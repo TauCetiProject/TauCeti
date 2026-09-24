@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.AddSubgroup.RationalSpan
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
@@ -218,31 +219,6 @@ end Field
 section Int
 
 variable {ι : Type*}
-
-/-- An element of the rational span of a subgroup `P` of `ι → ℤ` becomes an element of `P` after
-multiplication by some positive integer. -/
-private theorem AddSubgroup.exists_nat_mul_eq_intCast_of_mem_span {P : AddSubgroup (ι → ℤ)}
-    {x : ι → ℚ} (hx : x ∈ Submodule.span ℚ ((fun p : ι → ℤ => ((↑) : ℤ → ℚ) ∘ p) '' P)) :
-    ∃ N : ℕ, 0 < N ∧ ∃ p ∈ P, ∀ i, (p i : ℚ) = N * x i := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨p, hp, rfl⟩ := hy
-    exact ⟨1, one_pos, p, hp, fun i => by simp⟩
-  | zero => exact ⟨1, one_pos, 0, zero_mem P, fun i => by simp⟩
-  | add y z _ _ hy hz =>
-    obtain ⟨M, hM, p, hp, hpy⟩ := hy
-    obtain ⟨N, hN, q, hq, hqz⟩ := hz
-    refine ⟨M * N, mul_pos hM hN, N • p + M • q, add_mem (nsmul_mem hp N) (nsmul_mem hq M),
-      fun i => ?_⟩
-    rw [Pi.add_apply, Pi.smul_apply, Pi.smul_apply]
-    push_cast [nsmul_eq_mul, hpy, hqz, Pi.add_apply]
-    ring
-  | smul r y _ hy =>
-    obtain ⟨N, hN, p, hp, hpy⟩ := hy
-    refine ⟨r.den * N, mul_pos r.den_pos hN, r.num • p, zsmul_mem hp r.num, fun i => ?_⟩
-    simp only [Pi.smul_apply, smul_eq_mul, Int.cast_mul, hpy, Nat.cast_mul]
-    rw [← Rat.mul_den_eq_num]
-    ring
 
 /-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when some vector of
 strictly positive integer weights is orthogonal to all of `P`.
