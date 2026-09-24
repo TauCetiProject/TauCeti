@@ -128,6 +128,7 @@ theorem ramificationIndex_sub_one_le_differentExponent :
 attribute [local instance] Ideal.Quotient.field in
 /-- **The different exponent reaches the ramification index exactly in the wild case**:
 `e(L/K) ≤ d(L/K)` if and only if the residue characteristic divides `e(L/K)`. -/
+@[simp]
 theorem ramificationIndex_le_differentExponent_iff :
     ramificationIndex K L ≤ differentExponent K L ↔ IsWildlyRamified K L := by
   rw [← pow_dvd_differentIdeal_iff_le_differentExponent, isWildlyRamified_iff,
@@ -143,6 +144,7 @@ theorem ramificationIndex_le_differentExponent_iff :
 
 /-- **Dedekind's different theorem, the tame case**: `d(L/K) = e(L/K) - 1` exactly when `L/K` is
 tamely ramified. -/
+@[simp]
 theorem differentExponent_eq_ramificationIndex_sub_one_iff :
     differentExponent K L = ramificationIndex K L - 1 ↔ IsTamelyRamified K L := by
   have h := ramificationIndex_sub_one_le_differentExponent K L
