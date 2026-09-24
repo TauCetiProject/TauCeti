@@ -57,7 +57,7 @@ theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_constructionAL
 
 /-- The orthogonal quotient of the Golay code in the binary coordinate discriminant module has
 one element: the code is its own Euclidean dual. -/
-theorem natCard_orthogonalQuotient_code :
+theorem natCard_orthogonalQuotient_code_eq_one :
     Nat.card (((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).orthogonalQuotient
       code.toAddSubgroup) = 1 := by
   let A := (FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)
