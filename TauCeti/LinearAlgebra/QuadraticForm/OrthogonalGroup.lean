@@ -32,10 +32,12 @@ This file supplies that subgroup, together with its determinant-one subgroup and
 the hyperplanes of vectors of invertible norm. The orthogonal group is the target of the
 twisted-conjugation homomorphism out of the Pin group, so it is the object the Pin/Spin double
 covers are stated against, and the reflections are the generators an eventual Cartan-Dieudonné
-theorem factors an orthogonal automorphism into. The structural and reflection declarations below
-hold over an arbitrary commutative ring. The equal-norm dichotomy, Witt transitivity and the
-fixed-subspace correction assume a field in which `2` is nonzero. The characteristic restriction
-is not incidental: in characteristic two `polar Q v v = 2 • Q v` vanishes, so `reflection Q v`
+theorem factors an orthogonal automorphism into. The structural declarations and reflections
+defined using an invertible norm hold over an arbitrary commutative ring. The coefficient-spelling
+lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy,
+Witt transitivity and the fixed-subspace correction assume a field in which `2` is nonzero. The
+characteristic restriction is not incidental: in characteristic two `polar Q v v = 2 • Q v`
+vanishes, so `reflection Q v`
 fixes `v` instead of negating it and is a transvection rather than a reflection in `v ^ ⊥`.
 
 ## Main definitions
@@ -120,8 +122,9 @@ subtraction in `M` and `N`, since `QuadraticMap.polar` is stated for `[AddCommGr
 [AddCommGroup N]`, but still no more than a `CommSemiring`; the determinant needs `M` to be an
 additive group over a `CommRing`, and the
 reflections need to divide by `Q v` and so are stated for a `QuadraticForm R M`, that is, for
-`N = R`. The fixed-subspace correction assumes a field and `2 ≠ 0`; the closing
-Cartan--Dieudonne dichotomy assumes a field, a nonzero common quadratic value, and `2 ≠ 0`.
+`N = R`. The `ReflectionField` section divides by `Q v` over a field; its second coefficient
+spelling also assumes `2 ≠ 0`. The fixed-subspace correction assumes a field and `2 ≠ 0`; the
+closing Cartan--Dieudonne dichotomy assumes a field, a nonzero common quadratic value, and `2 ≠ 0`.
 The determinant's square needs a separating polar form on a finite free module over a domain, and
 its range and index a nondegenerate form over a field in which `2 ≠ 0`.
 
@@ -131,6 +134,8 @@ its range and index a nondegenerate form over a field in which `2 ≠ 0`.
   Layer 2, "the abstract orthogonal group".
 * J.-P. Serre, *A Course in Arithmetic* (1973), Chapter IV.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+* E. Artin, *Geometric Algebra* (1957), Chapter III.
+* O. T. O'Meara, *Introduction to Quadratic Forms* (1963), §43.
 -/
 
 public section
@@ -716,15 +721,15 @@ variable {R : Type u} {M : Type v} {M₁ : Type*} {M₂ : Type*} [CommRing R]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
 
 /-- An isometric equivalence `e` carries the reflection in `v` to the reflection in `e v`:
-`τ_{e v} = e ∘ τ_v ∘ e⁻¹`. -/
+`τ_{e v} = e ∘ τ_v ∘ e⁻¹`. This is the quadratic-form analogue of Mathlib's
+`reflection_map_apply` in `Mathlib.Analysis.InnerProductSpace.Projection.Reflection`. -/
 theorem reflection_map_apply (e : Q₁.IsometryEquiv Q₂) (v : M₁) [Invertible (Q₁ v)]
     [Invertible (Q₂ (e v))] (x : M₂) :
     reflection Q₂ (e v) x = e (reflection Q₁ v (e.symm x)) := by
-  have hinv : ⅟(Q₂ (e v)) = ⅟(Q₁ v) :=
-    invOf_eq_left_inv (by rw [e.map_app, invOf_mul_self])
+  have hinv : ⅟(Q₂ (e v)) = ⅟(Q₁ v) := Invertible.congr _ _ (e.map_app v)
   have hpolar : polar Q₂ (e v) x = polar Q₁ v (e.symm x) := by
-    conv_lhs => rw [← e.apply_symm_apply x]
-    simp only [QuadraticMap.polar, ← map_add e, e.map_app]
+    rw [← e.apply_symm_apply x]
+    simpa using e.toIsometry.polar_apply v (e.symm x)
   rw [reflection_apply, reflection_apply, map_sub, map_smul, e.apply_symm_apply, hinv, hpolar]
 
 /-- An isometric equivalence `e` carries the reflection in `v` to the reflection in `e v`, as linear
@@ -749,15 +754,16 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
     [Invertible (Q v)] [Invertible (Q ((g : M ≃ₗ[R] M) v))] :
     g * reflectionOrthogonal Q v * g⁻¹ = reflectionOrthogonal Q ((g : M ≃ₗ[R] M) v) := by
   refine Subtype.ext <| LinearEquiv.ext fun x => ?_
-  have hg : (g : M ≃ₗ[R] M) ∈ orthogonalGroup Q := g.2
-  have hinv : ⅟(Q ((g : M ≃ₗ[R] M) v)) = ⅟(Q v) :=
-    invOf_eq_left_inv (by rw [map_app_of_mem_orthogonalGroup hg, invOf_mul_self])
-  have hpolar : polar Q ((g : M ≃ₗ[R] M) v) x = polar Q v ((g : M ≃ₗ[R] M).symm x) := by
-    conv_lhs => rw [← (g : M ≃ₗ[R] M).apply_symm_apply x]
-    exact polar_apply_of_mem_orthogonalGroup hg _ _
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal, LinearEquiv.mul_apply,
-    LinearEquiv.coe_inv, reflection_apply, map_sub, map_smul, LinearEquiv.apply_symm_apply, hinv,
-    hpolar]
+  let _ : Invertible (Q ((orthogonalGroupEquivIsometryEquiv Q g) v)) := by
+    change Invertible (Q ((g : M ≃ₗ[R] M) v))
+    infer_instance
+  have hsymm : (orthogonalGroupEquivIsometryEquiv Q g).symm x =
+      (g : M ≃ₗ[R] M).symm x := rfl
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal,
+    LinearEquiv.mul_apply, LinearEquiv.coe_inv]
+  convert (reflection_map_apply (orthogonalGroupEquivIsometryEquiv Q g) v x).symm using 1
+  · simp only [coe_orthogonalGroupEquivIsometryEquiv, hsymm]
+  · congr 1
 
 end ReflectionMap
 

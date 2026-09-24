@@ -488,6 +488,33 @@ theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Fl
   apply Subtype.ext
   exact congrArg (fun x : orthogonalGroup Q => (x : M ≃ₗ[R] M)) hO
 
+/-- Polarization after base change, evaluated on pure tensors. -/
+theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
+    QuadraticMap.polar (Q.baseChange A) (a ⊗ₜ x) (b ⊗ₜ y) =
+      (QuadraticMap.polar Q x y) • (a * b) := by
+  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2
+    (map_ofNat _ _).symm
+  rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
+    LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+
+/-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
+of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/
+theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)]
+    [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
+    reflection (Q.baseChange A) (1 ⊗ₜ v) = LinearEquiv.baseChange R A M M (reflection Q v) := by
+  have hinv : ⅟(Q.baseChange A (1 ⊗ₜ v)) = algebraMap R A ⅟(Q v) :=
+    invOf_eq_left_inv (by
+      rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
+        invOf_mul_self, map_one])
+  ext x
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | tmul a m =>
+    rw [reflection_apply, LinearEquiv.baseChange_tmul, reflection_apply, hinv,
+      polar_baseChange_tmul]
+    simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 end QuadraticMap
 
 end TauCeti
@@ -598,35 +625,3 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
 end QuadraticForm
 
 end Field
-
-section Reflection
-
-variable {R : Type uR} {A : Type uA} [CommRing R] [CommRing A] [Algebra R A]
-variable [Invertible (2 : R)]
-variable {M : Type uM} [AddCommGroup M] [Module R M]
-
-namespace TauCeti.QuadraticMap
-
-/-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
-of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/
-theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)]
-    [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
-    reflection (Q.baseChange A) (1 ⊗ₜ v) = LinearEquiv.baseChange R A M M (reflection Q v) := by
-  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-  have hinv : ⅟(Q.baseChange A (1 ⊗ₜ v)) = algebraMap R A ⅟(Q v) :=
-    invOf_eq_left_inv (by
-      rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
-        invOf_mul_self, map_one])
-  ext x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a m =>
-    rw [reflection_apply, LinearEquiv.baseChange_tmul, reflection_apply, hinv,
-      ← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
-      LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
-    simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-end TauCeti.QuadraticMap
-
-end Reflection
