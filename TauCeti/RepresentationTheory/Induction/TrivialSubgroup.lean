@@ -491,6 +491,15 @@ theorem quotientToInvariantsCoindBotIso_hom_hom_apply_coe
     (dsimp% only (((quotientToInvariantsCoindBotIso S X).hom.hom f).1 y)) = f.1.1 y.out :=
   (rfl)
 
+/-- The forward isomorphism evaluated at the coset of a chosen representative. -/
+@[simp]
+theorem quotientToInvariantsCoindBotIso_hom_hom_apply_mk
+    (f : (coindBot k G X).quotientToInvariants S) (g : G) :
+    (dsimp% only (((quotientToInvariantsCoindBotIso S X).hom.hom f).1
+      (QuotientGroup.mk g))) = f.1.1 g := by
+  rw [quotientToInvariantsCoindBotIso_hom_hom_apply_coe]
+  exact coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)
+
 /-- A function on `G ⧸ S`, as an `S`-invariant function on `G`: `F ↦ (g ↦ F ⟦g⟧)`. -/
 @[simp]
 theorem quotientToInvariantsCoindBotIso_inv_hom_apply_coe_coe (F : coindBot k (G ⧸ S) X) (g : G) :

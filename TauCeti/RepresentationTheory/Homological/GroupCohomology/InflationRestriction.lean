@@ -22,10 +22,8 @@ restriction form a complex
 and if `Hⁱ(S, A) = 0` for `0 < i ≤ n`, it is exact and inflation is injective (Milne II 1.34).
 Mathlib proves the case `n = 0`, where there is no hypothesis, as `groupCohomology.H1InfRes`.
 
-The result is obtained by dimension shifting along the coinduced sequence
-`0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0`. The induced connecting isomorphisms commute
-with inflation and restriction, reducing the sequence in degree `n + 2` to that for
-`dimensionShiftUp A` in degree `n + 1`.
+The hypotheses concern the cohomology of `A` restricted to `S` in degrees below the degree of
+the complex. The file provides injectivity and exactness under these hypotheses.
 
 When `Hⁱ(S, A)` vanishes also in degree `n + 1`, inflation is an isomorphism
 (`isIso_infRes_f`). This is the form used for Tate's cohomological triviality criterion, where a
@@ -65,7 +63,7 @@ variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G) (S : Subgroup G) [S
 
 /-- The **inflation-restriction complex** `Hⁿ⁺¹(G ⧸ S, A^S) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(S, A)` in degree
 `n + 1`. In degree one it is Mathlib's `groupCohomology.H1InfRes`. -/
-def infRes (n : ℕ) : ShortComplex (ModuleCat k) where
+@[expose] def infRes (n : ℕ) : ShortComplex (ModuleCat k) where
   X₁ := groupCohomology (A.quotientToInvariants S) (n + 1)
   X₂ := groupCohomology A (n + 1)
   X₃ := groupCohomology (res S.subtype A) (n + 1)
@@ -74,6 +72,35 @@ def infRes (n : ℕ) : ShortComplex (ModuleCat k) where
   zero := by
     rw [← map_comp, Category.comp_id, congr (QuotientGroup.mk'_comp_subtype S)
       (fun f φ => map f φ (n + 1)), map_one_succ]
+
+/-- The first term of the inflation-restriction complex. -/
+@[simp]
+theorem infRes_X₁ (n : ℕ) :
+    (infRes A S n).X₁ = groupCohomology (A.quotientToInvariants S) (n + 1) := rfl
+
+/-- The middle term of the inflation-restriction complex. -/
+@[simp]
+theorem infRes_X₂ (n : ℕ) : (infRes A S n).X₂ = groupCohomology A (n + 1) := rfl
+
+/-- The last term of the inflation-restriction complex. -/
+@[simp]
+theorem infRes_X₃ (n : ℕ) :
+    (infRes A S n).X₃ = groupCohomology (res S.subtype A) (n + 1) := rfl
+
+/-- The inflation map in the inflation-restriction complex. -/
+@[simp]
+theorem infRes_f (n : ℕ) :
+    (infRes A S n).f =
+      map (QuotientGroup.mk' S) (ofHom <| A.ρ.quotientToInvariants_lift S) (n + 1) := rfl
+
+/-- The restriction map in the inflation-restriction complex. -/
+@[simp]
+theorem infRes_g (n : ℕ) :
+    (infRes A S n).g = map S.subtype (𝟙 _) (n + 1) := rfl
+
+/-- In degree one, `infRes` is Mathlib's `H1InfRes`. -/
+@[simp]
+theorem infRes_zero : infRes A S 0 = H1InfRes A S := rfl
 
 -- The two statements are proved together, by induction on the degree.
 private theorem mono_infRes_f_and_exact (n : ℕ) : ∀ A : Rep k G,
