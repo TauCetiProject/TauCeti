@@ -37,7 +37,7 @@ theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
 
 end TauCeti.GlobalNumberFields
 
-namespace TauCeti.ClassGroup
+namespace ClassGroup
 
 open TauCeti.GlobalNumberFields
 
@@ -64,4 +64,4 @@ theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
   · rw [map_mul, map_mul, IdeleGroup.toFiniteIdele_ofFiniteIdele,
       IdeleGroup.toFiniteIdele_ofCompletion, map_one, mul_one, hf]
 
-end TauCeti.ClassGroup
+end ClassGroup

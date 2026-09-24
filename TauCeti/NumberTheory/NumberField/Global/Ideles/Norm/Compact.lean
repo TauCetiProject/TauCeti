@@ -126,7 +126,7 @@ the class group together with Dirichlet's unit theorem. -/
 theorem isCompact_normOne : IsCompact (normOne K : Set (IdeleClassGroup (𝓞 K) K)) := by
   classical
   obtain ⟨W, hW, hWmem⟩ := exists_isCompact_forall_exists_mul_unitEmbedding_mem K
-  choose b hb1 hbc using TauCeti.ClassGroup.exists_ideleNorm_eq_one_and_toClassGroup_eq (K := K)
+  choose b hb1 hbc using ClassGroup.exists_ideleNorm_eq_one_and_toClassGroup_eq (K := K)
   have hq : Continuous (QuotientGroup.mk : IdeleGroup (𝓞 K) K → IdeleClassGroup (𝓞 K) K) :=
     continuous_quot_mk
   -- `C_K¹` is a closed subset of the union over the finitely many ideal classes `c` of the
