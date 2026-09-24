@@ -9,7 +9,6 @@ public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
-import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Pairwise products along diagonal chains

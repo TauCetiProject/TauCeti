@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.BrauerGroup.Group
 public import TauCeti.Algebra.Quaternion.CentralSimple
+public import TauCeti.FieldTheory.SquareClassGroup.Basic
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.BrauerGroup.Division
 import TauCeti.Algebra.Quaternion.TensorProduct
@@ -55,6 +56,7 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   symmetry, `2`-torsion, square-class invariance and the Steinberg relation.
 * `TauCeti.BrauerGroup.quaternionClass_mul`, `TauCeti.BrauerGroup.quaternionClass_mul_left`:
   **bilinearity of the quaternion symbol**.
+* `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes.
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
 
@@ -258,6 +260,42 @@ theorem quaternionClass_self (a : Kˣ) : quaternionClass a a = quaternionClass a
   calc quaternionClass a a = quaternionClass a (-1 * -a) := by rw [neg_one_mul, neg_neg]
     _ = quaternionClass a (-1) * quaternionClass a (-a) := quaternionClass_mul a (-1) (-a)
     _ = quaternionClass a (-1) := by rw [quaternionClass_neg_self, mul_one]
+
+/-! ### The symbol on square classes -/
+
+private theorem quaternionClass_congr_squareClass_left {a b c : Kˣ}
+    (h : squareClass a = squareClass b) : quaternionClass a c = quaternionClass b c := by
+  obtain ⟨t, ht⟩ := (squareClass_eq_iff_isSquare_mul a b).mp h
+  have hab : a = b * (t * b⁻¹) ^ 2 := by
+    calc
+      a = (a * b) * b⁻¹ := by group
+      _ = t ^ 2 * b⁻¹ := by rw [ht, pow_two]
+      _ = b * (t * b⁻¹) ^ 2 := by
+        calc
+          t ^ 2 * b⁻¹ = t ^ 2 * (b * (b⁻¹) ^ 2) := by congr 1; group
+          _ = b * (t * b⁻¹) ^ 2 := by rw [mul_pow]; ac_rfl
+  rw [hab, quaternionClass_mul_sq_left]
+
+private theorem quaternionClass_congr_squareClass_right {a b c : Kˣ}
+    (h : squareClass b = squareClass c) : quaternionClass a b = quaternionClass a c := by
+  rw [quaternionClass_comm a b, quaternionClass_comm a c]
+  exact quaternionClass_congr_squareClass_left h
+
+/-- The quaternion symbol factored through the square classes of its two parameters. -/
+noncomputable def quaternionClassOnSquareClasses (x y : SquareClassGroup K) : BrauerGroup K :=
+  quaternionClass (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
+
+/-- The square-class pairing agrees with the quaternion symbol on representatives. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_squareClass (a b : Kˣ) :
+    quaternionClassOnSquareClasses (squareClass a) (squareClass b) = quaternionClass a b := by
+  have hout (x : SquareClassGroup K) :
+      squareClass (Additive.toMul (Quotient.out x)) = x := by
+    rw [squareClass_def, ofMul_toMul]
+    exact Quotient.out_eq x
+  unfold quaternionClassOnSquareClasses
+  rw [quaternionClass_congr_squareClass_left (hout (squareClass a)),
+    quaternionClass_congr_squareClass_right (hout (squareClass b))]
 
 /-! ### Invariance under isometry of binary forms -/
 

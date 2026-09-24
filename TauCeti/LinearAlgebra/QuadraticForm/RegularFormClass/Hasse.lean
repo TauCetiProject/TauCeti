@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Quaternion.BrauerClass
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Induction
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
-import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BrauerGroup.Quaternion
 
 /-!
@@ -49,10 +49,13 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_mk_binary`: `s⟨a, b⟩ = [(a, b)]`.
 * `TauCeti.RegularFormClass.hasseInvariant_add_mk`: the orthogonal-sum formula on diagonal
   presentations.
+* `TauCeti.RegularFormClass.hasseInvariant_add`: the formula for arbitrary classes, with its
+  cross term expressed through their discriminants.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_scale`: the formula for scaling a diagonal
   presentation by a unit.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
+* `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
@@ -288,6 +291,29 @@ theorem hasseInvariant_mk_rankOne_mul_mk (a : Kˣ) (p : RegularFormPresentation 
     rw [hi] at happly
     simpa [r, j] using happly
   rw [mk_mul_mk, hscale, hasseInvariant_mk_scale]
+
+/-- **Orthogonal-sum formula** for regular-form classes: the cross term is the quaternion
+symbol of their discriminants. -/
+theorem hasseInvariant_add (x y : RegularFormClass K) :
+    hasseInvariant (x + y) = hasseInvariant x * hasseInvariant y *
+      quaternionClassOnSquareClasses (discr x) (discr y) := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    induction y using Quotient.inductionOn with
+    | h q =>
+      simpa only [discr_mk, quaternionClassOnSquareClasses_squareClass] using
+        hasseInvariant_add_mk p q
+
+/-- **Scaling formula** for any regular-form class: multiplying by `⟨a⟩` changes the Hasse
+invariant by a rank-dependent sign symbol and a symbol with its discriminant. -/
+theorem hasseInvariant_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
+      hasseInvariant x * quaternionClass a (-1) ^ (rank x).choose 2 *
+        quaternionClassOnSquareClasses (squareClass a) (discr x) ^ (rank x - 1) := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    simpa only [rank_mk, discr_mk, quaternionClassOnSquareClasses_squareClass] using
+      hasseInvariant_mk_rankOne_mul_mk a p
 
 /-- The hyperbolic plane `⟨1, -1⟩` has trivial Hasse invariant. -/
 @[simp]
