@@ -72,15 +72,15 @@ theorem isPowerBounded_iff_norm_le_one {x : K} : IsPowerBounded x ↔ ‖x‖ �
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · by_contra! hlt
     have hx0 : x ≠ 0 := norm_pos_iff.mp (one_pos.trans hlt)
-    obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp (isPowerBounded_iff.mp hx) (Metric.ball 0 1)
-      (Metric.ball_mem_nhds 0 one_pos)
     have hinv : ‖x⁻¹‖ < 1 := by
       rw [norm_inv]
       exact inv_lt_one_of_one_lt₀ hlt
-    obtain ⟨m, hm⟩ := ((tendsto_pow_atTop_nhds_zero_of_norm_lt_one hinv).eventually_mem hV).exists
+    obtain ⟨m, hm⟩ := (isPowerBounded_iff.mp hx).exists_pow_mul_subset
+      (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hinv : IsTopologicallyNilpotent x⁻¹)
+      (Metric.ball_mem_nhds 0 one_pos)
     have hone : x⁻¹ ^ m * x ^ m = 1 := by
       rw [inv_pow, inv_mul_cancel₀ (pow_ne_zero m hx0)]
-    have hmem := hVU (Set.mul_mem_mul hm ⟨m, rfl⟩)
+    have hmem := hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨m, rfl⟩)
     rw [hone, mem_ball_zero_iff, norm_one] at hmem
     exact lt_irrefl _ hmem
   · exact IsPowerBounded.of_norm_le_one hx

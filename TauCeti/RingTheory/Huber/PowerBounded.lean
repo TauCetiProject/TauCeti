@@ -539,6 +539,7 @@ theorem isPowerBounded_ringEquiv_iff (e : A ≃+* B) (he : Continuous e) (he' : 
 
 /-- A topological ring isomorphism maps the set of power-bounded elements onto the corresponding
 set in the target. -/
+@[simp]
 theorem image_ringEquiv_setOf_isPowerBounded (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) :
     e '' {a : A | IsPowerBounded a} = {b : B | IsPowerBounded b} := by
