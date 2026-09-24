@@ -211,7 +211,7 @@ theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*
       (congrFun (congrFun ((piSigmaConstHomeomorph K e).symm_apply_apply _) j) k)
   simp only [hblock, Sym.mem_basepointDivisor]
   rw [← Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero,
-    Sym.mem_sumSubtype_iff (fun i hij => hVdisj hij) hz,
+    Sym.mem_sumSubtype_iff (fun i hij hz' => Set.disjoint_left.1 (hVdisj hij) hz' hz) hz,
     Sym.mem_basepointDivisor, _root_.Sym.mem_map]
   refine ⟨fun h => ⟨_, h, rfl⟩, ?_⟩
   rintro ⟨x, hx, hxz⟩

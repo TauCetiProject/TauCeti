@@ -89,15 +89,19 @@ theorem isClosedEmbedding_cons [T1Space α] (a : α) :
 subset of the symmetric power. -/
 theorem isClosed_basepointDivisor [T1Space α] (a : α) :
     IsClosed (basepointDivisor a : Set (Sym α n)) := by
-  have heq : (basepointDivisor a : Set (Sym α n)) = {s | a ∈ s} :=
-    Set.ext fun s => mem_basepointDivisor
-  rw [heq]
-  rw [← isQuotientMap_ofFn.isClosed_preimage]
-  have h : ofFn ⁻¹' {s : Sym α n | a ∈ s} = ⋃ i, (fun f : Fin n → α => f i) ⁻¹' {a} := by
-    ext f
-    simp
-  rw [h]
-  exact isClosed_iUnion_of_finite fun i => isClosed_singleton.preimage (continuous_apply i)
+  cases n with
+  | zero =>
+    rw [show basepointDivisor a = ∅ by
+      ext s
+      constructor
+      · intro hs
+        rw [_root_.Sym.eq_nil_of_card_zero s, mem_basepointDivisor] at hs
+        exact (_root_.Sym.notMem_nil a hs).elim
+      · simp]
+    exact isClosed_empty
+  | succ n =>
+    rw [← range_cons a]
+    exact (isClosedEmbedding_cons a).isClosed_range
 
 end Sym
 
