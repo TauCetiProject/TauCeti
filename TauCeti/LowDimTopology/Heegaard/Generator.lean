@@ -18,15 +18,13 @@ paired fiber. The curve count is independent of surface genus; the diagram data 
 genus and basepoint count.
 
 This is the generator layer of the combinatorial Heegaard diagram. Surface regions, basepoints,
-domains, and admissibility are not encoded here; they are needed to define the differential and
-come later.
+domains, and admissibility are not encoded here; they are needed to define the differential.
 
 ## Main definitions
 
-* `TauCeti.HeegaardIntersectionSystem`: a finite set of intersection points with
-  its enumeration and two curve labels.
-* `TauCeti.HeegaardIntersectionSystem.Generator`: the matching type from
-  `TauCeti.Sym.piInterEquiv`, specialized to the system's `α`- and `β`-label fibers.
+* `TauCeti.HeegaardIntersectionSystem`: finite intersection data with two curve labels.
+* `TauCeti.HeegaardIntersectionSystem.Generator`: a permutation of the curve indices together
+  with one intersection point in each paired `α`- and `β`-label fiber.
 
 ## References
 
@@ -44,9 +42,8 @@ universe u
 /-- Finite intersection data for two equally sized curve systems. The finite enumeration records
 the point set, and each point has one `α`-curve label and one `β`-curve label; geometric surface
 and region data are additional structure. -/
-structure HeegaardIntersectionSystem (n : ℕ) (Point : Type u) where
-  /-- The finite enumeration of intersection points. -/
-  pointFintype : Fintype Point
+@[ext]
+structure HeegaardIntersectionSystem (n : ℕ) (Point : Type u) [Fintype Point] where
   /-- The `α`-curve containing an intersection point. -/
   alpha : Point → Fin n
   /-- The `β`-curve containing an intersection point. -/
@@ -54,7 +51,7 @@ structure HeegaardIntersectionSystem (n : ℕ) (Point : Type u) where
 
 namespace HeegaardIntersectionSystem
 
-variable {n : ℕ} {Point : Type u}
+variable {n : ℕ} {Point : Type u} [Fintype Point]
   (D : HeegaardIntersectionSystem n Point)
 
 /-- The generators of `D` as matchings between the fibers of its `α`- and `β`-labels. -/
@@ -63,40 +60,36 @@ abbrev Generator : Type u :=
     ∀ i, ↥({p | D.alpha p = i} ∩ {p | D.beta p = σ i})
 
 /-- The generators are finite because the intersection point type is finite. -/
-noncomputable instance : Fintype D.Generator := by
-  letI := D.pointFintype
-  classical
-  letI (σ : Equiv.Perm (Fin n)) (i : Fin n) : Fintype
-      ↥({p | D.alpha p = i} ∩ {p | D.beta p = σ i}) := inferInstance
-  exact Fintype.ofFinite _
+instance : Fintype D.Generator := inferInstance
 
-/-- The generators of `D` are the common points of the symmetric products of its `α`- and
-`β`-label fibers. -/
-noncomputable def generatorEquivPiInter : D.Generator ≃
-    ↥(Sym.pi (fun i => {p | D.alpha p = i}) ∩ Sym.pi (fun j => {p | D.beta p = j})) :=
-  Sym.piInterEquiv (A := fun i => {p | D.alpha p = i}) (B := fun j => {p | D.beta p = j})
-    (pairwise_disjoint_fiber D.alpha) (pairwise_disjoint_fiber D.beta)
-
-/-- The generator equivalence sends a matching to its unordered tuple of intersection points. -/
+/-- The chosen point over `i` has `α`-label `i`. -/
 @[simp]
-theorem generatorEquivPiInter_apply (g : D.Generator) :
-    D.generatorEquivPiInter g = Sym.matchingTuple g := by
-  simpa only [generatorEquivPiInter] using
-    (Sym.piInterEquiv_apply (A := fun i => {p | D.alpha p = i})
-      (B := fun j => {p | D.beta p = j}) (pairwise_disjoint_fiber D.alpha)
-      (pairwise_disjoint_fiber D.beta) g)
+theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
+  (g.2 i).property.1
 
-/-- A diagonal incidence system has one intersection point for each corresponding pair of
-curves, and its identity choice is a generator. This supplies a concrete nonempty example of the
-generator predicate. -/
-abbrev diagonal (n : ℕ) : HeegaardIntersectionSystem n (Fin n) where
-  pointFintype := inferInstance
-  alpha := id
-  beta := id
+/-- The chosen point over `i` has `β`-label given by the matching permutation. -/
+@[simp]
+theorem beta_coe (g : D.Generator) (i : Fin n) : D.beta (g.2 i) = g.1 i :=
+  (g.2 i).property.2
 
-/-- The identity choice is a generator of the diagonal incidence system. -/
-def diagonalGenerator (n : ℕ) : (diagonal n).Generator :=
-  ⟨Equiv.refl _, fun i => ⟨i, rfl, rfl⟩⟩
+/-- Two generators with the same chosen points are equal. -/
+@[ext]
+theorem Generator.ext {g g' : D.Generator} (h : ∀ i, (g.2 i : Point) = g'.2 i) : g = g' := by
+  have hσ : g.1 = g'.1 := by
+    apply Equiv.ext
+    intro i
+    apply Fin.ext
+    have hi := D.beta_coe g i
+    have hi' := D.beta_coe g' i
+    rw [h i] at hi
+    exact congrArg Fin.val (hi.symm.trans hi')
+  rcases g with ⟨σ, p⟩
+  rcases g' with ⟨τ, q⟩
+  change σ = τ at hσ
+  cases hσ
+  congr 1
+  funext i
+  exact Subtype.ext (h i)
 
 end HeegaardIntersectionSystem
 
