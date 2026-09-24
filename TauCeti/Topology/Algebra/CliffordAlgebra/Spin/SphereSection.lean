@@ -105,6 +105,14 @@ noncomputable def realCliffordSpinLastLocalSectionDirection {n : ℕ}
   (Real.sqrt (realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1 - -x)))⁻¹ •
     (Pi.single (Fin.last n) 1 - -x)
 
+/-- The normalized direction is given by inverse square-root rescaling of the translated input. -/
+theorem realCliffordSpinLastLocalSectionDirection_def {n : ℕ}
+    (x : Fin (n + 1) → ℝ) :
+    realCliffordSpinLastLocalSectionDirection x =
+      (Real.sqrt (realCliffordForm (n + 1) 0 (Pi.single (Fin.last n) 1 - -x)))⁻¹ •
+        (Pi.single (Fin.last n) 1 - -x) := by
+  rfl
+
 /-- Away from the last-vector antipode, the local-section direction has quadratic value one. -/
 @[simp]
 theorem realCliffordSpinLastLocalSectionDirection_form_eq_one {n : ℕ}
