@@ -43,6 +43,18 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
+    (h : s = t) (v : s) : ((Homeomorph.setCongr h) v : Y) = v := by
+  -- `setCongr` uses `Set.equivOfEq` for its underlying equivalence.
+  change ((Set.equivOfEq h) v : Y) = v
+  simp only [Set.equivOfEq_apply]
+
+private theorem coe_setCongr_symm_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
+    (h : s = t) (v : t) : ((Homeomorph.setCongr h).symm v : Y) = v := by
+  -- The inverse uses the inverse of the same set equivalence.
+  change ((Set.equivOfEq h).symm v : Y) = v
+  simp only [Set.equivOfEq_symm_apply]
+
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 variable {K α ε : ℝ≥0} (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
 variable (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
@@ -86,8 +98,8 @@ noncomputable def localStableSetHomeomorph :
 theorem coe_localStableSetHomeomorph_apply (v : {v : range P | ‖(v : X)‖ ≤ ρ}) :
     (localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
       (v : X) + localStableGraphMap A P N r hs hu hr hN hsmall v := by
-  simp only [localStableSetHomeomorph, Homeomorph.trans_apply]
-  exact coe_graphHomeomorph_apply _ _ _ _ _ _ _
+  simp only [localStableSetHomeomorph, Homeomorph.trans_apply, coe_setCongr_apply,
+    coe_graphHomeomorph_apply]
 
 /-- The inverse of the local stable set homeomorphism is the stable projection. -/
 @[simp]
@@ -96,13 +108,8 @@ theorem coe_localStableSetHomeomorph_symm_apply
           y 0 = x ∧ MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ}) :
     (((localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x : range P) : X) =
       P x := by
-  obtain ⟨v, rfl⟩ :=
-    (localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).surjective x
-  rw [Homeomorph.symm_apply_apply, coe_localStableSetHomeomorph_apply, map_add,
-    apply_localStableGraphMap hs hu hr hN hsmall hP hAP, add_zero]
-  exact ((LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
-      (LinearMap.mem_range.mpr (v : range P).2)).symm
+  simp only [localStableSetHomeomorph, Homeomorph.symm_trans_apply,
+    coe_setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
 
 /-- The local unstable set of confined backward solutions, truncated by the norm of its
 complementary projection, is homeomorphic to the corresponding closed ball in the unstable
@@ -127,8 +134,8 @@ theorem coe_localUnstableSetHomeomorph_apply
     (v : {v : range (ContinuousLinearMap.id ℝ X - P) | ‖(v : X)‖ ≤ ρ}) :
     (localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
       (v : X) + localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
-  simp only [localUnstableSetHomeomorph, Homeomorph.trans_apply]
-  exact coe_graphHomeomorph_apply _ _ _ _ _ _ _
+  simp only [localUnstableSetHomeomorph, Homeomorph.trans_apply, coe_setCongr_apply,
+    coe_graphHomeomorph_apply]
 
 /-- The inverse of the local unstable set homeomorphism is the unstable projection. -/
 @[simp]
@@ -138,13 +145,8 @@ theorem coe_localUnstableSetHomeomorph_symm_apply
           ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ}) :
     (((localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x :
         range (ContinuousLinearMap.id ℝ X - P)) : X) = (ContinuousLinearMap.id ℝ X - P) x := by
-  obtain ⟨v, rfl⟩ :=
-    (localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).surjective x
-  rw [Homeomorph.symm_apply_apply, coe_localUnstableSetHomeomorph_apply, map_add,
-    sub_apply_localUnstableGraphMap A P N r hs hu hr hN hsmall hP hAP, add_zero]
-  exact ((LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP.one_sub)).mp
-      (LinearMap.mem_range.mpr (v : range (ContinuousLinearMap.id ℝ X - P)).2)).symm
+  simp only [localUnstableSetHomeomorph, Homeomorph.symm_trans_apply,
+    coe_setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
 
 end ContinuousLinearMap
 

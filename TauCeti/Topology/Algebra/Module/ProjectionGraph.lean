@@ -28,6 +28,19 @@ open Set Topology
 
 namespace ContinuousLinearMap
 
+private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
+    (h : s = t) (v : s) : ((Homeomorph.setCongr h) v : Y) = v := by
+  -- `setCongr` uses `Set.equivOfEq` for its underlying equivalence.
+  change ((Set.equivOfEq h) v : Y) = v
+  simp only [Set.equivOfEq_apply]
+
+private theorem coe_homeomorphImage_apply {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] {f : Y → Z} (hf : IsEmbedding f) (s : Set Y) (v : s) :
+    (hf.homeomorphImage s v : Z) = f v := by
+  simp only [IsEmbedding.homeomorphImage, Homeomorph.trans_apply, coe_setCongr_apply]
+  -- The remaining component is the embedding's `toHomeomorph`.
+  rfl
+
 variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
   [ContinuousAdd M]
 
@@ -59,7 +72,8 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
     (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M)
     (v : (Subtype.val ⁻¹' s : Set (range P))) :
     (graphHomeomorph P hP g hPg hg s v : M) = (v : M) + g v := by
-  rfl
+  simp only [graphHomeomorph, Homeomorph.trans_apply, coe_setCongr_apply,
+    coe_homeomorphImage_apply]
 
 /-- The inverse graph homeomorphism is given by the projection. -/
 @[simp]
