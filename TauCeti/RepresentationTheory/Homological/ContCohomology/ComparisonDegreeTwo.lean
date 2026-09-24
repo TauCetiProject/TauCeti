@@ -39,6 +39,7 @@ variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- The degree-two comparison in `TopModuleCat ℤ` commutes with pullback along a compatible
 pair of a continuous group homomorphism and an equivariant coefficient map. -/
+@[simp]
 theorem explicitIso_map2
     (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
@@ -57,6 +58,7 @@ theorem explicitIso_map2
     (discreteH2Equiv G M x)
 
 /-- The degree-two comparison transports explicit restriction to canonical restriction. -/
+@[simp]
 theorem explicitIso_res2 (S : Subgroup G) [CompactSpace S] (x : DiscreteH2 G M) :
     TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 2
         ((explicitH2IsoContinuousCohomology G M).hom x) =
@@ -73,6 +75,7 @@ theorem explicitIso_res2 (S : Subgroup G) [CompactSpace S] (x : DiscreteH2 G M) 
 
 /-- The degree-two comparison transports a continuous equivariant coefficient map to the
 canonical map induced by the same homomorphism. -/
+@[simp]
 theorem explicitIso_coeffMap2
     (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : DiscreteH2 G M) :
