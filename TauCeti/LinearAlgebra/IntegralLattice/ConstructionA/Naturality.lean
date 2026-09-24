@@ -43,7 +43,8 @@ the common rational ambient space, and is the carrier part of the lattice isomet
 @[simp]
 theorem lattice_map_signedEquiv (C : AdditiveCode (ZMod m) ι) (u : ι → ℤˣ) (e : ι ≃ κ) :
     (lattice m C).map
-        ((signedEquiv (R := ℚ) u e).restrictScalars ℤ).toLinearMap =
+        (((signedEquiv (R := ℚ) u e).toLinearMap).restrictScalars ℤ :
+          (ι → ℚ) →ₗ[ℤ] (κ → ℚ)) =
       lattice m (C.map (signedEquiv (R := ZMod m) u e).toAddEquiv.toAddMonoidHom) := by
   ext x
   constructor
@@ -71,8 +72,7 @@ theorem lattice_map_signedEquiv (C : AdditiveCode (ZMod m) ι) (u : ι → ℤˣ
       (signedEquiv (R := ZMod m) u e).injective (hv.trans hwz.symm)
     refine ⟨fun i ↦ (v i : ℚ), (intCast_mem_lattice m v).mpr (by simpa [hcv] using hw), ?_⟩
     ext j
-    rw [LinearEquiv.restrictScalars_toLinearMap, LinearMap.coe_restrictScalars,
-      LinearEquiv.coe_coe, signedEquiv_apply]
+    simp only [LinearMap.coe_restrictScalars, LinearEquiv.coe_coe, signedEquiv_apply]
     have h := congrFun ((signedEquiv (R := ℤ) u e).apply_symm_apply z) j
     rw [signedEquiv_apply] at h
     exact_mod_cast h
@@ -122,7 +122,8 @@ noncomputable def integralLatticeSignedEquiv (C : AdditiveCode (ZMod m) ι)
           simpa only [LinearEquiv.coe_toLinearMap] using dotProduct_signedEquiv u e x y
         exact congrArg (fun a : ℚ ↦ a / (m : ℚ)) hdot }
   map_carrier := by
-    rw [integralLattice_carrier, integralLattice_carrier, lattice_map_signedEquiv]
+    rw [integralLattice_carrier, integralLattice_carrier]
+    exact lattice_map_signedEquiv C u e
 
 /-- The Construction A signed-coordinate isometry acts by the same signed permutation on
 rational vectors. -/
