@@ -18,9 +18,9 @@ of its own, compares the intrinsic notion with Mathlib's chosen-parameter `Funct
 characterizes it by finite generation and transcendence degree one.
 
 It then records how the notion behaves along a change of the field on either side: a finite
-extension of `F` is again a function field over `k`, an algebraic descent `F / E` makes `E` a
-function field over `k`, and an intermediate field `k'` of `F / k` is a legitimate base for `F`
-exactly when `k' / k` is algebraic
+extension of `F` is again a function field over `k`, an algebraic descent `F / E` preserves
+transcendence degree one and makes `E` a function field over `k`, and an intermediate field `k'`
+of `F / k` is a legitimate base for `F` exactly when `k' / k` is algebraic
 (`TauCeti.isFunctionField_base_iff_isAlgebraic`).
 
 The definition and the independence-of-parameter result follow Stichtenoth, *Algebraic Function
@@ -225,17 +225,23 @@ theorem IsFunctionField.finite_extension {E : Type*} [Field E] [Algebra k E] [Al
   rw [isFunctionField_iff_trdeg_eq_one]
   exact hF.trdeg_eq_one_of_isAlgebraic
 
+/-- An algebraic intermediate field below a function field still has transcendence degree one
+over the base field. -/
+theorem IsFunctionField.trdeg_eq_one_of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
+    [Algebra E F] [IsScalarTower k E F] [Algebra.IsAlgebraic E F]
+    (hF : IsFunctionField k F) : Algebra.trdeg k E = 1 := by
+  apply Cardinal.lift_injective.{v, w}
+  have h := lift_trdeg_add_eq k E F
+  rw [trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic E F),
+    Cardinal.lift_zero, add_zero, hF.trdeg_eq_one, Cardinal.lift_one] at h
+  simpa using h
+
 /-- If `F / k` is a function field and `F / E` is algebraic, then `E / k` is a function field.
 A transcendental element of `E` is a rational parameter for both `F` and `E`. -/
 theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
     [Algebra E F] [IsScalarTower k E F] [Algebra.IsAlgebraic E F]
     (hF : IsFunctionField k F) : IsFunctionField k E := by
-  have htr : Algebra.trdeg k E = 1 := by
-    apply Cardinal.lift_injective.{v, w}
-    have h := lift_trdeg_add_eq k E F
-    rw [trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic E F),
-      Cardinal.lift_zero, add_zero, hF.trdeg_eq_one, Cardinal.lift_one] at h
-    simpa using h
+  have htr : Algebra.trdeg k E = 1 := hF.trdeg_eq_one_of_isAlgebraic_top
   have htrans : Algebra.Transcendental k E := trdeg_ne_zero_iff.mp (htr ▸ one_ne_zero)
   obtain ⟨x, hx⟩ := htrans.transcendental
   have hxF : Transcendental k (algebraMap E F x) :=
@@ -243,13 +249,13 @@ theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
   let f : k⟮x⟯ →ₐ[k] F := (IsScalarTower.toAlgHom k E F).comp (k⟮x⟯).val
   have hrange : f.fieldRange = k⟮algebraMap E F x⟯ := by
     simp only [f, IntermediateField.fieldRange_comp_val, IntermediateField.adjoin_map,
-      Set.image_singleton]
-    rfl
+      Set.image_singleton, IsScalarTower.coe_toAlgHom']
   have hfinite : FiniteDimensional f.fieldRange F := by
     rw [hrange]
     exact hF.finiteDimensional_adjoin hxF
   have hfiniteF : FiniteDimensional k⟮x⟯ F := by
     let : FiniteDimensional f.fieldRange F := hfinite
+    -- The algebra map from `k⟮x⟯` to `F` is the composite through `E` by definition.
     exact AlgHom.finiteDimensional_of_fieldRange f (fun _ ↦ rfl)
   let : FiniteDimensional k⟮x⟯ F := hfiniteF
   exact ⟨x, hx, FiniteDimensional.left k⟮x⟯ E F⟩

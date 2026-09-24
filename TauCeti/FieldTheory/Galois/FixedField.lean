@@ -73,6 +73,7 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.finiteDimensional_fixedField_of_finite`,
   `IntermediateField.isGalois_fixedField_of_finite`, and
   `IntermediateField.finrank_fixedField_eq_card_of_finite`
+* `IntermediateField.subgroupEquivAlgEquiv_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -271,7 +272,8 @@ instance finiteDimensional_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [
     FiniteDimensional (fixedField H) M :=
   (inferInstance : FiniteDimensional (FixedPoints.subfield H M) M)
 
-/-- The extension over the fixed field of a finite group of automorphisms is Galois. -/
+/-- The extension over the fixed field of a finite group of automorphisms is Galois.
+`fixedField H` is definitionally `FixedPoints.subfield H M`. -/
 instance isGalois_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   (inferInstance : IsGalois (FixedPoints.subfield H M) M)
@@ -281,8 +283,15 @@ theorem finrank_fixedField_eq_card_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Fin
     Module.finrank (fixedField H) M = Nat.card H := by
   classical
   let := Fintype.ofFinite H
+  -- `fixedField H` is definitionally `FixedPoints.subfield H M`.
   change Module.finrank (FixedPoints.subfield H M) M = Nat.card H
   simpa only [Nat.card_eq_fintype_card] using FixedPoints.finrank_eq_card H M
+
+/-- A finite group of automorphisms is the Galois group over its fixed field. -/
+noncomputable def subgroupEquivAlgEquiv_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    H ≃* (M ≃ₐ[fixedField H] M) :=
+  (MulEquiv.subgroupCongr (fixingSubgroup_fixedField_of_finite H).symm).trans
+    (fixingSubgroupEquiv _)
 
 /-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
 automorphism group of a finite extension. -/

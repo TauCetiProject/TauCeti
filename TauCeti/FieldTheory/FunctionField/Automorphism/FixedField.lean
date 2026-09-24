@@ -18,8 +18,8 @@ Riemann--Hurwitz to a quotient by a finite automorphism group.
 
 Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`.
 `IntermediateField.finrank_fixedField_eq_card_of_finite` gives the degree,
-`IntermediateField.isGalois_fixedField_of_finite` gives the Galois extension, and Mathlib's
-`FixedPoints.toAlgAutMulEquiv` identifies the Galois group.
+`IntermediateField.isGalois_fixedField_of_finite` gives the Galois extension, and
+`IntermediateField.subgroupEquivAlgEquiv_of_finite` identifies the Galois group.
 
 ## References
 
@@ -34,7 +34,8 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- The fixed field of a finite group of `k`-automorphisms of a function field is itself a
 function field over `k`. `IntermediateField.isGalois_fixedField_of_finite` makes `F` Galois over
-this field, and `FixedPoints.toAlgAutMulEquiv` identifies its Galois group with `H`. -/
+this field, and `IntermediateField.subgroupEquivAlgEquiv_of_finite` identifies its Galois group
+with `H`. -/
 theorem IsFunctionField.fixedField (hF : IsFunctionField k F)
     (H : Subgroup (F ≃ₐ[k] F)) [Finite H] :
     IsFunctionField k (IntermediateField.fixedField H) := by
