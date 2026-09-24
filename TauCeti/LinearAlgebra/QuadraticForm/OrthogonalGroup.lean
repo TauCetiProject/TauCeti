@@ -204,7 +204,7 @@ theorem coe_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N) (f : orth
   rfl
 
 @[simp]
-theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N)
+theorem _root_.TauCeti.toLinearEquiv_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N)
     (f : orthogonalGroup Q) :
     (orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
   LinearEquiv.ext <| congrFun (coe_orthogonalGroupEquivIsometryEquiv Q f)
@@ -770,7 +770,8 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   intro _
   rw [reflection_map_apply e v x, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv e.symm,
     ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
-    toLinearEquiv_orthogonalGroupEquivIsometryEquiv, coe_orthogonalGroupEquivIsometryEquiv]
+    TauCeti.toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
+    coe_orthogonalGroupEquivIsometryEquiv]
 
 end ReflectionMap
 
