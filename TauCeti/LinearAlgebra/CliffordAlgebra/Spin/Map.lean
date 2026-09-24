@@ -79,6 +79,7 @@ def lipschitzGroupMap (f : Q₁ →qᵢ Q₂) : lipschitzGroup Q₁ →* lipschi
   map_one' := by simp
   map_mul' x y := by simp
 
+/-- Coercing the induced Lipschitz-group map is the corresponding Clifford-algebra map. -/
 @[simp]
 theorem coe_lipschitzGroupMap_apply (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q₁) :
     ((f.lipschitzGroupMap x : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) =
