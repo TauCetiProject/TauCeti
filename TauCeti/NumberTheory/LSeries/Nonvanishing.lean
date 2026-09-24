@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Asymptotics.InvSubOne
 
 /-!
 # Nonvanishing on the line `Re s = 1` from a 3-4-1 bound
@@ -21,23 +22,22 @@ in two steps. The first is arithmetic: an Euler product and the positivity of
 ```
 
 where `L₀` is the series of the trivial character, `L₁` that of a character `χ`, and `L₂` that of
-`χ²`. The second step is analytic and uses no arithmetic: if `L₀` has at most a simple pole at
-`1`, `L₂` stays bounded near `1 + 2it`, and `L₁` is differentiable at `1 + it` and vanishes
-there, then as `σ → 1⁺` the product is `O((σ - 1)⁻³ (σ - 1)⁴) = O(σ - 1)`, contradicting the
+`χ²`. The second step is analytic and uses no arithmetic: if `L₀(σ) = O((σ - 1)⁻¹)` as `σ → 1⁺`,
+`L₂` stays bounded near `1 + 2it`, and `L₁` is differentiable at `1 + it` and vanishes there,
+then as `σ → 1⁺` the product is `O((σ - 1)⁻³ (σ - 1)⁴) = O(σ - 1)`, contradicting the
 lower bound. This file proves the second step for arbitrary functions, so that each family of
 `L`-series needs to supply only its own `3-4-1` bound and its analytic inputs.
 
-The pole condition is stated as `f₀(σ) = O((σ - 1)⁻¹)` as `σ → 1⁺`. It follows from the one-sided
-residue limit `(σ - 1) f₀(σ) → r`, which is how the pole of a Dedekind zeta function is usually
-available; `isBigO_inv_sub_one_of_tendsto_sub_one_mul` records that implication.
+The growth condition on `f₀` is the one-sided bound `f₀(σ) = O((σ - 1)⁻¹)` as real `σ → 1⁺`.
+It follows from a limit of `(σ - 1) f₀(σ)` as `σ → 1⁺`, which is how such a bound is usually
+available for a Dedekind zeta function; `TauCeti.isBigO_inv_sub_one_of_tendsto_sub_one_mul`
+records that implication.
 
 ## Main results
 
-* `TauCeti.LSeries.isBigO_inv_sub_one_of_tendsto_sub_one_mul`: a function with a finite one-sided
-  residue at `1` is `O((σ - 1)⁻¹)` as `σ → 1⁺`.
-* `TauCeti.LSeries.ne_zero_of_threeFourOne`: the `3-4-1` bound together with the pole bound for
-  `f₀`, differentiability of `f₁` at `1 + it` and continuity of `f₂` at `1 + 2it` forces
-  `f₁ (1 + it) ≠ 0`.
+* `TauCeti.LSeries.ne_zero_of_threeFourOne`: the `3-4-1` bound together with the bound
+  `f₀(σ) = O((σ - 1)⁻¹)`, differentiability of `f₁` at `1 + it` and continuity of `f₂` at
+  `1 + 2it` forces `f₁ (1 + it) ≠ 0`.
 
 ## References
 
@@ -55,25 +55,11 @@ namespace TauCeti.LSeries
 open Asymptotics Complex Filter
 open scoped Topology
 
-/-- **A simple pole is `O((σ - 1)⁻¹)`.** If `(σ - 1) f(σ)` has a limit as `σ → 1⁺`, then
-`f(σ) = O((σ - 1)⁻¹)` as `σ → 1⁺`. -/
-theorem isBigO_inv_sub_one_of_tendsto_sub_one_mul {f : ℝ → ℂ} {r : ℂ}
-    (h : Tendsto (fun σ : ℝ ↦ ((σ : ℂ) - 1) * f σ) (𝓝[>] 1) (𝓝 r)) :
-    f =O[𝓝[>] 1] fun σ : ℝ ↦ (σ - 1)⁻¹ := by
-  have hinv : (fun σ : ℝ ↦ ((σ : ℂ) - 1)⁻¹) =O[𝓝[>] 1] fun σ : ℝ ↦ (σ - 1)⁻¹ :=
-    isBigO_of_le _ fun σ ↦ by rw [← ofReal_one, ← ofReal_sub, ← ofReal_inv, norm_real]
-  refine ((h.isBigO_one ℝ).mul hinv).congr' ?_ (by simp)
-  filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-  have : (σ : ℂ) - 1 ≠ 0 := by
-    rw [← ofReal_one, ← ofReal_sub, ofReal_ne_zero]
-    exact sub_ne_zero.mpr hσ.ne'
-  field_simp
-
 /-- **The `3-4-1` nonvanishing criterion.** Let `f₀`, `f₁`, `f₂` be complex functions and `t` real.
 Suppose that, as `σ → 1⁺` through real values,
 
 * `1 ≤ ‖f₀(σ) ^ 3 * f₁(σ + it) ^ 4 * f₂(σ + 2it)‖` eventually;
-* `f₀(σ) = O((σ - 1)⁻¹)`, so `f₀` has at most a simple pole at `1`;
+* `f₀(σ) = O((σ - 1)⁻¹)`;
 
 and that `f₁` is complex differentiable at `1 + it` and `f₂` is continuous at `1 + 2it`. Then
 `f₁ (1 + it) ≠ 0`.
