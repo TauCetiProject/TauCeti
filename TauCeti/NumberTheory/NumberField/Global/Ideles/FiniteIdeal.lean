@@ -35,9 +35,13 @@ theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
   simp only [toFractionalIdeal_eq_one_iff, adicOrd_eq_zero_iff, IdeleGroup.coe_toFiniteIdele,
     HeightOneSpectrum.coe_ideleFiniteCoord]
 
-section NumberField
+end TauCeti.GlobalNumberFields
 
-variable [NumberField K]
+namespace TauCeti.ClassGroup
+
+open TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- Every ideal class is the class of the finite part of an idele of norm one. -/
 theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
@@ -60,6 +64,4 @@ theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
   · rw [map_mul, map_mul, IdeleGroup.toFiniteIdele_ofFiniteIdele,
       IdeleGroup.toFiniteIdele_ofCompletion, map_one, mul_one, hf]
 
-end NumberField
-
-end TauCeti.GlobalNumberFields
+end TauCeti.ClassGroup
