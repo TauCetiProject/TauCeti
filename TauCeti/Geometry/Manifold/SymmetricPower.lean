@@ -59,7 +59,7 @@ change remains open.
 * `TauCeti.symChartedSpace_chartAt` and `TauCeti.symChartedSpace_atlas`: its preferred charts and
   atlas.
 * `TauCeti.mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero` and
-  `TauCeti.Sym.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`: the unordered tuples
+  `TauCeti.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`: the unordered tuples
   through a fixed point `z` are cut out by one affine equation, with nonzero linear part, in every
   chart that they meet. For a basepoint `z` of a Heegaard surface this is the divisor
   `V_z = {z} × Sym^{g-1}(Σ)` of Ozsváth--Szabó, which is therefore an affine hyperplane in
@@ -364,8 +364,6 @@ theorem symChartedSpace_atlas :
       Set.range (symChartAt (K := K)) :=
   (rfl)
 
-namespace Sym
-
 /-- **The unordered tuples through a point form an affine hyperplane in every chart of
 `TauCeti.symChartedSpace` that they meet.** If some tuple of the source of the chosen chart at `t`
 contains `z`, then there are a nonzero continuous linear functional `ℓ` and a scalar `b` such that
@@ -379,8 +377,6 @@ theorem exists_continuousLinearMap_ne_zero_mem_iff_symChartAt (t : Sym α n) {z 
   rw [h] at hz ⊢
   exact exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph _ V m hm hVo hVsub
     hVdisj e hp hz
-
-end Sym
 
 /-- Applying the construction with `α := K` charts the symmetric power of the model space by
 affine `n`-space. This is the local model used for `Sym^g(Σ)`. -/
