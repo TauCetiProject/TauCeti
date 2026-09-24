@@ -19,6 +19,13 @@ The attaching curves of a pointed Heegaard diagram `(Σ, α, β, z)` cut the sur
 combination of regions. This file records the incidence data that domains need, with no
 surface in sight, and develops domains, periodic domains and weak admissibility on top of it.
 
+`HeegaardRegionSystem` is abstract incidence data: `Region` is supplied by the caller.
+Its local incidence conditions do not identify the connected components of the complement
+of a specified surface diagram. To use these definitions for such a diagram, one must
+separately show that its supplied labels are exactly those components; identifying two
+components changes the incidence system and can change its periodic domains and
+admissibility. All results below concern the supplied incidence system.
+
 The data extends `TauCeti.HeegaardIntersectionSystem`, which labels each intersection point by
 its `α`- and `β`-curve. Orient every attaching curve. The intersection points on the `α`-curve
 `α_i` cut it into arcs, one starting at each point `p` on `α_i` and ending at the next point
@@ -94,7 +101,9 @@ intersection data it records, for each intersection point `p`, the next intersec
 the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
 starting at `p`, and the region containing each basepoint. The points on each curve form a single
 cycle of the corresponding successor permutation. Region labels agree around each crossing, and
-each region is incident to an arc (apart from the one-region case with no arcs). -/
+each region is incident to an arc (apart from the one-region case with no arcs). The data does
+not assert that the labels are the connected complementary regions of a particular surface
+realization; that requires a separate identification. -/
 @[ext]
 structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Basepoint : Type w)
     extends HeegaardIntersectionSystem n Point where
@@ -336,8 +345,9 @@ theorem IsDomainBetween.sub_mem_periodicDomains_iff {x y : H.Generator} {D D' : 
   tauto
 
 variable (H) in
-/-- A pointed Heegaard diagram is weakly admissible when every nonzero periodic domain has both
-positive and negative coefficients. -/
+/-- The supplied region incidence system is weakly admissible when every nonzero periodic domain
+has both positive and negative coefficients. Interpreting this for a geometric diagram requires
+identifying its actual complementary regions with `Region`. -/
 def WeaklyAdmissible : Prop :=
   ∀ P ∈ H.periodicDomains, P ≠ 0 → (∃ r, 0 < P r) ∧ ∃ r, P r < 0
 
