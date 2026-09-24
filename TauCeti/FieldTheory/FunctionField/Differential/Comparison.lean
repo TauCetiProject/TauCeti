@@ -228,13 +228,21 @@ canonical class of `F`. -/
 @[simp]
 theorem divisorClass_neg_two_zsmul_poles_add_different (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) :
-    (Place.orderSystem hF).divisorClass
-        ((-2 : ℤ) • Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
-            (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) +
-          Divisor.different k F (IsFunctionField.ratFunc k)) =
+    -(2 • (Place.orderSystem hF).divisorClass
+        (Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
+          (Units.mk0 RatFunc.X RatFunc.X_ne_zero)))) +
+      (Place.orderSystem hF).divisorClass
+        (Divisor.different k F (IsFunctionField.ratFunc k)) =
       canonicalClass hF hex := by
-  rw [← weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential hF hex,
-    divisorClass_weilDifferentialDivisor]
+  calc
+    _ = (Place.orderSystem hF).divisorClass
+          ((-2 : ℤ) • Divisor.poles hF
+            (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
+              (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) +
+            Divisor.different k F (IsFunctionField.ratFunc k)) := by simp; rfl
+    _ = canonicalClass hF hex := by
+      rw [← weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential hF hex,
+        divisorClass_weilDifferentialDivisor]
 
 end RatFunc
 
