@@ -62,7 +62,9 @@ private theorem card_inertiaDeg_eq_one_fiber_of_mem_frobeniusPrimeSet_one
 
 variable (K L) in
 /-- **The completely split primes have density `1 / [L : K]`.** The primes of `𝓞 K` that split
-completely in the finite Galois extension `L` have Dirichlet density `1 / [L : K]`. -/
+completely in the finite Galois extension `L` have Dirichlet density `1 / [L : K]`. The
+Chebotarev density theorem gives the same density as `1 / #Gal(L/K)`
+(`hasDirichletDensity_splitCompletely`). -/
 theorem hasDirichletDensity_frobeniusPrimeSet_one :
     (frobeniusPrimeSet K L 1).HasDirichletDensity (1 / Module.finrank K L) :=
   -- Contract all the primes of `𝓞 L`, which have density one: away from the ramified primes, a
