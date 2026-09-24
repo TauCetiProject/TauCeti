@@ -13,23 +13,20 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoot
 # The simple-root generators of the split type-D Cartan
 
 The explicit type-D Chevalley generators use the Bourbaki simple roots as diagonal coordinates.
-This file lifts those matrices into the diagonal Cartan subalgebra and records their ambient
-coordinates against the standard Cartan basis. It exposes the independence and Lie-span results
-needed to use these generators as the split Cartan's simple-root coordinates.
+This file records the ambient independence and Lie-span results for those generators, so later
+split-Cartan constructions can use them as simple-root coordinates. The generator membership and
+coordinate lemmas live with the generator definitions in `RootGenerators.lean`.
 
-The independence argument transports the integral independence of the Bourbaki simple roots to a
-commutative domain in which `2` is nonzero. The ambient independence and Lie-span theorems expose
-the resulting split Cartan structure.
+Independence over a commutative domain comes from
+`DynkinType.linearIndependent_typeDSimpleRoot_cast`: the simple-root matrix has determinant
+squaring to `4`, which is nonzero when `2` is nonzero. The ambient independence and Lie-span
+theorems then expose the resulting split Cartan structure.
 
 ## Main declarations
 
-* `TypeDStd.cartanGenerator_mem_typeDDiagonalCartan`: the explicit Cartan generator lies in the
-  standard diagonal Cartan.
 * `TypeDStd.linearIndependent_cartanGenerator`: the ambient Cartan generators are independent.
 * `TypeDStd.typeDDiagonalCartan_eq_lieSpan_cartanGenerator`: they span the diagonal Cartan as a
   Lie subalgebra.
-* `TypeDStd.typeDDiagonalCartanBasis_repr_cartanGenerator`: their coordinates in the ambient
-  diagonal basis are the pinned type-D simple roots.
 
 ## References
 
@@ -42,38 +39,6 @@ public section
 namespace TauCeti
 
 namespace TypeDStd
-
-section CommRing
-
-variable {K : Type*} [CommRing K]
-
-private theorem cartanGenerator_eq_coe_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
-    cartanGenerator (K := K) n hn i =
-      (typeDDiagonalEquiv (K := K) (ι := Fin n)
-        (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
-        LieAlgebra.Orthogonal.typeD (Fin n) K) := by
-  apply Subtype.ext
-  rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
-
-/-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
-theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
-    cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
-  rw [cartanGenerator_eq_coe_typeDDiagonalEquiv]
-  exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
-    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
-
-/-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
-type-D simple root. -/
-theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
-    (i j : Fin n) :
-    (typeDDiagonalCartanBasis (K := K) (ι := Fin n)).repr
-        (⟨cartanGenerator (K := K) n hn i,
-          cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) j =
-    (DynkinType.typeDSimpleRoot n hn i j : K) := by
-  rw [typeDDiagonalCartanBasis_repr_apply, val_cartanGenerator]
-  simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, eq_self, ite_true]
-
-end CommRing
 
 section Domain
 
@@ -94,7 +59,7 @@ private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ 
   convert hcoord using 1
   funext i
   apply Subtype.ext
-  exact cartanGenerator_eq_coe_typeDDiagonalEquiv (K := K) n hn i
+  exact cartanGenerator_eq_typeDDiagonalEquiv (K := K) n hn i
 
 /-- The explicit simple-root Cartan generators are linearly independent in the ambient
 type-D Lie algebra. -/
@@ -119,8 +84,10 @@ theorem typeDDiagonalCartan_eq_lieSpan_cartanGenerator (n : ℕ) (hn : 4 ≤ n) 
   · rw [← Submodule.map_subtype_top (typeDDiagonalCartan K (Fin n)).toSubmodule,
       ← (linearIndependent_cartanGenerator_subtype (K := K) n hn).span_eq_top_of_card_eq_finrank'
         (by simp [finrank_typeDDiagonalCartan]),
-      Submodule.map_span, ← Set.range_comp]
-    rfl
+      Submodule.map_span, Submodule.coe_subtype, ← Set.range_comp]
+    apply congrArg (Submodule.span K)
+    ext x
+    simp [Function.comp_def]
   · rintro x ⟨i, rfl⟩ y ⟨j, rfl⟩
     exact lie_cartanGenerator_cartanGenerator n hn i j
 

@@ -62,8 +62,8 @@ available: this deduces it from the lattice, rather than the other way round.
 * `TauCeti.IntegralLattice.determinant_checkerboardLattice`: the signed determinant of the
   checkerboard lattice is `4`.
 * `CartanMatrix.D_det`: `(CartanMatrix.D n).det = 4` for `2 ≤ n`.
-* `TauCeti.DynkinType.det_typeDSimpleRoot_sq`: the determinant square of the integral simple-root
-  matrix.
+* `TauCeti.DynkinType.det_typeDSimpleRoot_sq`: for `4 ≤ n`,
+  `(Matrix.of (typeDSimpleRoot n hn)).det ^ 2 = 4`.
 * `TauCeti.DynkinType.linearIndependent_typeDSimpleRoot_cast`: scalar-extension independence over
   a commutative domain where `2` is nonzero.
 
@@ -335,7 +335,7 @@ namespace TauCeti.DynkinType
 
 variable {n : ℕ}
 
-/-- The determinant square of the integral type-D simple-root matrix. -/
+/-- The determinant of the integral type-D simple-root matrix squares to `4`. -/
 theorem det_typeDSimpleRoot_sq (n : ℕ) (hn : 4 ≤ n) :
     (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 = 4 := by
   rw [← det_cartanMatrixD_eq_det_typeDSimpleRoot_sq hn, CartanMatrix.D_det (by omega)]
