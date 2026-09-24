@@ -8,7 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Ring.Rat
-import Mathlib.Tactic.Ring
+import Mathlib.RingTheory.Localization.Finiteness
+import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
 # Rational spans of integer subgroups
@@ -29,24 +30,31 @@ multiplication by some positive integer. -/
 theorem AddSubgroup.exists_nat_mul_eq_intCast_of_mem_span {P : AddSubgroup (ι → ℤ)}
     {x : ι → ℚ} (hx : x ∈ Submodule.span ℚ ((fun p : ι → ℤ => ((↑) : ℤ → ℚ) ∘ p) '' P)) :
     ∃ N : ℕ, 0 < N ∧ ∃ p ∈ P, ∀ i, (p i : ℚ) = N * x i := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨p, hp, rfl⟩ := hy
-    exact ⟨1, one_pos, p, hp, fun i => by simp⟩
-  | zero => exact ⟨1, one_pos, 0, zero_mem P, fun i => by simp⟩
-  | add y z _ _ hy hz =>
-    obtain ⟨M, hM, p, hp, hpy⟩ := hy
-    obtain ⟨N, hN, q, hq, hqz⟩ := hz
-    refine ⟨M * N, mul_pos hM hN, N • p + M • q, add_mem (nsmul_mem hp N) (nsmul_mem hq M),
-      fun i => ?_⟩
-    rw [Pi.add_apply, Pi.smul_apply, Pi.smul_apply]
-    push_cast [nsmul_eq_mul, hpy, hqz, Pi.add_apply]
-    ring
-  | smul r y _ hy =>
-    obtain ⟨N, hN, p, hp, hpy⟩ := hy
-    refine ⟨r.den * N, mul_pos r.den_pos hN, r.num • p, zsmul_mem hp r.num, fun i => ?_⟩
-    simp only [Pi.smul_apply, smul_eq_mul, Int.cast_mul, hpy, Nat.cast_mul]
-    rw [← Rat.mul_den_eq_num]
-    ring
+  let s : Set (ι → ℚ) := (fun p : ι → ℤ => ((↑) : ℤ → ℚ) ∘ p) '' P
+  obtain ⟨t, ht⟩ :=
+    multiple_mem_span_of_mem_localization_span (Submonoid.pos ℤ) ℚ s x hx
+  have hspan : ∀ y ∈ Submodule.span ℤ s, ∃ p ∈ P, ∀ i, (p i : ℚ) = y i := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨p, hp, rfl⟩ := hy
+      exact ⟨p, hp, fun _ => rfl⟩
+    | zero => exact ⟨0, zero_mem P, fun i => by simp⟩
+    | add y z _ _ hy hz =>
+      obtain ⟨p, hp, hpy⟩ := hy
+      obtain ⟨q, hq, hqz⟩ := hz
+      exact ⟨p + q, add_mem hp hq, fun i => by simp [hpy i, hqz i]⟩
+    | smul n y _ hy =>
+      obtain ⟨p, hp, hpy⟩ := hy
+      exact ⟨n • p, zsmul_mem hp n, fun i => by simp [hpy i]⟩
+  obtain ⟨p, hp, hpx⟩ := hspan (t • x) ht
+  have htn : (t.val.toNat : ℤ) = t.val := Int.toNat_of_nonneg t.prop.le
+  have hN : 0 < t.val.toNat := by
+    have htpos : (0 : ℤ) < t.val := t.prop
+    rw [← htn] at htpos
+    exact_mod_cast htpos
+  have hcast : (t.val.toNat : ℚ) = (t.val : ℚ) := by exact_mod_cast htn
+  refine ⟨t.val.toNat, hN, p, hp, fun i => ?_⟩
+  simpa [Submonoid.smul_def, Pi.smul_apply, smul_eq_mul, hcast] using hpx i
 
 end TauCeti

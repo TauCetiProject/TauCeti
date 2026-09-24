@@ -6,18 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.AddSubgroup.RationalSpan
+public import TauCeti.Data.Matrix.DotProduct
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Data.Int.Interval
-import Mathlib.Order.WellFoundedSet
 
 /-!
 # Theorems of the alternative for nonnegative vectors
 
 This file proves the classical theorems of the alternative of Gordan, Stiemke and Tucker over an
-arbitrary linearly ordered field and draws their consequences for subgroups of the integer lattice
+arbitrary linearly ordered field and draws a consequence for subgroups of the integer lattice
 `ι → ℤ`.
 
 For a finite family of vectors `a j` in a vector space over a linearly ordered field `K`,
@@ -31,13 +29,9 @@ nonnegative on the family, one of them strictly positive at `k`. Unlike Mathlib'
 separation-based Farkas lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
 
 For a subgroup `P` of `ι → ℤ` with `ι` finite, the condition that `P` contains no nonzero
-nonnegative vector has two equivalent reformulations proved here:
-
-* some vector of positive integer weights is orthogonal to `P`;
-* every coset `D₀ + P` contains only finitely many nonnegative vectors.
-
-The first is an integer-lattice form of Stiemke's theorem. The second is a finiteness consequence
-of Dickson's lemma.
+nonnegative vector is equivalent to the existence of positive integer weights orthogonal to `P`.
+This is an integer-lattice form of Stiemke's theorem. The equivalent finiteness condition for
+nonnegative vectors in cosets is proved in `TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset`.
 
 This is the combinatorial content of the admissibility lemmas of Heegaard Floer theory. For a
 pointed Heegaard diagram, `ι` indexes the regions of the surface cut along the attaching curves,
@@ -48,17 +42,16 @@ closed under negation, this is exactly the hypothesis of the theorems below. The
 positive target areas for the regions, with zero signed area for every periodic domain.
 Applying the finiteness theorem to Whitney disks requires a separate geometric correspondence
 between disk classes and their domain vectors, including control of the fibers of that map.
-The theorem itself counts nonnegative domain vectors in a coset of `P`.
+The coset theorem counts nonnegative domain vectors in a coset of `P`.
 
 ## Main declarations
 
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_dual_nonneg`: Tucker's key lemma.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
-* `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of `ι → K`.
-* `AddSubgroup.exists_pos_dotProduct_eq_zero_iff`: a subgroup of `ι → ℤ` has no nonzero
+* `TauCeti.Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
+  `ι → K`.
+* `TauCeti.AddSubgroup.exists_pos_dotProduct_eq_zero_iff`: a subgroup of `ι → ℤ` has no nonzero
   nonnegative element iff it is orthogonal to a vector of positive integer weights.
-* `AddSubgroup.finite_setOf_nonneg_sub_mem_iff`: a subgroup of `ι → ℤ` has no nonzero
-  nonnegative element iff each of its cosets has only finitely many nonnegative elements.
 
 ## References
 
@@ -75,17 +68,7 @@ public section
 
 namespace TauCeti
 
-variable {ι R K V : Type*}
-
-/-- For a vector `c` of strictly positive weights and a nonnegative vector `x`, the pairing
-`c ⬝ᵥ x` vanishes only when `x` does. -/
-theorem dotProduct_eq_zero_iff_of_pos [Fintype ι] [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] [NoZeroDivisors R] {c x : ι → R} (hc : ∀ i, 0 < c i) (hx : 0 ≤ x) :
-    c ⬝ᵥ x = 0 ↔ x = 0 := by
-  refine ⟨fun h => funext fun i => ?_, fun h => by simp [h]⟩
-  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun j _ => mul_nonneg (hc j).le (hx j)).1 h i
-    (Finset.mem_univ i)
-  exact (mul_eq_zero.1 hterm).resolve_left (hc i).ne'
+variable {ι K V : Type*}
 
 section Field
 
@@ -185,10 +168,6 @@ theorem exists_forall_dual_pos_iff [Fintype ι] (a : ι → V) :
 
 end Field
 
-end TauCeti
-
-open TauCeti
-
 section Field
 
 variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
@@ -247,7 +226,7 @@ theorem AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgr
       have := hpx i
       rw [hp0, Pi.zero_apply, Int.cast_zero, eq_comm, mul_eq_zero] at this
       exact this.resolve_left (Nat.cast_ne_zero.2 hN.ne')
-    obtain ⟨c, hc, hcS⟩ := (S.exists_pos_dotProduct_eq_zero_iff).2 hS
+    obtain ⟨c, hc, hcS⟩ := (Submodule.exists_pos_dotProduct_eq_zero_iff S).2 hS
     -- Clear the denominators of the rational weights.
     set N : ℕ := ∏ i, (c i).den
     have hN : 0 < N := Finset.prod_pos fun i _ => (c i).den_pos
@@ -271,33 +250,5 @@ theorem AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgr
       rw [hcp, mul_zero] at this
       exact_mod_cast this
 
-/-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when each coset
-`D₀ + P` contains only finitely many nonnegative vectors.
-
-For the group of periodic domains of a pointed Heegaard diagram, this bounds the nonnegative domain
-vectors in any coset. Applying the bound to Whitney disk classes also requires a geometric
-correspondence between those classes and domain vectors; compare Ozsváth–Szabó, *Holomorphic disks
-and topological invariants for closed three-manifolds*, Lemma 4.13. -/
-theorem AddSubgroup.finite_setOf_nonneg_sub_mem_iff [Finite ι] (P : AddSubgroup (ι → ℤ)) :
-    (∀ D₀ : ι → ℤ, {D | 0 ≤ D ∧ D - D₀ ∈ P}.Finite) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
-  constructor
-  · intro hfin p hp hp0
-    by_contra hne
-    refine Set.infinite_of_injective_forall_mem (f := fun n : ℕ => (n : ℤ) • p)
-      (fun m n hmn => Nat.cast_injective (smul_left_injective ℤ hne hmn))
-      (fun n => ?_) (hfin 0)
-    exact ⟨smul_nonneg (Nat.cast_nonneg n) hp0, by simpa using zsmul_mem hp n⟩
-  · intro h D₀
-    by_contra hinf
-    -- Dickson's lemma: the nonnegative vectors of `ι → ℤ` are partially well-ordered.
-    have hpwo : (Set.univ.pi fun _ : ι => Set.Ici (0 : ℤ)).IsPWO :=
-      Set.IsPWO.pi fun _ => Set.IsWF.isPWO (BddBelow.wellFoundedOn_lt bddBelow_Ici)
-    set f := Set.Infinite.natEmbedding _ hinf
-    obtain ⟨m, n, hmn, hle⟩ := hpwo.exists_lt (f := fun n => (f n : ι → ℤ))
-      fun n i _ => (f n).2.1 i
-    have hsub : (f n : ι → ℤ) - f m ∈ P := by
-      simpa using sub_mem (f n).2.2 (f m).2.2
-    have := h _ hsub (sub_nonneg.2 hle)
-    exact hmn.ne (f.injective (Subtype.ext (sub_eq_zero.1 this).symm))
-
 end Int
+end TauCeti
