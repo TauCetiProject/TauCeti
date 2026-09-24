@@ -43,7 +43,8 @@ prime degree containing a transposition is the full symmetric group.
 
 ## Main results
 
-* `TauCeti.hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot`: the dihedral route.
+* `TauCeti.hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot_of_hasFactorDegrees`:
+  the dihedral route.
 * `TauCeti.hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot`: the Frobenius route.
 * `TauCeti.hasGaloisLabel_five_three_of_isSquare_discr_of_hasFactorDegrees`: the alternating
   route.
@@ -74,7 +75,8 @@ private theorem natDegree_map_rat_eq_five (hf : f.Monic) (hdeg : f.natDegree = 5
 discriminant is a square, whose resolvent sextic is separable with an integral root, and whose
 factor degrees modulo a prime not dividing its discriminant are `(1,2,2)`, has the dihedral group
 of order ten on its five roots. -/
-theorem hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot (hf : f.Monic)
+theorem hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot_of_hasFactorDegrees
+    (hf : f.Monic)
     (hirr : Irreducible (f.map (Int.castRingHom ℚ)))
     (hdisc : IsSquare f.discr) {a : ℤ} (ha : HasSexticRoot f a)
     (hq : HasFactorDegrees f q {1, 2, 2}) :
