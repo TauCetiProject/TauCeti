@@ -55,7 +55,7 @@ in `ShortExact.lean`.
 * `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_f_injective`,
   `continuousCochainsShortExact_exact` and `continuousCochainsShortExact_g_surjective`: the
   degreewise exactness of the cochain sequence.
-* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_map_forget₂_shortExact`:
+* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_shortExact`:
   after forgetting topologies, the cochain sequence is a short exact sequence of cochain complexes
   of `ℤ`-modules. `TopModuleCat ℤ` is not abelian, so the snake lemma
   (`HomologicalComplex.HomologySequence`) applies only after this step.
@@ -153,12 +153,10 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y Z : TopRep.{v} R G}
 
+-- This is not `@[simp]`: simplifying the implicit carrier types makes the left side no longer
+-- match, as with Mathlib's `ContinuousCohomology.cochainsMap_f_hom`.
 /-- A homogeneous cochain is carried by the cochain map to its image under the level map of the
-coinduced resolution.
-
-This is deliberately not `@[simp]`, like Mathlib's `ContinuousCohomology.cochainsMap_f_hom`:
-`simp` first unfolds the carrier types in the implicit arguments of the left-hand side, after
-which this statement no longer matches (the `simpNF` linter rejects it). -/
+coinduced resolution. -/
 theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
     (v : (TopRep.resolutionX X (n + 1)).ρ.invariants) :
     Subtype.val (((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom v) =
@@ -193,11 +191,13 @@ theorem cochainsMap_id_f_exact {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsEmbedding f.h
       refine ((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom.isIntertwining k u).trans ?_
       rw [hu]
       exact v.2 k
-    exact ⟨⟨u, hinv⟩, Subtype.ext hu⟩
+    refine ⟨⟨u, hinv⟩, Subtype.ext ?_⟩
+    exact (coe_cochainsMap_id_f_hom_apply f n ⟨u, hinv⟩).trans hu
   · rintro ⟨u, rfl⟩
     apply Subtype.ext
     refine (coe_cochainsMap_id_f_hom_apply g n _).trans ?_
-    exact (resolutionMap_id_exact hf.isInducing hfg (n + 1) _).2 ⟨u.1, rfl⟩
+    exact (resolutionMap_id_exact hf.isInducing hfg (n + 1) _).2
+      ⟨u.1, (coe_cochainsMap_id_f_hom_apply f n u).symm⟩
 
 end Cochains
 
@@ -313,14 +313,51 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {C : Type u} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
 
--- Exposed because the generated `@[simps!]` field lemmas are `rfl` proofs about this body.
 /-- The short complex of canonical homogeneous-cochain complexes attached to a short exact
 sequence of discrete `G`-modules: in degree `n` it is
 `Cⁿ(G, A) → Cⁿ(G, B) → Cⁿ(G, C)` on Mathlib's homogeneous continuous cochains. -/
-@[expose, simps!]
 noncomputable def continuousCochainsShortExact :
     ShortComplex (CochainComplex (TopModuleCat.{u} ℤ) ℕ) :=
   S.toShortComplex.map (continuousCochainsFunctor ℤ G)
+
+/-- The first cochain complex is the image of the first coefficient representation. -/
+@[simp] theorem continuousCochainsShortExact_X₁ :
+    S.continuousCochainsShortExact.X₁ =
+      (continuousCochainsFunctor ℤ G).obj S.toShortComplex.X₁ := by
+  unfold continuousCochainsShortExact
+  rfl
+
+/-- The middle cochain complex is the image of the middle coefficient representation. -/
+@[simp] theorem continuousCochainsShortExact_X₂ :
+    S.continuousCochainsShortExact.X₂ =
+      (continuousCochainsFunctor ℤ G).obj S.toShortComplex.X₂ := by
+  unfold continuousCochainsShortExact
+  rfl
+
+/-- The last cochain complex is the image of the last coefficient representation. -/
+@[simp] theorem continuousCochainsShortExact_X₃ :
+    S.continuousCochainsShortExact.X₃ =
+      (continuousCochainsFunctor ℤ G).obj S.toShortComplex.X₃ := by
+  unfold continuousCochainsShortExact
+  rfl
+
+/-- The first cochain map is the functorial image of the coefficient inclusion, after
+transporting its source and target along the object identifications. -/
+theorem continuousCochainsShortExact_f :
+    S.continuousCochainsShortExact.f ≫ eqToHom S.continuousCochainsShortExact_X₂ =
+      eqToHom S.continuousCochainsShortExact_X₁ ≫
+        (continuousCochainsFunctor ℤ G).map S.toShortComplex.f := by
+  unfold continuousCochainsShortExact
+  rfl
+
+/-- The second cochain map is the functorial image of the coefficient projection, after
+transporting its source and target along the object identifications. -/
+theorem continuousCochainsShortExact_g :
+    S.continuousCochainsShortExact.g ≫ eqToHom S.continuousCochainsShortExact_X₃ =
+      eqToHom S.continuousCochainsShortExact_X₂ ≫
+        (continuousCochainsFunctor ℤ G).map S.toShortComplex.g := by
+  unfold continuousCochainsShortExact
+  rfl
 
 /-- The cochain map induced by the inclusion `A → B` is injective in every degree. -/
 theorem continuousCochainsShortExact_f_injective (n : ℕ) :
@@ -337,11 +374,22 @@ theorem continuousCochainsShortExact_exact (n : ℕ) :
       S.incl_injective fun _ _ ↦ isClosed_discrete _).isEmbedding S.exact n
 
 /-- **Continuous cochains lift along `B → C` in every degree.** For a locally compact group `G`
-acting continuously on the discrete modules `B` and `C`, every homogeneous continuous `n`-cochain
-with values in `C` is the image of one with values in `B`. -/
+acting continuously on the discrete module `B`, every homogeneous continuous `n`-cochain with
+values in `C` is the image of one with values in `B`. Continuity on `C` follows from the
+equivariant surjection `B → C`. -/
 theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
-    [ContinuousSMul G B] [ContinuousSMul G C] (n : ℕ) :
+    [ContinuousSMul G B] (n : ℕ) :
     Function.Surjective (S.continuousCochainsShortExact.g.f n).hom := by
+  have : ContinuousSMul G C := ⟨by
+    have hs : Continuous (Function.surjInv S.proj_surjective) :=
+      continuous_of_discreteTopology
+    have hp : Continuous (S.proj : B → C) := continuous_of_discreteTopology
+    have heq : (fun p : G × C ↦ p.1 • p.2) =
+        (fun p ↦ S.proj (p.1 • Function.surjInv S.proj_surjective p.2)) := by
+      funext p
+      rw [S.proj_equivariant, Function.surjInv_eq S.proj_surjective]
+    rw [heq]
+    exact hp.comp (continuous_fst.smul (hs.comp continuous_snd))⟩
   let s : C → B := Function.surjInv S.proj_surjective
   let σ : C(G × C, B) :=
     ⟨fun p ↦ p.1 • s (p.1⁻¹ • p.2), continuous_fst.smul
@@ -362,11 +410,11 @@ theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
 
 /-- **The cochain sequence of a short exact sequence of discrete modules is short exact.** After
 forgetting topologies, `0 → C•(G, A) → C•(G, B) → C•(G, C) → 0` is a short exact sequence of
-cochain complexes of `ℤ`-modules, for a locally compact group `G` acting continuously on `B` and
-`C`. This is the input to the snake lemma, and hence to the long exact sequence of continuous
+cochain complexes of `ℤ`-modules, for a locally compact group `G` acting continuously on `B`.
+This is the input to the snake lemma, and hence to the long exact sequence of continuous
 cohomology in every degree. -/
-theorem continuousCochainsShortExact_map_forget₂_shortExact [LocallyCompactSpace G]
-    [ContinuousSMul G B] [ContinuousSMul G C] :
+theorem continuousCochainsShortExact_shortExact [LocallyCompactSpace G]
+    [ContinuousSMul G B] :
     (S.continuousCochainsShortExact.map
       ((forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).mapHomologicalComplex _)).ShortExact :=
   HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
