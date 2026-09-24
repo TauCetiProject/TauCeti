@@ -16,7 +16,7 @@ computations. It is the generic part of the argument first developed for the dia
 adjoint-action calculation and their own weight/support API.
 
 The main theorem extends Mathlib's `Matrix.maxGenEigenspace_toLin_diagonal_eq_eigenspace`, whose
-domain hypothesis is strengthened here to the reduced-ring hypothesis needed by the coordinatewise
+domain hypothesis is weakened here to the reduced-ring hypothesis needed by the coordinatewise
 nilpotence argument.
 -/
 
