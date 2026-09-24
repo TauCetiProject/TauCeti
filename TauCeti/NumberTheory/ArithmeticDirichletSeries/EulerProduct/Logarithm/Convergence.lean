@@ -89,11 +89,7 @@ theorem eulerFactor_ne_zero_of_zeroFree (D : EulerProductData K)
     (hs : σ < s.re) :
     D.eulerFactor P s ≠ 0 := by
   apply D.eulerFactor_ne_zero_of_localPowerSeries_ne_zero P
-  apply hne
-  simp only [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-    (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-  exact Real.rpow_lt_rpow_of_exponent_lt (by
-    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
+  exact hne _ (P.norm_absNorm_cpow_neg_lt (by simpa using hs))
 
 /-- The evaluation of a local formal logarithmic derivative inside a zero-free disk. This is
 `logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries` with coefficient convergence
