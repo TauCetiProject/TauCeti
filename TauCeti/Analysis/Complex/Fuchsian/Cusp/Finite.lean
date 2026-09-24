@@ -20,7 +20,8 @@ Once the height is at least the width, the translates of a horodisc strip by the
 are pairwise disjoint: two translates can only meet through an element of the cusp stabilizer, by
 the precise invariance of high horodiscs, and a nontrivial element of the stabilizer shifts
 `re (σ • z)` by a nonzero multiple of `w`. Strips at two inequivalent cusps have disjoint
-translates as well, by Shimizu's inequality at two cusps.
+translates when their heights satisfy `0 ≤ A` and `w * w' ≤ A * A'`, by Shimizu's inequality at
+two cusps.
 
 Consequently, choosing one strip of height equal to the width for each cusp orbit produces a
 family of sets of area `1` whose translates are pairwise disjoint, and a fundamental domain of `Γ`
@@ -32,10 +33,12 @@ orbits (`Subgroup.IsCofinite.finite_cuspOrbit`).
 
 * `TauCeti.Subgroup.CuspDatum.volume_horodiscStrip`: the horodisc strip of height `A` has area
   `w / A`.
+* `TauCeti.Subgroup.CuspDatum.iUnion_smul_horodiscStrip`: the generator translates of a strip
+  cover its horodisc.
 * `TauCeti.Subgroup.CuspDatum.pairwise_disjoint_smul_horodiscStrip`: for a height at least the
   width, the `Γ`-translates of a horodisc strip are pairwise disjoint.
 * `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodiscStrip_smul_horodiscStrip`: the translates
-  of strips at two inequivalent cusps are disjoint.
+  of strips at two inequivalent cusps are disjoint when `0 ≤ A` and `w * w' ≤ A * A'`.
 * `Subgroup.card_cuspOrbit_le_covolume`: the number of cusp orbits of a discrete `Γ` is at most
   its covolume.
 * `Subgroup.IsCofinite.finite_cuspOrbit`: a cofinite Fuchsian group has finitely many cusp orbits.
@@ -78,6 +81,27 @@ theorem horodiscStrip_eq_inv_smul (A : ℝ) :
     horodiscStrip D A = D.scaling⁻¹ • {z : ℍ | z.re ∈ Ico 0 D.width ∧ A < z.im} := by
   ext z
   rw [mem_inv_smul_set_iff, mem_horodiscStrip, mem_ofPred_eq]
+
+/-- The translates of one horodisc strip by powers of the cusp generator cover the whole
+horodisc. -/
+theorem iUnion_smul_horodiscStrip (A : ℝ) :
+    (⋃ n : ℤ, D.generator ^ n • horodiscStrip D A) = horodisc D A := by
+  apply Set.Subset.antisymm
+  · apply Set.iUnion_subset
+    intro n
+    calc
+      D.generator ^ n • horodiscStrip D A ⊆ D.generator ^ n • horodisc D A :=
+        smul_set_mono (horodiscStrip_subset_horodisc D A)
+      _ = horodisc D A :=
+        smul_horodisc_of_mem_stabilizer D (D.mem_stabilizer_iff.mpr ⟨n, rfl⟩) A
+  · intro z hz
+    obtain ⟨n, hn, -⟩ := existsUnique_sub_zsmul_mem_Ico D.width_pos (D.scaling • z).re 0
+    rw [mem_horodisc] at hz
+    rw [Set.mem_iUnion]
+    refine ⟨n, (Set.mem_smul_set_iff_inv_smul_mem).2 ?_⟩
+    rw [← zpow_neg, mem_horodiscStrip, scaling_smul_generator_zpow, vadd_re, vadd_im]
+    refine ⟨?_, hz⟩
+    simpa [zsmul_eq_mul, sub_eq_add_neg, add_comm] using hn
 
 /-- A horodisc strip is measurable. -/
 theorem measurableSet_horodiscStrip (A : ℝ) : MeasurableSet (horodiscStrip D A) := by
