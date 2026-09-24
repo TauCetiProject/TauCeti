@@ -48,7 +48,7 @@ noncomputable def rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) 
   letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  comap (completionLocObjCommRingCatIso p).hom.hom
+  comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
     ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
       ⟨x, mem_spaBasicOpen.mp hx⟩).1
 
@@ -60,7 +60,7 @@ theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : P
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     rationalLocalizationPoint hP p x hx =
-      comap (completionLocObjCommRingCatIso p).hom.hom
+      comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
         ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
           ⟨x, mem_spaBasicOpen.mp hx⟩).1 :=
   by rw [rationalLocalizationPoint]
@@ -73,7 +73,8 @@ theorem comap_rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) (p :
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     comap (CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
-        (completionLocObjCommRingCatIso p).inv).hom (rationalLocalizationPoint hP p x hx) = x := by
+        (Presentation.completionLocObjCommRingCatIso p).inv).hom
+      (rationalLocalizationPoint hP p x hx) = x := by
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower

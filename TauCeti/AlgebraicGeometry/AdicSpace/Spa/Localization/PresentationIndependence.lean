@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
 public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.RefinementCategory
+public import TauCeti.Topology.Category.TopCommRingCat.Basic
 
 /-!
 # Comparison maps from a containment of rational subsets
@@ -259,70 +260,8 @@ theorem homOfRationalSubsetSubset_comp (Aplus : Subring A)
 
 variable {P : PairOfDefinition A} {Aplus : Subring A}
 
-/-- The underlying commutative ring of `p.completionLocObj` is the completed rational localisation
-`A⟨p⟩ = UniformSpace.Completion (Localization.Away p.den)`: the transport along
-`completionLocObj_obj`, with its target stated as `CommRingCat.of` of the completion so that
-maps out of `A⟨p⟩` compose with it on the nose. -/
-noncomputable def completionLocObjCommRingCatIso (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        p.completionLocObj ≅
-      CommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) :=
-  letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  (forget₂ TopCommRingCat CommRingCat).mapIso
-    (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))
-
-/-- The forward map identifying the underlying ring of a completed localization. -/
-@[simp]
-theorem completionLocObjCommRingCatIso_hom (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    (completionLocObjCommRingCatIso p).hom =
-      (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) :=
-  by rw [completionLocObjCommRingCatIso, Functor.mapIso_hom, eqToIso.hom]
-
-/-- The inverse map identifying the underlying ring of a completed localization. -/
-@[simp]
-theorem completionLocObjCommRingCatIso_inv (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    (completionLocObjCommRingCatIso p).inv =
-      (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) :=
-  by rw [completionLocObjCommRingCatIso, Functor.mapIso_inv, eqToIso.inv]
-
-/-- Forgetting the topology of a morphism keeps its underlying ring homomorphism. -/
-private theorem forget₂_map_topCommRingCat_hom {X Y : TopCommRingCat}
-    (g : X →+* Y) (hg : Continuous g) :
-    (forget₂ TopCommRingCat CommRingCat).map (⟨g, hg⟩ : X ⟶ Y) = CommRingCat.ofHom g := rfl
-
-/-- Transporting a morphism of topological commutative rings along equalities of its endpoints
-and then forgetting the topology commutes with the transports. -/
-private theorem forget₂_map_eqToHom_comp_comp_eqToHom {X X' Y Y' : TopCommRingCat}
-    (eX : X = X') (g : X' →+* Y') (hg : Continuous g) (eY : Y = Y') :
-    (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom eX ≫ (⟨g, hg⟩ : X' ⟶ Y') ≫ eqToHom eY.symm) ≫
-        (forget₂ TopCommRingCat CommRingCat).map (eqToHom eY) =
-      (forget₂ TopCommRingCat CommRingCat).map (eqToHom eX) ≫
-        CommRingCat.ofHom g := by
-  subst eX eY
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
-  rw [forget₂_map_topCommRingCat_hom]
-  -- The forgetful functor's object map is `CommRingCat.of` on the underlying ring.
-  change CommRingCat.ofHom g ≫ 𝟙 (CommRingCat.of Y.α) =
-    𝟙 (CommRingCat.of X.α) ≫ CommRingCat.ofHom g
-  simp only [Category.comp_id, Category.id_comp]
-
 /-- **Comparison maps through the identification with `A⟨p⟩`**: under
-`completionLocObjCommRingCatIso`, the underlying ring map of the comparison morphism of
+`Presentation.completionLocObjCommRingCatIso`, the underlying ring map of the comparison morphism of
 `R(q) ⊆ R(p)` is the comparison ring homomorphism `ringHomOfRationalSubsetSubset`. -/
 theorem map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q : Presentation P}
@@ -334,8 +273,9 @@ theorem map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom
     letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
     letI := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-        (homOfRationalSubsetSubset Aplus hAplus h) ≫ (completionLocObjCommRingCatIso q).hom =
-      (completionLocObjCommRingCatIso p).hom ≫
+        (homOfRationalSubsetSubset Aplus hAplus h) ≫
+          (Presentation.completionLocObjCommRingCatIso q).hom =
+      (Presentation.completionLocObjCommRingCatIso p).hom ≫
         CommRingCat.ofHom (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _
           p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower h) := by
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -346,10 +286,11 @@ theorem map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom
   have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
   unfold homOfRationalSubsetSubset
   rw [Functor.comp_map, ObjectProperty.ι_map, completionLocObjHom_hom,
-    completionLocObjCommRingCatIso_hom, completionLocObjCommRingCatIso_hom]
+    Presentation.completionLocObjCommRingCatIso_hom,
+    Presentation.completionLocObjCommRingCatIso_hom]
   -- `forget₂_map_eqToHom_comp_comp_eqToHom` cancels the endpoint transports and identifies
   -- the forgotten morphism with its underlying ring homomorphism.
-  exact forget₂_map_eqToHom_comp_comp_eqToHom
+  exact TauCeti.TopCommRingCat.forget₂_map_eqToHom_comp_comp_eqToHom
     (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower) _
     (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _
       p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower h)

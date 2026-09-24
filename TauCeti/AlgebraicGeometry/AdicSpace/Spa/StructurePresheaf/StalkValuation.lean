@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalks
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Point
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.OfDirected
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
-public import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
 # The valuation on a stalk of the presentation-limit presheaf
@@ -46,9 +44,6 @@ elements, and to contain the ring of definition of the chosen pair of definition
   valuation spectrum of the stalk with this property.
 * `TauCeti.ValuationSpectrum.comap_presentationLimitStalkValuation`: pulled back to `A`, the stalk
   valuation is `x` itself.
-* `TauCeti.ValuationSpectrum.exists_presentationLimitRationalGerm_eq` and
-  `TauCeti.ValuationSpectrum.exists_map_homOfRationalSubsetSubset_eq_zero`: every germ comes from
-  a rational coordinate ring, and a germ vanishes only if some restriction does.
 
 ## References
 
@@ -68,48 +63,6 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {P : PairOfDefinition A} {Aplus : Subring A}
 
 variable (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-
-/-- **Every germ is a rational germ**: each element of the stalk at `x` is the germ of an
-element of the coordinate ring `A⟨p⟩` of some rational neighbourhood `R(p)` of `x`. -/
-theorem exists_presentationLimitRationalGerm_eq (x : spa Aplus)
-    (t : (presentationLimitPresheafInCommRingCat P Aplus).stalk x) :
-    ∃ (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
-      (hx : x ∈ spaBasicOpen Aplus p.num p.den) (a : _),
-      (presentationLimitRationalGerm hAplus p hp x hx).hom a = t := by
-  obtain ⟨U, hxU, s, rfl⟩ := (presentationLimitPresheafInCommRingCat P Aplus).exists_germ_eq t
-  obtain ⟨p, hp, hxp, hpU⟩ := exists_presentation_mem_spaBasicOpen_le P hxU
-  refine ⟨p, hp, hxp, (presentationLimitRationalIsoInCommRingCat hAplus p hp).hom
-    ((presentationLimitPresheafInCommRingCat P Aplus).map (homOfLE hpU).op s), ?_⟩
-  rw [presentationLimitRationalGerm_def, CommRingCat.comp_apply, Iso.hom_inv_id_apply,
-    TopCat.Presheaf.germ_res_apply]
-
-/-- **A rational germ vanishes only if a restriction does**: if an element of `A⟨p⟩` has zero
-germ at `x`, then its image in the coordinate ring of some smaller rational neighbourhood of `x`
-is already zero. -/
-theorem exists_map_homOfRationalSubsetSubset_eq_zero {x : spa Aplus} {p : Presentation P}
-    {hp : IsOpen (Ideal.span (p.num : Set A) : Set A)} {hx : x ∈ spaBasicOpen Aplus p.num p.den}
-    {a : (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-      p.completionLocObj}
-    (ha : (presentationLimitRationalGerm hAplus p hp x hx).hom a = 0) :
-    ∃ (q : Presentation P) (_ : IsOpen (Ideal.span (q.num : Set A) : Set A))
-      (_ : x ∈ spaBasicOpen Aplus q.num q.den)
-      (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den),
-      ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-        (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))).hom a =
-        0 := by
-  set F := presentationLimitPresheafInCommRingCat P Aplus
-  rw [presentationLimitRationalGerm_def, CommRingCat.comp_apply,
-    ← map_zero (ConcreteCategory.hom (F.germ _ x hx))] at ha
-  obtain ⟨W, hxW, iU, iV, hW⟩ := F.germ_eq x hx hx _ _ ha
-  obtain ⟨q, hq, hxq, hqW⟩ := exists_presentation_mem_spaBasicOpen_le P hxW
-  have h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den := hqW.trans iU.le
-  refine ⟨q, hq, hxq, h, ?_⟩
-  have hres : F.map (homOfLE h).op ((presentationLimitRationalIsoInCommRingCat hAplus p hp).inv a)
-      = 0 := by
-    have := congrArg (F.map (homOfLE hqW).op) hW
-    rwa [map_zero, map_zero, ← CommRingCat.comp_apply, ← F.map_comp] at this
-  rw [← presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom hAplus p q hp hq h,
-    CommRingCat.comp_apply, CommRingCat.comp_apply, hres, map_zero]
 
 /-! ### The stalk valuation -/
 
@@ -148,11 +101,11 @@ private theorem exists_rationalNhd_le_le {x : spa Aplus} (i j : RationalNhd P x)
       spaBasicOpen Aplus k.1.pres.num k.1.pres.den ≤
         spaBasicOpen Aplus j.1.pres.num j.1.pres.den := by
   refine ⟨⟨i.1.commonRefinement j.1, ?_⟩, ?_, ?_⟩
-  · rw [spaBasicOpen_commonRefinement]
+  · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
     exact ⟨i.2, j.2⟩
-  · rw [spaBasicOpen_commonRefinement]
+  · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
     exact inf_le_left
-  · rw [spaBasicOpen_commonRefinement]
+  · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
     exact inf_le_right
 
 /-- Rational germs are compatible with the comparison maps. -/
@@ -265,7 +218,8 @@ theorem comap_presentationLimitStalkValuation (p : Presentation P)
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     comap (CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
-        (completionLocObjCommRingCatIso p).inv ≫ presentationLimitRationalGerm hAplus p hp x hx).hom
+        (Presentation.completionLocObjCommRingCatIso p).inv ≫
+          presentationLimitRationalGerm hAplus p hp x hx).hom
         (presentationLimitStalkValuation hAplus hP x) = x := by
   rw [← Category.assoc, ← comap_hom_comap_hom,
     comap_presentationLimitRationalGerm_presentationLimitStalkValuation,

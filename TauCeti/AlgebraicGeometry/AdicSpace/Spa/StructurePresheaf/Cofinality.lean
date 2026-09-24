@@ -151,7 +151,7 @@ private noncomputable def commonCostructuredArrow
       (i.left.commonRefinement j.left) ≤ U := by
     rw [rationalSubsetIndex_le_iff, presentationToRationalSubsetIndex_obj_open]
     intro x hx
-    rw [spaBasicOpen_commonRefinement, Opens.mem_inf]
+    rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement, Opens.mem_inf]
     constructor
     · rw [← presentationToRationalSubsetIndex_obj_open]
       exact i.hom.le hx
