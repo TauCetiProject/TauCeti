@@ -82,7 +82,6 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type u) [CommRing R]
 
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
-local notation "ρ" => AlgHom.toRingHom (rename (R := R) (Fin.succAbove (Fin.castSucc s)))
 
 /-! ### The underlying modules -/
 
@@ -90,7 +89,9 @@ local notation "ρ" => AlgHom.toRingHom (rename (R := R) (Fin.succAbove (Fin.cas
 `A`-linear map to the restriction of scalars of `GridState n →₀ S`. -/
 private noncomputable def centerCoefficientEquiv :
     (GridState n →₀ Polynomial A) ≃ₗ[A]
-      (ModuleCat.restrictScalars ρ).obj (ModuleCat.of S (GridState n →₀ S)) where
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).obj
+        (ModuleCat.of S (GridState n →₀ S)) where
   toFun f := Finsupp.mapRange (finSuccEquiv' R s.castSucc).symm (map_zero _) f
   -- The restriction of scalars of `GridState n →₀ S` has, by definition, the same elements.
   invFun g := Finsupp.mapRange (finSuccEquiv' R s.castSucc) (map_zero _)
@@ -109,7 +110,9 @@ private noncomputable def centerCoefficientEquiv :
 chain module of the center complex. -/
 private noncomputable def centerExtensionEquiv :
     Polynomial A ⊗[A] GridChainMinus R n ≃ₗ[A]
-      (ModuleCat.restrictScalars ρ).obj (ModuleCat.of S (GridState n →₀ S)) :=
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).obj
+        (ModuleCat.of S (GridState n →₀ S)) :=
   finsuppScalarRight A A (Polynomial A) (GridState n) ≪≫ₗ centerCoefficientEquiv s R
 
 /-- The identification sends `p ⊗ f` to the image of `p` in `S` times `f` with its coefficients
@@ -142,12 +145,16 @@ private theorem centerExtensionEquiv_mul_tmul (q p : Polynomial A) (f : GridChai
 /-- `centerExtensionEquiv` as an isomorphism in `ModuleCat A`. -/
 private noncomputable def centerExtensionIso :
     ModuleCat.of A (Polynomial A ⊗[A] GridChainMinus R n) ≅
-      (ModuleCat.restrictScalars ρ).obj (ModuleCat.of S (GridState n →₀ S)) :=
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).obj
+        (ModuleCat.of S (GridState n →₀ S)) :=
   (centerExtensionEquiv s R).toModuleIso
 
 private theorem centerExtensionIso_hom_comp :
     (centerExtensionIso s R).hom ≫
-        (ModuleCat.restrictScalars ρ).map (ModuleCat.ofHom (G.stabilizeXCenterDifferential s R)) =
+        (ModuleCat.restrictScalars
+          (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+          (ModuleCat.ofHom (G.stabilizeXCenterDifferential s R)) =
       ModuleCat.of A (Polynomial A) ◁ ModuleCat.ofHom (G.unblockedDifferential R) ≫
         (centerExtensionIso s R).hom :=
   -- On `p ⊗ f`, both sides are by definition the two sides of
@@ -158,7 +165,9 @@ private theorem centerExtensionIso_hom_comp :
 private theorem whiskerRight_mulLeft_comp_centerExtensionIso_hom (q : Polynomial A) :
     ModuleCat.ofHom (LinearMap.mulLeft A q) ▷ ModuleCat.of A (GridChainMinus R n) ≫
         (centerExtensionIso s R).hom =
-      (centerExtensionIso s R).hom ≫ (ModuleCat.restrictScalars ρ).map
+      (centerExtensionIso s R).hom ≫
+        (ModuleCat.restrictScalars
+          (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         ((finSuccEquiv' R s.castSucc).symm q • 𝟙 (ModuleCat.of S (GridState n →₀ S))) :=
   -- On `p ⊗ f`, both sides are by definition the two sides of `centerExtensionEquiv_mul_tmul`.
   ModuleCat.hom_ext (TensorProduct.ext' fun p f => centerExtensionEquiv_mul_tmul s R q p f)
@@ -177,10 +186,14 @@ variable [CharP R 2]
 /-- The unique component of `polynomialExtensionIsoStabilizeXCenter`. -/
 private noncomputable def polynomialExtensionXIso :
     (G.unblockedComplex R).polynomialExtension.X () ≅
-      (ModuleCat.restrictScalars ρ).obj ((G.stabilizeXCenterComplex s R).X ()) :=
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).obj
+        ((G.stabilizeXCenterComplex s R).X ()) :=
   MonoidalCategory.whiskerLeftIso (ModuleCat.of A (Polynomial A))
       (eqToIso (G.unblockedComplex_X R ())) ≪≫ centerExtensionIso s R ≪≫
-    (ModuleCat.restrictScalars ρ).mapIso (eqToIso (G.stabilizeXCenterComplex_X s R ()).symm)
+    (ModuleCat.restrictScalars
+      (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapIso
+      (eqToIso (G.stabilizeXCenterComplex_X s R ()).symm)
 
 /-- **The center complex is the polynomial extension of `GC⁻(G)`.** After restricting scalars
 from `S = R[V₀, …, V_n]` to `A = R[V₀, …, V_{n-1}]` along the renaming of the columns of `G` into
@@ -189,7 +202,9 @@ The isomorphism sends `p ⊗ x`, for `x` a grid state of `G`, to the image of `p
 `X ↦ V_{s.castSucc}` times the center state `x`. -/
 noncomputable def polynomialExtensionIsoStabilizeXCenter :
     (G.unblockedComplex R).polynomialExtension ≅
-      ((ModuleCat.restrictScalars ρ).mapHomologicalComplex _).obj
+      ((ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+          _).obj
         (G.stabilizeXCenterComplex s R) :=
   Hom.isoOfComponents (fun _ => G.polynomialExtensionXIso s R) (by
     rintro ⟨⟩ ⟨⟩ -
@@ -209,7 +224,9 @@ theorem polynomialExtensionMul_comp_polynomialExtensionIsoStabilizeXCenter_hom
     (G.unblockedComplex R).polynomialExtensionMul q ≫
         (G.polynomialExtensionIsoStabilizeXCenter s R).hom =
       (G.polynomialExtensionIsoStabilizeXCenter s R).hom ≫
-        ((ModuleCat.restrictScalars ρ).mapHomologicalComplex _).map
+        ((ModuleCat.restrictScalars
+          (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+            _).map
           ((finSuccEquiv' R s.castSucc).symm q • 𝟙 (G.stabilizeXCenterComplex s R)) := by
   ext ⟨⟩ : 1
   simp only [comp_f, polynomialExtensionMul_f, polynomialExtensionIsoStabilizeXCenter,
@@ -229,7 +246,9 @@ equivalent to `GC⁻(G)`. In characteristic two this multiplication is multiplic
 `GC⁻(G)` by evaluation at `V_s`. -/
 noncomputable def stabilizeXCenterConeHomotopyEquiv :
     HomotopyEquiv
-      (((ModuleCat.restrictScalars ρ).mapHomologicalComplex _).obj
+      (((ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+          _).obj
         (homotopyCofiber ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
           𝟙 (G.stabilizeXCenterComplex s R))))
       (G.unblockedComplex R) :=
@@ -250,7 +269,9 @@ noncomputable def stabilizeXCenterConeHomotopyEquiv :
 `GC⁻(G)`. -/
 @[reassoc (attr := simp)]
 theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
-    ((ModuleCat.restrictScalars ρ).mapHomologicalComplex _).map (homotopyCofiber.inr _) ≫
+    ((ModuleCat.restrictScalars
+      (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex _).map
+        (homotopyCofiber.inr _) ≫
         (G.stabilizeXCenterConeHomotopyEquiv s R).hom =
       (G.polynomialExtensionIsoStabilizeXCenter s R).inv ≫
         (G.unblockedComplex R).polynomialExtensionEval (MvPolynomial.X s) := by
@@ -259,8 +280,6 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
   rw [homotopyCofiber.inr_mapHomologicalComplexObjIso_hom_assoc, homotopyCofiber.mapArrowIso_hom,
     homotopyCofiber.mapArrowHom, homotopyCofiber.inr_desc_assoc]
   simp
-  -- The right component of `Arrow.isoMk l r _` is `r.hom`, here `(iso).symm.hom = (iso).inv`.
-  rfl
 
 /-- The homotopy inverse of `stabilizeXCenterConeHomotopyEquiv` includes `GC⁻(G)` into the
 summand of the cone given by the center complex, as the constant polynomials of its polynomial
@@ -270,17 +289,20 @@ theorem stabilizeXCenterConeHomotopyEquiv_inv :
     (G.stabilizeXCenterConeHomotopyEquiv s R).inv =
       (G.unblockedComplex R).polynomialExtensionConst ≫
         (G.polynomialExtensionIsoStabilizeXCenter s R).hom ≫
-          ((ModuleCat.restrictScalars ρ).mapHomologicalComplex _).map (homotopyCofiber.inr _) := by
+          ((ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+              _).map
+            (homotopyCofiber.inr _) := by
   have h := homotopyCofiber.inr_mapHomologicalComplexObjIso_hom
     ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) • 𝟙 (G.stabilizeXCenterComplex s R))
-    (ModuleCat.restrictScalars ρ)
+    (ModuleCat.restrictScalars
+      (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S))
   rw [← Iso.eq_comp_inv] at h
   simp only [stabilizeXCenterConeHomotopyEquiv, HomotopyEquiv.ofIso, HomotopyEquiv.trans_inv,
     polynomialExtensionMulXSubCHomotopyEquiv_inv, Iso.trans_inv, Category.assoc]
   rw [homotopyCofiber.mapArrowIso_inv, homotopyCofiber.mapArrowHom,
     homotopyCofiber.inr_desc_assoc, Category.assoc, ← h]
   simp
-  rfl
 
 end GridDiagram
 
