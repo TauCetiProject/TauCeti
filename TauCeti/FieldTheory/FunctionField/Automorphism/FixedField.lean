@@ -17,12 +17,6 @@ is again an algebraic function field over `k`. The extension of the fixed field 
 and its Galois group is the acting group. This is the field-theoretic input to applying
 Riemann--Hurwitz to a quotient by a finite automorphism group.
 
-Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`, applied via the
-integrality of `F` over the fixed field (`Algebra.IsInvariant.isIntegral`).
-`FixedPoints.finrank_eq_card` gives the degree,
-`IsGalois.of_fixed_field` gives the Galois extension, and
-`FixedPoints.toAlgAutMulEquiv` identifies the Galois group.
-
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Section III.7.
