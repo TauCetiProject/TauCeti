@@ -20,8 +20,8 @@ factorization `y = (y ^ n) ^ i * (y ^ m) ^ j`.
 The same arithmetic, run over all primes at once, detects membership in a subgroup: if for every
 prime `p` some power `x ^ m` with `p ∤ m` lies in `H`, then `x ∈ H`, because the exponents `m`
 with `x ^ m ∈ H` are the multiples of a single number that no prime divides. This is the
-prime-by-prime assembly step of Brauer's induction theorem, where `m • 1` is a multiple of the
-trivial character induced from `p`-elementary subgroups.
+prime-by-prime assembly step of Brauer's induction theorem, where `m • 1` lies in the span of
+virtual characters induced from `p`-elementary subgroups.
 
 ## Main results
 
