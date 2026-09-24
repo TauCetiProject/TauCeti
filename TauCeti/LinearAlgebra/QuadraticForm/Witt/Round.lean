@@ -37,15 +37,6 @@ universe u
 
 variable {K : Type u} [Field K]
 
-private noncomputable def quaternionLeftMulLinearEquiv {a b : K} (u : ℍ[K,a,b]ˣ) :
-    ℍ[K,a,b] ≃ₗ[K] ℍ[K,a,b] where
-  toFun x := (u : ℍ[K,a,b]) * x
-  map_add' x y := by rw [mul_add]
-  map_smul' r x := by rw [mul_smul_comm]; rfl
-  invFun x := (u⁻¹ : ℍ[K,a,b]ˣ) * x
-  left_inv x := by simp
-  right_inv x := by simp
-
 /-- A one-fold Pfister form is round: every unit it represents is a similarity factor. -/
 theorem oneFoldPfister_smul_equivalent_of_mem_unitValueSet (a : K) (c : Kˣ)
     (hc : c ∈ unitValueSet (weightedSumSquares K ![1, -a])) :
@@ -80,7 +71,7 @@ theorem twoFoldPfister_smul_equivalent_of_mem_unitValueSet (a b : K) (c : Kˣ)
     exact hq
   refine ⟨{
     toLinearEquiv :=
-      (e.symm.toLinearEquiv.trans (quaternionLeftMulLinearEquiv u)).trans e.toLinearEquiv
+      (e.symm.toLinearEquiv.trans (Units.mulLeftLinearEquiv K ℍ[K,a,b] u)).trans e.toLinearEquiv
     map_app' := ?_
   }⟩
   intro x
