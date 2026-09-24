@@ -65,7 +65,10 @@ theorem shortExact_map_invariantsFunctor {X : ShortComplex (Rep k G)}
     (X.map (invariantsFunctor k G)).ShortExact := by
   have h0 : (X.map (functor k G 0)).ShortExact := by
     refine { exact := mapShortComplex₂_exact hX 0, mono_f := ?_, epi_g := ?_ }
-    · change Mono (map (MonoidHom.id G) X.f 0)
+    · -- The first map of `X.map (functor k G 0)` unfolds to the degree-zero
+      -- cohomology map; rewriting `functor_map` alone does not unfold the
+      -- mapped short complex's `f` projection.
+      change Mono (map (MonoidHom.id G) X.f 0)
       exact @mono_map_0_of_mono _ _ _ _ _ _ X.f hX.mono_f
     · exact (mapShortComplex₃_exact hX (i := 0) (j := 1) rfl).epi_f
         (h1.eq_of_tgt _ _)
@@ -86,6 +89,9 @@ theorem shortExact_map_quotientToInvariantsFunctor {X : ShortComplex (Rep k G)}
   have h := shortExact_map_invariantsFunctor k S hXS h1
   exact (CategoryTheory.ShortExact.reflects_shortExact_of_faithful
     (forget₂ (Rep k (G ⧸ S)) (ModuleCat k))) (by
+      -- After forgetting the quotient action, the object and maps of
+      -- `quotientToInvariantsFunctor` unfold to invariants of the restriction;
+      -- rewriting functor composition alone does not identify these fields.
       change ((X.map (resFunctor S.subtype)).map (invariantsFunctor k S)).ShortExact
       exact h)
 
