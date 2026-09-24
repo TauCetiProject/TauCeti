@@ -78,19 +78,6 @@ formula `LinearMap.BilinForm.finrank_add_finrank_orthogonal` makes that precise.
 `center K L ⊔ ⁅L, L⁆`, whose orthogonal complement is the centre by the two computations above and
 which contains the centre for trivial reasons, it forces that ideal to be everything.
 
-## What is not proved here
-
-The forward direction of the full structure theorem is still missing: that a reductive `L` has the
-sum **direct** and the derived ideal semisimple. It is not a formal consequence of what is proved
-here, because the criterion below runs the other way, from semisimplicity of `⁅L, L⁆` to
-reductivity. It amounts to the vanishing of `H²` of a semisimple Lie algebra, equivalently to
-Weyl's complete reducibility theorem applied to the adjoint action of `L` on itself, and the
-complete reducibility available in
-`TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean` is stated for a Lie algebra with
-*nondegenerate* Killing form over an algebraically closed field, which a reductive `L` is not. For
-the concrete `gl n`, where the sum really is direct, the statement is available as
-`TauCeti.isCompl_center_derivedSeries_one_matrix`.
-
 ## Main results
 
 * `TauCeti.normalizer_center_eq_center`: over a reductive Lie algebra the centre is its own
@@ -119,16 +106,6 @@ the concrete `gl n`, where the sum really is direct, the statement is available 
 * `TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`: **such a Lie algebra
   is the direct sum of its centre and its derived ideal**, over a field of characteristic zero and
   in finite dimension.
-
-## Roadmap
-
-This is the spanning half and the converse criterion of "the structure of reductive Lie algebras",
-together with the "semisimple part acts irreducibly" target, of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose pinned names are
-`hasCentralRadical_iff_isCompl_center_derivedSeries` and `isIrreducible_restrict_derivedSeries`.
-Together with `TauCeti.exists_centralWeight_of_isIrreducible` of
-`TauCeti/Algebra/Lie/Weights/Central.lean`, it shows that every finite-dimensional irreducible of a
-reductive Lie algebra determines an irreducible restricted module and a central weight.
 
 ## References
 
@@ -328,9 +305,14 @@ variable (K : Type u) (L : Type v) [CommRing K] [LieRing L] [LieAlgebra K L]
 
 /-- **A solvable ideal meets the derived ideal trivially** when the derived ideal has no nonzero
 solvable ideals. The intersection is a solvable ideal of `L` lying inside `⁅L, L⁆`, so it is an
-ideal of `⁅L, L⁆` (`LieIdeal.restrict`) that `LieAlgebra.HasTrivialRadical` kills. -/
+ideal of `⁅L, L⁆` (`LieIdeal.restrict`) that `LieAlgebra.HasTrivialRadical` kills.
+
+The derived ideal is spelled `⁅⊤, ⊤⁆` rather than `derivedSeries K L 1` so that the left-hand
+side is in simp-normal form; the two are definitionally equal. -/
+@[simp]
 theorem inf_derivedSeries_eq_bot_of_isSolvable (J : LieIdeal K L) [LieAlgebra.IsSolvable ↥J] :
-    J ⊓ derivedSeries K L 1 = ⊥ := by
+    J ⊓ ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ = ⊥ := by
+  change J ⊓ derivedSeries K L 1 = ⊥
   have : LieAlgebra.IsSolvable ↥(J ⊓ derivedSeries K L 1) :=
     LieAlgebra.le_solvable_ideal_solvable inf_le_left inferInstance
   exact LieIdeal.eq_bot_of_le_of_isSolvable inf_le_right
@@ -343,12 +325,9 @@ bracket does; so it lands in their intersection, which is `⊥` by
 bracket with everything, which is membership in the centre. -/
 theorem le_center_of_isSolvable (J : LieIdeal K L) [LieAlgebra.IsSolvable ↥J] :
     J ≤ LieAlgebra.center K L := by
-  have hDtop : derivedSeries K L 1 = ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ := rfl
   have hle : ⁅(⊤ : LieIdeal K L), J⁆ ≤ ⊥ := by
     rw [← inf_derivedSeries_eq_bot_of_isSolvable K L J]
-    refine le_inf (LieSubmodule.lie_le_right _ _) ?_
-    rw [hDtop]
-    exact LieSubmodule.mono_lie le_rfl le_top
+    exact le_inf (LieSubmodule.lie_le_right _ _) (LieSubmodule.mono_lie le_rfl le_top)
   intro x hx
   refine (LieModule.mem_maxTrivSubmodule K L L x).2 fun y => ?_
   have hxy : ⁅y, x⁆ ∈ (⊥ : LieIdeal K L) :=
