@@ -593,14 +593,29 @@ jobs:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}
 
-      - name: Cache Lake builds (site + examples)
+      # Two projects on two toolchains, so two caches rather than one. web/ is pinned by its own
+      # committed lean-toolchain and manifest. web/examples has neither: both are generated from
+      # the ROOT pins several steps below, i.e. after this step runs, so naming them here hashed
+      # nothing and the key moved only when web/'s own pins did. A root toolchain bump therefore
+      # left the key unchanged and restored an examples tree built under the PREVIOUS root
+      # toolchain -- which is how run 35958213514 failed to link `web` with `undefined symbol:
+      # lean_inc_ref_huge_n`, from an MD4Lean object compiled under v4.34.0-rc2 (the root's Lean)
+      # and linked by v4.32.0 (web/'s). Key the examples tree on the pins it is actually derived
+      # from, and give it no restore-keys: when those pins change, every artifact in that tree has
+      # to be rebuilt anyway, so a prefix fallback restores nothing useful and risks exactly the
+      # mismatch above. The `v2` discards the entries poisoned before this fix.
+      - name: Cache Lake builds (site)
         uses: actions/cache@v4
         with:
-          path: |
-            web/.lake
-            web/examples/.lake
-          key: web-lake-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain', 'web/examples/lake-manifest.json', 'web/examples/lean-toolchain') }}
-          restore-keys: web-lake-${{ runner.os }}-
+          path: web/.lake
+          key: web-lake-v2-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
+          restore-keys: web-lake-v2-${{ runner.os }}-
+
+      - name: Cache Lake builds (examples)
+        uses: actions/cache@v4
+        with:
+          path: web/examples/.lake
+          key: web-examples-lake-v2-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
 
       # Run 35812845983 failed here with `unable to open output file .../Anchors.c.o.export:
       # 'Operation not permitted'` while compiling into the restored tree. Run 35812919873
