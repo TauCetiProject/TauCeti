@@ -73,13 +73,15 @@ private theorem trivialCohomologyCor_trans (T : LayerRestriction a b)
   unfold trivialCohomologyCor
   exact key
 
-private theorem trivialTateCor_comp_compare {small big : NormalLayer G}
+private theorem homCongr_trivialTateCor {small big : NormalLayer G}
     (T : LayerRestriction small big) (n : ℕ) [NeZero n] :
-    T.trivialTateCor n ≫
-        (TateCohomology.isoGroupCohomology n).hom.app (Rep.trivial ℤ big.Gal ℤ) =
-      (TateCohomology.isoGroupCohomology n).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
-        trivialCohomologyCor T n := by
+    ((TateCohomology.isoGroupCohomology n).app (Rep.trivial ℤ small.Gal ℤ)).homCongr
+        ((TateCohomology.isoGroupCohomology n).app (Rep.trivial ℤ big.Gal ℤ))
+        (T.trivialTateCor n) =
+      trivialCohomologyCor T n := by
   let : Fintype T.galHom.range := Fintype.ofFinite _
+  rw [Iso.homCongr_apply]
+  refine (Iso.inv_comp_eq ((TateCohomology.isoGroupCohomology n).app _)).2 ?_
   have h := T.trivialTateRangeIso_hom_comp_isoGroupCohomology_hom n
   have hcor := congrArg
     (fun f ↦ f ≫ TauCeti.groupCohomology.corestriction T.galHom.range
@@ -107,16 +109,19 @@ private theorem trivialHomologyCor_trans (T : LayerRestriction a b)
   ext
   rfl
 
-private theorem trivialTateCor_comp_compare_neg {small big : NormalLayer G}
+private theorem homCongr_trivialTateCor_negSucc {small big : NormalLayer G}
     (T : LayerRestriction small big) (n : ℕ) :
-    T.trivialTateCor (Int.negSucc (n + 1)) ≫
-        (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-          (by rw [Int.negSucc_eq])).hom.app (Rep.trivial ℤ big.Gal ℤ) =
-      (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-          (by rw [Int.negSucc_eq])).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
-        trivialHomologyCor T (n + 1) := by
+    ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ small.Gal ℤ)).homCongr
+        ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ big.Gal ℤ))
+        (T.trivialTateCor (Int.negSucc (n + 1))) =
+      trivialHomologyCor T (n + 1) := by
   let : Fintype T.galHom.range := Fintype.ofFinite _
-  rw [trivialTateCor_negSucc_succ, Category.assoc,
+  rw [Iso.homCongr_apply]
+  refine (Iso.inv_comp_eq ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+    (by rw [Int.negSucc_eq])).app _)).2 ?_
+  rw [Iso.app_hom, Iso.app_hom, trivialTateCor_negSucc_succ, Category.assoc,
     TauCeti.TateCohomology.negSuccCor_comp_isoGroupHomology_hom]
   have h := T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom n
   have hcor := congrArg
@@ -139,22 +144,6 @@ private theorem trivialTateCor_comp_compare_neg {small big : NormalLayer G}
   refine (Category.assoc _ _ _).symm.trans (hcor.trans ?_)
   exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) hmap)
 
-private theorem comp_of_compare {A B C A' B' C' : ModuleCat ℤ}
-    (f : A ⟶ B) (g : B ⟶ C) (h : A ⟶ C)
-    (f' : A' ⟶ B') (g' : B' ⟶ C') (h' : A' ⟶ C')
-    (iA : A ≅ A') (iB : B ≅ B') (iC : C ≅ C')
-    (hf : f ≫ iB.hom = iA.hom ≫ f')
-    (hg : g ≫ iC.hom = iB.hom ≫ g')
-    (hh : h ≫ iC.hom = iA.hom ≫ h')
-    (hcomp : h' = f' ≫ g') : h = f ≫ g := by
-  rw [← cancel_mono iC.hom]
-  calc
-    h ≫ iC.hom = iA.hom ≫ h' := hh
-    _ = iA.hom ≫ f' ≫ g' := by rw [hcomp]
-    _ = f ≫ iB.hom ≫ g' := by
-      simpa only [← Category.assoc] using congrArg (· ≫ g') hf.symm
-    _ = f ≫ g ≫ iC.hom := congrArg (f ≫ ·) hg.symm
-
 /-- Trivial-coefficient Tate corestriction is functorial in towers of finite normal layers. -/
 theorem trivialTateCor_trans (T : LayerRestriction a b)
     (T' : LayerRestriction b c) (r : ℤ) :
@@ -171,18 +160,12 @@ theorem trivialTateCor_trans (T : LayerRestriction a b)
   · have : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩
     have hn : (n : ℤ) + 1 = ((n + 1 : ℕ) : ℤ) := by omega
     rw [hn]
-    exact comp_of_compare
-      (T.trivialTateCor (n + 1)) (T'.trivialTateCor (n + 1))
-      ((T.trans T').trivialTateCor (n + 1))
-      (trivialCohomologyCor T (n + 1)) (trivialCohomologyCor T' (n + 1))
-      (trivialCohomologyCor (T.trans T') (n + 1))
-      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ a.Gal ℤ))
-      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ b.Gal ℤ))
-      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ c.Gal ℤ))
-      (trivialTateCor_comp_compare T (n + 1))
-      (trivialTateCor_comp_compare T' (n + 1))
-      (trivialTateCor_comp_compare (T.trans T') (n + 1))
-      (trivialCohomologyCor_trans T T' (n + 1))
+    apply ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ a.Gal ℤ)).homCongr
+      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ c.Gal ℤ)) |>.injective
+    rw [Iso.homCongr_comp _
+        ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ b.Gal ℤ)),
+      homCongr_trivialTateCor, homCongr_trivialTateCor, homCongr_trivialTateCor]
+    exact trivialCohomologyCor_trans T T' (n + 1)
   · ext x
     induction x using TauCeti.TateCohomology.H0_induction_on with | h y => ?_
     rw [ModuleCat.comp_apply, trivialTateCor_zero_H0π,
@@ -196,21 +179,15 @@ theorem trivialTateCor_trans (T : LayerRestriction a b)
       TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_trivial_int c.Gal
     ext x
     exact Subsingleton.elim _ _
-  · exact comp_of_compare
-      (T.trivialTateCor (Int.negSucc (n + 1)))
-      (T'.trivialTateCor (Int.negSucc (n + 1)))
-      ((T.trans T').trivialTateCor (Int.negSucc (n + 1)))
-      (trivialHomologyCor T (n + 1)) (trivialHomologyCor T' (n + 1))
-      (trivialHomologyCor (T.trans T') (n + 1))
+  · apply ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ a.Gal ℤ)).homCongr
       ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ a.Gal ℤ))
-      ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ b.Gal ℤ))
-      ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ c.Gal ℤ))
-      (trivialTateCor_comp_compare_neg T n)
-      (trivialTateCor_comp_compare_neg T' n)
-      (trivialTateCor_comp_compare_neg (T.trans T') n)
-      (trivialHomologyCor_trans T T' (n + 1))
+        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ c.Gal ℤ)) |>.injective
+    rw [Iso.homCongr_comp _
+        ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ b.Gal ℤ)),
+      homCongr_trivialTateCor_negSucc, homCongr_trivialTateCor_negSucc,
+      homCongr_trivialTateCor_negSucc]
+    exact trivialHomologyCor_trans T T' (n + 1)
 
 end TauCeti.ClassFieldTheory.LayerRestriction
