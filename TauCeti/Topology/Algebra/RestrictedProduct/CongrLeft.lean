@@ -79,6 +79,7 @@ def restrictedProductCongrLeftEquiv (e : ι' ≃ ι) :
     exact cast_apply (e.apply_symm_apply i) x
 
 /-- The set-level reindexing equivalence preserves the coordinate at `e i`. -/
+@[simp]
 theorem restrictedProductCongrLeftEquiv_apply_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     restrictedProductCongrLeftEquiv e x (e i) = x i := by
@@ -120,6 +121,7 @@ theorem restrictedProductReindexEquiv_apply (e : ι' ≃ ι)
   exact restrictedProductCongrLeftEquiv_symm_apply e x i
 
 /-- Evaluation of the inverse consumer-oriented set-level reindexing at a corresponding index. -/
+@[simp]
 theorem restrictedProductReindexEquiv_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     (restrictedProductReindexEquiv e).symm x (e i) = x i := by
@@ -196,6 +198,7 @@ def restrictedProductCongrLeft (e : ι' ≃ ι) :
     exact (MulEquiv.cast (e.apply_symm_apply i)).map_mul _ _
 
 /-- The reindexing equivalence preserves coordinates when evaluated at `e i`. -/
+@[simp]
 theorem restrictedProductCongrLeft_apply_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     restrictedProductCongrLeft e x (e i) = x i := by
@@ -236,6 +239,7 @@ theorem restrictedProductReindex_apply (e : ι' ≃ ι)
   exact restrictedProductCongrLeft_symm_apply e x i
 
 /-- Evaluation of the inverse of `restrictedProductReindex` at an original index. -/
+@[simp]
 theorem restrictedProductReindex_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     (restrictedProductReindex e).symm x (e i) = x i := by
