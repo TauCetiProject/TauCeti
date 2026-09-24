@@ -53,6 +53,7 @@ theorem exists_isSliceChart_of_isSliceChart (K : Subgroup G)
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
   have he_apply (y : G) : e y = (g : G)⁻¹ * y := by
+    -- Unfold the local chart abbreviation to expose the bundled homeomorphism action.
     change (Homeomorph.smul (g : G)).symm y = (g : G)⁻¹ * y
     rw [Homeomorph.smul_symm_apply]
     rw [smul_eq_mul]
@@ -66,6 +67,7 @@ theorem exists_isSliceChart_of_isSliceChart (K : Subgroup G)
     · intro hy
       refine ⟨?_, ?_⟩
       · simp [e]
+      -- The preimage notation must be unfolded before the translation identity can rewrite.
       · change e y ∈ K
         rw [he_apply]
         exact (K.mul_mem_cancel_left (K.inv_mem g.property)).mpr hy
@@ -73,6 +75,7 @@ theorem exists_isSliceChart_of_isSliceChart (K : Subgroup G)
   refine ⟨e.trans φ, ?_, ?_⟩
   · rw [OpenPartialHomeomorph.trans_source]
     refine ⟨by simp [e], ?_⟩
+    -- Expose the preimage membership in the translated chart source.
     change e (g : G) ∈ φ.source
     rw [he_apply, inv_mul_cancel]
     exact h1
