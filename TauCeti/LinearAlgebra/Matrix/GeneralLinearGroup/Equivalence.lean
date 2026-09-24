@@ -75,7 +75,6 @@ theorem reindexGL_refl : (Equiv.refl n).reindexGL R = MulEquiv.refl (GL n R) := 
   simp
 
 /-- Reindexing along the inverse equivalence is the inverse isomorphism. -/
-@[simp]
 theorem reindexGL_symm : e.symm.reindexGL R = (e.reindexGL R).symm := by
   refine MulEquiv.ext fun M => (e.reindexGL R).injective ?_
   rw [MulEquiv.apply_symm_apply]
