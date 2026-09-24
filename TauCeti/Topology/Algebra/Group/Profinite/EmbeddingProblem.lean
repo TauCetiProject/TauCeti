@@ -35,7 +35,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 /-- A **finite embedding problem** for a topological group `G`: a continuous surjection
 `π : G ↠ Q` onto a finite group, together with a surjection `α : E ↠ Q` of finite groups.
@@ -44,11 +44,11 @@ discrete group amounts to. -/
 structure FiniteEmbeddingProblem (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] where
   /-- The finite quotient of `G` the problem sits over. -/
-  Q : Type u
+  Q : Type v
   [groupQ : Group Q]
   [finiteQ : Finite Q]
   /-- The finite group into which a solution maps. -/
-  E : Type u
+  E : Type w
   [groupE : Group E]
   [finiteE : Finite E]
   /-- The continuous surjection `G ↠ Q`. -/
@@ -79,7 +79,7 @@ def IsSolution (β : G →* P.E) : Prop :=
 variable {P}
 
 /-- A homomorphism solves `P` exactly when its kernel is open and `α ∘ β = π`. -/
-theorem isSolution_iff {β : G →* P.E} :
+@[simp] theorem isSolution_iff {β : G →* P.E} :
     P.IsSolution β ↔ IsOpen (β.ker : Set G) ∧ P.α.comp β = P.π :=
   and_congr_right' <| by simp [MonoidHom.ext_iff]
 
@@ -88,7 +88,7 @@ theorem IsSolution.isOpen_ker {β : G →* P.E} (hβ : P.IsSolution β) : IsOpen
   hβ.1
 
 /-- A solution of a finite embedding problem lifts `π` through `α`. -/
-theorem IsSolution.comp_eq {β : G →* P.E} (hβ : P.IsSolution β) : P.α.comp β = P.π :=
+@[simp] theorem IsSolution.comp_eq {β : G →* P.E} (hβ : P.IsSolution β) : P.α.comp β = P.π :=
   (isSolution_iff.mp hβ).2
 
 end FiniteEmbeddingProblem
