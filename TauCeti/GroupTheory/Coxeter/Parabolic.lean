@@ -45,16 +45,11 @@ than through a coset type, so that the statements compose directly with the leng
 ## Relation to Matsumoto's theorem
 
 This file is the dihedral-parabolic input to **Matsumoto's theorem**, which is not proved here.
-That theorem is proved by induction on `ℓ w`, comparing two reduced words `i :: α` and `i' :: α'`
-for the same `w`. When `i ≠ i'`, both `s i` and `s i'` are left descents of `w`, and the induction
-step needs `w` written as `x * v` with `x ∈ cs.parabolic {i, i'}`, with `v` having no left descent
-in `{i, i'}`, and with `ℓ w = ℓ x + ℓ v`; the two descents then force `x` to be the longest element
-of that dihedral subgroup, whose two reduced words are the alternating words
-`alternatingWord i i' (M i i')` and `alternatingWord i' i (M i i')`, one braid move apart. That
-decomposition is `CoxeterSystem.existsUnique_mem_parabolic_mul`, its length additivity is
-`CoxeterSystem.length_mul_of_forall_not_isLeftDescent`, and reading off the reduced words of `x`
-inside the dihedral subgroup uses `CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabolic`
-together with `CoxeterSystem.simple_mem_parabolic_of_isReduced`.
+That theorem factors an element along the standard parabolic subgroup on a pair of indices
+`{i, i'}`, and so consumes `CoxeterSystem.existsUnique_mem_parabolic_mul` for the factorization,
+`CoxeterSystem.length_mul_of_forall_not_isLeftDescent` for its length additivity, and
+`CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabolic` together with
+`CoxeterSystem.simple_mem_parabolic_of_isReduced` for the reduced words of the parabolic factor.
 
 ## Main definitions
 
