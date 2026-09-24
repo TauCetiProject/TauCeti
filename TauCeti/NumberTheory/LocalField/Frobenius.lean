@@ -72,7 +72,7 @@ theorem frobeniusAlgEquiv_rootsOfUnity [IsUnramified K L]
     exact (algebraMap_teichmuller_rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[L] L ζ).symm
   rw [hζ]
-  rw [← AlgEquiv.coe_smul_integerRing, algEquiv_smul_teichmullerLift,
+  rw [← AlgEquiv.coe_smul_integerRing, AlgEquiv.smul_teichmullerLift,
     frobeniusAlgEquiv_teichmullerLift,
     map_pow]
   exact (map_pow (algebraMap 𝒪[L] L) (teichmullerLift L (a : 𝓀[L]))
