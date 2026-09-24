@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.RingTheory.Localization.IntegerMultiple
 
 /-!
 # Trace-dual families of a projective extension
@@ -29,8 +30,6 @@ coefficients remain in `A` whenever `x` pairs integrally with `B`.
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
-* `TauCeti.exists_smul_mem_span_basis`: every element of an algebra embedded in `L` has a
-  nonzero multiple in the span of lifts of a fraction-field basis.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
 
@@ -59,27 +58,6 @@ private theorem algebraMap_smul_eq (r : A) (y : B) :
     algebraMap B L (r • y) = algebraMap A K r • algebraMap B L y := by
   rw [Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply,
     IsScalarTower.algebraMap_apply A K L, ← Algebra.smul_def]
-
-omit [FiniteDimensional K L] [Algebra.IsSeparable K L] [IsIntegralClosure B A L] in
-/-- If `B` embeds in `L`, every element of `B` has a nonzero multiple in the `A`-span of lifts
-in `B` of a `K`-basis of `L`. -/
-theorem exists_smul_mem_span_basis {ι : Type*} [Finite ι] (b : Basis ι K L) (b' : ι → B)
-    (hb' : ∀ i, algebraMap B L (b' i) = b i)
-    (hinj : Function.Injective (algebraMap B L)) (x : B) :
-    ∃ a : A, a ≠ 0 ∧ a • x ∈ Submodule.span A (Set.range b') := by
-  classical
-  have := Fintype.ofFinite ι
-  obtain ⟨⟨a, ha⟩, hint⟩ := IsLocalization.exist_integer_multiples A⁰ Finset.univ
-    fun i ↦ b.repr (algebraMap B L x) i
-  choose c hc using fun i ↦ hint i (Finset.mem_univ i)
-  refine ⟨a, nonZeroDivisors.ne_zero ha, ?_⟩
-  have hx : a • x = ∑ i, c i • b' i := by
-    apply hinj
-    rw [algebraMap_smul_eq A K, map_sum, ← b.sum_repr (algebraMap B L x), Finset.smul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [algebraMap_smul_eq A K, hb', hc i, smul_smul, Algebra.smul_def (a : A)]
-  rw [hx]
-  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
 
 variable {A} in
 /-- **Linear forms are trace pairings.** Every `A`-linear form `f : B → A` on the integral closure

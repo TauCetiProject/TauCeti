@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 
@@ -46,14 +45,16 @@ determine `w` but not the base place `v`, so they are not simplification rules.
 
 ## Main results
 
-* `TauCeti.sum_trace_mul_smul_algebraMap_eq`: a trace-dual expansion of `L` over `K` remains one
-  of `L_w` over `K_v`.
-* `TauCeti.span_traceDual_one_eq_traceDual_one_adicCompletionIntegers`: the local trace dual is
-  spanned by the global one.
-* `TauCeti.extended_dual_one_eq_dual_one_adicCompletionIntegers`: the same statement for
-  fractional ideals, as the extension of the global trace dual along `𝒪 L → 𝒪_w`.
-* `TauCeti.map_differentIdeal_eq_differentIdeal_adicCompletionIntegers`: the different ideal
-  commutes with completion.
+All in the namespace `IsDedekindDomain.HeightOneSpectrum`, as they take the place `v` first:
+
+* `sum_trace_mul_smul_algebraMap_eq`: a trace-dual expansion of `L` over `K` remains one of `L_w`
+  over `K_v`.
+* `span_traceDual_one_eq_traceDual_one_adicCompletionIntegers`: the local trace dual is spanned by
+  the global one.
+* `extended_dual_one_eq_dual_one_adicCompletionIntegers`: the same statement for fractional
+  ideals, as the extension of the global trace dual along `𝒪 L → 𝒪_w`.
+* `map_differentIdeal_eq_differentIdeal_adicCompletionIntegers`: the different ideal commutes
+  with completion.
 
 ## References
 
@@ -67,9 +68,9 @@ noncomputable section
 open IsDedekindDomain NumberField
 open scoped TensorProduct NumberField AdicCompletionExtension Valued nonZeroDivisors
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
-open IsDedekindDomain.HeightOneSpectrum
+open TauCeti
 
 local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
@@ -121,14 +122,6 @@ theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι →
     Finset.sum_apply, Pi.smul_apply, semilocalEquiv_tmul, map_one, one_mul,
     trace_semilocalEquiv_symm_single_mul] at h'
   exact h'
-
-/-- A global integer, viewed in `L_w`, is the image of its image in `𝒪_w`. -/
-private theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (x : 𝒪 L) :
-    algebraMap L (w.adicCompletion L) (algebraMap (𝒪 L) L x) =
-      algebraMap (w.adicCompletionIntegers L) (w.adicCompletion L)
-        (algebraMap (𝒪 L) (w.adicCompletionIntegers L) x) := by
-  rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
-    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
 
 /-- On the image of `𝒪_v ⊗[𝒪 K] 𝒪 L`, the trace pairing with an element of the global trace dual
 takes values in `𝒪_v`. -/
@@ -236,4 +229,4 @@ theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
       (w.adicCompletionIntegers L), map_inv₀, FractionalIdeal.extendedHom'_apply,
     extended_dual_one_eq_dual_one_adicCompletionIntegers v w]
 
-end TauCeti
+end IsDedekindDomain.HeightOneSpectrum
