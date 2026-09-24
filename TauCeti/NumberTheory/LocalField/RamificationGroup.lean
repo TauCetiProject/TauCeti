@@ -31,11 +31,9 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L]
 
-/-- The lower-numbering ramification group of a finite Galois extension of local fields. -/
-def lowerRamificationGroup [IsGalois K L] (i : ℤ) : Subgroup (L ≃ₐ[K] L) :=
+/-- The lower-numbering ramification group of a finite extension of local fields. -/
+def lowerRamificationGroup (i : ℤ) : Subgroup (L ≃ₐ[K] L) :=
   TauCeti.IsLocalRing.ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i
-
-variable [IsGalois K L]
 
 /-- The local-field filtration is the ramification filtration of its integer ring. -/
 theorem lowerRamificationGroup_def (i : ℤ) :

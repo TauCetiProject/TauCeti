@@ -59,8 +59,6 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   (v : HeightOneSpectrum (𝓞 K)) {w : HeightOneSpectrum (𝓞 L)} [w.asIdeal.LiesOver v.asIdeal]
 
-variable [IsGalois K L]
-
 /-- **The global and local ramification groups agree.** An element `σ` of the decomposition group
 of `w` lies in the `i`-th ramification group of the prime `w` of `𝓞 L` exactly when its continuous
 extension to `L_w` lies in the `i`-th lower-numbering ramification group of `L_w/K_v`. -/
@@ -111,6 +109,8 @@ theorem ramificationGroup_stabilizer_eq_comap_decompositionHom (i : ℕ) :
   ext σ
   rw [← Ideal.ramificationGroup_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.mem_comap,
     mem_ramificationGroup_iff_decompositionHom_mem v]
+
+variable [IsGalois K L]
 
 variable (w) in
 /-- **The decomposition group carries the global ramification groups onto the local ones.** For
