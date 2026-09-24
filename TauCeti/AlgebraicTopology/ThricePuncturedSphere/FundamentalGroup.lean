@@ -63,6 +63,7 @@ private theorem range_map_rightOpen :
   exact congrArg Subgroup.zpowers map_val_periph1Right
 
 /-- **The peripheral elements `periph0` and `periph1` generate `π₁(ℂ ∖ {0, 1}, 1/2)`.** -/
+@[simp]
 theorem closure_periph0_periph1 :
     Subgroup.closure {periph0, periph1} = ⊤ := by
   have h := FundamentalGroup.range_map_subtypeVal_sup_eq_top
