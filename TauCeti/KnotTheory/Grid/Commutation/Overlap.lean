@@ -17,12 +17,12 @@ the pentagon's turn point produces the same L-shaped rectangle domain that occur
 that the grid differential squares to zero. This file begins transporting that generic recut back
 to the commutation setting.
 
-In the orientation treated here, the rectangle and pentagon share their initial side. The generic
-recut then has its first rectangle terminate on the replaced grid line. The cyclic row order forced
-by emptiness also shows that this new terminal side still contains the original turn point. Thus
-the first recut rectangle canonically promotes to a pentagon, producing a pentagon--rectangle
-decomposition. Forgetting the turn point recovers exactly the generic recut, so its emptiness and
-covered-square repartition data remain available without duplicating the rectangle geometry.
+When the rectangle and pentagon share their initial side, the generic recut has its first
+rectangle terminate on the replaced grid line. The cyclic row order forced by emptiness also
+shows that this new terminal side still contains the original turn point. Thus the first recut
+rectangle canonically promotes to a pentagon, producing a pentagon--rectangle decomposition.
+Forgetting the turn point recovers exactly the generic recut, so its emptiness and covered-square
+repartition data remain available without duplicating the rectangle geometry.
 
 This module treats the common-initial-side orientation and preserves the underlying rectangle
 repartition and its rectangle weights. It also records the two possible cuts in the
@@ -48,7 +48,7 @@ must distinguish the two cases.
 
 ## References
 
-This is one overlap orientation in the pentagon--rectangle juxtaposition argument of
+These are two overlap orientations in the pentagon--rectangle juxtaposition argument of
 Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*, Section 5.1.
 -/
 
