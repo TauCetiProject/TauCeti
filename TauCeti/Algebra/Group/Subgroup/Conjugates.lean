@@ -22,7 +22,7 @@ that orbit across a group isomorphism. A conjugate of `H ≤ G` is the image of 
 
 ## Main results
 
-* `TauCeti.mem_conjugateSubgroups_iff`: orbit membership is subgroup conjugation.
+* `TauCeti.mem_orbit_conjAct_iff`: orbit membership is subgroup conjugation.
 -/
 
 public section
@@ -33,7 +33,7 @@ open scoped Pointwise
 
 /-- Membership in the conjugacy orbit of `H` means being obtained from `H` by conjugation. -/
 @[simp]
-theorem mem_conjugateSubgroups_iff {G : Type*} [Group G] {H H' : Subgroup G} :
+theorem mem_orbit_conjAct_iff {G : Type*} [Group G] {H H' : Subgroup G} :
     H' ∈ MulAction.orbit (ConjAct G) H ↔ ∃ g : G, H.map (MulAut.conj g) = H' := by
   constructor
   · rintro ⟨g, rfl⟩
@@ -55,20 +55,20 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
   e.mapSubgroup.subtypeEquiv fun J ↦ by
     constructor
     · intro h
-      obtain ⟨g, hg⟩ := TauCeti.mem_conjugateSubgroups_iff.mp h
-      apply TauCeti.mem_conjugateSubgroups_iff.mpr
+      obtain ⟨g, hg⟩ := TauCeti.mem_orbit_conjAct_iff.mp h
+      apply TauCeti.mem_orbit_conjAct_iff.mpr
       refine ⟨e g, ?_⟩
       -- `Subgroup.map` sees the monoid homomorphism underlying `MulAut.conj`.
       change H.map (MulAut.conj g).toMonoidHom = J at hg
       change (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom = J.map e.toMonoidHom
       have hmap : (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom =
           (H.map (MulAut.conj g).toMonoidHom).map e.toMonoidHom := by
-        simpa only [show e.toMonoidHom g = e g from rfl] using
+        simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_coe] using
           (Subgroup.map_map_conj H e.toMonoidHom g).symm
       exact hmap.trans (congrArg (·.map e.toMonoidHom) hg)
     · intro h
-      obtain ⟨g, hg⟩ := TauCeti.mem_conjugateSubgroups_iff.mp h
-      apply TauCeti.mem_conjugateSubgroups_iff.mpr
+      obtain ⟨g, hg⟩ := TauCeti.mem_orbit_conjAct_iff.mp h
+      apply TauCeti.mem_orbit_conjAct_iff.mpr
       refine ⟨e.symm g, ?_⟩
       apply e.mapSubgroup.injective
       -- Expose the underlying homomorphisms to apply `Subgroup.map_map_conj`.

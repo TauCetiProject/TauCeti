@@ -32,7 +32,7 @@ distinct images of those embeddings are indexed by the cosets of
 
 ## Main results
 
-* `IntermediateField.stabilizer_intermediateField_eq_normalizer`: the field stabilizer is the
+* `IntermediateField.stabilizer_eq_normalizer_fixingSubgroup`: the field stabilizer is the
   normalizer of its fixing subgroup.
 * `IntermediateField.ncard_conjugateFields`: the number of fields is the normalizer index.
 -/
@@ -53,7 +53,7 @@ variable [FiniteDimensional K L] [IsGalois K L]
 /-- The stabilizer of an intermediate field under ambient automorphisms is the normalizer of
 its fixing subgroup. -/
 @[simp]
-theorem stabilizer_intermediateField_eq_normalizer (E : IntermediateField K L) :
+theorem stabilizer_eq_normalizer_fixingSubgroup (E : IntermediateField K L) :
     stabilizer (L ≃ₐ[K] L) E =
       Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L)) := by
   ext σ
@@ -77,14 +77,14 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
     conjugateFields E ≃ MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup where
   toFun E' := ⟨E'.1.fixingSubgroup, by
     obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.2
-    refine TauCeti.mem_conjugateSubgroups_iff.mpr ⟨σ, ?_⟩
+    refine TauCeti.mem_orbit_conjAct_iff.mpr ⟨σ, ?_⟩
     calc
       E.fixingSubgroup.map (MulAut.conj σ) = (E.map σ.toAlgHom).fixingSubgroup := by
         rw [IsGalois.map_fixingSubgroup]
         congr 1
       _ = E'.1.fixingSubgroup := congrArg IntermediateField.fixingSubgroup hσ⟩
   invFun H := ⟨fixedField H.1, by
-    obtain ⟨σ, hσ⟩ := TauCeti.mem_conjugateSubgroups_iff.mp H.2
+    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
     apply mem_conjugateFields_iff.mpr
     refine ⟨σ, ?_⟩
     calc
@@ -115,7 +115,7 @@ theorem conjugateFieldsEquivConjugateSubgroups_symm_apply (E : IntermediateField
 noncomputable def quotientNormalizerEquivConjugateFields (E : IntermediateField K L) :
     (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L)) ≃
       conjugateFields E :=
-  (Subgroup.quotientEquivOfEq (stabilizer_intermediateField_eq_normalizer E).symm).trans
+  (Subgroup.quotientEquivOfEq (stabilizer_eq_normalizer_fixingSubgroup E).symm).trans
     ((MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm.trans
       (Equiv.subtypeEquivRight fun E' ↦ by
         simp only [mem_orbit_iff, AlgEquiv.smul_intermediateField_def,
@@ -153,7 +153,7 @@ theorem ncard_conjugateFields (E : IntermediateField K L) :
     simp only [mem_conjugateFields_iff, mem_orbit_iff,
       AlgEquiv.smul_intermediateField_def]
   rw [hcard, ← MulAction.index_stabilizer,
-    stabilizer_intermediateField_eq_normalizer]
+    stabilizer_eq_normalizer_fixingSubgroup]
 
 end Galois
 

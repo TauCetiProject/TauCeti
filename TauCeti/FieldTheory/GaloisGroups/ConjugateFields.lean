@@ -30,11 +30,15 @@ not by the generally larger root quotient `G / H`.
 * `TauCeti.conjugateSimpleFields`: its set of conjugates under `Gal(N/F)`.
 * `TauCeti.quotientNormalizerEquivConjugateSimpleFields`: the normalizer quotient indexing
   those fields.
+* `TauCeti.quotientGalNormalizerEquivConjugateSimpleFields`: the same indexing through the
+  polynomial Galois group.
 
 ## Main results
 
 * `TauCeti.quotientStabilizerEquivAlgHomSimpleField`: the quotient of the normal-closure Galois
   group by a root stabilizer is the set of embeddings of the simple field.
+* `TauCeti.quotientGalStabilizerEquivAlgHomSimpleField`: the corresponding quotient of the
+  polynomial Galois group indexes those embeddings.
 * `TauCeti.quotientStabilizerEquivAlgHomSimpleField_smul`: this equivalence respects the
   Galois action by postcomposition.
 * `TauCeti.conjugateSimpleFieldsEquivConjugateSubgroups`: the conjugate fields
@@ -54,13 +58,21 @@ open scoped Pointwise
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
+/-- Transport cosets along a group isomorphism. -/
+private def quotientEquivOfMulEquiv {G G' : Type*} [Group G] [Group G']
+    (e : G ≃* G') (H : Subgroup G) : G ⧸ H ≃ G' ⧸ H.map e.toMonoidHom :=
+  Quotient.congr e.toEquiv (by
+    intro a b
+    simp only [QuotientGroup.leftRel_apply]
+    change a⁻¹ * b ∈ H ↔ (e a)⁻¹ * e b ∈ H.map e.toMonoidHom
+    rw [← e.map_inv, ← e.map_mul, Subgroup.mem_map_equiv, e.symm_apply_apply])
+
 section Normal
 
 variable [Normal F E]
 
 /-- The cosets of the stabilizer of a root are in bijection with the `F`-embeddings of `F⟮x⟯`
-into its normal closure.  This is the root-orbit equivalence followed by the fact that an
-embedding of a simple field is determined by the image of its generator. -/
+into its normal closure. -/
 noncomputable def quotientStabilizerEquivAlgHomSimpleField (x : E)
     (y : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E)) :
     Gal(normalClosure F F⟮x⟯ E/F) ⧸
@@ -113,19 +125,71 @@ theorem quotientStabilizerEquivAlgHomSimpleField_smul (x : E)
     AlgEquiv.smul_def] using
     congrArg Subtype.val he
 
+/-- Cosets in the polynomial Galois group of a root stabilizer index the embeddings of
+the simple field into its normal closure. -/
+noncomputable def quotientGalStabilizerEquivAlgHomSimpleField (x : E)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
+    (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y ≃
+      (F⟮x⟯ →ₐ[F] normalClosure F F⟮x⟯ E) := by
+  let e := splittingFieldEquivNormalClosure (F := F) (E := E) x
+  let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
+    ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
+  have hst : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      stabilizer Gal(normalClosure F F⟮x⟯ E/F) (y' : normalClosure F F⟮x⟯ E) := by
+    rw [map_stabilizer_galEquivNormalClosure, fixingSubgroup_adjoin_simple]
+  exact (quotientEquivOfMulEquiv (galEquivNormalClosure (F := F) (E := E) x)
+    (stabilizer (minpoly F x).Gal y)).trans
+      ((Subgroup.quotientEquivOfEq hst).trans
+        (quotientStabilizerEquivAlgHomSimpleField x y'))
+
+/-- A polynomial Galois coset represented by `σ` sends the generator to the image of `y`
+under `σ`, transported to the normal closure. -/
+@[simp]
+theorem quotientGalStabilizerEquivAlgHomSimpleField_mk_gen (x : E)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (σ : (minpoly F x).Gal) :
+    quotientGalStabilizerEquivAlgHomSimpleField x y (QuotientGroup.mk σ)
+      (AdjoinSimple.gen F x) =
+      splittingFieldEquivNormalClosure (F := F) (E := E) x (σ • y :
+        (minpoly F x).SplittingField) := by
+  let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
+    ⟨splittingFieldEquivNormalClosure x y,
+      rootSet_mapsTo (splittingFieldEquivNormalClosure x).toAlgHom y.2⟩
+  change quotientStabilizerEquivAlgHomSimpleField x y'
+      (QuotientGroup.mk (galEquivNormalClosure x σ)) (AdjoinSimple.gen F x) = _
+  rw [quotientStabilizerEquivAlgHomSimpleField_mk_gen]
+  change galEquivNormalClosure x σ (splittingFieldEquivNormalClosure x y) =
+    splittingFieldEquivNormalClosure x (σ y)
+  exact galEquivNormalClosure_apply x σ y
+
+/-- The polynomial Galois coset-to-embedding equivalence respects postcomposition. -/
+@[simp]
+theorem quotientGalStabilizerEquivAlgHomSimpleField_smul (x : E)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (σ : (minpoly F x).Gal)
+    (q : (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y) :
+    quotientGalStabilizerEquivAlgHomSimpleField x y (σ • q) =
+      galEquivNormalClosure x σ • quotientGalStabilizerEquivAlgHomSimpleField x y q := by
+  induction q using Quotient.inductionOn' with
+  | _ τ =>
+    apply adjoin_algHom_ext F
+    intro a ha
+    simp only [Set.mem_singleton_iff] at ha
+    subst a
+    change quotientGalStabilizerEquivAlgHomSimpleField x y
+        (QuotientGroup.mk (σ * τ)) (AdjoinSimple.gen F x) =
+      (galEquivNormalClosure x σ • quotientGalStabilizerEquivAlgHomSimpleField x y
+        (QuotientGroup.mk τ)) (AdjoinSimple.gen F x)
+    simp [quotientGalStabilizerEquivAlgHomSimpleField_mk_gen,
+      AlgEquiv.smul_algHom_apply, mul_smul]
+
 end Normal
 
 /-- The distinct conjugates of `F⟮x⟯` inside its normal closure. -/
 def conjugateSimpleFields (x : E) :
     Set (IntermediateField F (normalClosure F F⟮x⟯ E)) :=
   IntermediateField.conjugateFields (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))
-
-/-- Conjugate simple fields are the conjugates of the restricted simple field in its normal
-closure. -/
-theorem conjugateSimpleFields_def (x : E) :
-    conjugateSimpleFields (F := F) x =
-      IntermediateField.conjugateFields (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) :=
-  by simp only [conjugateSimpleFields]
 
 /-- A field is conjugate to `F⟮x⟯` exactly when it is the image of that field under an
 automorphism of its normal closure. -/
@@ -137,23 +201,6 @@ theorem mem_conjugateSimpleFields_iff {x : E}
   IntermediateField.mem_conjugateFields_iff
 
 variable [Normal F E]
-
-/-- The normal closure of a simple field has finite degree. -/
-private theorem finiteDimensional_normalClosure_adjoin_simple (x : E) :
-    FiniteDimensional F (normalClosure F F⟮x⟯ E) := by
-  let _ : FiniteDimensional F F⟮x⟯ :=
-    adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
-  exact normalClosure.is_finiteDimensional F F⟮x⟯ E
-
-/-- The normal closure of a simple field is Galois when its minimal polynomial is separable. -/
-private theorem isGalois_normalClosure_adjoin_simple (x : E)
-    (hsep : (minpoly F x).Separable) :
-    IsGalois F (normalClosure F F⟮x⟯ E) := by
-  let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
-  let _ : IsSplittingField F (normalClosure F F⟮x⟯ E) (minpoly F x) :=
-    isSplittingField_normalClosure_adjoin_simple x
-  exact IsGalois.of_separable_splitting_field hsep
 
 /-- The conjugate simple fields are precisely the fields generated by roots of the minimal
 polynomial inside the normal closure. -/
@@ -314,6 +361,66 @@ theorem quotientNormalizerEquivConjugateSimpleFields_smul (x : E)
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.quotientNormalizerEquivConjugateFields_smul
     (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) σ q
+
+/-- Cosets of the normalizer of a point stabilizer in the polynomial Galois group index
+the conjugate images of the simple field. -/
+noncomputable def quotientGalNormalizerEquivConjugateSimpleFields (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
+    (minpoly F x).Gal ⧸
+      Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal) ≃
+        conjugateSimpleFields (F := F) x := by
+  let e := galEquivNormalClosure (F := F) (E := E) x
+  have hn : (Subgroup.normalizer
+      (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).map e.toMonoidHom =
+      Subgroup.normalizer
+        ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
+          Set Gal(normalClosure F F⟮x⟯ E/F)) := by
+    rw [Subgroup.map_equiv_normalizer_eq, hy]
+  exact (quotientEquivOfMulEquiv e
+    (Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal))).trans
+      ((Subgroup.quotientEquivOfEq hn).trans
+        (quotientNormalizerEquivConjugateSimpleFields x hsep))
+
+/-- A polynomial Galois coset represented by `σ` gives the field obtained by the
+corresponding automorphism of the normal closure. -/
+@[simp]
+theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
+    (σ : (minpoly F x).Gal) :
+    ((quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
+      (QuotientGroup.mk σ)).1) =
+        galEquivNormalClosure x σ • (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
+  change ((quotientNormalizerEquivConjugateSimpleFields x hsep
+    (QuotientGroup.mk (galEquivNormalClosure x σ))).1) = _
+  exact quotientNormalizerEquivConjugateSimpleFields_mk x hsep _
+
+/-- The polynomial normalizer-coset parametrization respects the transported Galois action. -/
+@[simp]
+theorem quotientGalNormalizerEquivConjugateSimpleFields_smul (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
+    (σ : (minpoly F x).Gal)
+    (q : (minpoly F x).Gal ⧸
+      Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)) :
+    (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy (σ • q)).1 =
+      galEquivNormalClosure x σ •
+        (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy q).1 := by
+  induction q using Quotient.inductionOn' with
+  | _ τ =>
+    change (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
+      (QuotientGroup.mk (σ * τ))).1 = _
+    simp [quotientGalNormalizerEquivConjugateSimpleFields_mk, mul_smul]
 
 /-- For a separable minimal polynomial, the number of conjugates of `F⟮x⟯` is the index of
 the normalizer of its fixing subgroup in the Galois group of the normal closure. -/
