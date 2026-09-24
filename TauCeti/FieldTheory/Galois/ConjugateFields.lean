@@ -99,6 +99,8 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
   right_inv H := by
     obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
     apply Subtype.ext
+    -- By the `toFun` and `invFun` fields above, the round trip is by definition the fixing
+    -- subgroup of the fixed field of `H`; `change` states this before the Galois rewrites.
     change (fixedField H.1).fixingSubgroup = H.1
     rw [← hσ, Subgroup.fixedField_map_conj,
       InfiniteGalois.fixedField_fixingSubgroup, IsGalois.map_fixingSubgroup]
