@@ -16,8 +16,8 @@ import Mathlib.Order.WellFoundedSet
 # Theorems of the alternative for nonnegative vectors
 
 This file proves the classical theorems of the alternative of Gordan, Stiemke and Tucker over an
-arbitrary linearly ordered field, by the elementary induction of Broyden and Tucker, and draws
-their consequences for subgroups of the integer lattice `ι → ℤ`.
+arbitrary linearly ordered field and draws their consequences for subgroups of the integer lattice
+`ι → ℤ`.
 
 For a finite family of vectors `a j` in a vector space over a linearly ordered field `K`,
 *Gordan's theorem* says that either some linear functional is strictly positive on every `a j`,
@@ -26,9 +26,8 @@ Applied to the images of the coordinate vectors in a quotient `(ι → K) ⧸ S`
 *Stiemke's theorem*: a subspace `S` contains no nonzero nonnegative vector exactly when some
 strictly positive vector is orthogonal to all of `S`. Both are consequences of *Tucker's key
 lemma*, which for each index `k` produces a nonnegative relation `x` and a functional `y` that is
-nonnegative on the family, one of them strictly positive at `k`. The proof is by induction on the
-number of vectors and needs no topology, unlike Mathlib's separation-based Farkas lemma
-`ProperCone.hyperplane_separation`; this is what makes it available over `ℚ`.
+nonnegative on the family, one of them strictly positive at `k`. Unlike Mathlib's
+separation-based Farkas lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
 
 For a subgroup `P` of `ι → ℤ` with `ι` finite, the condition that `P` contains no nonzero
 nonnegative vector has two equivalent reformulations proved here:
@@ -36,20 +35,19 @@ nonnegative vector has two equivalent reformulations proved here:
 * some vector of positive integer weights is orthogonal to `P`;
 * every coset `D₀ + P` contains only finitely many nonnegative vectors.
 
-The first comes from Stiemke's theorem over `ℚ`. The second is Dickson's lemma: if a coset contained
-infinitely many nonnegative vectors, two of them would be comparable, and their difference would be
-a nonzero nonnegative element of `P`.
+The first is an integer-lattice form of Stiemke's theorem. The second is a finiteness consequence
+of Dickson's lemma.
 
 This is the combinatorial content of the admissibility lemmas of Heegaard Floer theory. For a
 pointed Heegaard diagram, `ι` indexes the regions of the surface cut along the attaching curves,
 a domain is a vector `ι → ℤ` of multiplicities, and `P` is the group of periodic domains (which
 avoid the basepoint). Weak admissibility, in its form for all `Spin^c` structures at once, asks
 that every nonzero periodic domain have both positive and negative multiplicities. Since `P` is
-closed under negation, this is exactly the hypothesis of the theorems below. The weights are then
-the areas of the regions for an area form in which every periodic domain has signed area zero.
-The domains of the Whitney disks joining two fixed generators and avoiding the basepoint form a
-coset of `P`, so the finiteness says that only finitely many of these disks have a positive domain;
-this is what makes the counts in the differential of `HF̂` finite sums.
+closed under negation, this is exactly the hypothesis of the theorems below. The weights provide
+positive target areas for the regions, with zero signed area for every periodic domain.
+Applying the finiteness theorem to Whitney disks requires a separate geometric correspondence
+between disk classes and their domain vectors, including control of the fibers of that map.
+The theorem itself counts nonnegative domain vectors in a coset of `P`.
 
 ## Main declarations
 
@@ -92,7 +90,7 @@ section Field
 
 variable [Field K] [LinearOrder K] [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
 
-/-- Tucker's key lemma for the vectors indexed by `insert k s`, proved by induction on `s`. -/
+/-- Tucker's key lemma for the vectors indexed by `insert k s`. -/
 private theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_of_finset [DecidableEq ι] (k : ι)
     (s : Finset ι) (a : ι → V) :
     ∃ x : ι → K, ∃ y : Module.Dual K V, (∀ j ∈ insert k s, 0 ≤ x j ∧ 0 ≤ y (a j)) ∧
@@ -300,10 +298,10 @@ theorem AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgr
 /-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when each coset
 `D₀ + P` contains only finitely many nonnegative vectors.
 
-For the group of periodic domains of a pointed Heegaard diagram, the domains of the Whitney disks
-joining two fixed generators and avoiding the basepoint form such a coset, so only finitely many of
-these disks have a positive domain; compare Ozsváth–Szabó, *Holomorphic disks and topological
-invariants for closed three-manifolds*, Lemma 4.13. -/
+For the group of periodic domains of a pointed Heegaard diagram, this bounds the nonnegative domain
+vectors in any coset. Applying the bound to Whitney disk classes also requires a geometric
+correspondence between those classes and domain vectors; compare Ozsváth–Szabó, *Holomorphic disks
+and topological invariants for closed three-manifolds*, Lemma 4.13. -/
 theorem AddSubgroup.finite_setOf_nonneg_sub_mem_iff [Finite ι] (P : AddSubgroup (ι → ℤ)) :
     (∀ D₀ : ι → ℤ, {D | 0 ≤ D ∧ D - D₀ ∈ P}.Finite) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   constructor
