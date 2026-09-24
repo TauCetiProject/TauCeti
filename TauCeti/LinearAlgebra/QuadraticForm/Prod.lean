@@ -47,6 +47,9 @@ so the embedding restricts to the special orthogonal groups.
   `QuadraticMap.specialOrthogonalGroupProd_injective`: both maps are injective.
 * `QuadraticMap.mem_range_orthogonalGroupProd_iff`: the image of `orthogonalGroupProd` is exactly
   the subgroup of orthogonal transformations of `Q₁.prod Q₂` preserving both summands.
+* `QuadraticMap.mem_range_specialOrthogonalGroupProd_iff`: the image of
+  `specialOrthogonalGroupProd` consists of the special orthogonal transformations preserving both
+  summands whose two diagonal blocks have determinant one.
 * `QuadraticMap.det_orthogonalGroupProd`: the determinant of an orthogonal sum is the product of
   the determinants.
 
@@ -280,6 +283,42 @@ theorem specialOrthogonalGroupProd_injective :
   rw [coe_specialOrthogonalGroupProd, coe_specialOrthogonalGroupProd,
     LinearEquiv.prodCongr_inj] at this
   exact Prod.ext (Subtype.ext this.1) (Subtype.ext this.2)
+
+/-- **The image of the orthogonal sum of special orthogonal groups.** A special orthogonal
+transformation `g` of `Q₁.prod Q₂` is an orthogonal sum `f₁ ⊕ f₂` of special orthogonal
+transformations of `Q₁` and `Q₂` exactly when it preserves both summands and both of its diagonal
+blocks `M₁ → M₁` and `M₂ → M₂` have determinant one. Preserving the summands alone does not
+suffice, since `f₁ ⊕ f₂` with `det f₁ = det f₂ = -1` is special orthogonal. -/
+theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q₁.prod Q₂)} :
+    g ∈ (specialOrthogonalGroupProd Q₁ Q₂).range ↔
+      (∀ m₁, ((g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (m₁, 0)).2 = 0) ∧
+        (∀ m₂, ((g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (0, m₂)).1 = 0) ∧
+        LinearMap.det (LinearMap.fst R M₁ M₂ ∘ₗ (g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
+          LinearMap.inl R M₁ M₂) = 1 ∧
+        LinearMap.det (LinearMap.snd R M₁ M₂ ∘ₗ (g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
+          LinearMap.inr R M₁ M₂) = 1 := by
+  -- The two diagonal blocks of an orthogonal sum `f₁ ⊕ f₂` are `f₁` and `f₂`.
+  have key (f₁ : M₁ ≃ₗ[R] M₁) (f₂ : M₂ ≃ₗ[R] M₂) :
+      LinearMap.fst R M₁ M₂ ∘ₗ (f₁.prodCongr f₂).toLinearMap ∘ₗ LinearMap.inl R M₁ M₂ =
+          f₁.toLinearMap ∧
+        LinearMap.snd R M₁ M₂ ∘ₗ (f₁.prodCongr f₂).toLinearMap ∘ₗ LinearMap.inr R M₁ M₂ =
+          f₂.toLinearMap :=
+    ⟨by ext; simp, by ext; simp⟩
+  constructor
+  · rintro ⟨f, rfl⟩
+    rw [coe_specialOrthogonalGroupProd, (key _ _).1, (key _ _).2, ← LinearEquiv.coe_det,
+      ← LinearEquiv.coe_det, (mem_specialOrthogonalGroup_iff.mp f.1.2).2,
+      (mem_specialOrthogonalGroup_iff.mp f.2.2).2]
+    exact ⟨fun _ ↦ by simp, fun _ ↦ by simp, rfl, rfl⟩
+  rintro ⟨h₁, h₂, d₁, d₂⟩
+  obtain ⟨f, hf⟩ := (mem_range_orthogonalGroupProd_iff Q₁ Q₂
+    (g := ⟨g, specialOrthogonalGroup_le_orthogonalGroup _ g.2⟩)).mpr ⟨h₁, h₂⟩
+  have hg := congrArg Subtype.val hf
+  rw [coe_orthogonalGroupProd] at hg
+  rw [← hg, (key _ _).1, ← LinearEquiv.coe_det, Units.val_eq_one] at d₁
+  rw [← hg, (key _ _).2, ← LinearEquiv.coe_det, Units.val_eq_one] at d₂
+  exact ⟨(⟨f.1, mem_specialOrthogonalGroup_iff.mpr ⟨f.1.2, d₁⟩⟩,
+    ⟨f.2, mem_specialOrthogonalGroup_iff.mpr ⟨f.2.2, d₂⟩⟩), Subtype.ext hg⟩
 
 end SpecialOrthogonalGroup
 
