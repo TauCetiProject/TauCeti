@@ -39,12 +39,9 @@ theorem pLowerCentralStep_le_proPFrattini (hp : p.Prime)
     (hF : IsClosed ((proPFrattini p G : Subgroup G) : Set G)) :
     pLowerCentralSeries p G 1 ≤ proPFrattini p G := by
   rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
-  refine Subgroup.topologicalClosure_minimal _ (sup_le ?_ ?_) hF
-  · refine Subgroup.closure_le _ |>.mpr ?_
-    rintro x ⟨h, -, rfl⟩
-    exact pow_mem_proPFrattini h
-  · refine Subgroup.commutator_le.mpr fun h _ g _ => ?_
-    exact commutator_le_proPFrattini hp (Subgroup.commutator_mem_commutator
-      (Subgroup.mem_top h) (Subgroup.mem_top g))
+  refine (pLowerCentralStep_le_iff hF).mpr ⟨fun x _ ↦ pow_mem_proPFrattini x, ?_⟩
+  refine Subgroup.commutator_le.mpr fun h _ g _ ↦ ?_
+  exact commutator_le_proPFrattini hp (Subgroup.commutator_mem_commutator
+    (Subgroup.mem_top h) (Subgroup.mem_top g))
 
 end TauCeti
