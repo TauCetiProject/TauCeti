@@ -42,7 +42,7 @@ statements about `TauCeti.Sym.pi A` as a subspace of the topological symmetric p
   `TauCeti.Sym.pi_nonempty_iff` recording when it is inhabited.
 * `TauCeti.Sym.mem_pi_iff` and `TauCeti.Sym.mem_pi_iff_card_filter`: membership, either through an
   ordered presentation or as "exactly one point in each member".
-* `TauCeti.Sym.disjoint_setOf_mem_pi`: the unordered tuples through a point outside every member
+* `TauCeti.Sym.disjoint_basepointDivisor_pi`: tuples through a point outside every member
   of the family do not meet `TauCeti.Sym.pi A`.
 * `TauCeti.Sym.ofFn_subtypeVal_injective` and `TauCeti.Sym.piEquiv`: for a pairwise disjoint
   family, the unordered tuples in `TauCeti.Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
@@ -132,10 +132,11 @@ theorem pi_eq_image_univ_pi (A : Fin n → Set α) : pi A = ofFn '' Set.univ.pi 
 /-- The unordered tuples containing a point `a` that lies in no member of the family are disjoint
 from `TauCeti.Sym.pi A`. For a basepoint `z` of a Heegaard diagram, chosen off the attaching curves,
 this says that the divisor `{z} × Sym^{g-1}(Σ)` misses the torus `T_α`. -/
-theorem disjoint_setOf_mem_pi {a : α} (ha : ∀ i, a ∉ A i) : Disjoint {s : Sym α n | a ∈ s} (pi A) :=
+theorem disjoint_basepointDivisor_pi {a : α} (ha : ∀ i, a ∉ A i) :
+    Disjoint (basepointDivisor a : Set (Sym α n)) (pi A) :=
   Set.disjoint_left.2 fun s has hs => by
     obtain ⟨x, hx, rfl⟩ := mem_pi_iff.1 hs
-    obtain ⟨i, rfl⟩ := mem_ofFn.1 has
+    obtain ⟨i, rfl⟩ := mem_ofFn.1 (mem_basepointDivisor.1 has)
     exact ha i (hx i)
 
 /-! ### Pairwise disjoint families -/

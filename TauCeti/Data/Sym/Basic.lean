@@ -34,8 +34,8 @@ orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing her
   `Sym.append`.
 * `TauCeti.Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple
   exactly when one is a reindexing of the other by a permutation.
-* `TauCeti.Sym.range_cons`: the unordered `(n + 1)`-tuples obtained by adjoining a point `a` are
-  exactly those containing `a`.
+* `TauCeti.Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
+  `TauCeti.Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
   entries are `0`, so there are `d + 1` of them.
 -/
@@ -161,10 +161,18 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
 
 /-! ### Adjoining a fixed point -/
 
+/-- The divisor of unordered tuples containing the fixed point `a`. -/
+def basepointDivisor (a : α) : Set (Sym α n) := {s | a ∈ s}
+
+@[simp]
+theorem mem_basepointDivisor {a : α} {s : Sym α n} :
+    s ∈ basepointDivisor a ↔ a ∈ s := Iff.rfl
+
 /-- The unordered `(n + 1)`-tuples obtained by adjoining the point `a` are exactly those that
 contain `a`. -/
 @[simp]
-theorem range_cons (a : α) : Set.range (Sym.cons a : Sym α n → Sym α (n + 1)) = {s | a ∈ s} := by
+theorem range_cons (a : α) :
+    Set.range (Sym.cons a : Sym α n → Sym α (n + 1)) = basepointDivisor a := by
   ext s
   refine ⟨?_, fun hs => ?_⟩
   · rintro ⟨t, rfl⟩

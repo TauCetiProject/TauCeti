@@ -197,7 +197,7 @@ theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*
     (hVdisj : Pairwise (Function.onFun Disjoint V)) (e : (Σ i, Fin (m i)) ≃ Fin n)
     (hp : Nonempty (∀ i, Sym ↥(V i) (m i))) {j : ι} {z : α} (hz : z ∈ V j) {s : Sym α n}
     (hs : s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source) :
-    z ∈ s ↔ φ j z ^ m j + ∑ k : Fin (m j),
+    s ∈ Sym.basepointDivisor z ↔ φ j z ^ m j + ∑ k : Fin (m j),
       symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s (e ⟨j, k⟩) * φ j z ^ (k : ℕ) =
         0 := by
   rw [symOpenPartialHomeomorph_source] at hs
@@ -209,9 +209,10 @@ theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*
     rw [symOpenPartialHomeomorph_apply]
     exact (piSigmaConstHomeomorph_symm_apply K e _ j k).symm.trans
       (congrFun (congrFun ((piSigmaConstHomeomorph K e).symm_apply_apply _) j) k)
-  simp only [hblock]
-  rw [← Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero, Sym.mem_sumSubtype_iff hVdisj hz,
-    _root_.Sym.mem_map]
+  simp only [hblock, Sym.mem_basepointDivisor]
+  rw [← Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero,
+    Sym.mem_sumSubtype_iff (fun i hij => hVdisj hij) hz,
+    Sym.mem_basepointDivisor, _root_.Sym.mem_map]
   refine ⟨fun h => ⟨_, h, rfl⟩, ?_⟩
   rintro ⟨x, hx, hxz⟩
   obtain rfl : x = ⟨z, hz⟩ := Subtype.ext ((φ j).injOn (hVsub j x.2) (hVsub j hz) hxz)
@@ -228,15 +229,17 @@ theorem exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph {ι 
     (hVsub : ∀ i, V i ⊆ (φ i).source)
     (hVdisj : Pairwise (Function.onFun Disjoint V)) (e : (Σ i, Fin (m i)) ≃ Fin n)
     (hp : Nonempty (∀ i, Sym ↥(V i) (m i))) {z : α}
-    (hz : ∃ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source, z ∈ s) :
+    (hz : ∃ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
+      s ∈ Sym.basepointDivisor z) :
     ∃ (ℓ : (Fin n → K) →L[K] K) (b : K), ℓ ≠ 0 ∧
       ∀ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
-        z ∈ s ↔ ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = b := by
+        s ∈ Sym.basepointDivisor z ↔
+          ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = b := by
   obtain ⟨s₀, hs₀, hzs₀⟩ := hz
   obtain ⟨j, hj⟩ : ∃ j, z ∈ V j := by
     rw [symOpenPartialHomeomorph_source] at hs₀
     obtain ⟨p, rfl⟩ := hs₀
-    exact Sym.exists_mem_of_mem_sumSubtype hzs₀
+    exact Sym.exists_mem_of_mem_sumSubtype (Sym.mem_basepointDivisor.1 hzs₀)
   -- the equation is `φ j z ^ m j + ℓ c = 0`, where `ℓ` weights the `j`-th block of coordinates
   -- by the powers of `φ j z`
   let ℓ : (Fin n → K) →L[K] K :=
@@ -244,7 +247,8 @@ theorem exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph {ι 
   have hℓ (c : Fin n → K) : ℓ c = ∑ k : Fin (m j), c (e ⟨j, k⟩) * φ j z ^ (k : ℕ) := by
     simp [ℓ, mul_comm]
   have hiff : ∀ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
-      z ∈ s ↔ ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = -φ j z ^ m j :=
+      s ∈ Sym.basepointDivisor z ↔
+        ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = -φ j z ^ m j :=
     fun s hs => by
       rw [mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero φ V m hm hVo hVsub hVdisj
         e hp hj hs, hℓ, add_comm, add_eq_zero_iff_eq_neg]
@@ -365,9 +369,10 @@ theorem symChartedSpace_atlas :
 contains `z`, then there are a nonzero continuous linear functional `ℓ` and a scalar `b` such that
 a tuple of that source contains `z` exactly when its coordinates satisfy `ℓ = b`. -/
 theorem exists_continuousLinearMap_ne_zero_mem_iff_symChartAt (t : Sym α n) {z : α}
-    (hz : ∃ s ∈ (symChartAt (K := K) t).source, z ∈ s) :
+    (hz : ∃ s ∈ (symChartAt (K := K) t).source, s ∈ Sym.basepointDivisor z) :
     ∃ (ℓ : (Fin n → K) →L[K] K) (b : K), ℓ ≠ 0 ∧
-      ∀ s ∈ (symChartAt (K := K) t).source, z ∈ s ↔ ℓ (symChartAt (K := K) t s) = b := by
+      ∀ s ∈ (symChartAt (K := K) t).source,
+        s ∈ Sym.basepointDivisor z ↔ ℓ (symChartAt (K := K) t s) = b := by
   obtain ⟨V, m, hm, hVo, hVsub, hVdisj, e, hp, h⟩ := symChartAt_spec (K := K) t
   rw [h] at hz ⊢
   exact exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph _ V m hm hVo hVsub
