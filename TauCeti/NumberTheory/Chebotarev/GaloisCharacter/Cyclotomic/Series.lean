@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cancellation
+public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Cancellation
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Basic
 import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely

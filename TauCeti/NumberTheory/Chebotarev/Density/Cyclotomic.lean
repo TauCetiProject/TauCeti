@@ -10,8 +10,8 @@ public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.NumberTheory.Chebotarev.Density.Ramification
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Series
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Series
 
 /-!
 # Chebotarev density for cyclotomic extensions
