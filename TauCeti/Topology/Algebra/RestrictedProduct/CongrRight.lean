@@ -133,7 +133,7 @@ induce an equivalence of restricted products. The witness uses identity maps on
 `Multiplicative ℤ`, with every source reference subgroup `⊥` and every target reference subgroup
 `⊤`: the induced map is the inclusion of the finitely supported elements into the full product,
 which is not surjective. -/
-theorem not_forall_surjective_restrictedProductMap :
+theorem not_forall_restrictedProductMap_surjective :
     ¬ ∀ (U U' : ℕ → Subgroup (Multiplicative ℤ))
         (φ : ∀ _ : ℕ, Multiplicative ℤ ≃* Multiplicative ℤ)
         (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)),
