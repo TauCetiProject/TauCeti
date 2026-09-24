@@ -188,7 +188,8 @@ noncomputable def presentationLimitStalkValuation (x : spa Aplus) :
     (directed_range_rationalNhdGerm hAplus x) (exists_mem_range_rationalNhdGerm hAplus x)
 
 /-- **The stalk valuation restricts to the rational points**: its pullback along the germ map of
-a rational neighbourhood `R(p)` of `x` is the point of `A⟨p⟩` determined by `x`. -/
+a rational neighbourhood `R(p)` of `x` is the point of `A⟨p⟩` determined by `x`.
+Not `@[simp]`: `presentationLimitRationalGerm_def` simplifies the left-hand side first. -/
 theorem comap_presentationLimitRationalGerm_presentationLimitStalkValuation (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
@@ -210,7 +211,9 @@ theorem eq_presentationLimitStalkValuation {x : spa Aplus}
   eq_ofDirected _ _ _ _ fun i ↦ hv i.1.pres i.1.isOpen_span i.2
 
 /-- **The stalk valuation lies over `x`**: pulled back to `A` along the structure map `A → A⟨p⟩`
-and the germ map of a rational neighbourhood `R(p)` of `x`, the stalk valuation at `x` is `x`. -/
+and the germ map of a rational neighbourhood `R(p)` of `x`, the stalk valuation at `x` is `x`.
+Not `@[simp]`: `comap_comp` and `presentationLimitRationalGerm_def` simplify the left-hand side
+first. -/
 theorem comap_presentationLimitStalkValuation (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
