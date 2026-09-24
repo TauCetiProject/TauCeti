@@ -81,6 +81,7 @@ theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
   Quotient.sound (Or.inr rfl)
 
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
+@[simp]
 theorem TraceFormulaMatrixModule.mk_eq_iff {A B : TraceFormulaMatrix n} :
     TraceFormulaMatrixModule.mk A = TraceFormulaMatrixModule.mk B ↔ A = B ∨ A = -B := by
   constructor
