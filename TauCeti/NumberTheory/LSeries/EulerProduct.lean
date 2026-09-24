@@ -34,6 +34,8 @@ This is the shape of the L-function of a normalized Hecke eigenform, where `c p 
 * `TauCeti.LSeries_localFactor_ne_zero_of_recurrence`: each quadratic factor is nonzero.
 * `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`: the Euler product, as a `HasProd`.
 * `TauCeti.LSeries_eulerProduct_tprod_of_recurrence`: the same, as an equality with `∏'`.
+* `TauCeti.LSeries_eulerProduct_of_recurrence`: the same, as convergence of the finite partial
+  products over `Nat.primesBelow n`.
 
 ## References
 
@@ -43,7 +45,7 @@ This is the shape of the L-function of a normalized Hecke eigenform, where `c p 
 
 public section
 
-open LSeries Nat
+open LSeries Nat Filter Topology
 
 namespace TauCeti
 
@@ -131,5 +133,24 @@ theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
     (hs : LSeriesSummable a s) :
     ∏' p : Primes, (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ = LSeries a s :=
   (LSeries_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs).tprod_eq
+
+/-- **The Euler product with quadratic local factors**, as convergence of the finite partial
+products: under the hypotheses of `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`,
+`∏_{p < n} (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ → L(a, s)` as `n → ∞`. -/
+theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) :
+    Tendsto (fun n : ℕ ↦
+        ∏ p ∈ primesBelow n, (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹)
+      atTop (𝓝 (LSeries a s)) := by
+  let F : ℕ → ℂ := fun p ↦ (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹
+  have H := ((hasProd_subtype_iff_mulIndicator (s := {p : ℕ | p.Prime}) (f := F)).mp
+    (LSeries_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs)).tendsto_prod_nat
+  have hF (n : ℕ) : ∏ i ∈ Finset.range n, Set.mulIndicator {p : ℕ | p.Prime} F i =
+      ∏ p ∈ primesBelow n, F p :=
+    Finset.prod_mulIndicator_eq_prod_filter (Finset.range n) (fun _ ↦ F) (fun _ ↦ {p | p.Prime}) id
+  simpa only [hF] using H
 
 end TauCeti

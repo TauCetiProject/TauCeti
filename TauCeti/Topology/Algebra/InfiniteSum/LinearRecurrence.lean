@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Tactic.NoncommRing
 
