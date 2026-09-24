@@ -39,7 +39,8 @@ The norm on unit groups is `TauCeti.Algebra.normUnits K : Lˣ →* Kˣ`, the fie
 
 ## Main definitions
 
-* `TauCeti.normGroup K L`: the norm group `N_{L/K}(Lˣ)`, the image of the field norm in `Kˣ`.
+* `TauCeti.normGroup K L`: the norm group `N_{L/K}(Lˣ)` of a finite extension, the image of the
+  field norm in `Kˣ`.
 
 ## Main results
 
@@ -71,19 +72,21 @@ section NormGroup
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
 
-/-- The norm group `N_{L/K}(Lˣ)` of a field extension `L/K`: the image in `Kˣ` of the field norm
-on units, `Algebra.normUnits K : Lˣ →* Kˣ`. -/
-noncomputable def normGroup : Subgroup Kˣ :=
+/-- The norm group `N_{L/K}(Lˣ)` of a finite field extension `L/K`: the image in `Kˣ` of the field
+norm on units, `Algebra.normUnits K : Lˣ →* Kˣ`. Finiteness is required because `Algebra.norm K`
+is identically `1` on an infinite extension. -/
+noncomputable def normGroup [_hfin : Module.Finite K L] : Subgroup Kˣ :=
   (Algebra.normUnits K : Lˣ →* Kˣ).range
 
 variable {K L} in
 /-- An element of `Kˣ` lies in the norm group exactly when it is the norm of a unit of `L`. -/
-theorem mem_normGroup_iff {x : Kˣ} :
+theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
     x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
   simp [normGroup, Units.ext_iff]
 
 /-- The norm of a unit of `L` lies in the norm group. -/
-theorem normUnits_mem_normGroup (y : Lˣ) : Algebra.normUnits K y ∈ normGroup K L :=
+theorem normUnits_mem_normGroup [Module.Finite K L] (y : Lˣ) :
+    Algebra.normUnits K y ∈ normGroup K L :=
   ⟨y, rfl⟩
 
 end NormGroup
@@ -208,7 +211,8 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
 variable (L) in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the
 residue degree `f(L/K)`. -/
-theorem inertiaDegree_dvd_of_mem_normGroup {x : Kˣ} (hx : x ∈ normGroup K L) :
+theorem inertiaDegree_dvd_of_mem_normGroup [Module.Finite K L] {x : Kˣ}
+    (hx : x ∈ normGroup K L) :
     (inertiaDegree K L : ℤ) ∣ (normalizedValuation K x).toAdd := by
   obtain ⟨y, rfl⟩ := hx
   exact ⟨_, toAdd_normalizedValuation_normUnits y⟩
