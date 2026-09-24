@@ -31,14 +31,15 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 namespace Fan
 
-/-- On every affine cone chart, the map of toric schemes induced by a subfan inclusion is the
-ordinary inclusion of that chart into the ambient fan scheme. -/
+/-- For a cone of a subfan, the affine chart map induced by the subfan inclusion, followed by the
+ambient chart inclusion at the least containing cone, is the ambient chart inclusion of that
+cone. -/
 @[reassoc (attr := simp)]
-theorem affineToricChartι_comp_subfanInclusion_algebraicMap
+theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
     (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
-    (Φ.subfan S hS hface).affineToricChartι
-        (hΦ.subfan S hS hface) σ ≫
-      (Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ =
+    (Φ.subfanInclusion S hS hface).affineToricChartMap σ ≫
+      Φ.affineToricChartι hΦ ⟨(Φ.subfanInclusion S hS hface).leastCone σ.2,
+        (Φ.subfanInclusion S hS hface).leastCone_mem σ.2⟩ =
       Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
   let f := Φ.subfanInclusion S hS hface
   have hσleast : σ.1.IsFaceOf (f.leastCone σ.2) := by
@@ -47,10 +48,21 @@ theorem affineToricChartι_comp_subfanInclusion_algebraicMap
       faceAffineToricSchemeMap Φ.lattice hσleast := by
     rw [FanHom.affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     simp only [f, subfanInclusion_latticeMap, subfanInclusion_realMap]
-  rw [FanHom.affineToricChartι_comp_algebraicMap, hmap]
+  rw [hmap]
   exact faceAffineToricSchemeMap_comp_affineToricChartι hΦ
     (τ := ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩)
     (σ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) hσleast
+
+/-- On every affine cone chart, the map of toric schemes induced by a subfan inclusion is the
+ordinary inclusion of that chart into the ambient fan scheme. -/
+@[reassoc]
+theorem affineToricChartι_comp_subfanInclusion_algebraicMap
+    (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
+    (Φ.subfan S hS hface).affineToricChartι
+        (hΦ.subfan S hS hface) σ ≫
+      (Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ =
+      Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
+  simp
 
 /-- The map of algebraic realizations induced by a subfan inclusion is injective on points. -/
 theorem subfanInclusion_algebraicMap_injective (hΦ : Φ.IsRegular) :
