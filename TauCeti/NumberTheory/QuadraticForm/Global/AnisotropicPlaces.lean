@@ -25,6 +25,7 @@ finite place `v` not above `2` at which every `aᵢ` is a `v`-adic unit, the bin
 represents the unit `-a₃` over the ring of integers of the completion `K_v`, a Henselian local ring
 with finite residue field of odd characteristic; this gives an isotropic vector of `Q` over `K_v`.
 The remaining places are those dividing `2` or one of the finitely many nonzero coefficients.
+This argument uses neither local Hasse invariants nor a rank-by-rank local classification.
 
 The rank bound is necessary: the binary form `⟨1, 1⟩` over `ℚ` is anisotropic at every prime
 congruent to `3` modulo `4`. The finiteness of the anisotropic places of a form of rank at least
