@@ -111,8 +111,7 @@ lemma orbitRelQuotientBotEquiv_symm_apply (x : X) :
 fixes that point, is a set of orbit representatives: sending a point of `s` to its orbit is a
 bijection onto the orbit space. -/
 noncomputable def transversalEquivOrbitRelQuotient {s : Set X} (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
-    (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) :
-    s ≃ _root_.MulAction.orbitRel.Quotient G X :=
+    (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) : s ≃ _root_.MulAction.orbitRel.Quotient G X :=
   Equiv.ofBijective (fun x ↦ Quotient.mk'' x.1)
     ⟨fun x y h ↦ (Quotient.exact h).elim fun g (hg : g • (y : X) = x) ↦
       Subtype.ext <| hg.symm.trans <| hfix _ y.2 g <| hg ▸ x.2,
@@ -126,8 +125,7 @@ lemma transversalEquivOrbitRelQuotient_apply {s : Set X} (hex : ∀ x : X, ∃ g
     transversalEquivOrbitRelQuotient hex hfix x = Quotient.mk'' (x : X) :=
   (rfl)
 
-/-- The inverse of `transversalEquivOrbitRelQuotient` sends the orbit of a point of `s` back to
-it. -/
+/-- The inverse of `transversalEquivOrbitRelQuotient` sends the orbit of `x ∈ s` back to `x`. -/
 @[simp]
 lemma transversalEquivOrbitRelQuotient_symm_mk {s : Set X} (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
     (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) (x : s) :
@@ -136,11 +134,10 @@ lemma transversalEquivOrbitRelQuotient_symm_mk {s : Set X} (hex : ∀ x : X, ∃
 
 /-- The inverse of `transversalEquivOrbitRelQuotient` picks the point of `s` in the given orbit. -/
 lemma transversalEquivOrbitRelQuotient_symm_mk_mem_orbit {s : Set X}
-    (hex : ∀ x : X, ∃ g : G, g • x ∈ s) (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x)
-    (x : X) :
+    (hex : ∀ x : X, ∃ g : G, g • x ∈ s) (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) (x : X) :
     ((transversalEquivOrbitRelQuotient hex hfix).symm (Quotient.mk'' x) : X) ∈
       _root_.MulAction.orbit G x :=
-  Quotient.exact ((transversalEquivOrbitRelQuotient hex hfix).apply_symm_apply _)
+  Quotient.exact <| (transversalEquivOrbitRelQuotient hex hfix).apply_symm_apply _
 
 /-- Equality of bottom-subgroup orbit classes is equality of representatives. -/
 @[simp]
