@@ -38,6 +38,8 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 * `TauCeti.E6Minuscule.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.E6Minuscule.rootSubgroupPoints`: its numbered root subgroups on matrix-valued points.
 * `TauCeti.E6Minuscule.weightTorus_conj_rootSubgroup`: the scheme-level pinning equation.
+* `TauCeti.E6Minuscule.rootGeneratorWeight_sum_mul_cartanBezout`: every simple-root character is
+  primitive, with the explicit integral certificate `TauCeti.E6Minuscule.cartanBezout`.
 
 ## References
 
@@ -87,6 +89,30 @@ theorem rootGeneratorWeight_inl (i j : Fin 6) :
 theorem rootGeneratorWeight_inr (i j : Fin 6) :
     rootGeneratorWeight (.inr i) j = -CartanMatrix.E 6 i j := by
   rw [rootGeneratorWeight]
+
+private def cartanNeighbor : Fin 6 → Fin 6 :=
+  ![2, 3, 0, 1, 3, 4]
+
+/-- A Bézout certificate for the rows of the type-`E₆` Cartan matrix: the coefficient `-1` at a
+neighbour of `i` whose Cartan entry is `-1`, and `0` elsewhere. -/
+def cartanBezout (i j : Fin 6) : ℤ :=
+  if j = cartanNeighbor i then -1 else 0
+
+private theorem cartan_sum_mul_bezout (i : Fin 6) :
+    ∑ j, CartanMatrix.E 6 i j * cartanBezout i j = 1 := by
+  fin_cases i <;> decide
+
+/-- **Every positive simple-root character of type `E₆` is primitive**, with the explicit
+certificate `TauCeti.E6Minuscule.cartanBezout`. -/
+theorem rootGeneratorWeight_sum_mul_cartanBezout (i : Fin 6) :
+    ∑ j, rootGeneratorWeight (.inl i) j * cartanBezout i j = 1 := by
+  simpa only [rootGeneratorWeight_inl] using cartan_sum_mul_bezout i
+
+/-- The negative simple-root character at a node is the negative of the positive one. -/
+theorem rootGeneratorWeight_inr_eq_neg_inl (i : Fin 6) :
+    rootGeneratorWeight (.inr i) = -rootGeneratorWeight (.inl i) := by
+  ext j
+  simp
 
 /-- The character of a raising generator is the corresponding simple root of the pinned
 simply connected type-`E₆` root datum. -/
