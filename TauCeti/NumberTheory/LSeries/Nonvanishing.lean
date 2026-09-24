@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Analysis.Asymptotics.InvSubOne
 
 /-!
 # Nonvanishing on the line `Re s = 1` from a 3-4-1 bound
