@@ -58,12 +58,6 @@ theorem mk_relator (r : freeProfiniteGroup X) (hr : r ∈ rels) : mk rels r = 1 
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
 
-/-- The kernel of the quotient map is the closed normal closure of the relators. -/
-theorem mem_ker_mk_iff (x : freeProfiniteGroup X) :
-    x ∈ (mk rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
-  change (x : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
-  exact QuotientGroup.eq_one_iff x
-
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
 noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
@@ -159,12 +153,6 @@ theorem mk_relator (r : freeProP p X) (hr : r ∈ rels) : mk p rels r = 1 := by
   change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
-
-/-- The kernel of the quotient map is the closed normal closure of the relators. -/
-theorem mem_ker_mk_iff (x : freeProP p X) :
-    x ∈ (mk p rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
-  change (x : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
-  exact QuotientGroup.eq_one_iff x
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
