@@ -53,7 +53,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- **Valuation of a Galois norm after scalar extension.** The norm is the product of the Galois
 conjugates, and each conjugate has the same normalized valuation. -/
-@[simp]
 theorem normalizedValuation_algebraMap_norm [IsGalois K L] (x : Lˣ) :
     normalizedValuation L (Units.map (algebraMap K L : K →* L) (Algebra.normUnits K x)) =
       normalizedValuation L x ^ Module.finrank K L := by
