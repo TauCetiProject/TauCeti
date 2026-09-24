@@ -17,27 +17,13 @@ rigidity statement behind the finiteness of `Aut(F / k)` in genus at least two: 
 group acting on a finite set of at least `2g + 3` rational places embeds into the permutations
 of that set.
 
-The argument is linear algebra on Riemann–Roch spaces.
-
-* At a rational place `Q` fixed by `σ`, the automorphism acts trivially on residues: every `z`
-  regular at `Q` has the same value at `Q` as `σ z`, because both agree with the constant
-  `z(Q) ∈ k` to first order.
-* If `σ` fixes a divisor `D` and a finite set `T` of rational places outside the support of `D`,
-  then for `z ∈ L(D)` the difference `σ z - z` lies in `L(D)` and vanishes on `T`, so it lies in
-  `L(D - ∑_{Q ∈ T} Q)`. When `deg D < #T` that space is zero, so `σ` fixes `L(D)` pointwise.
-* Now let `σ` fix the rational places `P₀, Q₁, …, Q_{2g+2}`. By Riemann–Roch in high degree
-  there are functions `x` and `y` whose only poles are at `P₀`, of orders `2g + 1` and `2g`.
-  Both lie in `L((2g + 1)P₀)`, which `σ` fixes pointwise, so the fixed field `E` of `σ`
-  contains `x` and `y`. Hence `[F : E]` divides `[F : k(x)] = 2g + 1` and, when `g ≥ 1`,
-  `[F : k(y)] = 2g`; so `[F : E] = 1` and `σ` is the identity.
+The proof uses the general residue calculation that an automorphism fixing a rational place has
+the same residue on regular functions, and the resulting Riemann–Roch-space rigidity lemma.
+Applied to prescribed-pole functions, these show that an automorphism fixing sufficiently many
+rational places is the identity.
 
 ## Main results
 
-* `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism
-  fixing a rational place `P` satisfies `v_P (σ z - z) < 1` for every `z ∈ 𝒪_P`.
-* `TauCeti.apply_eq_self_of_mem_riemannRochSpace_of_degree_lt_card`: an automorphism fixing a
-  divisor `D` and a set `T` of more than `deg D` rational places outside its support fixes
-  `L(D)` pointwise.
 * `TauCeti.eq_one_of_two_mul_genus_add_three_le_card`: an automorphism of `F / k` fixing at
   least `2g + 3` rational places is the identity.
 * `TauCeti.eq_of_forall_smul_eq_of_two_mul_genus_add_three_le_card`: two automorphisms agreeing
@@ -58,68 +44,6 @@ open scoped IntermediateField
 namespace TauCeti
 
 open AlgebraicGeometry
-
-section General
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-
-namespace Place
-
-/-- **An automorphism fixing a rational place acts trivially on its residues**: if `σ` fixes the
-place `P` of degree one, then `σ z` and `z` agree to first order at `P` for every `z` regular at
-`P`, that is, `v_P (σ z - z) < 1`. -/
-theorem valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one {σ : F' ≃ₐ[F] F'}
-    {P : Place k F'} (hσ : σ • P = P) (hP : P.degree = 1) {z : F'} (hz : z ∈ P.integers) :
-    P.valuation (σ z - z) < 1 := by
-  obtain ⟨c, hc⟩ := P.degree_eq_one_iff_forall_exists_valuation_sub_lt_one.mp hP z hz
-  have hfix : σ (algebraMap k F' c) = algebraMap k F' c := by
-    rw [IsScalarTower.algebraMap_apply k F F', AlgEquiv.commutes]
-  have hval : P.valuation (σ (z - algebraMap k F' c)) = P.valuation (z - algebraMap k F' c) := by
-    conv_lhs => rw [← hσ]
-    exact valuation_smul_apply σ P _
-  have hsub : σ z - z = σ (z - algebraMap k F' c) - (z - algebraMap k F' c) := by
-    rw [map_sub, hfix, sub_sub_sub_cancel_right]
-  rw [hsub]
-  exact (P.valuation.map_sub _ _).trans_lt (max_lt (hval ▸ hc) hc)
-
-end Place
-
-/-- **An automorphism fixing enough rational places fixes a Riemann–Roch space pointwise.** Let
-`σ` fix the divisor `D`, and let `T` be a finite set of rational places outside the support of
-`D`, each fixed by `σ`. If `deg D < #T`, then `σ z = z` for every `z ∈ L(D)`. -/
-theorem apply_eq_self_of_mem_riemannRochSpace_of_degree_lt_card (hF : IsFunctionField k F')
-    {σ : F' ≃ₐ[F] F'} {D : Divisor k F'} (hD : σ • D = D) {T : Finset (Place k F')}
-    (hT : ∀ Q ∈ T, Q.degree = 1 ∧ σ • Q = Q ∧ D.coeff Q = 0)
-    (hdeg : Divisor.degree D < T.card) {z : F'} (hz : z ∈ riemannRochSpace D) : σ z = z := by
-  classical
-  have hσz : σ z ∈ riemannRochSpace D := by
-    simpa only [hD] using (mem_riemannRochSpace_smul_iff σ D).mpr hz
-  have hw : σ z - z ∈ riemannRochSpace D := (riemannRochSpace D).sub_mem hσz hz
-  by_contra hne
-  have hw0 : σ z - z ≠ 0 := sub_ne_zero.mpr hne
-  -- The difference vanishes at every place of `T`, so it lies in `L(D - ∑_{Q ∈ T} Q)`.
-  have hmem : σ z - z ∈ riemannRochSpace (D - WeilDivisor.ofFinset T) := by
-    refine (mem_riemannRochSpace_iff_neg_le_ord hw0).mpr fun Q ↦ ?_
-    by_cases hQ : Q ∈ T
-    · obtain ⟨hQdeg, hQσ, hQD⟩ := hT Q hQ
-      have hzQ : z ∈ Q.integers := by
-        simpa [hQD] using mem_riemannRochSpace_iff.mp hz Q
-      have hpos := (Q.valuation_lt_one_iff_ord_pos hw0).mp
-        (Q.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one hQσ hQdeg hzQ)
-      simp only [WeilDivisor.coeff_sub, WeilDivisor.coeff_ofFinset, hQ, ite_true, hQD]
-      omega
-    · simpa [hQ] using (mem_riemannRochSpace_iff_neg_le_ord hw0).mp hw Q
-  have hdegT : Divisor.degree (WeilDivisor.ofFinset T : Divisor k F') = T.card := by
-    rw [Divisor.degree_eq_weightedDegree, WeilDivisor.weightedDegree_ofFinset,
-      Finset.sum_congr rfl fun Q hQ ↦ by rw [(hT Q hQ).1, Nat.cast_one]]
-    simp
-  have hbot := riemannRochSpace_eq_bot_of_degree_neg hF
-    (D := D - WeilDivisor.ofFinset T) (by rw [Divisor.degree_sub, hdegT]; omega)
-  rw [hbot, Submodule.mem_bot] at hmem
-  exact hw0 hmem
-
-end General
 
 section Aut
 
