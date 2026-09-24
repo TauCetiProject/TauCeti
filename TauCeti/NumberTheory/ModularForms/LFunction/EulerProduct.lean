@@ -68,7 +68,8 @@ theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
     exact this.trans_lt (mod_cast hs)
   have H := TauCeti.LSeries_localFactor_mul_tsum_eq_one_of_recurrence
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1))
-    h₁ p (f.qExpansion_coeff_prime_pow_add_two h₁ p.prop) hsum
+    h₁ p (f.qExpansion_coeff_prime_pow_add_two h₁ p.prop)
+    (hsum.comp_injective (Nat.pow_right_injective p.prop.two_le))
   simpa only [mul_assoc, prime_cpow_sub] using H
 
 /-- The prime-power sum of a normalized full eigenform is the inverse quadratic Euler factor. -/
@@ -121,6 +122,7 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
 Hecke eigenform `f` with `a₁(f) = 1` and `Re s > k/2 + 1`,
 
 `∏' p, (1 - a_p p^{-s} + χ(p) p^{k-1-2s})⁻¹ = L(s, f)`. -/
+@[simp]
 theorem LSeries_eulerProduct_tprod (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
     ∏' p : Nat.Primes,
