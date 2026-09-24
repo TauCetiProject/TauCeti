@@ -227,24 +227,6 @@ private theorem f4CartanDetectorSummand_eq_bracketSummand
       exact smul_eq_mul _ _
     _ = _ := (f4ModularChevalleyBasis_repr_lie_inr_summand X β k).symm
 
-private noncomputable def f4CartanBracketSum
-    (X : f4ModularChevalleyLieAlgebra) (β : Fin 48) : ZMod 2 :=
-  ∑ k : Fin 4,
-    f4ModularChevalleyBasis.repr X
-        (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) *
-      f4ModularChevalleyBasis.repr
-        ⁅f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)),
-          f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel β))
-
-private theorem f4CartanDetectorSum_eq_bracketSum
-    (X : f4ModularChevalleyLieAlgebra) (β : Fin 48) :
-    (∑ k : Fin 4, f4Root β k • f4CartanCoordinates X k) =
-      f4CartanBracketSum X β := by
-  rw [f4CartanBracketSum]
-  apply Finset.sum_congr rfl
-  intro k _
-  exact f4CartanDetectorSummand_eq_bracketSummand X β k
-
 private theorem f4CartanCoordinates_eq_zero
     (X : f4ModularChevalleyLieAlgebra)
     (hcentral : ∀ β : Fin 48, f4Length β = 1 →
@@ -252,11 +234,6 @@ private theorem f4CartanCoordinates_eq_zero
     f4CartanCoordinates X = 0 := by
   apply eq_zero_of_f4Root_smul_eq_zero_on_short
   intro β hβ
-  let f : f4ChevalleyIndex → ZMod 2 := fun i =>
-    f4ModularChevalleyBasis.repr X i *
-      f4ModularChevalleyBasis.repr
-        ⁅f4ModularChevalleyBasis i, f4ModularRootVector β⁆
-          (Sum.inl (f4KillingRootLabel β))
   have hsum := f4ModularChevalleyBasis_repr_lie_eq_sum X
     (f4ModularRootVector β) (Sum.inl (f4KillingRootLabel β))
   have hzero : f4ModularChevalleyBasis.repr
@@ -266,36 +243,41 @@ private theorem f4CartanCoordinates_eq_zero
         (Sum.inl (f4KillingRootLabel β))) (hcentral β hβ) |>.trans
           (congrArg (fun g => g (Sum.inl (f4KillingRootLabel β)))
             (map_zero f4ModularChevalleyBasis.repr))
-  have htotal : ∑ i : f4ChevalleyIndex, f i = 0 := hsum.symm.trans hzero
-  have hsplit : (∑ r : (F4.cartanSubalgebra valid_F4).root, f (Sum.inl r)) +
-      ∑ r : f4KillingBase.support,
-        f4ModularChevalleyBasis.repr X (Sum.inr r) *
-          f4ModularChevalleyBasis.repr
-            ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
-              (Sum.inl (f4KillingRootLabel β)) = 0 := by
-    exact (Fintype.sum_sum_type f).symm.trans htotal
-  have hroot : ∑ r : (F4.cartanSubalgebra valid_F4).root, f (Sum.inl r) = 0 := by
-    -- Expand the local summand f on the root part of the Chevalley basis.
-    change ∑ r : (F4.cartanSubalgebra valid_F4).root,
-      f4ModularChevalleyBasis.repr X (Sum.inl r) *
+  have htotal : (∑ i : f4ChevalleyIndex,
+      f4ModularChevalleyBasis.repr X i *
         f4ModularChevalleyBasis.repr
-          ⁅f4ModularChevalleyBasis (Sum.inl r), f4ModularRootVector β⁆
-            (Sum.inl (f4KillingRootLabel β)) = 0
-    exact f4ModularChevalleyBasis_sum_inl_lie_self_eq_zero X β
+          ⁅f4ModularChevalleyBasis i, f4ModularRootVector β⁆
+            (Sum.inl (f4KillingRootLabel β))) = 0 := hsum.symm.trans hzero
+  rw [Fintype.sum_sum_type] at htotal
+  have hroot := f4ModularChevalleyBasis_sum_inl_lie_self_eq_zero X β
   have hcartan : ∑ r : f4KillingBase.support,
       f4ModularChevalleyBasis.repr X (Sum.inr r) *
         f4ModularChevalleyBasis.repr
           ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
             (Sum.inl (f4KillingRootLabel β)) = 0 := by
-    simpa only [hroot, zero_add] using hsplit
-  have hindexed : f4CartanBracketSum X β = 0 := by
-    rw [f4CartanBracketSum]
-    exact (f4PinnedSimpleIndexEquiv.symm.sum_comp (fun r =>
-      f4ModularChevalleyBasis.repr X (Sum.inr r) *
-        f4ModularChevalleyBasis.repr
-          ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
-            (Sum.inl (f4KillingRootLabel β)))).trans hcartan
-  exact (f4CartanDetectorSum_eq_bracketSum X β).trans hindexed
+    simpa only [hroot, zero_add] using htotal
+  calc
+    (∑ k : Fin 4, f4Root β k • f4CartanCoordinates X k) =
+        ∑ k : Fin 4,
+          f4ModularChevalleyBasis.repr X
+            (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) *
+          f4ModularChevalleyBasis.repr
+            ⁅f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)),
+              f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel β)) := by
+      apply Finset.sum_congr rfl
+      intro k _
+      exact f4CartanDetectorSummand_eq_bracketSummand X β k
+    _ = ∑ r : f4KillingBase.support,
+          f4ModularChevalleyBasis.repr X (Sum.inr r) *
+          f4ModularChevalleyBasis.repr
+            ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
+              (Sum.inl (f4KillingRootLabel β)) := by
+      exact f4PinnedSimpleIndexEquiv.symm.sum_comp (fun r =>
+        f4ModularChevalleyBasis.repr X (Sum.inr r) *
+          f4ModularChevalleyBasis.repr
+            ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
+              (Sum.inl (f4KillingRootLabel β)))
+    _ = 0 := hcartan
 
 private theorem f4ModularChevalleyBasis_repr_eq_zero_of_long
     (X : f4ModularChevalleyLieAlgebra)

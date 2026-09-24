@@ -174,9 +174,7 @@ theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
         exact hε'
       _ = ((ε • f4IntegralRootVector γ : f4ChevalleyLieLattice) :
           F4.lieAlgebra valid_F4) := by
-        change _ = f4ChevalleyLieLattice.toSubmodule.subtype
-          (ε • f4IntegralRootVector γ)
-        rw [map_smul, Submodule.subtype_apply, coe_f4IntegralRootVector,
+        rw [SetLike.val_smul, coe_f4IntegralRootVector,
           Int.cast_smul_eq_zsmul]
   rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul, hintegral,
     TensorProduct.tmul_smul, TensorProduct.smul_tmul', f4ModularRootVector_eq]

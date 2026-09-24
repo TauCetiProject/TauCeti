@@ -128,7 +128,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
     f4ShortRootBaseChangeQuotient (f4RootExponential k t ((1 : A) ⊗ₜ[ℤ] x)) =
       (1 : A) ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] x) +
         t • ((1 : A) ⊗ₜ[ZMod 2]
-          f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] f4IntegralRootAdjoint k x)) +
+          f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆)) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
           f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
@@ -137,7 +137,8 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
     ((LinearMap.map_quadraticPolynomial q t _ _ _).trans
       (quadraticPolynomial_congr t
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)
-        (f4ShortRootBaseChangeQuotient_tmul (1 : A) (f4IntegralRootAdjoint k x))
+        (f4ShortRootBaseChangeQuotient_tmul (1 : A)
+          (⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆))
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) (f4IntegralDividedAdjointSquare k x))))
 
 /-- The canonical integral lift of a quotient basis coordinate: a long root vector, or the long
@@ -189,22 +190,24 @@ theorem f4IntegralShortRootQuotientLift_mkQ (a : Fin 26) :
   rw [f4IntegralShortRootQuotientLift_modular,
     f4ShortRootSubspace_mkQ_quotientLift]
 
-/-- The reduced first integral divided power on a canonical lift is the named quotient
-first-order column. -/
-theorem f4IntegralRootAdjoint_quotientLift_mkQ
+/-- The bracket of an integral root vector with a canonical lift reduces to the first-order
+quotient column. -/
+theorem f4IntegralRootBracket_quotientLift_mkQ
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :
     f4ShortRootSubspace.mkQ
-        (1 ⊗ₜ[ℤ] f4IntegralRootAdjoint k
-          (f4IntegralShortRootQuotientLift a)) =
+        (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k),
+          f4IntegralShortRootQuotientLift a⁆) =
       f4ShortRootQuotientFirstColumn k a := by
   let x := f4IntegralShortRootQuotientLift a
   let q := f4ShortRootSubspace.mkQ
+  have hbracket : ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
+        (1 : ZMod 2) ⊗ₜ[ℤ] x⁆ =
+      (1 : ZMod 2) ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆ := by
+    rw [f4ModularRootVector_eq, LieAlgebra.ExtendScalars.bracket_tmul, one_mul]
   calc
-    q (1 ⊗ₜ[ℤ] f4IntegralRootAdjoint k x) =
-        q (f4ModularRootAdjoint k (1 ⊗ₜ[ℤ] x)) :=
-      congrArg q (f4ModularRootAdjoint_tmul k x).symm
-    _ = q ⁅f4ModularRootVector (f4SignedSimpleRootIndex k), 1 ⊗ₜ[ℤ] x⁆ :=
-      congrArg q (f4ModularRootAdjoint_tmul_eq_lie k x)
+    q (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆) =
+        q ⁅f4ModularRootVector (f4SignedSimpleRootIndex k), 1 ⊗ₜ[ℤ] x⁆ :=
+      congrArg q hbracket.symm
     _ = q ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
           f4ShortRootQuotientLift a⁆ :=
       congrArg q (congrArg
@@ -266,8 +269,8 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientL
       (1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientBasis a +
         t • ((1 : A) ⊗ₜ[ZMod 2]
           f4ShortRootSubspace.mkQ
-            (1 ⊗ₜ[ℤ] f4IntegralRootAdjoint k
-              (f4IntegralShortRootQuotientLift a))) +
+            (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k),
+              f4IntegralShortRootQuotientLift a⁆)) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
           f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k
@@ -298,7 +301,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns
   have h := f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientLift
     (A := A) k t a
   have h₁ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-    (f4IntegralRootAdjoint_quotientLift_mkQ k a)
+    (f4IntegralRootBracket_quotientLift_mkQ k a)
   have h₂ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
     (f4IntegralDividedAdjointSquare_quotientLift_mkQ k a)
   exact h.trans (quadraticPolynomial_congr t rfl h₁ h₂)
