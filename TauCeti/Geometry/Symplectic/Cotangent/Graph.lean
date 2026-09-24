@@ -101,7 +101,7 @@ theorem isLagrangian_hessian_graph {f : V → ℝ} {x : V}
   exact hf.isSymmSndFDerivAt (by norm_num)
 
 /-- The derivative of the graph map of `df` is the graph map of the Hessian. -/
-theorem fderiv_cotangent_differential_graph {f : V → ℝ} {x : V}
+@[simp] theorem fderiv_cotangent_differential_graph {f : V → ℝ} {x : V}
     (hf : DifferentiableAt ℝ (fderiv ℝ f) x) :
     fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x =
       (ContinuousLinearMap.id ℝ V).prod (fderiv ℝ (fderiv ℝ f) x) := by
