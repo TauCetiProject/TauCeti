@@ -75,7 +75,6 @@ variable {K : Type u} [Field K]
 variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- The finite rank of `V` is unchanged by extension to a finite-place completion. -/
-@[simp]
 theorem finrank_atFinitePlace [NumberField K] [FiniteDimensional K V]
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) :
     Module.finrank (v.adicCompletion K) (v.FiniteScalarExtension (V := V)) =
