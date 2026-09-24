@@ -22,9 +22,9 @@ nonarchimedean local fields. Mapping the norm back to the extension field raises
 valuation to the extension degree. The intrinsic formula is
 `v_K(N_{L/K}(x)) = f(L/K) v_L(x)`.
 
-The formula is the valuation input to the norm-group criterion for unramified extensions.  The
-subsequent surjectivity-on-units argument identifies the entire norm group; this file deliberately
-records only the valuation computation that that argument uses.
+The formula is the valuation input to the norm-group criterion for unramified extensions, which
+`TauCeti.NumberTheory.LocalField.Norm.Unramified` combines with surjectivity of the norm on units
+to identify the entire norm group.
 
 ## Main results
 
