@@ -19,7 +19,8 @@ rings are discrete valuation rings and whose structure morphism satisfies the ex
 the valuative criterion (a proper curve, for instance), so that its codimension-one points are the
 places of the function field `k(X)`. This file identifies the cohomology of the sheaves
 `𝒪_X(D)` with the function-field objects of Weil's theory of repartitions and differentials, and
-deduces **Serre duality** in the form
+when `k` is integrally closed in `k(X)` (`IsIntegrallyClosedIn k X.functionField`), deduces
+**Serre duality** in the form
 
 `H¹(X, 𝒪_X(D))^∨ ≃ H⁰(X, 𝒪_X(K - D))`,
 
@@ -39,8 +40,9 @@ Combined with the function-field duality `L(W - D) ≃ Ω(D)`, `x ↦ x · ω`, 
 nonzero Weil differential `ω`, this is Serre duality. The pairing is explicit: a section `f` of
 `𝒪_X(K - D)` pairs with the class of a repartition `a` to `ω(f · a)`.
 
-Taking `D = 0` computes the genus: `dim_k H¹(X, 𝒪_X)` is the genus of the function field, and a
-canonical divisor has degree `2g - 2`.
+Under the same constant-field hypothesis, taking `D = 0` computes the genus:
+`dim_k H¹(X, 𝒪_X)` is the genus of the function field, and a canonical divisor has degree
+`2g - 2`.
 
 ## Main declarations
 
@@ -196,9 +198,10 @@ variable (hk : IsIntegrallyClosedIn k X.functionField)
   (hK : IsGreatest {E : Divisor k X.functionField | ω ∈ weilDifferentialFiltration E}
     (equivFunctionFieldDivisor hex hdim K))
 
-/-- **Serre duality for divisor sheaves on a curve.** Let `ω` be a nonzero Weil differential of
-the function field and `K` the divisor on `X` corresponding to its divisor `(ω)`. For every Weil
-divisor `D`, the dual of `H¹(X, 𝒪_X(D))` is `H⁰(X, 𝒪_X(K - D))`; a section `f` pairs with the
+/-- **Serre duality for divisor sheaves on a curve with `k` integrally closed in `k(X)`.**
+Let `ω` be a nonzero Weil differential of the function field and `K` the divisor on `X`
+corresponding to its divisor `(ω)`. For every Weil divisor `D`, the dual of `H¹(X, 𝒪_X(D))` is
+`H⁰(X, 𝒪_X(K - D))`; a section `f` pairs with the
 class of a repartition `a` to `ω(f · a)`
 (`SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne`).
 -/
@@ -236,8 +239,9 @@ section Dimension
 variable [IsNoetherian X] (hF : IsFunctionField k X.functionField)
   (hk : IsIntegrallyClosedIn k X.functionField)
 
-/-- **Serre duality, in dimensions.** For every canonical divisor `K` on the curve `X` (a divisor
-whose function-field divisor represents the canonical class) and every Weil divisor `D`,
+/-- **Serre duality, in dimensions.** Assume `k` is integrally closed in `k(X)`. For every
+canonical divisor `K` on the curve `X` (a divisor whose function-field divisor represents the
+canonical class) and every Weil divisor `D`,
 `dim_k H¹(X, 𝒪_X(D)) = dim_k H⁰(X, 𝒪_X(K - D))`. -/
 theorem finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
     {K : SchemeWeilDivisor X}
@@ -252,8 +256,8 @@ theorem finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
   exact (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hW D).finrank_eq
 
 include hex hdim hF hk in
-/-- The first cohomology of `𝒪_X(0)` has dimension the genus of the function field: its dual is
-the space of regular Weil differentials. -/
+/-- When `k` is integrally closed in `k(X)`, the first cohomology of `𝒪_X(0)` has dimension the
+genus of the function field: its dual is the space of regular Weil differentials. -/
 theorem finrank_cohomology_one_sheaf_zero_eq_genus :
     finrank k (Scheme.Modules.Cohomology (sheaf (0 : SchemeWeilDivisor X)) 1) =
       genus k X.functionField := by
@@ -265,16 +269,17 @@ theorem finrank_cohomology_one_sheaf_zero_eq_genus :
 variable [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
 include hex hdim hF hk in
-/-- **The genus of a curve is the genus of its function field.** The genus `dim_k H¹(X, 𝒪_X)` of
-`X` agrees with the genus of `k(X)` defined through Riemann's theorem. -/
+/-- **The genus of a curve is the genus of its function field when `k` is integrally closed in
+`k(X)`.** The genus `dim_k H¹(X, 𝒪_X)` of `X` agrees with the genus of `k(X)` defined through
+Riemann's theorem. -/
 theorem genus_eq_genus_functionField :
     X.genus k = genus k X.functionField := by
   rw [Scheme.genus_def, ← Scheme.Modules.finrank_cohomology_congr k (sheafZeroIsoTrivial hdim) 1]
   exact finrank_cohomology_one_sheaf_zero_eq_genus hex hdim hF hk
 
-/-- **A canonical divisor has degree `2g - 2`.** Every divisor `K` on `X` whose
-function-field divisor represents the canonical class has degree `2g - 2`, where
-`g = dim_k H¹(X, 𝒪_X)` is the genus of `X`. -/
+/-- **A canonical divisor has degree `2g - 2` when `k` is integrally closed in `k(X)`.** Every
+divisor `K` on `X` whose function-field divisor represents the canonical class has degree
+`2g - 2`, where `g = dim_k H¹(X, 𝒪_X)` is the genus of `X`. -/
 theorem relativeDegree_eq_two_mul_genus_sub_two {K : SchemeWeilDivisor X}
     (hK : (Place.orderSystem hF).divisorClass (equivFunctionFieldDivisor hex hdim K) =
       canonicalClass hF hk) :
