@@ -37,7 +37,7 @@ def productOneGeneratedSubgroup (p : G × G × G) : Subgroup G :=
   rw [productOneGeneratedSubgroup, Subgroup.closure_le]
   simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
 
-variable [Fintype G] [DecidableEq G]
+variable [Fintype G]
 
 open scoped Classical in
 /-- The product-one triples in three ambient conjugacy classes whose entries lie in `H`.
@@ -47,12 +47,14 @@ noncomputable def productOneTriplesIn (C0 C1 Cinf : ConjClasses G) (H : Subgroup
     Finset (G × G × G) :=
   (productOneTriples C0 C1 Cinf).filter fun p ↦ p.1 ∈ H ∧ p.2.1 ∈ H
 
+open Classical in
 @[simp] theorem mem_productOneTriplesIn {C0 C1 Cinf : ConjClasses G}
     {H : Subgroup G} {p : G × G × G} :
     p ∈ productOneTriplesIn C0 C1 Cinf H ↔
       p ∈ productOneTriples C0 C1 Cinf ∧ p.1 ∈ H ∧ p.2.1 ∈ H := by
   simp [productOneTriplesIn]
 
+open Classical in
 /-- The third entry also lies in `H`: the product-one equation forces it to be the inverse
 of the product of the first two entries. -/
 theorem productOneTriplesIn.third_mem {C0 C1 Cinf : ConjClasses G}
@@ -70,12 +72,14 @@ noncomputable def generatingProductOneTriples (C0 C1 Cinf : ConjClasses G) (H : 
     Finset (G × G × G) :=
   (productOneTriples C0 C1 Cinf).filter fun p ↦ productOneGeneratedSubgroup p = H
 
+open Classical in
 @[simp] theorem mem_generatingProductOneTriples {C0 C1 Cinf : ConjClasses G}
     {H : Subgroup G} {p : G × G × G} :
     p ∈ generatingProductOneTriples C0 C1 Cinf H ↔
       p ∈ productOneTriples C0 C1 Cinf ∧ productOneGeneratedSubgroup p = H := by
   simp [generatingProductOneTriples]
 
+open Classical in
 /-- A generating product-one triple lies in the subgroup it generates. -/
 theorem generatingProductOneTriples_subset_in (C0 C1 Cinf : ConjClasses G)
     (H : Subgroup G) :
@@ -85,6 +89,7 @@ theorem generatingProductOneTriples_subset_in (C0 C1 Cinf : ConjClasses G)
   exact mem_productOneTriplesIn.mpr
     ⟨hprod, (productOneGeneratedSubgroup_le_iff p H).mp hgen.le⟩
 
+open Classical in
 /-- Restricting product-one triples to the whole group changes nothing. -/
 @[simp] theorem productOneTriplesIn_top (C0 C1 Cinf : ConjClasses G) :
     productOneTriplesIn C0 C1 Cinf ⊤ = productOneTriples C0 C1 Cinf := by
