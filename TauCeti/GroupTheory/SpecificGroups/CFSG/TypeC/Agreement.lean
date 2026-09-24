@@ -65,7 +65,8 @@ simple.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III.
 
 The organization follows the rank-two comparison in
-`TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Agreement`.
+`TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Agreement` and the type-`A` comparison in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Agreement`.
 -/
 
 public section
@@ -97,11 +98,6 @@ noncomputable def pinnedEquivSymplectic : d.PinnedGroup ≃* d.StandardGroup :=
 preserves the underlying matrix. -/
 noncomputable def carrierEquivSymplectic : d.AmbientGroup ≃* d.StandardGroup :=
   SpStd.pointsMulEquivGLSymplecticFin d.carrierRank d.1.Closure
-
-/-- The carrier equivalence acts through the canonical identification with symplectic matrices. -/
-theorem carrierEquivSymplectic_apply (g : d.AmbientGroup) :
-    d.carrierEquivSymplectic g = SpStd.pointsMulEquivGLSymplecticFin d.carrierRank d.1.Closure g :=
-  (rfl)
 
 /-- **The explicit type-`C` carrier is equivalent to the points of the pinned `Sp_{2r}/ℤ` group
 scheme.** -/
