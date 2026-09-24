@@ -269,6 +269,15 @@ theorem stableConeTriangleOf_obj₂
       E.projectiveStableFunctor.obj Y := by
   simp only [stableConeTriangleOf, stableConeTriangle_obj₂]
 
+/-- A chosen stable cone triangle is the cone triangle of a representative of its morphism. -/
+theorem stableConeTriangleOf_exists_rep
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    ∃ g : X ⟶ Y, E.projectiveStableFunctor.map g = f ∧
+      (letI := hE.stableHasShift; hE.stableConeTriangleOf f = hE.stableConeTriangle g) := by
+  refine ⟨Classical.choose (E.projectiveStableFunctor.map_surjective f),
+    Classical.choose_spec (E.projectiveStableFunctor.map_surjective f), ?_⟩
+  rfl
+
 /-- The cone triangle of any stable-category morphism is distinguished. -/
 @[simp]
 theorem stableConeTriangleOf_mem
