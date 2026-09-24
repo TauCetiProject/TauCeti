@@ -5,8 +5,9 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+import TauCeti.Algebra.QuadraticDiscriminant
 
 /-!
 # The binary quadratic form of a `2 × 2` matrix
@@ -16,14 +17,15 @@ To a matrix `M = !![a, b; c, d]` we attach the binary quadratic form
 with columns `v` and `M v` (this is not the Gram form `vᵀ M v`). Its roots are the fixed points of
 `M` acting by Möbius transformations: for invertible `M`, `Q_M(z, 1)` is Mathlib's
 `Matrix.GeneralLinearGroup.fixpointPolynomial`. The discriminant of `Q_M` is `tr(M)² - 4 det M`,
+Mathlib's `Matrix.discr M`,
 and conjugating `M` by `γ ∈ SL(2, R)` acts on `Q_M` by the action `γ • f = f ∘ γ⁻¹` of
 `TauCeti.BinaryQuadraticForm.Basic`.
 
 Over `ℤ`, `M ↦ Q_M` is a bijection between the matrices of trace `t` and determinant `n` and the
 forms of discriminant `t² - 4 n`: the form determines `c`, `b` and `d - a`, the trace determines
-`a + d`, and `b² - 4 a c = t² - 4 n` forces `d - a ≡ t (mod 2)`. This is the correspondence through
-which the Eichler–Selberg trace formula counts the elliptic conjugacy classes of matrices of
-determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
+`a + d`, and `(d - a)² + 4 b c = t² - 4 n` forces `d - a ≡ t (mod 2)`. This is the correspondence
+through which the Eichler–Selberg trace formula counts the elliptic conjugacy classes of matrices
+of determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
 
 ## Main definitions
 
@@ -86,6 +88,21 @@ theorem discrim_ofMatrix (M : Matrix (Fin 2) (Fin 2) R) :
   simp only [discrim_def, discrim, trace_fin_two, det_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c]
   ring
 
+/-- The discriminant of `Q_M` is Mathlib's discriminant `Matrix.discr M` of `M`. -/
+theorem discrim_ofMatrix_eq_discr (M : Matrix (Fin 2) (Fin 2) R) :
+    (ofMatrix M).discrim = M.discr := by
+  rw [discrim_ofMatrix, discr_fin_two]
+
+/-- For `g ∈ GL(2, R)`, `Q_g(z, 1)` is Mathlib's fixed-point polynomial of `g` evaluated at `z`,
+whose roots are the fixed points of `g` acting by Möbius transformations. -/
+theorem eval_ofMatrix_eq_eval_fixpointPolynomial (g : GL (Fin 2) R) (z : R) :
+    (ofMatrix (g : Matrix (Fin 2) (Fin 2) R)).eval z 1 =
+      (GeneralLinearGroup.fixpointPolynomial g).eval z := by
+  simp only [eval_def, ofMatrix_a, ofMatrix_b, ofMatrix_c, GeneralLinearGroup.fixpointPolynomial,
+    Polynomial.eval_sub, Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_C,
+    Polynomial.eval_pow, Polynomial.eval_X]
+  ring
+
 /-- Conjugation by `γ ∈ SL(2, R)` acts on `Q_M` as `γ` acts on forms: `Q_{γ M γ⁻¹} = γ • Q_M`. -/
 theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     ofMatrix (γ * M * γ⁻¹ : Matrix (Fin 2) (Fin 2) R) = γ • ofMatrix M := by
@@ -96,7 +113,10 @@ theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
 
 private theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
     (hf : f.discrim = t ^ 2 - 4 * n) : 2 * ((t - f.b) / 2) = t - f.b :=
-  Int.mul_ediv_cancel' (by grind [discrim_def, discrim, Int.sq_emod_four t, Int.sq_emod_four f.b])
+  Int.two_mul_ediv_two_of_even <| by
+    have := Int.discrim_emod_four f.a f.b f.c
+    rw [← discrim_def, hf] at this
+    grind [Int.sq_emod_four t]
 
 /-- For `t n : ℤ`, `M ↦ Q_M` is a bijection from the integer matrices of trace `t` and determinant
 `n` to the integral forms of discriminant `t² - 4 n`. The inverse sends `f = ⟨a, b, c⟩` to
@@ -110,10 +130,10 @@ def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t �
     grind [two_mul_ediv_two_of_discrim_eq f.2, discrim_def, discrim]⟩
   left_inv M := by
     obtain ⟨M, rfl, -⟩ := M
-    ext1
-    dsimp only
-    rw [trace_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg,
-      show (M 0 0 + M 1 1 - (M 1 1 - M 0 0)) / 2 = M 0 0 by lia, add_sub_cancel_left, ← eta_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp only [trace_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg, Fin.zero_eta,
+        Fin.mk_one, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> omega
   right_inv f := by
     ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.2]
 
@@ -122,6 +142,15 @@ def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t �
 theorem coe_ofMatrixEquiv_apply {t n : ℤ}
     (M : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n}) :
     (ofMatrixEquiv t n M : BinaryQuadraticForm ℤ) = ofMatrix M :=
+  (rfl)
+
+/-- The inverse of `ofMatrixEquiv t n` sends `f = ⟨a, b, c⟩` to
+`!![(t - b) / 2, -c; a, t - (t - b) / 2]`. -/
+@[simp]
+theorem coe_ofMatrixEquiv_symm_apply {t n : ℤ}
+    (f : {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n}) :
+    ((ofMatrixEquiv t n).symm f : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2] :=
   (rfl)
 
 end BinaryQuadraticForm
