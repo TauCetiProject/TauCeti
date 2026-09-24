@@ -19,14 +19,8 @@ Let `U = R(T/s)` be a rational subset of `Spa (A, A⁺)` with coordinate ring `A
 `f ∈ A⟨T/s⟩` does not vanish at `x_U`, that is `f ∉ supp x_U`, exactly when `f` becomes a unit in
 the coordinate ring of some rational neighbourhood `R(T'/s') ⊆ R(T/s)` of `x`.
 
-This is the input for the locality of the stalks of the structure presheaf: it says that the germ
-at `x` of `f` should be invertible exactly when `f` does not vanish at `x`.
-
-The nontrivial direction runs as follows. The locus of `Spa (A⟨T/s⟩, A_U⁺)` where `f` does not
-vanish is open, so it contains a rational neighbourhood of `x_U`; by Proposition 8.2 (2) that
-neighbourhood is the trace of a rational subset `R(T'/s') ⊆ R(T/s)` of `Spa (A, A⁺)`. No point of
-`Spa (A⟨T'/s'⟩, A_U'⁺)` kills the image of `f`, and since `A⟨T'/s'⟩` is complete this makes the
-image a unit (Proposition 7.52 (2)).
+This criterion supplies the local unit calculation for proving that the stalk of the structure
+presheaf at `x` is a local ring whose maximal ideal is the support of the point valuation.
 
 ## Main results
 
@@ -94,7 +88,7 @@ private theorem spaComap_pairHomOfRationalSubsetSubset_spaCompletedLocalizationH
 /-- **Vanishing at `x` is compatible with restriction.** For a containment `R(T'/s') ⊆ R(T/s)` and
 a point `x ∈ R(T'/s')`, the image of `f ∈ A⟨T/s⟩` in `A⟨T'/s'⟩` lies in the support of the point
 over `x` exactly when `f` does. -/
-theorem ringHomOfRationalSubsetSubset_mem_supp_iff
+@[simp] theorem ringHomOfRationalSubsetSubset_mem_supp_iff
     (P : PairOfDefinition A)
     (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A) (S : Type*) [CommRing S]
