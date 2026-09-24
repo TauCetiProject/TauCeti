@@ -154,8 +154,11 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {X Y Z : TopRep.{v} R G}
 
 /-- A homogeneous cochain is carried by the cochain map to its image under the level map of the
-coinduced resolution. -/
-@[simp]
+coinduced resolution.
+
+This is deliberately not `@[simp]`, like Mathlib's `ContinuousCohomology.cochainsMap_f_hom`:
+`simp` first unfolds the carrier types in the implicit arguments of the left-hand side, after
+which this statement no longer matches (the `simpNF` linter rejects it). -/
 theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
     (v : (TopRep.resolutionX X (n + 1)).ρ.invariants) :
     Subtype.val (((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom v) =
