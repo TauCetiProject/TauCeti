@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.BaseChange
 
@@ -26,6 +27,8 @@ identities are from `TauCeti.RingTheory.NormTrace.BaseChange`.
   and trace of `x ∈ L` are the product and sum of the local norms and traces of `x`.
 * `TauCeti.trace_semilocalEquiv_symm_single_mul`: the trace pairing of one semilocal component
   with a global element is its local trace pairing.
+* `TauCeti.trace_integralSemilocalToField_tmul_mul`: the trace pairing of an integral pure tensor
+  with a global element commutes with extension to the completed field.
 
 ## References
 
@@ -48,10 +51,24 @@ variable {K : Type u} [Field K] [NumberField K]
 variable (L : Type v) [Field L] [NumberField L] [Algebra K L]
 variable (v : HeightOneSpectrum (𝒪 K))
 
+/-- The trace of a pure integral tensor paired with a global element is a scalar extension of
+the global trace pairing. -/
+theorem trace_integralSemilocalToField_tmul_mul
+    (a : v.adicCompletionIntegers K) (x : 𝒪 L) (d : L) :
+    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
+        (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
+      (a : v.adicCompletion K) *
+        algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
+  have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
+      (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
+    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
+    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
+
 attribute [local instance] Fintype.ofFinite in
 /-- The norm of the semilocal algebra `K_v ⊗[K] L` over `K_v` is the product of the norms of the
 components of the semilocal decomposition. -/
-theorem norm_eq_prod_norm_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
+@[simp] theorem norm_eq_prod_norm_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
     Algebra.norm (v.adicCompletion K) ξ =
       ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K) (semilocalEquiv L v ξ w) := by
@@ -74,7 +91,7 @@ theorem algebraMap_norm_eq_prod_norm (x : L) :
 attribute [local instance] Fintype.ofFinite in
 /-- The trace of the semilocal algebra `K_v ⊗[K] L` over `K_v` is the sum of the traces of the
 components of the semilocal decomposition. -/
-theorem trace_eq_sum_trace_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
+@[simp] theorem trace_eq_sum_trace_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) ξ =
       ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L) (semilocalEquiv L v ξ w) := by

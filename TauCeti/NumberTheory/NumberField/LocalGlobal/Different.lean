@@ -127,20 +127,6 @@ private theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (
   rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
     algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
 
-/-- The trace of a pure integral tensor paired with a global element is a scalar extension of
-the global trace pairing. -/
-private theorem trace_integralSemilocalToField_tmul_mul
-    (a : v.adicCompletionIntegers K) (x : 𝒪 L) (d : L) :
-    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
-        (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
-      (a : v.adicCompletion K) *
-        algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
-  have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
-      (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
-    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
-
 /-- On the image of `𝒪_v ⊗[𝒪 K] 𝒪 L`, the trace pairing with an element of the global trace dual
 takes values in `𝒪_v`. -/
 private theorem trace_integralSemilocalToField_mul_mem {d : L}
@@ -189,7 +175,7 @@ private theorem algebraMap_mem_traceDual_adicCompletionIntegers {d : L}
 
 /-- **The local trace dual is spanned by the global one.** The trace dual of `𝒪_w` over `𝒪_v` is
 the `𝒪_w`-span of the image in `L_w` of the trace dual of `𝒪 L` over `𝒪 K`. -/
-theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
+@[simp] theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
     Submodule.span (w.adicCompletionIntegers L)
         (algebraMap L (w.adicCompletion L) ''
           Submodule.traceDual (𝒪 K) K (1 : Submodule (𝒪 L) L)) =
@@ -212,7 +198,7 @@ theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
 
 /-- **Trace duals commute with completion**, as fractional ideals: extending the trace dual of
 `𝒪 L` over `𝒪 K` to `𝒪_w` gives the trace dual of `𝒪_w` over `𝒪_v`. -/
-theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
+@[simp] theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
     (FractionalIdeal.dual (𝒪 K) K (1 : FractionalIdeal (𝒪 L)⁰ L)).extended (w.adicCompletion L)
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective (𝒪 L) (w.adicCompletionIntegers L))) =
@@ -235,7 +221,7 @@ theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
 
 /-- **The different commutes with completion.** The different ideal of `𝒪 L` over `𝒪 K` generates
 in `𝒪_w` the different ideal of `𝒪_w` over `𝒪_v`. -/
-theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
+@[simp] theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
     (differentIdeal (𝒪 K) (𝒪 L)).map (algebraMap (𝒪 L) (w.adicCompletionIntegers L)) =
       differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) := by
   rw [← FractionalIdeal.coeIdeal_inj (K := w.adicCompletion L),

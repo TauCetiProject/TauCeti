@@ -29,8 +29,8 @@ coefficients remain in `A` whenever `x` pairs integrally with `B`.
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
-* `TauCeti.exists_smul_mem_span_basis`: every integral element has a nonzero multiple in the
-  span of an integral lift of a fraction-field basis.
+* `TauCeti.exists_smul_mem_span_basis`: every element of an algebra embedded in `L` has a
+  nonzero multiple in the span of lifts of a fraction-field basis.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
 
@@ -60,11 +60,12 @@ private theorem algebraMap_smul_eq (r : A) (y : B) :
   rw [Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply,
     IsScalarTower.algebraMap_apply A K L, ← Algebra.smul_def]
 
-omit [FiniteDimensional K L] [Algebra.IsSeparable K L] in
-/-- Every element of `B` has a nonzero multiple in the `A`-span of a `K`-basis of `L` consisting
-of elements of `B`. -/
+omit [FiniteDimensional K L] [Algebra.IsSeparable K L] [IsIntegralClosure B A L] in
+/-- If `B` embeds in `L`, every element of `B` has a nonzero multiple in the `A`-span of lifts
+in `B` of a `K`-basis of `L`. -/
 theorem exists_smul_mem_span_basis {ι : Type*} [Finite ι] (b : Basis ι K L) (b' : ι → B)
-    (hb' : ∀ i, algebraMap B L (b' i) = b i) (x : B) :
+    (hb' : ∀ i, algebraMap B L (b' i) = b i)
+    (hinj : Function.Injective (algebraMap B L)) (x : B) :
     ∃ a : A, a ≠ 0 ∧ a • x ∈ Submodule.span A (Set.range b') := by
   classical
   have := Fintype.ofFinite ι
@@ -73,7 +74,7 @@ theorem exists_smul_mem_span_basis {ι : Type*} [Finite ι] (b : Basis ι K L) (
   choose c hc using fun i ↦ hint i (Finset.mem_univ i)
   refine ⟨a, nonZeroDivisors.ne_zero ha, ?_⟩
   have hx : a • x = ∑ i, c i • b' i := by
-    apply IsIntegralClosure.algebraMap_injective B A L
+    apply hinj
     rw [algebraMap_smul_eq A K, map_sum, ← b.sum_repr (algebraMap B L x), Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [algebraMap_smul_eq A K, hb', hc i, smul_smul, Algebra.smul_def (a : A)]
@@ -98,7 +99,8 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   have hg : Set.EqOn g₁ g₂ (Set.range b') := by
     rintro _ ⟨i, rfl⟩
     simp [g₁, g₂, φ, hb']
-  obtain ⟨a, ha, hax⟩ := exists_smul_mem_span_basis A K b b' hb' x
+  obtain ⟨a, ha, hax⟩ := exists_smul_mem_span_basis A K b b' hb'
+    (IsIntegralClosure.algebraMap_injective B A L) x
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
   have ha' : algebraMap A K a ≠ 0 := (IsFractionRing.injective A K).ne_iff' (map_zero _) |>.mpr ha
