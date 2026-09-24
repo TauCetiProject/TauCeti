@@ -58,8 +58,9 @@ theorem measurable_dirichletMeasure :
     refine (Measure.measurable_map dirichletNormalize measurable_dirichletNormalize).comp
       (measurable_withDensity ?_)
     refine Finset.measurable_prod _ fun i _ ↦ ?_
-    exact measurable_uncurry_gammaPDF.comp (show Measurable
-      (fun q : (ι → ℝ) × (ι → ℝ) ↦ ((q.1 i, (1 : ℝ)), q.2 i)) from by fun_prop)
+    have hcoord : Measurable
+        (fun q : (ι → ℝ) × (ι → ℝ) ↦ ((q.1 i, (1 : ℝ)), q.2 i)) := by fun_prop
+    exact measurable_uncurry_gammaPDF.comp hcoord
 
 end Probability
 
