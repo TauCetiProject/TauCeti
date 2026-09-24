@@ -33,7 +33,7 @@ reverse norm one.
   even elements and differ by `(-1) ^ r` on a product of `r` vectors.
 * `CliffordAlgebra.cliffordNorm`: the unit-valued reverse norm on the Lipschitz group, with its
   defining equation `CliffordAlgebra.reverse_mul_self_eq_algebraMap_cliffordNorm`.
-* `CliffordAlgebra.cliffordNorm_unitι`: an anisotropic vector `v` has reverse norm `Q v`.
+* `CliffordAlgebra.cliffordNorm_unitι`: a vector `v` with unit `Q v` has reverse norm `Q v`.
 * `CliffordAlgebra.cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul`: rescaling by a scalar unit
   `c` multiplies the reverse norm by `c ^ 2`.
 * `CliffordAlgebra.lipschitzNorm_eq_cliffordNorm_of_mem_even` and
@@ -117,7 +117,7 @@ private theorem reverse_inv_mul_inv {x : (CliffordAlgebra Q)ˣ} {r : Rˣ}
           ↑x⁻¹ := by rw [hx, map_mul]
       _ = algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * reverse (x : CliffordAlgebra Q) := by
           rw [mul_assoc, mul_assoc, Units.mul_inv, mul_one]
-  nth_rw 2 [hinv]
+  conv_lhs => rhs; rw [hinv]
   rw [← mul_assoc, ← Algebra.commutes, mul_assoc, ← reverse.map_mul, Units.mul_inv,
     reverse.map_one, mul_one]
 
@@ -156,7 +156,7 @@ private theorem reverse_mul_self_eq_cliffordNormUnit (x : lipschitzGroup Q) :
 
 variable (Q) in
 /-- The **Clifford norm** `x ↦ reverse x * x` on the Lipschitz group, as a unit-valued
-homomorphism. It takes the value `Q v` on an anisotropic vector `v` (`cliffordNorm_unitι`). It
+homomorphism. It takes the value `Q v` when `Q v` is a unit (`cliffordNorm_unitι`). It
 agrees with the `star` norm `lipschitzNorm` on even elements and is its negative on odd ones. -/
 noncomputable def cliffordNorm : lipschitzGroup Q →* Rˣ where
   toFun := cliffordNormUnit Q
@@ -189,7 +189,7 @@ theorem self_mul_reverse_eq_algebraMap_cliffordNorm (x : lipschitzGroup Q) :
       algebraMap R (CliffordAlgebra Q) (cliffordNorm Q x : R) :=
   self_mul_reverse_of_reverse_mul_self (reverse_mul_self_eq_algebraMap_cliffordNorm x)
 
-/-- An anisotropic vector `v` has Clifford norm `Q v`, with no sign. -/
+/-- A vector `v` with unit `Q v` has Clifford norm `Q v`, with no sign. -/
 @[simp]
 theorem cliffordNorm_unitι (v : M) [Invertible (Q v)] :
     cliffordNorm Q ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ = unitOfInvertible (Q v) := by
