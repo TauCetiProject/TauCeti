@@ -56,7 +56,9 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   symmetry, `2`-torsion, square-class invariance and the Steinberg relation.
 * `TauCeti.BrauerGroup.quaternionClass_mul`, `TauCeti.BrauerGroup.quaternionClass_mul_left`:
   **bilinearity of the quaternion symbol**.
-* `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes.
+* `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes,
+  which is symmetric and bilinear (`quaternionClassOnSquareClasses_comm`,
+  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
 
@@ -285,17 +287,56 @@ private theorem quaternionClass_congr_squareClass_right {a b c : Kˣ}
 noncomputable def quaternionClassOnSquareClasses (x y : SquareClassGroup K) : BrauerGroup K :=
   quaternionClass (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
 
+omit [Invertible (2 : K)] in
+private theorem squareClass_toMul_out (x : SquareClassGroup K) :
+    squareClass (Additive.toMul (Quotient.out x)) = x := by
+  rw [squareClass_def, ofMul_toMul]
+  exact Quotient.out_eq x
+
 /-- The square-class pairing agrees with the quaternion symbol on representatives. -/
 @[simp]
 theorem quaternionClassOnSquareClasses_squareClass (a b : Kˣ) :
     quaternionClassOnSquareClasses (squareClass a) (squareClass b) = quaternionClass a b := by
-  have hout (x : SquareClassGroup K) :
-      squareClass (Additive.toMul (Quotient.out x)) = x := by
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq x
   unfold quaternionClassOnSquareClasses
-  rw [quaternionClass_congr_squareClass_left (hout (squareClass a)),
-    quaternionClass_congr_squareClass_right (hout (squareClass b))]
+  rw [quaternionClass_congr_squareClass_left (squareClass_toMul_out (squareClass a)),
+    quaternionClass_congr_squareClass_right (squareClass_toMul_out (squareClass b))]
+
+/-- The square-class pairing is symmetric. -/
+theorem quaternionClassOnSquareClasses_comm (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x y = quaternionClassOnSquareClasses y x := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, quaternionClassOnSquareClasses_squareClass,
+    quaternionClass_comm]
+
+/-- The square-class pairing is additive in its first argument. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_add_left (x y z : SquareClassGroup K) :
+    quaternionClassOnSquareClasses (x + y) z =
+      quaternionClassOnSquareClasses x z * quaternionClassOnSquareClasses y z := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, ← squareClass_toMul_out z,
+    ← squareClass_mul]
+  simp only [quaternionClassOnSquareClasses_squareClass, quaternionClass_mul_left]
+
+/-- The square-class pairing is additive in its second argument. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_add_right (x y z : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x (y + z) =
+      quaternionClassOnSquareClasses x y * quaternionClassOnSquareClasses x z := by
+  rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_add_left,
+    quaternionClassOnSquareClasses_comm y, quaternionClassOnSquareClasses_comm z]
+
+/-- The square-class pairing is trivial when its first argument is the trivial class. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_zero_left (y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses 0 y = 1 := by
+  rw [← (squareClass_eq_zero_iff (1 : Kˣ)).mpr (IsSquare.one), ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_one_left]
+
+/-- The square-class pairing is trivial when its second argument is the trivial class. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_zero_right (x : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x 0 = 1 := by
+  rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_zero_left]
 
 /-! ### Invariance under isometry of binary forms -/
 
