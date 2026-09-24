@@ -87,8 +87,7 @@ private theorem isLattice_pi [Finite ι] :
   classical
   cases nonempty_fintype ι
   constructor
-  · rw [← Submodule.iSup_map_single]
-    exact Submodule.fg_iSup _ fun i ↦ (Submodule.IsLattice.fg (A := ℚ)).map _
+  · exact Submodule.fg_pi fun _ ↦ (Submodule.IsLattice.fg (A := ℚ))
   · rw [eq_top_iff]
     intro x _
     rw [← Finset.univ_sum_single x]
