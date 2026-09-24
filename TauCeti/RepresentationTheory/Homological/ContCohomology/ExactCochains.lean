@@ -313,9 +313,12 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {C : Type u} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
 
+-- Exposed so that the homology of its terms is `continuousCohomology` by definition: the
+-- connecting map of `HomologySequence.lean` is transported along that identification.
 /-- The short complex of canonical homogeneous-cochain complexes attached to a short exact
 sequence of discrete `G`-modules: in degree `n` it is
 `Cⁿ(G, A) → Cⁿ(G, B) → Cⁿ(G, C)` on Mathlib's homogeneous continuous cochains. -/
+@[expose]
 noncomputable def continuousCochainsShortExact :
     ShortComplex (CochainComplex (TopModuleCat.{u} ℤ) ℕ) :=
   S.toShortComplex.map (continuousCochainsFunctor ℤ G)
