@@ -538,7 +538,8 @@ theorem isPowerBounded_ringEquiv_iff (e : A ≃+* B) (he : Continuous e) (he' : 
     fun h ↦ h.map_of_isOpenMap he.continuousAt (e.toEquiv.continuous_symm_iff.mp he')⟩
 
 /-- A topological ring isomorphism maps the set of power-bounded elements onto the corresponding
-set in the target. -/
+set in the target. This set-level result applies to semirings, including when the
+`powerBoundedSubring` is not available. -/
 @[simp]
 theorem image_ringEquiv_setOf_isPowerBounded (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) :
