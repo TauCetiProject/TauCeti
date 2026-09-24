@@ -312,7 +312,11 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
       f4ShortRootCarrierCotangentIdeal.toSubmodule)
     eCarrier hcarrierTrace
   exact eCarrierQuot.trans
-    (eEq.trans (eMap.trans (eTrace.trans f4ShortRootQuotientEquivRepresentedRange.symm)))
+    (eEq.trans (eMap.trans (eTrace.trans
+      (LinearMap.quotientEquivRangeQuotientMap
+        (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[𝔽₂]
+          Module.End 𝔽₂ f4ShortRootLieIdeal) f4ShortRootSubspace
+        ker_f4ShortRootAdjoint_le_f4ShortRootSubspace).symm)))
 
 /-- Transport the carrier subquotient comodule to the modular quotient `L / I`. -/
 noncomputable instance f4ShortRootQuotientCarrierComodule :
