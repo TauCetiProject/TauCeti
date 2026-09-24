@@ -31,7 +31,8 @@ namespace ExactStructure.IsFrobenius
 universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 variable {E : ExactStructure C} (hE : E.IsFrobenius)
-/-- The stable image of a conflation, with its connecting map transported to the suspension shift. -/
+/-- The stable image of a conflation, with its connecting map transported to the suspension
+shift. -/
 noncomputable def stableConflationTriangle (S : ShortComplex C) (hS : E.Conflation S) :
     letI := hE.stableHasShift
     CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory := by
@@ -53,7 +54,7 @@ noncomputable def stableDistinguishedTriangles :
 theorem stableConflationTriangle_mem (S : ShortComplex C) (hS : E.Conflation S) :
     letI := hE.stableHasShift
     (hE.stableConflationTriangle S hS) ∈ (hE.stableDistinguishedTriangles) := by
-  letI := hE.stableHasShift
+  let := hE.stableHasShift
   exact ⟨S, hS, ⟨by rfl⟩⟩
 /-- Distinguished triangles are closed under isomorphism in the stable category. -/
 theorem stableDistinguishedTriangles_isomorphic
@@ -63,7 +64,7 @@ theorem stableDistinguishedTriangles_isomorphic
       T₁ ∈ hE.stableDistinguishedTriangles)) (e : T₁ ≅ T₂) :
     (letI : HasShift E.ProjectiveStableCategory ℤ := hE.stableHasShift;
       T₂ ∈ hE.stableDistinguishedTriangles) := by
-  letI := hE.stableHasShift
+  let := hE.stableHasShift
   rcases hT₁ with ⟨S, hS, ⟨iso⟩⟩
   exact ⟨S, hS, ⟨(iso.symm.trans e).symm⟩⟩
 
@@ -109,7 +110,8 @@ noncomputable def stableConeTriangleIsoConflation (f : X ⟶ Y) :
       (E.projectiveStableFunctor.map (hE.connectingMap (hE.conflation_cone f)) ≫
         eqToHom bridge ≫ e.symm.hom.app (E.projectiveStableFunctor.obj X))
   refine CategoryTheory.Pretriangulated.Triangle.isoMk _ _ (Iso.refl _) i (Iso.refl _) ?_ ?_ ?_
-  · simp only [CategoryTheory.Pretriangulated.Triangle.mk_mor₁, CategoryTheory.Pretriangulated.Triangle.mk_mor₁, Iso.refl_hom, Category.id_comp]
+  · simp only [CategoryTheory.Pretriangulated.Triangle.mk_mor₁,
+      CategoryTheory.Pretriangulated.Triangle.mk_mor₁, Iso.refl_hom, Category.id_comp]
     rw [hE.projectiveStableFunctor_map_coneInflation]
   · simp only [CategoryTheory.Pretriangulated.Triangle.mk_mor₂,
       CategoryTheory.Pretriangulated.Triangle.mk_obj₃, Iso.refl_hom, Category.comp_id]
@@ -134,7 +136,7 @@ noncomputable def stableConeTriangleIsoConflation (f : X ⟶ Y) :
 theorem stableConeTriangle_mem (f : X ⟶ Y) :
     (letI : HasShift E.ProjectiveStableCategory ℤ := hE.stableHasShift;
       (hE.stableConeTriangle f) ∈ hE.stableDistinguishedTriangles) := by
-  letI := hE.stableHasShift
+  let := hE.stableHasShift
   exact ⟨_, hE.conflation_cone f, ⟨hE.stableConeTriangleIsoConflation f⟩⟩
 
 end ExactStructure.IsFrobenius
