@@ -62,7 +62,7 @@ variable {A}
 
 /-- A finitely generated module is zero in the stable module category exactly when it is
 projective. -/
-theorem isZero_stableModuleFunctor_obj_iff (X : FGModuleCat.{u} Aᵐᵒᵖ) :
+theorem _root_.FGModuleCat.isZero_stableModuleFunctor_obj_iff (X : FGModuleCat.{u} Aᵐᵒᵖ) :
     IsZero ((stableModuleFunctor A).obj X) ↔ Projective X := by
   rw [ExactStructure.isZero_projectiveStableFunctor_obj_iff,
     ExactStructure.abelian_isProjective_iff]
@@ -97,11 +97,11 @@ variable (k : Type w) [Field k] [Algebra k A] [FiniteDimensional k A]
 include k in
 /-- For a finite-dimensional algebra self-injective on both sides, an object is zero in `stmod-A`
 exactly when it is injective. -/
-theorem isZero_stableModuleFunctor_obj_iff_injective
+theorem _root_.FGModuleCat.isZero_stableModuleFunctor_obj_iff_injective
     (hr : Module.Injective Aᵐᵒᵖ Aᵐᵒᵖ)
     (hl : Module.Injective (Aᵐᵒᵖ)ᵐᵒᵖ Aᵐᵒᵖ) (X : FGModuleCat.{u} Aᵐᵒᵖ) :
     IsZero ((stableModuleFunctor A).obj X) ↔ Injective X := by
-  rw [isZero_stableModuleFunctor_obj_iff,
+  rw [FGModuleCat.isZero_stableModuleFunctor_obj_iff,
     FGModuleCat.projective_iff_injective_of_moduleInjective_self k hr hl]
 
 include k in
