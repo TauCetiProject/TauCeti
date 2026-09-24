@@ -30,15 +30,17 @@ here.
 
 ## Main declarations
 
-* `CliffordAlgebra.realCliffordSpinLastUnitNeighborhood` is the unit level away from the antipode
+* `TauCeti.realCliffordSpinLastUnitNeighborhood` is the unit level away from the antipode
   of the last coordinate vector.
-* `CliffordAlgebra.realCliffordSpinLastLocalSectionDirection` is the normalized direction used by
+* `TauCeti.realCliffordSpinLastLocalSectionDirection` is the normalized direction used by
   the lift.
-* `CliffordAlgebra.realCliffordSpinLastLocalSection` is the normalized reflection-pair lift.
-* `CliffordAlgebra.realCliffordSpinLastLocalSection_apply` evaluates the lift on its neighborhood.
-* `CliffordAlgebra.continuousOn_realCliffordSpinLastLocalSection` proves its continuity on the
+* `TauCeti.realCliffordSpinLastLocalSection` is the normalized reflection-pair lift.
+* `TauCeti.realCliffordSpinLastLocalSection_eq_one_of_not_mem` gives its totalized value at the
+  excluded antipode.
+* `TauCeti.realCliffordSpinLastLocalSection_apply` evaluates the lift on its neighborhood.
+* `TauCeti.continuousOn_realCliffordSpinLastLocalSection` proves its continuity on the
   neighborhood.
-* `CliffordAlgebra.realCliffordSpinLastLocalSection_action` proves that the lift carries the last
+* `TauCeti.realCliffordSpinLastLocalSection_action` proves that the lift carries the last
   coordinate vector to the prescribed unit vector.
 
 ## References
@@ -48,9 +50,9 @@ here.
 
 public section
 
-namespace CliffordAlgebra
+namespace TauCeti
 
-open TauCeti
+open CliffordAlgebra
 
 noncomputable section
 
@@ -128,6 +130,14 @@ def realCliffordSpinLastLocalSection (n : ℕ)
     realCliffordSpinGroupZero (n + 1) := by
   classical
   exact if hx : x ∈ realCliffordSpinLastUnitNeighborhood n then localSectionOn x hx else 1
+
+/-- At the excluded antipode, the totalized local section is the identity Spin element. -/
+theorem realCliffordSpinLastLocalSection_eq_one_of_not_mem {n : ℕ}
+    {x : {x : Fin (n + 1) → ℝ // realCliffordForm (n + 1) 0 x = 1}}
+    (hx : x ∉ realCliffordSpinLastUnitNeighborhood n) :
+    realCliffordSpinLastLocalSection n x = 1 := by
+  rw [realCliffordSpinLastLocalSection]
+  simp only [hx, dite_false]
 
 /-- On the last-vector neighborhood, the local section is the normalized reflection-pair lift. -/
 theorem realCliffordSpinLastLocalSection_apply {n : ℕ}
@@ -235,4 +245,4 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
 
 end
 
-end CliffordAlgebra
+end TauCeti
