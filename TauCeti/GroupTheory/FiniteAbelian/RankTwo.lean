@@ -36,15 +36,16 @@ open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
 
-/-- **Rank-two prime-power characterisation.** A finite abelian group killed by `p ^ k`, with
+/-- **Rank-two prime-power characterisation.** An abelian group killed by `p ^ k`, with
 order `p ^ (2 * k)` and `p ^ 2` elements killed by `p`, is additively equivalent to
 `ZMod (p ^ k) × ZMod (p ^ k)`. -/
-theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prime)
+theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     (hpow : ∀ x : G, p ^ k • x = 0)
     (hcard : Nat.card G = p ^ (2 * k))
     (hcardp : Nat.card (AddSubgroup.torsionBy G (p : ℤ)) = p ^ 2) :
     Nonempty (G ≃+ ZMod (p ^ k) × ZMod (p ^ k)) := by
   classical
+  have : Finite G := Nat.finite_of_card_ne_zero (hcard ▸ pow_ne_zero _ hp.ne_zero)
   obtain ⟨ι, hι, n, hn, ⟨e⟩⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' G
   let E : G ≃+ (∀ i : ι, ZMod (n i)) := e.trans (DirectSum.addEquivProd _)
   -- Each cyclic factor has order dividing the exponent of `G`.
