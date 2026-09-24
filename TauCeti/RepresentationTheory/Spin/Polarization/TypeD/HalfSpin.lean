@@ -51,11 +51,10 @@ theorem typeDSplitBasis_mem_spinPlus_univ_erase_last_iff_odd {n : ℕ} (hn : 1 �
     (typeDSplitBasis n).ExteriorAlgebra
         ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) ∈
       spinPlus _ (typeDSplitPolarization n) ↔ Odd n := by
-  rw [basis_mem_spinPlus_iff]
   have hlast : (⟨n - 1, by omega⟩ : Fin n) ∈ (Finset.univ : Finset (Fin n)) := by simp
-  rw [Finset.card_erase_of_mem hlast, Finset.card_univ, Fintype.card_fin]
-  rw [Nat.even_sub (by omega)]
-  simp
+  rw [← basis_mem_spinMinus_iff_basis_erase_mem_spinPlus
+    (P := typeDSplitPolarization n) (b := typeDSplitBasis n) hlast]
+  exact typeDSplitBasis_mem_spinMinus_univ_iff_odd n
 
 /-- Erasing the final coordinate puts the split type-`D` basis vector in `S⁻` exactly when the
 rank is even. -/
@@ -63,10 +62,9 @@ theorem typeDSplitBasis_mem_spinMinus_univ_erase_last_iff_even {n : ℕ} (hn : 1
     (typeDSplitBasis n).ExteriorAlgebra
         ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) ∈
       spinMinus _ (typeDSplitPolarization n) ↔ Even n := by
-  rw [basis_mem_spinMinus_iff]
   have hlast : (⟨n - 1, by omega⟩ : Fin n) ∈ (Finset.univ : Finset (Fin n)) := by simp
-  rw [Finset.card_erase_of_mem hlast, Finset.card_univ, Fintype.card_fin]
-  rw [Nat.odd_sub (by omega)]
-  simp
+  rw [← basis_mem_spinPlus_iff_basis_erase_mem_spinMinus
+    (P := typeDSplitPolarization n) (b := typeDSplitBasis n) hlast]
+  exact typeDSplitBasis_mem_spinPlus_univ_iff_even n
 
 end TauCeti
