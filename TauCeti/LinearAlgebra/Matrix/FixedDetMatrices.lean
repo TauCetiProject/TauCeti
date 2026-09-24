@@ -80,10 +80,11 @@ theorem eq_of_smul_eq_of_mem_reps {A B : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2
   ext i j
   fin_cases i <;> fin_cases j <;> simp [val_smul_apply, hg₀₀, hg₀₁, hg₁₀, hg₁₁, hA₁₀]
 
-/-- The diagonal entries of an upper-triangular representative multiply to `n`. -/
-lemma apply_zero_zero_mul_apply_one_one_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps n) : A.1 0 0 * A.1 1 1 = n := by
-  simpa only [det_fin_two, hA.1, mul_zero, sub_zero] using A.2
+/-- The diagonal entries of an upper-triangular `2 × 2` matrix of determinant `m` multiply to
+`m`. -/
+lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
+    {A : FixedDetMatrix (Fin 2) R m} (h : A.1 1 0 = 0) : A.1 0 0 * A.1 1 1 = m := by
+  simpa only [det_fin_two, h, mul_zero, sub_zero] using A.2
 
 private lemma card_reps_eq_card_sigma (hn : n ≠ 0) :
     Nat.card (reps n) = (n.natAbs.divisorsAntidiagonal.sigma fun p ↦ Finset.range p.2).card := by
@@ -98,7 +99,7 @@ private lemma card_reps_eq_card_sigma (hn : n ≠ 0) :
     (fun A hA ↦ ?_) (fun x hx ↦ ?_) (fun A hA ↦ ?_) (fun x hx ↦ ?_)
   · rw [Set.mem_toFinset] at hA
     simp only [Finset.mem_sigma, Nat.mem_divisorsAntidiagonal, Finset.mem_range]
-    refine ⟨⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one_of_mem_reps hA],
+    refine ⟨⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one hA.1],
       Int.natAbs_ne_zero.mpr hn⟩, ?_⟩
     zify
     exact hA.2.2.2
@@ -111,7 +112,7 @@ private lemma card_reps_eq_card_sigma (hn : n ≠ 0) :
     fin_cases i <;> fin_cases j
     -- the lower-right entry has the sign of `n`, since `n = a * d` with `0 < a`
     exacts [Int.natAbs_of_nonneg hA.2.1.le, Int.natAbs_of_nonneg hA.2.2.1, hA.1.symm, by
-      simp [← apply_zero_zero_mul_apply_one_one_of_mem_reps hA, Int.sign_eq_one_of_pos hA.2.1,
+      simp [← apply_zero_zero_mul_apply_one_one hA.1, Int.sign_eq_one_of_pos hA.2.1,
         Int.sign_mul_abs]]
   · simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero hn]
 

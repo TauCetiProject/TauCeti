@@ -21,6 +21,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 
 * `TauCeti.MulAction.orbitRelQuotientBotEquiv`: the quotient by the trivial subgroup is the
   original space.
+* `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
+  group element carrying one of its points into it fixes that point, is a set of orbit
+  representatives.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: enlarging the acting subgroup can only
@@ -103,6 +106,41 @@ lemma orbitRelQuotientBotEquiv_symm_apply (x : X) :
       (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) :=
   ((orbitRelQuotientBotEquiv (G := G) (X := X)).eq_symm_apply).mpr
     (orbitRelQuotientBotEquiv_mk (G := G) (X := X) x)
+
+/-- A set `s` meeting every orbit, such that a group element carrying a point of `s` into `s`
+fixes that point, is a set of orbit representatives: sending a point of `s` to its orbit is a
+bijection onto the orbit space. -/
+noncomputable def transversalEquivOrbitRelQuotient {s : Set X} (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
+    (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) :
+    s ≃ _root_.MulAction.orbitRel.Quotient G X :=
+  Equiv.ofBijective (fun x ↦ Quotient.mk'' x.1)
+    ⟨fun x y h ↦ (Quotient.exact h).elim fun g (hg : g • (y : X) = x) ↦
+      Subtype.ext <| hg.symm.trans <| hfix _ y.2 g <| hg ▸ x.2,
+    Quotient.ind' fun x ↦ (hex x).elim fun g hg ↦
+      ⟨⟨g • x, hg⟩, _root_.MulAction.orbitRel.Quotient.quotient_smul_eq⟩⟩
+
+/-- `transversalEquivOrbitRelQuotient` sends a point of `s` to its orbit. -/
+@[simp]
+lemma transversalEquivOrbitRelQuotient_apply {s : Set X} (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
+    (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) (x : s) :
+    transversalEquivOrbitRelQuotient hex hfix x = Quotient.mk'' (x : X) :=
+  (rfl)
+
+/-- The inverse of `transversalEquivOrbitRelQuotient` sends the orbit of a point of `s` back to
+it. -/
+@[simp]
+lemma transversalEquivOrbitRelQuotient_symm_mk {s : Set X} (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
+    (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) (x : s) :
+    (transversalEquivOrbitRelQuotient hex hfix).symm (Quotient.mk'' (x : X)) = x :=
+  (transversalEquivOrbitRelQuotient hex hfix).symm_apply_apply x
+
+/-- The inverse of `transversalEquivOrbitRelQuotient` picks the point of `s` in the given orbit. -/
+lemma transversalEquivOrbitRelQuotient_symm_mk_mem_orbit {s : Set X}
+    (hex : ∀ x : X, ∃ g : G, g • x ∈ s) (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x)
+    (x : X) :
+    ((transversalEquivOrbitRelQuotient hex hfix).symm (Quotient.mk'' x) : X) ∈
+      _root_.MulAction.orbit G x :=
+  Quotient.exact ((transversalEquivOrbitRelQuotient hex hfix).apply_symm_apply _)
 
 /-- Equality of bottom-subgroup orbit classes is equality of representatives. -/
 @[simp]

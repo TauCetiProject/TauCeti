@@ -5,20 +5,25 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 
 /-!
 # The upper-triangular representatives of `Γ \ ℳₙ`
 
-For a nonzero integer `n`, every orbit of `Γ = SL(2, ℤ)` on the projective determinant-`n`
-matrix module `ℳₙ` contains exactly one class of an upper-triangular matrix `(a b; 0 d)` with
+For a nonzero integer `n`, every orbit of `SL(2, ℤ)` on the projective determinant-`n` matrix
+module `ℳₙ` contains exactly one class of an upper-triangular matrix `(a b; 0 d)` with
 `ad = n`, `0 < a` and `0 ≤ b < |d|`. Popa and Zagier write `ℳₙ^∞` for this set of
 representatives and `Tₙ^∞` for its formal sum. The matrices themselves are Mathlib's
 `FixedDetMatrices.reps n`, which `TauCeti.LinearAlgebra.Matrix.FixedDetMatrices` shows to be a
 transversal of the `SL(2, ℤ)`-orbits of determinant-`n` matrices and counts
 (`FixedDetMatrices.card_reps`). This file takes their projective classes, proves that they form a
 transversal of the orbits of `ℳₙ`, and deduces `|Γ \ ℳₙ| = σ₁(|n|)`.
+
+Popa and Zagier take `Γ = PSL(2, ℤ)`. Since `-1` acts trivially on `ℳₙ`, the `PSL(2, ℤ)`-orbits
+are the `SL(2, ℤ)`-orbits, and this file works with the latter throughout: `Γ \ ℳₙ` denotes
+`MulAction.orbitRel.Quotient SL(2, ℤ) ℳₙ`.
 
 ## Main definitions
 
@@ -33,6 +38,7 @@ transversal of the orbits of `ℳₙ`, and deduces `|Γ \ ℳₙ| = σ₁(|n|)`.
   `SL(2, ℤ)`-orbit of `ℳₙ` meets `ℳₙ^∞`.
 * `TauCeti.TraceFormulaMatrixModule.smul_eq_self_of_mem_upperTriangularReps`: an element of
   `SL(2, ℤ)` that moves one element of `ℳₙ^∞` into `ℳₙ^∞` fixes it.
+* `TauCeti.TraceFormulaMatrixModule.card_upperTriangularReps`: `|ℳₙ^∞| = σ₁(|n|)`.
 * `TauCeti.TraceFormulaMatrixModule.card_orbitRel_quotient`: `|Γ \ ℳₙ| = σ₁(|n|)`.
 
 ## References
@@ -82,10 +88,10 @@ theorem mk_injOn_reps : Set.InjOn (mk (n := n)) (FixedDetMatrices.reps n) := by
 instance (n : ℤ) : Finite (upperTriangularReps n) :=
   Finite.Set.finite_image _ _
 
-/-- `ℳₙ^∞` has as many elements as `FixedDetMatrices.reps n`. -/
+/-- `ℳₙ^∞` has `σ₁(|n|)` elements, as many as `FixedDetMatrices.reps n`. -/
 theorem card_upperTriangularReps (n : ℤ) :
-    Nat.card (upperTriangularReps n) = Nat.card (FixedDetMatrices.reps n) :=
-  Nat.card_image_of_injOn mk_injOn_reps
+    Nat.card (upperTriangularReps n) = ArithmeticFunction.sigma 1 n.natAbs :=
+  (Nat.card_image_of_injOn mk_injOn_reps).trans (FixedDetMatrices.card_reps n)
 
 /-- **Existence of upper-triangular representatives**: for `n ≠ 0`, every element of `ℳₙ` can
 be moved into `ℳₙ^∞` by `SL(2, ℤ)`. -/
@@ -105,39 +111,30 @@ theorem smul_eq_self_of_mem_upperTriangularReps {x : TraceFormulaMatrixModule n}
     (⟨g, ·.symm⟩) fun h ↦ ⟨-g, Subtype.ext <| by simp [h, FixedDetMatrices.smul_coe]⟩
   rw [← hBA, FixedDetMatrices.eq_of_smul_eq_of_mem_reps hA hB hg']
 
-/-- Two elements of `ℳₙ^∞` in the same `SL(2, ℤ)`-orbit are equal. -/
-theorem eq_of_mem_orbit_of_mem_upperTriangularReps {x y : TraceFormulaMatrixModule n}
-    (hx : x ∈ upperTriangularReps n) (hy : y ∈ upperTriangularReps n)
-    (h : y ∈ MulAction.orbit SL(2, ℤ) x) : x = y := by
-  obtain ⟨g, rfl⟩ := h
-  exact (smul_eq_self_of_mem_upperTriangularReps hx hy).symm
-
 /-- For `n ≠ 0`, `ℳₙ^∞` is a transversal of the `SL(2, ℤ)`-orbits of `ℳₙ` (Popa--Zagier,
 Section 2): sending a representative to its orbit is a bijection onto `Γ \ ℳₙ`. -/
 noncomputable def upperTriangularRepsEquiv (hn : n ≠ 0) :
     upperTriangularReps n ≃ MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n) :=
-  Equiv.ofBijective (fun x ↦ Quotient.mk'' x.1) ⟨fun x y h ↦ Subtype.ext <|
-    eq_of_mem_orbit_of_mem_upperTriangularReps x.2 y.2 (Quotient.exact h.symm),
-    Quotient.ind' fun x ↦ (exists_smul_mem_upperTriangularReps hn x).elim fun g hg ↦
-      ⟨⟨g • x, hg⟩, MulAction.orbitRel.Quotient.quotient_smul_eq⟩⟩
+  MulAction.transversalEquivOrbitRelQuotient (exists_smul_mem_upperTriangularReps hn)
+    fun _ hx _ ↦ smul_eq_self_of_mem_upperTriangularReps hx
 
 /-- The transversal bijection sends a representative to its orbit. -/
 @[simp]
 theorem upperTriangularRepsEquiv_apply (hn : n ≠ 0) (x : upperTriangularReps n) :
     upperTriangularRepsEquiv hn x = Quotient.mk'' (x : TraceFormulaMatrixModule n) :=
-  (rfl)
+  MulAction.transversalEquivOrbitRelQuotient_apply _ _ x
 
 /-- The inverse of the transversal bijection picks the representative in the given orbit. -/
 theorem upperTriangularRepsEquiv_symm_mk_mem_orbit (hn : n ≠ 0) (x : TraceFormulaMatrixModule n) :
     ((upperTriangularRepsEquiv hn).symm (Quotient.mk'' x) : TraceFormulaMatrixModule n) ∈
       MulAction.orbit SL(2, ℤ) x :=
-  Quotient.exact ((upperTriangularRepsEquiv hn).apply_symm_apply _)
+  MulAction.transversalEquivOrbitRelQuotient_symm_mk_mem_orbit _ _ x
 
 /-- The inverse of the transversal bijection sends the orbit of a representative back to it. -/
 @[simp]
 theorem upperTriangularRepsEquiv_symm_mk (hn : n ≠ 0) (x : upperTriangularReps n) :
     (upperTriangularRepsEquiv hn).symm (Quotient.mk'' (x : TraceFormulaMatrixModule n)) = x :=
-  (upperTriangularRepsEquiv hn).symm_apply_apply x
+  MulAction.transversalEquivOrbitRelQuotient_symm_mk _ _ x
 
 /-- For `n ≠ 0`, the orbit space `Γ \ ℳₙ` is finite. -/
 theorem finite_orbitRel_quotient (hn : n ≠ 0) :
@@ -149,8 +146,7 @@ elements. -/
 theorem card_orbitRel_quotient (hn : n ≠ 0) :
     Nat.card (MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) =
       ArithmeticFunction.sigma 1 n.natAbs := by
-  rw [← Nat.card_congr (upperTriangularRepsEquiv hn), card_upperTriangularReps,
-    FixedDetMatrices.card_reps n]
+  rw [← Nat.card_congr (upperTriangularRepsEquiv hn), card_upperTriangularReps]
 
 end TraceFormulaMatrixModule
 
