@@ -44,6 +44,11 @@ noncomputable def mk {X : Type u} (rels : Set (freeProfiniteGroup X)) :
     freeProfiniteGroup X →ₜ* presentedProfiniteGroup X rels :=
   ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩
 
+/-- The canonical quotient map onto a presented profinite group is surjective. -/
+theorem mk_surjective {X : Type u} (rels : Set (freeProfiniteGroup X)) :
+    Function.Surjective (mk rels) :=
+  QuotientGroup.mk'_surjective _
+
 /-- The canonical generator in a presented profinite group. -/
 noncomputable def of {X : Type u} (rels : Set (freeProfiniteGroup X)) (x : X) :
     presentedProfiniteGroup X rels :=
@@ -54,9 +59,20 @@ variable {X : Type u} {rels : Set (freeProfiniteGroup X)}
 /-- The quotient map kills every relator. -/
 @[simp]
 theorem mk_relator (r : freeProfiniteGroup X) (hr : r ∈ rels) : mk rels r = 1 := by
+  -- Reduce the named presentation carrier and map to the quotient form accepted by Mathlib's
+  -- quotient kernel criterion.
   change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
+
+/-- The kernel of the presentation map consists exactly of the closed normal closure of the
+relators. -/
+@[simp]
+theorem mk_eq_one_iff (r : freeProfiniteGroup X) :
+    mk rels r = 1 ↔ r ∈ (Subgroup.normalClosure rels).topologicalClosure := by
+  -- Expose the quotient representation so Mathlib's general criterion applies.
+  change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  exact QuotientGroup.eq_one_iff r
 
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
@@ -73,6 +89,8 @@ canonical quotient projection. -/
 theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk rels) = ψ := by
+  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
+  -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
     (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
       (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
@@ -84,7 +102,8 @@ map does on the free generators. -/
 theorem lift_of {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) := by
-  -- Expand the named generator to the quotient-map composite this theorem characterizes.
+  -- Reduce the named generator and lift to the quotient-map composite characterized by
+  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
   change (lift ψ hψ).comp (mk rels) (freeProfiniteGroup.of x) = _
   exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProfiniteGroup.of x)
 
@@ -135,6 +154,11 @@ noncomputable def mk (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
     freeProP p X →ₜ* presentedProP p X rels :=
   ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩
 
+/-- The canonical quotient map onto a presented pro-`p` group is surjective. -/
+theorem mk_surjective (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
+    Function.Surjective (mk p rels) :=
+  QuotientGroup.mk'_surjective _
+
 /-- The canonical generator in a presented pro-`p` group. -/
 noncomputable def of (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) (x : X) :
     presentedProP p X rels :=
@@ -150,9 +174,20 @@ variable {p : ℕ} {X : Type u} {rels : Set (freeProP p X)}
 /-- The quotient map kills every relator. -/
 @[simp]
 theorem mk_relator (r : freeProP p X) (hr : r ∈ rels) : mk p rels r = 1 := by
+  -- Reduce the named presentation carrier and map to the quotient form accepted by Mathlib's
+  -- quotient kernel criterion.
   change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
+
+/-- The kernel of the presentation map consists exactly of the closed normal closure of the
+relators. -/
+@[simp]
+theorem mk_eq_one_iff (r : freeProP p X) :
+    mk p rels r = 1 ↔ r ∈ (Subgroup.normalClosure rels).topologicalClosure := by
+  -- Expose the quotient representation so Mathlib's general criterion applies.
+  change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  exact QuotientGroup.eq_one_iff r
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
@@ -169,6 +204,8 @@ canonical quotient projection. -/
 theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk p rels) = ψ := by
+  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
+  -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
     (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
       (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
@@ -180,7 +217,8 @@ map does on the free generators. -/
 theorem lift_of {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of p rels x) = ψ (freeProP.of x) := by
-  -- Expand the named generator to the quotient-map composite this theorem characterizes.
+  -- Reduce the named generator and lift to the quotient-map composite characterized by
+  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
   change (lift ψ hψ).comp (mk p rels) (freeProP.of x) = _
   exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProP.of x)
 
