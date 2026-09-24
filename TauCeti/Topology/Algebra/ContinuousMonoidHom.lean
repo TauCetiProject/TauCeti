@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
-# Continuous subgroup inclusion, inverse conjugation, and quotient projection
+# Continuity of homomorphisms and maps involving subgroups and quotients
 
 Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and its coercion
 `ContinuousMonoidHom.toContinuousMonoidHom` applies only to bundled types that already carry a
@@ -17,6 +17,7 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+A homomorphism from a topological group with open kernel is also continuous.
 -/
 
 public section
@@ -24,6 +25,15 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- A homomorphism from a topological group is continuous when its kernel is open. -/
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [IsTopologicalGroup G]
+    {H : Type*} [Monoid H]
+    [TopologicalSpace H] [ContinuousMul H] (f : G →* H)
+    (hf : IsOpen (f.ker : Set G)) : Continuous f :=
+  continuous_of_continuousAt_one f <| continuousAt_const.congr <|
+    Filter.mem_of_superset (hf.mem_nhds (one_mem _)) fun _ hx ↦
+      ((MonoidHom.mem_ker.mp hx).trans (map_one f).symm).symm
 
 namespace ContinuousMonoidHom
 

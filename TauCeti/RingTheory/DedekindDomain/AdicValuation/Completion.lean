@@ -47,6 +47,8 @@ Everything here concerns one completion. The comparison of two completions along
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
   representative.
+* `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
+  an element of `K` of valuation one maps to a unit of `𝒪_v`.
 
 ## Implementation notes
 
@@ -108,6 +110,18 @@ lemma under_maximalIdeal_adicCompletionIntegers (v : HeightOneSpectrum R) :
 section SingleCompletion
 
 variable (v : HeightOneSpectrum R)
+
+/-- An element of `K` with valuation one is the image of a unit in the ring of integers of its
+completion at `v`. -/
+theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
+    (hc : v.valuation K c = 1) :
+    ∃ u : v.adicCompletionIntegers K, IsUnit u ∧
+      (u : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c := by
+  have hv : Valued.v (algebraMap K (v.adicCompletion K) c) = 1 := by
+    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
+    simpa using hc
+  exact ⟨⟨_, (mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
+    adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
 
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
@@ -393,6 +407,11 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
       (v.adicCompletion K)]
     rw [Valuation.map_sub_swap]
     exact ha.trans_lt (by simp)
+
+/-- The residue field of an adic completion is finite when the residue field at `v` is finite. -/
+instance finite_residueField_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)] :
+    Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
+  Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
 
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the equivalence's construction as an `Ideal.quotientMap` is an implementation

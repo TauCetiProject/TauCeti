@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Rank
+public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-public import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
@@ -235,7 +235,7 @@ theorem exists_topologicalClosure_closure_range_eq_top_of_rank_le {n : ℕ}
   -- image generates `G ⧸ U` form a clopen subset `C U` of `Fin n → G`, because generating
   -- `G ⧸ U` is a condition on the image in the discrete space `Fin n → G ⧸ U`; the family is
   -- nonempty by hypothesis and directed downwards because `C (U ⊓ V) ⊆ C U ∩ C V`, so
-  -- `TauCeti.nonempty_iInter_of_directed_nonempty_isClosed` produces a common point.
+  -- `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed` produces a common point.
   have hneIdx : Nonempty (OpenNormalSubgroup G) := ⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }⟩
   set C : OpenNormalSubgroup G → Set (Fin n → G) := fun U ↦
     {g | Subgroup.closure (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ g)) = ⊤} with hC
@@ -276,7 +276,8 @@ theorem exists_topologicalClosure_closure_range_eq_top_of_rank_le {n : ℕ}
     have hmem : Subgroup.closure (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ g)) = ⊤ :=
       hcomp ▸ hfgen
     exact ⟨g, hmem⟩
-  obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
+  obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
+    (fun U ↦ (hclosed U).isCompact) hclosed
   refine ⟨g, topologicalClosure_closure_eq_top_iff.mpr fun U ↦ ?_⟩
   have hgU : Subgroup.closure (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ g)) = ⊤ :=
     Set.mem_iInter.mp hg U
@@ -578,7 +579,8 @@ private theorem exists_mem_iInter {c : Set (ConvergingGenData G)} (hc : IsChain 
     · exact ⟨x, by simp, hba.S_subset hx⟩
   have hclosed : ∀ b, IsClosed (C b) := fun b ↦
     (a.isClosed_K.preimage (continuous_inv.mul continuous_const)).inter b.1.isClosed_S
-  obtain ⟨y, hy⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
+  obtain ⟨y, hy⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
+    (fun b ↦ (hclosed b).isCompact) hclosed
   rw [Set.mem_iInter] at hy
   exact ⟨y, fun b ↦ (hy b).2, (hy ⟨a, ha⟩).1⟩
 

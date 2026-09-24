@@ -37,6 +37,10 @@ variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
+-- The `simp` lemmas below state their left-hand sides through `dsimp% only`: the implicit
+-- function-type arguments of the `TopModuleCat` morphisms applied there carry carrier redexes
+-- `(fun X ↦ …) _`, which `simp` beta-reduces before it looks a term up, so the plain form is
+-- never found.
 /-- The degree-two comparison in `TopModuleCat ℤ` commutes with pullback along a compatible
 pair of a continuous group homomorphism and an equivariant coefficient map. -/
 @[simp]
@@ -45,9 +49,9 @@ theorem explicitIso_map2
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : DiscreteH2 G M) :
-    _root_.ContinuousCohomology.map φ
+    (dsimp% only (_root_.ContinuousCohomology.map φ
         (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 2
-        ((explicitH2IsoContinuousCohomology G M).hom x) =
+        ((explicitH2IsoContinuousCohomology G M).hom x))) =
       (explicitH2IsoContinuousCohomology H N).hom
         ((discreteH2Equiv H N).symm
           (explicitMap2 G M H N φ f continuous_of_discreteTopology hf
@@ -60,8 +64,8 @@ theorem explicitIso_map2
 /-- The degree-two comparison transports explicit restriction to canonical restriction. -/
 @[simp]
 theorem explicitIso_res2 (S : Subgroup G) [CompactSpace S] (x : DiscreteH2 G M) :
-    TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 2
-        ((explicitH2IsoContinuousCohomology G M).hom x) =
+    (dsimp% only (TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 2
+        ((explicitH2IsoContinuousCohomology G M).hom x))) =
       (explicitH2IsoContinuousCohomology S M).hom
         ((discreteH2Equiv S M).symm
           (explicitRes2 G M S (discreteH2Equiv G M x))) := by
@@ -79,9 +83,9 @@ canonical map induced by the same homomorphism. -/
 theorem explicitIso_coeffMap2
     (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : DiscreteH2 G M) :
-    TauCeti.ContinuousCohomology.coeffMap
+    (dsimp% only (TauCeti.ContinuousCohomology.coeffMap
         (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 2
-        ((explicitH2IsoContinuousCohomology G M).hom x) =
+        ((explicitH2IsoContinuousCohomology G M).hom x))) =
       (explicitH2IsoContinuousCohomology G N).hom
         ((discreteH2Equiv G N).symm
           (explicitCoeff2 G M f continuous_of_discreteTopology

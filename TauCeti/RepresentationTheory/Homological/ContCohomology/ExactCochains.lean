@@ -87,13 +87,16 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y Z : TopRep.{v} R G}
 
+-- Stated through `dsimp% only`: `simp` reduces the implicit carrier types of the level map,
+-- `(TopRep.resolutionX X (n + 1)).V` restricted along the identity, to `C(G, _)` before it looks
+-- a term up, so the plain form is never found.
 /-- The level-`(n + 1)` map of the coinduced resolution is postcomposition with the level-`n`
 map. -/
 @[simp]
 theorem resolutionMap_id_succ_apply (f : X ⟶ Y) (n : ℕ)
     (F : C(G, (TopRep.resolutionX X n).V)) (x : G) :
-    ((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom F :
-        C(G, (TopRep.resolutionX Y n).V)) x =
+    (dsimp% only (((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom F :
+        C(G, (TopRep.resolutionX Y n).V)) x)) =
       (resolutionMap (ContinuousMonoidHom.id G) f n).hom (F x) :=
   (rfl)
 

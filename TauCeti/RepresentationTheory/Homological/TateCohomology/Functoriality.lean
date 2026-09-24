@@ -60,6 +60,8 @@ invariants of its conjugate through the resulting map in degree two.
   the map induced on the quotient of invariants by the norm image.
 * `TauCeti.TateCohomology.HNegOneπ_comp_map`: in degree `-1` the construction sends the class of
   a norm-zero element to the class of its image (`TauCeti.TateCohomology.mapKerNorm`).
+* `TauCeti.TateCohomology.H0π_comp_tateCohomologyFunctor_map`: in degree zero, Mathlib's
+  coefficient functoriality sends the class of an invariant to the class of its image.
 
 ## References
 
@@ -543,6 +545,19 @@ theorem natCard_tateCohomology_eq {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
     Nat.card (tateCohomology M n) = Nat.card (tateCohomology N n) :=
   Nat.card_congr (mapIso he n).toLinearEquiv.toEquiv
+
+/-- In degree zero, the map induced by a morphism of representations of one finite group sends
+the class of an invariant to the class of its image. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem H0π_comp_tateCohomologyFunctor_map {M N : Rep R G} (f : M ⟶ N) :
+    H0π M ≫ (tateCohomologyFunctor 0).map f = (Rep.invariantsFunctor R G).map f ≫ H0π N := by
+  have hf : M.ρ.IsIntertwiningMap (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  -- `map_refl` produces `Rep.ofHom ⟨f.hom.toLinearMap, _⟩`, which is `f` by structure eta.
+  have h : map hf 0 = (tateCohomologyFunctor 0).map f := map_refl hf 0
+  rw [← h, H0π_comp_map]
+  -- `mapInvariants hf` restricts `f` to the invariants, which is how `Rep.invariantsFunctor` acts.
+  rfl
 
 end Degrees
 
