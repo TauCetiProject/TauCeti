@@ -760,25 +760,25 @@ theorem f4RootAdjointDerivation_pow_three_integral
   let F : f4ChevalleyLieLattice →ₗ[ℤ] F4.lieAlgebra valid_F4 :=
     (((f4RootAdjointDerivation k).toLinearMap ^ 3).restrictScalars ℤ).comp
       f4ChevalleyLieLattice.subtype
+  have hF_apply (z : f4ChevalleyLieLattice) :
+      F z = ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+        (z : F4.lieAlgebra valid_F4) := rfl
   have hF : F = 0 := by
     apply f4ChevalleyBasis.ext
     intro i
     cases i with
     | inl α =>
-      change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4ChevalleyBasis (Sum.inl α) : F4.lieAlgebra valid_F4) = 0
-      simpa only [f4IntegralRootVector, f4KillingRootLabel_f4PinnedRootIndex] using
-        f4RootAdjointDerivation_pow_three_integralRootVector k (f4PinnedRootIndex α)
+      exact (hF_apply _).trans (by
+        simpa only [LinearMap.zero_apply, f4IntegralRootVector,
+          f4KillingRootLabel_f4PinnedRootIndex] using
+          f4RootAdjointDerivation_pow_three_integralRootVector k (f4PinnedRootIndex α))
     | inr α =>
-      change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4ChevalleyBasis (Sum.inr α) : F4.lieAlgebra valid_F4) = 0
-      simpa only [f4IntegralSimpleCoroot, Equiv.apply_symm_apply] using
-        f4RootAdjointDerivation_pow_three_integralSimpleCoroot k
-          ((F4.lieBasis valid_F4).baseSupportEquiv.symm α)
+      exact (hF_apply _).trans (by
+        simpa only [LinearMap.zero_apply, f4IntegralSimpleCoroot, Equiv.apply_symm_apply] using
+          f4RootAdjointDerivation_pow_three_integralSimpleCoroot k
+            ((F4.lieBasis valid_F4).baseSupportEquiv.symm α))
   have hy := congrArg (fun f : f4ChevalleyLieLattice →ₗ[ℤ] F4.lieAlgebra valid_F4 => f y) hF
-  change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-    (y : F4.lieAlgebra valid_F4) = 0 at hy
-  exact hy
+  exact (hF_apply y).symm.trans (by simpa only [LinearMap.zero_apply] using hy)
 
 /-- The first integral divided power is the Lie bracket in the Chevalley lattice. -/
 theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
