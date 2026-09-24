@@ -87,9 +87,8 @@ theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
 /-- The scalar `-1` belongs to the Spin group of a nonzero quadratic form over a field. -/
 theorem neg_one_mem_spinGroup (Q : QuadraticForm K M) (hQ : Q ≠ 0) :
     (-1 : CliffordAlgebra Q) ∈ spinGroup Q := by
-  obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
-  exact neg_one_mem_spinGroup_of_isUnit Q v
-    (isUnit_iff_ne_zero.mpr (by simpa using hv))
+  obtain ⟨v, hv⟩ := QuadraticMap.exists_isUnit_of_ne_zero hQ
+  exact neg_one_mem_spinGroup_of_isUnit Q v hv
 
 namespace spinGroup
 

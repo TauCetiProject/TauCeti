@@ -93,12 +93,7 @@ theorem isSquare_lipschitzNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondeg
     (x : lipschitzGroup Q) (hx : x ∈ MonoidHom.ker (lipschitzToOrthogonal Q)) :
     IsSquare (lipschitzNorm Q x) := by
   obtain ⟨r, hr⟩ := (mem_ker_lipschitzToOrthogonal_iff hQ).mp hx
-  have hr₀ : r ≠ 0 := by
-    rintro rfl
-    exact Units.ne_zero _ (hr.trans (map_zero _))
-  refine ⟨Units.mk0 r hr₀, Units.ext (algebraMap_injective Q ?_)⟩
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm, hr, star_algebraMap, ← map_mul,
-    Units.val_mul, Units.val_mk0]
+  exact ⟨r, lipschitzNorm_eq_of_coe_eq_algebraMap hr⟩
 
 private noncomputable def lipschitzSquareClassHom (Q : QuadraticForm K V) :
     lipschitzGroup Q →* Multiplicative (SquareClassGroup K) :=
@@ -211,14 +206,6 @@ theorem spinorNorm_spinToSpecialOrthogonal (Q : QuadraticForm K V) (hQ : Q.Nonde
     orthogonalSpinorNorm_lipschitzToOrthogonal,
     lipschitzNorm_pinToLipschitz, map_one]
 
-omit [FiniteDimensional K V] in
-private theorem lipschitzNorm_scalarUnits (Q : QuadraticForm K V) (hv : ∃ v, IsUnit (Q v))
-    (a : Kˣ) : lipschitzNorm Q (scalarUnits Q hv a) = a * a := by
-  apply Units.ext
-  apply algebraMap_injective Q
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm, coe_scalarUnits, star_algebraMap, ← map_mul,
-    Units.val_mul]
-
 private theorem exists_pinToOrthogonal_eq_of_spinorNorm_eq_one [Nontrivial V]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.orthogonalGroup Q) (hg : orthogonalSpinorNorm Q hQ g = 1) :
@@ -229,9 +216,7 @@ private theorem exists_pinToOrthogonal_eq_of_spinorNorm_eq_one [Nontrivial V]
       rw [← orthogonalSpinorNorm_lipschitzToOrthogonal Q hQ, hx, hg]
     simpa using hsquareClass
   obtain ⟨a, ha⟩ := hsquare
-  have hv : ∃ v, IsUnit (Q v) := by
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ.ne_zero
-    exact ⟨v, isUnit_iff_ne_zero.mpr hv⟩
+  have hv : ∃ v, IsUnit (Q v) := hQ.exists_isUnit
   let y : lipschitzGroup Q := scalarUnits Q hv a⁻¹ * x
   have hynorm : lipschitzNorm Q y = 1 := by
     dsimp only [y]
