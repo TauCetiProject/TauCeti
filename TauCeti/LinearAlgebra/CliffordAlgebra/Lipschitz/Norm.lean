@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
@@ -24,6 +24,7 @@ norm: the Clifford norm descends modulo squares through the kernel of that actio
 * `CliffordAlgebra.self_mul_star_eq_algebraMap_lipschitzNorm`: its second
   characteristic Clifford-product equation.
 * `CliffordAlgebra.lipschitzNorm_unitι`: its value on a generating vector.
+* `CliffordAlgebra.lipschitzNorm_scalarUnits`: the norm of a scalar unit is its square.
 
 ## References
 
@@ -202,6 +203,23 @@ theorem lipschitzNorm_unitι (Q : QuadraticForm R V) (v : V) [Invertible (Q v)] 
       ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ : R) =
     algebraMap R (CliffordAlgebra Q) (-Q v)
   exact h.symm.trans (map_neg _ _).symm
+
+/-- A Lipschitz element equal to a scalar unit has norm equal to the square of that scalar. -/
+theorem lipschitzNorm_eq_of_coe_eq_algebraMap {Q : QuadraticForm R V}
+    {x : lipschitzGroup Q} {a : Rˣ}
+    (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) a) : lipschitzNorm Q x = a * a := by
+  apply Units.ext
+  apply algebraMap_injective Q
+  rw [← star_mul_self_eq_algebraMap_lipschitzNorm, hx, star_algebraMap, ← map_mul,
+    Units.val_mul]
+
+/-- The norm of a scalar unit in the Lipschitz group is its square. -/
+@[simp]
+theorem lipschitzNorm_scalarUnits {Q : QuadraticForm R V}
+    (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
+    lipschitzNorm Q (scalarUnits Q hQ a) = a * a :=
+  lipschitzNorm_eq_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
 
 /-- The Clifford norm of a Pin element is one. -/
 @[simp]

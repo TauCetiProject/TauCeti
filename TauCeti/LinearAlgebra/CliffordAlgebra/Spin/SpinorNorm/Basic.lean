@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.DetSquareClass
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -91,36 +92,8 @@ private theorem pinToOrthogonal_eq_lipschitzToOrthogonal
 theorem isSquare_lipschitzNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (x : lipschitzGroup Q) (hx : x ∈ MonoidHom.ker (lipschitzToOrthogonal Q)) :
     IsSquare (lipschitzNorm Q x) := by
-  let x₀ : CliffordAlgebra Q := ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
-  have hcomm : ∀ w : V, involute (Q := Q) x₀ * ι Q w = ι Q w * x₀ := by
-    intro w
-    have haction : lipschitzVectorAction Q x w = w := by
-      have h := congrArg (fun g : QuadraticMap.orthogonalGroup Q => ((g : V ≃ₗ[K] V) w))
-        (MonoidHom.mem_ker.mp hx)
-      rw [coe_lipschitzToOrthogonal_apply] at h
-      exact h
-    have h := ι_lipschitzVectorAction_apply (Q := Q) x w
-    rw [haction] at h
-    have h' := congrArg (fun z : CliffordAlgebra Q => z * x₀) h
-    simpa [x₀, mul_assoc] using h'.symm
-  obtain ⟨r, hr⟩ := exists_eq_algebraMap_of_involute_mul_ι_eq_ι_mul Q hQ x₀ hcomm
-  have hr₀ : r ≠ 0 := by
-    intro hr₀
-    have hx₀ : x₀ = 0 := by simpa [hr₀] using hr
-    exact Units.ne_zero (x : (CliffordAlgebra Q)ˣ) hx₀
-  let a : Kˣ := Units.mk0 r hr₀
-  refine ⟨a, ?_⟩
-  apply Units.ext
-  apply algebraMap_injective Q
-  -- Read the unit equality through the scalar embedding into the Clifford algebra.
-  change algebraMap K (CliffordAlgebra Q) (lipschitzNorm Q x : K) =
-    algebraMap K (CliffordAlgebra Q) ((a * a : Kˣ) : K)
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm]
-  -- Replace the coerced Lipschitz unit by the scalar Clifford element found above.
-  change star x₀ * x₀ = _
-  rw [hr]
-  simp only [star_algebraMap, map_mul, Units.val_mul]
-  rfl
+  obtain ⟨r, hr⟩ := (mem_ker_lipschitzToOrthogonal_iff hQ).mp hx
+  exact ⟨r, lipschitzNorm_eq_of_coe_eq_algebraMap hr⟩
 
 private noncomputable def lipschitzSquareClassHom (Q : QuadraticForm K V) :
     lipschitzGroup Q →* Multiplicative (SquareClassGroup K) :=
@@ -233,62 +206,6 @@ theorem spinorNorm_spinToSpecialOrthogonal (Q : QuadraticForm K V) (hQ : Q.Nonde
     orthogonalSpinorNorm_lipschitzToOrthogonal,
     lipschitzNorm_pinToLipschitz, map_one]
 
-omit [FiniteDimensional K V] [Invertible (2 : K)] in
-private theorem unitsMap_algebraMap_mem_lipschitzGroup [Nontrivial V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) :
-    Units.map (algebraMap K (CliffordAlgebra Q)) a ∈ lipschitzGroup Q := by
-  obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ.ne_zero
-  have hv' : Q v ≠ 0 := by simpa using hv
-  let _ : Invertible (Q v) := invertibleOfNonzero hv'
-  have hav : Q ((a : K) • v) ≠ 0 := by
-    rw [QuadraticMap.map_smul]
-    exact mul_ne_zero (mul_ne_zero (Units.ne_zero a) (Units.ne_zero a)) hv'
-  let _ : Invertible (Q ((a : K) • v)) := invertibleOfNonzero hav
-  let y := unitι Q ((a : K) • v) * (unitι Q v)⁻¹
-  have hy : y = Units.map (algebraMap K (CliffordAlgebra Q)) a := by
-    have hscale : unitι Q ((a : K) • v) =
-        Units.map (algebraMap K (CliffordAlgebra Q)) a * unitι Q v := by
-      apply Units.ext
-      simp only [coe_unitι, Units.val_mul, Units.coe_map, map_smul, Algebra.smul_def]
-      rfl
-    dsimp only [y]
-    rw [hscale, mul_inv_cancel_right]
-  rw [← hy]
-  exact mul_mem (unitι_mem_lipschitzGroup _) (inv_mem (unitι_mem_lipschitzGroup _))
-
-omit [FiniteDimensional K V] [Invertible (2 : K)] in
-private noncomputable def scalarLipschitz [Nontrivial V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) : lipschitzGroup Q :=
-  ⟨Units.map (algebraMap K (CliffordAlgebra Q)) a,
-    unitsMap_algebraMap_mem_lipschitzGroup Q hQ a⟩
-
-omit [FiniteDimensional K V] in
-private theorem lipschitzNorm_scalarLipschitz [Nontrivial V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) :
-    lipschitzNorm Q (scalarLipschitz Q hQ a) = a * a := by
-  apply Units.ext
-  apply algebraMap_injective Q
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm]
-  simp only [scalarLipschitz, Units.coe_map, MonoidHom.coe_coe]
-  rw [star_algebraMap, ← map_mul]
-  rfl
-
-omit [FiniteDimensional K V] in
-private theorem scalarLipschitz_mem_ker [Nontrivial V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) :
-    scalarLipschitz Q hQ a ∈ MonoidHom.ker (lipschitzToOrthogonal Q) := by
-  rw [MonoidHom.mem_ker]
-  apply Subtype.ext
-  apply LinearEquiv.ext
-  intro v
-  rw [coe_lipschitzToOrthogonal_apply]
-  apply ι_injective Q
-  rw [ι_lipschitzVectorAction_apply]
-  simp only [scalarLipschitz, Units.coe_map, MonoidHom.coe_coe, AlgHom.commutes,
-    Algebra.commutes, Units.coe_map_inv, Units.val_inv_eq_inv_val]
-  rw [mul_assoc, ← map_mul]
-  simp
-
 private theorem exists_pinToOrthogonal_eq_of_spinorNorm_eq_one [Nontrivial V]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.orthogonalGroup Q) (hg : orthogonalSpinorNorm Q hQ g = 1) :
@@ -299,14 +216,15 @@ private theorem exists_pinToOrthogonal_eq_of_spinorNorm_eq_one [Nontrivial V]
       rw [← orthogonalSpinorNorm_lipschitzToOrthogonal Q hQ, hx, hg]
     simpa using hsquareClass
   obtain ⟨a, ha⟩ := hsquare
-  let y : lipschitzGroup Q := scalarLipschitz Q hQ a⁻¹ * x
+  have hv : ∃ v, IsUnit (Q v) := hQ.exists_isUnit
+  let y : lipschitzGroup Q := scalarUnits Q hv a⁻¹ * x
   have hynorm : lipschitzNorm Q y = 1 := by
     dsimp only [y]
-    rw [map_mul, lipschitzNorm_scalarLipschitz, ha]
+    rw [map_mul, lipschitzNorm_scalarUnits, ha]
     simp
   have hyact : lipschitzToOrthogonal Q y = g := by
     dsimp only [y]
-    rw [map_mul, MonoidHom.mem_ker.mp (scalarLipschitz_mem_ker Q hQ a⁻¹), hx, one_mul]
+    rw [map_mul, lipschitzToOrthogonal_scalarUnits, hx, one_mul]
   let p : pinGroup Q :=
     ⟨((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q),
       (pinGroup.units_mem_iff).2 ⟨y.2, y.val.isUnit.mem_unitary_of_star_mul_self (by
