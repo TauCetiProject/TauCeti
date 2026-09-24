@@ -14,15 +14,16 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 The arithmetic Frobenius of a finite unramified extension is compatible with restriction through
 a normal intermediate field. This identifies the Frobenius elements at different finite levels
 of an unramified tower, rather than merely identifying arbitrary generators of their cyclic Galois
-groups. It acts on Teichmüller representatives and prime-to-residue-characteristic roots of unity
-by raising their residue classes to the cardinality of the base residue field.
+groups. The Teichmüller lifts of a residue element's Frobenius image and its power by the
+cardinality of the base residue field agree. Frobenius raises prime-to-residue-characteristic
+roots of unity to that same power.
 
 ## Main result
 
 * `TauCeti.frobeniusAlgEquiv_restrictNormal`: restricting arithmetic Frobenius to a normal
   intermediate field gives arithmetic Frobenius there.
-* `TauCeti.frobeniusAlgEquiv_teichmullerLift`: arithmetic Frobenius acts on Teichmüller
-  representatives by the `q`-th power map on the residue field.
+* `TauCeti.frobeniusAlgEquiv_teichmullerLift`: the Teichmüller lifts of the Frobenius action
+  on a residue element and its `q`-th power agree.
 * `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
   unity, arithmetic Frobenius acts by the `q`-th power map.
 
@@ -46,7 +47,7 @@ variable {K L : Type*}
   [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L] [IsGalois K L]
 
-/-- Arithmetic Frobenius sends the Teichmüller representative of `a` to that of `a ^ q`,
+/-- The Teichmüller lifts of the Frobenius action on `a` and of `a ^ q` agree,
 where `q` is the cardinality of the residue field of the base. -/
 @[simp]
 theorem frobeniusAlgEquiv_teichmullerLift [IsUnramified K L] (a : 𝓀[L]) :
