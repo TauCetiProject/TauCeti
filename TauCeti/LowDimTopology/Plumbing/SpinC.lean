@@ -101,22 +101,15 @@ theorem characteristicOrbit_surjective : Function.Surjective P.characteristicOrb
 intersection-matrix vector. -/
 @[simp]
 theorem characteristicOrbit_eq_iff (k l : P.characteristicVectors) :
-    P.characteristicOrbit k = P.characteristicOrbit l ↔ P.IsSpinCEquivalent k l := by
-  change Quotient.mk P.spinCSetoid k = Quotient.mk P.spinCSetoid l ↔ _
-  rw [Quotient.eq_iff_equiv]
-  rfl
+    P.characteristicOrbit k = P.characteristicOrbit l ↔ P.IsSpinCEquivalent k l :=
+  Quotient.eq
 
 /-- Adding twice an intersection-matrix vector does not change the lattice orbit. -/
 @[simp]
 theorem characteristicOrbit_add_two_mulVec (k : P.characteristicVectors) (x : V → ℤ) :
     P.characteristicOrbit ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v,
-      k.property.add_two_mul⟩ = P.characteristicOrbit k := by
-  unfold characteristicOrbit
-  rw [Quotient.eq_iff_equiv]
-  exact ⟨-x, by
-    ext v
-    simp only [Pi.neg_apply, Matrix.mulVec_neg]
-    ring⟩
+      k.property.add_two_mul⟩ = P.characteristicOrbit k :=
+  (P.characteristicOrbit_eq_iff _ _).2 (IsSpinCEquivalent.symm P ⟨x, rfl⟩)
 
 end PlumbingGraph
 
