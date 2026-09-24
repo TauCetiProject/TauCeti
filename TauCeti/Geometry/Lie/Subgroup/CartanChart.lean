@@ -11,15 +11,10 @@ public import TauCeti.Geometry.Lie.Subgroup.LocalSeparation
 /-!
 # The local Cartan chart of a closed subgroup
 
-For a closed subgroup `K` of a finite-dimensional Lie group, the exponential-product map for a
-complement of its Lie algebra is a local chart at the identity.  This file records the local
-consequence needed by the closed-subgroup atlas: sufficiently near `1`, membership in `K` is
-equivalent to being the exponential of an element of `lieSubalgebraOfSubgroup K`.
-
-The proof combines the local inverse of the complementary exponential-product chart with the
-local-separation criterion for the transverse subspace.  It deliberately stops at this chart
-boundary; the compatible manifold structure and its global atlas are supplied by the subsequent
-embedded-subgroup construction.
+For a closed subgroup `K` of a finite-dimensional Lie group, this file gives a neighborhood of
+the identity on which membership in `K` is equivalent to being the exponential of an element of
+`lieSubalgebraOfSubgroup K`.  This local characterization is the membership criterion used by
+the embedded Lie-subgroup chart.
 
 ## Main result
 
@@ -50,10 +45,7 @@ attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- Near the identity, a closed subgroup is exactly the exponential image of its Lie algebra.
-
-The neighborhood is obtained from the local inverse of the product chart
-`(X, Y) ↦ lieExp X * lieExp Y`, where `X` is in the subgroup Lie algebra and `Y` is in a
-complement.  The transverse local-separation theorem forces `Y = 0` for subgroup elements. -/
+This is the local membership criterion for the embedded Lie-subgroup chart. -/
 theorem exists_mem_nhds_one_iff_mem_lieExp_of_isClosed {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
