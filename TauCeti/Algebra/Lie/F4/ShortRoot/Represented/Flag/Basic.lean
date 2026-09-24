@@ -35,6 +35,8 @@ open Module
 noncomputable section
 
 local notation "𝔽₂" => ZMod 2
+local notation "ρ" => (f4ShortRootAdjoint :
+  f4ModularChevalleyLieAlgebra →ₗ[𝔽₂] Module.End 𝔽₂ f4ShortRootLieIdeal)
 
 private noncomputable local instance : AddCommGroup f4ShortRootRepresentedIdeal :=
   Module.addCommMonoidToAddCommGroup 𝔽₂
@@ -56,14 +58,14 @@ noncomputable def f4ShortRootRepresentedIdealBasis :
 /-- The prescribed basis of `M / J`, obtained from the special-isogeny-indexed basis of `L / I`. -/
 noncomputable def f4ShortRootRepresentedQuotientBasis :=
   f4ShortRootQuotientBasis.map
-    (LinearMap.quotientEquivRangeQuotientMap f4ShortRootAdjointLinearMap
+    (LinearMap.quotientEquivRangeQuotientMap ρ
       f4ShortRootSubspace ker_f4ShortRootAdjoint_le_f4ShortRootSubspace)
 
 /-- A basis of the represented range `M` adapted to `J ⊆ M`, with prescribed quotient block. -/
 noncomputable def f4ShortRootRepresentedRangeBasis :
     Basis (Fin (f4ShortRootRepresentedIdealRank + 26)) 𝔽₂
       f4ShortRootRepresentedRange :=
-  LinearMap.rangeExtensionBasis f4ShortRootAdjointLinearMap f4ShortRootSubspace
+  LinearMap.rangeExtensionBasis ρ f4ShortRootSubspace
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
     f4ShortRootRepresentedIdealBasis f4ShortRootQuotientBasis
 
@@ -153,7 +155,7 @@ theorem f4ShortRootRepresentedRangeBasis_ideal
     (i : Fin f4ShortRootRepresentedIdealRank) :
     f4ShortRootRepresentedRangeBasis (Fin.castAdd 26 i) =
       f4ShortRootRepresentedIdealBasis i :=
-  LinearMap.rangeExtensionBasis_castAdd f4ShortRootAdjointLinearMap f4ShortRootSubspace
+  LinearMap.rangeExtensionBasis_castAdd ρ f4ShortRootSubspace
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
     f4ShortRootRepresentedIdealBasis f4ShortRootQuotientBasis i
 
@@ -163,10 +165,10 @@ theorem f4ShortRootRepresentedRangeBasis_quotient (a : Fin 26) :
     Submodule.Quotient.mk
         (f4ShortRootRepresentedRangeBasis
           (Fin.natAdd f4ShortRootRepresentedIdealRank a)) =
-      LinearMap.quotientEquivRangeQuotientMap f4ShortRootAdjointLinearMap
+      LinearMap.quotientEquivRangeQuotientMap ρ
         f4ShortRootSubspace ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
         (f4ShortRootQuotientBasis a) :=
-  LinearMap.rangeExtensionBasis_natAdd_mkQ f4ShortRootAdjointLinearMap f4ShortRootSubspace
+  LinearMap.rangeExtensionBasis_natAdd_mkQ ρ f4ShortRootSubspace
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
     f4ShortRootRepresentedIdealBasis f4ShortRootQuotientBasis a
 

@@ -27,6 +27,8 @@ namespace TauCeti.DynkinType
 noncomputable section
 
 local notation "𝔽₂" => ZMod 2
+local notation "ρ" => (f4ShortRootAdjoint :
+  f4ModularChevalleyLieAlgebra →ₗ[𝔽₂] Module.End 𝔽₂ f4ShortRootLieIdeal)
 
 /-- The cotangent-dual adjoint module of `GL₂₆` over `ZMod 2`. -/
 abbrev f4ShortRootCotangentDual :=
@@ -89,7 +91,7 @@ private noncomputable def f4ShortRootAdjointMatrixBaseChangeLinearMap :
     f4ModularChevalleyLieAlgebra →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=
   (Algebra.linearMap (ZMod 2) A).mapMatrix.comp
     ((LinearMap.toMatrix f4ShortRootLieIdealBasis
-      f4ShortRootLieIdealBasis).toLinearMap.comp f4ShortRootAdjointLinearMap)
+      f4ShortRootLieIdealBasis).toLinearMap.comp ρ)
 
 private theorem f4ShortRootAdjointMatrixBaseChangeLinearMap_apply
     (X : f4ModularChevalleyLieAlgebra) :
@@ -97,8 +99,7 @@ private theorem f4ShortRootAdjointMatrixBaseChangeLinearMap_apply
       f4ShortRootAdjointMatrixBaseChange (A := A) X := by
   ext i j
   simp [f4ShortRootAdjointMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
-    f4ShortRootAdjointLinearMap_apply, LinearMap.toMatrix_apply,
-    f4ShortRootLieIdealBasis_repr_apply]
+    LinearMap.toMatrix_apply, f4ShortRootLieIdealBasis_repr_apply]
 
 private noncomputable def f4ShortRootIdealAdjointMatrixBaseChangeLinearMap :
     f4ShortRootLieIdeal →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=
@@ -169,11 +170,11 @@ noncomputable def f4ShortRootEndMatrixBaseChangeLinearMap :
 /-- Scalar extension of the adjoint endomorphism agrees with its named matrix. -/
 @[simp] theorem f4ShortRootEndMatrixBaseChangeLinearMap_adjoint
     (X : f4ModularChevalleyLieAlgebra) :
-    f4ShortRootEndMatrixBaseChangeLinearMap (A := A) (f4ShortRootAdjointLinearMap X) =
+    f4ShortRootEndMatrixBaseChangeLinearMap (A := A) (f4ShortRootAdjoint X) =
       f4ShortRootAdjointMatrixBaseChange (A := A) X := by
   ext i j
   simp [f4ShortRootEndMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
-    f4ShortRootAdjointLinearMap_apply, LinearMap.toMatrix_apply]
+    LinearMap.toMatrix_apply]
 
 /-- The first two adapted basis blocks span exactly the represented range after scalar extension. -/
 private theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
@@ -197,9 +198,9 @@ private theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
     _ = Submodule.span A (Set.range (g.comp f4ShortRootRepresentedRange.subtype)) :=
       (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedRangeBasis
         (g.comp f4ShortRootRepresentedRange.subtype)).symm
-    _ = Submodule.span A (Set.range (g.comp f4ShortRootAdjointLinearMap)) :=
+    _ = Submodule.span A (Set.range (g.comp ρ)) :=
       congrArg (Submodule.span A) (LinearMap.range_comp_rangeRestrict
-        f4ShortRootAdjointLinearMap g).symm
+        ρ g).symm
     _ = Submodule.span A (Set.range fun X : f4ModularChevalleyLieAlgebra =>
           f4ShortRootAdjointMatrixBaseChange (A := A) X) := by
       congr 2
@@ -240,8 +241,8 @@ private theorem f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq :
         ((g.comp f4ShortRootRepresentedRange.subtype).comp
           f4ShortRootRepresentedIdeal.subtype)).symm
     _ = Submodule.span A (Set.range
-          (g.comp (f4ShortRootAdjointLinearMap.comp f4ShortRootSubspace.subtype))) :=
-      congrArg (Submodule.span A) (LinearMap.range_comp_map_subtype f4ShortRootAdjointLinearMap
+          (g.comp ((ρ).comp f4ShortRootSubspace.subtype))) :=
+      congrArg (Submodule.span A) (LinearMap.range_comp_map_subtype ρ
         f4ShortRootSubspace g).symm
     _ = Submodule.span A (Set.range fun y : f4ShortRootLieIdeal =>
           f4ShortRootAdjointMatrixBaseChange (A := A)

@@ -25,20 +25,10 @@ open _root_.LieAlgebra
 
 noncomputable section
 
-/-- The adjoint action on the modular short-root ideal, viewed as a linear map. -/
-noncomputable def f4ShortRootAdjointLinearMap :
-    f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
-      Module.End (ZMod 2) f4ShortRootLieIdeal :=
-  f4ShortRootAdjoint
-
-@[simp] theorem f4ShortRootAdjointLinearMap_apply
-    (X : f4ModularChevalleyLieAlgebra) (y : f4ShortRootLieIdeal) :
-    f4ShortRootAdjointLinearMap X y = f4ShortRootAdjoint X y := by
-  simp [f4ShortRootAdjointLinearMap]
-
 /-- The kernel of the adjoint action on the modular short-root ideal is contained in that ideal. -/
 theorem ker_f4ShortRootAdjoint_le_f4ShortRootSubspace :
-    LinearMap.ker f4ShortRootAdjointLinearMap ≤ f4ShortRootSubspace := by
+    LinearMap.ker (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
+      Module.End (ZMod 2) f4ShortRootLieIdeal) ≤ f4ShortRootSubspace := by
   intro X hX
   apply mem_f4ShortRootSubspace_of_forall_lie_rootVector_eq_zero X
   intro β hβ
@@ -46,42 +36,43 @@ theorem ker_f4ShortRootAdjoint_le_f4ShortRootSubspace :
     ⟨f4ModularRootVector β,
       mem_f4ShortRootLieIdeal_iff.mpr
         (f4ModularRootVector_mem_shortRootSubspace β hβ)⟩
-  have happly : f4ShortRootAdjointLinearMap X y = 0 :=
+  have happly : f4ShortRootAdjoint X y = 0 :=
     congrArg (fun f : Module.End (ZMod 2) f4ShortRootLieIdeal => f y) hX
   calc
     ⁅X, f4ModularRootVector β⁆ =
         (f4ShortRootAdjoint X y : f4ModularChevalleyLieAlgebra) := by
       rw [coe_f4ShortRootAdjoint_apply]
-    _ = (f4ShortRootAdjointLinearMap X y : f4ModularChevalleyLieAlgebra) :=
-      congrArg (fun z : f4ShortRootLieIdeal =>
-        (z : f4ModularChevalleyLieAlgebra))
-        (f4ShortRootAdjointLinearMap_apply X y).symm
     _ = 0 := congrArg (fun z : f4ShortRootLieIdeal =>
       (z : f4ModularChevalleyLieAlgebra)) happly
 
 /-- The range of the modular short-root adjoint action. -/
 abbrev f4ShortRootRepresentedRange :=
-  LinearMap.range f4ShortRootAdjointLinearMap
+  LinearMap.range (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
+    Module.End (ZMod 2) f4ShortRootLieIdeal)
 
 /-- The image of the modular short-root ideal inside the represented range. -/
 abbrev f4ShortRootRepresentedIdeal :
     Submodule (ZMod 2) f4ShortRootRepresentedRange :=
-  f4ShortRootSubspace.map f4ShortRootAdjointLinearMap.rangeRestrict
+  f4ShortRootSubspace.map
+    (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
+      Module.End (ZMod 2) f4ShortRootLieIdeal).rangeRestrict
 
 /-- The modular Chevalley quotient by the short-root ideal, expressed as the quotient of the
 represented range by the image of that ideal. -/
 noncomputable def f4ShortRootQuotientEquivRepresentedRange :=
-  LinearMap.quotientEquivRangeQuotientMap f4ShortRootAdjointLinearMap f4ShortRootSubspace
+  LinearMap.quotientEquivRangeQuotientMap
+    (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
+      Module.End (ZMod 2) f4ShortRootLieIdeal) f4ShortRootSubspace
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
 
 /-- The represented-range equivalence evaluated on a modular Chevalley representative. -/
 @[simp] theorem f4ShortRootQuotientEquivRepresentedRange_apply_mk
     (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootQuotientEquivRepresentedRange (Submodule.Quotient.mk X) =
-      Submodule.Quotient.mk (f4ShortRootAdjointLinearMap.rangeRestrict X) :=
+      Submodule.Quotient.mk
+        ((f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
+          Module.End (ZMod 2) f4ShortRootLieIdeal).rangeRestrict X) :=
   LinearMap.quotientEquivRangeQuotientMap_apply_mk _ _ _ X
-
-
 end
 
 end TauCeti.DynkinType
