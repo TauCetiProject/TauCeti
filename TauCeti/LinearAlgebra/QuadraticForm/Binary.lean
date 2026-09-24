@@ -244,6 +244,35 @@ theorem equivalent_binary_iff [Invertible (2 : R)] (a b c d : Rˣ) :
 
 end CommRing
 
+/-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
+theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
+    (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
+  constructor
+  · intro hQ ⟨z, hz⟩
+    have hzero : weightedSumSquares F ![(1 : F), 1] ![z, 1] = 0 := by
+      simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+        Matrix.cons_val_one, one_mul]
+      rw [← hz]
+      simp
+    have hh := hQ ![z, 1] hzero
+    have : (1 : F) = 0 := by simpa using congrArg (fun f : Fin 2 → F => f 1) hh
+    exact one_ne_zero this
+  · intro hsq x hx
+    have hxy : x 0 ^ 2 + x 1 ^ 2 = 0 := by
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two] using hx
+    have hy : x 1 = 0 := by
+      by_contra hy
+      apply hsq
+      refine ⟨x 0 / x 1, ?_⟩
+      rw [← _root_.sq, div_pow]
+      field_simp
+      linear_combination -hxy
+    have hx0 : x 0 = 0 := by
+      have hx0sq : x 0 ^ 2 = 0 := by simpa [hy] using hxy
+      exact (sq_eq_zero_iff).mp hx0sq
+    funext i
+    fin_cases i <;> simp [hx0, hy]
+
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
 as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `(s, t) ↦ (s - t, s + t)`. -/

@@ -7,6 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
+import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.NumberTheory.LocalField.PowerSubgroup
 
 /-!
 # Normalization of the p-adic absolute value
@@ -24,6 +27,8 @@ concrete p-adic norm and valuation APIs.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
   number with `padicValNat`, and `Padic.natCastValuation_self` and
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
+* `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
+  `p ≡ 3 (mod 4)`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
@@ -108,5 +113,24 @@ theorem natCastValuation_two (hp : p ≠ 2) :
   rw [natCastValuation_eq_padicValNat]
   exact padicValNat.eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
+
+/-- If `p ≡ 3 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Reduction of a square
+root would make `-1` a square in the residue field of cardinality `p`. -/
+theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
+    ¬ IsSquare (-1 : ℚ_[p]) := by
+  intro hs0
+  have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
+  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
+    (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
+      (natCastValuation_two p (by omega))
+  have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
+    have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
+    exact (by simpa using h (by simpa using hs))
+  have hs' : IsSquare (-1 : 𝓀[ℚ_[p]]) :=
+    TauCeti.isSquare_units_val_iff.mpr hsres
+  let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
+  have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
+    simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
+  exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
 
 end Padic
