@@ -45,6 +45,8 @@ one through two prescribed points is not.
   point of `ℍ`.
 * `TauCeti.UpperHalfPlane.range_geodesicLine_one` and `TauCeti.UpperHalfPlane.range_geodesicLine`
   — every geodesic line, as a set, is a `g`-translate of the imaginary axis `{z | z.re = 0}`.
+* `TauCeti.UpperHalfPlane.mem_range_geodesicLine_iff` — membership test for a geodesic line,
+  without unfolding the smul-image.
 -/
 
 public section
@@ -121,5 +123,11 @@ theorem range_geodesicLine_one :
 theorem range_geodesicLine (g : PSL(2, ℝ)) :
     Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
   rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
+
+/-- Membership test for a geodesic line, without unfolding the smul-image. -/
+@[simp]
+theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
+  rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
 end TauCeti.UpperHalfPlane
