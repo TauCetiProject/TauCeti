@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
 
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
+import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import Mathlib.Analysis.Complex.Angle
 
 /-!
 # Conformal maps of the upper half-plane onto polygonal domains
@@ -35,7 +35,7 @@ on the bounding line or on the two bounding rays.
 
 ## Main result
 
-* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_injOn_of_image_eq` -- a conformal
+* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain` -- a conformal
   map of the upper half-plane onto a polygonal domain, continuous and injective up to the real
   axis and tending to a side at infinity, is an affine image of the Schwarz--Christoffel
   primitive.
@@ -54,44 +54,6 @@ namespace TauCeti
 
 variable {U : Set ℂ}
 
-/-! ### The frontier near a side and near a vertex -/
-
-/-- Near a boundary point where `U` coincides with an open half-plane, the frontier of `U` lies on
-the bounding line. -/
-private theorem im_div_eq_zero_of_mem_frontier {w q b z : ℂ} {ρ : ℝ}
-    (hU : ∀ y ∈ ball w ρ, (y ∈ U ↔ 0 < ((y - q) / b).im)) (hz : z ∈ ball w ρ)
-    (hzU : z ∈ frontier U) : ((z - q) / b).im = 0 := by
-  have hUO : U ∩ ball w ρ = {y : ℂ | 0 < ((y - q) / b).im} ∩ ball w ρ :=
-    Set.ext fun y => and_congr_left (hU y)
-  have h : z ∈ frontier {y : ℂ | 0 < ((y - q) / b).im} ∩ ball w ρ := by
-    rw [← frontier_inter_open_inter isOpen_ball, ← hUO, frontier_inter_open_inter isOpen_ball]
-    exact ⟨hzU, hz⟩
-  exact (frontier_lt_subset_eq continuous_const (by fun_prop) h.1).symm
-
-/-- Near a vertex where `U` coincides with the open sector `{|arg ((z - v) / b)| < α}`, the
-frontier of `U` away from the vertex lies on the two bounding rays `|arg ((z - v) / b)| = α`. -/
-private theorem abs_arg_div_eq_of_mem_frontier {v b z : ℂ} {ρ α : ℝ} (hb : b ≠ 0)
-    (hU : ∀ y ∈ ball v ρ, y ≠ v → (y ∈ U ↔ |((y - v) / b).arg| < α)) (hz : z ∈ ball v ρ)
-    (hzv : z ≠ v) (hzU : z ∈ frontier U) : |((z - v) / b).arg| = α := by
-  set O := ball v ρ \ {v}
-  have hO : IsOpen O := isOpen_ball.sdiff isClosed_singleton
-  -- `|arg|` is the unoriented angle with `1`, which is continuous away from `0`
-  have hφ : ContinuousOn (fun y : ℂ => |((y - v) / b).arg|) O := fun y hy => by
-    have hy0 : (y - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hy.2) hb
-    have hangle : ContinuousAt (fun y : ℂ => InnerProductGeometry.angle ((y - v) / b) 1) y :=
-      (InnerProductGeometry.continuousAt_angle (x := ((y - v) / b, (1 : ℂ))) hy0
-        one_ne_zero).comp (f := fun y : ℂ => ((y - v) / b, (1 : ℂ))) (by fun_prop)
-    refine (hangle.congr ?_).continuousWithinAt
-    filter_upwards [isOpen_ne.mem_nhds hy.2] with y hy
-    exact angle_one_right (div_ne_zero (sub_ne_zero.mpr hy) hb)
-  -- on the punctured ball `U` is the strict sublevel set of `|arg|`
-  have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
-    rw [← show ((↑) : O → ℂ) ⁻¹' U = {y : O | |((y - v : ℂ) / b).arg| < α} from
-      Set.ext fun y => hU y y.2.1 y.2.2,
-      ← hO.isOpenMap_subtype_val.preimage_frontier_eq_frontier_preimage continuous_subtype_val]
-    exact hzU
-  exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
-
 /-! ### Boundary values of a conformal map onto `U` -/
 
 variable {f : ℂ → ℂ}
@@ -107,12 +69,13 @@ private theorem exists_ball_im_div_of_image_eq (hfc : ContinuousOn f {z : ℂ | 
   obtain ⟨r, hr, hball⟩ := Metric.continuousWithinAt_iff.mp (hfc x hx.symm.le) ρ hρ
   refine ⟨r, hr, fun z hz hz0 => ?_, fun z hz hz0 => ?_⟩
   · exact im_div_eq_zero_of_mem_frontier hU (hball hz0.symm.le hz)
-      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi hz0)
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
   · exact (hU _ (hball hz0.le hz)).mp (hfU ▸ mem_image_of_mem f hz0)
 
 /-- **Corner condition.**  Near a real point `x` whose image is a vertex of `U`, the nearby upper
 half-plane is carried into the open sector at that vertex and the other boundary values of `f`
-onto its two bounding rays. -/
+lie on its two bounding rays. -/
 private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U) {x b : ℂ} {ρ α : ℝ}
     (hx : x.im = 0) (hρ : 0 < ρ) (hb : b ≠ 0)
@@ -125,7 +88,8 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
       simp [hfi hz0.le hx.symm.le h, hx] at hz0
     exact (hU _ (hball hz0.le hz) hzx).mp (hfU ▸ mem_image_of_mem f hz0)
   · exact abs_arg_div_eq_of_mem_frontier hb hU (hball hz0.symm.le hz) hzx
-      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi hz0)
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
 /-- **Condition at infinity.**  If `f` tends at infinity to a point `p` on a side of `U` which is
 not a value of `f`, then in the coordinate `w ↦ -w⁻¹` at infinity, and after normalizing that side
@@ -178,7 +142,9 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
       exact im_div_eq_zero_of_mem_frontier hU (mem_ball_self hρ) hpU
     · rw [update_of_ne h0]
       exact im_div_eq_zero_of_mem_frontier hU (hball w hw hw0.symm.le h0)
-        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi (by simp [hw0]))
+        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+          (hfc _ (by simp [hw0])) (by simp [hw0])
+          (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi (by simp [hw0])))
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))
@@ -204,7 +170,7 @@ is not a value of `f` on the closed upper half-plane.  Then throughout the upper
 
 where `F` is the normalized Schwarz--Christoffel primitive for the prevertices `a` and the turning
 exponents `e`. -/
-theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_injOn_of_image_eq
+theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain
     {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
     (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane) {v : ι → ℂ} {p : ℂ}
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
@@ -227,7 +193,9 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_injOn_of_image_eq
     have hxv : ∀ i, f x ≠ v i := fun i h =>
       hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))
     obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
-      hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi (ofReal_im x)) hxv
+      hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ (by simp)) (ofReal_im x)
+        (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi (ofReal_im x))) hxv
     obtain ⟨r, hr, hreal, hupper⟩ := exists_ball_im_div_of_image_eq hfc hfi hfU (ofReal_im x) hρ hU
     exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
       hupper⟩

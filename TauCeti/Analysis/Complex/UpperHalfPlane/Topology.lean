@@ -30,6 +30,7 @@ period exactly when the original function is invariant under the corresponding t
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
+* `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 
@@ -108,26 +109,33 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
   · have h := hupper ((starRingEnd ℂ) z) (by simpa using hz) (by simpa using hi.le)
     simpa only [hzconj, norm_conj] using h
 
-/-- A continuous injection of the closed upper half-plane sends every real point to the frontier
-of the image of the open upper half-plane. -/
+/-- A boundary point of the closed upper half-plane whose image avoids the open half-plane image
+maps to the frontier when the map is continuous there. -/
 theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
-    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ}
-    (hz : z.im = 0) : f z ∈ frontier (f '' upperHalfPlaneSet) := by
+    {z : ℂ} (hfc : ContinuousWithinAt f {z : ℂ | 0 ≤ z.im} z)
+    (hz : z.im = 0) (hnot : f z ∉ f '' upperHalfPlaneSet) :
+    f z ∈ frontier (f '' upperHalfPlaneSet) := by
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  have hz0 : z ∈ {z : ℂ | 0 ≤ z.im} := hz.symm.le
-  refine ⟨((hfc z hz0).mono hH0).mem_closure_image ?_, fun h => ?_⟩
+  refine ⟨(hfc.mono hH0).mem_closure_image ?_, fun h => hnot (interior_subset h)⟩
   · simp [upperHalfPlaneSet, hz]
-  · obtain ⟨y, hy, hyz⟩ := interior_subset h
-    have hyz' : y = z := hfi (hH0 hy) hz0 hyz
-    simp only [upperHalfPlaneSet, mem_ofPred_eq, hyz', hz, lt_self_iff_false] at hy
+
+/-- An injection on the closed upper half-plane cannot send a real point into the image of the
+open upper half-plane. -/
+theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ} (hz : z.im = 0) :
+    f z ∉ f '' upperHalfPlaneSet := by
+  rintro ⟨y, hy, heq⟩
+  have hyz : y = z := hfi (show 0 ≤ y.im from (show 0 < y.im from hy).le)
+    hz.symm.le heq
+  simp [upperHalfPlaneSet, hyz, hz] at hy
 
 /-- The inversion `w ↦ -w⁻¹` sends `w` into the closed upper half-plane exactly when `w` lies in
 it. -/
-theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
+@[simp] theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
-  · rw [show (-w⁻¹).im = w.im / normSq w by simp [neg_div], le_div_iff₀ (normSq_pos.mpr hw),
-      zero_mul]
+  · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
+    rw [him, le_div_iff₀ (normSq_pos.mpr hw), zero_mul]
 
 end TauCeti
 
