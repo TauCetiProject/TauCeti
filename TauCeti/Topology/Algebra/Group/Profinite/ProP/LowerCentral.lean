@@ -18,9 +18,8 @@ the series is `P₀ = G`, `Pₙ₊₁ = Φ Pₙ`.
 
 This is the `p`-analogue of `Subgroup.lowerCentralSeries`: where the ordinary lower central
 series repeatedly takes commutators with the whole group, the lower `p`-central series also
-throws in `p`-th powers at each stage. It is the filtration relative to which the associated
-graded object of a pro-`p` group is a Lie algebra over `𝔽ₚ`, and it is the standard tool for
-studying pro-`p` groups by successive elementary abelian quotients.
+throws in `p`-th powers at each stage. It is the standard filtration used to study pro-`p`
+groups through successive elementary abelian quotients.
 
 ## Main definitions
 
@@ -154,17 +153,14 @@ instance pLowerCentralSeries_normal (n : ℕ) : (pLowerCentralSeries p G n).Norm
   | zero => rw [pLowerCentralSeries_zero]; infer_instance
   | succ n ih => rw [pLowerCentralSeries_succ]; exact pLowerCentralStep_normal _
 
-/-- **`p`-th powers raise the degree.** If `x` lies in `P k`, then `x ^ p` lies in `P (k + 1)`.
-This is the membership statement that makes the `p`-power operator on the associated graded
-object well defined. -/
+/-- **`p`-th powers raise the degree.** If `x` lies in `P k`, then `x ^ p` lies in `P (k + 1)`. -/
 theorem pow_mem_pLowerCentralSeries (k : ℕ) {x : G} (hx : x ∈ pLowerCentralSeries p G k) :
     x ^ p ∈ pLowerCentralSeries p G (k + 1) := by
   rw [pLowerCentralSeries_succ]
   exact pow_mem_pLowerCentralStep hx
 
 /-- **Commutators raise the degree by one.** If `x ∈ P k` then `⁅x, y⁆ ∈ P (k + 1)` for *any*
-`y : G`, because each step adjoins the commutators `⁅P k, ⊤⁆`. This is the degree-shift in the
-form the graded bracket needs; the sharper `⁅P j, P k⁆ ≤ P (j + k + 1)` refines it. -/
+`y : G`, because each step adjoins the commutators `⁅P k, ⊤⁆`. -/
 theorem commutator_mem_pLowerCentralSeries_succ (k : ℕ) {x : G}
     (hx : x ∈ pLowerCentralSeries p G k) (y : G) :
     ⁅x, y⁆ ∈ pLowerCentralSeries p G (k + 1) := by
