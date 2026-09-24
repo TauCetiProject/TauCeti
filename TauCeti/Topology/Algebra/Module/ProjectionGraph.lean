@@ -37,9 +37,8 @@ private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y
 private theorem coe_homeomorphImage_apply {Y Z : Type*} [TopologicalSpace Y]
     [TopologicalSpace Z] {f : Y → Z} (hf : IsEmbedding f) (s : Set Y) (v : s) :
     (hf.homeomorphImage s v : Z) = f v := by
-  simp only [IsEmbedding.homeomorphImage, Homeomorph.trans_apply, coe_setCongr_apply]
-  -- The remaining component is the embedding's `toHomeomorph`.
-  rfl
+  simp only [IsEmbedding.homeomorphImage, Homeomorph.trans_apply, coe_setCongr_apply,
+    IsEmbedding.toHomeomorph_apply_coe, Function.comp_apply]
 
 variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
   [ContinuousAdd M]
