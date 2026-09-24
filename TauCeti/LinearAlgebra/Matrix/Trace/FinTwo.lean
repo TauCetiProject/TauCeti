@@ -5,44 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.PiDiv
+import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
 
 /-!
 # Trace identities for `2 × 2` matrices
 
 By the Cayley–Hamilton theorem in size two, a `2 × 2` matrix `A` satisfies
 `A ^ 2 = (trace A) • A - (det A) • 1`, so its powers obey the linear recurrence
-`A ^ (n + 2) = (trace A) • A ^ (n + 1) - (det A) • A ^ n`, and so do their traces. For a matrix
-of determinant one this pins down the order behaviour in terms of the trace alone:
-
-* **Elliptic case.** If `trace A = 2 cos θ`, then
-  `sin θ • A ^ n = sin (n θ) • A - sin ((n - 1) θ) • 1` (the Chebyshev form of the recurrence).
-  At `θ = π / k` with `2 ≤ k` this gives `A ^ k = -1`.
-* **Hyperbolic case.** Over a linearly ordered commutative ring, if `2 < trace A` then the traces
-  of the powers of `A` increase strictly, so `2 < trace (A ^ n)` for every `n ≠ 0`; hence if
-  `2 < |trace A|` then `2 < |trace (A ^ n)|` for every `n ≠ 0`. In particular no nonzero power of
-  such a matrix is `± 1`.
+`A ^ (n + 2) = (trace A) • A ^ (n + 1) - (det A) • A ^ n`, and so do their traces. Over a linearly
+ordered commutative ring this controls the powers of a hyperbolic matrix of determinant one: if
+`2 < trace A` then the traces of the powers of `A` increase strictly, so `2 < trace (A ^ n)` for
+every `n ≠ 0`; hence if `2 < |trace A|` then `2 < |trace (A ^ n)|` for every `n ≠ 0`. In particular
+no nonzero power of such a matrix is `± 1`. For determinant one, `2 < |trace A|` is equivalent to
+Mathlib's `Matrix.IsHyperbolic A`, whose discriminant is `trace A ^ 2 - 4`.
 
 The **Fricke trace identity** expresses the trace of a commutator in `SL(2, R)` through the traces
 of the two matrices and of their product:
 `tr ⁅A, B⁆ = tr A ^ 2 + tr B ^ 2 + tr (A B) ^ 2 - tr A tr B tr (A B) - 2`.
 
-These are the matrix inputs for reading off the order of an element of `SL(2, ℝ)` or `PSL(2, ℝ)`
-from its trace, and for recognizing a commutator as hyperbolic.
+These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
+from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
+trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo`.
 
 ## Main results
 
+* `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`: the Cayley–Hamilton identity in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
-* `Matrix.sin_smul_pow_fin_two`: the powers of a determinant-one matrix of trace `2 cos θ`.
-* `Matrix.pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div`: a determinant-one real matrix of trace
-  `2 cos (π / k)`, with `2 ≤ k`, has `k`-th power `-1`.
-* `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the powers of a determinant-one matrix
-  of trace (respectively absolute trace) greater than `2` again have that property.
+* `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the nonzero powers of a
+  determinant-one matrix of trace (respectively absolute trace) greater than `2` again have that
+  property.
+* `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
+  its trace has absolute value greater than `2`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 
 ## References
@@ -55,26 +52,25 @@ from its trace, and for recognizing a commutator as hyperbolic.
 
 public section
 
-open Real
-
 namespace Matrix
 
 section CommRing
 
 variable {R : Type*} [CommRing R]
 
+/-- **Cayley–Hamilton in size two**: a `2 × 2` matrix `A` satisfies
+`A ^ 2 = (trace A) • A - (det A) • 1`. -/
+theorem sq_eq_trace_smul_sub_det_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) :
+    A ^ 2 = A.trace • A - A.det • 1 := by
+  have h := A.mul_adjugate
+  rw [adjugate_fin_two_eq_trace_smul_one_sub, mul_sub, Matrix.mul_smul, mul_one] at h
+  rw [sq, ← h, sub_sub_cancel]
+
 /-- **Cayley–Hamilton in size two**, as a recurrence for the powers of a `2 × 2` matrix. -/
 theorem pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
     A ^ (n + 2) = A.trace • A ^ (n + 1) - A.det • A ^ n := by
-  have h : A ^ 2 = A.trace • A - A.det • 1 := by
-    nontriviality R
-    have hCH := A.aeval_self_charpoly
-    rw [A.charpoly_fin_two] at hCH
-    simp only [map_add, Polynomial.aeval_sub, map_pow, Polynomial.aeval_X, map_mul,
-      Polynomial.aeval_C, Algebra.smul_def, mul_one] at hCH ⊢
-    apply sub_eq_zero.mp
-    convert hCH using 1; abel
-  rw [pow_add, h, mul_sub, Matrix.mul_smul, Matrix.mul_smul, mul_one, pow_succ]
+  rw [pow_add, sq_eq_trace_smul_sub_det_smul_one_fin_two, mul_sub, Matrix.mul_smul,
+    Matrix.mul_smul, mul_one, pow_succ]
 
 /-- The traces of the powers of a `2 × 2` matrix satisfy the Cayley–Hamilton recurrence. -/
 theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
@@ -82,48 +78,6 @@ theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
   rw [pow_add_two_fin_two, trace_sub, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul]
 
 end CommRing
-
-/-- The powers of a real `2 × 2` matrix of determinant one and trace `2 cos θ`:
-`sin θ • A ^ n = sin (n θ) • A - sin ((n - 1) θ) • 1`. The coefficients are the values of the
-Chebyshev polynomials of the second kind at `cos θ`, multiplied by `sin θ`. -/
-theorem sin_smul_pow_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet : A.det = 1)
-    (htr : A.trace = 2 * cos θ) (n : ℕ) :
-    sin θ • A ^ n = sin (n * θ) • A - sin ((n - 1) * θ) • 1 := by
-  -- The sine sequence obeys the same recurrence as the powers:
-  -- `sin ((m + 1) θ) = 2 cos θ sin (m θ) - sin ((m - 1) θ)`.
-  have hsin (m : ℝ) : sin ((m + 1) * θ) = 2 * cos θ * sin (m * θ) - sin ((m - 1) * θ) := by
-    have h₁ : (m + 1) * θ = m * θ + θ := by ring
-    have h₂ : (m - 1) * θ = m * θ - θ := by ring
-    rw [h₁, h₂, sin_add, sin_sub]
-    ring
-  suffices ∀ n : ℕ, sin θ • A ^ n = sin (n * θ) • A - sin ((n - 1) * θ) • 1 ∧
-      sin θ • A ^ (n + 1) = sin ((n + 1 : ℕ) * θ) • A - sin ((((n + 1 : ℕ) : ℝ) - 1) * θ) • 1 from
-    (this n).1
-  intro n
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    refine ⟨ih.2, ?_⟩
-    rw [pow_add_two_fin_two, hdet, htr, one_smul, smul_sub, smul_comm, ih.2, ih.1]
-    have e₁ := hsin ((n + 1 : ℕ) : ℝ)
-    have e₂ := hsin (n : ℝ)
-    push_cast at e₁ e₂ ⊢
-    -- Normalize the predecessor indices so the sine recurrence matches the casted goal.
-    rw [show (n : ℝ) + 1 + 1 - 1 = n + 1 by ring, show (n : ℝ) + 1 - 1 = n by ring] at *
-    rw [e₁, e₂]
-    module
-
-/-- A real `2 × 2` matrix of determinant one and trace `2 cos (π / k)`, with `2 ≤ k`, has `k`-th
-power `-1`. Its image in `PSL(2, ℝ)` has order dividing `k`. -/
-theorem pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div {A : Matrix (Fin 2) (Fin 2) ℝ} {k : ℕ}
-    (hdet : A.det = 1) (hk : 2 ≤ k) (htr : A.trace = 2 * cos (π / k)) : A ^ k = -1 := by
-  have hk₀ : (k : ℝ) ≠ 0 := by positivity
-  have hs : 0 < sin (π / k) := TauCeti.sin_pi_div_pos hk
-  have h := sin_smul_pow_fin_two hdet htr k
-  -- Normalize the two sine arguments before using `sin_pi` and `sin_pi_sub`.
-  rw [show (k : ℝ) * (π / k) = π by field_simp, show ((k : ℝ) - 1) * (π / k) = π - π / k by
-    field_simp, sin_pi, sin_pi_sub, zero_smul, zero_sub, ← smul_neg] at h
-  exact smul_right_injective _ hs.ne' h
 
 section Ordered
 
@@ -156,6 +110,14 @@ theorem two_lt_abs_trace_pow {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
       exact h'.trans_le (le_abs_self _)
     · rw [hn'.neg_pow, trace_neg] at h'
       exact h'.trans_le (neg_le_abs _)
+
+/-- A `2 × 2` matrix of determinant one is hyperbolic, in the sense of `Matrix.IsHyperbolic`,
+exactly when its trace has absolute value greater than `2`: its discriminant is
+`trace A ^ 2 - 4`. -/
+theorem isHyperbolic_iff_two_lt_abs_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1) :
+    A.IsHyperbolic ↔ 2 < |A.trace| := by
+  rw [IsHyperbolic, discr_fin_two, hdet, mul_one, sub_pos, show (4 : R) = 2 ^ 2 by norm_num,
+    sq_lt_sq, abs_two]
 
 end Ordered
 
