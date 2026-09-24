@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
+public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
--- Non-public: `Algebra.FiniteType` appears only in the private step `finiteType_of_finite` and in
--- the proof of `instIsNoetherianRing`; no public statement below mentions it.
-import Mathlib.RingTheory.FiniteType
 
 /-!
 # The enveloping algebra of an abelian Lie algebra is its symmetric algebra
@@ -44,7 +42,8 @@ Two ring-theoretic finiteness properties transfer across the comparison with no 
 (`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra, and it is
 **Noetherian** over a Noetherian ring when `L` is finite as a module
 (`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`), being then a commutative `R`-algebra of
-finite type. These are the abelian cases of two general Poincaré--Birkhoff--Witt corollaries, which
+finite type (`TauCeti.UniversalEnvelopingAlgebra.instFiniteType`, which needs no hypothesis on
+`R`). These are the abelian cases of two general Poincaré--Birkhoff--Witt corollaries, which
 over a field hold for every Lie algebra and every finite-dimensional one respectively; the general
 statements go through the associated graded of the PBW filtration and are not proved here, the
 arguments below using commutativity of `U(L)` throughout.
@@ -87,6 +86,8 @@ about a non-abelian `L`.
   `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
   as a module over a domain.
+* `TauCeti.UniversalEnvelopingAlgebra.instFiniteType`: **`U(L)` is an algebra of finite type** for
+  an abelian `L` finite as a module.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **`U(L)` is Noetherian** for an abelian
   `L` finite as a module over a Noetherian ring.
 
@@ -336,11 +337,11 @@ PBW filtration and is not proved here. -/
 instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
   (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
 
-/-- The enveloping algebra of an abelian Lie algebra which is finite as a module is a commutative
-`R`-algebra of finite type: a finite spanning set of `L` generates `U(L)` as an algebra, the
+/-- **The enveloping algebra of an abelian Lie algebra which is finite as a module is an
+`R`-algebra of finite type**: a finite spanning set of `L` generates `U(L)` as an algebra, the
 canonical generators of `U(L)` generating it
 (`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`). -/
-private theorem finiteType_of_finite [Module.Finite R L] : Algebra.FiniteType R U := by
+instance instFiniteType [Module.Finite R L] : Algebra.FiniteType R U := by
   classical
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := R) (M := L)
   -- the span of the image of a spanning set of `L` is the whole of the image of `L`
@@ -361,7 +362,6 @@ This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` 
 every finite-dimensional Lie algebra over a field; the general statement goes through the
 associated graded of the PBW filtration and is not proved here. -/
 instance instIsNoetherianRing [IsNoetherianRing R] [Module.Finite R L] : IsNoetherianRing U :=
-  have := finiteType_of_finite (R := R) (L := L)
   Algebra.FiniteType.isNoetherianRing R U
 
 end Transfer
