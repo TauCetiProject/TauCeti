@@ -371,6 +371,7 @@ def nullHomotopic : MorphismIdeal (CurvedDuplex C w) where
     intro _ _ _ _ g ⟨h₀, h₁, hf⟩
     exact ⟨_, _, hf ▸ (nullHomotopicMap_comp ..).symm⟩
 
+@[simp]
 theorem mem_nullHomotopic_iff {f : X ⟶ Y} :
     f ∈ (nullHomotopic C w).hom X Y ↔ ∃ h₀ h₁, nullHomotopicMap h₀ h₁ = f :=
   Iff.rfl
@@ -470,6 +471,30 @@ theorem HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor :
       parityShift C w ⋙ (nullHomotopic C w).quotientFunctor := by
   rw [HomotopyCategory.parityShiftEquivalence, MorphismIdeal.mapEquivalence_functor]
   exact MorphismIdeal.quotientFunctor_comp_map ..
+
+/-- On the image of a curved duplex, the parity shift of the homotopy category is the image of its
+parity shift. -/
+@[simp]
+theorem HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj
+    (X : CurvedDuplex C w) :
+    (HomotopyCategory.parityShiftEquivalence C w).functor.obj
+        ((nullHomotopic C w).quotientFunctor.obj X) =
+      (nullHomotopic C w).quotientFunctor.obj ((parityShift C w).obj X) :=
+  Functor.congr_obj HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor X
+
+/-- On the image of a morphism of curved duplexes, the parity shift of the homotopy category is
+the image of its parity shift, up to the identification of objects
+`HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj`. -/
+@[simp]
+theorem HomotopyCategory.parityShiftEquivalence_functor_map_quotientFunctor_map (f : X ⟶ Y) :
+    (HomotopyCategory.parityShiftEquivalence C w).functor.map
+        ((nullHomotopic C w).quotientFunctor.map f) ≫
+        eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj Y) =
+      eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj X) ≫
+        (nullHomotopic C w).quotientFunctor.map ((parityShift C w).map f) := by
+  have h := Functor.congr_hom HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor f
+  simp only [Functor.comp_map] at h
+  simp [h]
 
 /-- The disk on `A` is contractible, hence a zero object of the homotopy category. -/
 theorem isZero_quotientFunctor_obj_disk (A : C) :
