@@ -134,27 +134,6 @@ theorem integralLatticeSignedEquiv_apply (C : AdditiveCode (ZMod m) ι)
     integralLatticeSignedEquiv C hC u e x = signedEquiv u e x := by
   rfl
 
-/-- Coordinate relabelling is the all-positive special case of the Construction A signed
-coordinate isometry. -/
-noncomputable def integralLatticePermutationEquiv (C : AdditiveCode (ZMod m) ι)
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (e : ι ≃ κ) :
-    IntegralLattice.Isometry (integralLattice m C hC)
-      (integralLattice m
-        (C.map (signedEquiv (R := ZMod m) (1 : ι → ℤˣ) e).toAddEquiv.toAddMonoidHom)
-        (map_signedEquiv_le_euclideanDual C hC 1 e)) :=
-  integralLatticeSignedEquiv C hC 1 e
-
-/-- The permutation isometry sends a rational word to the word with relabelled coordinates. -/
-@[simp]
-theorem integralLatticePermutationEquiv_apply (C : AdditiveCode (ZMod m) ι)
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (e : ι ≃ κ) (x : ι → ℚ) :
-    integralLatticePermutationEquiv C hC e x = LinearEquiv.funCongrLeft ℚ ℚ e.symm x := by
-  rw [integralLatticePermutationEquiv, integralLatticeSignedEquiv_apply]
-  ext j
-  simp [signedEquiv_apply]
-
 end
 
 end TauCeti.ConstructionA
