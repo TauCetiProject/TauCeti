@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
-import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
@@ -23,22 +23,9 @@ adelic form of the two finiteness theorems of algebraic number theory: the finit
 class group and Dirichlet's unit theorem.  The full idele class group is not compact, since the
 idele class norm maps it onto `ℝ>0`; `C_K¹` is the kernel of that map.
 
-The proof exhibits `C_K¹` as a closed subset of a compact set, namely the image of finitely many
-translates of one compact set of ideles.
-
-* The class group is finite.  Choose, for each ideal class `c`, an idele `b_c` of norm one whose
-  finite part has class `c`.  Given an idele `a` of norm one, dividing by `b_c` for the class of
-  `a` and then by a principal idele leaves an idele `z` of norm one whose finite part is a unit
-  of the local integers at every place.
-* The finite coordinates of such a `z` have norm one, so its infinite part has mixed norm one.
-  By Dirichlet's unit theorem, in Mathlib's form `fundamentalCone.exists_unit_smul_mem`, a
-  global unit moves that infinite part into the fundamental cone, and hence into the compact set
-  of norm-one points of the closure of `normLeOne`.  Multiplying by a global unit keeps the
-  finite part everywhere integral.
-* The ideles whose infinite part lies in that compact set and whose finite part is an
-  everywhere-integral unit form a compact subset of the idele group.  In the units topology this
-  needs both the idele and its inverse to be bounded: inversion is continuous on the units of the
-  mixed space, so the inverses of the compact set of infinite parts again form a compact set.
+The compactness argument combines finiteness of the ideal class group with Dirichlet's unit
+theorem.  It uses the compact norm-one part of the closure of the canonical-embedding fundamental
+cone and the compactness of the integral finite adeles.
 
 ## Main results
 
