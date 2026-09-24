@@ -24,6 +24,11 @@ density `#C / #G`.
   for Dirichlet density.
 * `NumberField.Chebotarev.hasDirichletDensity_splitCompletely`: the primes that split completely in
   `L` have Dirichlet density `1 / #Gal(L/K)`.
+* `NumberField.Chebotarev.infinite_frobeniusPrimeSet`: every conjugacy class of `Gal(L/K)` is the
+  Frobenius class of infinitely many primes of `𝓞 K`.
+* `NumberField.Chebotarev.hasDirichletDensity_iff_of_finite_symmDiff_frobeniusPrimeSet`: a set of
+  primes differing from a Frobenius fibre in finitely many primes has Dirichlet density `δ` exactly
+  when `δ = #C / #G`.
 
 ## References
 
@@ -32,6 +37,8 @@ density `#C / #G`.
 -/
 
 public section
+
+open scoped NumberField symmDiff
 
 namespace NumberField.Chebotarev
 
@@ -61,5 +68,28 @@ theorem hasDirichletDensity_splitCompletely :
     NumberField.Set.HasDirichletDensity (frobeniusPrimeSet K L 1)
       (1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
   simpa [ConjClasses.one_eq_mk_one] using hasDirichletDensity_frobeniusPrimeSet K L 1
+
+/-- **Every Frobenius class occurs infinitely often.** For every conjugacy class `C` of
+`Gal(L/K)`, infinitely many primes of `𝓞 K` are unramified in `L` with Frobenius class `C`. -/
+theorem infinite_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
+    (frobeniusPrimeSet K L C).Infinite := by
+  refine (hasDirichletDensity_frobeniusPrimeSet K L C).infinite (div_ne_zero ?_ ?_)
+  · obtain ⟨σ, rfl⟩ := ConjClasses.mk_surjective C
+    have : Nonempty (ConjClasses.mk σ).carrier := ⟨⟨σ, ConjClasses.mem_carrier_mk⟩⟩
+    exact Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  · exact Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+
+variable {K L} in
+/-- **Chebotarev density up to finitely many primes.** A set `S` of primes of `𝓞 K` that differs
+from the Frobenius fibre of a conjugacy class `C` of `Gal(L/K)` in only finitely many primes has
+Dirichlet density `δ` if and only if `δ = #C / #Gal(L/K)`. -/
+theorem hasDirichletDensity_iff_of_finite_symmDiff_frobeniusPrimeSet
+    {S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))} {C : ConjClasses (L ≃ₐ[K] L)} {δ : ℝ}
+    (hS : (S ∆ frobeniusPrimeSet K L C).Finite) :
+    NumberField.Set.HasDirichletDensity S δ ↔
+      δ = (Nat.card C.carrier : ℝ) / (Nat.card (L ≃ₐ[K] L) : ℝ) := by
+  have hC := hasDirichletDensity_frobeniusPrimeSet K L C
+  rw [NumberField.Set.hasDirichletDensity_iff_of_finite_symmDiff hS]
+  exact ⟨fun h ↦ h.unique hC, fun h ↦ h ▸ hC⟩
 
 end NumberField.Chebotarev
