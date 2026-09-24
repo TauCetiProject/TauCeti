@@ -236,6 +236,24 @@ theorem stabilizeXCenterDifferential_single_apply (x y : GridState n) :
       rename s.castSucc.succAbove (G.unblockedCoefficient R x y) := by
   simp [stabilizeXCenterDifferential]
 
+/-- On chains with coefficients renamed from `R[V₀, …, V_{n-1}]`, the center differential is the
+unblocked differential of `G` followed by the renaming of the coefficients. -/
+theorem stabilizeXCenterDifferential_mapRange_rename (f : GridChainMinus R n) :
+    G.stabilizeXCenterDifferential s R
+        (Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _) f) =
+      Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _)
+        (G.unblockedDifferential R f) := by
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [Finsupp.mapRange_add (map_add _), map_add, hf, hg, map_add,
+      Finsupp.mapRange_add (map_add _)]
+  | single x a =>
+    refine Finsupp.ext fun y => ?_
+    rw [Finsupp.mapRange_single, ← Finsupp.smul_single_one x (rename _ a), map_smul,
+      ← Finsupp.smul_single_one x a, map_smul]
+    simp
+
 /-- The matrix coefficients of the off-center differential are those of the unblocked
 differential of the stabilization. -/
 @[simp]
