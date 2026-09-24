@@ -167,8 +167,8 @@ theorem continuous_restrictedProductReindexEquiv_symm (e : ι' ≃ ι) :
 
 end Equiv
 
-variable {ι : Type u} {ι' : Type v} {G : ι → Type w} [∀ i, Monoid (G i)]
-  {U : ∀ i, Submonoid (G i)}
+variable {ι : Type u} {ι' : Type v} {G : ι → Type w} [∀ i, Mul (G i)]
+  {U : ∀ i, Subsemigroup (G i)}
 
 /-- Reindex a restricted product along an equivalence, in the orientation from `ι'` to `ι`.
 At the index `e i`, the output has the same coordinate as the input at `i`. -/
