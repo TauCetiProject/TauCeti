@@ -17,9 +17,9 @@ arrows and forgets orientation tags in symmetrified wide subquivers.
 ## Main results
 
 * `totalEquivSet`: identifies total arrows with their ambient image.
-* `symmetrifiedTreeEdgeMap`: forgets the orientation tag on a symmetrified edge.
-* `symmetrifiedTreeEdgeMap_apply_inl` and `symmetrifiedTreeEdgeMap_apply_inr`: its orientation
-  cases.
+* `totalWideSubquiverSymmetrify`: forgets the orientation tag on a symmetrified edge.
+* `totalWideSubquiverSymmetrify_apply_inl` and
+  `totalWideSubquiverSymmetrify_apply_inr`: its orientation cases.
 * `mem_wideSubquiverSymmetrify_iff`: membership in the symmetrification by either orientation.
 -/
 
@@ -56,7 +56,7 @@ def totalEquivSet (H : _root_.WideSubquiver V) :
   simp only [totalEquivSet, Equiv.coe_fn_symm_mk]
 
 /-- Forget the orientation tag of an edge in a symmetrified wide subquiver. -/
-def symmetrifiedTreeEdgeMap (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+def totalWideSubquiverSymmetrify (T : _root_.WideSubquiver (Quiver.Symmetrify V))
     (e : Quiver.Total T) : Quiver.Total (Quiver.wideSubquiverSymmetrify T) := by
   rcases e with ⟨a, b, ⟨f, hf⟩⟩
   cases f using Sum.casesOn with
@@ -67,18 +67,20 @@ def symmetrifiedTreeEdgeMap (T : _root_.WideSubquiver (Quiver.Symmetrify V))
 @[simp] theorem mem_wideSubquiverSymmetrify_iff (T : _root_.WideSubquiver (Quiver.Symmetrify V))
     {a b : V} (e : @Quiver.Hom V _ a b) :
     e ∈ Quiver.wideSubquiverSymmetrify T a b ↔
-      T a b (Sum.inl e) ∨ T b a (Sum.inr e) := Iff.rfl
+      Sum.inl e ∈ T a b ∨ Sum.inr e ∈ T b a := Iff.rfl
 
 /-- The forward map sends a forward-oriented edge to the same ambient edge. -/
-@[simp] theorem symmetrifiedTreeEdgeMap_apply_inl (T : _root_.WideSubquiver (Quiver.Symmetrify V))
-    {a b : V} (e : @Quiver.Hom V _ a b) (he : T a b (Sum.inl e)) :
-    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inl e, he⟩⟩ = ⟨a, b, ⟨e, Or.inl he⟩⟩ := by
-  simp [symmetrifiedTreeEdgeMap]
+@[simp] theorem totalWideSubquiverSymmetrify_apply_inl
+    (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ a b) (he : Sum.inl e ∈ T a b) :
+    totalWideSubquiverSymmetrify T ⟨a, b, ⟨Sum.inl e, he⟩⟩ = ⟨a, b, ⟨e, Or.inl he⟩⟩ := by
+  simp [totalWideSubquiverSymmetrify]
 
 /-- The forward map reverses an edge tagged with the reverse orientation. -/
-@[simp] theorem symmetrifiedTreeEdgeMap_apply_inr (T : _root_.WideSubquiver (Quiver.Symmetrify V))
-    {a b : V} (e : @Quiver.Hom V _ b a) (he : T a b (Sum.inr e)) :
-    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := by
-  simp [symmetrifiedTreeEdgeMap]
+@[simp] theorem totalWideSubquiverSymmetrify_apply_inr
+    (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ b a) (he : Sum.inr e ∈ T a b) :
+    totalWideSubquiverSymmetrify T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := by
+  simp [totalWideSubquiverSymmetrify]
 
 end TauCeti.WideSubquiver

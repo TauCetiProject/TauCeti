@@ -19,7 +19,7 @@ underlying unoriented tree.  The finite-quiver cardinality results in
 
 ## Main results
 
-* `WideSubquiver.spanningTreeBasis`: the non-tree directed edges freely generate the vertex
+* `WideSubquiver.endFreeGroupBasis`: the non-tree directed edges freely generate the vertex
   group.
 
 ## References
@@ -44,9 +44,60 @@ universe u
 
 namespace TauCeti
 
+namespace FreeGroupBasis
+
+/-- The basis obtained from a unique lift evaluates each generator as the supplied map. -/
+@[simp] theorem ofUniqueLift_apply {G : Type u} [Group G] (X : Type u) (of : X → G)
+    (h : ∀ {H : Type u} [Group H] (f : X → H), ∃! F : G →* H, ∀ a, F (of a) = f a)
+    (x : X) : FreeGroupBasis.ofUniqueLift X of h x = of x := by
+  change FreeGroup.lift of (FreeGroup.of x) = _
+  exact FreeGroup.lift_apply_of
+
+end FreeGroupBasis
+
 namespace WideSubquiver
 
-private lemma spanningTree_loopOfHom_map_eq_map
+/-- A functor that kills the tree generators kills the morphism assigned to every tree path. -/
+theorem spanningTree_map_homOfPath_eq_one
+    {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C] {Y : Type u} [Group Y]
+    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
+    (F' : C ⥤ CategoryTheory.SingleObj Y)
+    (hTree : ∀ {a b} (e : a ⟶ b), e ∈ wideSubquiverSymmetrify T a b →
+      F'.map (IsFreeGroupoid.of e) = 1)
+    {a : C} (p : Path (root T) a) :
+    F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 := by
+  induction p with
+  | nil =>
+      -- `SpanningTree.root'` is private, so the endpoints are not definitionally equal
+      -- at the transparency used by `rw`; make the intended root equality explicit.
+      change F'.map (𝟙 (show C from root T)) = 1
+      rw [F'.map_id, id_as_one]
+  | cons p e ih =>
+      rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
+      rcases e with ⟨e | e, eT⟩
+      · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
+          exact (_root_.TauCeti.WideSubquiver.mem_wideSubquiverSymmetrify_iff T e).mpr
+            (Or.inl eT)
+        rw [hTree e he]
+      · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
+          exact (_root_.TauCeti.WideSubquiver.mem_wideSubquiverSymmetrify_iff T e).mpr
+            (Or.inr eT)
+        rw [F'.map_inv, inv_as_inv, inv_eq_one, hTree e he]
+
+/-- A functor that kills the tree generators kills every tree homomorphism. -/
+theorem spanningTree_map_treeHom_eq_one
+    {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C] {Y : Type u} [Group Y]
+    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
+    (F' : C ⥤ CategoryTheory.SingleObj Y)
+    (hTree : ∀ {a b} (e : a ⟶ b), e ∈ wideSubquiverSymmetrify T a b →
+      F'.map (IsFreeGroupoid.of e) = 1)
+    (a : C) :
+    F'.map (IsFreeGroupoid.SpanningTree.treeHom T a) = 1 := by
+  rw [IsFreeGroupoid.SpanningTree.treeHom_eq T (default : Path (root T) a)]
+  exact spanningTree_map_homOfPath_eq_one T F' hTree _
+
+/-- A functor that kills the tree generators factors through the spanning-tree loops. -/
+theorem spanningTree_loopOfHom_map_eq_map
     {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C] {Y : Type u} [Group Y]
     (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
     (F' : C ⥤ CategoryTheory.SingleObj Y)
@@ -54,35 +105,14 @@ private lemma spanningTree_loopOfHom_map_eq_map
       F'.map (IsFreeGroupoid.of e) = 1) :
     ∀ {x y} (q : x ⟶ y),
       F'.map (IsFreeGroupoid.SpanningTree.loopOfHom T q) = (F'.map q : Y) := by
-  have hPath : ∀ {a : C} (p : Path (root T) a),
-      F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 := by
-    intro a p
-    induction p with
-    | nil =>
-        change F'.map (𝟙 (show C from root T)) = 1
-        rw [F'.map_id, id_as_one]
-    | cons p e ih =>
-        rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
-        rcases e with ⟨e | e, eT⟩
-        · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
-            exact (_root_.TauCeti.WideSubquiver.mem_wideSubquiverSymmetrify_iff T e).mpr
-              (Or.inl eT)
-          rw [hTree e he]
-        · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
-            exact (_root_.TauCeti.WideSubquiver.mem_wideSubquiverSymmetrify_iff T e).mpr
-              (Or.inr eT)
-          rw [F'.map_inv, inv_as_inv, inv_eq_one, hTree e he]
-  have hTreeHom (a : C) :
-      F'.map (IsFreeGroupoid.SpanningTree.treeHom T a) = 1 := by
-    rw [IsFreeGroupoid.SpanningTree.treeHom_eq T (default : Path (root T) a)]
-    exact hPath _
   intro x y q
   simp only [IsFreeGroupoid.SpanningTree.loopOfHom, Functor.map_comp, comp_as_mul,
-    inv_as_inv, hTreeHom, inv_one, mul_one, one_mul, Functor.map_inv]
+    inv_as_inv, spanningTree_map_treeHom_eq_one T F' hTree, inv_one, mul_one, one_mul,
+    Functor.map_inv]
 
 /-- The loops attached to the directed edges outside an unoriented spanning tree form a free
 basis of the vertex group at the root. -/
-noncomputable def spanningTreeBasis
+noncomputable def endFreeGroupBasis
     {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
     (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T] :
     FreeGroupBasis
@@ -106,7 +136,6 @@ noncomputable def spanningTreeBasis
         e ∈ wideSubquiverSymmetrify T a b → F'.map (IsFreeGroupoid.of e) = 1 := by
       intro a b e he
       rw [hF']
-      change (if h : e ∈ wideSubquiverSymmetrify T a b then 1 else _) = 1
       exact dite_eq_left he
     exact fun {x y} q => spanningTree_loopOfHom_map_eq_map T F' hTree q
   · intro E hE
@@ -130,13 +159,15 @@ noncomputable def spanningTreeBasis
     · exact hE ⟨⟨a, b, e⟩, h⟩
 
 /-- Applying the spanning-tree basis to a non-tree edge gives its associated loop. -/
-@[simp] theorem spanningTreeBasis_apply
+@[simp] theorem endFreeGroupBasis_apply
     {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
     (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
-    spanningTreeBasis T e =
+    endFreeGroupBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- `ofUniqueLift` computes this basis using `FreeGroup.lift` on generators.
+  -- `ofUniqueLift` computes this basis using `FreeGroup.lift` on generators.  Its
+  -- anonymous unique-lift witness cannot be matched by the generic boundary theorem
+  -- because Mathlib's private `SpanningTree.root'` is not definitionally the public root.
   change FreeGroup.lift
       (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
       (FreeGroup.of e) = _
