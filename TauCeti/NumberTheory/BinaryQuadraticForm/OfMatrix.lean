@@ -13,9 +13,11 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
 
 To a matrix `M = !![a, b; c, d]` we attach the binary quadratic form
 `Q_M = c x² + (d - a) x y - b y²`, whose value at `v = (x, y)` is the determinant of the matrix
-with columns `v` and `M v`. Its roots are the fixed points of `M` acting by Möbius
-transformations, its discriminant is `tr(M)² - 4 det M`, and conjugating `M` by `γ ∈ SL(2, R)`
-acts on `Q_M` by the action `γ • f = f ∘ γ⁻¹` of `TauCeti.BinaryQuadraticForm.Basic`.
+with columns `v` and `M v` (this is not the Gram form `vᵀ M v`). Its roots are the fixed points of
+`M` acting by Möbius transformations: for invertible `M`, `Q_M(z, 1)` is Mathlib's
+`Matrix.GeneralLinearGroup.fixpointPolynomial`. The discriminant of `Q_M` is `tr(M)² - 4 det M`,
+and conjugating `M` by `γ ∈ SL(2, R)` acts on `Q_M` by the action `γ • f = f ∘ γ⁻¹` of
+`TauCeti.BinaryQuadraticForm.Basic`.
 
 Over `ℤ`, `M ↦ Q_M` is a bijection between the matrices of trace `t` and determinant `n` and the
 forms of discriminant `t² - 4 n`: the form determines `c`, `b` and `d - a`, the trace determines
@@ -26,7 +28,7 @@ determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
 ## Main definitions
 
 * `TauCeti.BinaryQuadraticForm.ofMatrix`: the form `Q_M = c x² + (d - a) x y - b y²`.
-* `TauCeti.BinaryQuadraticForm.traceDetEquiv`: for `t n : ℤ`, the bijection `M ↦ Q_M` from the
+* `TauCeti.BinaryQuadraticForm.ofMatrixEquiv`: for `t n : ℤ`, the bijection `M ↦ Q_M` from the
   integer matrices of trace `t` and determinant `n` to the forms of discriminant `t² - 4 n`.
 
 ## Main results
@@ -92,38 +94,36 @@ theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     cons_val', cons_val_zero, cons_val_one]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
-/-- If `b² - 4 a c = t² - 4 n` then `b ≡ t (mod 2)`. -/
-private theorem two_dvd_sub_b {f : BinaryQuadraticForm ℤ} {t n : ℤ}
+private theorem two_dvd_sub_b_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
     (hf : f.discrim = t ^ 2 - 4 * n) : 2 ∣ t - f.b := by
-  have : Even (t ^ 2 - f.b ^ 2) := ⟨2 * (n - f.a * f.c), by
-    simp only [discrim_def, discrim] at hf
-    linear_combination -hf⟩
-  exact (by simpa [Int.even_sub, Int.even_pow] using this : Even (t - f.b)).two_dvd
+  grind [discrim_def, discrim, Int.sq_emod_four t, Int.sq_emod_four f.b]
 
 /-- For `t n : ℤ`, `M ↦ Q_M` is a bijection from the integer matrices of trace `t` and determinant
 `n` to the integral forms of discriminant `t² - 4 n`. The inverse sends `f = ⟨a, b, c⟩` to
-`!![(t - b) / 2, -c; a, (t + b) / 2]`, where `b ≡ t (mod 2)` since `b² - 4 a c = t² - 4 n`. -/
-def traceDetEquiv (t n : ℤ) :
-    {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n} ≃
-      {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n} where
+`!![(t - b) / 2, -c; a, t - (t - b) / 2]`; as `b² - 4 a c = t² - 4 n` forces `b ≡ t (mod 2)`, its
+lower right entry is `(t + b) / 2`. -/
+def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n} ≃
+    {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n} where
   toFun M := ⟨ofMatrix M.1, by rw [discrim_ofMatrix, M.2.1, M.2.2]⟩
   invFun f := ⟨!![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2], by
-    obtain ⟨⟨a, b, c⟩, hf⟩ := f
-    have h2 : 2 * ((t - b) / 2) = t - b := Int.mul_ediv_cancel' (two_dvd_sub_b hf)
-    refine ⟨by simp [trace_fin_two_of], ?_⟩
-    rw [det_fin_two_of]
-    refine mul_left_cancel₀ (four_ne_zero (α := ℤ)) ?_
-    simp only [discrim_def, discrim] at hf
-    linear_combination (t + b - 2 * ((t - b) / 2)) * h2 - hf⟩
+    rw [trace_fin_two_of, det_fin_two_of]
+    grind [Int.mul_ediv_cancel' (two_dvd_sub_b_of_discrim_eq f.2), f.2, discrim_def, discrim]⟩
   left_inv M := by
     obtain ⟨M, ht, -⟩ := M
+    rw [trace_fin_two] at ht
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [← ht, trace_fin_two] <;> omega
+    fin_cases i <;> fin_cases j <;>
+      simp only [ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg, Fin.zero_eta, Fin.mk_one, of_apply,
+        cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> lia
   right_inv f := by
-    obtain ⟨⟨a, b, c⟩, hf⟩ := f
-    have h2 : 2 * ((t - b) / 2) = t - b := Int.mul_ediv_cancel' (two_dvd_sub_b hf)
-    ext <;> simp
-    omega
+    ext <;> simp [sub_sub, ← two_mul, Int.mul_ediv_cancel' (two_dvd_sub_b_of_discrim_eq f.2)]
+
+/-- `ofMatrixEquiv t n` sends a matrix `M` to its form `Q_M`. -/
+@[simp]
+theorem coe_ofMatrixEquiv_apply {t n : ℤ}
+    (M : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n}) :
+    (ofMatrixEquiv t n M : BinaryQuadraticForm ℤ) = ofMatrix M :=
+  (rfl)
 
 end BinaryQuadraticForm
 
