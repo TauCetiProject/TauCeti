@@ -42,8 +42,11 @@ theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
         (Φ.subfanInclusion S hS hface).leastCone_mem σ.2⟩ =
       Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
   let f := Φ.subfanInclusion S hS hface
+  -- The let-bound `f` is definitionally the subfan inclusion.
+  have hleast : f.leastCone σ.2 = σ.1 :=
+    subfanInclusion_leastCone Φ S hS hface σ
   have hσleast : σ.1.IsFaceOf (f.leastCone σ.2) := by
-    rw [show f.leastCone σ.2 = σ.1 from subfanInclusion_leastCone Φ S hS hface σ]
+    rw [hleast]
   have hmap : f.affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
     rw [FanHom.affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
