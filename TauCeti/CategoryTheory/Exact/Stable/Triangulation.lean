@@ -244,16 +244,5 @@ theorem stableConeTriangle_mem (f : X ⟶ Y) :
   exact (hE.mem_stableDistinguishedTriangles_iff _).2
     ⟨_, hE.conflation_cone f, ⟨hE.stableConeTriangleIsoConflation f⟩⟩
 
-/-- Every stable morphism has a representative whose cone triangle is distinguished. -/
-theorem exists_stableConeTriangle_of_morphism {X Y : C}
-    (f : (letI := hE.stableHasShift;
-      E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y)) :
-    letI := hE.stableHasShift
-    ∃ g : X ⟶ Y, E.projectiveStableFunctor.map g = f ∧
-      (hE.stableConeTriangle g) ∈ hE.stableDistinguishedTriangles := by
-  let := hE.stableHasShift
-  obtain ⟨g, hg⟩ := E.projectiveStableFunctor.map_surjective f
-  exact ⟨g, hg, hE.stableConeTriangle_mem g⟩
-
 end ExactStructure.IsFrobenius
 end TauCeti
