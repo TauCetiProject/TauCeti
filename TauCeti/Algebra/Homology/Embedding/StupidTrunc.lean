@@ -92,6 +92,11 @@ lemma isZero_stupidTrunc_embeddingUpIntLE_X {i : ℤ} (hi : n < i) :
     IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntLE n)).X i) :=
   K.isZero_stupidTrunc_X _ i ((ComplexShape.notMem_range_embeddingUpIntLE_iff n i).2 hi)
 
+/-- In a degree above the truncation bound, the projection is zero. -/
+@[simp]
+lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) : (K.πStupidTruncLE n).f i = 0 :=
+  (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi).eq_of_tgt _ _
+
 /-- The projection onto the brutal truncation in degrees `≤ n` is an isomorphism in each degree
 `≤ n`. -/
 lemma isIso_πStupidTruncLE_f {i : ℤ} (hi : i ≤ n) : IsIso ((K.πStupidTruncLE n).f i) := by
@@ -113,6 +118,11 @@ noncomputable def ιTop : (single C (.up ℤ) n).obj (K.X n) ⟶ K :=
 @[simp]
 lemma ιTop_f : (K.ιTop n).f n = (singleObjXSelf (.up ℤ) n (K.X n)).hom := by
   simp [ιTop, mkHomFromSingle_f]
+
+/-- Away from the top degree, the inclusion of the top term is zero. -/
+@[simp]
+lemma ιTop_f_of_ne {i : ℤ} (hi : i ≠ n) : (K.ιTop n).f i = 0 :=
+  (isZero_single_obj_X (.up ℤ) _ _ _ hi).eq_of_src _ _
 
 end HasZeroMorphisms
 
@@ -161,6 +171,18 @@ degrees `≤ n`. -/
 lemma topShortComplex_X₃ :
     (K.topShortComplex n).X₃ = K.stupidTrunc (ComplexShape.embeddingUpIntLE n) := by
   simp [topShortComplex]
+
+/-- The first map of the short complex splitting off the top term is the top-term inclusion. -/
+@[simp]
+lemma topShortComplex_f : HEq (K.topShortComplex n).f (K.ιTop (n + 1)) := by
+  dsimp [topShortComplex]
+  rfl
+
+/-- The second map of the short complex splitting off the top term is the truncation projection. -/
+@[simp]
+lemma topShortComplex_g : HEq (K.topShortComplex n).g (K.πStupidTruncLE n) := by
+  dsimp [topShortComplex]
+  rfl
 
 /-- The short complex splitting off the top term is split in each degree: in degree `n + 1` its
 first map is an isomorphism and its third term vanishes, and in every other degree its first term
