@@ -28,10 +28,6 @@ so that `𝔡(L/K) = 𝓂[L] ^ d(L/K)`, and compares it with the ramification in
 
 These are the local form of Dedekind's different theorem. The residue fields of local fields are
 finite, so the residue extension is always separable and tameness is a condition on `e` alone.
-The proofs apply the Dedekind-domain statements `pow_sub_one_dvd_differentIdeal` (Mathlib) and
-`TauCeti.pow_ramificationIdx_dvd_differentIdeal_iff` to `𝒪[K] ⊆ 𝒪[L]`, through the comparison
-`TauCeti.ramificationIndex_eq_ramificationIdx` of the intrinsic ramification index with the
-ideal-theoretic one.
 
 ## Main definitions
 
@@ -156,6 +152,7 @@ theorem differentExponent_eq_ramificationIndex_sub_one_iff :
 
 /-- **The different of a local extension is trivial exactly when the extension is
 unramified**: `d(L/K) = 0` if and only if `L/K` is unramified. -/
+@[simp]
 theorem differentExponent_eq_zero_iff : differentExponent K L = 0 ↔ IsUnramified K L := by
   refine ⟨fun h ↦ ?_, fun _ ↦ ?_⟩
   · have := ramificationIndex_sub_one_le_differentExponent K L
@@ -166,6 +163,7 @@ theorem differentExponent_eq_zero_iff : differentExponent K L = 0 ↔ IsUnramifi
 
 /-- The different ideal of a separable extension of nonarchimedean local fields is the unit ideal
 exactly when the extension is unramified. -/
+@[simp]
 theorem differentIdeal_eq_top_iff : differentIdeal 𝒪[K] 𝒪[L] = ⊤ ↔ IsUnramified K L := by
   rw [← differentExponent_eq_zero_iff, differentIdeal_eq_maximalIdeal_pow]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, pow_zero, Ideal.one_eq_top]⟩
