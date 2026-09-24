@@ -73,12 +73,13 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
   let Φ := Φ₀.restrOpen V hV
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
-    change hf.localInverse.toOpenPartialHomeomorph x = hf.localInverse.toPartialEquiv x
-    exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
+    simpa only [Φ₀, p, PartialDiffeomorph.toOpenPartialHomeomorph] using
+      (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
       hf.localInverse.toOpenPartialHomeomorph) x).symm
   have hlocalInverse_toPartialEquiv (x : G) :
       hf.localInverse.toPartialEquiv x = hf.localInverse x := by
-    rfl
+    exact congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
+      hf.localInverse.toOpenPartialHomeomorph) x
   have hΦ₀_source : (1 : G) ∈ Φ₀.source := by
     -- `toOpenPartialHomeomorph` preserves the inverse source; this unfolds only that wrapper.
     change 1 ∈ hf.localInverse.source
@@ -151,10 +152,9 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       exact hz20.2
     have hzprod' := hzprod
     rw [hz20'] at hzprod'
-    change lieExp (I := I) (z.1 : LeftInvariantDerivation I G) *
-        lieExp (I := I) (0 : LeftInvariantDerivation I G) = x at hzprod'
-    rw [lieExp_zero, mul_one] at hzprod'
-    rw [← hzprod']
+    have hzprod'' : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) = x := by
+      simpa only [Submodule.coe_zero, lieExp_zero, mul_one] using hzprod'
+    rw [← hzprod'']
     exact hz1K
 
 end TauCeti.Lie
