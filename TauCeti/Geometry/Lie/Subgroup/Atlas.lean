@@ -71,18 +71,23 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     have hA : IsOpen A := by
       exact Metric.isOpen_ball.preimage continuous_snd
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
+  have hΦ₀_eq : Φ₀ = hf.localInverse.toOpenPartialHomeomorph := by
+    -- `Φ₀` is this wrapper by definition; no chart data is changed here.
+    rfl
+  have hΦ₀_source_eq : Φ₀.source = hf.localInverse.source := by
+    -- `toOpenPartialHomeomorph` reuses the underlying partial-equivalence source.
+    rfl
   let Φ := Φ₀.restrOpen V hV
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
-    simpa only [Φ₀, p, PartialDiffeomorph.toOpenPartialHomeomorph] using
-      (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
+    rw [hΦ₀_eq]
+    exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
       hf.localInverse.toOpenPartialHomeomorph) x).symm
   have hlocalInverse_toPartialEquiv (x : G) :
       hf.localInverse.toPartialEquiv x = hf.localInverse x := by
     exact congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
       hf.localInverse.toOpenPartialHomeomorph) x
   have hΦ₀_source : (1 : G) ∈ Φ₀.source := by
-    -- `toOpenPartialHomeomorph` preserves the inverse source; this unfolds only that wrapper.
-    change 1 ∈ hf.localInverse.source
+    rw [hΦ₀_source_eq]
     simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source
   have hzero : Φ₀ 1 = 0 := by
     have h := hf.localInverse_left_inv (x' := (0 : p × q)) hf.localInverse_mem_target
@@ -143,13 +148,12 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       simpa using hm
     have hz20 : (z.2 : LeftInvariantDerivation I G) = 0 :=
       (hsep (z.2 : LeftInvariantDerivation I G) z.2.property hz2norm).mp hz2K
-    change z.1 ∈ (univ : Set p) ∧ z.2 ∈ ({0} : Set q)
-    exact ⟨mem_univ _, Set.mem_singleton_iff.mpr (Subtype.ext hz20)⟩
+    exact Set.mem_prod.mpr
+      ⟨Set.mem_univ _, Set.mem_singleton_iff.mpr (Subtype.ext hz20)⟩
   · intro hz20
     -- A zero transverse coordinate reduces the product to an exponential from the Lie subalgebra.
     have hz20' : z.2 = 0 := by
-      change z ∈ (univ : Set p) ×ˢ ({0} : Set q) at hz20
-      exact hz20.2
+      exact Set.mem_singleton_iff.mp (Set.mem_prod.mp hz20).2
     have hzprod' := hzprod
     rw [hz20'] at hzprod'
     have hzprod'' : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) = x := by
