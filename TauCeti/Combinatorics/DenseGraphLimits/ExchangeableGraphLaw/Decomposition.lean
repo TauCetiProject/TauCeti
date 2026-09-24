@@ -20,11 +20,9 @@ exchangeable graph law, with the extreme laws (`mem_extremePoints_iff_isDissocia
 components; by `InfiniteExchangeableGraphLaw.ae_eq_of_comp_eq` a dissociated law is its own only
 decomposition. Representing the components by graphons is a separate step.
 
-The decomposition is the array one (`JointlyExchangeable.exists_dissociated_kernel`) read back
-through the graph-law/array-law adapter: almost every component of the array decomposition is
-carried by the symmetric `false`-diagonal arrays, because a null set of a mixture is null for
-almost every component (`ae_measure_eq_zero_of_comp_eq_zero`), so it decodes to an exchangeable
-graph law, and decoding is linear.
+The graph decomposition is the array decomposition of the adjacency array
+(`JointlyExchangeable.exists_dissociated_kernel`) viewed on graphs: its components are the
+decoded components of the array decomposition, and the mixing variable is the same.
 
 `MeasureTheory.Measure.IsDissociatedGraphLaw` packages the
 exchangeable probability measures on graphs whose finite law is dissociated, so that a component
@@ -32,8 +30,6 @@ of the decomposition is described by one predicate.
 
 ## Main results
 
-* `TauCeti.Probability.ae_measure_eq_zero_of_comp_eq_zero` — a null set of a mixture is null for
-  almost every component.
 * `MeasureTheory.Measure.IsDissociatedGraphLaw` — dissociated exchangeable
   probability measures on graphs, with `isDissociatedGraphLaw_iff` and its extreme-point form
   `isDissociatedGraphLaw_iff_mem_extremePoints`.
@@ -53,17 +49,6 @@ open MeasureTheory ProbabilityTheory Set TauCeti.Probability
 open scoped ENNReal
 
 namespace TauCeti
-
-namespace Probability
-
-/-- A null set of a mixture is null for almost every component. -/
-theorem ae_measure_eq_zero_of_comp_eq_zero {Z β : Type*} [MeasurableSpace Z] [MeasurableSpace β]
-    {π : Measure Z} {κ : Kernel Z β} {s : Set β} (hs : MeasurableSet s) (h : (κ ∘ₘ π) s = 0) :
-    ∀ᵐ z ∂π, κ z s = 0 := by
-  rw [Measure.bind_apply hs κ.aemeasurable, lintegral_eq_zero_iff (κ.measurable_coe hs)] at h
-  exact h
-
-end Probability
 
 namespace DenseGraphLimits
 
@@ -108,8 +93,9 @@ theorem InfiniteExchangeableGraphLaw.exists_dissociated_kernel (L : InfiniteExch
   -- almost every component of the array decomposition is carried by the symmetric arrays
   have hcarr : ∀ᵐ u ∂(volume : Measure unitInterval),
       κ u (symmetricArraysWithDiag Bool false)ᶜ = 0 :=
-    ae_measure_eq_zero_of_comp_eq_zero (measurableSet_symmetricArraysWithDiag _).compl
-      (hmix ▸ arrayLaw_compl_symmetricArraysWithDiag_eq_zero _)
+    (Measure.ae_ae_of_ae_comp (measure_eq_zero_iff_ae_notMem.1
+      (hmix ▸ arrayLaw_compl_symmetricArraysWithDiag_eq_zero _))).mono
+      fun _ => measure_eq_zero_iff_ae_notMem.2
   refine ⟨κ.map graphOfArray, Kernel.IsMarkovKernel.map κ measurable_graphOfArray, ?_, ?_⟩
   · filter_upwards [hae, hcarr] with u ⟨hexch, hdiss⟩ hc
     rw [Kernel.map_apply _ measurable_graphOfArray, ← graphLawOfArray_def]
