@@ -65,15 +65,6 @@ private theorem lipschitzToOrthogonal_surjective_of_invertible
   rw [hf]
   exact lipschitzToOrthogonal_surjective Q hQ
 
-omit [FiniteDimensional K V] in
-private theorem pinToOrthogonal_eq_lipschitzToOrthogonal
-    (Q : QuadraticForm K V) (p : pinGroup Q) :
-    pinToOrthogonal Q p = lipschitzToOrthogonal Q (pinToLipschitz Q p) := by
-  apply Subtype.ext
-  apply LinearEquiv.ext
-  intro v
-  simp only [coe_pinToOrthogonal_apply, coe_lipschitzToOrthogonal_apply]
-
 /-- The Clifford norm of an element acting trivially on the quadratic space is a square. -/
 theorem isSquare_lipschitzNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (x : lipschitzGroup Q) (hx : x ∈ MonoidHom.ker (lipschitzToOrthogonal Q)) :

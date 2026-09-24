@@ -338,6 +338,14 @@ theorem coe_pinToOrthogonal_apply (x : pinGroup Q) (m : M) :
       lipschitzVectorAction Q (pinToLipschitz Q x) m := by
   rw [pinToOrthogonal, MonoidHom.comp_apply, coe_lipschitzToOrthogonal_apply]
 
+/-- The Pin action is the Lipschitz action through the canonical inclusion. -/
+theorem pinToOrthogonal_eq_lipschitzToOrthogonal (x : pinGroup Q) :
+    pinToOrthogonal Q x = lipschitzToOrthogonal Q (pinToLipschitz Q x) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  simp only [coe_pinToOrthogonal_apply, coe_lipschitzToOrthogonal_apply]
+
 /-- A Pin element acts on a vector by twisted conjugation inside the Clifford algebra. Since a Pin
 element is unitary, the inverse appearing there is `star`. -/
 @[simp]
