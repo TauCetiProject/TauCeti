@@ -13,8 +13,8 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
 
 Let `D` be a normalized cusp datum of a discrete `Γ ≤ PSL(2, ℝ)`, with scaling `σ` and width `w`.
 The *horodisc strip* of height `A` is the part of the horodisc of height `A` lying over one
-period: the set of `z` with `0 ≤ re (σ • z) < w` and `A < im (σ • z)`. Its hyperbolic area is
-`w / A`; in particular the strip of height `w` has area exactly `1`.
+period: the set of `z` with `0 ≤ re (σ • z) < w` and `A < im (σ • z)`. When `A > 0`, its
+hyperbolic area is `w / A`; in particular the strip of height `w` has area exactly `1`.
 
 Once the height is at least the width, the translates of a horodisc strip by the elements of `Γ`
 are pairwise disjoint: two translates can only meet through an element of the cusp stabilizer, by
@@ -31,8 +31,8 @@ orbits (`Subgroup.IsCofinite.finite_cuspOrbit`).
 
 ## Main results
 
-* `TauCeti.Subgroup.CuspDatum.volume_horodiscStrip`: the horodisc strip of height `A` has area
-  `w / A`.
+* `TauCeti.Subgroup.CuspDatum.volume_horodiscStrip`: for `A > 0`, the horodisc strip of height
+  `A` has area `w / A`.
 * `TauCeti.Subgroup.CuspDatum.iUnion_smul_horodiscStrip`: the generator translates of a strip
   cover its horodisc.
 * `TauCeti.Subgroup.CuspDatum.pairwise_disjoint_smul_horodiscStrip`: for a height at least the

@@ -26,8 +26,8 @@ subsets of `ℂ` are null in `ℍ`.
 * `UpperHalfPlane.volume_preimage_coe_null`: preimages of Lebesgue-null sets are null.
 * the `NullSingletonClass` instance for `volume : Measure ℍ`: points, hence countable sets, are
   null.
-* `UpperHalfPlane.volume_setOf_re_mem_Ico_and_lt_im`: the region `{a ≤ re z < b, A < im z}`
-  above a horizontal segment has invariant measure `ENNReal.ofReal ((b - a) / A)`.
+* `UpperHalfPlane.volume_setOf_re_mem_Ico_and_lt_im`: for `A > 0`, the region
+  `{a ≤ re z < b, A < im z}` has invariant measure `ENNReal.ofReal ((b - a) / A)`.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
