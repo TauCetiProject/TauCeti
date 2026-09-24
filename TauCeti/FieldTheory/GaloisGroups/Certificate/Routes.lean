@@ -51,6 +51,8 @@ prime degree containing a transposition is the full symmetric group.
 
 ## References
 
+* [Polynomial Galois groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md),
+  Layer 6, "The degree-five certificate, and its soundness theorem".
 * D. S. Dummit, *Solving solvable quintics*, Mathematics of Computation **57** (1991), §2.
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, §6.3.
 -/
@@ -75,10 +77,13 @@ discriminant is a square, whose resolvent sextic is separable with an integral r
 factor degrees modulo a prime not dividing its discriminant are `(1,2,2)`, has the dihedral group
 of order ten on its five roots. -/
 theorem hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot (hf : f.Monic)
-    (hirr : Irreducible (f.map (Int.castRingHom ℚ))) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible (f.map (Int.castRingHom ℚ)))
     (hdisc : IsSquare f.discr) {a : ℤ} (ha : HasSexticRoot f a)
     (hq : HasFactorDegrees f q {1, 2, 2}) :
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨1, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hdeg : f.natDegree = 5 := by
+    rw [← hq.sum_eq_natDegree hf]
+    decide
   refine (hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot (hf.map _)
     (by simp) (PerfectField.separable_of_irreducible hirr) hirr
     (natDegree_map_rat_eq_five hf hdeg) (hf.isSquare_discr_map_rat_iff.mpr hdisc)
@@ -104,9 +109,12 @@ theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot (hf : f.M
 discriminant is a square, and whose factor degrees modulo a prime not dividing its discriminant
 are `(1,1,3)`, has the alternating group on its five roots. -/
 theorem hasGaloisLabel_five_three_of_isSquare_discr_of_hasFactorDegrees (hf : f.Monic)
-    (hirr : Irreducible (f.map (Int.castRingHom ℚ))) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible (f.map (Int.castRingHom ℚ)))
     (hdisc : IsSquare f.discr) (hq : HasFactorDegrees f q {1, 1, 3}) :
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨3, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hdeg : f.natDegree = 5 := by
+    rw [← hq.sum_eq_natDegree hf]
+    decide
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five
     (PerfectField.separable_of_irreducible hirr) hirr (natDegree_map_rat_eq_five hf hdeg)
   -- The square discriminant leaves the even labels `5T1`, `5T2` and `5T4`.
@@ -128,23 +136,37 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_hasFactorDegrees (hf : f.
     all_goals omega
   exact hj
 
+/-- **The full symmetric label from a surjective Galois action.** A monic irreducible quintic
+whose Galois action on its complex roots is surjective has label `5T5`. -/
+theorem hasGaloisLabel_five_four_of_surjective_galActionHom (hf : f.Monic)
+    (hirr : Irreducible (f.map (Int.castRingHom ℚ))) (hdeg : f.natDegree = 5)
+    (hsurj : Function.Surjective (Polynomial.Gal.galActionHom
+      (f.map (Int.castRingHom ℚ)) ℂ)) :
+    HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hd : f.discr ≠ 0 :=
+    (hf.discr_ne_zero_iff_separable_map ℚ).mpr (PerfectField.separable_of_irreducible hirr)
+  rw [hasGaloisLabel_five_iff_natCard_gal_eq (PerfectField.separable_of_irreducible hirr) hirr
+    (natDegree_map_rat_eq_five hf hdeg), natCard_referenceSubgroup_five_four,
+    ← natCard_galActionHom_range _ ℂ, MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top,
+    Nat.card_perm, natCard_rootSet_complex_eq_natDegree hd, hdeg]
+  rfl
+
 /-- **The symmetric route: `5T5`.** A monic integral quintic, irreducible over `ℚ`, whose factor
 degrees modulo a prime not dividing its discriminant are `(2,3)`, has the full symmetric group on
 its five roots. -/
 theorem hasGaloisLabel_five_four_of_hasFactorDegrees (hf : f.Monic)
-    (hirr : Irreducible (f.map (Int.castRingHom ℚ))) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible (f.map (Int.castRingHom ℚ)))
     (hq : HasFactorDegrees f q {2, 3}) :
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hdeg : f.natDegree = 5 := by
+    rw [← hq.sum_eq_natDegree hf]
+    decide
   obtain ⟨hq', hgood, hfac⟩ := hq.exists_fact
   let _ := hq'
   have hgood' := (isGoodPrime_iff f q).mp hgood
   -- The factor degrees `(2,3)` exhibit a transposition, so the Galois image is everything.
   have hsurj := surjective_galActionHom_of_prime_natDegree hf hirr (hdeg ▸ Nat.prime_five) q
     hgood' (by rw [hfac]; decide) (by rw [hfac]; decide)
-  rw [hasGaloisLabel_five_iff_natCard_gal_eq (PerfectField.separable_of_irreducible hirr) hirr
-    (natDegree_map_rat_eq_five hf hdeg), natCard_referenceSubgroup_five_four,
-    ← natCard_galActionHom_range _ ℂ, MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top,
-    Nat.card_perm, natCard_rootSet_complex_eq_natDegree fun h => hgood' (h ▸ dvd_zero _), hdeg]
-  rfl
+  exact hasGaloisLabel_five_four_of_surjective_galActionHom hf hirr hdeg hsurj
 
 end TauCeti

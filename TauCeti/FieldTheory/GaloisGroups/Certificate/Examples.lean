@@ -88,7 +88,7 @@ theorem hasGaloisLabel_X_pow_five_sub_X_sub_one :
     (isGoodPrime_iff _ 2).mpr not_two_dvd_discr_X_pow_five_sub_X_sub_one
   have h5 := HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_sub_one_five
   refine hasGaloisLabel_five_four_of_hasFactorDegrees hf (h5.irreducible_map_rat hf)
-    (by rw [← h5.sum_eq_natDegree hf, Multiset.sum_singleton]) (HasFactorDegrees.mk hgood2 ?_)
+    (HasFactorDegrees.mk hgood2 ?_)
   rw [factorDegrees_X_pow_five_sub_X_sub_one_two]
   decide
 
