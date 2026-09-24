@@ -34,13 +34,6 @@ open TauCeti.F4ShortRoot
 
 noncomputable section
 
-/-- The integral second divided power is the previously constructed divided adjoint square. -/
-theorem integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare
-    (k : Fin 4 ⊕ Fin 4) :
-    integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-        f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2) =
-      f4IntegralDividedAdjointSquare k := rfl
-
 /-- The integral divided square has the expected exceptional opposite-root column. -/
 theorem f4IntegralDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) :
     f4IntegralDividedAdjointSquare k

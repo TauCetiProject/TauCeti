@@ -713,7 +713,7 @@ noncomputable def f4RootExponential {A : Type*} [CommRing A] [Algebra ℤ A]
     (f4RootAdjointDerivation_dividedPower_mem k) t
 
 /-- The second divided adjoint power of a signed simple root on the integral Chevalley lattice. -/
-@[expose] noncomputable def f4IntegralDividedAdjointSquare (k : Fin 4 ⊕ Fin 4) :
+noncomputable def f4IntegralDividedAdjointSquare (k : Fin 4 ⊕ Fin 4) :
     Module.End ℤ f4ChevalleyLieLattice :=
   integralDividedPower (f4RootAdjointDerivation k).toLinearMap
     f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)
@@ -752,6 +752,34 @@ theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
     coe_f4IntegralSimpleCoroot]
   exact f4_ad_pow_three_cartan_eq_zero (f4SignedSimpleRootIndex k) (coroot β)
 
+/-- The third signed-root adjoint power vanishes on the whole integral Chevalley lattice. -/
+theorem f4RootAdjointDerivation_pow_three_integral
+    (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
+    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+      (y : F4.lieAlgebra valid_F4) = 0 := by
+  let F : f4ChevalleyLieLattice →ₗ[ℤ] F4.lieAlgebra valid_F4 :=
+    (((f4RootAdjointDerivation k).toLinearMap ^ 3).restrictScalars ℤ).comp
+      f4ChevalleyLieLattice.subtype
+  have hF : F = 0 := by
+    apply f4ChevalleyBasis.ext
+    intro i
+    cases i with
+    | inl α =>
+      change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+        (f4ChevalleyBasis (Sum.inl α) : F4.lieAlgebra valid_F4) = 0
+      simpa only [f4IntegralRootVector, f4KillingRootLabel_f4PinnedRootIndex] using
+        f4RootAdjointDerivation_pow_three_integralRootVector k (f4PinnedRootIndex α)
+    | inr α =>
+      change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+        (f4ChevalleyBasis (Sum.inr α) : F4.lieAlgebra valid_F4) = 0
+      simpa only [f4IntegralSimpleCoroot, Equiv.apply_symm_apply] using
+        f4RootAdjointDerivation_pow_three_integralSimpleCoroot k
+          ((F4.lieBasis valid_F4).baseSupportEquiv.symm α)
+  have hy := congrArg (fun f : f4ChevalleyLieLattice →ₗ[ℤ] F4.lieAlgebra valid_F4 => f y) hF
+  change ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+    (y : F4.lieAlgebra valid_F4) = 0 at hy
+  exact hy
+
 /-- The first integral divided power is the Lie bracket in the Chevalley lattice. -/
 theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
     (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
@@ -763,29 +791,20 @@ theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
     Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
     f4RootAdjointDerivation_toLinearMap, ad_apply]
 
-/-- Unfold the pinned root exponential to the general integral divided-power exponential. -/
-theorem f4RootExponential_eq_baseChangeExp {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) :
-    f4RootExponential k t = baseChangeExp (f4RootAdjointDerivation k).toLinearMap
-      f4ChevalleyLieLattice (f4RootAdjointDerivation_dividedPower_mem k) t := by
-  simp only [f4RootExponential]
-
-
-/-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
-ring is its three-term integral divided-power polynomial. -/
-theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice)
-    (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-      (y : F4.lieAlgebra valid_F4) = 0) :
+/-- On every integral pure tensor, the root exponential is its three-term divided-power
+polynomial over any parameter ring. -/
+theorem f4RootExponential_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
+    (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice) :
     f4RootExponential k t (1 ⊗ₜ[ℤ] y) =
       (1 ⊗ₜ[ℤ] y) +
         t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
         t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
-  rw [f4RootExponential_eq_baseChangeExp]
+  rw [f4RootExponential]
   rw [baseChangeExp_tmul_of_pow_smul_eq_zero
     (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
-    (isNilpotent_f4RootAdjointDerivation k) t 1 y hy]
+    (isNilpotent_f4RootAdjointDerivation k) t 1 y
+    (f4RootAdjointDerivation_pow_three_integral k y)]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
     pow_one, integralDividedPower_zero, Module.End.one_apply,
     integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
