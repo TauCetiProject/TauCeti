@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.LSeries.EulerProduct
 public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Eigenform
@@ -50,9 +51,8 @@ variable {N : ℕ} [NeZero N] {k : ℤ}
 
 private theorem prime_cpow_sub (p : Nat.Primes) (k : ℤ) (s : ℂ) :
     (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s) = (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
-  rw [sub_eq_add_neg _ (2 * s), ← neg_mul,
-    Complex.cpow_add _ _ (by exact_mod_cast p.prop.ne_zero), ← Complex.cpow_intCast,
-    Int.cast_sub, Int.cast_one]
+  rw [TauCeti.zpow_mul_cpow (by exact_mod_cast p.prop.ne_zero), Int.cast_sub, Int.cast_one,
+    neg_mul, ← sub_eq_add_neg]
 
 private theorem LSeriesSummable_qExpansion_coeff (f : Eigenform N k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
