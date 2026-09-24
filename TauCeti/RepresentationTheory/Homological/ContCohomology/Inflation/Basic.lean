@@ -38,8 +38,8 @@ at its two nodes.
 * `TauCeti.ContCohomology.explicitRes1_comp_explicitInfl1` and
   `TauCeti.ContCohomology.explicitRes2_comp_explicitInfl2`: restricting an inflated class back to
   `N` gives zero.
-* `TauCeti.ContCohomology.explicitInfl1_eq_explicitMap1` and
-  `explicitInfl2_eq_explicitMap2`: inflation in degrees `1` and `2` is the compatible-pair
+* `TauCeti.ContCohomology.explicitInfl0_eq_explicitMap0`, `explicitInfl1_eq_explicitMap1` and
+  `explicitInfl2_eq_explicitMap2`: inflation in degrees `0`, `1` and `2` is the compatible-pair
   pullback along `G → G ⧸ N`.
 * `TauCeti.ContCohomology.explicitInfl1_injective`: inflation is injective in degree `1`.
 * `TauCeti.ContCohomology.explicitInfRes_exact`: the image of inflation is exactly the kernel of
@@ -143,6 +143,16 @@ def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
 theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     (explicitInfl0 G M N m : M) = (m : M) :=
   coe_explicitMap0 _ _ _ _ _ m
+
+/-- Inflation in degree zero is the compatible-pair pullback along the quotient homomorphism
+`G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
+theorem explicitInfl0_eq_explicitMap0 :
+    explicitInfl0 G M N =
+      explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M) (QuotientGroup.mk' N)
+        (FixedPoints.addSubgroup N M).subtype fun g m => by
+          simp only [QuotientGroup.mk'_apply, AddSubgroup.coe_subtype,
+            coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup] := by
+  rw [explicitInfl0]
 
 /-- Degree-zero inflation is injective. In fact it is an equivalence, as packaged by
 `TauCeti.ContCohomology.explicitInfl0Equiv`. -/

@@ -10,7 +10,7 @@ import TauCeti.Algebra.Category.Grp.FilteredColimits
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!

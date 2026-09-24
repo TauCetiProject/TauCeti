@@ -184,10 +184,10 @@ variable [TopologicalSpace M]
 /-- The inclusion `M ^ H ↪ M` of the invariants is continuous for the subspace topology.
 
 Mathlib's `continuous_subtype_val` says the same thing for the bare coercion `Subtype.val`, whose
-type matches `⇑(FixedPoints.addSubgroup H M).subtype` only after unfolding; the compatible pairs of
-`TauCeti/RepresentationTheory/Homological/ContCohomology/Inflation.lean` need the statement in the
-`AddSubgroup.subtype` spelling, since a proof of the unfolded form blocks rewriting inside every
-map built from it. -/
+type matches `⇑(FixedPoints.addSubgroup H M).subtype` only after unfolding; the compatible pairs
+of `TauCeti/RepresentationTheory/Homological/ContCohomology/Inflation/Basic.lean` need the
+statement in the `AddSubgroup.subtype` spelling, since a proof of the unfolded form blocks
+rewriting inside every map built from it. -/
 theorem continuous_fixedPoints_addSubgroup_subtype (H : Subgroup G) :
     Continuous ⇑(FixedPoints.addSubgroup H M).subtype :=
   continuous_subtype_val
