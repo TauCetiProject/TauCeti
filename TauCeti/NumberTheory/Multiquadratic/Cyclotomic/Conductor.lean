@@ -12,14 +12,11 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 /-!
 # The conductor of a quadratic field
 
-A quadratic field of fundamental discriminant `D` lies in the cyclotomic field of level `|D|`.
-This file proves a converse within that ambient field: a cyclotomic subfield of level `m ∣ |D|`
-containing `ℚ(√D)` must have `m = |D|`. The result gives the conductor lower bound for divisor
-levels; comparison with cyclotomic fields of arbitrary levels requires a common ambient field.
-
-The proof uses the primitive quadratic character of conductor `|D|` and Mathlib's cyclotomic
-Galois correspondence. The Gauss sum identifies the field fixed by the character kernel with
-`ℚ(√D)`. For the classical argument see D. A. Cox, *Primes of the Form x² + ny²*, §3.B.
+A quadratic field of fundamental discriminant `D` has exact cyclotomic level `|D|`: within
+`ℚ(ζ_|D|)`, it cannot lie in a cyclotomic subfield at a proper divisor level. This is the
+quadratic exact-level building block for explicit Kronecker–Weber constructions of
+multiquadratic fields. For the classical argument see D. A. Cox,
+*Primes of the Form x² + ny²*, §3.B.
 -/
 
 public section
@@ -27,6 +24,14 @@ public section
 open IntermediateField
 
 namespace TauCeti.Multiquadratic
+
+/-- `galEquivZMod` is Mathlib's `zeta_spec` power-action equivalence.  Isolating this bridge
+keeps the conductor argument independent of the implementation detail at its use site. -/
+private theorem galEquivZMod_eq_zeta_spec_autToPow (n : ℕ) [NeZero n]
+    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
+    (σ : Gal(K/ℚ)) :
+    IsCyclotomicExtension.Rat.galEquivZMod n K σ =
+      (IsCyclotomicExtension.zeta_spec n ℚ K).autToPow ℚ σ := rfl
 
 /-- If a cyclotomic subfield of `ℚ(ζ_|D|)` at level `m ∣ |D|` contains `ℚ(√D)`, then
 `|D| ∣ m`; hence `m = |D|`. -/
@@ -59,11 +64,7 @@ theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic (D : ℤ)
         exact hσ
       simpa only [IntermediateField.fixingSubgroup_fixedField] using hfix
     have hval := (mem_fundamentalDiscriminantCharacterSubgroup_iff D hD σ).mp hker
-    have hpow : IsCyclotomicExtension.Rat.galEquivZMod D.natAbs
-        (CyclotomicField D.natAbs ℚ) σ =
-        (IsCyclotomicExtension.zeta_spec D.natAbs ℚ
-          (CyclotomicField D.natAbs ℚ)).autToPow ℚ σ := rfl
-    rw [hpow]
+    rw [galEquivZMod_eq_zeta_spec_autToPow]
     simpa only [MulChar.ringHomComp_apply, map_one] using
       congrArg (Int.castRingHom ℂ) hval
   have hbase : ℚ⟮fundamentalDiscriminantGaussSum D hD⟯ ≤ F := by
