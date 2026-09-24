@@ -13,6 +13,8 @@ public import Mathlib.Probability.ConditionalProbability
 
 Conditioning on a measurable initial-state event scales the mass of every finite path starting
 there and gives zero mass to paths starting elsewhere. Hence it preserves Markov exchangeability.
+The path-mass formulas are used by name: `simpNF` rewrites their `prefixLaw` left-hand sides
+through `prefixLaw_def` and `blockLaw_def`, so neither formula can carry `@[simp]`.
 
 ## References
 
