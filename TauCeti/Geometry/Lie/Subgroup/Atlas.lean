@@ -17,12 +17,20 @@ map is a local chart at the identity.  The local Cartan membership criterion and
 separation lemma identify the subgroup in this chart with the zero-complement slice.  This is the
 chart-level boundary used by the translated subgroup atlas.
 
+The complement, transverse separation radius, and local product chart are supplied by
+`TauCeti.Lie.exists_complement_data_of_isClosed_subgroup`.
+
 ## Main results
 
 * `TauCeti.Lie.exists_isSliceChart_of_isClosed_subgroup` packages the identity slice chart.
 
 The theorem stops at the topological chart interface: it does not install a manifold or Lie-group
 structure on the subgroup subtype.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Theorem 20.12.
+* H. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 9.1.
 -/
 
 public section
@@ -54,12 +62,10 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
   dsimp only
   let p : _root_.Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
-  obtain ⟨q, hpq⟩ := _root_.Submodule.exists_isCompl p
-  obtain ⟨ε, hε, hsep⟩ :=
-    exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint (I := I) hK q hpq.disjoint.symm
-  let hf := Submodule.isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl
-    (I := I) (G := G) p q hpq
+  obtain ⟨q, ε, hpq, hε, hsep, hf⟩ :=
+    exists_complement_data_of_isClosed_subgroup (I := I) hK
   let Φ₀ : OpenPartialHomeomorph G (p × q) := hf.localInverse.toOpenPartialHomeomorph
+  -- Shrink the inverse chart so that its transverse coordinate lies in the separation ball.
   let A : Set (p × q) := (Prod.snd : p × q → q) ⁻¹' Metric.ball (0 : q) ε
   let V : Set G := Φ₀.source ∩ Φ₀ ⁻¹' A
   have hV : IsOpen V := by
@@ -72,6 +78,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     change hf.localInverse.toPartialEquiv 1 = 0
     simpa only [Submodule.lieExpMulLieExp_zero] using h
   have h1 : (1 : G) ∈ Φ.source := by
+    -- The inverse chart sends `1` to `0`, whose transverse coordinate lies in every positive ball.
     change 1 ∈ Φ₀.source ∩ V
     refine ⟨?_, ?_⟩
     · change 1 ∈ hf.localInverse.source
@@ -90,6 +97,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
   apply isSliceChart_iff.2
   intro x hx
+  -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
   rw [OpenPartialHomeomorph.restrOpen_source] at hx
   simp only [OpenPartialHomeomorph.coe_restrOpen]
   change x ∈ Φ₀.source ∩ V at hx
@@ -106,6 +114,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
         (hf.localInverse.toPartialEquiv x) = x at hright
     rw [Submodule.lieExpMulLieExp_apply] at hright
     have hz_eq : z = hf.localInverse.toPartialEquiv x := by
+      -- The open partial homeomorph and partial diffeomorph have the same underlying partial map.
       change Φ₀ x = hf.localInverse.toPartialEquiv x
       change hf.localInverse.toOpenPartialHomeomorph x = hf.localInverse.toPartialEquiv x
       exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
@@ -120,6 +129,8 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK z.1.property
   constructor
   · intro hxK
+    -- Cancel the first exponential inside `K`; separation then forces the transverse term
+    -- to vanish.
     have hz2K : lieExp (I := I) (z.2 : LeftInvariantDerivation I G) ∈ K := by
       have hm := K.mul_mem (K.inv_mem hz1K) hxK
       rw [← hzprod] at hm
@@ -129,6 +140,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     change z.1 ∈ (univ : Set p) ∧ z.2 ∈ ({0} : Set q)
     exact ⟨mem_univ _, Set.mem_singleton_iff.mpr (Subtype.ext hz20)⟩
   · intro hz20
+    -- A zero transverse coordinate reduces the product to an exponential from the Lie subalgebra.
     have hz20' : z.2 = 0 := by
       change z ∈ (univ : Set p) ×ˢ ({0} : Set q) at hz20
       exact hz20.2
