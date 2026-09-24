@@ -39,5 +39,6 @@ theorem IsPrimitiveRoot.autToPow_eq_unitsMap_galEquivZMod {m : ℕ} [NeZero m] {
   have hexp : ζ ^ (hζ.autToPow ℚ σ : ZMod m).val = ζ ^ (galEquivZMod n K σ).val.val := by
     rw [hζ.autToPow_spec (R := ℚ), galEquivZMod_apply_of_pow_eq n K σ
       ((hζ.pow_eq_one_iff_dvd n).mpr hmn)]
-  rw [hζ.pow_eq_pow_iff_natCast_eq, ZMod.natCast_zmod_val] at hexp
+  rw [(hζ.isOfFinOrder (NeZero.ne m)).pow_eq_pow_iff_modEq, ← hζ.eq_orderOf,
+    ← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val] at hexp
   exact Units.ext (hexp.trans (ZMod.natCast_val _))

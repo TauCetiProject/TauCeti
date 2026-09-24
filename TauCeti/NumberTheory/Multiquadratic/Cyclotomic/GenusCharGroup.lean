@@ -103,9 +103,15 @@ theorem characterSubfield_genusCharGroup_eq_adjoin_range [NeZero (∏ P ∈ s, P
           (fun a b ha hb ↦ by rw [MulChar.mul_apply, ha, hb, one_mul])
           (MulChar.one_apply_coe _) fun P _ ↦ by rw [primeDiscriminantCharAtLevel_def]; exact h P
       rw [MulChar.ringHomCompHom_apply, MulChar.ringHomComp_apply, ht, map_one]
-  -- The character correspondence is by definition the fixed field of that kernel.
-  change fixedField ((subgroupGalEquivSubgroupChar N K R).symm (OrderDual.toDual
-    ((genusCharGroup s hs).map (MulChar.ringHomCompHom (Int.castRingHom R))))) = _
+  -- Unwind the character correspondence to its Galois fixed field.
+  have hcorrespondence (Y : Subgroup (DirichletCharacter R N)) :
+      (intermediateFieldEquivSubgroupChar N K R).symm Y =
+        fixedField ((subgroupGalEquivSubgroupChar N K R).symm (OrderDual.toDual Y)) := by
+    simp only [intermediateFieldEquivSubgroupChar, OrderIso.symm_trans_apply,
+      OrderIso.symm_symm, OrderIso.dualDual_apply, OrderIso.dual_symm_apply,
+      OrderDual.ofDual_toDual,
+      IsGalois.intermediateFieldEquivSubgroup_symm_apply_toDual]
+  rw [hcorrespondence]
   rw [hker, fixedField_iInf_stabilizer_eq_adjoin_range]
   apply TauCeti.IntermediateField.adjoin_eq_adjoin_of_forall_sq_eq
   · rintro _ ⟨P, rfl⟩
