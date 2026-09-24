@@ -22,7 +22,8 @@ change of variables that turns a row exchangeable array recording those successo
 mixture of Markov chains. This file supplies the missing hypothesis of that change of variables:
 for a recurrent Markov exchangeable process, the **visited successor array**
 `TauCeti.Probability.visitedSuccessorProcess`, whose rows at unvisited states are constant, is row
-exchangeable, and the Diaconis--Freedman representation follows.
+exchangeable, and the Diaconis--Freedman representation of such a process started at a fixed state
+follows.
 
 ## The argument
 
@@ -61,9 +62,10 @@ reads, and carries no such tie.
   successor array of a recurrent Markov exchangeable process is row exchangeable.**
 * `TauCeti.Probability.MarkovExchangeable.rowExchangeable_successorProcess` — the plain successor
   array is row exchangeable when every state is almost surely attained.
-* `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain` — **the Diaconis--Freedman
-  representation**: a recurrent Markov exchangeable process started at a fixed state is a mixture
-  of Markov chains.
+* `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain_of_ae_initial_eq` — **the
+  Diaconis--Freedman representation at a fixed start**: a recurrent Markov exchangeable process
+  started at a fixed state is a mixture of Markov chains. Conditioning on the initial state removes
+  the fixed start (`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain`).
 
 ## References
 
@@ -496,9 +498,10 @@ theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
   · filter_upwards [hae] with ω hω
     exact funext hω
 
-/-- **The Diaconis--Freedman representation theorem.** A recurrent Markov exchangeable process that
-starts almost surely at a fixed state is a mixture of Markov chains. -/
-theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α}
+/-- **The Diaconis--Freedman representation theorem at a fixed start.** A recurrent Markov
+exchangeable process that starts almost surely at a fixed state is a mixture of Markov chains.
+`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain` removes the fixed start. -/
+theorem MarkovExchangeable.mixedMarkovChain_of_ae_initial_eq [IsProbabilityMeasure μ] {a₀ : α}
     (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     MixedMarkovChain μ X := by
   have := h.countable
