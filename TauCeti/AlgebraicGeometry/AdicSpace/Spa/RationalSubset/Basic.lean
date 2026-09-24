@@ -130,6 +130,8 @@ public section
 
 namespace TauCeti.ValuationSpectrum
 
+open _root_.TopologicalSpace
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- The rational subset `R(T/s)` of the adic spectrum: the trace on `spa A⁺` of the basic open
@@ -332,6 +334,21 @@ theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s�
       = rationalSubset Aplus (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
   rw [rationalSubset_def, rationalSubset_def, rationalSubset_def, ← basicOpenFinset_inter]
   exact (Set.inter_inter_distrib_left _ _ _).symm
+
+/-- The rational open of the common refinement of two presentations is their intersection. -/
+@[simp]
+theorem spaBasicOpen_commonRefinement {P : Huber.PairOfDefinition A} (Aplus : Subring A)
+    (p q : P.Presentation) :
+    spaBasicOpen Aplus (p.commonRefinement q).num (p.commonRefinement q).den =
+      spaBasicOpen Aplus p.num p.den ⊓ spaBasicOpen Aplus q.num q.den := by
+  classical
+  apply Opens.ext
+  apply Set.ext
+  intro x
+  simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen,
+    Huber.PairOfDefinition.Presentation.commonRefinement_num,
+    Huber.PairOfDefinition.Presentation.commonRefinement_den, ← rationalSubset_inter,
+    Set.mem_inter_iff]
 
 /-- **A rational subset is the intersection of its one-numerator pieces**:
 `R(T/s) = ⋂ t ∈ T, R({t}/s)` for nonempty `T`. This is the finite-family companion of

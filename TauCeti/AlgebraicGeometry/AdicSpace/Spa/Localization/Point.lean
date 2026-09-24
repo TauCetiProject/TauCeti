@@ -67,6 +67,7 @@ theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : P
 
 /-- **The rational point lies over `x`**: pulled back along the structure map `A → A⟨p⟩`, the
 point of `A⟨p⟩` determined by `x ∈ R(p)` is `x` itself. -/
+@[simp]
 theorem comap_rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) (p : Presentation P)
     (x : spa Aplus) (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
     letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -127,6 +128,7 @@ private theorem comap_ringHomOfRationalSubsetSubset_symm (hP : P.ringOfDefinitio
 /-- **The rational points are compatible with the comparison maps**: for a containment
 `R(q) ⊆ R(p)` and `x ∈ R(q)`, the comparison map `A⟨p⟩ → A⟨q⟩` pulls the point of `A⟨q⟩`
 determined by `x` back to the point of `A⟨p⟩` determined by `x`. -/
+@[simp]
 theorem comap_homOfRationalSubsetSubset_rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p q : Presentation P)
     (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den) (x : spa Aplus)

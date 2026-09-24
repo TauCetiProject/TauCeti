@@ -15,9 +15,9 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.OfDirected
 Let `x` be a point of `X = Spa(A,A⁺)`. Every rational neighbourhood `R(p)` of `x` has coordinate
 ring `A⟨p⟩`, and `x` determines a point of `Spa (A⟨p⟩, A_p⁺)` through the homeomorphism
 `Spa (A⟨p⟩, A_p⁺) ≃ₜ R(p)` of Wedhorn's Proposition 8.2(2). This file glues these points along
-the germ maps `A⟨p⟩ → 𝒪_{X,x}` into a point of the valuation spectrum of the stalk: the valuation
-`v_x` on `𝒪_{X,x}` which Wedhorn attaches to `x` in §8.1. It is the valuation through which the
-stalks of an adic space carry their valuations.
+the germ maps into a point of the valuation spectrum of the presentation-limit presheaf stalk.
+It is the presheaf-stalk version of the valuation `v_x` which Wedhorn attaches to `x` in §8.1.
+No comparison with the adic-space structure sheaf is established here.
 
 The gluing is `TauCeti.ValuationSpectrum.ofDirected`. Its hypotheses are supplied here: every germ
 is the germ of an element of some `A⟨p⟩`; a germ vanishes only if some restriction to a smaller
@@ -178,7 +178,7 @@ private theorem rationalNhd_compat {x : spa Aplus} (i j : RationalNhd P x) (a b)
   exact hab
 
 /-- **The valuation on the stalk** of the presentation-limit presheaf at a point `x` of
-`Spa(A,A⁺)`: the point of `Spv 𝒪_{X,x}` which, on the germs of every rational neighbourhood
+`Spa(A,A⁺)`: the point of its valuation spectrum which, on the germs of every rational neighbourhood
 `R(p)` of `x`, is the point of `A⟨p⟩` that `x` determines under
 `Spa (A⟨p⟩, A_p⁺) ≃ₜ R(p)`. -/
 noncomputable def presentationLimitStalkValuation (x : spa Aplus) :
@@ -189,6 +189,7 @@ noncomputable def presentationLimitStalkValuation (x : spa Aplus) :
 
 /-- **The stalk valuation restricts to the rational points**: its pullback along the germ map of
 a rational neighbourhood `R(p)` of `x` is the point of `A⟨p⟩` determined by `x`. -/
+@[simp]
 theorem comap_presentationLimitRationalGerm_presentationLimitStalkValuation (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
@@ -211,6 +212,7 @@ theorem eq_presentationLimitStalkValuation {x : spa Aplus}
 
 /-- **The stalk valuation lies over `x`**: pulled back to `A` along the structure map `A → A⟨p⟩`
 and the germ map of a rational neighbourhood `R(p)` of `x`, the stalk valuation at `x` is `x`. -/
+@[simp]
 theorem comap_presentationLimitStalkValuation (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
