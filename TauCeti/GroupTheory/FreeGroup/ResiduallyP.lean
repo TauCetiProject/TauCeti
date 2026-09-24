@@ -42,8 +42,6 @@ open Matrix
 
 namespace FreeGroup
 
-open TauCeti.FreeGroup TauCeti.Matrix
-
 variable {X : Type*}
 
 section Matrices

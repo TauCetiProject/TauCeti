@@ -20,9 +20,7 @@ comes from nilpotence of strictly upper triangular matrices.
 
 @[expose] public section
 
-namespace TauCeti.Matrix
-
-open _root_.Matrix
+namespace Matrix
 
 variable (D : ℕ) {p : ℕ}
 
@@ -108,4 +106,4 @@ theorem isPGroup_unitriangular : IsPGroup p (unitriangular (p := p) D) := fun u 
     rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
     exact IsUnitri.pow_eq_one D u.2))⟩
 
-end TauCeti.Matrix
+end Matrix

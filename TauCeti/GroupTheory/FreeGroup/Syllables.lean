@@ -16,9 +16,7 @@ generators with consecutive generators distinct.
 
 @[expose] public section
 
-namespace TauCeti.FreeGroup
-
-open _root_.FreeGroup
+namespace FreeGroup
 
 variable {X : Type*}
 
@@ -85,4 +83,4 @@ theorem exists_isSyllableNormal (w : FreeGroup X) :
 
 end Syllables
 
-end TauCeti.FreeGroup
+end FreeGroup
