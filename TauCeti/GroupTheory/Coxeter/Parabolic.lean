@@ -40,6 +40,22 @@ deleting a letter of `ω'` contradicts reducedness on the parabolic side.
 Membership of `u` in the left coset of `w` is spelled `u⁻¹ * w ∈ cs.parabolic J` throughout, rather
 than through a coset type, so that the statements compose directly with the length API.
 
+## Relation to Matsumoto's theorem
+
+This file is the dihedral-parabolic input to **Matsumoto's theorem**, which is not proved here.
+That theorem is proved by induction on `ℓ w`, comparing two reduced words `i :: α` and `i' :: α'`
+for the same `w`. When `i ≠ i'`, both `s i` and `s i'` are left descents of `w`, and the induction
+step needs `w` written as `x * v` with `x ∈ cs.parabolic {i, i'}`, with `v` of minimal length in
+the coset `cs.parabolic {i, i'} * v`, and with `ℓ w = ℓ x + ℓ v`; the two descents then force `x`
+to be the longest element of that dihedral subgroup, whose two reduced words are the alternating
+words `alternatingWord i i' (M i i')` and `alternatingWord i' i (M i i')`, one braid move apart.
+Applied to `w⁻¹`, and using that length is inversion-invariant, that decomposition is
+`CoxeterSystem.existsUnique_isMinimalCosetRep_mul`; its length additivity is
+`CoxeterSystem.length_mul_of_isMinimalCosetRep`; the absence of left descents of `v` in `{i, i'}`
+is `CoxeterSystem.isMinimalCosetRep_iff`; and reading off the reduced words of `x` inside the
+dihedral subgroup uses `CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabolic` together with
+`CoxeterSystem.simple_mem_parabolic_of_isReduced`.
+
 ## Main definitions
 
 * `CoxeterSystem.parabolic`: the standard parabolic subgroup attached to a set of indices.
