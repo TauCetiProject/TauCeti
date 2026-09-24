@@ -55,18 +55,22 @@ theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_constructionAL
     (ConstructionA.ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattice
       2 (Fin 24) even_two code.toAddSubgroup hq)
 
+/-- The Golay code is Lagrangian in the binary coordinate discriminant module. -/
+theorem isLagrangian_code :
+    ((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).IsLagrangian
+      code.toAddSubgroup :=
+  (isLagrangian_coordinatePower_zmodStandard_iff 2 code.toAddSubgroup).mpr
+    toZModSubmodule_code_eq_euclideanDual
+
 /-- The orthogonal quotient of the Golay code in the binary coordinate discriminant module has
 one element: the code is its own Euclidean dual. -/
 theorem natCard_orthogonalQuotient_code_eq_one :
     Nat.card (((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).orthogonalQuotient
       code.toAddSubgroup) = 1 := by
   let A := (FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)
-  have hlag : A.IsLagrangian code.toAddSubgroup :=
-    (isLagrangian_coordinatePower_zmodStandard_iff 2 code.toAddSubgroup).mpr
-      toZModSubmodule_code_eq_euclideanDual
   have hiso : A.IsIsotropic code.toAddSubgroup :=
     (A.isIsotropic_iff_le_orthogonalComplement code.toAddSubgroup).mpr
-      ((A.isLagrangian_def code.toAddSubgroup).mp hlag).le
-  exact (A.card_orthogonalQuotient_eq_one_iff_isLagrangian hiso).mpr hlag
+      ((A.isLagrangian_def code.toAddSubgroup).mp isLagrangian_code).le
+  exact (A.card_orthogonalQuotient_eq_one_iff_isLagrangian hiso).mpr isLagrangian_code
 
 end TauCeti.BinaryGolay
