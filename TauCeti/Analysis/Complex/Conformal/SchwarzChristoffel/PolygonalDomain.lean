@@ -155,7 +155,8 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
   have hne : ∀ w ∈ upperHalfPlaneSet, w ≠ 0 := fun w (hw : 0 < w.im) h => by
     simp [h] at hw
   have hmem : ∀ w ∈ upperHalfPlaneSet, -w⁻¹ ∈ upperHalfPlaneSet := fun w (hw : 0 < w.im) => by
-    simpa [upperHalfPlaneSet, neg_div] using div_pos hw (normSq_pos.mpr (hne w hw))
+    simpa [upperHalfPlaneSet, neg_div, one_div, inv_neg] using
+      (⟨w, hw⟩ : ℍ).im_inv_neg_coe_pos
   -- the value `(p - q) / b` at `0` is not taken elsewhere
   have hnotp : ∀ w : ℂ, 0 ≤ w.im → (p - q) / b ≠ (f (-w⁻¹) - q) / b := fun w hw h => by
     rw [div_left_inj' hb, sub_left_inj] at h
