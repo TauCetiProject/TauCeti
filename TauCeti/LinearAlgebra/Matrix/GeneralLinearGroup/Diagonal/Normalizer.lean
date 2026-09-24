@@ -88,7 +88,6 @@ theorem coe_mul_permutationGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (
 
 /-- Conjugation by `permutationGL σ` relabels both indices: the `(i, j)` entry of
 `(permutationGL σ)⁻¹ * g * permutationGL σ` is the `(σ i, σ j)` entry of `g`. -/
-@[simp]
 theorem coe_permutationGL_inv_mul_mul_permutationGL_apply {ι : Type*} [Fintype ι]
     [DecidableEq ι] (σ : Equiv.Perm ι) (g : GL ι k) (i j : ι) :
     (((permutationGL (k := k) σ)⁻¹ * g * permutationGL (k := k) σ : GL ι k) :
