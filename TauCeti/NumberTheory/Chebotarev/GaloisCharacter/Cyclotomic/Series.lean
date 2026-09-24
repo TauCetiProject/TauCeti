@@ -34,7 +34,7 @@ so the series is analytic at `s = 1`, and its value at `s = 1` is nonzero.
   `L`-series of `galoisCharacterWeight χ`.
 * `NumberField.Chebotarev.differentiableOn_cyclotomicCharacterSeriesC`: for `F = K(μ_m)` and
   `χ` nontrivial it is holomorphic on `Re s > 1 - 1 / [K : ℚ]`.
-* `NumberField.Chebotarev.cyclotomicCharacterSeriesC_analyticAt_one`: for `F = K(μ_m)` and `χ`
+* `NumberField.Chebotarev.analyticAt_cyclotomicCharacterSeriesC_one`: for `F = K(μ_m)` and `χ`
   nontrivial it is analytic at `s = 1`.
 * `NumberField.Chebotarev.cyclotomicCharacterSeriesC_ne_zero_at_one`: for `F = K(μ_m)` and `χ`
   nontrivial it is nonzero at `s = 1`.
@@ -66,7 +66,7 @@ open scoped Classical in
 
 In every case it is the `L`-series on `Re s > 1` (`cyclotomicCharacterSeriesC_eq_LSeries`). For
 `F = K(μ_m)` and `χ ≠ 1` the continuation exists, and the function is analytic and nonzero at
-`s = 1` (`cyclotomicCharacterSeriesC_analyticAt_one`, `cyclotomicCharacterSeriesC_ne_zero_at_one`).
+`s = 1` (`analyticAt_cyclotomicCharacterSeriesC_one`, `cyclotomicCharacterSeriesC_ne_zero_at_one`).
 -/
 noncomputable def cyclotomicCharacterSeriesC (χ : (F ≃ₐ[K] F) →* ℂˣ) : ℂ → ℂ :=
   if h : ∃ f : ℂ → ℂ,
@@ -146,7 +146,7 @@ variable (K F) in
 /-- **Analyticity at `s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of `Gal(F/K)`,
 the continued `L`-series of `χ` is analytic at `s = 1`, which lies in the half-plane of
 `differentiableOn_cyclotomicCharacterSeriesC`. -/
-theorem cyclotomicCharacterSeriesC_analyticAt_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem analyticAt_cyclotomicCharacterSeriesC_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : AnalyticAt ℂ (cyclotomicCharacterSeriesC K F χ) 1 :=
   (differentiableOn_cyclotomicCharacterSeriesC K F m χ hχ).analyticAt <|
     (isOpen_lt continuous_const Complex.continuous_re).mem_nhds
@@ -271,7 +271,7 @@ private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ) [NeZero m]
     subst h1
     exact ⟨_, (tendsto_sub_one_mul_LSeries_ofBadPrimes (ramifiedPrimes K F)).congr fun σ ↦ by
       simp [Ne.symm hχ]⟩
-  have hana := cyclotomicCharacterSeriesC_analyticAt_one K F m ψ h1
+  have hana := analyticAt_cyclotomicCharacterSeriesC_one K F m ψ h1
   by_cases h2 : ψ = χ
   · -- The series of `χ` vanishes at `1`, so dividing by `σ - 1` gives a difference quotient.
     subst h2

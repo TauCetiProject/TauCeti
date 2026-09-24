@@ -48,8 +48,9 @@ private theorem mem_frobeniusPrimeSet_fixedField_range_cyclotomicArtin
     exact ⟨_, cyclotomicArtin_idealClass_of_isArithFrobAt F m 𝔭 hmem Q hσ⟩
   simpa only [ConjClasses.map_mk, hσH, ← ConjClasses.one_eq_mk_one] using
     frobeniusPrimeSet_subset_map_restrictNormalHom (M := fixedField (cyclotomicArtin K F m).range) _
-      (mem_frobeniusPrimeSet_mk_of_isArithFrobAt (fun Q _ _ ↦ isUnramifiedAt_of_notMem_support F m
-        (mem_cyclotomicModulus_support_iff.not.mpr h𝔭) Q) Q hσ)
+      (mem_frobeniusPrimeSet_mk_of_isArithFrobAt (fun Q _ _ ↦
+        isUnramifiedAt_of_notMem_cyclotomicModulus_support F m
+          (mem_cyclotomicModulus_support_iff.not.mpr h𝔭) Q) Q hσ)
 
 /-- **The cyclotomic Artin map is surjective.** For `F = K(μ_m)`, every automorphism of `F / K` is
 the Artin automorphism of a ray class of `cyclotomicModulus K m`. -/
