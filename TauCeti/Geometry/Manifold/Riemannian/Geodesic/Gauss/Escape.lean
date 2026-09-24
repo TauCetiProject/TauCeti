@@ -11,15 +11,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.RadialLength
 /-!
 # The escape estimate for normal neighbourhoods
 
-A path which starts at the centre of a normal neighbourhood and meets the complement of that
-neighbourhood must first reach the boundary of a smaller tangent ball. The first-exit argument uses
-continuity of the path and compactness of the closed exponential image. Before the exit, the path
-is inside the normal neighbourhood, so the polar length comparison applies. At the exit its
-logarithmic radius is the inner radius, which gives the required lower bound on the length of the
-whole path.
+This module provides the escape estimate for normal neighbourhoods: a path that starts at the
+centre and leaves the exponential image of the domain has length at least the radius of a smaller
+tangent ball contained in that domain. It also provides a strict comparison with the radial segment
+to a point in the smaller ball when the path leaves the larger domain.
 
-This is the escape estimate used with radial minimization to obtain the local distance identity on
-a normal ball. The first-exit organization follows the Apache-2.0
+Together with radial minimization, these estimates are used to obtain the local distance identity
+on a normal ball. The first-exit organization follows the Apache-2.0
 `frenzymath/Poincare-Conjecture` formalization, revision
 `24f32e4d600878bfaac6bc2f2f9324175571c321`, especially
 `DoCarmoLib/Riemannian/Exponential/NormalBallEDist.lean` and
@@ -144,18 +142,17 @@ theorem IsNormalDomain.pathELength_escape
   exact hbound.trans (Manifold.pathELength_mono (a := 0) (b := T)
     (a' := 0) (b' := 1) le_rfl hT01.2)
 
-/-- A `C¹` competitor with an endpoint in a smaller normal ball is strictly longer than its
-radial segment whenever its image leaves the larger normal domain. -/
+/-- A `C¹` competitor that starts at the centre and leaves the larger normal domain is strictly
+longer than the radial segment to a point in a smaller normal ball. -/
 theorem IsNormalDomain.pathELength_riemannianExp_smul_lt_of_not_mapsTo
     {p : M} {U : Set (TangentSpace I p)} {r : ℝ}
     {v : TangentSpace I p}
     (h : IsNormalDomain I M p U)
-    (hr : 0 < r) (hclosed : Metric.closedBall 0 r ⊆ U)
+    (hclosed : Metric.closedBall 0 r ⊆ U)
     (hv : v ∈ Metric.ball 0 r)
     {γ : ℝ → M}
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc 0 1))
     (hγ0 : γ 0 = p)
-    (hγ1 : γ 1 = riemannianExp I M p v)
     (hleave : ¬ MapsTo γ (Icc 0 1) (riemannianExp I M p '' U)) :
     Manifold.pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1
       < Manifold.pathELength I γ 0 1 := by
@@ -167,17 +164,9 @@ theorem IsNormalDomain.pathELength_riemannianExp_smul_lt_of_not_mapsTo
     apply h
     exact ⟨t, ht, hnot⟩
   have hvU : v ∈ U := (Metric.ball_subset_closedBall.trans hclosed) hv
-  have hγ1_mem : γ 1 ∈ riemannianExp I M p '' U := by
-    rw [hγ1]
-    exact ⟨v, hvU, rfl⟩
-  obtain ⟨t, ht, htU⟩ := hex
-  have ht_ne_one : t ≠ 1 := by
-    intro ht1
-    subst t
-    exact htU hγ1_mem
-  have hex' : ∃ t ∈ Icc 0 1, γ t ∉ riemannianExp I M p '' U :=
-    ⟨t, ⟨ht.1, (lt_of_le_of_ne ht.2 ht_ne_one).le⟩, htU⟩
-  have hesc := h.pathELength_escape hr hclosed hγ hγ0 hex'
+  have hr : 0 < r :=
+    lt_of_le_of_lt (norm_nonneg v) (mem_ball_zero_iff.mp hv)
+  have hesc := h.pathELength_escape hr hclosed hγ hγ0 hex
   have hrad := pathELength_riemannianExp_smul_zero_one h hvU
   have hnorm : ‖v‖ < r := mem_ball_zero_iff.mp hv
   have hrad_lt : Manifold.pathELength I
