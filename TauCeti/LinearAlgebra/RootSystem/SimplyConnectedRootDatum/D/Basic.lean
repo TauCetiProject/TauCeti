@@ -459,26 +459,21 @@ theorem mem_posRoots_typeDSimplyConnectedBase_iff_nonneg (hn : 4 ≤ n)
     simp only [dite_eq_left hjlt]
     rw [hindex]
     simp [coeff, hjlt]
-  have hne_sum : (∑ i : Fin n, typeDSimpleRootCoordinates n hn
-      (typeDRootEquiv n hn k) i) ≠ 0 := by
-    rw [← hcoeff, ← (typeDSimplyConnectedBase n hn).height_eq_sum hroot]
-    exact (typeDSimplyConnectedBase n hn).height_ne_zero k
-  rw [mem_posRoots, RootPairing.Base.isPos_iff',
-    (typeDSimplyConnectedBase n hn).height_eq_sum hroot,
-    hcoeff]
+  rw [mem_posRoots]
   constructor
   · intro hk
-    have hk' : 0 < ∑ i : Fin n,
-        typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i :=
-      lt_of_le_of_ne hk (Ne.symm hne_sum)
+    rw [RootPairing.Base.isPos_iff,
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff] at hk
     obtain hnonneg | hnonpos :=
       typeDSimpleRootCoordinates_nonneg_or_nonpos hn (typeDRootEquiv n hn k)
     · exact hnonneg
     · exfalso
       have hsum_nonpos : (∑ i : Fin n, typeDSimpleRootCoordinates n hn
           (typeDRootEquiv n hn k) i) ≤ 0 := Finset.sum_nonpos fun i _ => hnonpos i
-      exact (not_lt_of_ge hsum_nonpos hk').elim
+      exact (not_lt_of_ge hsum_nonpos hk).elim
   · intro hnonneg
+    rw [RootPairing.Base.isPos_iff',
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff]
     exact Finset.sum_nonneg fun i _ => hnonneg i
 
 /-- **The pinned datum of type `Dₙ` has Cartan type `D n`.** Its Bourbaki-numbered base realizes
