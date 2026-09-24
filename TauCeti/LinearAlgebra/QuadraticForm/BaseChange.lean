@@ -212,6 +212,16 @@ theorem QuadraticMap.Represents.baseChange {Q : _root_.QuadraticForm R M} {a : R
 
 namespace QuadraticForm
 
+/-- Polarization after base change, evaluated on pure tensors. -/
+@[simp]
+theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
+    QuadraticMap.polar (Q.baseChange A) (a ⊗ₜ x) (b ⊗ₜ y) =
+      (QuadraticMap.polar Q x y) • (a * b) := by
+  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2
+    (map_ofNat _ _).symm
+  rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
+    LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+
 section Diagonal
 
 variable {ι : Type*} [Fintype ι]
@@ -359,15 +369,6 @@ namespace TauCeti
 
 namespace QuadraticMap
 
-/-- Polarization after base change, evaluated on pure tensors. -/
-theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
-    QuadraticMap.polar (Q.baseChange A) (a ⊗ₜ x) (b ⊗ₜ y) =
-      (QuadraticMap.polar Q x y) • (a * b) := by
-  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2
-    (map_ofNat _ _).symm
-  rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
-    LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
-
 /-! ### Orthogonal groups -/
 
 /-- Extending scalars carries an orthogonal automorphism of `Q` to an orthogonal automorphism of
@@ -511,7 +512,7 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
   | zero => simp
   | tmul a m =>
     rw [reflection_apply, LinearEquiv.baseChange_tmul, reflection_apply, hinv,
-      polar_baseChange_tmul]
+      _root_.QuadraticForm.polar_baseChange_tmul]
     simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
   | add x y hx hy => simp only [map_add, hx, hy]
 

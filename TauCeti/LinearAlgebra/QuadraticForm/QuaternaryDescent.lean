@@ -148,7 +148,7 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
   rw [QuadraticMap.not_anisotropic_iff_exists] at h
   obtain ⟨z, hz0, hz⟩ := h
   obtain ⟨x, y, rfl⟩ := hdecomp z
-  rw [QuadraticMap.map_add (Q.baseChange E), QuadraticMap.polar_baseChange_tmul,
+  rw [QuadraticMap.map_add (Q.baseChange E), QuadraticForm.polar_baseChange_tmul,
     baseChange_tmul, baseChange_tmul] at hz
   -- Read off the coordinates of `Q_E (1 ⊗ x + s ⊗ y)` along the basis `1, s`.
   obtain ⟨hxy, hpolar⟩ := LinearIndependent.pair_iff.mp hli (Q x + d * Q y) (polar Q x y) (by
