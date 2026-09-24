@@ -19,6 +19,8 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: Dedekind independence of the characters of `Eˣ` is used only inside the proof that
 -- distinct orbits give distinct virtual characters.
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
+-- Non-public: lifting a unit of `E` lying in `F` to a unit of `F` is used only inside that proof.
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # The cuspidal virtual character of `GL₂(𝔽_q)`
@@ -46,7 +48,8 @@ here, and neither the construction of the representation nor the norm computatio
 difference to be `±` an irreducible character is carried out: what is established below is that the
 difference is a virtual character (`TauCeti.GL2CuspidalVirtualCharacter_mem_virtualCharacters`)
 with those four values and degree `q - 1`, together with the two symmetries the classical
-parametrization rests on.
+parametrization rests on and the fact that the orbit `{θ, θ^q}` is the exact fibre of the
+construction.
 
 ## The two symmetries
 
@@ -89,12 +92,12 @@ linearly independent over `ℂ`.
 * `TauCeti.GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one` and
   `TauCeti.GL2CuspidalVirtualCharacter_comp_powMonoidHom`: **the two symmetries**, in `ψ` and in
   `θ`.
-* `TauCeti.add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq`: the virtual character
+* `TauCeti.apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq`: the virtual character
   determines `u ↦ θ(u) + θ(u^q)` on all of `Eˣ`.
 * `TauCeti.eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq`: **distinct orbits give
   distinct virtual characters**.
-* `TauCeti.GL2CuspidalVirtualCharacter_eq_iff`: **the cuspidal series is parametrized by the
-  orbits `{θ, θ^q}`**, the two symmetries and the previous item together.
+* `TauCeti.GL2CuspidalVirtualCharacter_eq_iff`: **the orbit `{θ, θ^q}` is the exact fibre of the
+  construction**, the two symmetries and the previous item together.
 
 ## Implementation notes
 
@@ -272,27 +275,20 @@ theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) (ψ 
 
 /-! ### Distinct orbits give distinct virtual characters -/
 
-omit [Fintype F] in
-/-- A unit of `E` whose value lies in the image of `F` is the image of a unit of `F`. -/
-private theorem exists_units_map_algebraMap_eq {u : Eˣ}
-    (hu : (u : E) ∈ Set.range (algebraMap F E)) :
-    ∃ a : Fˣ, Units.map (algebraMap F E : F →* E) a = u := by
-  obtain ⟨a, ha⟩ := hu
-  have ha0 : a ≠ 0 := fun h => u.ne_zero (by rw [← ha, h, map_zero])
-  exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
-
 /-- **The cuspidal virtual character determines the function `u ↦ θ(u) + θ(u^q)` on all of
-`Eˣ`.** Outside `F` this is one of the four values, read off the elliptic classes. On a unit
-coming from `Fˣ` the `q`-power map is the identity, so both sides are twice a single value, and
-the central value `(q - 1) θ(a)` supplies that value once `q > 1`. Neither reading uses the
-additive character, so the two may differ. -/
-theorem add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq {θ θ' : Eˣ →* ℂˣ}
+`Eˣ`.** Outside `F` this is the negative of one of the four values, read off the elliptic
+classes. On a unit coming from `Fˣ` the `q`-power map is the identity, so both sides are twice a
+single value, and the central value `(q - 1) θ(a)` supplies that value once `q > 1`. Neither
+reading uses the additive character, so the two may differ. -/
+theorem apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq {θ θ' : Eˣ →* ℂˣ}
     {ψ ψ' : AddChar F ℂ}
     (h : GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ')
     (u : Eˣ) :
     (θ u : ℂ) + θ (u ^ Fintype.card F) = (θ' u : ℂ) + θ' (u ^ Fintype.card F) := by
   by_cases hu : (u : E) ∈ Set.range (algebraMap F E)
-  · obtain ⟨a, rfl⟩ := exists_units_map_algebraMap_eq hu
+  · obtain ⟨a, rfl⟩ :=
+      (mem_range_iff_exists_units_map_eq (f := (algebraMap F E : F →* E))
+        (map_zero (algebraMap F E)) u).mp hu
     have hfix : Units.map (algebraMap F E : F →* E) a ^ Fintype.card F =
         Units.map (algebraMap F E : F →* E) a := by
       rw [← Nat.card_eq_fintype_card]
@@ -319,26 +315,25 @@ theorem eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq {θ θ' : E
     {ψ ψ' : AddChar F ℂ}
     (h : GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ') :
     θ' = θ ∨ θ' = θ.comp (powMonoidHom (Fintype.card F)) := by
-  have hinj : ∀ {χ₁ χ₂ : Eˣ →* ℂˣ},
-      (Units.coeHom ℂ).comp χ₁ = (Units.coeHom ℂ).comp χ₂ → χ₁ = χ₂ := fun hχ =>
-    MonoidHom.ext fun u => Units.ext (by simpa using DFunLike.congr_fun hχ u)
   rcases MonoidHom.eq_and_eq_or_eq_and_eq_of_add_eq_add
       (a := (Units.coeHom ℂ).comp θ)
       (b := (Units.coeHom ℂ).comp (θ.comp (powMonoidHom (Fintype.card F))))
       (c := (Units.coeHom ℂ).comp θ')
       (d := (Units.coeHom ℂ).comp (θ'.comp (powMonoidHom (Fintype.card F))))
-      (by norm_num) (add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq hE h) with
+      (by norm_num) (apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq hE h) with
     ⟨hac, -⟩ | ⟨had, -⟩
-  · exact Or.inl (hinj hac).symm
-  · have hθ : θ = θ'.comp (powMonoidHom (Fintype.card F)) := hinj had
-    refine Or.inr (MonoidHom.ext fun u => ?_)
-    rw [MonoidHom.comp_apply, powMonoidHom_apply, hθ, MonoidHom.comp_apply, powMonoidHom_apply,
-      ← Nat.card_eq_fintype_card, FiniteField.units_pow_natCard_pow_natCard hE u]
+  · exact Or.inl ((MonoidHom.cancel_left Units.coeHom_injective).mp hac).symm
+  · have hθ : θ = θ'.comp (powMonoidHom (Fintype.card F)) :=
+      (MonoidHom.cancel_left Units.coeHom_injective).mp had
+    refine Or.inr ?_
+    rw [hθ, ← Nat.card_eq_fintype_card, MonoidHom.comp_assoc,
+      FiniteField.units_powMonoidHom_comp_powMonoidHom hE, MonoidHom.comp_id]
 
-/-- **The cuspidal series is parametrized by the orbits of the `q`-power map**: two cuspidal
+/-- **The orbit `{θ, θ^q}` is the exact fibre of the cuspidal virtual character**: two cuspidal
 virtual characters built from nontrivial additive characters agree exactly when their inducing
-characters of `Eˣ` lie in the same orbit `{θ, θ^q}`. This is the indexing that the classical
-construction of the discrete series rests on. -/
+characters of `Eˣ` lie in the same orbit. Classically it is this indexing that the construction
+of the discrete series rests on; that these virtual characters *are* the characters of the
+cuspidal representations is not established here. -/
 theorem GL2CuspidalVirtualCharacter_eq_iff (θ θ' : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :
     GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ' ↔
