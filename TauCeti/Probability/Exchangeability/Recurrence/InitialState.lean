@@ -12,9 +12,9 @@ public import TauCeti.Probability.Exchangeability.MarkovExchangeable.Conditionin
 # Conditional Diaconis--Freedman representation at an initial state
 
 The Diaconis--Freedman representation for a recurrent Markov exchangeable process is available
-when its initial state is fixed. Conditioning on a measurable initial-state event preserves
-recurrence and gives that fixed-start hypothesis. This provides the conditional pieces needed to
-represent a process with a random initial state.
+when its initial state is fixed. Conditioning on a measurable singleton initial-state event of
+positive probability preserves recurrence and gives that fixed-start hypothesis. This provides
+the conditional pieces needed to represent a process with a random initial state.
 
 ## References
 

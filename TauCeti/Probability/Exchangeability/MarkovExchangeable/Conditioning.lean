@@ -13,8 +13,8 @@ public import Mathlib.Probability.ConditionalProbability
 
 Conditioning on a measurable initial-state event scales the mass of every finite path starting
 there and gives zero mass to paths starting elsewhere. Hence it preserves Markov exchangeability.
-The path-mass formulas are used by name: `simpNF` rewrites their `prefixLaw` left-hand sides
-through `prefixLaw_def` and `blockLaw_def`, so neither formula can carry `@[simp]`.
+The conditional path-mass formula gives the same mass to paths with the same initial state and
+transition counts, establishing Markov exchangeability of the conditional law.
 
 ## References
 
@@ -82,17 +82,6 @@ theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X)
   rw [prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n u,
     prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n v,
     huv, h.prefixLaw_singleton_eq n u v huv hcount]
-
-/-- The mass of a finite path after conditioning on an initial state. Paths starting at another
-state have zero mass, including when the conditioning event itself has zero mass. -/
-theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
-    (hX : ∀ i, AEMeasurable (X i) μ) (hs : MeasurableSet {ω | X 0 ω = a})
-    (n : ℕ) (w : Fin (n + 1) → α) :
-    prefixLaw μ[|{ω | X 0 ω = a}] X (n + 1) {w} =
-      (μ {ω | X 0 ω = a})⁻¹ *
-        (if w 0 = a then prefixLaw μ X (n + 1) {w} else 0) := by
-  simpa only [Set.mem_singleton_iff] using
-    prefixLaw_singleton_cond_initial_mem (S := {a}) hX hs n w
 
 /-- Conditioning on a measurable initial-state event preserves Markov exchangeability. -/
 theorem MarkovExchangeable.cond_initial (h : MarkovExchangeable μ X)
