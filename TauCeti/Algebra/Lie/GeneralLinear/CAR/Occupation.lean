@@ -84,22 +84,19 @@ theorem carOccupationElement_def (i j : n) :
 @[simp]
 theorem carOccupationElement_self (i : n) :
     carOccupationElement (K := K) i i = (2 : K)⁻¹ • 1 := by
-  simp [carOccupationElement, carGenerator_def]
+  rw [carOccupationElement_def, carGenerator_mul_self]
+  simp
 
 /-- Oppositely oriented off-diagonal occupation elements are orthogonal in this order. -/
 @[simp]
 theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carOccupationElement (K := K) j i = 0 := by
   rw [carOccupationElement, carOccupationElement, smul_mul_assoc, mul_smul_comm, smul_smul]
-  -- Expose the common scalar and reassociate so `simp` can see the nilpotent middle pair.
-  change ((2 : K)⁻¹ * (2 : K)⁻¹) •
-    ((carGenerator (K := K) i j * carGenerator j i) *
-      (carGenerator j i * carGenerator i j)) = 0
   rw [mul_assoc (carGenerator (K := K) i j) (carGenerator j i)
       (carGenerator j i * carGenerator i j),
     ← mul_assoc (carGenerator (K := K) j i) (carGenerator j i)
       (carGenerator i j)]
-  simp [carGenerator_def, hij]
+  simp [carGenerator_mul_self, hij]
 
 section Half
 
