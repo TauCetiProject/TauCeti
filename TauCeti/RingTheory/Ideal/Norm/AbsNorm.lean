@@ -15,8 +15,8 @@ Identifying two rings along an isomorphism identifies their ideals, and the abso
 insensitive to that identification.
 
 In a ring that is free of finite rank over `ℤ`, elements congruent modulo `(m)` have norms
-congruent modulo `m`; for principal ideals whose generators have norms of the same sign, the
-congruence passes to the absolute norms.
+congruent modulo `m`; for principal ideals whose generators have norms with nonnegative product,
+the congruence passes to the absolute norms.
 
 ## Main results
 
@@ -25,8 +25,8 @@ congruence passes to the absolute norms.
 * `Algebra.intCast_norm_eq_of_sub_mem_span_natCast`: elements congruent modulo `(m)` have norms
   congruent modulo `m`.
 * `Ideal.span_singleton_natCast_eq_top_iff`: the ideal `(m)` is the unit ideal only for `m = 1`.
-* `Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem`: congruent elements whose norms have the
-  same sign generate ideals with absolute norms congruent modulo `m`.
+* `Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem`: congruent elements whose norms have
+  nonnegative product generate ideals with absolute norms congruent modulo `m`.
 -/
 
 public section
@@ -83,16 +83,16 @@ theorem Ideal.span_singleton_natCast_eq_top_iff [Nontrivial S] {m : ℕ} :
   rw [Algebra.norm_natCast, Int.natAbs_pow, Int.natAbs_natCast] at hu
   exact (Nat.pow_eq_one.mp hu).resolve_right Module.finrank_pos.ne'
 
-/-- **Congruent elements of norms of the same sign generate ideals of congruent norms.** If
-`a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`, and
-`N(a) N(b) > 0`, then the absolute norms of `(a)` and `(b)` are congruent modulo `m`. -/
+/-- **Congruent elements with norms of nonnegative product generate ideals of congruent norms.**
+If `a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`,
+and `N(a) N(b) ≥ 0`, then the absolute norms of `(a)` and `(b)` are congruent modulo `m`. -/
 theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S] [Infinite S]
     {m : ℕ}
-    {a b : S} (hab : 0 < Algebra.norm ℤ a * Algebra.norm ℤ b)
+    {a b : S} (hab : 0 ≤ Algebra.norm ℤ a * Algebra.norm ℤ b)
     (h : a - b ∈ Ideal.span {(m : S)}) :
     (Ideal.absNorm (Ideal.span {a}) : ZMod m) = Ideal.absNorm (Ideal.span {b}) := by
   rw [Ideal.absNorm_span_singleton, Ideal.absNorm_span_singleton]
-  exact ZMod.natCast_natAbs_eq_of_mul_pos hab (Algebra.intCast_norm_eq_of_sub_mem_span_natCast h)
+  exact ZMod.natCast_natAbs_eq_of_mul_nonneg hab (Algebra.intCast_norm_eq_of_sub_mem_span_natCast h)
 
 end Congruence
 

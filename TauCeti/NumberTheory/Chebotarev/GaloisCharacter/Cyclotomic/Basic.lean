@@ -202,15 +202,15 @@ private theorem ray_le_ker_cyclotomicArtinAway :
     ← cyclotomicArtinIntegral_apply, ← cyclotomicArtinIntegral_apply,
     autToPow_cyclotomicArtinIntegral F m hζ, autToPow_cyclotomicArtinIntegral F m hζ]
   -- They do: `a ≡ b` modulo `m`, and `N(a) = N(b) N(x)` with `N(x) > 0` as `x` is totally
-  -- positive, so the norms of `a` and `b` have the same sign.
+  -- positive, so `N(a) N(b) = N(b) ^ 2 N(x) ≥ 0`.
   have hNab : ((Algebra.norm ℤ a : ℤ) : ℚ) = (Algebra.norm ℤ b : ℤ) * Algebra.norm ℚ (x : K) := by
     rw [Algebra.coe_norm_int, Algebra.coe_norm_int, ← map_mul]
     exact congrArg _ hab
-  have hsign : (0 : ℚ) < (Algebra.norm ℤ a : ℤ) * (Algebra.norm ℤ b : ℤ) := by
+  have hsign : (0 : ℚ) ≤ (Algebra.norm ℤ a : ℤ) * (Algebra.norm ℤ b : ℤ) := by
     rw [hNab, mul_right_comm]
-    refine mul_pos (mul_self_pos.mpr (Int.cast_ne_zero.mpr (Algebra.norm_ne_zero_iff.mpr
-      (hne0 hb)))) (norm_pos_of_isTotallyPositive x.ne_zero (isTotallyPositive_iff.mpr
-        fun w hw ↦ hx.pos (mem_cyclotomicModulus_infinitePart K m ⟨w, hw⟩)))
+    exact mul_nonneg (mul_self_nonneg _) (norm_pos_of_isTotallyPositive x.ne_zero
+      (isTotallyPositive_iff.mpr fun w hw ↦
+        hx.pos (mem_cyclotomicModulus_infinitePart K m ⟨w, hw⟩))).le
   exact Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem (mod_cast hsign)
     (by simpa using sub_mem ha hb)
 
