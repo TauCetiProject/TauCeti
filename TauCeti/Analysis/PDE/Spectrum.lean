@@ -144,7 +144,7 @@ Dirichlet problem, and it is the operator whose spectrum carries the Dirichlet e
 problem; `TauCeti.PDE.dirichletSolutionOperator_apply` identifies its value with the
 Lax--Milgram solution. -/
 def dirichletSolutionOperator
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     Lp ℝ 2 (mu.restrict Omega) →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
   hcoercive.formSolutionOperator W1p0.valueL
@@ -152,10 +152,10 @@ def dirichletSolutionOperator
 /-- The abstract solution map of the energy form along the value inclusion is the weak solution
 of the Dirichlet problem. -/
 theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     hcoercive.formSolutionMap W1p0.valueL f = weakSolutionDirichlet hcoeff hcoercive f := by
-  refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v => ?_).symm
+  refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v ↦ ?_).symm
   rw [energyFormH1L0_apply, W1p0.valueL_apply, ← dirichletForcing_apply f v,
     dirichletForcing_apply_eq_setIntegral]
   exact (isWeakSolutionDirichlet_iff f _).mp
@@ -164,7 +164,7 @@ theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
 /-- The solution operator returns the value component of the weak solution. -/
 @[simp]
 theorem dirichletSolutionOperator_apply
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     dirichletSolutionOperator hcoeff hcoercive f =
       W1p.value (weakSolutionDirichlet hcoeff hcoercive f : W1p mu Omega 2) := by
@@ -173,7 +173,7 @@ theorem dirichletSolutionOperator_apply
 
 /-- **The solution operator is compact on a bounded domain**, by Rellich--Kondrachov. -/
 theorem isCompactOperator_dirichletSolutionOperator
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
     IsCompactOperator (dirichletSolutionOperator hcoeff hcoercive) :=
@@ -184,7 +184,7 @@ theorem isCompactOperator_dirichletSolutionOperator
 almost everywhere symmetric principal coefficient the symmetry hypothesis is supplied by
 `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`. -/
 theorem isSymmetric_dirichletSolutionOperator
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
@@ -198,7 +198,7 @@ theorem isSymmetric_dirichletSolutionOperator
 /-- **The solution operator is positive semidefinite**: its quadratic form is the energy of the
 solution it produces. -/
 theorem inner_dirichletSolutionOperator_self_nonneg
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     0 ≤ ⟪f, dirichletSolutionOperator hcoeff hcoercive f⟫_ℝ :=
   hcoercive.inner_formSolutionOperator_self_nonneg W1p0.valueL f
@@ -240,7 +240,7 @@ theorem isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift (kappa
       ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ IsWeakSolutionDirichletMassShift a b c kappa 0 u := by
   have hzero : ∀ v : W1p0 mu Omega 2,
       (∫ x in Omega, (0 : Lp ℝ 2 (mu.restrict Omega)) x *
-        W1p.value (v : W1p mu Omega 2) x ∂mu) = 0 := fun v => by
+        W1p.value (v : W1p mu Omega 2) x ∂mu) = 0 := fun v ↦ by
     rw [← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
   simp only [IsDirichletEigenvalue, isWeakSolutionDirichletMassShift_iff, hzero, sub_eq_zero]
 
@@ -248,12 +248,12 @@ theorem isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift (kappa
 form on `H¹₀(Ω)` is the only hypothesis: neither boundedness nor any regularity of `Ω` is
 needed. -/
 theorem pos_of_isDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ}
     (h : IsDirichletEigenvalue mu Omega a b c kappa) : 0 < kappa := by
   obtain ⟨u, hu, heq⟩ := h
   refine hcoercive.pos_of_forall_apply_eq_smul_inner
-    (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) hu fun v => ?_
+    (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) hu fun v ↦ ?_
   rw [energyFormH1L0_apply, W1p0.valueL_apply, W1p0.valueL_apply]
   exact heq v
 
@@ -262,7 +262,7 @@ theorem pos_of_isDirichletEigenvalue
 available on a bounded domain is a Poincaré constant, so this says that the first Dirichlet
 eigenvalue is at least the Poincaré constant. -/
 theorem le_of_isDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hlower : ∀ w : W1p0 mu Omega 2,
       C * ‖w‖ ^ 2 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
@@ -270,7 +270,7 @@ theorem le_of_isDirichletEigenvalue
   obtain ⟨u, hu, heq⟩ := h
   refine hcoercive.le_of_forall_apply_eq_smul_inner
     (J := W1p0.valueL (mu := mu) (Omega := Omega) (p := 2))
-    (fun w => ?_) (fun w => ?_) hu fun v => ?_
+    (fun w ↦ ?_) (fun w ↦ ?_) hu fun v ↦ ?_
   · rw [energyFormH1L0_apply]
     exact hlower w
   · rw [W1p0.valueL_apply]
@@ -283,14 +283,14 @@ operator.  On a nonempty bounded domain with symmetric energy form this value is
 the least Dirichlet eigenvalue; see `TauCeti.PDE.isDirichletEigenvalue_first` and
 `TauCeti.PDE.firstDirichletEigenvalue_le`. -/
 def firstDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) : ℝ :=
   ‖dirichletSolutionOperator hcoeff hcoercive‖⁻¹
 
 /-- The first Dirichlet eigenvalue is the reciprocal of the operator norm of the Dirichlet
 solution operator. -/
 theorem firstDirichletEigenvalue_def
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     firstDirichletEigenvalue hcoeff hcoercive =
       ‖dirichletSolutionOperator hcoeff hcoercive‖⁻¹ := (rfl)
@@ -298,7 +298,7 @@ theorem firstDirichletEigenvalue_def
 /-- **Existence of a Dirichlet eigenvalue.**  On a nonempty bounded domain with a symmetric energy
 form, the Dirichlet eigenvalue problem has a nonzero weak solution. -/
 theorem exists_isDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -309,7 +309,7 @@ theorem exists_isDirichletEigenvalue
   obtain ⟨kappa, -, u, hu, heq⟩ := hcoercive.exists_ne_zero_forall_apply_eq_smul_inner
     (W1p0.isCompactOperator_valueL (by simp) hOmega) (energyFormH1L0_comm hcoeff hsymm)
     (W1p0.valueL_ne_zero hOmega_nonempty)
-  refine ⟨kappa, u, hu, fun v => ?_⟩
+  refine ⟨kappa, u, hu, fun v ↦ ?_⟩
   have hv := heq v
   rwa [energyFormH1L0_apply, W1p0.valueL_apply, W1p0.valueL_apply] at hv
 
@@ -317,20 +317,20 @@ theorem exists_isDirichletEigenvalue
 operator.**  This is the passage that turns the eigenvalue problem for the unbounded operator
 `L` into one for a bounded — and, on a bounded domain, compact — operator on `L²(Ω)`. -/
 theorem isDirichletEigenvalue_iff_hasEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ} (hkappa : kappa ≠ 0) :
     IsDirichletEigenvalue mu Omega a b c kappa ↔
       HasEigenvalue (dirichletSolutionOperator hcoeff hcoercive :
         Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) kappa⁻¹ := by
   rw [dirichletSolutionOperator,
     hcoercive.hasEigenvalue_formSolutionOperator_iff W1p0.valueL hkappa]
-  refine exists_congr fun u => and_congr_right fun _ => forall_congr' fun v => ?_
+  refine exists_congr fun u ↦ and_congr_right fun _ ↦ forall_congr' fun v ↦ ?_
   rw [energyFormH1L0_apply, W1p0.valueL_apply, W1p0.valueL_apply]
 
 /-- The first Dirichlet eigenvalue is attained on a nonempty bounded domain with symmetric energy
 form. -/
 theorem isDirichletEigenvalue_first
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -343,13 +343,13 @@ theorem isDirichletEigenvalue_first
   obtain ⟨u, hu, heq⟩ := hcoercive.exists_ne_zero_forall_apply_eq_inv_norm_smul_inner
     (W1p0.isCompactOperator_valueL (by simp) hOmega) (energyFormH1L0_comm hcoeff hsymm)
     (W1p0.valueL_ne_zero hOmega_nonempty)
-  refine ⟨u, hu, fun v => ?_⟩
+  refine ⟨u, hu, fun v ↦ ?_⟩
   have hv := heq v
   rwa [energyFormH1L0_apply, W1p0.valueL_apply, W1p0.valueL_apply] at hv
 
 /-- The first Dirichlet eigenvalue is positive. -/
 theorem firstDirichletEigenvalue_pos
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -362,7 +362,7 @@ theorem firstDirichletEigenvalue_pos
 
 /-- The first Dirichlet eigenvalue is no greater than any Dirichlet eigenvalue. -/
 theorem firstDirichletEigenvalue_le
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ}
     (hkappa : IsDirichletEigenvalue mu Omega a b c kappa) :
     firstDirichletEigenvalue hcoeff hcoercive ≤ kappa := by
@@ -388,7 +388,7 @@ theorem firstDirichletEigenvalue_le
 
 /-- A diagonal lower bound for the energy form bounds the first Dirichlet eigenvalue below. -/
 theorem le_firstDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -412,7 +412,7 @@ which this holds.  Neither boundedness nor nonemptiness of `Ω` is needed here: 
 which makes the solution operator exist, and symmetry, which gives the energy form its
 Cauchy--Schwarz inequality. -/
 theorem firstDirichletEigenvalue_mul_norm_value_sq_le
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
@@ -434,7 +434,7 @@ over the `u ∈ H¹₀(Ω)` with nonzero `L²` value; the minimum is attained at
 Boundedness of `Ω` enters only through the attainment, by way of Rellich--Kondrachov: the
 inequality alone is `TauCeti.PDE.firstDirichletEigenvalue_mul_norm_value_sq_le`. -/
 theorem isLeast_rayleighQuotient_firstDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -461,7 +461,7 @@ Rayleigh principle read as an inequality, and it shows that the bound
 `TauCeti.PDE.firstDirichletEigenvalue_mul_norm_value_sq_le` is optimal.  Boundedness of `Ω` is
 not needed because this optimal-constant characterization does not assert attainment. -/
 theorem isGreatest_firstDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
@@ -483,7 +483,7 @@ theorem isGreatest_firstDirichletEigenvalue
 
 /-- **The eigenspaces of the Dirichlet problem are finite dimensional** on a bounded domain. -/
 theorem finiteDimensional_eigenspace_dirichletSolutionOperator
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {nu : ℝ} (hnu : nu ≠ 0) :
     FiniteDimensional ℝ (eigenspace (dirichletSolutionOperator hcoeff hcoercive :
@@ -495,7 +495,7 @@ theorem finiteDimensional_eigenspace_dirichletSolutionOperator
 /-- **The spectral theorem for the Dirichlet problem**: on a bounded domain and for a symmetric
 energy form, the eigenvectors of the solution operator span a dense subspace of `L²(Ω)`. -/
 theorem orthogonalComplement_iSup_eigenspaces_dirichletSolutionOperator_eq_bot
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -511,7 +511,7 @@ theorem orthogonalComplement_iSup_eigenspaces_dirichletSolutionOperator_eq_bot
 `H¹₀(Ω) → L²(Ω)` has dense range, so the eigenvalue `0` of the solution operator is absent and
 the eigenspaces at nonzero eigenvalues already have trivial orthogonal complement. -/
 theorem orthogonalComplement_iSup_eigenspaces_ne_zero_dirichletSolutionOperator_eq_bot
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -531,7 +531,7 @@ weak solutions `u ∈ H¹₀(Ω)` of `L u = κ u` at positive Dirichlet eigenval
 `W1p.value u = ∑ κ⁻¹ ⟪eₖ, f⟫ eₖ`.  No regularity of `∂Ω` enters, and `L²(Ω)` is not assumed
 separable, so the basis is indexed by a set of functions as in `exists_hilbertBasis`. -/
 theorem exists_hilbertBasis_forall_isDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
@@ -547,7 +547,7 @@ theorem exists_hilbertBasis_forall_isDirichletEigenvalue
         energyFormH1 a b c (u f : W1p mu Omega 2) (v : W1p mu Omega 2) =
           kappa f * ⟪W1p.value (u f : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ∧
       ∀ f : Lp ℝ 2 (mu.restrict Omega),
-        HasSum (fun g : s => (kappa g)⁻¹ • basis.repr f g • basis g)
+        HasSum (fun g : s ↦ (kappa g)⁻¹ • basis.repr f g • basis g)
           (dirichletSolutionOperator hcoeff hcoercive f) := by
   obtain ⟨s, basis, kappa, u, hbasis, hpos, hune, hvalue, heq, hsum⟩ :=
     hcoercive.exists_hilbertBasis_forall_apply_eq_smul_inner
@@ -556,10 +556,10 @@ theorem exists_hilbertBasis_forall_isDirichletEigenvalue
   have heq' : ∀ (f : s) (v : W1p0 mu Omega 2),
       energyFormH1 a b c (u f : W1p mu Omega 2) (v : W1p mu Omega 2) =
         kappa f * ⟪W1p.value (u f : W1p mu Omega 2),
-          W1p.value (v : W1p mu Omega 2)⟫_ℝ := fun f v => by
+          W1p.value (v : W1p mu Omega 2)⟫_ℝ := fun f v ↦ by
     simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq f v
-  refine ⟨s, basis, kappa, u, hbasis, hpos, fun f => ⟨u f, hune f, heq' f⟩,
-    fun f => ?_, heq', ?_⟩
+  refine ⟨s, basis, kappa, u, hbasis, hpos, fun f ↦ ⟨u f, hune f, heq' f⟩,
+    fun f ↦ ?_, heq', ?_⟩
   · simpa only [W1p0.valueL_apply] using hvalue f
   · rw [dirichletSolutionOperator]
     exact hsum
@@ -568,7 +568,7 @@ theorem exists_hilbertBasis_forall_isDirichletEigenvalue
 Dirichlet eigenvalue then `L u - κ u = f` in `Ω`, `u = 0` on `∂Ω`, has exactly one weak solution
 for every `f ∈ L²(Ω)`. -/
 theorem existsUnique_isWeakSolutionDirichletMassShift_of_not_isDirichletEigenvalue
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {kappa : ℝ}
     (hkappa : ¬ IsDirichletEigenvalue mu Omega a b c kappa) (f : Lp ℝ 2 (mu.restrict Omega)) :
@@ -615,13 +615,13 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
     (hkappa : IsDirichletEigenvalue volume Omega a b c kappa) :
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) ≤ kappa := by
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-    (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
+    (fun _x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   exact le_of_isDirichletEigenvalue hcoeff
     (isCoercive_energyFormH1L0 hcoeff
       (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
-      (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
+      (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
         hc_nonneg hball w.2))
-    (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
+    (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
       hc_nonneg hball w.2)
     hkappa
 
@@ -634,19 +634,19 @@ weak solution satisfies `1/(2(4R² + 1)) ≤ κ`; in particular the first Dirich
 theorem le_of_isDirichletEigenvalue_laplacian_of_subset_ball
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R) {kappa : ℝ}
-    (hkappa : IsDirichletEigenvalue volume Omega (fun _ => 1) 0 0 kappa) :
+    (hkappa : IsDirichletEigenvalue volume Omega (fun _ ↦ 1) 0 0 kappa) :
     1 / (2 * ((2 * R) ^ 2 + 1)) ≤ kappa := by
   have key := UniformlyEllipticOn.le_of_isDirichletEigenvalue_of_subset_ball
     (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-    (fun _ _ => le_rfl) hR hball (by simp) hkappa
+    aestronglyMeasurable_const le_rfl (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+    (fun _ _ ↦ le_rfl) hR hball (by simp) hkappa
   simpa using key
 
 /-- **Every Dirichlet eigenvalue of `-Δ` is positive** on a domain inside a ball. -/
 theorem pos_of_isDirichletEigenvalue_laplacian_of_subset_ball
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R) {kappa : ℝ}
-    (hkappa : IsDirichletEigenvalue volume Omega (fun _ => 1) 0 0 kappa) :
+    (hkappa : IsDirichletEigenvalue volume Omega (fun _ ↦ 1) 0 0 kappa) :
     0 < kappa :=
   lt_of_lt_of_le (by positivity)
     (le_of_isDirichletEigenvalue_laplacian_of_subset_ball hR hball hkappa)
