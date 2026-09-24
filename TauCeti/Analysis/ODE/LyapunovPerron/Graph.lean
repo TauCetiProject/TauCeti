@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
+public import TauCeti.Topology.Algebra.Module.ProjectionGraph
 
 /-!
 # The Lyapunov--Perron graph
@@ -255,9 +256,9 @@ theorem invOn_add_lyapunovPerronGraphMap :
     rw [lyapunovPerronGraphMap_map hs hu hα hN hsmall hP,
       ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap]
     exact hx
-  · rintro _ ⟨w, rfl⟩
-    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero,
-      ← mul_apply_eq_comp P P, hP.eq]
+  · intro v hv
+    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero]
+    exact IsIdempotentElem.apply_eq_self_of_mem_range P hP hv
 
 /-- **The Lyapunov--Perron fixed-point set is a graph over the range of `P`.** When `P` is
 idempotent and commutes with `A`, the fixed points of `ξ ↦ lyapunovPerronSolution ξ 0` are exactly

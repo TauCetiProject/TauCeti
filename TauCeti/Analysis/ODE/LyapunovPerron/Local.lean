@@ -251,7 +251,8 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
     exact ⟨P (y 0), ⟨⟨y 0, rfl⟩, hPx⟩,
       (invOn_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall hP hAP).1 hfix⟩
   · rintro ⟨v, ⟨⟨w, rfl⟩, hv⟩, rfl⟩
-    have hPP : P (P w) = P w := by rw [← mul_apply_eq_comp P P, hP.eq]
+    have hPP : P (P w) = P w :=
+      IsIdempotentElem.apply_eq_self_of_mem_range P hP ⟨w, rfl⟩
     set γ := lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall
       (P w) with hγ
     have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hr hN hsmall (P w) := by
