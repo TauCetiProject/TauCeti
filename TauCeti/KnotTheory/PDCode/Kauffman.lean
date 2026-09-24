@@ -146,6 +146,11 @@ def smoothingTurn (D : PDCode n) (b : Fin n → Bool) : Equiv.Perm (Fin (4 * n))
   D.halfEdge.permCongr
     ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i => slotSmoothing (b i)))
 
+/-- The defining equation for the smoothing traversal permutation. -/
+theorem smoothingTurn_def (D : PDCode n) (b : Fin n → Bool) :
+    D.smoothingTurn b = D.halfEdge.permCongr
+      ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i => slotSmoothing (b i))) := (rfl)
+
 /-- Smoothing reconnects the slots at a crossing by the chosen local smoothing. -/
 @[simp] theorem smoothingTurn_crossing (D : PDCode n) (b : Fin n → Bool) (i : Fin n)
     (slot : Fin 4) :
@@ -273,24 +278,33 @@ theorem even_orbitCount_statePerm (D : PDCode n) (s : Fin n → Bool) :
     Even (orbitCount (D.statePerm s)) :=
   (D.isPerfectMatching_smoothingTurn _).even_orbitCount_mul D.edgePair.prop
 
-/-- A code with a crossing leaves at least one circle in every state. -/
-theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
-    1 ≤ D.stateLoopCount s := by
-  have hpos : 0 < orbitCount (D.statePerm s) := by
-    have : Nonempty (Quotient (SameCycle.setoid (D.statePerm s))) :=
-      ⟨Quotient.mk _ ⟨0, by omega⟩⟩
-    rw [orbitCount_def]
-    exact Nat.card_pos
-  obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
-  rw [stateLoopCount_def]
-  omega
-
 /-- A code with no crossings has one circle per crossing-free component, in every state. -/
 @[simp] theorem stateLoopCount_eq_crossinglessComponentCount (D : PDCode 0) (s : Fin 0 → Bool) :
     D.stateLoopCount s = D.crossinglessComponentCount := by
   have h := Equiv.Perm.orbitCount_le_card (D.statePerm s)
   simp at h
   simp [stateLoopCount_def, h]
+
+/-- Every smoothing of a diagram with a component has at least one circle. -/
+theorem one_le_stateLoopCount_of_componentCount_pos (D : PDCode n)
+    (h : 0 < D.componentCount) (s : Fin n → Bool) : 1 ≤ D.stateLoopCount s := by
+  by_cases hn : n = 0
+  · subst n
+    have hc : 0 < D.crossinglessComponentCount := by
+      simpa [componentCount_eq, crossingComponentCount_eq_zero] using h
+    rw [stateLoopCount_eq_crossinglessComponentCount]
+    omega
+  · have hpos : 0 < orbitCount (D.statePerm s) := by
+      let _ : Nonempty (Fin (4 * n)) := ⟨⟨0, by omega⟩⟩
+      exact Equiv.Perm.orbitCount_pos (D.statePerm s)
+    obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
+    rw [stateLoopCount_def]
+    omega
+
+/-- A code with a crossing has at least one circle in every state. -/
+theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
+    1 ≤ D.stateLoopCount s :=
+  D.one_le_stateLoopCount_of_componentCount_pos (D.componentCount_pos hn) s
 
 /-- Mirroring a code negates the state producing a given circle count. -/
 @[simp] theorem stateLoopCount_mirror (D : PDCode n) (s : Fin n → Bool) :

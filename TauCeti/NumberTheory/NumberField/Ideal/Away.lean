@@ -33,6 +33,11 @@ The generation proof transports Mathlib's unique factorization of a nonzero frac
 * `NumberFieldArithmetic.integralIdealsAway`: nonzero integral ideals prime to `S`.
 * `NumberFieldArithmetic.integralIdealsAwayHom`: the map from integral to fractional ideals.
 
+## Main results
+
+* `NumberFieldArithmetic.integralIdealsAway_hom_ext`: a monoid homomorphism out of
+  `integralIdealsAway S` is determined by its values on the primes outside `S`.
+
 ## References
 
 The shared lift of fractional-ideal factorization to units,
@@ -163,6 +168,35 @@ theorem mem_integralIdealsAway_iff {S : Finset (HeightOneSpectrum (𝓞 K))}
 instance (S : Finset (HeightOneSpectrum (𝓞 K))) : CancelCommMonoid (integralIdealsAway S) where
   mul_left_cancel a _ _ h :=
     Subtype.ext <| mul_left_cancel₀ (mem_integralIdealsAway_iff.mp a.2).1 (congrArg Subtype.val h)
+
+/-- **Homomorphisms out of `integralIdealsAway S` are determined on the primes.** Two monoid
+homomorphisms from the integral ideals prime to `S` agree as soon as they agree on every prime
+outside `S`. -/
+theorem integralIdealsAway_hom_ext {M : Type*} [MulOneClass M]
+    {S : Finset (HeightOneSpectrum (𝓞 K))} {f g : integralIdealsAway (K := K) S →* M}
+    (h : ∀ (v : HeightOneSpectrum (𝓞 K)) (hv : v.asIdeal ∈ integralIdealsAway (K := K) S),
+      f ⟨v.asIdeal, hv⟩ = g ⟨v.asIdeal, hv⟩) : f = g := by
+  refine MonoidHom.ext fun ⟨I, hI⟩ ↦ ?_
+  -- The carrier of `integralIdealsAway S` is `Ideal.IsPrimeTo`, whose induction principle applies.
+  refine Ideal.IsPrimeTo.induction_on (motive := fun J ↦ ∀ hJ : J ∈ integralIdealsAway (K := K) S,
+    f ⟨J, hJ⟩ = g ⟨J, hJ⟩) hI (fun htop ↦ ?_) (fun v J hv hJ ih _ ↦ ?_) hI
+  · have hone : (⟨⊤, htop⟩ : integralIdealsAway (K := K) S) = 1 :=
+      Subtype.ext Ideal.one_eq_top.symm
+    rw [hone, map_one, map_one]
+  · have hvS : v.asIdeal ∈ integralIdealsAway (K := K) S := Ideal.isPrimeTo_asIdeal_iff.mpr hv
+    rw [← Submonoid.mk_mul_mk _ _ _ hvS hJ, map_mul, map_mul, ih hJ, h v hvS]
+
+/-- Divisibility in `integralIdealsAway S` is divisibility of the underlying ideals: a cofactor
+of two ideals prime to `S` is itself prime to `S`. -/
+theorem integralIdealsAway_dvd_iff_dvd_coe {S : Finset (HeightOneSpectrum (𝓞 K))}
+    {I J : integralIdealsAway S} : I ∣ J ↔ (I : Ideal (𝓞 K)) ∣ (J : Ideal (𝓞 K)) := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, by rw [hc, Submonoid.coe_mul]⟩, fun ⟨c, hc⟩ ↦ ?_⟩
+  have hJ := mem_integralIdealsAway_iff.mp J.prop
+  refine ⟨⟨c, mem_integralIdealsAway_iff.mpr
+    ⟨fun h ↦ hJ.1 ?_, fun v hv hvc ↦ hJ.2 v hv ?_⟩⟩, Subtype.ext hc⟩
+  · rw [hc, h, Ideal.mul_bot]
+  · rw [hc]
+    exact dvd_mul_of_dvd_right hvc _
 
 /-- Membership in `integralIdealsAway S` is equivalently nonvanishing and vanishing fractional
 ideal multiplicity at every prime in `S`. -/

@@ -25,6 +25,19 @@ public section
 
 namespace TauCeti.DynkinType
 
+/-- The pinned index of the root opposite to `α`. -/
+noncomputable def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
+  f4SimplyConnectedRootDatum.reflectionPerm α α
+
+/-- The opposite index is the self-reflection in the pinned root datum. -/
+theorem f4OppositeRootIndex_eq_reflectionPerm (α : Fin 48) :
+    f4OppositeRootIndex α = f4SimplyConnectedRootDatum.reflectionPerm α α := (rfl)
+
+/-- Taking the opposite pinned root index twice restores the index. -/
+@[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :
+    f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
+  exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
+
 /-- The tabulated F4 root length is quadratic along every integral root relation. -/
 theorem f4Length_of_root_eq_add_zsmul (α β γ : Fin 48) (n : ℤ)
     (h : f4SimplyConnectedRootDatum.root γ =
@@ -132,5 +145,34 @@ theorem f4_chainBotCoeff_eq_zero_of_add_eq_short (α β γ : Fin 48)
   f4SimplyConnectedRootDatum.chainBotCoeff_eq_zero_of_add_eq_short f4Length
     f4Length_mul_pairing_comm α β γ (f4Length_pos α)
     (fun δ _ => by rcases f4Length_eq_one_or_eq_two δ with hδ | hδ <;> omega) hβ hγ h
+
+/-- A short root with Cartan pairing one has no positive step in the given root direction. -/
+theorem f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one (α β : Fin 48)
+    (hβ : f4Length β = 1)
+    (hpair : f4SimplyConnectedRootDatum.pairing β α = 1) :
+    f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
+  let P := f4SimplyConnectedRootDatum
+  rw [P.chainTopCoeff_eq_zero_iff]
+  right
+  rintro ⟨γ, hγ⟩
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
+    simpa only [P, one_zsmul] using hγ)
+  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
+    rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
+
+/-- A short root orthogonal to a long root has no positive step in the long-root direction. -/
+theorem f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero (α β : Fin 48)
+    (hα : f4Length α = 2) (hβ : f4Length β = 1)
+    (hpair : f4SimplyConnectedRootDatum.pairing β α = 0) :
+    f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
+  let P := f4SimplyConnectedRootDatum
+  rw [P.chainTopCoeff_eq_zero_iff]
+  right
+  rintro ⟨γ, hγ⟩
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
+    simpa only [P, one_zsmul] using hγ)
+  rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
+    rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
 
 end TauCeti.DynkinType

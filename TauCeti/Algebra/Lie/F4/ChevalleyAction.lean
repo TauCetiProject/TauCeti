@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.Root.CorootSpan
+public import TauCeti.Algebra.Lie.Weights.Root.KostantStability
 public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.RingTheory.DividedPowers.Associative
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.RootSystem
 
@@ -21,6 +23,7 @@ short-root submodule.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
+
 -/
 
 public section
@@ -371,6 +374,175 @@ theorem exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short (α β �
     rw [hz]
     rw [smul_smul]
     norm_num
+
+/-- The pinned opposite-root index has the negative rational Killing-root label. -/
+theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
+    f4KillingRootLabel (f4OppositeRootIndex α) = -f4KillingRootLabel α := by
+  have hsource : (F4.rationalRootSystem valid_F4).reflectionPerm
+      (f4RootIndex α) (f4RootIndex α) = f4RootIndex (f4OppositeRootIndex α) := by
+    rw [reflectionPerm_rationalRootSystem, simplyConnectedRootDatum_F4,
+      f4OppositeRootIndex_eq_reflectionPerm]; rfl
+  calc
+    _ = (F4.rationalRootSystemEquiv valid_F4).indexEquiv
+        ((F4.rationalRootSystem valid_F4).reflectionPerm (f4RootIndex α) (f4RootIndex α)) :=
+      congrArg (F4.rationalRootSystemEquiv valid_F4).indexEquiv hsource.symm
+    _ = (rootSystem (F4.cartanSubalgebra valid_F4)).reflectionPerm
+        (f4KillingRootLabel α) (f4KillingRootLabel α) :=
+      indexEquiv_reflectionPerm (F4.rationalRootSystemEquiv valid_F4).toHom _ _
+    _ = _ := rootSystem_reflectionPerm_self_eq_neg _
+
+/-- Distinct pinned indices define distinct rational Killing roots. -/
+theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
+  intro α β h
+  have hlabel : f4KillingRootLabel α = f4KillingRootLabel β := by
+    apply Subtype.ext
+    exact h
+  have hi := (F4.rationalRootSystemEquiv valid_F4).indexEquiv.injective hlabel
+  apply Fin.ext
+  exact congrArg Fin.val hi
+
+/-- The Killing root at the opposite pinned index is the negative root. -/
+@[simp] theorem f4KillingRoot_f4OppositeRootIndex (α : Fin 48) :
+    f4KillingRoot (f4OppositeRootIndex α) = -f4KillingRoot α := by
+  exact congrArg
+    (fun r : (F4.cartanSubalgebra valid_F4).root =>
+      (r : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4)))
+    (f4KillingRootLabel_f4OppositeRootIndex α)
+
+/-- Two indexed rational Killing roots do not sum to zero unless their pinned labels are
+opposite. -/
+theorem f4KillingRoot_add_ne_zero_of_ne_opposite (α β : Fin 48)
+    (hopp : α ≠ f4OppositeRootIndex β) :
+    (f4KillingRoot α : (F4.cartanSubalgebra valid_F4) → ℚ) + f4KillingRoot β ≠ 0 := by
+  intro hz
+  apply hopp
+  apply f4KillingRoot_injective
+  rw [f4KillingRoot_f4OppositeRootIndex]
+  apply Weight.ext
+  intro x
+  have hx := congrFun hz x
+  simp only [Pi.add_apply, Pi.zero_apply] at hx ⊢
+  exact eq_neg_of_add_eq_zero_left hx
+
+/-- Every rational Killing root label is one of the pinned forty-eight indices. -/
+theorem f4KillingRootLabel_surjective : Function.Surjective f4KillingRootLabel := by
+  intro γ
+  refine ⟨Fin.cast numRoots_F4
+    ((F4.rationalRootSystemEquiv valid_F4).indexEquiv.symm γ), ?_⟩
+  simp only [f4KillingRootLabel, f4RootIndex, Fin.cast_cast, Fin.cast_eq_self]
+  exact Equiv.apply_symm_apply (F4.rationalRootSystemEquiv valid_F4).indexEquiv γ
+
+/-- The second divided adjoint power sends the opposite root vector to the negative root vector. -/
+theorem f4_dividedPower_two_ad_rootVector_opposite (α : Fin 48) :
+    Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot α))) •
+        f4ChevalleyRootVector (f4KillingRoot (f4OppositeRootIndex α)) =
+      -f4ChevalleyRootVector (f4KillingRoot α) := by
+  let a := f4KillingRoot α
+  let x := f4ChevalleyRootVector
+  have ha : a.IsNonZero :=
+    (F4.cartanSubalgebra valid_F4).isNonZero_coe_root (f4KillingRootLabel α)
+  have hop : f4KillingRoot (f4OppositeRootIndex α) = -a := by
+    simpa only [a] using f4KillingRoot_f4OppositeRootIndex α
+  have h1 : (ad ℚ (F4.lieAlgebra valid_F4) (x a)) (x (-a)) =
+      ((coroot a : F4.cartanSubalgebra valid_F4) : F4.lieAlgebra valid_F4) :=
+    f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_neg a ha
+  have h2 : (ad ℚ (F4.lieAlgebra valid_F4) (x a))
+      ((coroot a : F4.cartanSubalgebra valid_F4) : F4.lieAlgebra valid_F4) =
+        (-2 : ℚ) • x a := by
+    rw [ad_apply, ← lie_skew,
+      f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_coroot a a,
+      root_apply_coroot ha]
+    module
+  rw [hop, Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
+    Module.End.mul_apply, h1, h2, smul_smul]
+  norm_num
+  rfl
+
+/-- Away from the opposite-root string, the second divided adjoint power annihilates every
+short-root vector. -/
+theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
+    (hβ : f4Length β = 1) (hopp : β ≠ f4OppositeRootIndex α) :
+    Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot α))) •
+        f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
+  by_cases heq : β = α
+  · subst β
+    simp only [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
+      Module.End.mul_apply, ad_apply, lie_self, lie_zero, smul_zero]
+  have hαnz : (f4KillingRoot α).IsNonZero :=
+    (F4.cartanSubalgebra valid_F4).isNonZero_coe_root (f4KillingRootLabel α)
+  have hβnz : (f4KillingRoot β).IsNonZero :=
+    (F4.cartanSubalgebra valid_F4).isNonZero_coe_root (f4KillingRootLabel β)
+  have hopp' : α ≠ f4OppositeRootIndex β := by
+    intro h
+    apply hopp
+    rw [h, f4OppositeRootIndex_f4OppositeRootIndex]
+  have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
+  rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
+      hαnz hβnz hsum 2 with hzero | hnonzero
+  · rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, hzero,
+      smul_zero]
+  · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
+    have hγnz : γ.IsNonZero := by
+      rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
+      exact coe_add_natCast_smul_ne_zero hαnz hβnz hsum 2
+    have hγroot : γ ∈ (F4.cartanSubalgebra valid_F4).root := by
+      simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using hγnz
+    obtain ⟨δ, hδlabel⟩ := f4KillingRootLabel_surjective ⟨γ, hγroot⟩
+    have hδweight : f4KillingRoot δ = γ := by
+      -- `f4KillingRoot` is the subtype coercion of `f4KillingRootLabel`, with no coercion lemma.
+      change (f4KillingRootLabel δ : Weight ℚ (F4.cartanSubalgebra valid_F4)
+        (F4.lieAlgebra valid_F4)) = γ
+      exact congrArg Subtype.val hδlabel
+    have hpinned : f4SimplyConnectedRootDatum.root δ =
+        f4SimplyConnectedRootDatum.root β +
+          (2 : ℤ) • f4SimplyConnectedRootDatum.root α := by
+      apply (f4KillingRoot_eq_add_zsmul_iff α β δ 2).mp
+      rw [hδweight]
+      simpa using hγcoe
+    rcases f4Length_eq_one_or_eq_two α with hα | hα
+    · have hneg : f4SimplyConnectedRootDatum.root β ≠
+          -f4SimplyConnectedRootDatum.root α := by
+        intro h
+        apply hopp
+        apply f4KillingRoot_injective
+        rw [f4KillingRoot_f4OppositeRootIndex]
+        have hk := (f4KillingRoot_eq_add_zsmul_iff α α β (-2)).mpr (by
+          rw [h]
+          module)
+        apply Weight.ext
+        intro x
+        have hx := congrFun hk x
+        simp only [Pi.add_apply, Pi.smul_apply, Int.cast_neg, Int.cast_ofNat] at hx
+        simp only [Weight.coe_neg, Pi.neg_apply]
+        linear_combination hx
+      exact (f4_not_root_eq_short_add_nsmul_short_of_two_le α β δ 2 hα hβ hneg
+        (by omega) hpinned).elim
+    · have hn :=
+        f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
+          α β δ 2 hα hβ (by omega) hpinned
+      omega
+
+/-- The second divided adjoint power annihilates every Cartan element. -/
+theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
+    (h : F4.cartanSubalgebra valid_F4) :
+    Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot α))) •
+        (h : F4.lieAlgebra valid_F4) = 0 := by
+  have hfirst : ⁅f4ChevalleyRootVector (f4KillingRoot α),
+      (h : F4.lieAlgebra valid_F4)⁆ =
+      -(f4KillingRoot α h) • f4ChevalleyRootVector (f4KillingRoot α) := by
+    rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
+      LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace
+      (f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.mem_rootSpace _), neg_smul]
+  rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
+    Module.End.mul_apply, ad_apply, ad_apply, hfirst, lie_smul, lie_self, smul_zero,
+    smul_zero]
+
 
 end
 

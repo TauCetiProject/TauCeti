@@ -361,51 +361,12 @@ abbrev f4PinnedRootIndex (α : (F4.cartanSubalgebra valid_F4).root) : Fin 48 :=
       f4ModularRootVector (f4PinnedRootIndex α) := by
   rw [f4ModularRootVector_eq_basis, f4KillingRootLabel_f4PinnedRootIndex]
 
-/-- The pinned index of the root opposite to `α`. -/
-def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
-  f4SimplyConnectedRootDatum.reflectionPerm α α
-
-theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
-    f4KillingRootLabel (f4OppositeRootIndex α) = -f4KillingRootLabel α := by
-  have hsource : (F4.rationalRootSystem valid_F4).reflectionPerm
-      (f4RootIndex α) (f4RootIndex α) = f4RootIndex (f4OppositeRootIndex α) := by
-    rw [reflectionPerm_rationalRootSystem, simplyConnectedRootDatum_F4]
-    rfl
-  calc
-    _ = (F4.rationalRootSystemEquiv valid_F4).indexEquiv
-        ((F4.rationalRootSystem valid_F4).reflectionPerm (f4RootIndex α) (f4RootIndex α)) :=
-      congrArg (F4.rationalRootSystemEquiv valid_F4).indexEquiv hsource.symm
-    _ = (rootSystem (F4.cartanSubalgebra valid_F4)).reflectionPerm
-        (f4KillingRootLabel α) (f4KillingRootLabel α) :=
-      indexEquiv_reflectionPerm (F4.rationalRootSystemEquiv valid_F4).toHom _ _
-    _ = _ := rootSystem_reflectionPerm_self_eq_neg _
-
-theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
-  intro α β h
-  have hlabel : f4KillingRootLabel α = f4KillingRootLabel β := by
-    apply Subtype.ext
-    exact h
-  rw [← f4PinnedRootIndex_f4KillingRootLabel α,
-    ← f4PinnedRootIndex_f4KillingRootLabel β, hlabel]
-
-@[simp] theorem f4KillingRoot_f4OppositeRootIndex (α : Fin 48) :
-    f4KillingRoot (f4OppositeRootIndex α) = -f4KillingRoot α := by
-  exact congrArg
-    (fun r : (F4.cartanSubalgebra valid_F4).root =>
-      (r : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4)))
-    (f4KillingRootLabel_f4OppositeRootIndex α)
-
-@[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :
-    f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
-  exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
-
 /-- In the pinned F₄ table the root opposite to a simple root is the corresponding entry in the
 second half of the table. -/
 @[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
     f4OppositeRootIndex (Fin.castAdd 44 i) =
       Fin.addNat (Fin.castAdd 20 i) 24 := by
-  unfold f4OppositeRootIndex
-  rw [f4SimplyConnectedRootDatum_reflectionPerm]
+  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
   revert i
   decide
 
@@ -450,21 +411,6 @@ noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm i) := by
   rw [← f4OppositeRootIndex_castAdd, f4ModularCoroot_f4OppositeRootIndex,
     f4ModularCoroot_castAdd]
-
-/-- Two indexed rational Killing roots do not sum to zero unless their pinned labels are
-opposite. -/
-theorem f4KillingRoot_add_ne_zero_of_ne_opposite (α β : Fin 48)
-    (hopp : α ≠ f4OppositeRootIndex β) :
-    (f4KillingRoot α : (F4.cartanSubalgebra valid_F4) → ℚ) + f4KillingRoot β ≠ 0 := by
-  intro hz
-  apply hopp
-  apply f4KillingRoot_injective
-  rw [f4KillingRoot_f4OppositeRootIndex]
-  apply Weight.ext
-  intro x
-  have hx := congrFun hz x
-  simp only [Pi.add_apply, Pi.zero_apply] at hx ⊢
-  exact eq_neg_of_add_eq_zero_left hx
 
 /-- If the pinned root string from `β` in direction `α` has no positive step, then the
 corresponding modular Chevalley bracket vanishes. -/

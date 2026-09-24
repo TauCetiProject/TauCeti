@@ -68,4 +68,14 @@ theorem measurable_restrictFin (n : ℕ) :
     simp only [restrictFin_adj]
     exact measurable_iff_adj.1 measurable_id (u : ℕ) v
 
+open Classical in
+/-- Reading a graph as its adjacency array is measurable. -/
+@[fun_prop]
+theorem measurable_adjArray {V : Type*} :
+    Measurable (adjArray : SimpleGraph V → V × V → Bool) :=
+  Measurable.of_eval fun ⟨i, j⟩ => by
+    simp only [adjArray_apply]
+    exact (measurable_of_countable (fun q : Prop => decide q)).comp
+      (measurable_iff_adj.1 measurable_id i j)
+
 end SimpleGraph

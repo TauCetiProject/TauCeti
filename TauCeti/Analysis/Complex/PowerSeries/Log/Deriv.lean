@@ -12,20 +12,19 @@ public import Mathlib.Analysis.Complex.TaylorSeries
 /-!
 # Convergence of formal logarithmic derivatives
 
-This file connects the formal logarithmic derivative of a complex power series to the analytic
-logarithmic derivative of its sum. If a power series has constant coefficient one and its analytic
-sum has no zero in its disk of convergence, then its formal logarithmic derivative converges
-throughout that disk.
+This file connects the formal logarithmic derivative of a complex power series to its analytic
+sum. If a power series has constant coefficient one and its analytic sum has no zero in a disk
+of convergence, then its formal logarithmic derivative converges throughout that disk.
 
 The zero-free hypothesis is essential: the radius of the logarithmic derivative is limited by the
 nearest zero of the original series, even when the original series converges farther.
 
-## Main result
+## Main results
 
 * `PowerSeries.hasSum_coeff_logDeriv_mul_pow_of_zeroFree`: evaluation of the formal
   logarithmic derivative throughout a zero-free convergence disk.
-* `PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree`: convergence of the formal
-  logarithmic derivative throughout a zero-free convergence disk.
+* `PowerSeries.summable_norm_coeff_logDeriv_mul_pow_of_zeroFree`: absolute convergence of the
+  formal logarithmic derivative throughout a zero-free convergence disk.
 -/
 
 public section
@@ -130,6 +129,51 @@ theorem coeff_logDeriv_eq_iteratedDeriv (f : ℂ⟦X⟧)
       rw [Nat.sub_self, hfcoeff, mul_one] at ha
       exact add_left_cancel (hr.trans ha.symm)
 
+private theorem hasFPowerSeriesOnBall_logDeriv_of_zeroFree (f : ℂ⟦X⟧)
+    (hf0 : constantCoeff f = 1) {r : ENNReal} {R : NNReal}
+    (hr : r ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
+    (hne : ∀ z : ℂ, ‖z‖ₑ < r →
+      FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0)
+    (hR0 : 0 < R) (hRr : (R : ENNReal) < r) :
+    HasFPowerSeriesOnBall
+      (_root_.logDeriv
+        (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f))
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n (logDeriv f)) 0 R := by
+  let F := FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f
+  let G := _root_.logDeriv F
+  have hR0e : (0 : ENNReal) < R := by exact_mod_cast hR0
+  have hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius :=
+    hR0e.trans (hRr.trans_le hr)
+  have hr0 : 0 < r := hR0e.trans hRr
+  have hseries :=
+    ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
+      hr0 hr
+  have hFa : AnalyticOnNhd ℂ F (Metric.eball 0 r) := by
+    simpa [F, FormalMultilinearSeries.ofScalarsSum] using hseries.analyticOnNhd
+  have hGa : AnalyticOnNhd ℂ G (Metric.eball 0 r) := by
+    exact hFa.deriv.div hFa fun w hw ↦ hne w (by
+      simpa only [Metric.mem_eball, edist_zero_right] using hw)
+  have hG0 : AnalyticAt ℂ G 0 := hGa 0 (Metric.mem_eball_self hr0)
+  have hTaylor := hG0.hasFPowerSeriesAt
+  have hcoeff : (fun n ↦ coeff n (logDeriv f)) =
+      fun n ↦ iteratedDeriv n G 0 / n.factorial := by
+    funext n
+    simpa [G, F] using coeff_logDeriv_eq_iteratedDeriv f hf0 hfr n
+  have hformal : (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f.logDeriv) =
+      FormalMultilinearSeries.ofScalars ℂ
+        (fun n ↦ iteratedDeriv n G 0 / n.factorial) := by
+    rw [hcoeff]
+  rw [← hformal] at hTaylor
+  have hclosed : Metric.closedBall (0 : ℂ) R ⊆ Metric.eball 0 r := by
+    intro w hw
+    rw [Metric.mem_closedBall, dist_zero_right] at hw
+    rw [Metric.mem_eball, edist_zero_right]
+    rw [enorm_eq_nnnorm]
+    exact (ENNReal.coe_le_coe.mpr (by exact_mod_cast hw)).trans_lt hRr
+  have hRseries := (hGa.differentiableOn.mono hclosed).hasFPowerSeriesOnBall hR0
+  obtain ⟨r₀, hr₀⟩ := hTaylor
+  exact hr₀.exchange_radius hRseries
+
 /-- **A formal logarithmic derivative sums to the analytic logarithmic derivative throughout a
 zero-free disk.** Let `f` be a complex power series with constant coefficient one. If its analytic
 sum has no zero in a disk inside its disk of convergence, then the coefficient series of
@@ -143,49 +187,38 @@ theorem hasSum_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     HasSum (fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n)
       (_root_.logDeriv
         (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) z) := by
-  let F := FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f
-  let G := _root_.logDeriv F
-  have hr0 : 0 < r := (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hz
-  have hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius :=
-    hr0.trans_le hr
-  have hseries :=
-    ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
-      hr0 hr
-  have hFa : AnalyticOnNhd ℂ F (Metric.eball 0 r) := by
-    simpa [F, FormalMultilinearSeries.ofScalarsSum] using hseries.analyticOnNhd
-  have hGa : AnalyticOnNhd ℂ G (Metric.eball 0 r) := by
-    exact hFa.deriv.div hFa fun w hw ↦ hne w (by simpa only [Metric.mem_eball, edist_zero_right]
-      using hw)
-  have hG0 : AnalyticAt ℂ G 0 := hGa 0 (Metric.mem_eball_self hr0)
-  have hTaylor := hG0.hasFPowerSeriesAt
-  have hcoeff : (fun n ↦ coeff n (logDeriv f)) =
-      fun n ↦ iteratedDeriv n G 0 / n.factorial := by
-    funext n
-    simpa [G] using coeff_logDeriv_eq_iteratedDeriv f hf0 hfr n
-  have hformal : (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f.logDeriv) =
-      FormalMultilinearSeries.ofScalars ℂ
-        (fun n ↦ iteratedDeriv n G 0 / n.factorial) := by
-    rw [hcoeff]
-  rw [← hformal] at hTaylor
   obtain ⟨R, hzR, hRr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hz
   have hRpos : 0 < R := by
     have hRpos' : (0 : ENNReal) < (R : ENNReal) :=
       (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR
     exact_mod_cast hRpos'
-  have hclosed : Metric.closedBall (0 : ℂ) R ⊆
-      Metric.eball 0 r := by
-    intro w hw
-    rw [Metric.mem_closedBall, dist_zero_right] at hw
-    rw [Metric.mem_eball, edist_zero_right]
-    rw [enorm_eq_nnnorm]
-    exact (ENNReal.coe_le_coe.mpr (by exact_mod_cast hw)).trans_lt hRr
-  have hRseries := (hGa.differentiableOn.mono hclosed).hasFPowerSeriesOnBall hRpos
-  obtain ⟨r, hr⟩ := hTaylor
-  have hlogSeries := hr.exchange_radius hRseries
+  have hlogSeries := hasFPowerSeriesOnBall_logDeriv_of_zeroFree f hf0 hr hne hRpos hRr
   have hzBall : z ∈ Metric.eball (0 : ℂ) (R : ENNReal) := by
     rw [Metric.mem_eball, edist_zero_right, enorm_lt_coe]
     exact enorm_lt_coe.mp hzR
-  simpa [G, F, mul_comm] using hlogSeries.hasSum hzBall
+  simpa [mul_comm] using hlogSeries.hasSum hzBall
+
+/-- A formal logarithmic derivative converges absolutely throughout a zero-free disk. -/
+theorem summable_norm_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
+    (hf0 : constantCoeff f = 1) {r : ENNReal}
+    (hr : r ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
+    (hne : ∀ z : ℂ, ‖z‖ₑ < r →
+      FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0)
+    {z : ℂ} (hz : ‖z‖ₑ < r) :
+    Summable fun n : ℕ ↦ ‖coeff n (logDeriv f) * z ^ n‖ := by
+  obtain ⟨R, hzR, hRr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hz
+  have hRpos : 0 < R := by
+    have hRpos' : (0 : ENNReal) < (R : ENNReal) :=
+      (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR
+    exact_mod_cast hRpos'
+  have hseries := hasFPowerSeriesOnBall_logDeriv_of_zeroFree f hf0 hr hne hRpos hRr
+  have hz' : z ∈ Metric.eball (0 : ℂ)
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n (logDeriv f)).radius := by
+    rw [Metric.mem_eball, edist_zero_right]
+    exact hzR.trans_le hseries.r_le
+  exact ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n (logDeriv f))
+    |>.summable_norm_apply hz').congr fun n ↦ by
+      simp [mul_comm]
 
 /-- A formal logarithmic derivative converges throughout a zero-free disk. -/
 theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
@@ -195,6 +228,7 @@ theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
       FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0)
     {z : ℂ} (hz : ‖z‖ₑ < r) :
     Summable fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n :=
-  (hasSum_coeff_logDeriv_mul_pow_of_zeroFree f hf0 hr hne hz).summable
+  (summable_norm_coeff_logDeriv_mul_pow_of_zeroFree f hf0 hr hne hz).of_norm
+
 
 end PowerSeries

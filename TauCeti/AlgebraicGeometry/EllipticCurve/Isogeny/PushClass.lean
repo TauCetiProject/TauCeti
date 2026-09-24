@@ -35,6 +35,8 @@ of class groups.
   class extended into the intermediate ring.
 * `TauCeti.Isogeny.pushClassMonoidHom_mk0`: when the source coordinate ring is normal, the map on
   the class of an integral ideal is the relative norm of its extension.
+* `TauCeti.Isogeny.pushClassMonoidHom_mk0_eq_one_of_map_eq_top`: an integral ideal extending to the
+  unit ideal of the intermediate ring has trivial image.
 * `TauCeti.Isogeny.pushClass_apply`: the additive form is the multiplicative one transported
   along `Additive`.
 * `TauCeti.Isogeny.pushClassMonoidHom_id` and `TauCeti.Isogeny.pushClass_id`: the identity
@@ -189,6 +191,40 @@ theorem pushClassMonoidHom_mk0 [IsIntegrallyClosed W₁.CoordinateRing]
   have : Module.IsTorsionFree W₂.CoordinateRing φ.intermediateRing :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
   exact ClassGroup.extendedRelNormHom_mk0 _ _ _ I
+
+/-- **An ideal extending to the unit ideal of the intermediate ring has trivial class under the
+induced map**: the relative norm of the unit ideal is the unit ideal. -/
+theorem pushClassMonoidHom_mk0_eq_one_of_map_eq_top [IsIntegrallyClosed W₁.CoordinateRing]
+    (I : (Ideal W₁.CoordinateRing)⁰)
+    (hI : (I : Ideal W₁.CoordinateRing).map φ.toIntermediateRing = ⊤) :
+    haveI := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₁
+    φ.pushClassMonoidHom (ClassGroup.mk0 I) = 1 := by
+  -- the structures `pushClassMonoidHom_mk0` builds, re-introduced to compute the norm
+  have := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₁
+  have := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₂
+  let _ : Algebra W₂.CoordinateRing W₁.FunctionField := φ.pullback.toRingHom.toAlgebra
+  let _ : Algebra W₂.FunctionField W₁.FunctionField := φ.fieldPullback.toRingHom.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+    .of_algebraMap_eq fun x ↦ (φ.fieldPullback_algebraMap x).symm
+  let _ : Algebra W₁.CoordinateRing φ.intermediateRing := φ.toIntermediateRing.toAlgebra
+  let _ : Algebra W₂.CoordinateRing φ.intermediateRing := φ.pullbackToIntermediateRing.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
+    φ.isScalarTower_intermediateRing rfl fun _ ↦ rfl
+  have := φ.isDedekindDomain_intermediateRing fun _ ↦ rfl
+  have : Module.Finite W₂.CoordinateRing φ.intermediateRing :=
+    φ.moduleFinite_intermediateRing fun _ ↦ rfl
+  have : Module.IsTorsionFree W₁.CoordinateRing φ.intermediateRing :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr φ.toIntermediateRing_injective
+  have : Module.IsTorsionFree W₂.CoordinateRing φ.intermediateRing :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
+  rw [pushClassMonoidHom_mk0]
+  -- the extension is the unit ideal, and so is its norm, which is the neutral element
+  have hnorm : Ideal.relNorm0 W₂.CoordinateRing
+      (ClassGroup.extendedIdeal W₁.CoordinateRing φ.intermediateRing I) = 1 := by
+    refine Subtype.ext ?_
+    rw [Ideal.coe_relNorm0, Submonoid.coe_one, Ideal.one_eq_top]
+    simp only [RingHom.algebraMap_toAlgebra, hI, Ideal.relNorm_top]
+  rw [hnorm, map_one]
 
 /-- **The induced map on a class** is the relative norm, down to `W₂.CoordinateRing`, of that
 class extended into the intermediate ring. This is `ClassGroup.extendedRelNormHom_apply` for the

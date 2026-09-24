@@ -97,13 +97,21 @@ noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
   f4ShortRootAdjoint (f4ModularSignedSimpleRootVector k)
 
 /-- The signed simple-root adjoint operator is the bracket with its signed simple root vector. -/
-@[simp] theorem coe_f4ShortRootSignedSimpleAdjoint_apply
+theorem coe_f4ShortRootSignedSimpleAdjoint_apply
     (k : Fin 4 ⊕ Fin 4) (y : f4ShortRootLieIdeal) :
     (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
         (y : f4ModularChevalleyLieAlgebra)⁆ := by
   simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply,
     f4ModularSignedSimpleRootVector_eq]
+
+/-- The signed simple-root operator is the restricted adjoint action of its root vector. -/
+@[simp] theorem f4ShortRootSignedSimpleAdjoint_apply (k : Fin 4 ⊕ Fin 4)
+    (y : f4ShortRootLieIdeal) :
+    f4ShortRootSignedSimpleAdjoint k y =
+      f4ShortRootAdjoint (f4ModularRootVector (f4SignedSimpleRootIndex k)) y :=
+  Subtype.ext ((coe_f4ShortRootSignedSimpleAdjoint_apply k y).trans
+    (coe_f4ShortRootAdjoint_apply _ y).symm)
 
 /-- The matrix of the signed simple-root adjoint operator in the canonical short-root basis. -/
 noncomputable def f4ShortRootSignedSimpleAdjointMatrix (k : Fin 4 ⊕ Fin 4) :

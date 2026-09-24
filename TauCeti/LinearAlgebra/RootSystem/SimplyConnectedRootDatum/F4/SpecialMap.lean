@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialMap
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Length
@@ -26,6 +27,7 @@ permutation of the forty-eight root indices exchanges long roots with short ones
 positivity, and commutes with root negation. The rescaling exponent is the squared-length table
 `TauCeti.DynkinType.f4Length`: it is `1` on short roots and `2` on long roots. Applying the data
 twice multiplies both lattices by `2`, and the two exponents along each orbit multiply to `2`.
+The dual map on torus points and its character evaluation are computed here as well.
 
 These equations are the explicit `F₄` input for the root-datum special-isogeny construction, the
 last of the three beside the type `B₂` case of
@@ -254,5 +256,32 @@ theorem f4Length_mul_pairing_f4SpecialIsogenyIndex (i j : Fin 48) :
     f4SimplyConnectedRootDatum_coroot] using
     (mul_dotProduct_eq_of_mulVec_eq_smul f4SpecialIsogenyMatrix_mulVec_root
       f4SpecialIsogenyMatrix_transpose_mulVec_coroot i j)
+
+/-- The torus-point map contravariant to the F4 special character-lattice map. -/
+def f4SpecialIsogenyTorusMap {A : Type*} [CommRing A]
+    (s : Fin 4 → Aˣ) : Fin 4 → Aˣ :=
+  ![s 3 ^ 2, s 2 ^ 2, s 1, s 0]
+
+/-- Applying the special torus map twice is coordinatewise squaring. -/
+@[simp] theorem f4SpecialIsogenyTorusMap_apply_apply
+    {A : Type*} [CommRing A] (s : Fin 4 → Aˣ) :
+    f4SpecialIsogenyTorusMap (f4SpecialIsogenyTorusMap s) =
+      fun i => s i ^ 2 := by
+  ext i
+  fin_cases i <;> simp [f4SpecialIsogenyTorusMap]
+
+/-- Evaluation after the special torus map is evaluation after applying the
+special character-lattice matrix. -/
+theorem torusCharacter_f4SpecialIsogenyTorusMap
+    {A : Type*} [CommRing A] (s : Fin 4 → Aˣ) (μ : Fin 4 → ℤ) :
+    TauCeti.torusCharacter (f4SpecialIsogenyTorusMap s) μ =
+      TauCeti.torusCharacter s (f4SpecialIsogenyMatrix *ᵥ μ) := by
+  rw [TauCeti.torusCharacter_def, TauCeti.torusCharacter_def,
+    f4SpecialIsogenyMatrix_def]
+  have hcomm (a b c d : Aˣ) : a * (b * (c * d)) = d * (c * (b * a)) := by
+    ac_rfl
+  simpa [f4SpecialIsogenyTorusMap, Matrix.mulVec, dotProduct,
+    Fin.sum_univ_succ, Fin.prod_univ_succ, zpow_mul] using
+      hcomm ((s 3 ^ 2) ^ μ 0) ((s 2 ^ 2) ^ μ 1) (s 1 ^ μ 2) (s 0 ^ μ 3)
 
 end TauCeti.DynkinType

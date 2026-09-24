@@ -25,14 +25,11 @@ on `PresheafOfModules.pushforward₀OfCommRingCat`. No formalization is vendored
 ## Main declarations
 
 * `SheafOfModules.pushforwardTensorProductIso` is the generic comparison;
-* `SheafOfModules.overTensorProductIso` specializes it to restriction over an object;
-* `SheafOfModules.overTensorIso` states the same compatibility for the monoidal tensor product
-  `M ⊗ N` of sheaves of modules on a small site.
+* `SheafOfModules.overTensorProductIso` specializes it to restriction over an object.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`". It supplies the restriction compatibility needed to
-put two local trivializations over a common refinement and prove that an arbitrary tensor product
-of invertible sheaves is invertible.
+The slice-site comparison lets tensor-product constructions be transported to a common
+restriction. In particular, it is used to combine local trivializations of invertible and finite
+locally free sheaves over refinements of a cover.
 -/
 
 public section
@@ -144,29 +141,5 @@ theorem overTensorProductIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) (X 
 end SheafOfModules
 
 end
-
-section Monoidal
-
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C} {R : Sheaf J CommRingCat.{u}}
-
-namespace SheafOfModules
-
-/-- On a small site, restriction to an object `X` commutes with the monoidal tensor product of
-sheaves of modules. Both sides are regarded as sheaves of modules over `R.over X`, whose
-underlying sheaf of rings is definitionally the restriction of the one underlying `R`; the
-category is named explicitly so that the monoidal structure over `R.over X` applies. -/
-noncomputable def _root_.SheafOfModules.overTensorIso
-    (M N : SheafOfModules.{u} (ringCatSheaf R)) (X : C) :
-    @Iso (SheafOfModules.{u} (ringCatSheaf (R.over X))) _ ((M ⊗ N).over X)
-      (M.over X ⊗ N.over X) :=
-  (_root_.SheafOfModules.overFunctor _ X).mapIso
-      (tensorProductIso R M N ≪≫ (M.tensorUnderlyingIso N).symm).symm ≪≫
-    overTensorProductIso R M N X ≪≫
-    (tensorProductIso (R.over X) _ _ ≪≫
-      (SheafOfModules.tensorUnderlyingIso (R := R.over X) (M.over X) (N.over X)).symm)
-
-end SheafOfModules
-
-end Monoidal
 
 end TauCeti

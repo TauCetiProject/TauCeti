@@ -9,7 +9,11 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
-# Descent of bracket equations after extension of scalars
+# Descent of membership and of bracket equations after extension of scalars
+
+Over a faithfully flat coefficient algebra, membership of `1 ⊗ₜ x` in the extension of a Lie
+submodule descends to membership of `x` in the submodule itself; this is the underlying
+`Submodule.one_tmul_mem_baseChange_iff` read through `LieSubmodule.coe_baseChange`.
 
 The adjoint endomorphism of a Lie algebra commutes with extension of scalars.  Consequently, a
 bracket equation `x = ⁅x, y⁆` that has a solution after a faithfully flat extension already has a
@@ -21,6 +25,8 @@ The compatibility with the adjoint action uses `LieModule.toEnd_baseChange` from
 
 ## Main results
 
+* `LieSubmodule.one_tmul_mem_baseChange_iff`: **membership in a Lie submodule may be checked after
+  a faithfully flat extension of scalars.**
 * `LieAlgebra.exists_eq_lie_of_one_tmul_mem_range_ad`: membership of `1 ⊗ₜ x` in the range of
   the extended adjoint endomorphism descends to an equation `x = ⁅x, y⁆`.
 -/
@@ -30,9 +36,25 @@ public section
 open TensorProduct
 open scoped TensorProduct
 
-namespace LieAlgebra
+universe u v w x
 
-universe u v w
+namespace LieSubmodule
+
+variable {R : Type u} {A : Type v} {L : Type w} {M : Type x}
+variable [CommRing R] [CommRing A] [Algebra R A]
+variable [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- **Over a faithfully flat coefficient algebra, a vector lies in a Lie submodule exactly when
+its canonical image lies in the extension of that submodule.** -/
+@[simp]
+theorem one_tmul_mem_baseChange_iff [Module.FaithfullyFlat R A] (N : LieSubmodule R L M) (m : M) :
+    (1 : A) ⊗ₜ[R] m ∈ N.baseChange A ↔ m ∈ N := by
+  rw [← mem_toSubmodule, coe_baseChange, Submodule.one_tmul_mem_baseChange_iff, mem_toSubmodule]
+
+end LieSubmodule
+
+namespace LieAlgebra
 
 variable (R : Type u) (A : Type v) (L : Type w)
 variable [CommRing R] [CommRing A] [Algebra R A]

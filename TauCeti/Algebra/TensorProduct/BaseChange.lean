@@ -73,9 +73,25 @@ namespace TauCeti
 
 open scoped TensorProduct
 
-namespace Algebra.TensorProduct
-
 universe u v w x
+
+/-- Pairing the scalar factor against an `R`-linear functional commutes with distributing scalar
+extension over a tensor product. -/
+theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w} {N : Type x}
+    [CommRing R] [CommRing A] [Algebra R A] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (l : A →ₗ[R] R) (y : A ⊗[R] M) (n : N) :
+    TensorProduct.lid R (M ⊗[R] N) (l.rTensor (M ⊗[R] N)
+        ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
+          (y ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n)))) =
+      TensorProduct.lid R M (l.rTensor M y) ⊗ₜ[R] n := by
+  induction y using TensorProduct.induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+  | tmul a m =>
+    rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
+    simp [TensorProduct.smul_tmul']
+
+namespace Algebra.TensorProduct
 
 variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]

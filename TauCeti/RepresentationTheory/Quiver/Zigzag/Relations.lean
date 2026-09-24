@@ -95,8 +95,6 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### The relation ideals -/
 
-variable [Finite V]
-
 /-- The two-sided ideal spanned by the quadratic zigzag relators. -/
 noncomputable def quadraticZigzagIdeal : TwoSidedIdeal (pathAlgebra k (DoubledQuiver G)) :=
   TwoSidedIdeal.span {x | IsQuadraticZigzagRelator k G x}
@@ -181,6 +179,7 @@ private theorem exists_adj_thirdVertex (hconn : G.Connected)
     (hcard : 3 ≤ Nat.card V) (i m : V) :
     ∃ n : V, n ≠ i ∧ n ≠ m ∧ (G.Adj i n ∨ G.Adj m n) := by
   classical
+  have : Finite V := Nat.finite_of_card_ne_zero (by omega)
   have : Fintype V := Fintype.ofFinite V
   rw [Nat.card_eq_fintype_card] at hcard
   obtain ⟨w, hwi, hwm⟩ : ∃ w : V, w ≠ i ∧ w ≠ m := by
@@ -289,6 +288,8 @@ theorem zigzagIdeal_eq_quadraticZigzagIdeal (hconn : G.Connected)
     exact ofPath_mem_quadraticZigzagIdeal k G hconn hcard p hy
 
 /-! ### The relation quotient -/
+
+variable [Finite V]
 
 /-- The zigzag relation quotient of a simple graph: the path algebra of the doubled quiver modulo
 the uniform relation ideal.

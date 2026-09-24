@@ -142,7 +142,7 @@ theorem twoByTwo_X : twoByTwo.X = GridState.twoByTwoSwap :=
 
 /-- In grid number two the standard unknot grid is the `2 × 2` diagram `twoByTwo`. -/
 theorem unknot_zero : unknot 0 = twoByTwo := by
-  refine GridDiagram.ext rfl (GridState.ext fun c => ?_)
+  refine GridDiagram.ext rfl (GridState.ext fun c ↦ ?_)
   revert c
   decide
 
@@ -151,7 +151,7 @@ theorem unknot_zero : unknot 0 = twoByTwo := by
 /-- Traversing the standard unknot grid from an `O` marking to the `X` marking in its row and
 back down to the next `O` marking shifts the column down by one. -/
 theorem componentPerm_unknot : (unknot n).componentPerm = (finRotate (n + 2))⁻¹ := by
-  refine Equiv.ext fun c => ?_
+  refine Equiv.ext fun c ↦ ?_
   rw [componentPerm_apply, unknot_O_apply]
   have h1 : (unknot n).X (XColumnOfRow (unknot n) c) = c := XColumnOfRow_apply _ c
   have h2 : (unknot n).X ((finRotate (n + 2))⁻¹ c) = c := by
@@ -173,7 +173,7 @@ theorem componentCycleType_unknot : (unknot n).componentCycleType = {n + 2} :=
 at the same time. -/
 theorem relabelRows_relabelColumns_unknot :
     ((unknot n).relabelRows (finRotate (n + 2))).relabelColumns (finRotate (n + 2)) = unknot n := by
-  refine GridDiagram.ext (GridState.ext fun c => ?_) (GridState.ext fun c => ?_)
+  refine GridDiagram.ext (GridState.ext fun c ↦ ?_) (GridState.ext fun c ↦ ?_)
   · rw [relabelColumns_O_apply, relabelRows_O_apply, unknot_O_apply, unknot_O_apply,
       Equiv.apply_symm_apply]
   · rw [relabelColumns_X_apply, relabelRows_X_apply, unknot_X_apply, unknot_X_apply,
@@ -184,9 +184,9 @@ theorem relabelRows_relabelColumns_unknot :
 /-- Splitting a set of pairs of columns according to an auxiliary predicate. -/
 private theorem card_filter_split (Q P : Fin (n + 2) × Fin (n + 2) → Prop)
     [DecidablePred Q] [DecidablePred P] :
-    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => Q p ∧ P p).card
-        + (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => Q p ∧ ¬ P p).card
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => Q p).card := by
+    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ Q p ∧ P p).card
+        + (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ Q p ∧ ¬ P p).card
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ Q p).card := by
   rw [← Finset.filter_filter, ← Finset.filter_filter]
   exact Finset.card_filter_add_card_filter_not _
 
@@ -194,20 +194,20 @@ private theorem card_filter_split (Q P : Fin (n + 2) × Fin (n + 2) → Prop)
 pairs: the case of the identity row assignment of
 `TauCeti.card_filter_le_eq_card_filter_lt_add_card_of_injective`. -/
 private theorem card_filter_le :
-    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 ≤ p.2).card
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card + (n + 2) := by
+    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 ≤ p.2).card
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card + (n + 2) := by
   simpa using card_filter_le_eq_card_filter_lt_add_card_of_injective
     (f := (id : Fin (n + 2) → Fin (n + 2))) Function.injective_id
 
 /-- A set of column pairs cut out by prescribing the second column as a function of the first,
 which is required to avoid one prescribed column, has `n + 1` elements. -/
 private theorem card_filter_graph (a : Fin (n + 2)) (f : Fin (n + 2) → Fin (n + 2)) :
-    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≠ a ∧ p.2 = f p.1).card = n + 1 := by
-  have himg : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+  have himg : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≠ a ∧ p.2 = f p.1)
-      = (Finset.univ.filter fun c : Fin (n + 2) => c ≠ a).image
-          fun c => (c, f c) := by
+      = (Finset.univ.filter fun c : Fin (n + 2) ↦ c ≠ a).image
+          fun c ↦ (c, f c) := by
     ext ⟨c, d⟩
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image, Prod.mk.injEq]
     constructor
@@ -215,28 +215,28 @@ private theorem card_filter_graph (a : Fin (n + 2)) (f : Fin (n + 2) → Fin (n 
       exact ⟨c, hc, rfl, rfl⟩
     · rintro ⟨e, he, rfl, rfl⟩
       exact ⟨he, rfl⟩
-  rw [himg, Finset.card_image_of_injective _ fun a b hab => congrArg Prod.fst hab,
+  rw [himg, Finset.card_image_of_injective _ fun a b hab ↦ congrArg Prod.fst hab,
     Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
     Fintype.card_fin]
   omega
 
 /-- The number of increasing column pairs is unchanged by additionally demanding that the two
 diagonal `O` markings be in increasing order, which they always are. -/
-private theorem card_filter_lt_O_lt_O : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+private theorem card_filter_lt_O_lt_O : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ (unknot n).O p.1 < (unknot n).O p.2).card
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card :=
-  congrArg Finset.card (Finset.filter_congr fun p _ => by simp)
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card :=
+  congrArg Finset.card (Finset.filter_congr fun p _ ↦ by simp)
 
 /-- Among the increasing column pairs, exactly the `n + 1` pairs ending in the last column fail to
 put the first diagonal `O` marking below the second shifted `X` marking. -/
-private theorem card_filter_lt_O_lt_X : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+private theorem card_filter_lt_O_lt_X : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ (unknot n).O p.1 < (unknot n).X p.2).card + (n + 1)
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card := by
-  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card := by
+  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ ¬ ((unknot n).O p.1 < (unknot n).X p.2))
-      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
-        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun _ => Fin.last (n + 1)) p.1 := by
-    refine Finset.filter_congr fun p _ => ?_
+      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
+        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun _ ↦ Fin.last (n + 1)) p.1 := by
+    refine Finset.filter_congr fun p _ ↦ ?_
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
@@ -248,22 +248,22 @@ private theorem card_filter_lt_O_lt_X : (Finset.univ.filter fun p : Fin (n + 2) 
       refine ⟨h2 ▸ Fin.lt_last_iff_ne_last.mpr h1, ?_⟩
       rw [h2, finRotate_last]
       exact Fin.not_lt_zero p.1
-  have hcard := card_filter_graph n (Fin.last (n + 1)) fun _ => Fin.last (n + 1)
+  have hcard := card_filter_graph n (Fin.last (n + 1)) fun _ ↦ Fin.last (n + 1)
   rw [← hset] at hcard
   have hsplit :=
-    card_filter_split n (fun p => p.1 < p.2) fun p => (unknot n).O p.1 < (unknot n).X p.2
+    card_filter_split n (fun p ↦ p.1 < p.2) fun p ↦ (unknot n).O p.1 < (unknot n).X p.2
   omega
 
 /-- Among the increasing column pairs, exactly the `n + 1` pairs of consecutive columns fail to
 put the first shifted `X` marking below the second diagonal `O` marking. -/
-private theorem card_filter_lt_X_lt_O : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+private theorem card_filter_lt_X_lt_O : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ (unknot n).X p.1 < (unknot n).O p.2).card + (n + 1)
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card := by
-  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card := by
+  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ ¬ ((unknot n).X p.1 < (unknot n).O p.2))
-      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≠ Fin.last (n + 1) ∧ p.2 = finRotate (n + 2) p.1 := by
-    refine Finset.filter_congr fun p _ => ?_
+    refine Finset.filter_congr fun p _ ↦ ?_
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
@@ -281,19 +281,19 @@ private theorem card_filter_lt_X_lt_O : (Finset.univ.filter fun p : Fin (n + 2) 
   have hcard := card_filter_graph n (Fin.last (n + 1)) (finRotate (n + 2))
   rw [← hset] at hcard
   have hsplit :=
-    card_filter_split n (fun p => p.1 < p.2) fun p => (unknot n).X p.1 < (unknot n).O p.2
+    card_filter_split n (fun p ↦ p.1 < p.2) fun p ↦ (unknot n).X p.1 < (unknot n).O p.2
   omega
 
 /-- Among the increasing column pairs, exactly the `n + 1` pairs ending in the last column fail to
 keep the two shifted `X` markings in increasing order. -/
-private theorem card_filter_lt_X_lt_X : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+private theorem card_filter_lt_X_lt_X : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ (unknot n).X p.1 < (unknot n).X p.2).card + (n + 1)
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card := by
-  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card := by
+  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 < p.2 ∧ ¬ ((unknot n).X p.1 < (unknot n).X p.2))
-      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
-        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun _ => Fin.last (n + 1)) p.1 := by
-    refine Finset.filter_congr fun p _ => ?_
+      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
+        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun _ ↦ Fin.last (n + 1)) p.1 := by
+    refine Finset.filter_congr fun p _ ↦ ?_
     rw [unknot_X_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
@@ -308,24 +308,24 @@ private theorem card_filter_lt_X_lt_X : (Finset.univ.filter fun p : Fin (n + 2) 
       refine ⟨h2 ▸ Fin.lt_last_iff_ne_last.mpr h1, ?_⟩
       rw [h2, finRotate_last]
       exact Fin.not_lt_zero _
-  have hcard := card_filter_graph n (Fin.last (n + 1)) fun _ => Fin.last (n + 1)
+  have hcard := card_filter_graph n (Fin.last (n + 1)) fun _ ↦ Fin.last (n + 1)
   rw [← hset] at hcard
   have hsplit :=
-    card_filter_split n (fun p => p.1 < p.2) fun p => (unknot n).X p.1 < (unknot n).X p.2
+    card_filter_split n (fun p ↦ p.1 < p.2) fun p ↦ (unknot n).X p.1 < (unknot n).X p.2
   omega
 
 /-- Among the weakly increasing column pairs, exactly the `n + 1` pairs whose second column is
 the last one and whose first column is nonzero fail to place the `O` marking weakly southwest of
 the `X` marking, because the last `X` marking wraps around to row zero. -/
 private theorem card_filter_le_O_le_X :
-    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≤ p.2 ∧ (unknot n).O p.1 ≤ (unknot n).X p.2).card
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card + 1 := by
-  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card + 1 := by
+  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≤ p.2 ∧ ¬ ((unknot n).O p.1 ≤ (unknot n).X p.2))
-      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
-        p.1 ≠ 0 ∧ p.2 = (fun _ => Fin.last (n + 1)) p.1 := by
-    refine Finset.filter_congr fun p _ => ?_
+      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
+        p.1 ≠ 0 ∧ p.2 = (fun _ ↦ Fin.last (n + 1)) p.1 := by
+    refine Finset.filter_congr fun p _ ↦ ?_
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
@@ -336,16 +336,16 @@ private theorem card_filter_le_O_le_X :
         rw [coe_finRotate_of_ne_last hne] at h2'
         omega
       rw [hlast, finRotate_last] at h2'
-      exact ⟨fun h0 => by simp [h0] at h2', hlast⟩
+      exact ⟨fun h0 ↦ by simp [h0] at h2', hlast⟩
     · rintro ⟨h1, h2⟩
-      have h1' : (p.1 : ℕ) ≠ 0 := fun h => h1 (Fin.ext h)
+      have h1' : (p.1 : ℕ) ≠ 0 := fun h ↦ h1 (Fin.ext h)
       refine ⟨h2 ▸ Fin.le_last p.1, ?_⟩
       rw [h2, finRotate_last, Fin.not_le, Fin.lt_def]
       simpa using Nat.pos_of_ne_zero h1'
-  have hcard := card_filter_graph n 0 fun _ => Fin.last (n + 1)
+  have hcard := card_filter_graph n 0 fun _ ↦ Fin.last (n + 1)
   rw [← hset] at hcard
   have hsplit :=
-    card_filter_split n (fun p => p.1 ≤ p.2) fun p => (unknot n).O p.1 ≤ (unknot n).X p.2
+    card_filter_split n (fun p ↦ p.1 ≤ p.2) fun p ↦ (unknot n).O p.1 ≤ (unknot n).X p.2
   have hle := card_filter_le n
   omega
 
@@ -353,14 +353,14 @@ private theorem card_filter_le_O_le_X :
 last column fail to place the `X` marking weakly southwest of the `O` marking, because the `X`
 marking of a column sits one row above its `O` marking. -/
 private theorem card_filter_le_X_le_O :
-    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+    (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≤ p.2 ∧ (unknot n).X p.1 ≤ (unknot n).O p.2).card
-      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) => p.1 < p.2).card + 1 := by
-  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      = (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦ p.1 < p.2).card + 1 := by
+  have hset : (Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
         p.1 ≤ p.2 ∧ ¬ ((unknot n).X p.1 ≤ (unknot n).O p.2))
-      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
-        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun c => c) p.1 := by
-    refine Finset.filter_congr fun p _ => ?_
+      = Finset.univ.filter fun p : Fin (n + 2) × Fin (n + 2) ↦
+        p.1 ≠ Fin.last (n + 1) ∧ p.2 = (fun c ↦ c) p.1 := by
+    refine Finset.filter_congr fun p _ ↦ ?_
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
@@ -378,10 +378,10 @@ private theorem card_filter_le_X_le_O :
       refine ⟨le_of_eq hp.symm, ?_⟩
       rw [Fin.not_le, hp]
       exact (lt_finRotate_iff_ne_last p.1).mpr h1
-  have hcard := card_filter_graph n (Fin.last (n + 1)) fun c => c
+  have hcard := card_filter_graph n (Fin.last (n + 1)) fun c ↦ c
   rw [← hset] at hcard
   have hsplit :=
-    card_filter_split n (fun p => p.1 ≤ p.2) fun p => (unknot n).X p.1 ≤ (unknot n).O p.2
+    card_filter_split n (fun p ↦ p.1 ≤ p.2) fun p ↦ (unknot n).X p.1 ≤ (unknot n).O p.2
   have hle := card_filter_le n
   omega
 

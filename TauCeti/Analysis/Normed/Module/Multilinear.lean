@@ -32,8 +32,7 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
   [∀ i, FiniteDimensional 𝕜 (M i)] [NormedAddCommGroup N] [NormedSpace 𝕜 N]
 
 /-- **A multilinear map on finitely many finite-dimensional spaces is continuous.** Over a
-complete field, no bound need be assumed: expanding every argument in a basis exhibits the map as
-a finite sum of products of coordinates times constant vectors. -/
+complete field, no bound need be assumed. -/
 theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuous f := by
   classical
   cases nonempty_fintype ι

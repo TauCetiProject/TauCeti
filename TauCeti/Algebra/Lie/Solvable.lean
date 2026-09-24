@@ -46,6 +46,8 @@ whole algebra.
   `LieAlgebra.isSolvable_iff_ideal_quotient`: solvability is an extension property.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
   onto the radical.
+* `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
+  isomorphism of Lie algebras.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
@@ -155,6 +157,20 @@ theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
   refine ⟨fun _ => ⟨inferInstance, I.mkQ_surjective.lieAlgebra_isSolvable⟩, fun h => ?_⟩
   obtain ⟨h₁, h₂⟩ := h
   exact isSolvable_of_isSolvable_ker_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
+
+/-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
+
+No finiteness hypothesis is needed: neither Lie algebra has to be Noetherian or
+finite-dimensional. -/
+theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasTrivialRadical R L' :=
+  hasTrivialRadical_of_no_solvable_ideals fun I hI => by
+    have hbot : I.map (e.symm : L' →ₗ⁅R⁆ L) = ⊥ :=
+      HasTrivialRadical.eq_bot_of_isSolvable
+        (hI := LieIdeal.isSolvable_map _ _ e.symm.surjective) _
+    have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
+    rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
+    exact hbot
 
 variable (R L)
 

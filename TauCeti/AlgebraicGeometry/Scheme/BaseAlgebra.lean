@@ -61,6 +61,14 @@ instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlge
 def _root_.AlgebraicGeometry.Scheme.baseRingToStalk (x : X) : k →+* X.presheaf.stalk x :=
   (X.presheaf.germ ⊤ x trivial).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
 
+/-- The image of a base-ring element in a stalk is the germ of the corresponding global
+function. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply (x : X) (c : k) :
+    Scheme.baseRingToStalk k X x c =
+      X.presheaf.germ ⊤ x trivial (Scheme.Modules.baseRingToGlobalSections k X c) :=
+  by simp only [Scheme.baseRingToStalk, RingHom.comp_apply]
+
 /-- Every stalk of a scheme over `Spec k` is canonically a `k`-algebra. -/
 instance (priority := 900) _root_.AlgebraicGeometry.Scheme.stalkBaseAlgebra (x : X) :
     Algebra k (X.presheaf.stalk x) :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
 # The p-adic integers are a Huber ring, and not a Tate ring
@@ -29,6 +30,9 @@ nilpotent.
 * `TauCeti.Huber.PadicInt.isAdic_maximalIdeal`: the norm topology of `ℤ_[p]` is the `(p)`-adic
   topology. Mathlib has `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` but not this comparison of
   topologies, which is what a pair of definition requires.
+* `TauCeti.Huber.PadicInt.instIsLinearTopology`: consequently `ℤ_[p]` is linearly topologized,
+  and `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
+  elements are the multiples of `p`.
 * `TauCeti.Huber.PadicInt.isHuberRing` and `TauCeti.Huber.PadicInt.not_isTateRing`: the two
   halves of the example.
 
@@ -81,6 +85,18 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal ℤ_[p]) := by
   rw [coe_maximalIdeal_pow, Set.mem_ofPred_eq] at hx
   refine Metric.mem_ball.mpr (lt_of_le_of_lt ?_ hn)
   simpa [zpow_neg, zpow_natCast, ← inv_pow, dist_eq_norm] using hx
+
+/-- The norm topology of `ℤ_[p]` is linear: the ideals `(p ^ n)` are a neighbourhood basis of
+zero. -/
+instance instIsLinearTopology : IsLinearTopology ℤ_[p] ℤ_[p] :=
+  isAdic_maximalIdeal.isLinearTopology
+
+/-- A `p`-adic integer is topologically nilpotent exactly when it is divisible by `p`. -/
+theorem isTopologicallyNilpotent_iff_dvd {c : ℤ_[p]} :
+    IsTopologicallyNilpotent c ↔ (p : ℤ_[p]) ∣ c := by
+  rw [isAdic_maximalIdeal.isTopologicallyNilpotent_iff_mem_radical,
+    (maximalIdeal.isMaximal ℤ_[p]).isPrime.radical, _root_.PadicInt.maximalIdeal_eq_span_p,
+    Ideal.mem_span_singleton]
 
 /-- The pair of definition `(ℤ_[p], (p))` exhibiting `ℤ_[p]` as a Huber ring. The ring of
 definition is everything, and the ideal of definition is the maximal ideal carried across

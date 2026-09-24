@@ -78,6 +78,16 @@ attribute [local instance] Gal.splits_ℚ_ℂ
 
 variable {f : ℤ[X]}
 
+/-- A prime candidate is good for an integral polynomial when it does not divide the polynomial
+discriminant. -/
+def IsGoodPrime (f : ℤ[X]) (p : ℕ) : Prop :=
+  ¬ (p : ℤ) ∣ f.discr
+
+/-- The defining characterization of a good prime. -/
+@[simp]
+theorem isGoodPrime_iff (f : ℤ[X]) (p : ℕ) : IsGoodPrime f p ↔ ¬ (p : ℤ) ∣ f.discr :=
+  Iff.rfl
+
 open scoped Classical in
 /-- **Factor degrees are a full cycle type of the Galois image.** Let `f` be a monic integral
 polynomial and `p` a prime not dividing `disc f`. Some permutation of the complex roots of `f`

@@ -29,6 +29,10 @@ places the class in Mathlib's canonical continuous cohomology.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.evensHomCocycleAmbient`: a continuous homomorphism `α` on a subgroup
+  `U`, as a continuous `1`-cocycle of `U` with the lifted trivial `𝔽₂` coefficients of the
+  ambient group. It represents the class of `α` to which the restriction, corestriction and cup
+  products of the ambient group apply.
 * `TauCeti.ContCohomology.evensGraphCocycle`: the lifted continuous graph `2`-cocycle.
 * `TauCeti.ContCohomology.evensGraphCochainClass`: its canonical continuous-cohomology class for
   a specified `s ∉ U`.
@@ -69,6 +73,43 @@ private theorem graphElement_not_mem (U : OpenSubgroup G)
   (Classical.choose_spec (Subgroup.index_eq_two_iff_exists_notMem_and.mp hU)).1
 
 end Choice
+
+section HomCocycle
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+
+attribute [local instance] TopRep.distribMulAction
+
+private theorem evensHomCochainAmbient_mem_Z1 (U : Subgroup G)
+    (α : U →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    (fun h : U => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h))) ∈
+      Z1 U (trivialF2 G).V := by
+  refine mem_Z1_iff.2 ⟨?_, fun g h => ?_⟩
+  · exact (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
+      (continuous_toAdd.comp hα)
+  · apply (trivialF2Equiv G).injective
+    simp only [Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, map_add,
+      AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
+    exact add_comm _ _
+
+/-- A continuous homomorphism `α : U → Multiplicative (ZMod 2)` on a subgroup `U`, as a continuous
+`1`-cocycle of `U` with coefficients in the lifted trivial `𝔽₂` object of the ambient group `G`.
+This is the representative of the class of `α` to which restriction, corestriction and the cup
+products of the ambient group apply. -/
+noncomputable def evensHomCocycleAmbient (U : Subgroup G)
+    (α : U →* Multiplicative (ZMod 2)) (hα : Continuous α) : Z1 U (trivialF2 G).V :=
+  ⟨fun h => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h)),
+    evensHomCochainAmbient_mem_Z1 U α hα⟩
+
+/-- The underlying cochain of `evensHomCocycleAmbient`. -/
+@[simp]
+theorem coe_evensHomCocycleAmbient (U : Subgroup G)
+    (α : U →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    (evensHomCocycleAmbient U α hα : U → (trivialF2 G).V) =
+      fun h => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h)) :=
+  (rfl)
+
+end HomCocycle
 
 section GraphClass
 

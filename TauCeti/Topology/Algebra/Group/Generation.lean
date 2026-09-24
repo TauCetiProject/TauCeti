@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.GroupTheory.Schreier
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Topological generation of a topological group
@@ -24,7 +25,7 @@ The predicate is covariant: a topological generating set is carried to a topolog
 set by any continuous homomorphism with dense range, hence in particular by a continuous
 surjection and so to every quotient. It is invariant under a topological group isomorphism, and
 it has the uniqueness half one expects of a notion of generation — a continuous homomorphism into
-a Hausdorff group is determined by its values on a topological generating set, as is a
+a Hausdorff monoid is determined by its values on a topological generating set, as is a
 homomorphism with open kernel into an arbitrary group. Counting the latter over a finite target
 is what bounds the supply of open subgroups of a compact group.
 
@@ -44,7 +45,7 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
 * `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: a continuous homomorphism into a
-  Hausdorff group is determined by its values on a topological generating set.
+  Hausdorff monoid is determined by its values on a topological generating set.
 * `MonoidHom.eq_of_eqOn_of_isOpen_ker`: the same uniqueness statement for a homomorphism with
   open kernel, for which the target carries no topology.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
@@ -105,12 +106,12 @@ theorem topologicalClosure_closure_image_eq_top {s : Set G}
   rw [← MonoidHom.map_closure]
   exact hf'.topologicalClosure_map_subgroup hf hs
 
-omit [IsTopologicalGroup H] in
 /-- A continuous homomorphism out of a topological group is determined by its values on a
-topological generating set, provided the target is Hausdorff. This is the uniqueness half of
-every construction that defines a map on generators. -/
-theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top [T2Space H] {s : Set G}
-    (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : G →* H} (hf : Continuous f)
+topological generating set, provided the target is a Hausdorff monoid. This is the uniqueness
+half of every construction that defines a map on generators. -/
+theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top {M : Type*} [Monoid M]
+    [TopologicalSpace M] [T2Space M] {s : Set G}
+    (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : G →* M} (hf : Continuous f)
     (hg : Continuous g) (hfg : Set.EqOn f g s) : f = g := by
   have hdense : Dense (Subgroup.closure s : Set G) := by
     rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hs, Subgroup.coe_top]
@@ -189,8 +190,7 @@ topologically finitely generated. -/
 theorem IsTopologicallyFinitelyGenerated.of_openSubgroup [CompactSpace G]
     (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G) :
     IsTopologicallyFinitelyGenerated (↥U.toSubgroup) := by
-  have hUindex : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  exact hG.of_openSubgroup_of_finiteIndex (U := U) (hUindex := hUindex)
+  exact hG.of_openSubgroup_of_finiteIndex (U := U)
 
 /-- Topological finite generation is invariant under topological group isomorphism. -/
 theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :

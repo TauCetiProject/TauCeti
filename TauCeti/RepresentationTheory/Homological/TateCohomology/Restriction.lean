@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
-public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm

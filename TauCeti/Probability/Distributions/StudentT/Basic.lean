@@ -162,18 +162,8 @@ theorem studentTPDF_neg (ν x : ℝ) : studentTPDF ν (-x) = studentTPDF ν x :=
 /-- The real-valued Student t density is measurable. -/
 @[fun_prop]
 theorem measurable_studentTPDFReal (ν : ℝ) : Measurable (studentTPDFReal ν) := by
-  by_cases hν : 0 < ν
-  · have h : studentTPDFReal ν = fun y =>
-        Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)) *
-          Real.exp (Real.log (1 + y ^ 2 / ν) * (-((ν + 1) / 2))) := by
-      funext y
-      rw [studentTPDFReal_of_pos hν, Real.rpow_def_of_pos (by positivity)]
-    rw [h]
-    fun_prop
-  · have h : studentTPDFReal ν = fun _ => (0 : ℝ) :=
-      funext fun y => studentTPDFReal_of_nonpos (not_lt.mp hν) y
-    rw [h]
-    exact measurable_const
+  unfold studentTPDFReal
+  exact Measurable.ite (by measurability) (by fun_prop) measurable_const
 
 /-- The `ℝ≥0∞`-valued Student t density is measurable. -/
 @[fun_prop]
@@ -332,25 +322,8 @@ theorem studentTMeasure_one : studentTMeasure 1 = cauchyMeasure 0 1 := by
 @[fun_prop]
 theorem measurable_uncurry_studentTPDF :
     Measurable fun q : ℝ × ℝ => studentTPDF q.1 q.2 := by
-  have heq : (fun q : ℝ × ℝ => studentTPDF q.1 q.2) = fun q =>
-      ENNReal.ofReal (if 0 < q.1 then
-        Real.Gamma ((q.1 + 1) / 2) / (√(q.1 * π) * Real.Gamma (q.1 / 2)) *
-          Real.exp (Real.log (1 + q.2 ^ 2 / q.1) * (-((q.1 + 1) / 2))) else 0) := by
-    funext q
-    rw [studentTPDF, studentTPDFReal]
-    split_ifs with h
-    · rw [Real.rpow_def_of_pos (by positivity)]
-    · rfl
-  rw [heq]
-  refine (Measurable.ite ?_ ?_ measurable_const).ennreal_ofReal
-  · exact measurableSet_lt (measurable_const : Measurable fun _ : ℝ × ℝ => (0 : ℝ)) measurable_fst
-  · have hG1 : Measurable fun q : ℝ × ℝ => Real.Gamma ((q.1 + 1) / 2) :=
-      Real.measurable_Gamma.comp (by fun_prop)
-    have hG2 : Measurable fun q : ℝ × ℝ => Real.Gamma (q.1 / 2) :=
-      Real.measurable_Gamma.comp (by fun_prop)
-    have hsqrt : Measurable fun q : ℝ × ℝ => √(q.1 * π) :=
-      Real.continuous_sqrt.measurable.comp (by fun_prop)
-    exact (hG1.div (hsqrt.mul hG2)).mul (by fun_prop)
+  unfold studentTPDF studentTPDFReal
+  exact (Measurable.ite (by measurability) (by fun_prop) measurable_const).ennreal_ofReal
 
 /-- The Student t family is measurable in its degrees of freedom. -/
 @[fun_prop]

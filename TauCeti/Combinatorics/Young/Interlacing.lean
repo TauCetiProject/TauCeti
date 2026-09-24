@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Kostka
+import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
 # Interlacing shapes and the branching of bounded tableaux
@@ -43,6 +44,9 @@ way keeps every type non-dependent, so the resulting sum decomposition
 
 ## Main results
 
+* `YoungDiagram.sum_interlacingShapes_eq_sum_piFinset`: the shapes with at most `n` rows
+  interlacing a shape with at most `n + 1` rows are parametrized by their row lengths, the `j`-th
+  drawn freely from `[μ_{j+1}, μ_j]`.
 * `TauCeti.BoundedSSYT.restrictShape_mem_interlacingShapes`: the sub-shape of small entries
   interlaces `μ` and has at most `n` rows.
 * `TauCeti.BoundedSSYT.content_restrict`: erasing the top letter leaves unchanged how often each
@@ -117,6 +121,43 @@ noncomputable def interlacingShapes (n : ℕ) (μ : _root_.YoungDiagram) :
 theorem mem_interlacingShapes {n : ℕ} :
     ν ∈ interlacingShapes n μ ↔ InterlacedBy μ ν ∧ ν.colLen 0 ≤ n :=
   Set.Finite.mem_toFinset _
+
+/-- **The shapes interlacing `μ` are parametrized by their row lengths.**  For a shape `μ` with at
+most `n + 1` rows, a shape `ν` with at most `n` rows interlaces `μ` exactly when its `j`-th row
+length lies in `[μ_{j+1}, μ_j]` for each `j < n`, and it is determined by those row lengths.  So a
+sum over the interlacing shapes is a sum over the families `r : Fin n → ℕ` drawn from those
+intervals. -/
+theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n : ℕ}
+    (hμ : μ.colLen 0 ≤ n + 1) (f : (Fin n → ℕ) → M) :
+    ∑ ν ∈ interlacingShapes n μ, f (fun j => ν.rowLen j) =
+      ∑ r ∈ Fintype.piFinset fun j : Fin n => Finset.Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
+        f r := by
+  refine Finset.sum_bij (fun ν _ j => ν.rowLen j) (fun ν hν => ?_) (fun ν₁ hν₁ ν₂ hν₂ h => ?_)
+    (fun r hr => ?_) fun _ _ => rfl
+  · obtain ⟨hint, -⟩ := mem_interlacingShapes.mp hν
+    exact Fintype.mem_piFinset.mpr fun j => Finset.mem_Icc.mpr (interlacedBy_iff.mp hint j)
+  · refine rowLen_injective (funext fun i => ?_)
+    rcases lt_or_ge i n with hi | hi
+    · exact congrFun h ⟨i, hi⟩
+    · rw [rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₁).2.trans hi),
+        rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₂).2.trans hi)]
+  · have hr' : ∀ j : Fin n, μ.rowLen ((j : ℕ) + 1) ≤ r j ∧ r j ≤ μ.rowLen j := fun j =>
+      Finset.mem_Icc.mp (Fintype.mem_piFinset.mp hr j)
+    have hanti : Antitone r := fun j k hjk => by
+      rcases hjk.eq_or_lt with rfl | hlt
+      · exact le_rfl
+      · exact ((hr' k).2.trans (μ.rowLen_anti _ _ (Nat.succ_le_of_lt hlt))).trans (hr' j).1
+    refine ⟨ofRowLensFin r hanti, mem_interlacingShapes.mpr
+      ⟨interlacedBy_iff.mpr fun i => ?_, colLen_zero_ofRowLensFin_le r hanti⟩,
+      funext fun j => rowLen_ofRowLensFin r hanti j⟩
+    rcases lt_or_ge i n with hi | hi
+    · have h := rowLen_ofRowLensFin r hanti ⟨i, hi⟩
+      rw [Fin.val_mk] at h
+      rw [h]
+      exact hr' ⟨i, hi⟩
+    · rw [rowLen_ofRowLensFin_eq_zero_of_le r hanti hi,
+        rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+      exact ⟨le_rfl, Nat.zero_le _⟩
 
 end YoungDiagram
 

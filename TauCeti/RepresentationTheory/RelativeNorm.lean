@@ -47,6 +47,12 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
   submodule of `G` into the augmentation submodule of `H`.
 * `Representation.relTransfer_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
   relative transfer is `[G : H] • ·`.
+* `Representation.relTransfer_sub_sum_mem`: modulo the augmentation submodule of `H` the relative
+  transfer is the sum over any transversal of `H`.
+* `Representation.relTransfer_map_sub_mem`: modulo the augmentation submodule of `H'` the relative
+  transfer commutes with a map of representations along a group isomorphism carrying `H` to `H'`.
+* `Representation.relTransfer_relTransfer_sub_relTransfer_mem`: modulo the augmentation submodule
+  of `K` the relative transfer is transitive along a tower `K ≤ H ≤ G`.
 
 ## References
 
@@ -232,6 +238,27 @@ theorem coinvariantsKer_comp_subtype_le :
   rintro _ ⟨⟨h, y⟩, rfl⟩
   exact Submodule.subset_span ⟨((h : G), y), rfl⟩
 
+/-- **An intertwining map carries the augmentation submodule into the augmentation submodule.**
+Only the compatibility of the actions is used, so `e` need not be a homomorphism. -/
+theorem coinvariantsKer_map_le {G' V' : Type*} [Group G'] [AddCommGroup V'] [Module R V']
+    {ρ' : Representation R G' V'} (e : G → G') (φ : V →ₗ[R] V')
+    (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) :
+    (Coinvariants.ker ρ).map φ ≤ Coinvariants.ker ρ' := by
+  rw [Coinvariants.ker, Submodule.map_span_le]
+  rintro _ ⟨⟨g, x⟩, rfl⟩
+  rw [map_sub, hφ]
+  exact Coinvariants.sub_mem_ker _ _
+
+/-- **Precomposing the restricting homomorphism with a surjection does not change the
+augmentation submodule.** -/
+theorem coinvariantsKer_comp_comp_of_surjective {G' G'' : Type*} [Group G'] [Group G'']
+    (ψ : G' →* G) (ε : G'' →* G') (hε : Function.Surjective ε) :
+    Coinvariants.ker (ρ.comp (ψ.comp ε)) = Coinvariants.ker (ρ.comp ψ) := by
+  rw [Coinvariants.ker, Coinvariants.ker]
+  exact congrArg (Submodule.span R)
+    ((Prod.map_surjective.2 ⟨hε, Function.surjective_id⟩).range_comp
+      fun gv : G' × V => (ρ.comp ψ) gv.1 gv.2 - gv.2)
+
 variable [Fintype (G ⧸ H)]
 
 /-- Modulo the augmentation submodule of `G`, the relative transfer is multiplication by the
@@ -277,6 +304,77 @@ theorem relTransfer_mem_coinvariantsKer {x : V} (hx : x ∈ Coinvariants.ker ρ)
     congr 1
     exact congrArg ρ (hgrp g q)
   exact hmap ⟨x, hx, rfl⟩
+
+/-- **The relative transfer is computed by any transversal, modulo the augmentation submodule of
+`H`.** `relTransfer` sums `ρ q.out⁻¹` over the transversal `Quotient.out`; any family `f` whose
+classes exhaust `G ⧸ H` bijectively computes the same element of the coinvariants. -/
+theorem relTransfer_sub_sum_mem {ι : Type*} [Fintype ι] (f : ι → G)
+    (hf : Function.Bijective fun i => ((f i : G) : G ⧸ H)) (x : V) :
+    relTransfer ρ H x - ∑ i, ρ (f i)⁻¹ x ∈ Coinvariants.ker (ρ.comp H.subtype) := by
+  set e : ι ≃ G ⧸ H := Equiv.ofBijective _ hf
+  rw [relTransfer_apply, ← Equiv.sum_comp e.symm fun i => ρ (f i)⁻¹ x, ← Finset.sum_sub_distrib]
+  refine Submodule.sum_mem _ fun q _ => ?_
+  -- Two representatives of the coset `q` differ by an element of `H`.
+  have hq : (f (e.symm q))⁻¹ * (q.out : G) ∈ H :=
+    QuotientGroup.eq.mp ((e.apply_symm_apply q).trans q.out_eq'.symm)
+  have hg : H.subtype ⟨(f (e.symm q))⁻¹ * (q.out : G), hq⟩⁻¹ * (f (e.symm q))⁻¹ =
+      ((q.out : G))⁻¹ := by
+    rw [Subgroup.subtype_apply, InvMemClass.coe_inv, Subgroup.coe_mk]
+    group
+  refine Coinvariants.mem_ker_of_eq (ρ := ρ.comp H.subtype) ⟨_, hq⟩⁻¹
+    (ρ (f (e.symm q))⁻¹ x) _ ?_
+  congr 1
+  rw [MonoidHom.comp_apply, ← Module.End.mul_apply, ← map_mul, hg]
+
+/-- **The relative transfer commutes with a map of representations along a group isomorphism**,
+modulo the augmentation submodule of `H'`. Here `e : G ≃* G'` carries `H` onto `H'` and `φ`
+intertwines `ρ` with `ρ'` along `e`. -/
+theorem relTransfer_map_sub_mem {G' V' : Type*} [Group G'] [AddCommGroup V'] [Module R V']
+    {ρ' : Representation R G' V'} (e : G ≃* G') (φ : V →ₗ[R] V')
+    (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) {H' : Subgroup G'}
+    (he : H.map (e : G →* G') = H') [Fintype (G' ⧸ H')] (x : V) :
+    φ (relTransfer ρ H x) - relTransfer ρ' H' (φ x) ∈ Coinvariants.ker (ρ'.comp H'.subtype) := by
+  have hmem : ∀ a b : G, ((e a : G') : G' ⧸ H') = ((e b : G') : G' ⧸ H') ↔
+      ((a : G ⧸ H) = (b : G ⧸ H)) := fun a b => by
+    rw [QuotientGroup.eq, QuotientGroup.eq, ← he, ← map_inv, ← map_mul]
+    exact Subgroup.mem_map_iff_mem e.injective
+  -- Carrying the `Quotient.out` transversal of `H` across `e` gives a transversal of `H'`, but
+  -- not the one `Quotient.out` picks there.
+  have hbij : Function.Bijective fun q : G ⧸ H => ((e (q.out : G) : G') : G' ⧸ H') := by
+    refine ⟨fun a b hab => ?_, fun r => ⟨((e.symm (r.out : G') : G) : G ⧸ H), ?_⟩⟩
+    · simpa using (hmem _ _).1 hab
+    · dsimp only
+      rw [(hmem (Quotient.out _) (e.symm (r.out : G'))).2 (QuotientGroup.out_eq' _),
+        e.apply_symm_apply, QuotientGroup.out_eq']
+  have hsum : φ (relTransfer ρ H x) = ∑ q : G ⧸ H, ρ' (e (q.out : G))⁻¹ (φ x) := by
+    simp [relTransfer_apply, hφ]
+  rw [hsum, ← neg_sub (relTransfer ρ' H' (φ x))]
+  exact Submodule.neg_mem _ (relTransfer_sub_sum_mem _ hbij (φ x))
+
+/-- **The relative transfer is transitive along a tower `K ≤ H ≤ G`, modulo the augmentation
+submodule of `K`.** Transferring from `G` to `H` and then from `H` to `K` agrees with the
+transfer from `G` to `K`. -/
+theorem relTransfer_relTransfer_sub_relTransfer_mem {K : Subgroup G} (hKH : K ≤ H)
+    [Fintype (G ⧸ K)] [Fintype (H ⧸ K.subgroupOf H)] (x : V) :
+    relTransfer (ρ.comp H.subtype) (K.subgroupOf H) (relTransfer ρ H x) - relTransfer ρ K x ∈
+      Coinvariants.ker (ρ.comp K.subtype) := by
+  set e := Subgroup.quotientEquivProdOfLE hKH
+  -- The composite transfer sums over the products `q.out * s.out` of the two chosen
+  -- transversals, which form a transversal of `K` in `G` but not the one `Quotient.out` picks.
+  have hcoset : ∀ t : G ⧸ K, (((e t).1.out * ((e t).2.out : G) : G) : G ⧸ K) = t := fun t => by
+    conv_rhs => rw [← e.symm_apply_apply t, ← Prod.mk.eta (p := e t), ← (e t).2.out_eq']
+    rw [Subgroup.quotientEquivProdOfLE_symm_apply, Quotient.map'_mk'']
+  have hprod : ∑ t : G ⧸ K, ρ ((e t).1.out * ((e t).2.out : G))⁻¹ x =
+      relTransfer (ρ.comp H.subtype) (K.subgroupOf H) (relTransfer ρ H x) := by
+    rw [← Equiv.sum_comp e.symm fun t : G ⧸ K => ρ ((e t).1.out * ((e t).2.out : G))⁻¹ x]
+    simp only [e.apply_symm_apply]
+    rw [relTransfer_apply, Fintype.sum_prod_type, Finset.sum_comm]
+    refine Finset.sum_congr rfl fun s _ => ?_
+    rw [relTransfer_apply, map_sum]
+    refine Finset.sum_congr rfl fun q _ => ?_
+    simp [← Module.End.mul_apply, ← map_mul]
+  rw [← hprod, ← neg_sub (relTransfer ρ K x)]
+  exact Submodule.neg_mem _ (relTransfer_sub_sum_mem _ (by simp [hcoset]) x)
 
 end Coinvariants
 

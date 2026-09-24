@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.UniversalEnveloping
+public import Mathlib.RingTheory.FiniteType
 
 /-!
 # Basic results on universal enveloping algebras
@@ -19,6 +20,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   generated, as an algebra, by its canonical Lie generators.
 * `TauCeti.UniversalEnvelopingAlgebra.induction_ι`: the induction principle on the canonical Lie
   generators that the previous statement supplies.
+* `TauCeti.UniversalEnvelopingAlgebra.instFiniteType`: a universal enveloping algebra is an algebra
+  of finite type over the base ring as soon as the Lie algebra is finite as a module.
 * `TauCeti.UniversalEnvelopingAlgebra.representation`: the algebra homomorphism `U(L) → End M`
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
@@ -85,6 +88,24 @@ theorem induction_ι {p : U → Prop}
   | algebraMap r => exact algebraMap r
   | add a b _ _ ha hb => exact add a b ha hb
   | mul a b _ _ ha hb => exact mul a b ha hb
+
+variable {R L} in
+/-- **The enveloping algebra of a Lie algebra which is finite as a module is an `R`-algebra of
+finite type**: a finite spanning set of `L` generates `U(L)` as an algebra, the canonical Lie
+generators of `U(L)` generating it
+(`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`). -/
+instance instFiniteType [Module.Finite R L] : Algebra.FiniteType R U := by
+  classical
+  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := R) (M := L)
+  -- the span of the image of a spanning set of `L` is the whole of the image of `L`
+  have hrange : ((Submodule.span R
+      (⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U) ''
+        (S : Set L)) : Submodule R U) : Set U) =
+      Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)) := by
+    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range,
+      LieHom.coe_toLinearMap]
+  exact ⟨S.image ⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U), by
+    rw [Finset.coe_image, ← _root_.Algebra.adjoin_span, hrange, adjoin_range_ι R L]⟩
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 

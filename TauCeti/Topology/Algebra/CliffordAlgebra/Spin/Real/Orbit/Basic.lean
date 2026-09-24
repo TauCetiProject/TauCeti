@@ -37,6 +37,7 @@ noncomputable def realCliffordSpinOrbitMap (n : ℕ) (x : realCliffordUnitLevel 
     simpa only [SubMulAction.val_smul, spinGroup_smul_apply] using
       continuous_spinVectorAction_apply (realCliffordForm n 0) x
 
+/-- Evaluating the compact real Spin orbit map at `s` gives the action `s • x`. -/
 @[simp]
 theorem realCliffordSpinOrbitMap_apply (n : ℕ) (x : realCliffordUnitLevel n)
     (s : realCliffordSpinGroupZero n) :
