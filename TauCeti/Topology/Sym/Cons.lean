@@ -23,7 +23,7 @@ homology: the multiplicity `n_z(φ)` of a Whitney disk `φ` is its intersection 
 That `V_z` misses the tori of a Heegaard diagram when `z` lies off the attaching curves is
 `TauCeti.Sym.disjoint_basepointDivisor_pi`. It is cut out by a single affine equation in every
 elementary symmetric chart it meets, as shown by
-`TauCeti.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`.
+`TauCeti.Sym.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`.
 
 ## Main declarations
 
