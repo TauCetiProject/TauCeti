@@ -47,35 +47,35 @@ private noncomputable def quaternionLeftMulLinearEquiv {a b : K} (u : ℍ[K,a,b]
   right_inv x := by simp
 
 /-- A one-fold Pfister form is round: every unit it represents is a similarity factor. -/
-theorem oneFoldPfister_smul_equivalent_of_mem_unitValueSet (a c : Kˣ)
-    (hc : c ∈ unitValueSet (weightedSumSquares K ![1, -(a : K)])) :
-    ((c : K) • weightedSumSquares K ![1, -(a : K)]).Equivalent
-      (weightedSumSquares K ![1, -(a : K)]) := by
+theorem oneFoldPfister_smul_equivalent_of_mem_unitValueSet (a : K) (c : Kˣ)
+    (hc : c ∈ unitValueSet (weightedSumSquares K ![1, -a])) :
+    ((c : K) • weightedSumSquares K ![1, -a]).Equivalent
+      (weightedSumSquares K ![1, -a]) := by
   have hscale :
-      (c : K) • weightedSumSquares K ![1, -(a : K)] =
-        weightedSumSquares K ![(c : K), (1 : K) * (-(a : K)) * c] := by
+      (c : K) • weightedSumSquares K ![1, -a] =
+        weightedSumSquares K ![(c : K), (1 : K) * -a * c] := by
     ext x
     simp [weightedSumSquares_apply, Fin.sum_univ_two]
     ring
   rw [hscale]
-  exact (mem_unitValueSet_binary_iff_equivalent (1 : K) (-(a : K)) c).mp hc |>.symm
+  exact (mem_unitValueSet_binary_iff_equivalent (1 : K) (-a) c).mp hc |>.symm
 
 /-- A two-fold Pfister form is round: every unit it represents is a similarity factor. -/
-theorem twoFoldPfister_smul_equivalent_of_mem_unitValueSet (a b c : Kˣ)
-    (hc : c ∈ unitValueSet (weightedSumSquares K ![1, -(a : K), -(b : K), (a : K) * b])) :
-    ((c : K) • weightedSumSquares K ![1, -(a : K), -(b : K), (a : K) * b]).Equivalent
-      (weightedSumSquares K ![1, -(a : K), -(b : K), (a : K) * b]) := by
-  let e := QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares (a : K) (b : K)
-  have hc' : Represents (QuaternionAlgebra.normForm (a : K) 0 (b : K)) (c : K) :=
+theorem twoFoldPfister_smul_equivalent_of_mem_unitValueSet (a b : K) (c : Kˣ)
+    (hc : c ∈ unitValueSet (weightedSumSquares K ![1, -a, -b, a * b])) :
+    ((c : K) • weightedSumSquares K ![1, -a, -b, a * b]).Equivalent
+      (weightedSumSquares K ![1, -a, -b, a * b]) := by
+  let e := QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares a b
+  have hc' : Represents (QuaternionAlgebra.normForm a 0 b) (c : K) :=
     (e.represents_iff (c : K)).mpr (mem_unitValueSet.mp hc)
   rw [represents_iff, Set.mem_range] at hc'
   obtain ⟨q, hq⟩ := hc'
   have hqUnit : IsUnit q :=
-    (QuaternionAlgebra.isUnit_iff_normForm_isUnit (a : K) 0 (b : K) q).mpr (by
+    (QuaternionAlgebra.isUnit_iff_normForm_isUnit a 0 b q).mpr (by
     rw [hq]
     exact c.isUnit)
-  let u : ℍ[K,(a : K),(b : K)]ˣ := hqUnit.unit
-  have hu : QuaternionAlgebra.normForm (a : K) 0 (b : K) (u : ℍ[K,(a : K),(b : K)]) = c := by
+  let u : ℍ[K,a,b]ˣ := hqUnit.unit
+  have hu : QuaternionAlgebra.normForm a 0 b (u : ℍ[K,a,b]) = c := by
     rw [hqUnit.unit_spec]
     exact hq
   refine ⟨{
@@ -85,9 +85,9 @@ theorem twoFoldPfister_smul_equivalent_of_mem_unitValueSet (a b c : Kˣ)
   }⟩
   intro x
   -- Expose the three maps in the composite linear equivalence to apply their quadratic-form laws.
-  change weightedSumSquares K ![1, -(a : K), -(b : K), (a : K) * b]
-      (e ((u : ℍ[K,(a : K),(b : K)]) * e.symm x)) =
-    (c : K) * weightedSumSquares K ![1, -(a : K), -(b : K), (a : K) * b] x
+  change weightedSumSquares K ![1, -a, -b, a * b]
+      (e ((u : ℍ[K,a,b]) * e.symm x)) =
+    (c : K) * weightedSumSquares K ![1, -a, -b, a * b] x
   rw [e.map_app, QuaternionAlgebra.normForm_mul, hu, e.symm.map_app]
 
 end TauCeti
