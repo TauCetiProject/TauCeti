@@ -46,16 +46,19 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
 
 As in Mathlib's `Representation.FiniteCyclicGroup.coinvariantsKer_eq_range`, the operator
 `ρ g - 1` is written `ρ g - LinearMap.id`. The orbit-sum map is
-`MonoidAlgebra.mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel G X))`. A set `s` of orbit
-representatives is described by the two hypotheses `∀ x, ∃ g : G, g • x ∈ s` (every orbit meets
-`s`) and `∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x` (every orbit meets `s` at most once).
+`MonoidAlgebra.mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel G X))`. Its kernel lies in
+the coinvariant kernel by `Representation.sub_mapDomainLinearMap_mem_coinvariantsKer`, applied to
+the map `Quotient.out ∘ Quotient.mk _` that sends each point of `X` to a chosen representative of
+its orbit. A set `s` of orbit representatives is described by the two hypotheses
+`∀ x, ∃ g : G, g • x ∈ s` (every orbit meets `s`) and `∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x`
+(every orbit meets `s` at most once).
 
 ## References
 
-The motivating application is the period relation in §2 of A. Popa and D. Zagier,
-*An elementary proof of the Eichler–Selberg trace formula*, J. Reine Angew. Math. 762 (2020),
-105–122, arXiv:1711.00327, where an element `ζ` of the permutation module `ℚ[ℳₙ]` is shown to lie
-in `(1 - T) ℚ[ℳₙ]` by checking that its coefficient sums along the `T`-orbits vanish.
+* A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327. The motivating application is
+  the period relation (A) of §1; in §3 an element `ζ` of the permutation module `ℚ[ℳ]` is shown
+  to lie in `(1 - T) ℚ[ℳ]` if and only if its coefficients sum to zero along every `T`-orbit.
 -/
 
 public section
@@ -64,25 +67,18 @@ open MonoidAlgebra MulAction
 
 namespace Representation
 
-/-! ### The permutation representation as a pushforward -/
+/-! ### Orbit sums are invariant -/
 
 section Semiring
 
 variable {k G X : Type*} [Semiring k]
 
-/-- The permutation representation `k[X]` acts by pushing forward along `x ↦ g • x`. -/
-theorem ofMulAction_eq_mapDomainLinearMap [Monoid G] [MulAction G X] (g : G) :
-    ofMulAction k G X g = mapDomainLinearMap k k (g • · : X → X) :=
-  rfl
-
 /-- The orbit-sum map `k[X] → k[X ⧸ G]` is invariant under the permutation representation. -/
 @[simp]
-theorem mapDomainLinearMap_orbitRel_mk_ofMulAction [Group G] [MulAction G X] (g : G)
-    (v : k[X]) :
+theorem mapDomainLinearMap_orbitRel_mk_ofMulAction [Group G] [MulAction G X] (g : G) (v : k[X]) :
     mapDomainLinearMap k k (Quotient.mk (orbitRel G X)) (ofMulAction k G X g v) =
       mapDomainLinearMap k k (Quotient.mk (orbitRel G X)) v := by
-  rw [ofMulAction_eq_mapDomainLinearMap, ← LinearMap.comp_apply, ← mapDomainLinearMap_comp]
-  exact congrArg (mapDomainLinearMap k k · v) (funext fun x ↦ Quotient.sound ⟨g, rfl⟩)
+  induction v using induction_linear <;> simp [*]
 
 end Semiring
 
@@ -92,32 +88,29 @@ section Permutation
 
 variable {k G X : Type*} [CommRing k]
 
-/-- If `f : X → X` keeps every point in its orbit, then `v - f_* v` lies in the coinvariant
-kernel of the permutation representation `k[X]`. -/
+/-- If every `x : X` lies in the `G`-orbit of `f x`, then `v` minus its pushforward along `f`
+lies in the coinvariant kernel of the permutation representation `k[X]`. -/
 theorem sub_mapDomainLinearMap_mem_coinvariantsKer [Monoid G] [MulAction G X] {f : X → X}
     (hf : ∀ x, ∃ g : G, g • f x = x) (v : k[X]) :
     v - mapDomainLinearMap k k f v ∈ Coinvariants.ker (ofMulAction k G X) := by
-  induction v using MonoidAlgebra.induction_linear with
+  induction v using induction_linear with
   | zero => simp
   | add v w hv hw => simpa [add_sub_add_comm] using add_mem hv hw
   | single x r =>
     obtain ⟨g, hg⟩ := hf x
-    exact Coinvariants.mem_ker_of_eq g (single (f x) r) _ (by simp [hg])
+    exact Coinvariants.mem_ker_of_eq g (single (f x) r) _ <| by simp [hg]
 
 /-- **The coinvariant kernel of a permutation representation.** An element of `k[X]` lies in the
 coinvariant kernel of the permutation representation if and only if its coefficients sum to zero
 along every `G`-orbit. -/
+@[simp]
 theorem coinvariantsKer_ofMulAction_eq_ker [Group G] [MulAction G X] :
     Coinvariants.ker (ofMulAction k G X) =
       LinearMap.ker (mapDomainLinearMap k k (Quotient.mk (orbitRel G X))) := by
-  refine le_antisymm (Submodule.span_le.2 ?_) fun v hv ↦ ?_
-  · rintro _ ⟨⟨g, v⟩, rfl⟩
-    simp
-  · have h := sub_mapDomainLinearMap_mem_coinvariantsKer
-      (f := Quotient.out ∘ Quotient.mk (orbitRel G X))
-      (fun x ↦ orbitRel_apply.1 ((orbitRel G X).symm' (Quotient.mk_out' x))) v
-    rwa [mapDomainLinearMap_comp, LinearMap.comp_apply, LinearMap.mem_ker.1 hv, map_zero,
-      sub_zero] at h
+  refine le_antisymm (Submodule.span_le.2 <| Set.range_subset_iff.2 fun _ ↦ by simp) fun v hv ↦ ?_
+  simpa [LinearMap.mem_ker.1 hv] using sub_mapDomainLinearMap_mem_coinvariantsKer
+    (f := Quotient.out ∘ Quotient.mk (orbitRel G X))
+    (fun x ↦ mem_orbit_symm.1 (Quotient.mk_out (s := orbitRel G X) x)) v
 
 end Permutation
 
@@ -132,24 +125,21 @@ variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
 `g ∈ s`. -/
 theorem coinvariantsKer_eq_iSup_range {s : Set G} (hs : Subgroup.closure s = ⊤) :
     Coinvariants.ker ρ = ⨆ g ∈ s, LinearMap.range (ρ g - LinearMap.id) := by
-  refine le_antisymm (Submodule.span_le.2 ?_) (iSup₂_le fun g _ ↦ ?_)
-  · rintro _ ⟨⟨g, v⟩, rfl⟩
-    induction (hs ▸ Subgroup.mem_top g : g ∈ Subgroup.closure s) using Subgroup.closure_induction
-      generalizing v with
-    | mem g hg => exact Submodule.mem_iSup_of_mem g (Submodule.mem_iSup_of_mem hg ⟨v, rfl⟩)
-    | one => simp
-    | mul g h _ _ hg hh => simpa [sub_add_sub_cancel] using add_mem (hg (ρ h v)) (hh v)
-    | inv g _ hg => simpa using neg_mem (hg (ρ g⁻¹ v))
-  · rintro _ ⟨v, rfl⟩
-    exact Coinvariants.sub_mem_ker g v
+  refine le_antisymm (Submodule.span_le.2 ?_) <|
+    iSup₂_le fun g _ _ ⟨v, hv⟩ ↦ Coinvariants.mem_ker_of_eq g v _ hv
+  rintro _ ⟨⟨g, v⟩, rfl⟩
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction generalizing v with
+  | mem g hg => exact Submodule.mem_iSup_of_mem g (Submodule.mem_iSup_of_mem hg ⟨v, rfl⟩)
+  | one => simp
+  | mul g h _ _ hg hh => simpa [sub_add_sub_cancel] using add_mem (hg (ρ h v)) (hh v)
+  | inv g _ hg => simpa using neg_mem (hg (ρ g⁻¹ v))
 
 /-- If `g` generates `G`, the coinvariant kernel of `ρ` is the range of `ρ g - 1`. Unlike
 `Representation.FiniteCyclicGroup.coinvariantsKer_eq_range`, `G` need not be finite. -/
-theorem coinvariantsKer_eq_range_of_forall_mem_zpowers (g : G)
-    (hg : ∀ x, x ∈ Subgroup.zpowers g) :
-    Coinvariants.ker ρ = LinearMap.range (ρ g - LinearMap.id) := by
-  rw [coinvariantsKer_eq_iSup_range ρ (s := {g}), iSup_singleton]
-  rwa [← Subgroup.zpowers_eq_closure, Subgroup.eq_top_iff']
+theorem coinvariantsKer_eq_range_of_forall_mem_zpowers (g : G) (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+    Coinvariants.ker ρ = LinearMap.range (ρ g - LinearMap.id) :=
+  (coinvariantsKer_eq_iSup_range ρ <| (Subgroup.zpowers_eq_closure g).symm.trans <|
+    (Subgroup.eq_top_iff' _).2 hg).trans iSup_singleton
 
 end Generators
 
@@ -162,16 +152,12 @@ variable {k G X : Type*}
 /-- **Membership in the range of `ρ g - 1` via orbit sums.** For the permutation representation
 `k[X]`, an element lies in the range of `ρ g - 1` if and only if its coefficients sum to zero along
 every orbit of the cyclic subgroup generated by `g`. -/
-theorem mem_range_ofMulAction_sub_id_iff [CommRing k] [Group G] [MulAction G X] (g : G)
-    {v : k[X]} :
+theorem mem_range_ofMulAction_sub_id_iff [CommRing k] [Group G] [MulAction G X] (g : G) {v : k[X]} :
     v ∈ LinearMap.range (ofMulAction k G X g - LinearMap.id) ↔
-      mapDomainLinearMap k k (Quotient.mk (orbitRel (Subgroup.zpowers g) X)) v = 0 := by
-  have h := coinvariantsKer_eq_range_of_forall_mem_zpowers
-    (ofMulAction k (Subgroup.zpowers g) X) ⟨g, Subgroup.mem_zpowers g⟩ fun ⟨x, hx⟩ ↦ by
-      obtain ⟨n, rfl⟩ := Subgroup.mem_zpowers_iff.1 hx
-      exact ⟨n, Subtype.ext (by simp)⟩
-  rw [coinvariantsKer_ofMulAction_eq_ker] at h
-  exact (SetLike.ext_iff.1 h v).symm
+      mapDomainLinearMap k k (Quotient.mk (orbitRel (Subgroup.zpowers g) X)) v = 0 :=
+  (SetLike.ext_iff.1 (coinvariantsKer_ofMulAction_eq_ker.symm.trans <|
+    coinvariantsKer_eq_range_of_forall_mem_zpowers (ofMulAction k (Subgroup.zpowers g) X)
+      ⟨g, Subgroup.mem_zpowers g⟩ (Subgroup.forall_zpowers.2 fun m ↦ ⟨m, rfl⟩)) v).symm
 
 /-- If a finite set `s` meets every `G`-orbit exactly once, then the element
 `∑ x ∈ s, single x r` of `k[X]` has all its orbit sums equal to `r`. -/
@@ -180,12 +166,10 @@ theorem coeff_mapDomainLinearMap_orbitRel_sum_single [Semiring k] [Group G] [Mul
     (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) (r : k) (q : orbitRel.Quotient G X) :
     (mapDomainLinearMap k k (Quotient.mk (orbitRel G X))
       (∑ x ∈ hs.toFinset, single x r)).coeff q = r := by
-  classical
   obtain ⟨y, rfl⟩ := Quotient.mk_surjective q
   obtain ⟨g, hg⟩ := hex y
   have hq : Quotient.mk (orbitRel G X) (g • y) = Quotient.mk _ y := Quotient.sound ⟨g, rfl⟩
-  simp only [map_sum, mapDomainLinearMap_single, coeff_sum, coeff_single, Finsupp.coe_finsetSum,
-    Finset.sum_apply]
+  simp only [map_sum, mapDomainLinearMap_single, coeff_sum, coeff_single, Finsupp.finsetSum_apply]
   rw [Finset.sum_eq_single_of_mem (g • y) (hs.mem_toFinset.2 hg) fun x hx hne ↦ ?_]
   · simp [hq]
   refine Finsupp.single_eq_of_ne' fun hxy ↦ hne ?_
