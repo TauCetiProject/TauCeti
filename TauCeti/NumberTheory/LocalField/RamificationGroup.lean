@@ -198,6 +198,7 @@ theorem lowerRamificationGroup_largestLowerJump_ne_bot [Nontrivial (L ≃ₐ[K] 
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_i` is trivial exactly past the largest lower jump. -/
+@[simp]
 theorem lowerRamificationGroup_eq_bot_iff [Nontrivial (L ≃ₐ[K] L)] {i : ℤ} :
     lowerRamificationGroup K L i = ⊥ ↔ largestLowerJump K L < i := by
   refine ⟨fun h ↦ ?_, lowerRamificationGroup_eq_bot_of_largestLowerJump_lt⟩
@@ -243,6 +244,7 @@ theorem lowerRamificationGroupReal_antitone : Antitone (lowerRamificationGroupRe
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest
 lower jump. -/
+@[simp]
 theorem lowerRamificationGroupReal_eq_bot_iff [Nontrivial (L ≃ₐ[K] L)] {u : ℝ} :
     lowerRamificationGroupReal K L u = ⊥ ↔ (largestLowerJump K L : ℝ) < u := by
   rw [lowerRamificationGroupReal_def, lowerRamificationGroup_eq_bot_iff, Int.lt_ceil]
