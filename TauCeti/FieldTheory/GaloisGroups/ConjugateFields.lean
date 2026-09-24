@@ -248,7 +248,7 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
     conjugateSimpleFields (F := F) x ≃
       MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   let e := MulEquiv.conjugateSubgroupsEquiv (galEquivNormalClosure (F := F) (E := E) x)
@@ -274,7 +274,7 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply (x : E)
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy K).1).map
       ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) = K.1.fixingSubgroup := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   let E₀ := F⟮x⟯.restrict (le_normalClosure F⟮x⟯)
@@ -324,7 +324,7 @@ noncomputable def quotientNormalizerEquivConjugateSimpleFields (x : E)
         ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
           Set Gal(normalClosure F F⟮x⟯ E/F)) ≃ conjugateSimpleFields (F := F) x := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.quotientNormalizerEquivConjugateFields
@@ -337,7 +337,7 @@ theorem quotientNormalizerEquivConjugateSimpleFields_mk (x : E)
     ((quotientNormalizerEquivConjugateSimpleFields x hsep (QuotientGroup.mk σ)).1) =
       σ • (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.quotientNormalizerEquivConjugateFields_mk
@@ -354,7 +354,7 @@ theorem quotientNormalizerEquivConjugateSimpleFields_smul (x : E)
     (quotientNormalizerEquivConjugateSimpleFields x hsep (σ • q)).1 =
       σ • (quotientNormalizerEquivConjugateSimpleFields x hsep q).1 := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.quotientNormalizerEquivConjugateFields_smul
@@ -448,7 +448,7 @@ theorem ncard_conjugateSimpleFields (x : E) (hsep : (minpoly F x).Separable) :
         ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
           Set Gal(normalClosure F F⟮x⟯ E/F))).index := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.ncard_conjugateFields

@@ -54,11 +54,11 @@ theorem isSplittingField_normalClosure_adjoin_simple (x : E) :
   rw [normalClosure_adjoin_simple_eq_adjoin_rootSet]
   exact adjoin_rootSet_isSplittingField (Normal.splits (inferInstance : Normal F E) x)
 
+omit [Normal F E] in
 /-- The normal closure of a simple algebraic extension has finite degree. -/
-theorem finiteDimensional_normalClosure_adjoin_simple (x : E) :
+theorem finiteDimensional_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F x) :
     FiniteDimensional F (normalClosure F F⟮x⟯ E) := by
-  let _ : FiniteDimensional F F⟮x⟯ :=
-    adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
+  let _ : FiniteDimensional F F⟮x⟯ := adjoin.finiteDimensional hx
   exact normalClosure.is_finiteDimensional F F⟮x⟯ E
 
 /-- The normal closure of a simple extension is Galois if its minimal polynomial is
@@ -67,7 +67,7 @@ theorem isGalois_normalClosure_adjoin_simple (x : E)
     (hsep : (minpoly F x).Separable) :
     IsGalois F (normalClosure F F⟮x⟯ E) := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple x
+    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsSplittingField F (normalClosure F F⟮x⟯ E) (minpoly F x) :=
     isSplittingField_normalClosure_adjoin_simple x
   exact IsGalois.of_separable_splitting_field hsep
