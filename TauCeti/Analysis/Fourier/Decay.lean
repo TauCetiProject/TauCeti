@@ -37,7 +37,10 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
     (k : ℕ) : ∃ C : ℝ, 0 < C ∧ ∀ v : V, ‖v‖ ^ k * ‖𝓕 f v‖ ≤ C := by
   obtain ⟨C, hC0, hC⟩ := (𝓕 (hsupp.toSchwartzMap hf) : SchwartzMap V E).decay k 0
   refine ⟨C, hC0, fun v ↦ ?_⟩
+  have hcoe0 : ⇑(hsupp.toSchwartzMap hf) = f := by
+    ext u
+    simp
   have h := hC v
-  rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe] at h
+  rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe0] at h
 
 end TauCeti
