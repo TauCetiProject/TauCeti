@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Exponential.ProductChart
+import TauCeti.Geometry.Lie.Exponential.ProductChart
 public import TauCeti.Geometry.Lie.Subgroup.LocalSeparation
 
 /-!
@@ -18,8 +18,8 @@ the embedded Lie-subgroup chart.
 
 ## Main result
 
-* `TauCeti.Lie.exists_mem_nhds_one_iff_exists_lieExp_eq_of_mem_lieSubalgebraOfSubgroup_of_isClosed`:
-  a closed subgroup is locally the exponential image of its Lie algebra.
+* The local characterization theorem below: a closed subgroup is locally the
+  exponential image of its Lie algebra.
 
 ## References
 
@@ -46,7 +46,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- Near the identity, a closed subgroup is exactly the exponential image of its Lie algebra.
 This is the local membership criterion for the embedded Lie-subgroup chart. -/
-theorem exists_mem_nhds_one_iff_exists_lieExp_eq_of_mem_lieSubalgebraOfSubgroup_of_isClosed
+theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
     {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
