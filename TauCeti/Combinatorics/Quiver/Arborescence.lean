@@ -58,12 +58,6 @@ universe u v
 
 namespace TauCeti
 
-namespace WideSubquiver
-
-variable {V : Type u} [Quiver.{v, u} V]
-
-end WideSubquiver
-
 private lemma existsLastData {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (b : W) (hb : b ≠ root W) :
     Nonempty (Σ a : W, Path (root W) a × (a ⟶ b)) := by
@@ -83,7 +77,8 @@ private lemma defaultPathLengthRoot {W : Type u} [Quiver.{v, u} W] [Arborescence
   cases h
   exact congrArg Path.length (Subsingleton.elim _ Path.nil)
 
-private lemma targetNeRoot {W : Type u} [Quiver.{v, u} W] [Arborescence W]
+/-- The target of an edge in an arborescence is not its root. -/
+theorem total_right_ne_root {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (e : Quiver.Total W) : e.right ≠ root W := by
   intro h
   let p : Path (root W) e.left := default
@@ -95,12 +90,12 @@ private lemma targetNeRoot {W : Type u} [Quiver.{v, u} W] [Arborescence W]
 /-- The directed edges of an arborescence correspond to the vertices other than its root. -/
 noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{v, u} W] [Arborescence W] :
     Quiver.Total W ≃ {b : W // b ≠ root W} where
-  toFun e := ⟨e.right, targetNeRoot e⟩
+  toFun e := ⟨e.right, total_right_ne_root e⟩
   invFun b :=
     let d := lastData b
     ⟨d.1, b.1, d.2.2⟩
   left_inv e := by
-    let b : {b : W // b ≠ root W} := ⟨e.right, targetNeRoot e⟩
+    let b : {b : W // b ≠ root W} := ⟨e.right, total_right_ne_root e⟩
     let d := lastData b
     have hp : d.2.1.cons d.2.2 = (default : Path (root W) e.left).cons e.hom :=
       Subsingleton.elim _ _
@@ -118,13 +113,13 @@ noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{v, u} W] [Arboresc
 @[simp] theorem arborescenceEdgeCard (W : Type u) [Quiver.{v, u} W] [Arborescence W] [Finite W] :
     Nat.card (Quiver.Total W) = Nat.card W - 1 := by
   classical
-  exact (letI := Fintype.ofFinite W
-    letI : Fintype (Quiver.Total W) := Fintype.ofEquiv _ (arborescenceEdgeEquiv W).symm
-    -- Keep both chosen instances active while rewriting `Nat.card` through the equivalence.
-    show Nat.card (Quiver.Total W) = Nat.card W - 1 from by
-      rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
-        Fintype.card_congr (arborescenceEdgeEquiv W), Fintype.card_subtype_compl]
-      simp)
+  rw [Nat.card_congr (arborescenceEdgeEquiv W)]
+  have h := Nat.card_congr (Equiv.optionSubtypeNe (root W))
+  have h' : Nat.card {b : W // b ≠ root W} + 1 = Nat.card W :=
+    (letI := Fintype.ofFinite W
+    letI : Fintype {b : W // b ≠ root W} := Fintype.ofFinite _
+    show _ from by simpa only [Nat.card_eq_fintype_card, Fintype.card_option] using h)
+  omega
 
 namespace WideSubquiver
 
@@ -148,11 +143,18 @@ private lemma noReverseEdges (T : WideSubquiver (Symmetrify V)) [Arborescence T]
     simpa only [Path.length_cons] using congrArg Path.length hqp
   omega
 
+/-- An arborescence in a symmetrified quiver cannot contain both orientations of an arrow. -/
+theorem not_inl_and_inr_of_arborescence (T : WideSubquiver (Symmetrify V)) [Arborescence T]
+    {a b : V} (e : @Quiver.Hom V _ a b) :
+    ¬ (T a b (Sum.inl e) ∧ T b a (Sum.inr e)) := by
+  rintro ⟨h₁, h₂⟩
+  exact noReverseEdges T e h₁ h₂
+
 private def symEdgeForgetInv (T : WideSubquiver (Symmetrify V))
     (e : Quiver.Total (wideSubquiverSymmetrify T)) : Quiver.Total T := by
   rcases e with ⟨a, b, ⟨f, hf⟩⟩
   -- Membership in the forgotten subquiver records which of the two orientations lies in `T`.
-  change T a b (Sum.inl f) ∨ T b a (Sum.inr f) at hf
+  rw [mem_wideSubquiverSymmetrify_iff] at hf
   by_cases h : T a b (Sum.inl f)
   · exact ⟨a, b, ⟨Sum.inl f, h⟩⟩
   · exact ⟨b, a, ⟨Sum.inr f, hf.resolve_left h⟩⟩
@@ -169,7 +171,8 @@ private lemma symEdgeForgetInvForget
       simp only [symEdgeForgetInv]
       exact dite_eq_left hf
   | inr f =>
-      have hn : ¬T b a (Sum.inl f) := fun h => noReverseEdges T f h hf
+      have hn : ¬T b a (Sum.inl f) := fun h =>
+        not_inl_and_inr_of_arborescence T f ⟨h, hf⟩
       rw [symmetrifiedTreeEdgeMap_apply_inr]
       simp only [symEdgeForgetInv]
       exact dite_eq_right hn
@@ -182,7 +185,7 @@ private lemma symEdgeForgetForgetInv
   -- Remove the symmetrification's vertex type synonym before inspecting the orientation tag.
   change V at a b
   -- The forgotten edge belongs to `T` in one of its two possible orientations.
-  change T a b (Sum.inl f) ∨ T b a (Sum.inr f) at hf
+  rw [mem_wideSubquiverSymmetrify_iff] at hf
   by_cases h : T a b (Sum.inl f)
   · have hinv : symEdgeForgetInv T ⟨a, b, ⟨f, hf⟩⟩ =
         ⟨a, b, ⟨Sum.inl f, h⟩⟩ := by
@@ -220,7 +223,6 @@ def symmetrifiedTreeEdgeEquiv (T : WideSubquiver (Symmetrify V)) [Arborescence T
   rw [← Nat.card_coe_set_eq]
   let vertexEquiv : T ≃ V := Equiv.refl V
   exact (letI : Finite T := Finite.of_equiv V vertexEquiv.symm
-    -- The local finite instance lets `Nat.card_congr` compare both subtype presentations.
     show _ from calc
       Nat.card (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
           Set (Quiver.Total V)) = Nat.card (Quiver.Total (wideSubquiverSymmetrify T)) :=
@@ -229,18 +231,18 @@ def symmetrifiedTreeEdgeEquiv (T : WideSubquiver (Symmetrify V)) [Arborescence T
       _ = Nat.card T - 1 := arborescenceEdgeCard T
       _ = Nat.card V - 1 := by rw [Nat.card_congr vertexEquiv])
 
-private lemma finiteVertices_of_finiteTotal [Finite (Quiver.Total V)]
+/-- A spanning arborescence on a quiver with finitely many total arrows has finitely many
+vertices. -/
+theorem finite_of_finite_total [Finite (Quiver.Total V)]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] : Finite V := by
   classical
   let vertexEquiv : T ≃ V := Equiv.refl V
   exact (letI : Finite (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Finite.of_equiv _ (totalEquivSet (wideSubquiverSymmetrify T)).symm
-    letI : Finite (Quiver.Total T) :=
-      Finite.of_equiv _ (symmetrifiedTreeEdgeEquiv T).symm
-    letI : Finite {b : T // b ≠ root T} :=
-      Finite.of_equiv _ (arborescenceEdgeEquiv T)
+    letI : Finite (Quiver.Total T) := Finite.of_equiv _ (symmetrifiedTreeEdgeEquiv T).symm
+    letI : Finite {b : T // b ≠ root T} := Finite.of_equiv _ (arborescenceEdgeEquiv T)
     letI : Finite T := Finite.of_equiv _ (Equiv.optionSubtypeNe (root T))
-    Finite.of_equiv T vertexEquiv)
+    show Finite V from Finite.of_equiv T vertexEquiv)
 
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
 number of directed edges plus one minus the number of vertices. -/
@@ -249,32 +251,17 @@ number of directed edges plus one minus the number of vertices. -/
     ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ :
       Set (Quiver.Total V)).ncard =
     Nat.card (Quiver.Total V) + 1 - Nat.card V := by
-  rw [← Nat.card_coe_set_eq]
   classical
-  exact (letI : Fintype (Quiver.Total V) := Fintype.ofFinite _
-    let A : Set (Quiver.Total V) :=
-      wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T)
-    letI : Fintype A := Fintype.ofFinite _
-    letI : Finite V := finiteVertices_of_finiteTotal T
-    letI := Fintype.ofFinite V
-    -- Reuse finite cardinality lemmas without exposing chosen `Fintype` instances.
-    -- Pin the target after coercing the complemented set to its subtype presentation.
+  let A : Set (Quiver.Total V) :=
+    wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T)
+  exact (letI : Finite V := finite_of_finite_total T
+    letI : Nonempty V := ⟨root T⟩
     show _ from by
-      rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-      -- Express membership in the set complement as the negated predicate used by the card lemma.
-      change Fintype.card {e : Quiver.Total V // e ∉ A} =
-        Fintype.card (Quiver.Total V) + 1 - Fintype.card V
-      have hcomplement := Fintype.card_subtype_compl (fun e : Quiver.Total V ↦ e ∈ A)
-      have htree : Fintype.card A = Fintype.card V - 1 := by
-        simpa only [← Set.fintypeCard_eq_ncard, Nat.card_eq_fintype_card] using
-          symmetrifiedTreeSetCard T
-      have hle : Fintype.card V - 1 ≤ Fintype.card (Quiver.Total V) := by
-        rw [← htree]
-        exact Fintype.card_subtype_le _
-      have hvertices : 0 < Fintype.card V := Fintype.card_pos_iff.mpr ⟨root T⟩
-      rw [htree] at hcomplement
-      exact hcomplement.trans (by omega)
-  )
+      have hle := Set.ncard_le_card A
+      have hpos : 0 < Nat.card V := Nat.card_pos
+      rw [Set.ncard_compl, symmetrifiedTreeSetCard T]
+      rw [symmetrifiedTreeSetCard T] at hle
+      omega)
 
 
 end WideSubquiver

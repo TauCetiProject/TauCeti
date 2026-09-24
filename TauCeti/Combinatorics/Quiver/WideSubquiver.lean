@@ -20,6 +20,7 @@ arrows and forgets orientation tags in symmetrified wide subquivers.
 * `symmetrifiedTreeEdgeMap`: forgets the orientation tag on a symmetrified edge.
 * `symmetrifiedTreeEdgeMap_apply_inl` and `symmetrifiedTreeEdgeMap_apply_inr`: its orientation
   cases.
+* `mem_wideSubquiverSymmetrify_iff`: membership in the symmetrification by either orientation.
 -/
 
 open Set Function Quiver
@@ -61,6 +62,12 @@ def symmetrifiedTreeEdgeMap (T : _root_.WideSubquiver (Quiver.Symmetrify V))
   cases f using Sum.casesOn with
   | inl f => exact ⟨a, b, ⟨f, Or.inl hf⟩⟩
   | inr f => exact ⟨b, a, ⟨f, Or.inr hf⟩⟩
+
+/-- An arrow belongs to the symmetrification exactly when either orientation belongs to `T`. -/
+@[simp] theorem mem_wideSubquiverSymmetrify_iff (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ a b) :
+    e ∈ Quiver.wideSubquiverSymmetrify T a b ↔
+      T a b (Sum.inl e) ∨ T b a (Sum.inr e) := Iff.rfl
 
 /-- The forward map sends a forward-oriented edge to the same ambient edge. -/
 @[simp] theorem symmetrifiedTreeEdgeMap_apply_inl (T : _root_.WideSubquiver (Quiver.Symmetrify V))
