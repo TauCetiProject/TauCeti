@@ -117,6 +117,9 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
 
 /-- Singular cohomology in degree `n` as a contravariant functor from topological spaces to
 `k`-modules. -/
+-- `@[expose]` is mandated by the module system: without it `map` cannot be characterised at
+-- all, since the statement that `map f` is `singularCohomologyMap f.unop n` only typechecks once
+-- `obj` unfolds, and an exported statement may unfold only exposed definitions.
 @[expose, simps]
 def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k where
   obj X := X.unop.singularCohomology R k M n

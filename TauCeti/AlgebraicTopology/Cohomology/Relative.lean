@@ -137,6 +137,9 @@ variable (R k M)
 
 /-- Relative singular cohomology in degree `n` as a contravariant functor from topological pairs
 to `k`-modules. -/
+-- `@[expose]` is mandated by the module system: without it `map` cannot be characterised at
+-- all, since the statement that `map f` is `singularCohomologyMap f.unop n` only typechecks once
+-- `obj` unfolds, and an exported statement may unfold only exposed definitions.
 @[expose, simps]
 def singularCohomologyFunctor (n : ℕ) : TopPair.{w}ᵒᵖ ⥤ ModuleCat.{v} k where
   obj P := P.unop.singularCohomology R k M n
@@ -225,7 +228,7 @@ instance : Mono (P.singularCohomologyπ R k M 0) := by
       (P.singularCochainComplexShortComplex R k M).f
   exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
     (P.singularCochainComplexShortComplex R k M).f 0 fun i h ↦ by
-      change i + 1 = 0 at h
+      rw [ComplexShape.up_Rel] at h
       omega
 
 /-- Exactness at ambient cohomology: `Hⁿ(X, A) ⟶ Hⁿ(X) ⟶ Hⁿ(A)` is exact. -/
@@ -242,7 +245,6 @@ variable {P R k M}
 
 /-- The morphism of cochain sequences `C*(Y, B) ⟶ C*(Y) ⟶ C*(B)` to `C*(X, A) ⟶ C*(X) ⟶ C*(A)`
 induced by a map of pairs `(X, A) ⟶ (Y, B)`. -/
-@[expose, simps]
 def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     P'.singularCochainComplexShortComplex R k M ⟶ P.singularCochainComplexShortComplex R k M where
   τ₁ := singularCochainComplexMap f
@@ -257,6 +259,21 @@ def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     exact h.symm
   comm₂₃ := by
     rw [← TopCat.singularCochainComplexMap_comp, ← TopCat.singularCochainComplexMap_comp, Hom.w]
+
+@[simp]
+lemma singularCochainComplexShortComplexMap_τ₁ {P P' : TopPair.{w}} (f : P ⟶ P') :
+    (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₁ =
+      singularCochainComplexMap f := (rfl)
+
+@[simp]
+lemma singularCochainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P') :
+    (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₂ =
+      TopCat.singularCochainComplexMap (Hom.fst f) := (rfl)
+
+@[simp]
+lemma singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P ⟶ P') :
+    (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ =
+      TopCat.singularCochainComplexMap (Hom.snd f) := (rfl)
 
 /-- The map from relative to absolute cohomology is natural in the pair. -/
 @[reassoc]

@@ -41,6 +41,10 @@ variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemig
 
 /-- The contravariant functor sending a chain complex `X` to the cochain complex of `k`-modules
 `Hom(X, Y)`, which in degree `i` is the module of morphisms `X.X i ⟶ Y`. -/
+-- `@[expose]` is mandated by the module system: exported statements downstream (the singular
+-- cochain maps, typed between `ChainComplex.linearYonedaObj` complexes) need
+-- `(linearYonedaFunctor k Y).obj X` to unfold to `X.unop.linearYonedaObj k Y`, and an exported
+-- statement may unfold only exposed definitions.
 @[expose]
 noncomputable def linearYonedaFunctor : (ChainComplex C α)ᵒᵖ ⥤ CochainComplex (ModuleCat k) α :=
   (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
@@ -53,9 +57,8 @@ lemma linearYonedaFunctor_obj (X : (ChainComplex C α)ᵒᵖ) :
 /-- The map `Hom(X', Y) ⟶ Hom(X, Y)` induced by a chain map `X ⟶ X'` is precomposition. -/
 @[simp]
 lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ : X ⟶ X') (i : α)
-    (g : X.unop.X i ⟶ Y) :
-    (show (X.unop.linearYonedaObj k Y).X i ⟶ (X'.unop.linearYonedaObj k Y).X i from
-      ((linearYonedaFunctor k Y).map φ).f i) g = φ.unop.f i ≫ g := rfl
+    (g : (X.unop.linearYonedaObj k Y).X i) :
+    ((linearYonedaFunctor k Y).map φ).f i g = φ.unop.f i ≫ g := rfl
 
 instance : (linearYonedaFunctor (α := α) k Y).Additive :=
   inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
