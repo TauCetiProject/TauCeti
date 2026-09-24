@@ -51,7 +51,8 @@ by `π/2` reverses the axis (`geodesicLine_rotation_pi_div_two`).
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq` — a geodesic line through any prescribed
   point of `ℍ`.
 * `TauCeti.UpperHalfPlane.mem_range_geodesicLine_one_iff` — the geodesic line of the identity
-  is the imaginary axis; `geodesicLine_rotation_pi_div_two` reverses its parametrisation.
+  is the imaginary axis (`exists_geodesicLine_one_eq_iff` is its simp-normal form);
+  `geodesicLine_rotation_pi_div_two` reverses its parametrisation.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_dist_eq` — two-point transitivity:
   a geodesic line with `z` at parameter `0` and `w` at parameter `dist z w`, for any `z`, `w`;
   `exists_mem_range_geodesicLine_and_mem_range` is the same at the level of the line as a set.
@@ -125,8 +126,8 @@ theorem geodesicLine_rotation_pi_div_two (t : ℝ) :
   rw [Complex.ext_iff]
   simp [Real.exp_neg, Real.exp_ne_zero]
 
-/-- The geodesic line of the identity is the imaginary axis. -/
-@[simp]
+/-- The geodesic line of the identity is the imaginary axis. The simp-normal form is
+`exists_geodesicLine_one_eq_iff`, since `simp` unfolds `Set.range` membership. -/
 theorem mem_range_geodesicLine_one_iff {u : ℍ} : u ∈ Set.range (geodesicLine 1) ↔ u.re = 0 := by
   constructor
   · rintro ⟨t, rfl⟩
@@ -136,6 +137,12 @@ theorem mem_range_geodesicLine_one_iff {u : ℍ} : u ∈ Set.range (geodesicLine
     ext
     rw [geodesicLine_one_apply, UpperHalfPlane.coe_mk, Complex.ext_iff]
     simp [coe_re, coe_im, hu, Real.exp_log u.im_pos]
+
+/-- `mem_range_geodesicLine_one_iff` in simp-normal form: a point is on the geodesic line of the
+identity exactly when it is on the imaginary axis. -/
+@[simp]
+theorem exists_geodesicLine_one_eq_iff {u : ℍ} : (∃ t, geodesicLine 1 t = u) ↔ u.re = 0 :=
+  mem_range_geodesicLine_one_iff
 
 /-- Any two points `z`, `w` lie on a common geodesic line, `z` at parameter `0` and `w` at a
 nonnegative parameter; the parameter is identified as `dist z w` in
