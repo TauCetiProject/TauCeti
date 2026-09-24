@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.Data.Matrix.Basic
-public import Mathlib.Data.Nat.Choose.Lucas
-public import Mathlib.GroupTheory.FreeGroup.Reduce
-public import Mathlib.GroupTheory.PGroup
+public import TauCeti.GroupTheory.FreeGroup.Syllables
+public import TauCeti.LinearAlgebra.Matrix.UnitriangularP
+public import TauCeti.NumberTheory.Binomial.PadicVal
 public import Mathlib.GroupTheory.ResiduallyFinite
-public import Mathlib.LinearAlgebra.Matrix.CharP
-public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 
 /-!
 # Free groups are residually `p`
@@ -28,18 +24,8 @@ of free groups as a special case.
   lies outside some normal subgroup of finite index whose quotient is a `p`-group.
 * `FreeGroup.instResiduallyFinite`: free groups are residually finite.
 
-## Implementation notes
-
-Write a nontrivial reduced element as a product of syllables `x₁ ^ e₁ ⋯ x_k ^ e_k`, with nonzero
-exponents and consecutive generators distinct, and put `tᵢ = p ^ v_p(eᵢ)`. Spell out the word
-`x₁ ^ t₁ ⋯ x_k ^ t_k` in positions `1, …, D`, and let the generator `x` act on `(ZMod p) ^ (D + 1)`
-by `1 + Nₓ`, where `Nₓ` is the shift matrix with an entry `1` at `(s - 1, s)` for each position `s`
-spelled with `x`. These matrices are upper unitriangular, and the upper unitriangular matrices
-over `ZMod p` form a finite `p`-group. The entry of `(1 + Nₓ) ^ n` at `(a, b)` is `n.choose (b - a)`
-when all positions in `(a, b]` are spelled with `x`, and `0` otherwise. Tracking the first row
-syllable by syllable, the entry of the image of the element at `(0, D)` is a product of binomial
-coefficients `n.choose (p ^ v_p(n))`, none of which vanishes modulo `p` by Lucas' theorem; so the
-image is not the identity. This is a matrix form of the Magnus embedding reduced modulo `p`.
+The proof uses finite upper unitriangular representations over `ZMod p`, in the spirit of the
+Magnus embedding reduced modulo `p`.
 
 ## References
 
@@ -56,66 +42,9 @@ open Matrix
 
 namespace FreeGroup
 
+open TauCeti.FreeGroup TauCeti.Matrix
+
 variable {X : Type*}
-
-section Syllables
-
-/-- The product `x₁ ^ e₁ ⋯ x_k ^ e_k` of a list of syllables. -/
-private def syllableProd (s : List (X × ℤ)) : FreeGroup X :=
-  (s.map fun a ↦ of a.1 ^ a.2).prod
-
-@[simp]
-private theorem syllableProd_nil : syllableProd ([] : List (X × ℤ)) = 1 := rfl
-
-@[simp]
-private theorem syllableProd_cons (a : X × ℤ) (s : List (X × ℤ)) :
-    syllableProd (a :: s) = of a.1 ^ a.2 * syllableProd s := rfl
-
-/-- A syllable list is normal when its exponents are nonzero and consecutive generators are
-distinct. -/
-private def IsSyllableNormal (s : List (X × ℤ)) : Prop :=
-  (∀ a ∈ s, a.2 ≠ 0) ∧ s.IsChain fun a b ↦ a.1 ≠ b.1
-
-/-- Every element of a free group is the product of a normal syllable list. -/
-private theorem exists_isSyllableNormal (w : FreeGroup X) :
-    ∃ s, IsSyllableNormal s ∧ syllableProd s = w := by
-  classical
-  rw [← mk_toWord (x := w)]
-  induction w.toWord with
-  | nil => exact ⟨[], ⟨by simp, .nil⟩, rfl⟩
-  | cons a L ih =>
-    obtain ⟨x, b⟩ := a
-    obtain ⟨s, ⟨hs0, hsc⟩, hs⟩ := ih
-    set ε : ℤ := if b then 1 else -1 with hε
-    have hε0 : ε ≠ 0 := by rw [hε]; split <;> simp
-    have hmk : mk ((x, b) :: L) = of x ^ ε * mk L := by
-      rw [← List.singleton_append, ← mul_mk]
-      cases b <;> simp [hε, of, inv_mk, invRev]
-    rw [hmk, ← hs]
-    match s, hs0, hsc with
-    | [], _, _ => exact ⟨[(x, ε)], ⟨by simpa using hε0, .singleton _⟩, by simp⟩
-    | (y, f) :: s', hs0, hsc =>
-      by_cases hyx : y = x
-      · subst hyx
-        by_cases hf : ε + f = 0
-        · refine ⟨s', ⟨fun a ha ↦ hs0 a (List.mem_cons_of_mem _ ha), hsc.tail⟩, ?_⟩
-          rw [syllableProd_cons, ← mul_assoc, ← zpow_add, hf, zpow_zero, one_mul]
-        · refine ⟨(y, ε + f) :: s', ⟨?_, ?_⟩, ?_⟩
-          · intro a ha
-            rcases List.mem_cons.mp ha with rfl | ha
-            · exact hf
-            · exact hs0 a (List.mem_cons_of_mem _ ha)
-          · cases s' with
-            | nil => exact .singleton _
-            | cons c s'' => exact .cons_cons (List.isChain_cons_cons.mp hsc).1 hsc.tail
-          · simp [mul_assoc, zpow_add]
-      · refine ⟨(x, ε) :: (y, f) :: s', ⟨?_, .cons_cons (Ne.symm hyx) hsc⟩, by simp⟩
-        intro a ha
-        rcases List.mem_cons.mp ha with rfl | ha
-        · exact hε0
-        · exact hs0 a ha
-
-end Syllables
 
 section Matrices
 
@@ -194,52 +123,8 @@ private theorem one_add_shift_pow_apply (x : X) (n : ℕ) (a b : Fin (D + 1)) :
       rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, ite_self]
   · exact Finset.sum_eq_zero fun j _ ↦ ite_eq_right fun h' ↦ h ⟨by omega, h'.2⟩
 
-omit [DecidableEq X] in
-/-- A strictly upper triangular matrix raised to the power `j` is supported on entries `(a, b)`
-with `a + j ≤ b`. -/
-private theorem pow_apply_ne_zero_le {R : Type*} [CommRing R]
-    {N : Matrix (Fin (D + 1)) (Fin (D + 1)) R} (hN : ∀ a b, b ≤ a → N a b = 0) (j : ℕ)
-    (a b : Fin (D + 1)) (h : (N ^ j) a b ≠ 0) : (a : ℕ) + j ≤ b := by
-  induction j generalizing b with
-  | zero =>
-    rw [pow_zero, Matrix.one_apply] at h
-    split_ifs at h with hab
-    · subst hab; simp
-    · exact absurd rfl h
-  | succ j ih =>
-    rw [pow_succ, Matrix.mul_apply] at h
-    obtain ⟨c, -, hc⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
-    have h₁ := ih c (left_ne_zero_of_mul hc)
-    have h₂ : c < b := lt_of_not_ge fun hbc ↦ right_ne_zero_of_mul hc (hN c b hbc)
-    have : (c : ℕ) < b := h₂
-    omega
-
-omit [DecidableEq X] in
-variable (p) in
-/-- Upper unitriangularity of a square matrix over `ZMod p`. -/
-private def IsUnitri (M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) : Prop :=
-  ∀ a b, b ≤ a → M a b = (1 : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) a b
-
-omit [DecidableEq X] in
-private theorem IsUnitri.mul {M M' : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) (hM' : IsUnitri p D M') : IsUnitri p D (M * M') := by
-  intro a b hab
-  rw [Matrix.mul_apply, Fintype.sum_eq_single a]
-  · rw [hM a a le_rfl, hM' a b hab, Matrix.one_apply_eq, one_mul]
-  · intro c hca
-    rcases lt_or_gt_of_ne hca with h | h
-    · rw [hM a c h.le, Matrix.one_apply_ne (Ne.symm hca), zero_mul]
-    · rw [hM' c b (hab.trans h.le), Matrix.one_apply_ne (ne_of_gt (lt_of_le_of_lt hab h)),
-        mul_zero]
-
-omit [DecidableEq X] in
-private theorem IsUnitri.pow {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) (k : ℕ) : IsUnitri p D (M ^ k) := by
-  induction k with
-  | zero => exact fun _ _ _ ↦ rfl
-  | succ k ih => rw [pow_succ]; exact ih.mul D hM
-
 private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x) := by
+  unfold IsUnitri
   intro a b hab
   have : ¬ ((b : ℕ) = a + 1 ∧ ℓ b = some x) := fun h ↦ by
     have : (b : ℕ) ≤ a := hab
@@ -248,51 +133,17 @@ private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x
 
 variable [hp : Fact p.Prime]
 
-omit [DecidableEq X] in
-/-- An upper unitriangular matrix over `ZMod p` of size `D + 1` has order dividing
-`p ^ (D + 1)`. -/
-private theorem IsUnitri.pow_eq_one {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) : M ^ p ^ (D + 1) = 1 := by
-  have hN : ∀ a b, b ≤ a → (M - 1) a b = 0 := fun a b hab ↦ by
-    rw [Matrix.sub_apply, hM a b hab, sub_self]
-  have hnil : (M - 1) ^ (D + 1) = 0 := by
-    ext a b
-    by_contra h
-    have := pow_apply_ne_zero_le D hN (D + 1) a b h
-    omega
-  calc M ^ p ^ (D + 1) = (1 + (M - 1)) ^ p ^ (D + 1) := by rw [add_sub_cancel]
-    _ = 1 := by
-      rw [add_pow_char_pow_of_commute p (D + 1) (Commute.one_left _), one_pow,
-        pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hnil, add_zero]
-
-omit [DecidableEq X] in
-/-- The subgroup of upper unitriangular matrices over `ZMod p`. -/
-private def unitriangular : Subgroup (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ where
-  carrier := {u | IsUnitri p D u}
-  one_mem' := fun _ _ _ ↦ rfl
-  mul_mem' {u v} hu hv := by
-    rw [Set.mem_ofPred, Units.val_mul]
-    exact hu.mul D hv
-  inv_mem' {u} hu := by
-    have hpow : u ^ p ^ (D + 1) = 1 := Units.ext (by
-      rw [Units.val_pow_eq_pow_val, Units.val_one]; exact hu.pow_eq_one D)
-    have hinv : u⁻¹ = u ^ (p ^ (D + 1) - 1) := by
-      rw [eq_comm, ← mul_eq_one_iff_eq_inv, ← pow_succ,
-        Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.out.pos), hpow]
-    rw [hinv, Set.mem_ofPred, Units.val_pow_eq_pow_val]
-    exact hu.pow D _
-
-omit [DecidableEq X] in
-private theorem isPGroup_unitriangular : IsPGroup p (unitriangular (p := p) D) := fun u ↦
-  ⟨D + 1, Subtype.ext (Units.ext (by
-    rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact IsUnitri.pow_eq_one D u.2))⟩
-
 /-- The generator `x` as the unitriangular matrix `1 + Nₓ`. -/
 private def generator (x : X) : unitriangular (p := p) D :=
   ⟨Units.ofPowEqOne _ (p ^ (D + 1)) ((isUnitri_one_add_shift ℓ D x).pow_eq_one D)
       (pow_pos hp.out.pos _).ne',
     isUnitri_one_add_shift ℓ D x⟩
+
+private theorem generator_val (x : X) :
+    (((generator (p := p) ℓ D x : unitriangular (p := p) D) :
+        (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
+        Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) = 1 + shift ℓ D x := by
+  simp only [generator, Units.val_ofPowEqOne]
 
 /-- The representation of the free group by upper unitriangular matrices. -/
 private def rep : FreeGroup X →* unitriangular (p := p) D :=
@@ -310,38 +161,10 @@ private theorem coe_rep_of_zpow (x : X) (e : ℤ) :
     exact IsUnitri.pow_eq_one D (generator ℓ D x).2))
   rw [rep, map_zpow, lift_apply_of, zpow_eq_zpow_emod' e hpow,
     ← Int.toNat_of_nonneg (Int.emod_nonneg _ (Nat.cast_ne_zero.2 (pow_pos hp.out.pos _).ne')),
-    zpow_natCast, Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-  rfl
+    zpow_natCast, Subgroup.coe_pow, Units.val_pow_eq_pow_val, generator_val]
+  congr 1
 
 end Matrices
-
-section Binomial
-
-variable {p : ℕ} [hp : Fact p.Prime]
-
-/-- If `n ≡ e` modulo a power of `p` beyond `v_p(e)`, then `n.choose (p ^ v_p(e))` is nonzero
-modulo `p`. -/
-private theorem choose_emod_ne_zero {e : ℤ} (he : e ≠ 0) {K : ℕ} (hK : padicValInt p e < K) :
-    (((e % (p ^ K : ℕ)).toNat.choose (p ^ padicValInt p e) : ℕ) : ZMod p) ≠ 0 := by
-  set v := padicValInt p e
-  set n := (e % (p ^ K : ℕ)).toNat
-  have hn : (n : ℤ) = e % (p ^ K : ℕ) :=
-    Int.toNat_of_nonneg (Int.emod_nonneg _ (Nat.cast_ne_zero.2 (pow_pos hp.out.pos _).ne'))
-  have hdvd : ∀ k ≤ K, ((p ^ k : ℕ) ∣ n ↔ (p : ℤ) ^ k ∣ e) := fun k hk ↦ by
-    rw [← Int.natCast_dvd_natCast, hn, Int.dvd_iff_emod_eq_zero, Int.dvd_iff_emod_eq_zero,
-      Int.emod_emod_of_dvd _ (Int.natCast_dvd_natCast.2 (Nat.pow_dvd_pow p hk))]
-    simp
-  obtain ⟨m, hm⟩ := (hdvd v hK.le).2 (padicValInt_dvd e)
-  have hpm : ¬ p ∣ m := fun ⟨c, hc⟩ ↦ by
-    have := (hdvd (v + 1) hK).1 ⟨c, by rw [hm, hc, pow_succ, mul_assoc]⟩
-    rw [padicValInt_dvd_iff] at this
-    omega
-  have hmod := Choose.choose_pow_mul_pow_mul_modEq_choose_nat (p := p) (k := v) (a := m) (b := 1)
-  rw [mul_one, Nat.choose_one_right] at hmod
-  rw [hm, (ZMod.natCast_eq_natCast_iff _ _ _).2 hmod, Ne, ZMod.natCast_eq_zero_iff]
-  exact hpm
-
-end Binomial
 
 section Tracking
 
@@ -443,7 +266,8 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
     simpa using hR
   | cons a s ih =>
     obtain ⟨x, e⟩ := a
-    obtain ⟨hs0, hsc⟩ := hs
+    obtain ⟨hs0, hsc⟩ := (show (∀ a ∈ (x, e) :: s, a.2 ≠ 0) ∧
+      ((x, e) :: s).IsChain (fun a b ↦ a.1 ≠ b.1) from hs)
     obtain ⟨hrun, hL'⟩ := hL
     have hLt : L + weight p e ≤ D := hL'.le
     have hrunx : ℓ (L + weight p e) = some x :=
@@ -470,7 +294,7 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
       dsimp only at hb ⊢
       rw [coe_rep_of_zpow, one_add_shift_pow_apply, ite_eq_left ⟨by omega, by rwa [ha, hb]⟩,
         show (b : ℕ) - a = p ^ padicValInt p e by rw [ha, hb]; simp [weight]]
-      refine choose_emod_ne_zero (e := e) (hs0 _ List.mem_cons_self) ?_
+      refine TauCeti.choose_emod_ne_zero (e := e) (hs0 _ List.mem_cons_self) ?_
       have := Nat.lt_pow_self hp.out.one_lt (n := padicValInt p e)
       have : weight p e ≤ D := by omega
       simp only [weight] at this
@@ -489,6 +313,14 @@ end Tracking
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
+/-
+For a nontrivial normal syllable word `x₁ ^ e₁ ⋯ x_k ^ e_k`, assign syllable `i` a run of
+`p ^ v_p(eᵢ)` positions spelled with `xᵢ`. The generator `x` acts by `1 + shift ℓ D x`.
+Its `n`th power has entry `n.choose (b - a)` when `a ≤ b` and `(a, b]` is spelled with `x`,
+and zero otherwise. Following the first row through successive syllables gives a nonzero
+entry at the end of the word by Lucas' theorem.
+-/
+
 /-- **Free groups are residually `p`.** A nontrivial element of a free group lies outside some
 normal subgroup of finite index whose quotient is a `p`-group. -/
 theorem exists_normal_isPGroup_quotient_notMem {w : FreeGroup X} (hw : w ≠ 1) :
@@ -496,7 +328,7 @@ theorem exists_normal_isPGroup_quotient_notMem {w : FreeGroup X} (hw : w ≠ 1) 
       N.FiniteIndex ∧ IsPGroup p (FreeGroup X ⧸ N) ∧ w ∉ N := by
   classical
   obtain ⟨s, hs, rfl⟩ := exists_isSyllableNormal w
-  have hs₀ : s ≠ [] := by rintro rfl; exact hw rfl
+  have hs₀ : s ≠ [] := by rintro rfl; exact hw (by simp)
   let D := totalWeight p s
   let ρ := rep (p := p) (letters p s) D
   refine ⟨ρ.ker, inferInstance, inferInstance,
