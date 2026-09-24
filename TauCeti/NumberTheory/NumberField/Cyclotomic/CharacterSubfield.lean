@@ -22,6 +22,9 @@ The result combines Mathlib's character-subgroup correspondence
 
 ## Main results
 
+* `IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar_symm_apply`: the field cut out
+  by a character subgroup is the fixed field of the automorphisms on which every character in the
+  subgroup is trivial.
 * `Subgroup.characterSubfield_le_iff_dirichletConductor_dvd`: the field cut out by a character
   subgroup lies in a lower cyclotomic field exactly when the subgroup conductor divides the lower
   level.
@@ -31,13 +34,26 @@ public section
 
 open DirichletCharacter IsCyclotomicExtension
 
-namespace Subgroup
-
 variable {n m : ℕ} [NeZero n]
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
   [IsAbelianGalois ℚ K]
 variable {R : Type*} [CommRing R]
   [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
+
+namespace IsCyclotomicExtension.Rat
+
+/-- The intermediate field attached to a subgroup `Y` of Dirichlet characters is the fixed field
+of the automorphisms `σ` with `χ (galEquivZMod n K σ) = 1` for every `χ ∈ Y`; membership in that
+subgroup is `mem_subgroupGalEquivSubgroupChar_symm_iff`. -/
+theorem intermediateFieldEquivSubgroupChar_symm_apply (Y : Subgroup (DirichletCharacter R n)) :
+    (intermediateFieldEquivSubgroupChar n K R).symm Y =
+      IntermediateField.fixedField
+        ((subgroupGalEquivSubgroupChar n K R).symm (OrderDual.toDual Y)) :=
+  (rfl)
+
+end IsCyclotomicExtension.Rat
+
+namespace Subgroup
 
 /-- A character subfield of the `n`-th cyclotomic field lies in its cyclotomic subfield of level
 `m` exactly when every character in the group factors through level `m`, equivalently when the
