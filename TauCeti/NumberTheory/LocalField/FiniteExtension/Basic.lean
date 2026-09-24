@@ -57,10 +57,6 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
-* `AlgEquiv.normalizedValuation_eq`: the corresponding invariance of the normalized
-  valuation on units.
-* `AlgEquiv.normalizedValuationWithZero_eq`: invariance of the zero-inclusive normalized
-  valuation.
 * `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
@@ -83,7 +79,7 @@ from `FiniteDimensional.proper`.
 public section
 noncomputable section
 
-open ValuativeRel IsNonarchimedeanLocalField
+open ValuativeRel
 
 namespace TauCeti
 
@@ -365,31 +361,6 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
   have h : ‖σ x‖ = ‖x‖ := (spectralNorm_eq_of_equiv σ x).symm
   exact le_antisymm ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.le)
     ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.ge)
-
-/-- A `K`-automorphism of a finite local-field extension preserves its normalized valuation. -/
-@[simp]
-theorem _root_.AlgEquiv.normalizedValuation_eq [ValuativeRel M] [ValuativeExtension K M]
-    [TopologicalSpace M] [IsNonarchimedeanLocalField M] (σ : M ≃ₐ[K] M) (x : Mˣ) :
-    normalizedValuation M (Units.map σ x) = normalizedValuation M x := by
-  apply Multiplicative.toAdd.injective
-  simp only [toAdd_normalizedValuation_eq_neg_log, Units.coe_map]
-  exact congrArg (fun v => -WithZero.log (valueGroupWithZeroIsoInt M v))
-    (σ.valuation_eq (x : M))
-
-/-- A `K`-automorphism of a finite local-field extension preserves its normalized valuation,
-including at zero. -/
-@[simp]
-theorem _root_.AlgEquiv.normalizedValuationWithZero_eq [ValuativeRel M] [ValuativeExtension K M]
-    [TopologicalSpace M] [IsNonarchimedeanLocalField M] (σ : M ≃ₐ[K] M) (x : M) :
-    normalizedValuationWithZero M (σ x) = normalizedValuationWithZero M x := by
-  by_cases hx : x = 0
-  · subst x
-    simp
-  · let u : Mˣ := Units.mk0 x hx
-    have hσ : σ x = (Units.map (σ : M →* M) u : M) := by simp [u]
-    have hu : (u : M) = x := by simp [u]
-    rw [hσ, ← hu, normalizedValuationWithZero_coe,
-      normalizedValuationWithZero_coe, σ.normalizedValuation_eq]
 
 end Uniqueness
 
