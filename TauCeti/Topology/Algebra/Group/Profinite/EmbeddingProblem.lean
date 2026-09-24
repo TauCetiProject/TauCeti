@@ -88,7 +88,7 @@ theorem IsSolution.isOpen_ker {β : G →* P.E} (hβ : P.IsSolution β) : IsOpen
   hβ.1
 
 /-- A solution of a finite embedding problem lifts `π` through `α`. -/
-@[simp] theorem IsSolution.comp_eq {β : G →* P.E} (hβ : P.IsSolution β) : P.α.comp β = P.π :=
+theorem IsSolution.comp_eq {β : G →* P.E} (hβ : P.IsSolution β) : P.α.comp β = P.π :=
   (isSolution_iff.mp hβ).2
 
 end FiniteEmbeddingProblem
