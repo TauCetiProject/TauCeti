@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.AddSubgroup.RationalSpan
 public import TauCeti.Data.Matrix.DotProduct
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -15,8 +14,7 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Theorems of the alternative for nonnegative vectors
 
 This file proves the classical theorems of the alternative of Gordan, Stiemke and Tucker over an
-arbitrary linearly ordered field and draws a consequence for subgroups of the integer lattice
-`ι → ℤ`.
+arbitrary linearly ordered field.
 
 For a finite family of vectors `a j` in a vector space over a linearly ordered field `K`,
 *Gordan's theorem* says that either some linear functional is strictly positive on every `a j`,
@@ -28,21 +26,12 @@ lemma*, which for each index `k` produces a nonnegative relation `x` and a funct
 nonnegative on the family, one of them strictly positive at `k`. Unlike Mathlib's
 separation-based Farkas lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
 
-For a subgroup `P` of `ι → ℤ` with `ι` finite, the condition that `P` contains no nonzero
-nonnegative vector is equivalent to the existence of positive integer weights orthogonal to `P`.
-This is an integer-lattice form of Stiemke's theorem. The equivalent finiteness condition for
+The integer-lattice form of Stiemke's theorem is proved in
+`TauCeti.Algebra.Group.AddSubgroup.PositiveWeights`. The equivalent finiteness condition for
 nonnegative vectors in cosets is proved in `TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset`.
 
-This is the combinatorial content of the admissibility lemmas of Heegaard Floer theory. For a
-pointed Heegaard diagram, `ι` indexes the regions of the surface cut along the attaching curves,
-a domain is a vector `ι → ℤ` of multiplicities, and `P` is the group of periodic domains (which
-avoid the basepoint). Weak admissibility, in its form for all `Spin^c` structures at once, asks
-that every nonzero periodic domain have both positive and negative multiplicities. Since `P` is
-closed under negation, this is exactly the hypothesis of the theorems below. The weights provide
-positive target areas for the regions, with zero signed area for every periodic domain.
-Applying the finiteness theorem to Whitney disks requires a separate geometric correspondence
-between disk classes and their domain vectors, including control of the fibers of that map.
-The coset theorem counts nonnegative domain vectors in a coset of `P`.
+These results supply the field-level alternative needed for the integer-lattice admissibility
+lemmas of Heegaard Floer theory.
 
 ## Main declarations
 
@@ -50,8 +39,6 @@ The coset theorem counts nonnegative domain vectors in a coset of `P`.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
 * `TauCeti.submodule_exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
-* `TauCeti.addSubgroup_exists_pos_dotProduct_eq_zero_iff`: a subgroup of `ι → ℤ` has no nonzero
-  nonnegative element iff it is orthogonal to a vector of positive integer weights.
 
 ## References
 
@@ -194,61 +181,4 @@ theorem submodule_exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι → K))
     simpa [dotProduct, mul_comm] using this
 
 end Field
-
-section Int
-
-variable {ι : Type*}
-
-/-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when some vector of
-strictly positive integer weights is orthogonal to all of `P`.
-
-For the group of periodic domains of a pointed Heegaard diagram, the weights are the areas of the
-regions for an area form in which every periodic domain has signed area zero; compare
-Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed three-manifolds*,
-Lemma 4.12. -/
-theorem addSubgroup_exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgroup (ι → ℤ)) :
-    (∃ c : ι → ℤ, (∀ i, 0 < c i) ∧ ∀ p ∈ P, c ⬝ᵥ p = 0) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
-  constructor
-  · rintro ⟨c, hc, hP⟩ p hp hp0
-    exact (dotProduct_eq_zero_iff_of_pos hc hp0).1 (hP p hp)
-  · intro h
-    set S := Submodule.span ℚ ((fun p : ι → ℤ => ((↑) : ℤ → ℚ) ∘ p) '' P)
-    -- The rational span of `P` has no nonzero nonnegative vector either.
-    have hS : ∀ x ∈ S, 0 ≤ x → x = 0 := by
-      intro x hx hx0
-      obtain ⟨N, hN, p, hp, hpx⟩ := AddSubgroup.exists_nat_mul_eq_intCast_of_mem_span hx
-      have hp0 : p = 0 := h p hp fun i => by
-        have : (0 : ℚ) ≤ p i := by
-          rw [hpx]
-          exact mul_nonneg (Nat.cast_nonneg N) (hx0 i)
-        exact_mod_cast this
-      funext i
-      have := hpx i
-      rw [hp0, Pi.zero_apply, Int.cast_zero, eq_comm, mul_eq_zero] at this
-      exact this.resolve_left (Nat.cast_ne_zero.2 hN.ne')
-    obtain ⟨c, hc, hcS⟩ := (submodule_exists_pos_dotProduct_eq_zero_iff S).2 hS
-    -- Clear the denominators of the rational weights.
-    set N : ℕ := ∏ i, (c i).den
-    have hN : 0 < N := Finset.prod_pos fun i _ => (c i).den_pos
-    have hint : ∀ i, ∃ z : ℤ, (z : ℚ) = N * c i := fun i => by
-      obtain ⟨m, hm⟩ : (c i).den ∣ N := Finset.dvd_prod_of_mem _ (Finset.mem_univ i)
-      refine ⟨m * (c i).num, ?_⟩
-      rw [hm]
-      push_cast
-      rw [← Rat.mul_den_eq_num]
-      ring
-    choose e he using hint
-    refine ⟨e, fun i => ?_, fun p hp => ?_⟩
-    · have : (0 : ℚ) < e i := by
-        rw [he]
-        exact mul_pos (Nat.cast_pos.2 hN) (hc i)
-      exact_mod_cast this
-    · have hcp := hcS _ (Submodule.subset_span ⟨p, hp, rfl⟩)
-      have : ((e ⬝ᵥ p : ℤ) : ℚ) = N * (c ⬝ᵥ (((↑) : ℤ → ℚ) ∘ p)) := by
-        simp only [dotProduct, Int.cast_sum, Int.cast_mul, he, Finset.mul_sum,
-          Function.comp_apply, mul_assoc]
-      rw [hcp, mul_zero] at this
-      exact_mod_cast this
-
-end Int
 end TauCeti
