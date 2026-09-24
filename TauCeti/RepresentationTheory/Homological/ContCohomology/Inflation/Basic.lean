@@ -130,13 +130,19 @@ variable (G : Type u) [Group G]
   (M : Type v) [AddCommGroup M] [DistribMulAction G M]
   (N : Subgroup G) [N.Normal]
 
+/-- The coefficient inclusion is compatible with the quotient map, without any topology. -/
+theorem subtype_quotientGroupMk_smul (g : G)
+    (m : FixedPoints.addSubgroup N M) :
+    (FixedPoints.addSubgroup N M).subtype (QuotientGroup.mk' N g • m) =
+      g • (FixedPoints.addSubgroup N M).subtype m := by
+  simp only [QuotientGroup.mk'_apply, AddSubgroup.coe_subtype,
+    coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
+
 /-- **Inflation in degree zero**: inclusion of the `G ⧸ N`-invariants of `M ^ N` into the
 `G`-invariants of `M`. -/
 def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
   explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M) (QuotientGroup.mk' N)
-    (FixedPoints.addSubgroup N M).subtype fun g m => by
-      simp only [QuotientGroup.mk'_apply, AddSubgroup.coe_subtype,
-        coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
+    (FixedPoints.addSubgroup N M).subtype (subtype_quotientGroupMk_smul G M N)
 
 /-- Degree-zero inflation does not change the underlying coefficient. -/
 @[simp]
@@ -149,9 +155,7 @@ theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 theorem explicitInfl0_eq_explicitMap0 :
     explicitInfl0 G M N =
       explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M) (QuotientGroup.mk' N)
-        (FixedPoints.addSubgroup N M).subtype fun g m => by
-          simp only [QuotientGroup.mk'_apply, AddSubgroup.coe_subtype,
-            coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup] := by
+        (FixedPoints.addSubgroup N M).subtype (subtype_quotientGroupMk_smul G M N) := by
   rw [explicitInfl0]
 
 /-- Degree-zero inflation is injective. In fact it is an equivalence, as packaged by

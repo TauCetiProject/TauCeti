@@ -66,6 +66,8 @@ theorem ofDiscreteModulePair_quotientMk_subtype :
       (TopRep.resFunctor (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
           (ofDiscreteModuleQuotient G M N) ≫
         TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N :=
+  -- Evaluating the restricted morphism and the invariants inclusion reduces to the
+  -- underlying coefficient of `ofDiscreteModuleQuotient`.
   ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun m ↦ ofDiscreteModuleQuotient_apply G M N m
 
 variable [IsTopologicalGroup G]
@@ -103,6 +105,12 @@ theorem explicitH0Iso_infl [IsTopologicalAddGroup M]
       (explicitH0IsoContinuousCohomology G M).hom (explicitInfl0 G M N x) := by
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl0_eq_explicitMap0]
+  -- The bundled continuous quotient map has `QuotientGroup.mk'` as its underlying monoid hom.
+  -- Expose this equality in the dependent compatible-pair argument.
+  change _ = (explicitH0IsoContinuousCohomology G M).hom
+    (explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M)
+      (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+      (subtype_quotientMk_smul G M N) x)
   exact explicitH0Iso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
     (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
     (subtype_quotientMk_smul G M N) x
