@@ -16,7 +16,10 @@ The `m`-th Tate twist of a pure Hodge structure of weight `n` has weight `n - 2m
 filtration `F^p(V(m)) = F^{p+m}(V)`. The underlying lattice and complex vector space are unchanged:
 this presents `V ⊗ ℤ(m)` through the canonical identifications `V ⊗_ℤ ℤ ≃ V` and
 `V_ℂ ⊗_ℂ ℂ ≃ V_ℂ`. Thus the construction works directly with the abstract base-change
-interface and introduces no choice of tensor-product equivalence.
+interface and introduces no choice of tensor-product equivalence. That it agrees with the
+tensor product `TauCeti.Hodge.HodgeStructureOn.tensorProduct` with `ℤ(m)` along Mathlib's right
+unitor is `TauCeti.Hodge.HodgeStructureOn.tateTwist_F_eq_comap`, in
+`TauCeti.Geometry.Hodge.Tate.TensorProduct`.
 
 The shift carries Hodge components and Hodge numbers by the same translation. It also acts on
 morphisms. A polarizing form for `V` polarizes `V(m)` unchanged: subtracting the even integer `2m`
