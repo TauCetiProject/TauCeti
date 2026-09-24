@@ -101,7 +101,8 @@ theorem ofRayClassCharacter_apply (χ : RayClassCharacter 𝔪) (c : IdeleClassG
 with `rayClassQuotient 𝔪`. -/
 @[simp]
 theorem toMonoidHom_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
-    (ofRayClassCharacter 𝔪 χ).toMonoidHom = χ.comp (rayClassQuotient 𝔪) :=
+    (↑(ofRayClassCharacter 𝔪 χ) :
+      IdeleClassGroup (𝓞 K) K →* ℂˣ) = χ.comp (rayClassQuotient 𝔪) :=
   (rfl)
 
 /-- **Pullback of ray class characters is injective**, because `rayClassQuotient 𝔪` is
