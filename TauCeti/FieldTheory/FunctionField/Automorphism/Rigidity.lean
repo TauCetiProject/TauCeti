@@ -17,11 +17,6 @@ rigidity statement behind the finiteness of `Aut(F / k)` in genus at least two: 
 group acting on a finite set of at least `2g + 3` rational places embeds into the permutations
 of that set.
 
-The proof uses the general residue calculation that an automorphism fixing a rational place has
-the same residue on regular functions, and the resulting Riemann–Roch-space rigidity lemma.
-Applied to prescribed-pole functions, these show that an automorphism fixing sufficiently many
-rational places is the identity.
-
 ## Main results
 
 * `TauCeti.eq_one_of_two_mul_genus_add_three_le_card`: an automorphism of `F / k` fixing at
