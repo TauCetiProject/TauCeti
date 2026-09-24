@@ -54,7 +54,6 @@ theorem typeDSplitBasis_mem_spinPlus_univ_erase_last_iff_odd {n : ℕ} (hn : 1 �
   rw [basis_mem_spinPlus_iff]
   have hlast : (⟨n - 1, by omega⟩ : Fin n) ∈ (Finset.univ : Finset (Fin n)) := by simp
   rw [Finset.card_erase_of_mem hlast, Finset.card_univ, Fintype.card_fin]
-  change Even (n - 1) ↔ Odd n
   rw [Nat.even_sub (by omega)]
   simp
 
@@ -67,7 +66,6 @@ theorem typeDSplitBasis_mem_spinMinus_univ_erase_last_iff_even {n : ℕ} (hn : 1
   rw [basis_mem_spinMinus_iff]
   have hlast : (⟨n - 1, by omega⟩ : Fin n) ∈ (Finset.univ : Finset (Fin n)) := by simp
   rw [Finset.card_erase_of_mem hlast, Finset.card_univ, Fintype.card_fin]
-  change Odd (n - 1) ↔ Even n
   rw [Nat.odd_sub (by omega)]
   simp
 
