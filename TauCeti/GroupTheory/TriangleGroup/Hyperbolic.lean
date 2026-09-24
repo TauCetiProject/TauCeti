@@ -133,24 +133,6 @@ theorem pslRep_commutator_x_y :
         SL(2, ℝ)) : PSL(2, ℝ)) := by
   simp [commutatorElement_def]
 
-/-- For a hyperbolic parameter triple there is a nonzero `t` with
-`cosh t * (sin θ₁ * sin θ₂) = cos θ₁ * cos θ₂ + cos θ₃`, namely `t = arcosh κ` in the notation of
-the module docstring. -/
-private theorem exists_cosh_mul_eq (ha : 2 ≤ a) (hb : 2 ≤ b)
-    (h : (a : ℝ)⁻¹ + (b : ℝ)⁻¹ + (c : ℝ)⁻¹ < 1) :
-    ∃ t : ℝ, t ≠ 0 ∧ cosh t * (sin (π / a) * sin (π / b)) =
-      cos (π / a) * cos (π / b) + cos (π / c) := by
-  have hs : 0 < sin (π / a) * sin (π / b) :=
-    mul_pos (sin_pi_div_pos (Nat.one_lt_cast.2 ha)) (sin_pi_div_pos (Nat.one_lt_cast.2 hb))
-  have hκ := one_lt_cos_mul_cos_add_cos_div_sin_mul_sin (α := π / a) (β := π / b) (γ := π / c)
-    (div_pos pi_pos (Nat.cast_pos.2 (by omega))) (div_pos pi_pos (Nat.cast_pos.2 (by omega)))
-    (by positivity) (by
-      have := mul_lt_mul_of_pos_left h pi_pos
-      simp only [div_eq_mul_inv]
-      linarith)
-  refine ⟨arcosh _, (arcosh_pos hκ).ne', ?_⟩
-  rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
-
 /-- **Hyperbolic triangle groups have elements of infinite order.** If `1/a + 1/b + 1/c < 1` with
 `a, b, c` nonzero, then the commutator of the generators `x` and `y` of the triangle group
 `Δ(a, b, c)` has infinite order. The witness is a representation of `Δ(a, b, c)` in `PSL(2, ℝ)`
@@ -168,7 +150,14 @@ theorem not_isOfFinOrder_commutator_x_y_of_inv_add_inv_add_inv_lt_one {a b c : �
   have ha₂ := two_le_of_cast_inv_lt_one (α := ℝ) ha (by linarith)
   have hb₂ := two_le_of_cast_inv_lt_one (α := ℝ) hb (by linarith)
   have hc₂ := two_le_of_cast_inv_lt_one (α := ℝ) hc (by linarith)
-  obtain ⟨t, ht, hcosh⟩ := exists_cosh_mul_eq ha₂ hb₂ hR
+  obtain ⟨t, htpos, hcosh⟩ := exists_pos_cosh_mul_sin_mul_sin_eq
+    (α := π / a) (β := π / b) (γ := π / c)
+    (div_pos pi_pos (Nat.cast_pos.2 (by omega)))
+    (div_pos pi_pos (Nat.cast_pos.2 (by omega))) (by positivity) (by
+      have := mul_lt_mul_of_pos_left hR pi_pos
+      simp only [div_eq_mul_inv]
+      linarith)
+  have ht : t ≠ 0 := htpos.ne'
   intro hfin
   have hρ := (pslRep t ha₂ hb₂ hc₂ hcosh).isOfFinOrder hfin
   rw [pslRep_commutator_x_y] at hρ

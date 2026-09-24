@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Arcosh
 
 /-!
 # Trigonometric bounds for triangle angles
@@ -39,5 +40,17 @@ theorem one_lt_cos_mul_cos_add_cos_div_sin_mul_sin {α β γ : ℝ} (hα : 0 < �
   rw [cos_pi_sub, cos_add] at hcos
   rw [one_lt_div hs]
   linarith
+
+/-- Positive angles with sum less than `π` determine a positive hyperbolic scale `t` for which
+`cosh t * sin α * sin β = cos α * cos β + cos γ`. -/
+theorem exists_pos_cosh_mul_sin_mul_sin_eq {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < β)
+    (hγ : 0 ≤ γ) (h : α + β + γ < π) :
+    ∃ t : ℝ, 0 < t ∧ cosh t * (sin α * sin β) = cos α * cos β + cos γ := by
+  have hs : 0 < sin α * sin β :=
+    mul_pos (sin_pos_of_pos_of_lt_pi hα (by linarith))
+      (sin_pos_of_pos_of_lt_pi hβ (by linarith))
+  have hκ := one_lt_cos_mul_cos_add_cos_div_sin_mul_sin hα hβ hγ h
+  refine ⟨arcosh _, arcosh_pos hκ, ?_⟩
+  rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
 
 end TauCeti

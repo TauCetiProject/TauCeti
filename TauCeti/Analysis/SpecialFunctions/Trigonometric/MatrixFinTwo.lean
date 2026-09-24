@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -79,8 +80,7 @@ theorem sin_smul_pow_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet :
     have e₂ := hsin (n : ℝ)
     push_cast at e₁ e₂ ⊢
     -- Normalize the predecessor indices so the sine recurrence matches the casted goal.
-    rw [show (n : ℝ) + 1 + 1 - 1 = n + 1 by ring]
-    rw [show (n : ℝ) + 1 - 1 = n by ring] at e₁ ⊢
+    ring_nf at e₁ e₂ ⊢
     rw [e₁, e₂]
     module
 
@@ -98,29 +98,27 @@ theorem pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div {A : Matrix (Fin 2) (Fin 2
 
 namespace ProjectiveSpecialLinearGroup
 
+private theorem mk_pow_eq_one_of_trace_eq_two_mul_cos_pi_div {A : SL(2, ℝ)} {k : ℕ}
+    (hk : 2 ≤ k) (h : (A : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * cos (π / k)) :
+    (A : PSL(2, ℝ)) ^ k = 1 := by
+  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
+    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  exact .inr (Subtype.ext (by
+    rw [SpecialLinearGroup.coe_pow, SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one]
+    exact pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div A.det_coe hk h))
+
 /-- If a matrix of `SL(2, ℝ)` has trace `± 2 cos (π / k)` with `2 ≤ k`, then its class in
 `PSL(2, ℝ)` has `k`-th power `1`: the matrix itself, or its negative, has `k`-th power `-1`. The
 hypothesis is stated on the square of the trace, which depends only on the class in `PSL(2, ℝ)`. -/
 theorem mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq {A : SL(2, ℝ)} {k : ℕ} (hk : 2 ≤ k)
     (h : (A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 = (2 * cos (π / k)) ^ 2) :
     (A : PSL(2, ℝ)) ^ k = 1 := by
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   rcases sq_eq_sq_iff_eq_or_eq_neg.mp h with h | h
-  · exact .inr (Subtype.ext (by
-      rw [SpecialLinearGroup.coe_pow, SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one]
-      exact pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div A.det_coe hk h))
-  · -- The negative of `A` has trace `2 cos (π / k)`, and `(-A) ^ k = ± A ^ k`.
-    have hneg := pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div (A := -(A : Matrix _ _ ℝ))
-      (by simp [det_neg]) hk (by rw [trace_neg, h, neg_neg])
-    rcases k.even_or_odd with hk' | hk'
-    · rw [hk'.neg_pow] at hneg
-      exact .inr (Subtype.ext (by
-        rw [SpecialLinearGroup.coe_pow, SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one,
-          hneg]))
-    · rw [hk'.neg_pow, neg_inj] at hneg
-      exact .inl (Subtype.ext (by rw [SpecialLinearGroup.coe_pow, hneg,
-        SpecialLinearGroup.coe_one]))
+  · exact mk_pow_eq_one_of_trace_eq_two_mul_cos_pi_div hk h
+  · have hneg : ((-A : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
+        2 * cos (π / k) := by rw [SpecialLinearGroup.coe_neg, trace_neg, h, neg_neg]
+    simpa only [mk_neg] using
+      (mk_pow_eq_one_of_trace_eq_two_mul_cos_pi_div (A := -A) hk hneg)
 
 end ProjectiveSpecialLinearGroup
 

@@ -43,6 +43,17 @@ open scoped MatrixGroups
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
+variable {S : Type*} [CommRing S]
+
+/-- Negating a special linear matrix does not change its class in `PSL(2, S)`. -/
+theorem mk_neg (A : SL(2, S)) : ((-A : SL(2, S)) : PSL(2, S)) = A := by
+  rw [QuotientGroup.eq_iff_div_mem]
+  have h : (-A) / A = (-1 : SL(2, S)) := by
+    rw [← neg_one_mul A]
+    exact mul_div_cancel_right _ _
+  rw [h]
+  exact Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
+
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- A **hyperbolic element of `PSL(2, R)` has infinite order**: if a matrix of `SL(2, R)` has
