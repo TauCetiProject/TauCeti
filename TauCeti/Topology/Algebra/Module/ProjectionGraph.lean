@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Homeomorph.Lemmas
-public import Mathlib.LinearAlgebra.Projection
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 
 /-!
 # Graphs over the range of a projection
@@ -24,12 +24,6 @@ namespace ContinuousLinearMap
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A point in the range of an idempotent continuous linear map is fixed by that map. -/
-theorem IsIdempotentElem.apply_eq_self_of_mem_range (P : X →L[ℝ] X)
-    (hP : IsIdempotentElem P) {v : X} (hv : v ∈ range P) : P v = v := by
-  obtain ⟨w, rfl⟩ := hv
-  rw [← mul_apply_eq_comp, hP.eq]
-
 /-- A graph over the range of a continuous projection is embedded when its vertical component
 lies in the kernel of the projection. -/
 theorem isEmbedding_graph (P : X →L[ℝ] X) (hP : IsIdempotentElem P) (g : X → X)
@@ -41,49 +35,39 @@ theorem isEmbedding_graph (P : X →L[ℝ] X) (hP : IsIdempotentElem P) (g : X �
     apply Subtype.ext
     change P ((v : X) + g v) = v
     rw [map_add, hPg, add_zero]
-    exact IsIdempotentElem.apply_eq_self_of_mem_range P hP v.2
+    exact (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr v.2)
   exact hleft.isEmbedding (P.continuous.subtype_mk _)
     (continuous_subtype_val.add (hg.comp continuous_subtype_val))
 
-/-- The graph of a map into the kernel of a continuous projection is homeomorphic to the range
-of that projection. -/
-noncomputable def graphHomeomorphRange (P : X →L[ℝ] X) (hP : IsIdempotentElem P)
-    (g : X → X) (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) :
-    range P ≃ₜ range (fun v : range P ↦ (v : X) + g v) :=
-  (isEmbedding_graph P hP g hPg hg).toHomeomorph
-
-/-- The graph homeomorphism evaluates to the graph map. -/
-@[simp]
-theorem coe_graphHomeomorphRange_apply (P : X →L[ℝ] X) (hP : IsIdempotentElem P)
-    (g : X → X) (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) (v : range P) :
-    ↑(graphHomeomorphRange P hP g hPg hg v) = (v : X) + g v := by
-  simp [graphHomeomorphRange]
-
 /-- The inverse graph homeomorphism is given by the projection. -/
 @[simp]
-theorem coe_graphHomeomorphRange_symm_apply (P : X →L[ℝ] X) (hP : IsIdempotentElem P)
+theorem coe_isEmbedding_graph_toHomeomorph_symm_apply (P : X →L[ℝ] X)
+    (hP : IsIdempotentElem P)
     (g : X → X) (hPg : ∀ v, P (g v) = 0) (hg : Continuous g)
     (z : range (fun v : range P ↦ (v : X) + g v)) :
-    ↑((graphHomeomorphRange P hP g hPg hg).symm z) = P z := by
+    ↑((isEmbedding_graph P hP g hPg hg).toHomeomorph.symm z) = P z := by
   obtain ⟨v, hv⟩ := z.2
-  have hz : z = graphHomeomorphRange P hP g hPg hg v := by
+  have hz : z = (isEmbedding_graph P hP g hPg hg).toHomeomorph v := by
     apply Subtype.ext
-    exact hv.symm
-  rw [hz, Homeomorph.symm_apply_apply, coe_graphHomeomorphRange_apply, map_add, hPg,
+    simpa using hv.symm
+  rw [hz, Homeomorph.symm_apply_apply, IsEmbedding.toHomeomorph_apply_coe, map_add, hPg,
     add_zero]
-  exact (IsIdempotentElem.apply_eq_self_of_mem_range P hP v.2).symm
+  exact ((LinearMap.IsIdempotentElem.mem_range_iff
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
+      (LinearMap.mem_range.mpr v.2)).symm
 
 /-- The graph over a closed ball in the range subtype is the graph over the corresponding
 intersection in the ambient space. -/
 theorem image_graph_closedBall (P : X →L[ℝ] X) (g : X → X) (ρ : ℝ) :
     (fun v : range P ↦ (v : X) + g v) '' {v : range P | ‖(v : X)‖ ≤ ρ} =
       (fun v : X ↦ v + g v) '' (range P ∩ closedBall 0 ρ) := by
-  ext x
-  simp only [mem_image, mem_ofPred_eq, mem_inter_iff, mem_closedBall_zero_iff]
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    exact ⟨v, ⟨v.2, hv⟩, rfl⟩
-  · rintro ⟨v, ⟨hv, hn⟩, rfl⟩
-    exact ⟨⟨v, hv⟩, hn, rfl⟩
+  have hset : {v : range P | ‖(v : X)‖ ≤ ρ} =
+      Subtype.val ⁻¹' closedBall 0 ρ := by
+    ext v
+    simp only [mem_ofPred_eq, mem_preimage, mem_closedBall_zero_iff]
+  rw [hset, show (fun v : range P ↦ (v : X) + g v) =
+    (fun v : X ↦ v + g v) ∘ Subtype.val from rfl, Set.image_comp,
+    Subtype.image_preimage_val]
 
 end ContinuousLinearMap

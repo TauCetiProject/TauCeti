@@ -252,7 +252,9 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
       (invOn_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall hP hAP).1 hfix⟩
   · rintro ⟨v, ⟨⟨w, rfl⟩, hv⟩, rfl⟩
     have hPP : P (P w) = P w :=
-      IsIdempotentElem.apply_eq_self_of_mem_range P hP ⟨w, rfl⟩
+      (LinearMap.IsIdempotentElem.mem_range_iff
+        (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
+          (LinearMap.mem_range.mpr ⟨w, rfl⟩)
     set γ := lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall
       (P w) with hγ
     have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hr hN hsmall (P w) := by
@@ -339,6 +341,15 @@ theorem apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P
   rw [sub_apply, ContinuousLinearMap.id_apply, sub_eq_zero] at h0
   rw [localUnstableGraphMap]
   exact h0.symm
+
+/-- The complementary projection kills the local unstable graph map. -/
+@[simp]
+theorem sub_apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P)
+    (v : X) :
+    (ContinuousLinearMap.id ℝ X - P)
+      (localUnstableGraphMap A P N r hs hu hr hN hsmall v) = 0 := by
+  rw [sub_apply, id_apply, apply_localUnstableGraphMap hs hu hr hN hsmall hP hAP,
+    sub_self]
 
 /-- The local unstable graph map depends only on the component in `range (1 - P)`. -/
 @[simp]
