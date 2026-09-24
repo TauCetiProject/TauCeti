@@ -147,12 +147,10 @@ private noncomputable def commonCostructuredArrow
     (U : RationalSubsetIndex Aplus V)
     (i j : CostructuredArrow (presentationToRationalSubsetIndex (P := P) Aplus V) U) :
     CostructuredArrow (presentationToRationalSubsetIndex (P := P) Aplus V) U := by
-  let k := i.left.commonRefinement j.left
-  have hk : (presentationToRationalSubsetIndex (P := P) Aplus V).obj k ≤ U := by
+  have hk : (presentationToRationalSubsetIndex (P := P) Aplus V).obj
+      (i.left.commonRefinement j.left) ≤ U := by
     rw [rationalSubsetIndex_le_iff, presentationToRationalSubsetIndex_obj_open]
     intro x hx
-    change x ∈ spaBasicOpen Aplus (i.left.commonRefinement j.left).pres.num
-      (i.left.commonRefinement j.left).pres.den
     rw [spaBasicOpen_commonRefinement, Opens.mem_inf]
     constructor
     · rw [← presentationToRationalSubsetIndex_obj_open]
