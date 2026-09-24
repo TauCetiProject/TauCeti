@@ -93,6 +93,17 @@ theorem LSeries_localFactor_ne_zero_of_recurrence (h₁ : a 1 = 1) (p : Primes)
   rw [hzero] at h
   simp at h
 
+/-- The L-series terms of a coefficient sequence multiplicative on coprime arguments are
+themselves multiplicative on coprime arguments. -/
+private theorem term_mul_of_coprime (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    {m n : ℕ} (hmn : m.Coprime n) : term a s (m * n) = term a s m * term a s n := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn, hmul hmn,
+    cast_mul, Complex.natCast_mul_natCast_cpow, mul_div_mul_comm]
+
 /-- **The Euler product with quadratic local factors.** Let `a : ℕ → ℂ` satisfy `a 1 = 1`, be
 multiplicative on coprime arguments, and obey the recurrence
 `a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r)` along the powers of every prime `p`.
@@ -106,21 +117,12 @@ theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
     (hs : LSeriesSummable a s) :
     HasProd (fun p : Primes ↦ (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹)
       (LSeries a s) := by
-  have hterm₁ : term a s 1 = 1 := by
-    simp [h₁]
-  have htermMul : ∀ {m n : ℕ}, m.Coprime n → term a s (m * n) = term a s m * term a s n := by
-    intro m n hmn
-    rcases eq_or_ne m 0 with rfl | hm
-    · simp
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn, hmul hmn,
-      cast_mul, Complex.natCast_mul_natCast_cpow, mul_div_mul_comm]
   have hlocal (p : Primes) : ∑' e : ℕ, term a s (p ^ e) =
       (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ := by
     exact LSeries_localFactor_tsum_of_recurrence h₁ p (hrec p p.prop)
       (hs.comp_injective (Nat.pow_right_injective p.prop.two_le))
-  have H := EulerProduct.eulerProduct_hasProd hterm₁ htermMul hs.norm (term_zero a s)
+  have H := EulerProduct.eulerProduct_hasProd (by simp [h₁]) (term_mul_of_coprime hmul) hs.norm
+    (term_zero a s)
   rwa [funext hlocal] at H
 
 /-- **The Euler product with quadratic local factors**, as an equality with `∏'`: under the
@@ -145,12 +147,10 @@ theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ primesBelow n, (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries a s)) := by
-  let F : ℕ → ℂ := fun p ↦ (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹
-  have H := ((hasProd_subtype_iff_mulIndicator (s := {p : ℕ | p.Prime}) (f := F)).mp
-    (LSeries_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs)).tendsto_prod_nat
-  have hF (n : ℕ) : ∏ i ∈ Finset.range n, Set.mulIndicator {p : ℕ | p.Prime} F i =
-      ∏ p ∈ primesBelow n, F p :=
-    Finset.prod_mulIndicator_eq_prod_filter (Finset.range n) (fun _ ↦ F) (fun _ ↦ {p | p.Prime}) id
-  simpa only [hF] using H
+  refine (EulerProduct.eulerProduct (by simp [h₁]) (term_mul_of_coprime hmul) hs.norm
+    (term_zero a s)).congr fun n ↦ Finset.prod_congr rfl fun p hp ↦ ?_
+  have hp := prime_of_mem_primesBelow hp
+  exact LSeries_localFactor_tsum_of_recurrence (p := ⟨p, hp⟩) h₁ (hrec p hp)
+    (hs.comp_injective (Nat.pow_right_injective hp.two_le))
 
 end TauCeti
