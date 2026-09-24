@@ -158,13 +158,35 @@ theorem exists_adeleFiltration_sup_diagonalRepartitions_eq_repartitionSpace
 
 /-! ### Theorem 1.5.4 -/
 
-/-- The cokernel `A_F ⧸ (A_F(D) + F)` is finite-dimensional over `k`. -/
-theorem finiteDimensional_quotient_repartitionSpace (hex : IsIntegrallyClosedIn k F)
-    (D : Divisor k F) :
+/-- The cokernel `A_F ⧸ (A_F(D) + F)` is finite-dimensional over `k`, without an exact
+constant-field hypothesis. -/
+theorem finiteDimensional_quotient_repartitionSpace (D : Divisor k F) :
     FiniteDimensional k (↥(repartitionSpace k F) ⧸
       (adeleFiltration D ⊔ diagonalRepartitions k F).submoduleOf (repartitionSpace k F)) := by
-  obtain ⟨E, hDE, -, hEeq⟩ :=
-    exists_adeleFiltration_sup_diagonalRepartitions_eq_repartitionSpace hF hex D
+  classical
+  let p : ℕ → Prop := fun n ↦ ∃ E : Divisor k F, D ≤ E ∧ Divisor.indexOfSpecialty E = n
+  have hp : ∃ n, p n := by
+    refine ⟨(Divisor.indexOfSpecialty D).toNat, D, le_refl D, ?_⟩
+    rw [Int.toNat_of_nonneg (Divisor.indexOfSpecialty_nonneg hF D)]
+  obtain ⟨E, hDE, hiE⟩ := Nat.find_spec hp
+  have hmin (E' : Divisor k F) (hDE' : D ≤ E') :
+      Divisor.indexOfSpecialty E ≤ Divisor.indexOfSpecialty E' := by
+    have hfind := Nat.find_min' hp (show p (Divisor.indexOfSpecialty E').toNat from
+      ⟨E', hDE', by rw [Int.toNat_of_nonneg (Divisor.indexOfSpecialty_nonneg hF E')]⟩)
+    have hnonneg := Divisor.indexOfSpecialty_nonneg hF E'
+    omega
+  have hEeq : adeleFiltration E ⊔ diagonalRepartitions k F = repartitionSpace k F := by
+    refine le_antisymm (adeleFiltration_sup_diagonalRepartitions_le hF E) ?_
+    intro a ha
+    obtain ⟨E', hE'⟩ := exists_mem_adeleFiltration ha
+    have hsup : Divisor.indexOfSpecialty E = Divisor.indexOfSpecialty (E ⊔ E') := by
+      have hleft := hmin (E ⊔ E') (hDE.trans le_sup_left)
+      have hright := finrank_quotient_adeleFiltration_sup_diagonalRepartitions hF
+        (le_sup_left : E ≤ E ⊔ E')
+      omega
+    rw [adeleFiltration_sup_diagonalRepartitions_eq_of_indexOfSpecialty_eq hF
+      (le_sup_left : E ≤ E ⊔ E') hsup]
+    exact Submodule.mem_sup_left (adeleFiltration_mono le_sup_right hE')
   have h := finiteDimensional_quotient_adeleFiltration_sup_diagonalRepartitions hF hDE
   rwa [hEeq] at h
 
