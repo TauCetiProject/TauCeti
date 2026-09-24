@@ -191,15 +191,20 @@ theorem coe_kostantToralWeightTorusPoints (A : Type v) [CommRing A] (s : κ → 
   rw [kostantToralWeightTorusPoints]
   rfl
 
+/-- The integral-points presentation of the toral Kostant closure. -/
+noncomputable abbrev kostantToralPointsPresentation (A : Type v) [CommRing A] :
+    GeneralLinear.IntegralPointsPresentation n
+      (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A :=
+  ⟨kostantToralPointsSubgroup e h ρ M hM hnil b wt A,
+    kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A⟩
+
 /-- The presented toral-closure root point is natural in the value ring. -/
+@[simp]
 theorem map_kostantToralRootSubgroupPoints
     {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (f : A →+* B) (i : I) (u : Multiplicative A) :
-    GeneralLinear.IntegralPointsPresentation.map
-        (Subtype.mk (kostantToralPointsSubgroup e h ρ M hM hnil b wt A)
-          (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A))
-        (Subtype.mk (kostantToralPointsSubgroup e h ρ M hM hnil b wt B)
-          (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt B)) f
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
         (kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A u) =
       kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i B
         (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
@@ -210,14 +215,12 @@ theorem map_kostantToralRootSubgroupPoints
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
 
 /-- The presented toral-closure weight-torus point is natural in the value ring. -/
+@[simp]
 theorem map_kostantToralWeightTorusPoints
     {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (f : A →+* B) (s : κ → Aˣ) :
-    GeneralLinear.IntegralPointsPresentation.map
-        (Subtype.mk (kostantToralPointsSubgroup e h ρ M hM hnil b wt A)
-          (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A))
-        (Subtype.mk (kostantToralPointsSubgroup e h ρ M hM hnil b wt B)
-          (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt B)) f
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
         (kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s) =
       kostantToralWeightTorusPoints e h ρ M hM hnil b wt B
         (fun i ↦ Units.map (f : A →* B) (s i)) := by

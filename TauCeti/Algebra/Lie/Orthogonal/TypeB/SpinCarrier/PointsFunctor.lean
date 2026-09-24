@@ -37,7 +37,7 @@ variable (n : ℕ)
 
 /-- The carrier's matrix points, presented by its defining integral Hopf ideal. -/
 abbrev pointsPresentation (A : Type v) [CommRing A] :
-    GeneralLinear.IntegralPointsPresentation (dimension n) (definingIdeal n) A where
+    TauCeti.GeneralLinear.IntegralPointsPresentation (dimension n) (definingIdeal n) A where
   val := points n A
   property := points_def n A
 
@@ -45,6 +45,7 @@ variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
+@[simp]
 theorem map_rootSubgroupPoints (f : A →+* B)
     (k : Fin (n + 1) ⊕ Fin (n + 1)) (u : Multiplicative A) :
     (pointsPresentation n A).map (pointsPresentation n B) f (rootSubgroupPoints n k A u) =
@@ -57,13 +58,13 @@ theorem map_rootSubgroupPoints (f : A →+* B)
       (h := TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (ρ := rep n)
       (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n)
       (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n) (wt := basisWeight n) f k u)
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [GeneralLinear.IntegralPointsPresentation.coe_map, coe_rootSubgroupPoints,
-    coe_kostantToralRootSubgroupPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
+  simpa only [coe_rootSubgroupPoints, coe_kostantToralRootSubgroupPoints] using h
 
 /-- The induced map carries a point of the split spin weight torus coordinatewise along the
 homomorphism of value rings. -/
+@[simp]
 theorem map_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
     (pointsPresentation n A).map (pointsPresentation n B) f (weightTorusPoints n A s) =
       weightTorusPoints n B fun i ↦ Units.map (f : A →* B) (s i) := by
@@ -74,10 +75,9 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
       (h := TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (ρ := rep n)
       (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n)
       (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n) (wt := basisWeight n) f s)
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [GeneralLinear.IntegralPointsPresentation.coe_map, coe_weightTorusPoints,
-    coe_kostantToralWeightTorusPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
+  simpa only [coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using h
 
 end
 
