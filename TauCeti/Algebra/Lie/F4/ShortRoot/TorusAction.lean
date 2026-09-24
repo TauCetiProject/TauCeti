@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Quotient
+public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
@@ -456,17 +457,6 @@ private theorem f4ShortRootIdealAdjointMatrixBaseChangeLinearMap_apply
       f4ShortRootAdjointMatrixBaseChange (A := A)
         (y : f4ModularChevalleyLieAlgebra) := by
   exact f4ShortRootAdjointMatrixBaseChangeLinearMap_apply _
-
-private theorem span_range_eq_span_range_basis
-    {R S M N ι : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    [Module S N] [IsScalarTower R S N]
-    (b : Basis ι R M) (f : M →ₗ[R] N) :
-    Submodule.span S (Set.range f) = Submodule.span S (Set.range (f ∘ b)) := by
-  rw [← LinearMap.coe_range, LinearMap.range_eq_map, ← b.span_eq,
-    LinearMap.map_span, Submodule.span_span_of_tower]
-  congr 1
-  rw [Set.range_comp]
 
 /-- The distinguished-basis definition of the base-changed represented range agrees with the
 `A`-span of every entrywise base-changed matrix in `M`. -/

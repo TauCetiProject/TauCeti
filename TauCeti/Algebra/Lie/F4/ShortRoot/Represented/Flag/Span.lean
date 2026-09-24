@@ -59,17 +59,6 @@ noncomputable def f4ShortRootRepresentedRangeBasisMatrixBaseChange :
     f4ShortRootEndMatrixBaseChangeLinearMap (A := A)
       (f4ShortRootEndBasis (Fin.castAdd f4ShortRootRepresentedComplementRank i))
 
-private theorem span_range_eq_span_range_basis
-    {R S V W ι : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
-    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-    [Module S W] [IsScalarTower R S W]
-    (b : Module.Basis ι R V) (f : V →ₗ[R] W) :
-    Submodule.span S (Set.range f) = Submodule.span S (Set.range (f ∘ b)) := by
-  rw [← LinearMap.coe_range, LinearMap.range_eq_map, ← b.span_eq,
-    LinearMap.map_span, Submodule.span_span_of_tower]
-  congr 1
-  rw [Set.range_comp]
-
 private theorem range_comp_rangeRestrict
     {R V W N : Type*} [Semiring R]
     [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
