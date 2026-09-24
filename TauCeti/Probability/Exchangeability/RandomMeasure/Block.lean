@@ -45,6 +45,8 @@ equalities hold on width-dependent almost-sure sets.
   the split large block is the law of the corresponding consecutive small blocks;
 * `MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul` -- each component of
   that joint law is the corresponding small block marginal;
+* `TauCeti.Probability.codedBlockMarginals_blockRestriction_mul_apply` -- the coded coordinates
+  agree across this restriction;
 * `MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq` -- all coded positive-width
   blocks at the origin determine the path measure;
 * `TauCeti.Probability.fullyExchangeable_blockMarginals_of_invariant` -- invariance of the random
@@ -142,26 +144,22 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
         (blockRestriction (α := α) m n r) =
       P.blockMarginals m (i * n + r) := by
   let _ : NeZero n := r.neZero
-  have hOld : (@ProbabilityMeasure.blockMarginals α _ P (n * m)
-      ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
-        (blockRestriction (α := α) m n r) = P.blockMarginals m (i * n + r) := by
-    have hcomp : blockRestriction (α := α) m n r =
-        (fun x : Fin n → Fin m → α => x r) ∘ blockSplitEquiv α m n := by
-      funext x j
-      simp only [blockRestriction_apply, Function.comp_apply, blockSplitEquiv_apply]
-    apply ProbabilityMeasure.toMeasure_injective
-    have h := congrArg
-      (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
-        (Q.map fun x => x r).toMeasure)
-      (P.map_blockSplitEquiv_blockMarginals_mul m n i)
-    simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
-    rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
-    rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
-      (f := fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j)))
-      (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
-        measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
-    simpa only [hcomp, Function.comp_def] using h
-  exact hOld
+  have hcomp : blockRestriction (α := α) m n r =
+      (fun x : Fin n → Fin m → α => x r) ∘ blockSplitEquiv α m n := by
+    funext x j
+    simp only [blockRestriction_apply, Function.comp_apply, blockSplitEquiv_apply]
+  apply ProbabilityMeasure.toMeasure_injective
+  have h := congrArg
+    (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
+      (Q.map fun x => x r).toMeasure)
+    (P.map_blockSplitEquiv_blockMarginals_mul m n i)
+  simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
+  rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
+  rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
+    (f := fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j)))
+    (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
+      measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
+  simpa only [hcomp, Function.comp_def] using h
 
 /-! ### Reconstruction from the block marginals -/
 
@@ -265,6 +263,20 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_apply
     [MeasurableSpace.CountablyGenerated (Fin m → α)] (i : ℕ) :
     P.codedBlockMarginals m i = probabilityMeasureCode (P.blockMarginals m i) :=
   (rfl)
+
+/-- The code of a restricted large-block marginal agrees coordinatewise with the corresponding
+small-block marginal code. -/
+theorem codedBlockMarginals_blockRestriction_mul_apply
+    (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m]
+    [∀ k : ℕ, MeasurableSpace.CountablyGenerated (Fin k → α)]
+    (i : ℕ) (r : Fin n) (s : ProbabilityMeasureCodeIndex (Fin m → α)) :
+    probabilityMeasureCode
+        ((@ProbabilityMeasure.blockMarginals α _ P (n * m)
+          ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
+            (blockRestriction (α := α) m n r)) s =
+      codedBlockMarginals P m (i * n + r) s := by
+  rw [P.map_blockRestriction_blockMarginals_mul]
+  rfl
 
 /-- The path of coded finite block marginals is measurable. -/
 theorem measurable_codedBlockMarginals (m : ℕ) [NeZero m]
