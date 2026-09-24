@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
+-- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
 # A layer-cake formula for the distance between real functions
@@ -16,6 +18,20 @@ the integral, over all levels, of the measure of the symmetric difference of the
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
 functions lies above the level.
+
+Finally, for `1 < p` it writes the power `|x - y| ^ p` as a mixture of *hinges*: it is the
+integral over the thresholds `r > 0`, with weight `p (p - 1) r ^ (p - 2)`, of
+`(y - x - r)⁺ + (x - y - r)⁺`. Integrated against a measure, this turns the `p`-th moment of a
+difference into a mixture of one-sided integrals of the form above.
+
+## Main statements
+
+* `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
+  functions, level by level;
+* `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
+  `(g - f)⁺`, level by level;
+* `TauCeti.ofReal_rpow_eq_lintegral_mul_ofReal_sub` and `TauCeti.edist_rpow_eq_lintegral` — a
+  power `d ^ p`, and the power `|x - y| ^ p` of a distance, as mixtures of hinges.
 -/
 
 public section
@@ -153,5 +169,55 @@ theorem lintegral_ofReal_sub_eq_lintegral_measure (m : Measure α) [SFinite m] {
       apply measure_congr
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       rw [hfa, hga]
+
+/-- For a nonnegative threshold `r`, the two hinges of a pair of reals add up to the single hinge
+`(|x - y| - r)⁺` of their distance, since at most one of `y - x - r` and `x - y - r` is positive. -/
+theorem ofReal_sub_sub_add_ofReal_sub_sub {r : ℝ} (hr : 0 ≤ r) (x y : ℝ) :
+    ENNReal.ofReal (y - x - r) + ENNReal.ofReal (x - y - r) = ENNReal.ofReal (|x - y| - r) := by
+  rcases le_total x y with h | h
+  · rw [ENNReal.ofReal_of_nonpos (by linarith : x - y - r ≤ 0), add_zero, abs_sub_comm,
+      abs_of_nonneg (sub_nonneg.2 h)]
+  · rw [ENNReal.ofReal_of_nonpos (by linarith : y - x - r ≤ 0), zero_add,
+      abs_of_nonneg (sub_nonneg.2 h)]
+
+/-- **Powers are mixtures of hinges.** For `1 < p` and `d ≥ 0`,
+`d ^ p = ∫_{r > 0} p (p - 1) r ^ (p - 2) (d - r)⁺ dr`. -/
+theorem ofReal_rpow_eq_lintegral_mul_ofReal_sub {p d : ℝ} (hp : 1 < p) (hd : 0 ≤ d) :
+    ENNReal.ofReal (d ^ p)
+      = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2)) * ENNReal.ofReal (d - r) := by
+  -- The layer-cake formula for `s ^ (p - 1)` against Lebesgue measure on `(0, d)`.
+  have hlayer := lintegral_rpow_eq_lintegral_meas_lt_mul (volume.restrict (Ioo 0 d)) (f := id)
+    (ae_restrict_of_forall_mem measurableSet_Ioo fun s hs ↦ hs.1.le) aemeasurable_id
+    (by linarith : 0 < p - 1)
+  simp only [id_eq] at hlayer
+  calc ENNReal.ofReal (d ^ p)
+      = ENNReal.ofReal p * ∫⁻ s in Ioo 0 d, ENNReal.ofReal (s ^ (p - 1)) := by
+        rw [lintegral_ofReal_rpow_Ioo (by linarith) hd, sub_add_cancel,
+          ← ENNReal.ofReal_mul (by linarith), mul_div_cancel₀ _ (by linarith)]
+    _ = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1))
+          * (volume.restrict (Ioo 0 d) {s | r < s} * ENNReal.ofReal (r ^ (p - 1 - 1))) := by
+        rw [hlayer, ← mul_assoc, ← ENNReal.ofReal_mul (by linarith),
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    _ = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2)) * ENNReal.ofReal (d - r) := by
+        refine setLIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ ?_
+        -- Against Lebesgue measure on `(0, d)`, the mass above a level `r > 0` is `d - r`.
+        have hset : {s | r < s} ∩ Ioo 0 d = Ioo r d := by
+          ext s
+          simp only [mem_inter_iff, mem_ofPred_eq, mem_Ioo]
+          exact ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun h ↦ ⟨h.1, hr.trans h.1, h.2⟩⟩
+        rw [Measure.restrict_apply' measurableSet_Ioo, hset, Real.volume_Ioo,
+          ENNReal.ofReal_mul (by nlinarith : 0 ≤ p * (p - 1)), show p - 1 - 1 = p - 2 by ring]
+        ring
+
+/-- **The power of a distance as a mixture of hinges.** For `1 < p`, the power `|x - y| ^ p` is
+the integral, over the thresholds `r > 0` with weight `p (p - 1) r ^ (p - 2)`, of the two hinges
+`(y - x - r)⁺ + (x - y - r)⁺`. -/
+theorem edist_rpow_eq_lintegral {p : ℝ} (hp : 1 < p) (x y : ℝ) :
+    edist x y ^ p = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2))
+      * (ENNReal.ofReal (y - x - r) + ENNReal.ofReal (x - y - r)) := by
+  rw [edist_dist, Real.dist_eq, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by linarith),
+    ofReal_rpow_eq_lintegral_mul_ofReal_sub hp (abs_nonneg _)]
+  exact setLIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
+    rw [ofReal_sub_sub_add_ofReal_sub_sub hr.le]
 
 end TauCeti

@@ -35,6 +35,8 @@ identity for every exponent `1 ≤ p ≤ ∞` — is a rearrangement inequality 
 ## Main statements
 
 * `MeasureTheory.Measure.isCoupling_quantileCoupling` — the monotone coupling is a transport plan;
+* `MeasureTheory.Measure.quantileCoupling_Iic_prod_Ioi` — its mass on a quadrant
+  `Iic a ×ˢ Ioi b` is the positive part of `cdf μ a - cdf ν b`;
 * `TauCeti.eLpNorm_edist_quantileCoupling` — its transport objective is the `L^p (0,1)` distance
   of the two quantile functions;
 * `TauCeti.wassersteinEDist_le_eLpNorm_quantile_sub` — the resulting upper bound on the
@@ -87,6 +89,31 @@ instance isProbabilityMeasure_quantileCoupling (μ ν : Measure ℝ) :
   have : IsProbabilityMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
   rw [quantileCoupling_def]
   infer_instance
+
+/-- Exchanging the coordinates of the monotone coupling of `μ` and `ν` gives the monotone coupling
+of `ν` and `μ`. -/
+@[simp]
+theorem map_swap_quantileCoupling (μ ν : Measure ℝ) :
+    (μ.quantileCoupling ν).map Prod.swap = ν.quantileCoupling μ := by
+  rw [quantileCoupling_def, quantileCoupling_def, map_map measurable_swap (by fun_prop)]
+  simp only [Function.comp_def, Prod.swap_prod_mk]
+
+/-- **The monotone coupling on a quadrant.** The monotone coupling of two real laws gives the
+quadrant `Iic a ×ˢ Ioi b` the positive part of the gap `cdf μ a - cdf ν b`: the uniform levels `t`
+with `μ.quantile t ≤ a` and `b < ν.quantile t` are those with `cdf ν b < t ≤ cdf μ a`. -/
+theorem quantileCoupling_Iic_prod_Ioi (μ ν : Measure ℝ) (a b : ℝ) :
+    μ.quantileCoupling ν (Iic a ×ˢ Ioi b) = ENNReal.ofReal (cdf μ a - cdf ν b) := by
+  have hmeas : MeasurableSet (Iic a ×ˢ Ioi b) := measurableSet_Iic.prod measurableSet_Ioi
+  rw [quantileCoupling_def, map_apply (by fun_prop) hmeas,
+    restrict_apply (hmeas.preimage (by fun_prop))]
+  have hset : (fun t ↦ (μ.quantile t, ν.quantile t)) ⁻¹' (Iic a ×ˢ Ioi b) ∩ Ioo 0 1
+      = Ioc (cdf ν b) (cdf μ a) ∩ Ioo 0 1 := by
+    ext t
+    simp only [mem_inter_iff, mem_preimage, mem_prod, mem_Iic, mem_Ioi, mem_Ioc, mem_Ioo,
+      and_congr_left_iff]
+    rintro ⟨ht0, ht1⟩
+    rw [quantile_le_iff μ ht0 ht1, lt_quantile_iff ν ht0 ht1, and_comm]
+  rw [hset, TauCeti.volume_Ioc_inter_Ioo_zero_one (cdf_nonneg ν b) (cdf_le_one μ a)]
 
 end MeasureTheory.Measure
 

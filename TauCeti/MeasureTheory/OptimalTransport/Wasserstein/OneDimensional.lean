@@ -68,7 +68,7 @@ the level `s` has mass at least the gap between the two cumulative distribution 
 theorem enorm_cdf_sub_le_measure_symmDiff {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     {π : Measure (ℝ × ℝ)} (hπ : IsCoupling π μ ν) (s : ℝ) :
     ‖cdf μ s - cdf ν s‖ₑ ≤ π ({z : ℝ × ℝ | z.1 ≤ s} ∆ {z : ℝ × ℝ | z.2 ≤ s}) := by
-  let : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   have hfst : {z : ℝ × ℝ | z.1 ≤ s} = Iic s ×ˢ univ := by ext z; simp
   have hsnd : {z : ℝ × ℝ | z.2 ≤ s} = univ ×ˢ Iic s := by ext z; simp
@@ -105,20 +105,10 @@ theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure
   have hmeas : MeasurableSet ({t | μ.quantile t ≤ s} ∆ {t | ν.quantile t ≤ s}) :=
     (measurableSet_le (Measure.measurable_quantile μ) measurable_const).symmDiff
       (measurableSet_le (Measure.measurable_quantile ν) measurable_const)
-  rw [Measure.restrict_apply hmeas, hset]
-  refine le_antisymm ?_ ?_
-  · calc volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) ∩ Ioo (0 : ℝ) 1)
-        ≤ volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s))) :=
-          measure_mono inter_subset_left
-      _ = ‖cdf μ s - cdf ν s‖ₑ := by
-          rw [Real.volume_Ioc, max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
-  · calc ‖cdf μ s - cdf ν s‖ₑ
-        = volume (Ioo (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s))) := by
-          rw [Real.volume_Ioo, max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
-      _ ≤ volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) ∩ Ioo (0 : ℝ) 1) := by
-          refine measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ?_⟩
-          exact ⟨lt_of_le_of_lt (le_min (cdf_nonneg μ s) (cdf_nonneg ν s)) ht.1,
-            lt_of_lt_of_le ht.2 (max_le (cdf_le_one μ s) (cdf_le_one ν s))⟩
+  rw [Measure.restrict_apply hmeas, hset,
+    volume_Ioc_inter_Ioo_zero_one (le_min (cdf_nonneg μ s) (cdf_nonneg ν s))
+      (max_le (cdf_le_one μ s) (cdf_le_one ν s)),
+    max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
 
 /-- **The one-dimensional Kantorovich formula.** The Wasserstein distance at exponent one of two
 probability laws on `ℝ` is the area between their cumulative distribution functions. -/
