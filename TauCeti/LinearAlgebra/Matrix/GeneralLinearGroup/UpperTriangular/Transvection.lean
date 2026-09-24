@@ -11,7 +11,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 /-!
 # Upper transvections
 
-This file records that an upper transvection belongs to the upper-triangular subgroup.
+This file records that an upper transvection belongs to the upper-triangular subgroup. This lets
+upper transvections be used as elements of the Borel subgroup `B` in the construction of the
+standard Tits system of `GLₙ₊₁`: they appear when an element of `B` is factored as a product with
+a transvection at a simple root, and, together with their conjugates by permutation matrices, in
+the proof that `B` and the permutation matrices generate `GLₙ(k)`.
 -/
 
 public section

@@ -78,6 +78,7 @@ theorem permutationGL_coe {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv
 
 /-- Right multiplication by `permutationGL σ` permutes the columns: the `(i, j)` entry of
 `g * permutationGL σ` is the `(i, σ j)` entry of `g`. -/
+@[simp]
 theorem coe_mul_permutationGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (g : GL ι k)
     (σ : Equiv.Perm ι) (i j : ι) :
     ((g * permutationGL (k := k) σ : GL ι k) : Matrix ι ι k) i j =

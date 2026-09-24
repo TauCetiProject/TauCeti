@@ -21,8 +21,10 @@ transpositions `(i i+1)`.
 
 The rank-one construction identifies the Weyl group of `GL₂` with the two permutations of its
 coordinate lines. In every rank, the Weyl group is the symmetric group on the coordinates, and
-its simple reflections are the adjacent transpositions. The resulting Bruhat decomposition
-covers `GLₙ₊₁(k)` by the double cosets `B τ B` of permutation matrices.
+its simple reflections are the adjacent transpositions. The multiplication step of the Tits
+system holds over every field, so the Bruhat decomposition, covering `GLₘ(k)` by the double cosets
+`B τ B` of permutation matrices, is proved without the assumption on the unit group; over `𝔽₂`
+it holds even though `B` and the torus normalizer do not form a Tits system.
 
 ## Main results
 
@@ -37,8 +39,8 @@ covers `GLₙ₊₁(k)` by the double cosets `B τ B` of permutation matrices.
   permutations.
 * `TauCeti.glTitsSystemSimpleRep` and `TauCeti.glTitsSystem_simple`: its simple reflections are
   represented by the permutation matrices of the adjacent transpositions.
-* `TauCeti.exists_mem_doubleCoset_permutationGL`: the Bruhat decomposition of `GLₙ₊₁(k)`, every
-  element lies in `B τ B` for a permutation `τ`.
+* `TauCeti.exists_mem_doubleCoset_permutationGL`: the Bruhat decomposition of `GLₘ(k)` over any
+  field, every element lies in `B τ B` for a permutation `τ`.
 
 ## References
 
@@ -452,6 +454,117 @@ private theorem permutationGL_swap_mul_mul_permutationGL_mem (hab : a.val + 1 = 
       simp only [_root_.mul_inv_rev, hsinv, mul_assoc, hss, mul_inv_cancel_left,
         inv_mul_cancel_left]
 
+/-- The upper-triangular subgroup and the permutation matrices generate `GLₘ(k)`. -/
+private theorem closure_upperTriangularGroup_union_range_permutationGL (k : Type u) [Field k]
+    (m : ℕ) :
+    Subgroup.closure ((upperTriangularGroup (Fin m) k : Set (GL (Fin m) k)) ∪
+      Set.range (permutationGL (k := k))) = ⊤ := by
+  set C := Subgroup.closure ((upperTriangularGroup (Fin m) k : Set (GL (Fin m) k)) ∪
+    Set.range (permutationGL (k := k)))
+  have hB : upperTriangularGroup (Fin m) k ≤ C := fun x hx ↦ Subgroup.subset_closure (Or.inl hx)
+  have hN (σ : Equiv.Perm (Fin m)) : permutationGL (k := k) σ ∈ C :=
+    Subgroup.subset_closure (Or.inr ⟨σ, rfl⟩)
+  refine top_unique fun g _ ↦ ?_
+  obtain ⟨h, hC, hh⟩ : ∃ h ∈ C, (h : Matrix (Fin m) (Fin m) k) = g := by
+    refine Matrix.diagonal_transvection_induction_of_det_ne_zero
+      (fun M ↦ ∃ h ∈ C, (h : Matrix (Fin m) (Fin m) k) = M) g
+      (Matrix.isUnits_det_units g).ne_zero ?_ ?_ ?_
+    · intro D hD
+      have hD' (i : Fin m) : D i ≠ 0 := by
+        rw [Matrix.det_diagonal] at hD
+        exact Finset.prod_ne_zero_iff.mp hD i (Finset.mem_univ i)
+      refine ⟨diagGL fun i ↦ Units.mk0 (D i) (hD' i), hB (UpperTriangularGroup.diagonalTorus_le
+        (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩)), ?_⟩
+      simp [diagGL_coe]
+    · intro t
+      refine ⟨transvectionUnit t.hij t.c, ?_, by
+        rw [coe_transvectionUnit, Matrix.TransvectionStruct.toMatrix]⟩
+      rcases lt_or_gt_of_ne t.hij with hlt | hgt
+      · exact hB (transvectionUnit_mem_upperTriangularGroup hlt t.c)
+      · -- A lower transvection is an upper one conjugated by the transposition of its indices.
+        have hconj := permutationGL_inv_mul_transvectionUnit_mul_permutationGL (A := k)
+          (Equiv.swap t.i t.j) t.hij.symm t.c
+        have heq : transvectionUnit t.hij t.c =
+            (permutationGL (k := k) (Equiv.swap t.i t.j))⁻¹ * transvectionUnit t.hij.symm t.c *
+              permutationGL (k := k) (Equiv.swap t.i t.j) := by
+          rw [hconj]
+          ext
+          simp [Matrix.transvection, Matrix.single_apply]
+        rw [heq]
+        exact mul_mem (mul_mem (inv_mem (hN _))
+          (hB (transvectionUnit_mem_upperTriangularGroup hgt t.c))) (hN _)
+    · rintro A B - - ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
+      exact ⟨x * y, mul_mem hx hy, rfl⟩
+  rwa [← Units.ext hh]
+
+/-- Left multiplication by an adjacent transposition maps a Bruhat cell `B τ B` into the Bruhat
+cell of another permutation matrix. -/
+private theorem exists_permutationGL_swap_mul_mem_doubleCoset (hab : a.val + 1 = b.val)
+    {g : GL (Fin m) k} {τ : Equiv.Perm (Fin m)}
+    (hg : g ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ)
+      (upperTriangularGroup (Fin m) k) (upperTriangularGroup (Fin m) k)) :
+    ∃ τ' : Equiv.Perm (Fin m), permutationGL (k := k) (Equiv.swap a b) * g ∈
+      DoubleCoset.doubleCoset (permutationGL (k := k) τ')
+        (upperTriangularGroup (Fin m) k) (upperTriangularGroup (Fin m) k) := by
+  obtain ⟨x, hx, y, hy, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
+  have hmem : permutationGL (k := k) (Equiv.swap a b) * (x * permutationGL (k := k) τ * y) ∈
+      DoubleCoset.doubleCoset (permutationGL (k := k) (Equiv.swap a b) * x *
+        permutationGL (k := k) τ) (upperTriangularGroup (Fin m) k)
+        (upperTriangularGroup (Fin m) k) :=
+    DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, y, hy, by group⟩
+  rcases permutationGL_swap_mul_mul_permutationGL_mem hab hx τ with h | h
+  · refine ⟨Equiv.swap a b * τ, ?_⟩
+    rw [map_mul, ← DoubleCoset.doubleCoset_eq_of_mem h]
+    exact hmem
+  · refine ⟨τ, ?_⟩
+    rw [← DoubleCoset.doubleCoset_eq_of_mem h]
+    exact hmem
+
+/-- **Bruhat decomposition** of `GLₘ(k)` over any field: every invertible matrix lies in a
+double coset `B τ B` of the upper-triangular subgroup represented by a permutation matrix. -/
+theorem exists_mem_doubleCoset_permutationGL (g : GL (Fin m) k) :
+    ∃ τ : Equiv.Perm (Fin m), g ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ)
+      (upperTriangularGroup (Fin m) k) (upperTriangularGroup (Fin m) k) := by
+  obtain _ | n := m
+  · exact ⟨1, DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, Subsingleton.elim _ _⟩⟩
+  -- The union of the cells `B τ B` is stable under left multiplication by `B` and by
+  -- permutation matrices, which together generate `GLₙ₊₁(k)`.
+  set B := upperTriangularGroup (Fin (n + 1)) k
+  have hB {x h : GL (Fin (n + 1)) k} (hx : x ∈ B) :
+      (∃ τ, h ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ) B B) →
+        ∃ τ, x * h ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ) B B := by
+    rintro ⟨τ, hτ⟩
+    obtain ⟨y, hy, z, hz, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hτ
+    exact ⟨τ, DoubleCoset.mem_doubleCoset.mpr ⟨x * y, mul_mem hx hy, z, hz, by group⟩⟩
+  have hperm (σ : Equiv.Perm (Fin (n + 1))) {h : GL (Fin (n + 1)) k} :
+      (∃ τ, h ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ) B B) →
+        ∃ τ, permutationGL (k := k) σ * h ∈
+          DoubleCoset.doubleCoset (permutationGL (k := k) τ) B B := by
+    induction (Equiv.Perm.mclosure_swap_castSucc_succ n).ge (Submonoid.mem_top σ) using
+      Submonoid.closure_induction_left generalizing h with
+    | one => simpa only [map_one, one_mul] using id
+    | mul_left x hx y _ ih =>
+      obtain ⟨i, rfl⟩ := hx
+      rintro ⟨τ, hτ⟩
+      rw [map_mul, mul_assoc]
+      obtain ⟨τ', hτ'⟩ := ih ⟨τ, hτ⟩
+      exact exists_permutationGL_swap_mul_mem_doubleCoset (by simp) hτ'
+  have hg : g ∈ Subgroup.closure ((B : Set (GL (Fin (n + 1)) k)) ∪
+      Set.range (permutationGL (k := k))) := by
+    rw [closure_upperTriangularGroup_union_range_permutationGL]
+    exact Subgroup.mem_top g
+  induction hg using Subgroup.closure_induction_left with
+  | one => exact ⟨1, DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, by simp⟩⟩
+  | mul_left x hx y _ ih =>
+    rcases hx with hx | ⟨σ, rfl⟩
+    · exact hB hx ih
+    · exact hperm σ ih
+  | inv_mul_cancel x hx y _ ih =>
+    rcases hx with hx | ⟨σ, rfl⟩
+    · exact hB (inv_mem hx) ih
+    · rw [← map_inv]
+      exact hperm σ⁻¹ ih
+
 end Adjacent
 
 section TitsSystem
@@ -550,49 +663,6 @@ private theorem doubleCoset_mul_doubleCoset_subset {m : ℕ} {a b : Fin m}
       DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, b₄, hb₄, rfl⟩)
 
 omit [Nontrivial kˣ] in
-/-- The upper-triangular subgroup and the permutation matrices generate `GLₘ(k)`. -/
-private theorem closure_upperTriangularGroup_union_normalizer (m : ℕ) :
-    Subgroup.closure ((upperTriangularGroup (Fin m) k : Set (GL (Fin m) k)) ∪
-      GLDiagonalNormalizer k m) = ⊤ := by
-  set C := Subgroup.closure ((upperTriangularGroup (Fin m) k : Set (GL (Fin m) k)) ∪
-    GLDiagonalNormalizer k m)
-  have hB : upperTriangularGroup (Fin m) k ≤ C := fun x hx ↦ Subgroup.subset_closure (Or.inl hx)
-  have hN : GLDiagonalNormalizer k m ≤ C := fun x hx ↦ Subgroup.subset_closure (Or.inr hx)
-  refine top_unique fun g _ ↦ ?_
-  obtain ⟨h, hC, hh⟩ : ∃ h ∈ C, (h : Matrix (Fin m) (Fin m) k) = g := by
-    refine Matrix.diagonal_transvection_induction_of_det_ne_zero
-      (fun M ↦ ∃ h ∈ C, (h : Matrix (Fin m) (Fin m) k) = M) g
-      (Matrix.isUnits_det_units g).ne_zero ?_ ?_ ?_
-    · intro D hD
-      have hD' (i : Fin m) : D i ≠ 0 := by
-        rw [Matrix.det_diagonal] at hD
-        exact Finset.prod_ne_zero_iff.mp hD i (Finset.mem_univ i)
-      refine ⟨diagGL fun i ↦ Units.mk0 (D i) (hD' i), hB (UpperTriangularGroup.diagonalTorus_le
-        (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩)), ?_⟩
-      simp [diagGL_coe]
-    · intro t
-      refine ⟨transvectionUnit t.hij t.c, ?_, by
-        rw [coe_transvectionUnit, Matrix.TransvectionStruct.toMatrix]⟩
-      rcases lt_or_gt_of_ne t.hij with hlt | hgt
-      · exact hB (transvectionUnit_mem_upperTriangularGroup hlt t.c)
-      · -- A lower transvection is an upper one conjugated by the transposition of its indices.
-        have hconj := permutationGL_inv_mul_transvectionUnit_mul_permutationGL (A := k)
-          (Equiv.swap t.i t.j) t.hij.symm t.c
-        have heq : transvectionUnit t.hij t.c =
-            (permutationGL (k := k) (Equiv.swap t.i t.j))⁻¹ * transvectionUnit t.hij.symm t.c *
-              permutationGL (k := k) (Equiv.swap t.i t.j) := by
-          rw [hconj]
-          ext
-          simp [Matrix.transvection, Matrix.single_apply]
-        rw [heq]
-        exact mul_mem (mul_mem (inv_mem (hN (permutationGL_mem_normalizer _)))
-          (hB (transvectionUnit_mem_upperTriangularGroup hgt t.c)))
-          (hN (permutationGL_mem_normalizer _))
-    · rintro A B - - ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
-      exact ⟨x * y, mul_mem hx hy, rfl⟩
-  rwa [← Units.ext hh]
-
-omit [Nontrivial kˣ] in
 /-- Conjugating the upper transvection `x_{ab}(1)` by the transposition of `a` and `b` leaves the
 upper-triangular subgroup. -/
 private theorem permutationGL_swap_mul_transvectionUnit_mul_inv_notMem {m : ℕ} {a b : Fin m}
@@ -639,7 +709,10 @@ matrices of the adjacent transpositions `(i i+1)`. -/
 def glTitsSystem (n : ℕ) : TitsSystem (GL (Fin (n + 1)) k) where
   subgroupB := upperTriangularGroup (Fin (n + 1)) k
   subgroupN := GLDiagonalNormalizer k (n + 1)
-  closure_subgroupB_union_subgroupN := closure_upperTriangularGroup_union_normalizer k (n + 1)
+  closure_subgroupB_union_subgroupN := top_unique <|
+    (closure_upperTriangularGroup_union_range_permutationGL k (n + 1)).ge.trans <|
+      Subgroup.closure_mono <| Set.union_subset_union_right _ <|
+        Set.range_subset_iff.mpr permutationGL_mem_normalizer
   intersection_normal := inferInstance
   simple := Set.range fun i : Fin n ↦ QuotientGroup.mk (glSimpleRep k n i)
   closure_simple := closure_range_mk_glSimpleRep k n
@@ -733,17 +806,6 @@ theorem glTitsSystemWeylGroupMulEquivPerm_mk_permutationGL (σ : Equiv.Perm (Fin
   rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     diagonalNormalizerQuotientMulEquivPerm_mk]
   exact diagonalNormalizerPerm_permutationGL σ
-
-/-- **Bruhat decomposition** of `GLₙ₊₁(k)`: every invertible matrix lies in a double coset
-`B τ B` of the upper-triangular subgroup represented by a permutation matrix. -/
-theorem exists_mem_doubleCoset_permutationGL (g : GL (Fin (n + 1)) k) :
-    ∃ τ : Equiv.Perm (Fin (n + 1)), g ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ)
-      (upperTriangularGroup (Fin (n + 1)) k) (upperTriangularGroup (Fin (n + 1)) k) := by
-  obtain ⟨w, hw⟩ := (glTitsSystem k n).exists_mem_doubleCoset g
-  have hwN : (w : GL (Fin (n + 1)) k) ∈ GLDiagonalNormalizer k (n + 1) := w.property
-  obtain ⟨d, τ, hdτ⟩ := mem_normalizer_diagonalTorus_iff_exists.mp hwN
-  refine ⟨τ, ?_⟩
-  rwa [glTitsSystem_subgroupB, hdτ, doubleCoset_diagGL_mul] at hw
 
 /-- In rank one the standard Tits system is the one of `GL₂` built from its Bruhat
 decomposition. -/

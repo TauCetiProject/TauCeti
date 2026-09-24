@@ -479,7 +479,7 @@ theorem map_typeAGraphConjugator {B : Type*} [CommRing B] (f : A â†’+* B) (r : â
       typeAGraphConjugator r B := by
   apply Units.ext
   ext i j
-  simp [typeAGraphConjugator, typeAGraphSign]
+  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
 
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]

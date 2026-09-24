@@ -126,6 +126,7 @@ theorem diagonalTorus_le :
 
 /-- Conjugating by the permutation matrix of `σ` gives an upper-triangular matrix exactly when
 the entries of `g` at `(σ i, σ j)` vanish for all `j < i`. -/
+@[simp]
 theorem permutationGL_inv_mul_mul_permutationGL_mem_iff {ι : Type*} [Fintype ι]
     [LinearOrder ι] (σ : Equiv.Perm ι) (g : GL ι R) :
     (permutationGL (k := R) σ)⁻¹ * g * permutationGL (k := R) σ ∈ upperTriangularGroup ι R ↔
