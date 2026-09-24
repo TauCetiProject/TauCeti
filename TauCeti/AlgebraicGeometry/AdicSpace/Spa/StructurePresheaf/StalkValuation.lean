@@ -23,10 +23,10 @@ stalks of an adic space carry their valuations.
 
 The gluing is `TauCeti.ValuationSpectrum.ofDirected`. Its hypotheses are supplied here: every germ
 is the germ of an element of some `A⟨p⟩`; a germ vanishes only if some restriction to a smaller
-rational neighbourhood does; and the points of `x` on the rings `A⟨p⟩` are compatible with the
-comparison maps of Wedhorn's Proposition 8.2(1). Two lifts of one germ therefore differ, on a
-common rational neighbourhood, by an element of the support of the point of `x`, and so they have
-the same value.
+rational neighbourhood does. The compatibility of the points of `x` on the rings `A⟨p⟩` with the
+comparison maps of Wedhorn's Proposition 8.2(1) comes from `Spa.Localization.Point`. Two lifts of
+one germ therefore differ, on a common rational neighbourhood, by an element of the support of the
+point of `x`, and so they have the same value.
 
 The stalk is the ring colimit of `presentationLimitPresheafInCommRingCat`; no topology on it is
 used. `A⁺` is assumed to consist of power-bounded elements, as for every ring of integral
@@ -35,8 +35,6 @@ elements, and to contain the ring of definition of the chosen pair of definition
 
 ## Main definitions
 
-* `TauCeti.ValuationSpectrum.rationalLocalizationPoint`: the point of `A⟨p⟩` determined by
-  `x ∈ R(p)`.
 * `TauCeti.ValuationSpectrum.presentationLimitStalkValuation`: the valuation on the stalk at `x`.
 
 ## Main results
@@ -149,15 +147,16 @@ private theorem exists_rationalNhd_le_le {x : spa Aplus} (i j : RationalNhd P x)
         spaBasicOpen Aplus i.1.pres.num i.1.pres.den ∧
       spaBasicOpen Aplus k.1.pres.num k.1.pres.den ≤
         spaBasicOpen Aplus j.1.pres.num j.1.pres.den := by
-  have hk (y : spa Aplus) :
-      y ∈ spaBasicOpen Aplus (i.1.commonRefinement j.1).pres.num
-          (i.1.commonRefinement j.1).pres.den ↔
-        y ∈ spaBasicOpen Aplus i.1.pres.num i.1.pres.den ∧
-          y ∈ spaBasicOpen Aplus j.1.pres.num j.1.pres.den := by
+  have hx : x ∈ spaBasicOpen Aplus (i.1.commonRefinement j.1).pres.num
+      (i.1.commonRefinement j.1).pres.den := by
     simp only [PresentationIndex.commonRefinement_pres, mem_spaBasicOpen,
       rationalSubset_commonRefinement, Set.mem_inter_iff]
-  exact ⟨⟨i.1.commonRefinement j.1, (hk x).mpr ⟨i.2, j.2⟩⟩,
-    fun y hy ↦ ((hk y).mp hy).1, fun y hy ↦ ((hk y).mp hy).2⟩
+    exact ⟨mem_spaBasicOpen.mp i.2, mem_spaBasicOpen.mp j.2⟩
+  exact ⟨⟨i.1.commonRefinement j.1, hx⟩,
+    spaBasicOpen_le_spaBasicOpen_iff.mpr
+      (rationalSubset_subset_rationalSubset_of_le Aplus (i.1.le_commonRefinement_left j.1)),
+    spaBasicOpen_le_spaBasicOpen_iff.mpr
+      (rationalSubset_subset_rationalSubset_of_le Aplus (i.1.le_commonRefinement_right j.1))⟩
 
 /-- Rational germs are compatible with the comparison maps. -/
 private theorem rationalNhdGerm_rationalNhdMap {x : spa Aplus} {i j : RationalNhd P x}

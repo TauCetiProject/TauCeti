@@ -276,6 +276,8 @@ noncomputable def completionLocObjCommRingCatIso (p : Presentation P) :
   (forget₂ TopCommRingCat CommRingCat).mapIso
     (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))
 
+/-- The definitional unfolding of the forward map, kept private because the public theorem
+states the usable identification. -/
 private theorem completionLocObjCommRingCatIso_hom_aux (p : Presentation P) :
     letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -292,9 +294,11 @@ theorem completionLocObjCommRingCatIso_hom (p : Presentation P) :
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     (completionLocObjCommRingCatIso p).hom =
       (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) := by
-  exact completionLocObjCommRingCatIso_hom_aux p
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) :=
+  completionLocObjCommRingCatIso_hom_aux p
 
+/-- The definitional unfolding of the inverse map, kept private because the public theorem
+states the usable identification. -/
 private theorem completionLocObjCommRingCatIso_inv_aux (p : Presentation P) :
     letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -311,8 +315,8 @@ theorem completionLocObjCommRingCatIso_inv (p : Presentation P) :
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     (completionLocObjCommRingCatIso p).inv =
       (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) := by
-  exact completionLocObjCommRingCatIso_inv_aux p
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) :=
+  completionLocObjCommRingCatIso_inv_aux p
 
 /-- Forgetting the topology of a morphism keeps its underlying ring homomorphism. -/
 private theorem forget₂_map_topCommRingCat_hom {X Y : TopCommRingCat}
@@ -330,8 +334,12 @@ private theorem forget₂_map_eqToHom_comp_comp_eqToHom {X X' Y Y' : TopCommRing
         CommRingCat.ofHom g := by
   subst eX eY
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  simp only [forget₂_map_topCommRingCat_hom]
-  exact (Category.comp_id _).trans (Category.id_comp _).symm
+  rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
+  rw [forget₂_map_topCommRingCat_hom]
+  -- The forgetful functor's object map is `CommRingCat.of` on the underlying ring.
+  change CommRingCat.ofHom g ≫ 𝟙 (CommRingCat.of Y.α) =
+    𝟙 (CommRingCat.of X.α) ≫ CommRingCat.ofHom g
+  simp only [Category.comp_id, Category.id_comp]
 
 /-- **Comparison maps through the identification with `A⟨p⟩`**: under
 `completionLocObjCommRingCatIso`, the underlying ring map of the comparison morphism of

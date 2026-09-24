@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PlusComparison
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Valuation
 
 /-!
 # Points on completed rational localizations
@@ -14,6 +13,17 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Valuation
 A point of a rational subset of `Spa(A,A⁺)` determines a point of its completed rational
 localization through Wedhorn's Proposition 8.2(2). These points agree along the comparison maps
 of Proposition 8.2(1).
+
+## Main definitions
+
+* `TauCeti.ValuationSpectrum.rationalLocalizationPoint`: the point of `A⟨p⟩` determined by
+  `x ∈ R(p)`.
+
+## Main results
+
+* `TauCeti.ValuationSpectrum.comap_rationalLocalizationPoint`: the rational point lies over `x`.
+* `TauCeti.ValuationSpectrum.comap_homOfRationalSubsetSubset_rationalLocalizationPoint`: the
+  rational points agree along comparison maps.
 -/
 
 namespace TauCeti.ValuationSpectrum
@@ -42,6 +52,8 @@ noncomputable def rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) 
     ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
       ⟨x, mem_spaBasicOpen.mp hx⟩).1
 
+/-- The definitional unfolding of the rational point, kept private because the public theorem
+states the usable identification. -/
 private theorem rationalLocalizationPoint_def_aux (hP : P.ringOfDefinition ≤ Aplus)
     (p : Presentation P)
     (x : spa Aplus) (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
