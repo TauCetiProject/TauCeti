@@ -18,10 +18,10 @@ Cartan subalgebra. The two copies of `ι` in the hyperbolic basis have coordinat
 signed coordinate weights.
 
 Over a reduced ring, generalized root spaces are honest simultaneous eigenspaces because each Cartan
-element acts diagonally on the ambient matrix units. This gives an entrywise support criterion
-that reduces the calculation of a concrete root space to the positions having its requested signed
-weight; the converse support characterization uses the stronger hypothesis that the coefficient
-ring is a domain.
+element acts diagonally on the ambient matrix units. This identifies the root space with the
+corresponding weight space. The support implication from entries of the requested signed weight to
+root-space membership holds over any commutative ring; the converse implication, from root-space
+membership to entrywise support, uses the stronger hypothesis that the coefficient ring is a domain.
 
 ## Main results
 
