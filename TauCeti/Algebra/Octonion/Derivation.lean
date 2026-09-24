@@ -43,10 +43,9 @@ In the other direction the file exhibits `14` independent derivations. The Zorn 
 by `ℤ/3`, with the two scalar entries in degree `0`, the top-right vector entry in degree `1` and
 the bottom-left one in degree `2`, and three families of derivations match those degrees: the
 `𝔰𝔩₃` acting on the vector entries in degree `0`, and a copy of `R³` in each off-diagonal degree.
-Evaluation at the diagonal idempotent `⟨1, 0, 0, 0⟩` separates the two off-diagonal families, which
-the `𝔰𝔩₃` family kills; evaluation on the vector entries then separates the `𝔰𝔩₃` family itself. So
-the three are independent and `14 ≤ finrank (Der 𝕆)` over a field. The reverse inequality is not
-proved here.
+The three are independent, so `14 ≤ finrank (Der 𝕆)` over a field, and every bracket of two of
+them lands back in the three, so their images span a Lie subalgebra of `Der 𝕆`. The reverse
+inequality is not proved here.
 
 ## Main definitions
 
@@ -58,6 +57,8 @@ proved here.
   off-diagonal families of derivations, of degrees `1` and `2` for the `ℤ/3`-grading of `𝕆`.
 * `TauCeti.Octonion.gradedDerivation`: the three families assembled into a map of `R`-modules
   `𝔰𝔩₃ ⊕ R³ ⊕ R³ → Der 𝕆`.
+* `TauCeti.Octonion.slOfVectorCovector`: the traceless matrix `3 • (c dᵀ) - (c ⬝ᵥ d) • 1`, the
+  value in `𝔰𝔩₃` of the bracket of a degree-`1` and a degree-`2` derivation.
 
 ## Main results
 
@@ -78,6 +79,13 @@ proved here.
   none of the above is vacuous. `TauCeti.Octonion.slDerivation_injective`,
   `TauCeti.Octonion.vectorDerivation_injective` and
   `TauCeti.Octonion.covectorDerivation_injective` are the one-family corollaries.
+* `TauCeti.Octonion.slDerivation_lie_vectorDerivation`,
+  `TauCeti.Octonion.slDerivation_lie_covectorDerivation`,
+  `TauCeti.Octonion.vectorDerivation_lie_vectorDerivation`,
+  `TauCeti.Octonion.covectorDerivation_lie_covectorDerivation` and
+  `TauCeti.Octonion.vectorDerivation_lie_covectorDerivation`: the five brackets of two of the three
+  families, each back inside the three; the sixth, `𝔰𝔩₃` with itself, is `map_lie` for
+  `TauCeti.Octonion.slDerivation`.
 * `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`: over a field,
   `14 ≤ finrank (Der 𝕆)`.
 
@@ -368,12 +376,9 @@ embeddings are built here, not the decomposition.
   `D` on `V` and on `V*` in turn; the same computation in degree `2` gives `covectorDerivation`.
 
 That computation is how the formulas were found and is not itself formalized. What is proved here
-is that the three families do consist of derivations, and that they are independent. Evaluation at
-`e` settles the two off-diagonal families at once, since `slDerivation A` vanishes at `e` while
-`vectorDerivation c` and `covectorDerivation d` give `⟨0, 0, c, 0⟩` and `⟨0, 0, 0, -d⟩`; for the
-same reason it says nothing about `A`, which a second evaluation, on the vector entries, then
-pins down. That the three families *exhaust* `Der 𝕆`, which is the other half of
-`finrank (Der 𝕆) = 14`, is not proved here. -/
+is that the three families do consist of derivations, that they are independent, and that their
+brackets stay inside the three, as the `ℤ/3`-grading predicts. That the three families *exhaust*
+`Der 𝕆`, which is the other half of `finrank (Der 𝕆) = 14`, is not proved here. -/
 
 section Matrices
 
@@ -470,8 +475,8 @@ private def vectorDerivationEnd (c : Fin 3 → R) : Module.End R (Octonion R) wh
       module
     · simp
 
-/-- The action of `TauCeti.Octonion.vectorDerivationEnd`, so that its Leibniz-rule proof can name
-the four entries instead of reshaping the goal by definitional equality. -/
+/-- The action of `TauCeti.Octonion.vectorDerivationEnd` on the four entries of a Zorn vector
+matrix. -/
 private theorem vectorDerivationEnd_apply (c : Fin 3 → R) (x : Octonion R) :
     vectorDerivationEnd c x = ⟨-(c ⬝ᵥ x.w), c ⬝ᵥ x.w, (x.a - x.b) • c, c ⨯₃ x.v⟩ :=
   (rfl)
@@ -601,6 +606,138 @@ theorem covectorDerivation_apply (d : Fin 3 → R) (x : Octonion R) :
       ⟨d ⬝ᵥ x.v, -(d ⬝ᵥ x.v), x.w ⨯₃ d, (x.b - x.a) • d⟩ :=
   (rfl)
 
+/-! #### The brackets of the three families
+
+The five lemmas below compute the bracket of two members of the three families, in each case as a
+member of the family of the summed degree — degrees `0`, `1` and `2` add mod `3`, so the images of
+the three families span a Lie subalgebra of `Der 𝕆`. The sixth pairing, `𝔰𝔩₃` with itself, is
+`map_lie` for the Lie algebra homomorphism `TauCeti.Octonion.slDerivation`. -/
+
+/-- **The `𝔰𝔩₃` element a degree-`1` and a degree-`2` derivation bracket to**: the traceless
+matrix `3 • (c dᵀ) - (c ⬝ᵥ d) • 1`, whose action on `R³` is `u ↦ 3 (d ⬝ᵥ u) • c - (c ⬝ᵥ d) • u`. -/
+def slOfVectorCovector (c d : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
+  ⟨(3 : R) • vecMulVec c d - (c ⬝ᵥ d) • 1, by
+    change Matrix.trace ((3 : R) • vecMulVec c d - (c ⬝ᵥ d) • (1 : Matrix (Fin 3) (Fin 3) R)) = 0
+    simp [trace_sub, trace_smul]
+    ring⟩
+
+@[simp]
+theorem coe_slOfVectorCovector (c d : Fin 3 → R) :
+    (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R) =
+      (3 : R) • vecMulVec c d - (c ⬝ᵥ d) • 1 :=
+  (rfl)
+
+private theorem mulVec_slOfVectorCovector (c d u : Fin 3 → R) :
+    (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R) *ᵥ u =
+      (3 : R) • ((d ⬝ᵥ u) • c) - (c ⬝ᵥ d) • u := by
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, one_mulVec]
+
+private theorem mulVec_transpose_slOfVectorCovector (c d u : Fin 3 → R) :
+    (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ u =
+      (3 : R) • ((c ⬝ᵥ u) • d) - (c ⬝ᵥ d) • u := by
+  simp [transpose_sub, transpose_smul, sub_mulVec, smul_mulVec, transpose_vecMulVec,
+    vecMulVec_mulVec, transpose_one, one_mulVec]
+
+/-- **`𝔰𝔩₃` acts on the degree-`1` family by its defining representation**: bracketing with
+`slDerivation A` sends `vectorDerivation c` to `vectorDerivation (A c)`. -/
+@[simp]
+theorem slDerivation_lie_vectorDerivation (A : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (c : Fin 3 → R) :
+    ⁅slDerivation A, vectorDerivation c⁆ =
+      vectorDerivation ((A : Matrix (Fin 3) (Fin 3) R) *ᵥ c) := by
+  refine Subtype.ext (LinearMap.ext fun x => ?_)
+  have htr : (A : Matrix (Fin 3) (Fin 3) R).trace = 0 := A.2
+  have hdot : c ⬝ᵥ ((A : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ x.w) =
+      ((A : Matrix (Fin 3) (Fin 3) R) *ᵥ c) ⬝ᵥ x.w := by
+    rw [dotProduct_transpose_mulVec, dotProduct_comm]
+  have hcross := transpose_mulVec_crossProduct htr c x.v
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    slDerivation_apply, vectorDerivation_apply]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot]
+  · simp [hdot]
+  · simp [mulVec_smul]
+  · simp only [sub_w, hcross, mulVec_smul]
+    abel
+
+/-- **`𝔰𝔩₃` acts on the degree-`2` family by minus the transpose of its defining
+representation**, the dual of `TauCeti.Octonion.slDerivation_lie_vectorDerivation`. -/
+@[simp]
+theorem slDerivation_lie_covectorDerivation (A : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (d : Fin 3 → R) :
+    ⁅slDerivation A, covectorDerivation d⁆ =
+      -covectorDerivation ((A : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ d) := by
+  refine Subtype.ext (LinearMap.ext fun x => ?_)
+  have htr : (A : Matrix (Fin 3) (Fin 3) R)ᵀ.trace = 0 := by rw [trace_transpose]; exact A.2
+  have hdot : d ⬝ᵥ ((A : Matrix (Fin 3) (Fin 3) R) *ᵥ x.v) =
+      ((A : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ d) ⬝ᵥ x.v := by
+    rw [← transpose_transpose (A : Matrix (Fin 3) (Fin 3) R), dotProduct_transpose_mulVec,
+      dotProduct_comm, transpose_transpose]
+  have hcross := transpose_mulVec_crossProduct htr x.w d
+  rw [transpose_transpose] at hcross
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    slDerivation_apply, covectorDerivation_apply, NegMemClass.coe_neg, LinearMap.neg_apply]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot]
+  · simp [hdot]
+  · simp only [sub_v, neg_v, hcross, map_neg, LinearMap.neg_apply]
+    abel
+  · simp [mulVec_smul]
+
+section Brackets
+
+attribute [local simp] vec3_dotProduct cross_apply Matrix.vecHead Matrix.vecTail
+
+/-- **Two degree-`1` derivations bracket into degree `2`**, at `-2` times the cross product of the
+two vectors indexing them. -/
+@[simp]
+theorem vectorDerivation_lie_vectorDerivation (c c' : Fin 3 → R) :
+    ⁅vectorDerivation c, vectorDerivation c'⁆ =
+      ((-2 : R) • covectorDerivation (c ⨯₃ c') : derivationLieAlgebra R (Octonion R)) := by
+  refine Subtype.ext (LinearMap.ext fun x => ?_)
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    vectorDerivation_apply, SetLike.val_smul, LinearMap.smul_apply, covectorDerivation_apply]
+  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
+  · simp; ring
+  · simp; ring
+  · fin_cases i <;> (simp; ring)
+  · fin_cases i <;> (simp; ring)
+
+/-- **Two degree-`2` derivations bracket into degree `1`**, the mirror of
+`TauCeti.Octonion.vectorDerivation_lie_vectorDerivation`. -/
+@[simp]
+theorem covectorDerivation_lie_covectorDerivation (d d' : Fin 3 → R) :
+    ⁅covectorDerivation d, covectorDerivation d'⁆ =
+      ((2 : R) • vectorDerivation (d ⨯₃ d') : derivationLieAlgebra R (Octonion R)) := by
+  refine Subtype.ext (LinearMap.ext fun x => ?_)
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    covectorDerivation_apply, SetLike.val_smul, LinearMap.smul_apply, vectorDerivation_apply]
+  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
+  · simp; ring
+  · simp; ring
+  · fin_cases i <;> (simp; ring)
+  · fin_cases i <;> (simp; ring)
+
+/-- **A degree-`1` and a degree-`2` derivation bracket back into `𝔰𝔩₃`**, at the traceless matrix
+`TauCeti.Octonion.slOfVectorCovector`. -/
+@[simp]
+theorem vectorDerivation_lie_covectorDerivation (c d : Fin 3 → R) :
+    ⁅vectorDerivation c, covectorDerivation d⁆ = slDerivation (slOfVectorCovector c d) := by
+  refine Subtype.ext (LinearMap.ext fun x => ?_)
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    vectorDerivation_apply, covectorDerivation_apply, slDerivation_apply]
+  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
+  · simp; ring
+  · simp; ring
+  · rw [sub_v]
+    simp only [mulVec_slOfVectorCovector]
+    fin_cases i <;> (simp; ring)
+  · rw [sub_w]
+    simp only [mulVec_transpose_slOfVectorCovector]
+    fin_cases i <;> (simp; ring)
+
+end Brackets
+
 /-- **The three graded families together**, `𝔰𝔩₃ ⊕ V ⊕ V* → Der 𝕆`. It is a map of `R`-modules and
 not of Lie algebras: the source is a direct sum of modules, carrying no bracket that pairs its two
 off-diagonal summands with each other. Its injectivity
@@ -617,10 +754,9 @@ theorem gradedDerivation_apply (A : LieAlgebra.SpecialLinear.sl (Fin 3) R) (c d 
     gradedDerivation (A, c, d) = slDerivation A + (vectorDerivation c + covectorDerivation d) :=
   (rfl)
 
-/-- **The three graded families are independent.** Evaluating at the diagonal idempotent
-`e = ⟨1, 0, 0, 0⟩` reads off `c` from the top-right entry and `-d` from the bottom-left one, since
-`slDerivation A` kills `e`; with those gone, evaluating `slDerivation A` at `⟨0, 0, u, 0⟩` says
-`A u = 0` for every `u`. -/
+/-- **The three graded families are independent**: a traceless matrix and two vectors whose three
+derivations sum to `0` are all three zero, so `Der 𝕆` contains `8 + 3 + 3` independent
+derivations. -/
 theorem gradedDerivation_injective : Function.Injective (gradedDerivation (R := R)) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   rintro ⟨A, c, d⟩ h
