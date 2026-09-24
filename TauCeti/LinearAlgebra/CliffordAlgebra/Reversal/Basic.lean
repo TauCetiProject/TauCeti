@@ -12,7 +12,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 /-!
 # Reversal on Clifford subalgebras
 
-This file restricts Clifford reversal to the even subalgebra and records its action on bivectors.
+This file restricts Clifford reversal to the even subalgebra, records its action on bivectors,
+and develops general reverse-norm identities and comparisons with Clifford conjugation.
 -/
 
 public section
@@ -63,6 +64,68 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
     reverseEven Q (reverseEven Q x) = x := by
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
+
+/-! ### Reverse norms and comparison with Clifford conjugation -/
+
+/-- The reverse norm of a product of vectors is the product of their quadratic norms. -/
+theorem reverse_prod_map_ι_mul_prod_map_ι (l : List M) :
+    reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod =
+      algebraMap R (CliffordAlgebra Q) (l.map Q).prod := by
+  induction l with
+  | nil => simp
+  | cons m l ih =>
+    rw [List.map_cons, List.prod_cons, reverse.map_mul, reverse_ι, mul_assoc,
+      ← mul_assoc (ι Q m), ι_sq_scalar, ← mul_assoc, ← Algebra.commutes, mul_assoc, ih,
+      ← map_mul, List.map_cons, List.prod_cons]
+
+/-- On an even element, the `star` norm and the `reverse` norm agree. -/
+theorem star_mul_self_eq_reverse_mul_self_of_mem_even {x : CliffordAlgebra Q}
+    (hx : x ∈ evenOdd Q 0) : star x * x = reverse x * x := by
+  rw [star_def, involute_eq_of_mem_even hx]
+
+/-- On an odd element, the `star` norm is the negative of the `reverse` norm. -/
+theorem star_mul_self_eq_neg_reverse_mul_self_of_mem_odd {x : CliffordAlgebra Q}
+    (hx : x ∈ evenOdd Q 1) : star x * x = -(reverse x * x) := by
+  rw [star_def, involute_eq_of_mem_odd hx, map_neg, neg_mul]
+
+/-- On a product of `r` vectors, the `star` norm is `(-1) ^ r` times the `reverse` norm. -/
+theorem star_mul_self_eq_neg_one_pow_smul_reverse_mul_self (l : List M) :
+    star (l.map (ι Q)).prod * (l.map (ι Q)).prod =
+      (-1 : R) ^ l.length • (reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod) := by
+  rw [star_def, involute_prod_map_ι, map_smul, smul_mul_assoc]
+
+/-- A scalar factor on the left comes out of the reverse norm. -/
+theorem reverse_mul_mul_self_mul {x y : CliffordAlgebra Q} {r : R}
+    (hx : reverse x * x = algebraMap R (CliffordAlgebra Q) r) :
+    reverse (x * y) * (x * y) = algebraMap R (CliffordAlgebra Q) r * (reverse y * y) := by
+  rw [reverse.map_mul, mul_assoc, ← mul_assoc (reverse x), hx, ← mul_assoc, ← Algebra.commutes,
+    mul_assoc]
+
+/-- If the reverse norm of a unit is a scalar, then so is the reverse norm on the other side. -/
+theorem self_mul_reverse_of_reverse_mul_self {x : (CliffordAlgebra Q)ˣ} {r : R}
+    (hx : reverse (x : CliffordAlgebra Q) * x = algebraMap R (CliffordAlgebra Q) r) :
+    (x : CliffordAlgebra Q) * reverse (x : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) r := by
+  have hrev : reverse (x : CliffordAlgebra Q) = algebraMap R (CliffordAlgebra Q) r * ↑x⁻¹ := by
+    rw [← hx, mul_assoc, Units.mul_inv, mul_one]
+  rw [hrev, ← mul_assoc, ← Algebra.commutes, mul_assoc, Units.mul_inv, mul_one]
+
+/-- If the reverse norm of a unit is the scalar unit `r`, that of its inverse is `r⁻¹`. -/
+theorem reverse_inv_mul_inv {x : (CliffordAlgebra Q)ˣ} {r : Rˣ}
+    (hx : reverse (x : CliffordAlgebra Q) * x = algebraMap R (CliffordAlgebra Q) r) :
+    reverse ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ↑x⁻¹ =
+      algebraMap R (CliffordAlgebra Q) ↑r⁻¹ := by
+  have hinv : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * reverse (x : CliffordAlgebra Q) := by
+    calc ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+        = algebraMap R (CliffordAlgebra Q) (↑r⁻¹ * ↑r) * ↑x⁻¹ := by simp
+      _ = algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * (reverse (x : CliffordAlgebra Q) * x) *
+          ↑x⁻¹ := by rw [hx, map_mul]
+      _ = algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * reverse (x : CliffordAlgebra Q) := by
+          rw [mul_assoc, mul_assoc, Units.mul_inv, mul_one]
+  conv_lhs => rhs; rw [hinv]
+  rw [← mul_assoc, ← Algebra.commutes, mul_assoc, ← reverse.map_mul, Units.mul_inv,
+    reverse.map_one, mul_one]
 
 section Bivector
 

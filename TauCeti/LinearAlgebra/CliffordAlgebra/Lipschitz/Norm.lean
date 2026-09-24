@@ -207,6 +207,7 @@ theorem lipschitzNorm_unitι (Q : QuadraticForm R V) (v : V) [Invertible (Q v)] 
   exact h.symm.trans (map_neg _ _).symm
 
 /-- A Lipschitz element lies in the Pin group exactly when its `lipschitzNorm` is one. -/
+@[simp]
 theorem mem_pinGroup_iff_lipschitzNorm_eq_one (Q : QuadraticForm R V) (x : lipschitzGroup Q) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ pinGroup Q ↔ lipschitzNorm Q x = 1 := by
   rw [pinGroup.units_mem_iff, Unitary.mem_iff, star_mul_self_eq_algebraMap_lipschitzNorm,
@@ -231,7 +232,7 @@ theorem lipschitzNorm_scalarUnits {Q : QuadraticForm R V}
     lipschitzNorm Q (scalarUnits Q hQ a) = a * a :=
   lipschitzNorm_eq_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
 
-/-- The Clifford norm of a Pin element is one. -/
+/-- The `star` norm of a Pin element is one. -/
 @[simp]
 theorem lipschitzNorm_pinToLipschitz (Q : QuadraticForm R V) (p : pinGroup Q) :
     lipschitzNorm Q (pinToLipschitz Q p) = 1 := by
