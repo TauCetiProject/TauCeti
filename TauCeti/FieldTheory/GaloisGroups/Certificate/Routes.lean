@@ -145,10 +145,20 @@ theorem hasGaloisLabel_five_four_of_surjective_galActionHom (hf : f.Monic)
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
   have hd : f.discr ≠ 0 :=
     (hf.discr_ne_zero_iff_separable_map ℚ).mpr (PerfectField.separable_of_irreducible hirr)
+  have hroots : Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = 5 := by
+    rw [natCard_rootSet_complex_eq_natDegree hd, hdeg]
+  have hperm : Nat.card (Equiv.Perm ((f.map (Int.castRingHom ℚ)).rootSet ℂ)) =
+      Nat.factorial 5 := by
+    rw [Nat.card_perm, hroots]
+  have himage : Nat.card (Polynomial.Gal.galActionHom
+      (f.map (Int.castRingHom ℚ)) ℂ).range = Nat.factorial 5 := by
+    rw [MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top]
+    exact hperm
+  have hgal : Nat.card (f.map (Int.castRingHom ℚ)).Gal = Nat.factorial 5 := by
+    rw [← natCard_galActionHom_range _ ℂ]
+    exact himage
   rw [hasGaloisLabel_five_iff_natCard_gal_eq (PerfectField.separable_of_irreducible hirr) hirr
-    (natDegree_map_rat_eq_five hf hdeg), natCard_referenceSubgroup_five_four,
-    ← natCard_galActionHom_range _ ℂ, MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top,
-    Nat.card_perm, natCard_rootSet_complex_eq_natDegree hd, hdeg]
+    (natDegree_map_rat_eq_five hf hdeg), natCard_referenceSubgroup_five_four, hgal]
   rfl
 
 /-- **The symmetric route: `5T5`.** A monic integral quintic, irreducible over `ℚ`, whose factor
