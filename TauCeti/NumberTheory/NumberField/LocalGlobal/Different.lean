@@ -41,6 +41,9 @@ This is the completion counterpart of `TauCeti.span_traceDual_one_eq_traceDual_o
 `TauCeti/RingTheory/DedekindDomain/Different/Localization.lean`; the trace-dual comparison and
 the names follow that formal localization result.
 
+The completion comparison equations are used with both places explicit: their left-hand sides
+determine `w` but not the base place `v`, so they are not simplification rules.
+
 ## Main results
 
 * `TauCeti.sum_trace_mul_smul_algebraMap_eq`: a trace-dual expansion of `L` over `K` remains one
