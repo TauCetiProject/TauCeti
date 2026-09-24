@@ -109,13 +109,6 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
       ⁅x * y, z⁆ = x * ⁅y, z⁆ + ⁅x, z⁆ * y := by
     simp only [Ring.lie_def]
     noncomm_ring
-  have hFD (i j : Fin N) : ⁅carF (K := K) i j, carGenerator (K := K) a b⁆ =
-      (if j = a then carGenerator (K := K) i b else 0) -
-        if b = i then carGenerator (K := K) a j else 0 := by
-    simp only [carF, carGenerator_def]
-    rw [glCliffordHom_lie_ι, lie_single_single]
-    simp only [map_sub, apply_ite, map_zero, one_mul]
-    split_ifs <;> rfl
   have hF (i j : Fin N) :
       carF (K := K) i j =
       (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (K := K) i k * carGenerator k j := by
@@ -145,7 +138,8 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
           (∑ i : Fin N, carF (K := K) i b * carGenerator a i) +
           (∑ i : Fin N, carGenerator (K := K) i b * carF a i) -
           ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
-      simp_rw [hleib, hFD, mul_sub, sub_mul, Finset.sum_add_distrib,
+      simp_rw [hleib, glCliffordHom_single_lie_carGenerator, mul_sub, sub_mul,
+        Finset.sum_add_distrib,
         Finset.sum_sub_distrib]
       rw [hA, hB, hC, hD]
       abel

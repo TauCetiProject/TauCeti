@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.TraceForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 import Mathlib.Algebra.Lie.Classical
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -24,6 +25,7 @@ corresponding Clifford algebra.
 * `TauCeti.glCliffordHom_one`: its scalar value on the identity matrix.
 * `TauCeti.glCliffordHom_lie_ι`: its commutator action on Clifford generators.
 * `TauCeti.glCliffordHom_single`: its formula on matrix units.
+* `TauCeti.glCliffordHom_single_lie_carGenerator`: its action on matrix-unit generators.
 * `TauCeti.glCliffordHom_normalOrdering`: its decomposition into bivectors and the central
   normal-ordering constant.
 * `TauCeti.glCliffordHom_injective`: it is injective once `Fintype.card n` is invertible, which
@@ -253,6 +255,17 @@ theorem glCliffordHom_single [decEq : DecidableEq n] (i j : n) :
     rw [← hcentral]
     rw [Finset.sum_add_distrib, smul_add]
   · simp [h, Finset.smul_sum]
+
+/-- The matrix-unit Clifford lift acts on the canonical matrix-unit generators by the defining
+matrix-unit commutator. -/
+theorem glCliffordHom_single_lie_carGenerator (i j a b : n) :
+    ⁅glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)),
+        carGenerator (K := K) a b⁆ =
+      (if j = a then carGenerator (K := K) i b else 0) -
+        if b = i then carGenerator (K := K) a j else 0 := by
+  rw [carGenerator_def, glCliffordHom_lie_ι, lie_single_single]
+  simp only [map_sub, apply_ite, map_zero, one_mul]
+  split_ifs <;> simp only [carGenerator_def]
 
 /-! ### Injectivity -/
 
