@@ -355,11 +355,20 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
     LinearMap.baseChange_eq_ltensor] using hxy
 
-/-! ### Orthogonal groups -/
-
 namespace TauCeti
 
 namespace QuadraticMap
+
+/-- Polarization after base change, evaluated on pure tensors. -/
+theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
+    QuadraticMap.polar (Q.baseChange A) (a ⊗ₜ x) (b ⊗ₜ y) =
+      (QuadraticMap.polar Q x y) • (a * b) := by
+  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2
+    (map_ofNat _ _).symm
+  rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
+    LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+
+/-! ### Orthogonal groups -/
 
 /-- Extending scalars carries an orthogonal automorphism of `Q` to an orthogonal automorphism of
 `Q.baseChange A`.  Over a field extension this is the map that compares the rational and local
@@ -487,15 +496,6 @@ theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Fl
           specialOrthogonalGroupBaseChange_to_orthogonalGroup (A := A) Q h
   apply Subtype.ext
   exact congrArg (fun x : orthogonalGroup Q => (x : M ≃ₗ[R] M)) hO
-
-/-- Polarization after base change, evaluated on pure tensors. -/
-theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
-    QuadraticMap.polar (Q.baseChange A) (a ⊗ₜ x) (b ⊗ₜ y) =
-      (QuadraticMap.polar Q x y) • (a * b) := by
-  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2
-    (map_ofNat _ _).symm
-  rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
-    LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
 
 /-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
 of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/

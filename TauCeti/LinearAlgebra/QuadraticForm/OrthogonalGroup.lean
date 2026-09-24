@@ -204,6 +204,12 @@ theorem coe_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N) (f : orth
   rfl
 
 @[simp]
+theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N)
+    (f : orthogonalGroup Q) :
+    (orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
+  LinearEquiv.ext <| congrFun (coe_orthogonalGroupEquivIsometryEquiv Q f)
+
+@[simp]
 theorem coe_orthogonalGroupEquivIsometryEquiv_symm (Q : QuadraticMap R M N)
     (e : Q.IsometryEquiv Q) :
     (((orthogonalGroupEquivIsometryEquiv Q).symm e : M ≃ₗ[R] M) : M → M) = ⇑e := by
@@ -754,16 +760,17 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
     [Invertible (Q v)] [Invertible (Q ((g : M ≃ₗ[R] M) v))] :
     g * reflectionOrthogonal Q v * g⁻¹ = reflectionOrthogonal Q ((g : M ≃ₗ[R] M) v) := by
   refine Subtype.ext <| LinearEquiv.ext fun x => ?_
-  let _ : Invertible (Q ((orthogonalGroupEquivIsometryEquiv Q g) v)) := by
-    change Invertible (Q ((g : M ≃ₗ[R] M) v))
-    infer_instance
-  have hsymm : (orthogonalGroupEquivIsometryEquiv Q g).symm x =
-      (g : M ≃ₗ[R] M).symm x := rfl
+  let e := orthogonalGroupEquivIsometryEquiv Q g
+  have hv : e v = (g : M ≃ₗ[R] M) v := congrFun (coe_orthogonalGroupEquivIsometryEquiv Q g) v
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal,
     LinearEquiv.mul_apply, LinearEquiv.coe_inv]
-  convert (reflection_map_apply (orthogonalGroupEquivIsometryEquiv Q g) v x).symm using 1
-  · simp only [coe_orthogonalGroupEquivIsometryEquiv, hsymm]
-  · congr 1
+  -- Generalize over the `Invertible` instance so that `g v` can be rewritten to `e v` under it.
+  revert ‹Invertible (Q ((g : M ≃ₗ[R] M) v))›
+  rw [← hv]
+  intro _
+  rw [reflection_map_apply e v x, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv e.symm,
+    ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
+    toLinearEquiv_orthogonalGroupEquivIsometryEquiv, coe_orthogonalGroupEquivIsometryEquiv]
 
 end ReflectionMap
 
