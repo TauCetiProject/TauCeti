@@ -63,11 +63,11 @@ theorem isLagrangian_strongDualCotangent_graph_iff :
 /-- The graph of a symmetric second derivative is Lagrangian. The Hessian here is the derivative
 of the differential, taking values in the continuous dual. -/
 theorem isLagrangian_hessian_graph {f : V → ℝ} {x : V}
-    (hf : ContDiffAt ℝ 2 f x) :
+    (hf : IsSymmSndFDerivAt ℝ f x) :
     (strongDualCotangentSymplecticForm (V := V)).IsLagrangian
       (fderiv ℝ (fderiv ℝ f) x).toLinearMap.graph := by
   apply isLagrangian_strongDualCotangent_graph_iff.mpr
-  exact hf.isSymmSndFDerivAt (by norm_num)
+  exact hf
 
 /-- The derivative of the graph map of `df` is the graph map of the Hessian. -/
 @[simp] theorem fderiv_cotangent_differential_graph {f : V → ℝ} {x : V}
@@ -89,11 +89,11 @@ theorem cotangentLiouvilleForm_differential_graph_apply
 /-- The tangent image to the graph of a differential is Lagrangian in the linear cotangent
 space. This is the pointwise Lagrangian condition for an exact graph. -/
 theorem isLagrangian_range_fderiv_cotangent_differential_graph
-    {f : V → ℝ} {x : V} (hf : ContDiffAt ℝ 2 f x) :
+    {f : V → ℝ} {x : V} (hf : IsSymmSndFDerivAt ℝ f x)
+    (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) :
     (strongDualCotangentSymplecticForm (V := V)).IsLagrangian
       (LinearMap.range (fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x).toLinearMap) := by
-  rw [fderiv_cotangent_differential_graph
-    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num))]
+  rw [fderiv_cotangent_differential_graph hdf]
   have hid : (ContinuousLinearMap.id ℝ V).toLinearMap = (LinearMap.id : V →ₗ[ℝ] V) := by
     ext v
     rfl
