@@ -229,10 +229,11 @@ attribute [local instance] Classical.propDecidable
 of its highest weight occurs with multiplicity one, and minuscule-ness excludes every other
 weight. -/
 theorem formalCharacter_coeff_irreducibleQuotient_eq_ite_of_isMinuscule_of_vermaGenerator_ne_zero
-    [FiniteDimensional K (irreducibleQuotient b mu)] (h : IsMinuscule b mu)
-    (hM : vermaGenerator b mu ≠ 0) (chi : Dual K H) :
+    (h : IsMinuscule b mu) (hM : vermaGenerator b mu ≠ 0) (chi : Dual K H) :
+    letI := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
     (formalCharacter K H (irreducibleQuotient b mu)).coeff chi =
       if chi ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup mu then 1 else 0 := by
+  let _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
   let hv := isHighestWeightVector_irreducibleQuotientGenerator b mu hM
   let hgen := lieSpan_irreducibleQuotientGenerator_eq_top b mu
   exact formalCharacter_coeff_eq_ite_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen h.2 chi
