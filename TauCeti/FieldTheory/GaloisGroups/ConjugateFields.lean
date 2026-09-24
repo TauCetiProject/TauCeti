@@ -24,6 +24,9 @@ where `H` is the point stabilizer in the polynomial Galois group, transported to
 not by the generally larger root quotient `G / H`, which indexes the embeddings of `F⟮x⟯`
 (see `TauCeti.FieldTheory.GaloisGroups.Embeddings`).
 
+This quotient distinction follows the Layer 0 “Conjugate fields” target in the
+[Polynomial Galois groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md).
+
 ## Main definitions
 
 * `TauCeti.conjugateSimpleFields`: its set of conjugates under `Gal(N/F)`.
