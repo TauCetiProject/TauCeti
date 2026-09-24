@@ -16,6 +16,8 @@ Restriction of sheaves of modules to a slice site is strong monoidal. It therefo
 canonical comparison from the restriction of an internal Hom to the internal Hom of the
 restrictions. The comparison is natural in both arguments, and its defining equation says
 that evaluation after restriction agrees with the restriction of evaluation.
+The named comparison packages the slice site's monoidal and closed instances, which must
+otherwise be supplied locally when applying the generic comparison.
 
 This is the comparison map needed to study local duality and internal Homs on a cover.
 It is not asserted to be an isomorphism for arbitrary sheaves of modules.
