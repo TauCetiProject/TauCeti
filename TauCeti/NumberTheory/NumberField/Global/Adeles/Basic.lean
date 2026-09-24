@@ -121,15 +121,19 @@ the infinite places of the local absolute values, squared at the complex places.
 @[simp]
 theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField K]
     (x : InfiniteAdeleRing K) :
-    mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K x) = ‖x‖ := by
+    mixedEmbedding.norm
+      (fun (v : {w : InfinitePlace K // w.IsReal}) ↦
+        InfinitePlace.Completion.extensionEmbeddingOfIsReal v.2 (x v),
+       fun (v : {w : InfinitePlace K // w.IsComplex}) ↦
+        InfinitePlace.Completion.extensionEmbedding v.1 (x v)) = ‖x‖ := by
   rw [mixedEmbedding.norm_apply, InfiniteAdeleRing.norm_def]
   refine Finset.prod_congr rfl fun w _ ↦ congrArg (· ^ w.mult) ?_
   by_cases hw : w.IsReal
-  · rw [mixedEmbedding.normAtPlace_apply_of_isReal hw, InfiniteAdeleRing.ringEquiv_mixedSpace_apply]
+  · rw [mixedEmbedding.normAtPlace_apply_of_isReal hw]
     exact (InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero
       (map_zero _) _
   · rw [mixedEmbedding.normAtPlace_apply_of_isComplex
-      (InfinitePlace.not_isReal_iff_isComplex.mp hw), InfiniteAdeleRing.ringEquiv_mixedSpace_apply]
+      (InfinitePlace.not_isReal_iff_isComplex.mp hw)]
     exact (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
       (map_zero _) _
 

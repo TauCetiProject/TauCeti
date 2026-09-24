@@ -68,6 +68,7 @@ theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
     have hv := FiniteAdeleRing.mem_integralUnits_iff.mp hz v
     rw [IdeleGroup.coe_toFiniteIdele] at hv
     rw [HeightOneSpectrum.coe_ideleFiniteCoord, FinitePlace.norm_def, hv, map_one, NNReal.coe_one]
+  rw [InfiniteAdeleRing.ringEquiv_mixedSpace_apply]
   simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
     infiniteCompletionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord,
     InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace, InfiniteAdeleRing.norm_def]
