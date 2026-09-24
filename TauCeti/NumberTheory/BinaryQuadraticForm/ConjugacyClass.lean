@@ -214,7 +214,6 @@ theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_mem (h : t ^ 2 - 4 * n = -D)
 
 /-- The class of a matrix `M` whose form `Q_{adjugate M}` is positive definite, that is whose lower
 left entry is negative, goes to the class of `Q_{adjugate M}` in the second copy. -/
-@[simp]
 theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_adjugate_mem (h : t ^ 2 - 4 * n = -D)
     (M : traceDetFiber (Fin 2) t n)
     (hM : ofMatrix (adjugate (M : Matrix (Fin 2) (Fin 2) ℤ)) ∈ posDef D) :
