@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.SetAlgebra
 import Mathlib.MeasureTheory.Function.FactorsThrough
-import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Measurable coding of probability measures
@@ -139,27 +138,6 @@ theorem probabilityMeasureCode_injective :
     isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
     (fun s hs => congrFun hPQ ⟨s, hs⟩) ?_
   exact hP.measure_univ.trans Q.2.measure_univ.symm
-
-omit [CountablyGenerated α] in
-/-- Coding commutes with pushing a probability measure forward, coordinate by coordinate: the
-value at a member of the coding set algebra is the original measure of its preimage. -/
-theorem _root_.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply
-    {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
-    (P : ProbabilityMeasure α) (f : α → β) (hf : AEMeasurable f P)
-    (s : ProbabilityMeasureCodeIndex β) :
-    probabilityMeasureCode (P.map f) s =
-      (P : Measure α) (f ⁻¹' (s : Set β)) := by
-  simpa only [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map] using
-    Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
-
-omit [CountablyGenerated α] in
-/-- A measurable pushforward followed by the canonical measure code is measurable in the input
-probability measure. -/
-theorem measurable_probabilityMeasureCode_map {β : Type*} [MeasurableSpace β]
-    [CountablyGenerated β] (f : α → β) (hf : Measurable f) :
-    Measurable (fun P : ProbabilityMeasure α => probabilityMeasureCode (P.map f)) :=
-  measurable_probabilityMeasureCode.comp
-    (TauCeti.MeasureTheory.measurable_probabilityMeasure_map hf)
 
 end MeasureTheory
 

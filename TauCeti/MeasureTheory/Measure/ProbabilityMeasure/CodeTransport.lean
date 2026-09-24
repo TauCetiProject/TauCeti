@@ -28,7 +28,11 @@ on either value space.
 * `TauCeti.MeasureTheory.probabilityMeasureCodeMap` -- measurable transport of codes along a
   measurable map;
 * `TauCeti.MeasureTheory.probabilityMeasureCodeMap_apply` -- on realizable codes this transport is
-  pushforward of the represented probability measure.
+  pushforward of the represented probability measure;
+* `TauCeti.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply` -- coordinatewise
+  evaluation of a pushed-forward code;
+* `TauCeti.MeasureTheory.measurable_probabilityMeasureCode_map` -- measurability of a
+  pushed-forward code.
 -/
 
 public section
@@ -45,6 +49,27 @@ namespace MeasureTheory
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [CountablyGenerated α] [CountablyGenerated β]
+
+omit [CountablyGenerated α] in
+/-- Coding commutes with pushing a probability measure forward, coordinate by coordinate: the
+value at a member of the coding set algebra is the original measure of its preimage. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply
+    {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
+    (P : ProbabilityMeasure α) (f : α → β) (hf : AEMeasurable f P)
+    (s : ProbabilityMeasureCodeIndex β) :
+    probabilityMeasureCode (P.map f) s =
+      (P : Measure α) (f ⁻¹' (s : Set β)) := by
+  simpa only [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map] using
+    Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
+
+omit [CountablyGenerated α] in
+/-- A measurable pushforward followed by the canonical measure code is measurable in the input
+probability measure. -/
+theorem measurable_probabilityMeasureCode_map {β : Type*} [MeasurableSpace β]
+    [CountablyGenerated β] (f : α → β) (hf : Measurable f) :
+    Measurable (fun P : ProbabilityMeasure α => probabilityMeasureCode (P.map f)) :=
+  measurable_probabilityMeasureCode.comp
+    (TauCeti.MeasureTheory.measurable_probabilityMeasure_map hf)
 
 /-- A measurable map between value spaces induces a measurable map between their ambient
 probability-measure code spaces.  Outside the subset of realizable codes this is the measurable

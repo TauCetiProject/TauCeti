@@ -45,8 +45,6 @@ equalities hold on width-dependent almost-sure sets.
   the split large block is the law of the corresponding consecutive small blocks;
 * `MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul` -- each component of
   that joint law is the corresponding small block marginal;
-* `TauCeti.Probability.codedBlockMarginals_blockRestriction_mul_apply` -- the coded coordinates
-  agree across this restriction;
 * `MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq` -- all coded positive-width
   blocks at the origin determine the path measure;
 * `TauCeti.Probability.fullyExchangeable_blockMarginals_of_invariant` -- invariance of the random
@@ -263,20 +261,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_apply
     [MeasurableSpace.CountablyGenerated (Fin m → α)] (i : ℕ) :
     P.codedBlockMarginals m i = probabilityMeasureCode (P.blockMarginals m i) :=
   (rfl)
-
-/-- The code of a restricted large-block marginal agrees coordinatewise with the corresponding
-small-block marginal code. -/
-theorem codedBlockMarginals_blockRestriction_mul_apply
-    (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m]
-    [∀ k : ℕ, MeasurableSpace.CountablyGenerated (Fin k → α)]
-    (i : ℕ) (r : Fin n) (s : ProbabilityMeasureCodeIndex (Fin m → α)) :
-    probabilityMeasureCode
-        ((@ProbabilityMeasure.blockMarginals α _ P (n * m)
-          ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
-            (blockRestriction (α := α) m n r)) s =
-      codedBlockMarginals P m (i * n + r) s := by
-  rw [P.map_blockRestriction_blockMarginals_mul]
-  rfl
 
 /-- The path of coded finite block marginals is measurable. -/
 theorem measurable_codedBlockMarginals (m : ℕ) [NeZero m]
