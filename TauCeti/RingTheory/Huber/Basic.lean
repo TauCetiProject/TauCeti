@@ -678,9 +678,10 @@ theorem hasBasis_nhds_zero (P : PairOfDefinition A) :
     (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True)
       fun n ↦ (a ^ n) • (P.ringOfDefinition : Set A) := by
   refine Filter.hasBasis_iff.mpr fun U ↦ ⟨fun hU ↦ ?_, ?_⟩
-  · obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp P.isBounded_ringOfDefinition U hU
-    obtain ⟨n, hn⟩ := (ha.isTopologicallyNilpotent.eventually_mem hV).exists
-    exact ⟨n, trivial, fun _ ⟨x, hx, hxy⟩ ↦ hxy ▸ hVU (Set.mul_mem_mul hn hx)⟩
+  · obtain ⟨n, hn⟩ :=
+      P.isBounded_ringOfDefinition.exists_pow_mul_subset ha.isTopologicallyNilpotent hU
+    exact ⟨n, trivial, by
+      simpa only [Set.singleton_mul, ← Set.image_smul, smul_eq_mul] using hn⟩
   · rintro ⟨n, -, hn⟩
     exact Filter.mem_of_superset (ha.smul_ringOfDefinition_mem_nhds_zero P n) hn
 

@@ -126,29 +126,29 @@ theorem IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer [IsUniform A]
     (hϖ : IsPseudoUniformizer ϖ) : nilradical A ≤ (⊥ : Ideal A).closure := by
   intro a ha
   obtain ⟨u, rfl⟩ := hϖ.isUnit
-  -- `a` lies in every neighbourhood `U` of zero, that is, `a ⤳ 0`: choose `V` with `V · A° ⊆ U`
-  -- and `n` with `ϖⁿ ∈ V`; then `a = ϖⁿ · (ϖ⁻ⁿ a)` with `ϖ⁻ⁿ a` nilpotent, hence power-bounded.
+  -- `a` lies in every neighbourhood `U` of zero, that is, `a ⤳ 0`: choose `n` with `ϖⁿ · A° ⊆ U`;
+  -- then `a = ϖⁿ · (ϖ⁻ⁿ a)` with `ϖ⁻ⁿ a` nilpotent, hence power-bounded.
   have hspec : a ⤳ 0 := by
     rw [specializes_iff_pure, pure_le_iff]
     intro U hU
-    obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp (IsUniform.isBounded_setOf_isPowerBounded (A := A))
-      U hU
-    obtain ⟨n, hn⟩ := (hϖ.isTopologicallyNilpotent.eventually_mem hV).exists
+    obtain ⟨n, hn⟩ :=
+      (IsUniform.isBounded_setOf_isPowerBounded (A := A)).exists_pow_mul_subset
+        hϖ.isTopologicallyNilpotent hU
     have hpb : IsPowerBounded ((↑u⁻¹ : A) ^ n * a) :=
       .of_isTopologicallyNilpotent
         ((Commute.all _ a).isNilpotent_mul_left ha).isTopologicallyNilpotent
     have heq : (u : A) ^ n * ((↑u⁻¹ : A) ^ n * a) = a := by
       rw [← mul_assoc, ← mul_pow, Units.mul_inv, one_pow, one_mul]
-    exact heq ▸ hVU (Set.mul_mem_mul hn hpb)
+    exact heq ▸ hn (Set.mul_mem_mul (Set.mem_singleton _) hpb)
   rw [← SetLike.mem_coe, Ideal.coe_closure, Submodule.bot_coe, ← specializes_iff_mem_closure]
   exact hspec.symm
 
 /-- A Hausdorff uniform topological ring with a pseudo-uniformizer is reduced. -/
 theorem IsUniform.isReduced_of_isPseudoUniformizer [IsUniform A] [T0Space A] {ϖ : A}
     (hϖ : IsPseudoUniformizer ϖ) : IsReduced A := by
-  refine ⟨fun a ha ↦ ?_⟩
-  have h := IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer hϖ (mem_nilradical.mpr ha)
-  rwa [Ideal.closure_eq_of_isClosed _ (by simp), Ideal.mem_bot] at h
+  refine nilradical_eq_bot_iff.mp (le_bot_iff.mp ?_)
+  simpa [Ideal.closure_eq_of_isClosed] using
+    IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer hϖ
 
 /-- **In a uniform Tate ring every nilpotent element lies in the closure of zero.** -/
 theorem IsUniform.nilradical_le_closure_bot [IsTateRing A] [IsUniform A] :
