@@ -52,14 +52,11 @@ private lemma ringEquiv_mixedSpace_mul_unitEmbedding (z : IdeleGroup (𝓞 K) K)
       ((z * IdeleGroup.unitEmbedding (𝓞 K) K
         (Units.map (algebraMap (𝓞 K) K) u) : AdeleRing (𝓞 K) K).1) =
       u • InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1 := by
-  rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul]
-  congr 1
-  funext w
-  change (z : AdeleRing (𝓞 K) K).1 w *
-      (algebraMap K (AdeleRing (𝓞 K) K) ((algebraMap (𝓞 K) K) u)).1 w =
-    (algebraMap K (InfiniteAdeleRing K) ((algebraMap (𝓞 K) K) u)) w *
-      (z : AdeleRing (𝓞 K) K).1 w
-  simp [mul_comm]
+  rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul,
+    IdeleGroup.coe_unitEmbedding, AdeleRing.fst_mul, mul_comm]
+  refine congrArg _ (congrArg (· * _) (funext fun w ↦ ?_))
+  rw [AdeleRing.algebraMap_fst_apply, InfiniteAdeleRing.algebraMap_apply, Units.coe_map,
+    MonoidHom.coe_coe]
 
 /-- There is a compact set of ideles meeting the orbit under the global units of every idele of
 norm one whose finite part is an everywhere-integral unit. -/

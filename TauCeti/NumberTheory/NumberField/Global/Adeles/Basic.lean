@@ -15,7 +15,9 @@ Mathlib's `NumberField.InfiniteAdeleRing K` is the finite product of the complet
 infinite places, and `NumberField.AdeleRing R K` is the product of the infinite adele ring with the
 finite adele ring of `R`.  Both are defined as type synonyms, so the Hausdorff property of the
 underlying products is not found by instance search.  This file records it, so that closedness of
-discrete subgroups and separation of quotients apply to the adele ring.
+discrete subgroups and separation of quotients apply to the adele ring.  For the same reason
+`Prod.fst_mul` does not apply to adeles, so the file also records that the infinite component of a
+product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`).
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
@@ -143,5 +145,11 @@ theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField 
 /-- The adele ring is Hausdorff, as the product of the infinite and the finite adele rings. -/
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
   inferInstanceAs <| T2Space (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
+
+variable {R K} in
+/-- The infinite component of a product of adeles is the product of their infinite components. -/
+@[simp]
+theorem AdeleRing.fst_mul (a b : AdeleRing R K) : (a * b).1 = a.1 * b.1 :=
+  rfl
 
 end NumberField
