@@ -11,12 +11,10 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 /-!
 # Dihedral spherical triangle groups
 
-For a positive integer `m`, the spherical signature `(2, 2, m)` is presented by two
-involutions whose product is a rotation of order `m`.  The map below sends the two
-reflection generators to adjacent reflections in `DihedralGroup m`; their product is the
-one-step rotation.  This gives the lower bound on the order of `y * x`, while the third
-presentation relator gives the matching upper bound.  The existing dihedral recognition
-theorem then identifies the presented group with `DihedralGroup m`.
+For `m` with `2 ≤ m`, `equivDihedral` identifies the spherical triangle group with
+signature `(2, 2, m)` with `DihedralGroup m`.  The reflection generators `x` and `y`
+correspond to `DihedralGroup.sr 1` and `DihedralGroup.sr 0`, respectively, and their product
+corresponds to the rotation `DihedralGroup.r 1`.
 -/
 
 public section
@@ -133,22 +131,14 @@ private theorem dihedralEquiv_sr_one (m : ℕ) (hm : 2 ≤ m) :
   calc
     y 2 2 m * (y 2 2 m * x 2 2 m) = (y 2 2 m * y 2 2 m) * x 2 2 m := by ac_rfl
     _ = x 2 2 m := by
-      rw [show y 2 2 m * y 2 2 m = 1 by
-        simpa only [pow_two] using y_pow 2 2 m, one_mul]
-
-@[simp]
-private theorem dihedralEquiv_r_one (m : ℕ) (hm : 2 ≤ m) :
-    dihedralEquiv m hm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m := by
-  simp only [dihedralEquiv, TauCeti.dihedralGroupMulEquiv_apply,
-    TauCeti.dihedralHom_r]
-  rw [cast_one_of_two_le m hm]
-  simp
+      rw [← pow_two, y_pow 2 2 m, one_mul]
 
 /-- The spherical signature `(2, 2, m)` is the dihedral group of order `2m`. -/
 noncomputable def equivDihedral (m : ℕ) (hm : 2 ≤ m) :
     TriangleGroup 2 2 m ≃* DihedralGroup m :=
   (dihedralEquiv m hm).symm
 
+/-- `equivDihedral` sends the generator `x` to the reflection `DihedralGroup.sr 1`. -/
 @[simp]
 theorem equivDihedral_x (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (x 2 2 m) = DihedralGroup.sr 1 := by
@@ -156,6 +146,7 @@ theorem equivDihedral_x (m : ℕ) (hm : 2 ≤ m) :
   rw [← dihedralEquiv_sr_one m hm]
   exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
 
+/-- `equivDihedral` sends the generator `y` to the reflection `DihedralGroup.sr 0`. -/
 @[simp]
 theorem equivDihedral_y (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (y 2 2 m) = DihedralGroup.sr 0 := by
@@ -163,24 +154,46 @@ theorem equivDihedral_y (m : ℕ) (hm : 2 ≤ m) :
   rw [← dihedralEquiv_sr_zero m hm]
   exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
 
+/-- The inverse equivalence sends `DihedralGroup.sr 0` to the generator `y`. -/
+@[simp]
+theorem equivDihedral_symm_sr_zero (m : ℕ) (hm : 2 ≤ m) :
+    (equivDihedral m hm).symm (DihedralGroup.sr 0) = y 2 2 m := by
+  unfold equivDihedral
+  simpa only [MulEquiv.symm_symm] using (dihedralEquiv_sr_zero m hm)
+
+/-- The inverse equivalence sends `DihedralGroup.sr 1` to the generator `x`. -/
+@[simp]
+theorem equivDihedral_symm_sr_one (m : ℕ) (hm : 2 ≤ m) :
+    (equivDihedral m hm).symm (DihedralGroup.sr 1) = x 2 2 m := by
+  unfold equivDihedral
+  simpa only [MulEquiv.symm_symm] using (dihedralEquiv_sr_one m hm)
+
+/-- `equivDihedral` sends the product `y * x` to the rotation `DihedralGroup.r 1`. -/
 @[simp]
 theorem equivDihedral_y_mul_x (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (y 2 2 m * x 2 2 m) = DihedralGroup.r 1 := by
   rw [map_mul, equivDihedral_y, equivDihedral_x]
   simp [DihedralGroup.sr_mul_sr]
 
+/-- `equivDihedral` sends the generator `z` to the inverse one-step rotation. -/
 @[simp]
 theorem equivDihedral_z (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (z 2 2 m) = DihedralGroup.r (-1 : ZMod m) := by
   rw [z_eq, map_inv, equivDihedral_y_mul_x]
   exact DihedralGroup.inv_r (n := m) 1
 
+/-- The inverse equivalence sends `DihedralGroup.r 1` to the product `y * x`. -/
 @[simp]
 theorem equivDihedral_symm_r_one (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m :=
-  dihedralEquiv_r_one m hm
+    (equivDihedral m hm).symm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m := by
+  unfold equivDihedral
+  simp only [MulEquiv.symm_symm, dihedralEquiv,
+    TauCeti.dihedralGroupMulEquiv_apply, TauCeti.dihedralHom_r]
+  rw [cast_one_of_two_le m hm]
+  simp
 
 /-- The dihedral triangle group has cardinality `2m`. -/
+@[simp]
 theorem natCard_two_two (m : ℕ) (hm : 2 ≤ m) :
     Nat.card (TriangleGroup 2 2 m) = 2 * m := by
   calc
