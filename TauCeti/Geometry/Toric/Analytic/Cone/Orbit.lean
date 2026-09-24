@@ -373,7 +373,6 @@ include hσ
 open Classical in
 /-- In the chart of an extending basis, the ray coordinates of the distinguished point of `F`
 vanish at the rays of `F` and equal `1` at all other rays. -/
-@[simp]
 theorem coneChartEquiv_distinguishedPoint_fst (F : σ.Face) (ρ : ToricRay σ) :
     (coneChartEquiv hi hσ.toIsToricCone hb (distinguishedPoint hi F)).1 ρ =
       if ρ ∈ hσ.faceOrderIso hi F then 0 else 1 := by
@@ -463,15 +462,13 @@ theorem faceEquivOrbitRelQuotient_apply (hi : IsIntegralLattice i) (hσ : IsRegu
   (rfl)
 
 /-- The torus orbit corresponding to a face is its stratum. -/
-@[simp]
 theorem orbit_faceEquivOrbitRelQuotient (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
     (F : σ.Face) :
-    (faceEquivOrbitRelQuotient hi hσ F).orbit = affineConeOrbit hi F := by
-  rw [faceEquivOrbitRelQuotient_apply, MulAction.orbitRel.Quotient.orbit_mk,
-    affineConeOrbit_eq_orbit hi hσ F]
+    (faceEquivOrbitRelQuotient hi hσ F).orbit =
+      MulAction.orbit (ComplexTorus N) (distinguishedPoint hi F) := by
+  rw [faceEquivOrbitRelQuotient_apply, MulAction.orbitRel.Quotient.orbit_mk]
 
 /-- The face corresponding to the torus orbit of a point is the face whose stratum contains it. -/
-@[simp]
 theorem faceEquivOrbitRelQuotient_symm_mk (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
     {F : σ.Face} {x : AffineSemigroupComplexPoint (dualSemigroup hi σ)}
     (hx : x ∈ affineConeOrbit hi F) :
