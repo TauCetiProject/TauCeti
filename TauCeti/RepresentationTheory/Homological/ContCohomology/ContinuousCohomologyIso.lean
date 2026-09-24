@@ -108,6 +108,7 @@ def H0ContinuousLinearEquivInvariants :
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
+/-- `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
     (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
@@ -122,6 +123,7 @@ theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
+/-- The inverse of `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
@@ -180,12 +182,15 @@ theorem explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass (m : H0 G M) :
       (H0ContinuousLinearEquivInvariants_val G M m).symm)
   rw [explicitH0IsoContinuousCohomology_hom_apply, ← hval, Iso.hom_inv_id_apply]
 
+-- `simp` reduces the carrier of the `abbrev` `TopModuleCat.of ℤ (H0 G M)` to `H0 G M` in the
+-- implicit type arguments of the applied morphism before it looks a term up, so this `simp` lemma
+-- states its left-hand side through `dsimp% only`, as in #8315.
 /-- The inverse of the comparison reads off the invariant element that
 `ContinuousCohomology.zeroIso` assigns to a degree-zero class. -/
 @[simp]
 theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     (y : continuousCohomology 0 (ofDiscreteModule ℤ G M)) :
-    (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M) =
+    (dsimp% only (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M)) =
       ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
   H0ContinuousLinearEquivInvariants_symm_val G M
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)

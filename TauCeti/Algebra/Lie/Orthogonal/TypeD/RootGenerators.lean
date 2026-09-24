@@ -337,6 +337,40 @@ theorem val_cartanGenerator {K : Type*} [CommRing K] (i : Fin n) :
         typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :=
   by simp [cartanGenerator]
 
+section CommRing
+
+variable {K : Type*} [CommRing K]
+
+/-- A diagonal Cartan generator is the image of its simple-root coordinate vector under the
+coordinate equivalence for the standard diagonal Cartan. -/
+theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    cartanGenerator (K := K) n hn i =
+      (typeDDiagonalEquiv (K := K) (ι := Fin n)
+        (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
+        LieAlgebra.Orthogonal.typeD (Fin n) K) := by
+  apply Subtype.ext
+  rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
+
+/-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
+theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
+  rw [cartanGenerator_eq_typeDDiagonalEquiv]
+  exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
+    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
+
+/-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
+type-D simple root. -/
+theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
+    (i j : Fin n) :
+    (typeDDiagonalCartanBasis (K := K) (ι := Fin n)).repr
+        (⟨cartanGenerator (K := K) n hn i,
+          cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) j =
+    (DynkinType.typeDSimpleRoot n hn i j : K) := by
+  rw [typeDDiagonalCartanBasis_repr_apply, val_cartanGenerator]
+  simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, eq_self, ite_true]
+
+end CommRing
+
 /-! ## Cartan action -/
 
 /-- The integral weight of a raising or lowering generator on the numbered Cartan generators: the

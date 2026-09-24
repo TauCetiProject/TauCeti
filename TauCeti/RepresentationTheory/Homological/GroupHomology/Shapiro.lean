@@ -68,8 +68,9 @@ private theorem shapiroChains :
         (TauCeti.Rep.barComplex.resChainMap (k := k) S.subtype) ≫
       (NatIso.mapHomologicalComplex (coinvariantsTensorIndNatIso S.subtype A).symm _).hom.app
         (barComplex k G) ≫
-      (inhomogeneousChainsIso (ind S.subtype A)).inv =
-    chainsMap S.subtype ((indResAdjunction k S.subtype).unit.app A) := by
+      -- Universes pinned: an unsolved `max ?w u u = u` makes this statement slow to elaborate.
+      (inhomogeneousChainsIso (ind.{u, u, u, u} S.subtype A)).inv =
+    chainsMap S.subtype ((indResAdjunction.{u, u, u, u} k S.subtype).unit.app A) := by
   refine HomologicalComplex.hom_ext _ _ fun i => ModuleCat.hom_ext (lhom_ext fun x a => ?_)
   simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
     inhomogeneousChainsIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
@@ -95,48 +96,38 @@ change-of-group map along `S ≤ G` induced by the unit `A ⟶ Res_S Ind_S^G A`,
 of induction–restriction. The `DecidableEq G` instance is the one used by Mathlib's `indIso`;
 keeping it caller-supplied ensures that this equality rewrites the caller's isomorphism. -/
 theorem indIso_inv (n : ℕ) :
-    (indIso S A n).inv = map S.subtype ((indResAdjunction k S.subtype).unit.app A) n := by
+    (indIso S A n).inv =
+      -- Universes pinned: an unsolved `max ?w u u = u` makes this statement slow to elaborate.
+      map S.subtype ((indResAdjunction.{u, u, u, u} k S.subtype).unit.app A) n := by
   -- The comparison, through `Tor`, of the bar resolution of `S` with the restricted bar resolution
   -- of `G` is the map induced on homology by the chain map between them.
-  have hcomp : ((barResolution k S).isoLeftDerivedObj ((coinvariantsTensor k S).obj A) n).inv ≫
-      (((resFunctor S.subtype).mapProjectiveResolution (barResolution k G)).isoLeftDerivedObj
-        ((coinvariantsTensor k S).obj A) n).hom =
-      HomologicalComplex.homologyMap ((((coinvariantsTensor k S).obj A).mapHomologicalComplex _).map
-        (TauCeti.Rep.barComplex.resChainMap S.subtype)) n := by
-    have hnat := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
-      (barResolution k S) ((resFunctor S.subtype).mapProjectiveResolution (barResolution k G))
-      (TauCeti.Rep.barComplex.resChainMap S.subtype)
-      ((TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype).trans
-        (Category.comp_id _).symm) ((coinvariantsTensor k S).obj A) n
-    rw [CategoryTheory.Functor.map_id, Category.id_comp] at hnat
-    have hmap :
-        (((coinvariantsTensor k S).obj A).mapHomologicalComplex _ ⋙
-          HomologicalComplex.homologyFunctor _ _ n).map
-            (TauCeti.Rep.barComplex.resChainMap S.subtype) =
-          HomologicalComplex.homologyMap
-            ((((coinvariantsTensor k S).obj A).mapHomologicalComplex _).map
-              (TauCeti.Rep.barComplex.resChainMap S.subtype)) n := by
-      rw [CategoryTheory.Functor.comp_map, HomologicalComplex.homologyFunctor_map]
-    exact (Iso.inv_comp_eq _).2 (hnat.trans (congrArg (_ ≫ ·) hmap))
+  have hnat := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
+    (barResolution k S) ((resFunctor S.subtype).mapProjectiveResolution (barResolution k G))
+    (TauCeti.Rep.barComplex.resChainMap S.subtype)
+    ((TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype).trans
+      (Category.comp_id _).symm) ((coinvariantsTensor k S).obj A) n
+  rw [CategoryTheory.Functor.map_id, Category.id_comp] at hnat
+  have hmap :
+      (((coinvariantsTensor k S).obj A).mapHomologicalComplex _ ⋙
+        HomologicalComplex.homologyFunctor _ _ n).map
+          (TauCeti.Rep.barComplex.resChainMap S.subtype) =
+        HomologicalComplex.homologyMap
+          ((((coinvariantsTensor k S).obj A).mapHomologicalComplex _).map
+            (TauCeti.Rep.barComplex.resChainMap S.subtype)) n := by
+    rw [CategoryTheory.Functor.comp_map, HomologicalComplex.homologyFunctor_map]
   -- `indIso` is by definition the homology of the Shapiro chain isomorphism preceded by that
   -- comparison and by the identification of inhomogeneous chains with the bar complex. Mathlib's
   -- definition resolves the trivial representation of `S` both by `barResolution k S` and by the
   -- restriction of `barResolution k G`, so its intermediate objects have two syntactic forms and
   -- rewriting inside it is not type-correct; the steps below are applied as terms instead. The
   -- explicit universes on `ind` avoid a slow universe unification (as in Mathlib's `indIso`).
-  have e : (indIso S A n).inv =
-      HomologicalComplex.homologyMap (inhomogeneousChainsIso A).hom n ≫
-      (((barResolution k S).isoLeftDerivedObj ((coinvariantsTensor k S).obj A) n).inv ≫
-      (((resFunctor S.subtype).mapProjectiveResolution (barResolution k G)).isoLeftDerivedObj
-        ((coinvariantsTensor k S).obj A) n).hom) ≫
-      HomologicalComplex.homologyMap
-        ((NatIso.mapHomologicalComplex (coinvariantsTensorIndNatIso S.subtype A).symm _).hom.app
-          (barComplex k G) ≫ (inhomogeneousChainsIso (ind.{u, u, u, u} S.subtype A)).inv) n := rfl
-  refine e.trans ((congrArg (fun t => HomologicalComplex.homologyMap
+  -- Neither the comparison nor the unfolding of `indIso` is stated as a `have`: elaborating
+  -- those long composites re-checks the two resolutions' objects against each other.
+  refine (congrArg (fun t => HomologicalComplex.homologyMap
     (inhomogeneousChainsIso A).hom n ≫ t ≫ HomologicalComplex.homologyMap
       ((NatIso.mapHomologicalComplex (coinvariantsTensorIndNatIso S.subtype A).symm _).hom.app
         (barComplex k G) ≫ (inhomogeneousChainsIso (ind.{u, u, u, u} S.subtype A)).inv) n)
-    hcomp).trans ?_)
+    ((Iso.inv_comp_eq _).2 (hnat.trans (congrArg (_ ≫ ·) hmap)))).trans ?_
   exact ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
     (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
     (congrArg (HomologicalComplex.homologyMap · n) (shapiroChains S A))

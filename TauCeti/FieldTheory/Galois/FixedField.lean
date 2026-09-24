@@ -81,6 +81,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
+* `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
+  dividing the degree, since that order is the degree over the field fixed by all automorphisms
 -/
 
 public section
@@ -470,3 +472,17 @@ theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.
     ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
 
 end AlgEquiv
+
+namespace TauCeti
+
+/-- The order of the automorphism group of a finite field extension divides its degree. -/
+theorem natCard_algEquiv_dvd_finrank (F E : Type*) [Field F] [Field E] [Algebra F E]
+    [FiniteDimensional F E] : Nat.card (E ≃ₐ[F] E) ∣ Module.finrank F E := by
+  rw [← Subgroup.card_top (G := E ≃ₐ[F] E),
+    ← IntermediateField.finrank_fixedField_eq_card (H := (⊤ : Subgroup (E ≃ₐ[F] E)))]
+  simpa only [IntermediateField.finrank_bot'] using
+    (IntermediateField.finrank_dvd_of_le_left
+      (bot_le : (⊥ : IntermediateField F E) ≤
+        IntermediateField.fixedField (⊤ : Subgroup (E ≃ₐ[F] E))))
+
+end TauCeti

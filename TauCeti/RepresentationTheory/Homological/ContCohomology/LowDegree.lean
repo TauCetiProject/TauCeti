@@ -701,11 +701,14 @@ abbrev H1pi : (Z1 G M) →+ H1 G M := QuotientAddGroup.mk' _
 continuous cohomology. -/
 def DiscreteH1 : Type _ := H1 G M
 
+/-- `DiscreteH1 G M` has the additive group structure of `H¹(G, M)`. -/
 noncomputable instance : AddCommGroup (DiscreteH1 G M) :=
   inferInstanceAs (AddCommGroup (H1 G M))
 
+/-- `DiscreteH1 G M` carries the discrete topology. -/
 instance : TopologicalSpace (DiscreteH1 G M) := ⊥
 
+/-- The topology on `DiscreteH1 G M` is discrete. -/
 instance : DiscreteTopology (DiscreteH1 G M) := ⟨rfl⟩
 
 /-- The identity as an additive equivalence, so that the quotient-class computations on
@@ -757,11 +760,14 @@ abbrev H2pi : (Z2 G M) →+ H2 G M := QuotientAddGroup.mk' _
 continuous cohomology. -/
 def DiscreteH2 : Type _ := H2 G M
 
+/-- `DiscreteH2 G M` has the additive group structure of `H²(G, M)`. -/
 noncomputable instance : AddCommGroup (DiscreteH2 G M) :=
   inferInstanceAs (AddCommGroup (H2 G M))
 
+/-- `DiscreteH2 G M` carries the discrete topology. -/
 instance : TopologicalSpace (DiscreteH2 G M) := ⊥
 
+/-- The topology on `DiscreteH2 G M` is discrete. -/
 instance : DiscreteTopology (DiscreteH2 G M) := ⟨rfl⟩
 
 /-- The degree-`2` counterpart of `TauCeti.ContCohomology.discreteH1Equiv`. -/

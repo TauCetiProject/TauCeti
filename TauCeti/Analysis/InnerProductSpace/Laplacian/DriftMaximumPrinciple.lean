@@ -71,24 +71,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 This is the shared first-derivative computation feeding both `laplacian_exp_inner` and
 `fderiv_exp_inner_apply`. -/
 private theorem hasFDerivAt_exp_inner (α : ℝ) (u x : E) :
-    HasFDerivAt (fun y : E => Real.exp (α * ⟪u, y⟫))
+    HasFDerivAt (fun y : E ↦ Real.exp (α * ⟪u, y⟫))
       (Real.exp (α * ⟪u, x⟫) • (α • innerSL ℝ u)) x := by
-  have h1 : HasFDerivAt (fun z : E => (⟪u, z⟫ : ℝ)) (innerSL ℝ u) x := by
+  have h1 : HasFDerivAt (fun z : E ↦ (⟪u, z⟫ : ℝ)) (innerSL ℝ u) x := by
     simpa only [coe_innerSL_apply] using (innerSL ℝ u).hasFDerivAt
-  have h2 : HasFDerivAt (fun z : E => α * ⟪u, z⟫) (α • innerSL ℝ u) x := h1.const_mul α
+  have h2 : HasFDerivAt (fun z : E ↦ α * ⟪u, z⟫) (α • innerSL ℝ u) x := h1.const_mul α
   exact (Real.hasDerivAt_exp (α * ⟪u, x⟫)).comp_hasFDerivAt x h2
 
 /-- The exponential barrier `y ↦ exp (α ⟪u, y⟫)` is smooth, being the exponential of a continuous
 linear form. -/
 theorem contDiff_exp_inner (α : ℝ) (u : E) :
-    ContDiff ℝ ∞ fun y : E => Real.exp (α * ⟪u, y⟫) := by
-  have hi : ContDiff ℝ ∞ (fun y : E => (⟪u, y⟫ : ℝ)) := by
+    ContDiff ℝ ∞ fun y : E ↦ Real.exp (α * ⟪u, y⟫) := by
+  have hi : ContDiff ℝ ∞ (fun y : E ↦ (⟪u, y⟫ : ℝ)) := by
     simpa only [coe_innerSL_apply] using (innerSL ℝ u).contDiff
   exact (by simpa only [smul_eq_mul] using hi.const_smul α : ContDiff ℝ ∞ _).exp
 
 /-- The directional derivative of the exponential barrier `y ↦ exp (α ⟪u, y⟫)`. -/
 @[simp] theorem fderiv_exp_inner_apply (α : ℝ) (u x v : E) :
-    fderiv ℝ (fun y : E => Real.exp (α * ⟪u, y⟫)) x v
+    fderiv ℝ (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x v
       = Real.exp (α * ⟪u, x⟫) * (α * ⟪u, v⟫) := by
   rw [(hasFDerivAt_exp_inner α u x).fderiv]
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul]
@@ -103,14 +103,14 @@ a linear form: the second directional derivative along an orthonormal basis vect
 contributes `α² ⟪u, eᵢ⟫²`, and these sum to `α² ‖u‖²`. This is the barrier for the weak
 maximum principle with drift. -/
 @[simp] theorem laplacian_exp_inner (α : ℝ) (u x : E) :
-    Δ (fun y : E => Real.exp (α * ⟪u, y⟫)) x
+    Δ (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x
       = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
-  set w : E → ℝ := fun y => Real.exp (α * ⟪u, y⟫)
+  set w : E → ℝ := fun y ↦ Real.exp (α * ⟪u, y⟫)
   -- The first derivative of `w`, as a function of the base point.
-  have hfw : fderiv ℝ w = fun y => Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u) :=
-    funext fun y => (hasFDerivAt_exp_inner α u y).fderiv
+  have hfw : fderiv ℝ w = fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u) :=
+    funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv
   -- The second derivative at `x`.
-  have hw2 : HasFDerivAt (fun y => Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u))
+  have hw2 : HasFDerivAt (fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u))
       ((Real.exp (α * ⟪u, x⟫) • (α • innerSL ℝ u)).smulRight (α • innerSL ℝ u)) x :=
     (hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)
   -- Each diagonal Hessian entry along the standard orthonormal basis.
@@ -127,9 +127,10 @@ maximum principle with drift. -/
   calc ∑ i, iteratedFDeriv ℝ 2 w x
         ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]
       = ∑ i, α ^ 2 * ⟪u, (stdOrthonormalBasis ℝ E) i⟫ ^ 2 * Real.exp (α * ⟪u, x⟫) :=
-        Finset.sum_congr rfl fun i _ => hterm i
+        Finset.sum_congr rfl fun i _ ↦ hterm i
     _ = α ^ 2 * Real.exp (α * ⟪u, x⟫) * ∑ i, ⟪u, (stdOrthonormalBasis ℝ E) i⟫ ^ 2 := by
-        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ = α ^ 2 * Real.exp (α * ⟪u, x⟫) * ‖u‖ ^ 2 := by
         rw [(stdOrthonormalBasis ℝ E).sum_sq_inner_left u]
     _ = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, x⟫) := by ring
@@ -168,7 +169,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos {K : Set E} (hK 
     (hpos : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
   exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
-    fun {_} hx => not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
+    fun {_} hx ↦ not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
 
 /-- **Strict boundary minimum principle for `Δ + b·∇`.** The dual of
 `exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos`. -/
@@ -178,7 +179,7 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_neg {K : Set E} (hK 
     (hneg : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
   exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
-    fun {_} hx => not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
+    fun {_} hx ↦ not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
 
 section Nontrivial
 
@@ -189,15 +190,15 @@ omit [Nontrivial E] in
 `Δ + b·∇`. -/
 theorem laplacian_add_fderiv_exp_inner_pos_of_norm_le {u b : E} {β : ℝ}
     (hu : ‖u‖ = 1) (hb : ‖b‖ ≤ β) (x : E) :
-    0 < Δ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x +
-      fderiv ℝ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x b := by
+    0 < Δ (fun y ↦ Real.exp ((β + 1) * ⟪u, y⟫)) x +
+      fderiv ℝ (fun y ↦ Real.exp ((β + 1) * ⟪u, y⟫)) x b := by
   have hβ0 : 0 ≤ β := (norm_nonneg b).trans hb
   have hinner : -β ≤ ⟪u, b⟫ := by
     have h := (abs_le.mp (abs_real_inner_le_norm u b)).1
     rw [hu, one_mul] at h
     exact (neg_le_neg hb).trans h
-  have hL : Δ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x +
-      fderiv ℝ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x b =
+  have hL : Δ (fun y ↦ Real.exp ((β + 1) * ⟪u, y⟫)) x +
+      fderiv ℝ (fun y ↦ Real.exp ((β + 1) * ⟪u, y⟫)) x b =
         (β + 1) * (β + 1 + ⟪u, b⟫) * Real.exp ((β + 1) * ⟪u, x⟫) := by
     rw [laplacian_exp_inner, fderiv_exp_inner_apply, hu]
     ring
@@ -209,21 +210,21 @@ omit [Nontrivial E] in
 /-- The operator `Δ + b·∇` is linear under addition of a constant multiple. -/
 theorem laplacian_add_fderiv_add_const_smul (f w : E → ℝ) (b : E) (ε : ℝ) (x : E)
     (hf : ContDiffAt ℝ 2 f x) (hw : ContDiffAt ℝ 2 w x) :
-    Δ (fun y => f y + ε • w y) x + fderiv ℝ (fun y => f y + ε • w y) x b =
+    Δ (fun y ↦ f y + ε • w y) x + fderiv ℝ (fun y ↦ f y + ε • w y) x b =
       (Δ f x + fderiv ℝ f x b) + ε * (Δ w x + fderiv ℝ w x b) := by
   have hfd : DifferentiableAt ℝ f x := hf.differentiableAt (by norm_num)
   have hwd : DifferentiableAt ℝ w x := hw.differentiableAt (by norm_num)
-  have hΔ : Δ (fun y => f y + ε • w y) x = Δ f x + ε * Δ w x := by
-    have hadd : Δ (fun y => f y + ε • w y) x =
-        Δ f x + Δ (fun y => ε • w y) x := hf.laplacian_add (hw.const_smul ε)
-    have hsmul : Δ (fun y => ε • w y) x = ε • Δ w x := laplacian_smul ε hw
+  have hΔ : Δ (fun y ↦ f y + ε • w y) x = Δ f x + ε * Δ w x := by
+    have hadd : Δ (fun y ↦ f y + ε • w y) x =
+        Δ f x + Δ (fun y ↦ ε • w y) x := hf.laplacian_add (hw.const_smul ε)
+    have hsmul : Δ (fun y ↦ ε • w y) x = ε • Δ w x := laplacian_smul ε hw
     rw [hadd, hsmul, smul_eq_mul]
-  have hderiv : fderiv ℝ (fun y => f y + ε • w y) x b =
+  have hderiv : fderiv ℝ (fun y ↦ f y + ε • w y) x b =
       fderiv ℝ f x b + ε * fderiv ℝ w x b := by
-    have hadd : fderiv ℝ (fun y => f y + ε • w y) x =
-        fderiv ℝ f x + fderiv ℝ (fun y => ε • w y) x :=
+    have hadd : fderiv ℝ (fun y ↦ f y + ε • w y) x =
+        fderiv ℝ f x + fderiv ℝ (fun y ↦ ε • w y) x :=
       fderiv_add hfd (hwd.const_smul ε)
-    have hsmul : fderiv ℝ (fun y => ε • w y) x = ε • fderiv ℝ w x :=
+    have hsmul : fderiv ℝ (fun y ↦ ε • w y) x = ε • fderiv ℝ w x :=
       fderiv_const_smul hwd ε
     rw [hadd, hsmul]
     simp only [add_apply, smul_apply, smul_eq_mul]
@@ -251,10 +252,10 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
   have hxC : w x ≤ C := hCub (Set.mem_image_of_mem w hxK)
   have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * (C - w x) := by
     intro ε hε
-    set g : E → ℝ := fun y => f y + ε • w y with hgdef
+    set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
     have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
     have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
-      fun y hy => (hcd hy).add ((hwcd hy).const_smul ε)
+      fun y hy ↦ (hcd hy).add ((hwcd hy).const_smul ε)
     -- The perturbed function is a strict subsolution of `Δ + b·∇`.
     have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
       intro y hy
@@ -264,9 +265,15 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
     obtain ⟨z, hzfr, hzmax⟩ :=
       exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
     have hzK : z ∈ K := hK.isClosed.frontier_subset hzfr
-    have hgx : g x = f x + ε * w x := by rw [hgdef]; simp [smul_eq_mul]
-    have hgz : g z = f z + ε * w z := by rw [hgdef]; simp [smul_eq_mul]
-    have hxle : f x + ε * w x ≤ f z + ε * w z := by rw [← hgx, ← hgz]; exact hzmax hxK
+    have hgx : g x = f x + ε * w x := by
+      rw [hgdef]
+      simp [smul_eq_mul]
+    have hgz : g z = f z + ε * w z := by
+      rw [hgdef]
+      simp [smul_eq_mul]
+    have hxle : f x + ε * w x ≤ f z + ε * w z := by
+      rw [← hgx, ← hgz]
+      exact hzmax hxK
     have hzC : ε * w z ≤ ε * C :=
       mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
     have hexp : ε * (C - w x) = ε * C - ε * w x := by ring
@@ -289,12 +296,12 @@ theorem le_of_laplacian_add_fderiv_nonneg_le_frontier {K : Set E} (hK : IsCompac
   obtain ⟨v₀, hv₀⟩ := exists_ne (0 : E)
   set u : E := (‖v₀‖⁻¹ : ℝ) • v₀
   have hunorm : ‖u‖ = 1 := norm_smul_inv_norm hv₀
-  set w : E → ℝ := fun y => Real.exp ((β + 1) * ⟪u, y⟫) with hwdef
+  set w : E → ℝ := fun y ↦ Real.exp ((β + 1) * ⟪u, y⟫) with hwdef
   have hwCD : ContDiff ℝ 2 w :=
     (hwdef ▸ contDiff_exp_inner (β + 1) u : ContDiff ℝ ∞ w).of_le (by norm_cast)
   exact le_of_strict_subsolution_barrier hK hcont hcd hlap hbdry hwCD.continuous.continuousOn
-    (fun _ _ => hwCD.contDiffAt)
-    fun y hy => laplacian_add_fderiv_exp_inner_pos_of_norm_le hunorm (hb hy) y
+    (fun _ _ ↦ hwCD.contDiffAt)
+    fun y hy ↦ laplacian_add_fderiv_exp_inner_pos_of_norm_le hunorm (hb hy) y
 
 /-- **Weak minimum principle for `Δ + b·∇` with bounded drift.** The dual of
 `le_of_laplacian_add_fderiv_nonneg_le_frontier` for supersolutions
@@ -307,13 +314,14 @@ theorem ge_of_laplacian_add_fderiv_nonpos_ge_frontier {K : Set E} (hK : IsCompac
     ∀ ⦃x⦄, x ∈ K → m ≤ f x := by
   intro x hxK
   have hle := le_of_laplacian_add_fderiv_nonneg_le_frontier (f := -f) (b := b) (β := β) (m := -m)
-    hK hcont.neg (fun y hy => (hcd hy).neg) hb
-    (fun y hy => by
+    hK hcont.neg (fun y hy ↦ (hcd hy).neg) hb
+    (fun y hy ↦ by
       have h1 : Δ (-f) y = -Δ f y := by rw [congrFun laplacian_neg y, Pi.neg_apply]
       have h2 : fderiv ℝ (-f) y (b y) = -fderiv ℝ f y (b y) := by
         rw [fderiv_neg, neg_apply]
-      rw [h1, h2]; linarith [hlap hy])
-    (fun y hy => neg_le_neg (hbdry hy)) hxK
+      rw [h1, h2]
+      linarith [hlap hy])
+    (fun y hy ↦ neg_le_neg (hbdry hy)) hxK
   simp only [Pi.neg_apply] at hle
   linarith
 
@@ -330,14 +338,14 @@ theorem le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier {K : S
     ∀ ⦃x⦄, x ∈ K → f x ≤ g x := by
   intro x hx
   have h := le_of_laplacian_add_fderiv_nonneg_le_frontier (f := f - g) (b := b) (β := β)
-    (m := 0) hK (hfcont.sub hgcont) (fun y hy => (hfcd hy).sub (hgcd hy)) hb
-    (fun y hy => by
+    (m := 0) hK (hfcont.sub hgcont) (fun y hy ↦ (hfcd hy).sub (hgcd hy)) hb
+    (fun y hy ↦ by
       have hfd : DifferentiableAt ℝ f y := (hfcd hy).differentiableAt (by norm_num)
       have hgd : DifferentiableAt ℝ g y := (hgcd hy).differentiableAt (by norm_num)
       rw [(hfcd hy).laplacian_sub (hgcd hy), fderiv_sub hfd hgd]
       simp only [sub_apply]
       linarith [hL hy])
-    (fun y hy => sub_nonpos.mpr (hbdry hy)) hx
+    (fun y hy ↦ sub_nonpos.mpr (hbdry hy)) hx
   exact sub_nonpos.mp h
 
 /-- **Uniqueness principle for `Δ + b·∇`.** Functions with equal operator values for the same
@@ -353,9 +361,9 @@ theorem eqOn_of_laplacian_add_fderiv_eq_of_eqOn_frontier {K : Set E} (hK : IsCom
   intro x hx
   apply le_antisymm
   · exact le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier hK hfcont hgcont
-      hfcd hgcd hb (fun y hy => (hL hy).ge) (fun y hy => (hbdry hy).le) hx
+      hfcd hgcd hb (fun y hy ↦ (hL hy).ge) (fun y hy ↦ (hbdry hy).le) hx
   · exact le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier hK hgcont hfcont
-      hgcd hfcd hb (fun y hy => (hL hy).le) (fun y hy => (hbdry hy).ge) hx
+      hgcd hfcd hb (fun y hy ↦ (hL hy).le) (fun y hy ↦ (hbdry hy).ge) hx
 
 /-- The `∃`-form of the weak maximum principle for `Δ + b·∇`: a subsolution with bounded drift
 on a nonempty compact set attains a maximum on the frontier. -/
@@ -364,7 +372,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry =>
+  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry ↦
     le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap hbdry
 
 /-- The `∃`-form of the weak minimum principle for `Δ + b·∇`: a supersolution with bounded
@@ -375,10 +383,10 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_nonpos {K : Set E} (
     (hlap : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) ≤ 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
   obtain ⟨z, hzfr, hzmax⟩ := exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg
-    hK hne hcont.neg (fun y hy => (hcd hy).neg) hb (fun y hy => by
+    hK hne hcont.neg (fun y hy ↦ (hcd hy).neg) hb (fun y hy ↦ by
       rw [congrFun laplacian_neg y, Pi.neg_apply, fderiv_neg, neg_apply]
       linarith [hlap hy])
-  refine ⟨z, hzfr, isMinOn_iff.mpr fun y hyK => ?_⟩
+  refine ⟨z, hzfr, isMinOn_iff.mpr fun y hyK ↦ ?_⟩
   simpa using neg_le_neg (isMaxOn_iff.mp hzmax y hyK)
 
 end Nontrivial

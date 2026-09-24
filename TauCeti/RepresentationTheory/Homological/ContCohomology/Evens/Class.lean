@@ -117,6 +117,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
+/-- `G` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
 local instance : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 

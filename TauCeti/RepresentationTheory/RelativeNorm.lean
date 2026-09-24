@@ -88,9 +88,13 @@ def relTransfer : Module.End R V := ∑ q : G ⧸ H, ρ q.out⁻¹
 
 variable {ρ H}
 
+/-- The relative norm sends `x` to `∑_{q ∈ G ⧸ H} ρ(q.out) x`, a sum over the chosen coset
+representatives. -/
 theorem relNorm_apply (x : V) : relNorm ρ H x = ∑ q : G ⧸ H, ρ q.out x := by
   simp [relNorm]
 
+/-- The relative transfer sends `x` to `∑_{q ∈ G ⧸ H} ρ(q.out⁻¹) x`, a sum over the inverses of the
+chosen coset representatives. -/
 theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.out⁻¹ x := by
   simp [relTransfer]
 
@@ -100,12 +104,7 @@ section Norm
 
 variable [Fintype G] {ρ H}
 
-/-- A subgroup of a finite group is a finite type. -/
-noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
-
-/-- The quotient of a finite group by a subgroup is a finite type. -/
-noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
-  H.fintypeQuotientOfFiniteIndex
+attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
 
 private theorem norm_apply' (x : V) : ρ.norm x = ∑ g : G, ρ g x := by
   simp [Representation.norm]
@@ -157,6 +156,7 @@ def relTransferKerNorm :
   (relTransfer ρ H).restrict fun x hx =>
     LinearMap.mem_ker.2 <| (norm_relTransfer_apply x).trans (LinearMap.mem_ker.mp hx)
 
+/-- On underlying elements, `relTransferKerNorm` is the relative transfer. -/
 @[simp]
 theorem coe_relTransferKerNorm (x : LinearMap.ker ρ.norm) :
     (relTransferKerNorm ρ H x : V) = relTransfer ρ H x := by
@@ -219,6 +219,7 @@ def relNormInvariants :
     Representation.invariants (ρ.comp H.subtype) →ₗ[R] ρ.invariants :=
   (relNorm ρ H).restrict fun _ hx => relNorm_mem_invariants hx
 
+/-- On underlying elements, `relNormInvariants` is the relative norm. -/
 @[simp]
 theorem coe_relNormInvariants (x : Representation.invariants (ρ.comp H.subtype)) :
     (relNormInvariants ρ H x : V) = relNorm ρ H x := by

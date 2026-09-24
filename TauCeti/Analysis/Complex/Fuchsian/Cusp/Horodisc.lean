@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 import TauCeti.Analysis.Complex.Fuchsian.Shimizu
 
 /-!
@@ -30,7 +31,10 @@ of `z` above the cusp of `D'` have product at most `D.width * D'.width`. Hence h
 heights are at least the widths never meet across such an element, and at two cusps that are not
 `Γ`-equivalent their images in the orbit space `Γ \ ℍ` are disjoint. These disjoint punctured-disc
 neighbourhoods of inequivalent cusps are what separate distinct cusp points once they are adjoined
-to the quotient.
+to the quotient, while at two `Γ`-equivalent cusps the horodisc images agree up to a rescaling of
+the height, so that the neighbourhoods adjoined at a cusp orbit do not depend on the chosen
+representative. The same inequality shows that orbits stay uniformly low near any point of `ℍ`,
+which separates a point of the orbit space from every adjoined cusp.
 
 All of these bounds are Shimizu's lemma
 (`Subgroup.im_smul_mul_im_le_abs_mul_of_upperRightHom_mem`), applied to the conjugate group
@@ -49,8 +53,14 @@ All of these bounds are Shimizu's lemma
 * `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc` and
   `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc_self`: the translates of a high horodisc
   by two elements lying in different cosets of the cusp stabilizer are disjoint.
+* `TauCeti.Subgroup.CuspDatum.exists_image_quotientMk_horodisc_eq`: horodiscs at two
+  `Γ`-equivalent cusps have the same images in the orbit space up to a fixed rescaling of the
+  height.
 * `TauCeti.Subgroup.CuspDatum.disjoint_image_quotientMk_horodisc_iff`: high horodiscs at two cusps
   have disjoint images in the orbit space exactly when the cusps are not `Γ`-equivalent.
+* `TauCeti.Subgroup.CuspDatum.exists_isOpen_mem_disjoint_image_quotientMk_horodisc`: near any
+  point of `ℍ`, orbits stay uniformly low, so a neighbourhood of a point of the orbit space misses
+  the image of a high horodisc.
 
 ## References
 
@@ -99,6 +109,59 @@ theorem smul_horodisc_of_mem_stabilizer {g : Γ} (hg : g ∈ stabilizer Γ D.cus
   ext z
   rw [Set.mem_smul_set_iff_inv_smul_mem, mem_horodisc, mem_horodisc,
     im_scaling_smul_smul_of_mem_stabilizer D (inv_mem hg)]
+
+/-- A horodisc is open. -/
+theorem isOpen_horodisc (A : ℝ) : IsOpen (horodisc D A) :=
+  isOpen_lt continuous_const (continuous_im.comp (continuous_const_smul _))
+
+/-- Horodiscs shrink as their height grows. -/
+theorem horodisc_antitone : Antitone (horodisc D) := fun _ _ h _ hz ↦ h.trans_lt hz
+
+/-- Every horodisc is nonempty. -/
+theorem nonempty_horodisc (A : ℝ) : (horodisc D A).Nonempty := by
+  refine ⟨D.scaling⁻¹ • (⟨max A 0 + 1, by positivity⟩ : {x : ℝ // 0 < x}) • UpperHalfPlane.I, ?_⟩
+  rw [mem_horodisc, smul_inv_smul]
+  simp only [pos_real_im, UpperHalfPlane.I_im, mul_one]
+  linarith [le_max_left A 0]
+
+/-- **Heights above equivalent cusps are proportional.** If `k ∈ Γ` carries the cusp of `D` to
+the cusp of `D'`, then `σ' k σ⁻¹` fixes `∞`, so it is a positive real affine map, and the height
+of `k • z` above the cusp of `D'` is a fixed positive multiple of the height of `z` above the cusp
+of `D`. -/
+theorem exists_im_scaling_smul_smul_eq_mul (D' : Γ.CuspDatum) {k : Γ}
+    (hk : k • D.cusp = D'.cusp) :
+    ∃ a : ℝ, 0 < a ∧ ∀ z : ℍ, (D'.scaling • k • z).im = a * (D.scaling • z).im := by
+  obtain ⟨a, b, ha, h⟩ := TauCeti.cuspDatum_exists_scaling_smul_eq_affine hk
+  exact ⟨a, ha, fun z ↦ by simpa using congrArg Complex.im (h z)⟩
+
+/-- An element of `Γ` carrying the cusp of `D` to the cusp of `D'` carries the horodiscs at `D`
+onto the horodiscs at `D'`, rescaling the height by a fixed positive factor. -/
+theorem exists_smul_horodisc_eq (D' : Γ.CuspDatum) {k : Γ} (hk : k • D.cusp = D'.cusp) :
+    ∃ a : ℝ, 0 < a ∧ ∀ A : ℝ, k • horodisc D A = horodisc D' (a * A) := by
+  obtain ⟨a, ha, h⟩ := exists_im_scaling_smul_smul_eq_mul D D' hk
+  refine ⟨a, ha, fun A ↦ ?_⟩
+  ext z
+  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_horodisc, mem_horodisc, ← smul_inv_smul k z, h,
+    inv_smul_smul, mul_lt_mul_iff_right₀ ha]
+
+/-- **Horodiscs at equivalent cusps have the same images.** If the cusps of `D` and `D'` are
+`Γ`-equivalent, then after rescaling heights by a fixed positive factor the horodiscs at the two
+cusps have the same image in the orbit space `Γ \ ℍ`. -/
+theorem exists_image_quotientMk_horodisc_eq (D' : Γ.CuspDatum)
+    (hc : D'.cusp ∈ orbit Γ D.cusp) :
+    ∃ a : ℝ, 0 < a ∧ ∀ A : ℝ, Quotient.mk (orbitRel Γ ℍ) '' horodisc D' (a * A) =
+      Quotient.mk (orbitRel Γ ℍ) '' horodisc D A := by
+  obtain ⟨k, hk⟩ := mem_orbit_iff.mp hc
+  obtain ⟨a, ha, h⟩ := exists_smul_horodisc_eq D D' hk
+  refine ⟨a, ha, fun A ↦ ?_⟩
+  rw [← h]
+  ext q
+  simp only [Set.mem_image, Set.mem_smul_set]
+  constructor
+  · rintro ⟨_, ⟨z, hz, rfl⟩, rfl⟩
+    exact ⟨z, hz, Quotient.sound (mem_orbit_iff.mpr ⟨k⁻¹, inv_smul_smul k z⟩)⟩
+  · rintro ⟨z, hz, rfl⟩
+    exact ⟨k • z, ⟨z, hz, rfl⟩, Quotient.sound (mem_orbit_iff.mpr ⟨k, rfl⟩)⟩
 
 /-- **Shimizu's inequality at two cusps.** Let `D` and `D'` be normalized cusp data of a discrete
 `Γ ≤ PSL(2, ℝ)`. If `g ∈ Γ` does not carry the cusp of `D'` to the cusp of `D`, then the height of
@@ -194,37 +257,12 @@ theorem not_disjoint_image_quotientMk_horodisc_of_mem_orbit (D' : Γ.CuspDatum)
     (hc : D'.cusp ∈ orbit Γ D.cusp) (A A' : ℝ) :
     ¬Disjoint (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A)
       (Quotient.mk (orbitRel Γ ℍ) '' horodisc D' A') := by
-  obtain ⟨k, hk⟩ := mem_orbit_iff.mp hc
-  -- `σ' k σ⁻¹` fixes `∞`, so it acts on the upper half-plane by a positive real affine map
-  have hfix : (D'.scaling * (k : PSL(2, ℝ)) * D.scaling⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
-    rw [mul_smul, mul_smul, inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm,
-      ← _root_.Subgroup.smul_def, hk, D'.scaling_smul_cusp]
-  obtain ⟨M, hM⟩ := QuotientGroup.mk_surjective (D'.scaling * (k : PSL(2, ℝ)) * D.scaling⁻¹)
-  rw [← hM, OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
-    Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hfix
-  obtain ⟨a, b, hab⟩ := exists_SL2_smul_eq_of_apply_zero_one_eq_zero M hfix
-  -- a point at height `t` in the scaling coordinate of `D`, with `t` large, lies in both
-  -- horodiscs up to the action of `k`
-  set t := max (max A (A' / a)) 0 + 1
-  have ht : 0 < t := by positivity
-  set x : ℍ := D.scaling⁻¹ • ((⟨t, ht⟩ : {x : ℝ // 0 < x}) • UpperHalfPlane.I)
-  have hσx : D.scaling • x = (⟨t, ht⟩ : {x : ℝ // 0 < x}) • UpperHalfPlane.I :=
-    smul_inv_smul _ _
-  have hkx : D'.scaling • k • x = M • (D.scaling • x) := by
-    rw [← UpperHalfPlane.pslMk_smul, hM, mul_smul, mul_smul, inv_smul_smul,
-      _root_.Subgroup.smul_def]
-  have hx : (D.scaling • x).im = t := by
-    simp [hσx, pos_real_im]
-  have hkx' : (D'.scaling • k • x).im = a * t := by
-    rw [hkx, ← hx, congrFun hab]
-    simp [pos_real_im]
-  rw [Set.not_disjoint_iff]
-  refine ⟨Quotient.mk _ x, ⟨x, ?_, rfl⟩, ⟨k • x, ?_, ?_⟩⟩
-  · rw [mem_horodisc, hx]
-    linarith [le_max_left (max A (A' / a)) 0, le_max_left A (A' / a)]
-  · rw [mem_horodisc, hkx', ← div_lt_iff₀' a.2]
-    linarith [le_max_left (max A (A' / a)) 0, le_max_right A (A' / a)]
-  · exact Quotient.sound (mem_orbit_iff.mpr ⟨k, rfl⟩)
+  obtain ⟨a, ha, h⟩ := exists_image_quotientMk_horodisc_eq D D' hc
+  -- both images contain the image of a horodisc at `D` high enough for both heights
+  refine Set.Nonempty.not_disjoint (((nonempty_horodisc D (max A (A' / a))).image _).mono
+    (Set.subset_inter (Set.image_mono (horodisc_antitone D (le_max_left _ _))) ?_))
+  rw [← h]
+  exact Set.image_mono (horodisc_antitone D' ((div_le_iff₀' ha).mp (le_max_right A (A' / a))))
 
 /-- **Horodiscs at inequivalent cusps have disjoint images.** Let `D` and `D'` be normalized cusp
 data of a discrete `Γ ≤ PSL(2, ℝ)`, and let the heights satisfy `0 ≤ A` and
@@ -245,5 +283,41 @@ theorem disjoint_image_quotientMk_horodisc_iff [DiscreteTopology Γ] (D' : Γ.Cu
     (Set.smul_mem_smul_set hy) (by rwa [inv_smul_smul])
   intro h
   exact hc (mem_orbit_iff.mpr ⟨g, by rw [← h, smul_inv_smul]⟩)
+
+/-- **Orbits stay uniformly low near a point.** Let `D` be a normalized cusp datum of a discrete
+`Γ ≤ PSL(2, ℝ)`. Every point of `ℍ` has an open neighbourhood `S` and a height `A` such that no
+element of `Γ` carries a point of `S` above height `A` over the cusp of `D`: the cusp stabilizer
+preserves heights, and Shimizu's inequality bounds the height of `g • w` for `g` outside it. -/
+theorem exists_isOpen_mem_forall_im_scaling_smul_smul_le [DiscreteTopology Γ] (z : ℍ) :
+    ∃ S : Set ℍ, IsOpen S ∧ z ∈ S ∧ ∃ A : ℝ, ∀ g : Γ, ∀ w ∈ S, (D.scaling • g • w).im ≤ A := by
+  set h := (D.scaling • z).im
+  have h0 : 0 < h := (D.scaling • z).im_pos
+  have hcont : Continuous fun w : ℍ ↦ (D.scaling • w).im :=
+    continuous_im.comp (continuous_const_smul _)
+  refine ⟨{w | h / 2 < (D.scaling • w).im} ∩ {w | (D.scaling • w).im < 2 * h},
+    (isOpen_lt continuous_const hcont).inter (isOpen_lt hcont continuous_const),
+    ⟨(by linarith : h / 2 < h), (by linarith : h < 2 * h)⟩,
+    max (2 * h) (2 * D.width * D.width / h), fun g w ⟨hw1, hw2⟩ ↦ ?_⟩
+  by_cases hg : g ∈ stabilizer Γ D.cusp
+  · rw [im_scaling_smul_smul_of_mem_stabilizer D hg]
+    exact hw2.le.trans (le_max_left _ _)
+  · have hkey := im_scaling_smul_smul_mul_im_scaling_smul_le D D
+      (fun h ↦ hg (MulAction.mem_stabilizer_iff.mpr h)) w
+    refine le_trans ?_ (le_max_right _ _)
+    rw [le_div_iff₀ h0]
+    have him : 0 ≤ (D.scaling • g • w).im := (D.scaling • g • w).im_pos.le
+    nlinarith [mul_le_mul_of_nonneg_left hw1.le him]
+
+/-- **A point of the orbit space is separated from every cusp.** Let `D` be a normalized cusp
+datum of a discrete `Γ ≤ PSL(2, ℝ)`. Every point of `ℍ` has an open neighbourhood whose image in
+the orbit space `Γ \ ℍ` is disjoint from the image of a sufficiently high horodisc at `D`. -/
+theorem exists_isOpen_mem_disjoint_image_quotientMk_horodisc [DiscreteTopology Γ] (z : ℍ) :
+    ∃ S : Set ℍ, IsOpen S ∧ z ∈ S ∧ ∃ A : ℝ,
+      Disjoint (Quotient.mk (orbitRel Γ ℍ) '' S) (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A) := by
+  obtain ⟨S, hS, hz, A, hA⟩ := exists_isOpen_mem_forall_im_scaling_smul_smul_le D z
+  refine ⟨S, hS, hz, A, Set.disjoint_left.mpr ?_⟩
+  rintro _ ⟨w, hw, rfl⟩ ⟨v, hv, hvw⟩
+  obtain ⟨g, rfl⟩ := mem_orbit_iff.mp (Quotient.exact hvw)
+  exact absurd hv (not_lt.mpr (hA g w hw))
 
 end TauCeti.Subgroup.CuspDatum

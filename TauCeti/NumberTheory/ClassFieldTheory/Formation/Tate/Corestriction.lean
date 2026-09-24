@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Corestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
 /-!
 # Corestriction of finite-layer Tate cohomology

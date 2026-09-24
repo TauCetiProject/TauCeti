@@ -55,7 +55,7 @@ theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
 section Commute
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsCancelMulZero k]
+variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
 
 /-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
 matrix separates the coordinates `i` and `j`. -/

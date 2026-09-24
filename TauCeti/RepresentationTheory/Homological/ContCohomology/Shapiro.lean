@@ -114,6 +114,7 @@ def constCoind (a : H0 U A) : DiscreteCoind G U A :=
   DiscreteCoind.mk G U A (fun _ => (a : A)) (IsLocallyConstant.const _)
     (fun u _ => ((FixedPoints.mem_addSubgroup U A (a : A)).1 a.2 u).symm)
 
+/-- The coinduced function `constCoind G a` is constant with value `a`. -/
 @[simp]
 theorem constCoind_apply (a : H0 U A) (g : G) : constCoind G a g = (a : A) := (rfl)
 
@@ -150,10 +151,12 @@ def explicitShapiro0 : H0 G (DiscreteCoind G U A) ≃+ H0 U A where
   right_inv a := Subtype.ext (constCoind_apply a 1)
   map_add' _ _ := (rfl)
 
+/-- The degree-zero Shapiro map evaluates a `G`-invariant coinduced function at `1`. -/
 @[simp]
 theorem explicitShapiro0_apply (f : H0 G (DiscreteCoind G U A)) :
     (explicitShapiro0 G U A f : A) = (f : DiscreteCoind G U A) 1 := (rfl)
 
+/-- The inverse degree-zero Shapiro map sends `a ∈ A^U` to the constant function with value `a`. -/
 @[simp]
 theorem explicitShapiro0_symm_apply (a : H0 U A) :
     ((explicitShapiro0 G U A).symm a : DiscreteCoind G U A) = constCoind G a := (rfl)
@@ -170,9 +173,11 @@ of `G` over the right cosets of `U`. Its failure of `U`-equivariance is `c` itse
 nonzero class. -/
 def shapiroLift : G → A := fun y => c (w y)
 
+/-- The lift `shapiroLift w c` is `y ↦ c (w y)`. -/
 @[simp]
 theorem shapiroLift_apply (y : G) : shapiroLift w c y = c (w y) := (rfl)
 
+/-- The lift of a continuous cochain along a continuous factorization is continuous. -/
 theorem continuous_shapiroLift [TopologicalSpace G] [TopologicalSpace A] (hw : Continuous w)
     (hc : Continuous c) : Continuous (shapiroLift w c) := hc.comp hw
 
@@ -208,6 +213,8 @@ noncomputable abbrev shapiroCocycles1 : Z1 G (DiscreteCoind G U A) →+ Z1 U A :
     (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
 
 omit [CompactSpace G] [ContinuousSMul U A] in
+/-- The Shapiro map on `1`-cocycles restricts a cocycle `f` to `U` and evaluates at `1`: `u ↦ f u
+1`. -/
 @[simp]
 theorem shapiroCocycles1_apply (f : Z1 G (DiscreteCoind G U A)) (u : U) :
     (shapiroCocycles1 G U A f : U → A) u = (f : G → DiscreteCoind G U A) (u : G) 1 := by
@@ -252,6 +259,7 @@ noncomputable def coindCochain1 (g : G) : DiscreteCoind G U A :=
     (shapiroLift_sub_mul w c hwmul hccoc g)
 
 omit [CompactSpace G] [ContinuousSMul U A] in
+/-- The inverse Shapiro cochain sends `g` to the function `x ↦ c (w (x * g)) - c (w x)`. -/
 @[simp]
 theorem coindCochain1_apply (g x : G) :
     coindCochain1 w c hw hwmul hccont hccoc g x = c (w (x * g)) - c (w x) := (rfl)
@@ -285,6 +293,7 @@ noncomputable def coindCocycle1 : Z1 G (DiscreteCoind G U A) :=
   ⟨coindCochain1 w c hw hwmul hccont hccoc, coindCochain1_mem_Z1 w c hw hwmul hccont hccoc⟩
 
 omit [ContinuousSMul U A] in
+/-- The underlying cochain of the inverse Shapiro `1`-cocycle is `coindCochain1`. -/
 @[simp]
 theorem coe_coindCocycle1 :
     (coindCocycle1 w c hw hwmul hccont hccoc : G → DiscreteCoind G U A) =
@@ -397,6 +406,7 @@ noncomputable def explicitShapiro1 (hU : IsClosed (U : Set G)) :
     H1 G (DiscreteCoind G U A) ≃+ H1 U A :=
   AddEquiv.ofBijective (explicitShapiroMap1 G U A) (bijective_explicitShapiroMap1 G U A hU)
 
+/-- `explicitShapiro1` is the forward Shapiro map `explicitShapiroMap1` on `H¹`. -/
 @[simp]
 theorem explicitShapiro1_apply (hU : IsClosed (U : Set G)) (x : H1 G (DiscreteCoind G U A)) :
     explicitShapiro1 G U A hU x = explicitShapiroMap1 G U A x := (rfl)
@@ -437,6 +447,8 @@ noncomputable def shapiroCocycles2 : Z2 G (DiscreteCoind G U A) →+ Z2 U A :=
     (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
 
 omit [CompactSpace G] [ContinuousSMul U A] in
+/-- The Shapiro map on `2`-cocycles restricts a cocycle `f` to `U × U` and evaluates at `1`: `(u, v)
+↦ f (u, v) 1`. -/
 @[simp]
 theorem shapiroCocycles2_apply (f : Z2 G (DiscreteCoind G U A)) (u v : U) :
     (shapiroCocycles2 G U A f : U × U → A) (u, v) =
@@ -514,6 +526,8 @@ noncomputable def coindCochain2 (q : G × G) : DiscreteCoind G U A :=
       exact homogeneous2_smul c u (w y) (w (y * q.1)) (w (y * q.1 * q.2)))
 
 omit [CompactSpace G] in
+/-- The inverse Shapiro `2`-cochain sends `(g, h)` to the function `y ↦ homogeneous2 c (w y) (w (y *
+g)) (w (y * g * h))`. -/
 @[simp]
 theorem coindCochain2_apply (g h y : G) :
     coindCochain2 w c hw hwmul hccont (g, h) y =
@@ -555,6 +569,7 @@ noncomputable def coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) :
     Z2 G (DiscreteCoind G U A) :=
   ⟨coindCochain2 w c hw hwmul hccont, coindCochain2_mem_Z2 w c hw hwmul hccont hccoc⟩
 
+/-- The underlying cochain of the inverse Shapiro `2`-cocycle is `coindCochain2`. -/
 @[simp]
 theorem coe_coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) :
     (coindCocycle2 w c hw hwmul hccont hccoc : G × G → DiscreteCoind G U A) =
@@ -742,6 +757,7 @@ noncomputable def explicitShapiro2 (hU : IsClosed (U : Set G)) :
     H2 G (DiscreteCoind G U A) ≃+ H2 U A :=
   AddEquiv.ofBijective (explicitShapiroMap2 G U A) (bijective_explicitShapiroMap2 G U A hU)
 
+/-- `explicitShapiro2` is the forward Shapiro map `explicitShapiroMap2` on `H²`. -/
 @[simp]
 theorem explicitShapiro2_apply (hU : IsClosed (U : Set G)) (x : H2 G (DiscreteCoind G U A)) :
     explicitShapiro2 G U A hU x = explicitShapiroMap2 G U A x := (rfl)

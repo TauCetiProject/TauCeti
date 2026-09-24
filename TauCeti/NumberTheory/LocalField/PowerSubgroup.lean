@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -363,8 +364,7 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
 theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = 4 := by
-  have h2K : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
   have hchar : ringChar K ≠ 2 := fun h ↦ h2K (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
   rw [card_powerClasses_of_isUnit (by exact_mod_cast h2),
     (IsPrimitiveRoot.neg_one (ringChar K) hchar).card_rootsOfUnity]

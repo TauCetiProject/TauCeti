@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 
 /-!
 # Restriction of finite-layer Tate cohomology
@@ -26,8 +27,8 @@ Galois group is identified with the image of its inclusion into the larger one, 
 The comparison lemmas below identify each branch with the corresponding established map. On
 representatives, degree-zero restriction is the ground-level inclusion and degree-minus-one
 restriction is the relative transfer of norm kernels, and restriction is functorial along a tower
-`F ⊆ E ⊆ E' ⊆ K` in every degree at least minus one. Corestriction after restriction is
-multiplication by the relative degree `[E : F]` in every degree.
+`F ⊆ E ⊆ E' ⊆ K` in every degree. Corestriction after restriction is multiplication by the
+relative degree `[E : F]` in every degree.
 
 ## Main definitions
 
@@ -54,6 +55,9 @@ multiplication by the relative degree `[E : F]` in every degree.
   of norm kernels is transitive along a tower modulo the augmentation submodule.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_of_neg_one_le`: Tate restriction is
   functorial along towers in every degree at least minus one.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_eq_comp` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans`: Tate restriction is functorial along
+  towers of layers in every degree.
 
 ## References
 
@@ -289,6 +293,51 @@ theorem tateRes_trans_of_neg_one_le (T : LayerRestriction a b) (T' : LayerRestri
         tateRes_neg_one_HNegOneπ, TauCeti.TateCohomology.HNegOneπ_eq_iff]
       exact kerNormTransfer_trans_sub_mem T T' F y
   · exact tateRes_trans_of_nonneg T T' F r (by omega)
+
+-- The degrees below `-1` of `tateRes_trans`, where restriction is the transfer in group homology.
+attribute [local instance] Subgroup.fintypeOfFinite in
+private theorem tateRes_negSucc_succ_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (n : ℕ) : (T.trans T').tateRes F (Int.negSucc (n + 1)) =
+      T'.tateRes F (Int.negSucc (n + 1)) ≫ T.tateRes F (Int.negSucc (n + 1)) := by
+  simp only [tateRes_negSucc_succ, Category.assoc]
+  -- The transfer is transitive along the image of the tower of Galois groups...
+  rw [← TauCeti.TateCohomology.negSuccRes_trans_assoc (c.rep F) (galHom_range_trans_le T T')]
+  refine congrArg (_ ≫ ·) ((Iso.eq_inv_comp _).2 ?_)
+  -- ...and compatible with the identification of the middle Galois group with its image.
+  simp only [tateRangeIso_hom, TauCeti.TateCohomology.map_comp_negSuccRes_assoc (b.rep F)
+    (MonoidHom.ofInjective T'.galHom_injective) (isIntertwiningMap_repIso_range T' F)
+    (galHom_range_map_ofInjective T T') (n + 1)]
+  refine congrArg (_ ≫ ·) ?_
+  -- It remains to compose the identifications of Galois groups and coefficients along the tower.
+  rw [TauCeti.TateCohomology.map_comp_assoc, Iso.comp_inv_eq, Iso.eq_inv_comp]
+  -- `rw [tateRangeIso_hom]` would be far slower here than `simp only`.
+  simp only [tateRangeIso_hom, TauCeti.TateCohomology.map_comp]
+  refine TauCeti.TateCohomology.map_congr (MulEquiv.ext fun γ ↦ Subtype.ext ?_)
+    (LinearMap.ext fun x ↦ Subtype.ext ?_) _
+  · simp [TauCeti.Subgroup.coe_congrOfMapEq_apply, MonoidHom.ofInjective_apply, galHom_trans T T']
+  · exact (T'.repIso_hom_apply_coe F _).trans
+      ((T.repIso_hom_apply_coe F x).trans ((T.trans T').repIso_hom_apply_coe F x).symm)
+
+/-- **Tate restriction is functorial along a tower, in every integer degree**, as an identity of
+morphisms: restricting from `K/F` to `K/E'` is restricting from `K/F` to `K/E` and then from `K/E`
+to `K/E'`. -/
+@[reassoc]
+theorem tateRes_trans_eq_comp (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (r : ℤ) : (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
+  -- The degrees are left to unification: instantiating at the literal `-1` rather than
+  -- `Int.negSucc 0` makes `exact` markedly slower.
+  rcases r with _ | (_ | n)
+  · exact tateRes_trans_of_neg_one_le T T' F _ (by lia)
+  · exact tateRes_trans_of_neg_one_le T T' F _ le_rfl
+  · exact tateRes_negSucc_succ_trans T T' F n
+
+/-- **Tate restriction is functorial along a tower, in every integer degree.** Restricting from
+`K/F` to `K/E` and then to `K/E'` agrees with direct restriction from `K/F` to `K/E'`. -/
+-- Not `@[simp]`: `LayerRestriction` is a `Prop`, so the left-hand side does not mention `T`, `T'`
+-- or the middle layer, and `simp` could never instantiate them.
+theorem tateRes_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (F : Formation G)
+    (r : ℤ) (x : c.TateH F r) : (T.trans T').tateRes F r x = T.tateRes F r (T'.tateRes F r x) := by
+  rw [tateRes_trans_eq_comp, ModuleCat.comp_apply]
 
 end Towers
 

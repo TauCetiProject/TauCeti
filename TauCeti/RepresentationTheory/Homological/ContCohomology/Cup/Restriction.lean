@@ -121,6 +121,7 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (n : N), μ (g • m) (g • n) = g • μ m n)
 
+/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
 local instance : ContinuousMul U := U.toSubmonoid.continuousMul
 
 include hμ hequiv

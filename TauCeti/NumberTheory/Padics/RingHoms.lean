@@ -34,6 +34,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   ring operations, modulo `p ^ n`.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
+* `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
+  `ZMod (p ^ n)`.
 -/
 
 public section
@@ -91,6 +93,18 @@ theorem appr_mul_modEq (x y : ℤ_[p]) (n : ℕ) :
 /-- Truncation fixes a natural number modulo `p ^ n`. -/
 theorem appr_natCast_modEq (k n : ℕ) : ((k : ℤ_[p])).appr n ≡ k [MOD p ^ n] := by
   rw [← ZMod.natCast_eq_natCast_iff, ← toZModPow_eq_natCast_appr, map_natCast]
+
+/-- The truncation `toZModPow n` identifies the quotient of `ℤ_[p]` by the ideal `(p ^ n)` with
+`ZMod (p ^ n)`. This is the `p ^ n` analogue of `PadicInt.residueField`. -/
+noncomputable def quotientSpanPowEquivZMod (n : ℕ) :
+    ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p]) ^ n} ≃+* ZMod (p ^ n) :=
+  (Ideal.quotEquivOfEq (ker_toZModPow n).symm).trans
+    (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective (toZModPow n)))
+
+@[simp]
+theorem quotientSpanPowEquivZMod_mk (n : ℕ) (x : ℤ_[p]) :
+    quotientSpanPowEquivZMod n (Ideal.Quotient.mk _ x) = toZModPow n x := by
+  simp [quotientSpanPowEquivZMod]
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

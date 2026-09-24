@@ -252,12 +252,15 @@ theorem coindMap_apply (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) 
 theorem coindMap_id : coindMap G U (AddMonoidHom.id A) (fun _ _ => rfl) = AddMonoidHom.id _ := by
   ext f g; simp
 
-/-- Coinduction of a composite is the composite of the coinductions. -/
+-- The composition `simp` lemmas take both equivariance hypotheses on the left-hand side and derive
+-- the equivariance of the composite on the right: a hypothesis occurring on the left only inside a
+-- proof is not assigned by unification, and `simp` cannot prove an equivariance for symbolic maps.
+/-- The composite of two coinductions is the coinduction of the composite. -/
 @[simp]
-theorem coindMap_comp (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
+theorem coindMap_comp_coindMap (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
     (ψ : B →+ C) (hψ : ∀ (u : U) (b : B), ψ (u • b) = u • ψ b) :
-    coindMap G U (ψ.comp φ) (fun u a => by rw [AddMonoidHom.comp_apply, hφ, hψ]; rfl) =
-      (coindMap G U ψ hψ).comp (coindMap G U φ hφ) := by
+    (coindMap G U ψ hψ).comp (coindMap G U φ hφ) =
+      coindMap G U (ψ.comp φ) (fun u a => by rw [AddMonoidHom.comp_apply, hφ, hψ]; rfl) := by
   ext f g; simp
 
 /-- The counit is natural in the coefficients. -/
@@ -682,11 +685,14 @@ theorem map_id :
   ext a g
   rfl
 
+-- Hypotheses on the left-hand side: see the comment on `TauCeti.coindMap_comp_coindMap`.
+/-- Composing the maps of coinduced functions induced by two equivariant linear maps gives the map
+induced by their composite. -/
 @[simp]
-theorem map_comp (f : A →ₗ[R] B) (hf) (f' : B →ₗ[R] C) (hf') :
-    map (G := G) (U := U) (f'.comp f)
-        (fun u a => by rw [LinearMap.comp_apply, hf, hf']; rfl) =
-      (map (G := G) (U := U) f' hf').comp (map (G := G) (U := U) f hf) := by
+theorem map_comp_map (f : A →ₗ[R] B) (hf) (f' : B →ₗ[R] C) (hf') :
+    (map (G := G) (U := U) f' hf').comp (map (G := G) (U := U) f hf) =
+      map (G := G) (U := U) (f'.comp f)
+        (fun u a => by rw [LinearMap.comp_apply, hf, hf']; rfl) := by
   ext a g
   rfl
 
@@ -856,12 +862,15 @@ private theorem coindDiscreteFunctor_map_apply_impl {A B : DiscreteRep.{u, v, w}
   change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
   exact DiscreteCoind.map_apply f.toLinearMap _ a g
 
+-- `simp` reduces the `abbrev` carrier `(coindDiscreteRep R G U B).V` and the fields of the `abbrev`
+-- `TopRep.res` in implicit type arguments before it looks a term up, so the `simp` lemmas below
+-- that evaluate on them state their left-hand sides through `dsimp% only`, as in #8315.
 /-- Discrete coinduction maps act pointwise on their locally constant functions. The explicit
 object transports identify the opaque functor's objects with `coindDiscreteRep`. -/
 @[simp]
 theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    ((show ((coindDiscreteFunctor R G U).obj B).ρ.IntertwiningMap
+    (dsimp% only ((show ((coindDiscreteFunctor R G U).obj B).ρ.IntertwiningMap
         (coindDiscreteRep R G U B).ρ from
         eqToHom (coindDiscreteFunctor_obj R G U B))
       ((show ((coindDiscreteFunctor R G U).obj A).ρ.IntertwiningMap
@@ -869,7 +878,7 @@ theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
           (coindDiscreteFunctor R G U).map f)
         ((show (coindDiscreteRep R G U A).ρ.IntertwiningMap
             ((coindDiscreteFunctor R G U).obj A).ρ from
-            eqToHom (coindDiscreteFunctor_obj R G U A).symm) a))) g =
+            eqToHom (coindDiscreteFunctor_obj R G U A).symm) a)) g)) =
         f.toLinearMap (a g) :=
   by
     simpa only [DiscreteRep.comp_toLinearMap, LinearMap.coe_comp,
@@ -895,9 +904,11 @@ noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
 private theorem coindCounit_apply_impl (A : SmoothDiscreteTopRep.{u, v, w} R U)
     (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 := rfl
 
+-- `dsimp% only` on the left-hand side: see the comment on `coindDiscreteFunctor_map_apply`.
+/-- The counit of coinduction evaluates a coinduced function at the identity. -/
 @[simp]
 theorem coindCounit_apply (A : SmoothDiscreteTopRep.{u, v, w} R U)
-    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 :=
+    (f : DiscreteCoind G U A.obj.V) : (dsimp% only (coindCounit R G U A f)) = f 1 :=
   coindCounit_apply_impl R G U A f
 
 /-- The trace packaged as a morphism of smooth discrete `G`-representations for a finite-index

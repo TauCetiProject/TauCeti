@@ -24,12 +24,19 @@ monomial biholomorphism computed in
 singleton-chart structures is holomorphic in both directions.  The topology is likewise independent
 of the finite semigroup generating family used to present the affine complex points.
 
+The monomials, that is, the character functions of the dual semigroup, are holomorphic on this
+manifold: in the ambient coordinates a monomial is a product of natural powers of the ray
+coordinates and integral powers of the torus coordinates, which do not vanish on the chart.
+
 ## Main declarations
 
 * `TauCeti.Toric.isOpenEmbedding_coneChartAmbient`: the ambient cone chart is an open embedding.
 * `TauCeti.Toric.coneChartedSpace`: the complex charted-space structure induced by one system of
   regular cone coordinates.
 * `TauCeti.Toric.isManifold_coneChartedSpace`: this charted space is a complex manifold.
+* `TauCeti.Toric.contMDiff_coneChartAmbient_comp_iff`: a map into the complex points is
+  holomorphic exactly when its ambient chart coordinates are.
+* `TauCeti.Toric.contMDiff_apply_single`: every monomial is a holomorphic function.
 * `TauCeti.Toric.contMDiff_id_coneChartedSpace`: changing the extending basis or the generating
   family preserves the complex structure.
 
@@ -107,6 +114,57 @@ theorem isManifold_coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi �
   let _ := affinePointTopology g
   let h := isOpenEmbedding_coneChartAmbient hi hσ hB κ g
   exact h.isManifold_singleton
+
+/-- The ambient cone chart is holomorphic for the charted-space structure it induces. -/
+theorem contMDiff_coneChartAmbient (g : AddGeneratingFamily (dualSemigroup hi σ) s) (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
+      (coneChartAmbient hi hσ hB κ) :=
+  let _ := affinePointTopology g
+  contMDiff_isOpenEmbedding (isOpenEmbedding_coneChartAmbient hi hσ hB κ g)
+
+/-- A map into the affine complex points of a regular cone is holomorphic exactly when its ambient
+chart coordinates are. -/
+theorem contMDiff_coneChartAmbient_comp_iff {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [TopologicalSpace M]
+    [ChartedSpace H M] (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    {f : M → AffineSemigroupComplexPoint (dualSemigroup hi σ)} {n : ℕ∞ω} :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (coneChartAmbient hi hσ hB κ ∘ f) ↔
+      ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n f := by
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ hB κ g
+  exact ⟨ContMDiff.of_comp_isOpenEmbedding (isOpenEmbedding_coneChartAmbient hi hσ hB κ g),
+    (contMDiff_coneChartAmbient hi hσ hB κ g n).comp⟩
+
+/-- Every monomial is a holomorphic function on the affine complex points of a regular cone: in the
+ambient mixed coordinates it is a product of natural powers of the ray coordinates and integral
+powers of the torus coordinates, and the latter do not vanish on the image of the chart. -/
+theorem contMDiff_apply_single (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    (m : dualSemigroup hi σ) (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, ℂ) n
+      fun x : AffineSemigroupComplexPoint (dualSemigroup hi σ) ↦
+        x (MonoidAlgebra.single (Multiplicative.ofAdd m) 1) := by
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ hB κ g
+  let a := regularDualSemigroupEquiv hi hσ hB m
+  -- The monomial in the ambient mixed coordinates.
+  let F : (Fin k → ℂ) × (Fin l → ℂ) → ℂ := fun w ↦
+    (a.1.prod fun ρ p ↦ w.1 (κ ρ) ^ p) * a.2.prod fun c q ↦ w.2 c ^ q
+  have hF : ContDiffOn ℂ n F (mixedChartDomain k l) := fun w hw ↦
+    ((contDiffAt_prod fun ρ _ ↦
+        (((contDiff_apply ℂ ℂ (κ ρ)).comp contDiff_fst).pow _).contDiffAt).mul
+      (contDiffAt_prod fun c _ ↦ (((contDiff_apply ℂ ℂ c).comp contDiff_snd).contDiffAt).zpow
+        (Or.inl (mem_mixedChartDomain.1 hw c)))).contDiffWithinAt
+  refine (hF.contMDiffOn.comp_contMDiff (contMDiff_coneChartAmbient hi hσ hB κ g n)
+    (coneChartAmbient_mem_mixedChartDomain hi hσ hB κ)).congr fun x ↦ ?_
+  conv_lhs => rw [← (coneChartEquiv hi hσ hB).symm_apply_apply x]
+  rw [coneChartEquiv_symm_apply_single, ← Units.coeHom_apply, map_finsuppProd]
+  simp [F, a]
 
 /-- The identity map between the affine complex-point spaces equipped with two regular coordinate
 systems is holomorphic.  Both the extending basis and the finite generating family used to define

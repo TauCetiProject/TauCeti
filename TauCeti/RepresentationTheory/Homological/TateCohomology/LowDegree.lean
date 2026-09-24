@@ -193,6 +193,8 @@ theorem H0π_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
   exact ((Category.assoc _ _ _).trans (congrArg ((Zero.cyclesIsoInvariants M).inv ≫ ·)
     (Category.assoc _ _ _))).symm
 
+/-- The quotient map from invariant representatives onto degree-zero Tate cohomology is an
+epimorphism. -/
 instance (M : Rep R G) : Epi (H0π M) :=
   have : Epi (ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants))) :=
     (ModuleCat.epi_iff_surjective _).2 (Submodule.mkQ_surjective _)
@@ -321,6 +323,8 @@ def HNegOneπ (M : Rep R G) : ModuleCat.of R (ker M.ρ.norm) ⟶ tateCohomology 
       (Submodule.mkQ ((Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm))) ≫
     (HNegOneIsoNormKernelQuotient M).inv
 
+/-- The quotient map from norm-zero representatives onto degree `-1` Tate cohomology is an
+epimorphism. -/
 instance (M : Rep R G) : Epi (HNegOneπ M) :=
   have : Epi (ModuleCat.ofHom
       (Submodule.mkQ ((Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)))) :=

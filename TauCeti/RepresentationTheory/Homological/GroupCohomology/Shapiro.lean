@@ -107,14 +107,14 @@ theorem coindIso_hom (n : ℕ) :
         (HomologicalComplex.homologyMap_id _ n)))
   -- `coindIso` is by definition the homology of the Shapiro cochain isomorphism followed by the
   -- comparison, through `Ext`, of the restricted bar resolution of `G` with the bar resolution
-  -- of `S`.
-  have e : (coindIso A n).hom = HomologicalComplex.homologyMap
-      ((inhomogeneousCochainsIso (coind S.subtype A)).hom ≫
-        (linearYonedaObjResProjectiveResolutionIso (barResolution k G) A).inv) n ≫
-      (((resFunctor S.subtype).mapProjectiveResolution (barResolution k G)).isoExt n A).inv ≫
-      ((barResolution k S).isoExt n A).hom ≫
-      (isoOfQuasiIsoAt (HomotopyEquiv.ofIso (inhomogeneousCochainsIso A)).hom n).inv := rfl
-  rw [e, hinhom]
+  -- of `S`. The unfolding is taken from the `Iso.trans` lemmas, not restated and proved by `rfl`:
+  -- restated, its `Ext` objects carry fresh instance terms and the kernel unfolds `Ext` to match.
+  have e : (coindIso A n).hom = _ := Iso.trans_hom _ _
+  have h1 : (groupCohomologyIso A n
+      ((resFunctor S.subtype).mapProjectiveResolution (barResolution k G))).inv = _ :=
+    Iso.trans_inv _ _
+  have h2 : (groupCohomologyIsoExt A n).inv = _ := Iso.trans_inv _ _
+  rw [e, Iso.symm_hom, h1, h2, Iso.symm_inv, hinhom]
   exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans
       (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm)))).trans
     ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans

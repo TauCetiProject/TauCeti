@@ -35,7 +35,7 @@ pointwise algebra happens before integration; a later layer proves invariance un
 ## Main results
 
 * `abs_rectIntegral_le_cutNorm` and `cutNorm_le` are the introduction and elimination rules for the
-  supremum.
+  supremum, and `exists_cutNorm_eq_abs_rectIntegral` says it is attained on a finite carrier.
 * `cutNorm_zero`, `cutNorm_neg`, `cutNorm_add_le`, and `cutNorm_smul` are the seminorm laws.
 * `cutNorm_le_integral_abs` bounds the cut norm by the `L¹` norm.
 * `rectIntegral_comap_preimage` and `cutNorm_le_cutNorm_comap` are the change of variables along a
@@ -203,6 +203,15 @@ theorem exists_lt_abs_rectIntegral (K : SymmKernel Ω μ) {c : ℝ} (h : c < cut
   apply cutNorm_le μ
   intro S hS T hT
   exact le_of_not_gt fun hST => h' ⟨S, T, hS, hT, hST⟩
+
+/-- **On a finite carrier the cut norm is attained.** When the carrier is finite and every subset
+of it is measurable, the supremum defining the cut norm is a maximum over rectangles. -/
+theorem exists_cutNorm_eq_abs_rectIntegral [Finite Ω] [MeasurableSingletonClass Ω]
+    (K : SymmKernel Ω μ) : ∃ S T : Set Ω, cutNorm μ K = |K.rectIntegral μ S T| := by
+  obtain ⟨p, hp⟩ := Finite.exists_max fun p : Set Ω × Set Ω => |K.rectIntegral μ p.1 p.2|
+  exact ⟨p.1, p.2, le_antisymm (cutNorm_le μ fun S _ T _ => hp (S, T))
+    (abs_rectIntegral_le_cutNorm μ K (Set.toFinite _).measurableSet
+      (Set.toFinite _).measurableSet)⟩
 
 /-- The cut norm is nonnegative. -/
 theorem cutNorm_nonneg (K : SymmKernel Ω μ) : 0 ≤ cutNorm μ K := by

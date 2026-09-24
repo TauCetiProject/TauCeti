@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
+import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.Data.List.Pair
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import Mathlib.Analysis.Normed.Group.BallSphere
@@ -264,19 +265,8 @@ private theorem surjective_realCliffordSpinCompactParam (n : ℕ) [NeZero n] :
 instance instSubsingletonRealCliffordSpinGroupZeroZero :
     Subsingleton (realCliffordSpinGroupZero 0) := by
   let Q := realCliffordForm 0 0
-  have hsource : ((↑) ⁻¹' Set.range (ι Q) : Set (CliffordAlgebra Q)ˣ) = ∅ := by
-    ext u
-    constructor
-    · rintro ⟨v, hv⟩
-      have hvzero : v = 0 := by
-        ext i
-        exact Fin.elim0 i
-      subst v
-      exact (Units.ne_zero u (by simpa using hv.symm)).elim
-    · intro hu
-      exact hu.elim
-  have hlipschitz : lipschitzGroup Q = ⊥ := by
-    rw [lipschitzGroup, hsource, Subgroup.closure_empty]
+  have : Subsingleton (Fin 0 → ℝ) := ⟨fun _ _ ↦ funext (fun i ↦ Fin.elim0 i)⟩
+  have hlipschitz : lipschitzGroup Q = ⊥ := lipschitzGroup_eq_bot
   constructor
   intro x y
   apply spinGroup.toUnits_injective

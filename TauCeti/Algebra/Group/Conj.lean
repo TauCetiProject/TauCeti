@@ -161,11 +161,10 @@ class is the orbit of `g` under the conjugation action and the centralizer is th
 this is the orbit-stabilizer theorem. -/
 theorem ncard_carrier_mk (g : G) :
     (ConjClasses.mk g).carrier.ncard = (Subgroup.centralizer {g}).index := by
-  have hcomap := (MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
-    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective
   rw [← ConjAct.orbit_eq_carrier_conjClasses, ← MulAction.index_stabilizer,
     Subgroup.centralizer_eq_comap_stabilizer]
-  exact hcomap.symm
+  exact ((MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
+    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective).symm
 
 /-- **The conjugacy class of a central element is a single point**: nothing moves it. -/
 @[simp]

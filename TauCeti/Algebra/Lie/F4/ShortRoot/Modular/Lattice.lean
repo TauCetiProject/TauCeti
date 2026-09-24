@@ -45,7 +45,7 @@ noncomputable section
 short simple coroots. -/
 def F4ChevalleyIndexIsShort : f4ChevalleyIndex → Prop :=
   Sum.elim (fun α => f4Length (f4PinnedRootIndex α) = 1)
-    (fun j => f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3)
+    (fun j => f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3)
 
 @[simp] theorem f4ChevalleyIndexIsShort_inl_iff
     (α : (F4.cartanSubalgebra valid_F4).root) :
@@ -54,7 +54,7 @@ def F4ChevalleyIndexIsShort : f4ChevalleyIndex → Prop :=
 
 @[simp] theorem f4ChevalleyIndexIsShort_inr_iff (j : f4KillingBase.support) :
     F4ChevalleyIndexIsShort (Sum.inr j) ↔
-      f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3 := Iff.rfl
+      f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3 := Iff.rfl
 
 /-- The coordinate labels spanning the modular short-root space. -/
 def f4ShortChevalleyIndices : Set f4ChevalleyIndex :=
@@ -94,9 +94,9 @@ theorem f4ModularSimpleCoroot_mem_shortRootSubspace (i : Fin F4.rank)
   refine ⟨Sum.inr ((F4.lieBasis valid_F4).baseSupportEquiv i), ?_,
     (f4ModularSimpleCoroot_eq_basis i).symm⟩
   -- Membership unfolds the defining coordinate predicate on a simple-coroot label.
-  change f4PinnedSimpleIndex ((F4.lieBasis valid_F4).baseSupportEquiv i) = 2 ∨
-    f4PinnedSimpleIndex ((F4.lieBasis valid_F4).baseSupportEquiv i) = 3
-  simpa only [f4PinnedSimpleIndex_baseSupportEquiv] using hi
+  change f4PinnedSimpleIndexEquiv ((F4.lieBasis valid_F4).baseSupportEquiv i) = 2 ∨
+    f4PinnedSimpleIndexEquiv ((F4.lieBasis valid_F4).baseSupportEquiv i) = 3
+  simpa only [f4PinnedSimpleIndexEquiv_baseSupportEquiv] using hi
 
 /-- Every short-root coroot reduces to the span of the two short simple coroots modulo two. -/
 theorem f4ModularCoroot_mem_shortRootSubspace (β : Fin 48) (hβ : f4Length β = 1) :
@@ -203,10 +203,10 @@ theorem f4Modular_lie_rootVector_simpleCoroot_mem_shortRootSubspace
     (α : Fin 48) (i : Fin F4.rank)
     (hi : Fin.cast rank_F4 i = 2 ∨ Fin.cast rank_F4 i = 3) :
     ⁅f4ModularRootVector α, f4ModularSimpleCoroot i⁆ ∈ f4ShortRootSubspace := by
-  rw [← lie_skew, f4Modular_lie_simpleCoroot_rootVector]
+  rw [f4Modular_lie_rootVector_simpleCoroot]
   rcases f4Length_eq_one_or_eq_two α with hαshort | hαlong
-  · exact Submodule.neg_mem _ (Submodule.smul_mem _ _
-      (f4ModularRootVector_mem_shortRootSubspace α hαshort))
+  · exact Submodule.smul_mem _ _
+      (f4ModularRootVector_mem_shortRootSubspace α hαshort)
   · let j : Fin 4 := Fin.cast rank_F4 i
     let s : Fin 48 := Fin.castAdd 44 j
     have hs : f4Length s = 1 := by
@@ -223,7 +223,7 @@ theorem f4Modular_lie_rootVector_simpleCoroot_mem_shortRootSubspace
       rw [heven, Int.cast_mul,
         Int.cast_ofNat, CharTwo.two_eq_zero (R := ZMod 2), zero_mul]
     -- The local name s denotes this simple-root index in the full root table.
-    rw [show Fin.castAdd 44 (Fin.cast rank_F4 i) = s by rfl, hz, zero_smul, neg_zero]
+    rw [show Fin.castAdd 44 (Fin.cast rank_F4 i) = s by rfl, hz, neg_zero, zero_smul]
     exact Submodule.zero_mem _
 
 theorem f4Modular_lie_simpleCoroot_rootVector_mem_shortRootSubspace
@@ -250,7 +250,8 @@ private theorem f4Modular_lie_basis_inl_inr_mem_shortRootSubspace
       f4ModularChevalleyBasis (Sum.inr b)⁆ ∈ f4ShortRootSubspace := by
   let k : Fin F4.rank := (F4.lieBasis valid_F4).baseSupportEquiv.symm b
   have hk : Fin.cast rank_F4 k = 2 ∨ Fin.cast rank_F4 k = 3 := by
-    simpa only [k, f4PinnedSimpleIndex] using
+    simpa only [k, f4PinnedSimpleIndexEquiv, f4PinnedSimpleIndexEquiv,
+      Equiv.trans_apply, finCongr_apply, Fin.cast_mk] using
       (f4ChevalleyIndexIsShort_inr_iff b).mp hbshort
   rw [f4ModularChevalleyBasis_inl_eq_rootVector,
     f4ModularChevalleyBasis_inr_eq_simpleCoroot]
@@ -339,6 +340,22 @@ noncomputable def f4ShortRootLieIdeal :
 @[simp] theorem mem_f4ShortRootLieIdeal_iff {x : f4ModularChevalleyLieAlgebra} :
     x ∈ f4ShortRootLieIdeal ↔ x ∈ f4ShortRootSubspace := by
   rfl
+
+/-- A modular Chevalley vector whose coordinates outside the distinguished short labels vanish
+belongs to the short-root coordinate subspace. -/
+theorem mem_f4ShortRootSubspace_of_repr_eq_zero
+    (X : f4ModularChevalleyLieAlgebra)
+    (hX : ∀ i : f4ChevalleyIndex, ¬ F4ChevalleyIndexIsShort i →
+      f4ModularChevalleyBasis.repr X i = 0) :
+    X ∈ f4ShortRootSubspace := by
+  rw [← f4ModularChevalleyBasis.sum_repr X]
+  apply Submodule.sum_mem
+  intro i _
+  by_cases hi : F4ChevalleyIndexIsShort i
+  · exact Submodule.smul_mem _ _ (f4ModularChevalleyBasis_mem_shortRootSubspace hi)
+  · rw [hX i hi, zero_smul]
+    exact Submodule.zero_mem _
+
 
 end
 

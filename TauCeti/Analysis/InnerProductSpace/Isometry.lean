@@ -50,9 +50,9 @@ section Seminormed
 
 variable {E F : Type*} [SeminormedAddGroup E] [SeminormedAddGroup F] {s : Set E} {g : E → F}
 
-/-- **A distance-preserving map fixing the origin preserves norms.** The norm is the distance to
-the origin, which is a fixed point lying in `s`. Only the metric structure is involved, so this
-step asks for no inner product. -/
+/-- **A distance-preserving map fixing the origin preserves norms.** If `0 ∈ s` is fixed by `g`
+and `g` preserves distances between points of `s`, then `g` preserves the norm of every point of
+`s`. -/
 theorem norm_map_of_dist_map_eq (h0 : (0 : E) ∈ s) (hg0 : g 0 = 0)
     (hg : ∀ z ∈ s, ∀ w ∈ s, dist (g z) (g w) = dist z w) {z : E} (hz : z ∈ s) :
     ‖g z‖ = ‖z‖ := by
@@ -65,10 +65,7 @@ section InnerProduct
 variable {E F : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [SeminormedAddCommGroup F] [InnerProductSpace ℝ F] {s : Set E} {g : E → F}
 
-/-- **A distance-preserving map fixing the origin preserves the real inner product.** Polarisation:
-by `norm_sub_sq_real` the inner product `⟪z, w⟫_ℝ` is determined by the three quantities `‖z‖`,
-`‖w‖` and `‖z - w‖`, and `g` preserves all three — the first two by
-`TauCeti.norm_map_of_dist_map_eq`, the third by hypothesis.
+/-- **A distance-preserving map fixing the origin preserves the real inner product.**
 
 Neither linearity nor surjectivity of `g` is assumed, and `g` need only be distance-preserving
 between points of `s`; the conclusion is correspondingly restricted to `s`. -/

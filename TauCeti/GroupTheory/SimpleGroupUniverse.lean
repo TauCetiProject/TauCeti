@@ -29,13 +29,6 @@ properties of the candidates may be established separately.
 
 * `TauCeti.exists_mulEquiv_of_forall_finite_isSimpleGroup_zero`: a classification of groups in
   universe zero by a fixed family holds in every universe.
-
-## Roadmap
-
-This is the universe-transport argument required by milestone A0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. Once `CFSGIndex.Group` is assembled, its named theorem
-`classificationStatement_of_zero` is the direct specialization to the family
-`CFSGIndex.Group`.
 -/
 
 public section
