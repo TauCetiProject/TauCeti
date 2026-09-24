@@ -48,7 +48,7 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
       -- Unfold the local chart abbreviation to expose the bundled homeomorphism action.
       change (Homeomorph.smul (g : G)).symm y = (g : G)⁻¹ * y
       rw [Homeomorph.smul_symm_apply]
-      rfl
+      rw [smul_eq_mul]
     have hset : e.source ∩ e ⁻¹' (K : Set G) = (K : Set G) := by
       ext y
       constructor
