@@ -259,6 +259,21 @@ theorem f4ShortRootQuotientBasis_thirteen :
   rw [f4ShortRootQuotientBasis_apply,
     f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
 
+/-- A long-root lift is the quotient basis vector indexed by its short special-map image. -/
+-- `simpNF` times out normalizing the dependent special-map index on the right.
+@[simp, nolint simpNF] theorem f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis
+    (γ : Fin 48) (hγ : f4Length γ = 2) :
+    Submodule.Quotient.mk (f4ModularRootVector γ) =
+      f4ShortRootQuotientBasis
+        (f4ShortRootWeightIndexEquiv.symm (Sum.inl
+          ⟨f4SpecialIsogenyIndexEquiv γ, by
+            exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩)) := by
+  rw [f4ShortRootQuotientBasis_symm_inl]
+  apply congrArg f4ShortRootSubspace.mkQ
+  apply congrArg f4ModularRootVector
+  exact (f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv γ).symm
+
+
 end
 
 end TauCeti.DynkinType

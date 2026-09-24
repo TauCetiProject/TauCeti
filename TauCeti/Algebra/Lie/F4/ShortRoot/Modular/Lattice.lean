@@ -341,6 +341,22 @@ noncomputable def f4ShortRootLieIdeal :
     x ∈ f4ShortRootLieIdeal ↔ x ∈ f4ShortRootSubspace := by
   rfl
 
+/-- A modular Chevalley vector whose coordinates outside the distinguished short labels vanish
+belongs to the short-root coordinate subspace. -/
+theorem mem_f4ShortRootSubspace_of_repr_eq_zero
+    (X : f4ModularChevalleyLieAlgebra)
+    (hX : ∀ i : f4ChevalleyIndex, ¬ F4ChevalleyIndexIsShort i →
+      f4ModularChevalleyBasis.repr X i = 0) :
+    X ∈ f4ShortRootSubspace := by
+  rw [← f4ModularChevalleyBasis.sum_repr X]
+  apply Submodule.sum_mem
+  intro i _
+  by_cases hi : F4ChevalleyIndexIsShort i
+  · exact Submodule.smul_mem _ _ (f4ModularChevalleyBasis_mem_shortRootSubspace hi)
+  · rw [hX i hi, zero_smul]
+    exact Submodule.zero_mem _
+
+
 end
 
 end TauCeti.DynkinType

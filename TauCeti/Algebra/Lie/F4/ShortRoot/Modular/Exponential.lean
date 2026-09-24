@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.F4.ModularLattice
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.DividedAction
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Carrier
 public import TauCeti.Algebra.Lie.Derivation.IntegralExp
@@ -37,45 +38,6 @@ open TauCeti.F4ShortRoot
 noncomputable section
 
 attribute [local instance high] Algebra.toModule
-
-/-- The signed-root adjoint derivation. -/
-noncomputable def f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
-    LieDerivation ℚ (F4.lieAlgebra valid_F4) (F4.lieAlgebra valid_F4) :=
-  LieDerivation.ad ℚ (F4.lieAlgebra valid_F4)
-    (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))
-
-/-- The root derivation acts by the rational Lie bracket. -/
-@[simp] theorem f4RootAdjointDerivation_apply (k : Fin 4 ⊕ Fin 4)
-    (x : F4.lieAlgebra valid_F4) :
-    f4RootAdjointDerivation k x =
-      ⁅f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)), x⁆ := by
-  -- The derivation coerces through its underlying linear map; `rw` does not see that coercion.
-  change (f4RootAdjointDerivation k).toLinearMap x = _
-  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply, ad_apply]
-
-/-- The underlying linear map is the adjoint endomorphism of the rational root vector. -/
-theorem f4RootAdjointDerivation_toLinearMap (k : Fin 4 ⊕ Fin 4) :
-    (f4RootAdjointDerivation k).toLinearMap =
-      ad ℚ (F4.lieAlgebra valid_F4)
-        (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k))) := by
-  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply]
-
-/-- All divided powers of the root adjoint derivation preserve the integral Chevalley lattice. -/
-theorem f4RootAdjointDerivation_dividedPower_mem (k : Fin 4 ⊕ Fin 4) (n : ℕ)
-    (y : F4.lieAlgebra valid_F4) (hy : y ∈ f4ChevalleyLieLattice) :
-    Associative.dividedPower n (f4RootAdjointDerivation k).toLinearMap y ∈
-      f4ChevalleyLieLattice := by
-  rw [Associative.dividedPower_def, f4RootAdjointDerivation_toLinearMap]
-  exact IsChevalleySystem.inv_factorial_smul_ad_pow_mem_chevalleyLieLattice
-    f4ChevalleyRootVector_isChevalleySystem
-    (f4KillingRoot (f4SignedSimpleRootIndex k)) n hy
-
-/-- The root adjoint derivation is nilpotent. -/
-theorem isNilpotent_f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
-    IsNilpotent (f4RootAdjointDerivation k).toLinearMap := by
-  rw [f4RootAdjointDerivation_toLinearMap]
-  exact f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.isNilpotent_ad_rootVector
-    (f4KillingRoot (f4SignedSimpleRootIndex k))
 
 /-- The third adjoint power vanishes on every integral root vector. -/
 theorem f4RootAdjointDerivation_pow_three_integralRootVector
@@ -121,30 +83,6 @@ theorem integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdj
   rw [coe_integralDividedPower_apply, coe_f4IntegralDividedAdjointSquare_apply,
     f4RootAdjointDerivation_toLinearMap]
 
-/-- The integral root exponential after extension to an arbitrary parameter ring. -/
-noncomputable def f4RootExponential {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) :
-    Module.End A (A ⊗[ℤ] f4ChevalleyLieLattice) :=
-  baseChangeExp (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
-    (f4RootAdjointDerivation_dividedPower_mem k) t
-
-/-- The integral root exponential as a Lie algebra automorphism after arbitrary scalar
-extension. -/
-noncomputable def f4RootExponentialLieEquiv {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) :
-    A ⊗[ℤ] f4ChevalleyLieLattice ≃ₗ⁅A⁆ A ⊗[ℤ] f4ChevalleyLieLattice :=
-  baseChangeExpLieEquiv (f4RootAdjointDerivation k) f4ChevalleyLieLattice
-    (f4RootAdjointDerivation_dividedPower_mem k)
-    (isNilpotent_f4RootAdjointDerivation k) t
-
-/-- The Lie equivalence acts by the integral root exponential on every vector. -/
-@[simp] theorem f4RootExponentialLieEquiv_apply {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
-    f4RootExponentialLieEquiv k t x = f4RootExponential k t x := by
-  exact baseChangeExpLieEquiv_apply (f4RootAdjointDerivation k) f4ChevalleyLieLattice
-    (f4RootAdjointDerivation_dividedPower_mem k)
-    (isNilpotent_f4RootAdjointDerivation k) t x
-
 /-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
 ring is its three-term integral divided-power polynomial. -/
 theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
@@ -155,37 +93,22 @@ theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Al
       (1 ⊗ₜ[ℤ] y) +
         t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
         t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
-  rw [f4RootExponential]
+  rw [f4RootExponential_eq_baseChangeExp]
   rw [baseChangeExp_tmul_of_pow_smul_eq_zero
     (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t 1 y hy]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, one_mul,
-    pow_one, integralDividedPower_zero, Module.End.one_apply]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
+    pow_one, integralDividedPower_zero, Module.End.one_apply,
+    integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
+    integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare,
+    mul_one]
   have hscalar (s : A) (z : f4ChevalleyLieLattice) :
-      (s * 1) ⊗ₜ[ℤ] z = s • (1 ⊗ₜ[ℤ] z) := by
+      s ⊗ₜ[ℤ] z = s • (1 ⊗ₜ[ℤ] z) := by
     simpa only [mul_one] using TensorProduct.tmul_eq_smul_one_tmul s z
-  have hone : (t * 1) ⊗ₜ[ℤ]
-        (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-          f4ChevalleyLieLattice 1 (f4RootAdjointDerivation_dividedPower_mem k 1)) y =
-      t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) := by
-    rw [integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie]
-    exact hscalar t _
-  have hdp2 : (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-      f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)) y =
-      f4IntegralDividedAdjointSquare k y :=
-    LinearMap.congr_fun
-      (integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare k) y
-  have htwo : (t ^ 2 * 1) ⊗ₜ[ℤ]
-        (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-          f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)) y =
-      t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
-    calc
-      _ = (t ^ 2 * 1) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y :=
-        congrArg (fun z : f4ChevalleyLieLattice => (t ^ 2 * 1) ⊗ₜ[ℤ] z) hdp2
-      _ = t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := hscalar _ _
-  exact congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => u + v)
-    (congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => u + v) rfl hone) htwo
+  exact congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => (1 ⊗ₜ[ℤ] y + u) + v)
+    (hscalar t ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
+    (hscalar (t ^ 2) (f4IntegralDividedAdjointSquare k y))
 
 /-- The three-term root polynomial on the scalar extension of the modular short-root ideal. -/
 noncomputable def f4ShortRootExponential {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
@@ -212,6 +135,15 @@ noncomputable def f4ShortRootBaseChangeInclusion {A : Type*} [CommRing A]
     A ⊗[ZMod 2] f4ShortRootLieIdeal →ₗ[A] A ⊗[ℤ] f4ChevalleyLieLattice :=
   (TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice).toLinearMap.comp
     ((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A)
+
+/-- Evaluate the scalar-extended ideal inclusion as inclusion followed by cancellation. -/
+theorem f4ShortRootBaseChangeInclusion_apply {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (z : A ⊗[ZMod 2] f4ShortRootLieIdeal) :
+    f4ShortRootBaseChangeInclusion (A := A) z =
+      TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+        (((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) z) := by
+  simp only [f4ShortRootBaseChangeInclusion, LinearMap.comp_apply,
+    LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom]
 
 /-- On a pure tensor, the scalar-extended ideal inclusion is the scalar-tower cancellation of the
 underlying modular vector. -/
@@ -290,25 +222,27 @@ theorem f4ShortRootBaseChangeInclusion_adjoint {A : Type*} [CommRing A]
   let e := TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
   let f := (f4ShortRootLieIdeal.incl.toLinearMap).baseChange A
   calc
-    _ = f4ShortRootBaseChangeInclusion (A := A)
-          ((LieModule.toEnd A
-            (A ⊗[ZMod 2] f4ModularChevalleyLieAlgebra)
-            (A ⊗[ZMod 2] f4ShortRootLieIdeal))
-            ((TauCeti.cancelBaseChange ℤ (ZMod 2) A
-              f4ChevalleyLieLattice).symm x) z) :=
-      congrArg (f4ShortRootBaseChangeInclusion (A := A))
-        (f4ShortRootBaseChangeAdjoint_apply x z)
-    _ = _ := by
-      change e (f ((LieModule.toEnd A
+    _ = e (f ((LieModule.toEnd A
         (A ⊗[ZMod 2] f4ModularChevalleyLieAlgebra)
-        (A ⊗[ZMod 2] f4ShortRootLieIdeal)) (e.symm x) z)) = ⁅x, e (f z)⁆
-      calc
-        _ = e (f ⁅e.symm x, z⁆) := congrArg (fun w => e (f w))
-          (LieModule.toEnd_apply_apply A _ _ (e.symm x) z)
-        _ = e ⁅e.symm x, f z⁆ := congrArg e
-          (f4ShortRootInclusion_baseChange_lie (e.symm x) z)
-        _ = ⁅e (e.symm x), e (f z)⁆ := e.map_lie _ _
-        _ = _ := congrArg (fun w => ⁅w, e (f z)⁆) (e.apply_symm_apply x)
+        (A ⊗[ZMod 2] f4ShortRootLieIdeal)) (e.symm x) z)) := by
+      have hinc : f4ShortRootBaseChangeInclusion (A := A)
+          (f4ShortRootBaseChangeAdjoint x z) =
+          e (f (f4ShortRootBaseChangeAdjoint x z)) := by
+        simpa only [e, f] using
+          f4ShortRootBaseChangeInclusion_apply (f4ShortRootBaseChangeAdjoint x z)
+      exact hinc.trans (congrArg (fun w => e (f w))
+        (f4ShortRootBaseChangeAdjoint_apply x z))
+    _ = e (f ⁅e.symm x, z⁆) := congrArg (fun w => e (f w))
+      (LieModule.toEnd_apply_apply A _ _ (e.symm x) z)
+    _ = e ⁅e.symm x, f z⁆ := congrArg e
+      (f4ShortRootInclusion_baseChange_lie (e.symm x) z)
+    _ = ⁅e (e.symm x), e (f z)⁆ := e.map_lie _ _
+    _ = ⁅x, e (f z)⁆ :=
+      congrArg (fun w => ⁅w, e (f z)⁆) (e.apply_symm_apply x)
+    _ = _ := by
+      have hinc : f4ShortRootBaseChangeInclusion (A := A) z = e (f z) := by
+        simpa only [e, f] using f4ShortRootBaseChangeInclusion_apply z
+      exact congrArg (fun w => ⁅x, w⁆) hinc.symm
 
 /-- On a scalar-extended pure tensor, the ambiently indexed adjoint action is the base change of
 the original modular adjoint action. -/

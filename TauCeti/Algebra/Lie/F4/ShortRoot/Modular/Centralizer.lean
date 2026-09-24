@@ -18,8 +18,8 @@ element of the modular Chevalley algebra bracketing to zero with every short-roo
 in the short-root subspace. Thus the kernel of the adjoint action on the short-root ideal is
 contained in the ideal, as needed for the quotient construction.
 
-The proof detects long-root coordinates with a structurally chosen short neighbor, then detects
-the remaining Cartan coordinates using the integral span of the short-root weights.
+The coordinate lemmas detect long-root and Cartan components from brackets with short-root
+vectors; together they give the centralizer inclusion above.
 
 ## References
 
@@ -265,21 +265,6 @@ private theorem f4ModularChevalleyBasis_repr_eq_zero_of_long
   have hsingle := f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     X α β γ hγ hbracket
   exact hsingle ▸ hsum.symm.trans hzero
-
-/-- A modular Chevalley vector whose coordinates outside the distinguished short labels vanish
-belongs to the short-root coordinate subspace. -/
-theorem mem_f4ShortRootSubspace_of_repr_eq_zero
-    (X : f4ModularChevalleyLieAlgebra)
-    (hX : ∀ i : f4ChevalleyIndex, ¬ F4ChevalleyIndexIsShort i →
-      f4ModularChevalleyBasis.repr X i = 0) :
-    X ∈ f4ShortRootSubspace := by
-  rw [← f4ModularChevalleyBasis.sum_repr X]
-  apply Submodule.sum_mem
-  intro i _
-  by_cases hi : F4ChevalleyIndexIsShort i
-  · exact Submodule.smul_mem _ _ (f4ModularChevalleyBasis_mem_shortRootSubspace hi)
-  · rw [hX i hi, zero_smul]
-    exact Submodule.zero_mem _
 
 /-- A modular Chevalley vector that centralizes every short root vector belongs to the
 short-root coordinate subspace. -/
