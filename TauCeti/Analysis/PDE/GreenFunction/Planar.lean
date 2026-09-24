@@ -26,6 +26,7 @@ Equations*, Chapter 2, Section 2.2.
 ## Main declarations
 
 * `TauCeti.planarGreenKernel`: the Dirichlet Green kernel of the unit disk.
+* `TauCeti.planarGreenKernel_def`: its formula in terms of Newtonian kernels.
 * `TauCeti.harmonicAt_planarGreenKernel`: harmonicity away from the pole in the disk.
 * `TauCeti.planarGreenKernel_eq_zero_of_norm_eq_one`: vanishing on the unit circle.
 -/
@@ -44,6 +45,12 @@ For `‖a‖ < 1`, the second term is harmonic throughout the disk.  Thus the fi
 Newtonian singularity at `a`, while the difference vanishes on the unit circle. -/
 def planarGreenKernel (a z : ℂ) : ℝ :=
   planarNewtonianKernel (z - a) - planarNewtonianKernel (1 - starRingEnd ℂ a * z)
+
+/-- The defining formula for the planar Green kernel. -/
+theorem planarGreenKernel_def (a z : ℂ) :
+    planarGreenKernel a z =
+      planarNewtonianKernel (z - a) - planarNewtonianKernel (1 - starRingEnd ℂ a * z) := by
+  rfl
 
 /-- The reflected logarithmic term in `planarGreenKernel` is harmonic at every point of the
 unit disk when the pole lies in the disk. -/
@@ -68,8 +75,12 @@ private theorem harmonicAt_planarNewtonianKernel_one_sub_conj_mul {a z : ℂ}
 theorem harmonicAt_planarGreenKernel {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ < 1)
     (hza : z ≠ a) :
     HarmonicAt (planarGreenKernel a) z := by
-  change HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (w - a) -
-    planarNewtonianKernel (1 - starRingEnd ℂ a * w)) z
+  have hformula : planarGreenKernel a =
+      (fun w : ℂ ↦ planarNewtonianKernel (w - a)) -
+        (fun w : ℂ ↦ planarNewtonianKernel (1 - starRingEnd ℂ a * w)) := by
+    funext w
+    exact planarGreenKernel_def a w
+  rw [hformula]
   exact (harmonicAt_planarNewtonianKernel_sub hza).sub
     (harmonicAt_planarNewtonianKernel_one_sub_conj_mul ha hz)
 
@@ -78,10 +89,8 @@ throughout the unit disk. -/
 theorem harmonicAt_planarGreenKernel_sub_newtonianKernel {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ < 1) :
     HarmonicAt (fun w : ℂ ↦ planarGreenKernel a w - planarNewtonianKernel (w - a)) z := by
-  change HarmonicAt (fun w : ℂ ↦ (planarNewtonianKernel (w - a) -
-    planarNewtonianKernel (1 - starRingEnd ℂ a * w)) - planarNewtonianKernel (w - a)) z
-  simp only [sub_sub_cancel_left]
-  exact (harmonicAt_planarNewtonianKernel_one_sub_conj_mul ha hz).neg
+  simpa only [planarGreenKernel_def, sub_sub_cancel_left, Pi.neg_def] using
+    (harmonicAt_planarNewtonianKernel_one_sub_conj_mul ha hz).neg
 
 /-- Away from its pole, the planar Green kernel is positive inside the unit disk. -/
 theorem planarGreenKernel_pos {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ < 1)
