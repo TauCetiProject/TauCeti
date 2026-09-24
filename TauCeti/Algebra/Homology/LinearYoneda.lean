@@ -54,7 +54,8 @@ lemma linearYonedaFunctor_obj (X : (ChainComplex C α)ᵒᵖ) :
 @[simp]
 lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ : X ⟶ X') (i : α)
     (g : X.unop.X i ⟶ Y) :
-    ((linearYonedaFunctor k Y).map φ).f i g = φ.unop.f i ≫ g := rfl
+    (show (X.unop.linearYonedaObj k Y).X i ⟶ (X'.unop.linearYonedaObj k Y).X i from
+      ((linearYonedaFunctor k Y).map φ).f i) g = φ.unop.f i ≫ g := rfl
 
 instance : (linearYonedaFunctor (α := α) k Y).Additive :=
   inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
