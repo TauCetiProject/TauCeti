@@ -75,7 +75,8 @@ theorem lintegral_transportConstraintCost_eq_top_iff {C : Set (X × Y)}
 
 /-- A measurable set of pairs supports a coupling exactly when its barrier transport cost is zero.
 No topological or probability assumptions are needed. -/
-theorem transportConstraintCost_eq_zero_iff {C : Set (X × Y)} (hC : MeasurableSet C)
+theorem transportCost_transportConstraintCost_eq_zero_iff {C : Set (X × Y)}
+    (hC : MeasurableSet C)
     {μ : Measure X} {ν : Measure Y} :
     transportCost (transportConstraintCost C) μ ν = 0 ↔
       ∃ π : Measure (X × Y), IsCoupling π μ ν ∧ π Cᶜ = 0 := by
@@ -92,13 +93,14 @@ theorem transportConstraintCost_eq_zero_iff {C : Set (X × Y)} (hC : MeasurableS
         ((lintegral_transportConstraintCost_eq_zero_iff hC π).2 hπC)
 
 /-- The barrier transport value is infinite precisely when the constraint is infeasible. -/
-theorem transportConstraintCost_eq_top_iff {C : Set (X × Y)} (hC : MeasurableSet C)
+theorem transportCost_transportConstraintCost_eq_top_iff {C : Set (X × Y)}
+    (hC : MeasurableSet C)
     {μ : Measure X} {ν : Measure Y} :
     transportCost (transportConstraintCost C) μ ν = ∞ ↔
       ¬∃ π : Measure (X × Y), IsCoupling π μ ν ∧ π Cᶜ = 0 := by
   constructor
   · intro h hπ
-    have hz := (transportConstraintCost_eq_zero_iff hC).2 hπ
+    have hz := (transportCost_transportConstraintCost_eq_zero_iff hC).2 hπ
     exact ENNReal.zero_ne_top (hz.symm.trans h)
   · intro h
     by_contra htop
