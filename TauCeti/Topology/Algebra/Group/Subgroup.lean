@@ -42,8 +42,8 @@ namespace TauCeti
 /-- The closed normal closure of relators lies in the kernel of a continuous homomorphism that
 kills them. -/
 theorem topologicalClosure_normalClosure_le_ker {G H : Type*} [Group G] [Group H]
-    [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [T1Space H] (s : Set G)
-    (f : G →ₜ* H) (hf : ∀ r ∈ s, f r = 1) :
+    [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [T1Space H] {s : Set G}
+    {f : G →ₜ* H} (hf : ∀ r ∈ s, f r = 1) :
     (Subgroup.normalClosure s).topologicalClosure ≤ f.toMonoidHom.ker := by
   exact Subgroup.topologicalClosure_minimal (Subgroup.normalClosure s)
     (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hf r hr))

@@ -81,7 +81,7 @@ noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     presentedProfiniteGroup X rels →ₜ* G := by
   let R : Subgroup (freeProfiniteGroup X) := (Subgroup.normalClosure rels).topologicalClosure
   exact ContinuousMonoidHom.quotientLift R ψ
-    (topologicalClosure_normalClosure_le_ker rels ψ hψ)
+    (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
@@ -92,7 +92,7 @@ theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
   -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
-    (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
+    (topologicalClosure_normalClosure_le_ker hψ)).comp
       (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
@@ -196,7 +196,7 @@ noncomputable def lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     presentedProP p X rels →ₜ* P := by
   let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
   exact ContinuousMonoidHom.quotientLift R ψ
-    (topologicalClosure_normalClosure_le_ker rels ψ hψ)
+    (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
@@ -207,7 +207,7 @@ theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
   -- factorization equation.
   change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
-    (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
+    (topologicalClosure_normalClosure_le_ker hψ)).comp
       (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
