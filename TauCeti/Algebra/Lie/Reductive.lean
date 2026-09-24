@@ -31,14 +31,19 @@ derived ideal (`TauCeti.isIrreducible_restrict_derivedSeries`).
 
 It also proves the converse criterion. If the derived ideal `⁅L, L⁆` has **no nonzero solvable
 ideals** (`LieAlgebra.HasTrivialRadical`, which a semisimple Lie algebra has) then `L` is
-reductive (`TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`), and the sum above is
-direct (`TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`), so
+reductive (`TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`) and every solvable
+ideal, the centre among them, meets `⁅L, L⁆` only in `⊥`
+(`TauCeti.inf_derivedSeries_eq_bot_of_isSolvable`). That much is elementary and much cheaper than
+the spanning half: it holds over any commutative ring and needs no Killing form, no
+characteristic-zero hypothesis, no finite dimension and no Noetherian hypothesis.
 
-`L = Z(L) ⊕ ⁅L, L⁆`.
+Over a field of characteristic zero and in finite dimension, where the spanning half is available,
+the two combine into a direct sum
 
-That direction is elementary and much cheaper than the spanning half: it needs no Killing form, no
-characteristic-zero hypothesis and no finite dimension, only that `L` be Noetherian so that its
-radical is solvable.
+`L = Z(L) ⊕ ⁅L, L⁆`
+
+(`TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`), which therefore
+carries those hypotheses even though the criterion itself does not.
 
 ## The argument for the criterion
 
@@ -47,8 +52,9 @@ For a solvable ideal `J` the bracket `⁅L, J⁆` lies in `J`, because that is a
 inside `⁅L, L⁆`, hence — read as an ideal of the Lie algebra `⁅L, L⁆` through `LieIdeal.restrict`
 of `TauCeti/Algebra/Lie/Solvable.lean` — a solvable ideal of an algebra with trivial radical, so
 it vanishes. An element of `J` therefore brackets to zero against everything: it is central. The
-radical is such a `J` over a Noetherian `L`, and so is the centre, which gives directness of the
-sum at the same time.
+radical is the supremum of the solvable ideals, so it is central too — that is reductivity, and no
+finiteness hypothesis is needed because the radical itself never has to be solvable. The centre is
+one of those solvable ideals, so it meets `⁅L, L⁆` trivially, which is directness of the sum.
 
 ## The argument for the spanning half
 
@@ -106,23 +112,20 @@ the concrete `gl n`, where the sum really is direct, the statement is available 
   algebraically closed field.
 * `TauCeti.inf_derivedSeries_eq_bot_of_isSolvable` and `TauCeti.le_center_of_isSolvable`: when
   the derived ideal has trivial radical, **every solvable ideal is central**, meeting the derived
-  ideal only in `⊥`; `TauCeti.radical_inf_derivedSeries_eq_bot` and
-  `TauCeti.radical_le_center_of_hasTrivialRadical_derivedSeries` are the two cases `J = radical`.
+  ideal only in `⊥`.
 * `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`: **a Lie algebra whose derived
   ideal has trivial radical is reductive**, with
   `TauCeti.radical_le_center_of_hasTrivialRadical_derivedSeries` the inclusion it rests on.
 * `TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`: **such a Lie algebra
-  is the direct sum of its centre and its derived ideal**.
+  is the direct sum of its centre and its derived ideal**, over a field of characteristic zero and
+  in finite dimension.
 
 ## Roadmap
 
-This is the spanning half of "the structure of reductive Lie algebras" and the "semisimple part
-acts irreducibly" target of Layer 9 of
+This is the spanning half and the converse criterion of "the structure of reductive Lie algebras",
+together with the "semisimple part acts irreducibly" target, of Layer 9 of
 `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose pinned names are
 `hasCentralRadical_iff_isCompl_center_derivedSeries` and `isIrreducible_restrict_derivedSeries`.
-The criterion supplies the `←` direction of that pinned equivalence, under the weaker hypothesis
-that only the semisimplicity conjunct is assumed: the complementarity conjunct is not needed, and
-is recovered instead. The `→` direction remains open, for the reason recorded above.
 Together with `TauCeti.exists_centralWeight_of_isIrreducible` of
 `TauCeti/Algebra/Lie/Weights/Central.lean`, it shows that every finite-dimensional irreducible of a
 reductive Lie algebra determines an irreducible restricted module and a central weight.
@@ -352,28 +355,23 @@ theorem le_center_of_isSolvable (J : LieIdeal K L) [LieAlgebra.IsSolvable ↥J] 
     hle (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top y) hx)
   rwa [LieSubmodule.mem_bot] at hxy
 
-variable [IsNoetherian K L]
+/-- **The radical of a Lie algebra whose derived ideal has trivial radical is central.**
 
-/-- The radical meets a derived ideal with trivial radical only in `⊥`: the case `J = radical K L`
-of `TauCeti.inf_derivedSeries_eq_bot_of_isSolvable`, the radical of a Noetherian Lie algebra being
-solvable. -/
-theorem radical_inf_derivedSeries_eq_bot :
-    LieAlgebra.radical K L ⊓ derivedSeries K L 1 = ⊥ :=
-  inf_derivedSeries_eq_bot_of_isSolvable K L _
-
-/-- **The radical of a Lie algebra whose derived ideal has trivial radical is central**: the case
-`J = radical K L` of `TauCeti.le_center_of_isSolvable`. -/
+The radical is the supremum of the solvable ideals, and `TauCeti.le_center_of_isSolvable` puts
+each of them inside the centre.  Passing through the supremum this way avoids any finiteness
+hypothesis: the radical itself never has to be solvable. -/
 theorem radical_le_center_of_hasTrivialRadical_derivedSeries :
     LieAlgebra.radical K L ≤ LieAlgebra.center K L :=
-  le_center_of_isSolvable K L _
+  sSup_le fun J hJ => @le_center_of_isSolvable K L _ _ _ _ J hJ
 
 /-- **A Lie algebra whose derived ideal has trivial radical is reductive.**
 
 This is the converse direction of the structure theorem for reductive Lie algebras, and it needs
-neither a field of characteristic zero nor finite dimension, only that `L` be Noetherian so that
-its radical is solvable. Nor does it need the centre and the derived ideal to be complementary:
-triviality of the radical of `⁅L, L⁆` alone forces `radical K L = center K L`, and the
-complementarity is then a consequence
+no field of characteristic zero, no finite dimension and no Noetherian hypothesis. Nor does it
+need the centre and the derived ideal to be complementary: triviality of the radical of `⁅L, L⁆`
+alone forces `radical K L = center K L`. Complementarity is a further consequence, but only over
+a field of characteristic zero and in finite dimension, where the spanning half
+`TauCeti.sup_center_derivedSeries_eq_top` is available
 (`TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`). -/
 theorem hasCentralRadical_of_hasTrivialRadical_derivedSeries :
     LieAlgebra.HasCentralRadical K L :=
@@ -388,10 +386,11 @@ variable (K : Type u) (L : Type v) [Field K] [CharZero K] [LieRing L] [LieAlgebr
   [FiniteDimensional K L] [LieAlgebra.HasTrivialRadical K (derivedSeries K L 1)]
 
 /-- **A Lie algebra whose derived ideal has trivial radical is the direct sum of its centre and
-that ideal**: `L = Z(L) ⊕ ⁅L, L⁆`.
+that ideal**: `L = Z(L) ⊕ ⁅L, L⁆`, over a field of characteristic zero and in finite dimension.
 
-Reductivity comes from `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`, the sum
-from `TauCeti.sup_center_derivedSeries_eq_top`, and the directness from
+Reductivity comes from `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`, which needs
+neither hypothesis; the sum comes from `TauCeti.sup_center_derivedSeries_eq_top`, which is where
+both of them are spent; and the directness comes from
 `TauCeti.inf_derivedSeries_eq_bot_of_isSolvable` applied to the centre, which is abelian and
 therefore a solvable ideal. -/
 theorem isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries :

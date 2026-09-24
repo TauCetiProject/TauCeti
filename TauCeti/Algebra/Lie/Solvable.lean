@@ -55,6 +55,8 @@ whole algebra.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
   onto the radical.
 * `LieIdeal.restrict`: an ideal of `L` read as an ideal of an ideal `I` of `L`, with
+  `LieIdeal.restrict_eq_bot_iff` and `LieIdeal.isSolvable_restrict_iff` saying that for `J ≤ I`
+  the two readings are trivial, respectively solvable, together, and
   `LieIdeal.eq_bot_of_le_of_isSolvable`: **a solvable ideal inside an ideal with trivial radical
   is trivial**.
 * `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
@@ -175,10 +177,19 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
   have h' := Subtype.ext_iff.mp h
   exact Subtype.ext (Subtype.ext h')
 
+private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
+    Function.Surjective (restrictIncl I J) :=
+  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, rfl⟩
+
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
     IsSolvable ↥(I.restrict J) :=
   (restrictIncl_injective I J).lieAlgebra_isSolvable
+
+/-- An ideal contained in `I` is solvable exactly when it is solvable read inside `I`. -/
+theorem isSolvable_restrict_iff {I J : LieIdeal R L} (h : J ≤ I) :
+    IsSolvable ↥(I.restrict J) ↔ IsSolvable ↥J :=
+  ⟨fun _ => (restrictIncl_surjective h).lieAlgebra_isSolvable, fun _ => isSolvable_restrict I J⟩
 
 /-- An ideal contained in `I` is trivial exactly when it is trivial read inside `I`. -/
 theorem restrict_eq_bot_iff {I J : LieIdeal R L} (h : J ≤ I) : I.restrict J = ⊥ ↔ J = ⊥ := by
