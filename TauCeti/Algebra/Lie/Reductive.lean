@@ -312,6 +312,9 @@ side is in simp-normal form; the two are definitionally equal. -/
 @[simp]
 theorem inf_derivedSeries_eq_bot_of_isSolvable (J : LieIdeal K L) [LieAlgebra.IsSolvable ↥J] :
     J ⊓ ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ = ⊥ := by
+  -- Instance synthesis does not unfold `⁅⊤, ⊤⁆` to `derivedSeries K L 1`, so the section's
+  -- `LieAlgebra.HasTrivialRadical K (derivedSeries K L 1)` is invisible to the goal as stated;
+  -- converting to that spelling first is what lets the two steps below find it.
   change J ⊓ derivedSeries K L 1 = ⊥
   have : LieAlgebra.IsSolvable ↥(J ⊓ derivedSeries K L 1) :=
     LieAlgebra.le_solvable_ideal_solvable inf_le_left inferInstance
