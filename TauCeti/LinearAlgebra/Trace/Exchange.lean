@@ -20,7 +20,7 @@ images of `A` and `B`, the induced map exchanges the two summands and so has tra
 (Mathlib's `LinearMap.trace_eq_zero_of_mapsTo_ne`).
 
 This is the linear algebra behind the trace reduction in Popa and Zagier's proof of the
-Eichler–Selberg trace formula: their operator `T̃ₙ` exchanges `A = ker(1 + S)` and
+Eichler–Selberg trace formula: their modified Hecke operator exchanges `A = ker(1 + S)` and
 `B = ker(1 + U + U²)` in the space `V_w` of homogeneous polynomials of degree `w`, with
 `A + B = V_w`, so its trace on the period polynomials `W_w = A ∩ B` is its trace on `V_w`.
 
