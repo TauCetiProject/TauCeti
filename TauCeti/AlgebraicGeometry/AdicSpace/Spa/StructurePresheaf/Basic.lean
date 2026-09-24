@@ -186,6 +186,16 @@ presentations. -/
 theorem PresentationIndex.commonRefinement_pres (i j : PresentationIndex (P := P) Aplus V) :
     (i.commonRefinement j).pres = i.pres.commonRefinement j.pres := (rfl)
 
+/-- The rational open of a common refinement is the intersection of its two rational opens. -/
+theorem spaBasicOpen_commonRefinement (i j : PresentationIndex (P := P) Aplus V) :
+    spaBasicOpen Aplus (i.commonRefinement j).pres.num (i.commonRefinement j).pres.den =
+      spaBasicOpen Aplus i.pres.num i.pres.den ⊓ spaBasicOpen Aplus j.pres.num j.pres.den := by
+  apply Opens.ext
+  apply Set.ext
+  intro x
+  simp only [PresentationIndex.commonRefinement_pres, Opens.coe_inf, Set.mem_inter_iff,
+    SetLike.mem_coe, mem_spaBasicOpen, rationalSubset_commonRefinement]
+
 /-- The common refinement of two indices refines the left one. -/
 theorem PresentationIndex.le_commonRefinement_left (i j : PresentationIndex (P := P) Aplus V) :
     i ≤ i.commonRefinement j :=

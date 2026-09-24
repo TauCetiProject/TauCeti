@@ -147,16 +147,13 @@ private theorem exists_rationalNhd_le_le {x : spa Aplus} (i j : RationalNhd P x)
         spaBasicOpen Aplus i.1.pres.num i.1.pres.den ∧
       spaBasicOpen Aplus k.1.pres.num k.1.pres.den ≤
         spaBasicOpen Aplus j.1.pres.num j.1.pres.den := by
-  have hx : x ∈ spaBasicOpen Aplus (i.1.commonRefinement j.1).pres.num
-      (i.1.commonRefinement j.1).pres.den := by
-    simp only [PresentationIndex.commonRefinement_pres, mem_spaBasicOpen,
-      rationalSubset_commonRefinement, Set.mem_inter_iff]
-    exact ⟨mem_spaBasicOpen.mp i.2, mem_spaBasicOpen.mp j.2⟩
-  exact ⟨⟨i.1.commonRefinement j.1, hx⟩,
-    spaBasicOpen_le_spaBasicOpen_iff.mpr
-      (rationalSubset_subset_rationalSubset_of_le Aplus (i.1.le_commonRefinement_left j.1)),
-    spaBasicOpen_le_spaBasicOpen_iff.mpr
-      (rationalSubset_subset_rationalSubset_of_le Aplus (i.1.le_commonRefinement_right j.1))⟩
+  refine ⟨⟨i.1.commonRefinement j.1, ?_⟩, ?_, ?_⟩
+  · rw [spaBasicOpen_commonRefinement]
+    exact ⟨i.2, j.2⟩
+  · rw [spaBasicOpen_commonRefinement]
+    exact inf_le_left
+  · rw [spaBasicOpen_commonRefinement]
+    exact inf_le_right
 
 /-- Rational germs are compatible with the comparison maps. -/
 private theorem rationalNhdGerm_rationalNhdMap {x : spa Aplus} {i j : RationalNhd P x}

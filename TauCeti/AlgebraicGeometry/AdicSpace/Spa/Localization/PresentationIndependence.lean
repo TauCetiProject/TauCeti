@@ -276,16 +276,6 @@ noncomputable def completionLocObjCommRingCatIso (p : Presentation P) :
   (forget₂ TopCommRingCat CommRingCat).mapIso
     (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))
 
-/-- The definitional unfolding of the forward map, kept private because the public theorem
-states the usable identification. -/
-private theorem completionLocObjCommRingCatIso_hom_aux (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    (completionLocObjCommRingCatIso p).hom =
-      (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) := rfl
-
 /-- The forward map identifying the underlying ring of a completed localization. -/
 @[simp]
 theorem completionLocObjCommRingCatIso_hom (p : Presentation P) :
@@ -295,17 +285,7 @@ theorem completionLocObjCommRingCatIso_hom (p : Presentation P) :
     (completionLocObjCommRingCatIso p).hom =
       (forget₂ TopCommRingCat CommRingCat).map
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) :=
-  completionLocObjCommRingCatIso_hom_aux p
-
-/-- The definitional unfolding of the inverse map, kept private because the public theorem
-states the usable identification. -/
-private theorem completionLocObjCommRingCatIso_inv_aux (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    (completionLocObjCommRingCatIso p).inv =
-      (forget₂ TopCommRingCat CommRingCat).map
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) := rfl
+  by rw [completionLocObjCommRingCatIso, Functor.mapIso_hom, eqToIso.hom]
 
 /-- The inverse map identifying the underlying ring of a completed localization. -/
 @[simp]
@@ -316,7 +296,7 @@ theorem completionLocObjCommRingCatIso_inv (p : Presentation P) :
     (completionLocObjCommRingCatIso p).inv =
       (forget₂ TopCommRingCat CommRingCat).map
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) :=
-  completionLocObjCommRingCatIso_inv_aux p
+  by rw [completionLocObjCommRingCatIso, Functor.mapIso_inv, eqToIso.inv]
 
 /-- Forgetting the topology of a morphism keeps its underlying ring homomorphism. -/
 private theorem forget₂_map_topCommRingCat_hom {X Y : TopCommRingCat}

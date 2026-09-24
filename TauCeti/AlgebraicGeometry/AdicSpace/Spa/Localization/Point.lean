@@ -52,19 +52,6 @@ noncomputable def rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) 
     ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
       ⟨x, mem_spaBasicOpen.mp hx⟩).1
 
-/-- The definitional unfolding of the rational point, kept private because the public theorem
-states the usable identification. -/
-private theorem rationalLocalizationPoint_def_aux (hP : P.ringOfDefinition ≤ Aplus)
-    (p : Presentation P)
-    (x : spa Aplus) (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    rationalLocalizationPoint hP p x hx =
-      comap (completionLocObjCommRingCatIso p).hom.hom
-        ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
-          ⟨x, mem_spaBasicOpen.mp hx⟩).1 := rfl
-
 /-- The rational point is the point supplied by the completed-localization homeomorphism,
 transported to the underlying ring of `p.completionLocObj`. -/
 theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : Presentation P)
@@ -76,7 +63,7 @@ theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : P
       comap (completionLocObjCommRingCatIso p).hom.hom
         ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
           ⟨x, mem_spaBasicOpen.mp hx⟩).1 :=
-  rationalLocalizationPoint_def_aux hP p x hx
+  by rw [rationalLocalizationPoint]
 
 /-- **The rational point lies over `x`**: pulled back along the structure map `A → A⟨p⟩`, the
 point of `A⟨p⟩` determined by `x ∈ R(p)` is `x` itself. -/
