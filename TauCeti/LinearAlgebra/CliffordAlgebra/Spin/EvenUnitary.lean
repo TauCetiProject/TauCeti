@@ -65,6 +65,7 @@ def evenUnitaryGroup : Subgroup (CliffordAlgebra Q)ˣ where
 namespace evenUnitaryGroup
 
 /-- Membership in `evenUnitaryGroup` is exactly evenness together with the unitary equation. -/
+@[simp]
 theorem mem_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ evenUnitaryGroup Q ↔
       (x : CliffordAlgebra Q) ∈ even Q ∧
@@ -100,15 +101,18 @@ def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
     constructor
     · exact CliffordAlgebra.map_mem_even f x.2.1
     · rw [Unitary.mem_iff]
+      have hmap :
+          (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (x : (CliffordAlgebra Q₁)ˣ)) :
+              CliffordAlgebra Q₂) = CliffordAlgebra.map f
+                ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := by
+        simp only [Units.coe_map]
+        -- The algebra-map and ring-hom coercions coincide definitionally here.
+        rfl
       constructor
-      · change star (CliffordAlgebra.map f (x : (CliffordAlgebra Q₁)ˣ)) *
-          CliffordAlgebra.map f (x : (CliffordAlgebra Q₁)ˣ) = 1
-        rw [← CliffordAlgebra.map_star, ← map_mul, Unitary.star_mul_self_of_mem x.2.2,
-          map_one]
-      · change CliffordAlgebra.map f (x : (CliffordAlgebra Q₁)ˣ) *
-          star (CliffordAlgebra.map f (x : (CliffordAlgebra Q₁)ˣ)) = 1
-        rw [← CliffordAlgebra.map_star, ← map_mul, Unitary.mul_star_self_of_mem x.2.2,
-          map_one]
+      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
+          Unitary.star_mul_self_of_mem x.2.2, map_one]
+      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
+          Unitary.mul_star_self_of_mem x.2.2, map_one]
   map_one' := by simp
   map_mul' x y := by simp
 
@@ -117,9 +121,9 @@ theorem coe_evenUnitaryGroupMap_apply (f : Q₁ →qᵢ Q₂)
     (x : CliffordAlgebra.evenUnitaryGroup Q₁) :
     ((f.evenUnitaryGroupMap x : CliffordAlgebra.evenUnitaryGroup Q₂) : (CliffordAlgebra Q₂)ˣ) =
       Units.map (CliffordAlgebra.map f).toMonoidHom (x : (CliffordAlgebra Q₁)ˣ) := by
-  change Units.map (CliffordAlgebra.map f).toMonoidHom (x : (CliffordAlgebra Q₁)ˣ) = _
   rfl
 
+/-- The identity quadratic isometry induces the identity even-unitary-group homomorphism. -/
 @[simp]
 theorem evenUnitaryGroupMap_id (Q : QuadraticForm R M₁) :
     (QuadraticMap.Isometry.id Q).evenUnitaryGroupMap = MonoidHom.id _ := by
@@ -129,6 +133,7 @@ theorem evenUnitaryGroupMap_id (Q : QuadraticForm R M₁) :
   apply Units.ext
   simp
 
+/-- Even-unitary-group homomorphisms respect composition of quadratic isometries. -/
 @[simp]
 theorem evenUnitaryGroupMap_comp (f : Q₂ →qᵢ Q₃)
     (g : Q₁ →qᵢ Q₂) :
@@ -152,6 +157,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M)
 
 /-- The Spin units are precisely the Lipschitz units that lie in the even unitary carrier. -/
+@[simp]
 theorem range_spinGroup_toUnits :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range =
       (lipschitzGroup Q) ⊓ evenUnitaryGroup Q := by
