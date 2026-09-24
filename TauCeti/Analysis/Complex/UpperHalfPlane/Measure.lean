@@ -27,7 +27,7 @@ subsets of `ℂ` are null in `ℍ`.
 * the `NullSingletonClass` instance for `volume : Measure ℍ`: points, hence countable sets, are
   null.
 * `UpperHalfPlane.volume_setOf_re_mem_Ico_and_lt_im`: the region `{a ≤ re z < b, A < im z}`
-  above a horizontal segment has invariant measure `(b - a) / A`.
+  above a horizontal segment has invariant measure `ENNReal.ofReal ((b - a) / A)`.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -87,15 +87,15 @@ instance : NullSingletonClass (volume : Measure ℍ) where
     rwa [← image_singleton, isOpenEmbedding_coe.injective.preimage_image] at h
 
 /-- The region of `ℍ` lying above the height `A > 0` and over the interval `[a, b)` has invariant
-measure `∫_a^b ∫_A^∞ y⁻² dy dx = (b - a) / A`. -/
+measure `ENNReal.ofReal ((b - a) / A)`, which is zero when `b ≤ a`. -/
 theorem volume_setOf_re_mem_Ico_and_lt_im (a b : ℝ) {A : ℝ} (hA : 0 < A) :
     volume {z : ℍ | z.re ∈ Ico a b ∧ A < z.im} = ENNReal.ofReal ((b - a) / A) := by
   -- the inner integral `∫_A^∞ y⁻² dy = A⁻¹`
   have hinner : ∫⁻ y in Ioi A, (((1 / ‖y‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal A⁻¹ := by
     have hint := integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) hA
-    have hval := integral_Ioi_rpow_of_lt (a := -2) (by norm_num) hA
-    rw [show (-2 : ℝ) + 1 = -1 by norm_num, Real.rpow_neg_one, neg_div, div_neg, neg_neg,
-      div_one] at hval
+    have hval : ∫ y in Ioi A, y ^ (-2 : ℝ) = A⁻¹ := by
+      convert integral_Ioi_rpow_of_lt (a := -2) (by norm_num) hA using 1
+      norm_num [Real.rpow_neg_one]
     rw [← hval, ofReal_integral_eq_lintegral_ofReal hint
       (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦
         Real.rpow_nonneg (hA.trans hy).le _)]

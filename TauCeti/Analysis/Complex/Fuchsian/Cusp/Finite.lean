@@ -128,13 +128,16 @@ theorem pairwise_disjoint_smul_horodiscStrip [DiscreteTopology Γ] {A : ℝ} (hA
 
 /-- **Horodisc strips at inequivalent cusps have disjoint translates.** Let `D` and `D'` be
 normalized cusp data of a discrete `Γ ≤ PSL(2, ℝ)` whose cusps are not `Γ`-equivalent, and let the
-heights be at least the widths. Then every translate of the strip at `D` is disjoint from every
-translate of the strip at `D'`. -/
+heights satisfy `0 ≤ A` and `D.width * D'.width ≤ A * A'`. Then every translate of the strip at
+`D` is disjoint from every translate of the strip at `D'`. -/
 theorem disjoint_smul_horodiscStrip_smul_horodiscStrip [DiscreteTopology Γ] (D' : Γ.CuspDatum)
-    (hc : D'.cusp ∉ orbit Γ D.cusp) {A A' : ℝ} (hA : D.width ≤ A) (hA' : D'.width ≤ A')
+    (hc : D'.cusp ∉ orbit Γ D.cusp) {A A' : ℝ} (hA : 0 ≤ A)
+    (hAA' : D.width * D'.width ≤ A * A')
     (g h : Γ) : Disjoint (g • horodiscStrip D A) (h • horodiscStrip D' A') := by
-  have hdisj := disjoint_smul_horodisc_horodisc D' D (D'.width_pos.le.trans hA')
-    (mul_le_mul hA' hA D.width_pos.le (D'.width_pos.le.trans hA')) (g := h⁻¹ * g)
+  have hA' : 0 ≤ A' := (pos_of_mul_pos_right
+    ((mul_pos D.width_pos D'.width_pos).trans_le hAA') hA).le
+  have hdisj := disjoint_smul_horodisc_horodisc D' D (A := A') (A' := A) hA'
+    (by simpa only [mul_comm] using hAA') (g := h⁻¹ * g)
     fun h' ↦ hc (mem_orbit_iff.mpr ⟨_, h'⟩)
   rw [← disjoint_smul_set (a := h⁻¹), smul_smul, inv_smul_smul]
   exact hdisj.mono (smul_set_mono (horodiscStrip_subset_horodisc D A))
@@ -174,7 +177,8 @@ private theorem card_finset_cuspOrbit_le_covolume [DiscreteTopology Γ] (s : Fin
     by_cases hCC' : C = C'
     · subst hCC'
       exact pairwise_disjoint_smul_horodiscStrip _ le_rfl fun hgh ↦ hne' (by rw [hgh])
-    · exact disjoint_smul_horodiscStrip_smul_horodiscStrip _ _ (hne C C' hCC') le_rfl le_rfl g h
+    · exact disjoint_smul_horodiscStrip_smul_horodiscStrip _ _ (hne C C' hCC')
+        (D C).width_pos.le le_rfl g h
   obtain ⟨F, -, -, hF⟩ := exists_isFundamentalDomain Γ
   have ht : volume t = s.card := by
     rw [measure_biUnion_finset (fun C _ C' _ hCC' ↦ by
