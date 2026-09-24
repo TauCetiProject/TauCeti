@@ -329,6 +329,28 @@ noncomputable def symplecticChangeOfBasis : GL (Fin (1 + 1 + (1 + 1))) ℤ where
   inv_val := by
     rw [submatrix_mul_equiv, transpose_mul_symplecticBasisChange, submatrix_one_equiv]
 
+/-- The matrix underlying `symplecticChangeOfBasis`. -/
+private theorem coe_symplecticChangeOfBasis :
+    (symplecticChangeOfBasis : Matrix (Fin (1 + 1 + (1 + 1)))
+      (Fin (1 + 1 + (1 + 1))) ℤ) =
+      symplecticBasisChange.submatrix finSumFinEquiv.symm spinIndex :=
+  rfl
+
+/-- The matrix underlying the inverse of `symplecticChangeOfBasis`. -/
+private theorem coe_symplecticChangeOfBasis_inv :
+    ((symplecticChangeOfBasis⁻¹ : GL (Fin (1 + 1 + (1 + 1))) ℤ) :
+      Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) ℤ) =
+      symplecticBasisChangeᵀ.submatrix spinIndex finSumFinEquiv.symm :=
+  rfl
+
+/-- Mapping `symplecticChangeOfBasis` to a ring maps its underlying matrix entrywise. -/
+private theorem coe_map_symplecticChangeOfBasis (A : Type v) [CommRing A] :
+    ((Matrix.GeneralLinearGroup.map (algebraMap ℤ A) symplecticChangeOfBasis :
+      GL (Fin (1 + 1 + (1 + 1))) A) : Matrix (Fin (1 + 1 + (1 + 1)))
+        (Fin (1 + 1 + (1 + 1))) A) =
+      (symplecticBasisChange.submatrix finSumFinEquiv.symm spinIndex).map (algebraMap ℤ A) :=
+  rfl
+
 /-- The reindexed integral matrix of a numbered spin generator, on the symplectic coordinates. -/
 private theorem reindex_rankTwoRootIntMatrix (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
     (rankTwoRootIntMatrix k).submatrix (finCongr dimension_one).symm
@@ -348,9 +370,7 @@ private theorem symplecticChangeOfBasis_mul_rankTwoRootIntMatrix
         (symplecticChangeOfBasis⁻¹ : GL (Fin (1 + 1 + (1 + 1))) ℤ) =
       SpStd.rootIntMatrix 1 (symplecticRootIndex k) := by
   rw [reindex_rankTwoRootIntMatrix, rootIntMatrix_eq_submatrix]
-  -- Expose the defining submatrices of the change of basis and of its inverse.
-  change symplecticBasisChange.submatrix _ _ * (rankTwoRootMatrix k).submatrix _ _ *
-    symplecticBasisChangeᵀ.submatrix _ _ = _
+  rw [coe_symplecticChangeOfBasis, coe_symplecticChangeOfBasis_inv]
   rw [submatrix_mul_equiv, submatrix_mul_equiv, symplecticBasisChange_mul_rankTwoRootMatrix,
     Matrix.mul_assoc, symplecticBasisChange_mul_transpose, Matrix.mul_one]
 
@@ -441,8 +461,8 @@ private theorem symplecticChangeOfBasis_conj_weightTorusPoints (A : Type v) [Com
   by_cases h : symplecticBasisChange (finSumFinEquiv.symm a) (spinIndex j) = 0
   · have hQ : (Q : Matrix _ _ A) a j = 0 := by
       -- An entry of the image of the integral change of basis is the image of its entry.
-      change algebraMap ℤ A (symplecticBasisChange (finSumFinEquiv.symm a) (spinIndex j)) = 0
-      rw [h, map_zero]
+      simpa only [Q, coe_map_symplecticChangeOfBasis, Matrix.map_apply, Matrix.submatrix_apply,
+        map_zero] using congrArg (algebraMap ℤ A) h
     rw [hQ, zero_mul, mul_zero]
   · rw [mul_comm]
     congr 3
