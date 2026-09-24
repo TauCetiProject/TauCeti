@@ -112,10 +112,12 @@ private theorem f4ShortRootCotangentFlagIdeal_weightSet :
   constructor
   · intro hi
     have him : i.val < f4ShortRootRepresentedIdealRank := by
-      simp only [f4ShortRootCotangentFlagWeight] at hi
-      split at hi
-      · assumption
-      · split at hi <;> omega
+      by_contra hnot
+      by_cases hr : i.val < f4ShortRootRepresentedIdealRank + 26
+      · have hw := f4ShortRootCotangentFlagWeight_of_quotient i hnot hr
+        omega
+      · have hw := f4ShortRootCotangentFlagWeight_of_complement i hr
+        omega
     exact ⟨⟨i.val, him⟩, Fin.ext rfl⟩
   · rintro ⟨j, rfl⟩
     simp
@@ -129,17 +131,15 @@ private theorem f4ShortRootCotangentFlagRange_weightSet :
   constructor
   · intro hi
     have him : i.val < f4ShortRootRepresentedIdealRank + 26 := by
-      simp only [f4ShortRootCotangentFlagWeight] at hi
-      split at hi
-      · omega
-      · split at hi
-        · assumption
-        · omega
+      by_contra hnot
+      have hw := f4ShortRootCotangentFlagWeight_of_complement i hnot
+      omega
     exact ⟨⟨i.val, him⟩, Fin.ext rfl⟩
   · rintro ⟨j, rfl⟩
     by_cases hj : (j : ℕ) < f4ShortRootRepresentedIdealRank
-    · simp [f4ShortRootCotangentFlagWeight, hj]
-    · simp [f4ShortRootCotangentFlagWeight, hj]
+    · rw [f4ShortRootCotangentFlagWeight_of_ideal _ hj]
+      omega
+    · rw [f4ShortRootCotangentFlagWeight_of_quotient _ hj j.isLt]
 
 private theorem map_submodule_eq_span_basis
     {R V W ι : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
