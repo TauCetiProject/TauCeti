@@ -227,15 +227,17 @@ theorem _root_.Equiv.Perm.dvd_of_mem_parts_partition {σ : Equiv.Perm α} {n : �
   rw [← lcm_parts_partition]
   exact Multiset.dvd_lcm hn
 
-omit [DecidableEq α] in
+omit [Fintype α] [DecidableEq α] in
 /-- A finite type carries a permutation of order `k` exactly when `k` is the least common multiple
 of the parts of some partition of its cardinality. A partition is realized by a permutation whose
 cycles have its parts of size at least two as lengths, by `Equiv.Perm.exists_with_cycleType_iff`;
 the parts equal to one do not change the least common multiple. -/
-theorem _root_.Equiv.Perm.exists_orderOf_eq_iff {k : ℕ} :
+theorem _root_.Equiv.Perm.exists_orderOf_eq_iff [Finite α] {k : ℕ} :
     (∃ σ : Equiv.Perm α, orderOf σ = k) ↔
-      ∃ p : (Fintype.card α).Partition, p.parts.lcm = k := by
+      ∃ p : (Nat.card α).Partition, p.parts.lcm = k := by
   classical
+  have := Fintype.ofFinite α
+  rw [Nat.card_eq_fintype_card]
   refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨σ.partition, by rw [lcm_parts_partition, hσ]⟩, fun ⟨p, hp⟩ ↦ ?_⟩
   -- The parts below two are ones, so dropping them changes neither the order nor the lcm.
   have hone : p.parts.filter (¬2 ≤ ·) = Multiset.replicate
