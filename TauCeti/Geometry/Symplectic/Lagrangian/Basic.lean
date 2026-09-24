@@ -154,12 +154,11 @@ lemma IsLagrangian.symplecticForm_apply_eq_zero (h : ω.IsLagrangian L) {v w : V
   isIsotropic_iff.1 h.isIsotropic v hv w hw
 
 /-- A graph is Lagrangian exactly when its defining map is symmetric for a pairing whose
-associated product symplectic form and separation property are specified by the hypotheses. -/
+associated product symplectic form is specified by the hypothesis. -/
 theorem isLagrangian_graph_iff_of_pairing
     {V D : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup D] [Module ℝ D]
     (ω : SymplecticForm (V × D)) (pair : D → V → ℝ)
     (hω : ∀ x y, ω x y = pair y.2 x.1 - pair x.2 y.1)
-    (hext : ∀ a b : D, (∀ v, pair a v = pair b v) → a = b)
     (A : V →ₗ[ℝ] D) :
     ω.IsLagrangian A.graph ↔ ∀ v w, pair (A v) w = pair (A w) v := by
   constructor
@@ -178,13 +177,16 @@ theorem isLagrangian_graph_iff_of_pairing
       simp [hv, hw, hsym]
     · apply isCoisotropic_iff.mpr
       intro x hx
-      rw [LinearMap.mem_graph_iff]
-      apply hext
-      intro v
-      have hv := (mem_orthogonal_iff.mp hx) (v, A v) (by simp)
-      rw [hω] at hv
-      have hsymv := hsym v x.1
-      linarith
+      rw [LinearMap.mem_graph_iff, ← sub_eq_zero]
+      have h0 := ω.separatingLeft ((0, x.2) - (0, A x.1)) fun y ↦ by
+        have hy := (mem_orthogonal_iff.mp hx) (y.1, A y.1) (by simp)
+        have hsymy := hsym y.1 x.1
+        have hx0 := hω (0, x.2) y
+        have hAx0 := hω (0, A x.1) y
+        rw [hω] at hy
+        simp only [map_sub, LinearMap.sub_apply] at hx0 hAx0 hy ⊢
+        linarith
+      simpa using congrArg Prod.snd h0
 
 section FiniteDimensional
 

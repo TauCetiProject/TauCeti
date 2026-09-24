@@ -43,22 +43,22 @@ theorem isLagrangian_cotangent_graph_iff :
     (cotangentSymplecticForm (V := V)).IsLagrangian A.graph ↔
       ∀ v w, A v w = A w v := by
   exact SymplecticForm.isLagrangian_graph_iff_of_pairing cotangentSymplecticForm
-    (fun a v ↦ a v) (by simp) (fun _ _ h ↦ LinearMap.ext h) A
+    (fun a v ↦ a v) (by simp) A
 
 end AlgebraicDual
 
 section ContinuousDual
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-variable {A : V →L[ℝ] StrongDual ℝ V}
+variable {A : V →ₗ[ℝ] StrongDual ℝ V}
 
-/-- The graph of a continuous linear map to the continuous dual is Lagrangian precisely when
-its pairing is symmetric. This applies in infinite-dimensional normed spaces as well. -/
+/-- The graph of a linear map to the continuous dual is Lagrangian precisely when its pairing
+is symmetric. This applies in infinite-dimensional normed spaces as well. -/
 theorem isLagrangian_strongDualCotangent_graph_iff :
-    (strongDualCotangentSymplecticForm (V := V)).IsLagrangian A.toLinearMap.graph ↔
+    (strongDualCotangentSymplecticForm (V := V)).IsLagrangian A.graph ↔
       ∀ v w, A v w = A w v := by
   exact SymplecticForm.isLagrangian_graph_iff_of_pairing strongDualCotangentSymplecticForm
-    (fun a v ↦ a v) (by simp) (fun _ _ h ↦ ContinuousLinearMap.ext h) A.toLinearMap
+    (fun a v ↦ a v) (by simp) A
 
 /-- The graph of a symmetric second derivative is Lagrangian. The Hessian here is the derivative
 of the differential, taking values in the continuous dual. -/
