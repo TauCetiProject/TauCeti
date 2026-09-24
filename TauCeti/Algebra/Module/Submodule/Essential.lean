@@ -234,7 +234,7 @@ being one. It suffices to quantify over targets in the universe of `M₂`; for a
 forward implication is `TauCeti.IsEssential.injective_of_injective_comp`. -/
 theorem isEssential_range_iff_forall_injective {f : M →ₗ[R] M₂} (hf : Function.Injective f) :
     IsEssential (LinearMap.range f) ↔
-      ∀ {M₃ : Type w} [AddCommGroup M₃] [Module R M₃] (h : M₂ →ₗ[R] M₃),
+      ∀ {M₃ : Type w} [AddCommMonoid M₃] [Module R M₃] (h : M₂ →ₗ[R] M₃),
         Function.Injective (h ∘ₗ f) → Function.Injective h := by
   constructor
   · intro hrange _ _ _ h hhf
