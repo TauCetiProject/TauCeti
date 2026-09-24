@@ -38,7 +38,6 @@ variable [CommGroupWithZero F]
 
 /-- **Every unit of a finite commutative group with zero with `q` elements is a `(q-1)`-st root
 of unity**; in particular every unit of a finite field is. -/
-@[simp]
 theorem rootsOfUnity_natCard_sub_one_eq_top : rootsOfUnity (Nat.card F - 1) F = ⊤ := by
   have := Fintype.ofFinite F
   ext α
