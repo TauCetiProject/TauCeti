@@ -123,6 +123,7 @@ theorem faceAffinePointMap_comp (hi : IsIntegralLattice i) (hυτ : υ.IsFaceOf 
   funext (faceAffinePointMap_faceAffinePointMap hi hυτ hτσ)
 
 /-- The face map is equivariant for the coordinate-free complex torus. -/
+@[simp]
 theorem faceAffinePointMap_smul (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ)
     (t : ComplexTorus N) (x : AffineSemigroupComplexPoint (dualSemigroup hi τ)) :
     faceAffinePointMap hi hτσ (t • x) = t • faceAffinePointMap hi hτσ x :=
@@ -266,6 +267,48 @@ theorem isOpenEmbedding_faceAffinePointMap_of_inf_ker_eq (hσ : σ.FG) (hτσ : 
 
 end InfKer
 
+/-- For a face `τ` of a finitely generated cone `σ` cut out by a character, the image of the
+chart of `τ` in the chart of `σ` is intrinsically the locus where every monomial of a character
+vanishing on `τ` is nonzero. -/
+theorem range_faceAffinePointMap_of_exists_inf_ker_eq (hi : IsIntegralLattice i) (hσ : σ.FG)
+    (hτσ : τ.IsFaceOf σ)
+    (hτ : ∃ m : dualSemigroup hi σ,
+      σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ) :
+    Set.range (faceAffinePointMap hi hτσ) =
+      {x | ∀ m : dualSemigroup hi σ, (∀ v ∈ τ, hi.realCharacter m v = 0) →
+        x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0} := by
+  refine Set.Subset.antisymm ?_ fun x hx ↦ ?_
+  · rintro _ ⟨y, rfl⟩ m hm
+    exact faceAffinePointMap_apply_single_ne_zero hi hτσ y hm
+  obtain ⟨m, hm⟩ := hτ
+  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ hτσ m hm]
+  exact hx m (realCharacter_eq_zero_of_inf_ker_eq hi hm)
+
+/-- If two faces of a finitely generated cone are cut out by characters, the image of their
+intersection is the intersection of their images. -/
+theorem range_faceAffinePointMap_inf_of_inf_ker_eq (hi : IsIntegralLattice i) (hσ : σ.FG)
+    (hτσ : τ.IsFaceOf σ) (hυσ : υ.IsFaceOf σ) (m₁ : dualSemigroup hi σ)
+    (h₁ : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m₁)) = τ)
+    (m₂ : dualSemigroup hi σ)
+    (h₂ : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m₂)) = υ) :
+    Set.range (faceAffinePointMap hi (hτσ.inf_left hυσ)) =
+      Set.range (faceAffinePointMap hi hτσ) ∩ Set.range (faceAffinePointMap hi hυσ) := by
+  have h₁₂ : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter (m₁ + m₂))) = τ ⊓ υ := by
+    rw [map_add, PointedCone.inf_ker_add
+      ((mem_dualSemigroup hi m₁).1 m₁.2) ((mem_dualSemigroup hi m₂).1 m₂.2), h₁, h₂]
+  refine Set.Subset.antisymm ?_ fun x ⟨hxτ, hxυ⟩ ↦ ?_
+  · rintro x hx
+    rw [range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ (hτσ.inf_left hυσ)
+      ⟨m₁ + m₂, h₁₂⟩] at hx
+    rw [range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ hτσ ⟨m₁, h₁⟩,
+      range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ hυσ ⟨m₂, h₂⟩]
+    exact ⟨fun m hm ↦ hx m fun v hv ↦ hm v hv.1, fun m hm ↦ hx m fun v hv ↦ hm v hv.2⟩
+  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ _ (m₁ + m₂) h₁₂,
+    Set.mem_ofPred_eq, apply_single_add]
+  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ hτσ m₁ h₁] at hxτ
+  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ hυσ m₂ h₂] at hxυ
+  exact mul_ne_zero hxτ hxυ
+
 /-! ### Faces of regular cones -/
 
 namespace IsRegularCone
@@ -279,12 +322,8 @@ theorem range_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf
     Set.range (faceAffinePointMap hi hτσ) =
       {x | ∀ m : dualSemigroup hi σ, (∀ v ∈ τ, hi.realCharacter m v = 0) →
         x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0} := by
-  refine Set.Subset.antisymm ?_ fun x hx ↦ ?_
-  · rintro _ ⟨y, rfl⟩ m hm
-    exact faceAffinePointMap_apply_single_ne_zero hi hτσ y hm
   obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
-  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ.fg hτσ ⟨m, hm⟩ hmτ]
-  exact hx ⟨m, hm⟩ (realCharacter_eq_zero_of_inf_ker_eq hi hmτ)
+  exact range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ.fg hτσ ⟨⟨m, hm⟩, hmτ⟩
 
 /-- For a face `τ` of a regular cone `σ`, the face map is an open embedding of the chart of `τ`
 into the chart of `σ`, for the monomial-embedding topologies of arbitrary finite generating
@@ -303,20 +342,9 @@ theorem range_faceAffinePointMap_inf (hσ : IsRegularCone i σ) (hτσ : τ.IsFa
     (hυσ : υ.IsFaceOf σ) :
     Set.range (faceAffinePointMap hi (hτσ.inf_left hυσ)) =
       Set.range (faceAffinePointMap hi hτσ) ∩ Set.range (faceAffinePointMap hi hυσ) := by
-  refine Set.Subset.antisymm (fun x hx ↦ ?_) fun x ⟨hxτ, hxυ⟩ ↦ ?_
-  · rw [range_faceAffinePointMap hi hσ] at hx
-    rw [range_faceAffinePointMap hi hσ, range_faceAffinePointMap hi hσ]
-    exact ⟨fun m hm ↦ hx m fun v hv ↦ hm v hv.1, fun m hm ↦ hx m fun v hv ↦ hm v hv.2⟩
-  -- The sum of characters cutting out `τ` and `υ` cuts out `τ ⊓ υ`.
   obtain ⟨m₁, hm₁, h₁⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   obtain ⟨m₂, hm₂, h₂⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hυσ
-  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ.fg hτσ ⟨m₁, hm₁⟩ h₁] at hxτ
-  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ.fg hυσ ⟨m₂, hm₂⟩ h₂] at hxυ
-  rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ.fg _ (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩)
-    (by rw [AddSubmonoid.coe_add, map_add, PointedCone.inf_ker_add
-      ((mem_dualSemigroup hi m₁).1 hm₁) ((mem_dualSemigroup hi m₂).1 hm₂), h₁, h₂]),
-    Set.mem_ofPred_eq, apply_single_add]
-  exact mul_ne_zero hxτ hxυ
+  exact range_faceAffinePointMap_inf_of_inf_ker_eq hi hσ.fg hτσ hυσ ⟨m₁, hm₁⟩ h₁ ⟨m₂, hm₂⟩ h₂
 
 end IsRegularCone
 
