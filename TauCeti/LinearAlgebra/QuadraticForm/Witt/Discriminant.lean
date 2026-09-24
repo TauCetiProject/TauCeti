@@ -125,7 +125,6 @@ theorem signedDiscr_neg_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fun
     _ = signedDiscr x := by rw [← h, add_zero (M := SquareClassGroup K)]
 
 /-- On the fundamental ideal the signed discriminant commutes with natural multiples. -/
-@[simp]
 theorem signedDiscr_nsmul_of_mem_fundamentalIdeal (n : ℕ) {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K) : signedDiscr (n • x) = n • signedDiscr x := by
   induction n with
@@ -147,7 +146,6 @@ theorem signedDiscr_oneFoldPfisterClass (a : Kˣ) :
     ← squareClass_mul, neg_one_mul, neg_neg]
 
 /-- The signed discriminant of a two-fold Pfister class `⟨⟨a, b⟩⟩` is trivial. -/
-@[simp]
 theorem signedDiscr_oneFoldPfisterClass_mul (a b : Kˣ) :
     signedDiscr (oneFoldPfisterClass a * oneFoldPfisterClass b) = 0 := by
   have hab : oneFoldPfisterClass a * oneFoldPfisterClass b =
@@ -163,7 +161,6 @@ theorem signedDiscr_oneFoldPfisterClass_mul (a b : Kˣ) :
 
 /-- **The signed discriminant vanishes on `I(K)²`.** The two-fold Pfister classes additively
 generate `I(K)²` and have trivial signed discriminant, and `d±` is additive on `I(K)`. -/
-@[simp]
 theorem signedDiscr_eq_zero_of_mem_fundamentalIdeal_sq {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K ^ 2) : signedDiscr x = 0 := by
   have hI : ∀ z ∈ AddSubgroup.closure (Set.range (pfisterClass (K := K) (n := 2))),
@@ -289,7 +286,6 @@ theorem mem_fundamentalIdeal_sq_iff {x : WittRing K} :
 
 /-- **A form has Witt class in `I(K)²` exactly when it has even rank and trivial signed
 discriminant.** -/
-@[simp]
 theorem wittClass_mem_fundamentalIdeal_sq_iff (q : RegularFormClass K) :
     wittClass q ∈ fundamentalIdeal K ^ 2 ↔
       Even (RegularFormClass.rank q) ∧ RegularFormClass.signedDiscr q = 0 := by
@@ -298,7 +294,6 @@ theorem wittClass_mem_fundamentalIdeal_sq_iff (q : RegularFormClass K) :
 
 /-- A one-fold Pfister class `⟨⟨a⟩⟩` lies in `I(K)²` exactly when `a` is a square, in which case
 it is already zero. -/
-@[simp]
 theorem oneFoldPfisterClass_mem_fundamentalIdeal_sq_iff {a : Kˣ} :
     oneFoldPfisterClass a ∈ fundamentalIdeal K ^ 2 ↔ IsSquare a := by
   rw [mem_fundamentalIdeal_sq_iff, WittRing.signedDiscr_oneFoldPfisterClass,
@@ -334,7 +329,6 @@ theorem signedDiscrHom_surjective : Function.Surjective (signedDiscrHom (K := K)
       ofMul_toMul]
 
 /-- **The kernel of the signed discriminant on `I(K)` is `I(K)²`.** -/
-@[simp]
 theorem signedDiscrHom_eq_zero_iff (x : fundamentalIdeal K) :
     signedDiscrHom x = 0 ↔ (x : WittRing K) ∈ fundamentalIdeal K ^ 2 := by
   rw [signedDiscrHom_apply, mem_fundamentalIdeal_sq_iff, and_iff_right x.2]
