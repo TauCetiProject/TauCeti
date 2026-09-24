@@ -110,9 +110,9 @@ coefficients. -/
 def realHasse (w : {w : InfinitePlace K // w.IsReal}) : ℤˣ :=
   (-1) ^ (I.realNegativeIndex w).choose 2
 
-/-- The product of the Hasse signs over all finite and real places. Both factors are `finprod`s;
-there are finitely many real places, and the finite factor is the product over any finite set
-outside which the finite Hasse signs are `1` (`hasseProduct_eq_prod_mul_prod`). -/
+/-- The product of the Hasse signs over all finite and real places, as a `finprod` over each.
+The finite factor is the product over any finite set outside which the finite Hasse signs are `1`
+(`hasseProduct_eq_prod_mul_prod`). -/
 def hasseProduct : ℤˣ :=
   (∏ᶠ v, I.finiteHasse v) * ∏ᶠ w, I.realHasse w
 
@@ -221,7 +221,7 @@ structure IsAdmissible : Prop where
   /-- In rank one every finite Hasse sign is `1`. -/
   finiteHasse_eq_one_of_rank_eq_one : I.rank = 1 → ∀ v, I.finiteHasse v = 1
   /-- In rank two the finite Hasse sign is `1` wherever the discriminant is the class of `-1`. -/
-  finiteHasse_eq_one_of_rank_eq_two :
+  finiteHasse_eq_one_of_rank_eq_two_of_finiteDiscr_eq_neg_one :
     I.rank = 2 → ∀ v, I.finiteDiscr v = squareClass (-1) → I.finiteHasse v = 1
   /-- The product of all finite and real Hasse signs is `1`. -/
   hasseProduct_eq_one : I.hasseProduct = 1
@@ -254,7 +254,7 @@ theorem isAdmissible_mk_zero_one {n : ℕ} (hn : 1 ≤ n) :
   realDiscr_eq _ := by simp [realDiscr, realNegativeIndex]
   finite_mulSupport_finiteHasse := by simp
   finiteHasse_eq_one_of_rank_eq_one _ _ := rfl
-  finiteHasse_eq_one_of_rank_eq_two _ _ _ := rfl
+  finiteHasse_eq_one_of_rank_eq_two_of_finiteDiscr_eq_neg_one _ _ _ := rfl
   hasseProduct_eq_one := by simp [hasseProduct, realHasse, realNegativeIndex]
 
 variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -262,7 +262,8 @@ variable {Q : _root_.QuadraticForm K V}
 
 /-- **The archimedean conditions are automatic for a global form.** A system whose rank,
 discriminant and real positive indices are those of a regular form over `K` is admissible as
-soon as it satisfies the conditions at the finite places and the product condition. -/
+soon as it has positive rank and satisfies the conditions at the finite places and the product
+condition. -/
 theorem IsAdmissible.of_nondegenerate (hQ : Q.Nondegenerate)
     (hrank : I.rank = Module.finrank K V)
     (hdiscr : letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
@@ -271,7 +272,7 @@ theorem IsAdmissible.of_nondegenerate (hQ : Q.Nondegenerate)
     (one_le_rank : 1 ≤ I.rank)
     (finite_mulSupport_finiteHasse : (Function.mulSupport I.finiteHasse).Finite)
     (finiteHasse_eq_one_of_rank_eq_one : I.rank = 1 → ∀ v, I.finiteHasse v = 1)
-    (finiteHasse_eq_one_of_rank_eq_two :
+    (finiteHasse_eq_one_of_rank_eq_two_of_finiteDiscr_eq_neg_one :
       I.rank = 2 → ∀ v, I.finiteDiscr v = squareClass (-1) → I.finiteHasse v = 1)
     (hasseProduct_eq_one : I.hasseProduct = 1) :
     I.IsAdmissible where
@@ -285,7 +286,8 @@ theorem IsAdmissible.of_nondegenerate (hQ : Q.Nondegenerate)
       _root_.QuadraticForm.squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul]
   finite_mulSupport_finiteHasse := finite_mulSupport_finiteHasse
   finiteHasse_eq_one_of_rank_eq_one := finiteHasse_eq_one_of_rank_eq_one
-  finiteHasse_eq_one_of_rank_eq_two := finiteHasse_eq_one_of_rank_eq_two
+  finiteHasse_eq_one_of_rank_eq_two_of_finiteDiscr_eq_neg_one :=
+    finiteHasse_eq_one_of_rank_eq_two_of_finiteDiscr_eq_neg_one
   hasseProduct_eq_one := hasseProduct_eq_one
 
 end NumberField
