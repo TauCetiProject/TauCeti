@@ -94,7 +94,7 @@ exponent `n`** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)
 `y ^ n = u` for a
 nonzero `u ∈ F`, `n` is invertible in `k`, and `n` divides the order of `u` at the place `P` below
 `P'`, then `d(P' ∣ P) = 0`. -/
-@[simp] theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
+theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0)
     (hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u) :
     differentExponent k F P' = 0 := by
@@ -135,7 +135,7 @@ exponent `n`** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)
 `y ^ n = u` for a
 nonzero `u ∈ F`, `n` is invertible in `k`, and `n` divides the order of `u` at the place `P` below
 `P'`, then `e(P' ∣ P) = 1`. -/
-@[simp] theorem ramificationIdx_eq_one_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
+theorem ramificationIdx_eq_one_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0)
     (hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u) :
     ramificationIdx F P' = 1 := by
@@ -175,7 +175,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then `d(P' ∣ P)` is `0` when `n` divides the order of `u` at the place `P`
 below `P'`, and `n - 1` otherwise. -/
-@[simp] theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     differentExponent k F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 0 else n - 1 := by
   split_ifs with hdvd
@@ -189,7 +189,7 @@ below `P'`, and `n - 1` otherwise. -/
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then the place `P` below `P'` is unramified when `n` divides `ord_P u`, and
 `e(P' ∣ P) = n` otherwise. -/
-@[simp] theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     ramificationIdx F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 1 else n := by
   split_ifs with hdvd
