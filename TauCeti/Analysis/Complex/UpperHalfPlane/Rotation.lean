@@ -65,6 +65,7 @@ theorem rotation_zero : rotation 0 = 1 :=
     fin_cases i <;> fin_cases j <;> simp
 
 /-- The rotations form a one-parameter subgroup: `rotation (θ + φ) = rotation θ * rotation φ`. -/
+@[simp]
 theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
   Matrix.SpecialLinearGroup.ext _ _ fun i j => by
     fin_cases i <;> fin_cases j <;>
@@ -74,16 +75,6 @@ theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation
 @[simp]
 theorem rotation_neg (θ : ℝ) : rotation (-θ) = (rotation θ)⁻¹ := by
   rw [eq_inv_iff_mul_eq_one, ← rotation_add, neg_add_cancel, rotation_zero]
-
-private theorem rotation_denom_ne_zero (θ : ℝ) (z : ℍ) :
-    -(Real.sin θ : ℂ) * z + Real.cos θ ≠ 0 := by
-  have h : ![-Real.sin θ, Real.cos θ] ≠ 0 := by
-    intro h
-    have h0 := congrFun h 0
-    have h1 := congrFun h 1
-    simp at h0 h1
-    nlinarith [Real.sin_sq_add_cos_sq θ]
-  simpa using linear_ne_zero (cd := ![-Real.sin θ, Real.cos θ]) z h
 
 /-- The Möbius action of `rotation θ`, as a complex number:
 `(cos θ · z + sin θ) / (-sin θ · z + cos θ)`. -/
@@ -114,7 +105,9 @@ theorem exists_rotation_smul_re_eq_zero (w : ℍ) :
       rw [← coe_re, coe_rotation_smul]
     rw [this]
     refine Complex.continuous_re.comp (Continuous.div (by fun_prop) (by fun_prop) ?_)
-    exact fun θ => rotation_denom_ne_zero θ w
+    intro θ
+    simpa [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix] using
+      denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ (rotation θ)) w
   have h0 : (rotation 0 • w).re = w.re := by
     rw [rotation_zero, one_smul]
   have hpi : (rotation (Real.pi / 2) • w).re = -(w.re / Complex.normSq w) := by

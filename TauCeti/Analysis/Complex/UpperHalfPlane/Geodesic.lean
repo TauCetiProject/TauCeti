@@ -126,6 +126,7 @@ theorem geodesicLine_rotation_pi_div_two (t : ℝ) :
   simp [Real.exp_neg, Real.exp_ne_zero]
 
 /-- The geodesic line of the identity is the imaginary axis. -/
+@[simp]
 theorem mem_range_geodesicLine_one_iff {u : ℍ} : u ∈ Set.range (geodesicLine 1) ↔ u.re = 0 := by
   constructor
   · rintro ⟨t, rfl⟩
