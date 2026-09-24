@@ -20,12 +20,13 @@ Let `Q` be a quadratic form on `M` with un-halved polar form `B = polar Q`, so t
 It is a proper isometry of `Q`. It fixes `u` and every vector orthogonal to both `u` and `w`, and it
 depends on `w` only through its class modulo `R ∙ u`. For fixed `u`, the map `w ↦ E_{u,w}` turns
 addition into composition. So the Eichler transvections with isotropic vector `u` are the image of
-a homomorphism from the additive group `u^⊥ / R ∙ u` into `SO(Q)`. Over a field this homomorphism
-is injective as soon as `u` is not in the kernel of the polar form. The orthogonal group acts on
-these subgroups by conjugation, moving the pair `(u, w)`.
+a homomorphism from the additive group `u^⊥ / R ∙ u` into `SO(Q)`. This homomorphism is injective
+as soon as the polar form pairs `u` with some vector to a unit; over a field, as soon as `u` is not
+in the kernel of the polar form. The orthogonal group acts on these subgroups by conjugation, moving
+the pair `(u, w)`.
 
-Nothing here assumes that `2` is invertible, and only the injectivity statements need a field. The
-formula uses `B` and `Q`, never `B / 2`, so it makes sense verbatim for integral quadratic forms.
+Nothing here assumes that `2` is invertible or that the scalars form a field. The formula uses `B`
+and `Q`, never `B / 2`, so it makes sense verbatim for integral quadratic forms.
 
 ## Main definitions
 
@@ -41,6 +42,8 @@ formula uses `B` and `Q`, never `B / 2`, so it makes sense verbatim for integral
 * `QuadraticMap.transvection_add`: `E_{u,w + w'} = E_{u,w} * E_{u,w'}`.
 * `QuadraticMap.transvection_add_smul`: `E_{u,w + c • u} = E_{u,w}`.
 * `QuadraticMap.transvection_conj`: `g * E_{u,w} * g⁻¹ = E_{g u, g w}` for `g ∈ O(Q)`.
+* `QuadraticMap.transvection_eq_one_iff_of_isUnit`: if `polar Q x u` is a unit for some `x`,
+  then `E_{u,w} = 1` exactly when `w ∈ R ∙ u`. Hence `transvectionHom_injective_of_isUnit`.
 * `QuadraticMap.transvection_eq_one_iff`: over a field, if `polarBilin Q u ≠ 0`, then
   `E_{u,w} = 1` exactly when `w ∈ K ∙ u`. Hence `transvectionHom_injective`.
 
@@ -195,8 +198,8 @@ private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (
 
 variable (Q) in
 /-- **The Eichler transvections with a fixed isotropic vector `u`**, as a homomorphism
-`w ↦ E_{u,w}` from the additive group of `u^⊥ / R ∙ u` into `SO(Q)`. Over a field it is
-injective when `u` is not in the kernel of the polar form (`transvectionHom_injective`). -/
+`w ↦ E_{u,w}` from the additive group of `u^⊥ / R ∙ u` into `SO(Q)`. It is injective when the
+polar form pairs `u` with some vector to a unit (`transvectionHom_injective_of_isUnit`). -/
 noncomputable def transvectionHom (hu : Q u = 0) :
     (LinearMap.ker (Q.polarBilin u) ⧸
         (R ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) →+
@@ -218,6 +221,32 @@ theorem coe_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
   erw [transvectionHom, QuotientAddGroup.lift_mk']
   exact coe_toMul_transvectionAddHom hu _
 
+/-- An Eichler transvection `E_{u,w}` is trivial exactly when `w` is a multiple of `u`, provided
+the polar form pairs `u` with some vector to a unit. -/
+theorem transvection_eq_one_iff_of_isUnit (hu : Q u = 0) (huw : polar Q u w = 0)
+    (hu₀ : ∃ x, IsUnit (polar Q x u)) : transvection Q hu huw = 1 ↔ w ∈ R ∙ u := by
+  refine ⟨fun h => ?_, transvection_eq_one_of_mem_span hu huw⟩
+  obtain ⟨x, a, ha⟩ := hu₀
+  have hEx : transvection Q hu huw x = x := by rw [h, LinearEquiv.coe_one, id_eq]
+  rw [transvection_apply] at hEx
+  have hw : polar Q x u • w = (polar Q x w + Q w * polar Q x u) • u := by
+    linear_combination (norm := module) hEx
+  refine Submodule.mem_span_singleton.mpr ⟨↑a⁻¹ * (polar Q x w + Q w * polar Q x u), ?_⟩
+  rw [mul_smul, ← hw, ← ha, smul_smul, Units.inv_mul, one_smul]
+
+/-- The Eichler transvections with isotropic vector `u` form a copy of the additive group
+`u^⊥ / R ∙ u` inside `SO(Q)`, provided the polar form pairs `u` with some vector to a unit. -/
+theorem transvectionHom_injective_of_isUnit (hu : Q u = 0) (hu₀ : ∃ x, IsUnit (polar Q x u)) :
+    Function.Injective (transvectionHom Q hu) := by
+  refine (injective_iff_map_eq_zero _).mpr fun q hq => ?_
+  induction q using Submodule.Quotient.induction_on with | H w => ?_
+  obtain ⟨w, hw⟩ := w
+  have huw : polar Q u w = 0 := by simpa using hw
+  rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.coe_subtype,
+    ← transvection_eq_one_iff_of_isUnit hu huw hu₀]
+  have := congrArg (fun a => ((Additive.toMul a : specialOrthogonalGroup Q) : M ≃ₗ[R] M)) hq
+  simpa only [coe_transvectionHom_mk hu huw, toMul_zero, OneMemClass.coe_one] using this
+
 end CommRing
 
 section Field
@@ -225,35 +254,23 @@ section Field
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {u w : V}
 
+private theorem exists_isUnit_polar_of_polarBilin_ne_zero (hu₀ : Q.polarBilin u ≠ 0) :
+    ∃ x, IsUnit (polar Q x u) := by
+  by_contra! H
+  exact hu₀ (LinearMap.ext fun x => by simpa [polar_comm Q u x] using H x)
+
 /-- Over a field, an Eichler transvection `E_{u,w}` is trivial exactly when `w` is a multiple of
 `u`, provided `u` is not in the kernel of the polar form (for instance, `u ≠ 0` and `Q`
 nondegenerate). -/
 theorem transvection_eq_one_iff (hu : Q u = 0) (huw : polar Q u w = 0)
-    (hu₀ : Q.polarBilin u ≠ 0) : transvection Q hu huw = 1 ↔ w ∈ K ∙ u := by
-  refine ⟨fun h => ?_, transvection_eq_one_of_mem_span hu huw⟩
-  obtain ⟨x, hx⟩ : ∃ x, polar Q x u ≠ 0 := by
-    by_contra! H
-    exact hu₀ (LinearMap.ext fun x => by simp [polar_comm Q u x, H x])
-  have hEx : transvection Q hu huw x = x := by rw [h, LinearEquiv.coe_one, id_eq]
-  rw [transvection_apply] at hEx
-  have hw : polar Q x u • w = (polar Q x w + Q w * polar Q x u) • u := by
-    linear_combination (norm := module) hEx
-  refine Submodule.mem_span_singleton.mpr
-    ⟨(polar Q x u)⁻¹ * (polar Q x w + Q w * polar Q x u), ?_⟩
-  rw [mul_smul, ← hw, smul_smul, inv_mul_cancel₀ hx, one_smul]
+    (hu₀ : Q.polarBilin u ≠ 0) : transvection Q hu huw = 1 ↔ w ∈ K ∙ u :=
+  transvection_eq_one_iff_of_isUnit hu huw (exists_isUnit_polar_of_polarBilin_ne_zero hu₀)
 
 /-- Over a field, the Eichler transvections with isotropic vector `u` form a copy of the additive
 group `u^⊥ / K ∙ u` inside `SO(Q)`, provided `u` is not in the kernel of the polar form. -/
 theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) :
-    Function.Injective (transvectionHom Q hu) := by
-  refine (injective_iff_map_eq_zero _).mpr fun q hq => ?_
-  induction q using Submodule.Quotient.induction_on with | H w => ?_
-  obtain ⟨w, hw⟩ := w
-  have huw : polar Q u w = 0 := by simpa using hw
-  rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.coe_subtype,
-    ← transvection_eq_one_iff hu huw hu₀]
-  have := congrArg (fun a => ((Additive.toMul a : specialOrthogonalGroup Q) : V ≃ₗ[K] V)) hq
-  simpa only [coe_transvectionHom_mk hu huw, toMul_zero, OneMemClass.coe_one] using this
+    Function.Injective (transvectionHom Q hu) :=
+  transvectionHom_injective_of_isUnit hu (exists_isUnit_polar_of_polarBilin_ne_zero hu₀)
 
 end Field
 
