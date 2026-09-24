@@ -32,6 +32,11 @@ under base change: `Spec K → Spec k` has relative dimension zero for every fie
   most `d`.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_le`: the
   condition in terms of set-theoretic fibres.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_inter_eq`: in a fibre of a morphism locally
+  of finite type, a nonempty open part of an irreducible component has the dimension of the
+  component.
+* `TauCeti.AlgebraicGeometry.isOpenEmbedding_fiber`: the fibre of the restriction of a morphism
+  to an open subscheme is an open subspace of the fibre of the morphism.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtSource` and
   `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtTarget`: locality.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
@@ -79,6 +84,23 @@ theorem RelativeDimensionLE.topologicalKrullDim_preimage_le (f : X ⟶ Y) [Relat
 theorem RelativeDimensionLE.mono (f : X ⟶ Y) [RelativeDimensionLE d f] (hde : d ≤ e) :
     RelativeDimensionLE e f :=
   ⟨fun y ↦ (topologicalKrullDim_fiber_le y).trans (mod_cast hde)⟩
+
+/-- In a fibre of a morphism locally of finite type, a nonempty open part of an irreducible
+component has the dimension of the component. -/
+theorem topologicalKrullDim_fiber_inter_eq (f : X ⟶ Y) [LocallyOfFiniteType f] (y : Y) :
+    ∀ C ∈ irreducibleComponents (f.fiber y), ∀ U : Set (f.fiber y), IsOpen U →
+      (C ∩ U).Nonempty → topologicalKrullDim ↥(C ∩ U) = topologicalKrullDim C := by
+  intro C hC U hU hCU
+  have : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
+  exact topologicalKrullDim_inter_eq_of_locallyOfFiniteType (K := Y.residueField y)
+    (f.fiberToSpecResidueField y) hC.1 (isClosed_of_mem_irreducibleComponents C hC) hU hCU
+
+/-- The fibre over `y` of the restriction of `f` along an open immersion `i` is an open subspace
+of the scheme-theoretic fibre of `f` over `y`. -/
+theorem isOpenEmbedding_fiber (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y) (y : Y) :
+    IsOpenEmbedding ((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage i) :=
+  (f.fiberHomeo y).symm.isOpenEmbedding.comp (i.isOpenEmbedding.restrictPreimage _)
 
 private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
     (i ≫ f) ⁻¹' s = i ⁻¹' (f ⁻¹' s) := by

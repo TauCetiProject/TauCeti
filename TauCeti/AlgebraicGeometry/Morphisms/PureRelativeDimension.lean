@@ -92,23 +92,6 @@ private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
   ext
   simp
 
-/-- In a fibre of a morphism locally of finite type, a nonempty open part of an irreducible
-component has the dimension of the component. -/
-private theorem topologicalKrullDim_fiber_inter_eq (f : X ⟶ Y) [LocallyOfFiniteType f] (y : Y) :
-    ∀ C ∈ irreducibleComponents (f.fiber y), ∀ U : Set (f.fiber y), IsOpen U →
-      (C ∩ U).Nonempty → topologicalKrullDim ↥(C ∩ U) = topologicalKrullDim C := by
-  intro C hC U hU hCU
-  have : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
-    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
-  exact topologicalKrullDim_inter_eq_of_locallyOfFiniteType (K := Y.residueField y)
-    (f.fiberToSpecResidueField y) hC.1 (isClosed_of_mem_irreducibleComponents C hC) hU hCU
-
-/-- The fibre over `y` of the restriction of `f` along an open immersion `i` is an open subspace
-of the scheme-theoretic fibre of `f` over `y`. -/
-private theorem isOpenEmbedding_fiber (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y) (y : Y) :
-    IsOpenEmbedding ((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage i) :=
-  (f.fiberHomeo y).symm.isOpenEmbedding.comp (i.isOpenEmbedding.restrictPreimage _)
-
 /-- Precomposing with an embedding whose range contains the fibre over `y` does not change that
 fibre up to homeomorphism. -/
 private theorem isPureDimensional_preimage_comp_iff (i : Z ⟶ X) (hi : IsEmbedding i) (f : X ⟶ Y)
