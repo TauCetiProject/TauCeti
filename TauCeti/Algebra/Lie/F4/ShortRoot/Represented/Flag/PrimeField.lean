@@ -57,6 +57,7 @@ theorem f4ShortRootPrimeField_weightTorus_blockTriangular :
     (SplitTorus.pointsMulEquiv q) hg
   have hgen : g.ofConv =
       (F4ShortRoot.PrimeField.generator (.inr ())).hom.toAlgHom := by
+    -- Evaluate the mapped torus point at the identity algebra homomorphism.
     change (AlgHom.id 𝔽₂ T₄).comp
       (GeneralLinear.weightTorusCoordinateMap (R := 𝔽₂) f4ShortRootWeight).hom.toAlgHom = _
     rw [AlgHom.id_comp, F4ShortRoot.PrimeField.generator_inr,
@@ -86,6 +87,7 @@ theorem f4ShortRootPrimeField_root_blockTriangular (k : Fin 4 ⊕ Fin 4) :
   have h := f4ShortRootRootSubgroup_adjoint_blockTriangular g k u hg
   have hgen : g.ofConv =
       (F4ShortRoot.PrimeField.generator (.inl k)).hom.toAlgHom := by
+    -- Evaluate the mapped root point at the identity algebra homomorphism.
     change (AlgHom.id 𝔽₂ Gₐ).comp
       (F4ShortRoot.PrimeField.generator (.inl k)).hom.toAlgHom = _
     rw [AlgHom.id_comp]

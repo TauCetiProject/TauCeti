@@ -26,11 +26,6 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
-/-- The cotangent-dual adjoint module of `GL₂₆` over `ZMod 2`. -/
-abbrev f4ShortRootCotangentDual :=
-  Module.Dual 𝔽₂
-    (Bialgebra.CotangentSpace 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26))
-
 /-- Local adjoint comodule on the cotangent dual of `GL₂₆`. -/
 local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
     f4ShortRootCotangentDual :=
@@ -39,45 +34,123 @@ local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 2
 
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
-/-- The scalar-extended represented-ideal term of the cotangent flag. -/
-@[expose] noncomputable def cotangentFlagIdeal :
-    Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
-  Submodule.span A <| Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
-    f4ShortRootCotangentFlagBasis.baseChange A
-      (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
+private theorem f4ShortRootWeightTorusConj_mem_range_generator
+    (s : Fin 4 → Aˣ) (k : f4ChevalleyIndex) :
+    f4ShortRootWeightTorusConjLinearMap s
+        (f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) ∈
+      f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+  rcases k with α | r
+  · let a := f4PinnedRootIndex α
+    have hα : f4ModularChevalleyBasis (Sum.inl α) = f4ModularRootVector a := by
+      rw [f4ModularRootVector_eq_basis]
+      simp only [a, f4KillingRootLabel_f4PinnedRootIndex]
+    have hgen :
+        f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularRootVector a) ∈
+          f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+      rw [← hα]
+      exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inl α)
+    rw [f4ShortRootWeightTorusConjLinearMap_apply, hα,
+      f4ShortRootWeightTorusGL_conj_root]
+    exact Submodule.smul_mem _ _ hgen
+  · let a : Fin F4.rank := (F4.lieBasis valid_F4).baseSupportEquiv.symm r
+    have hr : f4ModularChevalleyBasis (Sum.inr r) = f4ModularSimpleCoroot a := by
+      rw [f4ModularSimpleCoroot_eq_basis]
+      simp only [a, Equiv.apply_symm_apply]
+    have hgen :
+        f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularSimpleCoroot a) ∈
+          f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+      rw [← hr]
+      exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inr r)
+    rw [f4ShortRootWeightTorusConjLinearMap_apply, hr,
+      f4ShortRootWeightTorusGL_conj_simpleCoroot]
+    exact hgen
 
-/-- The scalar-extended represented-range term of the cotangent flag. -/
-@[expose] noncomputable def cotangentFlagRange :
-    Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
-  Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-    f4ShortRootCotangentFlagBasis.baseChange A
-      (Fin.castAdd f4ShortRootRepresentedComplementRank i)
+/-- The base-changed represented range is preserved by every short-root weight-torus point. -/
+theorem f4ShortRootWeightTorusConj_mem_representedRange
+    (s : Fin 4 → Aˣ) {X : Matrix (Fin 26) (Fin 26) A}
+    (hX : X ∈ f4ShortRootRepresentedRangeMatrixBaseChange (A := A)) :
+    f4ShortRootWeightTorusConjLinearMap s X ∈
+      f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+  have hX' : X ∈ Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
+      f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) :=
+    (f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis (A := A)) ▸ hX
+  refine Submodule.span_induction ?_ (by simp) ?_ ?_ hX'
+  · rintro _ ⟨k, rfl⟩
+    exact f4ShortRootWeightTorusConj_mem_range_generator s k
+  · intro X Y _ _ hX hY
+    rw [map_add]
+    exact Submodule.add_mem _ hX hY
+  · intro c X _ hX
+    rw [map_smul]
+    exact Submodule.smul_mem _ c hX
 
-omit [Algebra 𝔽₂ A] in
-private theorem mem_of_equiv_mem_map
-    {V W : Type*} [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-    (e : V ≃ₗ[A] W) (p : Submodule A V) {x : V}
-    (hx : e x ∈ p.map e.toLinearMap) : x ∈ p := by
-  obtain ⟨y, hy, hey⟩ := Submodule.mem_map.mp hx
-  exact e.injective hey ▸ hy
+private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
+    (s : Fin 4 → Aˣ) (i : Fin 26) :
+    f4ShortRootWeightTorusConjLinearMap s
+        (f4ShortRootAdjointMatrixBaseChange (A := A)
+          (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) ∈
+      f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+  have hgen :
+      f4ShortRootAdjointMatrixBaseChange (A := A)
+          (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
+        f4ShortRootRepresentedIdealMatrixBaseChange (A := A) :=
+    f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis i
+  rcases hi : f4ShortRootWeightIndexEquiv i with α | k
+  · have hi' := congrArg f4ShortRootWeightIndexEquiv.symm hi
+    simp only [Equiv.symm_apply_apply] at hi'
+    have hroot :
+        (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) =
+          f4ModularRootVector α := by
+      rw [hi', coe_f4ShortRootLieIdealBasis_symm_inl]
+    rw [f4ShortRootWeightTorusConjLinearMap_apply, hroot,
+      f4ShortRootWeightTorusGL_conj_root]
+    exact Submodule.smul_mem _ _ (hroot ▸ hgen)
+  · fin_cases k
+    · have hi' : i = 12 :=
+        (f4ShortRootWeightIndexEquiv_apply_eq_inr_zero_iff i).mp (by simpa using hi)
+      subst i
+      have hgen' :
+          f4ShortRootAdjointMatrixBaseChange (A := A)
+              (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (2 : Fin 4))) ∈
+            f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+        simpa only [coe_f4ShortRootLieIdealBasis_twelve] using hgen
+      rw [f4ShortRootWeightTorusConjLinearMap_apply,
+        coe_f4ShortRootLieIdealBasis_twelve,
+        f4ShortRootWeightTorusGL_conj_simpleCoroot]
+      exact hgen'
+    · have hi' : i = 13 :=
+        (f4ShortRootWeightIndexEquiv_apply_eq_inr_one_iff i).mp (by simpa using hi)
+      subst i
+      have hgen' :
+          f4ShortRootAdjointMatrixBaseChange (A := A)
+              (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (3 : Fin 4))) ∈
+            f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+        simpa only [coe_f4ShortRootLieIdealBasis_thirteen] using hgen
+      rw [f4ShortRootWeightTorusConjLinearMap_apply,
+        coe_f4ShortRootLieIdealBasis_thirteen,
+        f4ShortRootWeightTorusGL_conj_simpleCoroot]
+      exact hgen'
 
-private theorem basis_repr_eq_zero_of_mem_span_range
-    {R V ι κ : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-    (b : Module.Basis ι R V) (e : κ → ι) {x : V} {i : ι}
-    (hx : x ∈ Submodule.span R (Set.range fun k => b (e k)))
-    (hi : i ∉ Set.range e) : b.repr x i = 0 := by
-  have hset : Set.range (fun k => b (e k)) = b '' Set.range e := by
-    ext y
-    constructor
-    · rintro ⟨k, rfl⟩
-      exact ⟨e k, ⟨k, rfl⟩, rfl⟩
-    · rintro ⟨_, ⟨k, rfl⟩, rfl⟩
-      exact ⟨k, rfl⟩
-  have hx' : x ∈ Submodule.span R (b '' Set.range e) := by
-    rw [← hset]
-    exact hx
-  have hsupp := b.mem_span_image.mp hx'
-  exact Finsupp.notMem_support_iff.mp fun himem => hi (hsupp himem)
+/-- The base-changed represented ideal is preserved by every short-root weight-torus point. -/
+theorem f4ShortRootWeightTorusConj_mem_representedIdeal
+    (s : Fin 4 → Aˣ) {X : Matrix (Fin 26) (Fin 26) A}
+    (hX : X ∈ f4ShortRootRepresentedIdealMatrixBaseChange (A := A)) :
+    f4ShortRootWeightTorusConjLinearMap s X ∈
+      f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+  have hX' : X ∈ Submodule.span A (Set.range fun i : Fin 26 =>
+      f4ShortRootAdjointMatrixBaseChange (A := A)
+        (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) :=
+    (f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis (A := A)) ▸ hX
+  refine Submodule.span_induction ?_ (by simp) ?_ ?_ hX'
+  · rintro _ ⟨i, rfl⟩
+    exact f4ShortRootWeightTorusConj_mem_ideal_generator s i
+  · intro X Y _ _ hX hY
+    rw [map_add]
+    exact Submodule.add_mem _ hX hY
+  · intro c X _ hX
+    rw [map_smul]
+    exact Submodule.smul_mem _ c hX
+
 
 private theorem torus_endOfPoint_mem_ideal
     (g : HopfAlgebra.points
@@ -89,24 +162,19 @@ private theorem torus_endOfPoint_mem_ideal
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
       cotangentFlagIdeal (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
-  have hex : e x ∈ f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-    rw [← f4ShortRootCotangentFlagIdeal_map]
-    exact Submodule.mem_map_of_mem hx
-  have hstable := f4ShortRootWeightTorusConj_mem_representedIdeal s hex
-  have heq :
-      e (Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x) =
-        f4ShortRootWeightTorusConjLinearMap s (e x) := by
+  refine e.mem_of_preserves_map
+    (cotangentFlagIdeal (A := A))
+    (f4ShortRootRepresentedIdealMatrixBaseChange (A := A))
+    (f4ShortRootCotangentFlagIdeal_map (A := A))
+    (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
+    (f4ShortRootWeightTorusConjLinearMap s) ?_ ?_ hx
+  · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
       hg, f4ShortRootWeightTorusConjLinearMap_apply,
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
-  have hmap : (cotangentFlagIdeal (A := A)).map e.toLinearMap =
-      f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-    simpa only [cotangentFlagIdeal, e] using
-      (f4ShortRootCotangentFlagIdeal_map (A := A))
-  apply mem_of_equiv_mem_map e (cotangentFlagIdeal (A := A))
-  rw [heq, hmap]
-  exact hstable
+  · intro Y hY
+    exact f4ShortRootWeightTorusConj_mem_representedIdeal s hY
 
 private theorem torus_endOfPoint_mem_range
     (g : HopfAlgebra.points
@@ -118,24 +186,19 @@ private theorem torus_endOfPoint_mem_range
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
       cotangentFlagRange (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
-  have hex : e x ∈ f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-    rw [← f4ShortRootCotangentFlagRange_map]
-    exact Submodule.mem_map_of_mem hx
-  have hstable := f4ShortRootWeightTorusConj_mem_representedRange s hex
-  have heq :
-      e (Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x) =
-        f4ShortRootWeightTorusConjLinearMap s (e x) := by
+  refine e.mem_of_preserves_map
+    (cotangentFlagRange (A := A))
+    (f4ShortRootRepresentedRangeMatrixBaseChange (A := A))
+    (f4ShortRootCotangentFlagRange_map (A := A))
+    (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
+    (f4ShortRootWeightTorusConjLinearMap s) ?_ ?_ hx
+  · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
       hg, f4ShortRootWeightTorusConjLinearMap_apply,
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
-  have hmap : (cotangentFlagRange (A := A)).map e.toLinearMap =
-      f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-    simpa only [cotangentFlagRange, e] using
-      (f4ShortRootCotangentFlagRange_map (A := A))
-  apply mem_of_equiv_mem_map e (cotangentFlagRange (A := A))
-  rw [heq, hmap]
-  exact hstable
+  · intro Y hY
+    exact f4ShortRootWeightTorusConj_mem_representedRange s hY
 
 /-- A point acts block triangularly on the adapted represented flag if it preserves its two
 nontrivial steps. -/
@@ -164,9 +227,11 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       Fin.ext rfl
     have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
         cotangentFlagIdeal (A := A) := by
+      rw [cotangentFlagIdeal_eq_span_basis (A := A)]
       exact Submodule.subset_span ⟨j', by rw [hj]⟩
     have hmap := hIdeal hjmem
-    apply basis_repr_eq_zero_of_mem_span_range
+    rw [cotangentFlagIdeal_eq_span_basis (A := A)] at hmap
+    apply Module.Basis.repr_eq_zero_of_mem_span_range
       (f4ShortRootCotangentFlagBasis.baseChange A)
       (fun i : Fin f4ShortRootRepresentedIdealRank =>
         Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i)) hmap
@@ -181,9 +246,11 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank j' := Fin.ext rfl
       have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
           cotangentFlagRange (A := A) := by
+        rw [cotangentFlagRange_eq_span_basis (A := A)]
         exact Submodule.subset_span ⟨j', by rw [hj]⟩
       have hmap := hRange hjmem
-      apply basis_repr_eq_zero_of_mem_span_range
+      rw [cotangentFlagRange_eq_span_basis (A := A)] at hmap
+      apply Module.Basis.repr_eq_zero_of_mem_span_range
         (f4ShortRootCotangentFlagBasis.baseChange A)
         (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
           Fin.castAdd f4ShortRootRepresentedComplementRank i) hmap

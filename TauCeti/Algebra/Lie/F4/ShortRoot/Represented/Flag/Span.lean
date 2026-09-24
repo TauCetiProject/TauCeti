@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.TorusAction
+public import TauCeti.LinearAlgebra.Basis.RangeSpan
+public import TauCeti.LinearAlgebra.LinearEquiv.Submodule
 
 /-!
 # Scalar-extended coordinate spans of the represented modular F4 flag
@@ -24,7 +26,170 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
+/-- The cotangent-dual adjoint module of `GL₂₆` over `ZMod 2`. -/
+abbrev f4ShortRootCotangentDual :=
+  Module.Dual 𝔽₂
+    (Bialgebra.CotangentSpace 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26))
+
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
+
+/-- The scalar-extended represented-ideal term of the cotangent flag. -/
+noncomputable def cotangentFlagIdeal :
+    Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
+  Submodule.span A <| Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
+    f4ShortRootCotangentFlagBasis.baseChange A
+      (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
+
+/-- The ideal flag term is spanned by the first block of the adapted cotangent basis. -/
+theorem cotangentFlagIdeal_eq_span_basis :
+    cotangentFlagIdeal (A := A) =
+      Submodule.span A (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
+        f4ShortRootCotangentFlagBasis.baseChange A
+          (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))) := by
+  unfold cotangentFlagIdeal
+  rfl
+
+/-- The scalar-extended represented-range term of the cotangent flag. -/
+noncomputable def cotangentFlagRange :
+    Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
+  Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
+    f4ShortRootCotangentFlagBasis.baseChange A
+      (Fin.castAdd f4ShortRootRepresentedComplementRank i)
+
+/-- The range flag term is spanned by the first two blocks of the adapted cotangent basis. -/
+theorem cotangentFlagRange_eq_span_basis :
+    cotangentFlagRange (A := A) =
+      Submodule.span A (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
+        f4ShortRootCotangentFlagBasis.baseChange A
+          (Fin.castAdd f4ShortRootRepresentedComplementRank i)) := by
+  unfold cotangentFlagRange
+  rfl
+
+/-! ### Stability of the represented flag
+
+The following two submodules are the matrix-coordinate scalar extensions of the represented
+range `M` and its represented ideal `J`.  We give them by the images of their distinguished
+bases.  This form makes the torus stability argument valid over an arbitrary value algebra,
+without any flatness or injectivity hypothesis on its structure map from `ZMod 2`.
+-/
+
+/-- The base-changed matrix-coordinate range of the short-root adjoint representation. -/
+noncomputable def f4ShortRootRepresentedRangeMatrixBaseChange :
+    Submodule A (Matrix (Fin 26) (Fin 26) A) :=
+  Submodule.span A <| Set.range fun k : f4ChevalleyIndex =>
+    f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)
+
+/-- The represented range is spanned by the base-changed Chevalley adjoint matrices. -/
+theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis :
+    f4ShortRootRepresentedRangeMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
+        f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) := by
+  unfold f4ShortRootRepresentedRangeMatrixBaseChange
+  rfl
+
+/-- Each Chevalley adjoint matrix is in the scalar-extended represented range. -/
+theorem f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (k : f4ChevalleyIndex) :
+    f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k) ∈
+      f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+  rw [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis]
+  exact Submodule.subset_span (Set.mem_range_self k)
+
+/-- The base-changed matrix-coordinate image of the short-root ideal. -/
+noncomputable def f4ShortRootRepresentedIdealMatrixBaseChange :
+    Submodule A (Matrix (Fin 26) (Fin 26) A) :=
+  Submodule.span A <| Set.range fun i : Fin 26 =>
+    f4ShortRootAdjointMatrixBaseChange (A := A)
+      (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)
+
+/-- The represented ideal is spanned by the base-changed ideal-basis adjoint matrices. -/
+theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis :
+    f4ShortRootRepresentedIdealMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun i : Fin 26 =>
+        f4ShortRootAdjointMatrixBaseChange (A := A)
+          (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) := by
+  unfold f4ShortRootRepresentedIdealMatrixBaseChange
+  rfl
+
+/-- Each ideal-basis adjoint matrix is in the scalar-extended represented ideal. -/
+theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
+    f4ShortRootAdjointMatrixBaseChange (A := A)
+        (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
+      f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+  rw [f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis]
+  exact Submodule.subset_span (Set.mem_range_self i)
+
+private noncomputable def f4ShortRootAdjointMatrixBaseChangeLinearMap :
+    f4ModularChevalleyLieAlgebra →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=
+  (Algebra.linearMap (ZMod 2) A).mapMatrix.comp
+    ((LinearMap.toMatrix f4ShortRootLieIdealBasis
+      f4ShortRootLieIdealBasis).toLinearMap.comp f4ShortRootAdjointLinearMap)
+
+private theorem f4ShortRootAdjointMatrixBaseChangeLinearMap_apply
+    (X : f4ModularChevalleyLieAlgebra) :
+    f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A) X =
+      f4ShortRootAdjointMatrixBaseChange (A := A) X := by
+  ext i j
+  simp [f4ShortRootAdjointMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
+    f4ShortRootAdjointLinearMap, LinearMap.toMatrix_apply, f4ShortRootLieIdealBasis_repr_apply]
+
+private noncomputable def f4ShortRootIdealAdjointMatrixBaseChangeLinearMap :
+    f4ShortRootLieIdeal →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=
+  (f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A)).comp
+    f4ShortRootLieIdeal.toSubmodule.subtype
+
+private theorem f4ShortRootIdealAdjointMatrixBaseChangeLinearMap_apply
+    (y : f4ShortRootLieIdeal) :
+    f4ShortRootIdealAdjointMatrixBaseChangeLinearMap (A := A) y =
+      f4ShortRootAdjointMatrixBaseChange (A := A)
+        (y : f4ModularChevalleyLieAlgebra) := by
+  exact f4ShortRootAdjointMatrixBaseChangeLinearMap_apply _
+
+/-- The distinguished-basis definition of the base-changed represented range agrees with the
+`A`-span of every entrywise base-changed matrix in `M`. -/
+theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span :
+    f4ShortRootRepresentedRangeMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun X : f4ModularChevalleyLieAlgebra =>
+        f4ShortRootAdjointMatrixBaseChange (A := A) X) := by
+  -- Identify the bundled linear map with its named pointwise matrix function.
+  simpa only [f4ShortRootRepresentedRangeMatrixBaseChange,
+    Function.comp_def,
+    f4ShortRootAdjointMatrixBaseChangeLinearMap_apply,
+    show ⇑(f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A)) =
+      f4ShortRootAdjointMatrixBaseChange from
+        funext f4ShortRootAdjointMatrixBaseChangeLinearMap_apply] using
+    (Module.Basis.span_range_eq_span_range_basis (S := A) f4ModularChevalleyBasis
+      (f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A))).symm
+
+/-- The distinguished-basis definition of the base-changed represented ideal agrees with the
+`A`-span of every entrywise base-changed matrix in `J`. -/
+theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span :
+    f4ShortRootRepresentedIdealMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun y : f4ShortRootLieIdeal =>
+        f4ShortRootAdjointMatrixBaseChange (A := A)
+          (y : f4ModularChevalleyLieAlgebra)) := by
+  -- Identify the restricted linear map with its named matrix function.
+  simpa only [f4ShortRootRepresentedIdealMatrixBaseChange,
+    Function.comp_def,
+    f4ShortRootIdealAdjointMatrixBaseChangeLinearMap_apply,
+    show ⇑(f4ShortRootIdealAdjointMatrixBaseChangeLinearMap (A := A)) =
+      (fun y : f4ShortRootLieIdeal =>
+        f4ShortRootAdjointMatrixBaseChange (A := A) (y : f4ModularChevalleyLieAlgebra)) from
+        funext f4ShortRootIdealAdjointMatrixBaseChangeLinearMap_apply] using
+    (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootLieIdealBasis
+      (f4ShortRootIdealAdjointMatrixBaseChangeLinearMap (A := A))).symm
+
+/-- The base-changed represented ideal is contained in the base-changed represented range. -/
+theorem f4ShortRootRepresentedIdealMatrixBaseChange_le_range :
+    f4ShortRootRepresentedIdealMatrixBaseChange (A := A) ≤
+      f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+  rw [f4ShortRootRepresentedIdealMatrixBaseChange, Submodule.span_le]
+  rintro X ⟨i, rfl⟩
+  -- Coerce an ideal-basis vector to the ambient Lie algebra.
+  change f4ShortRootAdjointMatrixBaseChange (A := A)
+      (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈ _
+  rw [coe_f4ShortRootLieIdealBasis]
+  exact Submodule.subset_span (Set.mem_range_self (f4ShortRootBasisCoordinate i))
+
 
 /-- Entrywise scalar extension of an endomorphism of the modular short-root ideal, in its
 distinguished matrix coordinates. -/
@@ -59,41 +224,6 @@ noncomputable def f4ShortRootRepresentedRangeBasisMatrixBaseChange :
     f4ShortRootEndMatrixBaseChangeLinearMap (A := A)
       (f4ShortRootEndBasis (Fin.castAdd f4ShortRootRepresentedComplementRank i))
 
-private theorem range_comp_rangeRestrict
-    {R V W N : Type*} [Semiring R]
-    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-    [AddCommMonoid N] [Module R N]
-    (f : V →ₗ[R] W) (g : W →ₗ[R] N) :
-    Set.range (g.comp f) = Set.range (g.comp f.range.subtype) := by
-  ext z
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨⟨f x, LinearMap.mem_range_self f x⟩, rfl⟩
-  · rintro ⟨y, rfl⟩
-    obtain ⟨x, hx⟩ := y.2
-    exact ⟨x, by
-      simp only [LinearMap.comp_apply]
-      rw [hx]
-      rfl⟩
-
-private theorem range_comp_map_subtype
-    {R V W N : Type*} [Semiring R]
-    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-    [AddCommMonoid N] [Module R N]
-    (f : V →ₗ[R] W) (I : Submodule R V) (g : W →ₗ[R] N) :
-    Set.range (g.comp (f.comp I.subtype)) =
-      Set.range ((g.comp f.range.subtype).comp (I.map f.rangeRestrict).subtype) := by
-  ext z
-  constructor
-  · rintro ⟨x, rfl⟩
-    let y : I.map f.rangeRestrict := ⟨f.rangeRestrict x, Submodule.mem_map_of_mem x.2⟩
-    exact ⟨y, rfl⟩
-  · rintro ⟨y, rfl⟩
-    obtain ⟨x, hx, hxy⟩ := y.2
-    exact ⟨⟨x, hx⟩, by
-      simp only [LinearMap.comp_apply]
-      exact congrArg g (congrArg Subtype.val hxy)⟩
-
 /-- The first two adapted basis blocks span exactly the represented range after scalar extension. -/
 theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
     f4ShortRootRepresentedRangeBasisMatrixBaseChange (A := A) =
@@ -113,18 +243,16 @@ theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
           ((g.comp f4ShortRootRepresentedRange.subtype) ∘
             f4ShortRootRepresentedRangeBasis)) := rfl
     _ = Submodule.span A (Set.range (g.comp f4ShortRootRepresentedRange.subtype)) :=
-      (span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedRangeBasis
+      (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedRangeBasis
         (g.comp f4ShortRootRepresentedRange.subtype)).symm
     _ = Submodule.span A (Set.range (g.comp f4ShortRootAdjointLinearMap)) :=
-      congrArg (Submodule.span A) (range_comp_rangeRestrict
+      congrArg (Submodule.span A) (LinearMap.range_comp_rangeRestrict
         f4ShortRootAdjointLinearMap g).symm
     _ = Submodule.span A (Set.range fun X : f4ModularChevalleyLieAlgebra =>
           f4ShortRootAdjointMatrixBaseChange (A := A) X) := by
       congr 2
       funext X
       exact f4ShortRootEndMatrixBaseChangeLinearMap_adjoint X
-    _ = f4ShortRootRepresentedRangeMatrixSpan (A := A) :=
-      f4ShortRootRepresentedRangeMatrixSpan_eq_span_range.symm
     _ = f4ShortRootRepresentedRangeMatrixBaseChange (A := A) :=
       f4ShortRootRepresentedRangeMatrixBaseChange_eq_span.symm
 
@@ -154,12 +282,12 @@ theorem f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq :
     _ = Submodule.span A (Set.range
           ((g.comp f4ShortRootRepresentedRange.subtype).comp
             f4ShortRootRepresentedIdeal.subtype)) :=
-      (span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedIdealBasis
+      (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedIdealBasis
         ((g.comp f4ShortRootRepresentedRange.subtype).comp
           f4ShortRootRepresentedIdeal.subtype)).symm
     _ = Submodule.span A (Set.range
           (g.comp (f4ShortRootAdjointLinearMap.comp f4ShortRootSubspace.subtype))) :=
-      congrArg (Submodule.span A) (range_comp_map_subtype f4ShortRootAdjointLinearMap
+      congrArg (Submodule.span A) (LinearMap.range_comp_map_subtype f4ShortRootAdjointLinearMap
         f4ShortRootSubspace g).symm
     _ = Submodule.span A (Set.range fun y : f4ShortRootLieIdeal =>
           f4ShortRootAdjointMatrixBaseChange (A := A)
@@ -173,8 +301,6 @@ theorem f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq :
       · rintro ⟨y, rfl⟩
         exact ⟨⟨y, mem_f4ShortRootLieIdeal_iff.mp y.property⟩,
           f4ShortRootEndMatrixBaseChangeLinearMap_adjoint y⟩
-    _ = f4ShortRootRepresentedIdealMatrixSpan (A := A) :=
-      f4ShortRootRepresentedIdealMatrixSpan_eq_span_range.symm
     _ = f4ShortRootRepresentedIdealMatrixBaseChange (A := A) :=
       f4ShortRootRepresentedIdealMatrixBaseChange_eq_span.symm
 
@@ -194,6 +320,7 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_apply (x) :
       GeneralLinear.tangentMatrix 26
         (Derivation.tangentScalarExtensionEquiv
           (R := 𝔽₂) (A := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (B := A) x) := by
+  -- Expose the second equivalence in the composition to use its evaluation theorem.
   change GeneralLinear.tangentLinearEquivMatrix 26
       (Derivation.tangentScalarExtensionEquiv
         (R := 𝔽₂) (A := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (B := A) x) = _
@@ -243,12 +370,11 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_basis (i) :
 /-- Under cotangent-dual matrix coordinates, the first adapted basis block is exactly the
 scalar-extended represented ideal. -/
 theorem f4ShortRootCotangentFlagIdeal_map :
-    (Submodule.span A <| Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
-      f4ShortRootCotangentFlagBasis.baseChange A
-        (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))).map
+    (cotangentFlagIdeal (A := A)).map
         (f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)).toLinearMap =
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-  rw [LinearMap.map_span, ← f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq]
+  rw [cotangentFlagIdeal, LinearMap.map_span,
+    ← f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq]
   congr 1
   ext X
   constructor
@@ -260,12 +386,11 @@ theorem f4ShortRootCotangentFlagIdeal_map :
 /-- Under cotangent-dual matrix coordinates, the first two adapted basis blocks are exactly the
 scalar-extended represented range. -/
 theorem f4ShortRootCotangentFlagRange_map :
-    (Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-      f4ShortRootCotangentFlagBasis.baseChange A
-        (Fin.castAdd f4ShortRootRepresentedComplementRank i)).map
+    (cotangentFlagRange (A := A)).map
         (f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)).toLinearMap =
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-  rw [LinearMap.map_span, ← f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq]
+  rw [cotangentFlagRange, LinearMap.map_span,
+    ← f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq]
   congr 1
   ext X
   constructor
@@ -273,6 +398,34 @@ theorem f4ShortRootCotangentFlagRange_map :
     exact ⟨i, (f4ShortRootCotangentBaseChangeMatrixEquiv_basis _).symm⟩
   · rintro ⟨i, rfl⟩
     exact ⟨_, ⟨i, rfl⟩, f4ShortRootCotangentBaseChangeMatrixEquiv_basis _⟩
+
+/-- A cotangent vector belongs to the ideal flag term exactly when its matrix coordinates
+belong to the base-changed represented ideal. -/
+theorem mem_cotangentFlagIdeal_iff
+    (x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :
+    x ∈ cotangentFlagIdeal (A := A) ↔
+      f4ShortRootCotangentBaseChangeMatrixEquiv (A := A) x ∈
+        f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+  rw [← f4ShortRootCotangentFlagIdeal_map, Submodule.mem_map_equiv]
+  simp only [LinearEquiv.symm_apply_apply]
+
+/-- A cotangent vector belongs to the range flag term exactly when its matrix coordinates
+belong to the base-changed represented range. -/
+theorem mem_cotangentFlagRange_iff
+    (x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :
+    x ∈ cotangentFlagRange (A := A) ↔
+      f4ShortRootCotangentBaseChangeMatrixEquiv (A := A) x ∈
+        f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
+  rw [← f4ShortRootCotangentFlagRange_map, Submodule.mem_map_equiv]
+  simp only [LinearEquiv.symm_apply_apply]
+
+/-- The represented ideal is the first step of the represented range flag. -/
+theorem cotangentFlagIdeal_le_range :
+    cotangentFlagIdeal (A := A) ≤ cotangentFlagRange (A := A) := by
+  intro x hx
+  exact (mem_cotangentFlagRange_iff x).mpr
+    (f4ShortRootRepresentedIdealMatrixBaseChange_le_range
+      ((mem_cotangentFlagIdeal_iff x).mp hx))
 
 end
 

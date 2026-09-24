@@ -165,6 +165,7 @@ theorem cotangentDualMatrixEquiv_f4ShortRootEndEquivCotangentDual
   else if i.val < f4ShortRootRepresentedIdealRank + 26 then 1
   else 0
 
+/-- The first block of the represented-range basis is the represented-ideal basis. -/
 @[simp]
 theorem f4ShortRootRepresentedRangeBasis_ideal
     (i : Fin f4ShortRootRepresentedIdealRank) :
@@ -174,6 +175,7 @@ theorem f4ShortRootRepresentedRangeBasis_ideal
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
     f4ShortRootRepresentedIdealBasis f4ShortRootQuotientBasis i
 
+/-- The second block of the represented-range basis projects to the modular quotient basis. -/
 @[simp]
 theorem f4ShortRootRepresentedRangeBasis_quotient (a : Fin 26) :
     Submodule.Quotient.mk
@@ -186,6 +188,7 @@ theorem f4ShortRootRepresentedRangeBasis_quotient (a : Fin 26) :
     ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
     f4ShortRootRepresentedIdealBasis f4ShortRootQuotientBasis a
 
+/-- The first two blocks of the adapted endomorphism basis equal the represented-range basis. -/
 @[simp]
 theorem f4ShortRootEndBasis_range (i : Fin (f4ShortRootRepresentedIdealRank + 26)) :
     f4ShortRootEndBasis (Fin.castAdd f4ShortRootRepresentedComplementRank i) =
@@ -193,6 +196,7 @@ theorem f4ShortRootEndBasis_range (i : Fin (f4ShortRootRepresentedIdealRank + 26
   TauCeti.extensionBasis_castAdd f4ShortRootRepresentedRange
     f4ShortRootRepresentedRangeBasis f4ShortRootRepresentedComplementBasis i
 
+/-- The first two cotangent-flag blocks are the image of the represented-range basis. -/
 theorem f4ShortRootCotangentFlagBasis_range
     (i : Fin (f4ShortRootRepresentedIdealRank + 26)) :
     f4ShortRootCotangentFlagBasis
@@ -204,6 +208,7 @@ theorem f4ShortRootCotangentFlagBasis_range
       f4ShortRootCotangentFlagBasis_apply _
     _ = _ := congrArg f4ShortRootEndEquivCotangentDual (f4ShortRootEndBasis_range i)
 
+/-- The first cotangent-flag block is the image of the represented-ideal basis. -/
 theorem f4ShortRootCotangentFlagBasis_ideal
     (i : Fin f4ShortRootRepresentedIdealRank) :
     f4ShortRootCotangentFlagBasis

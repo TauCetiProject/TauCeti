@@ -18,7 +18,7 @@ on its entire domain.
 
 public section
 
-namespace TauCeti
+namespace Module.Basis
 
 /-- Over a scalar extension, the image of a linear map is spanned by its values on any basis. -/
 theorem span_range_eq_span_range_basis
@@ -32,4 +32,55 @@ theorem span_range_eq_span_range_basis
   congr 1
   rw [Set.range_comp]
 
-end TauCeti
+/-- A coordinate outside a set of basis indices vanishes on the span of those basis vectors. -/
+theorem repr_eq_zero_of_mem_span_range
+    {R V ι κ : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    (b : Module.Basis ι R V) (e : κ → ι) {x : V} {i : ι}
+    (hx : x ∈ Submodule.span R (Set.range fun k => b (e k)))
+    (hi : i ∉ Set.range e) : b.repr x i = 0 := by
+  have hset : Set.range (fun k => b (e k)) = b '' Set.range e := by
+    simpa only [Function.comp_def] using (Set.range_comp (b : ι → V) e)
+  have hx' : x ∈ Submodule.span R (b '' Set.range e) := by
+    rw [← hset]
+    exact hx
+  have hsupp := b.mem_span_image.mp hx'
+  exact Finsupp.notMem_support_iff.mp fun himem => hi (hsupp himem)
+
+end Module.Basis
+
+namespace LinearMap
+
+/-- Composing through the range restriction does not change a composite linear map's range. -/
+theorem range_comp_rangeRestrict
+    {R V W N : Type*} [Semiring R]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
+    [AddCommMonoid N] [Module R N]
+    (f : V →ₗ[R] W) (g : W →ₗ[R] N) :
+    Set.range (g.comp f) = Set.range (g.comp f.range.subtype) := by
+  have h : (g.comp f).range = (g.comp f.range.subtype).range := by
+    simpa only [LinearMap.comp_assoc, LinearMap.subtype_comp_rangeRestrict] using
+      (LinearMap.range_comp_of_range_eq_top (g.comp f.range.subtype)
+        (LinearMap.range_rangeRestrict f))
+  simpa only [LinearMap.coe_range] using
+    congrArg (fun p : Submodule R N => (p : Set N)) h
+
+/-- Mapping a submodule into a linear map's range does not change the composite range. -/
+theorem range_comp_map_subtype
+    {R V W N : Type*} [Semiring R]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
+    [AddCommMonoid N] [Module R N]
+    (f : V →ₗ[R] W) (I : Submodule R V) (g : W →ₗ[R] N) :
+    Set.range (g.comp (f.comp I.subtype)) =
+      Set.range ((g.comp f.range.subtype).comp (I.map f.rangeRestrict).subtype) := by
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    let y : I.map f.rangeRestrict := ⟨f.rangeRestrict x, Submodule.mem_map_of_mem x.2⟩
+    exact ⟨y, rfl⟩
+  · rintro ⟨y, rfl⟩
+    obtain ⟨x, hx, hxy⟩ := y.2
+    exact ⟨⟨x, hx⟩, by
+      simp only [LinearMap.comp_apply]
+      exact congrArg g (congrArg Subtype.val hxy)⟩
+
+end LinearMap
