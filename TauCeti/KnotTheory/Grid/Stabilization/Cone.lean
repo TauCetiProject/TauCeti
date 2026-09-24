@@ -238,6 +238,7 @@ theorem stabilizeXCenterDifferential_single_apply (x y : GridState n) :
 
 /-- On chains with coefficients renamed from `R[V₀, …, V_{n-1}]`, the center differential is the
 unblocked differential of `G` followed by the renaming of the coefficients. -/
+@[simp]
 theorem stabilizeXCenterDifferential_mapRange_rename (f : GridChainMinus R n) :
     G.stabilizeXCenterDifferential s R
         (Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _) f) =

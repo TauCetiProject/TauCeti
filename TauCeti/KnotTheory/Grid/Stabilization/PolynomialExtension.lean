@@ -53,6 +53,8 @@ in the proof of stabilization invariance of `GH⁻`.
 
 ## Main results
 
+* `TauCeti.GridDiagram.polynomialExtensionIsoStabilizeXCenter_hom_f_tmul`: the isomorphism sends
+  `p ⊗ f` to the image of `p` in `S` times `f` with its coefficients renamed into `S`.
 * `TauCeti.GridDiagram.polynomialExtensionMul_comp_polynomialExtensionIsoStabilizeXCenter_hom`:
   the isomorphism intertwines multiplication by `q : A[X]` with multiplication by its image in `S`.
 * `TauCeti.GridDiagram.map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom` and
@@ -62,10 +64,11 @@ in the proof of stabilization invariance of `GH⁻`.
 
 ## References
 
-This is the identification of the stabilized complex with the mapping cone of `V₁ - V₂` on the
-polynomial extension `GC⁻(G)[V₁]` in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
-Links*, Section 5.2, and Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer
-homology*, Section 3.2.
+The identification of the center complex with the polynomial extension `GC⁻(G)[V₁]`, and of the
+cone of `V₁ - V₂` on it with `GC⁻(G)`, are steps of the stabilization argument in
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2, and
+Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.2. The
+comparison of the whole stabilized complex with that cone is not carried out here.
 -/
 
 public section
@@ -195,6 +198,15 @@ private noncomputable def polynomialExtensionXIso :
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapIso
       (eqToIso (G.stabilizeXCenterComplex_X s R ()).symm)
 
+private theorem polynomialExtensionXIso_hom :
+    (G.polynomialExtensionXIso s R).hom =
+      ModuleCat.of A (Polynomial A) ◁ eqToHom (G.unblockedComplex_X R ()) ≫
+        (centerExtensionIso s R).hom ≫
+          (ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+            (eqToHom (G.stabilizeXCenterComplex_X s R ()).symm) :=
+  rfl
+
 /-- **The center complex is the polynomial extension of `GC⁻(G)`.** After restricting scalars
 from `S = R[V₀, …, V_n]` to `A = R[V₀, …, V_{n-1}]` along the renaming of the columns of `G` into
 those of the stabilization, the complex of center states is isomorphic to `A[X] ⊗[A] GC⁻(G)`.
@@ -208,12 +220,34 @@ noncomputable def polynomialExtensionIsoStabilizeXCenter :
         (G.stabilizeXCenterComplex s R) :=
   Hom.isoOfComponents (fun _ => G.polynomialExtensionXIso s R) (by
     rintro ⟨⟩ ⟨⟩ -
-    simp only [polynomialExtensionXIso, Iso.trans_hom, MonoidalCategory.whiskerLeftIso_hom,
-      eqToIso.hom, Functor.mapIso_hom, Functor.mapHomologicalComplex_obj_d, unblockedComplex_d,
-      stabilizeXCenterComplex_d, Functor.map_comp, eqToHom_map, MonoidalCategory.whiskerLeft_comp,
-      Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, curriedTensor_obj_map,
-      MonoidalCategory.whiskerLeft_eqToHom]
-    rw [reassoc_of% (G.centerExtensionIso_hom_comp s R)])
+    simp [polynomialExtensionXIso_hom, reassoc_of% (G.centerExtensionIso_hom_comp s R)])
+
+/-- Up to the identifications of the chain modules with their underlying free modules, the
+component of `polynomialExtensionIsoStabilizeXCenter` is `centerExtensionIso`. -/
+private theorem polynomialExtensionIsoStabilizeXCenter_hom_f_eq :
+    ModuleCat.of A (Polynomial A) ◁ eqToHom (G.unblockedComplex_X R ()).symm ≫
+        (G.polynomialExtensionIsoStabilizeXCenter s R).hom.f () ≫
+          (ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+            (eqToHom (G.stabilizeXCenterComplex_X s R ())) =
+      (centerExtensionIso s R).hom := by
+  simp [polynomialExtensionIsoStabilizeXCenter, polynomialExtensionXIso_hom]
+
+/-- On a pure tensor `p ⊗ f`, the identification of `A[X] ⊗[A] GC⁻(G)` with the center complex
+is the image of `p` in `S` times `f` with its coefficients renamed into `S`. The `eqToHom`s
+identify the chain modules of `GC⁻(G)` and of the center complex with their underlying free
+modules. -/
+theorem polynomialExtensionIsoStabilizeXCenter_hom_f_tmul (p : Polynomial A)
+    (f : GridChainMinus R n) :
+    (ModuleCat.of A (Polynomial A) ◁ eqToHom (G.unblockedComplex_X R ()).symm ≫
+        (G.polynomialExtensionIsoStabilizeXCenter s R).hom.f () ≫
+          (ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+            (eqToHom (G.stabilizeXCenterComplex_X s R ()))) (p ⊗ₜ[A] f) =
+      (finSuccEquiv' R s.castSucc).symm p •
+        Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _) f := by
+  rw [polynomialExtensionIsoStabilizeXCenter_hom_f_eq]
+  exact centerExtensionEquiv_tmul s R p f
 
 /-- The identification of the center complex with the polynomial extension of `GC⁻(G)`
 intertwines multiplication by a polynomial `q : A[X]` with multiplication by its image in `S`
@@ -229,12 +263,8 @@ theorem polynomialExtensionMul_comp_polynomialExtensionIsoStabilizeXCenter_hom
             _).map
           ((finSuccEquiv' R s.castSucc).symm q • 𝟙 (G.stabilizeXCenterComplex s R)) := by
   ext ⟨⟩ : 1
-  simp only [comp_f, polynomialExtensionMul_f, polynomialExtensionIsoStabilizeXCenter,
-    Hom.isoOfComponents_hom_f, polynomialExtensionXIso, Iso.trans_hom, whiskerLeftIso_hom,
-    eqToIso.hom, Functor.mapIso_hom, Functor.mapHomologicalComplex_map_f, smul_f_apply, id_f]
-  rw [← whisker_exchange_assoc, reassoc_of% whiskerRight_mulLeft_comp_centerExtensionIso_hom,
-    Category.assoc, Category.assoc, ← Functor.map_comp, ← Functor.map_comp, Linear.comp_smul,
-    Linear.smul_comp, Category.comp_id, Category.id_comp]
+  simp [polynomialExtensionIsoStabilizeXCenter, polynomialExtensionXIso_hom,
+    reassoc_of% whiskerRight_mulLeft_comp_centerExtensionIso_hom, ← Functor.map_comp]
 
 /-! ### The mapping cone of `V_{s.succ} + V_{s.castSucc}` -/
 
