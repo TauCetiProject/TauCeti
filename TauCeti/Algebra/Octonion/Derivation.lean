@@ -621,7 +621,11 @@ def slOfVectorCovector (c d : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3)
     simp [trace_sub, trace_smul]
     ring⟩
 
-@[simp]
+/-- **`TauCeti.Octonion.slOfVectorCovector` as a matrix**. This is deliberately not `@[simp]`: the
+simp-normal form of that matrix is its action on `R³`, given by
+`TauCeti.Octonion.mulVec_slOfVectorCovector` and
+`TauCeti.Octonion.mulVec_transpose_slOfVectorCovector`, whose left-hand sides this equation would
+otherwise rewrite away. -/
 theorem coe_slOfVectorCovector (c d : Fin 3 → R) :
     (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R) =
       (3 : R) • vecMulVec c d - (c ⬝ᵥ d) • 1 :=
@@ -629,18 +633,20 @@ theorem coe_slOfVectorCovector (c d : Fin 3 → R) :
 
 /-- **The action of `TauCeti.Octonion.slOfVectorCovector` on `R³`**: the rank-one part sends `u`
 to a multiple of `c`, and the scalar part scales `u`. -/
+@[simp]
 theorem mulVec_slOfVectorCovector (c d u : Fin 3 → R) :
     (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R) *ᵥ u =
       (3 : R) • ((d ⬝ᵥ u) • c) - (c ⬝ᵥ d) • u := by
-  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, one_mulVec]
+  simp [coe_slOfVectorCovector, sub_mulVec, smul_mulVec, vecMulVec_mulVec, one_mulVec]
 
 /-- **The action of the transpose of `TauCeti.Octonion.slOfVectorCovector` on `R³`**, the mirror of
 `TauCeti.Octonion.mulVec_slOfVectorCovector` with the roles of `c` and `d` exchanged. -/
+@[simp]
 theorem mulVec_transpose_slOfVectorCovector (c d u : Fin 3 → R) :
     (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ u =
       (3 : R) • ((c ⬝ᵥ u) • d) - (c ⬝ᵥ d) • u := by
-  simp [transpose_sub, transpose_smul, sub_mulVec, smul_mulVec, transpose_vecMulVec,
-    vecMulVec_mulVec, transpose_one, one_mulVec]
+  simp [coe_slOfVectorCovector, transpose_sub, transpose_smul, sub_mulVec, smul_mulVec,
+    transpose_vecMulVec, vecMulVec_mulVec, transpose_one, one_mulVec]
 
 /-- **`𝔰𝔩₃` acts on the degree-`1` family by its defining representation**: bracketing with
 `slDerivation A` sends `vectorDerivation c` to `vectorDerivation (A c)`. -/
