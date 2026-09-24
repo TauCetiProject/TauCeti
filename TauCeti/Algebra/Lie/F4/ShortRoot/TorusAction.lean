@@ -85,7 +85,7 @@ private theorem f4Root_add_eq_zero_of_repr_lie_rootVector_inr_ne_zero
   · have hlie := f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot
     rw [hlie, map_zero] at hne
     exact (hne rfl).elim
-  · obtain ⟨ε, hε⟩ := exists_f4Root_eq_add_of_rootSpace_ne_bot α β hsum hbot
+  · obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot α β hsum hbot
     obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add α β ε hε
     rw [hlie, f4ModularChevalleyBasis_repr_smul_rootVector_inr_eq_zero] at hne
     exact (hne rfl).elim
@@ -110,7 +110,7 @@ private theorem f4ShortRootAdjointMatrix_root_root_support (α : Fin 48)
       f4ModularChevalleyBasis_inl_eq_rootVector]
     simp only [f4PinnedRootIndex_f4KillingRootLabel]
   simp only [f4ShortRootAdjointMatrix_apply, hinput, hcoord] at hne
-  have hroot := f4Root_eq_add_of_repr_lie_rootVector_ne_zero α β γ hne
+  have hroot := f4_root_eq_add_of_repr_lie_rootVector_ne_zero α β γ hne
   rw [f4ShortRootWeight_eq_root_of_eq_inl i γ hi,
     f4ShortRootWeight_eq_root_of_eq_inl j β hj]
   simpa only [f4SimplyConnectedRootDatum_root] using hroot

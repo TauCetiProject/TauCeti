@@ -24,6 +24,17 @@ open LieModule
 
 noncomputable section
 
+/-- The special root permutation preserves Cartan integers between roots of equal length. -/
+theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
+    (α β : Fin 48) (hαβ : f4Length α = f4Length β) :
+    f4SimplyConnectedRootDatum.pairing
+        (f4SpecialIsogenyIndexEquiv α) (f4SpecialIsogenyIndexEquiv β) =
+      f4SimplyConnectedRootDatum.pairing α β := by
+  have h := f4Length_mul_pairing_f4SpecialIsogenyIndex α β
+  rw [← hαβ] at h
+  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rw [hα] at h <;> omega
+
 /-- Evaluation of the quotient-to-ideal equivalence on a long root vector. -/
 theorem f4ShortRootQuotientToIdealEquiv_mkQ_rootVector
     (γ : Fin 48) (hγ : f4Length γ = 2) :
@@ -70,7 +81,7 @@ private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum
           coe_f4ShortRootLieIdealBasis_symm_inl]
       _ = 0 := f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot
       _ = ((0 : f4ShortRootLieIdeal) : f4ModularChevalleyLieAlgebra) := rfl
-  · obtain ⟨δ, hδroot⟩ := exists_f4Root_eq_add_of_rootSpace_ne_bot α β hsum hbot
+  · obtain ⟨δ, hδroot⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot α β hsum hbot
     have hδlong : f4Length δ = 2 := by
       rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
       · exact False.elim (hno δ hδ hδroot)
@@ -207,14 +218,14 @@ private theorem exists_f4SignedLongCoroot_quotient_ideal_coordinate
     contradiction
   · exact ⟨13,
       (congrArg f4ShortRootSubspace.mkQ
-        (f4ModularCoroot_signedSimpleRootIndex_inr_eq_inl 0)).trans hzero,
+        (by simp)).trans hzero,
       (coe_f4ShortRootLieIdealBasis_thirteen.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]
         rfl)).symm⟩
   · exact ⟨12,
       (congrArg f4ShortRootSubspace.mkQ
-        (f4ModularCoroot_signedSimpleRootIndex_inr_eq_inl 1)).trans hone,
+        (by simp)).trans hone,
       (coe_f4ShortRootLieIdealBasis_twelve.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]

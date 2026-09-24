@@ -432,9 +432,22 @@ theorem f4KillingRootLabel_surjective : Function.Surjective f4KillingRootLabel :
   simp only [f4KillingRootLabel, f4RootIndex, Fin.cast_cast, Fin.cast_eq_self]
   exact Equiv.apply_symm_apply (F4.rationalRootSystemEquiv valid_F4).indexEquiv γ
 
+/-- An edge labelled by a nonzero root changes the pinned root label. -/
+theorem f4KillingRootLabel_ne_of_root_eq_add (α β γ : Fin 48)
+    (hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
+    f4KillingRootLabel β ≠ f4KillingRootLabel γ := by
+  intro heq
+  have hindex : β = γ := f4KillingRoot_injective (congrArg Subtype.val heq)
+  have hzero : f4SimplyConnectedRootDatum.root α = 0 := by
+    apply add_left_cancel (a := f4SimplyConnectedRootDatum.root β)
+    simpa only [add_zero, hindex] using hγ.symm
+  exact f4SimplyConnectedRootDatum.ne_zero α hzero
+
+
 /-- A nonzero weight whose root space is present has a pinned index, including when it is
 presented as an endpoint of a root string. -/
-theorem exists_f4Root_eq_add_zsmul_of_rootSpace_ne_bot
+theorem exists_f4_root_eq_add_zsmul_of_rootSpace_ne_bot
     (α β : Fin 48) (n : ℕ)
     (hsum : (f4KillingRoot β : (F4.cartanSubalgebra valid_F4) → ℚ) +
       n • f4KillingRoot α ≠ 0)
@@ -457,7 +470,31 @@ theorem exists_f4Root_eq_add_zsmul_of_rootSpace_ne_bot
   apply (f4KillingRoot_eq_add_zsmul_iff α β γ n).mp
   have hγweight : f4KillingRoot γ = γweight := congrArg Subtype.val hγlabel
   rw [hγweight]
+  -- Both sides are the toFun field of the locally constructed weight.
   rfl
+
+/-- A nonzero, present sum of two Killing roots has the corresponding pinned integral root
+label. -/
+theorem exists_f4_root_eq_add_of_rootSpace_ne_bot
+    (δ β : Fin 48)
+    (hsum : (f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
+      f4KillingRoot β ≠ 0)
+    (hbot : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
+        f4KillingRoot β) ≠ ⊥) :
+    ∃ ε : Fin 48, f4SimplyConnectedRootDatum.root ε =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
+  have hsum' : (f4KillingRoot β : (F4.cartanSubalgebra valid_F4) → ℚ) +
+      (1 : ℕ) • f4KillingRoot δ ≠ 0 := by
+    rw [one_smul, add_comm]
+    exact hsum
+  have hbot' : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot β : (F4.cartanSubalgebra valid_F4) → ℚ) +
+        (1 : ℕ) • f4KillingRoot δ) ≠ ⊥ := by
+    rw [one_smul, add_comm]
+    exact hbot
+  simpa only [Nat.cast_one, one_zsmul] using
+    exists_f4_root_eq_add_zsmul_of_rootSpace_ne_bot δ β 1 hsum' hbot'
 
 /-- A missing endpoint in the pinned root string forces the corresponding adjoint power to
 vanish. The only excluded case is the string through the opposite root. -/
@@ -489,24 +526,8 @@ theorem f4_ad_pow_rootVector_eq_zero_of_no_endpoint (α β : Fin 48) (n : ℕ)
         exact γ.genWeightSpace_ne_bot'
       simpa only [Nat.cast_smul_eq_nsmul] using hspace'
     obtain ⟨δ, hδ⟩ :=
-      exists_f4Root_eq_add_zsmul_of_rootSpace_ne_bot α β n hweight hspace
+      exists_f4_root_eq_add_zsmul_of_rootSpace_ne_bot α β n hweight hspace
     exact (hno δ hδ).elim
-
-/-- In characteristic zero, the second divided adjoint power vanishes exactly when the
-ordinary second adjoint power does. -/
-theorem f4_dividedPower_two_ad_smul_eq_zero_iff (α : Fin 48)
-    (y : F4.lieAlgebra valid_F4) :
-    Associative.dividedPower 2
-        (ad ℚ (F4.lieAlgebra valid_F4)
-          (f4ChevalleyRootVector (f4KillingRoot α))) • y = 0 ↔
-      ((ad ℚ (F4.lieAlgebra valid_F4)
-        (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2) y = 0 := by
-  rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply]
-  constructor
-  · intro h
-    exact (smul_eq_zero.mp h).resolve_left (by norm_num)
-  · intro h
-    rw [h, smul_zero]
 
 /-- A missing second root-string endpoint makes the second adjoint divided power vanish. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
@@ -518,7 +539,7 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  exact (f4_dividedPower_two_ad_smul_eq_zero_iff α _).2
+  exact (Associative.dividedPower_apply_eq_zero_iff _ 2 _).2
     (f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 2 hopp hno)
 
 /-- The second divided adjoint power sends the opposite root vector to the negative root vector. -/
@@ -544,7 +565,7 @@ theorem f4_dividedPower_two_ad_rootVector_opposite (α : Fin 48) :
       f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_coroot a a,
       root_apply_coroot ha]
     module
-  rw [hop, Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
+  rw [hop, Associative.dividedPower_apply, pow_two,
     Module.End.mul_apply, h1, h2, smul_smul]
   norm_num
   rfl
@@ -563,9 +584,7 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
   · have hneg : f4SimplyConnectedRootDatum.root β ≠
         -f4SimplyConnectedRootDatum.root α := by
       intro h
-      apply hopp
-      simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
-        (f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
+      exact hopp ((f4Root_eq_neg_iff α β).mp h)
     exact (f4_not_root_eq_short_add_nsmul_short_of_two_le α β δ 2 hα hβ hneg
       (by omega) hpinned).elim
   · have hn :=
@@ -584,16 +603,7 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
   apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
   intro γ hγ
-  have hpairLower := f4_pairing_ge_neg_one_of_long_ne_opposite α β hα hβ hopp
-  rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
-  have hlen := f4Length_of_root_eq_add_zsmul α β γ 2 hγ
-  rcases f4Length_eq_one_or_eq_two γ with hlenγ | hlenγ
-  · rw [hα, hβ, hlenγ] at hlen
-    norm_num at hlen
-    omega
-  · rw [hα, hβ, hlenγ] at hlen
-    norm_num at hlen
-    omega
+  exact (f4_not_root_eq_long_add_two_long_of_ne_opposite α β γ hα hβ hopp hγ).elim
 
 /-- The second divided adjoint power annihilates every Cartan element. -/
 theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
@@ -608,9 +618,21 @@ theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
     rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
       LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace
       (f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.mem_rootSpace _), neg_smul]
-  rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
+  rw [Associative.dividedPower_apply, pow_two,
     Module.End.mul_apply, ad_apply, ad_apply, hfirst, lie_smul, lie_self, smul_zero,
     smul_zero]
+
+/-- A vanishing divided square forces the third adjoint power to vanish. -/
+theorem f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero
+    (α : Fin 48) (y : F4.lieAlgebra valid_F4)
+    (h : Associative.dividedPower 2
+      (ad ℚ (F4.lieAlgebra valid_F4)
+        (f4ChevalleyRootVector (f4KillingRoot α))) • y = 0) :
+    ((ad ℚ (F4.lieAlgebra valid_F4)
+      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3) y = 0 := by
+  have hpow := (Associative.dividedPower_apply_eq_zero_iff _ 2 y).mp h
+  have hthree : (3 : ℕ) = 2 + 1 := by omega
+  rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
 
 /-- Three adjoint applications annihilate every F4 root vector, regardless of root length. -/
 theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
@@ -621,7 +643,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
   by_cases hopp : β = f4OppositeRootIndex α
   · subst β
     have hdiv := f4_dividedPower_two_ad_rootVector_opposite α
-    rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
+    rw [Associative.dividedPower_apply] at hdiv
     have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
         (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
           (f4ChevalleyRootVector (f4KillingRoot (f4OppositeRootIndex α))) =
@@ -633,23 +655,13 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       lie_self, smul_zero]
   · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
     · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
-      have hpow := (f4_dividedPower_two_ad_smul_eq_zero_iff α _).1 hdiv
-      rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
+      exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
     · rcases f4Length_eq_one_or_eq_two α with hα | hα
       · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
         intro δ hpinned
-        have hlen := f4Length_of_root_eq_add_zsmul α β δ 3 hpinned
-        have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
-        have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
-          (abs_le.mp hpair).1
-        rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
-        rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
-        all_goals rw [hα, hβ, hδ] at hlen
-        all_goals norm_num at hlen
-        all_goals omega
+        exact (f4_not_root_eq_long_add_three_short α β δ hα hβ hpinned).elim
       · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hβ hopp
-        have hpow := (f4_dividedPower_two_ad_smul_eq_zero_iff α _).1 hdiv
-        rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
+        exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
 
 /-- The third adjoint power annihilates every Cartan element. -/
 theorem f4_ad_pow_three_cartan_eq_zero (α : Fin 48)
@@ -658,9 +670,7 @@ theorem f4_ad_pow_three_cartan_eq_zero (α : Fin 48)
       (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
         (h : F4.lieAlgebra valid_F4) = 0 := by
   have hdiv := f4_dividedPower_two_ad_cartan_eq_zero α h
-  have hpow := (f4_dividedPower_two_ad_smul_eq_zero_iff α _).1 hdiv
-  have hthree : (3 : ℕ) = 2 + 1 := by omega
-  rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
+  exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
 
 
 end

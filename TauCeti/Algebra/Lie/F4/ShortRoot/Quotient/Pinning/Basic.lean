@@ -639,7 +639,7 @@ private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_edge
   have hbot : rootSpace H
       ((f4KillingRoot α : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥ := by
     by_contra hne
-    obtain ⟨δ, hδroot⟩ := exists_f4Root_eq_add_of_rootSpace_ne_bot α β hsum hne
+    obtain ⟨δ, hδroot⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot α β hsum hne
     have hδshort : f4Length δ = 1 := by
       have hlen := f4Length_of_root_eq_add_zsmul α β δ 1
         (by simpa only [one_zsmul] using hδroot)

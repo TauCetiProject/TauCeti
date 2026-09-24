@@ -154,7 +154,7 @@ theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
               (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
           f4ChevalleyRootVector (f4KillingRoot β) =
         (ε : ℚ) • f4ChevalleyRootVector (f4KillingRoot γ) := by
-    rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply]
+    rw [Associative.dividedPower_apply]
     exact hε
   have hintegral :
       f4IntegralDividedAdjointSquare k (f4IntegralRootVector β) =
@@ -202,6 +202,7 @@ theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short
     (f4_dividedPower_two_ad_rootVector_eq_zero_of_short
       (f4SignedSimpleRootIndex k) i hi hopp)
 
+/-- Modulo two, the divided square vanishes when the second root-string endpoint is absent. -/
 theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
     (hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k))

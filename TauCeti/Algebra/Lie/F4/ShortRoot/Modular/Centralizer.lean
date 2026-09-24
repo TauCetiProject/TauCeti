@@ -34,24 +34,6 @@ open _root_.LieAlgebra _root_.LieAlgebra.IsKilling LieModule Module Set
 
 noncomputable section
 
-private theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
-    (δ β γ : Fin 48)
-    (h : f4SimplyConnectedRootDatum.root γ ≠
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ) :
-    f4ModularChevalleyBasis.repr
-      ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-        (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  by_contra hne
-  exact h (f4Root_eq_add_of_repr_lie_rootVector_ne_zero δ β γ hne)
-
-private theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
-    (i : Fin F4.rank) (β γ : Fin 48) (hβγ : f4KillingRootLabel β ≠ f4KillingRootLabel γ) :
-    f4ModularChevalleyBasis.repr
-      ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
-        (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  rw [f4Modular_lie_simpleCoroot_rootVector]
-  exact f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero _ β γ hβγ
-
 private theorem f4ModularChevalleyBasis_repr_lie_summand_eq_zero_of_ne_long
     (X : f4ModularChevalleyLieAlgebra) (α β γ : Fin 48)
     (hγ : f4SimplyConnectedRootDatum.root γ =
@@ -109,11 +91,12 @@ private theorem f4ModularChevalleyBasis_repr_lie_distinguished_eq_one
   have hlie : ⁅f4ModularChevalleyBasis (Sum.inl (f4KillingRootLabel α)),
       f4ModularRootVector β⁆ = f4ModularRootVector γ :=
     congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis |>.trans hbracket
-  exact congrArg
-    (fun Y => f4ModularChevalleyBasis.repr Y
-      (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans (by
-        rw [f4ModularRootVector_eq_basis, f4ModularChevalleyBasis.repr_self,
-          Finsupp.single_eq_same])
+  calc
+    _ = f4ModularChevalleyBasis.repr (f4ModularRootVector γ)
+        (Sum.inl (f4KillingRootLabel γ)) :=
+      congrArg (fun Y => f4ModularChevalleyBasis.repr Y
+        (Sum.inl (f4KillingRootLabel γ))) hlie
+    _ = 1 := f4ModularChevalleyBasis_repr_rootVector_self γ
 
 private theorem f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     (X : f4ModularChevalleyLieAlgebra) (α β γ : Fin 48)
@@ -142,15 +125,6 @@ private theorem f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     _ = _ := by
       rw [f4ModularChevalleyBasis_repr_lie_distinguished_eq_one α β γ hbracket,
         mul_one]
-
-private theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
-    (δ β : Fin 48) :
-    f4ModularChevalleyBasis.repr
-      ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-        (Sum.inl (f4KillingRootLabel β)) = 0 := by
-  apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
-  intro h
-  exact f4KillingRootLabel_ne_of_root_eq_add δ β β h rfl
 
 private noncomputable def f4CartanCoordinates
     (X : f4ModularChevalleyLieAlgebra) : Fin 4 → ZMod 2 := fun i =>
@@ -234,15 +208,11 @@ private theorem f4CartanCoordinates_eq_zero
     f4CartanCoordinates X = 0 := by
   apply eq_zero_of_f4Root_smul_eq_zero_on_short
   intro β hβ
-  have hsum := f4ModularChevalleyBasis_repr_lie_eq_sum X
+  have hsum := Module.Basis.repr_lie_eq_sum f4ModularChevalleyBasis X
     (f4ModularRootVector β) (Sum.inl (f4KillingRootLabel β))
   have hzero : f4ModularChevalleyBasis.repr
       ⁅X, f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel β)) = 0 := by
-    exact congrArg
-      (fun Y => f4ModularChevalleyBasis.repr Y
-        (Sum.inl (f4KillingRootLabel β))) (hcentral β hβ) |>.trans
-          (congrArg (fun g => g (Sum.inl (f4KillingRootLabel β)))
-            (map_zero f4ModularChevalleyBasis.repr))
+    exact f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero (hcentral β hβ) _
   have htotal : (∑ i : f4ChevalleyIndex,
       f4ModularChevalleyBasis.repr X i *
         f4ModularChevalleyBasis.repr
@@ -290,15 +260,11 @@ private theorem f4ModularChevalleyBasis_repr_eq_zero_of_long
   have hbracket : ⁅f4ModularRootVector α, f4ModularRootVector β⁆ =
       f4ModularRootVector γ :=
     f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ hγ hbot
-  have hsum := f4ModularChevalleyBasis_repr_lie_eq_sum X
+  have hsum := Module.Basis.repr_lie_eq_sum f4ModularChevalleyBasis X
     (f4ModularRootVector β) (Sum.inl (f4KillingRootLabel γ))
   have hzero : f4ModularChevalleyBasis.repr
       ⁅X, f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-    exact congrArg
-      (fun Y => f4ModularChevalleyBasis.repr Y
-        (Sum.inl (f4KillingRootLabel γ))) (hcentral β hβ) |>.trans
-          (congrArg (fun f => f (Sum.inl (f4KillingRootLabel γ)))
-            (map_zero f4ModularChevalleyBasis.repr))
+    exact f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero (hcentral β hβ) _
   have hsingle := f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     X α β γ hγ hbracket
   exact hsingle ▸ hsum.symm.trans hzero

@@ -49,6 +49,7 @@ noncomputable def f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
     (x : F4.lieAlgebra valid_F4) :
     f4RootAdjointDerivation k x =
       ⁅f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)), x⁆ := by
+  -- The derivation coerces through its underlying linear map; `rw` does not see that coercion.
   change (f4RootAdjointDerivation k).toLinearMap x = _
   rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply, ad_apply]
 
@@ -76,7 +77,7 @@ theorem isNilpotent_f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
   exact f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.isNilpotent_ad_rootVector
     (f4KillingRoot (f4SignedSimpleRootIndex k))
 
-/-- The third adjoint power vanishes on each integral short-root vector. -/
+/-- The third adjoint power vanishes on every integral root vector. -/
 theorem f4RootAdjointDerivation_pow_three_integralRootVector
     (k : Fin 4 ⊕ Fin 4) (i : Fin 48) :
     ((f4RootAdjointDerivation k).toLinearMap ^ 3)
@@ -393,7 +394,7 @@ theorem f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
         (f4ShortRootLieIdealBasis.baseChange A))
         (f4ShortRootBaseChangeAdjoint_cancel_tmul x)
     _ = _ :=
-      (Module.Basis.toMatrix_baseChange (S := A) f4ShortRootLieIdealBasis
+      (Module.Basis.toMatrix_baseChange_baseChange (S := A) f4ShortRootLieIdealBasis
         (f4ShortRootAdjoint x)).trans
         (congrArg (fun m : Matrix (Fin 26) (Fin 26) (ZMod 2) =>
           m.map (algebraMap (ZMod 2) A))
@@ -540,20 +541,76 @@ theorem f4RootExponential_intertwines {A : Type*} [CommRing A]
     f4ShortRootExponential (A := A) k 0 = 1 := by
   simp [f4ShortRootExponential]
 
+/-- In the scalar-extended canonical basis, the modular root exponential is the existing sparse
+root matrix plus its divided-square term. -/
+theorem f4ShortRootExponential_toMatrix {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A) :
+    LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
+        (f4ShortRootLieIdealBasis.baseChange A) (f4ShortRootExponential k t) =
+      1 + t • (rootMatrix k).map (Int.cast : ℤ → A) +
+        t ^ 2 • (rootDividedSquareMatrix k).map (Int.cast : ℤ → A) := by
+  let B := f4ShortRootLieIdealBasis.baseChange A
+  let T := LinearMap.toMatrixAlgEquiv B
+  have hbase (f : Module.End (ZMod 2) f4ShortRootLieIdeal) :
+      T (f.baseChange A) =
+        (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis f).map
+          (algebraMap (ZMod 2) A) := by
+    -- Here `B` abbreviates the scalar-extended basis.
+    change LinearMap.toMatrix B B (f.baseChange A) = _
+    exact Module.Basis.toMatrix_baseChange_baseChange (S := A) f4ShortRootLieIdealBasis f
+  have hd1matrix : LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
+      (f4ShortRootSignedSimpleAdjoint k) = f4ShortRootSignedSimpleAdjointMatrix k := by
+    ext i j
+    exact (LinearMap.toMatrix_apply _ _ _ _ _).trans
+      (f4ShortRootSignedSimpleAdjointMatrix_apply k i j).symm
+  -- Here `T` is the matrix algebra equivalence applied to the defining quadratic polynomial.
+  change T (1 + t • (f4ShortRootSignedSimpleAdjoint k).baseChange A +
+      t ^ 2 • (f4ShortRootDividedAdjointSquare k).baseChange A) = _
+  simp only [map_add, map_smul, map_one, hbase, hd1matrix,
+    f4ShortRootSignedSimpleAdjointMatrix_eq_rootMatrix_map,
+    f4ShortRootDividedAdjointSquare_toMatrix, Matrix.map_map]
+  simp only [Function.comp_def, map_intCast]
+
+/-- The induced root exponential is exactly the existing carrier root-subgroup point. -/
+theorem f4ShortRootExponential_toMatrix_eq_rootSubgroupPoints
+    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+    (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
+    LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
+        (f4ShortRootLieIdealBasis.baseChange A)
+        (f4ShortRootExponential k (Multiplicative.toAdd u)) =
+      ((rootSubgroupPoints k A u : Matrix.GeneralLinearGroup (Fin 26) A) :
+        Matrix (Fin 26) (Fin 26) A) := by
+  exact (f4ShortRootExponential_toMatrix k (Multiplicative.toAdd u)).trans
+    (coe_rootSubgroupPoints_eq k A u).symm
+
 /-- Restricted root actions compose by addition of their parameters. -/
 theorem f4ShortRootExponential_add {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t u : A) :
     f4ShortRootExponential k (t + u) =
       f4ShortRootExponential k t * f4ShortRootExponential k u := by
-  apply LinearMap.ext
-  intro z
-  apply f4ShortRootBaseChangeInclusion_injective
-  have h := congrArg (fun e : A ⊗[ℤ] f4ChevalleyLieLattice ≃ₗ⁅A⁆
-      A ⊗[ℤ] f4ChevalleyLieLattice =>
-        e (f4ShortRootBaseChangeInclusion (A := A) z))
-    (f4RootExponentialLieEquiv_trans (A := A) k u t)
-  simpa only [add_comm u t, LieEquiv.trans_apply, f4RootExponentialLieEquiv_apply,
-    f4RootExponential_intertwines, Module.End.mul_apply] using h.symm
+  let B := f4ShortRootLieIdealBasis.baseChange A
+  apply (LinearMap.toMatrixAlgEquiv B).injective
+  calc
+    LinearMap.toMatrix B B (f4ShortRootExponential k (t + u)) =
+        ((rootSubgroupPoints k A (Multiplicative.ofAdd (t + u)) :
+          Matrix.GeneralLinearGroup (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) := by
+      simpa only [B, toAdd_ofAdd] using
+        f4ShortRootExponential_toMatrix_eq_rootSubgroupPoints k
+          (Multiplicative.ofAdd (t + u))
+    _ = ((rootSubgroupPoints k A (Multiplicative.ofAdd t) :
+          Matrix.GeneralLinearGroup (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) *
+        ((rootSubgroupPoints k A (Multiplicative.ofAdd u) :
+          Matrix.GeneralLinearGroup (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) := by
+      rw [ofAdd_add, map_mul]
+      rfl
+    _ = (LinearMap.toMatrixAlgEquiv B) (f4ShortRootExponential k t) *
+        (LinearMap.toMatrixAlgEquiv B) (f4ShortRootExponential k u) := by
+      exact congrArg₂ (· * ·)
+        (f4ShortRootExponential_toMatrix_eq_rootSubgroupPoints k
+          (Multiplicative.ofAdd t)).symm
+        (f4ShortRootExponential_toMatrix_eq_rootSubgroupPoints k
+          (Multiplicative.ofAdd u)).symm
+    _ = _ := (map_mul (LinearMap.toMatrixAlgEquiv B) _ _).symm
 
 /-- The action with opposite parameter is a left inverse. -/
 @[simp] theorem f4ShortRootExponential_neg_mul {A : Type*} [CommRing A]
@@ -628,48 +685,6 @@ theorem f4ShortRootExponential_mul_adjoint
     f4ShortRootBaseChangeAdjoint (f4RootExponential k t x)
       (f4ShortRootExponential k t z)
   exact f4ShortRootExponential_adjoint_intertwines k t x z
-
-/-- In the scalar-extended canonical basis, the modular root exponential is the existing sparse
-root matrix plus its divided-square term. -/
-theorem f4ShortRootExponential_toMatrix {A : Type*} [CommRing A]
-    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A) :
-    LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
-        (f4ShortRootLieIdealBasis.baseChange A) (f4ShortRootExponential k t) =
-      1 + t • (rootMatrix k).map (Int.cast : ℤ → A) +
-        t ^ 2 • (rootDividedSquareMatrix k).map (Int.cast : ℤ → A) := by
-  let B := f4ShortRootLieIdealBasis.baseChange A
-  let T := LinearMap.toMatrixAlgEquiv B
-  have hbase (f : Module.End (ZMod 2) f4ShortRootLieIdeal) :
-      T (f.baseChange A) =
-        (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis f).map
-          (algebraMap (ZMod 2) A) := by
-    -- Here `B` abbreviates the scalar-extended basis.
-    change LinearMap.toMatrix B B (f.baseChange A) = _
-    exact Module.Basis.toMatrix_baseChange (S := A) f4ShortRootLieIdealBasis f
-  have hd1matrix : LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
-      (f4ShortRootSignedSimpleAdjoint k) = f4ShortRootSignedSimpleAdjointMatrix k := by
-    ext i j
-    exact (LinearMap.toMatrix_apply _ _ _ _ _).trans
-      (f4ShortRootSignedSimpleAdjointMatrix_apply k i j).symm
-  -- Here `T` is the matrix algebra equivalence applied to the defining quadratic polynomial.
-  change T (1 + t • (f4ShortRootSignedSimpleAdjoint k).baseChange A +
-      t ^ 2 • (f4ShortRootDividedAdjointSquare k).baseChange A) = _
-  simp only [map_add, map_smul, map_one, hbase, hd1matrix,
-    f4ShortRootSignedSimpleAdjointMatrix_eq_rootMatrix_map,
-    f4ShortRootDividedAdjointSquare_toMatrix, Matrix.map_map]
-  simp only [Function.comp_def, map_intCast]
-
-/-- The induced root exponential is exactly the existing carrier root-subgroup point. -/
-theorem f4ShortRootExponential_toMatrix_eq_rootSubgroupPoints
-    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
-    (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
-    LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
-        (f4ShortRootLieIdealBasis.baseChange A)
-        (f4ShortRootExponential k (Multiplicative.toAdd u)) =
-      ((rootSubgroupPoints k A u : Matrix.GeneralLinearGroup (Fin 26) A) :
-        Matrix (Fin 26) (Fin 26) A) := by
-  exact (f4ShortRootExponential_toMatrix k (Multiplicative.toAdd u)).trans
-    (coe_rootSubgroupPoints_eq k A u).symm
 
 /-- In the canonical matrix coordinates, left multiplication by a root exponential intertwines
 the represented adjoint operator with the operator of the transformed ambient vector. -/
