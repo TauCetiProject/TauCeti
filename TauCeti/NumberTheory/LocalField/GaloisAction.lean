@@ -110,6 +110,17 @@ theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
   (rfl)
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- Restricting the scalars of an automorphism along a tower `L/K'/K` does not change its action
+on the ring of integers of `L`. -/
+@[simp]
+theorem restrictScalars_smul_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
+    [TopologicalSpace K'] [IsNonarchimedeanLocalField K'] [Algebra K K'] [Algebra K' L]
+    [IsScalarTower K K' L] [ValuativeExtension K' L] [Module.Finite K' L]
+    (σ : L ≃ₐ[K'] L) (x : 𝒪[L]) :
+    σ.restrictScalars K • x = σ • x :=
+  Subtype.ext (by rw [coe_smul_integerRing, coe_smul_integerRing, restrictScalars_apply])
+
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where
   toFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ x, by
@@ -211,5 +222,17 @@ theorem residueField_toAlgAut_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
       σ.residueFieldEquiv x := by
   simpa only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply] using
     (AlgEquiv.residueFieldEquiv_apply σ x).symm
+
+/-- An automorphism of a finite extension is determined by its action on the ring of integers,
+since every element of `L` becomes integral after multiplication by a nonzero integer of `K`. -/
+instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
+  eq_of_smul_eq_smul {σ τ} h := AlgEquiv.ext fun y ↦ by
+    obtain ⟨a, ha, hay⟩ := exists_algebraMap_mul_mem_integerRing K L y
+    have hσ : ((σ • ⟨_, hay⟩ : 𝒪[L]) : L) = ((τ • ⟨_, hay⟩ : 𝒪[L]) : L) := by rw [h]
+    have ha' : algebraMap K L (a : K) ≠ 0 :=
+      (map_ne_zero _).2 (Subtype.coe_ne_coe.2 ha)
+    rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
+      AlgEquiv.commutes, AlgEquiv.commutes] at hσ
+    exact mul_left_cancel₀ ha' hσ
 
 end TauCeti
