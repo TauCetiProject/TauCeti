@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Int.Order.Units
 public import Mathlib.Data.PNat.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.InformationTheory.Hamming
@@ -190,19 +191,28 @@ section Fintype
 
 variable [Fintype ι] [Fintype κ]
 
-private theorem intCast_unit_sq (u : ℤˣ) : (u : R) ^ 2 = 1 := by
-  rcases Int.units_eq_one_or u with rfl | rfl <;> simp
-
 /-- A signed coordinate change preserves the standard dot product. -/
 theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
     signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
-  rw [dotProduct, ← Equiv.sum_comp e]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [signedEquiv_apply, signedEquiv_apply, Equiv.symm_apply_apply]
   calc
-    (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
-    _ = x i * y i := by rw [intCast_unit_sq]; simp
+    signedEquiv u e x ⬝ᵥ signedEquiv u e y =
+        ((fun i ↦ (u i : R) * x i) ∘ e.symm) ⬝ᵥ
+          ((fun i ↦ (u i : R) * y i) ∘ e.symm) := by
+            congr 1
+    _ = (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) :=
+      comp_equiv_dotProduct_comp_equiv _ _ e.symm
+    _ = x ⬝ᵥ y := by
+      simp only [dotProduct]
+      apply Finset.sum_congr rfl
+      intro i _
+      have hu : (u i : R) ^ 2 = 1 := by
+        calc
+          (u i : R) ^ 2 = (((u i : ℤ) ^ 2 : ℤ) : R) := by norm_cast
+          _ = 1 := by simp only [← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one,
+            Int.cast_one]
+      calc
+        (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
+        _ = x i * y i := by rw [hu]; simp
 
 end Fintype
 
