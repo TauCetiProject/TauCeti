@@ -105,6 +105,7 @@ theorem simple_mem_parabolic {J : Set B} {i : B} (hi : i ∈ J) : s i ∈ cs.par
 /-- **The universal property of a standard parabolic subgroup.** It is the smallest subgroup of `W`
 containing the simple reflections indexed by `J`: it is contained in a subgroup `H` exactly when
 `s i ∈ H` for every `i ∈ J`. -/
+@[simp]
 theorem parabolic_le_iff {J : Set B} {H : Subgroup W} :
     cs.parabolic J ≤ H ↔ ∀ i ∈ J, s i ∈ H := by
   rw [parabolic, Subgroup.closure_le, Set.image_subset_iff]
@@ -201,17 +202,11 @@ theorem simple_mem_parabolic_of_isReduced {J : Set B} :
     have hlen : ℓ (π (a :: ω)) = ω.length + 1 := by simpa using hred.eq
     have hcancel : π ω = s a * π (a :: ω) := by
       rw [cs.wordProd_cons, cs.simple_mul_simple_cancel_left]
-    have hle : ℓ (π ω) ≤ ω.length := cs.length_wordProd_le ω
-    have hge : ω.length ≤ ℓ (π ω) := by
-      have h := cs.length_mul_le (s a) (π ω)
-      rw [← cs.wordProd_cons, hlen, cs.length_simple] at h
-      omega
+    have hredω : cs.IsReduced ω := by simpa using hred.drop 1
     have hdesc : cs.IsLeftDescent (π (a :: ω)) a :=
-      cs.isLeftDescent_iff.mpr (by rw [← hcancel, hlen]; omega)
+      cs.isLeftDescent_iff.mpr (by rw [← hcancel, hlen, hredω.eq])
     have hsa : s a ∈ cs.parabolic J := cs.simple_mem_parabolic_of_isLeftDescent hw hdesc
     have hωmem : π ω ∈ cs.parabolic J := by rw [hcancel]; exact mul_mem hsa hw
-    -- `IsReduced` is by definition a length equation; Mathlib has no introduction lemma for it.
-    have hredω : cs.IsReduced ω := show ℓ (π ω) = ω.length from le_antisymm hle hge
     intro i hi
     rcases List.mem_cons.mp hi with rfl | hi
     · exact hsa
@@ -263,11 +258,8 @@ theorem length_mul_of_isMinimalCosetRep {J : Set B} {u : W} (hu : cs.IsMinimalCo
     have hsplit : π (ω' ++ [j]) = π ω' * s j := by
       rw [cs.wordProd_append, cs.wordProd_singleton]
     have hv' : π ω' ∈ cs.parabolic J := cs.wordProd_mem_parabolic hω'J
-    have hω'length : ℓ (π ω') = n := by
-      have hle : ℓ (π ω') ≤ n := hω'len ▸ cs.length_wordProd_le ω'
-      have hbound := cs.length_mul_le (π ω') (s j)
-      rw [← hsplit, hvn, cs.length_simple] at hbound
-      omega
+    have hω'red : cs.IsReduced ω' := by simpa using hred.take ω'.length
+    have hω'length : ℓ (π ω') = n := by rw [hω'red.eq, hω'len]
     have hIH : ℓ (u * π ω') = ℓ u + n := by rw [ih (π ω') hv' (by omega), hω'length]
     rw [hvn, hsplit, ← mul_assoc]
     rcases cs.length_mul_simple (u * π ω') j with h1 | h1
@@ -311,6 +303,7 @@ theorem length_mul_of_isMinimalCosetRep {J : Set B} {u : W} (hu : cs.IsMinimalCo
       omega
 
 /-- Minimality in the coset is the absence of right descents inside `J`. -/
+@[simp]
 theorem isMinimalCosetRep_iff {J : Set B} {u : W} :
     cs.IsMinimalCosetRep J u ↔ ∀ i ∈ J, ¬ cs.IsRightDescent u i := by
   refine ⟨fun hu i hi hdesc => ?_, fun hu => ?_⟩
@@ -338,17 +331,13 @@ theorem isMinimalCosetRep_iff {J : Set B} {u : W} :
   have hcat : π ω' * s i = v₀⁻¹ := by
     rw [← hprod, cs.wordProd_append, cs.wordProd_singleton]
   have hlen : ℓ v₀⁻¹ = ω'.length + 1 := by rw [← hprod, hred.eq]; simp
-  have hω'len : ℓ (π ω') = ω'.length := by
-    refine le_antisymm (cs.length_wordProd_le ω') ?_
-    have hbound := cs.length_mul_le (π ω') (s i)
-    rw [hcat, hlen, cs.length_simple] at hbound
-    omega
+  have hω'red : cs.IsReduced ω' := by simpa using hred.take ω'.length
   have hlast : v₀⁻¹ * s i = π ω' := by
     rw [← hcat, mul_assoc, cs.simple_mul_simple_self, mul_one]
   have heq : u * s i = u * v₀ * π ω' := by
     rw [← hlast, ← mul_assoc, mul_assoc u v₀ v₀⁻¹, mul_inv_cancel, mul_one]
   have hfact : ℓ (u * s i) = ℓ (u * v₀) + ω'.length := by
-    rw [heq, cs.length_mul_of_isMinimalCosetRep hmin hω'mem, hω'len]
+    rw [heq, cs.length_mul_of_isMinimalCosetRep hmin hω'mem, hω'red.eq]
   exact hu i hiJ (cs.isRightDescent_iff.mpr (by omega))
 
 /-- **Every element of `W` factors uniquely as a minimal coset representative times an element of
