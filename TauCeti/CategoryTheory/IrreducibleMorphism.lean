@@ -263,13 +263,13 @@ theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImage f]
 
 /-- An irreducible morphism with an image in a balanced category with equalizers is a
 monomorphism exactly when it fails to be an epimorphism. -/
-theorem IsIrreducibleMorphism.mono_iff_not_epi [HasEqualizers C] [HasImage f] [Balanced C]
+theorem IsIrreducibleMorphism.mono_iff_not_epi [HasEqualizers C] [Balanced C] [HasImage f]
     (hf : IsIrreducibleMorphism f) : Mono f ↔ ¬ Epi f :=
   ⟨fun hm he => hf.not_mono_and_epi ⟨hm, he⟩, fun he => hf.mono_or_epi.resolve_right he⟩
 
 /-- An irreducible morphism with an image in a balanced category with equalizers is an
 epimorphism exactly when it fails to be a monomorphism. -/
-theorem IsIrreducibleMorphism.epi_iff_not_mono [HasEqualizers C] [HasImage f] [Balanced C]
+theorem IsIrreducibleMorphism.epi_iff_not_mono [HasEqualizers C] [Balanced C] [HasImage f]
     (hf : IsIrreducibleMorphism f) : Epi f ↔ ¬ Mono f :=
   ⟨fun he hm => hf.not_mono_and_epi ⟨hm, he⟩, fun hm => hf.mono_or_epi.resolve_left hm⟩
 
