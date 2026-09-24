@@ -256,7 +256,7 @@ theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, 
     fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
 
 /-- The principal finite idele of a unit of `R` is an everywhere-integral unit. -/
-theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :
+@[simp 1100] theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :
     unitEmbedding R K (Units.map (algebraMap R K) u) ∈ integralUnits R K := by
   refine mem_integralUnits_iff.mpr fun v ↦ ?_
   rw [unitEmbedding_apply, algebraMap_apply, valuedAdicCompletion_eq_valuation', Units.coe_map,
