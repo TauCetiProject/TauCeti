@@ -155,7 +155,6 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
 
 /-- A homogeneous cochain is carried by the cochain map to its image under the level map of the
 coinduced resolution. -/
-@[simp]
 theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
     (v : (TopRep.resolutionX X (n + 1)).ρ.invariants) :
     Subtype.val (((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom v) =
