@@ -135,14 +135,6 @@ private theorem f4Root_eq_of_repr_smul_rootVector_inl_ne_zero
   simp only [Sum.inl.injEq, hlabel, ↓reduceIte, smul_zero] at hne
   exact hne rfl
 
-private theorem f4Modular_lie_rootVector_simpleCoroot_eq
-    (α : Fin 48) (a : Fin F4.rank) :
-    ⁅f4ModularRootVector α, f4ModularSimpleCoroot a⁆ =
-      -(f4SimplyConnectedRootDatum.pairing α
-        (Fin.castAdd 44 (Fin.cast rank_F4 a)) : ZMod 2) •
-          f4ModularRootVector α := by
-  rw [← lie_skew, f4Modular_lie_simpleCoroot_rootVector, neg_smul]
-
 private theorem f4Root_eq_of_adjointMatrix_root_simpleCoroot_input_ne_zero
     (α : Fin 48) (i j : Fin 26) (γ : F4ShortRootIndex) (a : Fin F4.rank)
     (hi : f4ShortRootWeightIndexEquiv i = Sum.inl γ)
@@ -156,7 +148,7 @@ private theorem f4Root_eq_of_adjointMatrix_root_simpleCoroot_input_ne_zero
       Sum.inl (f4KillingRootLabel γ) := by
     rw [hi', f4ShortRootBasisCoordinate_symm_inl]
   rw [f4ShortRootAdjointMatrix_apply, hj, hcoord,
-    f4Modular_lie_rootVector_simpleCoroot_eq] at hne
+    f4Modular_lie_rootVector_simpleCoroot] at hne
   exact f4Root_eq_of_repr_smul_rootVector_inl_ne_zero _ α γ hne
 
 private theorem f4ShortRootAdjointMatrix_root_zero_input_support
@@ -219,7 +211,7 @@ private theorem f4ShortRootAdjointMatrix_root_simpleCoroot_zero_output_eq_zero
     simpa only [Function.comp_apply, Equiv.symm_apply_apply,
       f4ShortRootBasisCoordinate_symm_inr] using h
   rw [f4ShortRootAdjointMatrix_apply, hj, hcoord,
-    f4Modular_lie_rootVector_simpleCoroot_eq,
+    f4Modular_lie_rootVector_simpleCoroot,
     f4ModularChevalleyBasis_repr_smul_rootVector_inr_eq_zero]
 
 private theorem f4ShortRootAdjointMatrix_zero_zero_input_eq_zero

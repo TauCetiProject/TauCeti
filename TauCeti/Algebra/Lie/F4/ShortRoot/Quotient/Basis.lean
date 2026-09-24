@@ -114,7 +114,7 @@ the twenty-four long roots and the two long simple coroots. -/
       omega
     · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
         mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndex_baseSupportEquiv]
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
       fin_cases k <;> simp [f4LongSimpleIndex]
   · intro hx
     rcases x with α | j
@@ -135,28 +135,28 @@ the twenty-four long roots and the two long simple coroots. -/
       dsimp only [i]
       rw [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
       exact f4KillingRootLabel_f4PinnedRootIndex α
-    · have hne : ¬(f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3) := by
+    · have hne : ¬(f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3) := by
         simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
           f4ChevalleyIndexIsShort_inr_iff] using hx
-      have hj : f4PinnedSimpleIndex j = 0 ∨ f4PinnedSimpleIndex j = 1 := by
+      have hj : f4PinnedSimpleIndexEquiv j = 0 ∨ f4PinnedSimpleIndexEquiv j = 1 := by
         omega
       rcases hj with h0 | h1
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 1), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
         apply f4PinnedSimpleIndexEquiv.injective
-        have hnode : f4PinnedSimpleIndex
+        have hnode : f4PinnedSimpleIndexEquiv
             ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 1)) = 0 := by
-          rw [f4PinnedSimpleIndex_baseSupportEquiv, f4LongSimpleIndex_one,
+          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_one,
             Fin.cast_cast, Fin.cast_eq_self]
         exact hnode.trans h0.symm
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 0), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
         apply f4PinnedSimpleIndexEquiv.injective
-        have hnode : f4PinnedSimpleIndex
+        have hnode : f4PinnedSimpleIndexEquiv
             ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 0)) = 1 := by
-          rw [f4PinnedSimpleIndex_baseSupportEquiv, f4LongSimpleIndex_zero,
+          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_zero,
             Fin.cast_cast, Fin.cast_eq_self]
         exact hnode.trans h1.symm
 

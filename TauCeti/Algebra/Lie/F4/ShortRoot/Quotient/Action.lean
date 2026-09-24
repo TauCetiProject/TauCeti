@@ -79,12 +79,7 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_simpleCoroot
       -(f4SimplyConnectedRootDatum.pairing α
         (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) •
           f4ShortRootSubspace.mkQ (f4ModularRootVector α) := by
-  let c : ZMod 2 := f4SimplyConnectedRootDatum.pairing α
-    (Fin.castAdd 44 (Fin.cast rank_F4 i))
-  have hlie : ⁅f4ModularRootVector α, f4ModularSimpleCoroot i⁆ =
-      -c • f4ModularRootVector α := by
-    rw [← lie_skew, f4Modular_lie_simpleCoroot_rootVector, neg_smul]
-  rw [hlie, map_smul]
+  rw [f4Modular_lie_rootVector_simpleCoroot, map_smul]
 
 /-- For a non-opposite pair of long roots, absence of the transported target edge forces the
 first-order quotient column to vanish. -/

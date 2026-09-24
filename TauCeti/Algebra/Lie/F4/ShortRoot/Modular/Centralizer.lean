@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Lattice
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight.RootString
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight.CartanDetector
@@ -68,6 +69,7 @@ private theorem f4ModularChevalleyBasis_repr_lie_summand_eq_zero_of_ne_long
         f4ModularChevalleyBasis_inr_eq_simpleCoroot r
       have hz := f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
         j β γ (f4KillingRootLabel_ne_of_root_eq_add α β γ hγ)
+      -- Transport the bracket equality without unfolding the imported basis definition.
       have hlie := congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis
       have hcoord : f4ModularChevalleyBasis.repr
           ⁅f4ModularChevalleyBasis (Sum.inr r), f4ModularRootVector β⁆
@@ -88,15 +90,8 @@ private theorem f4ModularChevalleyBasis_repr_lie_distinguished_eq_one
       f4ModularRootVector α := by
     rw [f4ModularChevalleyBasis_inl_eq_rootVector,
       f4PinnedRootIndex_f4KillingRootLabel]
-  have hlie : ⁅f4ModularChevalleyBasis (Sum.inl (f4KillingRootLabel α)),
-      f4ModularRootVector β⁆ = f4ModularRootVector γ :=
-    congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis |>.trans hbracket
-  calc
-    _ = f4ModularChevalleyBasis.repr (f4ModularRootVector γ)
-        (Sum.inl (f4KillingRootLabel γ)) :=
-      congrArg (fun Y => f4ModularChevalleyBasis.repr Y
-        (Sum.inl (f4KillingRootLabel γ))) hlie
-    _ = 1 := f4ModularChevalleyBasis_repr_rootVector_self γ
+  rw [hbasis, hbracket]
+  exact f4ModularChevalleyBasis_repr_rootVector_self γ
 
 private theorem f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     (X : f4ModularChevalleyLieAlgebra) (α β γ : Fin 48)
@@ -147,6 +142,7 @@ private theorem f4ModularChevalleyBasis_repr_lie_inr_summand
   have hbasis : f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) =
       f4ModularSimpleCoroot (Fin.cast rank_F4.symm k) :=
     f4ModularChevalleyBasis_inr_f4PinnedSimpleIndexEquiv_symm k
+  -- A direct rewrite of `hbasis` exceeds the heartbeat limit on this coordinate goal.
   have hlie := congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis
   have hcoord : f4ModularChevalleyBasis.repr
       ⁅f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)),
@@ -158,6 +154,7 @@ private theorem f4ModularChevalleyBasis_repr_lie_inr_summand
     simpa only [Fin.cast_cast, Fin.cast_eq_self] using
       f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
         (Fin.cast rank_F4.symm k) β
+  -- Transport just this scalar coordinate; rewriting the full product exceeds the heartbeat limit.
   calc
     _ = f4ModularChevalleyBasis.repr X
         (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) * (f4Root β k : ZMod 2) :=
@@ -212,7 +209,7 @@ private theorem f4CartanCoordinates_eq_zero
     (f4ModularRootVector β) (Sum.inl (f4KillingRootLabel β))
   have hzero : f4ModularChevalleyBasis.repr
       ⁅X, f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel β)) = 0 := by
-    exact f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero (hcentral β hβ) _
+    simp only [hcentral β hβ, map_zero, Finsupp.zero_apply]
   have htotal : (∑ i : f4ChevalleyIndex,
       f4ModularChevalleyBasis.repr X i *
         f4ModularChevalleyBasis.repr
@@ -264,7 +261,7 @@ private theorem f4ModularChevalleyBasis_repr_eq_zero_of_long
     (f4ModularRootVector β) (Sum.inl (f4KillingRootLabel γ))
   have hzero : f4ModularChevalleyBasis.repr
       ⁅X, f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-    exact f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero (hcentral β hβ) _
+    simp only [hcentral β hβ, map_zero, Finsupp.zero_apply]
   have hsingle := f4ModularChevalleyBasis_sum_lie_eq_long_coordinate
     X α β γ hγ hbracket
   exact hsingle ▸ hsum.symm.trans hzero
