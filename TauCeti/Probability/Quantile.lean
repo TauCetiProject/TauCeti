@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.CDF
+public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # The quantile function of a real law
@@ -58,19 +59,6 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Set
-
-namespace TauCeti
-
-/-- The part of a subinterval `Ioc a b` of `[0, 1]` lying in the open unit interval has the full
-length `b - a`: the two intervals differ at most at the endpoint `1`. Levels `a` and `b` of this
-kind are values of cumulative distribution functions. -/
-theorem volume_Ioc_inter_Ioo_zero_one {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1) :
-    volume (Ioc a b ∩ Ioo 0 1) = ENNReal.ofReal (b - a) := by
-  refine le_antisymm ((measure_mono inter_subset_left).trans_eq Real.volume_Ioc) ?_
-  rw [← Real.volume_Ioo]
-  exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ha.trans_lt ht.1, ht.2.trans_le hb⟩
-
-end TauCeti
 
 namespace MeasureTheory.Measure
 

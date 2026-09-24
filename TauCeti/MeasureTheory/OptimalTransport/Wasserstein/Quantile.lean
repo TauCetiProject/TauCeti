@@ -101,6 +101,7 @@ theorem map_swap_quantileCoupling (μ ν : Measure ℝ) :
 /-- **The monotone coupling on a quadrant.** The monotone coupling of two real laws gives the
 quadrant `Iic a ×ˢ Ioi b` the positive part of the gap `cdf μ a - cdf ν b`: the uniform levels `t`
 with `μ.quantile t ≤ a` and `b < ν.quantile t` are those with `cdf ν b < t ≤ cdf μ a`. -/
+@[simp]
 theorem quantileCoupling_Iic_prod_Ioi (μ ν : Measure ℝ) (a b : ℝ) :
     μ.quantileCoupling ν (Iic a ×ˢ Ioi b) = ENNReal.ofReal (cdf μ a - cdf ν b) := by
   have hmeas : MeasurableSet (Iic a ×ˢ Ioi b) := measurableSet_Iic.prod measurableSet_Ioi

@@ -32,6 +32,8 @@ difference into a mixture of one-sided integrals of the form above.
   `(g - f)⁺`, level by level;
 * `TauCeti.ofReal_rpow_eq_lintegral_mul_ofReal_sub` and `TauCeti.edist_rpow_eq_lintegral` — a
   power `d ^ p`, and the power `|x - y| ^ p` of a distance, as mixtures of hinges.
+* `TauCeti.lintegral_ofReal_sub_sub_eq` and `TauCeti.lintegral_edist_rpow_eq` — their integrated
+  forms for a measure on pairs of real variables.
 -/
 
 public section
@@ -170,6 +172,17 @@ theorem lintegral_ofReal_sub_eq_lintegral_measure (m : Measure α) [SFinite m] {
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       rw [hfa, hga]
 
+/-- The expected hinge cost `(y - x - r)⁺` is the integral, over the levels `a`, of the mass
+given to the quadrant `Iic a ×ˢ Ioi (a + r)`. -/
+theorem lintegral_ofReal_sub_sub_eq (m : Measure (ℝ × ℝ)) [SFinite m] (r : ℝ) :
+    ∫⁻ z, ENNReal.ofReal (z.2 - z.1 - r) ∂m = ∫⁻ a, m (Iic a ×ˢ Ioi (a + r)) := by
+  simp_rw [sub_right_comm _ _ r]
+  rw [lintegral_ofReal_sub_eq_lintegral_measure m measurable_fst.aemeasurable
+      (measurable_snd.sub_const r).aemeasurable]
+  refine lintegral_congr fun a ↦ congrArg m ?_
+  ext z
+  simp [lt_sub_iff_add_lt]
+
 /-- For a nonnegative threshold `r`, the two hinges of a pair of reals add up to the single hinge
 `(|x - y| - r)⁺` of their distance, since at most one of `y - x - r` and `x - y - r` is positive. -/
 theorem ofReal_sub_sub_add_ofReal_sub_sub {r : ℝ} (hr : 0 ≤ r) (x y : ℝ) :
@@ -219,5 +232,15 @@ theorem edist_rpow_eq_lintegral {p : ℝ} (hp : 1 < p) (x y : ℝ) :
     ofReal_rpow_eq_lintegral_mul_ofReal_sub hp (abs_nonneg _)]
   exact setLIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
     rw [ofReal_sub_sub_add_ofReal_sub_sub hr.le]
+
+/-- The `p`-th moment of the distance between pairs of real variables, for `1 < p`, is the
+corresponding mixture of their two expected hinge costs. -/
+theorem lintegral_edist_rpow_eq {p : ℝ} (hp : 1 < p) (m : Measure (ℝ × ℝ)) [SFinite m] :
+    ∫⁻ z, edist z.1 z.2 ^ p ∂m = ∫⁻ r in Ioi 0, ENNReal.ofReal (p * (p - 1) * r ^ (p - 2))
+      * (∫⁻ z, ENNReal.ofReal (z.2 - z.1 - r) ∂m + ∫⁻ z, ENNReal.ofReal (z.1 - z.2 - r) ∂m) := by
+  simp_rw [edist_rpow_eq_lintegral hp]
+  rw [lintegral_lintegral_swap (by fun_prop)]
+  refine lintegral_congr fun r ↦ ?_
+  rw [lintegral_const_mul _ (by fun_prop), lintegral_add_left (by fun_prop)]
 
 end TauCeti
