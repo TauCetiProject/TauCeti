@@ -253,6 +253,22 @@ theorem stableConeTriangleOf_mor₁
   simp only [stableConeTriangleOf, stableConeTriangle_mor₁]
   exact Classical.choose_spec (E.projectiveStableFunctor.map_surjective f)
 
+/-- The first object of the chosen stable cone triangle. -/
+@[simp]
+theorem stableConeTriangleOf_obj₁
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₁) =
+      E.projectiveStableFunctor.obj X := by
+  simp only [stableConeTriangleOf, stableConeTriangle_obj₁]
+
+/-- The second object of the chosen stable cone triangle. -/
+@[simp]
+theorem stableConeTriangleOf_obj₂
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₂) =
+      E.projectiveStableFunctor.obj Y := by
+  simp only [stableConeTriangleOf, stableConeTriangle_obj₂]
+
 /-- The cone triangle of any stable-category morphism is distinguished. -/
 @[simp]
 theorem stableConeTriangleOf_mem
