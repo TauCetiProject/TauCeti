@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 
 /-!
 # Functoriality of Spin groups
@@ -20,8 +19,6 @@ an orthogonal summand.
 
 ## Main results
 
-* `QuadraticMap.Isometry.lipschitzGroupMap` is the homomorphism of Lipschitz groups induced by a
-  quadratic isometry.
 * `QuadraticMap.Isometry.spinGroupMap` is the homomorphism of Spin groups induced by a quadratic
   isometry.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv` is the group equivalence induced by a quadratic
@@ -30,8 +27,6 @@ an orthogonal summand.
   isometry has an isometric left inverse.
 * `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
   action.
-* `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_lipschitzToOrthogonal` proves naturality of
-  the Lipschitz action under a quadratic isometry equivalence.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_fixed_of_prod` proves that the Spin group of one
   summand fixes the other summand.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_spinVectorAction_prod` combines these facts into the
@@ -42,51 +37,6 @@ public section
 
 
 open QuadraticMap
-
-namespace QuadraticMap.Isometry
-
-universe u v w
-
-
-variable {R : Type u} [CommRing R]
-  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- Mapping Clifford units along a quadratic isometry preserves the Lipschitz group. -/
-theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ}
-    (hx : x ∈ lipschitzGroup Q₁) :
-    Units.map (CliffordAlgebra.map f).toMonoidHom x ∈ lipschitzGroup Q₂ := by
-  induction hx using Subgroup.closure_induction with
-  | mem x hx =>
-      apply Subgroup.subset_closure
-      obtain ⟨m, hm⟩ := hx
-      -- Express the mapped unit as a Clifford generator in the target closure.
-      change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom x) ∈
-        Set.range (CliffordAlgebra.ι Q₂)
-      refine ⟨f m, ?_⟩
-      change CliffordAlgebra.ι Q₂ (f m) =
-        CliffordAlgebra.map f (x : CliffordAlgebra Q₁)
-      rw [← hm, CliffordAlgebra.map_apply_ι]
-  | one => simp
-  | mul x y _ _ hx hy => simpa using mul_mem hx hy
-  | inv x _ hx => simpa using inv_mem hx
-
-/-- The Clifford map of a quadratic isometry restricts to a homomorphism of Lipschitz groups. -/
-def lipschitzGroupMap (f : Q₁ →qᵢ Q₂) : lipschitzGroup Q₁ →* lipschitzGroup Q₂ where
-  toFun x :=
-    ⟨Units.map (CliffordAlgebra.map f).toMonoidHom x.1, f.map_mem_lipschitzGroup x.2⟩
-  map_one' := by simp
-  map_mul' x y := by simp
-
-/-- Coercing the induced Lipschitz-group map is the corresponding Clifford-algebra map. -/
-@[simp]
-theorem coe_lipschitzGroupMap_apply (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q₁) :
-    ((f.lipschitzGroupMap x : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) =
-      CliffordAlgebra.map f ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := (rfl)
-
-end QuadraticMap.Isometry
-
 
 namespace QuadraticMap.Isometry
 
@@ -308,48 +258,5 @@ theorem spinGroupMap_spinVectorAction_prod
   · simpa [f₁] using
       (QuadraticMap.Isometry.spinGroupMap_spinVectorAction f₁ x m₁)
   · simpa [f₁, f₂] using e.spinGroupMap_fixed_of_prod x m₂
-
-private theorem map_involute (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
-    CliffordAlgebra.map f (CliffordAlgebra.involute x) =
-      CliffordAlgebra.involute (CliffordAlgebra.map f x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => simp
-  | ι m => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | mul x y hx hy => simp only [map_mul, hx, hy]
-
-/-- The Lipschitz vector action is natural under a quadratic isometry equivalence. -/
-@[simp]
-theorem orthogonalGroupCongr_lipschitzToOrthogonal [Invertible (2 : R)]
-    (e : Q₁.IsometryEquiv Q₂) (x : lipschitzGroup Q₁) :
-    TauCeti.QuadraticMap.orthogonalGroupCongr e
-        (CliffordAlgebra.lipschitzToOrthogonal Q₁ x) =
-      CliffordAlgebra.lipschitzToOrthogonal Q₂ (e.toIsometry.lipschitzGroupMap x) := by
-  ext m
-  rw [TauCeti.QuadraticMap.coe_orthogonalGroupCongr_apply,
-    CliffordAlgebra.coe_lipschitzToOrthogonal_apply,
-    CliffordAlgebra.coe_lipschitzToOrthogonal_apply]
-  apply CliffordAlgebra.ι_injective Q₂
-  -- Expose the isometry coercion so the named map-on-generators lemma applies.
-  change CliffordAlgebra.ι Q₂
-      (e.toIsometry (CliffordAlgebra.lipschitzVectorAction Q₁ x (e.symm m))) = _
-  have hmap : CliffordAlgebra.map e.toIsometry
-      ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) =
-      ((e.toIsometry.lipschitzGroupMap x : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) :=
-    (QuadraticMap.Isometry.coe_lipschitzGroupMap_apply e.toIsometry x).symm
-  have hmap_inv : CliffordAlgebra.map e.toIsometry
-      (((x : (CliffordAlgebra Q₁)ˣ)⁻¹ : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) =
-      (((e.toIsometry.lipschitzGroupMap x)⁻¹ : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) := by
-    calc
-      _ = (((e.toIsometry.lipschitzGroupMap (x⁻¹) : lipschitzGroup Q₂) :
-          (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) :=
-        (QuadraticMap.Isometry.coe_lipschitzGroupMap_apply e.toIsometry (x⁻¹)).symm
-      _ = _ := by simp
-  rw [← CliffordAlgebra.map_apply_ι (f := e.toIsometry)
-      (CliffordAlgebra.lipschitzVectorAction Q₁ x (e.symm m)),
-    CliffordAlgebra.ι_lipschitzVectorAction_apply, map_mul, map_mul,
-    map_involute, hmap, hmap_inv, CliffordAlgebra.map_apply_ι,
-    QuadraticMap.IsometryEquiv.toIsometry_apply, e.apply_symm_apply,
-    CliffordAlgebra.ι_lipschitzVectorAction_apply]
 
 end QuadraticMap.IsometryEquiv
