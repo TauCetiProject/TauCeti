@@ -35,6 +35,8 @@ degree.
 * `TauCeti.GinzburgQuiver`: the Ginzburg quiver of `Q`, with arrows `TauCeti.GinzburgHom`.
 * `TauCeti.ginzburgOf`: the inclusion of the doubled quiver, and `TauCeti.ginzburgMap` the induced
   homomorphism of path algebras.
+* `TauCeti.ginzburgOriginalMap`: the inclusion of the path algebra of `Q` in the Ginzburg path
+  algebra, as the original arrows.
 * `TauCeti.ginzburgTwoArrowRelator`: the prescribed values of the differential on the arrows.
 * `TauCeti.ginzburgTwoDegree` and `TauCeti.ginzburgTwoAdamsDegree`: the two arrow weights.
 * `TauCeti.ginzburgTwoDifferential`: the two-dimensional Ginzburg differential.
@@ -180,6 +182,26 @@ theorem ginzburgMap_doubledVertexIdempotent (v : Q) :
       vertexIdempotent (Q := GinzburgQuiver Q) k v := by
   rw [doubledVertexIdempotent_def, ginzburgMap, mapAlgHom_vertexIdempotent, ginzburgOf_obj,
     symmetrify_of_obj]
+
+/-- The inclusion of the path algebra of `Q` in the path algebra of the Ginzburg quiver, sending
+every arrow of `Q` to the corresponding original arrow. -/
+noncomputable def ginzburgOriginalMap : pathAlgebra k Q →ₐ[k] pathAlgebra k (GinzburgQuiver Q) :=
+  (ginzburgMap k).comp (mapAlgHom k Symmetrify.of symmetrify_of_obj_bijective)
+
+/-- The inclusion sends an arrow of `Q` to the corresponding original arrow of the Ginzburg
+quiver. -/
+theorem ginzburgOriginalMap_ofArrow {i j : Q} (a : i ⟶ j) :
+    ginzburgOriginalMap k (ofArrow a) = ofArrow (GinzburgHom.double (Sum.inl a)) := by
+  rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_ofArrow, ginzburgMap_ofArrow,
+    Symmetrify.of_map]
+  rfl
+
+@[simp]
+theorem ginzburgOriginalMap_vertexIdempotent (v : Q) :
+    ginzburgOriginalMap k (vertexIdempotent k v) =
+      vertexIdempotent (Q := GinzburgQuiver Q) k v := by
+  rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_vertexIdempotent,
+    ← doubledVertexIdempotent_def, ginzburgMap_doubledVertexIdempotent]
 
 /-! ### The doubled path algebra mapped to the Ginzburg path algebra -/
 

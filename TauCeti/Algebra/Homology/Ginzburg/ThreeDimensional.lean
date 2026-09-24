@@ -46,8 +46,6 @@ which vanishes by the local cyclic identity
 ## Main definitions
 
 * `TauCeti.ginzburgThreeDegree`: the cohomological degrees of the arrows of the Ginzburg quiver.
-* `TauCeti.ginzburgOriginalMap`: the inclusion of the path algebra of `Q` in the Ginzburg path
-  algebra, as the original arrows.
 * `TauCeti.ginzburgThreeArrowRelator`: the prescribed values of the differential on the arrows.
 * `TauCeti.ginzburgThreeDifferential`: the three-dimensional Ginzburg differential of `(Q, W)`.
 
@@ -104,29 +102,7 @@ theorem ginzburgThreeDegree_loop (i : Q) : ginzburgThreeDegree (GinzburgHom.loop
 
 section Map
 
-variable (k : Type w) [CommSemiring k] [Finite Q]
-
-/-- The inclusion of the path algebra of `Q` in the path algebra of the Ginzburg quiver, sending
-every arrow of `Q` to the corresponding original arrow. -/
-noncomputable def ginzburgOriginalMap : pathAlgebra k Q →ₐ[k] pathAlgebra k (GinzburgQuiver Q) :=
-  (ginzburgMap k).comp (mapAlgHom k Symmetrify.of symmetrify_of_obj_bijective)
-
-variable {k}
-
-/-- The inclusion sends an arrow of `Q` to the corresponding original arrow of the Ginzburg
-quiver. -/
-theorem ginzburgOriginalMap_ofArrow {i j : Q} (a : i ⟶ j) :
-    ginzburgOriginalMap k (ofArrow a) = ofArrow (GinzburgHom.double (Sum.inl a)) := by
-  rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_ofArrow, ginzburgMap_ofArrow,
-    Symmetrify.of_map]
-  rfl
-
-@[simp]
-theorem ginzburgOriginalMap_vertexIdempotent (v : Q) :
-    ginzburgOriginalMap k (vertexIdempotent k v) =
-      vertexIdempotent (Q := GinzburgQuiver Q) k v := by
-  rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_vertexIdempotent,
-    ← doubledVertexIdempotent_def, ginzburgMap_doubledVertexIdempotent]
+variable {k : Type w} [CommSemiring k] [Finite Q]
 
 omit [Finite Q] in
 /-- An original arrow has cohomological degree `0`. -/
