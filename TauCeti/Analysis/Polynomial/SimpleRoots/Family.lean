@@ -27,8 +27,9 @@ target regroupings. The assembled statement is
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
 at tuples that are multiplicity-free inside every block. At colliding tuples, the polynomial case
 is `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SymmetricPower.lean`; general holomorphic coordinate changes still
-require a direct symmetric-function argument.
+`TauCeti/Analysis/Polynomial/SymmetricPower.lean`. The complex colliding-point case, including
+general holomorphic coordinate changes, is proved separately in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`.
 
 This is the multiplicity-free assembly step in Lane F4.1 of the analytic Heegaard Floer roadmap,
 whose first target is the smooth complex structure on `Sym^g(Σ)` from elementary symmetric

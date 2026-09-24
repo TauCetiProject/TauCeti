@@ -61,10 +61,10 @@ below is what makes that a chart on a topological manifold; the charted structur
 from it in `TauCeti/Geometry/Manifold/SymmetricPower.lean`. Away from the diagonal the continuity
 proved here is upgraded to analyticity in
 `TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`, and its assembly across the blocks of an
-elementary-symmetric chart is in `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. The complex
-structure itself and the totally real tori `T_α`, `T_β`, are separate later steps. For transition
-maps at colliding tuples, this file handles the case induced by a univariate polynomial; the
-general holomorphic case over `ℂ` is
+elementary-symmetric chart, including colliding points over `ℂ`, is in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The complex atlas and the totally real tori
+`T_α`, `T_β`, are separate later steps. For transition maps at colliding tuples, this file also
+handles the case induced by a univariate polynomial; the general holomorphic case over `ℂ` is
 `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
 `TauCeti/Analysis/Polynomial/RootSum.lean`.
 -/

@@ -40,14 +40,14 @@ maps are holomorphic, is the next step of Lane F4.1 and is not done here; so are
 tori `T_α`, `T_β`. What is available towards that holomorphy is the analytic ingredient for a
 single coordinate patch at a multiplicity-free coefficient tuple,
 `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`. Its assembly across the blocks that a chart
-below splits a tuple into, along the regrouping `e`, is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. At colliding points, polynomial-induced
-coordinate maps are handled by `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SymmetricPower.lean`, and a general holomorphic coordinate change, at
-colliding points too, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
-`TauCeti/Analysis/Polynomial/RootSum.lean`.
+`TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`. Its general blockwise assembly, including
+colliding points over `ℂ`, is
+`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The actual transition between two explicit
+charts using one common block partition is proved in
+`TauCeti.analyticAt_symOpenPartialHomeomorph_transition` in
+`TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`. The full atlas still requires
+transition theorems for arbitrary choices of block partitions.
 
 ## Main declarations
 
