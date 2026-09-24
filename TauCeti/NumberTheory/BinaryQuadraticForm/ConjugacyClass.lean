@@ -204,6 +204,7 @@ noncomputable def orbitRelQuotientTraceDetFiberEquiv (h : t ^ 2 - 4 * n = -D) :
 
 /-- The class of a matrix `M` whose form `Q_M` is positive definite, that is whose lower left entry
 is positive (`ofMatrix_mem_posDef_iff`), goes to the class of `Q_M` in the first copy. -/
+@[simp]
 theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_mem (h : t ^ 2 - 4 * n = -D)
     (M : traceDetFiber (Fin 2) t n) (hM : ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) ∈ posDef D) :
     orbitRelQuotientTraceDetFiberEquiv h (Quotient.mk'' M) = .inl (Quotient.mk'' ⟨_, hM⟩) := by
@@ -213,6 +214,7 @@ theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_mem (h : t ^ 2 - 4 * n = -D)
 
 /-- The class of a matrix `M` whose form `Q_{adjugate M}` is positive definite, that is whose lower
 left entry is negative, goes to the class of `Q_{adjugate M}` in the second copy. -/
+@[simp]
 theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_adjugate_mem (h : t ^ 2 - 4 * n = -D)
     (M : traceDetFiber (Fin 2) t n)
     (hM : ofMatrix (adjugate (M : Matrix (Fin 2) (Fin 2) ℤ)) ∈ posDef D) :
@@ -225,6 +227,7 @@ theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_adjugate_mem (h : t ^ 2 - 4 * n
 /-- The inverse of `orbitRelQuotientTraceDetFiberEquiv h` sends the class of `f` in the first copy
 to the class of the matrix `M_f` of trace `t` and determinant `n` with `Q_{M_f} = f`, the preimage
 of `f` under `ofMatrixEquiv t n`. -/
+@[simp]
 theorem orbitRelQuotientTraceDetFiberEquiv_symm_inl (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
     (orbitRelQuotientTraceDetFiberEquiv h).symm (.inl (Quotient.mk'' f)) = Quotient.mk''
       ⟨_, mem_traceDetFiber.2
@@ -233,6 +236,7 @@ theorem orbitRelQuotientTraceDetFiberEquiv_symm_inl (h : t ^ 2 - 4 * n = -D) (f 
 
 /-- The inverse of `orbitRelQuotientTraceDetFiberEquiv h` sends the class of `f` in the second copy
 to the class of the adjugate of the matrix `M_f` with `Q_{M_f} = f`, whose form is `-f`. -/
+@[simp]
 theorem orbitRelQuotientTraceDetFiberEquiv_symm_inr (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
     (orbitRelQuotientTraceDetFiberEquiv h).symm (.inr (Quotient.mk'' f)) = Quotient.mk''
       ⟨_, adjugate_mem_traceDetFiber <| mem_traceDetFiber.2
