@@ -35,7 +35,7 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
 
 /-- On an invariant integral representative, degree-zero corestriction multiplies by the
 relative degree. -/
-@[simp] theorem trivialTateCor_zero_H0π {small big : NormalLayer G}
+theorem trivialTateCor_zero_H0π {small big : NormalLayer G}
     (T : LayerRestriction small big) (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
     T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ x) =
       TauCeti.TateCohomology.H0π _
@@ -156,7 +156,7 @@ private theorem comp_of_compare {A B C A' B' C' : ModuleCat ℤ}
     _ = f ≫ g ≫ iC.hom := congrArg (f ≫ ·) hg.symm
 
 /-- Trivial-coefficient Tate corestriction is functorial in towers of finite normal layers. -/
-@[simp] theorem trivialTateCor_trans (T : LayerRestriction a b)
+theorem trivialTateCor_trans (T : LayerRestriction a b)
     (T' : LayerRestriction b c) (r : ℤ) :
     (T.trans T').trivialTateCor r = T.trivialTateCor r ≫ T'.trivialTateCor r := by
   -- The four cases use ordinary cohomology, the norm quotient, the vanishing of degree minus
