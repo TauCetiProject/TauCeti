@@ -31,6 +31,8 @@ Everything here concerns one completion. The comparison of two completions along
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
+  `IsDedekindDomain.HeightOneSpectrum.mem_asIdeal_pow_iff_valued_algebraMap_le` is the same
+  statement for `v ^ n` and elements of `R`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
@@ -173,6 +175,13 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
     simp
   rw [← hπn]
   exact Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπ n) x
+
+/-- An element of `R` lies in `v ^ n` exactly when its image in `K_v` has valuation at most
+`exp (-n)`: the ideal filtration of `R` at `v` is the valuation filtration `K_v` induces on it. -/
+theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
+    r ∈ v.asIdeal ^ n ↔ Valued.v (algebraMap R (v.adicCompletion K) r) ≤ exp (-(n : ℤ)) := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    valuation_of_algebraMap, intValuation_le_pow_iff_mem]
 
 /-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
 whose valuation is below the valuations of `a` and `b`, and below `1`. -/
