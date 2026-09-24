@@ -69,8 +69,6 @@ conflation `X ⟶ Y ⟶ Z`, the cone of `f` is an extension of `Z` by the projec
   `TauCeti.ExactStructure.IsFrobenius.coneInclusion_comp_coneConnectingMap` and
   `projectiveStableFunctor_map_coneConnectingMap_comp_cokernelMap`:
   consecutive composites of `X ⟶ Y ⟶ cone f ⟶ ΣX ⟶ ΣY` vanish in the stable category.
-* `TauCeti.ExactStructure.IsFrobenius.biproductInr_comp_coneDeflation`: the inclusion of `Y` into
-  the cone conflation's biproduct maps to the cone inclusion.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_cone`: the
   connecting morphism of the cone conflation is `coneConnectingMap f`.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_coneMap_id` and
@@ -147,12 +145,6 @@ noncomputable abbrev coneInflation (f : X ⟶ Y) : X ⟶ hE.suspensionInjective 
 noncomputable abbrev coneDeflation (f : X ⟶ Y) :
     hE.suspensionInjective X ⊞ Y ⟶ hE.coneObj f :=
   biprod.desc (hE.coneInjectiveMap f) (hE.coneInclusion f)
-
-/-- The biproduct inclusion of `Y` followed by the cone deflation is the cone inclusion. -/
-theorem biproductInr_comp_coneDeflation (f : X ⟶ Y) :
-    (biprod.inr (X := hE.suspensionInjective X) (Y := Y) :
-      Y ⟶ hE.suspensionInjective X ⊞ Y) ≫ hE.coneDeflation f = hE.coneInclusion f := by
-  simp [coneDeflation]
 
 /-- The two maps of the cone conflation compose to zero. -/
 @[reassoc]
