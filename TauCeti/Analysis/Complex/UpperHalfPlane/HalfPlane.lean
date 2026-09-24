@@ -11,24 +11,34 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 # Half-planes bounded by a geodesic line
 
 The imaginary axis splits `ℍ` into two open half-planes, `{z | 0 < z.re}` and
-`{z | z.re < 0}`, with the axis itself as their shared boundary. This file transports that
-picture by `g : PSL(2, ℝ)`, the same idiom `Geodesic.lean` uses for the line itself:
-`rightHalfPlane g` and `leftHalfPlane g` are the two open half-planes bounded by
-`geodesicLine g`, disjoint from each other and from the line.
+`{z | z.re < 0}`, with the axis itself, `{z | z.re = 0}`, as the boundary between them. This
+file transports that picture by `g : PSL(2, ℝ)`, the same idiom `Geodesic.lean` uses for the
+line itself: `rightHalfPlane g` and `leftHalfPlane g` are the `g`-images of the two canonical
+sides, `Set.range (geodesicLine g)` (via `range_geodesicLine`) is the `g`-image of the axis, and
+the three are pairwise disjoint and cover `ℍ`
+(`union_rightHalfPlane_range_geodesicLine_leftHalfPlane`).
+
+Only the *unordered* pair of sides is determined by `geodesicLine g`: which one is called
+`right` depends on the chosen representing `g`, not on the line's image alone. For
+`g' = g * ⟦!![-1, 0; 0, 1]⟧`, `Set.range (geodesicLine g') = Set.range (geodesicLine g)` but
+`rightHalfPlane g' = leftHalfPlane g`.
 
 ## Main declarations
 
 * `TauCeti.UpperHalfPlane.rightHalfPlane g`, `TauCeti.UpperHalfPlane.leftHalfPlane g` — the two
   open half-planes bounded by `geodesicLine g`, as `g`-translates of the canonical pair for the
   raw imaginary axis. `mem_rightHalfPlane_iff` and `mem_leftHalfPlane_iff` test membership
-  directly, without unfolding the translate.
+  directly, without unfolding the translate; `rightHalfPlane_one`/`leftHalfPlane_one` and
+  `smul_rightHalfPlane`/`smul_leftHalfPlane` give their value at `g = 1` and their equivariance,
+  matching `Geodesic.lean`'s own API for the line.
 * `TauCeti.UpperHalfPlane.isOpen_rightHalfPlane`, `isOpen_leftHalfPlane` — both are open.
-* `TauCeti.UpperHalfPlane.disjoint_rightHalfPlane_leftHalfPlane` — the two half-planes are
-  disjoint.
-* `TauCeti.UpperHalfPlane.range_geodesicLine` — the geodesic line itself, as a set, is exactly
-  the `g`-translate of `{z | z.re = 0}`, matching the two half-planes' own description, so all
-  three pieces of the transported picture (line, right half-plane, left half-plane) are stated
-  the same way.
+* `TauCeti.UpperHalfPlane.mem_range_geodesicLine_iff` — membership test for the line itself, in
+  the same style.
+* `TauCeti.UpperHalfPlane.disjoint_rightHalfPlane_leftHalfPlane`,
+  `disjoint_rightHalfPlane_range_geodesicLine`, `disjoint_leftHalfPlane_range_geodesicLine` — the
+  three pieces are pairwise disjoint, and
+  `TauCeti.UpperHalfPlane.union_rightHalfPlane_range_geodesicLine_leftHalfPlane` says they cover
+  `ℍ`.
 -/
 
 public section
@@ -48,55 +58,75 @@ def rightHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | 0 < z.re}
 negative real part. -/
 def leftHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | z.re < 0}
 
+@[simp]
 theorem mem_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ rightHalfPlane g ↔ 0 < (g⁻¹ • z : ℍ).re := by
   rw [rightHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
+@[simp]
 theorem mem_leftHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ leftHalfPlane g ↔ (g⁻¹ • z : ℍ).re < 0 := by
   rw [leftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
-theorem isOpen_rightHalfPlane (g : PSL(2, ℝ)) : IsOpen (rightHalfPlane g) := by
-  have heq : rightHalfPlane g = (fun z : ℍ => (g⁻¹ • z : ℍ).re) ⁻¹' Set.Ioi 0 := by
-    ext z
-    rw [mem_rightHalfPlane_iff, Set.mem_preimage, Set.mem_Ioi]
-  rw [heq]
-  exact (UpperHalfPlane.continuous_re.comp (continuous_const_smul g⁻¹)).isOpen_preimage _ isOpen_Ioi
+/-- Membership test for the geodesic line itself, in the same style as the two half-planes. -/
+@[simp]
+theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
+  rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
-theorem isOpen_leftHalfPlane (g : PSL(2, ℝ)) : IsOpen (leftHalfPlane g) := by
-  have heq : leftHalfPlane g = (fun z : ℍ => (g⁻¹ • z : ℍ).re) ⁻¹' Set.Iio 0 := by
-    ext z
-    rw [mem_leftHalfPlane_iff, Set.mem_preimage, Set.mem_Iio]
-  rw [heq]
-  exact (UpperHalfPlane.continuous_re.comp (continuous_const_smul g⁻¹)).isOpen_preimage _ isOpen_Iio
+theorem rightHalfPlane_one : rightHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | 0 < z.re} := one_smul _ _
+
+theorem leftHalfPlane_one : leftHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | z.re < 0} := one_smul _ _
+
+@[simp]
+theorem smul_rightHalfPlane (h g : PSL(2, ℝ)) :
+    h • rightHalfPlane g = rightHalfPlane (h * g) := by
+  rw [rightHalfPlane, rightHalfPlane, smul_smul]
+
+@[simp]
+theorem smul_leftHalfPlane (h g : PSL(2, ℝ)) :
+    h • leftHalfPlane g = leftHalfPlane (h * g) := by
+  rw [leftHalfPlane, leftHalfPlane, smul_smul]
+
+theorem isOpen_rightHalfPlane (g : PSL(2, ℝ)) : IsOpen (rightHalfPlane g) :=
+  (isOpen_lt continuous_const UpperHalfPlane.continuous_re).smul g
+
+theorem isOpen_leftHalfPlane (g : PSL(2, ℝ)) : IsOpen (leftHalfPlane g) :=
+  (isOpen_lt UpperHalfPlane.continuous_re continuous_const).smul g
 
 theorem disjoint_rightHalfPlane_leftHalfPlane (g : PSL(2, ℝ)) :
-    Disjoint (rightHalfPlane g) (leftHalfPlane g) := by
+    Disjoint (rightHalfPlane g) (leftHalfPlane g) :=
+  Set.disjoint_smul_set.2 (Set.Ioi_disjoint_Iio_same.preimage UpperHalfPlane.re)
+
+theorem disjoint_rightHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
+    Disjoint (rightHalfPlane g) (Set.range (geodesicLine g)) := by
   rw [Set.disjoint_left]
   intro z hz hz'
   rw [mem_rightHalfPlane_iff] at hz
-  rw [mem_leftHalfPlane_iff] at hz'
+  rw [mem_range_geodesicLine_iff] at hz'
   linarith
 
-theorem range_geodesicLine_one :
-    Set.range (geodesicLine (1 : PSL(2, ℝ))) = {z : ℍ | z.re = 0} := by
-  ext z
-  simp only [Set.mem_range, Set.mem_ofPred_eq]
-  constructor
-  · rintro ⟨t, rfl⟩
-    simp [geodesicLine_def, UpperHalfPlane.re]
-  · intro hz
-    refine ⟨Real.log z.im, ?_⟩
-    rw [geodesicLine_def, one_smul]
-    apply UpperHalfPlane.ext
-    change (⟨0, Real.exp (Real.log z.im)⟩ : ℂ) = (z : ℂ)
-    rw [Real.exp_log z.im_pos]
-    exact Complex.ext hz.symm rfl
+theorem disjoint_leftHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
+    Disjoint (leftHalfPlane g) (Set.range (geodesicLine g)) := by
+  rw [Set.disjoint_left]
+  intro z hz hz'
+  rw [mem_leftHalfPlane_iff] at hz
+  rw [mem_range_geodesicLine_iff] at hz'
+  linarith
 
-/-- The geodesic line, as a set, is the `g`-translate of `{z | z.re = 0}` — the boundary the two
-half-planes share, described the same way they are. -/
-theorem range_geodesicLine (g : PSL(2, ℝ)) :
-    Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
-  rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
+/-- The right half-plane, the geodesic line, and the left half-plane, all bounded by
+`geodesicLine g`, cover `ℍ`: every point lies in exactly one of the three, by trichotomy on
+`(g⁻¹ • z).re`. -/
+theorem union_rightHalfPlane_range_geodesicLine_leftHalfPlane (g : PSL(2, ℝ)) :
+    rightHalfPlane g ∪ Set.range (geodesicLine g) ∪ leftHalfPlane g = Set.univ := by
+  have : ({z : ℍ | 0 < z.re} ∪ {z : ℍ | z.re = 0} ∪ {z : ℍ | z.re < 0}) = Set.univ := by
+    ext z
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+    rcases lt_trichotomy z.re 0 with h | h | h
+    · exact Or.inr h
+    · exact Or.inl (Or.inr h)
+    · exact Or.inl (Or.inl h)
+  rw [rightHalfPlane, leftHalfPlane, range_geodesicLine, ← Set.smul_set_union,
+    ← Set.smul_set_union, this, Set.smul_set_univ]
 
 end TauCeti.UpperHalfPlane

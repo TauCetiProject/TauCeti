@@ -43,6 +43,8 @@ one through two prescribed points is not.
   mapped into each other, by the `PSL(2, ℝ)`-action.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq` — a geodesic line through any prescribed
   point of `ℍ`.
+* `TauCeti.UpperHalfPlane.range_geodesicLine_one` and `TauCeti.UpperHalfPlane.range_geodesicLine`
+  — every geodesic line, as a set, is a `g`-translate of the imaginary axis `{z | z.re = 0}`.
 -/
 
 public section
@@ -101,5 +103,23 @@ theorem smul_range_geodesicLine (h g : PSL(2, ℝ)) :
 theorem exists_geodesicLine_zero_eq (z : ℍ) : ∃ g : PSL(2, ℝ), geodesicLine g 0 = z := by
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) UpperHalfPlane.I z
   exact ⟨g, by rw [geodesicLine_zero, hg]⟩
+
+/-- The geodesic line of the identity, as a set, is the imaginary axis `{z | z.re = 0}`. -/
+theorem range_geodesicLine_one :
+    Set.range (geodesicLine (1 : PSL(2, ℝ))) = {z : ℍ | z.re = 0} := by
+  ext z
+  simp only [Set.mem_range, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨t, rfl⟩
+    simp [geodesicLine_one_apply]
+  · intro hz
+    refine ⟨Real.log z.im, UpperHalfPlane.ext_re_im ?_ ?_⟩
+    · simp [geodesicLine_one_apply, hz]
+    · simp [geodesicLine_one_apply, Real.exp_log z.im_pos]
+
+/-- Every geodesic line, as a set, is a `g`-translate of the imaginary axis. -/
+theorem range_geodesicLine (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
+  rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
 
 end TauCeti.UpperHalfPlane
