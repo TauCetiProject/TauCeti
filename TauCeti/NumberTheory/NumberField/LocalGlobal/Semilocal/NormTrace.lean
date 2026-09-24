@@ -20,11 +20,10 @@ identities are from `TauCeti.RingTheory.NormTrace.BaseChange`.
 
 ## Main results
 
-* `TauCeti.norm_eq_prod_norm_semilocalEquiv` and `TauCeti.trace_eq_sum_trace_semilocalEquiv`: the
-  norm and trace of `K_v ⊗[K] L` over `K_v` are the product and sum of those of the components of
-  the semilocal decomposition.
-* `TauCeti.algebraMap_norm_eq_prod_norm` and `TauCeti.algebraMap_trace_eq_sum_trace`: the norm
-  and trace of `x ∈ L` are the product and sum of the local norms and traces of `x`.
+* `TauCeti.algebraMap_norm_eq_prod_norm`: the norm of `x ∈ L` is the product of its local norms.
+* `TauCeti.trace_eq_sum_trace_semilocalEquiv`: the trace of `K_v ⊗[K] L` over `K_v` is the sum
+  of the traces of its semilocal components.
+* `TauCeti.algebraMap_trace_eq_sum_trace`: the trace of `x ∈ L` is the sum of its local traces.
 * `TauCeti.trace_semilocalEquiv_symm_single_mul`: the trace pairing of one semilocal component
   with a global element is its local trace pairing.
 * `TauCeti.trace_integralSemilocalToField_tmul_mul`: the trace pairing of an integral pure tensor
@@ -66,27 +65,31 @@ theorem trace_integralSemilocalToField_tmul_mul
     map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
 
 attribute [local instance] Fintype.ofFinite in
-/-- The norm of the semilocal algebra `K_v ⊗[K] L` over `K_v` is the product of the norms of the
-components of the semilocal decomposition. -/
-@[simp] theorem norm_eq_prod_norm_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
-    Algebra.norm (v.adicCompletion K) ξ =
-      ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.norm (v.adicCompletion K) (semilocalEquiv L v ξ w) := by
-  rw [← Algebra.norm_eq_of_algEquiv (semilocalEquiv L v)]
-  exact Algebra.norm_pi _
-
-attribute [local instance] Fintype.ofFinite in
 /-- The norm of a number-field element is the product of its norms in the completions above `v`. -/
 theorem algebraMap_norm_eq_prod_norm (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
       ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) x) := by
-  rw [← Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
-    norm_eq_prod_norm_semilocalEquiv]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [semilocalEquiv_tmul]
-  simp
+  calc
+    algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
+        Algebra.norm (v.adicCompletion K) ((1 : v.adicCompletion K) ⊗ₜ[K] x) :=
+      (Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x).symm
+    _ = Algebra.norm (v.adicCompletion K)
+        (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) := by
+      symm
+      exact Algebra.norm_eq_of_algEquiv (semilocalEquiv L v) _
+    _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.norm (v.adicCompletion K)
+        (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x) w) :=
+      Algebra.norm_pi _
+    _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.norm (v.adicCompletion K)
+        (algebraMap L (w.1.adicCompletion L) x) := by
+      apply Finset.prod_congr rfl
+      intro w hw
+      rw [semilocalEquiv_tmul]
+      simp
 
 attribute [local instance] Fintype.ofFinite in
 /-- The trace of the semilocal algebra `K_v ⊗[K] L` over `K_v` is the sum of the traces of the

@@ -18,22 +18,10 @@ generates the different of the local extension `𝒪_w / 𝒪_v`:
 
 `𝔇(𝒪 L / 𝒪 K) · 𝒪_w = 𝔇(𝒪_w / 𝒪_v)`.
 
-The comparison is made on the trace duals, which the different inverts. The semilocal
-decomposition `K_v ⊗[K] L ≃ ∏_{w' ∣ v} L_{w'}` computes the trace of `K_v ⊗[K] L` as the sum of
-the local traces, so an element of `L_w` placed in the `w`-component pairs with a global element
-exactly as it does in `L_w`.
-
-* The image of the global trace dual lies in the local one: an element of `𝒪_w`, placed in the
-  `w`-component, comes from `𝒪_v ⊗[𝒪 K] 𝒪 L` by the integral semilocal decomposition, on which
-  the pairing with the global trace dual takes values in `𝒪_v`.
-* Conversely, `𝒪 L` is a finite projective `𝒪 K`-module, so it carries a finite trace-dual
-  family `x = ∑ᵢ Tr(x bᵢ) yᵢ` with `bᵢ ∈ 𝒪 L` and `yᵢ` in the global trace dual. This identity
-  is `K`-linear, so it passes to `K_v ⊗[K] L` and then to the `w`-component, where it writes every
-  element `z` of the local trace dual as `z = ∑ᵢ Tr_{L_w/K_v}(z bᵢ) yᵢ` with coefficients in
-  `𝒪_v`.
-
-The equality of trace duals then passes to fractional ideals, and to the different ideals by
-inversion.
+The trace dual of the global extension spans the trace dual of the completed extension. This
+comparison gives the equality of different ideals, and lets results about the global different be
+used at each completed place. The semilocal decomposition relates the global trace pairing to the
+local pairings.
 
 This is the completion counterpart of `TauCeti.span_traceDual_one_eq_traceDual_one`,
 `TauCeti.extended_dual_one_eq_dual_one`, and `TauCeti.map_differentIdeal_eq_differentIdeal` in
@@ -145,6 +133,8 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
       algebraMap_adicCompletionIntegers_apply, algebraMap_adicCompletion,
       Function.comp_apply, Algebra.algebraMap_self_apply]
 
+-- The first inclusion uses the integral semilocal decomposition to lift an element of `𝒪_w` in
+-- the `w`-component to `𝒪_v ⊗[𝒪 K] 𝒪 L`, where the global trace pairing is integral.
 /-- The image in `L_w` of an element of the trace dual of `𝒪 L` over `𝒪 K` lies in the trace dual
 of `𝒪_w` over `𝒪_v`. -/
 private theorem algebraMap_mem_traceDual_adicCompletionIntegers {d : L}
@@ -180,7 +170,9 @@ theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
   refine le_antisymm (Submodule.span_le.mpr ?_) fun z hz ↦ ?_
   · rintro _ ⟨d, hd, rfl⟩
     exact algebraMap_mem_traceDual_adicCompletionIntegers v w hd
-  -- Expand `z` along a trace-dual family of the projective `𝒪 K`-module `𝒪 L`.
+  -- For the reverse inclusion, expand `z` along a trace-dual family of the projective
+  -- `𝒪 K`-module `𝒪 L`. The finite identity passes through `K_v ⊗[K] L` to its `w`-component,
+  -- and its coefficients lie in `𝒪_v` because `z` belongs to the local trace dual.
   have := Module.finitePresentation_of_finite (𝒪 K) (𝒪 L)
   have : Module.Projective (𝒪 K) (𝒪 L) := Module.Flat.projective_of_finitePresentation
   obtain ⟨n, b, y, hy, hb⟩ := exists_sum_trace_mul_smul_eq (𝒪 K) K (L := L) (B := 𝒪 L)

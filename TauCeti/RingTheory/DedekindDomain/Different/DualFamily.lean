@@ -17,15 +17,13 @@ Let `A` be a domain with fraction field `K`, let `L / K` be a finite separable e
 trace pairing `x ↦ Tr_{L/K}(y x)`, and the element `y` then lies in the trace dual
 `Bᵛ = {y ∈ L | Tr_{L/K}(y B) ⊆ A}`.
 
-When `B` is moreover a finite projective `A`-module, as it is over a Dedekind domain, a finite
-dual basis of `B` consists of elements `bᵢ ∈ B` and linear forms `B → A`. Representing the forms
-by elements `yᵢ ∈ Bᵛ` gives the expansion
+When `B` is moreover a finite projective `A`-module, as it is over a Dedekind domain, there is a
+finite trace-dual family `bᵢ ∈ B` and `yᵢ ∈ Bᵛ` satisfying
 
 `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`.
 
-This is the finite-level identity that transports trace duals along base change: an expansion of
-this shape is linear in `x` over `K`, so it survives every extension of scalars, while its
-coefficients remain in `A` whenever `x` pairs integrally with `B`.
+This identity is used to compare trace duals after extending scalars, in particular when
+comparing a number-field different with the different of a completed extension.
 
 ## Main results
 
