@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.ElementaryTwoQuotient.KleinFour
-public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
-public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.Squares
@@ -51,8 +49,6 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## References
 
-* TauCetiRoadmap, `TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 6A,
-  "The square-class counts", for the specified representatives `1`, `u`, `π`, `u π`.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter II, §3, for `K = ℚ_p`.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §5.
@@ -147,7 +143,8 @@ theorem eq_zero_or_eq_squareClass_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π 
 For a uniformizer `π` and a nonsquare `u` of even valuation, every element of `Kˣ` becomes a
 square after multiplication by one of `1`, `u`, `π`, `u π`. Together with
 `TauCeti.natCard_squareClassGroup_of_isUnit_two` this says that the four listed elements
-represent the four square classes. -/
+represent the four square classes. The choice of representatives follows
+`TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 6A. -/
 theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : Kˣ}
     (hπ : IsUniformizer K π) (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u)
     (a : Kˣ) :
