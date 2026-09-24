@@ -60,7 +60,8 @@ namespace SchemeWeilDivisor
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [IsIntegral X]
 
-local instance : Nonempty (⊤ : X.Opens) :=
+/-- The top open of an integral scheme is nonempty. -/
+local instance nonemptyTopOpensRepartitionCohomology : Nonempty (⊤ : X.Opens) :=
   ⟨⟨Classical.choice inferInstance, trivial⟩⟩
 
 /-- Global rational functions are the function field, also as vector spaces over the base field. -/
@@ -143,10 +144,10 @@ lemma repartitionToCohomologyOne_apply (D : SchemeWeilDivisor X)
 @[simp]
 lemma repartitionToCohomologyOne_diagonalRationalFunctionsToRepartitions
     (D : SchemeWeilDivisor X) (f : Γ(Scheme.rationalFunctions X, ⊤)) :
-    repartitionToCohomologyOne hex hdim hclosed D
-        (diagonalRationalFunctionsToRepartitions (X := X) hF f) = 0 := by
-  rw [repartitionToCohomologyOne_apply,
-    repartitionToPrincipalParts_diagonalRationalFunctionsToRepartitions (X := X) (hF := hF)
+    principalPartsBoundary k hclosed D
+        (repartitionToPrincipalParts hex hdim D
+          (diagonalRationalFunctionsToRepartitions (X := X) hF f)) = 0 := by
+  rw [repartitionToPrincipalParts_diagonalRationalFunctionsToRepartitions (X := X) (hF := hF)
       (hex := hex) (hdim := hdim),
     ← LinearMap.mem_ker, ker_principalPartsBoundary]
   exact LinearMap.mem_range_self _ _
