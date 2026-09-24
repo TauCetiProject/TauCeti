@@ -57,22 +57,6 @@ abbrev f4ShortRootRepresentedIdeal :
     (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
       Module.End (ZMod 2) f4ShortRootLieIdeal).rangeRestrict
 
-/-- The modular Chevalley quotient by the short-root ideal, expressed as the quotient of the
-represented range by the image of that ideal. -/
-noncomputable def f4ShortRootQuotientEquivRepresentedRange :=
-  LinearMap.quotientEquivRangeQuotientMap
-    (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
-      Module.End (ZMod 2) f4ShortRootLieIdeal) f4ShortRootSubspace
-    ker_f4ShortRootAdjoint_le_f4ShortRootSubspace
-
-/-- The represented-range equivalence evaluated on a modular Chevalley representative. -/
-@[simp] theorem f4ShortRootQuotientEquivRepresentedRange_apply_mk
-    (X : f4ModularChevalleyLieAlgebra) :
-    f4ShortRootQuotientEquivRepresentedRange (Submodule.Quotient.mk X) =
-      Submodule.Quotient.mk
-        ((f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
-          Module.End (ZMod 2) f4ShortRootLieIdeal).rangeRestrict X) :=
-  LinearMap.quotientEquivRangeQuotientMap_apply_mk _ _ _ X
 end
 
 end TauCeti.DynkinType
