@@ -83,11 +83,11 @@ private theorem sum_carGenerator_cycle (a b : Fin N) :
     have hib' : carGenerator (K := K) k i * carGenerator i b =
         algebraMap K _ (if i = i ∧ b = k then 2 * (1 * 1) else 0) -
           carGenerator i b * carGenerator k i :=
-      eq_sub_iff_add_eq.mpr (by simpa using hib)
+      eq_sub_iff_add_eq.mpr (by simp)
     have hak' : carGenerator (K := K) k i * carGenerator a k =
         algebraMap K _ (if i = a ∧ k = k then 2 * (1 * 1) else 0) -
           carGenerator a k * carGenerator k i :=
-      eq_sub_iff_add_eq.mpr (by simpa using hak)
+      eq_sub_iff_add_eq.mpr (by simp)
     rw [hib', sub_mul, mul_assoc (carGenerator (K := K) i b), hak', mul_sub]
     have hcentral (x : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
         algebraMap K _ (2 : K) * x = x * algebraMap K _ (2 : K) :=

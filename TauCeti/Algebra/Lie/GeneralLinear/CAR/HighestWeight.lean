@@ -262,6 +262,13 @@ private theorem positive_iota_mul_carHighestWeightVector_eq_zero
     apply carPositiveUnits_ortho hij
     simpa only [carPositiveRootPairs, Finset.mem_filter, Finset.mem_univ, true_and] using hr
 
+private theorem positive_carGenerator_mul_carHighestWeightVector_eq_zero
+    {i j : n} (hij : i < j) :
+    carGenerator (K := K) i j * carHighestWeightVector K n = 0 := by
+  rw [carGenerator_def]
+  rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
+    positive_iota_mul_carHighestWeightVector_eq_zero hij]
+
 private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) (k : n) :
     carGenerator (K := K) i k * carGenerator (K := K) k j * carHighestWeightVector K n = 0 := by
@@ -271,19 +278,11 @@ private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
       carGenerator i k * (carGenerator k j * carHighestWeightVector K n) :=
         mul_assoc _ _ _
       _ = 0 := by
-        have hzero : carGenerator (K := K) k j * carHighestWeightVector K n = 0 := by
-          rw [carGenerator_def]
-          rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
-            positive_iota_mul_carHighestWeightVector_eq_zero hkj]
-        rw [hzero, mul_zero]
+        rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hkj, mul_zero]
   · have hik : i < k := lt_of_lt_of_le hij (le_of_not_gt hkj)
     rw [carGenerator_mul_comm_of_not_paired i k k j
       (by intro h; exact (ne_of_lt hij) h.2.symm), neg_mul, mul_assoc]
-    have hzero : carGenerator (K := K) i k * carHighestWeightVector K n = 0 := by
-      rw [carGenerator_def]
-      rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
-        positive_iota_mul_carHighestWeightVector_eq_zero hik]
-    rw [hzero, mul_zero, neg_zero]
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hik, mul_zero, neg_zero]
 
 private theorem diagonalTerm_mul_carHighestWeightVector (i k : n) :
     carGenerator (K := K) i k * carGenerator (K := K) k i * carHighestWeightVector K n =
@@ -292,23 +291,15 @@ private theorem diagonalTerm_mul_carHighestWeightVector (i k : n) :
   rcases lt_trichotomy k i with hki | rfl | hik
   · simp only [hki, ↓reduceIte]
     rw [mul_assoc]
-    have hzero : carGenerator (K := K) k i * carHighestWeightVector K n = 0 := by
-      rw [carGenerator_def]
-      rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
-        positive_iota_mul_carHighestWeightVector_eq_zero hki]
-    rw [hzero, mul_zero]
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hki, mul_zero]
   · simp
   · simp only [not_lt_of_ge hik.le, ne_of_gt hik, ↓reduceIte]
     have hcar := carGenerator_mul_add_swap (K := K) i k k i
     have hmul := congrArg
       (fun x : CliffordAlgebra (traceQuadraticForm K n) =>
         x * carHighestWeightVector K n) hcar
-    have hzero : carGenerator (K := K) i k * carHighestWeightVector K n = 0 := by
-      rw [carGenerator_def]
-      rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
-        positive_iota_mul_carHighestWeightVector_eq_zero hik]
     simp only [add_mul, mul_assoc] at hmul
-    rw [hzero, mul_zero, add_zero] at hmul
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hik, mul_zero, add_zero] at hmul
     rw [mul_assoc]
     simpa [Algebra.smul_def] using hmul
 

@@ -333,6 +333,7 @@ theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j :
 
 omit [DecidableEq n] in
 /-- The matrix-unit generators satisfy the CAR anticommutation relation. -/
+@[simp]
 theorem carGenerator_mul_add_swap {K : Type*} [CommRing K] {m : Type*} [Fintype m]
     (i j k l : m) :
     carGenerator (K := K) i j * carGenerator k l + carGenerator k l * carGenerator i j =
