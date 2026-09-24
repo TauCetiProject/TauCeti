@@ -17,6 +17,22 @@ the `(i + 1)`-st power of its maximal ideal. The integer index is total: at `i �
 group is the full Galois group.
 
 This is the local field specialization of `TauCeti.IsLocalRing.ramificationGroup`.
+
+## Main definitions
+
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroup K L i`: the `i`-th lower-numbering
+  ramification group of `L/K`.
+
+## Main results
+
+* `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroup_iff`: the defining congruence
+  `σ • x ≡ x mod 𝔪 ^ (i + 1)` on `𝒪[L]`.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_top_of_le_neg_one`,
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero` and
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_antitone`: the filtration is `⊤` below
+  `0`, starts with the inertia group of the maximal ideal, and decreases.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroup_natCast`: at a nonnegative index it is
+  `Ideal.ramificationGroup` of the maximal ideal of `𝒪[L]`.
 -/
 
 public section
@@ -41,7 +57,30 @@ theorem lowerRamificationGroup_def (i : ℤ) :
       TauCeti.IsLocalRing.ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i :=
   (rfl)
 
+variable {K L} in
+/-- The defining membership criterion of the lower ramification groups. -/
+@[simp]
+theorem mem_lowerRamificationGroup_iff {i : ℤ} {σ : L ≃ₐ[K] L} :
+    σ ∈ lowerRamificationGroup K L i ↔
+      ∀ x : 𝒪[L], σ • x - x ∈ IsLocalRing.maximalIdeal 𝒪[L] ^ (i + 1).toNat := by
+  rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.mem_ramificationGroup_iff]
+
+/-- Below the index `0` the lower filtration is the whole Galois group. -/
+theorem lowerRamificationGroup_eq_top_of_le_neg_one {i : ℤ} (hi : i ≤ -1) :
+    lowerRamificationGroup K L i = ⊤ := by
+  rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one _ _ hi]
+
+/-- The zeroth lower ramification group is the inertia group of the maximal ideal of `𝒪[L]`. -/
+theorem lowerRamificationGroup_zero :
+    lowerRamificationGroup K L 0 = Ideal.inertia (L ≃ₐ[K] L) (IsLocalRing.maximalIdeal 𝒪[L]) := by
+  rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia]
+
+/-- The lower ramification filtration is decreasing. -/
+theorem lowerRamificationGroup_antitone : Antitone (lowerRamificationGroup K L) :=
+  TauCeti.IsLocalRing.ramificationGroup_antitone _ _
+
 /-- At nonnegative indices, the canonical lower group is the maximal-ideal ramification group. -/
+@[simp]
 theorem lowerRamificationGroup_natCast (i : ℕ) :
     lowerRamificationGroup K L i =
       (IsLocalRing.maximalIdeal 𝒪[L]).ramificationGroup (L ≃ₐ[K] L) i := by

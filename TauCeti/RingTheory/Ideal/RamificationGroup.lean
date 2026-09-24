@@ -36,9 +36,9 @@ but is not itself a member of the family.
   decrease and lie in the decomposition group.
 * `Ideal.ramificationGroup_smul`: moving `Q` by `g` conjugates its ramification groups by `g`, and
   `Ideal.instNormalRamificationGroupStabilizer` makes each `G_i` normal in the decomposition group.
-* `Ideal.iInf_ramificationGroup_eq_ker` and `Ideal.exists_forall_ramificationGroup_eq_bot`: over a
-  Noetherian domain the filtration cuts out the kernel of the action, and a faithful action with
-  finite inertia group has `G_i = 1` for all large `i`.
+* `Ideal.iInf_ramificationGroup_eq_ker` and `Ideal.exists_forall_ramificationGroup_eq_bot`: for a
+  proper ideal `Q` of a Noetherian domain the filtration cuts out the kernel of the action, and a
+  faithful action with finite inertia group has `G_i = 1` for all large `i`.
 
 ## References
 

@@ -113,6 +113,7 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
 
 /-- At a nonnegative index, the ramification group of the local ring is the ramification group
 `Ideal.ramificationGroup` of its maximal ideal. -/
+@[simp]
 theorem ramificationGroup_natCast (n : ℕ) :
     ramificationGroup G S n = (maximalIdeal S).ramificationGroup G n := by
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega

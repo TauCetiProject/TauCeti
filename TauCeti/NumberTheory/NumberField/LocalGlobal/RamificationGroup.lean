@@ -39,8 +39,8 @@ and local ramification groups have the same orders.
   same statement as an equality of subgroups of the decomposition group.
 * `IsDedekindDomain.HeightOneSpectrum.map_ramificationGroup_decompositionHom`: for `L/K`
   Galois, `decompositionHom v w` carries the global ramification groups onto the local ones.
-* `IsDedekindDomain.HeightOneSpectrum.card_ramificationGroup_eq_card_ramificationGroup`: for `L/K`
-  Galois, the global and local ramification groups have the same orders.
+* `IsDedekindDomain.HeightOneSpectrum.card_ramificationGroup_eq_card_lowerRamificationGroup`: for
+  `L/K` Galois, the global and local ramification groups have the same orders.
 
 ## References
 
@@ -128,7 +128,7 @@ variable (w) in
 /-- **The global and local ramification groups have the same order.** For `L/K` Galois, the
 `i`-th ramification group of `w` has as many elements as the `i`-th lower-numbering ramification
 group of `L_w/K_v`. -/
-theorem card_ramificationGroup_eq_card_ramificationGroup (i : ℕ) :
+theorem card_ramificationGroup_eq_card_lowerRamificationGroup (i : ℕ) :
     Nat.card (w.asIdeal.ramificationGroup (L ≃ₐ[K] L) i) =
       Nat.card (TauCeti.LocalFieldsRamification.lowerRamificationGroup
         (v.adicCompletion K) (w.adicCompletion L) i) := by
