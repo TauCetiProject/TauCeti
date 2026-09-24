@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Action.Invariant
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.IsGaloisGroup.Basic
+public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
@@ -33,6 +34,12 @@ extension is Galois, the kernel of this homomorphism is the inertia group in ram
 The homomorphism from field automorphisms to residue-field automorphisms is Mathlib's generic
 `MulSemiringAction.toAlgAut` applied to the action constructed here.
 
+## Main results
+
+* `TauCeti.decompositionSubgroup_valuationSubring_eq_top`: every automorphism preserves the
+  valuation subring of `L`, so Mathlib's `ValuationSubring.decompositionSubgroup` is everything.
+* `TauCeti.integerRingFaithfulSMul`: an automorphism is determined by its action on `𝒪[L]`.
+
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter I, §§7–8 and Chapter IV, §1.
@@ -57,6 +64,19 @@ instance integerRingIsInvariantSubring : IsInvariantSubring (L ≃ₐ[K] L) 𝒪
   smul_mem σ x hx := by
     rw [Valuation.mem_integer_iff] at hx ⊢
     simpa only [AlgEquiv.smul_def, σ.valuation_eq] using hx
+
+variable (K L) in
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+open scoped Pointwise in
+/-- Every automorphism of `L/K` preserves the valuation subring of `L`, so its decomposition
+subgroup is the whole automorphism group. -/
+theorem decompositionSubgroup_valuationSubring_eq_top :
+    (valuation L).valuationSubring.decompositionSubgroup K = ⊤ := by
+  ext σ
+  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
+  ext x
+  rw [ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, Valuation.mem_valuationSubring_iff,
+    Valuation.mem_valuationSubring_iff, AlgEquiv.smul_def, σ⁻¹.valuation_eq]
 
 /-- Scalar multiplication by an extension automorphism is compatible with multiplication by an
 integer of the extension. -/

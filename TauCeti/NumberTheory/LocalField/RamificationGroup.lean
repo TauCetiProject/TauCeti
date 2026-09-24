@@ -27,7 +27,8 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   ramification group of `L/K`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal K L u`: the same filtration indexed
   by `u : ℝ` through the ceiling.
-* `TauCeti.LocalFieldsRamification.largestLowerJump K L`: the largest index `t` with `G_t ≠ 1`.
+* `TauCeti.LocalFieldsRamification.largestLowerJump K L`: for a nontrivial Galois group, the
+  largest index `t` with `G_t ≠ 1`; it is `-1` by convention when the Galois group is trivial.
 
 ## Main results
 
@@ -44,9 +45,11 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
-  precisely for `i` past the largest jump.
+  precisely for `i` past the largest jump when the Galois group is nontrivial.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_of_sub_one_lt_of_le`: the real
   indexing is constant on each interval `(i - 1, i]`.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_bot_iff`: for a nontrivial
+  Galois group, `G_u = 1` exactly for real `u` past the largest jump.
 * `TauCeti.LocalFieldsRamification.map_restrictScalarsHom_lowerRamificationGroup`: for a tower
   `L/K'/K`, the filtration of `H = Gal(L/K')` is `H ∩ G_i`.
 
@@ -113,21 +116,9 @@ instance instNormalLowerRamificationGroup (i : ℤ) : (lowerRamificationGroup K 
 
 /-! ### Comparison with Mathlib's inertia subgroup of a valuation subring -/
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-open scoped Pointwise in
-/-- Every automorphism of `L/K` preserves the valuation subring of `L`, so its decomposition
-subgroup is the whole automorphism group. -/
-theorem decompositionSubgroup_valuationSubring_eq_top :
-    (valuation L).valuationSubring.decompositionSubgroup K = ⊤ := by
-  ext σ
-  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
-  ext x
-  rw [ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, Valuation.mem_valuationSubring_iff,
-    Valuation.mem_valuationSubring_iff, AlgEquiv.smul_def, σ⁻¹.valuation_eq]
-
 /-- The zeroth lower ramification group is Mathlib's `ValuationSubring.inertiaSubgroup` of the
 valuation subring of `L`, viewed inside the decomposition subgroup, which is everything by
-`decompositionSubgroup_valuationSubring_eq_top`. -/
+`TauCeti.decompositionSubgroup_valuationSubring_eq_top`. -/
 theorem lowerRamificationGroup_zero_eq_map_inertiaSubgroup :
     lowerRamificationGroup K L 0 =
       ((valuation L).valuationSubring.inertiaSubgroup K).map
@@ -148,7 +139,7 @@ theorem lowerRamificationGroup_zero_eq_map_inertiaSubgroup :
     exact forall₂_congr fun x hx ↦ Valuation.mem_maximalIdeal_iff (v := valuation L)
   ext σ
   have hσ : σ ∈ A.decompositionSubgroup K := by
-    rw [decompositionSubgroup_valuationSubring_eq_top]
+    rw [TauCeti.decompositionSubgroup_valuationSubring_eq_top]
     exact Subgroup.mem_top σ
   refine ⟨fun h ↦ ⟨⟨σ, hσ⟩, (hI _).2 ((hG σ).1 h), rfl⟩, ?_⟩
   rintro ⟨τ, hτ, rfl⟩
@@ -165,11 +156,11 @@ theorem exists_forall_lowerRamificationGroup_eq_bot :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → lowerRamificationGroup K L i = ⊥ :=
   TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot _ _
 
-/-- The **largest jump** `t` of the lower ramification filtration: the largest index with
-`G_t ≠ 1`, so that `G_t ≠ 1 = G_{t + 1}` (`lowerRamificationGroup_largestLowerJump_ne_bot` and
-`lowerRamificationGroup_eq_bot_iff`). It is at least `-1`, because `G_{-1}` is the whole Galois
-group. When `L ≃ₐ[K] L` is trivial every `G_i` is trivial and there is no jump; the value is then
-`-1` by convention. -/
+/-- The **largest jump** `t` of the lower ramification filtration. For a nontrivial Galois group
+it is the largest index with `G_t ≠ 1`, so that `G_t ≠ 1` and `G_{t + 1} = 1`
+(`lowerRamificationGroup_largestLowerJump_ne_bot` and `lowerRamificationGroup_eq_bot_iff`); it is
+at least `-1` because `G_{-1}` is the whole Galois group. When `L ≃ₐ[K] L` is trivial every `G_i`
+is trivial and there is no jump; the value is then `-1` by convention. -/
 noncomputable def largestLowerJump : ℤ :=
   (sInf {n : ℕ | lowerRamificationGroup K L n = ⊥} : ℕ) - 1
 
@@ -248,6 +239,13 @@ theorem lowerRamificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ}
 /-- The real-indexed lower filtration is decreasing. -/
 theorem lowerRamificationGroupReal_antitone : Antitone (lowerRamificationGroupReal K L) :=
   TauCeti.IsLocalRing.ramificationGroupReal_antitone _ _
+
+variable {K L} in
+/-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest
+lower jump. -/
+theorem lowerRamificationGroupReal_eq_bot_iff [Nontrivial (L ≃ₐ[K] L)] {u : ℝ} :
+    lowerRamificationGroupReal K L u = ⊥ ↔ (largestLowerJump K L : ℝ) < u := by
+  rw [lowerRamificationGroupReal_def, lowerRamificationGroup_eq_bot_iff, Int.lt_ceil]
 
 /-- Every real-indexed lower ramification group is normal in the Galois group. -/
 instance instNormalLowerRamificationGroupReal (u : ℝ) :
