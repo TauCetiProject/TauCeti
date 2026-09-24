@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Exposure
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 import Mathlib.Probability.ProductMeasure
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import TauCeti.Probability.McDiarmid
 
 /-!
@@ -74,28 +73,6 @@ section Deterministic
 variable [NeZero n]
 
 open scoped Classical in
-/-- A graph on `Fin n` as a graphon on the uniform carrier on `Fin n`. -/
-private def finGraphon (G : SimpleGraph (Fin n)) : Graphon (Fin n) (uniformOn Set.univ) :=
-  Graphon.ofMatrix _ (fun i j => if G.Adj i j then 1 else 0) fun i j => by
-    simp only [G.adj_comm]
-
-open scoped Classical in
-private theorem finGraphon_apply (G : SimpleGraph (Fin n)) (i j : Fin n) :
-    finGraphon G i j = if G.Adj i j then 1 else 0 := by
-  simp [finGraphon, apply_ite Subtype.val]
-
-open scoped Classical in
-/-- The graphon of a finite graph is the pullback of its uniform-carrier graphon along the cells of
-the unit interval. -/
-private theorem finiteGraphGraphon_eq_comap (G : SimpleGraph (Fin n)) :
-    finiteGraphGraphon G = (finGraphon G).comap (cellFin n) measurable_cellFin volume := by
-  ext x y
-  have hcell : ∀ z : I, cellFin n z = ⟨cellIdx n z, cellIdx_lt (NeZero.pos n) z⟩ := fun z =>
-    Fin.ext (coe_cellFin z)
-  rw [finiteGraphGraphon_apply_fin G (NeZero.pos n), Graphon.comap_apply, finGraphon_apply,
-    hcell, hcell]
-
-open scoped Classical in
 /-- A graph at cut distance at least `ε` from a graphon on the uniform carrier on `Fin n` has a
 rectangle of vertices on which its edge count differs from the total weight by at least `εn²`. -/
 private theorem exists_le_abs_sum_of_le_cutDist (W : Graphon Ω μ) (G : SimpleGraph (Fin n))
@@ -107,7 +84,7 @@ private theorem exists_le_abs_sum_of_le_cutDist (W : Graphon Ω μ) (G : SimpleG
   rw [finiteGraphGraphon_eq_comap, cutDist_comm,
     cutDist_comap_right (hf := measurePreserving_cellFin), cutDist_comm] at h
   obtain ⟨S, T, hST⟩ := exists_cutNorm_eq_abs_rectIntegral _
-    ((finGraphon G).toSymmKernel - (W.comap y (measurable_of_finite y) _).toSymmKernel)
+    ((finiteGraphGraphonOnFin G).toSymmKernel - (W.comap y (measurable_of_finite y) _).toSymmKernel)
   have hle := (h.trans (cutDist_le_cutNorm_sub _ _)).trans_eq hST
   have hn : (0 : ℝ) < (n : ℝ) ^ 2 := by
     have : (0 : ℝ) < n := by exact_mod_cast NeZero.pos n
@@ -115,7 +92,7 @@ private theorem exists_le_abs_sum_of_le_cutDist (W : Graphon Ω μ) (G : SimpleG
   refine ⟨S.toFinite.toFinset, T.toFinite.toFinset, ?_⟩
   rw [← S.toFinite.coe_toFinset, ← T.toFinite.coe_toFinset, SymmKernel.rectIntegral_uniformOn_univ,
     abs_div, Fintype.card_fin, abs_of_pos hn, le_div_iff₀ hn] at hle
-  simpa [finGraphon_apply] using hle
+  simpa [finiteGraphGraphonOnFin_apply] using hle
 
 end Deterministic
 
@@ -379,6 +356,14 @@ theorem exposedSample_cutDist_comap_concentration [NeZero n] (W : Graphon Ω μ)
     field_simp
   have hmp := measurePreserving_arrowProdEquivProdArrow Ω (Fin n → ℝ) (Fin n) (fun _ => μ)
     (fun _ => Measure.pi fun _ : Fin n => Probability.uniformMeasure 0 1)
+  have hcard : Fintype.card (Finset (Fin n) × Finset (Fin n)) = 4 ^ n := by
+    simp only [Fintype.card_prod, Fintype.card_finset, Fintype.card_fin]
+    rw [← mul_pow]
+    norm_num
+  have hfactor : ((4 ^ n : ℕ) : ℝ) * (2 * Real.exp (-(ε * n - 1) ^ 2 / 2)) =
+      2 * 4 ^ n * Real.exp (-(ε * n - 1) ^ 2 / 2) := by
+    push_cast
+    ring
   rw [exposureMeasure_def]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   calc _ ≤ _ := measure_mono (setOf_le_cutDist_subset_iUnion_rectEvent W ε)
@@ -392,13 +377,8 @@ theorem exposedSample_cutDist_comap_concentration [NeZero n] (W : Graphon Ω μ)
           ENNReal.ofReal (2 * Real.exp (-(ε * n - 1) ^ 2 / 2)) :=
       Finset.sum_le_sum fun ST _ => (prod_rectEvent_le W hs ST.1 ST.2).trans_eq (by rw [hexp])
     _ = ENNReal.ofReal (2 * 4 ^ n * Real.exp (-(ε * n - 1) ^ 2 / 2)) := by
-      rw [Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_finset,
-        Fintype.card_fin, nsmul_eq_mul, show (2 : ℝ) * 4 ^ n * Real.exp _ =
-          ((2 ^ n * 2 ^ n : ℕ) : ℝ) * (2 * Real.exp (-(ε * n - 1) ^ 2 / 2)) by
-            push_cast
-            rw [← mul_pow]
-            ring,
-        ENNReal.ofReal_mul (p := ((2 ^ n * 2 ^ n : ℕ) : ℝ)) (Nat.cast_nonneg _),
+      rw [Finset.sum_const, Finset.card_univ, hcard, nsmul_eq_mul, ← hfactor,
+        ENNReal.ofReal_mul (p := ((4 ^ n : ℕ) : ℝ)) (Nat.cast_nonneg _),
         ENNReal.ofReal_natCast]
 
 end Coins
