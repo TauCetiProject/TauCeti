@@ -173,7 +173,7 @@ theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :
 
 /-- The cohomology class of the diagonal repartition of a global rational function vanishes. -/
 @[simp]
-lemma repartitionToCohomologyOne_diagonalRationalFunctionsToRepartitions
+lemma principalPartsBoundary_repartitionToPrincipalParts_diagonalRationalFunctionsToRepartitions
     (D : SchemeWeilDivisor X) (f : Γ(Scheme.rationalFunctions X, ⊤)) :
     principalPartsBoundary k
       (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property) D
