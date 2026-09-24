@@ -94,7 +94,8 @@ theorem star_mul_self_eq_neg_one_pow_smul_reverse_mul_self (l : List M) :
       (-1 : R) ^ l.length • (reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod) := by
   rw [star_def, involute_prod_map_ι, map_smul, smul_mul_assoc]
 
-/-- A scalar factor on the left comes out of the reverse norm. -/
+/-- When the reverse norm of `x` is the scalar `r`, the reverse norm of `x * y` is `r` times
+the reverse norm of `y`. -/
 theorem reverse_mul_mul_self_mul {x y : CliffordAlgebra Q} {r : R}
     (hx : reverse x * x = algebraMap R (CliffordAlgebra Q) r) :
     reverse (x * y) * (x * y) = algebraMap R (CliffordAlgebra Q) r * (reverse y * y) := by
