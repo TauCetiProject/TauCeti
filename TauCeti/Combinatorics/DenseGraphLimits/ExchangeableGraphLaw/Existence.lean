@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Empirical
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Compact
-import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
-import Mathlib.MeasureTheory.Measure.Prokhorov
 
 /-!
 # Every exchangeable graph law is a graphon mixture
@@ -19,17 +17,14 @@ Diaconis–Janson correspondence between exchangeable graph laws and graphon mix
 graphon-space compactness with no array-level input. It asserts only that a mixing measure exists:
 it makes no claim of uniqueness and picks no canonical one.
 
-Compactness enters through the space of mixing measures. Since `GraphonSpaceI` is a compact metric
-space, so is `ProbabilityMeasure GraphonSpaceI` with the topology of weak convergence, and every
-sequence of mixing measures has a weakly convergent subsequence
+Compactness enters through the space of mixing measures: every sequence of probability measures
+on the compact graphon space has a weakly convergent subsequence
 (`exists_subseq_tendsto_probabilityMeasure`). Applied to the empirical mixing measures of a law,
 the limit of such a subsequence represents the law by
 `mixtureExchangeableLaw_eq_of_tendsto_empiricalMixing`.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.exists_subseq_tendsto_probabilityMeasure` — every sequence of
-  probability measures on `GraphonSpaceI` has a weakly convergent subsequence.
 * `TauCeti.DenseGraphLimits.exists_mixtureExchangeableLaw_eq` — **every exchangeable graph law is
   the mixture law of a probability measure on `GraphonSpaceI`.**
 
@@ -48,20 +43,11 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Topology
+open MeasureTheory
 
 namespace TauCeti
 
 namespace DenseGraphLimits
-
-/-- **Compactness extraction.** Every sequence of probability measures on `GraphonSpaceI` has a
-weakly convergent subsequence: the graphon space is a compact metric space, so its space of
-probability measures is compact and metrizable (the compact-space direction of Prokhorov's
-theorem, with no tightness argument). -/
-theorem exists_subseq_tendsto_probabilityMeasure (Ps : ℕ → ProbabilityMeasure GraphonSpaceI) :
-    ∃ (P : ProbabilityMeasure GraphonSpaceI) (φ : ℕ → ℕ),
-      StrictMono φ ∧ Tendsto (Ps ∘ φ) atTop (𝓝 P) :=
-  CompactSpace.tendsto_subseq Ps
 
 /-- **Every exchangeable graph law is a graphon mixture.** For every exchangeable graph law `L`
 there is a probability measure `P` on `GraphonSpaceI` whose mixture law is `L`: any weak limit of a
