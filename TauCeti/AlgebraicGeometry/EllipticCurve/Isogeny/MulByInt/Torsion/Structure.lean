@@ -53,7 +53,7 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     apply dvd_pow_self
     exact (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors p.2) hN0
       (Nat.dvd_of_mem_primeFactors p.2)).ne'
-  let : Finite G := W.finite_torsionBy_self (by exact_mod_cast hN0)
+  let : Finite G := W.finite_torsionBy (by exact_mod_cast hN0)
   let e : Submodule.torsionBy ℤ G (q : ℤ) ≃+
       AddSubgroup.torsionBy W.toAffine.Point (q : ℤ) :=
         TauCeti.AddSubgroup.torsionByTorsionByEquiv (by exact_mod_cast hq_dvd)
@@ -62,7 +62,7 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
   have hcardq : Nat.card (Submodule.torsionBy ℤ G (q : ℤ)) = q ^ 2 := by
     rw [Nat.card_congr e.toEquiv]
     simpa only [Int.natAbs_natCast] using
-      W.natCard_torsionBy_self (n := (q : ℤ)) (by
+      W.natCard_torsionBy (n := (q : ℤ)) (by
         exact_mod_cast ne_zero_of_dvd_ne_zero hN (Nat.cast_dvd_cast hq_dvd))
   have hcardp : Nat.card
       (AddSubgroup.torsionBy (Submodule.torsionBy ℤ G (q : ℤ)) (p : ℤ)) = p ^ 2 := by
@@ -70,7 +70,7 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
       (TauCeti.AddSubgroup.torsionByTorsionByEquiv (by exact_mod_cast hp_dvd_q))
     rw [Nat.card_congr ep.toEquiv]
     simpa only [Int.natAbs_natCast] using
-      W.natCard_torsionBy_self (n := (p : ℤ)) (by
+      W.natCard_torsionBy (n := (p : ℤ)) (by
         exact_mod_cast ne_zero_of_dvd_ne_zero hN
           (Nat.cast_dvd_cast (Nat.dvd_of_mem_primeFactors p.2)))
   have hcardq' : Nat.card (Submodule.torsionBy ℤ G (q : ℤ)) =
@@ -80,27 +80,6 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     rw [← pow_mul, mul_comm]
   exact (TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow
     (Nat.prime_of_mem_primeFactors p.2) hpow hcardq' hcardp).some
-
-open scoped Classical in
-omit [IsSepClosed K] in
-/-- The primary torsion subgroups form an internal direct sum of `E[N]`. -/
-private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
-    (N : ℕ) [NeZero N] : DirectSum.IsInternal fun p : N.primeFactors ↦
-    Submodule.torsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))
-      ((p ^ N.factorization p : ℕ) : ℤ) := by
-  have hN0 : N ≠ 0 := NeZero.ne N
-  have hcoprime : (N.primeFactors : Set ℕ).Pairwise
-      (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
-    intro p hp r hr hpr
-    have hne : (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ :=
-      fun h ↦ hpr (congrArg Subtype.val h)
-    exact _root_.Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
-      hne
-  apply Submodule.torsionBy_isInternal hcoprime
-  have hprod : ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
-    exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN0).symm
-  rw [hprod]
-  exact Submodule.torsionBy_isTorsionBy (R := ℤ) (N : ℤ)
 
 open scoped Classical in
 /-- The primary decomposition of `E[N]`, with each component put in rank-two cyclic form. -/
@@ -115,7 +94,8 @@ private noncomputable def primaryDecompositionEquiv (W : WeierstrassCurve K) [W.
       Submodule.torsionBy ℤ G (q p : ℤ) ≃+ ZMod (q p) × ZMod (q p) :=
     primePowerComponentEquiv W N hN p
   have hinternal : DirectSum.IsInternal fun p : N.primeFactors ↦
-      Submodule.torsionBy ℤ G (q p : ℤ) := torsionPrimaryIsInternal W N
+      Submodule.torsionBy ℤ G (q p : ℤ) :=
+    TauCeti.AddSubgroup.torsionBy_primeFactors_isInternal N (NeZero.ne N)
   letI := hinternal.chooseDecomposition
   exact (DirectSum.decomposeAddEquiv fun p : N.primeFactors ↦
     Submodule.torsionBy ℤ G (q p : ℤ)).trans <|

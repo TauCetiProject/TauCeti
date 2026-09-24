@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.GroupTheory.Index
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -88,8 +87,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     exact Nat.pow_right_injective hp.two_le ht
   have hsum : ∑ i, a i = 2 * k := by
     apply Nat.pow_right_injective hp.two_le
-    -- Applying injectivity exposes equality after applying the power function.
-    change p ^ (∑ i, a i) = p ^ (2 * k)
+    dsimp only
     rw [← Finset.prod_pow_eq_pow_sum Finset.univ a p]
     simp only [← ha, hcard_prod]
   have ha_eq (i : ι) : a i = k := by

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.PrimeKernel
-import TauCeti.Algebra.Module.Torsion.Basic
 -- Proof-only: rationality of torsion over an algebraically closed base.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClosed
 -- Proof-only: `sepDeg [n] = n ²` for `n` invertible in the base field.
@@ -46,9 +45,10 @@ closure of the pulled-back field, so that is where the torsion difference lives.
   field.
 * `WeierstrassCurve.Affine.natCard_torsionBy_of_torsion_rational`: the count read on Mathlib's
   intrinsic torsion subgroup.
-* `WeierstrassCurve.finite_torsionBy_self`: finiteness of nonzero torsion over the original field.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny_of_torsion_rational`: the same at a prime, as `ℓ ²`
   rather than `(ℓ : ℤ).natAbs ^ 2`.
+* `WeierstrassCurve.finite_torsionBy`: finiteness of `E[n]` for nonzero `n`, read on
+  `W.toAffine.Point` itself rather than on the trivial base change `W⁄K`.
 
 The three steps of the argument sketched above — the torsion difference, its rationality, and the
 resulting bound on embeddings — are `private`; nothing outside this module uses them.
@@ -206,14 +206,12 @@ namespace WeierstrassCurve
 variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
 open scoped Classical in
-/-- The `n`-torsion of an elliptic curve over its original field is finite for nonzero `n`. -/
-theorem finite_torsionBy_self {n : ℤ} (hn : n ≠ 0) :
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, is finite for nonzero `n`. -/
+theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
     Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
-  let eSelf : (W.toAffine⁄K).toAffine.Point ≃+ W.toAffine.Point :=
-    AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
-  let : Finite (AddSubgroup.torsionBy (W.toAffine⁄K).toAffine.Point n) :=
-    W.toAffine.finite_torsionBy hn
-  exact Finite.of_equiv _ (AddEquiv.torsionByCongr eSelf n).toEquiv
+  have h := W.toAffine.finite_torsionBy hn
+  rwa [Affine.baseChange_self] at h
 
 end WeierstrassCurve
 

@@ -25,21 +25,20 @@ namespace AddEquiv
 
 /-- Functions into products are additively equivalent to products of function spaces. -/
 def arrowProdEquivProdArrow {ι : Type*} (B C : ι → Type*)
-    [∀ i, AddMonoid (B i)] [∀ i, AddMonoid (C i)] :
+    [∀ i, Add (B i)] [∀ i, Add (C i)] :
     (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
   { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
 
 /-- `arrowProdEquivProdArrow` maps a function to its two component functions. -/
 @[simp]
-theorem arrowProdEquivProdArrow_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)]
-    [∀ i, AddMonoid (C i)]
+theorem arrowProdEquivProdArrow_apply (B C : ι → Type*) [∀ i, Add (B i)] [∀ i, Add (C i)]
     (f : ∀ i, B i × C i) : arrowProdEquivProdArrow B C f = (fun i ↦ (f i).1, fun i ↦ (f i).2) :=
   Equiv.arrowProdEquivProdArrow_apply ι B C f
 
 /-- The inverse of `arrowProdEquivProdArrow` pairs component functions pointwise. -/
 @[simp]
-theorem arrowProdEquivProdArrow_symm_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)]
-    [∀ i, AddMonoid (C i)] (f : (∀ i, B i) × (∀ i, C i)) :
+theorem arrowProdEquivProdArrow_symm_apply (B C : ι → Type*) [∀ i, Add (B i)] [∀ i, Add (C i)]
+    (f : (∀ i, B i) × (∀ i, C i)) :
     (arrowProdEquivProdArrow B C).symm f = fun i ↦ (f.1 i, f.2 i) :=
   by
     apply funext

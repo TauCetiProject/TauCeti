@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-import Mathlib.GroupTheory.Index
 
 /-!
 # Torsion in residue rings with power modulus
@@ -91,9 +90,33 @@ theorem zmodTorsionByEquiv_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
       (x.val * p ^ k : ℕ) :=
   zmodTorsionByEquivHom_apply_coe p k x
 
+/-- The inverse of `zmodTorsionByEquiv` divides the representative by `p ^ k`. -/
+@[simp]
+theorem zmodTorsionByEquiv_symm_apply (p k : ℕ) [NeZero p]
+    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
+    (zmodTorsionByEquiv p k).symm y = ((y.1.val / p ^ k : ℕ) : ZMod p) := by
+  apply (zmodTorsionByEquiv p k).injective
+  rw [(zmodTorsionByEquiv p k).apply_symm_apply]
+  apply Subtype.ext
+  symm
+  rw [zmodTorsionByEquiv_apply_coe]
+  have hy : ((p : ℤ) : ZMod (p ^ (k + 1))) * y.1 = 0 := by
+    simpa only [Int.cast_smul_eq_zsmul, zsmul_eq_mul] using
+      (Submodule.mem_torsionBy_iff _ _).mp y.2
+  have hdiv : p ^ k ∣ y.1.val := by
+    rw [← ZMod.natCast_zmod_val y.1] at hy
+    simp only [Int.cast_natCast] at hy
+    rw [← Nat.cast_mul, ZMod.natCast_eq_zero_iff] at hy
+    have hy' : p * p ^ k ∣ p * y.1.val := by
+      simpa only [pow_succ, mul_comm (p ^ k)] using hy
+    exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p))).mp hy'
+  have hlt : y.1.val / p ^ k < p := by
+    apply (Nat.div_lt_iff_lt_mul (pow_pos (Nat.pos_of_ne_zero (NeZero.ne p)) k)).2
+    simpa only [pow_succ, mul_comm] using y.1.val_lt
+  rw [ZMod.val_natCast_of_lt hlt, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
+
 /-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in
 the ambient residue ring. -/
-@[simp]
 theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
     zmodTorsionByEquiv p k x = y ↔
@@ -106,7 +129,6 @@ theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     exact Subtype.ext h
 
 /-- The inverse picks the unique residue whose multiple by `p ^ k` is the given torsion point. -/
-@[simp]
 theorem zmodTorsionByEquiv_symm_apply_eq_iff (p k : ℕ) [NeZero p]
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) (x : ZMod p) :
     (zmodTorsionByEquiv p k).symm y = x ↔
