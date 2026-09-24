@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.Probability.UniformOn
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -36,7 +37,8 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 
 ## Main definitions
 
-* `TauCeti.unitInterval.cellIdx` — the cell index.
+* `TauCeti.unitInterval.cellIdx` — the cell index;
+* `TauCeti.unitInterval.cellFin` — the same index as an element of `Fin m`, for positive `m`.
 
 ## Main results
 
@@ -47,6 +49,8 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.measurable_cellIdx` — the index depends measurably on the point;
 * `TauCeti.unitInterval.measurableSet_preimage_cellIdx` — every cell is measurable;
 * `TauCeti.unitInterval.volume_preimage_cellIdx` — every cell has volume `1/m`;
+* `TauCeti.unitInterval.measurePreserving_cellFin` — the cell index carries `volume` to the uniform
+  measure on `Fin m`;
 * `TauCeti.unitInterval.integral_pi_comp_cellIdx_eq_inv_smul_sum` — a function of the cell indices
   of finitely many independent uniform points integrates to the average of its values over
   `V → Fin m`.
@@ -161,6 +165,36 @@ theorem volume_preimage_cellIdx (hi : i < m) :
       field_simp
       linarith
   rw [hgoal, one_div, ENNReal.ofReal_inv_of_pos hmR, ENNReal.ofReal_natCast]
+
+/-- The index of the cell containing `x`, as an element of `Fin m`. Positivity of `m`, carried by
+`NeZero`, is what makes `cellIdx m x` a valid index. -/
+def cellFin (m : ℕ) [NeZero m] (x : I) : Fin m := ⟨cellIdx m x, cellIdx_lt (NeZero.pos m) x⟩
+
+@[simp]
+theorem coe_cellFin [NeZero m] (x : I) : (cellFin m x : ℕ) = cellIdx m x := (rfl)
+
+/-- The cells of `cellFin` are those of `cellIdx`. -/
+theorem preimage_cellFin_singleton [NeZero m] (i : Fin m) :
+    cellFin m ⁻¹' {i} = cellIdx m ⁻¹' {(i : ℕ)} := by
+  ext x
+  simp [Fin.ext_iff]
+
+/-- The `Fin m`-valued cell index depends measurably on the point. -/
+@[fun_prop]
+theorem measurable_cellFin [NeZero m] : Measurable (cellFin m) :=
+  measurable_to_countable' fun i => by
+    rw [preimage_cellFin_singleton]
+    exact measurableSet_preimage_cellIdx m i
+
+/-- **The cells are equally likely.** The `Fin m`-valued cell index is measure preserving from
+`(I, volume)` to the uniform probability measure on `Fin m`: this is how an object on `m` equally
+weighted points is read on the unit interval. -/
+theorem measurePreserving_cellFin [NeZero m] :
+    MeasurePreserving (cellFin m) volume (ProbabilityTheory.uniformOn Set.univ) := by
+  refine ⟨measurable_cellFin, Measure.ext_of_singleton fun i => ?_⟩
+  rw [Measure.map_apply measurable_cellFin (measurableSet_singleton i), preimage_cellFin_singleton,
+    volume_preimage_cellIdx i.isLt, ProbabilityTheory.uniformOn_univ, Measure.count_singleton,
+    Fintype.card_fin, one_div]
 
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
