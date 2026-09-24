@@ -19,6 +19,7 @@ restriction form a complex
 
 and if `Hⁱ(S, A) = 0` for `0 < i ≤ n`, it is exact and inflation is injective (Milne II 1.34).
 Mathlib proves the case `n = 0`, where there is no hypothesis, as `groupCohomology.H1InfRes`.
+The pinned Mathlib has no versions of `H1InfRes` or `map₁_one` in arbitrary positive degree.
 
 The general case is by dimension shifting along the coinduced sequence
 
