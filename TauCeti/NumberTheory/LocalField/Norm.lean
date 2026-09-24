@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.NormTrace
+import Mathlib.RingTheory.Localization.NormTrace
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -148,29 +148,6 @@ theorem normalizedValuationWithZero_norm (x : L) :
     simpa only [x', Units.val_mk0] using hnorm
 
 
-section NormGroup
-
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
-
-/-- The norm group `N_{L/K}(Lˣ)` of a finite field extension `L/K`: the image in `Kˣ` of the field
-norm on units, `Algebra.normUnits K : Lˣ →* Kˣ`. Finiteness is required because `Algebra.norm K`
-is identically `1` on an infinite extension. -/
-noncomputable def normGroup [_hfin : Module.Finite K L] : Subgroup Kˣ :=
-  (Algebra.normUnits K : Lˣ →* Kˣ).range
-
-variable {K L} in
-/-- An element of `Kˣ` lies in the norm group exactly when it is the norm of a unit of `L`. -/
-theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
-    x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
-  simp [normGroup, Units.ext_iff]
-
-/-- The norm of a unit of `L` lies in the norm group. -/
-theorem normUnits_mem_normGroup [Module.Finite K L] (y : Lˣ) :
-    Algebra.normUnits K y ∈ normGroup K L :=
-  ⟨y, rfl⟩
-
-end NormGroup
-
 omit [FiniteDimensional K L] in
 /-- The norm of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
 norm of `L/K`. -/
@@ -186,6 +163,7 @@ theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ �
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
 
 /-- A unit of `L` is a unit of `𝒪[L]` exactly when its norm is a unit of `𝒪[K]`. -/
+@[simp]
 theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
     Algebra.normUnits K y ∈ unitFiltration K 0 ↔ y ∈ unitFiltration L 0 := by
   rw [mem_unitFiltration_zero, mem_unitFiltration_zero, ← normalizedValuation_eq_one_iff,
@@ -209,13 +187,14 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
   exact Nat.cast_eq_one
 
 variable (L) in
-omit [FiniteDimensional K L] in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the
 residue degree `f(L/K)`. -/
-theorem inertiaDegree_dvd_of_mem_normGroup [Module.Finite K L] {x : Kˣ}
+theorem inertiaDegree_dvd_of_mem_normGroup {x : Kˣ}
     (hx : x ∈ normGroup K L) :
     (inertiaDegree K L : ℤ) ∣ (normalizedValuation K x).toAdd := by
-  obtain ⟨y, rfl⟩ := hx
+  obtain ⟨y, hy⟩ := mem_normGroup_iff.mp hx
+  have h : Algebra.normUnits K y = x := Units.ext (by simpa using hy)
+  subst x
   exact ⟨_, toAdd_normalizedValuation_norm y⟩
 
 end TauCeti
