@@ -151,6 +151,8 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_mk_gen (x : E)
       stabilizer Gal(normalClosure F F⟮x⟯ E/F) (y' : normalClosure F F⟮x⟯ E) := by
     simpa only [MulEquiv.toMonoidHom_eq_coe, fixingSubgroup_adjoin_simple] using
       map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y
+  -- The composite equivalence is defined with local transports, so `rw` cannot see its
+  -- final component until the application is exposed.
   change quotientStabilizerEquivAlgHomSimpleField x y'
       (QuotientGroup.congrOfMapEq (galEquivNormalClosure x) hst
         (QuotientGroup.mk σ)) (AdjoinSimple.gen F x) = _
@@ -172,6 +174,7 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_smul (x : E)
     intro a ha
     simp only [Set.mem_singleton_iff] at ha
     subst a
+    -- The quotient action on representatives reduces definitionally to multiplication.
     change quotientGalStabilizerEquivAlgHomSimpleField x y
         (QuotientGroup.mk (σ * τ)) (AdjoinSimple.gen F x) =
       (galEquivNormalClosure x σ • quotientGalStabilizerEquivAlgHomSimpleField x y
@@ -408,6 +411,8 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
     rw [← hy']
     simpa only [MulEquiv.toMonoidHom_eq_coe] using
       Subgroup.map_equiv_normalizer_eq (stabilizer (minpoly F x).Gal y) e
+  -- The composite equivalence is defined with local transports; expose its final
+  -- application so the quotient transport rule can rewrite the representative.
   change ((quotientNormalizerEquivConjugateSimpleFields x hsep
     (QuotientGroup.congrOfMapEq e hn (QuotientGroup.mk σ))).1) = _
   rw [QuotientGroup.congrOfMapEq_mk]
@@ -429,6 +434,7 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_smul (x : E)
         (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy q).1 := by
   induction q using Quotient.inductionOn' with
   | _ τ =>
+    -- The quotient action on representatives reduces definitionally to multiplication.
     change (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
       (QuotientGroup.mk (σ * τ))).1 = _
     simp [quotientGalNormalizerEquivConjugateSimpleFields_mk, mul_smul]
@@ -447,6 +453,22 @@ theorem ncard_conjugateSimpleFields (x : E) (hsep : (minpoly F x).Separable) :
     isGalois_normalClosure_adjoin_simple x hsep
   exact IntermediateField.ncard_conjugateFields
     (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))
+
+/-- The number of conjugate simple fields is the index of the normalizer of a point
+stabilizer in the polynomial Galois group, when that stabilizer fixes the original field. -/
+theorem ncard_conjugateSimpleFields_eq_index_normalizer (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
+    (conjugateSimpleFields (F := F) x).ncard =
+      (Subgroup.normalizer
+        (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).index := by
+  let e := galEquivNormalClosure (F := F) (E := E) x
+  rw [ncard_conjugateSimpleFields (F := F) x hsep, ← hy]
+  rw [← Subgroup.map_equiv_normalizer_eq]
+  exact Subgroup.index_map_equiv _ e
 
 /-- A root corresponding to the original generator identifies the fixing subgroup of `F⟮x⟯`
 with its point stabilizer.  Hence the number of conjugate fields is the index of the normalizer
