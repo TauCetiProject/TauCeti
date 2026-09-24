@@ -31,24 +31,12 @@ open scoped TensorProduct
 
 noncomputable section
 
-/-- A long-root lift is the quotient basis vector indexed by its short special-map image. -/
-theorem f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis
-    (γ : Fin 48) (hγ : f4Length γ = 2) :
-    f4ShortRootSubspace.mkQ (f4ModularRootVector γ) =
-      f4ShortRootQuotientBasis
-        (f4ShortRootWeightIndexEquiv.symm (Sum.inl
-          ⟨f4SpecialIsogenyIndexEquiv γ, by
-            exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩)) := by
-  rw [f4ShortRootQuotientBasis_symm_inl]
-  apply congrArg f4ShortRootSubspace.mkQ
-  apply congrArg f4ModularRootVector
-  exact (f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv γ).symm
-
 /-- The first adjoint action of a short root vanishes after quotienting by the short-root ideal. -/
-theorem f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short
+@[simp] theorem f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short
     (α : Fin 48) (hα : f4Length α = 1) (x : f4ModularChevalleyLieAlgebra) :
-    f4ShortRootSubspace.mkQ ⁅f4ModularRootVector α, x⁆ = 0 := by
-  rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    (Submodule.Quotient.mk ⁅f4ModularRootVector α, x⁆ :
+      f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) = 0 := by
+  rw [Submodule.Quotient.mk_eq_zero]
   rw [← lie_skew (f4ModularRootVector α) x]
   exact Submodule.neg_mem _
     (f4ShortRootSubspace_lie_mem x
@@ -128,7 +116,6 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
     (hα : f4Length (f4SignedSimpleRootIndex k) = 1)
     (hβ : f4Length β = 2)
-    (hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k))
     (hno : ∀ δ : Fin 48, f4Length δ = 1 →
       f4SimplyConnectedRootDatum.root δ ≠
         f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
@@ -136,6 +123,11 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
             (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
     f4ShortRootSubspace.mkQ
       (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) = 0 := by
+  have hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k) := by
+    intro heq
+    have hlen := congrArg f4Length heq
+    rw [hβ, f4Length_opposite, hα] at hlen
+    omega
   have hzero := f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint k β hopp
     (fun γ hγ ↦ by
       have hγlong := (f4_pairings_of_long_add_two_short

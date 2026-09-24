@@ -57,26 +57,6 @@ open LieModule
 
 noncomputable section
 
-theorem f4Length_opposite (α : Fin 48) :
-    f4Length (f4OppositeRootIndex α) = f4Length α := by
-  let H := F4.cartanSubalgebra valid_F4
-  have hroot : f4SimplyConnectedRootDatum.root (f4OppositeRootIndex α) =
-      f4SimplyConnectedRootDatum.root α +
-        (-2 : ℤ) • f4SimplyConnectedRootDatum.root α := by
-    apply (f4KillingRoot_eq_add_zsmul_iff α α _ (-2)).mp
-    rw [f4KillingRoot_f4OppositeRootIndex]
-    change -(f4KillingRoot α : H → ℚ) =
-      (f4KillingRoot α : H → ℚ) + (-2 : ℚ) • (f4KillingRoot α : H → ℚ)
-    rw [show (-2 : ℚ) = -(2 : ℚ) by norm_num, neg_smul, two_smul]
-    module
-  have hlen := f4Length_of_root_eq_add_zsmul α α (f4OppositeRootIndex α) (-2) hroot
-  change f4Length (f4OppositeRootIndex α) =
-      f4Length α + (-2) * f4Length α *
-        f4SimplyConnectedRootDatum.pairing α α + (-2) ^ 2 * f4Length α at hlen
-  rw [f4SimplyConnectedRootDatum.pairing_same] at hlen
-  norm_num at hlen
-  linarith
-
 /-- The coordinate identification from the long-root quotient to the short-root ideal.  Both
 sides use the same `Fin 26` labels, already normalized by the special root permutation. -/
 noncomputable def f4ShortRootQuotientToIdealEquiv :
@@ -731,17 +711,12 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
       simp only [f4SpecialIsogenyIndexEquiv_apply]
       exact f4SpecialIsogenyIndex_involutive i
     simpa only [hi] using hcomparison
-  · have hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k) := by
-      intro heq
-      have hlen := congrArg f4Length heq
-      rw [hβ,f4Length_opposite, hk] at hlen
-      omega
-    have hqzero : f4ShortRootQuotientDividedSquareColumn k
+  · have hqzero : f4ShortRootQuotientDividedSquareColumn k
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) = 0 := by
       unfold f4ShortRootQuotientDividedSquareColumn
       rw [hlift]
       exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
-        k β hk hβ hopp (by
+        k β hk hβ (by
           intro δ hδ hδeq
           apply hedge
           refine ⟨δ, hδ, ?_⟩
