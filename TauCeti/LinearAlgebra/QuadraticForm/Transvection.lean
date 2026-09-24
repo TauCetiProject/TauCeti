@@ -135,6 +135,7 @@ theorem transvection_eq_one_of_mem_span (hu : Q u = 0) (huw : polar Q u w = 0)
   module
 
 /-- The Eichler transvections with a fixed isotropic vector `u` compose additively in `w`. -/
+@[simp]
 theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q u w' = 0)
     : transvection Q (w := w + w') hu (by simp [huw, huw']) =
       transvection Q hu huw * transvection Q hu huw' := by
@@ -145,6 +146,7 @@ theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q 
   module
 
 /-- The inverse of an Eichler transvection is the Eichler transvection of `-w`. -/
+@[simp]
 theorem transvection_neg (hu : Q u = 0) (huw : polar Q u w = 0) :
     transvection Q (w := -w) hu (by simpa using huw) =
       (transvection Q hu huw)⁻¹ := by
@@ -173,27 +175,23 @@ theorem transvection_conj (hu : Q u = 0) (huw : polar Q u w = 0) {g : M ≃ₗ[R
   simp [transvection_apply, polar_apply_of_mem_orthogonalGroup hg,
     map_app_of_mem_orthogonalGroup hg]
 
-private theorem polar_eq_zero_of_mem_ker (hw : w ∈ LinearMap.ker (Q.polarBilin u)) :
-    polar Q u w = 0 :=
-  LinearMap.mem_ker.mp hw
-
 /-- The Eichler transvections with isotropic vector `u`, as a homomorphism out of the vectors
 orthogonal to `u`. It descends to `u^⊥ / R ∙ u` as `transvectionHom`. -/
 private noncomputable def transvectionAddHom (hu : Q u = 0) :
     LinearMap.ker (Q.polarBilin u) →+ Additive (specialOrthogonalGroup Q) :=
   AddMonoidHom.mk' (fun w => Additive.ofMul
-      ⟨transvection Q hu (polar_eq_zero_of_mem_ker w.2),
-        transvection_mem_specialOrthogonalGroup hu (polar_eq_zero_of_mem_ker w.2)⟩)
+      ⟨transvection Q hu (LinearMap.mem_ker.mp w.2),
+        transvection_mem_specialOrthogonalGroup hu (LinearMap.mem_ker.mp w.2)⟩)
     fun w w' => by
       apply Additive.toMul.injective
       rw [toMul_add, toMul_ofMul, toMul_ofMul, toMul_ofMul]
       refine Subtype.ext ?_
       rw [Subgroup.coe_mul]
-      exact transvection_add hu (polar_eq_zero_of_mem_ker w.2) (polar_eq_zero_of_mem_ker w'.2)
+      exact transvection_add hu (LinearMap.mem_ker.mp w.2) (LinearMap.mem_ker.mp w'.2)
 
 private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (Q.polarBilin u)) :
     ((Additive.toMul (transvectionAddHom hu w) : specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
-      transvection Q hu (polar_eq_zero_of_mem_ker w.2) := by
+      transvection Q hu (LinearMap.mem_ker.mp w.2) := by
   rw [transvectionAddHom, AddMonoidHom.mk'_apply, toMul_ofMul]
 
 variable (Q) in
@@ -217,9 +215,9 @@ noncomputable def transvectionHom (hu : Q u = 0) :
 @[simp]
 theorem coe_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
     ((Additive.toMul (transvectionHom Q hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) :
-        specialOrthogonalGroup Q) : M ≃ₗ[R] M) = transvection Q hu huw :=
-  -- `QuotientAddGroup.lift` computes on `Submodule.Quotient.mk` by definition.
-  coe_toMul_transvectionAddHom hu _
+        specialOrthogonalGroup Q) : M ≃ₗ[R] M) = transvection Q hu huw := by
+  erw [transvectionHom, QuotientAddGroup.lift_mk']
+  exact coe_toMul_transvectionAddHom hu _
 
 end CommRing
 
