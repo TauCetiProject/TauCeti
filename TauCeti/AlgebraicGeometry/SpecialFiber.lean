@@ -142,10 +142,11 @@ lemma specialFiberIsoFiberClosedPoint_inv_specialFiberι :
 
 /-- The inverse closed-point fibre comparison preserves the maps to the residue-field
 spectrum. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
     (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        (specialFiber R toBase).hom ≫ (specLocalResidueFieldIso R).hom =
+        pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
+          (specLocalResidueFieldIso R).hom =
       toBase.fiberToSpecResidueField (closedPoint R) :=
   (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
     (IsPullback.of_hasPullback toBase
