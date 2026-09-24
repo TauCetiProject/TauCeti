@@ -9,7 +9,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- The upper-unitriangular subgroup is the kernel of the diagonal projection.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 
 /-!
 # Upper-triangular general linear groups
@@ -31,7 +30,6 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 * `TauCeti.UpperTriangularGroup.diag`: the diagonal homomorphism to `m → Rˣ`.
 * `TauCeti.UpperTriangularGroup.diagonalHom`: its section by diagonal matrices.
 * `TauCeti.UpperTriangularGroup.ker_diag`: identification of the diagonal kernel.
-* `TauCeti.transvectionUnit_mem_upperTriangularGroup`: upper transvections lie in the subgroup.
 
 ## References
 
@@ -190,18 +188,5 @@ theorem ker_diag :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, diag_eq_one_iff]
 
 end UpperTriangularGroup
-
-variable {m R}
-
-/-- A transvection `x_{ij}(c)` with `i < j` is upper triangular. -/
-theorem transvectionUnit_mem_upperTriangularGroup {i j : m} (hij : i < j) (c : R) :
-    transvectionUnit hij.ne c ∈ upperTriangularGroup m R := by
-  rw [UpperTriangularGroup.mem_iff, coe_transvectionUnit]
-  intro a b hba
-  have hab : a ≠ b := ne_of_gt hba
-  have hij' : ¬ (i = a ∧ j = b) := by
-    rintro ⟨rfl, rfl⟩
-    exact lt_asymm hij hba
-  simp [Matrix.transvection, hab, hij']
 
 end TauCeti

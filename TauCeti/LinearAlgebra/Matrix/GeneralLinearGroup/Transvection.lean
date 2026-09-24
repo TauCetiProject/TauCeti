@@ -522,6 +522,7 @@ theorem transvectionUnit_mem_of_adjacent {m : ℕ}
 
 /-- Conjugating the transvection `xᵢⱼ(c)` by the permutation matrix of `σ` gives the transvection
 `x_{σ⁻¹ i, σ⁻¹ j}(c)`. -/
+@[simp]
 theorem permutationGL_inv_mul_transvectionUnit_mul_permutationGL (σ : Equiv.Perm n)
     (hij : i ≠ j) (c : A) :
     (permutationGL (k := A) σ)⁻¹ * transvectionUnit hij c * permutationGL (k := A) σ =

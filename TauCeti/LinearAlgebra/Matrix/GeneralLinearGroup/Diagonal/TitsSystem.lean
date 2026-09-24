@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Transvection
 
 import TauCeti.Data.Fin.Basic
 
@@ -697,6 +697,7 @@ theorem glTitsSystem_simple :
 coordinates. -/
 noncomputable def glTitsSystemWeylGroupMulEquivPerm :
     (glTitsSystem k n).WeylGroup ≃* Equiv.Perm (Fin (n + 1)) := by
+  -- `WeylGroup` unfolds through `glTitsSystem` to this normalizer quotient.
   change (GLDiagonalNormalizer k (n + 1) ⧸
     (upperTriangularGroup (Fin (n + 1)) k).subgroupOf (GLDiagonalNormalizer k (n + 1))) ≃* _
   exact (QuotientGroup.quotientMulEquivOfEq
@@ -709,6 +710,7 @@ theorem glTitsSystemWeylGroupMulEquivPerm_simpleRep (i : Fin n) :
     glTitsSystemWeylGroupMulEquivPerm k n
       (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) =
         Equiv.swap i.castSucc i.succ := by
+  -- This exposes the normalizer quotient to which the equivalence was defined.
   change ((QuotientGroup.quotientMulEquivOfEq
       (upperTriangularGroup_subgroupOf_normalizer k (n + 1))).trans
       (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n + 1)))
@@ -716,6 +718,21 @@ theorem glTitsSystemWeylGroupMulEquivPerm_simpleRep (i : Fin n) :
   rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     diagonalNormalizerQuotientMulEquivPerm_mk]
   exact diagonalNormalizerPerm_permutationGL (Equiv.swap i.castSucc i.succ)
+
+/-- The Weyl-group equivalence sends the class of a permutation matrix to that permutation. -/
+@[simp]
+theorem glTitsSystemWeylGroupMulEquivPerm_mk_permutationGL (σ : Equiv.Perm (Fin (n + 1))) :
+    glTitsSystemWeylGroupMulEquivPerm k n
+      (QuotientGroup.mk ⟨permutationGL (k := k) σ,
+        by simpa only [glTitsSystem_subgroupN] using permutationGL_mem_normalizer σ⟩) = σ := by
+  -- This exposes the normalizer quotient to which the equivalence was defined.
+  change ((QuotientGroup.quotientMulEquivOfEq
+      (upperTriangularGroup_subgroupOf_normalizer k (n + 1))).trans
+      (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n + 1)))
+        (QuotientGroup.mk (permutationNormalizer k (n + 1) σ)) = _
+  rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    diagonalNormalizerQuotientMulEquivPerm_mk]
+  exact diagonalNormalizerPerm_permutationGL σ
 
 /-- **Bruhat decomposition** of `GLₙ₊₁(k)`: every invertible matrix lies in a double coset
 `B τ B` of the upper-triangular subgroup represented by a permutation matrix. -/
