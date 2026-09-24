@@ -50,9 +50,9 @@ private lemma sq_div_const_rpow_studentTBetaExponent (hν : 0 < ν) (q : ℝ) {z
   rw [Nat.cast_ofNat, he, div_eq_mul_inv, ← Real.rpow_neg hν.le]
 
 /-- The sample powers left by the Jacobian combine to `z ^ q`. -/
-private lemma rpow_sub_one_mul_self (q : ℝ) {z : ℝ} (hz : 0 < z) :
+private lemma rpow_sub_one_mul_self (q : ℝ) {z : ℝ} (hz : z ≠ 0) :
     z ^ (q - 1) * z = z ^ q := by
-  rw [Real.rpow_sub_one hz.ne', div_mul_cancel₀ _ hz.ne']
+  rw [Real.rpow_sub_one hz, div_mul_cancel₀ _ hz]
 
 /-- The powers of `ν` introduced by the square chart and the Jacobian cancel. -/
 private lemma studentT_chart_nu_powers_cancel (hν : 0 < ν) (q : ℝ) :
@@ -94,7 +94,7 @@ private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz 
         ν ^ ((q + 1) / 2) * ν ^ (-((q - 1) / 2)) * ν ^ (-1 : ℝ) := by ring
     rw [hcomm]
     exact studentT_chart_nu_powers_cancel hν q
-  rw [h5, hνpow, mul_one, rpow_sub_one_mul_self q hz]
+  rw [h5, hνpow, mul_one, rpow_sub_one_mul_self q hz.ne']
 
 /-- Under the chart `z ↦ z ^ 2 / ν`, the weighted Student t density becomes the normalized
 beta kernel on the positive half-line. -/
