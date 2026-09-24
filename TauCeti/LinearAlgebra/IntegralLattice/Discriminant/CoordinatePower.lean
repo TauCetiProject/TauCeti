@@ -75,7 +75,8 @@ theorem mem_dualCarrier_coordinatePower_iff (x : ι → V) :
   simp only [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
   constructor
   · intro hx i y hy
-    rw [← coordinatePowerForm_single_right L ι x i y, ← coordinatePower_form]
+    rw [← coordinatePowerForm_single_right L ι x i y,
+      ← coordinatePowerForm_apply, ← coordinatePower_form]
     exact hx _ (L.single_mem_coordinatePower_carrier ι i hy)
   · intro hx y hy
     rw [coordinatePower_form, coordinatePowerForm_apply]

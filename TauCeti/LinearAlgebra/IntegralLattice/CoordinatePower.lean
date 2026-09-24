@@ -61,8 +61,8 @@ theorem coordinatePowerForm_apply (x y : ι → V) :
 /-- Pairing with a function supported at one coordinate extracts that coordinate pairing. -/
 @[simp]
 theorem coordinatePowerForm_single_right [DecidableEq ι] (x : ι → V) (i : ι) (v : V) :
-    coordinatePowerForm L ι x (Pi.single i v) = L.form (x i) v := by
-  rw [coordinatePowerForm_apply, Finset.sum_eq_single i]
+    (∑ j, L.form (x j) ((Pi.single i v : ι → V) j)) = L.form (x i) v := by
+  rw [Finset.sum_eq_single i]
   · rw [Pi.single_eq_same]
   · intro j _ hji
     rw [Pi.single_eq_of_ne hji, map_zero]
@@ -72,8 +72,8 @@ theorem coordinatePowerForm_single_right [DecidableEq ι] (x : ι → V) (i : ι
 coordinate pairing. -/
 @[simp]
 theorem coordinatePowerForm_single_left [DecidableEq ι] (i : ι) (v : V) (y : ι → V) :
-    coordinatePowerForm L ι (Pi.single i v) y = L.form v (y i) := by
-  rw [coordinatePowerForm_apply, Finset.sum_eq_single i]
+    (∑ j, L.form ((Pi.single i v : ι → V) j) (y j)) = L.form v (y i) := by
+  rw [Finset.sum_eq_single i]
   · rw [Pi.single_eq_same]
   · intro j _ hji
     rw [Pi.single_eq_of_ne hji, map_zero, LinearMap.zero_apply]
@@ -158,7 +158,7 @@ private theorem eq_zero_of_forall_coordinatePowerForm (hL : L.form.Nondegenerate
   funext i
   apply hL.1 (x i)
   intro v
-  rw [← coordinatePowerForm_single_right L ι x i v]
+  rw [← coordinatePowerForm_single_right L ι x i v, ← coordinatePowerForm_apply]
   exact hx _
 
 /-- The coordinate-power form is nondegenerate when the factor form is, and conversely when the
@@ -172,7 +172,7 @@ theorem nondegenerate_coordinatePower_iff [Nonempty ι] :
     refine L.isSymm.isRefl.nondegenerate_iff_separatingLeft.mpr fun v hv ↦ ?_
     have hzero : (Pi.single i v : ι → V) = 0 :=
       h.1 _ fun y ↦ by
-        rw [coordinatePower_form, coordinatePowerForm_single_left]
+        rw [coordinatePower_form, coordinatePowerForm_apply, coordinatePowerForm_single_left]
         exact hv (y i)
     simpa using congrFun hzero i
   · intro hL
