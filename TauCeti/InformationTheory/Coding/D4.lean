@@ -338,54 +338,15 @@ theorem isIsotropic_coordinatePower_typeD4QuaternaryQuadraticModule_iff [Decidab
 
 /-! ## Transport to the discriminant groups of `D₄` -/
 
-/-- Coordinatewise identification of quaternary words with words in the discriminant groups of
-copies of `D₄`: in each coordinate `1, ω, ω²` go to the vector, spinor and cospinor classes. -/
-noncomputable def typeD4CoordinateDiscriminantEquiv (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) :
-    (ι → F) ≃+ (ι → (checkerboardLattice 4).DiscriminantGroup) :=
-  AddEquiv.piCongrRight fun _ ↦ (zmodTwoProdAddEquiv hF hω).symm.trans
-    (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide))
-
-omit [Fintype ι] in
-/-- The coordinatewise `D₄` identification applies the alphabet identification in each
-coordinate. -/
-@[simp]
-theorem typeD4CoordinateDiscriminantEquiv_apply (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) (x : ι → F) (i : ι) :
-    typeD4CoordinateDiscriminantEquiv hF hω x i =
-      typeD4QuaternaryDiscriminantQuadraticIsometry hF hω (x i) :=
-  (rfl)
-
-omit [Fintype ι] in
-/-- The inverse coordinatewise `D₄` identification applies the inverse alphabet identification in
-each coordinate. -/
-@[simp]
-theorem typeD4CoordinateDiscriminantEquiv_symm_apply (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) (x : ι → (checkerboardLattice 4).DiscriminantGroup) (i : ι) :
-    (typeD4CoordinateDiscriminantEquiv hF hω).symm x i =
-      (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).symm (x i) :=
-  (rfl)
-
-/-- The additive equivalence underlying the coordinatewise `D₄` quadratic isometry is the
-coordinatewise discriminant-group identification. -/
-@[simp]
-theorem typeD4QuaternaryDiscriminantQuadraticIsometry_coordinatePower_toAddEquiv
-    (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0) :
-    ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι).toAddEquiv =
-      typeD4CoordinateDiscriminantEquiv (ι := ι) hF hω := by
-  rw [FiniteQuadraticModule.Isometry.coordinatePower_toAddEquiv,
-    typeD4QuaternaryDiscriminantQuadraticIsometry_toAddEquiv]
-  rfl
-
 /-- A quaternary additive code transported coordinatewise to the discriminant groups of copies of
 the `D₄` root lattice. In every coordinate `1, ω, ω²` are sent to the vector, spinor and cospinor
 classes. -/
 noncomputable def codeInTypeD4Discriminant (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι) :
     AddSubgroup (ι → (checkerboardLattice 4).DiscriminantGroup) :=
-  C.map (typeD4CoordinateDiscriminantEquiv (ι := ι) hF hω)
+  let f := (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι
+  C.map f.toAddEquiv.toAddMonoidHom
 
-omit [Fintype ι] in
 /-- Membership in the transported `D₄` discriminant subgroup is detected by applying the inverse
 identification. -/
 @[simp]
@@ -393,8 +354,10 @@ theorem mem_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι)
     (x : ι → (checkerboardLattice 4).DiscriminantGroup) :
     x ∈ codeInTypeD4Discriminant hF hω C ↔
-      (typeD4CoordinateDiscriminantEquiv hF hω).symm x ∈ C :=
-  AddSubgroup.mem_map_equiv (f := typeD4CoordinateDiscriminantEquiv (ι := ι) hF hω)
+      ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι).toAddEquiv.symm
+        x ∈ C :=
+  AddSubgroup.mem_map_equiv
+    (f := ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι).toAddEquiv)
 
 /-- Transport to the `D₄` discriminant groups preserves and reflects quadratic isotropy. -/
 @[simp]
@@ -404,8 +367,7 @@ theorem isIsotropic_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
         (isEven_checkerboardLattice 4)).coordinatePower ι).IsIsotropic
       (codeInTypeD4Discriminant hF hω C) ↔
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C := by
-  rw [codeInTypeD4Discriminant,
-    ← typeD4QuaternaryDiscriminantQuadraticIsometry_coordinatePower_toAddEquiv]
+  rw [codeInTypeD4Discriminant]
   exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι) C
 
@@ -418,8 +380,7 @@ theorem isLagrangian_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
         (isEven_checkerboardLattice 4)).coordinatePower ι).IsLagrangian
       (codeInTypeD4Discriminant hF hω C) ↔
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsLagrangian C := by
-  rw [codeInTypeD4Discriminant,
-    ← typeD4QuaternaryDiscriminantQuadraticIsometry_coordinatePower_toAddEquiv]
+  rw [codeInTypeD4Discriminant]
   exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι) C
 
