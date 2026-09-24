@@ -368,7 +368,7 @@ theorem symChartedSpace_atlas :
 `TauCeti.symChartedSpace` that they meet.** If some tuple of the source of the chosen chart at `t`
 contains `z`, then there are a nonzero continuous linear functional `ℓ` and a scalar `b` such that
 a tuple of that source contains `z` exactly when its coordinates satisfy `ℓ = b`. -/
-theorem exists_continuousLinearMap_ne_zero_mem_iff_symChartAt (t : Sym α n) {z : α}
+theorem exists_continuousLinearMap_ne_zero_mem_iff_symChartAt (z : α) (t : Sym α n)
     (hz : ∃ s ∈ (symChartAt (K := K) t).source, s ∈ Sym.basepointDivisor z) :
     ∃ (ℓ : (Fin n → K) →L[K] K) (b : K), ℓ ≠ 0 ∧
       ∀ s ∈ (symChartAt (K := K) t).source,
