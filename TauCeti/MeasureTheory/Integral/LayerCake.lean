@@ -13,6 +13,9 @@ public import Mathlib.Data.Set.SymmDiff
 
 This file expresses the `L¹` distance between two almost everywhere measurable real functions as
 the integral, over all levels, of the measure of the symmetric difference of their sublevel sets.
+It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
+`s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
+functions lies above the level.
 -/
 
 public section
@@ -112,6 +115,43 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       apply measure_congr
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
+      rw [hfa, hga]
+
+private theorem lintegral_ofReal_sub_eq_lintegral_measure_of_measurable (m : Measure α) [SFinite m]
+    {f g : α → ℝ} (hf : Measurable f) (hg : Measurable g) :
+    ∫⁻ a, ENNReal.ofReal (g a - f a) ∂m = ∫⁻ s, m {a | f a ≤ s ∧ s < g a} := by
+  set F : Set (α × ℝ) := {q | f q.1 ≤ q.2 ∧ q.2 < g q.1} with hFdef
+  have hF : MeasurableSet F :=
+    (measurableSet_le (hf.comp measurable_fst) measurable_snd).inter
+      (measurableSet_lt measurable_snd (hg.comp measurable_fst))
+  calc ∫⁻ a, ENNReal.ofReal (g a - f a) ∂m = ∫⁻ a, volume (Prod.mk a ⁻¹' F) ∂m := by
+        refine lintegral_congr fun a ↦ ?_
+        have hsection : Prod.mk a ⁻¹' F = Ico (f a) (g a) := by
+          ext s
+          simp [hFdef]
+        rw [hsection, Real.volume_Ico]
+    _ = m.prod volume F := (Measure.prod_apply hF).symm
+    _ = ∫⁻ s, m {a | f a ≤ s ∧ s < g a} := Measure.prod_apply_symm hF
+
+/-- **The positive part of a difference, level by level.** For two almost everywhere measurable
+real functions `f` and `g`, the integral of the positive part of `g - f` is the integral, over the
+levels `s`, of the measure of the set where `f ≤ s < g`. -/
+theorem lintegral_ofReal_sub_eq_lintegral_measure (m : Measure α) [SFinite m] {f g : α → ℝ}
+    (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
+    ∫⁻ a, ENNReal.ofReal (g a - f a) ∂m = ∫⁻ s, m {a | f a ≤ s ∧ s < g a} := by
+  calc
+    ∫⁻ a, ENNReal.ofReal (g a - f a) ∂m = ∫⁻ a, ENNReal.ofReal (hg.mk g a - hf.mk f a) ∂m := by
+      apply lintegral_congr_ae
+      filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
+      rw [hfa, hga]
+    _ = ∫⁻ s, m {a | hf.mk f a ≤ s ∧ s < hg.mk g a} :=
+      lintegral_ofReal_sub_eq_lintegral_measure_of_measurable m hf.measurable_mk
+        hg.measurable_mk
+    _ = ∫⁻ s, m {a | f a ≤ s ∧ s < g a} := by
+      apply lintegral_congr
+      intro s
+      apply measure_congr
+      filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       rw [hfa, hga]
 
 end TauCeti
