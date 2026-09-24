@@ -138,6 +138,7 @@ theorem typeD4QuaternaryQuadraticMap_apply [DecidableEq F] (hF : Nat.card F = 4)
 
 /-- **The polar pairing of the quaternary `D₄` alphabet is `b(x, y) = Tr(x y²) / 2`**, where
 `Tr` is the absolute trace to the prime field. -/
+@[simp↓]
 theorem typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2) F] (hF : Nat.card F = 4)
     (x y : F) :
     (typeD4QuaternaryQuadraticModule hF).toFiniteBilinearModule.pairing x y =
@@ -188,6 +189,17 @@ theorem typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2) F] (hF : Nat.c
 
 /-! ## Identification with the discriminant module of `D₄` -/
 
+private theorem typeD4QuaternaryDiscriminantEquiv_apply (hF : Nat.card F = 4) {ω : F}
+    (hω : ω ^ 2 + ω + 1 = 0) (x : F) :
+    (((zmodTwoProdAddEquiv hF hω).symm.trans
+      (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide))).toIntLinearEquiv :
+        (typeD4QuaternaryQuadraticModule hF).carrier ≃ₗ[ℤ]
+          ((checkerboardLattice 4).discriminantQuadraticModule
+            (isEven_checkerboardLattice 4)).carrier).toFun x =
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide)
+        ((zmodTwoProdAddEquiv hF hω).symm x) :=
+  rfl
+
 /-- **The quaternary `D₄` alphabet is isometric to the discriminant quadratic module of the `D₄`
 root lattice**, by the identification sending `1` to the vector class and `ω, ω²` to the spinor
 and cospinor classes. -/
@@ -203,7 +215,9 @@ noncomputable def typeD4QuaternaryDiscriminantQuadraticIsometry (hF : Nat.card F
     have hcases : ∀ c : ZMod 2, c = 0 ∨ c = 1 := by decide
     have hspin : ((((4 : ℕ) : ℚ) / 8 : ℚ) : AddCircle (1 : ℚ)) = (((1 : ℚ) / 2 : ℚ)) := by
       norm_num
-    -- The linear and additive equivalences have definitionally equal coercions.
+    rw [typeD4QuaternaryDiscriminantEquiv_apply]
+    -- The evaluation rewrite removes the isometry and linear-equivalence wrappers; this only
+    -- unfolds the target quadratic module to its defining quadratic map.
     change (checkerboardLattice 4).discriminantQuadraticMap (isEven_checkerboardLattice 4)
         (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide)
           ((zmodTwoProdAddEquiv hF hω).symm (zmodTwoProdAddEquiv hF hω p))) =
@@ -295,6 +309,7 @@ theorem coordinatePower_typeD4QuaternaryQuadraticModule_quadratic [DecidableEq F
       rw [← Finset.sum_div, hsum]
 
 /-- **The `D₄` pairing of two quaternary words is `Tr(∑ᵢ xᵢ yᵢ²) / 2`.** -/
+@[simp↓]
 theorem coordinatePower_typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2) F]
     (hF : Nat.card F = 4) (x y : ι → F) :
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).toFiniteBilinearModule.pairing x y =
