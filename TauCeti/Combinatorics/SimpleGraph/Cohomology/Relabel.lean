@@ -71,8 +71,34 @@ theorem oneCochainsRelabel_apply (e : G ≃g H) (σ : G.oneCochains A) (d : H.Da
       (σ : G.Dart → A) (e.symm.toHom.mapDart d) := by
   simp [oneCochainsRelabel]
 
+/-- Relabelling by the identity graph isomorphism fixes every one-cochain. -/
+@[simp]
+theorem oneCochainsRelabel_refl :
+    oneCochainsRelabel A (Iso.refl : G ≃g G) = MulEquiv.refl (G.oneCochains A) := by
+  ext σ d
+  simp only [oneCochainsRelabel_apply, MulEquiv.refl_apply]
+  apply congrArg (σ : G.Dart → A)
+  apply Dart.ext
+  cases d with
+  | mk p hp => cases p with
+    | mk i j => simp [SimpleGraph.Hom.mapDart]
+
+/-- Successive graph relabellings compose on one-cochains. -/
+theorem oneCochainsRelabel_comp {X : Type*} {I : SimpleGraph X}
+    (e : G ≃g H) (f : H ≃g I) :
+    oneCochainsRelabel A (f.comp e) =
+      (oneCochainsRelabel A e).trans (oneCochainsRelabel A f) := by
+  ext σ d
+  simp only [oneCochainsRelabel_apply, MulEquiv.trans_apply]
+  apply congrArg (σ : G.Dart → A)
+  apply Dart.ext
+  cases d with
+  | mk p hp => cases p with
+    | mk i j => simp [SimpleGraph.Hom.mapDart]
+
 /-- Relabelling carries the coboundary of a vertex function to the coboundary of its
 inverse-image relabelling. -/
+@[simp]
 theorem oneCochainsRelabel_coboundary (e : G ≃g H) (φ : V → A) :
     oneCochainsRelabel A e (G.coboundary A φ) =
       H.coboundary A (φ ∘ e.symm) := by
@@ -81,9 +107,7 @@ theorem oneCochainsRelabel_coboundary (e : G ≃g H) (φ : V → A) :
 
 /-- A graph isomorphism identifies the first cohomology groups of its two graphs. -/
 def firstCohomologyRelabel (e : G ≃g H) : G.FirstCohomology A ≃* H.FirstCohomology A := by
-  unfold FirstCohomology
-  apply QuotientGroup.congr (G.coboundary A).range (H.coboundary A).range
-    (oneCochainsRelabel A e)
+  apply FirstCohomology.congr (oneCochainsRelabel A e)
   apply le_antisymm
   · rintro σ ⟨τ, ⟨φ, rfl⟩, rfl⟩
     exact ⟨φ ∘ e.symm, (oneCochainsRelabel_coboundary A e φ).symm⟩
@@ -101,8 +125,26 @@ def firstCohomologyRelabel (e : G ≃g H) : G.FirstCohomology A ≃* H.FirstCoho
 theorem firstCohomologyRelabel_mk (e : G ≃g H) (σ : G.oneCochains A) :
     firstCohomologyRelabel A e (FirstCohomology.mk G A σ) =
       FirstCohomology.mk H A (oneCochainsRelabel A e σ) := by
-  unfold firstCohomologyRelabel
-  rw [FirstCohomology.mk]
-  exact QuotientGroup.congr_mk _ _ _ _ σ
+  exact FirstCohomology.congr_mk _ _ σ
+
+/-- Relabelling by the identity graph isomorphism fixes every cohomology class. -/
+@[simp]
+theorem firstCohomologyRelabel_refl :
+    firstCohomologyRelabel A (Iso.refl : G ≃g G) =
+      MulEquiv.refl (G.FirstCohomology A) := by
+  ext x
+  obtain ⟨σ, rfl⟩ := FirstCohomology.mk_surjective x
+  simp
+
+/-- Successive graph relabellings compose on first cohomology. -/
+theorem firstCohomologyRelabel_comp {X : Type*} {I : SimpleGraph X}
+    (e : G ≃g H) (f : H ≃g I) :
+    firstCohomologyRelabel A (f.comp e) =
+      (firstCohomologyRelabel A e).trans (firstCohomologyRelabel A f) := by
+  ext x
+  obtain ⟨σ, rfl⟩ := FirstCohomology.mk_surjective x
+  simp only [firstCohomologyRelabel_mk, MulEquiv.trans_apply]
+  rw [oneCochainsRelabel_comp]
+  rfl
 
 end SimpleGraph

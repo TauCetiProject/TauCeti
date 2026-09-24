@@ -96,7 +96,7 @@ variable (G A)
 
 /-- The **first cohomology** `H¹(G, A)` of a simple graph with coefficients in a commutative
 group: its `1`-cochains modulo the coboundaries of functions on its vertices. -/
-@[expose] def FirstCohomology : Type _ :=
+def FirstCohomology : Type _ :=
   G.oneCochains A ⧸ (G.coboundary A).range
 
 namespace FirstCohomology
@@ -105,7 +105,7 @@ instance : CommGroup (G.FirstCohomology A) :=
   inferInstanceAs (CommGroup (G.oneCochains A ⧸ (G.coboundary A).range))
 
 /-- The **cohomology class** of a `1`-cochain. -/
-@[expose] def mk : G.oneCochains A →* G.FirstCohomology A :=
+def mk : G.oneCochains A →* G.FirstCohomology A :=
   QuotientGroup.mk' _
 
 variable {G A}
@@ -156,6 +156,21 @@ theorem mk_eq_mk_iff {σ τ : G.oneCochains A} :
 @[simp]
 theorem ker_mk : (mk G A).ker = (G.coboundary A).range :=
   QuotientGroup.ker_mk' _
+
+/-- An equivalence of one-cochain groups preserving coboundaries induces an equivalence of
+first cohomology groups. -/
+def congr {W : Type*} {H : SimpleGraph W} (e : G.oneCochains A ≃* H.oneCochains A)
+    (he : (G.coboundary A).range.map e = (H.coboundary A).range) :
+    G.FirstCohomology A ≃* H.FirstCohomology A :=
+  QuotientGroup.congr _ _ e he
+
+/-- The induced equivalence sends the class of a cochain to the class of its image. -/
+@[simp]
+theorem congr_mk {W : Type*} {H : SimpleGraph W} (e : G.oneCochains A ≃* H.oneCochains A)
+    (he : (G.coboundary A).range.map e = (H.coboundary A).range)
+    (σ : G.oneCochains A) :
+    congr e he (mk G A σ) = mk H A (e σ) :=
+  QuotientGroup.congr_mk' _ _ e he σ
 
 end FirstCohomology
 

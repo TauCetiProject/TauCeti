@@ -31,6 +31,7 @@ variable {k : Type*} [CommMonoid k] {V W : Type*}
 
 /-- Relabelling a skew-zigzag parameter transports its first cohomology class along the same
 graph isomorphism. -/
+@[simp]
 theorem cohomologyClass_relabel (e : G ≃g H) (c : SkewZigzagParameter k G) :
     cohomologyClass k H (c.relabel e) =
       SimpleGraph.firstCohomologyRelabel kˣ e (cohomologyClass k G c) := by
