@@ -175,7 +175,7 @@ private theorem algebraMap_mem_traceDual_adicCompletionIntegers {d : L}
 
 /-- **The local trace dual is spanned by the global one.** The trace dual of `𝒪_w` over `𝒪_v` is
 the `𝒪_w`-span of the image in `L_w` of the trace dual of `𝒪 L` over `𝒪 K`. -/
-@[simp] theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
+theorem span_traceDual_one_eq_traceDual_one_adicCompletionIntegers :
     Submodule.span (w.adicCompletionIntegers L)
         (algebraMap L (w.adicCompletion L) ''
           Submodule.traceDual (𝒪 K) K (1 : Submodule (𝒪 L) L)) =
@@ -198,7 +198,7 @@ the `𝒪_w`-span of the image in `L_w` of the trace dual of `𝒪 L` over `𝒪
 
 /-- **Trace duals commute with completion**, as fractional ideals: extending the trace dual of
 `𝒪 L` over `𝒪 K` to `𝒪_w` gives the trace dual of `𝒪_w` over `𝒪_v`. -/
-@[simp] theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
+theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
     (FractionalIdeal.dual (𝒪 K) K (1 : FractionalIdeal (𝒪 L)⁰ L)).extended (w.adicCompletion L)
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective (𝒪 L) (w.adicCompletionIntegers L))) =
@@ -221,7 +221,7 @@ the `𝒪_w`-span of the image in `L_w` of the trace dual of `𝒪 L` over `𝒪
 
 /-- **The different commutes with completion.** The different ideal of `𝒪 L` over `𝒪 K` generates
 in `𝒪_w` the different ideal of `𝒪_w` over `𝒪_v`. -/
-@[simp] theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
+theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
     (differentIdeal (𝒪 K) (𝒪 L)).map (algebraMap (𝒪 L) (w.adicCompletionIntegers L)) =
       differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) := by
   rw [← FractionalIdeal.coeIdeal_inj (K := w.adicCompletion L),
