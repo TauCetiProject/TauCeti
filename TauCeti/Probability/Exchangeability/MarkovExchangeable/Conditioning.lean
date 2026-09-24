@@ -31,17 +31,18 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-  {μ : Measure Ω} {X : ℕ → Ω → α} {a : α}
+  {μ : Measure Ω} {X : ℕ → Ω → α} {a : α} {S : Set α}
 
-/-- The mass of a finite path after conditioning on an initial state. Paths starting at another
-state have zero mass, including when the conditioning event itself has zero mass. -/
-theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
-    (hX : ∀ i, AEMeasurable (X i) μ) (hs : MeasurableSet {ω | X 0 ω = a})
+/-- The mass of a finite path after conditioning on an initial-state event. Paths whose initial
+state lies outside the conditioning set have zero mass, including when the conditioning event
+itself has zero mass. -/
+theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α]
+    (hX : ∀ i, AEMeasurable (X i) μ) (hs : MeasurableSet {ω | X 0 ω ∈ S})
     (n : ℕ) (w : Fin (n + 1) → α) :
-    prefixLaw μ[|{ω | X 0 ω = a}] X (n + 1) {w} =
-      (μ {ω | X 0 ω = a})⁻¹ *
-        (if w 0 = a then prefixLaw μ X (n + 1) {w} else 0) := by
-  let s : Set Ω := {ω | X 0 ω = a}
+    prefixLaw μ[|{ω | X 0 ω ∈ S}] X (n + 1) {w} =
+      (μ {ω | X 0 ω ∈ S})⁻¹ *
+        (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
+  let s : Set Ω := {ω | X 0 ω ∈ S}
   have hac : μ[|s] ≪ μ := cond_absolutelyContinuous
   have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => by
     obtain ⟨f, hf, heq⟩ := hX i
@@ -57,28 +58,45 @@ theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
     constructor
     · exact And.right
     · intro hp
-      exact ⟨by simpa [s, hw] using (hp 0), hp⟩
+      exact ⟨(hp 0).symm ▸ hw, hp⟩
   · have hempty : s ∩ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} = ∅ := by
       apply Set.eq_empty_of_forall_notMem
       intro ω hω
-      exact hw (hω.1.symm.trans (hω.2 0)).symm
+      exact hw ((hω.2 0) ▸ hω.1)
     rw [hempty, measure_empty]
+
+/-- Conditioning on a measurable initial-state event preserves Markov exchangeability. -/
+theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X)
+    (hs : MeasurableSet {ω | X 0 ω ∈ S}) :
+    MarkovExchangeable (μ[|{ω | X 0 ω ∈ S}]) X := by
+  classical
+  let _ : Countable α := h.countable
+  let _ : MeasurableSingletonClass α := h.measurableSingletonClass
+  have hac : μ[|{ω | X 0 ω ∈ S}] ≪ μ := cond_absolutelyContinuous
+  have hX : ∀ i, AEMeasurable (X i) μ[|{ω | X 0 ω ∈ S}] := fun i => by
+    obtain ⟨f, hf, heq⟩ := h.aemeasurable i
+    exact ⟨f, hf, heq.filter_mono hac.ae_le⟩
+  refine MarkovExchangeable.intro hX fun n u v huv hcount => ?_
+  rw [prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n u,
+    prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n v,
+    huv, h.prefixLaw_singleton_eq n u v huv hcount]
+
+/-- The mass of a finite path after conditioning on an initial state. Paths starting at another
+state have zero mass, including when the conditioning event itself has zero mass. -/
+@[simp] theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
+    (hX : ∀ i, AEMeasurable (X i) μ) (hs : MeasurableSet {ω | X 0 ω = a})
+    (n : ℕ) (w : Fin (n + 1) → α) :
+    prefixLaw μ[|{ω | X 0 ω = a}] X (n + 1) {w} =
+      (μ {ω | X 0 ω = a})⁻¹ *
+        (if w 0 = a then prefixLaw μ X (n + 1) {w} else 0) := by
+  simpa only [Set.mem_singleton_iff] using
+    prefixLaw_singleton_cond_initial_mem (S := {a}) hX hs n w
 
 /-- Conditioning on a measurable initial-state event preserves Markov exchangeability. -/
 theorem MarkovExchangeable.cond_initial (h : MarkovExchangeable μ X)
     (hs : MeasurableSet {ω | X 0 ω = a}) :
     MarkovExchangeable (μ[|{ω | X 0 ω = a}]) X := by
-  classical
-  let _ : Countable α := h.countable
-  let _ : MeasurableSingletonClass α := h.measurableSingletonClass
-  have hac : μ[|{ω | X 0 ω = a}] ≪ μ := cond_absolutelyContinuous
-  have hX : ∀ i, AEMeasurable (X i) μ[|{ω | X 0 ω = a}] := fun i => by
-    obtain ⟨f, hf, heq⟩ := h.aemeasurable i
-    exact ⟨f, hf, heq.filter_mono hac.ae_le⟩
-  refine MarkovExchangeable.intro hX fun n u v huv hcount => ?_
-  rw [prefixLaw_singleton_cond_initial h.aemeasurable hs n u,
-    prefixLaw_singleton_cond_initial h.aemeasurable hs n v,
-    huv, h.prefixLaw_singleton_eq n u v huv hcount]
+  simpa only [Set.mem_singleton_iff] using h.cond_initial_mem (S := {a}) hs
 
 end TauCeti.Probability
 
