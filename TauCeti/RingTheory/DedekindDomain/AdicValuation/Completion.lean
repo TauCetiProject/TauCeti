@@ -25,6 +25,8 @@ Everything here concerns one completion. The comparison of two completions along
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
   characteristic zero has characteristic zero.
+* `algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers` (in the same namespace): an
+  element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
@@ -111,6 +113,14 @@ section SingleCompletion
 
 variable (v : HeightOneSpectrum R)
 
+/-- An element of `R`, mapped to `K_v` through `K`, is the image of its image in `𝒪_v`. -/
+@[simp]
+theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (r : R) :
+    algebraMap K (v.adicCompletion K) (algebraMap R K r) =
+      algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+        (algebraMap R (v.adicCompletionIntegers K) r) := by
+  rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
+    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
 /-- An element of `K` with valuation one is the image of a unit in the ring of integers of its
 completion at `v`. -/
 theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}

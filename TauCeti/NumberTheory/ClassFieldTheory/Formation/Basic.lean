@@ -62,6 +62,8 @@ as `Kˣ` enters through an `Additive` adapter.
   group.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
+* `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
+  element of the ground level.
 
 ## Main statements
 
@@ -72,6 +74,8 @@ as `Kˣ` enters through an `Additive` adapter.
   degree `-2` identification sends the standard homology class of `g` to its abelianization.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
+* `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass_eq_zero_iff`: the zero-dimensional Tate
+  class of an element of the ground level vanishes exactly when the element is a norm.
 
 ## Implementation notes
 
@@ -575,6 +579,37 @@ theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
   -- that it is normalised to the application form the goal uses before it rewrites.
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
   simp [tateHZeroEquivNormQuotient, h]
+
+-- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
+/-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
+of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
+coefficient module `A^V`. -/
+def zeroTateClass : F.level L.ground →+ L.TateH F 0 :=
+  ((TateCohomology.H0π (L.rep F)).hom ∘ₗ (L.groundLevelEquiv F).symm.toLinearMap).toAddMonoidHom
+
+-- `dsimp% only` on the left-hand sides of this and the next two lemmas, as explained in the
+-- implementation notes.
+/-- The zero-dimensional Tate class of the ground-level element corresponding to an invariant is
+the class of that invariant. -/
+@[simp]
+theorem zeroTateClass_groundLevelEquiv (x : (L.rep F).ρ.invariants) :
+    (dsimp% only (L.zeroTateClass F (L.groundLevelEquiv F x))) = TateCohomology.H0π (L.rep F) x :=
+  (rfl)
+
+/-- Under the identification of degree-zero Tate cohomology with the norm quotient, the
+zero-dimensional Tate class of `a` is the class of `a` modulo norms. -/
+@[simp]
+theorem tateHZeroEquivNormQuotient_zeroTateClass (a : F.level L.ground) :
+    (dsimp% only (L.tateHZeroEquivNormQuotient F (L.zeroTateClass F a))) =
+      L.normQuotientMk F a := by
+  simp [zeroTateClass]
+
+/-- The zero-dimensional Tate class of `a` vanishes exactly when `a` is a norm. -/
+@[simp]
+theorem zeroTateClass_eq_zero_iff (a : F.level L.ground) :
+    (dsimp% only (L.zeroTateClass F a = 0)) ↔ a ∈ L.normSubgroup F := by
+  rw [← (L.tateHZeroEquivNormQuotient F).map_eq_zero_iff,
+    tateHZeroEquivNormQuotient_zeroTateClass, normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
 
 end Norm
 

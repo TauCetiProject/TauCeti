@@ -43,6 +43,8 @@ invariants of its conjugate through the resulting map in degree two.
 * `TauCeti.TateCohomology.complexMap`: the induced map of Tate complexes.
 * `TauCeti.TateCohomology.map`: the induced map in a single integer degree.
 * `TauCeti.TateCohomology.mapIso`: the induced isomorphism, for `φ` a linear equivalence.
+* `TauCeti.TateCohomology.negSuccIso`: Mathlib's identification of Tate cohomology in degree
+  `-(n+1)` with group homology in degree `n`, as an isomorphism of the two modules.
 * `TauCeti.TateCohomology.resIso`: the packaged natural isomorphism
   `Res(e) ⋙ tateCohomologyFunctor n ≅ tateCohomologyFunctor n`.
 
@@ -55,7 +57,9 @@ invariants of its conjugate through the resulting map in degree two.
 * `TauCeti.TateCohomology.map_comp_isoGroupCohomology_hom`: in positive degrees the construction
   is `groupCohomology.map` along `e.symm`.
 * `TauCeti.TateCohomology.map_comp_isoGroupHomology_hom`: in degrees at most `-2` it is
-  `groupHomology.map` along `e`.
+  `groupHomology.map` along `e`; `TauCeti.TateCohomology.map_comp_negSuccIso_hom` restates this
+  through `TauCeti.TateCohomology.negSuccIso`, which `TauCeti.TateCohomology.negSuccIso_hom`
+  identifies with Mathlib's comparison.
 * `TauCeti.TateCohomology.map_comp_H0IsoNormQuotient_hom`: in degree zero the construction is
   the map induced on the quotient of invariants by the norm image.
 * `TauCeti.TateCohomology.HNegOneπ_comp_map`: in degree `-1` the construction sends the class of
@@ -496,6 +500,30 @@ theorem map_comp_isoGroupHomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
   -- As above: `isoGroupHomology` is `homologyIsoNeg` componentwise, `groupHomology.map` is
   -- `homologyMap` of `chainsMap`, and `tateCohomology M m` is the homology of `tateComplex M`.
   exact key
+
+variable (M) in
+/-- Tate cohomology in degree `-(n+1)`, for `n > 0`, is group homology in degree `n`: the
+component at `M` of Mathlib's comparison `TateCohomology.isoGroupHomology`. -/
+def negSuccIso (n : ℕ) [NeZero n] :
+    tateCohomology M (Int.negSucc n) ≅ groupHomology M n :=
+  (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).app M
+
+variable (M) in
+/-- `TauCeti.TateCohomology.negSuccIso` is the component at `M` of Mathlib's comparison
+`TateCohomology.isoGroupHomology`. -/
+theorem negSuccIso_hom (n : ℕ) [NeZero n] :
+    (negSuccIso M n).hom =
+      ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).app M).hom :=
+  (rfl)
+
+/-- **In degrees `-(n+1)` with `n > 0` the construction is the ordinary homological
+change-of-group map** along `e`, read through `TauCeti.TateCohomology.negSuccIso`. -/
+@[reassoc (attr := simp)]
+theorem map_comp_negSuccIso_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (n : ℕ) [NeZero n] :
+    map hφ (Int.negSucc n) ≫ (negSuccIso N n).hom =
+      (negSuccIso M n).hom ≫ groupHomology.map (e : G →* H) (IsIntertwiningMap.toRes hφ) n :=
+  map_comp_isoGroupHomology_hom hφ _ n (Int.negSucc_eq n)
 
 /-- **Restricting the coefficients along an isomorphism of finite groups does not change Tate
 cohomology**, naturally in the coefficients. -/

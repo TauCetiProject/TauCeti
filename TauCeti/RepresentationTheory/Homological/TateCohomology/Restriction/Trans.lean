@@ -49,15 +49,9 @@ theorem negSuccRes_trans {K H : Subgroup G} (hKH : K ≤ H) (n : ℕ) [NeZero n]
         (Rep.isIntertwiningMap_res_res M (Subgroup.subtype_comp_subgroupOfEquivOfLe hKH))
         (Int.negSucc n) = negSuccRes M K n := by
   -- Compare both sides in group homology, where restriction is the transfer.
-  refine (cancel_mono ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
-    (Int.negSucc_eq n)).hom.app (Rep.res K.subtype M))).1 ?_
-  simp only [Category.assoc, map_comp_isoGroupHomology_hom, negSuccRes_comp_isoGroupHomology_hom]
-  -- Paste the remaining squares as terms: once `map` is rewritten, the composites pass through
-  -- both `(groupHomology.functor _ _ n).obj X` and `groupHomology X n`, which `rw` and `simp` do
-  -- not identify.
-  exact (_ ≫= (negSuccRes_comp_isoGroupHomology_hom_assoc _ _ n _).trans
-    (Category.assoc _ _ _)).trans <| (negSuccRes_comp_isoGroupHomology_hom_assoc M H n _).trans <|
-    (Category.assoc _ _ _).trans (_ ≫= TauCeti.groupHomology.transfer_trans hKH M n)
+  rw [← cancel_mono (negSuccIso (Rep.res K.subtype M) n).hom]
+  simp only [Category.assoc, map_comp_negSuccIso_hom, negSuccRes_comp_negSuccIso_hom_assoc,
+    negSuccRes_comp_negSuccIso_hom, TauCeti.groupHomology.transfer_trans]
 
 /-- **Tate restriction below degree `-1` is compatible with a group isomorphism** `e : G ≃* G'`
 carrying `S` onto `S'`: for a compatible pair `(e, φ)`, restricting to `S'` after transporting
@@ -71,15 +65,12 @@ theorem map_comp_negSuccRes {G' : Type u} [Group G'] [Fintype G'] (e : G ≃* G'
       negSuccRes M S n ≫ map (e := TauCeti.Subgroup.congrOfMapEq e he) (φ := φ)
         ⟨fun s v ↦ by simpa using hφ.isIntertwining (s : G) v⟩ (Int.negSucc n) := by
   -- Compare both sides in group homology, where restriction is the transfer.
-  refine (cancel_mono ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
-    (Int.negSucc_eq n)).hom.app (Rep.res S'.subtype N))).1 ?_
-  simp only [Category.assoc, map_comp_isoGroupHomology_hom, negSuccRes_comp_isoGroupHomology_hom]
-  -- As in `negSuccRes_trans`, paste the remaining squares as terms: the change-of-group square
-  -- over `G`, the compatibility of the transfer with `(e, φ)`, and the restriction square over `S`.
-  exact ((reassoc_of% map_comp_isoGroupHomology_hom hφ _ n (Int.negSucc_eq n)) _).trans <|
-    (Category.assoc _ _ _).trans <|
-    (_ ≫= (TauCeti.groupHomology.map_comp_transfer_congrOfMapEq e he hφ.toRes n).trans
-      (_ ≫= groupHomology.map_congr rfl (by simp) n)).trans <|
-    (Category.assoc _ _ _).symm.trans (negSuccRes_comp_isoGroupHomology_hom_assoc M S n _).symm
+  rw [← cancel_mono (negSuccIso (Rep.res S'.subtype N) n).hom]
+  simp only [Category.assoc, map_comp_negSuccIso_hom, negSuccRes_comp_negSuccIso_hom_assoc,
+    negSuccRes_comp_negSuccIso_hom, map_comp_negSuccIso_hom_assoc]
+  -- What is left is the compatibility of the transfer with `(e, φ)`, up to the two presentations
+  -- of the restricted coefficient map over `S`.
+  exact _ ≫= (TauCeti.groupHomology.map_comp_transfer_congrOfMapEq e he hφ.toRes n).trans
+    (_ ≫= groupHomology.map_congr rfl (by simp) n)
 
 end TauCeti.TateCohomology

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Basic
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
@@ -51,7 +52,8 @@ homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestricti
 
 ## Main results
 
-* `TauCeti.TateCohomology.negSuccRes_comp_isoGroupHomology_hom`: negative restriction agrees with
+* `TauCeti.TateCohomology.negSuccRes_comp_isoGroupHomology_hom`,
+  `TauCeti.TateCohomology.negSuccRes_comp_negSuccIso_hom`: negative restriction agrees with
   homological transfer through Mathlib's comparison with group homology.
 * `TauCeti.TateCohomology.H0π_comp_H0Res`, `TauCeti.TateCohomology.H0π_comp_H0Cor`,
   `TauCeti.TateCohomology.HNegOneπ_comp_HNegOneRes`,
@@ -111,6 +113,15 @@ theorem negSuccRes_comp_isoGroupHomology_hom (n : ℕ) [NeZero n] :
   -- holds by `rfl`.
   (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n
     (Int.negSucc_eq n)).app (Rep.res H.subtype M))).1 rfl
+
+/-- Negative-degree Tate restriction is the homological transfer through
+`TauCeti.TateCohomology.negSuccIso`. -/
+@[reassoc (attr := simp)]
+theorem negSuccRes_comp_negSuccIso_hom (n : ℕ) [NeZero n] :
+    negSuccRes M H n ≫ (negSuccIso (Rep.res H.subtype M) n).hom =
+      (negSuccIso M n).hom ≫ TauCeti.groupHomology.transfer M H n := by
+  rw [negSuccIso_hom, negSuccIso_hom]
+  exact negSuccRes_comp_isoGroupHomology_hom M H n
 
 /-- Restriction to a subgroup in degree `-2` Tate cohomology. Under the comparison with first
 group homology, this is the homological transfer. -/
