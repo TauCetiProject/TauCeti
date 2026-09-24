@@ -33,7 +33,7 @@ comparison between representatives of one class.
 For negative-definite plumbings, the identification of these orbits with torsion boundary
 spin-c structures is given by A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 2.2.2. This is the indexing
-convention for the lattice homology in the Combinatorial Heegaard Floer roadmap, Lane L.
+convention for lattice homology.
 -/
 
 public section
@@ -92,6 +92,19 @@ abbrev characteristicOrbits : Type _ := Quotient P.spinCSetoid
 
 /-- The lattice orbit of a characteristic covector. -/
 def characteristicOrbit (k : P.characteristicVectors) : P.characteristicOrbits := Quotient.mk _ k
+
+/-- Every characteristic orbit has a characteristic-covector representative. -/
+theorem characteristicOrbit_surjective : Function.Surjective P.characteristicOrbit :=
+  Quotient.mk_surjective
+
+/-- Two characteristic covectors have the same orbit exactly when they differ by twice an
+intersection-matrix vector. -/
+@[simp]
+theorem characteristicOrbit_eq_iff (k l : P.characteristicVectors) :
+    P.characteristicOrbit k = P.characteristicOrbit l ↔ P.IsSpinCEquivalent k l := by
+  change Quotient.mk P.spinCSetoid k = Quotient.mk P.spinCSetoid l ↔ _
+  rw [Quotient.eq_iff_equiv]
+  rfl
 
 /-- Adding twice an intersection-matrix vector does not change the lattice orbit. -/
 @[simp]
