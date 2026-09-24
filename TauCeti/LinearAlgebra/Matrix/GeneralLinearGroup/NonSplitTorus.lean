@@ -278,9 +278,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
       (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes, ← hmat, hdet]
   have hvF : (v : E) = algebraMap F E a := sub_eq_zero.mp (Algebra.norm_eq_zero_iff.mp hnorm)
   -- the conjugate is then a central scalar matrix, so `g` is scalar
-  obtain ⟨b, rfl⟩ :=
-    (mem_range_iff_exists_units_map_eq (f := (algebraMap F E : F →* E))
-      (map_zero (algebraMap F E)) v).mp ⟨a, hvF.symm⟩
+  obtain ⟨b, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) v).mp ⟨a, hvF.symm⟩
   have hscal : x⁻¹ * g * x = Matrix.GeneralLinearGroup.scalar (Fin 2) b := by
     rw [← hv, gl2NonSplitTorusHom_map_algebraMap]
   have hgeq : g = Matrix.GeneralLinearGroup.scalar (Fin 2) b := by

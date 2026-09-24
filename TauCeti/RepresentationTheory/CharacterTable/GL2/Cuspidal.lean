@@ -286,9 +286,7 @@ theorem apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq {θ θ' : 
     (u : Eˣ) :
     (θ u : ℂ) + θ (u ^ Fintype.card F) = (θ' u : ℂ) + θ' (u ^ Fintype.card F) := by
   by_cases hu : (u : E) ∈ Set.range (algebraMap F E)
-  · obtain ⟨a, rfl⟩ :=
-      (mem_range_iff_exists_units_map_eq (f := (algebraMap F E : F →* E))
-        (map_zero (algebraMap F E)) u).mp hu
+  · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) u).mp hu
     have hfix : Units.map (algebraMap F E : F →* E) a ^ Fintype.card F =
         Units.map (algebraMap F E : F →* E) a := by
       rw [← Nat.card_eq_fintype_card]
