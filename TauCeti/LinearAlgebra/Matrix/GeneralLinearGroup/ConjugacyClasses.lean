@@ -311,8 +311,14 @@ theorem bijective_mk_conjRepGLFinTwo :
   · intro C
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
-    · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (Matrix.scalar (Fin 2)) g).mp hg
-      exact ⟨Sum.inl a, rfl⟩
+    · obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (Matrix.scalar (Fin 2)) g).mp hg
+      -- `Matrix.GeneralLinearGroup.scalar` is `Units.map` of `Matrix.scalar`, but the two spell
+      -- the coercion to a monoid homomorphism differently, so compare the underlying matrices
+      -- instead of unfolding either definition.
+      have hrep : conjRepGLFinTwo (Sum.inl a) = g := by
+        rw [conjRepGLFinTwo_inl, ← ha]
+        exact Units.ext (by simp)
+      exact ⟨Sum.inl a, congrArg ConjClasses.mk hrep⟩
     · exact ⟨Sum.inr ((g : Matrix (Fin 2) (Fin 2) F).trace, Matrix.GeneralLinearGroup.det g),
         ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_companionGL hg).symm⟩
 
