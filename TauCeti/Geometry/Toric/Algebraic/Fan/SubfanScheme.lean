@@ -58,7 +58,7 @@ theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
 
 /-- On every affine cone chart, the map of toric schemes induced by a subfan inclusion is the
 ordinary inclusion of that chart into the ambient fan scheme. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem affineToricChartι_comp_subfanInclusion_algebraicMap
     (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfan S hS hface).affineToricChartι
