@@ -186,6 +186,8 @@ private theorem finite_setOf_comp_toPath_comp_eq {s t : Q} (p : _root_.Quiver.Pa
   · rintro _ ⟨d, rfl, rfl⟩
     simp [_root_.Quiver.Path.length_comp]
   · rintro ⟨v, u⟩ hd ⟨v', u'⟩ hd' hl
+    -- Unfold the decomposition-set memberships to expose the path equalities required for
+    -- dependent cancellation.
     change v.comp (a.toPath.comp u) = p at hd
     change v'.comp (a.toPath.comp u') = p at hd'
     obtain ⟨rfl, h⟩ := (_root_.Quiver.Path.comp_inj' hl).1
@@ -204,6 +206,8 @@ private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path
       have hempty : {d : _root_.Quiver.Path s i × _root_.Quiver.Path j s |
           d.1.comp (a.toPath.comp d.2) = .nil} = ∅ :=
         Set.eq_empty_of_forall_notMem fun d hd => by
+          -- Membership in the decomposition set is precisely this path equality, whose lengths
+          -- contradict the empty path.
           change d.1.comp (a.toPath.comp d.2) = .nil at hd
           simpa [_root_.Quiver.Path.length_comp] using
             congrArg _root_.Quiver.Path.length hd
@@ -221,6 +225,7 @@ private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path
         ext ⟨v, u⟩
         constructor
         · rintro ⟨hd, hu⟩
+          -- Expose the source decomposition equality before splitting the dependent path `u`.
           change v.comp (a.toPath.comp u) = p.cons e at hd
           cases u with
           | nil => exact absurd rfl hu
@@ -232,9 +237,12 @@ private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path
               obtain rfl := eq_of_heq (_root_.Quiver.Path.hom_heq_of_cons_eq_cons hd')
               exact ⟨(v, u), rfl, rfl⟩
         · rintro ⟨⟨v', u'⟩, hd, h⟩
+          -- Again, the image source is a decomposition set; unfold its membership before
+          -- appending `e` to the equality.
           change v'.comp (a.toPath.comp u') = p at hd
           obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
           refine ⟨?_, by simp⟩
+          -- The target decomposition equality is the result of appending `e` to the source one.
           change v'.comp (a.toPath.comp (u'.cons e)) = p.cons e
           simpa only [_root_.Quiver.Path.comp_cons] using congrArg (fun q => q.cons e) hd
       have hinj : Set.InjOn (fun d : _root_.Quiver.Path s i × _root_.Quiver.Path j m =>
@@ -253,6 +261,8 @@ private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path
             ext ⟨v, u⟩
             constructor
             · rintro ⟨hd, hu⟩
+              -- Unfold the decomposition membership so that cancellation of the final arrow is
+              -- available in the `u = nil` case.
               change v.comp (a.toPath.comp u) = p.cons a at hd
               cases u with
               | nil =>
