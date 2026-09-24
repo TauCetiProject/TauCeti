@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 
 /-!
@@ -42,11 +41,14 @@ Two ring-theoretic finiteness properties transfer across the comparison with no 
 (`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra, and it is
 **Noetherian** over a Noetherian ring when `L` is finite as a module
 (`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`), being then a commutative `R`-algebra of
-finite type (`TauCeti.UniversalEnvelopingAlgebra.instFiniteType`, which needs no hypothesis on
-`R`). These are the abelian cases of two general Poincaré--Birkhoff--Witt corollaries, which
-over a field hold for every Lie algebra and every finite-dimensional one respectively; the general
-statements go through the associated graded of the PBW filtration and are not proved here, the
-arguments below using commutativity of `U(L)` throughout.
+finite type. Finite type needs no abelianness and so is not proved here: it is
+`TauCeti.UniversalEnvelopingAlgebra.instFiniteType` of
+`TauCeti/Algebra/Lie/UniversalEnveloping/Basic.lean`, which only needs the canonical Lie generators
+to generate `U(L)`. The two instances below are the abelian cases of two general
+Poincaré--Birkhoff--Witt corollaries, which over a field hold for every Lie algebra and every
+finite-dimensional one respectively; the general statements go through the associated graded of the
+PBW filtration and are not proved here, the arguments below using commutativity of `U(L)`
+throughout.
 
 The comparison also makes `ι` injective on any abelian `L`
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), with no hypothesis on `L` as a module: it
@@ -86,8 +88,6 @@ about a non-abelian `L`.
   `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
   as a module over a domain.
-* `TauCeti.UniversalEnvelopingAlgebra.instFiniteType`: **`U(L)` is an algebra of finite type** for
-  an abelian `L` finite as a module.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **`U(L)` is Noetherian** for an abelian
   `L` finite as a module over a Noetherian ring.
 
@@ -337,26 +337,9 @@ PBW filtration and is not proved here. -/
 instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
   (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
 
-/-- **The enveloping algebra of an abelian Lie algebra which is finite as a module is an
-`R`-algebra of finite type**: a finite spanning set of `L` generates `U(L)` as an algebra, the
-canonical generators of `U(L)` generating it
-(`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`). -/
-instance instFiniteType [Module.Finite R L] : Algebra.FiniteType R U := by
-  classical
-  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := R) (M := L)
-  -- the span of the image of a spanning set of `L` is the whole of the image of `L`
-  have hrange : ((Submodule.span R
-      (⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U) ''
-        (S : Set L)) : Submodule R U) : Set U) =
-      Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)) := by
-    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range,
-      LieHom.coe_toLinearMap]
-  exact ⟨S.image ⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U), by
-    rw [Finset.coe_image, ← Algebra.adjoin_span, hrange, adjoin_range_ι R L]⟩
-
 /-- **The enveloping algebra of a finite abelian Lie algebra over a Noetherian ring is
-Noetherian**: it is a commutative algebra of finite type over the base ring, so the Hilbert basis
-theorem applies.
+Noetherian**: it is a commutative algebra of finite type over the base ring
+(`TauCeti.UniversalEnvelopingAlgebra.instFiniteType`), so the Hilbert basis theorem applies.
 
 This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is Noetherian for
 every finite-dimensional Lie algebra over a field; the general statement goes through the
