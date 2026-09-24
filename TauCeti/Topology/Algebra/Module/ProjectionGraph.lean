@@ -28,17 +28,6 @@ open Set Topology
 
 namespace ContinuousLinearMap
 
-private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
-    (h : s = t) (v : s) : ((Homeomorph.setCongr h) v : Y) = v := by
-  -- `setCongr` has no application theorem; use the computation theorem for its public `toEquiv`.
-  exact congrArg Subtype.val (Set.equivOfEq_apply h v)
-
-private theorem coe_homeomorphImage_apply {Y Z : Type*} [TopologicalSpace Y]
-    [TopologicalSpace Z] {f : Y → Z} (hf : IsEmbedding f) (s : Set Y) (v : s) :
-    (hf.homeomorphImage s v : Z) = f v := by
-  simp only [IsEmbedding.homeomorphImage, Homeomorph.trans_apply, coe_setCongr_apply,
-    IsEmbedding.toHomeomorph_apply_coe, Function.comp_apply]
-
 variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
   [ContinuousAdd M]
 
@@ -70,8 +59,26 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
     (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M)
     (v : (Subtype.val ⁻¹' s : Set (range P))) :
     (graphHomeomorph P hP g hPg hg s v : M) = (v : M) + g v := by
-  simp only [graphHomeomorph, Homeomorph.trans_apply, coe_setCongr_apply,
-    coe_homeomorphImage_apply]
+  let h : (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) =
+      (fun v : M ↦ v + g v) '' (range P ∩ s) := by
+    rw [← Subtype.image_preimage_val, image_image]
+  change (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) = _
+  have hh : (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) =
+      ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v : M) :=
+    congrArg Subtype.val (Set.equivOfEq_apply h _)
+  rw [hh]
+  let h' : Set.range ((fun v : range P ↦ (v : M) + g v) ∘
+      (Subtype.val : (Subtype.val ⁻¹' s : Set (range P)) → range P)) =
+      (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) := by
+    rw [Set.range_comp, Subtype.range_val]
+  change (Homeomorph.setCongr h'
+    (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v) : M) = _
+  have hh' : (Homeomorph.setCongr h'
+      (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v) : M) =
+      (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v : M) :=
+    congrArg Subtype.val (Set.equivOfEq_apply h' _)
+  rw [hh']
+  exact IsEmbedding.toHomeomorph_apply_coe _ _
 
 /-- The inverse graph homeomorphism is given by the projection. -/
 @[simp]
