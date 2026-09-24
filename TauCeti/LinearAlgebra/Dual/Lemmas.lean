@@ -34,6 +34,7 @@ section Semiring
 variable {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
 
 /-- If `f x = 1`, the kernel of `id - f(·) • x` is the line through `x`. -/
+@[simp]
 theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
     LinearMap.ker (LinearMap.id - LinearMap.smulRight f x) = K ∙ x := by
   ext y
