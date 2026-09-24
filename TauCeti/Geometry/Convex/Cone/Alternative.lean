@@ -48,9 +48,9 @@ The coset theorem counts nonnegative domain vectors in a coset of `P`.
 
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_dual_nonneg`: Tucker's key lemma.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
-* `TauCeti.Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
+* `TauCeti.submodule_exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
-* `TauCeti.AddSubgroup.exists_pos_dotProduct_eq_zero_iff`: a subgroup of `ι → ℤ` has no nonzero
+* `TauCeti.addSubgroup_exists_pos_dotProduct_eq_zero_iff`: a subgroup of `ι → ℤ` has no nonzero
   nonnegative element iff it is orthogonal to a vector of positive integer weights.
 
 ## References
@@ -174,7 +174,7 @@ variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedR
 
 /-- **Stiemke's theorem.** A subspace `S` of `ι → K` contains no nonzero nonnegative vector
 exactly when some vector with strictly positive coordinates is orthogonal to all of `S`. -/
-theorem Submodule.exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι → K)) :
+theorem submodule_exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι → K)) :
     (∃ c : ι → K, (∀ i, 0 < c i) ∧ ∀ x ∈ S, c ⬝ᵥ x = 0) ↔ ∀ x ∈ S, 0 ≤ x → x = 0 := by
   classical
   constructor
@@ -206,7 +206,7 @@ For the group of periodic domains of a pointed Heegaard diagram, the weights are
 regions for an area form in which every periodic domain has signed area zero; compare
 Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed three-manifolds*,
 Lemma 4.12. -/
-theorem AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgroup (ι → ℤ)) :
+theorem addSubgroup_exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgroup (ι → ℤ)) :
     (∃ c : ι → ℤ, (∀ i, 0 < c i) ∧ ∀ p ∈ P, c ⬝ᵥ p = 0) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   constructor
   · rintro ⟨c, hc, hP⟩ p hp hp0
@@ -226,7 +226,7 @@ theorem AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgr
       have := hpx i
       rw [hp0, Pi.zero_apply, Int.cast_zero, eq_comm, mul_eq_zero] at this
       exact this.resolve_left (Nat.cast_ne_zero.2 hN.ne')
-    obtain ⟨c, hc, hcS⟩ := (Submodule.exists_pos_dotProduct_eq_zero_iff S).2 hS
+    obtain ⟨c, hc, hcS⟩ := (submodule_exists_pos_dotProduct_eq_zero_iff S).2 hS
     -- Clear the denominators of the rational weights.
     set N : ℕ := ∏ i, (c i).den
     have hN : 0 < N := Finset.prod_pos fun i _ => (c i).den_pos
