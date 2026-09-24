@@ -19,15 +19,9 @@ containing a unit `w` whose trace is a unit of `R`. Then every unit `v` of `R` t
 modulo `𝔪` is a norm: if `N_{S/R}(a) ≡ v (mod 𝔪)` then `N_{S/R}(y) = v` for some `y ≡ a`
 (mod `𝔪S`).
 
-The proof looks for `y` on the line `t ↦ a (1 - t w)`. Along it the norm is
-`N(a) · det (1 - t M)`, where `M` is the matrix of multiplication by `w`, and `det (1 - X M)` is
-the reversed characteristic polynomial of `M`. Because `M` is invertible this is a unit multiple
-of the monic characteristic polynomial of `M⁻¹`, its value at `0` is `1` and its derivative at
-`0` is `-tr M`, a unit. So `t = 0` is a simple approximate root of the equation
-`N(a) · det (1 - t M) = v`, which Hensel's lemma lifts to a root in `𝔪`.
-
-This is the step that makes the norm surjective on units in an unramified extension of local
-fields, where the residue norm is surjective and the residue trace is nonzero.
+So a norm equation over `R` with a unit right-hand side is solvable as soon as it is solvable
+modulo `𝔪`. This is the step that makes the norm surjective on units in an unramified extension
+of local fields, where the residue norm is surjective and the residue trace is nonzero.
 
 ## Main results
 
@@ -55,6 +49,12 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal {w : S} (hw : IsUnit
     (htr : IsUnit (Algebra.trace R S w)) {a : S} {v : R} (hv : IsUnit v)
     (hav : Algebra.norm R a - v ∈ maximalIdeal R) :
     ∃ y : S, Algebra.norm R y = v ∧ y - a ∈ (maximalIdeal R).map (algebraMap R S) := by
+  -- We look for `y` on the line `t ↦ a (1 - t w)`. Along it the norm is `N(a) · det (1 - t M)`,
+  -- where `M` is the matrix of multiplication by `w`, and `det (1 - X M)` is the reversed
+  -- characteristic polynomial of `M`. Because `M` is invertible this is a unit multiple of the
+  -- monic characteristic polynomial of `M⁻¹`, its value at `0` is `1` and its derivative at `0`
+  -- is `-tr M`, a unit. So `t = 0` is a simple approximate root of `N(a) · det (1 - t M) = v`,
+  -- which Hensel's lemma lifts to a root in `𝔪`.
   classical
   let b := Module.Free.chooseBasis R S
   let n := Fintype.card (Module.Free.ChooseBasisIndex R S)
@@ -111,8 +111,7 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal {w : S} (hw : IsUnit
       simpa [f, sub_eq_zero] using ht
     rw [map_mul, κ.mul_right_inj.1 hroot, ← hν, mul_comm, Units.inv_mul_cancel_right]
   · have ht' : t ∈ maximalIdeal R := by simpa using ht𝔪
-    rw [show a * (1 - t • w) - a = -(algebraMap R S t * (a * w)) by
-      rw [Algebra.smul_def]; ring]
-    exact neg_mem (Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ht'))
+    rw [mul_sub, mul_one, sub_sub_cancel_left, Algebra.smul_def]
+    exact neg_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ht')))
 
 end TauCeti

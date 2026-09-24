@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.RingTheory.Trace.Basic
+import Mathlib.RingTheory.Trace.Quotient
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.RingTheory.Norm.Henselian
 import TauCeti.RingTheory.Norm.Quotient
