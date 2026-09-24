@@ -255,8 +255,10 @@ theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
     exact hF.finiteDimensional_adjoin hxF
   have hfiniteF : FiniteDimensional k⟮x⟯ F := by
     let : FiniteDimensional f.fieldRange F := hfinite
-    -- The algebra map from `k⟮x⟯` to `F` is the composite through `E` by definition.
-    exact AlgHom.finiteDimensional_of_fieldRange f (fun _ ↦ rfl)
+    exact AlgHom.finiteDimensional_of_fieldRange f (fun z ↦ by
+      simpa only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+        IntermediateField.coe_val, IntermediateField.algebraMap_apply] using
+        (IsScalarTower.algebraMap_apply k⟮x⟯ E F z))
   let : FiniteDimensional k⟮x⟯ F := hfiniteF
   exact ⟨x, hx, FiniteDimensional.left k⟮x⟯ E F⟩
 

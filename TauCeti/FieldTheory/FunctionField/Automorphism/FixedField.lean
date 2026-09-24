@@ -17,9 +17,9 @@ and its Galois group is the acting group. This is the field-theoretic input to a
 Riemann--Hurwitz to a quotient by a finite automorphism group.
 
 Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`.
-`IntermediateField.finrank_fixedField_eq_card_of_finite` gives the degree,
-`IntermediateField.isGalois_fixedField_of_finite` gives the Galois extension, and
-`IntermediateField.subgroupEquivAlgEquivOfFinite` identifies the Galois group.
+`FixedPoints.finrank_eq_card` gives the degree,
+`IsGalois.of_fixed_field` gives the Galois extension, and
+`FixedPoints.toAlgAutMulEquiv` identifies the Galois group.
 
 ## References
 
@@ -33,8 +33,8 @@ namespace TauCeti
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- The fixed field of a finite group of `k`-automorphisms of a function field is itself a
-function field over `k`. `IntermediateField.isGalois_fixedField_of_finite` makes `F` Galois over
-this field, and `IntermediateField.subgroupEquivAlgEquivOfFinite` identifies its Galois group
+function field over `k`. `IsGalois.of_fixed_field` makes `F` Galois over
+this field, and `FixedPoints.toAlgAutMulEquiv` identifies its Galois group
 with `H`. -/
 theorem IsFunctionField.fixedField (hF : IsFunctionField k F)
     (H : Subgroup (F ≃ₐ[k] F)) [Finite H] :
