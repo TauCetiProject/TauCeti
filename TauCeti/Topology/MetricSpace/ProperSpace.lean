@@ -15,11 +15,9 @@ A pseudometric space is proper, that is, its closed balls are compact, exactly w
 increasing sequence of compact sets `K n` covering it such that the distance from a fixed point
 `p` tends to infinity along every sequence `q` with `q n ∉ K n`.
 
-In a proper space the closed balls `closedBall p n` form such an exhaustion.  Conversely, the
-divergence condition alone forces every bounded set into some `K n`: otherwise a sequence of its
-points avoiding the `K n` would stay at bounded distance from `p`.  A closed ball is then a closed
-subset of a compact set.  This direction needs neither monotonicity of `K` nor that it covers the
-space, and the base point `p` is arbitrary on both sides.
+In a proper space the closed balls `closedBall p n` form such an exhaustion. Conversely, the
+divergence condition alone makes every bounded set lie in some `K n`, so monotonicity and covering
+are unnecessary for this direction. The base point `p` is arbitrary on both sides.
 
 This is the equivalence of assertions (b) and (e) in do Carmo's statement of the Hopf–Rinow
 theorem.  It holds in every pseudometric space; the Riemannian structure plays no role.
