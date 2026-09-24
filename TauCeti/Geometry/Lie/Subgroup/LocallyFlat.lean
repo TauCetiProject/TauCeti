@@ -50,6 +50,7 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
     let e : OpenPartialHomeomorph G G :=
       (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
     have he_apply (y : G) : e y = (g : G)⁻¹ * y := by
+      -- Unfold the local chart abbreviation to expose the bundled homeomorphism action.
       change (Homeomorph.smul (g : G)).symm y = (g : G)⁻¹ * y
       rw [Homeomorph.smul_symm_apply]
       rfl
@@ -64,6 +65,7 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
       · intro hy
         refine ⟨?_, ?_⟩
         · simp [e]
+        -- Unfold the preimage membership and local chart abbreviation before cancellation.
         · change e y ∈ K
           rw [he_apply]
           exact K.mul_mem (K.inv_mem g.property) hy
@@ -71,6 +73,7 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
     refine ⟨e.trans φ, ?_, ?_⟩
     · rw [OpenPartialHomeomorph.trans_source]
       refine ⟨by simp [e], ?_⟩
+      -- The source condition is stated through `e`; expose it before applying `he_apply`.
       change e (g : G) ∈ φ.source
       rw [he_apply, inv_mul_cancel]
       exact h1
