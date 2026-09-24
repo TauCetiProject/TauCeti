@@ -405,14 +405,7 @@ theorem coe_specialOrthogonalWithinEquiv_apply (g : specialOrthogonalWithin Q) :
     ((specialOrthogonalWithinEquiv Q g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
         M ≃ₗ[R] M) =
       ((g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) := by
-  let h : specialOrthogonalWithin Q =
-      (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
-        (TauCeti.QuadraticMap.orthogonalGroup Q) :=
-    specialOrthogonalWithin_eq_subgroupOf
-  change ((MulEquiv.subgroupCongr h g :
-    TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) = _
-  exact congrArg (fun x : TauCeti.QuadraticMap.orthogonalGroup Q => (x : M ≃ₗ[R] M))
-    (MulEquiv.subgroupCongr_apply h g)
+  simp [specialOrthogonalWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
 @[simp]
 theorem coe_specialOrthogonalWithinEquiv_symm_apply
@@ -420,16 +413,8 @@ theorem coe_specialOrthogonalWithinEquiv_symm_apply
     (((specialOrthogonalWithinEquiv Q).symm g : specialOrthogonalWithin Q) :
         TauCeti.QuadraticMap.orthogonalGroup Q) =
       specialOrthogonalToOrthogonal Q g := by
-  let h : specialOrthogonalWithin Q =
-      (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
-        (TauCeti.QuadraticMap.orthogonalGroup Q) :=
-    specialOrthogonalWithin_eq_subgroupOf
-  change ((MulEquiv.subgroupCongr h).symm
-    ((Subgroup.subgroupOfEquivOfLe
-      (TauCeti.QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)).symm g) :
-    TauCeti.QuadraticMap.orthogonalGroup Q) = _
-  rw [MulEquiv.subgroupCongr_symm_apply]
-  rfl
+  ext1
+  simp [specialOrthogonalWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
 /-- On a zero module the determinant kernel is all of `O(Q)`, both groups being trivial; this is
 the case excluded from `index_specialOrthogonalWithin`. -/
