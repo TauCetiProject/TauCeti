@@ -30,6 +30,7 @@ that subgroup with all points of the Geck toral-closure scheme is a separate com
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
+* `TauCeti.Algebra.Lie.E7.Minuscule.Generation`, an earlier formal coroot-generation application.
 -/
 
 public section
@@ -94,6 +95,7 @@ theorem range_geckTorusPoints_le_geckElementarySubgroup_G2 (A : CommAlgCat.{v} �
 
 /-- Adding the type-`G₂` Geck weight torus to every numbered simple-root subgroup does not
 enlarge the elementary subgroup over any commutative ring. -/
+@[simp]
 theorem geckTorusSubsystemSubgroup_univ_eq_geckElementarySubgroup_G2
     (A : CommAlgCat.{v} ℤ) :
     G2.geckTorusSubsystemSubgroup valid_G2 Set.univ A =
