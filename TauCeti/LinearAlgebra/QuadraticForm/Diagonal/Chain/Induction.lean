@@ -65,28 +65,6 @@ section Binary
 
 variable [CommRing R] [Invertible (2 : R)] {F : Rˣ → Rˣ → M}
 
-/-- A pairing that is multiplicative in its first argument and constant on the coefficients of
-isometric binary forms takes the same values at the two discriminants of isometric binary forms. -/
-private theorem apply_mul_eq_of_equivalent_binary
-    (hmul : ∀ a b c, F (a * b) c = F a c * F b c)
-    (hF : ∀ a b c d : Rˣ, (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
-      (weightedSumSquares R ![(c : R), (d : R)]) → F a b = F c d)
-    {a b c d : Rˣ} (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
-      (weightedSumSquares R ![(c : R), (d : R)])) (x : Rˣ) :
-    F (a * b) x = F (c * d) x := by
-  -- Squares are invisible to `F` in the first argument, since `⟨1, x⟩ ≅ ⟨t², x⟩`.
-  have hsq (t : Rˣ) : F (t * t) x = F 1 x := by
-    refine hF (t * t) x 1 x ⟨isometryEquivWeightedSumSquaresWeightedSumSquares ![t, 1] ?_⟩
-    refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩ <;> simp [pow_two]
-  obtain ⟨s, hs⟩ := isSquare_mul_mul_of_equivalent_binary h
-  symm
-  calc F (c * d) x = F (c * d * 1) x := by rw [mul_one]
-    _ = F (c * d) x * F ((a * b) * (a * b)) x := by rw [hmul, hsq]
-    _ = F ((a * b * (c * d)) * (a * b)) x := by
-      rw [← hmul]
-      ac_rfl
-    _ = F (a * b) x := by rw [hs, hmul, hsq, ← hmul, one_mul]
-
 /-- **Pairwise products are invariant under a binary step.** Let `F` be multiplicative in its first
 argument and take equal values on the coefficients of isometric binary forms. Then replacing two
 coefficients of a diagonal form by the coefficients of an isometric binary form does not change
@@ -111,7 +89,16 @@ theorem BinaryStep.prod_prod_Ioi_eq (hmul : ∀ a b c, F (a * b) c = F a c * F b
     have := Fin.val_ne_of_ne hij
     omega
   -- Move the changed pair to the first two positions, then peel it off.
-  obtain ⟨σ, hσ0, hσ1⟩ := exists_perm_zero_one hij
+  have h01 : Function.Injective (![0, 1] : Fin 2 → Fin (m + 2)) := by
+    intro x y hxy
+    fin_cases x <;> fin_cases y <;> simp_all
+  have hij' : Function.Injective (![i, j] : Fin 2 → Fin (m + 2)) := by
+    intro x y hxy
+    fin_cases x <;> fin_cases y <;> simp_all
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair
+    (![0, 1] : Fin 2 → Fin (m + 2)) ![i, j] h01 hij'
+  have hσ0 : σ 0 = i := by simpa using hσ 0
+  have hσ1 : σ 1 = j := by simpa using hσ 1
   have hfix (k : Fin m) : w' (σ k.succ.succ) = w (σ k.succ.succ) := by
     refine (hrest _ ?_ ?_).symm
     · rw [← hσ0]

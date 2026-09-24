@@ -98,6 +98,8 @@ theorem prod_prod_Ioi_append {A M : Type*} [CommMonoid M] {n m : ℕ}
     let b := v (Fin.last m)
     have hv : v = Fin.snoc v₀ b := (Fin.snoc_init_self v).symm
     rw [hv, Fin.append_snoc]
+    -- `Nat.add_succ` makes `n + (m + 1)` and `(n + m) + 1` definitionally equal here.
+    -- The remaining `change` exposes the `Fin.snoc` expression used by the snoc lemma.
     change (∏ i : Fin ((n + m) + 1), ∏ j ∈ Ioi i,
       f (Fin.snoc (α := fun _ => A) (Fin.append w v₀) b i)
         (Fin.snoc (α := fun _ => A) (Fin.append w v₀) b j)) = _

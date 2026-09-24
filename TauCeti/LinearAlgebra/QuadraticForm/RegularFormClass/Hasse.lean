@@ -159,6 +159,7 @@ noncomputable def hasseInvariant : RegularFormClass K → BrauerGroup K :=
 
 /-- The Hasse invariant of the class of a diagonal presentation `⟨a₁, …, aₙ⟩` is
 `∏_{i<j} [(aᵢ, aⱼ)]`. -/
+@[simp]
 theorem hasseInvariant_mk (p : RegularFormPresentation K) :
     hasseInvariant (Quotient.mk (regularFormSetoid K) p) =
       ∏ i, ∏ j ∈ Ioi i, quaternionClass (p.2 i) (p.2 j) :=
