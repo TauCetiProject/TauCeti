@@ -71,7 +71,8 @@ namespace HeckeCharacter
 
 variable {𝔪 𝔫 : Modulus K}
 
-/-- A ray class character pulled back to the idele class group is trivial on the ray subgroup. -/
+/-- A pulled-back ray class character kills the ray subgroup. This kernel containment is shared
+by the continuity proof and the public evaluation lemma. -/
 private theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
     raySubgroup 𝔪 ≤ (χ.comp (rayClassQuotient 𝔪)).ker := by
   rw [← ker_rayClassQuotient]
