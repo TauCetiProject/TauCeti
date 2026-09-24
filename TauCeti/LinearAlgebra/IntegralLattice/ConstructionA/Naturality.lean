@@ -40,6 +40,7 @@ variable {m : ℕ+}
 
 /-- Construction A commutes with a signed coordinate change.  The carrier equality is stated in
 the common rational ambient space, and is the carrier part of the lattice isometry below. -/
+@[simp]
 theorem lattice_map_signedEquiv (C : AdditiveCode (ZMod m) ι) (u : ι → ℤˣ) (e : ι ≃ κ) :
     (lattice m C).map
         ((signedEquiv (R := ℚ) u e).restrictScalars ℤ).toLinearMap =
@@ -130,8 +131,6 @@ theorem integralLatticeSignedEquiv_apply (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
     (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
     integralLatticeSignedEquiv C hC u e x = signedEquiv u e x := by
-  -- Reveal the ambient equivalence selected in the isometry, while keeping `signedEquiv` sealed.
-  change signedEquiv (R := ℚ) u e x = signedEquiv u e x
   rfl
 
 /-- Coordinate relabelling is the all-positive special case of the Construction A signed

@@ -167,6 +167,7 @@ theorem signedEquiv_toAddMonoidHom_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x :
     (signedEquiv (R := R) u e).toAddEquiv.toAddMonoidHom x = signedEquiv u e x := rfl
 
 /-- Signed coordinate changes commute with taking integer coordinates in any commutative ring. -/
+@[simp]
 theorem signedEquiv_intCast (u : ι → ℤˣ) (e : ι ≃ κ) (z : ι → ℤ) :
     signedEquiv (R := R) u e (fun i ↦ (z i : R)) =
       fun j ↦ ((signedEquiv (R := ℤ) u e z j : ℤ) : R) := by
@@ -192,6 +193,7 @@ section Fintype
 variable [Fintype ι] [Fintype κ]
 
 /-- A signed coordinate change preserves the standard dot product. -/
+@[simp]
 theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
     signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
   calc
