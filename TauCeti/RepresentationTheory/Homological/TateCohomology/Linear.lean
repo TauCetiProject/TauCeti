@@ -56,6 +56,8 @@ theorem tateComplex_map_smul {M N : Rep k G} (c : k) (f : M ⟶ N) :
 instance : (tateComplexFunctor k G).Linear k where
   map_smul f c := tateComplex_map_smul c f
 
+-- Typeclass search does not unfold the named `tateCohomologyFunctor` definition to find the
+-- generic composition instances, so these expose them under the functor's public name.
 /-- Tate cohomology in each degree is an additive functor of the representation. -/
 instance (n : ℤ) : (tateCohomologyFunctor (R := k) (G := G) n).Additive :=
   inferInstanceAs (tateComplexFunctor k G ⋙
