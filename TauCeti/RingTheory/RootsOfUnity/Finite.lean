@@ -51,8 +51,9 @@ def rootsOfUnityEquivUnits : rootsOfUnity (Nat.card F - 1) F ≃* Fˣ :=
 
 @[simp]
 theorem rootsOfUnityEquivUnits_apply (ζ : rootsOfUnity (Nat.card F - 1) F) :
-    rootsOfUnityEquivUnits F ζ = (ζ : Fˣ) :=
-  (rfl)
+    rootsOfUnityEquivUnits F ζ = (ζ : Fˣ) := by
+  simp only [rootsOfUnityEquivUnits, MulEquiv.trans_apply, Subgroup.topEquiv_apply,
+    MulEquiv.subgroupCongr_apply]
 
 end CommGroupWithZero
 
