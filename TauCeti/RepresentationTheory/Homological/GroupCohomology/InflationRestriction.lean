@@ -61,17 +61,31 @@ open _root_.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G) (S : Subgroup G) [S.Normal]
 
+/-- Inflation followed by restriction vanishes in every positive degree. -/
+theorem map_mk'_comp_map_subtype_succ (n : ℕ) :
+    (map (QuotientGroup.mk' S) (ofHom <| A.ρ.quotientToInvariants_lift S) (n + 1) :
+      groupCohomology (A.quotientToInvariants S) (n + 1) ⟶ groupCohomology A (n + 1)) ≫
+      map S.subtype (𝟙 _) (n + 1) = 0 := by
+  rw [← map_comp, Category.comp_id, congr (QuotientGroup.mk'_comp_subtype S)
+    (fun f φ => map f φ (n + 1)), map_one_succ]
+
 /-- The **inflation-restriction complex** `Hⁿ⁺¹(G ⧸ S, A^S) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(S, A)` in degree
 `n + 1`. In degree one it is Mathlib's `groupCohomology.H1InfRes`. -/
-@[expose] def infRes (n : ℕ) : ShortComplex (ModuleCat k) where
-  X₁ := groupCohomology (A.quotientToInvariants S) (n + 1)
-  X₂ := groupCohomology A (n + 1)
-  X₃ := groupCohomology (res S.subtype A) (n + 1)
-  f := map (QuotientGroup.mk' S) (ofHom <| A.ρ.quotientToInvariants_lift S) (n + 1)
-  g := map S.subtype (𝟙 _) (n + 1)
-  zero := by
-    rw [← map_comp, Category.comp_id, congr (QuotientGroup.mk'_comp_subtype S)
-      (fun f φ => map f φ (n + 1)), map_one_succ]
+-- The exported component lemmas below require exposure: without it Lean cannot type-check their
+-- dependent morphism types or validate their definitional equalities across the module boundary.
+@[expose] def infRes (n : ℕ) : ShortComplex (ModuleCat k) :=
+  ShortComplex.mk
+    (map (QuotientGroup.mk' S) (ofHom <| A.ρ.quotientToInvariants_lift S) (n + 1) :
+      groupCohomology (A.quotientToInvariants S) (n + 1) ⟶ groupCohomology A (n + 1))
+    (map S.subtype (𝟙 _) (n + 1)) (map_mk'_comp_map_subtype_succ A S n)
+
+/-- The inflation-restriction complex as a short complex of the two maps. -/
+theorem infRes_def (n : ℕ) :
+    infRes A S n = ShortComplex.mk
+      (map (QuotientGroup.mk' S) (ofHom <| A.ρ.quotientToInvariants_lift S) (n + 1) :
+        groupCohomology (A.quotientToInvariants S) (n + 1) ⟶ groupCohomology A (n + 1))
+      (map S.subtype (𝟙 _) (n + 1)) (map_mk'_comp_map_subtype_succ A S n) := by
+  rfl
 
 /-- The first term of the inflation-restriction complex. -/
 @[simp]
@@ -107,7 +121,10 @@ private theorem mono_infRes_f_and_exact (n : ℕ) : ∀ A : Rep k G,
     (∀ i < n, IsZero (groupCohomology (res S.subtype A) (i + 1))) →
       Mono (infRes A S n).f ∧ (infRes A S n).Exact := by
   induction n with
-  | zero => exact fun A _ => ⟨inferInstanceAs (Mono (H1InfRes A S).f), H1InfRes_exact A S⟩
+  | zero =>
+    intro A _
+    rw [infRes_zero]
+    exact ⟨inferInstance, H1InfRes_exact A S⟩
   | succ n ih =>
     intro A hA
     -- The upward dimension-shifting sequence `0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0`.
@@ -129,6 +146,7 @@ private theorem mono_infRes_f_and_exact (n : ℕ) : ∀ A : Rep k G,
       { τ₁ := ofHom (A.ρ.quotientToInvariants_lift S)
         τ₂ := ofHom ((coindBot k G A.V).ρ.quotientToInvariants_lift S)
         τ₃ := ofHom ((dimensionShiftUp A).ρ.quotientToInvariants_lift S)
+        -- `quotientToInvariantsFunctor.map` acts by the underlying representation map.
         comm₁₂ := by ext; rfl
         comm₂₃ := by ext; rfl }
     have h₁₂ : e₁.hom ≫ (infRes A S (n + 1)).f =

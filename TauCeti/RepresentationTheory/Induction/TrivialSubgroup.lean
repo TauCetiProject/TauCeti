@@ -495,7 +495,7 @@ theorem quotientToInvariantsCoindBotIso_hom_hom_apply_coe
 of its coset. Together with `quotientToInvariantsCoindBotIso_hom_hom_apply_coe`, this evaluates
 the forward isomorphism on cosets of representatives. -/
 @[simp]
-theorem coindBot_apply_out_mk
+theorem quotientToInvariants_coindBot_apply_out_mk
     (f : (coindBot k G X).quotientToInvariants S) (g : G) :
     f.1.1 (QuotientGroup.mk g : G ⧸ S).out = f.1.1 g := by
   exact coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)

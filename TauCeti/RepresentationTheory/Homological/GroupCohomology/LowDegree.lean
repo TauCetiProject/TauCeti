@@ -6,6 +6,8 @@ Authors: Claude
 module
 
 import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.CategoryTheory.Abelian.ShortExact
+import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Invariants
 
@@ -17,14 +19,17 @@ additive homomorphisms `G →+ A`. This file records the consequence that `H¹(G
 `G` is finite and `A` has no additive torsion, since a homomorphism from a finite group into a
 torsion-free group is zero.
 
-It also records the `H¹` criterion for taking invariants under a normal subgroup `S` to preserve a
-short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0`: it suffices that `H¹(S, X₁) = 0`, since an
-`S`-invariant element of `X₃` lifts to `X₂` up to a `1`-cocycle of `S` with values in `X₁`.
+It also records the `H¹` criterion for taking invariants to preserve a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0`. The general result for `G`-invariants follows from the degree-zero
+part of Mathlib's long exact cohomology sequence. The result for a normal subgroup `S` applies it
+to the restricted sequence and retains the quotient-group action.
 
 ## Main statements
 
 * `TauCeti.groupCohomology.isZero_H1_of_isTrivial`: `H¹(G, A) = 0` for a trivial representation `A`
   of a finite group `G` without additive torsion.
+* `TauCeti.groupCohomology.shortExact_map_invariantsFunctor`: taking `G`-invariants preserves a
+  short exact sequence when `H¹(G, X₁) = 0`.
 * `TauCeti.groupCohomology.shortExact_map_quotientToInvariantsFunctor`: taking `S`-invariants
   preserves a short exact sequence whose kernel `X₁` has `H¹(S, X₁) = 0`.
 -/
@@ -52,55 +57,36 @@ theorem isZero_H1_of_isTrivial [Finite G] (A : Rep k G) [A.IsTrivial] [IsAddTors
   (ModuleCat.isZero_of_subsingleton (ModuleCat.of k (Additive G →+ A))).of_iso <|
     H1IsoOfIsTrivial A
 
+variable (k G) in
+/-- Taking invariants preserves a short exact sequence of `G`-representations when the first
+cohomology of its kernel vanishes. -/
+theorem shortExact_map_invariantsFunctor {X : ShortComplex (Rep k G)}
+    (hX : X.ShortExact) (h1 : IsZero (groupCohomology X.X₁ 1)) :
+    (X.map (invariantsFunctor k G)).ShortExact := by
+  have h0 : (X.map (functor k G 0)).ShortExact := by
+    refine { exact := mapShortComplex₂_exact hX 0, mono_f := ?_, epi_g := ?_ }
+    · change Mono (map (MonoidHom.id G) X.f 0)
+      exact @mono_map_0_of_mono _ _ _ _ _ _ X.f hX.mono_f
+    · exact (mapShortComplex₃_exact hX (i := 0) (j := 1) rfl).epi_f
+        (h1.eq_of_tgt _ _)
+  exact ShortComplex.shortExact_of_iso
+    (ShortComplex.isoMk (H0Iso X.X₁) (H0Iso X.X₂) (H0Iso X.X₃)
+      (by exact (map_id_comp_H0Iso_hom X.f).symm)
+      (by exact (map_id_comp_H0Iso_hom X.g).symm)) h0
+
 variable (S : Subgroup G) [S.Normal]
 
-/-- **Taking invariants preserves a short exact sequence when `H¹` of its kernel vanishes.** If
-`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is short exact and `H¹(S, X₁) = 0`, then so is
-`0 ⟶ X₁^S ⟶ X₂^S ⟶ X₃^S ⟶ 0` as a sequence of representations of `G ⧸ S`. Only surjectivity on
-the right needs the hypothesis. -/
+/-- If `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is short exact and `H¹(S, X₁) = 0`, then taking `S`-invariants
+preserves short exactness as a sequence of representations of `G ⧸ S`. -/
 theorem shortExact_map_quotientToInvariantsFunctor {X : ShortComplex (Rep k G)}
     (hX : X.ShortExact) (h1 : IsZero (groupCohomology (res S.subtype X.X₁) 1)) :
     (X.map (quotientToInvariantsFunctor k S)).ShortExact := by
-  -- Mathlib has no evaluation lemmas for `quotientToInvariantsFunctor` or for a short complex
-  -- mapped by `forget₂`: both act on elements through the underlying maps of `X`, by definition.
-  -- The type ascriptions below and the final `change` read the goals in that form.
-  have hf := (Rep.mono_iff_injective X.f).1 hX.mono_f
-  have hex : ∀ y : X.X₂, X.g.hom y = 0 → ∃ x, X.f.hom x = y :=
-    (ShortComplex.moduleCat_exact_iff _).1 (hX.exact.map (forget₂ (Rep k G) (ModuleCat k)))
-  -- The action identity shared by both steps below: `X.f` commutes with the action of `S`.
-  have hρ : ∀ (s : S) (x : X.X₁), X.f.hom ((res S.subtype X.X₁).ρ s x) = X.X₂.ρ s (X.f.hom x) :=
-    fun s x => hom_comm_apply X.f s.1 x
-  refine
-    { exact := (forget₂ (Rep k (G ⧸ S)) (ModuleCat k)).reflects_exact_of_faithful _ <|
-        (ShortComplex.moduleCat_exact_iff _).2 fun y hy => ?_
-      mono_f := (Rep.mono_iff_injective _).2 fun a b h => Subtype.ext (hf (congrArg Subtype.val h))
-      epi_g := (Rep.epi_iff_surjective _).2 fun z => ?_ }
-  · obtain ⟨x, hx⟩ := hex y.1 (congrArg Subtype.val hy)
-    refine ⟨⟨x, fun s => hf ?_⟩, Subtype.ext hx⟩
-    have hx' : X.f.hom x = y.1 := hx
-    have h2 : X.X₂.ρ s y.1 = y.1 := y.2 s
-    rw [hρ, hx', h2]
-  · obtain ⟨y, hy⟩ := (Rep.epi_iff_surjective X.g).1 hX.epi_g z.1
-    -- `s ↦ s • y - y` takes values in `X.X₁`, where it is a `1`-cocycle of `S`.
-    have hc : ∀ s : S, ∃ x : X.X₁, X.f.hom x = X.X₂.ρ s y - y := fun s =>
-      hex _ (by rw [map_sub, hom_comm_apply, hy]; exact sub_eq_zero.2 (z.2 s))
-    choose c hc using hc
-    have hcoc : c ∈ cocycles₁ (res S.subtype X.X₁) := by
-      rw [mem_cocycles₁_iff]
-      intro s t
-      apply hf
-      simp only [map_add, hρ, hc, map_sub, Subgroup.coe_mul, map_mul, Module.End.mul_apply]
-      abel
-    -- It is a coboundary `s ↦ s • x - x`, and `y - x` is the required invariant lift.
-    obtain ⟨x, hx⟩ := (H1π_eq_zero_iff (A := res S.subtype X.X₁) ⟨c, hcoc⟩).1
-      ((ModuleCat.subsingleton_of_isZero h1).elim _ _)
-    have hx' : ∀ s : S, (res S.subtype X.X₁).ρ s x = c s + x := fun s =>
-      sub_eq_iff_eq_add.1 (congr_fun hx s)
-    have hgf : X.g.hom (X.f.hom x) = 0 := congrArg (fun φ => φ.hom x) X.zero
-    refine ⟨⟨y - X.f.hom x, fun s => ?_⟩, Subtype.ext ?_⟩
-    · rw [MonoidHom.comp_apply, Subgroup.coe_subtype, map_sub, ← hρ, hx', map_add, hc]
-      abel
-    · change X.g.hom (y - X.f.hom x) = z.1
-      rw [map_sub, hy, hgf, sub_zero]
+  have hXS : (X.map (resFunctor S.subtype)).ShortExact :=
+    (Rep.shortExact_res S.subtype).2 hX
+  have h := shortExact_map_invariantsFunctor k S hXS h1
+  exact (CategoryTheory.ShortExact.reflects_shortExact_of_faithful
+    (forget₂ (Rep k (G ⧸ S)) (ModuleCat k))) (by
+      change ((X.map (resFunctor S.subtype)).map (invariantsFunctor k S)).ShortExact
+      exact h)
 
 end TauCeti.groupCohomology
