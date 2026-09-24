@@ -31,6 +31,7 @@ abbrev f4ShortRootCotangentDual :=
   Module.Dual 𝔽₂
     (Bialgebra.CotangentSpace 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26))
 
+/-- Local adjoint comodule on the cotangent dual of `GL₂₆`. -/
 local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
     f4ShortRootCotangentDual :=
   Derivation.adjointComodule
@@ -38,12 +39,14 @@ local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 2
 
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
+/-- The scalar-extended represented-ideal term of the cotangent flag. -/
 @[expose] noncomputable def cotangentFlagIdeal :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
 
+/-- The scalar-extended represented-range term of the cotangent flag. -/
 @[expose] noncomputable def cotangentFlagRange :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>

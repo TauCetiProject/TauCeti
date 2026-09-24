@@ -28,6 +28,7 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
+/-- Local adjoint comodule used for root-subgroup stability of the cotangent flag. -/
 local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
     f4ShortRootCotangentDual :=
   Derivation.adjointComodule
