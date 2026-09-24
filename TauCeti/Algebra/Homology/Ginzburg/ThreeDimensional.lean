@@ -250,26 +250,23 @@ theorem ginzburgThreeDifferential_ofArrow_mul {i j : GinzburgQuiver Q} (e : i �
   exact liftDerivation_ofArrow_mul k _ _ (vertexIdempotent_mul_ginzburgThreeArrowRelator k W)
     (ginzburgThreeArrowRelator_mul_vertexIdempotent k W) e z
 
-/-- **The original arrows are cycles** of the three-dimensional Ginzburg differential. Deliberately
-not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already normalizes its left-hand
-side. -/
+/-- **The original arrows are cycles** of the three-dimensional Ginzburg differential. -/
+@[simp]
 theorem ginzburgThreeDifferential_ofArrow_original {i j : Q} (a : i ⟶ j) :
     ginzburgThreeDifferential k W
         (ofArrow (GinzburgHom.double (Sum.inl a) : GinzburgHom Q i j)) = 0 :=
   (ginzburgThreeDifferential_ofArrow k W _).trans (ginzburgThreeArrowRelator_double_inl k W a)
 
-/-- **The differential of the reverse `a*` of an arrow `a` is the cyclic derivative `∂_a W`.**
-Deliberately not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already normalizes its
-left-hand side. -/
+/-- **The differential of the reverse `a*` of an arrow `a` is the cyclic derivative `∂_a W`.** -/
+@[simp]
 theorem ginzburgThreeDifferential_ofArrow_reverse {i j : Q} (a : j ⟶ i) :
     ginzburgThreeDifferential k W
         (ofArrow (GinzburgHom.double (Sum.inr a) : GinzburgHom Q i j)) =
       ginzburgOriginalMap k (cyclicDerivative k a W) :=
   (ginzburgThreeDifferential_ofArrow k W _).trans (ginzburgThreeArrowRelator_double_inr k W a)
 
-/-- **The differential of the adjoined loop `t_i` is the local preprojective relator `ρ_i`.**
-Deliberately not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already normalizes its
-left-hand side. -/
+/-- **The differential of the adjoined loop `t_i` is the local preprojective relator `ρ_i`.** -/
+@[simp]
 theorem ginzburgThreeDifferential_ofArrow_loop (i : Q) :
     ginzburgThreeDifferential k W (ofArrow (GinzburgHom.loop i)) =
       ginzburgMap k (localPreprojectiveRelator k i) :=

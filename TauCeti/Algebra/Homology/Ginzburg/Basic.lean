@@ -190,11 +190,19 @@ noncomputable def ginzburgOriginalMap : pathAlgebra k Q →ₐ[k] pathAlgebra k 
 
 /-- The inclusion sends an arrow of `Q` to the corresponding original arrow of the Ginzburg
 quiver. -/
+@[simp]
 theorem ginzburgOriginalMap_ofArrow {i j : Q} (a : i ⟶ j) :
     ginzburgOriginalMap k (ofArrow a) = ofArrow (GinzburgHom.double (Sum.inl a)) := by
   rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_ofArrow, ginzburgMap_ofArrow,
     Symmetrify.of_map]
   rfl
+
+/-- The inclusion sends the one-arrow path to the corresponding original arrow. -/
+@[simp]
+theorem ginzburgOriginalMap_ofPath_toPath {i j : Q} (a : i ⟶ j) :
+    ginzburgOriginalMap k (ofPath ⟨i, j, a.toPath⟩) =
+      ofArrow (GinzburgHom.double (Sum.inl a)) := by
+  simpa only [ofArrow_eq_ofPath] using ginzburgOriginalMap_ofArrow k a
 
 @[simp]
 theorem ginzburgOriginalMap_vertexIdempotent (v : Q) :
