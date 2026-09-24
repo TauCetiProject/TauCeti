@@ -336,7 +336,6 @@ theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s�
   exact (Set.inter_inter_distrib_left _ _ _).symm
 
 /-- The rational open of the common refinement of two presentations is their intersection. -/
-@[simp]
 theorem spaBasicOpen_commonRefinement {P : Huber.PairOfDefinition A} (Aplus : Subring A)
     (p q : P.Presentation) :
     spaBasicOpen Aplus (p.commonRefinement q).num (p.commonRefinement q).den =

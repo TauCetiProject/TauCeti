@@ -74,8 +74,10 @@ theorem comap_rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) (p :
     letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     comap (CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
-        (Presentation.completionLocObjCommRingCatIso p).inv).hom
+        (forget₂ TopCommRingCat CommRingCat).map
+          (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm)).hom
       (rationalLocalizationPoint hP p x hx) = x := by
+  simp only [← Presentation.completionLocObjCommRingCatIso_inv]
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -133,9 +135,10 @@ theorem comap_homOfRationalSubsetSubset_rationalLocalizationPoint (hP : P.ringOf
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p q : Presentation P)
     (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus q.num q.den) :
-    comap ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-        (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))).hom
+    comap ((forget₂ TopCommRingCat CommRingCat).map
+        (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom).hom
       (rationalLocalizationPoint hP q x hx) = rationalLocalizationPoint hP p x (h hx) := by
+  simp only [← Functor.comp_map, ← ObjectProperty.ι_map]
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
