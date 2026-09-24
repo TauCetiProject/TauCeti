@@ -19,9 +19,8 @@ import Mathlib.RingTheory.Coprime.Lemmas
 # The finite-level torsion structure of an elliptic curve
 
 Over a separably closed field, the `N`-torsion of an elliptic curve is a product of two cyclic
-groups of order `N`, provided that `N` is invertible in the field.  The proof first treats each
-prime-power part using the structure theorem for finite abelian groups and the known torsion
-counts.  The coprime parts are then reassembled by the Chinese remainder theorem.
+groups of order `N`, provided that `N` is invertible in the field. This identifies the finite
+torsion available for studying isogenies and the Weil pairing.
 
 ## Main result
 
@@ -41,7 +40,8 @@ open scoped DirectSum
 variable {K : Type*} [Field K] [IsSepClosed K]
 
 open scoped Classical in
-/-- The known geometric torsion count, transported across base change by the identity map. -/
+/-- The `d`-torsion over the original field has order `d ^ 2` when `d ∣ N` and `N` is invertible.
+This makes the geometric torsion count available without changing the base field. -/
 private theorem natCard_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     {N d : ℕ} (hN : (N : K) ≠ 0) (hd : d ∣ N) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point (d : ℤ)) = d ^ 2 := by
@@ -53,8 +53,7 @@ private theorem natCard_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
 
 open scoped Classical in
 omit [IsSepClosed K] in
-/-- The torsion subgroup over the original field is finite, by transport from identity base
-change. -/
+/-- The nonzero torsion subgroup over the original field is finite. -/
 private theorem finite_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     {d : ℕ} (hd : d ≠ 0) : Finite (AddSubgroup.torsionBy W.toAffine.Point (d : ℤ)) := by
   let eSelf : (W.toAffine⁄K).toAffine.Point ≃+ W.toAffine.Point :=
@@ -104,6 +103,13 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
 
 open scoped Classical in
 omit [IsSepClosed K] in
+/-- The additive-subgroup presentation of `N`-torsion is annihilated by `N`. -/
+private theorem torsionBy_isTorsionBy (W : WeierstrassCurve K) (N : ℕ) :
+    Module.IsTorsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (N : ℤ) :=
+  Submodule.torsionBy_isTorsionBy (R := ℤ) (M := W.toAffine.Point) (N : ℤ)
+
+open scoped Classical in
+omit [IsSepClosed K] in
 /-- The primary torsion subgroups form an internal direct sum of `E[N]`. -/
 private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
     (N : ℕ) [NeZero N] : DirectSum.IsInternal fun p : N.primeFactors ↦
@@ -121,9 +127,7 @@ private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
   have hprod : ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
     exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN0).symm
   rw [hprod]
-  -- `AddSubgroup.torsionBy` is the underlying subtype of this `Module.IsTorsionBy` instance.
-  change Module.IsTorsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (N : ℤ)
-  exact Submodule.torsionBy_isTorsionBy (R := ℤ) (M := W.toAffine.Point) (N : ℤ)
+  exact torsionBy_isTorsionBy W N
 
 open scoped Classical in
 /-- The primary decomposition of `E[N]`, with each component put in rank-two cyclic form. -/
@@ -147,9 +151,7 @@ private noncomputable def primaryDecompositionEquiv (W : WeierstrassCurve K) [W.
 open scoped Classical in
 /-- **`E[N] ≃+ (ℤ/N)²`** over a separably closed field in which `N` is invertible.
 
-The equivalence is noncanonical: on each primary component it comes from the finite abelian group
-structure theorem, and the primary components are assembled using the Chinese remainder theorem.
--/
+The equivalence is noncanonical, so the result asserts its existence. -/
 theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ) [NeZero N]
     (hN : (N : K) ≠ 0) :
     Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by

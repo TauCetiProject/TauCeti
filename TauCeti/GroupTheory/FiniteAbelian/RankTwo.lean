@@ -65,7 +65,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
     simp only [Nat.card_zmod]
   have hcard_torsion_pi :
       Nat.card (AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ)) = p ^ Fintype.card ι := by
-    rw [Nat.card_congr (TauCeti.AddSubgroup.torsionByPiEquiv (fun i ↦ ZMod (n i)) p).toEquiv,
+    rw [Nat.card_congr (TauCeti.AddSubgroup.torsionByPiEquiv (fun i ↦ ZMod (n i)) (p : ℤ)).toEquiv,
       Nat.card_pi]
     let : NeZero p := ⟨hp.ne_zero⟩
     calc

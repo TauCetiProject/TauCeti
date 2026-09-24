@@ -107,6 +107,7 @@ theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     exact Subtype.ext h
 
 /-- The inverse picks the unique residue whose multiple by `p ^ k` is the given torsion point. -/
+@[simp]
 theorem zmodTorsionByEquiv_symm_apply_eq_iff (p k : ℕ) [NeZero p]
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) (x : ZMod p) :
     (zmodTorsionByEquiv p k).symm y = x ↔

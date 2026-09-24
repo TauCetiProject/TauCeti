@@ -48,21 +48,19 @@ namespace AddSubgroup
 
 /-- Torsion in a product of additive commutative groups is additively equivalent to the product
 of their torsion subgroups. -/
-def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)] (n : ℕ) :
-    _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ) ≃+
-      (∀ i, _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) where
+def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)] (n : ℤ) :
+    _root_.AddSubgroup.torsionBy (∀ i, A i) n ≃+
+      (∀ i, _root_.AddSubgroup.torsionBy (A i) n) where
   toFun x i := ⟨x.1 i, by
-    apply _root_.AddSubgroup.torsionBy.nsmul_iff.2
+    change n • x.1 i = 0
     have hx : n • (x.1 : ∀ i, A i) = 0 :=
-      congrArg Subtype.val (_root_.AddSubgroup.torsionBy.nsmul x)
+      (Submodule.mem_torsionBy_iff _ _).mp x.2
     simpa only [Pi.smul_apply, Pi.zero_apply] using congrFun hx i⟩
   invFun x := ⟨fun i ↦ x i, by
-    apply _root_.AddSubgroup.torsionBy.nsmul_iff.2
+    change n • (fun i ↦ (x i : A i)) = 0
     ext i
     simp only [Pi.smul_apply, Pi.zero_apply]
-    have hxi : n • (x i : A i) = 0 :=
-      congrArg Subtype.val (_root_.AddSubgroup.torsionBy.nsmul (x i))
-    exact hxi⟩
+    exact (Submodule.mem_torsionBy_iff _ _).mp (x i).2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -70,15 +68,15 @@ def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
 /-- `torsionByPiEquiv` sends a torsion element to its pointwise torsion elements. -/
 @[simp]
 theorem torsionByPiEquiv_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
-    (n : ℕ) (x : _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ)) (i : ι) :
-    ((torsionByPiEquiv A n x i : _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) : A i) = x.1 i :=
+    (n : ℤ) (x : _root_.AddSubgroup.torsionBy (∀ i, A i) n) (i : ι) :
+    ((torsionByPiEquiv A n x i : _root_.AddSubgroup.torsionBy (A i) n) : A i) = x.1 i :=
   by simp [torsionByPiEquiv]
 
 /-- The inverse of `torsionByPiEquiv` assembles torsion elements pointwise. -/
 @[simp]
 theorem torsionByPiEquiv_symm_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
-    (n : ℕ) (x : ∀ i, _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) (i : ι) :
-    (((torsionByPiEquiv A n).symm x : _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ)) :
+    (n : ℤ) (x : ∀ i, _root_.AddSubgroup.torsionBy (A i) n) (i : ι) :
+    (((torsionByPiEquiv A n).symm x : _root_.AddSubgroup.torsionBy (∀ i, A i) n) :
       ∀ i, A i) i = (x i).1 :=
   by simp [torsionByPiEquiv]
 
@@ -127,20 +125,20 @@ end TauCeti
 namespace AddEquiv
 
 /-- An additive equivalence carries the `n`-torsion subgroup to the `n`-torsion subgroup. -/
-def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B) (n : ℕ) :
-    _root_.AddSubgroup.torsionBy A (n : ℤ) ≃+ _root_.AddSubgroup.torsionBy B (n : ℤ) where
-  toFun x := ⟨e x, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
-    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-    rw [natCast_zsmul] at hx
+def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B) (n : ℤ) :
+    _root_.AddSubgroup.torsionBy A n ≃+ _root_.AddSubgroup.torsionBy B n where
+  toFun x := ⟨e x, by
+    change n • e x = 0
+    have hx : n • (x.1 : A) = 0 := (Submodule.mem_torsionBy_iff _ _).mp x.2
     calc
-      n • e x = e (n • (x.1 : A)) := (map_nsmul e n x.1).symm
+      n • e x = e (n • (x.1 : A)) := (map_zsmul e n x.1).symm
       _ = e 0 := congrArg e hx
       _ = 0 := map_zero e⟩
-  invFun x := ⟨e.symm x, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
-    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-    rw [natCast_zsmul] at hx
+  invFun x := ⟨e.symm x, by
+    change n • e.symm x = 0
+    have hx : n • (x.1 : B) = 0 := (Submodule.mem_torsionBy_iff _ _).mp x.2
     calc
-      n • e.symm x = e.symm (n • (x.1 : B)) := (map_nsmul e.symm n x.1).symm
+      n • e.symm x = e.symm (n • (x.1 : B)) := (map_zsmul e.symm n x.1).symm
       _ = e.symm 0 := congrArg e.symm hx
       _ = 0 := map_zero e.symm⟩
   left_inv x := Subtype.ext (e.left_inv x)
@@ -150,15 +148,15 @@ def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B
 /-- `torsionByCongr` applies its additive equivalence to the underlying element. -/
 @[simp]
 theorem torsionByCongr_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B)
-    (n : ℕ) (x : _root_.AddSubgroup.torsionBy A (n : ℤ)) :
-    ((torsionByCongr e n x : _root_.AddSubgroup.torsionBy B (n : ℤ)) : B) = e x.1 :=
+    (n : ℤ) (x : _root_.AddSubgroup.torsionBy A n) :
+    ((torsionByCongr e n x : _root_.AddSubgroup.torsionBy B n) : B) = e x.1 :=
   by simp [torsionByCongr]
 
 /-- The inverse of `torsionByCongr` applies the inverse additive equivalence. -/
 @[simp]
 theorem torsionByCongr_symm_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B]
-    (e : A ≃+ B) (n : ℕ) (x : _root_.AddSubgroup.torsionBy B (n : ℤ)) :
-    (((torsionByCongr e n).symm x : _root_.AddSubgroup.torsionBy A (n : ℤ)) : A) = e.symm x.1 :=
+    (e : A ≃+ B) (n : ℤ) (x : _root_.AddSubgroup.torsionBy B n) :
+    (((torsionByCongr e n).symm x : _root_.AddSubgroup.torsionBy A n) : A) = e.symm x.1 :=
   by simp [torsionByCongr]
 
 end AddEquiv
