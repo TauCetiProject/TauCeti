@@ -98,10 +98,10 @@ include hπ hρ
 omit [CompleteSpace W] in
 /-- The integrand `g ↦ ρ g⁻¹ ∘ T ∘ π g` of the averaging construction, as a continuous map on the
 group. Continuity is where the two continuity hypotheses on the representations are used. -/
-private noncomputable def conjFamily (T : V →L[𝕜] W) : C(G, V →L[𝕜] W) where
-  toFun g := (ρ g⁻¹).comp (T.comp (π g))
-  continuous_toFun :=
-    (hρ.comp continuous_inv).clm_comp (Continuous.clm_comp continuous_const hπ)
+private noncomputable def conjFamily (T : V →L[𝕜] W) : C(G, V →L[𝕜] W) :=
+  ContinuousMap.mk (fun g => ContRepresentation.linHom π ρ g⁻¹ T)
+    ((ContRepresentation.continuous_linHom π ρ hπ hρ).comp continuous_inv |>.clm_apply
+      continuous_const)
 
 omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
   [CompleteSpace W] in
@@ -110,7 +110,9 @@ is the unfolding lemma that keeps the proofs below from reaching through `conjFa
 definition. -/
 @[simp]
 private theorem conjFamily_apply_apply (T : V →L[𝕜] W) (g : G) (v : V) :
-    conjFamily π hπ ρ hρ T g v = ρ g⁻¹ (T (π g v)) :=
+    conjFamily π hπ ρ hρ T g v = ρ g⁻¹ (T (π g v)) := by
+  change (ContRepresentation.linHom π ρ g⁻¹) T v = _
+  rw [ContRepresentation.linHom_apply, inv_inv]
   rfl
 
 omit [CompleteSpace W] in
@@ -133,7 +135,10 @@ theorem averageOperator_apply (T : V →L[𝕜] W) (v : V) :
     (conjFamily π hπ ρ hρ T)
   simp only [ContinuousLinearMap.apply_apply] at h
   rw [averageOperator, ← h, haarAverage_apply]
-  rfl
+  apply integral_congr_ae
+  filter_upwards [] with g
+  change ((ContinuousLinearMap.apply 𝕜 W v) (conjFamily π hπ ρ hρ T g)) = _
+  exact conjFamily_apply_apply π hπ ρ hρ T g v
 
 /-! ### Linearity in the averaged operator -/
 
@@ -373,6 +378,12 @@ theorem inner_averageOperator (T : V →L[𝕜] W) (v : V) (w : W) :
     (G := G) (conjFamily π hπ ρ hρ T)
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply] at h
   rw [averageOperator, ← innerSL_apply_apply, ← h, haarAverage_apply]
+  apply integral_congr_ae
+  filter_upwards [] with g
+  change (innerSL 𝕜 w) ((ContinuousLinearMap.apply 𝕜 W v) (conjFamily π hπ ρ hρ T g)) = _
+  rw [show (ContinuousLinearMap.apply 𝕜 W v) (conjFamily π hπ ρ hρ T g) =
+      (conjFamily π hπ ρ hρ T g) v by rfl]
+  rw [conjFamily_apply_apply]
   rfl
 
 /-- For a **unitary** `ρ` the inverse action can be moved to the other side of the inner product,
