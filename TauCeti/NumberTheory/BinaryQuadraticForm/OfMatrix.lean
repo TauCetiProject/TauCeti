@@ -81,13 +81,16 @@ theorem eval_ofMatrix (M : Matrix (Fin 2) (Fin 2) R) (x y : R) :
 @[simp]
 theorem discrim_ofMatrix (M : Matrix (Fin 2) (Fin 2) R) :
     (ofMatrix M).discrim = M.trace ^ 2 - 4 * M.det := by
-  simp [discrim_def, discrim, trace_fin_two, det_fin_two]
+  simp only [discrim_def, discrim, trace_fin_two, det_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c]
   ring
 
 /-- Conjugation by `γ ∈ SL(2, R)` acts on `Q_M` as `γ` acts on forms: `Q_{γ M γ⁻¹} = γ • Q_M`. -/
 theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     ofMatrix (γ * M * γ⁻¹ : Matrix (Fin 2) (Fin 2) R) = γ • ofMatrix M := by
-  ext <;> simp [SpecialLinearGroup.coe_inv, adjugate_fin_two, mul_apply, Fin.sum_univ_two] <;> ring
+  simp only [BinaryQuadraticForm.ext_iff, SpecialLinearGroup.coe_inv, adjugate_fin_two, ofMatrix_a,
+    ofMatrix_b, ofMatrix_c, smul_a, smul_b, smul_c, mul_apply, Fin.sum_univ_two, of_apply,
+    cons_val', cons_val_zero, cons_val_one]
+  refine ⟨?_, ?_, ?_⟩ <;> ring
 
 /-- If `b² - 4 a c = t² - 4 n` then `b ≡ t (mod 2)`. -/
 private theorem two_dvd_sub_b {f : BinaryQuadraticForm ℤ} {t n : ℤ}
