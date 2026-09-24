@@ -39,7 +39,7 @@ by an explicit prime-power series, not merely chosen on a simply connected regio
 the logarithmic derivative of the `L`-series, whose own prime-power expansion is
 `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree`.
 
-The zero-free hypothesis at every prime is needed only for the exponential and holomorphy
+The zero-free hypothesis at every prime is needed for the summability, exponential, and holomorphy
 statements: for the finitely many primes with a large tail, the local power series may vanish
 inside the disk, and then its formal logarithm need not converge.
 
@@ -188,16 +188,29 @@ private theorem eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor (D : Eul
       (hσ.comp_injective P.primeIdealPow_injective) (hP.trans (by norm_num)) hs
 
 /-- **The local prime-power logarithms are summable over the primes.** If the ideal-indexed series
-converges absolutely at the real point `σ`, then for `Re(s) > σ` the evaluated formal logarithms of
-the local factors form a summable family over the height-one primes. -/
+converges absolutely at the real point `σ` and every local power series is zero-free on the disk of
+radius `N(P) ^ (-σ)`, then for `Re(s) > σ` the evaluated formal logarithms of the local factors
+each converge, and form a summable family over the height-one primes. -/
 theorem summable_tsum_coeff_localLogSeries (D : EulerProductData K) {σ : ℝ} {s : ℂ}
-    (hσ : Summable (idealTerm K D.toIdealArithmeticFunction σ)) (hs : σ < s.re) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      ∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
-        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e :=
-  (D.summable_log_eulerFactor
-    (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_cofinite <|
-    (D.eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor hσ).mono fun _ hP ↦ (hP s hs).symm
+    (hσ : Summable (idealTerm K D.toIdealArithmeticFunction σ))
+    (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
+      ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
+        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
+    (hs : σ < s.re) :
+    (∀ P : HeightOneSpectrum (𝓞 K), Summable fun e : ℕ ↦
+      PowerSeries.coeff e (D.localLogSeries P) *
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) ∧
+      Summable fun P : HeightOneSpectrum (𝓞 K) ↦
+        ∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
+          ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
+  refine ⟨fun P ↦ ?_, ?_⟩
+  · exact (D.summable_norm_coeff_localLogSeries_of_zeroFree P
+      (D.LSeriesSummable_localArithmeticFactor hσ P) (hne P) hs).of_norm
+  · exact (D.summable_log_eulerFactor
+      (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_cofinite <|
+      (D.eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor hσ).mono
+        fun _ hP ↦ (hP s hs).symm
 
 /-- **The prime-power expansion of the logarithm.** Suppose the ideal-indexed series converges
 absolutely at the real point `σ` and every local power series is zero-free on the disk of radius
@@ -215,7 +228,7 @@ theorem exp_tsum_tsum_coeff_localLogSeries_eq_LSeries_of_zeroFree (D : EulerProd
         PowerSeries.coeff e (D.localLogSeries P) *
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) =
       LSeries (normCoeff K D.toIdealArithmeticFunction) s := by
-  have hprod := (D.summable_tsum_coeff_localLogSeries hσ hs).hasSum.cexp
+  have hprod := (D.summable_tsum_coeff_localLogSeries hσ hne hs).2.hasSum.cexp
   refine hprod.unique ((D.hasProd_eulerFactor
     (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_fun fun P ↦ ?_)
   exact D.exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree P
