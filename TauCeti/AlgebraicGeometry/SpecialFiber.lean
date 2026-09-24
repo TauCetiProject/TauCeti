@@ -43,9 +43,10 @@ noncomputable def localResidueFieldEquiv :
 /-- The closed-point residue-field equivalence respects the map from the local ring. -/
 @[simp]
 lemma localResidueFieldEquiv_algebraMap (r : R) :
-    localResidueFieldEquiv R (algebraMap R (ResidueField R) r) =
+    localResidueFieldEquiv R (residue R r) =
       (Scheme.Spec.residueFieldIso R (closedPoint R)).inv
         (algebraMap R (maximalIdeal R).ResidueField r) := by
+  rw [← ResidueField.algebraMap_eq]
   simp only [localResidueFieldEquiv]
   rw [← Ideal.algebraMap_quotient_residueField_mk (maximalIdeal R) r]
   rfl
@@ -137,14 +138,39 @@ lemma specialFiberIsoFiberClosedPoint_inv_specialFiberι :
 
 /-- The inverse closed-point fibre comparison preserves the maps to the residue-field
 spectrum. -/
-@[reassoc (attr := simp)]
+@[simp]
 lemma specialFiberIsoFiberClosedPoint_inv_hom :
     (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        (specialFiber R toBase).hom ≫ (specLocalResidueFieldIso R).hom =
+        pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
+          (specLocalResidueFieldIso R).hom =
       toBase.fiberToSpecResidueField (closedPoint R) :=
-  (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
-    (IsPullback.of_hasPullback toBase
-      ((Spec R).fromSpecResidueField (closedPoint R)))
+  by
+    change (specialFiberIsoFiberClosedPoint R toBase).inv ≫
+        (specialFiber R toBase).hom ≫ (specLocalResidueFieldIso R).hom =
+      toBase.fiberToSpecResidueField (closedPoint R)
+    exact (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
+      (IsPullback.of_hasPullback toBase
+        ((Spec R).fromSpecResidueField (closedPoint R)))
+
+/-- The inverse comparison preserves the residue-field projection after composition. -/
+@[simp]
+lemma specialFiberIsoFiberClosedPoint_inv_hom_assoc {Y : Scheme.{u}}
+    (h : Spec (.of ((Spec R).residueField (closedPoint R))) ⟶ Y) :
+    (specialFiberIsoFiberClosedPoint R toBase).inv ≫
+        (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
+          ((specLocalResidueFieldIso R).hom ≫ h)) =
+      toBase.fiberToSpecResidueField (closedPoint R) ≫ h := by
+  calc
+    _ = ((specialFiberIsoFiberClosedPoint R toBase).inv ≫
+        (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
+          (specLocalResidueFieldIso R).hom)) ≫ h :=
+      (congrArg (fun f => (specialFiberIsoFiberClosedPoint R toBase).inv ≫ f)
+        (Category.assoc
+          (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))))
+          (specLocalResidueFieldIso R).hom h).symm).trans
+        (Category.assoc _ _ h).symm
+    _ = _ := congrArg (fun f => f ≫ h)
+      (specialFiberIsoFiberClosedPoint_inv_hom R toBase)
 
 end ClosedPoint
 
