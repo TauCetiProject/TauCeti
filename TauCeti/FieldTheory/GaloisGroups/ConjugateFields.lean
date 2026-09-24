@@ -58,15 +58,6 @@ open scoped Pointwise
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
-/-- Transport cosets along a group isomorphism. -/
-private def quotientEquivOfMulEquiv {G G' : Type*} [Group G] [Group G']
-    (e : G ≃* G') (H : Subgroup G) : G ⧸ H ≃ G' ⧸ H.map e.toMonoidHom :=
-  Quotient.congr e.toEquiv (by
-    intro a b
-    simp only [QuotientGroup.leftRel_apply]
-    change a⁻¹ * b ∈ H ↔ (e a)⁻¹ * e b ∈ H.map e.toMonoidHom
-    rw [← e.map_inv, ← e.map_mul, Subgroup.mem_map_equiv, e.symm_apply_apply])
-
 section Normal
 
 variable [Normal F E]
@@ -135,13 +126,12 @@ noncomputable def quotientGalStabilizerEquivAlgHomSimpleField (x : E)
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
     ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
   have hst : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) =
       stabilizer Gal(normalClosure F F⟮x⟯ E/F) (y' : normalClosure F F⟮x⟯ E) := by
-    rw [map_stabilizer_galEquivNormalClosure, fixingSubgroup_adjoin_simple]
-  exact (quotientEquivOfMulEquiv (galEquivNormalClosure (F := F) (E := E) x)
-    (stabilizer (minpoly F x).Gal y)).trans
-      ((Subgroup.quotientEquivOfEq hst).trans
-        (quotientStabilizerEquivAlgHomSimpleField x y'))
+    simpa only [MulEquiv.toMonoidHom_eq_coe, fixingSubgroup_adjoin_simple] using
+      map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y
+  exact (QuotientGroup.congrOfMapEq (galEquivNormalClosure (F := F) (E := E) x)
+    hst).trans (quotientStabilizerEquivAlgHomSimpleField x y')
 
 /-- A polynomial Galois coset represented by `σ` sends the generator to the image of `y`
 under `σ`, transported to the normal closure. -/
@@ -156,11 +146,16 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_mk_gen (x : E)
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
     ⟨splittingFieldEquivNormalClosure x y,
       rootSet_mapsTo (splittingFieldEquivNormalClosure x).toAlgHom y.2⟩
+  have hst : (stabilizer (minpoly F x).Gal y).map
+      ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) =
+      stabilizer Gal(normalClosure F F⟮x⟯ E/F) (y' : normalClosure F F⟮x⟯ E) := by
+    simpa only [MulEquiv.toMonoidHom_eq_coe, fixingSubgroup_adjoin_simple] using
+      map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y
   change quotientStabilizerEquivAlgHomSimpleField x y'
-      (QuotientGroup.mk (galEquivNormalClosure x σ)) (AdjoinSimple.gen F x) = _
+      (QuotientGroup.congrOfMapEq (galEquivNormalClosure x) hst
+        (QuotientGroup.mk σ)) (AdjoinSimple.gen F x) = _
+  rw [QuotientGroup.congrOfMapEq_mk]
   rw [quotientStabilizerEquivAlgHomSimpleField_mk_gen]
-  change galEquivNormalClosure x σ (splittingFieldEquivNormalClosure x y) =
-    splittingFieldEquivNormalClosure x (σ y)
   exact galEquivNormalClosure_apply x σ y
 
 /-- The polynomial Galois coset-to-embedding equivalence respects postcomposition. -/
@@ -375,15 +370,18 @@ noncomputable def quotientGalNormalizerEquivConjugateSimpleFields (x : E)
         conjugateSimpleFields (F := F) x := by
   let e := galEquivNormalClosure (F := F) (E := E) x
   have hn : (Subgroup.normalizer
-      (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).map e.toMonoidHom =
+      (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).map (e : _ →* _) =
       Subgroup.normalizer
         ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
           Set Gal(normalClosure F F⟮x⟯ E/F)) := by
-    rw [Subgroup.map_equiv_normalizer_eq, hy]
-  exact (quotientEquivOfMulEquiv e
-    (Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal))).trans
-      ((Subgroup.quotientEquivOfEq hn).trans
-        (quotientNormalizerEquivConjugateSimpleFields x hsep))
+    have hy' : (stabilizer (minpoly F x).Gal y).map (e : _ →* _) =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
+      simpa only [MulEquiv.toMonoidHom_eq_coe] using hy
+    rw [← hy']
+    simpa only [MulEquiv.toMonoidHom_eq_coe] using
+      Subgroup.map_equiv_normalizer_eq (stabilizer (minpoly F x).Gal y) e
+  exact (QuotientGroup.congrOfMapEq e hn).trans
+    (quotientNormalizerEquivConjugateSimpleFields x hsep)
 
 /-- A polynomial Galois coset represented by `σ` gives the field obtained by the
 corresponding automorphism of the normal closure. -/
@@ -398,8 +396,21 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
     ((quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
       (QuotientGroup.mk σ)).1) =
         galEquivNormalClosure x σ • (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
+  let e := galEquivNormalClosure (F := F) (E := E) x
+  have hn : (Subgroup.normalizer
+      (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).map (e : _ →* _) =
+      Subgroup.normalizer
+        ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
+          Set Gal(normalClosure F F⟮x⟯ E/F)) := by
+    have hy' : (stabilizer (minpoly F x).Gal y).map (e : _ →* _) =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
+      simpa only [MulEquiv.toMonoidHom_eq_coe] using hy
+    rw [← hy']
+    simpa only [MulEquiv.toMonoidHom_eq_coe] using
+      Subgroup.map_equiv_normalizer_eq (stabilizer (minpoly F x).Gal y) e
   change ((quotientNormalizerEquivConjugateSimpleFields x hsep
-    (QuotientGroup.mk (galEquivNormalClosure x σ))).1) = _
+    (QuotientGroup.congrOfMapEq e hn (QuotientGroup.mk σ))).1) = _
+  rw [QuotientGroup.congrOfMapEq_mk]
   exact quotientNormalizerEquivConjugateSimpleFields_mk x hsep _
 
 /-- The polynomial normalizer-coset parametrization respects the transported Galois action. -/
