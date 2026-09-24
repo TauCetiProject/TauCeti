@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
 
 /-!
 # Global and local ramification groups
@@ -60,16 +59,19 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   (v : HeightOneSpectrum (𝓞 K)) {w : HeightOneSpectrum (𝓞 L)} [w.asIdeal.LiesOver v.asIdeal]
 
+variable [IsGalois K L]
+
 /-- **The global and local ramification groups agree.** An element `σ` of the decomposition group
 of `w` lies in the `i`-th ramification group of the prime `w` of `𝓞 L` exactly when its continuous
 extension to `L_w` lies in the `i`-th lower-numbering ramification group of `L_w/K_v`. -/
 theorem mem_ramificationGroup_iff_decompositionHom_mem (i : ℕ)
     (σ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) :
     (σ : L ≃ₐ[K] L) ∈ w.asIdeal.ramificationGroup (L ≃ₐ[K] L) i ↔
-      decompositionHom v w σ ∈ TauCeti.IsLocalRing.ramificationGroup
-        (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L)
-        𝒪[w.adicCompletion L] i := by
-  rw [Ideal.mem_ramificationGroup_iff, TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff]
+      decompositionHom v w σ ∈ TauCeti.LocalFieldsRamification.lowerRamificationGroup
+        (v.adicCompletion K) (w.adicCompletion L) i := by
+  rw [Ideal.mem_ramificationGroup_iff,
+    TauCeti.LocalFieldsRamification.lowerRamificationGroup_def,
+    TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff]
   simp_rw [mem_maximalIdeal_integer_pow_iff, w.mem_asIdeal_pow_iff_valued_algebraMap_le (K := L),
     map_sub, AddSubgroupClass.coe_sub, AlgEquiv.coe_smul_integerRing]
   refine ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
@@ -104,16 +106,11 @@ Inside the decomposition group of `w`, the `i`-th ramification group of `w` is t
 `i`-th lower-numbering ramification group of `L_w/K_v`. -/
 theorem ramificationGroup_stabilizer_eq_comap_decompositionHom (i : ℕ) :
     w.asIdeal.ramificationGroup (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) i =
-      (TauCeti.IsLocalRing.ramificationGroup
-        (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L)
-        𝒪[w.adicCompletion L] i).comap (decompositionHom v w) := by
+      (TauCeti.LocalFieldsRamification.lowerRamificationGroup
+        (v.adicCompletion K) (w.adicCompletion L) i).comap (decompositionHom v w) := by
   ext σ
   rw [← Ideal.ramificationGroup_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.mem_comap,
     mem_ramificationGroup_iff_decompositionHom_mem v]
-
-section IsGalois
-
-variable [IsGalois K L]
 
 variable (w) in
 /-- **The decomposition group carries the global ramification groups onto the local ones.** For
@@ -122,9 +119,8 @@ lower-numbering ramification group of `L_w/K_v`. -/
 theorem map_ramificationGroup_decompositionHom (i : ℕ) :
     (w.asIdeal.ramificationGroup (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) i).map
         (decompositionHom v w) =
-      TauCeti.IsLocalRing.ramificationGroup
-        (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L)
-        𝒪[w.adicCompletion L] i := by
+      TauCeti.LocalFieldsRamification.lowerRamificationGroup
+        (v.adicCompletion K) (w.adicCompletion L) i := by
   rw [ramificationGroup_stabilizer_eq_comap_decompositionHom v]
   exact Subgroup.map_comap_eq_self_of_surjective (decompositionHom_surjective v w) _
 
@@ -134,14 +130,11 @@ variable (w) in
 group of `L_w/K_v`. -/
 theorem card_ramificationGroup_eq_card_ramificationGroup (i : ℕ) :
     Nat.card (w.asIdeal.ramificationGroup (L ≃ₐ[K] L) i) =
-      Nat.card (TauCeti.IsLocalRing.ramificationGroup
-        (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L)
-        𝒪[w.adicCompletion L] i) := by
+      Nat.card (TauCeti.LocalFieldsRamification.lowerRamificationGroup
+        (v.adicCompletion K) (w.adicCompletion L) i) := by
   rw [← map_ramificationGroup_decompositionHom v w i, ← Ideal.ramificationGroup_subgroupOf]
   exact Nat.card_congr ((Subgroup.subgroupOfEquivOfLe
     (w.asIdeal.ramificationGroup_le_stabilizer i)).symm.trans
       (Subgroup.equivMapOfInjective _ _ (decompositionHom_injective v w))).toEquiv
-
-end IsGalois
 
 end IsDedekindDomain.HeightOneSpectrum
