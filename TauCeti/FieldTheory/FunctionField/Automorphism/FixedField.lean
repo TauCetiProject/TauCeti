@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Basic
-public import TauCeti.FieldTheory.Galois.FixedField
+public import Mathlib.FieldTheory.Galois.Basic
 
 /-!
 # Fixed fields of finite automorphism groups of function fields
@@ -39,6 +39,10 @@ with `H`. -/
 theorem IsFunctionField.fixedField (hF : IsFunctionField k F)
     (H : Subgroup (F ≃ₐ[k] F)) [Finite H] :
     IsFunctionField k (IntermediateField.fixedField H) := by
+  -- `fixedField H` is definitionally `FixedPoints.subfield H F`, which carries Mathlib's
+  -- finite-dimensionality instance for finite `H`.
+  have : FiniteDimensional (IntermediateField.fixedField H) F :=
+    inferInstanceAs (FiniteDimensional (FixedPoints.subfield H F) F)
   exact hF.of_isAlgebraic_top (E := IntermediateField.fixedField H)
 
 end TauCeti

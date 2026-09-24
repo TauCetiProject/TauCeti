@@ -160,14 +160,9 @@ instance isGalois_translationFixedField [Finite Φ] :
 points.** -/
 theorem finrank_translationFixedField [Finite Φ] :
     Module.finrank (translationFixedField W Φ) W.FunctionField = Nat.card Φ := by
-  classical
-  let := Fintype.ofFinite (translationSubgroup W Φ)
-  calc
-    Module.finrank (translationFixedField W Φ) W.FunctionField =
-        Fintype.card (translationSubgroup W Φ) := FixedPoints.finrank_eq_card _ _
-    _ = Nat.card Φ := by
-      rw [← Nat.card_eq_fintype_card]
-      exact card_translationSubgroup W Φ
+  have : Fintype (translationSubgroup W Φ) := Fintype.ofFinite _
+  rw [← card_translationSubgroup W Φ, Nat.card_eq_fintype_card]
+  exact FixedPoints.finrank_eq_card (translationSubgroup W Φ) W.FunctionField
 
 /-- **Every automorphism of the function field fixing the fixed field of a finite subgroup of
 points is a translation by a point of that subgroup.** This is the surjectivity half of the Galois

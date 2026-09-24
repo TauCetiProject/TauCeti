@@ -225,8 +225,8 @@ theorem IsFunctionField.finite_extension {E : Type*} [Field E] [Algebra k E] [Al
   rw [isFunctionField_iff_trdeg_eq_one]
   exact hF.trdeg_eq_one_of_isAlgebraic
 
-/-- An algebraic intermediate field below a function field still has transcendence degree one
-over the base field. -/
+/-- If `F / k` is a function field and `F / E` is algebraic, then `E / k` has transcendence
+degree one. -/
 theorem IsFunctionField.trdeg_eq_one_of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
     [Algebra E F] [IsScalarTower k E F] [Algebra.IsAlgebraic E F]
     (hF : IsFunctionField k F) : Algebra.trdeg k E = 1 := by
