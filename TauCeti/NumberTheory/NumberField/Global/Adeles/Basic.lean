@@ -19,7 +19,8 @@ discrete subgroups and separation of quotients apply to the adele ring.
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
-equivalence and its inverse are continuous.
+equivalence and its inverse are continuous, and the norm of the mixed space
+(`NumberField.mixedEmbedding.norm`) is carried to the norm of the infinite adele ring.
 -/
 
 public section
@@ -114,6 +115,23 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
   (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorphMixedSpace_symm_apply K x
+
+/-- The norm of the Minkowski mixed-space image of an infinite adele is its norm: the product over
+the infinite places of the local absolute values, squared at the complex places. -/
+@[simp]
+theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField K]
+    (x : InfiniteAdeleRing K) :
+    mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K x) = ‖x‖ := by
+  rw [mixedEmbedding.norm_apply, InfiniteAdeleRing.norm_def]
+  refine Finset.prod_congr rfl fun w _ ↦ congrArg (· ^ w.mult) ?_
+  by_cases hw : w.IsReal
+  · rw [mixedEmbedding.normAtPlace_apply_of_isReal hw, InfiniteAdeleRing.ringEquiv_mixedSpace_apply]
+    exact (InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero
+      (map_zero _) _
+  · rw [mixedEmbedding.normAtPlace_apply_of_isComplex
+      (InfinitePlace.not_isReal_iff_isComplex.mp hw), InfiniteAdeleRing.ringEquiv_mixedSpace_apply]
+    exact (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
+      (map_zero _) _
 
 /-- The adele ring is Hausdorff, as the product of the infinite and the finite adele rings. -/
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
