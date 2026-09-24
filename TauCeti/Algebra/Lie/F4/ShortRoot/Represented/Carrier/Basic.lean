@@ -322,7 +322,9 @@ noncomputable instance f4ShortRootQuotientCarrierComodule :
 
 private noncomputable def f4ShortRootCarrierRepresentedAmbientMap :
     f4ModularChevalleyLieAlgebra →ₗ[𝔽₂] f4ShortRootCotangentDual :=
-  f4ShortRootEndEquivCotangentDual.toLinearMap.comp f4ShortRootAdjointLinearMap
+  f4ShortRootEndEquivCotangentDual.toLinearMap.comp
+    (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[𝔽₂]
+      Module.End 𝔽₂ f4ShortRootLieIdeal)
 
 private noncomputable def f4ShortRootCarrierRepresentedToSubmodule :
     f4ModularChevalleyLieAlgebra →ₗ[𝔽₂]
@@ -330,7 +332,7 @@ private noncomputable def f4ShortRootCarrierRepresentedToSubmodule :
   f4ShortRootCarrierRepresentedAmbientMap.codRestrict
     f4ShortRootCarrierCotangentRange.toSubmodule fun X => by
       rw [f4ShortRootCarrierCotangentRange_toSubmodule]
-      exact ⟨f4ShortRootAdjointLinearMap X, ⟨X, rfl⟩, rfl⟩
+      exact ⟨f4ShortRootAdjoint X, ⟨X, rfl⟩, rfl⟩
 
 /-- The represented adjoint image, regarded as a vector in the carrier-stable cotangent range. -/
 noncomputable def f4ShortRootCarrierRepresentedMap :
@@ -341,7 +343,7 @@ noncomputable def f4ShortRootCarrierRepresentedMap :
 @[simp] theorem f4ShortRootCarrierRepresentedMap_apply
     (X : f4ModularChevalleyLieAlgebra) :
     (f4ShortRootCarrierRepresentedMap X : f4ShortRootCotangentDual) =
-      f4ShortRootEndEquivCotangentDual (f4ShortRootAdjointLinearMap X) :=
+      f4ShortRootEndEquivCotangentDual (f4ShortRootAdjoint X) :=
   by exact rfl
 
 /-- Project the carrier-stable represented range onto its transported modular quotient. -/
