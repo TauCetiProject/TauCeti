@@ -103,7 +103,7 @@ theorem isLagrangian_strongDualCotangent_graph_iff :
 
 /-- The graph of a symmetric second derivative is Lagrangian. The Hessian here is the derivative
 of the differential, taking values in the continuous dual. -/
-theorem ContDiffAt.isLagrangian_hessian_graph {f : V → ℝ} {x : V}
+theorem isLagrangian_hessian_graph {f : V → ℝ} {x : V}
     (hf : ContDiffAt ℝ 2 f x) :
     (strongDualCotangentSymplecticForm (V := V)).IsLagrangian
       (fderiv ℝ (fderiv ℝ f) x).toLinearMap.graph := by
@@ -111,7 +111,7 @@ theorem ContDiffAt.isLagrangian_hessian_graph {f : V → ℝ} {x : V}
   exact hf.isSymmSndFDerivAt (by norm_num)
 
 /-- The derivative of the graph map of `df` is the graph map of the Hessian. -/
-theorem ContDiffAt.fderiv_cotangentDifferentialGraph {f : V → ℝ} {x : V}
+theorem fderiv_cotangentDifferentialGraph {f : V → ℝ} {x : V}
     (hf : ContDiffAt ℝ 2 f x) :
     fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x =
       (ContinuousLinearMap.id ℝ V).prod (fderiv ℝ (fderiv ℝ f) x) := by
@@ -120,28 +120,28 @@ theorem ContDiffAt.fderiv_cotangentDifferentialGraph {f : V → ℝ} {x : V}
 
 /-- The Liouville form pulls back along the graph of `df` to `df` itself: on a tangent vector
 `v`, its value is the directional derivative `dfₓ(v)`. -/
-theorem ContDiffAt.cotangentLiouvilleForm_differentialGraph
+theorem cotangentLiouvilleForm_differentialGraph
     {f : V → ℝ} {x : V} (hf : ContDiffAt ℝ 2 f x) (v : V) :
     cotangentLiouvilleForm (x, fderiv ℝ f x)
       (fun _ ↦ fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x v) =
         fderiv ℝ f x v := by
-  rw [ContDiffAt.fderiv_cotangentDifferentialGraph hf]
+  rw [fderiv_cotangentDifferentialGraph hf]
   simp
 
 /-- The tangent image to the graph of a differential is Lagrangian in the linear cotangent
 space. This is the pointwise Lagrangian condition for an exact graph. -/
-theorem ContDiffAt.isLagrangian_range_fderiv_cotangentDifferentialGraph
+theorem isLagrangian_range_fderiv_cotangentDifferentialGraph
     {f : V → ℝ} {x : V} (hf : ContDiffAt ℝ 2 f x) :
     (strongDualCotangentSymplecticForm (V := V)).IsLagrangian
       (LinearMap.range (fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x).toLinearMap) := by
-  rw [ContDiffAt.fderiv_cotangentDifferentialGraph hf]
+  rw [fderiv_cotangentDifferentialGraph hf]
   have hmap : ((ContinuousLinearMap.id ℝ V).prod
       (fderiv ℝ (fderiv ℝ f) x)).toLinearMap =
       LinearMap.id.prod (fderiv ℝ (fderiv ℝ f) x).toLinearMap := by
     ext v w <;> simp [ContinuousLinearMap.prod, LinearMap.prod]
   rw [hmap]
   simpa only [LinearMap.graph_eq_range_prod] using
-    (ContDiffAt.isLagrangian_hessian_graph hf)
+    (isLagrangian_hessian_graph hf)
 
 end ContinuousDual
 
