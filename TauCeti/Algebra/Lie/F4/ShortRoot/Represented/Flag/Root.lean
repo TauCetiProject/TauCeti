@@ -88,7 +88,7 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
       exact Submodule.subset_span (Set.mem_range_self X)
 
 /-- Conjugation by a carrier root-subgroup point, as a linear map on matrices. -/
-@[expose] noncomputable def f4ShortRootRootConjLinearMap
+noncomputable def f4ShortRootRootConjLinearMap
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
     Matrix (Fin 26) (Fin 26) A →ₗ[A] Matrix (Fin 26) (Fin 26) A where
   toFun X :=
@@ -98,12 +98,14 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
   map_smul' c X := by rw [RingHom.id_apply, Matrix.mul_smul, Matrix.smul_mul]
 
 omit [Algebra 𝔽₂ A] in
-theorem f4ShortRootRootConjLinearMap_apply
+@[simp] theorem f4ShortRootRootConjLinearMap_apply
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (X : Matrix (Fin 26) (Fin 26) A) :
     f4ShortRootRootConjLinearMap k u X =
       ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) * X *
-        (((rootSubgroupPoints k A u)⁻¹ : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) := rfl
+        (((rootSubgroupPoints k A u)⁻¹ : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) := by
+  unfold f4ShortRootRootConjLinearMap
+  rfl
 
 /-- Root conjugation carries a represented adjoint matrix to the adjoint matrix of the
 integrally transformed ambient vector. -/

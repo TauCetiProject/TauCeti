@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Span
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 
 /-!
 # Weight-torus stability of the represented modular F4 flag
@@ -151,7 +150,6 @@ theorem f4ShortRootWeightTorusConj_mem_representedIdeal
     rw [map_smul]
     exact Submodule.smul_mem _ c hX
 
-
 private theorem torus_endOfPoint_mem_ideal
     (g : HopfAlgebra.points
       (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (CommAlgCat.of 𝔽₂ A))
@@ -199,81 +197,6 @@ private theorem torus_endOfPoint_mem_range
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
   · intro Y hY
     exact f4ShortRootWeightTorusConj_mem_representedRange s hY
-
-/-- A point acts block triangularly on the adapted represented flag if it preserves its two
-nontrivial steps. -/
-theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
-    (g : HopfAlgebra.points
-      (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (CommAlgCat.of 𝔽₂ A))
-    (hIdeal : ∀ {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual},
-      x ∈ cotangentFlagIdeal (A := A) →
-        Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-          cotangentFlagIdeal (A := A))
-    (hRange : ∀ {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual},
-      x ∈ cotangentFlagRange (A := A) →
-        Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-          cotangentFlagRange (A := A)) :
-    ((Comodule.coefficientMatrix
-        (C := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
-        f4ShortRootCotangentFlagBasis).map g.ofConv).BlockTriangular
-      (OrderDual.toDual ∘ f4ShortRootCotangentFlagWeight) := by
-  intro i j hij
-  rw [← Comodule.toMatrix_endOfPoint, LinearMap.toMatrix_apply]
-  have hweight : f4ShortRootCotangentFlagWeight i <
-      f4ShortRootCotangentFlagWeight j := OrderDual.toDual_lt_toDual.mp hij
-  by_cases hjIdeal : j.val < f4ShortRootRepresentedIdealRank
-  · let j' : Fin f4ShortRootRepresentedIdealRank := ⟨j.val, hjIdeal⟩
-    have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 j') :=
-      Fin.ext rfl
-    have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
-        cotangentFlagIdeal (A := A) := by
-      rw [cotangentFlagIdeal_eq_span_basis (A := A)]
-      exact Submodule.subset_span ⟨j', by rw [hj]⟩
-    have hmap := hIdeal hjmem
-    rw [cotangentFlagIdeal_eq_span_basis (A := A)] at hmap
-    apply Module.Basis.repr_eq_zero_of_mem_span_range
-      (f4ShortRootCotangentFlagBasis.baseChange A)
-      (fun i : Fin f4ShortRootRepresentedIdealRank =>
-        Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i)) hmap
-    rintro ⟨i', hi'⟩
-    have hiIdeal : i.val < f4ShortRootRepresentedIdealRank := by
-      rw [← hi']
-      exact i'.isLt
-    simp only [f4ShortRootCotangentFlagWeight, hjIdeal, hiIdeal, ↓reduceIte] at hweight
-    omega
-  · by_cases hjRange : j.val < f4ShortRootRepresentedIdealRank + 26
-    · let j' : Fin (f4ShortRootRepresentedIdealRank + 26) := ⟨j.val, hjRange⟩
-      have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank j' := Fin.ext rfl
-      have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
-          cotangentFlagRange (A := A) := by
-        rw [cotangentFlagRange_eq_span_basis (A := A)]
-        exact Submodule.subset_span ⟨j', by rw [hj]⟩
-      have hmap := hRange hjmem
-      rw [cotangentFlagRange_eq_span_basis (A := A)] at hmap
-      apply Module.Basis.repr_eq_zero_of_mem_span_range
-        (f4ShortRootCotangentFlagBasis.baseChange A)
-        (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-          Fin.castAdd f4ShortRootRepresentedComplementRank i) hmap
-      rintro ⟨i', hi'⟩
-      have hiRange : i.val < f4ShortRootRepresentedIdealRank + 26 := by
-        rw [← hi']
-        exact i'.isLt
-      have hjWeight : f4ShortRootCotangentFlagWeight j = 1 := by
-        simp [f4ShortRootCotangentFlagWeight, hjIdeal, hjRange]
-      have hiWeight : 1 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal]
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
-      omega
-    · have hjWeight : f4ShortRootCotangentFlagWeight j = 0 := by
-        simp [f4ShortRootCotangentFlagWeight, hjIdeal, hjRange]
-      have hiNonneg : 0 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal]
-        · by_cases hiRange : i.val < f4ShortRootRepresentedIdealRank + 26
-          · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
-          · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
-      omega
 
 /-- Every short-root weight-torus point acts block triangularly on the adapted represented flag. -/
 theorem f4ShortRootWeightTorus_adjoint_blockTriangular
