@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.Subspace
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 public import TauCeti.Topology.Category.TopCat.Subspace
 
