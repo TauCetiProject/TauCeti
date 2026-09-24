@@ -116,16 +116,25 @@ private noncomputable def dihedralEquiv (m : ℕ) (hm : 2 ≤ m) :
       rw [hset]
       exact closure_x_y 2 2 m)
 
+/-- The spherical signature `(2, 2, m)` is the dihedral group of order `2m`. -/
+noncomputable def equivDihedral (m : ℕ) (hm : 2 ≤ m) :
+    TriangleGroup 2 2 m ≃* DihedralGroup m :=
+  (dihedralEquiv m hm).symm
+
+/-- The inverse equivalence sends `DihedralGroup.sr 0` to the generator `y`. -/
 @[simp]
-private theorem dihedralEquiv_sr_zero (m : ℕ) (hm : 2 ≤ m) :
-    dihedralEquiv m hm (DihedralGroup.sr 0) = y 2 2 m := by
+theorem equivDihedral_symm_sr_zero (m : ℕ) (hm : 2 ≤ m) :
+    (equivDihedral m hm).symm (DihedralGroup.sr 0) = y 2 2 m := by
+  unfold equivDihedral
   simp [dihedralEquiv, TauCeti.dihedralGroupMulEquiv_apply]
 
+/-- The inverse equivalence sends `DihedralGroup.sr 1` to the generator `x`. -/
 @[simp]
-private theorem dihedralEquiv_sr_one (m : ℕ) (hm : 2 ≤ m) :
-    dihedralEquiv m hm (DihedralGroup.sr 1) = x 2 2 m := by
-  simp only [dihedralEquiv, TauCeti.dihedralGroupMulEquiv_apply,
-    TauCeti.dihedralHom_sr]
+theorem equivDihedral_symm_sr_one (m : ℕ) (hm : 2 ≤ m) :
+    (equivDihedral m hm).symm (DihedralGroup.sr 1) = x 2 2 m := by
+  unfold equivDihedral
+  simp only [MulEquiv.symm_symm, dihedralEquiv,
+    TauCeti.dihedralGroupMulEquiv_apply, TauCeti.dihedralHom_sr]
   rw [cast_one_of_two_le m hm]
   simp only [zpow_one]
   calc
@@ -133,17 +142,12 @@ private theorem dihedralEquiv_sr_one (m : ℕ) (hm : 2 ≤ m) :
     _ = x 2 2 m := by
       rw [← pow_two, y_pow 2 2 m, one_mul]
 
-/-- The spherical signature `(2, 2, m)` is the dihedral group of order `2m`. -/
-noncomputable def equivDihedral (m : ℕ) (hm : 2 ≤ m) :
-    TriangleGroup 2 2 m ≃* DihedralGroup m :=
-  (dihedralEquiv m hm).symm
-
 /-- `equivDihedral` sends the generator `x` to the reflection `DihedralGroup.sr 1`. -/
 @[simp]
 theorem equivDihedral_x (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (x 2 2 m) = DihedralGroup.sr 1 := by
   unfold equivDihedral
-  rw [← dihedralEquiv_sr_one m hm]
+  rw [← equivDihedral_symm_sr_one m hm]
   exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
 
 /-- `equivDihedral` sends the generator `y` to the reflection `DihedralGroup.sr 0`. -/
@@ -151,22 +155,8 @@ theorem equivDihedral_x (m : ℕ) (hm : 2 ≤ m) :
 theorem equivDihedral_y (m : ℕ) (hm : 2 ≤ m) :
     equivDihedral m hm (y 2 2 m) = DihedralGroup.sr 0 := by
   unfold equivDihedral
-  rw [← dihedralEquiv_sr_zero m hm]
+  rw [← equivDihedral_symm_sr_zero m hm]
   exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
-
-/-- The inverse equivalence sends `DihedralGroup.sr 0` to the generator `y`. -/
-@[simp]
-theorem equivDihedral_symm_sr_zero (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.sr 0) = y 2 2 m := by
-  unfold equivDihedral
-  simpa only [MulEquiv.symm_symm] using (dihedralEquiv_sr_zero m hm)
-
-/-- The inverse equivalence sends `DihedralGroup.sr 1` to the generator `x`. -/
-@[simp]
-theorem equivDihedral_symm_sr_one (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.sr 1) = x 2 2 m := by
-  unfold equivDihedral
-  simpa only [MulEquiv.symm_symm] using (dihedralEquiv_sr_one m hm)
 
 /-- `equivDihedral` sends the product `y * x` to the rotation `DihedralGroup.r 1`. -/
 @[simp]
