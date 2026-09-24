@@ -93,25 +93,13 @@ abbrev characteristicOrbits : Type _ := Quotient P.spinCSetoid
 /-- The lattice orbit of a characteristic covector. -/
 def characteristicOrbit (k : P.characteristicVectors) : P.characteristicOrbits := Quotient.mk _ k
 
-/-- Every lattice orbit has a characteristic-covector representative. -/
-theorem characteristicOrbit_surjective : Function.Surjective P.characteristicOrbit := by
-  intro s
-  obtain ⟨k, rfl⟩ := Quotient.exists_rep s
-  exact ⟨k, rfl⟩
-
-/-- Two characteristic covectors have the same lattice orbit exactly when they differ by twice an
-intersection-matrix vector. -/
-@[simp]
-theorem characteristicOrbit_eq_iff (k l : P.characteristicVectors) :
-    P.characteristicOrbit k = P.characteristicOrbit l ↔ P.IsSpinCEquivalent k l :=
-  Quotient.eq_iff_equiv
-
 /-- Adding twice an intersection-matrix vector does not change the lattice orbit. -/
 @[simp]
 theorem characteristicOrbit_add_two_mulVec (k : P.characteristicVectors) (x : V → ℤ) :
     P.characteristicOrbit ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v,
       k.property.add_two_mul⟩ = P.characteristicOrbit k := by
-  rw [P.characteristicOrbit_eq_iff]
+  unfold characteristicOrbit
+  rw [Quotient.eq_iff_equiv]
   exact ⟨-x, by
     ext v
     simp only [Pi.neg_apply, Matrix.mulVec_neg]
