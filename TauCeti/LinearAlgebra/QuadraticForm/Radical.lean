@@ -36,6 +36,7 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   nonzero.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a field has a vector of
   unit norm.
+* `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
 * `QuadraticMap.Nondegenerate.exists_isUnit`: the same conclusion for a nondegenerate form on a
   nontrivial vector space.
 * `TauCeti.nondegenerate_of_span_singleton_eq_top`: a form on a line is nondegenerate when it is
@@ -108,6 +109,12 @@ theorem exists_isUnit_of_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Modul
     {Q : QuadraticForm K V} (hQ : Q ≠ 0) : ∃ v, IsUnit (Q v) := by
   obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
   exact ⟨v, isUnit_iff_ne_zero.mpr hv⟩
+
+/-- Scaling a vector of unit norm by a unit preserves unit norm. -/
+theorem isUnit_apply_smul {Q : QuadraticForm R M} {c : R} {v : M}
+    (hc : IsUnit c) (hv : IsUnit (Q v)) : IsUnit (Q (c • v)) := by
+  rw [QuadraticMap.map_smul]
+  simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
 
 end QuadraticMap
 

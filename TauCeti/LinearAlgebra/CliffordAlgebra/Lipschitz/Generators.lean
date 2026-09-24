@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # The Lipschitz group as the products of vectors
@@ -41,11 +42,6 @@ namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
-
-private theorem isUnit_apply_smul {c : R} {v : M} (hc : IsUnit c) (hv : IsUnit (Q v)) :
-    IsUnit (Q (c • v)) := by
-  rw [QuadraticMap.map_smul]
-  simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
 
 /-! ### The Lipschitz group as the products of vectors -/
 
@@ -98,7 +94,7 @@ theorem mem_lipschitzGroup_iff_exists_list [Invertible (2 : R)] {x : (CliffordAl
     rw [heq]
     refine ⟨[⅟(Q m) • m], ?_, by simp⟩
     simp only [List.mem_singleton, forall_eq]
-    exact isUnit_apply_smul (isUnit_of_invertible _) (isUnit_of_invertible _)
+    exact QuadraticMap.isUnit_apply_smul (isUnit_of_invertible _) (isUnit_of_invertible _)
 
 /-- The Lipschitz group of a quadratic form on the zero module is trivial: its only vector is `0`,
 which is not a unit unless the Clifford algebra is itself trivial. -/
@@ -118,7 +114,7 @@ theorem unitsMap_algebraMap_mem_lipschitzGroup (hQ : ∃ v, IsUnit (Q v)) (a : R
     Units.map (algebraMap R (CliffordAlgebra Q)) a ∈ lipschitzGroup Q := by
   obtain ⟨v, hv⟩ := hQ
   let _ := hv.invertible
-  have hav : IsUnit (Q ((a : R) • v)) := isUnit_apply_smul a.isUnit hv
+  have hav : IsUnit (Q ((a : R) • v)) := QuadraticMap.isUnit_apply_smul a.isUnit hv
   let _ := hav.invertible
   have hscale : unitι Q ((a : R) • v) =
       Units.map (algebraMap R (CliffordAlgebra Q)) a * unitι Q v := by
@@ -142,6 +138,14 @@ theorem coe_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
     ((scalarUnits Q hQ a : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) a :=
   (rfl)
+
+/-- The scalar unit embedding agrees with the map on units induced by `algebraMap`. -/
+@[simp]
+theorem coe_scalarUnits_units (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
+    (scalarUnits Q hQ a : (CliffordAlgebra Q)ˣ) =
+      Units.map (algebraMap R (CliffordAlgebra Q)) a := by
+  apply Units.ext
+  exact coe_scalarUnits hQ a
 
 /-- The scalar units embed into the Lipschitz group. -/
 theorem scalarUnits_injective [Invertible (2 : R)] (hQ : ∃ v, IsUnit (Q v)) :
