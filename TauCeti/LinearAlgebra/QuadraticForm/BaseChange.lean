@@ -555,6 +555,7 @@ namespace TauCeti.QuadraticMap
 
 /-- Conjugating a directly extended orthogonal automorphism by the canonical scalar-tower
 equivalence agrees with extending it successively. -/
+@[simp]
 theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) :
     letI : Invertible (2 : A) :=
@@ -566,33 +567,22 @@ theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
   apply Subtype.ext
   apply LinearEquiv.ext
   intro x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul b m =>
-      induction m using TensorProduct.induction_on with
-      | zero => rw [TensorProduct.tmul_zero, map_zero, map_zero]
-      | add m n hm hn => rw [TensorProduct.tmul_add, map_add, map_add, hm, hn]
-      | tmul a v =>
-          rw [coe_orthogonalGroupCongr_apply]
-          have hsymm := QuadraticForm.baseChangeBaseChange_symm_tmul
-            (A := A) (B := B) Q b a v
-          have hinner := congrArg (fun z : B ⊗[R] M ↦
-            ((orthogonalGroupBaseChange (A := B) Q g :
-              B ⊗[R] M ≃ₗ[B] B ⊗[R] M) z)) hsymm
-          calc
-            _ = (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
-                ((orthogonalGroupBaseChange (A := B) Q g :
-                  B ⊗[R] M ≃ₗ[B] B ⊗[R] M) ((a • b) ⊗ₜ[R] v)) := congrArg _ hinner
-            _ = b ⊗ₜ[A] (a ⊗ₜ[R] (g : M ≃ₗ[R] M) v) := by
-              simp only [orthogonalGroupBaseChange_apply_tmul,
-                QuadraticForm.baseChangeBaseChange_tmul]
-              rw [TensorProduct.smul_tmul (R := A) a b
-                (1 ⊗ₜ[R] (g : M ≃ₗ[R] M) v)]
-              simp [TensorProduct.smul_tmul']
+  simp only [coe_orthogonalGroupCongr_apply,
+    QuadraticForm.baseChangeBaseChange_toLinearEquiv,
+    coe_orthogonalGroupBaseChange]
+  have h := LinearMap.baseChange_baseChange (R := R) (A := A) (B := B)
+    ((g : M ≃ₗ[R] M).toLinearMap)
+  have hx := congrArg (fun f => f x) h
+  change
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm
+        (((g : M ≃ₗ[R] M).toLinearMap.baseChange B)
+          ((TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M) x)) =
+      (((g : M ≃ₗ[R] M).toLinearMap.baseChange A).baseChange B) x
+  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe] using hx.symm
 
 /-- The special-orthogonal scalar-extension maps satisfy the same scalar-tower law, read through
 the canonical inclusion into the orthogonal group. -/
+@[simp]
 theorem specialOrthogonalGroupBaseChange_baseChange [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
     letI : Invertible (2 : A) :=
