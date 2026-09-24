@@ -21,8 +21,8 @@ images of `A` and `B`, the induced map exchanges the two summands and so has tra
 
 This is the linear algebra behind the trace reduction in Popa and Zagier's proof of the
 Eichler–Selberg trace formula: their operator `T̃ₙ` exchanges `A = ker(1 + S)` and
-`B = ker(1 + U + U²)` in the space `V_w` of polynomials of degree `w`, with `A + B = V_w`, so its
-trace on the period polynomials `W_w = A ∩ B` is its trace on `V_w`.
+`B = ker(1 + U + U²)` in the space `V_w` of homogeneous polynomials of degree `w`, with
+`A + B = V_w`, so its trace on the period polynomials `W_w = A ∩ B` is its trace on `V_w`.
 
 ## Main results
 
@@ -32,7 +32,7 @@ trace on the period polynomials `W_w = A ∩ B` is its trace on `V_w`.
 ## References
 
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
-  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, Proposition 2.
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, Proposition 3.
 -/
 
 public section
@@ -51,23 +51,16 @@ theorem trace_restrict_inf_eq_trace {A B : Submodule K V} (hAB : A ⊔ B = ⊤) 
       trace K V f := by
   set C := A ⊓ B
   have hC : ∀ x ∈ C, f x ∈ C := fun x hx ↦ ⟨hB x hx.2, hA x hx.1⟩
+  -- `trace f` is the trace on `C` plus the trace of the induced map on `V ⧸ C`
   rw [trace_eq_add_of_exact C.injective_subtype C.mkQ_surjective (exact_subtype_mkQ C)
-    (fN := f.restrict hC) (fQ := C.mapQ C f hC) (by ext; rfl) (mapQ_mkQ _ _ _).symm, left_eq_add]
+    (fN := f.restrict hC) (fQ := C.mapQ C f hC) rfl rfl, left_eq_add]
   -- in `V ⧸ C` the images of `A` and `B` are complementary, and `mapQ` exchanges them
   have hcompl : IsCompl (A.map C.mkQ) (B.map C.mkQ) := by
-    refine ⟨disjoint_def.2 ?_, ?_⟩
-    · rintro _ ⟨a, ha, rfl⟩ ⟨b, hb, hab⟩
-      rw [mkQ_apply, mkQ_apply, Submodule.Quotient.eq] at hab
-      rw [mkQ_apply, Submodule.Quotient.mk_eq_zero]
-      exact ⟨ha, by simpa using B.sub_mem hb hab.2⟩
-    · rw [codisjoint_iff, ← Submodule.map_sup, hAB, Submodule.map_top, range_mkQ]
+    refine ⟨disjoint_iff.2 ?_, codisjoint_map C.mkQ_surjective (codisjoint_iff.2 hAB)⟩
+    rw [map_inf_eq_map_inf_comap, comap_map_mkQ, sup_of_le_right inf_le_right, mkQ_map_self]
   refine trace_eq_zero_of_mapsTo_ne (N := ![A.map C.mkQ, B.map C.mkQ])
-    ((DirectSum.isInternal_submodule_iff_isCompl _ zero_ne_one
-      (by ext i; fin_cases i <;> simp)).2 hcompl) (· + 1) (by decide)
-    (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
-  · rintro _ ⟨a, ha, rfl⟩
-    exact ⟨f a, hA a ha, rfl⟩
-  · rintro _ ⟨b, hb, rfl⟩
-    exact ⟨f b, hB b hb, rfl⟩
+    ((DirectSum.isInternal_submodule_iff_isCompl _ zero_ne_one (Set.ext <| by decide)).2 hcompl)
+    (· + 1) (by decide) (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;> rintro _ ⟨x, hx, rfl⟩
+  exacts [⟨f x, hA x hx, rfl⟩, ⟨f x, hB x hx, rfl⟩]
 
 end LinearMap
