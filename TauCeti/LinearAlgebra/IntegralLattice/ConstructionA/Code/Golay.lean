@@ -40,6 +40,7 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule :
 
 /-- Gluing `2 ℤ²⁴` along the Golay discriminant subgroup is literally the Golay Construction A
 lattice, with its halved dot product on the rational coordinate space. -/
+@[simp]
 theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_constructionALattice :
     (ConstructionA.zeroLattice 2 (Fin 24)).ofIsotropicSubgroup
       (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
