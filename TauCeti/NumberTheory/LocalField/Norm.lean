@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Unramified
+public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.RingTheory.Norm.Units
 import Mathlib.RingTheory.Norm.Transitivity
