@@ -29,19 +29,19 @@ formula uses `B` and `Q`, never `B / 2`, so it makes sense verbatim for integral
 
 ## Main definitions
 
-* `TauCeti.QuadraticMap.transvection Q hu huw`: the Eichler transvection `E_{u,w}`, as a linear
+* `QuadraticMap.transvection Q hu huw`: the Eichler transvection `E_{u,w}`, as a linear
   automorphism of `M` with determinant `1`.
-* `TauCeti.QuadraticMap.transvectionHom Q hu`: the homomorphism `w ↦ E_{u,w}` from the additive
+* `QuadraticMap.transvectionHom Q hu`: the homomorphism `w ↦ E_{u,w}` from the additive
   group of `u^⊥ / R ∙ u` into `specialOrthogonalGroup Q`.
 
 ## Main results
 
-* `TauCeti.QuadraticMap.transvection_apply`: the defining formula.
-* `TauCeti.QuadraticMap.transvection_mem_specialOrthogonalGroup`: `E_{u,w}` is a proper isometry.
-* `TauCeti.QuadraticMap.transvection_add`: `E_{u,w + w'} = E_{u,w} * E_{u,w'}`.
-* `TauCeti.QuadraticMap.transvection_add_smul`: `E_{u,w + c • u} = E_{u,w}`.
-* `TauCeti.QuadraticMap.transvection_conj`: `g * E_{u,w} * g⁻¹ = E_{g u, g w}` for `g ∈ O(Q)`.
-* `TauCeti.QuadraticMap.transvection_eq_one_iff`: over a field, if `polarBilin Q u ≠ 0`, then
+* `QuadraticMap.transvection_apply`: the defining formula.
+* `QuadraticMap.transvection_mem_specialOrthogonalGroup`: `E_{u,w}` is a proper isometry.
+* `QuadraticMap.transvection_add`: `E_{u,w + w'} = E_{u,w} * E_{u,w'}`.
+* `QuadraticMap.transvection_add_smul`: `E_{u,w + c • u} = E_{u,w}`.
+* `QuadraticMap.transvection_conj`: `g * E_{u,w} * g⁻¹ = E_{g u, g w}` for `g ∈ O(Q)`.
+* `QuadraticMap.transvection_eq_one_iff`: over a field, if `polarBilin Q u ≠ 0`, then
   `E_{u,w} = 1` exactly when `w ∈ K ∙ u`. Hence `transvectionHom_injective`.
 
 ## References
@@ -51,11 +51,9 @@ formula uses `B` and `Q`, never `B / 2`, so it makes sense verbatim for integral
 
 public section
 
-open QuadraticMap
+open TauCeti.QuadraticMap
 
 universe u v
-
-namespace TauCeti
 
 namespace QuadraticMap
 
@@ -263,5 +261,3 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
 end Field
 
 end QuadraticMap
-
-end TauCeti
