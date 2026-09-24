@@ -108,7 +108,7 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
       _ = a • f4ShortRootAdjointMatrixBaseChange (A := A) X := by
         rw [cotangentDualMatrixEquiv_f4ShortRootEndEquivCotangentDual]
         ext i j
-        simp [f4ShortRootAdjointMatrixBaseChange, f4ShortRootAdjointLinearMap,
+        simp [f4ShortRootAdjointMatrixBaseChange, f4ShortRootAdjointLinearMap_apply,
           LinearMap.toMatrix_apply]
       _ = _ := (f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul a X).symm
   exact DFunLike.congr_fun hmaps x
