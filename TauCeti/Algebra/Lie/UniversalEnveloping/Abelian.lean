@@ -348,8 +348,8 @@ private theorem finiteType_of_finite [Module.Finite R L] : Algebra.FiniteType R 
       (⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U) ''
         (S : Set L)) : Submodule R U) : Set U) =
       Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)) := by
-    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range]
-    rfl
+    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range,
+      LieHom.coe_toLinearMap]
   exact ⟨S.image ⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U), by
     rw [Finset.coe_image, ← Algebra.adjoin_span, hrange, adjoin_range_ι R L]⟩
 
