@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
+public import TauCeti.NumberTheory.ModularForms.Degeneracy
 
 /-!
 # The two spellings of `M_k(Γ₀(N))`
@@ -62,6 +63,8 @@ space of forms, not an equality of types.
   trivial nebentypus.
 * `TauCeti.cuspFormTraceGamma0_ofLe`: tracing a restricted `Γ₀(N)` form multiplies it by
   `#(ZMod N)ˣ`.
+* `TauCeti.cuspFormTraceGamma0_levelRaise`: trace commutes with level raising when the lower-level
+  diamond sum comes from a `Γ₀` cusp form.
 
 ## References
 
@@ -367,6 +370,24 @@ theorem cuspFormTraceGamma0_ofLe [NeZero N]
   ext τ
   rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
   simp [diamondOpCusp_ofLe]
+
+/-- Tracing a level-raised cusp form commutes with level raising when the diamond sum at the
+lower level is the restriction of a `Γ₀(M)` cusp form. -/
+theorem cuspFormTraceGamma0_levelRaise {M d : ℕ} [NeZero N] [NeZero d]
+    (hMN : M ∣ N) (hdvd : d * M ∣ N)
+    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)
+    (g₀ : CuspForm ((Gamma0 M).map (mapGL ℝ)) k)
+    (hsum : CuspForm.ofLe (Gamma1_map_le_Gamma0_map M) g₀ =
+      ∑ u : (ZMod N)ˣ, diamondOpCusp k (ZMod.unitsMap hMN u) g) :
+    cuspFormTraceGamma0 N k
+        (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =
+      CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdvd) g₀ := by
+  apply DFunLike.coe_injective
+  rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
+  simp_rw [CuspForm.diamondOpCusp_levelRaise hdvd, ← CuspForm.levelRaiseₗ_apply, ← map_sum,
+    CuspForm.levelRaiseₗ_apply, ← hsum]
+  ext τ
+  simp
 
 end Trace
 

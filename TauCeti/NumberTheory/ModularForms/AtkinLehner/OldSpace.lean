@@ -118,15 +118,8 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
       rcases hd with rfl | rfl
       exacts [⟨p, by rw [← hpL]; ring⟩, ⟨1, by rw [← hpL, mul_one]⟩]
     have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
-    have hsum : cuspFormTraceGamma0 N k
-        (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =
-        CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdvd) g₀ := by
-      refine DFunLike.coe_injective ?_
-      rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
-      simp_rw [CuspForm.diamondOpCusp_levelRaise hdvd, ← CuspForm.levelRaiseₗ_apply, ← map_sum,
-        CuspForm.levelRaiseₗ_apply, ← hg₀]
-      ext τ
-      simp
+    have hsum := cuspFormTraceGamma0_levelRaise hLN hdvd g g₀ (by
+      simpa only [CuspForm.ofLeₗ_apply] using hg₀)
     -- the goal is stated through the `have`-bound divisibility of `cuspFormsOld_le_of_prime`
     change CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g ∈ _
     rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply, hsum,
