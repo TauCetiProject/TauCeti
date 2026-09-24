@@ -19,8 +19,6 @@ states the resulting subgroup-lattice recursion for the counts.
 The classes remain classes of the ambient group throughout: intersecting them with a subgroup
 does not in general produce a single conjugacy class of that subgroup.
 
-The subgroup partition uses the same `Finset.card_eq_sum_card_fiberwise` pattern as
-`MonoidHom.card_comp_eq_and_closure_range_eq_congr` in `TauCeti/GroupTheory/Gaschutz.lean`.
 -/
 
 public section
@@ -34,7 +32,7 @@ third entry belongs to this subgroup as well. -/
 def productOneGeneratedSubgroup (p : G × G × G) : Subgroup G :=
   Subgroup.closure {p.1, p.2.1}
 
-theorem productOneGeneratedSubgroup_le_iff (p : G × G × G) (H : Subgroup G) :
+@[simp] theorem productOneGeneratedSubgroup_le_iff (p : G × G × G) (H : Subgroup G) :
     productOneGeneratedSubgroup p ≤ H ↔ p.1 ∈ H ∧ p.2.1 ∈ H := by
   rw [productOneGeneratedSubgroup, Subgroup.closure_le]
   simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
@@ -88,7 +86,7 @@ theorem generatingProductOneTriples_subset_in (C0 C1 Cinf : ConjClasses G)
     ⟨hprod, (productOneGeneratedSubgroup_le_iff p H).mp hgen.le⟩
 
 /-- Restricting product-one triples to the whole group changes nothing. -/
-theorem productOneTriplesIn_top (C0 C1 Cinf : ConjClasses G) :
+@[simp] theorem productOneTriplesIn_top (C0 C1 Cinf : ConjClasses G) :
     productOneTriplesIn C0 C1 Cinf ⊤ = productOneTriples C0 C1 Cinf := by
   ext p
   simp
