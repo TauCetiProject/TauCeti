@@ -29,8 +29,6 @@ cut distances available on a common carrier with the same cut-norm control.
   Theorem 9.23.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Section 6 (cut distance through couplings).
-* `TauCeti/MeasureTheory/OptimalTransport/Wasserstein/Complete.lean`: the formal chain-measure
-  gluing argument used as a model for realignment.
 -/
 
 public section
@@ -68,7 +66,8 @@ theorem exists_isProbabilityMeasure_cutNorm_comap_sub_lt (W : ℕ → Graphon Ω
   choose π hπ hlt using fun n => exists_isCoupling_cutNorm_lt (W n) (W (n + 1)) (hW n)
   have : ∀ n, IsProbabilityMeasure (π n) := fun n => (hπ n).isProbabilityMeasure
   have : Nonempty Ω := nonempty_of_isProbabilityMeasure μ
-  -- Glue the chosen couplings of consecutive terms into one law on the path space.
+  -- Glue the chosen couplings of consecutive terms into one law on the path space, following
+  -- `TauCeti/MeasureTheory/OptimalTransport/Wasserstein/Complete.lean`.
   set P : Measure (ℕ → Ω) := TauCeti.Measure.chainMeasure (X := fun _ => Ω) π
   have hmatch : ∀ n, (π n).snd = (π (n + 1)).fst := fun n => by
     rw [(hπ n).snd_eq, (hπ (n + 1)).fst_eq]
