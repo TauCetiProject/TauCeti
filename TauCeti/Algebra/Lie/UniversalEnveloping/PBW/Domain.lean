@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.WordFiltration.Domain
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.AssociatedGraded
 
 /-!
@@ -27,9 +28,9 @@ Injectivity is not proved here, and the statements below take the conclusion it 
 hypothesis. What they add is that nothing else is missing: once PBW is available, `U(L)` being a
 domain is immediate.
 
-The hypothesis is not vacuous — it holds whenever the canonical map is an isomorphism onto a
-symmetric algebra which is a domain — and it is exactly the shape the transfer consumes, so no
-intermediate statement about the enveloping algebra has to be invented to state it.
+The hypothesis is not vacuous — it holds whenever the canonical map from `Sym(L)` is an isomorphism
+and `Sym(L)` is a domain — and it is exactly the shape the transfer consumes, so no intermediate
+statement about the enveloping algebra has to be invented to state it.
 
 ## Main results
 
@@ -37,12 +38,6 @@ intermediate statement about the enveloping algebra has to be invented to state 
   `U(L)` has no zero divisors as soon as `gr U(L)` has none.
 * `TauCeti.UniversalEnvelopingAlgebra.isDomain_of_noZeroDivisors_pbwAssociatedGraded`: over a
   nontrivial base ring, `U(L)` is then a domain.
-
-## Roadmap
-
-This is the transfer half of `isDomain_universalEnvelopingAlgebra`, "`U(L)` is a **domain**, by
-transfer from the associated graded symmetric algebra", in Layer 3 ("PBW, a substantial
-sub-project") of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 ## References
 
@@ -62,36 +57,29 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
-/-- Every element of the enveloping algebra lies in some PBW filtration step. This is
-`TauCeti.UniversalEnvelopingAlgebra.iSup_pbwFiltration_eq_top` in the elementwise form the
-filtered-to-graded transfer asks for; the filtration is increasing, so its supremum is the union
-of its steps. -/
-theorem exists_mem_pbwFiltration (a : U) : ∃ k, a ∈ pbwFiltration R L k := by
-  have hmem : a ∈ ⨆ k, pbwFiltration R L k := by
-    rw [iSup_pbwFiltration_eq_top]
-    exact Submodule.mem_top
-  rwa [Submodule.mem_iSup_of_directed _ (pbwFiltration_mono R L).directed_le] at hmem
+/-- Exhaustivity of the PBW filtration, spelled for the word filtration of the canonical Lie map,
+which is the form the general transfer consumes. -/
+private theorem exists_mem_wordFiltration_ι (a : U) :
+    ∃ k, a ∈ TauCeti.Algebra.wordFiltration
+      (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap k := by
+  obtain ⟨k, hk⟩ := exists_mem_pbwFiltration R L a
+  exact ⟨k, by rwa [pbwFiltration_def] at hk⟩
 
 /-- **The enveloping algebra has no zero divisors as soon as its PBW associated graded has
 none.** -/
 theorem noZeroDivisors_of_noZeroDivisors_pbwAssociatedGraded
-    (h : NoZeroDivisors (PBWAssociatedGraded R L)) : NoZeroDivisors U := by
-  refine TauCeti.Algebra.wordFiltration.noZeroDivisors_of_noZeroDivisors_associatedGraded
-    (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap (fun a => ?_) h
-  obtain ⟨k, hk⟩ := exists_mem_pbwFiltration R L a
-  exact ⟨k, by rwa [pbwFiltration_def] at hk⟩
+    [NoZeroDivisors (PBWAssociatedGraded R L)] : NoZeroDivisors U :=
+  TauCeti.Algebra.wordFiltration.noZeroDivisors_of_noZeroDivisors_associatedGraded
+    (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap
+    (exists_mem_wordFiltration_ι R L) inferInstance
 
 /-- **The enveloping algebra of a Lie algebra over a nontrivial base ring is a domain as soon as
-its PBW associated graded has no zero divisors.**
-
-Nontriviality of `U(L)` comes from the augmentation `U(L) → R` induced by the zero Lie
-homomorphism, which retracts the structure map and so makes it injective. -/
+its PBW associated graded has no zero divisors.** -/
 theorem isDomain_of_noZeroDivisors_pbwAssociatedGraded [Nontrivial R]
-    (h : NoZeroDivisors (PBWAssociatedGraded R L)) : IsDomain U := by
-  have hnt : Nontrivial U :=
-    Function.Injective.nontrivial (f := algebraMap R U) fun x y hxy => by
-      simpa using congrArg ⇑(_root_.UniversalEnvelopingAlgebra.lift R (0 : L →ₗ⁅R⁆ R)) hxy
-  exact @NoZeroDivisors.to_isDomain U _ hnt
-    (noZeroDivisors_of_noZeroDivisors_pbwAssociatedGraded R L h)
+    [NoZeroDivisors (PBWAssociatedGraded R L)] : IsDomain U := by
+  have : Nontrivial U := Bialgebra.nontrivial R
+  exact TauCeti.Algebra.wordFiltration.isDomain_of_noZeroDivisors_associatedGraded
+    (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap
+    (exists_mem_wordFiltration_ι R L) inferInstance
 
 end TauCeti.UniversalEnvelopingAlgebra

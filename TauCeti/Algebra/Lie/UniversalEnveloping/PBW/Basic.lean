@@ -44,6 +44,7 @@ comes from the tensor-algebra presentation.
 * `TauCeti.UniversalEnvelopingAlgebra.adjoin_image_ι_eq_top`: the image of any Lie generating set
   generates `U(L)` as an `R`-algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.iSup_pbwFiltration_eq_top`: the filtration is exhaustive.
+* `TauCeti.UniversalEnvelopingAlgebra.exists_mem_pbwFiltration`: exhaustivity read elementwise.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsRingFiltration`: the bundled `IsRingFiltration`
   structure on `pbwFiltration`, with `pbwFiltrationPrevious` as its preceding-step family.
 
@@ -233,6 +234,15 @@ theorem iSup_pbwFiltration_eq_top : ⨆ k, pbwFiltration R L k = ⊤ := by
         (Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap)).toSubmodule :=
     TauCeti.Algebra.iSup_wordFiltration_eq_adjoin _
   rw [h, LieHom.coe_toLinearMap, adjoin_range_ι, _root_.Algebra.top_toSubmodule]
+
+/-- **Every element of the enveloping algebra lies in some PBW filtration step**, the elementwise
+form of `TauCeti.UniversalEnvelopingAlgebra.iSup_pbwFiltration_eq_top`. -/
+theorem exists_mem_pbwFiltration (a : U) : ∃ k, a ∈ pbwFiltration R L k := by
+  have h : ⨆ k, TauCeti.Algebra.wordFiltration
+      (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap k = ⊤ := by
+    simpa only [← pbwFiltration_def] using iSup_pbwFiltration_eq_top R L
+  obtain ⟨k, hk⟩ := TauCeti.Algebra.exists_mem_wordFiltration_of_iSup_eq_top _ h a
+  exact ⟨k, by rwa [pbwFiltration_def]⟩
 
 /-- The PBW filtration carries Mathlib's bundled ring-filtration structure. -/
 instance instIsRingFiltration :
