@@ -32,37 +32,6 @@ noncomputable section
 
 namespace TauCeti
 
-private theorem isLagrangian_graph_iff_of_pairing
-    {V D : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup D] [Module ℝ D]
-    (ω : SymplecticForm (V × D)) (pair : D → V → ℝ)
-    (hω : ∀ x y, ω x y = pair y.2 x.1 - pair x.2 y.1)
-    (hext : ∀ a b : D, (∀ v, pair a v = pair b v) → a = b)
-    (A : V →ₗ[ℝ] D) :
-    ω.IsLagrangian A.graph ↔ ∀ v w, pair (A v) w = pair (A w) v := by
-  constructor
-  · intro h v w
-    have hzero := (SymplecticForm.isIsotropic_iff.mp h.isIsotropic)
-      (v, A v) (by simp) (w, A w) (by simp)
-    rw [hω] at hzero
-    exact (sub_eq_zero.mp hzero).symm
-  · intro hsym
-    apply (SymplecticForm.isLagrangian_iff).2
-    constructor
-    · apply (SymplecticForm.isIsotropic_iff).2
-      intro v hv w hw
-      rw [LinearMap.mem_graph_iff] at hv hw
-      rw [hω]
-      simp [hv, hw, hsym]
-    · apply (SymplecticForm.isCoisotropic_iff).2
-      intro x hx
-      rw [LinearMap.mem_graph_iff]
-      apply hext
-      intro v
-      have hv := (SymplecticForm.mem_orthogonal_iff.mp hx) (v, A v) (by simp)
-      rw [hω] at hv
-      have hsymv := hsym v x.1
-      linarith
-
 section AlgebraicDual
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
@@ -73,7 +42,7 @@ symmetric bilinear pairing. No finite-dimensionality hypothesis is needed. -/
 theorem isLagrangian_cotangent_graph_iff :
     (cotangentSymplecticForm (V := V)).IsLagrangian A.graph ↔
       ∀ v w, A v w = A w v := by
-  exact isLagrangian_graph_iff_of_pairing cotangentSymplecticForm
+  exact SymplecticForm.isLagrangian_graph_iff_of_pairing cotangentSymplecticForm
     (fun a v ↦ a v) (by simp) (fun _ _ h ↦ LinearMap.ext h) A
 
 end AlgebraicDual
@@ -88,7 +57,7 @@ its pairing is symmetric. This applies in infinite-dimensional normed spaces as 
 theorem isLagrangian_strongDualCotangent_graph_iff :
     (strongDualCotangentSymplecticForm (V := V)).IsLagrangian A.toLinearMap.graph ↔
       ∀ v w, A v w = A w v := by
-  exact isLagrangian_graph_iff_of_pairing strongDualCotangentSymplecticForm
+  exact SymplecticForm.isLagrangian_graph_iff_of_pairing strongDualCotangentSymplecticForm
     (fun a v ↦ a v) (by simp) (fun _ _ h ↦ ContinuousLinearMap.ext h) A.toLinearMap
 
 /-- The graph of a symmetric second derivative is Lagrangian. The Hessian here is the derivative
