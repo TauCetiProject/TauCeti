@@ -72,32 +72,43 @@ theorem natCard_gal_minpoly_eq_finrank
   rw [Polynomial.Gal.card_of_separable (by exact IsGalois.separable F x)]
   exact (IsSplittingField.algEquiv E (minpoly F x)).toLinearEquiv.finrank_eq.symm
 
-/-- A prime-degree polynomial whose simple root field has a nonidentity automorphism is
-separable, and its Galois group has order equal to its degree. -/
-theorem separable_and_natCard_gal_eq_natDegree_of_prime_of_exists_aut_ne_one
+/-- A simple root field of a prime-degree polynomial is Galois as soon as it has a nonidentity
+automorphism. -/
+theorem isGalois_of_natDegree_prime_of_adjoin_simple_eq_top_of_exists_aut_ne_one
     (F : Type*) [Field F] (q : F[X]) (hprime : q.natDegree.Prime)
     (E : Type*) [Field E] [Algebra F E] (x : E)
     (hminpoly : minpoly F x = q) (hgen : F⟮x⟯ = ⊤)
-    (hAut : ∃ σ : E ≃ₐ[F] E, σ ≠ 1) :
-    q.Separable ∧ Nat.card q.Gal = q.natDegree := by
+    (hAut : ∃ σ : E ≃ₐ[F] E, σ ≠ 1) : IsGalois F E := by
   have hq : q ≠ 0 := by
-    intro h
-    exact hprime.ne_zero (by simp [h])
+    rintro rfl
+    exact hprime.ne_zero natDegree_zero
   have hx : IsIntegral F x := minpoly.ne_zero_iff.mp (hminpoly ▸ hq)
-  have hfin : FiniteDimensional F F⟮x⟯ := adjoin.finiteDimensional hx
-  rw [hgen] at hfin
-  have : FiniteDimensional F E := topEquiv.toLinearEquiv.finiteDimensional
   have hfinrank : Module.finrank F E = q.natDegree := by
     rw [← finrank_top', ← hgen, adjoin.finrank hx, hminpoly]
-  have hgal : IsGalois F E :=
-    isGalois_of_prime_finrank_of_exists_aut_ne_one F E (hfinrank ▸ hprime) hAut
-  have hsep : q.Separable := by
-    rw [← hminpoly]
-    exact IsGalois.separable F x
-  refine ⟨hsep, ?_⟩
-  calc
-    Nat.card q.Gal = Nat.card (minpoly F x).Gal := by rw [hminpoly]
-    _ = Module.finrank F E := natCard_gal_minpoly_eq_finrank F E x hgen
-    _ = q.natDegree := hfinrank
+  exact isGalois_of_prime_finrank_of_exists_aut_ne_one F E (hfinrank ▸ hprime) hAut
+
+/-- A prime-degree polynomial whose simple root field has a nonidentity automorphism is
+separable. -/
+theorem separable_of_natDegree_prime_of_exists_aut_ne_one
+    (F : Type*) [Field F] (q : F[X]) (hprime : q.natDegree.Prime)
+    (E : Type*) [Field E] [Algebra F E] (x : E)
+    (hminpoly : minpoly F x = q) (hgen : F⟮x⟯ = ⊤)
+    (hAut : ∃ σ : E ≃ₐ[F] E, σ ≠ 1) : q.Separable :=
+  have := isGalois_of_natDegree_prime_of_adjoin_simple_eq_top_of_exists_aut_ne_one F q hprime E x
+    hminpoly hgen hAut
+  hminpoly ▸ IsGalois.separable F x
+
+/-- A prime-degree polynomial whose simple root field has a nonidentity automorphism has Galois
+group of order equal to its degree. -/
+theorem natCard_gal_eq_natDegree_of_prime_of_exists_aut_ne_one
+    (F : Type*) [Field F] (q : F[X]) (hprime : q.natDegree.Prime)
+    (E : Type*) [Field E] [Algebra F E] (x : E)
+    (hminpoly : minpoly F x = q) (hgen : F⟮x⟯ = ⊤)
+    (hAut : ∃ σ : E ≃ₐ[F] E, σ ≠ 1) : Nat.card q.Gal = q.natDegree := by
+  have := isGalois_of_natDegree_prime_of_adjoin_simple_eq_top_of_exists_aut_ne_one F q hprime E x
+    hminpoly hgen hAut
+  have hx : IsIntegral F x := IsGalois.integral F x
+  rw [← hminpoly, natCard_gal_minpoly_eq_finrank F E x hgen, ← finrank_top', ← hgen,
+    adjoin.finrank hx]
 
 end TauCeti
