@@ -155,7 +155,6 @@ theorem transvection_neg (hu : Q u = 0) (huw : polar Q u w = 0) :
   exact transvection_eq_one_of_mem_span hu _ (by simp)
 
 /-- An Eichler transvection depends on `w` only through its class modulo `R ∙ u`. -/
-@[simp]
 theorem transvection_add_smul (hu : Q u = 0) (huw : polar Q u w = 0) (c : R)
     : transvection Q (w := w + c • u) hu (by simp [polar_self, hu, huw]) =
       transvection Q hu huw := by
