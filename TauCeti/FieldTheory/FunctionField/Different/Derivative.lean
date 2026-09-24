@@ -20,14 +20,6 @@ provided `ψ'(y) ≠ 0` (Stichtenoth, Theorem 3.5.10(a), where `ψ` is the minim
 `y`). This is the tool that computes different exponents from an explicit equation: a place at
 which `ψ'(y)` is a unit is unramified, with `d(P' ∣ P) = 0`.
 
-The bound comes from Mathlib's conductor formula for the different ideal: the value `φ'(y)` of
-the derivative of the minimal polynomial `φ` of `y` over `𝒪_P` lies in the different ideal of the
-local model `𝒪_P ⊆ 𝒪'_P` (`aeval_derivative_mem_differentIdeal`). Since `𝒪_P` is integrally
-closed, `φ` divides `ψ` in `𝒪_P[X]`, so `ψ'(y)` is a multiple of `φ'(y)` in `𝒪'_P` and lies in the
-different ideal too. Allowing any monic `ψ` rather than only the minimal polynomial means that no
-irreducibility has to be checked: for a radical extension one may take `ψ = X ^ n - u` whatever
-the degree of `F' / F`.
-
 ## Main results
 
 * `TauCeti.Place.differentExponent_le_ord_aeval_derivative`: `d(P' ∣ P) ≤ ord_{P'} (ψ'(y))`.
@@ -107,7 +99,7 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
 (Stichtenoth, Theorem 3.5.10(a)): if `F' = F(y)`, `y` is a root of a monic `ψ ∈ F[X]` whose
 coefficients are regular at the place `P` below `P'`, and `ψ'(y)` is a unit at `P'`, then
 `d(P' ∣ P) = 0`. -/
-theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
+@[simp] theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
     (hgen : F⟮y⟯ = ⊤) {ψ : F[X]} (hψ : ψ.Monic)
     (hcoeff : ∀ i, ψ.coeff i ∈ (P'.restrict k F).integers) (hy : aeval y ψ = 0)
     (hψ' : P'.valuation (aeval y (derivative ψ)) = 1) :

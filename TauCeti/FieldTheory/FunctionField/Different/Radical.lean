@@ -20,12 +20,8 @@ place when `n` is prime. Both rest on Stichtenoth's Theorem 3.5.10(a) applied to
 `F' = F(z)` with `z ^ n = c` regular at `P`, then `d(P' ∣ P) ≤ (n - 1) · ord_{P'} z`.
 
 * If `n ∣ ord_P u` (that is, `r_P = n`), then `P` is unramified in `F'`: `d(P' ∣ P) = 0` and
-  `e(P' ∣ P) = 1`. Dividing `y` by an element `w ∈ F` with `n · ord_P w = ord_P u` gives a
-  generator `z` with `z ^ n` a unit at `P`, so `ord_{P'} z = 0`.
-* If `gcd(n, ord_P u) = 1`, then `d(P' ∣ P) = n - 1`. With `n α + ord_P(u) β = 1` and a prime
-  element `w` at `P`, the generator `z = y ^ β w ^ α` has `z ^ n` of order one at `P`. Dedekind's
-  bound `e(P' ∣ P) ≤ d(P' ∣ P) + 1`, with `e(P' ∣ P) = n · ord_{P'} z`, then forces
-  `ord_{P'} z = 1`.
+  `e(P' ∣ P) = 1`.
+* If `gcd(n, ord_P u) = 1`, then `d(P' ∣ P) = n - 1`.
 
 For `n = 2` this is the different of `y ^ 2 = f(x)` over `k(x)` in characteristic not two: the
 places over `P` ramify exactly when `ord_P f` is odd, each with different exponent one.
@@ -94,10 +90,11 @@ theorem differentExponent_le_mul_ord_of_pow_eq {z : F'} {n : ℕ} {c : F} (hgen 
     Nat.cast_one, zero_add] at hd
 
 /-- **A radical extension is unramified where the order of the radicand is divisible by the
-degree** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)` with `y ^ n = u` for a
+exponent `n`** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)` with
+`y ^ n = u` for a
 nonzero `u ∈ F`, `n` is invertible in `k`, and `n` divides the order of `u` at the place `P` below
 `P'`, then `d(P' ∣ P) = 0`. -/
-theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
+@[simp] theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0)
     (hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u) :
     differentExponent k F P' = 0 := by
@@ -134,10 +131,11 @@ theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F
   omega
 
 /-- **A radical extension is unramified where the order of the radicand is divisible by the
-degree** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)` with `y ^ n = u` for a
+exponent `n`** (Stichtenoth, Proposition 3.7.3(b) with `r_P = n`): if `F' = F(y)` with
+`y ^ n = u` for a
 nonzero `u ∈ F`, `n` is invertible in `k`, and `n` divides the order of `u` at the place `P` below
 `P'`, then `e(P' ∣ P) = 1`. -/
-theorem ramificationIdx_eq_one_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
+@[simp] theorem ramificationIdx_eq_one_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0)
     (hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u) :
     ramificationIdx F P' = 1 := by
@@ -145,42 +143,6 @@ theorem ramificationIdx_eq_one_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F}
   rw [differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn hu hdvd] at this
   have := ramificationIdx_pos F P'
   omega
-
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
-/-- If `F' = F(y)` with `y ^ n = u` and `n` coprime to `ord_P u`, then some generator `z` of
-`F' / F` has `z ^ n` of order one at `P`: with `n α + ord_P(u) β = 1` and a prime element `w` at
-`P`, take `z = y ^ β w ^ α`. -/
-private theorem exists_adjoin_eq_top_pow_eq_ord_eq_one (P : Place k F) {y : F'} {n : ℕ} {u : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hu : u ≠ 0) (hn0 : n ≠ 0)
-    (h : Int.gcd n (P.ord u) = 1) :
-    ∃ z : F', ∃ c : F, F⟮z⟯ = ⊤ ∧ z ^ n = algebraMap F F' c ∧ P.ord c = 1 ∧ z ≠ 0 := by
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    rw [zero_pow hn0, eq_comm, map_eq_zero] at hy
-    exact hu hy
-  set α := Int.gcdA n (P.ord u)
-  set β := Int.gcdB n (P.ord u)
-  have hab : (n : ℤ) * α + P.ord u * β = 1 := by
-    rw [← Int.gcd_eq_gcd_ab, h, Nat.cast_one]
-  obtain ⟨w, hw0, hw⟩ := P.exists_ne_zero_ord_eq 1
-  have hW0 : algebraMap F F' w ≠ 0 := (_root_.map_ne_zero _).mpr hw0
-  set z := y ^ β * algebraMap F F' w ^ α with hz_def
-  refine ⟨z, u ^ β * w ^ (α * n), ?_, ?_, ?_, mul_ne_zero (zpow_ne_zero _ hy0) (zpow_ne_zero _ hW0)⟩
-  · -- `y = (y ^ β) ^ ord_P(u) · (y ^ n) ^ α`, and `y ^ β = z · w ^ (-α)`.
-    have hyz : y = (z * algebraMap F F' w ^ (-α)) ^ P.ord u * algebraMap F F' u ^ α := by
-      rw [hz_def, zpow_neg, mul_inv_cancel_right₀ (zpow_ne_zero _ hW0), ← hy, ← zpow_natCast,
-        ← zpow_mul, ← zpow_mul, ← zpow_add₀ hy0, mul_comm β, add_comm, hab, zpow_one]
-    have hymem : y ∈ F⟮z⟯ := by
-      rw [hyz]
-      exact mul_mem (zpow_mem (mul_mem (IntermediateField.mem_adjoin_simple_self F z)
-        (zpow_mem (IntermediateField.algebraMap_mem _ w) _)) _)
-        (zpow_mem (IntermediateField.algebraMap_mem _ u) _)
-    rw [eq_top_iff, ← hgen, IntermediateField.adjoin_simple_le_iff]
-    exact hymem
-  · rw [hz_def, mul_pow, ← zpow_natCast (y ^ β), ← zpow_natCast (_ ^ α), ← zpow_mul, ← zpow_mul,
-      mul_comm β, zpow_mul, zpow_natCast, hy, map_mul, map_zpow₀, map_zpow₀]
-  · rw [P.ord_mul (zpow_ne_zero _ hu) (zpow_ne_zero _ hw0), ord_zpow, ord_zpow, hw]
-    linarith
 
 /-- **The different exponent of a totally ramified radical extension** (Stichtenoth,
 Proposition 3.7.3(b) with `r_P = 1`): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n`
@@ -213,7 +175,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then `d(P' ∣ P)` is `0` when `n` divides the order of `u` at the place `P`
 below `P'`, and `n - 1` otherwise. -/
-theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+@[simp] theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     differentExponent k F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 0 else n - 1 := by
   split_ifs with hdvd
@@ -227,7 +189,7 @@ theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp :
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then the place `P` below `P'` is unramified when `n` divides `ord_P u`, and
 `e(P' ∣ P) = n` otherwise. -/
-theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+@[simp] theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     ramificationIdx F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 1 else n := by
   split_ifs with hdvd
