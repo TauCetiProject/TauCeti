@@ -168,6 +168,11 @@ def basepointDivisor (a : α) : Set (Sym α n) := {s | a ∈ s}
 theorem mem_basepointDivisor {a : α} {s : Sym α n} :
     s ∈ basepointDivisor a ↔ a ∈ s := Iff.rfl
 
+/-- No unordered tuple of length zero contains a point. -/
+@[simp]
+theorem basepointDivisor_zero (a : α) : (basepointDivisor a : Set (Sym α 0)) = ∅ :=
+  Set.eq_empty_of_forall_notMem fun s => by simp [_root_.Sym.eq_nil_of_card_zero s]
+
 /-- The unordered `(n + 1)`-tuples obtained by adjoining the point `a` are exactly those that
 contain `a`. -/
 @[simp]
