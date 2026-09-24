@@ -81,6 +81,9 @@ theorem _root_.AdjoinRoot.lastCoeff_eq_repr (hg : g.Monic) (hd : 0 < g.natDegree
     (a : AdjoinRoot g) :
     AdjoinRoot.lastCoeff hg a =
       (AdjoinRoot.powerBasis' hg).basis.repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩ := by
+  -- `(powerBasis' hg).basis` is `powerBasisAux' hg` by definition, but Mathlib states no lemma for
+  -- it (`PowerBasis` disables the `basis` projection for `@[simps]`); `lastCoeff` unfolds to the
+  -- `coeff` of `modByMonicHom`, the form used by `powerBasisAux'_repr_apply_to_fun`.
   change (AdjoinRoot.modByMonicHom hg a).coeff (g.natDegree - 1) =
     (AdjoinRoot.powerBasisAux' hg).repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩
   exact (AdjoinRoot.powerBasisAux'_repr_apply_to_fun hg a
@@ -135,6 +138,15 @@ theorem _root_.AdjoinRoot.lastCoeff_X_pow_root_pow (n i : ℕ) :
   · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hi
     rw [pow_add, ← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self, zero_mul, map_zero]
     grind
+
+/-- On `R[X]/(X ^ n)` for `n > 0`, `AdjoinRoot.lastCoeff` sends the class of `p` to the
+coefficient of `X ^ (n - 1)` in `p`. -/
+theorem _root_.AdjoinRoot.lastCoeff_X_pow_mk {n : ℕ} (hn : 0 < n) (p : R[X]) :
+    AdjoinRoot.lastCoeff (monic_X_pow n) (AdjoinRoot.mk (X ^ n) p) = p.coeff (n - 1) := by
+  nontriviality R
+  conv_rhs => rw [← modByMonic_add_div p (X ^ n)]
+  rw [AdjoinRoot.lastCoeff_mk, natDegree_X_pow, coeff_add, coeff_X_pow_mul']
+  simp [show ¬n ≤ n - 1 by omega]
 
 /-- **The truncated polynomial algebra `R[X]/(X ^ n)` is a symmetric Frobenius algebra**: for
 `n > 0`, the coefficient of `x ^ (n - 1)` is a symmetric Frobenius functional on it, over any
