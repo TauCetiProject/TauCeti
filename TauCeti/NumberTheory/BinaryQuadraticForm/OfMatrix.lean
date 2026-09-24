@@ -52,31 +52,29 @@ namespace BinaryQuadraticForm
 
 variable {R : Type*} [CommRing R]
 
-/-- The binary quadratic form `c x² + (d - a) x y - b y²` of the matrix `!![a, b; c, d]`. Its value
-at `v = (x, y)` is the determinant of the matrix with columns `v` and `M v`. -/
+/-- The binary quadratic form `Q_M = c x² + (d - a) x y - b y²` of the matrix `M = !![a, b; c, d]`.
+Its value at `v = (x, y)` is the determinant of the matrix with columns `v` and `M v`. -/
 def ofMatrix (M : Matrix (Fin 2) (Fin 2) R) : BinaryQuadraticForm R :=
   ⟨M 1 0, M 1 1 - M 0 0, -M 0 1⟩
 
-/-- The `x²`-coefficient of `Q_M` is the lower left entry of `M`. -/
+/-- The `x²`-coefficient of `Q_M` is the lower left entry `c` of `M`. -/
 @[simp]
-theorem ofMatrix_a (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).a = M 1 0 :=
-  (rfl)
+theorem ofMatrix_a (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).a = M 1 0 := (rfl)
 
 /-- The `x y`-coefficient of `Q_M` is the difference `d - a` of the diagonal entries of `M`. -/
 @[simp]
-theorem ofMatrix_b (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).b = M 1 1 - M 0 0 :=
-  (rfl)
+theorem ofMatrix_b (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).b = M 1 1 - M 0 0 := (rfl)
 
-/-- The `y²`-coefficient of `Q_M` is the upper right entry of `M` negated. -/
+/-- The `y²`-coefficient of `Q_M` is `-b`, the negated upper right entry of `M`. -/
 @[simp]
-theorem ofMatrix_c (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).c = -M 0 1 :=
-  (rfl)
+theorem ofMatrix_c (M : Matrix (Fin 2) (Fin 2) R) : (ofMatrix M).c = -M 0 1 := (rfl)
 
 /-- The value of `Q_M` at `(x, y)` is the determinant of the matrix with columns `(x, y)` and
 `M (x, y)`. -/
 theorem eval_ofMatrix (M : Matrix (Fin 2) (Fin 2) R) (x y : R) :
     (ofMatrix M).eval x y = det !![x, (M *ᵥ ![x, y]) 0; y, (M *ᵥ ![x, y]) 1] := by
-  simp [eval_def, det_fin_two_of, mulVec, dotProduct, Fin.sum_univ_two]
+  simp only [eval_def, ofMatrix_a, ofMatrix_b, ofMatrix_c, det_fin_two_of, mulVec, dotProduct,
+    Fin.sum_univ_two, cons_val_zero, cons_val_one]
   ring
 
 /-- The discriminant of `Q_M` is `tr(M)² - 4 det M`. -/
