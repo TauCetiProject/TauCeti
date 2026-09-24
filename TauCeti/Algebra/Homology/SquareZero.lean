@@ -54,7 +54,6 @@ abbrev boundariesInKer : Submodule S (ker d) :=
   (range d).comap (ker d).subtype
 
 /-- An element of the kernel of `d` is a boundary exactly when it is a value of `d`. -/
-@[simp]
 theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) ∈ range d :=
   Iff.rfl
 
