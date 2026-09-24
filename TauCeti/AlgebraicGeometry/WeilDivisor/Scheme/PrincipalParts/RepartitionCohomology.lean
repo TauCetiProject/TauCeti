@@ -65,35 +65,22 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 local instance nonemptyTopOpensRepartitionCohomology : Nonempty (⊤ : X.Opens) :=
   ⟨⟨Classical.choice inferInstance, trivial⟩⟩
 
-/-- Global rational functions are the function field, also as vector spaces over the base field. -/
-private def globalRationalFunctionsEquivFunctionField :
-    Γ(Scheme.rationalFunctions X, ⊤) ≃ₗ[k] X.functionField where
-  toFun := Scheme.rationalFunctionsEquiv ⊤
-  invFun := (Scheme.rationalFunctionsEquiv ⊤).symm
-  left_inv := (Scheme.rationalFunctionsEquiv ⊤).left_inv
-  right_inv := (Scheme.rationalFunctionsEquiv ⊤).right_inv
-  map_add' := (Scheme.rationalFunctionsEquiv ⊤).map_add
-  map_smul' c f := by
-    rw [Scheme.Modules.base_smul_globalSections,
-      (Scheme.rationalFunctionsEquiv ⊤).map_smul]
-    -- The scalar action through global functions is the germ in the function field.
-    change X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) *
-        Scheme.rationalFunctionsEquiv ⊤ f =
-      algebraMap k X.functionField c * Scheme.rationalFunctionsEquiv ⊤ f
-    rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
-    rw [Scheme.baseRingToFunctionField_apply]
-
 /-- Global rational functions, viewed as diagonal elements of the repartition space. -/
 def diagonalRationalFunctionsToRepartitions (hF : IsFunctionField k X.functionField) :
     Γ(Scheme.rationalFunctions X, ⊤) →ₗ[k] repartitionSpace k X.functionField :=
   LinearMap.codRestrict _
     ((Pi.constAlgHom k (Place k X.functionField) X.functionField).toLinearMap.comp
-      (globalRationalFunctionsEquivFunctionField (X := X)).toLinearMap)
+      (Scheme.globalRationalFunctionsEquivFunctionField (k := k) (X := X)).toLinearMap)
     fun f ↦ by
       -- The codomain restriction is the constant family underlying the diagonal map.
-      change Function.const _ (Scheme.rationalFunctionsEquiv ⊤ f) ∈
-        repartitionSpace k X.functionField
-      exact const_mem_repartitionSpace hF (Scheme.rationalFunctionsEquiv ⊤ f)
+      have hconst (x : X.functionField) :
+          (Pi.constAlgHom k (Place k X.functionField) X.functionField).toLinearMap x =
+            Function.const _ x := by
+        funext P
+        exact Pi.constAlgHom_apply k (Place k X.functionField) X.functionField x P
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, hconst,
+        Scheme.globalRationalFunctionsEquivFunctionField_apply] using
+        const_mem_repartitionSpace hF (Scheme.rationalFunctionsEquiv ⊤ f)
 
 @[simp]
 lemma diagonalRationalFunctionsToRepartitions_apply
@@ -102,9 +89,11 @@ lemma diagonalRationalFunctionsToRepartitions_apply
       Place k X.functionField → X.functionField) =
       Function.const _ (Scheme.rationalFunctionsEquiv ⊤ f) :=
   by
-    rw [diagonalRationalFunctionsToRepartitions, LinearMap.codRestrict_apply,
-      LinearMap.comp_apply, globalRationalFunctionsEquivFunctionField]
-    rfl
+    funext P
+    simp only [diagonalRationalFunctionsToRepartitions, LinearMap.codRestrict_apply,
+      LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      Scheme.globalRationalFunctionsEquivFunctionField_apply,
+      AlgHom.toLinearMap_apply, Pi.constAlgHom_apply]
 
 /-- The image of global rational functions is the diagonal inside the repartition space. -/
 theorem range_diagonalRationalFunctionsToRepartitions (hF : IsFunctionField k X.functionField) :
