@@ -24,27 +24,12 @@ into estimates on the expectations of Lipschitz test functions, and conversely. 
 differences of expectations enter, the supremum may be restricted to the functions vanishing at a
 prescribed basepoint.
 
-One inequality holds with no hypothesis on the ground space: each `1`-Lipschitz `f` gives the
-feasible dual pair `(f, -f)` for the cost `edist`, so Kantorovich weak duality bounds its value
-by `W₁` (`TauCeti.ofReal_integral_sub_integral_le_wassersteinEDist_one`).
-
-For the other inequality, the compact case comes first. On a compact pseudometric space, strong
-Kantorovich duality for the continuous cost `dist` gives a continuous feasible pair `(φ, ψ)` whose
-value is within `ε` of `W₁`. Its transform `f x = ⨅ y, (dist x y - ψ y)` is `1`-Lipschitz and
-satisfies `φ ≤ f` and `ψ ≤ -f`, so `f` alone does at least as well
-(`TauCeti.wassersteinEDist_one_eq_iSup_of_compactSpace`).
-
-The general case reduces to the compact one by quantization. Both laws are pushed, within `W₁`
-distance `ε`, onto a common finite set `t` by measurable quantizers
-(`TauCeti.exists_map_wassersteinEDist_le`). On the compact space `t` the formula holds; a
-`1`-Lipschitz function on `t` extends to a `1`-Lipschitz function on `X` by McShane's theorem,
-`LipschitzOnWith.extend_real`; and replacing the quantized laws by the original ones changes both
-sides by at most `ε`, by the triangle inequality for `W₁` on the left and by weak duality on the
-right (`TauCeti.wassersteinEDist_one_eq_iSup`).
-
-The finite-moment hypotheses make every `1`-Lipschitz function integrable
-(`TauCeti.HasFiniteMoment.integrable_of_lipschitzWith`), so that the Bochner integrals on the
-right are the honest expectations. Under them both sides are finite.
+The inequality bounding a difference of expectations by `W₁` (weak duality) holds on an arbitrary
+extended pseudometric space, for arbitrary measures, as soon as the test function is integrable.
+On a compact pseudometric space the full formula holds for all probability measures, with no
+moment hypothesis. In general, the finite-moment hypotheses make every `1`-Lipschitz function
+integrable (`TauCeti.HasFiniteMoment.integrable_of_lipschitzWith`), so that the Bochner integrals on
+the right are the honest expectations; under them both sides are finite.
 
 ## Main statements
 
@@ -92,6 +77,7 @@ measurability of the ground distance and no finiteness of the measures is needed
 theorem ofReal_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
     (hf : LipschitzWith 1 f) (hμ : Integrable f μ) (hν : Integrable f ν) :
     ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) ≤ wassersteinEDist 1 μ ν := by
+  -- `(f, -f)` is a feasible dual pair for the cost `edist`, so Kantorovich weak duality applies
   have hfeas : DualFeasible (fun z : X × X ↦ edist z.1 z.2) f (fun y ↦ -f y) := by
     refine dualFeasible_iff_ofReal_add_le.2 fun x y ↦ ?_
     calc ENNReal.ofReal (f x + -f y) ≤ edist (f x) (f y) := by
@@ -108,11 +94,6 @@ section Compact
 
 variable [PseudoMetricSpace X] [CompactSpace X] [OpensMeasurableSpace X]
 
-/-- A continuous real function on a compact space is integrable against every finite measure. -/
-private theorem integrable_of_continuous_of_compactSpace {ρ : Measure X} [IsFiniteMeasure ρ]
-    {g : X → ℝ} (hg : Continuous g) : Integrable g ρ :=
-  (BoundedContinuousFunction.mkOfCompact ⟨g, hg⟩).integrable ρ
-
 /-- The approximate form of Kantorovich–Rubinstein duality on a compact space: `W₁` is within any
 `ε > 0` of the difference of expectations of some `1`-Lipschitz function. -/
 private theorem exists_lipschitzWith_wassersteinEDist_one_le [IsProbabilityMeasure μ]
@@ -120,10 +101,13 @@ private theorem exists_lipschitzWith_wassersteinEDist_one_le [IsProbabilityMeasu
     ∃ f : X → ℝ, LipschitzWith 1 f ∧
       wassersteinEDist 1 μ ν ≤ ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν + ε) := by
   have : Nonempty X := μ.nonempty_of_neZero
+  -- strong Kantorovich duality for the continuous cost `dist` gives a continuous feasible pair
+  -- `(φ, ψ)` whose value is within `ε` of `W₁`
   obtain ⟨φ, ψ, hφc, hψc, hfeas, hle⟩ :=
     exists_continuous_forall_add_le_transportCost_le (μ := μ) (ν := ν)
       (c := fun z : X × X ↦ dist z.1 z.2) continuous_dist (fun _ ↦ dist_nonneg) hε
-  -- the transform `f x = ⨅ y, (dist x y - ψ y)` is `1`-Lipschitz and dominates the pair
+  -- the transform `f x = ⨅ y, (dist x y - ψ y)` is `1`-Lipschitz and satisfies `φ ≤ f` and
+  -- `ψ ≤ -f`, so `f` alone does at least as well as the pair
   obtain ⟨M, hM⟩ := (isCompact_range hψc).bddAbove
   have hbdd : ∀ x, BddBelow (range fun y ↦ dist x y - ψ y) := fun x ↦
     ⟨-M, by rintro _ ⟨y, rfl⟩; linarith [dist_nonneg (x := x) (y := y), hM ⟨y, rfl⟩]⟩
@@ -142,11 +126,11 @@ private theorem exists_lipschitzWith_wassersteinEDist_one_le [IsProbabilityMeasu
   refine hcost.trans_le (hle.trans (ENNReal.ofReal_le_ofReal ?_))
   have hfc := hf.continuous
   have hφ : ∫ x, φ x ∂μ ≤ ∫ x, f x ∂μ :=
-    integral_mono (integrable_of_continuous_of_compactSpace hφc)
-      (integrable_of_continuous_of_compactSpace hfc) hφf
+    integral_mono (hφc.integrable_of_hasCompactSupport (.of_compactSpace _))
+      (hfc.integrable_of_hasCompactSupport (.of_compactSpace _)) hφf
   have hψ : ∫ y, ψ y ∂ν ≤ ∫ y, -f y ∂ν :=
-    integral_mono (integrable_of_continuous_of_compactSpace hψc)
-      (integrable_of_continuous_of_compactSpace hfc.neg) hψf
+    integral_mono (hψc.integrable_of_hasCompactSupport (.of_compactSpace _))
+      (hfc.neg.integrable_of_hasCompactSupport (.of_compactSpace _)) hψf
   rw [kantorovichDualValue_def]
   rw [integral_neg] at hψ
   linarith
@@ -170,8 +154,8 @@ theorem wassersteinEDist_one_eq_iSup_of_compactSpace [IsProbabilityMeasure μ]
           exact le_iSup₂ (f := fun (f : X → ℝ) (_ : LipschitzWith 1 f) ↦
             ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)) f hf
   · exact ofReal_integral_sub_integral_le_wassersteinEDist_one hf
-      (integrable_of_continuous_of_compactSpace hf.continuous)
-      (integrable_of_continuous_of_compactSpace hf.continuous)
+      (hf.continuous.integrable_of_hasCompactSupport (.of_compactSpace _))
+      (hf.continuous.integrable_of_hasCompactSupport (.of_compactSpace _))
 
 end Compact
 
@@ -182,14 +166,16 @@ variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [SecondCountableTopology
 
 omit [StandardBorelSpace X] in
 /-- Kantorovich–Rubinstein duality for laws pushed onto a finite set, in the direction not given by
-weak duality. A finite set is compact, so the compact case applies on it, and every `1`-Lipschitz
-function on the finite set extends to a `1`-Lipschitz function on `X` by McShane's theorem. -/
+weak duality: the `1`-Wasserstein distance of two laws supported on a common finite set is at most
+the supremum of the differences of expectations of the `1`-Lipschitz real functions on `X`. -/
 private theorem wassersteinEDist_one_map_le_iSup [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] {T T' : X → X} (hT : Measurable T) (hT' : Measurable T')
     {t : Finset X} (hTt : ∀ x, T x ∈ t) (hT't : ∀ x, T' x ∈ t) :
     wassersteinEDist 1 (μ.map T) (ν.map T') ≤ ⨆ (G : X → ℝ) (_ : LipschitzWith 1 G),
       ENNReal.ofReal (∫ x, G x ∂(μ.map T) - ∫ x, G x ∂(ν.map T')) := by
   classical
+  -- the finite subspace `t` is compact, so the compact case applies on it; every `1`-Lipschitz
+  -- function on `t` then extends to one on `X` by McShane's theorem, `LipschitzOnWith.extend_real`
   -- the two laws, read on the finite subspace `t`
   let U : X → (t : Set X) := fun x ↦ ⟨T x, Finset.mem_coe.2 (hTt x)⟩
   let U' : X → (t : Set X) := fun x ↦ ⟨T' x, Finset.mem_coe.2 (hT't x)⟩
@@ -231,6 +217,10 @@ theorem wassersteinEDist_one_eq_iSup [IsProbabilityMeasure μ] [IsProbabilityMea
   refine le_antisymm ?_ (iSup₂_le fun f hf ↦
     ofReal_integral_sub_integral_le_wassersteinEDist_one hf
       (hμ.integrable_of_lipschitzWith hf) (hν.integrable_of_lipschitzWith hf))
+  -- reduce to the compact case by quantization: push both laws, within `W₁` distance `δ`, onto a
+  -- common finite set, where the formula holds; replacing the quantized laws by the original ones
+  -- changes both sides by a small amount, by the triangle inequality for `W₁` on the left and by
+  -- weak duality on the right
   set R := ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f), ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
   set δ : ℝ≥0∞ := (ε : ℝ≥0∞) / 2 / 2 with hδ
