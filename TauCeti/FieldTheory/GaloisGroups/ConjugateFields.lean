@@ -24,9 +24,6 @@ where `H` is the point stabilizer in the polynomial Galois group, transported to
 not by the generally larger root quotient `G / H`, which indexes the embeddings of `F⟮x⟯`
 (see `TauCeti.FieldTheory.GaloisGroups.Embeddings`).
 
-This quotient distinction follows the Layer 0 “Conjugate fields” target in the
-[Polynomial Galois groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md).
-
 ## Main definitions
 
 * `TauCeti.conjugateSimpleFields`: its set of conjugates under `Gal(N/F)`.
@@ -38,7 +35,8 @@ This quotient distinction follows the Layer 0 “Conjugate fields” target in t
 ## Main results
 
 * `TauCeti.quotientGalStabilizerEquivAlgHomSimpleField_fieldRange`: the embedding indexed by
-  a root-stabilizer coset has as image the conjugate field indexed by its normalizer coset.
+  a root-stabilizer coset has as image the conjugate field indexed by its projection to the
+  normalizer quotient.
 * `TauCeti.conjugateSimpleFieldsEquivConjugateSubgroups`: the conjugate fields
   correspond to conjugates of a point stabilizer in the polynomial Galois group.
 * `TauCeti.ncard_conjugateSimpleFields`: the number of conjugate simple fields is the index of
@@ -171,10 +169,9 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply (x : E)
     _ = K.1.fixingSubgroup :=
       IntermediateField.conjugateFieldsEquivConjugateSubgroups_apply E₀ K
 
-/-- The field corresponding to a conjugate point stabilizer is fixed by its transported
-subgroup. -/
-@[simp]
-theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
+/-- The fixing subgroup of the field corresponding to a conjugate point stabilizer is its
+transported subgroup. -/
+theorem fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
@@ -187,6 +184,24 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
   rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply x hsep y hy
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H),
     Equiv.apply_symm_apply]
+
+/-- The field corresponding to a conjugate point stabilizer is the fixed field of its
+transported subgroup. -/
+@[simp]
+theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
+    (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
+      (stabilizer (minpoly F x).Gal y)) :
+    ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H).1 =
+      fixedField (H.1.map ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _)) := by
+  let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
+    isGalois_normalClosure_adjoin_simple x hsep
+  rw [← fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply x hsep y hy H,
+    InfiniteGalois.fixedField_fixingSubgroup]
 
 /-- A normalizer coset for the simple field specifies one of its conjugate images. -/
 noncomputable def quotientNormalizerEquivConjugateSimpleFields (x : E)
@@ -290,17 +305,18 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
   exact quotientNormalizerEquivConjugateSimpleFields_mk x hsep _
 
 /-- The field range of the embedding indexed by a root-stabilizer coset is the conjugate
-field indexed by the same representative's normalizer coset. -/
+field indexed by the image of that coset in the normalizer quotient. -/
 theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
       (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
-    (σ : (minpoly F x).Gal) :
-    (quotientGalStabilizerEquivAlgHomSimpleField x y (QuotientGroup.mk σ)).fieldRange =
+    (q : (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y) :
+    (quotientGalStabilizerEquivAlgHomSimpleField x y q).fieldRange =
       (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
-        (QuotientGroup.mk σ)).1 := by
+        (Subgroup.quotientMapOfLE Subgroup.le_normalizer q)).1 := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
   let N := normalClosure F F⟮x⟯ E
   let e := splittingFieldEquivNormalClosure (F := F) (E := E) x
   have hgen : (F⟮AdjoinSimple.gen F x⟯ : IntermediateField F F⟮x⟯) = ⊤ := by
@@ -319,7 +335,7 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
     congr 1
     exact (map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y).symm.trans hy
   rw [hrange, quotientGalStabilizerEquivAlgHomSimpleField_mk_gen,
-    quotientGalNormalizerEquivConjugateSimpleFields_mk]
+    Subgroup.quotientMapOfLE_apply_mk, quotientGalNormalizerEquivConjugateSimpleFields_mk]
   have heval : e (σ • (y : (minpoly F x).SplittingField)) =
       galEquivNormalClosure x σ (e y) :=
     (galEquivNormalClosure_apply x σ y).symm
