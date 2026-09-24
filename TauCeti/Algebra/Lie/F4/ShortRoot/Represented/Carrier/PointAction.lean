@@ -100,7 +100,7 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
           f4ChevalleyLieLattice (a ⊗ₜ[𝔽₂] X))
     calc
       _ = a • (GeneralLinear.cotangentDualMatrixEquiv
-          (f4ShortRootEndEquivCotangentDual (f4ShortRootAdjointLinearMap X))).map
+          (f4ShortRootEndEquivCotangentDual (f4ShortRootAdjoint X))).map
             (algebraMap 𝔽₂ A) :=
         congrArg (fun v : f4ShortRootCotangentDual =>
           a • (GeneralLinear.cotangentDualMatrixEquiv v).map (algebraMap 𝔽₂ A))
@@ -108,8 +108,7 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
       _ = a • f4ShortRootAdjointMatrixBaseChange (A := A) X := by
         rw [cotangentDualMatrixEquiv_f4ShortRootEndEquivCotangentDual]
         ext i j
-        simp [f4ShortRootAdjointMatrixBaseChange, f4ShortRootAdjointLinearMap_apply,
-          LinearMap.toMatrix_apply]
+        simp [f4ShortRootAdjointMatrixBaseChange, LinearMap.toMatrix_apply]
       _ = _ := (f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul a X).symm
   exact DFunLike.congr_fun hmaps x
 
