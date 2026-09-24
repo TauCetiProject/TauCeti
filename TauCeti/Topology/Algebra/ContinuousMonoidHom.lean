@@ -26,17 +26,14 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-namespace MonoidHom
-
 /-- A homomorphism from a topological group is continuous when its kernel is open. -/
-theorem continuous_of_isOpen_ker [IsTopologicalGroup G] {H : Type*} [Monoid H]
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [IsTopologicalGroup G]
+    {H : Type*} [Monoid H]
     [TopologicalSpace H] [ContinuousMul H] (f : G →* H)
     (hf : IsOpen (f.ker : Set G)) : Continuous f :=
   continuous_of_continuousAt_one f <| continuousAt_const.congr <|
     Filter.mem_of_superset (hf.mem_nhds (one_mem _)) fun _ hx ↦
       ((MonoidHom.mem_ker.mp hx).trans (map_one f).symm).symm
-
-end MonoidHom
 
 namespace ContinuousMonoidHom
 
