@@ -37,7 +37,7 @@ lemmas of Heegaard Floer theory.
 
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_dual_nonneg`: Tucker's key lemma.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
-* `TauCeti.submodule_exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
+* `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
 
 ## References
@@ -161,7 +161,7 @@ variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedR
 
 /-- **Stiemke's theorem.** A subspace `S` of `ι → K` contains no nonzero nonnegative vector
 exactly when some vector with strictly positive coordinates is orthogonal to all of `S`. -/
-theorem submodule_exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι → K)) :
+theorem _root_.Submodule.exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι → K)) :
     (∃ c : ι → K, (∀ i, 0 < c i) ∧ ∀ x ∈ S, c ⬝ᵥ x = 0) ↔ ∀ x ∈ S, 0 ≤ x → x = 0 := by
   classical
   constructor

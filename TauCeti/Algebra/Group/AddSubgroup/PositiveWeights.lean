@@ -24,7 +24,7 @@ their periodic-domain subgroup.
 
 ## Main result
 
-* `TauCeti.addSubgroup_exists_pos_dotProduct_eq_zero_iff`.
+* `AddSubgroup.exists_pos_dotProduct_eq_zero_iff`.
 
 ## Reference
 
@@ -45,7 +45,7 @@ For the group of periodic domains of a pointed Heegaard diagram, the weights are
 regions for an area form in which every periodic domain has signed area zero; compare
 Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed three-manifolds*,
 Lemma 4.12. -/
-theorem addSubgroup_exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgroup (ι → ℤ)) :
+theorem _root_.AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgroup (ι → ℤ)) :
     (∃ c : ι → ℤ, (∀ i, 0 < c i) ∧ ∀ p ∈ P, c ⬝ᵥ p = 0) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   constructor
   · rintro ⟨c, hc, hP⟩ p hp hp0
@@ -65,7 +65,7 @@ theorem addSubgroup_exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : AddSubgr
       have := hpx i
       rw [hp0, Pi.zero_apply, Int.cast_zero, eq_comm, mul_eq_zero] at this
       exact this.resolve_left (Nat.cast_ne_zero.2 hN.ne')
-    obtain ⟨c, hc, hcS⟩ := (submodule_exists_pos_dotProduct_eq_zero_iff S).2 hS
+    obtain ⟨c, hc, hcS⟩ := S.exists_pos_dotProduct_eq_zero_iff.2 hS
     -- Clear the denominators of the rational weights.
     set N : ℕ := ∏ i, (c i).den
     have hN : 0 < N := Finset.prod_pos fun i _ => (c i).den_pos

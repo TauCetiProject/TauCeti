@@ -27,7 +27,7 @@ correspondence with domain vectors and control of its fibers.
 
 ## Main result
 
-* `TauCeti.addSubgroup_finite_setOf_nonneg_sub_mem_iff`.
+* `AddSubgroup.finite_setOf_nonneg_sub_mem_iff`.
 -/
 
 public section
@@ -36,7 +36,7 @@ namespace TauCeti
 
 /-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when each coset
 `D₀ + P` contains only finitely many nonnegative vectors. -/
-theorem addSubgroup_finite_setOf_nonneg_sub_mem_iff {ι : Type*} [Finite ι]
+theorem _root_.AddSubgroup.finite_setOf_nonneg_sub_mem_iff {ι : Type*} [Finite ι]
     (P : AddSubgroup (ι → ℤ)) :
     (∀ D₀ : ι → ℤ, {D | 0 ≤ D ∧ D - D₀ ∈ P}.Finite) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   constructor
