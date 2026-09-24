@@ -59,6 +59,21 @@ noncomputable def πStupidTruncLE : K ⟶ K.stupidTrunc (ComplexShape.embeddingU
   (ComplexShape.embeddingUpIntLE n).liftExtend (𝟙 _) fun j hj ↦
     (hj.2 (j + 1) ((ComplexShape.embeddingUpIntLE n).rel (by simp))).elim
 
+/-- The inverse of the canonical identification of a retained term of the brutal truncation
+factors through restriction and extension along the degree embedding. -/
+private lemma stupidTruncXIso_embeddingUpIntLE_inv {i : ℤ} (hi : i ≤ n) :
+    (K.stupidTruncXIso (ComplexShape.embeddingUpIntLE n)
+      (i := (n - i).natAbs) (i' := i) (by
+        simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).inv =
+      (K.restrictionXIso (ComplexShape.embeddingUpIntLE n)
+        (i := (n - i).natAbs) (i' := i) (by
+          simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).inv ≫
+      ((K.restriction (ComplexShape.embeddingUpIntLE n)).extendXIso
+        (ComplexShape.embeddingUpIntLE n) (i := (n - i).natAbs) (i' := i) (by
+          simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).inv := by
+  simp only [stupidTruncXIso, restrictionXIso, eqToIso.inv]
+  rfl
+
 /-- In a retained degree, the projection is the inverse of the canonical identification with
 the original complex. -/
 @[simp]
@@ -69,8 +84,8 @@ lemma πStupidTruncLE_f {i : ℤ} (hi : i ≤ n) :
           simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).inv := by
   refine (ComplexShape.Embedding.liftExtend_f _ _ _ (i := (n - i).natAbs)
     (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).trans ?_
-  simp [stupidTruncXIso, restrictionXIso]
-  rfl
+  simp only [HomologicalComplex.id_f, Category.id_comp]
+  rw [← K.stupidTruncXIso_embeddingUpIntLE_inv n hi]
 
 /-- The brutal truncation in degrees `≤ n` vanishes in degrees `> n`. -/
 lemma isZero_stupidTrunc_embeddingUpIntLE_X {i : ℤ} (hi : n < i) :
