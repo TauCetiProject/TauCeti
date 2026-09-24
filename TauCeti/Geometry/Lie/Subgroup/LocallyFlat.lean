@@ -10,18 +10,14 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 /-!
 # Locally flat subgroup inclusions
 
-An identity-neighbourhood slice chart for a subgroup can be transported by left translations to
-charts around every subgroup element.  This file packages that elementary but useful step as local
-flatness of the subtype inclusion.  The result is the topological chart boundary used when the
-local Cartan chart is upgraded to an embedded Lie-subgroup atlas.
+For a topological group, an identity-neighbourhood slice chart for a subgroup gives a locally flat
+subtype inclusion.  The result records the standard `univ × {0}` slice for the subgroup carrier,
+providing the local-flatness interface for geometric subgroup constructions.
 
 ## Main result
 
-* `Subgroup.isLocallyFlat_subtypeVal_of_isSliceChart`: transports one slice chart at the identity
-  to a locally flat embedding of the subgroup carrier.
-
-The argument is purely topological; smoothness of the charts and the Lie-group structure on the
-subgroup are deliberately left to the later atlas construction.
+* `Subgroup.isLocallyFlat_subtypeVal_of_isSliceChart`: an identity slice chart implies local
+  flatness of the subgroup subtype inclusion.
 -/
 
 public section
@@ -33,11 +29,10 @@ namespace Subgroup
 variable {G F F' : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
   [TopologicalSpace F] [TopologicalSpace F'] [Zero F']
 
-/-- An identity slice chart for a subgroup gives a locally flat chart at every subgroup point.
+/-- An identity slice chart for a subgroup makes its subtype inclusion locally flat.
 
-The chart at `g : K` is obtained by precomposing the identity chart with the inverse of left
-translation by `g`.  Since left translation preserves the subgroup carrier, the transported chart
-still flattens it onto `univ × {0}`. -/
+The hypothesis is an ambient chart around the identity that identifies the subgroup carrier with
+the standard slice `univ × {0}`. -/
 theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
     (φ : OpenPartialHomeomorph G (F × F'))
     (hφ : TauCeti.IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
@@ -59,21 +54,20 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
       constructor
       · intro hy
         have hy' : e y ∈ K := hy.2
-        have hmul : (g : G) * e y ∈ K := K.mul_mem g.property hy'
-        rw [he_apply, mul_inv_cancel_left] at hmul
-        exact hmul
+        rw [he_apply] at hy'
+        exact (K.mul_mem_cancel_left (K.inv_mem g.property)).mp hy'
       · intro hy
         refine ⟨?_, ?_⟩
         · simp [e]
-        -- Unfold the preimage membership and local chart abbreviation before cancellation.
+        -- The preimage notation must be unfolded before the translation identity can rewrite.
         · change e y ∈ K
           rw [he_apply]
-          exact K.mul_mem (K.inv_mem g.property) hy
+          exact (K.mul_mem_cancel_left (K.inv_mem g.property)).mpr hy
     have hchart := hφ.comp e
     refine ⟨e.trans φ, ?_, ?_⟩
     · rw [OpenPartialHomeomorph.trans_source]
       refine ⟨by simp [e], ?_⟩
-      -- The source condition is stated through `e`; expose it before applying `he_apply`.
+      -- Likewise expose the preimage membership in the translated chart source.
       change e (g : G) ∈ φ.source
       rw [he_apply, inv_mul_cancel]
       exact h1
