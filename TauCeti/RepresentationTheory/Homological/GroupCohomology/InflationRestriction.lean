@@ -22,18 +22,10 @@ restriction form a complex
 and if `Hⁱ(S, A) = 0` for `0 < i ≤ n`, it is exact and inflation is injective (Milne II 1.34).
 Mathlib proves the case `n = 0`, where there is no hypothesis, as `groupCohomology.H1InfRes`.
 
-The general case is by dimension shifting along the coinduced sequence
-
-`0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0`.
-
-Because `H¹(S, A) = 0`, taking `S`-invariants keeps it exact
-(`shortExact_map_quotientToInvariantsFunctor`). The `S`-invariants of `Coind_⊥^G A` are coinduced
-from the trivial subgroup of `G ⧸ S` (`Rep.quotientToInvariantsCoindBotIso`), so they have no
-cohomology in positive degrees (`isZero_quotientToInvariants_coindBot_succ`). The connecting maps
-of the three sequences over `G ⧸ S`, `G` and `S` are therefore isomorphisms. They are compatible
-with inflation and restriction (`TauCeti.groupCohomology.δ_naturality`). So the complex for `A`
-in degree `n + 2` is isomorphic to the complex for `dimensionShiftUp A` in degree `n + 1`, and
-`dimensionShiftUp A` satisfies the vanishing hypothesis one degree lower.
+The result is obtained by dimension shifting along the coinduced sequence
+`0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0`. The induced connecting isomorphisms commute
+with inflation and restriction, reducing the sequence in degree `n + 2` to that for
+`dimensionShiftUp A` in degree `n + 1`.
 
 When `Hⁱ(S, A)` vanishes also in degree `n + 1`, inflation is an isomorphism
 (`isIso_infRes_f`). This is the form used for Tate's cohomological triviality criterion, where a
@@ -56,8 +48,7 @@ module is shown to be cohomologically trivial by induction along a normal series
 * J.-P. Serre, *Local Fields*, Chapter VII, §6, Proposition 5.
 * `ClassFieldTheory/Cohomology/Functors/InflationRestriction.lean` in `kbuzzard/ClassFieldTheory`,
   commit `ccc3323c6750abca25b49b35106f54eb3a398509`, states `inflation_restriction_mono` and
-  `inflation_restriction_exact` with `sorry` proofs and sketches the same dimension-shifting
-  argument.
+  `inflation_restriction_exact` and uses the same dimension-shifting argument.
 -/
 
 public noncomputable section
@@ -74,7 +65,6 @@ variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G) (S : Subgroup G) [S
 
 /-- The **inflation-restriction complex** `Hⁿ⁺¹(G ⧸ S, A^S) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(S, A)` in degree
 `n + 1`. In degree one it is Mathlib's `groupCohomology.H1InfRes`. -/
-@[expose, simps X₁ X₂ X₃ f g]
 def infRes (n : ℕ) : ShortComplex (ModuleCat k) where
   X₁ := groupCohomology (A.quotientToInvariants S) (n + 1)
   X₂ := groupCohomology A (n + 1)
