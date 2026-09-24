@@ -32,6 +32,8 @@ cast.
 
 * `TauCeti.Sym.sumSubtype`: the concatenation of a family of unordered tuples of points of the
   members of the family, as an unordered `n`-tuple of points of `α`.
+* `TauCeti.Sym.mem_sumSubtype_iff`: for a pairwise disjoint family, a point of `U j` lies in the
+  concatenation exactly when it lies in the `j`-th part.
 * `TauCeti.Sym.filter_mem_sumSubtype` and `TauCeti.Sym.sumSubtype_injective`: for a pairwise
   disjoint family the concatenation determines all of its parts.
 * `TauCeti.Sym.mem_range_sumSubtype`: its range consists of the tuples supported in the union of
@@ -92,6 +94,20 @@ theorem exists_mem_of_mem_sumSubtype {a : α} {hn : ∑ i, m i = n} {p : ∀ i, 
   obtain ⟨i, -, hi⟩ := ha
   obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 hi
   exact ⟨i, x.2⟩
+
+/-- For a pairwise disjoint family, a point of `U j` lies in a concatenated tuple exactly when it
+lies in the `j`-th part: the other parts are supported in sets disjoint from `U j`. -/
+theorem mem_sumSubtype_iff (h : Pairwise (Function.onFun Disjoint U)) {hn : ∑ i, m i = n}
+    {p : ∀ i, Sym (U i) (m i)} {j : ι} {a : α} (ha : a ∈ U j) :
+    a ∈ sumSubtype U m hn p ↔ (⟨a, ha⟩ : U j) ∈ p j := by
+  rw [← _root_.Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum]
+  refine ⟨?_, fun hp => ⟨j, Finset.mem_univ j, Multiset.mem_map.2 ⟨_, hp, rfl⟩⟩⟩
+  rintro ⟨i, -, hi⟩
+  obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 hi
+  obtain rfl : i = j := by
+    by_contra hij
+    exact Set.disjoint_left.1 (h hij) x.2 ha
+  exact hx
 
 omit [Fintype ι] in
 /-- Filtering distributes over a finite sum of multisets. -/

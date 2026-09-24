@@ -34,6 +34,8 @@ orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing her
   `Sym.append`.
 * `TauCeti.Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple
   exactly when one is a reindexing of the other by a permutation.
+* `TauCeti.Sym.range_cons`: the unordered `(n + 1)`-tuples obtained by adjoining a point `a` are
+  exactly those containing `a`.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
   entries are `0`, so there are `d + 1` of them.
 -/
@@ -156,6 +158,19 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
       funext fun i => Equiv.ofFiberEquiv_map _ i⟩
   · rintro ⟨σ, rfl⟩
     exact (ofFn_comp_perm σ f).symm
+
+/-! ### Adjoining a fixed point -/
+
+/-- The unordered `(n + 1)`-tuples obtained by adjoining the point `a` are exactly those that
+contain `a`. -/
+@[simp]
+theorem range_cons (a : α) : Set.range (Sym.cons a : Sym α n → Sym α (n + 1)) = {s | a ∈ s} := by
+  ext s
+  refine ⟨?_, fun hs => ?_⟩
+  · rintro ⟨t, rfl⟩
+    exact Sym.mem_cons_self a t
+  · obtain ⟨t, rfl⟩ := Sym.exists_cons_of_mem hs
+    exact ⟨t, rfl⟩
 
 end Sym
 
