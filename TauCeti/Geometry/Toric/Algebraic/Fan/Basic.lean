@@ -435,6 +435,7 @@ theorem subfanInclusion_realMap :
     (Φ.subfanInclusion S hS hface).realMap = LinearMap.id := (rfl)
 
 /-- The least ambient cone containing a cone of a subfan is that cone itself. -/
+@[simp]
 theorem subfanInclusion_leastCone (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfanInclusion S hS hface).leastCone σ.2 = σ.1 := by
   apply le_antisymm
