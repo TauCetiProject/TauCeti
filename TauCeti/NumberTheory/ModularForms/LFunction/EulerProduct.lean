@@ -122,7 +122,6 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
 Hecke eigenform `f` with `a₁(f) = 1` and `Re s > k/2 + 1`,
 
 `∏' p, (1 - a_p p^{-s} + χ(p) p^{k-1-2s})⁻¹ = L(s, f)`. -/
-@[simp]
 theorem LSeries_eulerProduct_tprod (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
     ∏' p : Nat.Primes,

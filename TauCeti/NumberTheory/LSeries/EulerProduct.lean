@@ -72,7 +72,6 @@ theorem LSeries_localFactor_mul_tsum_eq_one_of_recurrence (h₁ : a 1 = 1) (p : 
   exact key.trans (by simp [h₁])
 
 /-- The sum over powers of a prime is the inverse quadratic Euler factor. -/
-@[simp]
 theorem LSeries_localFactor_tsum_of_recurrence (h₁ : a 1 = 1) (p : Primes)
     (hrec : ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
@@ -125,7 +124,6 @@ theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
 /-- **The Euler product with quadratic local factors**, as an equality with `∏'`: under the
 hypotheses of `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`,
 `∏' p, (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ = L(a, s)`. -/
-@[simp]
 theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
     (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
     (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
