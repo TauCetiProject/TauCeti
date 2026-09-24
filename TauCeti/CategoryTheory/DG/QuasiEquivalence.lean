@@ -53,10 +53,26 @@ theorem IsQuasiFullyFaithful.isIso_homologyMap
     IsIso (homologyMap (F.map X Y) n) := by
   exact (quasiIsoAt_iff_isIso_homologyMap (F.map X Y) n).mp ((hF X Y).quasiIsoAt n)
 
+/-- A DG functor is quasi-fully faithful exactly when it induces isomorphisms on all Hom
+cohomology groups. -/
+theorem isQuasiFullyFaithful_iff_isIso_homologyMap
+    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
+    IsQuasiFullyFaithful F ↔
+      ∀ (X Y : C) (n : ℤ), IsIso (homologyMap (F.map X Y) n) := by
+  constructor
+  · intro hF X Y n
+    exact hF.isIso_homologyMap X Y n
+  · intro hF X Y
+    rw [quasiIso_iff]
+    intro n
+    exact (quasiIsoAt_iff_isIso_homologyMap (F.map X Y) n).mpr (hF X Y n)
+
 /-- The identity DG functor is quasi-fully faithful. -/
+@[simp]
 theorem isQuasiFullyFaithful_id :
     IsQuasiFullyFaithful (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
   intro X Y
+  -- The identity enriched functor maps every Hom complex by its identity morphism.
   change QuasiIso (𝟙 _)
   exact quasiIso_of_isIso _
 
@@ -92,6 +108,7 @@ theorem IsQuasiEquivalence.essentiallySurjective
       DGHomotopyCategory.of R Y) := hF.2 Y
 
 /-- The identity DG functor is a quasi-equivalence. -/
+@[simp]
 theorem isQuasiEquivalence_id :
     IsQuasiEquivalence (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
   refine ⟨isQuasiFullyFaithful_id, ?_⟩
@@ -106,6 +123,7 @@ variable {P : C → Prop}
 
 /-- The inclusion of a full DG subcategory is quasi-fully faithful: its maps on Hom complexes
 are identity maps. -/
+@[simp]
 theorem isQuasiFullyFaithful_inclusion :
     DGFunctor.IsQuasiFullyFaithful (inclusion (R := R) (P := P)) := by
   intro X Y
@@ -114,6 +132,7 @@ theorem isQuasiFullyFaithful_inclusion :
 
 /-- Inclusion of a full DG subcategory is a quasi-equivalence precisely when every ambient
 object is isomorphic in `H⁰` to an object satisfying its predicate. -/
+@[simp]
 theorem isQuasiEquivalence_inclusion_iff :
     DGFunctor.IsQuasiEquivalence (inclusion (R := R) (P := P)) ↔
       ∀ Y : C, ∃ X : C, P X ∧
