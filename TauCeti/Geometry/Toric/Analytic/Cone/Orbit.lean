@@ -464,9 +464,21 @@ theorem faceEquivOrbitRelQuotient_apply (hi : IsIntegralLattice i) (hσ : IsRegu
 /-- The torus orbit corresponding to a face is its stratum. -/
 theorem orbit_faceEquivOrbitRelQuotient (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
     (F : σ.Face) :
-    (faceEquivOrbitRelQuotient hi hσ F).orbit =
-      MulAction.orbit (ComplexTorus N) (distinguishedPoint hi F) := by
-  rw [faceEquivOrbitRelQuotient_apply, MulAction.orbitRel.Quotient.orbit_mk]
+    (faceEquivOrbitRelQuotient hi hσ F).orbit = affineConeOrbit hi F := by
+  rw [faceEquivOrbitRelQuotient_apply, MulAction.orbitRel.Quotient.orbit_mk,
+    affineConeOrbit_eq_orbit hi hσ F]
+
+/-- Under the orbit–cone correspondence, face inclusion is the reverse of orbit closure
+inclusion. -/
+theorem orbit_faceEquivOrbitRelQuotient_subset_closure_iff (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) (F G : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
+    let _ := affinePointTopology g
+    (faceEquivOrbitRelQuotient hi hσ G).orbit ⊆
+      closure (faceEquivOrbitRelQuotient hi hσ F).orbit ↔ F ≤ G := by
+  let _ := affinePointTopology g
+  simpa only [orbit_faceEquivOrbitRelQuotient] using
+    (affineConeOrbit_subset_closure_iff hi hσ F G g)
 
 /-- The face corresponding to the torus orbit of a point is the face whose stratum contains it. -/
 theorem faceEquivOrbitRelQuotient_symm_mk (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
