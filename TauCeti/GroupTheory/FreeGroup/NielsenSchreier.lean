@@ -7,7 +7,8 @@ Authors: Arthur Freitas Ramos, David Hulak, Ruy de Queiroz,
 module
 
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
-public import TauCeti.Combinatorics.Quiver.Arborescence
+public import Mathlib.Combinatorics.Quiver.Arborescence
+public import TauCeti.Combinatorics.Quiver.WideSubquiver
 
 /-!
 # A free basis from a spanning tree
@@ -46,6 +47,46 @@ namespace TauCeti
 
 namespace WideSubquiver
 
+private lemma spanningTree_loopOfHom_map_eq_map
+    {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C] {Y : Type u} [Group Y]
+    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
+    (F' : C ⥤ CategoryTheory.SingleObj Y)
+    (hTree : ∀ {a b} (e : a ⟶ b), e ∈ wideSubquiverSymmetrify T a b →
+      F'.map (IsFreeGroupoid.of e) = 1) :
+    ∀ {x y} (q : x ⟶ y),
+      F'.map (IsFreeGroupoid.SpanningTree.loopOfHom T q) = (F'.map q : Y) := by
+  have hPath : ∀ {a : C} (p : Path (root T) a),
+      F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 := by
+    intro a p
+    induction p with
+    | nil =>
+        have hnil :
+            F'.map (IsFreeGroupoid.SpanningTree.homOfPath T
+              (Path.nil : Path (root T) (root T))) = 1 := by
+          -- `homOfPath` has a root in the wide-subquiver vertex synonym, while `map_id` has the
+          -- corresponding object in `C`; exposing their shared identity isolates this coercion.
+          change F'.map (𝟙 (show C from root T)) = 1
+          rw [F'.map_id, id_as_one]
+        exact hnil
+    | cons p e ih =>
+        rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
+        rcases e with ⟨e | e, eT⟩
+        · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
+            change T _ _ (Sum.inl e) ∨ T _ _ (Sum.inr e)
+            exact Or.inl eT
+          rw [hTree e he]
+        · have he : e ∈ wideSubquiverSymmetrify T _ _ := by
+            change T _ _ (Sum.inl e) ∨ T _ _ (Sum.inr e)
+            exact Or.inr eT
+          rw [F'.map_inv, inv_as_inv, inv_eq_one, hTree e he]
+  have hTreeHom (a : C) :
+      F'.map (IsFreeGroupoid.SpanningTree.treeHom T a) = 1 := by
+    rw [IsFreeGroupoid.SpanningTree.treeHom_eq T (default : Path (root T) a)]
+    exact hPath _
+  intro x y q
+  simp only [IsFreeGroupoid.SpanningTree.loopOfHom, Functor.map_comp, comp_as_mul,
+    inv_as_inv, hTreeHom, inv_one, mul_one, one_mul, Functor.map_inv]
+
 /-- The loops attached to the directed edges outside an unoriented spanning tree form a free
 basis of the vertex group at the root. -/
 noncomputable def spanningTreeBasis
@@ -69,32 +110,12 @@ noncomputable def spanningTreeBasis
       rintro ⟨⟨a, b, e⟩, h⟩
       simp only [Functor.mapEnd, DFunLike.coe, this, hF']
       exact dite_eq_right h
-    have hPath : ∀ {a : C} (p : Path (root T) a),
-        F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 := by
-      intro a p
-      induction p with
-      | nil =>
-          have hnil :
-              F'.map (IsFreeGroupoid.SpanningTree.homOfPath T
-                (Path.nil : Path (root T) (root T))) = 1 := by
-            -- `homOfPath` has a root in the wide-subquiver vertex synonym, while `map_id` has the
-            -- corresponding object in `C`; exposing their shared identity isolates this coercion.
-            change F'.map (𝟙 (show C from root T)) = 1
-            rw [F'.map_id, id_as_one]
-          exact hnil
-      | cons p e ih =>
-          rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
-          rcases e with ⟨e | e, eT⟩
-          · rw [hF']
-            exact dite_eq_left (Or.inl eT)
-          · rw [F'.map_inv, inv_as_inv, inv_eq_one, hF']
-            exact dite_eq_left (Or.inr eT)
-    have hTreeHom (a : C) : F'.map (IsFreeGroupoid.SpanningTree.treeHom T a) = 1 := by
-      rw [IsFreeGroupoid.SpanningTree.treeHom_eq T (default : Path (root T) a)]
-      exact hPath _
-    intro x y q
-    simp only [IsFreeGroupoid.SpanningTree.loopOfHom, Functor.map_comp, comp_as_mul,
-      inv_as_inv, hTreeHom, inv_one, mul_one, one_mul, Functor.map_inv]
+    have hTree : ∀ {a b} (e : a ⟶ b),
+        e ∈ wideSubquiverSymmetrify T a b → F'.map (IsFreeGroupoid.of e) = 1 := by
+      intro a b e he
+      rw [hF']
+      simp [f', he]
+    exact fun {x y} q => spanningTree_loopOfHom_map_eq_map T F' hTree q
   · intro E hE
     ext x
     have hRoot :
@@ -115,18 +136,6 @@ noncomputable def spanningTreeBasis
         ← CategoryTheory.End.one_def, E.map_one]
     · exact hE ⟨⟨a, b, e⟩, h⟩
 
-private theorem ofUniqueLift_spanningTreeBasis_apply
-    {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
-    spanningTreeBasis T e =
-      IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- This isolates the constructor reduction for the universal-property basis.
-  change FreeGroup.lift
-      (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
-      (FreeGroup.of e) = _
-  exact FreeGroup.lift_apply_of
-
 /-- Applying the spanning-tree basis to a non-tree edge gives its associated loop. -/
 @[simp] theorem spanningTreeBasis_apply
     {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
@@ -134,7 +143,12 @@ private theorem ofUniqueLift_spanningTreeBasis_apply
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     spanningTreeBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  exact ofUniqueLift_spanningTreeBasis_apply T e
+  -- `ofUniqueLift` constructs this basis using `FreeGroup.lift`; reduce that constructor here to
+  -- apply the public computation theorem for a lifted generator.
+  change FreeGroup.lift
+      (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
+      (FreeGroup.of e) = _
+  exact FreeGroup.lift_apply_of
 
 end WideSubquiver
 
