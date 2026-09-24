@@ -91,7 +91,7 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   `TauCeti.QuadraticMap.orthogonalGroupCongr_reflectionOrthogonal`: an isometric equivalence `e`
   carries the reflection in `v` to the reflection in `e v`; inside `O(Q)` this is the conjugation
   law `g τ_v g⁻¹ = τ_{g v}`, `TauCeti.QuadraticMap.mul_reflectionOrthogonal_mul_inv`.
-* `TauCeti.QuadraticMap.polar_div_eq_two_mul_polar_div_polar`: over a field with `2 ≠ 0`, the
+* `QuadraticForm.polar_div_eq_two_mul_polar_div_polar`: over a field with `2 ≠ 0`, the
   reflection coefficient `polar Q v x / Q v` equals `2 * polar Q v x / polar Q v v`, so the two
   spellings of the reflection in the literature
   (`TauCeti.QuadraticMap.reflection_apply_eq_sub_div` and
@@ -789,14 +789,14 @@ theorem reflection_apply_eq_sub_div (v : V) [Invertible (Q v)] (x : V) :
 `Q v` is the same as dividing twice it by `polar Q v v = 2 • Q v`, the form in which sources whose
 bilinear form `b` satisfies `b v v = Q v` write the reflection. No anisotropy is needed, since both
 sides vanish when `Q v = 0`. -/
-theorem polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
+theorem _root_.QuadraticForm.polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
     polar Q v x / Q v = 2 * polar Q v x / polar Q v v := by
   rw [polar_self, nsmul_eq_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero]
 
 /-- The reflection in `v` is `x ↦ x - (2 * polar Q v x / polar Q v v) • v`. -/
 theorem reflection_apply_eq_sub_two_mul_div [NeZero (2 : K)] (v : V) [Invertible (Q v)]
     (x : V) : reflection Q v x = x - (2 * polar Q v x / polar Q v v) • v := by
-  rw [reflection_apply_eq_sub_div, polar_div_eq_two_mul_polar_div_polar]
+  rw [reflection_apply_eq_sub_div, Q.polar_div_eq_two_mul_polar_div_polar]
 
 end ReflectionField
 
