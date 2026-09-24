@@ -34,8 +34,6 @@ without repeatedly transporting across the definitional equality of trivial repr
 ## Main results
 
 * `TauCeti.trivialFp_ρ_apply_apply`: the action is trivial.
-* `TauCeti.ofDiscreteModule_trivialFp`: the discrete-coefficient dictionary recovers
-  `trivialFp`.
 * `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose.
 
 ## References
@@ -91,14 +89,6 @@ theorem trivialFpEquiv_symm_apply (x : ZMod p) :
 /-- The lifted carrier of `trivialFp p G` has the discrete topology. -/
 instance : DiscreteTopology (trivialFp p G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod p)))
-
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-/-- Applying the discrete coefficient dictionary to the carrier of `trivialFp` recovers the
-coefficient object itself. -/
-theorem ofDiscreteModule_trivialFp :
-    ofDiscreteModule (ZMod p) G (trivialFp p G).V = trivialFp p G :=
-  ofDiscreteModule_eq_self (trivialFp p G)
 
 /-- Every monoid element acts trivially on `trivialFp p G`. -/
 @[simp]
