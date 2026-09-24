@@ -26,7 +26,7 @@ This file supplies the two propagation mechanisms of the Stacks proof.
   `mᵢ|aᵢᵢ| = 2mᵢwᵢ ≤ 2mₖ|aₖₖ|`. Along a walk of such components starting at a component that is
   not a `(-2)`-index, the weighted self-intersection at most doubles at each step. This handles
   the small configurations, where every component is close to a component outside them.
-* **A weighted maximum principle.** Let `S` be a proper set of components and `v` a vector,
+* **A weighted maximum principle.** Let `S` be a nonempty proper set of components and `v` a vector,
   positive on `S`, with `∑_{k ∈ S} aᵢₖvₖ ≤ 0` for every `i ∈ S`. Then the ratio `mᵢ/vᵢ` attains
   its maximum over `S` at a component meeting a component outside `S`. This is the concavity
   argument of the Stacks proof, and it handles the long configurations. For a chain of the
