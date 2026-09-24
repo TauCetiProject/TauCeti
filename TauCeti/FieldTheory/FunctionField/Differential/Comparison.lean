@@ -50,8 +50,8 @@ particular `-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor of `F`.
   `(dx) = -2 (x)_∞ + Diff(F / k(x))`, and
   `TauCeti.weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential`, the same
   identity for any finite separable extension of `k(x)`.
-* `TauCeti.divisorClass_neg_two_zsmul_poles_add_different`: `-2 (x)_∞ + Diff(F / k(x))` represents
-  the canonical class.
+* `TauCeti.divisorClass_neg_two_zsmul_poles_add_different_eq_canonicalClass`:
+  `-2 (x)_∞ + Diff(F / k(x))` represents the canonical class.
 
 ## References
 
@@ -226,8 +226,8 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential
 finite separable extension `F` of `k(x)` with exact constant field `k`, this divisor represents the
 canonical class of `F`. -/
 @[simp]
-theorem divisorClass_neg_two_zsmul_poles_add_different (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) :
+theorem divisorClass_neg_two_zsmul_poles_add_different_eq_canonicalClass
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     -(2 • (Place.orderSystem hF).divisorClass
         (Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
           (Units.mk0 RatFunc.X RatFunc.X_ne_zero)))) +
