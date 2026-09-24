@@ -24,9 +24,9 @@ On the closed domain `𝒟` the representative is not unique: `z ↦ z + 1` iden
 vertical edges and `z ↦ -1/z` folds the unit arc onto itself, fixing `i` and swapping `ρ` with
 `ρ + 1`. Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd` pins these
 identifications down, and here it yields the closed-domain complements: the elliptic orbits of
-`i` and `ρ` meet `𝒟` exactly at `i` and at `{ρ, ρ + 1}`, and the orbit map is injective on the
-part of `𝒟` left of the identifications — `𝒟` without the right vertical edge and the part of
-the unit arc right of `i`.
+`i` and `ρ` meet `𝒟` exactly at `i` and at `{ρ, ρ + 1}`, and every orbit meets the part of `𝒟`
+left of the identifications — `𝒟` without the right vertical edge and the part of the unit arc
+right of `i` — exactly once.
 
 ## Main declarations
 
@@ -42,6 +42,7 @@ the unit arc right of `i`.
 * `TauCeti.ModularGroup.orbit_mk_I_ne_orbit_mk_ρ`: the two elliptic orbits are distinct.
 * `TauCeti.ModularGroup.orbit_mk_injOn_fd_left`: the orbit map is injective on `𝒟` minus the
   right vertical edge and the part of the unit arc right of `i`.
+* `TauCeti.ModularGroup.exists_smul_mem_fd_left`: every orbit meets that part of `𝒟`.
 
 ## References
 
@@ -254,6 +255,22 @@ lemma orbit_mk_injOn_fd_left :
   · exact (smul_eq_smul_of_eq_or_eq_neg hg).trans ST_smul_ρ
   · exact absurd (by rw [smul_eq_smul_of_eq_or_eq_neg hg, TST_smul_ρ, re_vadd_ρ]) hp₁re.ne
   · exact (smul_eq_smul_of_eq_or_eq_neg hg).trans T_inv_S_smul_ρ
+
+/-- Every `SL(2, ℤ)`-orbit of `ℍ` meets the part of `𝒟` left of the boundary identifications: the
+points with `re < 1/2` which, if on the unit circle, have `re ≤ 0`. -/
+lemma exists_smul_mem_fd_left (z : ℍ) :
+    ∃ g : SL(2, ℤ), g • z ∈ 𝒟 ∧ (g • z).re < 1 / 2 ∧ (‖(↑(g • z) : ℂ)‖ = 1 → (g • z).re ≤ 0) := by
+  -- move into `𝒟`, then off the arc right of `i` by `S` or off the right vertical edge by `T⁻¹`
+  obtain ⟨g, hg⟩ := _root_.ModularGroup.exists_smul_mem_fd z
+  by_cases harc : ‖(↑(g • z) : ℂ)‖ = 1 ∧ 0 < (g • z).re
+  · refine ⟨_root_.ModularGroup.S * g, ?_⟩
+    rw [mul_smul, re_S_smul_of_norm_eq_one harc.1]
+    exact ⟨S_smul_mem_fd_of_norm_eq_one hg.2 harc.1, by linarith, fun _ ↦ by linarith⟩
+  rcases (le_abs_self _).trans hg.2 |>.lt_or_eq with hlt | heq
+  · exact ⟨g, hg, hlt, fun h ↦ not_lt.mp fun h' ↦ harc ⟨h, h'⟩⟩
+  · refine ⟨_root_.ModularGroup.T ^ (-1 : ℤ) * g, ?_⟩
+    rw [mul_smul, modular_T_zpow_smul, vadd_re, heq]
+    exact ⟨vadd_mem_fd_of_re_eq hg (heq.trans (by norm_num)), by norm_num, fun _ ↦ by norm_num⟩
 
 end ModularGroup
 
