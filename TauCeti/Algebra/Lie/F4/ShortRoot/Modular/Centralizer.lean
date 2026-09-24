@@ -59,7 +59,8 @@ private theorem f4ModularChevalleyBasis_repr_lie_summand_eq_zero_of_ne_long
             _ = f4KillingRootLabel δ := rfl
             _ = f4KillingRootLabel α := congrArg f4KillingRootLabel hδα
         exact hi (congrArg Sum.inl hr)
-      have hz := f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero δ β γ hne
+      have hz := f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero δ β γ
+        (by simpa only [f4SimplyConnectedRootDatum_root] using hne)
       rw [f4ModularChevalleyBasis_inl_eq_rootVector]
       exact mul_eq_zero_of_right _ hz
   | inr r =>

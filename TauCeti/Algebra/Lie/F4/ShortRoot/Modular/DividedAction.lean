@@ -34,30 +34,12 @@ open TauCeti.F4ShortRoot
 
 noncomputable section
 
-/-- The second divided adjoint power of a signed simple root on the integral Chevalley lattice. -/
-noncomputable def f4IntegralDividedAdjointSquare (k : Fin 4 ⊕ Fin 4) :
-    Module.End ℤ f4ChevalleyLieLattice :=
-  integralDividedPower
-    (ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k))))
-    f4ChevalleyLieLattice 2 (by
-      intro y hy
-      rw [Associative.dividedPower_def, Module.End.smul_def]
-      exact IsChevalleySystem.inv_factorial_smul_ad_pow_mem_chevalleyLieLattice
-        f4ChevalleyRootVector_isChevalleySystem
-        (f4KillingRoot (f4SignedSimpleRootIndex k)) 2 hy)
-
-/-- The integral divided square acts in the ambient Lie algebra by the second divided adjoint
-power. -/
-@[simp] theorem coe_f4IntegralDividedAdjointSquare_apply
-    (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
-    ((f4IntegralDividedAdjointSquare k y : f4ChevalleyLieLattice) :
-      F4.lieAlgebra valid_F4) =
-        Associative.dividedPower 2
-          (ad ℚ (F4.lieAlgebra valid_F4)
-            (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
-          (y : F4.lieAlgebra valid_F4) := by
-  rw [f4IntegralDividedAdjointSquare, coe_integralDividedPower_apply]
+/-- The integral second divided power is the previously constructed divided adjoint square. -/
+theorem integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare
+    (k : Fin 4 ⊕ Fin 4) :
+    integralDividedPower (f4RootAdjointDerivation k).toLinearMap
+        f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2) =
+      f4IntegralDividedAdjointSquare k := rfl
 
 /-- The integral divided square has the expected exceptional opposite-root column. -/
 theorem f4IntegralDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) :

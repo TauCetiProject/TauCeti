@@ -547,18 +547,17 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     f4ModularChevalleyBasis_repr_simpleCoroot_inl, smul_zero]
 
 /-- A root vector has zero coordinate at any different root label. -/
-theorem f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
-    (c : ZMod 2) (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
-    f4ModularChevalleyBasis.repr (c • f4ModularRootVector ε)
+@[simp] theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
+    (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
+    f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
   classical
   have hindex : (Sum.inl (f4KillingRootLabel γ) : f4ChevalleyIndex) ≠
       Sum.inl (f4KillingRootLabel ε) := by
     intro h
     exact hεγ ((Sum.inl.inj h).symm)
-  rw [map_smul, f4ModularRootVector_eq_basis,
-    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
-    Finsupp.single_eq_of_ne hindex, smul_zero]
+  rw [f4ModularRootVector_eq_basis, f4ModularChevalleyBasis.repr_self,
+    Finsupp.single_eq_of_ne hindex]
 
 /-- The coordinate of a root vector at its own root label is one. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_self (β : Fin 48) :
@@ -566,15 +565,6 @@ theorem f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
       (Sum.inl (f4KillingRootLabel β)) = 1 := by
   rw [f4ModularRootVector_eq_basis, f4ModularChevalleyBasis.repr_self,
     Finsupp.single_eq_same]
-
-/-- The coordinate of a scaled root vector at its own root label is its scalar. -/
-theorem f4ModularChevalleyBasis_repr_smul_rootVector_self
-    (c : ZMod 2) (β : Fin 48) :
-    f4ModularChevalleyBasis.repr (c • f4ModularRootVector β)
-      (Sum.inl (f4KillingRootLabel β)) = c := by
-  rw [map_smul, f4ModularRootVector_eq_basis,
-    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
-    Finsupp.single_eq_same, smul_eq_mul, mul_one]
 
 /-- A nonzero root coordinate in a modular root-vector bracket has the expected integral root
 label, even though the bracket itself is reduced modulo two. -/
@@ -615,16 +605,13 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
       exact hγε ▸ hε
     · have hz : f4ModularChevalleyBasis.repr
           ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-            (Sum.inl (f4KillingRootLabel γ)) = 0 :=
-        congrArg
-          (fun Y => f4ModularChevalleyBasis.repr Y
-            (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans
-              (f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
-                (z : ZMod 2) ε γ heq)
+            (Sum.inl (f4KillingRootLabel γ)) = 0 := by
+        simp only [hlie, map_smul, Finsupp.smul_apply,
+          f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero ε γ heq, smul_zero]
       exact (hne hz).elim
 
 /-- The root-vector coordinate of a simple-coroot bracket is its reduced Cartan integer. -/
-theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
+@[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
     (i : Fin F4.rank) (β : Fin 48) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
@@ -638,48 +625,45 @@ theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
       (Fin.castAdd 44 (Fin.cast rank_F4 i)) = f4Root β (Fin.cast rank_F4 i) := by
     rw [f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd,
       dotProduct_single_one]
-  rw [hlie, f4ModularChevalleyBasis_repr_smul_rootVector_self]
+  rw [hlie, map_smul, Finsupp.smul_apply,
+    f4ModularChevalleyBasis_repr_rootVector_self, smul_eq_mul, mul_one]
   simp only [c, hcoeff]
 
 
-
-
 /-- A root-vector bracket has no coordinate at an unrelated root label. -/
-theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
+@[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
     (δ β γ : Fin 48)
-    (h : f4SimplyConnectedRootDatum.root γ ≠
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ) :
+    (h : f4Root γ ≠ f4Root β + f4Root δ) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
         (Sum.inl (f4KillingRootLabel γ)) = 0 := by
   by_contra hne
-  exact h (f4_root_eq_add_of_repr_lie_rootVector_ne_zero δ β γ hne)
+  exact h (by simpa only [f4SimplyConnectedRootDatum_root] using
+    f4_root_eq_add_of_repr_lie_rootVector_ne_zero δ β γ hne)
 
 /-- A simple-coroot bracket has no coordinate away from its root label. -/
-theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
+@[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
     (i : Fin F4.rank) (β γ : Fin 48) (hβγ : f4KillingRootLabel β ≠ f4KillingRootLabel γ) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
         (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  rw [f4Modular_lie_simpleCoroot_rootVector]
-  exact f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero _ β γ hβγ
+  simp only [f4Modular_lie_simpleCoroot_rootVector, map_smul, Finsupp.smul_apply,
+    f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero β γ hβγ, smul_zero]
 
 /-- A root-vector bracket has zero coordinate at the second factor's root label. -/
-theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
+@[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
     (δ β : Fin 48) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
         (Sum.inl (f4KillingRootLabel β)) = 0 := by
   apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
   intro h
-  exact f4KillingRootLabel_ne_of_root_eq_add δ β β h rfl
-
-
+  exact f4KillingRootLabel_ne_of_root_eq_add δ β β
+    (by simpa only [f4SimplyConnectedRootDatum_root] using h) rfl
 
 /-! ## Integral root exponentials -/
 
 attribute [local instance high] Algebra.toModule
-
 
 /-- The signed-root adjoint derivation. -/
 noncomputable def f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
@@ -728,6 +712,57 @@ noncomputable def f4RootExponential {A : Type*} [CommRing A] [Algebra ℤ A]
   baseChangeExp (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k) t
 
+/-- The second divided adjoint power of a signed simple root on the integral Chevalley lattice. -/
+@[expose] noncomputable def f4IntegralDividedAdjointSquare (k : Fin 4 ⊕ Fin 4) :
+    Module.End ℤ f4ChevalleyLieLattice :=
+  integralDividedPower (f4RootAdjointDerivation k).toLinearMap
+    f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)
+
+/-- The integral divided square acts in the ambient Lie algebra by the second divided adjoint
+power. -/
+@[simp] theorem coe_f4IntegralDividedAdjointSquare_apply
+    (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
+    ((f4IntegralDividedAdjointSquare k y : f4ChevalleyLieLattice) :
+      F4.lieAlgebra valid_F4) =
+        Associative.dividedPower 2
+          (ad ℚ (F4.lieAlgebra valid_F4)
+            (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
+          (y : F4.lieAlgebra valid_F4) := by
+  rw [f4IntegralDividedAdjointSquare, coe_integralDividedPower_apply,
+    f4RootAdjointDerivation_toLinearMap]
+
+/-- The third adjoint power vanishes on every integral root vector. -/
+theorem f4RootAdjointDerivation_pow_three_integralRootVector
+    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) :
+    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+        (f4IntegralRootVector i : F4.lieAlgebra valid_F4) = 0 := by
+  rw [f4RootAdjointDerivation_toLinearMap,
+    coe_f4IntegralRootVector]
+  exact f4_ad_pow_three_rootVector_eq_zero (f4SignedSimpleRootIndex k) i
+
+/-- The third adjoint power vanishes on each integral simple coroot. -/
+theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
+    (k : Fin 4 ⊕ Fin 4) (i : Fin F4.rank) :
+    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+        (f4IntegralSimpleCoroot i : F4.lieAlgebra valid_F4) = 0 := by
+  let β : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4) :=
+    ((F4.lieBasis valid_F4).baseSupportEquiv i :
+      (F4.cartanSubalgebra valid_F4).root)
+  rw [f4RootAdjointDerivation_toLinearMap,
+    coe_f4IntegralSimpleCoroot]
+  exact f4_ad_pow_three_cartan_eq_zero (f4SignedSimpleRootIndex k) (coroot β)
+
+/-- The first integral divided power is the Lie bracket in the Chevalley lattice. -/
+theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
+    (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
+    (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
+      f4ChevalleyLieLattice 1 (f4RootAdjointDerivation_dividedPower_mem k 1)) y =
+        ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
+  apply Subtype.ext
+  rw [coe_integralDividedPower_apply, Associative.dividedPower_one,
+    Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
+    f4RootAdjointDerivation_toLinearMap, ad_apply]
+
 /-- Unfold the pinned root exponential to the general integral divided-power exponential. -/
 theorem f4RootExponential_eq_baseChangeExp {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t : A) :
@@ -735,6 +770,32 @@ theorem f4RootExponential_eq_baseChangeExp {A : Type*} [CommRing A] [Algebra ℤ
       f4ChevalleyLieLattice (f4RootAdjointDerivation_dividedPower_mem k) t := by
   simp only [f4RootExponential]
 
+
+/-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
+ring is its three-term integral divided-power polynomial. -/
+theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
+    (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice)
+    (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
+      (y : F4.lieAlgebra valid_F4) = 0) :
+    f4RootExponential k t (1 ⊗ₜ[ℤ] y) =
+      (1 ⊗ₜ[ℤ] y) +
+        t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
+        t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
+  rw [f4RootExponential_eq_baseChangeExp]
+  rw [baseChangeExp_tmul_of_pow_smul_eq_zero
+    (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
+    (f4RootAdjointDerivation_dividedPower_mem k)
+    (isNilpotent_f4RootAdjointDerivation k) t 1 y hy]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
+    pow_one, integralDividedPower_zero, Module.End.one_apply,
+    integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
+    f4IntegralDividedAdjointSquare, mul_one]
+  have hscalar (s : A) (z : f4ChevalleyLieLattice) :
+      s ⊗ₜ[ℤ] z = s • (1 ⊗ₜ[ℤ] z) := by
+    simpa only [mul_one] using TensorProduct.tmul_eq_smul_one_tmul s z
+  exact congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => (1 ⊗ₜ[ℤ] y + u) + v)
+    (hscalar t ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
+    (hscalar (t ^ 2) (f4IntegralDividedAdjointSquare k y))
 
 /-- The integral root exponential as a Lie algebra automorphism after arbitrary scalar
 extension. -/

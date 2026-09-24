@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.F4.ModularLattice
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.DividedAction
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Carrier
-public import TauCeti.Algebra.Lie.Derivation.IntegralExp
 public import TauCeti.Algebra.Lie.BaseChange.Cancel
 public import TauCeti.Algebra.Lie.BaseChange.Module
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
@@ -17,9 +16,8 @@ public import Mathlib.Algebra.Field.ZMod
 /-!
 # Integral root exponentials on the modular F₄ short-root ideal
 
-This file packages the adjoint derivation attached to each signed simple Chevalley root and
-identifies its integral exponential on the modular short-root ideal with the existing sparse
-linear and divided-square matrices.
+This file identifies the ambient integral root exponential on the modular short-root ideal
+with the existing sparse linear and divided-square matrices.
 
 ## References
 
@@ -38,77 +36,6 @@ open TauCeti.F4ShortRoot
 noncomputable section
 
 attribute [local instance high] Algebra.toModule
-
-/-- The third adjoint power vanishes on every integral root vector. -/
-theorem f4RootAdjointDerivation_pow_three_integralRootVector
-    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) :
-    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4IntegralRootVector i : F4.lieAlgebra valid_F4) = 0 := by
-  rw [f4RootAdjointDerivation_toLinearMap,
-    coe_f4IntegralRootVector]
-  exact f4_ad_pow_three_rootVector_eq_zero (f4SignedSimpleRootIndex k) i
-
-/-- The third adjoint power vanishes on each integral simple coroot. -/
-theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
-    (k : Fin 4 ⊕ Fin 4) (i : Fin F4.rank) :
-    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4IntegralSimpleCoroot i : F4.lieAlgebra valid_F4) = 0 := by
-  let β : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4) :=
-    ((F4.lieBasis valid_F4).baseSupportEquiv i :
-      (F4.cartanSubalgebra valid_F4).root)
-  rw [f4RootAdjointDerivation_toLinearMap,
-    coe_f4IntegralSimpleCoroot]
-  exact f4_ad_pow_three_cartan_eq_zero (f4SignedSimpleRootIndex k) (coroot β)
-
-/-- The first integral divided power is the Lie bracket in the Chevalley lattice. -/
-theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
-    (k : Fin 4 ⊕ Fin 4) (y : f4ChevalleyLieLattice) :
-    (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-      f4ChevalleyLieLattice 1 (f4RootAdjointDerivation_dividedPower_mem k 1)) y =
-        ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
-  apply Subtype.ext
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one,
-    Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
-    f4RootAdjointDerivation_toLinearMap, ad_apply]
-
-/-- The integral second divided power is the previously constructed divided adjoint square. -/
-theorem integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare
-    (k : Fin 4 ⊕ Fin 4) :
-    integralDividedPower (f4RootAdjointDerivation k).toLinearMap
-        f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2) =
-      f4IntegralDividedAdjointSquare k := by
-  apply LinearMap.ext
-  intro y
-  apply Subtype.ext
-  rw [coe_integralDividedPower_apply, coe_f4IntegralDividedAdjointSquare_apply,
-    f4RootAdjointDerivation_toLinearMap]
-
-/-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
-ring is its three-term integral divided-power polynomial. -/
-theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice)
-    (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-      (y : F4.lieAlgebra valid_F4) = 0) :
-    f4RootExponential k t (1 ⊗ₜ[ℤ] y) =
-      (1 ⊗ₜ[ℤ] y) +
-        t • (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
-        t ^ 2 • (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) := by
-  rw [f4RootExponential_eq_baseChangeExp]
-  rw [baseChangeExp_tmul_of_pow_smul_eq_zero
-    (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
-    (f4RootAdjointDerivation_dividedPower_mem k)
-    (isNilpotent_f4RootAdjointDerivation k) t 1 y hy]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
-    pow_one, integralDividedPower_zero, Module.End.one_apply,
-    integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
-    integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare,
-    mul_one]
-  have hscalar (s : A) (z : f4ChevalleyLieLattice) :
-      s ⊗ₜ[ℤ] z = s • (1 ⊗ₜ[ℤ] z) := by
-    simpa only [mul_one] using TensorProduct.tmul_eq_smul_one_tmul s z
-  exact congrArg₂ (fun u v : A ⊗[ℤ] f4ChevalleyLieLattice => (1 ⊗ₜ[ℤ] y + u) + v)
-    (hscalar t ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
-    (hscalar (t ^ 2) (f4IntegralDividedAdjointSquare k y))
 
 /-- The three-term root polynomial on the scalar extension of the modular short-root ideal. -/
 noncomputable def f4ShortRootExponential {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
