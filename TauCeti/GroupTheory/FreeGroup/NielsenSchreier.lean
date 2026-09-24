@@ -44,17 +44,6 @@ universe u
 
 namespace TauCeti
 
-namespace FreeGroupBasis
-
-/-- The basis obtained from a unique lift evaluates each generator as the supplied map. -/
-@[simp] theorem ofUniqueLift_apply {G : Type u} [Group G] (X : Type u) (of : X → G)
-    (h : ∀ {H : Type u} [Group H] (f : X → H), ∃! F : G →* H, ∀ a, F (of a) = f a)
-    (x : X) : FreeGroupBasis.ofUniqueLift X of h x = of x := by
-  change FreeGroup.lift of (FreeGroup.of x) = _
-  exact FreeGroup.lift_apply_of
-
-end FreeGroupBasis
-
 namespace WideSubquiver
 
 /-- A functor that kills the tree generators kills the morphism assigned to every tree path. -/
@@ -165,9 +154,13 @@ noncomputable def endFreeGroupBasis
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     endFreeGroupBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- `ofUniqueLift` computes this basis using `FreeGroup.lift` on generators.  Its
-  -- anonymous unique-lift witness cannot be matched by the generic boundary theorem
-  -- because Mathlib's private `SpanningTree.root'` is not definitionally the public root.
+  -- Mathlib defines `FreeGroupBasis.ofUniqueLift` through `FreeGroupBasis.ofLift`
+  -- in `Mathlib/GroupTheory/FreeGroup/IsFreeGroup.lean`, but exposes no application
+  -- theorem for the resulting basis.  The public computation rule is
+  -- `FreeGroup.lift_apply_of`; this `change` exposes precisely that definitional
+  -- boundary at a generator.  The anonymous unique-lift witness in `endFreeGroupBasis`
+  -- prevents a constructor rewrite, and Mathlib's private `SpanningTree.root'` prevents
+  -- matching the witness by `rw`.
   change FreeGroup.lift
       (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
       (FreeGroup.of e) = _

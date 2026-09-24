@@ -119,6 +119,15 @@ noncomputable def totalEquivSubtypeNeRoot (W : Type u) [Quiver.{v, u} W] [Arbore
     rw [← Finite.card_option, Nat.card_congr (Equiv.optionSubtypeNe (root W))]
   omega
 
+/-- An arborescence with finitely many directed edges has finitely many vertices. -/
+theorem finite_of_finite_total (W : Type u) [Quiver.{v, u} W] [Arborescence W]
+    [Finite (Quiver.Total W)] : Finite W := by
+  classical
+  exact (letI : Finite {b : W // b ≠ root W} :=
+      Finite.of_equiv _ (totalEquivSubtypeNeRoot W)
+    letI : Finite W := Finite.of_equiv _ (Equiv.optionSubtypeNe (root W))
+    inferInstance)
+
 namespace WideSubquiver
 
 variable {V : Type u} [Quiver.{v, u} V]
@@ -228,13 +237,13 @@ vertices. -/
 theorem finite_of_finite_total [Finite (Quiver.Total V)]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] : Finite V := by
   classical
-  let vertexEquiv : T ≃ V := Equiv.refl V
   exact (letI : Finite (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Finite.of_equiv _ (totalEquivSet (wideSubquiverSymmetrify T)).symm
-    letI : Finite (Quiver.Total T) := Finite.of_equiv _ (totalEquivTotalSymmetrify T).symm
-    letI : Finite {b : T // b ≠ root T} := Finite.of_equiv _ (totalEquivSubtypeNeRoot T)
-    letI : Finite T := Finite.of_equiv _ (Equiv.optionSubtypeNe (root T))
-    show Finite V from Finite.of_equiv T vertexEquiv)
+    letI : Finite (Quiver.Total T) :=
+      Finite.of_equiv _ (totalEquivTotalSymmetrify T).symm
+    letI : Finite T := _root_.TauCeti.finite_of_finite_total T
+    let vertexEquiv : T ≃ V := Equiv.refl V
+    Finite.of_equiv T vertexEquiv)
 
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
 number of directed edges plus one minus the number of vertices. -/
