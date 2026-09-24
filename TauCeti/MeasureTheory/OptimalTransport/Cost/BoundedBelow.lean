@@ -41,8 +41,6 @@ also has value `∞`.
 
 * C. Villani, *Optimal Transport: Old and New*, Chapter 5, especially the convention of allowing
   costs bounded below by a sum of integrable marginal functions.
-* `TauCetiRoadmap/OptimalTransport/README.md`, Layer 1, items 1 and 4 (the bounded-below signed
-  cost interface and its weak lower-semicontinuity bridge).
 -/
 
 public section
@@ -119,35 +117,32 @@ def ofNonneg (hc : ∀ z, 0 ≤ c z) (μ : Measure X) (ν : Measure Y) :
   integrable_snd := integrable_zero Y ℝ ν
   le_cost x y := by simpa using hc (x, y)
 
-section Semicontinuity
+end IntegrableSplitLowerBound
 
-variable [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- Subtracting an upper-semicontinuous split lower bound from a lower-semicontinuous cost
-and taking the nonnegative extended-real part preserves lower semicontinuity.
-
-The integrability in `h` is not needed for this pointwise fact; it is retained in the statement
-because this theorem is the residual used by the normalized transport cost. The addition step is
-continuous at every pair because the split term is a finite real value, so the indeterminate
-`⊥ + ⊤` case of extended-real addition is avoided. -/
-theorem residual_lowerSemicontinuous
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- If `c` is lower semicontinuous and the real-valued split terms are upper semicontinuous,
+then their nonnegative extended-real residual is lower semicontinuous. -/
+theorem lowerSemicontinuous_residual
+    [TopologicalSpace X] [TopologicalSpace Y]
+    (a : X → ℝ) (b : Y → ℝ)
     (hc : LowerSemicontinuous c)
-    (ha : UpperSemicontinuous h.fst)
-    (hb : UpperSemicontinuous h.snd) :
-    LowerSemicontinuous h.residual := by
+    (ha : UpperSemicontinuous a)
+    (hb : UpperSemicontinuous b) :
+    LowerSemicontinuous
+      (fun z : X × Y => (c z - (a z.1 + b z.2 : ℝ)).toENNReal) := by
   have hsum : UpperSemicontinuous
-      (fun z : X × Y => h.fst z.1 + h.snd z.2) :=
+      (fun z : X × Y => a z.1 + b z.2) :=
     (ha.comp continuous_fst).add (hb.comp continuous_snd)
   have hsumE : UpperSemicontinuous
-      (fun z : X × Y => ((h.fst z.1 + h.snd z.2 : ℝ) : EReal)) :=
+      (fun z : X × Y => ((a z.1 + b z.2 : ℝ) : EReal)) :=
     continuous_coe_real_ereal.comp_upperSemicontinuous hsum
       EReal.coe_strictMono.monotone
   have hneg : LowerSemicontinuous
-      (fun z : X × Y => -((h.fst z.1 + h.snd z.2 : ℝ) : EReal)) :=
+      (fun z : X × Y => -((a z.1 + b z.2 : ℝ) : EReal)) :=
     continuous_neg.comp_upperSemicontinuous_antitone hsumE
       (by intro a b hab; exact EReal.neg_le_neg_iff.mpr hab)
   have hsub : LowerSemicontinuous
-      (fun z : X × Y => c z - ((h.fst z.1 + h.snd z.2 : ℝ) : EReal)) := by
+      (fun z : X × Y => c z - ((a z.1 + b z.2 : ℝ) : EReal)) := by
     apply LowerSemicontinuous.add' hc hneg
     intro z
     exact EReal.continuousAt_add (Or.inr (by simp)) (Or.inr (by simp))
@@ -156,17 +151,9 @@ theorem residual_lowerSemicontinuous
     exact EReal.toENNReal_le_toENNReal hab
   have hres : LowerSemicontinuous
       (fun z : X × Y =>
-        (c z - ((h.fst z.1 + h.snd z.2 : ℝ) : EReal)).toENNReal) :=
+        (c z - ((a z.1 + b z.2 : ℝ) : EReal)).toENNReal) :=
     EReal.continuous_toENNReal.comp_lowerSemicontinuous hsub hto
-  -- Unfold the public residual definition; its extended-real subtraction is definitionally
-  -- the expression above.
-  change LowerSemicontinuous
-    (fun z : X × Y => (c z - (h.fst z.1 + h.snd z.2 : ℝ)).toENNReal)
   exact hres
-
-end Semicontinuity
-
-end IntegrableSplitLowerBound
 
 /-- The signed cost of a coupling, normalized using an integrable split lower bound.
 
@@ -193,18 +180,15 @@ variable [PseudoMetricSpace X] [PseudoMetricSpace Y]
   {μp : ProbabilityMeasure X} {νp : ProbabilityMeasure Y}
   (h : IntegrableSplitLowerBound c μp.toMeasure νp.toMeasure)
 
-/-- The normalized signed cost is lower semicontinuous in the weak topology on couplings.
-
-The marginal correction terms are fixed real numbers, so the only varying part of the cost is
-the integral of the residual. Lower semicontinuity of the integral pairing is inherited by the
-subspace of couplings from the ambient probability measures on the product. -/
+/-- If the cost is lower semicontinuous and both split terms are upper semicontinuous, its
+normalized signed cost is lower semicontinuous on the weak topology of couplings. -/
 theorem lowerSemicontinuous_planCostBddBelow
     (hc : LowerSemicontinuous c)
     (ha : UpperSemicontinuous h.fst)
     (hb : UpperSemicontinuous h.snd) :
     LowerSemicontinuous
       (fun π : Coupling μp νp => planCostBddBelow π.1.toMeasure π.2 h) := by
-  have hres := h.residual_lowerSemicontinuous hc ha hb
+  have hres := lowerSemicontinuous_residual h.fst h.snd hc ha hb
   have hlin : LowerSemicontinuous
       (fun π : ProbabilityMeasure (X × Y) =>
         (∫⁻ z, h.residual z ∂(π.toMeasure) : ENNReal)) :=
