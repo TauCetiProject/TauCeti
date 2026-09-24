@@ -84,8 +84,6 @@ theorem exists_pow_eq_of_residue_pow_eq {R : Type*} [CommRing R] [HenselianLocal
     {n : ℕ} (hn : IsUnit (n : R)) {x₀ u : R} (hx₀ : IsUnit x₀)
     (h : residue R x₀ ^ n = residue R u) :
     ∃ x : R, x ^ n = u ∧ residue R x = residue R x₀ := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact ⟨x₀, Subsingleton.elim _ _, rfl⟩
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
