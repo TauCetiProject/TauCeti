@@ -250,8 +250,6 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A)
     (z : f4ShortRootLieIdeal) (y : f4ChevalleyLieLattice)
     (hz : (z : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y)
-    (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-      (y : F4.lieAlgebra valid_F4) = 0)
     (hd1 : (f4ShortRootSignedSimpleAdjoint k z : f4ModularChevalleyLieAlgebra) =
       1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
     (hd2 : (f4ShortRootDividedAdjointSquare k z : f4ModularChevalleyLieAlgebra) =
@@ -285,7 +283,7 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
     _ = (1 : A) ⊗ₜ[ℤ] y +
         t • ((1 : A) ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
         t ^ 2 • ((1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :=
-      f4RootExponential_tmul_of_pow_three_eq_zero k t y hy
+      f4RootExponential_tmul k t y
     _ = _ := (congrArg ι hpoly).trans
       (hmap.trans
         (congrArg₂ (· + ·)
@@ -296,9 +294,7 @@ private theorem f4RootExponential_intertwines_basis_of_coe_eq
     {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (b : Fin 26) (y : f4ChevalleyLieLattice)
     (hz : (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) =
-      1 ⊗ₜ[ℤ] y)
-    (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-      (y : F4.lieAlgebra valid_F4) = 0) :
+      1 ⊗ₜ[ℤ] y) :
     f4RootExponential k t
         (f4ShortRootBaseChangeInclusion (A := A)
           ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis b)) =
@@ -327,7 +323,7 @@ private theorem f4RootExponential_intertwines_basis_of_coe_eq
         congrArg (f4ModularDividedAdjointSquare k) hz
       _ = _ := f4ModularDividedAdjointSquare_tmul k y
   exact f4RootExponential_intertwines_tmul_of_coe_eq k t
-    (f4ShortRootLieIdealBasis b) y hz hy hd1 hd2
+    (f4ShortRootLieIdealBasis b) y hz hd1 hd2
 
 /-- The integral root exponential preserves the scalar-extended modular short-root ideal on every
 canonical basis column, where its action is the base-changed sparse three-term polynomial. -/
@@ -340,19 +336,16 @@ theorem f4RootExponential_intertwines_basis {A : Type*} [CommRing A]
         (f4ShortRootExponential (A := A) k t
           ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis b)) := by
   have hlift : ∃ y : f4ChevalleyLieLattice,
-      (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y ∧
-      ((f4RootAdjointDerivation k).toLinearMap ^ 3) (y : F4.lieAlgebra valid_F4) = 0 := by
+      (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y := by
     obtain ⟨i | j, rfl⟩ := f4ShortRootWeightIndexEquiv.symm.surjective b
     · exact ⟨f4IntegralRootVector i,
-        (coe_f4ShortRootLieIdealBasis_symm_inl i).trans (f4ModularRootVector_eq i),
-        f4RootAdjointDerivation_pow_three_integralRootVector k i⟩
-    · refine ⟨f4IntegralSimpleCoroot (f4ShortSimpleIndex j), ?_,
-        f4RootAdjointDerivation_pow_three_integralSimpleCoroot k (f4ShortSimpleIndex j)⟩
+        (coe_f4ShortRootLieIdealBasis_symm_inl i).trans (f4ModularRootVector_eq i)⟩
+    · refine ⟨f4IntegralSimpleCoroot (f4ShortSimpleIndex j), ?_⟩
       exact (coe_f4ShortRootLieIdealBasis _).trans
         ((congrArg f4ModularChevalleyBasis (f4ShortRootBasisCoordinate_symm_inr j)).trans
           ((f4ModularSimpleCoroot_eq_basis _).symm.trans (f4ModularSimpleCoroot_eq _)))
-  obtain ⟨y, hy, hcube⟩ := hlift
-  exact f4RootExponential_intertwines_basis_of_coe_eq k t b y hy hcube
+  obtain ⟨y, hy⟩ := hlift
+  exact f4RootExponential_intertwines_basis_of_coe_eq k t b y hy
 
 /-- The scalar-extended modular short-root ideal is preserved by every signed-simple integral
 root exponential, and the induced action is the sparse three-term polynomial. -/

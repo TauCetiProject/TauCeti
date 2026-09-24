@@ -118,13 +118,11 @@ theorem f4ShortRootBaseChangeQuotient_tmul
         ℤ (ZMod 2) A f4ChevalleyLieLattice a x)
     _ = _ := LinearMap.baseChange_tmul f4ShortRootSubspace.mkQ a (1 ⊗ₜ[ℤ] x)
 
-/-- After passing to the quotient, a pointwise cubic root exponential is still its three-term
-integral divided-power polynomial. -/
-theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
+/-- After passing to the quotient, the root exponential has its three-term integral
+divided-power polynomial on every pure tensor. -/
+theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul
     {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) (x : f4ChevalleyLieLattice)
-    (hx : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-      (x : F4.lieAlgebra valid_F4) = 0) :
+    (k : Fin 4 ⊕ Fin 4) (t : A) (x : f4ChevalleyLieLattice) :
     f4ShortRootBaseChangeQuotient (f4RootExponential k t ((1 : A) ⊗ₜ[ℤ] x)) =
       (1 : A) ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] x) +
         t • ((1 : A) ⊗ₜ[ZMod 2]
@@ -133,7 +131,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
           f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
   let q := f4ShortRootBaseChangeQuotient (A := A)
-  exact (congrArg q (f4RootExponential_tmul_of_pow_three_eq_zero k t x hx)).trans
+  exact (congrArg q (f4RootExponential_tmul k t x)).trans
     ((LinearMap.map_quadraticPolynomial q t _ _ _).trans
       (quadraticPolynomial_congr t
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)
@@ -236,26 +234,6 @@ theorem f4IntegralDividedAdjointSquare_quotientLift_mkQ
     _ = f4ShortRootQuotientDividedSquareColumn k a :=
       (f4ShortRootQuotientDividedSquareColumn_eq k a).symm
 
-/-- Every canonical integral quotient lift is killed by the third signed-simple-root adjoint
-power. -/
-theorem f4RootAdjointDerivation_pow_three_integralShortRootQuotientLift
-    (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :
-    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4IntegralShortRootQuotientLift a : F4.lieAlgebra valid_F4) = 0 := by
-  rcases h : f4ShortRootWeightIndexEquiv a with i | j
-  · have ha : a = f4ShortRootWeightIndexEquiv.symm (Sum.inl i) := by
-      apply f4ShortRootWeightIndexEquiv.injective
-      rw [h, Equiv.apply_symm_apply]
-    subst a
-    simp only [f4IntegralShortRootQuotientLift, Equiv.apply_symm_apply]
-    exact f4RootAdjointDerivation_pow_three_integralRootVector k _
-  · have ha : a = f4ShortRootWeightIndexEquiv.symm (Sum.inr j) := by
-      apply f4ShortRootWeightIndexEquiv.injective
-      rw [h, Equiv.apply_symm_apply]
-    subst a
-    simp only [f4IntegralShortRootQuotientLift, Equiv.apply_symm_apply]
-    exact f4RootAdjointDerivation_pow_three_integralSimpleCoroot k _
-
 /-- On every canonical quotient-basis lift, the arbitrary-scalar root exponential is the
 three-term integral divided-power polynomial, with constant term normalized to the quotient
 basis.  The two remaining terms retain their integral lifts until the concrete quotient-column
@@ -275,9 +253,8 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientL
           f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k
               (f4IntegralShortRootQuotientLift a))) := by
-  have hpoly := f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
+  have hpoly := f4ShortRootBaseChangeQuotient_rootExponential_tmul
     (A := A) k t (f4IntegralShortRootQuotientLift a)
-      (f4RootAdjointDerivation_pow_three_integralShortRootQuotientLift k a)
   have hzero :
       (1 : A) ⊗ₜ[ZMod 2]
           f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] f4IntegralShortRootQuotientLift a) =
