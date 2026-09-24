@@ -51,6 +51,8 @@ converse of each row.
 * `TauCeti.existsUnique_hasGaloisLabel_five`: an irreducible separable quintic carries exactly one
   label, and `TauCeti.hasGaloisLabel_five_iff_natCard_gal_eq`: the order of its Galois group
   recognizes that label.
+* `TauCeti.hasGaloisLabel_five_four_of_surjective_galActionHom`: a quintic whose Galois group
+  acts on its roots by every permutation has the label `5T5`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_five`: the Galois group of a quintic is solvable
   exactly for the labels `5T1`, `5T2` and `5T3`.
 * `TauCeti.HasGaloisLabel.isSquare_discr_iff_five`: **the discriminant reads the parity of the
@@ -101,6 +103,25 @@ theorem hasGaloisLabel_five_iff_natCard_gal_eq (hsep : f.Separable) (hirr : Irre
   have hjk : TransitiveGroupLabel j (referenceSubgroup 5 k) :=
     (transitiveGroupLabel_five_iff_natCard_eq j _).mpr (hk.natCard_gal.symm.trans h)
   rwa [hjk.eq_of_five (transitiveGroupLabel_referenceSubgroup 5 k)]
+
+/-- **The full symmetric label from a surjective Galois action.** An irreducible separable quintic
+whose Galois group acts on its roots in some splitting extension by every permutation has the
+label `5T5`. -/
+theorem hasGaloisLabel_five_four_of_surjective_galActionHom (hsep : f.Separable)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5) {E : Type*} [Field E] [Algebra F E]
+    [Fact ((f.map (algebraMap F E)).Splits)]
+    (hsurj : Function.Surjective (Gal.galActionHom f E)) :
+    HasGaloisLabel f (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  classical
+  have hroots : Nat.card (f.rootSet E) = 5 := by
+    rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Fact.out, hdeg]
+  have himage : Nat.card (Gal.galActionHom f E).range = Nat.factorial 5 := by
+    rw [MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top, Nat.card_perm, hroots]
+  have hgal : Nat.card f.Gal = Nat.factorial 5 := by
+    rw [← natCard_galActionHom_range f E, himage]
+  rw [hasGaloisLabel_five_iff_natCard_gal_eq hsep hirr hdeg, natCard_referenceSubgroup_five_four,
+    hgal]
+  rfl
 
 /-- **Solvability and the quintic labels.** The Galois group of a quintic with a label is solvable
 exactly for the labels `5T1`, `5T2` and `5T3`, the cyclic, dihedral and Frobenius groups. This is a
