@@ -44,28 +44,19 @@ theorem eventually_mem_iff_exists_mul_eq_of_mem
     (K : Subgroup G) {ι : Type*} {s : Set ι} {f : ι → G} {g : G} (hg : g ∈ K)
     (h : ∀ᶠ x in 𝓝 (1 : G), x ∈ K ↔ ∃ y ∈ s, f y = x) :
     ∀ᶠ x in 𝓝 g, x ∈ K ↔ ∃ y ∈ s, g * f y = x := by
-  let e : G ≃ₜ G := Homeomorph.smul (α := G) g⁻¹
   have hmap : Tendsto (fun x : G => g⁻¹ * x) (𝓝 g) (𝓝 (1 : G)) := by
-    -- `Tendsto` is definitionally a map inequality; expose the action homeomorphism coercion so
-    -- its neighborhood equality can be applied, then simplify the self-action to multiplication.
-    change Filter.map e (𝓝 g) ≤ 𝓝 (1 : G)
-    rw [e.map_nhds_eq]
-    simp only [e, Homeomorph.smul_apply, smul_eq_mul, inv_mul_cancel]
-    exact le_rfl
+    simpa only [ContinuousAt, smul_eq_mul, inv_mul_cancel] using
+      ((continuous_const_smul (T := G) g⁻¹).continuousAt :
+        ContinuousAt (fun x : G => g⁻¹ • x) g)
   filter_upwards [hmap.eventually h] with x hx
   constructor
   · intro hKx
-    obtain ⟨y, hy, hfy⟩ := hx.mp (K.mul_mem (K.inv_mem hg) hKx)
+    obtain ⟨y, hy, hfy⟩ := hx.mp ((K.mul_mem_cancel_left (K.inv_mem hg)).mpr hKx)
     refine ⟨y, hy, ?_⟩
-    rw [hfy]
-    simp
+    exact (eq_inv_mul_iff_mul_eq.mp hfy)
   · rintro ⟨y, hy, hfy⟩
-    have hKx : g * (g⁻¹ * x) ∈ K := K.mul_mem hg (hx.mpr ⟨y, hy, by
-      calc
-        f y = g⁻¹ * (g * f y) := by simp
-        _ = g⁻¹ * x := by rw [hfy]
-      ⟩)
-    simpa using hKx
+    apply (K.mul_mem_cancel_left (K.inv_mem hg)).mp
+    exact hx.mpr ⟨y, hy, eq_inv_mul_iff_mul_eq.mpr hfy⟩
 
 end Subgroup
 
