@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
@@ -16,18 +15,18 @@ The Lipschitz group acts on its quadratic space by twisted conjugation,
 `lipschitzToOrthogonal Q : lipschitzGroup Q →* O(Q)`. Scalars act trivially. Conversely, an
 element acting trivially graded-commutes with every vector, and for a nondegenerate form on a
 finite-dimensional space over a field in which `2` is invertible such an element is a scalar
-(`CliffordAlgebra.exists_eq_algebraMap_of_involute_mul_ι_eq_ι_mul`). So the kernel of the action is
-exactly the group of scalar units. This is the statement that makes the spinor norm of an isometry
+(`CliffordAlgebra.exists_eq_algebraMap_of_involute_mul_ι_eq_ι_mul`). When a vector has invertible
+norm, the scalar units lie in the Lipschitz group and form exactly the kernel of the action.
+This is the statement that makes the spinor norm of an isometry
 independent of the Lipschitz element chosen to lift it: two lifts differ by a scalar.
 
 ## Main results
 
 * `CliffordAlgebra.lipschitzToOrthogonal_eq_one_of_coe_eq_algebraMap`: a scalar acts trivially.
-* `CliffordAlgebra.lipschitzNorm_scalarUnits`: the norm of a scalar unit is its square.
 * `CliffordAlgebra.mem_ker_lipschitzToOrthogonal_iff`: an element of the Lipschitz group acts
   trivially exactly when it is a scalar unit.
-* `CliffordAlgebra.ker_lipschitzToOrthogonal`: the kernel of the Lipschitz action is the range of
-  `CliffordAlgebra.scalarUnits`.
+* `CliffordAlgebra.ker_lipschitzToOrthogonal`: when a vector has invertible norm, the kernel of
+  the Lipschitz action is the range of `CliffordAlgebra.scalarUnits`.
 
 ## References
 
@@ -61,21 +60,6 @@ theorem lipschitzToOrthogonal_eq_one_of_coe_eq_algebraMap {x : lipschitzGroup Q}
 theorem lipschitzToOrthogonal_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
     lipschitzToOrthogonal Q (scalarUnits Q hQ a) = 1 :=
   lipschitzToOrthogonal_eq_one_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
-
-/-- A Lipschitz element equal to a scalar unit has norm equal to the square of that scalar. -/
-theorem lipschitzNorm_eq_of_coe_eq_algebraMap {x : lipschitzGroup Q} {a : Rˣ}
-    (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-      algebraMap R (CliffordAlgebra Q) a) : lipschitzNorm Q x = a * a := by
-  apply Units.ext
-  apply algebraMap_injective Q
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm, hx, star_algebraMap, ← map_mul,
-    Units.val_mul]
-
-/-- The norm of a scalar unit in the Lipschitz group is its square. -/
-@[simp]
-theorem lipschitzNorm_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
-    lipschitzNorm Q (scalarUnits Q hQ a) = a * a :=
-  lipschitzNorm_eq_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
 
 end CommRing
 
