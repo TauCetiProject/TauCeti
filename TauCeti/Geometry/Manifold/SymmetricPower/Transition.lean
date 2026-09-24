@@ -22,6 +22,9 @@ This file identifies that coefficient expression with the transition
 `TauCeti.symOpenPartialHomeomorph`. The blockwise root theorem
 `TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`
 then proves that the transition is analytic at the represented tuple. Repeated points are included.
+The regularity claims below assume that, for every represented block `q i` and every `z ∈ q i`,
+the surface coordinate change `fun w : ℂ => ψ i ((φ i).symm w)` is analytic at `φ i (z : α)`.
+The whole-target claims require this hypothesis for every block represented in the target.
 
 The construction follows Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed
 three-manifolds* ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2.1.
@@ -115,7 +118,8 @@ theorem symOpenPartialHomeomorph_transition_apply
 /-- **The same-partition elementary-symmetric chart transition is analytic at a represented tuple.**
 The two charts use the common disjoint patch family `V` and multiplicities `m`; their surface
 coordinate maps `φ`, `ψ` and regrouping bijections `e`, `e'` may differ. Repeated points in the
-represented symmetric-power tuple are allowed. -/
+represented symmetric-power tuple are allowed. The hypothesis `hφ` requires the surface coordinate
+change `ψ i ∘ (φ i).symm` to be analytic at `φ i (z : α)` for every `i` and `z ∈ p i`. -/
 theorem analyticAt_symOpenPartialHomeomorph_transition
     (φ ψ : ι → OpenPartialHomeomorph α ℂ)
     (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
@@ -178,7 +182,10 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
   exact hlocal c hc
 
 
-/-- **The coordinate transition is infinitely differentiable on the source-chart target.** -/
+/-- **The coordinate transition is infinitely differentiable on the source-chart target.**
+Here `hφ` requires the surface coordinate change `ψ i ∘ (φ i).symm` to be analytic at
+`φ i (z : α)` for every `i`, every represented block `q i`, and every `z ∈ q i`. No analyticity is
+required for points outside the represented blocks. -/
 theorem contDiffOn_symOpenPartialHomeomorph_transition
     (φ ψ : ι → OpenPartialHomeomorph α ℂ)
     (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
@@ -188,7 +195,7 @@ theorem contDiffOn_symOpenPartialHomeomorph_transition
     (hVdisj : Pairwise (Function.onFun Disjoint V))
     (e e' : (Σ i, Fin (m i)) ≃ Fin n)
     (hp : Nonempty (∀ i, Sym ↥(V i) (m i)))
-    (hφ : ∀ i (z : ↥(V i)),
+    (hφ : ∀ i (q : Sym ↥(V i) (m i)) (z : ↥(V i)), z ∈ q →
       AnalyticAt ℂ (fun w : ℂ => ψ i ((φ i).symm w)) (φ i (z : α))) :
     ContDiffOn ℂ ω
       (fun c : Fin n → ℂ =>
@@ -206,7 +213,8 @@ theorem contDiffOn_symOpenPartialHomeomorph_transition
     rw [symOpenPartialHomeomorph_source φ V m hm hVo hVsubφ hVdisj e hp] at hs
     rcases Set.mem_range.mp hs with ⟨q, hq⟩
     have hqA := analyticAt_symOpenPartialHomeomorph_transition
-      φ ψ V m hm hVo hVsubφ hVsubψ hVdisj e e' q (fun i z _ => hφ i z)
+      φ ψ V m hm hVo hVsubφ hVsubψ hVdisj e e' q
+        (fun i z hz => hφ i (q i) z hz)
     have hc' : C (Sym.sumSubtype V m hm q) = c := by
       calc
         C (Sym.sumSubtype V m hm q) = C (C.symm c) := by rw [hq]
@@ -216,7 +224,10 @@ theorem contDiffOn_symOpenPartialHomeomorph_transition
   exact ha.contDiffOn C.open_target.uniqueDiffOn
 
 /-- **The transition partial homeomorphism is infinitely differentiable on its source.** This is
-the source-and-target form consumed by `isManifold_of_contDiffOn`. -/
+the source-and-target form consumed by `isManifold_of_contDiffOn`. Here `hφ` requires the surface
+coordinate change `ψ i ∘ (φ i).symm` to be analytic at `φ i (z : α)` for every `i`, every
+represented block `q i`, and every `z ∈ q i`; no analyticity is required for points outside the
+represented blocks. -/
 theorem contDiffOn_symOpenPartialHomeomorph_trans
     (φ ψ : ι → OpenPartialHomeomorph α ℂ)
     (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
@@ -226,7 +237,7 @@ theorem contDiffOn_symOpenPartialHomeomorph_trans
     (hVdisj : Pairwise (Function.onFun Disjoint V))
     (e e' : (Σ i, Fin (m i)) ≃ Fin n)
     (hp : Nonempty (∀ i, Sym ↥(V i) (m i)))
-    (hφ : ∀ i (z : ↥(V i)),
+    (hφ : ∀ i (q : Sym ↥(V i) (m i)) (z : ↥(V i)), z ∈ q →
       AnalyticAt ℂ (fun w : ℂ => ψ i ((φ i).symm w)) (φ i (z : α))) :
     ContDiffOn ℂ ω
       ((symOpenPartialHomeomorph φ V m hm hVo hVsubφ hVdisj e hp).symm.trans
