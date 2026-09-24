@@ -163,6 +163,13 @@ lemma repartitionToCohomologyOne_apply (D : SchemeWeilDivisor X)
   by
     rw [repartitionToCohomologyOne, LinearMap.comp_apply]
 
+/-- Every first cohomology class is represented by a repartition. -/
+theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :
+    Function.Surjective (repartitionToCohomologyOne hex hdim D) :=
+  (principalPartsBoundary_surjective k
+    (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property)
+    D).comp (repartitionToPrincipalParts_surjective hex hdim D)
+
 /-- The cohomology class of the diagonal repartition of a global rational function vanishes. -/
 @[simp]
 lemma repartitionToCohomologyOne_diagonalRationalFunctionsToRepartitions
@@ -244,10 +251,7 @@ def repartitionQuotientEquivCohomologyOne (hF : IsFunctionField k X.functionFiel
       Scheme.Modules.Cohomology (sheaf D) 1 :=
   (Submodule.quotEquivOfEq _ _ (ker_repartitionToCohomologyOne hex hdim hF D).symm).trans
     ((repartitionToCohomologyOne hex hdim D).quotKerEquivOfSurjective
-      ((principalPartsBoundary_surjective k
-        (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property)
-        D).comp
-        (repartitionToPrincipalParts_surjective hex hdim D)))
+      (repartitionToCohomologyOne_surjective hex hdim D))
 
 /-- The repartition-quotient equivalence sends the class of a repartition to its first
 cohomology class. -/
