@@ -18,7 +18,7 @@ module `ℳₙ` contains exactly one class of an upper-triangular matrix `(a b; 
 representatives and `Tₙ^∞` for its formal sum. The matrices themselves are Mathlib's
 `FixedDetMatrices.reps n`, which `TauCeti.LinearAlgebra.Matrix.FixedDetMatrices` shows to be a
 transversal of the `SL(2, ℤ)`-orbits of determinant-`n` matrices and counts
-(`FixedDetMatrices.card_reps`). This file takes their projective classes, proves that they form a
+(`FixedDetMatrices.ncard_reps`). This file takes their projective classes, proves that they form a
 transversal of the orbits of `ℳₙ`, and deduces `|Γ \ ℳₙ| = σ₁(|n|)`.
 
 Popa and Zagier take `Γ = PSL(2, ℤ)`. Since `-1` acts trivially on `ℳₙ`, the `PSL(2, ℤ)`-orbits
@@ -38,7 +38,7 @@ are the `SL(2, ℤ)`-orbits, and this file works with the latter throughout: `Γ
   `SL(2, ℤ)`-orbit of `ℳₙ` meets `ℳₙ^∞`.
 * `TauCeti.TraceFormulaMatrixModule.smul_eq_self_of_mem_upperTriangularReps`: an element of
   `SL(2, ℤ)` that moves one element of `ℳₙ^∞` into `ℳₙ^∞` fixes it.
-* `TauCeti.TraceFormulaMatrixModule.card_upperTriangularReps`: `|ℳₙ^∞| = σ₁(|n|)`.
+* `TauCeti.TraceFormulaMatrixModule.ncard_upperTriangularReps`: `|ℳₙ^∞| = σ₁(|n|)`.
 * `TauCeti.TraceFormulaMatrixModule.card_orbitRel_quotient`: `|Γ \ ℳₙ| = σ₁(|n|)`.
 
 ## References
@@ -89,9 +89,10 @@ instance (n : ℤ) : Finite (upperTriangularReps n) :=
   Finite.Set.finite_image _ _
 
 /-- `ℳₙ^∞` has `σ₁(|n|)` elements, as many as `FixedDetMatrices.reps n`. -/
-theorem card_upperTriangularReps (n : ℤ) :
-    Nat.card (upperTriangularReps n) = ArithmeticFunction.sigma 1 n.natAbs :=
-  (Nat.card_image_of_injOn mk_injOn_reps).trans (FixedDetMatrices.card_reps n)
+@[simp]
+theorem ncard_upperTriangularReps (n : ℤ) :
+    (upperTriangularReps n).ncard = ArithmeticFunction.sigma 1 n.natAbs :=
+  mk_injOn_reps.ncard_image.trans (FixedDetMatrices.ncard_reps n)
 
 /-- **Existence of upper-triangular representatives**: for `n ≠ 0`, every element of `ℳₙ` can
 be moved into `ℳₙ^∞` by `SL(2, ℤ)`. -/
@@ -143,10 +144,12 @@ theorem finite_orbitRel_quotient (hn : n ≠ 0) :
 
 /-- **The number of orbits** (Popa--Zagier, Section 2): for `n ≠ 0`, `Γ \ ℳₙ` has `σ₁(|n|)`
 elements. -/
+@[simp]
 theorem card_orbitRel_quotient (hn : n ≠ 0) :
     Nat.card (MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) =
       ArithmeticFunction.sigma 1 n.natAbs := by
-  rw [← Nat.card_congr (upperTriangularRepsEquiv hn), card_upperTriangularReps]
+  rw [← Nat.card_congr (upperTriangularRepsEquiv hn), Nat.card_coe_set_eq,
+    ncard_upperTriangularReps]
 
 end TraceFormulaMatrixModule
 
