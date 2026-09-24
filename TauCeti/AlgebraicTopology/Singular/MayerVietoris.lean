@@ -57,31 +57,7 @@ namespace TopCat
 
 variable {X : TopCat.{w}}
 
-private lemma range_ofHom_subtypeVal (S : Set X) :
-    Set.range (ofHom (ContinuousMap.subtypeVal S)) = S :=
-  Subtype.range_coe
-
-private lemma isInducing_ofHom_subtypeVal (S : Set X) :
-    IsInducing (ofHom (ContinuousMap.subtypeVal S)) :=
-  IsInducing.subtypeVal
-
-private lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
-    (σ : (toSSet.obj X).obj n) :
-    σ ∈ (SSet.Subcomplex.range
-      (toSSet.map (ofHom (ContinuousMap.subtypeVal S)))).obj n ↔
-      Set.range (X.toSSetObjEquiv n σ) ⊆ S := by
-  change σ ∈ Set.range ((toSSet.map (ofHom (ContinuousMap.subtypeVal S))).app n) ↔ _
-  rw [(isInducing_ofHom_subtypeVal S).mem_range_toSSet_map_app_iff n σ,
-    range_ofHom_subtypeVal]
-
 variable (U V : Set X)
-
-/-- The square of inclusions of `U ∩ V`, `U` and `V` into `X` commutes. -/
-lemma commSq_ofHom_inter :
-    CommSq (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V))))
-      (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U))))
-      (ofHom (ContinuousMap.subtypeVal U)) (ofHom (ContinuousMap.subtypeVal V)) :=
-  ⟨rfl⟩
 
 /-- **The singular simplicial sets of an intersection form a pushout square.** For subsets `U` and
 `V` of `X`, the singular simplicial sets of `U ∩ V`, `U` and `V` form a pushout square with the
@@ -101,6 +77,7 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
   let D := X.smallSingularSubcomplex ![U, V]
   have h_inf : B ⊓ C = A := by
     ext n σ
+    -- The lattice structure on subcomplexes is computed pointwise on their `obj` sets.
     change (σ ∈ B.obj n ∧ σ ∈ C.obj n) ↔ σ ∈ A.obj n
     rw [mem_range_toSSet_subtypeVal_iff U,
       mem_range_toSSet_subtypeVal_iff V,
@@ -108,6 +85,7 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
     exact Set.subset_inter_iff.symm
   have h_sup : B ⊔ C = D := by
     ext n σ
+    -- Supremum of subcomplexes is also computed pointwise.
     change (σ ∈ B.obj n ∨ σ ∈ C.obj n) ↔ σ ∈ D.obj n
     rw [mem_range_toSSet_subtypeVal_iff U,
       mem_range_toSSet_subtypeVal_iff V, mem_smallSingularSubcomplex_iff]
@@ -121,18 +99,22 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
     (asIso (SSet.Subcomplex.toRange fU))
     (asIso (SSet.Subcomplex.toRange fV)) (Iso.refl _) ?_ ?_ ?_ ?_
   · rw [← cancel_mono B.ι]
+    -- `toRange` followed by the range inclusion is the original singular map.
     change fI = toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))) ≫ fU
     rw [← Functor.map_comp]
     rfl
   · rw [← cancel_mono C.ι]
+    -- `toRange` followed by the range inclusion is the original singular map.
     change fI = toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U)))) ≫ fV
     rw [← Functor.map_comp]
     rfl
   · rw [← cancel_mono D.ι]
+    -- The range isomorphism reduces this side to the inclusion into `X.toSSet`.
     change fU = toSmallSingularSubcomplex ![U, V]
       (Matrix.cons_val_zero U ![V]).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
   · rw [← cancel_mono D.ι]
+    -- The range isomorphism reduces this side to the inclusion into `X.toSSet`.
     change fV = toSmallSingularSubcomplex ![U, V]
       ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
