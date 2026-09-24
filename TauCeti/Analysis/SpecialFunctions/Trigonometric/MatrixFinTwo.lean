@@ -139,7 +139,6 @@ theorem coe_conjRotation (θ t : ℝ) :
       !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
 
 /-- The conjugated rotation `conjRotation θ t` has the trace `2 cos θ` of the rotation. -/
-@[simp]
 theorem trace_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * cos θ := by
   rw [coe_conjRotation, trace_fin_two_of]
@@ -147,7 +146,6 @@ theorem trace_conjRotation (θ t : ℝ) :
 
 /-- The product of the conjugated rotations with parameters `(θ₂, t)` and `(θ₁, 0)` has trace
 `2 cos θ₁ cos θ₂ - 2 cosh t sin θ₁ sin θ₂`. -/
-@[simp]
 theorem trace_conjRotation_mul_conjRotation (θ₁ θ₂ t : ℝ) :
     ((conjRotation θ₂ t * conjRotation θ₁ 0 : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       2 * cos θ₁ * cos θ₂ - 2 * cosh t * (sin θ₁ * sin θ₂) := by

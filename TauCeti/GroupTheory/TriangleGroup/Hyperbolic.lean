@@ -129,7 +129,6 @@ theorem pslRep_z :
 /-- The commutator of `x` and `y` goes to the class of the commutator of the two conjugated
 rotations, a matrix of trace `2 + 4 (sin (π / a) sin (π / b) sinh t) ^ 2`
 (`Matrix.SpecialLinearGroup.trace_commutatorElement_conjRotation`). -/
-@[simp]
 theorem pslRep_commutator_x_y :
     pslRep t ha hb hc ht ⁅x a b c, y a b c⁆ =
       ((⁅SpecialLinearGroup.conjRotation (π / a) 0, SpecialLinearGroup.conjRotation (π / b) t⁆ :
