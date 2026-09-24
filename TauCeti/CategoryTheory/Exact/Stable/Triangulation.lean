@@ -267,32 +267,6 @@ noncomputable def stableConeTriangleOf
     CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory :=
   hE.stableConeTriangle (Classical.choose (E.projectiveStableFunctor.map_surjective f))
 
-/-- The first morphism of the chosen stable cone triangle is the given stable-category morphism. -/
-@[simp]
-theorem stableConeTriangleOf_mor₁
-    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
-    HEq (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).mor₁) f := by
-  simp only [stableConeTriangleOf]
-  exact HEq.trans (hE.stableConeTriangle_mor₁ (Classical.choose
-    (E.projectiveStableFunctor.map_surjective f))) (heq_of_eq
-      (Classical.choose_spec (E.projectiveStableFunctor.map_surjective f)))
-
-/-- The first object of the chosen stable cone triangle. -/
-@[simp]
-theorem stableConeTriangleOf_obj₁
-    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
-    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₁) =
-      E.projectiveStableFunctor.obj X := by
-  simp only [stableConeTriangleOf, stableConeTriangle_obj₁]
-
-/-- The second object of the chosen stable cone triangle. -/
-@[simp]
-theorem stableConeTriangleOf_obj₂
-    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
-    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₂) =
-      E.projectiveStableFunctor.obj Y := by
-  simp only [stableConeTriangleOf, stableConeTriangle_obj₂]
-
 /-- A chosen stable cone triangle is the cone triangle of a representative of its morphism. -/
 theorem stableConeTriangleOf_exists_rep
     (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
@@ -301,6 +275,35 @@ theorem stableConeTriangleOf_exists_rep
   refine ⟨Classical.choose (E.projectiveStableFunctor.map_surjective f),
     Classical.choose_spec (E.projectiveStableFunctor.map_surjective f), ?_⟩
   rfl
+
+/-- The first morphism of the chosen stable cone triangle is the given stable-category morphism. -/
+@[simp]
+theorem stableConeTriangleOf_mor₁
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    HEq (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).mor₁) f := by
+  rcases hE.stableConeTriangleOf_exists_rep f with ⟨g, hfg, htriangle⟩
+  rw [htriangle]
+  exact (hE.stableConeTriangle_mor₁ g).trans (heq_of_eq hfg)
+
+/-- The first object of the chosen stable cone triangle. -/
+@[simp]
+theorem stableConeTriangleOf_obj₁
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₁) =
+      E.projectiveStableFunctor.obj X := by
+  rcases hE.stableConeTriangleOf_exists_rep f with ⟨g, _, htriangle⟩
+  rw [htriangle]
+  exact hE.stableConeTriangle_obj₁ g
+
+/-- The second object of the chosen stable cone triangle. -/
+@[simp]
+theorem stableConeTriangleOf_obj₂
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).obj₂) =
+      E.projectiveStableFunctor.obj Y := by
+  rcases hE.stableConeTriangleOf_exists_rep f with ⟨g, _, htriangle⟩
+  rw [htriangle]
+  exact hE.stableConeTriangle_obj₂ g
 
 /-- The cone triangle of any stable-category morphism is distinguished. -/
 @[simp]
