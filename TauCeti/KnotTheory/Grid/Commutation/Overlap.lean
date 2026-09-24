@@ -87,29 +87,12 @@ private theorem isRecutOfLeftEqLeft_recut
         (by
       simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
-        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)) := by
-  have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
-      D.toRectangleDecomposition.second.IsEmpty :=
-    ⟨by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
-      by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_middle,
-        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
-  have hcommon' : D.toRectangleDecomposition.first.left =
-      D.toRectangleDecomposition.second.left := by
-    simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
-      hcommon
-  have hright := D.right_ne_right_of_left_eq_left hcommon hone
-  have hrecut := D.toRectangleDecomposition.isRecut_recut hone hempty.1 hempty.2
-  rcases hrecut.orientation with hdata | hdata | hdata | hdata
-  · exact hdata
-  · exact (hright hdata.side_eq).elim
-  · exact (D.toRectangleDecomposition.second.left_ne_right
-      (hcommon'.symm.trans hdata.side_eq)).elim
-  · exact (D.toRectangleDecomposition.first.left_ne_right
-      (hcommon'.trans hdata.side_eq.symm)).elim
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)) :=
+  D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut
+    (by
+      simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
+        hcommon)
+    hone _ _
 
 /-- In the common-initial-side overlap, the first rectangle of the recut terminates on the
 replaced grid line and hence has the required terminal side of a commutation pentagon. -/
