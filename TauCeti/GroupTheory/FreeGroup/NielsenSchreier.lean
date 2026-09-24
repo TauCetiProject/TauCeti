@@ -44,6 +44,18 @@ universe u
 
 namespace TauCeti
 
+namespace FreeGroupBasis
+
+/-- Mathlib does not expose the generator computation for `ofUniqueLift`; keep its single
+necessary unfold behind this private bridge. -/
+private theorem ofUniqueLift_apply {G : Type u} [Group G] (X : Type u) (of : X → G)
+    (h : ∀ {H : Type u} [Group H] (f : X → H), ∃! F : G →* H, ∀ a, F (of a) = f a)
+    (x : X) : FreeGroupBasis.ofUniqueLift X of h x = of x := by
+  change FreeGroup.lift of (FreeGroup.of x) = _
+  exact FreeGroup.lift_apply_of
+
+end FreeGroupBasis
+
 namespace WideSubquiver
 
 /-- A functor that kills the tree generators kills the morphism assigned to every tree path. -/
@@ -109,43 +121,47 @@ noncomputable def endFreeGroupBasis
       (End (show C from root T)) := by
   classical
   let X : Set _ := (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ
-  apply FreeGroupBasis.ofUniqueLift X
-    (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
-  intro Y _ f
-  let f' : Labelling (IsFreeGroupoid.Generators C) Y := fun a b e =>
-    if h : e ∈ wideSubquiverSymmetrify T a b then 1 else f ⟨⟨a, b, e⟩, h⟩
-  rcases IsFreeGroupoid.unique_lift f' with ⟨F', hF', uF'⟩
-  refine ⟨F'.mapEnd _, ?_, ?_⟩
-  · suffices ∀ {x y} (q : x ⟶ y),
-        F'.map (IsFreeGroupoid.SpanningTree.loopOfHom T q) = (F'.map q : Y) by
-      rintro ⟨⟨a, b, e⟩, h⟩
-      simp only [Functor.mapEnd, DFunLike.coe, this, hF']
-      exact dite_eq_right h
-    have hTree : ∀ {a b} (e : a ⟶ b),
-        e ∈ wideSubquiverSymmetrify T a b → F'.map (IsFreeGroupoid.of e) = 1 := by
-      intro a b e he
-      rw [hF']
-      exact dite_eq_left he
-    exact fun {x y} q => spanningTree_loopOfHom_map_eq_map T F' hTree q
-  · intro E hE
-    ext x
-    have hRoot :
-        (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = E x := by
-      simp only [IsFreeGroupoid.SpanningTree.functorOfMonoidHom_map,
-        IsFreeGroupoid.SpanningTree.loopOfHom,
-        IsFreeGroupoid.SpanningTree.treeHom_root, IsIso.inv_id,
-        Category.id_comp, Category.comp_id]
-    suffices (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = F'.map x by
-      exact hRoot.symm.trans this
-    congr
-    apply uF'
-    intro a b e
-    -- Expanding the labelling exposes the tree-edge case split used in its definition.
-    change E (IsFreeGroupoid.SpanningTree.loopOfHom T _) = dite _ _ _
-    split_ifs with h
-    · rw [IsFreeGroupoid.SpanningTree.loopOfHom_eq_id T e h,
-        ← CategoryTheory.End.one_def, E.map_one]
-    · exact hE ⟨⟨a, b, e⟩, h⟩
+  let of : X → _ := fun e =>
+    IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom)
+  have hUniqueLift : ∀ {H : Type u} [Group H] (f : X → H),
+      ∃! F : _ →* H, ∀ a, F (of a) = f a := by
+    intro Y _ f
+    let f' : Labelling (IsFreeGroupoid.Generators C) Y := fun a b e =>
+      if h : e ∈ wideSubquiverSymmetrify T a b then 1 else f ⟨⟨a, b, e⟩, h⟩
+    rcases IsFreeGroupoid.unique_lift f' with ⟨F', hF', uF'⟩
+    refine ⟨F'.mapEnd _, ?_, ?_⟩
+    · suffices ∀ {x y} (q : x ⟶ y),
+          F'.map (IsFreeGroupoid.SpanningTree.loopOfHom T q) = (F'.map q : Y) by
+        rintro ⟨⟨a, b, e⟩, h⟩
+        simp only [of]
+        simp only [Functor.mapEnd, DFunLike.coe, this, hF']
+        exact dite_eq_right h
+      have hTree : ∀ {a b} (e : a ⟶ b),
+          e ∈ wideSubquiverSymmetrify T a b → F'.map (IsFreeGroupoid.of e) = 1 := by
+        intro a b e he
+        rw [hF']
+        exact dite_eq_left he
+      exact fun {x y} q => spanningTree_loopOfHom_map_eq_map T F' hTree q
+    · intro E hE
+      ext x
+      have hRoot :
+          (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = E x := by
+        simp only [IsFreeGroupoid.SpanningTree.functorOfMonoidHom_map,
+          IsFreeGroupoid.SpanningTree.loopOfHom,
+          IsFreeGroupoid.SpanningTree.treeHom_root, IsIso.inv_id,
+          Category.id_comp, Category.comp_id]
+      suffices (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = F'.map x by
+        exact hRoot.symm.trans this
+      congr
+      apply uF'
+      intro a b e
+      -- Expanding the labelling exposes the tree-edge case split used in its definition.
+      change E (IsFreeGroupoid.SpanningTree.loopOfHom T _) = dite _ _ _
+      split_ifs with h
+      · rw [IsFreeGroupoid.SpanningTree.loopOfHom_eq_id T e h,
+          ← CategoryTheory.End.one_def, E.map_one]
+      · exact hE ⟨⟨a, b, e⟩, h⟩
+  exact FreeGroupBasis.ofUniqueLift X of hUniqueLift
 
 /-- Applying the spanning-tree basis to a non-tree edge gives its associated loop. -/
 @[simp] theorem endFreeGroupBasis_apply
@@ -154,17 +170,8 @@ noncomputable def endFreeGroupBasis
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     endFreeGroupBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- Mathlib defines `FreeGroupBasis.ofUniqueLift` through `FreeGroupBasis.ofLift`
-  -- in `Mathlib/GroupTheory/FreeGroup/IsFreeGroup.lean`, but exposes no application
-  -- theorem for the resulting basis.  The public computation rule is
-  -- `FreeGroup.lift_apply_of`; this `change` exposes precisely that definitional
-  -- boundary at a generator.  The anonymous unique-lift witness in `endFreeGroupBasis`
-  -- prevents a constructor rewrite, and Mathlib's private `SpanningTree.root'` prevents
-  -- matching the witness by `rw`.
-  change FreeGroup.lift
-      (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
-      (FreeGroup.of e) = _
-  exact FreeGroup.lift_apply_of
+  unfold endFreeGroupBasis
+  exact FreeGroupBasis.ofUniqueLift_apply _ _ _ e
 
 end WideSubquiver
 
