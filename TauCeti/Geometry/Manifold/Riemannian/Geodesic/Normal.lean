@@ -34,10 +34,10 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
   partial diffeomorphism between a normal domain and its normal neighbourhood.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
-* `TauCeti.Manifold.isCompact_image_closedBall`: a closed tangent ball in the exponential domain
-  has compact exponential image.
-* `TauCeti.Manifold.exists_isNormalDomain_ball_with_isCompact_image_closedBall`: a smaller closed
-  tangent ball inside a larger normal ball has compact exponential image.
+* `TauCeti.Manifold.isCompact_riemannianExp_image_closedBall`: a closed tangent ball in the
+  exponential domain has compact exponential image.
+* `TauCeti.Manifold.exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall`:
+  a smaller closed tangent ball inside a larger normal ball has compact exponential image.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.riemannianExp_riemannianLog`: the two inverse identities.
@@ -170,7 +170,7 @@ theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
 
 /-- The exponential image of a closed tangent ball contained in the exponential domain is
 compact. -/
-theorem isCompact_image_closedBall [T2Space (TangentBundle I M)]
+theorem isCompact_riemannianExp_image_closedBall [T2Space (TangentBundle I M)]
     (p : M) {r : ℝ} (hr : Metric.closedBall 0 r ⊆ expDomain I M p) :
     IsCompact (riemannianExp I M p '' Metric.closedBall 0 r) := by
   apply (isCompact_closedBall (0 : TangentSpace I p) r).image_of_continuousOn
@@ -183,7 +183,7 @@ compact.
 
 The nested tangent balls and compact exponential image are inputs to the escape estimate for
 curves leaving a normal neighbourhood. -/
-theorem exists_isNormalDomain_ball_with_isCompact_image_closedBall
+theorem exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall
     [T2Space (TangentBundle I M)] (p : M) :
     ∃ r R : ℝ, 0 < r ∧ r < R ∧ IsNormalDomain I M p (Metric.ball 0 R) ∧
       Metric.closedBall 0 r ⊆ Metric.ball 0 R ∧
@@ -191,7 +191,7 @@ theorem exists_isNormalDomain_ball_with_isCompact_image_closedBall
   obtain ⟨R, hR, hRnormal⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   refine ⟨R / 2, R, half_pos hR, half_lt_self hR, hRnormal,
     Metric.closedBall_subset_ball (half_lt_self hR), ?_⟩
-  exact isCompact_image_closedBall (I := I) (M := M) p
+  exact isCompact_riemannianExp_image_closedBall (I := I) (M := M) p
     ((Metric.closedBall_subset_ball (half_lt_self hR)).trans hRnormal.subset_expDomain)
 
 /-! ### The Riemannian logarithm -/
