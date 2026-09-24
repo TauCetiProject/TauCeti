@@ -137,7 +137,6 @@ instance subsingleton_discriminantBilinearModule :
     discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr hq
 
 /-- The discriminant bilinear group of the Golay lattice has one element. -/
-@[simp]
 theorem natCard_discriminantBilinearModule_eq_one :
     Nat.card constructionALattice.discriminantBilinearModule = 1 :=
   @Nat.card_unique _ inferInstance subsingleton_discriminantBilinearModule
