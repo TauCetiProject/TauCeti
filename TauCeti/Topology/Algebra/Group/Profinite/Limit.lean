@@ -5,9 +5,9 @@ Authors: Tau Ceti AI contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-public import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Profinite groups: the finite-quotient limit description
@@ -23,7 +23,7 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   Proposition 1.1.4). This is the unbundled counterpart of `ProfiniteGrp.toLimit_surjective`
   and `ProfiniteGrp.toLimit_injective`, which describe the same identification for the
   `ProfiniteGrp` category. The compactness input is
-  `TauCeti.nonempty_iInter_of_directed_nonempty_isClosed`.
+  `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`.
 * Two companion forms of the same identification: a point of `G` is determined by its images in
   the finite quotients (`eq_of_forall_mk_eq`), and a map into `G` is continuous as soon as all
   of its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`).
@@ -72,8 +72,9 @@ theorem existsUnique_forall_mk_eq (x : ∀ U : OpenNormalSubgroup G, G ⧸ (U : 
       exact hcompat (U ⊓ V) U inf_le_left g hgU
     · rw [Set.mem_preimage, Set.mem_singleton_iff] at hgV ⊢
       exact hcompat (U ⊓ V) V inf_le_right g hgV
-  obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed
-    (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne hcl
+  obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed
+    (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne
+    (fun U ↦ (hcl U).isCompact) hcl
   refine ⟨g, fun U => Set.mem_iInter.mp hg U, fun g' hg' => ?_⟩
   have hgg : ∀ U : OpenNormalSubgroup G, QuotientGroup.mk' (U : Subgroup G) g = x U :=
     fun U => Set.mem_iInter.mp hg U
@@ -227,8 +228,9 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
         rwa [hH inf_le_right] at this
     let _ : Nonempty (OpenNormalSubgroup G) :=
       ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
-    obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed t ht_directed
-      ht_nonempty ht_closed
+    obtain ⟨g, hg⟩ :=
+      IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t ht_directed ht_nonempty
+        (fun V ↦ (ht_closed V).isCompact) ht_closed
     exact ⟨g, mem_limitSubgroup_iff.mpr fun V ↦ (Set.mem_iInter.mp hg V).2,
       (Set.mem_iInter.mp hg U).1⟩
 
