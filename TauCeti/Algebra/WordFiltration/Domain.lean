@@ -107,7 +107,7 @@ theorem noZeroDivisors_of_gradedMul_ne_zero
 /-- The homogeneous hypothesis of
 `TauCeti.Algebra.wordFiltration.noZeroDivisors_of_gradedMul_ne_zero`, read off the associated
 graded ring. -/
-theorem gradedMul_ne_zero_of_noZeroDivisors (h : NoZeroDivisors (AssociatedGraded f))
+theorem gradedMul_ne_zero_of_noZeroDivisors [NoZeroDivisors (AssociatedGraded f)]
     {i j : ℕ} {x : GradedPiece f i} {y : GradedPiece f j} (hx : x ≠ 0) (hy : y ≠ 0) :
     gradedMul f i j x y ≠ 0 := by
   intro hzero
@@ -116,24 +116,24 @@ theorem gradedMul_ne_zero_of_noZeroDivisors (h : NoZeroDivisors (AssociatedGrade
       (DirectSum.of (GradedPiece f) i x * DirectSum.of (GradedPiece f) j y :
         AssociatedGraded f) = 0 := by
     rw [associatedGraded_of_mul_of, hzero, map_zero]
-  rcases h.eq_zero_or_eq_zero_of_mul_eq_zero hprod with hcase | hcase
+  rcases eq_zero_or_eq_zero_of_mul_eq_zero hprod with hcase | hcase
   · exact hx (DirectSum.of_injective i (hcase.trans (map_zero _).symm))
   · exact hy (DirectSum.of_injective j (hcase.trans (map_zero _).symm))
 
 /-- **An exhaustively word-filtered algebra whose associated graded has no zero divisors has
 none.** -/
 theorem noZeroDivisors_of_noZeroDivisors_associatedGraded
-    (hex : ∀ a : A, ∃ k, a ∈ wordFiltration f k)
-    (h : NoZeroDivisors (AssociatedGraded f)) : NoZeroDivisors A :=
+    [NoZeroDivisors (AssociatedGraded f)]
+    (hex : ∀ a : A, ∃ k, a ∈ wordFiltration f k) : NoZeroDivisors A :=
   noZeroDivisors_of_gradedMul_ne_zero f hex fun _ _ _ _ hx hy =>
-    gradedMul_ne_zero_of_noZeroDivisors f h hx hy
+    gradedMul_ne_zero_of_noZeroDivisors f hx hy
 
 /-- **An exhaustively word-filtered nontrivial algebra whose associated graded has no zero divisors
 is a domain.** -/
 theorem isDomain_of_noZeroDivisors_associatedGraded [Nontrivial A]
-    (hex : ∀ a : A, ∃ k, a ∈ wordFiltration f k)
-    (h : NoZeroDivisors (AssociatedGraded f)) : IsDomain A := by
-  have : NoZeroDivisors A := noZeroDivisors_of_noZeroDivisors_associatedGraded f hex h
+    [NoZeroDivisors (AssociatedGraded f)]
+    (hex : ∀ a : A, ∃ k, a ∈ wordFiltration f k) : IsDomain A := by
+  have : NoZeroDivisors A := noZeroDivisors_of_noZeroDivisors_associatedGraded f hex
   exact NoZeroDivisors.to_isDomain A
 
 end TauCeti.Algebra.wordFiltration

@@ -159,8 +159,7 @@ private theorem gradedPreMul_mem_ker_left (f : M →ₗ[R] A) (i j : ℕ) :
   rw [LinearMap.mem_ker]
   ext y
   simp only [gradedPreMul_apply, LinearMap.zero_apply]
-  rw [Submodule.Quotient.mk_eq_zero]
-  rw [mem_previousRestricted_iff]
+  rw [gradedPiece_mk_eq_zero_iff]
   -- The filtration product lemma is stated for ambient filtered-algebra elements.
   change (x : A) * (y : A) ∈ wordFiltrationPrevious f (i + j)
   exact mul_mem_wordFiltrationPrevious_left f hprevious y.property
@@ -173,8 +172,7 @@ private theorem gradedPreMul_mem_ker_right (f : M →ₗ[R] A) (i j : ℕ) :
   rw [LinearMap.mem_ker]
   ext x
   simp only [LinearMap.flip_apply, LinearMap.zero_apply]
-  rw [gradedPreMul_apply, Submodule.Quotient.mk_eq_zero]
-  rw [mem_previousRestricted_iff]
+  rw [gradedPreMul_apply, gradedPiece_mk_eq_zero_iff]
   -- The filtration product lemma is stated for ambient filtered-algebra elements.
   change (x : A) * (y : A) ∈ wordFiltrationPrevious f (i + j)
   exact mul_mem_wordFiltrationPrevious_right f x.property hprevious

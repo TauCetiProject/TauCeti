@@ -237,12 +237,8 @@ theorem iSup_pbwFiltration_eq_top : ⨆ k, pbwFiltration R L k = ⊤ := by
 
 /-- **Every element of the enveloping algebra lies in some PBW filtration step**, the elementwise
 form of `TauCeti.UniversalEnvelopingAlgebra.iSup_pbwFiltration_eq_top`. -/
-theorem exists_mem_pbwFiltration (a : U) : ∃ k, a ∈ pbwFiltration R L k := by
-  have h : ⨆ k, TauCeti.Algebra.wordFiltration
-      (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap k = ⊤ := by
-    simpa only [← pbwFiltration_def] using iSup_pbwFiltration_eq_top R L
-  obtain ⟨k, hk⟩ := TauCeti.Algebra.exists_mem_wordFiltration_of_iSup_eq_top _ h a
-  exact ⟨k, by rwa [pbwFiltration_def]⟩
+theorem exists_mem_pbwFiltration (a : U) : ∃ k, a ∈ pbwFiltration R L k :=
+  TauCeti.Algebra.exists_mem_wordFiltration_of_iSup_eq_top _ (iSup_pbwFiltration_eq_top R L) a
 
 /-- The PBW filtration carries Mathlib's bundled ring-filtration structure. -/
 instance instIsRingFiltration :
