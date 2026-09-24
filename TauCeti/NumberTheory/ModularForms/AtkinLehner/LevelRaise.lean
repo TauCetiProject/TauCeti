@@ -97,6 +97,16 @@ theorem IsAtkinLehnerMatrix.exists_scaleGL_mul_atkinLehnerGL [NeZero d₁] [NeZe
 
 /-! ### The Atkin–Lehner operator on a level-raise -/
 
+/-- The Atkin–Lehner level-raise factorizations make `d * M` divide `N`. -/
+theorem levelRaise_d_mul_M_dvd {M d : ℕ} (hQ : Q = d₁ * e₁ * Q₁)
+    (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M') (hd : d = d₁ * d₂) :
+    d * M ∣ N := ⟨e₁ * e₂, by rw [hN, hQ, hM, hd]; ring⟩
+
+/-- The Atkin–Lehner level-raise factorizations make `e * M` divide `N`. -/
+theorem levelRaise_e_mul_M_dvd {M e : ℕ} (hQ : Q = d₁ * e₁ * Q₁)
+    (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M') (he : e = e₁ * d₂) :
+    e * M ∣ N := ⟨d₁ * e₂, by rw [hN, hQ, hM, he]; ring⟩
+
 namespace Nat.IsExactDivisor
 
 variable {M d e : ℕ}
@@ -110,12 +120,14 @@ it is taken as an argument because it names the operator `W_{Q₁}`.) -/
 theorem atkinLehnerOperator_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N) (h₁ : Q₁ ∥ M)
     (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M')
     (hd : d = d₁ * d₂) (he : e = e₁ * d₂)
-    (hdΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma0 M).map (mapGL ℝ))
-    (heΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma0 M).map (mapGL ℝ))
     (f : ModularForm ((Gamma0 M).map (mapGL ℝ)) k) :
-    h.atkinLehnerOperator k (ModularForm.levelRaise d hdΓ f) =
+    h.atkinLehnerOperator k
+      (ModularForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd
+        (levelRaise_d_mul_M_dvd hQ hN hM hd)) f) =
       ((d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
-        ModularForm.levelRaise e heΓ (h₁.atkinLehnerOperator k f) := by
+        ModularForm.levelRaise e (Gamma0_map_le_conjAct_scaleGL_of_dvd
+          (levelRaise_e_mul_M_dvd hQ hN hM he))
+          (h₁.atkinLehnerOperator k f) := by
   subst hd he hM
   have : NeZero d₁ := ⟨fun h0 ↦ h.ne_zero (by rw [hQ, h0]; ring)⟩
   have : NeZero e₁ := ⟨fun h0 ↦ h.ne_zero (by rw [hQ, h0]; ring)⟩
@@ -146,14 +158,16 @@ factorizations of `atkinLehnerOperator_levelRaise`,
 theorem atkinLehnerOperatorCusp_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N) (h₁ : Q₁ ∥ M)
     (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M')
     (hd : d = d₁ * d₂) (he : e = e₁ * d₂)
-    (hdΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma0 M).map (mapGL ℝ))
-    (heΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma0 M).map (mapGL ℝ))
     (f : CuspForm ((Gamma0 M).map (mapGL ℝ)) k) :
-    h.atkinLehnerOperatorCusp k (CuspForm.levelRaise d hdΓ f) =
+    h.atkinLehnerOperatorCusp k
+      (CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd
+        (levelRaise_d_mul_M_dvd hQ hN hM hd)) f) =
       ((d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
-        CuspForm.levelRaise e heΓ (h₁.atkinLehnerOperatorCusp k f) := by
+        CuspForm.levelRaise e (Gamma0_map_le_conjAct_scaleGL_of_dvd
+          (levelRaise_e_mul_M_dvd hQ hN hM he))
+          (h₁.atkinLehnerOperatorCusp k f) := by
   refine DFunLike.coe_injective ?_
-  have := congrArg DFunLike.coe (atkinLehnerOperator_levelRaise h h₁ hQ hN hM hd he hdΓ heΓ
+  have := congrArg DFunLike.coe (atkinLehnerOperator_levelRaise h h₁ hQ hN hM hd he
     (f : ModularForm ((Gamma0 M).map (mapGL ℝ)) k))
   rw [coe_atkinLehnerOperator, ModularForm.coe_levelRaise, FunLike.coe_smul,
     ModularForm.coe_levelRaise, coe_atkinLehnerOperator, ModularFormClass.coe_modularForm] at this
@@ -166,17 +180,19 @@ under the factorizations of `atkinLehnerOperator_levelRaise`,
 theorem normalizedAtkinLehnerOperator_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N)
     (h₁ : Q₁ ∥ M) (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M')
     (hd : d = d₁ * d₂) (he : e = e₁ * d₂)
-    (hdΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma0 M).map (mapGL ℝ))
-    (heΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma0 M).map (mapGL ℝ))
     (f : ModularForm ((Gamma0 M).map (mapGL ℝ)) k) :
-    h.normalizedAtkinLehnerOperator k (ModularForm.levelRaise d hdΓ f) =
+    h.normalizedAtkinLehnerOperator k
+      (ModularForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd
+        (levelRaise_d_mul_M_dvd hQ hN hM hd)) f) =
       (atkinLehnerNormalizer (d₁ * e₁) k * (d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
-        ModularForm.levelRaise e heΓ (h₁.normalizedAtkinLehnerOperator k f) := by
+        ModularForm.levelRaise e (Gamma0_map_le_conjAct_scaleGL_of_dvd
+          (levelRaise_e_mul_M_dvd hQ hN hM he))
+          (h₁.normalizedAtkinLehnerOperator k f) := by
   have hα : atkinLehnerNormalizer Q k =
       atkinLehnerNormalizer (d₁ * e₁) k * atkinLehnerNormalizer Q₁ k := by
     rw [hQ, atkinLehnerNormalizer_mul]
   rw [normalizedAtkinLehnerOperator_def, LinearMap.smul_apply,
-    atkinLehnerOperator_levelRaise h h₁ hQ hN hM hd he hdΓ heΓ, normalizedAtkinLehnerOperator_def,
+    atkinLehnerOperator_levelRaise h h₁ hQ hN hM hd he, normalizedAtkinLehnerOperator_def,
     LinearMap.smul_apply, hα]
   ext τ
   simp only [FunLike.coe_smul, Pi.smul_apply, ModularForm.levelRaise_apply, smul_eq_mul]
@@ -188,17 +204,19 @@ under the factorizations of `atkinLehnerOperator_levelRaise`,
 theorem normalizedAtkinLehnerOperatorCusp_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N)
     (h₁ : Q₁ ∥ M) (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M')
     (hd : d = d₁ * d₂) (he : e = e₁ * d₂)
-    (hdΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma0 M).map (mapGL ℝ))
-    (heΓ : (Gamma0 N).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • (Gamma0 M).map (mapGL ℝ))
     (f : CuspForm ((Gamma0 M).map (mapGL ℝ)) k) :
-    h.normalizedAtkinLehnerOperatorCusp k (CuspForm.levelRaise d hdΓ f) =
+    h.normalizedAtkinLehnerOperatorCusp k
+      (CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd
+        (levelRaise_d_mul_M_dvd hQ hN hM hd)) f) =
       (atkinLehnerNormalizer (d₁ * e₁) k * (d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
-        CuspForm.levelRaise e heΓ (h₁.normalizedAtkinLehnerOperatorCusp k f) := by
+        CuspForm.levelRaise e (Gamma0_map_le_conjAct_scaleGL_of_dvd
+          (levelRaise_e_mul_M_dvd hQ hN hM he))
+          (h₁.normalizedAtkinLehnerOperatorCusp k f) := by
   have hα : atkinLehnerNormalizer Q k =
       atkinLehnerNormalizer (d₁ * e₁) k * atkinLehnerNormalizer Q₁ k := by
     rw [hQ, atkinLehnerNormalizer_mul]
   rw [normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply,
-    atkinLehnerOperatorCusp_levelRaise h h₁ hQ hN hM hd he hdΓ heΓ,
+    atkinLehnerOperatorCusp_levelRaise h h₁ hQ hN hM hd he,
     normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, hα]
   ext τ
   simp only [FunLike.coe_smul, Pi.smul_apply, CuspForm.levelRaise_apply, smul_eq_mul]

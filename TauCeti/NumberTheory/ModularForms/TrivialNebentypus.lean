@@ -56,8 +56,12 @@ space of forms, not an equality of types.
 * `TauCeti.modFormCharSpace_one_eq_range`, `TauCeti.cuspFormCharSpace_one_eq_range`: for
   `N ≠ 0`, the trivial-nebentypus space is the image of the restriction map from level
   `Γ₀(N)`.
-* `TauCeti.coe_trace_eq_sum_diamondOpCusp`, `TauCeti.coe_cuspFormTraceGamma0`: the trace from
-  `Γ₁(N)` to `Γ₀(N)` is the sum of the diamond operators `∑ᵤ ⟨u⟩`.
+* `TauCeti.coe_trace_eq_sum_diamondOpCusp`: the trace from `Γ₁(N)` to `Γ₀(N)` is the sum of
+  the diamond operators `∑ᵤ ⟨u⟩`.
+* `TauCeti.sum_diamondOpCusp_mem_cuspFormCharSpace_one`: a diamond sum along a surjection has
+  trivial nebentypus.
+* `TauCeti.cuspFormTraceGamma0_ofLe`: tracing a restricted `Γ₀(N)` form multiplies it by
+  `#(ZMod N)ˣ`.
 
 ## References
 
@@ -108,6 +112,19 @@ theorem mem_cuspFormCharSpace_one_iff_diamondOpCusp (f : CuspForm ((Gamma1 N).ma
     f ∈ cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ) ↔
       ∀ d : (ZMod N)ˣ, diamondOpCusp k d f = f := by
   simp
+
+/-- Summing the diamond operators of level `M` along a surjection `(ZMod N)ˣ → (ZMod M)ˣ`
+gives a form of trivial nebentypus. -/
+theorem sum_diamondOpCusp_mem_cuspFormCharSpace_one {M : ℕ} [NeZero N]
+    {φ : (ZMod N)ˣ →* (ZMod M)ˣ} (hφ : Function.Surjective φ)
+    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    ∑ u, diamondOpCusp k (φ u) g ∈ cuspFormCharSpace k (1 : (ZMod M)ˣ →* ℂˣ) := by
+  rw [mem_cuspFormCharSpace_one_iff_diamondOpCusp]
+  intro v
+  obtain ⟨w, rfl⟩ := hφ v
+  rw [map_sum]
+  exact Fintype.sum_equiv (Equiv.mulLeft w) _ _ fun u ↦ by
+    rw [Equiv.coe_mulLeft, map_mul, diamondOpCusp_mul, LinearMap.comp_apply]
 
 /-! ### Restricting a `Γ₀(N)`-form to `Γ₁(N)` -/
 
@@ -314,7 +331,7 @@ theorem coe_trace_eq_sum_diamondOpCusp [NeZero N] (F : CuspForm ((Gamma1 N).map 
 
 variable (N k) in
 /-- **The trace from `Γ₁(N)` to `Γ₀(N)`**, Mathlib's `CuspForm.trace`, as a `ℂ`-linear map. By
-`coe_cuspFormTraceGamma0` it is the diamond sum `F ↦ ∑ᵤ ⟨u⟩ F`. -/
+`coe_trace_eq_sum_diamondOpCusp` it is the diamond sum `F ↦ ∑ᵤ ⟨u⟩ F`. -/
 noncomputable def cuspFormTraceGamma0 [NeZero N] :
     CuspForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k where
   toFun F := CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F
@@ -339,10 +356,17 @@ theorem cuspFormTraceGamma0_apply [NeZero N] (F : CuspForm ((Gamma1 N).map (mapG
     cuspFormTraceGamma0 N k F = CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F :=
   (rfl)
 
-/-- The trace from `Γ₁(N)` to `Γ₀(N)` is the diamond sum `∑ᵤ ⟨u⟩ F`. -/
-theorem coe_cuspFormTraceGamma0 [NeZero N] (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(cuspFormTraceGamma0 N k F) = ⇑(∑ u : (ZMod N)ˣ, diamondOpCusp k u F) :=
-  coe_trace_eq_sum_diamondOpCusp F
+/-- Tracing the restriction of a `Γ₀(N)` cusp form multiplies it by the index
+`#(ZMod N)ˣ`. -/
+@[simp]
+theorem cuspFormTraceGamma0_ofLe [NeZero N]
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    cuspFormTraceGamma0 N k (CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
+      (Fintype.card (ZMod N)ˣ : ℂ) • f := by
+  apply DFunLike.coe_injective
+  ext τ
+  rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
+  simp [diamondOpCusp_ofLe]
 
 end Trace
 

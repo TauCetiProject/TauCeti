@@ -66,19 +66,6 @@ section OldSpace
 
 variable {M d : ℕ}
 
-/-- Summing the diamond operators of level `M` along a surjection `(ZMod N)ˣ → (ZMod M)ˣ` gives
-a form of trivial nebentypus. -/
-private lemma sum_diamondOpCusp_mem_cuspFormCharSpace_one [NeZero N]
-    {φ : (ZMod N)ˣ →* (ZMod M)ˣ} (hφ : Function.Surjective φ)
-    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
-    ∑ u, diamondOpCusp k (φ u) g ∈ cuspFormCharSpace k (1 : (ZMod M)ˣ →* ℂˣ) := by
-  rw [mem_cuspFormCharSpace_one_iff_diamondOpCusp]
-  intro v
-  obtain ⟨w, rfl⟩ := hφ v
-  rw [map_sum]
-  exact Fintype.sum_equiv (Equiv.mulLeft w) _ _ fun u ↦ by
-    rw [Equiv.coe_mulLeft, map_mul, diamondOpCusp_mul, LinearMap.comp_apply]
-
 /-- `W_Q` carries a level-raise `V_d g` of a cusp form `g` on `Γ₀(M)`, `M` a proper divisor of
 `N`, to an old form, once `Q`, `N`, `M` and `d` factor as in
 `Nat.IsExactDivisor.atkinLehnerOperatorCusp_levelRaise`. -/
@@ -92,8 +79,7 @@ private lemma ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld [NeZero N
       cuspFormsOld N k := by
   have heM : e₁ * d₂ * M ∣ N := ⟨d₁ * e₂, by rw [hN, hQ, hM]; ring⟩
   have : NeZero (e₁ * d₂) := NeZero.of_dvd (dvd_of_mul_right_dvd heM)
-  rw [h.atkinLehnerOperatorCusp_levelRaise h₁ hQ hN hM hd rfl _
-    (Gamma0_map_le_conjAct_scaleGL_of_dvd heM)]
+  rw [h.atkinLehnerOperatorCusp_levelRaise h₁ hQ hN hM hd rfl]
   have hof : CuspForm.ofLe (Gamma1_map_le_Gamma0_map N)
       (CuspForm.levelRaise (e₁ * d₂) (Gamma0_map_le_conjAct_scaleGL_of_dvd heM)
         (h₁.atkinLehnerOperatorCusp k g)) =
@@ -136,7 +122,7 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
         (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =
         CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdvd) g₀ := by
       refine DFunLike.coe_injective ?_
-      rw [coe_cuspFormTraceGamma0]
+      rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
       simp_rw [CuspForm.diamondOpCusp_levelRaise hdvd, ← CuspForm.levelRaiseₗ_apply, ← map_sum,
         CuspForm.levelRaiseₗ_apply, ← hg₀]
       ext τ
@@ -175,13 +161,9 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
           (d₂ := p) (e₂ := 1) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd, one_mul])
           hLN' hdvd g₀
   -- on the restriction of `f`, the diamond sum is multiplication by `#(ZMod N)ˣ`
-  have hf' : cuspFormTraceGamma0 N k (CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
-      (Fintype.card (ZMod N)ˣ : ℂ) • f := by
-    refine DFunLike.coe_injective ?_
-    ext τ
-    simp [coe_cuspFormTraceGamma0, diamondOpCusp_ofLe]
   have := hT hf
-  rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply, hf', map_smul, map_smul,
+  rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply,
+    cuspFormTraceGamma0_ofLe, map_smul, map_smul,
     CuspForm.ofLeₗ_apply] at this
   exact (Submodule.smul_mem_iff _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)).1 this
 
