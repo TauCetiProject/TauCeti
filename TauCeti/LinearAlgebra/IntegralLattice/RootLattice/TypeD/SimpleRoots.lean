@@ -317,7 +317,7 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
       norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
         Matrix.cons_val_fin_one]
   have : NeZero n := ⟨by omega⟩
-  have hsq := TauCeti.DynkinType.det_D_eq_det_typeDSimpleRoot_sq hn4
+  have hsq := TauCeti.DynkinType.det_cartanMatrixD_eq_det_typeDSimpleRoot_sq hn4
   have hnonneg : 0 ≤ (D n).det := by
     rw [hsq]
     exact sq_nonneg _
@@ -338,7 +338,7 @@ variable {n : ℕ}
 /-- The determinant square of the integral type-D simple-root matrix. -/
 theorem det_typeDSimpleRoot_sq (n : ℕ) (hn : 4 ≤ n) :
     (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 = 4 := by
-  rw [← det_D_eq_det_typeDSimpleRoot_sq hn, CartanMatrix.D_det (by omega)]
+  rw [← det_cartanMatrixD_eq_det_typeDSimpleRoot_sq hn, CartanMatrix.D_det (by omega)]
 
 /-! ## Scalar extension of the simple-root independence -/
 
