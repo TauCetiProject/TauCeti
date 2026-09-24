@@ -72,7 +72,8 @@ theorem isQuasiFullyFaithful_iff_isIso_homologyMap
 theorem isQuasiFullyFaithful_id :
     IsQuasiFullyFaithful (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
   intro X Y
-  -- The identity enriched functor maps every Hom complex by its identity morphism.
+  -- `EnrichedFunctor.id` defines `map` to be the identity morphism; expose that
+  -- definitional reduction so the isomorphism instance for identities applies.
   change QuasiIso (𝟙 _)
   exact quasiIso_of_isIso _
 
