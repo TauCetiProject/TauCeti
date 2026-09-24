@@ -459,13 +459,8 @@ theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Fi
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) (a : A) (m : M) :
     ((specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
       a ⊗ₜ (g : M ≃ₗ[R] M) m := by
-  have h := congrArg (fun x : orthogonalGroup (Q.baseChange A) =>
-    (x : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m))
-    (specialOrthogonalGroupBaseChange_to_orthogonalGroup (A := A) Q g)
-  change ((Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))
-    (specialOrthogonalGroupBaseChange (A := A) Q g) : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
-      a ⊗ₜ (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g : M ≃ₗ[R] M) m
-  simpa only [orthogonalGroupBaseChange_apply_tmul] using h
+  rw [coe_specialOrthogonalGroupBaseChange]
+  exact LinearEquiv.baseChange_tmul R A M M a m
 
 /-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
 faithful and the original module is flat. -/
