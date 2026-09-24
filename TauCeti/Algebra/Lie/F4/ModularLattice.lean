@@ -310,24 +310,14 @@ theorem f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero (α β γ : Fin
     norm_num
   rw [hlie, hzmod, one_smul]
 
-/-- Along a root edge between two short-root coordinates, the modular Chevalley bracket is the
-target short-root vector. -/
-theorem f4Modular_lie_rootVector_of_add_eq_short (α β γ : Fin 48)
-    (hβ : f4Length β = 1) (hγ : f4Length γ = 1)
-    (h : f4SimplyConnectedRootDatum.root γ =
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
-    ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = f4ModularRootVector γ := by
-  exact f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
-    (f4_chainBotCoeff_eq_zero_of_add_eq_short α β γ hβ hγ h)
-
 /-- A root edge between two roots of equal length has unit modular bracket coefficient. -/
-theorem f4Modular_lie_rootVector_of_add_eq_same_length (α β γ : Fin 48)
+theorem f4Modular_lie_rootVector_of_add_of_length_eq (α β γ : Fin 48)
     (hβγ : f4Length β = f4Length γ)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
     ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = f4ModularRootVector γ := by
   exact f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
-    (f4_chainBotCoeff_eq_zero_of_add_eq_same_length α β γ hβγ h)
+    (f4_chainBotCoeff_eq_zero_of_add_of_length_eq α β γ hβγ h)
 
 /-- Modular root vectors bracket to zero when their rational root-space sum is absent. -/
 theorem f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot (α β : Fin 48)
@@ -414,6 +404,13 @@ noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
     CharTwo.neg_eq, one_smul]
   rfl
 
+/-- Positive and negative simple-root labels have the same modular coroot. -/
+theorem f4ModularCoroot_signedSimpleRootIndex_inr_eq_inl (i : Fin 4) :
+    f4ModularCoroot (f4SignedSimpleRootIndex (.inr i)) =
+      f4ModularCoroot (f4SignedSimpleRootIndex (.inl i)) := by
+  rw [f4SignedSimpleRootIndex_inr, f4SignedSimpleRootIndex_inl,
+    f4ModularCoroot_f4OppositeRootIndex]
+
 /-- In characteristic two the negative of a pinned simple root has the same modular coroot. -/
 @[simp] theorem f4ModularCoroot_addNat_castAdd (i : Fin 4) :
     f4ModularCoroot (Fin.addNat (Fin.castAdd 20 i) 24) =
@@ -485,19 +482,30 @@ theorem f4Modular_lie_rootVector_opposite (α : Fin 48) :
     f4Modular_lie_tmul, f4Integral_lie_rootVector_opposite]
   rfl
 
-/-- Recover the Bourbaki node number of a simple Killing root. -/
-abbrev f4PinnedSimpleIndex (i : f4KillingBase.support) : Fin 4 :=
-  Fin.cast rank_F4 ((F4.lieBasis valid_F4).baseSupportEquiv.symm i)
-
 /-- The pinned numbering of simple Killing-root support labels. -/
 abbrev f4PinnedSimpleIndexEquiv : f4KillingBase.support ≃ Fin 4 :=
   (F4.lieBasis valid_F4).baseSupportEquiv.symm.trans (finCongr rank_F4)
 
+/-- Recover the Bourbaki node number of a simple Killing root. -/
+abbrev f4PinnedSimpleIndex (i : f4KillingBase.support) : Fin 4 :=
+  f4PinnedSimpleIndexEquiv i
+
 theorem f4PinnedSimpleIndex_baseSupportEquiv (i : Fin F4.rank) :
     f4PinnedSimpleIndex ((F4.lieBasis valid_F4).baseSupportEquiv i) =
       Fin.cast rank_F4 i := by
-  unfold f4PinnedSimpleIndex
+  change Fin.cast rank_F4
+    ((F4.lieBasis valid_F4).baseSupportEquiv.symm
+      ((F4.lieBasis valid_F4).baseSupportEquiv i)) = _
   rw [Equiv.symm_apply_apply]
+
+/-- A pinned simple-index coordinate is the corresponding modular simple coroot. -/
+theorem f4ModularChevalleyBasis_inr_f4PinnedSimpleIndexEquiv_symm (k : Fin 4) :
+    f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) =
+      f4ModularSimpleCoroot (Fin.cast rank_F4.symm k) := by
+  rw [f4ModularChevalleyBasis_inr_eq_simpleCoroot]
+  congr 1
+  simp only [f4PinnedSimpleIndexEquiv, Equiv.symm_trans_apply,
+    Equiv.symm_symm, Equiv.symm_apply_apply, finCongr_symm, finCongr_apply]
 
 /-- Modular simple coroots commute. -/
 theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
@@ -508,6 +516,176 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
   rw [f4ModularSimpleCoroot_eq, f4ModularSimpleCoroot_eq,
     f4Modular_lie_tmul, hlieIntegral,
     TensorProduct.tmul_zero]
+
+/-- The coordinate of a bracket is the sum of the bracket columns of the basis coordinates. -/
+theorem f4ModularChevalleyBasis_repr_lie_eq_sum
+    (X Y : f4ModularChevalleyLieAlgebra) (k : f4ChevalleyIndex) :
+    f4ModularChevalleyBasis.repr ⁅X, Y⁆ k =
+      ∑ i : f4ChevalleyIndex,
+        f4ModularChevalleyBasis.repr X i *
+          f4ModularChevalleyBasis.repr ⁅f4ModularChevalleyBasis i, Y⁆ k := by
+  conv_lhs => rw [← f4ModularChevalleyBasis.sum_repr X]
+  rw [sum_lie]
+  simp only [smul_lie, map_sum, LinearEquiv.map_smul]
+  simp only [Fintype.sum_sum_type, Finset.univ_eq_attach, Finsupp.coe_add,
+    Finsupp.coe_finsetSum, Finsupp.coe_smul, Pi.add_apply, Finset.sum_apply,
+    Pi.smul_apply, smul_eq_mul]
+
+/-- A simple coroot has no root-vector coordinate. -/
+theorem f4ModularChevalleyBasis_repr_simpleCoroot_inl
+    (i : Fin F4.rank) (γ : Fin 48) :
+    f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i)
+      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
+  classical
+  rw [f4ModularSimpleCoroot_eq_basis, f4ModularChevalleyBasis.repr_self]
+  exact Finsupp.single_eq_of_ne (by simp)
+
+/-- A modular coroot has no root-vector coordinate. -/
+theorem f4ModularChevalleyBasis_repr_coroot_inl
+    (β γ : Fin 48) :
+    f4ModularChevalleyBasis.repr (f4ModularCoroot β)
+      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
+  classical
+  rw [f4ModularCoroot_eq_sum_simple, map_sum]
+  simp only [Finsupp.coe_finsetSum, Finset.sum_apply]
+  apply Finset.sum_eq_zero
+  intro i _
+  rw [map_smul, Finsupp.smul_apply,
+    f4ModularChevalleyBasis_repr_simpleCoroot_inl, smul_zero]
+
+/-- A root vector has zero coordinate at any different root label. -/
+theorem f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
+    (c : ZMod 2) (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
+    f4ModularChevalleyBasis.repr (c • f4ModularRootVector ε)
+      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
+  classical
+  have hindex : (Sum.inl (f4KillingRootLabel γ) : f4ChevalleyIndex) ≠
+      Sum.inl (f4KillingRootLabel ε) := by
+    intro h
+    exact hεγ ((Sum.inl.inj h).symm)
+  rw [map_smul, f4ModularRootVector_eq_basis,
+    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
+    Finsupp.single_eq_of_ne hindex, smul_zero]
+
+/-- The coordinate of a scaled root vector at its own root label is its scalar. -/
+theorem f4ModularChevalleyBasis_repr_smul_rootVector_self
+    (c : ZMod 2) (β : Fin 48) :
+    f4ModularChevalleyBasis.repr (c • f4ModularRootVector β)
+      (Sum.inl (f4KillingRootLabel β)) = c := by
+  rw [map_smul, f4ModularRootVector_eq_basis,
+    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
+    Finsupp.single_eq_same, smul_eq_mul, mul_one]
+
+/-- A nonzero, present sum of two Killing roots has the corresponding pinned integral root
+label. -/
+theorem exists_f4Root_eq_add_of_rootSpace_ne_bot
+    (δ β : Fin 48)
+    (hsum : (f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
+      f4KillingRoot β ≠ 0)
+    (hbot : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
+        f4KillingRoot β) ≠ ⊥) :
+    ∃ ε : Fin 48, f4SimplyConnectedRootDatum.root ε =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
+  have hsum' : (f4KillingRoot β : (F4.cartanSubalgebra valid_F4) → ℚ) +
+      (1 : ℕ) • f4KillingRoot δ ≠ 0 := by
+    rw [one_smul, add_comm]
+    exact hsum
+  have hbot' : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot β : (F4.cartanSubalgebra valid_F4) → ℚ) +
+        (1 : ℕ) • f4KillingRoot δ) ≠ ⊥ := by
+    rw [one_smul, add_comm]
+    exact hbot
+  simpa only [Nat.cast_one, one_zsmul] using
+    exists_f4Root_eq_add_zsmul_of_rootSpace_ne_bot δ β 1 hsum' hbot'
+
+/-- A nonzero root coordinate in a modular root-vector bracket has the expected integral root
+label, even though the bracket itself is reduced modulo two. -/
+theorem f4Root_eq_add_of_repr_lie_rootVector_ne_zero
+    (δ β γ : Fin 48)
+    (hne : f4ModularChevalleyBasis.repr
+      ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
+        (Sum.inl (f4KillingRootLabel γ)) ≠ 0) :
+    f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
+  classical
+  let H := F4.cartanSubalgebra valid_F4
+  by_cases hsum :
+      (f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ) = 0
+  · have hindex : δ = f4OppositeRootIndex β := by
+      by_contra hopp
+      exact f4KillingRoot_add_ne_zero_of_ne_opposite δ β hopp hsum
+    rw [hindex, ← lie_skew, f4Modular_lie_rootVector_opposite, map_neg] at hne
+    rw [Finsupp.neg_apply] at hne
+    rw [f4ModularChevalleyBasis_repr_coroot_inl, neg_zero] at hne
+    exact (hne rfl).elim
+  by_cases hbot : rootSpace H
+      ((f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥
+  · have hlie : ⁅f4ModularRootVector δ, f4ModularRootVector β⁆ = 0 :=
+      f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot δ β hbot
+    have hz : f4ModularChevalleyBasis.repr
+        ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
+          (Sum.inl (f4KillingRootLabel γ)) = 0 := by
+      exact congrArg
+        (fun Y => f4ModularChevalleyBasis.repr Y
+          (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans
+            (congrArg (fun f => f (Sum.inl (f4KillingRootLabel γ)))
+              (map_zero f4ModularChevalleyBasis.repr))
+    exact (hne hz).elim
+  · obtain ⟨ε, hε⟩ := exists_f4Root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
+    obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
+    by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
+    · have hεγ : ε = γ := by
+        simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
+          congrArg f4PinnedRootIndex heq
+      have hγε : γ = ε := hεγ.symm
+      exact hγε ▸ hε
+    · have hz : f4ModularChevalleyBasis.repr
+          ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
+            (Sum.inl (f4KillingRootLabel γ)) = 0 :=
+        congrArg
+          (fun Y => f4ModularChevalleyBasis.repr Y
+            (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans
+              (f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
+                (z : ZMod 2) ε γ heq)
+      exact (hne hz).elim
+
+/-- The root-vector coordinate of a simple-coroot bracket is its reduced Cartan integer. -/
+theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
+    (i : Fin F4.rank) (β : Fin 48) :
+    f4ModularChevalleyBasis.repr
+      ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
+      (Sum.inl (f4KillingRootLabel β)) =
+      (f4Root β (Fin.cast rank_F4 i) : ZMod 2) := by
+  let c : ZMod 2 := f4SimplyConnectedRootDatum.pairing β
+    (Fin.castAdd 44 (Fin.cast rank_F4 i))
+  have hlie : ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆ =
+      c • f4ModularRootVector β := f4Modular_lie_simpleCoroot_rootVector i β
+  have hrepr := congrArg
+    (fun Y => f4ModularChevalleyBasis.repr Y
+      (Sum.inl (f4KillingRootLabel β))) hlie
+  have hcoeff : f4SimplyConnectedRootDatum.pairing β
+      (Fin.castAdd 44 (Fin.cast rank_F4 i)) = f4Root β (Fin.cast rank_F4 i) := by
+    rw [f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd,
+      dotProduct_single_one]
+  exact hrepr.trans <| (f4ModularChevalleyBasis_repr_smul_rootVector_self c β).trans <|
+    congrArg (fun z : ℤ => (z : ZMod 2)) hcoeff
+
+
+/-- An edge labelled by a nonzero root changes the pinned root label. -/
+theorem f4KillingRootLabel_ne_of_root_eq_add (α β γ : Fin 48)
+    (hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
+    f4KillingRootLabel β ≠ f4KillingRootLabel γ := by
+  intro heq
+  have hindex : β = γ := by
+    simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
+      congrArg f4PinnedRootIndex heq
+  have hzero : f4SimplyConnectedRootDatum.root α = 0 := by
+    apply add_left_cancel (a := f4SimplyConnectedRootDatum.root β)
+    simpa only [add_zero, hindex] using hγ.symm
+  exact f4SimplyConnectedRootDatum.ne_zero α hzero
+
 
 end
 

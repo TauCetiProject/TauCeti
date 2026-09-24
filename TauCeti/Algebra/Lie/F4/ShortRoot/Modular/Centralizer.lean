@@ -12,10 +12,13 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Short
 /-!
 # Centralizers of the short-root vectors in modular type F₄
 
-This file detects the coordinates of an element of the modular Chevalley lattice from its
-brackets with the short-root vectors. Long-root coordinates are detected by a structurally
-chosen short neighbor, and the remaining Cartan coordinates are detected by the integral span
-of the short-root weights.
+The main result, `mem_f4ShortRootSubspace_of_forall_lie_rootVector_eq_zero`, shows that an
+element of the modular Chevalley algebra bracketing to zero with every short-root vector lies
+in the short-root subspace. Thus the kernel of the adjoint action on the short-root ideal is
+contained in the ideal, as needed for the quotient construction.
+
+The proof detects long-root coordinates with a structurally chosen short neighbor, then detects
+the remaining Cartan coordinates using the integral span of the short-root weights.
 
 ## References
 
@@ -30,172 +33,6 @@ namespace TauCeti.DynkinType
 open _root_.LieAlgebra _root_.LieAlgebra.IsKilling LieModule Module Set
 
 noncomputable section
-
-private theorem f4ModularChevalleyBasis_repr_lie_eq_sum
-    (X Y : f4ModularChevalleyLieAlgebra) (k : f4ChevalleyIndex) :
-    f4ModularChevalleyBasis.repr ⁅X, Y⁆ k =
-      ∑ i : f4ChevalleyIndex,
-        f4ModularChevalleyBasis.repr X i *
-          f4ModularChevalleyBasis.repr ⁅f4ModularChevalleyBasis i, Y⁆ k := by
-  conv_lhs => rw [← f4ModularChevalleyBasis.sum_repr X]
-  rw [sum_lie]
-  simp only [smul_lie, map_sum, LinearEquiv.map_smul]
-  simp only [Fintype.sum_sum_type, Finset.univ_eq_attach, Finsupp.coe_add,
-    Finsupp.coe_finsetSum, Finsupp.coe_smul, Pi.add_apply, Finset.sum_apply,
-    Pi.smul_apply, smul_eq_mul]
-
-private theorem eq_zero_of_f4Root_smul_eq_zero_on_short
-    (c : Fin 4 → ZMod 2)
-    (hc : ∀ β : Fin 48, f4Length β = 1 → ∑ i, f4Root β i • c i = 0) :
-    c = 0 := by
-  apply eq_zero_of_f4ShortRootWeight_smul_eq_zero
-  intro a
-  by_cases ha : f4ShortRootWeight a = 0
-  · simp only [ha, Pi.zero_apply, zero_smul, Finset.sum_const_zero]
-  · obtain ⟨β, hβ, hroot⟩ :=
-      (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
-    simpa only [← hroot] using hc β hβ
-
-private theorem f4ModularChevalleyBasis_repr_simpleCoroot_inl
-    (i : Fin F4.rank) (γ : Fin 48) :
-    f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i)
-      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  rw [f4ModularSimpleCoroot_eq_basis, f4ModularChevalleyBasis.repr_self,
-    Finsupp.single_apply]
-  split
-  · rename_i h
-    exact (Sum.inr_ne_inl h).elim
-  · rfl
-
-private theorem f4ModularChevalleyBasis_repr_coroot_inl
-    (β γ : Fin 48) :
-    f4ModularChevalleyBasis.repr (f4ModularCoroot β)
-      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  rw [f4ModularCoroot_eq_sum_simple, map_sum]
-  -- Evaluate the sum of finitely supported coordinate vectors at this root label.
-  change (∑ i : Fin F4.rank,
-    f4ModularChevalleyBasis.repr
-      ((f4Coroot β (Fin.cast rank_F4 i) : ZMod 2) • f4ModularSimpleCoroot i)
-        (Sum.inl (f4KillingRootLabel γ))) = 0
-  apply Finset.sum_eq_zero
-  intro i _
-  rw [map_smul, Finsupp.smul_apply,
-    f4ModularChevalleyBasis_repr_simpleCoroot_inl, smul_zero]
-
-private theorem f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
-    (c : ZMod 2) (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
-    f4ModularChevalleyBasis.repr (c • f4ModularRootVector ε)
-      (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  rw [map_smul, f4ModularRootVector_eq_basis,
-    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
-    Finsupp.single_apply]
-  split
-  · rename_i h
-    exact (hεγ (Sum.inl.inj h)).elim
-  · exact smul_zero _
-
-private theorem f4ModularChevalleyBasis_repr_smul_rootVector_self
-    (c : ZMod 2) (β : Fin 48) :
-    f4ModularChevalleyBasis.repr (c • f4ModularRootVector β)
-      (Sum.inl (f4KillingRootLabel β)) = c := by
-  rw [map_smul, f4ModularRootVector_eq_basis,
-    f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
-    Finsupp.single_eq_same, smul_eq_mul, mul_one]
-
-/-- A nonzero, present sum of two Killing roots has the corresponding pinned integral root
-label. -/
-theorem exists_f4Root_eq_add_of_rootSpace_ne_bot
-    (δ β : Fin 48)
-    (hsum : (f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
-      f4KillingRoot β ≠ 0)
-    (hbot : rootSpace (F4.cartanSubalgebra valid_F4)
-      ((f4KillingRoot δ : (F4.cartanSubalgebra valid_F4) → ℚ) +
-        f4KillingRoot β) ≠ ⊥) :
-    ∃ ε : Fin 48, f4SimplyConnectedRootDatum.root ε =
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
-  let H := F4.cartanSubalgebra valid_F4
-  have hadd : (f4KillingRoot β : H → ℚ) + (f4KillingRoot δ : H → ℚ) =
-      (f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ) := add_comm _ _
-  have hroot : rootSpace H
-      ((f4KillingRoot β : H → ℚ) + (f4KillingRoot δ : H → ℚ)) ≠ ⊥ := by
-    rw [hadd]
-    exact hbot
-  let εweight : Weight ℚ H (F4.lieAlgebra valid_F4) :=
-    ⟨(f4KillingRoot β : H → ℚ) + (f4KillingRoot δ : H → ℚ), hroot⟩
-  have hεnz : εweight.IsNonZero := by
-    intro hz
-    apply hsum
-    -- Read vanishing of the constructed weight as equality of its underlying functions.
-    change (f4KillingRoot β : H → ℚ) + (f4KillingRoot δ : H → ℚ) = 0 at hz
-    exact hadd.symm.trans hz
-  let εroot : H.root := ⟨εweight, by simpa only [LieSubalgebra.root,
-    Finset.mem_filter, Finset.mem_univ, true_and] using hεnz⟩
-  let ε : Fin 48 := f4PinnedRootIndex εroot
-  have hεweight : f4KillingRoot ε = εweight := by
-    exact congrArg
-      (fun s : H.root => (s : Weight ℚ H (F4.lieAlgebra valid_F4)))
-      (f4KillingRootLabel_f4PinnedRootIndex εroot)
-  refine ⟨ε, ?_⟩
-  have h := (f4KillingRoot_eq_add_zsmul_iff δ β ε 1).mp
-  simp only [Int.cast_one, one_smul] at h
-  apply h
-  exact congrArg DFunLike.coe hεweight
-
-/-- A nonzero root coordinate in a modular root-vector bracket has the expected integral root
-label, even though the bracket itself is reduced modulo two. -/
-theorem f4Root_eq_add_of_repr_lie_rootVector_ne_zero
-    (δ β γ : Fin 48)
-    (hne : f4ModularChevalleyBasis.repr
-      ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-        (Sum.inl (f4KillingRootLabel γ)) ≠ 0) :
-    f4SimplyConnectedRootDatum.root γ =
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
-  classical
-  let H := F4.cartanSubalgebra valid_F4
-  by_cases hsum :
-      (f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ) = 0
-  · have hindex : δ = f4OppositeRootIndex β := by
-      by_contra hopp
-      exact f4KillingRoot_add_ne_zero_of_ne_opposite δ β hopp hsum
-    rw [hindex, ← lie_skew, f4Modular_lie_rootVector_opposite, map_neg] at hne
-    -- Negation in the coordinate Finsupp is pointwise.
-    change -f4ModularChevalleyBasis.repr (f4ModularCoroot β)
-      (Sum.inl (f4KillingRootLabel γ)) ≠ 0 at hne
-    rw [f4ModularChevalleyBasis_repr_coroot_inl, neg_zero] at hne
-    exact (hne rfl).elim
-  by_cases hbot : rootSpace H
-      ((f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥
-  · have hlie : ⁅f4ModularRootVector δ, f4ModularRootVector β⁆ = 0 :=
-      f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot δ β hbot
-    have hz : f4ModularChevalleyBasis.repr
-        ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-          (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-      exact congrArg
-        (fun Y => f4ModularChevalleyBasis.repr Y
-          (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans
-            (congrArg (fun f => f (Sum.inl (f4KillingRootLabel γ)))
-              (map_zero f4ModularChevalleyBasis.repr))
-    exact (hne hz).elim
-  · obtain ⟨ε, hε⟩ := exists_f4Root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
-    obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
-    by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
-    · have hεγ : ε = γ := by
-        simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
-          congrArg f4PinnedRootIndex heq
-      have hγε : γ = ε := hεγ.symm
-      exact hγε ▸ hε
-    · have hz : f4ModularChevalleyBasis.repr
-          ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-            (Sum.inl (f4KillingRootLabel γ)) = 0 :=
-        congrArg
-          (fun Y => f4ModularChevalleyBasis.repr Y
-            (Sum.inl (f4KillingRootLabel γ))) hlie |>.trans
-              (f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero
-                (z : ZMod 2) ε γ heq)
-      exact (hne hz).elim
 
 private theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
     (δ β γ : Fin 48)
@@ -214,19 +51,6 @@ private theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
         (Sum.inl (f4KillingRootLabel γ)) = 0 := by
   rw [f4Modular_lie_simpleCoroot_rootVector]
   exact f4ModularChevalleyBasis_repr_smul_rootVector_inl_eq_zero _ β γ hβγ
-
-private theorem f4KillingRootLabel_ne_of_root_eq_add (α β γ : Fin 48)
-    (hγ : f4SimplyConnectedRootDatum.root γ =
-      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
-    f4KillingRootLabel β ≠ f4KillingRootLabel γ := by
-  intro heq
-  have hindex : β = γ := by
-    simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
-      congrArg f4PinnedRootIndex heq
-  have hzero : f4SimplyConnectedRootDatum.root α = 0 := by
-    apply add_left_cancel (a := f4SimplyConnectedRootDatum.root β)
-    simpa only [add_zero, hindex] using hγ.symm
-  exact f4SimplyConnectedRootDatum.ne_zero α hzero
 
 private theorem f4ModularChevalleyBasis_repr_lie_summand_eq_zero_of_ne_long
     (X : f4ModularChevalleyLieAlgebra) (α β γ : Fin 48)
@@ -326,30 +150,7 @@ private theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
         (Sum.inl (f4KillingRootLabel β)) = 0 := by
   apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
   intro h
-  have hzero : f4SimplyConnectedRootDatum.root δ = 0 := by
-    apply add_left_cancel (a := f4SimplyConnectedRootDatum.root β)
-    simpa only [add_zero] using h.symm
-  exact f4SimplyConnectedRootDatum.ne_zero δ hzero
-
-private theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
-    (i : Fin F4.rank) (β : Fin 48) :
-    f4ModularChevalleyBasis.repr
-      ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
-      (Sum.inl (f4KillingRootLabel β)) =
-      (f4Root β (Fin.cast rank_F4 i) : ZMod 2) := by
-  let c : ZMod 2 := f4SimplyConnectedRootDatum.pairing β
-    (Fin.castAdd 44 (Fin.cast rank_F4 i))
-  have hlie : ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆ =
-      c • f4ModularRootVector β := f4Modular_lie_simpleCoroot_rootVector i β
-  have hrepr := congrArg
-    (fun Y => f4ModularChevalleyBasis.repr Y
-      (Sum.inl (f4KillingRootLabel β))) hlie
-  have hcoeff : f4SimplyConnectedRootDatum.pairing β
-      (Fin.castAdd 44 (Fin.cast rank_F4 i)) = f4Root β (Fin.cast rank_F4 i) := by
-    rw [f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd,
-      dotProduct_single_one]
-  exact hrepr.trans <| (f4ModularChevalleyBasis_repr_smul_rootVector_self c β).trans <|
-    congrArg (fun z : ℤ => (z : ZMod 2)) hcoeff
+  exact f4KillingRootLabel_ne_of_root_eq_add δ β β h rfl
 
 private noncomputable def f4CartanCoordinates
     (X : f4ModularChevalleyLieAlgebra) : Fin 4 → ZMod 2 := fun i =>
@@ -369,21 +170,9 @@ private theorem f4ModularChevalleyBasis_repr_lie_inr_summand
           f4ModularRootVector β⁆ (Sum.inl (f4KillingRootLabel β)) =
       (f4Root β k : ZMod 2) * f4ModularChevalleyBasis.repr X
         (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) := by
-  let i : Fin F4.rank := finCongr rank_F4.symm k
   have hbasis : f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) =
-      f4ModularSimpleCoroot i := by
-    calc
-      _ = f4ModularSimpleCoroot
-          ((F4.lieBasis valid_F4).baseSupportEquiv.symm
-            (f4PinnedSimpleIndexEquiv.symm k)) :=
-        f4ModularChevalleyBasis_inr_eq_simpleCoroot _
-      _ = f4ModularSimpleCoroot i := by
-        congr 1
-        calc
-          _ = (finCongr rank_F4).symm k := by
-            simp only [f4PinnedSimpleIndexEquiv, Equiv.symm_trans_apply,
-              Equiv.symm_symm, Equiv.symm_apply_apply]
-          _ = i := rfl
+      f4ModularSimpleCoroot (Fin.cast rank_F4.symm k) :=
+    f4ModularChevalleyBasis_inr_f4PinnedSimpleIndexEquiv_symm k
   have hlie := congrArg (fun Y => ⁅Y, f4ModularRootVector β⁆) hbasis
   have hcoord : f4ModularChevalleyBasis.repr
       ⁅f4ModularChevalleyBasis (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)),
@@ -392,12 +181,9 @@ private theorem f4ModularChevalleyBasis_repr_lie_inr_summand
     refine congrArg
       (fun Y => f4ModularChevalleyBasis.repr Y
         (Sum.inl (f4KillingRootLabel β))) hlie |>.trans ?_
-    have hi : Fin.cast rank_F4 i = k := by
-      apply Fin.ext
-      rfl
-    have h := f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self i β
-    rw [hi] at h
-    exact h
+    simpa only [Fin.cast_cast, Fin.cast_eq_self] using
+      f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
+        (Fin.cast rank_F4.symm k) β
   calc
     _ = f4ModularChevalleyBasis.repr X
         (Sum.inr (f4PinnedSimpleIndexEquiv.symm k)) * (f4Root β k : ZMod 2) :=

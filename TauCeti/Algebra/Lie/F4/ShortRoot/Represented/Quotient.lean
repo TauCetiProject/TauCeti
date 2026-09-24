@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Centralizer
+public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Action
 public import TauCeti.Algebra.Module.Submodule.Quotient
 

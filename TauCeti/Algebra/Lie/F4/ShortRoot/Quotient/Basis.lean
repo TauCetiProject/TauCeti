@@ -114,7 +114,7 @@ the twenty-four long roots and the two long simple coroots. -/
       omega
     · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
         mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndex, Equiv.symm_apply_apply]
+      rw [f4PinnedSimpleIndex_baseSupportEquiv]
       fin_cases k <;> simp [f4LongSimpleIndex]
   · intro hx
     rcases x with α | j
@@ -133,8 +133,7 @@ the twenty-four long roots and the two long simple coroots. -/
       simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
       apply congrArg Sum.inl
       dsimp only [i]
-      simp only [f4SpecialIsogenyIndexEquiv_apply]
-      rw [f4SpecialIsogenyIndex_involutive]
+      rw [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
       exact f4KillingRootLabel_f4PinnedRootIndex α
     · have hne : ¬(f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3) := by
         simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
@@ -145,21 +144,21 @@ the twenty-four long roots and the two long simple coroots. -/
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 1), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
-        rw [← (F4.lieBasis valid_F4).baseSupportEquiv.apply_symm_apply j]
-        apply congrArg (F4.lieBasis valid_F4).baseSupportEquiv
-        apply Fin.ext
-        have := congrArg Fin.val h0
-        simp only [f4PinnedSimpleIndex, Fin.val_cast] at this
-        simpa [f4LongSimpleIndex] using this.symm
+        apply f4PinnedSimpleIndexEquiv.injective
+        have hnode : f4PinnedSimpleIndex
+            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 1)) = 0 := by
+          rw [f4PinnedSimpleIndex_baseSupportEquiv, f4LongSimpleIndex_one,
+            Fin.cast_cast, Fin.cast_eq_self]
+        exact hnode.trans h0.symm
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 0), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
-        rw [← (F4.lieBasis valid_F4).baseSupportEquiv.apply_symm_apply j]
-        apply congrArg (F4.lieBasis valid_F4).baseSupportEquiv
-        apply Fin.ext
-        have := congrArg Fin.val h1
-        simp only [f4PinnedSimpleIndex, Fin.val_cast] at this
-        simpa [f4LongSimpleIndex] using this.symm
+        apply f4PinnedSimpleIndexEquiv.injective
+        have hnode : f4PinnedSimpleIndex
+            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 0)) = 1 := by
+          rw [f4PinnedSimpleIndex_baseSupportEquiv, f4LongSimpleIndex_zero,
+            Fin.cast_cast, Fin.cast_eq_self]
+        exact hnode.trans h1.symm
 
 /-- The coordinate complement to the modular short-root subspace. -/
 def f4LongRootComplement : Submodule (ZMod 2) f4ModularChevalleyLieAlgebra :=

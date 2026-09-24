@@ -176,13 +176,27 @@ private theorem exists_f4SignedLongCoroot_quotient_ideal_coordinate
         f4ShortRootQuotientBasis c ∧
       f4ModularCoroot (f4SignedSimpleRootIndex (isogenyReverse k)) =
         (f4ShortRootLieIdealBasis c : f4ModularChevalleyLieAlgebra) := by
+  have hzero : f4ShortRootSubspace.mkQ
+      (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 0))) =
+        f4ShortRootQuotientBasis 13 := by
+    exact (congrArg f4ShortRootSubspace.mkQ
+      ((congrArg f4ModularCoroot (f4SignedSimpleRootIndex_inl 0)).trans
+        (f4ModularCoroot_castAdd 0))).trans
+      f4ShortRootQuotientBasis_thirteen.symm
+  have hone : f4ShortRootSubspace.mkQ
+      (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 1))) =
+        f4ShortRootQuotientBasis 12 := by
+    exact (congrArg f4ShortRootSubspace.mkQ
+      ((congrArg f4ModularCoroot (f4SignedSimpleRootIndex_inl 1)).trans
+        (f4ModularCoroot_castAdd 1))).trans
+      f4ShortRootQuotientBasis_twelve.symm
   rcases k with ⟨j⟩ | ⟨j⟩ <;> fin_cases j
-  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_inl_zero_eq_quotientBasis,
+  · exact ⟨13, hzero,
       (coe_f4ShortRootLieIdealBasis_thirteen.trans (by
         simp only [isogenyReverse, Sum.map_inl, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
         rfl)).symm⟩
-  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_inl_one_eq_quotientBasis,
+  · exact ⟨12, hone,
       (coe_f4ShortRootLieIdealBasis_twelve.trans (by
         simp only [isogenyReverse, Sum.map_inl, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
@@ -191,12 +205,16 @@ private theorem exists_f4SignedLongCoroot_quotient_ideal_coordinate
     contradiction
   · rw [f4SignedSimpleRootIndex_inl, f4Length_def] at hk
     contradiction
-  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_inr_zero_eq_quotientBasis,
+  · exact ⟨13,
+      (congrArg f4ShortRootSubspace.mkQ
+        (f4ModularCoroot_signedSimpleRootIndex_inr_eq_inl 0)).trans hzero,
       (coe_f4ShortRootLieIdealBasis_thirteen.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]
         rfl)).symm⟩
-  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_inr_one_eq_quotientBasis,
+  · exact ⟨12,
+      (congrArg f4ShortRootSubspace.mkQ
+        (f4ModularCoroot_signedSimpleRootIndex_inr_eq_inl 1)).trans hone,
       (coe_f4ShortRootLieIdealBasis_twelve.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]
@@ -262,7 +280,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_opposite_of_long
       f4ShortRootSubspace.mkQ (f4ModularCoroot α) := by
     rw [f4ShortRootQuotientFirstColumn_eq, hlift,
       show β = f4OppositeRootIndex α from rfl]
-    exact f4ShortRootSubspace_mkQ_lie_rootVector_opposite α
+    exact congrArg f4ShortRootSubspace.mkQ (f4Modular_lie_rootVector_opposite α)
   let α' := f4SignedSimpleRootIndex (isogenyReverse k)
   have hα'short : f4Length α' = 1 := by
     have hα'eq : α' = f4SpecialIsogenyIndexEquiv α :=
@@ -442,8 +460,8 @@ private theorem f4ShortRootQuotientToIdealEquiv_firstColumn_cartan_of_long
   let iα : F4ShortRootIndex := ⟨f4SpecialIsogenyIndexEquiv α, by
     exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk⟩
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iα)
-  have hpair := f4_pairing_specialIsogenyIndexEquiv_eq_of_long
-    α (Fin.castAdd 44 j) hk hj
+  have hpair := f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
+    α (Fin.castAdd 44 j) (hk.trans hj.symm)
   rw [hα', hs] at hpair
   have hsource : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootQuotientFirstColumn k a) =

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Carrier
 public import TauCeti.Algebra.Lie.Derivation.IntegralExp
 public import TauCeti.Algebra.Lie.BaseChange.Cancel
 public import TauCeti.Algebra.Lie.BaseChange.Module
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -43,13 +44,27 @@ noncomputable def f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
   LieDerivation.ad ℚ (F4.lieAlgebra valid_F4)
     (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))
 
+/-- The root derivation acts by the rational Lie bracket. -/
+@[simp] theorem f4RootAdjointDerivation_apply (k : Fin 4 ⊕ Fin 4)
+    (x : F4.lieAlgebra valid_F4) :
+    f4RootAdjointDerivation k x =
+      ⁅f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)), x⁆ := by
+  change (f4RootAdjointDerivation k).toLinearMap x = _
+  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply, ad_apply]
+
+/-- The underlying linear map is the adjoint endomorphism of the rational root vector. -/
+theorem f4RootAdjointDerivation_toLinearMap (k : Fin 4 ⊕ Fin 4) :
+    (f4RootAdjointDerivation k).toLinearMap =
+      ad ℚ (F4.lieAlgebra valid_F4)
+        (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k))) := by
+  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply]
+
 /-- All divided powers of the root adjoint derivation preserve the integral Chevalley lattice. -/
 theorem f4RootAdjointDerivation_dividedPower_mem (k : Fin 4 ⊕ Fin 4) (n : ℕ)
     (y : F4.lieAlgebra valid_F4) (hy : y ∈ f4ChevalleyLieLattice) :
     Associative.dividedPower n (f4RootAdjointDerivation k).toLinearMap y ∈
       f4ChevalleyLieLattice := by
-  rw [Associative.dividedPower_def, f4RootAdjointDerivation,
-    LieDerivation.coe_ad_apply_eq_ad_apply]
+  rw [Associative.dividedPower_def, f4RootAdjointDerivation_toLinearMap]
   exact IsChevalleySystem.inv_factorial_smul_ad_pow_mem_chevalleyLieLattice
     f4ChevalleyRootVector_isChevalleySystem
     (f4KillingRoot (f4SignedSimpleRootIndex k)) n hy
@@ -57,73 +72,18 @@ theorem f4RootAdjointDerivation_dividedPower_mem (k : Fin 4 ⊕ Fin 4) (n : ℕ)
 /-- The root adjoint derivation is nilpotent. -/
 theorem isNilpotent_f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
     IsNilpotent (f4RootAdjointDerivation k).toLinearMap := by
-  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply]
+  rw [f4RootAdjointDerivation_toLinearMap]
   exact f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.isNilpotent_ad_rootVector
     (f4KillingRoot (f4SignedSimpleRootIndex k))
-
-/-- Three adjoint applications annihilate every F4 root vector, regardless of root length. -/
-theorem f4_ad_cube_rootVector_eq_zero (α β : Fin 48) :
-    ((ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
-        (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
-  have hthree : (3 : ℕ) = 2 + 1 := by omega
-  by_cases hopp : β = f4OppositeRootIndex α
-  · subst β
-    have hdiv := f4_dividedPower_two_ad_rootVector_opposite α
-    rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
-    have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
-        (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
-          (f4ChevalleyRootVector (f4KillingRoot (f4OppositeRootIndex α))) =
-            (-2 : ℚ) • f4ChevalleyRootVector (f4KillingRoot α) := by
-      rw [f4KillingRoot_f4OppositeRootIndex]
-      have h := congrArg (fun x : F4.lieAlgebra valid_F4 => (2 : ℚ) • x) hdiv
-      simpa [smul_smul] using h
-    rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_smul, ad_apply,
-      lie_self, smul_zero]
-  · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
-    · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
-      have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
-          (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
-            (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
-        rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
-        exact (smul_eq_zero.mp hdiv).resolve_left (by norm_num)
-      rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
-    · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
-      intro δ hpinned
-      have hlen := f4Length_of_root_eq_add_zsmul α β δ 3 hpinned
-      have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
-      have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
-        (abs_le.mp hpair).1
-      rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
-      rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
-        rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
-      all_goals rw [hα, hβ, hδ] at hlen
-      all_goals norm_num at hlen
-      all_goals omega
-
-/-- The third adjoint power annihilates every Cartan element. -/
-theorem f4_ad_cube_cartan_eq_zero (α : Fin 48)
-    (h : F4.cartanSubalgebra valid_F4) :
-    ((ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
-        (h : F4.lieAlgebra valid_F4) = 0 := by
-  have hdiv := f4_dividedPower_two_ad_cartan_eq_zero α h
-  have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
-        (h : F4.lieAlgebra valid_F4) = 0 := by
-    rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
-    exact (smul_eq_zero.mp hdiv).resolve_left (by norm_num)
-  have hthree : (3 : ℕ) = 2 + 1 := by omega
-  rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
 
 /-- The third adjoint power vanishes on each integral short-root vector. -/
 theorem f4RootAdjointDerivation_pow_three_integralRootVector
     (k : Fin 4 ⊕ Fin 4) (i : Fin 48) :
     ((f4RootAdjointDerivation k).toLinearMap ^ 3)
         (f4IntegralRootVector i : F4.lieAlgebra valid_F4) = 0 := by
-  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply,
+  rw [f4RootAdjointDerivation_toLinearMap,
     coe_f4IntegralRootVector]
-  exact f4_ad_cube_rootVector_eq_zero (f4SignedSimpleRootIndex k) i
+  exact f4_ad_pow_three_rootVector_eq_zero (f4SignedSimpleRootIndex k) i
 
 /-- The third adjoint power vanishes on each integral simple coroot. -/
 theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
@@ -133,9 +93,9 @@ theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
   let β : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4) :=
     ((F4.lieBasis valid_F4).baseSupportEquiv i :
       (F4.cartanSubalgebra valid_F4).root)
-  rw [f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply,
+  rw [f4RootAdjointDerivation_toLinearMap,
     coe_f4IntegralSimpleCoroot]
-  exact f4_ad_cube_cartan_eq_zero (f4SignedSimpleRootIndex k) (coroot β)
+  exact f4_ad_pow_three_cartan_eq_zero (f4SignedSimpleRootIndex k) (coroot β)
 
 /-- The first integral divided power of the signed-simple-root adjoint derivation. -/
 noncomputable def f4IntegralRootAdjoint (k : Fin 4 ⊕ Fin 4) :
@@ -165,7 +125,8 @@ theorem f4ModularRootAdjoint_tmul (k : Fin 4 ⊕ Fin 4)
     Associative.dividedPower_one, Module.End.smul_def]
 
 /-- The integral second divided power is the previously constructed divided adjoint square. -/
-theorem f4IntegralRootDividedPower_two_eq (k : Fin 4 ⊕ Fin 4) :
+theorem integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare
+    (k : Fin 4 ⊕ Fin 4) :
     integralDividedPower (f4RootAdjointDerivation k).toLinearMap
         f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2) =
       f4IntegralDividedAdjointSquare k := by
@@ -173,7 +134,7 @@ theorem f4IntegralRootDividedPower_two_eq (k : Fin 4 ⊕ Fin 4) :
   intro y
   apply Subtype.ext
   rw [coe_integralDividedPower_apply, coe_f4IntegralDividedAdjointSquare_apply,
-    f4RootAdjointDerivation, LieDerivation.coe_ad_apply_eq_ad_apply]
+    f4RootAdjointDerivation_toLinearMap]
 
 /-- The first base-changed divided power is the modular adjoint bracket on pure tensors. -/
 theorem f4ModularRootAdjoint_tmul_eq_lie (k : Fin 4 ⊕ Fin 4)
@@ -183,8 +144,7 @@ theorem f4ModularRootAdjoint_tmul_eq_lie (k : Fin 4 ⊕ Fin 4)
   have hint : f4IntegralRootAdjoint k y =
       ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
     apply Subtype.ext
-    rw [f4IntegralRootAdjoint_apply, f4RootAdjointDerivation,
-      LieDerivation.coe_ad_apply_eq_ad_apply,
+    rw [f4IntegralRootAdjoint_apply, f4RootAdjointDerivation_toLinearMap,
       LieSubalgebra.coe_bracket, coe_f4IntegralRootVector, ad_apply]
   rw [f4ModularRootAdjoint_tmul, hint, f4ModularRootVector_eq,
     LieAlgebra.ExtendScalars.bracket_tmul, one_mul]
@@ -275,7 +235,7 @@ noncomputable def f4RootExponentialLieEquiv {A : Type*} [CommRing A] [Algebra �
 
 /-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
 ring is its three-term integral divided-power polynomial. -/
-theorem f4RootExponential_tmul_of_cube {A : Type*} [CommRing A] [Algebra ℤ A]
+theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice)
     (hy : ((f4RootAdjointDerivation k).toLinearMap ^ 3)
       (y : F4.lieAlgebra valid_F4) = 0) :
@@ -303,7 +263,8 @@ theorem f4RootExponential_tmul_of_cube {A : Type*} [CommRing A] [Algebra ℤ A]
   have hdp2 : (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
       f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)) y =
       f4IntegralDividedAdjointSquare k y :=
-    LinearMap.congr_fun (f4IntegralRootDividedPower_two_eq k) y
+    LinearMap.congr_fun
+      (integralDividedPower_f4RootAdjointDerivation_two_eq_f4IntegralDividedAdjointSquare k) y
   have htwo : (t ^ 2 * 1) ⊗ₜ[ℤ]
         (integralDividedPower (f4RootAdjointDerivation k).toLinearMap
           f4ChevalleyLieLattice 2 (f4RootAdjointDerivation_dividedPower_mem k 2)) y =
@@ -470,9 +431,12 @@ theorem f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
       congrArg (LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootLieIdealBasis.baseChange A))
         (f4ShortRootBaseChangeAdjoint_cancel_tmul x)
-    _ = _ := by
-      ext i j
-      simp [LinearMap.toMatrix_apply, Module.Basis.baseChange_apply, Algebra.smul_def]
+    _ = _ :=
+      (Module.Basis.toMatrix_baseChange (S := A) f4ShortRootLieIdealBasis
+        (f4ShortRootAdjoint x)).trans
+        (congrArg (fun m : Matrix (Fin 26) (Fin 26) (ZMod 2) =>
+          m.map (algebraMap (ZMod 2) A))
+          (f4ShortRootAdjointMatrix_eq_toMatrix x).symm)
 
 /-- A modular ideal vector with an integral lift maps to that lift after scalar extension. -/
 theorem f4ShortRootBaseChangeInclusion_tmul_of_coe_eq {A : Type*} [CommRing A]
@@ -524,7 +488,7 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
     _ = (1 : A) ⊗ₜ[ℤ] y +
         t • ((1 : A) ⊗ₜ[ℤ] f4IntegralRootAdjoint k y) +
         t ^ 2 • ((1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :=
-      f4RootExponential_tmul_of_cube k t y hy
+      f4RootExponential_tmul_of_pow_three_eq_zero k t y hy
     _ = _ := (congrArg ι hpoly).trans
       (hmap.trans
         (congrArg₂ (· + ·)
@@ -718,8 +682,7 @@ theorem f4ShortRootExponential_toMatrix {A : Type*} [CommRing A]
           (algebraMap (ZMod 2) A) := by
     -- Here `B` abbreviates the scalar-extended basis.
     change LinearMap.toMatrix B B (f.baseChange A) = _
-    ext i j
-    simp [B, LinearMap.toMatrix_apply, Module.Basis.baseChange_apply, Algebra.smul_def]
+    exact Module.Basis.toMatrix_baseChange (S := A) f4ShortRootLieIdealBasis f
   have hd1matrix : LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
       (f4ShortRootSignedSimpleAdjoint k) = f4ShortRootSignedSimpleAdjointMatrix k := by
     ext i j

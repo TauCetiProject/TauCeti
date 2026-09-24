@@ -124,6 +124,11 @@ def f4SpecialIsogenyIndexEquiv : Equiv.Perm (Fin 48) :=
     f4SpecialIsogenyIndexEquiv i = f4SpecialIsogenyIndex i := by
   rw [f4SpecialIsogenyIndexEquiv, Involutive.coe_toPerm]
 
+/-- Applying the special root permutation twice restores the pinned index. -/
+theorem f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv (i : Fin 48) :
+    f4SpecialIsogenyIndexEquiv (f4SpecialIsogenyIndexEquiv i) = i := by
+  simpa only [f4SpecialIsogenyIndexEquiv_apply] using f4SpecialIsogenyIndex_involutive i
+
 /-- The special root permutation commutes with passing to the negative root. -/
 @[simp] theorem f4SpecialIsogenyIndex_add_twentyFour (i : Fin 48) :
     f4SpecialIsogenyIndex (i + 24) = f4SpecialIsogenyIndex i + 24 := by
@@ -270,6 +275,17 @@ theorem f4Length_mul_pairing_f4SpecialIsogenyIndex (i j : Fin 48) :
     (mul_dotProduct_eq_of_mulVec_eq_smul f4SpecialIsogenyMatrix_mulVec_root
       f4SpecialIsogenyMatrix_transpose_mulVec_coroot i j)
 
+/-- The special root permutation preserves Cartan integers between roots of equal length. -/
+theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
+    (α β : Fin 48) (hαβ : f4Length α = f4Length β) :
+    f4SimplyConnectedRootDatum.pairing
+        (f4SpecialIsogenyIndexEquiv α) (f4SpecialIsogenyIndexEquiv β) =
+      f4SimplyConnectedRootDatum.pairing α β := by
+  have h := f4Length_mul_pairing_f4SpecialIsogenyIndex α β
+  rw [← hαβ] at h
+  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rw [hα] at h <;> omega
+
 /-- The torus-point map contravariant to the F4 special character-lattice map. -/
 def f4SpecialIsogenyTorusMap {A : Type*} [CommRing A]
     (s : Fin 4 → Aˣ) : Fin 4 → Aˣ :=
@@ -304,9 +320,8 @@ private theorem f4SpecialIsogenyMatrix_mulVec_root_image (i : Fin 48) :
         (f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv i)) =
       f4Length (f4SpecialIsogenyIndexEquiv i) •
         f4SimplyConnectedRootDatum.root i := by
-  have hindex : f4SpecialIsogenyIndexEquiv (f4SpecialIsogenyIndexEquiv i) = i := by
-    simpa only [f4SpecialIsogenyIndexEquiv_apply] using f4SpecialIsogenyIndex_involutive i
-  rw [f4SpecialIsogenyMatrix_mulVec_root, hindex]
+  rw [f4SpecialIsogenyMatrix_mulVec_root,
+    f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
 
 private theorem f4SpecialIsogenyMatrix_mulVec_injective :
     Function.Injective (Matrix.mulVec f4SpecialIsogenyMatrix) :=

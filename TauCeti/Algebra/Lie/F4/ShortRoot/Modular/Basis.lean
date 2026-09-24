@@ -129,7 +129,8 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 0 := by
           apply Fin.ext
           have hv := congrArg Fin.val h2
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndex, f4PinnedSimpleIndexEquiv,
+            Equiv.trans_apply, finCongr_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans
@@ -141,7 +142,8 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 1 := by
           apply Fin.ext
           have hv := congrArg Fin.val h3
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndex, f4PinnedSimpleIndexEquiv,
+            Equiv.trans_apply, finCongr_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans

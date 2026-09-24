@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Action
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Centralizer
+public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 
 /-!
 # Pinned coordinates on the modular F4 quotient
@@ -300,7 +300,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
       f4ShortRootSubspace.mkQ (f4ModularRootVector α) := by
     unfold f4ShortRootQuotientDividedSquareColumn
     rw [hlift]
-    exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite k
+    exact congrArg f4ShortRootSubspace.mkQ
+      (f4ModularDividedAdjointSquare_rootVector_opposite k)
   let j : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv α, by
       exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk⟩
@@ -446,7 +447,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_twelve
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 12 = 0 := by
       unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
       rw [f4ModularChevalleyBasis_longRootBasisCoordinate_twelve]
-      exact f4ShortRootSubspace_mkQ_dividedSquare_simpleCoroot_eq_zero k _
+      rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 12 = 0 := by
       unfold f4ShortRootIdealDividedSquareColumn
       apply Subtype.ext
@@ -477,7 +478,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_thirteen
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 13 = 0 := by
       unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
       rw [f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
-      exact f4ShortRootSubspace_mkQ_dividedSquare_simpleCoroot_eq_zero k _
+      rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 13 = 0 := by
       unfold f4ShortRootIdealDividedSquareColumn
       apply Subtype.ext
@@ -820,7 +821,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_twelve_of_s
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 12 = 0 := by
     unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
     rw [f4ModularChevalleyBasis_longRootBasisCoordinate_twelve]
-    exact f4ShortRootSubspace_mkQ_dividedSquare_simpleCoroot_eq_zero k _
+    rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealFirstColumn (isogenyReverse k) 12 = 0 := by
     apply f4ShortRootIdealFirstColumn_cartan_eq_zero_of_short
       k hk 1 2 12
@@ -847,7 +848,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_thirteen_of
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 13 = 0 := by
     unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
     rw [f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
-    exact f4ShortRootSubspace_mkQ_dividedSquare_simpleCoroot_eq_zero k _
+    rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealFirstColumn (isogenyReverse k) 13 = 0 := by
     apply f4ShortRootIdealFirstColumn_cartan_eq_zero_of_short
       k hk 0 3 13

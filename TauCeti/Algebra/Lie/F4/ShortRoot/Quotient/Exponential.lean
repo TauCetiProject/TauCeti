@@ -133,7 +133,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
           f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
   let q := f4ShortRootBaseChangeQuotient (A := A)
-  exact (congrArg q (f4RootExponential_tmul_of_cube k t x hx)).trans
+  exact (congrArg q (f4RootExponential_tmul_of_pow_three_eq_zero k t x hx)).trans
     ((LinearMap.map_quadraticPolynomial q t _ _ _).trans
       (quadraticPolynomial_congr t
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)

@@ -250,7 +250,8 @@ private theorem f4Modular_lie_basis_inl_inr_mem_shortRootSubspace
       f4ModularChevalleyBasis (Sum.inr b)⁆ ∈ f4ShortRootSubspace := by
   let k : Fin F4.rank := (F4.lieBasis valid_F4).baseSupportEquiv.symm b
   have hk : Fin.cast rank_F4 k = 2 ∨ Fin.cast rank_F4 k = 3 := by
-    simpa only [k, f4PinnedSimpleIndex] using
+    simpa only [k, f4PinnedSimpleIndex, f4PinnedSimpleIndexEquiv,
+      Equiv.trans_apply, finCongr_apply, Fin.cast_mk] using
       (f4ChevalleyIndexIsShort_inr_iff b).mp hbshort
   rw [f4ModularChevalleyBasis_inl_eq_rootVector,
     f4ModularChevalleyBasis_inr_eq_simpleCoroot]

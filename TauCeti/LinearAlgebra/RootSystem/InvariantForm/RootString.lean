@@ -76,7 +76,7 @@ variable {I M N : Type*} [Finite I] [AddCommGroup M] [Module ℤ M]
 omit [P.IsCrystallographic] [P.IsReduced] in
 /-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
 when that pairing has absolute value at most two. -/
-theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_eq_length
+theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_length_eq
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β : I) (hpair : |P.pairing β α| ≤ 2)
@@ -101,21 +101,6 @@ theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_eq_length
   omega
 
 omit [P.IsCrystallographic] [P.IsReduced] in
-/-- The equal-length Cartan-pairing bound for short roots. -/
-theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_short
-    (length : I → ℤ)
-    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β : I) (hpair : |P.pairing β α| ≤ 2)
-    (hα : length α = 1) (hβ : length β = 1) (hne : β ≠ α)
-    (hneg : P.root β ≠ -P.root α) :
-    P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
-  apply P.pairing_mem_neg_one_zero_one_of_eq_length length hsym α β hpair
-  · omega
-  · omega
-  · exact hne
-  · exact hneg
-
-omit [P.IsCrystallographic] [P.IsReduced] in
 /-- A root string through distinct, non-opposite roots of length one has no term two or more
 steps in the positive direction when that term has length one or two. -/
 theorem _root_.RootPairing.not_root_eq_short_add_nsmul_short_of_two_le
@@ -134,7 +119,8 @@ theorem _root_.RootPairing.not_root_eq_short_add_nsmul_short_of_two_le
       rw [hα, hγ, P.pairing_same] at hlen <;>
       norm_num at hlen <;>
       nlinarith
-  have hp := P.pairing_mem_neg_one_zero_one_of_short length hsym α β hpair hα hβ hne hneg
+  have hp := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β hpair
+    (by omega) (hα.trans hβ.symm) hne hneg
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
   rcases hγ with hγ | hγ <;>
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp <;>
@@ -315,7 +301,7 @@ theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
 omit [Module.IsTorsionFree ℤ M] [P.IsReduced] in
 /-- A root edge whose source and target have the same positive length has no descending root
 when every possible predecessor has length at most two. -/
-theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_eq_same_length
+theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_of_length_eq
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hαpos : 0 < length α)
@@ -337,21 +323,6 @@ theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_eq_same_length
   rw [hpair] at hδlen
   norm_num at hδlen
   nlinarith [hβpos]
-
-omit [Module.IsTorsionFree ℤ M] [P.IsReduced] in
-/-- The equal-length root-edge criterion for short source and target. -/
-theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_eq_short
-    (length : I → ℤ)
-    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β γ : I) (hαpos : 0 < length α)
-    (hminus : ∀ δ, P.root δ = P.root β + (-1 : ℤ) • P.root α → length δ ≤ 2)
-    (hβ : length β = 1) (hγ : length γ = 1)
-    (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 0 := by
-  apply P.chainBotCoeff_eq_zero_of_add_eq_same_length length hsym α β γ hαpos hminus
-  · omega
-  · omega
-  · exact h
-
 
 end
 
