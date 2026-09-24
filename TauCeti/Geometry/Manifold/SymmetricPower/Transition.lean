@@ -28,6 +28,8 @@ three-manifolds* ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2
 
 ## Main declarations
 
+* `TauCeti.symOpenPartialHomeomorph_transition_apply`: the explicit blockwise coordinate
+  expression equals the source-chart transition on its target.
 * `TauCeti.analyticAt_symOpenPartialHomeomorph_transition`: the transition between two
   elementary-symmetric coordinate charts is analytic at the tuple represented by the source
   coefficients.
@@ -46,10 +48,74 @@ namespace TauCeti
 
 variable {α : Type*} [TopologicalSpace α] {ι : Type*} [Fintype ι] {n : ℕ}
 
+/-- **The coefficient expression is the same-partition chart transition on the source target.** -/
+theorem symOpenPartialHomeomorph_transition_apply
+    (φ ψ : ι → OpenPartialHomeomorph α ℂ)
+    (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
+    (hVo : ∀ i, IsOpen (V i))
+    (hVsubφ : ∀ i, V i ⊆ (φ i).source)
+    (hVsubψ : ∀ i, V i ⊆ (ψ i).source)
+    (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (e e' : (Σ i, Fin (m i)) ≃ Fin n)
+    (hp : Nonempty (∀ i, Sym ↥(V i) (m i)))
+    (c : Fin n → ℂ)
+    (hc : c ∈ (symOpenPartialHomeomorph
+      φ V m hm hVo hVsubφ hVdisj e hp).target) :
+    piSigmaConstHomeomorph ℂ e' (fun i =>
+      Sym.coeffEquiv ℂ (m i)
+        (Sym.map (fun w : ℂ => ψ i ((φ i).symm w))
+          ((Sym.coeffEquiv ℂ (m i)).symm
+            ((piSigmaConstHomeomorph ℂ e).symm c i)))) =
+      symOpenPartialHomeomorph ψ V m hm hVo hVsubψ hVdisj e' hp
+        ((symOpenPartialHomeomorph φ V m hm hVo hVsubφ hVdisj e hp).symm c) := by
+  classical
+  let C : OpenPartialHomeomorph (Sym α n) (Fin n → ℂ) :=
+    symOpenPartialHomeomorph φ V m hm hVo hVsubφ hVdisj e hp
+  let D : OpenPartialHomeomorph (Sym α n) (Fin n → ℂ) :=
+    symOpenPartialHomeomorph ψ V m hm hVo hVsubψ hVdisj e' hp
+  have hrepr : ∃ q : ∀ i, Sym ↥(V i) (m i),
+      C.symm c = Sym.sumSubtype V m hm q := by
+    have hs : C.symm c ∈ C.source := C.map_target hc
+    rw [symOpenPartialHomeomorph_source φ V m hm hVo hVsubφ hVdisj e hp] at hs
+    rcases Set.mem_range.mp hs with ⟨q, hq⟩
+    exact ⟨q, hq.symm⟩
+  obtain ⟨q, hq⟩ := hrepr
+  have hsq : Sym.sumSubtype V m hm q ∈ C.source := by
+    rw [← hq]
+    exact C.map_target hc
+  have hc' : C (Sym.sumSubtype V m hm q) = c := by
+    rw [← hq, C.right_inv hc]
+  rw [← hc', C.left_inv hsq]
+  have hCcoords : C (Sym.sumSubtype V m hm q) =
+      piSigmaConstHomeomorph ℂ e (fun j =>
+        Sym.coeffEquiv ℂ (m j)
+          (Sym.map (fun z : ↥(V j) => φ j (z : α)) (q j))) := by
+    exact symOpenPartialHomeomorph_apply φ V m hm hVo hVsubφ hVdisj e hp q
+  rw [hCcoords]
+  rw [symOpenPartialHomeomorph_apply ψ V m hm hVo hVsubψ hVdisj e' hp]
+  apply congrArg (piSigmaConstHomeomorph ℂ e')
+  funext i
+  have hroot : (Sym.coeffEquiv ℂ (m i)).symm
+        (((piSigmaConstHomeomorph ℂ e).symm
+          (piSigmaConstHomeomorph ℂ e (fun j =>
+            Sym.coeffEquiv ℂ (m j)
+              (Sym.map (fun z : ↥(V j) => φ j (z : α)) (q j))))) i) =
+      Sym.map (fun z : ↥(V i) => φ i (z : α)) (q i) := by
+    simp
+  rw [hroot]
+  congr 1
+  rw [Sym.map_map]
+  congr 1
+  funext z
+  simp only [Function.comp_apply]
+  have hzφ : (φ i).symm (φ i z) = z :=
+    (φ i).left_inv (hVsubφ i z.2)
+  rw [hzφ]
+
 /-- **The same-partition elementary-symmetric chart transition is analytic at a represented tuple.**
-The two charts use the common disjoint patch family `V`, multiplicities `m`, and only their
-regrouping bijections may differ. Repeated points in the represented symmetric-power tuple are
-allowed. -/
+The two charts use the common disjoint patch family `V` and multiplicities `m`; their surface
+coordinate maps `φ`, `ψ` and regrouping bijections `e`, `e'` may differ. Repeated points in the
+represented symmetric-power tuple are allowed. -/
 theorem analyticAt_symOpenPartialHomeomorph_transition
     (φ ψ : ι → OpenPartialHomeomorph α ℂ)
     (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
@@ -59,7 +125,7 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
     (hVdisj : Pairwise (Function.onFun Disjoint V))
     (e e' : (Σ i, Fin (m i)) ≃ Fin n)
     (p : ∀ i, Sym ↥(V i) (m i))
-    (hφ : ∀ i (z : ↥(V i)),
+    (hφ : ∀ i (z : ↥(V i)), z ∈ p i →
       AnalyticAt ℂ (fun w : ℂ => ψ i ((φ i).symm w)) (φ i (z : α))) :
     AnalyticAt ℂ
       (fun c : Fin n → ℂ =>
@@ -87,52 +153,16 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
       simpa [cblocks] using hz
     rcases (Sym.mem_map).1 hz' with ⟨a, ha, hza⟩
     rw [← hza]
-    exact hφ i a
+    exact hφ i a ha
   have hF : AnalyticAt ℂ F (piSigmaConstHomeomorph ℂ e cblocks) := by
     dsimp only [F]
     exact Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt
       e e' hφ'
-  have hrepr : ∀ c : Fin n → ℂ, c ∈ C.target →
-      ∃ q : ∀ i, Sym ↥(V i) (m i), C.symm c = Sym.sumSubtype V m hm q := by
-    intro c hc
-    have hs : C.symm c ∈ C.source := C.map_target hc
-    rw [symOpenPartialHomeomorph_source φ V m hm hVo hVsubφ hVdisj e hp] at hs
-    rcases Set.mem_range.mp hs with ⟨q, hq⟩
-    exact ⟨q, hq.symm⟩
   have hlocal : ∀ c : Fin n → ℂ, c ∈ C.target → F c = D (C.symm c) := by
     intro c hc
-    obtain ⟨q, hq⟩ := hrepr c hc
-    have hsq : Sym.sumSubtype V m hm q ∈ C.source := by
-      rw [← hq]
-      exact C.map_target hc
-    have hc' : C (Sym.sumSubtype V m hm q) = c := by
-      rw [← hq, C.right_inv hc]
-    rw [← hc', C.left_inv hsq]
-    have hCcoords : C (Sym.sumSubtype V m hm q) =
-        piSigmaConstHomeomorph ℂ e (fun j =>
-          Sym.coeffEquiv ℂ (m j)
-            (Sym.map (fun z : ↥(V j) => φ j (z : α)) (q j))) := by
-      exact symOpenPartialHomeomorph_apply φ V m hm hVo hVsubφ hVdisj e hp q
-    rw [hCcoords]
-    rw [symOpenPartialHomeomorph_apply ψ V m hm hVo hVsubψ hVdisj e' hp]
-    apply congrArg (piSigmaConstHomeomorph ℂ e')
-    funext i
-    have hroot : (Sym.coeffEquiv ℂ (m i)).symm
-          (((piSigmaConstHomeomorph ℂ e).symm
-            (piSigmaConstHomeomorph ℂ e (fun j =>
-              Sym.coeffEquiv ℂ (m j)
-                (Sym.map (fun z : ↥(V j) => φ j (z : α)) (q j))))) i) =
-        Sym.map (fun z : ↥(V i) => φ i (z : α)) (q i) := by
-      simp
-    rw [hroot]
-    congr 1
-    rw [Sym.map_map]
-    congr 1
-    funext z
-    simp only [Function.comp_apply]
-    have hzφ : (φ i).symm (φ i z) = z :=
-      (φ i).left_inv (hVsubφ i z.2)
-    rw [hzφ]
+    simpa only [C, D, F] using
+      (symOpenPartialHomeomorph_transition_apply
+        φ ψ V m hm hVo hVsubφ hVsubψ hVdisj e e' hp c hc)
   have hbase : C (Sym.sumSubtype V m hm p) =
       piSigmaConstHomeomorph ℂ e cblocks := by
     simp [C, cblocks, symOpenPartialHomeomorph_apply]
@@ -176,7 +206,7 @@ theorem contDiffOn_symOpenPartialHomeomorph_transition
     rw [symOpenPartialHomeomorph_source φ V m hm hVo hVsubφ hVdisj e hp] at hs
     rcases Set.mem_range.mp hs with ⟨q, hq⟩
     have hqA := analyticAt_symOpenPartialHomeomorph_transition
-      φ ψ V m hm hVo hVsubφ hVsubψ hVdisj e e' q hφ
+      φ ψ V m hm hVo hVsubφ hVsubψ hVdisj e e' q (fun i z _ => hφ i z)
     have hc' : C (Sym.sumSubtype V m hm q) = c := by
       calc
         C (Sym.sumSubtype V m hm q) = C (C.symm c) := by rw [hq]

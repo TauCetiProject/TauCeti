@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.RootSum
-public import TauCeti.Topology.PiCurry
+public import TauCeti.Topology.PiCurry.Analytic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 
@@ -42,33 +42,6 @@ namespace Sym
 variable {ι : Type*} [Finite ι] {m : ι → ℕ} {n : ℕ}
 
 attribute [local instance] Fintype.ofFinite
-
-/-- Regrouping a finite family of tuples is analytic. This is kept private because the public
-result below exposes exactly the conjugated coordinate change needed by symmetric-power charts. -/
-private theorem analyticAt_piSigmaConstHomeomorph
-    (e : (Σ i, Fin (m i)) ≃ Fin n) (c : ∀ i, Fin (m i) → ℂ) :
-    AnalyticAt ℂ (piSigmaConstHomeomorph ℂ e) c := by
-  refine AnalyticAt.pi fun j => ?_
-  have hblock : AnalyticAt ℂ (fun p : (∀ i, Fin (m i) → ℂ) => p (e.symm j).1) c :=
-    (ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ)
-      (e.symm j).1).analyticAt c
-  have hcoord : AnalyticAt ℂ (fun p : Fin (m (e.symm j).1) → ℂ => p (e.symm j).2)
-      (c (e.symm j).1) :=
-    (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin (m (e.symm j).1) => ℂ)
-      (e.symm j).2).analyticAt _
-  convert hcoord.comp hblock using 1
-  ext x
-  exact piSigmaConstHomeomorph_apply ℂ e x j
-
-/-- The inverse regrouping from one tuple to a finite family of tuples is analytic. -/
-private theorem analyticAt_piSigmaConstHomeomorph_symm
-    (e : (Σ i, Fin (m i)) ≃ Fin n) (c : Fin n → ℂ) :
-    AnalyticAt ℂ (piSigmaConstHomeomorph ℂ e).symm c := by
-  refine AnalyticAt.pi fun i => AnalyticAt.pi fun j => ?_
-  convert (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin n => ℂ)
-    (e ⟨i, j⟩)).analyticAt c using 1
-  ext x
-  exact piSigmaConstHomeomorph_symm_apply ℂ e x i j
 
 /-- **Coordinate changes on a finite family of root blocks are analytic.**
 
