@@ -376,7 +376,6 @@ theorem coe_specialOrthogonalToOrthogonal (g : TauCeti.QuadraticMap.specialOrtho
       g := (rfl)
 
 /-- The orthogonal determinant of an element of `SO(Q)` is one. -/
-@[simp]
 theorem orthogonalDet_specialOrthogonalToOrthogonal
     (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
     orthogonalDet Q (specialOrthogonalToOrthogonal Q g) = 1 := by
@@ -677,7 +676,6 @@ theorem coe_reflectionOrthogonal :
   simp only [reflectionOrthogonal]
 
 /-- The orthogonal determinant of a reflection is minus one. -/
-@[simp]
 theorem _root_.QuadraticMap.orthogonalDet_reflectionOrthogonal [Module.Free R M]
     [Module.Finite R M] :
     orthogonalDet Q (reflectionOrthogonal Q v) = (-1 : Rˣ) := by
