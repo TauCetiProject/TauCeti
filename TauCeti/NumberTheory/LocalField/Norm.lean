@@ -183,7 +183,6 @@ theorem normalizedValuationWithZero_norm (y : L) :
     rw [hK, hL, normalizedValuation_normUnits, WithZero.coe_pow]
 
 /-- A unit of `L` is a unit of `𝒪[L]` exactly when its norm is a unit of `𝒪[K]`. -/
-@[simp]
 theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
     Algebra.normUnits K y ∈ unitFiltration K 0 ↔ y ∈ unitFiltration L 0 := by
   rw [mem_unitFiltration_zero, mem_unitFiltration_zero, ← normalizedValuation_eq_one_iff,
