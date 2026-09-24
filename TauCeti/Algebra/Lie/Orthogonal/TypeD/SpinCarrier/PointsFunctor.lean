@@ -39,7 +39,6 @@ variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
-@[simp]
 theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin n ⊕ Fin n)
     (u : Multiplicative A) :
     (pointsPresentation n hn A).map (pointsPresentation n hn B) f (rootSubgroupPoints n hn k A u) =
@@ -60,7 +59,6 @@ theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin n ⊕ Fin n)
 
 /-- The induced map carries a point of the split spin weight torus coordinatewise along the
 homomorphism of value rings. -/
-@[simp]
 theorem map_weightTorusPoints (f : A →+* B) (s : Fin n → Aˣ) :
     (pointsPresentation n hn A).map (pointsPresentation n hn B) f (weightTorusPoints n hn A s) =
       weightTorusPoints n hn B fun i ↦ Units.map (f : A →* B) (s i) := by

@@ -51,9 +51,7 @@ generation theorem and is not asserted here.
 
 The construction is the pointwise face of the split torus and root-subgroup carrier in the
 Chevalley--Demazure construction; see J. E. Humphreys, *Linear Algebraic Groups*, §26, and
-R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1. It advances "The
-Chevalley--Demazure construction" and "Points over an algebraically closed field" targets in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
+R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 -/
 
 public section
