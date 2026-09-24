@@ -11,29 +11,30 @@ public import TauCeti.Algebra.Algebra.Frobenius.Basic
 /-!
 # `R[X]/(g)` is a symmetric Frobenius algebra
 
-Let `g` be a monic polynomial of degree `d` over a commutative ring `R`. The quotient
+Let `g` be a monic polynomial of degree `d` over a commutative ring `R`. When `d > 0`, the quotient
 `AdjoinRoot g = R[X]/(g)` is free over `R` with power basis `1, x, …, x ^ (d - 1)`, where `x` is
 the class of `X`. This file shows that the last coordinate in that basis, the coefficient of
-`x ^ (d - 1)`, is a symmetric Frobenius functional on `R[X]/(g)`. No hypothesis on `R` (such as
-being a field, or its characteristic) is needed.
+`x ^ (d - 1)`, is a symmetric Frobenius functional on `R[X]/(g)`. When `d = 0`, the quotient and
+functional are zero. No hypothesis on `R` (such as being a field, or its characteristic) is needed.
 
-The main example is the truncated polynomial algebra `k[x]/(x ^ n)`, where the functional is the
-coefficient of `x ^ (n - 1)`. Over a field it is the basic example of a symmetric Frobenius
-algebra that is not semisimple (for `n ≥ 2`), and so, being self-injective, the basic example of
-an algebra whose finite-dimensional modules form a Frobenius exact category with a nontrivial
-stable category.
+The main example is the truncated polynomial algebra `k[x]/(x ^ n)`, where for `n > 0` the
+functional is the coefficient of `x ^ (n - 1)`. Over a field it is the basic example of a symmetric
+Frobenius algebra that is not semisimple (for `n ≥ 2`), and so, being self-injective, the basic
+example of an algebra whose finite-dimensional modules form a Frobenius exact category with a
+nontrivial stable category.
 
 ## Main definitions
 
-* `AdjoinRoot.lastCoeff`: the coefficient of `x ^ (d - 1)` in the power basis of `R[X]/(g)`, as a
-  linear functional.
+* `AdjoinRoot.lastCoeff`: for `d > 0`, the coefficient of `x ^ (d - 1)` in the power basis of
+  `R[X]/(g)`, as a linear functional; for `d = 0`, the zero functional.
 
 ## Main results
 
 * `AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff`: `AdjoinRoot.lastCoeff` is a symmetric
   Frobenius functional.
-* `AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff_X_pow`: the coefficient of `x ^ (n - 1)`
-  is a symmetric Frobenius functional on `R[X]/(X ^ n)`.
+* `AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff_X_pow`: for `n > 0`, the coefficient of
+  `x ^ (n - 1)` is a symmetric Frobenius functional on `R[X]/(X ^ n)`; for `n = 0`, the quotient
+  and functional are zero.
 
 ## References
 
@@ -49,9 +50,10 @@ open Polynomial
 
 variable {R : Type*} [CommRing R] {g : R[X]}
 
-/-- For a monic polynomial `g` of degree `d`, the coefficient of `x ^ (d - 1)` in the power basis
-`1, x, …, x ^ (d - 1)` of `R[X]/(g)`, where `x = AdjoinRoot.root g`: it sends the class of `p` to
-the coefficient of `X ^ (d - 1)` in the remainder `p %ₘ g`. -/
+/-- For a monic polynomial `g` of positive degree `d`, the coefficient of `x ^ (d - 1)` in the
+power basis `1, x, …, x ^ (d - 1)` of `R[X]/(g)`, where `x = AdjoinRoot.root g`: it sends the
+class of `p` to the coefficient of `X ^ (d - 1)` in the remainder `p %ₘ g`. For `d = 0`, the
+quotient and functional are zero. -/
 noncomputable def _root_.AdjoinRoot.lastCoeff (hg : g.Monic) : AdjoinRoot g →ₗ[R] R :=
   lcoeff R (g.natDegree - 1) ∘ₗ AdjoinRoot.modByMonicHom hg
 
@@ -63,6 +65,7 @@ theorem _root_.AdjoinRoot.lastCoeff_mk (hg : g.Monic) (p : R[X]) :
 
 /-- On the basis vectors `x ^ i` with `i < d`, `AdjoinRoot.lastCoeff` is `1` at `x ^ (d - 1)`
 and `0` elsewhere. -/
+@[simp]
 theorem _root_.AdjoinRoot.lastCoeff_root_pow (hg : g.Monic) {i : ℕ} (hi : i < g.natDegree) :
     AdjoinRoot.lastCoeff hg (AdjoinRoot.root g ^ i) = if i + 1 = g.natDegree then 1 else 0 := by
   nontriviality R
@@ -78,16 +81,10 @@ theorem _root_.AdjoinRoot.lastCoeff_eq_repr (hg : g.Monic) (hd : 0 < g.natDegree
     (a : AdjoinRoot g) :
     AdjoinRoot.lastCoeff hg a =
       (AdjoinRoot.powerBasis' hg).basis.repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩ := by
-  -- Both sides are linear in `a`; compare them on the basis vectors `x ^ j`.
-  have : AdjoinRoot.lastCoeff hg = Finsupp.lapply ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩ ∘ₗ
-      (AdjoinRoot.powerBasis' hg).basis.repr.toLinearMap :=
-    (AdjoinRoot.powerBasis' hg).basis.ext fun j => by
-      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.repr_self, Finsupp.lapply_apply,
-        Finsupp.single_apply, PowerBasis.coe_basis, AdjoinRoot.powerBasis'_gen,
-        AdjoinRoot.lastCoeff_root_pow hg j.isLt]
-      simp only [Fin.ext_iff]
-      grind
-  rw [this, LinearMap.comp_apply, Finsupp.lapply_apply, LinearEquiv.coe_coe]
+  change (AdjoinRoot.modByMonicHom hg a).coeff (g.natDegree - 1) =
+    (AdjoinRoot.powerBasisAux' hg).repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩
+  exact (AdjoinRoot.powerBasisAux'_repr_apply_to_fun hg a
+    ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩).symm
 
 /-- An element `a` with `lastCoeff (a * b) = 0` for every `b` is zero. -/
 private theorem eq_zero_of_forall_lastCoeff_mul (hg : g.Monic) {a : AdjoinRoot g}
@@ -113,8 +110,9 @@ private theorem eq_zero_of_forall_lastCoeff_mul (hg : g.Monic) {a : AdjoinRoot g
   rw [← map_mul, AdjoinRoot.lastCoeff_mk, hpk, ← hk, coeff_mul_X_pow, coeff_natDegree] at this
   exact leadingCoeff_ne_zero.mpr hp this
 
-/-- For a monic polynomial `g` of degree `d` over a commutative ring, the coefficient of
-`x ^ (d - 1)` in the power basis is a symmetric Frobenius functional on `R[X]/(g)`. -/
+/-- For a monic polynomial `g` of positive degree `d` over a commutative ring, the coefficient of
+`x ^ (d - 1)` in the power basis is a symmetric Frobenius functional on `R[X]/(g)`. For `d = 0`,
+the quotient and functional are zero. -/
 theorem _root_.AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff (hg : g.Monic) :
     (AdjoinRoot.lastCoeff hg).IsSymmetricFrobeniusFunctional where
   isFrobeniusFunctional := LinearMap.isFrobeniusFunctional_iff.mpr
@@ -124,8 +122,9 @@ theorem _root_.AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff (hg : g.Monic
 
 /-! ### The truncated polynomial algebra `R[X]/(X ^ n)` -/
 
-/-- On `R[X]/(X ^ n)`, `AdjoinRoot.lastCoeff` extracts the coefficient of `x ^ (n - 1)`: it is
-`1` on `x ^ (n - 1)` and `0` on every other power of `x`. -/
+/-- On `R[X]/(X ^ n)` for `n > 0`, `AdjoinRoot.lastCoeff` extracts the coefficient of
+`x ^ (n - 1)`: it is `1` on `x ^ (n - 1)` and `0` on every other power of `x`. For `n = 0`, the
+quotient and functional are zero. -/
 @[simp]
 theorem _root_.AdjoinRoot.lastCoeff_X_pow_root_pow (n i : ℕ) :
     AdjoinRoot.lastCoeff (monic_X_pow n) (AdjoinRoot.root (X ^ n : R[X]) ^ i) =
@@ -137,9 +136,9 @@ theorem _root_.AdjoinRoot.lastCoeff_X_pow_root_pow (n i : ℕ) :
     rw [pow_add, ← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self, zero_mul, map_zero]
     grind
 
-/-- **The truncated polynomial algebra `R[X]/(X ^ n)` is a symmetric Frobenius algebra**: the
-coefficient of `x ^ (n - 1)` is a symmetric Frobenius functional on it, over any commutative
-ring `R`. -/
+/-- **The truncated polynomial algebra `R[X]/(X ^ n)` is a symmetric Frobenius algebra**: for
+`n > 0`, the coefficient of `x ^ (n - 1)` is a symmetric Frobenius functional on it, over any
+commutative ring `R`. For `n = 0`, the quotient and functional are zero. -/
 theorem _root_.AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff_X_pow (n : ℕ) :
     (AdjoinRoot.lastCoeff (monic_X_pow n : (X ^ n : R[X]).Monic)).IsSymmetricFrobeniusFunctional :=
   AdjoinRoot.isSymmetricFrobeniusFunctional_lastCoeff _
