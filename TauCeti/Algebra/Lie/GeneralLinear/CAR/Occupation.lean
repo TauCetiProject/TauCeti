@@ -73,14 +73,12 @@ noncomputable def carOccupationElement (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
   (2 : K)⁻¹ • (carGenerator (K := K) i j * carGenerator j i)
 
-/-- The occupation element written directly in terms of the two matrix-unit generators. -/
-theorem carOccupationElement_def [decEq : DecidableEq n] (i j : n) :
+/-- The occupation element written in terms of the canonical matrix-unit generators. -/
+theorem carOccupationElement_def (i j : n) :
     carOccupationElement (K := K) i j =
       (2 : K)⁻¹ •
-        (ι (traceQuadraticForm K n) (Matrix.single i j 1) *
-          ι (traceQuadraticForm K n) (Matrix.single j i 1)) := by
-  cases Subsingleton.elim decEq (Classical.decEq n)
-  rw [carOccupationElement, carGenerator_def, carGenerator_def]
+        (carGenerator (K := K) i j * carGenerator j i) := by
+  rfl
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
 @[simp]
@@ -200,7 +198,7 @@ theorem glCliffordHom_single_self_eq_sum_occupation (i : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i i 1) =
       ∑ k : n, carOccupationElement (K := K) i k := by
   rw [glCliffordHom_single, Finset.smul_sum]
-  simp only [carOccupationElement, carGenerator_def]
+  simp only [carOccupationElement]
 
 /-- Orient the diagonal lift using only positive-pair occupation projections. Below `i`, the
 opposite orientation is replaced by its complement. -/

@@ -70,9 +70,7 @@ private theorem commute_carOccupationElement_carGenerator
   have hsecond : ¬(i = k ∧ l = j) := by
     rintro ⟨rfl, rfl⟩
     exact hforward rfl
-  rw [carOccupationElement_def (K := K) (n := Fin N)
-    (decEq := Classical.decEq (Fin N))]
-  simp only [← carGenerator_def]
+  rw [carOccupationElement_def (K := K) (n := Fin N)]
   apply Commute.smul_left
   rw [Commute]
   calc
@@ -107,9 +105,7 @@ private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carGenerator (K := K) j i = 0 := by
   classical
-  rw [carOccupationElement_def (K := K) (n := Fin N)
-    (decEq := Classical.decEq (Fin N)), smul_mul_assoc, mul_assoc]
-  simp only [← carGenerator_def]
+  rw [carOccupationElement_def (K := K) (n := Fin N), smul_mul_assoc, mul_assoc]
   rw [carGenerator_mul_self]
   simp [Ne.symm hij]
 
@@ -188,19 +184,20 @@ private theorem pow_card_mul_finrank_carOccupationFixed
   · intro a ha x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    rw [carGenerator_def, carGenerator_def, smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
-    rw [← carOccupationElement_def (K := K) (n := Fin N)
-      (decEq := Classical.decEq (Fin N))]
+    rw [smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
+    rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
     simpa only [← mul_assoc] using hx
   · intro a ha x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [← mul_assoc, mul_smul_comm]
-    rw [carGenerator_def, carGenerator_def, smul_mul_assoc, ← smul_mul_assoc]
-    rw [← carOccupationElement_def (K := K) (n := Fin N)
-      (decEq := Classical.decEq (Fin N))]
-    rw [carOccupationElement_swap]
-    simp [sub_mul, hx]
+    rw [smul_mul_assoc, ← smul_mul_assoc]
+    rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
+    have hswap := carOccupationElement_swap (K := K) (n := Fin N) a.1.1 a.1.2
+    rw [carOccupationElement_def (K := K) (n := Fin N),
+      carOccupationElement_def (K := K) (n := Fin N)] at hswap
+    have hswap' := congrArg (fun z => z * x) hswap
+    simpa [sub_mul, hx] using hswap'
 
 private theorem finrank_carOccupationFixed
     {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :

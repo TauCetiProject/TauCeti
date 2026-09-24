@@ -358,12 +358,11 @@ private theorem glCliffordHom_single_mul_carHighestWeightVector_eq_zero
       carHighestWeightVector K n = 0 := by
   rw [glCliffordHom_single (decEq := inferInstance), smul_mul_assoc, Finset.sum_mul]
   have hsum : (∑ k : n,
-      CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i k 1) *
-        CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single k j 1) *
+      carGenerator (K := K) i k * carGenerator k j *
           carHighestWeightVector K n) = 0 := by
     apply Finset.sum_eq_zero
     intro k hk
-    simpa only [carGenerator_eq_iota] using raisingTerm_mul_carHighestWeightVector_eq_zero hij k
+    exact raisingTerm_mul_carHighestWeightVector_eq_zero hij k
   rw [hsum, smul_zero]
 
 private theorem raising_lie_carHighestWeightVector_eq_zero
@@ -380,17 +379,15 @@ private theorem diagonal_lie_carHighestWeightVector (i : n) :
   have hsum := diagonalSum_mul_carHighestWeightVector (K := K) i
   have hsum' :
       (∑ k : n,
-          CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i k 1) *
-            CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single k i 1)) *
+          carGenerator (K := K) i k * carGenerator k i) *
           carHighestWeightVector K n =
         (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •
           carHighestWeightVector K n := by
-    simpa only [carGenerator_eq_iota] using hsum
+    exact hsum
   calc
     (2 : K)⁻¹ •
         ((∑ k : n,
-            CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i k 1) *
-              CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single k i 1)) *
+            carGenerator (K := K) i k * carGenerator k i) *
           carHighestWeightVector K n) =
       (2 : K)⁻¹ •
         ((1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •

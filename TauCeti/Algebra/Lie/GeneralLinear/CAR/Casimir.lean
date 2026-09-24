@@ -174,7 +174,9 @@ private theorem carCasimirElement_mem_even :
     apply Submodule.smul_mem
     apply Submodule.sum_mem
     intro k _
-    exact ι_mul_ι_mem_evenOdd_zero _ _ _
+    simpa only [carGenerator_def] using
+      ι_mul_ι_mem_evenOdd_zero (traceQuadraticForm K (Fin N))
+        (Matrix.single i k 1) (Matrix.single k j 1)
   rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
   apply Submodule.sum_mem
   intro i _

@@ -319,15 +319,13 @@ omit [DecidableEq n] in
 /-- The Clifford generator associated to the matrix unit `Eᵢⱼ`.
 
 This is the common CAR generator used by the highest-weight, occupation, Casimir, and weight
-multiplicity calculations. It is opaque so downstream proofs use the characterization theorem
-below rather than depending on the implementation. -/
+multiplicity calculations. -/
 noncomputable def carGenerator {K : Type*} [CommRing K] {m : Type*} [Fintype m]
     (i j : m) : CliffordAlgebra (traceQuadraticForm K m) :=
   ι (traceQuadraticForm K m) (Matrix.single i j 1)
 
 omit [DecidableEq n] in
 /-- The matrix-unit formula for `carGenerator`. -/
-@[simp]
 theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
     carGenerator (K := K) i j =
       ι (traceQuadraticForm K m) (Matrix.single i j 1) := by
@@ -345,6 +343,7 @@ theorem carGenerator_mul_add_swap {K : Type*} [CommRing K] {m : Type*} [Fintype 
 
 omit [DecidableEq n] in
 /-- The square of a matrix-unit generator is zero off the diagonal and scalar on the diagonal. -/
+@[simp]
 theorem carGenerator_mul_self {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
     carGenerator (K := K) i j * carGenerator i j =
       algebraMap K _ (if i = j then 1 else 0) := by
