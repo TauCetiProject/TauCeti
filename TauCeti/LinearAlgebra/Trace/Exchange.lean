@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Algebra.DirectSum.LinearMap
-import Mathlib.Algebra.Exact.Basic
+import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.LinearAlgebra.Trace.Exact
 
 /-!
@@ -44,8 +44,9 @@ namespace LinearMap
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- **Trace reduction to an intersection.** If `f` maps the subspaces `A` and `B` into each other
-and `A ⊔ B = ⊤`, then the trace of `f` is the trace of its restriction to `A ⊓ B`. -/
-theorem trace_restrict_inf_eq_trace {A B : Submodule K V} (hAB : A ⊔ B = ⊤) {f : V →ₗ[K] V}
+and `A ⊔ B = ⊤` (`Codisjoint A B`), then the trace of `f` is the trace of its restriction to
+`A ⊓ B`. -/
+theorem trace_restrict_inf_eq_trace {A B : Submodule K V} (hAB : Codisjoint A B) {f : V →ₗ[K] V}
     (hA : ∀ x ∈ A, f x ∈ B) (hB : ∀ x ∈ B, f x ∈ A) :
     trace K (A ⊓ B : Submodule K V) (f.restrict fun x hx ↦ ⟨hB x hx.2, hA x hx.1⟩) =
       trace K V f := by
@@ -55,9 +56,9 @@ theorem trace_restrict_inf_eq_trace {A B : Submodule K V} (hAB : A ⊔ B = ⊤) 
   rw [trace_eq_add_of_exact C.injective_subtype C.mkQ_surjective (exact_subtype_mkQ C)
     (fN := f.restrict hC) (fQ := C.mapQ C f hC) rfl rfl, left_eq_add]
   -- in `V ⧸ C` the images of `A` and `B` are complementary, and `mapQ` exchanges them
-  have hcompl : IsCompl (A.map C.mkQ) (B.map C.mkQ) := by
-    refine ⟨disjoint_iff.2 ?_, codisjoint_map C.mkQ_surjective (codisjoint_iff.2 hAB)⟩
-    rw [map_inf_eq_map_inf_comap, comap_map_mkQ, sup_of_le_right inf_le_right, mkQ_map_self]
+  have hcompl : IsCompl (A.map C.mkQ) (B.map C.mkQ) := isCompl_map_mkQ_iff.2
+    ⟨by rw [sup_of_le_right inf_le_left, sup_of_le_right inf_le_right],
+      by rw [codisjoint_iff.1 hAB, sup_top_eq]⟩
   refine trace_eq_zero_of_mapsTo_ne (N := ![A.map C.mkQ, B.map C.mkQ])
     ((DirectSum.isInternal_submodule_iff_isCompl _ zero_ne_one (Set.ext <| by decide)).2 hcompl)
     (· + 1) (by decide) (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;> rintro _ ⟨x, hx, rfl⟩
