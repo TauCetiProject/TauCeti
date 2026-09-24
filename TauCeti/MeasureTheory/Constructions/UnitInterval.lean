@@ -174,6 +174,7 @@ def cellFin (m : ℕ) [NeZero m] (x : I) : Fin m := ⟨cellIdx m x, cellIdx_lt (
 theorem coe_cellFin [NeZero m] (x : I) : (cellFin m x : ℕ) = cellIdx m x := (rfl)
 
 /-- The cells of `cellFin` are those of `cellIdx`. -/
+@[simp]
 theorem preimage_cellFin_singleton [NeZero m] (i : Fin m) :
     cellFin m ⁻¹' {i} = cellIdx m ⁻¹' {(i : ℕ)} := by
   ext x

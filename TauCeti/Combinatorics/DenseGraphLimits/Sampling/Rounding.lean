@@ -129,14 +129,6 @@ private theorem measurable_coinSample (W : Graphon Ω μ) (y : Fin n → Ω) :
     Measurable (coinSample W y) :=
   (measurable_exposedSample W).comp (by fun_prop)
 
-/-- A pair `(i, j)` whose designated coin is `p` is one of the two orderings of `p`. -/
-private theorem eq_or_swap_eq_of_max_min_eq {p : Fin n × Fin n} {i j : Fin n}
-    (h : (max i j, min i j) = p) : (i, j) = p ∨ (i, j) = p.swap := by
-  subst h
-  rcases le_total i j with hij | hij
-  · simp [max_eq_right hij, min_eq_left hij]
-  · simp [max_eq_left hij, min_eq_right hij]
-
 /-- Changing one coin changes the edge count of a rectangle by at most `2`. -/
 private theorem abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin n → Ω) (S T : Finset (Fin n))
     (p : Fin n × Fin n) (u u' : Fin n × Fin n → ℝ) (huu' : ∀ q, q ≠ p → u q = u' q) :
@@ -148,8 +140,12 @@ private theorem abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin n → Ω) 
       (if (coinSample W y u').Adj q.1 q.2 then 1 else 0) with hd
   have hd0 : ∀ q, q ≠ p → q ≠ p.swap → d q = 0 := by
     intro q hp hs
-    have hq : (max q.1 q.2, min q.1 q.2) ≠ p := fun h =>
-      (eq_or_swap_eq_of_max_min_eq h).elim hp hs
+    -- the designated coin of `q` is `p` only if `q` is one of the two orderings of `p`
+    have hq : (max q.1 q.2, min q.1 q.2) ≠ p := by
+      rintro rfl
+      rcases le_total q.1 q.2 with h | h
+      · exact hs (by simp [max_eq_right h, min_eq_left h])
+      · exact hp (by simp [max_eq_left h, min_eq_right h])
     simp [hd, huu' _ hq]
   have hd1 : ∀ q, |d q| ≤ 1 := by
     intro q
