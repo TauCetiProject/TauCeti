@@ -18,6 +18,12 @@ represented without changing the ambient restricted product.  The resulting open
 compactness statements are the point-set input for maps and decompositions of restricted
 products.
 
+It also names the restricted product of a family of groups relative to a family of reference
+subgroups, and its product with a distinguished factor carrying no integrality condition. These
+are the shapes in which restricted products appear when a family of local groups is assembled
+into an adelic one: the finite adelic points, and the full adelic points with the archimedean
+factor set apart.
+
 The eventual comparison results are adapted from the FLT project
 (`ImperialCollegeLondon/FLT`, file `TopologicalSpace.lean`, source commit
 `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088, Apache 2.0), whose source file
@@ -37,10 +43,20 @@ namespace TauCeti
 open Filter
 open scoped RestrictedProduct
 
-universe u v
+universe u v w
 
 variable {ι : Type u} {G : ι → Type v}
 variable [∀ i, Group (G i)]
+
+/-- The restricted product of the family `G` relative to the reference subgroups `U`: the
+elements of `Π i, G i` whose coordinates lie in `U i` for all but finitely many `i`. -/
+abbrev RestrictedProductGroup (U : ∀ i, Subgroup (G i)) :=
+  Πʳ i, [G i, (U i : Set (G i))]
+
+/-- A restricted product together with a distinguished factor `H` carrying **no** integrality
+condition. -/
+abbrev RestrictedProductGroupWithFactor (H : Type w) (U : ∀ i, Subgroup (G i)) :=
+  H × RestrictedProductGroup U
 
 /-- The subgroup of a restricted product cut out by a second family of subgroups. -/
 def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :

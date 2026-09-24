@@ -9,17 +9,22 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.Data.Nat.Factorization.MulDvd
 
 /-!
-# Which numbers divide the order of a power
+# Orders of elements and cardinalities
 
 Let `g` have finite order `n` and let `f` divide `n`. The order of `g ^ k` is `n / gcd n k`, so
 `f` divides it exactly when `f * gcd n k` divides `n`. That condition is decided one prime of `f`
 at a time: it fails at `p` exactly when `k` is divisible by `p ^ (v_p n - v_p f + 1)`, the room
 `n` leaves at `p` after `f`, plus one.
 
+In a finite additive group with one, the cardinality casts to `0`, as Mathlib's
+`Nat.cast_card_eq_zero` records, so the cardinality minus one casts to `-1`.
+
 ## Main results
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
+  cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 -/
 
 public section
@@ -51,3 +56,16 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
   rw [Nat.dvd_gcd_iff, and_iff_right (Nat.pow_factorization_sub_factorization_add_one_dvd hf hp)]
 
 end IsOfFinOrder
+
+namespace TauCeti
+
+/-- In a finite additive group with one of cardinality `q`, the cast of `q - 1` is `-1`. -/
+theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Finite R] :
+    ((Nat.card R - 1 : ℕ) : R) = -1 := by
+  cases subsingleton_or_nontrivial R
+  · exact Subsingleton.elim _ _
+  have := Fintype.ofFinite R
+  rw [Nat.cast_sub Finite.one_lt_card.le, Nat.card_eq_fintype_card, Nat.cast_card_eq_zero,
+    Nat.cast_one, zero_sub]
+
+end TauCeti

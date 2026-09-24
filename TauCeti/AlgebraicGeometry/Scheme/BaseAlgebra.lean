@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.AlgebraicGeometry.ResidueDegree
 public import Mathlib.AlgebraicGeometry.FunctionField
 
@@ -19,6 +20,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 ## Main definitions and results
 
 * `Scheme.baseRingToFunctionField`: the canonical map from the base ring to the function field.
+* `Scheme.globalRationalFunctionsEquivFunctionField`: global rational functions as a module
+  over the base ring.
 * `Scheme.baseRingToStalk`: the canonical map from the base ring to a stalk.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
@@ -52,6 +55,15 @@ def _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField [IsIntegral X] :
   letI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
   (X.germToFunctionField ⊤).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
 
+/-- The base-ring map to the function field sends a scalar to the rational function induced by
+the corresponding global function. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_apply [IsIntegral X] (c : k) :
+    haveI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
+    Scheme.baseRingToFunctionField k X c =
+      X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) := by
+  rfl
+
 /-- The function field of an integral scheme over `Spec k` is canonically a `k`-algebra. -/
 instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlgebra
     [IsIntegral X] : Algebra k X.functionField :=
@@ -60,6 +72,14 @@ instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlge
 /-- The canonical map from the base ring of a scheme to its stalk at `x`. -/
 def _root_.AlgebraicGeometry.Scheme.baseRingToStalk (x : X) : k →+* X.presheaf.stalk x :=
   (X.presheaf.germ ⊤ x trivial).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
+
+/-- The image of a base-ring element in a stalk is the germ of the corresponding global
+function. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply (x : X) (c : k) :
+    Scheme.baseRingToStalk k X x c =
+      X.presheaf.germ ⊤ x trivial (Scheme.Modules.baseRingToGlobalSections k X c) :=
+  by simp only [Scheme.baseRingToStalk, RingHom.comp_apply]
 
 /-- Every stalk of a scheme over `Spec k` is canonically a `k`-algebra. -/
 instance (priority := 900) _root_.AlgebraicGeometry.Scheme.stalkBaseAlgebra (x : X) :
@@ -165,6 +185,43 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [Is
     Scheme.baseRingToFunctionField]
 
 end CommRing
+
+section RationalFunctions
+
+variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+  [IsIntegral X]
+
+/-- Global rational functions are the function field, also as modules over the base ring. -/
+def _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionField :
+    Γ(Scheme.rationalFunctions X, ⊤) ≃ₗ[k] X.functionField := by
+  letI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
+  exact {
+    toFun := Scheme.rationalFunctionsEquiv ⊤
+    invFun := (Scheme.rationalFunctionsEquiv ⊤).symm
+    left_inv := (Scheme.rationalFunctionsEquiv ⊤).left_inv
+    right_inv := (Scheme.rationalFunctionsEquiv ⊤).right_inv
+    map_add' := (Scheme.rationalFunctionsEquiv ⊤).map_add
+    map_smul' c f := by
+      rw [Scheme.Modules.base_smul_globalSections,
+        (Scheme.rationalFunctionsEquiv ⊤).map_smul]
+      -- The scalar action through global functions is the germ in the function field.
+      change X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) *
+          Scheme.rationalFunctionsEquiv ⊤ f =
+        algebraMap k X.functionField c * Scheme.rationalFunctionsEquiv ⊤ f
+      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
+      rw [Scheme.baseRingToFunctionField_apply]
+  }
+
+/-- The linear equivalence sends a global rational function to its value in the function field. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionField_apply
+    (f : Γ(Scheme.rationalFunctions X, ⊤)) :
+    haveI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
+    Scheme.globalRationalFunctionsEquivFunctionField (k := k) (X := X) f =
+      Scheme.rationalFunctionsEquiv ⊤ f := by
+  rfl
+
+end RationalFunctions
 
 section Field
 

@@ -45,8 +45,9 @@ below splits a tuple into, along the regrouping `e`, is
 `TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm` in
 `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. At colliding points, polynomial-induced
 coordinate maps are handled by `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SymmetricPower.lean`; the case of a general holomorphic coordinate
-change remains open.
+`TauCeti/Analysis/Polynomial/SymmetricPower.lean`, and a general holomorphic coordinate change, at
+colliding points too, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+`TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 ## Main declarations
 

@@ -244,6 +244,34 @@ def pushforwardToSheafify (P : PresheafOfModules.{v} R.obj) :
 
 omit [HasWeakSheafify J AddCommGrpCat.{v}]
   [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
+/-- The comparison from pushforward to the underlying presheaf of the pushed-forward
+sheafification is natural in the presheaf. -/
+@[reassoc]
+theorem pushforwardToSheafify_naturality {P Q : PresheafOfModules.{v} R.obj} (f : P ⟶ Q) :
+    (PresheafOfModules.pushforward (F := F)
+        (pushforwardRingIso (J := J) (K := K) F R).inv).map f ≫
+        pushforwardToSheafify (J := J) (K := K) F R Q =
+      pushforwardToSheafify (J := J) (K := K) F R P ≫
+        ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+          ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).map f)).val := by
+  -- The stated equality is between bundled module morphisms, while adjunction naturality is an
+  -- equality of the maps used to build them. Unfolding these wrapper fields by `change` is needed
+  -- here: the public underlying-presheaf characterization below is only available after applying
+  -- `toPresheaf`, so it cannot rewrite this bundled goal directly.
+  change (presheafPushforward F R).map f ≫
+      (presheafPushforward F R).map
+        ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app Q) =
+    (presheafPushforward F R).map
+        ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app P) ≫
+      (presheafPushforward F R).map
+        ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj) ⋙
+          SheafOfModules.forget R ⋙ PresheafOfModules.restrictScalars (𝟙 R.obj)).map f)
+  rw [← Functor.map_comp, ← Functor.map_comp]
+  exact congrArg (presheafPushforward F R).map
+    ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.naturality f)
+
+omit [HasWeakSheafify J AddCommGrpCat.{v}]
+  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
 /-- Pushforward of the sheafification unit becomes whiskering on underlying presheaves. -/
 private theorem toPresheaf_map_pushforwardToSheafify_def
     (P : PresheafOfModules.{v} R.obj) :
@@ -325,6 +353,26 @@ theorem pushforwardSheafificationIso_inv (P : PresheafOfModules.{v} R.obj) :
             ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).obj P))).hom := by
   simp [pushforwardSheafificationIso]
 
+/-- The inverse sheafification--pushforward comparison is natural in the presheaf. -/
+@[reassoc]
+theorem pushforwardSheafificationIso_inv_naturality
+    {P Q : PresheafOfModules.{v} R.obj} (f : P ⟶ Q) :
+    (PresheafOfModules.sheafification
+          (R := (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+          (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj)).map
+            ((PresheafOfModules.pushforward (F := F)
+              (pushforwardRingIso (J := J) (K := K) F R).inv).map f) ≫
+        (pushforwardSheafificationIso F R Q).inv =
+      (pushforwardSheafificationIso F R P).inv ≫
+        (SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+          ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).map f) := by
+  rw [pushforwardSheafificationIso_inv, pushforwardSheafificationIso_inv]
+  rw [← Category.assoc, ← Functor.map_comp]
+  rw [pushforwardToSheafify_naturality]
+  simp only [Functor.map_comp]
+  rw [Category.assoc, sheafificationIso_hom_naturality]
+  rw [Category.assoc]
+
 end General
 
 /-- For each presheaf of modules and object of the site, restriction of its sheafification is
@@ -352,6 +400,59 @@ theorem overSheafificationIso_inv (R : Sheaf J RingCat.{u})
         (sheafificationIso (R.over X)
           (((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).obj P).over X)).hom :=
   pushforwardSheafificationIso_inv (J := J.over X) (K := J) (Over.forget X) R P
+
+/-- The inverse restriction--sheafification comparison is natural in the presheaf. -/
+@[reassoc]
+theorem overSheafificationIso_inv_naturality (R : Sheaf J RingCat.{u})
+    {P Q : PresheafOfModules.{v} R.obj} (f : P ⟶ Q) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}] :
+    (PresheafOfModules.sheafification (R := R.over X) (𝟙 (R.over X).obj)).map
+          ((PresheafOfModules.pushforward (F := Over.forget X)
+            (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X) R).inv).map f) ≫
+        (overSheafificationIso R Q X).inv =
+      (overSheafificationIso R P X).inv ≫
+        (_root_.SheafOfModules.overFunctor R X).map
+          ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).map f) :=
+  pushforwardSheafificationIso_inv_naturality
+    (J := J.over X) (K := J) (Over.forget X) R f
+
+/-- Restriction after sheafification is naturally isomorphic to sheafification after restriction
+of presheaves. -/
+def overSheafificationNatIso (R : Sheaf J RingCat.{u}) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}] :
+    PresheafOfModules.sheafification (R := R) (𝟙 R.obj) ⋙
+        _root_.SheafOfModules.overFunctor R X ≅
+      PresheafOfModules.pushforward (F := Over.forget X)
+          (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X) R).inv ⋙
+        PresheafOfModules.sheafification (R := R.over X) (𝟙 (R.over X).obj) := by
+  symm
+  apply NatIso.ofComponents
+  case app => exact fun P ↦ (overSheafificationIso R P X).symm
+  case naturality => exact fun f ↦ overSheafificationIso_inv_naturality R f X
+
+/-- The forward component of `overSheafificationNatIso` is the generic
+pushforward--sheafification comparison. -/
+@[simp]
+theorem overSheafificationNatIso_hom_app (R : Sheaf J RingCat.{u}) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}]
+    (P : PresheafOfModules.{v} R.obj) :
+    (overSheafificationNatIso R X).hom.app P =
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X) R P).hom :=
+  (rfl)
+
+/-- The inverse component of `overSheafificationNatIso` is the inverse generic
+pushforward--sheafification comparison. -/
+@[simp]
+theorem overSheafificationNatIso_inv_app (R : Sheaf J RingCat.{u}) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}]
+    (P : PresheafOfModules.{v} R.obj) :
+    (overSheafificationNatIso R X).inv.app P =
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X) R P).inv :=
+  (rfl)
 
 end SheafOfModules
 

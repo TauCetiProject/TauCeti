@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.Probability.Exchangeability.RandomMeasure.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.Exchangeability.FiniteMarginals
 import TauCeti.Probability.Exchangeability.FullyExchangeable
 import TauCeti.Probability.Exchangeability.Map
 
@@ -30,7 +31,9 @@ These block marginals retain each finite-dimensional marginal of the random path
 only its one-coordinate marginals. A block of width `n * m` canonically splits into `n` consecutive
 blocks of width `m` along `TauCeti.MeasureTheory.blockSplitEquiv`; the restriction identities below
 make the finite-dimensional systems at different widths compatible. They are the input for
-comparing the conditional directing laws obtained at those widths.
+comparing the conditional directing laws obtained at those widths. Conversely, the coded zeroth
+block marginals at all positive widths determine the original path measure, even when their
+equalities hold on width-dependent almost-sure sets.
 
 ## Main definitions and results
 
@@ -42,6 +45,8 @@ comparing the conditional directing laws obtained at those widths.
   the split large block is the law of the corresponding consecutive small blocks;
 * `MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul` -- each component of
   that joint law is the corresponding small block marginal;
+* `MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq` -- all coded positive-width
+  blocks at the origin determine the path measure;
 * `TauCeti.Probability.fullyExchangeable_blockMarginals_of_invariant` -- invariance of the random
   path-measure law makes the block marginals fully exchangeable;
 * `TauCeti.Probability.conditionallyIID_codedBlockMarginals_of_invariant` -- their conditional
@@ -154,6 +159,58 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
       measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
   simpa only [hcomp, Function.comp_def] using h
 
+/-! ### Reconstruction from the block marginals -/
+
+/-- The zeroth block marginal of positive width `m` is the ordinary first-`m` prefix marginal.
+This identifies the consecutive-block API with the finite-marginal uniqueness API. -/
+-- `blockMarginals_apply` simplifies the left side, so `simpNF` rejects a `@[simp]` tag here.
+theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_zero_eq_map_prefixProj
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] :
+    P.blockMarginals m 0 = P.map (prefixProj α m) := by
+  have hproj :
+      (fun x : ℕ → α => fun j : Fin m => x ((Nat.divModEquiv m).symm (0, j))) =
+        prefixProj α m := by
+    funext x j
+    -- Unfold the quotient-remainder inverse to expose the zeroth block coordinate.
+    change x (0 * m + j) = x j
+    simp
+  rw [ProbabilityMeasure.blockMarginals_apply, hproj]
+
+/-- Two path measures are equal if their zeroth block marginals agree at every positive width. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_blockMarginals_zero_eq
+    {P Q : ProbabilityMeasure (ℕ → α)}
+    (h : ∀ m : ℕ, P.blockMarginals (m + 1) 0 = Q.blockMarginals (m + 1) 0) : P = Q := by
+  apply ProbabilityMeasure.toMeasure_injective
+  apply measure_eq_of_prefixProj_map_eq
+  intro m
+  let restrictSucc : (Fin (m + 1) → α) → (Fin m → α) :=
+    fun x i => x i.castSucc
+  have hrestrict : Measurable restrictSucc :=
+    Measurable.of_eval fun i => measurable_pi_apply i.castSucc
+  have hcomp : prefixProj α m = restrictSucc ∘ prefixProj α (m + 1) := by
+    funext x i
+    rfl
+  have hnext :
+      (P : Measure (ℕ → α)).map (prefixProj α (m + 1)) =
+        (Q : Measure (ℕ → α)).map (prefixProj α (m + 1)) := by
+    simpa only [← ProbabilityMeasure.toMeasure_map,
+      ProbabilityMeasure.blockMarginals_zero_eq_map_prefixProj] using
+        congrArg ProbabilityMeasure.toMeasure (h m)
+  rw [hcomp, ← Measure.map_map hrestrict (measurable_prefixProj (m + 1)), hnext,
+    Measure.map_map hrestrict (measurable_prefixProj (m + 1))]
+
+/-- Two random path measures are almost surely equal if their zeroth block marginals agree
+almost surely at every positive width. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_blockMarginals_zero_ae_eq
+    {S : Type*} [MeasurableSpace S] {μ : Measure S}
+    {P Q : S → ProbabilityMeasure (ℕ → α)}
+    (h : ∀ m : ℕ,
+      (fun s => (P s).blockMarginals (m + 1) 0) =ᵐ[μ]
+        fun s => (Q s).blockMarginals (m + 1) 0) :
+    P =ᵐ[μ] Q := by
+  filter_upwards [ae_all_iff.2 h] with s hs
+  exact ProbabilityMeasure.eq_of_blockMarginals_zero_eq hs
+
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/
 private def blockPerm (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) : Equiv.Perm ℕ :=
@@ -212,6 +269,33 @@ theorem measurable_codedBlockMarginals (m : ℕ) [NeZero m]
   Measurable.of_eval fun i =>
     measurable_probabilityMeasureCode.comp
       ((measurable_pi_apply i).comp (measurable_blockMarginals m))
+
+/-- Two path measures are equal if their coded zeroth block marginals agree at every positive
+width, assuming countable generation of the finite product spaces being coded. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq
+    [∀ m : ℕ, MeasurableSpace.CountablyGenerated (Fin (m + 1) → α)]
+    {P Q : ProbabilityMeasure (ℕ → α)}
+    (h : ∀ m : ℕ, P.codedBlockMarginals (m + 1) 0 = Q.codedBlockMarginals (m + 1) 0) :
+    P = Q := by
+  apply ProbabilityMeasure.eq_of_blockMarginals_zero_eq
+  intro m
+  exact probabilityMeasureCode_injective (h m)
+
+/-- Two random path measures are almost surely equal if their coded zeroth block marginals agree
+almost surely at every positive width, assuming countable generation of the finite product spaces
+being coded. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_codedBlockMarginals_zero_ae_eq
+    [∀ m : ℕ, MeasurableSpace.CountablyGenerated (Fin (m + 1) → α)]
+    {S : Type*} [MeasurableSpace S] {μ : Measure S}
+    {P Q : S → ProbabilityMeasure (ℕ → α)}
+    (h : ∀ m : ℕ,
+      (fun s => (P s).codedBlockMarginals (m + 1) 0) =ᵐ[μ]
+        fun s => (Q s).codedBlockMarginals (m + 1) 0) :
+    P =ᵐ[μ] Q := by
+  apply ProbabilityMeasure.ae_eq_of_blockMarginals_zero_ae_eq
+  intro m
+  filter_upwards [h m] with s hs
+  exact probabilityMeasureCode_injective hs
 
 /-- **The finite block marginals of an invariant random path measure are fully exchangeable.**
 

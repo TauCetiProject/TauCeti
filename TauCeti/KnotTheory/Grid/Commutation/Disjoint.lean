@@ -47,87 +47,10 @@ public section
 
 namespace TauCeti
 
-private theorem rectangleDecomposition_fields_heq {n : ℕ} {x z : GridState n}
-    {D E : GridRectangleDecomposition x z} (h : D = E) :
-    HEq D.first E.first ∧ HEq D.second E.second := by
-  subst E
-  exact ⟨HEq.rfl, HEq.rfl⟩
 
 namespace GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
-
-/-- Forget that the first domain of a pentagon--rectangle decomposition has a distinguished
-turn point. -/
-def toRectangleDecomposition (D : GridPentagonRectangleDecomposition a s x z) :
-    GridRectangleDecomposition x z where
-  middle := D.middle
-  first := D.pentagon.toGridRectangleBetween
-  second := D.rectangle
-
-/-- Forgetting the pentagon turn point preserves the intermediate state. -/
-@[simp]
-theorem toRectangleDecomposition_middle (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.middle = D.middle := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying rectangle has the pentagon's initial side. -/
-@[simp]
-theorem toRectangleDecomposition_first_left (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.first.left = D.pentagon.left := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying rectangle has the pentagon's terminal side. -/
-@[simp]
-theorem toRectangleDecomposition_first_right (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.first.right = D.pentagon.right := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying toroidal rectangle is the pentagon's underlying rectangle. -/
-@[simp]
-theorem toRectangleDecomposition_first_toGridRectangle
-    (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.first.toGridRectangle = D.pentagon.toGridRectangle := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying rectangle has the rectangle's initial side. -/
-@[simp]
-theorem toRectangleDecomposition_second_left (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.second.left = D.rectangle.left := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying rectangle has the rectangle's terminal side. -/
-@[simp]
-theorem toRectangleDecomposition_second_right (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.second.right = D.rectangle.right := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying toroidal rectangle is the decomposition's rectangle. -/
-@[simp]
-theorem toRectangleDecomposition_second_toGridRectangle
-    (D : GridPentagonRectangleDecomposition a s x z) :
-    D.toRectangleDecomposition.second.toGridRectangle = D.rectangle.toGridRectangle := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- A pentagon--rectangle decomposition is determined by its underlying pair of rectangles. -/
-theorem toRectangleDecomposition_injective :
-    Function.Injective
-      (toRectangleDecomposition : GridPentagonRectangleDecomposition a s x z → _) := by
-  intro D E h
-  have hmiddle := congrArg GridRectangleDecomposition.middle h
-  have hrectangle : HEq D.rectangle E.rectangle :=
-    (rectangleDecomposition_fields_heq h).2
-  have hpentagon : HEq D.pentagon E.pentagon :=
-    Subsingleton.helim
-      (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
-  exact GridPentagonRectangleDecomposition.ext hmiddle hpentagon hrectangle
 
 /-- The pentagon and rectangle have disjoint pairs of vertical sides. -/
 def HasDisjointSides (D : GridPentagonRectangleDecomposition a s x z) : Prop :=
@@ -177,65 +100,6 @@ end GridPentagonRectangleDecomposition
 namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
-
-/-- Forget that the second domain of a rectangle--pentagon decomposition has a distinguished
-turn point. -/
-def toRectangleDecomposition (D : GridRectanglePentagonDecomposition a s x z) :
-    GridRectangleDecomposition x z where
-  middle := D.middle
-  first := D.rectangle
-  second := D.pentagon.toGridRectangleBetween
-
-/-- Forgetting the pentagon turn point preserves the intermediate state. -/
-@[simp]
-theorem toRectangleDecomposition_middle (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.middle = D.middle := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying rectangle has the rectangle's initial side. -/
-@[simp]
-theorem toRectangleDecomposition_first_left (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.first.left = D.rectangle.left := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying rectangle has the rectangle's terminal side. -/
-@[simp]
-theorem toRectangleDecomposition_first_right (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.first.right = D.rectangle.right := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The first underlying toroidal rectangle is the decomposition's rectangle. -/
-@[simp]
-theorem toRectangleDecomposition_first_toGridRectangle
-    (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.first.toGridRectangle = D.rectangle.toGridRectangle := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying rectangle has the pentagon's initial side. -/
-@[simp]
-theorem toRectangleDecomposition_second_left (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.second.left = D.pentagon.left := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying rectangle has the pentagon's terminal side. -/
-@[simp]
-theorem toRectangleDecomposition_second_right (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.second.right = D.pentagon.right := by
-  unfold toRectangleDecomposition
-  rfl
-
-/-- The second underlying toroidal rectangle is the pentagon's underlying rectangle. -/
-@[simp]
-theorem toRectangleDecomposition_second_toGridRectangle
-    (D : GridRectanglePentagonDecomposition a s x z) :
-    D.toRectangleDecomposition.second.toGridRectangle = D.pentagon.toGridRectangle := by
-  unfold toRectangleDecomposition
-  rfl
 
 /-- The rectangle and pentagon have disjoint pairs of vertical sides. -/
 def HasDisjointSides (D : GridRectanglePentagonDecomposition a s x z) : Prop :=
@@ -404,7 +268,13 @@ theorem isEmpty_commute_pentagon
   unfold commute
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
-    hrectangle hpentagon
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
 /-- Reordering preserves emptiness of the rectangle when both original domains are empty. -/
 theorem isEmpty_commute_rectangle
@@ -413,20 +283,13 @@ theorem isEmpty_commute_rectangle
     (D.commute h).rectangle.IsEmpty := by
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
-    hrectangle hpentagon
-
-/-- A rectangle--pentagon decomposition is determined by its underlying pair of rectangles. -/
-theorem toRectangleDecomposition_injective :
-    Function.Injective
-      (toRectangleDecomposition : GridRectanglePentagonDecomposition a s x z → _) := by
-  intro D E h
-  have hmiddle := congrArg GridRectangleDecomposition.middle h
-  have hrectangle : HEq D.rectangle E.rectangle :=
-    (rectangleDecomposition_fields_heq h).1
-  have hpentagon : HEq D.pentagon E.pentagon :=
-    Subsingleton.helim
-      (congrArg (fun y => GridPentagonBetween a s y z) hmiddle) D.pentagon E.pentagon
-  exact GridRectanglePentagonDecomposition.ext hmiddle hrectangle hpentagon
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
 end GridRectanglePentagonDecomposition
 
@@ -557,7 +420,13 @@ theorem isEmpty_commute_rectangle
     (D.commute h).rectangle.IsEmpty := by
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
-    hpentagon hrectangle
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 
 /-- Reordering preserves emptiness of the pentagon when both original domains are empty. -/
 theorem isEmpty_commute_pentagon
@@ -567,7 +436,13 @@ theorem isEmpty_commute_pentagon
   unfold commute
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
-    hpentagon hrectangle
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 
 /-- Reordering a disjoint pentagon--rectangle decomposition twice recovers the original
 decomposition. -/

@@ -24,7 +24,8 @@ need no transport isomorphism in their public statements.
 ## Main declarations
 
 * `TauCeti.AlmostComplexStructure.latticeComplexification`: the complex-linear extension of `J`
-  acting on the chosen abstract complexification.
+  acting on the chosen abstract complexification; on the real points coming from the realification
+  it acts by `J` (`latticeComplexification_realificationComplexEquiv_one_tmul`).
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure`: the associated effective integral Hodge
   structure of weight one.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_one` and
@@ -65,6 +66,16 @@ theorem realificationComplexEquiv_baseChange_apply
     Hodge.realificationComplexEquiv hℂ (J.toLinearMap.baseChange ℂ x) =
       J.latticeComplexification hℂ (Hodge.realificationComplexEquiv hℂ x) := by
   simp [latticeComplexification]
+
+/-- The transported complex structure acts on the image of a real vector by the original almost
+complex structure. -/
+@[simp]
+theorem latticeComplexification_realificationComplexEquiv_one_tmul
+    (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ)
+    (x : Hodge.Realification V) :
+    J.latticeComplexification hℂ (Hodge.realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] x)) =
+      Hodge.realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] J x) := by
+  rw [← realificationComplexEquiv_baseChange_apply, LinearMap.baseChange_tmul]
 
 /-- The transported complex structure still squares to minus the identity. -/
 theorem latticeComplexification_comp_self

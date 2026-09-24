@@ -99,7 +99,7 @@ theorem mackeySummand_eq_ind_res_conjRep (s : G) (A : Rep.{u} k H) :
   have e : TauCeti.mackeyToH s H K =
       ((TauCeti.conjSubgroupEquiv s H).toMonoidHom.comp (TauCeti.mackeyToConjH s H K)).comp
         (Subgroup.subgroupOfEquivOfLe TauCeti.mackeySubgroup_le_right).toMonoidHom :=
-    MonoidHom.ext fun y => Subtype.ext (by simp)
+    MonoidHom.ext fun y ↦ Subtype.ext (by simp)
   rw [← TauCeti.res_obj_eq_conjRep, mackeySummand, e]
   rfl
 
@@ -110,7 +110,7 @@ corresponding under the induction--restriction adjunction to `a ↦ ⟦s⁻¹ �
 noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
     mackeySummand H K s A ⟶ Rep.res K.subtype (Rep.ind H.subtype A) :=
   (Rep.indResHomEquiv _ _ _).symm <| Rep.ofHom
-    ⟨IndV.mk H.subtype A.ρ s⁻¹, fun m => LinearMap.ext fun a => by
+    ⟨IndV.mk H.subtype A.ρ s⁻¹, fun m ↦ LinearMap.ext fun a ↦ by
       have h := TauCeti.indV_mk_apply_inv H.subtype A.ρ (TauCeti.mackeyToH s H K m)⁻¹ s⁻¹ a
       rw [inv_inv] at h
       -- The two sides are the restricted actions on `mackeySummand` and on `Rep.res K.subtype`,
@@ -134,7 +134,7 @@ variable (H K) in
 /-- The direct sum of the Mackey summands over the double cosets `K \ G / H`, each built from the
 chosen representative `Quotient.out`. -/
 noncomputable abbrev mackeyDirectSum (A : Rep.{u} k H) : Rep.{u} k K :=
-  Rep.of (directSum fun D : DoubleCoset.Quotient (K : Set G) (H : Set G) =>
+  Rep.of (directSum fun D : DoubleCoset.Quotient (K : Set G) (H : Set G) ↦
     (mackeySummand H K D.out A).ρ)
 
 variable (H K) in
@@ -153,10 +153,10 @@ to `Rep.mackeyDirectSum H K A` (`Rep.mackeyDirectSumFunctor_obj`) and on morphis
 @[expose]
 noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
   obj A := mackeyDirectSum H K A
-  map f := Rep.ofHom ⟨DirectSum.lmap fun D =>
+  map f := Rep.ofHom ⟨DirectSum.lmap fun D ↦
       ((mackeySummandFunctor H K D.out).map f).hom.toLinearMap,
-    fun x => by
-      refine DirectSum.linearMap_ext k fun D => LinearMap.ext fun y => ?_
+    fun x ↦ by
+      refine DirectSum.linearMap_ext k fun D ↦ LinearMap.ext fun y ↦ ?_
       simp only [LinearMap.coe_comp, Function.comp_apply, directSum_apply, DirectSum.lmap_lof]
       exact congrArg (DirectSum.lof k _ _ D) (Rep.hom_comm_apply _ x y)⟩
   map_id A := by
@@ -197,10 +197,10 @@ theorem mackeyDirectSumFunctor_map_hom_lof {A B : Rep.{u} k H} (f : A ⟶ B)
     (D : DoubleCoset.Quotient (K : Set G) (H : Set G)) (u : K) (a : A) :
     ((mackeyDirectSumFunctor H K).map f).hom
         (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-          (fun D => (mackeySummand H K D.out A : Type u)) D
+          (fun D ↦ (mackeySummand H K D.out A : Type u)) D
           (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a)) =
       DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-        (fun D => (mackeySummand H K D.out B : Type u)) D
+        (fun D ↦ (mackeySummand H K D.out B : Type u)) D
         (IndV.mk _ (B.ρ.comp (TauCeti.mackeyToH D.out H K)) u (f.hom a)) := by
   exact (DirectSum.lmap_lof _ _ _).trans rfl
 
@@ -274,14 +274,14 @@ linear maps indexed by `g`. -/
 private noncomputable def mackeyDecompAux (g : G) :
     A →ₗ[k] mackeyDirectSum H K A :=
   (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-    (fun D => (mackeySummand H K D.out A : Type u)) (DoubleCoset.mk K H g⁻¹)).comp
+    (fun D ↦ (mackeySummand H K D.out A : Type u)) (DoubleCoset.mk K H g⁻¹)).comp
     (mackeyComponent A (DoubleCoset.mk K H g⁻¹) g (exists_eq_mul_out_inv_mul g))
 
 private theorem mackeyDecompAux_eq (D : DoubleCoset.Quotient (K : Set G) (H : Set G))
     (h : H) (u : K) (a : A) :
     mackeyDecompAux A ((h : G) * D.out⁻¹ * u) a =
       DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-        (fun D => (mackeySummand H K D.out A : Type u)) D
+        (fun D ↦ (mackeySummand H K D.out A : Type u)) D
         (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u (A.ρ h⁻¹ a)) := by
   have hD : DoubleCoset.mk K H ((h : G) * D.out⁻¹ * u)⁻¹ = D :=
     ((DoubleCoset.eq.mpr ⟨(u : G)⁻¹, K.inv_mem u.2, (h : G)⁻¹, H.inv_mem h.2, by group⟩).symm).trans
@@ -290,10 +290,10 @@ private theorem mackeyDecompAux_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
   have key : ∀ (D' : DoubleCoset.Quotient (K : Set G) (H : Set G)) (_ : D' = D)
       (hg : ∃ h' : H, ∃ u' : K, (h : G) * D.out⁻¹ * u = h' * D'.out⁻¹ * u'),
       DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-          (fun D => (mackeySummand H K D.out A : Type u)) D'
+          (fun D ↦ (mackeySummand H K D.out A : Type u)) D'
           (mackeyComponent A D' _ hg a) =
         DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-          (fun D => (mackeySummand H K D.out A : Type u)) D
+          (fun D ↦ (mackeySummand H K D.out A : Type u)) D
           (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u (A.ρ h⁻¹ a)) := by
     rintro _ rfl hg
     rw [mackeyComponent_eq A _ _ hg h u rfl]
@@ -319,10 +319,10 @@ private theorem lift_single_tmul {W : Type*} [AddCommGroup W] [Module k W] (f : 
 private noncomputable def indToMackeySum :
     IndV H.subtype A.ρ →ₗ[k] mackeyDirectSum H K A :=
   Coinvariants.lift _ (TensorProduct.lift <|
-    (Finsupp.lift _ k G fun g => mackeyDecompAux A g) ∘ₗ
-      (MonoidAlgebra.coeffLinearEquiv k).toLinearMap) fun h₀ => by
-    refine TensorProduct.ext (MonoidAlgebra.lhom_ext' fun g =>
-      LinearMap.ext_ring (LinearMap.ext fun a => ?_))
+    (Finsupp.lift _ k G fun g ↦ mackeyDecompAux A g) ∘ₗ
+      (MonoidAlgebra.coeffLinearEquiv k).toLinearMap) fun h₀ ↦ by
+    refine TensorProduct.ext (MonoidAlgebra.lhom_ext' fun g ↦
+      LinearMap.ext_ring (LinearMap.ext fun a ↦ ?_))
     simp only [LinearMap.compr₂ₛₗ_apply, LinearMap.comp_apply, TensorProduct.mk_apply,
       MonoidAlgebra.lsingle_apply, tprod_apply, TensorProduct.map_tmul, MonoidHom.comp_apply,
       ofMulAction_single]
@@ -335,12 +335,12 @@ private theorem indToMackeySum_mk (g : G) (a : A) :
 
 /-- The inverse map of the Mackey decomposition, as a linear map. -/
 private noncomputable def mackeySumToInd : mackeyDirectSum H K A →ₗ[k] IndV H.subtype A.ρ :=
-  DirectSum.toModule k _ _ fun D => (mackeyInclusion K D.out A).hom.toLinearMap
+  DirectSum.toModule k _ _ fun D ↦ (mackeyInclusion K D.out A).hom.toLinearMap
 
 private theorem mackeySumToInd_lof (D : DoubleCoset.Quotient (K : Set G) (H : Set G)) (u : K)
     (a : A) :
     mackeySumToInd A (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-        (fun D => (mackeySummand H K D.out A : Type u)) D
+        (fun D ↦ (mackeySummand H K D.out A : Type u)) D
         (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a)) =
       IndV.mk H.subtype A.ρ (D.out⁻¹ * u) a := by
   rw [mackeySumToInd, DirectSum.toModule_lof]
@@ -349,25 +349,25 @@ private theorem mackeySumToInd_lof (D : DoubleCoset.Quotient (K : Set G) (H : Se
 private theorem mackeySumToInd_comp_ρ (x : K) :
     mackeySumToInd A ∘ₗ (mackeyDirectSum H K A).ρ x =
       (Rep.res K.subtype (Rep.ind H.subtype A)).ρ x ∘ₗ mackeySumToInd A := by
-  refine DirectSum.linearMap_ext k fun D => LinearMap.ext fun y => ?_
+  refine DirectSum.linearMap_ext k fun D ↦ LinearMap.ext fun y ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, directSum_apply,
     DirectSum.lmap_lof, mackeySumToInd, DirectSum.toModule_lof]
   exact Rep.hom_comm_apply (mackeyInclusion K D.out A) x y
 
 private theorem indToMackeySum_comp_mackeySumToInd :
     indToMackeySum (K := K) A ∘ₗ mackeySumToInd A = LinearMap.id := by
-  refine DirectSum.linearMap_ext k fun D => IndV.hom_ext _ _ fun u => LinearMap.ext fun a => ?_
+  refine DirectSum.linearMap_ext k fun D ↦ IndV.hom_ext _ _ fun u ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.id_comp]
   have e : (D.out⁻¹ * u : G) = ((1 : H) : G) * D.out⁻¹ * u := by simp
   -- `rw` cannot abstract terms whose type mentions `D.out`, so the steps are chained by hand.
   exact (congrArg (indToMackeySum A) ((mackeySumToInd_lof A D u a).trans
-    (congrArg (fun x => IndV.mk H.subtype A.ρ x a) e))).trans
+    (congrArg (fun x ↦ IndV.mk H.subtype A.ρ x a) e))).trans
     ((indToMackeySum_mk A _ a).trans ((mackeyDecompAux_eq A D 1 u a).trans
       (by rw [inv_one, map_one, Module.End.one_apply]; rfl)))
 
 private theorem mackeySumToInd_comp_indToMackeySum :
     mackeySumToInd A ∘ₗ indToMackeySum (K := K) A = LinearMap.id := by
-  refine IndV.hom_ext _ _ fun g => LinearMap.ext fun a => ?_
+  refine IndV.hom_ext _ _ fun g ↦ LinearMap.ext fun a ↦ ?_
   obtain ⟨h, u, e⟩ := exists_eq_mul_out_inv_mul (H := H) (K := K) g
   generalize DoubleCoset.mk K H g⁻¹ = D at e
   subst e
@@ -376,7 +376,7 @@ private theorem mackeySumToInd_comp_indToMackeySum :
   exact (congrArg (mackeySumToInd A)
     ((indToMackeySum_mk A _ a).trans (mackeyDecompAux_eq A D h u a))).trans
     ((mackeySumToInd_lof A D u _).trans ((TauCeti.indV_mk_apply_inv H.subtype A.ρ h _ a).trans
-      (congrArg (fun x => IndV.mk H.subtype A.ρ x a) (mul_assoc _ _ _).symm)))
+      (congrArg (fun x ↦ IndV.mk H.subtype A.ρ x a) (mul_assoc _ _ _).symm)))
 
 /-- **The Mackey decomposition formula.**  For subgroups `H` and `K` of `G` and a representation
 `A` of `H`, restricting the induced representation `Ind_H^G A` to `K` gives the direct sum, over
@@ -401,7 +401,7 @@ theorem mackeyDecomposition_hom_hom_apply_mk (D : DoubleCoset.Quotient (K : Set 
     (h : H) (u : K) (a : A) :
     (mackeyDecomposition A).hom.hom (IndV.mk H.subtype A.ρ (h * D.out⁻¹ * u) a) =
       DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-        (fun D => (mackeySummand H K D.out A : Type u)) D
+        (fun D ↦ (mackeySummand H K D.out A : Type u)) D
         (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u (A.ρ h⁻¹ a)) :=
   (indToMackeySum_mk A _ a).trans (mackeyDecompAux_eq A D h u a)
 
@@ -412,7 +412,7 @@ theorem mackeyDecomposition_inv_hom_apply_lof
     (D : DoubleCoset.Quotient (K : Set G) (H : Set G)) (u : K) (a : A) :
     (mackeyDecomposition A).inv.hom
         (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-          (fun D => (mackeySummand H K D.out A : Type u)) D
+          (fun D ↦ (mackeySummand H K D.out A : Type u)) D
           (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a)) =
       IndV.mk H.subtype A.ρ (D.out⁻¹ * u) a :=
   mackeySumToInd_lof A D u a
@@ -423,21 +423,21 @@ variable (H K) in
 noncomputable def mackeyDecompositionNatIso :
     Rep.indFunctor k H.subtype ⋙ Rep.resFunctor K.subtype ≅
       mackeyDirectSumFunctor H K :=
-  (NatIso.ofComponents (fun A => (mackeyDecomposition A).symm) fun {A B} f => by
-    refine Rep.hom_ext (IntertwiningMap.ext (DirectSum.linearMap_ext k fun D =>
-      IndV.hom_ext _ _ fun u => LinearMap.ext fun a => ?_))
+  (NatIso.ofComponents (fun A ↦ (mackeyDecomposition A).symm) fun {A B} f ↦ by
+    refine Rep.hom_ext (IntertwiningMap.ext (DirectSum.linearMap_ext k fun D ↦
+      IndV.hom_ext _ _ fun u ↦ LinearMap.ext fun a ↦ ?_))
     -- Both composites are `LinearMap.comp`s of the `IntertwiningMap` underlying a morphism of
     -- `Rep k K`; since `Rep.comp`, `Rep.res` and `Iso.symm` are sealed, no rewrite strips those
     -- wrappers, so the goal is restated definitionally as an equation between the maps applied to
     -- the generator `⟦u ⊗ₜ a⟧` of the summand of `D`.
     change (mackeyDecomposition B).inv.hom (((mackeyDirectSumFunctor H K).map f).hom
         (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-          (fun D => (mackeySummand H K D.out A : Type u)) D
+          (fun D ↦ (mackeySummand H K D.out A : Type u)) D
           (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a))) =
       ((Rep.indFunctor k H.subtype ⋙ Rep.resFunctor K.subtype).map f).hom
         ((mackeyDecomposition A).inv.hom
           (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
-            (fun D => (mackeySummand H K D.out A : Type u)) D
+            (fun D ↦ (mackeySummand H K D.out A : Type u)) D
             (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a)))
     rw [mackeyDecomposition_inv_hom_apply_lof, mackeyDirectSumFunctor_map_hom_lof,
       mackeyDecomposition_inv_hom_apply_lof]

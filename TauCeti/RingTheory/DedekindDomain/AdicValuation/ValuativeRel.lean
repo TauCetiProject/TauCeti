@@ -23,8 +23,9 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
-  membership form and `valuation_integers_adicCompletionIntegers` packages it as
-  `Valuation.Integers`.
+  membership form, `valuation_integers_adicCompletionIntegers` packages it as
+  `Valuation.Integers`, and `mem_maximalIdeal_integer_pow_iff` reads the powers of its maximal
+  ideal as valuation bounds.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
@@ -111,6 +112,17 @@ theorem coe_integerEquivAdicCompletionIntegers (x : 𝒪[v.adicCompletion K]) :
 theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionIntegers K) :
     ((v.integerEquivAdicCompletionIntegers (K := K)).symm x : v.adicCompletion K) =
       (x : v.adicCompletion K) := (rfl)
+
+/-- An element of the ring of integers of the valuative relation on `K_v` lies in the `n`-th power
+of its maximal ideal exactly when its valuation is at most `exp (-n)`. This is
+`mem_maximalIdeal_pow_iff`, read through `integerEquivAdicCompletionIntegers`. -/
+theorem mem_maximalIdeal_integer_pow_iff {x : 𝒪[v.adicCompletion K]} {n : ℕ} :
+    x ∈ IsLocalRing.maximalIdeal 𝒪[v.adicCompletion K] ^ n ↔
+      Valued.v (x : v.adicCompletion K) ≤ WithZero.exp (-(n : ℤ)) := by
+  let e := v.integerEquivAdicCompletionIntegers (K := K)
+  rw [← coe_integerEquivAdicCompletionIntegers v x, ← mem_maximalIdeal_pow_iff,
+    ← IsLocalRing.map_ringEquiv_maximalIdeal e, ← Ideal.map_pow, ← Ideal.mem_comap,
+    Ideal.comap_map_of_bijective _ e.bijective]
 
 /-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
 most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation

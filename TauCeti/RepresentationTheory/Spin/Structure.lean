@@ -125,7 +125,7 @@ omit [Invertible (2 : K)] in
 `2 * l`. -/
 theorem finrank_exteriorAlgebra_W_of_finrank_eq_two_mul {l : ℕ}
     (hV : finrank K V = 2 * l) : finrank K (ExteriorAlgebra K P.W) = 2 ^ l := by
-  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_of_finrank_eq_two_mul hV]
+  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_eq_of_finrank_eq_two_mul hV]
 
 /-- **The Clifford algebra and the operator algebra of the spinor module have equal dimension** in
 even dimension: `2 ^ (2 * l)` on the left, `(2 ^ l) ^ 2` on the right. This is the dimension count
@@ -398,7 +398,7 @@ noncomputable def SpinPolarizationData.evenCliffordEquivProdMatrix {l : ℕ}
       Matrix (Fin (2 ^ (l - 1))) (Fin (2 ^ (l - 1))) K ×
         Matrix (Fin (2 ^ (l - 1))) (Fin (2 ^ (l - 1))) K := by
   have hline := P.line_eq_bot_of_even_finrank (hV ▸ even_two_mul l)
-  have hWfin := P.finrank_W_of_finrank_eq_two_mul hV
+  have hWfin := P.finrank_W_eq_of_finrank_eq_two_mul hV
   have hplus : finrank K (spinPlus Q P) = 2 ^ (l - 1) := by
     rw [finrank_spinPlus P hW, hWfin]
   have hminus : finrank K (spinMinus Q P) = 2 ^ (l - 1) := by
@@ -414,10 +414,10 @@ theorem SpinPolarizationData.evenCliffordEquivProdMatrix_apply {l : ℕ}
     (hW : P.W ≠ ⊥) (hV : finrank K V = 2 * l) (x : CliffordAlgebra.even Q) :
     P.evenCliffordEquivProdMatrix hW hV x =
       (Algebra.endAlgEquivMatrix K (spinPlus Q P)
-          (by rw [finrank_spinPlus P hW, P.finrank_W_of_finrank_eq_two_mul hV])
+          (by rw [finrank_spinPlus P hW, P.finrank_W_eq_of_finrank_eq_two_mul hV])
           (spinPlusAction Q P (P.line_eq_bot_of_even_finrank (hV ▸ even_two_mul l)) x),
         Algebra.endAlgEquivMatrix K (spinMinus Q P)
-          (by rw [finrank_spinMinus P hW, P.finrank_W_of_finrank_eq_two_mul hV])
+          (by rw [finrank_spinMinus P hW, P.finrank_W_eq_of_finrank_eq_two_mul hV])
           (spinMinusAction Q P (P.line_eq_bot_of_even_finrank (hV ▸ even_two_mul l)) x)) := by
   simp [evenCliffordEquivProdMatrix]
 

@@ -118,8 +118,6 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥) {I : I
         hQp.ne_top (top_le_iff.mp (Ideal.dvd_iff_le.mp hdvd))
     rw [hQtop, Nat.mul_zero]
   | h₃ J P hJ hP ih =>
-    -- The `≠ ⊥` guard is part of the motive, so it is already introduced here.
-    have hJ' : J ≠ ⊥ := hJ
     have hP0 : P ≠ ⊥ := hP.ne_zero
     have hPprime : P.IsPrime := Ideal.isPrime_of_prime hP
     have hnb : relNorm A P * relNorm A J ≠ ⊥ :=

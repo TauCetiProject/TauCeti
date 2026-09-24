@@ -55,6 +55,8 @@ integers in a fixed ray class.
   every point of `posRegion 𝔪` of nonzero norm has a congruence-unit translate in the domain;
 * `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion`
   — that translate is unique modulo the congruence units that are roots of unity;
+* `TauCeti.GlobalNumberFields.index_unitsCongruenceSubgroup_mul_card_unitsCongruenceTorsion`:
+  the index of the congruence units against that of their join with the roots of unity;
 * `TauCeti.GlobalNumberFields.rayFundamentalDomain_one`: the trivial modulus recovers Mathlib's
   fundamental cone;
 * `TauCeti.GlobalNumberFields.measurableSet_rayFundamentalDomain`: the domain is measurable;
@@ -95,16 +97,46 @@ translates of the cone below. -/
 def unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
   unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K
 
+/-- `unitsCongruenceSubgroupSupTorsion 𝔪` is the join of `unitsCongruenceSubgroup 𝔪` and the roots
+of unity. -/
+theorem unitsCongruenceSubgroupSupTorsion_def (𝔪 : Modulus K) :
+    unitsCongruenceSubgroupSupTorsion 𝔪 =
+      unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K :=
+  (rfl)
+
+/-- The universal property of the join: a subgroup contains `unitsCongruenceSubgroupSupTorsion 𝔪`
+if and only if it contains the units congruent to one modulo `𝔪` and the roots of unity. -/
+theorem unitsCongruenceSubgroupSupTorsion_le_iff {𝔪 : Modulus K} {H : Subgroup (𝓞 K)ˣ} :
+    unitsCongruenceSubgroupSupTorsion 𝔪 ≤ H ↔
+      unitsCongruenceSubgroup 𝔪 ≤ H ∧ NumberField.Units.torsion K ≤ H :=
+  sup_le_iff
+
+/-- The roots of unity lie in `unitsCongruenceSubgroupSupTorsion 𝔪`. -/
+theorem torsion_le_unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) :
+    NumberField.Units.torsion K ≤ unitsCongruenceSubgroupSupTorsion 𝔪 :=
+  le_sup_right
+
+/-- The units congruent to one modulo `𝔪` lie in `unitsCongruenceSubgroupSupTorsion 𝔪`. -/
+theorem unitsCongruenceSubgroup_le_unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) :
+    unitsCongruenceSubgroup 𝔪 ≤ unitsCongruenceSubgroupSupTorsion 𝔪 :=
+  le_sup_left
+
+/-- A unit lies in `unitsCongruenceSubgroupSupTorsion 𝔪` exactly when it is the product of a unit
+congruent to one modulo `𝔪` and a root of unity. -/
+theorem mem_unitsCongruenceSubgroupSupTorsion {𝔪 : Modulus K} {u : (𝓞 K)ˣ} :
+    u ∈ unitsCongruenceSubgroupSupTorsion 𝔪 ↔
+      ∃ v ∈ unitsCongruenceSubgroup 𝔪, ∃ ζ ∈ NumberField.Units.torsion K, v * ζ = u :=
+  Subgroup.mem_sup
+
 instance unitsCongruenceSubgroupSupTorsion_finiteIndex (𝔪 : Modulus K) :
-    (unitsCongruenceSubgroupSupTorsion 𝔪).FiniteIndex := by
-  rw [unitsCongruenceSubgroupSupTorsion]
-  exact Subgroup.finiteIndex_of_le (H := unitsCongruenceSubgroup 𝔪) le_sup_left
+    (unitsCongruenceSubgroupSupTorsion 𝔪).FiniteIndex :=
+  Subgroup.finiteIndex_of_le (unitsCongruenceSubgroup_le_unitsCongruenceSubgroupSupTorsion 𝔪)
 
 /-- For the trivial modulus the congruence units are already all of `(𝓞 K)ˣ`, so adjoining the
 roots of unity changes nothing and there is a single coset. -/
 @[simp] theorem unitsCongruenceSubgroupSupTorsion_one :
     unitsCongruenceSubgroupSupTorsion (Modulus.one K) = ⊤ := by
-  rw [unitsCongruenceSubgroupSupTorsion]
+  rw [unitsCongruenceSubgroupSupTorsion_def]
   simp
 
 /-! ### The sign conditions prescribed by the infinite part -/
@@ -117,6 +149,11 @@ element congruent to one lies in this region, and the region is stable under the
 congruent to one. -/
 def posRegion (𝔪 : Modulus K) : Set (mixedSpace K) :=
   {x | ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w}
+
+/-- `posRegion 𝔪` is the set of points positive at every real place of the infinite part of `𝔪`. -/
+theorem posRegion_def (𝔪 : Modulus K) :
+    posRegion 𝔪 = {x | ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w} :=
+  (rfl)
 
 @[simp] theorem mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} :
     x ∈ posRegion 𝔪 ↔ ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w := Iff.rfl
@@ -233,7 +270,7 @@ theorem measurableSet_rayFundamentalDomain (𝔪 : Modulus K) :
   rw [rayFundamentalDomain_eq_iUnion]
   refine (measurableSet_posRegion 𝔪).inter (MeasurableSet.iUnion fun q ↦ ?_)
   rw [← Set.preimage_smul_inv]
-  exact (measurableSet_fundamentalCone K).preimage (measurable_unitSMul _)
+  exact (measurableSet_fundamentalCone K).preimage (measurable_const_smul _)
 
 /-- Every point of the ray fundamental domain has positive mixed norm. -/
 theorem norm_pos_of_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
@@ -312,6 +349,32 @@ theorem mem_unitsCongruenceTorsion {𝔪 : Modulus K} {u : (𝓞 K)ˣ} :
       u ∈ unitsCongruenceSubgroup 𝔪 ∧ u ∈ NumberField.Units.torsion K :=
   Iff.rfl
 
+/-- `unitsCongruenceTorsion 𝔪` is finite, being a subgroup of the roots of unity. -/
+instance (𝔪 : Modulus K) : Finite (unitsCongruenceTorsion 𝔪) :=
+  Finite.of_injective _ (Subgroup.inclusion_injective inf_le_right)
+
+/-- **The index of the congruence units, corrected by torsion.**  Adjoining the roots of unity to
+the units congruent to one modulo `𝔪` divides their index by the index of
+`unitsCongruenceTorsion 𝔪` in the roots of unity:
+`[E : E_𝔪] · #(E_𝔪 ∩ μ_K) = [E : E_𝔪 · μ_K] · #μ_K`.
+
+The identity is stated multiplicatively, so it holds in `ℕ` with no divisibility side
+condition. -/
+theorem index_unitsCongruenceSubgroup_mul_card_unitsCongruenceTorsion (𝔪 : Modulus K) :
+    (unitsCongruenceSubgroup 𝔪).index * Nat.card (unitsCongruenceTorsion 𝔪) =
+      (unitsCongruenceSubgroupSupTorsion 𝔪).index * NumberField.Units.torsionOrder K := by
+  -- `[E_𝔪 · μ_K : E_𝔪] = [μ_K : E_𝔪 ∩ μ_K]` by the second isomorphism theorem
+  have hrel : (unitsCongruenceSubgroup 𝔪).relIndex (unitsCongruenceSubgroupSupTorsion 𝔪) =
+      (unitsCongruenceTorsion 𝔪).relIndex (NumberField.Units.torsion K) := by
+    rw [unitsCongruenceSubgroupSupTorsion_def, Subgroup.relIndex_sup_left,
+      ← Subgroup.inf_relIndex_right]
+    rfl
+  -- `#μ_K = #(E_𝔪 ∩ μ_K) · [μ_K : E_𝔪 ∩ μ_K]`
+  have hcard := Subgroup.relIndex_mul_relIndex ⊥ (unitsCongruenceTorsion 𝔪) _ bot_le inf_le_right
+  rw [Subgroup.relIndex_bot_left, Subgroup.relIndex_bot_left] at hcard
+  rw [NumberField.Units.torsionOrder, ← hcard, ← Subgroup.relIndex_mul_index
+    (unitsCongruenceSubgroup_le_unitsCongruenceSubgroupSupTorsion 𝔪), hrel]
+  ring
 
 /-- **Existence of a representative.** Every point carrying the signs prescribed by `𝔪` and of
 nonzero mixed norm is moved into the ray fundamental domain by a unit congruent to one modulo
@@ -324,8 +387,7 @@ theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Mod
   set r : (𝓞 K)ˣ := rayUnitRepresentative 𝔪 q with hr
   have hmem : r⁻¹ * u⁻¹ ∈ unitsCongruenceSubgroupSupTorsion 𝔪 :=
     QuotientGroup.eq.mp (by rw [hr, rayUnitRepresentative_mk, hq])
-  rw [unitsCongruenceSubgroupSupTorsion] at hmem
-  obtain ⟨v, hv, ζ, hζ, hvζ⟩ := Subgroup.mem_sup.mp hmem
+  obtain ⟨v, hv, ζ, hζ, hvζ⟩ := mem_unitsCongruenceSubgroupSupTorsion.mp hmem
   have hv' : v⁻¹ ∈ unitsCongruenceSubgroup 𝔪 := (unitsCongruenceSubgroup 𝔪).inv_mem hv
   refine ⟨v⁻¹, hv', mem_rayFundamentalDomain_iff.mpr
     ⟨unitSMul_mem_posRegion hpos hv', q, ?_⟩⟩
@@ -388,8 +450,9 @@ theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion {�
     have hsplit : (rayUnitRepresentative 𝔪 q)⁻¹ * rayUnitRepresentative 𝔪 q'
         = ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q)⁻¹ * u := by
       simp [mul_comm, mul_left_comm]
-    rw [unitsCongruenceSubgroupSupTorsion, hsplit]
-    exact mul_mem (inv_mem (Subgroup.mem_sup_right htor)) (Subgroup.mem_sup_left hu)
+    rw [hsplit]
+    exact mul_mem (inv_mem (torsion_le_unitsCongruenceSubgroupSupTorsion 𝔪 htor))
+      (unitsCongruenceSubgroup_le_unitsCongruenceSubgroupSupTorsion 𝔪 hu)
   subst hqq
   have hconj : (rayUnitRepresentative 𝔪 q)⁻¹ * u * rayUnitRepresentative 𝔪 q = u := by
     simp [mul_comm, mul_left_comm]

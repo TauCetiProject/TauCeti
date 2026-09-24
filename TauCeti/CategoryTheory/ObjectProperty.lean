@@ -40,6 +40,9 @@ standard functors between full subcategories.
 * `CategoryTheory.Equivalence.congrFullSubcategory_functor_additive` and
   `CategoryTheory.Equivalence.congrFullSubcategory_inverse_additive`: an additive equivalence
   restricts to an additive equivalence between corresponding full subcategories.
+* `CategoryTheory.Equivalence.congrFullSubcategory_functor_comp_ι` and
+  `CategoryTheory.Equivalence.congrFullSubcategory_inverse_comp_ι`: the restricted functors,
+  followed by the inclusions, are the inclusions followed by the original functors.
 -/
 
 public section
@@ -139,6 +142,30 @@ theorem congrFullSubcategory_inverse_eq_lift
         rw [← h]
         exact Q.prop_of_iso (e.counitIso.app Y).symm hY) :=
   rfl
+
+/-- The forward functor on corresponding full subcategories, followed by the inclusion, is the
+inclusion followed by the original functor. -/
+theorem congrFullSubcategory_functor_comp_ι
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
+    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
+    (e.congrFullSubcategory h).functor ⋙ Q.ι = P.ι ⋙ e.functor := by
+  rw [congrFullSubcategory_functor_eq_lift]
+  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
+    simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
+      Category.comp_id]
+
+/-- The inverse functor on corresponding full subcategories, followed by the inclusion, is the
+inclusion followed by the original inverse. -/
+theorem congrFullSubcategory_inverse_comp_ι
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
+    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
+    (e.congrFullSubcategory h).inverse ⋙ P.ι = Q.ι ⋙ e.inverse := by
+  rw [congrFullSubcategory_inverse_eq_lift]
+  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
+    simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
+      Category.comp_id]
 
 /-- The functor of an equivalence restricted to corresponding full subcategories is additive. -/
 instance congrFullSubcategory_functor_additive

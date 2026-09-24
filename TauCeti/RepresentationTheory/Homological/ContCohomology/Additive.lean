@@ -28,6 +28,8 @@ and cup products, need linearity before passing to cohomology.
 * `TauCeti.ContinuousCohomology.mapAddHom` and
   `TauCeti.ContinuousCohomology.mapLinearMap` bundle that dependence as an additive homomorphism
   and a linear map.
+* `TauCeti.ContinuousCohomology.continuousCochainsFunctor` is the additive functor of
+  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_additive` and
   `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_linear` install the corresponding
   functor instances.
@@ -227,6 +229,43 @@ noncomputable instance continuousCohomologyFunctor_linear (n : ℕ) :
   map_smul f r := coeffMap_smul R G r f n
 
 end Linear
+
+/-! ### The cochain functor -/
+
+section Functor
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+-- Exposed because the generated `@[simps]` field lemmas are `rfl` proofs about this body.
+/-- Mathlib's homogeneous cochain complex `TopRep.homogeneousCochains` as a functor in the
+coefficients. Its action on morphisms is the compatible-pair cochain map at `φ = id`, the
+cochain-level counterpart of `TauCeti.ContinuousCohomology.coeffMap`. -/
+@[expose, simps]
+noncomputable def continuousCochainsFunctor :
+    TopRep.{v} R G ⥤ CochainComplex (TopModuleCat.{v} R) ℕ where
+  obj X := TopRep.homogeneousCochains X
+  map f := cochainsMap (ContinuousMonoidHom.id G) f
+  map_id X := cochainsMap_id X
+  map_comp f g := cochainsMap_comp (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g
+
+/-- The cochain functor is additive in the coefficient representation. -/
+noncomputable instance continuousCochainsFunctor_additive :
+    (continuousCochainsFunctor R G).Additive where
+  map_add {_X _Y} {f g} := cochainsMap_add (ContinuousMonoidHom.id G) f g
+
+/-- The homology of the cochain functor in degree `n` is continuous cohomology
+`continuousCohomologyFunctor R G n`; the two functors agree on objects and morphisms by
+definition. -/
+noncomputable def continuousCochainsFunctorCompHomologyIso (n : ℕ) :
+    continuousCochainsFunctor R G ⋙ HomologicalComplex.homologyFunctor _ _ n ≅
+      continuousCohomologyFunctor R G n :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    simp only [Functor.comp_map, continuousCochainsFunctor_map, continuousCohomologyFunctor_map,
+      coeffMap_def]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+end Functor
 
 end TauCeti.ContinuousCohomology
 

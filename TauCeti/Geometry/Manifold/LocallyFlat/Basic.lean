@@ -84,7 +84,7 @@ discs (topological sliceness) and for stating the annulus conjecture.
   the origin of the complementary model is closed.
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
-* `TauCeti.IsLocallyFlat.exists_isOpenEmbedding_prod`: a locally flat embedding with normed
+* `TauCeti.IsLocallyFlat.exists_isOpenEmbedding_prod`: a locally flat embedding with seminormed
   complementary model has local product neighbourhoods.
 
 ## Implementation notes
@@ -698,7 +698,7 @@ private theorem isOpenEmbedding_symm_comp {X : Type*} [TopologicalSpace X]
       exact ψ.isOpen_image_symm_of_subset_target (hg.isOpenMap O hO)
         ((image_subset_range g O).trans hgr)
 
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
 part of the domain lying under it with the complementary model, the map being the zero slice.
@@ -769,7 +769,7 @@ private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialH
 an open neighbourhood `U` such that an open subset of the ambient space is a product `U × G`, in
 which the map is the zero slice.
 
-The complementary model is only asked to be a real normed space, so this covers every
+The complementary model is only asked to be a real seminormed space, so this covers every
 codimension. What is codimension-sensitive is patching these local products into a global one,
 which is not proved here. -/
 theorem IsLocallyFlat.exists_isOpenEmbedding_prod (h : IsLocallyFlat F G f) (x : N) :

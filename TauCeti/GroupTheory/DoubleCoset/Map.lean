@@ -12,9 +12,11 @@ public import Mathlib.GroupTheory.DoubleCoset
 
 Enlarging the left subgroup coarsens the double-coset relation.  This file packages the resulting
 surjection `H \ G / K → H' \ G / K` for `H ≤ H'`, records its value on representatives, and
-proves its identity and composition laws.
+proves its identity and composition laws.  It also transports a double-coset space along a group
+isomorphism `e : G ≃* G'`, onto the double-coset space of the image subgroups.
 
-This is the double-coset analogue of `Subgroup.quotientMapOfLE` for ordinary coset spaces.
+These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
+ordinary coset spaces.
 -/
 
 public section
@@ -67,5 +69,38 @@ theorem quotientMapOfLELeft_surjective {H H' : Subgroup G} (h : H ≤ H') (K : S
   intro q
   induction q using Quotient.inductionOn' with
   | h g => exact ⟨mk H K g, quotientMapOfLELeft_apply_mk h K g⟩
+
+variable {G' : Type*} [Group G']
+
+/-- Transport of a double-coset space along a group isomorphism `e : G ≃* G'`: the equivalence
+`H \ G / K ≃ H' \ G' / K'` when `H'` and `K'` are the images of `H` and `K` under `e`. -/
+def quotientCongr (H K : Subgroup G) {H' K' : Subgroup G'} (e : G ≃* G')
+    (hH : H.map e = H') (hK : K.map e = K') :
+    Quotient (H : Set G) K ≃ Quotient (H' : Set G') K' :=
+  Quotient.congr e.toEquiv fun a b ↦ by
+    subst hH hK
+    rw [rel_iff, rel_iff]
+    constructor
+    · rintro ⟨h, hh, k, hk, rfl⟩
+      exact ⟨e h, Subgroup.mem_map_of_mem _ hh, e k, Subgroup.mem_map_of_mem _ hk, by simp⟩
+    · rintro ⟨h', hh', k', hk', hb⟩
+      obtain ⟨h, hh, rfl⟩ := Subgroup.mem_map.mp hh'
+      obtain ⟨k, hk, rfl⟩ := Subgroup.mem_map.mp hk'
+      exact ⟨h, hh, k, hk, e.injective (by simpa using hb)⟩
+
+/-- The transported double-coset space sends the double coset of `g` to that of `e g`. -/
+@[simp]
+theorem quotientCongr_apply_mk (H K : Subgroup G) {H' K' : Subgroup G'} (e : G ≃* G')
+    (hH : H.map e = H') (hK : K.map e = K') (g : G) :
+    quotientCongr H K e hH hK (mk H K g) = mk H' K' (e g) :=
+  (rfl)
+
+/-- The inverse of the transported double-coset space sends the double coset of `g` to that of
+`e.symm g`. -/
+@[simp]
+theorem quotientCongr_symm_apply_mk (H K : Subgroup G) {H' K' : Subgroup G'} (e : G ≃* G')
+    (hH : H.map e = H') (hK : K.map e = K') (g : G') :
+    (quotientCongr H K e hH hK).symm (mk H' K' g) = mk H K (e.symm g) := by
+  rw [Equiv.symm_apply_eq, quotientCongr_apply_mk, MulEquiv.apply_symm_apply]
 
 end DoubleCoset

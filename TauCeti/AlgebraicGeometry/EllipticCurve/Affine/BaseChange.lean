@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 
 /-!
 # Base change of affine elliptic curves
@@ -13,8 +14,9 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 Mathlib carries ellipticity through `WeierstrassCurve.map`. This module exposes the same instance
 for the canonical affine base-change spelling `W⁄A`, so consumers of the point and function-field
 base-change APIs do not have to unfold that abbreviation. It also records that base change along
-the identity algebra map returns the original curve, and a coordinate descent lemma for points
-whose abscissa is already rational.
+the identity algebra map returns the original curve, together with the resulting identification
+`WeierstrassCurve.Affine.Point.equivBaseChangeSelf` of the point groups of `W` and `W⁄F`, and a
+coordinate descent lemma for points whose abscissa is already rational.
 
 This is infrastructure for the base-change lane of
 `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5.
@@ -46,6 +48,18 @@ lemma baseChange_self : (W⁄R).toAffine = W := by
   exact W.map_id
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine.Point
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F)
+
+/-- **The points of `W` are the points of its base change along the identity**: the transport of
+the point group along `baseChange_self`. Point-group facts stated for `W⁄F`, the form base-change
+statements produce, are read on `W` itself through it. -/
+noncomputable def equivBaseChangeSelf : W.Point ≃+ (W⁄F).toAffine.Point :=
+  AddEquiv.cast (M := fun W' : Affine F ↦ W'.Point) W.baseChange_self.symm
+
+end WeierstrassCurve.Affine.Point
 
 namespace WeierstrassCurve
 

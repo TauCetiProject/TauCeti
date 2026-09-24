@@ -13,6 +13,8 @@ public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import Mathlib.CategoryTheory.Sites.Localization
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 
+import TauCeti.LinearAlgebra.DirectSum.Finsupp
+
 /-!
 # Local isomorphisms of presheaves of modules are stable under tensor products
 
@@ -45,31 +47,6 @@ open CategoryTheory Limits MonoidalCategory Opposite TensorProduct
 namespace TauCeti
 
 universe v u
-
-section Algebra
-
-variable {S : Type*} [CommRing S] {ι : Type*} {B B' : Type*} [AddCommGroup B] [Module S B]
-  [AddCommGroup B'] [Module S B']
-
-/-- The coefficients of `(1 ⊗ g) t` in the free module `(ι →₀ S) ⊗ B'` are the images under `g`
-of the coefficients of `t`. -/
-private lemma finsuppScalarLeft_lTensor_apply [DecidableEq ι] (g : B →ₗ[S] B')
-    (t : (ι →₀ S) ⊗[S] B) (z : ι) :
-    finsuppScalarLeft S B' ι (g.lTensor _ t) z = g (finsuppScalarLeft S B ι t z) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
-  | tmul p n => simp
-  | add a b ha hb => simp [ha, hb]
-
-/-- An element of `(ι →₀ S) ⊗ B` is the sum of its coefficients against the basis vectors. -/
-private lemma eq_sum_single_tmul [DecidableEq ι] (t : (ι →₀ S) ⊗[S] B) :
-    t = ∑ z ∈ (finsuppScalarLeft S B ι t).support,
-      Finsupp.single z (1 : S) ⊗ₜ finsuppScalarLeft S B ι t z := by
-  conv_lhs => rw [← (finsuppScalarLeft S B ι).symm_apply_apply t,
-    ← Finsupp.sum_single (finsuppScalarLeft S B ι t)]
-  simp [Finsupp.sum, finsuppScalarLeft_symm_apply_single]
-
-end Algebra
 
 section Locality
 
@@ -136,7 +113,7 @@ theorem _root_.PresheafOfModules.isLocallyInjective_free_whiskerLeft (F : Cᵒ�
       (Finset.inf_le (f := fun z ↦ Presheaf.equalizerSieve
         (F := (PresheafOfModules.toPresheaf _).obj N) (e t z) 0) hz g hg).trans (map_zero _)
     have key : ((PresheafOfModules.free _).obj F ⊗ N).map g.op t = 0 := by
-      refine (congrArg _ (eq_sum_single_tmul t)).trans
+      refine (congrArg _ (sum_single_tmul_finsuppScalarLeft t).symm).trans
         ((map_sum _ _ _).trans (Finset.sum_eq_zero fun z hz ↦ ?_))
       -- Expose the sectionwise tensor map in order to rewrite its second tensor factor.
       change _ ⊗ₜ N.map g.op (e t z) = 0

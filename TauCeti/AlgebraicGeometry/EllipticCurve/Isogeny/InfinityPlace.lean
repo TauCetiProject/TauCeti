@@ -49,9 +49,6 @@ Neither direction uses ellipticity, separability, or the degree of an isogeny.
   infinity**, `1 < v_∞ (φ x₂)`.
 * `TauCeti.Isogeny.isEquiv_comap_infinityPlace`: **the place at infinity restricts to the place at
   infinity** along an isogeny.
-* `TauCeti.Isogeny.comap_infinityPlace_apply_algebraMap`: the restricted valuation, evaluated on
-  the image of the target coordinate ring, is `v_∞ ∘ φ` — the computation rule the other two are
-  stated through.
 * `TauCeti.CoordinatePullback.mapsInfinity_iff_one_lt_infinityPlace`: **pointedness is exactly a
   pole of `x` at infinity**, for any coordinate pullback — the form in which a construction can
   establish it by one valuation computation.
@@ -75,14 +72,6 @@ namespace Isogeny
 
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} (φ : Isogeny W₁ W₂)
 
-/-- **The restricted place, evaluated on an affine function of the target**: it is the value at
-infinity of the pullback of that function. -/
-theorem comap_infinityPlace_apply_algebraMap (c : W₂.CoordinateRing) :
-    ((infinityPlace W₁).comap φ.fieldPullback.toRingHom)
-        (algebraMap W₂.CoordinateRing W₂.FunctionField c)
-      = infinityPlace W₁ (φ.pullback c) := by
-  rw [Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fieldPullback_algebraMap]
-
 /-- **The pullback of the target's coordinate `x` has a pole at the source's point at infinity.**
 If it did not, then neither would the pullback of `y` — by the Weierstrass equation of the target —
 so the whole pulled-back coordinate ring would lie in the valuation ring at infinity of the source;
@@ -90,7 +79,7 @@ that ring is integrally closed, so `MapsInfinity` would put the source coordinat
 against its double pole. -/
 theorem one_lt_infinityPlace_pullback_X :
     1 < infinityPlace W₁ (φ.pullback (algebraMap F[X] W₂.CoordinateRing Polynomial.X)) := by
-  rw [← comap_infinityPlace_apply_algebraMap φ,
+  rw [← comap_fieldPullback_apply_algebraMap φ (infinityPlace W₁),
     ← IsScalarTower.algebraMap_apply F[X] W₂.CoordinateRing W₂.FunctionField]
   set u := (infinityPlace W₁).comap φ.fieldPullback.toRingHom with hu
   by_contra hle
@@ -123,7 +112,7 @@ theorem one_lt_infinityPlace_pullback_X :
   have hmem : ∀ c : W₂.CoordinateRing, φ.pullback c ∈ (infinityPlace W₁).integer := by
     intro c
     have h := hcr c
-    rwa [hu, comap_infinityPlace_apply_algebraMap] at h
+    rwa [hu, comap_fieldPullback_apply_algebraMap] at h
   -- `MapsInfinity` is integrality over `R(W₂)` acting through the pullback; corestricting the
   -- pullback to the valuation ring at infinity makes it integrality over that ring, which is
   -- integrally closed. So `x₁` would lie in it, against its double pole.
@@ -147,7 +136,7 @@ theorem isEquiv_comap_infinityPlace :
     ((infinityPlace W₁).comap φ.fieldPullback.toRingHom).IsEquiv (infinityPlace W₂) := by
   refine isEquiv_infinityPlace_of_one_lt _ ?_
   rw [IsScalarTower.algebraMap_apply F[X] W₂.CoordinateRing W₂.FunctionField,
-    comap_infinityPlace_apply_algebraMap]
+    comap_fieldPullback_apply_algebraMap]
   exact one_lt_infinityPlace_pullback_X φ
 
 end Isogeny

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
@@ -36,7 +38,10 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 ## Main results
 
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2) + 1) ⊆ (Kˣ)²`.
+* `TauCeti.normalizedValuation_even_of_isSquare`: squares have even normalized valuation.
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
+* `TauCeti.exists_mem_unitFiltration_not_isSquare`: a nonsquare witness in
+  `U(K, 2 v_K(2))`.
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two_iff`: `U(K, n) ⊆ (Kˣ)²` exactly when
   `2 v_K(2) + 1 ≤ n`.
 * `TauCeti.dyadicLevel`: the valuation `v_K(2)` used in the square interface.
@@ -45,6 +50,13 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.valuation_sq_sub_one_ne_pow_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
   `2 v_K(2)`, a square cannot differ from one to exact odd order, so `1 + π^(2k+1)` is not a
   square when `k < v_K(2)`.
+* `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
+  is a unit of `𝒪[K]` whose residue is a nonsquare.
+* `TauCeti.isSquare_zpow_mul_iff`: for `w` of even valuation, `π ^ m * w` is a square exactly
+  when `m` is even and `w` is a square.
+* `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
+  times an element of even valuation is not a square.
+* `TauCeti.not_isSquare_of_isUniformizer`: a uniformizer is not a square.
 
 ## References
 
@@ -61,6 +73,13 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
+
+/-- A square in a nonarchimedean local field has even normalized valuation. -/
+theorem normalizedValuation_even_of_isSquare {a : Kˣ} (ha : IsSquare a) :
+    Even (normalizedValuation K a).toAdd := by
+  obtain ⟨b, rfl⟩ := ha
+  refine ⟨(normalizedValuation K b).toAdd, ?_⟩
+  simp
 
 /-- The dyadic level `v_K(2)`, expressed using the supplied natural-valued valuation. -/
 noncomputable def dyadicLevel (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -141,6 +160,16 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     (ValuationRing.isSquare_one_add_four_mul_iff (IsRegular.of_ne_zero h2')).mp
     ⟨⟨y, hyO⟩, Subtype.ext (by simpa [pow_two, h4] using hyK.symm)⟩
   exact ha (IsLocalRing.residue 𝒪[K] t) (by rw [← ht]; simp)
+
+/-- There is a nonsquare in the last unit-filtration step not entirely contained in the
+squares. -/
+theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
+    ∃ u : Kˣ, u ∈ unitFiltration K (2 * natCastValuation K 2 h2) ∧ ¬IsSquare u := by
+  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
+    (not_unitFiltration_le_range_powMonoidHom_two h2)
+  exact ⟨u, hu, by
+    simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm]
+      using hsq⟩
 
 /-- Every unit of depth `2 * dyadicLevel K + 1` is a square. -/
 theorem unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
@@ -267,5 +296,51 @@ characteristic different from two. -/
 theorem isClosed_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     IsClosed ((powMonoidHom 2 : Kˣ →* Kˣ).range : Set Kˣ) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom_two h2)
+
+/-- **Squares in a nonarchimedean local field.** Written against a uniformizer `π`, an element
+`π ^ m * w` with `w` of even valuation is a square exactly when `m` is even and `w` is a square.
+No hypothesis on the residue characteristic is needed. -/
+theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
+    (hw : Even (normalizedValuation K w).toAdd) (m : ℤ) :
+    IsSquare (π ^ m * w) ↔ Even m ∧ IsSquare w := by
+  have hπ' := (isUniformizer_def π).mp hπ
+  refine ⟨fun hsq ↦ ?_, ?_⟩
+  · -- The valuation of `π ^ m * w` is `m` plus the even valuation of `w`, so `m` is even.
+    have hm : Even m := by
+      have hev := even_toAdd_normalizedValuation_of_isSquare hsq
+      rw [map_mul, toAdd_mul, normalizedValuation_zpow_of_eq_ofAdd_one hπ', toAdd_ofAdd] at hev
+      exact (Int.even_add.mp hev).mpr hw
+    refine ⟨hm, ?_⟩
+    have h := hsq.mul ((even_neg.mpr hm).isSquare_zpow π)
+    rwa [mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul] at h
+  · rintro ⟨hm, hw'⟩
+    exact (hm.isSquare_zpow π).mul hw'
+
+/-- A uniformizer times an element of even valuation has odd valuation, so it is not a
+square. -/
+theorem not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation {π w : Kˣ}
+    (hπ : IsUniformizer K π)
+    (hw : Even (normalizedValuation K w).toAdd) : ¬IsSquare (π * w) := fun h ↦
+  Int.not_even_one ((isSquare_zpow_mul_iff hπ hw 1).mp (by simpa using h)).1
+
+/-- A uniformizer is not a square. -/
+theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬IsSquare π := by
+  simpa using not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation
+    hπ (w := 1) (by simp)
+
+/-- Away from residue characteristic two, there is a unit of `𝒪[K]` whose residue is a
+nonsquare. -/
+theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
+    ∃ u : 𝒪[K]ˣ, ¬IsSquare (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
+  obtain ⟨x, hx, hxsq⟩ := exists_mem_unitFiltration_not_isSquare h2K
+  have hx0 : x ∈ unitFiltration K 0 := unitFiltration_antitone (Nat.zero_le _) hx
+  let x0 : unitFiltration K 0 := ⟨x, hx0⟩
+  let u : 𝒪[K]ˣ := unitFiltrationToIntegerUnits 0 x0
+  have hu_map : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = x := by
+    simp [u, x0]
+  refine ⟨u, ?_⟩
+  rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
+  exact hxsq
 
 end TauCeti

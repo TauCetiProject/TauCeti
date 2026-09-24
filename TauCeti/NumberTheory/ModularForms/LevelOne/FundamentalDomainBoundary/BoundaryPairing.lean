@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 public import TauCeti.NumberTheory.ModularForms.Order.OfVanishing
+import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 import TauCeti.NumberTheory.Modular.Orbits
 
 /-!
@@ -60,22 +61,6 @@ section Vertical
 
 variable {g : ℍ → ℂ} {r : ℝ} {p : ℍ}
 
--- `re = -r / 2` is the perpendicular bisector of `0` and `-r`; for `r = ±1` it is an edge of `𝒟`.
-private lemma normSq_coe_vadd_of_re_eq (hre : (p : ℂ).re = -r / 2) :
-    normSq ((r +ᵥ p : ℍ) : ℂ) = normSq (p : ℂ) := by
-  grind [coe_vadd, normSq_apply, add_re, add_im, ofReal_re, ofReal_im]
-
-private lemma norm_coe_vadd_of_re_eq (hre : (p : ℂ).re = -r / 2) :
-    ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
-  rw [norm_def, norm_def, normSq_coe_vadd_of_re_eq hre]
-
-/-- Translation by `r` carries a fundamental-domain point on the line `re = -r / 2` to one on
-`re = r / 2`, keeping the modulus. -/
-lemma vadd_mem_fd_of_re_eq (hr : |r| ≤ 1) (hp : p ∈ 𝒟) (hre : (p : ℂ).re = -r / 2) :
-    r +ᵥ p ∈ 𝒟 := by
-  refine ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, abs_le.mpr ⟨?_, ?_⟩⟩ <;>
-    rw [vadd_re, ← coe_re, hre] <;> linarith [abs_le.mp hr]
-
 private lemma orderOfVanishingAt_vadd_one (hper : Periodic (g ∘ ofComplex) 1) (p : ℍ) :
     orderOfVanishingAt g ((1 : ℝ) +ᵥ p) = orderOfVanishingAt g p :=
   orderOfVanishingAt_eq_of_coe_eq_add hper <| by simp [add_comm]
@@ -84,32 +69,32 @@ private lemma orderOfVanishingAt_vadd_neg_one (hper : Periodic (g ∘ ofComplex)
     orderOfVanishingAt g ((-1 : ℝ) +ᵥ p) = orderOfVanishingAt g p :=
   orderOfVanishingAt_eq_of_coe_eq_add hper.neg <| by simp [add_comm]
 
-private lemma vadd_mem_of_re_eq (hr : |r| ≤ 1) (hS : ∀ q ∈ S, orderOfVanishingAt g q ≠ 0 → q ∈ 𝒟)
+private lemma vadd_mem_of_re_eq (hS : ∀ q ∈ S, orderOfVanishingAt g q ≠ 0 → q ∈ 𝒟)
     (hcomp : ∀ q, q ∈ 𝒟 → orderOfVanishingAt g q ≠ 0 → q ∈ S)
     (hord : orderOfVanishingAt g (r +ᵥ p) = orderOfVanishingAt g p) (hp : p ∈ S)
     (hre : (p : ℂ).re = -r / 2) (hne : orderOfVanishingAt g p ≠ 0) :
-    r +ᵥ p ∈ S ∧ ((r +ᵥ p : ℍ) : ℂ).re = r / 2 ∧ ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ :=
-  ⟨hcomp _ (vadd_mem_fd_of_re_eq hr (hS p hp hne) hre) (hord ▸ hne),
-    by rw [coe_vadd, add_re, ofReal_re, hre]; ring, norm_coe_vadd_of_re_eq hre⟩
+    r +ᵥ p ∈ S ∧ ((r +ᵥ p : ℍ) : ℂ).re = r / 2 ∧ ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
+  have hre' : p.re = -r / 2 := (coe_re p).symm.trans hre
+  exact ⟨hcomp _ (ModularGroup.vadd_mem_fd_of_re_eq (hS p hp hne) hre') (hord ▸ hne),
+    by rw [coe_vadd, add_re, ofReal_re, hre]; ring, norm_coe_vadd_of_re_eq hre'⟩
 
 -- Translation by `r` matches the points of modulus `> 1` on `re = a` with those on `re = -a`.
-private theorem sum_orderOfVanishingAt_vert_aux {a : ℝ} (hr : |r| ≤ 1) (ha : a = -r / 2)
+private theorem sum_orderOfVanishingAt_vertical_aux {a : ℝ} (ha : a = -r / 2)
     (hord : ∀ q : ℍ, orderOfVanishingAt g (r +ᵥ q) = orderOfVanishingAt g q)
     (hS : ∀ q ∈ S, orderOfVanishingAt g q ≠ 0 → q ∈ 𝒟)
     (hcomp : ∀ q, q ∈ 𝒟 → orderOfVanishingAt g q ≠ 0 → q ∈ S) :
     ∑ q ∈ S.filter (fun q : ℍ ↦ (q : ℂ).re = a ∧ 1 < ‖(q : ℂ)‖), orderOfVanishingAt g q =
       ∑ q ∈ S.filter (fun q : ℍ ↦ (q : ℂ).re = -a ∧ 1 < ‖(q : ℂ)‖), orderOfVanishingAt g q := by
-  have hord' : ∀ q : ℍ, orderOfVanishingAt g ((-r) +ᵥ q) = orderOfVanishingAt g q := fun q ↦ by
-    simpa using (hord ((-r) +ᵥ q)).symm
+  have hord' (q : ℍ) : orderOfVanishingAt g (-r +ᵥ q) = orderOfVanishingAt g q := by
+    simpa using (hord (-r +ᵥ q)).symm
   refine Finset.sum_bij_ne_zero (fun q _ _ ↦ r +ᵥ q) (fun q hq hne ↦ ?_)
     (fun q₁ _ _ q₂ _ _ ↦ vadd_left_cancel r)
-    (fun q hq hne ↦ ⟨(-r) +ᵥ q, ?_, hord' q ▸ hne, by simp⟩) fun q _ _ ↦ (hord q).symm
+    (fun q hq hne ↦ ⟨-r +ᵥ q, ?_, hord' q ▸ hne, by simp⟩) fun q _ _ ↦ (hord q).symm
   · obtain ⟨hqS, hre, hnorm⟩ := Finset.mem_filter.mp hq
-    obtain ⟨h₁, h₂, h₃⟩ := vadd_mem_of_re_eq hr hS hcomp (hord q) hqS (hre.trans ha) hne
-    exact Finset.mem_filter.mpr ⟨h₁, by rw [h₂, ha]; ring, h₃ ▸ hnorm⟩
+    obtain ⟨h₁, h₂, h₃⟩ := vadd_mem_of_re_eq hS hcomp (hord q) hqS (hre.trans ha) hne
+    exact Finset.mem_filter.mpr ⟨h₁, by rw [h₂, ha, neg_div', neg_neg], h₃ ▸ hnorm⟩
   · obtain ⟨hqS, hre, hnorm⟩ := Finset.mem_filter.mp hq
-    obtain ⟨h₁, h₂, h₃⟩ := vadd_mem_of_re_eq (by rwa [abs_neg]) hS hcomp (hord' q) hqS
-      (by rw [hre, ha]; ring) hne
+    obtain ⟨h₁, h₂, h₃⟩ := vadd_mem_of_re_eq hS hcomp (hord' q) hqS (by rw [hre, ha, neg_div']) hne
     exact Finset.mem_filter.mpr ⟨h₁, h₂.trans ha.symm, h₃ ▸ hnorm⟩
 
 end Vertical
@@ -121,7 +106,7 @@ theorem sum_orderOfVanishingAt_rightVertical_eq_leftVertical (f : F)
     (hcomp : ∀ p, p ∈ 𝒟 → orderOfVanishingAt f p ≠ 0 → p ∈ S) :
     ∑ p ∈ S.filter (fun p : ℍ ↦ (p : ℂ).re = 1 / 2 ∧ 1 < ‖(p : ℂ)‖), orderOfVanishingAt f p =
       ∑ p ∈ S.filter (fun p : ℍ ↦ (p : ℂ).re = -(1 / 2) ∧ 1 < ‖(p : ℂ)‖), orderOfVanishingAt f p :=
-  sum_orderOfVanishingAt_vert_aux (r := -1) (by norm_num) (by norm_num)
+  sum_orderOfVanishingAt_vertical_aux (r := -1) (by norm_num)
     (orderOfVanishingAt_vadd_neg_one hper) hS hcomp
 
 section Arc
@@ -193,7 +178,7 @@ private lemma vadd_one_ρ_mem_rightArc {g : ℍ → ℂ}
     (h : orderOfVanishingAt g ρ ≠ 0) :
     (1 : ℝ) +ᵥ ρ ∈ S.filter (fun p : ℍ ↦ ‖(p : ℂ)‖ = 1 ∧ 0 < (p : ℂ).re) :=
   Finset.mem_filter.mpr
-    ⟨hcomp _ (vadd_mem_fd_of_re_eq (r := 1) (by norm_num) ModularGroup.ρ_mem_fd
+    ⟨hcomp _ (ModularGroup.vadd_mem_fd_of_re_eq (r := 1) ModularGroup.ρ_mem_fd
         (by norm_num)) (by rw [hordρ]; exact h),
       by rw [coe_vadd_one_ρ]; exact norm_ρ_add_one,
       by norm_num⟩

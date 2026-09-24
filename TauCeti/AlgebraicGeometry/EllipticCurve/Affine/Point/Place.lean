@@ -43,9 +43,18 @@ When `W` is elliptic, Mathlib's `Affine.equation_iff_nonsingular` identifies the
 ## Main results
 
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal`: a `@[simp]` lemma
-  identifying the ideal underlying `pointPlace` as `XYIdeal W x (C y)`.
+  identifying the ideal underlying `pointPlace` as `XYIdeal W x (C y)`. Membership is then read
+  off `CoordinateRing.mk_mem_XYIdeal_iff`: a class lies in it exactly when its representative
+  vanishes at the point.
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff`: `pointPlace` is injective —
   two points have the same place exactly when they have the same coordinates.
+* `WeierstrassCurve.Affine.CoordinateRing.eq_pointPlace_of_mem_asIdeal`: a height-one prime
+  containing both generators of the ideal of a point is that point's place.
+* `WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_le_one` and
+  `WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_lt_one` and
+  `WeierstrassCurve.Affine.CoordinateRing.one_lt_valuation_pointPlace_div`: the value at a point
+  of a quotient of coordinate-ring classes, read off from where its numerator and denominator
+  vanish.
 * `WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one`: the
   place of a point has degree one.
 * `WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq`: conversely, every
@@ -102,6 +111,8 @@ public section
 
 open Polynomial WeierstrassCurve WeierstrassCurve.Affine IsDedekindDomain
 
+open scoped Polynomial.Bivariate
+
 namespace TauCeti
 
 section
@@ -142,6 +153,77 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff
   rw [HeightOneSpectrum.ext_iff, WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
       WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal]
   exact WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff h₁
+
+/-- **A height-one prime containing both generators of the ideal of a point is that point's
+place**: the ideal of a point is maximal, so the containment cannot be strict. -/
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.eq_pointPlace_of_mem_asIdeal {y : F}
+    (h : W.Equation x y) {Q : HeightOneSpectrum W.CoordinateRing}
+    (hX : CoordinateRing.XClass W x ∈ Q.asIdeal) (hY : CoordinateRing.YClass W (C y) ∈ Q.asIdeal) :
+    Q = WeierstrassCurve.Affine.CoordinateRing.pointPlace h := by
+  have hle : CoordinateRing.XYIdeal W x (C y) ≤ Q.asIdeal := by
+    rw [CoordinateRing.XYIdeal, Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+    exact ⟨hX, hY⟩
+  refine HeightOneSpectrum.ext ?_
+  rw [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+    (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal_of_equation h).eq_of_le
+      Q.isPrime.ne_top hle]
+
+section Valuation
+
+variable (K : Type*) [Field K] [Algebra W.CoordinateRing K] [IsFractionRing W.CoordinateRing K]
+
+/-- **A quotient of coordinate-ring classes has no pole at a point where its denominator does not
+vanish.** -/
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_le_one {y : F}
+    (h : W.Equation x y) {p q : F[X][Y]} (hq : q.evalEval x y ≠ 0) :
+    (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
+      (algebraMap W.CoordinateRing K (CoordinateRing.mk W p) /
+        algebraMap W.CoordinateRing K (CoordinateRing.mk W q)) ≤ 1 := by
+  have hq1 : (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).intValuation
+      (CoordinateRing.mk W q) = 1 := HeightOneSpectrum.intValuation_eq_one_iff.mpr (by
+    rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+      CoordinateRing.mk_mem_XYIdeal_iff h])
+  rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
+    HeightOneSpectrum.valuation_of_algebraMap, hq1, div_one]
+  exact HeightOneSpectrum.intValuation_le_one _ _
+
+/-- **A quotient of coordinate-ring classes vanishes at a point where its numerator does and its
+denominator does not.** -/
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_lt_one {y : F}
+    (h : W.Equation x y) {p q : F[X][Y]} (hq : q.evalEval x y ≠ 0) (hp : p.evalEval x y = 0) :
+    (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
+      (algebraMap W.CoordinateRing K (CoordinateRing.mk W p) /
+        algebraMap W.CoordinateRing K (CoordinateRing.mk W q)) < 1 := by
+  have hq1 : (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).intValuation
+      (CoordinateRing.mk W q) = 1 := HeightOneSpectrum.intValuation_eq_one_iff.mpr (by
+    rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+      CoordinateRing.mk_mem_XYIdeal_iff h])
+  rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
+    HeightOneSpectrum.valuation_of_algebraMap, hq1, div_one]
+  refine (HeightOneSpectrum.intValuation_lt_one_iff_mem _ _).mpr ?_
+  rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+    CoordinateRing.mk_mem_XYIdeal_iff h]
+
+/-- **A quotient of coordinate-ring classes has a pole at a point where its denominator vanishes
+and its numerator does not.** -/
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.one_lt_valuation_pointPlace_div {y : F}
+    (h : W.Equation x y) {p q : F[X][Y]} (hp : p.evalEval x y ≠ 0) (hq : q.evalEval x y = 0)
+    (hq0 : CoordinateRing.mk W q ≠ 0) :
+    1 < (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
+      (algebraMap W.CoordinateRing K (CoordinateRing.mk W p) /
+        algebraMap W.CoordinateRing K (CoordinateRing.mk W q)) := by
+  have hp1 : (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).intValuation
+      (CoordinateRing.mk W p) = 1 := HeightOneSpectrum.intValuation_eq_one_iff.mpr (by
+    rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+      CoordinateRing.mk_mem_XYIdeal_iff h])
+  rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
+    HeightOneSpectrum.valuation_of_algebraMap, hp1, one_div,
+    one_lt_inv₀ (zero_lt_iff.mpr (HeightOneSpectrum.intValuation_ne_zero _ _ hq0))]
+  refine (HeightOneSpectrum.intValuation_lt_one_iff_mem _ _).mpr ?_
+  rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
+    CoordinateRing.mk_mem_XYIdeal_iff h]
+
+end Valuation
 
 /-- **The place of a point has degree one.** The degree of a place is the rank of its residue field
 over the base, and here that rank is one — which is the sense in which the point–place dictionary

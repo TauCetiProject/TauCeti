@@ -29,6 +29,13 @@ subgroup is a unit at *every* finite place: the fractional ideal it defines is t
 ideles of the congruence subgroup exactly the units of `𝓞 K` congruent to one modulo `𝔪`
 (`unitEmbedding_mem_ideleCongruenceSubgroup_iff`).
 
+Dropping the unit conditions away from `𝔪` gives the larger subgroup `ideleCongrOneSubgroup 𝔪` of
+ideles **congruent to one modulo `𝔪`**, which imposes conditions only at the places of `𝔪`.  It is
+the idelic counterpart of `congruenceSubgroup 𝔪`: a principal idele is congruent to one exactly
+when its generator is (`unitEmbedding_mem_ideleCongrOneSubgroup_iff`).  Such an idele is still a
+unit at every finite divisor of `𝔪`, so the fractional ideal it defines is prime to `𝔪`; this is
+what lets it be sent to the ray class group.
+
 The two structural facts about the family `𝔪 ↦ ideleCongruenceSubgroup 𝔪` are that each member
 is open in the idele topology — the conditions at the finitely many places of `𝔪` are open, and
 away from them the condition is membership in the open subgroup of everywhere-integral ideles —
@@ -36,6 +43,8 @@ and that the family is antitone: a larger modulus imposes stronger conditions.
 
 ## Main definitions
 
+* `TauCeti.GlobalNumberFields.ideleCongrOneSubgroup`: the ideles congruent to one modulo a
+  modulus.
 * `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup`: the idele congruence subgroup of a
   modulus.
 
@@ -53,6 +62,11 @@ and that the family is antitone: a larger modulus imposes stronger conditions.
   modulo `𝔪`.
 * `TauCeti.GlobalNumberFields.mem_ideleCongruenceSubgroup_one_iff`: the trivial modulus gives the
   ideles that are units at every finite place.
+* `TauCeti.GlobalNumberFields.unitEmbedding_mem_ideleCongrOneSubgroup_iff`: a principal idele is
+  congruent to one exactly when its generator is.
+* `TauCeti.GlobalNumberFields.ideleCongrOneSubgroup_inf_ideleCongruenceSubgroup_one`: the
+  congruence subgroup consists of the ideles congruent to one that are units at every finite
+  place.
 
 ## References
 
@@ -71,47 +85,42 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **The idele congruence subgroup of a modulus**: the ideles that are principal units of the
-prescribed level at the finite divisors of `𝔪`, units of the valuation ring at the remaining
-finite places, and positive at the real places selected by `𝔪`.  No condition is imposed at the
-infinite places outside `𝔪`. -/
-def ideleCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) where
+/-- **The ideles congruent to one modulo a modulus**: the ideles that are principal units of the
+prescribed level at the finite divisors of `𝔪` and positive at the real places selected by `𝔪`.
+No condition is imposed at any other place.  This is the idelic counterpart of
+`congruenceSubgroup 𝔪` (`unitEmbedding_mem_ideleCongrOneSubgroup_iff`). -/
+def ideleCongrOneSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) where
   carrier := {x |
-    (∀ v : HeightOneSpectrum (𝓞 K), ¬ v.asIdeal ∣ 𝔪.finitePart →
-        Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1) ∧
-      (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+    (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
         Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
           WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
       ∀ w ∈ 𝔪.infinitePart,
         0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
           (w.1.ideleInfiniteCoord x : w.1.Completion)}
-  one_mem' := by
-    refine ⟨fun v _ ↦ by simp, fun v _ ↦ by simp, fun w _ ↦ by simp⟩
+  one_mem' := ⟨fun v _ ↦ by simp, fun w _ ↦ by simp⟩
   mul_mem' := by
-    rintro x y ⟨hx1, hx2, hx3⟩ ⟨hy1, hy2, hy3⟩
-    refine ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · rw [map_mul, Units.val_mul, map_mul, hx1 v hv, hy1 v hv, one_mul]
+    rintro x y ⟨hx1, hx2⟩ ⟨hy1, hy2⟩
+    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · -- `xy - 1 = (x - 1) * y + (y - 1)`, and `y` is a unit at `v`.
       have hyone : Valued.v (v.ideleFiniteCoord y : v.adicCompletion K) = 1 :=
-        𝔪.valued_eq_one_of_valued_sub_one_le hv (hy2 v hv)
+        𝔪.valued_eq_one_of_valued_sub_one_le hv (hy1 v hv)
       have hsub : (v.ideleFiniteCoord (x * y) : v.adicCompletion K) - 1 =
           ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) *
             (v.ideleFiniteCoord y : v.adicCompletion K) +
             ((v.ideleFiniteCoord y : v.adicCompletion K) - 1) := by
         rw [map_mul, Units.val_mul]; ring
       rw [hsub]
-      refine le_trans (Valuation.map_add _ _ _) (max_le ?_ (hy2 v hv))
+      refine le_trans (Valuation.map_add _ _ _) (max_le ?_ (hy1 v hv))
       rw [map_mul, hyone, mul_one]
-      exact hx2 v hv
+      exact hx1 v hv
     · rw [map_mul, Units.val_mul, map_mul]
-      exact mul_pos (hx3 w hw) (hy3 w hw)
+      exact mul_pos (hx2 w hw) (hy2 w hw)
   inv_mem' := by
-    rintro x ⟨hx1, hx2, hx3⟩
-    refine ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · rw [map_inv, Units.val_inv_eq_inv_val, map_inv₀, hx1 v hv, inv_one]
+    rintro x ⟨hx1, hx2⟩
+    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · -- `x⁻¹ - 1 = -((x - 1) * x⁻¹)`, and `x` is a unit at `v`.
       have hxone : Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 :=
-        𝔪.valued_eq_one_of_valued_sub_one_le hv (hx2 v hv)
+        𝔪.valued_eq_one_of_valued_sub_one_le hv (hx1 v hv)
       have hne : (v.ideleFiniteCoord x : v.adicCompletion K) ≠ 0 :=
         (v.ideleFiniteCoord x).ne_zero
       have hsub : (v.ideleFiniteCoord x⁻¹ : v.adicCompletion K) - 1 =
@@ -121,9 +130,69 @@ def ideleCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K
         field_simp
         ring
       rw [hsub, Valuation.map_neg, map_mul, map_inv₀, hxone, inv_one, mul_one]
-      exact hx2 v hv
+      exact hx1 v hv
     · rw [map_inv, Units.val_inv_eq_inv_val, map_inv₀]
-      exact inv_pos.mpr (hx3 w hw)
+      exact inv_pos.mpr (hx2 w hw)
+
+/-- **The placewise conditions defining the ideles congruent to one.** -/
+@[simp] theorem mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K} :
+    x ∈ ideleCongrOneSubgroup 𝔪 ↔
+      (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+          Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
+            WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
+        ∀ w ∈ 𝔪.infinitePart,
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
+            (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+  Iff.rfl
+
+/-- The trivial modulus imposes no congruence conditions on an idele. -/
+@[simp] theorem ideleCongrOneSubgroup_one :
+    ideleCongrOneSubgroup (Modulus.one K) = ⊤ := by
+  apply eq_top_iff.mpr
+  intro x _
+  rw [mem_ideleCongrOneSubgroup_iff]
+  constructor
+  · intro v hv
+    exact (v.prime.not_dvd_one (by
+      simpa [Modulus.one_finitePart, ← Ideal.one_eq_top] using hv)).elim
+  · simp [Modulus.one_infinitePart]
+
+/-- **An idele congruent to one is a unit at every finite divisor of the modulus**, because the
+prescribed exponent there is positive. -/
+theorem ideleCongrOneSubgroup.valued_ideleFiniteCoord_eq_one {𝔪 : Modulus K}
+    {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongrOneSubgroup 𝔪) {v : HeightOneSpectrum (𝓞 K)}
+    (hv : v.asIdeal ∣ 𝔪.finitePart) :
+    Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 :=
+  𝔪.valued_eq_one_of_valued_sub_one_le hv (hx.1 v hv)
+
+/-- **The ideles congruent to one decrease as the modulus grows.** -/
+theorem ideleCongrOneSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
+    ideleCongrOneSubgroup 𝔫 ≤ ideleCongrOneSubgroup 𝔪 := by
+  rintro x ⟨hx1, hx2⟩
+  refine ⟨fun v hv ↦ (hx1 v (hv.trans (Modulus.dvd_iff.mp h).1)).trans ?_,
+    fun w hw ↦ hx2 w ((Modulus.dvd_iff.mp h).2 hw)⟩
+  exact WithZero.exp_le_exp.mpr (by
+    simpa using Nat.cast_le (α := ℤ) |>.mpr (Modulus.exponent_mono h v))
+
+/-- **The idele congruence subgroup of a modulus**: the ideles congruent to one modulo `𝔪` that
+are moreover units of the valuation ring at the finite places not dividing `𝔪`.  Explicitly, they
+are principal units of the prescribed level at the finite divisors of `𝔪`, units of the valuation
+ring at the remaining finite places, and positive at the real places selected by `𝔪`.  No
+condition is imposed at the infinite places outside `𝔪`. -/
+def ideleCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) where
+  carrier := {x |
+    (∀ v : HeightOneSpectrum (𝓞 K), ¬ v.asIdeal ∣ 𝔪.finitePart →
+        Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1) ∧
+      x ∈ ideleCongrOneSubgroup 𝔪}
+  one_mem' := ⟨fun v _ ↦ by simp, (ideleCongrOneSubgroup 𝔪).one_mem⟩
+  mul_mem' := by
+    rintro x y ⟨hx1, hx⟩ ⟨hy1, hy⟩
+    refine ⟨fun v hv ↦ ?_, (ideleCongrOneSubgroup 𝔪).mul_mem hx hy⟩
+    rw [map_mul, Units.val_mul, map_mul, hx1 v hv, hy1 v hv, one_mul]
+  inv_mem' := by
+    rintro x ⟨hx1, hx⟩
+    refine ⟨fun v hv ↦ ?_, (ideleCongrOneSubgroup 𝔪).inv_mem hx⟩
+    rw [map_inv, Units.val_inv_eq_inv_val, map_inv₀, hx1 v hv, inv_one]
 
 /-- **The placewise conditions defining the idele congruence subgroup.** -/
 @[simp] theorem mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K} :
@@ -168,16 +237,13 @@ end ideleCongruenceSubgroup
 
 /-- **The idele congruence subgroups decrease as the modulus grows.** -/
 theorem ideleCongruenceSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
-    ideleCongruenceSubgroup 𝔫 ≤ ideleCongruenceSubgroup 𝔪 := by
-  intro x hx
-  refine mem_ideleCongruenceSubgroup_iff.mpr
-    ⟨fun v _ ↦ ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v,
-    fun v hv ↦ ?_, fun w hw ↦ ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx
-      ((Modulus.dvd_iff.mp h).2 hw)⟩
-  refine le_trans (ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx
-    (hv.trans (Modulus.dvd_iff.mp h).1)) ?_
-  exact WithZero.exp_le_exp.mpr (by
-    simpa using Nat.cast_le (α := ℤ) |>.mpr (Modulus.exponent_mono h v))
+    ideleCongruenceSubgroup 𝔫 ≤ ideleCongruenceSubgroup 𝔪 := fun _ hx ↦
+  ⟨fun v _ ↦ ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v,
+    ideleCongrOneSubgroup_antitone h hx.2⟩
+
+/-- **The idele congruence subgroup lies in the ideles congruent to one.** -/
+theorem ideleCongruenceSubgroup_le_ideleCongrOneSubgroup (𝔪 : Modulus K) :
+    ideleCongruenceSubgroup 𝔪 ≤ ideleCongrOneSubgroup 𝔪 := fun _ hx ↦ hx.2
 
 /-! ### Openness -/
 
@@ -256,6 +322,30 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
 
 /-! ### Principal ideles and the trivial modulus -/
 
+/-- **The principal ideles congruent to one are the elements congruent to one.**  At a finite
+divisor of `𝔪` the coordinate of a principal idele is the global element, whose valuation in the
+completion is its `v`-adic valuation, and at a real place its sign is that of the real embedding. -/
+-- The placewise membership and coordinate simp lemmas already normalize the left-hand side.
+theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ} :
+    IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongrOneSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := by
+  have hsub : ∀ v : HeightOneSpectrum (𝓞 K),
+      Valued.v ((v.ideleFiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) :
+          v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
+    intro v
+    rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
+    simp only [MonoidHom.coe_coe, RingHom.toMonoidHom_eq_coe]
+    rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
+    simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+  have hinf : ∀ w : {w : InfinitePlace K // w.IsReal},
+      InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
+        (w.1.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) : w.1.Completion) =
+        InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+    intro w
+    rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
+    simp
+  simp only [mem_ideleCongrOneSubgroup_iff, hsub, hinf, isCongrOne_iff]
+
 /-- **The principal ideles of the congruence subgroup are the congruence units.**  A principal
 idele lies in `ideleCongruenceSubgroup 𝔪` exactly when its generator is the image of a unit of
 `𝓞 K` congruent to one modulo `𝔪`: the local unit conditions force the generator to be integral
@@ -273,18 +363,6 @@ theorem unitEmbedding_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K} {x : K�
       Valued.v (algebraMap K (v.adicCompletion K) k) = v.valuation K k := fun v k ↦ by
     simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
       Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
-  have hsub : ∀ v : HeightOneSpectrum (𝓞 K),
-      Valued.v ((v.ideleFiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) :
-          v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
-    intro v
-    rw [hcoord v, ← map_one (algebraMap K (v.adicCompletion K)), ← map_sub, hval]
-  have hinf : ∀ w : {w : InfinitePlace K // w.IsReal},
-      InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-        (w.1.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) : w.1.Completion) =
-        InfinitePlace.embedding_of_isReal w.2 (x : K) := by
-    intro w
-    rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-    simp
   rw [Subgroup.mem_map]
   constructor
   · intro hx
@@ -302,19 +380,13 @@ theorem unitEmbedding_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K} {x : K�
       Units.ext (by simpa using ha)
     refine ⟨⟨a, b, hab, hba⟩, ?_, hu⟩
     rw [mem_unitsCongruenceSubgroup, hu]
-    exact isCongrOne_iff.mpr
-      ⟨fun v hv ↦ (hsub v) ▸ ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx hv,
-        fun w hw ↦ (hinf w) ▸ ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx hw⟩
+    exact unitEmbedding_mem_ideleCongrOneSubgroup_iff.mp hx.2
   · rintro ⟨u, hu, rfl⟩
     rw [mem_unitsCongruenceSubgroup] at hu
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · rw [hcoord v, hval]
-      exact (v.valuation_eq_one_iff_notMem (K := K)).mpr fun h ↦
-        v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
-    · rw [hsub v]
-      exact hu.valuation_sub_one_le hv
-    · rw [hinf w]
-      exact hu.pos hw
+    refine ⟨fun v _ ↦ ?_, unitEmbedding_mem_ideleCongrOneSubgroup_iff.mpr hu⟩
+    rw [hcoord v, hval]
+    exact (v.valuation_eq_one_iff_notMem (K := K)).mpr fun h ↦
+      v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
 
 /-- **The trivial modulus gives the ideles that are units at every finite place.**  No prime
 divides the unit ideal and the infinite part is empty, so only the local unit conditions
@@ -327,5 +399,15 @@ theorem mem_ideleCongruenceSubgroup_one_iff {x : IdeleGroup (𝓞 K) K} :
   refine mem_ideleCongruenceSubgroup_iff.mpr
     ⟨fun v _ ↦ hx v, fun v hv ↦ ?_, fun w hw ↦ absurd hw (by simp)⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
+
+/-- **The idele congruence subgroup consists of the ideles congruent to one that are units at every
+finite place.** -/
+theorem ideleCongrOneSubgroup_inf_ideleCongruenceSubgroup_one (𝔪 : Modulus K) :
+    ideleCongrOneSubgroup 𝔪 ⊓ ideleCongruenceSubgroup (Modulus.one K) =
+      ideleCongruenceSubgroup 𝔪 := by
+  ext x
+  rw [Subgroup.mem_inf, mem_ideleCongruenceSubgroup_one_iff]
+  exact ⟨fun ⟨hx, h⟩ ↦ ⟨fun v _ ↦ h v, hx⟩,
+    fun hx ↦ ⟨hx.2, ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx⟩⟩
 
 end TauCeti.GlobalNumberFields

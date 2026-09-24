@@ -120,6 +120,7 @@ noncomputable def corestriction (A : Rep.{u} k G) (n : ℕ) :
     groupCohomology (res S.subtype A) n ⟶ groupCohomology A n :=
   (corestrictionNatTrans k S n).app A
 
+/-- The component at `A` of the corestriction natural transformation is `corestriction S A n`. -/
 @[simp]
 theorem corestrictionNatTrans_app (A : Rep.{u} k G) (n : ℕ) :
     (corestrictionNatTrans k S n).app A = corestriction S A n := (rfl)

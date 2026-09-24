@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.GroupTheory.Perm.SylowFive
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Transitive subgroups of `S₃`, `S₄` and `S₅`
@@ -401,13 +402,9 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
     -- The action is regular, so a nontrivial element of `G` fixes no point.
     have hfree : ∀ g ∈ G, g ≠ 1 → ∀ x, g x ≠ x := by
       intro g hg hg1 x hx
-      have hstab : Nat.card (stabilizer G x) = 1 := by
-        have h := (stabilizer G x).index_mul_card
-        rw [index_stabilizer_of_transitive, hG, Nat.card_fin] at h
-        omega
-      have hmem : (⟨g, hg⟩ : G) ∈ stabilizer G x := hx
-      rw [Subgroup.eq_bot_of_card_eq _ hstab, Subgroup.mem_bot] at hmem
-      exact hg1 (congrArg Subtype.val hmem)
+      have hfix : (⟨g, hg⟩ : G) • x = x := hx
+      exact hg1 (congrArg Subtype.val
+        (eq_one_of_natCard_eq_of_smul_eq_self (by simpa using hG) hfix))
     -- A fixed-point-free involution of four points is a double transposition.
     have hklein : ∀ σ : Perm (Fin 4), σ ^ 2 = 1 → (∀ x, σ x ≠ x) →
         sign σ = 1 ∧ σ.cycleType = {2, 2} := by

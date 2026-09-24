@@ -101,23 +101,12 @@ theorem sum_lt_sum_image_sdiff [DecidableEq α] (f : α → M) {X A : Finset α}
     rwa [hXA] at hmem
   have hlt' := sum_lt_sum_of_forall_lt f hUV.symm hUne hUlt
   -- the two sums agree on the common part, so the two differences compare them
-  have hsd1 : (X \ A) \ ((X \ A) ∩ ((X \ A).image σ)) = (X \ A) \ ((X \ A).image σ) := by
-    ext z
-    simp only [Finset.mem_sdiff, Finset.mem_inter]
-    tauto
-  have hsd2 : ((X \ A).image σ) \ ((X \ A) ∩ ((X \ A).image σ)) =
-      ((X \ A).image σ) \ (X \ A) := by
-    ext z
-    simp only [Finset.mem_sdiff, Finset.mem_inter]
-    tauto
-  have h1 : (∑ z ∈ (X \ A) \ ((X \ A).image σ), f z) +
-      ∑ z ∈ (X \ A) ∩ ((X \ A).image σ), f z = ∑ z ∈ X \ A, f z := by
-    rw [← hsd1]
-    exact Finset.sum_sdiff Finset.inter_subset_left
-  have h2 : (∑ z ∈ ((X \ A).image σ) \ (X \ A), f z) +
-      ∑ z ∈ (X \ A) ∩ ((X \ A).image σ), f z = ∑ z ∈ (X \ A).image σ, f z := by
-    rw [← hsd2]
-    exact Finset.sum_sdiff Finset.inter_subset_right
+  have h1 := Finset.sum_sdiff (s₁ := (X \ A) ∩ ((X \ A).image σ))
+    (s₂ := X \ A) (f := f) Finset.inter_subset_left
+  rw [Finset.sdiff_inter_self_left] at h1
+  have h2 := Finset.sum_sdiff (s₁ := ((X \ A).image σ) ∩ (X \ A))
+    (s₂ := (X \ A).image σ) (f := f) Finset.inter_subset_left
+  rw [Finset.sdiff_inter_self_left, Finset.inter_comm] at h2
   calc ∑ z ∈ X \ A, f z
       = (∑ z ∈ (X \ A) \ ((X \ A).image σ), f z) +
         ∑ z ∈ (X \ A) ∩ ((X \ A).image σ), f z := h1.symm

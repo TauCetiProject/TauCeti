@@ -186,12 +186,18 @@ theorem exists_eq_sub [HasZeroObject C] (x : SplitK0 C) :
       obtain ⟨X, Y, rfl⟩ := hx
       exact ⟨Y, X, by abel⟩
 
-variable {G : Type*} [AddCommGroup G]
+section HomExt
+
+variable {G : Type*} [AddMonoid G]
 
 /-- Two homomorphisms out of split `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
 theorem hom_ext {f g : SplitK0 C →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   PresentedK0.hom_ext h
+
+end HomExt
+
+variable {G : Type*} [AddCommGroup G]
 
 variable (C) in
 /-- An additive invariant for split `K₀`: a function on objects of `C`, constant on isomorphism

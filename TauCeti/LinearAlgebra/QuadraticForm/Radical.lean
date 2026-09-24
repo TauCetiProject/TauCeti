@@ -23,6 +23,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
+  trivial kernel is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
@@ -32,6 +34,11 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
+* `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a field has a vector of
+  unit norm.
+* `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
+* `QuadraticMap.Nondegenerate.exists_isUnit`: the same conclusion for a nondegenerate form on a
+  nontrivial vector space.
 * `TauCeti.nondegenerate_of_span_singleton_eq_top`: a form on a line is nondegenerate when it is
   nonzero on a spanning vector.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
@@ -89,6 +96,26 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
   · rintro ⟨hp, hp'⟩ x
     simpa using congrArg₂ (· + ·) (hp x.1) (hp' x.2)
 
+/-- A quadratic map whose polar form has trivial kernel is nondegenerate. -/
+theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
+    (hker : Q.polarBilin.ker = ⊥) : Q.Nondegenerate := by
+  refine ⟨le_antisymm (Q.radical_le_ker_polarBilin.trans hker.le) bot_le, ?_⟩
+  rw [hker]
+  nontriviality R
+  simp only [rank_subsingleton', zero_le]
+
+/-- A nonzero quadratic form over a field has a vector of unit norm. -/
+theorem exists_isUnit_of_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    {Q : QuadraticForm K V} (hQ : Q ≠ 0) : ∃ v, IsUnit (Q v) := by
+  obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
+  exact ⟨v, isUnit_iff_ne_zero.mpr hv⟩
+
+/-- Scaling a vector of unit norm by a unit preserves unit norm. -/
+theorem isUnit_apply_smul {Q : QuadraticForm R M} {c : R} {v : M}
+    (hc : IsUnit c) (hv : IsUnit (Q v)) : IsUnit (Q (c • v)) := by
+  rw [QuadraticMap.map_smul]
+  simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
+
 end QuadraticMap
 
 namespace QuadraticMap.Nondegenerate
@@ -112,6 +139,11 @@ theorem ne_zero [Nontrivial M] {Q : QuadraticForm R M} (hQ : Q.Nondegenerate) : 
     rw [hzero, QuadraticMap.mem_radical_iff']
     simp
   rwa [hQ.radical_eq_bot, Submodule.mem_bot] at hm
+
+/-- A nondegenerate quadratic form on a nontrivial vector space has a vector of nonzero norm. -/
+theorem exists_isUnit {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [Nontrivial V] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) :
+    ∃ v, IsUnit (Q v) := QuadraticMap.exists_isUnit_of_ne_zero hQ.ne_zero
 
 section Orthogonal
 
