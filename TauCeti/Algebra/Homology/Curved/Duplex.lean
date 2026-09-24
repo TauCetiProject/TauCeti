@@ -142,6 +142,8 @@ instance : Category (CurvedDuplex C w) where
 
 variable {X Y Z : CurvedDuplex C w}
 
+-- Register extensionality for categorical morphisms `X ⟶ Y`; `Hom.ext` alone does not let
+-- `ext` recognize that these morphisms are `CurvedDuplex.Hom` structures.
 @[ext]
 theorem hom_ext {f g : X ⟶ Y} (h₀ : f.f₀ = g.f₀) (h₁ : f.f₁ = g.f₁) : f = g :=
   Hom.ext h₀ h₁
