@@ -357,7 +357,6 @@ theorem distinguishedPoint_bot (hi : IsIntegralLattice i) :
 
 /-- The torus preserves every stratum: translating a point by a torus point multiplies its value
 on each monomial by a unit, so it does not change which monomials vanish. -/
-@[simp]
 theorem smul_mem_affineConeOrbit_iff (hi : IsIntegralLattice i) (F : σ.Face) (T : ComplexTorus N)
     {x : AffineSemigroupComplexPoint (dualSemigroup hi σ)} :
     T • x ∈ affineConeOrbit hi F ↔ x ∈ affineConeOrbit hi F := by
