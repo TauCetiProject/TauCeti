@@ -116,6 +116,7 @@ def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
   map_one' := by simp
   map_mul' x y := by simp
 
+/-- After coercion, the induced map is the `Units.map` of the Clifford-algebra map. -/
 @[simp]
 theorem coe_evenUnitaryGroupMap_apply (f : Q₁ →qᵢ Q₂)
     (x : CliffordAlgebra.evenUnitaryGroup Q₁) :
