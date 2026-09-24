@@ -8,12 +8,13 @@ module
 public import TauCeti.Algebra.Group.Subgroup.Conjugates
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.IntermediateField.ConjugateFields
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Conjugate intermediate fields
 
 The automorphism group of an extension acts on its intermediate fields by mapping their
-elements.  For a finite Galois extension, the Galois correspondence intertwines this action
+elements.  For a Galois extension, the Galois correspondence intertwines this action
 with conjugation of fixing subgroups.  Consequently the conjugates of an intermediate field
 correspond bijectively to the conjugates of its fixing subgroup, and their number is the index
 of the subgroup's normalizer.
@@ -48,7 +49,7 @@ namespace IntermediateField
 
 section Galois
 
-variable [FiniteDimensional K L] [IsGalois K L]
+variable [IsGalois K L]
 
 /-- The stabilizer of an intermediate field under ambient automorphisms is the normalizer of
 its fixing subgroup. -/
@@ -66,10 +67,10 @@ theorem stabilizer_eq_normalizer_fixingSubgroup (E : IntermediateField K L) :
         congr 1
       _ = E.fixingSubgroup := congrArg IntermediateField.fixingSubgroup h
   · intro h
-    rw [← IsGalois.fixedField_fixingSubgroup (σ • E), AlgEquiv.smul_intermediateField_def,
+    rw [← InfiniteGalois.fixedField_fixingSubgroup (σ • E), AlgEquiv.smul_intermediateField_def,
       IsGalois.map_fixingSubgroup]
     convert congrArg fixedField h using 1 <;> congr 1
-    exact (IsGalois.fixedField_fixingSubgroup E).symm
+    exact (InfiniteGalois.fixedField_fixingSubgroup E).symm
 
 /-- The Galois correspondence restricts to a bijection from conjugates of an intermediate
 field to conjugates of its fixing subgroup. -/
@@ -90,12 +91,18 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
     calc
       E.map σ.toAlgHom = σ • E := (AlgEquiv.smul_intermediateField_def σ E).symm
       _ = fixedField (E.fixingSubgroup.map (MulAut.conj σ)) := by
-        simp only [Subgroup.fixedField_map_conj, IsGalois.fixedField_fixingSubgroup,
+        simp only [Subgroup.fixedField_map_conj, InfiniteGalois.fixedField_fixingSubgroup,
           AlgEquiv.smul_intermediateField_def]
       _ = fixedField H.1 := congrArg fixedField hσ
       _ = _ := rfl⟩
-  left_inv E' := Subtype.ext (IsGalois.fixedField_fixingSubgroup E'.1)
-  right_inv H := Subtype.ext (IntermediateField.fixingSubgroup_fixedField H.1)
+  left_inv E' := Subtype.ext (InfiniteGalois.fixedField_fixingSubgroup E'.1)
+  right_inv H := by
+    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
+    apply Subtype.ext
+    change (fixedField H.1).fixingSubgroup = H.1
+    rw [← hσ, Subgroup.fixedField_map_conj,
+      InfiniteGalois.fixedField_fixingSubgroup, IsGalois.map_fixingSubgroup]
+    congr 1
 
 /-- The forward Galois correspondence sends a conjugate field to its fixing subgroup. -/
 @[simp]
