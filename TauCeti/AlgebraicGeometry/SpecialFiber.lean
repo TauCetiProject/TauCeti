@@ -15,6 +15,10 @@ scheme-theoretic fibre at the closed point. The two residue fields are construct
 one is the quotient by the maximal ideal, while the other is the residue field of the scheme
 point. This file gives their canonical equivalence and the resulting comparison of fibres,
 including its projection identities.
+
+The residue-field equivalence uses `Scheme.Spec.residueFieldIso` and
+`Ideal.bijective_algebraMap_quotient_residueField`; the projection comparisons follow the
+generic-point pattern in `TauCeti/AlgebraicGeometry/Fibers.lean`.
 -/
 
 public section
@@ -138,39 +142,14 @@ lemma specialFiberIsoFiberClosedPoint_inv_specialFiberι :
 
 /-- The inverse closed-point fibre comparison preserves the maps to the residue-field
 spectrum. -/
-@[simp]
-lemma specialFiberIsoFiberClosedPoint_inv_hom :
+@[reassoc (attr := simp)]
+lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
     (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
-          (specLocalResidueFieldIso R).hom =
-      toBase.fiberToSpecResidueField (closedPoint R) :=
-  by
-    change (specialFiberIsoFiberClosedPoint R toBase).inv ≫
         (specialFiber R toBase).hom ≫ (specLocalResidueFieldIso R).hom =
-      toBase.fiberToSpecResidueField (closedPoint R)
-    exact (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
-      (IsPullback.of_hasPullback toBase
-        ((Spec R).fromSpecResidueField (closedPoint R)))
-
-/-- The inverse comparison preserves the residue-field projection after composition. -/
-@[simp]
-lemma specialFiberIsoFiberClosedPoint_inv_hom_assoc {Y : Scheme.{u}}
-    (h : Spec (.of ((Spec R).residueField (closedPoint R))) ⟶ Y) :
-    (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
-          ((specLocalResidueFieldIso R).hom ≫ h)) =
-      toBase.fiberToSpecResidueField (closedPoint R) ≫ h := by
-  calc
-    _ = ((specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
-          (specLocalResidueFieldIso R).hom)) ≫ h :=
-      (congrArg (fun f => (specialFiberIsoFiberClosedPoint R toBase).inv ≫ f)
-        (Category.assoc
-          (pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))))
-          (specLocalResidueFieldIso R).hom h).symm).trans
-        (Category.assoc _ _ h).symm
-    _ = _ := congrArg (fun f => f ≫ h)
-      (specialFiberIsoFiberClosedPoint_inv_hom R toBase)
+      toBase.fiberToSpecResidueField (closedPoint R) :=
+  (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
+    (IsPullback.of_hasPullback toBase
+      ((Spec R).fromSpecResidueField (closedPoint R)))
 
 end ClosedPoint
 
