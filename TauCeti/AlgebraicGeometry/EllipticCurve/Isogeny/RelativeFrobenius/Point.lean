@@ -45,8 +45,10 @@ open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (p : ℕ) [ExpChar F p] (W : WeierstrassCurve.Affine F)
 
-/-- **Relative Frobenius sends the generic affine `x`-coordinate to its `p`-th power.** -/
-@[simp]
+/-- **Relative Frobenius sends the generic affine `x`-coordinate to its `p`-th power.**
+
+**Deliberately not `@[simp]`.** Its left-hand side is already reduced by the coordinate-pullback
+and relative-Frobenius simp lemmas; this named form remains the point-level API. -/
 theorem xCoord_tautologicalPoint_relativeFrobeniusIsogeny [W.IsElliptic] :
     Point.xCoord (CoordinatePullback.tautologicalPoint
       (relativeFrobeniusIsogeny p W).pullback) = W.genericX ^ p := by
@@ -56,8 +58,10 @@ theorem xCoord_tautologicalPoint_relativeFrobeniusIsogeny [W.IsElliptic] :
     ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
     ← W.genericX_eq_algebraMap]
 
-/-- **Relative Frobenius sends the generic affine `y`-coordinate to its `p`-th power.** -/
-@[simp]
+/-- **Relative Frobenius sends the generic affine `y`-coordinate to its `p`-th power.**
+
+**Deliberately not `@[simp]`.** Its left-hand side is already reduced by the coordinate-pullback
+and relative-Frobenius simp lemmas; this named form remains the point-level API. -/
 theorem yCoord_tautologicalPoint_relativeFrobeniusIsogeny [W.IsElliptic] :
     Point.yCoord (CoordinatePullback.tautologicalPoint
       (relativeFrobeniusIsogeny p W).pullback) = W.genericY ^ p := by
@@ -66,8 +70,10 @@ theorem yCoord_tautologicalPoint_relativeFrobeniusIsogeny [W.IsElliptic] :
   rw [WeierstrassCurve.Affine.genericY_def, map_pow, AdjoinRoot.mk_X]
 
 /-- **The `n`-fold relative Frobenius sends the generic affine `x`-coordinate to its
-`p ^ n`-th power.** -/
-@[simp]
+`p ^ n`-th power.**
+
+**Deliberately not `@[simp]`.** Its left-hand side is already reduced by the coordinate-pullback
+and iterated-relative-Frobenius simp lemmas; this named form remains the point-level API. -/
 theorem xCoord_tautologicalPoint_iterateRelativeFrobeniusIsogeny [W.IsElliptic] (n : ℕ) :
     Point.xCoord (CoordinatePullback.tautologicalPoint
       (iterateRelativeFrobeniusIsogeny p W n).pullback) =
@@ -79,8 +85,10 @@ theorem xCoord_tautologicalPoint_iterateRelativeFrobeniusIsogeny [W.IsElliptic] 
     ← W.genericX_eq_algebraMap]
 
 /-- **The `n`-fold relative Frobenius sends the generic affine `y`-coordinate to its
-`p ^ n`-th power.** -/
-@[simp]
+`p ^ n`-th power.**
+
+**Deliberately not `@[simp]`.** Its left-hand side is already reduced by the coordinate-pullback
+and iterated-relative-Frobenius simp lemmas; this named form remains the point-level API. -/
 theorem yCoord_tautologicalPoint_iterateRelativeFrobeniusIsogeny [W.IsElliptic] (n : ℕ) :
     Point.yCoord (CoordinatePullback.tautologicalPoint
       (iterateRelativeFrobeniusIsogeny p W n).pullback) =
