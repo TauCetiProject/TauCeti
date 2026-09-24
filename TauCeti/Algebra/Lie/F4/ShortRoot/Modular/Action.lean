@@ -177,8 +177,8 @@ theorem coe_f4ShortRootAdjoint_simpleCoroot (alpha : Fin 48) (i : Fin F4.rank)
       f4ModularChevalleyLieAlgebra) =
       -(f4SimplyConnectedRootDatum.pairing alpha
         (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) • f4ModularRootVector alpha := by
-  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk, ← lie_skew,
-    f4Modular_lie_simpleCoroot_rootVector, neg_smul]
+  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk,
+    f4Modular_lie_rootVector_simpleCoroot]
 
 end
 

@@ -101,33 +101,33 @@ theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_length_eq
   omega
 
 omit [P.IsCrystallographic] [P.IsReduced] in
-/-- A root string through distinct, non-opposite roots of length one has no term two or more
-steps in the positive direction when that term has length one or two. -/
-theorem _root_.RootPairing.not_root_eq_short_add_nsmul_short_of_two_le
+/-- An equal-length root string through non-opposite roots has no term two or more steps
+in the positive direction when the resulting root has length less than three times theirs. -/
+theorem _root_.RootPairing.not_root_eq_add_nsmul_of_length_eq_of_two_le
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (n : ℕ) (hpair : |P.pairing β α| ≤ 2)
-    (hα : length α = 1) (hβ : length β = 1) (hγ : length γ = 1 ∨ length γ = 2)
+    (hαpos : 0 < length α) (hαβ : length α = length β)
+    (hγ : length γ < 3 * length α)
     (hneg : P.root β ≠ -P.root α) (hn : 2 ≤ n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) : False := by
   have hn' : (2 : ℤ) ≤ n := by exact_mod_cast hn
-  have hne : β ≠ α := by
-    intro hβα
-    subst β
-    have hlen := P.length_of_root_eq_add_zsmul length hsym α α γ n h
-    rcases hγ with hγ | hγ <;>
-      rw [hα, hγ, P.pairing_same] at hlen <;>
-      norm_num at hlen <;>
-      nlinarith
-  have hp := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β hpair
-    (by omega) (hα.trans hβ.symm) hne hneg
+  have hquad : 0 ≤ (n : ℤ) ^ 2 - n - 2 := by nlinarith
+  have hne_or_eq : β = α ∨ β ≠ α := eq_or_ne β α
+  have hp : P.pairing β α ∈ ({-1, 0, 1, 2} : Set ℤ) := by
+    rcases hne_or_eq with hsame | hne
+    · subst β
+      simp
+    · have hp' := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β
+        hpair hαpos hαβ hne hneg
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp' ⊢
+      rcases hp' with hp' | hp' | hp' <;> simp [hp']
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
-  rcases hγ with hγ | hγ <;>
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp <;>
-    rcases hp with hp | hp | hp <;>
-    rw [hα, hβ, hγ, hp] at hlen <;>
-    norm_num at hlen <;>
-    nlinarith [sq_nonneg ((n : ℤ) - 1)]
+  rw [← hαβ] at hlen
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
+  rcases hp with hp | hp | hp | hp <;>
+    rw [hp] at hlen <;>
+    nlinarith [mul_nonneg hquad (le_of_lt hαpos)]
 
 omit [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced] in
 /-- If two roots of length one add to a root of length two, their Cartan pairing is zero. -/

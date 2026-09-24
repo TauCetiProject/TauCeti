@@ -469,9 +469,7 @@ theorem exists_f4_root_eq_add_zsmul_of_rootSpace_ne_bot
   refine ⟨γ, ?_⟩
   apply (f4KillingRoot_eq_add_zsmul_iff α β γ n).mp
   have hγweight : f4KillingRoot γ = γweight := congrArg Subtype.val hγlabel
-  rw [hγweight]
-  -- Both sides are the toFun field of the locally constructed weight.
-  rfl
+  rw [hγweight, Weight.coe_weight_mk, Int.cast_natCast, Nat.cast_smul_eq_nsmul]
 
 /-- A nonzero, present sum of two Killing roots has the corresponding pinned integral root
 label. -/
@@ -584,8 +582,9 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
   · have hneg : f4SimplyConnectedRootDatum.root β ≠
         -f4SimplyConnectedRootDatum.root α := by
       intro h
-      exact hopp ((f4Root_eq_neg_iff α β).mp h)
-    exact (f4_not_root_eq_short_add_nsmul_short_of_two_le α β δ 2 hα hβ hneg
+      exact hopp ((f4_root_eq_neg_iff α β).mp h)
+    exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β δ 2
+      (hα.trans hβ.symm) hneg
       (by omega) hpinned).elim
   · have hn :=
       f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
@@ -603,7 +602,12 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
   apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β hopp
   intro γ hγ
-  exact (f4_not_root_eq_long_add_two_long_of_ne_opposite α β γ hα hβ hopp hγ).elim
+  have hneg : f4SimplyConnectedRootDatum.root β ≠
+      -f4SimplyConnectedRootDatum.root α := by
+    intro h
+    exact hopp ((f4_root_eq_neg_iff α β).mp h)
+  exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β γ 2
+    (hα.trans hβ.symm) hneg (by omega) hγ).elim
 
 /-- The second divided adjoint power annihilates every Cartan element. -/
 theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
@@ -621,18 +625,6 @@ theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
   rw [Associative.dividedPower_apply, pow_two,
     Module.End.mul_apply, ad_apply, ad_apply, hfirst, lie_smul, lie_self, smul_zero,
     smul_zero]
-
-/-- A vanishing divided square forces the third adjoint power to vanish. -/
-theorem f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero
-    (α : Fin 48) (y : F4.lieAlgebra valid_F4)
-    (h : Associative.dividedPower 2
-      (ad ℚ (F4.lieAlgebra valid_F4)
-        (f4ChevalleyRootVector (f4KillingRoot α))) • y = 0) :
-    ((ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3) y = 0 := by
-  have hpow := (Associative.dividedPower_apply_eq_zero_iff _ 2 y).mp h
-  have hthree : (3 : ℕ) = 2 + 1 := by omega
-  rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
 
 /-- Three adjoint applications annihilate every F4 root vector, regardless of root length. -/
 theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
@@ -655,13 +647,19 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       lie_self, smul_zero]
   · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
     · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
-      exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
+      simpa only [Nat.reduceAdd] using
+        (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
+          (ad ℚ (F4.lieAlgebra valid_F4)
+            (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
     · rcases f4Length_eq_one_or_eq_two α with hα | hα
       · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
         intro δ hpinned
         exact (f4_not_root_eq_long_add_three_short α β δ hα hβ hpinned).elim
       · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hβ hopp
-        exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
+        simpa only [Nat.reduceAdd] using
+        (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
+          (ad ℚ (F4.lieAlgebra valid_F4)
+            (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
 
 /-- The third adjoint power annihilates every Cartan element. -/
 theorem f4_ad_pow_three_cartan_eq_zero (α : Fin 48)
@@ -670,7 +668,10 @@ theorem f4_ad_pow_three_cartan_eq_zero (α : Fin 48)
       (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
         (h : F4.lieAlgebra valid_F4) = 0 := by
   have hdiv := f4_dividedPower_two_ad_cartan_eq_zero α h
-  exact f4_ad_pow_three_eq_zero_of_dividedPower_two_eq_zero α _ hdiv
+  simpa only [Nat.reduceAdd] using
+        (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
+          (ad ℚ (F4.lieAlgebra valid_F4)
+            (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
 
 
 end

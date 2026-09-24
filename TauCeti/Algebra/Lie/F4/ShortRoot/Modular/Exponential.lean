@@ -145,34 +145,6 @@ noncomputable def f4RootExponentialLieEquiv {A : Type*} [CommRing A] [Algebra �
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t x
 
-/-- The integral root action at zero is the identity Lie automorphism. -/
-@[simp] theorem f4RootExponentialLieEquiv_zero {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) :
-    f4RootExponentialLieEquiv (A := A) k 0 = LieEquiv.refl := by
-  simpa only [f4RootExponentialLieEquiv] using
-    (baseChangeExpLieEquiv_zero (R := A) (f4RootAdjointDerivation k)
-      f4ChevalleyLieLattice (f4RootAdjointDerivation_dividedPower_mem k)
-      (isNilpotent_f4RootAdjointDerivation k))
-
-/-- Composing two integral root actions adds their parameters. -/
-@[simp] theorem f4RootExponentialLieEquiv_trans {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t u : A) :
-    (f4RootExponentialLieEquiv k t).trans (f4RootExponentialLieEquiv k u) =
-      f4RootExponentialLieEquiv k (t + u) := by
-  simpa only [f4RootExponentialLieEquiv] using
-    (baseChangeExpLieEquiv_trans (f4RootAdjointDerivation k) f4ChevalleyLieLattice
-      (f4RootAdjointDerivation_dividedPower_mem k)
-      (isNilpotent_f4RootAdjointDerivation k) t u)
-
-/-- Negating the parameter gives the inverse integral root action. -/
-@[simp] theorem f4RootExponentialLieEquiv_symm {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) (t : A) :
-    (f4RootExponentialLieEquiv k t).symm = f4RootExponentialLieEquiv k (-t) := by
-  simpa only [f4RootExponentialLieEquiv] using
-    (baseChangeExpLieEquiv_symm (f4RootAdjointDerivation k) f4ChevalleyLieLattice
-      (f4RootAdjointDerivation_dividedPower_mem k)
-      (isNilpotent_f4RootAdjointDerivation k) t)
-
 /-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
 ring is its three-term integral divided-power polynomial. -/
 theorem f4RootExponential_tmul_of_pow_three_eq_zero {A : Type*} [CommRing A] [Algebra ℤ A]
@@ -348,6 +320,7 @@ theorem f4ShortRootBaseChangeAdjoint_cancel_tmul
           f4ChevalleyLieLattice ((1 : A) ⊗ₜ[ZMod 2] x)) =
       (f4ShortRootAdjoint x).baseChange A := by
   let e := TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+  -- The imported restricted adjoint is opaque here, so compare its action pointwise.
   have hrho : (LieModule.toEnd (ZMod 2) f4ModularChevalleyLieAlgebra
       f4ShortRootLieIdeal) x = f4ShortRootAdjoint x := by
     apply LinearMap.ext

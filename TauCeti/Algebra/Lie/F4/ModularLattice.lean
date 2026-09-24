@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.BaseChange
-public import TauCeti.Algebra.Lie.Basis
 public import TauCeti.Algebra.Lie.F4.ChevalleyAction
 public import TauCeti.Algebra.Lie.Weights.Root.IntegralBasis
 
@@ -172,6 +171,13 @@ theorem f4Modular_lie_simpleCoroot_rootVector (i : Fin F4.rank) (α : Fin 48) :
         (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) • f4ModularRootVector α := by
   rw [f4ModularSimpleCoroot_eq, f4ModularRootVector_eq,
     f4Modular_lie_tmul, f4Integral_lie_simpleCoroot_rootVector, one_tmul_zsmul]
+
+/-- A modular root vector acts on a simple coroot by the negative reduced Cartan integer. -/
+theorem f4Modular_lie_rootVector_simpleCoroot (α : Fin 48) (i : Fin F4.rank) :
+    ⁅f4ModularRootVector α, f4ModularSimpleCoroot i⁆ =
+      -(f4SimplyConnectedRootDatum.pairing α
+        (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) • f4ModularRootVector α := by
+  rw [← lie_skew, f4Modular_lie_simpleCoroot_rootVector, neg_smul]
 
 /-- Integral coroot coordinates in the Chevalley basis are the pinned coroot coordinates. -/
 theorem f4IntegralCoroot_eq_sum_simple (β : Fin 48) :
@@ -492,14 +498,10 @@ theorem f4PinnedSimpleIndexEquiv_symm_apply (k : Fin 4) :
   simp only [f4PinnedSimpleIndexEquiv, Equiv.symm_trans_apply,
     Equiv.symm_symm, finCongr_symm, finCongr_apply]
 
-/-- Recover the Bourbaki node number of a simple Killing root. -/
-abbrev f4PinnedSimpleIndex (i : f4KillingBase.support) : Fin 4 :=
-  f4PinnedSimpleIndexEquiv i
-
-theorem f4PinnedSimpleIndex_baseSupportEquiv (i : Fin F4.rank) :
-    f4PinnedSimpleIndex ((F4.lieBasis valid_F4).baseSupportEquiv i) =
+theorem f4PinnedSimpleIndexEquiv_baseSupportEquiv (i : Fin F4.rank) :
+    f4PinnedSimpleIndexEquiv ((F4.lieBasis valid_F4).baseSupportEquiv i) =
       Fin.cast rank_F4 i := by
-  simp only [f4PinnedSimpleIndex, f4PinnedSimpleIndexEquiv_apply,
+  simp only [f4PinnedSimpleIndexEquiv_apply,
     Equiv.symm_apply_apply]
 
 /-- A pinned simple-index coordinate is the corresponding modular simple coroot. -/
@@ -572,13 +574,6 @@ theorem f4ModularChevalleyBasis_repr_smul_rootVector_self
     f4ModularChevalleyBasis.repr_self, Finsupp.smul_apply,
     Finsupp.single_eq_same, smul_eq_mul, mul_one]
 
-/-- Every coordinate of a zero modular Lie vector vanishes. -/
-theorem f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero
-    {X : f4ModularChevalleyLieAlgebra} (hX : X = 0) (i : f4ChevalleyIndex) :
-    f4ModularChevalleyBasis.repr X i = 0 := by
-  subst X
-  simp
-
 /-- A nonzero root coordinate in a modular root-vector bracket has the expected integral root
 label, even though the bracket itself is reduced modulo two. -/
 theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
@@ -606,7 +601,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     have hz : f4ModularChevalleyBasis.repr
         ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
           (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-      exact f4ModularChevalleyBasis_repr_eq_zero_of_eq_zero hlie _
+      simp only [hlie, map_zero, Finsupp.zero_apply]
     exact (hne hz).elim
   · obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
     obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
@@ -637,15 +632,12 @@ theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
     (Fin.castAdd 44 (Fin.cast rank_F4 i))
   have hlie : ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆ =
       c • f4ModularRootVector β := f4Modular_lie_simpleCoroot_rootVector i β
-  have hrepr := congrArg
-    (fun Y => f4ModularChevalleyBasis.repr Y
-      (Sum.inl (f4KillingRootLabel β))) hlie
   have hcoeff : f4SimplyConnectedRootDatum.pairing β
       (Fin.castAdd 44 (Fin.cast rank_F4 i)) = f4Root β (Fin.cast rank_F4 i) := by
     rw [f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd,
       dotProduct_single_one]
-  exact hrepr.trans <| (f4ModularChevalleyBasis_repr_smul_rootVector_self c β).trans <|
-    congrArg (fun z : ℤ => (z : ZMod 2)) hcoeff
+  rw [hlie, f4ModularChevalleyBasis_repr_smul_rootVector_self]
+  simp only [c, hcoeff]
 
 
 
