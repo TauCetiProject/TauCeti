@@ -166,7 +166,7 @@ open ProbabilityTheory in
 /-- **Rectangle integrals on a uniform finite carrier.** On a finite carrier with the uniform
 probability measure, the integral of a kernel over `S × T` is its sum over the rectangle divided by
 the square of the number of points. -/
-theorem rectIntegral_uniformOn_univ {α : Type*} [MeasurableSpace α] [Fintype α] [Nonempty α]
+theorem rectIntegral_uniformOn_univ {α : Type*} [MeasurableSpace α] [Fintype α]
     [MeasurableSingletonClass α] (K : SymmKernel α (uniformOn Set.univ)) (S T : Finset α) :
     K.rectIntegral (uniformOn Set.univ) S T =
       (∑ x ∈ S, ∑ y ∈ T, (K x y : ℝ)) / (Fintype.card α : ℝ) ^ 2 := by
