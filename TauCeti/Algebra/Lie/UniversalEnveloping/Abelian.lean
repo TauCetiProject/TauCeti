@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+-- Non-public: `Algebra.FiniteType` appears only in the private step `finiteType_of_finite` and in
+-- the proof of `instIsNoetherianRing`; no public statement below mentions it.
+import Mathlib.RingTheory.FiniteType
 
 /-!
 # The enveloping algebra of an abelian Lie algebra is its symmetric algebra
@@ -35,6 +38,16 @@ monomials `∏ᵢ ι(b i) ^ nᵢ` are an `R`-basis of it
 ordered-monomial theorem for an abelian Lie algebra: the ordering of a monomial carries no
 information here, since the generators commute, so a monomial is recorded by its exponent
 function `n : κ →₀ ℕ` rather than by a sorted word.
+
+Two ring-theoretic finiteness properties transfer across the comparison with no further Lie theory:
+`U(L)` is a **domain** over a domain when `L` is free as a module
+(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra, and it is
+**Noetherian** over a Noetherian ring when `L` is finite as a module
+(`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`), being then a commutative `R`-algebra of
+finite type. These are the abelian cases of two general Poincaré--Birkhoff--Witt corollaries, which
+over a field hold for every Lie algebra and every finite-dimensional one respectively; the general
+statements go through the associated graded of the PBW filtration and are not proved here, the
+arguments below using commutativity of `U(L)` throughout.
 
 The comparison also makes `ι` injective on any abelian `L`
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), with no hypothesis on `L` as a module: it
@@ -72,6 +85,10 @@ about a non-abelian `L`.
   an `R`-module.
 * `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`, with
   `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
+* `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
+  as a module over a domain.
+* `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **`U(L)` is Noetherian** for an abelian
+  `L` finite as a module over a Noetherian ring.
 
 ## References
 
@@ -303,5 +320,50 @@ theorem linearIndependent_ι_basis (b : Basis κ R L) :
     ((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
     (LinearMap.ker_eq_bot_of_injective (ι_injective R L))
   simpa [Function.comp_def] using h
+
+/-! ### Domains and Noetherian rings -/
+
+section Transfer
+
+variable {R L}
+
+/-- **The enveloping algebra of an abelian Lie algebra over a domain is a domain**, when the Lie
+algebra is free as a module: it is then a polynomial algebra over the base ring.
+
+This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is a domain for
+every Lie algebra over a field; the general statement goes through the associated graded of the
+PBW filtration and is not proved here. -/
+instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
+  (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
+
+/-- The enveloping algebra of an abelian Lie algebra which is finite as a module is a commutative
+`R`-algebra of finite type: a finite spanning set of `L` generates `U(L)` as an algebra, the
+canonical generators of `U(L)` generating it
+(`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`). -/
+private theorem finiteType_of_finite [Module.Finite R L] : Algebra.FiniteType R U := by
+  classical
+  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := R) (M := L)
+  -- the span of the image of a spanning set of `L` is the whole of the image of `L`
+  have hrange : ((Submodule.span R
+      (⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U) ''
+        (S : Set L)) : Submodule R U) : Set U) =
+      Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)) := by
+    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range]
+    rfl
+  exact ⟨S.image ⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U), by
+    rw [Finset.coe_image, ← Algebra.adjoin_span, hrange, adjoin_range_ι R L]⟩
+
+/-- **The enveloping algebra of a finite abelian Lie algebra over a Noetherian ring is
+Noetherian**: it is a commutative algebra of finite type over the base ring, so the Hilbert basis
+theorem applies.
+
+This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is Noetherian for
+every finite-dimensional Lie algebra over a field; the general statement goes through the
+associated graded of the PBW filtration and is not proved here. -/
+instance instIsNoetherianRing [IsNoetherianRing R] [Module.Finite R L] : IsNoetherianRing U :=
+  have := finiteType_of_finite (R := R) (L := L)
+  Algebra.FiniteType.isNoetherianRing R U
+
+end Transfer
 
 end TauCeti.UniversalEnvelopingAlgebra

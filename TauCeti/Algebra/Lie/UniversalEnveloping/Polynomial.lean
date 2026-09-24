@@ -6,22 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
-public import Mathlib.Algebra.Polynomial.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Abelian
--- Non-public: the Hilbert basis theorem for `MvPolynomial` is used only inside the proof of
--- `instIsNoetherianRing`, and no statement below mentions polynomial rings in several variables.
-import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
 # The enveloping algebra of a line is a polynomial ring
 
 For an abelian Lie algebra `L` over a commutative ring `R` with a basis `b`, the enveloping
 algebra `U(L)` is the polynomial algebra on the `b i`
-(`TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`). This file reads off the two consequences
-that need no further Lie theory: the **one-variable** case, where a single basis vector makes
-`U(L)` the polynomial ring `R[X]` in the image of that vector, and the transfer of ring-theoretic
-finiteness properties, `U(L)` being a **domain** over a domain and **Noetherian** over a
-Noetherian ring when `L` is finite.
+(`TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`). This file reads off the **one-variable**
+case, where a single basis vector makes `U(L)` the polynomial ring `R[X]` in the image of that
+vector.
 
 The one-variable case is where the Poincaré--Birkhoff--Witt theorem is first visible: its content
 is that the powers `ι(b default) ^ n` are linearly independent, and here they are the ordinary
@@ -29,13 +23,6 @@ monomials of a polynomial ring, `TauCeti.UniversalEnvelopingAlgebra.basisPow`. B
 identification and the basis are stated for a basis indexed by an arbitrary `Unique` type rather
 than by `PUnit`, since that is what `MvPolynomial.uniqueAlgEquiv` provides and a consumer holding
 a `Basis (Fin 1) R L` should not have to reindex it.
-
-The transfers are the abelian case of two general Poincaré--Birkhoff--Witt corollaries. Over a
-field, filtered-to-graded transfer along the PBW filtration makes `U(L)` a domain for every Lie
-algebra and Noetherian for every finite-dimensional one; the abelian case needs no filtration
-argument, because the comparison with the polynomial ring is already an algebra isomorphism. The
-general statements are not proved here and do not follow: the argument below uses commutativity of
-`U(L)` throughout.
 
 ## Main definitions
 
@@ -52,19 +39,11 @@ general statements are not proved here and do not follow: the argument below use
   the identification says nothing about the Poincaré--Birkhoff--Witt monomials.
 * `TauCeti.UniversalEnvelopingAlgebra.polynomialEquiv_toAlgHom`: the identification is evaluation
   at the canonical generator.
-* `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L`
-  free as a module over a domain.
-* `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **`U(L)` is Noetherian** for an
-  abelian `L` finite and free as a module over a Noetherian ring.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Chapter V,
   §17.2 (the abelian case of the Poincaré--Birkhoff--Witt theorem).
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 3, "PBW, a substantial sub-project": the acceptance test
-  `exists_polynomialAlgEquiv_of_finrank_one`, and the abelian case of the corollaries
-  `isDomain_universalEnvelopingAlgebra` and `isNoetherianRing_universalEnvelopingAlgebra`.
 -/
 
 public section
@@ -156,50 +135,19 @@ theorem polynomialEquiv_symm_ι' (b : Basis κ R L) :
 is the Poincaré--Birkhoff--Witt ordered-monomial theorem for a Lie algebra of rank one: a monomial
 in a single generator is recorded by its exponent, and the powers are linearly independent.
 
-The indexing is by `ℕ`, the exponent itself, rather than by the exponent functions `κ →₀ ℕ` of
-`TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: a consumer of a rank-one enveloping algebra
+This is `TauCeti.UniversalEnvelopingAlgebra.basisMonomials` with its index changed from the
+exponent functions `κ →₀ ℕ` to the exponent itself: a consumer of a rank-one enveloping algebra
 reads off degrees, and would otherwise have to transport every statement along
-`Finsupp.equivFunOnFinite` and `Equiv.funUnique`. -/
+`Finsupp.uniqueEquiv`. -/
 noncomputable def basisPow (b : Basis κ R L) : Basis ℕ R U :=
-  (Polynomial.basisMonomials R).map (polynomialEquiv R L b).toLinearEquiv
+  (basisMonomials R L b).reindex (Finsupp.uniqueEquiv default)
 
 /-- The `n`-th vector of `TauCeti.UniversalEnvelopingAlgebra.basisPow` is the `n`-th power of the
 canonical generator. -/
 @[simp]
 theorem basisPow_apply (b : Basis κ R L) (n : ℕ) :
     basisPow R L b n = _root_.UniversalEnvelopingAlgebra.ι R (b default) ^ n := by
-  rw [basisPow, Basis.map_apply, AlgEquiv.toLinearEquiv_apply]
-  rw [show (Polynomial.basisMonomials R) n = Polynomial.monomial n 1 by
-    simp [Polynomial.coe_basisMonomials]]
-  rw [polynomialEquiv_monomial, one_smul]
-
-/-! ### Domains and Noetherian rings -/
-
-section Transfer
-
-variable {R L}
-
-/-- **The enveloping algebra of an abelian Lie algebra over a domain is a domain**, when the Lie
-algebra is free as a module: it is a polynomial algebra over the base ring.
-
-This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is a domain for
-every Lie algebra over a field; the general statement goes through the associated graded of the
-PBW filtration and is not proved here. -/
-instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
-  (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
-
-/-- **The enveloping algebra of a finite abelian Lie algebra over a Noetherian ring is
-Noetherian**, when the Lie algebra is free as a module: it is a polynomial algebra in finitely
-many variables, so the Hilbert basis theorem applies.
-
-This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is Noetherian for
-every finite-dimensional Lie algebra over a field; the general statement goes through the
-associated graded of the PBW filtration and is not proved here. -/
-instance instIsNoetherianRing [IsNoetherianRing R] [Module.Free R L]
-    [Module.Finite R L] : IsNoetherianRing U :=
-  isNoetherianRing_of_ringEquiv _
-    (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).toRingEquiv
-
-end Transfer
+  rw [basisPow, Basis.reindex_apply, Finsupp.uniqueEquiv_symm_apply, basisMonomials_apply]
+  exact Finsupp.prod_single_index (pow_zero _)
 
 end TauCeti.UniversalEnvelopingAlgebra
