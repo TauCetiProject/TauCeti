@@ -24,6 +24,8 @@ identities are from `TauCeti.RingTheory.NormTrace.BaseChange`.
   the semilocal decomposition.
 * `TauCeti.algebraMap_norm_eq_prod_norm` and `TauCeti.algebraMap_trace_eq_sum_trace`: the norm
   and trace of `x ∈ L` are the product and sum of the local norms and traces of `x`.
+* `TauCeti.trace_semilocalEquiv_symm_single_mul`: the trace pairing of one semilocal component
+  with a global element is its local trace pairing.
 
 ## References
 
@@ -78,6 +80,26 @@ theorem trace_eq_sum_trace_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
         Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L) (semilocalEquiv L v ξ w) := by
   rw [← Algebra.trace_eq_of_algEquiv (semilocalEquiv L v)]
   exact Algebra.trace_pi _
+
+open scoped Classical in
+attribute [local instance] Fintype.ofFinite in
+/-- An element of `L_w`, placed in the `w`-component of `K_v ⊗[K] L`, has the same trace pairing
+with a global element as in `L_w`. -/
+theorem trace_semilocalEquiv_symm_single_mul
+    (w : HeightOneSpectrum (𝒪 L)) [w.asIdeal.LiesOver v.asIdeal]
+    (z : w.adicCompletion L) (x : L) :
+    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
+        ((semilocalEquiv L v).symm (Pi.single (⟨w, inferInstance⟩ :
+          {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z) * (1 ⊗ₜ x)) =
+      Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
+        (z * algebraMap L (w.adicCompletion L) x) := by
+  classical
+  rw [trace_eq_sum_trace_semilocalEquiv, Finset.sum_eq_single
+    (⟨w, inferInstance⟩ : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal})]
+  · simp [semilocalEquiv_tmul]
+  · intro w' _ hw'
+    simp [Pi.single_eq_of_ne hw']
+  · simp
 
 attribute [local instance] Fintype.ofFinite in
 /-- The trace of a number-field element is the sum of its traces in the completions above `v`. -/

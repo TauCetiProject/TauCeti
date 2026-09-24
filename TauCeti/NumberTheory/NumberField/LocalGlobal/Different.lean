@@ -36,6 +36,11 @@ exactly as it does in `L_w`.
 The equality of trace duals then passes to fractional ideals, and to the different ideals by
 inversion.
 
+This is the completion counterpart of `TauCeti.span_traceDual_one_eq_traceDual_one`,
+`TauCeti.extended_dual_one_eq_dual_one`, and `TauCeti.map_differentIdeal_eq_differentIdeal` in
+`TauCeti/RingTheory/DedekindDomain/Different/Localization.lean`; the trace-dual comparison and
+the names follow that formal localization result.
+
 ## Main results
 
 * `TauCeti.sum_trace_mul_smul_algebraMap_eq`: a trace-dual expansion of `L` over `K` remains one
@@ -73,20 +78,17 @@ variable {K : Type*} [Field K] [NumberField K]
 private abbrev placeAbove : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} :=
   ⟨w, inferInstance⟩
 
-open scoped Classical in
-/-- An element of `L_w`, placed in the `w`-component of `K_v ⊗[K] L`, has the same trace pairing
-with a global element as in `L_w`. -/
-private theorem trace_semilocalEquiv_symm_single_mul (z : w.adicCompletion L) (x : L) :
+/-- The trace pairing and scalar multiplication commute with extension from `K` to `K_v`. -/
+private theorem trace_tmul_mul_smul (a : v.adicCompletion K) (x b y : L) :
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
-        ((semilocalEquiv L v).symm (Pi.single (placeAbove v w) z) * (1 ⊗ₜ x)) =
-      Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
-        (z * algebraMap L (w.adicCompletion L) x) := by
-  let _ := Fintype.ofFinite {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}
-  rw [trace_eq_sum_trace_semilocalEquiv, Finset.sum_eq_single (placeAbove v w)]
-  · simp [semilocalEquiv_tmul]
-  · intro w' _ hw'
-    simp [Pi.single_eq_of_ne hw']
-  · simp
+        ((a ⊗ₜ x) * (1 ⊗ₜ b)) • ((1 : v.adicCompletion K) ⊗ₜ[K] y) =
+      a ⊗ₜ[K] (Algebra.trace K L (x * b) • y) := by
+  have ha : a ⊗ₜ[K] (x * b) = a • ((1 : v.adicCompletion K) ⊗ₜ[K] (x * b)) := by
+    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
+    Algebra.trace_baseChange_tmul]
+  simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
+    ← Algebra.smul_def, TensorProduct.smul_tmul]
 
 /-- **Trace-dual expansions pass to completions.** If `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every
 `x ∈ L`, then `z = ∑ᵢ Tr_{L_w/K_v}(z bᵢ) yᵢ` for every `z ∈ L_w`. -/
@@ -108,11 +110,7 @@ theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι →
     | tmul a x =>
       conv_rhs => rw [← h x, TensorProduct.tmul_sum]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      have ha : a ⊗ₜ[K] (x * b i) = a • ((1 : v.adicCompletion K) ⊗ₜ[K] (x * b i)) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
-        Algebra.trace_baseChange_tmul, smul_eq_mul, TensorProduct.smul_tmul', smul_eq_mul,
-        mul_one, mul_comm a, ← Algebra.smul_def, TensorProduct.smul_tmul]
+      exact trace_tmul_mul_smul v a x (b i) (y i)
   -- Place `z` in the `w`-component and read off that component.
   have h' := congrArg (fun ξ ↦ semilocalEquiv L v ξ (placeAbove v w))
     (hF ((semilocalEquiv L v).symm (Pi.single (placeAbove v w) z)))
@@ -128,6 +126,20 @@ private theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (
         (algebraMap (𝒪 L) (w.adicCompletionIntegers L) x) := by
   rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
     algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+
+/-- The trace of a pure integral tensor paired with a global element is a scalar extension of
+the global trace pairing. -/
+private theorem trace_integralSemilocalToField_tmul_mul
+    (a : v.adicCompletionIntegers K) (x : 𝒪 L) (d : L) :
+    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
+        (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
+      (a : v.adicCompletion K) *
+        algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
+  have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
+      (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
+    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
+    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
 
 /-- On the image of `𝒪_v ⊗[𝒪 K] 𝒪 L`, the trace pairing with an element of the global trace dual
 takes values in `𝒪_v`. -/
@@ -145,13 +157,10 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
   | tmul a x =>
     obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
     refine ⟨a * algebraMap (𝒪 K) (v.adicCompletionIntegers K) r, ?_⟩
-    have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
-        (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
-      Algebra.trace_baseChange_tmul, mul_comm (x : L), ← Algebra.traceForm_apply, ← hr, map_mul,
-      ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply,
-      algebraMap_adicCompletionIntegers_apply, smul_eq_mul, algebraMap_adicCompletion,
+    rw [trace_integralSemilocalToField_tmul_mul, mul_comm (x : L),
+      ← Algebra.traceForm_apply, ← hr]
+    simp only [map_mul, ValuationSubring.algebraMap_apply,
+      algebraMap_adicCompletionIntegers_apply, algebraMap_adicCompletion,
       Function.comp_apply, Algebra.algebraMap_self_apply]
 
 /-- The image in `L_w` of an element of the trace dual of `𝒪 L` over `𝒪 K` lies in the trace dual

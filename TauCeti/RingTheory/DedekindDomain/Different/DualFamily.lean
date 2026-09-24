@@ -29,6 +29,8 @@ coefficients remain in `A` whenever `x` pairs integrally with `B`.
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
+* `TauCeti.exists_smul_mem_span_basis`: every integral element has a nonzero multiple in the
+  span of an integral lift of a fraction-field basis.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
 
@@ -61,7 +63,7 @@ private theorem algebraMap_smul_eq (r : A) (y : B) :
 omit [FiniteDimensional K L] [Algebra.IsSeparable K L] in
 /-- Every element of `B` has a nonzero multiple in the `A`-span of a `K`-basis of `L` consisting
 of elements of `B`. -/
-private theorem exists_smul_mem_span_basis {ι : Type*} [Finite ι] (b : Basis ι K L) (b' : ι → B)
+theorem exists_smul_mem_span_basis {ι : Type*} [Finite ι] (b : Basis ι K L) (b' : ι → B)
     (hb' : ∀ i, algebraMap B L (b' i) = b i) (x : B) :
     ∃ a : A, a ≠ 0 ∧ a • x ∈ Submodule.span A (Set.range b') := by
   classical
@@ -105,6 +107,18 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
 
 variable [Module.Finite A B] [Module.Projective A B]
 
+omit [Algebra A B] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
+  [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+  [IsIntegralClosure B A L] [Module.Finite A B] [Module.Projective A B] in
+/-- Moving a scalar trace pairing between the two entries of a trace-dual expansion. -/
+private theorem trace_pairing_smul_swap (x y : L) (b z : B) (r : A)
+    (hr : Algebra.trace K L (y * algebraMap B L z) = algebraMap A K r) :
+    Algebra.trace K L ((Algebra.trace K L (x * algebraMap B L b) • y) *
+        algebraMap B L z) =
+      Algebra.trace K L (x * (algebraMap A K r • algebraMap B L b)) := by
+  rw [smul_mul_assoc, map_smul, hr, mul_smul_comm, map_smul,
+    smul_eq_mul, smul_eq_mul, mul_comm]
+
 /-- **A finite trace-dual family.** If the integral closure `B` of `A` in a finite separable
 extension `L / K` is a finite projective `A`-module, there are finitely many `bᵢ ∈ B` and
 `yᵢ ∈ Bᵛ` such that `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`. -/
@@ -136,8 +150,8 @@ theorem exists_sum_trace_mul_smul_eq :
     rw [sub_mul, map_sub, Finset.sum_mul, map_sum, sub_eq_zero]
     conv_rhs => rw [← hB z, Finset.mul_sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smul_mul_assoc, map_smul, hy, mul_smul_comm, map_smul, smul_eq_mul, smul_eq_mul, mul_comm,
-      LinearMap.comp_apply, LinearMap.proj_apply]
+    exact trace_pairing_smul_swap A K x (y i) (b i) z (G z i) (by
+      simpa only [LinearMap.comp_apply, LinearMap.proj_apply] using hy i z)
   rw [← sub_eq_zero]
   refine (traceForm_nondegenerate K L).1 _ fun z ↦ ?_
   obtain ⟨⟨a, ha⟩, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization A⁰ z
