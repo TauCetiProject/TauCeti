@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -46,6 +47,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
+* `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
+  a group isomorphism induces an equivalence of orbit spaces.
+* `TauCeti.MulAction.orbitRelQuotientSumEquiv`: the orbit space of an action on `X ⊕ Y` is the
+  sum of the orbit spaces of `X` and `Y`.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
@@ -564,6 +569,79 @@ theorem normalizerQuotientOrbitRelQuotientIsCancelSMul [IsCancelSMul G X] (H : S
   letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
   { right_cancel' := fun a c x h =>
       (normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff H a c x).mp h }
+
+section Congr
+
+variable {H Y : Type*} [Group H] [MulAction H Y]
+
+/-- **An equivariant equivalence induces an equivalence of orbit spaces**: if `e : X ≃ Y` carries
+the `G`-action to the `H`-action along a group isomorphism `φ : G ≃* H`, it maps the `G`-orbits
+onto the `H`-orbits. -/
+def orbitRelQuotientCongr (φ : G ≃* H) (e : X ≃ Y) (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) :
+    _root_.MulAction.orbitRel.Quotient G X ≃ _root_.MulAction.orbitRel.Quotient H Y :=
+  -- both orbit relations unfold to an existential over the acting group; reindex it along `φ`
+  Quotient.congr e fun _ _ ↦ φ.toEquiv.exists_congr fun _ ↦ by simp [← he]
+
+/-- `orbitRelQuotientCongr φ e he` sends the orbit of `x` to the orbit of `e x`. -/
+@[simp]
+theorem orbitRelQuotientCongr_mk (φ : G ≃* H) (e : X ≃ Y)
+    (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) (x : X) :
+    orbitRelQuotientCongr φ e he (Quotient.mk'' x) = Quotient.mk'' (e x) :=
+  (rfl)
+
+/-- The inverse of `orbitRelQuotientCongr φ e he` sends the orbit of `y` to the orbit of
+`e.symm y`. -/
+@[simp]
+theorem orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
+    (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) (y : Y) :
+    (orbitRelQuotientCongr φ e he).symm (Quotient.mk'' y) = Quotient.mk'' (e.symm y) :=
+  (rfl)
+
+end Congr
+
+section Sum
+
+variable {Y : Type*} [MulAction G Y]
+
+/-- **The orbits of an action on a sum are those of the two summands**: `G` acts on `X ⊕ Y`
+summandwise, so its orbit space is the sum of the orbit spaces of `X` and `Y`. -/
+def orbitRelQuotientSumEquiv :
+    _root_.MulAction.orbitRel.Quotient G (X ⊕ Y) ≃
+      _root_.MulAction.orbitRel.Quotient G X ⊕ _root_.MulAction.orbitRel.Quotient G Y where
+  toFun := Quotient.lift (Sum.map Quotient.mk'' Quotient.mk'') <| by
+    rintro (x | y) (x' | y') ⟨g, ⟨⟩⟩ <;> simp
+  invFun := Sum.elim
+    (Quotient.map' Sum.inl fun _ _ ⟨g, hg⟩ ↦ ⟨g, congrArg Sum.inl hg⟩)
+    (Quotient.map' Sum.inr fun _ _ ⟨g, hg⟩ ↦ ⟨g, congrArg Sum.inr hg⟩)
+  left_inv := by rintro ⟨x | y⟩ <;> rfl
+  right_inv := by rintro (q | q) <;> induction q using Quotient.inductionOn' <;> rfl
+
+/-- `orbitRelQuotientSumEquiv` sends the orbit of `x : X ⊕ Y` to the orbit of its summand: the
+orbit of `Sum.inl a` goes to `Sum.inl` of the orbit of `a`, and that of `Sum.inr b` to `Sum.inr`
+of the orbit of `b`. -/
+@[simp]
+theorem orbitRelQuotientSumEquiv_mk (x : X ⊕ Y) :
+    orbitRelQuotientSumEquiv (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient G (X ⊕ Y)) =
+      x.map Quotient.mk'' Quotient.mk'' :=
+  (rfl)
+
+/-- The inverse of `orbitRelQuotientSumEquiv` sends `Sum.inl` of the orbit of `x` to the orbit of
+`Sum.inl x`. -/
+@[simp]
+theorem orbitRelQuotientSumEquiv_symm_inl_mk (x : X) :
+    (orbitRelQuotientSumEquiv (G := G) (Y := Y)).symm (.inl (Quotient.mk'' x)) =
+      Quotient.mk'' (Sum.inl x) :=
+  (rfl)
+
+/-- The inverse of `orbitRelQuotientSumEquiv` sends `Sum.inr` of the orbit of `y` to the orbit of
+`Sum.inr y`. -/
+@[simp]
+theorem orbitRelQuotientSumEquiv_symm_inr_mk (y : Y) :
+    (orbitRelQuotientSumEquiv (G := G) (X := X)).symm (.inr (Quotient.mk'' y)) =
+      Quotient.mk'' (Sum.inr y) :=
+  (rfl)
+
+end Sum
 
 end MulAction
 
