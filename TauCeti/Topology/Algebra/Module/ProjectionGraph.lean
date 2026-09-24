@@ -34,30 +34,29 @@ variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Modu
 /-- A graph over the range of a continuous projection is embedded when its vertical component
 lies in the kernel of the projection. -/
 theorem isEmbedding_graph (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M → M)
-    (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) :
+    (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) :
     IsEmbedding (fun v : range P ↦ (v : M) + g v) := by
   have hleft : Function.LeftInverse (rangeFactorization P) (fun v : range P ↦ (v : M) + g v) := by
     intro v
     apply Subtype.ext
-    rw [rangeFactorization_coe, map_add, hPg, add_zero]
+    rw [rangeFactorization_coe, map_add, hPg v v.2, add_zero]
     exact (LinearMap.IsIdempotentElem.mem_range_iff
       (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr v.2)
   exact hleft.isEmbedding P.continuous.rangeFactorization
-    (continuous_subtype_val.add (hg.comp continuous_subtype_val))
+    (continuous_subtype_val.add (hg.comp_continuous continuous_subtype_val Subtype.prop))
 
 /-- The graph over the part of the range of a continuous projection lying in `s` is homeomorphic
 to that part, when the vertical component of the graph lies in the kernel of the projection. -/
 noncomputable def graphHomeomorph (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M → M)
-    (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) (s : Set M) :
+    (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M) :
     (Subtype.val ⁻¹' s : Set (range P)) ≃ₜ (fun v : M ↦ v + g v) '' (range P ∩ s) :=
   ((isEmbedding_graph P hP g hPg hg).homeomorphImage _).trans <| .setCongr <| by
-    rw [show (fun v : range P ↦ (v : M) + g v) = (fun v : M ↦ v + g v) ∘ Subtype.val from rfl,
-      image_comp, Subtype.image_preimage_val]
+    rw [← Subtype.image_preimage_val, image_image]
 
 /-- The graph homeomorphism sends `v` to `v + g v`. -/
 @[simp]
 theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M → M)
-    (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) (s : Set M)
+    (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M)
     (v : (Subtype.val ⁻¹' s : Set (range P))) :
     (graphHomeomorph P hP g hPg hg s v : M) = (v : M) + g v := by
   rfl
@@ -65,12 +64,12 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
 /-- The inverse graph homeomorphism is given by the projection. -/
 @[simp]
 theorem coe_graphHomeomorph_symm_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M → M)
-    (hPg : ∀ v, P (g v) = 0) (hg : Continuous g) (s : Set M)
+    (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M)
     (z : (fun v : M ↦ v + g v) '' (range P ∩ s)) :
     (((graphHomeomorph P hP g hPg hg s).symm z : range P) : M) = P z := by
   set v := (graphHomeomorph P hP g hPg hg s).symm z
   rw [← (graphHomeomorph P hP g hPg hg s).apply_symm_apply z, coe_graphHomeomorph_apply,
-    map_add, hPg, add_zero]
+    map_add, hPg _ (v : range P).2, add_zero]
   exact ((LinearMap.IsIdempotentElem.mem_range_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
       (LinearMap.mem_range.mpr (v : range P).2)).symm

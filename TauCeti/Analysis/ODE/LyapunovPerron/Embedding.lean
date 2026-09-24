@@ -44,7 +44,7 @@ noncomputable section
 namespace ContinuousLinearMap
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
-variable {K α ε : ℝ≥0} {A P : X →L[ℝ] X} {N : X → X} {r : ℝ}
+variable {K α ε : ℝ≥0} (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
 variable (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
       ‖NormedSpace.exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
     (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
@@ -61,6 +61,12 @@ private theorem setOf_norm_coe_le_eq_preimage (S : Set X) (ρ : ℝ) :
   ext v
   simp only [mem_ofPred_eq, mem_preimage, mem_closedBall_zero_iff]
 
+include hP hAP in
+/-- The complementary projection kills the local unstable graph map. -/
+private theorem sub_apply_localUnstableGraphMap (v : X) :
+    (ContinuousLinearMap.id ℝ X - P) (localUnstableGraphMap A P N r hs hu hr hN hsmall v) = 0 := by
+  rw [sub_apply, id_apply, apply_localUnstableGraphMap hs hu hr hN hsmall hP hAP, sub_self]
+
 /-- The local stable set of confined forward solutions, truncated by the norm of its stable
 projection, is homeomorphic to the corresponding closed ball in the stable spectral subspace. -/
 noncomputable def localStableSetHomeomorph :
@@ -69,8 +75,8 @@ noncomputable def localStableSetHomeomorph :
           y 0 = x ∧ MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} :=
   (Homeomorph.setCongr (setOf_norm_coe_le_eq_preimage _ ρ)).trans <|
     (graphHomeomorph P hP (localStableGraphMap A P N r hs hu hr hN hsmall)
-      (apply_localStableGraphMap hs hu hr hN hsmall hP hAP)
-      (lipschitzWith_localStableGraphMap hs hu hr hN hsmall).continuous _).trans <|
+      (fun v _ ↦ apply_localStableGraphMap hs hu hr hN hsmall hP hAP v)
+      (lipschitzWith_localStableGraphMap hs hu hr hN hsmall).continuous.continuousOn _).trans <|
     Homeomorph.setCongr
       (setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr hN hsmall
         hN0 hP hAP hρ).symm
@@ -78,7 +84,7 @@ noncomputable def localStableSetHomeomorph :
 /-- The local stable set homeomorphism is the graph parameterization `v ↦ v + h(v)`. -/
 @[simp]
 theorem coe_localStableSetHomeomorph_apply (v : {v : range P | ‖(v : X)‖ ≤ ρ}) :
-    (localStableSetHomeomorph hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
+    (localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
       (v : X) + localStableGraphMap A P N r hs hu hr hN hsmall v := by
   simp only [localStableSetHomeomorph, Homeomorph.trans_apply]
   exact coe_graphHomeomorph_apply _ _ _ _ _ _ _
@@ -88,9 +94,15 @@ theorem coe_localStableSetHomeomorph_apply (v : {v : range P | ‖(v : X)‖ ≤
 theorem coe_localStableSetHomeomorph_symm_apply
     (x : {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧
           y 0 = x ∧ MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ}) :
-    (((localStableSetHomeomorph hs hu hr hN hsmall hN0 hP hAP hρ).symm x : range P) : X) =
-      P x :=
-  coe_graphHomeomorph_symm_apply P hP _ _ _ _ _
+    (((localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x : range P) : X) =
+      P x := by
+  obtain ⟨v, rfl⟩ :=
+    (localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).surjective x
+  rw [Homeomorph.symm_apply_apply, coe_localStableSetHomeomorph_apply, map_add,
+    apply_localStableGraphMap hs hu hr hN hsmall hP hAP, add_zero]
+  exact ((LinearMap.IsIdempotentElem.mem_range_iff
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
+      (LinearMap.mem_range.mpr (v : range P).2)).symm
 
 /-- The local unstable set of confined backward solutions, truncated by the norm of its
 complementary projection, is homeomorphic to the corresponding closed ball in the unstable
@@ -103,8 +115,8 @@ noncomputable def localUnstableSetHomeomorph :
   (Homeomorph.setCongr (setOf_norm_coe_le_eq_preimage _ ρ)).trans <|
     (graphHomeomorph (ContinuousLinearMap.id ℝ X - P) hP.one_sub
       (localUnstableGraphMap A P N r hs hu hr hN hsmall)
-      (sub_apply_localUnstableGraphMap hs hu hr hN hsmall hP hAP)
-      (lipschitzWith_localUnstableGraphMap hs hu hr hN hsmall).continuous _).trans <|
+      (fun v _ ↦ sub_apply_localUnstableGraphMap A P N r hs hu hr hN hsmall hP hAP v)
+      (lipschitzWith_localUnstableGraphMap hs hu hr hN hsmall).continuous.continuousOn _).trans <|
     Homeomorph.setCongr
       (setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image hs hu hr hN hsmall
         hN0 hP hAP hρ).symm
@@ -113,7 +125,7 @@ noncomputable def localUnstableSetHomeomorph :
 @[simp]
 theorem coe_localUnstableSetHomeomorph_apply
     (v : {v : range (ContinuousLinearMap.id ℝ X - P) | ‖(v : X)‖ ≤ ρ}) :
-    (localUnstableSetHomeomorph hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
+    (localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ v : X) =
       (v : X) + localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
   simp only [localUnstableSetHomeomorph, Homeomorph.trans_apply]
   exact coe_graphHomeomorph_apply _ _ _ _ _ _ _
@@ -124,9 +136,15 @@ theorem coe_localUnstableSetHomeomorph_symm_apply
     (x : {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ∧
           y 0 = x ∧ MapsTo y (Iic 0) (closedBall 0 r)) ∧
           ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ}) :
-    (((localUnstableSetHomeomorph hs hu hr hN hsmall hN0 hP hAP hρ).symm x :
-        range (ContinuousLinearMap.id ℝ X - P)) : X) = (ContinuousLinearMap.id ℝ X - P) x :=
-  coe_graphHomeomorph_symm_apply (ContinuousLinearMap.id ℝ X - P) hP.one_sub _ _ _ _ _
+    (((localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x :
+        range (ContinuousLinearMap.id ℝ X - P)) : X) = (ContinuousLinearMap.id ℝ X - P) x := by
+  obtain ⟨v, rfl⟩ :=
+    (localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).surjective x
+  rw [Homeomorph.symm_apply_apply, coe_localUnstableSetHomeomorph_apply, map_add,
+    sub_apply_localUnstableGraphMap A P N r hs hu hr hN hsmall hP hAP, add_zero]
+  exact ((LinearMap.IsIdempotentElem.mem_range_iff
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP.one_sub)).mp
+      (LinearMap.mem_range.mpr (v : range (ContinuousLinearMap.id ℝ X - P)).2)).symm
 
 end ContinuousLinearMap
 
