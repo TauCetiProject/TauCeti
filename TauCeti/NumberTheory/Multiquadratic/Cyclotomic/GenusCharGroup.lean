@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Square
+public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.GaussSum
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Group
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.CharacterSubfield
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.GaussSum
@@ -24,7 +25,8 @@ the prime-discriminant character group `genusCharGroup s hs` (the characters of 
 `s`) with the compositum `ℚ(√P : P ∈ s)`.
 
 The square roots are Gauss sums: for `P ∈ s`, the Gauss sum of the primitive character of `P`,
-formed with a primitive `|P|`-th root of unity in `K`, squares to `P`, and its Galois stabilizer
+formed with a primitive `|P|`-th root of unity in `K`, squares to `P`
+(`gaussSumOfPrimitiveRoot_primeDiscriminantChar_sq`), and its Galois stabilizer
 is the kernel of that character lifted to level `N`. Intersecting these kernels and applying the
 Galois correspondence gives the compositum.
 
@@ -39,8 +41,6 @@ D. A. Cox, *Primes of the Form x² + ny²*, §§3.B and 6.A.
 
 ## Main results
 
-* `gaussSumOfPrimitiveRoot_primeDiscriminantChar_sq`: the Gauss sum of the character of a prime
-  discriminant `P` squares to `P`.
 * `characterSubfield_genusCharGroup_eq_adjoin_range`: the prime-discriminant character group cuts
   out the compositum of the fields `ℚ(√P)`.
 * `adjoin_range_le_iff_lcm_dvd`: that compositum lies in the `m`-th cyclotomic subfield exactly
@@ -54,19 +54,6 @@ public section
 open IntermediateField IsCyclotomicExtension IsCyclotomicExtension.Rat DirichletCharacter
 
 namespace TauCeti.Multiquadratic
-
-/-- **The Gauss sum of a prime discriminant squares to it.** In any field of characteristic zero,
-the Gauss sum of the character of the prime discriminant `P`, formed with a primitive `|P|`-th
-root of unity, is a square root of `P`. -/
-theorem gaussSumOfPrimitiveRoot_primeDiscriminantChar_sq {L : Type*} [Field L] [CharZero L]
-    {P : ℤ} (hP : IsPrimeDiscriminant P) [NeZero P.natAbs] {ζ : L}
-    (hζ : IsPrimitiveRoot ζ P.natAbs) :
-    gaussSumOfPrimitiveRoot (primeDiscriminantChar P hP) hζ ^ 2 = (P : L) := by
-  have hneg := primeDiscriminantChar_apply_int P hP (-1)
-  rw [Int.cast_neg, Int.cast_one, primeDiscriminantCharFun_neg_one hP] at hneg
-  rw [gaussSumOfPrimitiveRoot_sq _ (isPrimitive_primeDiscriminantChar P hP)
-    (isQuadratic_primeDiscriminantChar P hP), MulChar.ringHomComp_apply, hneg, ZMod.card,
-    eq_intCast, ← Int.cast_natCast, ← Int.cast_mul, Int.sign_mul_natAbs]
 
 variable (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
 
@@ -116,8 +103,10 @@ theorem characterSubfield_genusCharGroup_eq_adjoin_range [NeZero (∏ P ∈ s, P
           (fun a b ha hb ↦ by rw [MulChar.mul_apply, ha, hb, one_mul])
           (MulChar.one_apply_coe _) fun P _ ↦ by rw [primeDiscriminantCharAtLevel_def]; exact h P
       rw [MulChar.ringHomCompHom_apply, MulChar.ringHomComp_apply, ht, map_one]
-  rw [intermediateFieldEquivSubgroupChar_symm_apply, hker,
-    fixedField_iInf_stabilizer_eq_adjoin_range]
+  -- The character correspondence is by definition the fixed field of that kernel.
+  change fixedField ((subgroupGalEquivSubgroupChar N K R).symm (OrderDual.toDual
+    ((genusCharGroup s hs).map (MulChar.ringHomCompHom (Int.castRingHom R))))) = _
+  rw [hker, fixedField_iInf_stabilizer_eq_adjoin_range]
   apply TauCeti.IntermediateField.adjoin_eq_adjoin_of_forall_sq_eq
   · rintro _ ⟨P, rfl⟩
     exact ⟨r P, ⟨P, rfl⟩, by rw [hr, gaussSumOfPrimitiveRoot_primeDiscriminantChar_sq]⟩
@@ -153,7 +142,7 @@ theorem adjoin_range_le_iff_eq_natAbs_prod
     (hmN : m ∣ (∏ P ∈ s, P).natAbs) :
     adjoin ℚ (Set.range r) ≤ F ↔ m = (∏ P ∈ s, P).natAbs := by
   rw [adjoin_range_le_iff_lcm_dvd s hs r hr F hmN,
-    lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant hs heven]
+    lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even hs heven]
   exact ⟨Nat.dvd_antisymm hmN, fun h ↦ h ▸ dvd_rfl⟩
 
 end TauCeti.Multiquadratic

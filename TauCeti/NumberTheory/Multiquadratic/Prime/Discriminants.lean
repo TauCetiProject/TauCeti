@@ -43,8 +43,9 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   the only prime divisor.
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminant_of_ne_of_not_both_even`: distinct prime
   discriminants are coprime, unless both are even.
-* `TauCeti.Multiquadratic.lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant`: with at most
-  one even member, the least common multiple of their absolute values is that of their product.
+* `TauCeti.Multiquadratic.lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even`:
+  for prime discriminants with at most one even member, the least common multiple of their
+  absolute values is that of their product.
 * `TauCeti.Multiquadratic.prod_ne_zero_of_forall_isPrimeDiscriminant` and
   `TauCeti.Multiquadratic.neZero_natAbs_prod_of_forall_isPrimeDiscriminant`: a product of prime
   discriminants is nonzero, so its absolute value is a legitimate Dirichlet character level.
@@ -538,8 +539,8 @@ theorem isCoprime_primeDiscriminant_of_ne_of_not_both_even {D E : ℤ}
 
 /-- For a family of prime discriminants with at most one even member, the least common multiple
 of their absolute values is the absolute value of their product. -/
-theorem lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant {s : Finset ℤ}
-    (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+theorem lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     s.lcm Int.natAbs = (∏ P ∈ s, P).natAbs := by

@@ -269,6 +269,7 @@ theorem natCard_genusCharGroup
 
 /-- **The conductor of the prime-discriminant character group** is the least common multiple of
 the absolute values of the prime discriminants. -/
+@[simp]
 theorem dirichletConductor_genusCharGroup :
     (genusCharGroup s hs).dirichletConductor = s.lcm Int.natAbs := by
   let _ := neZero_natAbs_prod_of_forall_isPrimeDiscriminant hs

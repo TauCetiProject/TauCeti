@@ -29,6 +29,8 @@ normality extends that conjugacy to the ambient field.
 
 * `IsPrimitiveRoot.map_eq_pow`: a ring endomorphism sending a primitive `n`-th root of
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
+* `IsPrimitiveRoot.pow_eq_pow_iff_natCast_eq`: two powers of a primitive `n`-th root of unity
+  agree exactly when their exponents agree modulo `n`.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -56,6 +58,14 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
     (σ : R →+* R) (hσ : σ ζ = ζ ^ j) {μ : R} (hμ : μ ^ n = 1) : σ μ = μ ^ j := by
   obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
   rw [map_pow, hσ, ← pow_mul, ← pow_mul, Nat.mul_comm]
+
+/-- Two powers of a primitive `n`-th root of unity agree exactly when their exponents agree
+modulo `n`. -/
+theorem _root_.IsPrimitiveRoot.pow_eq_pow_iff_natCast_eq {M : Type*} [CommMonoid M] {n : ℕ}
+    [NeZero n] {ζ : M} (hζ : IsPrimitiveRoot ζ n) {a b : ℕ} :
+    ζ ^ a = ζ ^ b ↔ (a : ZMod n) = b := by
+  rw [(hζ.isOfFinOrder (NeZero.ne n)).pow_eq_pow_iff_modEq, ← hζ.eq_orderOf,
+    ZMod.natCast_eq_natCast_iff]
 
 /-- In a normal extension of `ℚ`, every coprime power of a primitive root is the image of that root
 under a `ℚ`-algebra automorphism. -/
