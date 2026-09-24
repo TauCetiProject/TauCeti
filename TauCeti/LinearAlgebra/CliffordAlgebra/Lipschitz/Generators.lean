@@ -133,7 +133,6 @@ noncomputable def scalarUnits (hQ : ∃ v, IsUnit (Q v)) : Rˣ →* lipschitzGro
     (unitsMap_algebraMap_mem_lipschitzGroup hQ)
 
 /-- The scalar unit `a` is the Clifford element `algebraMap R _ a`. -/
-@[simp]
 theorem coe_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
     ((scalarUnits Q hQ a : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) a :=
