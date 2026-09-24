@@ -391,7 +391,6 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
 
 /-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
 second tensor factor. -/
-@[simp]
 theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) (a : A) (m : M) :
     ((orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
@@ -401,7 +400,6 @@ theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
 
 /-- The determinant of a base-changed orthogonal automorphism is the image of its original
 determinant. -/
-@[simp]
 theorem det_orthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : orthogonalGroup Q) :
     LinearEquiv.det (orthogonalGroupBaseChange (A := A) Q g :
@@ -447,7 +445,6 @@ theorem coe_specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Finite R 
 
 /-- The special-orthogonal base-change map is the orthogonal base-change map restricted to the
 determinant-one subgroup. -/
-@[simp]
 theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
     (specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
@@ -456,7 +453,6 @@ theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [M
   rw [coe_specialOrthogonalGroupBaseChange, coe_orthogonalGroupBaseChange]
 
 /-- On pure tensors, base change of a special orthogonal automorphism acts on the second factor. -/
-@[simp]
 theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) (a : A) (m : M) :
     ((specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
