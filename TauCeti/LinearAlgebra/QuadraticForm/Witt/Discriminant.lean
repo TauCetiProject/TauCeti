@@ -54,8 +54,6 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter II, §2, where the
   signed discriminant is shown to induce `I/I² ≅ Kˣ/(Kˣ)²`.
-* Tau Ceti Roadmap, `QuadraticFormInvariants/Suggested.lean`, Layer 4, for the proof blueprint
-  of `signedDiscrHom`, its surjectivity, and its kernel.
 -/
 
 public section
@@ -110,12 +108,14 @@ theorem signedDiscr_add (x y : WittRing K) :
 
 /-- **The signed discriminant is additive on the fundamental ideal**:
 `d±(x + y) = d±(x) + d±(y)` as soon as `x` has even dimension. -/
+@[simp]
 theorem signedDiscr_add_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fundamentalIdeal K)
     (y : WittRing K) : signedDiscr (x + y) = signedDiscr x + signedDiscr y := by
   rw [signedDiscr_add, mem_fundamentalIdeal_iff.mp hx, zero_mul, zero_smul,
     zero_add (M := SquareClassGroup K)]
 
 /-- On the fundamental ideal the signed discriminant is invariant under negation. -/
+@[simp]
 theorem signedDiscr_neg_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fundamentalIdeal K) :
     signedDiscr (-x) = signedDiscr x := by
   have h := signedDiscr_add_of_mem_fundamentalIdeal hx (-x)
@@ -125,6 +125,7 @@ theorem signedDiscr_neg_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fun
     _ = signedDiscr x := by rw [← h, add_zero (M := SquareClassGroup K)]
 
 /-- On the fundamental ideal the signed discriminant commutes with natural multiples. -/
+@[simp]
 theorem signedDiscr_nsmul_of_mem_fundamentalIdeal (n : ℕ) {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K) : signedDiscr (n • x) = n • signedDiscr x := by
   induction n with
@@ -162,6 +163,7 @@ theorem signedDiscr_oneFoldPfisterClass_mul (a b : Kˣ) :
 
 /-- **The signed discriminant vanishes on `I(K)²`.** The two-fold Pfister classes additively
 generate `I(K)²` and have trivial signed discriminant, and `d±` is additive on `I(K)`. -/
+@[simp]
 theorem signedDiscr_eq_zero_of_mem_fundamentalIdeal_sq {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K ^ 2) : signedDiscr x = 0 := by
   have hI : ∀ z ∈ AddSubgroup.closure (Set.range (pfisterClass (K := K) (n := 2))),
@@ -184,6 +186,7 @@ theorem signedDiscr_eq_zero_of_mem_fundamentalIdeal_sq {x : WittRing K}
 
 /-- **The signed discriminant is semilinear on the fundamental ideal**: for `x ∈ I(K)`,
 `d±(w x) = dim(w) • d±(x)`, with the dimension of `w` read modulo two. -/
+@[simp]
 theorem signedDiscr_mul_of_mem_fundamentalIdeal (w : WittRing K) {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K) :
     signedDiscr (w * x) = dimMod2 w • signedDiscr x := by
@@ -274,6 +277,7 @@ private theorem exists_sub_oneFoldPfisterClass_mem_sq {x : WittRing K}
 
 /-- **The description of `I(K)²` by the signed discriminant**: a Witt class lies in `I(K)²`
 exactly when it lies in `I(K)` and has trivial signed discriminant. -/
+@[simp]
 theorem mem_fundamentalIdeal_sq_iff {x : WittRing K} :
     x ∈ fundamentalIdeal K ^ 2 ↔
       x ∈ fundamentalIdeal K ∧ WittRing.signedDiscr x = 0 := by
@@ -285,6 +289,7 @@ theorem mem_fundamentalIdeal_sq_iff {x : WittRing K} :
 
 /-- **A form has Witt class in `I(K)²` exactly when it has even rank and trivial signed
 discriminant.** -/
+@[simp]
 theorem wittClass_mem_fundamentalIdeal_sq_iff (q : RegularFormClass K) :
     wittClass q ∈ fundamentalIdeal K ^ 2 ↔
       Even (RegularFormClass.rank q) ∧ RegularFormClass.signedDiscr q = 0 := by
@@ -293,6 +298,7 @@ theorem wittClass_mem_fundamentalIdeal_sq_iff (q : RegularFormClass K) :
 
 /-- A one-fold Pfister class `⟨⟨a⟩⟩` lies in `I(K)²` exactly when `a` is a square, in which case
 it is already zero. -/
+@[simp]
 theorem oneFoldPfisterClass_mem_fundamentalIdeal_sq_iff {a : Kˣ} :
     oneFoldPfisterClass a ∈ fundamentalIdeal K ^ 2 ↔ IsSquare a := by
   rw [mem_fundamentalIdeal_sq_iff, WittRing.signedDiscr_oneFoldPfisterClass,
@@ -328,6 +334,7 @@ theorem signedDiscrHom_surjective : Function.Surjective (signedDiscrHom (K := K)
       ofMul_toMul]
 
 /-- **The kernel of the signed discriminant on `I(K)` is `I(K)²`.** -/
+@[simp]
 theorem signedDiscrHom_eq_zero_iff (x : fundamentalIdeal K) :
     signedDiscrHom x = 0 ↔ (x : WittRing K) ∈ fundamentalIdeal K ^ 2 := by
   rw [signedDiscrHom_apply, mem_fundamentalIdeal_sq_iff, and_iff_right x.2]
