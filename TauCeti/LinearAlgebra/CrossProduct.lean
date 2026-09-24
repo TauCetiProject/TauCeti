@@ -15,7 +15,8 @@ import Mathlib.Tactic.FinCases
 
 A matrix `B` acting on `R³` does not commute with the cross product, but the failure is completely
 described by the trace: differentiating the Cauchy--Binet formula
-`(B u) ⨯₃ (B v) = (det B) • (B⁻¹)ᵀ (u ⨯₃ v)` at `B = 1` gives
+`(B u) ⨯₃ (B v) = (adjugate B)ᵀ *ᵥ (u ⨯₃ v)` — which for an invertible `B` is the familiar
+`(det B) • (B⁻¹)ᵀ (u ⨯₃ v)`, but which holds for every `B` — at `B = 1` gives
 
 `(B u) ⨯₃ v + u ⨯₃ (B v) = (tr B) • (u ⨯₃ v) - Bᵀ (u ⨯₃ v)`,
 
@@ -35,7 +36,8 @@ open Matrix
 variable {R : Type*} [CommRing R]
 
 /-- **The infinitesimal Cauchy--Binet relation**: differentiating
-`(B u) ⨯₃ (B v) = (det B) • (B⁻¹)ᵀ (u ⨯₃ v)` at `B = 1` gives
+`(B u) ⨯₃ (B v) = (adjugate B)ᵀ *ᵥ (u ⨯₃ v)`, which for an invertible `B` reads
+`(det B) • (B⁻¹)ᵀ (u ⨯₃ v)`, at `B = 1` gives
 `(B u) ⨯₃ v + u ⨯₃ (B v) = (tr B) • (u ⨯₃ v) - Bᵀ (u ⨯₃ v)`. -/
 theorem mulVec_crossProduct_add (B : Matrix (Fin 3) (Fin 3) R) (u v : Fin 3 → R) :
     (B *ᵥ u) ⨯₃ v + u ⨯₃ (B *ᵥ v) = B.trace • (u ⨯₃ v) - Bᵀ *ᵥ (u ⨯₃ v) := by

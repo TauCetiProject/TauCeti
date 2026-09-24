@@ -627,12 +627,16 @@ theorem coe_slOfVectorCovector (c d : Fin 3 → R) :
       (3 : R) • vecMulVec c d - (c ⬝ᵥ d) • 1 :=
   (rfl)
 
-private theorem mulVec_slOfVectorCovector (c d u : Fin 3 → R) :
+/-- **The action of `TauCeti.Octonion.slOfVectorCovector` on `R³`**: the rank-one part sends `u`
+to a multiple of `c`, and the scalar part scales `u`. -/
+theorem mulVec_slOfVectorCovector (c d u : Fin 3 → R) :
     (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R) *ᵥ u =
       (3 : R) • ((d ⬝ᵥ u) • c) - (c ⬝ᵥ d) • u := by
   simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, one_mulVec]
 
-private theorem mulVec_transpose_slOfVectorCovector (c d u : Fin 3 → R) :
+/-- **The action of the transpose of `TauCeti.Octonion.slOfVectorCovector` on `R³`**, the mirror of
+`TauCeti.Octonion.mulVec_slOfVectorCovector` with the roles of `c` and `d` exchanged. -/
+theorem mulVec_transpose_slOfVectorCovector (c d u : Fin 3 → R) :
     (slOfVectorCovector c d : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ u =
       (3 : R) • ((c ⬝ᵥ u) • d) - (c ⬝ᵥ d) • u := by
   simp [transpose_sub, transpose_smul, sub_mulVec, smul_mulVec, transpose_vecMulVec,
