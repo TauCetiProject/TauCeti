@@ -54,6 +54,9 @@ simple.
   a difference root, by `TauCeti.TypeCLieIndex.symplecticRootIndex_of_carrierNode_ne_last`.
 * `TauCeti.TypeCLieIndex.carrierEquivPinned_simpleRootSubgroup`: the equivalence matches the
   numbered simple-root subgroups.
+* `TauCeti.TypeCLieIndex.symplecticFrobenius_symplecticSimpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.pinnedFrobenius_pinnedSimpleRootSubgroup`: each Frobenius raises the
+  parameter of a numbered simple-root element to the `q`-th power.
 * `TauCeti.TypeCLieIndex.carrierEquivPinned_frobenius` and
   `TauCeti.TypeCLieIndex.carrierEquivPinned_steinberg`: the equivalence intertwines the carrier
   Frobenius and Steinberg map with the pinned Frobenius.
@@ -238,6 +241,17 @@ theorem carrierEquivSymplectic_frobenius (g : d.AmbientGroup) :
     SpStd.coe_frobenius, symplecticFrobenius, GLSymplecticFin.coe_map,
     SpStd.coe_pointsMulEquivGLSymplecticFin_apply]
 
+/-- **The matrix Frobenius raises the parameter of a numbered simple-root element to the `q`-th
+power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
+@[simp]
+theorem symplecticFrobenius_symplecticSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.symplecticFrobenius (d.symplecticSimpleRootSubgroup i u) =
+      d.symplecticSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [← carrierEquivSymplectic_simpleRootSubgroup, ← carrierEquivSymplectic_frobenius,
+    frobenius_simpleRootSubgroup, carrierEquivSymplectic_simpleRootSubgroup]
+
 /-! ## The comparison with the pinned scheme points -/
 
 /-- The pinned comparison, read in the standard matrix realization, is the carrier's own. -/
@@ -262,6 +276,19 @@ theorem carrierEquivPinned_frobenius (g : d.AmbientGroup) :
   apply d.pinnedEquivSymplectic.injective
   rw [pinnedEquivSymplectic_carrierEquivPinned, carrierEquivSymplectic_frobenius,
     pinnedEquivSymplectic_pinnedFrobenius, pinnedEquivSymplectic_carrierEquivPinned]
+
+/-- **The pinned Frobenius raises the parameter of a numbered simple-root element to the `q`-th
+power**, that is, `F' (x'_i(u)) = x'_i(u ^ q)`. -/
+@[simp]
+theorem pinnedFrobenius_pinnedSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.pinnedFrobenius (d.pinnedSimpleRootSubgroup i u) =
+      d.pinnedSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  apply d.pinnedEquivSymplectic.injective
+  rw [pinnedEquivSymplectic_pinnedFrobenius, pinnedEquivSymplectic_pinnedSimpleRootSubgroup,
+    symplecticFrobenius_symplecticSimpleRootSubgroup,
+    pinnedEquivSymplectic_pinnedSimpleRootSubgroup]
 
 /-- **The carrier Steinberg map agrees with the independently defined pinned `q`-power Frobenius**,
 the Steinberg map of the untwisted type-`C` family on the pinned scheme points. -/
