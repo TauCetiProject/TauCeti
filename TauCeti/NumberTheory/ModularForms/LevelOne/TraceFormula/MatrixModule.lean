@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Modular
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -39,12 +38,8 @@ namespace TauCeti
 /-- Integral two-by-two matrices of determinant `n`. -/
 abbrev TraceFormulaMatrix (n : ℤ) := { A : Matrix (Fin 2) (Fin 2) ℤ // A.det = n }
 
-theorem det_neg_traceFormulaMatrix (n : ℤ) (A : TraceFormulaMatrix n) :
-    (-A.1).det = n := by
-  simpa only [Matrix.det_fin_two, Matrix.neg_apply, neg_mul_neg] using A.2
-
 instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
-  neg A := ⟨-A.1, det_neg_traceFormulaMatrix n A⟩
+  neg A := ⟨-A.1, by simpa [Matrix.det_neg] using A.2⟩
 
 /-- Two determinant-`n` matrices define the same projective matrix when they differ by sign. -/
 protected def TraceFormulaMatrix.Rel (A B : TraceFormulaMatrix n) : Prop := A = B ∨ A = -B
@@ -144,6 +139,7 @@ instance (n : ℤ) : MulAction SL(2, ℤ) (TraceFormulaMatrixModule n) where
       (g : Matrix (Fin 2) (Fin 2) ℤ) * ((h : Matrix (Fin 2) (Fin 2) ℤ) * A.1)
     rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_assoc]
 
+/-- Left multiplication on a projective class is computed on any representative. -/
 @[simp]
 theorem TraceFormulaMatrixModule.smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     g • TraceFormulaMatrixModule.mk A = TraceFormulaMatrixModule.mk (traceFormulaMatrixLeft g A) :=
@@ -153,6 +149,7 @@ theorem TraceFormulaMatrixModule.smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatri
 private theorem TraceFormulaMatrixModule.neg_one_smul (x : TraceFormulaMatrixModule n) :
     (-1 : SL(2, ℤ)) • x = x := by
   refine Quotient.inductionOn' x fun A ↦ ?_
+  -- Quotient induction produces a raw constructor; `mk` exposes the representative lemma.
   change (-1 : SL(2, ℤ)) • TraceFormulaMatrixModule.mk A = TraceFormulaMatrixModule.mk A
   rw [TraceFormulaMatrixModule.smul_mk]
   calc
@@ -160,6 +157,7 @@ private theorem TraceFormulaMatrixModule.neg_one_smul (x : TraceFormulaMatrixMod
         TraceFormulaMatrixModule.mk (-A) := by
           congr 1
           apply Subtype.ext
+          -- The scalar matrix `-1` acts on the underlying matrix by negation.
           change (-(1 : Matrix (Fin 2) (Fin 2) ℤ)) * A.1 = -A.1
           simp
     _ = TraceFormulaMatrixModule.mk A := TraceFormulaMatrixModule.mk_neg A
@@ -181,7 +179,7 @@ theorem TraceFormulaMatrixModule.psl_smul_mk (g : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) : (g : PSL(2, ℤ)) • x = g • x := (rfl)
 
 /-- The right multiplication action on `ℳₙ`, expressed as a left action through inversion. -/
-public def TraceFormulaMatrixModule.right (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+public def TraceFormulaMatrixModule.right (x : TraceFormulaMatrixModule n) (g : SL(2, ℤ)) :
     TraceFormulaMatrixModule n :=
   Quotient.map' (traceFormulaMatrixRight g) (fun A B h ↦ by
     rcases h with h | h
@@ -194,21 +192,17 @@ public def TraceFormulaMatrixModule.right (g : SL(2, ℤ)) (x : TraceFormulaMatr
         -(B.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
       rw [hval, Matrix.neg_mul]) x
 
+/-- Inverse right multiplication on a projective class is computed on any representative. -/
 @[simp]
 theorem TraceFormulaMatrixModule.right_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     (TraceFormulaMatrixModule.mk A).right g =
       TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := (rfl)
 
 /-- The conjugation action on `ℳₙ`, expressed as a left action by `A ↦ g A g⁻¹`. -/
-public def TraceFormulaMatrixModule.conj (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+public def TraceFormulaMatrixModule.conj (x : TraceFormulaMatrixModule n) (g : SL(2, ℤ)) :
     TraceFormulaMatrixModule n := g • x.right g
 
-/-- Conjugation is left multiplication followed by inverse right multiplication. -/
-theorem TraceFormulaMatrixModule.conj_eq_smul_right (g : SL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : x.conj g = g • x.right g := by
-  unfold TraceFormulaMatrixModule.conj
-  rfl
-
+/-- Conjugation on a projective class is computed on any representative. -/
 @[simp]
 theorem TraceFormulaMatrixModule.conj_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     (TraceFormulaMatrixModule.mk A).conj g =
@@ -244,6 +238,7 @@ theorem TraceFormulaMatrixModule.right_mul_rev (g h : SL(2, ℤ))
 private theorem TraceFormulaMatrixModule.right_neg_one (x : TraceFormulaMatrixModule n) :
     x.right (-1 : SL(2, ℤ)) = x := by
   refine Quotient.inductionOn' x fun A ↦ ?_
+  -- Quotient induction produces a raw constructor; `mk` exposes the representative lemma.
   change (TraceFormulaMatrixModule.mk A).right (-1 : SL(2, ℤ)) =
     TraceFormulaMatrixModule.mk A
   rw [TraceFormulaMatrixModule.right_mk]
@@ -252,6 +247,7 @@ private theorem TraceFormulaMatrixModule.right_neg_one (x : TraceFormulaMatrixMo
         TraceFormulaMatrixModule.mk (-A) := by
           congr 1
           apply Subtype.ext
+          -- The scalar matrix `-1` acts on the underlying matrix by negation.
           change A.1 * (((-1 : SL(2, ℤ))⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
             -A.1
           simp
@@ -265,11 +261,13 @@ private def traceFormulaMatrixRightHom (n : ℤ) :
     invFun := fun x ↦ x.right g⁻¹
     left_inv := by
       intro x
+      -- Evaluation of the permutation wrapper exposes the public right-action law.
       change (x.right g).right g⁻¹ = x
       rw [← TraceFormulaMatrixModule.right_mul_rev]
       simp
     right_inv := by
       intro x
+      -- Evaluation of the permutation wrapper exposes the public right-action law.
       change (x.right g⁻¹).right g = x
       rw [← TraceFormulaMatrixModule.right_mul_rev]
       simp
@@ -278,7 +276,7 @@ private def traceFormulaMatrixRightHom (n : ℤ) :
   map_mul' g h := Equiv.ext fun x ↦ TraceFormulaMatrixModule.right_mul_rev g h x
 
 /-- Inverse right multiplication descends through the central quotient. -/
-private def traceFormulaMatrixRightPSLHom (n : ℤ) :
+public def TraceFormulaMatrixModule.rightPSLHom (n : ℤ) :
     PSL(2, ℤ) →* Equiv.Perm (TraceFormulaMatrixModule n) :=
   QuotientGroup.lift (Subgroup.center SL(2, ℤ)) (traceFormulaMatrixRightHom n)
     fun c hc ↦ by
@@ -288,8 +286,16 @@ private def traceFormulaMatrixRightPSLHom (n : ℤ) :
       · exact Equiv.ext fun x ↦ TraceFormulaMatrixModule.right_neg_one x
 
 /-- Inverse right multiplication by a projective modular-group element. -/
-def TraceFormulaMatrixModule.rightPSL (g : PSL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
-    TraceFormulaMatrixModule n := traceFormulaMatrixRightPSLHom n g x
+public def TraceFormulaMatrixModule.rightPSL (x : TraceFormulaMatrixModule n) (g : PSL(2, ℤ)) :
+    TraceFormulaMatrixModule n := TraceFormulaMatrixModule.rightPSLHom n g x
+
+/-- The packaged permutation action agrees with inverse right multiplication. -/
+@[simp]
+theorem TraceFormulaMatrixModule.rightPSLHom_apply (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) :
+    TraceFormulaMatrixModule.rightPSLHom n g x = x.rightPSL g := by
+  unfold TraceFormulaMatrixModule.rightPSL
+  rfl
 
 /-- A representative acts by inverse right multiplication. -/
 @[simp]
@@ -300,16 +306,16 @@ theorem TraceFormulaMatrixModule.rightPSL_mk (g : SL(2, ℤ))
 @[simp]
 theorem TraceFormulaMatrixModule.rightPSL_one (x : TraceFormulaMatrixModule n) :
     x.rightPSL 1 = x := by
-  change traceFormulaMatrixRightPSLHom n 1 x = x
+  unfold TraceFormulaMatrixModule.rightPSL
   rw [map_one]
   rfl
 
 /-- Inverse right multiplication gives a left action of `PSL(2, ℤ)`. -/
+@[simp]
 theorem TraceFormulaMatrixModule.rightPSL_mul_rev (g h : PSL(2, ℤ))
     (x : TraceFormulaMatrixModule n) :
     x.rightPSL (g * h) = (x.rightPSL h).rightPSL g := by
-  change traceFormulaMatrixRightPSLHom n (g * h) x =
-    traceFormulaMatrixRightPSLHom n g (traceFormulaMatrixRightPSLHom n h x)
+  unfold TraceFormulaMatrixModule.rightPSL
   rw [map_mul]
   rfl
 
@@ -333,6 +339,7 @@ theorem TraceFormulaMatrixModule.conj_one (x : TraceFormulaMatrixModule n) : x.c
   simp [TraceFormulaMatrixModule.conj]
 
 /-- Conjugation by a product composes in the usual left-action order. -/
+@[simp]
 theorem TraceFormulaMatrixModule.conj_mul (g h : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) : x.conj (g * h) = (x.conj h).conj g := by
   simp only [TraceFormulaMatrixModule.conj, right_mul_rev, mul_smul, smul_right]
@@ -346,7 +353,7 @@ theorem TraceFormulaMatrixModule.psl_smul_right (g h : PSL(2, ℤ))
   simpa only [psl_smul_mk, rightPSL_mk] using TraceFormulaMatrixModule.smul_right a b x
 
 /-- Conjugation of projective determinant-`n` matrices by `PSL(2, ℤ)`. -/
-def TraceFormulaMatrixModule.conjPSL (g : PSL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+def TraceFormulaMatrixModule.conjPSL (x : TraceFormulaMatrixModule n) (g : PSL(2, ℤ)) :
     TraceFormulaMatrixModule n := g • x.rightPSL g
 
 /-- A representative conjugates by `A ↦ g A g⁻¹`. -/
@@ -361,6 +368,7 @@ theorem TraceFormulaMatrixModule.conjPSL_one (x : TraceFormulaMatrixModule n) :
   simp [TraceFormulaMatrixModule.conjPSL]
 
 /-- Conjugation by a product composes in left-action order. -/
+@[simp]
 theorem TraceFormulaMatrixModule.conjPSL_mul (g h : PSL(2, ℤ))
     (x : TraceFormulaMatrixModule n) :
     x.conjPSL (g * h) = (x.conjPSL h).conjPSL g := by
