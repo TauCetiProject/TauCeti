@@ -20,14 +20,14 @@ This is the conclusion the fundamental theorem of calculus delivers for a `C¹` 
 `φ = ‖deriv g‖ₑ`; it is also the conclusion the chord bound of the length–area method delivers for
 a holomorphic map restricted to a circular arc, with `φ` the angular length density
 (`TauCeti.ofReal_dist_le_mul_lintegral_Ioc` in `Analysis/Complex/Conformal/LengthArea.lean`). This
-file records that, on an order-connected `s` and for a density of **finite total integral**, the
-domination alone forces two things:
+file records three consequences of the domination on an order-connected `s`:
 
-* `g` has **bounded range**: indeed `Metric.ediam (g '' s) ≤ ∫⁻ t in s, φ t`, with no finiteness
-  hypothesis at all; and
-* `g` is **uniformly continuous** on `s`.
+* With no finiteness assumption, `Metric.ediam (g '' s) ≤ ∫⁻ t in s, φ t`.
+* If the total integral is finite and the target is a pseudo-metric space, `g '' s` is bounded.
+* If the total integral is finite, `g` is uniformly continuous on `s`, even for a pseudo-emetric
+  target.
 
-The second does not follow from bounded variation: domination by a *finite* integral is an
+Uniform continuity does not follow from bounded variation: domination by a *finite* integral is an
 absolute-continuity statement. The set `s` need only be order-connected, so a half-line and the
 whole line are covered along with `Ioo a b`, and `φ` need not be measurable, the integrals being
 lower integrals throughout.
