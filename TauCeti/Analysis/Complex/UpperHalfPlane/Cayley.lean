@@ -32,8 +32,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   upper half-plane onto the open unit disc.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
   half-plane onto the closed unit disc minus `1`.
-* `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: the transform is holomorphic on a
-  neighbourhood of the closed upper half-plane, in particular continuous there.
+* `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
+* `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
+  neighbourhood of the closed upper half-plane.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
 
 ## References
@@ -133,11 +134,16 @@ theorem bijOn_sub_I_div_add_I_im_nonneg :
     rw [mem_ofPred_eq, ← norm_sub_I_div_add_I_le_one_iff hne, heq]
     exact mem_closedBall_zero_iff.mp hw.1
 
+/-- The Cayley transform is complex differentiable away from its pole at `-i`. -/
+theorem differentiableOn_sub_I_div_add_I :
+    DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | z + I ≠ 0} :=
+  (differentiableOn_id.sub (differentiableOn_const _)).div
+    (differentiableOn_id.add (differentiableOn_const _)) fun _ hz => hz
+
 /-- The Cayley transform is complex differentiable at every point of the closed upper half-plane. -/
 theorem differentiableOn_sub_I_div_add_I_im_nonneg :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | 0 ≤ z.im} :=
-  (differentiableOn_id.sub (differentiableOn_const _)).div
-    (differentiableOn_id.add (differentiableOn_const _)) fun _ hz => add_I_ne_zero_of_im_nonneg hz
+  differentiableOn_sub_I_div_add_I.mono fun _ hz => add_I_ne_zero_of_im_nonneg hz
 
 /-- The Cayley transform tends to `1` at infinity: the point `1` it omits from the closed disc is
 the image of `∞`. -/
