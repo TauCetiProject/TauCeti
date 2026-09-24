@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
@@ -68,14 +67,10 @@ lemma πStupidTruncLE_f {i : ℤ} (hi : i ≤ n) :
       (K.stupidTruncXIso (ComplexShape.embeddingUpIntLE n)
         (i := (n - i).natAbs) (i' := i) (by
           simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).inv := by
-  simp only [πStupidTruncLE, ComplexShape.Embedding.liftExtend]
-  rw [ComplexShape.Embedding.liftExtend.f_eq
-    (i := (n - i).natAbs)
-    (hi := by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])]
-  dsimp [HomologicalComplex.stupidTruncXIso, HomologicalComplex.restrictionXIso]
-  dsimp [CategoryTheory.Iso.trans]
-  dsimp [HomologicalComplex.stupidTrunc]
-  simp only [Category.id_comp]
+  refine (ComplexShape.Embedding.liftExtend_f _ _ _ (i := (n - i).natAbs)
+    (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])).trans ?_
+  simp [stupidTruncXIso, restrictionXIso]
+  rfl
 
 /-- The brutal truncation in degrees `≤ n` vanishes in degrees `> n`. -/
 lemma isZero_stupidTrunc_embeddingUpIntLE_X {i : ℤ} (hi : n < i) :
@@ -110,17 +105,47 @@ section Preadditive
 
 variable [Preadditive C] [HasZeroObject C] (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE (n + 1)]
 
+/-- The inclusion of the top term followed by the projection onto the brutal truncation below it
+is zero. -/
+@[reassoc (attr := simp)]
+lemma ιTop_comp_πStupidTruncLE : K.ιTop (n + 1) ≫ K.πStupidTruncLE n = 0 := by
+  refine HomologicalComplex.hom_ext _ _ fun i ↦ ?_
+  by_cases hi : i = n + 1
+  · subst hi
+    exact (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).eq_of_tgt _ _
+  · exact (isZero_single_obj_X (.up ℤ) _ _ _ hi).eq_of_src _ _
+
 /-- The short complex splitting off the top term of a cochain complex `K` vanishing in degrees
 `> n + 1`: the top term in degree `n + 1`, then `K`, then the brutal truncation of `K` in degrees
 `≤ n`. -/
-@[expose, simps]
 noncomputable def topShortComplex : ShortComplex (CochainComplex C ℤ) :=
-  ShortComplex.mk (K.ιTop (n + 1)) (K.πStupidTruncLE n) (by
-    refine HomologicalComplex.hom_ext _ _ fun i ↦ ?_
-    by_cases hi : i = n + 1
-    · subst hi
-      exact (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).eq_of_tgt _ _
-    · exact (isZero_single_obj_X (.up ℤ) _ _ _ hi).eq_of_src _ _)
+  ShortComplex.mk (K.ιTop (n + 1)) (K.πStupidTruncLE n) (K.ιTop_comp_πStupidTruncLE n)
+
+/-- The short complex splitting off the top term is formed by the inclusion of the top term and
+the projection onto the brutal truncation below it. -/
+lemma topShortComplex_eq :
+    K.topShortComplex n =
+      ShortComplex.mk (K.ιTop (n + 1)) (K.πStupidTruncLE n) (K.ιTop_comp_πStupidTruncLE n) := by
+  simp [topShortComplex]
+
+/-- The first term of the short complex splitting off the top term is the top term placed in
+degree `n + 1`. -/
+@[simp]
+lemma topShortComplex_X₁ :
+    (K.topShortComplex n).X₁ = (single C (.up ℤ) (n + 1)).obj (K.X (n + 1)) := by
+  simp [topShortComplex]
+
+/-- The middle term of the short complex splitting off the top term is the complex itself. -/
+@[simp]
+lemma topShortComplex_X₂ : (K.topShortComplex n).X₂ = K := by
+  simp [topShortComplex]
+
+/-- The last term of the short complex splitting off the top term is the brutal truncation in
+degrees `≤ n`. -/
+@[simp]
+lemma topShortComplex_X₃ :
+    (K.topShortComplex n).X₃ = K.stupidTrunc (ComplexShape.embeddingUpIntLE n) := by
+  simp [topShortComplex]
 
 /-- The short complex splitting off the top term is split in each degree: in degree `n + 1` its
 first map is an isomorphism and its third term vanishes, and in every other degree its first term
