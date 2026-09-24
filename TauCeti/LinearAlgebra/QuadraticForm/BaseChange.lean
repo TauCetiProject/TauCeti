@@ -573,12 +573,17 @@ theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
   have h := LinearMap.baseChange_baseChange (R := R) (A := A) (B := B)
     ((g : M ≃ₗ[R] M).toLinearMap)
   have hx := congrArg (fun f => f x) h
-  change
-    (TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M).symm
-        (((g : M ≃ₗ[R] M).toLinearMap.baseChange B)
-          ((TensorProduct.AlgebraTensorModule.cancelBaseChange R A B B M) x)) =
-      (((g : M ≃ₗ[R] M).toLinearMap.baseChange A).baseChange B) x
-  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe] using hx.symm
+  convert hx.symm using 1
+  · have hB (y : B ⊗[R] M) :
+        LinearEquiv.baseChange R B M M (g : M ≃ₗ[R] M) y =
+          (g : M ≃ₗ[R] M).toLinearMap.baseChange B y :=
+      DFunLike.congr_fun (LinearEquiv.coe_baseChange R B M M (g : M ≃ₗ[R] M)) y
+    rw [hB]
+    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.symm_symm]
+  · exact congrArg (fun f => f x)
+      (LinearEquiv.coe_baseChange A B (A ⊗[R] M) (A ⊗[R] M)
+        (LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M)))
 
 /-- The special-orthogonal scalar-extension maps satisfy the same scalar-tower law, read through
 the canonical inclusion into the orthogonal group. -/
