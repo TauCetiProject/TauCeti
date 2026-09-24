@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
@@ -159,7 +160,7 @@ theorem range_ofRayClassCharacter_le (h : 𝔪 ∣ 𝔫) :
 group is finite. -/
 theorem isOfFinOrder_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
     IsOfFinOrder (ofRayClassCharacter 𝔪 χ) :=
-  (ofRayClassCharacter 𝔪).isOfFinOrder χ.isOfFinOrder
+  (ofRayClassCharacter 𝔪).isOfFinOrder (isOfFinOrder_of_finite χ)
 
 end HeckeCharacter
 
