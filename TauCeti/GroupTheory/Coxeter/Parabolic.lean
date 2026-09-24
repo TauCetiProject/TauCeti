@@ -30,12 +30,14 @@ The main theorem is the **factorization of `W` along a standard parabolic subgro
   `v ∈ cs.parabolic J` (`CoxeterSystem.existsUnique_isMinimalCosetRep_mul`), and the two lengths
   then add by the first item.
 
-Everything is proved from the exchange condition in
-`TauCeti/GroupTheory/Coxeter/StrongExchange.lean`: no geometric representation, no finiteness
-hypothesis, and no appeal to Matsumoto's theorem. The length-additivity argument is the classical
-one: in a reduced word `α ++ ω'` whose halves spell a minimal representative and a parabolic
-element, deleting a letter of `α` produces a shorter representative of the same coset, while
-deleting a letter of `ω'` contradicts reducedness on the parabolic side.
+The same factorization is also available on the other side: `ℓ (x * v) = ℓ x + ℓ v` whenever
+`x ∈ cs.parabolic J` and `v` has no left descent in `J`
+(`CoxeterSystem.length_mul_of_forall_not_isLeftDescent`), and every `w : W` factors uniquely as
+such a product (`CoxeterSystem.existsUnique_mem_parabolic_mul`).
+
+The development rests only on the exchange condition of
+`TauCeti/GroupTheory/Coxeter/StrongExchange.lean`: there is no geometric representation, no
+finiteness hypothesis, and no appeal to Matsumoto's theorem, which these results are meant to feed.
 
 Membership of `u` in the left coset of `w` is spelled `u⁻¹ * w ∈ cs.parabolic J` throughout, rather
 than through a coset type, so that the statements compose directly with the length API.
@@ -45,16 +47,14 @@ than through a coset type, so that the statements compose directly with the leng
 This file is the dihedral-parabolic input to **Matsumoto's theorem**, which is not proved here.
 That theorem is proved by induction on `ℓ w`, comparing two reduced words `i :: α` and `i' :: α'`
 for the same `w`. When `i ≠ i'`, both `s i` and `s i'` are left descents of `w`, and the induction
-step needs `w` written as `x * v` with `x ∈ cs.parabolic {i, i'}`, with `v` of minimal length in
-the coset `cs.parabolic {i, i'} * v`, and with `ℓ w = ℓ x + ℓ v`; the two descents then force `x`
-to be the longest element of that dihedral subgroup, whose two reduced words are the alternating
-words `alternatingWord i i' (M i i')` and `alternatingWord i' i (M i i')`, one braid move apart.
-Applied to `w⁻¹`, and using that length is inversion-invariant, that decomposition is
-`CoxeterSystem.existsUnique_isMinimalCosetRep_mul`; its length additivity is
-`CoxeterSystem.length_mul_of_isMinimalCosetRep`; the absence of left descents of `v` in `{i, i'}`
-is `CoxeterSystem.isMinimalCosetRep_iff`; and reading off the reduced words of `x` inside the
-dihedral subgroup uses `CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabolic` together with
-`CoxeterSystem.simple_mem_parabolic_of_isReduced`.
+step needs `w` written as `x * v` with `x ∈ cs.parabolic {i, i'}`, with `v` having no left descent
+in `{i, i'}`, and with `ℓ w = ℓ x + ℓ v`; the two descents then force `x` to be the longest element
+of that dihedral subgroup, whose two reduced words are the alternating words
+`alternatingWord i i' (M i i')` and `alternatingWord i' i (M i i')`, one braid move apart. That
+decomposition is `CoxeterSystem.existsUnique_mem_parabolic_mul`, its length additivity is
+`CoxeterSystem.length_mul_of_forall_not_isLeftDescent`, and reading off the reduced words of `x`
+inside the dihedral subgroup uses `CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabolic`
+together with `CoxeterSystem.simple_mem_parabolic_of_isReduced`.
 
 ## Main definitions
 
@@ -75,6 +75,10 @@ dihedral subgroup uses `CoxeterSystem.exists_isReduced_wordProd_eq_of_mem_parabo
   in `J`.
 * `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`: the unique factorization of an element of `W`
   as a minimal coset representative times a parabolic element.
+* `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
+* `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
+  `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
+  factorization, on the other side, with the left-descent form of the minimality condition.
 
 ## References
 
@@ -102,6 +106,14 @@ def parabolic (J : Set B) : Subgroup W := Subgroup.closure (cs.simple '' J)
 
 theorem simple_mem_parabolic {J : Set B} {i : B} (hi : i ∈ J) : s i ∈ cs.parabolic J :=
   Subgroup.subset_closure ⟨i, hi, rfl⟩
+
+/-- **The universal property of a standard parabolic subgroup.** It is the smallest subgroup of `W`
+containing the simple reflections indexed by `J`: it is contained in a subgroup `H` exactly when
+`s i ∈ H` for every `i ∈ J`. -/
+theorem parabolic_le_iff {J : Set B} {H : Subgroup W} :
+    cs.parabolic J ≤ H ↔ ∀ i ∈ J, s i ∈ H := by
+  rw [parabolic, Subgroup.closure_le, Set.image_subset_iff]
+  exact Iff.rfl
 
 theorem parabolic_mono {J J' : Set B} (h : J ⊆ J') : cs.parabolic J ≤ cs.parabolic J' :=
   Subgroup.closure_mono (Set.image_mono h)
@@ -145,13 +157,16 @@ theorem exists_wordProd_eq_of_mem_parabolic {J : Set B} {w : W} (hw : w ∈ cs.p
     obtain ⟨ω, h, rfl⟩ := ih
     exact ⟨ω.reverse, fun i hi => h i (by simpa using hi), cs.wordProd_reverse ω⟩
 
+/-- **Membership in a standard parabolic subgroup is being spelled by a word with letters in the
+defining set.** -/
 theorem mem_parabolic_iff_exists_wordProd_eq {J : Set B} {w : W} :
     w ∈ cs.parabolic J ↔ ∃ ω : List B, (∀ i ∈ ω, i ∈ J) ∧ π ω = w :=
   ⟨cs.exists_wordProd_eq_of_mem_parabolic,
     fun ⟨_, hω, hp⟩ => hp ▸ cs.wordProd_mem_parabolic hω⟩
 
-/-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced:
-shrinking a word to a reduced sublist keeps all of its letters inside `J`. -/
+/-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced: every
+element of a standard parabolic subgroup is spelled by a reduced word with letters in the defining
+set. -/
 theorem exists_isReduced_wordProd_eq_of_mem_parabolic {J : Set B} {w : W}
     (hw : w ∈ cs.parabolic J) :
     ∃ ω : List B, cs.IsReduced ω ∧ (∀ i ∈ ω, i ∈ J) ∧ π ω = w := by
@@ -162,7 +177,8 @@ theorem exists_isReduced_wordProd_eq_of_mem_parabolic {J : Set B} {w : W}
 /-! ### Reduced words of parabolic elements stay inside the parabolic subgroup -/
 
 /-- A left descent of an element of a standard parabolic subgroup lies in that subgroup. This is
-the exchange condition applied to a reduced word with letters in `J`. -/
+the single-letter case that `CoxeterSystem.simple_mem_parabolic_of_isReduced` iterates along a
+reduced word. -/
 theorem simple_mem_parabolic_of_isLeftDescent {J : Set B} {w : W} (hw : w ∈ cs.parabolic J)
     {i : B} (hi : cs.IsLeftDescent w i) : s i ∈ cs.parabolic J := by
   obtain ⟨ω, hred, hωJ, rfl⟩ := cs.exists_isReduced_wordProd_eq_of_mem_parabolic hw
@@ -199,6 +215,7 @@ theorem simple_mem_parabolic_of_isReduced {J : Set B} :
       cs.isLeftDescent_iff.mpr (by rw [← hcancel, hlen]; omega)
     have hsa : s a ∈ cs.parabolic J := cs.simple_mem_parabolic_of_isLeftDescent hw hdesc
     have hωmem : π ω ∈ cs.parabolic J := by rw [hcancel]; exact mul_mem hsa hw
+    -- `IsReduced` is by definition a length equation; Mathlib has no introduction lemma for it.
     have hredω : cs.IsReduced ω := show ℓ (π ω) = ω.length from le_antisymm hle hge
     intro i hi
     rcases List.mem_cons.mp hi with rfl | hi
@@ -264,6 +281,7 @@ theorem length_mul_of_isMinimalCosetRep {J : Set B} {u : W} (hu : cs.IsMinimalCo
     obtain ⟨α, hαred, hαu⟩ := cs.exists_isReduced u
     have hαlen : α.length = ℓ u := by rw [hαu, hαred.eq]
     have hprod : π (α ++ ω') = u * π ω' := by rw [cs.wordProd_append, ← hαu]
+    -- `IsReduced` is by definition a length equation; Mathlib has no introduction lemma for it.
     have hcat : cs.IsReduced (α ++ ω') :=
       show ℓ (π (α ++ ω')) = (α ++ ω').length from by
         rw [hprod, hIH, List.length_append, hαlen, hω'len]
@@ -370,5 +388,37 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
   have hXu : u * v * v₀ = u := by rw [mul_assoc, h5, mul_one]
   rw [Prod.mk.injEq]
   exact ⟨hXu.symm, hvv⟩
+
+/-! ### The factorization on the other side -/
+
+/-- **Lengths add across an element with no left descent in `J`.** If `x` lies in `cs.parabolic J`
+and `v` has no left descent lying in `J`, then `ℓ (x * v) = ℓ x + ℓ v`. -/
+theorem length_mul_of_forall_not_isLeftDescent {J : Set B} {x : W} (hx : x ∈ cs.parabolic J)
+    {v : W} (hv : ∀ i ∈ J, ¬ cs.IsLeftDescent v i) : ℓ (x * v) = ℓ x + ℓ v := by
+  have hmin : cs.IsMinimalCosetRep J v⁻¹ :=
+    cs.isMinimalCosetRep_iff.mpr fun i hi hd => hv i hi (cs.isRightDescent_inv_iff.mp hd)
+  have h := cs.length_mul_of_isMinimalCosetRep hmin (inv_mem hx)
+  rw [← mul_inv_rev] at h
+  simp only [cs.length_inv] at h
+  omega
+
+/-- **Every element of `W` factors uniquely as an element of the standard parabolic subgroup times
+an element with no left descent in `J`.** The two lengths then add, by
+`CoxeterSystem.length_mul_of_forall_not_isLeftDescent`. This is the shape of the factorization
+consumed by the induction step of Matsumoto's theorem. -/
+theorem existsUnique_mem_parabolic_mul (J : Set B) (w : W) :
+    ∃! p : W × W,
+      p.1 ∈ cs.parabolic J ∧ (∀ i ∈ J, ¬ cs.IsLeftDescent p.2 i) ∧ w = p.1 * p.2 := by
+  obtain ⟨⟨u, v⟩, ⟨hu, hv, hw⟩, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J w⁻¹
+  refine ⟨(v⁻¹, u⁻¹), ⟨inv_mem hv, fun i hi hd =>
+    cs.isMinimalCosetRep_iff.mp hu i hi (cs.isLeftDescent_inv_iff.mp hd),
+    by rw [← mul_inv_rev, ← hw, inv_inv]⟩, ?_⟩
+  rintro ⟨x, v'⟩ ⟨hx, hv', rfl⟩
+  have hmin : cs.IsMinimalCosetRep J v'⁻¹ :=
+    cs.isMinimalCosetRep_iff.mpr fun i hi hd => hv' i hi (cs.isRightDescent_inv_iff.mp hd)
+  have h := huniq (v'⁻¹, x⁻¹) ⟨hmin, inv_mem hx, by rw [mul_inv_rev]⟩
+  rw [Prod.mk.injEq] at h
+  rw [Prod.mk.injEq]
+  exact ⟨by rw [← h.2, inv_inv], by rw [← h.1, inv_inv]⟩
 
 end CoxeterSystem
