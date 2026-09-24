@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 
 /-!
 # Points of the valuation spectrum of a directed union of images

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Valuation.Quotient
 public import Mathlib.RingTheory.Valuation.ExtendToLocalization
 public import Mathlib.Topology.Order
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import Mathlib.Algebra.Category.Ring.Basic
 
 /-!
 # The valuation spectrum of a ring
@@ -264,6 +265,15 @@ lemma comap_injective {φ : A →+* B} (hφ : Function.Surjective φ) :
   exact iff_of_eq (by simpa only [comap_vle] using congr_arg (fun v ↦ v.toValuativeRel.vle a₁ a₂) h)
 
 end Functoriality
+
+open CategoryTheory
+/-- Pulling back along two composable morphisms of commutative rings is pulling back along their
+composite. -/
+theorem comap_hom_comap_hom {X Y Z : CommRingCat} (φ : X ⟶ Y) (ψ : Y ⟶ Z) (w : Spv Z) :
+    comap φ.hom (comap ψ.hom w) = comap (φ ≫ ψ).hom w := by
+  rw [CommRingCat.hom_comp, comap_comp, Function.comp_apply]
+
+
 
 /-- The support ideal `{a ∈ A | v(a) = 0}` of a point `v : Spv A`. -/
 def supp (v : Spv A) : Ideal A :=
