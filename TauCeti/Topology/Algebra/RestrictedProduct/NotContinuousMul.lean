@@ -152,14 +152,6 @@ private theorem isOpen_escapeSet : IsOpen escapeSet := by
     exact (hirr.ne_rat _).symm
   · exact h n hnS hn
 
-/-- A neighbourhood of `0` in `ℚ` contains every rational of small enough absolute value. -/
-private theorem exists_pos_forall_abs_lt_mem {V : Set ℚ} (hV : IsOpen V) (h0 : 0 ∈ V) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ t : ℚ, |(t : ℝ)| < δ → t ∈ V := by
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 hV 0 h0
-  refine ⟨δ, hδ, fun t ht ↦ hball ?_⟩
-  rw [Metric.mem_ball, Rat.dist_eq]
-  simpa using ht
-
 /-- Every open neighbourhood of the identity contains the element `ofAdd t` inserted at the `n`-th
 coordinate, for all rationals `t` of small enough absolute value. -/
 private theorem exists_pos_mulSingle_mem {ι : Type*} [DecidableEq ι]
@@ -168,11 +160,14 @@ private theorem exists_pos_mulSingle_mem {ι : Type*} [DecidableEq ι]
     (hV : IsOpen V) (h1 : 1 ∈ V) (n : ι) :
     ∃ δ : ℝ, 0 < δ ∧ ∀ t : ℚ, |(t : ℝ)| < δ →
       RestrictedProduct.mulSingle (fun _ : ι ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)
-        ∈ V :=
-  exists_pos_forall_abs_lt_mem (V := (fun t : ℚ ↦ RestrictedProduct.mulSingle
-      (fun _ : ι ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)) ⁻¹' V)
-    (hV.preimage ((continuous_restrictedProduct_mulSingle _ n).comp continuous_ofAdd))
-    (by rw [Set.mem_preimage, ofAdd_zero, RestrictedProduct.mulSingle_one]; exact h1)
+        ∈ V := by
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1
+    (hV.preimage ((continuous_restrictedProduct_mulSingle _ n).comp continuous_ofAdd)) 0
+    (by simpa only [Set.mem_preimage, Function.comp_apply, ofAdd_zero,
+      RestrictedProduct.mulSingle_one] using h1)
+  refine ⟨δ, hδ, fun t ht ↦ hball ?_⟩
+  rw [Metric.mem_ball, Rat.dist_eq]
+  simpa using ht
 
 /-- Given `δ > 0` and positive `ε n`, some `n ≥ 1` admits rationals `t` and `s` with `|t| < δ`,
 `|s| < ε n` and `|t - √2 / (n + 1)| ≤ |s|`. -/
@@ -303,9 +298,12 @@ theorem not_continuous_restrictedProduct_of_apply_eq_rat_bot
     (by rw [Set.mem_preimage, Prod.mk_one_one, hf1]; exact one_mem_escapeSet)
   -- Near `0`, the finite factor contains the constant `ofAdd t`, and the restricted factor
   -- contains `ofAdd s` inserted at any index `n ≠ 0`.
-  obtain ⟨δ, hδ, hδV⟩ := exists_pos_forall_abs_lt_mem
-    (hV.preimage (continuous_pi fun _ ↦ continuous_ofAdd))
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1
+    (hV.preimage (continuous_pi fun _ ↦ continuous_ofAdd)) 0
     (by rw [Set.mem_preimage, ofAdd_zero]; exact h1V)
+  have hδV : ∀ t : ℚ, |(t : ℝ)| < δ → (fun _ ↦ ofAdd t) ∈ V := fun t ht ↦ hball (by
+    rw [Metric.mem_ball, Rat.dist_eq]
+    simpa using ht)
   choose ε hε hεV' using fun j : {j // j ∉ ({0} : Set ℕ)} ↦ exists_pos_mulSingle_mem hV' h1V' j
   obtain ⟨n, hn, t, s, ht, hs, hts⟩ := exists_rat_escape hδ
     (ε := fun n ↦ if h : n ∈ ({0} : Set ℕ) then 1 else ε ⟨n, h⟩)
