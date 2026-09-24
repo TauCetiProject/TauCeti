@@ -422,7 +422,7 @@ theorem spechtSubrepresentation_eq_augmentationSubrepresentation (h1 : μ.rowLen
     exact polytabloid_mem_augmentationSubrepresentation h1 h2 t
   · obtain ⟨t₀⟩ := YoungTableau.nonempty μ
     rw [toSubmodule_augmentationSubrepresentation,
-      ker_sumCoords_basis_eq_span ℚ _ (tabloid t₀), Submodule.span_le]
+      MonoidAlgebra.ker_sumCoords_basis_eq_span ℚ _ (tabloid t₀), Submodule.span_le]
     rintro _ ⟨X, rfl⟩
     exact single_sub_single_mem_spechtSubrepresentation h1 h2 X (tabloid t₀)
 
