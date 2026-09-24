@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Short exact sequences of canonical continuous cochains
@@ -19,9 +18,7 @@ Mathlib's continuous cohomology is the homology of the homogeneous cochain compl
 iterated coinduced representation `C(G, C(G, …, C(G, X)))` with `n + 1` factors of `C(G, -)`.
 This file shows that a short exact sequence `0 → A → B → C → 0` of discrete `G`-modules induces,
 in **every** degree, a short exact sequence of these cochain modules. This is the input to the
-snake lemma, hence to the long exact sequence of continuous cohomology in all degrees; Mathlib's
-`Mathlib/RepresentationTheory/Homological/ContCohomology/Basic.lean` lists the long exact sequence
-as a TODO.
+snake lemma, hence to the long exact sequence of continuous cohomology in all degrees.
 
 The three exactness statements have different hypotheses, and the statements below carry exactly
 those:
@@ -42,14 +39,11 @@ those:
   iterated function spaces uses continuity of evaluation `C(G, V) × G → V`, which is where local
   compactness of `G` enters; profinite groups are locally compact.
 
-## Main definitions
+The cochain functor is defined in `Additive.lean`, and the coefficient short complex is defined
+in `ShortExact.lean`.
 
-* `TauCeti.ContinuousCohomology.continuousCochainsFunctor`: Mathlib's homogeneous cochain complex
-  as an additive functor `TopRep R G ⥤ CochainComplex (TopModuleCat R) ℕ`, with
-  `continuousCochainsFunctorCompHomologyIso` identifying its homology with
-  `continuousCohomologyFunctor`.
-* `TauCeti.ContCohomology.DiscreteShortExact.toShortComplex`: a short exact sequence of discrete
-  `G`-modules as a short complex of canonical coefficient objects in `TopRep ℤ G`.
+## Main definition
+
 * `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact`: its image under
   `continuousCochainsFunctor`, a short complex of cochain complexes.
 
@@ -84,43 +78,6 @@ namespace ContinuousCohomology
 open _root_.ContinuousCohomology
 
 universe u v
-
-/-! ### The cochain functor -/
-
-section Functor
-
-variable (R : Type u) [Ring R] [TopologicalSpace R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
--- Exposed: the generated `@[simps]` field lemmas are `rfl`-proofs about this body.
-/-- Mathlib's homogeneous cochain complex `TopRep.homogeneousCochains` as a functor in the
-coefficients. Its action on morphisms is the compatible-pair cochain map at `φ = id`, the
-cochain-level counterpart of `TauCeti.ContinuousCohomology.coeffMap`. -/
-@[expose, simps]
-noncomputable def continuousCochainsFunctor :
-    TopRep.{v} R G ⥤ CochainComplex (TopModuleCat.{v} R) ℕ where
-  obj X := TopRep.homogeneousCochains X
-  map f := cochainsMap (ContinuousMonoidHom.id G) f
-  map_id X := cochainsMap_id X
-  map_comp f g := cochainsMap_comp (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g
-
-/-- The cochain functor is additive in the coefficient representation. -/
-noncomputable instance continuousCochainsFunctor_additive :
-    (continuousCochainsFunctor R G).Additive where
-  map_add {_X _Y} {f g} := cochainsMap_add (ContinuousMonoidHom.id G) f g
-
-/-- The homology of the cochain functor in degree `n` is continuous cohomology
-`continuousCohomologyFunctor R G n`; the two functors agree on objects and morphisms by
-definition. -/
-noncomputable def continuousCochainsFunctorCompHomologyIso (n : ℕ) :
-    continuousCochainsFunctor R G ⋙ HomologicalComplex.homologyFunctor _ _ n ≅
-      continuousCohomologyFunctor R G n :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
-    simp only [Functor.comp_map, continuousCochainsFunctor_map, continuousCohomologyFunctor_map,
-      coeffMap_def]
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
-
-end Functor
 
 /-! ### Exactness on the coinduced resolution -/
 
@@ -244,8 +201,17 @@ end Cochains
 section Lift
 
 variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {Y Z : TopRep.{v} R G}
+
+/-- The action on the successor level of the coinduced resolution, evaluated at a point. -/
+private theorem resolutionX_succ_ρ_apply_apply (X : TopRep.{v} R G) (n : ℕ)
+    (k : G) (F : C(G, (TopRep.resolutionX X n).V)) (y : G) :
+    ((TopRep.resolutionX X (n + 1)).ρ k F) y =
+      (TopRep.resolutionX X n).ρ k (F (k⁻¹ * y)) := by
+  exact ContRepresentation.coind₁_apply_apply (TopRep.resolutionX X n).ρ k F y
+
+variable [LocallyCompactSpace G]
 
 /-- A continuous family `σ : G × Z → Y` of maps, transported to every level of the coinduced
 resolution by `σₙ₊₁ (h, φ) = (y ↦ σₙ (h, φ y))`. Continuity at each level uses continuity of
@@ -280,11 +246,17 @@ private theorem ρ_levelLift (σ : C(G × Z.V, Y.V))
       levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k φ)
   | 0, k, h, z => hσ k h z
   | n + 1, k, h, (φ : C(G, (TopRep.resolutionX Z n).V)) => ContinuousMap.ext fun y ↦ by
-    -- The action on level `n + 1` is `ContRepresentation.coind₁` of the level-`n` action, by the
-    -- definition of `TopRep.resolutionX`; unfold it pointwise (`coind₁_apply_apply`).
-    change (TopRep.resolutionX Y n).ρ k (levelLift σ n (h, φ (k⁻¹ * y))) =
-      levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k (φ (k⁻¹ * y)))
-    exact ρ_levelLift σ hσ n k h (φ (k⁻¹ * y))
+    calc
+      ((TopRep.resolutionX Y (n + 1)).ρ k (levelLift σ (n + 1) (h, φ))) y =
+          (TopRep.resolutionX Y n).ρ k
+            ((levelLift σ (n + 1) (h, φ)) (k⁻¹ * y)) :=
+        resolutionX_succ_ρ_apply_apply Y n k _ y
+      _ = levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k (φ (k⁻¹ * y))) := by
+        rw [levelLift_succ_apply]
+        exact ρ_levelLift σ hσ n k h (φ (k⁻¹ * y))
+      _ = (levelLift σ (n + 1)
+          (k * h, (TopRep.resolutionX Z (n + 1)).ρ k φ)) y := by
+        rw [levelLift_succ_apply, resolutionX_succ_ρ_apply_apply]
 
 /-- **Invariant cochains lift along a map with an equivariant continuous family of sections.** If
 `σ : G × Z → Y` is continuous, `g (σ (h, z)) = z` and `k • σ (h, z) = σ (k h, k • z)`, then every
@@ -300,12 +272,17 @@ theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y
     ⟨fun x ↦ levelLift σ n (x, F₀ x), (levelLift σ n).continuous.comp
       (continuous_id.prodMk F₀.continuous)⟩
   have hL : L ∈ (TopRep.resolutionX Y (n + 1)).ρ.invariants := fun k ↦ ContinuousMap.ext fun y ↦ by
-    -- As in `ρ_levelLift`: unfold the level-`(n + 1)` action pointwise (`coind₁_apply_apply`).
-    change (TopRep.resolutionX Y n).ρ k (levelLift σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) =
-      levelLift σ n (y, F₀ y)
-    rw [ρ_levelLift σ hσ', mul_inv_cancel_left]
-    congr 2
-    exact congrArg (fun F' : C(G, (TopRep.resolutionX Z n).V) ↦ F' y) (F.2 k)
+    calc
+      ((TopRep.resolutionX Y (n + 1)).ρ k L) y =
+          (TopRep.resolutionX Y n).ρ k (L (k⁻¹ * y)) :=
+        resolutionX_succ_ρ_apply_apply Y n k L y
+      _ = levelLift σ n (y, F₀ y) := by
+        change (TopRep.resolutionX Y n).ρ k
+          (levelLift σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) = levelLift σ n (y, F₀ y)
+        rw [ρ_levelLift σ hσ', mul_inv_cancel_left]
+        congr 2
+        exact congrArg (fun F' : C(G, (TopRep.resolutionX Z n).V) ↦ F' y) (F.2 k)
+      _ = L y := rfl
   refine ⟨⟨L, hL⟩, Subtype.ext ((coe_cochainsMap_id_f_hom_apply g n ⟨L, hL⟩).trans ?_)⟩
   exact ContinuousMap.ext fun y ↦ by
     rw [resolutionMap_id_succ_apply]
@@ -329,18 +306,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {C : Type u} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
 
--- Exposed: the generated `@[simps]` field lemmas are `rfl`-proofs about this body, and a consumer
--- must see that the three objects are the canonical coefficient objects of `A`, `B` and `C`.
-/-- A short exact sequence of discrete `G`-modules as a short complex of canonical coefficient
-objects in `TopRep ℤ G`. -/
-@[expose, simps]
-noncomputable def toShortComplex : ShortComplex (TopRep.{u} ℤ G) where
-  f := ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant
-  g := ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant
-  zero := TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ S.proj_incl a
-
--- Exposed: the generated `@[simps!]` field lemmas are `rfl`-proofs about this body, and a
--- consumer must see that its objects are the homogeneous cochains of `A`, `B` and `C`.
+-- Exposed because the generated `@[simps!]` field lemmas are `rfl` proofs about this body.
 /-- The short complex of canonical homogeneous-cochain complexes attached to a short exact
 sequence of discrete `G`-modules: in degree `n` it is
 `Cⁿ(G, A) → Cⁿ(G, B) → Cⁿ(G, C)` on Mathlib's homogeneous continuous cochains. -/
@@ -375,12 +341,13 @@ theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
       ((continuous_of_discreteTopology (f := s)).comp (continuous_fst.inv.smul continuous_snd))⟩
   refine cochainsMap_id_f_surjective_of_section _ σ (fun h (c : C) ↦ ?_)
     (fun k h (c : C) ↦ ?_) n
-  -- The objects of `S.toShortComplex` are `ofDiscreteModule`, whose action is `•` and whose maps
-  -- are `S.incl` and `S.proj` by definition (`ofDiscreteModule_ρ_apply_apply`,
-  -- `ofDiscreteModuleMap_hom_apply`); state the two conditions on `σ` in those terms.
-  · change S.proj (h • s (h⁻¹ • c)) = c
+  · change S.toShortComplex.g.hom (h • s (h⁻¹ • c)) = c
+    rw [S.toShortComplex_g_hom_apply]
     rw [S.proj_equivariant, Function.surjInv_eq S.proj_surjective, smul_inv_smul]
-  · change k • (h • s (h⁻¹ • c)) = (k * h) • s ((k * h)⁻¹ • (k • c))
+  · change (S.toShortComplex.X₂).ρ k (σ (h, c)) =
+      σ (k * h, (S.toShortComplex.X₃).ρ k c)
+    rw [S.toShortComplex_X₂_ρ_apply, S.toShortComplex_X₃_ρ_apply]
+    change k • (h • s (h⁻¹ • c)) = (k * h) • s ((k * h)⁻¹ • (k • c))
     rw [mul_inv_rev, mul_smul, mul_smul, inv_smul_smul]
 
 /-- **The cochain sequence of a short exact sequence of discrete modules is short exact.** After
