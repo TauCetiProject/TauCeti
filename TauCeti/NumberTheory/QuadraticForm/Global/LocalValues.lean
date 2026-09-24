@@ -7,14 +7,13 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
-public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 
 /-!
-# Common local values of the summands of a locally isotropic orthogonal sum
+# Common local values of the summands of a non-anisotropic orthogonal sum
 
-Let `U ⊥ W` be a locally isotropic orthogonal sum of quadratic forms over a number field, with
-`U` regular and `W` on a nonzero space. At every finite or real place where the localization of
-`W` is anisotropic, this file produces local vectors `x` of `U` and `y` of `W` with
+Let `U` and `W` be quadratic forms over a number field. If `U ⊥ W` is not anisotropic at a finite
+or real place, with `U` regular and `W` anisotropic on a nonzero space at that place, this file
+produces local vectors `x` of `U` and `y` of `W` with
 
 `U(x) = -W(y) ≠ 0`.
 
@@ -26,8 +25,8 @@ a condition. The results of this file do not assume `W` regular.
 
 ## Main results
 
-* `QuadraticForm.IsLocallyIsotropic.exists_atFinitePlace_ne_zero_eq_neg`
-* `QuadraticForm.IsLocallyIsotropic.exists_atRealPlace_ne_zero_eq_neg`
+* `QuadraticForm.exists_atFinitePlace_ne_zero_eq_neg`
+* `QuadraticForm.exists_atRealPlace_ne_zero_eq_neg`
 
 ## References
 
@@ -42,35 +41,36 @@ universe u v w
 
 namespace QuadraticForm
 
-variable {K : Type u} [Field K] [NumberField K]
+variable {K : Type u} [Field K]
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable {W : Type w} [AddCommGroup W] [Module K W] [Nontrivial W]
 
-/-- If `U ⊥ R` is locally isotropic with `U` regular and `R` on a nonzero space, then at every
-finite place where `R` is anisotropic, some nonzero local value of `U` is the negative of a local
-value of `R`. -/
-theorem IsLocallyIsotropic.exists_atFinitePlace_ne_zero_eq_neg
-    {U : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-    (h : IsLocallyIsotropic (U.prod R)) (hU : U.Nondegenerate) {v : HeightOneSpectrum (𝓞 K)}
-    (hR : (R.atFinitePlace v).Anisotropic) :
+/-- If `U ⊥ R` is not anisotropic at a finite place where `R` is anisotropic, with `U` regular
+and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
+of `R`. -/
+theorem exists_atFinitePlace_ne_zero_eq_neg
+    {U : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} [NumberField K]
+    {v : HeightOneSpectrum (𝓞 K)} (h : ¬(atFinitePlace (U.prod R) v).Anisotropic)
+    (hU : U.Nondegenerate) (hR : (R.atFinitePlace v).Anisotropic) :
     ∃ x y, U.atFinitePlace v x ≠ 0 ∧ U.atFinitePlace v x = -R.atFinitePlace v y := by
   refine hR.exists_ne_zero_eq_neg_of_not_anisotropic_prod
     (Nondegenerate.atFinitePlace hU v).radical_eq_bot ?_
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atFinitePlaceProd U R v⟩]
-  exact ((isLocallyIsotropic_iff _).1 h).1 v
+  exact h
 
-/-- If `U ⊥ R` is locally isotropic with `U` regular and `R` on a nonzero space, then at every
-real place where `R` is anisotropic, some nonzero local value of `U` is the negative of a local
-value of `R`. -/
-theorem IsLocallyIsotropic.exists_atRealPlace_ne_zero_eq_neg
+/-- If `U ⊥ R` is not anisotropic at a real place where `R` is anisotropic, with `U` regular
+and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
+of `R`. -/
+theorem exists_atRealPlace_ne_zero_eq_neg
     {U : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
-    (h : IsLocallyIsotropic (U.prod R)) (hU : U.Nondegenerate)
-    {w : {w : InfinitePlace K // w.IsReal}} (hR : (R.atRealPlace w).Anisotropic) :
+    {w : {w : InfinitePlace K // w.IsReal}}
+    (h : ¬(atRealPlace (U.prod R) w).Anisotropic) (hU : U.Nondegenerate)
+    (hR : (R.atRealPlace w).Anisotropic) :
     ∃ x y, U.atRealPlace w x ≠ 0 ∧ U.atRealPlace w x = -R.atRealPlace w y := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   refine hR.exists_ne_zero_eq_neg_of_not_anisotropic_prod
     (Nondegenerate.atRealPlace hU w).radical_eq_bot ?_
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd U R w⟩]
-  exact ((isLocallyIsotropic_iff _).1 h).2 w
+  exact h
 
 end QuadraticForm
