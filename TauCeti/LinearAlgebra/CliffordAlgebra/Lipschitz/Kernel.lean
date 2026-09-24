@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
