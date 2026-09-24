@@ -31,7 +31,6 @@ bidegrees is obtained by dimension shifting (Cassels–Fröhlich, Chapter IV, §
 
 ## Main definitions
 
-* `Rep.tensorInvariant`: for an invariant `y` of `N`, the morphism `M ⟶ M ⊗ N`, `m ↦ m ⊗ₜ y`.
 * `TauCeti.TateCohomology.cupH0`: the cup product
   `tateCohomology M n × tateCohomology N 0 → tateCohomology (M ⊗ N) n`, as a `k`-bilinear map.
 
@@ -108,10 +107,14 @@ theorem cupH0_H0π (n : ℤ) (x : tateCohomology M n) (y : N.ρ.invariants) :
     H0π_comp_H0IsoNormQuotient_hom_apply, Submodule.liftQ_apply,
     LinearMap.coe_mk, AddHom.coe_mk]
 
+-- The left-hand side is stated through `dsimp% only` for the same reason as in `cupH0_H0π`. The
+-- priority is `high` so that `simp` uses this lemma before the more general `cupH0_H0π`, which
+-- would otherwise rewrite the left-hand side first.
 /-- In degree zero, the cup product of the classes of invariants `x` and `y` is the class of the
 invariant `x ⊗ y`. -/
+@[simp high]
 theorem cupH0_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
-    cupH0 M N 0 (H0π M x) (H0π N y) =
+    (dsimp% only (cupH0 M N 0 (H0π M x) (H0π N y))) =
       H0π (M ⊗ N) ⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
         simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ := by
   rw [cupH0_H0π, H0π_comp_tateCohomologyFunctor_map_apply]
