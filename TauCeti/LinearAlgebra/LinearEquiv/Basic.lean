@@ -33,12 +33,4 @@ theorem mem_of_preserves_map
   rw [← hcomm x, ← hmap] at hfx
   simpa only [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply] using hfx
 
-/-- An equivalence followed by an inverse coordinate change evaluates as the first map. -/
-theorem apply_trans_symm
-    {R U V W : Type*} [Semiring R] [AddCommMonoid U] [Module R U]
-    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-    (f : U ≃ₗ[R] V) (e : W ≃ₗ[R] V) (x : U) :
-    e (f.trans e.symm x) = f x := by
-  rw [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-
 end LinearEquiv

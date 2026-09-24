@@ -26,14 +26,15 @@ open _root_.LieAlgebra
 noncomputable section
 
 /-- The adjoint action on the modular short-root ideal, viewed as a linear map. -/
-@[expose] noncomputable def f4ShortRootAdjointLinearMap :
+noncomputable def f4ShortRootAdjointLinearMap :
     f4ModularChevalleyLieAlgebra →ₗ[ZMod 2]
       Module.End (ZMod 2) f4ShortRootLieIdeal :=
   f4ShortRootAdjoint
 
 @[simp] theorem f4ShortRootAdjointLinearMap_apply
     (X : f4ModularChevalleyLieAlgebra) (y : f4ShortRootLieIdeal) :
-    f4ShortRootAdjointLinearMap X y = f4ShortRootAdjoint X y := rfl
+    f4ShortRootAdjointLinearMap X y = f4ShortRootAdjoint X y := by
+  simp [f4ShortRootAdjointLinearMap]
 
 /-- The kernel of the adjoint action on the modular short-root ideal is contained in that ideal. -/
 theorem ker_f4ShortRootAdjoint_le_f4ShortRootSubspace :

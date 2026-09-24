@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Quotient
+public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Action
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
@@ -318,11 +318,6 @@ variable {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
 noncomputable abbrev f4ShortRootWeightTorusGL (s : Fin 4 → Aˣ) :
     GL (Fin 26) A :=
   TauCeti.diagGL fun i => TauCeti.torusCharacter s (f4ShortRootWeight i)
-
-/-- Base change of a modular short-root adjoint matrix to a value algebra. -/
-noncomputable abbrev f4ShortRootAdjointMatrixBaseChange
-    (X : f4ModularChevalleyLieAlgebra) : Matrix (Fin 26) (Fin 26) A :=
-  (f4ShortRootAdjointMatrix X).map (algebraMap (ZMod 2) A)
 
 /-- Conjugation by the actual diagonal torus point scales a represented root vector by its
 integral root character. -/

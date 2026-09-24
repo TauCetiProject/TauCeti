@@ -43,12 +43,14 @@ noncomputable def f4ShortRootBaseChangeAdjointMatrixLinearMap :
     (f4ShortRootLieIdealBasis.baseChange A)).toLinearMap.comp
       f4ShortRootBaseChangeAdjoint
 
-private theorem f4ShortRootBaseChangeAdjointMatrixLinearMap_apply
+/-- Evaluate the scalar-extended adjoint map in matrix coordinates. -/
+@[simp] theorem f4ShortRootBaseChangeAdjointMatrixLinearMap_apply
     (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
     f4ShortRootBaseChangeAdjointMatrixLinearMap x =
       LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootLieIdealBasis.baseChange A)
-        (f4ShortRootBaseChangeAdjoint x) := rfl
+        (f4ShortRootBaseChangeAdjoint x) := by
+  simp [f4ShortRootBaseChangeAdjointMatrixLinearMap]
 
 /-- On a pure tensor, the scalar-extended adjoint matrix is the entrywise scalar extension of the
 modular adjoint matrix. -/

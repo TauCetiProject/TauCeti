@@ -98,9 +98,8 @@ theorem cotangentDualMatrixEquiv_f4ShortRootEndEquivCotangentDual
     (T : Module.End 𝔽₂ f4ShortRootLieIdeal) :
     GeneralLinear.cotangentDualMatrixEquiv (f4ShortRootEndEquivCotangentDual T) =
       (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis) T := by
-  exact LinearEquiv.apply_trans_symm
-    (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis)
-    (GeneralLinear.cotangentDualMatrixEquiv (k := 𝔽₂) (n := 26)) T
+  simp only [f4ShortRootEndEquivCotangentDual, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply]
 
 /-- The cotangent-dual basis carrying the represented flag `J ⊆ M ⊆ End(I)`. -/
 noncomputable def f4ShortRootCotangentFlagBasis :
@@ -118,12 +117,35 @@ noncomputable def f4ShortRootCotangentFlagBasis :
   Module.Basis.map_apply f4ShortRootEndBasis f4ShortRootEndEquivCotangentDual i
 
 /-- Weights `2`, `1`, and `0` on the `J`, `M/J`, and `End(I)/M` blocks. -/
-@[expose] def f4ShortRootCotangentFlagWeight
+def f4ShortRootCotangentFlagWeight
     (i : Fin ((f4ShortRootRepresentedIdealRank + 26) +
       f4ShortRootRepresentedComplementRank)) : ℤ :=
   if i.val < f4ShortRootRepresentedIdealRank then 2
   else if i.val < f4ShortRootRepresentedIdealRank + 26 then 1
   else 0
+
+/-- Indices in the represented ideal have weight two. -/
+theorem f4ShortRootCotangentFlagWeight_of_ideal
+    (i)
+    (hi : i.val < f4ShortRootRepresentedIdealRank) :
+    f4ShortRootCotangentFlagWeight i = 2 := by
+  simp [f4ShortRootCotangentFlagWeight, hi]
+
+/-- Indices in the represented quotient block have weight one. -/
+theorem f4ShortRootCotangentFlagWeight_of_quotient
+    (i)
+    (hi : ¬ i.val < f4ShortRootRepresentedIdealRank)
+    (hir : i.val < f4ShortRootRepresentedIdealRank + 26) :
+    f4ShortRootCotangentFlagWeight i = 1 := by
+  simp [f4ShortRootCotangentFlagWeight, hi, hir]
+
+/-- Indices after the represented range have weight zero. -/
+theorem f4ShortRootCotangentFlagWeight_of_complement
+    (i)
+    (hi : ¬ i.val < f4ShortRootRepresentedIdealRank + 26) :
+    f4ShortRootCotangentFlagWeight i = 0 := by
+  have hi' : ¬ i.val < f4ShortRootRepresentedIdealRank := by omega
+  simp [f4ShortRootCotangentFlagWeight, hi', hi]
 
 /-- The first block of the represented-range basis is the represented-ideal basis. -/
 @[simp]

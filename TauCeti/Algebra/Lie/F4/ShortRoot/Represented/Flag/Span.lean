@@ -42,30 +42,12 @@ noncomputable def cotangentFlagIdeal :
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
 
-/-- The ideal flag term is spanned by the first block of the adapted cotangent basis. -/
-theorem cotangentFlagIdeal_eq_span_basis :
-    cotangentFlagIdeal (A := A) =
-      Submodule.span A (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
-        f4ShortRootCotangentFlagBasis.baseChange A
-          (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))) := by
-  unfold cotangentFlagIdeal
-  rfl
-
 /-- The scalar-extended represented-range term of the cotangent flag. -/
 noncomputable def cotangentFlagRange :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank i)
-
-/-- The range flag term is spanned by the first two blocks of the adapted cotangent basis. -/
-theorem cotangentFlagRange_eq_span_basis :
-    cotangentFlagRange (A := A) =
-      Submodule.span A (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-        f4ShortRootCotangentFlagBasis.baseChange A
-          (Fin.castAdd f4ShortRootRepresentedComplementRank i)) := by
-  unfold cotangentFlagRange
-  rfl
 
 /-! ### Stability of the represented flag
 
@@ -76,48 +58,31 @@ without any flatness or injectivity hypothesis on its structure map from `ZMod 2
 -/
 
 /-- The base-changed matrix-coordinate range of the short-root adjoint representation. -/
-noncomputable def f4ShortRootRepresentedRangeMatrixBaseChange :
+@[expose] noncomputable def f4ShortRootRepresentedRangeMatrixBaseChange :
     Submodule A (Matrix (Fin 26) (Fin 26) A) :=
   Submodule.span A <| Set.range fun k : f4ChevalleyIndex =>
     f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)
-
-/-- The represented range is spanned by the base-changed Chevalley adjoint matrices. -/
-theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis :
-    f4ShortRootRepresentedRangeMatrixBaseChange (A := A) =
-      Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
-        f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) := by
-  unfold f4ShortRootRepresentedRangeMatrixBaseChange
-  rfl
 
 /-- Each Chevalley adjoint matrix is in the scalar-extended represented range. -/
 theorem f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (k : f4ChevalleyIndex) :
     f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k) ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-  rw [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis]
+  unfold f4ShortRootRepresentedRangeMatrixBaseChange
   exact Submodule.subset_span (Set.mem_range_self k)
 
 /-- The base-changed matrix-coordinate image of the short-root ideal. -/
-noncomputable def f4ShortRootRepresentedIdealMatrixBaseChange :
+@[expose] noncomputable def f4ShortRootRepresentedIdealMatrixBaseChange :
     Submodule A (Matrix (Fin 26) (Fin 26) A) :=
   Submodule.span A <| Set.range fun i : Fin 26 =>
     f4ShortRootAdjointMatrixBaseChange (A := A)
       (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)
-
-/-- The represented ideal is spanned by the base-changed ideal-basis adjoint matrices. -/
-theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis :
-    f4ShortRootRepresentedIdealMatrixBaseChange (A := A) =
-      Submodule.span A (Set.range fun i : Fin 26 =>
-        f4ShortRootAdjointMatrixBaseChange (A := A)
-          (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) := by
-  unfold f4ShortRootRepresentedIdealMatrixBaseChange
-  rfl
 
 /-- Each ideal-basis adjoint matrix is in the scalar-extended represented ideal. -/
 theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
     f4ShortRootAdjointMatrixBaseChange (A := A)
         (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-  rw [f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis]
+  unfold f4ShortRootRepresentedIdealMatrixBaseChange
   exact Submodule.subset_span (Set.mem_range_self i)
 
 private noncomputable def f4ShortRootAdjointMatrixBaseChangeLinearMap :
@@ -132,7 +97,8 @@ private theorem f4ShortRootAdjointMatrixBaseChangeLinearMap_apply
       f4ShortRootAdjointMatrixBaseChange (A := A) X := by
   ext i j
   simp [f4ShortRootAdjointMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
-    f4ShortRootAdjointLinearMap, LinearMap.toMatrix_apply, f4ShortRootLieIdealBasis_repr_apply]
+    f4ShortRootAdjointLinearMap_apply, LinearMap.toMatrix_apply,
+    f4ShortRootLieIdealBasis_repr_apply]
 
 private noncomputable def f4ShortRootIdealAdjointMatrixBaseChangeLinearMap :
     f4ShortRootLieIdeal →ₗ[ZMod 2] Matrix (Fin 26) (Fin 26) A :=
@@ -207,7 +173,7 @@ noncomputable def f4ShortRootEndMatrixBaseChangeLinearMap :
       f4ShortRootAdjointMatrixBaseChange (A := A) X := by
   ext i j
   simp [f4ShortRootEndMatrixBaseChangeLinearMap, f4ShortRootAdjointMatrixBaseChange,
-    f4ShortRootAdjointLinearMap, LinearMap.toMatrix_apply]
+    f4ShortRootAdjointLinearMap_apply, LinearMap.toMatrix_apply]
 
 /-- The first two adapted basis blocks span exactly the represented range after scalar extension. -/
 private theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
@@ -316,10 +282,14 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_apply (x) :
 
 /-- The transported adapted cotangent basis is the entrywise scalar extension of the adapted
 endomorphism basis. -/
-theorem f4ShortRootCotangentBaseChangeMatrixEquiv_basis (i) :
+@[simp] theorem f4ShortRootCotangentBaseChangeMatrixEquiv_basis (i) :
     f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
-        (f4ShortRootCotangentFlagBasis.baseChange A i) =
+        (1 ⊗ₜ[𝔽₂] f4ShortRootEndEquivCotangentDual (f4ShortRootEndBasis i)) =
       f4ShortRootEndMatrixBaseChangeLinearMap (A := A) (f4ShortRootEndBasis i) := by
+  suffices h : f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
+      (f4ShortRootCotangentFlagBasis.baseChange A i) =
+        f4ShortRootEndMatrixBaseChangeLinearMap (A := A) (f4ShortRootEndBasis i) by
+    simpa only [Module.Basis.baseChange_apply, f4ShortRootCotangentFlagBasis_apply] using h
   have hbasis : f4ShortRootCotangentFlagBasis i =
       f4ShortRootEndEquivCotangentDual (f4ShortRootEndBasis i) :=
     f4ShortRootCotangentFlagBasis_apply i
@@ -367,9 +337,13 @@ theorem f4ShortRootCotangentFlagIdeal_map :
   ext X
   constructor
   · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-    exact ⟨i, (f4ShortRootCotangentBaseChangeMatrixEquiv_basis _).symm⟩
+    refine ⟨i, ?_⟩
+    simpa only [Module.Basis.baseChange_apply, f4ShortRootCotangentFlagBasis_apply,
+      LinearEquiv.coe_coe] using (f4ShortRootCotangentBaseChangeMatrixEquiv_basis (A := A) _).symm
   · rintro ⟨i, rfl⟩
-    exact ⟨_, ⟨i, rfl⟩, f4ShortRootCotangentBaseChangeMatrixEquiv_basis _⟩
+    refine ⟨_, ⟨i, rfl⟩, ?_⟩
+    simpa only [Module.Basis.baseChange_apply, f4ShortRootCotangentFlagBasis_apply,
+      LinearEquiv.coe_coe] using (f4ShortRootCotangentBaseChangeMatrixEquiv_basis (A := A) _)
 
 /-- Under cotangent-dual matrix coordinates, the first two adapted basis blocks are exactly the
 scalar-extended represented range. -/
@@ -383,9 +357,13 @@ theorem f4ShortRootCotangentFlagRange_map :
   ext X
   constructor
   · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-    exact ⟨i, (f4ShortRootCotangentBaseChangeMatrixEquiv_basis _).symm⟩
+    refine ⟨i, ?_⟩
+    simpa only [Module.Basis.baseChange_apply, f4ShortRootCotangentFlagBasis_apply,
+      LinearEquiv.coe_coe] using (f4ShortRootCotangentBaseChangeMatrixEquiv_basis (A := A) _).symm
   · rintro ⟨i, rfl⟩
-    exact ⟨_, ⟨i, rfl⟩, f4ShortRootCotangentBaseChangeMatrixEquiv_basis _⟩
+    refine ⟨_, ⟨i, rfl⟩, ?_⟩
+    simpa only [Module.Basis.baseChange_apply, f4ShortRootCotangentFlagBasis_apply,
+      LinearEquiv.coe_coe] using (f4ShortRootCotangentBaseChangeMatrixEquiv_basis (A := A) _)
 
 /-- A cotangent vector belongs to the ideal flag term exactly when its matrix coordinates
 belong to the base-changed represented ideal. -/
@@ -447,10 +425,10 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       Fin.ext rfl
     have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
         cotangentFlagIdeal (A := A) := by
-      rw [cotangentFlagIdeal_eq_span_basis (A := A)]
+      unfold cotangentFlagIdeal
       exact Submodule.subset_span ⟨j', by rw [hj]⟩
     have hmap := hIdeal hjmem
-    rw [cotangentFlagIdeal_eq_span_basis (A := A)] at hmap
+    unfold cotangentFlagIdeal at hmap
     apply Module.Basis.repr_eq_zero_of_mem_span_range
       (f4ShortRootCotangentFlagBasis.baseChange A)
       (fun i : Fin f4ShortRootRepresentedIdealRank =>
@@ -459,17 +437,18 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     have hiIdeal : i.val < f4ShortRootRepresentedIdealRank := by
       rw [← hi']
       exact i'.isLt
-    simp only [f4ShortRootCotangentFlagWeight, hjIdeal, hiIdeal, ↓reduceIte] at hweight
+    rw [f4ShortRootCotangentFlagWeight_of_ideal j hjIdeal,
+      f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal] at hweight
     omega
   · by_cases hjRange : j.val < f4ShortRootRepresentedIdealRank + 26
     · let j' : Fin (f4ShortRootRepresentedIdealRank + 26) := ⟨j.val, hjRange⟩
       have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank j' := Fin.ext rfl
       have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
           cotangentFlagRange (A := A) := by
-        rw [cotangentFlagRange_eq_span_basis (A := A)]
+        unfold cotangentFlagRange
         exact Submodule.subset_span ⟨j', by rw [hj]⟩
       have hmap := hRange hjmem
-      rw [cotangentFlagRange_eq_span_basis (A := A)] at hmap
+      unfold cotangentFlagRange at hmap
       apply Module.Basis.repr_eq_zero_of_mem_span_range
         (f4ShortRootCotangentFlagBasis.baseChange A)
         (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
@@ -478,21 +457,24 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       have hiRange : i.val < f4ShortRootRepresentedIdealRank + 26 := by
         rw [← hi']
         exact i'.isLt
-      have hjWeight : f4ShortRootCotangentFlagWeight j = 1 := by
-        simp [f4ShortRootCotangentFlagWeight, hjIdeal, hjRange]
+      have hjWeight : f4ShortRootCotangentFlagWeight j = 1 :=
+        f4ShortRootCotangentFlagWeight_of_quotient j hjIdeal hjRange
       have hiWeight : 1 ≤ f4ShortRootCotangentFlagWeight i := by
         by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal]
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
+        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
+          omega
+        · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
       omega
-    · have hjWeight : f4ShortRootCotangentFlagWeight j = 0 := by
-        simp [f4ShortRootCotangentFlagWeight, hjIdeal, hjRange]
+    · have hjWeight : f4ShortRootCotangentFlagWeight j = 0 :=
+        f4ShortRootCotangentFlagWeight_of_complement j hjRange
       have hiNonneg : 0 ≤ f4ShortRootCotangentFlagWeight i := by
         by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · simp [f4ShortRootCotangentFlagWeight, hiIdeal]
+        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
+          omega
         · by_cases hiRange : i.val < f4ShortRootRepresentedIdealRank + 26
-          · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
-          · simp [f4ShortRootCotangentFlagWeight, hiIdeal, hiRange]
+          · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
+            omega
+          · rw [f4ShortRootCotangentFlagWeight_of_complement i hiRange]
       omega
 
 end
