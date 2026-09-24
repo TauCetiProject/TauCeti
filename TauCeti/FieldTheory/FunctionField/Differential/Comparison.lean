@@ -206,6 +206,7 @@ theorem weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero (hF : IsFunction
 of `k(x)` with exact constant field `k`, the cotrace to `F` of the normalized differential `η` of
 `k(x)` has divisor `-2 (x)_∞ + Diff(F / k(x))`, where `x` is the image in `F` of the variable of
 `k(x)`. -/
+@[simp]
 theorem weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     weilDifferentialDivisor hF hex
@@ -224,6 +225,7 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential
 /-- **`-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor** (Stichtenoth, Remark 4.3.7(c)): for a
 finite separable extension `F` of `k(x)` with exact constant field `k`, this divisor represents the
 canonical class of `F`. -/
+@[simp]
 theorem divisorClass_neg_two_zsmul_poles_add_different (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) :
     (Place.orderSystem hF).divisorClass
@@ -239,6 +241,7 @@ end RatFunc
 /-- **The divisor of `dx`** (Stichtenoth, Remark 4.3.7(c)): for a separating element `x` of `F / k`
 with exact constant field `k`, the Weil differential `dx` has divisor `-2 (x)_∞ + Diff(F / k(x))`,
 the different being taken along the embedding `k(X) → F`, `X ↦ x`. -/
+@[simp]
 theorem weilDifferentialDivisor_weilDifferentialOfSeparating (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     letI := ratFuncAlgebraOfTranscendental hx
