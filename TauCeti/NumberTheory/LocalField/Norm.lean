@@ -38,8 +38,8 @@ records only the valuation computation that that argument uses.
 
 ## References
 
-* J.-P. Serre, *Local Fields*, Chapter V, §2.
-* J. Neukirch, *Algebraic Number Theory*, Chapter II, §7.
+* J.-P. Serre, *Local Fields*, Chapter I, §4 and Chapter V, §2.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §§4 and 7.
 -/
 
 public section
