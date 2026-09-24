@@ -83,11 +83,8 @@ variable {A B : Type*} [Semiring A] [Semiring B] [TopologicalSpace A] [Topologic
 /-- **Uniformity transports along a topological ring isomorphism.** -/
 theorem isUniform_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :
     IsUniform A ↔ IsUniform B := by
-  have himage : e '' {a : A | IsPowerBounded a} = {b : B | IsPowerBounded b} := by
-    ext b
-    obtain ⟨a, rfl⟩ := e.surjective b
-    simp [isPowerBounded_ringEquiv_iff e he he']
-  rw [isUniform_iff, isUniform_iff, ← himage, isBounded_image_ringEquiv_iff e he he']
+  rw [isUniform_iff, isUniform_iff,
+    ← image_ringEquiv_setOf_isPowerBounded e he he', isBounded_image_ringEquiv_iff e he he']
 
 /-- A topological ring isomorphic to a uniform one is uniform. -/
 theorem IsUniform.of_ringEquiv [IsUniform A] (e : A ≃+* B) (he : Continuous e)
@@ -103,8 +100,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
 /-- A nonarchimedean ring is uniform exactly when its power-bounded subring `A°` is bounded. -/
 theorem isUniform_iff_isBounded_powerBoundedSubring :
     IsUniform A ↔ IsBounded (powerBoundedSubring A : Set A) := by
-  rw [isUniform_iff]
-  exact Iff.of_eq (congrArg IsBounded (Set.ext fun _ ↦ mem_powerBoundedSubring.symm))
+  rw [isUniform_iff, coe_powerBoundedSubring]
 
 /-- In a uniform nonarchimedean ring the power-bounded subring `A°` is bounded. -/
 theorem IsUniform.isBounded_powerBoundedSubring [IsUniform A] :
@@ -124,11 +120,11 @@ theorem isUniform_iff_exists_pairOfDefinition_ringOfDefinition_eq [IsHuberRing A
   rw [exists_pairOfDefinition_ringOfDefinition_eq_iff, isUniform_iff_isBounded_powerBoundedSubring]
   exact ⟨fun h ↦ ⟨isOpen_powerBoundedSubring A, h⟩, And.right⟩
 
-/-- **In a uniform Tate ring every nilpotent element lies in the closure of zero.** -/
-theorem IsUniform.nilradical_le_closure_bot [IsTateRing A] [IsUniform A] :
-    nilradical A ≤ (⊥ : Ideal A).closure := by
+/-- In a uniform topological ring with a pseudo-uniformizer, every nilpotent element lies in the
+closure of zero. -/
+theorem IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer [IsUniform A] {ϖ : A}
+    (hϖ : IsPseudoUniformizer ϖ) : nilradical A ≤ (⊥ : Ideal A).closure := by
   intro a ha
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨u, rfl⟩ := hϖ.isUnit
   -- `a` lies in every neighbourhood `U` of zero, that is, `a ⤳ 0`: choose `V` with `V · A° ⊆ U`
   -- and `n` with `ϖⁿ ∈ V`; then `a = ϖⁿ · (ϖ⁻ⁿ a)` with `ϖ⁻ⁿ a` nilpotent, hence power-bounded.
@@ -147,11 +143,23 @@ theorem IsUniform.nilradical_le_closure_bot [IsTateRing A] [IsUniform A] :
   rw [← SetLike.mem_coe, Ideal.coe_closure, Submodule.bot_coe, ← specializes_iff_mem_closure]
   exact hspec.symm
 
+/-- A Hausdorff uniform topological ring with a pseudo-uniformizer is reduced. -/
+theorem IsUniform.isReduced_of_isPseudoUniformizer [IsUniform A] [T0Space A] {ϖ : A}
+    (hϖ : IsPseudoUniformizer ϖ) : IsReduced A := by
+  refine ⟨fun a ha ↦ ?_⟩
+  have h := IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer hϖ (mem_nilradical.mpr ha)
+  rwa [Ideal.closure_eq_of_isClosed _ (by simp), Ideal.mem_bot] at h
+
+/-- **In a uniform Tate ring every nilpotent element lies in the closure of zero.** -/
+theorem IsUniform.nilradical_le_closure_bot [IsTateRing A] [IsUniform A] :
+    nilradical A ≤ (⊥ : Ideal A).closure := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  exact IsUniform.nilradical_le_closure_bot_of_isPseudoUniformizer hϖ
+
 /-- **A Hausdorff uniform Tate ring is reduced.** -/
 theorem IsUniform.isReduced [IsTateRing A] [IsUniform A] [T0Space A] : IsReduced A := by
-  refine ⟨fun a ha ↦ ?_⟩
-  have h := IsUniform.nilradical_le_closure_bot (A := A) (mem_nilradical.mpr ha)
-  rwa [Ideal.closure_eq_of_isClosed _ (by simp), Ideal.mem_bot] at h
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  exact IsUniform.isReduced_of_isPseudoUniformizer hϖ
 
 end Huber
 

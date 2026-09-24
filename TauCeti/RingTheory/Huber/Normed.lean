@@ -11,8 +11,8 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Bounded and power-bounded elements of normed rings
 
-In a seminormed ring the balls about zero form a neighbourhood basis of zero, so boundedness in
-the sense of `TauCeti.Huber.IsBounded` can be read off from the norm. For a normed division ring
+In a seminormed ring the balls about zero form a neighbourhood basis of zero, so norm-bounded
+sets are bounded in the sense of `TauCeti.Huber.IsBounded`. For a normed division ring
 this identifies the power-bounded elements with the closed unit ball and shows that the ring is
 uniform; for instance `ℚ_[p]` is uniform, and its power-bounded elements are those of `ℤ_[p]`.
 
@@ -35,6 +35,7 @@ open Filter Topology
 namespace TauCeti.Huber
 
 /-- **Closed balls about zero are bounded** in a seminormed ring. -/
+@[simp]
 theorem isBounded_closedBall_zero {R : Type*} [SeminormedRing R] (r : ℝ) :
     IsBounded (Metric.closedBall (0 : R) r) := by
   rw [isBounded_iff]
@@ -51,9 +52,22 @@ theorem isBounded_closedBall_zero {R : Type*} [SeminormedRing R] (r : ℝ) :
     _ < ε / (|r| + 1) * (|r| + 1) := by gcongr
     _ = ε := div_mul_cancel₀ ε hr.ne'
 
+/-- An element of norm at most one in a seminormed ring is power-bounded. -/
+theorem IsPowerBounded.of_norm_le_one {R : Type*} [SeminormedRing R] {x : R}
+    (hx : ‖x‖ ≤ 1) : IsPowerBounded x := by
+  refine isPowerBounded_iff.mpr ((isBounded_closedBall_zero (R := R) (max 1 ‖(1 : R)‖)).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  rw [mem_closedBall_zero_iff]
+  cases n with
+  | zero => simp
+  | succ n =>
+    exact (norm_pow_le' x (Nat.succ_pos n)).trans
+      ((pow_le_one₀ (norm_nonneg x) hx).trans (le_max_left 1 ‖(1 : R)‖))
+
 variable {K : Type*} [NormedDivisionRing K]
 
 /-- **In a normed division ring the power-bounded elements are the closed unit ball.** -/
+@[simp]
 theorem isPowerBounded_iff_norm_le_one {x : K} : IsPowerBounded x ↔ ‖x‖ ≤ 1 := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · by_contra! hlt
@@ -69,10 +83,7 @@ theorem isPowerBounded_iff_norm_le_one {x : K} : IsPowerBounded x ↔ ‖x‖ �
     have hmem := hVU (Set.mul_mem_mul hm ⟨m, rfl⟩)
     rw [hone, mem_ball_zero_iff, norm_one] at hmem
     exact lt_irrefl _ hmem
-  · refine isPowerBounded_iff.mpr ((isBounded_closedBall_zero (R := K) 1).subset ?_)
-    rintro _ ⟨n, rfl⟩
-    rw [mem_closedBall_zero_iff, norm_pow]
-    exact pow_le_one₀ (norm_nonneg x) hx
+  · exact IsPowerBounded.of_norm_le_one hx
 
 /-- **Normed division rings are uniform.** -/
 instance (priority := 100) IsUniform.of_normedDivisionRing : IsUniform K :=
