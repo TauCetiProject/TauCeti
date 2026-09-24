@@ -60,6 +60,7 @@ end IsOfFinOrder
 namespace TauCeti
 
 /-- In a finite additive group with one of cardinality `q`, the cast of `q - 1` is `-1`. -/
+@[simp high]
 theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Finite R] :
     ((Nat.card R - 1 : ℕ) : R) = -1 := by
   cases subsingleton_or_nontrivial R
