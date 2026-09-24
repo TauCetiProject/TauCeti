@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 
 -- Private in `RayClass.Basic`; needed below for the principal-ideal class criteria.
@@ -41,6 +42,8 @@ finite-index input to the geometry-of-numbers count of ideals in a ray class.
 * `TauCeti.GlobalNumberFields.finiteIndex_ray`: the ray has finite index in the group of
   invertible fractional ideals prime to the modulus.
 * `TauCeti.GlobalNumberFields.finite_rayClassGroup`: the ray class group of a modulus is finite.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.isOfFinOrder`: every ray class character has
+  finite order.
 
 ## References
 
@@ -158,5 +161,13 @@ instance finite_rayClassGroup (𝔪 : Modulus K) : Finite (RayClassGroup 𝔪) :
     fun c ↦ ?_
   obtain ⟨I, hI⟩ := rayClassMk_surjective 𝔪 c
   exact ⟨QuotientGroup.mk I, hI⟩
+
+namespace RayClassCharacter
+
+/-- A ray class character has finite order because the ray class group is finite. -/
+theorem isOfFinOrder {𝔪 : Modulus K} (χ : RayClassCharacter 𝔪) : IsOfFinOrder χ :=
+  isOfFinOrder_of_finite χ
+
+end RayClassCharacter
 
 end TauCeti.GlobalNumberFields

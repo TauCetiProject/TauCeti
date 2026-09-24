@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
+
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # Hecke characters
@@ -69,6 +70,12 @@ namespace HeckeCharacter
 
 variable {𝔪 𝔫 : Modulus K}
 
+/-- A ray class character pulled back to the idele class group is trivial on the ray subgroup. -/
+theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
+    raySubgroup 𝔪 ≤ (χ.comp (rayClassQuotient 𝔪)).ker := by
+  rw [← ker_rayClassQuotient]
+  exact fun c hc ↦ by simp [(MonoidHom.mem_ker).1 hc]
+
 /-- **The Hecke character of a ray class character**: the pullback of a character of the ray
 class group of `𝔪` along `rayClassQuotient 𝔪`.  It is continuous because it is trivial on the
 open subgroup `raySubgroup 𝔪`. -/
@@ -76,18 +83,9 @@ def ofRayClassCharacter (𝔪 : Modulus K) : RayClassCharacter 𝔪 →* HeckeCh
   toFun χ :=
     { toMonoidHom := χ.comp (rayClassQuotient 𝔪)
       continuous_toFun := by
-        refine continuous_of_continuousAt_one (χ.comp (rayClassQuotient 𝔪)) fun s hs ↦ ?_
-        -- The kernel of the composite contains the open subgroup `raySubgroup 𝔪`, so it is an
-        -- open neighbourhood of `1` on which the composite takes the value `1 ∈ s`.
-        have hker : raySubgroup 𝔪 ≤ (χ.comp (rayClassQuotient 𝔪)).ker := by
-          rw [← ker_rayClassQuotient]
-          exact fun c hc ↦ by simp [(MonoidHom.mem_ker).1 hc]
-        refine Filter.mem_map.2 <| Filter.mem_of_superset
-          ((Subgroup.isOpen_mono hker (isOpen_raySubgroup 𝔪)).mem_nhds (one_mem _))
-          fun c hc ↦ ?_
-        rw [SetLike.mem_coe, MonoidHom.mem_ker] at hc
-        rw [Set.mem_preimage, hc]
-        simpa using mem_of_mem_nhds hs }
+        exact MonoidHom.continuous_of_isOpen_ker _
+          (Subgroup.isOpen_mono (raySubgroup_le_ker_comp_rayClassQuotient χ)
+            (isOpen_raySubgroup 𝔪)) }
   map_one' := rfl
   map_mul' _ _ := rfl
 
@@ -122,21 +120,23 @@ theorem ofRayClassCharacter_eq_one_iff {χ : RayClassCharacter 𝔪} :
   (ofRayClassCharacter_injective 𝔪).eq_iff' (map_one _)
 
 /-- The Hecke character of a ray class character of `𝔪` is trivial on the ray subgroup of `𝔪`. -/
-theorem ofRayClassCharacter_apply_eq_one (χ : RayClassCharacter 𝔪) {c : IdeleClassGroup (𝓞 K) K}
+theorem ofRayClassCharacter_apply_eq_one_of_mem_raySubgroup (χ : RayClassCharacter 𝔪)
+    {c : IdeleClassGroup (𝓞 K) K}
     (hc : c ∈ raySubgroup 𝔪) : ofRayClassCharacter 𝔪 χ c = 1 := by
-  rw [← ker_rayClassQuotient, MonoidHom.mem_ker] at hc
-  simp [hc]
+  exact MonoidHom.mem_ker.mp (raySubgroup_le_ker_comp_rayClassQuotient χ hc)
 
 /-- **The image of pullback from the ray class group of `𝔪`.**  A Hecke character comes from a
 ray class character of `𝔪` exactly when it is trivial on `raySubgroup 𝔪`. -/
 theorem mem_range_ofRayClassCharacter_iff {χ : HeckeCharacter K} :
-    χ ∈ (ofRayClassCharacter 𝔪).range ↔ raySubgroup 𝔪 ≤ χ.toMonoidHom.ker := by
+    χ ∈ (ofRayClassCharacter 𝔪).range ↔
+      raySubgroup 𝔪 ≤ (χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨ψ, rfl⟩ c hc
-    exact ofRayClassCharacter_apply_eq_one ψ hc
+    exact ofRayClassCharacter_apply_eq_one_of_mem_raySubgroup ψ hc
   · rw [← ker_rayClassQuotient] at h
     refine ⟨(rayClassQuotient 𝔪).liftOfSurjective (rayClassQuotient_surjective 𝔪)
-      ⟨χ.toMonoidHom, h⟩, ContinuousMonoidHom.ext fun c ↦ ?_⟩
+      ⟨(χ : IdeleClassGroup (𝓞 K) K →* ℂˣ), h⟩,
+      ContinuousMonoidHom.ext fun c ↦ ?_⟩
     rw [ofRayClassCharacter_apply]
     exact MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ c
 
@@ -158,10 +158,8 @@ theorem range_ofRayClassCharacter_le (h : 𝔪 ∣ 𝔫) :
 /-- **Hecke characters coming from ray class characters have finite order**, since the ray class
 group is finite. -/
 theorem isOfFinOrder_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
-    IsOfFinOrder (ofRayClassCharacter 𝔪 χ) := by
-  refine (ofRayClassCharacter 𝔪).isOfFinOrder (isOfFinOrder_iff_pow_eq_one.2
-    ⟨Nat.card (RayClassGroup 𝔪), Nat.card_pos, MonoidHom.ext fun c ↦ ?_⟩)
-  rw [MonoidHom.pow_apply, ← map_pow, pow_card_eq_one', map_one, MonoidHom.one_apply]
+    IsOfFinOrder (ofRayClassCharacter 𝔪 χ) :=
+  (ofRayClassCharacter 𝔪).isOfFinOrder χ.isOfFinOrder
 
 end HeckeCharacter
 
