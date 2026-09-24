@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Balanced
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 
 /-!
 # Irreducible morphisms
@@ -19,14 +19,16 @@ the second factor `h : Z ⟶ Y`.
 
 Irreducible morphisms are what the arrows of the Auslander-Reiten quiver of a finite-dimensional
 algebra record. An arrow there is not an individual irreducible morphism: what governs the arrows
-from `[X]` to `[Y]` is the space of irreducible morphisms `X ⟶ Y`, the quotient
-`rad(X, Y) / rad²(X, Y)`, which is a bimodule over the division rings `End(Y) / rad End(Y)` and
+from indecomposable finite-dimensional modules `[X]` to `[Y]` is the space of irreducible morphisms
+`X ⟶ Y`, the quotient `rad(X, Y) / rad²(X, Y)`. This is a bimodule over the division rings
+`End(Y) / rad End(Y)` and
 `End(X) / rad End(X)`. Over an algebraically closed field those division rings are the field
 itself, and then the arrows represent a basis, so their number is the dimension of that space;
 over a general field the quiver is a valued one, carrying the two one-sided dimensions of the
-bimodule instead. The middle term of an almost-split sequence is glued to its ends by
-irreducible morphisms. Nothing in the definition is special to modules, so this file develops the
-notion for an arbitrary category and specializes only where the statement forces it.
+bimodule instead. The components of the maps in an almost-split sequence, after decomposing
+the middle term into indecomposable summands, are irreducible morphisms. Nothing in the definition
+is special to modules, so this file develops the notion for an arbitrary category and specializes
+only where the statement forces it.
 
 ## Main results
 
@@ -38,45 +40,36 @@ notion for an arbitrary category and specializes only where the statement forces
   `TauCeti.isIrreducibleMorphism_iso_comp_iff`: irreducibility only depends on the morphism up to
   isomorphisms of its source and target, so it descends to the arrows of a skeleton.
 * `TauCeti.not_isIrreducibleMorphism_zero`: **a zero morphism is never irreducible**, and its
-  contrapositive `TauCeti.IsIrreducibleMorphism.ne_zero`.
+  consequence `TauCeti.IsIrreducibleMorphism.ne_zero`.
 * `TauCeti.IsIrreducibleMorphism.mono_or_epi`: **an irreducible morphism of a category with
   equalizers and images is a monomorphism or an epimorphism**, and by
   `TauCeti.IsIrreducibleMorphism.not_mono_and_epi` never both in a balanced category, so there,
   as in an abelian category, `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi` is a genuine
   dichotomy.
 
-Two general facts about split morphisms and composition are proved on the way and stated for
-reuse: `TauCeti.isSplitMono_of_isSplitMono_comp` and `TauCeti.isSplitEpi_of_isSplitEpi_comp`.
-Mathlib has the composition direction (a composite of split monos is a split mono) but not these
-cancellation directions.
+The split-morphism cancellation lemmas include `TauCeti.isSplitMono_of_isSplitMono_comp` and
+`TauCeti.isSplitEpi_of_isSplitEpi_comp`.
 
 ## Implementation notes
 
-The definition is a conjunction rather than a structure, matching the signature pinned by the
-roadmap; the three components are available as `TauCeti.IsIrreducibleMorphism.not_isSplitMono`,
+The definition is a conjunction; the three components are available as
+`TauCeti.IsIrreducibleMorphism.not_isSplitMono`,
 `TauCeti.IsIrreducibleMorphism.not_isSplitEpi` and `TauCeti.IsIrreducibleMorphism.factors`, so
 that no proof has to project through `And` by hand. The body of the definition is not exposed
 outside this module, so `⟨_, _, _⟩` is not available to establish it downstream;
 `TauCeti.isIrreducibleMorphism_iff` is the introduction rule.
 
-The quantifier in the third component ranges over *all* objects of the ambient category. For the
-Auslander-Reiten theory of a finite-dimensional algebra that is the intended reading: the ambient
-category there is already the finite-dimensional one (compare the finiteness side conditions that
-the roadmap's `IsAlmostSplit` carries, which are needed because the lifting properties of an
-almost-split sequence are *not* stable under enlarging the category, whereas the condition here
-is a factorization property of a single morphism and so is simply inherited by any full
-subcategory containing `X` and `Y`).
+The factorization property quantifies over all objects of the ambient category. In applications
+to finite-dimensional representations, choose the category of finite-dimensional representations
+as the ambient category. Irreducibility is inherited by a full subcategory containing the source
+and target, but irreducibility in that subcategory need not imply irreducibility in the larger
+category.
 
 The dichotomy `mono_or_epi` is proved by feeding the image factorization `f = e ≫ i` to the
 definition: `e` is epi (the category has equalizers), so if it splits it is an isomorphism and `f`
 is mono; `i` is mono, so if it splits it is an isomorphism and `f` is epi.
 
 ## References
-
-This implements the `IsIrreducibleMorphism` target of Layer 6 (Auslander-Reiten theory) of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, stated there for
-representations of a quiver; the definition below is the same one for a general category, and
-instantiating `C` at `TauCeti.QuiverRep k Q` returns the pinned signature.
 
 * M. Auslander, I. Reiten, S. Smalø, *Representation Theory of Artin Algebras*, CUP (1995), V.5.
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
@@ -95,29 +88,26 @@ variable {C : Type u} [Category.{v} C]
 
 /-! ### Cancelling a split morphism off a composite -/
 
-/-- **A composite that is a split mono has a split mono for its first factor**: a retraction of
-`f ≫ g` retracts `f` after `g` is absorbed into it. Mathlib has the composition direction
-(`CategoryTheory.IsSplitMono` is closed under `≫`) but not this cancellation. -/
+/-- The first factor of a split monomorphism is a split monomorphism. -/
 theorem isSplitMono_of_isSplitMono_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsSplitMono (f ≫ g)] : IsSplitMono f :=
   IsSplitMono.mk' ⟨g ≫ retraction (f ≫ g), by rw [← Category.assoc]; exact IsSplitMono.id _⟩
 
-/-- **A composite that is a split epi has a split epi for its second factor**: a section of
-`f ≫ g` sections `g` after `f` is absorbed into it. -/
+/-- The second factor of a split epimorphism is a split epimorphism. -/
 theorem isSplitEpi_of_isSplitEpi_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsSplitEpi (f ≫ g)] : IsSplitEpi g :=
   IsSplitEpi.mk' ⟨section_ (f ≫ g) ≫ f, by rw [Category.assoc]; exact IsSplitEpi.id _⟩
 
-/-- The remaining cancellation, in the case the absorbed factor is invertible: if `f ≫ e.hom`
-is a split epi then so is `f`. -/
+/-- If postcomposition with an isomorphism is a split epimorphism, the original morphism is
+also a split epimorphism. -/
 theorem isSplitEpi_of_isSplitEpi_comp_iso {X Y Y' : C} (f : X ⟶ Y) (e : Y ≅ Y')
     [IsSplitEpi (f ≫ e.hom)] : IsSplitEpi f := by
   have h : (f ≫ e.hom) ≫ e.inv = f := by simp
   rw [← h]
   infer_instance
 
-/-- The remaining cancellation, in the case the absorbed factor is invertible: if `e.hom ≫ f`
-is a split mono then so is `f`. -/
+/-- If precomposition with an isomorphism is a split monomorphism, the original morphism is
+also a split monomorphism. -/
 theorem isSplitMono_of_isSplitMono_iso_comp {X' X Y : C} (e : X' ≅ X) (f : X ⟶ Y)
     [IsSplitMono (e.hom ≫ f)] : IsSplitMono f := by
   have h : e.inv ≫ e.hom ≫ f = f := by simp
@@ -127,7 +117,7 @@ theorem isSplitMono_of_isSplitMono_iso_comp {X' X Y : C} (e : X' ≅ X) (f : X �
 /-! ### Irreducible morphisms -/
 
 /-- **An irreducible morphism**: one that is neither a split monomorphism nor a split
-epimorphism, and through which no object factors nontrivially — in every factorization
+epimorphism, and admits only split factorizations: in every factorization
 `f = g ≫ h`, either `g` is a split mono or `h` is a split epi.
 
 The two negative clauses are what makes the notion nonvacuous: without them every isomorphism
@@ -163,19 +153,19 @@ factor is a split mono or the second is a split epi. -/
 theorem IsIrreducibleMorphism.factors (hf : IsIrreducibleMorphism f) {Z : C} (g : X ⟶ Z)
     (h : Z ⟶ Y) (hgh : g ≫ h = f) : IsSplitMono g ∨ IsSplitEpi h := hf.2.2 Z g h hgh
 
-/-- The form of `TauCeti.IsIrreducibleMorphism.factors` used when the second factor is known not
-to split. -/
+/-- In a factorization of an irreducible morphism, if the second factor is not a split
+epimorphism, the first is a split monomorphism. -/
 theorem IsIrreducibleMorphism.isSplitMono_of_not_isSplitEpi (hf : IsIrreducibleMorphism f)
     {Z : C} {g : X ⟶ Z} {h : Z ⟶ Y} (hgh : g ≫ h = f) (hh : ¬ IsSplitEpi h) : IsSplitMono g :=
   (hf.factors g h hgh).resolve_right hh
 
-/-- The form of `TauCeti.IsIrreducibleMorphism.factors` used when the first factor is known not to
-split. -/
+/-- In a factorization of an irreducible morphism, if the first factor is not a split
+monomorphism, the second is a split epimorphism. -/
 theorem IsIrreducibleMorphism.isSplitEpi_of_not_isSplitMono (hf : IsIrreducibleMorphism f)
     {Z : C} {g : X ⟶ Z} {h : Z ⟶ Y} (hgh : g ≫ h = f) (hg : ¬ IsSplitMono g) : IsSplitEpi h :=
   (hf.factors g h hgh).resolve_left hg
 
-/-- **An irreducible morphism is not an isomorphism**, an isomorphism being a split mono. -/
+/-- An irreducible morphism is not an isomorphism. -/
 theorem IsIrreducibleMorphism.not_isIso (hf : IsIrreducibleMorphism f) : ¬ IsIso f :=
   fun _ => hf.not_isSplitMono inferInstance
 
@@ -234,10 +224,7 @@ section Zero
 
 variable [HasZeroMorphisms C]
 
-/-- **A zero morphism is never irreducible.** It factors as `X --0--> X --0--> Y`, and neither
-factor can split: if the first splits then `𝟙 X = 0`, which makes the zero morphism `X ⟶ Y` a
-split mono; and the second factor *is* the morphism itself. Note that no zero object is needed —
-the intermediate object is `X`. -/
+/-- A zero morphism is never irreducible, in any category with zero morphisms. -/
 @[simp]
 theorem not_isIrreducibleMorphism_zero (X Y : C) : ¬ IsIrreducibleMorphism (0 : X ⟶ Y) := by
   intro hf
@@ -256,20 +243,14 @@ end Zero
 /-! ### The monomorphism/epimorphism dichotomy -/
 
 /-- **An irreducible morphism of a balanced category is not both a monomorphism and an
-epimorphism**, since it would then be an isomorphism. -/
+epimorphism**. -/
 theorem IsIrreducibleMorphism.not_mono_and_epi [Balanced C] (hf : IsIrreducibleMorphism f) :
     ¬ (Mono f ∧ Epi f) := fun ⟨_, _⟩ => hf.not_isIso (isIso_of_mono_of_epi f)
 
-/-- **An irreducible morphism of a category with equalizers and images is a monomorphism or an
-epimorphism.**
-
-Apply the definition to the image factorization `f = e ≫ i`. If `e`, which is epi, is a split
-mono, then it is an isomorphism and `f` is the composite of an isomorphism with the mono `i`. If
-`i`, which is mono, is a split epi, then it is an isomorphism and `f` is the composite of the epi
-`e` with an isomorphism. -/
+/-- An irreducible morphism of a category with equalizers and images is a monomorphism or an
+epimorphism. -/
 theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImages C]
-    (hf : IsIrreducibleMorphism f) :
-    Mono f ∨ Epi f := by
+    (hf : IsIrreducibleMorphism f) : Mono f ∨ Epi f := by
   rcases hf.factors (factorThruImage f) (image.ι f) (image.fac f) with h | h
   · refine Or.inl ?_
     have : IsIso (factorThruImage f) := isIso_of_epi_of_isSplitMono _
@@ -283,14 +264,13 @@ theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImages C]
 /-- **The dichotomy**: an irreducible morphism of a balanced category with equalizers and images,
 such as an abelian category, is a monomorphism exactly when it fails to be an epimorphism. -/
 theorem IsIrreducibleMorphism.mono_iff_not_epi [HasEqualizers C] [HasImages C] [Balanced C]
-    (hf : IsIrreducibleMorphism f) :
-    Mono f ↔ ¬ Epi f :=
+    (hf : IsIrreducibleMorphism f) : Mono f ↔ ¬ Epi f :=
   ⟨fun hm he => hf.not_mono_and_epi ⟨hm, he⟩, fun he => hf.mono_or_epi.resolve_right he⟩
 
-/-- The other half of the dichotomy of `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi`. -/
+/-- An irreducible morphism of a balanced category with equalizers and images is an epimorphism
+exactly when it fails to be a monomorphism. -/
 theorem IsIrreducibleMorphism.epi_iff_not_mono [HasEqualizers C] [HasImages C] [Balanced C]
-    (hf : IsIrreducibleMorphism f) :
-    Epi f ↔ ¬ Mono f :=
+    (hf : IsIrreducibleMorphism f) : Epi f ↔ ¬ Mono f :=
   ⟨fun he hm => hf.not_mono_and_epi ⟨hm, he⟩, fun hm => hf.mono_or_epi.resolve_left hm⟩
 
 end TauCeti
