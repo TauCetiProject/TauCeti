@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.DimensionShift
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # The inflation-restriction sequence in every positive degree
@@ -19,7 +21,6 @@ restriction form a complex
 
 and if `Hⁱ(S, A) = 0` for `0 < i ≤ n`, it is exact and inflation is injective (Milne II 1.34).
 Mathlib proves the case `n = 0`, where there is no hypothesis, as `groupCohomology.H1InfRes`.
-The pinned Mathlib has no versions of `H1InfRes` or `map₁_one` in arbitrary positive degree.
 
 The general case is by dimension shifting along the coinduced sequence
 
@@ -48,8 +49,6 @@ module is shown to be cohomologically trivial by induction along a normal series
 * `TauCeti.groupCohomology.infRes_exact`: the inflation-restriction sequence is exact.
 * `TauCeti.groupCohomology.isIso_infRes_f`: inflation is an isomorphism when `Hⁱ(S, A) = 0` for
   `0 < i ≤ n + 1`.
-* `TauCeti.groupCohomology.map_one_succ`: the map along the trivial homomorphism vanishes in
-  positive degrees.
 
 ## References
 
@@ -58,7 +57,7 @@ module is shown to be cohomologically trivial by induction along a normal series
 * `ClassFieldTheory/Cohomology/Functors/InflationRestriction.lean` in `kbuzzard/ClassFieldTheory`,
   commit `ccc3323c6750abca25b49b35106f54eb3a398509`, states `inflation_restriction_mono` and
   `inflation_restriction_exact` with `sorry` proofs and sketches the same dimension-shifting
-  argument. The proofs here are new.
+  argument.
 -/
 
 public noncomputable section
@@ -71,92 +70,7 @@ namespace TauCeti.groupCohomology
 
 open _root_.groupCohomology
 
-variable {k G : Type u} [CommRing k] [Group G]
-
-/-- The map on cohomology along the trivial homomorphism vanishes in positive degrees, because it
-factors through the cohomology of the trivial group. In degree one this is Mathlib's
-`groupCohomology.map₁_one`. -/
-theorem map_one_succ {H : Type u} [Group H] {B : Rep k H} {C : Rep k G}
-    (φ : res (1 : G →* H) B ⟶ C) (n : ℕ) :
-    map (1 : G →* H) φ (n + 1) = 0 := by
-  have h := map_comp (1 : PUnit.{u + 1} →* H) (1 : G →* PUnit.{u + 1}) (𝟙 _) φ (n + 1)
-  -- `1 : G →* H` factors through `PUnit`, whose positive-degree cohomology vanishes.
-  have e : (resFunctor (1 : G →* PUnit.{u + 1})).map (𝟙 (res (1 : PUnit.{u + 1} →* H) B)) ≫ φ =
-      φ := by
-    rw [CategoryTheory.Functor.map_id]
-    exact Category.id_comp φ
-  rw [e] at h
-  -- `(1 : PUnit →* H).comp 1` is `1 : G →* H` by definition.
-  refine (h : map (1 : G →* H) φ (n + 1) = _).trans ?_
-  rw [(isZero_groupCohomology_succ_of_subsingleton _ n).eq_zero_of_tgt
-    (map (1 : PUnit.{u + 1} →* H) (𝟙 _) (n + 1)), zero_comp]
-
-variable (A : Rep k G) (S : Subgroup G) [S.Normal]
-
-/-- Taking `S`-invariants is additive, so it maps short complexes of representations of `G` to
-short complexes of representations of `G ⧸ S`. -/
-instance : (quotientToInvariantsFunctor k S).Additive where
-
-/-- **Taking invariants preserves a short exact sequence when `H¹` of its kernel vanishes.** If
-`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is short exact and `H¹(S, X₁) = 0`, then so is
-`0 ⟶ X₁^S ⟶ X₂^S ⟶ X₃^S ⟶ 0` as a sequence of representations of `G ⧸ S`. Only surjectivity on
-the right needs the hypothesis. -/
-theorem shortExact_map_quotientToInvariantsFunctor {X : ShortComplex (Rep k G)}
-    (hX : X.ShortExact) (h1 : IsZero (groupCohomology (res S.subtype X.X₁) 1)) :
-    (X.map (quotientToInvariantsFunctor k S)).ShortExact := by
-  -- Mathlib has no evaluation lemmas for `quotientToInvariantsFunctor` or for a short complex
-  -- mapped by `forget₂`: both act on elements through the underlying maps of `X`, by definition.
-  -- The type ascriptions below and the final `change` read the goals in that form.
-  have hf := (Rep.mono_iff_injective X.f).1 hX.mono_f
-  have hex : ∀ y : X.X₂, X.g.hom y = 0 → ∃ x, X.f.hom x = y :=
-    (ShortComplex.moduleCat_exact_iff _).1 (hX.exact.map (forget₂ (Rep k G) (ModuleCat k)))
-  refine
-    { exact := (forget₂ (Rep k (G ⧸ S)) (ModuleCat k)).reflects_exact_of_faithful _ <|
-        (ShortComplex.moduleCat_exact_iff _).2 fun y hy => ?_
-      mono_f := (Rep.mono_iff_injective _).2 fun a b h => Subtype.ext (hf (congrArg Subtype.val h))
-      epi_g := (Rep.epi_iff_surjective _).2 fun z => ?_ }
-  · obtain ⟨x, hx⟩ := hex y.1 (congrArg Subtype.val hy)
-    refine ⟨⟨x, fun s => hf ?_⟩, Subtype.ext hx⟩
-    have hx' : X.f.hom x = y.1 := hx
-    have h2 : X.X₂.ρ s y.1 = y.1 := y.2 s
-    exact (hom_comm_apply X.f s.1 x).trans (by rw [hx', h2])
-  · obtain ⟨y, hy⟩ := (Rep.epi_iff_surjective X.g).1 hX.epi_g z.1
-    -- `s ↦ s • y - y` takes values in `X.X₁`, where it is a `1`-cocycle of `S`.
-    have hc : ∀ s : S, ∃ x : X.X₁, X.f.hom x = X.X₂.ρ s y - y := fun s =>
-      hex _ (by rw [map_sub, hom_comm_apply, hy]; exact sub_eq_zero.2 (z.2 s))
-    choose c hc using hc
-    have hcoc : c ∈ cocycles₁ (res S.subtype X.X₁) := by
-      rw [mem_cocycles₁_iff]
-      intro s t
-      apply hf
-      rw [res_obj_ρ, MonoidHom.comp_apply, Subgroup.coe_subtype, map_add, hom_comm_apply, hc, hc,
-        hc]
-      simp only [Subgroup.coe_mul, map_mul, Module.End.mul_apply, map_sub]
-      abel
-    -- It is a coboundary `s ↦ s • x - x`, and `y - x` is the required invariant lift.
-    obtain ⟨x, hx⟩ := (H1π_eq_zero_iff (A := res S.subtype X.X₁) ⟨c, hcoc⟩).1
-      ((ModuleCat.subsingleton_of_isZero h1).elim _ _)
-    have hx' : ∀ s : S, X.X₁.ρ s x = c s + x := fun s =>
-      sub_eq_iff_eq_add.1 (congr_fun hx s)
-    have hgf : X.g.hom (X.f.hom x) = 0 := congrArg (fun φ => φ.hom x) X.zero
-    refine ⟨⟨y - X.f.hom x, fun s => ?_⟩, Subtype.ext ?_⟩
-    · rw [MonoidHom.comp_apply, Subgroup.coe_subtype, map_sub, ← hom_comm_apply, hx', map_add, hc]
-      abel
-    · change X.g.hom (y - X.f.hom x) = z.1
-      rw [map_sub, hy, hgf, sub_zero]
-
-section Coinduced
-
-variable (X : Type u) [AddCommGroup X] [Module k X]
-
-/-- The `S`-invariants of `Coind_⊥^G X` have no cohomology over `G ⧸ S` in positive degrees: they
-are coinduced from the trivial subgroup of `G ⧸ S`. -/
-theorem isZero_quotientToInvariants_coindBot_succ (n : ℕ) :
-    IsZero (groupCohomology ((coindBot k G X).quotientToInvariants S) (n + 1)) :=
-  (_root_.groupCohomology.isZero_coindBot_succ X n).of_iso
-    ((functor k (G ⧸ S) (n + 1)).mapIso (Rep.quotientToInvariantsCoindBotIso S X))
-
-end Coinduced
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G) (S : Subgroup G) [S.Normal]
 
 /-- The **inflation-restriction complex** `Hⁿ⁺¹(G ⧸ S, A^S) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(S, A)` in degree
 `n + 1`. In degree one it is Mathlib's `groupCohomology.H1InfRes`. -/
