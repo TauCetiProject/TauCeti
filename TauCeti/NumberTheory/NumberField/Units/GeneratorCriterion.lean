@@ -15,16 +15,12 @@ exactly when no unit has a smaller nonzero logarithmic embedding. The statement 
 logarithmic embedding and torsion subgroup. It turns the generation condition used in the
 rank-one regulator formula into a minimality test on units.
 
-The logarithmic space has one coordinate in rank one. The regulator-index formula identifies
-the norm of that coordinate with the subgroup index times the positive regulator. If the index
-of a proposed unit exceeds one, a fundamental unit supplies the smaller unit.
+The criterion makes the abstract generation condition testable through logarithmic norms.
+The placewise comparison in `Units.Regulator` expresses these norms as weighted logarithms
+at a chosen infinite place.
 
 ## Main results
 
-* `TauCeti.NumberField.Units.norm_logEmbedding_eq_mult_abs_log`: at every infinite place, the
-  log-embedding norm is the absolute value of the weighted logarithm there.
-* `TauCeti.NumberField.Units.logEmbedding_norm_lt_iff_at_place`: compares log-embedding norms
-  using the absolute logarithm at a chosen place.
 * `TauCeti.NumberField.Units.generates_mod_torsion_iff_no_smaller_logEmbedding`: the rank-one
   generator criterion.
 
@@ -44,69 +40,6 @@ namespace TauCeti.NumberField.Units
 variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
-/-- In unit rank one, the logarithmic embedding has one coordinate. Its norm is the absolute
-value of the weighted logarithm at any place other than Mathlib's distinguished place. -/
-private theorem norm_logEmbedding_eq_mult_abs_log_of_rank_eq_one (hr : rank K = 1)
-    (u : (𝓞 K)ˣ) (w : InfinitePlace K)
-    (hw : w ≠ NumberField.Units.dirichletUnitTheorem.w₀) :
-    ‖logEmbedding K (Additive.ofMul u)‖ = w.mult * |Real.log (w u)| := by
-  classical
-  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
-    unfold rank at hr
-    omega
-  have hcard : Fintype.card {v : InfinitePlace K //
-      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} = 1 := by
-    simp [Fintype.card_subtype_compl, hplaces]
-  have : Subsingleton {v : InfinitePlace K //
-      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} :=
-    Fintype.card_le_one_iff_subsingleton.mp hcard.le
-  let : Unique {v : InfinitePlace K //
-      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} :=
-    ⟨⟨⟨w, hw⟩⟩, fun _ => Subsingleton.elim _ _⟩
-  have hdefault : (default : {v : InfinitePlace K //
-      v ≠ NumberField.Units.dirichletUnitTheorem.w₀}) = ⟨w, hw⟩ :=
-    Subsingleton.elim _ _
-  rw [Pi.norm_def]
-  simp [Finset.univ_unique, hdefault,
-    NumberField.Units.dirichletUnitTheorem.logEmbedding_component]
-
-open scoped Classical in
-/-- In unit rank one, the norm of the logarithmic embedding is the weighted absolute logarithm
-at *any* infinite place. The regulator-index formula identifies the values at different places,
-including Mathlib's distinguished place. -/
-theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
-    (w : InfinitePlace K) :
-    ‖logEmbedding K (Additive.ofMul u)‖ = w.mult * |Real.log (w u)| := by
-  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
-    unfold rank at hr
-    omega
-  have : Nontrivial (InfinitePlace K) :=
-    Fintype.one_lt_card_iff_nontrivial.mp (by omega)
-  obtain ⟨w', hw'⟩ := exists_ne (NumberField.Units.dirichletUnitTheorem.w₀ (K := K))
-  calc
-    ‖logEmbedding K (Additive.ofMul u)‖ =
-        w'.mult * |Real.log (w' u)| :=
-      norm_logEmbedding_eq_mult_abs_log_of_rank_eq_one hr u w' hw'
-    _ = ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K :=
-      mult_abs_log_eq_index_mul_regulator hr u w'
-    _ = w.mult * |Real.log (w u)| :=
-      (mult_abs_log_eq_index_mul_regulator hr u w).symm
-
-open scoped Classical in
-/-- At a place where `u` has absolute value greater than one, comparing log-embedding norms
-amounts to comparing the absolute logarithm of `v` with the logarithm of `u` at that place. -/
-theorem logEmbedding_norm_lt_iff_at_place (hr : rank K = 1) (u v : (𝓞 K)ˣ)
-    (w : InfinitePlace K) (hw : 1 < w u) :
-    ‖logEmbedding K (Additive.ofMul v)‖ < ‖logEmbedding K (Additive.ofMul u)‖ ↔
-      |Real.log (w v)| < Real.log (w u) := by
-  rw [norm_logEmbedding_eq_mult_abs_log hr v w,
-    norm_logEmbedding_eq_mult_abs_log hr u w, abs_of_pos (Real.log_pos hw)]
-  have hmult : (0 : ℝ) < (w.mult : ℝ) := by
-    exact_mod_cast (NumberField.InfinitePlace.mult_pos (w := w))
-  exact ⟨fun h => lt_of_mul_lt_mul_left h hmult.le,
-    fun h => mul_lt_mul_of_pos_left h hmult⟩
-
-open scoped Classical in
 /-- A non-torsion unit in a rank-one number field generates all units modulo torsion exactly
 when there is no unit with a strictly smaller nonzero logarithmic embedding. -/
 theorem generates_mod_torsion_iff_no_smaller_logEmbedding (hr : rank K = 1)
@@ -116,17 +49,11 @@ theorem generates_mod_torsion_iff_no_smaller_logEmbedding (hr : rank K = 1)
         ‖logEmbedding K (Additive.ofMul v)‖ <
           ‖logEmbedding K (Additive.ofMul u)‖ := by
   classical
-  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
-    unfold rank at hr
-    omega
-  have : Nontrivial (InfinitePlace K) :=
-    Fintype.one_lt_card_iff_nontrivial.mp (by omega)
-  obtain ⟨w, hw⟩ := exists_ne (NumberField.Units.dirichletUnitTheorem.w₀ (K := K))
   have hnorm (v : (𝓞 K)ˣ) :
       ‖logEmbedding K (Additive.ofMul v)‖ =
         ((Subgroup.closure {v} ⊔ torsion K).index : ℝ) * regulator K := by
-    rw [norm_logEmbedding_eq_mult_abs_log_of_rank_eq_one hr v w hw,
-      mult_abs_log_eq_index_mul_regulator hr v w]
+    rw [norm_logEmbedding_eq_mult_abs_log hr v NumberField.Units.dirichletUnitTheorem.w₀,
+      mult_abs_log_eq_index_mul_regulator hr v NumberField.Units.dirichletUnitTheorem.w₀]
   have hupos : 0 < ‖logEmbedding K (Additive.ofMul u)‖ := by
     rw [norm_pos_iff, ne_eq, NumberField.Units.dirichletUnitTheorem.logEmbedding_eq_zero_iff]
     exact hu
