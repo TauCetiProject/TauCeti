@@ -146,6 +146,7 @@ of its fixing subgroup. -/
 theorem ncard_conjugateFields (E : IntermediateField K L) :
     (conjugateFields E).ncard =
       (Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))).index := by
+  -- The imported definition does not unfold here; identify its orbit through membership.
   have hcard : (conjugateFields E).ncard =
       (MulAction.orbit (L ≃ₐ[K] L) E).ncard := by
     congr 1
