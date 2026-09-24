@@ -133,6 +133,7 @@ def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
     linear_combination cos_sq_add_sin_sq θ⟩
 
 /-- The entries of `conjRotation θ t`. -/
+@[simp]
 theorem coe_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ) =
       !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
@@ -146,6 +147,7 @@ theorem trace_conjRotation (θ t : ℝ) :
 
 /-- The product of the conjugated rotations with parameters `(θ₂, t)` and `(θ₁, 0)` has trace
 `2 cos θ₁ cos θ₂ - 2 cosh t sin θ₁ sin θ₂`. -/
+@[simp]
 theorem trace_conjRotation_mul_conjRotation (θ₁ θ₂ t : ℝ) :
     ((conjRotation θ₂ t * conjRotation θ₁ 0 : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       2 * cos θ₁ * cos θ₂ - 2 * cosh t * (sin θ₁ * sin θ₂) := by
@@ -156,6 +158,7 @@ theorem trace_conjRotation_mul_conjRotation (θ₁ θ₂ t : ℝ) :
 
 /-- The commutator of the conjugated rotations with parameters `(θ₁, 0)` and `(θ₂, t)` has trace
 `2 + 4 (sin θ₁ sin θ₂ sinh t) ^ 2`, by the Fricke trace identity. -/
+@[simp]
 theorem trace_commutatorElement_conjRotation (θ₁ θ₂ t : ℝ) :
     ((⁅conjRotation θ₁ 0, conjRotation θ₂ t⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       2 + 4 * (sin θ₁ * sin θ₂ * sinh t) ^ 2 := by

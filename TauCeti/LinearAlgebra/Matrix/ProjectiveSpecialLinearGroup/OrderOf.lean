@@ -46,6 +46,7 @@ namespace Matrix.ProjectiveSpecialLinearGroup
 variable {S : Type*} [CommRing S]
 
 /-- Negating a special linear matrix does not change its class in `PSL(2, S)`. -/
+@[simp]
 theorem mk_neg (A : SL(2, S)) : ((-A : SL(2, S)) : PSL(2, S)) = A := by
   rw [QuotientGroup.eq_iff_div_mem]
   have h : (-A) / A = (-1 : SL(2, S)) := by

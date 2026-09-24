@@ -60,6 +60,8 @@ the discreteness of its image is claimed.
 
 ## References
 
+* TauCetiRoadmap, `BelyiMaps`, milestone 4.5 (the five-step construction of the hyperbolic
+  triangle-group representation used here).
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   LMS Student Texts 79, Cambridge University Press, 2012, §2.4 (hyperbolic triangle groups, there
   realized through reflections in the sides of a hyperbolic triangle rather than through the
@@ -127,6 +129,7 @@ theorem pslRep_z :
 /-- The commutator of `x` and `y` goes to the class of the commutator of the two conjugated
 rotations, a matrix of trace `2 + 4 (sin (π / a) sin (π / b) sinh t) ^ 2`
 (`Matrix.SpecialLinearGroup.trace_commutatorElement_conjRotation`). -/
+@[simp]
 theorem pslRep_commutator_x_y :
     pslRep t ha hb hc ht ⁅x a b c, y a b c⁆ =
       ((⁅SpecialLinearGroup.conjRotation (π / a) 0, SpecialLinearGroup.conjRotation (π / b) t⁆ :
