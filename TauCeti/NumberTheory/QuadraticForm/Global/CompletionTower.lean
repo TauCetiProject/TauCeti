@@ -200,6 +200,18 @@ theorem atRealPlaceBaseChange_tmul (Q : _root_.QuadraticForm K V)
     ← atRealPlaceBaseChange_toLinearEquiv] at h
   exact h
 
+omit [NumberField L] in
+/-- The inverse real-place localization/base-change comparison inserts the unit of `L` as the
+intermediate scalar. -/
+@[simp]
+theorem atRealPlaceBaseChange_symm_tmul (Q : _root_.QuadraticForm K V)
+    (w : {w : InfinitePlace L // w.IsReal}) (b : ℝ) (x : V) :
+    letI : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
+    letI : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
+    (atRealPlaceBaseChange Q w).symm (b ⊗ₜ x) = b ⊗ₜ (1 ⊗ₜ x) := by
+  apply (atRealPlaceBaseChange Q w).symm_apply_eq.mpr
+  rw [atRealPlaceBaseChange_tmul, map_one, one_mul]
+
 /-- A quadratic form which is isotropic at every finite and real place of `K` stays isotropic at
 every finite and real place of a finite extension `L` of `K`. -/
 theorem IsLocallyIsotropic.baseChange {Q : _root_.QuadraticForm K V}

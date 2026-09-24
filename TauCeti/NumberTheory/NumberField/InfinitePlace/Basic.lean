@@ -158,6 +158,7 @@ theorem InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces :
 omit [NumberField K] in
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of
 `w` composed with `f`. -/
+@[simp]
 theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →+* K)
     {w : InfinitePlace K} (hw : w.IsReal) :
     embedding_of_isReal (hw.comap f) = (embedding_of_isReal hw).comp f := by
