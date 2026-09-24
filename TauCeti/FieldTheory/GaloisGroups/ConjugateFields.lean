@@ -418,6 +418,46 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
   rw [QuotientGroup.congrOfMapEq_mk]
   exact quotientNormalizerEquivConjugateSimpleFields_mk x hsep _
 
+/-- The field range of the embedding indexed by a root-stabilizer coset is the conjugate
+field indexed by the same representative's normalizer coset. -/
+theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
+    (σ : (minpoly F x).Gal) :
+    (quotientGalStabilizerEquivAlgHomSimpleField x y (QuotientGroup.mk σ)).fieldRange =
+      (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
+        (QuotientGroup.mk σ)).1 := by
+  let N := normalClosure F F⟮x⟯ E
+  let e := splittingFieldEquivNormalClosure (F := F) (E := E) x
+  have hgen : (F⟮AdjoinSimple.gen F x⟯ : IntermediateField F F⟮x⟯) = ⊤ := by
+    apply (IntermediateField.lift_injective F⟮x⟯)
+    rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
+    rfl
+  have hrange (φ : F⟮x⟯ →ₐ[F] N) :
+      φ.fieldRange = F⟮φ (AdjoinSimple.gen F x)⟯ := by
+    rw [AlgHom.fieldRange_eq_map, ← hgen, IntermediateField.adjoin_map]
+    simp only [Set.image_singleton]
+  let _ : IsGalois F N := isGalois_normalClosure_adjoin_simple x hsep
+  have hbase : F⟮(e y : N)⟯ = F⟮x⟯.restrict (le_normalClosure F⟮x⟯) := by
+    apply (InfiniteGalois.fixedField_fixingSubgroup _).symm.trans
+    rw [← InfiniteGalois.fixedField_fixingSubgroup
+      (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))]
+    congr 1
+    exact (map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y).symm.trans hy
+  rw [hrange, quotientGalStabilizerEquivAlgHomSimpleField_mk_gen,
+    quotientGalNormalizerEquivConjugateSimpleFields_mk]
+  have heval : e (σ • (y : (minpoly F x).SplittingField)) =
+      galEquivNormalClosure x σ (e y) :=
+    (galEquivNormalClosure_apply x σ y).symm
+  rw [heval]
+  simpa only [IntermediateField.adjoin_map, Set.image_singleton,
+    AlgEquiv.toAlgHom_apply, AlgEquiv.smul_intermediateField_def] using
+    congrArg (fun K : IntermediateField F N ↦
+      K.map (galEquivNormalClosure x σ).toAlgHom) hbase
+
 /-- The polynomial normalizer-coset parametrization respects the transported Galois action. -/
 @[simp]
 theorem quotientGalNormalizerEquivConjugateSimpleFields_smul (x : E)
