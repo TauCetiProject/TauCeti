@@ -33,21 +33,21 @@ namespace TauCeti.ClassFieldTheory.LayerRestriction
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] {a b c : NormalLayer G}
 
-private def trivialInvariant (L : NormalLayer G) (x : ℤ) :
-    (Rep.trivial ℤ L.Gal ℤ).ρ.invariants :=
-  ⟨x, fun _ ↦ rfl⟩
-
-private theorem trivialTateCor_zero_H0π {small big : NormalLayer G}
-    (T : LayerRestriction small big) (x : ℤ) :
-    T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ (trivialInvariant small x)) =
-      TauCeti.TateCohomology.H0π _ (trivialInvariant big (T.relativeDegree * x)) := by
+/-- On an invariant integral representative, degree-zero corestriction multiplies by the
+relative degree. -/
+@[simp] theorem trivialTateCor_zero_H0π {small big : NormalLayer G}
+    (T : LayerRestriction small big) (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
+    T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ x) =
+      TauCeti.TateCohomology.H0π _
+        (⟨T.relativeDegree * (x : ℤ), fun _ ↦ rfl⟩ :
+          (Rep.trivial ℤ big.Gal ℤ).ρ.invariants) := by
   let : Fintype (big.Gal ⧸ T.galHom.range) := Fintype.ofFinite _
   rw [trivialTateCor_zero, ModuleCat.comp_apply,
     trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
   congr 1
   apply Subtype.ext
   rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
-  · simp only [trivialInvariant, T.index_range_galHom]
+  · simp only [T.index_range_galHom]
     simp
   · exact fun _ ↦ rfl
 
@@ -68,8 +68,10 @@ private theorem trivialCohomologyCor_trans (T : LayerRestriction a b)
       trivialCohomologyCor T n ≫ trivialCohomologyCor T' n := by
   have key := (TauCeti.groupCohomology.corestriction_trans T.galHom_injective
       T'.galHom_injective (T.galHom_trans T').symm (Rep.trivial ℤ c.Gal ℤ) n).symm
-  simpa only [trivialCohomologyCor, Category.assoc, Rep.res, Rep.resFunctor,
-    Rep.trivial, Representation.trivial, MonoidHom.one_comp] using key
+  -- Restriction of a trivial representation is definitionally trivial, so the general
+  -- corestriction law has this type after expanding the local map abbreviation.
+  unfold trivialCohomologyCor
+  exact key
 
 private theorem trivialTateCor_comp_compare {small big : NormalLayer G}
     (T : LayerRestriction small big) (n : ℕ) [NeZero n] :
@@ -154,7 +156,8 @@ private theorem comp_of_compare {A B C A' B' C' : ModuleCat ℤ}
     _ = f ≫ g ≫ iC.hom := congrArg (f ≫ ·) hg.symm
 
 /-- Trivial-coefficient Tate corestriction is functorial in towers of finite normal layers. -/
-theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (r : ℤ) :
+@[simp] theorem trivialTateCor_trans (T : LayerRestriction a b)
+    (T' : LayerRestriction b c) (r : ℤ) :
     (T.trans T').trivialTateCor r = T.trivialTateCor r ≫ T'.trivialTateCor r := by
   -- The four cases use ordinary cohomology, the norm quotient, the vanishing of degree minus
   -- one for integral coefficients, and ordinary homology, respectively.
@@ -182,12 +185,10 @@ theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b
       (trivialCohomologyCor_trans T T' (n + 1))
   · ext x
     induction x using TauCeti.TateCohomology.H0_induction_on with | h y => ?_
-    have hy : y = trivialInvariant a (y : ℤ) := by ext; rfl
-    rw [hy, ModuleCat.comp_apply, trivialTateCor_zero_H0π,
+    rw [ModuleCat.comp_apply, trivialTateCor_zero_H0π,
       trivialTateCor_zero_H0π, trivialTateCor_zero_H0π]
     congr 1
     apply Subtype.ext
-    simp only [trivialInvariant]
     rw [relativeDegree_trans T T']
     push_cast
     ring
