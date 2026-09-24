@@ -12,6 +12,7 @@ import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # Square classes of a local field with odd residue characteristic
@@ -37,12 +38,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-private theorem normalizedValuation_even_of_isSquare {a : Kˣ} (ha : IsSquare a) :
-    Even (normalizedValuation K a).toAdd := by
-  obtain ⟨b, rfl⟩ := ha
-  refine ⟨(normalizedValuation K b).toAdd, ?_⟩
-  simp
 
 /-- At odd residue characteristic there is an integer unit whose residue is nonsquare. -/
 theorem exists_integerUnit_not_isSquare_residue (h2 : IsUnit (2 : 𝒪[K])) :
@@ -146,21 +141,5 @@ theorem squareClass_eq_representative_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) 
   have hsu : s = Finset.univ := Finset.eq_univ_of_card s (hs.trans hcard.symm)
   have hmem : squareClass a ∈ s := by rw [hsu]; simp
   simpa only [s, Finset.mem_insert, Finset.mem_singleton] using hmem
-
-/-- At odd residue characteristic, every uniformizer admits a unit with nonsquare residue
-giving representatives for all four square classes. -/
-theorem exists_squareClass_representatives_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K]))
-    {π : Kˣ} (hπ : IsUniformizer (K := K) π) :
-    ∃ u : 𝒪[K]ˣ,
-      ¬IsSquare (Units.map ((residue 𝒪[K] : 𝒪[K] →+* 𝓀[K]).toMonoidHom) u) ∧
-      (∀ a : Kˣ, squareClass a = 0 ∨
-        squareClass a = squareClass
-          (Units.map ((Subring.subtype 𝒪[K] : 𝒪[K] →+* K).toMonoidHom) u) ∨
-        squareClass a = squareClass π ∨
-        squareClass a = squareClass
-          (Units.map ((Subring.subtype 𝒪[K] : 𝒪[K] →+* K).toMonoidHom) u * π)) := by
-  classical
-  obtain ⟨u, hu⟩ := exists_integerUnit_not_isSquare_residue h2
-  exact ⟨u, hu, squareClass_eq_representative_of_isUnit_two h2 u hu hπ⟩
 
 end TauCeti
