@@ -449,16 +449,24 @@ theorem recut_first_or_second_right_eq_pentagon_right
       D.toRectangleDecomposition.second.right := by
     simpa only [toRectangleDecomposition_first_right,
       toRectangleDecomposition_second_right] using hcommon
-  have hfirst : D.toRectangleDecomposition.first.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
-  have hsecond : D.toRectangleDecomposition.second.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_middle,
-      D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
-  simpa only [D.toRectangleDecomposition_second_right] using
-    D.toRectangleDecomposition.recut_first_or_second_right_eq_second_right hcommon' hone
-      hfirst hsecond
+  have hdata := D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  have hbranches :
+      (E.first.right = D.toRectangleDecomposition.second.right ∧
+        E.second.right ≠ D.toRectangleDecomposition.second.right) ∨
+        (E.first.right ≠ D.toRectangleDecomposition.second.right ∧
+          E.second.right = D.toRectangleDecomposition.second.right) := by
+    rcases hdata.recut_branch with ⟨-, -, hfirst, hsecond⟩ | ⟨-, -, hfirst, hsecond⟩
+    · right
+      refine ⟨?_, hsecond.trans hcommon'⟩
+      intro h
+      rw [hfirst, ← hcommon'] at h
+      exact D.toRectangleDecomposition.first.left_ne_right h
+    · left
+      refine ⟨hfirst.trans hcommon', ?_⟩
+      intro h
+      rw [hsecond] at h
+      exact D.toRectangleDecomposition.second.left_ne_right h
+  simpa only [D.toRectangleDecomposition_second_right] using hbranches
 
 end GridRectanglePentagonDecomposition
 
