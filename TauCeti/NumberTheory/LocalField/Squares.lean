@@ -291,7 +291,6 @@ theorem isClosed_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
 /-- **Squares in a nonarchimedean local field.** Written against a uniformizer `π`, an element
 `π ^ m * w` with `w` of even valuation is a square exactly when `m` is even and `w` is a square.
 No hypothesis on the residue characteristic is needed. -/
-@[simp]
 theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
     (hw : Even (normalizedValuation K w).toAdd) (m : ℤ) :
     IsSquare (π ^ m * w) ↔ Even m ∧ IsSquare w := by
@@ -310,14 +309,12 @@ theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
 
 /-- A uniformizer times an element of even valuation has odd valuation, so it is not a
 square. -/
-@[simp]
 theorem not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation {π w : Kˣ}
     (hπ : IsUniformizer K π)
     (hw : Even (normalizedValuation K w).toAdd) : ¬IsSquare (π * w) := fun h ↦
   Int.not_even_one ((isSquare_zpow_mul_iff hπ hw 1).mp (by simpa using h)).1
 
 /-- A uniformizer is not a square. -/
-@[simp]
 theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬IsSquare π := by
   simpa using not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation
     hπ (w := 1) (by simp)
