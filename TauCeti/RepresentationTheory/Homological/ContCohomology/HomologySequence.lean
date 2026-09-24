@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains
 
@@ -66,38 +67,9 @@ open CategoryTheory
 
 namespace TauCeti
 
-namespace ContinuousCohomology
-
-open _root_.ContinuousCohomology
-
-universe u v
-
-variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- After forgetting topologies, the coefficient map `Hⁿ(G, X) ⟶ Hⁿ(G, Y)` is the map induced on
-the homology of the forgotten homogeneous-cochain complexes, conjugated by the identifications
-`CategoryTheory.ShortComplex.mapHomologyIso` of that homology with the underlying modules of
-continuous cohomology. -/
-theorem forget₂_map_coeffMap {X Y : TopRep.{v} R G} (f : X ⟶ Y) (n : ℕ) :
-    (forget₂ (TopModuleCat R) (ModuleCat R)).map (coeffMap f n) =
-      ((X.homogeneousCochains.sc n).mapHomologyIso
-          (forget₂ (TopModuleCat R) (ModuleCat R))).inv ≫
-        HomologicalComplex.homologyMap
-          (((forget₂ (TopModuleCat R) (ModuleCat R)).mapHomologicalComplex _).map
-            ((continuousCochainsFunctor R G).map f)) n ≫
-          ((Y.homogeneousCochains.sc n).mapHomologyIso
-            (forget₂ (TopModuleCat R) (ModuleCat R))).hom := by
-  rw [coeffMap_def]
-  exact (Iso.eq_inv_comp _).2 (ShortComplex.mapHomologyIso_hom_naturality
-    ((HomologicalComplex.shortComplexFunctor _ _ n).map ((continuousCochainsFunctor R G).map f))
-    (forget₂ (TopModuleCat R) (ModuleCat R))).symm
-
-end ContinuousCohomology
-
 namespace ContCohomology.DiscreteShortExact
 
-open _root_.ContinuousCohomology _root_.TauCeti.ContinuousCohomology
+open _root_.ContinuousCohomology _root_.TauCeti _root_.TauCeti.ContinuousCohomology
 
 universe u
 
@@ -138,28 +110,12 @@ theorem forget₂_map_delta (n : ℕ) :
             (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom :=
   (rfl)
 
-omit [CompactSpace G] [ContinuousSMul G B] in
-/-- Exactness of a pair of composable maps of topological modules follows from exactness of the
-maps of modules they become after forgetting topologies, up to conjugation by isomorphisms. -/
-private theorem exact_of_forget₂_map_eq {X₁ X₂ X₃ : TopModuleCat.{u} ℤ} {f : X₁ ⟶ X₂}
-    {g : X₂ ⟶ X₃} {Y₁ Y₂ Y₃ : ModuleCat.{u} ℤ} {f' : Y₁ ⟶ Y₂} {g' : Y₂ ⟶ Y₃}
-    {e₁ : Y₁ ≅ (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).obj X₁}
-    {e₂ : Y₂ ≅ (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).obj X₂}
-    {e₃ : Y₃ ≅ (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).obj X₃}
-    (hf : (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map f = e₁.inv ≫ f' ≫ e₂.hom)
-    (hg : (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map g = e₂.inv ≫ g' ≫ e₃.hom)
-    (h : Function.Exact f' g') : Function.Exact f g :=
-  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := e₁.toLinearEquiv) (e₂ := e₂.toLinearEquiv)
-    (e₃ := e₃.toLinearEquiv) (g₁₂ := f.hom.toLinearMap) (g₂₃ := g.hom.toLinearMap)
-    (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₁).1 hf.symm).symm)
-    (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₂).1 hg.symm).symm) h
-
 /-- **Exactness at `Hⁿ⁺¹(G, A)`**: the image of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)` is
 the kernel of the coefficient map induced by `A → B`. -/
 theorem longExact_exact₁ (n : ℕ) :
     Function.Exact (S.delta n)
       (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) :=
-  exact_of_forget₂_map_eq (S.forget₂_map_delta n) (forget₂_map_coeffMap _ _)
+  TopModuleCat.exact_of_forget₂_map_eq (S.forget₂_map_delta n) (forget₂_map_coeffMap _ _)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
       (S.continuousCochainsShortExact_shortExact.homology_exact₁ n (n + 1) rfl))
 
@@ -170,7 +126,7 @@ compactness of `G` suffices. -/
 theorem longExact_exact₂ [LocallyCompactSpace G] (n : ℕ) :
     Function.Exact (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) n)
       (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=
-  exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (forget₂_map_coeffMap _ _)
+  TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (forget₂_map_coeffMap _ _)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
       (S.continuousCochainsShortExact_shortExact.homology_exact₂ n))
 
@@ -179,7 +135,7 @@ kernel of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)`. -/
 theorem longExact_exact₃ (n : ℕ) :
     Function.Exact (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n)
       (S.delta n) :=
-  exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (S.forget₂_map_delta n)
+  TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (S.forget₂_map_delta n)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
       (S.continuousCochainsShortExact_shortExact.homology_exact₃ n (n + 1) rfl))
 
@@ -215,6 +171,7 @@ Hⁿ(G, C) ---δ---> Hⁿ⁺¹(G, A)
 Hⁿ(G, C') --δ--> Hⁿ⁺¹(G, A')
 ```
 -/
+@[reassoc]
 theorem delta_naturality (T : DiscreteShortExact G A' B' C')
     (fA : A →+[G] A') (fB : B →+[G] B') (fC : C →+[G] C')
     (hincl : ∀ a : A, fB (S.incl a) = T.incl (fA a))
