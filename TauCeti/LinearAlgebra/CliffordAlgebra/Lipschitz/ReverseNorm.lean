@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 

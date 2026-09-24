@@ -232,14 +232,4 @@ theorem lipschitzNorm_scalarUnits {Q : QuadraticForm R V}
     lipschitzNorm Q (scalarUnits Q hQ a) = a * a :=
   lipschitzNorm_eq_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
 
-/-- The `star` norm of a Pin element is one. -/
-@[simp]
-theorem lipschitzNorm_pinToLipschitz (Q : QuadraticForm R V) (p : pinGroup Q) :
-    lipschitzNorm Q (pinToLipschitz Q p) = 1 := by
-  apply Units.ext
-  apply algebraMap_injective Q
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm]
-  simpa only [coe_pinToLipschitz_apply, Units.val_one, map_one] using
-    pinGroup.coe_star_mul_self p
-
 end CliffordAlgebra

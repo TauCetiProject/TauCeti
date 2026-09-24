@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.DetSquareClass

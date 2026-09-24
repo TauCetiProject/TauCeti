@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
