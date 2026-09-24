@@ -97,7 +97,7 @@ theorem exists_f4_short_neighbor_of_long (α : Fin 48) (hα : f4Length α = 2) :
     exact (f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
       α β γ 1 hα hβ (by omega) (by simpa only [P, Nat.cast_one, one_zsmul] using hγroot)).2.2
   have hbot : P.chainBotCoeff α β = 0 :=
-    f4_chainBotCoeff_eq_zero_of_add_eq_short α β γ hβ hγ hγroot
+    f4_chainBotCoeff_eq_zero_of_add_of_length_eq α β γ (hβ.trans hγ.symm) hγroot
   exact ⟨β, γ, hβ, hp, hγroot, hγ, hbot⟩
 
 end TauCeti.DynkinType

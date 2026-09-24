@@ -69,17 +69,18 @@ theorem f4IntegralDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4)
   rw [NegMemClass.coe_neg, coe_f4IntegralRootVector]
   exact f4_dividedPower_two_ad_rootVector_opposite (f4SignedSimpleRootIndex k)
 
-/-- The integral divided square vanishes on every other short-root column. -/
-theorem f4IntegralDividedAdjointSquare_rootVector_eq_zero_of_short
-    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) (hi : f4Length i = 1)
-    (hopp : i ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k)) :
+/-- A rational divided-square zero column remains zero in the integral Chevalley lattice. -/
+theorem f4IntegralDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (i : Fin 48)
+    (h : Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
+        f4ChevalleyRootVector (f4KillingRoot i) = 0) :
     f4IntegralDividedAdjointSquare k (f4IntegralRootVector i) = 0 := by
   apply Subtype.ext
   rw [coe_f4IntegralDividedAdjointSquare_apply, coe_f4IntegralRootVector,
     ZeroMemClass.coe_zero]
-  exact f4_dividedPower_two_ad_rootVector_eq_zero_of_short
-    (f4SignedSimpleRootIndex k) i hi (by
-      exact hopp)
+  exact h
 
 /-- The integral divided square vanishes on each simple-coroot basis column. -/
 theorem f4IntegralDividedAdjointSquare_simpleCoroot_eq_zero
@@ -131,6 +132,54 @@ theorem f4ModularDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) 
   rw [f4ModularRootVector_eq]
   congr 1
 
+/-- A short-source second divided power carries a long root to another long root with unit
+coefficient after reduction modulo two. -/
+theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
+    (k : Fin 4 ⊕ Fin 4) (β γ : Fin 48)
+    (hα : f4Length (f4SignedSimpleRootIndex k) = 1)
+    (hβ : f4Length β = 2)
+    (h : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β +
+        (2 : ℤ) • f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k)) :
+    f4ModularDividedAdjointSquare k (f4ModularRootVector β) =
+      f4ModularRootVector γ := by
+  obtain ⟨ε, hεabs, hε⟩ :=
+    exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short
+      (f4SignedSimpleRootIndex k) β γ hα hβ h
+  have hεsign : ε = 1 ∨ ε = -1 := by omega
+  have hε' :
+      Associative.dividedPower 2
+          (ad ℚ (F4.lieAlgebra valid_F4)
+            (f4ChevalleyRootVector
+              (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
+          f4ChevalleyRootVector (f4KillingRoot β) =
+        (ε : ℚ) • f4ChevalleyRootVector (f4KillingRoot γ) := by
+    rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply]
+    exact hε
+  have hintegral :
+      f4IntegralDividedAdjointSquare k (f4IntegralRootVector β) =
+        ε • f4IntegralRootVector γ := by
+    apply Subtype.ext
+    calc
+      ((f4IntegralDividedAdjointSquare k (f4IntegralRootVector β) :
+          f4ChevalleyLieLattice) : F4.lieAlgebra valid_F4) =
+          Associative.dividedPower 2
+            (ad ℚ (F4.lieAlgebra valid_F4)
+              (f4ChevalleyRootVector
+                (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
+            (f4IntegralRootVector β : F4.lieAlgebra valid_F4) :=
+        coe_f4IntegralDividedAdjointSquare_apply k (f4IntegralRootVector β)
+      _ = (ε : ℚ) • f4ChevalleyRootVector (f4KillingRoot γ) := by
+        rw [coe_f4IntegralRootVector]
+        exact hε'
+      _ = ((ε • f4IntegralRootVector γ : f4ChevalleyLieLattice) :
+          F4.lieAlgebra valid_F4) := by
+        rw [SetLike.val_smul, coe_f4IntegralRootVector,
+          Int.cast_smul_eq_zsmul]
+  rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul, hintegral,
+    TensorProduct.tmul_smul, TensorProduct.smul_tmul', f4ModularRootVector_eq]
+  rcases hεsign with rfl | rfl <;> simp
+
 /-- A rational divided-square zero column remains zero after integral reduction. -/
 theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
@@ -139,10 +188,8 @@ theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero
           (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0) :
     f4ModularDividedAdjointSquare k (f4ModularRootVector β) = 0 := by
-  have hintegral : f4IntegralDividedAdjointSquare k (f4IntegralRootVector β) = 0 := by
-    apply Subtype.ext
-    simpa only [coe_f4IntegralDividedAdjointSquare_apply, coe_f4IntegralRootVector,
-      ZeroMemClass.coe_zero] using h
+  have hintegral :=
+    f4IntegralDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β h
   rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul, hintegral,
     TensorProduct.tmul_zero]
 
@@ -154,6 +201,18 @@ theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short
   exact f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k i
     (f4_dividedPower_two_ad_rootVector_eq_zero_of_short
       (f4SignedSimpleRootIndex k) i hi hopp)
+
+theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint
+    (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
+    (hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k))
+    (hno : ∀ γ : Fin 48, f4SimplyConnectedRootDatum.root γ ≠
+      f4SimplyConnectedRootDatum.root β +
+        (2 : ℤ) •
+          f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k)) :
+    f4ModularDividedAdjointSquare k (f4ModularRootVector β) = 0 := by
+  exact f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β
+    (f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
+      (f4SignedSimpleRootIndex k) β hopp hno)
 
 /-- The modular divided square vanishes on every simple-coroot basis column. -/
 theorem f4ModularDividedAdjointSquare_simpleCoroot_eq_zero
