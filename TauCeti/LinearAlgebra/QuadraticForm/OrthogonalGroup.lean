@@ -85,6 +85,15 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   product of, under hypotheses (a field of characteristic not two, a nondegenerate form, finite
   dimension) that are not assumed here, and the image of the Pin group's generating vectors under
   twisted conjugation.
+* `TauCeti.QuadraticMap.reflection_map` and
+  `TauCeti.QuadraticMap.orthogonalGroupCongr_reflectionOrthogonal`: an isometric equivalence `e`
+  carries the reflection in `v` to the reflection in `e v`; inside `O(Q)` this is the conjugation
+  law `g τ_v g⁻¹ = τ_{g v}`, `TauCeti.QuadraticMap.mul_reflectionOrthogonal_mul_inv`.
+* `TauCeti.QuadraticMap.polar_div_eq_two_mul_polar_div_polar`: over a field with `2 ≠ 0`, the
+  reflection coefficient `polar Q v x / Q v` equals `2 * polar Q v x / polar Q v v`, so the two
+  spellings of the reflection in the literature
+  (`TauCeti.QuadraticMap.reflection_apply_eq_sub_div` and
+  `TauCeti.QuadraticMap.reflection_apply_eq_sub_two_mul_div`) are the same map.
 * `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
   group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
   `x + y`.
@@ -699,6 +708,83 @@ theorem reflectionOrthogonal_inv :
   inv_eq_of_mul_eq_one_left (reflectionOrthogonal_mul_self Q v)
 
 end Reflection
+
+section ReflectionMap
+
+variable {R : Type u} {M : Type v} {M₁ : Type*} {M₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- An isometric equivalence `e` carries the reflection in `v` to the reflection in `e v`:
+`τ_{e v} = e ∘ τ_v ∘ e⁻¹`. -/
+theorem reflection_map_apply (e : Q₁.IsometryEquiv Q₂) (v : M₁) [Invertible (Q₁ v)]
+    [Invertible (Q₂ (e v))] (x : M₂) :
+    reflection Q₂ (e v) x = e (reflection Q₁ v (e.symm x)) := by
+  have hinv : ⅟(Q₂ (e v)) = ⅟(Q₁ v) :=
+    invOf_eq_left_inv (by rw [e.map_app, invOf_mul_self])
+  have hpolar : polar Q₂ (e v) x = polar Q₁ v (e.symm x) := by
+    conv_lhs => rw [← e.apply_symm_apply x]
+    simp only [QuadraticMap.polar, ← map_add e, e.map_app]
+  rw [reflection_apply, reflection_apply, map_sub, map_smul, e.apply_symm_apply, hinv, hpolar]
+
+/-- An isometric equivalence `e` carries the reflection in `v` to the reflection in `e v`, as linear
+equivalences: `τ_{e v} = e ∘ τ_v ∘ e⁻¹`. -/
+theorem reflection_map (e : Q₁.IsometryEquiv Q₂) (v : M₁) [Invertible (Q₁ v)]
+    [Invertible (Q₂ (e v))] :
+    reflection Q₂ (e v) = e.toLinearEquiv.symm.trans ((reflection Q₁ v).trans e.toLinearEquiv) :=
+  LinearEquiv.ext (reflection_map_apply e v)
+
+/-- Transporting orthogonal groups along an isometric equivalence `e` carries the reflection in `v`
+to the reflection in `e v`. -/
+theorem orthogonalGroupCongr_reflectionOrthogonal (e : Q₁.IsometryEquiv Q₂) (v : M₁)
+    [Invertible (Q₁ v)] [Invertible (Q₂ (e v))] :
+    orthogonalGroupCongr e (reflectionOrthogonal Q₁ v) = reflectionOrthogonal Q₂ (e v) :=
+  Subtype.ext <| LinearEquiv.ext fun x => by
+    simp [reflection_map_apply]
+
+/-- **The conjugation law for reflections**: `g τ_v g⁻¹ = τ_{g v}` for `g ∈ O(Q)`. So every
+conjugate of `τ_v` in `O(Q)` is the reflection in a vector of the `O(Q)`-orbit of `v`, in particular
+in a vector with the same value of `Q`. -/
+theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonalGroup Q) (v : M)
+    [Invertible (Q v)] [Invertible (Q ((g : M ≃ₗ[R] M) v))] :
+    g * reflectionOrthogonal Q v * g⁻¹ = reflectionOrthogonal Q ((g : M ≃ₗ[R] M) v) := by
+  refine Subtype.ext <| LinearEquiv.ext fun x => ?_
+  have hg : (g : M ≃ₗ[R] M) ∈ orthogonalGroup Q := g.2
+  have hinv : ⅟(Q ((g : M ≃ₗ[R] M) v)) = ⅟(Q v) :=
+    invOf_eq_left_inv (by rw [map_app_of_mem_orthogonalGroup hg, invOf_mul_self])
+  have hpolar : polar Q ((g : M ≃ₗ[R] M) v) x = polar Q v ((g : M ≃ₗ[R] M).symm x) := by
+    conv_lhs => rw [← (g : M ≃ₗ[R] M).apply_symm_apply x]
+    exact polar_apply_of_mem_orthogonalGroup hg _ _
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal, LinearEquiv.mul_apply,
+    LinearEquiv.coe_inv, reflection_apply, map_sub, map_smul, LinearEquiv.apply_symm_apply, hinv,
+    hpolar]
+
+end ReflectionMap
+
+section ReflectionField
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+variable (Q : QuadraticForm K V)
+
+/-- Over a field, the reflection in `v` is `x ↦ x - (polar Q v x / Q v) • v`. -/
+theorem reflection_apply_eq_sub_div (v : V) [Invertible (Q v)] (x : V) :
+    reflection Q v x = x - (polar Q v x / Q v) • v := by
+  rw [reflection_apply, invOf_eq_inv, div_eq_inv_mul]
+
+/-- **The two spellings of the reflection coefficient agree.** Dividing the un-halved polar form by
+`Q v` is the same as dividing twice it by `polar Q v v = 2 • Q v`, the form in which sources whose
+bilinear form `b` satisfies `b v v = Q v` write the reflection. No anisotropy is needed, since both
+sides vanish when `Q v = 0`. -/
+theorem polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
+    polar Q v x / Q v = 2 * polar Q v x / polar Q v v := by
+  rw [polar_self, nsmul_eq_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero]
+
+/-- The reflection in `v` is `x ↦ x - (2 * polar Q v x / polar Q v v) • v`. -/
+theorem reflection_apply_eq_sub_two_mul_div [NeZero (2 : K)] (v : V) [Invertible (Q v)]
+    (x : V) : reflection Q v x = x - (2 * polar Q v x / polar Q v v) • v := by
+  rw [reflection_apply_eq_sub_div, polar_div_eq_two_mul_polar_div_polar]
+
+end ReflectionField
 
 section CartanDieudonneStep
 

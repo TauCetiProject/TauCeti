@@ -9,8 +9,8 @@ public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
@@ -24,9 +24,10 @@ It lifts isometries and isometric equivalences by extending their underlying lin
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
 nondegenerate over a field extension. It also identifies the base change of a diagonal form with
-the diagonal form obtained by mapping its coefficients into the target algebra. Finally, it
-extends orthogonal and special orthogonal automorphisms, which lets a quadratic space's rational
-symmetries act on each scalar extension.
+the diagonal form obtained by mapping its coefficients into the target algebra, extends
+orthogonal and special orthogonal automorphisms so a quadratic space's rational symmetries act on
+each scalar extension, and shows that extending scalars carries the reflection in a vector `v` to
+the reflection in `1 ⊗ₜ v`.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -597,3 +598,35 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
 end QuadraticForm
 
 end Field
+
+section Reflection
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [CommRing A] [Algebra R A]
+variable [Invertible (2 : R)]
+variable {M : Type uM} [AddCommGroup M] [Module R M]
+
+namespace TauCeti.QuadraticMap
+
+/-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
+of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/
+theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)]
+    [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
+    reflection (Q.baseChange A) (1 ⊗ₜ v) = LinearEquiv.baseChange R A M M (reflection Q v) := by
+  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  have hinv : ⅟(Q.baseChange A (1 ⊗ₜ v)) = algebraMap R A ⅟(Q v) :=
+    invOf_eq_left_inv (by
+      rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
+        invOf_mul_self, map_one])
+  ext x
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | tmul a m =>
+    rw [reflection_apply, LinearEquiv.baseChange_tmul, reflection_apply, hinv,
+      ← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
+      LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+    simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end TauCeti.QuadraticMap
+
+end Reflection
