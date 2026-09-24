@@ -306,15 +306,16 @@ theorem indVirtualCharacters_eq_virtualCharacters_iff :
     indVirtualCharacters_le_virtualCharacters fun f hf => ?_⟩
   simpa using mul_mem_indVirtualCharacters hf h
 
-/-- **An induction theorem, one prime at a time and with algebraic-integer coefficients.** Let `A`
-be a subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`, such as `ℤ[ζ]` for a root
+/-- **An induction theorem, one prime at a time and with coefficients in a subring.** Let `A` be a
+subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`; for example `ℤ[ζ]` for a root
 of unity `ζ` in characteristic zero (`PowerBasis.exists_linearMap_apply_one`). The virtual
 characters induced from a family of subgroups exhaust `R(G)` exactly when, for every prime `p`,
 some multiple `m • 1` with `p ∤ m` is an `A`-linear combination of them.
 
-This is the form in which Brauer's induction theorem is proved for the elementary subgroups: for
-each `p`, the `p`-elementary subgroups produce such an `m` using coefficients in `ℤ[ζ]`, `ζ` a
-primitive `|G|`-th root of unity. -/
+This reduces an induction theorem to a separate statement for each prime `p`. In Serre's proof of
+Brauer's induction theorem, that statement is supplied, for the elementary subgroups, by the
+`p`-elementary subgroups with coefficients in `ℤ[ζ]`, `ζ` a primitive `|G|`-th root of unity; this
+declaration does not prove it. -/
 theorem indVirtualCharacters_eq_virtualCharacters_iff_forall_prime [IsAlgClosed k]
     [Invertible (Nat.card G : k)] (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1) :
     indVirtualCharacters k G P = virtualCharacters k G ↔
