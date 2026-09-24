@@ -180,12 +180,16 @@ component. Let `S` and `v` be as in
 component meeting `S` from outside is not a `(-2)`-index. Then some `i ∈ S` satisfies
 `mⱼwᵢvᵢ ≤ (6g - 6)vⱼ` for every `j ∈ S`. -/
 theorem exists_forall_multiplicity_mul_weight_mul_le (hT : T.IsMinimal)
-    (h : 1 < Fintype.card T.Component) {S : Finset T.Component} (hS : S.Nonempty)
-    (hSu : ∃ k, k ∉ S) {v : T.Component → ℤ} (hv : ∀ i ∈ S, 0 < v i)
+    {S : Finset T.Component} (hS : S.Nonempty) (hSu : ∃ k, k ∉ S)
+    {v : T.Component → ℤ} (hv : ∀ i ∈ S, 0 < v i)
     (hrow : ∀ i ∈ S, ∑ k ∈ S, T.intersection i k * v k ≤ 0)
     (hclosed : ∀ i ∈ S, ∀ k ∉ S, 0 < T.intersection i k → ¬ T.IsMinusTwoIndex k) :
     ∃ i ∈ S, ∀ j ∈ S, (T.multiplicity j : ℤ) * T.weight i * v i ≤
       (6 * T.arithmeticGenus - 6) * v j := by
+  have h : 1 < Fintype.card T.Component := Fintype.one_lt_card_iff.mpr <| by
+    obtain ⟨i, hi⟩ := hS
+    obtain ⟨k, hk⟩ := hSu
+    exact ⟨i, k, fun hik ↦ hk (hik ▸ hi)⟩
   obtain ⟨i, hi, ⟨k, hk, hik⟩, hmax⟩ :=
     T.exists_adj_notMem_forall_multiplicity_mul_le hS hSu hv hrow
   refine ⟨i, hi, fun j hj ↦ ?_⟩
@@ -314,8 +318,11 @@ five components of self-intersection `-2w`, with `T` having more components than
 suppose that every component outside the chain meeting it is not a `(-2)`-index. Then
 `mᵢ|aᵢᵢ| ≤ 24g - 24` for every component `i` of the chain.
 
-By [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89), such a chain is a path with
-equal weights, except possibly at one end where the weight may be twice or half the common one.
+For `t > 5`, [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89) says that such a
+chain is a path with equal weights, except possibly at one end where the weight may be twice or
+half the common one. The `t = 5` case is supplied locally by the five-component classification
+`TauCeti.NumericalType.exists_intersection_ratio_chain_five_mem`, through
+`IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end`.
 The bound follows from the weighted maximum principle, with the test vector equal to `1` at a
 component of twice the common weight and to `2` elsewhere. This is the concavity argument of the
 proof of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W), for all three weight
@@ -355,7 +362,7 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
   have h1 : 1 < Fintype.card T.Component := by omega
   have hSu : ∃ k, k ∉ S :=
     exists_notMem_of_card_lt ((Finset.card_image_le.trans (card_range t).le).trans_lt hcard)
-  obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le h1
+  obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le
     ⟨c 0, hmemS.mpr ⟨0, by omega, rfl⟩⟩ hSu hv hrow hclosed'
   obtain ⟨p, hp, rfl⟩ := hmemS.mp hi
   have hj := hbound (c r) (hmemS.mpr ⟨r, hr, rfl⟩)
@@ -440,7 +447,8 @@ private lemma sum_intersection_mul_forkTest_nonpos
   rcases hmemS.mp hi with rfl | ⟨r, hr, rfl⟩
   · -- the extra leaf meets the chain only at `c (t - 2)`
     rw [Finset.sum_eq_single (t - 2), hbself, T.intersection_comm, hbranch]
-    · simp only [show t - 2 ≠ t - 1 by omega, ↓reduceIte]
+    · have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
+      simp only [hpenultimate_ne_last, ↓reduceIte]
       linarith
     · intro s hs hst
       rw [T.intersection_comm, hf.branch_intersection_eq_zero (Finset.mem_range.mp hs) hst,
@@ -454,32 +462,41 @@ private lemma sum_intersection_mul_forkTest_nonpos
     rcases Nat.eq_zero_or_pos r with rfl | hr0
     · -- the free end of the chain
       have h01 := hedge 0 (by omega)
+      have hzero_ne_last : (0 : ℕ) ≠ t - 1 := by omega
+      have hone_ne_last : 1 ≠ t - 1 := by omega
       rw [zero_add] at h01
       rw [hf.branch_intersection_eq_zero hr (by omega), hc.left_sum_eq hcardt (by omega),
         hself, h01]
-      simp only [show (0 : ℕ) ≠ t - 1 by omega, show 1 ≠ t - 1 by omega, ↓reduceIte]
+      simp only [hzero_ne_last, hone_ne_last, ↓reduceIte]
       linarith
     rcases lt_or_ge (r + 1) t with hrt | hrt
     · have hprev := hsucc (r - 1) (by omega)
-      rw [show r - 1 + 1 = r by omega] at hprev
+      have hprev_succ : r - 1 + 1 = r := by omega
+      have hprev_ne_last : r - 1 ≠ t - 1 := by omega
+      have hr_ne_last : r ≠ t - 1 := by omega
+      rw [hprev_succ] at hprev
       rw [hc.interior_sum_eq hcardt _ hr0 hrt, hself, hedge r hrt, hprev]
-      simp only [show r - 1 ≠ t - 1 by omega, show r ≠ t - 1 by omega, ↓reduceIte]
+      simp only [hprev_ne_last, hr_ne_last, ↓reduceIte]
       by_cases hrb : r = t - 2
       · -- the forked component meets both leaves
         subst hrb
         rw [hbranch]
-        simp only [show t - 2 + 1 = t - 1 by omega, ↓reduceIte]
+        have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+        simp only [hpenultimate_succ, ↓reduceIte]
         linarith
       · rw [hf.branch_intersection_eq_zero hr hrb]
-        simp only [show r + 1 ≠ t - 1 by omega, ↓reduceIte]
+        have hnext_ne_last : r + 1 ≠ t - 1 := by omega
+        simp only [hnext_ne_last, ↓reduceIte]
         linarith
     · -- the leaf `c (t - 1)`
       obtain rfl : r = t - 1 := by omega
       have hprev := hsucc (t - 2) (by omega)
-      rw [show t - 2 + 1 = t - 1 by omega] at hprev
+      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+      have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
+      rw [hpenultimate_succ] at hprev
       rw [hf.branch_intersection_eq_zero hr (by omega), hc.right_sum_eq hcardt (by omega),
         hself, hprev]
-      simp only [show t - 2 ≠ t - 1 by omega, ↓reduceIte]
+      simp only [hpenultimate_ne_last, ↓reduceIte]
       linarith
 
 /-- The weighted-maximum-principle bound on a fork, for every component of the fork. -/
@@ -520,7 +537,7 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
         have := (Finset.card_image_le (s := range t) (f := c)).trans (card_range t).le
         omega
       _ < Fintype.card T.Component := hcard
-  obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le h1
+  obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le
     ⟨branch, hmemS.mpr (Or.inl rfl)⟩ hSu hv hrow hclosed'
   -- every component of the fork has weight `W`
   have hweight : ∀ k ∈ S, (T.weight k : ℤ) = W := by
@@ -548,7 +565,8 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   -- `mⱼW ≤ mⱼWvᵢ ≤ (6g - 6)vⱼ ≤ 2(6g - 6)`
   have h₁ : (T.multiplicity j : ℤ) * W ≤ (T.multiplicity j : ℤ) * W * forkTest c t branch i :=
     le_mul_of_one_le_right (by positivity) hvi
-  have h₂ := mul_le_mul_of_nonneg_left hvj (show (0 : ℤ) ≤ 6 * T.arithmeticGenus - 6 by linarith)
+  have hgenus : (0 : ℤ) ≤ 6 * T.arithmeticGenus - 6 := by linarith
+  have h₂ := mul_le_mul_of_nonneg_left hvj hgenus
   linarith
 
 /-- In a minimal numerical type `T` of genus `g`, let `c 0, …, c (t - 1)` together with `branch`
@@ -556,7 +574,10 @@ be a fork of components of self-intersection `-2w`, with `T` having more compone
 fork, and suppose that every component outside the fork meeting it is not a `(-2)`-index. Then
 `mᵢ|aᵢᵢ| ≤ 24g - 24` for every component `c r` of the chain of the fork.
 
-By [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D) the fork is simply laced.
+For `t > 4`, [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D) says that the fork
+is simply laced. The shorter cases `t = 3` and `t = 4` are supplied locally by
+`exists_weight_intersection_eq_three` and `exists_weight_intersection_eq_four`, respectively,
+through `IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`.
 The bound follows from the weighted maximum principle, with the test vector equal to `1` at the
 two leaves `c (t - 1)` and `branch` and to `2` elsewhere; this is the concavity argument of the
 proof of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W) for a fork. -/
