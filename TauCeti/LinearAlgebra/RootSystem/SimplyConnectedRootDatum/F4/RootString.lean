@@ -38,22 +38,13 @@ theorem f4OppositeRootIndex_eq_reflectionPerm (α : Fin 48) :
     f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
   exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
 
-/-- Negation of pinned roots is exactly the opposite-index permutation. -/
-theorem f4_root_eq_neg_iff (α β : Fin 48) :
-    f4SimplyConnectedRootDatum.root β = -f4SimplyConnectedRootDatum.root α ↔
-      β = f4OppositeRootIndex α := by
-  exact f4SimplyConnectedRootDatum.root_eq_neg_iff
-
 /-- Being non-opposite is symmetric in the two pinned root indices. -/
 theorem ne_f4OppositeRootIndex_comm (α β : Fin 48) :
     β ≠ f4OppositeRootIndex α ↔ α ≠ f4OppositeRootIndex β := by
-  constructor
-  · intro h h'
-    apply h
-    rw [h', f4OppositeRootIndex_f4OppositeRootIndex]
-  · intro h h'
-    apply h
-    rw [h', f4OppositeRootIndex_f4OppositeRootIndex]
+  have hinv : Function.Involutive f4OppositeRootIndex :=
+    f4OppositeRootIndex_f4OppositeRootIndex
+  simpa only [ne_eq, eq_comm] using
+    not_congr ((Function.Involutive.eq_iff hinv (x := β) (y := α)).symm)
 
 /-- The tabulated F4 root length is quadratic along every integral root relation. -/
 theorem f4Length_of_root_eq_add_zsmul (α β γ : Fin 48) (n : ℤ)
@@ -174,7 +165,7 @@ theorem f4_pairing_ge_neg_one_of_length_eq_ne_opposite
   have hnegroot : f4SimplyConnectedRootDatum.root β ≠
       -f4SimplyConnectedRootDatum.root α := by
     intro hroot
-    exact hopp ((f4_root_eq_neg_iff α β).mp hroot)
+    exact hopp (f4SimplyConnectedRootDatum.root_eq_neg_iff.mp hroot)
   by_cases hsame : β = α
   · subst β
     simp only [f4SimplyConnectedRootDatum.pairing_same]

@@ -582,7 +582,8 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
   · have hneg : f4SimplyConnectedRootDatum.root β ≠
         -f4SimplyConnectedRootDatum.root α := by
       intro h
-      exact hopp ((f4_root_eq_neg_iff α β).mp h)
+      exact hopp (by simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
+        f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
     exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β δ 2
       (hα.trans hβ.symm) hneg
       (by omega) hpinned).elim
@@ -605,7 +606,8 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
   have hneg : f4SimplyConnectedRootDatum.root β ≠
       -f4SimplyConnectedRootDatum.root α := by
     intro h
-    exact hopp ((f4_root_eq_neg_iff α β).mp h)
+    exact hopp (by simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
+      f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
   exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β γ 2
     (hα.trans hβ.symm) hneg (by omega) hγ).elim
 
