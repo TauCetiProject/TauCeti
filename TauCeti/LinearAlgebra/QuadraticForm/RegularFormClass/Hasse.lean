@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.BrauerClass
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.ChainInduction
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Induction
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
@@ -47,6 +47,12 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_eq_one_of_rank_le_one`: the invariant is trivial in
   ranks `0` and `1`, in particular on `0`, on `1` and on every `⟨a⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_binary`: `s⟨a, b⟩ = [(a, b)]`.
+* `TauCeti.RegularFormClass.hasseInvariant_add_mk`: the orthogonal-sum formula on diagonal
+  presentations.
+* `TauCeti.RegularFormClass.hasseInvariant_mk_scale`: the formula for scaling a diagonal
+  presentation by a unit.
+* `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
+  multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
@@ -88,6 +94,61 @@ private theorem hasseProd_rankOne (a b : Kˣ) :
     ∏ i : Fin 1, ∏ _j ∈ Ioi i, quaternionClass a a =
       ∏ i : Fin 1, ∏ _j ∈ Ioi i, quaternionClass b b := by
   simp
+
+private theorem hasseProd_scale (a : Kˣ) {n : ℕ} (w : Fin n → Kˣ) :
+    (∏ i, ∏ j ∈ Ioi i, quaternionClass (a * w i) (a * w j)) =
+      (∏ i, ∏ j ∈ Ioi i, quaternionClass (w i) (w j)) *
+        quaternionClass a (-1) ^ n.choose 2 *
+        quaternionClass a (∏ i, w i) ^ (n - 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    let w₀ := Fin.init w
+    let b := w (Fin.last n)
+    have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
+    rw [hw]
+    have hs (i : Fin (n + 1)) :
+        a * Fin.snoc (α := fun _ => Kˣ) w₀ b i =
+          Fin.snoc (α := fun _ => Kˣ) (fun j => a * w₀ j) (a * b) i := by
+      rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
+    simp_rw [hs]
+    rw [prod_prod_Ioi_snoc quaternionClass (fun j => a * w₀ j) (a * b)]
+    rw [prod_prod_Ioi_snoc quaternionClass w₀ b]
+    let h₁ : Kˣ →* BrauerGroup K := {
+      toFun := quaternionClass a
+      map_one' := quaternionClass_one_right a
+      map_mul' := quaternionClass_mul a }
+    have hprod : (∏ i, quaternionClass a (w₀ i)) =
+        quaternionClass a (∏ i, w₀ i) :=
+      (map_prod h₁ w₀ Finset.univ).symm
+    have hpair (i : Fin n) : quaternionClass (a * w₀ i) (a * b) =
+        quaternionClass (w₀ i) b * quaternionClass a (-1) *
+          quaternionClass a (w₀ i) * quaternionClass a b := by
+      rw [quaternionClass_mul_left, quaternionClass_mul, quaternionClass_mul,
+        quaternionClass_self, quaternionClass_comm (w₀ i) a]
+      ac_rfl
+    simp_rw [hpair]
+    simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    rw [hprod, ih w₀, Fin.prod_snoc, quaternionClass_mul]
+    cases n with
+    | zero =>
+      simp [quaternionClass_one_right]
+    | succ n =>
+      have hchoose : (n + 1 + 1).choose 2 = (n + 1).choose 2 + (n + 1) := by
+        have h := Nat.choose_succ_succ (n + 1) 1
+        simp only [Nat.choose_one_right] at h
+        exact h.trans (add_comm _ _)
+      rw [hchoose]
+      simp only [Nat.add_sub_cancel_right, pow_add, mul_pow, pow_succ]
+      ac_nf
+      have htail :
+          quaternionClass a (-1) ^ n *
+            (quaternionClass a (-1) ^ (n + 1).choose 2 *
+              quaternionClass a (∏ i, w₀ i) ^ n) =
+          quaternionClass a (∏ i, w₀ i) ^ n *
+            (quaternionClass a (-1) ^ n *
+              quaternionClass a (-1) ^ (n + 1).choose 2) := by ac_rfl
+      rw [htail]
 
 /-- **The Hasse invariant of an isometry class of regular quadratic forms**: for a diagonal
 presentation `⟨a₁, …, aₙ⟩` of the class, the product `∏_{i<j} [(aᵢ, aⱼ)]` of quaternion symbols in
@@ -137,14 +198,96 @@ theorem hasseInvariant_one : hasseInvariant (1 : RegularFormClass K) = 1 :=
   hasseInvariant_eq_one_of_rank_le_one rank_one.le
 
 /-- A rank-one form `⟨a⟩` has trivial Hasse invariant. -/
+@[simp]
 theorem hasseInvariant_mk_rankOne (a : Kˣ) :
     hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = 1 :=
   hasseInvariant_eq_one_of_rank_le_one (by rw [rank_mk])
 
 /-- The Hasse invariant of a binary form `⟨a, b⟩` is the quaternion symbol `[(a, b)]`. -/
+@[simp]
 theorem hasseInvariant_mk_binary (a b : Kˣ) :
     hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = quaternionClass a b := by
   simp [Fin.prod_univ_succ]
+
+/-- **Orthogonal-sum formula** on diagonal presentations: the cross term is the quaternion
+symbol of their coefficient products, which represent their discriminants. -/
+theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K) p +
+      Quotient.mk (regularFormSetoid K) q) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
+        hasseInvariant (Quotient.mk (regularFormSetoid K) q) *
+        quaternionClass (∏ i, p.2 i) (∏ j, q.2 j) := by
+  let h₁ (a : Kˣ) : Kˣ →* BrauerGroup K := {
+    toFun := quaternionClass a
+    map_one' := quaternionClass_one_right a
+    map_mul' := quaternionClass_mul a }
+  let h₂ (b : Kˣ) : Kˣ →* BrauerGroup K := {
+    toFun := fun a => quaternionClass a b
+    map_one' := quaternionClass_one_left b
+    map_mul' := fun a c => quaternionClass_mul_left a c b }
+  have happend : p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
+    let hfst := RegularFormPresentation.fst_append p q
+    have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
+      funext i
+      refine Fin.addCases ?_ ?_ i
+      · intro k
+        simpa only [Function.comp_apply, Fin.append_left] using
+          RegularFormPresentation.append_apply_castAdd p q k
+      · intro k
+        simpa only [Function.comp_apply, Fin.append_right] using
+          RegularFormPresentation.append_apply_natAdd p q k
+    apply RegularFormPresentation.ext hfst
+    intro i
+    let j := Fin.cast hfst i
+    have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
+    rw [hi]
+    exact congrFun hw j
+  rw [mk_add_mk, happend, hasseInvariant_mk, hasseInvariant_mk, hasseInvariant_mk]
+  rw [prod_prod_Ioi_append]
+  congr 1
+  calc
+    (∏ i, ∏ j, quaternionClass (p.2 i) (q.2 j)) =
+        ∏ i, quaternionClass (p.2 i) (∏ j, q.2 j) := by
+          apply Finset.prod_congr rfl
+          intro i _
+          exact (map_prod (h₁ (p.2 i)) q.2 Finset.univ).symm
+    _ = quaternionClass (∏ i, p.2 i) (∏ j, q.2 j) :=
+      (map_prod (h₂ (∏ j, q.2 j)) p.2 Finset.univ).symm
+
+/-- **Scaling formula** on a diagonal presentation: the first correction counts coefficient
+pairs, and the second uses the product of coefficients representing the discriminant. -/
+theorem hasseInvariant_mk_scale (a : Kˣ) (p : RegularFormPresentation K) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K)
+      ⟨p.1, fun i => a * p.2 i⟩) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
+        quaternionClass a (-1) ^ p.1.choose 2 *
+        quaternionClass a (∏ i, p.2 i) ^ (p.1 - 1) := by
+  rw [hasseInvariant_mk, hasseInvariant_mk]
+  exact hasseProd_scale a p.2
+
+/-- **Scaling by a rank-one class** is coefficientwise scaling of a diagonal presentation.
+The Hasse-invariant correction is expressed through the presentation's rank and coefficient
+product. -/
+theorem hasseInvariant_mk_rankOne_mul_mk (a : Kˣ) (p : RegularFormPresentation K) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ *
+      Quotient.mk (regularFormSetoid K) p) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
+        quaternionClass a (-1) ^ p.1.choose 2 *
+        quaternionClass a (∏ i, p.2 i) ^ (p.1 - 1) := by
+  let r : RegularFormPresentation K := ⟨1, fun _ => a⟩
+  have hrank : (r.tmul p).1 = p.1 := by simp [r]
+  have hscale : r.tmul p = ⟨p.1, fun i => a * p.2 i⟩ := by
+    refine RegularFormPresentation.ext (q := ⟨p.1, fun i => a * p.2 i⟩) hrank ?_
+    intro i
+    let j := Fin.cast hrank i
+    have happly := RegularFormPresentation.tmul_apply r p (0 : Fin r.1) j
+    have hi : Fin.cast (RegularFormPresentation.fst_tmul r p).symm
+        (finProdFinEquiv (0, j)) = i := by
+      apply Fin.ext
+      simp [r, j, finProdFinEquiv]
+    rw [hi] at happly
+    simpa [r, j] using happly
+  rw [mk_mul_mk, hscale, hasseInvariant_mk_scale]
 
 /-- The hyperbolic plane `⟨1, -1⟩` has trivial Hasse invariant. -/
 @[simp]

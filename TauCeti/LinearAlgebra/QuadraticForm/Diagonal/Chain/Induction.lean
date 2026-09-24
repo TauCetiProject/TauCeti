@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
 import Mathlib.Algebra.BigOperators.Fin
 
 /-!
@@ -59,26 +60,6 @@ theorem PermutationStep.prod_prod_Ioi_eq [CommSemiring R] {F : Rˣ → Rˣ → M
   obtain ⟨σ, hσ⟩ := h.exists_perm
   simp only [hσ]
   exact (prod_prod_Ioi_comp_perm σ fun i j => hF (w i) (w j)).symm
-
-/-- Peel the first two indices off a product over the increasing pairs of `Fin (m + 2)`: the pair
-they form, their pairings with the remaining indices, and the product over the increasing pairs of
-the remaining indices. -/
-private theorem prod_prod_Ioi_eq_of_two {m : ℕ} (f : Fin (m + 2) → Fin (m + 2) → M) :
-    ∏ i, ∏ j ∈ Ioi i, f i j =
-      f 0 1 * ((∏ k : Fin m, f 0 k.succ.succ) * ∏ k : Fin m, f 1 k.succ.succ) *
-        ∏ i : Fin m, ∏ j ∈ Ioi i, f i.succ.succ j.succ.succ := by
-  simp only [Fin.prod_univ_succ, Fin.prod_Ioi_zero, Fin.prod_Ioi_succ, Fin.succ_zero_eq_one]
-  ac_rfl
-
-/-- A permutation of `Fin (m + 2)` moving `0` to `i` and `1` to `j`, for distinct `i` and `j`. -/
-private theorem exists_perm_zero_one {m : ℕ} {i j : Fin (m + 2)} (hij : i ≠ j) :
-    ∃ σ : Equiv.Perm (Fin (m + 2)), σ 0 = i ∧ σ 1 = j := by
-  refine ⟨Equiv.swap 0 i * Equiv.swap 1 (Equiv.swap 0 i j), ?_, ?_⟩
-  · have h0 : (0 : Fin (m + 2)) ≠ Equiv.swap 0 i j := by
-      intro h
-      exact hij ((Equiv.swap_apply_eq_iff.mp h.symm).trans (Equiv.swap_apply_left 0 i)).symm
-    simp [Equiv.swap_apply_of_ne_of_ne (Fin.zero_ne_one) h0]
-  · simp
 
 section Binary
 
