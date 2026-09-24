@@ -19,7 +19,48 @@ parameters are classified by their cohomology classes.
 
 public section
 
+namespace TauCeti
+
+open SimpleGraph
+
+private theorem mapDart_symm {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (f : G →g H) (d : G.Dart) : f.mapDart d.symm = (f.mapDart d).symm := by
+  apply Dart.ext
+  cases d.toProd with
+  | mk _ _ => rfl
+
+private theorem mapDart_comp {V W X : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    {I : SimpleGraph X} (f : G →g H) (g : H →g I) (d : G.Dart) :
+    (g.comp f).mapDart d = g.mapDart (f.mapDart d) := by
+  apply Dart.ext
+  rfl
+
+private theorem mapDart_refl {V : Type*} {G : SimpleGraph V} (d : G.Dart) :
+    (Iso.refl : G ≃g G).toHom.mapDart d = d := by
+  apply Dart.ext
+  rfl
+
+private theorem mapDart_iso_symm {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (e : G ≃g H) (d : G.Dart) :
+    e.symm.toHom.mapDart (e.toHom.mapDart d) = d := by
+  rw [← mapDart_comp, e.symm_toHom_comp_toHom]
+  exact mapDart_refl d
+
+private theorem mapDart_iso_comp {V W X : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    {I : SimpleGraph X} (e : G ≃g H) (f : H ≃g I) (d : I.Dart) :
+    (f.comp e).symm.toHom.mapDart d =
+      e.symm.toHom.mapDart (f.symm.toHom.mapDart d) := by
+  have h : (f.comp e).symm.toHom = e.symm.toHom.comp f.symm.toHom := by
+    ext v
+    simp
+  rw [h]
+  exact mapDart_comp _ _ d
+
+end TauCeti
+
 namespace SimpleGraph
+
+open TauCeti
 
 variable {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
   (A : Type*) [CommGroup A]
@@ -29,37 +70,23 @@ def oneCochainsRelabel (e : G ≃g H) : G.oneCochains A ≃* H.oneCochains A whe
   toFun σ := ⟨fun d => (σ : G.Dart → A) (e.symm.toHom.mapDart d), by
     rw [mem_oneCochains_iff]
     intro d
-    have hd : e.symm.toHom.mapDart d.symm = (e.symm.toHom.mapDart d).symm := by
-      apply Dart.ext
-      cases d with
-      | mk p hp => cases p; rfl
-    rw [hd]
+    rw [mapDart_symm]
     exact (mem_oneCochains_iff.mp σ.property) (e.symm.toHom.mapDart d)⟩
   invFun σ := ⟨fun d => (σ : H.Dart → A) (e.toHom.mapDart d), by
     rw [mem_oneCochains_iff]
     intro d
-    have hd : e.toHom.mapDart d.symm = (e.toHom.mapDart d).symm := by
-      apply Dart.ext
-      cases d with
-      | mk p hp => cases p; rfl
-    rw [hd]
+    rw [mapDart_symm]
     exact (mem_oneCochains_iff.mp σ.property) (e.toHom.mapDart d)⟩
   left_inv σ := by
     ext d
     dsimp
     apply congrArg (σ : G.Dart → A)
-    apply Dart.ext
-    cases d with
-    | mk p hp => cases p with
-      | mk i j => simp
+    exact mapDart_iso_symm e d
   right_inv σ := by
     ext d
     dsimp
     apply congrArg (σ : H.Dart → A)
-    apply Dart.ext
-    cases d with
-    | mk p hp => cases p with
-      | mk i j => simp
+    exact mapDart_iso_symm e.symm d
   map_mul' σ τ := by
     ext d
     rfl
@@ -78,10 +105,7 @@ theorem oneCochainsRelabel_refl :
   ext σ d
   simp only [oneCochainsRelabel_apply, MulEquiv.refl_apply]
   apply congrArg (σ : G.Dart → A)
-  apply Dart.ext
-  cases d with
-  | mk p hp => cases p with
-    | mk i j => simp [SimpleGraph.Hom.mapDart]
+  exact mapDart_refl d
 
 /-- Successive graph relabellings compose on one-cochains. -/
 theorem oneCochainsRelabel_comp {X : Type*} {I : SimpleGraph X}
@@ -91,10 +115,7 @@ theorem oneCochainsRelabel_comp {X : Type*} {I : SimpleGraph X}
   ext σ d
   simp only [oneCochainsRelabel_apply, MulEquiv.trans_apply]
   apply congrArg (σ : G.Dart → A)
-  apply Dart.ext
-  cases d with
-  | mk p hp => cases p with
-    | mk i j => simp [SimpleGraph.Hom.mapDart]
+  exact mapDart_iso_comp e f d
 
 /-- Relabelling carries the coboundary of a vertex function to the coboundary of its
 inverse-image relabelling. -/
