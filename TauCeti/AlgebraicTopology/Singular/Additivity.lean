@@ -9,11 +9,12 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.ContinuousMap.Sigma
+public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
-# Additivity of singular chains
+# Additivity of singular chains and singular homology
 
 A singular simplex of a disjoint union `Σ i, X i` has connected domain, so its image lies in a
 single summand, and it comes from a singular simplex of that summand in exactly one way.  Hence
@@ -21,12 +22,22 @@ the singular simplicial set of a disjoint union is the coproduct of the singular
 of the summands, and, since the simplicial chain complex functor preserves colimits, so is the
 singular chain complex.
 
-This is the chain-level input to the additivity axiom of Eilenberg--Steenrod, not the axiom
-itself: the axiom is a statement about singular *homology*, which needs the further step that
-homology commutes with the coproduct of chain complexes and is not proved here.  What the chain
-level does supply is that every map in sight is induced by one of the inclusions
-`X i ⟶ Σ i, X i`, so the result is a statement about a cofan rather than an unrelated degreewise
-decomposition.
+Passing to homology needs one more input: homology commutes with the coproduct of chain
+complexes when coproducts are exact in the coefficient category (Grothendieck's axiom AB4, as for
+modules over a ring).  Under that hypothesis the singular homology of a disjoint union is the
+coproduct of the singular homologies of the summands in every degree.  This is the additivity
+axiom of Eilenberg--Steenrod.
+
+Every map in sight is induced by one of the inclusions `X i ⟶ Σ i, X i`, so the results are
+statements about cofans rather than unrelated degreewise decompositions.
+
+## Main results
+
+* `TauCeti.isColimitCofanSingularChainComplex`: the singular chain complex of `Σ i, X i` is the
+  coproduct of the singular chain complexes of the `X i`.
+* `TauCeti.isColimitCofanSingularHomology`: if coproducts indexed by `ι` are exact in the
+  coefficient category, the singular homology of `Σ i, X i` in each degree is the coproduct of the
+  singular homologies of the `X i`.
 
 ## Sources
 
@@ -37,6 +48,10 @@ chain complex `AlgebraicTopology.singularChainComplexFunctor` are by Andrew Yang
 `Mathlib/AlgebraicTopology/SingularHomology/Basic`, building on Joël Riou's `TopCat.toSSet`
 adjunction; and the concrete cofan `TopCat.sigmaCofanIsColimit` is by Patrick Massot, Kim
 Morrison, Mario Carneiro and Andrew Yang in `Mathlib/Topology/Category/TopCat/Limits/Products`.
+The passage from chains to homology is
+`TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`, in
+`TauCeti/Algebra/Homology/ShortComplex/Colimit`, applied with Mathlib's exactness class
+`HasExactColimitsOfShape`.
 -/
 
 public section
@@ -112,6 +127,8 @@ def isColimitCofanToSSet :
       (fun i ↦ toSSet.map (sigmaι X i)) : Cofan fun i ↦ toSSet.obj (X i)) :=
   isColimitCofanMkObjOfIsColimit toSSet X _ (sigmaCofanIsColimit X)
 
+section Chains
+
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
 
 /-- The singular chain complex with coefficients in `R` preserves coproducts of families indexed
@@ -131,5 +148,34 @@ def isColimitCofanSingularChainComplex :
       (fun i ↦ ((AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R).map (sigmaι X i)) :
       Cofan fun i ↦ ((AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R).obj (X i)) :=
   isColimitCofanMkObjOfIsColimit _ X _ (sigmaCofanIsColimit X)
+
+end Chains
+
+section Homology
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  [HasExactColimitsOfShape (Discrete ι) C] (R : C) (k : ℕ)
+
+/-- Singular homology in each degree, with coefficients in `R`, preserves coproducts of families
+indexed by `ι` when such coproducts are exact in `C`: it is the singular chain complex followed by
+homology, and both preserve them. -/
+instance : PreservesColimitsOfShape (Discrete ι)
+    ((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R) :=
+  inferInstanceAs (PreservesColimitsOfShape (Discrete ι)
+    ((AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R ⋙
+      HomologicalComplex.homologyFunctor C _ k))
+
+/-- **Additivity of singular homology.** If coproducts indexed by `ι` are exact in `C`, then in
+every degree the singular homology of a disjoint union of spaces, with coefficients in `R`, is the
+coproduct of the singular homologies of the summands, with the maps induced by the inclusions of
+the summands as the cofan legs. -/
+def isColimitCofanSingularHomology :
+    IsColimit (Cofan.mk
+      (((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R).obj (of (Σ i, X i)))
+      (fun i ↦ ((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R).map (sigmaι X i)) :
+      Cofan fun i ↦ ((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R).obj (X i)) :=
+  isColimitCofanMkObjOfIsColimit _ X _ (sigmaCofanIsColimit X)
+
+end Homology
 
 end TauCeti
