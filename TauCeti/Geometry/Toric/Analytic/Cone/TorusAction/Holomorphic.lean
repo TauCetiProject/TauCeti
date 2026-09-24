@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- Supplies the `ContMDiffMul` instance used for coordinatewise multiplication below.
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Basic
