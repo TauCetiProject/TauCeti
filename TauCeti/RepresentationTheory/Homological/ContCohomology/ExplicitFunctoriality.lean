@@ -48,7 +48,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-universe uG uH uM uN uK uP
+universe uG uH uM uN uK uP uA uB
 
 section Cochains
 
@@ -235,12 +235,20 @@ theorem cochainsMap2_mem_Z2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f
   exact congrArg f ((mem_Z2_iff.1 hc).2 ((φ : H →* G) h) ((φ : H →* G) k)
     ((φ : H →* G) j))
 
+/-- Restrict an additive map to the cocycle subgroups supplied by a compatible pair. -/
+private def restrictCocycles
+    {A : Type uA} {B : Type uB} [AddCommGroup A] [AddCommGroup B]
+    (Zsrc : AddSubgroup A) (Zdst : AddSubgroup B) (F : A →+ B)
+    (hF : ∀ c : Zsrc, (F (c : A) : B) ∈ Zdst) :
+    Zsrc →+ Zdst :=
+  AddMonoidHom.codRestrict (F.domRestrict Zsrc) Zdst hF
+
 /-- The pullback of continuous degree-one cocycles along a compatible pair, sending a cocycle `c`
 to `h ↦ f (c (φ h))`. -/
 def cocyclesMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : Z1 G M →+ Z1 H N :=
-  AddMonoidHom.codRestrict ((cochainsMap1 (φ : H →* G) f).domRestrict (Z1 G M))
-    (Z1 H N) fun c => cochainsMap1_mem_Z1 G M H N φ f hf hequiv c.property
+  restrictCocycles (Z1 G M) (Z1 H N) (cochainsMap1 (φ : H →* G) f)
+    (fun c => cochainsMap1_mem_Z1 G M H N φ f hf hequiv c.property)
 
 /-- The underlying cochain of `cocyclesMap1` is the degree-one cochain pullback. -/
 @[simp]
@@ -289,8 +297,8 @@ theorem cocyclesMap1_comp
 /-- The pullback of continuous degree-two cocycles along a compatible pair. -/
 def cocyclesMap2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : Z2 G M →+ Z2 H N :=
-  AddMonoidHom.codRestrict ((cochainsMap2 (φ : H →* G) f).domRestrict (Z2 G M))
-    (Z2 H N) fun c => cochainsMap2_mem_Z2 G M H N φ f hf hequiv c.property
+  restrictCocycles (Z2 G M) (Z2 H N) (cochainsMap2 (φ : H →* G) f)
+    (fun c => cochainsMap2_mem_Z2 G M H N φ f hf hequiv c.property)
 
 /-- The underlying cochain of `cocyclesMap2` is the degree-two cochain pullback. -/
 @[simp]
@@ -341,6 +349,18 @@ theorem cocyclesMap2_comp
 
 end Cocycles
 
+/-- Descend a map of cocycle subgroups through the coboundary subgroups. -/
+private def descendCocycles
+    {A : Type uA} {B : Type uB} [AddCommGroup A] [AddCommGroup B]
+    (Zsrc : AddSubgroup A) (Zdst : AddSubgroup B)
+    (Bsrc : AddSubgroup A) (Bdst : AddSubgroup B)
+    (F : Zsrc →+ Zdst)
+    (hB : (Bsrc.addSubgroupOf Zsrc) ≤
+      AddSubgroup.comap F (Bdst.addSubgroupOf Zdst)) :
+    (↥Zsrc ⧸ (Bsrc.addSubgroupOf Zsrc)) →+
+      (↥Zdst ⧸ (Bdst.addSubgroupOf Zdst)) :=
+  QuotientAddGroup.map (Bsrc.addSubgroupOf Zsrc) (Bdst.addSubgroupOf Zdst) F hB
+
 section Cohomology
 
 variable (G : Type uG) [Monoid G] [TopologicalSpace G]
@@ -353,17 +373,18 @@ variable (G : Type uG) [Monoid G] [TopologicalSpace G]
 /-- Pullback on the explicit first continuous cohomology group along a compatible pair. -/
 noncomputable def explicitMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : H1 G M →+ H1 H N :=
-  QuotientAddGroup.map ((B1 G M).addSubgroupOf (Z1 G M))
-    ((B1 H N).addSubgroupOf (Z1 H N)) (cocyclesMap1 G M H N φ f hf hequiv)
-    fun _ hc => cochainsMap1_mem_B1 (φ : H →* G) f hequiv hc
+  descendCocycles (Z1 G M) (Z1 H N) (B1 G M) (B1 H N)
+    (cocyclesMap1 G M H N φ f hf hequiv)
+    (fun _ hc => cochainsMap1_mem_B1 (φ : H →* G) f hequiv hc)
 
 /-- `explicitMap1` sends the class of a cocycle to the class of its pullback. -/
 @[simp]
 theorem explicitMap1_mk (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z1 G M) :
     explicitMap1 G M H N φ f hf hequiv (c : H1 G M) =
-      (cocyclesMap1 G M H N φ f hf hequiv c : H1 H N) :=
-  QuotientAddGroup.map_mk _ _ _ _ c
+      (cocyclesMap1 G M H N φ f hf hequiv c : H1 H N) := by
+  unfold explicitMap1 descendCocycles
+  apply QuotientAddGroup.map_mk
 
 /-- Equality of compatible pairs gives equality of the induced maps on explicit `H¹`. -/
 theorem explicitMap1_congr_of_eq
@@ -424,9 +445,9 @@ theorem explicitMap1_comp
 noncomputable def explicitMap2 [ContinuousMul G] [ContinuousMul H]
     (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : H2 G M →+ H2 H N :=
-  QuotientAddGroup.map ((B2 G M).addSubgroupOf (Z2 G M))
-    ((B2 H N).addSubgroupOf (Z2 H N)) (cocyclesMap2 G M H N φ f hf hequiv)
-    fun _ hc => cochainsMap2_mem_B2 (φ := φ) f hf hequiv hc
+  descendCocycles (Z2 G M) (Z2 H N) (B2 G M) (B2 H N)
+    (cocyclesMap2 G M H N φ f hf hequiv)
+    (fun _ hc => cochainsMap2_mem_B2 (φ := φ) f hf hequiv hc)
 
 /-- `explicitMap2` sends the class of a cocycle to the class of its pullback. -/
 @[simp]
@@ -435,7 +456,9 @@ theorem explicitMap2_mk [ContinuousMul G] [ContinuousMul H]
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z2 G M) :
     explicitMap2 G M H N φ f hf hequiv (c : H2 G M) =
       (cocyclesMap2 G M H N φ f hf hequiv c : H2 H N) :=
-  QuotientAddGroup.map_mk _ _ _ _ c
+  by
+  unfold explicitMap2 descendCocycles
+  apply QuotientAddGroup.map_mk
 
 /-- Equality of compatible pairs gives equality of the induced maps on explicit `H²`. -/
 theorem explicitMap2_congr_of_eq [ContinuousMul G] [ContinuousMul H]
