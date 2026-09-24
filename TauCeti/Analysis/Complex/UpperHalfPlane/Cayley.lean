@@ -60,18 +60,28 @@ private theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 
   ring
 
 /-- The Cayley transform lies in the closed unit disc exactly on the closed upper half-plane. -/
-theorem norm_sub_I_div_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
+@[simp] theorem norm_sub_I_div_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
     ‖(z - I) / (z + I)‖ ≤ 1 ↔ 0 ≤ z.im := by
   rw [norm_div, div_le_one (norm_pos_iff.mpr hz), ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
     norm_add_I_sq]
   constructor <;> intro h <;> linarith
 
 /-- The Cayley transform lies in the open unit disc exactly on the open upper half-plane. -/
-theorem norm_sub_I_div_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
+@[simp] theorem norm_sub_I_div_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
     ‖(z - I) / (z + I)‖ < 1 ↔ 0 < z.im := by
   rw [norm_div, div_lt_one (norm_pos_iff.mpr hz), ← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _),
     norm_add_I_sq]
   constructor <;> intro h <;> linarith
+
+/-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
+@[simp] theorem norm_sub_I_div_norm_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
+    ‖z - I‖ / ‖z + I‖ ≤ 1 ↔ 0 ≤ z.im := by
+  simpa only [norm_div] using norm_sub_I_div_add_I_le_one_iff hz
+
+/-- The open-disc criterion in the normal form used by `simp` after `norm_div`. -/
+@[simp] theorem norm_sub_I_div_norm_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
+    ‖z - I‖ / ‖z + I‖ < 1 ↔ 0 < z.im := by
+  simpa only [norm_div] using norm_sub_I_div_add_I_lt_one_iff hz
 
 /-- The Cayley transform is injective wherever its denominator does not vanish. -/
 theorem injOn_sub_I_div_add_I :
