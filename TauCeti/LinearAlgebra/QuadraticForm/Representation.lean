@@ -197,6 +197,20 @@ theorem _root_.QuadraticMap.Represents.prod
   obtain ⟨w, hw⟩ := h₂
   exact ⟨(v, w), by simp [QuadraticMap.prod_apply, hv, hw]⟩
 
+/-- If one factor represents a nonzero value `a` and the other represents `-a`, then their
+orthogonal product is isotropic. -/
+theorem _root_.QuadraticMap.not_anisotropic_prod_of_represents_neg
+    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommGroup P]
+    [Module R M₁] [Module R M₂] [Module R P]
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a : P}
+    (h₁ : Represents Q₁ a) (h₂ : Represents Q₂ (-a)) (ha : a ≠ 0) :
+    ¬(Q₁.prod Q₂).Anisotropic := by
+  obtain ⟨v, hv⟩ := h₁
+  obtain ⟨w, hw⟩ := h₂
+  intro h
+  have hvw := h (v, w) (by rw [QuadraticMap.prod_apply, hv, hw, add_neg_cancel])
+  exact ha (by rw [← hv, (Prod.mk_eq_zero.mp hvw).1, map_zero])
+
 /-- Representing a value is preserved after multiplying it by the square of any scalar. -/
 theorem _root_.QuadraticMap.Represents.smul_mul_self
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
