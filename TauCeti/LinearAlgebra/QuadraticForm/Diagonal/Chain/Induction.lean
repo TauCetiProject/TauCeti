@@ -58,7 +58,8 @@ theorem PermutationStep.prod_prod_Ioi_eq [CommSemiring R] {F : Rˣ → Rˣ → M
     ∏ i, ∏ j ∈ Ioi i, F (w i) (w j) = ∏ i, ∏ j ∈ Ioi i, F (w' i) (w' j) := by
   obtain ⟨σ, hσ⟩ := h.exists_perm
   simp only [hσ]
-  exact (prod_prod_Ioi_comp_perm σ fun i j => hF (w i) (w j)).symm
+  exact (prod_prod_Ioi_comp_perm (fun i j => F (w i) (w j)) σ
+    fun i j => hF (w i) (w j)).symm
 
 section Binary
 
@@ -104,8 +105,10 @@ theorem BinaryStep.prod_prod_Ioi_eq (hmul : ∀ a b c, F (a * b) c = F a c * F b
       exact σ.injective.ne (Fin.succ_ne_zero _)
     · rw [← hσ1]
       exact σ.injective.ne (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _))
-  rw [← prod_prod_Ioi_comp_perm σ (fun k l => hsymm (w k) (w l)),
-    ← prod_prod_Ioi_comp_perm σ (fun k l => hsymm (w' k) (w' l)), prod_prod_Ioi_eq_of_two,
+  rw [← prod_prod_Ioi_comp_perm (fun k l => F (w k) (w l)) σ
+      (fun k l => hsymm (w k) (w l)),
+    ← prod_prod_Ioi_comp_perm (fun k l => F (w' k) (w' l)) σ
+      (fun k l => hsymm (w' k) (w' l)), prod_prod_Ioi_eq_of_two,
     prod_prod_Ioi_eq_of_two]
   simp only [hσ0, hσ1, hfix, ← prod_mul_distrib, ← hmul,
     apply_mul_eq_of_equivalent_binary hmul hF hpair, hF _ _ _ _ hpair]

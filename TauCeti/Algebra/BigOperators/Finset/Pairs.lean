@@ -144,7 +144,7 @@ for symmetric `f`, `∏_{i<j} f (σ i) (σ j) = ∏_{i<j} f i j` for every permu
 invariant:** for symmetric `f`, `∑_{i<j} f (σ i) (σ j) = ∑_{i<j} f i j` for every permutation
 `σ`. -/]
 theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
-    [LocallyFiniteOrderTop ι] [CommMonoid M] (σ : Equiv.Perm ι) {f : ι → ι → M}
+    [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) (σ : Equiv.Perm ι)
     (hf : ∀ i j, f i j = f j i) :
     ∏ i, ∏ j ∈ Ioi i, f (σ i) (σ j) = ∏ i, ∏ j ∈ Ioi i, f i j := by
   rw [prod_sigma', prod_sigma']
