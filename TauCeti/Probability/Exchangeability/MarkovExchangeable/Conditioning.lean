@@ -83,7 +83,7 @@ theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X)
 
 /-- The mass of a finite path after conditioning on an initial state. Paths starting at another
 state have zero mass, including when the conditioning event itself has zero mass. -/
-@[simp] theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
+theorem prefixLaw_singleton_cond_initial [MeasurableSingletonClass α]
     (hX : ∀ i, AEMeasurable (X i) μ) (hs : MeasurableSet {ω | X 0 ω = a})
     (n : ℕ) (w : Fin (n + 1) → α) :
     prefixLaw μ[|{ω | X 0 ω = a}] X (n + 1) {w} =
