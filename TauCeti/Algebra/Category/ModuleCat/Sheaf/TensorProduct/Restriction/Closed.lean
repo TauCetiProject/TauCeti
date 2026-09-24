@@ -39,10 +39,12 @@ variable [HasWeakSheafify J AddCommGrpCat.{u}]
   [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 variable (R : Sheaf J CommRingCat.{u}) (X : C)
 
+/-- The monoidal structure on sheaves of modules on the slice site. -/
 local instance : MonoidalCategory
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   monoidalCategory (R.over X)
 
+/-- The closed monoidal structure on sheaves of modules on the slice site. -/
 local instance : MonoidalClosed
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   monoidalClosed (R.over X)
