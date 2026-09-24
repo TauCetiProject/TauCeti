@@ -13,7 +13,10 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Map
 A family of multiplicative equivalences induces an equivalence of restricted products when it
 carries the reference subgroups bijectively onto one another at all but finitely many indices.
 The `Set.BijOn` hypothesis supplies both the forward and inverse restrictedness conditions; a
-one-sided `Set.MapsTo` hypothesis would only produce a homomorphism in one direction.
+one-sided `Set.MapsTo` hypothesis would only produce a homomorphism in one direction. It cannot be
+weakened: for coordinatewise equivalences that eventually map the reference subgroups into one
+another, the induced homomorphism is surjective exactly when they are eventually bijections of
+the reference subgroups, and the file ends with a family of identity maps for which it is not.
 
 The algebraic construction is adapted from `MulEquiv.restrictedProductCongrRight` in the FLT
 project (`ImperialCollegeLondon/FLT`, file
@@ -109,5 +112,39 @@ theorem continuous_restrictedProductCongrRight_symm {H : ι → Type w} [∀ i, 
     (hφ.mono fun _ hi ↦ hi.equiv_symm.mapsTo) hcont using 1
   ext y i
   simp
+
+/-- For coordinatewise equivalences that eventually map the reference subgroups into one another,
+the induced homomorphism of restricted products is surjective exactly when the equivalences are
+eventually bijections of the reference subgroups. So the `Set.BijOn` hypothesis of
+`restrictedProductCongrRight` is not only sufficient but necessary. -/
+theorem restrictedProductMap_surjective_iff_eventually_bijOn {H : ι → Type w}
+    [∀ i, Group (H i)] (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i ≃* H i)
+    (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)) :
+    Function.Surjective (restrictedProductMap U U' (fun i ↦ (φ i).toMonoidHom) hφ) ↔
+      ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i) := by
+  refine (restrictedProductMap_surjective_iff U U' _ hφ).trans
+    ⟨fun h ↦ ?_, fun h ↦ ⟨fun i ↦ (φ i).surjective, h.mono fun _ hi ↦ hi.surjOn⟩⟩
+  filter_upwards [hφ, h.2] with i hmaps hsurj
+  exact ⟨hmaps, (φ i).injective.injOn, hsurj⟩
+
+/-- Coordinatewise equivalences that merely map the reference subgroups into one another need not
+induce an equivalence of restricted products. The witness uses identity maps on
+`Multiplicative ℤ`, with every source reference subgroup `⊥` and every target reference subgroup
+`⊤`: the induced map is the inclusion of the finitely supported elements into the full product,
+which is not surjective. -/
+theorem not_forall_restrictedProductMap_surjective :
+    ¬ ∀ (U U' : ℕ → Subgroup (Multiplicative ℤ))
+        (φ : ∀ _ : ℕ, Multiplicative ℤ ≃* Multiplicative ℤ)
+        (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)),
+        Function.Surjective (restrictedProductMap U U' (fun i ↦ (φ i).toMonoidHom) hφ) := by
+  intro h
+  have hbij := (restrictedProductMap_surjective_iff_eventually_bijOn (fun _ ↦ ⊥) (fun _ ↦ ⊤)
+    (fun _ ↦ MulEquiv.refl _) (.of_forall fun _ _ _ ↦ Subgroup.mem_top _)).mp (h _ _ _ _)
+  obtain ⟨i, hi⟩ := hbij.exists
+  obtain ⟨a, ha, hae⟩ := hi.surjOn (Subgroup.mem_top (Multiplicative.ofAdd (1 : ℤ)))
+  rw [SetLike.mem_coe, Subgroup.mem_bot] at ha
+  rw [ha, map_one, eq_comm, ofAdd_eq_one] at hae
+  exact one_ne_zero hae
 
 end TauCeti

@@ -603,6 +603,16 @@ theorem hasFiniteMoment_iff_memLp_edist {x : X} {ν : Measure X}
     HasFiniteMoment p ν ↔ MemLp (fun y ↦ edist x y) p ν :=
   ⟨fun h ↦ h.memLp hd, fun h ↦ ⟨x, h⟩⟩
 
+/-- For a finite nonzero exponent `p`, the finite-moment condition for a finite measure is
+equivalent to finiteness of its `p`-moment about any basepoint. -/
+theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X) (ν : Measure X) [IsFiniteMeasure ν] :
+    HasFiniteMoment p ν ↔ ∫⁻ y, edist x y ^ p.toReal ∂ν ≠ ∞ := by
+  rw [hasFiniteMoment_iff_memLp_edist (x := x) measurable_edist_right.aestronglyMeasurable]
+  rw [MemLp, and_iff_right measurable_edist_right.aestronglyMeasurable,
+    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp, lt_top_iff_ne_top]
+  simp only [enorm_eq_self]
+
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/
 theorem hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top

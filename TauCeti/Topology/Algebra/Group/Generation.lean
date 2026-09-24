@@ -200,6 +200,18 @@ theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :
 
 section OpenKernel
 
+/-- A homomorphism from a topological group into a monoid carrying the discrete topology is
+continuous exactly when its kernel is open. -/
+theorem _root_.MonoidHom.continuous_iff_isOpen_ker {F : Type*} [MulOneClass F] [TopologicalSpace F]
+    [DiscreteTopology F] (f : G →* F) : Continuous f ↔ IsOpen (f.ker : Set G) := by
+  -- The kernel is the preimage of the open point `1`; conversely a homomorphism out of a
+  -- topological group that is continuous at `1` is continuous everywhere.
+  refine ⟨fun hf ↦ ?_, fun hf ↦ continuous_of_continuousAt_one f ?_⟩
+  · rw [MonoidHom.coe_ker]
+    exact (isOpen_discrete _).preimage hf
+  · rw [ContinuousAt, map_one, nhds_discrete F, Filter.tendsto_pure]
+    exact Filter.mem_of_superset (hf.mem_nhds (one_mem f.ker)) fun _ hx ↦ MonoidHom.mem_ker.mp hx
+
 /-- A homomorphism whose kernel is open is determined by its values on a topological generating
 set: the equalizer of two such homomorphisms contains the (open) intersection of their kernels,
 hence is open, hence closed, hence contains the whole group. The target carries no topology at

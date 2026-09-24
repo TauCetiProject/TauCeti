@@ -108,8 +108,9 @@ section Cyclotomic
 
 /-- For `F = K(μ_m)`, every prime of `𝓞 F` above a prime `v` of `𝓞 K` outside the support of
 `cyclotomicModulus K m` (that is, with `(m : 𝓞 K) ∉ v.asIdeal`) is unramified over `𝓞 K`. -/
-theorem isUnramifiedAt_of_notMem_support {K : Type*} [Field K] [NumberField K] (F : Type*)
-    [Field F] [NumberField F] [Algebra K F] (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem isUnramifiedAt_of_notMem_cyclotomicModulus_support {K : Type*} [Field K] [NumberField K]
+    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ) [NeZero m]
+    [IsCyclotomicExtension {m} K F]
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ (cyclotomicModulus K m).support) (Q : Ideal (𝓞 F))
     [Q.IsPrime] [Q.LiesOver v.asIdeal] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
   rw [mem_cyclotomicModulus_support_iff] at hv
@@ -126,13 +127,15 @@ variable {K : Type*} [Field K] [NumberField K] (F : Type*) [Field F] [NumberFiel
 private noncomputable def cyclotomicArtinAway :
     idealsPrimeTo (cyclotomicModulus K m) →* (F ≃ₐ[K] F) :=
   artinHomAway (IsCyclotomicExtension.isMulCommutative {m} K F).is_comm.comm
-    (cyclotomicModulus K m).support fun _ hv Q _ _ ↦ isUnramifiedAt_of_notMem_support F m hv Q
+    (cyclotomicModulus K m).support fun _ hv Q _ _ ↦
+      isUnramifiedAt_of_notMem_cyclotomicModulus_support F m hv Q
 
 -- The Artin map of `F / K` on the integral ideals prime to `m`.
 private noncomputable def cyclotomicArtinIntegral :
     integralIdealsPrimeTo (cyclotomicModulus K m) →* (F ≃ₐ[K] F) :=
   artinHomAwayIntegral (IsCyclotomicExtension.isMulCommutative {m} K F).is_comm.comm
-    (cyclotomicModulus K m).support fun _ hv Q _ _ ↦ isUnramifiedAt_of_notMem_support F m hv Q
+    (cyclotomicModulus K m).support fun _ hv Q _ _ ↦
+      isUnramifiedAt_of_notMem_cyclotomicModulus_support F m hv Q
 
 -- The integral Artin map is the fractional one read on the ideals the integral ones generate.
 private theorem cyclotomicArtinIntegral_apply (I : integralIdealsPrimeTo (cyclotomicModulus K m)) :
@@ -202,15 +205,15 @@ private theorem ray_le_ker_cyclotomicArtinAway :
     ← cyclotomicArtinIntegral_apply, ← cyclotomicArtinIntegral_apply,
     autToPow_cyclotomicArtinIntegral F m hζ, autToPow_cyclotomicArtinIntegral F m hζ]
   -- They do: `a ≡ b` modulo `m`, and `N(a) = N(b) N(x)` with `N(x) > 0` as `x` is totally
-  -- positive, so the norms of `a` and `b` have the same sign.
+  -- positive, so `N(a) N(b) = N(b) ^ 2 N(x) ≥ 0`.
   have hNab : ((Algebra.norm ℤ a : ℤ) : ℚ) = (Algebra.norm ℤ b : ℤ) * Algebra.norm ℚ (x : K) := by
     rw [Algebra.coe_norm_int, Algebra.coe_norm_int, ← map_mul]
     exact congrArg _ hab
-  have hsign : (0 : ℚ) < (Algebra.norm ℤ a : ℤ) * (Algebra.norm ℤ b : ℤ) := by
+  have hsign : (0 : ℚ) ≤ (Algebra.norm ℤ a : ℤ) * (Algebra.norm ℤ b : ℤ) := by
     rw [hNab, mul_right_comm]
-    refine mul_pos (mul_self_pos.mpr (Int.cast_ne_zero.mpr (Algebra.norm_ne_zero_iff.mpr
-      (hne0 hb)))) (norm_pos_of_isTotallyPositive x.ne_zero (isTotallyPositive_iff.mpr
-        fun w hw ↦ hx.pos (mem_cyclotomicModulus_infinitePart K m ⟨w, hw⟩)))
+    exact mul_nonneg (mul_self_nonneg _) (norm_pos_of_isTotallyPositive x.ne_zero
+      (isTotallyPositive_iff.mpr fun w hw ↦
+        hx.pos (mem_cyclotomicModulus_infinitePart K m ⟨w, hw⟩))).le
   exact Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem (mod_cast hsign)
     (by simpa using sub_mem ha hb)
 
@@ -255,9 +258,10 @@ private theorem galoisCharacterWeight_asIdeal_eq_cyclotomicArtin (χ : (F ≃ₐ
     galoisCharacterWeight (L := F) χ v.asIdeal =
       (χ (cyclotomicArtin K F m (idealClass _ ⟨v.asIdeal, hv⟩)) : ℂ) := by
   have hur : ∀ (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
-      Algebra.IsUnramifiedAt (𝓞 K) Q := fun Q _ _ ↦ isUnramifiedAt_of_notMem_support F m
-    (mem_cyclotomicModulus_support_iff.not.mpr
-      (asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff.mp hv)) Q
+      Algebra.IsUnramifiedAt (𝓞 K) Q := fun Q _ _ ↦
+    isUnramifiedAt_of_notMem_cyclotomicModulus_support F m
+      (mem_cyclotomicModulus_support_iff.not.mpr
+        (asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff.mp hv)) Q
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 F)))
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   have := IsCyclotomicExtension.isMulCommutative {m} K F

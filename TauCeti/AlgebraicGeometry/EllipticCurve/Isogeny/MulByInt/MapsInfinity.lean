@@ -31,6 +31,11 @@ the pullback of the class of `X`.
 * `TauCeti.Isogeny.mapsInfinity_mulByIntPullback`: the pullback of `[n]` maps infinity to
   infinity.
 * `TauCeti.Isogeny.mulByIntIsogeny`: `[n]` as an `Isogeny W W`.
+* `TauCeti.Isogeny.fieldPullback_mulByIntIsogeny_genericX` and
+  `TauCeti.Isogeny.fieldPullback_mulByIntIsogeny_genericY`: the pullback of `[n]` sends the generic
+  coordinates to `[n]*x` and `[n]*y`.
+* `TauCeti.Isogeny.mulByIntX_sub_algebraMap_ne_zero`: `[n]*x` is not a constant — the
+  transcendence of the generic coordinate, carried across the pullback.
 * `TauCeti.Isogeny.map_mulByIntIsogeny_genericPoint`: the function-field map of `[n]` carries the
   generic point to `n • ` the generic point.
 
@@ -118,6 +123,42 @@ discharged by `psiFunctionField_ne_zero_of_Δ_ne_zero` as in `mulByIntPullbackOf
 noncomputable abbrev mulByIntIsogenyOfNeZero [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) :
     _root_.TauCeti.Isogeny W W :=
   mulByIntIsogeny W (psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero hn)
+
+/-- **The pullback of `[n]` sends the generic `x` to `[n]*x`.**
+
+Not the same statement as `fieldPullback_mulByIntIsogeny_X`, which the degree tower needs and
+which lands in `F(x)` as a quotient of `RatFunc F`; this is the `mulByIntX` form, which is what
+a computation in `F(W)` wants, as in `mulByIntX_sub_algebraMap_ne_zero` below and in the place and
+Wronskian computations downstream. -/
+@[simp]
+theorem fieldPullback_mulByIntIsogeny_genericX [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) :
+    (mulByIntIsogeny W hn).fieldPullback W.genericX = mulByIntX W n := by
+  rw [WeierstrassCurve.Affine.genericX_def, fieldPullback_algebraMap, mulByIntIsogeny_pullback]
+  exact mulByIntPullback_X W hn
+
+/-- **The pullback of `[n]` sends the generic `y` to `[n]*y`**, the companion of
+`fieldPullback_mulByIntIsogeny_genericX` for the second coordinate. -/
+@[simp]
+theorem fieldPullback_mulByIntIsogeny_genericY [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) :
+    (mulByIntIsogeny W hn).fieldPullback W.genericY = mulByIntY W n := by
+  rw [WeierstrassCurve.Affine.genericY_def, fieldPullback_algebraMap, mulByIntIsogeny_pullback]
+  exact mulByIntPullback_Y W hn
+
+/-- **`[n]*x` is not a constant**: it is the image of the generic coordinate under an injective
+map, and the generic coordinate is not a constant. -/
+theorem mulByIntX_sub_algebraMap_ne_zero [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) (x : F) :
+    mulByIntX W n - algebraMap F W.FunctionField x ≠ 0 := by
+  rw [sub_ne_zero]
+  intro heq
+  refine W.genericX_ne_algebraMap x ((mulByIntIsogeny W hn).fieldPullback.toRingHom.injective ?_)
+  calc (mulByIntIsogeny W hn).fieldPullback.toRingHom W.genericX
+      = mulByIntX W n := fieldPullback_mulByIntIsogeny_genericX W hn
+    _ = algebraMap F W.FunctionField x := heq
+    _ = (mulByIntIsogeny W hn).fieldPullback.toRingHom (algebraMap F W.FunctionField x) :=
+        ((mulByIntIsogeny W hn).fieldPullback.commutes x).symm
 
 end Isogeny
 

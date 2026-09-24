@@ -8,6 +8,9 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+-- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
+-- the normalized form the centre construction compares against.
+import TauCeti.RingTheory.Valuation.Discrete.Normalize
 
 /-!
 # Normalized valuations of the fraction field of a Dedekind domain are adic
@@ -129,6 +132,31 @@ theorem existsUnique_heightOneSpectrum_valuation_eq [IsDedekindDomain R]
   haveI := isNontrivial_of_surjective hw
   ⟨heightOneSpectrum R w hR, valuation_heightOneSpectrum hw hR,
     fun _ h ↦ eq_heightOneSpectrum hw hR h⟩
+
+variable (R) in
+/-- **A nontrivial valuation of `K` bounded by `1` on `R` is adic up to equivalence.** It is
+equivalent to the adic valuation of the centre of its normalization, and that centre collects
+exactly the elements of `R` whose value drops below `1`.
+
+Normalizing is what makes the centre's adic valuation equal the valuation rather than merely
+equivalent to it (`valuation_heightOneSpectrum`); a valuation that is only bounded, not normalized,
+still picks out the same prime, which is what this states. -/
+theorem exists_heightOneSpectrum_isEquiv_of_le_one [IsDedekindDomain R]
+    (u : _root_.Valuation K ℤᵐ⁰) [u.IsNontrivial]
+    (hR : ∀ r : R, u (algebraMap R K r) ≤ 1) :
+    ∃ 𝔭 : HeightOneSpectrum R, (𝔭.valuation K).IsEquiv u ∧
+      ∀ r : R, r ∈ 𝔭.asIdeal ↔ u (algebraMap R K r) < 1 := by
+  have hEq : (normalization u).IsEquiv u := isEquiv_normalization u
+  have hsurj : Function.Surjective (normalization u) :=
+    normalization_surjective u (ordIndex_ne_zero_of_isNontrivial u)
+  have hRw : ∀ r : R, normalization u (algebraMap R K r) ≤ 1 :=
+    fun r ↦ hEq.le_one_iff_le_one.mpr (hR r)
+  have : (normalization u).IsNontrivial := isNontrivial_of_surjective hsurj
+  refine ⟨heightOneSpectrum R (normalization u) hRw, ?_, fun r ↦ ?_⟩
+  · rw [valuation_heightOneSpectrum hsurj hRw]
+    exact hEq
+  · rw [asIdeal_heightOneSpectrum, mem_centerIdeal]
+    simpa using hEq.lt_iff_lt (x := algebraMap R K r) (y := 1)
 
 end Comparison
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.RestrictedProduct.CongrRight
+public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Right
 
 /-!
 # Diagonal homomorphisms into restricted products

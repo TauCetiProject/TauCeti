@@ -27,6 +27,9 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
 * Two companion forms of the same identification: a point of `G` is determined by its images in
   the finite quotients (`eq_of_forall_mk_eq`), and a map into `G` is continuous as soon as all
   of its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`).
+* The same identification for homomorphisms: a family of homomorphisms `H →* G ⧸ U` compatible
+  along the quotient maps is induced by a unique homomorphism `H →* G`
+  (`existsUnique_monoidHom_mk'_comp_eq`).
 * The same for subgroups: a family `H` of subgroups of the quotients `G ⧸ U` cuts out the closed
   subgroup `limitSubgroup H` of `G` (`isClosed_limitSubgroup`), and when `H` is compatible along
   the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
@@ -108,6 +111,35 @@ theorem continuous_iff_forall_continuous_mk {X : Type*} [TopologicalSpace X] {f 
   have hmem : (f x₀)⁻¹ * f x ∈ U.toSubgroup := by
     simpa using U.toSubgroup.inv_mem (QuotientGroup.eq.mp hx)
   exact hWV (by simpa using hU hmem)
+
+/-- **Limit description of a profinite group, for homomorphisms.** A family of homomorphisms
+`x N : H →* G ⧸ N` into the quotients of `G` by its open normal subgroups, compatible along the
+quotient maps `G ⧸ N → G ⧸ N'` for `N ≤ N'`, is induced by a unique homomorphism `H →* G`. This is
+the universal property of `G` as the inverse limit of its finite quotients, for abstract
+homomorphisms out of a monoid `H` that carries no topology. -/
+theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
+    (x : ∀ N : OpenNormalSubgroup G, H →* G ⧸ N.toSubgroup)
+    (hx : ∀ ⦃N N' : OpenNormalSubgroup G⦄ (hle : N ≤ N'),
+      (QuotientGroup.mapOfLE hle).comp (x N) = x N') :
+    ∃! φ : H →* G, ∀ N : OpenNormalSubgroup G, (QuotientGroup.mk' N.toSubgroup).comp φ = x N := by
+  -- For a fixed `a : H`, the classes `x N a` form a compatible family of cosets, so the limit
+  -- description of `G` realizes them by a unique element `φ a`.
+  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (hle : (U : Subgroup G) ≤ V) (g : G),
+      QuotientGroup.mk' (U : Subgroup G) g = x U a →
+        QuotientGroup.mk' (V : Subgroup G) g = x V a := by
+    intro a U V hle g hg
+    rw [← hx hle, MonoidHom.comp_apply, ← hg, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      QuotientGroup.mapOfLE_mk]
+  choose φ hφ using fun a : H ↦ (existsUnique_forall_mk_eq (fun N ↦ x N a) (hcompat a)).exists
+  refine ⟨MonoidHom.mk' φ fun a b ↦ eq_of_forall_mk_eq fun N ↦ ?_, fun N ↦ MonoidHom.ext (hφ · N),
+    fun ψ hψ ↦ MonoidHom.ext fun a ↦ eq_of_forall_mk_eq fun N ↦ ?_⟩
+  · -- Multiplicativity is checked in every finite quotient, where it is that of `x N`.
+    calc (φ (a * b) : G ⧸ N.toSubgroup) = x N (a * b) := hφ (a * b) N
+      _ = x N a * x N b := map_mul _ _ _
+      _ = ((φ a * φ b : G) : G ⧸ N.toSubgroup) := by
+        rw [QuotientGroup.mk_mul, ← hφ a N, ← hφ b N, QuotientGroup.mk'_apply,
+          QuotientGroup.mk'_apply]
+  · exact (DFunLike.congr_fun (hψ N) a).trans (hφ a N).symm
 
 end LimitDescription
 
