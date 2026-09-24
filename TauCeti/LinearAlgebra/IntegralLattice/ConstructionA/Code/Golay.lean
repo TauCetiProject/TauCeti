@@ -122,7 +122,7 @@ noncomputable def discriminantQuadraticOrthogonalQuotientIsometry :
       code.toAddSubgroup isIsotropic_code)
 
 /-- The discriminant bilinear group of the Golay lattice is trivial. -/
-theorem subsingleton_discriminantBilinearModule :
+instance subsingleton_discriminantBilinearModule :
     Subsingleton constructionALattice.discriminantBilinearModule := by
   let hC := toZModSubmodule_code_eq_euclideanDual.le
   have hU : (ConstructionA.integralLattice 2 code.toAddSubgroup hC).IsUnimodular := by
@@ -137,12 +137,13 @@ theorem subsingleton_discriminantBilinearModule :
     discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr hq
 
 /-- The discriminant bilinear group of the Golay lattice has one element. -/
+@[simp]
 theorem natCard_discriminantBilinearModule_eq_one :
     Nat.card constructionALattice.discriminantBilinearModule = 1 :=
   @Nat.card_unique _ inferInstance subsingleton_discriminantBilinearModule
 
 /-- The discriminant quadratic group of the Golay lattice is also trivial. -/
-theorem subsingleton_discriminantQuadraticModule :
+instance subsingleton_discriminantQuadraticModule :
     Subsingleton
       (constructionALattice.discriminantQuadraticModule isEven_constructionALattice) := by
   let hC := (isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual 2
