@@ -127,29 +127,6 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
     atComplexEmbedding Q w = Q.baseChange ℂ := by
   rfl
 
-/-- The finite rank of the underlying space is unchanged by localization at a finite place. -/
-theorem finrank_atFinitePlace [NumberField K] [FiniteDimensional K V]
-    (v : HeightOneSpectrum (𝓞 K)) :
-    Module.finrank (v.adicCompletion K) (v.FiniteScalarExtension (V := V)) =
-      Module.finrank K V := by
-  simp
-
-/-- The finite rank of the underlying space is unchanged by localization at a real place. -/
-theorem finrank_atRealPlace [FiniteDimensional K V]
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    Module.finrank ℝ (TauCeti.RealScalarExtension (V := V) w) =
-      Module.finrank K V := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  simp
-
-/-- The finite rank of the underlying space is unchanged by a complex embedding. -/
-theorem finrank_atComplexEmbedding [FiniteDimensional K V]
-    (w : InfinitePlace K) :
-    Module.finrank ℂ (w.ComplexScalarExtension (V := V)) =
-      Module.finrank K V := by
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  simp
-
 /-- A scalar represented by a global form is represented by its finite-place localization. -/
 theorem _root_.QuadraticMap.Represents.atFinitePlace [NumberField K]
     {Q : _root_.QuadraticForm K V} {a : K}
