@@ -107,16 +107,9 @@ def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
   toFun f := (f.a, f.b, f.c)
   invFun t := ⟨t.1, t.2.1, t.2.2⟩
 
-variable {R : Type*} [CommRing R]
+section Semiring
 
-/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
-@[expose]
-protected def discrim (f : BinaryQuadraticForm R) : R :=
-  discrim f.a f.b f.c
-
-/-- The discriminant of a form is Mathlib's `discrim` of its coefficients. -/
-theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
-  rfl
+variable {R : Type*} [Semiring R]
 
 /-- The value `a x² + b x y + c y²` of the form `f` at `(x, y)`. -/
 def eval (f : BinaryQuadraticForm R) (x y : R) : R :=
@@ -142,6 +135,19 @@ theorem eval_one_zero (f : BinaryQuadraticForm R) : f.eval 1 0 = f.a := by
 @[simp]
 theorem eval_zero_one (f : BinaryQuadraticForm R) : f.eval 0 1 = f.c := by
   simp [eval_def]
+
+end Semiring
+
+variable {R : Type*} [CommRing R]
+
+/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
+@[expose]
+protected def discrim (f : BinaryQuadraticForm R) : R :=
+  discrim f.a f.b f.c
+
+/-- The discriminant of a form is Mathlib's `discrim` of its coefficients. -/
+theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
+  rfl
 
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
