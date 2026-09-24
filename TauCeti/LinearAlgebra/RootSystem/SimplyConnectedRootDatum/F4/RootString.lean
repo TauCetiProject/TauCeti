@@ -38,6 +38,12 @@ theorem f4OppositeRootIndex_eq_reflectionPerm (α : Fin 48) :
     f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
   exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
 
+/-- Negation of pinned roots is exactly the opposite-index permutation. -/
+theorem f4Root_eq_neg_iff (α β : Fin 48) :
+    f4SimplyConnectedRootDatum.root β = -f4SimplyConnectedRootDatum.root α ↔
+      β = f4OppositeRootIndex α := by
+  exact f4SimplyConnectedRootDatum.root_eq_neg_iff
+
 /-- Being non-opposite is symmetric in the two pinned root indices. -/
 theorem ne_f4OppositeRootIndex_comm (α β : Fin 48) :
     β ≠ f4OppositeRootIndex α ↔ α ≠ f4OppositeRootIndex β := by
@@ -59,15 +65,15 @@ theorem f4Length_of_root_eq_add_zsmul (α β γ : Fin 48) (n : ℤ)
     f4Length_mul_pairing_comm α β γ n h
 
 
-/-- Distinct non-opposite short F4 roots have Cartan pairing `-1`, `0`, or `1`. -/
-theorem f4_pairing_mem_neg_one_zero_one_of_short (α β : Fin 48)
-    (hα : f4Length α = 1) (hβ : f4Length β = 1) (hne : β ≠ α)
+/-- Distinct non-opposite F4 roots of equal length have pairing `-1`, `0`, or `1`. -/
+theorem f4_pairing_mem_neg_one_zero_one_of_length_eq (α β : Fin 48)
+    (hαβ : f4Length α = f4Length β) (hne : β ≠ α)
     (hneg : f4SimplyConnectedRootDatum.root β ≠
       -f4SimplyConnectedRootDatum.root α) :
     f4SimplyConnectedRootDatum.pairing β α ∈ ({-1, 0, 1} : Set ℤ) :=
   f4SimplyConnectedRootDatum.pairing_mem_neg_one_zero_one_of_length_eq f4Length
     f4Length_mul_pairing_comm α β (abs_pairing_f4SimplyConnectedRootDatum_le_two β α)
-    (f4Length_pos α) (hα.trans hβ.symm) hne hneg
+    (f4Length_pos α) hαβ hne hneg
 
 /-- A root string through two distinct, non-opposite short F4 roots has no term
 two or more steps in the positive direction. -/
@@ -158,39 +164,86 @@ theorem f4_chainBotCoeff_eq_zero_of_add_of_length_eq (α β γ : Fin 48)
     (fun δ _ => by rcases f4Length_eq_one_or_eq_two δ with hδ | hδ <;> omega)
     (f4Length_pos β) hβγ h
 
-/-- A non-opposite pair of long roots has Cartan pairing at least `-1`. -/
-theorem f4_pairing_ge_neg_one_of_long_ne_opposite
-    (α β : Fin 48) (hα : f4Length α = 2) (hβ : f4Length β = 2)
+/-- Distinct or equal non-opposite roots of equal length have Cartan pairing at least `-1`. -/
+theorem f4_pairing_ge_neg_one_of_length_eq_ne_opposite
+    (α β : Fin 48) (hαβ : f4Length α = f4Length β)
     (hopp : β ≠ f4OppositeRootIndex α) :
     -1 ≤ f4SimplyConnectedRootDatum.pairing β α := by
-  let P := f4SimplyConnectedRootDatum
-  have hnegroot : P.root β ≠ -P.root α := by
+  have hnegroot : f4SimplyConnectedRootDatum.root β ≠
+      -f4SimplyConnectedRootDatum.root α := by
     intro hroot
-    apply hopp
-    simpa only [P, f4OppositeRootIndex_eq_reflectionPerm] using
-      (f4SimplyConnectedRootDatum.root_eq_neg_iff.mp hroot)
+    exact hopp ((f4Root_eq_neg_iff α β).mp hroot)
   by_cases hsame : β = α
   · subst β
     simp only [f4SimplyConnectedRootDatum.pairing_same]
     omega
-  · have hpair := f4SimplyConnectedRootDatum.pairing_mem_neg_one_zero_one_of_length_eq
-      f4Length f4Length_mul_pairing_comm α β
-      (abs_pairing_f4SimplyConnectedRootDatum_le_two β α)
-      (f4Length_pos α) (hα.trans hβ.symm) hsame hnegroot
+  · have hpair := f4_pairing_mem_neg_one_zero_one_of_length_eq
+      α β hαβ hsame hnegroot
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hpair
     rcases hpair with hpair | hpair | hpair <;> omega
+
+/-- The sum of two long roots, when it is a root, is long. -/
+theorem f4Length_eq_two_of_root_eq_add_of_long_long (α β γ : Fin 48)
+    (hα : f4Length α = 2) (hβ : f4Length β = 2)
+    (hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
+    f4Length γ = 2 := by
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 1
+    (by simpa only [one_zsmul] using hγ)
+  rcases f4Length_eq_one_or_eq_two γ with hshort | hlong
+  · rw [hα, hβ, hshort] at hlen
+    norm_num at hlen
+    omega
+  · exact hlong
+
+/-- A non-opposite pair of long roots has no second positive root-string endpoint. -/
+theorem f4_not_root_eq_long_add_two_long_of_ne_opposite
+    (α β γ : Fin 48) (hα : f4Length α = 2) (hβ : f4Length β = 2)
+    (hopp : β ≠ f4OppositeRootIndex α)
+    (hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + (2 : ℤ) •
+        f4SimplyConnectedRootDatum.root α) : False := by
+  have hpair := f4_pairing_ge_neg_one_of_length_eq_ne_opposite
+    α β (hα.trans hβ.symm) hopp
+  rw [f4SimplyConnectedRootDatum_pairing] at hpair
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 2 hγ
+  rcases f4Length_eq_one_or_eq_two γ with hshort | hlong
+  · rw [hα, hβ, hshort] at hlen
+    norm_num at hlen
+    omega
+  · rw [hα, hβ, hlong] at hlen
+    norm_num at hlen
+    omega
+
+/-- A short-root direction has no third step from a long root. -/
+theorem f4_not_root_eq_long_add_three_short (α β γ : Fin 48)
+    (hα : f4Length α = 1) (hβ : f4Length β = 2)
+    (hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + (3 : ℤ) •
+        f4SimplyConnectedRootDatum.root α) : False := by
+  have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
+  have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
+    (abs_le.mp hpair).1
+  rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 3 hγ
+  rcases f4Length_eq_one_or_eq_two γ with hshort | hlong
+  · rw [hα, hβ, hshort] at hlen
+    norm_num at hlen
+    omega
+  · rw [hα, hβ, hlong] at hlen
+    norm_num at hlen
+    omega
 
 /-- A short root with Cartan pairing one has no positive step in the given root direction. -/
 theorem f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one (α β : Fin 48)
     (hβ : f4Length β = 1)
     (hpair : f4SimplyConnectedRootDatum.pairing β α = 1) :
     f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
-  let P := f4SimplyConnectedRootDatum
-  rw [P.chainTopCoeff_eq_zero_iff]
+  rw [f4SimplyConnectedRootDatum.chainTopCoeff_eq_zero_iff]
   right
   rintro ⟨γ, hγ⟩
   have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
-    simpa only [P, one_zsmul] using hγ)
+    simpa only [one_zsmul] using hγ)
   rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
     rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
     rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
@@ -200,12 +253,11 @@ theorem f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero (α β : Fin 48)
     (hα : f4Length α = 2) (hβ : f4Length β = 1)
     (hpair : f4SimplyConnectedRootDatum.pairing β α = 0) :
     f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
-  let P := f4SimplyConnectedRootDatum
-  rw [P.chainTopCoeff_eq_zero_iff]
+  rw [f4SimplyConnectedRootDatum.chainTopCoeff_eq_zero_iff]
   right
   rintro ⟨γ, hγ⟩
   have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
-    simpa only [P, one_zsmul] using hγ)
+    simpa only [one_zsmul] using hγ)
   rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
     rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
 

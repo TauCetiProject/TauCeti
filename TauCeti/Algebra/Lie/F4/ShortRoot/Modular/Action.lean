@@ -96,9 +96,7 @@ theorem f4ShortRootAdjointMatrix_eq_toMatrix (X : f4ModularChevalleyLieAlgebra) 
     f4ShortRootAdjointMatrix X =
       LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
         (f4ShortRootAdjoint X) := by
-  ext i j
-  simpa only [LinearMap.toMatrix_apply, f4ShortRootLieIdealBasis_repr_apply,
-    coe_f4ShortRootAdjoint_apply] using f4ShortRootAdjointMatrix_apply X i j
+  rfl
 
 /-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
 noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :

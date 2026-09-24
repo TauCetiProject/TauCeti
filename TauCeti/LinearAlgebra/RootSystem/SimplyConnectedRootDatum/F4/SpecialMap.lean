@@ -251,11 +251,13 @@ which it multiplies. -/
   rw [f4SpecialIsogenyIndex_involutive i] at h
   exact h
 
+/-- The special permutation sends a long root to a short root. -/
 theorem f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff (i : Fin 48) :
     f4Length (f4SpecialIsogenyIndexEquiv i) = 1 ↔ f4Length i = 2 := by
   simpa only [f4SpecialIsogenyIndexEquiv_apply] using
     f4Length_specialIsogenyIndex_eq_one_iff i
 
+/-- The special permutation sends a short root to a long root. -/
 theorem f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff (i : Fin 48) :
     f4Length (f4SpecialIsogenyIndexEquiv i) = 2 ↔ f4Length i = 1 := by
   simpa only [f4SpecialIsogenyIndexEquiv_apply] using
@@ -274,17 +276,6 @@ theorem f4Length_mul_pairing_f4SpecialIsogenyIndex (i j : Fin 48) :
     f4SimplyConnectedRootDatum_coroot] using
     (mul_dotProduct_eq_of_mulVec_eq_smul f4SpecialIsogenyMatrix_mulVec_root
       f4SpecialIsogenyMatrix_transpose_mulVec_coroot i j)
-
-/-- The special root permutation preserves Cartan integers between roots of equal length. -/
-theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
-    (α β : Fin 48) (hαβ : f4Length α = f4Length β) :
-    f4SimplyConnectedRootDatum.pairing
-        (f4SpecialIsogenyIndexEquiv α) (f4SpecialIsogenyIndexEquiv β) =
-      f4SimplyConnectedRootDatum.pairing α β := by
-  have h := f4Length_mul_pairing_f4SpecialIsogenyIndex α β
-  rw [← hαβ] at h
-  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
-    rw [hα] at h <;> omega
 
 /-- The torus-point map contravariant to the F4 special character-lattice map. -/
 def f4SpecialIsogenyTorusMap {A : Type*} [CommRing A]
@@ -353,5 +344,32 @@ theorem f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
     have h' := congrArg (Matrix.mulVec f4SpecialIsogenyMatrix) h
     simpa only [Matrix.mulVec_add, f4SpecialIsogenyMatrix_mulVec_root_image,
       hβ', hγ', one_smul] using h'
+
+/-- A long root direction transports an ordinary first-order root edge. -/
+theorem f4_root_add_iff_specialIsogenyIndexEquiv_root_add_of_long
+    (α β γ : Fin 48) (hα : f4Length α = 2)
+    (hβ : f4Length β = 2) (hγ : f4Length γ = 2) :
+    f4SimplyConnectedRootDatum.root γ =
+        f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α ↔
+      f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
+        f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
+          f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
+  have hα' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hα
+  simpa only [hα', one_zsmul] using
+    f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ
+
+/-- A short root direction transports a second-order source edge to a target root edge. -/
+theorem f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
+    (α β γ : Fin 48) (hα : f4Length α = 1)
+    (hβ : f4Length β = 2) (hγ : f4Length γ = 2) :
+    f4SimplyConnectedRootDatum.root γ =
+        f4SimplyConnectedRootDatum.root β + (2 : ℤ) •
+          f4SimplyConnectedRootDatum.root α ↔
+      f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
+        f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
+          f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
+  have hα' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff α).2 hα
+  simpa only [hα'] using
+    f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ
 
 end TauCeti.DynkinType

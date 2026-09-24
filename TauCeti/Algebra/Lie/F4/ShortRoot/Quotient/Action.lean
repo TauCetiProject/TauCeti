@@ -65,12 +65,11 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_of_specialMap_add
     f4ShortRootSubspace.mkQ ⁅f4ModularRootVector α, f4ModularRootVector β⁆ =
       f4ShortRootSubspace.mkQ (f4ModularRootVector γ) := by
   have hsource :=
-    (f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ).2 hmap
-  have hspecial : f4Length (f4SpecialIsogenyIndexEquiv α) = 1 := by
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hα
+    (f4_root_add_iff_specialIsogenyIndexEquiv_root_add_of_long
+      α β γ hα hβ hγ).2 hmap
   apply congrArg f4ShortRootSubspace.mkQ
   exact f4Modular_lie_rootVector_of_add_of_length_eq α β γ
-    (hβ.trans hγ.symm) (by simpa only [hspecial, one_zsmul] using hsource)
+    (hβ.trans hγ.symm) hsource
 
 /-- The first-order column on every simple-coroot lift is the source root vector scaled by the
 reduced Cartan integer, with the sign from bracket order. -/
@@ -105,23 +104,14 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge
       ((f4KillingRoot α : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥ := by
     by_contra hne
     obtain ⟨δ, hsource⟩ :=
-      exists_f4Root_eq_add_of_rootSpace_ne_bot α β hsum hne
-    have hδlong : f4Length δ = 2 := by
-      have hlen := f4Length_of_root_eq_add_zsmul α β δ 1
-        (by simpa only [one_zsmul] using hsource)
-      rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
-      · rw [hα, hβ, hδ] at hlen
-        norm_num at hlen
-        omega
-      · exact hδ
+      exists_f4_root_eq_add_of_rootSpace_ne_bot α β hsum hne
+    have hδlong : f4Length δ = 2 :=
+      f4Length_eq_two_of_root_eq_add_of_long_long α β δ hα hβ hsource
     have hδshort : f4Length (f4SpecialIsogenyIndexEquiv δ) = 1 := by
       exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff δ).2 hδlong
     apply hno (f4SpecialIsogenyIndexEquiv δ) hδshort
-    apply (f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
-      α β δ hβ hδlong).1
-    have hspecial : f4Length (f4SpecialIsogenyIndexEquiv α) = 1 := by
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hα
-    simpa only [hspecial, one_zsmul] using hsource
+    exact (f4_root_add_iff_specialIsogenyIndexEquiv_root_add_of_long
+      α β δ hα hβ hδlong).1 hsource
   rw [f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot, map_zero]
 
 /-- For a long source and a non-opposite long-root lift, the second divided-power quotient column
@@ -151,9 +141,6 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
             (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
     f4ShortRootSubspace.mkQ
       (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) = 0 := by
-  have hspecial :
-      f4Length (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) = 2 := by
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff (f4SignedSimpleRootIndex k)).2 hα
   have hzero := f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint k β hopp
     (fun γ hγ ↦ by
       have hγlong := (f4_pairings_of_long_add_two_short
@@ -161,9 +148,8 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
       have hγshort : f4Length (f4SpecialIsogenyIndexEquiv γ) = 1 := by
         exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγlong
       apply hno (f4SpecialIsogenyIndexEquiv γ) hγshort
-      apply (f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
-        (f4SignedSimpleRootIndex k) β γ hβ hγlong).1
-      simpa only [hspecial] using hγ)
+      exact (f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
+        (f4SignedSimpleRootIndex k) β γ hα hβ hγlong).1 hγ)
   rw [hzero, map_zero]
 
 /-- The special root permutation turns a short-source quadratic quotient column into an
@@ -180,15 +166,11 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
         (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) =
       f4ShortRootSubspace.mkQ (f4ModularRootVector γ) := by
   have hsource :=
-    (f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
-      (f4SignedSimpleRootIndex k) β γ hβ hγ).2 hmap
-  have hspecial :
-      f4Length (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) = 2 :=
-    by
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff (f4SignedSimpleRootIndex k)).2 hα
+    (f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
+      (f4SignedSimpleRootIndex k) β γ hα hβ hγ).2 hmap
   apply congrArg f4ShortRootSubspace.mkQ
   exact f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
-    k β γ hα hβ (by simpa only [hspecial] using hsource)
+    k β γ hα hβ hsource
 
 
 
