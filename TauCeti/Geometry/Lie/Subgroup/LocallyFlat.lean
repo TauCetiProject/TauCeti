@@ -33,7 +33,7 @@ variable {G F F' : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
 
 The hypothesis is an ambient chart around the identity that identifies the subgroup carrier with
 the standard slice `univ × {0}`. -/
-theorem isLocallyFlat_subtypeVal_of_isSliceChart {K : Subgroup G}
+theorem isLocallyFlat_subtypeVal_of_isSliceChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G (F × F'))
     (hφ : TauCeti.IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (h1 : (1 : G) ∈ φ.source) :
