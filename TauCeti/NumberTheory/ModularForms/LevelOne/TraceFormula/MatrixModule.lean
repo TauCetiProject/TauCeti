@@ -52,10 +52,8 @@ instance (n : ℤ) : InvolutiveNeg (TraceFormulaMatrix n) where
     simp
 
 /-- Two determinant-`n` matrices define the same projective matrix when they differ by sign. -/
-protected def TraceFormulaMatrix.Rel (A B : TraceFormulaMatrix n) : Prop := A = B ∨ A = -B
-
 instance (n : ℤ) : Setoid (TraceFormulaMatrix n) where
-  r := TraceFormulaMatrix.Rel
+  r A B := A = B ∨ A = -B
   iseqv := by
     refine ⟨?_, ?_, ?_⟩
     · intro A
@@ -165,7 +163,7 @@ theorem TraceFormulaMatrixModule.neg_one_smul (x : TraceFormulaMatrixModule n) :
 instance (n : ℤ) : MulAction PSL(2, ℤ) (TraceFormulaMatrixModule n) :=
   MulAction.compHom _ <| QuotientGroup.lift (Subgroup.center SL(2, ℤ))
     (MulAction.toPermHom SL(2, ℤ) (TraceFormulaMatrixModule n)) fun c hc ↦
-      Equiv.ext fun x ↦ by
+      MonoidHom.mem_ker.mpr <| Equiv.ext fun x ↦ by
         rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with
           rfl | rfl
         · simp
@@ -175,7 +173,9 @@ instance (n : ℤ) : MulAction PSL(2, ℤ) (TraceFormulaMatrixModule n) :=
 /-- A projective modular-group element represented by `g` acts as `g`. -/
 @[simp]
 theorem TraceFormulaMatrixModule.coe_smul (g : SL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : (g : PSL(2, ℤ)) • x = g • x := (rfl)
+    (x : TraceFormulaMatrixModule n) : (g : PSL(2, ℤ)) • x = g • x := by
+  rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
+    MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
 /-- The right multiplication action on `ℳₙ`, expressed as a left action through inversion. -/
 public def TraceFormulaMatrixModule.right (x : TraceFormulaMatrixModule n) (g : SL(2, ℤ)) :
@@ -291,7 +291,10 @@ theorem TraceFormulaMatrixModule.rightPSLHom_apply (g : PSL(2, ℤ))
 /-- A representative acts by inverse right multiplication. -/
 @[simp]
 theorem TraceFormulaMatrixModule.rightPSL_coe (g : SL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : x.rightPSL (g : PSL(2, ℤ)) = x.right g := (rfl)
+    (x : TraceFormulaMatrixModule n) : x.rightPSL (g : PSL(2, ℤ)) = x.right g := by
+  rw [TraceFormulaMatrixModule.rightPSL, TraceFormulaMatrixModule.rightPSLHom,
+    QuotientGroup.lift_mk, traceFormulaMatrixRightHom, MonoidHom.coe_mk, OneHom.coe_mk,
+    Equiv.coe_fn_mk]
 
 /-- The identity acts trivially by inverse right multiplication. -/
 @[simp]
@@ -352,7 +355,9 @@ public def TraceFormulaMatrixModule.conjPSL (x : TraceFormulaMatrixModule n) (g 
 /-- A representative conjugates by `A ↦ g A g⁻¹`. -/
 @[simp]
 theorem TraceFormulaMatrixModule.conjPSL_coe (g : SL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : x.conjPSL (g : PSL(2, ℤ)) = x.conj g := (rfl)
+    (x : TraceFormulaMatrixModule n) : x.conjPSL (g : PSL(2, ℤ)) = x.conj g := by
+  rw [TraceFormulaMatrixModule.conjPSL, TraceFormulaMatrixModule.coe_smul,
+    TraceFormulaMatrixModule.rightPSL_coe, TraceFormulaMatrixModule.conj]
 
 /-- Conjugation fixes every class at the identity. -/
 @[simp]
