@@ -33,7 +33,6 @@ private theorem cyclicGenerator_pow (m : ℕ) :
     (Multiplicative.ofAdd (1 : ZMod m)) ^ m = 1 := by
   apply Multiplicative.toAdd.injective
   rw [toAdd_pow]
-  change m • (1 : ZMod m) = (0 : ZMod m)
   simp
 
 private theorem cyclicGenerator_inv_pow (m : ℕ) :
@@ -73,9 +72,7 @@ private theorem cyclic_order_y (m : ℕ) (hm : 0 < m) :
     orderOf (y 1 m m : TriangleGroup 1 m m) = m := by
   -- The representation into `ZMod m` supplies the lower bound on the order.
   have hmap : orderOf (toCyclic m (y 1 m m)) = m := by
-    rw [toCyclic_y]
-    change addOrderOf (1 : ZMod m) = m
-    exact ZMod.addOrderOf_one m
+    rw [toCyclic_y, orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
   have h₁ : orderOf (toCyclic m (y 1 m m)) ∣ orderOf (y 1 m m) :=
     orderOf_map_dvd _ _
   have h₂ : orderOf (y 1 m m) ∣ m := orderOf_dvd_of_pow_eq_one (y_pow 1 m m)
@@ -86,18 +83,10 @@ private theorem cyclic_order_y (m : ℕ) (hm : 0 < m) :
   · exact Nat.le_of_dvd (Nat.pos_of_dvd_of_pos h₂ hm) h₁'
 
 /-- The cyclic spherical triangle group `TriangleGroup 1 m m` has cardinality `m`. -/
-theorem natCard_one_one (m : ℕ) (hm : 0 < m) : Nat.card (TriangleGroup 1 m m) = m := by
-  calc
-    Nat.card (TriangleGroup 1 m m) = Nat.card ↥(Subgroup.zpowers (y 1 m m)) := by
-      have h : Nat.card (TriangleGroup 1 m m) =
-          Nat.card {q : TriangleGroup 1 m m // q ∈ (Set.univ : Set (TriangleGroup 1 m m))} :=
-        Nat.card_congr (Equiv.Set.univ (TriangleGroup 1 m m)).symm
-      rw [cyclic_zpowers_eq_top]
-      change Nat.card (TriangleGroup 1 m m) =
-        Nat.card {q : TriangleGroup 1 m m // q ∈ (⊤ : Subgroup (TriangleGroup 1 m m))}
-      simpa only [Subgroup.mem_top, Set.mem_univ] using h
-    _ = orderOf (y 1 m m) := Nat.card_zpowers _
-    _ = m := cyclic_order_y m hm
+@[simp]
+theorem natCard_one_self_self (m : ℕ) (hm : 0 < m) : Nat.card (TriangleGroup 1 m m) = m := by
+  exact (orderOf_eq_card_of_zpowers_eq_top (cyclic_zpowers_eq_top m)).symm.trans
+    (cyclic_order_y m hm)
 
 /-- The spherical signature `(1, m, m)` has cyclic triangle group, of order `m`. -/
 noncomputable def equivCyclic (m : ℕ) (hm : 0 < m) :
@@ -107,19 +96,22 @@ noncomputable def equivCyclic (m : ℕ) (hm : 0 < m) :
       intro q
       rw [cyclic_zpowers_eq_top]
       exact Subgroup.mem_top q)
-    (by simpa using natCard_one_one m hm)).symm
+    (by simpa using natCard_one_self_self m hm)).symm
 
+/-- `equivCyclic` sends the trivial generator `x` to the identity. -/
 @[simp]
 theorem equivCyclic_x (m : ℕ) (hm : 0 < m) :
     equivCyclic m hm (x 1 m m) = 1 := by
   have hx : x 1 m m = 1 := by simpa using (x_pow 1 m m)
   simp [hx, equivCyclic]
 
+/-- `equivCyclic` sends `y` to the generator `Multiplicative.ofAdd 1`. -/
 @[simp]
 theorem equivCyclic_y (m : ℕ) (hm : 0 < m) :
     equivCyclic m hm (y 1 m m) = Multiplicative.ofAdd (1 : ZMod m) := by
   simp [equivCyclic]
 
+/-- `equivCyclic` sends `z` to the inverse generator `Multiplicative.ofAdd (-1)`. -/
 @[simp]
 theorem equivCyclic_z (m : ℕ) (hm : 0 < m) :
     equivCyclic m hm (z 1 m m) = Multiplicative.ofAdd (-1 : ZMod m) := by
@@ -127,6 +119,7 @@ theorem equivCyclic_z (m : ℕ) (hm : 0 < m) :
   rw [z_eq, hx]
   simp [equivCyclic]
 
+/-- The inverse of `equivCyclic` sends `Multiplicative.ofAdd 1` to `y`. -/
 @[simp]
 theorem equivCyclic_symm_ofAdd_one (m : ℕ) (hm : 0 < m) :
     (equivCyclic m hm).symm (Multiplicative.ofAdd (1 : ZMod m)) = y 1 m m := by
