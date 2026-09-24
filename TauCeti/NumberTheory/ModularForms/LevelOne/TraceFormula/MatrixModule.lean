@@ -46,33 +46,31 @@ instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
 /-- Two determinant-`n` matrices define the same projective matrix when they differ by sign. -/
 protected def TraceFormulaMatrix.Rel (A B : TraceFormulaMatrix n) : Prop := A = B ∨ A = -B
 
-theorem traceFormulaMatrix_rel_refl (A : TraceFormulaMatrix n) : A.Rel A := Or.inl rfl
-
-theorem traceFormulaMatrix_rel_symm {A B : TraceFormulaMatrix n} : A.Rel B → B.Rel A
-  | Or.inl h => Or.inl h.symm
-  | Or.inr h => Or.inr <| by
-    rw [h]
-    apply Subtype.ext
-    change B.1 = - -B.1
-    simp
-
-theorem traceFormulaMatrix_rel_trans {A B C : TraceFormulaMatrix n} :
-    A.Rel B → B.Rel C → A.Rel C
-  | Or.inl h, hBC => h ▸ hBC
-  | Or.inr h, Or.inl hBC => Or.inr (hBC ▸ h)
-  | Or.inr h, Or.inr hBC => Or.inl <| by
-    rw [h, hBC]
-    apply Subtype.ext
-    change - -C.1 = C.1
-    simp
-
 instance (n : ℤ) : Setoid (TraceFormulaMatrix n) where
   r := TraceFormulaMatrix.Rel
-  iseqv := ⟨traceFormulaMatrix_rel_refl, traceFormulaMatrix_rel_symm,
-    traceFormulaMatrix_rel_trans⟩
+  iseqv := by
+    have neg_neg (A : TraceFormulaMatrix n) : - -A = A := by
+      apply Subtype.ext
+      -- Negation of the determinant fibre is defined on its underlying matrix.
+      change - -A.1 = A.1
+      simp
+    refine ⟨?_, ?_, ?_⟩
+    · intro A
+      exact Or.inl rfl
+    · intro A B h
+      rcases h with h | h
+      · exact Or.inl h.symm
+      · exact Or.inr (by rw [h]; exact (neg_neg B).symm)
+    · intro A B C hAB hBC
+      rcases hAB with hAB | hAB
+      · exact hAB ▸ hBC
+      · rcases hBC with hBC | hBC
+        · exact Or.inr (hBC ▸ hAB)
+        · exact Or.inl (by rw [hAB, hBC]; exact neg_neg C)
 
 /-- The projective determinant-`n` matrix module `ℳₙ`: matrices modulo simultaneous sign. -/
-def TraceFormulaMatrixModule (n : ℤ) := Quotient (inferInstance : Setoid (TraceFormulaMatrix n))
+abbrev TraceFormulaMatrixModule (n : ℤ) :=
+  Quotient (inferInstance : Setoid (TraceFormulaMatrix n))
 
 /-- The projective class of a determinant-`n` matrix. -/
 def TraceFormulaMatrixModule.mk (A : TraceFormulaMatrix n) : TraceFormulaMatrixModule n :=
@@ -87,7 +85,6 @@ theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
 theorem TraceFormulaMatrixModule.mk_eq_iff {A B : TraceFormulaMatrix n} :
     TraceFormulaMatrixModule.mk A = TraceFormulaMatrixModule.mk B ↔ A = B ∨ A = -B := by
-  change Quotient.mk'' A = Quotient.mk'' B ↔ A = B ∨ A = -B
   constructor
   · exact Quotient.exact
   · intro h
@@ -112,49 +109,18 @@ def traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
 def traceFormulaMatrixConj (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     TraceFormulaMatrix n := traceFormulaMatrixLeft g (traceFormulaMatrixRight g A)
 
-theorem traceFormulaMatrixLeft_rel (g : SL(2, ℤ)) {A B : TraceFormulaMatrix n}
-    (h : A.Rel B) : (traceFormulaMatrixLeft g A).Rel (traceFormulaMatrixLeft g B) := by
-  rcases h with h | h
-  · exact Or.inl (h ▸ rfl)
-  · right
-    apply Subtype.ext
-    have hval : A.1 = -B.1 := congrArg Subtype.val h
-    change (g : Matrix (Fin 2) (Fin 2) ℤ) * A.1 = -((g : Matrix (Fin 2) (Fin 2) ℤ) * B.1)
-    rw [hval, Matrix.mul_neg]
-
-theorem traceFormulaMatrixRight_rel (g : SL(2, ℤ)) {A B : TraceFormulaMatrix n}
-    (h : A.Rel B) : (traceFormulaMatrixRight g A).Rel (traceFormulaMatrixRight g B) := by
-  rcases h with h | h
-  · exact Or.inl (h ▸ rfl)
-  · right
-    apply Subtype.ext
-    have hval : A.1 = -B.1 := congrArg Subtype.val h
-    change A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
-      -(B.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
-    rw [hval, Matrix.neg_mul]
-
-theorem traceFormulaMatrixConj_rel (g : SL(2, ℤ)) {A B : TraceFormulaMatrix n}
-    (h : A.Rel B) : (traceFormulaMatrixConj g A).Rel (traceFormulaMatrixConj g B) :=
-  traceFormulaMatrixLeft_rel g (traceFormulaMatrixRight_rel g h)
-
-/-- The map on `ℳₙ` induced by left multiplication. -/
-def traceFormulaMatrixModuleLeft (g : SL(2, ℤ)) :
-    TraceFormulaMatrixModule n → TraceFormulaMatrixModule n :=
-  Quotient.map' (traceFormulaMatrixLeft g) fun _ _ h ↦ traceFormulaMatrixLeft_rel g h
-
-/-- The map on `ℳₙ` induced by right multiplication by an inverse. -/
-def traceFormulaMatrixModuleRight (g : SL(2, ℤ)) :
-    TraceFormulaMatrixModule n → TraceFormulaMatrixModule n :=
-  Quotient.map' (traceFormulaMatrixRight g) fun _ _ h ↦ traceFormulaMatrixRight_rel g h
-
-/-- The map on `ℳₙ` induced by conjugation. -/
-def traceFormulaMatrixModuleConj (g : SL(2, ℤ)) :
-    TraceFormulaMatrixModule n → TraceFormulaMatrixModule n :=
-  Quotient.map' (traceFormulaMatrixConj g) fun _ _ h ↦ traceFormulaMatrixConj_rel g h
-
 /-- Left multiplication makes `ℳₙ` an `SL(2, ℤ)`-set. -/
 instance (n : ℤ) : SMul SL(2, ℤ) (TraceFormulaMatrixModule n) where
-  smul := traceFormulaMatrixModuleLeft
+  smul g := Quotient.map' (traceFormulaMatrixLeft g) fun A B h ↦ by
+    rcases h with h | h
+    · exact Or.inl (h ▸ rfl)
+    · right
+      apply Subtype.ext
+      have hval : A.1 = -B.1 := congrArg Subtype.val h
+      -- Subtype equality reduces to equality of the underlying matrices.
+      change (g : Matrix (Fin 2) (Fin 2) ℤ) * A.1 =
+        -((g : Matrix (Fin 2) (Fin 2) ℤ) * B.1)
+      rw [hval, Matrix.mul_neg]
 
 instance (n : ℤ) : MulAction SL(2, ℤ) (TraceFormulaMatrixModule n) where
   one_smul x := by
@@ -162,6 +128,7 @@ instance (n : ℤ) : MulAction SL(2, ℤ) (TraceFormulaMatrixModule n) where
     apply Quotient.sound
     left
     apply Subtype.ext
+    -- The quotient and subtype constructors expose the matrix action definitionally.
     change (1 : Matrix (Fin 2) (Fin 2) ℤ) * A.1 = A.1
     simp
   mul_smul g h x := by
@@ -169,6 +136,7 @@ instance (n : ℤ) : MulAction SL(2, ℤ) (TraceFormulaMatrixModule n) where
     apply Quotient.sound
     left
     apply Subtype.ext
+    -- The quotient and subtype constructors expose the matrix action definitionally.
     change ((g * h : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) * A.1 =
       (g : Matrix (Fin 2) (Fin 2) ℤ) * ((h : Matrix (Fin 2) (Fin 2) ℤ) * A.1)
     rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_assoc]
@@ -179,8 +147,18 @@ theorem TraceFormulaMatrixModule.smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatri
   (rfl)
 
 /-- The right multiplication action on `ℳₙ`, expressed as a left action through inversion. -/
-def TraceFormulaMatrixModule.right (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
-    TraceFormulaMatrixModule n := traceFormulaMatrixModuleRight g x
+public def TraceFormulaMatrixModule.right (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+    TraceFormulaMatrixModule n :=
+  Quotient.map' (traceFormulaMatrixRight g) (fun A B h ↦ by
+    rcases h with h | h
+    · exact Or.inl (h ▸ rfl)
+    · right
+      apply Subtype.ext
+      have hval : A.1 = -B.1 := congrArg Subtype.val h
+      -- Subtype equality reduces to equality of the underlying matrices.
+      change A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+        -(B.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+      rw [hval, Matrix.neg_mul]) x
 
 @[simp]
 theorem TraceFormulaMatrixModule.right_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
@@ -188,30 +166,41 @@ theorem TraceFormulaMatrixModule.right_mk (g : SL(2, ℤ)) (A : TraceFormulaMatr
       TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := (rfl)
 
 /-- The conjugation action on `ℳₙ`, expressed as a left action by `A ↦ g A g⁻¹`. -/
-def TraceFormulaMatrixModule.conj (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
-    TraceFormulaMatrixModule n := traceFormulaMatrixModuleConj g x
+public def TraceFormulaMatrixModule.conj (g : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+    TraceFormulaMatrixModule n := g • x.right g
+
+/-- Conjugation is left multiplication followed by inverse right multiplication. -/
+theorem TraceFormulaMatrixModule.conj_eq_smul_right (g : SL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : x.conj g = g • x.right g := by
+  unfold TraceFormulaMatrixModule.conj
+  rfl
 
 @[simp]
 theorem TraceFormulaMatrixModule.conj_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     (TraceFormulaMatrixModule.mk A).conj g =
       TraceFormulaMatrixModule.mk (traceFormulaMatrixConj g A) := (rfl)
 
-/-- Right multiplication by inverse matrices is a right `SL(2, ℤ)`-action on `ℳₙ`. -/
+/-- Inverse right multiplication fixes `ℳₙ` at the identity. -/
+@[simp]
 theorem TraceFormulaMatrixModule.right_one (x : TraceFormulaMatrixModule n) : x.right 1 = x := by
   refine Quotient.inductionOn' x fun A ↦ ?_
   apply Quotient.sound
   left
   apply Subtype.ext
+  -- The quotient and subtype constructors expose the right matrix action definitionally.
   change A.1 * ((1⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = A.1
   simp
 
-/-- The composition rule for the right modular-group action on `ℳₙ`. -/
-theorem TraceFormulaMatrixModule.right_mul (g h : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+/-- Inverse right multiplication defines a left action, so successive arguments reverse. -/
+@[simp]
+theorem TraceFormulaMatrixModule.right_mul_rev (g h : SL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) :
     x.right (g * h) = (x.right h).right g := by
   refine Quotient.inductionOn' x fun A ↦ ?_
   apply Quotient.sound
   left
   apply Subtype.ext
+  -- The quotient and subtype constructors expose the right matrix action definitionally.
   change A.1 * (((g * h)⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
     (A.1 * ((h⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) *
       ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
@@ -224,10 +213,21 @@ theorem TraceFormulaMatrixModule.smul_right (g h : SL(2, ℤ)) (x : TraceFormula
   apply Quotient.sound
   left
   apply Subtype.ext
+  -- Both quotient actions reduce to matrix multiplication on representatives.
   change ((g : Matrix (Fin 2) (Fin 2) ℤ) * A.1) *
       ((h⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
     (g : Matrix (Fin 2) (Fin 2) ℤ) *
       (A.1 * ((h⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
   rw [Matrix.mul_assoc]
+
+/-- Conjugation fixes `ℳₙ` at the identity. -/
+@[simp]
+theorem TraceFormulaMatrixModule.conj_one (x : TraceFormulaMatrixModule n) : x.conj 1 = x := by
+  simp [TraceFormulaMatrixModule.conj]
+
+/-- Conjugation by a product composes in the usual left-action order. -/
+theorem TraceFormulaMatrixModule.conj_mul (g h : SL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : x.conj (g * h) = (x.conj h).conj g := by
+  simp only [TraceFormulaMatrixModule.conj, right_mul_rev, mul_smul, smul_right]
 
 end TauCeti
