@@ -97,7 +97,7 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
 /-- **Transport of inflation in degree zero.** The degree-zero comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
-theorem explicitH0Iso_infl [IsTopologicalAddGroup M]
+theorem explicitH0Iso_infl
     (x : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 0
         (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 0
@@ -120,7 +120,7 @@ variable [ContinuousSMul G M] [CompactSpace G]
 /-- **Transport of inflation in degree one.** The degree-one comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
-theorem explicitIso_infl [IsTopologicalAddGroup M]
+theorem explicitIso_infl
     (x : DiscreteH1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 1
         (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 1
@@ -137,7 +137,8 @@ theorem explicitIso_infl [IsTopologicalAddGroup M]
 /-- **Transport of inflation in degree two.** The degree-two comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
-theorem explicitIso_infl2 [IsTopologicalAddGroup M]
+@[simp]
+theorem explicitIso_infl2
     (x : DiscreteH2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 2
         (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 2
