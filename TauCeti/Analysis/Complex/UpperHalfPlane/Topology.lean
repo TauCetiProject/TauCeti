@@ -131,7 +131,7 @@ theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
 
 /-- The inversion `w ↦ -w⁻¹` sends `w` into the closed upper half-plane exactly when `w` lies in
 it. -/
-@[simp] theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
+theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
