@@ -37,11 +37,12 @@ reverse norm one.
 * `CliffordAlgebra.cliffordNorm_unitι`: a vector `v` with unit `Q v` has reverse norm `Q v`.
 * `CliffordAlgebra.cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul`: rescaling by a scalar unit
   `c` multiplies the reverse norm by `c ^ 2`.
+* `CliffordAlgebra.cliffordNorm_scalarUnits`: a scalar unit has reverse norm equal to its square.
 * `CliffordAlgebra.lipschitzNorm_eq_cliffordNorm_of_mem_even` and
   `CliffordAlgebra.lipschitzNorm_eq_neg_cliffordNorm_of_mem_odd`: the comparison with the
   `star` norm on the Lipschitz group.
-* `CliffordAlgebra.mem_spinGroup_iff_cliffordNorm_eq_one`: the Spin group consists of the even
-  Lipschitz elements of reverse norm one.
+* `CliffordAlgebra.mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one`: the Spin group consists
+  of the even Lipschitz elements of reverse norm one.
 
 ## References
 
@@ -151,6 +152,14 @@ theorem cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul {x y : lipschitzGroup Q}
     reverse_mul_self_eq_algebraMap_cliffordNorm, ← map_mul, Units.val_mul, Units.val_pow_eq_pow_val,
     sq]
 
+/-- The Clifford norm of a scalar unit in the Lipschitz group is its square. -/
+@[simp]
+theorem cliffordNorm_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (c : Rˣ) :
+    cliffordNorm Q (scalarUnits Q hQ c) = c * c := by
+  simpa only [map_one, mul_one, sq] using
+    (cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul (x := 1)
+      (y := scalarUnits Q hQ c) (c := c) (by simp))
+
 /-! ### Comparison with the `star` norm and the Spin group -/
 
 /-- On an even Lipschitz element, the `star` norm equals the Clifford norm. -/
@@ -175,7 +184,7 @@ theorem lipschitzNorm_eq_neg_cliffordNorm_of_mem_odd (x : lipschitzGroup Q)
 /-- **Mathlib's Spin group, read through the Clifford norm.** A Lipschitz element lies in
 `spinGroup Q` exactly when it is even and its Clifford norm `reverse x * x` is one. -/
 @[simp]
-theorem mem_spinGroup_iff_cliffordNorm_eq_one (x : lipschitzGroup Q) :
+theorem mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one (x : lipschitzGroup Q) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ spinGroup Q ↔
       ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 ∧ cliffordNorm Q x = 1 := by
   rw [spinGroup.mem_iff, mem_pinGroup_iff_lipschitzNorm_eq_one, ← even_toSubmodule,
@@ -186,7 +195,7 @@ theorem mem_spinGroup_iff_cliffordNorm_eq_one (x : lipschitzGroup Q) :
 @[simp]
 theorem cliffordNorm_pinToLipschitz_spinToPin (x : spinGroup Q) :
     cliffordNorm Q (pinToLipschitz Q (spinToPin Q x)) = 1 := by
-  refine ((mem_spinGroup_iff_cliffordNorm_eq_one _).1 ?_).2
+  refine ((mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one _).1 ?_).2
   rw [coe_pinToLipschitz_apply, coe_spinToPin_apply]
   exact x.2
 
