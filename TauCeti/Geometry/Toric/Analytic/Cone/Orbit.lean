@@ -55,6 +55,10 @@ single character of the dual semigroup.
 * `TauCeti.Toric.mem_stabilizer_distinguishedPoint_iff`: the stabilizer of the distinguished point
   of a face is the subtorus of torus points trivial on the characters vanishing on that face.
 
+The orbit characterizations without a `simp` attribute are intended for explicit rewriting:
+existing simplifier rules already normalize parts of their statements, and Mathlib's `simpNF`
+linter rejects adding those attributes.
+
 ## References
 
 * W. Fulton, *Introduction to Toric Varieties*, §§2.1–2.2 and §3.1.
