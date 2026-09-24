@@ -27,8 +27,10 @@ different source and target regroupings. The multiplicity-free `RCLike` version 
 
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
 at every represented tuple. This supplies the transition-map calculation needed to assemble a
-holomorphic atlas for symmetric powers. The organization follows Ozsváth--Szabó,
-[arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.1.
+holomorphic atlas for symmetric powers. For background on the symmetric-power setting, see
+Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.2. The
+blockwise analytic statement and proof in this file are developed here, rather than attributed to
+that section.
 -/
 
 public section

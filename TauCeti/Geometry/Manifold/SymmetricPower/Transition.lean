@@ -26,8 +26,10 @@ The regularity claims below assume that, for every represented block `q i` and e
 the surface coordinate change `fun w : ℂ => ψ i ((φ i).symm w)` is analytic at `φ i (z : α)`.
 The whole-target claims require this hypothesis for every block represented in the target.
 
-The construction follows Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed
-three-manifolds* ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2.1.
+For background on the symmetric-power setting, see Ozsváth–Szabó, *Holomorphic disks and
+topological invariants for closed three-manifolds*
+([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2.2. The chart construction and
+transition calculation in this file are developed here, rather than attributed to that section.
 
 ## Main declarations
 
