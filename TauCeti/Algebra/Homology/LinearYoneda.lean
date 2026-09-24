@@ -51,6 +51,7 @@ lemma linearYonedaFunctor_obj (X : (ChainComplex C α)ᵒᵖ) :
     (linearYonedaFunctor k Y).obj X = X.unop.linearYonedaObj k Y := rfl
 
 /-- The map `Hom(X', Y) ⟶ Hom(X, Y)` induced by a chain map `X ⟶ X'` is precomposition. -/
+@[simp]
 lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ : X ⟶ X') (i : α)
     (g : X.unop.X i ⟶ Y) :
     ((linearYonedaFunctor k Y).map φ).f i g = φ.unop.f i ≫ g := rfl

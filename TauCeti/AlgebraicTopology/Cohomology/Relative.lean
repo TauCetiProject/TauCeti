@@ -73,6 +73,22 @@ abbrev singularCochainComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     P'.singularCochainComplex R k M ⟶ P.singularCochainComplex R k M :=
   (TauCeti.ChainComplex.linearYonedaFunctor k M).map (singularChainComplexMap f R).op
 
+/-- The relative cochain map is the image under `Hom(-, M)` of the relative singular chain map
+of the associated simplicial-set pair. -/
+lemma singularCochainComplexMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') :
+    singularCochainComplexMap (R := R) (k := k) (M := M) f =
+      (TauCeti.ChainComplex.linearYonedaFunctor k M).map
+        (SSetPair.chainComplexMap (toSSetPair.map f) R).op := rfl
+
+/-- The cochain map on ambient spaces is the image under `Hom(-, M)` of the ambient component
+of the induced simplicial-set-pair map. -/
+lemma singularCochainComplexMap_fst_eq {P P' : TopPair.{w}} (f : P ⟶ P') :
+    TopCat.singularCochainComplexMap (R := R) (k := k) (M := M) (Hom.fst f) =
+      (TauCeti.ChainComplex.linearYonedaFunctor k M).map
+        (SSet.chainComplexMap (toSSetPair.map f).right R).op := by
+  rw [toSSetPair_map_right]
+  rfl
+
 /-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
 degree-`n` component of the induced relative singular chain map. -/
 @[simp]
@@ -145,14 +161,27 @@ abbrev singularCochainComplexShortComplex : ShortComplex (CochainComplex (Module
     ((P.singularChainComplexShortComplex R).op.map
       (TauCeti.ChainComplex.linearYonedaFunctor k M)).zero
 
+/-- The cochain sequence of a pair is the image under `Hom(-, M)` of its singular chain
+sequence. -/
+lemma singularCochainComplexShortComplex_eq_map :
+    P.singularCochainComplexShortComplex R k M =
+      (P.singularChainComplexShortComplex R).op.map
+        (TauCeti.ChainComplex.linearYonedaFunctor k M) := rfl
+
+/-- The first map of the cochain sequence is the image under `Hom(-, M)` of the quotient map
+from ambient to relative singular chains. -/
+lemma singularCochainComplexShortComplex_f_eq :
+    (P.singularCochainComplexShortComplex R k M).f =
+      (TauCeti.ChainComplex.linearYonedaFunctor k M).map (P.singularChainComplexπ R).op := rfl
+
 /-- The cochain sequence `0 ⟶ C*(X, A) ⟶ C*(X) ⟶ C*(A) ⟶ 0` of a topological pair is short
 exact. -/
 lemma shortExact_singularCochainComplexShortComplex :
     (P.singularCochainComplexShortComplex R k M).ShortExact :=
-  -- As in `singularCochainComplexShortComplex`, the sequence is `Hom(-, M)` applied to the chain
-  -- sequence of `P` on the nose.
-  TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
-    (P.shortExact_singularChainComplexShortComplex R)
+  by
+    rw [singularCochainComplexShortComplex_eq_map]
+    exact TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
+      (P.shortExact_singularChainComplexShortComplex R)
 
 /-- The map `Hⁿ(X, A) ⟶ Hⁿ(X)` from relative to absolute singular cohomology, induced by the
 quotient map from the singular chains of `X` to the relative chains of `(X, A)`. -/
@@ -166,7 +195,7 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.snd.singularCohomology R k M n ⟶ P.singularCohomology R k M m :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
@@ -186,6 +215,18 @@ lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
     (ShortComplex.mk _ _ (P.singularCohomologyδ_comp_singularCohomologyπ R k M n m h)).Exact :=
   (P.shortExact_singularCochainComplexShortComplex R k M).homology_exact₁ n m (by simpa)
+
+/-- The map from relative to absolute zeroth singular cohomology is a monomorphism. -/
+instance : Mono (P.singularCohomologyπ R k M 0) := by
+  let _ : Mono (P.singularCochainComplexShortComplex R k M).f :=
+    (P.shortExact_singularCochainComplexShortComplex R k M).mono_f
+  let _ : Mono ((P.singularCochainComplexShortComplex R k M).f.f 0) :=
+    Functor.map_mono (HomologicalComplex.eval (ModuleCat k) (ComplexShape.up ℕ) 0)
+      (P.singularCochainComplexShortComplex R k M).f
+  exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
+    (P.singularCochainComplexShortComplex R k M).f 0 fun i h ↦ by
+      change i + 1 = 0 at h
+      omega
 
 /-- Exactness at ambient cohomology: `Hⁿ(X, A) ⟶ Hⁿ(X) ⟶ Hⁿ(A)` is exact. -/
 lemma singularCohomology_exact_space (n : ℕ) :
@@ -211,8 +252,8 @@ def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
       (((SSetPair.chainComplexFunctorπ C).app R).naturality (toSSetPair.map f))
     simp only [op_comp, Functor.map_comp] at h
-    -- `h` is the required square, with the chain maps of `toSSetPair.map f` written through the
-    -- bifunctors of `SSetPair` rather than through `toSSet` and `singularChainComplexπ`.
+    rw [singularCochainComplexMap_eq, singularCochainComplexMap_fst_eq,
+      singularCochainComplexShortComplex_f_eq]
     exact h.symm
   comm₂₃ := by
     rw [← TopCat.singularCochainComplexMap_comp, ← TopCat.singularCochainComplexMap_comp, Hom.w]
