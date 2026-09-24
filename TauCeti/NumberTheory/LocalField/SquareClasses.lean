@@ -91,7 +91,7 @@ theorem not_isSquare_integerUnit_mul_uniformizer (u : 𝒪[K]ˣ) {π : Kˣ}
 /-- **The four square classes at odd residue characteristic.** If `u` has nonsquare
 residue and `π` is any uniformizer, the classes of `1`, `u`, `π`, and `uπ` exhaust the
 square-class group. -/
-theorem squareClass_eq_representative_of_odd (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ)
+theorem squareClass_eq_representative_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ)
     (hu : ¬IsSquare (Units.map ((residue 𝒪[K] : 𝒪[K] →+* 𝓀[K]).toMonoidHom) u))
     {π : Kˣ} (hπ : IsUniformizer (K := K) π) (a : Kˣ) :
     squareClass a = 0 ∨
@@ -149,7 +149,7 @@ theorem squareClass_eq_representative_of_odd (h2 : IsUnit (2 : 𝒪[K])) (u : �
 
 /-- At odd residue characteristic, every uniformizer admits a unit with nonsquare residue
 giving representatives for all four square classes. -/
-theorem exists_odd_squareClass_representatives (h2 : IsUnit (2 : 𝒪[K]))
+theorem exists_squareClass_representatives_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K]))
     {π : Kˣ} (hπ : IsUniformizer (K := K) π) :
     ∃ u : 𝒪[K]ˣ,
       ¬IsSquare (Units.map ((residue 𝒪[K] : 𝒪[K] →+* 𝓀[K]).toMonoidHom) u) ∧
@@ -161,6 +161,6 @@ theorem exists_odd_squareClass_representatives (h2 : IsUnit (2 : 𝒪[K]))
           (Units.map ((Subring.subtype 𝒪[K] : 𝒪[K] →+* K).toMonoidHom) u * π)) := by
   classical
   obtain ⟨u, hu⟩ := exists_integerUnit_not_isSquare_residue h2
-  exact ⟨u, hu, squareClass_eq_representative_of_odd h2 u hu hπ⟩
+  exact ⟨u, hu, squareClass_eq_representative_of_isUnit_two h2 u hu hπ⟩
 
 end TauCeti
