@@ -14,9 +14,9 @@ For a tower of finite normal layers, corestriction on integral Tate cohomology c
 integer degree. This supplies the trivial-coefficient side of the tower compatibility used by
 the Tate isomorphism of a class formation.
 
-The positive-degree argument uses transitivity of ordinary group-cohomology corestriction;
-the negative-degree argument uses functoriality of group homology. In degree zero the map is the
-relative norm, while degree minus one is trivial for integral coefficients.
+In positive degrees these maps agree with ordinary group-cohomology corestriction, and below
+degree minus one with group-homology maps. In degree zero the map is the relative norm, while
+degree minus one vanishes for integral coefficients.
 
 ## References
 
@@ -137,7 +137,24 @@ private theorem trivialTateCor_comp_compare_neg {small big : NormalLayer G}
   refine (Category.assoc _ _ _).symm.trans (hcor.trans ?_)
   exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) hmap)
 
+private theorem comp_of_compare {A B C A' B' C' : ModuleCat ℤ}
+    (f : A ⟶ B) (g : B ⟶ C) (h : A ⟶ C)
+    (f' : A' ⟶ B') (g' : B' ⟶ C') (h' : A' ⟶ C')
+    (iA : A ≅ A') (iB : B ≅ B') (iC : C ≅ C')
+    (hf : f ≫ iB.hom = iA.hom ≫ f')
+    (hg : g ≫ iC.hom = iB.hom ≫ g')
+    (hh : h ≫ iC.hom = iA.hom ≫ h')
+    (hcomp : h' = f' ≫ g') : h = f ≫ g := by
+  rw [← cancel_mono iC.hom]
+  calc
+    h ≫ iC.hom = iA.hom ≫ h' := hh
+    _ = iA.hom ≫ f' ≫ g' := by rw [hcomp]
+    _ = f ≫ iB.hom ≫ g' := by
+      simpa only [← Category.assoc] using congrArg (· ≫ g') hf.symm
+    _ = f ≫ g ≫ iC.hom := congrArg (f ≫ ·) hg.symm
+
 /-- Trivial-coefficient Tate corestriction is functorial in towers of finite normal layers. -/
+@[simp]
 theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (r : ℤ) :
     (T.trans T').trivialTateCor r = T.trivialTateCor r ≫ T'.trivialTateCor r := by
   -- The four cases use ordinary cohomology, the norm quotient, the vanishing of degree minus
@@ -152,20 +169,18 @@ theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b
   · have : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩
     have hn : (n : ℤ) + 1 = ((n + 1 : ℕ) : ℤ) := by omega
     rw [hn]
-    rw [← cancel_mono ((TateCohomology.isoGroupCohomology (n + 1)).hom.app
-      (Rep.trivial ℤ c.Gal ℤ))]
-    have hT := trivialTateCor_comp_compare T (n + 1)
-    have hT' := trivialTateCor_comp_compare T' (n + 1)
-    have hTT := trivialTateCor_comp_compare (T.trans T') (n + 1)
-    -- Transport transitivity through the canonical comparison in positive degree.
-    have hR := congrArg (T.trivialTateCor (n + 1) ≫ ·) hT'
-    have hR2 := congrArg (· ≫ trivialCohomologyCor T' (n + 1)) hT
-    have hc := congrArg
-      ((TateCohomology.isoGroupCohomology (n + 1)).hom.app
-        (Rep.trivial ℤ a.Gal ℤ) ≫ ·) (trivialCohomologyCor_trans T T' (n + 1))
-    exact hTT.trans (hc.trans
-      ((Category.assoc _ _ _).symm.trans (hR2.symm.trans
-        ((Category.assoc _ _ _).trans (hR.symm.trans (Category.assoc _ _ _).symm)))))
+    exact comp_of_compare
+      (T.trivialTateCor (n + 1)) (T'.trivialTateCor (n + 1))
+      ((T.trans T').trivialTateCor (n + 1))
+      (trivialCohomologyCor T (n + 1)) (trivialCohomologyCor T' (n + 1))
+      (trivialCohomologyCor (T.trans T') (n + 1))
+      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ a.Gal ℤ))
+      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ b.Gal ℤ))
+      ((TateCohomology.isoGroupCohomology (n + 1)).app (Rep.trivial ℤ c.Gal ℤ))
+      (trivialTateCor_comp_compare T (n + 1))
+      (trivialTateCor_comp_compare T' (n + 1))
+      (trivialTateCor_comp_compare (T.trans T') (n + 1))
+      (trivialCohomologyCor_trans T T' (n + 1))
   · ext x
     induction x using TauCeti.TateCohomology.H0_induction_on with | h y => ?_
     have hy : y = trivialInvariant a (y : ℤ) := by ext; rfl
@@ -181,21 +196,21 @@ theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b
       TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_trivial_int c.Gal
     ext x
     exact Subsingleton.elim _ _
-  · rw [← cancel_mono ((TateCohomology.isoGroupHomology
-      (Int.negSucc (n + 1)) (n + 1) (by rw [Int.negSucc_eq])).hom.app
-      (Rep.trivial ℤ c.Gal ℤ))]
-    have hT := trivialTateCor_comp_compare_neg T n
-    have hT' := trivialTateCor_comp_compare_neg T' n
-    have hTT := trivialTateCor_comp_compare_neg (T.trans T') n
-    -- The same composition argument applies under the homological comparison below minus one.
-    have hR := congrArg (T.trivialTateCor (Int.negSucc (n + 1)) ≫ ·) hT'
-    have hR2 := congrArg (· ≫ trivialHomologyCor T' (n + 1)) hT
-    have hc := congrArg
+  · exact comp_of_compare
+      (T.trivialTateCor (Int.negSucc (n + 1)))
+      (T'.trivialTateCor (Int.negSucc (n + 1)))
+      ((T.trans T').trivialTateCor (Int.negSucc (n + 1)))
+      (trivialHomologyCor T (n + 1)) (trivialHomologyCor T' (n + 1))
+      (trivialHomologyCor (T.trans T') (n + 1))
       ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-        (by rw [Int.negSucc_eq])).hom.app (Rep.trivial ℤ a.Gal ℤ) ≫ ·)
+        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ a.Gal ℤ))
+      ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ b.Gal ℤ))
+      ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+        (by rw [Int.negSucc_eq])).app (Rep.trivial ℤ c.Gal ℤ))
+      (trivialTateCor_comp_compare_neg T n)
+      (trivialTateCor_comp_compare_neg T' n)
+      (trivialTateCor_comp_compare_neg (T.trans T') n)
       (trivialHomologyCor_trans T T' (n + 1))
-    exact hTT.trans (hc.trans
-      ((Category.assoc _ _ _).symm.trans (hR2.symm.trans
-        ((Category.assoc _ _ _).trans (hR.symm.trans (Category.assoc _ _ _).symm)))))
 
 end TauCeti.ClassFieldTheory.LayerRestriction

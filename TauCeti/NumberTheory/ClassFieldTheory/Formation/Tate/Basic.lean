@@ -148,7 +148,7 @@ theorem trivialTateRangeIso_hom_H0π (T : LayerRestriction small big)
 
 /-- In positive degrees, the trivial-coefficient range comparison agrees with the ordinary
 group-cohomology change-of-group isomorphism. -/
-@[reassoc]
+@[simp, reassoc]
 theorem trivialTateRangeIso_hom_comp_isoGroupCohomology_hom
     (T : LayerRestriction small big) (n : ℕ) [NeZero n] :
     (T.trivialTateRangeIso n).hom ≫
@@ -184,7 +184,7 @@ theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
 
 /-- Below degree minus one, the trivial-coefficient range comparison agrees with the
 group-homology change-of-group isomorphism. -/
-@[reassoc]
+@[simp, reassoc]
 theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
     (T : LayerRestriction small big) (n : ℕ) :
     (T.trivialTateRangeIso (Int.negSucc (n + 1))).hom ≫
