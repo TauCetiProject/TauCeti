@@ -14,6 +14,10 @@ This file supplies the reduced-ring diagonal-operator lemma used by concrete Lie
 computations. It is the generic part of the argument first developed for the diagonal Cartan of
 `gl n` in `TauCeti.Algebra.Lie.GeneralLinear.RootSpace`; concrete Lie-algebra files provide the
 adjoint-action calculation and their own weight/support API.
+
+The main theorem extends Mathlib's `Matrix.maxGenEigenspace_toLin_diagonal_eq_eigenspace`, whose
+domain hypothesis is strengthened here to the reduced-ring hypothesis needed by the coordinatewise
+nilpotence argument.
 -/
 
 public section

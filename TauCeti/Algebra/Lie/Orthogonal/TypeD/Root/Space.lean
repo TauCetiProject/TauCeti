@@ -19,15 +19,16 @@ signed coordinate weights.
 
 Over a reduced ring, generalized root spaces are honest simultaneous eigenspaces because each Cartan
 element acts diagonally on the ambient matrix units. This gives an entrywise support criterion
-that reduces the calculation of a concrete root space to the positions having its requested
-signed weight.
+that reduces the calculation of a concrete root space to the positions having its requested signed
+weight; the converse support characterization uses the stronger hypothesis that the coefficient
+ring is a domain.
 
 ## Main results
 
 * `TauCeti.rootSpace_typeDDiagonalCartan_eq_weightSpace`: generalized root spaces are honest
   simultaneous eigenspaces.
-* `TauCeti.mem_rootSpace_typeDDiagonalCartan_iff`: membership is equivalent to entrywise support
-  on positions of the requested weight.
+* `TauCeti.mem_rootSpace_typeDDiagonalCartan_iff`: over a domain, membership is equivalent to
+  entrywise support on positions of the requested weight.
 
 The reduced-ring diagonal-eigenspace step reuses the generic helper in
 `TauCeti.LinearAlgebra.Eigenspace.Diagonal`, factored from the analogous
@@ -64,6 +65,7 @@ noncomputable def typeDMatrixWeight (a b : ι ⊕ ι) :
     Module.Dual K (typeDDiagonalCartan K ι) :=
   typeDCoordinateWeight a - typeDCoordinateWeight b
 
+/-- The signed coordinate weight evaluates through the corresponding diagonal entry. -/
 @[simp]
 theorem typeDCoordinateWeight_apply (a : ι ⊕ ι) (A : typeDDiagonalCartan K ι) :
     typeDCoordinateWeight a A =
@@ -72,6 +74,7 @@ theorem typeDCoordinateWeight_apply (a : ι ⊕ ι) (A : typeDDiagonalCartan K �
   | inl i => simp [typeDCoordinateWeight]
   | inr i => simp [typeDCoordinateWeight]
 
+/-- The matrix-entry weight evaluates as the difference of the two signed diagonal coordinates. -/
 @[simp]
 theorem typeDMatrixWeight_apply (a b : ι ⊕ ι) (A : typeDDiagonalCartan K ι) :
     typeDMatrixWeight a b A =
@@ -87,6 +90,7 @@ noncomputable def typeDWeightSub (i j : ι) : Module.Dual K (typeDDiagonalCartan
 noncomputable def typeDWeightAdd (i j : ι) : Module.Dual K (typeDDiagonalCartan K ι) :=
   typeDEpsilon i + typeDEpsilon j
 
+/-- The difference-root weight evaluates as the difference of the corresponding diagonal entries. -/
 @[simp]
 theorem typeDWeightSub_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
     typeDWeightSub i j A =
@@ -94,6 +98,7 @@ theorem typeDWeightSub_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
         (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl j) := by
   simp [typeDWeightSub]
 
+/-- The sum-root weight evaluates as the sum of the corresponding diagonal entries. -/
 @[simp]
 theorem typeDWeightAdd_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
     typeDWeightAdd i j A =
@@ -101,22 +106,38 @@ theorem typeDWeightAdd_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
         (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl j) := by
   simp [typeDWeightAdd]
 
+/-- A difference-root weight vanishes when its two coordinates agree. -/
+@[simp]
+theorem typeDWeightSub_self (i : ι) : typeDWeightSub (K := K) i i = 0 := by
+  ext A
+  simp [typeDWeightSub]
+
+/-- The matrix-entry weight on a diagonal entry is the zero functional. -/
+@[simp]
+theorem typeDMatrixWeight_self (a : ι ⊕ ι) :
+    typeDMatrixWeight (K := K) a a = 0 := by
+  simp [typeDMatrixWeight]
+
+/-- The `(inl i, inl j)` matrix-entry weight is the difference-root weight `εᵢ - εⱼ`. -/
 @[simp]
 theorem typeDMatrixWeight_inl_inl (i j : ι) :
     typeDMatrixWeight (K := K) (.inl i) (.inl j) = typeDWeightSub i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightSub]
 
+/-- The `(inl i, inr j)` matrix-entry weight is the sum-root weight `εᵢ + εⱼ`. -/
 @[simp]
 theorem typeDMatrixWeight_inl_inr (i j : ι) :
     typeDMatrixWeight (K := K) (.inl i) (.inr j) = typeDWeightAdd i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightAdd]
 
+/-- The `(inr i, inl j)` matrix-entry weight is the negative sum-root weight. -/
 @[simp]
 theorem typeDMatrixWeight_inr_inl (i j : ι) :
     typeDMatrixWeight (K := K) (.inr i) (.inl j) = -typeDWeightAdd i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightAdd]
   abel
 
+/-- The `(inr i, inr j)` matrix-entry weight is the reversed difference-root weight. -/
 @[simp]
 theorem typeDMatrixWeight_inr_inr (i j : ι) :
     typeDMatrixWeight (K := K) (.inr i) (.inr j) = typeDWeightSub j i := by
@@ -182,14 +203,13 @@ theorem rootSpace_typeDDiagonalCartan_eq_weightSpace
     LieModule.toEnd_apply_apply] at hA
   exact Subtype.ext hA
 
-/-- The diagonal Cartan acts on each matrix entry through its signed coordinate-difference
-weight. -/
+/-- The diagonal Cartan acts on each ambient matrix entry through its signed coordinate-difference
+weight. The matrix need not itself lie in the type-`D` subalgebra. -/
 @[simp]
 theorem typeDDiagonalCartan_lie_apply (A : typeDDiagonalCartan K ι)
-    (X : LieAlgebra.Orthogonal.typeD ι K) (a b : ι ⊕ ι) :
+    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (a b : ι ⊕ ι) :
     ⁅(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K),
-        (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K)⁆ a b =
-      typeDMatrixWeight a b A * (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b := by
+        X⁆ a b = typeDMatrixWeight a b A * X a b := by
   rw [← (typeDDiagonalEquiv (K := K) (ι := ι)).apply_symm_apply A,
     coe_typeDDiagonalEquiv_apply, typeDDiagonalMatrix_lie_apply, typeDMatrixWeight_apply]
   simp only [LinearEquiv.symm_apply_apply]
@@ -213,8 +233,8 @@ theorem mem_rootSpace_typeDDiagonalCartan_of_forall
   · rw [congrArg (fun f : Module.Dual K (typeDDiagonalCartan K ι) => f A) hab]
   · rw [h a b hab, mul_zero, mul_zero]
 
-/-- A matrix in the split type-`D` Lie algebra belongs to the root space of `χ` exactly when all
-entries whose signed coordinate difference is not `χ` vanish. -/
+/-- Over a domain, a matrix in the split type-`D` Lie algebra belongs to the root space of `χ`
+exactly when all entries whose signed coordinate difference is not `χ` vanish. -/
 @[simp]
 theorem mem_rootSpace_typeDDiagonalCartan_iff
     [IsDomain K]
