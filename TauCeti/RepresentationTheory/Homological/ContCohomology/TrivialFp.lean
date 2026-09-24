@@ -29,7 +29,7 @@ without repeatedly transporting across the definitional equality of trivial repr
 
 * `TauCeti.trivialFp`: trivial `ZMod p` coefficients in the universe of the group.
 * `TauCeti.cohomFp`: continuous cohomology with trivial `ZMod p` coefficients.
-* `TauCeti.cohomFpResMap`: restriction on `cohomFp`.
+* `TauCeti.trivialFpResMap`: restriction on `cohomFp`.
 
 ## Main results
 
@@ -67,11 +67,11 @@ noncomputable def trivialFp : TopRep (ZMod p) G :=
 @[simp]
 theorem trivialFp_V : (trivialFp p G).V = ULift.{u} (ZMod p) := (rfl)
 
-/-- The additive equivalence from the lifted carrier of `trivialFp p G` to `ZMod p`. -/
-noncomputable def trivialFpEquiv : (trivialFp p G).V ≃+ ZMod p :=
-  -- The carrier is definitionally `ULift.{u} (ZMod p)`; elaborate `AddEquiv.ulift` against
+/-- The `ZMod p`-linear equivalence from the lifted carrier of `trivialFp p G` to `ZMod p`. -/
+noncomputable def trivialFpEquiv : (trivialFp p G).V ≃ₗ[ZMod p] ZMod p :=
+  -- The carrier is definitionally `ULift.{u} (ZMod p)`; elaborate `ULift.moduleEquiv` against
   -- that unfolded carrier because `trivialFp_V` is an equality of types.
-  AddEquiv.ulift
+  ULift.moduleEquiv
 
 /-- `trivialFpEquiv` sends a lifted element to its underlying value. -/
 @[simp]
@@ -96,6 +96,7 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-- Applying the discrete coefficient dictionary to the carrier of `trivialFp` recovers the
 coefficient object itself. -/
+@[simp]
 theorem ofDiscreteModule_trivialFp :
     ofDiscreteModule (ZMod p) G (trivialFp p G).V = trivialFp p G :=
   ofDiscreteModule_eq_self (trivialFp p G)
@@ -132,14 +133,14 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 noncomputable abbrev cohomFp (n : ℕ) := continuousCohomology n (trivialFp p G)
 
 /-- Restriction on cohomology with trivial `ZMod p` coefficients. -/
-noncomputable def cohomFpResMap (S : Subgroup G) (n : ℕ) :
+noncomputable def trivialFpResMap (S : Subgroup G) (n : ℕ) :
     cohomFp p G n ⟶ cohomFp p S n :=
   ContinuousCohomology.res S (trivialFp p G) n ≫
     eqToHom (congrArg (continuousCohomology n) (res_trivialFp p G S))
 
 /-- The defining equation of restriction with trivial `ZMod p` coefficients. -/
-theorem cohomFpResMap_def (S : Subgroup G) (n : ℕ) :
-    cohomFpResMap p G S n = ContinuousCohomology.res S (trivialFp p G) n ≫
+theorem trivialFpResMap_def (S : Subgroup G) (n : ℕ) :
+    trivialFpResMap p G S n = ContinuousCohomology.res S (trivialFp p G) n ≫
       eqToHom (congrArg (continuousCohomology n) (res_trivialFp p G S)) :=
   (rfl)
 
