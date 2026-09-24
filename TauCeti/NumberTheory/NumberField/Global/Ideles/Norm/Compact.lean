@@ -13,7 +13,6 @@ import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
 # Compactness of the norm-one idele class group
@@ -22,10 +21,6 @@ For a number field `K`, the norm-one idele class group `C_K¹ = 𝕀_K¹ / Kˣ` 
 adelic form of the two finiteness theorems of algebraic number theory: the finiteness of the ideal
 class group and Dirichlet's unit theorem.  The full idele class group is not compact, since the
 idele class norm maps it onto `ℝ>0`; `C_K¹` is the kernel of that map.
-
-The compactness argument combines finiteness of the ideal class group with Dirichlet's unit
-theorem.  It uses the compact norm-one part of the closure of the canonical-embedding fundamental
-cone and the compactness of the integral finite adeles.
 
 ## Main results
 
