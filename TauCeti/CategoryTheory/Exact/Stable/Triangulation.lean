@@ -16,7 +16,9 @@ This file gives the standard Happel triangles in the projective stable quotient 
 Frobenius exact category. A conflation is sent to a triangle in the stable category by the
 quotient functor, its connecting map, and the comparison between the chosen suspension object and
 the stable suspension. The cone of an arbitrary morphism is identified with the standard triangle
-of its cone conflation.
+of its cone conflation. This construction follows Happel, *Triangulated Categories in the
+Representation Theory of Finite Dimensional Algebras*, Chapter I, Section 2. Morphisms between
+objects in the stable category are handled by choosing a representative in the exact category.
 
 The isomorphism-closed class of distinguished triangles records the triangles arising from
 conflations. The cone construction shows that the standard cone triangles belong to this class.
@@ -218,17 +220,8 @@ noncomputable def stableConeTriangleIsoConflation (f : X ⟶ Y) :
       CategoryTheory.Pretriangulated.Triangle.mk_obj₃, Iso.refl_hom, Category.comp_id]
     dsimp [i]
     simp only [E.projectiveStableIsoBiprod_hom]
-    -- This change unfolds `coneDeflation` to its biproduct-desc definition.
-    change E.projectiveStableFunctor.map (hE.coneInclusion f) =
-      E.projectiveStableFunctor.map (biprod.inr (X := p) (Y := Y)) ≫
-        E.projectiveStableFunctor.map (hE.coneDeflation f)
     rw [← Functor.map_comp]
-    -- This change exposes the right-hand composite as the defining biproduct map.
-    change E.projectiveStableFunctor.map (hE.coneInclusion f) =
-      E.projectiveStableFunctor.map
-        ((biprod.inr (X := p) (Y := Y) : Y ⟶ p ⊞ Y) ≫
-          biprod.desc (hE.coneInjectiveMap f) (hE.coneInclusion f))
-    rw [biprod.inr_desc]
+    rw [hE.biproductInr_comp_coneDeflation]
   · simp only [CategoryTheory.Pretriangulated.Triangle.mk_mor₃,
       CategoryTheory.Pretriangulated.Triangle.mk_mor₃, Category.assoc, Iso.refl_hom]
     rw [hE.projectiveStableFunctor_map_connectingMap_cone]
@@ -243,6 +236,31 @@ theorem stableConeTriangle_mem (f : X ⟶ Y) :
   let := hE.stableHasShift
   exact (hE.mem_stableDistinguishedTriangles_iff _).2
     ⟨_, hE.conflation_cone f, ⟨hE.stableConeTriangleIsoConflation f⟩⟩
+
+/-- A cone triangle for a morphism between objects in the projective stable category, represented
+by a morphism in the Frobenius exact category. -/
+@[expose] noncomputable def stableConeTriangleOf
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    letI := hE.stableHasShift
+    CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory :=
+  hE.stableConeTriangle (Classical.choose (E.projectiveStableFunctor.map_surjective f))
+
+/-- The first morphism of the chosen stable cone triangle is the given stable-category morphism. -/
+@[simp]
+theorem stableConeTriangleOf_mor₁
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift; (hE.stableConeTriangleOf f).mor₁) = f := by
+  simp only [stableConeTriangleOf, stableConeTriangle_mor₁]
+  exact Classical.choose_spec (E.projectiveStableFunctor.map_surjective f)
+
+/-- The cone triangle of any stable-category morphism is distinguished. -/
+@[simp]
+theorem stableConeTriangleOf_mem
+    (f : E.projectiveStableFunctor.obj X ⟶ E.projectiveStableFunctor.obj Y) :
+    (letI := hE.stableHasShift;
+      (hE.stableConeTriangleOf f) ∈ hE.stableDistinguishedTriangles) := by
+  simpa only [stableConeTriangleOf] using hE.stableConeTriangle_mem
+    (Classical.choose (E.projectiveStableFunctor.map_surjective f))
 
 end ExactStructure.IsFrobenius
 end TauCeti
