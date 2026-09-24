@@ -44,6 +44,23 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K : Type*) [Field K] [NumberField K]
 
+/-- Multiplying an idele by a principal unit acts on its infinite component by the corresponding
+unit action on the mixed space. -/
+private lemma ringEquiv_mixedSpace_mul_unitEmbedding (z : IdeleGroup (𝓞 K) K)
+    (u : (𝓞 K)ˣ) :
+    InfiniteAdeleRing.ringEquiv_mixedSpace K
+      ((z * IdeleGroup.unitEmbedding (𝓞 K) K
+        (Units.map (algebraMap (𝓞 K) K) u) : AdeleRing (𝓞 K) K).1) =
+      u • InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1 := by
+  rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul]
+  congr 1
+  funext w
+  change (z : AdeleRing (𝓞 K) K).1 w *
+      (algebraMap K (AdeleRing (𝓞 K) K) ((algebraMap (𝓞 K) K) u)).1 w =
+    (algebraMap K (InfiniteAdeleRing K) ((algebraMap (𝓞 K) K) u)) w *
+      (z : AdeleRing (𝓞 K) K).1 w
+  simp [mul_comm]
+
 /-- There is a compact set of ideles meeting the orbit under the global units of every idele of
 norm one whose finite part is an everywhere-integral unit. -/
 private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
@@ -86,10 +103,7 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
   refine ⟨u, ?_⟩
   set z' := z * IdeleGroup.unitEmbedding (𝓞 K) K (Units.map (algebraMap (𝓞 K) K) u)
   have he : e (z' : AdeleRing (𝓞 K) K).1 = u • e (z : AdeleRing (𝓞 K) K).1 := by
-    rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul, mul_comm]
-    -- `AdeleRing` is a type synonym for `K∞ × 𝔸_K^f`, so the infinite part of the product with a
-    -- principal idele is the product with the diagonal image in `K∞`; no lemma states this.
-    rfl
+    simpa only [z', e, Units.val_mul] using ringEquiv_mixedSpace_mul_unitEmbedding K z u
   have hF' : e (z' : AdeleRing (𝓞 K) K).1 ∈ F := by
     rw [he]
     exact ⟨subset_closure ⟨hu, by simp [hnorm]⟩, by simp [hnorm]⟩
