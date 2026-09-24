@@ -50,6 +50,7 @@ theorem dotProduct_extend_zero {f : n → m} (hf : f.Injective) (x : m → α) (
 
 /-- For a vector `c` of strictly positive weights and a nonnegative vector `x`, the pairing
 `c ⬝ᵥ x` vanishes only when `x` does. -/
+@[simp]
 theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [Semiring R] [PartialOrder R]
     [IsOrderedRing R] [NoZeroDivisors R] {c x : ι → R} (hc : ∀ i, 0 < c i) (hx : 0 ≤ x) :
     c ⬝ᵥ x = 0 ↔ x = 0 := by

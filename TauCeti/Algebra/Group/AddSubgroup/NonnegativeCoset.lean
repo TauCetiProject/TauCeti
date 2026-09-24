@@ -11,7 +11,8 @@ import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Module.Pi
 import Mathlib.Algebra.Order.Module.Basic
-import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.Algebra.Group.Pi.Torsion
+import Mathlib.Algebra.Order.Pi
 import Mathlib.Order.WellFoundedSet
 
 /-!
