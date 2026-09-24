@@ -49,6 +49,11 @@ Lagrangian condition transfer along this isometry by
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §3.
+* `TauCeti/LinearAlgebra/IntegralLattice/Discriminant/Operations.lean`: the proofs of
+  `discriminantBilinearIsometryCoordinatePower` and
+  `discriminantQuadraticIsometryCoordinatePower` follow the corresponding orthogonal-sum
+  isometries `discriminantBilinearIsometryOrthogonalSum` and
+  `discriminantQuadraticIsometryOrthogonalSum`.
 -/
 
 public section

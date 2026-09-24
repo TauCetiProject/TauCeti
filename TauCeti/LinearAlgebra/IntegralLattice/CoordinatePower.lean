@@ -59,6 +59,7 @@ theorem coordinatePowerForm_apply (x y : ι → V) :
   simp [coordinatePowerForm, LinearMap.sum_apply]
 
 /-- Pairing with a function supported at one coordinate extracts that coordinate pairing. -/
+@[simp]
 theorem coordinatePowerForm_single_right [DecidableEq ι] (x : ι → V) (i : ι) (v : V) :
     coordinatePowerForm L ι x (Pi.single i v) = L.form (x i) v := by
   rw [coordinatePowerForm_apply, Finset.sum_eq_single i]
@@ -69,6 +70,7 @@ theorem coordinatePowerForm_single_right [DecidableEq ι] (x : ι → V) (i : ι
 
 /-- Pairing a function supported at one coordinate with an arbitrary function extracts that
 coordinate pairing. -/
+@[simp]
 theorem coordinatePowerForm_single_left [DecidableEq ι] (i : ι) (v : V) (y : ι → V) :
     coordinatePowerForm L ι (Pi.single i v) y = L.form v (y i) := by
   rw [coordinatePowerForm_apply, Finset.sum_eq_single i]
@@ -141,6 +143,7 @@ theorem single_mem_coordinatePower_carrier [DecidableEq ι] (i : ι) {v : V}
   Submodule.le_comap_single_pi (fun _ ↦ L.carrier) hv
 
 /-- The norm on a coordinate power is the sum of the coordinate norms. -/
+@[simp]
 theorem norm_coordinatePower_apply (x : ι → V) :
     (L.coordinatePower ι).norm x = ∑ i, L.norm (x i) := by
   simp [norm_apply]
