@@ -8,7 +8,6 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.Combinatorics.Quiver.Arborescence
-public import TauCeti.Combinatorics.Quiver.WideSubquiver
 
 /-!
 # A free basis from a spanning tree

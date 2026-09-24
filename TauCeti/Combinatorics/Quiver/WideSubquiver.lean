@@ -6,12 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Subquiver
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 
 /-!
-# Total arrows of a wide subquiver
+# Edge maps for wide subquivers
 
 This file relates the total-arrow type of a wide subquiver to its image as a set of ambient
-arrows.
+arrows and forgets orientation tags in symmetrified wide subquivers.
+
+## Main results
+
+* `totalEquivSet`: identifies total arrows with their ambient image.
+* `symmetrifiedTreeEdgeMap`: forgets the orientation tag on a symmetrified edge.
+* `symmetrifiedTreeEdgeMap_apply_inl` and `symmetrifiedTreeEdgeMap_apply_inr`: its orientation
+  cases.
 -/
 
 open Set Function Quiver
@@ -45,5 +53,25 @@ def totalEquivSet (H : _root_.WideSubquiver V) :
     (e : {e : Quiver.Total V // e ∈ wideSubquiverEquivSetTotal H}) :
     (totalEquivSet H).symm e = ⟨e.1.left, e.1.right, ⟨e.1.hom, e.2⟩⟩ := by
   simp only [totalEquivSet, Equiv.coe_fn_symm_mk]
+
+/-- Forget the orientation tag of an edge in a symmetrified wide subquiver. -/
+def symmetrifiedTreeEdgeMap (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    (e : Quiver.Total T) : Quiver.Total (Quiver.wideSubquiverSymmetrify T) := by
+  rcases e with ⟨a, b, ⟨f, hf⟩⟩
+  cases f using Sum.casesOn with
+  | inl f => exact ⟨a, b, ⟨f, Or.inl hf⟩⟩
+  | inr f => exact ⟨b, a, ⟨f, Or.inr hf⟩⟩
+
+/-- The forward map sends a forward-oriented edge to the same ambient edge. -/
+@[simp] theorem symmetrifiedTreeEdgeMap_apply_inl (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ a b) (he : T a b (Sum.inl e)) :
+    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inl e, he⟩⟩ = ⟨a, b, ⟨e, Or.inl he⟩⟩ := by
+  simp [symmetrifiedTreeEdgeMap]
+
+/-- The forward map reverses an edge tagged with the reverse orientation. -/
+@[simp] theorem symmetrifiedTreeEdgeMap_apply_inr (T : _root_.WideSubquiver (Quiver.Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ b a) (he : T a b (Sum.inr e)) :
+    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := by
+  simp [symmetrifiedTreeEdgeMap]
 
 end TauCeti.WideSubquiver
