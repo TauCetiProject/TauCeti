@@ -65,7 +65,7 @@ private lemma studentT_chart_nu_powers_cancel (hν : 0 < ν) (q : ℝ) :
 
 /-- The non-kernel scalar part of the transformed weighted density reduces to the expected
 normalizing constant times `z ^ q`. -/
-private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : 0 < z)
+private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : z ≠ 0)
     (C : ℝ) :
     C * ν ^ ((q + 1) / 2) / 2 * (2 * z / ν) *
         (z ^ (q - 1) * ν ^ (-((q - 1) / 2))) = C * z ^ q := by
@@ -94,7 +94,7 @@ private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz 
         ν ^ ((q + 1) / 2) * ν ^ (-((q - 1) / 2)) * ν ^ (-1 : ℝ) := by ring
     rw [hcomm]
     exact studentT_chart_nu_powers_cancel hν q
-  rw [h5, hνpow, mul_one, rpow_sub_one_mul_self q hz.ne']
+  rw [h5, hνpow, mul_one, rpow_sub_one_mul_self q hz]
 
 /-- Under the chart `z ↦ z ^ 2 / ν`, the weighted Student t density becomes the normalized
 beta kernel on the positive half-line. -/
@@ -111,7 +111,7 @@ lemma abs_deriv_smul_studentTPDFReal (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : 0 
       C * (1 + z ^ 2 / ν) ^ (-((ν + 1) / 2)) * z ^ q := by
     have h71 : C * ν ^ ((q + 1) / 2) / 2 * (2 * z / ν) *
           (z ^ (q - 1) * ν ^ (-((q - 1) / 2))) = C * z ^ q :=
-      studentT_chart_scalar_part hν q hz C
+      studentT_chart_scalar_part hν q hz.ne' C
     rw [h71]; ring
   have hgoal : (2 * z / ν) * (C * ν ^ ((q + 1) / 2) / 2 *
         (z ^ (q - 1) * ν ^ (-((q - 1) / 2)) *
