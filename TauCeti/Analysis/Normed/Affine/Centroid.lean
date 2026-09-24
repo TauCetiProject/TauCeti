@@ -12,15 +12,19 @@ public import Mathlib.LinearAlgebra.AffineSpace.Centroid
 /-!
 # Distances to the centroid of finitely many points
 
-For a nonempty finite family of points `p i`, `i ∈ s`, of a real normed affine space whose
-pairwise distances are at most `d`, the centroid `s.centroid ℝ p` lies within
-`(1 - 1 / #s) * d` of each point `p j`, `j ∈ s`, and of the centroid of every nonempty subfamily.
+For a nonempty finite family of points `p i`, `i ∈ s`, in a pseudometric affine space over a
+real seminormed space, whose pairwise distances are at most `d`, the centroid `s.centroid ℝ p`
+lies within `(1 - 1 / #s) * d` of each point `p j`, `j ∈ s`, and of the centroid of every nonempty
+subfamily.
 These are the estimates behind the shrinking of barycentric subdivision: the vertices of a
 simplex of the barycentric subdivision of a `k`-simplex of diameter `d` are centroids of nested
 faces, hence lie within `k / (k + 1) * d` of each other.
 
 ## Main results
 
+* `Finset.centroid_vsub_eq_sum`: the displacement of the centroid from a point is the average of
+  the displacements of the family from that point. This identity only needs a real module and an
+  additive torsor, with no metric assumptions.
 * `Finset.dist_centroid_le`: the centroid lies in every closed ball containing the points.
 * `Finset.dist_centroid_apply_le`: the distance from the centroid to one of the points.
 * `Finset.dist_centroid_centroid_le_of_subset`: the distance between the centroids of a family
@@ -37,8 +41,11 @@ open Finset Metric
 
 namespace Finset
 
-variable {ι V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
-  [NormedAddTorsor V P] {s t : Finset ι} {p : ι → P}
+variable {ι : Type*} {s t : Finset ι}
+
+section AddTorsor
+
+variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {p : ι → P}
 
 /-- The displacement of the centroid from a point `q` is the average of the displacements of
 the points from `q`. -/
@@ -47,6 +54,11 @@ lemma centroid_vsub_eq_sum (hs : s.Nonempty) (q : P) :
   rw [s.centroid_vsub_const ℝ hs, centroid_def, affineCombination_eq_linear_combination _ _ _
     (s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
   simp [centroidWeights_apply]
+
+end AddTorsor
+
+variable {V P : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V] [PseudoMetricSpace P]
+  [NormedAddTorsor V P] {p : ι → P}
 
 /-- The centroid of a nonempty family of points lies in every closed ball containing all of
 them. -/
@@ -58,8 +70,8 @@ theorem dist_centroid_le (hs : s.Nonempty) {q : P} {r : ℝ} (h : ∀ i ∈ s, d
   · rw [mem_closedBall_zero_iff, ← dist_eq_norm_vsub V]
     exact h i hi
 
-/-- If the points `p i`, `i ∈ s`, are at distance at most `d` from `p j`, then the centroid lies
-within `(1 - 1 / #s) * d` of `p j`. -/
+/-- If `j ∈ s` and the points `p i`, `i ∈ s`, are at distance at most `d` from `p j`, then the
+centroid lies within `(1 - 1 / #s) * d` of `p j`. -/
 theorem dist_centroid_apply_le {d : ℝ} {j : ι} (hd : ∀ i ∈ s, dist (p i) (p j) ≤ d)
     (hj : j ∈ s) : dist (s.centroid ℝ p) (p j) ≤ (1 - (#s : ℝ)⁻¹) * d := by
   have hcard : (#s : ℝ) ≠ 0 := by exact_mod_cast (card_pos.2 ⟨j, hj⟩).ne'
