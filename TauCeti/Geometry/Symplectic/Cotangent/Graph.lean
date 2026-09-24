@@ -94,7 +94,9 @@ theorem isLagrangian_range_fderiv_cotangent_differential_graph
       (LinearMap.range (fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x).toLinearMap) := by
   rw [fderiv_cotangent_differential_graph
     ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num))]
-  have hid : (ContinuousLinearMap.id ℝ V).toLinearMap = (LinearMap.id : V →ₗ[ℝ] V) := rfl
+  have hid : (ContinuousLinearMap.id ℝ V).toLinearMap = (LinearMap.id : V →ₗ[ℝ] V) := by
+    ext v
+    rfl
   simpa only [ContinuousLinearMap.coe_prod, hid, LinearMap.graph_eq_range_prod] using
     (isLagrangian_hessian_graph hf)
 
