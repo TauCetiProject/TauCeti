@@ -52,7 +52,7 @@ claimed: the defining bound has exponent zero, while the absolute bound for the 
 logarithmic.
 
 The continued `L`-function itself follows these operations. Conjugating the weight reflects it
-in the real axis, `L(χ̄, s̄) = conj (L(χ, s))`, at every `s`
+in the real axis, `L(conj χ, conj s) = conj (L(χ, s))`, at every `s`
 (`TauCeti.continuedLFunctionOfWeight_conj`). An imaginary norm twist by `N(I) ^ (-z)` translates
 it by `z`: on `Re s > 1` for every weight
 (`TauCeti.continuedLFunctionOfWeight_normTwist_of_one_lt_re`), and on the whole half-plane
@@ -379,7 +379,8 @@ theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
 -/
 
 /-- **The continued L-function of the conjugate weight** is the reflection of the continued
-L-function of the weight in the real axis: `L(χ̄, s̄) = conj (L(χ, s))`. This holds at every `s`,
+L-function of the weight in the real axis: `L(conj χ, conj s) = conj (L(χ, s))`.
+This holds at every `s`,
 including the junk values off the region where the defining integral converges, because complex
 conjugation commutes with the Bochner integral. -/
 theorem continuedLFunctionOfWeight_conj (χ : UnitaryIdealWeight K) (s : ℂ) :
