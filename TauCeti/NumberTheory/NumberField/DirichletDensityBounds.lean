@@ -35,6 +35,8 @@ comparison also gives the natural interval restrictions on one-sided bounds.
 * `NumberField.Set.HasDirichletDensity.isLowerDirichletDensityBound` and
   `NumberField.Set.HasDirichletDensity.isUpperDirichletDensityBound`: a Dirichlet density is
   both a lower and an upper bound.
+* `NumberField.Set.isLowerDirichletDensityBound_of_forall_lt`: a value is a lower bound as soon
+  as every smaller value is.
 * `NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
   every lower bound is at most every upper bound.
 * `NumberField.Set.hasDirichletDensity_of_upperBound_of_lowerBound`: matching one-sided bounds
@@ -156,6 +158,13 @@ theorem IsLowerDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))}
   intro ε hε
   filter_upwards [h ε hε] with s hs
   exact lt_of_le_of_lt (sub_le_sub_right hδ ε) hs
+
+/-- If every value below `δ` is a lower Dirichlet-density bound for `S`, then so is `δ`. -/
+theorem isLowerDirichletDensityBound_of_forall_lt {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
+    (h : ∀ δ' < δ, IsLowerDirichletDensityBound S δ') : IsLowerDirichletDensityBound S δ :=
+  isLowerDirichletDensityBound_iff.mpr fun ε hε ↦
+    (isLowerDirichletDensityBound_iff.mp (h (δ - ε / 2) (by linarith)) (ε / 2) (half_pos hε)).mono
+      fun _ hs ↦ by linarith
 
 /-- An upper Dirichlet-density bound remains an upper bound when its value is increased. -/
 theorem IsUpperDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))} {δ δ' : ℝ}
