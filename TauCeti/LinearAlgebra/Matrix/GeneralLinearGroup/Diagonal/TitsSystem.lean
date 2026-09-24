@@ -24,7 +24,8 @@ coordinate lines. In every rank, the Weyl group is the symmetric group on the co
 its simple reflections are the adjacent transpositions. The multiplication step of the Tits
 system holds over every field, so the Bruhat decomposition, covering `GLₘ(k)` by the double cosets
 `B τ B` of permutation matrices, is proved without the assumption on the unit group; over `𝔽₂`
-it holds even though `B` and the torus normalizer do not form a Tits system.
+it holds even though, in dimension `m ≥ 2`, `B` and the torus normalizer do not form a Tits
+system.
 
 ## Main results
 
