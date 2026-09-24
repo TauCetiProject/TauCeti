@@ -42,7 +42,7 @@ must distinguish the two cases.
 * `TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutLeftEqLeft`: the
   product of the two underlying rectangle weights is preserved.
 * `TauCeti.GridRectanglePentagonDecomposition.isRecutOfRightEqRight_recut`: the generic recut
-  has the common-terminal-side orientation when the original rectangle and pentagon do.
+  is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
   exactly one of the two new rectangles has the original pentagon's terminal side.
 
@@ -389,8 +389,8 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- The generic recut retains the common-terminal-side orientation when the rectangle and
-pentagon of a rectangle--pentagon decomposition share their terminal side. -/
+/-- When the rectangle and pentagon share their terminal side, their underlying rectangle
+decomposition's recut is classified by the original common-terminal-side orientation. -/
 theorem isRecutOfRightEqRight_recut
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.right)

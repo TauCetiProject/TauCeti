@@ -598,7 +598,8 @@ theorem isRecut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommo
     D.IsRecut (D.recut hone hfirst hsecond) :=
   (D.existsUnique_isRecut hone hfirst hsecond).choose_spec.1
 
-/-- The generic recut retains the common-terminal-side orientation. -/
+/-- A decomposition whose rectangles share their terminal side has a recut classified by the
+`right = right` side data of the original decomposition. -/
 theorem isRecutOfRightEqRight_recut (D : GridRectangleDecomposition x z)
     (hcommon : D.first.right = D.second.right) (hone : D.HasOneCommonSide)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
