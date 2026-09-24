@@ -26,6 +26,12 @@ In both cases the homogeneous projections are those of `M`, transported along th
 the quotient map respectively.  Combining the two gives the grading of a subquotient, such as the
 cohomology `ker d ⧸ im d` of a differential of degree one.
 
+The kernel and the image of a homogeneous linear map are homogeneous, because such a map carries
+the degree-`p` component of an element to the component of its image in the shifted degree. This
+is how the cycles and boundaries of a homogeneous differential become homogeneous submodules. The
+map may be linear over a larger ring `S` than the ring `R` of the grading, as for a differential
+over a polynomial ring whose variables move the degree.
+
 ## Main definitions
 
 * `TauCeti.InternalGrading.submodule`: the grading of a homogeneous submodule.
@@ -38,6 +44,11 @@ cohomology `ker d ⧸ im d` of a differential of degree one.
 * `TauCeti.InternalGrading.decompose_quotient_mk`: homogeneous projection commutes with the
   quotient map.
 * `TauCeti.InternalGrading.isHomogeneous_mkQ`: the quotient map has degree zero.
+* `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
+  projection, up to the shift of degree.
+* `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
+  `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
+  map are homogeneous submodules.
 -/
 
 public section
@@ -141,3 +152,31 @@ theorem decompose_quotient_mk (p : ℤ) (x : M) :
 end Quotient
 
 end TauCeti.InternalGrading
+
+namespace TauCeti.LinearMap.IsHomogeneous
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+  {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
+
+/-- A homogeneous linear map of degree `r` carries the degree-`p` component of an element to the
+degree-`(p + r)` component of its image. -/
+theorem map_decompose (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (p : ℤ) (x : M) :
+    f (decompose G.piece x p : M) = (decompose H.piece (f x) (p + r) : N) :=
+  DirectSum.map_decompose_shift G.piece H.piece (f.restrictScalars R) (· + r)
+    (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
+
+/-- The kernel of a homogeneous linear map is a homogeneous submodule. -/
+theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+    SetLike.IsHomogeneous G.piece (_root_.LinearMap.ker f) := fun p x hx ↦ by
+  rw [_root_.LinearMap.mem_ker] at hx ⊢
+  rw [hf.map_decompose, hx, decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- The image of a homogeneous linear map is a homogeneous submodule. -/
+theorem isHomogeneous_range (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+    SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
+  rintro q _ ⟨x, rfl⟩
+  exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
+
+end TauCeti.LinearMap.IsHomogeneous
