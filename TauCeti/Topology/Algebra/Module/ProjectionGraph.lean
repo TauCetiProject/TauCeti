@@ -30,9 +30,8 @@ namespace ContinuousLinearMap
 
 private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
     (h : s = t) (v : s) : ((Homeomorph.setCongr h) v : Y) = v := by
-  -- `setCongr` uses `Set.equivOfEq` for its underlying equivalence.
-  change ((Set.equivOfEq h) v : Y) = v
-  simp only [Set.equivOfEq_apply]
+  -- `setCongr` has no application theorem; use the computation theorem for its public `toEquiv`.
+  exact congrArg Subtype.val (Set.equivOfEq_apply h v)
 
 private theorem coe_homeomorphImage_apply {Y Z : Type*} [TopologicalSpace Y]
     [TopologicalSpace Z] {f : Y → Z} (hf : IsEmbedding f) (s : Set Y) (v : s) :

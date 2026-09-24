@@ -45,15 +45,13 @@ namespace ContinuousLinearMap
 
 private theorem coe_setCongr_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
     (h : s = t) (v : s) : ((Homeomorph.setCongr h) v : Y) = v := by
-  -- `setCongr` uses `Set.equivOfEq` for its underlying equivalence.
-  change ((Set.equivOfEq h) v : Y) = v
-  simp only [Set.equivOfEq_apply]
+  -- `setCongr` has no application theorem; use the computation theorem for its public `toEquiv`.
+  exact congrArg Subtype.val (Set.equivOfEq_apply h v)
 
 private theorem coe_setCongr_symm_apply {Y : Type*} [TopologicalSpace Y] {s t : Set Y}
     (h : s = t) (v : t) : ((Homeomorph.setCongr h).symm v : Y) = v := by
-  -- The inverse uses the inverse of the same set equivalence.
-  change ((Set.equivOfEq h).symm v : Y) = v
-  simp only [Set.equivOfEq_symm_apply]
+  -- `setCongr` has no inverse-application theorem; use the one for its public `toEquiv`.
+  exact congrArg Subtype.val (Set.equivOfEq_symm_apply h v)
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 variable {K α ε : ℝ≥0} (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
