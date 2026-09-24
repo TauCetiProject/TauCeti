@@ -97,6 +97,8 @@ private noncomputable def centerCoefficientEquiv :
         (ModuleCat.of S (GridState n →₀ S)) where
   toFun f := Finsupp.mapRange (finSuccEquiv' R s.castSucc).symm (map_zero _) f
   -- The restriction of scalars of `GridState n →₀ S` has, by definition, the same elements.
+  -- The explicit identifications below in both `invFun` and `right_inv` tell Lean to use that
+  -- underlying `Finsupp`; they are needed because the expected type is a restricted module.
   invFun g := Finsupp.mapRange (finSuccEquiv' R s.castSucc) (map_zero _)
     (show GridState n →₀ S from g)
   map_add' f g := Finsupp.mapRange_add (map_add _) f g
