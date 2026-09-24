@@ -45,6 +45,15 @@ open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (p : ℕ) [ExpChar F p] (W : WeierstrassCurve.Affine F)
 
+/-- Substituting `X ^ q` into the affine coordinate and passing to the function field gives the
+`q`-th power of the generic `x`-coordinate. -/
+private theorem algebraMap_of_expand_X (q : ℕ) :
+    algebraMap W.CoordinateRing W.FunctionField (AdjoinRoot.of W.polynomial (expand F q X)) =
+      W.genericX ^ q := by
+  rw [Polynomial.expand_X, map_pow, map_pow, ← AdjoinRoot.algebraMap_eq,
+    ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
+    ← W.genericX_eq_algebraMap]
+
 /-- **Relative Frobenius sends the generic affine `x`-coordinate to its `p`-th power.**
 
 **Deliberately not `@[simp]`.** Its left-hand side is already reduced by the coordinate-pullback
@@ -53,10 +62,8 @@ theorem xCoord_tautologicalPoint_relativeFrobeniusIsogeny [W.IsElliptic] :
     Point.xCoord (CoordinatePullback.tautologicalPoint
       (relativeFrobeniusIsogeny p W).pullback) = W.genericX ^ p := by
   rw [CoordinatePullback.xCoord_tautologicalPoint, relativeFrobeniusIsogeny_pullback,
-    relativeFrobeniusPullback_apply, CoordinateRing.relativeFrobenius_of]
-  rw [Polynomial.expand_X, map_pow, map_pow, ← AdjoinRoot.algebraMap_eq,
-    ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
-    ← W.genericX_eq_algebraMap]
+    relativeFrobeniusPullback_apply, CoordinateRing.relativeFrobenius_of,
+    algebraMap_of_expand_X]
 
 /-- **Relative Frobenius sends the generic affine `y`-coordinate to its `p`-th power.**
 
@@ -79,10 +86,8 @@ theorem xCoord_tautologicalPoint_iterateRelativeFrobeniusIsogeny [W.IsElliptic] 
       (iterateRelativeFrobeniusIsogeny p W n).pullback) =
       W.genericX ^ p ^ n := by
   rw [CoordinatePullback.xCoord_tautologicalPoint, iterateRelativeFrobeniusIsogeny_pullback,
-    iterateRelativeFrobeniusPullback_apply, CoordinateRing.iterateRelativeFrobenius_of]
-  rw [Polynomial.expand_X, map_pow, map_pow, ← AdjoinRoot.algebraMap_eq,
-    ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
-    ← W.genericX_eq_algebraMap]
+    iterateRelativeFrobeniusPullback_apply, CoordinateRing.iterateRelativeFrobenius_of,
+    algebraMap_of_expand_X]
 
 /-- **The `n`-fold relative Frobenius sends the generic affine `y`-coordinate to its
 `p ^ n`-th power.**
