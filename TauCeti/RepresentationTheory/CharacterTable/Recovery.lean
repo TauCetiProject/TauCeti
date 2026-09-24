@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.ClassEquation
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Eigenrow
 
