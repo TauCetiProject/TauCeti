@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The homotopy category of bounded cochain complexes
@@ -34,7 +35,9 @@ The construction follows the organization of Mathlib's bounded-below category
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
-small, so it has a triangulated Grothendieck group.
+small (through `HomotopyCategory.essentiallySmall` and
+`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`), so it has a triangulated
+Grothendieck group.
 
 ## References
 
@@ -49,7 +52,7 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
   HomologicalComplex
 
-universe w v u
+universe v u
 
 variable (C : Type u) [Category.{v} C]
 
@@ -220,10 +223,6 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
 instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
-
-instance [EssentiallySmall.{w} C] :
-    ObjectProperty.EssentiallySmall.{w} (HomotopyCategory.bounded C) :=
-  .of_le (Q := ⊤) le_top
 
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory
