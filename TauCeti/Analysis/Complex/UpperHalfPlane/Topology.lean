@@ -125,8 +125,8 @@ theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ} (hz : z.im = 0) :
     f z ∉ f '' upperHalfPlaneSet := by
   rintro ⟨y, hy, heq⟩
-  have hyz : y = z := hfi (show 0 ≤ y.im from (show 0 < y.im from hy).le)
-    hz.symm.le heq
+  have hypos : 0 < y.im := by simpa only [upperHalfPlaneSet, Set.mem_ofPred_eq] using hy
+  have hyz : y = z := hfi hypos.le hz.symm.le heq
   simp [upperHalfPlaneSet, hyz, hz] at hy
 
 /-- The inversion `w ↦ -w⁻¹` sends `w` into the closed upper half-plane exactly when `w` lies in
