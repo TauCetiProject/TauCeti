@@ -51,6 +51,8 @@ tower `F ⊆ E ⊆ E' ⊆ K` of ground fields in every degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_negSucc_succ_comp_isoGroupHomology_hom`: in
   degrees at most minus two, corestriction is `groupHomology.map` along the inclusion of Galois
   groups.
+* `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateCor_zero_H0π`: in degree zero,
+  trivial-coefficient corestriction multiplies an integral representative by the relative degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_trans`: Tate corestriction is functorial
   along a tower of restrictions, in every integer degree.
 
@@ -343,6 +345,24 @@ theorem trivialTateCor_zero (T : LayerRestriction small big) :
     T.trivialTateCor 0 = (T.trivialTateRangeIso 0).hom ≫
       TauCeti.TateCohomology.H0Cor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range :=
   (rfl)
+
+/-- On an invariant integral representative, degree-zero corestriction multiplies by the
+relative degree. -/
+theorem trivialTateCor_zero_H0π (T : LayerRestriction small big)
+    (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
+    T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ x) =
+      TauCeti.TateCohomology.H0π _
+        (⟨T.relativeDegree * (x : ℤ), fun _ ↦ rfl⟩ :
+          (Rep.trivial ℤ big.Gal ℤ).ρ.invariants) := by
+  let : Fintype (big.Gal ⧸ T.galHom.range) := Fintype.ofFinite _
+  rw [trivialTateCor_zero, ModuleCat.comp_apply,
+    trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
+  congr 1
+  apply Subtype.ext
+  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
+  · simp only [T.index_range_galHom]
+    simp
+  · exact fun _ ↦ rfl
 
 /-- In a positive degree, trivial-coefficient Tate corestriction is ordinary cohomological
 corestriction after identifying the smaller Galois group with its image. -/

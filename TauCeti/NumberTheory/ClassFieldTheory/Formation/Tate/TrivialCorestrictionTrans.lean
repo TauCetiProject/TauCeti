@@ -33,24 +33,6 @@ namespace TauCeti.ClassFieldTheory.LayerRestriction
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] {a b c : NormalLayer G}
 
-/-- On an invariant integral representative, degree-zero corestriction multiplies by the
-relative degree. -/
-theorem trivialTateCor_zero_H0π {small big : NormalLayer G}
-    (T : LayerRestriction small big) (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
-    T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ x) =
-      TauCeti.TateCohomology.H0π _
-        (⟨T.relativeDegree * (x : ℤ), fun _ ↦ rfl⟩ :
-          (Rep.trivial ℤ big.Gal ℤ).ρ.invariants) := by
-  let : Fintype (big.Gal ⧸ T.galHom.range) := Fintype.ofFinite _
-  rw [trivialTateCor_zero, ModuleCat.comp_apply,
-    trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
-  congr 1
-  apply Subtype.ext
-  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
-  · simp only [T.index_range_galHom]
-    simp
-  · exact fun _ ↦ rfl
-
 private def trivialCohomologyCor {small big : NormalLayer G}
     (T : LayerRestriction small big) (n : ℕ) :
     groupCohomology (Rep.trivial ℤ small.Gal ℤ) n ⟶
