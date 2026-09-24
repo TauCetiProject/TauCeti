@@ -147,7 +147,6 @@ theorem normalizedValuationWithZero_norm (x : L) :
       exact WithZero.coe_pow _ _
     simpa only [x', Units.val_mk0] using hnorm
 
-
 omit [FiniteDimensional K L] in
 /-- The norm of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
 norm of `L/K`. -/
@@ -163,7 +162,6 @@ theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ �
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
 
 /-- A unit of `L` is a unit of `𝒪[L]` exactly when its norm is a unit of `𝒪[K]`. -/
-@[simp]
 theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
     Algebra.normUnits K y ∈ unitFiltration K 0 ↔ y ∈ unitFiltration L 0 := by
   rw [mem_unitFiltration_zero, mem_unitFiltration_zero, ← normalizedValuation_eq_one_iff,
