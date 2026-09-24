@@ -381,10 +381,7 @@ theorem inner_averageOperator (T : V →L[𝕜] W) (v : V) (w : W) :
   apply integral_congr_ae
   filter_upwards [] with g
   change (innerSL 𝕜 w) ((ContinuousLinearMap.apply 𝕜 W v) (conjFamily π hπ ρ hρ T g)) = _
-  rw [show (ContinuousLinearMap.apply 𝕜 W v) (conjFamily π hπ ρ hρ T g) =
-      (conjFamily π hπ ρ hρ T g) v by rfl]
-  rw [conjFamily_apply_apply]
-  rfl
+  exact congrArg (innerSL 𝕜 w) (conjFamily_apply_apply π hπ ρ hρ T g v)
 
 /-- For a **unitary** `ρ` the inverse action can be moved to the other side of the inner product,
 which is the form the matrix-coefficient computation needs. -/
