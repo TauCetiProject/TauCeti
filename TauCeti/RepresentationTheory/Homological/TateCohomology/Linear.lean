@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Homology.Linear
 Mathlib shows that the Tate complex of a representation of a finite group is an additive functor
 of the representation. This file records that it is moreover `k`-linear, and deduces that Tate
 cohomology in each integer degree is an additive, `k`-linear functor: the map induced on
-`Ĥⁿ(G, -)` by `c • f` is `c` times the map induced by `f`.
+`tateCohomology · n` by `c • f` is `c` times the map induced by `f`.
 
 ## Main statements
 

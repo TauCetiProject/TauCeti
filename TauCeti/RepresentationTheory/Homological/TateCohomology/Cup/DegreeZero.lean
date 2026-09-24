@@ -14,12 +14,12 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 For a finite group `G` and representations `M`, `N`, this file constructs the Tate cup product
 
-`Ĥⁿ(G, M) × Ĥ⁰(G, N) → Ĥⁿ(G, M ⊗ N)`
+`tateCohomology M n × tateCohomology N 0 → tateCohomology (M ⊗ N) n`
 
 in every integer degree `n`. An invariant `y ∈ N^G` gives a morphism of representations
-`M ⟶ M ⊗ N`, `m ↦ m ⊗ y`, and the cup product of `x ∈ Ĥⁿ(G, M)` with the class of `y` is the image
-of `x` under the induced map. The substance is that this depends only on the class of `y` in
-`Ĥ⁰(G, N) = N^G / N_G N`: when `y = N_G z` is a norm, `m ↦ m ⊗ N_G z` is the norm
+`M ⟶ M ⊗ N`, `m ↦ m ⊗ y`, and the cup product of `x ∈ tateCohomology M n` with the class of `y`
+is the image of `x` under the induced map. The substance is that this depends only on the class of
+`y` in `tateCohomology N 0 = N^G / N_G N`: when `y = N_G z` is a norm, `m ↦ m ⊗ N_G z` is the norm
 `m ↦ ∑ g, g • (g⁻¹ • m ⊗ z)` of the linear map `m ↦ m ⊗ z`, so it factors through a coinduced
 representation and induces zero on Tate cohomology.
 
@@ -31,8 +31,8 @@ bidegrees is obtained by dimension shifting (Cassels–Fröhlich, Chapter IV, §
 ## Main definitions
 
 * `Rep.tensorInvariant`: for an invariant `y` of `N`, the morphism `M ⟶ M ⊗ N`, `m ↦ m ⊗ₜ y`.
-* `TauCeti.TateCohomology.cupH0`: the cup product `Ĥⁿ(G, M) × Ĥ⁰(G, N) → Ĥⁿ(G, M ⊗ N)`, as a
-  `k`-bilinear map.
+* `TauCeti.TateCohomology.cupH0`: the cup product
+  `tateCohomology M n × tateCohomology N 0 → tateCohomology (M ⊗ N) n`, as a `k`-bilinear map.
 
 ## Main statements
 
@@ -134,9 +134,10 @@ theorem map_tensorInvariant_eq_zero (M : Rep k G) {y : N.ρ.invariants}
     ← Module.End.mul_apply, ← map_mul]
 
 variable (M N) in
-/-- **The Tate cup product with a degree-zero class**, `Ĥⁿ(G, M) × Ĥ⁰(G, N) → Ĥⁿ(G, M ⊗ N)`: the
-cup product of `x` with the class of an invariant `y` is the image of `x` under the map induced by
-`m ↦ m ⊗ y` (`cupH0_H0π`). It is well defined because that map vanishes on Tate cohomology when
+/-- **The Tate cup product with a degree-zero class**,
+`tateCohomology M n × tateCohomology N 0 → tateCohomology (M ⊗ N) n`: the cup product of `x` with
+the class of an invariant `y` is the image of `x` under the map induced by `m ↦ m ⊗ y`
+(`cupH0_H0π`). It is well defined because that map vanishes on Tate cohomology when
 `y` is a norm (`map_tensorInvariant_eq_zero`). -/
 def cupH0 (n : ℤ) :
     tateCohomology M n →ₗ[k] tateCohomology N 0 →ₗ[k] tateCohomology (M ⊗ N) n :=
