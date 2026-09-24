@@ -30,7 +30,9 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.GaloisDescent
+open TauCeti.GaloisDescent
+
+namespace Representation.IntertwiningMap
 
 variable {k L M N P : Type*}
 variable [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
@@ -192,4 +194,4 @@ theorem groupAlgebraInvariantsBaseChangeBialgEquiv_naturality
   intro a x
   simp
 
-end TauCeti.GaloisDescent
+end Representation.IntertwiningMap

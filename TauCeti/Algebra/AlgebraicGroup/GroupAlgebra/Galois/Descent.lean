@@ -34,8 +34,8 @@ finite-rank free lattice, `D(M)` is a split torus.
 * `TauCeti.GaloisDescent.groupAlgebraAction_single`: its value on a monomial.
 * `TauCeti.GaloisDescent.coeff_groupAlgebraAction`: its coefficient formula.
 * `TauCeti.GaloisDescent.groupAlgebraAction_smul`: semilinearity over the coefficient algebra.
-* `TauCeti.GaloisDescent.groupAlgebraAction_mapDomainBialgHom`: compatibility with equivariant
-  exponent maps.
+* `Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom`: compatibility with
+  equivariant exponent maps.
 * `TauCeti.GaloisDescent.groupAlgebraActionSemilinearEquiv`: the semilinear action.
 * `TauCeti.GaloisDescent.groupAlgebraTensorActionSemilinearEquiv`: its tensor-square action.
 * `TauCeti.GaloisDescent.counit_groupAlgebraAction`: compatibility with the counit.
@@ -160,7 +160,8 @@ variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
 /-- The map of split group algebras induced by an equivariant exponent map commutes with
 the simultaneous Galois action on coefficients and exponents. -/
 @[simp]
-theorem groupAlgebraAction_mapDomainBialgHom (f : Representation.IntertwiningMap rho tau)
+theorem _root_.Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom
+    (f : Representation.IntertwiningMap rho tau)
     (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
     groupAlgebraAction tau sigma
         (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative x) =
