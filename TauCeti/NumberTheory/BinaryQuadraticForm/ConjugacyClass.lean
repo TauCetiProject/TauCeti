@@ -48,12 +48,14 @@ Popa and Zagier state it for matrices modulo `±1`, summing over the classes of 
 ## Main definitions
 
 * `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv`: for `t² - 4 n = -D < 0`, the
-  conjugacy classes of `Matrix.SpecialLinearGroup.traceDetFiber (Fin 2) t n` are two copies of the
+  conjugacy classes of `TauCeti.traceDetFiber (Fin 2) t n` are two copies of the
   classes of `posDef D`: the classes with `c > 0` through `M ↦ Q_M`, and those with `c < 0`
   through `M ↦ Q_{adjugate M}`, with
   `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv_mk_of_mem` and
   `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv_mk_of_adjugate_mem` its
-  evaluation lemmas.
+  evaluation lemmas, and `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv_symm_inl`
+  and `TauCeti.BinaryQuadraticForm.orbitRelQuotientTraceDetFiberEquiv_symm_inr` those of its
+  inverse.
 
 ## Main results
 
@@ -81,7 +83,6 @@ Popa and Zagier state it for matrices modulo `±1`, summing over the classes of 
 public section
 
 open Matrix MulAction ConjAct
-open Matrix.SpecialLinearGroup (traceDetFiber)
 open scoped MatrixGroups
 
 namespace TauCeti
@@ -108,7 +109,7 @@ theorem card_stabilizer_ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :
   -- conjugation preserves the trace, and a matrix is determined by its trace and its form, so
   -- `γ` centralises `M` exactly when it fixes `Q_M`
   card_stabilizer_congr (ofConjAct (G := SL(2, ℤ))) M (ofMatrix_conjAct_smul · M) fun g ↦
-    (ofMatrix_inj_of_trace_eq (SpecialLinearGroup.trace_conjAct_smul g M)).1
+    (ofMatrix_inj_of_trace_eq (trace_specialLinearGroup_smul g M)).1
 
 variable {t n : ℤ} {D : ℕ} [NeZero D]
 
@@ -117,36 +118,46 @@ determinant `n` has non-zero lower left entry `c`. -/
 theorem apply_one_zero_ne_zero_of_mem_traceDetFiber (h : t ^ 2 - 4 * n = -D)
     {M : Matrix (Fin 2) (Fin 2) ℤ} (hM : M ∈ traceDetFiber (Fin 2) t n) : M 1 0 ≠ 0 :=
   -- `M` is elliptic: its discriminant is `t² - 4 n = -D < 0`
-  IsElliptic.c_ne_zero <| by simp [IsElliptic, discr_fin_two, hM.1, hM.2, h, NeZero.pos D]
+  IsElliptic.c_ne_zero <| by
+    simp [IsElliptic, discr_fin_two, (mem_traceDetFiber.1 hM).1, (mem_traceDetFiber.1 hM).2, h,
+      NeZero.pos D]
 
 /-- If `t² - 4 n = -D < 0`, the form `Q_M` of a matrix of trace `t` and determinant `n` is positive
 definite exactly when the lower left entry `c` of `M` is positive. -/
 theorem ofMatrix_mem_posDef_iff (h : t ^ 2 - 4 * n = -D) {M : Matrix (Fin 2) (Fin 2) ℤ}
     (hM : M ∈ traceDetFiber (Fin 2) t n) : ofMatrix M ∈ posDef D ↔ 0 < M 1 0 := by
-  simp [hM.1, hM.2, h]
+  simp [(mem_traceDetFiber.1 hM).1, (mem_traceDetFiber.1 hM).2, h]
 
 /-- The matrix of trace `t` and determinant `n` whose form is `f`, for `f ∈ posDef D`. -/
 private def toFiber (h : t ^ 2 - 4 * n = -D) (f : posDef D) : traceDetFiber (Fin 2) t n :=
-  (ofMatrixEquiv t n).symm ⟨f, (mem_posDef.1 f.2).1.trans h.symm⟩
+  ⟨_, mem_traceDetFiber.2 ((ofMatrixEquiv t n).symm ⟨f, (mem_posDef.1 f.2).1.trans h.symm⟩).2⟩
 
 private theorem ofMatrix_toFiber (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
     ofMatrix (toFiber h f : Matrix (Fin 2) (Fin 2) ℤ) = f :=
   (coe_ofMatrixEquiv_apply _).symm.trans <| congrArg Subtype.val <| Equiv.apply_symm_apply _ _
 
+/-- `M ↦ Q_M` is injective on the fibre of trace `t` and determinant `n`. -/
+private theorem ofMatrix_coe_injective :
+    Function.Injective fun M : traceDetFiber (Fin 2) t n ↦
+      ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :=
+  fun M N hMN ↦ Subtype.ext <| (ofMatrix_inj_of_trace_eq <|
+    (mem_traceDetFiber.1 M.2).1.trans (mem_traceDetFiber.1 N.2).1.symm).1 hMN
+
 private theorem toFiber_ofMatrix (h : t ^ 2 - 4 * n = -D) (M : traceDetFiber (Fin 2) t n)
     (hM : ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) ∈ posDef D) : toFiber h ⟨_, hM⟩ = M :=
-  (Equiv.symm_apply_eq _).2 <| Subtype.ext (coe_ofMatrixEquiv_apply M).symm
+  ofMatrix_coe_injective (ofMatrix_toFiber h _)
 
 private theorem toFiber_injective (h : t ^ 2 - 4 * n = -D) : Function.Injective (toFiber h) :=
-  (ofMatrixEquiv t n).symm.injective.comp fun _ _ hfg ↦ Subtype.ext congr($hfg.1)
+  fun f g hfg ↦ Subtype.ext <| (ofMatrix_toFiber h f).symm.trans <|
+    (congrArg (fun M : traceDetFiber (Fin 2) t n ↦ ofMatrix (M : Matrix _ _ ℤ)) hfg).trans
+      (ofMatrix_toFiber h g)
 
 private theorem toFiber_smul (h : t ^ 2 - 4 * n = -D) (g : SL(2, ℤ)) (f : posDef D) :
     toFiber h (g • f) = toConjAct g • toFiber h f :=
-  (Equiv.symm_apply_eq _).2 <| Subtype.ext <|
-    .trans (by simp [ofMatrix_toFiber]) (coe_ofMatrixEquiv_apply _).symm
+  ofMatrix_coe_injective <| by simp [ofMatrix_toFiber]
 
 private def adjugateFiber (M : traceDetFiber (Fin 2) t n) : traceDetFiber (Fin 2) t n :=
-  ⟨adjugate M, SpecialLinearGroup.adjugate_mem_traceDetFiber M.2⟩
+  ⟨adjugate M, adjugate_mem_traceDetFiber M.2⟩
 
 private theorem adjugateFiber_involutive :
     Function.Involutive (adjugateFiber : traceDetFiber (Fin 2) t n → _) :=
@@ -210,6 +221,23 @@ theorem orbitRelQuotientTraceDetFiberEquiv_mk_of_adjugate_mem (h : t ^ 2 - 4 * n
     (Equiv.symm_apply_eq _).2 <|
       adjugateFiber_involutive.eq_iff.1 (toFiber_ofMatrix h (adjugateFiber M) hM).symm
   simp [orbitRelQuotientTraceDetFiberEquiv, this]
+
+/-- The inverse of `orbitRelQuotientTraceDetFiberEquiv h` sends the class of `f` in the first copy
+to the class of the matrix `M_f` of trace `t` and determinant `n` with `Q_{M_f} = f`, the preimage
+of `f` under `ofMatrixEquiv t n`. -/
+theorem orbitRelQuotientTraceDetFiberEquiv_symm_inl (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
+    (orbitRelQuotientTraceDetFiberEquiv h).symm (.inl (Quotient.mk'' f)) = Quotient.mk''
+      ⟨_, mem_traceDetFiber.2
+        ((ofMatrixEquiv t n).symm ⟨f, (mem_posDef.1 f.2).1.trans h.symm⟩).2⟩ := by
+  simp [orbitRelQuotientTraceDetFiberEquiv, fromSumEquiv, toFiber]
+
+/-- The inverse of `orbitRelQuotientTraceDetFiberEquiv h` sends the class of `f` in the second copy
+to the class of the adjugate of the matrix `M_f` with `Q_{M_f} = f`, whose form is `-f`. -/
+theorem orbitRelQuotientTraceDetFiberEquiv_symm_inr (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
+    (orbitRelQuotientTraceDetFiberEquiv h).symm (.inr (Quotient.mk'' f)) = Quotient.mk''
+      ⟨_, adjugate_mem_traceDetFiber <| mem_traceDetFiber.2
+        ((ofMatrixEquiv t n).symm ⟨f, (mem_posDef.1 f.2).1.trans h.symm⟩).2⟩ := by
+  simp [orbitRelQuotientTraceDetFiberEquiv, fromSumEquiv, adjugateFiber, toFiber]
 
 /-- **The correspondence of classes preserves the automorphism weights**: a conjugacy class of
 matrices and the class of forms it corresponds to have stabilisers of the same order. -/
