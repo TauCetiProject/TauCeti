@@ -12,10 +12,11 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 # Multilinear maps on finitely many finite-dimensional spaces are continuous
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
-topological vector spaces over a complete field is continuous, with no bound assumed:
-`MultilinearMap.continuous_of_finiteDimensional`. Expanding each argument in a basis
-writes `f` as a finite sum of terms `(∏ i, coordinate) • constant`, and each coordinate is a
-linear functional on a finite-dimensional space, hence continuous.
+topological vector spaces over a complete nontrivially normed field is continuous when addition
+and scalar multiplication are continuous in the codomain:
+`MultilinearMap.continuous_of_finiteDimensional`. The codomain need only be an additive
+commutative monoid. No norm is required on the domain modules or codomain, and no bound on the
+map is assumed.
 
 This is the multilinear companion of `LinearMap.continuous_of_finiteDimensional`. Mathlib's
 `MultilinearMap.continuous_of_bound` asks for an explicit bound, which is exactly what one does
@@ -33,8 +34,9 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
   [∀ i, FiniteDimensional 𝕜 (M i)] [AddCommMonoid N] [Module 𝕜 N] [TopologicalSpace N]
   [ContinuousAdd N] [ContinuousSMul 𝕜 N]
 
-/-- **A multilinear map on finitely many finite-dimensional spaces is continuous.** Over a
-complete field, no bound need be assumed. -/
+/-- A multilinear map on finitely many finite-dimensional Hausdorff topological vector spaces
+over a complete nontrivially normed field is continuous when its codomain is an additive
+commutative monoid with continuous addition and scalar multiplication. No bound is required. -/
 theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuous f := by
   classical
   cases nonempty_fintype ι
