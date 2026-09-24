@@ -38,7 +38,7 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   square-class group has four elements.
 * `TauCeti.isAddKleinFour_squareClassGroup_of_isUnit_two`: away from residue characteristic two
   the square-class group is a Klein four-group.
-* `TauCeti.squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare`: the four specified
+* `TauCeti.squareClass_ne_zero_and_ne_of_isUniformizer_of_even_of_not_isSquare`: the four specified
   square classes are pairwise distinct.
 * `TauCeti.eq_zero_or_eq_squareClass_of_isUnit_two`: the four specified square classes
   exhaust the square-class group.
@@ -95,7 +95,7 @@ theorem isAddKleinFour_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])
 
 /-- For a nonsquare `u` of even valuation and a uniformizer `π`, the square classes of
 `1`, `u`, `π`, and `u * π` are pairwise distinct. -/
-theorem squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare
+theorem squareClass_ne_zero_and_ne_of_isUniformizer_of_even_of_not_isSquare
     {u π : Kˣ} (hπ : IsUniformizer K π)
     (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u) :
     squareClass u ≠ 0 ∧ squareClass π ≠ 0 ∧ squareClass (u * π) ≠ 0 ∧
@@ -131,7 +131,7 @@ theorem eq_zero_or_eq_squareClass_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π 
   let _ : IsAddKleinFour (SquareClassGroup K) :=
     isAddKleinFour_squareClassGroup_of_isUnit_two h2
   obtain ⟨h0u, h0π, _, huπ, _, _⟩ :=
-    squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare hπ hu hu'
+    squareClass_ne_zero_and_ne_of_isUniformizer_of_even_of_not_isSquare hπ hu hu'
   intro x
   by_cases hx : x = 0
   · exact Or.inl hx
