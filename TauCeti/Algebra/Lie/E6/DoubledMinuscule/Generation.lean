@@ -21,7 +21,7 @@ The two inputs are the same as for the `27`-dimensional carrier. The positive an
 generators at every node act on the rational doubled module as an `sl₂` triple, by
 `TauCeti.E6DoubledMinuscule.isSl2Triple_rep_serreRootGenerator`. The root characters are those of
 the type-`E₆` Serre algebra and do not depend on the representation, so the Bézout certificate
-`TauCeti.E6Minuscule.rootGeneratorWeight_sum_mul_cartanBezout` shows that each of them is a
+`TauCeti.E6.rootGeneratorWeight_sum_mul_cartanBezout` shows that each of them is a
 primitive character of the weight torus. The generic coroot-generation theorem then puts every
 coordinate cocharacter, and hence every point of the weight torus, in the elementary group.
 
@@ -42,8 +42,6 @@ that is a separate scheme-theoretic comparison.
 
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
-* `TauCeti.Algebra.Lie.E6.Minuscule.Generation`, whose formal template this file follows with the
-  doubled representation and its fifty-four matrix coordinates in place of the minuscule ones.
 -/
 
 public section
@@ -115,18 +113,17 @@ theorem weightTorusPoints_range_le_elementarySubgroup (A : Type v) [CommRing A] 
     exact ⟨s, rfl⟩
   have hroot : ∀ (k : Fin 6 ⊕ Fin 6) (j : Fin 6),
       ⁅cartanGen j, rootGen k⁆ =
-        (TauCeti.E6Minuscule.rootGeneratorWeight k j : ℚ) • rootGen k := by
-    rw [← TauCeti.E6Minuscule.weightTable_cartanMatrix]
-    exact TauCeti.E6Minuscule.lie_serreH_rootGenerator
+        (TauCeti.E6.rootGeneratorWeight k j : ℚ) • rootGen k := by
+    exact TauCeti.E6.lie_serreH_rootGenerator
   have helementary :=
     (kostantTorusSubgroup_le_kostantElementarySubgroup
       rootGen cartanGen rep lattice.toAddSubgroup
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
       matrixBasis matrixWeight isCartanWeightVector_matrixBasis
-      TauCeti.E6Minuscule.rootGeneratorWeight hroot Sum.inl Sum.inr
+      TauCeti.E6.rootGeneratorWeight hroot Sum.inl Sum.inr
       isSl2Triple_rep_serreRootGenerator
-      TauCeti.E6Minuscule.rootGeneratorWeight_inr_eq_neg_inl TauCeti.E6Minuscule.cartanBezout
-      TauCeti.E6Minuscule.rootGeneratorWeight_sum_mul_cartanBezout
+      TauCeti.E6.rootGeneratorWeight_inr_eq_neg_inl TauCeti.E6.cartanBezout
+      TauCeti.E6.rootGeneratorWeight_sum_mul_cartanBezout
       (CommAlgCat.of ℤ A)) htorus
   obtain ⟨g, hg, hg_eq⟩ :=
     map_kostantElementarySubgroup_le_map_elementarySubgroup A ⟨_, helementary, rfl⟩

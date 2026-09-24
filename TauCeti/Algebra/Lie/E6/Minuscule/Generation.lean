@@ -48,6 +48,8 @@ universe v
 
 namespace TauCeti.E6Minuscule
 
+open TauCeti.E6
+
 open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -115,7 +117,9 @@ theorem weightTorusPoints_range_le_elementarySubgroup (A : Type v) [CommRing A] 
       rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
       𝓑 weightTable.weight weightTable.isCartanWeightVector_coordinateLatticeBasis
-      rootGeneratorWeight lie_serreH_rootGenerator Sum.inl Sum.inr
+      rootGeneratorWeight
+      (by intro k j; rw [weightTable_cartanMatrix]; exact lie_serreH_rootGenerator k j)
+      Sum.inl Sum.inr
       (fun i ↦ weightTable.isSl2Triple_rep_serreRootGenerator i
         (by
           obtain ⟨a, ha⟩ := exists_e6MinusculeWeight_apply_eq_neg_one i
