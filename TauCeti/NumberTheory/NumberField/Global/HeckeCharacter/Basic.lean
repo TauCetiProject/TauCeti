@@ -72,7 +72,7 @@ namespace HeckeCharacter
 variable {𝔪 𝔫 : Modulus K}
 
 /-- A ray class character pulled back to the idele class group is trivial on the ray subgroup. -/
-theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
+private theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
     raySubgroup 𝔪 ≤ (χ.comp (rayClassQuotient 𝔪)).ker := by
   rw [← ker_rayClassQuotient]
   exact fun c hc ↦ by simp [(MonoidHom.mem_ker).1 hc]
