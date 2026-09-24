@@ -38,8 +38,9 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 ## Main results
 
 * `TauCeti.WittRing.signedDiscr_wittClass`: `d±` of the Witt class of a form is `d±` of the form.
-* `TauCeti.WittRing.signedDiscr_add_of_mem_fundamentalIdeal`: `d±` is additive once one summand
-  lies in `I(K)`.
+* `TauCeti.WittRing.signedDiscr_add`: the correction term for `d±` of a sum of Witt classes.
+* `TauCeti.WittRing.signedDiscr_add_of_mem_fundamentalIdeal`: the correction term vanishes once
+  one summand lies in `I(K)`.
 * `TauCeti.WittRing.signedDiscr_oneFoldPfisterClass`: `d±⟨⟨a⟩⟩` is the square class of `a`.
 * `TauCeti.mem_fundamentalIdeal_sq_iff`: `I(K)²` consists of the classes in `I(K)` with trivial
   signed discriminant.
@@ -53,6 +54,8 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter II, §2, where the
   signed discriminant is shown to induce `I/I² ≅ Kˣ/(Kˣ)²`.
+* Tau Ceti Roadmap, `QuadraticFormInvariants/Suggested.lean`, Layer 4, for the proof blueprint
+  of `signedDiscrHom`, its surjectivity, and its kernel.
 -/
 
 public section
@@ -94,16 +97,22 @@ theorem signedDiscr_zero : signedDiscr (0 : WittRing K) = 0 := by
 theorem signedDiscr_one : signedDiscr (1 : WittRing K) = 0 := by
   rw [← map_one (wittClass (K := K)), signedDiscr_wittClass, RegularFormClass.signedDiscr_one]
 
-/-- **The signed discriminant is additive on the fundamental ideal**:
-`d±(x + y) = d±(x) + d±(y)` as soon as `x` has even dimension. The correction term
-`mn • squareClass (-1)` of `TauCeti.RegularFormClass.signedDiscr_add` vanishes when `m` is even. -/
-theorem signedDiscr_add_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fundamentalIdeal K)
-    (y : WittRing K) : signedDiscr (x + y) = signedDiscr x + signedDiscr y := by
-  obtain ⟨q, ⟨k, hk⟩, rfl⟩ := mem_fundamentalIdeal_iff_exists_evenRank.mp hx
+/-- **The signed discriminant of a sum of Witt classes**: the correction term is the product of
+their dimensions modulo two, times the square class of `-1`. -/
+theorem signedDiscr_add (x y : WittRing K) :
+    signedDiscr (x + y) =
+      (dimMod2 x * dimMod2 y) • squareClass (-1 : Kˣ) + signedDiscr x + signedDiscr y := by
+  obtain ⟨q, rfl⟩ := wittClass_surjective x
   obtain ⟨r, rfl⟩ := wittClass_surjective y
   rw [← map_add, signedDiscr_wittClass, signedDiscr_wittClass, signedDiscr_wittClass,
-    RegularFormClass.signedDiscr_add, hk, add_mul, add_nsmul,
-    ZModModule.add_self ((k * RegularFormClass.rank r) • squareClass (-1 : Kˣ)),
+    RegularFormClass.signedDiscr_add, dimMod2_wittClass, dimMod2_wittClass, ← Nat.cast_mul,
+    Nat.cast_smul_eq_nsmul]
+
+/-- **The signed discriminant is additive on the fundamental ideal**:
+`d±(x + y) = d±(x) + d±(y)` as soon as `x` has even dimension. -/
+theorem signedDiscr_add_of_mem_fundamentalIdeal {x : WittRing K} (hx : x ∈ fundamentalIdeal K)
+    (y : WittRing K) : signedDiscr (x + y) = signedDiscr x + signedDiscr y := by
+  rw [signedDiscr_add, mem_fundamentalIdeal_iff.mp hx, zero_mul, zero_smul,
     zero_add (M := SquareClassGroup K)]
 
 /-- On the fundamental ideal the signed discriminant is invariant under negation. -/
