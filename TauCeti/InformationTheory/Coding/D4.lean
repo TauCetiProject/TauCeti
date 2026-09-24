@@ -103,10 +103,11 @@ private theorem halfKleinFourMap_symm_apply [DecidableEq F] (hF : Nat.card F = 4
 
 open Classical in
 /-- The quadratic map of the quaternary `D₄` alphabet: every nonzero element of a field of order
-four has value `1 / 2`. It is transported from the Klein four-group along an additive
-identification, which shows it is a quadratic map; the result does not depend on that choice. -/
+four has value `1 / 2`. The formula does not depend on the choice of root used to identify the
+field with the Klein four-group. -/
 noncomputable def typeD4QuaternaryQuadraticMap (hF : Nat.card F = 4) :
     QuadraticMap ℤ F (AddCircle (1 : ℚ)) :=
+  -- Transport the quadratic map on the Klein four-group along the chosen additive identification.
   let hω := (exists_sq_add_self_add_one_eq_zero_of_card_eq_four hF).choose_spec
   (halfKleinFourMap.comp (zmodTwoProdAddEquiv hF hω).symm.toIntLinearEquiv.toLinearMap).copy
     (fun x ↦ if x = 0 then 0 else (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)))
