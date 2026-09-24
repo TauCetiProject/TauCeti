@@ -92,8 +92,7 @@ private theorem local_threeFourOne_nonneg (χ : (L ≃ₐ[K] L) →* ℂˣ)
       rw [MonoidHom.galoisCharacterWeight_apply_of_unramified _ P hur,
         MonoidHom.pow_apply, Units.val_pow_eq_pow_val,
         ← MonoidHom.galoisCharacterWeight_apply_of_unramified χ P hur]
-      rw [show (2 : ℂ) * I * (t : ℂ) = (2 : ℕ) * (I * t) by ring]
-      rw [cpow_add _ _ hNc, cpow_nat_mul, hbase]
+      rw [mul_assoc, cpow_add _ _ hNc, cpow_ofNat_mul, hbase]
       simp only [a, z, Real.rpow_neg hN.le, Complex.ofReal_inv, div_eq_mul_inv,
         mul_pow]
       rw [mul_inv_rev, inv_pow]
