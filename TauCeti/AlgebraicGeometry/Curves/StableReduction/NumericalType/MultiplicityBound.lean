@@ -318,15 +318,8 @@ five components of self-intersection `-2w`, with `T` having more components than
 suppose that every component outside the chain meeting it is not a `(-2)`-index. Then
 `mᵢ|aᵢᵢ| ≤ 24g - 24` for every component `i` of the chain.
 
-For `t > 5`, [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89) says that such a
-chain is a path with equal weights, except possibly at one end where the weight may be twice or
-half the common one. The `t = 5` case is supplied locally by the five-component classification
-`TauCeti.NumericalType.exists_intersection_ratio_chain_five_mem`, through
-`IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end`.
-The bound follows from the weighted maximum principle, with the test vector equal to `1` at a
-component of twice the common weight and to `2` elsewhere. This is the concavity argument of the
-proof of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W), for all three weight
-patterns of the chain. -/
+For chains of length greater than five, see [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89).
+The bound is the chain case of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W). -/
 theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_le
     (hT : T.IsMinimal) (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (hcard : t < Fintype.card T.Component) (ht : 4 < t)
@@ -334,6 +327,8 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
       ¬ T.IsMinusTwoIndex k)
     {r : ℕ} (hr : r < t) :
     (T.multiplicity (c r) : ℤ) * |T.intersection (c r) (c r)| ≤ 24 * T.arithmeticGenus - 24 := by
+  -- The `t = 5` classification comes from `exists_intersection_ratio_chain_five_mem` via
+  -- `exists_weight_eq_except_one_end`. Use `1` at a double-weight end and `2` elsewhere.
   obtain ⟨W, hW, hint, h₀, hlast, -⟩ := hc.exists_weight_eq_except_one_end hcard ht
   have hall : ∀ i < t, (T.weight (c i) : ℤ) = W ∨ (T.weight (c i) : ℤ) = 2 * W ∨
       2 * (T.weight (c i) : ℤ) = W := fun i hi ↦ by
@@ -509,6 +504,8 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
       (T.multiplicity j : ℤ) * |T.intersection j j| ≤ 24 * T.arithmeticGenus - 24 := by
   have hc := hf.toIsSelfIntersectionMinusTwoChain
   have ht := hf.two_lt
+  -- The shorter fork classifications are supplied by `exists_weight_intersection_eq_three`
+  -- and `exists_weight_intersection_eq_four`. Use `1` at both leaves and `2` elsewhere.
   obtain ⟨W, hwc, hwb, hedge, hbranch⟩ := hf.exists_weight_intersection_eq hcard
   have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
   set S := insert branch ((range t).image c) with hS
@@ -574,13 +571,8 @@ be a fork of components of self-intersection `-2w`, with `T` having more compone
 fork, and suppose that every component outside the fork meeting it is not a `(-2)`-index. Then
 `mᵢ|aᵢᵢ| ≤ 24g - 24` for every component `c r` of the chain of the fork.
 
-For `t > 4`, [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D) says that the fork
-is simply laced. The shorter cases `t = 3` and `t = 4` are supplied locally by
-`exists_weight_intersection_eq_three` and `exists_weight_intersection_eq_four`, respectively,
-through `IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`.
-The bound follows from the weighted maximum principle, with the test vector equal to `1` at the
-two leaves `c (t - 1)` and `branch` and to `2` elsewhere; this is the concavity argument of the
-proof of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W) for a fork. -/
+For forks with `t > 4`, see [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D).
+The bound is the fork case of [Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W). -/
 theorem multiplicity_mul_abs_intersection_self_le (hT : T.IsMinimal)
     (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     (hcard : t + 1 < Fintype.card T.Component)
