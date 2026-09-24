@@ -415,13 +415,13 @@ theorem cotangentFlagIdeal_le_range :
     (f4ShortRootRepresentedIdealMatrixBaseChange_le_range
       ((mem_cotangentFlagIdeal_iff x).mp hx))
 
+/-- The adjoint comodule structure used for the represented cotangent flag. -/
 local instance f4ShortRootCotangentAdjointComodule :
     Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) f4ShortRootCotangentDual :=
   Derivation.adjointComodule
     (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
 
-/-- A point acts block triangularly on the adapted represented flag if it preserves its two
-nontrivial steps. -/
+/-- A point acts block triangularly on the adapted flag if it preserves its two nontrivial steps. -/
 theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     (g : HopfAlgebra.points
       (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (CommAlgCat.of 𝔽₂ A))
