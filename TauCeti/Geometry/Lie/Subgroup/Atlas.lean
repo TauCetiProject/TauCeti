@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.CartanChart
-public import TauCeti.Geometry.Lie.Exponential.ProductChart
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 
 /-!
@@ -14,8 +13,8 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 
 For a closed subgroup of a finite-dimensional Lie group, the complementary exponential-product
 map is a local chart at the identity.  The local Cartan membership criterion and the transverse
-separation lemma identify the subgroup in this chart with the zero-complement slice.  This is the
-chart-level boundary used by the translated subgroup atlas.
+separation lemma identify the subgroup in this chart with the zero-complement slice.  Translating
+this identity chart gives the corresponding local models at other subgroup points.
 
 The complement, transverse separation radius, and local product chart are supplied by
 `TauCeti.Lie.exists_complement_data_of_isClosed_subgroup`.
@@ -73,26 +72,33 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       exact Metric.isOpen_ball.preimage continuous_snd
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
   let Φ := Φ₀.restrOpen V hV
+  have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
+    change hf.localInverse.toOpenPartialHomeomorph x = hf.localInverse.toPartialEquiv x
+    exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
+      hf.localInverse.toOpenPartialHomeomorph) x).symm
+  have hlocalInverse_toPartialEquiv (x : G) :
+      hf.localInverse.toPartialEquiv x = hf.localInverse x := by
+    rfl
+  have hΦ₀_source : (1 : G) ∈ Φ₀.source := by
+    -- `toOpenPartialHomeomorph` preserves the inverse source; this unfolds only that wrapper.
+    change 1 ∈ hf.localInverse.source
+    simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source
   have hzero : Φ₀ 1 = 0 := by
     have h := hf.localInverse_left_inv (x' := (0 : p × q)) hf.localInverse_mem_target
-    change hf.localInverse.toPartialEquiv 1 = 0
+    rw [hΦ₀_toPartialEquiv]
     simpa only [Submodule.lieExpMulLieExp_zero] using h
   have h1 : (1 : G) ∈ Φ.source := by
     -- The inverse chart sends `1` to `0`, whose transverse coordinate lies in every positive ball.
-    change 1 ∈ Φ₀.source ∩ V
+    rw [OpenPartialHomeomorph.restrOpen_source]
     refine ⟨?_, ?_⟩
-    · change 1 ∈ hf.localInverse.source
-      simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source
+    · exact hΦ₀_source
     · change 1 ∈ Φ₀.source ∩ Φ₀ ⁻¹' A
-      refine ⟨?_, ?_⟩
-      · exact (by
-          change 1 ∈ hf.localInverse.source
-          simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source)
-      · change Φ₀ 1 ∈ A
-        rw [hzero]
-        change (0 : q) ∈ Metric.ball (0 : q) ε
-        exact Metric.mem_ball_self hε
+      refine ⟨hΦ₀_source, ?_⟩
+      change Φ₀ 1 ∈ A
+      rw [hzero]
+      exact Metric.mem_ball_self hε
   refine ⟨p, q, Φ, hpq, h1, ?_⟩
+  -- Unfold the local name `Φ`; the remaining chart equality uses the coercion fact above.
   change IsSliceChart (Φ₀.restrOpen V hV)
     ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
   apply isSliceChart_iff.2
@@ -100,6 +106,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
   -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
   rw [OpenPartialHomeomorph.restrOpen_source] at hx
   simp only [OpenPartialHomeomorph.coe_restrOpen]
+  -- The remaining changes below unfold the local set aliases `V` and `A`.
   change x ∈ Φ₀.source ∩ V at hx
   let z : p × q := Φ₀ x
   have hxV : x ∈ V := hx.2
@@ -110,17 +117,15 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
   have hzprod : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) *
       lieExp (I := I) (z.2 : LeftInvariantDerivation I G) = x := by
     have hright := hf.localInverse_right_inv hx.1
-    change Submodule.lieExpMulLieExp (I := I) (G := G) p q
-        (hf.localInverse.toPartialEquiv x) = x at hright
-    rw [Submodule.lieExpMulLieExp_apply] at hright
+    have hright' : Submodule.lieExpMulLieExp (I := I) (G := G) p q
+        (hf.localInverse.toPartialEquiv x) = x := by
+      rw [hlocalInverse_toPartialEquiv]
+      exact hright
+    rw [Submodule.lieExpMulLieExp_apply] at hright'
     have hz_eq : z = hf.localInverse.toPartialEquiv x := by
-      -- The open partial homeomorph and partial diffeomorph have the same underlying partial map.
-      change Φ₀ x = hf.localInverse.toPartialEquiv x
-      change hf.localInverse.toOpenPartialHomeomorph x = hf.localInverse.toPartialEquiv x
-      exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
-        hf.localInverse.toOpenPartialHomeomorph) x).symm
+      exact hΦ₀_toPartialEquiv x
     rw [hz_eq]
-    exact hright
+    exact hright'
   have hz2norm : ‖(z.2 : LeftInvariantDerivation I G)‖ < ε := by
     have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
       simpa only [A, Set.mem_preimage] using hzA

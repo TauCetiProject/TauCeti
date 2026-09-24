@@ -44,8 +44,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- Choose the complementary submodules, transverse separation radius, and local product chart
-used in the closed-subgroup argument. -/
+/-- For a closed subgroup, there are a complementary submodule and positive radius such that small
+transverse exponentials lie in the subgroup exactly at zero, while the complementary exponential
+product is a local diffeomorphism at the identity. -/
 theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
