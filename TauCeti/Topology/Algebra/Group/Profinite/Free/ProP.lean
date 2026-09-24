@@ -24,6 +24,7 @@ induces a surjection of free pro-`p` groups.
 
 * `TauCeti.freeProP`: the free pro-`p` group on a type.
 * `TauCeti.freeProP.of`: its canonical generators.
+* `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
 * `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
@@ -96,6 +97,16 @@ theorem fromFreeProfiniteGroup_of (x : X) :
 theorem fromFreeProfiniteGroup_surjective :
     Function.Surjective (fromFreeProfiniteGroup p X) :=
   maximalProPQuotient.mk_surjective p (freeProfiniteGroup X)
+
+/-- The canonical homomorphism from the discrete free group on `X` to the free pro-`p` group on
+`X`: the unit of the profinite completion followed by the maximal pro-`p` quotient map. -/
+noncomputable def fromFreeGroup (p : ℕ) (X : Type u) : FreeGroup X →* freeProP p X :=
+  (fromFreeProfiniteGroup p X).toMonoidHom.comp (freeProfiniteGroup.fromFreeGroup X)
+
+/-- `fromFreeGroup` carries the free-group generator at `x` to the generator `of x`. -/
+@[simp]
+theorem fromFreeGroup_of (x : X) : fromFreeGroup p X (FreeGroup.of x) = of x := by
+  simp [fromFreeGroup]
 
 end freeProP
 
