@@ -343,7 +343,6 @@ theorem apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P
   exact h0.symm
 
 /-- The complementary projection kills the local unstable graph map. -/
-@[simp]
 theorem sub_apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P)
     (v : X) :
     (ContinuousLinearMap.id ℝ X - P)
