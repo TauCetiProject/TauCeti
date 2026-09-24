@@ -30,6 +30,8 @@ combination of induced characters with coefficients in `ℤ[ζ]`.
 
 ## Main statements
 
+* `TauCeti.mem_closure_range_iff_exists_linearCombination_intCast`: the integer combinations of
+  `b` are the `A`-combinations of `b` with integer coefficients.
 * `TauCeti.mem_of_mem_span_of_mem_closure`: an integer combination of `b` that is an
   `A`-combination of elements of `V` is already in `V`.
 
@@ -46,17 +48,19 @@ namespace TauCeti
 
 variable {ι A M : Type*} [Ring A] [AddCommGroup M] [Module A M] {b : ι → M}
 
-/-- An integer combination of `b` has integer `A`-coordinates. -/
-private theorem exists_linearCombination_intCast_eq {v : M}
-    (hv : v ∈ AddSubgroup.closure (Set.range b)) :
-    ∃ n : ι →₀ ℤ, Finsupp.linearCombination A b (n.mapRange (Int.cast) Int.cast_zero) = v := by
-  have hv' : v ∈ (AddSubgroup.closure (Set.range b)).toIntSubmodule := hv
-  rw [AddSubgroup.toIntSubmodule_closure, Finsupp.mem_span_range_iff_exists_finsupp] at hv'
-  obtain ⟨n, rfl⟩ := hv'
-  refine ⟨n, ?_⟩
-  rw [Finsupp.linearCombination_apply,
-    Finsupp.sum_mapRange_index (h := fun i (a : A) => a • b i) fun i => zero_smul A (b i)]
-  exact Finsupp.sum_congr fun i _ => Int.cast_smul_eq_zsmul A (n i) (b i)
+/-- The integer combinations of `b` are exactly the `A`-combinations of `b` with integer
+coefficients. -/
+theorem mem_closure_range_iff_exists_linearCombination_intCast {v : M} :
+    v ∈ AddSubgroup.closure (Set.range b) ↔
+      ∃ n : ι →₀ ℤ, Finsupp.linearCombination A b (n.mapRange Int.cast Int.cast_zero) = v := by
+  have h (n : ι →₀ ℤ) : Finsupp.linearCombination A b (n.mapRange Int.cast Int.cast_zero) =
+      Finsupp.linearCombination ℤ b n := by
+    rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply,
+      Finsupp.sum_mapRange_index (h := fun i (a : A) => a • b i) fun i => zero_smul A (b i)]
+    exact Finsupp.sum_congr fun i _ => Int.cast_smul_eq_zsmul A (n i) (b i)
+  change v ∈ (AddSubgroup.closure (Set.range b)).toIntSubmodule ↔ _
+  simp only [h, AddSubgroup.toIntSubmodule_closure, Finsupp.mem_span_range_iff_exists_finsupp,
+    Finsupp.linearCombination_apply]
 
 /-- **Descent of a span from `A` to `ℤ`.** Let `b` be linearly independent over `A`, and let
 `t : A → ℤ` be additive with `t 1 = 1`. If `V` is an additive subgroup of the integer combinations
@@ -78,7 +82,7 @@ theorem mem_of_mem_span_of_mem_closure (hb : LinearIndependent A b) (t : A →+ 
     rw [map_add, add_add_add_comm]
   -- For `v ∈ V ≤ L` with integer coordinates `n`, `a • v = t(a) • v + ∑ (a - t(a)) nᵢ bᵢ`.
   have hP_smul (a : A) {v : M} (hv : v ∈ V) : P (a • v) := by
-    obtain ⟨n, hn⟩ := exists_linearCombination_intCast_eq (A := A) (hV hv)
+    obtain ⟨n, hn⟩ := (mem_closure_range_iff_exists_linearCombination_intCast (A := A)).mp (hV hv)
     let m : ι →₀ A := n.mapRange Int.cast Int.cast_zero
     refine ⟨t a • v, V.zsmul_mem hv _, a • m - (t a : A) • m, fun i => ?_, ?_⟩
     · simp only [m, Finsupp.coe_sub, Finsupp.coe_smul, Pi.sub_apply, Pi.smul_apply,
@@ -94,7 +98,7 @@ theorem mem_of_mem_span_of_mem_closure (hb : LinearIndependent A b) (t : A →+ 
     | smul r x _ hx => exact fun a => by rw [smul_smul]; exact hx (a * r)
   obtain ⟨w, hw, c, hc, hfw⟩ := one_smul A f ▸ hP f hfA 1
   -- `f - w` has integer coordinates `n`, which must be the coordinates `c`, killed by `t`.
-  obtain ⟨n, hn⟩ := exists_linearCombination_intCast_eq (A := A)
+  obtain ⟨n, hn⟩ := (mem_closure_range_iff_exists_linearCombination_intCast (A := A)).mp
     (AddSubgroup.sub_mem _ hf (hV hw))
   have hcn : n.mapRange Int.cast Int.cast_zero = c :=
     hb.finsuppLinearCombination_injective (by rw [hn, hfw, add_sub_cancel_left])
