@@ -29,14 +29,17 @@ This is the shape of the L-function of a normalized Hecke eigenform, where `c p 
 
 ## Main results
 
-* `TauCeti.LSeries_localFactor_mul_tsum_eq_one_of_recurrence`: the factor identity.
-* `TauCeti.LSeries_tsum_term_prime_pow_eq_inv_of_recurrence`: the prime-power sum is the
+* `TauCeti.LSeries.localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence`: the factor
+  identity.
+* `TauCeti.LSeries.tsum_term_prime_pow_eq_inv_of_recurrence`: the prime-power sum is the
   inverse factor.
-* `TauCeti.LSeries_localFactor_ne_zero_of_recurrence`: each quadratic factor is nonzero.
-* `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`: the Euler product, as a `HasProd`.
-* `TauCeti.LSeries_eulerProduct_tprod_of_recurrence`: the same, as an equality with `∏'`.
-* `TauCeti.LSeries_eulerProduct_of_recurrence`: the same, as convergence of the finite partial
-  products over `Nat.primesBelow n`.
+* `TauCeti.LSeries.localFactor_ne_zero_of_recurrence`: each quadratic factor is nonzero.
+* `TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`: the Euler product, as a
+  `HasProd`.
+* `TauCeti.LSeries.LSeries_eulerProduct_tprod_of_recurrence`: the same, as an equality with
+  `∏'`.
+* `TauCeti.LSeries.LSeries_eulerProduct_of_recurrence`: the same, as convergence of the finite
+  partial products over `Nat.primesBelow n`.
 
 ## References
 
@@ -48,13 +51,13 @@ public section
 
 open LSeries Nat Filter Topology
 
-namespace TauCeti
+namespace TauCeti.LSeries
 
 variable {a c : ℕ → ℂ} {s : ℂ}
 
 /-- An L-series term at a power of a nonzero index, written as a coefficient times a power of
 the index's Dirichlet weight. -/
-theorem LSeries_term_prime_pow (p : ℕ) (hp : p ≠ 0) (e : ℕ) :
+theorem term_pow (p : ℕ) (hp : p ≠ 0) (e : ℕ) :
     term a s (p ^ e) = a (p ^ e) * ((p : ℂ) ^ (-s)) ^ e := by
   rw [term_of_ne_zero (pow_ne_zero e hp), cast_pow,
     ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg, inv_pow,
@@ -62,13 +65,13 @@ theorem LSeries_term_prime_pow (p : ℕ) (hp : p ≠ 0) (e : ℕ) :
 
 /-- The quadratic factor times the sum over powers of a prime is `1` whenever the
 prime-power coefficients satisfy the second-order recurrence. -/
-theorem LSeries_localFactor_mul_tsum_eq_one_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+theorem localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence (h₁ : a 1 = 1) (p : Primes)
     (hrec : ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : Summable (fun e : ℕ ↦ term a s (p ^ e))) :
     (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s)) *
       (∑' e : ℕ, term a s (p ^ e)) = 1 := by
-  have hterm (e : ℕ) := LSeries_term_prime_pow (a := a) (s := s) p p.prop.ne_zero e
+  have hterm (e : ℕ) := term_pow (a := a) (s := s) p p.prop.ne_zero e
   have key := hs.hasSum
     |>.one_sub_add_mul_eq_of_linearRec₂ (D := a p * (p : ℂ) ^ (-s))
       (S := c p * ((p : ℂ) ^ (-s)) ^ 2) fun r ↦ by
@@ -80,25 +83,27 @@ theorem LSeries_localFactor_mul_tsum_eq_one_of_recurrence (h₁ : a 1 = 1) (p : 
   exact key.trans (by simp [h₁])
 
 /-- The sum over powers of a prime is the inverse quadratic Euler factor. -/
-theorem LSeries_tsum_term_prime_pow_eq_inv_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+theorem tsum_term_prime_pow_eq_inv_of_recurrence (h₁ : a 1 = 1) (p : Primes)
     (hrec : ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : Summable (fun e : ℕ ↦ term a s (p ^ e))) :
     ∑' e : ℕ, term a s (p ^ e) =
       (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ :=
-  eq_inv_of_mul_eq_one_right (LSeries_localFactor_mul_tsum_eq_one_of_recurrence h₁ p hrec hs)
+  eq_inv_of_mul_eq_one_right
+    (localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence h₁ p hrec hs)
 
 /-- Each quadratic Euler factor is nonzero when its prime-power series converges. -/
-theorem LSeries_localFactor_ne_zero_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+theorem localFactor_ne_zero_of_recurrence (h₁ : a 1 = 1) (p : Primes)
     (hrec : ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : Summable (fun e : ℕ ↦ term a s (p ^ e))) :
     1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s) ≠ 0 :=
-  left_ne_zero_of_mul_eq_one (LSeries_localFactor_mul_tsum_eq_one_of_recurrence h₁ p hrec hs)
+  left_ne_zero_of_mul_eq_one
+    (localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence h₁ p hrec hs)
 
 /-- The L-series terms of a coefficient sequence multiplicative on coprime arguments are
 themselves multiplicative on coprime arguments. -/
-theorem LSeries_term_mul_of_coprime
+theorem term_mul_of_coprime
     (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
     {m n : ℕ} (hmn : m.Coprime n) : term a s (m * n) = term a s m * term a s n := by
   rcases eq_or_ne m 0 with rfl | hm
@@ -123,14 +128,14 @@ theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
       (LSeries a s) := by
   have hlocal (p : Primes) : ∑' e : ℕ, term a s (p ^ e) =
       (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ := by
-    exact LSeries_tsum_term_prime_pow_eq_inv_of_recurrence h₁ p (hrec p p.prop)
+    exact tsum_term_prime_pow_eq_inv_of_recurrence h₁ p (hrec p p.prop)
       (hs.comp_injective (Nat.pow_right_injective p.prop.two_le))
   have H := EulerProduct.eulerProduct_hasProd (by simp [h₁])
-    (LSeries_term_mul_of_coprime hmul) hs.norm (term_zero a s)
+    (term_mul_of_coprime hmul) hs.norm (term_zero a s)
   rwa [funext hlocal] at H
 
 /-- **The Euler product with quadratic local factors**, as an equality with `∏'`: under the
-hypotheses of `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`,
+hypotheses of `TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`,
 `∏' p, (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ = L(a, s)`. -/
 theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
     (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
@@ -141,7 +146,7 @@ theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
   (LSeries_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs).tprod_eq
 
 /-- **The Euler product with quadratic local factors**, as convergence of the finite partial
-products: under the hypotheses of `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`,
+products: under the hypotheses of `TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`,
 `∏_{p < n} (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ → L(a, s)` as `n → ∞`. -/
 theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
     (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
@@ -151,10 +156,10 @@ theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ primesBelow n, (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries a s)) := by
-  refine (EulerProduct.eulerProduct (by simp [h₁]) (LSeries_term_mul_of_coprime hmul) hs.norm
+  refine (EulerProduct.eulerProduct (by simp [h₁]) (term_mul_of_coprime hmul) hs.norm
     (term_zero a s)).congr fun n ↦ Finset.prod_congr rfl fun p hp ↦ ?_
   have hp := prime_of_mem_primesBelow hp
-  exact LSeries_tsum_term_prime_pow_eq_inv_of_recurrence (p := ⟨p, hp⟩) h₁ (hrec p hp)
+  exact tsum_term_prime_pow_eq_inv_of_recurrence (p := ⟨p, hp⟩) h₁ (hrec p hp)
     (hs.comp_injective (Nat.pow_right_injective hp.two_le))
 
-end TauCeti
+end TauCeti.LSeries
