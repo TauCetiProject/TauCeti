@@ -79,6 +79,8 @@ positive degree.
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
   §2.7 (the monodromy of a cover is well defined up to the numbering of the fibre).
+* [BelyiMaps roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/BelyiMaps/README.md),
+  Layers 6.1 and 6.3 (the three cover carriers, isomorphism relations, and class quotients).
 -/
 
 public section
