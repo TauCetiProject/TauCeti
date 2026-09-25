@@ -5,44 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Stieltjes
+public import TauCeti.Order.Northcott.Stieltjes
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
-import Mathlib.Topology.Algebra.Order.Floor
 
 /-!
-# Summatory functions as Stieltjes functions
+# Stieltjes integration by parts and prime counting
 
-A partial sum `A(x) = ∑_{N i ≤ x} w i` of a nonnegative real weight over a Northcott carrier is a
-monotone step function, and with the inclusive cutoff it is continuous from the right: it can
-jump only at a natural number `n`, the jump there has size `∑_{N i = n} w i`, and the value at
-`n` already includes the jump. It is therefore a Stieltjes function, and the associated measure
-`dA` is the weighted sum of point masses `∑ i, w i δ_{N i}`.
-
-This is the language in which analytic number theory usually writes sums over integers, ideals
-or primes: `∑_{a < N i ≤ b} w i g (N i) = ∫_{(a, b]} g dA`. Here that identity is a theorem about
-Mathlib's `StieltjesFunction.measure`, for an arbitrary function `g` with values in a real Banach
-space. Combined with Abel summation it gives the Stieltjes integration-by-parts formula
-`∫_{(a, b]} g dA = g(b) A(b) - g(a) A(a) - ∫_a^b g'(t) A(t) dt`.
-
-For the prime counts of a number field this recovers the classical pair
-`π_S(x) = ∫_{(1, x]} dϑ_S(t) / log t` and `ϑ_S(x) = ∫_{(1, x]} log t dπ_S(t)`, valid for every
-real cutoff `x`.
+The generic Northcott–Stieltjes construction and its measure and integral identities are in
+`TauCeti.Order.Northcott.Stieltjes`. This module combines them with Abel summation to obtain
+Stieltjes integration by parts. For prime counts of a number field it gives the identities
+`π_S(x) = ∫_{(1, x]} dϑ_S(t) / log t` and `ϑ_S(x) = ∫_{(1, x]} log t dπ_S(t)` for every real `x`.
 
 ## Main definitions
 
-* `TauCeti.summatoryStieltjes`: the summatory function of a nonnegative real weight, as a
-  `StieltjesFunction ℝ`.
 * `TauCeti.primeThetaStieltjes` and `TauCeti.primeCountStieltjes`: the weighted and unweighted
   prime counts of a set of primes, as Stieltjes functions.
 
 ## Main results
 
-* `TauCeti.continuousWithinAt_summatory_Ici`: a summatory function is continuous from the right.
-* `TauCeti.measure_summatoryStieltjes`: the Stieltjes measure is `∑ i, w i • δ_{N i}`.
-* `TauCeti.restrict_Ioc_measure_summatoryStieltjes`: on `(a, b]` it is the finite sum of the point
-  masses of the indices of `N`-value in `(a, b]`.
-* `TauCeti.setIntegral_Ioc_summatoryStieltjes`: `∫_{(a, b]} g dA` is the increment between `a` and
-  `b` of the summatory function of `i ↦ w i • g (N i)`.
 * `TauCeti.setIntegral_Ioc_summatoryStieltjes_eq_sub_sub_integral`: Abel summation as Stieltjes
   integration by parts.
 * `TauCeti.primeCount_eq_integral_primeThetaStieltjes` and
@@ -63,98 +43,6 @@ open scoped Topology NumberField
 open IsDedekindDomain
 
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
-
-/-! ### Right continuity -/
-
-/-- A summatory function is continuous from the right: it is constant on each interval
-`[n, n + 1)` with `n` an integer, because the cutoff is inclusive. -/
-theorem continuousWithinAt_summatory_Ici {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
-    (w : ι → M) (x : ℝ) : ContinuousWithinAt (summatory N w) (Ici x) x := by
-  refine continuousWithinAt_const.congr_of_eventuallyEq ?_ rfl
-  filter_upwards [tendsto_pure.mp (tendsto_floor_right_pure_floor x)] with y hy
-  rw [summatory_apply, summatory_apply, normLE_eq_normLE_of_floor_eq N hy]
-
-/-! ### The Stieltjes function and its measure -/
-
-/-- The summatory function `x ↦ ∑_{N i ≤ x} w i` of a nonnegative real weight, as a Stieltjes
-function. -/
-noncomputable def summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) : StieltjesFunction ℝ where
-  toFun := summatory N w
-  mono' := summatory_mono N hw
-  right_continuous' := continuousWithinAt_summatory_Ici N w
-
-/-- The Stieltjes function `summatoryStieltjes N hw` evaluates to the summatory function. -/
-@[simp]
-theorem summatoryStieltjes_apply {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (x : ℝ) :
-    summatoryStieltjes N hw x = summatory N w x := (rfl)
-
-/-- **The Stieltjes measure of a summatory function** is the sum over the carrier of the point
-masses at the `N`-values, weighted by `w`. -/
-theorem measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
-    (summatoryStieltjes N hw).measure =
-      Measure.sum fun i ↦ ENNReal.ofReal (w i) • Measure.dirac (N i : ℝ) := by
-  refine Measure.ext_of_Ioc _ _ fun a b hab ↦ ?_
-  rw [StieltjesFunction.measure_Ioc, summatoryStieltjes_apply, summatoryStieltjes_apply,
-    summatory_sub_summatory_eq_sum_filter N w hab.le,
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hw i, Measure.sum_apply _ measurableSet_Ioc]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
-  have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
-    simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
-  rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
-  · refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [indicator_of_mem ((hmem i).mp hi), Pi.one_apply, mul_one]
-  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h)), mul_zero]
-
-/-- On the interval `(a, b]` the Stieltjes measure of a summatory function is the finite sum of
-the weighted point masses of the indices whose `N`-value lies in `(a, b]`. -/
-theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (a b : ℝ) :
-    (summatoryStieltjes N hw).measure.restrict (Ioc a b) =
-      ∑ i ∈ {j ∈ normLE N b | a < N j}, ENNReal.ofReal (w i) • Measure.dirac (N i : ℝ) := by
-  ext s hs
-  rw [Measure.restrict_apply hs, measure_summatoryStieltjes,
-    Measure.sum_apply _ (hs.inter measurableSet_Ioc), Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
-    Measure.dirac_apply' _ hs, smul_eq_mul]
-  have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
-    simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
-  rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
-  · refine Finset.sum_congr rfl fun i hi ↦ ?_
-    by_cases his : (N i : ℝ) ∈ s
-    · rw [indicator_of_mem (mem_inter his ((hmem i).mp hi)), indicator_of_mem his]
-    · rw [indicator_of_notMem (fun h ↦ his h.1), indicator_of_notMem his]
-  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h.2)), mul_zero]
-
-/-! ### Integrals against the Stieltjes measure -/
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- **Sums as Stieltjes integrals.** For `a ≤ b`, integrating `g` over `(a, b]` against the
-Stieltjes measure `dA` of `A = summatory N w` gives `∑_{a < N i ≤ b} w i • g (N i)`, written as
-the increment between `a` and `b` of the summatory function of `i ↦ w i • g (N i)`. -/
-theorem setIntegral_Ioc_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (g : ℝ → E)
-    {a b : ℝ} (hab : a ≤ b) :
-    ∫ t in Ioc a b, g t ∂(summatoryStieltjes N hw).measure =
-      summatory N (fun i ↦ w i • g (N i)) b - summatory N (fun i ↦ w i • g (N i)) a := by
-  rw [restrict_Ioc_measure_summatoryStieltjes, summatory_sub_summatory_eq_sum_filter N _ hab,
-    integral_finsetSum_measure fun i _ ↦
-      (integrable_dirac enorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (hw i)]
-
-/-- Sums as Stieltjes integrals from a cutoff `a` below every `N`-value: then
-`∫_{(a, x]} g dA = ∑_{N i ≤ x} w i • g (N i)` for every real `x`. -/
-theorem setIntegral_Ioc_summatoryStieltjes_of_lt {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (g : ℝ → E)
-    {a : ℝ} (hN : ∀ i, a < N i) (x : ℝ) :
-    ∫ t in Ioc a x, g t ∂(summatoryStieltjes N hw).measure =
-      summatory N (fun i ↦ w i • g (N i)) x := by
-  have hzero {y : ℝ} (hy : y ≤ a) : normLE N y = ∅ :=
-    Finset.eq_empty_of_forall_notMem fun i hi ↦
-      (hy.trans_lt (hN i)).not_ge ((mem_normLE N).mp hi)
-  rcases le_or_gt a x with hax | hxa
-  · rw [setIntegral_Ioc_summatoryStieltjes N hw g hax, summatory_apply N _ a, hzero le_rfl,
-      Finset.sum_empty, sub_zero]
-  · rw [Ioc_eq_empty_of_le hxa.le, Measure.restrict_empty, integral_zero_measure,
-      summatory_apply, hzero hxa.le, Finset.sum_empty]
 
 /-- **Abel summation as Stieltjes integration by parts.** For real cutoffs `a ≤ b` and a function
 `g` with values in `ℝ` or `ℂ`, differentiable on `[a, b]` with integrable derivative,

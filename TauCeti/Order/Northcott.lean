@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
+public import Mathlib.Topology.Algebra.Order.Floor
+public import Mathlib.Topology.UniformSpace.Real
 
 /-!
 # Finite real-cutoff carriers for Northcott functions
@@ -23,6 +25,9 @@ its natural floor.
 public section
 
 namespace TauCeti
+
+open Filter
+open scoped Topology
 
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 
@@ -158,6 +163,14 @@ theorem summatory_le_summatory {w₁ w₂ : ι → ℝ} (h : ∀ i, w₁ i ≤ w
 /-- A summatory function with nonnegative real weight is monotone in the cutoff. -/
 theorem summatory_mono {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) : Monotone (summatory N w) :=
   fun _ _ hxy ↦ Finset.sum_le_sum_of_subset_of_nonneg (normLE_mono N hxy) fun i _ _ ↦ hw i
+
+/-- A summatory function is continuous from the right: it is constant on each interval
+`[n, n + 1)` with `n` an integer, because the cutoff is inclusive. -/
+theorem continuousWithinAt_summatory_Ici {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
+    (w : ι → M) (x : ℝ) : ContinuousWithinAt (summatory N w) (Set.Ici x) x := by
+  refine continuousWithinAt_const.congr_of_eventuallyEq ?_ rfl
+  filter_upwards [tendsto_pure.mp (tendsto_floor_right_pure_floor x)] with y hy
+  rw [summatory_apply, summatory_apply, normLE_eq_normLE_of_floor_eq N hy]
 
 /-- Changing a weight on a finite set of indices changes the summatory function, for all large
 cutoffs, by the constant total discrepancy over that set. -/
