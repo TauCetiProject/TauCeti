@@ -30,6 +30,8 @@ solely through the boundary it produces.
 
 * `TauCeti.AInfinityHom.cyclesMap`: the linear part restricted to cycles.
 * `TauCeti.AInfinityHom.cohomologyMap`: the induced morphism of nonunital cohomology algebras.
+* `TauCeti.AInfinityHom.cohomologyStrictHom`: the induced map as a strict morphism of the
+  cohomology `A∞` algebras.
 * `TauCeti.AInfinityHom.IsQuasiIso`: a morphism inducing a bijection on cohomology.
 
 ## Main results
@@ -257,6 +259,19 @@ theorem cohomologyMap_mem_cohomologyGrading_piece (f : AInfinityHom AA BB) {p : 
   obtain ⟨x, hx, hxp, rfl⟩ := AA.mem_cohomologyGrading_piece_iff.1 hc
   rw [cohomologyMap_cohomologyClass]
   exact BB.cohomologyClass_mem_cohomologyGrading_piece _ (f.linearPart_mem hxp)
+
+/-- The map induced on cohomology by an `A∞` morphism, as a strict morphism of the cohomology `A∞`
+algebras. -/
+noncomputable def cohomologyStrictHom (f : AInfinityHom AA BB) :
+    AInfinityStrictHom AA.cohomologyAInfinityAlgebra BB.cohomologyAInfinityAlgebra :=
+  AInfinityAlgebra.cohomologyStrictHom f.cohomologyMap f.cohomologyMap_mem_cohomologyGrading_piece
+
+/-- The strict morphism of cohomology `A∞` algebras induced by `f` is the map induced on
+cohomology. -/
+@[simp]
+theorem coe_cohomologyStrictHom (f : AInfinityHom AA BB) :
+    ⇑f.cohomologyStrictHom = f.cohomologyMap :=
+  AInfinityAlgebra.coe_cohomologyStrictHom _ _
 
 /-- Passage to cohomology sends the identity `A∞` morphism to the identity. -/
 @[simp]

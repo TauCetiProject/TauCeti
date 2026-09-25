@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
@@ -31,7 +31,10 @@ component of a boundary `m₁(y)` is the boundary `m₁(y_{p-1})`.  The cycles t
 internal grading, the boundaries form a homogeneous submodule of them, and the cohomology is
 graded by the classes of homogeneous cycles.  The binary operation has degree zero, so the
 cohomology is a graded nonunital algebra: the graded algebra `H(A)` which carries the minimal
-models of `A` and against which formality of `A` is measured.
+models of `A` and against which formality of `A` is measured.  As a graded nonunital algebra with
+zero differential it is itself an `A∞` algebra, with zero `m₁`, the cohomology product as `m₂`,
+and no higher operations; degree-preserving algebra morphisms between cohomology algebras are
+strict morphisms of these `A∞` algebras.
 
 ## Main definitions
 
@@ -47,6 +50,10 @@ models of `A` and against which formality of `A` is measured.
 * `TauCeti.AInfinityAlgebra.cyclesGrading`: the internal grading of the cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyGrading`: the internal grading of the cohomology by the
   classes of homogeneous cycles.
+* `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
+  only nonzero operation is `m₂`.
+* `TauCeti.AInfinityAlgebra.cohomologyStrictHom`: a degree-preserving morphism of cohomology
+  algebras as a strict morphism of the cohomology `A∞` algebras.
 
 ## Main results
 
@@ -66,7 +73,7 @@ public section
 
 namespace TauCeti
 
-universe uR uA
+universe uR uA uB
 
 namespace AInfinityAlgebra
 
@@ -411,6 +418,71 @@ instance instGradedMulCohomologyGrading (𝒜 : AInfinityAlgebra R A) :
   mul_mem _ _ _ _ ha hb := 𝒜.cohomologyMul_mem_cohomologyGrading_piece ha hb
 
 end Grading
+
+/-! ### The cohomology as an `A∞` algebra -/
+
+section AInfinity
+
+/-- The cohomology of an `A∞` algebra, as the `A∞` algebra of a graded nonunital algebra with zero
+differential: `m₁ = 0`, `m₂` is the cohomology product, and all higher operations vanish. -/
+noncomputable def cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
+    AInfinityAlgebra R 𝒜.Cohomology :=
+  (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra
+
+/-- The grading of the cohomology `A∞` algebra is the grading of the cohomology. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_grading (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyAInfinityAlgebra.grading = 𝒜.cohomologyGrading := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading]
+  exact InternalGrading.ext fun _ ↦ by rw [InternalGrading.ofDecomposition_piece]
+
+/-- The unary operation of the cohomology `A∞` algebra vanishes. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_one_apply (𝒜 : AInfinityAlgebra R A)
+    (x : Fin 1 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 1 x = 0 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply,
+    LinearMap.zero_apply]
+
+/-- The binary operation of the cohomology `A∞` algebra is the cohomology product. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_two_apply (𝒜 : AInfinityAlgebra R A)
+    (x : Fin 2 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 2 x = x 0 * x 1 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_two_apply]
+
+/-- The operations of arity at least three of the cohomology `A∞` algebra vanish. -/
+theorem cohomologyAInfinityAlgebra_m_of_three_le (𝒜 : AInfinityAlgebra R A) {n : ℕ}
+    (hn : 3 ≤ n) : 𝒜.cohomologyAInfinityAlgebra.m n = 0 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_of_three_le _ hn]
+
+/-- The simp-normal form of `cohomologyAInfinityAlgebra_m_of_three_le`. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_add_three (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    𝒜.cohomologyAInfinityAlgebra.m (n + 3) = 0 :=
+  𝒜.cohomologyAInfinityAlgebra_m_of_three_le (by omega)
+
+variable {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
+  {ℬ : AInfinityAlgebra R B}
+
+/-- A degree-preserving morphism between cohomology algebras is a strict morphism between the
+corresponding cohomology `A∞` algebras. -/
+noncomputable def cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology)
+    (hφ : ∀ {p : ℤ} {c : 𝒜.Cohomology}, c ∈ 𝒜.cohomologyGrading.piece p →
+      φ c ∈ ℬ.cohomologyGrading.piece p) :
+    AInfinityStrictHom 𝒜.cohomologyAInfinityAlgebra ℬ.cohomologyAInfinityAlgebra :=
+  NonUnitalDGAlgHom.toAInfinityStrictHom
+    (hA := isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece)
+    (hB := isNonUnitalDGAlgebra_zero ℬ.cohomologyGrading.piece)
+    { toNonUnitalAlgHom := φ
+      map_mem' := hφ
+      map_d' := fun _ ↦ by simp only [LinearMap.zero_apply, map_zero] }
+
+/-- The strict morphism of cohomology `A∞` algebras induced by `φ` is `φ` itself. -/
+@[simp]
+theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology) (hφ) :
+    ⇑(cohomologyStrictHom φ hφ) = φ :=
+  NonUnitalDGAlgHom.coe_toAInfinityStrictHom _
+
+end AInfinity
 
 end AInfinityAlgebra
 

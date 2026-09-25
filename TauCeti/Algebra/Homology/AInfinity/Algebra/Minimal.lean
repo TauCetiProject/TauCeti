@@ -24,6 +24,10 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
 * `TauCeti.AInfinityAlgebra.isMinimal_iff_cycles_eq_top` and
   `TauCeti.AInfinityAlgebra.isMinimal_iff_boundaries_eq_bot`: minimality in terms of cycles and
   boundaries.
+* `TauCeti.IsNonUnitalDGAlgebra.isMinimal_toAInfinityAlgebra_iff`: the `A∞` algebra of a DG
+  algebra is minimal exactly when the differential vanishes.
+* `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology `A∞` algebra is
+  minimal.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_bijective_linearPart`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 
@@ -82,6 +86,7 @@ namespace IsMinimal
 variable {𝒜 : AInfinityAlgebra R A}
 
 /-- The unary operation of a minimal `A∞` algebra vanishes. -/
+@[simp]
 theorem m_one (h : 𝒜.IsMinimal) (x : Fin 1 → A) : 𝒜.m 1 x = 0 := by
   obtain ⟨y, rfl⟩ : ∃ y, x = ![y] := ⟨x 0, funext fun i ↦ by fin_cases i; rfl⟩
   exact (isMinimal_iff_m_one_eq_zero 𝒜).1 h y
@@ -128,6 +133,23 @@ theorem isHomogeneous_cohomologyEquiv (h : 𝒜.IsMinimal) :
   exact 𝒜.cohomologyClass_mem_cohomologyGrading_piece _ hx
 
 end IsMinimal
+
+end AInfinityAlgebra
+
+/-- The `A∞` algebra of a nonunital DG algebra is minimal exactly when the differential
+vanishes. -/
+theorem IsNonUnitalDGAlgebra.isMinimal_toAInfinityAlgebra_iff {A : Type uA} [NonUnitalRing A]
+    [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A}
+    [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜] {d : A →ₗ[R] A}
+    (h : IsNonUnitalDGAlgebra 𝒜 d) : h.toAInfinityAlgebra.IsMinimal ↔ d = 0 := by
+  rw [AInfinityAlgebra.isMinimal_def, toAInfinityAlgebra_differential]
+
+namespace AInfinityAlgebra
+
+/-- The cohomology `A∞` algebra is minimal. -/
+theorem isMinimal_cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyAInfinityAlgebra.IsMinimal :=
+  (isMinimal_iff_m_one_eq_zero _).2 fun _ ↦ 𝒜.cohomologyAInfinityAlgebra_m_one_apply _
 
 end AInfinityAlgebra
 

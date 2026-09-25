@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 
 /-!
@@ -13,9 +12,10 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 
 The cohomology `H(A)` of an `A∞` algebra `A` is a graded nonunital algebra, hence an `A∞`
 algebra with zero `m₁`, the cohomology product as `m₂`, and no higher operations; this is
-`AInfinityAlgebra.cohomologyAInfinityAlgebra`.  The algebra `A` is *formal* when it admits an
-`A∞` quasi-isomorphism to this `A∞` algebra.  Over a field every `A∞` quasi-isomorphism has an
-`A∞` inverse up to homotopy, so there the direction of the quasi-isomorphism is immaterial.
+`AInfinityAlgebra.cohomologyAInfinityAlgebra`, and it is minimal.  The algebra `A` is *formal*
+when it admits an `A∞` quasi-isomorphism to this `A∞` algebra.  Over a field every `A∞`
+quasi-isomorphism has an `A∞` inverse up to homotopy, so there the direction of the
+quasi-isomorphism is immaterial.
 Minimal models are exactly what distinguishes the two notions: the cohomology of a minimal algebra
 is the algebra itself, but formality asks in addition that the higher operations can be removed up
 to quasi-isomorphism.
@@ -28,15 +28,11 @@ graded nonunital algebra with zero differential is formal.
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
-  only nonzero operation is `m₂`.
 * `TauCeti.AInfinityAlgebra.IsFormal`: existence of an `A∞` quasi-isomorphism to
   `cohomologyAInfinityAlgebra`.
 
 ## Main results
 
-* `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology algebra is
-  minimal.
 * `TauCeti.AInfinityAlgebra.IsMinimal.isFormal`: a minimal algebra with vanishing higher operations
   is formal, and `TauCeti.IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_zero` specializes this to
   graded algebras with zero differential.
@@ -60,62 +56,6 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
 
 namespace AInfinityAlgebra
 
-/-! ### The cohomology as a formal `A∞` algebra -/
-
-/-- The cohomology of an `A∞` algebra, as the `A∞` algebra of a graded nonunital algebra with zero
-differential: `m₁ = 0`, `m₂` is the cohomology product, and all higher operations vanish. -/
-noncomputable def cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
-    AInfinityAlgebra R 𝒜.Cohomology :=
-  (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra
-
-/-- The grading of the cohomology `A∞` algebra is the grading of the cohomology. -/
-@[simp]
-theorem cohomologyAInfinityAlgebra_grading (𝒜 : AInfinityAlgebra R A) :
-    𝒜.cohomologyAInfinityAlgebra.grading = 𝒜.cohomologyGrading := by
-  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading]
-  exact InternalGrading.ext fun _ ↦ by rw [InternalGrading.ofDecomposition_piece]
-
-/-- The unary operation of the cohomology `A∞` algebra vanishes. -/
-@[simp]
-theorem cohomologyAInfinityAlgebra_m_one_apply (𝒜 : AInfinityAlgebra R A)
-    (x : Fin 1 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 1 x = 0 := by
-  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply,
-    LinearMap.zero_apply]
-
-/-- The binary operation of the cohomology `A∞` algebra is the cohomology product. -/
-@[simp]
-theorem cohomologyAInfinityAlgebra_m_two_apply (𝒜 : AInfinityAlgebra R A)
-    (x : Fin 2 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 2 x = x 0 * x 1 := by
-  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_two_apply]
-
-/-- The operations of arity at least three of the cohomology `A∞` algebra vanish. -/
-theorem cohomologyAInfinityAlgebra_m_of_three_le (𝒜 : AInfinityAlgebra R A) {n : ℕ}
-    (hn : 3 ≤ n) : 𝒜.cohomologyAInfinityAlgebra.m n = 0 := by
-  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_of_three_le _ hn]
-
-/-- The simp-normal form of `cohomologyAInfinityAlgebra_m_of_three_le`. -/
-@[simp]
-theorem cohomologyAInfinityAlgebra_m_add_three (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
-    𝒜.cohomologyAInfinityAlgebra.m (n + 3) = 0 :=
-  𝒜.cohomologyAInfinityAlgebra_m_of_three_le (by omega)
-
-end AInfinityAlgebra
-
-/-- The `A∞` algebra of a nonunital DG algebra is minimal exactly when the differential
-vanishes. -/
-theorem IsNonUnitalDGAlgebra.isMinimal_toAInfinityAlgebra_iff {A : Type uA} [NonUnitalRing A]
-    [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A}
-    [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜] {d : A →ₗ[R] A}
-    (h : IsNonUnitalDGAlgebra 𝒜 d) : h.toAInfinityAlgebra.IsMinimal ↔ d = 0 := by
-  rw [AInfinityAlgebra.isMinimal_def, toAInfinityAlgebra_differential]
-
-namespace AInfinityAlgebra
-
-/-- The cohomology `A∞` algebra is minimal. -/
-theorem isMinimal_cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
-    𝒜.cohomologyAInfinityAlgebra.IsMinimal :=
-  (IsNonUnitalDGAlgebra.isMinimal_toAInfinityAlgebra_iff _).2 rfl
-
 /-! ### Formality -/
 
 /-- An `A∞` algebra is **formal** when it admits an `A∞` quasi-isomorphism to its cohomology,
@@ -129,23 +69,6 @@ theorem isFormal_def (𝒜 : AInfinityAlgebra R A) :
     𝒜.IsFormal ↔ ∃ f : AInfinityHom 𝒜 𝒜.cohomologyAInfinityAlgebra, f.IsQuasiIso := Iff.rfl
 
 variable {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
-
-/-- A degree-preserving morphism between cohomology algebras is a strict morphism between the
-corresponding cohomology `A∞` algebras. -/
-private noncomputable def cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology)
-    (hφ : ∀ {p : ℤ} {c : 𝒜.Cohomology}, c ∈ 𝒜.cohomologyGrading.piece p →
-      φ c ∈ ℬ.cohomologyGrading.piece p) :
-    AInfinityStrictHom 𝒜.cohomologyAInfinityAlgebra ℬ.cohomologyAInfinityAlgebra :=
-  NonUnitalDGAlgHom.toAInfinityStrictHom
-    (hA := isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece)
-    (hB := isNonUnitalDGAlgebra_zero ℬ.cohomologyGrading.piece)
-    { toNonUnitalAlgHom := φ
-      map_mem' := hφ
-      map_d' := fun _ ↦ by simp only [LinearMap.zero_apply, map_zero] }
-
-private theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology) (hφ) :
-    ⇑(cohomologyStrictHom φ hφ) = φ :=
-  NonUnitalDGAlgHom.coe_toAInfinityStrictHom _
 
 /-- The map induced on cohomology by a quasi-isomorphism, as a linear equivalence. -/
 private noncomputable def cohomologyLinearEquiv {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
