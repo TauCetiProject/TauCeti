@@ -83,6 +83,8 @@ simple, nor that any carrier is reductive.
 
 ## Main results
 
+* `TauCeti.ValidLieTypeIndex.simpleRootSubgroup_add`: each numbered root-subgroup map is additive
+  in its parameter.
 * `TauCeti.ValidLieTypeIndex.frobenius_simpleRootSubgroup` and
   `TauCeti.ValidLieTypeIndex.primeFrobenius_simpleRootSubgroup`: the two Frobenius maps raise the
   parameter of every simple root subgroup to the `q`-th and to the `p`-th power, uniformly in the
@@ -163,6 +165,15 @@ def simpleRootSubgroup :
   | ⟨.reeG2 m, hv⟩ => (ReeG2LieIndex.of m hv).simpleRootSubgroup
   | ⟨.reeF4 m, hv⟩ => (ReeF4LieIndex.of m hv).simpleRootSubgroup
   | ⟨.tits, _⟩ => TitsLieIndex.of.simpleRootSubgroup
+
+/-- **A simple root subgroup is additive in its parameter.** The map is a homomorphism from the
+additive group underlying `Multiplicative d.Closure`; this equation is the additive form used when
+stating the root-subgroup pinning data. -/
+theorem simpleRootSubgroup_add (d : ValidLieTypeIndex) (i : Fin d.rank)
+    (s t : d.Closure) :
+    d.simpleRootSubgroup i (s + t) =
+      d.simpleRootSubgroup i s * d.simpleRootSubgroup i t := by
+  exact (d.simpleRootSubgroup i).map_mul (Multiplicative.ofAdd s) (Multiplicative.ofAdd t)
 
 /-- **The `q`-power Frobenius endomorphism of the ambient group of a valid Lie-type index**, for
 `q` the field order the index records. On each constructor it is the Frobenius of the graph-twisted
