@@ -55,6 +55,14 @@ instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
 @[simp]
 theorem TraceFormulaMatrix.val_neg (A : TraceFormulaMatrix n) : (-A).1 = -A.1 := rfl
 
+/-- The identity matrix, of determinant one. -/
+instance : One (TraceFormulaMatrix 1) where
+  one := ⟨1, Matrix.det_one⟩
+
+/-- The identity of the determinant-one fibre is the identity matrix. -/
+@[simp]
+theorem TraceFormulaMatrix.val_one : (1 : TraceFormulaMatrix 1).1 = 1 := rfl
+
 instance (n : ℤ) : InvolutiveNeg (TraceFormulaMatrix n) where
   neg_neg A := by
     apply FixedDetMatrices.ext'
@@ -91,6 +99,14 @@ def TraceFormulaMatrixModule.mk (A : TraceFormulaMatrix n) : TraceFormulaMatrixM
 theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
     TraceFormulaMatrixModule.mk (-A) = TraceFormulaMatrixModule.mk A :=
   Quotient.sound (Or.inr rfl)
+
+/-- A sign-invariant function of determinant-`n` matrices, descended to `ℳₙ`, takes the class of
+`A` to its value at `A`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.lift_mk {β : Sort*} (f : TraceFormulaMatrix n → β)
+    (h : ∀ A B, A ≈ B → f A = f B) (A : TraceFormulaMatrix n) :
+    Quotient.lift f h (TraceFormulaMatrixModule.mk A) = f A :=
+  (rfl)
 
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
 @[simp]
