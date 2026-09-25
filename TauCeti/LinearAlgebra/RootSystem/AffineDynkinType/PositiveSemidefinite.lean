@@ -20,8 +20,8 @@ normalized to `1` at the affine node.
 Away from `A₁` the matrix is `2I - A` for the adjacency matrix of the underlying graph, the marks
 are a positive additive function on that graph
 (`TauCeti.AffineDynkinType.sum_marks_neighborFinset_eq_two_mul`), and the graph is connected, so
-both statements are instances of `TauCeti.posSemidef_graphCartanMatrix` and
-`TauCeti.ker_mulVecLin_graphCartanMatrix`. The diagram `A₁`, whose matrix `!![2, -2; -2, 2]`
+both statements are instances of `SimpleGraph.posSemidef_graphCartanMatrix` and
+`SimpleGraph.ker_mulVecLin_graphCartanMatrix`. The diagram `A₁`, whose matrix `!![2, -2; -2, 2]`
 records a double edge and is not `2I - A` for any simple graph, is handled separately, but still
 by a Laplacian: its graph is the single edge, which is `1`-regular, so `D - A` there is
 `!![1, -1; -1, 1]` and the `A₁` matrix is twice it. Mathlib's `SimpleGraph.posSemidef_lapMatrix`
@@ -94,9 +94,9 @@ theorem isHermitian_realCartanMatrix (t : AffineDynkinType) : t.realCartanMatrix
 
 /-- **Away from `A₁` the symmetrized form is the matrix `2I - A` of the underlying graph.** -/
 theorem realCartanMatrix_eq_graphCartanMatrix (hg : t.IsGraphical) :
-    t.realCartanMatrix = graphCartanMatrix t.graph ℝ := by
+    t.realCartanMatrix = SimpleGraph.graphCartanMatrix t.graph ℝ := by
   rw [realCartanMatrix_eq_map, cartanMatrix_eq_graphCartanMatrix hg]
-  exact graphCartanMatrix_map t.graph (Int.castRingHom ℝ)
+  exact SimpleGraph.graphCartanMatrix_map t.graph (Int.castRingHom ℝ)
 
 /-- The marks are positive as real numbers. -/
 theorem cast_marks_pos {t : AffineDynkinType} (i : Fin t.nodes) : 0 < (t.marks i : ℝ) := by
@@ -214,7 +214,7 @@ function, the marks; at `A₁` the matrix is twice the Laplacian of the single e
 theorem posSemidef_realCartanMatrix (ht : t.Valid) : t.realCartanMatrix.PosSemidef := by
   by_cases hg : t.IsGraphical
   · rw [realCartanMatrix_eq_graphCartanMatrix hg]
-    exact posSemidef_graphCartanMatrix t.graph cast_marks_pos
+    exact SimpleGraph.posSemidef_graphCartanMatrix t.graph cast_marks_pos
       (sum_cast_marks_neighborFinset_eq_two_mul ht hg)
   · rw [eq_A_one_of_not_isGraphical hg]
     exact posSemidef_realCartanMatrix_A_one
@@ -230,7 +230,8 @@ theorem ker_mulVecLin_realCartanMatrix (ht : t.Valid) :
       Submodule.span ℝ {fun i ↦ (t.marks i : ℝ)} := by
   by_cases hg : t.IsGraphical
   · rw [realCartanMatrix_eq_graphCartanMatrix hg]
-    exact ker_mulVecLin_graphCartanMatrix t.graph (graph_connected ht) cast_marks_pos
+    exact SimpleGraph.ker_mulVecLin_graphCartanMatrix t.graph (graph_connected ht).preconnected
+      cast_marks_pos
       (sum_cast_marks_neighborFinset_eq_two_mul ht hg)
   · rw [eq_A_one_of_not_isGraphical hg]
     exact ker_mulVecLin_realCartanMatrix_A_one

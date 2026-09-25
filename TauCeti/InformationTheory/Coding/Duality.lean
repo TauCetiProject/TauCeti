@@ -88,7 +88,7 @@ theorem euclideanDual_puncture (C : LinearCode F ι) :
     euclideanDual (puncture C s) = shorten (euclideanDual C) s := by
   ext y
   rw [mem_shorten_iff_extend_mem, mem_euclideanDual, mem_euclideanDual]
-  simp only [dotProduct_extend_zero Subtype.val_injective, mem_puncture]
+  simp only [Subtype.val_injective.dotProduct_extend_zero, mem_puncture]
   constructor
   · exact fun h x hx ↦ h _ ⟨x, hx, fun _ ↦ rfl⟩
   · rintro h z ⟨x, hx, hxz⟩

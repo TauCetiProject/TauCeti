@@ -141,13 +141,13 @@ namespace ConnectedCoveringSpace
 
 variable {X : TopCat.{u}}
 
-/-- Over a path-connected base, every fibre of a connected covering space is nonempty: a chosen
-point of the total space is carried into the fibre by monodromy along any path. -/
+/-- Over a path-connected base, every fibre of a connected covering space is nonempty: a path
+component of the total space maps onto the base. -/
 theorem nonempty_fiber [PathConnectedSpace X] (p : ConnectedCoveringSpace X) (x : X) :
     Nonempty (⇑p.proj ⁻¹' {x}) := by
   obtain ⟨e⟩ := (inferInstance : Nonempty (p : TopCat))
-  exact ⟨p.isCoveringMap_proj.monodromy
-    (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (p.proj e) x)) ⟨e, rfl⟩⟩
+  obtain ⟨f, hf⟩ := p.isCoveringMap_proj.comp_subtypeVal_pathComponent_surjective e x
+  exact ⟨⟨f, hf⟩⟩
 
 /-- The ordinary monodromy functor of a connected cover over a path-connected base is transitive
 on every fibre. -/

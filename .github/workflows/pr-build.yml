@@ -226,7 +226,15 @@ jobs:
           # bot (lint-full.yml); its first build is the full lint that shows what to repair. Only
           # that exact shape is exempt from routing an empty diff to a human.
           repair_pr=0
-          if [ -z "$files" ] && [ "${{ github.event_name }}" = "pull_request_target" ] \
+          if [ -z "$files" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # A dispatched rebuild (e.g. `gh workflow run pr-build.yml -f pr=N`) carries no PR payload.
+            IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(gh api \
+              "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+              --jq '[.head.ref, .head.repo.full_name, .user.login] | @tsv') || true
+          fi
+          if [ -z "$files" ] \
+              && { [ "${{ github.event_name }}" = "pull_request_target" ] \
+                   || [ "${{ github.event_name }}" = "workflow_dispatch" ]; } \
               && [ "$PR_HEAD_REPO" = "${{ github.repository }}" ] \
               && [[ "$PR_HEAD_REF" == lint-repair/* ]] \
               && [ "$PR_USER" = "tauceti-review-bot[bot]" ]; then

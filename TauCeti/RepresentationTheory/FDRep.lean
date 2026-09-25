@@ -54,6 +54,8 @@ subgroup.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `FDRep.character_ρ`: the character of the carried representation is the character of the
+  object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
@@ -129,6 +131,13 @@ theorem character_forget₂_obj {k : Type u} {G : Type v} [Field k] [Monoid G] (
   rw [FDRep.character, Representation.character, FDRep.forget₂_ρ]
   -- The remaining `rfl` only identifies the two names of the single underlying module, the same
   -- definitional identification that lets `FDRep.forget₂_ρ` be stated at all.
+  rfl
+
+/-- The character of the representation carried by an object of `FDRep k G` is the character of
+that object. -/
+@[simp]
+theorem character_ρ {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k G) (g : G) :
+    Representation.character A.ρ g = A.character g :=
   rfl
 
 /-- Rebundling the representation carried by an object of `FDRep R G` returns that object. -/

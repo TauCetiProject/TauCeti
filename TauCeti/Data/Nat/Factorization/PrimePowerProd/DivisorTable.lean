@@ -191,8 +191,8 @@ theorem primePowerProd_mul_eq_sum_divisors_gcd
   -- The `p`-free gcd is strictly smaller, so the induction hypothesis applies to it.
   have hlt : Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < g := by
     rw [← hg]; exact gcd_ordCompl_lt hp hm hn hpm hpn
-  rw [← hg, primePowerProd_eq_ordProj_mul_ordCompl D hp hm,
-    primePowerProd_eq_ordProj_mul_ordCompl D hp hn, mul_mul_mul_comm,
+  rw [← hg, primePowerProd_eq_ordProj_mul_ordCompl D p (m := m),
+    primePowerProd_eq_ordProj_mul_ordCompl D p (m := n), mul_mul_mul_comm,
     primePowerProd_prime_pow_mul_min_max D p _ _, hppow p hp _ _ min_le_max,
     ih _ hlt hm'0 hn'0 rfl]
   exact primePowerProd_sum_mul_sum_eq_sum_divisors D S hp hm' hn' hm_eq hn_eq hgcd

@@ -45,6 +45,11 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
 
+In the namespace `TauCeti.Manifold`:
+
+* `exists_dist_riemannianExp_eq_dist_sub`: a sufficiently small geodesic sphere about `x` has a
+  point whose distance to any `q` decreases by the radius.
+
 ## References
 
 * The Apache-2.0 `frenzymath/Poincare-Conjecture` formalization, revision
@@ -289,6 +294,34 @@ theorem IsNormalDomain.dist_riemannianExp_eq_of_mem_ball (h : IsNormalDomain I M
     (hU : Metric.ball 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) :
     dist p (riemannianExp I M p v) = ‖v‖ := by
   rw [dist_edist, h.edist_riemannianExp_eq_of_mem_ball hU hv, toReal_enorm]
+
+/-- **The nearest point of a small geodesic sphere.**  About every point `x` there is a radius
+`ε > 0` such that, for every `0 ≤ δ < ε` with `δ ≤ dist x q`, some tangent vector `w` of norm `δ`
+in the domain of `exp_x` satisfies `dist (exp_x w) q = dist x q - δ`. -/
+theorem exists_dist_riemannianExp_eq_dist_sub (x q : M) :
+    ∃ ε > 0, ∀ δ, 0 ≤ δ → δ < ε → δ ≤ dist x q → ∃ w ∈ expDomain I M x, ‖w‖ = δ ∧
+      dist (riemannianExp I M x w) q = dist x q - δ := by
+  obtain ⟨R, hR, hU⟩ := exists_isNormalDomain_ball (I := I) (M := M) x
+  refine ⟨R, hR, fun δ hδ hδR hδq ↦ ?_⟩
+  have hcl : closedBall (0 : TangentSpace I x) δ ⊆ ball 0 R := closedBall_subset_ball hδR
+  have hsphere : sphere (0 : TangentSpace I x) δ ⊆ expDomain I M x :=
+    sphere_subset_closedBall.trans (hcl.trans hU.subset_expDomain)
+  -- `q` is not in the open geodesic ball of radius `δ`, which is the metric ball of that radius.
+  have hq : q ∉ riemannianExp I M x '' ball 0 δ := by
+    rw [hU.image_riemannianExp_ball (ball_subset_ball hδR.le), mem_eball', edist_dist, not_lt]
+    exact ENNReal.ofReal_le_ofReal hδq
+  have heq := hU.edist_eq_ofReal_add_infEDist hcl hδ hq
+  -- The geodesic sphere is compact, and nonempty because the distance from `x` to `q` is finite.
+  have hne : (riemannianExp I M x '' sphere 0 δ).Nonempty := by
+    by_contra hempty
+    rw [not_nonempty_iff_eq_empty.1 hempty, infEDist_empty, add_top] at heq
+    exact edist_ne_top x q heq
+  obtain ⟨_, ⟨w, hw, rfl⟩, hy⟩ :=
+    (isCompact_riemannianExp_image_sphere x hsphere).exists_infEDist_eq_edist hne q
+  refine ⟨w, hsphere hw, mem_sphere_zero_iff_norm.1 hw, ?_⟩
+  rw [hy, edist_dist, edist_dist, ← ENNReal.ofReal_add hδ dist_nonneg,
+    ENNReal.ofReal_eq_ofReal_iff dist_nonneg (add_nonneg hδ dist_nonneg)] at heq
+  rw [dist_comm, heq, add_sub_cancel_left]
 
 end Metric
 

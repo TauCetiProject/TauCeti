@@ -267,6 +267,26 @@ private theorem modelLineCoordinate_injective (n : ℕ) :
   (remainderCoordinate_injective (K := K) n).comp
     (modelLineEquivRemainder (K := K) n).injective
 
+private theorem isotropic_modelW (n : ℕ) (x : modelW (K := K) n) : splitModelForm K n x = 0 := by
+  simp [(mem_modelW_iff n x.1).1 x.2]
+
+private theorem isotropic_modelW' (n : ℕ) (y : modelW' (K := K) n) : splitModelForm K n y = 0 := by
+  simp [(mem_modelW'_iff n y.1).1 y.2]
+
+private theorem modelPairing_separatingLeft (n : ℕ) (x : modelW (K := K) n)
+    (hx : ∀ y : modelW' (K := K) n, QuadraticMap.polar (splitModelForm K n) x y = 0) : x = 0 :=
+  have := Module.Projective.of_equiv (modelWEquivHalf (K := K) n).symm
+  (Module.forall_dual_apply_eq_zero_iff K x).1 <| (modelPairingEquiv n).surjective.forall.2
+    fun y ↦ (modelPairingEquiv_apply n y x).trans (hx y)
+
+private theorem modelLine_orthogonal_modelW (n : ℕ) (z : modelLine (K := K) n)
+    (x : modelW (K := K) n) : QuadraticMap.polar (splitModelForm K n) z x = 0 := by
+  simp [(mem_modelLine_iff n z.1).1 z.2, (mem_modelW_iff n x.1).1 x.2]
+
+private theorem modelLine_orthogonal_modelW' (n : ℕ) (z : modelLine (K := K) n)
+    (y : modelW' (K := K) n) : QuadraticMap.polar (splitModelForm K n) z y = 0 := by
+  simp [(mem_modelLine_iff n z.1).1 z.2, (mem_modelW'_iff n y.1).1 y.2]
+
 private noncomputable def modelData (n : ℕ) :
     SpinPolarizationData (splitModelForm K n) where
   W := modelW (K := K) n
@@ -274,59 +294,20 @@ private noncomputable def modelData (n : ℕ) :
   line := modelLine (K := K) n
   decompositionEquiv := modelDecompositionEquiv (K := K) n
   decompositionEquiv_apply := modelDecompositionEquiv_apply (K := K) n
-  isotropic_W x := by
-    rcases x with ⟨⟨⟨f, u⟩, z⟩, hx⟩
-    rw [mem_modelW_iff] at hx
-    simp only at hx
-    rcases hx with ⟨rfl, rfl⟩
-    simp
-  isotropic_W' y := by
-    rcases y with ⟨⟨⟨f, u⟩, z⟩, hy⟩
-    rw [mem_modelW'_iff] at hy
-    simp only at hy
-    rcases hy with ⟨rfl, rfl⟩
-    simp
+  isotropic_W := isotropic_modelW (K := K) n
+  isotropic_W' := isotropic_modelW' (K := K) n
   pairingEquiv := modelPairingEquiv (K := K) n
   pairingEquiv_apply := modelPairingEquiv_apply (K := K) n
-  pairing_separatingLeft x hx := by
-    apply (modelWEquivHalf (K := K) n).injective
-    apply (Module.forall_dual_apply_eq_zero_iff K (modelWEquivHalf (K := K) n x)).1
-    intro f
-    let y := (modelW'EquivDual (K := K) n).symm f
-    calc
-      f (modelWEquivHalf (K := K) n x) =
-          modelPairingEquiv (K := K) n y x := by
-            simp [y, modelPairingEquiv]
-      _ = QuadraticMap.polar (splitModelForm K n) x y :=
-        modelPairingEquiv_apply (K := K) n y x
-      _ = 0 := hx y
+  pairing_separatingLeft := modelPairing_separatingLeft (K := K) n
   lineCoordinate := modelLineCoordinate (K := K) n
   lineCoordinate_injective := modelLineCoordinate_injective (K := K) n
   lineCoordinate_sq := modelLineCoordinate_sq (K := K) n
-  line_orthogonal_W z x := by
-    rcases z with ⟨⟨p, z⟩, hz⟩
-    rcases x with ⟨⟨⟨f, u⟩, w⟩, hx⟩
-    rw [mem_modelLine_iff] at hz
-    rw [mem_modelW_iff] at hx
-    simp only at hz hx
-    subst p
-    rcases hx with ⟨rfl, rfl⟩
-    simp
-  line_orthogonal_W' z y := by
-    rcases z with ⟨⟨p, z⟩, hz⟩
-    rcases y with ⟨⟨⟨f, u⟩, w⟩, hy⟩
-    rw [mem_modelLine_iff] at hz
-    rw [mem_modelW'_iff] at hy
-    simp only at hz hy
-    subst p
-    rcases hy with ⟨rfl, rfl⟩
-    simp
+  line_orthogonal_W := modelLine_orthogonal_modelW (K := K) n
+  line_orthogonal_W' := modelLine_orthogonal_modelW' (K := K) n
 
 private noncomputable def pullback {V V' : Type*} [AddCommGroup V] [Module K V]
     [AddCommGroup V'] [Module K V'] {Q : QuadraticForm K V} {Q' : QuadraticForm K V'}
     (e : Q.IsometryEquiv Q') (P : SpinPolarizationData Q') : SpinPolarizationData Q :=
-  have hpolar (x y : V) : QuadraticMap.polar Q' (e x) (e y) = QuadraticMap.polar Q x y := by
-    simpa using e.toIsometry.polar_apply x y
   let eS (S : Submodule K V') : S.comap e.toLinearEquiv.toLinearMap ≃ₗ[K] S :=
     Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (by simp)
   have he (S : Submodule K V') (x) : (eS S x : V') = e x := by simp [eS]
@@ -341,15 +322,16 @@ private noncomputable def pullback {V V' : Type*} [AddCommGroup V] [Module K V]
     pairingEquiv := (eS P.W').trans <| P.pairingEquiv.trans (eS P.W).dualMap
     pairingEquiv_apply y x := by
       simp only [LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, P.pairingEquiv_apply, he,
-        hpolar]
+        e.polar_apply]
     pairing_separatingLeft x hx := (eS P.W).map_eq_zero_iff.mp <| P.pairing_separatingLeft _ <|
-      (eS P.W').surjective.forall.mpr fun y ↦ by rw [he, he, hpolar, hx]
+      (eS P.W').surjective.forall.mpr fun y ↦ by rw [he, he, e.polar_apply, hx]
     lineCoordinate := P.lineCoordinate.comp (eS P.line).toLinearMap
     lineCoordinate_injective := P.lineCoordinate_injective.comp (eS P.line).injective
     lineCoordinate_sq z := by
       rw [LinearMap.comp_apply, LinearEquiv.coe_coe, P.lineCoordinate_sq, he, e.map_app]
-    line_orthogonal_W z x := by rw [← hpolar, ← he P.line, ← he P.W, P.line_orthogonal_W]
-    line_orthogonal_W' z y := by rw [← hpolar, ← he P.line, ← he P.W', P.line_orthogonal_W'] }
+    line_orthogonal_W z x := by rw [← e.polar_apply, ← he P.line, ← he P.W, P.line_orthogonal_W]
+    line_orthogonal_W' z y := by
+      rw [← e.polar_apply, ← he P.line, ← he P.W', P.line_orthogonal_W'] }
 
 private theorem finrank_splitModel {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     Module.finrank R (SplitModel R n) = n := by
