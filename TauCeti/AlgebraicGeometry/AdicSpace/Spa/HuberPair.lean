@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.RingTheory.Huber.Pair
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # Maps of adic spectra for Huber pairs
 
@@ -22,6 +24,7 @@ quotient-pair form of **Wedhorn, *Adic Spaces*, Proposition 7.38**.
 
 ## Main results
 
+* `TauCeti.Huber.Pair.Hom.spaComap_def`: the bridge from the bundled map to the unbundled one.
 * `TauCeti.Huber.Pair.Hom.continuous_spaComap`: the induced map is continuous.
 * `TauCeti.Huber.Pair.Hom.spaComap_id`, `spaComap_comp`: contravariant functoriality.
 * `TauCeti.Huber.Pair.Hom.spaComap_preimage_rationalSubset`: preimages of rational subsets.
@@ -66,6 +69,14 @@ theorem spaComap_val (f : Hom S T) (v : spa T.plus) :
     (f.spaComap v).1 = ValuationSpectrum.comap f.toRingHom v.1 :=
   ValuationSpectrum.spaComap_val f.toRingHom f.continuous_toRingHom S.plus T.plus
     f.map_mem_plus v
+
+/-- `f.spaComap` is the subring-level pullback of the underlying ring homomorphism of `f`. This is
+the bridge to the unbundled API of `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap`, whose
+definition is not exposed outside this module. -/
+theorem spaComap_def (f : Hom S T) :
+    f.spaComap =
+      ValuationSpectrum.spaComap f.toRingHom f.continuous_toRingHom S.plus T.plus f.map_mem_plus :=
+  (rfl)
 
 /-- `f.spaComap` is continuous. -/
 theorem continuous_spaComap (f : Hom S T) : Continuous f.spaComap :=
@@ -122,7 +133,7 @@ private theorem spaComap_quotientHom_eq (S : Pair A) (J : Ideal A) :
   funext v
   apply Subtype.ext
   have hev : ((quotientSpaHomeomorph S J) v).1 = v.1 := by
-    exact congr_arg Subtype.val (Set.equivOfEq_apply (quotient_spa_eq S J) v)
+    exact congr_arg Subtype.val (Homeomorph.setCongr_apply (quotient_spa_eq S J) v)
   calc
     ((quotientHom S J).spaComap v).1 =
         ValuationSpectrum.comap (Ideal.Quotient.mk J) v.1 := by

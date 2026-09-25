@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Image factorizations of commutative Hopf-algebra morphisms over a field

@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Induction.Clifford.Decomposition
 import TauCeti.LinearAlgebra.Trace.Pi
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
+import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-
 Roadmap source: `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, Layer 5.
@@ -94,56 +95,12 @@ theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
     (V.cliffordSum e).character x =
       (e : k) * ∑ᶠ q : G ⧸ inertia V,
         (conjNormalFDRep (Quotient.out q) V).character x := by
-  classical
   let _ : Fintype (G ⧸ inertia V) := Fintype.ofFinite _
-  rw [finsum_eq_sum_of_support_subset (s := Finset.univ) _ (by simp)]
-  rw [cliffordSum, character_ofShrink, _root_.Representation.character]
-  let f (q : G ⧸ inertia V) :
-      (Fin e → _root_.Representation.asModule
-        (conjNormalFDRep (Quotient.out q) V).ρ) →ₗ[k]
-      (Fin e → _root_.Representation.asModule
-        (conjNormalFDRep (Quotient.out q) V).ρ) := {
-    toFun z i := (conjNormalFDRep (Quotient.out q) V).ρ x (z i)
-    map_add' a b := funext fun i ↦ map_add _ _ _
-    map_smul' a b := funext fun i ↦ map_smul _ _ _
-  }
-  have htarget : ∀ z q,
-      (_root_.Representation.ofModule' (k := k) (G := N)
-        ((q : G ⧸ inertia V) → Fin e →
-          _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ)) x z q =
-        f q (z q) := by
-    intro z q
-    ext i
-    simp only [f]
-    rw [TauCeti.Representation.ofModule'_apply]
-    rw [Pi.smul_apply, Pi.smul_apply, _root_.Representation.single_smul, one_smul,
-      _root_.Representation.asModuleEquiv_apply]
-    rfl
-  rw [LinearMap.trace_pi_of_apply_eq_dependent _ f htarget]
-  let g (q : G ⧸ inertia V) :
-      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ →ₗ[k]
-      _root_.Representation.asModule (conjNormalFDRep (Quotient.out q) V).ρ :=
-    (_root_.Representation.asModuleEquiv
-      (conjNormalFDRep (Quotient.out q) V).ρ).symm.conj
-        ((conjNormalFDRep (Quotient.out q) V).ρ x)
-  have hg (q : G ⧸ inertia V) : LinearMap.trace k _ (g q) =
-      (conjNormalFDRep (Quotient.out q) V).character x := by
-    simp only [g]
-    rw [LinearMap.trace_conj', FDRep.character]
-  have hf (q : G ⧸ inertia V) : LinearMap.trace k _ (f q) =
-      (e : k) * (conjNormalFDRep (Quotient.out q) V).character x := by
-    have hfg : ∀ z i, f q z i = g q (z i) := by
-      intro z i
-      simp only [f, g, LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.symm_symm]
-      apply (_root_.Representation.asModuleEquiv
-        (conjNormalFDRep (Quotient.out q) V).ρ).injective
-      rw [LinearEquiv.apply_symm_apply, _root_.Representation.asModuleEquiv_apply]
-      rfl
-    rw [LinearMap.trace_pi_of_apply_eq (f q) id (fun _ ↦ g q) hfg]
-    simp [hg]
-  simp_rw [hf]
-  rw [Finset.mul_sum]
+  rw [finsum_eq_sum_of_fintype, cliffordSum, character_ofShrink, Finset.mul_sum]
+  simp only [Representation.char_ofModule'_pi, Representation.char_ofModule'_asModule,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  -- `FDRep.character V` and `V.ρ.character` both unfold to the trace of `V.ρ x`.
+  simp only [FDRep.character, _root_.Representation.character]
 
 end FDRep
 
@@ -192,6 +149,43 @@ private noncomputable def componentLinearEquiv
   simpa only [τ, g] using
     eComponent.trans (LinearEquiv.piCongrRight fun _ ↦ eConj)
 
+/-- The inertia group of a simple constituent of the restriction to `N` of a finite-dimensional
+irreducible representation has finite index. -/
+private theorem finite_quotient_inertia {k : Type u} {G : Type v} [Field k] [Group G] {X : Type u}
+    [AddCommGroup X] [Module k X] {N : Subgroup G} [N.Normal] (ρ : Representation k G X)
+    [FiniteDimensional k X] [ρ.IsIrreducible] (σ : Subrepresentation (ρ.comp N.subtype))
+    (hσ : IsAtom σ) : Finite (G ⧸ inertia (FDRep.of σ.toRepresentation)) :=
+  -- The restriction is a Noetherian `k[N]`-module, so it has finitely many isotypic components,
+  -- and these are indexed by the inertia cosets.
+  have : IsNoetherian k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) :=
+    isNoetherian_of_tower k inferInstance
+  .of_equiv _ (ρ.isotypicComponentsEquivQuotientInertia σ hσ)
+
+/-- **Clifford's decomposition of the module of the restriction.**  The `k[N]`-module carried by
+the restriction to `N` is the product, over the inertia cosets of a simple constituent `σ`, of `e`
+copies of the translate of `σ`, where `e` is the common Clifford multiplicity. -/
+private noncomputable def restrictLinearEquivPi {k : Type u} {G : Type v} [Field k] [IsAlgClosed k]
+    [Group G] {X : Type u} [AddCommGroup X] [Module k X] {N : Subgroup G} [N.Normal]
+    (ρ : Representation k G X) [FiniteDimensional k X] [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (e : ℕ)
+    (hcommon : ∀ τ : Subrepresentation (ρ.comp N.subtype), IsAtom τ → Module.finrank k
+      (τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) = e) :
+    _root_.Representation.asModule (ρ.comp N.subtype) ≃ₗ[k[N]]
+      ((q : G ⧸ inertia (FDRep.of σ.toRepresentation)) → Fin e → _root_.Representation.asModule
+        (conjNormalFDRep (Quotient.out q) (FDRep.of σ.toRepresentation)).ρ) :=
+  let M := _root_.Representation.asModule (ρ.comp N.subtype)
+  have : IsSemisimpleModule k[N] M :=
+    (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp
+      (Representation.isSemisimpleRepresentation_comp_subtype ρ)
+  have : IsNoetherian k[N] M := isNoetherian_of_tower k inferInstance
+  let _ : Fintype (isotypicComponents k[N] M) := Fintype.ofFinite _
+  -- `M` is the internal direct sum of its finitely many isotypic components, which
+  -- `isotypicComponentsEquivQuotientInertia` indexes by the inertia cosets; each component is `e`
+  -- copies of its translated constituent.
+  IsSemisimpleModule.linearEquivIsotypicComponents k[N] M ≪≫ₗ DFinsupp.linearEquivFunOnFintype ≪≫ₗ
+    .piCongrLeft' k[N] (fun c ↦ c.1) (ρ.isotypicComponentsEquivQuotientInertia σ hσ) ≪≫ₗ
+    .piCongrRight (componentLinearEquiv ρ σ hσ e hcommon)
+
 end TauCeti
 
 namespace FDRep
@@ -214,62 +208,17 @@ theorem clifford_restrict_iso_of_isAtom {k : Type u} {G : Type v} [Field k] [Gro
       let _ := hfinite
       ∃ e : ℕ, e ≠ 0 ∧
         Nonempty (resFDRep N W ≅ (FDRep.of σ.toRepresentation).cliffordSum e) := by
-  classical
-  let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
-  let _ : IsSemisimpleModule k[N]
-      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
-    (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule
-      (W.ρ.comp N.subtype)).mp
-      (Representation.isSemisimpleRepresentation_comp_subtype W.ρ)
-  let _ : Module.Finite k[N]
-      (_root_.Representation.asModule (W.ρ.comp N.subtype)) :=
-    Module.Finite.of_restrictScalars_finite k k[N] _
-  let V : FDRep k N := FDRep.of σ.toRepresentation
-  let _ : Representation.IsIrreducible V.ρ :=
-    Representation.isIrreducible_toRepresentation_of_isAtom hσ
-  let _ : Simple V := FDRep.simple_of_isIrreducible V
-  obtain ⟨e, he, hcommon⟩ :=
-    Representation.exists_forall_finrank_linearMap_eq (N := N) W.ρ
-  let C := isotypicComponents k[N]
-    (_root_.Representation.asModule (W.ρ.comp N.subtype))
-  let orbitEquiv : C ≃ G ⧸ inertia V :=
-    Representation.isotypicComponentsEquivQuotientInertia W.ρ σ hσ
-  let hfinite : Finite (G ⧸ inertia V) :=
-    Finite.of_surjective orbitEquiv orbitEquiv.surjective
-  refine ⟨hfinite, ?_⟩
-  let _ := hfinite
-  let _ : Fintype C := Fintype.ofFinite C
-  have hind : iSupIndep (fun c : C ↦ c.1) :=
-    (sSupIndep_iff _).mp (sSupIndep_isotypicComponents k[N]
-      (_root_.Representation.asModule (W.ρ.comp N.subtype)))
-  have htop : ⨆ c : C, c.1 = ⊤ :=
-    (sSup_eq_iSup' C).symm.trans
-      (sSup_isotypicComponents k[N]
-        (_root_.Representation.asModule (W.ρ.comp N.subtype)))
-  let splitComponents :
-      _root_.Representation.asModule (W.ρ.comp N.subtype) ≃ₗ[k[N]] (c : C) → c.1 :=
-    (hind.linearEquiv htop).symm.trans DFinsupp.linearEquivFunOnFintype
-  let indexComponents : ((c : C) → c.1) ≃ₗ[k[N]]
-      (q : G ⧸ inertia V) → (orbitEquiv.symm q).1 :=
-    LinearEquiv.piCongrLeft' k[N] (fun c : C ↦ c.1) orbitEquiv
-  let splitMultiplicity : ((q : G ⧸ inertia V) → (orbitEquiv.symm q).1) ≃ₗ[k[N]]
-      (q : G ⧸ inertia V) → Fin e → _root_.Representation.asModule
-        (conjNormalFDRep (Quotient.out q) V).ρ :=
-    LinearEquiv.piCongrRight fun q ↦ by
-      simpa only [orbitEquiv, V] using componentLinearEquiv W.ρ σ hσ e hcommon q
-  let target := Representation.ofModule' (k := k) (G := N)
-    ((q : G ⧸ inertia V) → Fin e → _root_.Representation.asModule
-      (conjNormalFDRep (Quotient.out q) V).ρ)
-  let moduleEquiv : _root_.Representation.asModule (resFDRep N W).ρ ≃ₗ[k[N]]
-      _root_.Representation.asModule target :=
-    splitComponents.trans indexComponents |>.trans splitMultiplicity |>.trans
-      (Representation.ofModule'AsModuleEquiv _).symm
-  let representationEquiv : _root_.Representation.Equiv (resFDRep N W).ρ target :=
-    Representation.equivOfAsModuleLinearEquiv moduleEquiv
-  have hfinal : Nonempty (_root_.Representation.Equiv
-      (resFDRep N W).ρ (V.cliffordSum e).ρ) :=
-    ⟨representationEquiv.trans (FDRep.ofShrinkEquiv target).symm⟩
-  exact ⟨e, Nat.ne_of_gt he, nonempty_fdRepIso_iff.mpr hfinal⟩
+  have : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
+  obtain ⟨e, he, hcommon⟩ := Representation.exists_forall_finrank_linearMap_eq (N := N) W.ρ
+  have hfinite := finite_quotient_inertia W.ρ σ hσ
+  refine ⟨hfinite, e, he.ne', nonempty_fdRepIso_iff.mpr ⟨?_⟩⟩
+  -- The one definitional step: `resFDRep` is `Action.res` along `N.subtype`, which keeps the
+  -- carrier (`Action.res_obj_V`) and precomposes the action (`Action.res_obj_ρ`).  The equation
+  -- only typechecks up to that carrier identification, so it is recorded by `rfl`.
+  have hres : (resFDRep N W).ρ = W.ρ.comp N.subtype := rfl
+  rw [hres, cliffordSum]
+  exact (Representation.equivOfAsModuleLinearEquiv (restrictLinearEquivPi W.ρ σ hσ e hcommon ≪≫ₗ
+    (Representation.ofModule'AsModuleEquiv _).symm)).trans (FDRep.ofShrinkEquiv _).symm
 
 /-- **Clifford's theorem, representation form.** The restriction of an irreducible
 representation to a normal subgroup is isomorphic to `e` copies of every conjugate of one simple

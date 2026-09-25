@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import Mathlib.Probability.Distributions.Geometric
 public import TauCeti.Analysis.Analytic.Binomial
 public import TauCeti.Probability.GeneratingFunction
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import TauCeti.Probability.Distributions.Geometric
 
 /-!
 # The negative-binomial distribution

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Germ
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import Mathlib.Data.DFinsupp.Module
+public import TauCeti.Data.DFinsupp.Basic
 public import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
@@ -132,23 +132,6 @@ abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Typ
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
   Π₀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, PrincipalPart D x.1
-
-private def dfinsuppOfFiniteSupport {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) : Π₀ i, β i := by
-  classical
-  exact DFinsupp.mk hf.toFinset fun i ↦ f i
-
-@[simp]
-private lemma dfinsuppOfFiniteSupport_apply {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) (i : I) :
-    dfinsuppOfFiniteSupport f hf i = f i := by
-  classical
-  simp only [dfinsuppOfFiniteSupport, DFinsupp.mk_apply]
-  split_ifs with hi
-  · rfl
-  · have : f i = 0 := not_ne_iff.mp (by
-      simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using hi)
-    exact this.symm
 
 /-- Restriction of a finitely supported family of principal parts to a smaller open subset. -/
 def principalPartsRestrict (D : SchemeWeilDivisor X) {U V : X.Opens} (i : V ⟶ U) :
@@ -558,7 +541,7 @@ lemma sheafι_toPrincipalParts (D : SchemeWeilDivisor X) :
 /-- The sequence `𝒪_X(D) ⟶ 𝒦_X ⟶ principalParts D` of `𝒪_X`-modules. It is exact in the middle
 (`principalPartsShortComplex_exact`), and short exact when the codimension-one points are closed
 (`principalPartsShortComplex_shortExact`). -/
-def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
+@[expose] def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
   ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D)
 
 /-- The first object of the principal-parts short complex is `𝒪_X(D)`. -/

@@ -53,6 +53,8 @@ Its pre-completion form is
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.spaComapLoc_eq_comp` : pullback along the structure map is
+  pullback along the completion map followed by pullback along the localisation map.
 * `TauCeti.ValuationSpectrum.spaComapLoc_mem_rationalSubset` and
   `TauCeti.ValuationSpectrum.range_spaComapLoc_subset` : the rational localisation satisfies that
   criterion, so `Spa (A_U, A_U⁺)` lies over `R(T/s)`.
@@ -139,6 +141,46 @@ theorem continuous_spaComapLoc (P : PairOfDefinition A) (Aplus : Subring A) (T :
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   exact continuous_spaComap _ _ _ _ _
+
+/-- **Pullback along the structure map factors through the uncompleted localization.** The
+structure map `ρ : A → A⟨T/s⟩` is the localization map `A → Aₛ` followed by the completion map
+`Aₛ → A⟨T/s⟩`, so `spaComapLoc` is the composite of the two induced maps of adic spectra.
+
+Both factors are ordinary `spaComap`s with a visible plus ring, which is what makes the generic
+descent results for a localization and for a map with dense range applicable; neither is
+available for `ρ` itself.
+
+The two continuity proofs and the two plus-ring conditions are quantified rather than fixed, so
+that a consumer can supply exactly the proofs its own `spaComap` was built from. -/
+theorem spaComapLoc_eq_comp (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (hloc : Continuous (algebraMap A S))
+      (hlocp : ∀ a ∈ Aplus, algebraMap A S a ∈ (integralClosure ↥(Algebra.adjoin Aplus
+        (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring)
+      (hcpl : Continuous (UniformSpace.Completion.coeRingHom : S →+* UniformSpace.Completion S))
+      (hcplp : ∀ x ∈ (integralClosure ↥(Algebra.adjoin Aplus
+        (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring,
+          UniformSpace.Completion.coeRingHom x ∈ completedPlusSubring P Aplus T s S hden),
+      spaComapLoc P Aplus T s S hden =
+        spaComap (algebraMap A S) hloc Aplus _ hlocp ∘
+          spaComap UniformSpace.Completion.coeRingHom hcpl _ _ hcplp := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro hloc hlocp hcpl hcplp
+  -- the factorization of the structure map as a ring homomorphism
+  have hrho : toCompletionLoc P T s S hden =
+      UniformSpace.Completion.coeRingHom.comp (algebraMap A S) :=
+    RingHom.ext (toCompletionLoc_apply P T s S hden)
+  -- `spaComap_comp` is the generic contravariant functoriality. It leaves the two `spaComap`s
+  -- differing only in their ring homomorphism, which is `hrho`, and in continuity and plus-ring
+  -- arguments, which are `Prop`s; `congr` discharges both kinds.
+  rw [← spaComap_comp hloc hcpl Aplus _ _ hlocp hcplp, spaComapLoc]
+  congr 1
 
 /-- **Every point of `Spa (A_U, A_U⁺)` lies over the rational subset `R(T/s)`** — the half of
 roadmap Layer 3.1's homeomorphism `Spa (A_U, A_U⁺) ≃ R(T/s)` that the localisation supplies

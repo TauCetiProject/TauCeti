@@ -43,6 +43,10 @@ on:
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
+      - 'scripts/roadmap_progress.py'
+      - 'scripts/roadmap_topics.json'
+      - 'scripts/roadmap_coverage.json'
+      - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and API docs
@@ -78,13 +82,16 @@ jobs:
   # status context (see pr-build.yml's header note on that collision). This workflow only runs on
   # push-to-main / schedule, never on a PR, so its check-run can't wedge a PR today — the distinct name
   # is hygiene so a future PR trigger here could never reintroduce the collision.
-  build-site:
+  # The data assets are generated here, in a job with no Lean in it. They are cheap -- minutes,
+  # all Python and gh -- whereas `build-site` below elaborates TauCeti twice and runs for hours.
+  # The two used to fail together for no better reason than sharing a job: an unrelated Verso
+  # error in Site.Front meant nothing deployed, so a perfectly good pipeline-health.json derived
+  # ninety minutes earlier in that same job was thrown away. Separating them means a site that
+  # will not compile can no longer make the published data stale by itself, and a data outage
+  # shows up in minutes rather than after the whole doc build has run.
+  build-data:
     runs-on: ubuntu-latest
     outputs:
-      # The commit the /docs actually being deployed were generated from, read from the tree itself.
-      # This is what `advance-docgen-ref` follows; there is deliberately no output for whether a
-      # rebuild was *planned*, because that says nothing about what ended up being published.
-      docs-source-sha: ${{ steps.fold.outputs.docs-source-sha }}
       # Which of the generated data assets could not be regenerated this run. The steps that
       # produce them are deliberately non-fatal -- a GitHub hiccup should cost a stale chart, not
       # the whole site deploy -- but "non-fatal" turned into "invisible": the PR statistics step
@@ -93,24 +100,37 @@ jobs:
       # green throughout. The report-data-freshness job below turns this back into a red run,
       # AFTER the deploy, so both properties hold at once.
       data-failures: ${{ steps.data-failures.outputs.assets }}
-    defaults:
-      run:
-        working-directory: web
     steps:
       # Full history: scripts/loc_graph.py reconstructs the whole "lines by date"
       # series by walking every commit, so a shallow checkout would truncate the charts.
       - uses: actions/checkout@v4
         with:
-          # Same reasoning as ci.yml's build checkout, and it matters more here: this job
-          # elaborates TauCeti twice (the doc-gen4 build and the examples build), and the token
-          # this workflow grants carries `pages: write` and `id-token: write`, not just
-          # `contents: read`. Left in the workspace .git/config, it would be readable by code
-          # running at elaboration time, which could then publish to the project's Pages site.
-          # Nothing in this job authenticates to GitHub: the only git command is a clone of the
-          # public roadmap repository, the history this checkout fetches is used locally, and the
-          # branch update lives in the separate advance-docgen-ref job with its own GH_TOKEN.
+          # Same reasoning as ci.yml's build checkout: the token this workflow grants carries
+          # `pages: write` and `id-token: write`, not just `contents: read`, so left in the
+          # workspace .git/config it would be readable by anything that reads the config. This
+          # job runs no Lean, but it does run the generator scripts, and they are handed an
+          # explicit GH_TOKEN per step rather than reading one out of the checkout. The only git
+          # command here is a clone of the public roadmap repository, the history this checkout
+          # fetches is used locally, and the branch update lives in the separate
+          # advance-docgen-ref job with its own GH_TOKEN.
           persist-credentials: false
           fetch-depth: 0
+
+      # Every generator below is deliberately non-fatal and leaves "whatever was there" in
+      # place. For the charts that is the committed fallback SVG. pipeline-health.json has no
+      # committed fallback and never will -- it is derived state, not a checked-in asset -- so
+      # without this there is nothing for a failed generator to leave behind, and the run would
+      # publish a static tree with no pipeline-health.json at all, DELETING the live endpoint
+      # that the rest of this change exists to keep fresh. Restoring the last published set
+      # first makes "keep the previous one" true for the generated data too.
+      - name: Restore the last published data assets
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/web/static_files
+          # Always a miss, so the save below always writes a fresh entry; the prefix restores
+          # the newest previous set.
+          key: site-data-v1-${{ github.run_id }}
+          restore-keys: site-data-v1-
 
       - name: Clone the roadmap repository (full history, for its chart)
         working-directory: ${{ github.workspace }}
@@ -146,7 +166,10 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "Tau Ceti — lines of Lean per roadmap" \
             --out web/static_files/loc-per-roadmap.svg \
-          || echo "::warning::per-roadmap chart generation failed; keeping the committed fallback SVG"
+          || {
+            echo "::warning::per-roadmap chart generation failed; keeping the last published SVG"
+            echo "per-roadmap chart" >> "$RUNNER_TEMP/data-failures"
+          }
 
       # A current snapshot rather than a historical series: participants are deduplicated
       # across PRs, issues, comments/reviews, and default-branch commits in all four repos.
@@ -158,7 +181,10 @@ jobs:
         run: |
           python3 scripts/participant_graph.py \
             --out web/static_files/participation.svg \
-          || echo "::warning::participation graph generation failed; keeping the committed fallback SVG"
+          || {
+            echo "::warning::participation graph generation failed; keeping the last published SVG"
+            echo "participation snapshot" >> "$RUNNER_TEMP/data-failures"
+          }
 
       # Walking every pull request's label timeline costs one GraphQL request each, against a
       # budget of 5000 an hour. At ~4600 open-or-recently-closed pull requests that no longer
@@ -261,9 +287,71 @@ jobs:
             echo "pipeline health (no snapshot)" >> "$RUNNER_TEMP/data-failures"
           fi
           # The published file is what every reader of "where is the queue stuck" fetches, so a
-          # run that does not write one has not done its job even if the site deploys.
+          # run that does not write one has not done its job even if the site deploys. Recorded
+          # as a data failure and not merely warned about: a warning notifies nobody, which is
+          # how this went unnoticed for a day.
           if [ ! -s web/static_files/pipeline-health.json ]; then
             echo "::warning::pipeline-health.json was not written"
+            echo "pipeline health (no file)" >> "$RUNNER_TEMP/data-failures"
+          fi
+
+      # The Progress page's board: one row per roadmap, one segment per layer, from the roadmap
+      # clone above plus the roadmap labels on merged pull requests. It reads the PR snapshot the
+      # statistics step just fetched rather than walking GitHub again; without one it pages the
+      # merged pull requests itself, which is a few dozen requests. As with the charts, a failure
+      # keeps the committed fallback JSON in place rather than sinking the deploy.
+      - name: Regenerate the roadmap progress board into static_files
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          data_arg=()
+          if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
+            data_arg=(--data "$RUNNER_TEMP/pr-snapshot.json")
+          fi
+          python3 scripts/roadmap_progress.py \
+            --roadmap-dir /tmp/roadmap \
+            --repo "${{ github.repository }}" \
+            "${data_arg[@]}" \
+            --out web/static_files/progress.json \
+          || {
+            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
+            echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+          }
+
+      # An explicit allowlist of GENERATED assets, not the whole directory. static_files also
+      # holds site.js, progress.js, style.css and the icons -- the front end, which belongs to
+      # the commit whose HTML is being served. Shipping those through this artifact would let
+      # the fallback below lay this commit's JavaScript and CSS over the last successfully
+      # built HTML, and the case where the site failed to build is exactly the case where a
+      # front-end change might be the reason. Data travels; the front end does not.
+      - name: Collect the generated data assets
+        id: collect
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/site-data"
+          missing=()
+          # Asked of the generators, not restated here. This list was written out by hand, so
+          # adding a chart meant editing two files -- and when those edits landed in two
+          # different pull requests, the two roadmap/contributor grids were generated into
+          # static_files and then not carried. The site referenced two images that never
+          # arrived, and nothing failed: the artifact was simply missing them.
+          for asset in $(python3 scripts/generated_assets.py)
+          do
+            if [ -s "web/static_files/$asset" ]; then
+              cp "web/static_files/$asset" "$RUNNER_TEMP/site-data/$asset"
+            else
+              missing+=("$asset")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::not carrying ${missing[*]}: absent or empty"
+          fi
+          # pipeline-health.json is the one every poller reads. If neither this run nor the
+          # restore above produced one, say so as a data failure rather than shipping a set
+          # that would silently remove it from the site.
+          if [ ! -s "$RUNNER_TEMP/site-data/pipeline-health.json" ]; then
+            echo "pipeline health (nothing to publish)" >> "$RUNNER_TEMP/data-failures"
           fi
 
       - name: Collect which data assets could not be regenerated
@@ -280,6 +368,78 @@ jobs:
           else
             echo "assets=" >> "$GITHUB_OUTPUT"
           fi
+
+      # Saved for the next run to restore, so a generator that fails then still has a
+      # last-good asset to leave in place. Never allowed to fail the job: this is an
+      # optimisation against future outages, not a precondition for this deploy.
+      - name: Save the data assets for the next run
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/web/static_files
+          key: site-data-v1-${{ github.run_id }}
+
+      - name: Hand the generated data to the site build
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-data
+          path: ${{ runner.temp }}/site-data
+          retention-days: 7
+
+  build-site:
+    # `!cancelled()` rather than `always()`: the data steps are deliberately non-fatal, so a run
+    # that can only report a stale chart must still publish the site -- but `always()` is also
+    # true while a run is being cancelled, and a cancelled run must not go on to deploy. What
+    # this job wants from build-data is the artifact, and it copes with that being absent.
+    needs: build-data
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    outputs:
+      # The commit the /docs actually being deployed were generated from, read from the tree itself.
+      # This is what `advance-docgen-ref` follows; there is deliberately no output for whether a
+      # rebuild was *planned*, because that says nothing about what ended up being published.
+      docs-source-sha: ${{ steps.fold.outputs.docs-source-sha }}
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        # the job's default working directory, web/, does not exist before checkout
+        working-directory: ${{ github.workspace }}
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+      - uses: actions/checkout@v4
+        with:
+          # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
+          # TauCeti twice (the doc-gen4 build and the examples build), so a token left in
+          # .git/config would be readable by code running at elaboration time, which could then
+          # publish to the project's Pages site.
+          persist-credentials: false
+          fetch-depth: 0
+
+      # Overwrites the checked-in SVGs in the runner only, never committed back -- exactly what
+      # the generators did when they ran in this job. A miss is survivable rather than fatal: the
+      # checkout above already carries the committed fallbacks, so the site still builds and
+      # deploys, and report-data-freshness is what makes the run red about it.
+      - name: Lay down the generated data
+        id: site-data
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: site-data
+          path: web/static_files
+
+      - name: Note when the site is building against fallback data
+        if: steps.site-data.outcome != 'success'
+        run: echo "::warning::no site-data artifact; building the site against the committed fallback assets"
 
       # Pinned leanprover/elan release, verified by SHA-256, rather than whatever the installer
       # URL serves at the moment of the request; this elan chooses the toolchain that builds the
@@ -446,14 +606,44 @@ jobs:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}
 
-      - name: Cache Lake builds (site + examples)
+      # Two projects on two toolchains, so two caches rather than one. web/ is pinned by its own
+      # committed lean-toolchain and manifest. web/examples has neither: both are generated from
+      # the ROOT pins several steps below, i.e. after this step runs, so naming them here hashed
+      # nothing and the key moved only when web/'s own pins did. A root toolchain bump therefore
+      # left the key unchanged and restored an examples tree built under the PREVIOUS root
+      # toolchain -- which is how run 35958213514 failed to link `web` with `undefined symbol:
+      # lean_inc_ref_huge_n`, from an MD4Lean object compiled under v4.34.0-rc2 (the root's Lean)
+      # and linked by v4.32.0 (web/'s). Key the examples tree on the pins it is actually derived
+      # from, and give it no restore-keys: when those pins change, every artifact in that tree has
+      # to be rebuilt anyway, so a prefix fallback restores nothing useful and risks exactly the
+      # mismatch above. The `v2` discards the entries poisoned before this fix.
+      - name: Cache Lake builds (site)
         uses: actions/cache@v4
         with:
-          path: |
-            web/.lake
-            web/examples/.lake
-          key: web-lake-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain', 'web/examples/lake-manifest.json', 'web/examples/lean-toolchain') }}
-          restore-keys: web-lake-${{ runner.os }}-
+          path: web/.lake
+          key: web-lake-v2-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
+          restore-keys: web-lake-v2-${{ runner.os }}-
+
+      - name: Cache Lake builds (examples)
+        uses: actions/cache@v4
+        with:
+          path: web/examples/.lake
+          key: web-examples-lake-v2-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+
+      # Run 35812845983 failed here with `unable to open output file .../Anchors.c.o.export:
+      # 'Operation not permitted'` while compiling into the restored tree. Run 35812919873
+      # restored the SAME cache entry and succeeded, because it needed no rebuild -- so the
+      # failure happens only when those objects have to be recompiled, which is the same
+      # intermittency the artifact-cache leak had. Why a restored file is unwritable is not
+      # established; that it is, is. Restoring write permission costs milliseconds and removes
+      # the error whatever put it there, which is worth more than a theory about which.
+      - name: Make the restored Lake trees writable
+        working-directory: ${{ github.workspace }}
+        run: |
+          for tree in web/.lake web/examples/.lake; do
+            [ -d "$tree" ] && chmod -R u+w "$tree"
+          done
+          exit 0
 
       # web/examples has no committed Lake manifest and no committed toolchain: the manifest is
       # derived from the root pins here, and elan finds the root lean-toolchain by walking up. So
@@ -473,9 +663,45 @@ jobs:
           # GITHUB_ENV carries the cache settings into every later step, and this is a
           # different project.
           LAKE_NO_CACHE: "true"
-        run: lake build
+          # ...but LAKE_NO_CACHE alone does not do it, which is what made this so persistent.
+          # In Lake it means only "do not download build caches for packages"
+          # (Lake/Config/Env.lean); the artifact cache is these three, so all three kept the
+          # values the docs step wrote into GITHUB_ENV and this project went on sharing the docs
+          # build's cache. Clearing them is Lake's own off switch: the environment is read ahead
+          # of any package configuration, `false` is an accepted off value, and a set-but-empty
+          # LAKE_CACHE_DIR reads as "no system cache".
+          LAKE_ARTIFACT_CACHE: "false"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_CACHE_DIR: ""
+        # The default target type-checks the showcased theorems. The site's nested call is
+        # `lake build :examples`, a different target -- the SubVerso extraction -- so build it
+        # here as well: when extraction breaks, it then fails in this step, under its own name,
+        # instead of inside Verso elaboration two steps later.
+        run: |
+          lake build
+          lake build :examples
 
       - name: Build site (extracts the checked snippets, compiles Verso)
+        env:
+          # Same reason as the examples build above, and easy to miss: this step builds web/, but
+          # elaborating Site/Front.lean runs `{leanExampleProject frontExamples "examples"}`, which
+          # shells out to a NESTED `lake build :examples` inside web/examples. That nested build
+          # inherits this step's environment, so without this the artifact-cache settings GITHUB_ENV
+          # carries from the docs build reach a third project, and Lake fails with `failed to cache
+          # artifact: no such file or directory` on subverso-extract -- taking Site.Front, the site,
+          # and the whole deploy with it. Setting it on the examples step alone was not enough,
+          # because the site re-enters that project through SubVerso.
+          #
+          # This only bites when subverso-extract actually has to be recompiled: when the restored
+          # web-lake cache already holds one built for the current root toolchain, the nested build
+          # has nothing to cache and the leak is harmless. That is why it presented as a roughly
+          # every-other-run failure rather than a consistent one.
+          LAKE_NO_CACHE: "true"
+          # Cleared for the same reason, and this step is where it mattered most: the nested
+          # `lake build :examples` inherits the environment set here.
+          LAKE_ARTIFACT_CACHE: "false"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_CACHE_DIR: ""
         run: lake build
 
       - name: Generate static site
@@ -541,13 +767,137 @@ jobs:
           echo "docs-source-sha=$sha" >> "$GITHUB_OUTPUT"
           printf 'deploying /docs generated from %s\n' "$sha"
 
+      # Saved only once the tree has passed every check in the fold step above, so what the
+      # fallback job can restore is by construction a site that was fit to deploy: it has /docs,
+      # an index, and a well-formed SOURCE_SHA. Run-specific key, prefix restore, same shape as
+      # the pr-snapshot and docs caches.
+      - name: Save the built site for the fallback path
+        # Never allowed to fail this job. A cache-service hiccup would otherwise turn a site
+        # that built perfectly into a failed build-site, skip the primary upload, and hand the
+        # deploy to the fallback -- publishing an OLDER site because the cache write for the
+        # newer one did not go through.
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: web/_out
+          key: site-out-v1-${{ github.run_id }}
+
+      # Distinct artifact names for the two producers. upload-artifact v4 artifacts are
+      # immutable and unique per name within a run, and the fallback runs precisely when the
+      # primary reported failure -- which includes the case where the upload finalized and then
+      # failed. Sharing the default `github-pages` name would make the fallback collide with a
+      # half-finished artifact instead of publishing.
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-primary
+          path: web/_out
+
+  # Publish the freshly generated DATA even when the site itself will not compile.
+  #
+  # A Pages deployment replaces the entire site, so there is no way to push a new
+  # pipeline-health.json without publishing a whole site alongside it. What this job publishes is
+  # therefore the last site that built successfully, with this run's data laid over the top. The
+  # prose and the API docs are then as old as the last good build, while everything anyone polls
+  # -- pipeline-health.json, the charts -- is current.
+  #
+  # This is the same bargain the data steps already make in build-data ("a GitHub hiccup should
+  # cost a stale chart, not the whole deploy"), applied one level up: a Verso error should cost
+  # stale prose, not a monitor that has been blind for a day. It is deliberately NOT silent --
+  # report-data-freshness fails the run whenever this path is taken, because a site that cannot
+  # build is a real problem and this job is precisely what would otherwise hide it.
+  fallback-site:
+    needs: [build-data, build-site]
+    # `failure`, not `!= success`. A `skipped` build-site means the graph did not reach it, and
+    # an unexplained skip must not authorize publishing an old site over the live one. And
+    # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
+    if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
+    runs-on: ubuntu-latest
+    outputs:
+      # Which cached site was republished. report-data-freshness compares it against this run's
+      # own key, because "the site could not be built" and "the site built and then the upload
+      # failed" publish very different pages and deserve different error text.
+      restored-key: ${{ steps.last-good.outputs.cache-matched-key }}
+    steps:
+      - name: Restore the last site that built
+        id: last-good
+        uses: actions/cache/restore@v4
+        with:
+          path: web/_out
+          # Normally a miss -- this run's own entry exists only if build-site got as far as saving
+          # one and then failed at the upload, in which case restoring it is exactly right. The
+          # prefix is what does the work on every other path.
+          key: site-out-v1-${{ github.run_id }}
+          restore-keys: site-out-v1-
+
+      # No cached site means there is nothing to publish: deploying an empty tree would replace the
+      # live site with nothing, which is far worse than leaving yesterday's data up. Refuse instead.
+      - name: Refuse to publish without a cached site
+        if: steps.last-good.outputs.cache-matched-key == ''
+        run: |
+          echo "::error title=No fallback site available::the site build failed and no previous build is cached, so this run cannot publish anything"
+          exit 1
+
+      - name: Lay this run's data over it
+        id: overlay
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: site-data
+          # `static "static" ← "static_files"` in web/Main.lean: the generated assets are served
+          # from /static, so that is where they have to land in the built tree.
+          path: web/_out/static
+
+      # Both halves stale is not worth a deploy: it would republish the cached site unchanged and
+      # report success, which is indistinguishable from having done something useful.
+      - name: Refuse to publish a fallback with no fresh data
+        if: steps.overlay.outcome != 'success'
+        run: |
+          echo "::error title=Nothing fresh to publish::the site build failed and no site-data artifact was produced, so the fallback would republish the cached site unchanged"
+          exit 1
+
+      # Checked rather than assumed: the cache key namespace is shared with entries written before
+      # this job existed, and publishing a tree without /docs deletes the live API documentation.
+      # The same checks the fold step applies on the primary path, for the same reason: this
+      # tree is about to replace the live site, and where it came from does not change what it
+      # has to satisfy. A cached entry can predate any of these rules.
+      - name: Check the cached site is fit to publish
+        run: |
+          if [ ! -s web/_out/index.html ]; then
+            echo "::error title=Cached site has no index::refusing to publish a tree with no front page"
+            exit 1
+          fi
+          if [ ! -s web/_out/docs/index.html ]; then
+            echo "::error title=Cached site has no usable /docs::refusing to publish it, which would delete the live documentation"
+            exit 1
+          fi
+          # Validated as bytes against the exact form the fold step writes, and refusing a
+          # symlink, exactly as there -- see that step for why command substitution alone is
+          # not enough.
+          marker=web/_out/docs/SOURCE_SHA
+          if [ -L "$marker" ] || [ ! -f "$marker" ]; then
+            echo "::error title=SOURCE_SHA is not a regular file::refusing to read provenance through a link or special file"
+            exit 1
+          fi
+          sha=$(< "$marker")
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]] || ! printf '%s\n' "$sha" | cmp -s - "$marker"; then
+            echo "::error title=Cached site has a malformed SOURCE_SHA::the marker is not exactly one 40-character commit sha followed by a newline"
+            exit 1
+          fi
+          printf 'republishing the site built from %s with this run data\n' "$sha"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages-fallback
           path: web/_out
 
   deploy:
-    needs: build-site
+    needs: [build-site, fallback-site]
+    # Exactly one of the two uploads an artifact, and `deploy-pages` publishes whichever one did.
+    # Skipped only when neither produced anything, which is the case where there is genuinely
+    # nothing to publish.
+    if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -556,6 +906,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Whichever producer succeeded. Exactly one of them uploaded, and the `if` above is
+          # what guarantees that at least one did.
+          artifact_name: ${{ needs.build-site.result == 'success' && 'github-pages-primary' || 'github-pages-fallback' }}
 
   # Fail the run when a generated data asset could not be regenerated, without having stopped the
   # deploy. The two are genuinely different questions and were previously collapsed into one: the
@@ -565,16 +919,60 @@ jobs:
   # failed on every run for two days, pipeline-health.json was never published at all, and every
   # run was green. Running after `deploy` keeps the site publishing while making the run red, and
   # a red scheduled run is what stuck_alerts.py's failing-scheduler detector watches for.
+  # Data can go stale two independent ways, and this job reports both. A generator can fail, which
+  # is what it was originally written for. Or every generator can succeed and the results never get
+  # published, which is what happened across 2026-09-22: pipeline-health.json was derived cleanly on
+  # four consecutive runs and discarded each time because Site.Front would not compile, so the
+  # published copy aged past twenty-four hours while each of those runs reported only a warning. The
+  # remedies differ -- a broken generator versus a broken publish path -- so they are separate errors.
   report-data-freshness:
-    needs: [build-site, deploy]
-    if: always() && needs.build-site.outputs.data-failures != ''
+    needs: [build-data, build-site, fallback-site, deploy]
+    # ALWAYS, unconditionally. The previous `always() && ...data-failures != ''` reads like "always"
+    # but is not: it decided whether to run by asking only whether a generator had failed, so the
+    # case above -- generators all green, nothing published -- skipped this job every time. Whether
+    # there is anything worth reporting is a question for the step, which can see the deploy result.
+    # It is not a question the `if:` has the information to answer.
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Report the assets serving stale data
+      - name: Report what is serving stale data
         env:
-          ASSETS: ${{ needs.build-site.outputs.data-failures }}
+          ASSETS: ${{ needs.build-data.outputs.data-failures }}
+          DATA_RESULT: ${{ needs.build-data.result }}
+          SITE_RESULT: ${{ needs.build-site.result }}
+          FALLBACK_RESULT: ${{ needs.fallback-site.result }}
+          RESTORED_KEY: ${{ needs.fallback-site.outputs.restored-key }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: |
-          echo "::error title=Stale site data::the site deployed, but these could not be regenerated and are now serving whatever was published last: ${ASSETS}"
+          stale=0
+          if [ "$DATA_RESULT" != "success" ]; then
+            echo "::error title=Data generation did not finish::the build-data job ended '${DATA_RESULT}', so nothing was regenerated this run"
+            stale=1
+          elif [ -n "$ASSETS" ]; then
+            echo "::error title=Stale site data::these could not be regenerated and are now serving whatever was published last: ${ASSETS}"
+            stale=1
+          fi
+          # Fresh data that never reached the site is just as stale to everyone reading it.
+          if [ "$DEPLOY_RESULT" != "success" ]; then
+            echo "::error title=Nothing was published::build-site ended '${SITE_RESULT}' and deploy ended '${DEPLOY_RESULT}', so the site still serves an earlier run's data, however old that is"
+            stale=1
+          elif [ "$SITE_RESULT" != "success" ]; then
+            # The data is current either way, so this is not a freshness failure -- but the run
+            # must still go red, because a site that cannot compile is exactly the condition the
+            # fallback exists to paper over, and papering over it silently is how it went
+            # unnoticed for nine days. Which pages actually got published depends on which cache
+            # the fallback found, so report that rather than assuming the worse of the two.
+            if [ "$RESTORED_KEY" = "site-out-v1-${GITHUB_RUN_ID}" ]; then
+              echo "::error title=Recovered by the fallback::build-site ended '${SITE_RESULT}' after its site was built and cached, so the published pages ARE this run's; the upload or a later step is what failed"
+            else
+              echo "::error title=Published from the fallback::build-site ended '${SITE_RESULT}'; the data is current but the site's own pages are whatever the last successful build produced (${RESTORED_KEY:-unknown cache})"
+            fi
+            stale=1
+          fi
+          if [ "$stale" = "0" ]; then
+            echo "every data asset regenerated, and the site deployed"
+            exit 0
+          fi
           exit 1
 
   # Point `docgen` at the commit whose documentation is now live.
@@ -596,6 +994,12 @@ jobs:
   # `docgen` names documentation that is already gone; if this job then fails, it stays wrong until
   # the next deploy repairs it. Anything that needs certainty should read `/docs/SOURCE_SHA` from
   # the deployed site, which is the only value that is true at the moment it is read.
+  # A fallback deploy skips this job, because it needs `build-site` and `build-site` failed.
+  # That is right in the ordinary fallback case: the republished tree is the docs from the last
+  # successful build, which is exactly where `docgen` already points. In the narrow case where
+  # the fallback restored THIS run's own cache, the published docs are newer than the branch and
+  # it lags by one run -- which the best-effort note above already covers, and which the next
+  # successful deploy repairs.
   advance-docgen-ref:
     needs: [build-site, deploy]
     if: needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main'

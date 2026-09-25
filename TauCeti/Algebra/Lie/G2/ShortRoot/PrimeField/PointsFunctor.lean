@@ -45,6 +45,10 @@ integral toral closure is used; no flatness is asserted.
   by the scheme-level generators are the named pinned point homomorphisms.
 * `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_carrierι`: the underlying matrix of
   a scheme-valued carrier point is obtained by composing with the ambient inclusion into `GL₇`.
+* `TauCeti.G2ShortRoot.PrimeField.coe_pointsMulEquiv_eq_map_carrierGenericMatrix` and
+  `TauCeti.G2ShortRoot.PrimeField.groupSchemePointMulEquiv_comp_coordinateMap`: a
+  quotient-coordinate point evaluates the universal point, and composing with the scheme
+  morphism of a coordinate endomorphism pulls the point back along it.
 * `TauCeti.G2ShortRoot.PrimeField.points_le_baseChangePresentationPoints`: every point of the
   carrier is a point of the base change of the integral short-root toral closure.
 
@@ -103,7 +107,7 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
 
 /-- The points of the quotient coordinate Hopf algebra are the named matrix-valued carrier
 points. -/
-private noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
+noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     HopfAlgebra.points
         (R := ZMod 3) (H := CommHopfAlgCat.quotient
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -129,8 +133,27 @@ private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
   exact TauCeti.GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply 7
     (CommHopfAlgCat.commonKernelHopfIdeal generator) A q
 
+/-- The matrix of a quotient-coordinate point is the universal point `carrierGenericMatrix`
+evaluated along it. -/
+theorem coe_pointsMulEquiv_eq_map_carrierGenericMatrix {B : Type v} [CommRing B]
+    [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) B)) :
+    ((pointsMulEquiv (CommAlgCat.of (ZMod 3) B) q :
+        _root_.Matrix.GeneralLinearGroup (Fin 7) B) : Matrix (Fin 7) (Fin 7) B) =
+      carrierGenericMatrix.map q.ofConv := by
+  rw [coe_pointsMulEquiv_apply, TauCeti.GeneralLinear.pointsMulEquiv_apply,
+    ← WithConv.toConv_ofConv (CommHopfAlgCat.quotientPointsHom
+      (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+      (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) B) q),
+    ← TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
+    carrierGenericMatrix_def, Matrix.map_map]
+  ext i j
+  rw [Matrix.map_apply, Matrix.map_apply, Function.comp_apply,
+    CommHopfAlgCat.quotientPointsHom_apply_apply]
+  rfl
+
 /-- Mathlib's spectrum-points equivalence for the quotient presentation of the carrier. -/
-private noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
+noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
     [Algebra (ZMod 3) A] :
     WithConv ((CommHopfAlgCat.quotient
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -163,6 +186,27 @@ private lemma groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A (by
       simpa only [definingIdeal_def] using groupScheme_def) groupScheme_X_left q
 
+/-- Composing a quotient-coordinate carrier point with the scheme morphism induced by a
+coordinate endomorphism of the carrier pulls the point back along that endomorphism. -/
+theorem groupSchemePointMulEquiv_comp_coordinateMap {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (phi : carrierAlgebra ⟶ carrierAlgebra)
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) B)) :
+    groupSchemePointMulEquiv B q ≫
+        (eqToHom groupScheme_eq_commonKernelSpec ≫
+          (hopfSpec (CommRingCat.of (ZMod 3))).map phi.op ≫
+            eqToHom groupScheme_eq_commonKernelSpec.symm).hom.hom =
+      groupSchemePointMulEquiv B (AlgHom.mapDomain phi.hom q) := by
+  have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := ZMod 3) B groupScheme_eq_commonKernelSpec groupScheme_eq_commonKernelSpec
+    (groupSchemePointMulEquiv B) (groupSchemePointMulEquiv B)
+    (groupSchemePointMulEquiv_apply_left B)
+    (groupSchemePointMulEquiv_apply_left B) phi q
+  have heval :
+      ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of (ZMod 3) B)) q =
+        AlgHom.mapDomain phi.hom q := rfl
+  rw [heval] at h
+  exact h
+
 /-- Scheme-valued points of the carrier are its named matrix-valued points. -/
 noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra (ZMod 3) A] :
     ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) ≃*
@@ -171,7 +215,7 @@ noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra (ZMod 3)
 
 /-- A quotient-coordinate point gives the same named carrier point under the scheme and matrix
 presentations. -/
-private theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A]
+theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
@@ -182,6 +226,8 @@ private theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRi
       pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q := by
   simp [schemePointsMulEquiv]
 
+/-- Composing the quotient-coordinate carrier point with `carrierι` gives the corresponding
+point of the ambient `GL₇`. -/
 private lemma groupSchemePointMulEquiv_comp_carrierι (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points

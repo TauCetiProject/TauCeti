@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
+import TauCeti.Analysis.Real.Sqrt
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -27,6 +28,9 @@ to the normal form of its own signature.
 
 ## Main results
 
+* `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
+  normalized to value one by inverse-square-root scaling. This normalization feeds the
+  reflection-pair construction for compact real Clifford forms.
 * `QuadraticForm.sigPos_weightedSumSquares_signType` and
   `QuadraticForm.sigNeg_weightedSumSquares_signType`: the two indices of inertia of a
   sign-weighted sum of squares count the weights `1` and the weights `-1`.
@@ -40,6 +44,8 @@ to the normal form of its own signature.
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
   normal form of its signature.
+* `QuadraticForm.equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq`: a regular real form is
+  isometric to a prescribed normal form exactly when it has the prescribed signature.
 * `QuadraticForm.equivalent_realSignatureForm_iff`: distinct signatures give non-isometric normal
   forms.
 
@@ -52,6 +58,24 @@ public section
 noncomputable section
 
 open Finset QuadraticMap
+
+namespace QuadraticMap
+
+variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
+
+/-- Scaling a vector by the inverse square root of its positive quadratic value gives value one. -/
+@[simp]
+theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q v) :
+    Q ((Real.sqrt (Q v))⁻¹ • v) = 1 := by
+  have hsquare : (Real.sqrt (Q v))⁻¹ ^ 2 = (Q v)⁻¹ := by
+    simpa only [mul_one, one_pow, one_div] using Real.inv_sqrt_mul_sq hpos.le 1
+  calc
+    Q ((Real.sqrt (Q v))⁻¹ • v) = (Real.sqrt (Q v))⁻¹ ^ 2 * Q v := by
+      simp only [QuadraticMap.map_smul, smul_eq_mul, pow_two]
+    _ = (Q v)⁻¹ * Q v := by rw [hsquare]
+    _ = 1 := inv_mul_cancel₀ hpos.ne'
+
+end QuadraticMap
 
 namespace QuadraticForm
 
@@ -90,8 +114,7 @@ private theorem equivalent_weightedSumSquares_of_ncard_fiber_eq (u : ι → Sign
   have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
     funext i
     exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
-  exact ⟨((isometryEquivWeightedSumSquaresReindex (R := ℝ) (fun i' ↦ ((u' i' : ℝ))) σ).trans
-    (weightedSumSquaresCongr hcomp)).symm⟩
+  exact equivalent_weightedSumSquares_of_comp_eq σ hcomp
 
 end Fibers
 
@@ -144,6 +167,11 @@ copies of `⟨-1⟩`. -/
 def realSignatureForm (p q : ℕ) : _root_.QuadraticForm ℝ (Fin p ⊕ Fin q → ℝ) :=
   weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1)
 
+/-- The normal form is the weighted sum of squares with `p` positive and `q` negative weights. -/
+theorem realSignatureForm_def (p q : ℕ) :
+    realSignatureForm p q =
+      weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) := (rfl)
+
 @[simp]
 theorem realSignatureForm_apply (p q : ℕ) (x : Fin p ⊕ Fin q → ℝ) :
     realSignatureForm p q x =
@@ -184,19 +212,26 @@ theorem nondegenerate_realSignatureForm (p q : ℕ) : (realSignatureForm p q).No
   have hdim : Module.finrank ℝ (Fin p ⊕ Fin q → ℝ) = p + q := by simp
   omega
 
+/-- A regular real quadratic form is isometric to the normal form of signature `(p, q)` exactly
+when its positive and negative indices are `p` and `q`. -/
+@[simp]
+theorem equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq
+    {Q : _root_.QuadraticForm ℝ M} (hQ : Q.Nondegenerate) (p q : ℕ) :
+    Q.Equivalent (realSignatureForm p q) ↔ sigPos Q = p ∧ sigNeg Q = q := by
+  rw [equivalent_iff_sigPos_eq_and_sigNeg_eq hQ (nondegenerate_realSignatureForm p q)]
+  simp
+
 /-- Two normal forms are isometric exactly when their signatures coincide, so the signature is a
 complete and independent system of invariants for regular real quadratic forms. -/
-@[simp]
 theorem equivalent_realSignatureForm_iff (p q p' q' : ℕ) :
     (realSignatureForm p q).Equivalent (realSignatureForm p' q') ↔ p = p' ∧ q = q' := by
-  rw [equivalent_iff_sigPos_eq_and_sigNeg_eq (nondegenerate_realSignatureForm p q)
-    (nondegenerate_realSignatureForm p' q')]
+  rw [equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq
+    (nondegenerate_realSignatureForm p q)]
   simp
 
 /-- Every regular real quadratic form is isometric to the normal form of its signature. -/
 theorem equivalent_realSignatureForm (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     Q.Equivalent (realSignatureForm (sigPos Q) (sigNeg Q)) :=
-  (equivalent_iff_sigPos_eq_and_sigNeg_eq hQ (nondegenerate_realSignatureForm _ _)).mpr
-    ⟨(sigPos_realSignatureForm _ _).symm, (sigNeg_realSignatureForm _ _).symm⟩
+  (equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq hQ _ _).mpr ⟨rfl, rfl⟩
 
 end QuadraticForm

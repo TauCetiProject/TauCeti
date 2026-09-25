@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-public import Mathlib.LinearAlgebra.Eigenspace.Matrix
+public import TauCeti.LinearAlgebra.Eigenspace.Diagonal
 
 /-!
 # The root space decomposition of `gl n R`
@@ -133,39 +133,6 @@ instance instIsTriangularizableMatrixDiagonalCartan :
     exact iSup_mono fun _ => Module.End.eigenspace_le_maxGenEigenspace
 
 /-! ### The weight spaces of `gl n R` -/
-
-/-- In a reduced ring `a ^ k * x = 0` already forces `a * x = 0`, since it makes `a * x`
-nilpotent. -/
-private theorem mul_eq_zero_of_pow_mul_eq_zero [IsReduced R] {a x : R} {k : ℕ}
-    (h : a ^ k * x = 0) : a * x = 0 :=
-  IsNilpotent.eq_zero ⟨k + 1, by
-    calc (a * x) ^ (k + 1) = a ^ k * x * (a * x ^ k) := by ring
-      _ = 0 := by rw [h, zero_mul]⟩
-
-/-- A generalized eigenvector of a diagonal operator over a *reduced* ring is an eigenvector.
-
-This is Mathlib's `Matrix.maxGenEigenspace_toLin_diagonal_eq_eigenspace` with `[IsDomain R]`
-weakened to `[IsReduced R]`, which is the sharp hypothesis: coordinatewise a generalized
-eigenvector satisfies `(d j - μ) ^ k * x j = 0`, and reducedness is exactly what turns that into
-`(d j - μ) * x j = 0`. It is stated here only to serve
-`TauCeti.rootSpace_diagonalCartan_eq_weightSpace`, and belongs upstream. -/
-private theorem maxGenEigenspace_toLin_diagonal_eq_eigenspace_of_isReduced [IsReduced R]
-    {ι M : Type*} [Fintype ι] [DecidableEq ι] [AddCommGroup M] [Module R M] (d : ι → R)
-    (b : Module.Basis ι R M) (μ : R) :
-    Module.End.maxGenEigenspace (toLin b b (diagonal d)) μ
-      = Module.End.eigenspace (toLin b b (diagonal d)) μ := by
-  refine le_antisymm (fun x hx => ?_) Module.End.eigenspace_le_maxGenEigenspace
-  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).mp hx
-  replace hk (j : ι) : b.repr x j * d j = μ * b.repr x j := by
-    have aux : toLin b b (diagonal d) - μ • 1 = toLin b b (diagonal (d - μ • 1)) := by
-      rw [Pi.sub_def, ← diagonal_sub]; simp [Module.End.one_eq_id]
-    rw [aux, ← toLin_pow, diagonal_pow, toLin_apply_eq_zero_iff] at hk
-    have := mul_eq_zero_of_pow_mul_eq_zero (a := d j - μ) (x := b.repr x j)
-      (by simpa [mulVec_diagonal] using hk j)
-    linear_combination this
-  have aux (j : ι) : (b.repr x j * d j) • b j = μ • (b.repr x j • b j) := by
-    rw [smul_smul, hk j]
-  simp [toLin_apply, mulVec_eq_sum, diagonal_apply, aux, ← Finset.smul_sum]
 
 /-- **Over a reduced ring the weight spaces of `gl n R` are honest simultaneous eigenspaces**, not
 merely generalized ones: the diagonal Cartan subalgebra acts diagonally on the matrix units, so no

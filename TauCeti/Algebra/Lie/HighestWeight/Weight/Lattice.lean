@@ -31,7 +31,8 @@ with no order none of this can be said about the values in `K` at all.
 
 * `TauCeti.isDominantIntegral_weylVector` and `TauCeti.weylVector_mem_integralWeightLattice`: the
   Weyl vector `ρ` is a dominant integral weight, and so lies in the integral weight lattice.
-* `TauCeti.coweightPairing_weylVector`: `⟨ρ, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, as an integer.
+* `TauCeti.coweightPairing_weylVector`: `⟨ρ, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, as an integer,
+  and `TauCeti.coweightPairing_weylVector_ne_zero`: `⟨ρ, α^∨⟩ ≠ 0` for every root `α`.
 * `TauCeti.coweightPairing_add_weylVector`: the `ρ`-shift raises every simple coroot pairing by
   one.
 * `TauCeti.isDominantIntegral_iff_isIntegralWeight_and_forall_coweightPairing_nonneg`: a weight
@@ -80,6 +81,16 @@ theorem coweightPairing_weylVector {i : H.root} (hi : i ∈ b.support) :
     coweightPairing (weylVector (IsKilling.rootSystem H) b) i = 1 :=
   coweightPairing_eq_of_apply_coroot_eq_intCast <| by
     rw [← rootSystem_coroot'_apply, coroot'_weylVector (IsKilling.rootSystem H) b hi, Int.cast_one]
+
+/-- **The Weyl vector pairs to a nonzero integer with every coroot**, simple or not: the pairing
+is the height of the coroot (`TauCeti.coroot'_weylVector_eq_height_flip`). These are the
+denominators of the Weyl dimension formula. -/
+theorem coweightPairing_weylVector_ne_zero (i : H.root) :
+    coweightPairing (weylVector (IsKilling.rootSystem H) b) i ≠ 0 := by
+  have h := coroot'_weylVector_ne_zero (IsKilling.rootSystem H) b i
+  rw [rootSystem_coroot'_apply,
+    ← intCast_coweightPairing isDominantIntegral_weylVector.isIntegralWeight] at h
+  exact_mod_cast h
 
 /-- **The `ρ`-shift raises every simple coroot pairing by one**, as an identity of integers. -/
 @[simp]

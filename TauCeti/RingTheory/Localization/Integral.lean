@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Localization.Integral
 # Integral closures of localizations
 
 If `Rₘ` is a localization of `R` at a submonoid `M`, and `S`, `Sₘ` are integral closures of `R`,
-`Rₘ` in the same field `L`, then `Sₘ` is the localization of `S` at the image of `M`.
+`Rₘ` in the same commutative ring `L`, then `Sₘ` is the localization of `S` at the image of `M`.
 
 Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebra
 `integralClosure R L`; the version here applies to arbitrary types satisfying
@@ -30,18 +30,19 @@ namespace TauCeti
 universe uR uRm uS uSm uL
 
 variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm} {L : Type uL}
-variable [CommRing R] [CommRing Rₘ] [CommRing S] [CommRing Sₘ] [Field L]
+variable [CommRing R] [CommRing Rₘ] [CommSemiring S] [CommSemiring Sₘ] [CommRing L]
 variable {M : Submonoid R}
-variable [Algebra R Rₘ] [Algebra R S] [Algebra R Sₘ] [Algebra R L]
-variable [Algebra Rₘ Sₘ] [Algebra Rₘ L] [Algebra S Sₘ] [Algebra S L] [Algebra Sₘ L]
-variable [IsScalarTower R Rₘ Sₘ] [IsScalarTower R Rₘ L] [IsScalarTower R S Sₘ]
-variable [IsScalarTower R S L] [IsScalarTower S Sₘ L]
+variable [Algebra R Rₘ] [Algebra R S] [Algebra R L]
+variable [Algebra Rₘ L] [Algebra S Sₘ] [Algebra S L] [Algebra Sₘ L]
+variable [IsScalarTower R Rₘ L] [IsScalarTower R S L] [IsScalarTower S Sₘ L]
 variable [IsIntegralClosure S R L] [IsIntegralClosure Sₘ Rₘ L]
 variable [IsLocalization M Rₘ]
 
 include Rₘ L M in
-/-- If `Rₘ` is a localization of `R`, then an integral closure of `Rₘ` in a field `L`
+/-- If `Rₘ` is a localization of `R`, then an integral closure of `Rₘ` in a commutative ring `L`
 is the corresponding localization of an integral closure of `R` in `L`.
+The maps `R → Rₘ → L`, `R → S → L`, and `S → Sₘ → L` must agree with the direct maps
+to `L`.
 
 Unlike `IsLocalization.integralClosure`, this applies when the original integral closure is an
 arbitrary type satisfying `IsIntegralClosure`, rather than the literal `integralClosure R L`. -/
@@ -49,9 +50,15 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
     IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ := by
   refine ⟨⟨?_, ?_, ?_⟩⟩
   · rintro ⟨_, m, hm, rfl⟩
-    rw [← IsScalarTower.algebraMap_apply R S Sₘ,
-      IsScalarTower.algebraMap_apply R Rₘ Sₘ]
-    exact (IsLocalization.map_units Rₘ ⟨m, hm⟩).map (algebraMap Rₘ Sₘ)
+    -- The inverse in `Rₘ` maps to an integral element of `L`, hence lifts to `Sₘ`.
+    obtain ⟨z, hz⟩ := isUnit_iff_exists_inv.mp (IsLocalization.map_units Rₘ ⟨m, hm⟩)
+    obtain ⟨s, hs⟩ := (IsIntegralClosure.isIntegral_iff (A := Sₘ) (R := Rₘ)).mp
+      (isIntegral_algebraMap (A := L) (x := z))
+    apply isUnit_iff_exists_inv.mpr
+    refine ⟨s, IsIntegralClosure.algebraMap_injective Sₘ Rₘ L ?_⟩
+    simpa only [map_mul, map_one, ← IsScalarTower.algebraMap_apply S Sₘ L,
+      ← IsScalarTower.algebraMap_apply R S L, ← IsScalarTower.algebraMap_apply R Rₘ L, hs]
+      using congrArg (algebraMap Rₘ L) hz
   · intro y
     obtain ⟨m, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
       (R := R) (Rₘ := Rₘ) M (algebraMap Sₘ L y)

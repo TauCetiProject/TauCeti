@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
 # The `n`-th power subgroup of a local field away from the residue characteristic
@@ -24,6 +25,10 @@ The proof exhibits an explicit open subgroup inside the range: every principal u
 the unit filtration onto itself, by Hensel's lemma applied to `X ^ n - u` at the approximate root
 `1`, whose derivative `n` is a unit there. Openness does not follow from any finiteness of the
 quotient `Kˣ ⧸ (Kˣ)ⁿ`: a subgroup of finite index in a topological group need not be open.
+
+Since the principal units are exactly the units of `𝒪[K]` that reduce to `1`, it follows that a
+unit of `𝒪[K]` is an `n`-th power in `K` precisely when its residue is an `n`-th power in
+`𝓀[K]`. At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square.
 
 As a consequence, a subgroup of `Kˣ` is open as soon as the exponent (for instance, the index) of
 the quotient by it is invertible in `𝒪[K]`, since it then contains the power subgroup attached to
@@ -44,6 +49,9 @@ when `2` is a unit of `𝒪[K]`.
   `U(K,i+1)` onto itself.
 * `TauCeti.unitFiltration_one_le_range_powMonoidHom_of_isUnit`: every principal unit is an
   `n`-th power, `U(K,1) ≤ (Kˣ)ⁿ`.
+* `TauCeti.unitsMap_subtype_mem_range_powMonoidHom_iff` and
+  `TauCeti.isSquare_unitsMap_subtype_iff`: a unit of `𝒪[K]` is an `n`-th power, respectively a
+  square, in `K` exactly when its residue is one in `𝓀[K]`.
 * `TauCeti.isOpen_range_powMonoidHom_of_isUnit` and
   `TauCeti.isClosed_range_powMonoidHom_of_isUnit`: the power subgroup is open and closed.
 * `TauCeti.isOpen_of_isUnit_exponent` and `TauCeti.isOpen_of_isUnit_index`: a subgroup of `Kˣ`
@@ -109,6 +117,76 @@ theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUni
     unitFiltration K 1 ≤ (powMonoidHom n : Kˣ →* Kˣ).range :=
   map_powMonoidHom_unitFiltration_succ_of_isUnit hn 0 ▸ Subgroup.map_le_range _ _
 
+/-- **`n`-th powers away from the residue characteristic are detected in the residue field.**
+For `n` invertible in `𝒪[K]`, a unit of `𝒪[K]` is an `n`-th power in `K` exactly when its residue
+is an `n`-th power in `𝓀[K]`. -/
+theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
+    (u : 𝒪[K]ˣ) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ (powMonoidHom n : Kˣ →* Kˣ).range ↔
+      Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u ∈
+        (powMonoidHom n : 𝓀[K]ˣ →* 𝓀[K]ˣ).range := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have hinj : Function.Injective (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)) :=
+    Units.map_injective Subtype.val_injective
+  have hmem : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 0 :=
+    (mem_unitFiltration_zero _).mpr
+      ((Valuation.integer.integers (valuation K)).valuation_unit u)
+  constructor
+  · rintro ⟨z, hz⟩
+    rw [powMonoidHom_apply] at hz
+    -- The value group `Multiplicative ℤ` is torsion-free, so `z` itself has valuation zero.
+    have hz0 : z ∈ unitFiltration K 0 := by
+      rw [← ker_normalizedValuation, MonoidHom.mem_ker]
+      have hpow : normalizedValuation K z ^ n = 1 := by
+        rw [← map_pow]
+        exact MonoidHom.mem_ker.mp ((ker_normalizedValuation K).ge (hz ▸ hmem))
+      have htoAdd := congrArg Multiplicative.toAdd hpow
+      rw [toAdd_pow, toAdd_one] at htoAdd
+      simpa [hn0] using htoAdd
+    refine ⟨Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 0 ⟨z, hz0⟩),
+      ?_⟩
+    rw [powMonoidHom_apply, ← map_pow]
+    refine congrArg _ (hinj ?_)
+    rw [map_pow, unitsMap_subtype_unitFiltrationToIntegerUnits]
+    exact hz
+  · rintro ⟨α, hα⟩
+    rw [powMonoidHom_apply] at hα
+    have hp : (α ^ n, (integerUnitsEquivProd u).2) = integerUnitsEquivProd u :=
+      Prod.ext (hα.trans (fst_integerUnitsEquivProd u).symm) rfl
+    have hu : integerUnitsProdHom (α ^ n, (integerUnitsEquivProd u).2) = u := by
+      rw [← integerUnitsEquivProd_symm_apply]
+      exact (congrArg (integerUnitsEquivProd (K := K)).symm hp).trans
+        ((integerUnitsEquivProd (K := K)).symm_apply_apply u)
+    obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
+      (integerUnitsEquivProd u).2.2
+    rw [powMonoidHom_apply] at hz
+    have hpow : TauCeti.teichmuller 𝒪[K] α ^ n =
+        TauCeti.teichmuller 𝒪[K] (α ^ n) :=
+      (map_pow (TauCeti.teichmuller 𝒪[K]) α n).symm
+    have hu' : TauCeti.teichmuller 𝒪[K] (α ^ n) *
+        unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 = u := by
+      calc
+        _ = integerUnitsProdHom (K := K) (α ^ n, (integerUnitsEquivProd u).2) :=
+          (integerUnitsProdHom_apply (K := K) _).symm
+        _ = u := hu
+    refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
+      (TauCeti.teichmuller 𝒪[K] α) * z, ?_⟩
+    rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
+      ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
+      hpow, hu']
+
+/-- Away from residue characteristic two, a unit of `𝒪[K]` is a square in `K` exactly when its
+residue is a square in `𝓀[K]`. -/
+@[simp]
+theorem isSquare_unitsMap_subtype_iff (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ) :
+    IsSquare (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) ↔
+      IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
+  have h2' : IsUnit ((2 : ℕ) : 𝒪[K]) := by simpa using h2
+  have h := unitsMap_subtype_mem_range_powMonoidHom_iff h2' u
+  simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm] using h
+
 /-- **The power subgroup is open away from the residue characteristic.** For `n` invertible in
 `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers is open in `Kˣ`. -/
 theorem isOpen_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -170,7 +248,9 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
-  have : Finite μ := .of_equiv _ (rootsOfUnityFieldEquivResidueFieldUnits K).symm.toEquiv
+  have : Finite μ := .of_equiv _
+    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      𝒪[K] K).symm.toEquiv
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
@@ -284,8 +364,7 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
 theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = 4 := by
-  have h2K : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
   have hchar : ringChar K ≠ 2 := fun h ↦ h2K (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
   rw [card_powerClasses_of_isUnit (by exact_mod_cast h2),
     (IsPrimitiveRoot.neg_one (ringChar K) hchar).card_rootsOfUnity]

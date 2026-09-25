@@ -35,6 +35,8 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
   equivalence is the image measure weighted by the transported weight.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
+* `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
+  measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
@@ -97,6 +99,18 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
       Set.indicator_of_mem hzq, hz]
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
+
+/-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
+right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
+`x ↦ f (x - y)`. This is how the location parameter of a location family on the line moves under
+translation. -/
+@[simp]
+theorem map_add_right_withDensity {G : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd G]
+    (μ : Measure G) [μ.IsAddRightInvariant] (f : G → ℝ≥0∞) (y : G) :
+    (μ.withDensity f).map (· + y) = μ.withDensity fun x => f (x - y) := by
+  rw [← MeasurableEquiv.coe_addRight y, MeasurableEquiv.map_withDensity]
+  simp only [MeasurableEquiv.coe_addRight, MeasurableEquiv.symm_addRight, map_add_right_eq_self,
+    sub_eq_add_neg]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E]

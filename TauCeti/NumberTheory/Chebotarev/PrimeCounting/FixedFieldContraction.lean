@@ -52,6 +52,11 @@ what remains, and discarding the relative primes of higher residue degree or abo
 * `NumberField.Chebotarev.frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO`: the relative
   Frobenius `ψ` of `sigma` over `L ^ <sigma>` is the fixed-field multiplicity times
   `frobeniusPsi K L C`, up to `o(x)`.
+* `NumberField.Chebotarev.frobeniusPsi_fixedField_asymptotic_iff`: hence the relative Frobenius
+  `ψ` of `sigma` is `δ x + o(x)` exactly when `frobeniusPsi K L C` is `δ x + o(x)` divided by
+  the fixed-field multiplicity.
+* `NumberField.Chebotarev.frobeniusPsi_asymptotic_of_fixedField`: its specialisation at the cyclic
+  value `δ = 1 / orderOf sigma`, which lands the Chebotarev value `#C / #G` over `K`.
 
 ## References
 
@@ -145,6 +150,25 @@ theorem primeTheta_fixedField_eq_mul_frobeniusTheta (C : ConjClasses (L ≃ₐ[K
     frobeniusPrimeSet_subset_compl_ramifiedPrimes _ hp (Finset.mem_coe.mpr h)
   exact ⟨hP, hram, (inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet sigma hP hram).mpr hp⟩
 
+omit [NumberField L] [IsGalois K L] in
+/-- **What the exact contraction discards.** Removing from `S` the primes that avoid `T` and have
+residue degree one over `K` leaves only primes of higher degree together with primes of `T`: a
+prime not in `T` and not of degree one has degree at least two.
+
+Nothing here is about fixed fields: `E` is any number field over `K`. The contraction below
+instantiates it at `L ^ <sigma>`. -/
+private theorem sdiff_setOf_inertiaDeg_eq_one_subset {E : Type*} [Field E] [NumberField E]
+    [Algebra K E] (S T : Set (HeightOneSpectrum (𝓞 E))) :
+    S \ {P | P ∈ S ∧ P ∉ T ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1} ⊆
+      higherDegreePrimes E ∪ (T \ higherDegreePrimes E) := by
+  rw [Set.union_sdiff_self]
+  intro P ⟨hPS, hPA⟩
+  by_cases hPT : P ∈ T
+  · exact Or.inr hPT
+  · exact Or.inl (mem_higherDegreePrimes_of_one_lt_inertiaDeg
+      (lt_of_le_of_ne (Ideal.inertiaDeg_pos P.asIdeal (𝓞 K))
+        fun h ↦ hPA ⟨hPS, hPT, h.symm⟩))
+
 /-- **The weighted contraction of Frobenius `ψ`.** Let `sigma` represent `C` and let
 `E = L ^ <sigma>`.  The relative Frobenius `ψ` of `sigma` in `L / E` is the fixed-field
 multiplicity `#Gal(L/K) / (#C * orderOf sigma)` times `frobeniusPsi K L C`, up to `o(x)`.
@@ -166,14 +190,8 @@ theorem frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO (C : ConjClasses 
   set A : Set (HeightOneSpectrum (𝓞 E)) :=
     {P | P ∈ S ∧ P ∉ T ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1}
   -- The relative primes outside the exact contraction have higher degree or lie in `T`.
-  have hsub : S \ A ⊆ higherDegreePrimes E ∪ (T \ higherDegreePrimes E) := by
-    rw [Set.union_sdiff_self]
-    intro P ⟨hPS, hPA⟩
-    by_cases hPT : P ∈ T
-    · exact Or.inr hPT
-    · exact Or.inl (mem_higherDegreePrimes_of_one_lt_inertiaDeg
-        (lt_of_le_of_ne (Ideal.inertiaDeg_pos P.asIdeal (𝓞 K))
-          fun h ↦ hPA ⟨hPS, hPT, h.symm⟩))
+  have hsub : S \ A ⊆ higherDegreePrimes E ∪ (T \ higherDegreePrimes E) :=
+    sdiff_setOf_inertiaDeg_eq_one_subset S T
   -- `u` is everything discarded on the `E` side; it lies between `0` and the discard majorant.
   set u : ℝ → ℝ := fun x ↦ frobeniusPsi E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x -
     frobeniusTheta E L (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x + primeTheta E (S \ A) x
@@ -201,5 +219,50 @@ theorem frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO (C : ConjClasses 
       Set.union_sdiff_cancel fun P hP ↦ hP.1]
   simp only [u, hsplit]
   ring
+
+/-- **Linear asymptotics of Frobenius `ψ` across the cyclic fixed field.** Let `sigma` represent
+`C` and put `E = L ^ <sigma>`.  The relative Frobenius `ψ` of `sigma.toFixedFieldAlgEquiv` over `E`
+is `δ x + o(x)` exactly when `frobeniusPsi K L C` is `(δ / (#G / (#C * orderOf sigma))) x + o(x)`.
+
+This is the weighted counterpart of `hasDirichletDensity_frobeniusPrimeSet_fixedField_iff`.  It
+carries an asymptotic for the fibre of `sigma` in the **cyclic** extension `L / E` down to the
+class `C` over `K`, and conversely. -/
+theorem frobeniusPsi_fixedField_asymptotic_iff (C : ConjClasses (L ≃ₐ[K] L))
+    (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier) {δ : ℝ} :
+    (fun x : ℝ ↦ frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+        (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - δ * x) =o[atTop] (fun x : ℝ ↦ x) ↔
+      (fun x : ℝ ↦ frobeniusPsi K L C x -
+        δ / ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) * x)
+          =o[atTop] (fun x : ℝ ↦ x) := by
+  set d : ℝ := ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ)
+  have hd : d ≠ 0 := Nat.cast_ne_zero.mpr (C.card_div_card_carrier_mul_orderOf_pos sigma hsigma).ne'
+  have h := frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO C sigma hsigma
+  -- The error over `E` is the `o(x)` contraction error plus `d` times the error over `K`.
+  have key (x : ℝ) : frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+      (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - δ * x =
+        (frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+          (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - d * frobeniusPsi K L C x) +
+        d * (frobeniusPsi K L C x - δ / d * x) := by
+    field_simp
+    ring
+  simp_rw [key]
+  rw [h.add_iff_right, Asymptotics.isLittleO_const_mul_left_iff hd]
+
+/-- **Chebotarev's weighted value, from the cyclic fibre.** If the relative Frobenius `ψ` of
+`sigma` over `E = L ^ <sigma>` is `x / orderOf sigma + o(x)`, the value for a fibre of the cyclic
+extension `L / E` of degree `orderOf sigma`, then `frobeniusPsi K L C x = (#C / #G) x + o(x)`.
+
+This is the weighted counterpart of `hasDirichletDensity_frobeniusPrimeSet_of_fixedField`: it
+reduces the prime-number-theorem form of Chebotarev for an arbitrary class to the cyclic
+extension `L / E`. -/
+theorem frobeniusPsi_asymptotic_of_fixedField (C : ConjClasses (L ≃ₐ[K] L))
+    (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier)
+    (h : (fun x : ℝ ↦ frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+        (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - 1 / orderOf sigma * x)
+          =o[atTop] (fun x : ℝ ↦ x)) :
+    (fun x : ℝ ↦ frobeniusPsi K L C x -
+      (Nat.card C.carrier / Nat.card (L ≃ₐ[K] L) : ℝ) * x) =o[atTop] (fun x : ℝ ↦ x) := by
+  exact C.one_div_orderOf_div_card_div_card_carrier_mul_orderOf (K := ℝ) sigma hsigma ▸
+    (frobeniusPsi_fixedField_asymptotic_iff C sigma hsigma).mp h
 
 end NumberField.Chebotarev

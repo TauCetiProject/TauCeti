@@ -41,7 +41,7 @@ private lemma toSimplicialObjectHomotopy_h_apply (H : SSet.Homotopy f g) {n : �
     (x : X _⦋n⦌) :
     H.toSimplicialObjectHomotopy.h i x =
       (yonedaEquiv.symm x ▷ Δ[1] ≫ H.h).app (op ⦋n + 1⦌)
-        (prodStdSimplex.nonDegenerateEquiv₁ i).1 := rfl
+        (prodStdSimplex₁.nonDegenerateEquiv i).1 := rfl
 
 /-- Simplicial homotopies which fit into a commutative square induce compatible families of
 morphisms `Xₙ ⟶ Y'ₙ₊₁`. -/

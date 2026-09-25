@@ -45,9 +45,9 @@ than excluding it.
 
 ## Implementation notes
 
-Everything is stated for `Quaternion R = ℍ[R]` rather than for Mathlib's general
-`QuaternionAlgebra R c₁ c₂ c₃`. That is not a missed generalization: the centre genuinely depends on
-the structure constants, and the general algebra need not be central even over `ℝ`. For instance in
+The Hamilton computation here is for `Quaternion R = ℍ[R]`, with `i² = j² = k² = -1`. The centre
+genuinely depends on the structure constants, and the general algebra need not be central even over
+`ℝ`. For instance in
 `ℍ[ℝ, 0, 0, 0]` the products of `k` with each imaginary unit all vanish (`i * k = k * i = 0`,
 `j * k = k * j = 0` and `k * k = 0`), so `k` is a central element outside the image of `ℝ`; the
 other products of imaginary units are not all zero there, since `i * j = k` and `j * i = -k`.

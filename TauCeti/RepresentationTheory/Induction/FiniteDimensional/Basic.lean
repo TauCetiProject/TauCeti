@@ -135,18 +135,23 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
     rw [rightCosetFactor_out]
     simp
 
+-- `simp` reduces the carriers of the `abbrev`s `Rep.coind` and `Rep.ind` in type arguments (of a
+-- coercion, or of `Module.finrank`) before it looks a term up, so the lemmas evaluating the coset
+-- model of coinduction, and `Rep.finrank_ind`, state their left-hand sides through `dsimp% only`,
+-- as in #8315.
 /-- The coset model evaluates a coinduced function at the chosen representative. -/
 @[simp]
 theorem coindSubtypeEquivPi_apply (A : Rep.{w} k S)
     (f : Rep.coind S.subtype A) (q : Quotient (QuotientGroup.rightRel S)) :
-    coindSubtypeEquivPi A f q = f.1 q.out := by
+    (dsimp% only (coindSubtypeEquivPi A f q)) = f.1 q.out := by
   rw [coindSubtypeEquivPi]
   rfl
 
 /-- The inverse coset model extends a value from each representative by `S`-equivariance. -/
 @[simp]
 theorem coindSubtypeEquivPi_symm_apply (A : Rep.{w} k S)
-    (x : Quotient (QuotientGroup.rightRel S) → A) (g : G) : ((coindSubtypeEquivPi A).symm x).1 g =
+    (x : Quotient (QuotientGroup.rightRel S) → A) (g : G) :
+    (dsimp% only (((coindSubtypeEquivPi A).symm x).1 g)) =
       A.ρ (rightCosetFactor (S := S) g) (x (Quotient.mk'' g)) := by
   rw [coindSubtypeEquivPi]
   rfl
@@ -248,10 +253,14 @@ noncomputable instance finiteDimensional_ind [S.FiniteIndex] (A : Rep.{max w u} 
   exact (indSubtypeEquivPi A).symm.finiteDimensional
 
 /-- The dimension of induction from a finite-index subgroup is the index times the original
-dimension. -/
-@[simp]
+dimension.
+
+Not a `simp` lemma: `A` lives in the universe `max w u`, and when `simp` unifies the left-hand side
+with a goal it cannot recover `w` from that universe, so in a universe-polymorphic context the lemma
+fires only with its universes given, as `simp [finrank_ind.{u, v, w}]`. The left-hand side is still
+stated through `dsimp% only`, so that `simp [finrank_ind]` fires when the universes are concrete. -/
 theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k A] :
-    Module.finrank k (Rep.ind S.subtype A) = S.index * Module.finrank k A := by
+    (dsimp% only (Module.finrank k (Rep.ind S.subtype A))) = S.index * Module.finrank k A := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   let := S.fintypeQuotientOfFiniteIndex
   let : Fintype (Quotient (QuotientGroup.rightRel S)) :=
@@ -303,20 +312,6 @@ noncomputable def indFDRepForgetIso {k G : Type u} [Field k] [Group G]
     (forget₂ (FDRep k G) (Rep k G)).obj (indFDRep A) ≅
       Rep.ind S.subtype ((forget₂ (FDRep k S) (Rep k S)).obj A) :=
   Rep.mkIso (indFDRepForgetEquiv A)
-
-/-- The hom of the categorical comparison applies its underlying equivariant equivalence. -/
-private theorem indFDRepForgetIso_hom_hom_apply {k G : Type u} [Field k] [Group G]
-    {S : Subgroup G} [S.FiniteIndex] (A : FDRep k S)
-    (x : (forget₂ (FDRep k G) (Rep k G)).obj (indFDRep A)) :
-    (Rep.Hom.hom (indFDRepForgetIso A).hom) x = indFDRepForgetEquiv A x :=
-  rfl
-
-/-- The inverse of the categorical comparison applies the inverse equivariant equivalence. -/
-private theorem indFDRepForgetIso_inv_hom_apply {k G : Type u} [Field k] [Group G]
-    {S : Subgroup G} [S.FiniteIndex] (A : FDRep k S)
-    (x : Rep.ind S.subtype ((forget₂ (FDRep k S) (Rep k S)).obj A)) :
-    (Rep.Hom.hom (indFDRepForgetIso A).inv) x = (indFDRepForgetEquiv A).symm x :=
-  rfl
 
 /-- The conjugated induced intertwiner between the forgotten small-carrier models. -/
 private noncomputable def indFDRepMapUnderlying {k : Type u} {G : Type v} [Field k]
@@ -380,7 +375,11 @@ theorem forget₂_map_indFDRepMap {k G : Type u} [Field k] [Group G] {S : Subgro
     Representation.IntertwiningMap.comp_toLinearMap, LinearMap.coe_comp,
     Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply,
     forget₂_map_indFDRepMap_apply, Rep.indFunctor_map]
-  rw [indFDRepForgetIso_hom_hom_apply, indFDRepForgetIso_inv_hom_apply]
+  -- `Rep.mkIso_hom_hom_apply` and `Rep.mkIso_inv_hom_apply` state the two remaining steps, but
+  -- `rw`/`simp` cannot match them: as in `indFDRepMapUnderlying_hom_apply`, the goal's `Semiring k`
+  -- comes from `Field` while the lemmas' comes from `CommRing`, so `erw` matches up to instances.
+  unfold indFDRepForgetIso
+  erw [Rep.mkIso_hom_hom_apply, Rep.mkIso_inv_hom_apply]
 
 /-- **Induction of intertwiners from a finite-index subgroup is additive**,
 `indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g`.  This is what makes `indFDRepFunctor` an

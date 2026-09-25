@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 -- Roadmap source: `TauCetiRoadmap/NumberFieldArithmetic/README.md` @ `ce02686a0c05`, Layer 8.1,
 -- which specifies the predicate below and the sign-recovery statement proved from
@@ -46,7 +46,7 @@ list — and nothing here defines or approximates it.
 * `TauCeti.NumberField.HasLMFDBIntrinsicLabel.sub_div_two_eq_nrComplexPlaces`: `(d - r) / 2`
   counts the complex places, read off a full label. The general statement about `K` alone is
   `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`, in
-  `TauCeti/NumberTheory/NumberField/InfinitePlace.lean`.
+  `TauCeti/NumberTheory/NumberField/InfinitePlace/Basic.lean`.
 * `TauCeti.NumberField.HasLMFDBIntrinsicLabel.discr_eq`: **sign recovery**,
   `discr K = (-1) ^ ((d - r) / 2) * D`.
 

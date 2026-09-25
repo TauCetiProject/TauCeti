@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
--- Private: `Subspace.dual_finrank_eq`, `Module.finrank_prod` and
--- `LinearMap.finrank_le_finrank_of_injective` occur only inside the proofs of the dimension
--- count; none is named by an exported statement.
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -17,14 +15,15 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 
 This file packages the decomposition used to construct spinor modules: two isotropic subspaces
 in a left- and right-nondegenerate polar pairing and an orthogonal remainder embedded in the
-scalar line. It also records the two elementary consequences that every consumer needs: the polar
-form vanishes identically on each isotropic summand, and a basis of the first summand has a
-Kronecker-dual family of vectors in the second.
+scalar line. It also records two elementary consequences: the polar form vanishes identically on
+each isotropic summand, and a basis of the first summand has a Kronecker-dual family of vectors in
+the second.
 
-Over a field the decomposition also counts dimensions: the two isotropic summands are dual to each
-other, so equidimensional, and the remainder embeds in the scalar line, so is at most a line.
-Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity of `dim V` decides which,
-giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension `2l + 1` (type `Bₗ`).
+The decomposition also counts dimensions. Over any commutative ring the remainder embeds in the
+scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to
+each other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the
+parity of `dim V` decides which, giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in
+dimension `2l + 1` (type `Bₗ`).
 
 ## Main definitions
 
@@ -47,25 +46,25 @@ giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension `2l + 1
   orthogonal to a dual vector.
 * `TauCeti.SpinPolarizationData.dualBasis_apply`: the dual basis has `dualVector` as its underlying
   family.
-* `TauCeti.SpinPolarizationData.finrank_eq_two_mul_finrank_W_add_finrank_line` and
-  `TauCeti.SpinPolarizationData.finrank_line_le_one` give the dimension bookkeeping of a
-  finite-dimensional polarization.
-* `TauCeti.SpinPolarizationData.line_eq_bot_of_even_finrank` and
-  `TauCeti.SpinPolarizationData.finrank_W_of_finrank_eq_two_mul` are its even-dimensional
-  consequences.
-* `TauCeti.SpinPolarizationData.finrank_W_of_finrank_eq_two_mul_add_one` and
-  `TauCeti.SpinPolarizationData.finrank_line_eq_one_of_finrank_eq_two_mul_add_one` are its
-  odd-dimensional consequences: the isotropic summand again has dimension `l`, and the remainder
-  is exactly a line.
+* `TauCeti.SpinPolarizationData.finrank_line_le_one`: over any commutative ring the remainder is
+  at most a line.
+* `TauCeti.SpinPolarizationData.finrank_W'_eq_finrank_W` and
+  `TauCeti.SpinPolarizationData.finrank_eq_two_mul_finrank_W_add_finrank_line`: over a field the
+  isotropic summands are equidimensional, and a finite-dimensional polarized space has dimension
+  `2 · dim W + dim line`.
+* `TauCeti.SpinPolarizationData.line_eq_bot_of_even_finrank`,
+  `TauCeti.SpinPolarizationData.even_finrank_of_line_eq_bot` and
+  `TauCeti.SpinPolarizationData.finrank_W_eq_of_finrank_eq_two_mul`: in even dimension the remainder
+  vanishes, and conversely, and the isotropic summand has half the dimension.
+* `TauCeti.SpinPolarizationData.finrank_W_eq_of_finrank_eq_two_mul_add_one` and
+  `TauCeti.SpinPolarizationData.finrank_line_eq_one_of_finrank_eq_two_mul_add_one`: in dimension
+  `2l + 1` the isotropic summand again has dimension `l`, and the remainder is exactly a line.
+* `TauCeti.SpinPolarizationData.lineCoordinate_surjective_of_ne_bot`: over a field the coordinate
+  of a nonzero remainder takes every scalar value.
 * `TauCeti.SpinPolarizationData.nondegenerate` and
   `TauCeti.SpinPolarizationData.nondegenerate_of_line_eq_bot`: a polarized quadratic form is
   nondegenerate, as soon as `2` is a regular scalar of a reduced ring in general and
   unconditionally when there is no remainder.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory /
-  Spin Representations, Layer 4, "The spin module".
 -/
 
 public section
@@ -74,7 +73,11 @@ namespace TauCeti
 
 universe u v
 
-/-- The decomposition data used by the exterior model of a spin representation. -/
+/-- A **polarization** of a quadratic space `(V, Q)`: a decomposition `V = W ⊕ W' ⊕ line` into two
+isotropic submodules, paired by the polar form so that `W'` is identified with the dual of `W` and
+no nonzero vector of `W` pairs to zero with all of `W'`, and an orthogonal remainder embedded in
+the scalar line by a coordinate whose square is `Q`. It is the data from which the
+exterior model `⋀·W` of a spin representation is built. -/
 @[ext]
 structure SpinPolarizationData {K : Type u} [CommRing K] {V : Type v}
     [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) where
@@ -166,8 +169,7 @@ variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
 
 /-! ### The polar form vanishes on each isotropic summand -/
 
-/-- The polar form vanishes on the first isotropic summand of a polarization: that summand is
-isotropic and closed under addition. -/
+/-- The polar form vanishes on the first isotropic summand of a polarization. -/
 theorem polar_W_eq_zero (x y : P.W) : QuadraticMap.polar Q (x : V) (y : V) = 0 := by
   have h : Q ((x : V) + (y : V)) = 0 := by simpa using P.isotropic_W (x + y)
   simp [QuadraticMap.polar, h]
@@ -201,6 +203,8 @@ noncomputable def dualVector (i : ι) : P.W' :=
   P.pairingEquiv.symm (b.coord i)
 
 omit [DecidableEq ι] in
+/-- The dual vector of the `i`-th basis vector pairs with `W` as the `i`-th coordinate
+functional. -/
 @[simp]
 theorem pairingEquiv_dualVector (i : ι) : P.pairingEquiv (P.dualVector b i) = b.coord i :=
   P.pairingEquiv.apply_symm_apply _
@@ -213,6 +217,7 @@ variable [Finite ι]
 noncomputable def dualBasis : Module.Basis ι K P.W' :=
   b.dualBasis.map P.pairingEquiv.symm
 
+/-- The dual basis consists of the dual vectors. -/
 @[simp]
 theorem dualBasis_apply (i : ι) : P.dualBasis b i = P.dualVector b i := by
   rw [dualBasis, Module.Basis.map_apply]
@@ -247,9 +252,7 @@ theorem isOrtho_basis_dualVector {i j : ι} (hij : i ≠ j) :
 
 end Isotropic
 
-/-- **A vector orthogonal to the whole space lies in the orthogonal remainder.** The polar pairing
-separates each isotropic summand from the other, and the remainder is orthogonal to both, so the
-two isotropic coordinates of such a vector vanish and only its remainder coordinate survives. -/
+/-- **A vector orthogonal to the whole space lies in the orthogonal remainder.** -/
 private theorem mem_line_of_polarBilin_eq_zero {K : Type u} [CommRing K] {V : Type v}
     [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     (P : SpinPolarizationData Q) {v : V} (hv : Q.polarBilin v = 0) : v ∈ P.line := by
@@ -278,36 +281,24 @@ private theorem mem_line_of_polarBilin_eq_zero {K : Type u} [CommRing K] {V : Ty
   rw [← hdecomp, hx, hy]
   simp
 
-/-- A quadratic form whose polar form has trivial kernel is nondegenerate. -/
-private theorem nondegenerate_of_ker_polarBilin_eq_bot {K : Type u} [CommRing K] {V : Type v}
-    [AddCommGroup V] [Module K V] {Q : QuadraticForm K V} (hker : Q.polarBilin.ker = ⊥) :
-    Q.Nondegenerate := by
-  refine ⟨le_antisymm (Q.radical_le_ker_polarBilin.trans hker.le) bot_le, ?_⟩
-  rw [hker]
-  nontriviality K
-  simp only [rank_subsingleton', zero_le]
-
 /-- A polarization without an orthogonal remainder has nondegenerate quadratic form. -/
 theorem nondegenerate_of_line_eq_bot {K : Type u} [CommRing K] {V : Type v}
     [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     (P : SpinPolarizationData Q) (hline : P.line = ⊥) : Q.Nondegenerate := by
-  refine nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.ker_eq_bot'.2 fun v hv => ?_)
+  refine QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot
+    (LinearMap.ker_eq_bot'.2 fun v hv => ?_)
   simpa [hline] using P.mem_line_of_polarBilin_eq_zero hv
 
-/-- **A polarization has nondegenerate quadratic form**, whatever its orthogonal remainder, as soon
-as `2` is a regular scalar and the base ring is reduced.
-
-A vector orthogonal to everything lies in the remainder, where the polar form is `2 Q` and `Q` is
-the square of the injective coordinate `SpinPolarizationData.lineCoordinate`; both hypotheses are
-needed to run that back — cancelling the `2` only asks it to be regular, not invertible, and the
-square only has to vanish for a square-zero scalar, which is all a reduced ring is asked for. When
-the remainder vanishes the same conclusion is available with neither hypothesis, from the separate
-`TauCeti.SpinPolarizationData.nondegenerate_of_line_eq_bot`; this theorem is what makes
-nondegeneracy redundant as a hypothesis alongside polarization data in general. -/
+/-- **A polarization has nondegenerate quadratic form**, whatever its orthogonal remainder, over a
+reduced ring in which `2` is a regular scalar. So over such a ring nondegeneracy never needs to be
+assumed alongside polarization data. When the remainder vanishes,
+`TauCeti.SpinPolarizationData.nondegenerate_of_line_eq_bot` gives the same conclusion with neither
+hypothesis. -/
 theorem nondegenerate {K : Type u} [CommRing K] [IsReduced K]
     {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     (P : SpinPolarizationData Q) (h2 : IsSMulRegular K (2 : K)) : Q.Nondegenerate := by
-  refine nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.ker_eq_bot'.2 fun v hv => ?_)
+  refine QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot
+    (LinearMap.ker_eq_bot'.2 fun v hv => ?_)
   let z : P.line := ⟨v, P.mem_line_of_polarBilin_eq_zero hv⟩
   have hQz : Q v = 0 := by
     refine h2.right_eq_zero_of_smul ?_
@@ -322,6 +313,16 @@ theorem nondegenerate {K : Type u} [CommRing K] [IsReduced K]
   exact congrArg Subtype.val (P.lineCoordinate_injective (by simpa using hcoord) :
     z = (0 : P.line))
 
+/-- **The orthogonal remainder of a polarization is at most a line**, over any commutative
+ring. -/
+theorem finrank_line_le_one {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V]
+    [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
+    Module.finrank K P.line ≤ 1 := by
+  nontriviality K
+  have h := LinearMap.finrank_le_finrank_of_injective (f := P.lineCoordinate)
+    P.lineCoordinate_injective
+  simpa using h
+
 section Dimension
 
 open Module
@@ -331,23 +332,22 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 /-! ### The dimensions of the three summands
 
-A polarization is a decomposition `V = W ⊕ W' ⊕ L` in which the polar form pairs `W` with `W'`
-perfectly and `L` sits inside the scalar line. The first fact makes the two isotropic summands
-equidimensional and the second bounds the remainder by one dimension, so the dimension of `V`
-determines the dimension of `W` up to the parity of `finrank V`. -/
+A polarization is a decomposition `V = W ⊕ W' ⊕ L` in which the polar form identifies `W'` with
+the dual of `W` and `L` sits inside the scalar line. The first fact makes the two isotropic summands
+equidimensional and the second, `finrank_line_le_one` above, bounds the remainder by one
+dimension, so the dimension of `V` determines the dimension of `W` up to the parity of
+`finrank V`. -/
 
-/-- **The two isotropic summands of a polarization have the same dimension.** The polar form
-identifies the second with the dual of the first, and a space and its dual have the same
-dimension. -/
+/-- **The two isotropic summands of a polarization have the same dimension.** -/
 theorem finrank_W'_eq_finrank_W : finrank K P.W' = finrank K P.W := by
   rw [P.pairingEquiv.finrank_eq, Subspace.dual_finrank_eq]
 
-/-- **The orthogonal remainder of a polarization is at most a line.** Its scalar coordinate
-`SpinPolarizationData.lineCoordinate` is injective into `K`, which is one-dimensional. -/
-theorem finrank_line_le_one : finrank K P.line ≤ 1 := by
-  have h := LinearMap.finrank_le_finrank_of_injective (f := P.lineCoordinate)
-    P.lineCoordinate_injective
-  simpa using h
+/-- **A nonzero orthogonal remainder is coordinatized onto the scalars**: its coordinate takes every
+value in the base field. -/
+theorem lineCoordinate_surjective_of_ne_bot (hline : P.line ≠ ⊥) :
+    Function.Surjective P.lineCoordinate :=
+  LinearMap.surjective fun h0 => hline ((Submodule.eq_bot_iff _).2 fun z hz => by
+    simpa using P.lineCoordinate_injective (a₁ := ⟨z, hz⟩) (a₂ := 0) (by simp [h0]))
 
 variable [FiniteDimensional K V]
 
@@ -359,21 +359,18 @@ theorem finrank_eq_two_mul_finrank_W_add_finrank_line :
   rw [← P.decompositionEquiv.finrank_eq, finrank_prod, finrank_prod, P.finrank_W'_eq_finrank_W]
   ring
 
-/-- **In even dimension a polarization has no remainder.** The remainder is at most a line and
-carries the parity of `finrank V`, so an even-dimensional space forces it to vanish. This is the
-hypothesis under which the exterior parity of `⋀·W` splits the spin representation, in
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`. -/
+/-- **In even dimension a polarization has no remainder.** This is the hypothesis under which the
+exterior parity of `⋀·W` splits the spin representation into its two half-spin
+representations. -/
 theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := by
   obtain ⟨m, hm⟩ := h
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   exact Submodule.finrank_eq_zero.1 (by omega)
 
-/-- **A polarization with no remainder has even dimension.** The two isotropic summands are
-equidimensional, so with the remainder gone the dimension is twice that of `W`. This is the
-converse of `SpinPolarizationData.line_eq_bot_of_even_finrank`, and it is what lets the
-even-dimensional theory be stated with the single hypothesis `P.line = ⊥` that the parity
-splitting of the spinor module needs. -/
+/-- **A polarization with no remainder has even dimension.** This is the converse of
+`SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can be stated
+with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module needs. -/
 theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) := by
   have h := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   rw [hline, finrank_bot] at h
@@ -382,7 +379,7 @@ theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) 
 /-- **In even dimension the isotropic summand has half the dimension.** The isotropic summand `W`
 of a polarization of a `2l`-dimensional space has dimension `l`. This is the type `Dₗ` case, where
 the spinor module `⋀·W` has dimension `2ˡ`. -/
-theorem finrank_W_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
+theorem finrank_W_eq_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
     finrank K P.W = l := by
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
@@ -392,31 +389,20 @@ theorem finrank_W_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
 isotropic summand `W` of a polarization of a `2l + 1`-dimensional space has dimension `l`, the odd
 dimension being taken up by the remainder. This is the type `Bₗ` case, where the spinor module
 `⋀·W` again has dimension `2ˡ` but the parity splitting is not one of representations. -/
-theorem finrank_W_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
+theorem finrank_W_eq_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.W = l := by
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
-/-- **In odd dimension the remainder is exactly a line.** It is at most a line by
-`SpinPolarizationData.finrank_line_le_one`, and the two isotropic summands, being equidimensional,
-take up an even dimension, so an odd-dimensional space leaves the remainder no alternative. It is
-the line spanned by an anisotropic vector, whose action mixes the two exterior parities of the
-spinor module — which is why they are not subrepresentations in the type `Bₗ` case. -/
+/-- **In odd dimension the remainder is exactly a line.** It is spanned by an anisotropic vector,
+whose action mixes the two exterior parities of the spinor module, which is why they are not
+subrepresentations in the type `Bₗ` case. -/
 theorem finrank_line_eq_one_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.line = 1 := by
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
-
-/-- In odd dimension, the coordinate map from the one-dimensional orthogonal remainder to the
-base field is surjective. -/
-theorem lineCoordinate_surjective_of_finrank_eq_two_mul_add_one {l : ℕ}
-    (hV : finrank K V = 2 * l + 1) : Function.Surjective P.lineCoordinate := by
-  apply (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp
-    P.lineCoordinate_injective
-  rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one hV]
-  simp
 
 end Dimension
 

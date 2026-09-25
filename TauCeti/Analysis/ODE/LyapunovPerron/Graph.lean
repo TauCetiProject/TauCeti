@@ -39,6 +39,8 @@ the local stable set, and differentiability and tangency of the graph.
 * `ContinuousLinearMap.lipschitzWith_lyapunovPerronGraphMap`: it is Lipschitz, with a constant
   that tends to `0` with the Lipschitz constant of the nonlinearity;
   `ContinuousLinearMap.norm_lyapunovPerronGraphMap_le` is the resulting cone bound.
+* `ContinuousLinearMap.hasFDerivAt_lyapunovPerronGraphMap_zero`: when the nonlinearity fixes the
+  origin and has derivative zero there, so does the graph map.
 * `ContinuousLinearMap.setOf_lyapunovPerronSolution_zero_eq_image`: the fixed-point set is the
   graph of the graph map over the range of `P`.
 * `ContinuousLinearMap.invOn_add_lyapunovPerronGraphMap` and
@@ -179,6 +181,64 @@ theorem norm_lyapunovPerronGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
   have h := (lipschitzWith_lyapunovPerronGraphMap hs hu hα hN hsmall).dist_le_mul ξ 0
   rwa [lyapunovPerronGraphMap_zero hs hu hα hN hsmall hN0, dist_zero_right, dist_zero_right] at h
 
+/-- **The Lyapunov--Perron graph map is flat at the equilibrium.** If the nonlinearity fixes the
+origin and has derivative zero there, then the graph map also has derivative zero at the origin. -/
+theorem hasFDerivAt_lyapunovPerronGraphMap_zero (hN0 : N 0 = 0)
+    (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
+    HasFDerivAt (lyapunovPerronGraphMap A P N hs hu hα hN hsmall)
+      (0 : X →L[ℝ] X) 0 := by
+  have hα' : (0 : ℝ) < α := by exact_mod_cast hα
+  have hsmall' : 2 * (K : ℝ) * ε < α := by exact_mod_cast hsmall
+  have hNlittle : N =o[nhds 0] fun z : X ↦ z := by
+    simpa only [hN0, sub_zero, zero_apply] using hN'.isLittleO
+  let B : ℝ := (K : ℝ) / (1 - 2 * K * (ε : ℝ) / α) + 1
+  have hbound_nonneg : 0 ≤ (K : ℝ) / (1 - 2 * K * (ε : ℝ) / α) := by
+    exact div_nonneg K.coe_nonneg (sub_nonneg.2 ((div_le_one hα').2 hsmall'.le))
+  have hBpos : 0 < B := by dsimp only [B]; linarith
+  have hbound_lt_B : (K : ℝ) / (1 - 2 * K * (ε : ℝ) / α) < B := by
+    dsimp only [B]
+    linarith
+  have hgraphLittle :
+      lyapunovPerronGraphMap A P N hs hu hα hN hsmall =o[nhds 0] fun z : X ↦ z := by
+    refine Asymptotics.isLittleO_iff.2 fun c hc ↦ ?_
+    let d : ℝ := c * (α : ℝ) / (2 * ((K : ℝ) + 1) * B)
+    have hd : 0 < d := by
+      dsimp only [d]
+      positivity
+    have hcoefficient : 2 * (K : ℝ) * (d * B) / α ≤ c := by
+      have hKden : (0 : ℝ) < (K : ℝ) + 1 := by positivity
+      have heq : 2 * (K : ℝ) * (d * B) / α = c * K / (K + 1) := by
+        dsimp only [d]
+        field_simp
+      rw [heq]
+      apply (div_le_iff₀ hKden).2
+      nlinarith [K.coe_nonneg]
+    obtain ⟨q, hq, hqsub⟩ := Metric.mem_nhds_iff.1 (hNlittle.def hd)
+    filter_upwards [eventually_norm_sub_lt (0 : X) (div_pos hq hBpos)] with ξ hξ
+    simp only [sub_zero] at hξ
+    let γ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ
+    have hγnorm (t : ℝ≥0) : ‖γ t‖ ≤ B * ‖ξ‖ := by
+      exact (norm_lyapunovPerronSolution_le_mul_norm hs hu hα hN hsmall hN0 ξ t).trans
+        (mul_le_mul_of_nonneg_right hbound_lt_B.le (norm_nonneg ξ))
+    have hγsmall (t : ℝ≥0) : ‖γ t‖ < q := by
+      exact (hγnorm t).trans_lt ((lt_div_iff₀' hBpos).1 hξ)
+    have hforcing (s : ℝ) : ‖N (γ s.toNNReal)‖ ≤ d * (B * ‖ξ‖) := by
+      calc
+        ‖N (γ s.toNNReal)‖ ≤ d * ‖γ s.toNNReal‖ :=
+          hqsub (by simpa only [Metric.mem_ball, dist_zero_right] using hγsmall s.toNNReal)
+        _ ≤ d * (B * ‖ξ‖) := mul_le_mul_of_nonneg_left (hγnorm _) hd.le
+    have hintegral := norm_lyapunovPerronIntegral_le hs hu hα hforcing le_rfl
+    calc
+      ‖lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ‖ =
+          ‖lyapunovPerronIntegral A P (fun s ↦ N (γ s.toNNReal)) 0‖ := by
+            rw [lyapunovPerronGraphMap_eq_lyapunovPerronIntegral]
+      _ ≤ 2 * (K : ℝ) * (d * (B * ‖ξ‖)) / α := hintegral
+      _ = (2 * (K : ℝ) * (d * B) / α) * ‖ξ‖ := by ring
+      _ ≤ c * ‖ξ‖ := mul_le_mul_of_nonneg_right hcoefficient (norm_nonneg ξ)
+  apply HasFDerivAt.of_isLittleO
+  simpa only [lyapunovPerronGraphMap_zero hs hu hα hN hsmall hN0, sub_zero, zero_apply] using
+    hgraphLittle
+
 section Graph
 
 variable (hP : IsIdempotentElem P) (hAP : Commute A P)
@@ -195,9 +255,10 @@ theorem invOn_add_lyapunovPerronGraphMap :
     rw [lyapunovPerronGraphMap_map hs hu hα hN hsmall hP,
       ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap]
     exact hx
-  · rintro _ ⟨w, rfl⟩
-    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero,
-      ← mul_apply_eq_comp P P, hP.eq]
+  · intro v hv
+    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero]
+    exact (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr hv)
 
 /-- **The Lyapunov--Perron fixed-point set is a graph over the range of `P`.** When `P` is
 idempotent and commutes with `A`, the fixed points of `ξ ↦ lyapunovPerronSolution ξ 0` are exactly

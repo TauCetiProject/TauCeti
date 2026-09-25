@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight
+import TauCeti.LinearAlgebra.Matrix.Step
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight.Basic
 
 /-!
 # The integral short-root representation of type F4
@@ -90,35 +91,33 @@ private theorem stepMatrix_apply (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) (a
     stepMatrix t c a b = if a = t b then c b else 0 := by
   rw [stepMatrix, Matrix.of_apply]
 
+/-- A matrix built from target and coefficient tables has those tables as step data. -/
+private theorem isStep_stepMatrix (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) :
+    (stepMatrix t c).IsStep t c :=
+  Matrix.isStep_of_apply (stepMatrix_apply t c)
+
 /-- The product of two step matrices is the step matrix of the composite targets and the
 product of the coefficients along the way. -/
 private theorem stepMatrix_mul_stepMatrix (t t' : Fin 26 → Fin 26) (c c' : Fin 26 → ℤ) :
     stepMatrix t c * stepMatrix t' c' = stepMatrix (t ∘ t') fun b => c (t' b) * c' b := by
   ext a b
-  rw [Matrix.mul_apply, stepMatrix_apply, Finset.sum_eq_single (t' b)]
-  · simp only [stepMatrix_apply, Function.comp_apply, ite_true]
-    split_ifs <;> simp
-  · intro l _ hl
-    simp [stepMatrix_apply, hl]
-  · simp
+  rw [((isStep_stepMatrix t c).mul (isStep_stepMatrix t' c')).apply a b, stepMatrix_apply]
 
 /-- A diagonal matrix times a step matrix rescales each column by the diagonal entry at its
 target. -/
 private theorem diagonal_mul_stepMatrix (d : Fin 26 → ℤ) (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) :
     Matrix.diagonal d * stepMatrix t c = stepMatrix t fun b => d (t b) * c b := by
   ext a b
-  rw [Matrix.diagonal_mul, stepMatrix_apply, stepMatrix_apply]
-  split_ifs with h
-  · rw [h]
-  · rw [mul_zero]
+  rw [((Matrix.isStep_diagonal d).mul (isStep_stepMatrix t c)).apply a b, stepMatrix_apply]
+  simp only [Function.comp_apply, id_eq]
 
 /-- A step matrix times a diagonal matrix rescales each column by the diagonal entry at its
 index. -/
 private theorem stepMatrix_mul_diagonal (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) (d : Fin 26 → ℤ) :
     stepMatrix t c * Matrix.diagonal d = stepMatrix t fun b => c b * d b := by
   ext a b
-  rw [Matrix.mul_diagonal, stepMatrix_apply, stepMatrix_apply]
-  split_ifs <;> simp
+  rw [((isStep_stepMatrix t c).mul (Matrix.isStep_diagonal d)).apply a b, stepMatrix_apply]
+  simp only [Function.comp_apply, id_eq]
 
 /-! ## The tables -/
 

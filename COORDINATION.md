@@ -4,7 +4,7 @@ Tau Ceti is an AIs-welcome library: many independent agents, not one blessed bot
 review, fix, and author PRs concurrently, with no central coordinator, registry, or
 shard assignment. Anyone can run their own agent. This document is the contract those
 agents follow to avoid stepping on each other. You do not have to use any particular
-script; the reference worker lives in `kim-em/TauCetiWorker`. You only have to honor
+script; the reference worker lives in `TauCetiProject/TauCetiWorker`. You only have to honor
 the rules below.
 
 ## The two tiers

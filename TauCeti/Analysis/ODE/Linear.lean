@@ -73,6 +73,25 @@ theorem flow_neg (A : X →L[ℝ] X) : (-A).flow = A.flow.reverse := by
 
 end ContinuousLinearMap
 
+namespace ContinuousLinearMap
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+
+/-- Combine an exponential-flow estimate with a comparison of the initial-vector norms,
+enlarging the latter estimate's constant from `M` to `K`. -/
+theorem norm_exp_smul_apply_le_mul_norm_of_le {A : X →L[ℝ] X} {t c M K : ℝ} {w v : X}
+    (hflow : ‖exp (t • A) w‖ ≤ c * ‖w‖) (hop : ‖w‖ ≤ M * ‖v‖)
+    (hc : 0 ≤ c) (hMK : M ≤ K) :
+    ‖exp (t • A) w‖ ≤ K * c * ‖v‖ := by
+  calc
+    ‖exp (t • A) w‖ ≤ c * ‖w‖ := hflow
+    _ ≤ c * (M * ‖v‖) := mul_le_mul_of_nonneg_left hop hc
+    _ = c * M * ‖v‖ := by ring
+    _ ≤ c * K * ‖v‖ := by gcongr
+    _ = K * c * ‖v‖ := by ring
+
+end ContinuousLinearMap
+
 namespace LinearMap.IsSymmetric
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]

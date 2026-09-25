@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
+public import Mathlib.MeasureTheory.Measure.Sub
 import TauCeti.MeasureTheory.Measure.Coupling.Basic
 
 /-!
@@ -42,12 +44,16 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
   `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
   of measures, which is what mixtures of transport problems use;
+* `TauCeti.IsCoupling.sub_add` — replacing a finite part of a coupling by a measure with the same
+  two marginals keeps the coupling property, which is how a plan is perturbed locally;
 * `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
   two couplings couples the two product measures;
 * `TauCeti.IsCoupling.map_prod` — a coupling run alongside an independent sample, with measurable
   maps applied to both coordinates, couples the two pushed-forward products;
 * `TauCeti.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
   exactly when they have the same total mass, the witness being their normalised product;
+* `TauCeti.isCoupling_sum_map_pi` — pairing the source of each of finitely many independent
+  samples with the target of a permuted one preserves both total marginals;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
@@ -122,27 +128,37 @@ theorem measurePreserving_snd (hπ : IsCoupling π μ ν) :
 
 section Integral
 
-variable {E : Type*} [NormedAddCommGroup E]
+section Composition
+
+variable {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
 
 /-- An integrable function of the first marginal remains integrable after composition with the
 first projection from a coupling. -/
-theorem integrable_comp_fst (hπ : IsCoupling π μ ν) {f : X → E} (hf : Integrable f μ) :
+theorem integrable_comp_fst (hπ : IsCoupling π μ ν) {f : X → ε} (hf : Integrable f μ) :
     Integrable (fun p : X × Y ↦ f p.1) π :=
   hπ.measurePreserving_fst.integrable_comp_of_integrable hf
 
 /-- An integrable function of the second marginal remains integrable after composition with the
 second projection from a coupling. -/
-theorem integrable_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E} (hf : Integrable f ν) :
+theorem integrable_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ε} (hf : Integrable f ν) :
     Integrable (fun p : X × Y ↦ f p.2) π :=
   hπ.measurePreserving_snd.integrable_comp_of_integrable hf
 
+end Composition
+
+section Sum
+
+variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [ContinuousAdd ε]
+
 /-- The sum of two integrable marginal functions is integrable against every coupling. -/
-theorem integrable_add_split (hπ : IsCoupling π μ ν) {f : X → E} {g : Y → E}
+theorem integrable_add_split (hπ : IsCoupling π μ ν) {f : X → ε} {g : Y → ε}
     (hf : Integrable f μ) (hg : Integrable g ν) :
     Integrable (fun p : X × Y ↦ f p.1 + g p.2) π :=
   (hπ.integrable_comp_fst hf).add (hπ.integrable_comp_snd hg)
 
-variable [NormedSpace ℝ E]
+end Sum
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A function of the first coordinate integrates against a coupling as it does against the first
 marginal. -/
@@ -202,6 +218,11 @@ theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCouplin
     IsProbabilityMeasure π :=
   ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
 
+/-- The target of a coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+
 /-- Exchanging the two coordinates of a coupling of `μ` and `ν` gives a coupling of `ν`
 and `μ`. -/
 protected theorem swap (hπ : IsCoupling π μ ν) : IsCoupling (π.map Prod.swap) ν μ where
@@ -244,6 +265,15 @@ protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι →
     IsCoupling (Measure.sum πs) (Measure.sum μs) (Measure.sum νs) where
   fst_eq := (Measure.fst_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).fst_eq))
   snd_eq := (Measure.snd_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).snd_eq))
+
+/-- **Rerouting part of a coupling.** Removing a finite part `κ ≤ π` of a coupling and putting
+back any measure `κ'` with the same two marginals as `κ` gives again a coupling of the same
+pair. -/
+protected theorem sub_add {κ κ' : Measure (X × Y)} [IsFiniteMeasure κ] (hπ : IsCoupling π μ ν)
+    (hκ : κ ≤ π) (hκ' : IsCoupling κ' κ.fst κ.snd) : IsCoupling (π - κ + κ') μ ν := by
+  have h := (IsCoupling.mk rfl rfl : IsCoupling (π - κ) (π - κ).fst (π - κ).snd).add hκ'
+  rwa [← Measure.fst_add, ← Measure.snd_add, Measure.sub_add_cancel_of_le hκ, hπ.fst_eq,
+    hπ.snd_eq] at h
 
 /-- Pushing a coupling forward along a measurable map of the source alone. -/
 protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Measurable f) :
@@ -362,6 +392,34 @@ mass. -/
 theorem exists_isCoupling_iff [IsFiniteMeasure μ] :
     (∃ π : Measure (X × Y), IsCoupling π μ ν) ↔ μ univ = ν univ :=
   ⟨fun ⟨_, hπ⟩ ↦ hπ.measure_univ_eq, fun h ↦ ⟨_, isCoupling_inv_smul_prod h⟩⟩
+
+/-- Draw independent samples `w i ∼ ρ i` of pairs and pair the source of `w i` with the target of
+`w (σ i)`. Summed over `i`, the laws of these permuted pairs have the same two marginals as
+`∑ i, ρ i`. -/
+theorem isCoupling_sum_map_pi {n : ℕ} (ρ : Fin n → Measure (X × Y))
+    [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n)) :
+    IsCoupling (Measure.sum fun i ↦ (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2))
+      (Measure.sum ρ).fst (Measure.sum ρ).snd := by
+  have hev : ∀ i, MeasurePreserving (Function.eval i) (Measure.pi ρ) (ρ i) :=
+    measurePreserving_eval ρ
+  -- In both computations the remaining goal holds because `Prod.fst ∘ Function.eval i` is
+  -- `fun w ↦ (w i).1` by definition, and likewise for `Prod.snd`.
+  have hfst : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).fst = (ρ i).fst :=
+    fun i ↦ by
+      rw [Measure.fst_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.fst, ← (hev i).map_eq,
+        Measure.map_map measurable_fst (measurable_pi_apply i)]
+      rfl
+  have hsnd : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).snd = (ρ (σ i)).snd :=
+    fun i ↦ by
+      rw [Measure.snd_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.snd, ← (hev (σ i)).map_eq,
+        Measure.map_map measurable_snd (measurable_pi_apply (σ i))]
+      rfl
+  have h := IsCoupling.sum fun i ↦ (⟨hfst i, hsnd i⟩ : IsCoupling
+    ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) (ρ i).fst (ρ (σ i)).snd)
+  rw [Measure.fst_sum, Measure.snd_sum, ← Measure.sum_comp_equiv σ fun i ↦ (ρ i).snd]
+  exact h
 
 section Dirac
 

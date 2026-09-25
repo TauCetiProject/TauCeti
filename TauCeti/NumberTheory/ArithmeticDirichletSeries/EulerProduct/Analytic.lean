@@ -35,6 +35,8 @@ product of the Dedekind zeta function.
 
 * `TauCeti.EulerProductData.hasProd_eulerFactor`: the **analytic Euler product**, when the
   ideal-indexed Dirichlet series converges absolutely at `s`.
+* `TauCeti.EulerProductData.norm_absNorm_cpow_neg_le_radius_localPowerSeries`: a lower bound for
+  the convergence radius of a local power series from absolute convergence at a real point.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
@@ -80,6 +82,13 @@ theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
   have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
   rw [Complex.norm_natCast_cpow_of_pos (by omega)]
   exact Real.one_lt_rpow (by exact_mod_cast hP) hs
+
+/-- The parameter `N(𝔭) ^ (-s)` strictly decreases in norm as `Re s` increases. -/
+theorem norm_absNorm_cpow_neg_lt (P : HeightOneSpectrum (𝓞 K)) {s t : ℂ} (h : s.re < t.re) :
+    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-t)‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ := by
+  have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
+  rw [Complex.norm_natCast_cpow_of_pos (by omega), Complex.norm_natCast_cpow_of_pos (by omega)]
+  exact Real.rpow_lt_rpow_of_exponent_lt (by exact_mod_cast hP) (by simpa using h)
 
 /-- On `Re s > 0`, `N(𝔭) ^ s - 1` is nonzero. -/
 theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
@@ -194,6 +203,16 @@ theorem coe_normCoeff_supportedPart_empty (hf : f 1 = 1) :
   funext n
   simp [ArithmeticFunction.one_apply, LSeries.delta]
 
+/-- An ideal term at a power of `P` is the corresponding coefficient times the matching power of
+`N(P) ^ (-s)`. -/
+theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (e : ℕ) :
+    idealTerm K f s (P.primeIdealPow e) =
+      f (P.primeIdealPow e) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
+  rw [idealTerm_def, P.absNorm_primeIdealPow, Nat.cast_pow,
+    ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg]
+  ring
+
 /-- **The prime terms are a subseries of the ideal terms.** Each height-one prime contributes its
 own ideal as the `e = 1` member of its power series, and distinct primes give distinct ideals, so
 absolute convergence over ideals restricts to the primes. Multiplicativity plays no part. -/
@@ -217,6 +236,56 @@ theorem LSeriesSummable_localArithmeticFactor
     LSeriesSummable (D.localArithmeticFactor P) s := by
   rw [D.localArithmeticFactor_eq]
   exact IdealArithmeticFunction.LSeriesSummable_localArithmeticFactor hs P
+
+/-- The abscissa of absolute convergence of a local Euler factor is at most the abscissa of the
+ideal-indexed series. -/
+theorem abscissaOfAbsConv_localArithmeticFactor_le (P : HeightOneSpectrum (𝓞 K)) :
+    LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) ≤
+      idealAbscissaOfAbsConv K D.toIdealArithmeticFunction := by
+  rw [LSeries.abscissaOfAbsConv, idealAbscissaOfAbsConv_def]
+  exact sInf_le_sInf <| Set.image_mono fun _ hx ↦
+    D.LSeriesSummable_localArithmeticFactor hx P
+
+/-- Absolute convergence of a local Euler factor at a real point gives a lower bound for the
+analytic radius of its local power series. -/
+theorem norm_absNorm_cpow_neg_le_radius_localPowerSeries
+    (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ)) :
+    (‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊ : ENNReal) ≤
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦
+        PowerSeries.coeff n (D.localPowerSeries P)).radius := by
+  let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
+  have hlocal : Summable fun e : ℕ ↦ D (P.primeIdealPow e) * q ^ e := by
+    have hsum := hσ
+    rw [LSeriesSummable] at hsum
+    have hsum' := hsum.comp_injective <|
+      Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
+    refine hsum'.congr fun e ↦ ?_
+    simp only [Function.comp_apply]
+    rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
+        (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
+      D.localArithmeticFactor_apply_pow]
+    dsimp [q]
+    rw [Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul,
+      Complex.cpow_neg]
+    ring
+  apply FormalMultilinearSeries.le_radius_of_summable
+  simpa [q, FormalMultilinearSeries.ofScalars_norm] using hlocal.norm
+
+/-- Absolute convergence at `σ` gives a radius bound for the local power series, and the
+prime-norm parameter at `s` lies strictly inside that radius when `σ < Re(s)`. -/
+theorem localPowerSeries_radius_data (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
+    (hs : σ < s.re) :
+    let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
+    (r : ENNReal) ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦
+      PowerSeries.coeff n (D.localPowerSeries P)).radius ∧
+    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
+  dsimp
+  constructor
+  · exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
+  · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+    exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction

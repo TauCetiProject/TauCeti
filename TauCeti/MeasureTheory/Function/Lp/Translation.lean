@@ -40,6 +40,8 @@ exchanging the order of integration.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of translation for `p < ∞`.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
+* `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
+  domain whose translate stays in the original domain.
 * `TauCeti.tendsto_eLpNorm_comp_add_sub_of_memLp`: translation increments of an `Lᵖ` function
   tend to zero.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
@@ -152,6 +154,26 @@ theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
 end LpTranslation
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [BorelSpace E] [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal}
+
+/-- An `Lᵖ` function remains `Lᵖ` after translation on any set whose translate lies in the
+original domain. This is the restricted-domain counterpart of precomposition by
+`MeasureTheory.Measure.translateLp`. -/
+theorem MemLp.comp_add_right_restrict_of_mapsTo {Omega V : Set E} {h : E} {f : E → F}
+    (hf : MemLp f p (mu.restrict Omega)) (hVO : MapsTo (· + h) V Omega) :
+    MemLp (fun x => f (x + h)) p (mu.restrict V) := by
+  have hpre : V ⊆ (· + h) ⁻¹' Omega := hVO
+  have hcomp : MemLp (f ∘ (· + h)) p (mu.restrict ((· + h) ⁻¹' Omega)) :=
+    hf.comp_measurePreserving ((measurePreserving_add_right mu h).restrict_preimage_emb
+      (Homeomorph.addRight h).measurableEmbedding Omega)
+  simpa only [Function.comp_def] using
+    hcomp.mono_measure (Measure.restrict_mono_set mu hpre)
+
+end MeasureTheory
 
 namespace TauCeti
 
@@ -275,7 +297,8 @@ theorem eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u) {p : 
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   rw [← ofReal_norm h]
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (norm_nonneg h) (zero_lt_one.trans_le hp).ne'
-    hp' ?_
+    hp' (((hu.continuous.comp (continuous_id.add continuous_const)).sub
+      hu.continuous).aestronglyMeasurable) ?_
   rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg h) (zero_lt_one.trans_le hr).le, ofReal_norm]
   exact lintegral_enorm_comp_add_sub_rpow_le hu hr h
 
@@ -340,8 +363,12 @@ theorem _root_.ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (hu : ContD
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p (mu.restrict T) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp',
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp']
+  have hsub : Continuous fun x => u (x + h) - u x :=
+    (hu.continuous.comp (continuous_id.add continuous_const)).sub hu.continuous
+  have hfd : Continuous fun x => fderiv ℝ u x h :=
+    (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
   exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
     (by positivity)
 

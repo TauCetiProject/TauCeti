@@ -9,7 +9,8 @@ public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.Variance
-import TauCeti.Probability.Distributions.Bernoulli
+public import TauCeti.Probability.GeneratingFunction
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Elementary theory of the binomial distribution
@@ -21,6 +22,8 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 ## Main results
 
+* `TauCeti.Probability.pgf_binomial` computes the probability-generating function on the native
+  carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
@@ -51,28 +54,22 @@ namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-private theorem mgf_id_map_cast_binomial_aux (n : ℕ) (p : unitInterval) (t : ℝ) :
-    mgf id Bin(ℝ, n, p) t =
-      ∑ k ∈ Finset.Iic n, n.choose k * (p : ℝ) ^ k * (1 - p : ℝ) ^ (n - k) *
-        Real.exp (t * k) := by
-  rw [mgf, integral_map_cast_binomial]
-  simp only [id_eq, smul_eq_mul]
+/-- The probability-generating function of a binomial distribution. -/
+@[simp]
+theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
+    pgf id (binomial n p) t = (1 - (p : ℝ) + (p : ℝ) * t) ^ n := by
+  -- `add_pow` attaches the binomial weights to its first summand.
+  have hbase : 1 - (p : ℝ) + (p : ℝ) * t = (p : ℝ) * t + (1 - (p : ℝ)) := add_comm _ _
+  rw [pgf_def, integral_binomial, ← Nat.range_succ_eq_Iic, hbase, add_pow]
+  simp only [smul_eq_mul, id_eq]
+  apply Finset.sum_congr rfl
+  intro k hk
+  ring
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     mgf id Bin(ℝ, n, p) t = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by
-  rw [mgf_id_map_cast_binomial_aux, ← n.range_succ_eq_Iic]
-  calc
-    _ = ∑ k ∈ Finset.range (n + 1), n.choose k *
-        ((p : ℝ) * Real.exp t) ^ k * (1 - p : ℝ) ^ (n - k) := by
-      apply Finset.sum_congr rfl
-      intro k hk
-      rw [mul_comm t (k : ℝ), Real.exp_nat_mul, mul_pow]
-      ring
-    _ = ((p : ℝ) * Real.exp t + (1 - p : ℝ)) ^ n := by
-      simpa only [Nat.cast_choose, nsmul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using
-        (add_pow ((p : ℝ) * Real.exp t) (1 - p : ℝ) n).symm
-    _ = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by ring
+  rw [mgf_id_map_natCast, pgf_binomial]
 
 /-- The cumulant generating function of the real-valued binomial law. -/
 theorem cgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :

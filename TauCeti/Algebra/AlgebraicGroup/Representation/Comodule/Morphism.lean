@@ -73,8 +73,7 @@ private theorem coact_apply_eq_universal_endOfPoint
     rw [Comodule.endOfPoint_tmul]
     exact one_smul _ _
   rw [hend]
-  induction rho.coact z using TensorProduct.induction_on with
-  | zero => simp
+  induction rho.coact z using TensorProduct.inductionOn with
   | add a b ha hb => simpa only [map_add] using congrArg₂ (fun c d ↦ c + d) ha hb
   | tmul a b =>
       simp only [LinearMap.lTensor_tmul, AlgEquiv.toLinearMap_apply,

@@ -82,8 +82,7 @@ theorem Comodule.iSup_baseChange_weightSpace_eq_top :
     ⨆ x : X, (weightSpace R X V x).baseChange K = ⊤ := by
   classical
   refine Submodule.eq_top_iff'.mpr fun z ↦ ?_
-  induction z using TensorProduct.induction_on with
-  | zero => exact zero_mem _
+  induction z using TensorProduct.inductionOn with
   | tmul a v =>
     have hv : v = (weightDecomposition R X V v).sum (fun _ w ↦ w) :=
       (weightDecomposition_sum (R := R) (G := X) (V := V) v).symm

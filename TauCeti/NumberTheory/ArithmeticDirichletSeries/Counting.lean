@@ -15,7 +15,8 @@ import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
-public import TauCeti.Order.Northcott
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+public import TauCeti.Order.Northcott.Basic
 
 /-!
 # Counting carriers for ideals and prime ideals
@@ -46,6 +47,10 @@ exponent is `1` exactly on the primes themselves, which is `TauCeti.primePowerEx
 `TauCeti.IdealPrimePower.ofPrime` is the resulting inclusion of the prime carrier into the
 prime-power carrier, and `TauCeti.primePowerSummatory_eq_primeSummatory` uses it to read a
 prime-power sum concentrated on the exponent-one part as a sum over primes.
+
+`TauCeti.idealsLE_filter_dvd` identifies the ideals below a cutoff divisible by a fixed nonzero
+ideal `P` with the multiples of `P`, and `TauCeti.idealSummatory_ite_dvd` reads the corresponding
+part of a summatory function at the rescaled cutoff `x / N(P)`.
 
 Two lemmas move a summatory function between the three carriers.
 `TauCeti.idealSummatory_eq_primePowerSummatory` reads an ideal weight vanishing off the prime
@@ -213,6 +218,17 @@ theorem absNorm_eq_absNorm_primePowerBase_pow (A : IdealPrimePower K) :
       Ideal.absNorm (primePowerBase A).asIdeal ^ primePowerExponent A := by
   rw [← primePowerBase_pow_primePowerExponent A, map_pow]
 
+/-- **Membership in the prime-power cutoff, read off the base and the exponent.** The cutoff
+bounds a prime power's own absolute norm, and that norm is `N(𝔭) ^ k`, so membership is exactly
+the bound the counting arguments use. Both steps are equivalences, so this is an `iff`.
+
+Deliberately not `@[simp]`: `mem_normLE` already carries `@[simp, grind =]` on the same
+reducible head and would compete with it. -/
+theorem mem_primePowersLE_iff {x : ℝ} {A : IdealPrimePower K} :
+    A ∈ primePowersLE K x ↔
+      ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A ≤ x := by
+  rw [mem_normLE, absNorm_eq_absNorm_primePowerBase_pow, Nat.cast_pow]
+
 /-- The absolute norm of a prime-power ideal is a prime power: `N(𝔭 ^ k) = p ^ (f k)` for the
 rational prime `p` below `𝔭` and the residue degree `f`. -/
 theorem isPrimePow_absNorm (A : IdealPrimePower K) :
@@ -330,6 +346,34 @@ theorem idealsLE_one : idealsLE K 1 = {1} := by
       fun hI ↦ by simp [hI]⟩
   rw [h, normFiber_one]
 
+open Classical in
+/-- **The multiples of a nonzero ideal below a cutoff.** The nonzero integral ideals of absolute
+norm at most `x` divisible by `P` are exactly the products `P * J`, for `J` a nonzero integral
+ideal of absolute norm at most `x / N(P)`. -/
+theorem idealsLE_filter_dvd (P : (Ideal (𝓞 K))⁰) (x : ℝ) :
+    (idealsLE K x).filter (fun I : (Ideal (𝓞 K))⁰ ↦ (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K))) =
+      (idealsLE K (x / Ideal.absNorm (P : Ideal (𝓞 K)))).image (fun J ↦ P * J) := by
+  have hP : (0 : ℝ) < Ideal.absNorm (P : Ideal (𝓞 K)) := by
+    exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors P
+  ext I
+  simp only [Finset.mem_filter, Finset.mem_image, mem_normLE]
+  constructor
+  · rintro ⟨hle, J, hJ⟩
+    have hJ0 : J ≠ 0 := by
+      rintro rfl
+      exact mem_nonZeroDivisors_iff_ne_zero.mp I.2 (by simpa using hJ)
+    refine ⟨⟨J, mem_nonZeroDivisors_of_ne_zero hJ0⟩, ?_, Subtype.ext hJ.symm⟩
+    rw [le_div_iff₀ hP]
+    calc (Ideal.absNorm J : ℝ) * Ideal.absNorm (P : Ideal (𝓞 K))
+        = (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by rw [hJ, map_mul]; push_cast; ring
+      _ ≤ x := hle
+  · rintro ⟨J, hJ, rfl⟩
+    refine ⟨?_, by rw [Submonoid.coe_mul]; exact dvd_mul_right _ _⟩
+    rw [Submonoid.coe_mul, map_mul]
+    rw [le_div_iff₀ hP] at hJ
+    push_cast
+    linarith
+
 /-- Below the cutoff `2` there is no height-one prime to count. -/
 theorem primesLE_eq_empty_of_lt_two {x : ℝ} (hx : x < 2) : primesLE K x = ∅ :=
   normLE_eq_empty_of_lt _ two_le_absNorm_asIdeal_real hx
@@ -355,9 +399,28 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
   · simpa using (mem_normLE _).mp hv
   · exact HeightOneSpectrum.ext (congrArg Subtype.val h)
 
+/-- There are at most as many prime-power ideals as nonzero integral ideals below any cutoff. -/
+theorem card_primePowersLE_le_card_idealsLE (x : ℝ) :
+    (primePowersLE K x).card ≤ (idealsLE K x).card := by
+  refine Finset.card_le_card_of_injOn
+    (fun A : IdealPrimePower K => (A.1 : (Ideal (𝓞 K))⁰))
+    (fun A hA => ?_) (fun A _ B _ h => ?_)
+  · simpa using (mem_normLE _).mp hA
+  · apply Subtype.ext
+    exact h
+
 variable (K)
 
 /-! ### Summatory functions over ideals and over primes -/
+
+/-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
+the summatory function by the value of the twist at that cutoff. -/
+theorem summatory_mul_eq_mul_summatory_of_le {ι 𝕜 : Type*} (N : ι → ℕ) [Northcott N]
+    [NonUnitalCommSemiring 𝕜] {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜) (g : ℝ → 𝕜) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
 
 /-- The inclusive summatory function of a weight on the nonzero integral ideals of `𝓞 K`. -/
 noncomputable abbrev idealSummatory {M : Type*} [AddCommMonoid M]
@@ -451,6 +514,65 @@ theorem idealSummatory_eq_zero_of_lt_one {M : Type*} [AddCommMonoid M]
 theorem idealSummatory_one {M : Type*} [AddCommMonoid M] (w : (Ideal (𝓞 K))⁰ → M) :
     idealSummatory K w 1 = w 1 := by
   rw [idealSummatory_apply, idealsLE_one, Finset.sum_singleton]
+
+open Classical in
+/-- **Restricting an ideal summatory function to the multiples of a nonzero ideal `P`.** Summing a
+weight over the nonzero ideals below `x` divisible by `P` is summing the weight of `P * J` over
+the nonzero ideals `J` below `x / N(P)`, because the absolute norm is multiplicative. -/
+theorem idealSummatory_ite_dvd {M : Type*} [AddCommMonoid M] (P : (Ideal (𝓞 K))⁰)
+    (w : (Ideal (𝓞 K))⁰ → M) (x : ℝ) :
+    idealSummatory K (fun I ↦ if (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K)) then w I else 0) x =
+      idealSummatory K (fun J ↦ w (P * J)) (x / Ideal.absNorm (P : Ideal (𝓞 K))) := by
+  rw [idealSummatory_apply, ← Finset.sum_filter, idealsLE_filter_dvd, idealSummatory_apply,
+    Finset.sum_image fun a _ b _ h ↦
+      Subtype.ext (mul_left_cancel₀ (mem_nonZeroDivisors_iff_ne_zero.mp P.2)
+        (by simpa using congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ (I : Ideal (𝓞 K))) h))]
+
+variable {K}
+
+namespace MultiplicativeIdealWeight
+
+variable (χ : MultiplicativeIdealWeight K)
+
+/-- **Forbidding one more prime in an ideal partial sum.** For a completely multiplicative weight
+`χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
+over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
+`N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`. -/
+theorem idealSummatory_restrict_insert
+    {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
+    idealSummatory K (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
+        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
+          (x / Ideal.absNorm 𝔭.asIdeal) := by
+  classical
+  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
+  set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
+  -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
+  have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
+    intro J
+    simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
+      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
+      Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
+    split_ifs <;> simp [_root_.map_mul]
+  have hsplit : idealSummatory K
+      (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K f x -
+        idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
+    rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun I _ ↦ ?_
+    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
+    split_ifs <;> simp [hf]
+  rw [hsplit, idealSummatory_ite_dvd K P f x]
+  congr 1
+  rw [idealSummatory_apply, idealSummatory_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun J _ ↦ hstep J
+
+end MultiplicativeIdealWeight
+
+variable (K)
 
 open Classical in
 /-- The ideals of absolute norm at most `x` and of absolute norm exactly `n` are the whole norm

@@ -33,9 +33,15 @@ transitive-groups table. The reference family is empty outside degrees one throu
 * `TauCeti.isPretransitive_referenceSubgroup`: every reference subgroup is transitive.
 * `Subgroup.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
   arbitrary set of `n` points does not depend on the numbering by `Fin n` used to read it.
+* `TauCeti.TransitiveGroupLabel.exists_le_map_conj_of_le`: inclusion of a reference subgroup in
+  a larger subgroup transports to inclusion of the labelled subgroup in a conjugate, and
+  `TauCeti.TransitiveGroupLabel.exists_le_map_conj_iff`: a labelled subgroup lies in a conjugate
+  of a fixed subgroup exactly when its reference subgroup does.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
-  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
-  a labelled subgroup has the order, parity, primitivity, and solvability of its reference.
+  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`,
+  `TauCeti.TransitiveGroupLabel.isCyclic_iff`:
+  a labelled subgroup has the order, parity, primitivity, solvability, and cyclicity of its
+  reference.
 * `TauCeti.transitiveGroupLabel_one`, `TauCeti.transitiveGroupLabel_two_iff`: in degrees one and
   two, a subgroup carries the unique label exactly when it is transitive.
 
@@ -399,19 +405,52 @@ theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : Transitiv
   ext σ x
   simp [Equiv.permCongr_eq_mul]
 
+/-- If a subgroup carries the label `j` and the reference subgroup for `j` lies in `H`, then the
+subgroup lies in a conjugate of `H`. -/
+theorem TransitiveGroupLabel.exists_le_map_conj_of_le {n : ℕ} {j : TransitiveGroupIndex n}
+    {G H : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G)
+    (hle : referenceSubgroup n j ≤ H) :
+    ∃ τ : Perm (Fin n), G ≤ H.map (MulAut.conj τ).toMonoidHom := by
+  obtain ⟨τ, hτ⟩ := (transitiveGroupLabel_iff _ _).mp h
+  refine ⟨τ⁻¹, ?_⟩
+  have hmap := Subgroup.map_mono (f := (MulAut.conj τ⁻¹).toMonoidHom) (hτ ▸ hle)
+  rw [Subgroup.map_map] at hmap
+  have hcomp : (MulAut.conj τ⁻¹).toMonoidHom.comp (MulAut.conj τ).toMonoidHom =
+      MonoidHom.id (Perm (Fin n)) := by ext; simp
+  rwa [hcomp, Subgroup.map_id] at hmap
+
+/-- **Conjugating into a subgroup depends only on the label.** A subgroup with the label `j` lies
+in a conjugate of `H` exactly when the reference subgroup of `j` does. This is what lets a
+criterion that confines a permutation group to a conjugate of a fixed subgroup, such as the
+existence of a root of a resolvent, be read as a condition on the label. -/
+theorem TransitiveGroupLabel.exists_le_map_conj_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G H : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    (∃ τ : Perm (Fin n), G ≤ H.map (MulAut.conj τ).toMonoidHom) ↔
+      ∃ τ : Perm (Fin n), referenceSubgroup n j ≤ H.map (MulAut.conj τ).toMonoidHom := by
+  constructor
+  · rintro ⟨τ, hτ⟩
+    obtain ⟨ρ, hρ⟩ := (transitiveGroupLabel_iff _ _).1 h
+    refine ⟨ρ * τ, ?_⟩
+    have hmap := Subgroup.map_mono (f := (MulAut.conj ρ).toMonoidHom) hτ
+    rw [hρ, Subgroup.map_map] at hmap
+    convert hmap using 2
+    ext σ
+    simp [mul_assoc]
+  · rintro ⟨τ, hτ⟩
+    obtain ⟨ρ, hρ⟩ := h.exists_le_map_conj_of_le hτ
+    refine ⟨ρ * τ, ?_⟩
+    rw [Subgroup.map_map] at hρ
+    convert hρ using 2
+    ext σ
+    simp [mul_assoc]
+
 /-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
 transitive-group labels. -/
 theorem _root_.Subgroup.transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {n : ℕ}
     {j : TransitiveGroupIndex n} (G : Subgroup (Perm α)) (e e' : α ≃ Fin n) :
     TransitiveGroupLabel j (G.map e.permCongrHom.toMonoidHom) ↔
       TransitiveGroupLabel j (G.map e'.permCongrHom.toMonoidHom) := by
-  have h : G.map e'.permCongrHom.toMonoidHom =
-      Subgroup.map (MulAut.conj (e.symm.trans e')) (G.map e.permCongrHom.toMonoidHom) := by
-    rw [Subgroup.map_map]
-    congr 1
-    ext σ x
-    simp [Equiv.permCongrHom_coe]
-  rw [h, transitiveGroupLabel_map_conj_iff]
+  rw [Equiv.map_permCongrHom_eq_map_conj e e' G, transitiveGroupLabel_map_conj_iff]
 
 /-- A subgroup carrying a transitive-group label has the order of its reference subgroup. -/
 theorem TransitiveGroupLabel.natCard_eq {n : ℕ} {j : TransitiveGroupIndex n}
@@ -444,6 +483,15 @@ theorem TransitiveGroupLabel.isSolvable_iff {n : ℕ} {j : TransitiveGroupIndex 
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
   exact (τ.permCongrHom.subgroupMap G).isSolvable_congr
+
+/-- A subgroup carrying a transitive-group label is cyclic exactly when its reference subgroup
+is. -/
+theorem TransitiveGroupLabel.isCyclic_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    IsCyclic G ↔ IsCyclic (referenceSubgroup n j) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
+  exact MulEquiv.isCyclic (τ.permCongrHom.subgroupMap G)
 
 /-- In degree one every subgroup carries the label `1T1`. -/
 @[simp]

@@ -9,9 +9,9 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.Semicontinuity.Defs
--- `TauCeti.MeasureTheory.Integral.Marcinkiewicz` is imported privately: its operator-level
+-- `TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic` is imported privately: its operator-level
 -- interpolation API is used only to prove the strong maximal inequality below.
-import TauCeti.MeasureTheory.Integral.Marcinkiewicz
+import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 -- `Mathlib.MeasureTheory.Constructions.BorelSpace.Order` is imported privately: it is used only
 -- for `LowerSemicontinuous.measurable`, inside the proof of `TauCeti.measurable_maximalFunction`.
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
@@ -481,33 +481,46 @@ Together with `TauCeti.maximalFunction_le_eLpNormEssSup` (the case `p = ∞`) an
 representative-level strong estimate for the maximal function. The resulting finiteness statement
 is recorded by
 `TauCeti.eLpNorm_maximalFunction_lt_top` below. -/
-theorem eLpNorm_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure] {f : E → F}
-    (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
+theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     eLpNorm (maximalFunction μ f) p μ ≤
       (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
         4 ^ finrank ℝ E) ^ (1 / p.toReal) * eLpNorm f p μ := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top,
-    ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
-  exact ENNReal.rpow_le_rpow (lintegral_rpow_maximalFunction_le μ hf hpr) (by positivity)
+  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
+  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ≤ eLpNorm f p μ := by
+    by_cases hfm : AEStronglyMeasurable f μ
+    · exact (eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top hfm).ge
+    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top
+    (measurable_maximalFunction μ f).aestronglyMeasurable]
+  calc (∫⁻ x, ‖maximalFunction μ f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
+      ≤ (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
+          4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+        refine ENNReal.rpow_le_rpow ?_ (by positivity)
+        simpa only [enorm_eq_self] using lintegral_rpow_maximalFunction_le μ hf hpr
+    _ = (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
+          4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+    _ ≤ _ := by gcongr
 
 end StrongType
 
 section Finiteness
 
-variable {p : ℝ≥0∞} {f : E → F}
+variable [TopologicalSpace F] {p : ℝ≥0∞} {f : E → F}
 
 /-- The maximal function of an `Lᵖ` function has finite `Lᵖ` seminorm when `1 < p ≤ ∞`. -/
 theorem eLpNorm_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure]
     (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) (hf_top : eLpNorm f p μ ≠ ∞)
     (hp : 1 < p) : eLpNorm (maximalFunction μ f) p μ < ∞ := by
+  have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf_top
   rcases eq_or_ne p ∞ with rfl | hp_top
-  · rw [eLpNorm_exponent_top]
+  · rw [eLpNorm_exponent_top (measurable_maximalFunction μ f).aestronglyMeasurable]
     refine (eLpNormEssSup_le_of_ae_enorm_bound (.of_forall fun x => ?_)).trans_lt (by
-        simpa only [eLpNorm_exponent_top] using hf_top.lt_top)
+        simpa only [eLpNorm_exponent_top hfm] using hf_top.lt_top)
     rw [enorm_eq_self]
     exact maximalFunction_le_eLpNormEssSup μ f x
   · exact (eLpNorm_maximalFunction_le μ hf hp hp_top).trans_lt
@@ -518,12 +531,13 @@ when `1 ≤ p`, including both endpoints. -/
 theorem ae_maximalFunction_lt_top_of_eLpNorm_ne_top (μ : Measure E) [μ.IsAddHaarMeasure]
     (f : E → F) (hf_top : eLpNorm f p μ ≠ ∞)
     (hp : 1 ≤ p) : ∀ᵐ x ∂μ, maximalFunction μ f x < ∞ := by
+  have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf_top
   rcases eq_or_ne p ∞ with rfl | hp_top
   · exact .of_forall fun x => (maximalFunction_le_eLpNormEssSup μ f x).trans_lt
-      (by simpa only [eLpNorm_exponent_top] using hf_top.lt_top)
+      (by simpa only [eLpNorm_exponent_top hfm] using hf_top.lt_top)
   rcases hp.eq_or_lt with rfl | hp
   · exact ae_maximalFunction_lt_top μ f (by
-      simpa only [eLpNorm_one_eq_lintegral_enorm] using hf_top)
+      simpa only [eLpNorm_one_eq_lintegral_enorm hfm] using hf_top)
   · have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
     have hpr : 1 < p.toReal := by
       simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
@@ -534,7 +548,7 @@ theorem ae_maximalFunction_lt_top_of_eLpNorm_ne_top (μ : Measure E) [μ.IsAddHa
       · exact ENNReal.le_rpow_self_of_one_le hx.le hpr.le
       · exact bot_le
     have hfp : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ < ∞ :=
-      (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp₀ hp_top).mp hf_top.lt_top
+      (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp₀ hp_top hfm).mp hf_top.lt_top
     have hg_int : ∫⁻ x, ‖g x‖ₑ ∂μ ≠ ∞ := by
       simpa only [enorm_eq_self] using (lt_of_le_of_lt (lintegral_mono hg_le) hfp).ne
     have hfg (x : E) : ‖f x‖ₑ ≤ 1 + g x := by

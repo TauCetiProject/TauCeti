@@ -151,7 +151,7 @@ theorem isRepresentative_matrixCoeff (π : ContRepresentation 𝕜 G V)
   ⟨Module.finrank 𝕜 V,
     ContRepresentation.congr (stdOrthonormalBasis 𝕜 V).repr.toContinuousLinearEquiv π,
     continuous_congr _ hπ, _, _,
-    (matrixCoeff_congr (stdOrthonormalBasis 𝕜 V).repr hπ v w).symm⟩
+    (matrixCoeff_congr (stdOrthonormalBasis 𝕜 V).repr (continuous_congr _ hπ) v w).symm⟩
 
 /-- Every matrix coefficient of a finite-dimensional continuous representation lies in `𝓡(G)`. -/
 theorem matrixCoeff_mem_representativeSubmodule (π : ContRepresentation 𝕜 G V)

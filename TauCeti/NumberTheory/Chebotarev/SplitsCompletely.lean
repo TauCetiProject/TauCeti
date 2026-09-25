@@ -54,8 +54,6 @@ open IsDedekindDomain (HeightOneSpectrum)
 
 namespace NumberField
 
--- Source: the identity fibre of Layer 2 of `TauCetiRoadmap/Chebotarev/README.md`, which Layer 10
--- consumes to derive, rather than reprove, the density of the split-completely primes.
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]

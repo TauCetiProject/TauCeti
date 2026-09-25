@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.LocallyConnected
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # The idempotent cutting out a connected component
 
@@ -71,9 +73,9 @@ contraction along the quotient map. -/
 @[simp]
 theorem quotientHomeomorphZeroLocus_apply_coe (I : Ideal R) (y : PrimeSpectrum (R ⧸ I)) :
     (quotientHomeomorphZeroLocus I y : PrimeSpectrum R) = comap (Ideal.Quotient.mk I) y := by
-  -- `Homeomorph.setCongr` has no application lemma, so unfold it here; it preserves the
-  -- underlying point while changing only the proof that the point belongs to the target set.
-  simp only [quotientHomeomorphZeroLocus, Homeomorph.trans_apply, Homeomorph.setCongr]
+  -- `Homeomorph.setCongr` preserves the underlying point, changing only the proof that it
+  -- belongs to the target set.
+  simp only [quotientHomeomorphZeroLocus, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact Topology.IsEmbedding.toHomeomorph_apply_coe
     (isEmbedding_comap_of_surjective
       (R ⧸ I) (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective) y

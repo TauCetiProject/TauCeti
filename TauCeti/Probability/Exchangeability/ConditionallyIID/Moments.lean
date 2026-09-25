@@ -95,43 +95,43 @@ theorem ConditionallyIIDWith.lintegral_mul_indicator_iInter
     ∫⁻ ω, g (ν ω) * (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
       = ∫⁻ ω, g (ν ω) * (ν ω : Measure α) B ^ m ∂μ := by
   have hν := h.measurable_directing
-  have hR : MeasurableSet (Set.univ.pi fun _ : Fin m => B) := MeasurableSet.univ_pi fun _ => hB
+  have hR : MeasurableSet (Set.univ.pi fun _ : Fin m ↦ B) := MeasurableSet.univ_pi fun _ ↦ hB
   set F : ProbabilityMeasure α × (Fin m → α) → ℝ≥0∞ :=
-    fun z => g z.1 * (Set.univ.pi fun _ : Fin m => B).indicator (1 : (Fin m → α) → ℝ≥0∞) z.2
+    fun z ↦ g z.1 * (Set.univ.pi fun _ : Fin m ↦ B).indicator (1 : (Fin m → α) → ℝ≥0∞) z.2
     with hF_def
   have hF : Measurable F :=
     (hg.comp measurable_fst).mul ((measurable_one.indicator hR).comp measurable_snd)
-  have hΦ : AEMeasurable (fun ω => (ν ω, fun i : Fin m => X (k i) ω)) μ :=
-    hν.aemeasurable.prodMk (AEMeasurable.of_eval fun i => h.aemeasurable (k i))
-  have hκ : AEMeasurable (fun ω =>
-      (Measure.dirac (ν ω)).prod (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
+  have hΦ : AEMeasurable (fun ω ↦ (ν ω, fun i : Fin m ↦ X (k i) ω)) μ :=
+    hν.aemeasurable.prodMk (AEMeasurable.of_eval fun i ↦ h.aemeasurable (k i))
+  have hκ : AEMeasurable (fun ω ↦
+      (Measure.dirac (ν ω)).prod (ProbabilityMeasure.pi fun _ : Fin m ↦ ν ω).toMeasure) μ :=
     (TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure ν
       hν).aemeasurable
-  have key : ∫⁻ z, F z ∂(μ.map fun ω => (ν ω, fun i : Fin m => X (k i) ω))
-      = ∫⁻ z, F z ∂(μ.bind fun ω =>
-          (Measure.dirac (ν ω)).prod (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) := by
+  have key : ∫⁻ z, F z ∂(μ.map fun ω ↦ (ν ω, fun i : Fin m ↦ X (k i) ω))
+      = ∫⁻ z, F z ∂(μ.bind fun ω ↦
+          (Measure.dirac (ν ω)).prod (ProbabilityMeasure.pi fun _ : Fin m ↦ ν ω).toMeasure) := by
     rw [h.jointLaw_eq_disintegration k hk]
   rw [lintegral_map' hF.aemeasurable hΦ, Measure.lintegral_bind hκ hF.aemeasurable] at key
   calc ∫⁻ ω, g (ν ω) * (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
-      = ∫⁻ ω, F (ν ω, fun i : Fin m => X (k i) ω) ∂μ := by
-        refine lintegral_congr fun ω => ?_
+      = ∫⁻ ω, F (ν ω, fun i : Fin m ↦ X (k i) ω) ∂μ := by
+        refine lintegral_congr fun ω ↦ ?_
         -- The two indicators live on different domains but share a membership condition.
-        have hind : (Set.univ.pi fun _ : Fin m => B).indicator (1 : (Fin m → α) → ℝ≥0∞)
-            (fun i : Fin m => X (k i) ω)
+        have hind : (Set.univ.pi fun _ : Fin m ↦ B).indicator (1 : (Fin m → α) → ℝ≥0∞)
+            (fun i : Fin m ↦ X (k i) ω)
             = (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω := by
-          have hmem : (fun i : Fin m => X (k i) ω) ∈ Set.univ.pi (fun _ : Fin m => B)
+          have hmem : (fun i : Fin m ↦ X (k i) ω) ∈ Set.univ.pi (fun _ : Fin m ↦ B)
               ↔ ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B := by
             simp only [Set.mem_univ_pi, Set.mem_iInter, Set.mem_preimage]
           by_cases hω : ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B
           · rw [Set.indicator_of_mem (hmem.mpr hω), Set.indicator_of_mem hω]
             rfl
-          · rw [Set.indicator_of_notMem (fun hc => hω (hmem.mp hc)),
+          · rw [Set.indicator_of_notMem (fun hc ↦ hω (hmem.mp hc)),
               Set.indicator_of_notMem hω]
         simp only [hF_def, hind]
     _ = ∫⁻ ω, ∫⁻ z, F z ∂((Measure.dirac (ν ω)).prod
-          (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) ∂μ := key
+          (ProbabilityMeasure.pi fun _ : Fin m ↦ ν ω).toMeasure) ∂μ := key
     _ = ∫⁻ ω, g (ν ω) * (ν ω : Measure α) B ^ m ∂μ := by
-        refine lintegral_congr fun ω => ?_
+        refine lintegral_congr fun ω ↦ ?_
         rw [Measure.dirac_prod, lintegral_map hF measurable_prodMk_left]
         simp only [hF_def]
         rw [lintegral_const_mul _ (measurable_one.indicator hR), lintegral_indicator_one hR,
@@ -144,7 +144,7 @@ theorem ConditionallyIIDWith.lintegral_mul_indicator_single
     {g : ProbabilityMeasure α → ℝ≥0∞} (hg : Measurable g) (hB : MeasurableSet B) :
     ∫⁻ ω, g (ν ω) * (X i ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
       = ∫⁻ ω, g (ν ω) * (ν ω : Measure α) B ∂μ := by
-  have hinj : Function.Injective (fun _ : Fin 1 => i) := fun a b _ => Subsingleton.elim a b
+  have hinj : Function.Injective (fun _ : Fin 1 ↦ i) := fun a b _ ↦ Subsingleton.elim a b
   simpa [Set.iInter_const] using
     h.lintegral_mul_indicator_iInter hinj hg hB
 
@@ -172,15 +172,15 @@ private theorem integral_toReal_eq_of_lintegral_eq {F G : Ω → ℝ≥0∞}
     (hFtop : ∀ ω, F ω ≠ ∞) (hGtop : ∀ ω, G ω ≠ ∞)
     (hFG : ∫⁻ ω, F ω ∂μ = ∫⁻ ω, G ω ∂μ) :
     ∫ ω, (F ω).toReal ∂μ = ∫ ω, (G ω).toReal ∂μ := by
-  rw [integral_toReal hF (ae_of_all _ fun ω => (hFtop ω).lt_top),
-    integral_toReal hG (ae_of_all _ fun ω => (hGtop ω).lt_top), hFG]
+  rw [integral_toReal hF (ae_of_all _ fun ω ↦ (hFtop ω).lt_top),
+    integral_toReal hG (ae_of_all _ fun ω ↦ (hGtop ω).lt_top), hFG]
 
 /-- A product of two `[0, 1]`-valued functions is integrable on a finite measure space, being
 bounded by `1`. Every summand of the expansion below is of this shape. -/
 private theorem integrable_mul_of_nonneg_of_le_one [IsFiniteMeasure μ] {u v : Ω → ℝ}
     (hu : AEMeasurable u μ) (hv : AEMeasurable v μ)
     (hu01 : ∀ᵐ ω ∂μ, 0 ≤ u ω ∧ u ω ≤ 1) (hv01 : ∀ᵐ ω ∂μ, 0 ≤ v ω ∧ v ω ≤ 1) :
-    Integrable (fun ω => u ω * v ω) μ := by
+    Integrable (fun ω ↦ u ω * v ω) μ := by
   refine Integrable.of_bound (hu.mul hv).aestronglyMeasurable 1 ?_
   filter_upwards [hu01, hv01] with ω ⟨hu0, hu1⟩ ⟨hv0, hv1⟩
   rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hu0, abs_of_nonneg hv0]
@@ -189,15 +189,15 @@ private theorem integrable_mul_of_nonneg_of_le_one [IsFiniteMeasure μ] {u v : �
 /-- **Expanding a centred product.** Whenever the four products are integrable, the integral of
 `(u - q)(v - q)` splits into the four moments of the product expansion. -/
 private theorem integral_sub_mul_sub {u v q : Ω → ℝ}
-    (hi1 : Integrable (fun ω => u ω * v ω) μ) (hi2 : Integrable (fun ω => q ω * u ω) μ)
-    (hi3 : Integrable (fun ω => q ω * v ω) μ) (hi4 : Integrable (fun ω => q ω ^ 2) μ) :
+    (hi1 : Integrable (fun ω ↦ u ω * v ω) μ) (hi2 : Integrable (fun ω ↦ q ω * u ω) μ)
+    (hi3 : Integrable (fun ω ↦ q ω * v ω) μ) (hi4 : Integrable (fun ω ↦ q ω ^ 2) μ) :
     ∫ ω, (u ω - q ω) * (v ω - q ω) ∂μ
       = ∫ ω, u ω * v ω ∂μ - ∫ ω, q ω * u ω ∂μ - ∫ ω, q ω * v ω ∂μ
         + ∫ ω, q ω ^ 2 ∂μ := by
   have hexp : ∀ ω, (u ω - q ω) * (v ω - q ω)
-      = u ω * v ω - q ω * u ω - q ω * v ω + q ω ^ 2 := fun ω => by ring
-  have hiB : Integrable (fun ω => u ω * v ω - q ω * u ω) μ := hi1.sub hi2
-  have hiA : Integrable (fun ω => u ω * v ω - q ω * u ω - q ω * v ω) μ := hiB.sub hi3
+      = u ω * v ω - q ω * u ω - q ω * v ω + q ω ^ 2 := fun ω ↦ by ring
+  have hiB : Integrable (fun ω ↦ u ω * v ω - q ω * u ω) μ := hi1.sub hi2
+  have hiA : Integrable (fun ω ↦ u ω * v ω - q ω * u ω - q ω * v ω) μ := hiB.sub hi3
   rw [integral_congr_ae (ae_of_all _ hexp), integral_add hiA hi4,
     integral_sub hiB hi3, integral_sub hi1 hi2]
 
@@ -221,27 +221,27 @@ private theorem integral_sq_average_sub [IsFiniteMeasure μ] {e : ℕ → Ω →
     rw [abs_le]
     constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
   have hInt : ∀ i ∈ Finset.range n, ∀ j ∈ Finset.range n,
-      Integrable (fun ω => (e i ω - q ω) * (e j ω - q ω)) μ := by
+      Integrable (fun ω ↦ (e i ω - q ω) * (e j ω - q ω)) μ := by
     intro i hi j hj
     refine Integrable.of_bound (((he i hi).sub hq).mul ((he j hj).sub hq)).aestronglyMeasurable 4
-      (ae_of_all _ fun ω => ?_)
+      (ae_of_all _ fun ω ↦ ?_)
     rw [Real.norm_eq_abs, abs_mul]
     nlinarith [hdb i hi ω, hdb j hj ω, abs_nonneg (e i ω - q ω),
       abs_nonneg (e j ω - q ω)]
   have hne : (Finset.range n).Nonempty := Finset.nonempty_range_iff.mpr hn
-  have hstep := fun ω => by
-    simpa [Finset.card_range] using average_sub_sq_eq_sum_sum hne (fun i => e i ω) (q ω)
+  have hstep := fun ω ↦ by
+    simpa [Finset.card_range] using average_sub_sq_eq_sum_sum hne (fun i ↦ e i ω) (q ω)
   simp_rw [hstep]
   rw [integral_const_mul,
-    integral_finsetSum _ fun i hi => integrable_finsetSum _ fun j hj => hInt i hi j hj]
+    integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hInt i hi j hj]
   have hrow : ∀ i ∈ Finset.range n,
       ∫ ω, ∑ j ∈ Finset.range n, (e i ω - q ω) * (e j ω - q ω) ∂μ = c := by
     intro i hi
-    rw [integral_finsetSum _ fun j hj => hInt i hi j hj]
+    rw [integral_finsetSum _ fun j hj ↦ hInt i hi j hj]
     calc
       ∑ j ∈ Finset.range n, ∫ ω, (e i ω - q ω) * (e j ω - q ω) ∂μ =
           ∑ j ∈ Finset.range n, if i = j then c else 0 := by
-        exact Finset.sum_congr rfl fun j hj => hcov i hi j hj
+        exact Finset.sum_congr rfl fun j hj ↦ hcov i hi j hj
       _ = c := by simp [Finset.sum_ite_eq, Finset.mem_range.mp hi]
   rw [Finset.sum_congr rfl hrow, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   field_simp
@@ -272,15 +272,15 @@ private theorem ConditionallyIIDWith.integral_indicator_single
     (hB : MeasurableSet B) :
     ∫ ω, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ∂μ
       = ∫ ω, ((ν ω : Measure α) B).toReal ∂μ := by
-  have hu : Measurable fun ω => (ν ω : Measure α) B :=
+  have hu : Measurable fun ω ↦ (ν ω : Measure α) B :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hB).comp
       h.measurable_directing
   have hlin : ∫⁻ ω, (X i ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
       = ∫⁻ ω, (ν ω : Measure α) B ∂μ := by
-    simpa using h.lintegral_mul_indicator_single (g := fun _ => 1) i measurable_const hB
+    simpa using h.lintegral_mul_indicator_single (g := fun _ ↦ 1) i measurable_const hB
   have := integral_toReal_eq_of_lintegral_eq
     (measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB))
-    hu.aemeasurable (indicator_one_ne_top _) (fun ω => measure_ne_top _ _) hlin
+    hu.aemeasurable (indicator_one_ne_top _) (fun ω ↦ measure_ne_top _ _) hlin
   simpa [toReal_indicator_one] using this
 
 /-- **Pair moment.** For distinct indices the integral of the product of the two indicators
@@ -289,19 +289,19 @@ private theorem ConditionallyIIDWith.integral_indicator_pair
     (h : ConditionallyIIDWith μ X ν) {i j : ℕ} (hB : MeasurableSet B) (hij : i ≠ j) :
     ∫ ω, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω * (X j ⁻¹' B).indicator (1 : Ω → ℝ) ω ∂μ
       = ∫ ω, ((ν ω : Measure α) B).toReal ^ 2 ∂μ := by
-  have hu : Measurable fun ω => (ν ω : Measure α) B :=
+  have hu : Measurable fun ω ↦ (ν ω : Measure α) B :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hB).comp
       h.measurable_directing
   have hlin : ∫⁻ ω, (X i ⁻¹' B ∩ X j ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
       = ∫⁻ ω, (ν ω : Measure α) B ^ 2 ∂μ := by
     simpa using
-      h.lintegral_mul_indicator_pair (g := fun _ => 1) hij measurable_const hB
+      h.lintegral_mul_indicator_pair (g := fun _ ↦ 1) hij measurable_const hB
   have := integral_toReal_eq_of_lintegral_eq
     (measurable_one.aemeasurable.indicator₀
       (((h.aemeasurable i).nullMeasurableSet_preimage hB).inter
         ((h.aemeasurable j).nullMeasurableSet_preimage hB)))
     (hu.pow_const 2).aemeasurable (indicator_one_ne_top _)
-    (fun ω => by simp [measure_ne_top (ν ω : Measure α) B]) hlin
+    (fun ω ↦ by simp [measure_ne_top (ν ω : Measure α) B]) hlin
   have hprod : ∀ ω, ((X i ⁻¹' B ∩ X j ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω).toReal
       = (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω * (X j ⁻¹' B).indicator (1 : Ω → ℝ) ω := by
     intro ω
@@ -315,18 +315,18 @@ private theorem ConditionallyIIDWith.integral_directing_mul_indicator
     (hB : MeasurableSet B) :
     ∫ ω, ((ν ω : Measure α) B).toReal * (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ∂μ
       = ∫ ω, ((ν ω : Measure α) B).toReal ^ 2 ∂μ := by
-  have hu : Measurable fun ω => (ν ω : Measure α) B :=
+  have hu : Measurable fun ω ↦ (ν ω : Measure α) B :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hB).comp
       h.measurable_directing
-  have hg : Measurable fun p : ProbabilityMeasure α => (p : Measure α) B :=
+  have hg : Measurable fun p : ProbabilityMeasure α ↦ (p : Measure α) B :=
     TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hB
-  have hlin := h.lintegral_mul_indicator_single (g := fun p => (p : Measure α) B) i hg hB
+  have hlin := h.lintegral_mul_indicator_single (g := fun p ↦ (p : Measure α) B) i hg hB
   have := integral_toReal_eq_of_lintegral_eq
     (hu.aemeasurable.mul
       (measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB)))
     (hu.mul hu).aemeasurable
-    (fun ω => ENNReal.mul_ne_top (measure_ne_top _ _) (indicator_one_ne_top _ ω))
-    (fun ω => ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _)) hlin
+    (fun ω ↦ ENNReal.mul_ne_top (measure_ne_top _ _) (indicator_one_ne_top _ ω))
+    (fun ω ↦ ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _)) hlin
   simpa [ENNReal.toReal_mul, toReal_indicator_one, sq] using this
 
 /-- **The centred indicators pair to `∫ q - ∫ q²` on the diagonal and to `0` off it.** Writing
@@ -344,7 +344,7 @@ private theorem ConditionallyIIDWith.integral_indicator_sub_directing_mul_indica
       = if i = j then
           (∫ ω, ((ν ω : Measure α) B).toReal ∂μ - ∫ ω, ((ν ω : Measure α) B).toReal ^ 2 ∂μ)
         else 0 := by
-  have hq : Measurable fun ω => ((ν ω : Measure α) B).toReal :=
+  have hq : Measurable fun ω ↦ ((ν ω : Measure α) B).toReal :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply_toReal hB).comp
       h.measurable_directing
   have hei : AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ :=
@@ -352,10 +352,10 @@ private theorem ConditionallyIIDWith.integral_indicator_sub_directing_mul_indica
   have hej : AEMeasurable ((X j ⁻¹' B).indicator (1 : Ω → ℝ)) μ :=
     measurable_one.aemeasurable.indicator₀ ((h.aemeasurable j).nullMeasurableSet_preimage hB)
   have hb : ∀ i, ∀ᵐ ω ∂μ, 0 ≤ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω
-      ∧ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ≤ 1 := fun i => ae_of_all _ fun ω => by
+      ∧ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ≤ 1 := fun i ↦ ae_of_all _ fun ω ↦ by
     by_cases hmem : ω ∈ X i ⁻¹' B <;> simp [hmem]
   have hbq : ∀ᵐ ω ∂μ, 0 ≤ ((ν ω : Measure α) B).toReal
-      ∧ ((ν ω : Measure α) B).toReal ≤ 1 := ae_of_all _ fun ω =>
+      ∧ ((ν ω : Measure α) B).toReal ≤ 1 := ae_of_all _ fun ω ↦
     ⟨ENNReal.toReal_nonneg, measureReal_le_one⟩
   rw [integral_sub_mul_sub
     (integrable_mul_of_nonneg_of_le_one hei hej (hb i) (hb j))
@@ -399,24 +399,24 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
           - ((ν ω : Measure α) B).toReal) ^ 2 ∂μ
       = (n : ℝ)⁻¹ * (∫ ω, ((ν ω : Measure α) B).toReal ∂μ
           - ∫ ω, ((ν ω : Measure α) B).toReal ^ 2 ∂μ) := by
-  have hq : Measurable fun ω => ((ν ω : Measure α) B).toReal :=
+  have hq : Measurable fun ω ↦ ((ν ω : Measure α) B).toReal :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply_toReal hB).comp
       h.measurable_directing
   have he : ∀ i ∈ Finset.range n,
-      AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i hi =>
+      AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i hi ↦
     measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB)
   -- the `[0, 1]` bounds feeding the `|·| ≤ 1` hypotheses of `integral_sq_average_sub`
-  have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ => ENNReal.toReal_nonneg
-  have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ => measureReal_le_one
-  have he0 : ∀ i ω, 0 ≤ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω := fun i ω =>
-    Set.indicator_nonneg (fun _ _ => zero_le_one) ω
+  have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ ↦ ENNReal.toReal_nonneg
+  have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ ↦ measureReal_le_one
+  have he0 : ∀ i ω, 0 ≤ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω := fun i ω ↦
+    Set.indicator_nonneg (fun _ _ ↦ zero_le_one) ω
   have he1 : ∀ i ω, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ≤ 1 := by
     intro i ω
     by_cases hmem : ω ∈ X i ⁻¹' B <;> simp [hmem]
   exact integral_sq_average_sub he hq.aemeasurable
-    (fun i _ ω => abs_le.mpr ⟨by linarith [he0 i ω], he1 i ω⟩)
-    (fun ω => abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩)
-    (fun i hi j hj =>
+    (fun i _ ω ↦ abs_le.mpr ⟨by linarith [he0 i ω], he1 i ω⟩)
+    (fun ω ↦ abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩)
+    (fun i hi j hj ↦
       h.integral_indicator_sub_directing_mul_indicator_sub_directing i j hB)
     hn
 
@@ -432,20 +432,20 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq_le [IsProbabilit
     (hn : n ≠ 0) :
     ∫ ω, ((n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω)
           - ((ν ω : Measure α) B).toReal) ^ 2 ∂μ ≤ (n : ℝ)⁻¹ := by
-  have hq : Measurable fun ω => ((ν ω : Measure α) B).toReal :=
+  have hq : Measurable fun ω ↦ ((ν ω : Measure α) B).toReal :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply_toReal hB).comp
       h.measurable_directing
-  have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ => ENNReal.toReal_nonneg
-  have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ => measureReal_le_one
-  have hqint : Integrable (fun ω => ((ν ω : Measure α) B).toReal) μ :=
-    Integrable.of_bound hq.aestronglyMeasurable 1 <| ae_of_all _ fun ω => by
+  have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ ↦ ENNReal.toReal_nonneg
+  have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ ↦ measureReal_le_one
+  have hqint : Integrable (fun ω ↦ ((ν ω : Measure α) B).toReal) μ :=
+    Integrable.of_bound hq.aestronglyMeasurable 1 <| ae_of_all _ fun ω ↦ by
       rw [Real.norm_eq_abs]
       exact abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩
   have hA : ∫ ω, ((ν ω : Measure α) B).toReal ∂μ ≤ 1 := by
     have := integral_mono hqint (integrable_const (1 : ℝ)) hq1
     simpa using this
   have hC : 0 ≤ ∫ ω, ((ν ω : Measure α) B).toReal ^ 2 ∂μ :=
-    integral_nonneg fun ω => by positivity
+    integral_nonneg fun ω ↦ by positivity
   have hn' : (0 : ℝ) ≤ (n : ℝ)⁻¹ := by positivity
   rw [h.integral_empiricalFrequency_sub_sq hB hn]
   nlinarith [hA, hC, hn']
@@ -460,13 +460,14 @@ At a probability measure this is convergence in mean square.
 Indexed at `n + 1` so that no caller carries an `n ≠ 0` side condition. -/
 theorem ConditionallyIIDWith.tendsto_integral_empiricalFrequency_sub_sq [IsFiniteMeasure μ]
     (h : ConditionallyIIDWith μ X ν) (hB : MeasurableSet B) :
-    Tendsto (fun n : ℕ => ∫ ω, (((n + 1 : ℕ) : ℝ)⁻¹ *
+    Tendsto (fun n : ℕ ↦ ∫ ω, (((n + 1 : ℕ) : ℝ)⁻¹ *
           (∑ i ∈ Finset.range (n + 1), (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω)
         - ((ν ω : Measure α) B).toReal) ^ 2 ∂μ) atTop (nhds 0) := by
-  have hupper : Tendsto (fun n : ℕ => ((n + 1 : ℕ) : ℝ)⁻¹) atTop (nhds 0) :=
-    tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n => by
-      rw [one_div]; norm_cast
-  simp only [fun n : ℕ =>
+  have hupper : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (nhds 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n ↦ by
+      rw [one_div]
+      norm_cast
+  simp only [fun n : ℕ ↦
     h.integral_empiricalFrequency_sub_sq hB (Nat.succ_ne_zero n)]
   simpa using hupper.mul_const _
 

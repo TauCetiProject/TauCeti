@@ -34,16 +34,8 @@ Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean`](https://github.com/CBirkbeck/AINTLIB),
 Chris Birkbeck).
 
-## Main definitions
-
-* `HeckeRing.GL2.Gamma1Image`: the image of `Γ₁(N)` in `GL₂(ℚ)`.
-
 ## Main results
 
-* `HeckeRing.GL2.Gamma1Image_le_Gamma0Image`: `Γ₁(N) ≤ Γ₀(N)` in `GL₂(ℚ)`.
-* `HeckeRing.GL2.Gamma1Image_le_Delta0`: `Γ₁(N) ≤ Δ₀(N)`, the special case of the Γ₀ result.
-* `HeckeRing.GL2.Delta0_le_commensurator_Gamma1Image`: `Δ₀(N)` lies in the commensurator
-  of `Γ₁(N)`.
 * the `IsHeckeTriple (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))`
   instance.
 
@@ -62,43 +54,19 @@ open scoped Pointwise MatrixGroups
 
 namespace HeckeRing.GL2
 
-variable (N : ℕ)
-
-/-- The image of `Γ₁(N)` in `GL₂(ℚ)`. -/
-noncomputable def Gamma1Image : Subgroup (GL (Fin 2) ℚ) :=
-  (Gamma1 N).map (mapGL ℚ)
-
-/-- Membership in the image of `Γ₁(N)`, by an integral witness. -/
-@[simp] lemma mem_Gamma1Image_iff {g : GL (Fin 2) ℚ} :
-    g ∈ Gamma1Image N ↔ ∃ σ ∈ Gamma1 N, mapGL ℚ σ = g := by
-  rw [Gamma1Image, Subgroup.mem_map]
-
-/-- `Γ₁(N) ≤ Γ₀(N)`, transported to the images in `GL₂(ℚ)`. -/
-lemma Gamma1Image_le_Gamma0Image : Gamma1Image N ≤ Gamma0Image N := by
-  intro g hg
-  obtain ⟨σ, hσ, rfl⟩ := (mem_Gamma1Image_iff N).mp hg
-  exact (mem_Gamma0Image_iff N).mpr ⟨σ, Gamma1_in_Gamma0 N hσ, rfl⟩
-
-/-- `Γ₁(N) ≤ Δ₀(N)`: the special case of `Gamma0Image_le_Delta0` at the smaller group, since
-`Γ₁(N) ≤ Γ₀(N)`. -/
-lemma Gamma1Image_le_Delta0 : (Gamma1Image N).toSubmonoid ≤ Delta0 N :=
-  fun _ hg ↦ Gamma0Image_le_Delta0 N (Gamma1Image_le_Gamma0Image N hg)
-
-variable [NeZero N]
-
-/-- `Δ₀(N)` lies in the commensurator of `Γ₁(N)`, the right-hand half of its Hecke triple. -/
-lemma Delta0_le_commensurator_Gamma1Image :
-    Delta0 N ≤ (commensurator (Gamma1Image N)).toSubmonoid :=
-  Delta0_le_commensurator_map N (Gamma1 N)
+variable (N : ℕ) [NeZero N]
 
 /-- **The Hecke triple of `Γ₁(N)`**: `Γ₁(N) ≤ Δ₀(N) ≤ commensurator(Γ₁(N))` inside
 `GL₂(ℚ)` — the setting of the Hecke operators on modular forms of level `N`.
 
-Stated at the unfolded `(Gamma1 N).map (mapGL ℚ)` rather than at `Gamma1Image N`: instance search
-unfolds neither, and the unfolded spelling is the one consumers meet, since the level of a
-modular form of level `N` is written `(Gamma1 N).map (mapGL ℝ)` and its rational companion
-arrives in the same shape. -/
+Stated at the unfolded `(Gamma1 N).map (mapGL ℚ)`, which is the spelling consumers meet: the
+level of a modular form of level `N` is written `(Gamma1 N).map (mapGL ℝ)` and its rational
+companion arrives in the same shape. Instance search does not unfold a `def`, so an abbreviation
+for this subgroup would not be found here anyway. -/
 instance : IsHeckeTriple (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
-  IsHeckeTriple.of_diagonal (Gamma1Image_le_Delta0 N) (Delta0_le_commensurator_Gamma1Image N)
+  IsHeckeTriple.of_diagonal
+    (fun _ hg ↦ Gamma0Image_le_Delta0 N
+      ((Gamma0Image_def N).symm ▸ Subgroup.map_mono (Gamma1_in_Gamma0 N) hg))
+    (Delta0_le_commensurator_map N (Gamma1 N))
 
 end HeckeRing.GL2

@@ -28,14 +28,15 @@ and it is their squares that are chi-squared.
 
 ## Main results
 
-* `TauCeti.map_sq_withDensity_eq_gammaMeasure` — squaring sends the root-gamma law to
+* `TauCeti.Probability.map_sq_withDensity_eq_gammaMeasure` — squaring sends the root-gamma law to
   `gammaMeasure a r`;
-* `TauCeti.map_sqrt_gammaMeasure` — the inverse correspondence, the image of `gammaMeasure a r`
+* `TauCeti.Probability.map_sqrt_gammaMeasure` — the inverse correspondence, the image of
+  `gammaMeasure a r`
   under `Real.sqrt`;
 * `TauCeti.Probability.map_sq_withDensity_eq_chiSquaredMeasure` and
   `TauCeti.Probability.map_sqrt_chiSquaredMeasure` — the same pair for the chi and chi-squared
   laws;
-* `TauCeti.isProbabilityMeasure_withDensity_rootGamma` and
+* `TauCeti.Probability.isProbabilityMeasure_withDensity_rootGamma` and
   `TauCeti.Probability.isProbabilityMeasure_withDensity_chi` — both source laws are normalised.
 
 ## References
@@ -52,7 +53,7 @@ open MeasureTheory ProbabilityTheory Real Set
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {a r : ℝ}
 
@@ -81,7 +82,7 @@ theorem map_sq_withDensity_eq_gammaMeasure (a r : ℝ) :
   ring
 
 /-- **The square root of a gamma variable has the root-gamma density.** This inverts
-`TauCeti.map_sq_withDensity_eq_gammaMeasure`. -/
+`TauCeti.Probability.map_sq_withDensity_eq_gammaMeasure`. -/
 theorem map_sqrt_gammaMeasure (a r : ℝ) :
     (gammaMeasure a r).map Real.sqrt =
       (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
@@ -100,8 +101,6 @@ theorem isProbabilityMeasure_withDensity_rootGamma (ha : 0 < a) (hr : 0 < r) :
   rw [← Measure.isProbabilityMeasure_map_iff (f := fun t : ℝ ↦ t ^ 2) (by fun_prop),
     map_sq_withDensity_eq_gammaMeasure a r]
   exact isProbabilityMeasure_gammaMeasure ha hr
-
-namespace Probability
 
 variable {k : ℝ}
 
@@ -145,6 +144,4 @@ theorem isProbabilityMeasure_withDensity_chi (hk : 0 < k) :
     map_sq_withDensity_eq_chiSquaredMeasure hk]
   exact isProbabilityMeasure_chiSquaredMeasure hk.le
 
-end Probability
-
-end TauCeti
+end TauCeti.Probability

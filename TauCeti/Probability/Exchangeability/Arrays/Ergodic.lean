@@ -32,6 +32,9 @@ the array is coded without a global coordinate.
 * `TauCeti.Probability.instSMulFinitaryPermArray` — the diagonal action of the finitary symmetric
   group `TauCeti.FinitaryPerm` (defined in `Algebra/GroupAction/FiniteSupportPerm.lean`) on array
   path space, one permutation relabelling both coordinates;
+* `TauCeti.Probability.preimage_pairReindex_eq_self_of_measurableSet_arrayTail` — a corner-tail
+  event is fixed by every pair of finitely supported axis permutations, not only by the diagonal
+  ones;
 * `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul` — joint dissociation is ergodicity of
   that action for a jointly exchangeable array law.
 
@@ -94,24 +97,18 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
   intro g s hs
   simp only [finitaryPerm_smul_array_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
-  have hfun : pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ =
-      fun (x : ℕ × ℕ → α) p =>
-        x ((FinitaryPerm.toPerm g)⁻¹ p.1, (FinitaryPerm.toPerm g)⁻¹ p.2) :=
-    funext fun x => funext fun p => pairReindex_apply _ _ x p
-  rw [hfun]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
     (jointlyExchangeable_iff.mp hρ (FinitaryPerm.toPerm g)⁻¹)
-  -- the identity reindexing is `id` by unfolding, which no propositional lemma states
-  rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id] at hmap
+  rw [← pairReindex_def, Measure.map_id'] at hmap
   exact hmap
 
 /-! ## Corner-tail events are invariant -/
 
 private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
-    {s : Set (ℕ × ℕ → α)} {π : Equiv.Perm ℕ} {N : ℕ}
+    {s : Set (ℕ × ℕ → α)} {σ τ : Equiv.Perm ℕ} {N : ℕ}
     (hs : MeasurableSet[arrayTailFamily (fun p (x : ℕ × ℕ → α) => x p) N] s)
-    (hπ : ∀ k, N ≤ k → π k = k) :
-    pairReindex (α := α) π π ⁻¹' s = s := by
+    (hσ : ∀ k, N ≤ k → σ k = k) (hτ : ∀ k, N ≤ k → τ k = k) :
+    pairReindex (α := α) σ τ ⁻¹' s = s := by
   rw [arrayTailFamily_eq_blockSigma, blockSigma_def] at hs
   rw [MeasurableSpace.measurableSet_iSup] at hs
   induction hs with
@@ -123,7 +120,7 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
           rcases hu with ⟨hp, v, hv, rfl⟩
           ext x
           simp only [Set.mem_preimage, pairReindex_apply]
-          rw [hπ p.1 hp.1, hπ p.2 hp.2]
+          rw [hσ p.1 hp.1, hτ p.2 hp.2]
       | empty => simp
       | compl t _ hpre => rw [Set.preimage_compl, hpre]
       | iUnion f _ hf =>
@@ -135,6 +132,20 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
       rw [Set.preimage_iUnion]
       simp [hf]
 
+/-- **Every corner-tail event is fixed by a finitely supported separate relabelling**: permuting
+the two axes independently by finitely supported permutations fixes every sufficiently far corner,
+which is all that a corner-tail event reads. -/
+theorem preimage_pairReindex_eq_self_of_measurableSet_arrayTail
+    {s : Set (ℕ × ℕ → α)}
+    (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
+    {σ τ : Equiv.Perm ℕ} (hσ : (MulAction.fixedBy ℕ σ)ᶜ.Finite)
+    (hτ : (MulAction.fixedBy ℕ τ)ᶜ.Finite) : pairReindex (α := α) σ τ ⁻¹' s = s := by
+  obtain ⟨M, hM⟩ := finite_compl_fixedBy_eventually_eq_self hσ
+  obtain ⟨N, hN⟩ := finite_compl_fixedBy_eventually_eq_self hτ
+  exact preimage_pairReindex_eq_of_measurable_arrayTailFamily
+    ((measurableSet_arrayTail_iff.mp hs) (max M N))
+    (fun k hk => hM k ((le_max_left M N).trans hk)) fun k hk => hN k ((le_max_right M N).trans hk)
+
 /-- **Every corner-tail event is fixed by the diagonal action**: a finitely supported relabelling
 of both coordinates changes only finitely many entries, and a corner-tail event does not read
 them. -/
@@ -142,12 +153,10 @@ theorem preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail
     {s : Set (ℕ × ℕ → α)}
     (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
     (g : FinitaryPerm) : (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s := by
-  obtain ⟨N, hN⟩ := finite_compl_fixedBy_eventually_eq_self
-    (FinitaryPerm.finite_compl_fixedBy_toPerm g⁻¹)
-  rw [FinitaryPerm.toPerm_inv] at hN
+  have hfin : (MulAction.fixedBy ℕ (FinitaryPerm.toPerm g)⁻¹)ᶜ.Finite := by
+    simpa only [FinitaryPerm.toPerm_inv] using FinitaryPerm.finite_compl_fixedBy_toPerm g⁻¹
   simp only [finitaryPerm_smul_array_def]
-  exact preimage_pairReindex_eq_of_measurable_arrayTailFamily
-    ((measurableSet_arrayTail_iff.mp hs) N) hN
+  exact preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs hfin hfin
 
 /-! ## The block-swap zero-one argument -/
 

@@ -89,6 +89,24 @@ private def contributorGraphs : Html := {{
   </div>
 }}
 
+/-- Who works on which roadmap: one grid for merged PRs, one for reviews. Regenerated with
+the rest of the pull-request statistics by `scripts/pr_stats_graphs.py`; both slices are a
+local join over the same snapshot, so neither costs an extra API call. -/
+private def roadmapContributorGraphs : Html := {{
+  <figure class="loc-figure loc-figure-wide">
+    <img class="loc-graph" src="static/merges-by-roadmap-and-contributor.svg"
+         alt="Merged pull requests per contributor per roadmap, over the trailing ninety days"
+         loading="lazy"/>
+    <figcaption>"Merged PRs per contributor per roadmap over the trailing ninety days."</figcaption>
+  </figure>
+  <figure class="loc-figure loc-figure-wide">
+    <img class="loc-graph" src="static/reviews-by-roadmap-and-contributor.svg"
+         alt="Reviews per contributor per roadmap, over the trailing ninety days"
+         loading="lazy"/>
+    <figcaption>"Reviews per contributor per roadmap over the same window and the same columns."</figcaption>
+  </figure>
+}}
+
 #doc (Page) "Statistics" =>
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
@@ -110,7 +128,9 @@ the net lines each roadmap has accrued — every merged PR's additions minus its
 deletions, attributed to its roadmap — by the day the PR merged. Because it sums
 diffs rather than counting the lines in the tree, a line later rewritten counts under
 both PRs, so this measures work landed per roadmap, not a snapshot line count.
-Infrastructure and refactor PRs, which advance no roadmap, are left out.
+Infrastructure and refactor PRs, which advance no roadmap, are left out. How far each roadmap
+has got against its own specification is a different question, answered on the
+[Progress](progress) page.
 
 :::blob roadmapGraph
 :::
@@ -143,12 +163,29 @@ deliberately overlap.
 :::blob participationGraph
 :::
 
-How have merged contributions and reviews accumulated? Unlike the rolling charts above,
-these histories include the current partial UTC day through the snapshot time. They show
-every contributor while that remains legible, then cap themselves at 24 named lines and
-combine the remaining long tail. Exact totals for every login remain available in the generated
+How have merged contributions and reviews accumulated? Like the rolling charts above, these
+histories are drawn through the last complete UTC day, so a few hours of today never read as
+a slowdown. They show every contributor while that remains legible, then cap themselves at 24
+named lines and combine the remaining long tail. Exact totals for every login, counted right
+through the snapshot instant, remain available in the generated
 [`pr-stats.json`](static/pr-stats.json). A review is one canonical v1 scoreboard whose
 posting login also authors a merged PR in the fetched snapshot.
 
 :::blob contributorGraphs
+:::
+
+Who works where? The two grids below slice the same merges and reviews by the roadmap each PR
+carries, over the trailing ninety days. Between them they answer the questions the cumulative
+histories cannot: who already knows an area well enough to review for it, whether a roadmap is
+resting on one person, and where somebody has been spending their effort.
+
+The columns are the fifteen roadmaps with the most merges in that window, rather than the
+largest of all time — every one of those questions is about now, and a whole-history cut would
+hold a column for a roadmap that finished in July while an active one could not get in. Both
+grids use the same columns, so they can be read against each other. Everything past the cut is
+summed into one `Other` column and the quietest contributors into one `Other` row, so nothing is
+dropped; exact per-contributor, per-roadmap counts are in
+[`pr-stats.json`](static/pr-stats.json).
+
+:::blob roadmapContributorGraphs
 :::

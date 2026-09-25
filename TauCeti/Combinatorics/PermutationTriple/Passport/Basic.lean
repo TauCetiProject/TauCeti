@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.GroupTheory.Perm.PermCongr
 
@@ -14,8 +15,9 @@ public import TauCeti.GroupTheory.Perm.PermCongr
 
 A passport records the coarse invariants of a connected permutation triple: the conjugacy class
 of its monodromy subgroup in the ambient symmetric group and the ordered full cycle partitions at
-the three branch points.  This file introduces connected triples as a carrier, their relabeling
-classes, passport specifications, and the membership relation between the two.
+the three branch points.  This file introduces passport specifications and the membership
+relation between connected triples (`TauCeti.ConnectedTriple`) and passports, together with its
+descent to isomorphism classes (`TauCeti.ConnectedIsoClass`).
 
 The cycle partitions include fixed points.  Admissibility therefore says that each partition has
 positive parts summing to the degree.  The degree is also required to be nonzero: transitivity on
@@ -23,8 +25,6 @@ positive parts summing to the degree.  The degree is also required to be nonzero
 
 ## Main definitions
 
-* `TauCeti.ConnectedTriple`: a permutation triple together with connectedness.
-* `TauCeti.ConnectedIsoClass`: connected triples modulo simultaneous relabeling.
 * `TauCeti.PassportSpec`: a reference monodromy subgroup and three ordered cycle partitions.
 * `TauCeti.PassportSpec.IsAdmissible`: well-formed passport data.
 * `TauCeti.PassportSpec.HasPassport`: membership of a connected triple in a passport.
@@ -41,65 +41,6 @@ open Equiv MulAction
 public section
 
 namespace TauCeti
-
-/-! ## Connected triples and their isomorphism classes -/
-
-/-- A connected permutation triple of degree `n`.
-
-Connectedness is part of the carrier because passports are invariants of connected covers. -/
-abbrev ConnectedTriple (n : ℕ) : Type :=
-  {t : PermutationTriple n // t.IsConnected}
-
-namespace ConnectedTriple
-
-variable {n : ℕ}
-
-/-- Relabeling a connected triple simultaneously conjugates its three permutations. -/
-instance : MulAction (Perm (Fin n)) (ConnectedTriple n) where
-  smul τ t := ⟨τ • t.1, (PermutationTriple.isConnected_smul_iff τ t.1).2 t.2⟩
-  one_smul t := Subtype.ext (one_smul _ t.1)
-  mul_smul τ υ t := Subtype.ext (mul_smul τ υ t.1)
-
-noncomputable instance : Fintype (ConnectedTriple n) := Fintype.ofFinite _
-
-instance : DecidableEq (ConnectedTriple n) := inferInstance
-
-@[simp]
-theorem coe_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) :
-    ((τ • t : ConnectedTriple n) : PermutationTriple n) = τ • (t : PermutationTriple n) :=
-  (rfl)
-
-end ConnectedTriple
-
-/-- Isomorphism classes of connected permutation triples of degree `n`. -/
-def ConnectedIsoClass (n : ℕ) : Type :=
-  MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n)
-
-namespace ConnectedIsoClass
-
-variable {n : ℕ}
-
-/-- The isomorphism class of a connected triple. -/
-def mk (t : ConnectedTriple n) : ConnectedIsoClass n :=
-  Quotient.mk'' t
-
-/-- Two connected triples determine the same isomorphism class exactly when they are related by
-simultaneous relabeling. -/
-@[simp]
-theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
-    mk t = mk t' ↔ MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t' :=
-  Quotient.eq''
-
-theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
-  Quotient.mk''_surjective
-
-noncomputable instance : Fintype (ConnectedIsoClass n) := by
-  classical
-  exact Fintype.ofSurjective mk mk_surjective
-
-noncomputable instance : DecidableEq (ConnectedIsoClass n) := Classical.decEq _
-
-end ConnectedIsoClass
 
 /-! ## Passport specifications -/
 
@@ -122,6 +63,19 @@ namespace PassportSpec
 
 variable {n : ℕ}
 
+/-- The cycle partition at a branch point, numbered `0`, `1`, `2` for `0`, `1`, `∞`. -/
+def partition (P : PassportSpec n) (i : Fin 3) : Multiset ℕ :=
+  ![P.lam0, P.lam1, P.laminf] i
+
+@[simp] theorem partition_zero (P : PassportSpec n) : P.partition 0 = P.lam0 := (rfl)
+@[simp] theorem partition_one (P : PassportSpec n) : P.partition 1 = P.lam1 := (rfl)
+@[simp] theorem partition_two (P : PassportSpec n) : P.partition 2 = P.laminf := (rfl)
+
+/-- Passport specifications agree when their reference groups and indexed partitions agree. -/
+theorem ext_partition {P Q : PassportSpec n} (hG : P.G = Q.G)
+    (h : ∀ i, P.partition i = Q.partition i) : P = Q :=
+  PassportSpec.ext hG (h 0) (h 1) (h 2)
+
 /-- A passport is admissible when its degree is nonzero, its reference subgroup is transitive,
 and its three multisets are partitions of the degree into positive parts. -/
 def IsAdmissible (P : PassportSpec n) : Prop :=
@@ -130,6 +84,12 @@ def IsAdmissible (P : PassportSpec n) : Prop :=
     (P.lam0.sum = n ∧ ∀ i ∈ P.lam0, 0 < i) ∧
     (P.lam1.sum = n ∧ ∀ i ∈ P.lam1, 0 < i) ∧
     (P.laminf.sum = n ∧ ∀ i ∈ P.laminf, 0 < i)
+
+/-- Admissibility expressed uniformly over the three branch points. -/
+theorem isAdmissible_iff_partition (P : PassportSpec n) :
+    P.IsAdmissible ↔ n ≠ 0 ∧ IsPretransitive P.G (Fin n) ∧
+      ∀ i, (P.partition i).sum = n ∧ ∀ j ∈ P.partition i, 0 < j := by
+  simp [IsAdmissible, Fin.forall_fin_succ, partition]
 
 theorem IsAdmissible.ne_zero {P : PassportSpec n} (hP : P.IsAdmissible) : n ≠ 0 := hP.1
 
@@ -209,6 +169,9 @@ def conjugate (P : PassportSpec n) (τ : Perm (Fin n)) : PassportSpec n where
   lam1 := P.lam1
   laminf := P.laminf
 
+@[simp] theorem partition_conjugate (P : PassportSpec n) (τ : Perm (Fin n)) (i : Fin 3) :
+    (P.conjugate τ).partition i = P.partition i := (rfl)
+
 @[simp] theorem conjugate_G (P : PassportSpec n) (τ : Perm (Fin n)) :
     (P.conjugate τ).G = P.G.map (MulAut.conj τ).toMonoidHom := (rfl)
 
@@ -282,6 +245,10 @@ theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
       exact t.1.σinf.partition.parts_pos hi
 
 end PassportSpec
+
+/-- An ordered passport is an admissible specification with the branch points still ordered.
+The reference subgroup is retained as data; passport membership compares it up to conjugacy. -/
+abbrev OrderedPassport (n : ℕ) := {P : PassportSpec n // P.IsAdmissible}
 
 namespace ConnectedIsoClass
 

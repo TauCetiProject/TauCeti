@@ -29,6 +29,11 @@ The perturbed data are not indexed by `T`: `T'` is any finite set each of whose 
 what the statement actually needs, and it avoids carrying a bijection `T ≃ T'` — the same set may
 be presented with different cardinality after perturbation.
 
+The same estimate settles a second way of leaving a rational subset where it is: *enlarging* the
+numerator set by elements too small to matter. Along a continuous homomorphism `φ : A → B` of
+Huber rings, a rational subset `R(T/s)` of `Spa(B, B⁺)` with `T · B` open admits a finite `D ⊆ A`
+spanning an open ideal of `A` whose image may be adjoined to `T` for free.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.valuation_lt_of_mem_idealImage` : elements of a sufficiently small
@@ -38,11 +43,15 @@ be presented with different cardinality after perturbation.
 * `TauCeti.ValuationSpectrum.exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem` : the same
   statement over a Huber ring, with the perturbation measured by a neighbourhood of zero and no
   pair of definition in sight.
+* `TauCeti.ValuationSpectrum.exists_isOpen_span_rationalSubset_union_image_eq` : a rational subset
+  is unchanged by adjoining the image of a suitable finite set spanning an open ideal of the
+  source of a continuous homomorphism.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 7.29 and
-  Proposition 7.34.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 7.29,
+  Proposition 7.34, and the enlargement of a numerator set carried out in the proof of
+  Proposition 8.2(2).
 -/
 
 public section
@@ -180,6 +189,52 @@ theorem exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem [IsHuberRing A]
     exists_forall_rationalSubset_eq_of_sub_mem_idealImage P Aplus T hT s
   exact ⟨(P.idealImage n : Set A),
     (P.isOpen_idealImage n).mem_nhds (P.idealImage n).zero_mem, hn⟩
+
+open scoped Classical in
+/-- **A rational subset absorbs the image of a small enough open-spanning finite set.** Along a
+continuous homomorphism `φ : A → B` of Huber rings, a rational subset `R(T/s)` of `Spa(B, B⁺)`
+whose numerator ideal `T · B` is open admits a finite `D ⊆ A` spanning an open ideal of `A` whose
+image may be adjoined to the numerators for free:
+
+```text
+R((T ∪ φ(D))/s) = R(T/s).
+```
+
+Wedhorn carries out this enlargement inside the proof of Proposition 8.2(2). Neither ring is
+assumed Tate, complete or Noetherian, and nothing is assumed relating the ideals of definition
+of `A` and `B`: the ideal `D · A` is open for reasons internal to `A`. -/
+theorem exists_isOpen_span_rationalSubset_union_image_eq [IsHuberRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {φ : A →+* B} (hφ : Continuous φ)
+    (Bplus : Subring B) (T : Finset B) (hT : IsOpen (Ideal.span (T : Set B) : Set B)) (s : B) :
+    ∃ D : Finset A, IsOpen (Ideal.span (D : Set A) : Set A) ∧
+      rationalSubset Bplus (T ∪ D.image φ) s = rationalSubset Bplus T s := by
+  -- `0` is adjoined to the numerators before the perturbation theorem is applied and removed
+  -- again afterwards. It is there because that theorem compares two presentations elementwise
+  -- in both directions, and `0` is the element each adjoined `φ d` is close to; removing it
+  -- costs nothing, since `v 0 ≤ v s` holds at every point.
+  obtain ⟨V, hV, hpert⟩ :=
+    exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem Bplus (insert 0 T) (by simpa using hT) s
+  obtain ⟨D, hD, hDopen⟩ :=
+    exists_finset_subset_isOpen_span <| hφ.continuousAt.preimage_mem_nhds <| map_zero φ ▸ hV
+  refine ⟨D, hDopen, ?_⟩
+  have h0 : (0 : B) ∈ V := mem_of_mem_nhds hV
+  have h := hpert (insert 0 (T ∪ D.image φ)) s (by
+    intro t ht
+    rcases Finset.mem_insert.mp ht with rfl | ht
+    · exact ⟨(0 : B), Finset.mem_insert_self 0 _, by simpa using h0⟩
+    · exact ⟨t, Finset.mem_insert_of_mem (Finset.mem_union_left _ ht), by simpa using h0⟩) (by
+    intro u hu
+    rcases Finset.mem_insert.mp hu with rfl | hu
+    · exact ⟨(0 : B), Finset.mem_insert_self 0 T, by simpa using h0⟩
+    rcases Finset.mem_union.mp hu with hu | hu
+    · exact ⟨u, Finset.mem_insert_of_mem hu, by simpa using h0⟩
+    · obtain ⟨d, hd, rfl⟩ := Finset.mem_image.mp hu
+      exact ⟨(0 : B), Finset.mem_insert_self 0 T, by simpa using hD hd⟩) (by simpa using h0)
+  rw [rationalSubset_insert_of_forall_vle Bplus (T ∪ D.image φ) s 0
+      (fun v _ ↦ v.toValuativeRel.zero_vle s),
+    rationalSubset_insert_of_forall_vle Bplus T s 0
+      (fun v _ ↦ v.toValuativeRel.zero_vle s)] at h
+  exact h
 
 end TauCeti.ValuationSpectrum
 

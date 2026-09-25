@@ -277,8 +277,7 @@ theorem map_baseChangeExp_algHom {T : Type*} [CommRing T] [Algebra ℤ T] (φ : 
         baseChangeExp x M hM (φ t)
           (TensorProduct.map φ.toLinearMap LinearMap.id z) := by
   intro z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r m =>
       rw [TensorProduct.map_tmul, baseChangeExp_tmul, baseChangeExp_tmul]
       simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply,
@@ -444,8 +443,7 @@ theorem baseChangeExp_zero (x : A) (M : S)
     rw [h0, pow_zero] at hpow
     apply LinearMap.ext
     intro v
-    induction v using TensorProduct.induction_on with
-    | zero => simp
+    induction v using TensorProduct.inductionOn with
     | tmul r m =>
         have hm : (m : V) = 0 := by
           have h1 : (m : V) = (1 : A) • (m : V) := (one_smul A (m : V)).symm
@@ -554,8 +552,7 @@ theorem baseChangeExp_neg (x : A) (M : S)
   obtain ⟨k, hk⟩ := id hx
   have hk' : (-x) ^ k = 0 := by rw [neg_pow, hk, mul_zero]
   refine LinearMap.ext fun z => ?_
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v =>
       rw [baseChangeExp_tmul_of_pow_eq_zero (-x) M hM' hk',
         baseChangeExp_tmul_of_pow_eq_zero x M hM hk]
@@ -594,8 +591,7 @@ theorem baseChangeExp_intCast (x : A) (M : S)
       ((integralExpZSMul x M hM hx t : M →ₗ[ℤ] M).baseChange R) := by
   obtain ⟨k, hk⟩ := id hx
   refine LinearMap.ext fun z => ?_
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v =>
       have hE : ((integralExpZSMul x M hM hx t : M →ₗ[ℤ] M) v : M) =
           ∑ n ∈ range k, t ^ n • integralDividedPower x M n (hM n) v := by
@@ -625,8 +621,7 @@ theorem baseChange_integralUnitRestrict_conj_baseChangeExp (x : A) (M : S) (u : 
   obtain ⟨k, hk⟩ := id hx
   have hk' : ((u : A) * x * ↑u⁻¹) ^ k = 0 := by rw [Units.conj_pow, hk, mul_zero, zero_mul]
   refine LinearMap.ext fun z => ?_
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v =>
       rw [Module.End.mul_apply, Module.End.mul_apply, LinearMap.baseChange_tmul,
         baseChangeExp_tmul_of_pow_eq_zero x M hM hk,

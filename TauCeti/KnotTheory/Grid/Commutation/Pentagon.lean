@@ -183,6 +183,49 @@ def ofSwapColumns (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
   right_eq := rfl
   turn_mem := hs
 
+/-- Regard an oriented rectangle as a pentagon: its terminal side must be the grid line replaced
+by `γ`, and the turn row must lie among the rows that side spans. -/
+def ofRightEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    GridPentagonBetween a s u v where
+  toGridRectangleBetween := r
+  right_eq := hright
+  turn_mem := hs
+
+/-- The rectangle underlying `ofRightEq` is the supplied rectangle. -/
+@[simp]
+theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).toGridRectangleBetween = r := by
+  unfold ofRightEq
+  rfl
+
+/-- Regard a rectangle between possibly different endpoint states as a pentagon when its
+underlying toroidal rectangle agrees with that of an existing pentagon. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridPentagonBetween a s u v :=
+  ofRightEq r
+    (by
+      have hright := congrArg GridRectangle.right h
+      simpa only [GridRectangleBetween.toGridRectangle_right] using hright.trans P.right_eq)
+    (by
+      have hbottom := congrArg GridRectangle.bottom h
+      have htop := congrArg GridRectangle.top h
+      simp only [GridRectangleBetween.toGridRectangle_bottom,
+        GridRectangleBetween.toGridRectangle_top] at hbottom htop
+      rw [hbottom, htop]
+      exact P.turn_mem)
+
+/-- The rectangle underlying `ofToGridRectangleEq` is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridPentagonBetween a s x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := by
+  unfold ofToGridRectangleEq
+  exact ofRightEq_toGridRectangleBetween r _ _
+
 /-- The initial side of the pentagon built from a column swap. -/
 @[simp]
 theorem ofSwapColumns_left (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
@@ -228,6 +271,20 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
           (p.1 = finRotate n a ∧ p.2 ∈ Grid.cIco P.bottom s) := by
   simp only [coveredSquares, Finset.mem_union, Finset.mem_product, Finset.mem_erase,
     Finset.mem_singleton, and_assoc]
+
+/-- Pentagons with the same underlying toroidal rectangle cover the same squares. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridPentagonBetween a s x y) (Q : GridPentagonBetween a s u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  have hleft := congrArg GridRectangle.left h
+  have hbottom := congrArg GridRectangle.bottom h
+  have htop := congrArg GridRectangle.top h
+  simp only [GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top] at hleft hbottom htop
+  ext p
+  rw [P.mem_coveredSquares, Q.mem_coveredSquares]
+  simp only [hleft, hbottom, htop]
 
 /-- Away from the two columns next to the replaced line, a pentagon covers the squares of its
 underlying rectangle. -/
@@ -352,6 +409,13 @@ empty pentagons from `x` to `y` carrying no `X`-marking. -/
 noncomputable def pentagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
     MvPolynomial (Fin n) R :=
   ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P
+
+/-- The matrix coefficient of the pentagon map is the sum of the weights of its counted
+pentagons. -/
+theorem pentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.pentagonCoefficient R C x y =
+      ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P :=
+  (rfl)
 
 /-- The value of the pentagon map on a single grid-state generator. -/
 noncomputable def pentagonMapOnGenerator (C : ColumnCommutationData G) (x : GridState n) :

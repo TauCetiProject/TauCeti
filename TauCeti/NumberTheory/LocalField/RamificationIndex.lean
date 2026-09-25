@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.RingTheory.RamificationInertia.Basic
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # The ramification index of an extension of local fields
@@ -33,6 +35,8 @@ filtration.
 
 * `TauCeti.ramificationIndex`: the ramification index `e(L/K)` of an extension of
   nonarchimedean local fields.
+* `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
+  divide, respectively divides, the ramification index.
 
 ## Main results
 
@@ -44,15 +48,21 @@ filtration.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
   `TauCeti.valuation_algebraMap_irreducible`: a uniformizer of `K` has normalized valuation `e`
   in `L`, that is, its valuation is the `e`-th power of that of a uniformizer of `L`.
+* `TauCeti.map_maximalIdeal_eq_maximalIdeal_pow`: the maximal ideal of `𝒪[K]` generates
+  `𝓂[L] ^ e(L/K)`.
+* `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
+  `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
+* `TauCeti.isTamelyRamified_iff_natCast_ne_zero`: `L/K` is tamely ramified exactly when `e(L/K)`
+  is nonzero in the residue field of `K`.
 
 ## Implementation notes
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def`, every public theorem about it assumes compatibility, which makes the
-restricted valuation trivial on the units of `𝒪[K]` and hence a power of `v_K`. Finiteness of
-`L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
+about it assumes compatibility, which makes the restricted valuation trivial on the units of
+`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -114,6 +124,46 @@ private theorem natCast_ramificationIndex_eq {m : ℤ} (hm : 0 ≤ m)
   · refine eq_top_iff.2 fun y _ ↦ Subgroup.mem_zpowers_iff.2 ⟨y.toAdd, ?_⟩
     apply Multiplicative.toAdd.injective
     simp
+
+section Tame
+
+variable (K L)
+
+/-- An extension of nonarchimedean local fields is **tamely ramified** when the residue
+characteristic does not divide its ramification index. For a general valued field tameness also
+asks for a separable residue extension; that condition is automatic here, the residue fields of
+nonarchimedean local fields being finite. -/
+def IsTamelyRamified : Prop :=
+  ¬ ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- An extension of nonarchimedean local fields is **wildly ramified** when the residue
+characteristic divides its ramification index. -/
+def IsWildlyRamified : Prop :=
+  ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- The defining condition of tame ramification. -/
+theorem isTamelyRamified_iff :
+    IsTamelyRamified K L ↔ ¬ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- The defining condition of wild ramification. -/
+theorem isWildlyRamified_iff :
+    IsWildlyRamified K L ↔ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- An extension is wildly ramified exactly when it is not tamely ramified. -/
+@[simp]
+theorem not_isTamelyRamified_iff : ¬ IsTamelyRamified K L ↔ IsWildlyRamified K L := not_not
+
+/-- An extension is tamely ramified exactly when it is not wildly ramified. -/
+@[simp]
+theorem not_isWildlyRamified_iff : ¬ IsWildlyRamified K L ↔ IsTamelyRamified K L := Iff.rfl
+
+/-- An extension is tamely ramified exactly when its ramification index is nonzero in the
+residue field of `K`. -/
+theorem isTamelyRamified_iff_natCast_ne_zero :
+    IsTamelyRamified K L ↔ (ramificationIndex K L : 𝓀[K]) ≠ 0 :=
+  (ringChar.spec 𝓀[K] _).not.symm
+
+end Tame
 
 variable [ValuativeExtension K L]
 
@@ -245,15 +295,48 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
   rw [h₁, map_pow, h₂, ← WithZero.exp_nsmul]
   simp
 
+variable (K L) in
+/-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
+This is the ideal-theoretic form of the characteristic property of the ramification index. -/
+theorem map_maximalIdeal_eq_maximalIdeal_pow :
+    𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] ^ ramificationIndex K L := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
+      valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
+    push_cast
+    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
+  have hint := Valuation.integer.integers (valuation L)
+  have hass : Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) :=
+    associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
+  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ,
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
+    Set.image_singleton, Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton]
+  exact hass
+
+variable (K L) in
+/-- **The intrinsic ramification index is the ideal-theoretic one**: the index of the image of the
+normalized value group is the ramification index of `𝓂[L]` over `𝒪[K]`. -/
+theorem ramificationIndex_eq_ramificationIdx :
+    ramificationIndex K L = 𝓂[L].ramificationIdx 𝒪[K] := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  rw [← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
+    (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  refine (Ideal.ramificationIdx'_spec
+    (map_maximalIdeal_eq_maximalIdeal_pow K L).le fun hle ↦ ?_).symm
+  rw [map_maximalIdeal_eq_maximalIdeal_pow K L,
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.span_singleton_pow,
+    Ideal.span_singleton_pow, Ideal.span_singleton_le_span_singleton,
+    pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
+  omega
+
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
 `e(M/K) = e(L/K) · e(M/L)`. -/
 theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  -- The compatibility of `M/K` follows from that of the two steps.
-  have : ValuativeExtension K M := ⟨fun a b ↦ by
-    simp only [IsScalarTower.algebraMap_apply K L M, ValuativeExtension.vle_iff_vle]⟩
+  have := ValuativeExtension.trans K L M
   refine ramificationIndex_eq_iff.2 fun x ↦ ?_
   have hx : Units.map (algebraMap K M : K →* M) x =
       Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by

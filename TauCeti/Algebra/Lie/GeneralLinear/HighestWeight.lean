@@ -65,6 +65,8 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   translated tuple is prescribed.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
+* `TauCeti.isGlDominantIntegral_glHalfStaircase`: the field-valued half-staircase is dominant in
+  characteristic zero.
 * `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
   characteristic-zero field.
 * `TauCeti.sum_glHalfStaircase`: the corresponding sum over any field in which two is
@@ -377,6 +379,34 @@ theorem isGlDominantIntegral_glStaircase (N : ℕ) : IsGlDominantIntegral (glSta
   intro i j hij
   have hji : ((j : ℕ) : ℚ) = ((i : ℕ) : ℚ) + 1 := by exact_mod_cast hij.symm
   exact ⟨1, by rw [glStaircase_apply, glStaircase_apply, hji]; push_cast; ring⟩
+
+/-- The half-staircase weight over a characteristic-zero field is dominant: as for the rational
+staircase, every consecutive difference is `1`. -/
+theorem isGlDominantIntegral_glHalfStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
+    IsGlDominantIntegral (glHalfStaircase F N) := by
+  rw [isGlDominantIntegral_iff]
+  intro i j hij
+  have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+
+/-- Lowering one entry of the half-shifted staircase preserves `gl n` dominance. -/
+theorem isGlDominantIntegral_glHalfStaircase_sub_single {F : Type*} [Field F] [CharZero F]
+    (N : ℕ) (t : Fin N) :
+    IsGlDominantIntegral (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) := by
+  rw [isGlDominantIntegral_iff]
+  intro i j hij
+  have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  by_cases hi : i = t <;> by_cases hj : j = t
+  · subst j
+    omega
+  · subst i
+    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hj]
+    exact ⟨0, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+  · subst j
+    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi]
+    exact ⟨2, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+  · simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi, ite_eq_right hj]
+    exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
 
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.HalfPlaneIdentity
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
@@ -33,6 +35,31 @@ It agrees with the norm-regrouped L-series of `χ` on `Re s > 1` for *every* uni
 on `Re s > 1 - 1 / d` (`TauCeti.differentiableOn_continuedLFunctionOfWeight`); so it is an analytic
 continuation of the L-series of `χ` across the line `Re s = 1`.
 
+Both are stable under deleting finitely many Euler factors, the operation a character family
+needs at the bad primes of its modulus. A one-prime recurrence relates the partial sums after
+inserting a forbidden prime to two partial sums before the insertion
+(`TauCeti.MultiplicativeIdealWeight.idealSummatory_restrict_insert`). Iterating this recurrence
+shows that cancellation passes to the restriction (`TauCeti.HasCancellation.restrict`); on
+`Re s > 1` the two continued
+`L`-functions differ by the entire factor `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))`
+(`TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re`), and under cancellation that identity
+propagates to the whole half-plane `Re s > 1 - 1 / d`
+(`TauCeti.continuedLFunctionOfWeight_restrict`).
+
+In number-field degree greater than one, cancellation is also invariant under purely imaginary
+norm twists (`TauCeti.hasCancellation_normTwist_iff`). Abel summation supplies this because the
+cancellation exponent `1 - 1 / [K : ℚ]` is then positive. The degree-one case is deliberately not
+claimed: the defining bound has exponent zero, while the absolute bound for the Abel integral is
+logarithmic.
+
+The continued `L`-function itself follows these operations. Conjugating the weight reflects it
+in the real axis, `L(conj χ, conj s) = conj (L(χ, s))`, at every `s`
+(`TauCeti.continuedLFunctionOfWeight_conj`). An imaginary norm twist by `N(I) ^ (-z)` translates
+it by `z`: on `Re s > 1` for every weight
+(`TauCeti.continuedLFunctionOfWeight_normTwist_of_one_lt_re`), and on the whole half-plane
+`Re s > 1 - 1 / d` when both the weight and its twist have cancellation
+(`TauCeti.continuedLFunctionOfWeight_normTwist`).
+
 Cancellation is a hypothesis about the partial sums themselves. It cannot be replaced by
 finiteness of the image of `χ` or of a quotient through which it factors: the values of a weight
 factoring through a finite quotient of the free group on the prime ideals can be prescribed
@@ -59,8 +86,8 @@ public section
 
 namespace TauCeti
 
-open Filter Asymptotics IsDedekindDomain
-open scoped nonZeroDivisors NumberField Topology
+open Filter Asymptotics IsDedekindDomain MeasureTheory
+open scoped ComplexConjugate nonZeroDivisors NumberField Topology
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -116,17 +143,122 @@ theorem hasCancellation_iff_isBigO {χ : UnitaryIdealWeight K} :
         _ ≤ max c M * x ^ θ :=
             (le_max_right c M).trans (le_mul_of_one_le_right (hM.trans (le_max_right c M)) hxθ)
 
+/-- The ideal partial sums of the conjugate of a unitary weight are the complex conjugates of
+the partial sums of the weight. -/
+@[simp]
+theorem idealSummatory_conj (χ : UnitaryIdealWeight K) (x : ℝ) :
+    idealSummatory K χ.conj.toIdealArithmeticFunction x =
+      conj (idealSummatory K χ.toIdealArithmeticFunction x) := by
+  simp only [idealSummatory_apply, UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+    UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, map_sum]
+
 /-- A weight has cancellation exactly when its complex conjugate does: conjugation commutes with
 the finite partial sums and preserves their modulus. -/
 @[simp]
 theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
     HasCancellation χ.conj ↔ HasCancellation χ := by
-  have h (x : ℝ) : ‖idealSummatory K χ.conj.toIdealArithmeticFunction x‖ =
-      ‖idealSummatory K χ.toIdealArithmeticFunction x‖ := by
-    simp only [idealSummatory_apply, UnitaryIdealWeight.toIdealArithmeticFunction_apply,
-      UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, ← map_sum,
-      Complex.norm_conj]
-  simp only [HasCancellation, h]
+  simp only [HasCancellation, idealSummatory_conj, Complex.norm_conj]
+
+/-- **Cancellation survives an imaginary norm twist in number-field degree greater than one.**
+If the ideal partial sums of `χ` are `O(x ^ (1 - 1 / [K : ℚ]))`, then multiplying the value
+at an ideal `I` by `N(I) ^ (-z)` for `Re z = 0` preserves the same bound, provided `[K : ℚ] > 1`.
+
+The degree hypothesis is exactly what makes the cancellation exponent positive: Abel summation
+bounds the integral term by a constant times `x ^ (1 - 1 / [K : ℚ])`. -/
+theorem HasCancellation.normTwist {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    (z : ℂ) (hz : z.re = 0) (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) := by
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  have hθ : 0 < θ := by
+    have hK' : (1 : ℝ) < Module.finrank ℚ K := by exact_mod_cast hK
+    exact sub_pos.mpr ((div_lt_one (by linarith)).mpr hK')
+  obtain ⟨C, hC⟩ := hχ
+  refine ⟨max C 0 * (1 + ‖z‖ / θ), fun x hx ↦ ?_⟩
+  have hC' (t : ℝ) (ht : 1 ≤ t) :
+      ‖idealSummatory K χ.toIdealArithmeticFunction t‖ ≤ max C 0 * t ^ θ :=
+    by
+      simpa only [θ] using (hC t ht).trans
+        (mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg (by linarith) θ))
+  have htwist : (UnitaryIdealWeight.normTwist z hz χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I *
+        (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      UnitaryIdealWeight.toIdealArithmeticFunction_apply, UnitaryIdealWeight.val_normTwist,
+      MultiplicativeIdealWeight.normTwist_apply]
+  rw [htwist]
+  simpa only [θ] using
+    norm_idealSummatory_mul_cpow_le_of_summatory_le K χ.toIdealArithmeticFunction hx hθ z hz
+      fun t ht ↦ hC' t ht.1
+
+/-- **Cancellation is invariant under imaginary norm twists in degree greater than one.**
+Cancellation may be transported freely across an imaginary norm twist in either direction, so a
+character-family argument can normalize away such a twist when `[K : ℚ] > 1`. -/
+@[simp]
+theorem hasCancellation_normTwist_iff {χ : UnitaryIdealWeight K} (z : ℂ) (hz : z.re = 0)
+    (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) ↔ HasCancellation χ := by
+  have hnz : (-z).re = 0 := by simp [hz]
+  constructor
+  · intro h
+    have := h.normTwist (-z) hnz hK
+    simpa only [UnitaryIdealWeight.normTwist_normTwist, neg_add_cancel,
+      UnitaryIdealWeight.normTwist_zero] using this
+  · exact fun h ↦ h.normTwist z hz hK
+
+/-!
+### Deleting finitely many Euler factors
+-/
+
+/-- **Cancellation survives the deletion of finitely many Euler factors.** If the ideal partial
+sums of a unitary weight `χ` are `O(x ^ (1 - 1 / [K : ℚ]))`, so are those of its restriction away
+from a finite set of primes: each prime removed splits the partial sum into two partial sums of
+the same order, at the cutoffs `x` and `x / N(𝔭)`.
+
+Character-family arguments use this to pass between a weight and the one whose Euler factors at a
+finite set of bad primes have been deleted. -/
+theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
+    HasCancellation (χ.restrict S hS) := by
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  have hθ : 0 ≤ θ := by
+    have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
+    exact sub_nonneg.mpr ((div_le_one (zero_lt_one.trans_le hd)).mpr hd)
+  induction S, hS using Set.Finite.induction_on with
+  | empty => simpa using hχ
+  | @insert 𝔭 T h𝔭 hT ih =>
+      obtain ⟨C, hC⟩ := ih
+      refine ⟨2 * max C 0, fun x hx ↦ ?_⟩
+      have hN : (2 : ℝ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) := two_le_absNorm_asIdeal_real 𝔭
+      have hxpow : (0 : ℝ) ≤ x ^ θ := Real.rpow_nonneg (zero_le_one.trans hx) θ
+      have hkey : idealSummatory K
+          (χ.restrict (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x =
+          idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction x -
+            χ.1 𝔭.asIdeal * idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
+              (x / Ideal.absNorm 𝔭.asIdeal) := by
+        rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+          UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict,
+          UnitaryIdealWeight.val_restrict]
+        exact χ.1.idealSummatory_restrict_insert hT h𝔭 x
+      have hsecond : ‖idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
+          (x / Ideal.absNorm 𝔭.asIdeal)‖ ≤ max C 0 * x ^ θ := by
+        rcases lt_or_ge (x / (Ideal.absNorm 𝔭.asIdeal : ℝ)) 1 with hy | hy
+        · rw [idealSummatory_eq_zero_of_lt_one K _ hy, norm_zero]
+          positivity
+        · have hxN : x / (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x :=
+            div_le_self (zero_le_one.trans hx) (by linarith)
+          exact (hC _ hy).trans (mul_le_mul (le_max_left C 0)
+            (Real.rpow_le_rpow (by linarith) hxN hθ) (Real.rpow_nonneg (by linarith) θ)
+            (le_max_right C 0))
+      calc ‖idealSummatory K
+            (χ.restrict (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x‖
+          ≤ max C 0 * x ^ θ + 1 * (max C 0 * x ^ θ) := by
+            rw [hkey]
+            refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+            · exact (hC x hx).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) hxpow)
+            · rw [norm_mul]
+              exact mul_le_mul (χ.norm_le_one _) hsecond (norm_nonneg _) zero_le_one
+        _ = 2 * max C 0 * x ^ θ := by ring
 
 /-- **Cancellation bounds the partial sums of the norm coefficients**, in the `O(n ^ r)` form of
 Mathlib's `LSeries_eq_mul_integral`. -/
@@ -184,6 +316,107 @@ theorem differentiableOn_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
   rw [funext (continuedLFunctionOfWeight_eq_mul_integral χ)]
   exact LSeries.differentiableOn_mul_integral_of_isBigO _ hχ.isBigO_sum_normCoeff
 
+/-- **Deleting finitely many Euler factors, to the right of `1`.** Where the norm-regrouped series
+converge absolutely, restricting a unitary weight away from a finite set `S` of primes multiplies
+its continued `L`-function by the reciprocals `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))` of the deleted
+local factors. -/
+theorem continuedLFunctionOfWeight_restrict_of_one_lt_re (χ : UnitaryIdealWeight K)
+    (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ} (hs : 1 < s.re) :
+    continuedLFunctionOfWeight
+        (χ.restrict (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
+      continuedLFunctionOfWeight χ s *
+        ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
+  rw [continuedLFunctionOfWeight_eq_LSeries _ hs, continuedLFunctionOfWeight_eq_LSeries _ hs,
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict]
+  exact χ.1.LSeries_restrict S (by
+    rw [← UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
+    exact summable_idealTerm_of_unitary_of_one_lt_re χ hs)
+
+/-- **Deleting finitely many Euler factors, across the line `Re s = 1`.** Under cancellation both
+sides of `TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re` are holomorphic on the
+half-plane `Re s > 1 - 1 / [K : ℚ]`, which is connected, so the identity propagates there from
+the half-plane `Re s > 1` where it was proved. The correction factor is entire. -/
+theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
+    (hχ : HasCancellation χ) (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ}
+    (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
+    continuedLFunctionOfWeight
+        (χ.restrict (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
+      continuedLFunctionOfWeight χ s *
+        ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
+  have hcorr : Differentiable ℂ
+      fun s : ℂ ↦ ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
+    refine Differentiable.fun_finsetProd fun 𝔭 _ ↦ ?_
+    have h𝔭 : ((Ideal.absNorm 𝔭.asIdeal : ℂ)) ≠ 0 := by
+      have h := NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭
+      exact Nat.cast_ne_zero.mpr (by omega)
+    exact (differentiable_const 1).sub ((differentiable_const _).div
+      (differentiable_id.const_cpow (.inl h𝔭))
+      fun s ↦ by simp [Complex.cpow_eq_zero_iff, h𝔭])
+  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
+    (differentiableOn_continuedLFunctionOfWeight (hχ.restrict _ S.finite_toSet))
+    ((differentiableOn_continuedLFunctionOfWeight hχ).mul hcorr.differentiableOn)
+    (fun z hz ↦ continuedLFunctionOfWeight_restrict_of_one_lt_re χ S hz) hs
+
+/-!
+### Conjugation and imaginary norm twists
+-/
+
+/-- **The continued L-function of the conjugate weight** is the reflection of the continued
+L-function of the weight in the real axis: `L(conj χ, conj s) = conj (L(χ, s))`.
+This holds at every `s`,
+including the junk values off the region where the defining integral converges, because complex
+conjugation commutes with the Bochner integral. -/
+@[simp]
+theorem continuedLFunctionOfWeight_conj (χ : UnitaryIdealWeight K) (s : ℂ) :
+    continuedLFunctionOfWeight χ.conj (conj s) = conj (continuedLFunctionOfWeight χ s) := by
+  simp only [continuedLFunctionOfWeight, map_mul, ← integral_conj]
+  congr 1
+  refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
+  have harg : (t : ℂ).arg ≠ Real.pi := by
+    rw [Complex.arg_ofReal_of_nonneg (by linarith)]
+    exact Real.pi_ne_zero.symm
+  have hpow := Complex.cpow_conj (t : ℂ) (-(s + 1)) harg
+  rw [Complex.conj_ofReal, map_neg, map_add, map_one] at hpow
+  rw [idealSummatory_conj, hpow]
+
+/-- **Imaginary norm twists translate the continued L-function, to the right of `1`.** Twisting
+a unitary weight by `N(I) ^ (-z)` with `Re z = 0` translates its continued L-function by `z` on
+the half-plane `Re s > 1`, where both sides are the norm-regrouped L-series. -/
+@[simp]
+theorem continuedLFunctionOfWeight_normTwist_of_one_lt_re (χ : UnitaryIdealWeight K) {z : ℂ}
+    (hz : z.re = 0) {s : ℂ} (hs : 1 < s.re) :
+    continuedLFunctionOfWeight (UnitaryIdealWeight.normTwist z hz χ) s =
+      continuedLFunctionOfWeight χ (s + z) := by
+  have hsz : 1 < (s + z).re := by simpa [hz] using hs
+  rw [continuedLFunctionOfWeight_eq_LSeries _ hs, continuedLFunctionOfWeight_eq_LSeries _ hsz,
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_normTwist]
+  rw [funext (MultiplicativeIdealWeight.normCoeff_normTwist z χ.1)]
+  exact LSeries.LSeries_mul_natCast_cpow_neg _ z s
+
+/-- **Imaginary norm twists translate the continued L-function, across the line `Re s = 1`.**
+If both a unitary weight and its twist by `N(I) ^ (-z)`, with `Re z = 0`, have cancellation,
+then the continued L-function of the twist at `s` is the continued L-function of the weight at
+`s + z`, throughout the half-plane `Re s > 1 - 1 / [K : ℚ]`.
+
+In degree `[K : ℚ] > 1` the second cancellation hypothesis follows from the first, by
+`TauCeti.HasCancellation.normTwist`. -/
+@[simp]
+theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : ℂ} (hz : z.re = 0)
+    (hχ : HasCancellation χ) (hχz : HasCancellation (UnitaryIdealWeight.normTwist z hz χ))
+    {s : ℂ} (hs : 1 - (Module.finrank ℚ K : ℝ)⁻¹ < s.re) :
+    continuedLFunctionOfWeight (UnitaryIdealWeight.normTwist z hz χ) s =
+      continuedLFunctionOfWeight χ (s + z) := by
+  have hshift : DifferentiableOn ℂ (fun s ↦ continuedLFunctionOfWeight χ (s + z))
+      {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
+    (differentiableOn_continuedLFunctionOfWeight hχ).comp
+      (differentiable_id.add_const z).differentiableOn fun s hs ↦ by simpa [hz] using hs
+  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
+    (differentiableOn_continuedLFunctionOfWeight hχz)
+    hshift (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
+    (by rwa [one_div])
+
 /-!
 ### The rejection test: weights that are norm twists on their good ideals
 -/
@@ -202,10 +435,6 @@ theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u 
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
       χ.1.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
     ⟨χ.1.finite_badPrimes.toFinset, χ.1.finite_badPrimes.coe_toFinset.symm⟩
-  have hfun : χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
-    funext I
-    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
-      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
   -- cancellation makes the continued `L`-function continuous at `1 + u * I`, so multiplying it
   -- by `t - 1` kills it as `t → 1⁺` along the horizontal ray through that point
   have hcontAt : ContinuousAt (continuedLFunctionOfWeight χ) (1 + (u : ℂ) * Complex.I) := by
@@ -231,7 +460,8 @@ theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u 
         continuedLFunctionOfWeight χ ((t : ℂ) + (u : ℂ) * Complex.I) := by
     filter_upwards [self_mem_nhdsWithin] with t (ht : (1 : ℝ) < t)
     have hre : (1 : ℝ) < ((t : ℂ) + (u : ℂ) * Complex.I).re := by simpa using ht
-    rw [continuedLFunctionOfWeight_eq_LSeries χ hre, hfun]
+    rw [continuedLFunctionOfWeight_eq_LSeries χ hre,
+      UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
   have hne : (NumberField.dedekindZeta_residue K : ℂ) *
       ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)) ≠ 0 :=
     mul_ne_zero (by exact_mod_cast (NumberField.dedekindZeta_residue_pos K).ne')

@@ -252,6 +252,13 @@ theorem infinity_ne_ofPrime [IsDedekindDomain W.CoordinateRing]
   rw [valuation_infinity, valuation_ofPrime] at hvaluation
   exact WeierstrassCurve.Affine.infinityPlace_ne_heightOneSpectrum_valuation W 𝔭 hvaluation
 
+/-- **The place at infinity is not equivalent to the place of any prime of the affine chart**: the
+valuation form of `infinity_ne_ofPrime`, a place being determined by the class of its valuation. -/
+theorem not_isEquiv_infinityPlace_valuation [IsDedekindDomain W.CoordinateRing]
+    (𝔭 : HeightOneSpectrum W.CoordinateRing) :
+    ¬ W.infinityPlace.IsEquiv (𝔭.valuation W.FunctionField) := fun hE ↦
+  infinity_ne_ofPrime 𝔭 (Place.eq_of_isEquiv (by rwa [valuation_infinity, valuation_ofPrime]))
+
 variable (W) [IsDedekindDomain W.CoordinateRing]
 
 /-- Send the point at infinity and the degree-one affine primes to normalized degree-one places.
@@ -344,6 +351,14 @@ theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
   rw [← CoordinateRing.equationEquivDegreeOnePlace_apply_coe ⟨(x, y), h⟩]
   exact Place.coe_degreeOneAffineOrInfinityEquiv_some W
     (CoordinateRing.equationEquivDegreeOnePlace W ⟨(x, y), h⟩)
+
+/-- The point--place dictionary sends a nonsingular point `(x, y)` to the normalized place of its
+maximal ideal. -/
+@[simp]
+theorem coe_pointEquivDegreeOnePlace_some {x y : F} (h : W.Nonsingular x y) :
+    (pointEquivDegreeOnePlace W (.some x y h)).1 =
+      Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left) :=
+  coe_pointEquivDegreeOnePlace_mk W h.left
 
 /-- Reading the place at infinity backwards through the dictionary recovers the point at
 infinity. -/

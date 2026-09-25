@@ -6,15 +6,18 @@ Authors: Codex
 module
 
 public import Mathlib.GroupTheory.Transfer
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
+import TauCeti.GroupTheory.Transfer
 
 /-!
 # Maps between abelianized Galois groups of finite normal layers
 
 The functoriality of the Artin map compares operations on formation levels with three canonical
-maps between the abelianizations of finite-layer Galois groups. This file constructs those maps
-from the group homomorphisms attached to restrictions and refinements.
+homomorphisms between the abelianizations of finite-layer Galois groups, and with the equivalence
+induced directly by conjugation. This file constructs the homomorphisms and proves coherence laws
+for the conjugation equivalence obtained from Mathlib's `MulEquiv.abelianizationCongr`.
 
 For a restriction of layers `K/E` inside `K/F`, the inclusion
 
@@ -26,7 +29,8 @@ induces `LayerRestriction.inclusionHom` on abelianizations. In the other directi
 `LayerRestriction.transferHom` is the group-theoretic transfer (Verlagerung). It is formed by
 identifying `Gal(K/E)` with the range of the inclusion, applying Mathlib's `MonoidHom.transfer`,
 and then using the universal property of the abelianization. The index of that range is the
-relative degree `[E : F]`.
+relative degree `[E : F]`. Like the inclusion, the transfer is functorial along a tower of
+restrictions, because the group-theoretic transfer is transitive (`MonoidHom.transfer_transfer`).
 
 For a refinement `L/F` of `K/F`, the quotient map
 
@@ -36,15 +40,23 @@ Gal(L/F) → Gal(K/F)
 
 induces `LayerRefinement.quotientHom`. The inclusion and quotient maps inherit identity and tower
 laws from `Abelianization.map`; these laws make the maps usable without unfolding their bodies.
+Conjugation of a layer similarly induces an equivalence on abelianizations from
+`NormalLayer.conjugateGalEquiv` and Mathlib's `MulEquiv.abelianizationCongr`.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.ClassFieldTheory.LayerRestriction.inclusionHom`: the map on abelianizations induced by
   inclusion of Galois groups.
 * `TauCeti.ClassFieldTheory.LayerRestriction.transferHom`: group-theoretic transfer between the
   same abelianizations, in the opposite direction.
+* `TauCeti.ClassFieldTheory.LayerRestriction.transferHom_trans`: the transfer is functorial along
+  a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRefinement.quotientHom`: the map on abelianizations induced by a
   quotient of Galois groups.
+* `NormalLayer.conjugateGalEquiv_abelianizationCongr_one`: conjugation by one is the identity on
+  abelianized Galois groups.
+* `NormalLayer.conjugateGalEquiv_abelianizationCongr_trans`: conjugation on abelianized Galois
+  groups composes.
 
 ## References
 
@@ -126,6 +138,41 @@ theorem transferHom_of (T : LayerRestriction small big) (x : big.Gal) :
           (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom) x) :=
   (rfl)
 
+/-- Transfer on abelianized Galois groups is functorial along a tower of restrictions: for
+`F ⊆ E ⊆ E' ⊆ K`, the transfer `Gal(K/F)^ab → Gal(K/E')^ab` is the transfer
+`Gal(K/F)^ab → Gal(K/E)^ab` followed by the transfer `Gal(K/E)^ab → Gal(K/E')^ab`. -/
+theorem transferHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    (T.trans T').transferHom = T.transferHom.comp T'.transferHom := by
+  have hle := galHom_range_trans_le T T'
+  -- Transported along `T'.galHom`, the transfer from `Gal(K/E)` to the image of `Gal(K/E')` is
+  -- the transfer from the image of `Gal(K/E)` to that of `Gal(K/E')`, both inside `Gal(K/F)`.
+  -- The identification `subgroupOfEquivOfLe` enters as a coercion, the form `transfer_transfer`
+  -- is stated in.
+  have htransport : (MonoidHom.transfer (Abelianization.of.comp
+        (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom)).comp
+        (MonoidHom.ofInjective T'.galHom_injective).symm.toMonoidHom =
+      MonoidHom.transfer ((Abelianization.of.comp
+        (MonoidHom.ofInjective (T.trans T').galHom_injective).symm.toMonoidHom).comp
+        (MonoidHomClass.toMonoidHom (Subgroup.subgroupOfEquivOfLe hle))) := by
+    ext z
+    obtain ⟨m, rfl⟩ := (MonoidHom.ofInjective T'.galHom_injective).surjective z
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply]
+    refine (MonoidHom.transfer_apply_of_mulEquiv _ _ (galHom_range_map_ofInjective T T') _
+      (fun h ↦ congrArg Abelianization.of ((T.trans T').galHom_injective ?_)) m).symm
+    simp only [MulEquiv.coe_toMonoidHom, MonoidHom.apply_ofInjective_symm]
+    simp [galHom_trans T T', MonoidHom.ofInjective_apply]
+  refine AddMonoidHom.ext fun x ↦ ?_
+  obtain ⟨x, rfl⟩ := Additive.ofMul.surjective x
+  obtain ⟨y, rfl⟩ : ∃ y, Abelianization.of y = x := QuotientGroup.mk_surjective x
+  rw [AddMonoidHom.comp_apply, transferHom_of, transferHom_of, transferHom,
+    MonoidHom.toAdditive_apply_apply, toMul_ofMul]
+  -- Naturality in the target (`transfer_comp`) moves the outer `Abelianization.lift` inside the
+  -- transfer to `Gal(K/E)`, where it becomes the inner transfer transported along `T'.galHom`;
+  -- `htransport` and the tower law `transfer_transfer` then give the transfer of `T.trans T'`.
+  rw [← MonoidHom.comp_apply (Abelianization.lift _), ← MonoidHom.transfer_comp,
+    ← MonoidHom.comp_assoc, ← Abelianization.lift_symm_apply, Equiv.symm_apply_apply, htransport,
+    MonoidHom.transfer_transfer]
+
 end LayerRestriction
 
 namespace LayerRefinement
@@ -173,5 +220,57 @@ theorem quotientHom_trans (T : LayerRefinement a b) (T' : LayerRefinement b c) :
   rfl
 
 end LayerRefinement
+
+namespace NormalLayer
+
+variable (L : NormalLayer G) (g h : G)
+
+/-- Conjugation by `1` is the identity on abelianized Galois groups, after transporting along
+`conjugate_one`. -/
+@[simp]
+theorem conjugateGalEquiv_abelianizationCongr_one :
+    ((L.conjugateGalEquiv 1).abelianizationCongr.toAdditive).trans
+        ((MulEquiv.abelianizationCongr
+          (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal) L.conjugate_one)).toAdditive) =
+      AddEquiv.refl (Additive (Abelianization L.Gal)) := by
+  apply AddEquiv.ext
+  intro x
+  have he :
+      (L.conjugateGalEquiv 1).abelianizationCongr.trans
+          (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal)
+            L.conjugate_one).abelianizationCongr =
+        MulEquiv.refl (Abelianization L.Gal) := by
+    rw [abelianizationCongr_trans, L.conjugateGalEquiv_one, abelianizationCongr_refl]
+  simpa only [AddEquiv.trans_apply,
+    MulEquiv.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, MulEquiv.refl_apply, AddEquiv.refl_apply,
+    toMul_ofMul, ofMul_toMul] using
+      congrArg Additive.ofMul (DFunLike.congr_fun he x.toMul)
+
+/-- Conjugation on abelianized Galois groups composes: conjugating by `h` and then by `g` is
+conjugating by `g * h`, up to transport along `conjugate_conjugate`. -/
+theorem conjugateGalEquiv_abelianizationCongr_trans :
+    ((L.conjugateGalEquiv h).abelianizationCongr.toAdditive).trans
+        (((L.conjugate h).conjugateGalEquiv g).abelianizationCongr.toAdditive) =
+      ((L.conjugateGalEquiv (g * h)).abelianizationCongr.toAdditive).trans
+        ((MulEquiv.abelianizationCongr
+          (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal)
+            (L.conjugate_conjugate g h).symm)).toAdditive) := by
+  apply AddEquiv.ext
+  intro x
+  have he :
+      (L.conjugateGalEquiv h).abelianizationCongr.trans
+          ((L.conjugate h).conjugateGalEquiv g).abelianizationCongr =
+        (L.conjugateGalEquiv (g * h)).abelianizationCongr.trans
+          (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal)
+            (L.conjugate_conjugate g h).symm).abelianizationCongr := by
+    simpa only [abelianizationCongr_trans] using congrArg MulEquiv.abelianizationCongr
+      (L.conjugateGalEquiv_trans_conjugateGalEquiv g h)
+  simpa only [AddEquiv.trans_apply,
+    MulEquiv.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, toMul_ofMul, ofMul_toMul] using
+      congrArg Additive.ofMul (DFunLike.congr_fun he x.toMul)
+
+end NormalLayer
 
 end TauCeti.ClassFieldTheory

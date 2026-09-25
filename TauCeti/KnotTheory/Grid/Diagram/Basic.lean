@@ -16,6 +16,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.GroupTheory.Perm.Basic
+public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Data.Sym.Sym2
 
 import Mathlib.Data.Sym.Card
@@ -37,6 +38,7 @@ The point-set API records the basic row, column, cardinality, and disjointness f
 before defining rectangles, empty rectangles, and the grid differential.
 
 * `TauCeti.GridState`: a grid state with a permutation graph on `Fin n`.
+* `TauCeti.GridState.subdiagonal`: the grid state whose occupied row is one below its column.
 * `TauCeti.GridState.pointSet`: the finite set of occupied grid points of a grid state.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking-square sets.
@@ -107,6 +109,31 @@ theorem ext {x y : GridState n} (h : ∀ c : Fin n, x c = y c) : x = y := by
   congr
   ext c
   exact congrArg Fin.val (h c)
+
+/-- The subdiagonal grid state of an `n`-column grid: its point in column `c` lies one row below
+the diagonal point `(c, c)`. -/
+def subdiagonal (n : ℕ) : GridState n :=
+  ⟨(finRotate n)⁻¹⟩
+
+/-- The permutation underlying the subdiagonal state is the inverse cyclic shift. -/
+theorem subdiagonal_toPerm (n : ℕ) : (subdiagonal n).toPerm = (finRotate n)⁻¹ :=
+  (rfl)
+
+/-- The subdiagonal state reads off the inverse cyclic shift. -/
+theorem subdiagonal_apply {n : ℕ} (c : Fin n) :
+    subdiagonal n c = (finRotate n)⁻¹ c :=
+  (rfl)
+
+/-- Moving the subdiagonal point of a column up one row reaches the diagonal. -/
+theorem subdiagonal_apply_add_one {n : ℕ} [NeZero n] (c : Fin n) :
+    subdiagonal n c + 1 = c := by
+  rw [← finRotate_apply, subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
+
+/-- The subdiagonal state sends each column to the preceding row. -/
+@[simp]
+theorem subdiagonal_apply_eq_sub_one {n : ℕ} [NeZero n] (c : Fin n) :
+    subdiagonal n c = c - 1 :=
+  eq_sub_iff_add_eq.mpr (subdiagonal_apply_add_one c)
 
 /-- The finite set of occupied grid points of a grid state. The first coordinate is the column and
 the second coordinate is the row. -/

@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
+-- Private: `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` are used only
+-- inside proofs.
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The weights of the spinor module
@@ -87,6 +91,12 @@ rest of the layer this file opens.
 * `TauCeti.range_spinWeight`: for a finite index type the weights are exactly the sign vectors,
   and, when `K` is nontrivial, `TauCeti.ncard_range_spinWeight` counts them: there are `2 ^ l` of
   them on an index type of cardinality `l`.
+* `TauCeti.ncard_image_spinWeight_even` and `TauCeti.ncard_image_spinWeight_odd`: **on a nonempty
+  index type the two parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. On the empty
+  index type they are not: the only sign vector is the empty one, which is even, so the even count
+  is `2 ^ (0 - 1) = 1` and the odd one is `0`, which is why the odd theorem asks `l > 0`. These
+  are the weights of the two half-spin summands; the identification is
+  `TauCeti/RepresentationTheory/Spin/HalfSpin/Weight.lean`.
 
 ## References
 
@@ -133,10 +143,6 @@ theorem spinWeight_of_mem {s : Finset ι} {i : ι} (h : i ∈ s) :
 theorem spinWeight_of_notMem {s : Finset ι} {i : ι} (h : i ∉ s) :
     spinWeight K s i = -⅟(2 : K) := by
   simp [spinWeight_apply, h]
-
-/-- Twice the inverse of `2` is `1`: the scalar identity behind half-integrality. -/
-private theorem invOf_two_add_invOf_two : (⅟(2 : K)) + ⅟(2 : K) = 1 := by
-  rw [← two_mul, mul_invOf_self]
 
 /-- **The weights are half-integral**: twice the weight at an occupied index is `1`. -/
 theorem spinWeight_add_self_of_mem {s : Finset ι} {i : ι} (h : i ∈ s) :
@@ -206,6 +212,26 @@ theorem ncard_range_spinWeight [Finite ι] [Nontrivial K] :
   have : Fintype ι := Fintype.ofFinite ι
   rw [Set.ncard_range_of_injective spinWeight_injective, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Fintype.card_finset]
+
+/-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on an index type of
+cardinality `l`. For `l > 0` that is half of the `2 ^ l` sign vectors of
+`TauCeti.ncard_range_spinWeight`, the odd ones of `TauCeti.ncard_image_spinWeight_odd` being the
+other half; for `l = 0` it is no half but the single empty sign vector, which is even, and
+`2 ^ (0 - 1) = 1` counts it. These are the weights of the even half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even`. -/
+theorem ncard_image_spinWeight_even [Finite ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_even_card_finset
+
+/-- **The sign vectors with an odd number of `+` signs number `2 ^ (l - 1)`**, the other half of
+`TauCeti.ncard_image_spinWeight_even`, on a nonempty index type: the empty index type has no sign
+vector of odd parity. These are the weights of the odd half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`. -/
+theorem ncard_image_spinWeight_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Odd s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_odd_card_finset
 
 end Weight
 
@@ -363,18 +389,11 @@ scales the `t`-th coordinate of any spinor by the `i`-th entry of the weight of 
 theorem repr_spinAction_diagonalBivector (i : ι) (t : Finset ι) (x : ExteriorAlgebra K P.W) :
     b.ExteriorAlgebra.repr (spinAction Q P (P.diagonalBivector b i) x) t =
       spinWeight K t i * b.ExteriorAlgebra.repr x t := by
-  have key :
-      (Finsupp.lapply t).comp (b.ExteriorAlgebra.repr.toLinearMap.comp
-          (spinAction Q P (P.diagonalBivector b i) : Module.End K (ExteriorAlgebra K P.W))) =
-        spinWeight K t i •
-          (Finsupp.lapply t).comp b.ExteriorAlgebra.repr.toLinearMap := by
-    apply b.ExteriorAlgebra.ext
-    intro s
-    by_cases hst : s = t
-    · subst hst
-      simp [SpinPolarizationData.spinAction_diagonalBivector_basis]
-    · simp [SpinPolarizationData.spinAction_diagonalBivector_basis, hst]
-  simpa using LinearMap.congr_fun key x
+  simpa using
+    b.ExteriorAlgebra.repr_apply_of_apply_basis
+      (f := spinAction Q P (P.diagonalBivector b i))
+      (a := fun s => spinWeight K s i)
+      (fun s => P.spinAction_diagonalBivector_basis b i s) x t
 
 /-- **Each weight space of the spinor module is a line**, spanned by the exterior basis vector
 carrying that weight. Distinct sign vectors differ somewhere by a unit, which is what forces every

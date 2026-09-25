@@ -29,14 +29,26 @@ scaling factor of valuation `1`.
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
+  equations are related by a change of variables.
+* `WeierstrassCurve.valuation_Δ_le_of_isMinimal_smul`: no integral model in the orbit of a minimal
+  model has larger `v (Δ)`.
 * `WeierstrassCurve.valuation_Δ_eq_of_isMinimal_smul`: two minimal models related by a change of
   variables have equal `v (Δ)`.
+* `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_of_isMinimal_smul`: conversely, an integral model
+  attaining that valuation is minimal.
+* `WeierstrassCurve.isMinimal_baseChange_smul`: a change of variables defined over `R` carries a
+  minimal model to a minimal model.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
+* `WeierstrassCurve.valuation_Δ_minimal_smul` and
+  `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
+  have the same discriminant and `c₄` valuations.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
-The third is what the last one runs on, though it is only half of what the descent needs.
+`valuation_u_eq_one_of_isMinimal_smul` is what the last one runs on, though it is only half of
+what the descent needs.
 `v (u) = 1` over a discrete valuation ring says `u` is a unit of `R`; turning that into a change of
 variables actually *defined* over `R` is the job of
 `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which also consumes integrality
@@ -74,7 +86,7 @@ is FLT PR #1088, "Quadratic twist to split multiplicative reduction". Five decla
 from it:
 
 * `isMinimal_of_valuation_c₄_eq_one`;
-* `valuation_Δ_aux_smul_le`;
+* `valuation_Δ_aux_smul_le`, here `valuation_Δ_le_of_isMinimal_smul`;
 * `valuation_Δ_eq_of_isMinimal_smul`;
 * `valuation_u_eq_one_of_isMinimal_smul`;
 * `HasSplitMultiplicativeReduction.of_isMinimal_smul`.
@@ -92,9 +104,11 @@ proofs diverge in six places:
 * the section's variable block is restated here, and the `open`s are narrowed to those of Mathlib's
   own `Minimal` section (`IsLocalRing` is left closed, since opening it makes `maximalIdeal`
   ambiguous — `ResidueField` is written qualified instead);
-* `valuation_Δ_aux_smul_le` is **private** here where the source exports it, because it is phrased
-  through the internal `valuation_Δ_aux` rather than the ordinary valuation and exists only to
-  serve the comparison below;
+* `valuation_Δ_aux_smul_le` is restated here as `valuation_Δ_le_of_isMinimal_smul`, through the
+  ordinary valuation of two models related by a change of variables rather than through the
+  internal `valuation_Δ_aux` and the orbit of one equation; `valuation_Δ_eq_of_isMinimal_smul` is
+  then two applications of it, and `isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` — its converse,
+  which the source does not have — is a third;
 * the source's `exists_algebraMap_unit_eq_of_valuation_eq_one` — a separate shim of its own, in
   `FLT/Mathlib/RingTheory/Valuation/Discrete/IsDiscreteValuationRing.lean` — is **not ported**.
   Mathlib has since acquired that file, and with it `associated_of_valuation_eq`, which the three
@@ -148,21 +162,36 @@ theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
 
+/-- The chosen minimal equations of two equations related by a change of variables are themselves
+related by a change of variables. -/
+theorem exists_smul_minimal_eq_minimal (D : VariableChange K) (W : WeierstrassCurve K) :
+    ∃ C : VariableChange K, C • W.minimal R = (D • W).minimal R := by
+  obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_minimal R
+  obtain ⟨C₂, hC₂⟩ := (D • W).exists_smul_eq_minimal R
+  refine ⟨C₂ * D * C₁⁻¹, ?_⟩
+  rw [mul_smul, mul_smul, ← hC₁, inv_smul_smul, hC₂]
+
 /-! ### Comparing two minimal models
 
 `IsMinimal` says the discriminant valuation is maximal among integral models. Two minimal models of
 the same curve therefore pin each other: each is at least as good as the other, so their
 valuations agree, and the change of variables between them can only scale `Δ` by a unit. -/
 
-/-- **No integral change of variables increases the discriminant valuation of a minimal model.**
-This is the maximality field of `IsMinimal`, with the `MaximalFor` comparison discharged. Kept
-private: it is stated through `valuation_Δ_aux`, Mathlib's internal `{v // v ≤ 1}` wrapper, whereas
-the results below speak of the ordinary valuation. -/
-private theorem valuation_Δ_aux_smul_le {W : WeierstrassCurve K} [hm : IsMinimal R W]
-    (D : VariableChange K) (hint : IsIntegral R (D • W)) :
-    valuation_Δ_aux R (D • W) ≤ valuation_Δ_aux R ((1 : VariableChange K) • W) :=
-  (le_total (valuation_Δ_aux R ((1 : VariableChange K) • W)) (valuation_Δ_aux R (D • W))).elim
-    (hm.val_Δ_maximal.2 hint) id
+/-- **A minimal model maximises the discriminant valuation in its orbit**: every integral model
+obtained from it by a change of variables has discriminant of at most that valuation. This is the
+`valuation`-level reading of Mathlib's `IsMinimal`, whose `MaximalFor` phrasing speaks of
+`valuation_Δ_aux` and of the orbit of a fixed equation. -/
+theorem valuation_Δ_le_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [hm : IsMinimal R W₁]
+    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) :
+    valuation K (maximalIdeal R) W₂.Δ ≤ valuation K (maximalIdeal R) W₁.Δ := by
+  have hint : IsIntegral R (D • W₁) := by rw [hD]; infer_instance
+  have h : valuation_Δ_aux R (D • W₁) ≤ valuation_Δ_aux R ((1 : VariableChange K) • W₁) :=
+    (le_total (valuation_Δ_aux R ((1 : VariableChange K) • W₁)) (valuation_Δ_aux R (D • W₁))).elim
+      (hm.val_Δ_maximal.2 hint) id
+  rw [hD, one_smul] at h
+  rw [← valuation_Δ_aux_eq_of_isIntegral R W₂, ← valuation_Δ_aux_eq_of_isIntegral R W₁,
+    Subtype.coe_le_coe]
+  exact h
 
 /-- **Two minimal models related by a change of variables have the same discriminant valuation.**
 So `v (Δ)` is an invariant of the curve at this place rather than of the chosen model: any two
@@ -170,16 +199,44 @@ minimal models of the same curve agree on it, and a consumer may read it off whi
 holds. -/
 theorem valuation_Δ_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
     [IsMinimal R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) :
-    valuation K (maximalIdeal R) W₂.Δ = valuation K (maximalIdeal R) W₁.Δ := by
+    valuation K (maximalIdeal R) W₂.Δ = valuation K (maximalIdeal R) W₁.Δ :=
   -- Antisymmetry: `D` carries `W₁` to `W₂` and `D⁻¹` carries `W₂` back, and by minimality neither
   -- direction can increase the valuation.
-  rw [← valuation_Δ_aux_eq_of_isIntegral R W₂, ← valuation_Δ_aux_eq_of_isIntegral R W₁]
-  refine le_antisymm (Subtype.coe_le_coe.mpr ?_) (Subtype.coe_le_coe.mpr ?_)
-  · have hsub := valuation_Δ_aux_smul_le R D (by rw [hD]; infer_instance)
-    rwa [hD, one_smul] at hsub
-  · have hW₁eq : W₁ = D⁻¹ • W₂ := by rw [← hD, inv_smul_smul]
-    have hsub := valuation_Δ_aux_smul_le R D⁻¹ (by rw [← hW₁eq]; infer_instance)
-    rwa [← hW₁eq, one_smul] at hsub
+  le_antisymm (valuation_Δ_le_of_isMinimal_smul R D hD)
+    (valuation_Δ_le_of_isMinimal_smul R D⁻¹ (by rw [← hD, inv_smul_smul]))
+
+/-- **An integral model whose discriminant valuation matches that of a minimal model in its orbit
+is itself minimal.** Together with `valuation_Δ_le_of_isMinimal_smul` this makes the discriminant
+valuation a complete test for minimality among integral models of one curve. -/
+theorem isMinimal_of_valuation_Δ_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}
+    [IsMinimal R W₁] [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂)
+    (h : valuation K (maximalIdeal R) W₂.Δ = valuation K (maximalIdeal R) W₁.Δ) :
+    IsMinimal R W₂ := by
+  refine ⟨⟨by simpa using ‹IsIntegral R W₂›, fun {C} hC _ => ?_⟩⟩
+  dsimp only at hC ⊢
+  have hint : IsIntegral R (C • W₂) := hC
+  have hCD : (C * D) • W₁ = C • W₂ := by rw [mul_smul, hD]
+  rw [← Subtype.coe_le_coe, one_smul, valuation_Δ_aux_eq_of_isIntegral R (C • W₂),
+    valuation_Δ_aux_eq_of_isIntegral R W₂, h]
+  exact valuation_Δ_le_of_isMinimal_smul R (C * D) hCD
+
+/-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
+and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
+`valuation_u_eq_one_of_isMinimal_smul` and
+`VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
+between minimal models of an elliptic curve are exactly those defined over `R`. -/
+theorem isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) : IsMinimal R (C.baseChange K • W) := by
+  have hW : (C • W.integralModel R).baseChange K = C.baseChange K • W := by
+    rw [baseChange, ← map_variableChange, ← baseChange, baseChange_integralModel_eq R W]
+    rfl
+  have : IsIntegral R (C.baseChange K • W) := ⟨⟨C • W.integralModel R, hW.symm⟩⟩
+  refine isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K) rfl ?_
+  have hu : valuation K (maximalIdeal R) (algebraMap R K ↑C.u) = 1 := by
+    rw [valuation_of_algebraMap, intValuation_eq_one_iff_mem_primeCompl]
+    exact (IsLocalRing.notMem_maximalIdeal).2 (Units.isUnit _)
+  rw [variableChange_Δ, map_mul, map_pow]
+  simp [VariableChange.baseChange, hu]
 
 /-- **The scaling factor of a change of variables between two minimal models of an elliptic curve
 has valuation `1`.** Over a discrete valuation ring that says `u` is a **unit**: it and its inverse
@@ -203,6 +260,30 @@ theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [I
     rw [inv_pow] at h1
     exact inv_eq_one.mp h1
   exact (pow_eq_one_iff_of_nonneg zero_le (by norm_num)).mp h12
+
+/-- The discriminants of the chosen minimal equations have the same valuation after a change of
+variables. -/
+@[simp]
+theorem valuation_Δ_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K) :
+    valuation K (maximalIdeal R) ((D • W).minimal R).Δ =
+      valuation K (maximalIdeal R) (W.minimal R).Δ := by
+  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
+  exact valuation_Δ_eq_of_isMinimal_smul R C hC
+
+/-- The `c₄` invariants of the chosen minimal equations have the same valuation after a change of
+variables. -/
+@[simp]
+theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K)
+    [W.IsElliptic] :
+    valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
+      valuation K (maximalIdeal R) (W.minimal R).c₄ := by
+  obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
+  let hEll : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
+  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
+  have hu := @valuation_u_eq_one_of_isMinimal_smul R _ _ _ K _ _ _
+    (W.minimal R) ((D • W).minimal R) _ _ hEll C hC
+  rw [← hC, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀, hu]
+  simp
 
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables

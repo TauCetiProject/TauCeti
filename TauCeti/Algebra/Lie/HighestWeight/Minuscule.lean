@@ -54,8 +54,8 @@ soon as `L(mu)` is nonzero, read off from
 `TauCeti.finrank_eq_card_orbit_of_isHighestWeightVector_of_lieSpan_eq_top`.
 
 At the zero weight the nonvanishing is available unconditionally, and there the count is complete:
-`TauCeti.isMinuscule_zero` proves `0` minuscule and `TauCeti.finrank_irreducibleQuotient_zero`
-reads off `dim L(0) = 1`.
+`TauCeti.isMinuscule_zero` proves `0` minuscule, and `TauCeti.finrank_irreducibleQuotient_zero`,
+which needs only triviality, agrees that `dim L(0) = 1`.
 
 ## Main definitions
 
@@ -73,9 +73,9 @@ reads off `dim L(0) = 1`.
   (`genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector_of_lieSpan_eq_top`).
 * `TauCeti.IsMinuscule.finrank_irreducibleQuotient_le`: **`dim L(mu) ≤ |W · mu|`**, the part of the
   dimension count at the named carrier that needs no Verma-module nonvanishing.
-* `TauCeti.isMinuscule_zero`: **the zero weight is minuscule**, so the notion is not empty, and
-  `TauCeti.finrank_irreducibleQuotient_zero`: the module it names is one-dimensional, the orbit of
-  `0` being a point. Both are unconditional.
+* `TauCeti.isMinuscule_zero`: **the zero weight is minuscule**, so the notion is not empty. It is
+  unconditional, and the point orbit it exhibits matches the one-dimensionality of `L(0)` recorded
+  by `TauCeti.finrank_irreducibleQuotient_zero`.
 
 ## Implementation notes
 
@@ -155,6 +155,33 @@ theorem finrank_eq_card_orbit_of_isHighestWeightVector_of_lieSpan_eq_top
   rw [hcard]
   exact_mod_cast hsum.symm
 
+attribute [local instance] Classical.propDecidable
+
+/-- **The formal-character coefficient of a highest-weight module whose weights lie in one Weyl
+orbit is the indicator of that orbit**: every Weyl translate of its highest weight occurs with
+multiplicity one, and the orbit-support hypothesis excludes every other weight. -/
+theorem formalCharacter_coeff_eq_ite_of_isHighestWeightVector_of_lieSpan_eq_top
+    (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
+    (horb : ∀ chi : Dual K H, genWeightSpace M (chi : H → K) ≠ ⊥ →
+      ∃ w : (IsKilling.rootSystem H).weylGroup, w • lam = chi)
+    (chi : Dual K H) :
+    (formalCharacter K H M).coeff chi =
+      if chi ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup lam then 1 else 0 := by
+  classical
+  have hsupp := genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector_of_lieSpan_eq_top
+    hv hgen horb chi
+  by_cases horb' : chi ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup lam
+  · obtain ⟨w, rfl⟩ := horb'
+    have hw : w • lam ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup lam :=
+      ⟨w, rfl⟩
+    simpa [hw] using
+      formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top
+        hv hgen w
+  · have hbot : LieModule.genWeightSpace M (chi : H → K) = ⊥ := by
+      by_contra hne
+      exact horb' (hsupp.mp hne)
+    simp [formalCharacter_coeff_eq_zero_iff.mpr hbot, horb']
+
 end General
 
 section Minuscule
@@ -195,6 +222,21 @@ theorem IsMinuscule.exists_weylGroup_smul_eq (h : IsMinuscule b mu) {nu : Dual K
     (hnu : genWeightSpace (irreducibleQuotient b mu) (nu : H → K) ≠ ⊥) :
     ∃ w : (IsKilling.rootSystem H).weylGroup, w • mu = nu :=
   h.2 nu hnu
+
+attribute [local instance] Classical.propDecidable
+
+/-- **The character of a nonzero minuscule module is the orbit indicator**: every Weyl translate
+of its highest weight occurs with multiplicity one, and minuscule-ness excludes every other
+weight. -/
+theorem formalCharacter_coeff_irreducibleQuotient_eq_ite_of_isMinuscule_of_vermaGenerator_ne_zero
+    (h : IsMinuscule b mu) (hM : vermaGenerator b mu ≠ 0) (chi : Dual K H) :
+    letI := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
+    (formalCharacter K H (irreducibleQuotient b mu)).coeff chi =
+      if chi ∈ MulAction.orbit (IsKilling.rootSystem H).weylGroup mu then 1 else 0 := by
+  let _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral h.isDominantIntegral
+  let hv := isHighestWeightVector_irreducibleQuotientGenerator b mu hM
+  let hgen := lieSpan_irreducibleQuotientGenerator_eq_top b mu
+  exact formalCharacter_coeff_eq_ite_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen h.2 chi
 
 /-- **The dimension of a minuscule module is at most the size of the Weyl orbit of its highest
 weight**, `dim L(mu) ≤ |W · mu|`, with equality as soon as `L(mu)` is nonzero; see the module
@@ -239,24 +281,6 @@ theorem isMinuscule_zero : IsMinuscule b (0 : Dual K H) := by
   refine ⟨isDominantIntegral_zero, fun nu hnu ↦ ⟨1, ?_⟩⟩
   rw [one_smul, eq_comm]
   exact LinearMap.ext fun x ↦ congrFun (eq_zero_of_genWeightSpace_ne_bot_of_isTrivial hnu) x
-
-/-- **`L(0)` is one-dimensional**: the irreducible module of highest weight `0` is the trivial
-one-dimensional module, the Weyl orbit of `0` being the point `{0}`. -/
-@[simp]
-theorem finrank_irreducibleQuotient_zero :
-    finrank K (irreducibleQuotient b (0 : Dual K H)) = 1 := by
-  have h : vermaGenerator b (0 : Dual K H) ≠ 0 :=
-    (isHighestWeightVector_vermaGenerator_zero b).ne_zero
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
-    (isDominantIntegral_zero (b := b))
-  -- The Weyl group fixes the zero weight, so its orbit is the point `{0}`.
-  have horbit : MulAction.orbit (IsKilling.rootSystem H).weylGroup (0 : Dual K H) = {0} :=
-    (MulAction.subsingleton_orbit_iff_mem_fixedPoints.mpr fun w ↦ smul_zero w).eq_singleton_of_mem
-      (MulAction.mem_orbit_self _)
-  rw [finrank_eq_card_orbit_of_isHighestWeightVector_of_lieSpan_eq_top
-    (isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H) h)
-    (lieSpan_irreducibleQuotientGenerator_eq_top b 0) (isMinuscule_zero b).2, horbit]
-  simp
 
 end Zero
 

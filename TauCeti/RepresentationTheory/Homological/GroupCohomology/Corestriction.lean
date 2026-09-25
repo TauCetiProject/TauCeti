@@ -53,6 +53,10 @@ restrictions.
 * `TauCeti.groupCohomology.map_comp_corestriction`: corestriction is natural in the coefficients.
 * `TauCeti.groupCohomology.map_subtype_id_comp_corestriction`: corestriction after restriction is
   multiplication by `[G : S]`.
+* `TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero`: a class whose restriction to `S`
+  vanishes is killed by `[G : S]`.
+* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
+  by the order of the group.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -116,6 +120,7 @@ noncomputable def corestriction (A : Rep.{u} k G) (n : ℕ) :
     groupCohomology (res S.subtype A) n ⟶ groupCohomology A n :=
   (corestrictionNatTrans k S n).app A
 
+/-- The component at `A` of the corestriction natural transformation is `corestriction S A n`. -/
 @[simp]
 theorem corestrictionNatTrans_app (A : Rep.{u} k G) (n : ℕ) :
     (corestrictionNatTrans k S n).app A = corestriction S A n := (rfl)
@@ -151,6 +156,12 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
     TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, hsmul,
     Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+
+/-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
+the index of `S`. -/
+theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
+  rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
 /-! ### Transitivity -/
 
@@ -305,6 +316,46 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
       (MonoidHom.mk_mul_out_bijective φ₁ φ₂ (by simp [φ₂.ker_eq_bot h₂]))
       _ _ fun _ => hF _
 
+/-- Read on `A` through `MonoidHom.ofInjective`, Shapiro's isomorphism for `(φ₂.comp φ₁).range`
+is the map induced by `restrictCoind` followed by Shapiro's isomorphism for `φ₁.range`. -/
+private theorem coindIso_hom_comp_mapIso_ofInjective {φ₁ : A →* B} {φ₂ : B →* C}
+    (h₁ : Function.Injective φ₁) (h₂ : Function.Injective φ₂) (n : ℕ) :
+    (coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
+      (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
+        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
+        (fun _ => LinearMap.ext fun _ => rfl) n).inv ≫
+      (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
+        (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
+        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
+      map φ₂ (restrictCoind φ₁ φ₂ M) n ≫ (coindIso (res φ₁.range.subtype (res φ₂ M)) n).hom := by
+  -- The right side first: `simp` would put `(resFunctor _).map` into `resMap` form, which
+  -- `res_map_restrictCoind_comp_counit` no longer matches. The left side is cheaper by `simp`.
+  -- `conv_rhs` keeps `rw` from re-checking the left side after every step.
+  conv_rhs => rw [coindIso_hom φ₁.range, ← map_comp, res_map_restrictCoind_comp_counit]
+  simp only [coindIso_hom, mapIso_hom, mapIso_inv, ← map_comp]
+  refine map_congr ?_ ?_ n
+  · ext a
+    exact congrArg φ₂ (MonoidHom.apply_ofInjective_symm h₁ a)
+  · exact LinearMap.ext fun _ => rfl
+
+open scoped Classical in
+/-- The trace of `φ₁.range` after `restrictCoind`, read on `C` through `MonoidHom.ofInjective`, is
+the map induced by `coindTrace` followed by Shapiro's isomorphism for `φ₂.range`. -/
+private theorem map_restrictCoind_comp_map_counit_comp_mapIso {φ₁ : A →* B} {φ₂ : B →* C}
+    [φ₁.range.FiniteIndex] (h₂ : Function.Injective φ₂) (n : ℕ) :
+    map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
+      map (MonoidHom.id B) ((coindResAdjunction.{u, u, u} k φ₁.range).counit.app (res φ₂ M)) n ≫
+      (mapIso (B := res φ₂ M) (A := res φ₂.range.subtype M) (MonoidHom.ofInjective h₂)
+        (LinearEquiv.refl k M) (fun _ => LinearMap.ext fun _ => rfl) n).hom =
+      map (MonoidHom.id C) (coindTrace φ₁ φ₂ M) n ≫ (coindIso (res φ₂.range.subtype M) n).hom := by
+  -- The right side first, as in `coindIso_hom_comp_mapIso_ofInjective`.
+  conv_rhs => rw [coindIso_hom φ₂.range, ← map_comp, res_map_coindTrace_comp_counit]
+  simp only [mapIso_hom, ← map_comp]
+  refine map_congr ?_ ?_ n
+  · ext a
+    exact MonoidHom.apply_ofInjective_symm h₂ a
+  · exact LinearMap.ext fun _ => rfl
+
 /-- **Transitivity of corestriction.** Let `φ₁ : A →* B` and `φ₂ : B →* C` be injective with
 images of finite index, and let `φ₃ = φ₂.comp φ₁`. Identify each group with its image through
 `MonoidHom.ofInjective`. Then corestriction from `A` to `B`, followed by corestriction from `B`
@@ -334,50 +385,35 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
         (fun _ => by subst h; exact LinearMap.ext fun _ => rfl) n).hom ≫
       corestriction φ₃.range M n := by
   subst h
-  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂
-  classical
-  -- Precompose with Shapiro's isomorphism for the composite, read on `A`.
-  rw [← cancel_epi ((coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
-    (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
-        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).inv)]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  rw [coindIso_hom_comp_corestriction]
-  -- Read on `B`, Shapiro for the composite is Shapiro for `φ₁.range` after `restrictCoind`.
-  have step₁ : (coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
-      (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
-        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).inv ≫
-      (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
-        (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
-      map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
-        (coindIso (res φ₁.range.subtype (res φ₂ M)) n).hom := by
-    rw [coindIso_hom, coindIso_hom, mapIso_hom, mapIso_inv, ← map_comp, ← map_comp, ← map_comp,
-      res_map_restrictCoind_comp_counit]
-    refine map_congr ?_ ?_ n
-    · ext a
-      simp only [MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply, Subgroup.coe_subtype,
-        MonoidHom.ofInjective_apply, MonoidHom.apply_ofInjective_symm]
-    · exact LinearMap.ext fun _ => rfl
-  -- Then the trace of `φ₁.range`, read on `C`, is Shapiro for `φ₂.range` after `coindTrace`.
-  have step₂ : map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
-      map (MonoidHom.id B) ((coindResAdjunction.{u, u, u} k φ₁.range).counit.app (res φ₂ M)) n ≫
-      (mapIso (B := res φ₂ M) (A := res φ₂.range.subtype M)
-        (MonoidHom.ofInjective h₂) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
-      map (MonoidHom.id C) (coindTrace φ₁ φ₂ M) n ≫ (coindIso (res φ₂.range.subtype M) n).hom := by
-    rw [coindIso_hom, mapIso_hom, ← map_comp, ← map_comp, ← map_comp,
-      res_map_coindTrace_comp_counit]
-    refine map_congr ?_ ?_ n
-    · ext a
-      simp only [MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply, MonoidHom.id_apply,
-        Subgroup.coe_subtype, MonoidHom.apply_ofInjective_symm]
-    · exact LinearMap.ext fun _ => rfl
-  rw [reassoc_of% step₁, reassoc_of% (coindIso_hom_comp_corestriction φ₁.range (res φ₂ M) n),
-    reassoc_of% step₂, coindIso_hom_comp_corestriction, ← map_id_comp,
-    coindTrace_comp_counit φ₁ φ₂ M h₂]
+  -- Move the identification for the composite, read on `A`, to the left, and precompose with
+  -- Shapiro's isomorphism for the composite.
+  -- (`groupCohomology.coindIso` is qualified: `Rep.coindIso` is also in scope.)
+  rw [← Iso.inv_comp_eq,
+    ← cancel_epi (groupCohomology.coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom,
+    coindIso_hom_comp_corestriction]
+  -- Pass through Shapiro for `φ₁.range`, then for `φ₂.range`, and compare the two traces.
+  conv_lhs => rw [reassoc_of% coindIso_hom_comp_mapIso_ofInjective M h₁ h₂ n,
+    reassoc_of% (coindIso_hom_comp_corestriction φ₁.range (res φ₂ M) n),
+    reassoc_of% map_restrictCoind_comp_map_counit_comp_mapIso M h₂ n,
+    coindIso_hom_comp_corestriction, ← map_id_comp, coindTrace_comp_counit φ₁ φ₂ M h₂]
 
 end Transitivity
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+
+open Limits
+
+/-- Positive-degree cohomology of a finite group is killed by the order of the group (Milne II
+1.31). -/
+theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n + 1)) :
+    Nat.card G • x = 0 := by
+  -- Restriction to the trivial subgroup lands in the vanishing cohomology of the trivial group.
+  simpa using TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero ⊥ <|
+    (ModuleCat.subsingleton_of_isZero
+      (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
+
+end groupCohomology

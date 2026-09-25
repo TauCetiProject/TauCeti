@@ -1,0 +1,9 @@
+{
+  "_comment": "Pages elsewhere about one roadmap, linked from its row on the Progress page. Keys are roadmap paths as in roadmap_coverage.json; each link is {label, url} with an https URL. Add a line here when someone publishes a per-roadmap map or write-up.",
+  "TauCetiRoadmap/GeometricTopology": [
+    {"label": "Geotopo route map (utensil)", "url": "https://utensil.github.io/formal-land/geotopo/geotopo-route-map.html"}
+  ],
+  "TauCetiRoadmap/RepresentationTheory/SpinRepresentations": [
+    {"label": "SpinRep route map (utensil)", "url": "https://utensil.github.io/formal-land/spinrep/spinrep-route-map.html"}
+  ]
+}

@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import TauCeti.KnotTheory.Grid.Cycles
+import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 
 /-!
 # The fully blocked grid homology
@@ -48,9 +52,13 @@ unknot.
 
 ## Main results
 
+* `TauCeti.GridDiagram.fullyBlockedBoundariesInCycles_eq_comap`: the boundaries inside the cycles
+  are the preimage of the boundaries under the inclusion of the cycles.
 * `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_iff`: two cycles are homologous exactly when
   their difference is a boundary, and `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_zero_iff`:
   a class vanishes exactly when a representing cycle is a boundary.
+* `TauCeti.GridDiagram.finrank_fullyBlockedHomology_add_two_mul_finrank_range`: rank-nullity for
+  any fully blocked differential that squares to zero.
 * `TauCeti.GridDiagram.natCard_fullyBlockedHomology_of_le_two` and
   `TauCeti.GridDiagram.finrank_fullyBlockedHomology_of_le_two`: the small-grid cardinality
   `2 ^ n!` and dimension `n!`.
@@ -90,13 +98,21 @@ the differential squares to zero (`fullyBlockedBoundaries_le_cycles`). -/
 noncomputable def fullyBlockedBoundariesInCycles : Submodule (ZMod 2) G.fullyBlockedCycles :=
   G.fullyBlockedBoundaries.submoduleOf G.fullyBlockedCycles
 
+/-- The boundaries inside the cycles are the preimage of the boundaries under the inclusion of the
+cycles. The body of `fullyBlockedBoundariesInCycles` is not exposed outside this module, so this
+restatement is what lets consumers reason about it as a comap. -/
+theorem fullyBlockedBoundariesInCycles_eq_comap :
+    G.fullyBlockedBoundariesInCycles =
+      G.fullyBlockedBoundaries.comap G.fullyBlockedCycles.subtype := by
+  rw [fullyBlockedBoundariesInCycles, Submodule.submoduleOf]
+
 /-- A cycle lies in `fullyBlockedBoundariesInCycles` exactly when it is a fully blocked boundary,
 letting membership be established without unfolding `submoduleOf`. -/
 @[simp]
 theorem mem_fullyBlockedBoundariesInCycles (x : G.fullyBlockedCycles) :
     x ∈ G.fullyBlockedBoundariesInCycles ↔
       (x : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
-  rw [fullyBlockedBoundariesInCycles, Submodule.submoduleOf, Submodule.mem_comap]
+  rw [fullyBlockedBoundariesInCycles_eq_comap, Submodule.mem_comap]
   rfl
 
 /-- The fully blocked grid homology: the cycles of the fully blocked differential modulo the
@@ -115,8 +131,7 @@ square to zero. -/
 theorem fullyBlockedHomology_mk_eq_iff (a b : G.fullyBlockedCycles) :
     (Submodule.Quotient.mk a : G.fullyBlockedHomology) = Submodule.Quotient.mk b ↔
       (a : GridChain (ZMod 2) n) - b ∈ G.fullyBlockedBoundaries := by
-  rw [Submodule.Quotient.eq, fullyBlockedBoundariesInCycles, Submodule.submoduleOf,
-    Submodule.mem_comap]
+  rw [Submodule.Quotient.eq, fullyBlockedBoundariesInCycles_eq_comap, Submodule.mem_comap]
   simp
 
 /-- A fully blocked homology class is zero exactly when a representing cycle is a boundary,
@@ -126,13 +141,39 @@ theorem fullyBlockedHomology_mk_eq_zero_iff (a : G.fullyBlockedCycles) :
       (a : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
   rw [Submodule.Quotient.mk_eq_zero, mem_fullyBlockedBoundariesInCycles]
 
+/-- The coefficient ring `ZMod 2` is a field, as needed for the dimension formula below. -/
+local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+
+/-- Rank-nullity for fully blocked grid homology: when the differential squares to zero, the
+homology dimension plus twice the differential rank is the number of grid states. -/
+theorem finrank_fullyBlockedHomology_add_two_mul_finrank_range
+    (hsq : G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0) :
+    Module.finrank (ZMod 2) G.fullyBlockedHomology +
+        2 * Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) = n.factorial := by
+  have hrk := LinearMap.finrank_range_add_finrank_ker G.fullyBlockedDifferential
+  have hZ : Module.finrank (ZMod 2) G.fullyBlockedCycles =
+      Module.finrank (ZMod 2) (LinearMap.ker G.fullyBlockedDifferential) :=
+    (LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker).finrank_eq
+  have hle := G.fullyBlockedBoundaries_le_cycles hsq
+  have hB : Module.finrank (ZMod 2) G.fullyBlockedBoundariesInCycles =
+      Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) := by
+    exact ((LinearEquiv.ofEq _ _ G.fullyBlockedBoundariesInCycles_eq_comap).trans
+      ((Submodule.comapSubtypeEquivOfLe hle).trans
+        (LinearEquiv.ofEq _ _ G.fullyBlockedBoundaries_eq_range))).finrank_eq
+  have hq : Module.finrank (ZMod 2) G.fullyBlockedHomology +
+      Module.finrank (ZMod 2) G.fullyBlockedBoundariesInCycles =
+        Module.finrank (ZMod 2) G.fullyBlockedCycles :=
+    Submodule.finrank_quotient_add_finrank _
+  rw [Module.finrank_finsupp_self, GridState.card] at hrk
+  omega
+
 /-- On grids of size at most two the fully blocked differential vanishes, so the homology is the
 whole chain module: cycles are everything and the only boundary is zero. -/
 noncomputable def fullyBlockedHomologyEquivChainOfLeTwo (hn : n ≤ 2) :
     G.fullyBlockedHomology ≃ₗ[ZMod 2] GridChain (ZMod 2) n :=
   have hp : G.fullyBlockedBoundariesInCycles = ⊥ := by
-    rw [fullyBlockedBoundariesInCycles, G.fullyBlockedBoundaries_eq_bot_of_le_two hn,
-      Submodule.submoduleOf, Submodule.comap_bot, Submodule.ker_subtype]
+    rw [fullyBlockedBoundariesInCycles_eq_comap, G.fullyBlockedBoundaries_eq_bot_of_le_two hn,
+      Submodule.comap_bot, Submodule.ker_subtype]
   (Submodule.quotEquivOfEqBot _ hp).trans
     ((LinearEquiv.ofEq _ _ (G.fullyBlockedCycles_eq_top_of_le_two hn)).trans Submodule.topEquiv)
 

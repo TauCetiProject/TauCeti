@@ -22,7 +22,8 @@ For a set `s` of *retained* coordinates, puncturing and shortening are exchanged
 sum is the direct sum of the duals. A monomial transformation which rescales coordinates by units
 `u` acts on the dual through the contragredient transformation, which rescales by the inverse
 units `u⁻¹` and relabels the coordinates in the same way; in particular, monomially (respectively
-permutation) equivalent codes have monomially (respectively permutation) equivalent duals.
+permutation) equivalent codes have monomially (respectively permutation) equivalent duals, and a
+coordinate permutation preserves Euclidean self-duality.
 
 ## Main statements
 
@@ -61,9 +62,9 @@ theorem euclideanDual_directSum (C : Submodule R (ι → R)) (D : Submodule R (�
   constructor
   · intro hy
     refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-    · have h := hy (Sum.elim x 0) (mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩)
+    · have h := hy (Sum.elim x 0) (sumElim_zero_right_mem_directSum D hx)
       simpa [hdot] using h
-    · have h := hy (Sum.elim 0 x) (mem_directSum_iff.mpr ⟨C.zero_mem, hx⟩)
+    · have h := hy (Sum.elim 0 x) (sumElim_zero_left_mem_directSum C hx)
       simpa [hdot] using h
   · rintro ⟨hC, hD⟩ x hx
     obtain ⟨hxC, hxD⟩ := mem_directSum_iff.mp hx
@@ -88,7 +89,7 @@ theorem euclideanDual_puncture (C : LinearCode F ι) :
     euclideanDual (puncture C s) = shorten (euclideanDual C) s := by
   ext y
   rw [mem_shorten_iff_extend_mem, mem_euclideanDual, mem_euclideanDual]
-  simp only [dotProduct_extend_zero Subtype.val_injective, mem_puncture]
+  simp only [Subtype.val_injective.dotProduct_extend_zero, mem_puncture]
   constructor
   · exact fun h x hx ↦ h _ ⟨x, hx, fun _ ↦ rfl⟩
   · rintro h z ⟨x, hx, hxz⟩
@@ -163,6 +164,15 @@ theorem IsPermutationEquivalent.euclideanDual {C : Submodule R (ι → R)}
   have h := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
   rw [inv_one, monomialEquiv_one] at h
   exact h.symm
+
+/-- Permutation equivalence preserves Euclidean self-duality. -/
+theorem IsPermutationEquivalent.eq_euclideanDual_iff {C : Submodule R (ι → R)}
+    {D : Submodule R (κ → R)} (h : IsPermutationEquivalent C D) :
+    C = C.euclideanDual ↔ D = D.euclideanDual := by
+  obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
+  have hdual := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
+  rw [inv_one, monomialEquiv_one] at hdual
+  rw [hdual, (map_injective_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective).eq_iff]
 
 end Monomial
 

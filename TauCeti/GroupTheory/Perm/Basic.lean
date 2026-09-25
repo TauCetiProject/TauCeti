@@ -16,8 +16,9 @@ This file records general-purpose facts about permutations: an identity between 
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
-permutations transported along injections with disjoint ranges, and the fact that a permutation
-is a single cycle on each of its own orbits.
+permutations transported along injections with disjoint ranges, the fact that a permutation
+is a single cycle on each of its own orbits, and the factorization of an invariant function
+through a map on whose fibres the permutation is a single cycle.
 -/
 
 public section
@@ -97,6 +98,13 @@ theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
       exact sameCycle_comm
     rw [hfibre]
     exact σ.isCycleOn_setOf_sameCycle x
+
+/-- A function invariant under a permutation that is a single cycle on each fibre of `g` factors
+through `g`. -/
+theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
+    (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
+    f.FactorsThrough g :=
+  fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
 
 /-- Transporting a permutation along an equivalence transports its cycles. -/
 @[simp]

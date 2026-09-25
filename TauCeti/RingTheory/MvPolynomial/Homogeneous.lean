@@ -57,5 +57,4 @@ theorem eval_smul {σ R : Type*} [CommSemiring R]
     _root_.MvPolynomial.eval (a • g) p = a ^ n • _root_.MvPolynomial.eval g p := by
   simpa only [_root_.MvPolynomial.eval, coe_eval₂Hom, Pi.smul_def, smul_eq_mul] using
     hp.eval₂_const_mul (RingHom.id R) g a
-
 end MvPolynomial.IsHomogeneous

@@ -8,10 +8,12 @@ module
 public import Mathlib.Topology.Connected.Basic
 
 /-!
-# Three frontier lemmas: straddling, splitting a domain in two, and clinging to it from inside
+# Elementary frontier lemmas
 
-Three elementary facts about `frontier`, each the topological core of a step that a boundary
-argument would otherwise carry out inside a concrete space.
+Facts about `frontier` that carry no structure of their own: straddling, splitting a domain in
+two, clinging to it from inside, the frontier of an image, and the frontier of a finite union.
+Each is the topological core of a step that a boundary argument would otherwise carry out inside
+a concrete space. The list is open-ended; nothing below depends on how many entries it has.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -67,16 +69,18 @@ domain-splitting argument live.
 
 ## Consumers
 
-All three lemmas serve layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's
-boundary correspondence. The first does so through
-`TauCeti/Analysis/Normed/Module/DiamFrontier.lean`: a ray leaving a bounded set crosses its
-frontier, which is what makes the frontier of such a set as wide as the set itself. The second is
-the splitting step of `TauCeti/Analysis/Complex/Conformal/CutDiameter.lean`, where `s` and `t` are
-the two sides of a circular crosscut of a domain and `u` is the crosscut arc. The third is what
-lets `TauCeti/Analysis/Complex/Conformal/ClusterSet.lean` identify the boundary piece that one
-side of such a crosscut cuts off, whose description as a union of cluster sets is naturally a
-statement about a closure. Nothing here is specific to those uses; no lemma mentions a metric, let
-alone a holomorphic map.
+The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
+conformal maps. The first does so through `TauCeti/Analysis/Normed/Module/DiamFrontier.lean`: a
+ray leaving a bounded set crosses its frontier, which is what makes the frontier of such a set as
+wide as the set itself. The second is the splitting step of
+`TauCeti/Analysis/Complex/Conformal/CutDiameter.lean`, where `s` and `t` are the two sides of a
+circular crosscut of a domain and `u` is the crosscut arc. The third is what lets
+`TauCeti/Analysis/Complex/Conformal/ClusterSet.lean` identify the boundary piece that one side of
+such a crosscut cuts off, whose description as a union of cluster sets is naturally a statement
+about a closure. The image and finite-union lemmas are used quite differently, for a partial
+homeomorphism of a real coordinate space and for the frontier of a finite union of unit translates
+of a lattice region. Nothing here is specific to any of those uses; no lemma mentions a metric,
+let alone a holomorphic map.
 
 ## Main results
 
@@ -87,6 +91,11 @@ alone a holomorphic map.
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
+* `TauCeti.frontier_image_subset_of_closure_subset` — for an open injective map whose image
+  closure adds at most a set `t`, the frontier of an image lies on the image of the frontier,
+  together with `t`.
+* `TauCeti.frontier_iUnion_subset` — the frontier of a union over a finite index type lies in the
+  union of the frontiers.
 -/
 
 public section
@@ -190,5 +199,52 @@ theorem frontier_inter_closure_eq_frontier_inter_frontier (hAV : A ⊆ V) :
   exact (mem_frontier_iff_notMem_interior (hAV hx.2)).mp hx.1 (interior_mono hAV hint)
 
 end Inside
+
+section OpenInjectiveImage
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {s : Set X}
+  {t : Set Y}
+
+/-- **The frontier of an image lies on the image of the frontier, plus whatever the closure adds.**
+For an open injective `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
+
+> `frontier (f '' s) ⊆ f '' frontier s ∪ t`.
+
+The extra set `t` absorbs whatever an unbounded direction of `s` escapes to: without it the
+inclusion would say that the frontier of an image is the image of a frontier, which fails as soon
+as `f` sends a divergent sequence somewhere convergent. A consumer supplies `t` together with the
+closure hypothesis, typically from a compactness statement about the image; it is often a single
+point, but nothing in the argument needs that.
+
+Openness and injectivity are both used, and neither can be dropped: openness keeps the image of
+the interior inside the interior of the image, and injectivity is what turns a difference of
+images into the image of a difference. -/
+theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Function.Injective f)
+    (hcl : closure (f '' s) ⊆ f '' closure s ∪ t) :
+    frontier (f '' s) ⊆ f '' frontier s ∪ t := by
+  refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
+  rw [Set.union_sdiff_distrib, ← Set.image_sdiff hfi]
+  exact Set.union_subset_union_right _ Set.sdiff_subset
+
+end OpenInjectiveImage
+
+section FiniteUnion
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- **The frontier of a finite union lies in the union of the frontiers.** Finiteness is
+essential, not a convenience of the proof: for an infinite union the inclusion fails — the
+rationals are a countable union of singletons, each its own frontier, yet their union has
+frontier all of `ℝ`. -/
+theorem frontier_iUnion_subset {ι : Type*} [Finite ι] (A : ι → Set X) :
+    frontier (⋃ i, A i) ⊆ ⋃ i, frontier (A i) := by
+  intro x hx
+  -- Finiteness enters through `closure_iUnion_of_finite`: a point adherent to the whole union
+  -- is already adherent to one of the pieces.
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (closure_iUnion_of_finite A ▸ hx.1)
+  -- The interior, by contrast, only grows with the union, so `x` misses `interior (A i)` too.
+  exact Set.mem_iUnion.2 ⟨i, hi, fun hmem ↦ hx.2 (interior_mono (Set.subset_iUnion A i) hmem)⟩
+
+end FiniteUnion
 
 end TauCeti

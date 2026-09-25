@@ -66,6 +66,9 @@ are marked `@[no_expose]`, which is what lets their bodies name those private co
   `TauCeti.exists_isGlHighestWeightVector_glIrreducible`: **its distinguished generator is a highest
   weight vector of weight `mu` and generates the carrier**, which is what ties the carrier to its
   name; `TauCeti.lieSpan_glIrreducibleGenerator_eq_top` states the generating property explicitly.
+* `TauCeti.weightSpace_glIrreducible_eq_span_singleton` and
+  `TauCeti.finrank_weightSpace_glIrreducible`: **the top weight space of `L(mu)` is its
+  distinguished generator line**, and therefore has dimension one.
 * `TauCeti.nonempty_lieModuleEquiv_glIrreducible`: **`L(mu)` is *the* irreducible of highest weight
   `mu`**: every irreducible `gl N K`-module carrying a highest weight vector of weight `mu` is
   isomorphic to it, and `TauCeti.finrank_glIrreducible_le` bounds its dimension by that of any
@@ -261,6 +264,24 @@ theorem lieSpan_glIrreducibleGenerator_eq_top (hmu : IsGlDominantIntegral mu) :
   let _ := isIrreducible_glIrreducible (K := K) hmu
   exact lieSpan_singleton_eq_top_of_ne_zero
     (isGlHighestWeightVector_glIrreducibleGenerator (K := K) hmu).ne_zero
+
+/-- **The top weight space of `L(mu)` is its distinguished generator line.** -/
+theorem weightSpace_glIrreducible_eq_span_singleton (hmu : IsGlDominantIntegral mu) :
+    weightSpace (glIrreducible N mu)
+        ((glWeightEquiv K (Fin N) mu : Module.Dual K (diagonalCartan K (Fin N))) :
+          diagonalCartan K (Fin N) → K) = K ∙ glIrreducibleGenerator N mu :=
+  weightSpace_eq_span_singleton_of_isGlHighestWeightVector_of_lieSpan_eq_top
+    (isGlHighestWeightVector_glIrreducibleGenerator hmu)
+    (lieSpan_glIrreducibleGenerator_eq_top hmu)
+
+/-- **The top weight has multiplicity one in `L(mu)`.** -/
+@[simp] theorem finrank_weightSpace_glIrreducible (hmu : IsGlDominantIntegral mu) :
+    finrank K (weightSpace (glIrreducible N mu)
+        ((glWeightEquiv K (Fin N) mu : Module.Dual K (diagonalCartan K (Fin N))) :
+          diagonalCartan K (Fin N) → K)) = 1 :=
+  finrank_weightSpace_eq_one_of_isGlHighestWeightVector_of_lieSpan_eq_top
+    (isGlHighestWeightVector_glIrreducibleGenerator hmu)
+    (lieSpan_glIrreducibleGenerator_eq_top hmu)
 
 /-- **`L(mu)` carries a highest weight vector of weight `mu`**, the existential form of
 `TauCeti.isGlHighestWeightVector_glIrreducibleGenerator` pinned by the roadmap. -/

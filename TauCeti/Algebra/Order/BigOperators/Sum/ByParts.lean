@@ -20,7 +20,7 @@ as the last weight times the last partial-sum difference plus the successive dec
 times the earlier partial-sum differences, and every one of these products is nonnegative.
 
 No sign condition on `f` or `g` is needed. The typical use takes `g` constant: a bound
-`∑_{i < k} f i ≤ C k` on all partial sums then gives `∑ w i * f i ≤ C ∑ w i` for every
+`∑_{i < k} f i ≤ k • C` on all partial sums then gives `∑ w i * f i ≤ (∑ w i) * C` for every
 nonnegative antitone weight.
 
 ## Main results
@@ -34,11 +34,13 @@ namespace TauCeti
 
 open Finset
 
-variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
+variable {R : Type*} [Ring R] [Preorder R] [IsOrderedAddMonoid R] [PosMulMono R]
 
 /-- **Abel's inequality, comparison form.** If the partial sums of `f` are dominated by those of
 `g` up to `N`, and `w` is nonnegative and antitone on the first `N` indices, then
-`∑_{i < N} w i * f i ≤ ∑_{i < N} w i * g i`. -/
+`∑_{i < N} w i * f i ≤ ∑_{i < N} w i * g i`. Only the last weight is required
+to be nonnegative explicitly; the other signs follow from the successive comparisons
+when `N > 0`. -/
 theorem sum_range_mul_le_sum_range_mul {f g w : ℕ → R} {N : ℕ}
     (hfg : ∀ k ≤ N, ∑ i ∈ range k, f i ≤ ∑ i ∈ range k, g i)
     (hw : ∀ i, i + 1 < N → w (i + 1) ≤ w i) (hw0 : 0 ≤ w (N - 1)) :
@@ -55,8 +57,9 @@ theorem sum_range_mul_le_sum_range_mul {f g w : ℕ → R} {N : ℕ}
       ≤ ∑ i ∈ range (N - 1), (0 : R) := by
         refine sum_le_sum fun i hi ↦ ?_
         rw [mem_range] at hi
-        exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (hw i (by omega)))
-          (hD (i + 1) (by omega))
+        rw [← neg_sub (w i) (w (i + 1)), neg_mul]
+        exact neg_nonpos.mpr (mul_nonneg (sub_nonneg.mpr (hw i (by omega)))
+          (hD (i + 1) (by omega)))
     _ = 0 := sum_const_zero
     _ ≤ w (N - 1) * ∑ j ∈ range N, d j := mul_nonneg hw0 (hD N le_rfl)
 

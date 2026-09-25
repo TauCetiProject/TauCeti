@@ -91,6 +91,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
+* `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form of a constant principal
+  coefficient with no lower-order terms is the integral of `⟨A ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -338,6 +340,16 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
+/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
+matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
+over `Ω`. This is the shape the difference-quotient arguments of elliptic regularity work
+with. -/
+theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => A) 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
+  rw [energyFormH1_def]
+  simp
+
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]
 theorem energyFormH1_zero_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
@@ -466,6 +478,48 @@ theorem integrable_energyIntegrand_jetField
   refine (integrable_bilinear_apply_of_memLp hcoeff (jetLpL u) (jetLpL v)).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
+
+omit [mu.IsAddHaarMeasure] [DecidableEq ι] in
+/-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
+pointwise energy forms. -/
+theorem memLp_energyIntegrand_mass_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) :
+    MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x - kappa)) ⊤ (mu.restrict Omega) := by
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  have hconst :
+      MemLp (fun _ : EuclideanSpace ℝ ι ↦ energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
+        ⊤ (mu.restrict Omega) :=
+    memLp_top_const
+      (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
+      (μ := mu.restrict Omega) (energyIntegrand (0 : Matrix ι ι ℝ) 0 kappa)
+  have hsub := hcoeff.sub hconst
+  apply MemLp.ae_eq (hf_Lp := hsub)
+  filter_upwards with x
+  simp only [Pi.sub_apply]
+  simpa only [sub_zero] using
+    (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
+
+open scoped InnerProductSpace in
+omit [DecidableEq ι] in
+/-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
+from the Sobolev energy form. No boundary or coercivity assumption is needed. -/
+theorem energyFormH1_mass_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 a b (fun x ↦ c x - kappa) u v =
+      energyFormH1 a b c u v - kappa * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  have hmass : Integrable (fun x ↦ W1p.value u x * W1p.value v x) (mu.restrict Omega) := by
+    simpa only [RCLike.inner_apply, conj_trivial, mul_comm] using
+      L2.integrable_inner (𝕜 := ℝ) (W1p.value u) (W1p.value v)
+  rw [energyFormH1_def, energyFormH1_def, W1p.inner_value_eq_setIntegral,
+    ← integral_const_mul, ← integral_sub (integrable_energyIntegrand_jetField hcoeff u v)
+      (hmass.const_mul kappa)]
+  apply integral_congr_ae
+  filter_upwards with x
+  simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
+  ring
 
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/

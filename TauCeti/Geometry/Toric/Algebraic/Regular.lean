@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
+import TauCeti.Data.Fin.Sum
 
 /-!
 # Regular toric cones and regular fans
@@ -49,10 +50,15 @@ boundary coordinates, twists them by `B`, and acts on the torus coordinates by `
   map.
 * `TauCeti.Toric.IsRegularCone.card_toricRay_le_finrank`: a regular cone has at most as many rays
   as the rank of the lattice, which is the count that gives the dimensions of its mixed chart.
+* `TauCeti.Toric.IsRegularCone.exists_basis_sum`: an extending basis indexed by the rays followed
+  by a finite complementary type, as required by regular affine coordinates.
 * `TauCeti.Toric.IsExtendingBasis.basis_apply_eq`,
   `TauCeti.Toric.IsExtendingBasis.repr_basis_apply` and
   `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`: the salient ray columns of the transition matrix
   relating two extending bases.
+* `TauCeti.Toric.isUnit_det_toMatrix_submatrix_inr`: for two bases indexed by a splitting of the
+  index set into the rays of the cone and a common complement, both extending the primitive ray
+  generators, the complementary block of the transition matrix is unimodular.
 * `TauCeti.Toric.IsExtendingBasis.isUnit_det_toMatrix_compl` and
   `TauCeti.Toric.IsExtendingBasis.exists_isUnit_det_toMatrix_compl`: the complementary block of
   that transition matrix is unimodular, for compatible splittings of the two index sets into the
@@ -233,10 +239,57 @@ theorem IsRegularCone.prod {τ' : PointedCone ℝ V'} (hσ : IsRegularCone i σ)
 
 /-! ### Two extending bases -/
 
+/-- The complementary block of the transition matrix between two bases indexed by a splitting of
+the index set into the rays of a cone and a common complement, both carrying the primitive
+generator of a ray at the index of that ray, is unimodular: the matrix has the block form
+`[[1, B], [0, D]]`, because a salient ray in an integral lattice has only one primitive generator.
+This is the unimodularity hypothesis used by the analytic change of chart. -/
+theorem isUnit_det_toMatrix_submatrix_inr {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (hi : IsIntegralLattice i) (hσ : (σ : ConvexCone ℝ V).Salient)
+    {B B' : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) :
+    IsUnit ((B'.toMatrix B).submatrix Sum.inr Sum.inr).det := by
+  classical
+  have := hi.finite
+  have := Module.Finite.finite_basis B
+  have : Finite (ToricRay σ) :=
+    Finite.of_injective (Sum.inl : ToricRay σ → ToricRay σ ⊕ ι) Sum.inl_injective
+  have _ : Fintype (ToricRay σ) := Fintype.ofFinite (ToricRay σ)
+  -- Every ray of a salient cone is salient, by `ConvexCone.Salient.anti` along the face inclusion.
+  have hray : ∀ ρ : ToricRay σ, (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
+    fun ρ ↦ hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
+  have hblocks : B'.toMatrix B = Matrix.fromBlocks 1
+      ((B'.toMatrix B).submatrix Sum.inl Sum.inr) 0
+      ((B'.toMatrix B).submatrix Sum.inr Sum.inr) := by
+    ext x y
+    rcases x with ρ' | j' <;> rcases y with ρ | k <;> simp only [Matrix.fromBlocks_apply₁₁,
+      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
+      Matrix.submatrix_apply, Matrix.zero_apply]
+    -- The ray block is the identity, since the two bases agree at the indices of a ray.
+    · rw [Module.Basis.toMatrix_apply, (hB ρ).unique hi (hray ρ) (hB' ρ), Module.Basis.repr_self,
+        Matrix.one_apply]
+      simp [Finsupp.single_apply, eq_comm]
+    -- The nonray-row, ray-column block vanishes, since a nonray index is not a ray index.
+    · rw [Module.Basis.toMatrix_apply, (hB ρ).unique hi (hray ρ) (hB' ρ), Module.Basis.repr_self]
+      simp
+  let _ : Invertible (B'.toMatrix B) := B'.invertibleToMatrix B
+  have h := Matrix.isUnit_det_of_invertible (B'.toMatrix B)
+  rwa [hblocks, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, one_mul] at h
+
 namespace IsExtendingBasis
 
 variable {n n' : ℕ} {b : Module.Basis (Fin n) ℤ N} {b' : Module.Basis (Fin n') ℤ N}
   {r : ToricRay σ ↪ Fin n} {r' : ToricRay σ ↪ Fin n'}
+
+/-- An extending basis, reindexed along a splitting of its index set into the rays of the cone and
+a complement compatibly with the ray indexing, carries the primitive generator of a ray at the
+index of that ray. This is the hypothesis shape consumed by
+`TauCeti.Toric.regularDualSemigroupEquiv`. -/
+theorem isPrimitiveGenerator_reindex {ι : Type*} (hb : IsExtendingBasis i b r)
+    (e : ToricRay σ ⊕ ι ≃ Fin n) (he : ∀ ρ, e (Sum.inl ρ) = r ρ) (ρ : ToricRay σ) :
+    IsPrimitiveGenerator i ρ (b.reindex e.symm (Sum.inl ρ)) := by
+  simpa [he ρ] using hb.isPrimitiveGenerator_apply ρ
 
 /-- Two integral bases extending the primitive ray generators of a cone carry the same vector at
 the indices of a given salient ray: both are primitive generators of that ray, and a salient ray in
@@ -288,35 +341,13 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
     (he : ∀ ρ, e (Sum.inl ρ) = r ρ) (he' : ∀ ρ, e' (Sum.inl ρ) = r' ρ) :
     IsUnit ((b'.toMatrix b).submatrix (fun j : ι ↦ e' (Sum.inr j))
       (fun k : ι ↦ e (Sum.inr k))).det := by
-  classical
-  have _ : Fintype (ToricRay σ) := Fintype.ofInjective r r.injective
-  -- Every ray of a salient cone is salient, by `ConvexCone.Salient.anti` along the face inclusion.
-  have hray : ∀ ρ : ToricRay σ, (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
-    fun ρ ↦ hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
-  set B₁ : Module.Basis (ToricRay σ ⊕ ι) ℤ N := b.reindex e.symm with hB₁
-  set B₂ : Module.Basis (ToricRay σ ⊕ ι) ℤ N := b'.reindex e'.symm with hB₂
-  have hM : ∀ k j, B₂.toMatrix B₁ k j = b'.toMatrix b (e' k) (e j) := by
-    intro k j
-    simp [hB₁, hB₂, Module.Basis.toMatrix_apply]
-  have hblocks : B₂.toMatrix B₁ = Matrix.fromBlocks 1
-      ((b'.toMatrix b).submatrix (fun ρ : ToricRay σ ↦ e' (Sum.inl ρ))
-        (fun k : ι ↦ e (Sum.inr k))) 0
-      ((b'.toMatrix b).submatrix (fun j : ι ↦ e' (Sum.inr j)) (fun k : ι ↦ e (Sum.inr k))) := by
-    ext x y
-    rcases x with ρ' | j' <;> rcases y with ρ | k <;> simp only [hM, Matrix.fromBlocks_apply₁₁,
-      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
-      Matrix.submatrix_apply, Matrix.zero_apply]
-    -- The ray block is the identity, since the two bases agree at the indices of a ray.
-    · rw [he, he', hb.toMatrix_apply hi hb' ρ (hray ρ), Matrix.one_apply]
-      simp [r'.injective.eq_iff]
-    -- The nonray-row, ray-column block vanishes, since a nonray index is not a ray index.
-    · rw [he]
-      refine hb.toMatrix_apply_eq_zero hi hb' ρ (hray ρ) ?_
-      rw [← he']
-      exact fun h ↦ by simpa using e'.injective h
-  let _ : Invertible (B₂.toMatrix B₁) := B₂.invertibleToMatrix B₁
-  have h := Matrix.isUnit_det_of_invertible (B₂.toMatrix B₁)
-  rwa [hblocks, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, one_mul] at h
+  have hmat : (((b'.reindex e'.symm).toMatrix (b.reindex e.symm)).submatrix Sum.inr Sum.inr) =
+      (b'.toMatrix b).submatrix (fun j : ι ↦ e' (Sum.inr j)) (fun k : ι ↦ e (Sum.inr k)) := by
+    ext j k
+    simp [Module.Basis.toMatrix_apply]
+  rw [← hmat]
+  exact isUnit_det_toMatrix_submatrix_inr hi hσ (hb.isPrimitiveGenerator_reindex e he)
+    (hb'.isPrimitiveGenerator_reindex e' he')
 
 /-- Two extending bases of the same cone admit compatible splittings of their index sets into the
 rays of the cone and a common complement `Fin l`, in which the transition matrix has the block form
@@ -330,20 +361,12 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
         IsUnit ((b'.toMatrix b).submatrix (fun j : Fin l ↦ e' (Sum.inr j))
           (fun k : Fin l ↦ e (Sum.inr k))).det := by
   classical
-  -- The rays sit inside the index set of an extending basis, so they split off a complement.
-  have key : ∀ {m : ℕ} (s : ToricRay σ ↪ Fin m),
-      ∃ (l : ℕ) (f : ToricRay σ ⊕ Fin l ≃ Fin m), ∀ ρ, f (Sum.inl ρ) = s ρ := by
-    intro m s
-    have _ : Fintype (ToricRay σ) := Fintype.ofInjective s s.injective
-    exact ⟨Fintype.card {j : Fin m // j ∉ Set.range s},
-      (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-        (Equiv.sumCompl fun j : Fin m ↦ j ∈ Set.range s), fun ρ ↦ rfl⟩
   have hcard : ∀ {m l : ℕ} (f : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
     intro m l f
     have _ : Finite (ToricRay σ) := Finite.of_injective _ (f.injective.comp Sum.inl_injective)
     simpa [Nat.card_sum] using (Nat.card_congr f)
-  obtain ⟨l, e, he⟩ := key r
-  obtain ⟨l', e', he'⟩ := key r'
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
+  obtain ⟨l', e', he'⟩ := r'.exists_equiv_sum_fin
   have hn : Module.finrank ℤ N = n := by simpa using Module.finrank_eq_card_basis b
   have hn' : Module.finrank ℤ N = n' := by simpa using Module.finrank_eq_card_basis b'
   obtain rfl : l' = l := by
@@ -353,6 +376,20 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
   exact ⟨_, e, e', he, he', isUnit_det_toMatrix_compl hi hσ hb hb' e e' he he'⟩
 
 end IsExtendingBasis
+
+namespace IsRegularCone
+
+/-- The primitive ray generators of a regular cone can be placed at the left summand of a basis
+indexed by the rays and a finite complementary type.  This is the indexing shape used by the
+regular affine-coordinate equivalence. -/
+theorem exists_basis_sum (h : IsRegularCone i σ) :
+    ∃ (l : ℕ) (b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N),
+  ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)) := by
+  obtain ⟨n, b, r, hb⟩ := h.exists_basis
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
+  exact ⟨l, b.reindex e.symm, hb.isPrimitiveGenerator_reindex e he⟩
+
+end IsRegularCone
 
 /-! ### Regular fans -/
 

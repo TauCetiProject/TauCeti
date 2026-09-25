@@ -83,13 +83,14 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hcZ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦
       edist w.1 w.2 ^ p.toReal :=
-    ENNReal.continuous_rpow_const.measurable.comp (measurable_edist_toLp_prod hp hdX hdY)
+    ENNReal.continuous_rpow_const.measurable.comp (measurable_edist_toLp_prod hdX hdY)
   have hcX : Measurable fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.measurable.comp hdX
   have hcY : Measurable fun z : Y × Y ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.measurable.comp hdY
-  rw [wassersteinEDist_rpow_eq_transportCost hp0 hp, wassersteinEDist_rpow_eq_transportCost hp0 hp,
-    wassersteinEDist_rpow_eq_transportCost hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
+  rw [wassersteinEDist_rpow_eq_transportCost (measurable_edist_toLp_prod hdX hdY) hp0 hp,
+    wassersteinEDist_rpow_eq_transportCost hdX hp0 hp,
+    wassersteinEDist_rpow_eq_transportCost hdY hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
     ← transportCost_comp_prodMap (MeasurableEquiv.toLp p (X × Y))
       (MeasurableEquiv.toLp p (X × Y)) hcZ]
   have hsep : (fun z : (X × Y) × X × Y ↦
@@ -97,7 +98,7 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
           ^ p.toReal)
       = fun z : (X × Y) × X × Y ↦
         edist z.1.1 z.2.1 ^ p.toReal + edist z.1.2 z.2.2 ^ p.toReal :=
-    funext fun z ↦ edist_toLp_rpow hp z.1 z.2
+    funext fun z ↦ edist_toLp_rpow (p.toReal_pos_iff_ne_top.mpr hp) z.1 z.2
   rw [hsep]
   exact transportCost_prod_add hcX hcY
 
@@ -150,7 +151,7 @@ theorem hasFiniteMoment_map_toLp_prod_iff (hp : p ≠ ∞)
       HasFiniteMoment p μ₁ ∧ HasFiniteMoment p μ₂ := by
   have hr : 0 < p.toReal := p.toReal_pos_iff_ne_top.mpr hp
   have hd : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦ edist w.1 w.2 :=
-    measurable_edist_toLp_prod hp hdX hdY
+    measurable_edist_toLp_prod hdX hdY
   have key : ∀ x₀ : X, ∀ y₀ : Y,
       wassersteinEDist p (Measure.dirac (WithLp.toLp p (x₀, y₀)))
           ((μ₁.prod μ₂).map (WithLp.toLp p)) ≠ ∞ ↔

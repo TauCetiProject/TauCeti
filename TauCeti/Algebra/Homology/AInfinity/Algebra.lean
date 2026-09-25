@@ -29,6 +29,14 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
 * `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 
+## Main results
+
+* `TauCeti.AInfinityAlgebra.stasheff`: the unsuspended Stasheff identities, with
+  `stasheff_arity_one` through `stasheff_arity_four` evaluated verbatim.
+* `TauCeti.AInfinityAlgebra.taylor_of_two` and
+  `TauCeti.AInfinityAlgebra.barDifferential_of_two`: the Taylor map and the bar differential on a
+  two-letter word.
+
 ## References
 
 * E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
@@ -318,6 +326,11 @@ theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential x = 𝒜.m 1 ![x] := by
   simp [differential, MultilinearMap.curryRight_apply]
 
+/-- The unary operation raises the degree by one. -/
+theorem differential_mem_piece (𝒜 : AInfinityAlgebra R A) {p : ℤ} {x : A}
+    (hx : x ∈ 𝒜.grading.piece p) : 𝒜.differential x ∈ 𝒜.grading.piece (p + 1) := by
+  simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![x] (fun _ ↦ by simpa using hx)
+
 /-- On a single letter the Taylor map is the unary operation: the suspension sign of a word of
 length one is trivial. -/
 @[simp]
@@ -352,15 +365,7 @@ theorem barDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
   rw [← taylor_ofLetter, ← letter_comp_barDifferential, LinearMap.comp_apply, ← hy,
     ReducedTensorWords.letter_ofLetter]
 
-/-- The unary operation squares to zero. -/
-@[simp]
-theorem differential_comp_self_eq_zero (𝒜 : AInfinityAlgebra R A) :
-    𝒜.differential ∘ₗ 𝒜.differential = 0 := by
-  ext x
-  simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply,
-    𝒜.stasheff_arity_one]
-
-/-- The binary `A∞` operation, regarded as a bilinear map on the total module. -/
+/-- The binary `A∞` operation, regarded as a linear map in each argument. -/
 def mul (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A →ₗ[R] A :=
   LinearMap.mk₂ R (fun x y ↦ 𝒜.m 2 ![x, y])
     (fun x x' y ↦ by
@@ -377,16 +382,101 @@ def mul (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A →ₗ[R] A :=
 theorem mul_apply (𝒜 : AInfinityAlgebra R A) (x y : A) : 𝒜.mul x y = 𝒜.m 2 ![x, y] := by
   simp [mul]
 
+/-- The binary operation has degree zero. -/
+theorem mul_mem_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {x y : A}
+    (hx : x ∈ 𝒜.grading.piece p) (hy : y ∈ 𝒜.grading.piece q) :
+    𝒜.mul x y ∈ 𝒜.grading.piece (p + q) := by
+  have h := (𝒜.m_degree 2 two_pos).map_mem ![p, q] ![x, y] fun i ↦ by fin_cases i <;> simpa
+  simpa using h
+
+/-- On a two-letter word the Taylor map is the binary operation, with the suspension sign carried
+by the degree-one Koszul twist of the first letter. -/
+theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
+    𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
+        (PiTensorProduct.tprod R ![a, b])) =
+      𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b] := by
+  let L : A →ₗ[R] A →ₗ[R] A :=
+    ((ReducedTensorWords.prepend R A).compr₂ 𝒜.taylor).compl₂
+      (ReducedTensorWords.ofLetter R A)
+  let Q : A →ₗ[R] A →ₗ[R] A := 𝒜.mul ∘ₗ 𝒜.grading.koszulTwist 1
+  suffices h : L = Q by
+    rw [← ReducedTensorWords.prepend_ofLetter]
+    simpa [L, Q] using LinearMap.congr_fun (LinearMap.congr_fun h a) b
+  refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
+  refine 𝒜.grading.linearMap_ext fun q y hy ↦ ?_
+  have hcons : (fun i : Fin 2 ↦ if (i : ℕ) = 0 then x else y) = ![x, y] := by
+    funext i
+    fin_cases i <;> simp
+  have hexp : _root_.MultilinearMap.suspExp 2 (fun j : ℕ ↦ if j = 0 then p else q) = p := by
+    simp [_root_.MultilinearMap.suspExp_def, Finset.sum_range_succ]
+  have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 2 (by omega)
+    (fun j : ℕ ↦ if j = 0 then p else q) (fun j : ℕ ↦ if j = 0 then x else y) (by
+      intro i hi
+      have hi' : i = 0 ∨ i = 1 := by omega
+      rcases hi' with rfl | rfl
+      · simpa using hx
+      · simpa using hy)
+  rw [hcons] at hs
+  rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, hcons, hexp] at hs
+  have hs' : 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
+      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := hs
+  simp only [L, Q, LinearMap.compl₂_apply, LinearMap.compr₂_apply, LinearMap.comp_apply,
+    𝒜.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast, one_mul, map_smul]
+  rw [ReducedTensorWords.prepend_ofLetter]
+  exact hs'
+
+/-- The bar differential of a two-letter word: the unary operation applied to either letter, and
+the collapse of both letters to the binary operation.  Koszul twists carry the suspension signs. -/
+theorem barDifferential_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
+    𝒜.barDifferential (ReducedTensorWords.of R A (2 : ℕ+)
+        (PiTensorProduct.tprod R ![a, b])) =
+      ReducedTensorWords.of R A (2 : ℕ+)
+          (PiTensorProduct.tprod R ![𝒜.m 1 ![a], b])
+        + ReducedTensorWords.ofLetter R A
+            (𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b])
+        - ReducedTensorWords.of R A (2 : ℕ+)
+            (PiTensorProduct.tprod R ![𝒜.grading.koszulTwist 1 a, 𝒜.m 1 ![b]]) := by
+  have hkos : (𝒜.grading.shift 1).koszulTwist 1 = -𝒜.grading.koszulTwist 1 := by
+    refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
+    have hshift : x ∈ (𝒜.grading.shift 1).piece (p - 1) := by
+      rwa [InternalGrading.shift_piece, sub_add_cancel]
+    have hadd := negOnePowCast_add (R := R) (p - 1) 1
+    rw [sub_add_cancel, negOnePowCast_one] at hadd
+    rw [LinearMap.neg_apply, InternalGrading.koszulTwist_apply_of_mem _ hshift,
+      𝒜.grading.koszulTwist_apply_of_mem hx]
+    simp only [one_mul, ← negOnePowCast_eq_intCast]
+    rw [hadd, mul_smul, neg_one_smul, smul_neg, neg_neg]
+  refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R A ?_ ?_
+  · rw [𝒜.isGradedCoderivation_barDifferential.deconcatenation_apply,
+      ReducedTensorWords.deconcatenation_of_two, map_sub, map_add,
+      ReducedTensorWords.deconcatenation_of_two, ReducedTensorWords.deconcatenation_ofLetter,
+      ReducedTensorWords.deconcatenation_of_two]
+    simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, ReducedTensorWords.map_ofLetter,
+      barDifferential_ofLetter]
+    rw [LinearMap.congr_fun hkos a, LinearMap.neg_apply, map_neg, TensorProduct.neg_tmul,
+      add_zero]
+    abel
+  · rw [← LinearMap.comp_apply, letter_comp_barDifferential, taylor_of_two, map_sub,
+      map_add, ReducedTensorWords.letter_of_two, ReducedTensorWords.letter_ofLetter,
+      ReducedTensorWords.letter_of_two, zero_add, sub_zero]
+
+/-- The unary operation squares to zero. -/
+@[simp]
+theorem differential_comp_self_eq_zero (𝒜 : AInfinityAlgebra R A) :
+    𝒜.differential ∘ₗ 𝒜.differential = 0 := by
+  ext x
+  simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply,
+    𝒜.stasheff_arity_one]
+
 /-- The unary operation anticommutes with the degree-one Koszul twist. -/
 theorem m_one_koszulTwist (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.m 1 ![𝒜.grading.koszulTwist 1 x] = -𝒜.grading.koszulTwist 1 (𝒜.m 1 ![x]) := by
   have h : 𝒜.differential ∘ₗ 𝒜.grading.koszulTwist 1 =
       -(𝒜.grading.koszulTwist 1 ∘ₗ 𝒜.differential) := by
     refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
-    have hdy : 𝒜.differential y ∈ 𝒜.grading.piece (p + 1) := by
-      simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![y] (fun _ ↦ by simpa using hy)
     rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
-      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul, 𝒜.grading.koszulTwist_apply_of_mem hdy,
+      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul,
+      𝒜.grading.koszulTwist_apply_of_mem (𝒜.differential_mem_piece hy),
       ← neg_smul]
     congr 1
     simp [Int.negOnePow_succ]

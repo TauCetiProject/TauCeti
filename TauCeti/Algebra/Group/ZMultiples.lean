@@ -32,7 +32,7 @@ variable {G : Type*} [AddGroup G] {p : G}
 cyclic, identified with `ℤ` by `n ↦ n • p`. -/
 noncomputable def intEquivZMultiples (hp : ¬ IsOfFinAddOrder p) : ℤ ≃+ zmultiples p :=
   let q : zmultiples p := ⟨p, mem_zmultiples_iff.2 ⟨1, by simp⟩⟩
-  haveI : Infinite (zmultiples p) := (infinite_zmultiples.2 hp).to_subtype
+  haveI : Infinite (zmultiples p) := infinite_zmultiples.2 hp
   intEquivOfZMultiplesEqTop q <| by
     ext x
     constructor

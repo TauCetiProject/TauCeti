@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
+public import TauCeti.NumberTheory.ModularForms.Degeneracy
 
 /-!
 # The two spellings of `M_k(Γ₀(N))`
@@ -42,6 +44,8 @@ space of forms, not an equality of types.
 
 * `TauCeti.modFormCharSpaceOneEquiv`, `TauCeti.cuspFormCharSpaceOneEquiv`: for `N ≠ 0`, the
   `ℂ`-linear equivalences `M_k(Γ₁(N), 1) ≃ₗ M_k(Γ₀(N))` and `S_k(Γ₁(N), 1) ≃ₗ S_k(Γ₀(N))`.
+* `TauCeti.cuspFormTraceGamma0`: for `N ≠ 0`, Mathlib's trace `CuspForm.trace` from `Γ₁(N)` to
+  `Γ₀(N)`, as a `ℂ`-linear map `S_k(Γ₁(N)) →ₗ S_k(Γ₀(N))`.
 
 ## Main results
 
@@ -53,6 +57,14 @@ space of forms, not an equality of types.
 * `TauCeti.modFormCharSpace_one_eq_range`, `TauCeti.cuspFormCharSpace_one_eq_range`: for
   `N ≠ 0`, the trivial-nebentypus space is the image of the restriction map from level
   `Γ₀(N)`.
+* `TauCeti.coe_trace_eq_sum_diamondOpCusp`: the trace from `Γ₁(N)` to `Γ₀(N)` is the sum of
+  the diamond operators `∑ᵤ ⟨u⟩`.
+* `TauCeti.sum_diamondOpCusp_mem_cuspFormCharSpace_one`: a diamond sum along a surjection has
+  trivial nebentypus.
+* `TauCeti.cuspFormTraceGamma0_ofLe`: tracing a restricted `Γ₀(N)` form multiplies it by
+  `#(ZMod N)ˣ`.
+* `TauCeti.cuspFormTraceGamma0_levelRaise`: trace commutes with level raising when the lower-level
+  diamond sum comes from a `Γ₀` cusp form.
 
 ## References
 
@@ -103,6 +115,19 @@ theorem mem_cuspFormCharSpace_one_iff_diamondOpCusp (f : CuspForm ((Gamma1 N).ma
     f ∈ cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ) ↔
       ∀ d : (ZMod N)ˣ, diamondOpCusp k d f = f := by
   simp
+
+/-- Summing the diamond operators of level `M` along a surjection `(ZMod N)ˣ → (ZMod M)ˣ`
+gives a form of trivial nebentypus. -/
+theorem sum_diamondOpCusp_mem_cuspFormCharSpace_one {M : ℕ} [NeZero N]
+    {φ : (ZMod N)ˣ →* (ZMod M)ˣ} (hφ : Function.Surjective φ)
+    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    ∑ u, diamondOpCusp k (φ u) g ∈ cuspFormCharSpace k (1 : (ZMod M)ˣ →* ℂˣ) := by
+  rw [mem_cuspFormCharSpace_one_iff_diamondOpCusp]
+  intro v
+  obtain ⟨w, rfl⟩ := hφ v
+  rw [map_sum]
+  exact Fintype.sum_equiv (Equiv.mulLeft w) _ _ fun u ↦ by
+    rw [Equiv.coe_mulLeft, map_mul, diamondOpCusp_mul, LinearMap.comp_apply]
 
 /-! ### Restricting a `Γ₀(N)`-form to `Γ₁(N)` -/
 
@@ -221,5 +246,149 @@ theorem coe_cuspFormCharSpaceOneEquiv_symm_apply [NeZero N]
       CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f :=
   (rfl)
+
+/-! ### The trace from `Γ₁(N)` to `Γ₀(N)` is the diamond sum -/
+
+section Trace
+
+/-- For `N ≠ 0`, `Γ₁(N)` has finite index in `Γ₀(N)`, so the trace from `Γ₁(N)` to `Γ₀(N)` is
+defined. -/
+instance instIsFiniteRelIndexGamma1MapGamma0Map (N : ℕ) [NeZero N] :
+    ((Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma0 N).map (mapGL ℝ)) :=
+  Subgroup.IsFiniteRelIndex.map (mapGL ℝ)
+    (Subgroup.isFiniteRelIndex_of_finiteIndex (H := Gamma1 N) (K := Gamma0 N))
+
+/-- A representative in `(Gamma0 N).map (mapGL ℝ)`, pulled back to `Γ₀(N)` and mapped forward
+again, is itself. -/
+private lemma mapGL_equivMapOfInjective_symm (y : (Gamma0 N).map (mapGL ℝ)) :
+    mapGL ℝ (((Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective).symm y :
+      Gamma0 N) : SL(2, ℤ)) = y := by
+  rw [← Subgroup.coe_equivMapOfInjective_apply (Gamma0 N) (mapGL ℝ) mapGL_injective,
+    MulEquiv.apply_symm_apply]
+
+/-- The cosets of `Γ₁(N)` in `Γ₀(N)` are indexed by `Gamma0Map` and hence by the diamond
+operators. -/
+private noncomputable def cosetDiamondEquiv (N : ℕ) :
+    (Gamma0 N).map (mapGL ℝ) ⧸
+      ((Gamma1 N).map (mapGL ℝ)).subgroupOf ((Gamma0 N).map (mapGL ℝ)) ≃ (ZMod N)ˣ := by
+  let e := Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective
+  let G := (Gamma1 N).map (mapGL ℝ)
+  let H := (Gamma0 N).map (mapGL ℝ)
+  have key (y : H) : (y : GL (Fin 2) ℝ) ∈ G ↔
+      (e.symm y) ∈ (Gamma0Map N).toHomUnits.ker := by
+    rw [← mapGL_equivMapOfInjective_symm y, Subgroup.mem_map_iff_mem mapGL_injective,
+      MonoidHom.mem_ker, mem_Gamma1_iff]
+    simp [Gamma0Map_apply, MonoidHom.coe_toHomUnits, Units.ext_iff, e]
+  let E : H ⧸ G.subgroupOf H ≃ (Gamma0 N) ⧸ (Gamma0Map N).toHomUnits.ker :=
+    Quotient.congr e.symm.toEquiv (by
+      intro x y
+      rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply,
+        Subgroup.mem_subgroupOf, key]
+      simp)
+  exact E.trans (QuotientGroup.quotientKerEquivOfSurjective
+    (Gamma0Map N).toHomUnits Gamma0Map_toHomUnits_surjective).toEquiv
+
+private lemma cosetDiamondEquiv_mk (N : ℕ) (g : Gamma0 N) :
+    cosetDiamondEquiv N
+      (QuotientGroup.mk (Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ)
+        mapGL_injective g)) = (Gamma0Map N).toHomUnits g := by
+  unfold cosetDiamondEquiv
+  dsimp only [Equiv.trans_apply]
+  rw [Quotient.congr_mk]
+  simp [QuotientGroup.quotientKerEquivOfSurjective]
+
+/-- `cosetDiamondEquiv` sends a coset to the diamond index of its chosen representative. -/
+private lemma cosetDiamondEquiv_apply (N : ℕ)
+    (q : (Gamma0 N).map (mapGL ℝ) ⧸
+      ((Gamma1 N).map (mapGL ℝ)).subgroupOf ((Gamma0 N).map (mapGL ℝ))) :
+    cosetDiamondEquiv N q = (Gamma0Map N).toHomUnits
+      ((Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective).symm q.out) := by
+  conv_lhs => rw [← QuotientGroup.out_eq' q,
+    ← (Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective).apply_symm_apply q.out]
+  exact cosetDiamondEquiv_mk N _
+
+/-- **Mathlib's cusp-form trace from `Γ₁(N)` to `Γ₀(N)` is the diamond sum** `∑ᵤ ⟨u⟩ F`. -/
+theorem coe_trace_eq_sum_diamondOpCusp [NeZero N] (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ⇑(CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F) =
+      ⇑(∑ u : (ZMod N)ˣ, diamondOpCusp k u F) := by
+  let qFintype : Fintype (((Gamma0 N).map (mapGL ℝ)) ⧸
+      ((Gamma1 N).map (mapGL ℝ)).subgroupOf ((Gamma0 N).map (mapGL ℝ))) :=
+    Fintype.ofFinite _
+  -- the trace slashes by the inverse of each representative, hence the `Equiv.inv`
+  let E := (cosetDiamondEquiv N).trans (Equiv.inv (ZMod N)ˣ)
+  funext τ
+  rw [CuspForm.coe_trace]
+  simp only [Finset.sum_apply]
+  have hsum : (∑ u : (ZMod N)ˣ, diamondOpCusp k u F) τ =
+      ∑ u : (ZMod N)ˣ, (diamondOpCusp k u F) τ := by simp
+  rw [hsum]
+  apply @Fintype.sum_equiv _ _ _ qFintype inferInstance _ E
+  intro q
+  let g : Gamma0 N := (Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective).symm q.out
+  have hg : (Gamma0Map N).toHomUnits g⁻¹ = E q := by
+    rw [Equiv.trans_apply, Equiv.inv_apply, cosetDiamondEquiv_apply, map_inv]
+  conv_lhs => rw [← Quotient.out_eq q]
+  rw [SlashInvariantForm.quotientFunc_mk, coe_diamondOpCusp k (E q) g⁻¹ hg F]
+  simpa only [Subgroup.coe_inv, map_inv] using
+    congrArg (fun x : GL (Fin 2) ℝ ↦ (⇑F ∣[k] x⁻¹) τ) (mapGL_equivMapOfInjective_symm q.out).symm
+
+variable (N k) in
+/-- **The trace from `Γ₁(N)` to `Γ₀(N)`**, Mathlib's `CuspForm.trace`, as a `ℂ`-linear map. By
+`coe_trace_eq_sum_diamondOpCusp` it is the diamond sum `F ↦ ∑ᵤ ⟨u⟩ F`. -/
+noncomputable def cuspFormTraceGamma0 [NeZero N] :
+    CuspForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k where
+  toFun F := CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F
+  map_add' F G := by
+    apply DFunLike.coe_injective
+    simp only [FunLike.coe_add]
+    rw [coe_trace_eq_sum_diamondOpCusp (F + G), coe_trace_eq_sum_diamondOpCusp F,
+      coe_trace_eq_sum_diamondOpCusp G]
+    simp only [map_add]
+    rw [Finset.sum_add_distrib]
+    rfl
+  map_smul' c F := by
+    apply DFunLike.coe_injective
+    simp only [FunLike.coe_smul]
+    rw [coe_trace_eq_sum_diamondOpCusp (c • F), coe_trace_eq_sum_diamondOpCusp F]
+    simp only [map_smul]
+    rw [← Finset.smul_sum]
+    rfl
+
+/-- `cuspFormTraceGamma0` is Mathlib's `CuspForm.trace`. -/
+theorem cuspFormTraceGamma0_apply [NeZero N] (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    cuspFormTraceGamma0 N k F = CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F :=
+  (rfl)
+
+/-- Tracing the restriction of a `Γ₀(N)` cusp form multiplies it by the index
+`#(ZMod N)ˣ`. -/
+@[simp]
+theorem cuspFormTraceGamma0_ofLe [NeZero N]
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    cuspFormTraceGamma0 N k (CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f) =
+      (Fintype.card (ZMod N)ˣ : ℂ) • f := by
+  apply DFunLike.coe_injective
+  ext τ
+  rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
+  simp [diamondOpCusp_ofLe]
+
+/-- Tracing a level-raised cusp form commutes with level raising when the diamond sum at the
+lower level is the restriction of a `Γ₀(M)` cusp form. -/
+theorem cuspFormTraceGamma0_levelRaise {M d : ℕ} [NeZero N] [NeZero d]
+    (hMN : M ∣ N) (hdvd : d * M ∣ N)
+    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)
+    (g₀ : CuspForm ((Gamma0 M).map (mapGL ℝ)) k)
+    (hsum : CuspForm.ofLe (Gamma1_map_le_Gamma0_map M) g₀ =
+      ∑ u : (ZMod N)ˣ, diamondOpCusp k (ZMod.unitsMap hMN u) g) :
+    cuspFormTraceGamma0 N k
+        (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =
+      CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdvd) g₀ := by
+  apply DFunLike.coe_injective
+  rw [cuspFormTraceGamma0_apply, coe_trace_eq_sum_diamondOpCusp]
+  simp_rw [CuspForm.diamondOpCusp_levelRaise hdvd, ← CuspForm.levelRaiseₗ_apply, ← map_sum,
+    CuspForm.levelRaiseₗ_apply, ← hsum]
+  ext τ
+  simp
+
+end Trace
 
 end TauCeti

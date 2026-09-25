@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Finiteness of the Riemannian distance, and the induced metric space
@@ -38,6 +39,8 @@ is the special case that matters downstream.
   `TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength`: the ambient (extended) distance of a
   Riemannian manifold, read through `IsRiemannianManifold.out`, is bounded by the length of any
   `C¹` path.
+* `TauCeti.IsRiemannianManifold.edist_le_of_norm_mfderiv_le`: the mean-value inequality for a
+  `C¹` map from a normed space into a Riemannian manifold along a segment.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
@@ -170,6 +173,43 @@ theorem edist_le_pathELength {γ : ℝ → M} {a b : ℝ} (hγ : CMDiff[Icc a b]
     edist (γ a) (γ b) ≤ pathELength I γ a b := by
   rw [IsRiemannianManifold.out (I := I) (γ a) (γ b)]
   exact riemannianEDist_le_pathELength hγ rfl rfl hab
+
+/-- **The mean-value inequality for maps into a Riemannian manifold.** Let `f` be a map from a real
+normed space to a Riemannian manifold which is `C¹` at every point of the segment from `a` to `b`.
+If its differential along that segment sends `b - a` to vectors of norm at most `C`, then `f a` and
+`f b` are at extended distance at most `C`. -/
+theorem edist_le_of_norm_mfderiv_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : F → M} {a b : F} {C : ℝ}
+    (hf : ∀ z ∈ segment ℝ a b, ContMDiffAt 𝓘(ℝ, F) I 1 f z)
+    (hC : ∀ z ∈ segment ℝ a b, ‖mfderiv 𝓘(ℝ, F) I f z (b - a)‖ ≤ C) :
+    edist (f a) (f b) ≤ ENNReal.ofReal C := by
+  let c : ℝ → F := fun τ ↦ a + τ • (b - a)
+  have hcseg : MapsTo c (Icc 0 1) (segment ℝ a b) := fun τ hτ ↦ by
+    rw [segment_eq_image']
+    exact ⟨τ, hτ, rfl⟩
+  have hcderiv : ∀ τ, HasDerivAt c (b - a) τ := fun τ ↦
+    (((hasDerivAt_id' τ).smul_const (b - a)).const_add a).congr_deriv (one_smul ℝ _)
+  have hc : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, F) 1 c := by
+    rw [contMDiff_iff_contDiff]
+    exact contDiff_const.add (contDiff_id.smul contDiff_const)
+  have hsmooth : CMDiff[Icc 0 1] 1 (f ∘ c) := fun τ hτ ↦
+    (hf _ (hcseg hτ)).comp_contMDiffWithinAt τ hc.contMDiffAt.contMDiffWithinAt
+  have hlen := edist_le_pathELength hsmooth zero_le_one
+  have h0 : c 0 = a := by simp [c]
+  have h1 : c 1 = b := by simp [c]
+  simp only [Function.comp_apply, h0, h1] at hlen
+  calc
+    edist (f a) (f b) ≤ pathELength I (f ∘ c) 0 1 := hlen
+    _ = ∫⁻ τ in Ioo 0 1, ‖mfderiv 𝓘(ℝ, ℝ) I (f ∘ c) τ (1 : ℝ)‖ₑ :=
+      pathELength_eq_lintegral_mfderiv_Ioo
+    _ ≤ ∫⁻ _ in Ioo (0 : ℝ) 1, ENNReal.ofReal C := by
+      refine MeasureTheory.setLIntegral_mono' measurableSet_Ioo fun τ hτ ↦ ?_
+      have hτ' : c τ ∈ segment ℝ a b := hcseg (Ioo_subset_Icc_self hτ)
+      rw [← Manifold.curveVelocity_apply,
+        ((hf _ hτ').mdifferentiableAt one_ne_zero).curveVelocity_comp_mfderiv (hcderiv τ),
+        ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (hC _ hτ')
+    _ = ENNReal.ofReal C := by simp
 
 end PseudoEMetric
 

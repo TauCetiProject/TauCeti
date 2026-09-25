@@ -151,7 +151,7 @@ theorem of_exact
   · rw [Finset.mem_union, not_or] at hj
     let _ := hsU j hj.1
     let _ := hsW j hj.2
-    exact subsingleton_of_exact (hfg j) (map_zero (f j))
+    exact subsingleton_of_exact (hfg j)
 
 /-- A finite Laurent support is preserved by translating the degree index. -/
 theorem reindex_add (h : HasFiniteLaurentSupport k V) (r : ℤ) :

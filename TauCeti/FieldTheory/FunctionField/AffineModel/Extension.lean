@@ -74,15 +74,16 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable {R : Type w} [CommRing R] [IsDedekindDomain R] [Algebra R F] [IsFractionRing R F]
-variable {S : Type w'} [CommRing S] [IsDedekindDomain S] [Algebra S F'] [IsFractionRing S F']
+variable {R : Type w} [CommRing R] [Algebra R F]
+variable {S : Type w'} [CommRing S] [Algebra S F']
 variable [Algebra R S] [Algebra R F'] [IsScalarTower R S F'] [IsScalarTower R F F']
 
 section Chart
 
 include F F'
 
-omit [IsFractionRing S F'] in
+variable [IsDedekindDomain R] [IsDedekindDomain S] [IsFractionRing R F]
+
 /-- `S` is torsion free over `R`, a hypothesis of Mathlib's ideal-theoretic ramification API. `R`
 injects into `S` because both routes from `R` to `F'` are injective, and `S` is a domain. -/
 private theorem isTorsionFree : Module.IsTorsionFree R S :=
@@ -97,11 +98,22 @@ variable [Algebra.IsIntegral F F']
 
 section Restrict
 
-variable (k F) (P' : Place k' F') (hS : ∀ s : S, algebraMap S F' s ∈ P'.integers)
+variable (k F) (P' : Place k' F')
+
+/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
+of that place, because the ramification index is a positive factor. -/
+private theorem ord_algebraMap_pos_iff (x : F) :
+    0 < P'.ord (algebraMap F F' x) ↔ 0 < (P'.restrict k F).ord x := by
+  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
+  rw [ord_algebraMap_restrict k F P' x]
+  exact mul_pos_iff_of_pos_left he
+
+section FiniteOnModel
+
+variable (hS : ∀ s : S, algebraMap S F' s ∈ P'.integers)
 
 include hS
 
-omit [IsDedekindDomain R] [IsFractionRing R F] [IsDedekindDomain S] [IsFractionRing S F'] in
 /-- **The restriction of a place finite on `S` is finite on `R`**: an element of `R`, viewed in
 `F'`, may equally be read along `R → S`. -/
 theorem algebraMap_mem_integers_restrict (r : R) :
@@ -110,14 +122,7 @@ theorem algebraMap_mem_integers_restrict (r : R) :
     IsScalarTower.algebraMap_apply R S F']
   exact hS _
 
-omit hS [IsDedekindDomain R] [IsFractionRing R F] [IsDedekindDomain S] [IsFractionRing S F'] in
-/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
-of that place, because the ramification index is a positive factor. -/
-private theorem ord_algebraMap_pos_iff (x : F) :
-    0 < P'.ord (algebraMap F F' x) ↔ 0 < (P'.restrict k F).ord x := by
-  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  rw [ord_algebraMap_restrict k F P' x]
-  exact mul_pos_iff_of_pos_left he
+variable [IsFractionRing R F] [IsFractionRing S F']
 
 /-- **The centre on `S` of a place of `F' / k'` finite on `S` lies over the centre on `R` of its
 restriction to `F`** (Stichtenoth, Proposition 3.1.4 at the level of the models): a function of `R`
@@ -134,6 +139,10 @@ theorem center_liesOver :
     rw [Ideal.mem_under, mem_center_asIdeal_iff_ord_pos _ _ hr,
       mem_center_asIdeal_iff_ord_pos _ _ hr', ← IsScalarTower.algebraMap_apply R S F',
       IsScalarTower.algebraMap_apply R F F', ord_algebraMap_pos_iff k F P']
+
+section Dedekind
+
+variable [IsDedekindDomain R] [IsDedekindDomain S]
 
 include k in
 /-- **The ramification index of a place over its restriction is the ramification index of the
@@ -185,12 +194,64 @@ theorem relativeDegree_eq_inertiaDeg_center :
 
 end ResidueDegree
 
+end Dedekind
+
+end FiniteOnModel
+
 end Restrict
+
+section FiniteExtension
+
+variable [IsDedekindDomain R] [IsFractionRing R F] [Algebra k R] [IsScalarTower k R F]
+variable (k F) (𝔭 : HeightOneSpectrum R)
+
+variable [Module.Finite R S]
+
+/-- A place of `F' / k'` lying over the place of a height one prime of `R` is finite on `S`: it is
+finite on `R`, and `S` is integral over `R`. -/
+theorem algebraMap_mem_integers_of_restrict_eq_ofPrime {P' : Place k' F'}
+    (h : P'.restrict k F = ofPrime k F 𝔭) (s : S) : algebraMap S F' s ∈ P'.integers := by
+  have : Algebra.IsIntegral R S := Algebra.IsIntegral.of_finite R S
+  refine P'.mem_integers_of_isIntegral (R := R) (fun r ↦ ?_)
+    ((Algebra.IsIntegral.isIntegral (R := R) s).map (IsScalarTower.toAlgHom R S F'))
+  rw [IsScalarTower.algebraMap_apply R F F', ← mem_integers_restrict_iff k F P', h]
+  exact algebraMap_mem_integers_ofPrime k F 𝔭 r
+
+/-- The centre on `R` of a place of `F' / k'` restricting to the place of `𝔭` is `𝔭`. -/
+private theorem center_restrict_eq {P' : Place k' F'} (h : P'.restrict k F = ofPrime k F 𝔭) :
+    (P'.restrict k F).center (algebraMap_mem_integers_restrict (R := R) k F P'
+      (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)) = 𝔭 :=
+  ((P'.restrict k F).eq_center _ (by rw [h, valuation_ofPrime])).symm
+
+variable [IsFractionRing S F']
+
+/-- The centre on `S` of a place of `F' / k'` restricting to the place of `𝔭` lies over `𝔭`. -/
+private theorem center_liesOver_of_restrict_eq_ofPrime {P' : Place k' F'}
+    (h : P'.restrict k F = ofPrime k F 𝔭) :
+    (P'.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)).asIdeal.LiesOver
+      𝔭.asIdeal := by
+  have hlies := center_liesOver (R := R) k F P'
+    (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)
+  rwa [center_restrict_eq (S := S) k F 𝔭 h] at hlies
+
+end FiniteExtension
 
 section OfPrime
 
-variable [Algebra k R] [IsScalarTower k R F] [Algebra k' S] [IsScalarTower k' S F']
-variable (k F) (𝔭 : HeightOneSpectrum R)
+variable [IsDedekindDomain R] [IsDedekindDomain S] [IsFractionRing R F] [IsFractionRing S F']
+variable [Algebra k' S] [IsScalarTower k' S F']
+variable (k F)
+
+include k in
+/-- **The ramification index over `F` of the place of a height one prime `𝔓` of `S` is the
+ramification index of `𝔓` over `R`.** -/
+theorem ramificationIdx_ofPrime (𝔓 : HeightOneSpectrum S) :
+    ramificationIdx F (ofPrime k' F' 𝔓) = 𝔓.asIdeal.ramificationIdx R := by
+  rw [ramificationIdx_eq_ramificationIdx_center (R := R) k F (ofPrime k' F' 𝔓)
+    (algebraMap_mem_integers_ofPrime k' F' 𝔓), center_ofPrime]
+
+variable [Algebra k R] [IsScalarTower k R F]
+variable (𝔭 : HeightOneSpectrum R)
 
 include k in
 /-- **A place of `F' / k'` lies over the place of a height one prime of `R` as soon as the
@@ -205,15 +266,6 @@ theorem restrict_ofPrime (𝔓 : HeightOneSpectrum S) [𝔓.asIdeal.LiesOver �
     HeightOneSpectrum.ext (hlies.over.trans (Ideal.over_def 𝔓.asIdeal 𝔭.asIdeal).symm)
   rw [← h𝔭, ofPrime_center]
 
-include k in
-omit [Algebra k R] [IsScalarTower k R F] in
-/-- **The ramification index over `F` of the place of a height one prime `𝔓` of `S` is the
-ramification index of `𝔓` over `R`.** -/
-theorem ramificationIdx_ofPrime (𝔓 : HeightOneSpectrum S) :
-    ramificationIdx F (ofPrime k' F' 𝔓) = 𝔓.asIdeal.ramificationIdx R := by
-  rw [ramificationIdx_eq_ramificationIdx_center (R := R) k F (ofPrime k' F' 𝔓)
-    (algebraMap_mem_integers_ofPrime k' F' 𝔓), center_ofPrime]
-
 /-- **The relative degree over `F` of the place of a height one prime `𝔓` of `S` is the residue
 degree of `𝔓` over `R`.** -/
 theorem relativeDegree_ofPrime (𝔓 : HeightOneSpectrum S) :
@@ -222,34 +274,6 @@ theorem relativeDegree_ofPrime (𝔓 : HeightOneSpectrum S) :
     (algebraMap_mem_integers_ofPrime k' F' 𝔓), center_ofPrime]
 
 variable [Module.Finite R S]
-
-omit [IsDedekindDomain S] [IsFractionRing S F'] [Algebra k' S] [IsScalarTower k' S F'] in
-/-- A place of `F' / k'` lying over the place of a height one prime of `R` is finite on `S`: it is
-finite on `R`, and `S` is integral over `R`. -/
-theorem algebraMap_mem_integers_of_restrict_eq_ofPrime {P' : Place k' F'}
-    (h : P'.restrict k F = ofPrime k F 𝔭) (s : S) : algebraMap S F' s ∈ P'.integers := by
-  have : Algebra.IsIntegral R S := Algebra.IsIntegral.of_finite R S
-  refine P'.mem_integers_of_isIntegral (R := R) (fun r ↦ ?_)
-    ((Algebra.IsIntegral.isIntegral (R := R) s).map (IsScalarTower.toAlgHom R S F'))
-  rw [IsScalarTower.algebraMap_apply R F F', ← mem_integers_restrict_iff k F P', h]
-  exact algebraMap_mem_integers_ofPrime k F 𝔭 r
-
-omit [IsDedekindDomain S] [IsFractionRing S F'] [Algebra k' S] [IsScalarTower k' S F'] in
-/-- The centre on `R` of a place of `F' / k'` restricting to the place of `𝔭` is `𝔭`. -/
-private theorem center_restrict_eq {P' : Place k' F'} (h : P'.restrict k F = ofPrime k F 𝔭) :
-    (P'.restrict k F).center (algebraMap_mem_integers_restrict (R := R) k F P'
-      (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)) = 𝔭 :=
-  ((P'.restrict k F).eq_center _ (by rw [h, valuation_ofPrime])).symm
-
-omit [Algebra k' S] [IsScalarTower k' S F'] in
-/-- The centre on `S` of a place of `F' / k'` restricting to the place of `𝔭` lies over `𝔭`. -/
-private theorem center_liesOver_of_restrict_eq_ofPrime {P' : Place k' F'}
-    (h : P'.restrict k F = ofPrime k F 𝔭) :
-    (P'.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)).asIdeal.LiesOver
-      𝔭.asIdeal := by
-  have hlies := center_liesOver (R := R) k F P'
-    (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)
-  rwa [center_restrict_eq (S := S) k F 𝔭 h] at hlies
 
 /-- **The places of `F' / k'` lying over the place of a height one prime `𝔭` of `R` are exactly
 the primes of `S` lying over `𝔭`** (Stichtenoth, Section III.2): a place over the place of `𝔭` is

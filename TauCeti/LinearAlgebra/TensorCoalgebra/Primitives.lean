@@ -26,6 +26,8 @@ letter, and cutting is injective, so no component of length at least two can sur
 
 * `TauCeti.ReducedTensorWords.subword_one`: a block of length one is a single letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_prepend`: the cuts of a prepended word.
+* `TauCeti.ReducedTensorWords.prepend_ofLetter` and
+  `TauCeti.ReducedTensorWords.deconcatenation_of_two`: the two-letter word and its only cut.
 * `TauCeti.ReducedTensorWords.letter_comp_map`: the letter of a letterwise-mapped word is the
   image of its letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_eq_zero_iff`: the primitives of the reduced tensor
@@ -225,6 +227,32 @@ theorem deconcatenation_prepend (a : M) (w : ReducedTensorWords R M) :
   simpa only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply,
     TensorProduct.mk_apply] using LinearMap.congr_fun h w
 
+/-- Prepending a letter to a single letter is the two-letter word. -/
+theorem prepend_ofLetter (a b : M) :
+    prepend R M a (ofLetter R M b) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]) := by
+  have hz0 : (![a, b] : Fin 2 → M) ⟨0, by omega⟩ = a := by simp
+  have hz1 : (![a, b] : Fin 2 → M) ⟨1, by omega⟩ = b := by simp
+  have h1 : subword R (![a, b] : Fin 2 → M) 1 1 = ofLetter R M b := by
+    rw [subword_one R M (![a, b] : Fin 2 → M) (by omega), hz1]
+  have h2 := prepend_subword (R := R) (N := M) (a := 0) (b := 1) (![a, b] : Fin 2 → M)
+    (by omega) Nat.one_pos
+  rw [hz0, h1] at h2
+  rw [h2]
+  exact (of_tprod_eq_subword R (Nat.succ_pos 1) (![a, b] : Fin 2 → M)).symm
+
+/-- The only cut of a two-letter word separates its two letters. -/
+theorem deconcatenation_of_two (a b : M) :
+    deconcatenation R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
+      ofLetter R M a ⊗ₜ[R] ofLetter R M b := by
+  rw [← prepend_ofLetter, deconcatenation_prepend, deconcatenation_ofLetter, map_zero, add_zero]
+
+/-- A two-letter word has no letter component. -/
+@[simp]
+theorem letter_of_two (a b : M) :
+    letter R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) = 0 := by
+  rw [← prepend_ofLetter, letter_prepend]
+
 end Prepend
 
 /-- The primitive elements of the reduced tensor coalgebra are exactly the single letters. -/
@@ -243,6 +271,15 @@ section Map
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [CommSemiring R] [AddCommMonoid M]
   [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- Mapping a single letter applies the map to that letter. -/
+@[simp]
+theorem map_ofLetter (g : M →ₗ[R] N) (a : M) :
+    ReducedTensorWords.map (R := R) g (ofLetter R M a) = ofLetter R N (g a) := by
+  have hz : (![a] : Fin 1 → M) ⟨0, Nat.one_pos⟩ = a := by simp
+  have h : subword R (![a] : Fin 1 → M) 0 1 = ofLetter R M a := by
+    rw [subword_one R M (![a] : Fin 1 → M) Nat.one_pos, hz]
+  rw [← h, map_subword, subword_one R N _ Nat.one_pos, hz]
 
 /-- The letter of a letterwise-mapped word is the image of its letter. -/
 @[simp]

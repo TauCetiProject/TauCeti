@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 
 /-!
 # Indexing the prime-power ideals by a prime and an exponent
@@ -28,6 +29,10 @@ series indexed by ideals — the shape a von Mangoldt coefficient identity needs
 
 ## Main results
 
+* `TauCeti.summable_comp_idealPrimePowerOf`: a summable family on all nonzero ideals remains
+  summable after restriction to the positive prime powers.
+* `TauCeti.summable_tsum_norm_idealPrimePowerOf`: the prime-power tails of an absolutely
+  summable ideal-indexed family are summable over the primes.
 * `TauCeti.tsum_idealPrimePower_eq`: a summable family on the prime-power ideals has the same sum
   as the iterated sum over primes and exponents.
 * `TauCeti.tsum_eq_tsum_idealPrimePower_of_support_subset`: a summable family on the nonzero
@@ -58,6 +63,11 @@ def idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) : IdealPrimePow
 theorem coe_idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) :
     ((P.idealPrimePowerOf k : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = P.asIdeal ^ (k + 1) :=
   (rfl)
+
+/-- The two representations of the positive power `P ^ (e + 1)` as a nonzero ideal agree. -/
+theorem coe_idealPrimePowerOf_eq_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
+    (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰) = P.primeIdealPow (e + 1) :=
+  Subtype.ext (by simp)
 
 @[simp]
 theorem primePowerBase_idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) :
@@ -113,7 +123,30 @@ theorem idealPrimePowerEquiv_symm_apply (A : IdealPrimePower K) :
   (rfl)
 
 variable {α : Type*} [AddCommGroup α] [UniformSpace α] [IsUniformAddGroup α] [CompleteSpace α]
-  [T0Space α] {f : (Ideal (𝓞 K))⁰ → α}
+  {f : (Ideal (𝓞 K))⁰ → α}
+
+/-- Restricting a summable family on the nonzero ideals to the positive prime powers preserves
+summability. -/
+theorem summable_comp_idealPrimePowerOf (hf : Summable f) :
+    Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
+      f (Pk.1.idealPrimePowerOf Pk.2 : (Ideal (𝓞 K))⁰) :=
+  hf.comp_injective (Subtype.val_injective.comp idealPrimePowerEquiv.injective)
+
+section Norm
+
+variable {β : Type*} [NormedAddCommGroup β] {g : (Ideal (𝓞 K))⁰ → β}
+
+/-- **The prime-power tails of an absolutely summable ideal-indexed family are summable over the
+primes.**  Restricting the norms to the pairs `(P, e)` and then summing out the exponent leaves a
+summable family on the height-one primes. -/
+theorem summable_tsum_norm_idealPrimePowerOf (hg : Summable fun I ↦ ‖g I‖) :
+    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
+      ∑' e : ℕ, ‖g (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰)‖ :=
+  (summable_comp_idealPrimePowerOf (f := fun I ↦ ‖g I‖) hg).prod
+
+end Norm
+
+variable [T0Space α]
 
 /-- **Summing over prime-power ideals is summing over primes and exponents.**  Stated for an
 arbitrary family on the prime-power ideals, not only for one restricted from the nonzero

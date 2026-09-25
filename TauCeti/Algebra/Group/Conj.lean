@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ConjFinite
+public import Mathlib.Data.Nat.Cast.Field
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
@@ -31,24 +32,28 @@ conjugation action.
 ## Main statements
 
 * `TauCeti.isConj_inv_iff`: conjugacy is inherited by inverses in both directions.
-* `TauCeti.ConjClasses.inv_mk`: the inverse of the class of `g` is the class of `g⁻¹`.
+* `ConjClasses.inv_mk`: the inverse of the class of `g` is the class of `g⁻¹`.
 * `TauCeti.IsRealClass`: a class containing an element conjugate to its own inverse, with
   `TauCeti.isRealClass_iff_inv_eq` identifying it with being fixed by inversion.
-* `TauCeti.ConjClasses.ncard_carrier_inv` and `TauCeti.ConjClasses.card_carrier_inv`: a conjugacy
+* `ConjClasses.ncard_carrier_inv` and `ConjClasses.card_carrier_inv`: a conjugacy
   class and its inverse have the same size, in `Set.ncard` and in `Nat.card` form.
-* `TauCeti.ConjClasses.ncard_carrier_mk` and `TauCeti.ConjClasses.card_carrier_mk`: the size of a
+* `ConjClasses.ncard_carrier_mk` and `ConjClasses.card_carrier_mk`: the size of a
   conjugacy class is the index of the centralizer of any of its members, in `Set.ncard` and in
   `Nat.card` form.
-* `TauCeti.ConjClasses.ncard_carrier_mk_of_mem_center`: the class of a central element is a single
+* `ConjClasses.ncard_carrier_mk_of_mem_center`: the class of a central element is a single
   point.
 * `ConjClasses.card_carrier_mul_orderOf_dvd`: the class size times the order of a member
   divides the order of the group, so the quotient below is an exact ratio.
+* `ConjClasses.card_div_card_carrier_mul_orderOf_pos`: for a finite group that ratio is positive.
 * `ConjClasses.card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf`: that
   quotient equals the order of the centralizer divided by the order of the member.
-* `TauCeti.ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
+* `ConjClasses.one_div_orderOf_div_card_div_card_carrier_mul_orderOf`: dividing `1 / orderOf σ`
+  by that quotient, in a semifield of characteristic zero, leaves `#C / #G`.
+* `ConjClasses.ncard_carrier_mk_eq_card_filter` and
+  `ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
   cardinality of a `Finset`, which makes it computable.
-* `TauCeti.ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
-  the group, with `TauCeti.ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
+* `ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
+  the group, with `ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
   a class is nonzero in any semiring where the group order is.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
@@ -98,15 +103,7 @@ variable {G : Type*} [Group G]
 Not `@[simp]`: Mathlib's `isConj_iff` is itself `simp`, so the left-hand side simplifies to
 `∃ c, c * x⁻¹ * c⁻¹ = y⁻¹` and the simp normal form linter rejects the pair. -/
 theorem isConj_inv_iff {x y : G} : IsConj x⁻¹ y⁻¹ ↔ IsConj x y := by
-  constructor <;> intro h
-  · obtain ⟨c, hc⟩ := isConj_iff.mp h
-    refine isConj_iff.mpr ⟨c, ?_⟩
-    have := congrArg Inv.inv hc
-    simpa [mul_assoc] using this
-  · obtain ⟨c, hc⟩ := isConj_iff.mp h
-    refine isConj_iff.mpr ⟨c, ?_⟩
-    have := congrArg Inv.inv hc
-    simpa [mul_assoc] using this
+  simp only [IsConj, SemiconjBy.inv_right_iff]
 
 /-- **Inversion of conjugacy classes.** Inversion of the group respects conjugacy, so it descends
 to the conjugacy classes; there it is an involution, because it is one on the group. -/
@@ -117,7 +114,11 @@ instance instInvolutiveInvConjClasses : InvolutiveInv (ConjClasses G) where
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     exact congrArg ConjClasses.mk (inv_inv g)
 
+end TauCeti
+
 namespace ConjClasses
+
+variable {G : Type*} [Group G]
 
 /-- The inverse of the conjugacy class of `g` is the conjugacy class of `g⁻¹`. -/
 @[simp]
@@ -141,7 +142,7 @@ theorem mem_carrier_inv_iff {C : ConjClasses G} {x : G} :
 a bijection between them.
 
 This is the `Set.ncard` form, which is the simp normal form: Mathlib's `Nat.card_coe_set_eq` is
-itself `simp`. See `TauCeti.ConjClasses.card_carrier_inv` for the `Nat.card` form. -/
+itself `simp`. See `ConjClasses.card_carrier_inv` for the `Nat.card` form. -/
 @[simp]
 theorem ncard_carrier_inv (C : ConjClasses G) :
     Set.ncard (C⁻¹).carrier = Set.ncard C.carrier :=
@@ -151,7 +152,7 @@ theorem ncard_carrier_inv (C : ConjClasses G) :
 
 Not `@[simp]`: Mathlib's `Nat.card_coe_set_eq` is itself `simp`, so the left-hand side simplifies
 to `(C⁻¹).carrier.ncard` and the simp normal form linter rejects the pair; that normalized form is
-`TauCeti.ConjClasses.ncard_carrier_inv`. -/
+`ConjClasses.ncard_carrier_inv`. -/
 theorem card_carrier_inv (C : ConjClasses G) : Nat.card (C⁻¹).carrier = Nat.card C.carrier :=
   ncard_carrier_inv C
 
@@ -160,11 +161,10 @@ class is the orbit of `g` under the conjugation action and the centralizer is th
 this is the orbit-stabilizer theorem. -/
 theorem ncard_carrier_mk (g : G) :
     (ConjClasses.mk g).carrier.ncard = (Subgroup.centralizer {g}).index := by
-  have hcomap := (MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
-    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective
   rw [← ConjAct.orbit_eq_carrier_conjClasses, ← MulAction.index_stabilizer,
     Subgroup.centralizer_eq_comap_stabilizer]
-  exact hcomap.symm
+  exact ((MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
+    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective).symm
 
 /-- **The conjugacy class of a central element is a single point**: nothing moves it. -/
 @[simp]
@@ -178,21 +178,31 @@ theorem ncard_carrier_mk_of_mem_center {g : G} (hg : g ∈ Subgroup.center G) :
 
 Not `@[simp]`: Mathlib's `Nat.card_coe_set_eq` is itself `simp`, so the left-hand side simplifies
 to `(ConjClasses.mk g).carrier.ncard` and the simp normal form linter rejects the pair; that
-normalized form is `TauCeti.ConjClasses.ncard_carrier_mk`. -/
+normalized form is `ConjClasses.ncard_carrier_mk`. -/
 theorem card_carrier_mk (g : G) :
     Nat.card (ConjClasses.mk g).carrier = (Subgroup.centralizer {g}).index := by
   rw [Nat.card_coe_set_eq, ncard_carrier_mk]
 
 /-- **The size of a conjugacy class as a `Finset` cardinality**: the members of the class of `g`
-are the elements of the group whose class is that of `g`, so in a finite group with decidable
+are the elements of the monoid whose class is that of `g`, so in a finite monoid with decidable
 equality the class size is a count that can be evaluated. -/
-theorem card_carrier_mk_eq_card_filter [Fintype G] [DecidableEq G] (g : G) :
-    Nat.card (ConjClasses.mk g).carrier =
-      {x ∈ (Finset.univ : Finset G) | ConjClasses.mk x = ConjClasses.mk g}.card := by
-  rw [Nat.card_coe_set_eq, ← Set.ncard_coe_finset]
+@[simp]
+theorem ncard_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [DecidableEq M]
+    (g : M) :
+    (ConjClasses.mk g).carrier.ncard =
+      {x ∈ (Finset.univ : Finset M) | ConjClasses.mk x = ConjClasses.mk g}.card := by
+  rw [← Set.ncard_coe_finset]
   congr 1
   ext x
   simp [_root_.ConjClasses.mem_carrier_iff_mk_eq]
+
+/-- The size of a conjugacy class as a computable `Finset` cardinality, in `Nat.card` form.
+See `ncard_carrier_mk_eq_card_filter` for the `simp` normal form. -/
+theorem card_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [DecidableEq M]
+    (g : M) :
+    Nat.card (ConjClasses.mk g).carrier =
+      {x ∈ (Finset.univ : Finset M) | ConjClasses.mk x = ConjClasses.mk g}.card := by
+  rw [Nat.card_coe_set_eq, ncard_carrier_mk_eq_card_filter]
 
 /-- **The size of a conjugacy class divides the order of the group**, being the index of a
 centralizer. -/
@@ -209,6 +219,10 @@ theorem card_carrier_cast_ne_zero {R : Type*} [Semiring R] (C : ConjClasses G)
   ne_zero_of_dvd_ne_zero h (Nat.cast_dvd_cast (card_carrier_dvd_card C))
 
 end ConjClasses
+
+namespace TauCeti
+
+variable {G : Type*} [Group G]
 
 /-- **A real conjugacy class**: one containing an element conjugate to its own inverse. -/
 def IsRealClass (C : ConjClasses G) : Prop :=
@@ -235,10 +249,7 @@ theorem isRealClass_mk_iff {g : G} : IsRealClass (ConjClasses.mk g) ↔ IsConj g
 
 end TauCeti
 
-/-! ### The size of a class against the order of a member
-
-These extend the centralizer-index description of the class size just above; they live in the root
-`ConjClasses` namespace so that `C.card_carrier_mul_orderOf_dvd` resolves. -/
+/-! ### The size of a class against the order of a member -/
 
 namespace ConjClasses
 
@@ -261,7 +272,20 @@ theorem card_carrier_mul_orderOf_dvd {G : Type*} [Group G] (C : ConjClasses G) (
   subst hσ
   obtain ⟨k, hk⟩ := (Subgroup.centralizer {σ}).orderOf_dvd_natCard
     (Subgroup.mem_centralizer_singleton_iff.mpr rfl)
-  exact ⟨k, by rw [TauCeti.ConjClasses.card_carrier_mk, mul_assoc, ← hk, Subgroup.index_mul_card]⟩
+  exact ⟨k, by rw [ConjClasses.card_carrier_mk, mul_assoc, ← hk, Subgroup.index_mul_card]⟩
+
+/-- **That quotient is positive.** For a finite group the class size times the order of a member
+divides the group order and both are positive, so the ratio `Nat.card G / (#C.carrier * orderOf σ)`
+is a positive natural number rather than a truncation to zero.
+
+Finiteness is needed, and not only for convenience: for an infinite `G` every one of
+`Nat.card G`, `Nat.card C.carrier` and `orderOf σ` may be `0`, and the quotient is then `0 / 0`. -/
+theorem card_div_card_carrier_mul_orderOf_pos {G : Type*} [Group G] [Finite G]
+    (C : ConjClasses G) (σ : G) (hσ : σ ∈ C.carrier) :
+    0 < Nat.card G / (Nat.card C.carrier * orderOf σ) :=
+  have : Nonempty C.carrier := ⟨⟨σ, hσ⟩⟩
+  Nat.div_pos (Nat.le_of_dvd Nat.card_pos (C.card_carrier_mul_orderOf_dvd σ hσ))
+    (Nat.mul_pos Nat.card_pos (orderOf_pos σ))
 
 /-- **That quotient in closed form.** Dividing the order of the group by the class size times the
 order of a member leaves the order of the centralizer divided by that same order.
@@ -278,15 +302,31 @@ theorem card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf {G : T
       = Nat.card (Subgroup.centralizer {σ}) / orderOf σ := by
   rw [mem_carrier_iff_mk_eq] at hσ
   subst hσ
-  rw [TauCeti.ConjClasses.card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
+  rw [ConjClasses.card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
     Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hindex)]
+
+/-- **Dividing `1 / orderOf σ` by that quotient leaves `#C / #G`.** Since
+`#C.carrier * orderOf σ` divides `#G`, the quotient casts to the exact ratio, and in a semifield of
+characteristic zero `(1 / orderOf σ) / (#G / (#C.carrier * orderOf σ)) = #C.carrier / #G`.
+For infinite groups both sides vanish because `Nat.card G = 0`. -/
+theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group G]
+    {K : Type*} [Semifield K] [CharZero K] (C : ConjClasses G) (σ : G) (hσ : σ ∈ C.carrier) :
+    (1 / orderOf σ : K) / ((Nat.card G / (Nat.card C.carrier * orderOf σ) : ℕ) : K) =
+      Nat.card C.carrier / Nat.card G := by
+  cases finite_or_infinite G with
+  | inl h =>
+      have : Nonempty C.carrier := ⟨⟨σ, hσ⟩⟩
+      have hC : (Nat.card C.carrier : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+      have hord : (orderOf σ : K) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos σ).ne'
+      rw [Nat.cast_div (C.card_carrier_mul_orderOf_dvd σ hσ)
+        (by push_cast; exact mul_ne_zero hC hord)]
+      push_cast
+      rw [div_div_eq_mul_div, one_div_mul_eq_div, mul_div_cancel_right₀ _ hord]
+  | inr h => simp [Nat.card_eq_zero_of_infinite]
 
 end ConjClasses
 
-/-! ### Powers of a conjugacy class
-
-These live in the root `ConjClasses` namespace, not under `TauCeti`, so that dot
-notation on Mathlib's `ConjClasses` type elaborates (`C.pow`, `C.pow_zero`, `C.pow_mul`). -/
+/-! ### Powers of a conjugacy class -/
 
 namespace ConjClasses
 
@@ -367,13 +407,17 @@ theorem map_pow {N : Type*} [Monoid N] (f : M →* N) (C : ConjClasses M) (j : �
   -- in `N`.
   rw [mk_pow, map_mk, map_mk, mk_pow, _root_.map_pow]
 
-/-- **Elements of different orders are not conjugate.** Conjugation is an automorphism, so it
-preserves the order of an element; hence two elements whose orders differ have distinct conjugacy
-classes. -/
-theorem mk_ne_mk_of_orderOf_ne {G : Type*} [Group G] {a b : G} (h : orderOf a ≠ orderOf b) :
-    ConjClasses.mk a ≠ ConjClasses.mk b := fun hclasses ↦ by
-  obtain ⟨c, hc⟩ := ConjClasses.mk_eq_mk_iff_isConj.mp hclasses
-  exact h (SemiconjBy.orderOf_eq (c : G) hc)
+/-- Elements of different orders lie in different conjugacy classes, even in a monoid. -/
+theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
+    ConjClasses.mk a ≠ ConjClasses.mk b := by
+  intro hclasses
+  apply h
+  rw [orderOf_eq_orderOf_iff]
+  intro n
+  have hc := ConjClasses.mk_eq_mk_iff_isConj.mp hclasses
+  constructor <;> intro hpow
+  · simpa only [hpow, isConj_one_right] using hc.pow n
+  · simpa only [hpow, isConj_one_right] using hc.symm.pow n
 
 /-- **A nonidentity square in the cyclic group of order four.** The generator has order four, its
 class squares to the class of the element of order two, and those two classes are distinct. A group

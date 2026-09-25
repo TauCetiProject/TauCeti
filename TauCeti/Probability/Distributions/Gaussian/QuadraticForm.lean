@@ -31,17 +31,21 @@ of squares of independent standard Gaussian coordinates, live in
 
 ## Main results
 
-* `TauCeti.mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff` — the exact
+* `TauCeti.Probability.mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff` — the
+  exact
   exponential-integrability domain of a Gaussian quadratic form;
-* `TauCeti.mgf_inner_toEuclideanLin_multivariateGaussian_sqrt` and
-  `TauCeti.mgf_inner_toEuclideanLin_multivariateGaussian` — its moment-generating function on
+* `TauCeti.Probability.mgf_inner_toEuclideanLin_multivariateGaussian_sqrt` and
+  `TauCeti.Probability.mgf_inner_toEuclideanLin_multivariateGaussian` — its moment-generating
+  function on
   that domain, in terms of the sandwich `√S * Θ * √S` and, for positive-semidefinite `S`, of
   `Θ * S`;
-* `TauCeti.cgf_inner_toEuclideanLin_multivariateGaussian_sqrt` and
-  `TauCeti.cgf_inner_toEuclideanLin_multivariateGaussian` — the cumulant-generating function,
+* `TauCeti.Probability.cgf_inner_toEuclideanLin_multivariateGaussian_sqrt` and
+  `TauCeti.Probability.cgf_inner_toEuclideanLin_multivariateGaussian` — the cumulant-generating
+  function,
   `-1 / 2` times the real logarithm of the same determinants;
-* `TauCeti.mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff` and
-  `TauCeti.mgf_inner_toEuclideanLin_stdGaussian` — the same results for the standard Gaussian,
+* `TauCeti.Probability.mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff` and
+  `TauCeti.Probability.mgf_inner_toEuclideanLin_stdGaussian` — the same results for the standard
+  Gaussian,
   in terms of the eigenvalues of the symmetric matrix.
 
 ## References
@@ -58,7 +62,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped RealInnerProductSpace MatrixOrder Matrix.Norms.L2Operator
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 /-! ### The standard Gaussian vector -/
 
@@ -172,4 +176,4 @@ theorem cgf_inner_toEuclideanLin_multivariateGaussian (hS : S.PosSemidef)
 
 end multivariateGaussian
 
-end TauCeti
+end TauCeti.Probability

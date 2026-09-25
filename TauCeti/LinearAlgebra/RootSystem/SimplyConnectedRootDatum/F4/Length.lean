@@ -141,4 +141,36 @@ theorem f4Length_castAdd_eq_one_iff (i : Fin 4) :
   rw [isLongSimpleRoot_iff_f4Length_eq_two]
   rcases f4Length_eq_one_or_eq_two (Fin.castAdd 44 i) with h | h <;> rw [h] <;> norm_num
 
+private lemma f4_pairing_longSimple_zero (β : Fin 48) :
+    f4SimplyConnectedRootDatum.pairing (Fin.castAdd 44 (0 : Fin 4)) β =
+      2 * f4Coroot β 0 - f4Coroot β 1 := by
+  rw [f4SimplyConnectedRootDatum_pairing, f4Root_castAdd]
+  simp [CartanMatrix.F₄, _root_.dotProduct, Fin.sum_univ_succ]
+  ring
+
+private lemma f4_pairing_longSimple_one (β : Fin 48) :
+    f4SimplyConnectedRootDatum.pairing (Fin.castAdd 44 (1 : Fin 4)) β =
+      -f4Coroot β 0 + 2 * f4Coroot β 1 - 2 * f4Coroot β 2 := by
+  rw [f4SimplyConnectedRootDatum_pairing, f4Root_castAdd]
+  simp [CartanMatrix.F₄, _root_.dotProduct, Fin.sum_univ_succ]
+  ring
+
+/-- The two long-simple coordinates of the coroot of any short F₄ root are even. -/
+theorem exists_f4Coroot_longSimple_coordinates_eq_two_mul (β : Fin 48)
+    (hβ : f4Length β = 1) :
+    ∃ k₀ k₁ : ℤ, f4Coroot β 0 = 2 * k₀ ∧ f4Coroot β 1 = 2 * k₁ := by
+  have h₀ := f4Length_mul_pairing_comm (Fin.castAdd 44 (0 : Fin 4)) β
+  have h₁ := f4Length_mul_pairing_comm (Fin.castAdd 44 (1 : Fin 4)) β
+  rw [hβ] at h₀ h₁
+  simp only [f4Length_castAdd, rootLength_F4] at h₀ h₁
+  rw [f4_pairing_longSimple_zero] at h₀
+  rw [f4_pairing_longSimple_one] at h₁
+  norm_num at h₀ h₁
+  -- Name the two pairings, so that the witnesses do not have to spell them out.
+  obtain ⟨a₀, h₀⟩ : ∃ a : ℤ, 2 * a = 2 * f4Coroot β 0 - f4Coroot β 1 := ⟨_, h₀⟩
+  obtain ⟨a₁, h₁⟩ : ∃ a : ℤ, 2 * a = -f4Coroot β 0 + 2 * f4Coroot β 1 - 2 * f4Coroot β 2 :=
+    ⟨_, h₁⟩
+  exact ⟨f4Coroot β 1 - f4Coroot β 2 - a₁, f4Coroot β 0 - a₀, by omega, by omega⟩
+
+
 end TauCeti.DynkinType

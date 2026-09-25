@@ -25,9 +25,27 @@ generation.
   meets the total supremum of a pointwise dominated family in its corresponding partial supremum.
 * `TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and`: two partial suprema of an independent
   family meet in the supremum over the intersection of their index predicates.
+* `OrderIso.isCompactElement` and `OrderIso.isCompactElement_iff`: an order isomorphism of
+  complete lattices preserves and reflects compactness of elements.
 -/
 
 public section
+
+/-- An order isomorphism of complete lattices sends compact elements to compact elements. -/
+theorem OrderIso.isCompactElement {α β : Type*} [CompleteLattice α] [CompleteLattice β]
+    (f : α ≃o β) {a : α} (ha : IsCompactElement a) : IsCompactElement (f a) := by
+  rw [isCompactElement_iff_le_of_directed_sSup_le] at ha ⊢
+  intro s hs hdir hle
+  obtain ⟨x, ⟨y, hy, rfl⟩, hay⟩ := ha (f.symm '' s) (hs.image _)
+    (hdir.mono_comp fun _ _ h ↦ f.symm.monotone h)
+    (by rw [sSup_image, ← f.symm.map_sSup]; exact f.le_symm_apply.mpr hle)
+  exact ⟨y, hy, f.le_symm_apply.mp hay⟩
+
+/-- An order isomorphism of complete lattices preserves and reflects compactness of elements. -/
+@[simp]
+theorem OrderIso.isCompactElement_iff {α β : Type*} [CompleteLattice α] [CompleteLattice β]
+    (f : α ≃o β) {a : α} : IsCompactElement (f a) ↔ IsCompactElement a :=
+  ⟨fun h ↦ by simpa using f.symm.isCompactElement h, f.isCompactElement⟩
 
 namespace TauCeti
 
@@ -36,7 +54,7 @@ members. -/
 theorem finite_ne_bot_of_iSupIndep_of_isCompactElement {α ι : Type*} [CompleteLattice α]
     {a : ι → α} (ha : iSupIndep a)
     (hc : IsCompactElement (⨆ i, a i)) : {i | a i ≠ ⊥}.Finite := by
-  obtain ⟨s, hs⟩ := CompleteLattice.IsCompactElement.exists_finset_of_le_iSup α hc a le_rfl
+  obtain ⟨s, hs⟩ := hc.exists_finset_of_le_iSup a le_rfl
   refine s.finite_toSet.subset fun i hi ↦ ?_
   by_contra his
   refine hi ((ha i).eq_bot_of_le ((le_iSup a i).trans (hs.trans (iSup₂_le fun j hj ↦ ?_))))

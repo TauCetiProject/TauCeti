@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.RootGenerator
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
@@ -145,6 +147,71 @@ theorem isNilpotent_rep_rootGenerator (k : Fin n ⊕ Fin n) :
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.D n) k))) :=
   (polarization n).isNilpotent_typeDSpinRep_rootGenerator (polarizationBasis n) hn k
+
+private theorem rep_serreH_ne_zero (i : Fin n) :
+    rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (TauCeti.serreH ℚ (CartanMatrix.D n) i)) ≠ 0 := by
+  intro hzero
+  by_cases hnext : (i : ℕ) + 1 < n
+  · have hweight :=
+      (isCartanWeightVector_iff
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn)).1
+        ((polarization n).isCartanWeightVector_typeDSpinRep_exteriorBasis
+          (polarizationBasis n) hn {i}) i
+    rw [hzero, LinearMap.zero_apply] at hweight
+    simp only [TauCeti.DynkinType.typeDSpinWeight_apply, dite_eq_left hnext,
+      Finset.mem_singleton, ↓reduceIte] at hweight
+    have hne : (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ≠ i := by
+      intro h
+      have hval : (i : ℕ) + 1 = i := congrArg Fin.val h
+      omega
+    rw [ite_eq_right hne] at hweight
+    simp only [sub_zero, Int.cast_one, one_smul] at hweight
+    exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} hweight.symm
+  · have hweight :=
+      (isCartanWeightVector_iff
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn)).1
+        ((polarization n).isCartanWeightVector_typeDSpinRep_exteriorBasis
+          (polarizationBasis n) hn ∅) i
+    rw [hzero, LinearMap.zero_apply] at hweight
+    simp only [TauCeti.DynkinType.typeDSpinWeight_apply, dite_eq_right hnext,
+      Finset.notMem_empty, ↓reduceIte, zero_add, zero_sub, Int.cast_neg, Int.cast_one,
+      neg_smul, one_smul] at hweight
+    exact (polarizationBasis n).ExteriorAlgebra.ne_zero ∅ (neg_eq_zero.mp hweight.symm)
+
+/-- The represented positive and negative simple generators at a common type-`D` node, together
+with the represented Cartan generator, form an `sl_2` triple. -/
+theorem isSl2Triple_rep_rootGenerator (i : Fin n) :
+    _root_.IsSl2Triple
+      (rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreH ℚ (CartanMatrix.D n) i)))
+      (rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.D n) (.inl i))))
+      (rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.D n) (.inr i)))) := by
+  let φ := (polarization n).typeDSpinSerreRepresentation (polarizationBasis n) hn
+  have hh : φ (TauCeti.serreH ℚ (CartanMatrix.D n) i) ≠ 0 := by
+    simpa only [φ, rep,
+      (polarization n).typeDSpinRep_ι (polarizationBasis n) hn] using
+      rep_serreH_ne_zero n hn i
+  have hsource :
+      _root_.IsSl2Triple
+        (TauCeti.serreH ℚ (CartanMatrix.D n) i)
+        (TauCeti.serreE ℚ (CartanMatrix.D n) i)
+        (TauCeti.serreF ℚ (CartanMatrix.D n) i) := {
+    h_ne_zero := fun hzero ↦ hh (by simp [hzero])
+    lie_e_f := TauCeti.lie_serreE_serreF_self ℚ (CartanMatrix.D n) i
+    lie_h_e_nsmul := by
+      rw [TauCeti.lie_serreH_serreE, CartanMatrix.D_diag]
+      rfl
+    lie_h_f_nsmul := by
+      rw [TauCeti.lie_serreH_serreF, CartanMatrix.D_diag]
+      rfl
+  }
+  have htriple := hsource.map φ hh
+  simpa only [φ, rep, TauCeti.serreRootGenerator_inl,
+    TauCeti.serreRootGenerator_inr,
+    (polarization n).typeDSpinRep_ι (polarizationBasis n) hn] using htriple
 
 /-- The type-`D` Serre Kostant form preserves the split exterior coordinate lattice. -/
 theorem rep_serreKostantForm_mem_lattice
@@ -487,7 +554,7 @@ theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing
 The two identifications the equations below rewrite with,
 `TauCeti.TypeDStd.rootGeneratorWeight_inl_eq_root_simpleIndex` and its lowering counterpart, are
 proved beside the weight they name, in
-`TauCeti/Algebra/Lie/Orthogonal/TypeD/RootGenerators.lean`.
+`TauCeti/Algebra/Lie/Orthogonal/TypeD/Root/Generators.lean`.
 
 None of the equations below is a `simp` lemma. Their right-hand sides name the character through
 `TauCeti.DynkinType.simplyConnectedRootDatum`, which `simp` unfolds at the `D n` branch, so they

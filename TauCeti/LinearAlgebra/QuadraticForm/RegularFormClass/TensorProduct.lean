@@ -316,6 +316,25 @@ theorem RegularFormClass.one_def :
     (1 : RegularFormClass K) =
       Quotient.mk (regularFormSetoid K) (RegularFormPresentation.one (K := K)) := rfl
 
+omit [Invertible (2 : K)] in
+/-- The class of the rank-one presentation with weight one is the multiplicative unit. -/
+theorem RegularFormClass.mk_rankOne_one :
+    Quotient.mk (regularFormSetoid K) (⟨1, fun _ => 1⟩ : RegularFormPresentation K) =
+      (1 : RegularFormClass K) := by
+  rw [RegularFormClass.one_def]
+  exact congrArg (Quotient.mk (regularFormSetoid K))
+    (RegularFormPresentation.ext RegularFormPresentation.fst_one.symm fun _ => by simp)
+
+/-- The tensor product of rank-one classes: `⟨a⟩ ⊗ ⟨b⟩ = ⟨ab⟩`. -/
+theorem RegularFormClass.mk_rankOne_mul_mk_rankOne (a b : Kˣ) :
+    Quotient.mk (regularFormSetoid K) (⟨1, fun _ => a⟩ : RegularFormPresentation K) *
+        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => b⟩ =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a * b⟩ := by
+  rw [RegularFormClass.mk_mul_mk]
+  exact congrArg (Quotient.mk (regularFormSetoid K))
+    (RegularFormPresentation.ext (RegularFormPresentation.fst_tmul _ _) fun _ => by
+      simp [RegularFormPresentation.tmul])
+
 /-- Tensor product makes regular-form classes a commutative monoid. -/
 instance : CommMonoid (RegularFormClass K) where
   mul_assoc x y z := by

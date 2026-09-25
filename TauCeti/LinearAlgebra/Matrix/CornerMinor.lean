@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The corner minor of a doubly singular matrix
@@ -25,9 +26,12 @@ inclusion `Fin n ↪ Fin (n + 1)`, and the identity with its last column replace
 same on the other side. A conjugation `A ↦ N * A * N⁻¹` by a matrix fixing `u` and `w` therefore
 multiplies the corner minor by `N.det` on one side and by `N.det⁻¹` on the other.
 
-The two Laplace expansions along the last row and the last column, in the sparse case used
-throughout, are recorded first, together with the description of the corner minor as an ordinary
-determinant after the last column is replaced by the last standard basis vector.
+The rectangular deletion and inclusion matrices and the row and column framing matrices are
+recorded first under `[Zero R] [One R]`, followed by their interaction with matrix
+multiplication under `[NonAssocSemiring R]`. The sparse Laplace expansions along the last row
+and column, the description of the corner minor as an ordinary determinant after replacing the
+last column by the last standard basis vector, and the conjugation invariance formula are
+proved under `[CommRing R]`.
 
 The intended source of such a matrix is `burau b - 1` for a braid `b`, where `u` is the all-ones
 vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
@@ -54,85 +58,20 @@ namespace Matrix
 
 variable {n : ℕ} {R : Type*}
 
-section NonAssocSemiring
+section ZeroOne
 
-variable [NonAssocSemiring R]
-
-/-- Deleting the last row and column of a product is the product of the deletions, provided the
-left factor has the last standard basis vector as its last column. -/
-theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    (hX : X *ᵥ Pi.single (Fin.last n) 1 = Pi.single (Fin.last n) 1) :
-    (X * Y).submatrix Fin.castSucc Fin.castSucc =
-      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
-  have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
-    rw [← Matrix.mulVec_single_one]
-    exact hX
-  have hentry : ∀ i : Fin (n + 1),
-      X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
-    fun i => congrFun hcol i
-  ext u v
-  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
-    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
-  rfl
-
-end NonAssocSemiring
-
-variable [CommRing R]
-
-/-- Laplace expansion along the last row of a matrix whose last row vanishes off the diagonal. -/
-theorem det_eq_mul_det_submatrix_castSucc_of_row (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    (h : ∀ j, j ≠ Fin.last n → A (Fin.last n) j = 0) :
-    A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [Matrix.det_succ_row A (Fin.last n),
-    Finset.sum_eq_single (Fin.last n) (fun j _ hj => by rw [h j hj]; ring) (by simp)]
-  rw [Fin.succAbove_last, Fin.val_last, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
-
-/-- Laplace expansion along the last column of a matrix whose last column vanishes off the
-diagonal. -/
-theorem det_eq_mul_det_submatrix_castSucc_of_col (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    (h : ∀ i, i ≠ Fin.last n → A i (Fin.last n) = 0) :
-    A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [← Matrix.det_transpose A, det_eq_mul_det_submatrix_castSucc_of_row Aᵀ h,
-    Matrix.transpose_apply, ← Matrix.transpose_submatrix, Matrix.det_transpose]
-
-/-- Replacing the last column of a matrix by the last standard basis vector turns its determinant
-into its corner minor. -/
-theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    (A.updateCol (Fin.last n) (Pi.single (Fin.last n) 1)).det =
-      (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi => by
-      rw [Matrix.updateCol_self, Pi.single_eq_of_ne hi],
-    Matrix.updateCol_self, Pi.single_eq_same, one_mul]
-  congr 1
-  ext a b
-  rw [Matrix.submatrix_apply, Matrix.submatrix_apply,
-    Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
-
-/-- The determinant of a matrix `M - 1` whose last column has been replaced by
-`c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/
-theorem det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero
-    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (hdet : (M - 1).det = 0) (c : R) :
-    ((M - 1).updateCol (Fin.last n)
-        (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u)).det =
-      (c - 1) * ((M - 1).submatrix Fin.castSucc Fin.castSucc).det := by
-  have hfun : (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u) =
-      c • (fun u => (M - 1) u (Fin.last n)) +
-        (c - 1) • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
-    funext u
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.sub_apply, Matrix.one_apply,
-      Pi.single_apply]
-    split_ifs <;> ring
-  rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
-    Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
+variable [Zero R] [One R]
 
 /-! ### The two rectangular matrices that delete and restore the last coordinate -/
 
 /-- The `n × (n + 1)` matrix that deletes the last coordinate. -/
-private def projCastSucc (n : ℕ) (R : Type*) [CommRing R] : Matrix (Fin n) (Fin (n + 1)) R :=
+private def projCastSucc (n : ℕ) (R : Type*) [Zero R] [One R] :
+    Matrix (Fin n) (Fin (n + 1)) R :=
   (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix Fin.castSucc id
 
 /-- The `(n + 1) × n` matrix that includes the first `n` coordinates. -/
-private def inclCastSucc (n : ℕ) (R : Type*) [CommRing R] : Matrix (Fin (n + 1)) (Fin n) R :=
+private def inclCastSucc (n : ℕ) (R : Type*) [Zero R] [One R] :
+    Matrix (Fin (n + 1)) (Fin n) R :=
   (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix id Fin.castSucc
 
 private theorem projCastSucc_apply (a : Fin n) (b : Fin (n + 1)) :
@@ -143,21 +82,6 @@ private theorem projCastSucc_apply (a : Fin n) (b : Fin (n + 1)) :
 private theorem inclCastSucc_apply (a : Fin (n + 1)) (b : Fin n) :
     inclCastSucc n R a b = if a = b.castSucc then 1 else 0 := by
   rw [inclCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
-  rfl
-
-private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
-    projCastSucc n R * A = A.submatrix Fin.castSucc id := by
-  ext i k
-  simp [Matrix.mul_apply, projCastSucc_apply, ite_mul]
-
-private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
-    A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
-  ext i k
-  simp [Matrix.mul_apply, inclCastSucc_apply, mul_ite]
-
-private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
-  rw [Matrix.mul_assoc, mul_inclCastSucc, projCastSucc_mul, Matrix.submatrix_submatrix]
   rfl
 
 /-! ### The two square matrices built from the annihilating vectors -/
@@ -190,17 +114,43 @@ private theorem submatrix_colFrame (u : Fin (n + 1) → R) :
   rw [Matrix.submatrix_apply, colFrame_castSucc]
   simp [Matrix.one_apply]
 
-private theorem det_rowFrame (w : Fin (n + 1) → R) : (rowFrame w).det = w (Fin.last n) := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_col _ ?_, submatrix_rowFrame, Matrix.det_one, mul_one,
-    rowFrame, Matrix.updateRow_self]
-  intro i hi
-  rw [rowFrame, Matrix.updateRow_ne hi, Matrix.one_apply_ne hi]
+end ZeroOne
 
-private theorem det_colFrame (u : Fin (n + 1) → R) : (colFrame u).det = u (Fin.last n) := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_row _ ?_, submatrix_colFrame, Matrix.det_one, mul_one,
-    colFrame, Matrix.updateCol_self]
-  intro j hj
-  rw [colFrame, Matrix.updateCol_ne hj, Matrix.one_apply_ne' hj]
+section NonAssocSemiring
+
+variable [NonAssocSemiring R]
+
+/-- Deleting the last row and column of a product is the product of the deletions, provided the
+left factor has the last standard basis vector as its last column. -/
+theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (hX : X *ᵥ Pi.single (Fin.last n) 1 = Pi.single (Fin.last n) 1) :
+    (X * Y).submatrix Fin.castSucc Fin.castSucc =
+      X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
+  have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
+    rw [← Matrix.mulVec_single_one]
+    exact hX
+  have hentry : ∀ i : Fin (n + 1),
+      X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
+    fun i => congrFun hcol i
+  ext u v
+  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
+    Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
+  rfl
+
+private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
+    projCastSucc n R * A = A.submatrix Fin.castSucc id := by
+  have h := Matrix.one_submatrix_mul Fin.castSucc (Equiv.refl (Fin (n + 1))) A
+  simpa [projCastSucc] using h
+
+private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
+    A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
+  have h := Matrix.mul_submatrix_one (Equiv.refl (Fin (n + 1))) Fin.castSucc A
+  simpa [inclCastSucc] using h
+
+private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
+  simpa only [projCastSucc, inclCastSucc] using
+    Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
 
 private theorem projCastSucc_mul_rowFrame (w : Fin (n + 1) → R) :
     projCastSucc n R * rowFrame w = projCastSucc n R := by
@@ -257,6 +207,68 @@ private theorem mul_colFrame (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {u : Fin
     rw [Matrix.mul_apply, Matrix.mul_apply]
     simp only [colFrame_castSucc, h2, Matrix.one_apply, mul_ite, mul_zero, mul_one,
       Finset.sum_ite_eq', Finset.mem_univ, ite_true, Matrix.submatrix_apply, id]
+
+end NonAssocSemiring
+
+variable [CommRing R]
+
+/-- Laplace expansion along the last row of a matrix whose last row vanishes off the diagonal. -/
+theorem det_eq_mul_det_submatrix_castSucc_of_row (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (h : ∀ j, j ≠ Fin.last n → A (Fin.last n) j = 0) :
+    A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  rw [Matrix.det_succ_row A (Fin.last n),
+    Finset.sum_eq_single (Fin.last n) (fun j _ hj => by rw [h j hj]; ring) (by simp)]
+  rw [Fin.succAbove_last, Fin.val_last, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
+
+/-- Laplace expansion along the last column of a matrix whose last column vanishes off the
+diagonal. -/
+theorem det_eq_mul_det_submatrix_castSucc_of_col (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (h : ∀ i, i ≠ Fin.last n → A i (Fin.last n) = 0) :
+    A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  rw [← Matrix.det_transpose A, det_eq_mul_det_submatrix_castSucc_of_row Aᵀ h,
+    Matrix.transpose_apply, ← Matrix.transpose_submatrix, Matrix.det_transpose]
+
+/-- Replacing the last column of a matrix by the last standard basis vector turns its determinant
+into its corner minor. -/
+theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    (A.updateCol (Fin.last n) (Pi.single (Fin.last n) 1)).det =
+      (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  rw [det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi => by
+      rw [Matrix.updateCol_self, Pi.single_eq_of_ne hi],
+    Matrix.updateCol_self, Pi.single_eq_same, one_mul]
+  congr 1
+  ext a b
+  rw [Matrix.submatrix_apply, Matrix.submatrix_apply,
+    Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
+
+/-- The determinant of a matrix `M - 1` whose last column has been replaced by
+`c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/
+theorem det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero
+    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (hdet : (M - 1).det = 0) (c : R) :
+    ((M - 1).updateCol (Fin.last n)
+        (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u)).det =
+      (c - 1) * ((M - 1).submatrix Fin.castSucc Fin.castSucc).det := by
+  have hfun : (fun u => c * M u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u) =
+      c • (fun u => (M - 1) u (Fin.last n)) +
+        (c - 1) • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
+    funext u
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.sub_apply, Matrix.one_apply,
+      Pi.single_apply]
+    split_ifs <;> ring
+  rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
+    Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
+
+private theorem det_rowFrame (w : Fin (n + 1) → R) : (rowFrame w).det = w (Fin.last n) := by
+  rw [det_eq_mul_det_submatrix_castSucc_of_col _ ?_, submatrix_rowFrame, Matrix.det_one, mul_one,
+    rowFrame, Matrix.updateRow_self]
+  intro i hi
+  rw [rowFrame, Matrix.updateRow_ne hi, Matrix.one_apply_ne hi]
+
+private theorem det_colFrame (u : Fin (n + 1) → R) : (colFrame u).det = u (Fin.last n) := by
+  rw [det_eq_mul_det_submatrix_castSucc_of_row _ ?_, submatrix_colFrame, Matrix.det_one, mul_one,
+    colFrame, Matrix.updateCol_self]
+  intro j hj
+  rw [colFrame, Matrix.updateCol_ne hj, Matrix.one_apply_ne' hj]
 
 /-! ### Conjugation invariance of the corner minor -/
 

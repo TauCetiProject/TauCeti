@@ -22,12 +22,12 @@ that theorem will need: a canonical set of representatives for the non-elliptic 
 nonzero order, and the rewriting of a `∑ᶠ` over those orbits as the sum over the three
 representative families.
 
-The reduction picks one representative per non-elliptic orbit of nonzero order inside the
-canonical set `canonicalReps`: interior points represent themselves; a right-vertical-edge point
-is moved to the left edge by `z ↦ z - 1`; a right-half-arc point is moved to the left half-arc
-by `z ↦ -1/z`. Faithfulness is the injectivity of the orbit map on the left part of `𝒟`
-(`TauCeti.ModularGroup.orbit_mk_injOn_fd_left`), and the elliptic orbits are excluded by their
-closed-domain descriptions (`orbit_mk_eq_I_iff`, `orbit_mk_eq_ρ_iff`).
+The reduction picks one representative per non-elliptic orbit of nonzero order inside the canonical
+set `canonicalReps`: interior points represent themselves; a right-vertical-edge point is moved to
+the left edge by `z ↦ z - 1`; a right-half-arc point is moved to the left half-arc by `z ↦ -1/z`
+(`TauCeti.ModularGroup.exists_smul_mem_fd_left`). Faithfulness is the injectivity of the orbit map
+on the left part of `𝒟` (`TauCeti.ModularGroup.orbit_mk_injOn_fd_left`), and the elliptic orbits are
+excluded by their closed-domain descriptions (`orbit_mk_eq_I_iff`, `orbit_mk_eq_ρ_iff`).
 
 ## Main declarations
 
@@ -128,98 +128,28 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
       ↑(canonicalReps f) := by
   refine ModularGroup.orbit_mk_injOn_fd_left.mono fun p hp ↦ ?_
   obtain ⟨hmem, hcond⟩ := mem_canonicalReps.mp hp
-  refine ⟨(mem_fdZeros.mp hmem).1, ?_, ?_⟩
-  · rcases hcond with ⟨-, habs⟩ | ⟨hre, -⟩ | ⟨-, -, hre⟩
-    · exact lt_of_abs_lt (coe_re p ▸ habs)
-    · norm_num [← coe_re, hre]
-    · exact (coe_re p ▸ hre).trans (by norm_num)
-  · intro hnorm
-    rcases hcond with ⟨hgt, -⟩ | ⟨-, hgt⟩ | ⟨-, -, hre⟩
-    · norm_num [hnorm] at hgt
-    · norm_num [hnorm] at hgt
-    · exact coe_re p ▸ hre
+  refine ⟨(mem_fdZeros.mp hmem).1, ?_⟩
+  rcases hcond with ⟨hgt, habs⟩ | ⟨hre, hgt⟩ | ⟨-, -, hre⟩
+  · exact ⟨lt_of_abs_lt habs, fun h ↦ absurd h hgt.ne'⟩
+  · exact ⟨hre.trans_lt (by norm_num), fun h ↦ absurd h hgt.ne'⟩
+  · exact ⟨hre.trans (by norm_num), fun _ ↦ hre.le⟩
 
-private lemma normSq_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
-    Complex.normSq (((-1 : ℝ) +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by
-  rw [coe_re] at hre
-  simp [coe_vadd, Complex.normSq_apply, hre]
-  ring
-
-private lemma norm_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
-    ‖(((-1 : ℝ) +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
-  rw [Complex.norm_def, Complex.norm_def, normSq_coe_vadd_neg_one hre]
-
-private lemma vadd_neg_one_mem_fd {p : ℍ} (hp : p ∈ 𝒟) (hre : (p : ℂ).re = 1 / 2) :
-    (-1 : ℝ) +ᵥ p ∈ 𝒟 := by
-  refine ⟨?_, ?_⟩
-  · rw [normSq_coe_vadd_neg_one hre]
-    exact hp.1
-  · rw [vadd_re, (coe_re p ▸ hre : p.re = 1 / 2)]
-    norm_num
-
-private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F}
-    {p₀ : ℍ} (hfd : p₀ ∈ 𝒟) (hord : orderOfVanishingAt f p₀ ≠ 0) (hre : (p₀ : ℂ).re = 1 / 2)
-    (hlt : 1 < ‖(p₀ : ℂ)‖) : ∃ p ∈ canonicalReps f,
-      (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' p₀ := by
-  have horb : (Quotient.mk'' ((-1 : ℝ) +ᵥ p₀) : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) =
-      Quotient.mk'' p₀ := by
-    simpa using ModularGroup.orbit_mk_int_vadd (-1) p₀
-  have hord' : orderOfVanishingAt f ((-1 : ℝ) +ᵥ p₀) ≠ 0 := by
-    rw [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
-    exact hord
-  refine ⟨(-1 : ℝ) +ᵥ p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
-    ⟨vadd_neg_one_mem_fd hfd hre, hord'⟩, Or.inr (Or.inl ⟨?_, ?_⟩)⟩, horb⟩
-  · rw [coe_vadd, Complex.add_re, Complex.ofReal_re, hre]
-    norm_num
-  · rw [norm_coe_vadd_neg_one hre]
-    exact hlt
-
-private lemma exists_of_norm_eq_one_of_re_pos [ModularFormClass F 𝒮ℒ k] {f : F}
-    {p₀ : ℍ} (hfd : p₀ ∈ 𝒟) (hord : orderOfVanishingAt f p₀ ≠ 0)
-    (hnorm : ‖(p₀ : ℂ)‖ = 1) (hpos : 0 < (p₀ : ℂ).re)
-    (hqρ : (Quotient.mk'' p₀ : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) ≠ Quotient.mk'' ρ) :
-    ∃ p ∈ canonicalReps f,
-      (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' p₀ := by
-  have horb : (Quotient.mk'' (ModularGroup.S • p₀) : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) =
-      Quotient.mk'' p₀ := Quotient.sound' ⟨ModularGroup.S, rfl⟩
-  have hord' : orderOfVanishingAt f (ModularGroup.S • p₀) ≠ 0 := by
-    rw [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
-    exact hord
-  have hne : ((ModularGroup.S • p₀ : ℍ) : ℂ) ≠ (ρ : ℂ) := fun h ↦
-    hqρ (horb ▸ congrArg Quotient.mk'' (UpperHalfPlane.coe_injective h))
-  refine ⟨ModularGroup.S • p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
-    ⟨ModularGroup.S_smul_mem_fd_of_norm_eq_one hfd.2 hnorm, hord'⟩,
-      Or.inr (Or.inr ⟨hne, ModularGroup.norm_coe_S_smul_of_norm_eq_one hnorm, ?_⟩)⟩, horb⟩
-  rw [coe_re, ModularGroup.re_S_smul_of_norm_eq_one hnorm]
-  exact neg_lt_zero.mpr (coe_re p₀ ▸ hpos)
-
-/-- Every non-elliptic orbit of nonzero order has a representative among the canonical ones:
-a fundamental-domain representative exists, and the boundary identifications move it into
-`canonicalReps` when it falls on the omitted right vertical edge or right half-arc. -/
+/-- Every non-elliptic orbit of nonzero order has a representative among the canonical ones. -/
 theorem exists_mem_canonicalReps_orbit_mk_eq [ModularFormClass F 𝒮ℒ k] {f : F}
-    {q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ}
-    (hqI : q ≠ Quotient.mk'' I) (hqρ : q ≠ Quotient.mk'' ρ)
-    (hq : orderOfVanishingOnOrbit f q ≠ 0) :
+    {q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ} (hqI : q ≠ Quotient.mk'' I)
+    (hqρ : q ≠ Quotient.mk'' ρ) (hq : orderOfVanishingOnOrbit f q ≠ 0) :
     ∃ p ∈ canonicalReps f, Quotient.mk'' p = q := by
-  obtain ⟨p₀, rfl, hfd⟩ := ModularGroup.exists_rep_mem_fd q
+  obtain ⟨z, rfl⟩ := q.exists_rep
+  -- the orbit's representative in the left part of `𝒟` is one of the canonical ones
+  obtain ⟨g, hfd, hre, harc⟩ := ModularGroup.exists_smul_mem_fd_left z
+  rw [← MulAction.orbitRel.Quotient.quotient_smul_eq (g := g) (a := z)] at hq hqI hqρ ⊢
   rw [orderOfVanishingOnOrbit_mk] at hq
+  refine ⟨g • z, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩, ?_⟩, rfl⟩
   rcases (Complex.one_le_normSq_iff.mp hfd.1).lt_or_eq with hlt | heq
-  · rcases hfd.2.lt_or_eq with hre_lt | hre_eq
-    · refine ⟨p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩, Or.inl ⟨hlt, ?_⟩⟩, rfl⟩
-      rwa [coe_re]
-    · rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1 / 2)).mp hre_eq with h | h
-      · exact exists_of_re_eq_half hfd hq ((coe_re p₀).trans h) hlt
-      · exact ⟨p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩,
-          Or.inr (Or.inl ⟨(coe_re p₀).trans h, hlt⟩)⟩, rfl⟩
-  · rcases lt_trichotomy ((p₀ : ℂ).re) 0 with hneg | hzero | hpos
-    · have hne : (p₀ : ℂ) ≠ (ρ : ℂ) := fun h ↦
-        hqρ (congrArg Quotient.mk'' (UpperHalfPlane.coe_injective h))
-      exact ⟨p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩,
-        Or.inr (Or.inr ⟨hne, heq.symm, hneg⟩)⟩, rfl⟩
-    · exact absurd (congrArg Quotient.mk'' (UpperHalfPlane.eq_of_re_of_norm
-        (by rw [← coe_re, hzero, ← coe_re, coe_I, Complex.I_re])
-        (by rw [heq.symm, coe_I, Complex.norm_I]))) hqI
-    · exact exists_of_norm_eq_one_of_re_pos hfd hq heq.symm hpos hqρ
+  · exact (neg_le_of_abs_le hfd.2).lt_or_eq.imp (fun h ↦ ⟨hlt, abs_lt.mpr ⟨h, hre⟩⟩)
+      fun h ↦ .inl ⟨h.symm, hlt⟩
+  · exact .inr <| .inr ⟨fun h ↦ hqρ (congrArg _ (coe_injective h)), heq.symm,
+      (harc heq.symm).lt_of_ne fun h ↦ hqI (congrArg _ (eq_I_of_re_eq_zero heq.symm h))⟩
 
 /-- The `∑ᶠ` over the non-elliptic orbit space equals the sum over the canonical
 representatives: the orbit map matches `canonicalReps` bijectively with the non-elliptic

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Spin.HalfSpin
+public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 -- Private: `CliffordAlgebra.finrank_evenOdd_zero` is used only inside proofs; it is not named by
 -- an exported statement.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
@@ -37,8 +37,8 @@ both in even dimension `2l`, the type `Dₗ` case, where the remainder of the po
 (`TauCeti.SpinPolarizationData.line_eq_bot_of_even_finrank`) so that the two halves are
 subrepresentations of dimension `2 ^ (l - 1)`, and in odd dimension `2l + 1`, the type `Bₗ` case,
 where the remainder is a line, the splitting is not one of representations (see
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`) and the spin module of dimension `2 ^ l` is the
-one that matters.
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`) and the spin module of dimension `2 ^ l`
+is the one that matters.
 
 ## Main results
 
@@ -68,7 +68,7 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 Half the dimension `2 ^ dim W` of the spinor module `⋀·W`, so `2 ^ (l - 1)` for a polarization of
 a `2l`-dimensional space, where `dim W = l` by
-`TauCeti.SpinPolarizationData.finrank_W_of_finrank_eq_two_mul`. The hypothesis `W ≠ ⊥` rules out
+`TauCeti.SpinPolarizationData.finrank_W_eq_of_finrank_eq_two_mul`. The hypothesis `W ≠ ⊥` rules out
 the degenerate case `⋀·W = K`, which is entirely even. -/
 theorem finrank_spinPlus (hW : P.W ≠ ⊥) :
     finrank K (spinPlus Q P) = 2 ^ (finrank K P.W - 1) := by

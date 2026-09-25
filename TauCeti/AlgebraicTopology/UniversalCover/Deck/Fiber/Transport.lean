@@ -15,9 +15,9 @@ An isomorphism of maps over a common base identifies corresponding fibres. This 
 that fibre identification and records that it intertwines the restricted deck actions with
 conjugation of deck transformations.
 
-This is bookkeeping for the universal-covers roadmap: pointed cover isomorphisms carry chosen
-lifts of the basepoint between fibres, and the pointed/unpointed cover correspondences need the
-deck action on those fibres to be compatible with conjugating the deck group.
+Pointed cover isomorphisms carry chosen lifts of the basepoint between fibres, and the
+pointed/unpointed cover correspondences need the deck action on those fibres to be compatible
+with conjugating the deck group.
 
 ## Main definitions
 
@@ -30,12 +30,6 @@ deck action on those fibres to be compatible with conjugating the deck group.
 * `TauCeti.Deck.map_fiber_stabilizer_conjMulEquiv`: conjugation maps the source fibre
   stabilizer onto the transported target fibre stabilizer.
 * `TauCeti.Deck.mem_orbit_fiberMap_iff`: fibre transport preserves deck-orbit membership.
-
-## References
-
-This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 2
-(`pointed` and `unpointed` connected cover correspondences), building on Stage 0.4's
-deck-transformation group.
 -/
 
 public section
@@ -97,32 +91,32 @@ lemma fiberMap_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
 /-- Fibre transport intertwines the restricted deck action with conjugation of deck
 transformations. -/
 @[simp]
-lemma fiberMap_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) (e : p ⁻¹' {b}) :
+lemma fiberMap_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) (e : p ⁻¹' {b}) :
     fiberMap h hpq b (φ • e) = conjMulEquiv h hpq φ • fiberMap h hpq b e := by
   ext
-  simp [fiber_smul_eq_fiberHomeomorph]
+  simp [deck.fiber_smul_eq_fiberHomeomorph]
 
 /-- The inverse fibre transport intertwines the restricted deck action with inverse
 conjugation of deck transformations. -/
-lemma fiberMap_symm_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : Deck q) (f : q ⁻¹' {b}) :
+lemma fiberMap_symm_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : deck q) (f : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm (ψ • f) = (conjMulEquiv h hpq).symm ψ • (fiberMap h hpq b).symm f := by
   ext
-  simp [fiber_smul_eq_fiberHomeomorph]
+  simp [deck.fiber_smul_eq_fiberHomeomorph]
 
 /-- Transporting a deck transformation to the target cover and then restricting it to a fibre
 is the same as restricting first and conjugating the resulting fibre homeomorphism by the fibre
 transport map. -/
 @[simp]
-lemma fiberMap_trans_fiberHomeomorph (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) :
-    (fiberMap h hpq b).trans (fiberHomeomorph (conjMulEquiv h hpq φ) b) =
-      (fiberHomeomorph φ b).trans (fiberMap h hpq b) := by
+lemma fiberMap_trans_fiberHomeomorph (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) :
+    (fiberMap h hpq b).trans (deck.fiberHomeomorph (conjMulEquiv h hpq φ) b) =
+      (deck.fiberHomeomorph φ b).trans (fiberMap h hpq b) := by
   ext e
   simp
 
 /-- Restricting conjugated deck transformations to a fibre is compatible with the fibre
 restriction homomorphism. -/
 @[simp]
-lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) :
+lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) :
     fiberHomeomorphHom q b (conjMulEquiv h hpq φ) =
       (fiberMap h hpq b).symm.trans ((fiberHomeomorphHom p b φ).trans (fiberMap h hpq b)) := by
   ext f
@@ -131,9 +125,9 @@ lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
 /-- Conjugation transports stabilizer membership along the fibre map. -/
 @[grind =]
 lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
-    (hpq : ∀ e, q (h e) = p e) (φ : Deck p) (e : p ⁻¹' {b}) :
-    conjMulEquiv h hpq φ ∈ MulAction.stabilizer (Deck q) (fiberMap h hpq b e) ↔
-      φ ∈ MulAction.stabilizer (Deck p) e := by
+    (hpq : ∀ e, q (h e) = p e) (φ : deck p) (e : p ⁻¹' {b}) :
+    conjMulEquiv h hpq φ ∈ MulAction.stabilizer (deck q) (fiberMap h hpq b e) ↔
+      φ ∈ MulAction.stabilizer (deck p) e := by
   constructor
   · intro hφ
     rw [MulAction.mem_stabilizer_iff] at hφ ⊢
@@ -147,9 +141,9 @@ lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
 /-- Conjugation maps the source fibre stabilizer onto the transported target fibre
 stabilizer. -/
 theorem map_fiber_stabilizer_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) :
-    (MulAction.stabilizer (Deck p) e).map ((conjMulEquiv h hpq : Deck p ≃* Deck q) :
-        Deck p →* Deck q) =
-      MulAction.stabilizer (Deck q) (fiberMap h hpq b e) := by
+    (MulAction.stabilizer (deck p) e).map ((conjMulEquiv h hpq : deck p ≃* deck q) :
+        deck p →* deck q) =
+      MulAction.stabilizer (deck q) (fiberMap h hpq b e) := by
   ext ψ
   constructor
   · rintro ⟨φ, hφ, rfl⟩
@@ -161,38 +155,38 @@ theorem map_fiber_stabilizer_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
 
 /-- Fibre transport identifies stabilizers, using conjugation on deck transformations. -/
 def fiberMapStabilizerEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) :
-    MulAction.stabilizer (Deck p) e ≃*
-      MulAction.stabilizer (Deck q) (fiberMap h hpq b e) :=
-  ((conjMulEquiv h hpq).subgroupMap (MulAction.stabilizer (Deck p) e)).trans
+    MulAction.stabilizer (deck p) e ≃*
+      MulAction.stabilizer (deck q) (fiberMap h hpq b e) :=
+  ((conjMulEquiv h hpq).subgroupMap (MulAction.stabilizer (deck p) e)).trans
     (MulEquiv.subgroupCongr (map_fiber_stabilizer_conjMulEquiv h hpq e))
 
 /-- On deck transformations, the fibre-map stabilizer equivalence is conjugation. -/
 @[simp]
 lemma fiberMapStabilizerEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
-    (e : p ⁻¹' {b}) (φ : MulAction.stabilizer (Deck p) e) :
-    (fiberMapStabilizerEquiv h hpq e φ : Deck q) = conjMulEquiv h hpq φ.1 :=
+    (e : p ⁻¹' {b}) (φ : MulAction.stabilizer (deck p) e) :
+    (fiberMapStabilizerEquiv h hpq e φ : deck q) = conjMulEquiv h hpq φ.1 :=
   by simp [fiberMapStabilizerEquiv]
 
 /-- On deck transformations, the inverse fibre-map stabilizer equivalence is inverse
 conjugation. -/
 @[simp]
 lemma fiberMapStabilizerEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
-    (e : p ⁻¹' {b}) (ψ : MulAction.stabilizer (Deck q) (fiberMap h hpq b e)) :
-    ((fiberMapStabilizerEquiv h hpq e).symm ψ : Deck p) = (conjMulEquiv h hpq).symm ψ.1 :=
+    (e : p ⁻¹' {b}) (ψ : MulAction.stabilizer (deck q) (fiberMap h hpq b e)) :
+    ((fiberMapStabilizerEquiv h hpq e).symm ψ : deck p) = (conjMulEquiv h hpq).symm ψ.1 :=
   by simp [fiberMapStabilizerEquiv]
 
 /-- Applying a deck transformation and then transporting to the target fibre gives a point in
 the target deck orbit. -/
-lemma fiberMap_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) (e : p ⁻¹' {b}) :
-    fiberMap h hpq b (φ • e) ∈ MulAction.orbit (Deck q) (fiberMap h hpq b e) := by
+lemma fiberMap_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) (e : p ⁻¹' {b}) :
+    fiberMap h hpq b (φ • e) ∈ MulAction.orbit (deck q) (fiberMap h hpq b e) := by
   exact ⟨conjMulEquiv h hpq φ, fiberMap_smul h hpq φ e |>.symm⟩
 
 /-- The fibre map carries the deck orbit of a point onto the deck orbit of the transported
 point. -/
 @[simp]
 theorem fiberMap_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) :
-    fiberMap h hpq b '' MulAction.orbit (Deck p) e =
-      MulAction.orbit (Deck q) (fiberMap h hpq b e) := by
+    fiberMap h hpq b '' MulAction.orbit (deck p) e =
+      MulAction.orbit (deck q) (fiberMap h hpq b e) := by
   ext f
   constructor
   · rintro ⟨e', ⟨φ, hφ⟩, rfl⟩
@@ -204,16 +198,16 @@ theorem fiberMap_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : 
 
 /-- Applying a deck transformation and then transporting back to the source fibre gives a
 point in the source deck orbit. -/
-lemma fiberMap_symm_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : Deck q) (f : q ⁻¹' {b}) :
+lemma fiberMap_symm_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : deck q) (f : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm (ψ • f) ∈
-      MulAction.orbit (Deck p) ((fiberMap h hpq b).symm f) := by
+      MulAction.orbit (deck p) ((fiberMap h hpq b).symm f) := by
   exact ⟨(conjMulEquiv h hpq).symm ψ, fiberMap_symm_smul h hpq ψ f |>.symm⟩
 
 /-- The inverse fibre map carries the deck orbit of a point onto the deck orbit of the
 transported point. -/
 theorem fiberMap_symm_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (f : q ⁻¹' {b}) :
-    (fiberMap h hpq b).symm '' MulAction.orbit (Deck q) f =
-      MulAction.orbit (Deck p) ((fiberMap h hpq b).symm f) := by
+    (fiberMap h hpq b).symm '' MulAction.orbit (deck q) f =
+      MulAction.orbit (deck p) ((fiberMap h hpq b).symm f) := by
   ext e
   constructor
   · rintro ⟨f', ⟨ψ, hψ⟩, rfl⟩
@@ -226,8 +220,8 @@ theorem fiberMap_symm_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) 
 /-- Transporting both fibre points preserves membership in deck orbits. -/
 @[simp]
 theorem mem_orbit_fiberMap_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b}) :
-    fiberMap h hpq b e' ∈ MulAction.orbit (Deck q) (fiberMap h hpq b e) ↔
-      e' ∈ MulAction.orbit (Deck p) e := by
+    fiberMap h hpq b e' ∈ MulAction.orbit (deck q) (fiberMap h hpq b e) ↔
+      e' ∈ MulAction.orbit (deck p) e := by
   constructor
   · rintro ⟨ψ, hψ⟩
     refine ⟨(conjMulEquiv h hpq).symm ψ, ?_⟩
@@ -248,8 +242,8 @@ theorem mem_orbit_fiberMap_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e 
 /-- Transporting both target-fibre points back preserves membership in deck orbits. -/
 theorem mem_orbit_fiberMap_symm_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (f f' : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm f' ∈
-        MulAction.orbit (Deck p) ((fiberMap h hpq b).symm f) ↔
-      f' ∈ MulAction.orbit (Deck q) f := by
+        MulAction.orbit (deck p) ((fiberMap h hpq b).symm f) ↔
+      f' ∈ MulAction.orbit (deck q) f := by
   constructor
   · rintro ⟨φ, hφ⟩
     refine ⟨conjMulEquiv h hpq φ, ?_⟩

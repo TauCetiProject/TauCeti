@@ -74,19 +74,19 @@ variable {I M N : Type*} [Finite I] [AddCommGroup M] [Module ℤ M]
   [P.IsCrystallographic] [P.IsReduced]
 
 omit [P.IsCrystallographic] [P.IsReduced] in
-/-- Distinct non-opposite roots of length one have Cartan pairing `-1`, `0`, or `1` when that
-Cartan pairing has absolute value at most two. -/
-theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_short
+/-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
+when that pairing has absolute value at most two. -/
+theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_length_eq
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β : I) (hpair : |P.pairing β α| ≤ 2)
-    (hα : length α = 1) (hβ : length β = 1) (hne : β ≠ α)
+    (hαpos : 0 < length α) (hαβ : length α = length β) (hne : β ≠ α)
     (hneg : P.root β ≠ -P.root α) :
     P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
   have hsym' : P.pairing β α = P.pairing α β := by
     have h := hsym α β
-    rw [hα, hβ, one_mul, one_mul] at h
-    exact h
+    rw [← hαβ] at h
+    nlinarith
   have hne_two : P.pairing β α ≠ 2 := by
     intro htwo
     have : β = α := (P.pairing_two_two_iff β α).mp ⟨htwo, hsym'.symm.trans htwo⟩
@@ -101,32 +101,33 @@ theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_short
   omega
 
 omit [P.IsCrystallographic] [P.IsReduced] in
-/-- A root string through distinct, non-opposite roots of length one has no term two or more
-steps in the positive direction when that term has length one or two. -/
-theorem _root_.RootPairing.not_root_eq_short_add_nsmul_short_of_two_le
+/-- An equal-length root string through non-opposite roots has no term two or more steps
+in the positive direction when the resulting root has length less than three times theirs. -/
+theorem _root_.RootPairing.not_root_eq_add_nsmul_of_length_eq_of_two_le
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (n : ℕ) (hpair : |P.pairing β α| ≤ 2)
-    (hα : length α = 1) (hβ : length β = 1) (hγ : length γ = 1 ∨ length γ = 2)
+    (hαpos : 0 < length α) (hαβ : length α = length β)
+    (hγ : length γ < 3 * length α)
     (hneg : P.root β ≠ -P.root α) (hn : 2 ≤ n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) : False := by
   have hn' : (2 : ℤ) ≤ n := by exact_mod_cast hn
-  have hne : β ≠ α := by
-    intro hβα
-    subst β
-    have hlen := P.length_of_root_eq_add_zsmul length hsym α α γ n h
-    rcases hγ with hγ | hγ <;>
-      rw [hα, hγ, P.pairing_same] at hlen <;>
-      norm_num at hlen <;>
-      nlinarith
-  have hp := P.pairing_mem_neg_one_zero_one_of_short length hsym α β hpair hα hβ hne hneg
+  have hquad : 0 ≤ (n : ℤ) ^ 2 - n - 2 := by nlinarith
+  have hne_or_eq : β = α ∨ β ≠ α := eq_or_ne β α
+  have hp : P.pairing β α ∈ ({-1, 0, 1, 2} : Set ℤ) := by
+    rcases hne_or_eq with hsame | hne
+    · subst β
+      simp
+    · have hp' := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β
+        hpair hαpos hαβ hne hneg
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp' ⊢
+      rcases hp' with hp' | hp' | hp' <;> simp [hp']
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
-  rcases hγ with hγ | hγ <;>
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp <;>
-    rcases hp with hp | hp | hp <;>
-    rw [hα, hβ, hγ, hp] at hlen <;>
-    norm_num at hlen <;>
-    nlinarith [sq_nonneg ((n : ℤ) - 1)]
+  rw [← hαβ] at hlen
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
+  rcases hp with hp | hp | hp | hp <;>
+    rw [hp] at hlen <;>
+    nlinarith [mul_nonneg hquad (le_of_lt hαpos)]
 
 omit [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced] in
 /-- If two roots of length one add to a root of length two, their Cartan pairing is zero. -/
@@ -296,6 +297,32 @@ theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
   refine ⟨δ, hδ, hδshort, hbot, htop, ?_, ?_⟩
   · omega
   · omega
+
+omit [Module.IsTorsionFree ℤ M] [P.IsReduced] in
+/-- A root edge whose source and target have the same positive length has no descending root
+when every possible predecessor has length at most two. -/
+theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_of_length_eq
+    (length : I → ℤ)
+    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
+    (α β γ : I) (hαpos : 0 < length α)
+    (hminus : ∀ δ, P.root δ = P.root β + (-1 : ℤ) • P.root α → length δ ≤ 2)
+    (hβpos : 0 < length β) (hβγ : length β = length γ)
+    (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 0 := by
+  have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ 1 (by simpa only [one_zsmul] using h)
+  have hpair : P.pairing β α = -1 := by
+    rw [← hβγ] at hlen
+    norm_num at hlen
+    nlinarith
+  rw [P.chainBotCoeff_eq_zero_iff]
+  right
+  rintro ⟨δ, hδ⟩
+  have hδ' : P.root δ = P.root β + (-1 : ℤ) • P.root α := by
+    simpa only [neg_one_zsmul, sub_eq_add_neg] using hδ
+  have hδlen := P.length_of_root_eq_add_zsmul length hsym α β δ (-1) hδ'
+  have hδbound := hminus δ hδ'
+  rw [hpair] at hδlen
+  norm_num at hδlen
+  nlinarith [hβpos]
 
 end
 

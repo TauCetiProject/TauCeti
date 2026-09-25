@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 
 /-!
@@ -24,6 +25,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation`: a choice of one dart from each reversed pair.
 * `TauCeti.DoubledQuiver.Orientation.ofLinearOrder`: orient every edge from its smaller endpoint
   to its larger endpoint.
+* `SimpleGraph.Coloring.sourceSink`: direct every edge toward the `true` endpoint of a
+  two-colouring.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
@@ -180,6 +183,32 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
   ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+
+/-- An orientation has one arrow, in total across the two directions, over each edge. -/
+theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
+    Nat.card (vertex G o i ⟶ vertex G o j) +
+        Nat.card (vertex G o j ⟶ vertex G o i) =
+      if G.Adj i j then 1 else 0 := by
+  rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
+  split_ifs with h
+  · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
+      rw [h1, h2]
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
+      rw [h1, h2]
+  · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
+    have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
+    rw [h1, h2]
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
@@ -344,5 +373,73 @@ theorem symmetrifyMap_comp_unsymmetrifyMap :
 instance unsymmetrifyMapMapReverse : Prefunctor.MapReverse (unsymmetrifyMap G o) where
   map_reverse' _ := Subsingleton.elim _ _
 
+/-- The comparison from a doubled graph to a symmetrified orientation is a quiver covering. In
+fact it is an isomorphism of quivers, but the covering interface is the part needed to transport
+sums over the arrows incident to a vertex. -/
+theorem unsymmetrifyMap_isCovering : (unsymmetrifyMap G o).IsCovering := by
+  apply Prefunctor.isCovering_of_bijective_star
+  intro i
+  let φ := unsymmetrifyMap G o
+  let ψ := symmetrifyMap G o
+  have hφψ : φ ⋙q ψ = Prefunctor.id (DoubledQuiver G) :=
+    unsymmetrifyMap_comp_symmetrifyMap G o
+  have hψφ : ψ ⋙q φ = Prefunctor.id (Symmetrify (OrientedQuiver G o)) :=
+    symmetrifyMap_comp_unsymmetrifyMap G o
+  have hφ_inj : Function.Injective (φ.star i) := by
+    intro x y hxy
+    have h := congrArg (ψ.star (φ.obj i)) hxy
+    -- `Prefunctor.star_comp` is definitional, but Lean does not otherwise recognize this
+    -- application of the two successive star maps as the star map of the composite prefunctor.
+    change (φ ⋙q ψ).star i x = (φ ⋙q ψ).star i y at h
+    rw [hφψ] at h
+    exact h
+  refine ⟨hφ_inj, ?_⟩
+  intro y
+  have hobj : ψ.obj (φ.obj i) = i := congrArg (fun F => F.obj i) hφψ
+  let z : Quiver.Star i :=
+    ⟨ψ.obj y.1, Quiver.homOfEq (ψ.map y.2) hobj rfl⟩
+  refine ⟨z, ?_⟩
+  let htarget := congrArg (fun F => F.obj y.1) hψφ
+  apply Sigma.ext htarget
+  exact (Quiver.Hom.cast_heq rfl htarget _).symm.trans
+    (heq_of_eq (Subsingleton.elim _ _))
+
+/-- The inverse comparison from a symmetrified orientation to the doubled graph is also a quiver
+covering. -/
+theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
+  let φ := unsymmetrifyMap G o
+  let ψ := symmetrifyMap G o
+  have hφ : φ.IsCovering := unsymmetrifyMap_isCovering G o
+  have hcomp : (φ ⋙q ψ).IsCovering := by
+    rw [unsymmetrifyMap_comp_symmetrifyMap G o]
+    exact ⟨fun _ => Function.bijective_id, fun _ => Function.bijective_id⟩
+  exact Prefunctor.IsCovering.of_comp_left (φ := φ) (ψ := ψ) hφ hcomp
+    (φ.obj_bijective_of_comp_eq_id ψ (unsymmetrifyMap_comp_symmetrifyMap G o)
+      (symmetrifyMap_comp_unsymmetrifyMap G o)).2
+
 end DoubledQuiver
 end TauCeti
+
+namespace SimpleGraph.Coloring
+
+open TauCeti.DoubledQuiver
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- The **source--sink orientation** supplied by a two-colouring: an edge is directed toward its
+endpoint of colour `true`. -/
+def sourceSink (C : G.Coloring Bool) : Orientation G where
+  carrier := {d | C d.snd = true}
+  symm_mem_iff_not_mem d := by
+    -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
+    change C d.fst = true ↔ C d.snd ≠ true
+    have h := C.valid d.adj
+    cases hi : C d.fst <;> cases hj : C d.snd <;> simp_all
+
+/-- A dart belongs to the source--sink orientation exactly when its target has colour `true`. -/
+@[simp]
+theorem mem_sourceSink_iff (C : G.Coloring Bool) (d : G.Dart) :
+    d ∈ C.sourceSink ↔ C d.snd = true :=
+  Iff.rfl
+
+end SimpleGraph.Coloring

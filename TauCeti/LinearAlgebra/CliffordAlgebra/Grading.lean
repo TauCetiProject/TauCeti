@@ -26,8 +26,9 @@ degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. The case of
 the product is odd, is the one that matters downstream.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
-indexed by `s` has degree `s.card`. This statement belongs to the grading API independently of any
-spin representation.
+indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
+and the two graded pieces meet only in `0` — that degree is the *only* one it has. This statement
+belongs to the grading API independently of any spin representation.
 
 ## Main results
 
@@ -38,7 +39,8 @@ spin representation.
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` reads that off in
   the odd case.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
-  homogeneous of degree given by the cardinality of its index set.
+  homogeneous of degree given by the cardinality of its index set, and
+  `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
 -/
 
 public section
@@ -94,5 +96,27 @@ variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [M
     (⟨s, rfl⟩ : Set.powersetCard I s.card)).2
   rw [← ExteriorAlgebra.basis_eq_coe_basis] at h
   exact h
+
+/-- **An exterior coordinate-basis vector is homogeneous of exactly one degree**: it lies in the
+graded piece `i` precisely when `i` is the parity of its number of coordinates. -/
+@[simp]
+theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) (s : Finset I)
+    (i : ZMod 2) :
+    b.ExteriorAlgebra s ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔
+      (s.card : ZMod 2) = i := by
+  refine ⟨fun hmem => ?_, fun h => h ▸ b.exteriorAlgebra_mem_evenOdd_card s⟩
+  by_contra hne
+  have hcard := b.exteriorAlgebra_mem_evenOdd_card s
+  have hpair : ∀ c d : ZMod 2, c ≠ d → (c = 0 ∧ d = 1) ∨ (c = 1 ∧ d = 0) := by decide
+  have hsplit := hpair _ _ hne
+  have hbot : b.ExteriorAlgebra s ∈
+      CliffordAlgebra.evenOdd (0 : QuadraticForm R M) 0 ⊓
+        CliffordAlgebra.evenOdd (0 : QuadraticForm R M) 1 := by
+    rcases hsplit with ⟨hc, hi⟩ | ⟨hc, hi⟩
+    · exact ⟨hc ▸ hcard, hi ▸ hmem⟩
+    · exact ⟨hi ▸ hmem, hc ▸ hcard⟩
+  rw [(CliffordAlgebra.evenOdd_isCompl (Q := (0 : QuadraticForm R M))).inf_eq_bot,
+    Submodule.mem_bot] at hbot
+  exact b.ExteriorAlgebra.ne_zero s hbot
 
 end Module.Basis
