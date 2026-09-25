@@ -18,7 +18,7 @@ Upper unitriangular matrices over `ZMod p` form a `p`-group of units. A bound on
 comes from nilpotence of strictly upper triangular matrices.
 -/
 
-@[expose] public section
+public section
 
 namespace Matrix
 
@@ -46,6 +46,16 @@ theorem pow_apply_ne_zero_le {R : Type*} [CommRing R]
 /-- Upper unitriangularity of a square matrix over `ZMod p`. -/
 def IsUnitri (p D : ℕ) (M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) : Prop :=
   ∀ a b, b ≤ a → M a b = (1 : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) a b
+
+/-- A matrix is upper unitriangular iff its diagonal entries are `1` and its entries below the
+diagonal are `0`. -/
+theorem isUnitri_iff {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)} :
+    IsUnitri p D M ↔ (∀ a, M a a = 1) ∧ ∀ a b, b < a → M a b = 0 := by
+  refine ⟨fun h ↦ ⟨fun a ↦ by rw [h a a le_rfl, one_apply_eq],
+    fun a b hab ↦ by rw [h a b hab.le, one_apply_ne hab.ne']⟩, fun ⟨hd, hl⟩ a b hab ↦ ?_⟩
+  rcases hab.lt_or_eq with hab | rfl
+  · rw [hl a b hab, one_apply_ne hab.ne']
+  · rw [hd, one_apply_eq]
 
 /-- The product of upper unitriangular matrices is upper unitriangular. -/
 theorem IsUnitri.mul {M M' : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
@@ -100,10 +110,15 @@ def unitriangular : Subgroup (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ whe
     rw [hinv, Set.mem_ofPred, Units.val_pow_eq_pow_val]
     exact hu.pow D _
 
+/-- A unit lies in `unitriangular D` iff its underlying matrix is upper unitriangular. -/
+theorem mem_unitriangular {u : (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ} :
+    u ∈ unitriangular D ↔ IsUnitri p D u :=
+  Iff.rfl
+
 /-- The group of upper unitriangular matrices over `ZMod p` is a `p`-group. -/
 theorem isPGroup_unitriangular : IsPGroup p (unitriangular (p := p) D) := fun u ↦
   ⟨D + 1, Subtype.ext (Units.ext (by
     rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact IsUnitri.pow_eq_one D u.2))⟩
+    exact ((mem_unitriangular D).1 u.2).pow_eq_one D))⟩
 
 end Matrix

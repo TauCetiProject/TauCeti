@@ -24,9 +24,6 @@ of free groups as a special case.
   lies outside some normal subgroup of finite index whose quotient is a `p`-group.
 * `FreeGroup.instResiduallyFinite`: free groups are residually finite.
 
-The proof uses finite upper unitriangular representations over `ZMod p`, in the spirit of the
-Magnus embedding reduced modulo `p`.
-
 ## References
 
 * W. Magnus, *Beziehungen zwischen Gruppen und Idealen in einem speziellen Ring*,
@@ -122,12 +119,11 @@ private theorem one_add_shift_pow_apply (x : X) (n : ℕ) (a b : Fin (D + 1)) :
   · exact Finset.sum_eq_zero fun j _ ↦ ite_eq_right fun h' ↦ h ⟨by omega, h'.2⟩
 
 private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x) := by
-  unfold IsUnitri
-  intro a b hab
+  refine (isUnitri_iff D).2 ⟨fun a ↦ by simp [shift], fun a b hab ↦ ?_⟩
   have : ¬ ((b : ℕ) = a + 1 ∧ ℓ b = some x) := fun h ↦ by
-    have : (b : ℕ) ≤ a := hab
+    have : (b : ℕ) < a := hab
     omega
-  simp [shift, this]
+  simp [shift, this, hab.ne']
 
 variable [hp : Fact p.Prime]
 
@@ -135,7 +131,7 @@ variable [hp : Fact p.Prime]
 private def generator (x : X) : unitriangular (p := p) D :=
   ⟨Units.ofPowEqOne _ (p ^ (D + 1)) ((isUnitri_one_add_shift ℓ D x).pow_eq_one D)
       (pow_pos hp.out.pos _).ne',
-    isUnitri_one_add_shift ℓ D x⟩
+    (mem_unitriangular D).2 (isUnitri_one_add_shift ℓ D x)⟩
 
 private theorem generator_val (x : X) :
     (((generator (p := p) ℓ D x : unitriangular (p := p) D) :
@@ -156,7 +152,7 @@ private theorem coe_rep_of_zpow (x : X) (e : ℤ) :
       (1 + shift ℓ D x) ^ (e % (p ^ (D + 1) : ℕ)).toNat := by
   have hpow : generator (p := p) ℓ D x ^ p ^ (D + 1) = 1 := Subtype.ext (Units.ext (by
     rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact IsUnitri.pow_eq_one D (generator ℓ D x).2))
+    exact ((mem_unitriangular D).1 (generator ℓ D x).2).pow_eq_one D))
   rw [rep, map_zpow, lift_apply_of, zpow_eq_zpow_emod' e hpow,
     ← Int.toNat_of_nonneg (Int.emod_nonneg _ (Nat.cast_ne_zero.2 (pow_pos hp.out.pos _).ne')),
     zpow_natCast, Subgroup.coe_pow, Units.val_pow_eq_pow_val, generator_val]
@@ -264,16 +260,15 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
     simpa using hR
   | cons a s ih =>
     obtain ⟨x, e⟩ := a
-    obtain ⟨hs0, hsc⟩ := (show (∀ a ∈ (x, e) :: s, a.2 ≠ 0) ∧
-      ((x, e) :: s).IsChain (fun a b ↦ a.1 ≠ b.1) from hs)
+    obtain ⟨hs0, hsc⟩ := isSyllableNormal_iff.1 hs
     obtain ⟨hrun, hL'⟩ := hL
     have hLt : L + weight p e ≤ D := hL'.le
     have hrunx : ℓ (L + weight p e) = some x :=
       (spelled_iff ℓ).1 hrun _ (by have := one_le_weight (p := p) e; omega) le_rfl
     rw [syllableProd_cons, _root_.map_mul, Subgroup.coe_mul, Units.val_mul, ← mul_assoc]
     -- Apply the one-syllable step to `x ^ e`, then continue with the remaining syllables.
-    refine ih ⟨fun a ha ↦ hs0 a (List.mem_cons_of_mem _ ha), hsc.tail⟩ _ hL' _
-      (RowInv.mul ℓ D hR hLt (hprev (x, e) rfl) ?_ ?_ ?_) ?_
+    refine ih (isSyllableNormal_iff.2 ⟨fun a ha ↦ hs0 a (List.mem_cons_of_mem _ ha), hsc.tail⟩)
+      _ hL' _ (RowInv.mul ℓ D hR hLt (hprev (x, e) rfl) ?_ ?_ ?_) ?_
     -- The run of `x` ends at `L + weight p e`: the next syllable has a different letter.
     · cases s with
       | nil => exact Or.inl hL'

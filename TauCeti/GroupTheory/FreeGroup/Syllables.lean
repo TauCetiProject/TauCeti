@@ -14,7 +14,7 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 generators with consecutive generators distinct.
 -/
 
-@[expose] public section
+public section
 
 namespace FreeGroup
 
@@ -41,6 +41,12 @@ theorem syllableProd_cons (a : X × ℤ) (s : List (X × ℤ)) :
 distinct. -/
 def IsSyllableNormal (s : List (X × ℤ)) : Prop :=
   (∀ a ∈ s, a.2 ≠ 0) ∧ s.IsChain fun a b ↦ a.1 ≠ b.1
+
+/-- A syllable list is normal iff its exponents are nonzero and consecutive generators are
+distinct. -/
+theorem isSyllableNormal_iff {s : List (X × ℤ)} :
+    IsSyllableNormal s ↔ (∀ a ∈ s, a.2 ≠ 0) ∧ s.IsChain fun a b ↦ a.1 ≠ b.1 :=
+  Iff.rfl
 
 /-- Every element of a free group is the product of a normal syllable list. -/
 theorem exists_isSyllableNormal (w : FreeGroup X) :
