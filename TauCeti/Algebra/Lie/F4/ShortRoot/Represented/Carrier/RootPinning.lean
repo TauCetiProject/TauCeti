@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Carrier.PointAction
+public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Exponential
 
 /-!
@@ -34,18 +35,6 @@ local notation "𝔽₂" => ZMod 2
 
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
-private theorem repr_comp_of_basis
-    {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N]
-    (b : Module.Basis ι R M) (c : Module.Basis ι R N) (f : M →ₗ[R] N)
-    (hf : ∀ i, f (b i) = c i) (x : M) : c.repr (f x) = b.repr x := by
-  have h : c.repr.toLinearMap ∘ₗ f = b.repr.toLinearMap := by
-    apply b.ext
-    intro i
-    exact (congrArg c.repr (hf i)).trans
-      ((c.repr_self i).trans (b.repr_self i).symm)
-  exact DFunLike.congr_fun h x
-
 /-- The prescribed quotient and ideal bases have the same coordinates under the pinned
 identification after scalar extension. -/
 theorem f4ShortRootLieIdealBasis_repr_quotientToIdeal
@@ -53,7 +42,7 @@ theorem f4ShortRootLieIdealBasis_repr_quotientToIdeal
     (f4ShortRootLieIdealBasis.baseChange A).repr
         (f4ShortRootQuotientToIdealBaseChange x) =
       (f4ShortRootQuotientBasis.baseChange A).repr x := by
-  apply repr_comp_of_basis (f4ShortRootQuotientBasis.baseChange A)
+  apply Module.Basis.repr_map_eq_of_map_basis (f4ShortRootQuotientBasis.baseChange A)
     (f4ShortRootLieIdealBasis.baseChange A) f4ShortRootQuotientToIdealBaseChange _ x
   intro a
   simp only [Module.Basis.baseChange_apply, f4ShortRootQuotientToIdealBaseChange_tmul,

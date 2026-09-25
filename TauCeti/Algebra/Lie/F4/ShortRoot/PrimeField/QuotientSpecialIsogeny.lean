@@ -226,7 +226,7 @@ private theorem quotientIsogeny_square_torus
   simpa only [f4SpecialIsogenyTorusMap_apply_apply] using h₂
 
 private theorem points_frobeniusBialgHom
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
+    {A : Type*} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
     GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv ((g.comp (frobeniusBialgHom 𝔽₂ Q).toAlgHom).comp
           (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
@@ -321,14 +321,14 @@ def specialIsogenyHom : groupScheme ⟶ groupScheme :=
 
 /-- The characteristic-two special endomorphism of the matrix-valued F4 carrier. It is induced
 by the represented quotient, with exponent one on long roots and two on short roots. -/
-noncomputable def specialIsogeny (A : Type) [CommRing A] [Algebra 𝔽₂ A] :
+noncomputable def specialIsogeny (A : Type*) [CommRing A] [Algebra 𝔽₂ A] :
     points A →* points A :=
   (coordinatePointsEquiv A).toMonoidHom.comp
     (((CommHopfAlgCat.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)).hom.comp
       (coordinatePointsEquiv A).symm.toMonoidHom)
 
 /-- The special endomorphism is precomposition by its coordinate morphism. -/
-theorem specialIsogeny_coordinatePointsEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+theorem specialIsogeny_coordinatePointsEquiv (A : Type*) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
     specialIsogeny A (coordinatePointsEquiv A q) =
       coordinatePointsEquiv A (WithConv.toConv (q.ofConv.comp quotientIsogeny.hom.toAlgHom)) := by
@@ -369,7 +369,7 @@ using the pinned long/short exponent convention. -/
   rw [← coe_coordinatePointsEquiv, hq, coe_weightTorusPoints_eq]
 
 /-- The special isogeny commutes with extension of the coefficient algebra. -/
-@[simp] theorem pointsMap_specialIsogeny {A B : Type} [CommRing A] [CommRing B]
+@[simp] theorem pointsMap_specialIsogeny {A B : Type*} [CommRing A] [CommRing B]
     [Algebra 𝔽₂ A] [Algebra 𝔽₂ B] (f : A →ₐ[𝔽₂] B) (g : points A) :
     pointsMap f (specialIsogeny A g) = specialIsogeny B (pointsMap f g) := by
   obtain ⟨q, rfl⟩ := (coordinatePointsEquiv A).surjective g
@@ -381,7 +381,7 @@ using the pinned long/short exponent convention. -/
   rfl
 
 /-- Squaring the special endomorphism gives the prime-field Frobenius on all carrier points. -/
-@[simp] theorem specialIsogeny_specialIsogeny (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+@[simp] theorem specialIsogeny_specialIsogeny (A : Type*) [CommRing A] [Algebra 𝔽₂ A]
     (g : points A) : specialIsogeny A (specialIsogeny A g) = frobenius 1 A g := by
   obtain ⟨q, rfl⟩ := (coordinatePointsEquiv A).surjective g
   apply Subtype.ext

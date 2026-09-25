@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Carrier.PointAction
+public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Torus
 
@@ -132,20 +133,6 @@ theorem f4ShortRootQuotient_endOfPoint_torus
       (congrArg (fun t : A => t • ((f4ShortRootQuotientBasis.baseChange A) a))
         (coe_torusCharacter_f4ShortRootQuotientWeight s a)))))
 
-private theorem toMatrix_eq_diagonal_of_basis
-    {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι R M) (f : M →ₗ[R] M) (c : ι → R)
-    (hf : ∀ i, f (b i) = c i • b i) :
-    LinearMap.toMatrix b b f = Matrix.diagonal c := by
-  ext i j
-  simp only [LinearMap.toMatrix_apply, hf, map_smul, Module.Basis.repr_self,
-    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, Matrix.diagonal_apply]
-  by_cases h : i = j
-  · subst j
-    simp
-  · simp [h, Ne.symm h]
-
 /-- Evaluating the quotient coordinate map at a weight-torus point applies the special torus
 map to that point. -/
 theorem pointsMulEquiv_f4ShortRootQuotientCoordinateBialgHom_torus
@@ -166,7 +153,8 @@ theorem pointsMulEquiv_f4ShortRootQuotientCoordinateBialgHom_torus
       pointsMulEquiv_comp_f4ShortRootQuotientCoordinateBialgHom g
     _ = Matrix.diagonal (fun a =>
         ((torusCharacter (f4SpecialIsogenyTorusMap s) (f4ShortRootWeight a) : Aˣ) : A)) :=
-      toMatrix_eq_diagonal_of_basis _ _ _ (f4ShortRootQuotient_endOfPoint_torus g s hg)
+      LinearMap.toMatrix_eq_diagonal_of_basis _ _ _
+        (f4ShortRootQuotient_endOfPoint_torus g s hg)
     _ = _ := (TauCeti.diagGL_coe _).symm
 
 end

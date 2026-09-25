@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Exponential
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.First
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.DividedSquare
+public import TauCeti.LinearAlgebra.LinearMap.QuadraticPolynomial
 
 /-!
 # Integral root exponentials on the modular F₄ quotient
@@ -31,23 +32,6 @@ open _root_.LieAlgebra _root_.LieAlgebra.IsKilling LieModule Module
 open scoped TensorProduct
 
 noncomputable section
-
-private theorem quadraticPolynomial_congr
-    {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-    {x₀ x₁ x₂ y₀ y₁ y₂ : M} (t : A)
-    (h₀ : x₀ = y₀) (h₁ : x₁ = y₁) (h₂ : x₂ = y₂) :
-    x₀ + t • x₁ + t ^ 2 • x₂ = y₀ + t • y₁ + t ^ 2 • y₂ := by
-  subst y₀
-  subst y₁
-  subst y₂
-  rfl
-
-private theorem map_quadraticPolynomial
-    {A M N : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-    [AddCommGroup N] [Module A N] (f : M →ₗ[A] N) (t : A) (x₀ x₁ x₂ : M) :
-    f (x₀ + t • x₁ + t ^ 2 • x₂) =
-      f x₀ + t • f x₁ + t ^ 2 • f x₂ := by
-  rw [map_add, map_add, map_smul, map_smul]
 
 /-- A short signed-simple source has parameter exponent two. -/
 theorem isogenyExponent_eq_two_of_short (k : Fin 4 ⊕ Fin 4)
@@ -138,7 +122,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
   let q := f4ShortRootBaseChangeQuotient (A := A)
   exact (congrArg q (f4RootExponential_tmul k t x)).trans
-    ((map_quadraticPolynomial q t _ _ _).trans
+    ((LinearMap.map_quadraticPolynomial q t _ _ _).trans
       (quadraticPolynomial_congr t
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)
         (f4ShortRootBaseChangeQuotient_tmul (1 : A)
@@ -439,7 +423,7 @@ theorem f4ShortRootQuotient_rootExponential_pinning
           t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
             f4ShortRootQuotientDividedSquareColumn k a)) =
         f4ShortRootTransportedQuotientPolynomial k t a := by
-    exact (map_quadraticPolynomial E t _ _ _).trans
+    exact (LinearMap.map_quadraticPolynomial E t _ _ _).trans
       (quadraticPolynomial_congr t h₀ h₁ h₂)
   exact hpoly.trans (hmap.trans (f4ShortRootQuotientColumns_eq_exponential k t a))
 
