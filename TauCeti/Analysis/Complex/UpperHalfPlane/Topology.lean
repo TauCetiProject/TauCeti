@@ -177,6 +177,7 @@ theorem closure_preimage_re (s : Set ℝ) :
 
 /-- The closure of an open right half-plane of `ℍ`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_lt_re` for `ℂ`. -/
+@[simp]
 theorem closure_setOfPred_lt_re (a : ℝ) : closure {z : ℍ | a < z.re} = {z : ℍ | a ≤ z.re} := by
   -- `{z | a < z.re}` unfolds to the preimage of `Set.Ioi a` under `re`, both being the same
   -- predicate `fun z => a < z.re` spelled two ways.
@@ -187,6 +188,7 @@ theorem closure_setOfPred_lt_re (a : ℝ) : closure {z : ℍ | a < z.re} = {z : 
 
 /-- The closure of an open left half-plane of `ℍ`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_re_lt` for `ℂ`. -/
+@[simp]
 theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : ℍ | z.re ≤ a} := by
   -- `{z | z.re < a}` unfolds to the preimage of `Set.Iio a` under `re`, both being the same
   -- predicate `fun z => z.re < a` spelled two ways.
