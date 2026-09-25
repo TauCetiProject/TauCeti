@@ -123,21 +123,21 @@ enough. -/
 differences of those of `C` and `D`, rescaled by powers of `D.u⁻¹`. -/
 
 /-- The scaling factor of `C * D⁻¹` is `C.u * D.u⁻¹`. -/
-lemma mul_inv_u (C D : VariableChange R) : (C * D⁻¹).u = C.u * D.u⁻¹ :=
+@[simp] lemma mul_inv_u (C D : VariableChange R) : (C * D⁻¹).u = C.u * D.u⁻¹ :=
   rfl
 
 /-- The translation `r` of `C * D⁻¹` is `(C.r - D.r) * D.u⁻¹ ^ 2`. -/
-lemma mul_inv_r (C D : VariableChange R) : (C * D⁻¹).r = (C.r - D.r) * ↑D.u⁻¹ ^ 2 := by
+@[simp] lemma mul_inv_r (C D : VariableChange R) : (C * D⁻¹).r = (C.r - D.r) * ↑D.u⁻¹ ^ 2 := by
   simp only [mul_def, inv_def]
   ring
 
 /-- The shear `s` of `C * D⁻¹` is `(C.s - D.s) * D.u⁻¹`. -/
-lemma mul_inv_s (C D : VariableChange R) : (C * D⁻¹).s = (C.s - D.s) * ↑D.u⁻¹ := by
+@[simp] lemma mul_inv_s (C D : VariableChange R) : (C * D⁻¹).s = (C.s - D.s) * ↑D.u⁻¹ := by
   simp only [mul_def, inv_def]
   ring
 
 /-- The translation `t` of `C * D⁻¹` is `(C.t - D.t - D.s * (C.r - D.r)) * D.u⁻¹ ^ 3`. -/
-lemma mul_inv_t (C D : VariableChange R) :
+@[simp] lemma mul_inv_t (C D : VariableChange R) :
     (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) * ↑D.u⁻¹ ^ 3 := by
   simp only [mul_def, inv_def]
   ring
