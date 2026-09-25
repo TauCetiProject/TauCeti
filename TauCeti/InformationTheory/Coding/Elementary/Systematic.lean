@@ -94,19 +94,11 @@ theorem generator_swap (a : F) :
   ext r (i | i) <;>
     simp only [generator_def, Matrix.submatrix_apply, id_eq, Equiv.sumComm_apply,
       Sum.swap_inl, Sum.swap_inr]
-  · change (fromCols (1 : Matrix (Fin 1) (Fin 1) F)
-        (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)) r (Sum.inr i) =
-        (fromCols (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)
-          (1 : Matrix (Fin 1) (Fin 1) F)) r (Sum.inl i)
-    exact (Matrix.fromCols_apply_inr (1 : Matrix (Fin 1) (Fin 1) F)
+  · exact (Matrix.fromCols_apply_inr (1 : Matrix (Fin 1) (Fin 1) F)
       (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F) r i).trans
       (Matrix.fromCols_apply_inl (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)
         (1 : Matrix (Fin 1) (Fin 1) F) r i).symm
-  · change (fromCols (1 : Matrix (Fin 1) (Fin 1) F)
-        (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)) r (Sum.inl i) =
-        (fromCols (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)
-          (1 : Matrix (Fin 1) (Fin 1) F)) r (Sum.inr i)
-    exact (Matrix.fromCols_apply_inl (1 : Matrix (Fin 1) (Fin 1) F)
+  · exact (Matrix.fromCols_apply_inl (1 : Matrix (Fin 1) (Fin 1) F)
       (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F) r i).trans
       (Matrix.fromCols_apply_inr (fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)
         (1 : Matrix (Fin 1) (Fin 1) F) r i).symm
