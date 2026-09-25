@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Sylow
+import Mathlib.Data.Nat.Prime.Factorial
 
 /-!
 # Sylow subgroups of prime order
@@ -30,6 +31,13 @@ generate conjugate subgroups.
 -/
 
 public section
+
+/-- A prime occurs only once in its own factorial. -/
+theorem Nat.Prime.not_sq_dvd_factorial {p : ℕ} (hp : p.Prime) : ¬ p ^ 2 ∣ p.factorial := by
+  intro h
+  rw [← Nat.mul_factorial_pred hp.ne_zero, pow_two] at h
+  have := hp.dvd_factorial.1 (Nat.dvd_of_mul_dvd_mul_left hp.pos h)
+  exact (Nat.not_le_of_gt (Nat.sub_lt hp.pos (by omega))) this
 
 namespace Sylow
 
