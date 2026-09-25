@@ -20,12 +20,12 @@ This supplies the morphism part of the character-group classification of groups 
 multiplicative type split by `L`, including tori. The exponent groups need not be finitely
 generated or torsion-free.
 
+Under the character comparison of `Galois.Character`, the descended morphisms of
+`Galois.Map` induce the original equivariant maps on exponent groups.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.23 and Appendix A.64.
-
-The construction uses the descended morphisms of `Galois.Map` and the character comparison
-of `Galois.Character`; no new descent or split group-algebra construction is needed.
 -/
 
 public section
@@ -138,6 +138,16 @@ private theorem splitInvariantsMap_single
     groupAlgebraInvariantsCharacterEquiv_symm_apply_val,
     groupAlgebraInvariantsCharacterMap_apply, ofAdd_toAdd] using h
 
+private theorem splitInvariantsMap_apply_invariant
+    (F : groupAlgebraInvariants rho →ₐc[k] groupAlgebraInvariants tau)
+    (x : groupAlgebraInvariants rho) :
+    splitInvariantsMap F (x : MonoidAlgebra L (Multiplicative M)) =
+      (F x : MonoidAlgebra L (Multiplicative N)) := by
+  simp only [splitInvariantsMap, BialgHom.comp_apply, BialgEquiv.toBialgHom_eq_coe,
+    BialgEquiv.coe_toBialgHom,
+    groupAlgebraInvariantsBaseChangeBialgEquiv_symm_apply, Bialgebra.TensorProduct.map_tmul,
+    BialgHom.id_apply, groupAlgebraInvariantsBaseChangeBialgEquiv_tmul, one_smul]
+
 private theorem splitInvariantsMap_injective :
     Function.Injective (splitInvariantsMap (rho := rho) (tau := tau)) := by
   intro F G h
@@ -145,7 +155,7 @@ private theorem splitInvariantsMap_injective :
   intro x
   apply Subtype.val_injective
   have hx := DFunLike.congr_fun h (x : MonoidAlgebra L (Multiplicative M))
-  simpa [splitInvariantsMap] using hx
+  simpa only [splitInvariantsMap_apply_invariant] using hx
 
 /-- Descending the recovered character map returns the original Hopf algebra morphism.
 In particular, every morphism between the descended groups is induced by a character map. -/
