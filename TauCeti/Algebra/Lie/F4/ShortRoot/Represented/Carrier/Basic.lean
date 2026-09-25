@@ -8,10 +8,8 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.PrimeField
 public import TauCeti.Algebra.AlgebraicGroup.Representation.GeneratedFlag
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
-public import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # The represented flag as a comodule of the prime-field F4 carrier
