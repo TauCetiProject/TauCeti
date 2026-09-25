@@ -79,8 +79,6 @@ positive degree.
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
   §2.7 (the monodromy of a cover is well defined up to the numbering of the fibre).
-* [BelyiMaps roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/BelyiMaps/README.md),
-  Layers 6.1 and 6.3 (the three cover carriers, isomorphism relations, and class quotients).
 -/
 
 public section
@@ -421,7 +419,7 @@ noncomputable def ConnectedCover.numbering (c : ConnectedCover x n) :
   ν := c.nonempty_equiv_fin.some
   pathConnected := c.pathConnected
 
-/-- A pointed cover with a chosen numbering of its fibre. -/
+/-- Chooses an arbitrary numbering of the fibre of a pointed cover. -/
 -- Applying the chosen numbering to `c.e` requires its projected cover to be definitionally
 -- `c.cover`.
 @[expose] noncomputable def ConnectedPointedCover.numbering (c : ConnectedPointedCover x n) :
