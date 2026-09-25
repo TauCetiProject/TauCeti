@@ -176,11 +176,8 @@ theorem equivDihedral_z (m : ℕ) (hm : 2 ≤ m) :
 @[simp]
 theorem equivDihedral_symm_r_one (m : ℕ) (hm : 2 ≤ m) :
     (equivDihedral m hm).symm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m := by
-  unfold equivDihedral
-  simp only [MulEquiv.symm_symm, dihedralEquiv,
-    TauCeti.dihedralGroupMulEquiv_apply, TauCeti.dihedralHom_r]
-  rw [cast_one_of_two_le m hm]
-  simp
+  apply (equivDihedral m hm).injective
+  rw [MulEquiv.apply_symm_apply, equivDihedral_y_mul_x]
 
 /-- The dihedral triangle group has cardinality `2m`. -/
 @[simp]
