@@ -36,7 +36,6 @@ classes; that inverse is not constructed here.
 * `TauCeti.TriangulatedK0.of_singleFunctor_shortExact` is the triangulated `K₀` relation between
   the degree-zero objects of a short exact sequence.
 * `TauCeti.AbelianK0.toBoundedDerivedK0_of` computes the map on an object class.
-* `TauCeti.AbelianK0.toBoundedDerivedK0_unique` is the universal characterization of the map.
 
 ## Mathlib infrastructure
 
@@ -91,17 +90,6 @@ complex. -/
     toBoundedDerivedK0 (of X) =
       TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X) :=
   lift_of _ X
-
-/-- A homomorphism from abelian `K₀` is the canonical map to derived `K₀` when it sends every
-object class to the class of its degree-zero complex. -/
-theorem toBoundedDerivedK0_unique
-    (f : AbelianK0 A →+ TriangulatedK0 (DerivedCategory.Bounded A))
-    (hf : ∀ X : A, f (of X) =
-      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)) :
-    f = toBoundedDerivedK0 := by
-  refine lift_unique _ f ?_
-  intro X
-  exact hf X
 
 end AbelianK0
 
