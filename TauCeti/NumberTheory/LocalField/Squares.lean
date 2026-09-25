@@ -188,6 +188,7 @@ theorem isSquare_of_eq_one_add_four_mul (h2 : (2 : K) ≠ 0) {w : Kˣ} {m : 𝒪
   group
 
 /-- In residue characteristic two, `4 ∈ 𝓂[K]`, so every `1 + 4n` with `n ∈ 𝒪[K]` is a unit. -/
+@[simp]
 theorem valuation_one_add_four_mul (h2 : (2 : K) ≠ 0) (he : 0 < natCastValuation K 2 h2)
     (n : 𝒪[K]) : valuation K (1 + 4 * (n : K)) = 1 := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
