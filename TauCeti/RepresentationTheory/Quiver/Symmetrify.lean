@@ -17,6 +17,9 @@ This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` cons
 ## Main results
 
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
+* `TauCeti.symmetrifyHomEquiv`: the arrows of the doubled quiver from `a` to `b` are the arrows
+  of `Q` from `a` to `b` together with those from `b` to `a`.
+* `TauCeti.card_symmetrify_hom`: hence their number is `#(a ⟶ b) + #(b ⟶ a)`.
 
 ## References
 
@@ -63,5 +66,38 @@ vertices, hence bijective on them. -/
 theorem symmetrify_of_obj_bijective {Q : Type u} [Quiver.{v} Q] :
     Function.Bijective (Symmetrify.of (V := Q)).obj :=
   Function.bijective_id
+
+/-- The arrows of the doubled quiver from `a` to `b` are the arrows of `Q` from `a` to `b`, the
+forward arrows `Quiver.Hom.toPos`, together with those from `b` to `a`, the backward arrows
+`Quiver.Hom.toNeg`. -/
+def symmetrifyHomEquiv {Q : Type u} [Quiver.{v} Q] (a b : Q) :
+    (Symmetrify.of.obj a ⟶ Symmetrify.of.obj b) ≃ (a ⟶ b) ⊕ (b ⟶ a) :=
+  Equiv.refl _
+
+@[simp]
+theorem symmetrifyHomEquiv_toPos {Q : Type u} [Quiver.{v} Q] {a b : Q} (f : a ⟶ b) :
+    symmetrifyHomEquiv a b f.toPos = Sum.inl f :=
+  (rfl)
+
+@[simp]
+theorem symmetrifyHomEquiv_toNeg {Q : Type u} [Quiver.{v} Q] {a b : Q} (f : b ⟶ a) :
+    symmetrifyHomEquiv a b f.toNeg = Sum.inr f :=
+  (rfl)
+
+@[simp]
+theorem symmetrifyHomEquiv_symm_inl {Q : Type u} [Quiver.{v} Q] {a b : Q} (f : a ⟶ b) :
+    (symmetrifyHomEquiv a b).symm (Sum.inl f) = f.toPos :=
+  (rfl)
+
+@[simp]
+theorem symmetrifyHomEquiv_symm_inr {Q : Type u} [Quiver.{v} Q] {a b : Q} (f : b ⟶ a) :
+    (symmetrifyHomEquiv a b).symm (Sum.inr f) = f.toNeg :=
+  (rfl)
+
+/-- The doubled quiver has `#(a ⟶ b) + #(b ⟶ a)` arrows from `a` to `b`. -/
+theorem card_symmetrify_hom {Q : Type u} [Quiver.{v} Q] [∀ i j : Q, Fintype (i ⟶ j)] (a b : Q) :
+    Fintype.card (Symmetrify.of.obj a ⟶ Symmetrify.of.obj b) =
+      Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) :=
+  (Fintype.card_congr (symmetrifyHomEquiv a b)).trans Fintype.card_sum
 
 end TauCeti

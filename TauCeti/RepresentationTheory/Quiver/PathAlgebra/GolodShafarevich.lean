@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.Algebra.Order.BigOperators.WeightedGrowth
 public import TauCeti.Combinatorics.Quiver.BoundedPaths
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
@@ -45,11 +46,18 @@ d_{n+2}(j) + d_n(j) ≥ ∑_{b : i ⟶ j} d_{n+1}(i),
 
 which is the vertexwise form of the coefficientwise inequality `H_A(t) (1 - C t + t²) ≥ 1` for the
 matrix Hilbert series of `A`, `C` being the arrow-count matrix of `R`. Weighting by `δ`, the sums
-`s_n = ∑_j δ_j d_n(j)` then satisfy `s_{n+2} - s_{n+1} ≥ s_{n+1} - s_n ≥ ⋯ ≥ s_1 - s_0 ≥ s_0 > 0`,
-so they are unbounded, while `s_n ≤ dim A · ∑_j δ_j`.
+`s_n = ∑_j δ_j d_n(j)` then satisfy `s_{n+2} - s_{n+1} ≥ s_{n+1} - s_n ≥ ⋯ ≥ s_1 - s_0 ≥ s_0`,
+so `s_n ≥ (n + 1) s_0 ≥ (n + 1) ∑_j δ_j` (`TauCeti.add_one_mul_sum_mul_le_sum_mul`). If `A` had
+finite dimension `N`, then `d_N(j) ≤ N` would give `s_N ≤ N ∑_j δ_j`, contradicting this at
+`n = N` since `∑_j δ_j > 0`.
 
 ## Main results
 
+* `TauCeti.PathAlgebra.pathsInto`: the span of the paths of length `n` ending at `j`, with its
+  characterization `TauCeti.PathAlgebra.mem_pathsInto_iff` as the degree-`n` part of `e_j kR`.
+* `TauCeti.PathAlgebra.sum_card_mul_finrank_map_pathsInto_le_add`: the Anick-type inequality
+  `∑_{b : i ⟶ j} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)` for the dimensions of the images of these
+  spans in the quotient.
 * `TauCeti.PathAlgebra.not_module_finite_quotient_span_range_of_two_mul_le_sum`: **a path algebra
   with one quadratic corner relation per vertex, whose arrow counts admit a nonzero nonnegative
   weight `δ` with `2 δ_i ≤ ∑_j #(i ⟶ j) δ_j`, is infinite-dimensional.**
@@ -58,7 +66,8 @@ so they are unbounded, while `s_n ≤ dim A · ∑_j δ_j`.
 
 All the dimension counting takes place among subspaces of `kR` itself; the quotient enters only
 through the images of the spaces `P_n(j)`, so no grading of the quotient is needed. The
-intermediate spaces and inequalities are private to this file.
+intersections `K_n(j)` with the relation ideal and the decomposition of that ideal are private to
+this file.
 
 ## References
 
@@ -136,18 +145,20 @@ section Semiring
 variable [CommSemiring k]
 
 /-- The span of the paths of length `n` ending at `j`: the degree-`n` part of the left corner
-`e_j kR`. -/
-private noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
+`e_j kR` (`TauCeti.PathAlgebra.mem_pathsInto_iff`). -/
+noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R))
 
 variable {k}
 
-private theorem ofPath_mem_pathsInto {s j : R} (p : Path s j) :
+/-- A path ending at `j` lies in the span of the paths of its length into `j`. -/
+theorem ofPath_mem_pathsInto {s j : R} (p : Path s j) :
     (ofPath ⟨s, j, p⟩ : pathAlgebra k R) ∈ pathsInto k p.length j :=
   Submodule.subset_span ⟨⟨⟨s, p⟩, rfl⟩, rfl⟩
 
-private theorem ofPath_mem_pathsInto_of_length {s j : R} {n : ℕ} (p : Path s j)
+/-- A path of length `n` ending at `j` lies in the span of the paths of length `n` into `j`. -/
+theorem ofPath_mem_pathsInto_of_length {s j : R} {n : ℕ} (p : Path s j)
     (hp : p.length = n) : (ofPath ⟨s, j, p⟩ : pathAlgebra k R) ∈ pathsInto k n j :=
   hp ▸ ofPath_mem_pathsInto p
 
@@ -156,7 +167,8 @@ private theorem ofArrow_mem_pathsInto {i j : R} (b : i ⟶ j) :
   rw [ofArrow_eq_ofPath]
   exact ofPath_mem_pathsInto_of_length _ (Path.length_toPath b)
 
-private theorem pathsInto_le_grade (n : ℕ) (j : R) : pathsInto k n j ≤ grade k R n := by
+/-- The paths of length `n` into `j` span a subspace of the degree-`n` part of the path algebra. -/
+theorem pathsInto_le_grade (n : ℕ) (j : R) : pathsInto k n j ≤ grade k R n := by
   refine Submodule.span_le.2 ?_
   rintro _ ⟨⟨⟨s, p⟩, hp⟩, rfl⟩
   exact ofPath_mem_grade_of_length hp
@@ -187,7 +199,16 @@ private theorem vertexIdempotent_mul_mem_pathsInto {n : ℕ} (j : R) {x : pathAl
   | add y z _ _ hy hz => rw [mul_add]; exact add_mem hy hz
   | smul c y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ c hy
 
-private theorem mul_mem_pathsInto {a c : ℕ} {i j : R} {x y : pathAlgebra k R}
+/-- **The span of the paths of length `n` into `j` is the degree-`n` part of the corner
+`e_j kR`.** -/
+theorem mem_pathsInto_iff {n : ℕ} {j : R} {x : pathAlgebra k R} :
+    x ∈ pathsInto k n j ↔ x ∈ grade k R n ∧ vertexIdempotent k j * x = x :=
+  ⟨fun hx => ⟨pathsInto_le_grade n j hx, vertexIdempotent_mul_of_mem_pathsInto hx⟩,
+    fun ⟨hx, hjx⟩ => hjx ▸ vertexIdempotent_mul_mem_pathsInto j hx⟩
+
+/-- The product of an element of `pathsInto k a i` and one of `pathsInto k c j` lies in
+`pathsInto k (c + a) i`: the paths of the right factor are followed by those of the left one. -/
+theorem mul_mem_pathsInto {a c : ℕ} {i j : R} {x y : pathAlgebra k R}
     (hx : x ∈ pathsInto k a i) (hy : y ∈ pathsInto k c j) : x * y ∈ pathsInto k (c + a) i := by
   induction hx using Submodule.span_induction with
   | mem x hx =>
@@ -284,7 +305,7 @@ section Field
 
 variable [Field k]
 
-private instance finiteDimensional_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ)
+instance finiteDimensional_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ)
     (j : R) : FiniteDimensional k (pathsInto k n j) :=
   FiniteDimensional.span_of_finite k (Set.finite_range _)
 
@@ -622,57 +643,38 @@ private theorem relPathsInto_eq_bot_of_lt_two [∀ a b : R, Finite (a ⟶ b)]
 
 end Degrees
 
-section Growth
-
-/-- **Linear growth from the Anick-type inequalities.** If `d_m(j)` are natural numbers with
-`d_0 ≥ 1`, `d_1(j) ≥ ∑_i c_{ij} d_0(i)` and `d_{m+2}(j) + d_m(j) ≥ ∑_i c_{ij} d_{m+1}(i)`, and a
-nonnegative vector `δ` satisfies `2 δ_i ≤ ∑_j c_{ij} δ_j`, then the weighted sums
-`s_m = ∑_j δ_j d_m(j)` grow at least linearly: `s_{m+2} - s_{m+1} ≥ s_{m+1} - s_m ≥ ⋯ ≥ s_0`. -/
-private theorem add_one_mul_sum_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] (c : ι → ι → ℕ) (δ : ι → S) (hδ0 : 0 ≤ δ)
-    (hδ : ∀ i, 2 * δ i ≤ ∑ j, (c i j : S) * δ j) (d : ℕ → ι → ℕ) (h0 : ∀ j, 1 ≤ d 0 j)
-    (h1 : ∀ j, ∑ i, c i j * d 0 i ≤ d 1 j)
-    (h2 : ∀ m j, ∑ i, c i j * d (m + 1) i ≤ d (m + 2) j + d m j) (m : ℕ) :
-    ((m : S) + 1) * ∑ j, δ j ≤ ∑ j, δ j * d m j := by
-  set s : ℕ → S := fun m => ∑ j, δ j * d m j with hs
-  -- Weighting a lower bound `∑_i c_{ij} e_i ≤ f_j` by `δ` doubles the weighted sum of `e`.
-  have key : ∀ e f : ι → ℕ, (∀ j, ∑ i, c i j * e i ≤ f j) →
-      2 * ∑ i, δ i * e i ≤ ∑ j, δ j * f j := by
-    intro e f hef
-    calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by
-          rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ i, (∑ j, (c i j : S) * δ j) * e i :=
-          Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (Nat.cast_nonneg _)
-      _ = ∑ j, δ j * ((∑ i, c i j * e i : ℕ) : S) := by
-          simp only [Finset.sum_mul, Finset.mul_sum, Nat.cast_sum, Nat.cast_mul]
-          rw [Finset.sum_comm]
-          exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ j, δ j * f j :=
-          Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left
-            (Nat.cast_le.2 (hef j)) (hδ0 j)
-  have hs0 : ∑ j, δ j ≤ s 0 := by
-    rw [hs]
-    exact Finset.sum_le_sum fun j _ => le_mul_of_one_le_right (hδ0 j) (by exact_mod_cast h0 j)
-  have hs1 : 2 * s 0 ≤ s 1 := key _ _ h1
-  have hs2 : ∀ m, 2 * s (m + 1) ≤ s (m + 2) + s m := by
-    intro m
-    have := key _ _ (h2 m)
-    simpa only [hs, Nat.cast_add, mul_add, Finset.sum_add_distrib] using this
-  have hstep : ∀ m, ∑ j, δ j ≤ s (m + 1) - s m ∧ ((m : S) + 1) * ∑ j, δ j ≤ s m := by
-    intro m
-    induction m with
-    | zero => constructor <;> [linarith; simpa using hs0]
-    | succ m ih =>
-      have := hs2 m
-      push_cast
-      constructor <;> nlinarith [ih.1, ih.2]
-  exact (hstep m).2
-
-end Growth
-
 section Main
 
 variable {k} [Field k] [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
+
+/-- **The Anick-type inequality for one quadratic corner relation per vertex.** Let each vertex `v`
+of `R` carry a relator `r_v` of path length two in the corner `e_v kR e_v`, and write `d_n(j)` for
+the dimension of the image in `kR / (r_v)` of the span of the paths of length `n` into `j`. Then
+`∑_{b : i ⟶ j} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)`, the vertexwise form of the coefficientwise
+inequality `H_A(t) (1 - C t + t²) ≥ 1` for the matrix Hilbert series of the quotient. -/
+theorem sum_card_mul_finrank_map_pathsInto_le_add (r : R → pathAlgebra k R)
+    (h2 : ∀ v, r v ∈ grade k R 2) (hl : ∀ v, vertexIdempotent k v * r v = r v)
+    (hr : ∀ v, r v * vertexIdempotent k v = r v) (m : ℕ) (j : R) :
+    ∑ i, Fintype.card (i ⟶ j) * Module.finrank k ((pathsInto k (m + 1) i).map
+        (Ideal.Quotient.mkₐ k (TwoSidedIdeal.span (Set.range r)).asIdeal).toLinearMap) ≤
+      Module.finrank k ((pathsInto k (m + 2) j).map
+          (Ideal.Quotient.mkₐ k (TwoSidedIdeal.span (Set.range r)).asIdeal).toLinearMap) +
+        Module.finrank k ((pathsInto k m j).map
+          (Ideal.Quotient.mkₐ k (TwoSidedIdeal.span (Set.range r)).asIdeal).toLinearMap) := by
+  have hdK := finrank_map_add_finrank_relPathsInto r
+  have hb := finrank_relPathsInto_add_le h2 hl hr m j
+  have hc : ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) ≤
+      Nat.card (PathInto R (m + 2) j) := card_arrow_mul_card_pathInto_le (m + 1) j
+  have hsum : ∑ i, Fintype.card (i ⟶ j) * Module.finrank k ((pathsInto k (m + 1) i).map
+      (Ideal.Quotient.mkₐ k (TwoSidedIdeal.span (Set.range r)).asIdeal).toLinearMap) +
+      ∑ i, Fintype.card (i ⟶ j) * Module.finrank k (relPathsInto r (m + 1) i) =
+        ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ => by rw [← mul_add, hdK]
+  rw [finrank_pathsInto] at hb
+  have e2 := hdK (m + 2) j
+  have e0 := hdK m j
+  omega
 
 /-- **A path algebra with one quadratic corner relation per vertex is infinite-dimensional when
 its arrow counts admit a suitable weight.** Let `R` be a finite quiver with finitely many arrows
@@ -691,9 +693,11 @@ theorem not_module_finite_quotient_span_range_of_two_mul_le_sum {S : Type*} [Com
   intro hfin
   set N := Module.finrank k (pathAlgebra k R ⧸ (TwoSidedIdeal.span (Set.range r)).asIdeal)
   -- `d n j` is the dimension of the image in the quotient of the paths of length `n` into `j`.
-  obtain ⟨d, hdN, hdK⟩ : ∃ d : ℕ → R → ℕ, (∀ n j, d n j ≤ N) ∧
-      ∀ n j, d n j + Module.finrank k (relPathsInto r n j) = Nat.card (PathInto R n j) :=
-    ⟨_, fun n j => Submodule.finrank_le _, finrank_map_add_finrank_relPathsInto r⟩
+  obtain ⟨d, hdN, hdK, h2'⟩ : ∃ d : ℕ → R → ℕ, (∀ n j, d n j ≤ N) ∧
+      (∀ n j, d n j + Module.finrank k (relPathsInto r n j) = Nat.card (PathInto R n j)) ∧
+      ∀ m j, ∑ i, Fintype.card (i ⟶ j) * d (m + 1) i ≤ d (m + 2) j + d m j :=
+    ⟨_, fun n j => Submodule.finrank_le _, finrank_map_add_finrank_relPathsInto r,
+      sum_card_mul_finrank_map_pathsInto_le_add r h2 hl hr⟩
   have hK01 : ∀ n j, n < 2 → Module.finrank k (relPathsInto r n j) = 0 := fun n j hn => by
     rw [relPathsInto_eq_bot_of_lt_two h2 hl hr hn j, finrank_bot]
   -- The Anick-type inequalities for the dimensions `d n j`.
@@ -712,33 +716,23 @@ theorem not_module_finite_quotient_span_range_of_two_mul_le_sum {S : Type*} [Com
       rwa [hK01 0 i (by norm_num), add_zero] at this
     simp only [hi]
     exact (card_arrow_mul_card_pathInto_le 0 j).trans hj.ge
-  have h2' : ∀ m j, ∑ i, Fintype.card (i ⟶ j) * d (m + 1) i ≤ d (m + 2) j + d m j := by
-    intro m j
-    have hb := finrank_relPathsInto_add_le h2 hl hr m j
-    have hc : ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) ≤
-        Nat.card (PathInto R (m + 2) j) := card_arrow_mul_card_pathInto_le (m + 1) j
-    have hsum : ∑ i, Fintype.card (i ⟶ j) * d (m + 1) i +
-        ∑ i, Fintype.card (i ⟶ j) * Module.finrank k (relPathsInto r (m + 1) i) =
-          ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) := by
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun i _ => by rw [← mul_add, hdK]
-    rw [finrank_pathsInto] at hb
-    have e2 := hdK (m + 2) j
-    have e0 := hdK m j
-    omega
   -- The weighted sums grow linearly but are bounded by `N ∑ δ`.
   have hpos : 0 < ∑ j, δ j := by
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hδ
     exact Finset.sum_pos' (fun j _ => hδ0 j) ⟨i, Finset.mem_univ i, lt_of_le_of_ne (hδ0 i)
       (Ne.symm hi)⟩
-  have hgrow := add_one_mul_sum_le_sum_mul (fun i j => Fintype.card (i ⟶ j)) δ hδ0 hδle d h0 h1
-    h2' N
+  have hgrow := add_one_mul_sum_mul_le_sum_mul (fun i j => (Fintype.card (i ⟶ j) : S)) hδ0 hδle
+    (d := fun n j => (d n j : S)) (fun _ _ => Nat.cast_nonneg _)
+    (fun j => by exact_mod_cast h1 j) (fun m j => by exact_mod_cast h2' m j) N
+  have hs0 : ∑ j, δ j ≤ ∑ j, δ j * (d 0 j : S) :=
+    Finset.sum_le_sum fun j _ => le_mul_of_one_le_right (hδ0 j) (by exact_mod_cast h0 j)
   have hbound : ∑ j, δ j * (d N j : S) ≤ (N : S) * ∑ j, δ j := by
     rw [Finset.mul_sum]
     exact Finset.sum_le_sum fun j _ => by
       rw [mul_comm (N : S)]
       exact mul_le_mul_of_nonneg_left (Nat.cast_le.2 (hdN N j)) (hδ0 j)
-  nlinarith
+  have := mul_le_mul_of_nonneg_left hs0 (by positivity : (0 : S) ≤ (N : S) + 1)
+  linarith
 
 end Main
 

@@ -97,18 +97,18 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
     rw [doubledVertexIdempotent_def k (Q := Q) v] at h
     -- `Symmetrify.of.obj v` is `v` itself (`TauCeti.symmetrify_of_obj`).
     exact h
-  -- An arrow `i ⟶ j` of the doubled quiver is an arrow of `Q` from `i` to `j` or from `j` to `i`.
-  have hcard (i j : Symmetrify Q) : Fintype.card (i ⟶ j) =
-      @Fintype.card (@Quiver.Hom Q _ i j) (‹∀ i j : Q, Fintype (i ⟶ j)› i j) +
-        @Fintype.card (@Quiver.Hom Q _ j i) (‹∀ i j : Q, Fintype (i ⟶ j)› j i) :=
-    (Fintype.card_congr (Equiv.refl _)).trans
-      (@Fintype.card_sum _ _ (‹∀ i j : Q, Fintype (i ⟶ j)› i j) (‹∀ i j : Q, Fintype (i ⟶ j)› j i))
+  -- An arrow `i ⟶ j` of the doubled quiver is an arrow of `Q` from `i` to `j` or from `j` to `i`;
+  -- `Symmetrify.of.obj i` is `i` itself (`TauCeti.symmetrify_of_obj`).
+  have hcard (i j : Q) : Fintype.card (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) =
+      Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) :=
+    card_symmetrify_hom i j
   have hI : preprojectiveIdeal k Q = TwoSidedIdeal.span (Set.range
       (localPreprojectiveRelator k (Q := Q) : Symmetrify Q → pathAlgebra k (Symmetrify Q))) :=
     preprojectiveIdeal_eq_span_range_localPreprojectiveRelator k Q
   have h := not_module_finite_quotient_span_range_of_two_mul_le_sum (R := Symmetrify Q)
     (localPreprojectiveRelator k (Q := Q)) (localPreprojectiveRelator_mem_grade_two k (Q := Q))
-    hl hr hδ0 hδ fun i => (hδle i).trans_eq (Finset.sum_congr rfl fun j _ => by rw [hcard i j])
+    hl hr hδ0 hδ fun i => (hδle i).trans_eq (Finset.sum_congr rfl fun j _ =>
+      congrArg (fun n : ℕ => (n : S) * δ j) (hcard i j).symm)
   -- `h` is about the same quotient, with the finiteness instances of the doubled quiver.
   convert h using 4 <;> exact hI
 
