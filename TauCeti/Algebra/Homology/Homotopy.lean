@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
+public import TauCeti.Algebra.Homology.HomologicalComplex
 
 /-!
 # Constructions on chain homotopies
@@ -99,17 +100,6 @@ end Homotopy
 section Pow
 
 variable {C : Type u} [Category.{v} C] {ι : Type*} {c : ComplexShape ι}
-
-namespace HomologicalComplex
-
-variable [HasZeroMorphisms C] {K : HomologicalComplex C c} {s : K ⟶ K}
-
-/-- Degreewise recursion for the powers of a chain endomorphism. -/
-lemma pow_f_succ (m : ℕ) (i : ι) :
-    (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
-  rw [pow_succ', End.mul_def, comp_f]
-
-end HomologicalComplex
 
 namespace Homotopy
 
