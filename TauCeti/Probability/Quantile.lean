@@ -306,9 +306,7 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
 /-- **The CDF/quantile transport of an atomless real law.** The cumulative distribution function
 and the quantile function of an atomless probability measure `ν` on `ℝ` push `ν` and Lebesgue
 measure restricted to `[0, 1]` forward onto one another, and are mutually inverse almost
-everywhere; together they are a mod-zero isomorphism between `ν` and the unit interval. It is
-`@[expose]`d so that its maps, `cdf ν` and `ν.quantile`, hold by `rfl` downstream. -/
-@[expose]
+everywhere; together they are a mod-zero isomorphism between `ν` and the unit interval. -/
 def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Mod0MeasureIso ℝ ℝ ν (volume.restrict (Set.Icc 0 1)) where
   toFun := cdf ν
@@ -320,5 +318,15 @@ def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMeasure ν]
     simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using (map_quantile_volume_Ioo ν)
   left_inv_ae := quantile_cdf_ae ν
   right_inv_ae := cdf_quantile_ae ν
+
+@[simp]
+theorem realMod0MeasureIso_toFun (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] : (realMod0MeasureIso ν).toFun = cdf ν :=
+  (rfl)
+
+@[simp]
+theorem realMod0MeasureIso_invFun (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] : (realMod0MeasureIso ν).invFun = ν.quantile :=
+  (rfl)
 
 end MeasureTheory.Measure

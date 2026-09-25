@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Atom
-public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Quantile
 
 /-!
@@ -58,15 +57,6 @@ private def atomless_standardBorel_mod0MeasureIso (α) [MeasurableSpace α]
   exact (@embeddingRealMod0MeasureIso α _ _ μ hne).trans
     (@realMod0MeasureIso (Measure.map (embeddingReal α) μ) hprob hnull)
 
-private theorem atomless_standardBorel_toFun_mem (α) [MeasurableSpace α]
-    [StandardBorelSpace α] (μ : Measure α) [IsProbabilityMeasure μ] [NullSingletonClass μ]
-    (x : α) : (atomless_standardBorel_mod0MeasureIso α μ).toFun x ∈ I := by
-  have htoFun :
-      (atomless_standardBorel_mod0MeasureIso α μ).toFun x =
-        cdf (Measure.map (embeddingReal α) μ) (embeddingReal α x) := rfl
-  rw [htoFun]
-  exact ⟨ProbabilityTheory.cdf_nonneg _ _, ProbabilityTheory.cdf_le_one _ _⟩
-
 /-- A measure-preserving map in each direction between an atomless standard-Borel
 probability space and the unit interval, with the two maps mutually inverse almost everywhere. -/
 theorem exists_mpModNull_equiv_unitInterval
@@ -76,10 +66,7 @@ theorem exists_mpModNull_equiv_unitInterval
       MeasurePreserving f μ (volume : Measure I) ∧
       MeasurePreserving g (volume : Measure I) μ ∧
       (∀ᵐ x ∂μ, g (f x) = x) ∧
-      (∀ᵐ y ∂(volume : Measure I), f (g y) = y) := by
-  let e := atomless_standardBorel_mod0MeasureIso Ω μ
-  apply mod0MeasureIso_to_unitInterval e
-  intro x
-  simpa [e] using atomless_standardBorel_toFun_mem Ω μ x
+      (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
+  mod0MeasureIso_to_unitInterval (atomless_standardBorel_mod0MeasureIso Ω μ)
 
 end MeasureTheory.Measure

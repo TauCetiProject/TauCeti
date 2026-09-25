@@ -25,12 +25,14 @@ The original work is copyright Cameron Freer and licensed under Apache 2.0.
 
 ## Main results
 
-* `MeasureTheory.Measure.Mod0MeasureIso` is the structure, `Mod0MeasureIso.measurePreserving`
-  reads off the measure-preserving forward map, and `Mod0MeasureIso.trans` composes two of them;
+* `MeasureTheory.Measure.Mod0MeasureIso` is the structure;
+  `Mod0MeasureIso.measurePreserving` and `Mod0MeasureIso.measurePreserving_invFun` read off the
+  two measure-preserving maps, `Mod0MeasureIso.symm` inverts an isomorphism, and
+  `Mod0MeasureIso.trans` composes two of them;
 * `MeasureTheory.Measure.embeddingRealMod0MeasureIso` transports a standard-Borel space into `ℝ`
   by `embeddingReal`;
 * `MeasureTheory.Measure.mod0MeasureIso_to_unitInterval` turns a mod-zero isomorphism into `ℝ`
-  whose image lies in the unit interval into measure-preserving maps in both directions between
+  carrying the unit interval measure into measure-preserving maps in both directions between
   that space and the unit interval.
 
 The instance built from the cumulative distribution function and the quantile of an atomless
@@ -68,10 +70,38 @@ theorem Mod0MeasureIso.measurePreserving {α β : Type*} [MeasurableSpace α] [M
     MeasurePreserving e.toFun μ ν :=
   ⟨e.measurable_toFun, e.map_toFun⟩
 
-/-- The composition of two mod-zero isomorphisms is again a mod-zero isomorphism.
+/-- The backward map of a mod-zero isomorphism preserves the measure. -/
+theorem Mod0MeasureIso.measurePreserving_invFun {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
+    MeasurePreserving e.invFun ν μ :=
+  ⟨e.measurable_invFun, e.map_invFun⟩
 
-It is `@[expose]`d so that the maps of a composite hold by `rfl` downstream. -/
-@[expose]
+/-- The inverse of a mod-zero isomorphism is a mod-zero isomorphism between the reversed spaces,
+with the two maps interchanged. -/
+def Mod0MeasureIso.symm {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) : Mod0MeasureIso β α ν μ where
+  toFun := e.invFun
+  invFun := e.toFun
+  measurable_toFun := e.measurable_invFun
+  measurable_invFun := e.measurable_toFun
+  map_toFun := e.map_invFun
+  map_invFun := e.map_toFun
+  left_inv_ae := e.right_inv_ae
+  right_inv_ae := e.left_inv_ae
+
+@[simp]
+theorem Mod0MeasureIso.symm_toFun {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
+    e.symm.toFun = e.invFun :=
+  (rfl)
+
+@[simp]
+theorem Mod0MeasureIso.symm_invFun {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
+    e.symm.invFun = e.toFun :=
+  (rfl)
+
+/-- The composition of two mod-zero isomorphisms is again a mod-zero isomorphism. -/
 def Mod0MeasureIso.trans {α β γ} [MeasurableSpace α] [MeasurableSpace β]
     [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
     (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
@@ -103,10 +133,22 @@ def Mod0MeasureIso.trans {α β γ} [MeasurableSpace α] [MeasurableSpace β]
     rw [hy1]
     exact hy2
 
+@[simp]
+theorem Mod0MeasureIso.trans_toFun {α β γ} [MeasurableSpace α] [MeasurableSpace β]
+    [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
+    (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
+    (e.trans f).toFun = f.toFun ∘ e.toFun :=
+  (rfl)
+
+@[simp]
+theorem Mod0MeasureIso.trans_invFun {α β γ} [MeasurableSpace α] [MeasurableSpace β]
+    [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
+    (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
+    (e.trans f).invFun = e.invFun ∘ f.invFun :=
+  (rfl)
+
 /-- Transporting a standard-Borel space into `ℝ` by `embeddingReal` is a mod-zero isomorphism
-onto the pushforward of the measure. It is `@[expose]`d so that its forward map, `embeddingReal`,
-holds by `rfl` downstream. -/
-@[expose]
+onto the pushforward of the measure. -/
 def embeddingRealMod0MeasureIso (α) [MeasurableSpace α] [StandardBorelSpace α] (μ : Measure α)
     [Nonempty α] : Mod0MeasureIso α ℝ μ (Measure.map (embeddingReal α) μ) :=
   let he := measurableEmbedding_embeddingReal α
@@ -128,27 +170,59 @@ def embeddingRealMod0MeasureIso (α) [MeasurableSpace α] [StandardBorelSpace α
       simp only [id_eq]
       rw [he.leftInverse_invFun x] }
 
-/-- A mod-zero isomorphism into `ℝ` whose image lies in the unit interval gives measure-preserving
-maps in both directions between the space and the unit interval, obtained by restricting the
-forward map to the unit interval and composing the backward map with the coercion, and the two
-maps are mutually inverse almost everywhere. -/
+@[simp]
+theorem embeddingRealMod0MeasureIso_toFun (α) [MeasurableSpace α] [StandardBorelSpace α]
+    (μ : Measure α) [Nonempty α] :
+    (embeddingRealMod0MeasureIso α μ).toFun = embeddingReal α :=
+  (rfl)
+
+@[simp]
+theorem embeddingRealMod0MeasureIso_invFun (α) [MeasurableSpace α] [StandardBorelSpace α]
+    (μ : Measure α) [Nonempty α] :
+    (embeddingRealMod0MeasureIso α μ).invFun = (measurableEmbedding_embeddingReal α).invFun :=
+  (rfl)
+
+/-- A mod-zero isomorphism into `ℝ` carrying the unit interval measure gives measure-preserving
+maps in both directions between the space and the unit interval: the forward map clipped to the
+unit interval, and the backward map composed with the coercion. Since the forward map takes
+values in the unit interval outside a null set, the two maps are mutually inverse almost
+everywhere. -/
 theorem mod0MeasureIso_to_unitInterval
     {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    (e : Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc (0 : ℝ) 1)))
-    (hp : ∀ x, e.toFun x ∈ I) :
+    (e : Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc (0 : ℝ) 1))) :
     ∃ (f : α → I) (g : I → α),
       MeasurePreserving f μ volume ∧ MeasurePreserving g volume μ ∧
       (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) := by
-  let f : α → I := fun x => (⟨e.toFun x, hp x⟩ : (I : Set ℝ))
+  have hempty : (I : Set ℝ)ᶜ ∩ Set.Icc (0 : ℝ) 1 = ∅ := by
+    ext y
+    simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_Icc]
+    grind
+  have hnull : (volume.restrict (Set.Icc (0 : ℝ) 1)) (I : Set ℝ)ᶜ = 0 := by
+    rw [Measure.restrict_apply measurableSet_Icc.compl, hempty, measure_empty]
+  have hmem : ∀ᵐ x ∂μ, e.toFun x ∈ I := by
+    have hpre : {x | e.toFun x ∉ I} = e.toFun ⁻¹' (I : Set ℝ)ᶜ := by
+      ext x
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_compl_iff]
+    rw [ae_iff, hpre]
+    exact e.measurePreserving.preimage_null hnull
+  have hclip : ∀ x : α, max (0 : ℝ) (min 1 (e.toFun x)) ∈ I := by
+    intro x
+    exact ⟨by grind, by grind⟩
+  let f : α → I := fun x => ⟨max (0 : ℝ) (min 1 (e.toFun x)), hclip x⟩
   let g : I → α := fun y => e.invFun y.1
   have hfmeas : Measurable f := by
     dsimp [f]
-    exact @Measurable.subtype_mk α ℝ _ _ _ e.toFun e.measurable_toFun hp
+    exact Measurable.subtype_mk
+      (measurable_const.max (measurable_const.min e.measurable_toFun)) (h := hclip)
   have hgmeas : Measurable g := by
     dsimp [g]
     exact e.measurable_invFun.comp measurable_subtype_coe
+  have hclip_id : ∀ᵐ x ∂μ, max (0 : ℝ) (min 1 (e.toFun x)) = e.toFun x := by
+    filter_upwards [hmem] with x hx
+    grind
   have hgf : (g ∘ f) =ᵐ[μ] id := by
-    simpa [f, g, Function.comp_def] using e.left_inv_ae
+    filter_upwards [hclip_id, e.left_inv_ae] with x hx hx'
+    simp [f, g, hx, hx']
   have hval : (fun y : I => e.toFun (e.invFun (y : ℝ))) =ᵐ[(volume : Measure I)]
       (fun y : I => (y : ℝ)) := by
     simpa [Function.comp_def] using
@@ -156,14 +230,14 @@ theorem mod0MeasureIso_to_unitInterval
   have hfg : (f ∘ g) =ᵐ[(volume : Measure I)] id := by
     filter_upwards [hval] with y hy
     apply Subtype.ext
-    exact hy
+    simp only [Function.comp_apply, f, g, id_eq]
+    rw [hy]
+    grind [y.2.1, y.2.2]
   have hmapf : Measure.map f μ = volume := by
     apply unitInterval.measurableEmbedding_coe.map_injective
-    have hcomp : (Subtype.val : I → ℝ) ∘ f = e.toFun := by
-      funext x
-      rfl
-    rw [Measure.map_map unitInterval.measurePreserving_coe.measurable hfmeas, hcomp]
-    rw [unitInterval.measurePreserving_coe.map_eq]
+    have hcomp : (Subtype.val : I → ℝ) ∘ f =ᵐ[μ] e.toFun := hclip_id
+    rw [Measure.map_map unitInterval.measurePreserving_coe.measurable hfmeas,
+      Measure.map_congr hcomp, unitInterval.measurePreserving_coe.map_eq]
     exact e.map_toFun
   have hmapg : Measure.map g volume = μ := by
     have hcomp : g = e.invFun ∘ (Subtype.val : I → ℝ) := by
