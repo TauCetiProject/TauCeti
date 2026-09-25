@@ -16,8 +16,10 @@ homology of consecutive skeleta assembles into a chain complex: the cellular cha
 group in degree `n` is `Hₙ(Xⁿ, Xⁿ⁻¹)`, and its differential is the connecting morphism of the long
 exact sequence of the triple `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)` of three consecutive skeleta.  That connecting
 morphism factors as `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹)` through the singular homology of the
-middle skeleton, and the two maps it factors into are consecutive in the long exact sequence of
-the pair `(Xⁿ, Xⁿ⁻¹)`; this is why two consecutive cellular differentials compose to zero.
+middle skeleton.  Composing two consecutive differentials puts the map `Hₙ₊₁(Xⁿ⁺¹) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ)`
+next to the connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)`; those two are consecutive in the long
+exact sequence of the pair `(Xⁿ⁺¹, Xⁿ)`, so they compose to zero, and hence so do the two
+differentials.
 
 A degree carrying no cells has equal consecutive skeleta, hence a zero cellular chain group, so
 the cellular chain complex of a finite-dimensional complex vanishes in high degrees.
@@ -113,14 +115,14 @@ abbrev skeletonPairπ (n : ℕ) : skeletonHomology C R (n + 1) n ⟶ cellularCha
 the skeletal pair followed by the map to the relative homology of the next skeletal pair.  It is
 the connecting morphism of the triple of three consecutive skeleta, by
 `TauCeti.cellularDifferential_eq_singularHomologyδ`. -/
-@[expose] def cellularDifferential (n : ℕ) :
+def cellularDifferential (n : ℕ) :
     cellularChainGroup C R (n + 1) ⟶ cellularChainGroup C R n :=
   skeletonPairδ C R n ≫ skeletonPairπ C R n
 
 /-- The cellular differential is the connecting morphism of the skeletal pair followed by the
 map to the relative homology of the next skeletal pair. -/
 lemma cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ (n : ℕ) :
-    cellularDifferential C R n = skeletonPairδ C R n ≫ skeletonPairπ C R n := rfl
+    cellularDifferential C R n = skeletonPairδ C R n ≫ skeletonPairπ C R n := (rfl)
 
 /-- The cellular differential is the connecting morphism of the long exact sequence of the triple
 `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)` of three consecutive skeleta. -/
@@ -144,18 +146,29 @@ lemma cellularDifferential_comp_cellularDifferential (n : ℕ) :
     reassoc_of% skeletonPairπ_comp_skeletonPairδ C R n, zero_comp, comp_zero]
 
 /-- The cellular chain complex of a relative CW complex with coefficients in `R`. -/
-@[expose] def cellularChainComplex : ChainComplex A ℕ :=
+def cellularChainComplex : ChainComplex A ℕ :=
   ChainComplex.of (cellularChainGroup C R) (cellularDifferential C R)
     (cellularDifferential_comp_cellularDifferential C R)
 
+/-- The objects of the cellular chain complex are the cellular chain groups. -/
 @[simp]
 lemma cellularChainComplex_X (n : ℕ) :
-    (cellularChainComplex C R).X n = cellularChainGroup C R n := rfl
+    (cellularChainComplex C R).X n = cellularChainGroup C R n := (rfl)
 
+/-- The differentials of the cellular chain complex are the cellular differentials, transported
+across `TauCeti.cellularChainComplex_X`. -/
 @[simp]
 lemma cellularChainComplex_d (n : ℕ) :
-    (cellularChainComplex C R).d (n + 1) n = cellularDifferential C R n :=
-  ChainComplex.of_d _ _ n
+    (cellularChainComplex C R).d (n + 1) n =
+      eqToHom (cellularChainComplex_X C R (n + 1)) ≫ cellularDifferential C R n ≫
+        eqToHom (cellularChainComplex_X C R n).symm := by
+  -- The object equations hold by definition, so both transports are identities; the body of
+  -- `cellularChainComplex` is not exposed, so reducing its differential needs an `unfold`.
+  have h : ∀ m : ℕ, cellularChainComplex_X C R m = rfl := fun _ ↦ Subsingleton.elim _ _
+  rw [h (n + 1), h n]
+  unfold cellularChainComplex
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  exact ChainComplex.of_d _ _ n
 
 end
 
