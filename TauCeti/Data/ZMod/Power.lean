@@ -17,7 +17,6 @@ for its inverse.
 ## Main results
 
 * `TauCeti.ZMod.ofAdd_one_pow`: the `n`-th power of the standard generator is trivial.
-* `TauCeti.ZMod.ofAdd_one_inv_pow`: the same statement for its inverse.
 -/
 
 public section
@@ -34,12 +33,6 @@ theorem ofAdd_one_pow (n : ℕ) :
   apply Multiplicative.toAdd.injective
   rw [toAdd_pow]
   simp
-
-/-- In the multiplicative tag of `ZMod n`, the `n`-th power of the inverse of
-`Multiplicative.ofAdd 1` is trivial. -/
-theorem ofAdd_one_inv_pow (n : ℕ) :
-    ((Multiplicative.ofAdd (1 : ZMod n))⁻¹) ^ n = 1 := by
-  rw [inv_pow, ofAdd_one_pow, inv_one]
 
 end ZMod
 
