@@ -99,12 +99,65 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
     fin_cases s <;> simp [Fin.exists_fin_two]
   basepoint _ := r
 
+/-- Both intersection points lie on the unique `α`-curve. -/
+@[simp]
+theorem circleTimesSphere_alpha (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).alpha p = 0 := by simp [circleTimesSphere]
+
+/-- Both intersection points lie on the unique `β`-curve. -/
+@[simp]
+theorem circleTimesSphere_beta (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).beta p = 0 := by simp [circleTimesSphere]
+
+/-- The successor on the `α`-curve exchanges the two intersection points. -/
+@[simp]
+theorem circleTimesSphere_alphaNext (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).alphaNext p = Equiv.swap 0 1 p := by simp [circleTimesSphere]
+
+/-- The successor on the `β`-curve exchanges the two intersection points. -/
+@[simp]
+theorem circleTimesSphere_betaNext (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).betaNext p = Equiv.swap 0 1 p := by simp [circleTimesSphere]
+
+/-- The regions to the left of the two `α`-arcs. -/
+@[simp]
+theorem circleTimesSphere_alphaLeft (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).alphaLeft p = ![1, 0] p := by simp [circleTimesSphere]
+
+/-- The regions to the right of the two `α`-arcs. -/
+@[simp]
+theorem circleTimesSphere_alphaRight (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).alphaRight p = ![0, 2] p := by simp [circleTimesSphere]
+
+/-- The regions to the left of the two `β`-arcs. -/
+@[simp]
+theorem circleTimesSphere_betaLeft (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).betaLeft p = ![0, 2] p := by simp [circleTimesSphere]
+
+/-- The regions to the right of the two `β`-arcs. -/
+@[simp]
+theorem circleTimesSphere_betaRight (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).betaRight p = ![1, 0] p := by simp [circleTimesSphere]
+
+/-- The basepoint lies in the region `r`. -/
+@[simp]
+theorem circleTimesSphere_basepoint (r : Fin 3) (z : Unit) :
+    (circleTimesSphere r).basepoint z = r := by simp [circleTimesSphere]
+
 /-- The generator of `circleTimesSphere r` at the intersection point `a`. -/
 def circleTimesSphereGenerator (r : Fin 3) (a : Fin 2) : (circleTimesSphere r).Generator :=
   (circleTimesSphere r).generatorOf 1 (fun _ => a) (fun _ => Subsingleton.elim _ _)
     (fun _ => Subsingleton.elim _ _)
 
-private theorem generatorChain_circleTimesSphereGenerator (r : Fin 3) (a q : Fin 2) :
+/-- The unique point chosen by `circleTimesSphereGenerator r a` is `a`. -/
+@[simp]
+theorem circleTimesSphereGenerator_point (r : Fin 3) (a : Fin 2) (i : Fin 1) :
+    (circleTimesSphere r).point (circleTimesSphereGenerator r a) i = a := by
+  simp [circleTimesSphereGenerator]
+
+/-- The generator chain is supported at its chosen intersection point. -/
+@[simp]
+theorem generatorChain_circleTimesSphereGenerator (r : Fin 3) (a q : Fin 2) :
     (circleTimesSphere r).generatorChain (circleTimesSphereGenerator r a) q =
       if a = q then 1 else 0 := by
   rw [HeegaardIntersectionSystem.generatorChain_apply]
