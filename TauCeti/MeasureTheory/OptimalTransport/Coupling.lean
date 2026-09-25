@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
+public import Mathlib.MeasureTheory.Measure.Sub
 import TauCeti.MeasureTheory.Measure.Coupling.Basic
 
 /-!
@@ -42,6 +43,8 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
   `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
   of measures, which is what mixtures of transport problems use;
+* `TauCeti.IsCoupling.sub_add` — replacing a finite part of a coupling by a measure with the same
+  two marginals keeps the coupling property, which is how a plan is perturbed locally;
 * `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
   two couplings couples the two product measures;
 * `TauCeti.IsCoupling.map_prod` — a coupling run alongside an independent sample, with measurable
@@ -259,6 +262,15 @@ protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι →
     IsCoupling (Measure.sum πs) (Measure.sum μs) (Measure.sum νs) where
   fst_eq := (Measure.fst_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).fst_eq))
   snd_eq := (Measure.snd_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).snd_eq))
+
+/-- **Rerouting part of a coupling.** Removing a finite part `κ ≤ π` of a coupling and putting
+back any measure `κ'` with the same two marginals as `κ` gives again a coupling of the same
+pair. -/
+protected theorem sub_add {κ κ' : Measure (X × Y)} [IsFiniteMeasure κ] (hπ : IsCoupling π μ ν)
+    (hκ : κ ≤ π) (hκ' : IsCoupling κ' κ.fst κ.snd) : IsCoupling (π - κ + κ') μ ν := by
+  have h := (IsCoupling.mk rfl rfl : IsCoupling (π - κ) (π - κ).fst (π - κ).snd).add hκ'
+  rwa [← Measure.fst_add, ← Measure.snd_add, Measure.sub_add_cancel_of_le hκ, hπ.fst_eq,
+    hπ.snd_eq] at h
 
 /-- Pushing a coupling forward along a measurable map of the source alone. -/
 protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Measurable f) :
