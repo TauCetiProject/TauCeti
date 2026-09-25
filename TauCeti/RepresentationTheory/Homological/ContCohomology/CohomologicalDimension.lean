@@ -78,20 +78,6 @@ variable {p : ℕ}
 
 section Torsion
 
-/-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
-`p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
-at once. -/
-theorem IsPPrimaryTorsion.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
-    [IsTopologicalAddGroup V] [DiscreteTopology V] (h : IsPPrimaryTorsion p V) (X : Type*)
-    [TopologicalSpace X] [CompactSpace X] : IsPPrimaryTorsion p C(X, V) := by
-  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
-  choose k hk using isPPrimaryTorsion_iff.1 h
-  have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
-  refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
-  obtain ⟨c, hc⟩ := pow_dvd_pow p
-    (Finset.le_sup (f := k) (hfin.mem_toFinset.2 (Set.mem_range_self x)))
-  simp [hc, mul_comm _ c, mul_smul, hk]
-
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] (X : TopRep k G) [DiscreteTopology X.V]
 
@@ -193,31 +179,31 @@ variable (p G)
 
 /-- `cohomologicalDimensionAt p G ≤ n` exactly when `Hⁱ(G, M)` vanishes above `n` for every
 discrete `p`-primary torsion `M`. -/
-theorem cohomologicalDimensionAt_le_iff (n : ℕ) :
+@[simp] theorem cohomologicalDimensionAt_le_iff (n : ℕ) :
     cohomologicalDimensionAt p G ≤ n ↔ CohomologicalDimensionLE p G n :=
   leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- `strictCohomologicalDimensionAt p G ≤ n` exactly when the `p`-primary component of
 `Hⁱ(G, M)` vanishes above `n` for every discrete `M`. -/
-theorem strictCohomologicalDimensionAt_le_iff (n : ℕ) :
+@[simp] theorem strictCohomologicalDimensionAt_le_iff (n : ℕ) :
     strictCohomologicalDimensionAt p G ≤ n ↔ StrictCohomologicalDimensionLE p G n :=
   leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- The `p`-cohomological dimension is infinite exactly when the ordinary vanishing predicate
 holds at no `n`. -/
-theorem cohomologicalDimensionAt_eq_top_iff :
+@[simp] theorem cohomologicalDimensionAt_eq_top_iff :
     cohomologicalDimensionAt p G = ⊤ ↔ ∀ n : ℕ, ¬CohomologicalDimensionLE p G n :=
   leastENatBound_eq_top_iff
 
 /-- The strict `p`-cohomological dimension is infinite exactly when the strict vanishing
 predicate holds at no `n`. -/
-theorem strictCohomologicalDimensionAt_eq_top_iff :
+@[simp] theorem strictCohomologicalDimensionAt_eq_top_iff :
     strictCohomologicalDimensionAt p G = ⊤ ↔ ∀ n : ℕ, ¬StrictCohomologicalDimensionLE p G n :=
   leastENatBound_eq_top_iff
 
 /-- `cohomologicalDimension G ≤ n` exactly when `CohomologicalDimensionLE q G n` holds for every
 prime `q`. -/
-theorem cohomologicalDimension_le_iff (n : ℕ) :
+@[simp] theorem cohomologicalDimension_le_iff (n : ℕ) :
     cohomologicalDimension G ≤ n ↔ ∀ q : ℕ, q.Prime → CohomologicalDimensionLE q G n := by
   simp only [cohomologicalDimension, iSup_le_iff, cohomologicalDimensionAt_le_iff, Nat.Primes,
     Subtype.forall]

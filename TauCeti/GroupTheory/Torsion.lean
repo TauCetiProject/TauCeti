@@ -8,6 +8,10 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+public import Mathlib.Topology.Algebra.Group.Defs
+public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Compactness.Compact
+public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -43,8 +47,8 @@ some power of `p`, that is, when Mathlib's `p`-primary component `AddCommGroup.p
 is all of `M`. This is the additive counterpart of Mathlib's `IsPGroup`, and it is the class of
 coefficient modules that cohomological dimension at `p` is tested on.
 
-Unlike a bound on the exponent, the condition is elementwise: `⨁ₖ ZMod (p ^ k)` is `p`-primary
-torsion but is killed by no single power of `p`.
+Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
+`⨁ₖ ZMod (p ^ k)` is `p`-primary torsion but is killed by no single power of `p`.
 
 ## Main results
 
@@ -182,20 +186,33 @@ variable {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
 
 /-- A group embedding into a `p`-primary torsion group is `p`-primary torsion. -/
 theorem of_injective (h : IsPPrimaryTorsion p N) (f : F) (hf : Function.Injective f) :
-    IsPPrimaryTorsion p M := by
-  refine isPPrimaryTorsion_iff.2 fun m ↦ ?_
-  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h (f m)
-  exact ⟨k, hf (by rw [map_nsmul, hk, map_zero])⟩
+    IsPPrimaryTorsion p M :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2
+    (((isPPrimaryTorsion_additive_iff (M := Multiplicative N)).1 h).of_injective
+      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
 
 /-- The image of a `p`-primary torsion group under a surjective homomorphism is `p`-primary
 torsion. -/
 theorem of_surjective (h : IsPPrimaryTorsion p M) (f : F) (hf : Function.Surjective f) :
-    IsPPrimaryTorsion p N := by
-  refine isPPrimaryTorsion_iff.2 fun n ↦ ?_
-  obtain ⟨m, rfl⟩ := hf n
-  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h m
-  exact ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
+    IsPPrimaryTorsion p N :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative N)).2
+    (((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h).of_surjective
+      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
 
 end IsPPrimaryTorsion
+
+/-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
+`p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
+at once. -/
+theorem IsPPrimaryTorsion.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [DiscreteTopology V] (h : IsPPrimaryTorsion p V) (X : Type*)
+    [TopologicalSpace X] [CompactSpace X] : IsPPrimaryTorsion p C(X, V) := by
+  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
+  choose k hk using isPPrimaryTorsion_iff.1 h
+  have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
+  refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
+  obtain ⟨c, hc⟩ := pow_dvd_pow p
+    (Finset.le_sup (f := k) (hfin.mem_toFinset.2 (Set.mem_range_self x)))
+  simp [hc, mul_comm _ c, mul_smul, hk]
 
 end TauCeti
