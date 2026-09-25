@@ -10,7 +10,6 @@ public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
-import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
 # Continuous characters and the pro-`p` Frattini subgroup
