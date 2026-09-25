@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.PontryaginDualEval
+public import TauCeti.Analysis.PositiveDefinite.AdditiveCharacter
+public import TauCeti.Analysis.Fourier.PontryaginDualEval
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 /-!
@@ -75,6 +76,17 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_add
     integral_add_measure (PontryaginDual.integrable_eval_ofAdd (μ := μ.toMeasure) g)
       (PontryaginDual.integrable_eval_ofAdd (μ := ν.toMeasure) g)]
   rfl
+
+/-- The transform of a point mass is its character. -/
+@[simp]
+theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_dirac
+    (χ : PontryaginDual (Multiplicative G)) (g : G) :
+    FiniteMeasure.pontryaginMeasureTransform
+      (⟨Measure.dirac χ, inferInstance⟩ : FiniteMeasure
+        (PontryaginDual (Multiplicative G))) g =
+      (χ (Multiplicative.ofAdd g) : ℂ) := by
+  simp [FiniteMeasure.pontryaginMeasureTransform,
+    integral_dirac' _ _ (PontryaginDual.continuous_eval_ofAdd g).stronglyMeasurable]
 
 /-- The transform of a finite positive measure on the dual is positive definite. -/
 theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasureTransform

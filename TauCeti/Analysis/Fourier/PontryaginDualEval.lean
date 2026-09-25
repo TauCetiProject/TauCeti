@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.AdditiveCharacter
+public import Mathlib.Topology.Algebra.PontryaginDual
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
