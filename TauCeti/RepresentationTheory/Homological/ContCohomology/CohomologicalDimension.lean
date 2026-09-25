@@ -149,22 +149,6 @@ noncomputable def cohomologicalDimension : ℕ∞ :=
 
 variable {p G}
 
-/-- Unfolding `CohomologicalDimensionLE`. -/
-theorem cohomologicalDimensionLE_iff {n : ℕ} :
-    CohomologicalDimensionLE p G n ↔
-      ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
-        ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) :=
-  Iff.rfl
-
-/-- Unfolding `StrictCohomologicalDimensionLE`. -/
-theorem strictCohomologicalDimensionLE_iff {n : ℕ} :
-    StrictCohomologicalDimensionLE p G n ↔
-      ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], ∀ i : ℕ, n < i →
-        AddCommGroup.primaryComponent (continuousCohomology i (ofDiscreteModule ℤ G M)) p = ⊥ :=
-  Iff.rfl
-
 /-- The ordinary vanishing predicate is upward closed in `n`. -/
 theorem CohomologicalDimensionLE.mono {m n : ℕ} (h : CohomologicalDimensionLE p G m)
     (hmn : m ≤ n) : CohomologicalDimensionLE p G n :=
@@ -207,12 +191,6 @@ prime `q`. -/
     cohomologicalDimension G ≤ n ↔ ∀ q : ℕ, q.Prime → CohomologicalDimensionLE q G n := by
   simp only [cohomologicalDimension, iSup_le_iff, cohomologicalDimensionAt_le_iff, Nat.Primes,
     Subtype.forall]
-
-/-- The cohomological dimension is the supremum of the `q`-cohomological dimensions over the
-primes `q`. -/
-theorem cohomologicalDimension_eq_iSup :
-    cohomologicalDimension G = ⨆ q : Nat.Primes, cohomologicalDimensionAt q G :=
-  (rfl)
 
 /-- The `p`-cohomological dimension is at most the cohomological dimension, for prime `p`. -/
 theorem cohomologicalDimensionAt_le_cohomologicalDimension (hp : p.Prime) :
