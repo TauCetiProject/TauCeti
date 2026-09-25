@@ -122,6 +122,10 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) :
 instance : SemilatticeInf Φ.cones :=
   Subtype.semilatticeInf fun _ _ ↦ Φ.inf_mem
 
+/-- Coercing the intersection of two fan cones gives their intersection as pointed cones. -/
+@[simp, norm_cast] theorem coe_inf (σ τ : Φ.cones) :
+    ((σ ⊓ τ : Φ.cones) : PointedCone ℝ V) = σ.1 ⊓ τ.1 := rfl
+
 /-- A fan has finitely many cones. -/
 instance : Finite Φ.cones := Φ.finite_cones.to_subtype
 

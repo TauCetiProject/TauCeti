@@ -44,7 +44,7 @@ variable (hΦ : Φ.IsRegular)
     (homOfLE inf_le_left)
 
 /-- The left overlap inclusion is the diagram map for the meet inequality. -/
-theorem analyticOverlapLeft_eq (σ τ : Φ.cones) :
+theorem analyticOverlapLeft_def (σ τ : Φ.cones) :
     Φ.analyticOverlapLeft hΦ σ τ =
       (Φ.analyticAffineChartDiagram hΦ).map (homOfLE inf_le_left) := rfl
 
@@ -56,7 +56,7 @@ theorem analyticOverlapLeft_eq (σ τ : Φ.cones) :
     (homOfLE inf_le_right)
 
 /-- The right overlap inclusion is the diagram map for the meet inequality. -/
-theorem analyticOverlapRight_eq (σ τ : Φ.cones) :
+theorem analyticOverlapRight_def (σ τ : Φ.cones) :
     Φ.analyticOverlapRight hΦ σ τ =
       (Φ.analyticAffineChartDiagram hΦ).map (homOfLE inf_le_right) := rfl
 
@@ -94,8 +94,7 @@ theorem isOpenEmbedding_analyticOverlapRight (σ τ : Φ.cones) :
 @[simp] theorem analyticOverlapOpens_self (σ : Φ.cones) :
     Φ.analyticOverlapOpens hΦ σ σ = ⊤ := by
   apply TopologicalSpace.Opens.ext
-  change Set.range (Φ.analyticOverlapLeft hΦ σ σ) = Set.univ
-  rw [analyticOverlapLeft_eq]
+  rw [coe_analyticOverlapOpens, analyticOverlapLeft_def, TopologicalSpace.Opens.coe_top]
   have h : (homOfLE (inf_le_left : σ ⊓ σ ≤ σ) : σ ⊓ σ ⟶ σ) =
       eqToHom (inf_idem σ) := Subsingleton.elim _ _
   rw [h]
@@ -124,12 +123,12 @@ theorem analyticOverlapRight_eq_swap_comp_left (σ τ : Φ.cones) :
     Φ.analyticOverlapRight hΦ σ τ =
       (Φ.analyticOverlapSwapIso hΦ σ τ).hom ≫
         Φ.analyticOverlapLeft hΦ τ σ := by
-  rw [analyticOverlapRight_eq, analyticOverlapLeft_eq, analyticOverlapSwapIso_hom]
+  rw [analyticOverlapRight_def, analyticOverlapLeft_def, analyticOverlapSwapIso_hom]
   rw [← Functor.map_comp]
   exact congrArg ((Φ.analyticAffineChartDiagram hΦ).map) (Subsingleton.elim _ _)
 
 /-- Pointwise, the right inclusion factors through the swapped left inclusion. -/
-theorem analyticOverlapRight_apply (σ τ : Φ.cones)
+theorem analyticOverlapRight_apply_eq_left_swapIso_hom_apply (σ τ : Φ.cones)
     (x : (Φ.analyticAffineChartDiagram hΦ).obj (σ ⊓ τ)) :
     Φ.analyticOverlapRight hΦ σ τ x =
       Φ.analyticOverlapLeft hΦ τ σ ((Φ.analyticOverlapSwapIso hΦ σ τ).hom x) :=
@@ -154,10 +153,8 @@ theorem analyticOverlapLeft_mem (σ τ : Φ.cones)
 theorem analyticOverlapRight_mem (σ τ : Φ.cones)
     (x : (Φ.analyticAffineChartDiagram hΦ).obj (σ ⊓ τ)) :
     Φ.analyticOverlapRight hΦ σ τ x ∈ Φ.analyticOverlapOpens hΦ τ σ := by
-  change Φ.analyticOverlapRight hΦ σ τ x ∈
-    (Φ.analyticOverlapOpens hΦ τ σ : Set _)
-  rw [← Φ.range_analyticOverlapRight hΦ σ τ]
-  exact ⟨x, rfl⟩
+  rw [Φ.analyticOverlapRight_apply_eq_left_swapIso_hom_apply hΦ σ τ]
+  exact ⟨_, rfl⟩
 
 /-- The transition between the two open overlap loci, induced by their common chart. -/
 @[expose] noncomputable def analyticOverlapHomeomorph (σ τ : Φ.cones) :
@@ -179,20 +176,31 @@ intersection-chart inclusion. -/
   let eL := (Φ.isOpenEmbedding_analyticOverlapLeft hΦ σ τ).isEmbedding.toHomeomorph
   let eR := (Φ.isOpenEmbedding_analyticOverlapLeft hΦ τ σ).isEmbedding.toHomeomorph
   let s := TopCat.homeoOfIso (Φ.analyticOverlapSwapIso hΦ σ τ)
+  -- `analyticFaceMap` is opaque, so expose the composite to apply the inverse-image law.
   change ((eL.symm.trans (s.trans eR))
     ⟨Φ.analyticOverlapLeft hΦ σ τ x, _⟩).1 = Φ.analyticOverlapRight hΦ σ τ x
   rw [Homeomorph.trans_apply, Homeomorph.trans_apply]
   have hL : eL.symm ⟨Φ.analyticOverlapLeft hΦ σ τ x, by exact ⟨x, rfl⟩⟩ = x := by
     exact (Φ.isOpenEmbedding_analyticOverlapLeft hΦ σ τ).isEmbedding.toHomeomorph_symm_apply x
   rw [hL]
-  exact (Φ.analyticOverlapRight_apply hΦ σ τ x).symm
+  exact (Φ.analyticOverlapRight_apply_eq_left_swapIso_hom_apply hΦ σ τ x).symm
+
+/-- The two overlap inclusions of a chart with itself coincide. -/
+theorem analyticOverlapRight_self (σ : Φ.cones) :
+    Φ.analyticOverlapRight hΦ σ σ = Φ.analyticOverlapLeft hΦ σ σ := by
+  unfold analyticOverlapRight analyticOverlapLeft
+  exact congrArg ((Φ.analyticAffineChartDiagram hΦ).map) (Subsingleton.elim _ _)
 
 /-- The transition across the self-overlap is the identity. -/
 @[simp] theorem analyticOverlapHomeomorph_self (σ : Φ.cones) :
     Φ.analyticOverlapHomeomorph hΦ σ σ = Homeomorph.refl _ := by
   ext ⟨x, hx⟩
   obtain ⟨y, rfl⟩ := (Φ.mem_analyticOverlapOpens hΦ σ σ x).1 hx
-  simpa [analyticOverlapRight, analyticOverlapLeft] using
-    congrArg Subtype.val (Φ.analyticOverlapHomeomorph_apply hΦ σ σ y)
+  -- The dependent membership witness hides the reflexive transition's underlying value.
+  change ↑(Φ.analyticOverlapHomeomorph hΦ σ σ
+    ⟨Φ.analyticOverlapLeft hΦ σ σ y, _⟩) = Φ.analyticOverlapLeft hΦ σ σ y
+  exact (congrArg Subtype.val
+    (Φ.analyticOverlapHomeomorph_apply hΦ σ σ y)).trans
+      (ConcreteCategory.congr_hom (Φ.analyticOverlapRight_self hΦ σ) y)
 
 end TauCeti.Toric.Fan
