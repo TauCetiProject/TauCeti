@@ -44,10 +44,14 @@ solely through the boundary it produces.
   grading of cohomology.
 * `TauCeti.AInfinityHom.cohomologyMap_id` and `TauCeti.AInfinityHom.cohomologyMap_comp`: passage to
   cohomology preserves identities and composition.
+* `TauCeti.AInfinityHom.cohomologyStrictHom_id` and
+  `TauCeti.AInfinityHom.cohomologyStrictHom_comp`: the same laws for strict cohomology morphisms.
 * `TauCeti.AInfinityHom.isQuasiIso_id` and `TauCeti.AInfinityHom.IsQuasiIso.comp`: identities are
   quasi-isomorphisms and quasi-isomorphisms compose.
 * `TauCeti.AInfinityHom.IsQuasiIso.cohomologyStrictHomInv`: a quasi-isomorphism induces an inverse
   strict quasi-isomorphism between its cohomology `A∞` algebras.
+* `TauCeti.AInfinityHom.IsQuasiIso.isQuasiIso_cohomologyStrictHom`: the forward strict
+  cohomology morphism is a quasi-isomorphism too.
 
 ## References
 
@@ -296,6 +300,23 @@ theorem cohomologyMap_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
   congr 1
   simp only [linearPart_comp, LinearMap.comp_apply]
 
+/-- Passage to cohomology sends the identity to the identity strict morphism. -/
+@[simp]
+theorem cohomologyStrictHom_id (AA : AInfinityAlgebra R A) :
+    (AInfinityHom.id AA).cohomologyStrictHom =
+      AInfinityStrictHom.id AA.cohomologyAInfinityAlgebra := by
+  ext c
+  simp only [coe_cohomologyStrictHom, cohomologyMap_id, NonUnitalAlgHom.coe_id,
+    AInfinityStrictHom.id_apply, id_eq]
+
+/-- Passage to cohomology preserves composition as strict morphisms. -/
+@[simp]
+theorem cohomologyStrictHom_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
+    (g.comp f).cohomologyStrictHom = g.cohomologyStrictHom.comp f.cohomologyStrictHom := by
+  ext c
+  simp only [coe_cohomologyStrictHom, cohomologyMap_comp, NonUnitalAlgHom.comp_apply,
+    AInfinityStrictHom.comp_apply]
+
 /-! ### Quasi-isomorphisms -/
 
 /-- An `A∞` morphism is a quasi-isomorphism when its linear part induces a bijection on
@@ -360,7 +381,9 @@ theorem cohomologyMapInv_apply {f : AInfinityHom AA BB} (hf : f.IsQuasiIso)
 theorem cohomologyMapInv_comp_cohomologyMap {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     hf.cohomologyMapInv.comp f.cohomologyMap = NonUnitalAlgHom.id R AA.Cohomology := by
   ext c
-  change hf.cohomologyLinearEquiv.symm (hf.cohomologyLinearEquiv c) = c
+  simp only [NonUnitalAlgHom.comp_apply, NonUnitalAlgHom.coe_id, id_eq,
+    cohomologyMapInv_apply]
+  rw [← hf.cohomologyLinearEquiv_apply c]
   exact hf.cohomologyLinearEquiv.symm_apply_apply c
 
 /-- The cohomology map is a left inverse to its inverse cohomology algebra map. -/
@@ -368,7 +391,9 @@ theorem cohomologyMapInv_comp_cohomologyMap {f : AInfinityHom AA BB} (hf : f.IsQ
 theorem cohomologyMap_comp_cohomologyMapInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     f.cohomologyMap.comp hf.cohomologyMapInv = NonUnitalAlgHom.id R BB.Cohomology := by
   ext c
-  change hf.cohomologyLinearEquiv (hf.cohomologyLinearEquiv.symm c) = c
+  simp only [NonUnitalAlgHom.comp_apply, NonUnitalAlgHom.coe_id, id_eq,
+    cohomologyMapInv_apply]
+  rw [← hf.cohomologyLinearEquiv_apply (hf.cohomologyLinearEquiv.symm c)]
   exact hf.cohomologyLinearEquiv.apply_symm_apply c
 
 /-- The inverse of the map induced on cohomology by a quasi-isomorphism preserves degrees. -/
@@ -463,6 +488,29 @@ theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQua
   apply (Function.Bijective.of_comp_iff _ hB).1
   rw [hcomm]
   exact hA.comp hf.cohomologyLinearEquiv.symm.bijective
+
+/-- The strict morphism induced on cohomology by a quasi-isomorphism is itself a
+quasi-isomorphism. -/
+theorem isQuasiIso_cohomologyStrictHom {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    f.cohomologyStrictHom.toAInfinityHom.IsQuasiIso := by
+  let eA : AA.Cohomology → AA.cohomologyAInfinityAlgebra.Cohomology :=
+    fun x => AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+      simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])
+  let eB : BB.Cohomology → BB.cohomologyAInfinityAlgebra.Cohomology :=
+    fun x => BB.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+      simp only [AInfinityAlgebra.mem_cycles, BB.cohomologyAInfinityAlgebra_m_one_apply])
+  have hA : Function.Bijective eA := cohomologyModelClass_bijective AA
+  have hB : Function.Bijective eB := cohomologyModelClass_bijective BB
+  have hcomm : ⇑f.cohomologyStrictHom.toAInfinityHom.cohomologyMap ∘ eA =
+      eB ∘ ⇑f.cohomologyMap := by
+    funext x
+    simp only [Function.comp_apply, eA, eB, cohomologyMap_cohomologyClass]
+    congr 1
+    simp only [AInfinityStrictHom.linearPart_toAInfinityHom,
+      AInfinityStrictHom.coe_toLinearMap, coe_cohomologyStrictHom]
+  apply (Function.Bijective.of_comp_iff _ hA).1
+  rw [hcomm]
+  exact hB.comp hf
 
 end IsQuasiIso
 
