@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PositiveDefinite.AdditiveCharacter
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 /-!
 # Positive-definite transforms of measures on a Pontryagin dual
@@ -35,17 +36,17 @@ private theorem continuous_character_eval (g : G) :
 
 variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
 
-/-- The Fourier–Stieltjes transform of a measure on the Pontryagin dual of an
+/-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
 additive group. -/
 noncomputable def pontryaginMeasureTransform
-    (μ : Measure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
-  ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
+  ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
 
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]
 theorem pontryaginMeasureTransform_zero
-    (μ : Measure (PontryaginDual (Multiplicative G))) :
-    pontryaginMeasureTransform μ 0 = (μ.real Set.univ : ℂ) := by
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) :
+    pontryaginMeasureTransform μ 0 = (μ.toMeasure.real Set.univ : ℂ) := by
   simp [pontryaginMeasureTransform]
 
 variable [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
@@ -60,17 +61,17 @@ private theorem integrable_character_eval
 
 /-- The transform of a finite positive measure on the dual is positive definite. -/
 theorem isPositiveDefiniteSub_pontryaginMeasureTransform
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] :
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) :
     IsPositiveDefiniteSub (pontryaginMeasureTransform μ) := by
   refine isPositiveDefiniteSub_iff_forall_sum_nonneg.mpr ?_
   intro n c v
   have hint (i j : Fin n) :
       Integrable (fun χ : PontryaginDual (Multiplicative G) =>
-        (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ)) μ :=
+        (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ)) μ.toMeasure :=
     (integrable_character_eval μ (v i - v j)).const_mul _
   have hsum :
       (∫ χ, ∑ i : Fin n, ∑ j : Fin n,
-        (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ) ∂μ) =
+        (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ) ∂μ.toMeasure) =
       ∑ i : Fin n, ∑ j : Fin n,
         (c i * conj (c j)) * pontryaginMeasureTransform μ (v i - v j) := by
     rw [integral_finsetSum]
@@ -88,8 +89,8 @@ theorem isPositiveDefiniteSub_pontryaginMeasureTransform
 
 /-- The absolute value of a measure transform is bounded by the measure's total mass. -/
 theorem norm_pontryaginMeasureTransform_le
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] (g : G) :
-    ‖pontryaginMeasureTransform μ g‖ ≤ μ.real Set.univ := by
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
+    ‖pontryaginMeasureTransform μ g‖ ≤ μ.toMeasure.real Set.univ := by
   simpa using
     (isPositiveDefiniteSub_pontryaginMeasureTransform μ).norm_apply_le_map_zero_re g
 
