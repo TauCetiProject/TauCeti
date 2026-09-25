@@ -84,12 +84,6 @@ theorem normLE_eq_normLE_of_floor_eq {x y : ℝ} (h : ⌊x⌋ = ⌊y⌋) : normL
   ext i
   rw [mem_normLE, mem_normLE, key, key, h]
 
-/-- An index lies in the carrier at `b` and has `N`-value greater than `a` exactly when its
-`N`-value lies in the half-open interval `(a, b]`. -/
-theorem mem_normLE_filter_lt {a b : ℝ} {i : ι} :
-    i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Set.Ioc a b := by
-  rw [Finset.mem_filter, mem_normLE, Set.mem_Ioc, and_comm]
-
 /-- Below a uniform lower bound for the `N`-values the carrier is empty. -/
 theorem normLE_eq_empty_of_lt {b x : ℝ} (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) :
     normLE N x = ∅ := by
@@ -140,8 +134,8 @@ theorem summatory_eq_summatory_natFloor {M : Type*} [AddCommMonoid M] (w : ι �
     (hx : 0 ≤ x) : summatory N w x = summatory N w (⌊x⌋₊ : ℝ) := by
   rw [summatory, summatory, normLE_eq_normLE_natFloor N hx]
 
-/-- Between two cutoffs `a ≤ b`, a summatory function increases by the total weight of the
-indices of `N`-value in `(a, b]`. -/
+/-- Between two cutoffs `a ≤ b`, the difference of the values of a summatory function is the total
+weight of the indices of `N`-value in `(a, b]`. -/
 theorem summatory_sub_summatory_eq_sum_filter {M : Type*} [AddCommGroup M] (w : ι → M) {a b : ℝ}
     (hab : a ≤ b) :
     summatory N w b - summatory N w a = ∑ i ∈ normLE N b with a < N i, w i := by

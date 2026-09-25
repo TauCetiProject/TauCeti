@@ -13,10 +13,10 @@ import Mathlib.Topology.Algebra.Order.Floor
 # Summatory functions as Stieltjes functions
 
 A partial sum `A(x) = ∑_{N i ≤ x} w i` of a nonnegative real weight over a Northcott carrier is a
-monotone step function, and with the inclusive cutoff it is continuous from the right: it jumps
-by `∑_{N i = n} w i` exactly at each natural number `n`, and the value at `n` already includes
-the jump. It is therefore a Stieltjes function, and the associated measure `dA` is the weighted
-sum of point masses `∑ i, w i δ_{N i}`.
+monotone step function, and with the inclusive cutoff it is continuous from the right: it can
+jump only at a natural number `n`, the jump there has size `∑_{N i = n} w i`, and the value at
+`n` already includes the jump. It is therefore a Stieltjes function, and the associated measure
+`dA` is the weighted sum of point masses `∑ i, w i δ_{N i}`.
 
 This is the language in which analytic number theory usually writes sums over integers, ideals
 or primes: `∑_{a < N i ≤ b} w i g (N i) = ∫_{(a, b]} g dA`. Here that identity is a theorem about
@@ -98,10 +98,12 @@ theorem measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
     summatory_sub_summatory_eq_sum_filter N w hab.le,
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hw i, Measure.sum_apply _ measurableSet_Ioc]
   simp only [Measure.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
+  have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
+    simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
   rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
   · refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [indicator_of_mem ((mem_normLE_filter_lt N).mp hi), Pi.one_apply, mul_one]
-  · rw [indicator_of_notMem (fun h ↦ hi ((mem_normLE_filter_lt N).mpr h)), mul_zero]
+    rw [indicator_of_mem ((hmem i).mp hi), Pi.one_apply, mul_one]
+  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h)), mul_zero]
 
 /-- On the interval `(a, b]` the Stieltjes measure of a summatory function is the finite sum of
 the weighted point masses of the indices whose `N`-value lies in `(a, b]`. -/
@@ -113,13 +115,14 @@ theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 
     Measure.sum_apply _ (hs.inter measurableSet_Ioc), Measure.finsetSum_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
     Measure.dirac_apply' _ hs, smul_eq_mul]
+  have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
+    simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
   rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
   · refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hmem := (mem_normLE_filter_lt N).mp hi
     by_cases his : (N i : ℝ) ∈ s
-    · rw [indicator_of_mem (mem_inter his hmem), indicator_of_mem his]
+    · rw [indicator_of_mem (mem_inter his ((hmem i).mp hi)), indicator_of_mem his]
     · rw [indicator_of_notMem (fun h ↦ his h.1), indicator_of_notMem his]
-  · rw [indicator_of_notMem (fun h ↦ hi ((mem_normLE_filter_lt N).mpr h.2)), mul_zero]
+  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h.2)), mul_zero]
 
 /-! ### Integrals against the Stieltjes measure -/
 
@@ -153,17 +156,31 @@ theorem setIntegral_Ioc_summatoryStieltjes_of_lt {w : ι → ℝ} (hw : ∀ i, 0
   · rw [Ioc_eq_empty_of_le hxa.le, Measure.restrict_empty, integral_zero_measure,
       summatory_apply, hzero hxa.le, Finset.sum_empty]
 
-/-- **Abel summation as Stieltjes integration by parts.** For nonnegative cutoffs `a ≤ b` and a
-function `g` differentiable on `[a, b]` with integrable derivative,
+/-- **Abel summation as Stieltjes integration by parts.** For real cutoffs `a ≤ b` and a function
+`g` with values in `ℝ` or `ℂ`, differentiable on `[a, b]` with integrable derivative,
 `∫_{(a, b]} g dA = g(b) A(b) - g(a) A(a) - ∫_a^b g'(t) A(t) dt`, where `A = summatory N w`. -/
-theorem setIntegral_Ioc_summatoryStieltjes_eq_sub_sub_integral {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
-    {g : ℝ → ℝ} {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b)
+theorem setIntegral_Ioc_summatoryStieltjes_eq_sub_sub_integral {𝕜 : Type*} [RCLike 𝕜]
+    {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) {g : ℝ → 𝕜} {a b : ℝ} (hab : a ≤ b)
     (hg_diff : ∀ t ∈ Icc a b, DifferentiableAt ℝ g t) (hg_int : IntegrableOn (deriv g) (Icc a b)) :
     ∫ t in Ioc a b, g t ∂(summatoryStieltjes N hw).measure =
       g b * summatory N w b - g a * summatory N w a -
         ∫ t in Ioc a b, deriv g t * summatory N w t := by
-  simpa only [setIntegral_Ioc_summatoryStieltjes N hw g hab, smul_eq_mul] using
-    summatory_mul_eq_sub_sub_integral_mul N w ha hab hg_diff hg_int
+  have hcast (x : ℝ) : ((summatory N w x : ℝ) : 𝕜) = summatory N (fun i ↦ (w i : 𝕜)) x := by
+    simp only [summatory_apply, RCLike.ofReal_sum]
+  simp only [setIntegral_Ioc_summatoryStieltjes N hw g hab, RCLike.real_smul_eq_coe_mul, hcast]
+  rcases le_or_gt 0 a with ha | ha
+  · exact summatory_mul_eq_sub_sub_integral_mul N _ ha hab hg_diff hg_int
+  -- Below `0` every summatory function vanishes, so the identity reduces to the one from `0`.
+  have hN (i : ι) : (0 : ℝ) ≤ N i := Nat.cast_nonneg _
+  rw [summatory_eq_zero_of_lt N hN ha, summatory_eq_zero_of_lt N hN ha, mul_zero, sub_zero,
+    sub_zero, summatory_mul_eq_sub_integral_mul_of_le N le_rfl hN _ b
+      (fun t ht ↦ hg_diff t ⟨ha.le.trans ht.1, ht.2⟩) (hg_int.mono_set (Icc_subset_Icc_left ha.le))]
+  congr 1
+  refine (setIntegral_eq_of_subset_of_ae_sdiff_eq_zero measurableSet_Ioc.nullMeasurableSet
+    (Ioc_subset_Ioc_left ha.le) ?_).symm
+  filter_upwards [volume.ae_ne 0] with t ht0 ht
+  have ht_neg : t < 0 := lt_of_le_of_ne (not_lt.mp fun h ↦ ht.2 ⟨h, ht.1.2⟩) ht0
+  rw [summatory_eq_zero_of_lt N hN ht_neg, mul_zero]
 
 /-! ### The prime counts of a number field -/
 
