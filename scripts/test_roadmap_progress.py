@@ -303,6 +303,41 @@ class Tree(unittest.TestCase):
         self.assertEqual(widgets["assessment"]["source"], "marker")
         self.assertEqual(widgets["assessment"]["remaining"], {"Layer 1": "the other half"})
 
+    def test_a_sub_roadmap_reads_its_own_marker_from_the_umbrella_report(self):
+        sub_readme = rp.sha256("# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n")
+
+        def sub_marker(roadmap, readme=sub_readme, layers='{"id":"Layer 0","state":"done"},{"id":"Layer 1","state":"untouched"}'):
+            return (f'<!--tauceti-coverage:v1 {{"roadmap":"{roadmap}","to_sha":"{SHA}","readme_sha":"{readme}",'
+                    f'"layers":[{layers}]}}-->\n')
+
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        # TauCetiProgress's order: status header, the umbrella's own marker, then its children's.
+        head, rest = STATUS.split("\n", 1)
+        status.write_text(head + "\n" + MARKER + sub_marker("Widgets/Sub")
+                          + sub_marker("Widgets/Twin", readme="f" * 64) + rest)
+        # A transcription for Sub is still on file; the marker wins over it.
+        hand = {"TauCetiRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
+                                               "readme_sha": sub_readme[:12], "layers": {"Layer 0": "p", "Layer 1": "p"}}}
+        gadgets, gtwin, widgets, sub, wtwin, done = rp.read_roadmaps(self.root, hand)
+        self.assertEqual((sub["states"], sub["assessment"]["source"]), (["done", "untouched"], "marker"))
+        # Twin's marker was made against another README, so it is refused, with the reason.
+        self.assertEqual(wtwin["assessment"]["reason"], "invalid-marker")
+        self.assertIn("different README", wtwin["assessment"]["detail"])
+        self.assertEqual(wtwin["states"], ["unassessed"] * 2)
+        # The umbrella's own marker is still its own, and a child of another umbrella with the same
+        # name is not touched by Widgets/Twin's.
+        self.assertEqual((widgets["states"], widgets["assessment"]["source"]), (["done", "partial", "untouched"], "marker"))
+        self.assertEqual(gtwin["assessment"]["reason"], "not-transcribed")
+        # A marker for a sub-roadmap that is not there, or one naming the parent's own layers, is
+        # not applied to a child.
+        status.write_text(head + "\n" + sub_marker("Widgets/Gone") + sub_marker("Widgets") + rest)
+        rows = rp.read_roadmaps(self.root, {})
+        self.assertEqual(rows[3]["assessment"]["reason"], "not-transcribed")
+        self.assertEqual(rows[2]["assessment"]["reason"], "invalid-marker")
+        st = rp.parse_status(status.read_text())
+        self.assertEqual(sorted(st["sub_coverage"]), ["Widgets/Gone"])
+        self.assertEqual(st["coverage"]["roadmap"], "Widgets")
+
     def test_a_malformed_old_transcription_is_dropped_not_fatal(self):
         hand = {"Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
                                    "layers": {"Part A": ["d"], "Part B": "p"}}}
