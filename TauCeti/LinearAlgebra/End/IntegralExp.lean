@@ -15,10 +15,6 @@ The product of two additive subgroups stable under divided powers is stable unde
 componentwise operator. After scalar extension to any commutative ring, its divided-power
 exponential is the product of the two exponentials. This allows integral representations to be
 combined without changing the root subgroup actions on their summands.
-
-The construction uses `baseChangeExp` and its expansion at an arbitrary nilpotency bound from
-`TauCeti.RingTheory.Nilpotent.BaseChangeAction`, together with Mathlib's `AddSubgroup.prodEquiv`
-and `TensorProduct.prodRight`.
 -/
 
 public section
