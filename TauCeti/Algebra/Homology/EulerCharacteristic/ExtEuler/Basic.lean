@@ -50,6 +50,7 @@ The value is defined by truncating the sum to the degrees below an explicit boun
 
 * `TauCeti.extEuler_eq`: the Ext-Euler characteristic is the alternating sum truncated at *any*
   bound beyond which the `Ext` groups vanish.
+* `TauCeti.extEuler_congr`: degreewise linear equivalences of `Ext` preserve the value.
 * `TauCeti.IsEulerAdmissible.of_iso` and `TauCeti.extEuler_of_iso`: isomorphism invariance of the
   hypothesis and of the value.
 * `TauCeti.IsEulerAdmissible.of_shortExact₂` and
@@ -88,7 +89,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 
-universe w v u t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] (k : Type t) [Field k] [Linear k C]
   [HasExt.{w} C]
@@ -248,7 +249,21 @@ theorem extEuler_eq_zero_of_isExtBoundedBy_zero {X Y : C} (h : IsEulerAdmissible
     (h₀ : IsExtBoundedBy.{w} X Y 0) : extEuler.{w} k h = 0 := by
   rw [extEuler_eq k h h₀, truncatedExtEuler_zero]
 
-/-! ### Isomorphism invariance -/
+/-! ### Invariance under linear equivalences and isomorphisms -/
+
+/-- Degreewise linear equivalences of `Ext` groups preserve the Ext-Euler characteristic,
+including when the pairs lie in different categories. -/
+theorem extEuler_congr {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D]
+    [HasExt.{w'} D] {X Y : C} {X' Y' : D}
+    (e : ∀ n, Ext.{w} X Y n ≃ₗ[k] Ext.{w'} X' Y' n)
+    (h : IsEulerAdmissible.{w} k X Y) (h' : IsEulerAdmissible.{w'} k X' Y') :
+    extEuler.{w'} k h' = extEuler.{w} k h := by
+  obtain ⟨N, hN⟩ := h.isExtBounded.exists_bound
+  have hN' : IsExtBoundedBy.{w'} X' Y' N :=
+    ⟨fun n hn ↦ haveI := hN.subsingleton hn
+      (e n).toEquiv.symm.subsingleton⟩
+  rw [extEuler_eq k h hN, extEuler_eq k h' hN']
+  exact Finset.sum_congr rfl fun n _ ↦ by rw [(e n).finrank_eq]
 
 variable {k} {X X' Y Y' : C}
 
@@ -277,11 +292,8 @@ theorem IsEulerAdmissible.of_iso (h : IsEulerAdmissible.{w} k X Y) (e : X ≅ X'
 /-- The Ext-Euler characteristic only depends on the isomorphism classes of the two objects. -/
 theorem extEuler_of_iso (h : IsEulerAdmissible.{w} k X Y)
     (h' : IsEulerAdmissible.{w} k X' Y') (e : X ≅ X') (f : Y ≅ Y') :
-    extEuler.{w} k h = extEuler.{w} k h' := by
-  obtain ⟨N, hN⟩ := h.isExtBounded.exists_bound
-  rw [extEuler_eq k h hN, extEuler_eq k h' (hN.of_iso e f)]
-  exact Finset.sum_congr rfl fun n _ ↦ by
-    rw [(extLinearEquivOfIso k e f n).finrank_eq]
+    extEuler.{w} k h = extEuler.{w} k h' :=
+  (extEuler_congr k (fun n ↦ extLinearEquivOfIso k e f n) h h').symm
 
 /-! ### Closure under extensions and finite direct sums -/
 

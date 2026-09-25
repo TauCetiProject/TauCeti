@@ -137,15 +137,9 @@ theorem IsEulerAdmissibleOn.of_map {P Q : ObjectProperty C} {P' Q' : ObjectPrope
 preserves it, `χ(F X, F Y) = χ(X, Y)`. -/
 theorem extEuler_map (hF : ∀ n, Function.Bijective (F.mapExtAddHom.{w, w'} X Y n))
     (h : IsEulerAdmissible.{w} k X Y) (h' : IsEulerAdmissible.{w'} k (F.obj X) (F.obj Y)) :
-    extEuler.{w'} k h' = extEuler.{w} k h := by
-  obtain ⟨N, hN⟩ := h.isExtBounded.exists_bound
-  rw [extEuler_eq k h hN, extEuler_eq k h' (hN.map F fun n _ ↦ (hF n).2)]
-  clear hN
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    rw [truncatedExtEuler_succ, truncatedExtEuler_succ, ih,
-      (LinearEquiv.ofBijective (F.mapExtLinearMap k X Y N) (hF N)).finrank_eq]
+    extEuler.{w'} k h' = extEuler.{w} k h :=
+  extEuler_congr k
+    (fun n ↦ LinearEquiv.ofBijective (F.mapExtLinearMap k X Y n) (hF n)) h h'
 
 /-! ### Naturality of the Ext-Euler pairing -/
 
@@ -184,18 +178,17 @@ theorem extEulerPairing_map_map
           ((ExactStructure.abelian C).isConflationExact_lift hQ hQ' F
             (ExactStructure.isConflationExact_abelian F) fun Y ↦ hFQ Y.property) y) =
       extEulerPairing hP hQ h x y := by
-  induction x using ExactK0.induction_on with
-  | zero => simp
-  | add a b ha hb => simp only [map_add, AddMonoidHom.add_apply, ha, hb]
-  | neg a ha => simp only [map_neg, AddMonoidHom.neg_apply, ha]
-  | of X =>
-    induction y using ExactK0.induction_on with
-    | zero => simp
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | neg a ha => simp only [map_neg, ha]
-    | of Y =>
-      simpa using extEuler_map F (hF X.property Y.property)
+  let mapP := ExactK0.map (P'.lift (P.ι ⋙ F) fun X ↦ hFP X.property)
+    ((ExactStructure.abelian C).isConflationExact_lift hP hP' F
+      (ExactStructure.isConflationExact_abelian F) fun X ↦ hFP X.property)
+  let mapQ := ExactK0.map (Q'.lift (Q.ι ⋙ F) fun Y ↦ hFQ Y.property)
+    ((ExactStructure.abelian C).isConflationExact_lift hQ hQ' F
+      (ExactStructure.isConflationExact_abelian F) fun Y ↦ hFQ Y.property)
+  let b := (AddMonoidHom.compHom' mapQ).comp ((extEulerPairing hP' hQ' h').comp mapP)
+  exact DFunLike.congr_fun (DFunLike.congr_fun
+    (extEulerPairing_unique hP hQ h b fun X Y ↦ by
+      simpa [b, mapP, mapQ] using extEuler_map F (hF X.property Y.property)
         (h.isEulerAdmissible X.property Y.property)
-        (h'.isEulerAdmissible (hFP X.property) (hFQ Y.property))
+        (h'.isEulerAdmissible (hFP X.property) (hFQ Y.property))) x) y
 
 end TauCeti
