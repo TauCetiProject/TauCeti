@@ -57,7 +57,7 @@ theorem mem_horodiscSubMulAction {A : ℝ} {z : ℍ} :
   Iff.rfl
 
 /-- The map from the cusp-stabilizer quotient of a horodisc to the full coarse quotient. -/
-abbrev horodiscQuotientToQuotient (A : ℝ) :
+@[expose] def horodiscQuotientToQuotient (A : ℝ) :
     orbitRel.Quotient (stabilizer Γ D.cusp) (horodiscSubMulAction D A) →
       orbitRel.Quotient Γ ℍ :=
   Quotient.map' (↑) fun _ _ h ↦ by
