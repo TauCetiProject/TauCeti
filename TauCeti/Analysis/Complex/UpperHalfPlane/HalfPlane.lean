@@ -16,7 +16,7 @@ The imaginary axis splits `ℍ` into two open half-planes, `{z | 0 < z.re}` and
 `g : PSL(2, ℝ)`, the same idiom `Geodesic.lean` uses for the line itself: `rightHalfPlane g`
 and `leftHalfPlane g` are the `g`-images of the two canonical sides, `Set.range (geodesicLine g)`
 (via `range_geodesicLine`) is the `g`-image of the axis, and the three are pairwise disjoint and
-cover `ℍ` (`union_rightHalfPlane_range_geodesicLine_leftHalfPlane`).
+cover `ℍ` (`rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane`).
 
 Only the *unordered* pair of sides is determined by `geodesicLine g`: which one is called
 `right` depends on the chosen representing `g`, not on the line's image alone. For
@@ -38,8 +38,8 @@ Only the *unordered* pair of sides is determined by `geodesicLine g`: which one 
 * `TauCeti.UpperHalfPlane.disjoint_rightHalfPlane_leftHalfPlane`,
   `disjoint_rightHalfPlane_range_geodesicLine`, `disjoint_leftHalfPlane_range_geodesicLine` — the
   three pieces are pairwise disjoint, and
-  `TauCeti.UpperHalfPlane.union_rightHalfPlane_range_geodesicLine_leftHalfPlane` says they cover
-  `ℍ`.
+  `TauCeti.UpperHalfPlane.rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane` says
+  they cover `ℍ`.
 * `TauCeti.UpperHalfPlane.frontier_rightHalfPlane`, `frontier_leftHalfPlane` — the geodesic line
   is the topological boundary of each half-plane it bounds, via `closure_rightHalfPlane` and
   `closure_leftHalfPlane`.
@@ -124,7 +124,7 @@ theorem disjoint_leftHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
 /-- The right half-plane, the geodesic line, and the left half-plane, all bounded by
 `geodesicLine g`, cover `ℍ`. With the three `disjoint_*` lemmas above, every point lies in
 exactly one of the three. -/
-theorem union_rightHalfPlane_range_geodesicLine_leftHalfPlane (g : PSL(2, ℝ)) :
+theorem rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane (g : PSL(2, ℝ)) :
     rightHalfPlane g ∪ Set.range (geodesicLine g) ∪ leftHalfPlane g = Set.univ := by
   have : ({z : ℍ | 0 < z.re} ∪ {z : ℍ | z.re = 0} ∪ {z : ℍ | z.re < 0}) = Set.univ := by
     ext z
