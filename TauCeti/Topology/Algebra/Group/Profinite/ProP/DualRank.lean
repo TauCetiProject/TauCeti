@@ -46,9 +46,10 @@ quotient converging to `1` lifts to `G`, which is
   the reverse inequality holds.
 * `TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousFpDual`: **Burnside's basis theorem,
   cardinal form** — the two agree for a profinite pro-`p` group.
-* `TauCeti.IsProP.finite_continuousFpDual`,
-  `TauCeti.IsProP.finrank_continuousFpDual_eq_topologicalGeneratorRankNat`: its natural-number
-  form for a topologically finitely generated pro-`p` group.
+* `TauCeti.finite_continuousFpDual`: the dual of a topologically finitely generated profinite
+  group is finite-dimensional, again with no pro-`p` hypothesis.
+* `TauCeti.IsProP.finrank_continuousFpDual_eq_topologicalGeneratorRankNat`: the natural-number
+  form of the theorem, for a topologically finitely generated pro-`p` group.
 
 ## References
 
@@ -122,6 +123,15 @@ theorem rank_continuousFpDual_le_topologicalGeneratorRank [CompactSpace G]
     Module.rank (ZMod p) (continuousFpDual p G) ≤ topologicalGeneratorRank G := by
   obtain ⟨s, hs, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
   exact hcard ▸ rank_continuousFpDual_le_of_convergesToOne hs hgen
+
+/-- **The continuous `𝔽_p`-dual of a topologically finitely generated profinite group is
+finite-dimensional**, its dimension being bounded by the finite topological generator rank. No
+pro-`p` hypothesis is needed. -/
+theorem finite_continuousFpDual [CompactSpace G] [TotallyDisconnectedSpace G]
+    (hfg : IsTopologicallyFinitelyGenerated G) :
+    Module.Finite (ZMod p) (continuousFpDual p G) :=
+  Module.rank_lt_aleph0_iff.mp <| rank_continuousFpDual_le_topologicalGeneratorRank.trans_lt
+    (topologicalGeneratorRank_lt_aleph0_iff.mpr hfg)
 
 end Restrict
 
@@ -292,14 +302,6 @@ theorem IsProP.topologicalGeneratorRank_eq_rank_continuousFpDual (hG : IsProP p 
   rw [← hG.topologicalGeneratorRank_quotient_proPFrattini,
     ← (frattiniQuotientDualEquiv (p := p) (G := G)).rank_eq]
   exact topologicalGeneratorRank_le_rank_continuousFpDual
-
-/-- The continuous `𝔽_p`-dual of a topologically finitely generated profinite pro-`p` group is
-finite-dimensional, since its dimension is the finite topological generator rank. -/
-theorem IsProP.finite_continuousFpDual (hG : IsProP p G)
-    (hfg : IsTopologicallyFinitelyGenerated G) :
-    Module.Finite (ZMod p) (continuousFpDual p G) := by
-  rw [← Module.rank_lt_aleph0_iff, ← hG.topologicalGeneratorRank_eq_rank_continuousFpDual]
-  exact topologicalGeneratorRank_lt_aleph0_iff.mpr hfg
 
 /-- **Burnside's basis theorem, numerical form against the dual.** For a topologically finitely
 generated profinite pro-`p` group the dimension of the continuous `𝔽_p`-dual over `𝔽_p` is the
