@@ -45,13 +45,13 @@ noncomputable abbrev singleFunctor (A : Type u) [Category.{v} A] [Abelian A]
 
 /-- Inclusion of a bounded single object recovers the corresponding derived single object. -/
 @[simp] lemma ι_obj_singleFunctor_obj (n : ℤ) (X : A) :
-    DerivedCategory.Bounded.ι.obj ((singleFunctor A n).obj X) =
+    ((singleFunctor A n).obj X).obj =
       (DerivedCategory.singleFunctor A n).obj X :=
   rfl
 
 /-- Inclusion of a map of bounded single objects recovers the derived single map. -/
 @[simp] lemma ι_map_singleFunctor_map (n : ℤ) {X Y : A} (f : X ⟶ Y) :
-    DerivedCategory.Bounded.ι.map ((singleFunctor A n).map f) =
+    ((singleFunctor A n).map f).hom =
       (DerivedCategory.singleFunctor A n).map f :=
   rfl
 
