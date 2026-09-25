@@ -46,7 +46,7 @@ becomes the closed genus formula of a radical extension of prime exponent,
 * `TauCeti.Place.differentExponent_eq_of_pow_eq_of_prime` and
   `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_prime`: the different exponent and ramification
   index at every place of a radical extension `y ^ n = u` with `n` prime.
-* `TauCeti.Divisor.nsmul_different_eq_conorm_of_pow_eq_of_prime`:
+* `TauCeti.Divisor.nsmul_different_eq_nsmul_conorm_of_pow_eq_of_prime`:
   `n • Diff(F'/F) = (n - 1) • Con(B)` for `n` prime.
 * `TauCeti.Divisor.finrank_mul_degree_different_of_pow_eq_of_prime`:
   `[k' : k] · deg Diff(F'/F) = (n - 1) · deg B` for `n` prime.
@@ -238,27 +238,58 @@ namespace Divisor
 
 variable (k' F') (hF : IsFunctionField k F)
 
+/-- The branch divisor of a radical extension: the sum of places whose order of the radicand is
+not divisible by the exponent. -/
+noncomputable def radicalBranch (n : ℕ) (u : F) (hu : u ≠ 0) : Divisor k F :=
+  WeilDivisor.ofFinset {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}
+
+/-- A place occurs in the radical branch divisor exactly when the exponent does not divide the
+order of the radicand there. -/
+theorem mem_support_radicalBranch_iff (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
+    P ∈ (radicalBranch hF n u hu).support ↔ ¬ (n : ℤ) ∣ P.ord u := by
+  classical
+  have hmem : P ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
+      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ P.ord u := by
+    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
+    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
+  rw [Finsupp.mem_support_iff, radicalBranch]
+  change WeilDivisor.coeff (WeilDivisor.ofFinset
+    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) P ≠ 0 ↔ _
+  rw [WeilDivisor.coeff_ofFinset]
+  simp [hmem]
+
+/-- The coefficient of a radical branch divisor is one at its branch places and zero elsewhere. -/
+theorem coeff_radicalBranch (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
+    radicalBranch hF n u hu P = if (n : ℤ) ∣ P.ord u then 0 else 1 := by
+  classical
+  have hmem : P ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
+      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ P.ord u := by
+    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
+    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
+  rw [radicalBranch]
+  change WeilDivisor.coeff (WeilDivisor.ofFinset
+    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) P = _
+  rw [WeilDivisor.coeff_ofFinset]
+  simp [hmem]
+
 /-- **The different divisor of a radical extension of prime exponent** (Stichtenoth,
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then `n • Diff(F'/F) = (n - 1) • Con(B)`, where `B` is the sum of the places `P`
 of `F` with `n ∤ ord_P u`.  Each such place is totally ramified with different exponent `n - 1`
 above it, and every other place is unramified. -/
-theorem nsmul_different_eq_conorm_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+theorem nsmul_different_eq_nsmul_conorm_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
-    n • different k' F' hF = (n - 1) • conorm k' F' (WeilDivisor.ofFinset
-      {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
+    n • different k' F' hF = (n - 1) • conorm k' F' (radicalBranch hF n u hu) := by
   classical
   refine WeilDivisor.ext fun P' ↦ ?_
-  have hmem : P'.restrict k F ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
-      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ (P'.restrict k F).ord u := by
-    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
-    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
   rw [WeilDivisor.coeff_nsmul, WeilDivisor.coeff_nsmul, coeff_different, coeff_conorm,
-    WeilDivisor.coeff_ofFinset, Place.differentExponent_eq_of_pow_eq_of_prime k F hp hgen hy hn hu,
+    Place.differentExponent_eq_of_pow_eq_of_prime k F hp hgen hy hn hu,
     Place.ramificationIdx_eq_of_pow_eq_of_prime k F hp hgen hy hn hu]
+  change _ = _ * (_ * radicalBranch hF n u hu (P'.restrict k F))
+  rw [coeff_radicalBranch hF (P'.restrict k F) hu]
   by_cases hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u
-  · simp [hdvd, hmem]
-  · simp only [hdvd, hmem, ite_false, not_false_eq_true, ite_true]
+  · simp [hdvd]
+  · simp only [hdvd, ite_false]
     push_cast [Nat.cast_sub hp.one_le]
     ring
 
@@ -271,29 +302,26 @@ theorem finrank_mul_degree_different_of_pow_eq_of_prime [Algebra.IsIntegral k k'
     {u : F} (hp : n.Prime) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0)
     (hu : u ≠ 0) :
     (Module.finrank k k' : ℤ) * degree (different k' F' hF) = ((n : ℤ) - 1) * degree
-      (WeilDivisor.ofFinset
-        {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
-  set B := WeilDivisor.ofFinset
-    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u} with hB
+      (radicalBranch hF n u hu) := by
+  set B := radicalBranch hF n u hu with hB
   have hn0 : (n : ℤ) ≠ 0 := by exact_mod_cast hp.ne_zero
   have hcon := finrank_mul_degree_conorm_of_isSeparable k' F' B
   have hdeg := congrArg (fun D ↦ (Module.finrank k k' : ℤ) * degree D)
-    (nsmul_different_eq_conorm_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu)
+    (nsmul_different_eq_nsmul_conorm_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu)
   simp only [map_nsmul, nsmul_eq_mul, Nat.cast_sub hp.one_le, Nat.cast_one, ← hB] at hdeg
   -- Either some place has `n ∤ ord_P u`, and then `[F' : F] = n`, or `B = 0`.
   have key : (n : ℤ) * ((Module.finrank k k' : ℤ) * degree (different k' F' hF)) =
       n * (((n : ℤ) - 1) * degree B) := by
-    by_cases hS : {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}.Nonempty
+    by_cases hS : B.support.Nonempty
     · obtain ⟨P, hP⟩ := hS
-      have hgcd : Int.gcd n (Valuation.ord P.valuation u) = 1 := by
-        rw [Valuation.ord_def, ← P.ord_def]
-        exact Int.isCoprime_iff_gcd_eq_one.mp
-          ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr (Finset.mem_filter.mp hP).2)
-      rw [Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one P.valuation hgen hy hp.ne_zero hgcd]
-        at hcon
+      rw [Place.finrank_eq_of_pow_eq_of_prime_of_not_dvd_ord k F P hp hgen hy
+        ((mem_support_radicalBranch_iff hF P hu).mp (hB ▸ hP))] at hcon
       linear_combination hdeg + ((n : ℤ) - 1) * hcon
     · have hB0 : B = 0 := by
-        rw [hB, Finset.not_nonempty_iff_eq_empty.mp hS, WeilDivisor.ofFinset_empty]
+        apply Finsupp.ext
+        intro P
+        by_contra hP
+        exact hS ⟨P, Finsupp.mem_support_iff.mpr hP⟩
       simp only [hB0, map_zero] at hdeg ⊢
       linear_combination hdeg
   exact mul_left_cancel₀ hn0 key
@@ -311,8 +339,7 @@ theorem hurwitz_genus_formula_of_pow_eq_of_prime [FiniteDimensional k k'] [Algeb
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       Module.finrank F F' * (2 * genus k F - 2) + ((n : ℤ) - 1) * Divisor.degree
-        (WeilDivisor.ofFinset
-          {P ∈ (Divisor.principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
+        (Divisor.radicalBranch hF n u hu) := by
   rw [hurwitz_genus_formula hF hF' hex hex',
     Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu]
 

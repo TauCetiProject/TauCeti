@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
+import TauCeti.FieldTheory.KummerExtension
+import Mathlib.Data.Nat.Prime.Int
 
 /-!
 # Ramification in a radical extension `y ^ n = u`
@@ -40,6 +42,8 @@ This covers, for instance, the places of `k(x)` at the simple zeros of a squaref
   `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one`: if `[F' : F] = n` and
   `gcd(n, ord_P u) = 1`, then `P'` is totally ramified over `F` with `e(P' ∣ P) = n`.
 * `TauCeti.Place.ord_eq_of_pow_eq_of_gcd_ord_eq_one`: in that case `ord_{P'} y = ord_P u`.
+* `TauCeti.Place.finrank_eq_of_pow_eq_of_prime_of_not_dvd_ord`: a place whose order is not
+  divisible by a prime exponent witnesses that the degree is that exponent.
 
 ## References
 
@@ -98,6 +102,19 @@ theorem div_gcd_ord_dvd_ramificationIdx_of_pow_eq {y : F'} {n : ℕ} {u : F} (hn
     Int.dvd_of_dvd_mul_left_of_gcd_one ⟨_, hdiv.symm⟩ (Int.gcd_div_gcd_div_gcd hr)
   rw [← Int.natCast_dvd_natCast, Int.natCast_div]
   exact hdvd
+
+omit [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
+/-- **The degree of a radical extension of prime exponent**: if `y` generates `F'` over `F`,
+satisfies `y ^ n = u`, and `n` does not divide the order of `u` at the place `P`, then
+`[F' : F] = n`. -/
+theorem finrank_eq_of_pow_eq_of_prime_of_not_dvd_ord (P : Place k F) {y : F'} {n : ℕ} {u : F}
+    (hp : n.Prime) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u)
+    (h : ¬ (n : ℤ) ∣ P.ord u) :
+    Module.finrank F F' = n := by
+  refine Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one P.valuation hgen hy hp.ne_zero ?_
+  rw [Valuation.ord_def, ← P.ord_def]
+  exact Int.isCoprime_iff_gcd_eq_one.mp
+    ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr h)
 
 omit [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- If `F' = F(y)` with `y ^ n = u` and `n` coprime to `ord_P u`, then some generator `z` of
