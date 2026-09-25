@@ -27,6 +27,11 @@ the Ree F4 and Tits branches in L2 of `TauCetiRoadmap/CFSGStatement/README.md`.
 
 The carrier is explicit; no identification with the pinned simply connected F4 group scheme,
 or finiteness or simplicity theorem for its fixed-point candidates, is asserted here.
+
+## References
+
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
+* R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 -/
 
 public section

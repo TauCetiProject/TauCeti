@@ -16,6 +16,10 @@ This file transports the integral Chevalley root exponential through reduction m
 quotient by the modular short-root ideal.  The resulting formula is valid over every commutative
 `ZMod 2`-algebra.  Its three terms are stated using the genuine integral adjoint action, so the
 concrete quotient column formulas can identify them without choosing representatives.
+
+## References
+
+* R. W. Carter, *Simple Groups of Lie Type*, §4.4, for Chevalley root exponentials.
 -/
 
 public section

@@ -14,6 +14,11 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Exponential
 The actual carrier action on its represented middle quotient agrees with the special-isogeny
 root formulas. The comparison descends the integral conjugation identity and then uses the
 structural quotient-column pinning; it does not compute a new matrix table.
+
+## References
+
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
+* R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 -/
 
 public section

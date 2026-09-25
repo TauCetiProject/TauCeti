@@ -15,6 +15,11 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Torus
 The canonical lifts of the quotient basis are torus eigenvectors. Descending their represented
 adjoint images through the carrier quotient identifies its torus action with the special
 character-lattice map.
+
+## References
+
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
+* R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 -/
 
 public section
