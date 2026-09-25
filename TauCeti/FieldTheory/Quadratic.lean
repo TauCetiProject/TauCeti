@@ -24,6 +24,9 @@ import Mathlib.FieldTheory.Finite.Extension
 import Mathlib.Algebra.Polynomial.SpecificDegree
 -- Non-public: `AdjoinRoot` and its power basis are the source of that root.
 import Mathlib.RingTheory.AdjoinRoot
+-- Non-public: `Matrix.aeval_self_charpoly` and `Matrix.charpoly_fin_two` are Cayley-Hamilton in
+-- size two, used only in the proof of the trace-norm quadratic.
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 
 /-!
 # The trace and the norm of a quadratic irrationality
@@ -39,14 +42,13 @@ These are what pin the elliptic normal form of `GL₂` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
 characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
 
-Read in the other direction the same basis says that `x` satisfies the quadratic built from its
-own trace and norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`: *some* monic quadratic is satisfied
-because `(1, x)` is a basis, and its coefficients are then computed by the two theorems above. For
-an `x` inside `F` there is no such basis, but the equation is a direct computation from
-`Algebra.trace_algebraMap` and `Algebra.norm_algebraMap`, so it holds for every `x` -- what the
-`x ∉ F` hypothesis buys is not the equation but the *uniqueness* of its coefficients. This is what
-separates the elliptic conjugacy classes of `GL₂(F)` from the split ones, an eigenvalue in `E`
-outside `F` being exactly what a split class does not have.
+Read in the other direction, `x` satisfies the quadratic built from its own trace and norm,
+`x² = Tr_{E/F}(x) · x - N_{E/F}(x)`. That is Cayley-Hamilton in size two: multiplication by `x` is a
+`2 × 2` matrix over `F` in any basis, its characteristic polynomial is `X² - Tr(x) X + N(x)`, and a
+matrix annihilates its own characteristic polynomial. No hypothesis on `x` is needed -- what the
+`x ∉ F` hypothesis buys the two theorems above is not the equation but the *uniqueness* of its
+coefficients. This is what separates the elliptic conjugacy classes of `GL₂(F)` from the split ones,
+an eigenvalue in `E` outside `F` being exactly what a split class does not have.
 
 Over a *finite* base field such an `x` always exists as soon as the quadratic has no root in `F`:
 the quadratic is then irreducible, so `AdjoinRoot` of it is a degree-`2` extension of `F`, and any
@@ -138,38 +140,25 @@ theorem norm_eq_of_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
   rw [Algebra.norm_eq_matrix_det (oneRootBasis hE hx), leftMulMatrix_oneRootBasis hE hx hx2,
     det_companionFinTwo]
 
-/-- An element outside the base field of a degree-`2` extension satisfies *some* monic quadratic
-over that field: the pair `(1, x)` is a basis, so `x * x` is a combination of `1` and `x`. -/
-private theorem exists_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) :
-    ∃ t d : F, x * x = algebraMap F E t * x - algebraMap F E d := by
-  have hb := coe_oneRootBasis hE hx
-  refine ⟨(oneRootBasis hE hx).repr (x * x) 1, -((oneRootBasis hE hx).repr (x * x) 0), ?_⟩
-  have hsum := (oneRootBasis hE hx).sum_repr (x * x)
-  rw [Fin.sum_univ_two, hb] at hsum
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.smul_def, mul_one,
-    map_neg] at hsum ⊢
-  linear_combination -hsum
-
 /-- **An element of a quadratic extension satisfies the quadratic built from its own trace and
-norm**: the Cayley-Hamilton equation `x² = Tr_{E/F}(x) · x - N_{E/F}(x)` in degree `2`. Together
-with `TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` this
-makes `(Tr x, N x)` the *unique* pair of coefficients of a monic quadratic over `F` satisfied by an
-`x` outside `F`. Inside `F` the equation still holds, `Tr x` being `2 x` and `N x` being `x²`, but
-the pair is no longer unique there, the minimal polynomial being linear. -/
+norm**: the Cayley-Hamilton equation `x² = Tr_{E/F}(x) · x - N_{E/F}(x)` in size two. It is
+`Matrix.aeval_self_charpoly` for the matrix of multiplication by `x` in any `F`-basis of `E`, pulled
+back along the injective algebra map `Algebra.leftMulMatrix`. Together with
+`TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` this makes
+`(Tr x, N x)` the *unique* pair of coefficients of a monic quadratic over `F` satisfied by an `x`
+outside `F`. For an `x` inside `F` the equation still holds, `Tr x` being `2 x` and `N x` being
+`x²`, but the pair is no longer unique there, the minimal polynomial being linear. -/
 theorem mul_self_eq_trace_mul_sub_norm (hE : Module.finrank F E = 2) (x : E) :
     x * x = algebraMap F E (Algebra.trace F E x) * x - algebraMap F E (Algebra.norm F x) := by
-  by_cases hx : x ∈ Set.range (algebraMap F E)
-  · obtain ⟨a, rfl⟩ := hx
-    have ht : Algebra.trace F E (algebraMap F E a) = a + a := by
-      rw [Algebra.trace_algebraMap, hE, two_nsmul]
-    have hn : Algebra.norm F (algebraMap F E a) = a ^ 2 := by
-      rw [Algebra.norm_algebraMap, hE]
-    rw [ht, hn, map_add, map_pow]
-    ring
-  · obtain ⟨t, d, hx2⟩ := exists_mul_self_eq hE hx
-    rw [trace_eq_of_mul_self_eq hE hx hx2, norm_eq_of_mul_self_eq hE hx hx2]
-    exact hx2
+  have : FiniteDimensional F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+  set b := Module.finBasisOfFinrankEq F E hE
+  have h : Polynomial.aeval x (Algebra.leftMulMatrix b x).charpoly = 0 :=
+    Algebra.leftMulMatrix_injective b (by
+      rw [← Polynomial.aeval_algHom_apply, Matrix.aeval_self_charpoly, map_zero])
+  rw [Matrix.charpoly_fin_two, ← Algebra.trace_eq_matrix_trace b,
+    ← Algebra.norm_eq_matrix_det b] at h
+  simp only [map_add, map_sub, map_pow, map_mul, Polynomial.aeval_X, Polynomial.aeval_C] at h
+  linear_combination h
 
 end Algebra
 

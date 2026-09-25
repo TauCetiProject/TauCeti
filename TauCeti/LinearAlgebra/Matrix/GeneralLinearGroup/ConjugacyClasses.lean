@@ -70,7 +70,8 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
 * `TauCeti.isConj_companionGL`: **rational canonical form inside `GL₂(F)`**, a non-scalar element
   is conjugate to the companion element of its characteristic polynomial.
 * `TauCeti.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class,
-  and `TauCeti.not_isConj_of_mem_range_scalar`: it is therefore not conjugate to a non-scalar one.
+  `TauCeti.not_isConj_of_mem_range_scalar`: it is therefore not conjugate to a non-scalar one, and
+  `TauCeti.isConj_scalar_iff`: two scalar elements are conjugate only when they are equal.
 * `TauCeti.isConj_iff_of_notMem_range_scalar`: **the classification**, two non-scalar elements of
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
@@ -119,13 +120,23 @@ theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
   rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
 
 /-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
-scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore
-the coarsest conjugacy invariant of `GL n R`, the one that separates a scalar matrix from the
-Jordan block with the same characteristic polynomial. -/
+scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a
+conjugacy invariant in its own right, and the one that trace and determinant miss: it separates a
+scalar matrix from a Jordan block with the same characteristic polynomial. -/
 theorem not_isConj_of_mem_range_scalar {g h : GL n R}
     (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n))
     (hh : (h : Matrix n n R) ∉ Set.range (Matrix.scalar n)) : ¬ IsConj g h := fun hgh =>
   hh (eq_of_mem_range_scalar_of_isConj hg hgh ▸ hg)
+
+/-- **Two scalar elements of `GL n R` are conjugate exactly when they are equal.** A scalar element
+is alone in its class, and the scalar embedding is injective (`Matrix.scalar_inj`). -/
+theorem isConj_scalar_iff [Nonempty n] (a b : Rˣ) :
+    IsConj (Matrix.GeneralLinearGroup.scalar n a) (Matrix.GeneralLinearGroup.scalar n b) ↔
+      a = b :=
+  ⟨fun h => Units.ext (Matrix.scalar_inj.1 (by
+      simpa only [Matrix.GeneralLinearGroup.coe_scalar] using
+        congrArg Units.val (eq_of_mem_range_scalar_of_isConj ⟨(a : R), rfl⟩ h))),
+    fun h => h ▸ IsConj.refl _⟩
 
 end Invariants
 
@@ -302,11 +313,7 @@ theorem bijective_mk_conjRepGLFinTwo :
   · rintro (a | ⟨t, d⟩) (b | ⟨t', d'⟩) hab <;>
       simp only [ConjClasses.mk_eq_mk_iff_isConj, conjRepGLFinTwo_inl,
         conjRepGLFinTwo_inr] at hab
-    · have hval := eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(a : F), rfl⟩ hab
-      have hcoe := congrArg (fun x : GL (Fin 2) F => (x : Matrix (Fin 2) (Fin 2) F)) hval
-      simp only [Matrix.GeneralLinearGroup.coe_scalar] at hcoe
-      have : a = b := Units.ext (Matrix.scalar_inj.1 hcoe)
-      rw [this]
+    · rw [(isConj_scalar_iff a b).1 hab]
     · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(a : F), rfl⟩ hab)
         (scalar_ne_companionGL t' d' a)
     · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(b : F), rfl⟩ hab.symm)
