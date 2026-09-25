@@ -42,13 +42,11 @@ These are what pin the elliptic normal form of `GL₂` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
 characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
 
-Read in the other direction, `x` satisfies the quadratic built from its own trace and norm,
-`x² = Tr_{E/F}(x) · x - N_{E/F}(x)`. That is Cayley-Hamilton in size two: multiplication by `x` is a
-`2 × 2` matrix over `F` in any basis, its characteristic polynomial is `X² - Tr(x) X + N(x)`, and a
-matrix annihilates its own characteristic polynomial. No hypothesis on `x` is needed -- what the
-`x ∉ F` hypothesis buys the two theorems above is not the equation but the *uniqueness* of its
-coefficients. This is what separates the elliptic conjugacy classes of `GL₂(F)` from the split ones,
-an eigenvalue in `E` outside `F` being exactly what a split class does not have.
+Read in the other direction, every `x : E` satisfies the quadratic built from its own trace and
+norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`, with no hypothesis on `x`: what the `x ∉ F` hypothesis
+buys the two theorems above is not the equation but the *uniqueness* of its coefficients. This is
+what separates the elliptic conjugacy classes of `GL₂(F)` from the split ones, an eigenvalue in `E`
+outside `F` being exactly what a split class does not have.
 
 Over a *finite* base field such an `x` always exists as soon as the quadratic has no root in `F`:
 the quadratic is then irreducible, so `AdjoinRoot` of it is a degree-`2` extension of `F`, and any
@@ -141,13 +139,16 @@ theorem norm_eq_of_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
     det_companionFinTwo]
 
 /-- **An element of a quadratic extension satisfies the quadratic built from its own trace and
-norm**: the Cayley-Hamilton equation `x² = Tr_{E/F}(x) · x - N_{E/F}(x)` in size two. It is
-`Matrix.aeval_self_charpoly` for the matrix of multiplication by `x` in any `F`-basis of `E`, pulled
-back along the injective algebra map `Algebra.leftMulMatrix`. Together with
-`TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` this makes
-`(Tr x, N x)` the *unique* pair of coefficients of a monic quadratic over `F` satisfied by an `x`
-outside `F`. For an `x` inside `F` the equation still holds, `Tr x` being `2 x` and `N x` being
-`x²`, but the pair is no longer unique there, the minimal polynomial being linear. -/
+norm**: if `E/F` has degree `2` then `x² = Tr_{E/F}(x) · x - N_{E/F}(x)` for every `x : E`, with no
+hypothesis on `x`. Together with `TauCeti.Algebra.trace_eq_of_mul_self_eq` and
+`TauCeti.Algebra.norm_eq_of_mul_self_eq` this makes `(Tr x, N x)` the *unique* pair of coefficients
+of a monic quadratic over `F` satisfied by an `x` outside `F`. For an `x` inside `F` the equation
+still holds, `Tr x` being `2 x` and `N x` being `x²`, but the pair is no longer unique there, the
+minimal polynomial being linear. This is what separates the elliptic conjugacy classes of `GL₂(F)`
+from the split ones in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`: matching the trace and the
+determinant of a split or a Jordan normal form makes `x` a root of that form's characteristic
+polynomial, whose roots lie in `F`. -/
 theorem mul_self_eq_trace_mul_sub_norm (hE : Module.finrank F E = 2) (x : E) :
     x * x = algebraMap F E (Algebra.trace F E x) * x - algebraMap F E (Algebra.norm F x) := by
   have : FiniteDimensional F E := Module.finite_of_finrank_eq_succ (n := 1) hE

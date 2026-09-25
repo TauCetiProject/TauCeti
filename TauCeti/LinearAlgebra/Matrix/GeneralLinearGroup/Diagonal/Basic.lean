@@ -171,6 +171,7 @@ theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
 /-- **A constant family of units embeds as the corresponding scalar element** of the general linear
 group. Together with `TauCeti.notMem_range_scalar_diagGL` this says that in size two the diagonal
 embedding is scalar exactly on the diagonal of `kˣ × kˣ`. -/
+@[simp]
 theorem diagGL_const {ι : Type*} [Fintype ι] [DecidableEq ι] (a : kˣ) :
     diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
   Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
