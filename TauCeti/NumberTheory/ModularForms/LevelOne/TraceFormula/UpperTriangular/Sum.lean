@@ -131,19 +131,17 @@ theorem mapDomainLinearMap_ofMulAction_op_T_zpow_upperTriangularSum (j : ℤ) :
       (by simp [coe_T_zpow, Matrix.mul_apply, hA.1])).imp'
         (fun m ↦ ⟨T ^ m, Subgroup.zpow_mem_zpowers T m⟩) fun _ ↦ id
   choose! γ hγ using key
-  -- as `ℳₙ^∞` meets each orbit at most once, `x ↦ γ i x • x • T ^ i` permutes `ℳₙ^∞`, with
-  -- inverse `x ↦ γ (-i) x • x • T ^ (-i)`
-  have inv (i : ℤ) (x) (hx : x ∈ upperTriangularReps n) :
-      γ (-i) (γ i x • op (T : PSL(2, ℤ)) ^ i • x) • op (T : PSL(2, ℤ)) ^ (-i) •
-        γ i x • op (T : PSL(2, ℤ)) ^ i • x = x := by
+  -- as `ℳₙ^∞` meets each orbit at most once, `φ i x = γ i x • x • T ^ i` permutes `ℳₙ^∞`, with
+  -- inverse `φ (-i)`
+  let φ (i : ℤ) (x : TraceFormulaMatrixModule n) := γ i x • op (T : PSL(2, ℤ)) ^ i • x
+  have inv (i : ℤ) (x) (hx : x ∈ upperTriangularReps n) : φ (-i) (φ i x) = x := by
     have h := hγ (-i) _ (hγ i x hx)
-    simp only [← smul_comm (γ i x), smul_smul, ← zpow_add, neg_add_cancel, zpow_zero,
+    simp only [φ, ← smul_comm (γ i x), smul_smul, ← zpow_add, neg_add_cancel, zpow_zero,
       one_smul] at h ⊢
     exact smul_eq_self_of_mem_upperTriangularReps hx h
   simp only [upperTriangularSum, map_sum, ofMulAction_single, mapDomainLinearMap_single]
-  exact Finset.sum_nbij' (fun x ↦ γ j x • op (T : PSL(2, ℤ)) ^ j • x)
-    (fun x ↦ γ (-j) x • op (T : PSL(2, ℤ)) ^ (-j) • x) (by simpa using hγ j)
-    (by simpa using hγ (-j)) (by simpa using inv j) (by simpa using inv (-j)) fun _ _ ↦ by simp
+  exact Finset.sum_nbij' (φ j) (φ (-j)) (by simpa [φ] using hγ j) (by simpa [φ] using hγ (-j))
+    (by simpa using inv j) (by simpa using inv (-j)) fun _ _ ↦ by simp [φ]
 
 end Semiring
 
@@ -163,7 +161,7 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
 open ModularGroup MulOpposite in
 /-- **The right translates of `Tₙ^∞` by powers of `T`.** For `j ∈ ℤ`, the element
 `Tₙ^∞ (1 - T ^ j)` of `k[ℳₙ]` lies in `(1 - T)·k[ℳₙ]`, the range of left multiplication by
-`1 - T`. Popa–Zagier use the case `j = 1` in §3. -/
+`1 - T`. Popa–Zagier state the case `j = 1`; their §3 uses `j = ±1`. -/
 theorem one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range [CommRing k] (j : ℤ) :
     (1 - ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (T : PSL(2, ℤ)) ^ j))
         (upperTriangularSum k n) ∈
