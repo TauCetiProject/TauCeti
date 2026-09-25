@@ -16,10 +16,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Ba
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
--- Non-public: `FDRep.character_actionRes` reads the characters of the two sides of the Mackey
--- condition, and irreducibility of a line and its passage to `CategoryTheory.Simple` are used
--- only inside the proof that those two sides are simple.
-import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
+-- Non-public: irreducibility of a line and its passage to `CategoryTheory.Simple` are used only
+-- inside the proof that the two sides of the Mackey condition are simple.
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Simple.Basic
 

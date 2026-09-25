@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
+public import TauCeti.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Res
 
@@ -230,12 +231,6 @@ section Character
 
 variable [Field k]
 
-/-- The character of a restriction is the restriction of the character. -/
-@[simp]
-theorem character_resFDRep (S : Subgroup G) (B : FDRep k G) (s : S) :
-    (resFDRep S B).character s = B.character (s : G) :=
-  rfl
-
 /-- Pulling the class function of a representation back along the inclusion of a subgroup gives
 the class function of the restricted representation: `ClassFunction.comap S.subtype` is
 restriction of class functions. -/
@@ -243,7 +238,10 @@ restriction of class functions. -/
 theorem ClassFunction.comap_subtype_ofFDRep (S : Subgroup G) (B : FDRep k G) :
     ClassFunction.comap S.subtype (ClassFunction.ofFDRep B) =
       ClassFunction.ofFDRep (resFDRep S B) :=
-  Subtype.ext (funext fun _ => by simp)
+  Subtype.ext (funext fun s => by
+    rw [ClassFunction.comap_apply, ClassFunction.ofFDRep_apply,
+      ClassFunction.ofFDRep_apply]
+    exact (FDRep.character_actionRes B S.subtype s).symm)
 
 end Character
 

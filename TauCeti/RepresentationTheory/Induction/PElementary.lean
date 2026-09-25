@@ -405,42 +405,20 @@ gives a bijection between the corresponding sets of contributing cosets. -/
 theorem pSectionCosetCard_conj (c x : G) :
     pSectionCosetCard s P (c * x * c⁻¹) = pSectionCosetCard s P x := by
   rw [pSectionCosetCard, pSectionCosetCard]
-  let e : (G ⧸ pElementaryOfSylow s P) ≃ (G ⧸ pElementaryOfSylow s P) :=
-    MulAction.toPerm c
-  refine Nat.card_congr (Equiv.subtypeEquiv e (fun t => ?_)).symm
+  refine Nat.card_congr (Equiv.subtypeEquiv (MulAction.toPerm c) (fun t => ?_)).symm
   have hmk : ((c * Quotient.out t : G) : G ⧸ pElementaryOfSylow s P) =
-      ((e t).out : G ⧸ pElementaryOfSylow s P) := by
+      (((MulAction.toPerm c) t).out : G ⧸ pElementaryOfSylow s P) := by
     rw [← smul_eq_mul, MulAction.Quotient.mk_smul_out, QuotientGroup.out_eq']
-    rfl
-  constructor
-  · intro h
-    apply (pSectionCosetCondition_iff_of_mk_eq (s := s) (P := P) hmk).1
-    constructor
-    · rw [pFreePart_conj]
-      calc
-        (c * Quotient.out t)⁻¹ * (c * pFreePart p x * c⁻¹) * (c * Quotient.out t) =
-            (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t := by group
-        _ = s := h.1
-    · rw [pPart_conj]
-      have heq : (c * Quotient.out t)⁻¹ * (c * pPart p x * c⁻¹) *
-          (c * Quotient.out t) = (Quotient.out t)⁻¹ * pPart p x * Quotient.out t := by group
-      rw [heq]
-      exact h.2
-  · intro h
-    have h' := (pSectionCosetCondition_iff_of_mk_eq (s := s) (P := P) hmk).2 h
-    constructor
-    · rw [pFreePart_conj] at h'
-      calc
-        (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t =
-            (c * Quotient.out t)⁻¹ * (c * pFreePart p x * c⁻¹) *
-              (c * Quotient.out t) := by group
-        _ = s := h'.1
-    · rw [pPart_conj] at h'
-      have heq : (Quotient.out t)⁻¹ * pPart p x * Quotient.out t =
-          (c * Quotient.out t)⁻¹ * (c * pPart p x * c⁻¹) *
-            (c * Quotient.out t) := by group
-      rw [heq]
-      exact h'.2
+    exact (MulAction.toPerm_apply c t).symm
+  have hfree : (c * Quotient.out t)⁻¹ * pFreePart p (c * x * c⁻¹) *
+      (c * Quotient.out t) = (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t := by
+    rw [pFreePart_conj]
+    group
+  have hpart : (c * Quotient.out t)⁻¹ * pPart p (c * x * c⁻¹) *
+      (c * Quotient.out t) = (Quotient.out t)⁻¹ * pPart p x * Quotient.out t := by
+    rw [pPart_conj]
+    group
+  rw [← pSectionCosetCondition_iff_of_mk_eq hmk, hfree, hpart]
 
 /-- **The count is prime to `p` on every conjugate of the `p`-section of `s`**: the class-function
 form of `TauCeti.not_dvd_pSectionCosetCard`. -/

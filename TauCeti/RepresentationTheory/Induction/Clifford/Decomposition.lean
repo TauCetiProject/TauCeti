@@ -333,7 +333,7 @@ theorem clifford_restrict_character [Finite G] [IsAlgClosed k]
   intro n
   have hn := congrArg (fun f : ClassFunction k N ↦ f.1 n) hclass
   dsimp only [lhs, rhs] at hn
-  simp only [ClassFunction.ofFDRep_apply, character_resFDRep,
+  simp only [ClassFunction.ofFDRep_apply, FDRep.character_actionRes,
     Submodule.coe_smul, Pi.smul_apply, smul_eq_mul] at hn
   let eval : ClassFunction k N →+ k :=
     (Pi.evalAddMonoidHom (fun _ : N => k) n).comp

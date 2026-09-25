@@ -154,14 +154,6 @@ theorem one_mem_virtualCharacters : (1 : G → k) ∈ virtualCharacters k G := b
     funext fun g => FDRep.character_of_trivial g
   exact h ▸ character_mem_virtualCharacters _
 
-/-- The character of a representation restricted along a monoid homomorphism is the pullback of
-its character along that homomorphism. -/
-@[simp]
-theorem _root_.FDRep.character_actionRes {H : Type w} [Monoid H] (V : FDRep k G)
-    (phi : H →* G) (h : H) :
-    FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
-  (rfl)
-
 /-- **Pulling back along a monoid homomorphism preserves virtual characters.** The pullback
 `f ∘ φ` of a character along `φ : H →* G` is the character of the representation restricted along
 `φ`, Mathlib's `Action.res`, and pullback is additive, so the property propagates through the
