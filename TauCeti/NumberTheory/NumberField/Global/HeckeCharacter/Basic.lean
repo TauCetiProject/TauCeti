@@ -78,25 +78,8 @@ abbrev IsFiniteOrder (χ : HeckeCharacter K) : Prop := IsOfFinOrder χ
 /-- A Hecke character has finite order exactly when all of its values have a common positive
 exponent equal to one. -/
 theorem isFiniteOrder_iff (χ : HeckeCharacter K) :
-    χ.IsFiniteOrder ↔ ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 := by
-  constructor
-  · rintro hχ
-    obtain ⟨n, hn, hχn⟩ := hχ.exists_pow_eq_one
-    refine ⟨n, hn, fun c ↦ ?_⟩
-    rw [← ContinuousMonoidHom.pow_apply, hχn]
-    rfl
-  · rintro ⟨n, hn, hχ⟩
-    apply isOfFinOrder_iff_pow_eq_one.mpr
-    refine ⟨n, hn, ?_⟩
-    apply ContinuousMonoidHom.ext
-    intro c
-    rw [ContinuousMonoidHom.pow_apply]
-    exact hχ c
-
-/-- A finite-order Hecke character has a common positive exponent equal to one on all values. -/
-theorem IsFiniteOrder.exists_forall_pow_apply_eq_one {χ : HeckeCharacter K}
-    (hχ : χ.IsFiniteOrder) : ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 :=
-  (isFiniteOrder_iff χ).mp hχ
+    χ.IsFiniteOrder ↔ ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 :=
+  ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one χ
 
 /-- A pulled-back ray class character kills the ray subgroup. -/
 private theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :

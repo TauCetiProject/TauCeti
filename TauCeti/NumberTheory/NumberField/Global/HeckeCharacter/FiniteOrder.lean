@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Basic
 
-import Mathlib.RingTheory.RootsOfUnity.Basic
 import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
@@ -43,13 +42,8 @@ namespace HeckeCharacter
 
 /-- A finite-order Hecke character has open kernel, and is therefore locally constant. -/
 theorem isOpen_ker_of_isFiniteOrder {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
-    IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) := by
-  obtain ⟨n, hn, hχn⟩ := hχ.exists_forall_pow_apply_eq_one
-  let _ : NeZero n := ⟨hn.ne'⟩
-  have hmem : ∀ c, χ c ∈ rootsOfUnity n ℂ := fun c ↦ (mem_rootsOfUnity _ _).mpr (hχn c)
-  rw [← MonoidHom.ker_codRestrict (χ : IdeleClassGroup (𝓞 K) K →* ℂˣ)
-    (rootsOfUnity n ℂ) hmem]
-  exact (MonoidHom.continuous_iff_isOpen_ker _).mp (χ.continuous.subtype_mk hmem)
+    IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) :=
+  ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder hχ
 
 /-- **A Hecke character pulled back from a ray class character has open kernel.** -/
 theorem isOpen_ker_ofRayClassCharacter {𝔪 : Modulus K} (η : RayClassCharacter 𝔪) :

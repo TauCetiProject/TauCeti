@@ -7,9 +7,13 @@ module
 
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.Schreier
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
@@ -49,6 +53,8 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   Hausdorff monoid is determined by its values on a topological generating set.
 * `MonoidHom.eq_of_eqOn_of_isOpen_ker`: the same uniqueness statement for a homomorphism with
   open kernel, for which the target carries no topology.
+* `ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder`: a finite-order continuous character into
+  complex units has open kernel.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
   homomorphisms with open kernel go from a topologically finitely generated group to a fixed
   finite group.
@@ -209,6 +215,15 @@ theorem _root_.MonoidHom.continuous_iff_isOpen_ker {F : Type*} [MulOneClass F] [
   refine ⟨fun hf ↦ ?_, f.continuous_of_isOpen_ker⟩
   rw [MonoidHom.coe_ker]
   exact (isOpen_discrete _).preimage hf
+
+/-- A finite-order continuous character into the complex units has open kernel. -/
+theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder {χ : G →ₜ* ℂˣ}
+    (hχ : IsOfFinOrder χ) : IsOpen ((χ : G →* ℂˣ).ker : Set G) := by
+  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+  let _ : NeZero n := ⟨hn.ne'⟩
+  have hmem : ∀ c, χ c ∈ rootsOfUnity n ℂ := fun c ↦ (mem_rootsOfUnity _ _).mpr (hχn c)
+  rw [← MonoidHom.ker_codRestrict (χ : G →* ℂˣ) (rootsOfUnity n ℂ) hmem]
+  exact (MonoidHom.continuous_iff_isOpen_ker _).mp (χ.continuous.subtype_mk hmem)
 
 /-- A homomorphism whose kernel is open is determined by its values on a topological generating
 set: the equalizer of two such homomorphisms contains the (open) intersection of their kernels,
