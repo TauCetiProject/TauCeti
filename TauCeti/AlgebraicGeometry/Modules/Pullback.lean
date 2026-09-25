@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
-public import Mathlib.CategoryTheory.Limits.Preserves.Lattice
 
 /-!
 # Pullback and restriction of modules on schemes
