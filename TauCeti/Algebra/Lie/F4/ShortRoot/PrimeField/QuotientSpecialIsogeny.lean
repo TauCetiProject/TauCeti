@@ -200,7 +200,7 @@ private theorem quotientIsogeny_square_root
   have h₂ := quotientIsogeny_root (g.comp quotientIsogeny.hom.toAlgHom)
     (isogenyReverse k) (Multiplicative.ofAdd (Multiplicative.toAdd u ^ isogenyExponent k)) h₁
   simpa only [toAdd_ofAdd, ← pow_mul,
-    isogenyExponent_mul_isogenyExponent, isogenyReverse_isogenyReverse] using h₂
+    isogenyExponent_mul_isogenyExponent_eq_two, isogenyReverse_isogenyReverse] using h₂
 
 private theorem quotientIsogeny_square_torus
     {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
