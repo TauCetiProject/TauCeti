@@ -134,6 +134,49 @@ lemma le_card_snoc (hc : T.IsSelfIntersectionMinusTwoChain t c) {branch : T.Comp
     apply Fin.ext
     exact hc.injOn_snoc hbranch_ne p (by omega) q (by omega) hpq)
 
+/-- A chain read backwards is again a chain. -/
+lemma reverse (hc : T.IsSelfIntersectionMinusTwoChain t c) :
+    T.IsSelfIntersectionMinusTwoChain t fun i ↦ c (t - 1 - i) where
+  injOn i hi j hj h := by
+    have := hc.injOn (t - 1 - i) (by omega) (t - 1 - j) (by omega) h
+    omega
+  intersection_self i hi := hc.intersection_self (t - 1 - i) (by omega)
+  intersection_succ_pos i hi := by
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
+
+/-- Prepending a component of self-intersection `-2w` which is not in a chain and meets its first
+component gives a chain one component longer. -/
+lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
+    (hx_ne : ∀ i < t, x ≠ c i) (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
+    (hx_pos : 0 < T.intersection x (c 0)) :
+    T.IsSelfIntersectionMinusTwoChain (t + 1) fun i ↦ if i = 0 then x else c (i - 1) where
+  injOn i hi j hj h := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0 <;> rcases Nat.eq_zero_or_pos j with rfl | hj0
+    · rfl
+    · simp only [↓reduceIte, hj0.ne'] at h
+      exact (hx_ne (j - 1) (by omega) h).elim
+    · simp only [↓reduceIte, hi0.ne'] at h
+      exact (hx_ne (i - 1) (by omega) h.symm).elim
+    · simp only [hi0.ne', hj0.ne', ↓reduceIte] at h
+      have := hc.injOn (i - 1) (by omega) (j - 1) (by omega) h
+      omega
+  intersection_self i hi := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · simpa using hx_self
+    · simpa only [hi0.ne', ↓reduceIte] using hc.intersection_self (i - 1) (by omega)
+  intersection_succ_pos i hi := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · simpa using hx_pos
+    · simpa only [hi0.ne', Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel] using
+        hc.intersection_pos (i := i - 1) (by omega) (by omega)
+
+/-- The components of a chain of length `t` form a set of `t` components. -/
+lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
+    #((range t).image c) = t := by
+  rw [card_image_of_injOn fun i hi j hj h ↦
+    hc.injOn i (mem_range.mp hi) j (mem_range.mp hj) h, card_range]
+
 end IsSelfIntersectionMinusTwoChain
 
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
