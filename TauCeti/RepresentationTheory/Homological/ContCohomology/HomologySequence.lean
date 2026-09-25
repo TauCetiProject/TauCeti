@@ -174,10 +174,9 @@ variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [Com
     [DistribMulAction H C']
 
 omit [CompactSpace G] [CompactSpace H] in
-/-- A square of discrete modules, with a compatible pair along `φ` on the left and right and
-coefficient maps on top and bottom, induces a commuting square of homogeneous-cochain complexes.
-The two sides are compatible-pair cochain maps along `id.comp φ` and `φ.comp id`, which are `φ`, so
-the square reduces to one of coefficient morphisms, checked on elements. -/
+/-- Compatible pairs `(φ, f)` and `(φ, f')` and equivariant coefficient maps `i` and `j`
+induce a commuting square of homogeneous-cochain complexes when `f' (i m) = j (f m)` for every
+`m : M`. -/
 private theorem cochainsMap_comp_cochainsMap_id
     {M M' : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M] [AddCommGroup M'] [TopologicalSpace M'] [DiscreteTopology M']
@@ -194,6 +193,7 @@ private theorem cochainsMap_comp_cochainsMap_id
         (continuousCochainsFunctor ℤ H).map (ofDiscreteModuleMap j.toIntLinearMap hj) =
       (continuousCochainsFunctor ℤ G).map (ofDiscreteModuleMap i.toIntLinearMap hi) ≫
         cochainsMap φ (ofDiscreteModulePair (φ : H →* G) f'.toIntLinearMap hf') :=
+  -- Both compositions act along `φ`; equality reduces to the coefficient maps on elements.
   (cochainsMap_comp φ (ContinuousMonoidHom.id H) _ _).symm.trans <|
     (congrArg (cochainsMap φ) <| by
       ext (m : M)
