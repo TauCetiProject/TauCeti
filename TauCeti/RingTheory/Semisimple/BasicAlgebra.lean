@@ -11,7 +11,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
-public import TauCeti.RingTheory.Jacobson.FiniteDimensional
+public import TauCeti.RingTheory.Jacobson.FiniteOverArtinian
 -- Non-public: used only inside proofs.  The matrix units produce the square-zero element that
 -- rules out a block of size at least two, a one-by-one matrix ring collapses to its base ring, and
 -- an equivalence of rings carries the Jacobson radical onto the Jacobson radical and so descends
