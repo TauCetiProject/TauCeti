@@ -3,6 +3,7 @@
 import json
 import os
 import pathlib
+import shlex
 import stat
 import subprocess
 import tempfile
@@ -142,16 +143,60 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertIn('--ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR"', run)
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
 
-    def test_empty_repair_pr_exception_covers_dispatched_rebuilds(self):
+    def repair_exemption(self, event, files, env=None, api=None):
+        """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
+        `gh` that prints `api` (or fails when it is None). Returns (repair_pr, routed_to_human)."""
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         (job,) = [j for j in wf["jobs"].values()
                   if any("Build exact candidate under bwrap" in s.get("name", "")
                          for s in j.get("steps", []))]
         run = next(s["run"] for s in job["steps"] if s.get("name", "").startswith("Scope guard"))
-        self.assertIn('"workflow_dispatch" ]; then', run)
-        self.assertIn("[.head.ref, .head.repo.full_name, .user.login]", run)
-        self.assertIn('[[ "$PR_HEAD_REF" == lint-repair/* ]]', run)
-        self.assertIn('[ "$PR_USER" = "tauceti-review-bot[bot]" ]', run)
+        start = run.index("repair_pr=0")
+        end = run.index('elif [ -n "$files" ]; then', start)
+        block = run[start:end] + "fi\necho \"repair_pr=$repair_pr\"\n"
+        block = (block.replace("${{ github.event_name }}", event)
+                      .replace("${{ github.repository }}", "o/r")
+                      .replace("${{ steps.pr.outputs.num }}", "12"))
+        with tempfile.TemporaryDirectory() as d:
+            d = pathlib.Path(d)
+            gh = d / "gh"
+            gh.write_text("#!/usr/bin/env bash\n" + ("exit 1\n" if api is None else
+                                                    f"printf '%s\\n' {shlex.quote(api)}\n"))
+            gh.chmod(0o755)
+            github_env = d / "github_env"
+            github_env.write_text("")
+            out = subprocess.run(
+                ["bash", "-c", f"set -uo pipefail\nfiles={shlex.quote(files)}\n{block}"],
+                env={**os.environ, "PATH": f"{d}:{os.environ['PATH']}", "GITHUB_ENV": str(github_env),
+                     "PR_HEAD_REF": "", "PR_HEAD_REPO": "", "PR_USER": "", **(env or {})},
+                capture_output=True, text=True)
+            self.assertEqual(out.returncode, 0, out.stderr)
+            return ("repair_pr=1" in out.stdout, "INFRA=1" in github_env.read_text())
+
+    BOT = "tauceti-review-bot[bot]"
+
+    def test_dispatched_empty_repair_pr_is_built(self):
+        self.assertEqual(self.repair_exemption(
+            "workflow_dispatch", "", api=f"lint-repair/main\to/r\t{self.BOT}"), (True, False))
+
+    def test_pull_request_empty_repair_pr_is_built(self):
+        env = {"PR_HEAD_REF": "lint-repair/main", "PR_HEAD_REPO": "o/r", "PR_USER": self.BOT}
+        self.assertEqual(self.repair_exemption("pull_request_target", "", env=env), (True, False))
+
+    def test_other_dispatched_empty_prs_go_to_a_human(self):
+        for api in (f"feature\to/r\t{self.BOT}", f"lint-repair/main\tfork/r\t{self.BOT}",
+                    "lint-repair/main\to/r\tsomeone", ""):
+            with self.subTest(api=api):
+                self.assertEqual(self.repair_exemption("workflow_dispatch", "", api=api),
+                                 (False, True))
+
+    def test_api_failure_goes_to_a_human(self):
+        self.assertEqual(self.repair_exemption("workflow_dispatch", "", api=None), (False, True))
+
+    def test_nonempty_diff_is_not_exempted(self):
+        self.assertEqual(self.repair_exemption(
+            "workflow_dispatch", "TauCeti/A.lean", api=f"lint-repair/main\to/r\t{self.BOT}"),
+            (False, False))
 
     def test_only_the_full_lint_label_rebuilds(self):
         # pr-build does not run on label changes; a separate workflow dispatches it for full-lint.
