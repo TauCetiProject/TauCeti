@@ -989,7 +989,24 @@ jobs:
   # successful deploy repairs.
   advance-docgen-ref:
     needs: [build-site, deploy]
-    if: needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main'
+    # `!cancelled()` is load-bearing, and its absence is why this job has not run since the
+    # provenance marker was introduced: `docgen` has sat at 93386bc8 while /docs went on being
+    # published, most recently from 5e787449.
+    #
+    # A condition with no status function carries an implicit `success()`, and that implicit
+    # check is not satisfied by this job's own needs succeeding -- a skipped job anywhere in the
+    # dependency graph above it is enough to skip it too. `deploy` needs `fallback-site`, which
+    # is skipped on every run where the site builds, so this job was skipped on exactly the runs
+    # that had something to publish, and could only have run after a build-site failure.
+    #
+    # Measured rather than reasoned: a probe workflow with this graph skips the dependent job,
+    # and adding `!cancelled()` makes it run, with everything else held fixed.
+    #
+    # The guard that matters is kept and tightened: advance only when build-site itself
+    # succeeded, so the published site is the one it produced, and only when it read a valid
+    # SOURCE_SHA out of the tree it deployed.
+    if: ${{ !cancelled() && needs.build-site.result == 'success'
+        && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
