@@ -16,17 +16,18 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 
 Let `Γ = PSL(2, ℤ)` act on the projective determinant-`n` matrix module `ℳₙ` by left and by
 right multiplication. For `n > 0` the elementary divisor theorem puts every `M ∈ ℳₙ` into the
-double coset of a diagonal matrix: `M = γ · diag(d₀, d₁) · γ'` with `γ, γ' ∈ Γ`, `0 < d₀`,
+double coset of a diagonal matrix: `M = g · diag(d₀, d₁) · g'` with `g, g' ∈ Γ`, `0 < d₀`,
 `d₀ ∣ d₁` and `d₀ d₁ = n`. Writing `d₀ = a` and `d₁ = am`, the double cosets
 `Γ (a 0; 0 am) Γ` with `a, m ≥ 1` therefore cover `ℳ = ⋃_{n ≥ 1} ℳₙ`, as in Popa and Zagier's
 decomposition of `ℳ` into double cosets.
 
 The right coset `diag(d₀, d₁) · Γ` consists of the classes of the matrices
-`(d₀ α, d₀ β; d₁ γ, d₁ δ)` with `αδ - βγ = 1`. As the determinant is fixed, these are exactly
-the determinant-`n` matrices whose first row is divisible by `d₀` and whose second row is
-divisible by `d₁`; for `diag(1, m)` this is Popa and Zagier's description of the coset
-`K₀ = (1 0; 0 m) Γ`. On the other side, the orbit of `diag(d₀, d₁)` under left multiplication
-by `Γ_∞ = ⟨T⟩` consists of the classes of the matrices `(d₀, j d₁; 0, d₁)` with `j ∈ ℤ`.
+`(d₀ α, d₀ β; d₁ γ, d₁ δ)` with `αδ - βγ = 1`. As the determinant `n = d₀ d₁` is fixed and
+nonzero, these are exactly the determinant-`n` matrices whose first row is divisible by `d₀` and
+whose second row is divisible by `d₁`; for `diag(1, m)` this is Popa and Zagier's description of
+the coset `K₀ = (1 0; 0 m) Γ`. On the other side, the orbit of `diag(d₀, d₁)` under left
+multiplication by `Γ_∞ = ⟨T⟩` consists of the classes of the matrices `(d₀, j d₁; 0, d₁)` with
+`j ∈ ℤ`.
 
 ## Main definitions
 
@@ -37,9 +38,9 @@ by `Γ_∞ = ⟨T⟩` consists of the classes of the matrices `(d₀, j d₁; 0,
 
 * `TauCeti.TraceFormulaMatrixModule.exists_eq_smul_op_smul_mk_diagonal`: for `n > 0`, every
   element of `ℳₙ` lies in the double coset of some `diag(d₀, d₁)` with `0 < d₀`, `d₀ ∣ d₁`.
-* `TauCeti.TraceFormulaMatrixModule.mk_mem_orbit_op_mk_diagonal_iff`: the class of `A` lies in
-  the right coset `diag(d₀, d₁) · Γ` if and only if `d₀` divides the first row of `A` and `d₁`
-  its second row.
+* `TauCeti.TraceFormulaMatrixModule.mk_mem_orbit_op_mk_diagonal_iff`: for `n ≠ 0`, the class of
+  `A` lies in the right coset `diag(d₀, d₁) · Γ` if and only if `d₀` divides the first row of `A`
+  and `d₁` its second row.
 * `TauCeti.TraceFormulaMatrixModule.mk_mem_orbit_zpowers_T_mk_diagonal_iff`: the
   `Γ_∞`-orbit of `diag(d₀, d₁)` consists of the classes of `(d₀, j d₁; 0, d₁)`.
 
@@ -76,16 +77,14 @@ Theorem 4(b)): for `n > 0`, every `x ∈ ℳₙ` is `g · diag(d₀, d₁) · γ
 `γ ∈ PSL(2, ℤ)` and `d₀ d₁ = n` with `0 < d₀` and `d₀ ∣ d₁`. -/
 theorem exists_eq_smul_op_smul_mk_diagonal (hn : 0 < n) (x : TraceFormulaMatrixModule n) :
     ∃ (d₀ d₁ : ℤ) (h : d₀ * d₁ = n), 0 < d₀ ∧ d₀ ∣ d₁ ∧
-      ∃ (g : SL(2, ℤ)) (γ : PSL(2, ℤ)),
-        x = g • mk (TraceFormulaMatrix.diagonal d₀ d₁ h) <• γ := by
+      ∃ (g : SL(2, ℤ)) (γ : PSL(2, ℤ)), x = g • mk (TraceFormulaMatrix.diagonal d₀ d₁ h) <• γ := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   -- the Smith normal form `L A R = diag(d₀, d₁)` gives `A = L⁻¹ diag(d₀, d₁) R⁻¹`
   obtain ⟨L, R, d, hd, hdvd, hLR⟩ := A.1.exists_smith_normal_form_of_det_pos (A.2.symm ▸ hn)
   have hdet : d 0 * d 1 = n := by
     simpa [Fin.prod_univ_two, A.2] using prod_eq_det_of_mul_mul_eq_diagonal hLR
-  refine ⟨d 0, d 1, hdet, hd 0, hdvd (Fin.zero_le 1), L⁻¹, ((R⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)), ?_⟩
-  rw [eq_inv_smul_iff, QuotientGroup.mk_inv, MulOpposite.op_inv, eq_inv_smul_iff, smul_mk,
-    op_smul_mk]
+  refine ⟨d 0, d 1, hdet, hd 0, hdvd (Fin.zero_le 1), L⁻¹, (R : PSL(2, ℤ))⁻¹, ?_⟩
+  rw [eq_inv_smul_iff, MulOpposite.op_inv, eq_inv_smul_iff, smul_mk, op_smul_mk]
   congr 1
   apply FixedDetMatrices.ext'
   simp [FixedDetMatrices.smul_coe, hLR, diagonal_fin_two]
@@ -98,19 +97,17 @@ theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) 
     mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔
       d₀ ∣ A.1 0 0 ∧ d₀ ∣ A.1 0 1 ∧ d₁ ∣ A.1 1 0 ∧ d₁ ∣ A.1 1 1 := by
   rw [mk_mem_orbit_op_mk_iff]
-  constructor
-  · rintro ⟨g, hg⟩
-    simp [hg, Matrix.mul_apply, Fin.sum_univ_two]
-  · -- `A = diag(d₀, d₁) (a b; c e)`, and `(a b; c e)` has determinant `1` because `A` has
-    -- determinant `d₀ d₁ ≠ 0`
-    rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨e, he⟩⟩
-    have hdet : a * e - b * c = 1 := by
-      have hA := A.2
-      rw [Matrix.det_fin_two, ha, hb, hc, he, ← h] at hA
-      exact mul_left_cancel₀ (h ▸ hn) (by linear_combination hA)
-    refine ⟨⟨!![a, b; c, e], by simp [Matrix.det_fin_two_of, hdet]⟩, ?_⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, he]
+  refine ⟨fun ⟨g, hg⟩ ↦ by simp [hg, Matrix.mul_apply], ?_⟩
+  -- `A = diag(d₀, d₁) (a b; c e)`, and `(a b; c e)` has determinant `1` because `A` has
+  -- determinant `d₀ d₁ ≠ 0`
+  rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨e, he⟩⟩
+  have hdet : a * e - b * c = 1 := by
+    have hA := A.2
+    rw [Matrix.det_fin_two, ha, hb, hc, he, ← h] at hA
+    exact mul_left_cancel₀ (h ▸ hn) (by linear_combination hA)
+  refine ⟨⟨!![a, b; c, e], by simp [Matrix.det_fin_two_of, hdet]⟩, ?_⟩
+  rw [A.1.eta_fin_two, ha, hb, hc, he]
+  simp
 
 /-- **The `Γ_∞`-orbit of a diagonal matrix**: the class of `A` lies in the orbit of
 `diag(d₀, d₁)` under left multiplication by `Γ_∞ = ⟨T⟩` if and only if
@@ -122,13 +119,9 @@ theorem mk_mem_orbit_zpowers_T_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d�
   rw [MulAction.mem_orbit_iff, Subgroup.exists_zpowers]
   refine exists_congr fun j ↦ ?_
   have hT : (T ^ j • TraceFormulaMatrix.diagonal d₀ d₁ h).1 = !![d₀, j * d₁; 0, d₁] := by
-    rw [FixedDetMatrices.smul_coe, coe_T_zpow, TraceFormulaMatrix.val_diagonal]
-    simp
+    simp [FixedDetMatrices.smul_coe, coe_T_zpow]
   rw [Subgroup.smul_def, smul_mk, mk_eq_iff]
-  refine or_congr ⟨fun hA ↦ hA ▸ hT, fun hA ↦ FixedDetMatrices.ext' _ _ (hT.trans hA.symm)⟩
-    ⟨fun hA ↦ ?_, fun hA ↦ FixedDetMatrices.ext' _ _ ?_⟩
-  · rw [← hT, hA, TraceFormulaMatrix.val_neg, neg_neg]
-  · rw [TraceFormulaMatrix.val_neg, hA, neg_neg, hT]
+  grind [FixedDetMatrices.ext', TraceFormulaMatrix.val_neg]
 
 end TraceFormulaMatrixModule
 

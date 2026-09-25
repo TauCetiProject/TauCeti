@@ -478,21 +478,17 @@ theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormu
 /-- The class of `A` lies in the right coset of the class of `B` exactly when `A = B g` for some
 `g ∈ SL(2, ℤ)`; the sign ambiguity of the classes is absorbed into `g`. -/
 theorem TraceFormulaMatrixModule.mk_mem_orbit_op_mk_iff {A B : TraceFormulaMatrix n} :
-    TraceFormulaMatrixModule.mk A ∈
-        MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
+    TraceFormulaMatrixModule.mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
       ∃ g : SL(2, ℤ), A.1 = B.1 * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
-  rw [MulAction.mem_orbit_iff]
+  simp only [MulAction.mem_orbit_iff, MulOpposite.exists, QuotientGroup.exists_mk, op_smul_mk,
+    eq_comm (b := mk A), mk_eq_iff]
   constructor
-  · rintro ⟨γ, hγ⟩
-    obtain ⟨γ, rfl⟩ := MulOpposite.op_surjective γ
-    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective γ
-    rcases mk_eq_iff.mp ((op_smul_mk g B).symm.trans hγ) with hg | hg
-    · exact ⟨g, by simp [← hg]⟩
-    · exact ⟨-g, by simp [← neg_eq_iff_eq_neg.mpr hg]⟩
+  · -- `A = ±B g`, and the sign is absorbed by replacing `g` with `-g`
+    rintro ⟨g, rfl | rfl⟩
+    · exact ⟨g, by simp⟩
+    · exact ⟨-g, by simp⟩
   · rintro ⟨g, hg⟩
-    refine ⟨.op (g : PSL(2, ℤ)), (op_smul_mk g B).trans (congrArg mk ?_)⟩
-    apply FixedDetMatrices.ext'
-    rw [val_traceFormulaMatrixRight, inv_inv, hg]
+    exact ⟨g, .inl <| FixedDetMatrices.ext' _ _ <| by simp [hg]⟩
 
 /-- Left and right multiplication on `ℳₙ` commute. -/
 instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
