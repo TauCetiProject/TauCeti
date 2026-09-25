@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.MeasureTheory.Measure.MeasurePreserving
 public import TauCeti.Probability.Cdf
 
@@ -48,7 +49,10 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.cdf_map_eq_volume_restrict` — the probability integral transform for an
   atomless real law;
 * `MeasureTheory.Measure.cdf_quantile_ae` and
-  `MeasureTheory.Measure.quantile_cdf_ae` — the two almost-everywhere inverse laws.
+  `MeasureTheory.Measure.quantile_cdf_ae` — the two almost-everywhere inverse laws;
+* `MeasureTheory.Measure.realMod0MeasureIso` — for an atomless real law, the pair
+  (`cdf ν`, `ν.quantile`) as a `MeasureTheory.Measure.Mod0MeasureIso` between `ν` and Lebesgue
+  measure restricted to `[0, 1]`.
 
 ## References
 
@@ -298,5 +302,23 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
     simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using
       (map_quantile_volume_Ioo ν)
   exact ae_eq_id_of_measurePreserving_of_le (hq.comp hcdf) hmap hle
+
+/-- **The CDF/quantile transport of an atomless real law.** The cumulative distribution function
+and the quantile function of an atomless probability measure `ν` on `ℝ` push `ν` and Lebesgue
+measure restricted to `[0, 1]` forward onto one another, and are mutually inverse almost
+everywhere; together they are a mod-zero isomorphism between `ν` and the unit interval. It is
+`@[expose]`d so that its maps, `cdf ν` and `ν.quantile`, hold by `rfl` downstream. -/
+@[expose]
+def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] : Mod0MeasureIso ℝ ℝ ν (volume.restrict (Set.Icc 0 1)) where
+  toFun := cdf ν
+  invFun := ν.quantile
+  measurable_toFun := (cdf ν).mono.measurable
+  measurable_invFun := measurable_quantile ν
+  map_toFun := cdf_map_eq_volume_restrict ν
+  map_invFun := by
+    simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using (map_quantile_volume_Ioo ν)
+  left_inv_ae := quantile_cdf_ae ν
+  right_inv_ae := cdf_quantile_ae ν
 
 end MeasureTheory.Measure
