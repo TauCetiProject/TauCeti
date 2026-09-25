@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 
 /-!
 # Descent of finite presentation along a covering family
@@ -30,6 +31,23 @@ noncomputable section
 
 namespace SheafOfModules
 
+section Shrink
+
+variable {C : Type u₁} [Category.{v} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+  [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+/-- Shrinking the covering family of finite quasicoherent data keeps each selected local
+presentation, so the generators and relations of the shrunk data remain finite. -/
+instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_shrink
+    {M : _root_.SheafOfModules.{u} R} (q : M.QuasicoherentData)
+    [q.IsFinitePresentation] : q.shrink.IsFinitePresentation where
+  isFinite_presentation i := by
+    dsimp only [_root_.SheafOfModules.QuasicoherentData.shrink]
+    exact _root_.SheafOfModules.QuasicoherentData.IsFinitePresentation.isFinite_presentation _
+
+end Shrink
+
 variable {C : Type u₁} [Category.{v} C] [HasBinaryProducts C]
   {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
   [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
@@ -38,16 +56,6 @@ variable {C : Type u₁} [Category.{v} C] [HasBinaryProducts C]
   [∀ X Y, HasSheafify ((J.over X).over Y) AddCommGrpCat.{u}]
   [∀ X Y, ((J.over X).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
 
-/-- Shrinking the index type of a finite local presentation retains finiteness of its
-generators and relations. -/
-instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_shrink
-    {M : _root_.SheafOfModules.{u} R} (q : M.QuasicoherentData)
-    [q.IsFinitePresentation] : q.shrink.IsFinitePresentation where
-  isFinite_presentation i := by
-    -- `shrink` chooses an original covering index for each object in the range of the cover.
-    change (q.presentation i.2.choose).IsFinite
-    infer_instance
-
 /-- Assembling finite local presentations along a cover gives a finite presentation on the
 resulting common cover. -/
 instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_bind
@@ -55,19 +63,12 @@ instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_bind
     (hX : J.CoversTop X) (D : ∀ i, (M.over (X i)).QuasicoherentData)
     [∀ i, (D i).IsFinitePresentation] :
     (_root_.SheafOfModules.QuasicoherentData.bind M X hX D).IsFinitePresentation where
+  -- Each assembled presentation is a local presentation mapped along an equivalence and then
+  -- transported along an isomorphism; both steps preserve finiteness.
   isFinite_presentation i := by
-    have h := _root_.SheafOfModules.QuasicoherentData.IsFinitePresentation.isFinite_presentation
-      (q := D i.1) i.2
-    constructor
-    · constructor
-      -- `bind` transports a presentation through an equivalence and an isomorphism; neither
-      -- changes the generator index type.
-      change Finite ((D i.1).presentation i.2).generators.I
-      exact h.isFiniteType_generators.finite
-    · constructor
-      -- The relation index type is unchanged by the same transport.
-      change Finite ((D i.1).presentation i.2).relations.I
-      exact h.isFiniteType_relations.finite
+    dsimp only [_root_.SheafOfModules.QuasicoherentData.bind]
+    apply +allowSynthFailures _root_.SheafOfModules.instIsFiniteOfIsIso
+    apply +allowSynthFailures _root_.SheafOfModules.Presentation.isFinite_map
 
 omit [HasBinaryProducts C] [HasSheafify J AddCommGrpCat.{u}]
   [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
