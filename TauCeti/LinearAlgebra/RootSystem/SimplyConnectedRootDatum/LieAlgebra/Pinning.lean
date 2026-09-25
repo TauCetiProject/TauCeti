@@ -21,9 +21,11 @@ by the Chevalley involution (`TauCeti.DynkinType.chevalleyInvolution_lieBasis_e`
 
 This module establishes the Serre-relation bracket vanishings that underlie the Chevalley
 commutator formulas, and applies them through the existing Kostant root-subgroup
-machinery. The uniform exponentials themselves are provided by
-`TauCeti.DynkinType.geckRootSubgroupMatrix`; this module contributes only the bracket
-relations and their direct transfer to the represented pinning.
+machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any `ℚ`-algebra are provided by
+`TauCeti.DynkinType.pinnedExp`, a thin wrapper over the existing
+`TauCeti.DynkinType.geckRootSubgroupMatrix` that converts the scalar to a `𝔾ₐ`-point; this
+module contributes only the bracket relations and their direct transfer to the represented
+pinning.
 
 ## Main results
 
@@ -34,9 +36,15 @@ relations and their direct transfer to the represented pinning.
 * `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero`: the Chevalley
   commutator relation (commuting case) for the represented pinning — the existing Kostant
   commutativity lemma applied through `geckRootSubgroupMatrix`.
+* `TauCeti.DynkinType.pinnedExp`: the uniform exponential `u ↦ exp(u • e_i)` over any
+  `ℚ`-algebra, as a thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`; with the
+  root-subgroup identification
+  `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`, the one-parameter law,
+  and the commuting-case Chevalley relation
+  `TauCeti.DynkinType.pinnedExp_comm_of_cartan_eq_zero`.
 * `TauCeti.DynkinType.lie_lieBasis_e_e_e_of_cartan_eq_neg_one`: for a length-one root
-  string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the Heisenberg
-  Lie-algebra structure underlying the non-commuting Chevalley commutator formula.
+  string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the one-sided
+  Serre relation.
 
 ## References
 
@@ -110,14 +118,65 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
   exact TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix
     _ _ _ _ _ _ hbracket _ _ _ _
 
-/-! ## Length-one root strings: Heisenberg Lie algebra structure -/
+/-! ## The uniform exponential -/
+
+/-- The uniform exponential `u ↦ exp(u • e_i)` of the `i`-th simple raising generator, as a
+thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`: the scalar `u : A` in any
+`ℚ`-algebra is converted to a `𝔾ₐ`-point through `Multiplicative.ofAdd` and
+`TauCeti.AdditiveGroup.gaPointsMulEquiv`. No exponential matrix is re-implemented here; the
+divided-power exponential nature of the underlying matrix is recorded in
+`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`, and the
+identification with the root-subgroup construction in
+`TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`. -/
+noncomputable def pinnedExp (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i : Fin t.rank) (u : A) :
+    Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
+  t.geckRootSubgroupMatrix ht (.inl i)
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+
+/-- **Identification of the uniform exponential with the root-subgroup construction.**
+`pinnedExp` is the coercion to the general linear group of the parametrized Geck
+root-subgroup point `TauCeti.DynkinType.geckRootSubgroupPoints` at the corresponding
+`𝔾ₐ`-parameter. -/
+theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i : Fin t.rank) (u : A) :
+    t.pinnedExp ht A i u =
+      (t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u) :
+        Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) := by
+  rw [t.coe_geckRootSubgroupPoints ht]
+  rfl
+
+/-- The uniform exponential at `u = 0` is the identity matrix. -/
+theorem pinnedExp_zero (A : Type*) [CommRing A] [Algebra ℚ A] (i : Fin t.rank) :
+    t.pinnedExp ht A i 0 = 1 := by
+  simp [pinnedExp]
+
+/-- The one-parameter subgroup law: `exp(u • e_i) * exp(v • e_i) = exp((u + v) • e_i)`,
+inherited from the monoid-hom structure of the root-subgroup matrix. -/
+theorem pinnedExp_mul (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i : Fin t.rank) (u v : A) :
+    t.pinnedExp ht A i u * t.pinnedExp ht A i v = t.pinnedExp ht A i (u + v) := by
+  simp only [pinnedExp, ← map_mul]
+  rfl
+
+/-- The Chevalley commutator relation (commuting case) for the uniform exponentials: when
+the Cartan matrix entry is zero, the corresponding exponentials commute. This is
+`TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero` through the
+`pinnedExp` interface. -/
+theorem pinnedExp_comm_of_cartan_eq_zero (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0) (u v : A) :
+    Commute (t.pinnedExp ht A i u) (t.pinnedExp ht A j v) :=
+  t.geckRootSubgroupMatrix_comm_of_cartan_eq_zero ht A i j hA _ _
+
+/-! ## Length-one root strings: one-sided Serre vanishing -/
 
 /-- For a length-one root string (`A_{ji} = -1`, i.e., `α_i + α_j` is a root but
 `2α_i + α_j` is not), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes. This is the Serre
-relation: `(ad e_i)^{-A_{ji}}(⁅e_i, e_j⁆) = (ad e_i)(⁅e_i, e_j⁆) = 0`. Together with the symmetric
-statement, this says the subalgebra generated by `e_i, e_j` is Heisenberg, the Lie-algebra
-input to the Chevalley commutator formula
-`[x_{α_i}(u), x_{α_j}(v)] = x_{α_i+α_j}(N_{ij} uv)`. -/
+relation: `(ad e_i)^{-A_{ji}}(⁅e_i, e_j⁆) = (ad e_i)(⁅e_i, e_j⁆) = 0`. Only this one-sided
+vanishing is proved: no symmetric statement is claimed, since in multiply-laced types
+(`B₂`, `C₂`, `G₂`) the reverse Cartan entry `A_{ij}` may be `-2` or `-3`, and the
+Chevalley commutator formula can then involve further root factors beyond
+`x_{α_i+α_j}`. -/
 theorem lie_lieBasis_e_e_e_of_cartan_eq_neg_one (i j : Fin t.rank)
     (hA : t.cartanMatrix j i = -1) :
     ⁅(t.lieBasis ht).e i, ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆⁆ = 0 := by
