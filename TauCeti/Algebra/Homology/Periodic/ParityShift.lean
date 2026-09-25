@@ -117,6 +117,36 @@ noncomputable def parityShiftToPeriodicComplexIso :
           (C := C) (R := R)).symm) _ ≪≫
       Functor.associator _ _ _)
 
+/-- On a duplex, the homotopy-category comparison is the image of the complex-level
+comparison, followed by the quotient's shift comparison. -/
+@[simp]
+theorem parityShiftToPeriodicComplexIso_hom_app_quotient_obj
+    (X : CurvedDuplex C (0 : R)) :
+    (parityShiftToPeriodicComplexIso C R).hom.app
+        ((nullHomotopic C (0 : R)).quotientFunctor.obj X) =
+      eqToHom (by simp [periodicComplexEquivalence_functor]) ≫
+        (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
+          ((CurvedDuplex.parityShiftToPeriodicComplexIso C R).hom.app X) ≫
+        ((_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).commShiftIso
+          (1 : ℤ)).hom.app ((CurvedDuplex.toPeriodicComplex C R).obj X) ≫
+        eqToHom (by simp [periodicComplexEquivalence_functor]) := by
+  simp [parityShiftToPeriodicComplexIso, eqToHom_map]
+
+/-- On a duplex, the inverse homotopy-category comparison is the quotient's inverse shift
+comparison followed by the image of the inverse complex-level comparison. -/
+@[simp]
+theorem parityShiftToPeriodicComplexIso_inv_app_quotient_obj
+    (X : CurvedDuplex C (0 : R)) :
+    (parityShiftToPeriodicComplexIso C R).inv.app
+        ((nullHomotopic C (0 : R)).quotientFunctor.obj X) =
+      eqToHom (by simp [periodicComplexEquivalence_functor]) ≫
+        ((_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).commShiftIso
+          (1 : ℤ)).inv.app ((CurvedDuplex.toPeriodicComplex C R).obj X) ≫
+        (_root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2))).map
+          ((CurvedDuplex.parityShiftToPeriodicComplexIso C R).inv.app X) ≫
+        eqToHom (by simp [periodicComplexEquivalence_functor]) := by
+  simp [parityShiftToPeriodicComplexIso, eqToHom_map, Category.assoc]
+
 end HomotopyCategory
 
 end TauCeti.CurvedDuplex
