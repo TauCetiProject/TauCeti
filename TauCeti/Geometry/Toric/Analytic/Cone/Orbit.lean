@@ -356,6 +356,7 @@ theorem affineConeOrbitAmbient_snd_apply (hi : IsIntegralLattice i)
   simp [affineConeOrbitAmbient]
 
 /-- The ambient orbit chart ranges over pairs whose coordinates are all nonzero. -/
+@[simp]
 theorem range_affineConeOrbitAmbient (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face) :
