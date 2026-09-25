@@ -37,9 +37,8 @@ pointwise commutator subgroup and the points of the derived group is needed.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-This advances Layer 5, "Lie--Kolchin; solvable groups", of the ReductiveGroups roadmap. It is the
-derived-subgroup recursion bridge connecting the existing scheme-theoretic derived subgroup to the
-existing geometric-points solvability predicate.
+This comparison passes solvability between a geometric group and its derived subgroup, and is used
+when reducing arguments by derived length.
 -/
 
 public section

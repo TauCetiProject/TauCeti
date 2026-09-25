@@ -62,6 +62,8 @@ commutator subgroup, and hence yields an ambient weight vector.
   the geometric-unipotence formulation of that basis theorem.
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_isSolvable`: every nonzero finite-dimensional
   representation of a connected solvable group has a weight vector.
+* `TauCeti.Comodule.hasNonzeroWeightVector_of_geometricallySolvable`: the same conclusion
+  stated with the geometric connectedness and solvability object properties.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable`: **the
   Lie--Kolchin theorem**, every finite-dimensional representation of a connected solvable group
   is upper triangularizable.
@@ -328,13 +330,9 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallyUnipote
   exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallyUnipotent_of_le_derived
     (CommHopfAlgCat.derivedDefiningIdeal H) le_rfl hderived
 
-/-- The induction behind Lie--Kolchin: if the rational points of a reduced connected affine group
-have derived length at most `n`, every nonzero finite-dimensional representation has a weight
-vector.
-
-For `n + 1`, the derived subgroup is again reduced and connected, and its rational points have
-derived length at most `n`. A weight vector for it is a joint eigenvector of the abstract
-commutator subgroup, which then supplies an ambient weight vector. -/
+-- The proof is by induction on derived length; the derived subgroup decreases it by one.
+/-- If the rational points of a reduced connected affine group have derived length at most `n`,
+every nonzero finite-dimensional representation has a weight vector. -/
 private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
     ∀ (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H] [IsReduced H]
       [ConnectedSpace (PrimeSpectrum H)],
@@ -396,6 +394,23 @@ theorem hasNonzeroWeightVector_of_isSolvable
   obtain ⟨n, hn⟩ := Group.IsSolvable.solvable (G := WithConv (H →ₐ[k] k))
   exact hasNonzeroWeightVector_of_derivedSeries_eq_bot n H hn M
 
+/-- **Lie--Kolchin, geometric weight-vector form.** Over an algebraically closed field, every
+nonzero finite-dimensional representation of a reduced, geometrically connected, geometrically
+solvable affine group of finite type has a nonzero weight vector. -/
+theorem hasNonzeroWeightVector_of_geometricallySolvable
+    [FiniteDimensional k M] [Nontrivial M]
+    (hconn : geometricallyConnectedCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H))
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H)) :
+    HasNonzeroWeightVector k H M := by
+  let _ : ConnectedSpace (PrimeSpectrum H) :=
+    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mp hconn
+  let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) :=
+    (geometricallySolvablePointsCommHopfAlgProperty_iff k _).mp hsolv
+  let φ : k →ₐ[k] AlgebraicClosure k := Algebra.ofId k (AlgebraicClosure k)
+  let _ : Group.IsSolvable (WithConv (H →ₐ[k] k)) :=
+    Group.isSolvable_of_isSolvable_injective (AlgHom.mapValue_injective φ.injective)
+  exact hasNonzeroWeightVector_of_isSolvable
+
 /-- **The Lie--Kolchin theorem.** If the rational points of a reduced connected affine group of
 finite type over an algebraically closed field form a solvable group, every finite-dimensional
 representation admits a basis in which its coefficient matrix is upper triangular, with
@@ -423,14 +438,8 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvabl
     ∃ (n : ℕ) (b : Module.Basis (Fin n) k M),
       (coefficientMatrix (C := H) b).IsUpperTriangular ∧
         ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) := by
-  let _ : ConnectedSpace (PrimeSpectrum H) :=
-    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mp hconn
-  let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff k _).mp hsolv
-  let φ : k →ₐ[k] AlgebraicClosure k := Algebra.ofId k (AlgebraicClosure k)
-  let _ : Group.IsSolvable (WithConv (H →ₐ[k] k)) :=
-    Group.isSolvable_of_isSolvable_injective (AlgHom.mapValue_injective φ.injective)
-  exact exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
+  exact exists_basis_coefficientMatrix_isUpperTriangular_of_weight_vectors
+    fun _ _ _ _ _ _ ↦ hasNonzeroWeightVector_of_geometricallySolvable hconn hsolv
 
 end Comodule
 
