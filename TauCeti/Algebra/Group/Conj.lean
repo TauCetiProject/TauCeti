@@ -70,14 +70,20 @@ conjugation action.
 The inversion is an instance rather than a plain function so that the notation `C⁻¹`, the
 involutivity lemma `inv_inv` and the reindexing equivalence `Equiv.inv` are all available for
 conjugacy classes. Powering is instead a named definition `ConjClasses.pow` with a `Pow` instance
-delegating to it, so that `C.pow j` and the notation `C ^ j` are the same function;
+delegating to it, so that the roadmap's `C.pow j` and the notation `C ^ j` are the same function;
 the lemmas below are all stated in the `^` form. There is still no
 multiplication on `ConjClasses M` — `Pow (ConjClasses M) ℕ` is a bare power operation, not the
 `npow` field of a monoid structure, and none of the lemmas here presuppose one.
 
-The power operation is used in the Frobenius von Mangoldt fibre, which sums over the classes
-`C ^ j`. The private `pow_two_cyclicFour` regression distinguishes this operation from one that
-collapses every positive power to the identity: a group of exponent two cannot do so using squares.
+The power operation is developed for the Chebotarev roadmap (`Chebotarev/README.md` Layer 1,
+"consumed Frobenius classes and powers of conjugacy classes", whose `Suggested.lean` pins these
+signatures); its consumer there is the von Mangoldt fibre, which sums over the classes `C ^ j`.
+That is also why a `pow_two_cyclicFour` regression is kept: a group of
+exponent two has no proper nonidentity square, so it cannot separate a correct power operation
+from one that collapses to the identity. It is `private`, being a check on this development
+rather than reusable conjugacy-class API. This operation is *not* adapted from the
+Birkbeck–Brasca `chebotarev-density` development, which works with `ConjClasses.mk` and
+`Subgroup.zpowers` directly and never forms `C ^ j`.
 
 The two arithmetic statements concern the quotient `#G / (#C * orderOf σ)`. The first says the
 division is exact — `#C` is the index of the centralizer of `σ`, and `orderOf σ` divides that
@@ -246,6 +252,12 @@ end TauCeti
 /-! ### The size of a class against the order of a member -/
 
 namespace ConjClasses
+
+-- Source. Both statements are specified by the Chebotarev roadmap. The divisibility is the
+-- declaration pinned at `TauCetiRoadmap/Chebotarev/Suggested.lean` lines 377-382, there stated
+-- with `[Finite G]`. The quotient identity is `TauCetiRoadmap/Chebotarev/README.md` §8.2, which
+-- writes it `#G / (#C * f) = #Centralizer_G(σ) / f` for `f = orderOf σ` and asks for
+-- `#C * f ∣ #G` as a separate statement.
 
 /-- **The size of a conjugacy class times the order of a member divides the order of the group.**
 
