@@ -219,7 +219,12 @@ theorem pointsMulEquiv_comp_f4ShortRootQuotientCoordinateBialgHom
     _ = (Comodule.coefficientMatrix
           (C := f4ShortRootCarrierCoordinateHopfAlgebra)
           f4ShortRootQuotientBasis).map g :=
-      AlgHom.pointsMulEquiv_comp_coordinateBialgHom g f4ShortRootQuotientBasis
+      by
+        ext i j
+        rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
+          WithConv.ofConv_toConv, AlgHom.comp_apply]
+        erw [f4ShortRootQuotientCoordinateBialgHom_X]
+        rw [Matrix.map_apply]
     _ = _ := (Comodule.toMatrix_endOfPoint f4ShortRootQuotientBasis g).symm
 
 end
