@@ -57,7 +57,12 @@ theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic (D : ℤ)
         exact hσ
       simpa only [IntermediateField.fixingSubgroup_fixedField] using hfix
     have hval := (mem_fundamentalDiscriminantCharacterSubgroup_iff D hD σ).mp hker
-    rw [TauCeti.IsCyclotomicExtension.Rat.galEquivZMod_eq_zeta_spec_autToPow]
+    have hζ := IsCyclotomicExtension.zeta_spec D.natAbs ℚ (CyclotomicField D.natAbs ℚ)
+    have hζ_eq : hζ.autToPow ℚ σ =
+        IsCyclotomicExtension.Rat.galEquivZMod D.natAbs (CyclotomicField D.natAbs ℚ) σ := by
+      simpa only [ZMod.unitsMap_self, MonoidHom.id_apply] using
+        hζ.autToPow_eq_unitsMap_galEquivZMod (dvd_refl D.natAbs) σ
+    rw [← hζ_eq]
     simpa only [MulChar.ringHomComp_apply, map_one] using
       congrArg (Int.castRingHom ℂ) hval
   have hbase : ℚ⟮fundamentalDiscriminantGaussSum D hD⟯ ≤ F := by

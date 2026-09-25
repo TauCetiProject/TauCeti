@@ -21,8 +21,6 @@ this file shows that it is the reduction of `galEquivZMod` modulo `m`.
 
 * `IsPrimitiveRoot.autToPow_eq_unitsMap_galEquivZMod`: the cyclotomic character of a primitive
   `m`-th root of unity in the `n`-th cyclotomic field is `galEquivZMod` reduced modulo `m`.
-* `TauCeti.IsCyclotomicExtension.Rat.galEquivZMod_eq_zeta_spec_autToPow`: the special case for
-  Mathlib's chosen primitive root.
 -/
 
 public section
@@ -44,25 +42,3 @@ theorem IsPrimitiveRoot.autToPow_eq_unitsMap_galEquivZMod {m : ℕ} [NeZero m] {
   rw [(hζ.isOfFinOrder (NeZero.ne m)).pow_eq_pow_iff_modEq, ← hζ.eq_orderOf,
     ← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val] at hexp
   exact Units.ext (hexp.trans (ZMod.natCast_val _))
-
-namespace TauCeti
-
-namespace IsCyclotomicExtension.Rat
-
-/-- Mathlib's rational cyclotomic Galois equivalence agrees with the power character of
-`zeta_spec`: both record the exponent by which an automorphism acts on the chosen primitive root.
--/
-theorem galEquivZMod_eq_zeta_spec_autToPow (n : ℕ) [NeZero n]
-    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
-    (σ : Gal(K/ℚ)) :
-    IsCyclotomicExtension.Rat.galEquivZMod n K σ =
-      (IsCyclotomicExtension.zeta_spec n ℚ K).autToPow ℚ σ := by
-  have hζ := IsCyclotomicExtension.zeta_spec n ℚ K
-  have h :=
-    (IsCyclotomicExtension.Rat.galEquivZMod_apply_of_pow_eq n K σ hζ.pow_eq_one).symm.trans
-      (hζ.autToPow_spec ℚ σ).symm
-  exact Units.ext <| ZMod.val_injective n <| hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h
-
-end IsCyclotomicExtension.Rat
-
-end TauCeti
