@@ -22,7 +22,7 @@ Transversality is the complementarity of the tangent subspaces in the product ve
 finite dimensions, injectivity of the Hessian suffices for this complementarity.
 
 This is the linear cotangent-space model of the Morse--Floer comparison. See M. Audin and
-M. Damian, *Morse Theory and Floer Homology*, Chapter 6.
+M. Damian, *Morse Theory and Floer Homology*, Chapter 1, Exercise 2.
 -/
 
 public section
