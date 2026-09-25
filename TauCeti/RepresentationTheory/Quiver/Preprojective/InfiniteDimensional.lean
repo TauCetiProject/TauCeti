@@ -30,8 +30,8 @@ counting twice. Under it `Π_k(Q)` is infinite-dimensional over every field `k`.
 
 For an orientation of a finite simple graph `G` the condition is `2 δ_i ≤ ∑_{j ∼ i} δ_j`. The marks
 of an affine simply-laced diagram satisfy it with equality, so the preprojective algebra of every
-orientation of a graphical affine diagram is infinite-dimensional. The diagrams of types `D̃_n`,
-`Ẽ_6`, `Ẽ_7` and `Ẽ_8` are trees, so all their orientations are acyclic and the oriented-cycle
+orientation of a graphical affine diagram is infinite-dimensional. The affine diagrams of types
+`D_n`, `E6`, `E7` and `E8` are trees, so all their orientations are acyclic and the oriented-cycle
 argument of `TauCeti.not_module_finite_preprojectiveAlgebra_of_length_pos` does not reach them. More
 generally the condition holds, with the marks extended by zero, for every graph containing a
 graphical affine diagram as a subgraph.
