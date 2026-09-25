@@ -62,6 +62,8 @@ unnormalised form needs no invertibility where none is used.
   `TauCeti.End.inf_ker_one_sub_le_map_one_add` and
   `TauCeti.End.inf_ker_one_sub_le_map_one_add_add_sq` (`Y ⊓ ker (1 - σ) ≤ Y.map (1 + σ)` when `2`
   is invertible, and likewise with `3`).
+* `TauCeti.End.range_one_sub_le_ker_one_add`, `TauCeti.End.range_one_sub_le_ker_one_add_add_sq`:
+  dually, `1 + σ` kills `range (1 - σ)` and `1 + υ + υ ^ 2` kills `range (1 - υ)`.
 
 ## Implementation notes
 
@@ -123,11 +125,16 @@ variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {σ υ : End R
 theorem range_one_add_le_ker_one_sub (hσ : σ ^ 2 = 1) : range (1 + σ) ≤ ker (1 - σ) :=
   range_le_ker_iff.2 (one_sub_mul_one_add_of_sq_eq_one hσ)
 
+/-- For `σ ^ 2 = 1`, the vectors `(1 - σ) x` are killed by `1 + σ`. -/
+theorem range_one_sub_le_ker_one_add (hσ : σ ^ 2 = 1) : range (1 - σ) ≤ ker (1 + σ) :=
+  range_le_ker_iff.2 (one_add_mul_one_sub_of_sq_eq_one hσ)
+
 /-- When `2` is invertible, a vector `y ∈ Y` fixed by `σ` is `(1 + σ) (y / 2)`. -/
 theorem inf_ker_one_sub_le_map_one_add [Invertible (2 : R)] (Y : Submodule R M) :
     Y ⊓ ker (1 - σ) ≤ Y.map (1 + σ) := by
-  rintro y ⟨hy, hfix⟩
-  rw [SetLike.mem_coe, mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hfix
+  intro y hy
+  obtain ⟨hy, hfix⟩ := Submodule.mem_inf.1 hy
+  have hfix : y = σ y := by simpa [sub_eq_zero] using hfix
   exact ⟨(⅟2 : R) • y, Y.smul_mem _ hy, by simp [← hfix, ← two_smul R]⟩
 
 /-- **The fixed vectors of an involution are the range of `1 + σ`**, when `2` is invertible. -/
@@ -138,8 +145,9 @@ theorem range_one_add_eq_ker_one_sub [Invertible (2 : R)] (hσ : σ ^ 2 = 1) :
 /-- When `3` is invertible, a vector `y ∈ Y` fixed by `υ` is `(1 + υ + υ²) (y / 3)`. -/
 theorem inf_ker_one_sub_le_map_one_add_add_sq [Invertible (3 : R)] (Y : Submodule R M) :
     Y ⊓ ker (1 - υ) ≤ Y.map (1 + υ + υ ^ 2) := by
-  rintro y ⟨hy, hfix⟩
-  rw [SetLike.mem_coe, mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hfix
+  intro y hy
+  obtain ⟨hy, hfix⟩ := Submodule.mem_inf.1 hy
+  have hfix : y = υ y := by simpa [sub_eq_zero] using hfix
   refine ⟨(⅟3 : R) • y, Y.smul_mem _ hy, ?_⟩
   simpa [sq, ← hfix, ← two_add_one_eq_three, add_smul, two_smul] using invOf_smul_smul (3 : R) y
 
@@ -147,6 +155,11 @@ theorem inf_ker_one_sub_le_map_one_add_add_sq [Invertible (3 : R)] (Y : Submodul
 theorem range_one_add_add_sq_le_ker_one_sub (hυ : υ ^ 3 = 1) :
     range (1 + υ + υ ^ 2) ≤ ker (1 - υ) :=
   range_le_ker_iff.2 (one_sub_mul_one_add_add_sq_of_pow_three_eq_one hυ)
+
+/-- For `υ ^ 3 = 1`, the vectors `(1 - υ) x` are killed by `1 + υ + υ²`. -/
+theorem range_one_sub_le_ker_one_add_add_sq (hυ : υ ^ 3 = 1) :
+    range (1 - υ) ≤ ker (1 + υ + υ ^ 2) :=
+  range_le_ker_iff.2 (one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ)
 
 /-- **The fixed vectors of an endomorphism `υ` with `υ ^ 3 = 1` are the range of
 `1 + υ + υ²`**, when `3` is invertible. -/
@@ -169,11 +182,8 @@ theorem one_sub_apply_mem_range_one_sub_mul_of_mem_sup (hσ : σ ^ 2 = 1) (hυ :
 `ker (1 + σ)`, `ker (1 + υ + υ²)` are disjoint. -/
 theorem disjoint_range_one_sub_of_disjoint_ker (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1)
     (hacyc : Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2))) :
-    Disjoint (range (1 - σ)) (range (1 - υ)) := by
-  -- `1 + σ` kills `range (1 - σ)` and `1 + υ + υ²` kills `range (1 - υ)`
-  refine hacyc.mono ?_ ?_ <;> rintro - ⟨y, rfl⟩
-  · rw [mem_ker, ← End.mul_apply, one_add_mul_one_sub_of_sq_eq_one hσ, zero_apply]
-  · rw [mem_ker, ← End.mul_apply, one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ, zero_apply]
+    Disjoint (range (1 - σ)) (range (1 - υ)) :=
+  hacyc.mono (range_one_sub_le_ker_one_add hσ) (range_one_sub_le_ker_one_add_add_sq hυ)
 
 /-- **The Choie–Zagier criterion** (Popa–Zagier, Lemma 1): for `σ ^ 2 = 1` and `υ ^ 3 = 1` with
 `2` and `3` invertible and `ker (1 + σ)`, `ker (1 + υ + υ²)` disjoint, a vector `x` lies in
@@ -224,8 +234,7 @@ theorem mem_sup_range_one_add_mul_one_sub [Invertible (2 : R)] [Invertible (3 : 
     ((inf_ker_one_sub_le_map_one_add_add_sq _).trans_eq (range_comp _ _).symm) <|
     mem_inf_ker_sup_inf_ker_of_mem_sup (hc hσσ').1
     (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
-    (range_le_ker_iff.2 (one_add_mul_one_sub_of_sq_eq_one hσ'))
-    (range_le_ker_iff.2 (one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ')) hξ
+    (range_one_sub_le_ker_one_add hσ') (range_one_sub_le_ker_one_add_add_sq hυ') hξ
     (range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ) (range_one_add_le_ker_one_sub hσ hυ'ξ)
 
 end Semiring
