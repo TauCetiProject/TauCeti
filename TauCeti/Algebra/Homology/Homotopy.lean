@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 
@@ -97,10 +98,11 @@ end Homotopy
 
 section Pow
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
-  {K : HomologicalComplex C c} {s : K ⟶ K}
+variable {C : Type u} [Category.{v} C] {ι : Type*} {c : ComplexShape ι}
 
 namespace HomologicalComplex
+
+variable [HasZeroMorphisms C] {K : HomologicalComplex C c} {s : K ⟶ K}
 
 /-- Degreewise recursion for the powers of a chain endomorphism. -/
 lemma pow_f_succ (m : ℕ) (i : ι) :
@@ -110,6 +112,8 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
 end HomologicalComplex
 
 namespace Homotopy
+
+variable [Preadditive C] {K : HomologicalComplex C c} {s : K ⟶ K}
 
 /-- Iterating a chain homotopy from the identity.  If `h` is a chain homotopy from the identity of
 `K` to a chain endomorphism `s`, then `h.idPow m` is a chain homotopy from the identity to the
@@ -121,11 +125,12 @@ def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m)
   comm i := by
     have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
         ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom := by
-      simp only [dNext, AddMonoidHom.mk'_apply, Preadditive.comp_sum]
-      exact Finset.sum_congr rfl fun k _ ↦ (HomologicalComplex.Hom.comm_assoc _ _ _ _).symm
+      simpa only [Finset.sum_fn, dNext_comp_left] using
+        map_sum (dNext i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
     have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
         ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ prevD i h.hom := by
-      simp only [prevD, AddMonoidHom.mk'_apply, Preadditive.sum_comp, Category.assoc]
+      simpa only [Finset.sum_fn, prevD_comp_left] using
+        map_sum (prevD i) (fun k a b ↦ (End.of s ^ k).f a ≫ h.hom a b) (Finset.range m)
     have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom +
         (End.of s ^ k).f i ≫ prevD i h.hom =
         (End.of s ^ k).f i - (End.of s ^ (k + 1)).f i := fun k _ ↦ by
