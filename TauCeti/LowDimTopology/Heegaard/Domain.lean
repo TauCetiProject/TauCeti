@@ -29,12 +29,12 @@ admissibility. All results below concern the supplied incidence system.
 The data extends `TauCeti.HeegaardIntersectionSystem`, which labels each intersection point by
 its `α`- and `β`-curve. Orient every attaching curve. The intersection points on the `α`-curve
 `α_i` cut it into arcs, one starting at each point `p` on `α_i` and ending at the next point
-along `α_i`, `alphaNext p`; the points on `α_i` form a single cycle of `alphaNext`. Each such
+along `α_i`, `alphaNext p`; when that curve has intersection points, they form a single cycle of
+`alphaNext`. Empty curve fibres satisfy the cycle condition vacuously. Each such
 arc has a region on its left and one on its right. The `β`-curves are recorded in the same way,
 with compatible region labels at each crossing and every region incident to an arc unless there
-are no intersection arcs. Each basepoint lies in a region. Every attaching curve is assumed to
-meet the other family, so that it is subdivided into arcs; this holds as soon as the diagram has
-a generator.
+are no intersection arcs. Each basepoint lies in a region. A generator supplies an intersection
+point on every curve, so curves in a diagram with a generator are subdivided into arcs.
 
 In these terms the `α`-part of the boundary of a domain `D` is the `1`-chain on `α`-arcs whose
 coefficient on the arc starting at `p` is `D (alphaLeft p) - D (alphaRight p)`, and the boundary
@@ -100,20 +100,22 @@ universe u v w
 intersection data it records, for each intersection point `p`, the next intersection point along
 the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
 starting at `p`, and the region containing each basepoint. The points on each curve form a single
-cycle of the corresponding successor permutation. Region labels agree around each crossing, and
-each region is incident to an arc (apart from the one-region case with no arcs). The data does
-not assert that the labels are the connected complementary regions of a particular surface
+cycle of the corresponding successor permutation when nonempty. Region labels agree around each
+crossing. Each region is incident to an arc, apart from the one-region case with no arcs. The data
+does not assert that the labels are the connected complementary regions of a particular surface
 realization; that requires a separate identification. -/
 @[ext]
 structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Basepoint : Type w)
     extends HeegaardIntersectionSystem n Point where
   /-- The next intersection point along the oriented `α`-curve. -/
   alphaNext : Equiv.Perm Point
-  /-- The intersection points on each `α`-curve form one cycle of `alphaNext`. -/
+  /-- The intersection points on a nonempty `α`-curve fibre form one cycle of `alphaNext`;
+  empty fibres satisfy this condition vacuously. -/
   alphaNext_isCycleOn (i : Fin n) : alphaNext.IsCycleOn {p | alpha p = i}
   /-- The next intersection point along the oriented `β`-curve. -/
   betaNext : Equiv.Perm Point
-  /-- The intersection points on each `β`-curve form one cycle of `betaNext`. -/
+  /-- The intersection points on a nonempty `β`-curve fibre form one cycle of `betaNext`;
+  empty fibres satisfy this condition vacuously. -/
   betaNext_isCycleOn (j : Fin n) : betaNext.IsCycleOn {p | beta p = j}
   /-- The region to the left of the `α`-arc starting at an intersection point. -/
   alphaLeft : Point → Region

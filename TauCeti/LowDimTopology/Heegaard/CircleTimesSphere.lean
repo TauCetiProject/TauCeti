@@ -40,10 +40,12 @@ is not weakly admissible.
 * `TauCeti.HeegaardRegionSystem.isDomainBetween_circleTimesSphere_single_one` and
   `TauCeti.HeegaardRegionSystem.isDomainBetween_circleTimesSphere_single_two`: both bigons are
   domains from `p₀` to `p₁`.
+* `TauCeti.HeegaardRegionSystem.mem_periodicDomains_circleTimesSphere_iff`: periodic-domain
+  membership for any basepoint placement.
 * `TauCeti.HeegaardRegionSystem.periodicDomains_circleTimesSphere_zero`: with the basepoint in
   the annulus, the periodic domains are the multiples of `B₁ - B₂`.
-* `TauCeti.HeegaardRegionSystem.weaklyAdmissible_circleTimesSphere_zero`: that diagram is weakly
-  admissible.
+* `TauCeti.HeegaardRegionSystem.weaklyAdmissible_circleTimesSphere_iff`: the diagram is weakly
+  admissible exactly when its basepoint lies in the annulus.
 * `TauCeti.HeegaardRegionSystem.not_weaklyAdmissible_circleTimesSphere_one`: with the basepoint
   in a bigon, the diagram is not weakly admissible.
 
@@ -124,7 +126,7 @@ private theorem betaArcBoundary_betaBoundary_circleTimesSphere (r : Fin 3) (D : 
 
 /-- A domain of `circleTimesSphere r` is periodic exactly when it vanishes at the basepoint and
 its multiplicities satisfy `D B₁ + D B₂ = 2 D A`. -/
-private theorem mem_periodicDomains_circleTimesSphere_iff (r : Fin 3) (D : Fin 3 → ℤ) :
+theorem mem_periodicDomains_circleTimesSphere_iff (r : Fin 3) (D : Fin 3 → ℤ) :
     D ∈ (circleTimesSphere r).periodicDomains ↔ D r = 0 ∧ D 1 + D 2 = 2 * D 0 := by
   simp only [mem_periodicDomains_iff, funext_iff, alphaArcBoundary_alphaBoundary_circleTimesSphere,
     betaArcBoundary_betaBoundary_circleTimesSphere, Fin.forall_fin_two]
@@ -132,25 +134,27 @@ private theorem mem_periodicDomains_circleTimesSphere_iff (r : Fin 3) (D : Fin 3
     forall_const]
   omega
 
-/-- The bigon `B₁` is a domain from the generator `p₀` to the generator `p₁`. -/
-theorem isDomainBetween_circleTimesSphere_single_one (r : Fin 3) :
+/-- Either bigon is a domain from the generator `p₀` to the generator `p₁`. -/
+private theorem isDomainBetween_circleTimesSphere_single_succ (r : Fin 3) (i : Fin 2) :
     (circleTimesSphere r).IsDomainBetween (circleTimesSphereGenerator r 0)
-      (circleTimesSphereGenerator r 1) (Pi.single 1 1) := by
+      (circleTimesSphereGenerator r 1) (Pi.single i.succ 1) := by
   refine isDomainBetween_iff.mpr ⟨funext fun q => ?_, funext fun q => ?_⟩ <;>
     simp only [alphaArcBoundary_alphaBoundary_circleTimesSphere,
       betaArcBoundary_betaBoundary_circleTimesSphere, Pi.sub_apply,
       generatorChain_circleTimesSphereGenerator] <;>
-    fin_cases q <;> simp
+    fin_cases i <;> fin_cases q <;> simp
+
+/-- The bigon `B₁` is a domain from the generator `p₀` to the generator `p₁`. -/
+theorem isDomainBetween_circleTimesSphere_single_one (r : Fin 3) :
+    (circleTimesSphere r).IsDomainBetween (circleTimesSphereGenerator r 0)
+      (circleTimesSphereGenerator r 1) (Pi.single 1 1) := by
+  simpa using isDomainBetween_circleTimesSphere_single_succ r 0
 
 /-- The bigon `B₂` is a domain from the generator `p₀` to the generator `p₁`. -/
 theorem isDomainBetween_circleTimesSphere_single_two (r : Fin 3) :
     (circleTimesSphere r).IsDomainBetween (circleTimesSphereGenerator r 0)
       (circleTimesSphereGenerator r 1) (Pi.single 2 1) := by
-  refine isDomainBetween_iff.mpr ⟨funext fun q => ?_, funext fun q => ?_⟩ <;>
-    simp only [alphaArcBoundary_alphaBoundary_circleTimesSphere,
-      betaArcBoundary_betaBoundary_circleTimesSphere, Pi.sub_apply,
-      generatorChain_circleTimesSphereGenerator] <;>
-    fin_cases q <;> simp
+  simpa using isDomainBetween_circleTimesSphere_single_succ r 1
 
 /-- With the basepoint in the annulus, the periodic domains of the genus-one diagram of
 `S¹ × S²` are the multiples of the difference `B₁ - B₂` of the two bigons. -/
@@ -178,18 +182,34 @@ theorem weaklyAdmissible_circleTimesSphere_zero : (circleTimesSphere 0).WeaklyAd
   funext i
   fin_cases i <;> simp <;> omega
 
+/-- The genus-one diagram of `S¹ × S²` is weakly admissible exactly when its basepoint
+lies in the annulus. -/
+theorem weaklyAdmissible_circleTimesSphere_iff (r : Fin 3) :
+    (circleTimesSphere r).WeaklyAdmissible ↔ r = 0 := by
+  constructor
+  · intro h
+    by_contra hr
+    rw [weaklyAdmissible_iff] at h
+    let P : Fin 3 → ℤ := fun i => if i = r then 0 else if i = 0 then 1 else 2
+    have hP : P ∈ (circleTimesSphere r).periodicDomains := by
+      rw [mem_periodicDomains_circleTimesSphere_iff]
+      fin_cases r <;> simp_all [P]
+    have hnonneg : (0 : Fin 3 → ℤ) ≤ P := by
+      intro i
+      dsimp [P]
+      split_ifs <;> omega
+    have hzero := h P hP hnonneg
+    have hP0 : P 0 = 1 := by simp [P, Ne.symm hr]
+    have : (1 : ℤ) = 0 := by rw [← hP0, hzero]; rfl
+    omega
+  · intro hr
+    subst r
+    exact weaklyAdmissible_circleTimesSphere_zero
+
 /-- With the basepoint in a bigon, the genus-one diagram of `S¹ × S²` is not weakly admissible:
 the periodic domain `A + 2 B₂` has no negative coefficient. -/
 theorem not_weaklyAdmissible_circleTimesSphere_one : ¬ (circleTimesSphere 1).WeaklyAdmissible := by
-  rw [weaklyAdmissible_iff]
-  intro h
-  have hP : ![1, 0, 2] ∈ (circleTimesSphere 1).periodicDomains := by
-    rw [mem_periodicDomains_circleTimesSphere_iff]
-    simp
-  have hnonneg : (0 : Fin 3 → ℤ) ≤ ![1, 0, 2] := by
-    intro i
-    fin_cases i <;> simp
-  simpa using congrFun (h _ hP hnonneg) 0
+  simpa using (weaklyAdmissible_circleTimesSphere_iff 1).not
 
 end HeegaardRegionSystem
 
