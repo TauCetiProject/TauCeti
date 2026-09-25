@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.Algebra.Field.Subfield.Quadratic
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.Algebra.QuadraticDiscriminant
 import TauCeti.FieldTheory.Minpoly
 
@@ -39,17 +40,6 @@ open IntermediateField
 namespace TauCeti.IntermediateField
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-/-- If `a` and `b` lie in `F`, then `a + b * x` lies in `F ⊔ K⟮x⟯`. -/
-theorem mem_sup_adjoin_of_exists_add_mul {F : IntermediateField K L} {x y : L}
-    (hy : ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x) :
-    y ∈ F ⊔ IntermediateField.adjoin K {x} := by
-  rcases hy with ⟨a, b, ha, hb, rfl⟩
-  have hF : F ≤ F ⊔ IntermediateField.adjoin K {x} := le_sup_left
-  have hx : IntermediateField.adjoin K {x} ≤ F ⊔ IntermediateField.adjoin K {x} :=
-    le_sup_right
-  exact add_mem (hF ha)
-    (mul_mem (hF hb) (hx (IntermediateField.mem_adjoin_of_mem K (Set.mem_singleton x))))
 
 /-- If `x² ∈ F`, then `x` is integral over `F` (it is a root of `X² - x²`). -/
 private theorem isIntegral_of_sq_mem {F : IntermediateField K L} {x : L} (hx2 : x ^ 2 ∈ F) :

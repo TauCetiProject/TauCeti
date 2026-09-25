@@ -11,8 +11,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Vanishing cross terms over subfields
 
-If `x²` lies in a subfield but `x` does not, squaring `a + b * x` can land in that subfield
-only when `a * b = 0`, provided the ambient field has characteristic different from two.
+If `x²`, `a`, and `b` lie in a subfield but `x` does not, squaring `a + b * x` can land in
+that subfield only when `a * b = 0`, provided the ambient field has characteristic different
+from two.
 This criterion is used in square-class descent through quadratic extensions.
 -/
 
