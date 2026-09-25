@@ -33,8 +33,6 @@ inflation in the class-level statement.
 
 * `TauCeti.ContCohomology.evensGraphCochain_quotient`: the graph-cochain formula commutes with the
   quotient map.
-* `TauCeti.ContCohomology.explicitMap2_evensGraphCocycle`: the coefficient identification carries
-  the quotient graph-cocycle class to the class inflated below.
 * `TauCeti.ContCohomology.explicitInfl2_evensGraphCocycle`: inflation of the quotient
   graph-cocycle class is the ambient graph-cocycle class.
 
@@ -188,8 +186,10 @@ local instance continuousSMul_trivialF2_ambient : ContinuousSMul G (trivialF2 G)
 omit [IsTopologicalGroup G] in
 /-- The coefficient equivalence, paired with the identity homomorphism of `G ⧸ N`, is a
 compatible pair: this is the shape in which `TauCeti.ContCohomology.cocyclesMap2` takes a
-coefficient map. -/
-theorem trivialF2QuotientEquivFixedPoints_id_smul (q : G ⧸ N) (x : (trivialF2 (G ⧸ N)).V) :
+coefficient map. It is private because it only repeats
+`trivialF2QuotientEquivFixedPoints_smul` in the argument shape `cocyclesMap2` expects. -/
+private theorem trivialF2QuotientEquivFixedPoints_id_smul (q : G ⧸ N)
+    (x : (trivialF2 (G ⧸ N)).V) :
     (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom
         (ContinuousMonoidHom.id (G ⧸ N) q • x) =
       q • (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom x := by
@@ -210,25 +210,6 @@ noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤
       ((quotientOpenSubgroup_index N U hNU).trans hU)
       (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)
 
-/-- **The coefficient identification carries the quotient graph-cocycle class to the class that
-`explicitInfl2_evensGraphCocycle` inflates.** This identifies the input of that theorem with the
-graph-cocycle class of the open subgroup `U / N` of `G / N`. -/
-theorem explicitMap2_evensGraphCocycle (U : OpenSubgroup G) (hNU : N ≤ U)
-    (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
-    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
-    (hα : Continuous α) :
-    explicitMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
-        (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
-        (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-        trivialF2QuotientEquivFixedPoints_id_smul
-        (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
-          ((quotientOpenSubgroup_index N U hNU).trans hU)
-          (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα :
-            H2 (G ⧸ N) (trivialF2 (G ⧸ N)).V) =
-      (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
-        H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) :=
-  explicitMap2_mk _ _ _ _ _ _ _ _ _
-
 /-- The fixed-point-valued graph cocycle is obtained by applying the coefficient equivalence
 pointwise to the quotient graph cocycle. -/
 @[simp]
@@ -244,21 +225,6 @@ theorem coe_evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
   funext p
   obtain ⟨q, r⟩ := p
   rw [evensGraphCocycleFixedPoints, cocyclesMap2_apply, coe_evensGraphCocycle]
-  simp
-
-/-- The fixed-point-valued graph cocycle has the same underlying `ZMod 2` value as the quotient
-graph cochain. -/
-theorem trivialF2Equiv_evensGraphCocycleFixedPoints_apply (U : OpenSubgroup G) (hNU : N ≤ U)
-    (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
-    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
-    (hα : Continuous α) (q r : G ⧸ N) :
-    trivialF2Equiv G
-        ((((evensGraphCocycleFixedPoints U hNU hU s hs α hα :
-            Z2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) :
-          (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N (trivialF2 G).V) (q, r) :
-            FixedPoints.addSubgroup N (trivialF2 G).V) : (trivialF2 G).V) =
-      evensGraphCochain (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α (q, r) := by
-  rw [coe_evensGraphCocycleFixedPoints]
   simp
 
 /-- **Inflation carries the quotient graph-cocycle class to the ambient graph-cocycle class.**
@@ -281,9 +247,9 @@ theorem explicitInfl2_evensGraphCocycle (U : OpenSubgroup G) (hNU : N ≤ U)
   apply (trivialF2Equiv G).injective
   rw [cocyclesMap2_apply]
   simp only [AddSubgroup.coe_subtype]
-  rw [trivialF2Equiv_evensGraphCocycleFixedPoints_apply]
+  rw [coe_evensGraphCocycleFixedPoints]
   simp only [ContinuousMonoidHom.quotientMk_apply, coe_evensGraphCocycle,
-    AddEquiv.apply_symm_apply]
+    trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints, AddEquiv.apply_symm_apply]
   exact (evensGraphCochain_quotient U hNU s α g h).symm
 
 end GraphClass
