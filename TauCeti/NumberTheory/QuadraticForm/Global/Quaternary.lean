@@ -33,9 +33,7 @@ locally represented by `Q ⊗ L` is locally isotropic. For `L = K(√d)` with `d
 square-discriminant case makes `Q ⊗ L` isotropic, and quaternary descent
 (`QuadraticForm.anisotropic_baseChange_iff_quaternary`) brings isotropy of `Q ⊗ L` back to `Q`.
 
-The ternary theorem enters as a hypothesis, stated for diagonal forms. The quaternary case is not
-proved by the finiteness argument used in rank at least five: a binary complement can be
-anisotropic at infinitely many places.
+The ternary theorem enters as a hypothesis, stated for diagonal forms.
 
 ## Main results
 
