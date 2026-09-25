@@ -32,6 +32,8 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 * `TauCeti.Associative.mul_pow_eq_pow_mul_add_nsmul_of_commutator_eq`: moving an element across a
   power releases that many copies of the correction term, when that term commutes with the element
   being powered.
+* `TauCeti.Associative.mul_pow_eq_pow_mul_add_nsmul`: the shifted-factor form for an
+  additive shift commuting with the element being powered.
 * `TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq`: the mirrored orientation,
   moving an element across a power standing to its left.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq`: a commutator commuting with both of its
@@ -98,6 +100,20 @@ theorem mul_pow_eq_pow_mul_add_nsmul_of_commutator_eq {x y z : A} (hxy : x * y =
           noncomm_ring [hyz.eq, pow_succ]
           simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_ofNat, mul_one]
           noncomm_ring
+
+
+/-- Moving an element across a power accumulates the additive shift, provided that shift
+commutes with the element being powered. -/
+theorem mul_pow_eq_pow_mul_add_nsmul {a x c : A} (h : a * x = x * (a + c))
+    (hc : Commute c x) (n : ℕ) :
+    a * x ^ n = x ^ n * (a + n • c) := by
+  cases n with
+  | zero => simp
+  | succ n =>
+      have hax : a * x = x * a + x * c := by simpa only [mul_add] using h
+      rw [mul_pow_eq_pow_mul_add_nsmul_of_commutator_eq hax
+        ((Commute.refl x).mul_right hc.symm), Nat.add_sub_cancel, mul_add,
+        mul_smul_comm, ← mul_assoc, ← pow_succ]
 
 
 /-- **Moving `y` past a power of `x` releases that many copies of the correction term.** If

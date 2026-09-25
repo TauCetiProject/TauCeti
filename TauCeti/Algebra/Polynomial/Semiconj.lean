@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Binomial
+public import TauCeti.Algebra.Ring.Commutator
 
 /-!
 # Polynomial evaluation across a semiconjugacy relation
@@ -74,26 +75,6 @@ section Semiring
 
 variable [Semiring A]
 
-private theorem add_mul_eq_mul_add_add {a x c d : A} (h : a * x = x * (a + c))
-    (hd : Commute d x) : (a + d) * x = x * (a + d + c) := by
-  rw [add_mul, h, hd.eq, ← mul_add]
-  congr 1
-  abel
-
-/-- Moving `a` across `x ^ n` accumulates `n` copies of the additive shift `c`, provided `c`
-commutes with `x`. -/
-private theorem mul_pow_eq_pow_mul_add_nsmul {a x c : A} (h : a * x = x * (a + c))
-    (hc : Commute c x) (n : ℕ) :
-    a * x ^ n = x ^ n * (a + n • c) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [pow_succ, ← mul_assoc, ih, mul_assoc]
-      have hshift : (a + n • c) * x = x * (a + (n + 1) • c) := by
-        simpa only [succ_nsmul, add_assoc] using
-          add_mul_eq_mul_add_add h (hc.smul_left n)
-      rw [hshift, ← mul_assoc, ← pow_succ]
-
 /-- A polynomial in `a` can be moved to the right across `x ^ n` by shifting its argument by
 `n • c`. -/
 theorem _root_.Polynomial.smeval_mul_pow_eq_pow_mul_smeval
@@ -104,7 +85,7 @@ theorem _root_.Polynomial.smeval_mul_pow_eq_pow_mul_smeval
     _root_.Polynomial.smeval p a * x ^ n =
       x ^ n * _root_.Polynomial.smeval p (a + n • c) := by
   have hs : SemiconjBy (x ^ n) (a + n • c) a :=
-    (mul_pow_eq_pow_mul_add_nsmul h hc n).symm
+    (Associative.mul_pow_eq_pow_mul_add_nsmul h hc n).symm
   exact (hs.smeval_right p).eq.symm
 
 end Semiring
@@ -112,12 +93,6 @@ end Semiring
 section Ring
 
 variable [Ring A]
-
-private theorem sub_nsmul_mul_eq_mul_add {a x c : A} (h : a * x = x * (a + c))
-    (hc : Commute c x) (n : ℕ) :
-    (a - n • c) * x = x * ((a - n • c) + c) := by
-  simpa only [sub_eq_add_neg] using
-    add_mul_eq_mul_add_add h (hc.smul_left n).neg_left
 
 /-- A polynomial in `a` can be moved to the left across `x ^ n` by shifting its argument by
 `-n • c`. -/
@@ -128,8 +103,11 @@ theorem _root_.Polynomial.pow_mul_smeval_eq_smeval_mul_pow
     (h : a * x = x * (a + c)) (hc : Commute c x) (n : ℕ) :
     x ^ n * _root_.Polynomial.smeval p a =
       _root_.Polynomial.smeval p (a - n • c) * x ^ n := by
+  have hs : SemiconjBy x (a + c) a := h.symm
+  have hshift : (a - n • c) * x = x * ((a - n • c) + c) := by
+    simpa only [add_sub_right_comm] using (hs.sub_right (hc.smul_left n).symm).eq.symm
   simpa only [sub_add_cancel] using
-    (Polynomial.smeval_mul_pow_eq_pow_mul_smeval p (sub_nsmul_mul_eq_mul_add h hc n) hc n).symm
+    (p.smeval_mul_pow_eq_pow_mul_smeval hshift hc n).symm
 
 attribute [local instance] BinomialRing.toIsAddTorsionFree
 
@@ -139,26 +117,23 @@ theorem ringChoose_mul_pow [BinomialRing A] (m : ℕ) {a x c : A}
     (h : a * x = x * (a + c)) (hc : Commute c x) (n : ℕ) :
     Ring.choose a m * x ^ n = x ^ n * Ring.choose (a + n • c) m := by
   apply nsmul_right_injective m.factorial_ne_zero
-  calc
-    m.factorial • (Ring.choose a m * x ^ n) =
-        (m.factorial • Ring.choose a m) * x ^ n := by
-      exact (smul_mul_assoc _ _ _).symm
-    _ = (descPochhammer ℤ m).smeval a * x ^ n := by
-      rw [Ring.descPochhammer_eq_factorial_smul_choose]
-    _ = x ^ n * (descPochhammer ℤ m).smeval (a + n • c) :=
-      Polynomial.smeval_mul_pow_eq_pow_mul_smeval _ h hc n
-    _ = x ^ n * (m.factorial • Ring.choose (a + n • c) m) := by
-      rw [Ring.descPochhammer_eq_factorial_smul_choose]
-    _ = m.factorial • (x ^ n * Ring.choose (a + n • c) m) := by
-      exact mul_smul_comm _ _ _
+  dsimp only
+  rw [← smul_mul_assoc, ← mul_smul_comm,
+    ← Ring.descPochhammer_eq_factorial_smul_choose,
+    ← Ring.descPochhammer_eq_factorial_smul_choose]
+  exact Polynomial.smeval_mul_pow_eq_pow_mul_smeval (descPochhammer ℤ m) h hc n
 
 /-- A generalized binomial coefficient in `a` can be moved to the left across `x ^ n` by
 shifting its argument by `-n • c`. -/
 theorem pow_mul_ringChoose [BinomialRing A] (m : ℕ) {a x c : A}
     (h : a * x = x * (a + c)) (hc : Commute c x) (n : ℕ) :
     x ^ n * Ring.choose a m = Ring.choose (a - n • c) m * x ^ n := by
-  simpa only [sub_add_cancel] using
-    (ringChoose_mul_pow m (sub_nsmul_mul_eq_mul_add h hc n) hc n).symm
+  apply nsmul_right_injective m.factorial_ne_zero
+  dsimp only
+  rw [← mul_smul_comm, ← smul_mul_assoc,
+    ← Ring.descPochhammer_eq_factorial_smul_choose,
+    ← Ring.descPochhammer_eq_factorial_smul_choose]
+  exact Polynomial.pow_mul_smeval_eq_smeval_mul_pow (descPochhammer ℤ m) h hc n
 
 end Ring
 
