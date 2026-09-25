@@ -43,6 +43,8 @@ strict morphisms of these `A∞` algebras.
 * `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
 * `TauCeti.AInfinityAlgebra.cohomologyClassLinearMap`: the quotient map from cycles to cohomology.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
+* `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot`: the class-map
+  equivalence when all elements are cycles and boundaries vanish.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
 * `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
@@ -179,6 +181,25 @@ def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycle
 through which maps out of cohomology are built by the universal property of the quotient. -/
 theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
+
+/-- If every element is a cycle and boundaries inside cycles are trivial, the class map is a
+linear equivalence with cohomology. -/
+noncomputable def cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
+    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
+    (hboundaries : 𝒜.boundariesInCycles = ⊥) : A ≃ₗ[R] 𝒜.Cohomology :=
+  (LinearEquiv.ofTop 𝒜.cycles hcycles).symm ≪≫ₗ
+    (Submodule.quotEquivOfEqBot _ hboundaries).symm
+
+/-- The equivalence for trivial differential sends an element to its cohomology class. -/
+@[simp]
+theorem cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
+    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
+    (hboundaries : 𝒜.boundariesInCycles = ⊥) (x : A) :
+    𝒜.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot hcycles hboundaries x =
+      𝒜.cohomologyClass (show x ∈ 𝒜.cycles by rw [hcycles]; trivial) := by
+  rw [cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot, LinearEquiv.trans_apply,
+    LinearEquiv.ofTop_symm_apply, Submodule.quotEquivOfEqBot_symm_apply,
+    cohomologyClass_eq_mk]
 
 /-- Zero represents zero in cohomology. -/
 @[simp]

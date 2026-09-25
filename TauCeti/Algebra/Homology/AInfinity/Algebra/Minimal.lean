@@ -106,15 +106,14 @@ theorem boundariesInCycles_eq_bot (h : 𝒜.IsMinimal) : 𝒜.boundariesInCycles
 /-- A minimal `A∞` algebra is linearly equivalent to its cohomology: every element is a cycle,
 and no nonzero element is a boundary. -/
 noncomputable def cohomologyEquiv (h : 𝒜.IsMinimal) : A ≃ₗ[R] 𝒜.Cohomology :=
-  (LinearEquiv.ofTop 𝒜.cycles ((isMinimal_iff_cycles_eq_top 𝒜).1 h)).symm ≪≫ₗ
-    (Submodule.quotEquivOfEqBot _ h.boundariesInCycles_eq_bot).symm
+  𝒜.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
+    ((isMinimal_iff_cycles_eq_top 𝒜).1 h) h.boundariesInCycles_eq_bot
 
 /-- The identification of a minimal algebra with its cohomology sends an element to its class. -/
 @[simp]
 theorem cohomologyEquiv_apply (h : 𝒜.IsMinimal) (x : A) :
     h.cohomologyEquiv x = 𝒜.cohomologyClass (h.mem_cycles x) := by
-  rw [cohomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.ofTop_symm_apply,
-    Submodule.quotEquivOfEqBot_symm_apply, cohomologyClass_eq_mk]
+  simp only [cohomologyEquiv, cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply]
 
 /-- The identification of a minimal algebra with its cohomology carries `m₂` to the cohomology
 product. -/

@@ -450,21 +450,29 @@ private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
     Function.Bijective (fun x : AA.Cohomology =>
       AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
         simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])) := by
-  have hcycle (x : AA.Cohomology) : x ∈ AA.cohomologyAInfinityAlgebra.cycles := by
-    exact (AA.cohomologyAInfinityAlgebra.mem_cycles).2
-      (AA.cohomologyAInfinityAlgebra_m_one_apply _)
-  have hbound (x : AA.Cohomology) (hx : x ∈ AA.cohomologyAInfinityAlgebra.boundaries) : x = 0 := by
-    obtain ⟨y, hy⟩ := (AA.cohomologyAInfinityAlgebra.mem_boundaries).1 hx
+  have hcycles : AA.cohomologyAInfinityAlgebra.cycles = ⊤ := by
+    ext x
+    simp only [Submodule.mem_top, AInfinityAlgebra.mem_cycles,
+      AA.cohomologyAInfinityAlgebra_m_one_apply]
+  have hboundaries : AA.cohomologyAInfinityAlgebra.boundariesInCycles = ⊥ := by
+    apply le_antisymm _ bot_le
+    intro x hx
+    apply Subtype.ext
+    have hx' := (AA.cohomologyAInfinityAlgebra.mem_boundariesInCycles).1 hx
+    obtain ⟨y, hy⟩ := (AA.cohomologyAInfinityAlgebra.mem_boundaries).1 hx'
     rw [AA.cohomologyAInfinityAlgebra_m_one_apply] at hy
     exact hy.symm
-  constructor
-  · intro x y hxy
-    apply sub_eq_zero.mp
-    exact hbound _ ((AA.cohomologyAInfinityAlgebra.cohomologyClass_eq_iff
-      (hcycle x) (hcycle y)).1 hxy)
-  · intro z
-    obtain ⟨x, hx, rfl⟩ := AA.cohomologyAInfinityAlgebra.exists_cohomologyClass_eq z
-    exact ⟨x, rfl⟩
+  let e := AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
+    hcycles hboundaries
+  have heq : (fun x : AA.Cohomology =>
+      AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+        simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])) =
+      ⇑e := by
+    funext x
+    exact (AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
+      hcycles hboundaries x).symm
+  rw [heq]
+  exact e.bijective
 
 /-- The inverse strict morphism between cohomology `A∞` algebras is a quasi-isomorphism. -/
 theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
