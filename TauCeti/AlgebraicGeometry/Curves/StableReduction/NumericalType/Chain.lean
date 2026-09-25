@@ -171,6 +171,16 @@ lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
     · simpa only [hi0.ne', Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel] using
         hc.intersection_pos (i := i - 1) (by omega) (by omega)
 
+/-- A property of a component and of the first `t` terms of a sequence holds for the first
+`t + 1` terms of the sequence with that component prepended. -/
+lemma forall_lt_succ_cons {α : Type*} {P : α → Prop} {x : α} {d : ℕ → α} {t : ℕ}
+    (hx : P x) (hd : ∀ i < t, P (d i)) :
+    ∀ i < t + 1, P (if i = 0 then x else d (i - 1)) := by
+  intro i hi
+  split_ifs
+  · exact hx
+  · exact hd _ (by omega)
+
 /-- The components of a chain of length `t` form a set of `t` components. -/
 lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
     #((range t).image c) = t := by
@@ -178,6 +188,25 @@ lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
     hc.injOn i (mem_range.mp hi) j (mem_range.mp hj) h, card_range]
 
 end IsSelfIntersectionMinusTwoChain
+
+/-- Every set of components contains a longest chain. -/
+lemma exists_chain_forall_le (S : Finset T.Component) :
+    ∃ t c, T.IsSelfIntersectionMinusTwoChain t c ∧ (∀ i < t, c i ∈ S) ∧
+      ∀ t' c', T.IsSelfIntersectionMinusTwoChain t' c' → (∀ i < t', c' i ∈ S) → t' ≤ t := by
+  classical
+  let P : ℕ → Prop := fun t ↦ ∃ c, T.IsSelfIntersectionMinusTwoChain t c ∧ ∀ i < t, c i ∈ S
+  have hle : ∀ t, P t → t ≤ #S := by
+    rintro t ⟨c, hc, hcS⟩
+    rw [← hc.card_image_range]
+    exact card_le_card fun x hx ↦ by
+      obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
+      exact hcS i (mem_range.mp hi)
+  have hP0 : P 0 := by
+    obtain ⟨x⟩ := T.componentNonempty
+    exact ⟨fun _ ↦ x, ⟨by omega, by omega, by omega⟩, by omega⟩
+  obtain ⟨c, hc, hcS⟩ := Nat.findGreatest_spec (Nat.zero_le _) hP0
+  exact ⟨_, c, hc, hcS, fun t' c' hc' hc'S ↦
+    Nat.le_findGreatest (hle t' ⟨c', hc', hc'S⟩) ⟨c', hc', hc'S⟩⟩
 
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
 with `pq = 1`, then they have equal weights. -/
@@ -413,6 +442,28 @@ theorem IsSelfIntersectionMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ 
     exact ends q p (by omega) hp
 
 namespace IsSelfIntersectionMinusTwoChain
+
+/-- A component outside a chain meets at most one of its components, provided the numerical type
+has a component besides it and those of the chain: otherwise the chain would close up into a
+cycle. -/
+lemma eq_of_intersection_pos {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t + 1 < Fintype.card T.Component)
+    {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i)
+    (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) {r s : ℕ} (hs : s < t)
+    (hr : 0 < T.intersection (c r) x) (hrs : r ≤ s) (hsx : 0 < T.intersection (c s) x) :
+    r = s := by
+  by_contra hne
+  -- `x, c s, c (s - 1), …, c r` is a chain whose two ends meet.
+  have hd := ((hc.shift (r := r) (s := s - r + 1) (by omega)).reverse).cons
+    (fun i hi ↦ hx_ne _ (by omega)) hx_self (by
+      rw [T.intersection_comm]
+      simpa [show r + (s - r) = s by omega] using hsx)
+  have h := hd.intersection_eq_zero (by omega) (p := 0) (q := s - r + 1) (by omega) (by omega)
+    (by omega) (by omega) (by omega)
+  simp only [↓reduceIte, Nat.add_one_ne_zero, Nat.add_sub_cancel, Nat.sub_self,
+    Nat.add_zero] at h
+  rw [T.intersection_comm] at h
+  omega
 
 /-- The intersection entries of a proper simply laced chain with common weight `w`. -/
 theorem intersection_eq_ite {t : ℕ} {c : ℕ → T.Component} {w : ℤ}
