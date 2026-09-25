@@ -19,7 +19,7 @@ namespace LinearEquiv
 
 /-- Transport stability of a mapped submodule through an intertwining linear equivalence. -/
 theorem mem_of_preserves_map
-    {R V W : Type*} [CommSemiring R]
+    {R V W : Type*} [Semiring R]
     [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
     (e : V ≃ₗ[R] W) (p : Submodule R V) (q : Submodule R W)
     (hmap : p.map e.toLinearMap = q) (f : V → V) (g : W → W)
