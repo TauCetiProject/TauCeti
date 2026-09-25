@@ -374,6 +374,12 @@ noncomputable def cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuas
     AInfinityStrictHom BB.cohomologyAInfinityAlgebra AA.cohomologyAInfinityAlgebra :=
   AInfinityAlgebra.cohomologyStrictHom hf.cohomologyMapInv (hf.cohomologyMapInv_mem)
 
+/-- The inverse strict morphism acts by the inverse cohomology map. -/
+@[simp]
+theorem coe_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    ⇑hf.cohomologyStrictHomInv = hf.cohomologyMapInv :=
+  AInfinityAlgebra.coe_cohomologyStrictHom _ _
+
 /-- The class map of a cohomology `A∞` algebra is bijective, since its unary operation is zero. -/
 private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
     Function.Bijective (fun x : AA.Cohomology =>
