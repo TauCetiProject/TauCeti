@@ -6,10 +6,10 @@
 #
 # Why not `lake exe runLinter TauCeti`: the root TauCeti.lean is intentionally empty
 # (the lakefile glob is authoritative for what gets built), so runLinter would lint an
-# empty environment and pass vacuously. Instead we generate a driver module that
-# imports every `TauCeti/**/*.lean` module and runs `#lint only ... in TauCeti`,
-# elaborate it against the already-built oleans (`lake env lean`), and parse the
-# violations out of the linter report, attributing each one to the linter whose
+# empty environment and pass vacuously. Instead scripts/LintEnvDriver.lean, compiled in a
+# throwaway workspace (step 2), imports every `TauCeti/**/*.lean` module from the
+# already-built oleans and does what `#lint only ... in TauCeti` does, and we parse the
+# violations out of its linter report, attributing each one to the linter whose
 # section it appears in.
 #
 # docBlame IS EXCLUDED from the `#lint` pass and replaced by a direct scan — do NOT
@@ -118,17 +118,19 @@
 # Growing the allowlist must go through the same human-reviewed path as this script —
 # it is exactly the hole an auto-merged PR would otherwise use.
 #
-# SECURITY MODEL (this script elaborates the PR's own code — both drivers execute
-# import-time initializers — so treat all lean output as partially
+# SECURITY MODEL (this script loads the PR's own code — both drivers execute
+# import-time initializers — so treat all driver output as partially
 # attacker-controlled):
 #   * The `#lint` report starts with a header line
 #       -- Found N error(s) in M declarations (plus ...) in TauCeti with K linters
 #     followed (when N > 0) by one section per reporting linter, opened by a line
 #       /- The `<linter>` linter reports:
 #     and containing one `#check <decl> /- ... -/` block per violation.
-#     When N > 0 the report is an error diagnostic, so the header carries the
-#     `<driver>:<line>:<col>: error: ` prefix of our own driver file (a fresh mktemp
-#     path) and lean exits nonzero; when N = 0 it is an info message printed bare.
+#     When N > 0 the report is printed as an error diagnostic: the header carries the
+#     `<driver>:1:0: error: ` prefix, where `<driver>` is a fresh mktemp path handed to
+#     the compiled driver, and the driver exits nonzero; when N = 0 the report is
+#     printed bare and the driver exits 0. (This is the format `lean` used for the
+#     generated driver file the compiled driver replaced.)
 #     We require EXACTLY ONE header in the output, of the form matching the exit
 #     code (anchored error header + N > 0 for a nonzero exit; bare header + N = 0
 #     for a zero exit), and we require the header's "with K linters" to equal the
@@ -147,8 +149,8 @@
 #     equal N. Every grammar violation is a DISTINCT driver failure, never a pass.
 #   * PR code can print arbitrary text at import time (initializers): a forged header
 #     printed alongside the real one yields two headers -> fail, and a forged smaller
-#     report cannot suppress the real report's `error:` diagnostic or lean's nonzero
-#     exit. Forged `#check` lines make the block count disagree with N -> fail.
+#     report cannot suppress the real report's `error:` diagnostic or the driver's
+#     nonzero exit. Forged `#check` lines make the block count disagree with N -> fail.
 #   * The docstring scan prints one `DOCSCAN <decl> ...` line per violation, one
 #     `DOCSCAN-ALL <decl> <status>` line per scanned declaration, one
 #     `NOLINT <linter> <decl>` line per TauCeti `@[nolint]` application, and exactly
@@ -161,13 +163,14 @@
 #     the tallies (they can only ADD lines — the real ones still print); a forged
 #     summary must predict the nonce.
 #   * The remaining forgery needs a process to die before the real work runs while
-#     having already printed a single self-consistent PASSING report. Commands after
-#     a failed command still elaborate, so the `#lint` driver appends a `#eval`
-#     printing a per-run random nonce after the `#lint`, and we require that marker
-#     AFTER the header; the scan's nonce-carrying summary plays the same role there.
+#     having already printed a single self-consistent PASSING report. The compiled
+#     `#lint` driver prints a per-run random nonce, read from a file in $TMP, after
+#     the report, and we require that marker AFTER the header; the scan's
+#     nonce-carrying summary plays the same role there.
 #   * Residual risk (accepted): initializer code could read /proc/self/cmdline to
-#     learn the driver path AND read the driver file to learn the nonce, then forge a
-#     passing report and exit(0) before the real work. Any lint that elaborates
+#     learn the driver prefix and the nonce file's path AND read that file (or the
+#     docstring scan's driver file) to learn the nonce, then forge a passing report
+#     and exit(0) before the real work. Any lint that elaborates
 #     untrusted code has this ceiling; the pr-build bwrap sandbox plus human review
 #     of suspicious `initialize`/`@[init]` code are the outer defense. Everything
 #     short of that deliberate two-step forgery fails closed.
@@ -199,6 +202,16 @@ run_lean() {
     lake env "$WATCHDOG_TOOLCHAIN/bin/lean" "$@"
   else
     lake env lean "$@"
+  fi
+}
+
+# The compiled `#lint` driver (step 2) is not a Lean process, so the watchdog does not see it.
+# Give it the same liveness bound as scripts/perf/lean-watchdog.sh in the sandboxed build.
+run_driver() {
+  if [ -n "${WATCHDOG_TOOLCHAIN:-}" ]; then
+    lake env timeout --signal=TERM --kill-after=30 3000 "$@"
+  else
+    lake env "$@"
   fi
 }
 
@@ -447,31 +460,57 @@ if [ -s "$TMP/nolints-fixed.txt" ]; then
   sed 's/^/  /' "$TMP/nolints-fixed.txt"
 fi
 
-# --- 2. generate the #lint driver: import every TauCeti module, default linters ---
-# A LEGACY (non-module) driver with plain imports, for the same reason the docstring
-# scan below uses one: a non-module root imports the closure at the `private` olean
-# level, so a declaration's statement is complete when the linters look at it. In a
-# module-style driver it is not, and the linters report artifacts rather than findings —
-# see PRIVATE DECLARATIONS in the header comment. `set_option linter.hashCommand false`
-# because the driver is generated, not committed; the style linter would otherwise flag
-# the bare `#lint`/`#eval`. That trailing `#eval` prints a per-run nonce proving the
-# process survived past the `#lint` (see SECURITY MODEL).
-{
-  sed 's/^/import /' "$MODULE_IMPORT_LIST"
-  echo
-  echo "set_option linter.hashCommand false in"
-  echo "#lint only $LINTERS in TauCeti"
-  echo
-  echo "set_option linter.hashCommand false in"
-  echo "#eval IO.println \"$MARKER\""
-} > "$DRIVER"
+# --- 2. build the compiled #lint driver ------------------------------------------
+# scripts/LintEnvDriver.lean runs `#lint only $LINTERS in TauCeti` over every TauCeti module and
+# prints exactly the report `lean` printed for the generated driver file this step used to write:
+# the same header, sections and `#check` blocks, with the error-diagnostic prefix `$DRIVER:1:0: `
+# when there are violations, then the nonce marker. It takes about a third less time and a quarter
+# less CPU than elaborating that file with `lake env lean` (measurements in the driver's header).
+# `$DRIVER` no longer names a file: it is only the unpredictable prefix the parser anchors on.
+#
+# The driver is compiled in a throwaway Lake workspace whose only dependency is the candidate's
+# pinned Batteries, by path, so the only code compiled is this trusted source and the pinned
+# Batteries modules it imports, with the candidate's toolchain. It imports the closure at the
+# `private` olean level, like the legacy (non-module) driver; see PRIVATE DECLARATIONS above.
+BATTERIES_DIR="$PROJECT_ROOT/.lake/packages/batteries"
+[ -f "$BATTERIES_DIR/Batteries/Tactic/Lint.lean" ] \
+  || fail "no Batteries checkout at $BATTERIES_DIR; run lake build first"
+DRIVER_WS="$TMP/lint-driver"
+mkdir "$DRIVER_WS" || fail "could not create $DRIVER_WS"
+cp "$TRUSTED_SCRIPTS/LintEnvDriver.lean" "$DRIVER_WS/LintEnvDriver.lean"
+cp "$PROJECT_ROOT/lean-toolchain" "$DRIVER_WS/lean-toolchain"
+cat > "$DRIVER_WS/lakefile.toml" <<TOML
+name = "lint-env-driver"
 
-# --- 3. elaborate it (exit 1 from lean is EXPECTED when the linters report) -------
-if run_lean "$DRIVER" > "$TMP/out.txt" 2>&1; then
+[[require]]
+name = "batteries"
+path = "$BATTERIES_DIR"
+
+[[lean_exe]]
+name = "lint-env-driver"
+root = "LintEnvDriver"
+supportInterpreter = true
+TOML
+if ! (cd "$DRIVER_WS" && lake build lint-env-driver) > "$TMP/driver-build.txt" 2>&1; then
+  cat "$TMP/driver-build.txt"
+  fail "could not build the compiled #lint driver (scripts/LintEnvDriver.lean) — see output above"
+fi
+DRIVER_EXE="$DRIVER_WS/.lake/build/bin/lint-env-driver"
+[ -x "$DRIVER_EXE" ] || fail "compiled #lint driver missing at $DRIVER_EXE"
+
+# --- 3. run it (exit 1 is EXPECTED when the linters report) -----------------------
+# shellcheck disable=SC2086 # $LINTERS is a space-separated list of linter names
+printf '%s\n' "$MARKER" > "$TMP/marker.txt"
+if run_driver "$DRIVER_EXE" "$DRIVER" "$TMP/marker.txt" "$MODULE_IMPORT_LIST" $LINTERS \
+    > "$TMP/out.txt" 2>&1; then
   status=0
 else
   status=$?
 fi
+# Echo each linter's completion trace line into the log. Informational only: nothing below reads
+# these lines, and PR code could print look-alikes. Once Batteries reports per-linter cost on them,
+# this is how the CI logs record what each linter costs.
+grep -E '^- [A-Za-z]+: \(2/2\) ' "$TMP/out.txt" | sed 's/^/lint-env: trace /' || true
 
 # --- 4. locate the linter report and parse it fail-closed -------------------------
 # Two genuine header shapes (see SECURITY MODEL): N > 0 comes as an error diagnostic

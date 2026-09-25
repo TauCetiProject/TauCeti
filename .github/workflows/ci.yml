@@ -312,8 +312,8 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
 
-      # Environment lint. Elaborates a generated driver importing every TauCeti/
-      # module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
+      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports every
+      # TauCeti/ module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
       # checkType, synTaut, ...) plus a module-system-reliable docstring scan (the
       # docBlame linter is blind across module boundaries; see the script header),
       # comparing linter-qualified violations against the grandfathered baseline in
