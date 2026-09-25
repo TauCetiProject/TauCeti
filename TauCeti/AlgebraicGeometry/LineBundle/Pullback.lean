@@ -76,7 +76,6 @@ variable {X Y : Scheme.{u}}
 
 /-- The pullback of line bundles along a morphism of schemes `f : X ⟶ Y`, as a functor from line
 bundles on `Y` to line bundles on `X`. -/
-@[expose]
 def pullback (f : X ⟶ Y) : InvertibleSheaf Y ⥤ InvertibleSheaf X :=
   (SheafOfModules.isInvertible X).lift
     ((SheafOfModules.isInvertible Y).ι ⋙ Scheme.Modules.pullback f)
@@ -92,8 +91,13 @@ lemma pullback_obj_obj (f : X ⟶ Y) (L : InvertibleSheaf Y) :
 /-- Pullback acts on a morphism of line bundles by the underlying module pullback. -/
 @[simp]
 lemma pullback_map (f : X ⟶ Y) {L K : InvertibleSheaf Y} (φ : L ⟶ K) :
-    ((pullback f).map φ).hom = (Scheme.Modules.pullback f).map φ.hom :=
-  rfl
+    ((pullback f).map φ).hom =
+      eqToHom (pullback_obj_obj f L) ≫ (Scheme.Modules.pullback f).map φ.hom ≫
+        eqToHom (pullback_obj_obj f K).symm := by
+  cases pullback_obj_obj f L
+  cases pullback_obj_obj f K
+  unfold pullback
+  simp
 
 end InvertibleSheaf
 
