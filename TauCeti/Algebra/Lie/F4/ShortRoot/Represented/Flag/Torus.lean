@@ -99,7 +99,8 @@ private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
       f4ShortRootAdjointMatrixBaseChange (A := A)
           (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
         f4ShortRootRepresentedIdealMatrixBaseChange (A := A) :=
-    f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis i
+    by simpa only [coe_f4ShortRootLieIdealBasis] using
+      (f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (A := A) i)
   rcases hi : f4ShortRootWeightIndexEquiv i with α | k
   · have hi' := congrArg f4ShortRootWeightIndexEquiv.symm hi
     simp only [Equiv.symm_apply_apply] at hi'

@@ -98,8 +98,9 @@ theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis :
 /-- Each ideal-basis adjoint matrix is in the scalar-extended represented ideal. -/
 @[simp] theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
     f4ShortRootAdjointMatrixBaseChange (A := A)
-        (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
+        (f4ModularChevalleyBasis (f4ShortRootBasisCoordinate i)) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
+  rw [← coe_f4ShortRootLieIdealBasis i]
   unfold f4ShortRootRepresentedIdealMatrixBaseChange
   exact Submodule.subset_span (Set.mem_range_self i)
 
