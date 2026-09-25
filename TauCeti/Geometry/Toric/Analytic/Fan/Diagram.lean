@@ -36,58 +36,59 @@ open CategoryTheory Topology
 namespace TauCeti.Toric.Fan
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
-  {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
+  {i : N →+ V} (Φ : Fan i)
 
 /-- A finite generating family for the dual semigroup of a cone of a regular fan. -/
-noncomputable def analyticChartGenerators (σ : Φ.cones) :
+noncomputable def analyticChartGenerators (σ : Φ.cones) (hσ : IsRegularCone i σ.1) :
     Σ r, AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r := by
   letI : AddMonoid.FG (dualSemigroup Φ.lattice σ.1) :=
-    IsRegularCone.fg_dualSemigroup Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2)
+    IsRegularCone.fg_dualSemigroup Φ.lattice hσ
   let r := Classical.choose (exists_addGeneratingFamily (dualSemigroup Φ.lattice σ.1))
   exact ⟨r, Classical.choice (Classical.choose_spec
     (exists_addGeneratingFamily (dualSemigroup Φ.lattice σ.1)))⟩
 
 /-- The affine complex-point chart of a cone, with its monomial-embedding topology. -/
-@[expose] noncomputable def analyticAffineChart (σ : Φ.cones) : TopCat :=
-  let g := Φ.analyticChartGenerators hΦ σ
+@[expose] noncomputable def analyticAffineChart (σ : Φ.cones) (hσ : IsRegularCone i σ.1) : TopCat :=
+  let g := analyticChartGenerators Φ σ hσ
   let _ := affinePointTopology g.2
   TopCat.of (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
 
 /-- The chart topology agrees with the monomial-embedding topology of any finite
 generating family. -/
-theorem analyticAffineChart_str_eq (σ : Φ.cones) {r : ℕ}
+theorem analyticAffineChart_str_eq (σ : Φ.cones) (hσ : IsRegularCone i σ.1) {r : ℕ}
     (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r) :
-    (Φ.analyticAffineChart hΦ σ).str = affinePointTopology g :=
-  affinePointTopology_eq (Φ.analyticChartGenerators hΦ σ).2 g
+    (Φ.analyticAffineChart σ hσ).str = affinePointTopology g :=
+  affinePointTopology_eq (analyticChartGenerators Φ σ hσ).2 g
 
 /-- Each analytic affine chart is Hausdorff. -/
-theorem t2Space_analyticAffineChart (σ : Φ.cones) :
-    T2Space (Φ.analyticAffineChart hΦ σ) := by
+theorem t2Space_analyticAffineChart (σ : Φ.cones) (hσ : IsRegularCone i σ.1) :
+    T2Space (Φ.analyticAffineChart σ hσ) := by
   -- The bundled chart topology is the topology of its chosen monomial embedding.
-  change @T2Space _ (affinePointTopology (Φ.analyticChartGenerators hΦ σ).2)
-  exact t2Space_affinePointTopology (Φ.analyticChartGenerators hΦ σ).2
+  change @T2Space _ (affinePointTopology (analyticChartGenerators Φ σ hσ).2)
+  exact t2Space_affinePointTopology (analyticChartGenerators Φ σ hσ).2
 
 /-- Each analytic affine chart is second countable. -/
-theorem secondCountableTopology_analyticAffineChart (σ : Φ.cones) :
-    SecondCountableTopology (Φ.analyticAffineChart hΦ σ) := by
+theorem secondCountableTopology_analyticAffineChart (σ : Φ.cones) (hσ : IsRegularCone i σ.1) :
+    SecondCountableTopology (Φ.analyticAffineChart σ hσ) := by
   -- The bundled chart topology is the topology of its chosen monomial embedding.
   change @SecondCountableTopology _
-    (affinePointTopology (Φ.analyticChartGenerators hΦ σ).2)
-  exact secondCountableTopology_affinePointTopology (Φ.analyticChartGenerators hΦ σ).2
+    (affinePointTopology (analyticChartGenerators Φ σ hσ).2)
+  exact secondCountableTopology_affinePointTopology (analyticChartGenerators Φ σ hσ).2
 
 /-- Each analytic affine chart is locally compact. -/
-theorem locallyCompactSpace_analyticAffineChart (σ : Φ.cones) :
-    LocallyCompactSpace (Φ.analyticAffineChart hΦ σ) := by
+theorem locallyCompactSpace_analyticAffineChart (σ : Φ.cones) (hσ : IsRegularCone i σ.1) :
+    LocallyCompactSpace (Φ.analyticAffineChart σ hσ) := by
   -- The bundled chart topology is the topology of its chosen monomial embedding.
   change @LocallyCompactSpace _
-    (affinePointTopology (Φ.analyticChartGenerators hΦ σ).2)
-  exact locallyCompactSpace_affinePointTopology (Φ.analyticChartGenerators hΦ σ).2
+    (affinePointTopology (analyticChartGenerators Φ σ hσ).2)
+  exact locallyCompactSpace_affinePointTopology (analyticChartGenerators Φ σ hσ).2
 
 /-- The analytic face map between two charts of a regular fan. -/
-noncomputable def analyticFaceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
-    Φ.analyticAffineChart hΦ τ ⟶ Φ.analyticAffineChart hΦ σ := by
-  let gτ := Φ.analyticChartGenerators hΦ τ
-  let gσ := Φ.analyticChartGenerators hΦ σ
+noncomputable def analyticFaceMap {τ σ : Φ.cones} (hτ : IsRegularCone i τ.1)
+    (hσ : IsRegularCone i σ.1) (f : τ ⟶ σ) :
+    Φ.analyticAffineChart τ hτ ⟶ Φ.analyticAffineChart σ hσ := by
+  let gτ := analyticChartGenerators Φ τ hτ
+  let gσ := analyticChartGenerators Φ σ hσ
   letI := affinePointTopology gτ.2
   letI := affinePointTopology gσ.2
   let hτσ := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)
@@ -95,16 +96,18 @@ noncomputable def analyticFaceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
     continuous_faceAffinePointMap Φ.lattice hτσ gσ.2 gτ.2⟩
 
 /-- An analytic face map restricts the character of a point to the smaller dual semigroup. -/
-theorem analyticFaceMap_apply {τ σ : Φ.cones} (f : τ ⟶ σ)
-    (x : Φ.analyticAffineChart hΦ τ) :
-    Φ.analyticFaceMap hΦ f x =
+@[simp] theorem analyticFaceMap_apply {τ σ : Φ.cones} (hτ : IsRegularCone i τ.1)
+    (hσ : IsRegularCone i σ.1) (f : τ ⟶ σ)
+    (x : Φ.analyticAffineChart τ hτ) :
+    Φ.analyticFaceMap hτ hσ f x =
       faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) x :=
   (rfl)
 
 /-- The analytic affine charts of a regular fan, indexed by its cones. -/
-@[expose] noncomputable def analyticAffineChartDiagram : Φ.cones ⥤ TopCat where
-  obj σ := Φ.analyticAffineChart hΦ σ
-  map f := Φ.analyticFaceMap hΦ f
+@[expose] noncomputable def analyticAffineChartDiagram (hΦ : Φ.IsRegular) : Φ.cones ⥤ TopCat where
+  obj σ := Φ.analyticAffineChart σ ((isRegular_iff.mp hΦ) σ.1 σ.2)
+  map {τ σ} f := Φ.analyticFaceMap ((isRegular_iff.mp hΦ) τ.1 τ.2)
+    ((isRegular_iff.mp hΦ) σ.1 σ.2) f
   map_id σ := by
     apply TopCat.ext
     intro x
@@ -123,49 +126,56 @@ theorem analyticFaceMap_apply {τ σ : Φ.cones} (f : τ ⟶ σ)
 
 /-- The diagram object at a cone is its affine analytic chart. -/
 @[simp]
-theorem analyticAffineChartDiagram_obj (σ : Φ.cones) :
-    (Φ.analyticAffineChartDiagram hΦ).obj σ = Φ.analyticAffineChart hΦ σ :=
+theorem analyticAffineChartDiagram_obj (hΦ : Φ.IsRegular) (σ : Φ.cones) :
+    (Φ.analyticAffineChartDiagram hΦ).obj σ =
+      Φ.analyticAffineChart σ ((isRegular_iff.mp hΦ) σ.1 σ.2) :=
   (rfl)
 
 /-- The diagram map at a face inclusion is restriction of complex points. -/
 @[simp]
-theorem analyticAffineChartDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
-    (Φ.analyticAffineChartDiagram hΦ).map f = Φ.analyticFaceMap hΦ f :=
+theorem analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones} (f : τ ⟶ σ) :
+    (Φ.analyticAffineChartDiagram hΦ).map f =
+      Φ.analyticFaceMap ((isRegular_iff.mp hΦ) τ.1 τ.2)
+        ((isRegular_iff.mp hΦ) σ.1 σ.2) f :=
   (rfl)
 
 /-- Every map in the analytic chart diagram is an open embedding. -/
-theorem isOpenEmbedding_analyticAffineChartDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
+theorem isOpenEmbedding_analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones}
+    (f : τ ⟶ σ) :
     IsOpenEmbedding (Φ.analyticAffineChartDiagram hΦ |>.map f) := by
   -- The chart objects carry exactly the chosen monomial-embedding topologies.
   change @IsOpenEmbedding _ _
-    (affinePointTopology (Φ.analyticChartGenerators hΦ τ).2)
-    (affinePointTopology (Φ.analyticChartGenerators hΦ σ).2)
+    (affinePointTopology (analyticChartGenerators Φ τ ((isRegular_iff.mp hΦ) τ.1 τ.2)).2)
+    (affinePointTopology (analyticChartGenerators Φ σ ((isRegular_iff.mp hΦ) σ.1 σ.2)).2)
     (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)))
   exact ((isRegular_iff.mp hΦ) σ.1 σ.2).isOpenEmbedding_faceAffinePointMap
     Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))
-    (Φ.analyticChartGenerators hΦ σ).2 (Φ.analyticChartGenerators hΦ τ).2
+    (analyticChartGenerators Φ σ ((isRegular_iff.mp hΦ) σ.1 σ.2)).2
+    (analyticChartGenerators Φ τ ((isRegular_iff.mp hΦ) τ.1 τ.2)).2
 
 /-- Two affine analytic charts mapping into a third chart meet in the chart of the
 intersection cone. -/
-theorem isLocallyDirected_analyticAffineChartDiagram :
+theorem isLocallyDirected_analyticAffineChartDiagram (hΦ : Φ.IsRegular) :
     (Φ.analyticAffineChartDiagram hΦ ⋙ forget TopCat).IsLocallyDirected := by
   refine ⟨fun {τ υ σ} fτ fυ xτ xυ h ↦ ?_⟩
   let hτσ := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom fτ)
   let hυσ := Φ.isFaceOf_of_le σ.2 υ.2 (leOfHom fυ)
+  have hτ := (isRegular_iff.mp hΦ) τ.1 τ.2
+  have hυ := (isRegular_iff.mp hΦ) υ.1 υ.2
   have h' : faceAffinePointMap Φ.lattice hτσ xτ =
       faceAffinePointMap Φ.lattice hυσ xυ := by
     -- Forgetting the bundled chart map gives the same restriction of characters.
     exact h
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
-  let _ := affinePointTopology (Φ.analyticChartGenerators hΦ σ).2
-  let _ := affinePointTopology (Φ.analyticChartGenerators hΦ τ).2
-  let _ := affinePointTopology (Φ.analyticChartGenerators hΦ υ).2
+  let _ := affinePointTopology (analyticChartGenerators Φ σ hσ).2
+  let _ := affinePointTopology (analyticChartGenerators Φ τ hτ).2
+  let _ := affinePointTopology (analyticChartGenerators Φ υ hυ).2
   have heτ : Function.Injective (faceAffinePointMap Φ.lattice hτσ) :=
     (hσ.isOpenEmbedding_faceAffinePointMap Φ.lattice hτσ
-      (Φ.analyticChartGenerators hΦ σ).2 (Φ.analyticChartGenerators hΦ τ).2).injective
+      (analyticChartGenerators Φ σ hσ).2 (analyticChartGenerators Φ τ hτ).2).injective
   have heυ : Function.Injective (faceAffinePointMap Φ.lattice hυσ) :=
     (hσ.isOpenEmbedding_faceAffinePointMap Φ.lattice hυσ
-      (Φ.analyticChartGenerators hΦ σ).2 (Φ.analyticChartGenerators hΦ υ).2).injective
+      (analyticChartGenerators Φ σ hσ).2 (analyticChartGenerators Φ υ hυ).2).injective
   obtain ⟨x, hx⟩ : faceAffinePointMap Φ.lattice hτσ xτ ∈
       Set.range (faceAffinePointMap Φ.lattice (hτσ.inf_left hυσ)) := by
     rw [hσ.range_faceAffinePointMap_inf Φ.lattice hτσ hυσ]
