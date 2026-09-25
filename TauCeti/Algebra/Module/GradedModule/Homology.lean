@@ -11,13 +11,15 @@ public import TauCeti.Algebra.Module.GradedModule.Quotient
 /-!
 # The grading of the homology of a homogeneous endomorphism
 
-Let `G` be an internal integer grading of a module `M` over a ring `R`, and let `d` be an
-endomorphism of `M`, linear over a ring `S` acting compatibly with `R`, which is homogeneous of
-some degree `r` for `G`. Then the kernel of `d` and the homology `d.homology = ker d ⧸ im d`
+Let `G` be an internal integer grading of a module `M` over a ring `R`, and let `d` be a
+square-zero endomorphism of `M`, linear over a ring `S` acting compatibly with `R`, which is
+homogeneous of some degree `r` for `G`. Then the kernel of `d` and its homology `ker d ⧸ im d`
 inherit internal gradings over `R`: the kernel and the image of `d` are homogeneous
 (`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`,
 `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`), so the grading of `M` restricts to the
 kernel and descends to its quotient by the image.
+
+The kernel grading also applies to homogeneous maps between different graded modules.
 
 The ring `S` of `d` may be larger than the ring `R` of the grading. This is the situation of a
 complex over a polynomial ring whose variables move the degree: the homogeneous pieces are then
@@ -28,7 +30,7 @@ moves every homogeneous piece of the homology by the same degree
 
 ## Main definitions
 
-* `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous endomorphism.
+* `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous linear map.
 * `TauCeti.InternalGrading.homology`: the grading of the homology of a homogeneous endomorphism.
 
 ## Main results
@@ -49,70 +51,75 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {R S M : Type*} [Ring R] [Ring S] [SMul R S] [AddCommGroup M] [Module R M]
-  [Module S M] [IsScalarTower R S M] (G : InternalGrading R M) {d : M →ₗ[S] M} {r : ℤ}
-  (hd : LinearMap.IsHomogeneous d G.piece G.piece r)
+variable {R S M N : Type*} [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+  (G : InternalGrading R M) {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
+  (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
 
-include hd in
-/-- The internal grading of the kernel of a homogeneous endomorphism: its degree-`p` piece consists
+include hf in
+/-- The internal grading of the kernel of a homogeneous linear map: its degree-`p` piece consists
 of the elements of the kernel lying in the degree-`p` piece of `M`. -/
-noncomputable def ker : InternalGrading R (_root_.LinearMap.ker d) where
-  piece p := (G.piece p).comap ((_root_.LinearMap.ker d).subtype.restrictScalars R)
+noncomputable def ker : InternalGrading R (_root_.LinearMap.ker f) where
+  piece p := (G.piece p).comap ((_root_.LinearMap.ker f).subtype.restrictScalars R)
   isInternal := DirectSum.isInternal_comap G.piece _ _ Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p z ↦ ⟨⟨_, hd.isHomogeneous_ker p z.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun p z ↦ ⟨⟨_, hf.isHomogeneous_ker p z.2⟩, rfl⟩
 
-/-- An element of the kernel of `d` is homogeneous of degree `p` exactly when it is homogeneous of
+/-- An element of the kernel of `f` is homogeneous of degree `p` exactly when it is homogeneous of
 degree `p` in `M`. -/
 @[simp]
-theorem mem_ker_piece {p : ℤ} {z : _root_.LinearMap.ker d} :
-    z ∈ (G.ker hd).piece p ↔ (z : M) ∈ G.piece p :=
+theorem mem_ker_piece {p : ℤ} {z : _root_.LinearMap.ker f} :
+    z ∈ (G.ker hf).piece p ↔ (z : M) ∈ G.piece p :=
   Iff.rfl
 
-/-- Homogeneous projection in the kernel of `d` is homogeneous projection in `M`. -/
+/-- Homogeneous projection in the kernel of `f` is homogeneous projection in `M`. -/
 @[simp]
-theorem coe_decompose_ker (p : ℤ) (z : _root_.LinearMap.ker d) :
-    ((decompose (G.ker hd).piece z p : _root_.LinearMap.ker d) : M) =
+theorem coe_decompose_ker (p : ℤ) (z : _root_.LinearMap.ker f) :
+    ((decompose (G.ker hf).piece z p : _root_.LinearMap.ker f) : M) =
       decompose G.piece (z : M) p :=
-  DirectSum.map_decompose_restrict G.piece (G.ker hd).piece
-    ((_root_.LinearMap.ker d).subtype.restrictScalars R) (fun _ _ ↦ Iff.rfl) p z
+  DirectSum.map_decompose_restrict G.piece (G.ker hf).piece
+    ((_root_.LinearMap.ker f).subtype.restrictScalars R) (fun _ _ ↦ Iff.rfl) p z
 
-include hd in
+variable {d : M →ₗ[S] M} (hhom : LinearMap.IsHomogeneous d G.piece G.piece r)
+  (hd : d ∘ₗ d = 0)
+
+include hhom in
 /-- The image of `d` inside its kernel is homogeneous for the grading of the kernel. -/
 theorem isHomogeneous_boundariesInKer :
-    SetLike.IsHomogeneous (G.ker hd).piece (d.boundariesInKer.restrictScalars R) := by
+    SetLike.IsHomogeneous (G.ker hhom).piece (d.boundariesInKer.restrictScalars R) := by
   intro p z hz
   rw [Submodule.restrictScalars_mem, LinearMap.mem_boundariesInKer, coe_decompose_ker]
-  exact hd.isHomogeneous_range p hz
+  exact hhom.isHomogeneous_range p hz
 
 /-- The internal grading of the homology `ker d ⧸ im d` of a homogeneous endomorphism: its
 degree-`p` piece consists of the classes of the cycles of degree `p`. -/
-noncomputable def homology : InternalGrading R d.homology :=
-  ((G.ker hd).quotient (d.boundariesInKer.restrictScalars R)
-    (G.isHomogeneous_boundariesInKer hd)).map
+noncomputable def homology : InternalGrading R (d.homology hd) :=
+  ((G.ker hhom).quotient (d.boundariesInKer.restrictScalars R)
+    (G.isHomogeneous_boundariesInKer hhom)).map
     (Submodule.Quotient.restrictScalarsEquiv R d.boundariesInKer)
 
 /-- A homology class is homogeneous of degree `p` exactly when it is the class of a cycle of
 degree `p`. -/
-theorem mem_homology_piece_iff {p : ℤ} {y : d.homology} :
-    y ∈ (G.homology hd).piece p ↔
-      ∃ z : _root_.LinearMap.ker d, (z : M) ∈ G.piece p ∧ d.homologyπ z = y := by
+theorem mem_homology_piece_iff {p : ℤ} {y : d.homology hd} :
+    y ∈ (G.homology hhom hd).piece p ↔
+      ∃ z : _root_.LinearMap.ker d, (z : M) ∈ G.piece p ∧ d.homologyπ hd z = y := by
   simp only [homology, map_piece, quotient_piece, Submodule.mem_map, Submodule.mkQ_apply,
     mem_ker_piece, LinearEquiv.coe_coe, exists_exists_and_eq_and,
     Submodule.Quotient.restrictScalarsEquiv_mk, LinearMap.homologyπ_apply]
 
 /-- The class of a cycle of degree `p` is a homology class of degree `p`. -/
 theorem homologyπ_mem_homology_piece {p : ℤ} {z : _root_.LinearMap.ker d}
-    (hz : (z : M) ∈ G.piece p) : d.homologyπ z ∈ (G.homology hd).piece p :=
-  (G.mem_homology_piece_iff hd).mpr ⟨z, hz, rfl⟩
+    (hz : (z : M) ∈ G.piece p) : d.homologyπ hd z ∈ (G.homology hhom hd).piece p :=
+  (G.mem_homology_piece_iff hhom hd).mpr ⟨z, hz, rfl⟩
 
 /-- An element of the ring of `d` which moves every homogeneous piece of `M` up by `q` moves every
 homogeneous piece of the homology of `d` up by `q`. -/
 theorem smul_mem_homology_piece {s : S} {q : ℤ}
     (hs : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → s • x ∈ G.piece (p + q)) {p : ℤ}
-    {y : d.homology} (hy : y ∈ (G.homology hd).piece p) :
-    s • y ∈ (G.homology hd).piece (p + q) := by
-  obtain ⟨z, hz, rfl⟩ := (G.mem_homology_piece_iff hd).mp hy
+    {y : d.homology hd} (hy : y ∈ (G.homology hhom hd).piece p) :
+    s • y ∈ (G.homology hhom hd).piece (p + q) := by
+  obtain ⟨z, hz, rfl⟩ := (G.mem_homology_piece_iff hhom hd).mp hy
   rw [← map_smul]
-  exact G.homologyπ_mem_homology_piece hd (z := s • z) (hs hz)
+  exact G.homologyπ_mem_homology_piece hhom hd (z := s • z) (hs hz)
 
 end TauCeti.InternalGrading

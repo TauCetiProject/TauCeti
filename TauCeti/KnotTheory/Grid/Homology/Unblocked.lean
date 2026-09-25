@@ -133,7 +133,8 @@ private noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblo
 differential: the cycles of `GC⁻` modulo the boundaries. -/
 noncomputable def unblockedHomologyIso :
     G.unblockedHomology R ≅
-      ModuleCat.of (MvPolynomial (Fin n) R) (G.unblockedDifferential R).homology :=
+      ModuleCat.of (MvPolynomial (Fin n) R)
+        ((G.unblockedDifferential R).homology (G.unblockedDifferential_comp_self_eq_zero R)) :=
   HomologicalComplex.homologyMapIso (G.unblockedComplexIso R) () ≪≫
     (G.unblockedComplex' R).homologyIsoSc' () () () rfl rfl ≪≫
       (G.unblockedDifferential R).homologyIso (G.unblockedDifferential_comp_self_eq_zero R)
@@ -141,28 +142,32 @@ noncomputable def unblockedHomologyIso :
 /-- The linear map sending a cycle of `GC⁻` to its class in `GH⁻`. -/
 noncomputable def unblockedHomologyClass :
     LinearMap.ker (G.unblockedDifferential R) →ₗ[MvPolynomial (Fin n) R] G.unblockedHomology R :=
-  (G.unblockedHomologyIso R).inv.hom ∘ₗ (G.unblockedDifferential R).homologyπ
+  (G.unblockedHomologyIso R).inv.hom ∘ₗ
+    (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R)
 
 /-- Under `unblockedHomologyIso`, the class of a cycle is its class modulo the boundaries. -/
 @[simp]
 theorem unblockedHomologyIso_hom_unblockedHomologyClass
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     (G.unblockedHomologyIso R).hom (G.unblockedHomologyClass R z) =
-      (G.unblockedDifferential R).homologyπ z := by
+      (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R) z := by
   simp [unblockedHomologyClass]
 
 /-- Every class in `GH⁻` is represented by a cycle. -/
 theorem unblockedHomologyClass_surjective : Function.Surjective (G.unblockedHomologyClass R) := by
   rw [unblockedHomologyClass, LinearMap.coe_comp]
   exact ((ModuleCat.epi_iff_surjective (G.unblockedHomologyIso R).inv).mp inferInstance).comp
-    (G.unblockedDifferential R).homologyπ_surjective
+    ((G.unblockedDifferential R).homologyπ_surjective
+      (G.unblockedDifferential_comp_self_eq_zero R))
 
 /-- A cycle represents zero in `GH⁻` exactly when it is a boundary. -/
 @[simp]
 theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyClass R z = 0 ↔ (z : GridChainMinus R n) ∈
       LinearMap.range (G.unblockedDifferential R) := by
-  rw [← LinearMap.homologyπ_eq_zero_iff, ← unblockedHomologyIso_hom_unblockedHomologyClass,
+  rw [← LinearMap.homologyπ_eq_zero_iff (G.unblockedDifferential R)
+    (G.unblockedDifferential_comp_self_eq_zero R),
+    ← unblockedHomologyIso_hom_unblockedHomologyClass,
     ← map_zero (G.unblockedHomologyIso R).hom.hom]
   exact ((ModuleCat.mono_iff_injective _).mp inferInstance).eq_iff.symm
 

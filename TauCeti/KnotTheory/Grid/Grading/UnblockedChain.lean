@@ -413,7 +413,7 @@ theorem unblockedDifferential_mem_alexanderChainMinusPiece {R : Type*} [CommSemi
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     G.1.unblockedDifferential R c ∈ G.alexanderChainMinusPiece R a :=
   G.unblockedDifferential_mem_bigradedChainMinusSupported
-    (fun g (hg : g.2 = a) ↦ show (g - (1, 0)).2 = a by simpa using hg) hc
+    (fun g (hg : g.2 = a) ↦ by simpa using hg) hc
 
 /-- **The variable `V_c` has Alexander degree `-1`**: multiplying an Alexander-homogeneous chain
 of `GC⁻` by a polynomial variable lowers its Alexander grading by one. -/
@@ -439,7 +439,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
   intro c hc hc'
   have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.2 ≠ a} :=
     iSup₂_le (fun b hb ↦ G.bigradedChainMinusSupported_mono
-      fun g (hg : g.2 = b) ↦ show g.2 ≠ a from hg ▸ hb) hc'
+      fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
   refine Finsupp.ext fun z ↦ ?_
   rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
   exact fun e he ↦ hcompl z e he (hc z e he)

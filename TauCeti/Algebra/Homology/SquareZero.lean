@@ -11,26 +11,24 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 # The homology of a square-zero linear endomorphism
 
 A linear endomorphism `d` of a module `M` with `d ∘ d = 0` is a differential module, and its
-homology is the kernel of `d` modulo its image. This file names that quotient concretely,
-
-`d.homology = ker d ⧸ (im d ∩ ker d)`,
-
-as a module over the ring of `d`, and identifies it with Mathlib's categorical homology of the
+homology is the kernel of `d` modulo its image. This file names that quotient concretely as
+`d.homology hd = ker d ⧸ im d`, where `hd : d ∘ₗ d = 0`, and identifies it with Mathlib's
+categorical homology of the
 short complex `M ⟶ M ⟶ M` whose two maps are `d` (`LinearMap.homologyIso`).
 
 The concrete quotient is what one needs to transport extra structure to homology that the category
 of modules over the ring of `d` does not see, for instance an internal grading over a smaller
-coefficient ring by which `d` is homogeneous: the elements of `d.homology` are classes of elements
-of `M`, on which such structure is defined. The image is intersected with the kernel so that the
-quotient makes sense for every endomorphism; when `d ∘ d = 0` the whole image lies in the kernel.
+coefficient ring by which `d` is homogeneous: the elements of `d.homology hd` are classes of
+elements of `M`, on which such structure is defined. The image is represented inside the kernel by
+`boundariesInKer`.
 
 ## Main definitions
 
 * `LinearMap.boundariesInKer`: the image of `d` as a submodule of the kernel of `d`.
-* `LinearMap.homology`: the kernel of `d` modulo its image.
+* `LinearMap.homology`: for square-zero `d`, the kernel of `d` modulo its image.
 * `LinearMap.homologyπ`: the class of an element of the kernel.
 * `LinearMap.homologyIso`: for `d ∘ d = 0`, Mathlib's homology of the short complex with both maps
-  `d` is `d.homology`.
+  `d` is `d.homology hd`.
 
 ## Main results
 
@@ -57,26 +55,27 @@ abbrev boundariesInKer : Submodule S (ker d) :=
 theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) ∈ range d :=
   Iff.rfl
 
-/-- The homology of a linear endomorphism `d`: its kernel modulo the part of its image lying in
-the kernel. When `d ∘ d = 0` this is the homology `ker d ⧸ im d` of the differential module
-`(M, d)`. -/
-abbrev homology : Type _ :=
+/-- The homology `ker d ⧸ im d` of a square-zero linear endomorphism `d`. -/
+abbrev homology (_hd : d ∘ₗ d = 0) : Type _ :=
   ker d ⧸ d.boundariesInKer
 
 /-- The class in the homology of `d` of an element of the kernel of `d`. -/
-noncomputable def homologyπ : ker d →ₗ[S] d.homology :=
+noncomputable def homologyπ (hd : d ∘ₗ d = 0) : ker d →ₗ[S] d.homology hd :=
   d.boundariesInKer.mkQ
 
 /-- The class of an element of the kernel is its class modulo the boundaries. -/
-theorem homologyπ_apply (z : ker d) : d.homologyπ z = Submodule.Quotient.mk z :=
+@[simp]
+theorem homologyπ_apply (hd : d ∘ₗ d = 0) (z : ker d) :
+    d.homologyπ hd z = Submodule.Quotient.mk z :=
   (rfl)
 
 /-- Every homology class is the class of an element of the kernel. -/
-theorem homologyπ_surjective : Function.Surjective d.homologyπ :=
+theorem homologyπ_surjective (hd : d ∘ₗ d = 0) : Function.Surjective (d.homologyπ hd) :=
   Submodule.mkQ_surjective _
 
 /-- An element of the kernel has zero class exactly when it is a value of `d`. -/
-theorem homologyπ_eq_zero_iff (z : ker d) : d.homologyπ z = 0 ↔ (z : M) ∈ range d :=
+theorem homologyπ_eq_zero_iff (hd : d ∘ₗ d = 0) (z : ker d) :
+    d.homologyπ hd z = 0 ↔ (z : M) ∈ range d :=
   Submodule.Quotient.mk_eq_zero _
 
 /-- The short complex `M ⟶ M ⟶ M` of `S`-modules whose two maps are a square-zero endomorphism
@@ -96,7 +95,7 @@ theorem range_moduleCatToCycles_eq_boundariesInKer (hd : d ∘ₗ d = 0) :
 /-- For a square-zero endomorphism `d`, Mathlib's homology of the short complex `M ⟶ M ⟶ M` with
 both maps `d` is the concrete homology `ker d ⧸ im d`. -/
 noncomputable def homologyIso (hd : d ∘ₗ d = 0) :
-    (d.shortComplex hd).homology ≅ ModuleCat.of S d.homology :=
+    (d.shortComplex hd).homology ≅ ModuleCat.of S (d.homology hd) :=
   (d.shortComplex hd).moduleCatHomologyIso ≪≫
     (Submodule.quotEquivOfEq _ _ (d.range_moduleCatToCycles_eq_boundariesInKer hd)).toModuleIso
 
