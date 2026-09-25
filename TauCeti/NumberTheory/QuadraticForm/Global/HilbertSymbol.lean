@@ -49,6 +49,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **The Hilbert symbol at a good finite place.** If `2`, `a` and `b` are units at the finite
 place `v`, then the Hilbert symbol of the images of `a` and `b` in the completion `K_v` is `1`. -/
+@[simp]
 theorem hilbertSymbol_unitAtFinitePlace_eq_one {a b : Kˣ} {v : HeightOneSpectrum (𝓞 K)}
     (h2 : v.valuation K 2 = 1) (ha : v.valuation K a = 1) (hb : v.valuation K b = 1) :
     hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = 1 := by
@@ -61,8 +62,8 @@ theorem hilbertSymbol_unitAtFinitePlace_eq_one {a b : Kˣ} {v : HeightOneSpectru
   -- `a` and `b` are the images of the units `u` and `u'` of the ring of integers of `K_v`.
   have hmap {c : Kˣ} {w : v.adicCompletionIntegers K} (hw : IsUnit w)
       (hwc : (w : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c) :
-      Units.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).toMonoidHom
-        hw.unit = v.unitAtFinitePlace c :=
+      Units.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) :
+        v.adicCompletionIntegers K →* v.adicCompletion K) hw.unit = v.unitAtFinitePlace c :=
     Units.ext (by simpa using hwc)
   rw [← hmap hu hua, ← hmap hu' hub]
   exact hilbertSymbol_units_map_eq_one (ht2' ▸ ht) _ _

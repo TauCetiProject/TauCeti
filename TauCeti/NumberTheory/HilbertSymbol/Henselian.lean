@@ -41,15 +41,16 @@ variable {K : Type*} [Field K] [Algebra R K]
 /-- **The Hilbert symbol of two units.** If `R` is a Henselian local ring with finite residue
 field in which `2` is a unit, then the Hilbert symbol over an `R`-algebra `K` of the images of two
 units of `R` is `1`. -/
+@[simp]
 theorem hilbertSymbol_units_map_eq_one (h2 : IsUnit (2 : R)) (u u' : Rˣ) :
-    hilbertSymbol (Units.map (algebraMap R K).toMonoidHom u)
-      (Units.map (algebraMap R K).toMonoidHom u') = 1 := by
+    hilbertSymbol (Units.map (algebraMap R K : R →* K) u)
+      (Units.map (algebraMap R K : R →* K) u') = 1 := by
   obtain ⟨x, y, hxy⟩ :=
     exists_mul_sq_add_mul_sq_eq_of_isUnit h2 isUnit_one (-u).isUnit u'.isUnit
   refine (hilbertSymbol_eq_one_iff _ _).mpr ⟨algebraMap R K x, algebraMap R K y, ?_⟩
   have := congrArg (algebraMap R K) hxy
   simp only [map_add, map_mul, map_pow, map_one, map_neg, Units.val_neg] at this
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+  simp only [Units.coe_map, MonoidHom.coe_coe]
   linear_combination -this
 
 end TauCeti
