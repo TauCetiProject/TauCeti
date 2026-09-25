@@ -23,14 +23,6 @@ constants `A ≠ 0` and `B` such that `A * F + B` maps the upper half-plane bije
 where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`, and sends each
 prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit of `F` at `a i`.
 
-The map is the Riemann map of `U` transported to the upper half-plane with infinity sent to a
-boundary point `p` that is not a vertex.  Such a `p` exists because a Jordan curve is infinite.
-Carathéodory's theorem makes this map a continuous injection of the closed upper half-plane that
-tends to `p` at infinity; the prevertices are the real preimages of the vertices.  These are the
-global conditions under which
-`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain` identifies the map
-with an affine image of the Schwarz--Christoffel primitive.
-
 ## Main result
 
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier` --
