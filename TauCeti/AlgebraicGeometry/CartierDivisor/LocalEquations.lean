@@ -36,11 +36,12 @@ differ by a unique regular unit.
   (`Scheme.CartierDivisor.IsLocalEquationAt.exists_unit_mul_eq`), and they only depend on the
   divisor near `x` (`Scheme.CartierDivisor.isLocalEquationAt_congr`).
 
-The local equations and their transition units are the gluing data used to construct the
-invertible sheaf `𝒪_X(D)`. This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A,
-item "Cartier divisors; the dictionaries `Cartier ≃ line bundles` and (smooth curve)
-`Weil ≃ Cartier`". The construction follows Hartshorne, *Algebraic Geometry*, II.6, and the
-Stacks Project, *Divisors*, Tag 02AR. No formalization is vendored: local lifting is Mathlib's
+The sheaf `𝒪_X(D)` is built in `TauCeti/AlgebraicGeometry/CartierDivisor/Sheaf.lean` as the
+subsheaf of `𝒦_X` cut out by the local equations, through
+`Scheme.CartierDivisor.IsLocalEquationAt`. The transition units record how two local equations of
+`D` change into one another on an overlap. The construction follows Hartshorne, *Algebraic
+Geometry*, II.6, and the Stacks Project, *Divisors*, Tag 02AR. No formalization is vendored: local
+lifting is Mathlib's
 characterization of epimorphisms of sheaves as locally surjective maps, while the transition-unit
 criterion uses left exactness of sections and the cokernel exact sequence.
 -/
@@ -161,9 +162,8 @@ theorem exists_local_equation_cover (D : CartierDivisor X) :
 /-- Two local equations of a global Cartier divisor determine a unique regular transition unit
 on their overlap.
 
-In multiplicative notation the displayed difference is the ratio `f / g`. The uniqueness is
-what makes the transition functions satisfy the cocycle identity in the subsequent construction
-of `𝒪_X(D)`. -/
+In multiplicative notation the displayed difference is the ratio `f / g`: the transition unit is
+the regular unit by which the equation `g` must be multiplied to give `f` on `U ⊓ V`. -/
 theorem existsUnique_transitionUnit (D : CartierDivisor X) {U V : X.Opens}
     (f : Additive (((rationalFunctionsRing X).presheaf.obj (op U))ˣ))
     (g : Additive (((rationalFunctionsRing X).presheaf.obj (op V))ˣ))

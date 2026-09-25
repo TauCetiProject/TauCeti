@@ -76,11 +76,9 @@ The sheaf `𝒪_X(D)` attached to a Weil divisor is the submodule of `𝒦_X` cu
 bound; it is built in `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, and the
 multiplication endomorphisms above are what make it depend only on the divisor class of `D`.
 
-The Cartier divisors of `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A ("Divisors on a
-curve: Weil divisors `⊕_x ℤ` and Cartier divisors; the dictionaries `Cartier ≃ line bundles`
-and (smooth curve) `Weil ≃ Cartier`"), are the global sections of `𝒦_X^*/𝒪_X^*`, and the line
-bundle `𝒪_X(D)` attached to a divisor is a subsheaf of `𝒦_X`; both need the sheaf `𝒦_X` and the
-inclusion `𝒪_X ⟶ 𝒦_X` built here. On an integral scheme the sheaf of total quotient rings agrees
+Cartier divisors are the global sections of `𝒦_X^*/𝒪_X^*`, and the line bundle `𝒪_X(D)` attached
+to a divisor is a subsheaf of `𝒦_X`; both need the sheaf `𝒦_X` and the inclusion `𝒪_X ⟶ 𝒦_X`
+built here. On an integral scheme the sheaf of total quotient rings agrees
 with this constant sheaf, so no generality is lost at that stage.
 
 No formalization is vendored. The construction reuses Mathlib's `Scheme.functionField`,

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 
 /-!
@@ -20,7 +21,9 @@ land in `N` factors through `N`, uniquely because `N.ι` is a monomorphism.
 * `TauCeti.PresheafOfModules.liftToSubmodule` and `TauCeti.SheafOfModules.liftToSubmodule`, the
   factorization itself, with `liftToSubmodule_ι` recording that it does factor the given morphism;
 * `TauCeti.SheafOfModules.Submodule.homOfLE`, the inclusion of one submodule of a sheaf of modules
-  into a larger one.
+  into a larger one;
+* `TauCeti.SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules
+  with the same sections over every object above `V`.
 
 No formalization is vendored; the constructions are `AddMonoidHom.codRestrict` applied section by
 section, assembled by Mathlib's `PresheafOfModules.homMk`.
@@ -125,6 +128,44 @@ def homOfLE {N₁ N₂ : M.Submodule} (h : N₁.toSubmodule ≤ N₂.toSubmodule
 lemma homOfLE_ι {N₁ N₂ : M.Submodule} (h : N₁.toSubmodule ≤ N₂.toSubmodule) :
     homOfLE h ≫ N₂.ι = N₁.ι :=
   _root_.SheafOfModules.Hom.ext (_root_.PresheafOfModules.Submodule.homOfLE_ι h)
+
+/-- Two submodules of a sheaf of modules which have the same sections over every object above `V`
+give isomorphic sheaves of modules over `V`, compatibly with their inclusions (`overIsoOfEq_hom_ι`,
+`overIsoOfEq_inv_ι`). -/
+def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
+    (h : ∀ (W : C) (_ : W ⟶ V), N₁.toSubmodule.obj (op W) = N₂.toSubmodule.obj (op W)) :
+    N₁.toSheafOfModules.over V ≅ N₂.toSheafOfModules.over V :=
+  (_root_.SheafOfModules.fullyFaithfulForget _).preimageIso <|
+    _root_.PresheafOfModules.isoMk
+      (fun W ↦
+        letI := ((N₁.toSheafOfModules.over V).val.obj W).isModule
+        letI := ((N₂.toSheafOfModules.over V).val.obj W).isModule
+        LinearEquiv.toModuleIso
+          ({ toFun := fun s ↦ ⟨s.val, h _ W.unop.hom ▸ s.2⟩
+             invFun := fun s ↦ ⟨s.val, (h _ W.unop.hom).symm ▸ s.2⟩
+             left_inv := fun _ ↦ rfl
+             right_inv := fun _ ↦ rfl
+             map_add' := fun _ _ ↦ rfl
+             map_smul' := fun _ _ ↦ rfl } :
+            (N₁.toSheafOfModules.over V).val.obj W ≃ₗ[(R.over V).obj.obj W]
+              (N₂.toSheafOfModules.over V).val.obj W))
+      (fun _ _ _ ↦ rfl)
+
+/-- The isomorphism `overIsoOfEq` is compatible with the inclusions into `M`. -/
+@[reassoc (attr := simp)]
+lemma overIsoOfEq_hom_ι (N₁ N₂ : M.Submodule) (V : C)
+    (h : ∀ (W : C) (_ : W ⟶ V), N₁.toSubmodule.obj (op W) = N₂.toSubmodule.obj (op W)) :
+    (overIsoOfEq N₁ N₂ V h).hom ≫ N₂.ι.over V = N₁.ι.over V := by
+  ext W s
+  rfl
+
+/-- The inverse of `overIsoOfEq` is compatible with the inclusions into `M`. -/
+@[reassoc (attr := simp)]
+lemma overIsoOfEq_inv_ι (N₁ N₂ : M.Submodule) (V : C)
+    (h : ∀ (W : C) (_ : W ⟶ V), N₁.toSubmodule.obj (op W) = N₂.toSubmodule.obj (op W)) :
+    (overIsoOfEq N₁ N₂ V h).inv ≫ N₁.ι.over V = N₂.ι.over V := by
+  ext W s
+  rfl
 
 end Submodule
 

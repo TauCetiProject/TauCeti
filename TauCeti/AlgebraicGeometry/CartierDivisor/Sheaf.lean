@@ -30,7 +30,9 @@ that it is a line bundle.
   subset on which `f` is an equation of `D`, as `f⁻¹ Γ(X, U)` by
   `Scheme.CartierDivisor.mem_sections_iff_of_rationalUnitClass_eq`;
 * `Scheme.CartierDivisor.sheaf D`, the sheaf `𝒪_X(D)` of `𝒪_X`-modules, with its inclusion
-  `Scheme.CartierDivisor.sheafι D : 𝒪_X(D) ⟶ 𝒦_X` (`range_sheafι_app`);
+  `Scheme.CartierDivisor.sheafι D : 𝒪_X(D) ⟶ 𝒦_X` (`sheafι_app_mem`, `range_sheafι_app`) and
+  the factorization `Scheme.CartierDivisor.sheafLift` through it of a morphism to `𝒦_X` whose
+  sections satisfy the defining condition;
 * `Scheme.CartierDivisor.sheafOverIsoOfRestrictEq`: divisors that agree on an open subset `V` have
   isomorphic sheaves over `V`;
 * `Scheme.CartierDivisor.unitIsoSheafPrincipalCartierDivisor`: the sheaf of the principal divisor
@@ -163,9 +165,10 @@ def submodule (D : CartierDivisor X) : (rationalFunctions X).Submodule where
     obtain ⟨V, i, hi, hxV⟩ := hs x hx
     have : Nonempty V := ⟨⟨x, hxV⟩⟩
     have : Nonempty U.unop := ⟨⟨x, hx⟩⟩
+    -- `hi` says that the restriction of `s` to `V` lies in the component of the submodule under
+    -- construction at `op V`, which is `D.sections V` by definition.
     have hi' : (rationalFunctions X).presheaf.map i.op s ∈ D.sections V := hi
-    have key := rationalFunctionsEquiv_map i s
-    rw [← key]
+    rw [← rationalFunctionsEquiv_map i s]
     exact hi' x hxV f hf
 
 /-- The component of the submodule `𝒪_X(D) ⊆ 𝒦_X` at an object of the opposite category. -/
@@ -188,6 +191,11 @@ lemma sheafι_app_injective (D : CartierDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app D.sheafι U) :=
   Subtype.val_injective
 
+/-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` sends a section of `𝒪_X(D)` over `U` into `sections D U`. -/
+lemma sheafι_app_mem (D : CartierDivisor X) (U : X.Opens) (t : Γ(D.sheaf, U)) :
+    Scheme.Modules.Hom.app D.sheafι U t ∈ D.sections U :=
+  TauCeti.SheafOfModules.ι_val_app_mem D.submodule (op U) t
+
 /-- **The sections of `𝒪_X(D)` over `U` are exactly `sections D U`.** Together with
 `sheafι_app_injective` this identifies the sections of `𝒪_X(D)` with the submodule of
 `Γ(𝒦_X, U)` which defines it. -/
@@ -195,47 +203,62 @@ lemma sheafι_app_injective (D : CartierDivisor X) (U : X.Opens) :
 lemma range_sheafι_app (D : CartierDivisor X) (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app D.sheafι U) = D.sections U := by
   ext t
-  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ TauCeti.SheafOfModules.ι_val_app_mem D.submodule (op U) s,
-    fun ht ↦ ⟨⟨t, ht⟩, rfl⟩⟩
+  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ sheafι_app_mem D U s, fun ht ↦ ⟨⟨t, ht⟩, rfl⟩⟩
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism. -/
-instance (D : CartierDivisor X) : Mono D.sheafι := by
-  have : ∀ U : (Opens X)ᵒᵖ,
-      Mono (((Scheme.Modules.toPresheaf X).map D.sheafι).app U) := fun U ↦
-    ConcreteCategory.mono_of_injective _ (sheafι_app_injective D U.unop)
-  exact (Scheme.Modules.toPresheaf X).mono_of_mono_map (NatTrans.mono_of_mono_app _)
+instance (D : CartierDivisor X) : Mono D.sheafι :=
+  -- Instance search does not see through `X.Modules` to `SheafOfModules X.ringCatSheaf`, so
+  -- Mathlib's instance for the inclusion of a submodule is supplied explicitly.
+  SheafOfModules.Submodule.instMonoι D.submodule
+
+/-- A morphism `M ⟶ 𝒦_X` all of whose sections lie in `𝒪_X(D)` factors through `𝒪_X(D)`. -/
+def sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U) :
+    M ⟶ D.sheaf :=
+  TauCeti.SheafOfModules.liftToSubmodule D.submodule φ fun U s ↦ hφ U.unop s
+
+/-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the inclusion
+`sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers `φ`. -/
+@[reassoc (attr := simp)]
+lemma sheafLift_ι {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U) :
+    D.sheafLift φ hφ ≫ D.sheafι = φ :=
+  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+
+/-- On sections, `sheafLift` followed by the inclusion into `𝒦_X` is the original morphism. -/
+@[simp]
+lemma sheafι_app_sheafLift {M : X.Modules} (D : CartierDivisor X)
+    (φ : M ⟶ rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U)
+    (U : X.Opens) (s : Γ(M, U)) :
+    Scheme.Modules.Hom.app D.sheafι U (Scheme.Modules.Hom.app (D.sheafLift φ hφ) U s) =
+      Scheme.Modules.Hom.app φ U s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) (sheafLift_ι D φ hφ)) s
 
 /-- **Divisors agreeing on an open subset have isomorphic sheaves there.** If `D` and `E` have the
 same restriction to `V`, then `𝒪_X(D)` and `𝒪_X(E)` have the same sections over every open
 subset of `V`, so they are isomorphic over `V`, compatibly with their inclusions into `𝒦_X`
-(`sheafOverIsoOfRestrictEq_hom_ι`). -/
+(`sheafOverIsoOfRestrictEq_hom_ι`, `sheafOverIsoOfRestrictEq_inv_ι`). -/
 def sheafOverIsoOfRestrictEq (D E : CartierDivisor X) (V : X.Opens) (h : D |_ V = E |_ V) :
     D.sheaf.over V ≅ E.sheaf.over V :=
-  (SheafOfModules.fullyFaithfulForget _).preimageIso <|
-    PresheafOfModules.isoMk
-      (fun W ↦ by
-        letI := ((D.submodule.toSheafOfModules.over V).val.obj W).isModule
-        letI := ((E.submodule.toSheafOfModules.over V).val.obj W).isModule
-        have hDE := sections_congr h W.unop.hom.le
-        exact LinearEquiv.toModuleIso ({
-          toFun := fun s ↦ ⟨s.val, (hDE ▸ s.2 : s.val ∈ E.sections W.unop.left)⟩
-          invFun := fun s ↦ ⟨s.val, (hDE ▸ s.2 : s.val ∈ D.sections W.unop.left)⟩
-          left_inv := fun _ ↦ rfl
-          right_inv := fun _ ↦ rfl
-          map_add' := fun _ _ ↦ rfl
-          map_smul' := fun _ _ ↦ rfl } :
-          (D.submodule.toSheafOfModules.over V).val.obj W
-              ≃ₗ[((X.ringCatSheaf.over V).obj.obj W : Type u)]
-            (E.submodule.toSheafOfModules.over V).val.obj W))
-      (fun _ _ _ ↦ rfl)
+  TauCeti.SheafOfModules.Submodule.overIsoOfEq D.submodule E.submodule V fun W i ↦
+    (D.submodule_obj (op W)).trans ((sections_congr h i.le).trans (E.submodule_obj (op W)).symm)
 
 /-- The isomorphism `sheafOverIsoOfRestrictEq` is compatible with the inclusions into `𝒦_X`. -/
 @[reassoc (attr := simp)]
 lemma sheafOverIsoOfRestrictEq_hom_ι (D E : CartierDivisor X) (V : X.Opens)
     (h : D |_ V = E |_ V) :
-    (sheafOverIsoOfRestrictEq D E V h).hom ≫ E.sheafι.over V = D.sheafι.over V := by
-  ext W s
-  rfl
+    (sheafOverIsoOfRestrictEq D E V h).hom ≫ E.sheafι.over V = D.sheafι.over V :=
+  TauCeti.SheafOfModules.Submodule.overIsoOfEq_hom_ι _ _ _ _
+
+/-- The inverse of `sheafOverIsoOfRestrictEq` is compatible with the inclusions into `𝒦_X`. -/
+@[reassoc (attr := simp)]
+lemma sheafOverIsoOfRestrictEq_inv_ι (D E : CartierDivisor X) (V : X.Opens)
+    (h : D |_ V = E |_ V) :
+    (sheafOverIsoOfRestrictEq D E V h).inv ≫ D.sheafι.over V = E.sheafι.over V :=
+  TauCeti.SheafOfModules.Submodule.overIsoOfEq_inv_ι _ _ _ _
 
 /-- For a regular function `a` on `U`, the rational function `f⁻¹ a` is a section of the sheaf of
 the principal divisor of `f` over `U`. -/
@@ -244,12 +267,13 @@ lemma rationalFunctionsMul_inv_toRationalFunctions_app_mem_sections (f : X.funct
     Scheme.Modules.Hom.app (rationalFunctionsMul X ((f⁻¹ : X.functionFieldˣ) : X.functionField))
         U (Scheme.Modules.Hom.app (toRationalFunctions X) U a) ∈
       (principalCartierDivisor X f).sections U := by
-  intro x hx g hg
-  have : Nonempty U := ⟨⟨x, hx⟩⟩
-  refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl
-    (principalCartierDivisor_restrict X f U).symm).mpr ⟨a, ?_⟩ x hx g hg
-  rw [rationalFunctionsEquiv_rationalFunctionsMul_app,
-    rationalFunctionsEquiv_toRationalFunctions_app, ← mul_assoc, Units.mul_inv, one_mul]
+  rcases isEmpty_or_nonempty U with hU | hU
+  · -- Over the empty set the membership condition is vacuous.
+    exact mem_sections.mpr fun x hx ↦ hU.elim ⟨x, hx⟩
+  · refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl
+      (principalCartierDivisor_restrict X f U).symm).mpr ⟨a, ?_⟩
+    rw [rationalFunctionsEquiv_rationalFunctionsMul_app,
+      rationalFunctionsEquiv_toRationalFunctions_app, ← mul_assoc, Units.mul_inv, one_mul]
 
 variable (X) in
 /-- Multiplication by `f⁻¹`, from `𝒪_X` to the sheaf of the principal divisor of `f`: a regular
@@ -257,9 +281,9 @@ function `a` goes to the section `f⁻¹ a` of `𝒪_X(div f)`. -/
 def unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     @Quiver.Hom X.Modules _ (SheafOfModules.unit X.ringCatSheaf)
       (principalCartierDivisor X f).sheaf :=
-  TauCeti.SheafOfModules.liftToSubmodule _
+  (principalCartierDivisor X f).sheafLift
     (toRationalFunctions X ≫ rationalFunctionsMul X ((f⁻¹ : X.functionFieldˣ) : X.functionField))
-    fun U a ↦ rationalFunctionsMul_inv_toRationalFunctions_app_mem_sections f U.unop a
+    fun U a ↦ rationalFunctionsMul_inv_toRationalFunctions_app_mem_sections f U a
 
 /-- `unitToSheafPrincipalCartierDivisor X f`, read inside `𝒦_X`, is multiplication by `f⁻¹`. -/
 @[reassoc]
@@ -267,11 +291,10 @@ lemma unitToSheafPrincipalCartierDivisor_ι (f : X.functionFieldˣ) :
     unitToSheafPrincipalCartierDivisor X f ≫ (principalCartierDivisor X f).sheafι =
       toRationalFunctions X ≫
         rationalFunctionsMul X ((f⁻¹ : X.functionFieldˣ) : X.functionField) :=
-  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+  sheafLift_ι _ _ _
 
-/-- Multiplication by `f⁻¹` identifies `𝒪_X` with the sheaf of the principal divisor of `f`: it
-is injective because `𝒪_X ⟶ 𝒦_X` is, and surjective because a section `g` of `𝒪_X(div f)` is a
-rational function with `f g` regular. -/
+/-- Multiplication by `f⁻¹` is an isomorphism from `𝒪_X` to the sheaf `𝒪_X(div f)` of the
+principal divisor of `f`; it is packaged as `unitIsoSheafPrincipalCartierDivisor`. -/
 instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     IsIso (unitToSheafPrincipalCartierDivisor X f) := by
   have key : ∀ (U : X.Opens) (a : Γ(SheafOfModules.unit X.ringCatSheaf, U)),
@@ -279,8 +302,13 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
           (Scheme.Modules.Hom.app (unitToSheafPrincipalCartierDivisor X f) U a) =
         Scheme.Modules.Hom.app (rationalFunctionsMul X
           ((f⁻¹ : X.functionFieldˣ) : X.functionField)) U
-          (Scheme.Modules.Hom.app (toRationalFunctions X) U a) := fun U a ↦
-    congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U a) (unitToSheafPrincipalCartierDivisor_ι f)
+          (Scheme.Modules.Hom.app (toRationalFunctions X) U a) := fun U a ↦ by
+    simpa only [Scheme.Modules.Hom.comp_app (M := SheafOfModules.unit X.ringCatSheaf),
+      ConcreteCategory.comp_apply] using
+      ConcreteCategory.congr_hom
+        (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U) (unitToSheafPrincipalCartierDivisor_ι f)) a
+  -- Injectivity comes from that of `𝒪_X ⟶ 𝒦_X`; surjectivity from the description of the
+  -- sections of `𝒪_X(div f)` as the rational functions `g` with `f g` regular.
   refine Scheme.Modules.Hom.isIso_iff_isIso_app.mpr fun U ↦ ?_
   rw [ConcreteCategory.isIso_iff_bijective]
   -- Multiplication by `f⁻¹` is injective on sections, with left inverse multiplication by `f`.
@@ -296,16 +324,11 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
   · rw [← hmul (Scheme.Modules.Hom.app (toRationalFunctions X) U a),
       ← hmul (Scheme.Modules.Hom.app (toRationalFunctions X) U b), ← key U a, ← key U b, hab]
   · rcases isEmpty_or_nonempty U with hU | hU
-    · have hbot : U = ⊥ := by
-        ext x
-        simpa using fun hx ↦ hU.elim ⟨x, hx⟩
+    · have hbot : U = ⊥ := Opens.coe_eq_empty.mp (Set.isEmpty_coe_sort.mp hU)
       have := subsingleton_rationalFunctions U hbot
       exact ⟨0, sheafι_app_injective _ U (Subsingleton.elim _ _)⟩
-    · have ht : Scheme.Modules.Hom.app (principalCartierDivisor X f).sheafι U t ∈
-          (principalCartierDivisor X f).sections U :=
-        TauCeti.SheafOfModules.ι_val_app_mem _ (op U) t
-      obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl
-        (principalCartierDivisor_restrict X f U).symm).mp ht
+    · obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl
+        (principalCartierDivisor_restrict X f U).symm).mp (sheafι_app_mem _ U t)
       refine ⟨a, sheafι_app_injective _ U ((key U a).trans
         ((rationalFunctionsEquiv U).injective ?_))⟩
       rw [rationalFunctionsEquiv_rationalFunctionsMul_app,
@@ -351,10 +374,8 @@ private def localTrivializations (D : CartierDivisor X) :
   exact
     { I := X
       X := V
-      coversTop := (Opens.coversTop_iff (X : Type u) V).mpr (by
-        rw [TopologicalSpace.IsOpenCover]
-        ext x
-        exact ⟨fun _ ↦ Opens.mem_top x, fun _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩⟩)
+      coversTop := (Opens.coversTop_iff (X : Type u) V).mpr
+        (IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩))
       iso := fun x ↦
         haveI : Nonempty (V x) := ⟨⟨x, hx x⟩⟩
         TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (V x)) ≪≫
