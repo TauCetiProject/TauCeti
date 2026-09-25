@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ENat.LeastBound
-public import TauCeti.Topology.Algebra.Group.Torsion
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 

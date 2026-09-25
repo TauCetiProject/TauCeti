@@ -8,6 +8,10 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+public import Mathlib.Topology.Algebra.Group.Defs
+public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Compactness.Compact
+public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -211,5 +215,19 @@ theorem of_surjective (h : IsPPrimaryTorsion p M) (f : F) (hf : Function.Surject
       (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
 
 end IsPPrimaryTorsion
+
+/-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
+`p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
+at once. -/
+theorem IsPPrimaryTorsion.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [DiscreteTopology V] (h : IsPPrimaryTorsion p V) (X : Type*)
+    [TopologicalSpace X] [CompactSpace X] : IsPPrimaryTorsion p C(X, V) := by
+  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
+  choose k hk using isPPrimaryTorsion_iff.1 h
+  have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
+  refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
+  obtain ⟨c, hc⟩ := pow_dvd_pow p
+    (Finset.le_sup (f := k) (hfin.mem_toFinset.2 (Set.mem_range_self x)))
+  simp [hc, mul_comm _ c, mul_smul, hk]
 
 end TauCeti
