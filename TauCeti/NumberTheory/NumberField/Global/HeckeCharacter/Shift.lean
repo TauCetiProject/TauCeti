@@ -97,9 +97,12 @@ def normPow (s : ℂ) : HeckeCharacter K where
 @[simp]
 theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ((normPow K s c : ℂˣ) : ℂ) = (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ s :=
-  (rfl)
+  by
+    change ((normPowAux s).toHomUnits c : ℂ) = normPowAux s c
+    exact MonoidHom.coe_toHomUnits (normPowAux s) c
 
 /-- The absolute value of `‖c‖ ^ s` is `‖c‖ ^ Re s`. -/
+@[simp]
 theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ‖((normPow K s c : ℂˣ) : ℂ)‖ = ((ideleClassNorm c : ℝ≥0) : ℝ) ^ s.re := by
   rw [normPow_apply, Complex.norm_cpow_eq_rpow_re_of_pos (coe_ideleClassNorm_pos c)]
@@ -132,7 +135,12 @@ private lemma coe_diagonalIdele (t : ℝ) :
     ((diagonalIdele (K := K) t : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K) =
       ((InfiniteAdeleRing.ringEquiv_mixedSpace K).symm
         (algebraMap ℝ (mixedSpace K) (Real.exp t)), 1) :=
-  (rfl)
+  by
+    unfold diagonalIdele
+    change ((Units.map _ _ : (InfiniteAdeleRing K × FiniteAdeleRing (𝓞 K) K)ˣ) :
+      InfiniteAdeleRing K × FiniteAdeleRing (𝓞 K) K) = _
+    simp only [Units.coe_map, MonoidHom.comp_apply, MonoidHom.inl_apply, Units.val_mk0]
+    rfl
 
 private lemma diagonalIdele_add (t u : ℝ) :
     diagonalIdele (K := K) (t + u) = diagonalIdele t * diagonalIdele u := by
@@ -287,6 +295,7 @@ theorem unitaryPart_def (χ : HeckeCharacter K) :
   (rfl)
 
 /-- The value of the unitary part of `χ` at `c` is `χ(c) · ‖c‖ ^ (-σ)`. -/
+@[simp]
 theorem unitaryPart_apply (χ : HeckeCharacter K) (c : IdeleClassGroup (𝓞 K) K) :
     ((χ.unitaryPart c : ℂˣ) : ℂ) =
       (χ c : ℂ) * (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ (-(χ.shift : ℂ)) := by
@@ -298,6 +307,7 @@ theorem shift_unitaryPart (χ : HeckeCharacter K) : χ.unitaryPart.shift = 0 := 
   simp [unitaryPart_def]
 
 /-- **The unitary part of a Hecke character takes values of absolute value `1`.** -/
+@[simp]
 theorem norm_unitaryPart (χ : HeckeCharacter K) (c : IdeleClassGroup (𝓞 K) K) :
     ‖((χ.unitaryPart c : ℂˣ) : ℂ)‖ = 1 :=
   (shift_eq_zero_iff _).mp (shift_unitaryPart χ) c
@@ -308,6 +318,33 @@ of the idele class norm. -/
 theorem unitaryPart_mul_normPow_shift (χ : HeckeCharacter K) :
     χ.unitaryPart * normPow K χ.shift = χ := by
   rw [unitaryPart_def, mul_assoc χ, ← normPow_add, neg_add_cancel, normPow_zero, mul_one χ]
+
+/-- The unitary part of a product is the product of the unitary parts. -/
+@[simp]
+theorem unitaryPart_mul (χ ψ : HeckeCharacter K) :
+    (χ * ψ).unitaryPart = χ.unitaryPart * ψ.unitaryPart := by
+  simp only [unitaryPart_def, shift_mul, Complex.ofReal_add, neg_add_rev, normPow_add]
+  rw [mul_comm (normPow K (-ψ.shift)) (normPow K (-χ.shift))]
+  exact mul_mul_mul_comm χ ψ (normPow K (-χ.shift)) (normPow K (-ψ.shift))
+
+/-- The unitary part of the trivial character is trivial. -/
+@[simp]
+theorem unitaryPart_one : (1 : HeckeCharacter K).unitaryPart = 1 := by
+  rw [unitaryPart_def, shift_one, Complex.ofReal_zero, neg_zero, normPow_zero]
+  exact mul_one (1 : HeckeCharacter K)
+
+/-- The unitary part of an inverse is the inverse of the unitary part. -/
+@[simp]
+theorem unitaryPart_inv (χ : HeckeCharacter K) : χ⁻¹.unitaryPart = χ.unitaryPart⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← unitaryPart_mul, inv_mul_cancel, unitaryPart_one]
+
+/-- Taking the unitary part twice has the same result as taking it once. -/
+@[simp]
+theorem unitaryPart_unitaryPart (χ : HeckeCharacter K) : χ.unitaryPart.unitaryPart =
+    χ.unitaryPart := by
+  rw [unitaryPart_def, shift_unitaryPart, Complex.ofReal_zero, neg_zero, normPow_zero]
+  exact mul_one (χ.unitaryPart)
 
 /-- **Uniqueness of the unitary decomposition**: the unitary part of `ψ · ‖·‖ ^ σ`, for a unitary
 Hecke character `ψ` and a real number `σ`, is `ψ`. -/
