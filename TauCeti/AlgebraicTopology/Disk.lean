@@ -29,6 +29,8 @@ namespace TauCeti.TopCat
 /-- The `n`-dimensional Euclidean disk is contractible. -/
 instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
+  -- `TopCat.disk` stores its metric closed ball inside a `ULift`; expose that carrier so the
+  -- closed-ball contractibility instance can be transported through the lift equivalence.
   change ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
   let hX : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
@@ -57,7 +59,7 @@ end TauCeti.TopCat
 namespace TopPair
 
 /-- The standard pair consisting of the `n`-dimensional disk and its boundary.  The abbreviation
-keeps the component spaces reducible for the projection lemma below. -/
+keeps the component spaces reducible for the projection lemmas below. -/
 abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
   TopPair.of (TopCat.diskBoundaryInclusion n) (by
     let hT2 : T2Space (TopCat.disk n) := by
@@ -68,7 +70,17 @@ abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
         ((TopCat.mono_iff_injective _).mp
           (inferInstance : Mono (TopCat.diskBoundaryInclusion n)))).isEmbedding)
 
+@[simp]
+lemma diskBoundaryPair_fst (n : ℕ) :
+    (diskBoundaryPair n).fst = TopCat.disk n := rfl
+
+@[simp]
+lemma diskBoundaryPair_snd (n : ℕ) :
+    (diskBoundaryPair n).snd = TopCat.diskBoundary n := rfl
+
 /-- The underlying map of `diskBoundaryPair n` is the standard boundary inclusion. -/
+-- This equation is definitional for the reducible abbreviation; an `@[simp]` attribute would be
+-- rejected by `simpNF` as a duplicate rule.
 lemma diskBoundaryPair_map (n : ℕ) :
     (diskBoundaryPair n).map = TopCat.diskBoundaryInclusion n := (rfl)
 
