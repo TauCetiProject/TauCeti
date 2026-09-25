@@ -51,8 +51,8 @@ varies the coefficients.
 
 Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence, so it
 is Layer B infrastructure for `TauCetiRoadmap/JacobianChallenge/README.md`. No formalization is
-vendored: the sequence itself is
-`TauCeti/CategoryTheory/Sites/SheafCohomology/LongExactSequence.lean`, exactness of forgetting
+vendored: the sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
+`TauCeti/CategoryTheory/Sites/SheafCohomology/LongExactSequence.lean`; exactness of forgetting
 the module structures is `TauCeti/AlgebraicGeometry/Modules/Sheaf.lean`, and the comparison of
 degree-zero cohomology with global sections is `Scheme.Modules.cohomologyZeroEquiv`.
 -/
@@ -112,51 +112,51 @@ include hS
 short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules. -/
 def cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Cohomology S.X₃ n₀ →+ Cohomology S.X₁ n₁ :=
-  TauCeti.CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h
+  CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h
 
 /-- The long exact cohomology sequence is exact at `Hⁿ(X, M₂)`. -/
 theorem exact_cohomologyMap_cohomologyMap (n : ℕ) :
     Function.Exact (cohomologyMap S.f n) (cohomologyMap S.g n) :=
-  TauCeti.CategoryTheory.Sheaf.H.exact_map_map (shortExact_map_toSheaf hS) n
+  CategoryTheory.Sheaf.H.exact_map_map (shortExact_map_toSheaf hS) n
 
 /-- The long exact cohomology sequence is exact at `Hⁿ⁰(X, M₃)`. -/
 theorem exact_cohomologyMap_cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Exact (cohomologyMap S.g n₀) (cohomologyδ hS n₀ n₁ h) :=
-  TauCeti.CategoryTheory.Sheaf.H.exact_map_δ (shortExact_map_toSheaf hS) n₀ n₁ h
+  CategoryTheory.Sheaf.H.exact_map_δ (shortExact_map_toSheaf hS) n₀ n₁ h
 
 /-- The long exact cohomology sequence is exact at `Hⁿ¹(X, M₁)`. -/
 theorem exact_cohomologyδ_cohomologyMap (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Exact (cohomologyδ hS n₀ n₁ h) (cohomologyMap S.f n₁) :=
-  TauCeti.CategoryTheory.Sheaf.H.exact_δ_map (shortExact_map_toSheaf hS) n₀ n₁ h
+  CategoryTheory.Sheaf.H.exact_δ_map (shortExact_map_toSheaf hS) n₀ n₁ h
 
 omit hS in
 /-- A monomorphism of sheaves of modules is injective on cohomology in degree zero. -/
 theorem cohomologyMap_injective {M N : X.Modules} (f : M ⟶ N) [Mono f] :
     Function.Injective (cohomologyMap f 0) :=
-  TauCeti.CategoryTheory.Sheaf.H.map_injective ((toSheaf X).map f)
+  CategoryTheory.Sheaf.H.map_injective ((toSheaf X).map f)
 
 /-- If `Hⁿ¹(X, M₁)` vanishes, then `Hⁿ⁰(X, M₂) →+ Hⁿ⁰(X, M₃)` is surjective. -/
 theorem cohomologyMap_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (h₁ : Subsingleton (Cohomology S.X₁ n₁)) :
     Function.Surjective (cohomologyMap S.g n₀) :=
-  TauCeti.CategoryTheory.Sheaf.H.map_g_surjective (shortExact_map_toSheaf hS) n₀ n₁ h h₁
+  CategoryTheory.Sheaf.H.map_g_surjective (shortExact_map_toSheaf hS) n₀ n₁ h h₁
 
 /-- If `Hⁿ(X, M₁)` and `Hⁿ(X, M₃)` vanish, then so does `Hⁿ(X, M₂)`. -/
 theorem subsingleton_cohomology_X₂ (n : ℕ) (h₁ : Subsingleton (Cohomology S.X₁ n))
     (h₃ : Subsingleton (Cohomology S.X₃ n)) : Subsingleton (Cohomology S.X₂ n) :=
-  TauCeti.CategoryTheory.Sheaf.H.subsingleton_X₂ (shortExact_map_toSheaf hS) n h₁ h₃
+  CategoryTheory.Sheaf.H.subsingleton_X₂ (shortExact_map_toSheaf hS) n h₁ h₃
 
 /-- If `Hⁿ⁰(X, M₂)` and `Hⁿ¹(X, M₁)` vanish, then so does `Hⁿ⁰(X, M₃)`. -/
 theorem subsingleton_cohomology_X₃ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (h₂ : Subsingleton (Cohomology S.X₂ n₀)) (h₁ : Subsingleton (Cohomology S.X₁ n₁)) :
     Subsingleton (Cohomology S.X₃ n₀) :=
-  TauCeti.CategoryTheory.Sheaf.H.subsingleton_X₃ (shortExact_map_toSheaf hS) n₀ n₁ h h₂ h₁
+  CategoryTheory.Sheaf.H.subsingleton_X₃ (shortExact_map_toSheaf hS) n₀ n₁ h h₂ h₁
 
 /-- If `Hⁿ⁰(X, M₃)` and `Hⁿ¹(X, M₂)` vanish, then so does `Hⁿ¹(X, M₁)`. -/
 theorem subsingleton_cohomology_X₁ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (h₃ : Subsingleton (Cohomology S.X₃ n₀)) (h₂ : Subsingleton (Cohomology S.X₂ n₁)) :
     Subsingleton (Cohomology S.X₁ n₁) :=
-  TauCeti.CategoryTheory.Sheaf.H.subsingleton_X₁ (shortExact_map_toSheaf hS) n₀ n₁ h h₃ h₂
+  CategoryTheory.Sheaf.H.subsingleton_X₁ (shortExact_map_toSheaf hS) n₀ n₁ h h₃ h₂
 
 /-- Global sections are left exact: the sections of `M₁` are exactly the sections of `M₂` that
 die in `M₃`. -/
@@ -205,8 +205,8 @@ theorem cohomologyδ_naturality {S₁ S₂ : ShortComplex X.Modules} (h₁ : S�
     (h₂ : S₂.ShortExact) (φ : S₁ ⟶ S₂) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (x : Cohomology S₁.X₃ n₀) :
     cohomologyMap φ.τ₁ n₁ (cohomologyδ h₁ n₀ n₁ h x) =
       cohomologyδ h₂ n₀ n₁ h (cohomologyMap φ.τ₃ n₀ x) :=
-  TauCeti.CategoryTheory.Sheaf.H.δ_naturality (shortExact_map_toSheaf h₁)
-    (shortExact_map_toSheaf h₂) ((toSheaf X).mapShortComplex.map φ) n₀ n₁ h x
+  (CategoryTheory.Sheaf.H.δ_naturality n₀ n₁ h (shortExact_map_toSheaf h₁)
+    (shortExact_map_toSheaf h₂) ((toSheaf X).mapShortComplex.map φ) x).symm
 
 /-- The connecting map of the long exact cohomology sequence is linear over the ring of global
 functions. -/
