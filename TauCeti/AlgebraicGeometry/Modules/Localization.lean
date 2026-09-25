@@ -23,8 +23,7 @@ sheaf of algebras coequifibered over the structure sheaf on the small affine Zar
 is the input of `AlgebraicGeometry.AffineZariskiSite.relativeGluingData`.
 
 Over `Spec R` the statement is Mathlib's `AlgebraicGeometry.isIso_fromTildeΓ_iff_isLocalizing`;
-the general case is reduced to it by restricting `M` along the open immersion
-`hU.fromSpec : Spec Γ(X, U) ⟶ X` onto `U`.
+this module extends that affine result to arbitrary schemes.
 
 ## Main declarations
 
