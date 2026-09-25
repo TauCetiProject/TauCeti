@@ -19,11 +19,13 @@ endomap lying below the identity almost everywhere is the identity almost everyw
 
 ## Main results
 
-* `MeasureTheory.Measure.ae_eq_of_measurePreserving_of_le` is the general form, for two
-  measurable real-valued functions on a finite measure space;
-* `MeasureTheory.Measure.ae_eq_id_of_measurePreserving_of_le` is the endomap case. It turns a
-  domination hypothesis on a real-valued coordinate into an equality almost everywhere, so it is
-  useful whenever one has to rule out a measure-preserving map that moves points downwards.
+* `MeasureTheory.Measure.ae_eq_of_measurePreserving_of_le` — two measurable real-valued
+  functions on a finite measure space with the same pushforward measure, where the first lies
+  below the second almost everywhere, agree almost everywhere. It turns a domination hypothesis
+  on a real-valued coordinate into an equality almost everywhere, so it is useful whenever one
+  has to rule out a measure-preserving map that moves points downwards. Its endomap case, namely
+  `α = ℝ` and `g = id`, says that a measure-preserving real endomap lying below the identity is
+  the identity almost everywhere.
 -/
 
 public section
@@ -74,13 +76,5 @@ theorem ae_eq_of_measurePreserving_of_le {α : Type*} [MeasurableSpace α] {f g 
     simp only [Pi.zero_apply] at hx
     linarith
   exact Real.arctan_injective heq
-
-/-- A measure-preserving real endomap bounded above by the identity is almost everywhere the
-identity. -/
-theorem ae_eq_id_of_measurePreserving_of_le {f : ℝ → ℝ} {μ : Measure ℝ}
-    (hf : Measurable f) [IsFiniteMeasure μ] (hmap : Measure.map f μ = μ)
-    (hle : ∀ᵐ x ∂μ, f x ≤ x) : f =ᵐ[μ] id := by
-  refine ae_eq_of_measurePreserving_of_le hf measurable_id (μ := μ) ?_ hle
-  rw [hmap, Measure.map_id]
 
 end MeasureTheory.Measure

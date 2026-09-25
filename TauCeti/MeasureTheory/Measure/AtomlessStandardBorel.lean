@@ -28,7 +28,7 @@ and rearrangements*, Theorem A.7.
 Here `NullSingletonClass μ` is the formal hypothesis. On a standard-Borel space it gives the
 atomlessness used by the CDF argument; the class itself only asserts that every singleton is
 null. The mod-zero isomorphism machinery it composes is
-`TauCeti.MeasureTheory.Measure.Mod0MeasureIso`; this module composes the two transports and
+`TauCeti.Mod0MeasureIso`; this module composes the two transports and
 exports the resulting theorem `exists_mpModNull_equiv_unitInterval`.
 -/
 
@@ -49,12 +49,13 @@ CDF/quantile transport along `ℝ`. -/
 
 private def atomless_standardBorel_mod0MeasureIso (α) [MeasurableSpace α]
     [StandardBorelSpace α] (μ : Measure α) [IsProbabilityMeasure μ] [NullSingletonClass μ] :
-    Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc 0 1)) := by
+    TauCeti.Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc 0 1)) := by
   have hne : Nonempty α := nonempty_of_isProbabilityMeasure μ
   have hprob : IsProbabilityMeasure (Measure.map (embeddingReal α) μ) := inferInstance
   have hnull : NullSingletonClass (Measure.map (embeddingReal α) μ) :=
-    noAtoms_map_of_injective (measurableEmbedding_embeddingReal α)
-  exact (@embeddingRealMod0MeasureIso α _ _ μ hne).trans
+    nullSingletonClass_map_of_injective (measurableEmbedding_embeddingReal α).measurable
+      (measurableEmbedding_embeddingReal α).injective
+  exact (@TauCeti.embeddingRealMod0MeasureIso α _ _ μ hne).trans
     (@realMod0MeasureIso (Measure.map (embeddingReal α) μ) hprob hnull)
 
 /-- A measure-preserving map in each direction between an atomless standard-Borel
@@ -67,6 +68,6 @@ theorem exists_mpModNull_equiv_unitInterval
       MeasurePreserving g (volume : Measure I) μ ∧
       (∀ᵐ x ∂μ, g (f x) = x) ∧
       (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
-  mod0MeasureIso_to_unitInterval (atomless_standardBorel_mod0MeasureIso Ω μ)
+  TauCeti.mod0MeasureIso_to_unitInterval (atomless_standardBorel_mod0MeasureIso Ω μ)
 
 end MeasureTheory.Measure

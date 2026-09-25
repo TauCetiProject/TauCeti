@@ -28,6 +28,21 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   an atomless real law;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin.
+
+## Adapted from
+
+`continuous_cdf_of_noAtoms` and `cdf_sublevel_measure` are adapted from Cameron Freer's
+independent implementation in `Graphon/MeasureIso.lean` at commit
+`9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
+<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>,
+under the same names; the graphon-specific packaging was removed. The original work is
+copyright Cameron Freer and licensed under Apache 2.0.
+
+These two results are the input to the probability integral transform
+`MeasureTheory.Measure.cdf_map_eq_volume_restrict` in `TauCeti.Probability.Quantile`, which is
+adapted from the same source, and they realize the measure-preserving equivalence of an
+atomless standard-Borel space with the unit interval proved as Theorem A.7 in S. Janson,
+*Graphons, cut norm and distance, couplings and rearrangements*, Arkiv för Matematik 52 (2014).
 -/
 
 public section

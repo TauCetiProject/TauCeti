@@ -34,8 +34,9 @@ atom while vanishing on every singleton.
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — an a.e.-measurable map from a
   positive finite-mass measurable atom into a standard Borel space has the corresponding point
   mass as its restricted pushforward;
-* `MeasureTheory.Measure.noAtoms_map_of_injective` — an injective measurable embedding preserves
-  the property that singletons have measure zero.
+* `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
+  into a space whose singletons are measurable preserves the property that singletons have
+  measure zero.
 -/
 
 public section
@@ -109,18 +110,26 @@ theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
     _ = μ.restrict A Set.univ • Measure.dirac y := Measure.map_const _ _
     _ = μ A • Measure.dirac y := by rw [Measure.restrict_apply_univ]
 
-/-- An injective measurable embedding sends a measure with null singletons to a measure with
-null singletons. -/
-theorem _root_.MeasureTheory.Measure.noAtoms_map_of_injective
+/-- An injective measurable map into a space whose singletons are measurable sends a measure
+with null singletons to a measure with null singletons: each singleton has an at-most-singleton
+preimage, which is null.
+
+Adapted from Cameron Freer's private `noAtoms_map_of_injective` in `Graphon/MeasureIso.lean` at
+commit `9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
+<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>; the
+original work is copyright Cameron Freer and licensed under Apache 2.0, and it assumes `f` to be
+a measurable embedding, where the measurability and injectivity of `f` are separated here. -/
+theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_injective
     {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     {μ : Measure α} [NullSingletonClass μ] {f : α → β}
-    (hf : MeasurableEmbedding f) : NullSingletonClass (Measure.map f μ) := by
+    [MeasurableSingletonClass β] (hf : Measurable f) (hInj : Function.Injective f) :
+    NullSingletonClass (Measure.map f μ) := by
   refine ⟨fun y => ?_⟩
-  rw [hf.map_apply]
+  rw [Measure.map_apply hf (measurableSet_singleton y)]
   have hsub : (f ⁻¹' {y}).Subsingleton := by
     intro a ha b hb
     simp only [mem_preimage, mem_singleton_iff] at ha hb
-    exact hf.injective (ha.trans hb.symm)
+    exact hInj (ha.trans hb.symm)
   exact hsub.measure_zero μ
 
 end MeasureTheory

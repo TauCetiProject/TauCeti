@@ -25,15 +25,15 @@ The original work is copyright Cameron Freer and licensed under Apache 2.0.
 
 ## Main results
 
-* `MeasureTheory.Measure.Mod0MeasureIso` is the structure;
-  `Mod0MeasureIso.measurePreserving` and `Mod0MeasureIso.measurePreserving_invFun` read off the
-  two measure-preserving maps, `Mod0MeasureIso.symm` inverts an isomorphism, and
-  `Mod0MeasureIso.trans` composes two of them;
-* `MeasureTheory.Measure.embeddingRealMod0MeasureIso` transports a standard-Borel space into `ℝ`
-  by `embeddingReal`;
-* `MeasureTheory.Measure.mod0MeasureIso_to_unitInterval` turns a mod-zero isomorphism into `ℝ`
-  carrying the unit interval measure into measure-preserving maps in both directions between
-  that space and the unit interval.
+* `TauCeti.Mod0MeasureIso` is the structure; `TauCeti.Mod0MeasureIso.measurePreserving` and
+  `TauCeti.Mod0MeasureIso.measurePreserving_invFun` read off the two measure-preserving maps,
+  `TauCeti.Mod0MeasureIso.symm` inverts an isomorphism, and `TauCeti.Mod0MeasureIso.trans`
+  composes two of them;
+* `TauCeti.embeddingRealMod0MeasureIso` transports a standard-Borel space into `ℝ` by
+  `embeddingReal`;
+* `TauCeti.mod0MeasureIso_to_unitInterval` turns a mod-zero isomorphism into `ℝ` carrying the
+  unit interval measure into measure-preserving maps in both directions between that space and
+  the unit interval.
 
 The instance built from the cumulative distribution function and the quantile of an atomless
 real law is `MeasureTheory.Measure.realMod0MeasureIso`, in `TauCeti.Probability.Quantile`.
@@ -46,7 +46,7 @@ noncomputable section
 open Filter MeasureTheory Set
 open scoped unitInterval
 
-namespace MeasureTheory.Measure
+namespace TauCeti
 
 /-- Two measurable maps that push `μ` and `ν` forward onto one another and that are mutually
 inverse outside a null set: a measure-preserving isomorphism of the two measured spaces modulo
@@ -247,4 +247,4 @@ theorem mod0MeasureIso_to_unitInterval
       unitInterval.measurePreserving_coe.map_eq, e.map_invFun]
   exact ⟨f, g, ⟨hfmeas, hmapf⟩, ⟨hgmeas, hmapg⟩, hgf, hfg⟩
 
-end MeasureTheory.Measure
+end TauCeti

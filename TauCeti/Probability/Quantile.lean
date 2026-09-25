@@ -51,8 +51,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.cdf_quantile_ae` and
   `MeasureTheory.Measure.quantile_cdf_ae` — the two almost-everywhere inverse laws;
 * `MeasureTheory.Measure.realMod0MeasureIso` — for an atomless real law, the pair
-  (`cdf ν`, `ν.quantile`) as a `MeasureTheory.Measure.Mod0MeasureIso` between `ν` and Lebesgue
-  measure restricted to `[0, 1]`.
+  (`cdf ν`, `ν.quantile`) as a `TauCeti.Mod0MeasureIso` between `ν` and Lebesgue measure
+  restricted to `[0, 1]`.
 
 ## References
 
@@ -60,6 +60,26 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   and its Galois property.
 * P. Embrechts and M. Hofert, *A note on generalized inverses*, Mathematical Methods of
   Operations Research 77 (2013), 423--432.
+
+## Adapted from
+
+The probability integral transform `cdf_map_eq_volume_restrict`, the inverse laws
+`cdf_quantile_ae` and `quantile_cdf_ae`, the inverse transform sampling theorem
+`map_quantile_volume_Ioo` and the resulting `realMod0MeasureIso` instance are adapted from
+Cameron Freer's independent implementation in `Graphon/MeasureIso.lean` at commit
+`9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
+<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>,
+where they appear as `cdf_map_eq_volume_restrict`, `cdf_cdfQuantile_ae`,
+`cdfQuantile_cdf_ae`, `map_cdfQuantile_volume_restrict` and `realMod0MeasureIso`, with the
+generalized inverse called `cdfQuantile` rather than `quantile`; the graphon-specific packaging
+was removed. The original work is copyright Cameron Freer and licensed under Apache 2.0.
+
+The measure-preserving equivalence that this file realizes on the real line is the classical
+transport of an atomless standard-Borel space to the unit interval, proved as Theorem A.7 in
+S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, Arkiv för
+Matematik 52 (2014); see also `TauCeti.MeasureTheory.Measure.exists_mpModNull_equiv_unitInterval`
+in `TauCeti.MeasureTheory.Measure.AtomlessStandardBorel`, which composes it with
+`TauCeti.embeddingRealMod0MeasureIso`.
 -/
 
 public section
@@ -301,14 +321,15 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
     rw [hcomp, ← Measure.map_map hq hcdf, cdf_map_eq_volume_restrict ν]
     simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using
       (map_quantile_volume_Ioo ν)
-  exact ae_eq_id_of_measurePreserving_of_le (hq.comp hcdf) hmap hle
+  exact ae_eq_of_measurePreserving_of_le (hq.comp hcdf) measurable_id
+    (hmap.trans Measure.map_id.symm) hle
 
 /-- **The CDF/quantile transport of an atomless real law.** The cumulative distribution function
 and the quantile function of an atomless probability measure `ν` on `ℝ` push `ν` and Lebesgue
 measure restricted to `[0, 1]` forward onto one another, and are mutually inverse almost
 everywhere; together they are a mod-zero isomorphism between `ν` and the unit interval. -/
 def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NullSingletonClass ν] : Mod0MeasureIso ℝ ℝ ν (volume.restrict (Set.Icc 0 1)) where
+    [NullSingletonClass ν] : TauCeti.Mod0MeasureIso ℝ ℝ ν (volume.restrict (Set.Icc 0 1)) where
   toFun := cdf ν
   invFun := ν.quantile
   measurable_toFun := (cdf ν).mono.measurable
