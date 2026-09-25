@@ -55,17 +55,10 @@ open _root_.ModularGroup
 
 /-! ### The descent
 
-`tPrime` is Popa--Zagier's `T′ = (1 0; 1 1)`, whose class in `PSL(2, ℤ)` is `U² * S`. The descent
-is `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem` with `E = {T, T′}` and `P` the set of
-classes of the matrices in `SL(2, ℤ)` with non-negative entries. -/
-
-private def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
-
-private lemma coe_T_mul_coe_S_sq_mul_coe_S :
-    ((T : PSL(2, ℤ)) * S) ^ 2 * S = (tPrime : PSL(2, ℤ)) := by
-  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_mul, QuotientGroup.eq,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  exact Or.inr (by decide +kernel)
+`TauCeti.ModularGroup.tPrime` is Popa--Zagier's `T′ = (1 0; 1 1)`, whose class in `PSL(2, ℤ)` is
+`U² * S`. The descent is `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem` with
+`E = {T, T′}` and `P` the set of classes of the matrices in `SL(2, ℤ)` with non-negative entries.
+-/
 
 private lemma coe_mul_ne_one {t g : SL(2, ℤ)} (ht : t ∈ ({T, tPrime} : Set SL(2, ℤ)))
     (hg : ∀ i j, 0 ≤ g i j) : ((t * g : SL(2, ℤ)) : PSL(2, ℤ)) ≠ 1 := by

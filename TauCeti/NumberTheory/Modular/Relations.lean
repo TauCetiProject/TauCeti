@@ -14,7 +14,8 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 In `PSL(2, ℤ)` the classes of `S = (0 -1; 1 0)` and `U = T * S = (1 -1; 1 0)`, where
 `T = (1 1; 0 1)`, satisfy `S² = 1` and `U³ = 1`, and `U * S = T`. In `SL(2, ℤ)` the first two
 products are `-1` and the last is `-T`, so each relation is proved by checking that the
-corresponding element of `SL(2, ℤ)` is `±1`, that is, central.
+corresponding element of `SL(2, ℤ)` is `±1`, that is, central. Likewise `U² * S` is the class of
+the lower-triangular matrix `T′ = (1 0; 1 1)`.
 
 `U` is written `(T : PSL(2, ℤ)) * S`, the simp-normal form of the class of `T * S`.
 
@@ -23,7 +24,11 @@ corresponding element of `SL(2, ℤ)` is `±1`, that is, central.
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_S_inv`: `S² = 1` and `S⁻¹ = S`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
+* `TauCeti.ModularGroup.coe_S_mul_coe_S`, `TauCeti.ModularGroup.mul_coe_S_mul_coe_S`: `S * S = 1`
+  and `g * S * S = g`, the product forms of `S² = 1`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_mul_coe_S`: `U * S = T`.
+* `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix
+  `T′ = (1 0; 1 1)` and `U² * S = T′`.
 -/
 
 public section
@@ -64,9 +69,28 @@ theorem coe_T_mul_coe_S_inv : ((T : PSL(2, ℤ)) * S)⁻¹ = ((T : PSL(2, ℤ)) 
 theorem coe_T_mul_coe_S_sq_inv : (((T : PSL(2, ℤ)) * S) ^ 2)⁻¹ = (T : PSL(2, ℤ)) * S := by
   rw [← coe_T_mul_coe_S_inv, inv_inv]
 
-/-- In `PSL(2, ℤ)`, `U * S = T` for `U = T * S`; in `SL(2, ℤ)` the product is `-T`. -/
+/-- The product form of `S² = 1` in `PSL(2, ℤ)`. -/
 @[simp]
-theorem coe_T_mul_coe_S_mul_coe_S : (T : PSL(2, ℤ)) * S * S = T := by
-  rw [mul_assoc, ← sq, coe_S_sq, mul_one]
+theorem coe_S_mul_coe_S : (S : PSL(2, ℤ)) * S = 1 := by
+  rw [← sq, coe_S_sq]
+
+/-- Right multiplication by `S` is an involution of `PSL(2, ℤ)`. -/
+@[simp]
+theorem mul_coe_S_mul_coe_S (g : PSL(2, ℤ)) : g * S * S = g := by
+  rw [mul_assoc, coe_S_mul_coe_S, mul_one]
+
+/-- In `PSL(2, ℤ)`, `U * S = T` for `U = T * S`; in `SL(2, ℤ)` the product is `-T`. -/
+theorem coe_T_mul_coe_S_mul_coe_S : (T : PSL(2, ℤ)) * S * S = T :=
+  mul_coe_S_mul_coe_S _
+
+/-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
+@[expose] def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
+
+/-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
+@[simp]
+theorem coe_T_mul_coe_S_sq_mul_coe_S : ((T : PSL(2, ℤ)) * S) ^ 2 * S = (tPrime : PSL(2, ℤ)) := by
+  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_mul, QuotientGroup.eq,
+    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  exact Or.inr (by decide +kernel)
 
 end TauCeti.ModularGroup
