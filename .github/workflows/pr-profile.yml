@@ -87,6 +87,12 @@ jobs:
       LAKE_RESTORE_ARTIFACTS: ""
       LAKE_CACHE_DIR: ""
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          sudo -n sysctl -w vm.max_map_count=1048576 || sysctl -w vm.max_map_count=1048576 \
+            || echo "::warning::could not raise vm.max_map_count"
+          echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
       # --- Trusted setup. No PR code runs before the sandboxed measurement steps. ---
       - name: Resolve immutable base and head commits
         id: pr

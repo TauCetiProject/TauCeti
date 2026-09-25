@@ -88,6 +88,12 @@ jobs:
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          sudo -n sysctl -w vm.max_map_count=1048576 || sysctl -w vm.max_map_count=1048576 \
+            || echo "::warning::could not raise vm.max_map_count"
+          echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
       - name: Resolve PR head
         id: pr

@@ -90,6 +90,12 @@ jobs:
       staged: ${{ steps.stage.outputs.staged }}
       reported-toolchain: ${{ steps.stage.outputs.toolchain }}
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          sudo -n sysctl -w vm.max_map_count=1048576 || sysctl -w vm.max_map_count=1048576 \
+            || echo "::warning::could not raise vm.max_map_count"
+          echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
       - uses: actions/checkout@v4
         with:
           # This job elaborates every TauCeti module, and Lean runs code at elaboration time.
