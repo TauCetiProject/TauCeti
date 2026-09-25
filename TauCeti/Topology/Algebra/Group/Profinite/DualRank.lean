@@ -22,9 +22,11 @@ by its values there, so restriction is a linear injection of the dual into the f
 this into a bound by the topological generator rank, and a finite generating set turns it into
 finite-dimensionality.
 
-Nothing here is pro-`p`, and nothing here needs the group to be commutative; the reverse
-inequality, which does need both, is
-`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`.
+Nothing here is pro-`p`, and nothing here needs the group to be commutative. The reverse
+inequality does need the group to be pro-`p`, but not to be commutative: its dual basis argument
+runs on the elementary abelian Frattini quotient, and the equality it yields,
+`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`, holds for an arbitrary
+profinite pro-`p` group.
 
 ## Main results
 

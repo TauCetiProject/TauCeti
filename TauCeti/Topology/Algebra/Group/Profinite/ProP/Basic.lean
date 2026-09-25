@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
-import TauCeti.Algebra.Module.ZMod.Exponent
 
 /-!
 # Pro-p groups
@@ -79,12 +78,11 @@ theorem _root_.IsPGroup.isProP (hG : IsPGroup p G) : IsProP p G :=
 
 end IsPGroup
 
-/-- A commutative topological group whose additive copy is a `ZMod p`-module is pro-`p`: it has
-exponent dividing `p` by `TauCeti.exponent_dvd_of_module_zmod`, hence is an abstract `p`-group. -/
+/-- A commutative topological group whose additive copy is a `ZMod p`-module is pro-`p`: it is an
+abstract `p`-group by `ZModModule.isPGroup_multiplicative`. -/
 theorem isProP_of_module_zmod {W : Type u} [CommGroup W] [TopologicalSpace W]
     [Module (ZMod p) (Additive W)] : IsProP p W :=
-  IsPGroup.isProP fun w ↦ ⟨1, by
-    simpa using Monoid.exponent_dvd_iff_forall_pow_eq_one.mp exponent_dvd_of_module_zmod w⟩
+  IsPGroup.isProP (G := W) (ZModModule.isPGroup_multiplicative (n := p) (G := Additive W))
 
 section Discrete
 
