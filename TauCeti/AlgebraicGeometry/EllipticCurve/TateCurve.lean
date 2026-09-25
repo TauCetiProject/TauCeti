@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.NumberTheory.ArithmeticFunction.SigmaCongruence
+public import TauCeti.NumberTheory.ArithmeticFunction.SigmaSeries
 
 /-!
 # The Tate curve over `ℤ⟦q⟧`
@@ -31,7 +32,7 @@ The formal invariants are those of the Tate curve as an elliptic curve over the 
 
 ## Main definitions
 
-* `TauCeti.TateCurve.divisorSumSeries k`: the series `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ` in `ℤ⟦q⟧`.
+* `TauCeti.divisorSumSeries k`: the series `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ` in `ℤ⟦q⟧`.
 * `TauCeti.tateCurve`: the Tate curve, a Weierstrass curve over `ℤ⟦q⟧`.
 
 ## Main results
@@ -60,29 +61,10 @@ open scoped ArithmeticFunction.sigma LaurentSeries
 
 namespace TauCeti
 
-namespace TateCurve
-
-/-- The divisor-sum series `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ` in `ℤ⟦q⟧`, the power series expansion of
-the Lambert series `∑_{n ≥ 1} nᵏ qⁿ / (1 - qⁿ)`. Its constant coefficient is `σ_k(0) = 0`. -/
-noncomputable def divisorSumSeries (k : ℕ) : ℤ⟦X⟧ :=
-  PowerSeries.mk fun n ↦ (σ k n : ℤ)
-
-@[simp]
-theorem coeff_divisorSumSeries (k n : ℕ) : coeff n (divisorSumSeries k) = σ k n := by
-  simp [divisorSumSeries]
-
-@[simp]
-theorem constantCoeff_divisorSumSeries (k : ℕ) : constantCoeff (divisorSumSeries k) = 0 := by
-  simp [← coeff_zero_eq_constantCoeff_apply]
-
-end TateCurve
-
-open TateCurve
-
 /-- **The Tate curve** `y² + xy = x³ + a₄ x + a₆` over `ℤ⟦q⟧`, with `a₄ = -5 s₃` and
 `a₆ = -(5 s₃ + 7 s₅) / 12`. The `n`-th coefficient of `a₆` is `-(5 σ₃(n) + 7 σ₅(n)) / 12`, an
-integer by `ArithmeticFunction.twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`; use
-`twelve_mul_coeff_tateCurve_a₆` and `twelve_mul_tateCurve_a₆` rather than the definition. -/
+integer by `twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`; use
+`coeff_tateCurve_a₆` and `twelve_mul_tateCurve_a₆` rather than the definition. -/
 noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
   a₁ := 1
   a₂ := 0
@@ -98,6 +80,12 @@ noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
 theorem coeff_tateCurve_a₄ (n : ℕ) : coeff n tateCurve.a₄ = -5 * σ 3 n := by
   simp [tateCurve]
 
+/-- The `n`-th coefficient of `a₆` is `-(5 σ₃(n) + 7 σ₅(n)) / 12`. -/
+@[simp]
+theorem coeff_tateCurve_a₆ (n : ℕ) :
+    coeff n tateCurve.a₆ = -(((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ) : ℤ) := by
+  simp [tateCurve]
+
 /-- The coefficients of `a₆`: `12 · [qⁿ] a₆ = -(5 σ₃(n) + 7 σ₅(n))`. -/
 theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
     12 * coeff n tateCurve.a₆ = -(5 * σ 3 n + 7 * σ 5 n) := by
@@ -107,6 +95,7 @@ theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
   linear_combination -h
 
 /-- `a₄ = -5 s₃`. -/
+@[simp]
 theorem tateCurve_a₄ : tateCurve.a₄ = -5 * divisorSumSeries 3 := by
   ext n
   rw [coeff_tateCurve_a₄, ← map_ofNat C 5, ← map_neg, coeff_C_mul, coeff_divisorSumSeries]
@@ -120,12 +109,14 @@ theorem twelve_mul_tateCurve_a₆ :
   exact twelve_mul_coeff_tateCurve_a₆ n
 
 /-- `c₄ = 1 + 240 s₃`, the normalised Eisenstein series of weight `4`. -/
+@[simp]
 theorem tateCurve_c₄ : tateCurve.c₄ = 1 + 240 * divisorSumSeries 3 := by
   simp only [WeierstrassCurve.c₄, WeierstrassCurve.b₂, WeierstrassCurve.b₄, tateCurve_a₁,
     tateCurve_a₂, tateCurve_a₃, tateCurve_a₄]
   ring
 
 /-- `c₆ = -1 + 504 s₅`, minus the normalised Eisenstein series of weight `6`. -/
+@[simp]
 theorem tateCurve_c₆ : tateCurve.c₆ = -1 + 504 * divisorSumSeries 5 := by
   simp only [WeierstrassCurve.c₆, WeierstrassCurve.b₂, WeierstrassCurve.b₄, WeierstrassCurve.b₆,
     tateCurve_a₁, tateCurve_a₂, tateCurve_a₃, tateCurve_a₄]
@@ -139,20 +130,18 @@ private theorem tateCurve_Δ_eq :
   ring
 
 private theorem coeff_tateCurve_a₆_one : coeff 1 tateCurve.a₆ = -1 := by
-  have := twelve_mul_coeff_tateCurve_a₆ 1
-  simp only [sigma_apply, Nat.divisors_one, Finset.sum_singleton] at this
-  omega
+  rw [coeff_tateCurve_a₆]
+  norm_num [sigma_apply, Nat.divisors_one]
 
 private theorem coeff_tateCurve_a₆_two : coeff 2 tateCurve.a₆ = -23 := by
-  have := twelve_mul_coeff_tateCurve_a₆ 2
-  simp only [sigma_apply, Nat.Prime.divisors Nat.prime_two] at this
-  norm_num at this
-  omega
+  rw [coeff_tateCurve_a₆]
+  norm_num [sigma_apply, Nat.Prime.divisors Nat.prime_two]
 
 /-- `a₄` vanishes at `q = 0`. -/
 @[simp]
 theorem constantCoeff_tateCurve_a₄ : constantCoeff tateCurve.a₄ = 0 := by
-  simp [← coeff_zero_eq_constantCoeff_apply]
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_tateCurve_a₄]
+  simp
 
 /-- `a₆` vanishes at `q = 0`. -/
 @[simp]
@@ -164,8 +153,8 @@ theorem constantCoeff_tateCurve_a₆ : constantCoeff tateCurve.a₆ = 0 := by
 private theorem coeff_tateCurve_Δ :
     constantCoeff tateCurve.Δ = 0 ∧ coeff 1 tateCurve.Δ = 1 ∧ coeff 2 tateCurve.Δ = -24 := by
   simp [map_ofNat constantCoeff, tateCurve_Δ_eq, coeff_mul, pow_succ,
-    Finset.Nat.antidiagonal_succ, constantCoeff_tateCurve_a₄, constantCoeff_tateCurve_a₆,
-    coeff_tateCurve_a₆_one, coeff_tateCurve_a₆_two, sigma_apply, Nat.Prime.divisors Nat.prime_two]
+    Finset.Nat.antidiagonal_succ, constantCoeff_tateCurve_a₆, sigma_apply,
+    Nat.Prime.divisors Nat.prime_two]
 
 /-- `Δ` vanishes at `q = 0`. -/
 @[simp]
@@ -231,9 +220,10 @@ theorem exists_tateCurve_j_eq :
     simp [coeff_mul, Finset.Nat.antidiagonal_succ, hu₀, hu₁, hv₀] at h
     linarith
   refine ⟨v * tateCurve.c₄ ^ 3, ?_, ?_, ?_⟩
-  · simp [hv₀, coeff_tateCurve_c₄_pow_three.1]
-  · have h := coeff_tateCurve_c₄_pow_three
-    simp [coeff_mul, Finset.Nat.antidiagonal_succ, hv₀, hv₁, h.1, h.2]
+  · rw [map_mul, coeff_tateCurve_c₄_pow_three.1]
+    simp [hv₀]
+  · rw [coeff_one_mul, coeff_tateCurve_c₄_pow_three.1, coeff_tateCurve_c₄_pow_three.2]
+    simp [hv₀, hv₁]
   · have hinv : (((tateCurve.baseChange ℤ⸨X⸩).Δ'⁻¹ : ℤ⸨X⸩ˣ) : ℤ⸨X⸩) =
         HahnSeries.single (-1) 1 * (v : ℤ⸨X⸩) := by
       refine Units.inv_eq_of_mul_eq_one_right ?_

@@ -23,7 +23,7 @@ to every ring, residue characteristics `2` and `3` included.
 
 ## Main results
 
-* `ArithmeticFunction.twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`:
+* `TauCeti.twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`:
   `12 ∣ 5 σ₃(n) + 7 σ₅(n)`.
 
 ## References
@@ -33,8 +33,9 @@ to every ring, residue characteristics `2` and `3` included.
 
 public section
 
-namespace ArithmeticFunction
+namespace TauCeti
 
+open ArithmeticFunction
 open scoped ArithmeticFunction.sigma
 
 /-- **`5 σ₃(n) + 7 σ₅(n)` is divisible by `12`.** -/
@@ -46,6 +47,6 @@ theorem twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five (n : ℕ) :
   push_cast
   exact Finset.sum_eq_zero fun d _ ↦ key d
 
-end ArithmeticFunction
+end TauCeti
 
 end
