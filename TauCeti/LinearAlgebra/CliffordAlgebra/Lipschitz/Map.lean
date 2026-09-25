@@ -43,6 +43,8 @@ theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q�
   | mem x hx =>
       apply Subgroup.subset_closure
       obtain ⟨m, hm⟩ := hx
+      -- The generator set is a preimage under the units coercion; expose that
+      -- representation before supplying the mapped Clifford generator.
       change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom x) ∈
         Set.range (CliffordAlgebra.ι Q₂)
       refine ⟨f m, ?_⟩
@@ -66,6 +68,18 @@ theorem coe_lipschitzGroupMap_apply (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup 
     ((f.lipschitzGroupMap x : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) =
       CliffordAlgebra.map f ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := (rfl)
 
+/-- Mapping the inverse of a Lipschitz unit agrees with taking the inverse after mapping. -/
+@[simp]
+theorem map_lipschitzGroup_inv_coe (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q₁) :
+    CliffordAlgebra.map f
+        (((x : (CliffordAlgebra Q₁)ˣ)⁻¹ : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) =
+      (((f.lipschitzGroupMap x)⁻¹ : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) := by
+  calc
+    _ = (((f.lipschitzGroupMap (x⁻¹) : lipschitzGroup Q₂) :
+        (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) :=
+      (f.coe_lipschitzGroupMap_apply (x⁻¹)).symm
+    _ = _ := by simp
+
 /-- The Lipschitz action commutes with the map induced by a quadratic isometry. -/
 @[simp]
 theorem lipschitzToOrthogonal_map [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
@@ -78,19 +92,8 @@ theorem lipschitzToOrthogonal_map [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
     CliffordAlgebra.ι_lipschitzVectorAction_apply,
     CliffordAlgebra.ι_lipschitzVectorAction_apply, map_mul, map_mul,
     CliffordAlgebra.map_involute]
-  have hmap : CliffordAlgebra.map f
-      ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) =
-      ((f.lipschitzGroupMap x : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) :=
-    (f.coe_lipschitzGroupMap_apply x).symm
-  have hmap_inv : CliffordAlgebra.map f
-      (((x : (CliffordAlgebra Q₁)ˣ)⁻¹ : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) =
-      (((f.lipschitzGroupMap x)⁻¹ : (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) := by
-    calc
-      _ = (((f.lipschitzGroupMap (x⁻¹) : lipschitzGroup Q₂) :
-          (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) :=
-        (f.coe_lipschitzGroupMap_apply (x⁻¹)).symm
-      _ = _ := by simp
-  rw [hmap, hmap_inv, CliffordAlgebra.map_apply_ι]
+  rw [← f.coe_lipschitzGroupMap_apply x, f.map_lipschitzGroup_inv_coe,
+    CliffordAlgebra.map_apply_ι]
 
 end QuadraticMap.Isometry
 
@@ -114,6 +117,8 @@ theorem orthogonalGroupCongr_lipschitzToOrthogonal [Invertible (2 : R)]
   rw [TauCeti.QuadraticMap.coe_orthogonalGroupCongr_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply]
+  -- Both sides are bundled linear maps; this unfolds their coercions to the
+  -- underlying isometry action required by the reusable naturality theorem.
   change e.toIsometry (CliffordAlgebra.lipschitzVectorAction Q₁ x (e.symm m)) = _
   simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply, e.apply_symm_apply] using
     e.toIsometry.lipschitzToOrthogonal_map x (e.symm m)
