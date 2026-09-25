@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.Separation.Basic
-public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Coordinate zero-pattern strata
@@ -108,7 +107,7 @@ noncomputable def zeroPatternSetHomeomorph (α β K : Type*) [Zero K] [Topologic
 
 /-- The homeomorphism retains each coordinate outside the prescribed zero set. -/
 @[simp]
-theorem zeroPatternSetHomeomorph_fst_apply (α β K : Type*) [Zero K]
+theorem val_zeroPatternSetHomeomorph_fst_apply (α β K : Type*) [Zero K]
     [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
     (z : zeroPatternSet α β K A) (a : {a : α // a ∉ A}) :
     ((zeroPatternSetHomeomorph α β K A z).1 a).1 = z.1.1 a.1 :=
@@ -133,7 +132,7 @@ theorem zeroPatternSetHomeomorph_symm_fst_apply_of_mem (α β K : Type*) [Zero K
 
 /-- Outside the zero set, the inverse restores the retained coordinate. -/
 @[simp]
-theorem zeroPatternSetHomeomorph_symm_fst_apply_of_not_mem (α β K : Type*) [Zero K]
+theorem zeroPatternSetHomeomorph_symm_fst_apply_of_notMem (α β K : Type*) [Zero K]
     [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
     (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) (a : α)
     (ha : a ∉ A) :

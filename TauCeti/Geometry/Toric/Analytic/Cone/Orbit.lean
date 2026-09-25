@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Face
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
-public import TauCeti.Geometry.Toric.Analytic.Torus.Topology
 public import TauCeti.Topology.ZeroPattern
 
 /-!
@@ -289,7 +288,7 @@ noncomputable def affineConeOrbitHomeomorph (hi : IsIntegralLattice i)
 
 /-- The first orbit coordinates are exactly the nonzero ray coordinates of the affine chart. -/
 @[simp]
-theorem affineConeOrbitHomeomorph_fst_apply (hi : IsIntegralLattice i)
+theorem val_affineConeOrbitHomeomorph_fst_apply (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
@@ -308,6 +307,23 @@ theorem affineConeOrbitHomeomorph_snd_apply (hi : IsIntegralLattice i)
       (coneChartEquiv hi hσ.toIsToricCone hb x.1).2 := by
   simp [affineConeOrbitHomeomorph, coe_coneChartHomeomorph]
 
+/-- The inverse orbit chart reconstructs the underlying affine point from its coordinates. -/
+@[simp]
+theorem affineConeOrbitHomeomorph_symm_apply_coe (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    (w : ({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → {z : ℂ // z ≠ 0}) ×
+      (ι → ℂˣ)) :
+    let _ := affinePointTopology g
+    (((affineConeOrbitHomeomorph hi hσ hb F g).symm w : affineConeOrbit hi F) :
+      AffineSemigroupComplexPoint (dualSemigroup hi σ)) =
+      (coneChartEquiv hi hσ.toIsToricCone hb).symm
+        ((zeroPatternSetHomeomorph (ToricRay σ) (ι → ℂˣ) ℂ
+          (hσ.faceOrderIso hi F)).symm w).1 := by
+  let _ := affinePointTopology g
+  simp [affineConeOrbitHomeomorph, coe_coneChartHomeomorph_symm]
+
 /-- Ambient coordinates on an affine orbit: retain exactly the nonzero ray coordinates outside
 the face, and view all torus coordinates as complex numbers. -/
 noncomputable def affineConeOrbitAmbient (hi : IsIntegralLattice i)
@@ -316,39 +332,68 @@ noncomputable def affineConeOrbitAmbient (hi : IsIntegralLattice i)
     (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
     (affineConeOrbit hi F) →
       (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (ι → ℂ)) :=
-  fun x ↦
-    ((fun ρ ↦ ((affineConeOrbitHomeomorph hi hσ hb F g x).1 ρ).1),
-      fun j ↦ ((affineConeOrbitHomeomorph hi hσ hb F g x).2 j : ℂ))
+  Prod.map (Pi.map fun _ ↦ Subtype.val) (Pi.map fun _ ↦ Units.val) ∘
+    affineConeOrbitHomeomorph hi hσ hb F g
+
+/-- The first ambient coordinates are the nonzero ray coordinates of the cone chart. -/
+@[simp]
+theorem affineConeOrbitAmbient_fst_apply (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) (x : affineConeOrbit hi F)
+    (ρ : {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F}) :
+    (affineConeOrbitAmbient hi hσ hb F g x).1 ρ =
+      (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 ρ.1 := by
+  simp [affineConeOrbitAmbient]
+
+/-- The second ambient coordinates are the complex values of the torus coordinates. -/
+@[simp]
+theorem affineConeOrbitAmbient_snd_apply (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) (x : affineConeOrbit hi F)
+    (j : ι) :
+    (affineConeOrbitAmbient hi hσ hb F g x).2 j =
+      ((coneChartEquiv hi hσ.toIsToricCone hb x.1).2 j : ℂ) := by
+  simp [affineConeOrbitAmbient]
+
+/-- The ambient orbit chart ranges over pairs whose coordinates are all nonzero. -/
+theorem range_affineConeOrbitAmbient (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
+    let _ := affinePointTopology g
+    Set.range (affineConeOrbitAmbient hi hσ hb F g) =
+      {w | (∀ ρ, w.1 ρ ≠ 0) ∧ ∀ j, w.2 j ≠ 0} := by
+  let _ := affinePointTopology g
+  ext w
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨fun ρ ↦ ((affineConeOrbitHomeomorph hi hσ hb F g x).1 ρ).2,
+      fun j ↦ Units.ne_zero _⟩
+  · rintro ⟨h₁, h₂⟩
+    refine ⟨(affineConeOrbitHomeomorph hi hσ hb F g).symm
+      (fun ρ ↦ ⟨w.1 ρ, h₁ ρ⟩, fun j ↦ Units.mk0 (w.2 j) (h₂ j)), ?_⟩
+    ext ρ <;> simp [affineConeOrbitAmbient]
 
 /-- The retained coordinates realize the affine orbit as an open subset of a complex vector
 space. In particular, their topology is the subspace topology inherited from the affine chart. -/
 theorem isOpenEmbedding_affineConeOrbitAmbient (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s) [Finite ι] :
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
     let _ := affinePointTopology g
     IsOpenEmbedding (affineConeOrbitAmbient hi hσ hb F g) := by
   let _ := affinePointTopology g
   let _ := ToricRay.finite_of_fg hσ.fg
-  let _ : Finite {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} := inferInstance
-  have h₁ : IsOpenEmbedding
-      (fun w : {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → {z : ℂ // z ≠ 0} ↦
-        fun ρ ↦ (w ρ).1) := by
-    have h : IsOpenEmbedding ((↑) : {z : ℂ // z ≠ 0} → ℂ) :=
-      (isOpen_ne (x := (0 : ℂ))).isOpenEmbedding_subtypeVal
-    convert (IsOpenEmbedding.piMap fun _ :
-      {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} ↦ h) using 1
-    funext w ρ
-    rfl
-  have h₂ : IsOpenEmbedding (fun w : ι → ℂˣ ↦ fun j ↦ (w j : ℂ)) := by
-    convert (IsOpenEmbedding.piMap fun _ : ι ↦ Units.isOpenEmbedding_val) using 1
-    · funext w j
-      rfl
-    · infer_instance
-  convert (h₁.prodMap h₂).comp
-    (affineConeOrbitHomeomorph hi hσ hb F g).isOpenEmbedding using 1
-  funext x
-  rfl
+  have := hi.finite
+  have := Module.Finite.finite_basis b
+  have : Finite ι :=
+    Finite.of_injective (Sum.inr : ι → ToricRay σ ⊕ ι) Sum.inr_injective
+  exact ((IsOpenEmbedding.piMap fun _ ↦
+    (isOpen_ne (x := (0 : ℂ))).isOpenEmbedding_subtypeVal).prodMap
+      (IsOpenEmbedding.piMap fun _ ↦ Units.isOpenEmbedding_val)).comp
+        (affineConeOrbitHomeomorph hi hσ hb F g).isOpenEmbedding
 
 /-- The complex charted-space structure on an affine orbit, using its complementary nonzero ray
 coordinates and torus coordinates. The orbit retains the topology induced from the affine chart. -/
@@ -356,27 +401,58 @@ coordinates and torus coordinates. The orbit retains the topology induced from t
 noncomputable def affineConeOrbitChartedSpace (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s) [Finite ι] :
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
     let _ := affinePointTopology g
     ChartedSpace
       (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (ι → ℂ))
       (affineConeOrbit hi F) := by
   let _ := affinePointTopology g
   let _ := ToricRay.finite_of_fg hσ.fg
-  let _ : Finite {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} := inferInstance
   let _ : Nonempty (affineConeOrbit hi F) :=
     (nonempty_affineConeOrbit hi hσ F).to_subtype
   exact (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g).singletonChartedSpace
+
+/-- Every chart of the orbit charted space is the ambient coordinate map. -/
+theorem affineConeOrbitChartedSpace_chartAt (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) (x : affineConeOrbit hi F) :
+    let _ := affinePointTopology g
+    ⇑(@chartAt (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (ι → ℂ))
+      _ (affineConeOrbit hi F) _ (affineConeOrbitChartedSpace hi hσ hb F g) x) =
+      affineConeOrbitAmbient hi hσ hb F g := by
+  let _ := affinePointTopology g
+  let _ : Nonempty (affineConeOrbit hi F) :=
+    (nonempty_affineConeOrbit hi hσ F).to_subtype
+  exact (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
+    |>.singletonChartedSpace_chartAt_eq
+
+/-- The target of each orbit chart is the locus of nonzero ambient coordinates. -/
+theorem affineConeOrbitChartedSpace_chartAt_target (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) (x : affineConeOrbit hi F) :
+    let _ := affinePointTopology g
+    (@chartAt (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (ι → ℂ))
+      _ (affineConeOrbit hi F) _ (affineConeOrbitChartedSpace hi hσ hb F g) x).target =
+      {w | (∀ ρ, w.1 ρ ≠ 0) ∧ ∀ j, w.2 j ≠ 0} := by
+  let _ := affinePointTopology g
+  let _ : Nonempty (affineConeOrbit hi F) :=
+    (nonempty_affineConeOrbit hi hσ F).to_subtype
+  rw [OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq
+      ((isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g).toOpenPartialHomeomorph
+        (affineConeOrbitAmbient hi hσ hb F g))
+      (IsOpenEmbedding.toOpenPartialHomeomorph_source _ _),
+    IsOpenEmbedding.toOpenPartialHomeomorph_target,
+    range_affineConeOrbitAmbient hi hσ hb F g]
 
 /-- Every affine-cone orbit is a complex manifold, modeled on the nonzero ray directions outside
 its face and the complementary torus directions. -/
 theorem isManifold_affineConeOrbitChartedSpace (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s) [Finite ι] (n : ℕ∞ω) :
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) [Fintype ι] (n : ℕ∞ω) :
     let _ : Finite (ToricRay σ) := ToricRay.finite_of_fg hσ.fg
-    let _ : Fintype ι := Fintype.ofFinite ι
-    let _ : Fintype (ToricRay σ) := Fintype.ofFinite (ToricRay σ)
     let _ : Fintype {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} :=
       Fintype.ofFinite _
     let _ := affinePointTopology g
@@ -386,9 +462,6 @@ theorem isManifold_affineConeOrbitChartedSpace (hi : IsIntegralLattice i)
       (affineConeOrbit hi F) := by
   let _ := affinePointTopology g
   let _ := ToricRay.finite_of_fg hσ.fg
-  let _ : Finite {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} := inferInstance
-  let _ : Fintype ι := Fintype.ofFinite ι
-  let _ : Fintype (ToricRay σ) := Fintype.ofFinite (ToricRay σ)
   let _ : Fintype {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} := Fintype.ofFinite _
   let _ : Nonempty (affineConeOrbit hi F) :=
     (nonempty_affineConeOrbit hi hσ F).to_subtype
