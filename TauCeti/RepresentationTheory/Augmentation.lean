@@ -26,9 +26,9 @@ average of the coefficients, and its second subtracts that multiple of the sum o
 basis. For empty `X`, both subrepresentations are zero and are still complementary.
 
 Over a field, the character of the augmentation subrepresentation is the character of the induced
-free-module action minus the trivial character, provided `X` is finite and nonempty. This identity holds even when
-the characteristic divides `|X|`, so the invariant line is not a complement. These constructions
-underlie the standard representation of the symmetric group.
+free-module action minus the trivial character, provided `X` is finite and nonempty. The identity
+holds even when the characteristic divides `|X|`, so the invariant line is not a complement.
+These constructions underlie the standard representation of the symmetric group.
 
 ## Main definitions and results
 
