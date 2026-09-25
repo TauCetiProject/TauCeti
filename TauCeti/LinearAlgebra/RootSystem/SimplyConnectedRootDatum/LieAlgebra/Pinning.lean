@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
 # Uniform Chevalley pinning for the Demazure construction
@@ -33,6 +34,9 @@ nilpotency makes the exponential a finite sum, hence a polynomial map over any `
 * `TauCeti.DynkinType.pinnedExpNeg_zero`: its value at zero.
 * `TauCeti.DynkinType.pinnedExp_comm_of_matrix_comm`: commuting generators give commuting
   exponentials, the group-level form of a vanishing Lie bracket.
+* `TauCeti.DynkinType.pinnedExp_comm_of_cartan_eq_zero`: the Chevalley commutator relation
+  (commuting case) — when the Cartan matrix entry is zero (i.e., `α_i + α_j` is not a root),
+  the root subgroups commute, via the Serre relation.
 
 ## References
 
@@ -49,6 +53,8 @@ public section
 namespace TauCeti.DynkinType
 
 noncomputable section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (t : DynkinType) (ht : t.Valid)
 
@@ -146,6 +152,60 @@ theorem pinnedExp_comm_of_matrix_comm (R : Type*) [CommRing R] [Algebra ℚ R]
   rw [hmat]
   -- Now both sides have (B^l * A^k); scalars commute
   rw [mul_comm (u ^ k * _) (v ^ l * _)]
+
+/-- The Lie bracket of distinct simple raising generators vanishes when the corresponding
+Cartan matrix entry is zero. This is the Serre relation: when `A_{ji} = 0`, the exponent
+`(-Aᵀ_{ij}).toNat = 0`, so `(ad e_i)^0 [e_i, e_j] = [e_i, e_j] = 0`. -/
+theorem lie_lieBasis_e_e_of_cartan_eq_zero (i j : Fin t.rank)
+    (hA : t.cartanMatrix j i = 0) :
+    ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ = 0 := by
+  have hserre := (t.isSerreSystem_lieBasis ht).ad_pow_lie_E_E i j
+  -- The Cartan matrix in the Serre system is the transpose: (Aᵀ)_{ij} = A_{ji}
+  have hCM : (-(t.cartanMatrix.transpose i j)).toNat = 0 := by
+    rw [Matrix.transpose_apply, hA]
+    simp
+  rw [hCM, pow_zero] at hserre
+  simpa using hserre
+
+/-- When the Cartan matrix entry vanishes, the simple raising generators commute as matrices.
+The Lie bracket in the matrix Lie algebra is the commutator, so a vanishing bracket gives
+commuting matrices. -/
+theorem coe_lieBasis_e_comm_of_cartan_eq_zero (i j : Fin t.rank)
+    (hA : t.cartanMatrix j i = 0) :
+    ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+     ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
+    ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+     ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
+  have hbracket := t.lie_lieBasis_e_e_of_cartan_eq_zero ht i j hA
+  -- The inclusion of the Lie subalgebra preserves brackets
+  have hcoe : ((((⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ : t.lieAlgebra ht))) :
+      Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
+      ⁅(((t.lieBasis ht).e i) : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ),
+       (((t.lieBasis ht).e j) : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)⁆ :=
+    LieSubalgebra.coe_bracket (t.lieAlgebra ht) _ _
+  rw [hbracket] at hcoe
+  -- The coercion of 0 is 0
+  simp only [ZeroMemClass.coe_zero] at hcoe
+  -- For matrices, ⁅A, B⁆ = A * B - B * A
+  have hcomm : ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+      ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) -
+      ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+      ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) = 0 := by
+    have h := hcoe
+    rw [LieRing.of_associative_ring_bracket] at h
+    exact h.symm
+  exact sub_eq_zero.mp hcomm
+
+/-- The Chevalley commutator relation (commuting case): when the Cartan matrix entry is zero
+— i.e., when `α_i + α_j` is not a root — the corresponding root subgroups commute. This
+connects the root-theoretic hypothesis to the group-level commutativity via the Serre
+relation and the matrix commutator. -/
+theorem pinnedExp_comm_of_cartan_eq_zero (R : Type*) [CommRing R] [Algebra ℚ R]
+    (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0) (u v : R) :
+    t.pinnedExp ht R i u * t.pinnedExp ht R j v =
+      t.pinnedExp ht R j v * t.pinnedExp ht R i u := by
+  apply t.pinnedExp_comm_of_matrix_comm ht R i j u v
+  exact t.coe_lieBasis_e_comm_of_cartan_eq_zero ht i j hA
 
 end
 
