@@ -43,12 +43,27 @@ noncomputable def cotangentFlagIdeal :
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
 
+/-- Each basis vector in the first adapted block belongs to the ideal term. -/
+theorem cotangentFlagIdeal_mem_basis (i : Fin f4ShortRootRepresentedIdealRank) :
+    f4ShortRootCotangentFlagBasis.baseChange A
+        (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i)) ∈
+      cotangentFlagIdeal (A := A) := by
+  exact Submodule.subset_span (Set.mem_range_self i)
+
 /-- The scalar-extended represented-range term of the cotangent flag. -/
 noncomputable def cotangentFlagRange :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank i)
+
+/-- Each basis vector in the first two adapted blocks belongs to the range term. -/
+theorem cotangentFlagRange_mem_basis
+    (i : Fin (f4ShortRootRepresentedIdealRank + 26)) :
+    f4ShortRootCotangentFlagBasis.baseChange A
+        (Fin.castAdd f4ShortRootRepresentedComplementRank i) ∈
+      cotangentFlagRange (A := A) := by
+  exact Submodule.subset_span (Set.mem_range_self i)
 
 /-! ### Stability of the represented flag
 
@@ -443,8 +458,8 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       Fin.ext rfl
     have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
         cotangentFlagIdeal (A := A) := by
-      unfold cotangentFlagIdeal
-      exact Submodule.subset_span ⟨j', by rw [hj]⟩
+      rw [hj]
+      exact cotangentFlagIdeal_mem_basis j'
     have hmap := hIdeal hjmem
     unfold cotangentFlagIdeal at hmap
     have hsupp :=
@@ -466,8 +481,8 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank j' := Fin.ext rfl
       have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
           cotangentFlagRange (A := A) := by
-        unfold cotangentFlagRange
-        exact Submodule.subset_span ⟨j', by rw [hj]⟩
+        rw [hj]
+        exact cotangentFlagRange_mem_basis j'
       have hmap := hRange hjmem
       unfold cotangentFlagRange at hmap
       have hsupp :=
