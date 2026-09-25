@@ -8,19 +8,26 @@ module
 public import TauCeti.GroupTheory.Torsion
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.ContinuousMap.Algebra
+import Mathlib.Topology.Compactness.Compact
 
 /-!
-# The torsion-free quotient under a topological product decomposition
+# Torsion and continuous maps in topological groups
 
 Let `A` be a topological abelian group topologically isomorphic to `Multiplicative (M × T)`, where
 `M` is a torsion-free additive group and `T` is a torsion additive group. The algebraic
 identification of `A ⧸ torsion A` with `M` from `TauCeti.GroupTheory.Torsion` is then a
 topological isomorphism for the quotient topology.
 
+Continuous maps from a compact space into a discrete `p`-primary torsion group also form a
+`p`-primary torsion group, since each map has finite image.
+
 ## Main definitions
 
 * `TauCeti.quotientTorsionContinuousMulEquiv`: the quotient of `A` by its torsion subgroup is
   topologically isomorphic to `M`.
+* `TauCeti.IsPPrimaryTorsion.continuousMap`: compact-to-discrete continuous maps preserve
+  `p`-primary torsion.
 -/
 
 public section
@@ -58,5 +65,21 @@ theorem quotientTorsionContinuousMulEquiv_symm_apply (hT : IsAddTorsion T)
     (quotientTorsionContinuousMulEquiv hT e).symm v =
       ((e.symm (ofAdd (v.toAdd, 0)) : A) : A ⧸ torsion A) :=
   quotientTorsionMulEquiv_symm_apply hT e.toMulEquiv v
+
+variable {p : ℕ}
+
+/-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
+`p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
+at once. -/
+theorem IsPPrimaryTorsion.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
+    [DiscreteTopology V] (h : IsPPrimaryTorsion p V) (X : Type*)
+    [TopologicalSpace X] [CompactSpace X] : IsPPrimaryTorsion p C(X, V) := by
+  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
+  choose k hk using isPPrimaryTorsion_iff.1 h
+  have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
+  refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
+  obtain ⟨c, hc⟩ := pow_dvd_pow p
+    (Finset.le_sup (f := k) (hfin.mem_toFinset.2 (Set.mem_range_self x)))
+  simp [hc, mul_comm _ c, mul_smul, hk]
 
 end TauCeti
