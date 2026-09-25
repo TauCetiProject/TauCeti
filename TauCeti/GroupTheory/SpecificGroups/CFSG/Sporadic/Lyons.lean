@@ -17,9 +17,10 @@ together with its exact source, conventions, expected counts, and decidable chec
 
 Gebhardt constructs the presentation in three stages. The first nine relators present a subgroup
 `5^(1+4) : GL₂(5)` on `a`, `b`, and `c`; seven more extend this to `G₂(5)` on `a`, `b`, `c`, and
-`d`; the final nine extend it to `Ly` on `a`, `b`, `c`, `d`, and `z`. Double-coset enumeration
-proves at each stage that the displayed relations define the claimed group. The three blocks have
-freely reduced lengths `80`, `160`, and `309`, giving the published total length `549`.
+`d`; the final nine extend it to `Ly` on `a`, `b`, `c`, `d`, and `z`. The paper establishes the
+first block by ordinary coset enumeration and obtains each of the two extensions from a
+double-coset enumeration. The three blocks have freely reduced lengths `80`, `160`, and `309`,
+giving the published total length `549`.
 
 The source writes `x̄` for `x⁻¹`, `x^y` for `y⁻¹xy`, which is `TauCeti.Relator.conj`, and `[x,y]`
 for `x⁻¹y⁻¹xy`, transcribed as `TauCeti.Relator.comm (.inv x) (.inv y)`. An equation `r = s` is
