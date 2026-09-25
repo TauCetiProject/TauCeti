@@ -19,7 +19,7 @@ measure-representation or Pontryagin-duality theorem.
 
 ## Main declarations
 
-* `TauCeti.pontryaginCharacter_isPositiveDefinite`: a continuous Pontryagin character is a
+* `PontryaginDual.isPositiveDefiniteSub`: a continuous Pontryagin character is a
   continuous positive-definite function in the additive subtraction form.
 -/
 
@@ -28,14 +28,15 @@ public section
 open ComplexConjugate
 open scoped ComplexOrder
 
-namespace TauCeti
+namespace PontryaginDual
+
+open TauCeti
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 
-/-- A continuous character of the multiplicative form of `G` gives a continuous function in
-subtraction-positive-definite form. The transport through `Multiplicative.ofAdd` is the standard
-way to view an additive character as a Pontryagin-dual element. -/
-theorem pontryaginCharacter_isPositiveDefinite
+/-- Precomposing a Pontryagin character with `Multiplicative.ofAdd` gives a continuous function in
+subtraction-positive-definite form. -/
+theorem isPositiveDefiniteSub
     (χ : PontryaginDual (Multiplicative G)) :
     Continuous (fun g : G => (χ (Multiplicative.ofAdd g) : ℂ)) ∧
       IsPositiveDefiniteSub
@@ -43,19 +44,18 @@ theorem pontryaginCharacter_isPositiveDefinite
   constructor
   · have hco : Continuous ((↑) : Circle → ℂ) :=
       (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous
-    have hid : Continuous (fun g : G => (g : Multiplicative G)) := continuous_id
+    have hid : Continuous (fun g : G => (g : Multiplicative G)) := continuous_ofAdd
     exact hco.comp (χ.continuous.comp hid)
   · rw [isPositiveDefiniteSub_iff_posSemidef]
     have heq : (fun g w : G => (χ (Multiplicative.ofAdd (g - w)) : ℂ)) =
         (fun g w : G => (χ (Multiplicative.ofAdd g) : ℂ) *
           ((χ (Multiplicative.ofAdd w) : ℂ))⁻¹) := by
       funext g w
-      rw [ofAdd_sub, map_div, div_eq_mul_inv]
-      rfl
+      rw [ofAdd_sub, map_div, div_eq_mul_inv, Circle.coe_mul, Circle.coe_inv]
     rw [heq]
     simpa only [RCLike.star_def, ← Circle.coe_inv, Circle.coe_inv_eq_conj,
       Complex.conj_conj] using
       (posSemidef_rankOne (R := ℂ)
         (fun g : G => conj (χ (Multiplicative.ofAdd g))))
 
-end TauCeti
+end PontryaginDual
