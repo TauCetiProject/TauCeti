@@ -143,8 +143,10 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
           (D.open_source.mem_nhds (by rwa [C.left_inv hpC]))
       filter_upwards [h₁, h₂] with c hc₁ hc₂
       simp only [Function.comp_apply, hT₀, D.left_inv hc₂, C.right_inv hc₁, id]
-    have hS' := hS.differentiableAt.hasFDerivAt
-    rw [show D (Sym.ofFn p) = T₀ (C (Sym.ofFn p)) by simp only [hT₀, C.left_inv hpC]] at hS'
+    have hS' : HasFDerivAt (fun c => C (D.symm c))
+        (fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p))))
+        (T₀ (C (Sym.ofFn p))) := by
+      simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
     have hcomp := ((hS'.comp _ hT₀').congr_of_eventuallyEq hST.symm).unique (hasFDerivAt_id _)
     exact Function.LeftInverse.injective fun a => by
       simpa using congrArg (fun L : (Fin n → ℂ) →L[ℂ] (Fin n → ℂ) => L a) hcomp
