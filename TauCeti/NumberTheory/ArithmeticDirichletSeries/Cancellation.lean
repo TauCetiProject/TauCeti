@@ -418,7 +418,6 @@ then the continued L-function of the twist at `s` is the continued L-function of
 
 In degree `[K : ℚ] > 1` the second cancellation hypothesis follows from the first, by
 `TauCeti.HasCancellation.normTwist`. -/
-@[simp]
 theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : ℂ} (hz : z.re = 0)
     (hχ : HasCancellation χ) (hχz : HasCancellation (UnitaryIdealWeight.normTwist z hz χ))
     {s : ℂ} (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
