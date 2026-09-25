@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
 
 /-!
@@ -26,13 +25,7 @@ of the five-term sequence
 the transgression `H¹(N, M) ^ (G ⧸ N) → H²(G ⧸ N, M ^ N)` is then injective, and it is
 bijective as soon as `H²(G, M)` vanishes.
 
-The case of interest is a minimal presentation `1 → R → F → G → 1` of a pro-`p` group: `F` is a
-free pro-`p` group, whose `H²` with finite `p`-primary coefficients vanishes
-(`TauCeti.freeProP.subsingleton_H2`), and `R ≤ Φ(F)`, which for a finite generating type
-characterizes the presentations with the minimal number of generators
-(`TauCeti.presentedProP.subset_proPFrattini_iff_card_eq`). For such a presentation the
-transgression identifies the `F`-invariant classes of `H¹(R, 𝔽_p)` with `H²(F ⧸ R, 𝔽_p)`. This
-is the first step of the interpretation of `dim H²(G, 𝔽_p)` as the number of relations of `G`.
+The free pro-`p` specialization is in `TauCeti.Topology.Algebra.Group.Profinite.Free.Transgression`.
 
 ## Main results
 
@@ -41,10 +34,6 @@ is the first step of the interpretation of `dim H²(G, 𝔽_p)` as the number of
 * `TauCeti.transgression_injective_of_le_proPFrattini`: the transgression of such a subgroup is
   injective.
 * `TauCeti.transgression_bijective_of_le_proPFrattini`: it is bijective when `H²(G, M) = 0`.
-* `TauCeti.freeProP.transgression_bijective`: **for a closed normal subgroup `R` of a free
-  pro-`p` group `F` with `R ≤ Φ(F)`, the transgression
-  `H¹(R, M) ^ (F ⧸ R) → H²(F ⧸ R, M ^ R)` is bijective**, for every finite abelian group `M` of
-  exponent dividing `p` with trivial action.
 
 ## References
 
@@ -127,26 +116,5 @@ theorem transgression_bijective_of_le_proPFrattini [Subsingleton (H2 G M)]
     (transgression_surjective_iff G M N hNc).2 (AddMonoidHom.ext fun _ ↦ Subsingleton.elim _ _)⟩
 
 end Frattini
-
-namespace freeProP
-
-variable {X : Type u} {M : Type u} [CommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [Finite M] [MulDistribMulAction (freeProP p X) M] [ContinuousSMul (freeProP p X) M]
-
-/-- **The transgression of a minimal presentation is an isomorphism.** Let `F = freeProP p X`
-and let `R` be a closed normal subgroup of `F` contained in its pro-`p` Frattini subgroup, as for
-the relation subgroup of a minimal presentation. For a finite abelian group `M` of exponent
-dividing `p` with trivial `F`-action, for instance `𝔽_p`, the transgression
-`H¹(R, M) ^ (F ⧸ R) → H²(F ⧸ R, M ^ R)` is bijective. -/
-theorem transgression_bijective (R : Subgroup (freeProP p X)) [R.Normal]
-    (hRc : IsClosed (R : Set (freeProP p X))) (hR : R ≤ proPFrattini p (freeProP p X))
-    (htriv : ∀ (g : freeProP p X) (m : M), g • m = m) (hexp : ∀ m : M, m ^ p = 1) :
-    Function.Bijective (transgression (freeProP p X) (Additive M) R hRc) :=
-  haveI := subsingleton_H2 (X := X) (IsPGroup.isProP (p := p) fun m ↦ ⟨1, by simpa using hexp m⟩)
-  transgression_bijective_of_le_proPFrattini hRc hR
-    (fun g m ↦ by rw [← ofMul_toMul m, ← Additive.ofMul_smul, htriv])
-    (fun m ↦ by rw [← ofMul_toMul m, ← ofMul_pow, hexp, ofMul_one])
-
-end freeProP
 
 end TauCeti
