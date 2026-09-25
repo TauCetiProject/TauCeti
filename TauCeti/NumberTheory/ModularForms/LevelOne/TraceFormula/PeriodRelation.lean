@@ -18,13 +18,12 @@ where `S = (0 -1; 1 0)` and `T = (1 1; 0 1)` act on `ℳₙ` by left and right m
 the predicate `TauCeti.TraceFormulaMatrixModule.PeriodRelation k n ξ` expressing (A) for `ξ ∈ ℛₙ`
 and proves that it has a solution for every `n`.
 
-As in Popa–Zagier, who say that solutions exist "as in [CZ]", existence is proved abstractly rather
-than by exhibiting a solution. It is a coinvariance statement. The right translate `Tₙ^∞·S` is the
-formal sum of another set of representatives of `Γ \ ℳₙ`, so `Tₙ^∞·(1 - S)` has vanishing sums along
-every orbit of `SL(2, ℤ)`, that is, it lies in the coinvariant kernel of the left action. As `S` and
-`T` generate `SL(2, ℤ)`, this kernel is `(1 - S)·ℛₙ + (1 - T)·ℛₙ`, which gives a solution. The
-explicit solution of Popa–Zagier's eq. (15) is not constructed here; they deduce (A) for it from the
-relations (B) and the coset identity `⟨ξ, K⟩ = -1`.
+By Popa–Zagier's Proposition 2, every solution of (A) acts on period polynomials as the Hecke
+operator `Tₙ`. Solutions exist for every `n`; as in Popa–Zagier, who say that they exist "as in
+[CZ]", this is an existence statement, without an explicit solution. Two solutions differ by an
+element `η` with `(1 - S)·η ∈ (1 - T)·ℛₙ`. Popa and Zagier also give an explicit solution, their
+eq. (15), and deduce (A) for it from the exchange relations (B) and the coset identity
+`⟨ξ, K⟩ = -1`; it is not constructed here.
 
 Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3: an element of `ℛₙ` lies in
 `(1 - T)·ℛₙ` if and only if its coefficients sum to zero along every orbit of `Γ_∞ = ⟨T⟩` on `ℳₙ`.
@@ -49,13 +48,12 @@ Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3
 The products in (A) are permutation representations on `ℛₙ`. The left products are the
 representation of `SL(2, ℤ)`: `S·ξ` is `Representation.ofMulAction ℚ SL(2, ℤ) ℳₙ S ξ`, and
 similarly for `T`. This is the simp-normal form of the left representation of `PSL(2, ℤ)` at the
-classes of `S` and `T` (by `TauCeti.TraceFormulaMatrixModule.ofMulAction_coe`), and since `S` and
-`T` generate `SL(2, ℤ)`, the coinvariant kernel of this representation is the sum of the ranges of
-`S - 1` and `T - 1`. The right product `ξ·S` is
-`Representation.ofMulAction ℚ PSL(2, ℤ)ᵐᵒᵖ ℳₙ (MulOpposite.op S) ξ`, the right representation of
-`PSL(2, ℤ)` from `TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule`, with
-`S` viewed in `PSL(2, ℤ)`. The matrices `S` and `T` are Mathlib's `ModularGroup.S` and
-`ModularGroup.T`; they are Popa–Zagier's `S` and `T`.
+classes of `S` and `T` (by `TauCeti.TraceFormulaMatrixModule.ofMulAction_coe`). The right product
+`ξ·S` is `Representation.ofMulAction ℚ PSL(2, ℤ)ᵐᵒᵖ ℳₙ (MulOpposite.op S) ξ`, the right
+representation of `PSL(2, ℤ)` from
+`TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule`, with `S` viewed in
+`PSL(2, ℤ)`. The matrices `S` and `T` are Mathlib's `ModularGroup.S` and `ModularGroup.T`; they are
+Popa–Zagier's `S` and `T`.
 
 ## References
 
@@ -122,7 +120,10 @@ variable (k) in
 /-- **Existence of a solution of the period relation (A)** (Popa–Zagier, "as in [CZ]"): for every
 `n` there is `ξ ∈ ℛₙ` with `(1 - S)·ξ - Tₙ^∞·(1 - S) ∈ (1 - T)·ℛₙ`. -/
 theorem exists_periodRelation (n : ℤ) : ∃ ξ, PeriodRelation k n ξ := by
-  -- `Tₙ^∞·(1 - S) = (S - 1)·x + (T - 1)·y`, since `S` and `T` generate `SL(2, ℤ)`
+  -- `Tₙ^∞·S` is the formal sum of another set of representatives of `Γ \ ℳₙ`, so `Tₙ^∞·(1 - S)`
+  -- lies in the coinvariant kernel of the left action of `SL(2, ℤ)`. As `S` and `T` generate
+  -- `SL(2, ℤ)`, that kernel is `(S - 1)·ℛₙ + (T - 1)·ℛₙ`: write
+  -- `Tₙ^∞·(1 - S) = (S - 1)·x + (T - 1)·y` and take `ξ = -x`.
   obtain ⟨_, ⟨x, rfl⟩, _, ⟨y, rfl⟩, hxy⟩ := Submodule.mem_sup.1 <|
     ((coinvariantsKer_eq_iSup_range _ SpecialLinearGroup.SL2Z_generators).trans iSup_pair).le
       (one_sub_ofMulAction_op_upperTriangularSum_mem (k := k) (n := n) (S : PSL(2, ℤ)))
