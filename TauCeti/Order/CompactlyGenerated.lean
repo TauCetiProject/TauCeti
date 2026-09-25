@@ -34,7 +34,7 @@ public section
 /-- An order isomorphism of complete lattices sends compact elements to compact elements. -/
 theorem OrderIso.isCompactElement {α β : Type*} [CompleteLattice α] [CompleteLattice β]
     (f : α ≃o β) {a : α} (ha : IsCompactElement a) : IsCompactElement (f a) := by
-  rw [CompleteLattice.isCompactElement_iff_le_of_directed_sSup_le] at ha ⊢
+  rw [isCompactElement_iff_le_of_directed_sSup_le] at ha ⊢
   intro s hs hdir hle
   obtain ⟨x, ⟨y, hy, rfl⟩, hay⟩ := ha (f.symm '' s) (hs.image _)
     (hdir.mono_comp fun _ _ h ↦ f.symm.monotone h)
