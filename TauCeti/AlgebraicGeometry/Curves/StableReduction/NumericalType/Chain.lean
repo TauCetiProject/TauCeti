@@ -171,16 +171,6 @@ lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
     · simpa only [hi0.ne', Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel] using
         hc.intersection_pos (i := i - 1) (by omega) (by omega)
 
-/-- A property of a component and of the first `t` terms of a sequence holds for the first
-`t + 1` terms of the sequence with that component prepended. -/
-lemma forall_lt_succ_cons {α : Type*} {P : α → Prop} {x : α} {d : ℕ → α} {t : ℕ}
-    (hx : P x) (hd : ∀ i < t, P (d i)) :
-    ∀ i < t + 1, P (if i = 0 then x else d (i - 1)) := by
-  intro i hi
-  split_ifs
-  · exact hx
-  · exact hd _ (by omega)
-
 /-- The components of a chain of length `t` form a set of `t` components. -/
 @[simp]
 lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :

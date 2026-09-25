@@ -164,7 +164,7 @@ private lemma not_intersection_pos_zero (hc : T.IsSelfIntersectionMinusTwoChain 
     (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) :
     ¬ 0 < T.intersection (c 0) x := fun hpos ↦ by
   have := hmax _ _ (hc.cons hx_ne hx_self (by rwa [T.intersection_comm]))
-    (forall_lt_succ_cons hxS hcS)
+    fun i hi ↦ by split_ifs; exacts [hxS, hcS _ (by omega)]
   omega
 
 /-- A component of `S` outside a longest chain in `S` can only meet interior components of the
@@ -195,9 +195,9 @@ private lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain
   have hright := hmax _ _
     (((hc.shift (r := r) (s := t - r) (by omega)).cons (fun i hi ↦ hx_ne _ (by omega))
       hx_self (by simpa [T.intersection_comm] using hx)).cons
-      (forall_lt_succ_cons (P := (y ≠ ·)) hyx fun i hi ↦ hy_ne (r + i) (by omega))
+      (fun i hi ↦ by split_ifs; exacts [hyx, hy_ne _ (by omega)])
       hy_self (by simpa [T.intersection_comm] using hxy))
-    (forall_lt_succ_cons hyS (forall_lt_succ_cons hxS fun i hi ↦ hcS (r + i) (by omega)))
+    fun i hi ↦ by split_ifs; exacts [hyS, hxS, hcS _ (by omega)]
   omega
 
 end IsSelfIntersectionMinusTwoChain
