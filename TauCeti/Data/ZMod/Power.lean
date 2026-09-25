@@ -37,7 +37,6 @@ theorem ofAdd_one_pow (n : ℕ) :
 
 /-- In the multiplicative tag of `ZMod n`, the `n`-th power of the inverse of
 `Multiplicative.ofAdd 1` is trivial. -/
-@[simp]
 theorem ofAdd_one_inv_pow (n : ℕ) :
     ((Multiplicative.ofAdd (1 : ZMod n))⁻¹) ^ n = 1 := by
   rw [inv_pow, ofAdd_one_pow, inv_one]
