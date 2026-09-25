@@ -67,28 +67,15 @@ theorem orderAt_eq_of_rationalUnitClass_eq (U : X.Opens) [Nonempty U]
     (hfg : Scheme.rationalUnitClass X U f = Scheme.rationalUnitClass X U g)
     (x : CodimensionOnePoint X) (hx : (x : X) ∈ U) :
     orderAt x f = orderAt x g := by
-  have hsections :
-      ((Scheme.toCartierDivisorSheaf X).hom.app (op U)).hom
-          ((Scheme.rationalUnitSectionsEquiv X U).symm f) =
-        ((Scheme.toCartierDivisorSheaf X).hom.app (op U)).hom
-          ((Scheme.rationalUnitSectionsEquiv X U).symm g) := by
-    simpa only [Scheme.rationalUnitClass_apply] using hfg
-  obtain ⟨r, hr⟩ := (Scheme.toCartierDivisorSheaf_app_eq_iff X _ _).mp hsections
-  have hr' : Additive.ofMul (Scheme.regularUnitToFunctionField X U (Additive.toMul r)) =
-      f - g := by
-    calc
-      _ = Scheme.rationalUnitSectionsEquiv X U
-          (((Scheme.toRationalUnitSheaf X).hom.app (op U)).hom r) := by
-        rw [← ofMul_toMul r]
-        exact (Scheme.rationalUnitSectionsEquiv_toRationalUnitSheaf_app X U
-          (Additive.toMul r)).symm
-      _ = Scheme.rationalUnitSectionsEquiv X U
-          ((Scheme.rationalUnitSectionsEquiv X U).symm f -
-            (Scheme.rationalUnitSectionsEquiv X U).symm g) := congrArg _ hr
-      _ = f - g := by simp
+  obtain ⟨r, hr⟩ := (Scheme.rationalUnitClass_eq_rationalUnitClass_iff X U
+    (Additive.toMul f) (Additive.toMul g)).mp hfg
+  have hr' : Additive.ofMul (Scheme.regularUnitToFunctionField X U r) = f - g := by
+    rw [eq_sub_iff_add_eq]
+    apply Additive.toMul.injective
+    rw [toMul_add, toMul_ofMul, hr]
   have hzero : orderAt x (f - g) = 0 := by
     rw [← hr']
-    exact orderAt_regularUnitToFunctionField U (Additive.toMul r) x hx
+    exact orderAt_regularUnitToFunctionField U r x hx
   rw [map_sub] at hzero
   omega
 

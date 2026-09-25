@@ -67,7 +67,10 @@ condition and the `𝒪_X`-module structure automatic.
   (`TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsEquiv_toRationalFunctions_app`), is
   injective on sections over every open subset of an integral scheme
   (`TauCeti.AlgebraicGeometry.Scheme.toRationalFunctions_app_injective`), and is therefore a
-  monomorphism.
+  monomorphism;
+* `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_forall_mem_range`: a
+  rational function lying in the local ring at every point of a nonempty open subset `U` is
+  regular on `U`.
 
 The sheaf `𝒪_X(D)` attached to a Weil divisor is the submodule of `𝒦_X` cut out by an order
 bound; it is built in `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, and the
@@ -558,6 +561,53 @@ theorem toRationalFunctions_app_injective (U : X.Opens) :
         ← rationalFunctionsEquiv_toRationalFunctions_app]
       exact congrArg _ hab
     exact X.germToFunctionField_injective U key
+
+/-- **A locally regular rational function is regular.** On an integral scheme, a rational function
+lying in the local ring `𝒪_{X,y}` at every point `y` of a nonempty open subset `U` is the germ of a
+section of `𝒪_X` over `U`: inside the function field, `Γ(X, U)` is the intersection of the local
+rings at the points of `U`. -/
+theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempty U]
+    {f : X.functionField}
+    (hf : ∀ y ∈ U, f ∈ (algebraMap (X.presheaf.stalk y) X.functionField).range) :
+    ∃ a : Γ(X, U), X.germToFunctionField U a = f := by
+  -- The generic point lies in every nonempty open subset, so germs there see every overlap.
+  have hgen : ∀ V : X.Opens, Nonempty V → genericPoint X ∈ V := fun V _ ↦ genericPoint_mem V
+  -- Every point of `U` has a neighbourhood inside `U` on which `f` is regular.
+  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ hV : V ≤ U,
+      ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
+    intro y
+    obtain ⟨g, hgf⟩ := hf y y.2
+    obtain ⟨W, hyW, s, hs⟩ := X.presheaf.exists_germ_eq g
+    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.2⟩
+    have hWU : Nonempty (W ⊓ U : X.Opens) := ⟨⟨(y : X), hmem⟩⟩
+    -- Only needed as an instance, so that `algebraMap_germ_eq_germToFunctionField` applies at `W`.
+    have : Nonempty W := ⟨⟨(y : X), hyW⟩⟩
+    refine ⟨W ⊓ U, hmem, inf_le_right, X.presheaf.map (homOfLE inf_le_left).op s, ?_⟩
+    rw [X.presheaf.germ_res_apply (homOfLE (inf_le_left : W ⊓ U ≤ W)) (genericPoint X)
+      (hgen _ hWU) s, ← hgf, ← hs]
+    exact (_root_.AlgebraicGeometry.Scheme.algebraMap_germ_eq_germToFunctionField X hyW s).symm
+  choose V hyV hVU s hs using key
+  -- The chosen local regular functions agree on overlaps, since they all have germ `f`.
+  have hne : ∀ y : U, Nonempty (V y) := fun y ↦ ⟨⟨(y : X), hyV y⟩⟩
+  have hcompat : TopCat.Presheaf.IsCompatible X.presheaf V s := by
+    intro y z
+    have hyz : Nonempty (V y ⊓ V z : X.Opens) :=
+      ⟨⟨genericPoint X, hgen _ (hne y), hgen _ (hne z)⟩⟩
+    refine X.germToFunctionField_injective (V y ⊓ V z) ?_
+    rw [X.presheaf.germ_res_apply (Opens.infLELeft (V y) (V z)) (genericPoint X)
+        (hgen _ hyz) (s y),
+      X.presheaf.germ_res_apply (Opens.infLERight (V y) (V z)) (genericPoint X)
+        (hgen _ hyz) (s z)]
+    exact (hs y).trans (hs z).symm
+  obtain ⟨a, ha, -⟩ := X.sheaf.existsUnique_gluing' V U (fun y ↦ homOfLE (hVU y))
+    (fun y hy ↦ Opens.mem_iSup.mpr ⟨⟨y, hy⟩, hyV ⟨y, hy⟩⟩) s hcompat
+  obtain ⟨y⟩ := ‹Nonempty U›
+  refine ⟨a, ?_⟩
+  -- `ha` is phrased through `X.sheaf`, whose underlying presheaf is `X.presheaf`; naming the
+  -- restriction identity with its `X.presheaf` type keeps the rewrites below type-correct.
+  have hres : X.presheaf.map (homOfLE (hVU y)).op a = s y := ha y
+  rw [← hs y, ← hres,
+    X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
 
 /-- The morphism `𝒪_X ⟶ 𝒦_X` of ring sheaves is injective on sections over every open
 subset of an integral scheme. -/
