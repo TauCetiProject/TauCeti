@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Presentation
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
 
 /-!
@@ -27,6 +27,8 @@ public section
 
 namespace TauCeti.TypeBSpinCarrier
 
+open TauCeti.UniversalEnvelopingAlgebra
+
 universe v v'
 
 noncomputable section
@@ -35,7 +37,7 @@ variable (n : ℕ)
 
 /-- The carrier's matrix points, presented by its defining integral Hopf ideal. -/
 abbrev pointsPresentation (A : Type v) [CommRing A] :
-    GeneralLinear.IntegralPointsPresentation (dimension n) (definingIdeal n) A where
+    TauCeti.GeneralLinear.IntegralPointsPresentation (dimension n) (definingIdeal n) A where
   val := points n A
   property := points_def n A
 
@@ -50,10 +52,15 @@ theorem map_rootSubgroupPoints (f : A →+* B)
       rootSubgroupPoints n k B
         (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
   apply Subtype.ext
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
-    coe_rootSubgroupPoints, coe_rootSubgroupPoints,
-    UniversalEnvelopingAlgebra.map_kostantRootSubgroupMatrix,
-    AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
+  have h := congrArg Subtype.val
+    (UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
+      (e := TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+      (h := TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (ρ := rep n)
+      (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n)
+      (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n) (wt := basisWeight n) f k u)
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
+  simpa only [coe_rootSubgroupPoints, coe_kostantToralRootSubgroupPoints] using h
 
 /-- The induced map carries a point of the split spin weight torus coordinatewise along the
 homomorphism of value rings. -/
@@ -62,10 +69,15 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
     (pointsPresentation n A).map (pointsPresentation n B) f (weightTorusPoints n A s) =
       weightTorusPoints n B fun i ↦ Units.map (f : A →* B) (s i) := by
   apply Subtype.ext
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
-    coe_weightTorusPoints, coe_weightTorusPoints]
-  exact UniversalEnvelopingAlgebra.map_kostantTorusMatrix
-    (M := (lattice n).toAddSubgroup) (b := latticeBasis n) (wt := basisWeight n) f s
+  have h := congrArg Subtype.val
+    (UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
+      (e := TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+      (h := TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (ρ := rep n)
+      (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n)
+      (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n) (wt := basisWeight n) f s)
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
+  simpa only [coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using h
 
 end
 

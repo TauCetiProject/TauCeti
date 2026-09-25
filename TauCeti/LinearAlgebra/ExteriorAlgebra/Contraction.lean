@@ -23,6 +23,9 @@ the wrong side of that move.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
+
+The basis vectors of index sets with one or two elements are the corresponding products of the
+exterior-algebra generators, in increasing order.
 -/
 
 public section
@@ -113,6 +116,30 @@ theorem basis_singleton {I : Type w} [LinearOrder I]
   have hj' : Set.powersetCard.ofFinEmbEquiv.symm a 0 ∈ ({i} : Finset I) := hj
   have heq : Set.powersetCard.ofFinEmbEquiv.symm a 0 = i := Finset.eq_of_mem_singleton hj'
   exact congrArg (fun j ↦ ExteriorAlgebra.ι R (b j)) heq
+
+/-- The exterior-basis vector indexed by a pair `{i, j}` with `i < j` is the product of the two
+basis vectors in increasing order. -/
+theorem basis_pair {I : Type w} [LinearOrder I] (b : Module.Basis I R M) {i j : I} (hij : i < j) :
+    b.ExteriorAlgebra {i, j} = ExteriorAlgebra.ι R (b i) * ExteriorAlgebra.ι R (b j) := by
+  have hcard : ({i, j} : Finset I).card = 2 := Finset.card_pair hij.ne
+  have hlt := ({i, j} : Finset I).orderEmbOfFin hcard |>.strictMono
+    (show (0 : Fin 2) < 1 by decide)
+  have h0 := ({i, j} : Finset I).orderEmbOfFin_mem hcard 0
+  have h1 := ({i, j} : Finset I).orderEmbOfFin_mem hcard 1
+  simp only [Finset.mem_insert, Finset.mem_singleton] at h0 h1
+  -- The increasing enumeration of `{i, j}` must list `i` first and `j` second.
+  obtain ⟨hi, hj⟩ : ({i, j} : Finset I).orderEmbOfFin hcard 0 = i ∧
+      ({i, j} : Finset I).orderEmbOfFin hcard 1 = j := by
+    rcases h0 with h0 | h0 <;> rcases h1 with h1 | h1 <;> rw [h0, h1] at hlt
+    · exact absurd hlt (lt_irrefl _)
+    · exact ⟨h0, h1⟩
+    · exact absurd hlt (lt_asymm hij)
+    · exact absurd hlt (lt_irrefl _)
+  rw [ExteriorAlgebra.basis_apply_ofCard b hcard, ExteriorAlgebra.ιMulti_family,
+    ExteriorAlgebra.ιMulti_succ_apply, ExteriorAlgebra.ιMulti_succ_apply,
+    ExteriorAlgebra.ιMulti_zero_apply, mul_one]
+  simp [Set.powersetCard.ofFinEmbEquiv_symm_apply, Set.powersetCard.ofCard, Matrix.vecTail,
+    hi, hj]
 
 /-- Multiplying the basis vector for `i` by the basis vector for `s.erase i` reconstructs the
 basis vector for `s`, with the shuffle sign that moves `i` to the front. -/

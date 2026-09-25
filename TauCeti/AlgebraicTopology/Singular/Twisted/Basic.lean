@@ -361,9 +361,9 @@ lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
   (rfl)
 
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
-def twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
+abbrev twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     twistedHomology L k ⟶ twistedHomology K k :=
-  (HomologicalComplex.homologyFunctor _ _ k).map (twistedChainComplexCoefficientMap η)
+  HomologicalComplex.homologyMap (twistedChainComplexCoefficientMap η) k
 
 /-- The identity morphism of a coefficient system induces the identity of twisted homology. -/
 @[simp]
@@ -575,6 +575,16 @@ def twistedChainComplexMap :
     twistedChainComplex ((pullback f.hom).obj L) ⟶ twistedChainComplex L :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L)
 
+/-- Equal continuous maps induce the same map on twisted chain complexes, after the canonical
+identification of their pullback coefficient systems. -/
+lemma twistedChainComplexMap_congr {g : X ⟶ Y} (h : f = g) :
+    twistedChainComplexMap f L =
+      twistedChainComplexCoefficientMap
+          (eqToIso (congrArg (fun k : X ⟶ Y ↦ (pullback k.hom).obj L) h)).hom ≫
+        twistedChainComplexMap g L := by
+  subst h
+  simp
+
 /-- In each degree, a continuous map sends the summand of a simplex `σ` of `X` identically onto
 the summand of its image simplex in `Y`. -/
 @[reassoc (attr := simp)]
@@ -715,6 +725,41 @@ lemma twistedHomologyMap_naturality (η : L ⟶ K) (k : ℕ) :
       ((HomologicalComplex.homologyFunctor _ _ k).map_comp _ _))
 
 end MapCoefficient
+
+section MapSquare
+
+variable {A B C D : TopCat.{v}} (a : A ⟶ B) (b : B ⟶ D)
+  (c : A ⟶ C) (d : C ⟶ D)
+  (L : LocalCoefficientSystem.{u, v, max v w} R D) (h : a ≫ b = c ≫ d)
+
+/-- A commutative square of spaces induces a commutative square of twisted chain maps after
+comparing the two iterated pullbacks of the coefficient system. -/
+lemma twistedChainComplexMap_naturality_square :
+    twistedChainComplexMap a ((pullback b.hom).obj L) ≫ twistedChainComplexMap b L =
+      twistedChainComplexCoefficientMap
+          (((pullbackCompIso a.hom b.hom).app L).symm ≪≫
+            eqToIso (congrArg (fun k : A ⟶ D ↦ (pullback k.hom).obj L) h) ≪≫
+            (pullbackCompIso c.hom d.hom).app L).hom ≫
+        twistedChainComplexMap c ((pullback d.hom).obj L) ≫
+          twistedChainComplexMap d L := by
+  let e := pullbackCompIso (R := R) a.hom b.hom
+  have he : IsIso (twistedChainComplexCoefficientMap (e.hom.app L)) := by
+    rw [← Iso.app_hom, ← twistedChainComplexCoefficientIso_hom]
+    infer_instance
+  let _ := he
+  apply (cancel_epi (twistedChainComplexCoefficientMap (e.hom.app L))).1
+  dsimp [e]
+  rw [← twistedChainComplexMap_comp a b L]
+  rw [← Category.assoc]
+  rw [← twistedChainComplexCoefficientMap_comp]
+  simp only [← Category.assoc]
+  rw [Iso.hom_inv_id_app, Category.id_comp]
+  rw [twistedChainComplexCoefficientMap_comp]
+  simp only [Category.assoc]
+  rw [← twistedChainComplexMap_comp c d L]
+  exact twistedChainComplexMap_congr (a ≫ b) L h
+
+end MapSquare
 
 section ConstantMap
 

@@ -36,7 +36,6 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
   closed.
 * `TauCeti.GlobalNumberFields.IdeleClassGroup.comap_normOne`: the ideles whose class has norm one
   are exactly the ideles of norm one.
-
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §16.
@@ -46,7 +45,7 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
 open scoped NNReal
 
 namespace TauCeti.GlobalNumberFields
@@ -63,6 +62,11 @@ def ideleClassNorm : IdeleClassGroup (𝓞 K) K →* ℝ≥0ˣ :=
 theorem ideleClassNorm_mk (x : IdeleGroup (𝓞 K) K) :
     ideleClassNorm (x : IdeleClassGroup (𝓞 K) K) = ideleNorm x :=
   QuotientGroup.lift_mk _ _ x
+
+/-- The idele class norm of an idele class is a positive real number. -/
+theorem coe_ideleClassNorm_pos (c : IdeleClassGroup (𝓞 K) K) :
+    0 < ((ideleClassNorm c : ℝ≥0) : ℝ) :=
+  NNReal.coe_pos.mpr (ideleClassNorm c).ne_zero.bot_lt
 
 /-- The idele class norm is continuous. -/
 theorem continuous_ideleClassNorm : Continuous (ideleClassNorm (K := K)) :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Short exact sequences of discrete modules, and the low-degree connecting maps
@@ -44,6 +45,8 @@ sequence and has to name the same two coefficient maps.
 ## Main definitions
 
 * `TauCeti.ContCohomology.DiscreteShortExact`: a short exact sequence of discrete `G`-modules.
+* `TauCeti.ContCohomology.DiscreteShortExact.toShortComplex`: the sequence as a short
+  complex of canonical topological coefficient representations.
 * `TauCeti.ContCohomology.DiscreteShortExact.restrict`: the same sequence over a subgroup.
 * `TauCeti.ContCohomology.DiscreteShortExact.inclDistribMulActionHom` and
   `TauCeti.ContCohomology.DiscreteShortExact.projDistribMulActionHom`: the inclusion and projection
@@ -801,3 +804,42 @@ end Delta1
 end DiscreteShortExact
 
 end TauCeti.ContCohomology
+
+namespace TauCeti.ContCohomology.DiscreteShortExact
+
+universe uS
+
+open CategoryTheory
+
+variable {G : Type uS} [Group G]
+  {A : Type uS} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {B : Type uS} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
+  {C : Type uS} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
+-- Exposed because the generated `@[simps]` field lemmas are `rfl` proofs about this body.
+/-- A short exact sequence of discrete `G`-modules as a short complex of canonical coefficient
+objects in `TopRep ℤ G`. -/
+@[expose, simps]
+noncomputable def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
+  f := ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant
+  g := ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant
+  zero := TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ S.proj_incl a
+
+-- A pre-lemma (`simp↓`): otherwise the `@[simps]` lemma `toShortComplex_g` rewrites
+-- `S.toShortComplex.g` first, and `ofDiscreteModuleMap_hom_apply` does not match the result, whose
+-- implicit objects `S.toShortComplex.X₂` and `S.toShortComplex.X₃` are not reducibly
+-- `ofDiscreteModule ℤ G B` and `ofDiscreteModule ℤ G C`.
+/-- The projection of the coefficient short complex is the given projection on elements. -/
+@[simp↓] theorem toShortComplex_g_hom_apply (b : B) :
+    S.toShortComplex.g.hom b = S.proj b := rfl
+
+/-- The middle coefficient representation has the given action. -/
+@[simp] theorem toShortComplex_X₂_ρ_apply (k : G) (b : B) :
+    (S.toShortComplex.X₂).ρ k b = k • b := rfl
+
+/-- The final coefficient representation has the given action. -/
+@[simp] theorem toShortComplex_X₃_ρ_apply (k : G) (c : C) :
+    (S.toShortComplex.X₃).ρ k c = k • c := rfl
+
+end TauCeti.ContCohomology.DiscreteShortExact

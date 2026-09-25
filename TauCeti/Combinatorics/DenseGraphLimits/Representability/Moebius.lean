@@ -83,8 +83,8 @@ open Classical in
 /-- The **Möbius transform** `f†` of a graph parameter over supergraphs on the same vertex set:
 `f†(F) = ∑_{G ≥ F} (-1)^{e(G) - e(F)} f(G)`, the coefficients of `f` in the "contains exactly"
 basis.  Edge counts are `Nat.card`, so no decidability is needed on the summed graphs. -/
-noncomputable def graphParamMobius (f : GraphParam) : GraphParam := fun n F =>
-  ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G),
+noncomputable def graphParamMobius (f : GraphParam) : GraphParam := fun n F ↦
+  ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G),
     (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * f n G
 
 open Classical in
@@ -93,7 +93,7 @@ simp lemma, so simplification can recognize the outer sum in `sum_graphParamMobi
 before unfolding its summands. -/
 theorem graphParamMobius_apply (f : GraphParam) (n : ℕ) (F : SimpleGraph (Fin n)) :
     graphParamMobius f n F =
-      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G),
+      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G),
         (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * f n G := by
   simp only [graphParamMobius]
 
@@ -102,16 +102,16 @@ open Classical in
 signed sum over each interval `[F, H]` cancels unless `F = H`. -/
 @[simp]
 theorem sum_graphParamMobius_filter_le (f : GraphParam) {n : ℕ} (F : SimpleGraph (Fin n)) :
-    ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G), graphParamMobius f n G = f n F := by
+    ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G), graphParamMobius f n G = f n F := by
   simp_rw [graphParamMobius_apply]
-  rw [Finset.sum_filter_le_sum_filter_le F fun G H =>
+  rw [Finset.sum_filter_le_sum_filter_le F fun G H ↦
     (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) * f n H]
   have hcancel (H : SimpleGraph (Fin n)) :
-      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
         (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
     let _ : DecidableEq (Fin n) := Classical.decEq _
     refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_right (R := ℝ) F H)
-    exact sum_congr (by ext G; simp) fun _ _ => rfl
+    exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
   simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
@@ -120,17 +120,17 @@ open Classical in
 Möbius transform of `f` exactly when its masses on the supergraphs of every `F` add up to `f(F)`. -/
 theorem eq_graphParamMobius_iff (f : GraphParam) {n : ℕ} (g : SimpleGraph (Fin n) → ℝ) :
     g = graphParamMobius f n ↔
-      ∀ F : SimpleGraph (Fin n), ∑ G ∈ univ.filter (fun G => F ≤ G), g G = f n F := by
-  refine ⟨fun h F => h ▸ sum_graphParamMobius_filter_le f F, fun h => funext fun F => ?_⟩
+      ∀ F : SimpleGraph (Fin n), ∑ G ∈ univ.filter (fun G ↦ F ≤ G), g G = f n F := by
+  refine ⟨fun h F ↦ h ▸ sum_graphParamMobius_filter_le f F, fun h ↦ funext fun F ↦ ?_⟩
   simp_rw [graphParamMobius_apply, ← h, mul_sum]
-  rw [Finset.sum_filter_le_sum_filter_le F fun G H =>
+  rw [Finset.sum_filter_le_sum_filter_le F fun G H ↦
     (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) * g H]
   have hcancel (H : SimpleGraph (Fin n)) :
-      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+      ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
         (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
     let _ : DecidableEq (Fin n) := Classical.decEq _
     refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
-    exact sum_congr (by ext G; simp) fun _ _ => rfl
+    exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
   simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
@@ -141,7 +141,7 @@ theorem graphParamMobius_sum_eq_one (f : GraphParam) (hmul : IsMultiplicative f)
     ∑ G : SimpleGraph (Fin n), graphParamMobius f n G = 1 := by
   classical
   have h := sum_graphParamMobius_filter_le f (⊥ : SimpleGraph (Fin n))
-  rw [filter_true_of_mem fun G _ => bot_le] at h
+  rw [filter_true_of_mem fun G _ ↦ bot_le] at h
   convert h using 1
   exact (hmul.apply_bot hnorm n).symm
 
@@ -153,14 +153,14 @@ theorem graphParamMobius_sum_comap (f : GraphParam) (hiso : IsIsoInvariant f)
     (hmul : IsMultiplicative f) (hnorm : IsNormalized f) {k n : ℕ} (e : Fin k ↪ Fin n)
     (G : SimpleGraph (Fin k)) :
     graphParamMobius f k G =
-      ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) => H.comap ⇑e = G),
+      ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) ↦ H.comap ⇑e = G),
         graphParamMobius f n H := by
   -- By uniqueness of the Möbius transform it suffices that the right side sums to `f(F)` over the
   -- supergraphs of every `F`; that sum is over the `H` above `F.map e`, so it is `f(F.map e)`.
-  refine congrFun ((eq_graphParamMobius_iff f fun G : SimpleGraph (Fin k) =>
-    ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) => H.comap ⇑e = G),
-      graphParamMobius f n H).2 fun F => ?_).symm G
-  simp_rw [sum_filter (s := univ) (p := fun H : SimpleGraph (Fin n) => H.comap ⇑e = _)]
+  refine congrFun ((eq_graphParamMobius_iff f fun G : SimpleGraph (Fin k) ↦
+    ∑ H ∈ univ.filter (fun H : SimpleGraph (Fin n) ↦ H.comap ⇑e = G),
+      graphParamMobius f n H).2 fun F ↦ ?_).symm G
+  simp_rw [sum_filter (s := univ) (p := fun H : SimpleGraph (Fin n) ↦ H.comap ⇑e = _)]
   rw [sum_comm]
   simp_rw [sum_ite_eq, mem_filter, mem_univ, true_and, ← SimpleGraph.map_le_iff_le_comap,
     ← sum_filter, sum_graphParamMobius_filter_le, hmul.apply_map hiso hnorm]
@@ -181,18 +181,18 @@ private theorem apply_glue_fullyLabeled {f : GraphParam} (hf : IsIsoInvariant f)
   set A := fullyLabeled G
   set B := fullyLabeled G'
   -- Every vertex of `B` is labeled, so the right side of the gluing lands inside the left side.
-  have hbij : Function.Bijective (A.glueInl B) := ⟨(A.glueInl B).injective, fun v => by
+  have hbij : Function.Bijective (A.glueInl B) := ⟨(A.glueInl B).injective, fun v ↦ by
     obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ := A.glue_surjective B v
     · exact ⟨a, rfl⟩
     · exact ⟨b, (A.glueInl_eq_glueInr_iff B b b).2 ⟨b, rfl, rfl⟩⟩⟩
   refine (hf.eq_of_iso
     { toEquiv := Equiv.ofBijective _ hbij
-      map_rel_iff' := fun {a b} => ?_ }).symm
+      map_rel_iff' := fun {a b} ↦ ?_ }).symm
   rw [Equiv.ofBijective_apply, Equiv.ofBijective_apply, LabeledGraph.glue_adj_inl]
   -- `A` and `B` are `G` and `G'` on `Fin n` labeled by the identity, so up to unfolding
   -- `fullyLabeled` the right-hand disjunct is `G'.Adj a b` and the whole is `(G ⊔ G').Adj a b`.
-  exact or_congr_right ⟨fun ⟨i, j, hi, hj, h⟩ => by rw [hi, hj]; exact h,
-    fun h => ⟨a, b, rfl, rfl, h⟩⟩
+  exact or_congr_right ⟨fun ⟨i, j, hi, hj, h⟩ ↦ by rw [hi, hj]; exact h,
+    fun h ↦ ⟨a, b, rfl, rfl, h⟩⟩
 
 /-- **Isomorphism invariance and reflection positivity make the Möbius masses nonnegative.** The
 connection matrix of the fully labeled graphs on `Fin n` has entries
@@ -202,26 +202,26 @@ theorem graphParamMobius_nonneg (f : GraphParam) (hiso : IsIsoInvariant f)
     (hrp : IsReflectionPositive f) (n : ℕ) (F : SimpleGraph (Fin n)) :
     0 ≤ graphParamMobius f n F := by
   classical
-  let z : SimpleGraph (Fin n) → SimpleGraph (Fin n) → ℝ := fun G H => if G ≤ H then 1 else 0
-  let x : SimpleGraph (Fin n) → ℝ := fun G =>
+  let z : SimpleGraph (Fin n) → SimpleGraph (Fin n) → ℝ := fun G H ↦ if G ≤ H then 1 else 0
+  let x : SimpleGraph (Fin n) → ℝ := fun G ↦
     if F ≤ G then (-1) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) else 0
   -- The connection matrix factors through the zeta function of the lattice of graphs.
   have hM : ∀ G G', connectionMatrix f fullyLabeled G G' =
-      ∑ H, z G H * z G' H * graphParamMobius f n H := fun G G' => by
+      ∑ H, z G H * z G' H * graphParamMobius f n H := fun G G' ↦ by
     rw [connectionMatrix_apply, LabeledGraph.forgetLabels_def, apply_glue_fullyLabeled hiso,
       ← sum_graphParamMobius_filter_le f (G ⊔ G'), sum_filter]
-    refine sum_congr rfl fun H _ => ?_
+    refine sum_congr rfl fun H _ ↦ ?_
     by_cases hG : G ≤ H <;> by_cases hG' : G' ≤ H <;> simp [z, hG, hG']
   -- The signed indicator of `F` is the row of the inverse zeta matrix at `F`.
-  have hx : ∀ H, ∑ G, x G * z G H = if F = H then 1 else 0 := fun H => by
+  have hx : ∀ H, ∑ G, x G * z G H = if F = H then 1 else 0 := fun H ↦ by
     have hcancel :
-        ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) => F ≤ G ∧ G ≤ H),
+        ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
           (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
       let _ : DecidableEq (Fin n) := Classical.decEq _
       refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
-      exact sum_congr (by ext G; simp) fun _ _ => rfl
+      exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
     rw [← hcancel, sum_filter]
-    refine sum_congr rfl fun G _ => ?_
+    refine sum_congr rfl fun G _ ↦ ?_
     by_cases hF : F ≤ G <;> by_cases hH : G ≤ H <;> simp [x, z, hF, hH]
   have h := (hrp.posSemidef fullyLabeled).dotProduct_mulVec_nonneg x
   refine h.trans_eq (Eq.symm ?_)
@@ -233,9 +233,9 @@ theorem graphParamMobius_nonneg (f : GraphParam) (hiso : IsIsoInvariant f)
     _ = _ := by
         simp_rw [sum_mul_sum, sum_mul, mul_sum]
         rw [sum_comm]
-        refine sum_congr rfl fun G _ => ?_
+        refine sum_congr rfl fun G _ ↦ ?_
         rw [sum_comm]
-        exact sum_congr rfl fun G' _ => sum_congr rfl fun H _ => by ring
+        exact sum_congr rfl fun G' _ ↦ sum_congr rfl fun H _ ↦ by ring
 
 section Examples
 
@@ -250,20 +250,20 @@ open Classical in
 /-- The Möbius transform of the parameter constantly `1` is the point mass at the complete
 graph. -/
 private theorem graphParamMobius_one (n : ℕ) (F : SimpleGraph (Fin n)) :
-    graphParamMobius (fun _ _ => 1) n F = if F = ⊤ then 1 else 0 := by
+    graphParamMobius (fun _ _ ↦ 1) n F = if F = ⊤ then 1 else 0 := by
   classical
-  have h := (eq_graphParamMobius_iff (fun _ _ => (1 : ℝ)) fun G : SimpleGraph (Fin n) =>
-    if G = ⊤ then 1 else 0).2 fun F => by simp [sum_ite_eq', le_top]
+  have h := (eq_graphParamMobius_iff (fun _ _ ↦ (1 : ℝ)) fun G : SimpleGraph (Fin n) ↦
+    if G = ⊤ then 1 else 0).2 fun F ↦ by simp [sum_ite_eq', le_top]
   exact (congrFun h F).symm
 
 open Classical in
 /-- The Möbius transform of the indicator of the edgeless graphs is the point mass at the edgeless
 graph. -/
 private theorem graphParamMobius_ite_eq_bot (n : ℕ) (F : SimpleGraph (Fin n)) :
-    graphParamMobius (fun _ G => if G = ⊥ then 1 else 0) n F = if F = ⊥ then 1 else 0 := by
+    graphParamMobius (fun _ G ↦ if G = ⊥ then 1 else 0) n F = if F = ⊥ then 1 else 0 := by
   classical
-  have h := (eq_graphParamMobius_iff (fun _ G => if G = ⊥ then (1 : ℝ) else 0)
-    fun G : SimpleGraph (Fin n) => if G = ⊥ then 1 else 0).2 fun F => by
+  have h := (eq_graphParamMobius_iff (fun _ G ↦ if G = ⊥ then (1 : ℝ) else 0)
+    fun G : SimpleGraph (Fin n) ↦ if G = ⊥ then 1 else 0).2 fun F ↦ by
       simp [sum_ite_eq', le_bot_iff]
   exact (congrFun h F).symm
 

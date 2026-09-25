@@ -25,10 +25,14 @@ coefficients.
   separable split polynomial of degree at least two has two distinct roots.
 * An irreducible polynomial is separable as soon as its degree is nonzero in the coefficient
   field, which for a quartic is exactly what characteristic `≠ 2` gives.
+* A monic quadratic `X² + aX + b` divides a depressed quartic `X⁴ + pX² + qX + r` exactly when
+  the two coefficients of the remainder of the division vanish. Over `ℤ` this reduces the search
+  for a quadratic factor of an explicit quartic to two Diophantine equations, which a reduction
+  modulo a small prime can rule out.
 
 Together these turn the single test "the resolvent cubic of a quartic has a root in the base
 field" into the classical resolvent conditions — irreducible, splits completely, exactly one root
-— used by the quartic label table of `TauCeti.FieldTheory.GaloisGroups.Quartic`.
+— used by the quartic label table of `TauCeti.FieldTheory.GaloisGroups.Quartic.Basic`.
 
 ## Main results
 
@@ -39,6 +43,8 @@ field" into the classical resolvent conditions — irreducible, splits completel
   `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot`
 * `Polynomial.Splits.of_natDegree_eq_three_of_isRoot_of_isRoot_of_ne` and
   `Polynomial.Splits.exists_isRoot_ne`
+* `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff`: when a monic quadratic divides a
+  depressed quartic, by explicit division with remainder
 -/
 
 public section
@@ -200,5 +206,52 @@ theorem Splits.exists_isRoot_ne {g : F[X]} (hsplit : g.Splits) (hsep : g.Separab
   by_cases hxa : (x : F) = a
   · exact ⟨y, hroot y, fun hya => hxy (Subtype.ext (hxa.trans hya.symm))⟩
   · exact ⟨x, hroot x, hxa⟩
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- **Division of a depressed quartic by a monic quadratic.** The monic quadratic `X² + aX + b`
+divides the depressed quartic `X⁴ + pX² + qX + r` exactly when the linear remainder of the
+division vanishes, that is when `q = a³ - 2ab + ap` and `r = a²b - b² + bp`. The quotient is
+`X² - aX + (a² - b + p)`. Over the zero ring both sides hold trivially. -/
+theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff (a b p q r : R) :
+    X ^ 2 + C a * X + C b ∣ X ^ 4 + C p * X ^ 2 + C q * X + C r ↔
+      q = a ^ 3 - 2 * a * b + a * p ∧ r = a ^ 2 * b - b ^ 2 + b * p := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact iff_of_true ⟨1, Subsingleton.elim _ _⟩ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  have hdiv : (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]) =
+      (X ^ 2 + C a * X + C b) * (X ^ 2 - C a * X + C (a ^ 2 - b + p)) +
+        (C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p)) := by
+    simp only [map_sub, map_add, map_mul, map_pow, map_ofNat]
+    ring
+  constructor
+  · intro hdvd
+    have hrem : X ^ 2 + C a * X + C b ∣
+        C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p) := by
+      have := dvd_sub hdvd
+        (dvd_mul_right (X ^ 2 + C a * X + C b) (X ^ 2 - C a * X + C (a ^ 2 - b + p)))
+      rwa [hdiv, add_sub_cancel_left] at this
+    have hmonic : (X ^ 2 + C a * X + C b : R[X]).Monic := by monicity!
+    have hzero :
+        C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p) = 0 := by
+      by_contra hne
+      refine hmonic.not_dvd_of_natDegree_lt hne ?_ hrem
+      calc (C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p)).natDegree
+          ≤ 1 := by compute_degree
+        _ < 2 := one_lt_two
+        _ = (X ^ 2 + C a * X + C b : R[X]).natDegree := by symm; compute_degree!
+    have h1 := congrArg (fun g : R[X] => g.coeff 1) hzero
+    have h0 := congrArg (fun g : R[X] => g.coeff 0) hzero
+    simp only [coeff_add, coeff_C_mul_X, coeff_C, coeff_zero, one_ne_zero, zero_ne_one,
+      ite_true, ite_false, add_zero, zero_add] at h1 h0
+    exact ⟨by linear_combination h1, by linear_combination h0⟩
+  · rintro ⟨hq, hr⟩
+    refine ⟨X ^ 2 - C a * X + C (a ^ 2 - b + p), ?_⟩
+    have hc1 : q - a ^ 3 + 2 * a * b - a * p = 0 := by rw [hq]; ring
+    have hc0 : r - a ^ 2 * b + b ^ 2 - b * p = 0 := by rw [hr]; ring
+    rw [hdiv, hc1, hc0, C_0, zero_mul, zero_add, add_zero]
+
+end CommRing
 
 end Polynomial

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 
 /-!
@@ -45,6 +47,13 @@ The Kummer map is **surjective**. This is exactness of the same sequence at `H¹
 is a connecting image. Injectivity on power classes and surjectivity together give the **Kummer
 isomorphism** `TauCeti.kummerIso`.
 
+The Kummer isomorphism is **natural in the field** for restriction. A `K`-embedding
+`σ : L →ₐ[K] Kˢ` identifies `Lˢ` with `Kˢ` and `G_L` with the subgroup of `G_K` fixing `σ(L)`;
+restricting the Kummer cocycle `g ↦ g α / α` of `a ∈ Kˣ` to that subgroup and transporting it to
+`G_L` gives the Kummer cocycle of the image of `a` in `Lˣ`, with the transported root. So
+restriction on `H¹(·, μₙ)` corresponds to the map `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ` of power classes. No
+finiteness of `L/K` is used.
+
 ## Main definitions
 
 * `TauCeti.kummerCocycle`: the cocycle `g ↦ g α / α` attached to a choice of `n`th root, and
@@ -55,6 +64,8 @@ isomorphism** `TauCeti.kummerIso`.
 * `TauCeti.kummerIso`: the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)`.
 * `TauCeti.kummerIsoTransport`: the Kummer isomorphism after an equivariant identification of
   the roots of unity with another discrete coefficient module.
+* `TauCeti.kummerRes`: restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` along a `K`-embedding
+  `σ : L →ₐ[K] Kˢ`, with its coefficient identification `TauCeti.kummerCoeffMap`.
 
 ## Main results
 
@@ -66,6 +77,11 @@ isomorphism** `TauCeti.kummerIso`.
   `TauCeti.kummerMap_eq_one_iff` the pointwise form.
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
+* `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
+  degree-one comparison isomorphism.
+* `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
+  extension, restriction corresponding to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ`;
+  `TauCeti.kummerRes_kummerMap` is the same statement on units.
 
 ## References
 
@@ -344,6 +360,31 @@ theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
 
+/-! ### The Kummer map against canonical continuous cohomology -/
+
+/-- **The canonical Kummer map** from units of `K` to Mathlib's continuous cohomology of the
+Kummer coefficient module. It is the explicit Kummer map transported through the degree-one
+comparison isomorphism. -/
+noncomputable def kummerMapCanonical (hn : IsUnit (n : K)) :
+    Kˣ →* Multiplicative
+      (continuousCohomology 1
+        (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) :=
+  AddMonoidHom.toMultiplicativeRight <|
+    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+      (KummerCoeff K n)).toAddMonoidHom.comp
+        (AddMonoidHom.toMultiplicativeRight.symm (kummerMap K n hn))
+
+/-- **The explicit and canonical Kummer maps agree.** The degree-one comparison sends the
+explicit Kummer class of a unit to its canonical continuous-cohomology class. -/
+@[simp]
+theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
+  rw [kummerMapCanonical, AddMonoidHom.toMultiplicativeRight_apply_apply, toAdd_ofAdd,
+    AddMonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
+    AddEquiv.coe_toAddMonoidHom]
+
 /-! ### Transport to another coefficient model -/
 
 /-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
@@ -398,5 +439,128 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
   rw [kummerIsoTransport, MulEquiv.trans_apply,
     AddEquiv.toMultiplicative_apply_apply, AddMonoidHom.toMultiplicative_apply_apply,
     AddEquiv.coe_toAddMonoidHom]
+
+/-! ### Restriction along a field extension -/
+
+section Restriction
+
+variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
+
+/-- **The Kummer coefficients of `K` as Kummer coefficients of `L`**, along a `K`-embedding
+`σ : L →ₐ[K] Kˢ`: the chosen identification `separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ`
+extending `σ`, read backwards on the `n`th roots of unity. It is equivariant for the action of
+`G_L` on `μₙ(Lˢ)` and its action on `μₙ(Kˢ)` through `G_L ≃ₜ* Gal(Kˢ/σ(L)) ≤ G_K`
+(`TauCeti.kummerCoeffMap_smul`). -/
+def kummerCoeffMap : KummerCoeff K n →+ KummerCoeff L n :=
+  (restrictRootsOfUnity (separableClosureRingEquiv K L σ).symm n).toAdditive
+
+/-- `kummerCoeffMap` applies the inverse identification of separable closures to a root of
+unity. -/
+@[simp]
+theorem toMul_kummerCoeffMap (x : KummerCoeff K n) :
+    ((kummerCoeffMap K n L σ x).toMul : (SeparableClosure L)ˣ) =
+      Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom x.toMul :=
+  (rfl)
+
+/-- **`kummerCoeffMap` is equivariant** along `G_L ≃ₜ* Gal(Kˢ/σ(L))`: an automorphism `g` of
+`Lˢ` over `L` acts on `μₙ(Kˢ)` through its image in the subgroup of `G_K` fixing `σ(L)`, which is
+`g` conjugated by the identification of separable closures. This is the compatibility making
+`(absoluteGaloisGroupEquivFixingSubgroup K L σ, kummerCoeffMap K n L σ)` a compatible pair. -/
+@[simp↓]
+theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
+    kummerCoeffMap K n L σ
+        ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
+      g • kummerCoeffMap K n L σ x :=
+  Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
+    simp [Subgroup.smul_def]
+
+/-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
+`H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
+followed by the pullback along `absoluteGaloisGroupEquivFixingSubgroup K L σ : G_L ≃ₜ* Gal(Kˢ/σ(L))`
+with the coefficient identification `kummerCoeffMap`. The embedding is genuine data: without one
+there is no map `G_L → G_K`. Written multiplicatively, like `TauCeti.kummerIso`. -/
+def kummerRes :
+    Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) →*
+      Multiplicative (H1 (AbsoluteGaloisGroup L) (KummerCoeff L n)) :=
+  AddMonoidHom.toMultiplicative <|
+    (explicitMap1 (↥σ.fieldRange.fixingSubgroup) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+      (KummerCoeff L n)
+      (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+        AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
+      (kummerCoeffMap K n L σ) continuous_of_discreteTopology (kummerCoeffMap_smul K n L σ)).comp
+      (explicitRes1 (AbsoluteGaloisGroup K) (KummerCoeff K n) σ.fieldRange.fixingSubgroup)
+
+/-- `kummerRes` is restriction to the subgroup fixing `σ(L)` followed by the transport to `G_L`
+along `absoluteGaloisGroupEquivFixingSubgroup K L σ` and `kummerCoeffMap`. -/
+theorem toAdd_kummerRes (x : Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n))) :
+    (kummerRes K n L σ x).toAdd =
+      explicitMap1 (↥σ.fieldRange.fixingSubgroup) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+        (KummerCoeff L n)
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
+        (kummerCoeffMap K n L σ) continuous_of_discreteTopology (kummerCoeffMap_smul K n L σ)
+        (explicitRes1 (AbsoluteGaloisGroup K) (KummerCoeff K n) σ.fieldRange.fixingSubgroup
+          x.toAdd) :=
+  (rfl)
+
+variable {K n L} in
+/-- **Transporting an `n`th root to `Lˢ`**: if `α ∈ Kˢ` is an `n`th root of `a ∈ Kˣ`, its image
+under the identification `separableClosureRingEquiv K L σ` of separable closures is an `n`th root
+of the image of `a` in `Lˣ`. -/
+theorem units_map_separableClosureRingEquiv_symm_pow
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =
+      Units.map (algebraMap L (SeparableClosure L)).toMonoidHom
+        (Units.map (algebraMap K L).toMonoidHom a) := by
+  rw [← map_pow, hα]
+  ext
+  simp [← IsScalarTower.algebraMap_apply]
+
+/-- **Restriction of a Kummer cocycle class**: restricting the class of `g ↦ g α / α` to `G_L`
+gives the class of `h ↦ h β / β` for the image `β ∈ Lˢ` of the root `α` under the
+identification of separable closures. -/
+@[simp]
+theorem kummerRes_kummerCocycleClass
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerRes K n L σ (Multiplicative.ofAdd (kummerCocycleClass hα)) =
+      Multiplicative.ofAdd
+        (kummerCocycleClass (units_map_separableClosureRingEquiv_symm_pow σ hα)) := by
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_kummerRes, toAdd_ofAdd, toAdd_ofAdd, kummerCocycleClass, H1pi,
+    QuotientAddGroup.mk'_apply, explicitRes1_mk, explicitMap1_mk, kummerCocycleClass, H1pi,
+    QuotientAddGroup.mk'_apply]
+  congr 1
+  refine Subtype.ext (funext fun g => Additive.toMul.injective (Subtype.ext (Units.ext ?_)))
+  simp [cocyclesMap1_apply]
+
+/-- **Restriction of Kummer classes along a field extension**: for a `K`-embedding
+`σ : L →ₐ[K] Kˢ`, restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` sends the Kummer class of `a ∈ Kˣ` to the
+Kummer class of its image in `Lˣ`. -/
+@[simp↓]
+theorem kummerRes_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
+    kummerRes K n L σ (kummerMap K n hn a) =
+      kummerMap L n (by simpa using hn.map (algebraMap K L))
+        (Units.map (algebraMap K L).toMonoidHom a) := by
+  have hnL : IsUnit (n : L) := by simpa using hn.map (algebraMap K L)
+  obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
+  rw [← ofAdd_toAdd (kummerMap K n hn a), kummerMap_eq_kummerCocycleClass hn hα,
+    kummerRes_kummerCocycleClass K n L σ hα,
+    ← kummerMap_eq_kummerCocycleClass hnL, ofAdd_toAdd]
+
+/-- **The restriction square of the Kummer isomorphism** (NSW, the display after (6.2.1)): for a
+`K`-embedding `σ : L →ₐ[K] Kˢ`, restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` corresponds under the
+Kummer isomorphisms to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ` induced by `K → L`. No
+finiteness of `L/K` is needed. -/
+@[simp↓]
+theorem kummerIso_res (hn : IsUnit (n : K))
+    (x : powerClassQuotient Kˣ n) :
+    kummerRes K n L σ (kummerIso K n hn x) =
+      kummerIso L n (by simpa using hn.map (algebraMap K L))
+        (powerClassMap n (Units.map (algebraMap K L).toMonoidHom) x) := by
+  induction x using QuotientGroup.induction_on with
+  | H a => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, kummerRes_kummerMap]
+
+end Restriction
 
 end TauCeti

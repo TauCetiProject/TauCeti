@@ -40,6 +40,8 @@ constructed directly on the set of squared-length-two vectors and proved involut
 * `TauCeti.DynkinType.sum_typeDSimpleRoot` gives their coordinate sums and
   `TauCeti.DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot` their Gram matrix, the Cartan
   matrix `CartanMatrix.D n`.
+* `TauCeti.DynkinType.typeDSimpleRoot_mul_transpose_self` packages that Gram identity as a matrix
+  product for determinant and scalar-extension arguments.
 * `TauCeti.DynkinType.linearIndependent_typeDSimpleRoot` says that basis is linearly independent.
 * `TauCeti.DynkinType.typeDRootReflectionEquiv` is reflection in a root, acting on the coordinates
   by `TauCeti.DynkinType.typeDSimpleRootCoordinates_typeDRootReflection`.
@@ -537,6 +539,22 @@ theorem typeDSimpleRoot_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (i j : Fin n) 
   by_cases hi : (i : ℕ) + 1 < n
   · exact typeDSimpleRoot_dotProduct_of_add_one_lt hn hi j
   · exact typeDSimpleRoot_dotProduct_of_not_add_one_lt hn hi j
+
+/-! The simple-root Gram matrix is the type-D Cartan matrix. -/
+
+/-- The matrix of type-D simple roots times its transpose is the type-D Cartan matrix:
+the Gram identity whose determinant gives the type-D determinant-square calculation. -/
+theorem typeDSimpleRoot_mul_transpose_self (hn : 4 ≤ n) :
+    Matrix.of (typeDSimpleRoot n hn) * Matrix.transpose (Matrix.of (typeDSimpleRoot n hn)) =
+      CartanMatrix.D n := by
+  ext i j
+  rw [Matrix.mul_apply, ← typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j]
+  simp [dotProduct]
+
+/-- The determinant of the type-D Cartan matrix is the square of the simple-root determinant. -/
+theorem det_cartanMatrixD_eq_det_typeDSimpleRoot_sq (hn : 4 ≤ n) :
+    (CartanMatrix.D n).det = (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 := by
+  rw [← typeDSimpleRoot_mul_transpose_self hn, Matrix.det_mul, Matrix.det_transpose, sq]
 
 
 /-- The first `n` entries of `typeDRootEquiv` are the Bourbaki-numbered simple roots. -/

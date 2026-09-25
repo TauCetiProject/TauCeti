@@ -127,17 +127,12 @@ theorem finite_connectedComponents_of_finite_irreducibleComponents
       rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
       rw [ConnectedComponents.coe_eq_coe']
       exact hZ.1.isConnected.isPreconnected.subset_connectedComponent hy hx
-  have hC_eq : C = Set.univ := by
-    rw [eq_univ_iff_forall]
-    intro c
-    obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
-    have hx : x ∈ ⋃₀ irreducibleComponents X := by
-      rw [sUnion_irreducibleComponents]
-      simp
-    obtain ⟨Z, hZ, hxZ⟩ := Set.mem_sUnion.mp hx
-    exact Set.mem_iUnion_of_mem Z <| Set.mem_iUnion_of_mem hZ ⟨x, hxZ, rfl⟩
   apply Finite.of_finite_univ
-  rw [← hC_eq]
-  exact hC
+  rw [← Set.eq_univ_of_forall]
+  · exact hC
+  · intro c
+    obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+    exact Set.mem_biUnion (irreducibleComponent_mem_irreducibleComponents x)
+      ⟨x, mem_irreducibleComponent, rfl⟩
 
 end TauCeti

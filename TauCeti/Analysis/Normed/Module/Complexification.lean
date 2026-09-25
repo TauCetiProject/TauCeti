@@ -87,15 +87,15 @@ variable {X : Type*} [AddCommGroup X]
 
 instance : Zero (Complexification X) := ⟨⟨0, 0⟩⟩
 
-instance : Add (Complexification X) := ⟨fun z w => ⟨z.re + w.re, z.im + w.im⟩⟩
+instance : Add (Complexification X) := ⟨fun z w ↦ ⟨z.re + w.re, z.im + w.im⟩⟩
 
-instance : Neg (Complexification X) := ⟨fun z => ⟨-z.re, -z.im⟩⟩
+instance : Neg (Complexification X) := ⟨fun z ↦ ⟨-z.re, -z.im⟩⟩
 
-instance : Sub (Complexification X) := ⟨fun z w => ⟨z.re - w.re, z.im - w.im⟩⟩
+instance : Sub (Complexification X) := ⟨fun z w ↦ ⟨z.re - w.re, z.im - w.im⟩⟩
 
-instance : SMul ℕ (Complexification X) := ⟨fun n z => ⟨n • z.re, n • z.im⟩⟩
+instance : SMul ℕ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
 
-instance : SMul ℤ (Complexification X) := ⟨fun n z => ⟨n • z.re, n • z.im⟩⟩
+instance : SMul ℤ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
 
 @[simp] theorem zero_re : (0 : Complexification X).re = 0 := (rfl)
 @[simp] theorem zero_im : (0 : Complexification X).im = 0 := (rfl)
@@ -107,12 +107,12 @@ instance : SMul ℤ (Complexification X) := ⟨fun n z => ⟨n • z.re, n • z
 @[simp] theorem sub_im (z w : Complexification X) : (z - w).im = z.im - w.im := (rfl)
 
 instance : AddCommGroup (Complexification X) :=
-  Function.Injective.addCommGroup (fun z : Complexification X => (z.re, z.im))
-    (fun _ _ h => by
+  Function.Injective.addCommGroup (fun z : Complexification X ↦ (z.re, z.im))
+    (fun _ _ h ↦ by
       simp only [Prod.mk.injEq] at h
       exact Complexification.ext h.1 h.2)
-    (rfl) (fun _ _ => (rfl)) (fun _ => (rfl)) (fun _ _ => (rfl)) (fun _ _ => (rfl))
-    (fun _ _ => (rfl))
+    (rfl) (fun _ _ ↦ (rfl)) (fun _ ↦ (rfl)) (fun _ _ ↦ (rfl)) (fun _ _ ↦ (rfl))
+    (fun _ _ ↦ (rfl))
 
 /-- The embedding `x ↦ x + i 0` of a real vector space into its complexification. -/
 def ofReal (x : X) : Complexification X := ⟨x, 0⟩
@@ -124,7 +124,7 @@ variable [Module ℝ X]
 
 /-- Complex scalars act by `(a + b i) • (x + i y) = (a x - b y) + i (b x + a y)`. -/
 instance : SMul ℂ (Complexification X) :=
-  ⟨fun c z => ⟨c.re • z.re - c.im • z.im, c.im • z.re + c.re • z.im⟩⟩
+  ⟨fun c z ↦ ⟨c.re • z.re - c.im • z.im, c.im • z.re + c.re • z.im⟩⟩
 
 @[simp]
 theorem smul_re (c : ℂ) (z : Complexification X) : (c • z).re = c.re • z.re - c.im • z.im :=
@@ -172,7 +172,7 @@ section Norm
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The Taylor norm `‖z‖ = ⨆ w ∈ 𝕋, ‖Re (w • z)‖` on the complexification. -/
-instance : Norm (Complexification X) := ⟨fun z => ⨆ w : Circle, ‖((w : ℂ) • z).re‖⟩
+instance : Norm (Complexification X) := ⟨fun z ↦ ⨆ w : Circle, ‖((w : ℂ) • z).re‖⟩
 
 theorem norm_def (z : Complexification X) : ‖z‖ = ⨆ w : Circle, ‖((w : ℂ) • z).re‖ := (rfl)
 
@@ -184,7 +184,7 @@ private theorem norm_smul_re_le_aux (c : ℂ) (z : Complexification X) :
     gcongr <;> simp [Complex.abs_re_le_norm, Complex.abs_im_le_norm]
 
 private theorem bddAbove_range_norm_smul_re (z : Complexification X) :
-    BddAbove (range fun w : Circle => ‖((w : ℂ) • z).re‖) :=
+    BddAbove (range fun w : Circle ↦ ‖((w : ℂ) • z).re‖) :=
   ⟨‖z.re‖ + ‖z.im‖, by
     rintro _ ⟨w, rfl⟩
     simpa using norm_smul_re_le_aux (w : ℂ) z⟩
@@ -210,7 +210,7 @@ theorem norm_im_le (z : Complexification X) : ‖z.im‖ ≤ ‖z‖ := by
 
 /-- The norm is at most the sum of the norms of the two components. -/
 theorem norm_le_norm_re_add_norm_im (z : Complexification X) : ‖z‖ ≤ ‖z.re‖ + ‖z.im‖ :=
-  norm_le_iff.2 fun w => by simpa using norm_smul_re_le_aux (w : ℂ) z
+  norm_le_iff.2 fun w ↦ by simpa using norm_smul_re_le_aux (w : ℂ) z
 
 /-- The real part of an arbitrary complex multiple is bounded by the product of the norms. -/
 theorem norm_smul_re_le (c : ℂ) (z : Complexification X) : ‖(c • z).re‖ ≤ ‖c‖ * ‖z‖ := by
@@ -239,28 +239,30 @@ theorem norm_ofReal (x : X) : ‖ofReal x‖ = ‖x‖ :=
 theorem normedSpaceCore : NormedSpace.Core ℂ (Complexification X) where
   norm_nonneg := norm_nonneg'
   norm_smul c z := by
-    have hle : ∀ (c : ℂ) (z : Complexification X), ‖c • z‖ ≤ ‖c‖ * ‖z‖ := fun c z =>
-      norm_le_iff.2 fun w => by
+    have hle : ∀ (c : ℂ) (z : Complexification X), ‖c • z‖ ≤ ‖c‖ * ‖z‖ := fun c z ↦
+      norm_le_iff.2 fun w ↦ by
         rw [smul_smul]
         simpa using norm_smul_re_le ((w : ℂ) * c) z
     refine le_antisymm (hle c z) ?_
     rcases eq_or_ne c 0 with rfl | hc
     · simpa using norm_nonneg' (0 : Complexification X)
     calc ‖c‖ * ‖z‖ = ‖c‖ * ‖c⁻¹ • c • z‖ := by rw [smul_smul, inv_mul_cancel₀ hc, one_smul]
-      _ ≤ ‖c‖ * (‖c⁻¹‖ * ‖c • z‖) := by gcongr; exact hle _ _
+      _ ≤ ‖c‖ * (‖c⁻¹‖ * ‖c • z‖) := by
+        gcongr
+        exact hle _ _
       _ = ‖c • z‖ := by rw [norm_inv, ← mul_assoc, mul_inv_cancel₀ (norm_ne_zero_iff.2 hc),
           one_mul]
-  norm_triangle z w := norm_le_iff.2 fun u => by
+  norm_triangle z w := norm_le_iff.2 fun u ↦ by
     rw [smul_add, add_re]
     exact (norm_add_le _ _).trans (add_le_add (norm_circle_smul_re_le u z)
       (norm_circle_smul_re_le u w))
   norm_eq_zero_iff z := by
-    refine ⟨fun h => ?_, fun h => ?_⟩
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · ext
       · exact norm_le_zero_iff.1 (h ▸ norm_re_le z)
       · exact norm_le_zero_iff.1 (h ▸ norm_im_le z)
     · subst h
-      exact le_antisymm (norm_le_iff.2 fun w => by simp)
+      exact le_antisymm (norm_le_iff.2 fun w ↦ by simp)
         (by simpa using norm_circle_smul_re_le 1 (0 : Complexification X))
 
 instance instNormedAddCommGroup : NormedAddCommGroup (Complexification X) :=
@@ -278,14 +280,14 @@ def reCLM : Complexification X →L[ℝ] X :=
   LinearMap.mkContinuous
     { toFun := re
       map_add' := add_re
-      map_smul' := real_smul_re } 1 fun z => by simpa using norm_re_le z
+      map_smul' := real_smul_re } 1 fun z ↦ by simpa using norm_re_le z
 
 /-- The imaginary part, as a bounded real-linear map of norm at most one. -/
 def imCLM : Complexification X →L[ℝ] X :=
   LinearMap.mkContinuous
     { toFun := im
       map_add' := add_im
-      map_smul' := real_smul_im } 1 fun z => by simpa using norm_im_le z
+      map_smul' := real_smul_im } 1 fun z ↦ by simpa using norm_im_le z
 
 /-- The real embedding, as a real-linear isometry. -/
 def ofRealLI : X →ₗᵢ[ℝ] Complexification X where
@@ -305,14 +307,14 @@ variable (X)
 /-- The complexification is real-linearly homeomorphic to `X × X` via `z ↦ (re z, im z)`. -/
 def equivProd : Complexification X ≃L[ℝ] X × X :=
   LinearEquiv.toContinuousLinearEquivOfBounds
-    { toFun := fun z => (z.re, z.im)
-      invFun := fun p => ⟨p.1, p.2⟩
-      map_add' := fun _ _ => (rfl)
-      map_smul' := fun r z => by ext <;> simp
-      left_inv := fun _ => (rfl)
-      right_inv := fun _ => (rfl) } 1 2
-    (fun z => by simpa using ⟨norm_re_le z, norm_im_le z⟩)
-    (fun p => by
+    { toFun := fun z ↦ (z.re, z.im)
+      invFun := fun p ↦ ⟨p.1, p.2⟩
+      map_add' := fun _ _ ↦ (rfl)
+      map_smul' := fun r z ↦ by ext <;> simp
+      left_inv := fun _ ↦ (rfl)
+      right_inv := fun _ ↦ (rfl) } 1 2
+    (fun z ↦ by simpa using ⟨norm_re_le z, norm_im_le z⟩)
+    (fun p ↦ by
       refine (norm_le_norm_re_add_norm_im (⟨p.1, p.2⟩ : Complexification X)).trans ?_
       have h1 : ‖p.1‖ ≤ ‖p‖ := norm_fst_le p
       have h2 : ‖p.2‖ ≤ ‖p‖ := norm_snd_le p
@@ -349,10 +351,10 @@ variable {X Y Z : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCo
 complex-linear operator. -/
 def complexify (T : X →L[ℝ] Y) : Complexification X →L[ℂ] Complexification Y :=
   LinearMap.mkContinuous
-    { toFun := fun z => ⟨T z.re, T z.im⟩
-      map_add' := fun z w => by ext <;> simp
-      map_smul' := fun c z => by ext <;> simp } ‖T‖ fun z =>
-    norm_le_iff.2 fun w => by
+    { toFun := fun z ↦ ⟨T z.re, T z.im⟩
+      map_add' := fun z w ↦ by ext <;> simp
+      map_smul' := fun c z ↦ by ext <;> simp } ‖T‖ fun z ↦
+    norm_le_iff.2 fun w ↦ by
       -- `T` commutes with rotations: the real part of `w • T_ℂ z` is `T (w • z).re`.
       have hre : ((w : ℂ) • (⟨T z.re, T z.im⟩ : Complexification Y)).re = T ((w : ℂ) • z).re := by
         simp
@@ -376,15 +378,15 @@ theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
 /-- The complexification is the unique complex-linear extension of `T`. -/
 theorem eq_complexify_iff (T : X →L[ℝ] Y) (S : Complexification X →L[ℂ] Complexification Y) :
     S = T.complexify ↔ ∀ x, S (ofReal x) = ofReal (T x) := by
-  refine ⟨fun h x => h ▸ complexify_ofReal T x, fun h => ?_⟩
-  refine ContinuousLinearMap.coe_injective (ext_ofReal fun x => ?_)
+  refine ⟨fun h x ↦ h ▸ complexify_ofReal T x, fun h ↦ ?_⟩
+  refine ContinuousLinearMap.coe_injective (ext_ofReal fun x ↦ ?_)
   simp [h]
 
 /-- Complexification preserves the operator norm. -/
 @[simp]
 theorem norm_complexify (T : X →L[ℝ] Y) : ‖T.complexify‖ = ‖T‖ := by
   refine le_antisymm (LinearMap.mkContinuous_norm_le _ (norm_nonneg T) _) ?_
-  refine T.opNorm_le_bound (norm_nonneg _) fun x => ?_
+  refine T.opNorm_le_bound (norm_nonneg _) fun x ↦ ?_
   simpa using T.complexify.le_opNorm (ofReal x)
 
 /-- Complexification preserves identity maps. -/

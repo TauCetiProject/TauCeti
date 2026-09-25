@@ -23,20 +23,21 @@ Lipschitz constant on a sufficiently small ball. This file combines those facts 
 Lyapunov--Perron theorem: the initial displacements of forward negative-gradient trajectories
 confined to that ball form a Lipschitz graph over a ball in the stable linear subspace.
 
-This is the Lipschitz local stable-manifold theorem specialized to a Morse critical point.
-Differentiability of the graph map and its tangency to the stable linear subspace are not
-established here.
+This is a local stable-set graph and tangency theorem at the equilibrium: the graph map is
+Lipschitz, differentiable at the origin with derivative zero, and hence tangent there to the stable
+linear subspace. Smoothness away from the equilibrium and the resulting embedded-submanifold
+structure are not established here.
 
 Applying the same construction after reversing time gives the corresponding local unstable set
-as a Lipschitz graph over the unstable Hessian spectral subspace.
+as a Lipschitz graph tangent at the origin to the unstable Hessian spectral subspace.
 
 ## Main declarations
 
 * `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`: confined forward
-  trajectories in coordinates centred at a nondegenerate critical point form a Lipschitz graph
-  over the stable Hessian spectral subspace.
+  trajectories in coordinates centred at a nondegenerate critical point form a Lipschitz graph,
+  tangent at the origin to the stable Hessian spectral subspace.
 * `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`: the backward-time
-  counterpart over the unstable Hessian spectral subspace.
+  counterpart, tangent at the origin to the unstable Hessian spectral subspace.
 
 ## References
 
@@ -64,6 +65,14 @@ namespace IsNondegenerateCriticalPoint
 private theorem negativeGradientRemainder_centered_zero (h : IsNondegenerateCriticalPoint f x) :
     (fun z ↦ negativeGradientRemainder f x (x + z)) 0 = 0 := by
   simp only [add_zero, negativeGradientRemainder_self h.gradient_eq_zero]
+
+/-- The nonlinear remainder of the centred negative-gradient field has derivative zero at the
+origin. -/
+private theorem hasFDerivAt_negativeGradientRemainder_centered
+    (h : IsNondegenerateCriticalPoint f x) :
+    HasFDerivAt (fun z ↦ negativeGradientRemainder f x (x + z)) (0 : E →L[ℝ] E) 0 := by
+  rw [hasFDerivAt_comp_add_left]
+  simpa only [add_zero] using h.contDiffAt.hasFDerivAt_negativeGradientRemainder
 
 /-- In displacement coordinates the negative-gradient field is the linearization
 `-hessianOperator f x` plus the nonlinear remainder. -/
@@ -140,13 +149,15 @@ displacements of forward solutions of the centred negative-gradient equation tha
 `closedBall 0 r`, restricted by `norm (stableProjection z) ≤ rho`, are exactly the graph of a
 `C`-Lipschitz map over `stableLinearSubspace ∩ closedBall 0 rho`.
 
-The graph map vanishes at the origin, takes values in the unstable linear subspace (the kernel of
-the stable projection), and depends only on the stable component of its input. The same radius
+The graph map vanishes at the origin, has derivative zero there, takes values in the unstable
+linear subspace (the kernel of the stable projection), and depends only on the stable component of
+its input. Thus its graph is tangent at the origin to the stable linear subspace. The same radius
 `r` also guarantees that every confined solution tends to zero. -/
 theorem exists_localStableSet_eq_lipschitzGraph
     (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
       LipschitzWith C g ∧ g 0 = 0 ∧
+      HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
       (∀ v, h.stableProjection (g v) = 0) ∧
       (∀ v, g (h.stableProjection v) = g v) ∧
       {z : E | ( ∃ y : ℝ → E,
@@ -163,6 +174,9 @@ theorem exists_localStableSet_eq_lipschitzGraph
   have hN0 : N 0 = 0 := by
     rw [hNdef]
     exact h.negativeGradientRemainder_centered_zero
+  have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
+    rw [hNdef]
+    exact h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centered_eq
@@ -178,13 +192,14 @@ theorem exists_localStableSet_eq_lipschitzGraph
       h.commute_neg_hessianOperator_stableProjection hr
   let g : E → E := ContinuousLinearMap.localStableGraphMap
     (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
-  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hg : LipschitzWith
         (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall
     intro v w
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localStableGraphMap_zero hs hu hr.le hN hsmall hN0
+  · exact ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hr hN0 hN'
   · intro v
     exact ContinuousLinearMap.apply_localStableGraphMap hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
@@ -212,13 +227,15 @@ initial displacements of backward solutions of the centred negative-gradient equ
 in `closedBall 0 r`, restricted by `norm (unstableProjection z) ≤ rho`, are exactly the graph of
 a `C`-Lipschitz map over `unstableLinearSubspace ∩ closedBall 0 rho`.
 
-The graph map vanishes at the origin, takes values in the stable linear subspace (the kernel of
-the unstable projection), and depends only on the unstable component of its input. Every such
+The graph map vanishes at the origin, has derivative zero there, takes values in the stable linear
+subspace (the kernel of the unstable projection), and depends only on the unstable component of
+its input. Thus its graph is tangent at the origin to the unstable linear subspace. Every such
 confined backward solution tends to zero in backward time. -/
 theorem exists_localUnstableSet_eq_lipschitzGraph
     (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
       LipschitzWith C g ∧ g 0 = 0 ∧
+      HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
       (∀ v, h.unstableProjection (g v) = 0) ∧
       (∀ v, g (h.unstableProjection v) = g v) ∧
       {z : E | (∃ y : ℝ → E,
@@ -235,6 +252,9 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   have hN0 : N 0 = 0 := by
     rw [hNdef]
     exact h.negativeGradientRemainder_centered_zero
+  have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
+    rw [hNdef]
+    exact h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centered_eq
@@ -249,13 +269,15 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
   let g : E → E := ContinuousLinearMap.localUnstableGraphMap
     (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
-  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hg : LipschitzWith
         (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localUnstableGraphMap hs hu hr.le hN hsmall
     intro v w
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0
+  · exact ContinuousLinearMap.hasFDerivAt_localUnstableGraphMap_zero
+      hs hu hr.le hN hsmall hr hN0 hN'
   · intro v
     have hgP := ContinuousLinearMap.apply_localUnstableGraphMap hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v

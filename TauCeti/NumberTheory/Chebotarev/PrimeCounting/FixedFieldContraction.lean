@@ -52,6 +52,11 @@ what remains, and discarding the relative primes of higher residue degree or abo
 * `NumberField.Chebotarev.frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO`: the relative
   Frobenius `ψ` of `sigma` over `L ^ <sigma>` is the fixed-field multiplicity times
   `frobeniusPsi K L C`, up to `o(x)`.
+* `NumberField.Chebotarev.frobeniusPsi_fixedField_asymptotic_iff`: hence the relative Frobenius
+  `ψ` of `sigma` is `δ x + o(x)` exactly when `frobeniusPsi K L C` is `δ x + o(x)` divided by
+  the fixed-field multiplicity.
+* `NumberField.Chebotarev.frobeniusPsi_asymptotic_of_fixedField`: its specialisation at the cyclic
+  value `δ = 1 / orderOf sigma`, which lands the Chebotarev value `#C / #G` over `K`.
 
 ## References
 
@@ -214,5 +219,50 @@ theorem frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO (C : ConjClasses 
       Set.union_sdiff_cancel fun P hP ↦ hP.1]
   simp only [u, hsplit]
   ring
+
+/-- **Linear asymptotics of Frobenius `ψ` across the cyclic fixed field.** Let `sigma` represent
+`C` and put `E = L ^ <sigma>`.  The relative Frobenius `ψ` of `sigma.toFixedFieldAlgEquiv` over `E`
+is `δ x + o(x)` exactly when `frobeniusPsi K L C` is `(δ / (#G / (#C * orderOf sigma))) x + o(x)`.
+
+This is the weighted counterpart of `hasDirichletDensity_frobeniusPrimeSet_fixedField_iff`.  It
+carries an asymptotic for the fibre of `sigma` in the **cyclic** extension `L / E` down to the
+class `C` over `K`, and conversely. -/
+theorem frobeniusPsi_fixedField_asymptotic_iff (C : ConjClasses (L ≃ₐ[K] L))
+    (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier) {δ : ℝ} :
+    (fun x : ℝ ↦ frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+        (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - δ * x) =o[atTop] (fun x : ℝ ↦ x) ↔
+      (fun x : ℝ ↦ frobeniusPsi K L C x -
+        δ / ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) * x)
+          =o[atTop] (fun x : ℝ ↦ x) := by
+  set d : ℝ := ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ)
+  have hd : d ≠ 0 := Nat.cast_ne_zero.mpr (C.card_div_card_carrier_mul_orderOf_pos sigma hsigma).ne'
+  have h := frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO C sigma hsigma
+  -- The error over `E` is the `o(x)` contraction error plus `d` times the error over `K`.
+  have key (x : ℝ) : frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+      (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - δ * x =
+        (frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+          (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - d * frobeniusPsi K L C x) +
+        d * (frobeniusPsi K L C x - δ / d * x) := by
+    field_simp
+    ring
+  simp_rw [key]
+  rw [h.add_iff_right, Asymptotics.isLittleO_const_mul_left_iff hd]
+
+/-- **Chebotarev's weighted value, from the cyclic fibre.** If the relative Frobenius `ψ` of
+`sigma` over `E = L ^ <sigma>` is `x / orderOf sigma + o(x)`, the value for a fibre of the cyclic
+extension `L / E` of degree `orderOf sigma`, then `frobeniusPsi K L C x = (#C / #G) x + o(x)`.
+
+This is the weighted counterpart of `hasDirichletDensity_frobeniusPrimeSet_of_fixedField`: it
+reduces the prime-number-theorem form of Chebotarev for an arbitrary class to the cyclic
+extension `L / E`. -/
+theorem frobeniusPsi_asymptotic_of_fixedField (C : ConjClasses (L ≃ₐ[K] L))
+    (sigma : L ≃ₐ[K] L) (hsigma : sigma ∈ C.carrier)
+    (h : (fun x : ℝ ↦ frobeniusPsi ↥(fixedField (Subgroup.zpowers sigma)) L
+        (ConjClasses.mk sigma.toFixedFieldAlgEquiv) x - 1 / orderOf sigma * x)
+          =o[atTop] (fun x : ℝ ↦ x)) :
+    (fun x : ℝ ↦ frobeniusPsi K L C x -
+      (Nat.card C.carrier / Nat.card (L ≃ₐ[K] L) : ℝ) * x) =o[atTop] (fun x : ℝ ↦ x) := by
+  exact C.one_div_orderOf_div_card_div_card_carrier_mul_orderOf (K := ℝ) sigma hsigma ▸
+    (frobeniusPsi_fixedField_asymptotic_iff C sigma hsigma).mp h
 
 end NumberField.Chebotarev

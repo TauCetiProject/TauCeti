@@ -97,9 +97,15 @@ theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattic
       integralLattice m C
         ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
           hC.toFiniteBilinearModule) := by
+  have h := toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice m ι C
+    ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
+      hC.toFiniteBilinearModule)
   apply IntegralLattice.ext
-  · rw [IntegralLattice.ofIsotropicSubgroup_carrier, integralLattice_carrier,
-      coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscriminantGroup]
-  · rw [IntegralLattice.ofIsotropicSubgroup_form, zeroLattice_form, integralLattice_form]
+  · simpa only [IntegralLattice.ofIsotropicSubgroup_carrier,
+      IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_carrier] using
+      congrArg IntegralLattice.carrier h
+  · simpa only [IntegralLattice.ofIsotropicSubgroup_form,
+      IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_form] using
+      congrArg IntegralLattice.form h
 
 end TauCeti.ConstructionA

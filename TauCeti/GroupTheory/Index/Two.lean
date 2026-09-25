@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.NthRewrite
 
@@ -23,6 +23,10 @@ subgroup, and three further elementary consequences of it are recorded here: all
 outside `N` have one and the same square, that common square squares to one, and -- for a finite
 `G` -- the elements outside `N` are exactly as many as those inside.
 
+The file also records the coset structure of an arbitrary subgroup of index two, which needs no
+inverting element: `G ⧸ N` consists of the trivial coset and the coset of any `s ∉ N`, so a finite
+sum over `G ⧸ N` has exactly those two terms.
+
 ## Main statements
 
 * `TauCeti.isMulCommutative_of_conj_eq_inv`: **a subgroup inverted by conjugation is abelian.**
@@ -32,6 +36,11 @@ outside `N` have one and the same square, that common square squares to one, and
   square, and `TauCeti.sq_sq_eq_one_of_conj_eq_inv`: that square squares to one.
 * `TauCeti.card_filter_notMem_eq_card_of_index_two`: the complement of a subgroup of index two in a
   finite group has as many elements as the subgroup.
+* `TauCeti.eq_mk_one_or_eq_mk_of_index_two`: **a subgroup of index two has exactly two cosets**,
+  the trivial one and that of any outside element, and
+  `TauCeti.sum_quotient_eq_add_of_index_two`: a finite sum over them is the sum of two terms.
+* `TauCeti.smul_mk_one_of_notMem_of_index_two` and `TauCeti.smul_mk_of_notMem_of_index_two`: an
+  element outside a subgroup of index two exchanges the two cosets.
 -/
 
 public section
@@ -109,5 +118,45 @@ theorem card_filter_notMem_eq_card_of_index_two [Fintype G] [DecidablePred (· �
   have hcard : (Finset.univ : Finset G).card = Nat.card N * 2 := by
     rw [Finset.card_univ, ← Nat.card_eq_fintype_card, ← Subgroup.card_mul_index N, hindex]
   omega
+
+/-! ### The two cosets of a subgroup of index two -/
+
+/-- The coset of an element outside `N` is not the trivial coset. No hypothesis on the index is
+needed. -/
+theorem mk_ne_mk_one_of_notMem {s : G} (hs : s ∉ N) :
+    (QuotientGroup.mk s : G ⧸ N) ≠ QuotientGroup.mk 1 := fun h =>
+  hs (by simpa using QuotientGroup.eq.1 h)
+
+/-- **A subgroup of index two has exactly two cosets**: the trivial coset and the coset of any
+element `s` outside it. -/
+theorem eq_mk_one_or_eq_mk_of_index_two (hindex : N.index = 2) {s : G} (hs : s ∉ N)
+    (u : G ⧸ N) : u = QuotientGroup.mk 1 ∨ u = QuotientGroup.mk s := by
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective u
+  by_cases hb : b ∈ N
+  · exact Or.inl (QuotientGroup.eq.2 (by simpa using hb))
+  · exact Or.inr (QuotientGroup.eq.2 ((Subgroup.mul_mem_iff_of_index_two hindex).2
+      (iff_of_false (mt N.inv_mem_iff.1 hb) hs)))
+
+/-- **A finite sum over the cosets of a subgroup of index two has two terms**, one at the trivial
+coset and one at the coset of any element `s` outside the subgroup. -/
+theorem sum_quotient_eq_add_of_index_two [Fintype (G ⧸ N)] {M : Type*} [AddCommMonoid M]
+    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (f : G ⧸ N → M) :
+    ∑ u : G ⧸ N, f u = f (QuotientGroup.mk 1) + f (QuotientGroup.mk s) :=
+  Fintype.sum_eq_add _ _ (mk_ne_mk_one_of_notMem hs).symm fun u hu =>
+    ((eq_mk_one_or_eq_mk_of_index_two hindex hs u).elim hu.1 hu.2).elim
+
+/-- An element outside a subgroup of index two carries the trivial coset to the coset of any
+other element outside it. -/
+theorem smul_mk_one_of_notMem_of_index_two (hindex : N.index = 2) {s γ : G} (hs : s ∉ N)
+    (hγ : γ ∉ N) : γ • (QuotientGroup.mk 1 : G ⧸ N) = QuotientGroup.mk s := by
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, QuotientGroup.eq]
+  exact (Subgroup.mul_mem_iff_of_index_two hindex).2 (iff_of_false (mt N.inv_mem_iff.1 hγ) hs)
+
+/-- An element outside a subgroup of index two carries the coset of any element outside it to the
+trivial coset. -/
+theorem smul_mk_of_notMem_of_index_two (hindex : N.index = 2) {s γ : G} (hs : s ∉ N)
+    (hγ : γ ∉ N) : γ • (QuotientGroup.mk s : G ⧸ N) = QuotientGroup.mk 1 := by
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq, mul_one, inv_mem_iff]
+  exact (Subgroup.mul_mem_iff_of_index_two hindex).2 (iff_of_false hγ hs)
 
 end TauCeti

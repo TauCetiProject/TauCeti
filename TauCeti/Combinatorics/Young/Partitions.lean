@@ -70,18 +70,11 @@ theorem rowLen_diagramOf_ones_le_one (n i : ℕ) :
 `n`, so there is nothing below the first row, and for `n = 0` the diagram is empty. -/
 theorem colLen_diagramOf_indiscrete_le_one (n : ℕ) :
     (diagramOf (Nat.Partition.indiscrete n)).colLen 0 ≤ 1 := by
-  have hlen : ((Nat.Partition.indiscrete n).parts.sort (· ≥ ·)).length ≤ 1 := by
-    rw [Multiset.length_sort]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · rw [Nat.Partition.indiscrete_parts hn]
-      simp
-  have hrow : (diagramOf (Nat.Partition.indiscrete n)).rowLen 1 = 0 := by
-    rw [rowLen_diagramOf, List.getD_eq_default _ _ hlen]
-  refine Nat.le_of_not_lt fun hlt => ?_
-  have hmem : ((1 : ℕ), (0 : ℕ)) ∈ diagramOf (Nat.Partition.indiscrete n) :=
-    YoungDiagram.mem_iff_lt_colLen.mpr hlt
-  exact absurd (YoungDiagram.mem_iff_lt_rowLen.mp hmem) (by omega)
+  rw [← YoungDiagram.length_rowLens, rowLens_diagramOf, Multiset.length_sort]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · rw [Nat.Partition.indiscrete_parts hn.ne']
+    simp
 
 /-- The second row of the Young diagram of the partition `(n+1, 1)` is a single cell. -/
 theorem rowLen_diagramOf_singletonSecondRow_one (n : ℕ) :

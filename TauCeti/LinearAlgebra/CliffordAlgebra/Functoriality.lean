@@ -21,6 +21,7 @@ and scalar action on the right Clifford algebra is faithful.
 ## Main results
 
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
+* `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
 -/
@@ -50,6 +51,16 @@ theorem map_star (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
   | ι m => simp
   | add x y hx hy => simp only [star_add, map_add, hx, hy]
   | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
+
+/-- The grade involution commutes with the algebra map induced by a quadratic isometry. -/
+@[simp]
+theorem map_involute (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
+    map f (involute x) = involute (map f x) := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => simp
+  | ι m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | mul x y hx hy => simp only [map_mul, hx, hy]
 
 /-- A quadratic isometry sends the even Clifford subalgebra into the even Clifford subalgebra. -/
 theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x ∈ even Q₁) :

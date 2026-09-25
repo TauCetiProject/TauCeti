@@ -49,6 +49,8 @@ The proof has two inputs, and neither suffices alone.
   `P(s) / log (1 / (s - 1)) → 1` as `s → 1⁺`.
 * `NumberField.Set.hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one`: a set of primes has
   Dirichlet density `δ` exactly when `P_S(s) / log (1 / (s - 1)) → δ`.
+* `NumberField.Set.ofReal_primeIdealZetaSum`: `P_S(t)`, cast to `ℂ`, is the complex sum over all
+  primes of the indicator of `S` against `N(𝔭) ^ (-t)`.
 
 ## References
 
@@ -205,5 +207,18 @@ theorem hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one
     refine (div_one δ ▸ h.div hratio one_ne_zero).congr' ?_
     filter_upwards [hL] with s hs
     rw [Pi.div_apply, div_div_div_cancel_right₀ hs.ne']
+
+open scoped Classical in
+/-- **The prime-ideal zeta sum as a complex indicator sum.** For real `t`, the sum `P_S(t)` of
+`N(𝔭) ^ (-t)` over `S`, cast to `ℂ`, is the sum over all height-one primes of the indicator of `S`
+divided by `N(𝔭) ^ t`. -/
+theorem ofReal_primeIdealZetaSum (S : Set (HeightOneSpectrum (𝓞 K))) (t : ℝ) :
+    (S.primeIdealZetaSum t : ℂ) = ∑' P : HeightOneSpectrum (𝓞 K),
+      (if P ∈ S then 1 else 0) / (Ideal.absNorm P.asIdeal : ℂ) ^ (t : ℂ) := by
+  rw [Set.primeIdealZetaSum_def,
+    tsum_subtype S fun P ↦ (Ideal.absNorm P.asIdeal : ℝ) ^ (-t), Complex.ofReal_tsum]
+  refine tsum_congr fun P ↦ ?_
+  by_cases h : P ∈ S <;>
+    simp [h, Real.rpow_neg (Nat.cast_nonneg _), Complex.ofReal_cpow (Nat.cast_nonneg _)]
 
 end NumberField.Set

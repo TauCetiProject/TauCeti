@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 
 /-!
@@ -34,6 +34,8 @@ finite-rank free lattice, `D(M)` is a split torus.
 * `TauCeti.GaloisDescent.groupAlgebraAction_single`: its value on a monomial.
 * `TauCeti.GaloisDescent.coeff_groupAlgebraAction`: its coefficient formula.
 * `TauCeti.GaloisDescent.groupAlgebraAction_smul`: semilinearity over the coefficient algebra.
+* `Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom`: compatibility with
+  equivariant exponent maps.
 * `TauCeti.GaloisDescent.groupAlgebraActionSemilinearEquiv`: the semilinear action.
 * `TauCeti.GaloisDescent.groupAlgebraTensorActionSemilinearEquiv`: its tensor-square action.
 * `TauCeti.GaloisDescent.counit_groupAlgebraAction`: compatibility with the counit.
@@ -148,6 +150,35 @@ theorem groupAlgebraAction_smul
     groupAlgebraAction rho sigma (a • x) =
       sigma a • groupAlgebraAction rho sigma x := by
   simp [Algebra.smul_def, MonoidAlgebra.coe_algebraMap]
+
+section Action
+
+variable {N : Type*} [AddCommGroup N]
+variable {rho : Representation ℤ (L ≃ₐ[k] L) M}
+variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
+
+/-- The map of split group algebras induced by an equivariant exponent map commutes with
+the simultaneous Galois action on coefficients and exponents. -/
+@[simp]
+theorem _root_.Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom
+    (f : Representation.IntertwiningMap rho tau)
+    (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
+    groupAlgebraAction tau sigma
+        (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative x) =
+      MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative
+        (groupAlgebraAction rho sigma x) := by
+  induction x using MonoidAlgebra.induction_on with
+  | of m =>
+      simp only [MonoidAlgebra.of_apply, MonoidAlgebra.mapDomainBialgHom_single,
+        groupAlgebraAction_single, AddMonoidHom.coe_toMultiplicative,
+        Function.comp_apply, toAdd_ofAdd, LinearMap.toAddMonoidHom_coe,
+        Representation.IntertwiningMap.coe_toLinearMap]
+      rw [Representation.IntertwiningMap.isIntertwining rho tau f sigma]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | smul a x hx =>
+      simp only [map_smul, groupAlgebraAction_smul, hx]
+
+end Action
 
 /-- The automorphism action packaged as a semilinear equivalence over its automorphism of `L`.
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Binary.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.TwoPowTypeII
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
@@ -47,13 +48,21 @@ theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
 theorem IsTypeII.eq_euclideanDual (hC : IsTypeII C) : C = C.euclideanDual :=
   hC.2
 
+/-- Over `ℤ/2 = ℤ/2^1`, the Type II condition for codes over `ℤ/2^r` is the binary Type II
+condition: binary Euclidean weights are Hamming weights. -/
+theorem _root_.TauCeti.TwoPowCode.isTypeII_one_iff :
+    TwoPowCode.IsTypeII 1 C.toAddSubgroup ↔ IsTypeII C := by
+  rw [TwoPowCode.isTypeII_iff, IsTypeII, isDoublyEven_iff, and_comm]
+  simp
+
 /-- A Type II binary code has length divisible by eight. -/
 theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   classical
   have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC.eq_euclideanDual
   have hn : Fintype.card ι = 2 * (Fintype.card ι / 2) := by omega
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
-    rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
+    rw [Submodule.natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.card_zmod, Nat.cast_pow,
+      Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
     simpa [aeval_weightEnumerator_diag _ (Set.toFinite _)] using h

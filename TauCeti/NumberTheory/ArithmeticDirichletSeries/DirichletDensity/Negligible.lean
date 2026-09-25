@@ -31,7 +31,8 @@ restricted to the primes of residue degree one.
 * `NumberField.Set.hasDirichletDensity_zero_of_summable`: a set of primes with
   `∑_{𝔭 ∈ S} N(𝔭)⁻¹ < ∞` has Dirichlet density zero.
 * `NumberField.Set.hasDirichletDensity_of_finite`: a finite set of primes has Dirichlet density
-  zero.
+  zero, so a set of nonzero Dirichlet density is infinite
+  (`NumberField.Set.HasDirichletDensity.infinite`).
 * `NumberField.Set.hasDirichletDensity_iff_of_symmDiff`: sets whose symmetric difference has
   density zero have the same densities; `NumberField.Set.hasDirichletDensity_iff_of_finite_symmDiff`
   is the case of a finite symmetric difference.
@@ -89,6 +90,11 @@ theorem hasDirichletDensity_of_finite (hS : S.Finite) : S.HasDirichletDensity 0 
   refine hasDirichletDensity_zero_of_eventually_le (C := S.ncard) ?_
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
   exact primeIdealZetaSum_le_card_of_finite hS (by linarith)
+
+/-- **Sets of nonzero density are infinite.** A set of primes with a nonzero Dirichlet density
+is infinite, because a finite set of primes has Dirichlet density zero. -/
+theorem HasDirichletDensity.infinite (hS : S.HasDirichletDensity δ) (hδ : δ ≠ 0) : S.Infinite :=
+  fun hfin ↦ hδ (hS.unique (hasDirichletDensity_of_finite hfin))
 
 /-- **Subsets of sets of density zero have density zero.** -/
 theorem HasDirichletDensity.zero_of_subset (hT : T.HasDirichletDensity 0) (hST : S ⊆ T) :

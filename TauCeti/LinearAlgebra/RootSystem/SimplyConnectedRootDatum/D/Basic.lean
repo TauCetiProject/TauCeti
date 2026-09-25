@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 
 /-!
 # The simply connected root datum of type `Dₙ`
@@ -388,6 +389,92 @@ indices. -/
     {k : Fin (2 * n * (n - 1))} :
     k ∈ (typeDSimplyConnectedBase n hn).support ↔ (k : ℕ) < n :=
   mem_typeDSimpleSupport hn
+
+private noncomputable def typeDSimpleSupportEquiv (hn : 4 ≤ n) :
+    Fin n ≃ (typeDSimplyConnectedBase n hn).support :=
+  Equiv.ofBijective (fun i =>
+    (⟨typeDSimpleIndex n hn i, by simp⟩ : (typeDSimplyConnectedBase n hn).support))
+    (by
+      constructor
+      · intro i j hij
+        exact typeDSimpleIndex_injective hn (congrArg Subtype.val hij)
+      · rintro ⟨j, hj⟩
+        have hjlt := (mem_typeDSimplyConnectedBase_support hn).mp hj
+        refine ⟨⟨j, hjlt⟩, ?_⟩
+        apply Subtype.ext
+        apply Fin.ext
+        simp [typeDSimpleIndex_val])
+
+private lemma sum_typeDSimpleSupport {α : Type*} [AddCommMonoid α] (hn : 4 ≤ n)
+    (f : Fin n → α) :
+    ∑ j ∈ (typeDSimplyConnectedBase n hn).support,
+      (if h : (j : ℕ) < n then f ⟨j, h⟩ else 0) = ∑ i : Fin n, f i := by
+  let e := typeDSimpleSupportEquiv hn
+  let _ : Fintype (typeDSimplyConnectedBase n hn).support := Fintype.ofEquiv (Fin n) e
+  have he_apply (i : Fin n) : (e i : Fin (2 * n * (n - 1))) = typeDSimpleIndex n hn i := by
+    rfl
+  calc
+    _ = ∑ j : (typeDSimplyConnectedBase n hn).support,
+        (if h : (j : ℕ) < n then f ⟨j, h⟩ else 0) := by
+      simpa using Finset.sum_subtype (typeDSimplyConnectedBase n hn).support
+        (p := fun j => j ∈ (typeDSimplyConnectedBase n hn).support) (by simp)
+        (fun j => if h : (j : ℕ) < n then f ⟨j, h⟩ else 0)
+    _ = ∑ i : Fin n, (if h : ((e i : Fin (2 * n * (n - 1))) : ℕ) < n then
+        f ⟨(e i : Fin (2 * n * (n - 1))), h⟩ else 0) :=
+      (e.sum_comp (fun j => if h : (j : ℕ) < n then f ⟨j, h⟩ else 0)).symm
+    _ = ∑ i : Fin n, f i := by
+      apply Finset.sum_congr rfl
+      intro i hi
+      rw [he_apply]
+      simp
+
+/-! ## Positive roots in the pinned coordinates -/
+
+/-- Positive roots of the pinned type `Dₙ` datum are exactly those whose classical simple-root
+coordinates are nonnegative. This sign criterion is the orientation input for the compatible
+Borel and its positive nilradical; it does not itself construct that nilradical.
+-/
+theorem mem_posRoots_typeDSimplyConnectedBase_iff_nonneg (hn : 4 ≤ n)
+    (k : Fin (2 * n * (n - 1))) :
+    k ∈ posRoots (typeDSimplyConnectedRootDatum n hn) (typeDSimplyConnectedBase n hn) ↔
+      ∀ i, 0 ≤ typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i := by
+  let coeff : Fin (2 * n * (n - 1)) → ℤ := fun j =>
+    if h : (j : ℕ) < n then typeDSimpleRootCoordinates n hn
+      (typeDRootEquiv n hn k) ⟨j, h⟩ else 0
+  have hcoeff := sum_typeDSimpleSupport hn
+    (fun i => typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i)
+  have hroot : (typeDSimplyConnectedRootDatum n hn).root k =
+      ∑ j ∈ (typeDSimplyConnectedBase n hn).support, coeff j •
+        (typeDSimplyConnectedRootDatum n hn).root j := by
+    rw [← sum_smul_root_typeDSimpleIndex hn k]
+    rw [← sum_typeDSimpleSupport hn (fun i =>
+      typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i •
+        (typeDSimplyConnectedRootDatum n hn).root (typeDSimpleIndex n hn i))]
+    apply Finset.sum_congr rfl
+    intro j hj
+    have hjlt := (mem_typeDSimplyConnectedBase_support hn).mp hj
+    have hindex : typeDSimpleIndex n hn ⟨j, hjlt⟩ = j := by
+      apply Fin.ext
+      simp [typeDSimpleIndex_val]
+    simp only [dite_eq_left hjlt]
+    rw [hindex]
+    simp [coeff, hjlt]
+  rw [mem_posRoots]
+  constructor
+  · intro hk
+    rw [RootPairing.Base.isPos_iff,
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff] at hk
+    obtain hnonneg | hnonpos :=
+      typeDSimpleRootCoordinates_nonneg_or_nonpos hn (typeDRootEquiv n hn k)
+    · exact hnonneg
+    · exfalso
+      have hsum_nonpos : (∑ i : Fin n, typeDSimpleRootCoordinates n hn
+          (typeDRootEquiv n hn k) i) ≤ 0 := Finset.sum_nonpos fun i _ => hnonpos i
+      exact (not_lt_of_ge hsum_nonpos hk).elim
+  · intro hnonneg
+    rw [RootPairing.Base.isPos_iff',
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff]
+    exact Finset.sum_nonneg fun i _ => hnonneg i
 
 /-- **The pinned datum of type `Dₙ` has Cartan type `D n`.** Its Bourbaki-numbered base realizes
 the standard Cartan matrix `CartanMatrix.D n`, with the node numbering of `TauCeti.DynkinType`. -/

@@ -158,7 +158,7 @@ theorem sign_eq_one_or_card_fixedPoints_eq_one_perm_fin_three (σ : Equiv.Perm (
 for the number of points that `σ` fixes, `sgn σ · F = sgn σ + F - 1` in any ring. This is the
 ring-valued form of `TauCeti.sign_eq_one_or_card_fixedPoints_eq_one_perm_fin_three`, and it is what
 turns the product of the sign character of `S₃` with a permutation character into a sum. -/
-theorem sign_mul_card_fixedPoints_fin_three {k : Type*} [Ring k] (σ : Equiv.Perm (Fin 3)) :
+theorem sign_mul_card_fixedPoints_fin_three {k : Type*} [NonAssocRing k] (σ : Equiv.Perm (Fin 3)) :
     ((Equiv.Perm.sign σ : ℤ) : k) * (Nat.card {x : Fin 3 // σ • x = x} : k)
       = ((Equiv.Perm.sign σ : ℤ) : k) + (Nat.card {x : Fin 3 // σ • x = x} : k) - 1 := by
   rcases sign_eq_one_or_card_fixedPoints_eq_one_perm_fin_three σ with h | h <;> rw [h] <;> simp
