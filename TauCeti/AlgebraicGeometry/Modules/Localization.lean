@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Sections of quasi-coherent modules over basic opens
@@ -27,9 +28,6 @@ the general case is reduced to it by restricting `M` along the open immersion
 
 ## Main declarations
 
-* `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom`: restricting sections of
-  `𝒪_X` from `U` and transporting them along `hU.fromSpec` is restriction of global sections of
-  `Spec Γ(X, U)`;
 * `AlgebraicGeometry.Scheme.Modules.moduleBasicOpen`: for `f ∈ Γ(X, U)`, the sections
   `Γ(M, X.basicOpen f)` form a `Γ(X, U)`-module by restriction of scalars;
 * `AlgebraicGeometry.Scheme.Modules.basicOpenRestrict`: the restriction map
@@ -55,21 +53,6 @@ universe u
 noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
-
-/-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
-restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`
-gives the restriction to `V` of the corresponding global section of `Spec Γ(X, U)`. -/
-@[reassoc]
-theorem _root_.AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom
-    (hU : IsAffineOpen U) (V : (Spec Γ(X, U)).Opens) :
-    X.presheaf.map (homOfLE (by
-        simpa [hU.opensRange_fromSpec] using hU.fromSpec.image_le_opensRange V)).op ≫
-      (hU.fromSpec.appIso V).hom =
-      (Scheme.ΓSpecIso Γ(X, U)).inv ≫ (Spec Γ(X, U)).presheaf.map V.leTop.op := by
-  rw [← hU.fromSpec.appLE_appIso_inv (by simp [hU.fromSpec_preimage_self]), Category.assoc,
-    Iso.inv_hom_id, Category.comp_id, Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc,
-    ← Functor.map_comp]
-  rfl
 
 variable (M : X.Modules)
 
@@ -159,10 +142,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
       rfl
     exact LinearMap.ext fun x ↦ ConcreteCategory.congr_hom h x
   have h₁iso : IsIso (M.presheaf.map (homOfLE h₁.le).op) := by
-    rw [show homOfLE h₁.le = eqToHom h₁ from Subsingleton.elim _ _]
+    have : IsIso (homOfLE h₁.le) := homOfLE_isIso_of_eq _ h₁
     infer_instance
   have h₂iso : IsIso (M.presheaf.map (homOfLE h₂.ge).op) := by
-    rw [show homOfLE h₂.ge = eqToHom h₂.symm from Subsingleton.elim _ _]
+    have : IsIso (homOfLE h₂.ge) := homOfLE_isIso_of_eq _ h₂.symm
     infer_instance
   have he₁ : Function.Bijective e₁ := ConcreteCategory.bijective_of_isIso
     (M.presheaf.map (homOfLE h₁.le).op ≫ (M.restrictAppIso hU.fromSpec ⊤).inv)
