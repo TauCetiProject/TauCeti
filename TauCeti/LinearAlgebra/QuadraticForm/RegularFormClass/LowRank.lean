@@ -40,6 +40,8 @@ have isometric pure norm forms.
 
 ## References
 
+* [Tau Ceti roadmap, QuadraticFormInvariants, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/QuadraticFormInvariants/README.md):
+  the classification blueprint using padding, discriminant scaling, and quaternion pure norms.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §3, (3.21).
 -/
@@ -57,56 +59,6 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 namespace RegularFormClass
 
 open BrauerGroup
-
-/-- **The Hasse invariant of a pure quaternion norm form**: the ternary form `⟨-a, -b, ab⟩`, which
-is the norm form of `ℍ[K,a,b]` on its pure quaternions, has Hasse invariant
-`[(a, b)] · [(-1, -1)]`. -/
-theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
-    hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
-      quaternionClass a b * quaternionClass (-1) (-1) := by
-  have hexp : hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
-      quaternionClass (-a) (-b) * quaternionClass (-a) (a * b) * quaternionClass (-b) (a * b) := by
-    simp [Fin.prod_univ_succ, mul_assoc]
-  have hneg (c d : Kˣ) : quaternionClass (-c) d = quaternionClass (-1) d * quaternionClass c d := by
-    rw [← quaternionClass_mul_left, neg_one_mul]
-  rw [hexp, hneg a (-b), hneg a (a * b), hneg b (a * b), quaternionClass_comm (-1) (-b),
-    hneg b (-1), quaternionClass_comm a (-b), hneg b a]
-  simp only [quaternionClass_mul, quaternionClass_self a, quaternionClass_self b]
-  rw [quaternionClass_comm a (-1), quaternionClass_comm b (-1), quaternionClass_comm b a]
-  -- Every symbol other than `[(a, b)]` and `[(-1, -1)]` now occurs an even number of times.
-  calc _ = quaternionClass a b * quaternionClass (-1) (-1) *
-        ((quaternionClass (-1) a * quaternionClass (-1) a) *
-          (quaternionClass (-1) a * quaternionClass (-1) a) *
-          (quaternionClass (-1) b * quaternionClass (-1) b) *
-          (quaternionClass (-1) b * quaternionClass (-1) b) *
-          (quaternionClass a b * quaternionClass a b)) := by ac_rfl
-    _ = _ := by simp only [← pow_two, quaternionClass_sq, one_pow, mul_one]
-
-/-- **A ternary form of trivial discriminant is a pure quaternion norm form**: a class of rank
-three and trivial discriminant is the class of `⟨-a, -b, ab⟩` for some units `a` and `b`. -/
-theorem exists_eq_mk_neg_neg_mul {x : RegularFormClass K} (hr : x.rank = 3) (hd : discr x = 0) :
-    ∃ a b : Kˣ, x = Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩ := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨n, w⟩ := p
-    rw [rank_mk] at hr
-    subst hr
-    rw [discr_mk, squareClass_eq_zero_iff, Fin.prod_univ_three] at hd
-    obtain ⟨t, ht⟩ := hd
-    refine ⟨-w 0, -w 1, ?_⟩
-    rw [mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
-      presentedForm_eq_weightedSumSquares_coe]
-    refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares
-      ![1, 1, t * (w 0 * w 1)⁻¹] ?_⟩
-    intro i
-    fin_cases i
-    · simp
-    · simp
-    · have ht' : (w 0 : K) * w 1 * w 2 = t * t := by simpa using congrArg Units.val ht
-      simp only [Fin.isValue, neg_neg, mul_neg, neg_mul, Fin.reduceFinMk, Matrix.cons_val,
-        Units.val_mul, mul_inv_rev, Units.val_inv_eq_inv_val]
-      field_simp
-      linear_combination -ht'
 
 /-- Classes of rank three and trivial discriminant with the same Hasse invariant are equal. -/
 private theorem eq_of_rank_eq_three_of_discr_eq_zero {x y : RegularFormClass K}
@@ -138,6 +90,7 @@ private theorem eq_of_rank_eq_three {x y : RegularFormClass K} (hx : x.rank = 3)
   -- Scaling by the discriminant `δ` makes both discriminants trivial.
   have hdisc (z : RegularFormClass K) (hz : z.rank = 3) (hdz : discr z = discr x) :
       discr (r * z) = 0 := by
+    -- After `succ_nsmul`, rewrite `3 + 1` as `2 * 2` to use the square-class exponent-two law.
     rw [discr_mk_rankOne_mul, hz, hdz, ← hδ, ← succ_nsmul, show 3 + 1 = 2 * 2 from rfl, mul_nsmul,
       h2, nsmul_zero]
   have hrank (z : RegularFormClass K) (hz : z.rank = 3) : (r * z).rank = 3 := by

@@ -56,6 +56,8 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
+* `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of the pure
+  quaternion norm form `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
@@ -329,6 +331,31 @@ theorem hasseInvariant_sq (x : RegularFormClass K) : hasseInvariant x ^ 2 = 1 :=
     refine prod_eq_one fun i _ => ?_
     rw [← prod_pow]
     exact prod_eq_one fun j _ => quaternionClass_sq _ _
+
+/-- **The Hasse invariant of a pure quaternion norm form**: the ternary form `⟨-a, -b, ab⟩`, which
+is the norm form of `ℍ[K,a,b]` on its pure quaternions, has Hasse invariant
+`[(a, b)] · [(-1, -1)]`. -/
+@[simp 1100]
+theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      quaternionClass a b * quaternionClass (-1) (-1) := by
+  have hexp : hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      quaternionClass (-a) (-b) * quaternionClass (-a) (a * b) * quaternionClass (-b) (a * b) := by
+    simp [Fin.prod_univ_succ, mul_assoc]
+  have hneg (c d : Kˣ) : quaternionClass (-c) d = quaternionClass (-1) d * quaternionClass c d := by
+    rw [← quaternionClass_mul_left, neg_one_mul]
+  rw [hexp, hneg a (-b), hneg a (a * b), hneg b (a * b), quaternionClass_comm (-1) (-b),
+    hneg b (-1), quaternionClass_comm a (-b), hneg b a]
+  simp only [quaternionClass_mul, quaternionClass_self a, quaternionClass_self b]
+  rw [quaternionClass_comm a (-1), quaternionClass_comm b (-1), quaternionClass_comm b a]
+  -- Every symbol other than `[(a, b)]` and `[(-1, -1)]` now occurs an even number of times.
+  calc _ = quaternionClass a b * quaternionClass (-1) (-1) *
+        ((quaternionClass (-1) a * quaternionClass (-1) a) *
+          (quaternionClass (-1) a * quaternionClass (-1) a) *
+          (quaternionClass (-1) b * quaternionClass (-1) b) *
+          (quaternionClass (-1) b * quaternionClass (-1) b) *
+          (quaternionClass a b * quaternionClass a b)) := by ac_rfl
+    _ = _ := by simp only [← pow_two, quaternionClass_sq, one_pow, mul_one]
 
 end RegularFormClass
 
