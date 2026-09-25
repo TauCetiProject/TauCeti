@@ -38,9 +38,10 @@ characteristic two every function field of genus two is hyperelliptic.
 
 The models `y² = f(x)` go the other way. Away from characteristic two, if `F = k(x)(y)` with
 `y² = f(x)` for a squarefree polynomial `f` of degree `m`, and `k` is the exact constant field,
-then `F` has genus `⌊(m - 1) / 2⌋`. The ramified places of `F / k(x)` lie over the irreducible
-factors of `f`, and over the place at infinity when `m` is odd. Each has different exponent one,
-so `deg Diff(F / k(x)) = m + m % 2`, and the Hurwitz genus formula gives the genus.
+then `F` has genus `⌊(m - 1) / 2⌋` when `m` is positive.  If `f` is constant, the hypotheses
+instead force `F = k(x)`, of genus zero.  The ramified places of `F / k(x)` lie over the
+irreducible factors of `f`, and over the place at infinity when `m` is odd. Each has different
+exponent one, so `deg Diff(F / k(x)) = m + m % 2`, and the Hurwitz genus formula gives the genus.
 
 ## Main definitions
 
@@ -58,8 +59,8 @@ so `deg Diff(F / k(x)) = m + m % 2`, and the Hurwitz genus formula gives the gen
   subfield, and away from characteristic two makes `F` hyperelliptic.
 * `TauCeti.finrank_eq_two_of_sq_eq_of_squarefree`: `[F : k(x)] = 2` for `y² = f(x)` with `f`
   squarefree and nonconstant.
-* `TauCeti.genus_eq_natDegree_sub_one_div_two_of_sq_eq`: `y² = f(x)` with `f` squarefree has genus
-  `⌊(deg f - 1) / 2⌋`.
+* `TauCeti.genus_eq_natDegree_sub_one_div_two_of_sq_eq`: for squarefree `f` of positive degree,
+  `y² = f(x)` has genus `⌊(deg f - 1) / 2⌋`; for constant `f`, it has genus zero.
 
 ## References
 
@@ -255,6 +256,18 @@ theorem Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_i
       WeilDivisor.coeff_ofPoint_of_ne (Place.adicOfIrreducible_ne_infty hq)]
     split_ifs <;> omega
 
+/-- The radical branch divisor of a squarefree polynomial on `k(x)` has degree
+`deg f + deg f % 2`. -/
+theorem Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree {f : k[X]}
+    (hf : Squarefree f) :
+    Divisor.degree (radicalBranch (IsFunctionField.ratFunc k) 2
+      (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf.ne_zero)) =
+      f.natDegree + f.natDegree % 2 := by
+  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
+    Divisor.degree_add, Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint,
+    Place.degree_infty]
+  norm_num
+
 variable [Algebra (RatFunc k) F]
 
 omit [Algebra k F] in
@@ -287,18 +300,15 @@ theorem Divisor.degree_different_eq_natDegree_add_mod_of_sq_eq (h2 : (2 : k) ≠
   have hu : algebraMap k[X] (RatFunc k) f ≠ 0 := RatFunc.algebraMap_ne_zero hf.ne_zero
   have h := Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k F
     (IsFunctionField.ratFunc k) Nat.prime_two hgen hy (by exact_mod_cast h2) hu
-  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
-    Divisor.degree_add,
-    Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint, Place.degree_infty] at h
+  rw [Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree hf] at h
   norm_num at h
   exact_mod_cast h
 
 /-- **The genus of `y² = f(x)`** (Stichtenoth, Proposition 6.2.3(b)): away from characteristic
 two, if `F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, and `k` is the exact field
-of constants of `F`, then `F` has genus `⌊(deg f - 1) / 2⌋`, that is `(m - 1) / 2` for `m = deg f`
-odd and `(m - 2) / 2` for `m` even.  In particular `F` has genus at least two once `deg f ≥ 5`.
-
-For constant `f` the hypotheses force `F = k(x)`, of genus `0`, in accordance with the formula. -/
+of constants of `F`, then for positive `m = deg f`, `F` has genus `⌊(m - 1) / 2⌋`, that is
+`(m - 1) / 2` for `m` odd and `(m - 2) / 2` for `m` even.  In particular `F` has genus at least
+two once `deg f ≥ 5`. For constant `f`, the hypotheses force `F = k(x)`, of genus `0`. -/
 theorem genus_eq_natDegree_sub_one_div_two_of_sq_eq (h2 : (2 : k) ≠ 0)
     (hex : IsIntegrallyClosedIn k F) {f : k[X]} (hf : Squarefree f) {y : F}
     (hgen : (RatFunc k)⟮y⟯ = ⊤)
@@ -325,9 +335,8 @@ theorem genus_eq_natDegree_sub_one_div_two_of_sq_eq (h2 : (2 : k) ≠ 0)
   have h := hurwitz_genus_formula_of_pow_eq_of_prime (IsFunctionField.ratFunc k)
     (isFunctionField_iff_functionField.mpr inferInstance) isIntegrallyClosedIn_ratFunc hex
     Nat.prime_two hgen hy (by exact_mod_cast h2) hu
-  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
-    Divisor.degree_add, Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint,
-    Place.degree_infty, genus_ratFunc, Module.finrank_self, hN] at h
+  rw [Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree hf, genus_ratFunc,
+    Module.finrank_self, hN] at h
   norm_num at h
   by_cases hm : f.natDegree = 0 <;>
     simp only [hm, ↓reduceIte] at h <;> omega

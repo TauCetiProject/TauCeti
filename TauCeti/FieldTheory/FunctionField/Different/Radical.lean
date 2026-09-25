@@ -257,6 +257,7 @@ theorem coeff_radicalBranch (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
 
 /-- A place occurs in the radical branch divisor exactly when the exponent does not divide the
 order of the radicand there. -/
+@[simp]
 theorem mem_support_radicalBranch_iff (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
     P ∈ (radicalBranch hF n u hu).support ↔ ¬ (n : ℤ) ∣ P.ord u := by
   classical

@@ -79,6 +79,7 @@ theorem ord_adicOfIrreducible_algebraMap_irreducible {q p : k[X]} (hq : Irreduci
 open scoped Classical in
 /-- A squarefree polynomial has order one at the finite place of each of its irreducible factors,
 and order zero at every other finite place. -/
+@[simp]
 theorem ord_adicOfIrreducible_algebraMap_of_squarefree {q r : k[X]} (hq : Irreducible q)
     (hr : Squarefree r) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = if q ∣ r then 1 else 0 := by
