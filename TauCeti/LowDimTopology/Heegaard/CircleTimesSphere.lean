@@ -150,13 +150,11 @@ def circleTimesSphereGenerator (r : Fin 3) (a : Fin 2) : (circleTimesSphere r).G
     (fun _ => Subsingleton.elim _ _)
 
 /-- The unique point chosen by `circleTimesSphereGenerator r a` is `a`. -/
-@[simp]
 theorem circleTimesSphereGenerator_point (r : Fin 3) (a : Fin 2) (i : Fin 1) :
     (circleTimesSphere r).point (circleTimesSphereGenerator r a) i = a := by
   simp [circleTimesSphereGenerator]
 
 /-- The generator chain is supported at its chosen intersection point. -/
-@[simp]
 theorem generatorChain_circleTimesSphereGenerator (r : Fin 3) (a q : Fin 2) :
     (circleTimesSphere r).generatorChain (circleTimesSphereGenerator r a) q =
       if a = q then 1 else 0 := by
