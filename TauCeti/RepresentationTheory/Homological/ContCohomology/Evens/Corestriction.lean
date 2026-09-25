@@ -18,8 +18,8 @@ import Mathlib.GroupTheory.IndexNormal
 Let `U` be an open subgroup of index two in a topological group `G`, choose `s ∉ U`, and let
 `α : U →* Multiplicative (ZMod 2)` be continuous.  The degree-one corestriction of the class of
 `α` is represented by the sum `b₁ + b_s` of the two Shapiro components used in the graph
-cochain.  The individual components are not cocycles, so the formula is necessarily an equality
-between the corestriction class and the class of their sum.
+cochain.  The individual components need not be cocycles, whereas their sum always is, so the
+formula is an equality between the corestriction class and the class of that sum.
 
 Everything here lives in the explicit inhomogeneous model: corestriction is `explicitCor1` and
 both sides of the formula are classes in `H1`.  The formula holds for an arbitrary representative
@@ -127,10 +127,11 @@ theorem coe_evensCorCocycle (U : OpenSubgroup G) (s : G)
   (rfl)
 
 /-- At index two, degree-one corestriction is represented by the sum `b₁ + b_s` of the two
-Shapiro components.  Neither summand is a cocycle on its own; the equation is between the
-corestriction class and the class of their sum, in the explicit inhomogeneous model `H1` that
-carries the corestriction `explicitCor1`.  This is the model computation behind the Evens-norm
-corestriction identity, not a statement about canonical `continuousCohomology` classes. -/
+Shapiro components.  Neither summand need be a cocycle on its own, whereas their sum always
+is; the equation is between the corestriction class and the class of that sum, in the explicit
+inhomogeneous model `H1` that carries the corestriction `explicitCor1`.  This is the model
+computation behind the Evens-norm corestriction identity, not a statement about canonical
+`continuousCohomology` classes. -/
 theorem explicitCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (s : G) (hs : s ∉ U) (α : U.toSubgroup →* Multiplicative (ZMod 2))
     (hα : Continuous α) :
