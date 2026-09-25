@@ -64,6 +64,31 @@ instance instIsProbabilityMeasureRowCodingArrayLaw
   rw [rowCodingArrayLaw_def]
   infer_instance
 
+/-- Separate exchangeability of an array is equivalent to representing its law by a
+column-invariant row-coding array law. -/
+theorem separatelyExchangeable_iff_exists_rowCodingArrayLaw
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ × ℕ → Ω → α} (hX : ∀ p, AEMeasurable (X p) μ) :
+    SeparatelyExchangeable μ X ↔
+      ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
+        (∀ τ : Equiv.Perm ℕ,
+          (π : Measure (ProbabilityMeasure (ℕ → α))).map
+            (fun P ↦ P.map (fun x : ℕ → α ↦ fun k ↦ x (τ k))) = π) ∧
+          μ.map (fun ω p ↦ X p ω) = rowCodingArrayLaw π := by
+  simpa only [rowCodingArrayLaw_def] using
+    separatelyExchangeable_iff_exists_coding (α := α) hX
+
+/-- A column-invariant mixing law gives a separately exchangeable row-coding array law. -/
+theorem separatelyExchangeable_rowCodingArrayLaw
+    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π]
+    (hπ : ∀ τ : Equiv.Perm ℕ,
+      π.map (fun P ↦ P.map (fun x : ℕ → α ↦ fun k ↦ x (τ k))) = π) :
+    SeparatelyExchangeable (rowCodingArrayLaw π) (fun p x ↦ x p) := by
+  apply (separatelyExchangeable_iff_exists_rowCodingArrayLaw
+    (μ := rowCodingArrayLaw π) (X := fun p x ↦ x p)
+    (fun p ↦ (measurable_pi_apply p).aemeasurable)).2
+  exact ⟨⟨π, inferInstance⟩, hπ, by simp⟩
+
 /-- Currying the canonical row-coding array law gives the de Finetti barycenter of its mixing
 law. This identifies the parameter law from the array law. -/
 @[simp]
@@ -77,7 +102,7 @@ theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → �
   rw [h, Measure.map_id]
 
 /-- The row-coding array law determines every finite mixing law on path measures. -/
-theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
+theorem eq_of_rowCodingArrayLaw_eq {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
     [IsFiniteMeasure π₁]
     (h : rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂) : π₁ = π₂ := by
   apply TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq
@@ -90,7 +115,7 @@ theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (
 theorem rowCodingArrayLaw_eq_iff {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
     [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
-  ⟨rowCodingArrayLaw_injective, fun h ↦ congrArg rowCodingArrayLaw h⟩
+  ⟨eq_of_rowCodingArrayLaw_eq, fun h ↦ congrArg rowCodingArrayLaw h⟩
 
 /-- **Canonical row-coding representation.** A separately exchangeable array has a unique law on
 path measures which is invariant under column reindexing and whose row-coding array law is the
@@ -110,7 +135,7 @@ theorem SeparatelyExchangeable.existsUnique_rowCodingArrayLaw
     exact hlaw
   · intro π' hπ'
     apply ProbabilityMeasure.toMeasure_injective
-    apply rowCodingArrayLaw_injective
+    apply eq_of_rowCodingArrayLaw_eq
     exact hπ'.2.symm.trans (by
       rw [rowCodingArrayLaw_def]
       exact hlaw)
