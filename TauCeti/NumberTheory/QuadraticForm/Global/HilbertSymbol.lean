@@ -35,8 +35,6 @@ invariant of a global form.
 
 ## References
 
-* `TauCetiRoadmap/GlobalQuadraticForms/README.md`, Layer 4.4 (finite support for the localized
-  Hilbert symbol).
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 63:11, 66:6 and 71:18.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.2, Theorem 1.
 -/
