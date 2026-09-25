@@ -319,6 +319,7 @@ noncomputable instance : CommMonoid (MultiplicativeIdealWeight K) where
 
 /-- A positive power of a weight is computed pointwise. The exponent must be nonzero: `χ ^ 0` is
 the trivial weight, which vanishes at `⊥`, while `χ ⊥ ^ 0 = 1`. -/
+@[simp]
 theorem pow_apply (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0) (I : Ideal (𝓞 K)) :
     (χ ^ n) I = χ I ^ n := by
   induction n with

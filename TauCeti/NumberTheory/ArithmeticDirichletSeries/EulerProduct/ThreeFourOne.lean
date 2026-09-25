@@ -27,19 +27,6 @@ the analytic criterion `TauCeti.LSeries.ne_zero_of_threeFourOne`: a continuation
 that is differentiable at `1 + it` does not vanish there, provided `L(χ₀, σ) = O((σ - 1)⁻¹)` as
 `σ → 1⁺` and `L(χ², ·)` continues continuously to `1 + 2it`.
 
-Each `L`-series is the exponential of a sum of principal logarithms over the primes
-(`TauCeti.MultiplicativeIdealWeight.exp_tsum_neg_log_one_sub_eq_LSeries`), so the norm of the
-product is the exponential of the sum over the primes `𝔭` of the real part of
-
-```text
-3 (-log (1 - χ₀(𝔭) N(𝔭)^{-σ})) + 4 (-log (1 - χ(𝔭) N(𝔭)^{-σ-it}))
-  + (-log (1 - χ(𝔭)² N(𝔭)^{-σ-2it})).
-```
-
-At a prime where `χ₀` vanishes all three terms vanish; at every other prime `χ₀(𝔭) = 1` and the
-term is nonnegative by the local inequality
-`TauCeti.LSeries.threeFourOne_re_neg_log_one_sub_nonneg`.
-
 ## Main results
 
 * `TauCeti.UnitaryIdealWeight.norm_LSeries_threeFourOne_ge_one`: the `3-4-1` bound for a unitary
@@ -121,17 +108,20 @@ theorem norm_LSeries_threeFourOne_ge_one (χ : UnitaryIdealWeight K)
     1 ≤ ‖LSeries (normCoeff K χ₀.toIdealArithmeticFunction) σ ^ 3 *
       LSeries (normCoeff K χ.toIdealArithmeticFunction) ((σ : ℂ) + I * t) ^ 4 *
       LSeries (normCoeff K (χ ^ 2).toIdealArithmeticFunction) ((σ : ℂ) + 2 * I * t)‖ := by
+  -- Express each factor as an exponential of a prime logarithm sum. At a bad prime of `χ₀`
+  -- all three local terms vanish; at every other prime the scalar 3-4-1 bound applies.
   have hS₀ := summable_idealTerm_of_bounded_of_one_lt_re
     (f := χ₀.toIdealArithmeticFunction) (C := 1) (s := (σ : ℂ))
     (fun I ↦ (χ₀.toIdealArithmeticFunction_apply I).symm ▸ h₀.norm_apply_le_one) (by simpa using hσ)
-  have hS₁ := summable_idealTerm_of_bounded_of_one_lt_re
-    (f := χ.1.toIdealArithmeticFunction) (C := 1)
-    (fun I ↦ (χ.1.toIdealArithmeticFunction_apply I).symm ▸ χ.norm_le_one I)
-    (s := (σ : ℂ) + I * t) (by simpa using hσ)
-  have hS₂ := summable_idealTerm_of_bounded_of_one_lt_re
-    (f := (χ ^ 2).1.toIdealArithmeticFunction) (C := 1)
-    (fun I ↦ ((χ ^ 2).1.toIdealArithmeticFunction_apply I).symm ▸ (χ ^ 2).norm_le_one I)
-    (s := (σ : ℂ) + 2 * I * t) (by simpa using hσ)
+  have hS₁ : Summable (idealTerm K χ.1.toIdealArithmeticFunction ((σ : ℂ) + I * t)) := by
+    simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using
+      summable_idealTerm_of_unitary_of_one_lt_re χ (s := (σ : ℂ) + I * t)
+        (by simpa using hσ)
+  have hS₂ : Summable (idealTerm K (χ ^ 2).1.toIdealArithmeticFunction
+      ((σ : ℂ) + 2 * I * t)) := by
+    rw [← (χ ^ 2).toIdealArithmeticFunction_eq_val]
+    exact summable_idealTerm_of_unitary_of_one_lt_re (χ ^ 2)
+      (s := (σ : ℂ) + 2 * I * t) (by simpa using hσ)
   have hs₀ := χ₀.summable_neg_log_one_sub hS₀
   have hs₁ := χ.1.summable_neg_log_one_sub hS₁
   have hs₂ := (χ ^ 2).1.summable_neg_log_one_sub hS₂
