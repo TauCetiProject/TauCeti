@@ -144,10 +144,10 @@ theorem IsEulerAdmissibleOn.of_map {P Q : ObjectProperty C} {P' Q' : ObjectPrope
 /-- **Naturality of the Ext-Euler characteristic**: an exact functor which is bijective on `Ext`
 preserves it, `χ(F X, F Y) = χ(X, Y)`. -/
 theorem extEuler_map (hF : ∀ n, Function.Bijective (F.mapExtAddHom.{w, w'} X Y n))
-    (h : IsEulerAdmissible.{w} k X Y) (h' : IsEulerAdmissible.{w'} k (F.obj X) (F.obj Y)) :
-    extEuler.{w'} k h' = extEuler.{w} k h :=
+    (h : IsEulerAdmissible.{w} k X Y) :
+    extEuler.{w'} k (h.map F fun n ↦ (hF n).2) = extEuler.{w} k h :=
   extEuler_congr k
-    (fun n ↦ LinearEquiv.ofBijective (F.mapExtLinearMap k X Y n) (hF n)) h h'
+    (fun n ↦ LinearEquiv.ofBijective (F.mapExtLinearMap k X Y n) (hF n)) h
 
 /-! ### Naturality of the Ext-Euler pairing -/
 
@@ -165,12 +165,11 @@ and `Q` of `C` into the extension-closed properties `P'` and `Q'` of `D`, and be
 `Ext` groups of every pair in `P × Q`. Then the maps of exact `K₀` induced by the restrictions of
 `F` to the full subcategories intertwine the two Ext-Euler pairings.
 
-The admissibility witness `h` on `C` can always be obtained from `h'` by
-`TauCeti.IsEulerAdmissibleOn.of_map`; any witness may be supplied. -/
+The admissibility witness on `C` is obtained from `h'` by
+`TauCeti.IsEulerAdmissibleOn.of_map`. -/
 theorem extEulerPairing_map_map
     (hP : (ExactStructure.abelian C).IsExtensionClosed P)
     (hQ : (ExactStructure.abelian C).IsExtensionClosed Q)
-    (h : IsEulerAdmissibleOn.{w} k P Q)
     (hP' : (ExactStructure.abelian D).IsExtensionClosed P')
     (hQ' : (ExactStructure.abelian D).IsExtensionClosed Q')
     (h' : IsEulerAdmissibleOn.{w'} k P' Q')
@@ -185,7 +184,10 @@ theorem extEulerPairing_map_map
         (ExactK0.map (Q'.lift (Q.ι ⋙ F) fun Y ↦ hFQ Y.property)
           ((ExactStructure.abelian C).isConflationExact_lift hQ hQ' F
             (ExactStructure.isConflationExact_abelian F) fun Y ↦ hFQ Y.property) y) =
-      extEulerPairing hP hQ h x y := by
+      extEulerPairing hP hQ
+        (h'.of_map F hFP hFQ fun _ _ hX hY n ↦ (hF hX hY n).1) x y := by
+  let h : IsEulerAdmissibleOn.{w} k P Q :=
+    h'.of_map F hFP hFQ fun _ _ hX hY n ↦ (hF hX hY n).1
   let mapP := ExactK0.map (P'.lift (P.ι ⋙ F) fun X ↦ hFP X.property)
     ((ExactStructure.abelian C).isConflationExact_lift hP hP' F
       (ExactStructure.isConflationExact_abelian F) fun X ↦ hFP X.property)
@@ -196,7 +198,6 @@ theorem extEulerPairing_map_map
   exact DFunLike.congr_fun (DFunLike.congr_fun
     (extEulerPairing_unique hP hQ h b fun X Y ↦ by
       simpa [b, mapP, mapQ] using extEuler_map F (hF X.property Y.property)
-        (h.isEulerAdmissible X.property Y.property)
-        (h'.isEulerAdmissible (hFP X.property) (hFQ Y.property))) x) y
+        (h.isEulerAdmissible X.property Y.property)) x) y
 
 end TauCeti
