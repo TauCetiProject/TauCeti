@@ -222,6 +222,13 @@ instance (D : CartierDivisor X) : Mono D.sheafι :=
   -- Mathlib's instance for the inclusion of a submodule is supplied explicitly.
   SheafOfModules.Submodule.instMonoι D.submodule
 
+instance (D : CartierDivisor X) (V : X.Opens) : Mono (D.sheafι.over V) := by
+  apply (SheafOfModules.forget _).mono_of_mono_map
+  change Mono (D.sheafι.over V).val
+  apply PresheafOfModules.mono_of_injective
+  intro W
+  exact Subtype.val_injective
+
 /-- A morphism `M ⟶ 𝒦_X` all of whose sections lie in `𝒪_X(D)` factors through `𝒪_X(D)`. -/
 def sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U) :
@@ -348,6 +355,7 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
         rationalFunctionsEquiv_toRationalFunctions_app, ha, ← mul_assoc, Units.inv_mul,
         one_mul]
 
+variable (X) in
 /-- **The sheaf of a principal Cartier divisor is trivial.** Multiplication by `f⁻¹` identifies
 `𝒪_X` with `𝒪_X(div f)`. -/
 def unitIsoSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
@@ -357,20 +365,20 @@ def unitIsoSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
 /-- The forward map of `unitIsoSheafPrincipalCartierDivisor` is multiplication by `f⁻¹`. -/
 @[simp]
 lemma unitIsoSheafPrincipalCartierDivisor_hom (f : X.functionFieldˣ) :
-    (unitIsoSheafPrincipalCartierDivisor f).hom = unitToSheafPrincipalCartierDivisor X f :=
+    (unitIsoSheafPrincipalCartierDivisor X f).hom = unitToSheafPrincipalCartierDivisor X f :=
   (rfl)
 
 /-- The inverse of `unitIsoSheafPrincipalCartierDivisor`, read inside `𝒦_X`, is multiplication by
 `f`: it sends a section `g` of `𝒪_X(div f)` to the regular function `f g`. -/
 @[simp, reassoc]
 lemma unitIsoSheafPrincipalCartierDivisor_inv_toRationalFunctions (f : X.functionFieldˣ) :
-    (unitIsoSheafPrincipalCartierDivisor f).inv ≫ toRationalFunctions X =
+    (unitIsoSheafPrincipalCartierDivisor X f).inv ≫ toRationalFunctions X =
       (principalCartierDivisor X f).sheafι ≫
         rationalFunctionsMul X ((f : X.functionFieldˣ) : X.functionField) :=
   -- The goal mentions `SheafOfModules.unit X.ringCatSheaf`, which `rw` cannot see to be
   -- type-correct (`TopCat.Sheaf` is not unfolded at instance transparency), so the
   -- associativity steps are chained as terms.
-  (Iso.inv_comp_eq (unitIsoSheafPrincipalCartierDivisor f)).mpr <|
+  (Iso.inv_comp_eq (unitIsoSheafPrincipalCartierDivisor X f)).mpr <|
     (Category.comp_id _).symm.trans <|
       (congrArg (toRationalFunctions X ≫ ·) (rationalFunctionsMul_inv_comp f).symm).trans <|
         (Category.assoc _ _ _).symm.trans <|
@@ -393,7 +401,7 @@ private def localTrivializations (D : CartierDivisor X) :
         haveI : Nonempty (V x) := ⟨⟨x, hx x⟩⟩
         TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (V x)) ≪≫
           (SheafOfModules.overFunctor X.ringCatSheaf (V x)).mapIso
-            (unitIsoSheafPrincipalCartierDivisor (f x)) ≪≫
+            (unitIsoSheafPrincipalCartierDivisor X (f x)) ≪≫
           sheafOverIsoOfRestrictEq _ D (V x)
             ((principalCartierDivisor_restrict X (f x) (V x)).trans (hV x)) }
 

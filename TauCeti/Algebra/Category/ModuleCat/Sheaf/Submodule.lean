@@ -167,15 +167,16 @@ def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
         letI := ((N₁.toSheafOfModules.over V).val.obj W).isModule
         letI := ((N₂.toSheafOfModules.over V).val.obj W).isModule
         LinearEquiv.toModuleIso
-          ({ toFun := fun s ↦ ⟨s.val, h _ W.unop.hom ▸ s.2⟩
-             invFun := fun s ↦ ⟨s.val, (h _ W.unop.hom).symm ▸ s.2⟩
-             left_inv := fun _ ↦ rfl
-             right_inv := fun _ ↦ rfl
-             map_add' := fun _ _ ↦ rfl
-             map_smul' := fun _ _ ↦ rfl } :
-            (N₁.toSheafOfModules.over V).val.obj W ≃ₗ[(R.over V).obj.obj W]
-              (N₂.toSheafOfModules.over V).val.obj W))
+          (LinearEquiv.ofEq _ _ (h _ W.unop.hom)))
       (fun _ _ _ ↦ rfl)
+
+/-- The inclusion of a submodule remains a monomorphism after restricting to an object. -/
+instance (N : M.Submodule) (V : C) : Mono (N.ι.over V) := by
+  apply (SheafOfModules.forget _).mono_of_mono_map
+  change Mono (N.ι.over V).val
+  apply PresheafOfModules.mono_of_injective
+  intro W
+  exact Subtype.val_injective
 
 /-- The isomorphism `overIsoOfEq` is compatible with the inclusions into `M`. -/
 @[reassoc (attr := simp)]
