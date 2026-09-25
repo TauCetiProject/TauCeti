@@ -19,18 +19,10 @@ opposite directions, this path has a genuine corner at `p`, and it is not minimi
 
 `edist (exp_p v) (exp_p w) < ‖v‖ + ‖w‖`.
 
-The corner is cut near `p`.  For a small `t > 0` the two radial legs are followed only from
-`exp_p v` to `exp_p (t • v)` and from `exp_p (t • w)` to `exp_p w`, which saves `t (‖v‖ + ‖w‖)`,
-while the points `exp_p (t • v)` and `exp_p (t • w)` are joined by the exponential image of the
-chord from `t • v` to `t • w`.  The differential of `exp_p` at the origin is the identity and it
-depends continuously on the point of `T_p M` at which it is taken, so for small `t` this chord has
-length at most `t (‖v - w‖ + η)` for any prescribed `η > 0`.  As `‖v - w‖ < ‖v‖ + ‖w‖` exactly
-when `v` and `-w` do not lie on the same ray, the saving wins.
-
-This is the local rigidity needed to extend a minimizing geodesic segment in the proof that an
-everywhere-defined exponential map yields minimizing geodesics: a path through a point which
-realizes the distance between points on either side of it, and consists of radial geodesics
-from that point, has to leave it in the direction in which it arrived.
+This strict inequality supplies the local rigidity needed to extend a minimizing geodesic segment
+in the proof that an everywhere-defined exponential map yields minimizing geodesics: a
+distance-realizing path formed from radial legs through a point must leave that point in the
+direction in which it arrived.
 
 ## Main results
 
