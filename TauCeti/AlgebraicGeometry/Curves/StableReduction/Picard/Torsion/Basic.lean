@@ -89,6 +89,31 @@ theorem degree_coe_torsion {ℓ : ℕ} (hℓ : ℓ ≠ 0) (x : T.torsion ℓ) :
     simpa only [map_nsmul, map_zero] using congrArg T.degree hx
   exact (nsmul_eq_zero_iff_right hℓ).mp h
 
+/-- The Picard group of a numerical type with a single component is torsion-free: its intersection
+matrix vanishes, so zero is the only principal multidegree. -/
+theorem isTorsionFree_pic_of_card_eq_one (h : Fintype.card T.Component = 1) :
+    Module.IsTorsionFree ℤ T.Pic := by
+  have hbot : T.principalDivisors = ⊥ := by
+    rw [eq_bot_iff]
+    intro d hd
+    obtain ⟨v, rfl⟩ := T.mem_principalDivisors_iff.mp hd
+    have hzero : T.weightedIntersection = 0 := by
+      ext i j
+      simp [T.intersection_eq_zero_of_card_eq_one h i j]
+    simp [hzero]
+  exact (Submodule.quotEquivOfEqBot _ hbot).injective.moduleIsTorsionFree _ (map_smul _)
+
+/-- A numerical type with a single component has no nonzero prime torsion in its Picard group. -/
+theorem finrank_torsion_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1) (ℓ : ℕ)
+    [Fact ℓ.Prime] : Module.finrank (ZMod ℓ) (T.torsion ℓ) = 0 := by
+  have hℓ : ℓ ≠ 0 := (Fact.out : ℓ.Prime).ne_zero
+  have := T.isTorsionFree_pic_of_card_eq_one h
+  have := IsAddTorsionFree.of_isTorsionFree ℤ T.Pic
+  have : Subsingleton (T.torsion ℓ) := ⟨fun x y ↦ Subtype.ext <| by
+    rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.2),
+      (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.2)]⟩
+  exact Module.finrank_zero_of_subsingleton
+
 namespace Equiv
 
 variable {T} {T' : NumericalType.{v}} {T'' : NumericalType}
