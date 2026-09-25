@@ -141,15 +141,18 @@ lemma specialFiberIsoFiberClosedPoint_inv_specialFiberι :
       ((Spec R).fromSpecResidueField (closedPoint R)))
 
 /-- The inverse closed-point fibre comparison preserves the maps to the residue-field
-spectrum. -/
+spectrum. The structure morphism `(specialFiber R toBase).hom` is written in its simp normal
+form, the pullback projection given by `specialFiber_hom`. -/
 @[simp, reassoc]
 lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
     (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        (specialFiber R toBase).hom ≫
+        pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
           (specLocalResidueFieldIso R).hom =
-      toBase.fiberToSpecResidueField (closedPoint R) :=
-  (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
+      toBase.fiberToSpecResidueField (closedPoint R) := by
+  have h := (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
     (IsPullback.of_hasPullback toBase ((Spec R).fromSpecResidueField (closedPoint R)))
+  simp only [specialFiber_hom, ResidueField.algebraMap_eq] at h
+  exact h
 
 end ClosedPoint
 
