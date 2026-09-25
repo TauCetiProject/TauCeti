@@ -101,6 +101,7 @@ variable [Algebra.IsSeparable K L]
 
 /-- **The characteristic property of the different exponent**: the `n`-th power of the maximal
 ideal of `𝒪[L]` divides the different ideal exactly when `n ≤ d(L/K)`. -/
+@[simp]
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     𝓂[L] ^ n ∣ differentIdeal 𝒪[K] 𝒪[L] ↔ n ≤ differentExponent K L :=
   (FiniteMultiplicity.of_prime_left
