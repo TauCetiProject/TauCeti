@@ -100,7 +100,8 @@ private theorem cos_θ₀ : Real.cos θ₀ = 1 / 6 :=
   Real.cos_arccos (by norm_num) (by norm_num)
 
 private theorem sin_θ₀ : Real.sin θ₀ = √35 / 6 := by
-  rw [sin_arccos, show (1 : ℝ) - (1 / 6) ^ 2 = 35 / 6 ^ 2 by norm_num,
+  have h : (1 : ℝ) - (1 / 6) ^ 2 = 35 / 6 ^ 2 := by norm_num
+  rw [sin_arccos, h,
     Real.sqrt_div' _ (by positivity), Real.sqrt_sq (by norm_num)]
 
 private theorem circleMap_θ₀ : circleMap 0 3 θ₀ = 1 / 2 + √35 / 2 * I := by
@@ -332,7 +333,8 @@ private theorem range_segPos : range segPos ⊆ {z | (z : ℂ).im = 0} := by
 private theorem range_δ₁ : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   refine (Path.range_subpath_of_le δ 0 tNeg unitInterval.nonneg').trans_subset ?_
   rintro _ ⟨t, ⟨-, ht⟩, rfl⟩
-  have h := mul_le_mul_of_nonneg_left (show (t : ℝ) ≤ tNeg from ht) (by positivity : 0 ≤ 2 * π)
+  have h := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (t : ℝ) ≤ tNeg)
+    (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_δ]
   exact mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
     (by nlinarith [θ₀_pos, t.2.1, pi_pos]) (by linarith [θ₀_add_two_pi_mul_tNeg]))
@@ -340,8 +342,10 @@ private theorem range_δ₁ : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} := by
 private theorem range_δ₂ : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} := by
   refine (Path.range_subpath_of_le _ _ _ tNeg_le_tPos).trans_subset ?_
   rintro _ ⟨t, ⟨ht₁, ht₂⟩, rfl⟩
-  have h₁ := mul_le_mul_of_nonneg_left (show (tNeg : ℝ) ≤ t from ht₁) (by positivity : 0 ≤ 2 * π)
-  have h₂ := mul_le_mul_of_nonneg_left (show (t : ℝ) ≤ tPos from ht₂) (by positivity : 0 ≤ 2 * π)
+  have h₁ := mul_le_mul_of_nonneg_left (by exact_mod_cast ht₁ : (tNeg : ℝ) ≤ t)
+    (by positivity : 0 ≤ 2 * π)
+  have h₂ := mul_le_mul_of_nonneg_left (by exact_mod_cast ht₂ : (t : ℝ) ≤ tPos)
+    (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_δ]
   exact mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
     (by linarith [θ₀_add_two_pi_mul_tNeg]) (by linarith [θ₀_add_two_pi_mul_tPos]))
@@ -349,7 +353,8 @@ private theorem range_δ₂ : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} := by
 private theorem range_δ₃ : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   refine (Path.range_subpath_of_le δ tPos 1 unitInterval.le_one').trans_subset ?_
   rintro _ ⟨t, ⟨ht, -⟩, rfl⟩
-  have h₁ := mul_le_mul_of_nonneg_left (show (tPos : ℝ) ≤ t from ht) (by positivity : 0 ≤ 2 * π)
+  have h₁ := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (tPos : ℝ) ≤ t)
+    (by positivity : 0 ≤ 2 * π)
   have h₂ := mul_le_mul_of_nonneg_left t.2.2 (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_δ, ← Real.sin_sub_two_pi]
   exact mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
@@ -358,7 +363,8 @@ private theorem range_δ₃ : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} := by
 private theorem range_γ0₁ : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   refine (Path.range_subpath_of_le _ _ _ unitInterval.nonneg').trans_subset ?_
   rintro _ ⟨t, ⟨-, ht⟩, rfl⟩
-  have h := mul_le_mul_of_nonneg_left (show (t : ℝ) ≤ tHalf from ht) (by positivity : 0 ≤ 2 * π)
+  have h := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (t : ℝ) ≤ tHalf)
+    (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_γ0]
   exact mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
     (by nlinarith [t.2.1, pi_pos]) (by linarith [two_pi_mul_tHalf]))
@@ -366,7 +372,8 @@ private theorem range_γ0₁ : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} := by
 private theorem range_γ0₂ : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} := by
   refine (Path.range_subpath_of_le _ _ _ unitInterval.le_one').trans_subset ?_
   rintro _ ⟨t, ⟨ht, -⟩, rfl⟩
-  have h₁ := mul_le_mul_of_nonneg_left (show (tHalf : ℝ) ≤ t from ht) (by positivity : 0 ≤ 2 * π)
+  have h₁ := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (tHalf : ℝ) ≤ t)
+    (by positivity : 0 ≤ 2 * π)
   have h₂ := mul_le_mul_of_nonneg_left t.2.2 (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_γ0]
   exact mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
@@ -375,7 +382,8 @@ private theorem range_γ0₂ : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} := by
 private theorem range_γ1₁ : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} := by
   refine (Path.range_subpath_of_le _ _ _ unitInterval.nonneg').trans_subset ?_
   rintro _ ⟨t, ⟨-, ht⟩, rfl⟩
-  have h := mul_le_mul_of_nonneg_left (show (t : ℝ) ≤ tHalf from ht) (by positivity : 0 ≤ 2 * π)
+  have h := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (t : ℝ) ≤ tHalf)
+    (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_γ1]
   exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
     (by nlinarith [t.2.1, pi_pos]) (by linarith [two_pi_mul_tHalf]))
@@ -383,7 +391,8 @@ private theorem range_γ1₁ : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} := by
 private theorem range_γ1₂ : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   refine (Path.range_subpath_of_le _ _ _ unitInterval.le_one').trans_subset ?_
   rintro _ ⟨t, ⟨ht, -⟩, rfl⟩
-  have h₁ := mul_le_mul_of_nonneg_left (show (tHalf : ℝ) ≤ t from ht) (by positivity : 0 ≤ 2 * π)
+  have h₁ := mul_le_mul_of_nonneg_left (by exact_mod_cast ht : (tHalf : ℝ) ≤ t)
+    (by positivity : 0 ≤ 2 * π)
   have h₂ := mul_le_mul_of_nonneg_left t.2.2 (by positivity : 0 ≤ 2 * π)
   rw [mem_ofPred_eq, im_coe_γ1]
   exact mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
