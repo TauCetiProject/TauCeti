@@ -118,7 +118,7 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) :
     σ ⊓ τ ∈ Φ.cones :=
   Φ.mem_of_isFaceOf hσ (Φ.inf_isFaceOf_left hσ hτ)
 
-/-- The intersection of two fan cones is again a cone of the fan. -/
+/-- The cones of a fan form a meet-semilattice under inclusion, with intersection as meet. -/
 instance : SemilatticeInf Φ.cones :=
   Subtype.semilatticeInf fun _ _ ↦ Φ.inf_mem
 
