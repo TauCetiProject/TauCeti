@@ -87,6 +87,7 @@ theorem exists_eq_smul_op_smul_mk_diagonal (hn : 0 < n) (x : TraceFormulaMatrixM
 /-- **The right coset of a diagonal matrix** (Popa–Zagier, §4, proof of Theorem 4(b)): for
 `n = d₀ d₁ ≠ 0`, the class of a determinant-`n` matrix `A` lies in the right coset
 `diag(d₀, d₁) · Γ` if and only if `d₀` divides the first row of `A` and `d₁` its second row. -/
+@[simp high]
 theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) (hn : n ≠ 0)
     {A : TraceFormulaMatrix n} :
     mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔
@@ -98,6 +99,7 @@ theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) 
 /-- **The `Γ_∞`-orbit of a diagonal matrix**: the class of `A` lies in the orbit of
 `diag(d₀, d₁)` under left multiplication by `Γ_∞ = ⟨T⟩` if and only if
 `A = ±(d₀, j d₁; 0, d₁)` for some `j ∈ ℤ`. -/
+@[simp]
 theorem mk_mem_orbit_zpowers_T_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n)
     {A : TraceFormulaMatrix n} :
     mk A ∈ MulAction.orbit (Subgroup.zpowers T) (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔

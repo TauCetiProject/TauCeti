@@ -477,6 +477,7 @@ theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormu
 
 /-- The class of `A` lies in the right coset of the class of `B` exactly when `A = B g` for some
 `g ∈ SL(2, ℤ)`; the sign ambiguity of the classes is absorbed into `g`. -/
+@[simp low]
 theorem TraceFormulaMatrixModule.mk_mem_orbit_op_mk_iff {A B : TraceFormulaMatrix n} :
     TraceFormulaMatrixModule.mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
       ∃ g : SL(2, ℤ), A.1 = B.1 * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
