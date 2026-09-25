@@ -38,18 +38,6 @@ In the namespace `TauCeti.Manifold`:
   the manifold proper.
 * `properSpace_of_completeSpace`: a complete Riemannian manifold is proper.
 
-## Implementation notes
-
-The argument is do Carmo's.  Put `r = dist p q`.  On a small geodesic sphere about `p`, choose a
-point `exp_p (δ • u)`, with `‖u‖ = 1`, nearest to `q`; the distance identity outside a normal
-ball says that `q` is then at distance `r - δ` from it.  Let `γ t = exp_p (t • u)`, and consider
-the closed set of times `s ∈ [0, r]` with `dist (γ s) q ≤ r - s`.  If its largest element `s`
-were smaller than `r`, the same construction on a small geodesic sphere about `γ s` would give a
-point `y` at distance `δ'` from `γ s` and `r - s - δ'` from `q`, hence at distance at least
-`s + δ'` from `p`.  The path from `p` along `γ` to `γ s` and then radially to `y` would thus be
-minimizing, so it has no corner at `γ s` by `dist_riemannianExp_lt_norm_add_norm`, and `y` is
-`γ (s + δ')`: a larger time of the set.  Hence `s = r` and `γ r = q`.
-
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7, §2, Thm. 2.8, the implication
@@ -77,33 +65,11 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
 
-/-- **The nearest point of a small geodesic sphere.**  About every point `x` there is a radius
-`ε > 0` such that, for every `0 ≤ δ < ε` with `δ ≤ dist x q`, some tangent vector `w` of norm `δ`
-in the domain of `exp_x` satisfies `dist (exp_x w) q = dist x q - δ`. -/
-private theorem exists_dist_riemannianExp_eq_dist_sub (x q : M) :
-    ∃ ε > 0, ∀ δ, 0 ≤ δ → δ < ε → δ ≤ dist x q → ∃ w ∈ expDomain I M x, ‖w‖ = δ ∧
-      dist (riemannianExp I M x w) q = dist x q - δ := by
-  obtain ⟨R, hR, hU⟩ := exists_isNormalDomain_ball (I := I) (M := M) x
-  refine ⟨R, hR, fun δ hδ hδR hδq ↦ ?_⟩
-  have hcl : closedBall (0 : TangentSpace I x) δ ⊆ ball 0 R := closedBall_subset_ball hδR
-  have hsphere : sphere (0 : TangentSpace I x) δ ⊆ expDomain I M x :=
-    sphere_subset_closedBall.trans (hcl.trans hU.subset_expDomain)
-  -- `q` is not in the open geodesic ball of radius `δ`, which is the metric ball of that radius.
-  have hq : q ∉ riemannianExp I M x '' ball 0 δ := by
-    rw [hU.image_riemannianExp_ball (ball_subset_ball hδR.le), mem_eball', edist_dist, not_lt]
-    exact ENNReal.ofReal_le_ofReal hδq
-  have heq := hU.edist_eq_ofReal_add_infEDist hcl hδ hq
-  -- The geodesic sphere is compact, and nonempty because the distance from `x` to `q` is finite.
-  have hne : (riemannianExp I M x '' sphere 0 δ).Nonempty := by
-    by_contra hempty
-    rw [not_nonempty_iff_eq_empty.1 hempty, infEDist_empty, add_top] at heq
-    exact edist_ne_top x q heq
-  obtain ⟨_, ⟨w, hw, rfl⟩, hy⟩ :=
-    (isCompact_riemannianExp_image_sphere x hsphere).exists_infEDist_eq_edist hne q
-  refine ⟨w, hsphere hw, mem_sphere_zero_iff_norm.1 hw, ?_⟩
-  rw [hy, edist_dist, edist_dist, ← ENNReal.ofReal_add hδ dist_nonneg,
-    ENNReal.ofReal_eq_ofReal_iff dist_nonneg (add_nonneg hδ dist_nonneg)] at heq
-  rw [dist_comm, heq, add_sub_cancel_left]
+/- The argument is do Carmo's. Put `r = dist p q`. On a small geodesic sphere about `p`, choose a
+point nearest to `q`, and follow its radial direction as `γ`. The closed set of times
+`s ∈ [0, r]` with `dist (γ s) q ≤ r - s` has largest element `r`: otherwise the local sphere
+lemma above produces a minimizing broken geodesic extension. The corner lemma makes that extension
+a later point of `γ`, contradicting maximality. -/
 
 /-- **A minimizing broken geodesic does not break.**  Let `γ` be the all-time maximal geodesic
 from `p` with unit initial velocity, let `s > 0`, and let `w` be a tangent vector at `γ s` in the

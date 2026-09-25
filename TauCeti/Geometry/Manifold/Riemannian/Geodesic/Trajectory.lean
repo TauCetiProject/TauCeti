@@ -277,7 +277,7 @@ theorem maximalGeodesic_add {p : M} {v : TangentSpace I p} {t s : ℝ}
 /-- **The maximal interval after restarting a maximal geodesic.**  Restarting the maximal geodesic
 from `p` with initial velocity `v` at a time `t` of its maximal interval, from the point and
 velocity it has there, translates the maximal interval by `-t`. -/
-theorem mem_geodesicInterval_maximalGeodesic_iff {p : M} {v : TangentSpace I p} {t s : ℝ}
+@[simp] theorem mem_geodesicInterval_maximalGeodesic_iff {p : M} {v : TangentSpace I p} {t s : ℝ}
     (ht : t ∈ geodesicInterval I M p v) :
     s ∈ geodesicInterval I M (maximalGeodesic I M p v t)
         (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t) ↔
