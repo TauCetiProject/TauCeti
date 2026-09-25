@@ -16,17 +16,9 @@ For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullb
 `f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f ∣_ V`. This compatibility lets
 local properties of modules, expressed on open covers, be transported along scheme morphisms.
 
-Mathlib states quasi-coherence, finite type, finite presentation and local freeness of an
-`𝒪_Y`-module `M` through local data on the site of opens of `Y`: a cover `V i` of `Y` together
-with generating sections or presentations of the restrictions `M.over (V i)` to the slice sites.
-Read on these slice sites, pullback along `f` is a colimit-preserving functor
-`Scheme.Modules.pullbackOver f V` which preserves the structure sheaf and sends `M.over V` to
-`(f^* M).over (f⁻¹ V)`. It therefore carries local generators and local presentations of `M` on
-the cover `V i` to local generators and local presentations of `f^* M` on the cover `f⁻¹ (V i)`,
-preserving finiteness of the index types and invertibility of the generating morphisms.
-Consequently all four properties are stable under arbitrary pullback. The transport of
-presentations follows Mathlib's `SheafOfModules.QuasicoherentData.pushforward`, which carries
-presentations along a colimit-preserving functor by `SheafOfModules.Presentation.map`.
+Pullback along any scheme morphism preserves quasi-coherence, finite type, finite presentation
+and local freeness of modules. Local generators and presentations on an open cover pull back to
+local data on the preimage cover.
 
 ## Main declarations
 
@@ -79,6 +71,8 @@ variable (V : Y.Opens)
 /-- Pullback along `f` read on slice sites: sheaves of modules over the slice of `Y` at an open
 `V` are identified with `𝒪_V`-modules, pulled back along `f ∣_ V : f⁻¹ V ⟶ V`, and read as
 sheaves of modules over the slice of `X` at `f⁻¹ V`. -/
+-- This composite is a left adjoint, hence preserves colimits. The unit and object isomorphisms
+-- below identify its effect on the structure sheaf and on restrictions of modules.
 def pullbackOver : SheafOfModules (Y.ringCatSheaf.over V) ⥤
     SheafOfModules (X.ringCatSheaf.over (f ⁻¹ᵁ V)) :=
   (overEquiv V).functor ⋙ pullback (f ∣_ V) ⋙ (overEquiv (f ⁻¹ᵁ V)).inverse
@@ -113,7 +107,7 @@ end Over
 
 /-- Local generators of an `𝒪_Y`-module `M` on a cover `V i` of `Y`, carried along `f` to local
 generators of `f^* M` on the cover `f⁻¹ (V i)` of `X`. -/
-@[expose, simps I X]
+@[expose, simps I X generators]
 def _root_.SheafOfModules.LocalGeneratorsData.pullback {M : Y.Modules}
     (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M) (f : X ⟶ Y) :
     SheafOfModules.LocalGeneratorsData.{w} (R := X.ringCatSheaf) ((pullback f).obj M) where
@@ -144,7 +138,9 @@ instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.rin
 
 /-- Quasi-coherent data of an `𝒪_Y`-module `M` on a cover `V i` of `Y`, carried along `f` to
 quasi-coherent data of `f^* M` on the cover `f⁻¹ (V i)` of `X`. -/
-@[expose, simps I X]
+-- As in Mathlib's `SheafOfModules.QuasicoherentData.pushforward`, presentations are transported
+-- by `SheafOfModules.Presentation.map` along a colimit-preserving functor.
+@[expose, simps I X presentation]
 def _root_.SheafOfModules.QuasicoherentData.pullback {M : Y.Modules}
     (q : SheafOfModules.QuasicoherentData.{w} (R := Y.ringCatSheaf) M) (f : X ⟶ Y) :
     SheafOfModules.QuasicoherentData.{w} (R := X.ringCatSheaf) ((pullback f).obj M) where
