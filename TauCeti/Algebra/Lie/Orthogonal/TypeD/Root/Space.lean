@@ -29,9 +29,9 @@ membership to entrywise support, uses the stronger hypothesis that the coefficie
 * `TauCeti.mem_rootSpace_typeDDiagonalCartan_iff`: over a domain, membership is equivalent to
   entrywise support on positions of the requested weight.
 
-The reduced-ring diagonal-eigenspace step reuses the generic helper in
-`TauCeti.LinearAlgebra.Eigenspace.Diagonal`, factored from the analogous
-`TauCeti.Algebra.Lie.GeneralLinear.RootSpace` development.
+The diagonal action on ambient matrix units reduces generalized root-space membership to ordinary
+eigenvector equations over a reduced ring, after which those equations become entrywise support
+conditions for the signed matrix weights.
 
 ## References
 

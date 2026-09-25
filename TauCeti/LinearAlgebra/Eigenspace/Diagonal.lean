@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 /-!
 # Eigenspaces of diagonal operators over reduced rings
 
-This file supplies the reduced-ring diagonal-operator lemma used by concrete Lie root-space
-computations. It is the generic part of the argument first developed for the diagonal Cartan of
-`gl n` in `TauCeti.Algebra.Lie.GeneralLinear.RootSpace`; concrete Lie-algebra files provide the
-adjoint-action calculation and their own weight/support API.
+For a diagonal linear operator over a reduced ring, coordinatewise generalized eigenvector
+conditions already imply the corresponding eigenvector conditions. The theorem below identifies
+the maximal generalized eigenspace with the eigenspace, so a diagonalized action can be studied
+through its ordinary eigenvectors.
 
 The main theorem extends Mathlib's `Matrix.maxGenEigenspace_toLin_diagonal_eq_eigenspace`, whose
 domain hypothesis is weakened here to the reduced-ring hypothesis needed by the coordinatewise
@@ -47,10 +47,11 @@ theorem maxGenEigenspace_toLin_diagonal_eq_eigenspace_of_isReduced [IsReduced R]
     rw [aux, ← Matrix.toLin_pow, Matrix.diagonal_pow, Matrix.toLin_apply_eq_zero_iff] at hk
     have hpow (a y : R) (n : ℕ) : (a * y) ^ (n + 1) = a ^ n * y * (a * y ^ n) := by
       ring
+    have hcoordinate : (d j - μ) ^ k * b.repr x j = 0 := by
+      simpa [Matrix.mulVec_diagonal] using hk j
     have hmul : (d j - μ) * b.repr x j = 0 :=
       IsNilpotent.eq_zero ⟨k + 1, by
-        rw [hpow, show (d j - μ) ^ k * b.repr x j = 0 by
-          simpa [Matrix.mulVec_diagonal] using hk j, zero_mul]⟩
+        rw [hpow, hcoordinate, zero_mul]⟩
     calc
       b.repr x j * d j = d j * b.repr x j := mul_comm _ _
       _ = μ * b.repr x j := by
