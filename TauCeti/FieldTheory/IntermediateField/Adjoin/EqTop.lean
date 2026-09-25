@@ -38,6 +38,8 @@ of fraction fields.
 
 ## Main results
 
+* `TauCeti.IntermediateField.algHom_ext_of_adjoin_eq_top`: algebra homomorphisms into any
+  semiring are determined by their values on a generating set.
 * `TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top`: two automorphisms agreeing on a
   generating set are equal.
 * `TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top`: an automorphism fixing each
@@ -54,9 +56,10 @@ of fraction fields.
 `adjoin_sup_fieldRange_eq_top` takes its hypothesis as `Algebra.adjoin L t = ⊤` — generation
 as an `L`-*algebra* — rather than as `IntermediateField.adjoin L t = ⊤`, because that is the
 form the cyclotomic API supplies (`IsCyclotomicExtension.adjoin_primitive_root_eq_top`, with
-`t = {ζ}`). Over a field the two agree, but taking the algebra form avoids making every caller
-convert. The statement is set-valued rather than single-generator because the induction over
-`Algebra.adjoin` never inspects `t`: the generator case is just `IntermediateField.subset_adjoin`.
+`t = {ζ}`). The two forms agree for algebraic generators; algebra generation is stronger in general.
+Taking the algebra form avoids making the cyclotomic callers convert. The statement is set-valued
+rather than single-generator because the induction over `Algebra.adjoin` never inspects `t`: the
+generator case is just `IntermediateField.subset_adjoin`.
 
 `adjoin_sup_fieldRange_eq_top` is adapted from the Birkbeck–Brasca Chebotarev density project,
 where the step is inlined into a larger `adjoin_induction`.
@@ -103,13 +106,8 @@ theorem algEquiv_eq_one_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = 
 theorem adjoin_adjoinSimpleGen_eq_top (x : E) :
     IntermediateField.adjoin F {IntermediateField.AdjoinSimple.gen F x} = ⊤ := by
   refine IntermediateField.map_injective (IntermediateField.adjoin F {x}).val ?_
-  have hmaptop :
-      (⊤ : IntermediateField F (IntermediateField.adjoin F {x})).map
-          (IntermediateField.adjoin F {x}).val = IntermediateField.adjoin F {x} := by
-    ext y
-    simp only [IntermediateField.mem_map, IntermediateField.mem_top, true_and]
-    exact ⟨fun ⟨z, hz⟩ => hz ▸ z.2, fun hy => ⟨⟨y, hy⟩, rfl⟩⟩
-  rw [IntermediateField.adjoin_map, hmaptop]
+  rw [IntermediateField.adjoin_map, ← AlgHom.fieldRange_eq_map,
+    IntermediateField.fieldRange_val]
   congr 1
   ext y
   simp
@@ -130,7 +128,7 @@ theorem adjoin_sup_fieldRange_eq_top (K L M : Type*) [Field K] [Field L] [Field 
   · exact le_sup_left (α := IntermediateField K M) (IntermediateField.subset_adjoin K t hy)
   · exact le_sup_right (α := IntermediateField K M) ⟨r, rfl⟩
 
-variable {R S K L : Type*} [CommRing R] [CommRing S] [Field K] [Field L] [Algebra R S]
+variable {R S K L : Type*} [CommSemiring R] [CommRing S] [Field K] [Field L] [Algebra R S]
   [Algebra R K] [Algebra R L] [Algebra S L] [Algebra K L] [IsScalarTower R S L]
   [IsScalarTower R K L] [IsFractionRing S L]
 
