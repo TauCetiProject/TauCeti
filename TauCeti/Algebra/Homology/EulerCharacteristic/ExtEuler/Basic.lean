@@ -50,7 +50,8 @@ The value is defined by truncating the sum to the degrees below an explicit boun
 
 * `TauCeti.extEuler_eq`: the Ext-Euler characteristic is the alternating sum truncated at *any*
   bound beyond which the `Ext` groups vanish.
-* `TauCeti.extEuler_congr`: degreewise linear equivalences of `Ext` preserve the value.
+* `TauCeti.IsEulerAdmissible.congr` and `TauCeti.extEuler_congr`: degreewise linear equivalences
+  of `Ext` preserve the hypothesis and the value.
 * `TauCeti.IsEulerAdmissible.of_iso` and `TauCeti.extEuler_of_iso`: isomorphism invariance of the
   hypothesis and of the value.
 * `TauCeti.IsEulerAdmissible.of_shortExact₂` and
@@ -251,49 +252,77 @@ theorem extEuler_eq_zero_of_isExtBoundedBy_zero {X Y : C} (h : IsEulerAdmissible
 
 /-! ### Invariance under linear equivalences and isomorphisms -/
 
+section congr
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [HasExt.{w'} D]
+  {X Y : C} {X' Y' : D}
+
+variable {k} in
+/-- `Ext`-finiteness transports along degreewise linear equivalences of `Ext` groups, including
+between pairs in different categories. -/
+theorem IsExtFinite.congr (h : IsExtFinite.{w} k X Y)
+    (e : ∀ n, Ext.{w} X Y n ≃ₗ[k] Ext.{w'} X' Y' n) : IsExtFinite.{w'} k X' Y' :=
+  ⟨fun n ↦ haveI := h.finiteDimensional n
+    Module.Finite.equiv (e n)⟩
+
+/-- A vanishing bound transports along bijections of the `Ext` groups from that degree on,
+including between pairs in different categories. -/
+theorem IsExtBoundedBy.congr {N : ℕ} (h : IsExtBoundedBy.{w} X Y N)
+    (e : ∀ ⦃n⦄, N ≤ n → Ext.{w} X Y n ≃ Ext.{w'} X' Y' n) : IsExtBoundedBy.{w'} X' Y' N :=
+  ⟨fun _ hn ↦ haveI := h.subsingleton hn
+    (e hn).symm.subsingleton⟩
+
+/-- Eventual `Ext`-vanishing transports along degreewise bijections of `Ext` groups, including
+between pairs in different categories. -/
+theorem IsExtBounded.congr (h : IsExtBounded.{w} X Y)
+    (e : ∀ n, Ext.{w} X Y n ≃ Ext.{w'} X' Y' n) : IsExtBounded.{w'} X' Y' :=
+  (h.exists_bound.choose_spec.congr fun n _ ↦ e n).isExtBounded
+
+variable {k} in
+/-- Euler-admissibility transports along degreewise linear equivalences of `Ext` groups,
+including between pairs in different categories. -/
+theorem IsEulerAdmissible.congr (h : IsEulerAdmissible.{w} k X Y)
+    (e : ∀ n, Ext.{w} X Y n ≃ₗ[k] Ext.{w'} X' Y' n) : IsEulerAdmissible.{w'} k X' Y' :=
+  ⟨h.isExtFinite.congr e, h.isExtBounded.congr fun n ↦ (e n).toEquiv⟩
+
 /-- Degreewise linear equivalences of `Ext` groups preserve the Ext-Euler characteristic,
 including when the pairs lie in different categories. -/
-theorem extEuler_congr {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D]
-    [HasExt.{w'} D] {X Y : C} {X' Y' : D}
-    (e : ∀ n, Ext.{w} X Y n ≃ₗ[k] Ext.{w'} X' Y' n)
+theorem extEuler_congr (e : ∀ n, Ext.{w} X Y n ≃ₗ[k] Ext.{w'} X' Y' n)
     (h : IsEulerAdmissible.{w} k X Y) (h' : IsEulerAdmissible.{w'} k X' Y') :
     extEuler.{w'} k h' = extEuler.{w} k h := by
   obtain ⟨N, hN⟩ := h.isExtBounded.exists_bound
-  have hN' : IsExtBoundedBy.{w'} X' Y' N :=
-    ⟨fun n hn ↦ haveI := hN.subsingleton hn
-      (e n).toEquiv.symm.subsingleton⟩
-  rw [extEuler_eq k h hN, extEuler_eq k h' hN']
+  rw [extEuler_eq k h hN, extEuler_eq k h' (hN.congr fun n _ ↦ (e n).toEquiv)]
   exact Finset.sum_congr rfl fun n _ ↦ by rw [(e n).finrank_eq]
+
+end congr
 
 variable {k} {X X' Y Y' : C}
 
 /-- `Ext`-finiteness only depends on the isomorphism classes of the two objects. -/
 theorem IsExtFinite.of_iso (h : IsExtFinite.{w} k X Y) (e : X ≅ X') (f : Y ≅ Y') :
     IsExtFinite.{w} k X' Y' :=
-  ⟨fun n ↦ haveI := h.finiteDimensional n
-    Module.Finite.equiv (extLinearEquivOfIso k e f n)⟩
+  h.congr (extLinearEquivOfIso k e f)
 
 /-- A vanishing bound transports along isomorphisms of the two objects. -/
 theorem IsExtBoundedBy.of_iso {N : ℕ} (h : IsExtBoundedBy.{w} X Y N) (e : X ≅ X') (f : Y ≅ Y') :
     IsExtBoundedBy.{w} X' Y' N :=
-  ⟨fun n hn ↦ haveI := h.subsingleton hn
-    (extAddEquivOfIso e f n).symm.toEquiv.subsingleton⟩
+  h.congr fun n _ ↦ (extAddEquivOfIso e f n).toEquiv
 
 /-- Eventual `Ext`-vanishing only depends on the isomorphism classes of the two objects. -/
 theorem IsExtBounded.of_iso (h : IsExtBounded.{w} X Y) (e : X ≅ X') (f : Y ≅ Y') :
     IsExtBounded.{w} X' Y' :=
-  ⟨h.exists_bound.choose, h.exists_bound.choose_spec.of_iso e f⟩
+  h.congr fun n ↦ (extAddEquivOfIso e f n).toEquiv
 
 /-- Euler-admissibility only depends on the isomorphism classes of the two objects. -/
 theorem IsEulerAdmissible.of_iso (h : IsEulerAdmissible.{w} k X Y) (e : X ≅ X') (f : Y ≅ Y') :
     IsEulerAdmissible.{w} k X' Y' :=
-  ⟨h.isExtFinite.of_iso e f, h.isExtBounded.of_iso e f⟩
+  h.congr (extLinearEquivOfIso k e f)
 
 /-- The Ext-Euler characteristic only depends on the isomorphism classes of the two objects. -/
 theorem extEuler_of_iso (h : IsEulerAdmissible.{w} k X Y)
     (h' : IsEulerAdmissible.{w} k X' Y') (e : X ≅ X') (f : Y ≅ Y') :
     extEuler.{w} k h = extEuler.{w} k h' :=
-  (extEuler_congr k (fun n ↦ extLinearEquivOfIso k e f n) h h').symm
+  (extEuler_congr k (extLinearEquivOfIso k e f) h h').symm
 
 /-! ### Closure under extensions and finite direct sums -/
 

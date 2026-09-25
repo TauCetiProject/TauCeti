@@ -98,29 +98,37 @@ theorem IsExtBoundedBy.map {N : ℕ} (h : IsExtBoundedBy.{w} X Y N)
   ⟨fun _ hn ↦ haveI := h.subsingleton hn
     (hF hn).subsingleton⟩
 
-/-- Eventual `Ext`-vanishing is reflected by an exact functor which is injective on `Ext`. -/
+/-- Eventual `Ext`-vanishing is reflected by an exact functor which is injective on `Ext` in all
+large degrees. -/
 theorem IsExtBounded.of_map (h : IsExtBounded.{w'} (F.obj X) (F.obj Y))
-    (hF : ∀ n, Function.Injective (F.mapExtAddHom.{w, w'} X Y n)) :
-    IsExtBounded.{w} X Y :=
-  (h.exists_bound.choose_spec.of_map F fun n _ ↦ hF n).isExtBounded
+    (hF : ∀ᶠ n in Filter.atTop, Function.Injective (F.mapExtAddHom.{w, w'} X Y n)) :
+    IsExtBounded.{w} X Y := by
+  obtain ⟨N, hN⟩ := h.exists_bound
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 hF
+  exact ((hN.mono (le_max_left N M)).of_map F fun n hn ↦
+    hM n ((le_max_right N M).trans hn)).isExtBounded
 
-/-- Eventual `Ext`-vanishing is carried along an exact functor which is surjective on `Ext`. -/
+/-- Eventual `Ext`-vanishing is carried along an exact functor which is surjective on `Ext` in all
+large degrees. -/
 theorem IsExtBounded.map (h : IsExtBounded.{w} X Y)
-    (hF : ∀ n, Function.Surjective (F.mapExtAddHom.{w, w'} X Y n)) :
-    IsExtBounded.{w'} (F.obj X) (F.obj Y) :=
-  (h.exists_bound.choose_spec.map F fun n _ ↦ hF n).isExtBounded
+    (hF : ∀ᶠ n in Filter.atTop, Function.Surjective (F.mapExtAddHom.{w, w'} X Y n)) :
+    IsExtBounded.{w'} (F.obj X) (F.obj Y) := by
+  obtain ⟨N, hN⟩ := h.exists_bound
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 hF
+  exact ((hN.mono (le_max_left N M)).map F fun n hn ↦
+    hM n ((le_max_right N M).trans hn)).isExtBounded
 
 /-- Euler-admissibility is reflected by an exact functor which is injective on `Ext`. -/
 theorem IsEulerAdmissible.of_map (h : IsEulerAdmissible.{w'} k (F.obj X) (F.obj Y))
     (hF : ∀ n, Function.Injective (F.mapExtAddHom.{w, w'} X Y n)) :
     IsEulerAdmissible.{w} k X Y :=
-  ⟨h.isExtFinite.of_map F hF, h.isExtBounded.of_map F hF⟩
+  ⟨h.isExtFinite.of_map F hF, h.isExtBounded.of_map F (.of_forall hF)⟩
 
 /-- Euler-admissibility is carried along an exact functor which is surjective on `Ext`. -/
 theorem IsEulerAdmissible.map (h : IsEulerAdmissible.{w} k X Y)
     (hF : ∀ n, Function.Surjective (F.mapExtAddHom.{w, w'} X Y n)) :
     IsEulerAdmissible.{w'} k (F.obj X) (F.obj Y) :=
-  ⟨h.isExtFinite.map F hF, h.isExtBounded.map F hF⟩
+  ⟨h.isExtFinite.map F hF, h.isExtBounded.map F (.of_forall hF)⟩
 
 /-- Euler-admissibility on a pair of object properties is reflected by an exact functor carrying
 them into Euler-admissible properties and injective on the `Ext` groups between them. -/
