@@ -101,12 +101,8 @@ theorem f4ShortRootQuotientToIdealEquiv_mkQ_quotientLift (a : Fin 26) :
     f4ShortRootQuotientToIdealEquiv
         (f4ShortRootSubspace.mkQ (f4ShortRootQuotientLift a)) =
       f4ShortRootLieIdealBasis a := by
-  calc
-    _ = f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientBasis a) :=
-      congrArg f4ShortRootQuotientToIdealEquiv
-        (f4ShortRootSubspace_mkQ_quotientLift a)
-    _ = _ := f4ShortRootQuotientToIdealEquiv_basis a
-
+  simpa only [f4ShortRootSubspace_mkQ_quotientLift] using
+    f4ShortRootQuotientToIdealEquiv_basis a
 
 /-- The first-order quotient column of a numbered signed simple root. -/
 noncomputable def f4ShortRootQuotientFirstColumn

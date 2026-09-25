@@ -659,7 +659,6 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_short
   exact (congrArg P (f4ShortRootWeightIndexEquiv.symm_apply_apply a)).mp
     (h (f4ShortRootWeightIndexEquiv a))
 
-
 end
 
 end TauCeti.DynkinType
