@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
-public import Mathlib.Algebra.MonoidAlgebra.Defs
+import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
 # Popa–Zagier's explicit Hecke element
@@ -30,12 +31,18 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 
 ## Main definitions
 
+* `TauCeti.TraceFormulaMatrixModule.ofWeight n w B hw`: the element of `k[ℳₙ]` in which the class
+  of `A` has coefficient `w A + w (-A)`, for a weight `w` on integral matrices that vanishes on
+  every determinant-`n` matrix with an entry larger than `B` in absolute value.
 * `TauCeti.PopaZagier.weight M`: twelve times the coefficient of `M` in (15);
   `TauCeti.PopaZagier.weight₁`, ..., `TauCeti.PopaZagier.weight₄`: the same for `T₁`, ..., `T₄`.
-* `TauCeti.TraceFormulaMatrixModule.popaZagierElement n`: Popa–Zagier's element of `ℚ[ℳₙ]`.
+* `TauCeti.TraceFormulaMatrixModule.popaZagierElement k n`: Popa–Zagier's element of `k[ℳₙ]`,
+  for a division ring `k`.
 
 ## Main results
 
+* `TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`: the coefficient of the class of `A` in
+  `ofWeight n w B hw` is `w A + w (-A)`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
@@ -52,6 +59,12 @@ define it by (15).
 The weights are integers, twelve times Popa–Zagier's coefficients, so that identities between
 them are statements of integer linear arithmetic. Their definitions are exposed (`@[expose]`) so
 that other modules can unfold them in such identities and evaluate them by `decide +kernel`.
+
+Elements of `k[ℳₙ]` given by a weight on integral matrices, over any semiring `k`, are built by
+`ofWeight`: the class of `A` gets `w A + w (-A)`, and a bound `B` on the entries of the
+determinant-`n` matrices of nonzero weight makes the support finite. The element
+`popaZagierElement k n` is `ofWeight` applied to the weight divided by `12` in `k`; when `12` is
+invertible in `k`, for instance for `k = ℚ`, its coefficients are Popa–Zagier's.
 
 ## References
 
@@ -125,32 +138,87 @@ private theorem cases_of_weight_ne_zero {a b c d : ℤ}
   simp only [weight₁, weight₂, weight₃, weight₄] at h
   split_ifs at h <;> grind [chainWeight₃, chainWeight₄]
 
+/-- Every matrix `(a b; c d)` satisfying the inequalities of `T₁` has positive determinant
+`n = ad - bc` and entries at most `2n` in absolute value. -/
+private theorem bounds_of_T₁ {a b c d : ℤ} (hc : 0 ≤ c) (hca : c < a) (hd : a - d ≤ -b)
+    (hb : -b ≤ c) :
+    0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
+      |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
+  simp only [abs_le]
+  have h₁ := mul_nonneg (by omega : 0 ≤ d - a - b) hc
+  have : d ≤ a * d - b * c := by
+    linear_combination h₁ + mul_nonneg (by omega : 0 ≤ d) (by omega : 0 ≤ a - 1 - c) +
+      mul_nonneg (by omega : 0 ≤ a) hc
+  have : a ≤ a * d - b * c := by
+    linear_combination h₁ + mul_nonneg (by omega : 0 ≤ d - 1) (by omega : 0 ≤ a - c) +
+      mul_nonneg hc (by omega : 0 ≤ a - 1)
+  omega
+
+/-- Every matrix `(a b; c d)` satisfying the inequalities of `T₂` has positive determinant
+`n = ad - bc` and entries at most `2n` in absolute value. -/
+private theorem bounds_of_T₂ {a b c d : ℤ} (hbd : b < d) (hd : d ≤ 0) (hb : -b ≤ a - d)
+    (hc : a - d ≤ c) :
+    0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
+      |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
+  simp only [abs_le]
+  have h₁ := mul_nonneg (by omega : 0 ≤ -b) (by omega : 0 ≤ c - a + d)
+  have : a ≤ a * d - b * c := by
+    linear_combination h₁ + mul_nonneg (by omega : 0 ≤ a) (by omega : 0 ≤ d - b - 1) +
+      mul_nonneg (by omega : 0 ≤ -d) (by omega : 0 ≤ -b)
+  have : -b ≤ a * d - b * c := by
+    linear_combination h₁ + mul_nonneg (by omega : 0 ≤ a + b - d) (by omega : 0 ≤ d - b) +
+      mul_nonneg (by omega : 0 ≤ -b) (by omega : 0 ≤ d - b - 1) + mul_self_nonneg d
+  have : c ≤ 2 * (a * d - b * c) := by
+    linear_combination mul_nonneg (by omega : 0 ≤ c - a + d) (by omega : 0 ≤ -2 * b - 1) +
+      2 * mul_nonneg (by omega : 0 ≤ a - d) (by omega : 0 ≤ -b - 1 + d) +
+      (by omega : 0 ≤ a - d) + 2 * mul_self_nonneg d
+  omega
+
+/-- Every matrix `(a b; c d)` satisfying the inequalities of `T₃` has positive determinant
+`n = ad - bc` and entries at most `2n` in absolute value. -/
+private theorem bounds_of_T₃ {a b c d : ℤ} (ha : a ≤ 0) (hc : 0 < c) (hd : 0 ≤ a - d)
+    (hdc : a - d ≤ c) (hcb : c ≤ -b) :
+    0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
+      |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
+  simp only [abs_le]
+  have : -b ≤ a * d - b * c := by
+    linear_combination mul_nonneg (by omega : 0 ≤ -a) (by omega : 0 ≤ -d) +
+      mul_nonneg (by omega : 0 ≤ -b) (by omega : 0 ≤ c - 1)
+  have : -a ≤ a * d - b * c := by
+    linear_combination mul_nonneg (by omega : 0 ≤ -a) (by omega : 0 ≤ a - d) +
+      Int.le_self_sq (-a) + mul_nonneg (by omega : 0 ≤ -b) hc.le
+  omega
+
+/-- Every matrix `(a b; c d)` satisfying the inequalities of `T₄` has positive determinant
+`n = ad - bc` and entries at most `2n` in absolute value. -/
+private theorem bounds_of_T₄ {a b c d : ℤ} (hd : d ≤ 0) (hb : 0 < -b) (had : 0 ≤ a - d)
+    (hab : a - d ≤ -b) (hbc : -b ≤ c) :
+    0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
+      |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
+  simp only [abs_le]
+  have h₁ := mul_nonneg_of_nonpos_of_nonpos hd (by omega : a + b - d ≤ 0)
+  have h₂ := mul_nonneg (by omega : 0 ≤ -b) (by omega : 0 ≤ c + b)
+  have h₃ := mul_nonneg (by omega : 0 ≤ -b) (by omega : 0 ≤ -b - 1)
+  have : -b ≤ 2 * (a * d - b * c) := by
+    linear_combination 2 * h₁ + 2 * h₂ + sq_nonneg (d - b) + mul_self_nonneg d + h₃
+  have : -d ≤ 2 * (a * d - b * c) := by
+    linear_combination 2 * h₁ + 2 * h₂ + 2 * sq_nonneg (d - b) +
+      mul_nonneg (by omega : 0 ≤ -d) (by omega : 0 ≤ -2 * b - 1)
+  have : c ≤ 2 * (a * d - b * c) := by
+    linear_combination 2 * h₁ + mul_nonneg (by omega : 0 ≤ c + b) (by omega : 0 ≤ -2 * b - 1) +
+      sq_nonneg (d - b) + mul_self_nonneg d + h₃
+  omega
+
 /-- Every matrix `(a b; c d)` of nonzero weight has positive determinant `ad - bc` and entries at
 most twice its determinant in absolute value. -/
 private theorem bounds_of_weight_ne_zero {a b c d : ℤ}
     (h : weight₁ a b c d - weight₂ a b c d - weight₃ a b c d - weight₄ a b c d ≠ 0) :
     0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
       |c| ≤ 2 * (a * d - b * c) ∧ |d| ≤ 2 * (a * d - b * c) := by
-  simp only [abs_le]
-  rcases cases_of_weight_ne_zero h with h | h | h | h
-  · -- `T₁`: `d ≥ a - c ≥ 1` and `n ≥ d (a - c) + a c`
-    have : d ≤ a * d - b * c := by nlinarith
-    have : a ≤ a * d - b * c := by nlinarith
-    lia
-  · -- `T₂`: `n ≥ a (d - b) + b d` with `d - b ≥ 1` and `b d ≥ 0`
-    have : a ≤ a * d - b * c := by nlinarith
-    have : -b ≤ a * d - b * c := by nlinarith
-    have : c ≤ 2 * (a * d - b * c) := by nlinarith
-    lia
-  · -- `T₃`: `n = c (-b) - a (a - d) + a² ≥ c² + a²`
-    have : -b ≤ a * d - b * c := by nlinarith
-    have : -a ≤ a * d - b * c := by nlinarith
-    lia
-  · -- `T₄`: `n = c (-b) + d (a - d) + d² ≥ b² + d (-b) + d²`
-    have : -b ≤ a * d - b * c := by nlinarith [sq_nonneg (2 * d - b)]
-    have : -d ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - 2 * b)]
-    have : c ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - b)]
-    lia
+  rcases cases_of_weight_ne_zero h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ |
+    ⟨h₁, h₂, h₃, h₄, h₅⟩ | ⟨h₁, h₂, h₃, h₄, h₅⟩
+  exacts [bounds_of_T₁ h₁ h₂ h₃ h₄, bounds_of_T₂ h₁ h₂ h₃ h₄, bounds_of_T₃ h₁ h₂ h₃ h₄ h₅,
+    bounds_of_T₄ h₁ h₂ h₃ h₄ h₅]
 
 /-- **Popa–Zagier, Lemma 4(a)**, positivity: every matrix of nonzero weight has positive
 determinant. -/
@@ -176,54 +244,73 @@ end PopaZagier
 
 namespace TraceFormulaMatrixModule
 
-variable {n : ℤ}
+variable {k : Type*} {n : ℤ}
 
-/-- The coefficients of Popa–Zagier's element: the class of `A` gets
-`(weight A + weight (-A)) / 12`. -/
-private def popaZagierCoeff (n : ℤ) : TraceFormulaMatrixModule n → ℚ :=
-  Quotient.lift (fun A ↦ ((PopaZagier.weight A.1 : ℚ) + PopaZagier.weight (-A.1)) / 12)
-    fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]
+section Semiring
 
-/-- The coefficients of Popa–Zagier's element have finite support. -/
-private theorem finite_support_popaZagierCoeff (n : ℤ) :
-    (Function.support (popaZagierCoeff n)).Finite := by
-  -- matrices of nonzero weight have entries in `[-2n, 2n]`
-  have hfin : {A : TraceFormulaMatrix n | PopaZagier.weight A.1 ≠ 0}.Finite :=
-    ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-(2 * n)) (2 * n)).preimage
-      Subtype.val_injective.injOn).subset fun A h i j ↦ by
-        simpa [A.2, abs_le] using PopaZagier.abs_le_of_weight_ne_zero h i j
-  -- a class in the support has a representative of nonzero weight
-  refine (hfin.image mk).subset fun x hx ↦ ?_
-  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  by_cases h : PopaZagier.weight A.1 = 0
-  · exact ⟨-A, by simpa [popaZagierCoeff, h] using hx, mk_neg A⟩
-  · exact ⟨A, h, rfl⟩
+variable [Semiring k]
 
-/-- **Popa–Zagier's explicit Hecke element** of `ℚ[ℳₙ]` (written `Tₙ` with a tilde in their
-paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`). Its coefficients
-are given by `coeff_popaZagierElement_mk`. -/
-noncomputable def popaZagierElement (n : ℤ) : ℚ[TraceFormulaMatrixModule n] :=
-  .ofCoeff (.ofSupportFinite (popaZagierCoeff n) (finite_support_popaZagierCoeff n))
+/-- The element of `k[ℳₙ]` in which the class of `A` has coefficient `w A + w (-A)`, for a weight
+`w` on integral matrices that vanishes on every determinant-`n` matrix with an entry larger than
+`B` in absolute value. Its coefficients are given by `coeff_ofWeight_mk`. -/
+noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) :
+    k[TraceFormulaMatrixModule n] :=
+  .ofCoeff <| .ofSupportFinite
+    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.1 + w (-A.1))
+      fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]) <| by
+    -- a class in the support has a representative of nonzero weight
+    refine ((FixedDetMatrices.finite_setOf_abs_le n B).image mk).subset fun x hx ↦ ?_
+    induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+    obtain h | h : w A.1 ≠ 0 ∨ w (-A.1) ≠ 0 := by
+      by_contra! h
+      simp [h] at hx
+    exacts [⟨A, hw A h, rfl⟩, ⟨-A, hw (-A) h, mk_neg A⟩]
+
+/-- The coefficient of the class of `A` in `ofWeight n w B hw` is `w A + w (-A)`. -/
+@[simp]
+theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (A : TraceFormulaMatrix n) :
+    (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
+  simp [ofWeight, Finsupp.ofSupportFinite_coe]
+
+end Semiring
+
+section DivisionRing
+
+variable [DivisionRing k]
+
+variable (k) in
+/-- **Popa–Zagier's explicit Hecke element** of `k[ℳₙ]` (written `Tₙ` with a tilde in their
+paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`), with the weights
+divided by `12` in `k`. Its coefficients are given by `coeff_popaZagierElement_mk`. -/
+noncomputable def popaZagierElement (n : ℤ) : k[TraceFormulaMatrixModule n] :=
+  ofWeight n (fun M ↦ (PopaZagier.weight M : k) / 12) (2 * n) fun A h i j ↦ by
+    have h : PopaZagier.weight A.1 ≠ 0 := fun h' ↦ h (by simp [h'])
+    simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero h i j
 
 /-- The coefficient of the class of `A` in Popa–Zagier's element is
 `(weight A + weight (-A)) / 12`. -/
 @[simp]
 theorem coeff_popaZagierElement_mk (A : TraceFormulaMatrix n) :
-    (popaZagierElement n).coeff (mk A) =
-      ((PopaZagier.weight A.1 : ℚ) + PopaZagier.weight (-A.1)) / 12 := by
-  simp [popaZagierElement, popaZagierCoeff, Finsupp.ofSupportFinite_coe]
+    (popaZagierElement k n).coeff (mk A) =
+      ((PopaZagier.weight A.1 : k) + PopaZagier.weight (-A.1)) / 12 := by
+  simp [popaZagierElement, add_div]
 
 /-- With Popa–Zagier's representatives, `c > 0` or `c = 0 < a`, the coefficient of the class of
 `A = (a b; c d)` is `weight A / 12`. -/
 theorem coeff_popaZagierElement_mk_of_pos (A : TraceFormulaMatrix n)
     (hA : 0 < A.1 1 0 ∨ A.1 1 0 = 0 ∧ 0 < A.1 0 0) :
-    (popaZagierElement n).coeff (mk A) = PopaZagier.weight A.1 / 12 := by
+    (popaZagierElement k n).coeff (mk A) = PopaZagier.weight A.1 / 12 := by
   have : PopaZagier.weight (-A.1) = 0 := by
     by_contra h
     have := PopaZagier.pos_or_eq_zero_and_pos_of_weight_ne_zero h
     simp only [Matrix.neg_apply] at this
     lia
   simp [this]
+
+end DivisionRing
 
 end TraceFormulaMatrixModule
 
