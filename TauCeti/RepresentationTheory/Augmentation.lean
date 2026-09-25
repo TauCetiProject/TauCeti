@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.FDRep
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
-# The augmentation subrepresentation of a permutation representation
+# The augmentation subrepresentation of a free-module action
 
 For a monoid action on `X`, the augmentation subrepresentation of `k[X]` consists of the vectors
 whose coefficients sum to zero. For a group action on finite `X`, the sum of the standard basis
@@ -20,13 +20,13 @@ defined over any semiring. If `X` is nonempty, the invariant line is equivalent 
 representation on `k`: every coordinate of a vector in the line is its scalar coefficient.
 
 For finite `X` over a division ring, the augmentation subrepresentation has dimension `|X| - 1`.
-When `|X|` is nonzero in the coefficients, the invariant line complements it. The equivalence
+Over any ring where `|X|` is a unit, the invariant line complements it. The equivalence
 `TauCeti.ofMulActionEquivProdAugmentation` expresses this splitting: its first component is the
 average of the coefficients, and its second subtracts that multiple of the sum of the standard
 basis. For empty `X`, both subrepresentations are zero and are still complementary.
 
-Over a field, the character of the augmentation subrepresentation is the permutation character
-minus the trivial character, provided `X` is finite and nonempty. This identity holds even when
+Over a field, the character of the augmentation subrepresentation is the character of the induced
+free-module action minus the trivial character, provided `X` is finite and nonempty. This identity holds even when
 the characteristic divides `|X|`, so the invariant line is not a complement. These constructions
 underlie the standard representation of the symmetric group.
 
@@ -38,10 +38,10 @@ underlie the standard representation of the symmetric group.
 * `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
   differences of standard basis vectors from a fixed one.
 * `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
-  are complementary exactly when `X` is empty or its cardinality is nonzero in a division ring.
+  are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.
 * `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
 * `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
-* `TauCeti.character_augmentationSubrepresentation`: the character is the permutation character
+* `TauCeti.character_augmentationSubrepresentation`: the character is the free-module character
   minus `1`.
 
 ## Implementation notes
@@ -65,7 +65,7 @@ section Subrep
 
 variable (k : Type*) [Semiring k] (G X : Type*) [Monoid G] [MulAction G X]
 
-/-- The coefficient sum is invariant under the permutation action. -/
+/-- The coefficient sum is invariant under the induced action on the free module. -/
 @[simp]
 theorem sumCoords_basis_ofMulAction (g : G) (v : MonoidAlgebra k X) :
     (MonoidAlgebra.basis X k).sumCoords (Representation.ofMulAction k G X g v) =
@@ -286,19 +286,16 @@ end Dimension
 
 /-! ### The splitting -/
 
-section DivisionRingScalars
+section RingScalars
 
-variable (k : Type*) [DivisionRing k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
+variable (k : Type*) [Ring k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
 
 variable {k G X}
 
-/-- **The permutation representation splits.**  When the cardinality of `X` is invertible in `k`,
-the invariant line and the augmentation subrepresentation are complementary, so `k[X]` is the
-direct sum of a trivial representation and a representation of dimension `|X| - 1`.  For an empty
-`X` the two are complementary as well, for the degenerate reason that `k[X]` is then the zero
-module. -/
+/-- The invariant line and augmentation subrepresentation are complementary when the index
+set is empty or its cardinality is a unit in the coefficient ring. -/
 theorem isCompl_invariantLine_augmentationSubrepresentation
-    (h : IsEmpty X ∨ (Fintype.card X : k) ≠ 0) :
+    (h : IsEmpty X ∨ IsUnit (Fintype.card X : k)) :
     IsCompl (invariantLine k G X) (augmentationSubrepresentation k G X) := by
   rcases h with hX | h
   · -- `k[X]` is the zero module, so it has only one subrepresentation
@@ -314,34 +311,46 @@ theorem isCompl_invariantLine_augmentationSubrepresentation
       rintro v hv hv'
       obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
       rw [LinearMap.mem_ker, map_smul, sumCoords_basis_permutationSum, smul_eq_mul] at hv'
-      rw [(mul_eq_zero.mp hv').resolve_right h, zero_smul]
+      have hc : c = 0 := by
+        calc
+          c = (c * (Fintype.card X : k)) * Ring.inverse (Fintype.card X : k) :=
+            (Ring.mul_inverse_cancel_right _ _ h).symm
+          _ = 0 := by rw [hv', zero_mul]
+      rw [hc, zero_smul]
     · rw [codisjoint_iff, eq_top_iff]
       intro v _
       refine Submodule.mem_sup.mpr
-        ⟨((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X,
+        ⟨((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+            permutationSum k X,
         Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
-        v - ((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X,
+        v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+          permutationSum k X,
         ?_, by abel⟩
       rw [LinearMap.mem_ker, map_sub, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
-        div_mul_cancel₀ _ h, sub_self]
+        Ring.inverse_mul_cancel_right _ _ h, sub_self]
   exact Subrepresentation.isCompl_toSubmodule.mp hsub
 
 /-- The invariant line complements the augmentation subrepresentation exactly when the index
-set is empty or its cardinality is nonzero in the coefficient division ring. -/
+set is empty or its cardinality is a unit in the coefficient ring. -/
 theorem isCompl_invariantLine_augmentationSubrepresentation_iff :
     IsCompl (invariantLine k G X) (augmentationSubrepresentation k G X) ↔
-      IsEmpty X ∨ (Fintype.card X : k) ≠ 0 := by
+      IsEmpty X ∨ IsUnit (Fintype.card X : k) := by
   refine ⟨fun h => ?_, isCompl_invariantLine_augmentationSubrepresentation⟩
   rcases isEmpty_or_nonempty X with hX | hX
   · exact Or.inl hX
   right
-  intro hcard
-  have hmem : permutationSum k X ∈ augmentationSubrepresentation k G X := by
-    rw [mem_augmentationSubrepresentation_iff, sumCoords_basis_permutationSum, hcard]
-  have hzero := (Submodule.disjoint_def.mp
-    (Subrepresentation.isCompl_toSubmodule.mpr h).disjoint) (permutationSum k X)
-    (Submodule.mem_span_singleton_self _) hmem
-  exact permutationSum_ne_zero hzero
+  let x := Classical.arbitrary X
+  have hmem : MonoidAlgebra.single x (1 : k) ∈
+      (invariantLine k G X).toSubmodule ⊔ (augmentationSubrepresentation k G X).toSubmodule := by
+    rw [(Subrepresentation.isCompl_toSubmodule.mpr h).sup_eq_top]
+    exact Submodule.mem_top
+  obtain ⟨y, hy, z, hz, heq⟩ := Submodule.mem_sup.mp hmem
+  obtain ⟨c, rfl⟩ := mem_invariantLine_iff.mp hy
+  have hc := congrArg (MonoidAlgebra.basis X k).sumCoords heq
+  rw [map_add, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
+    mem_augmentationSubrepresentation_iff.mp hz, add_zero] at hc
+  have hcn : c * (Fintype.card X : k) = 1 := by simpa using hc
+  exact isUnit_iff_exists.mpr ⟨c, by rw [Nat.cast_comm]; exact hcn, hcn⟩
 
 /-! ### The splitting as trivial plus augmentation -/
 
@@ -349,48 +358,58 @@ section Splitting
 
 variable (k G X)
 
-/-- When `|X|` is nonzero in a division ring, the permutation representation splits as the
+/-- When `|X|` is a unit in a ring, the permutation representation splits as the
 trivial representation on the scalars and the augmentation subrepresentation. The scalar
 component multiplies the sum of the standard basis. -/
-noncomputable def ofMulActionEquivProdAugmentation (h : (Fintype.card X : k) ≠ 0) :
+noncomputable def ofMulActionEquivProdAugmentation (h : IsUnit (Fintype.card X : k)) :
     (Representation.ofMulAction k G X).Equiv
       ((Representation.trivial k G k).prod
-        (augmentationSubrepresentation k G X).toRepresentation) :=
-  letI : Nonempty X := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h (by simp [h0]))
-  (Subrepresentation.equivProdOfIsCompl
-      (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).trans
-    (Representation.Equiv.mk
-      (LinearEquiv.prodCongr (invariantLineEquivTrivial k G X).toLinearEquiv
-        (LinearEquiv.refl k _))
-      fun g => by
-        refine LinearMap.ext fun v => Prod.ext ?_ rfl
-        simp)
+        (augmentationSubrepresentation k G X).toRepresentation) := by
+  classical
+  exact
+    if hX : Nonempty X then
+      letI := hX
+      (Subrepresentation.equivProdOfIsCompl
+          (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).trans
+        (Representation.Equiv.mk
+          (LinearEquiv.prodCongr (invariantLineEquivTrivial k G X).toLinearEquiv
+            (LinearEquiv.refl k _))
+          fun g => by
+            refine LinearMap.ext fun v => Prod.ext ?_ rfl
+            simp)
+    else by
+      haveI : IsEmpty X := not_nonempty_iff.mp hX
+      haveI : Subsingleton k := subsingleton_of_zero_eq_one
+        (isUnit_zero_iff.mp (by simpa using h))
+      exact Representation.Equiv.mk (LinearEquiv.ofSubsingleton _ _)
+        fun _ => Subsingleton.elim _ _
 
 /-- The splitting adds a multiple of the sum of the standard basis to a vector of the augmentation
 subrepresentation. -/
 @[simp]
-theorem ofMulActionEquivProdAugmentation_symm_apply (h : (Fintype.card X : k) ≠ 0)
+theorem ofMulActionEquivProdAugmentation_symm_apply (h : IsUnit (Fintype.card X : k))
     (v : k × (augmentationSubrepresentation k G X).toSubmodule) :
     (ofMulActionEquivProdAugmentation k G X h).symm v =
       v.1 • permutationSum k X + (v.2 : MonoidAlgebra k X) := by
-  have : Nonempty X := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h (by simp [h0]))
-  -- The inverse of the composite applies the two inverses in turn.  `Representation.Equiv` has no
-  -- lemma for the inverse of a `Representation.Equiv.trans`, so that one step is definitional --
-  -- `(rfl)`, not `rfl`, the body of `ofMulActionEquivProdAugmentation` not being `@[expose]`d.
-  -- Each of the two inverses is then computed by its own lemma.
+  nontriviality k
+  have hX : Nonempty X :=
+    Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h.ne_zero (by simp [h0]))
+  letI := hX
+  -- On a nonempty index type, unfold the composite equivalence to expose its two inverses.
   have hcomp : (ofMulActionEquivProdAugmentation k G X h).symm v =
       (Subrepresentation.equivProdOfIsCompl
           (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).symm
-        ((invariantLineEquivTrivial k G X).symm v.1, v.2) := (rfl)
+        ((invariantLineEquivTrivial k G X).symm v.1, v.2) := by
+    simp only [ofMulActionEquivProdAugmentation, dif_pos hX]
   rw [hcomp, Subrepresentation.equivProdOfIsCompl_symm_apply,
     coe_invariantLineEquivTrivial_symm_apply]
 
-/-- The scalar component of the splitting is the average of the coefficients. -/
+/-- The scalar component is the coefficient sum times the ring inverse of the cardinality. -/
 @[simp]
-theorem ofMulActionEquivProdAugmentation_apply_fst (h : (Fintype.card X : k) ≠ 0)
+theorem ofMulActionEquivProdAugmentation_apply_fst (h : IsUnit (Fintype.card X : k))
     (v : MonoidAlgebra k X) :
     (ofMulActionEquivProdAugmentation k G X h v).1 =
-      (MonoidAlgebra.basis X k).sumCoords v / Fintype.card X := by
+      (MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k) := by
   have hrec : (ofMulActionEquivProdAugmentation k G X h v).1 • permutationSum k X +
       ((ofMulActionEquivProdAugmentation k G X h v).2 : MonoidAlgebra k X) = v := by
     rw [← ofMulActionEquivProdAugmentation_symm_apply k G X h,
@@ -399,21 +418,22 @@ theorem ofMulActionEquivProdAugmentation_apply_fst (h : (Fintype.card X : k) ≠
   rw [map_add, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
     mem_augmentationSubrepresentation_iff.mp (ofMulActionEquivProdAugmentation k G X h v).2.2,
     add_zero] at haug
-  rw [← haug, mul_div_assoc, div_self h, mul_one]
+  rw [← haug, Ring.mul_inverse_cancel_right _ _ h]
 
 /-- The augmentation component subtracts the average coefficient from every coordinate. -/
 @[simp]
-theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : (Fintype.card X : k) ≠ 0)
+theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : IsUnit (Fintype.card X : k))
     (v : MonoidAlgebra k X) :
     ((ofMulActionEquivProdAugmentation k G X h v).2 : MonoidAlgebra k X) =
-      v - ((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X := by
+      v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+        permutationSum k X := by
   rw [← ofMulActionEquivProdAugmentation_apply_fst k G X h v, eq_sub_iff_add_eq, add_comm,
     ← ofMulActionEquivProdAugmentation_symm_apply k G X h,
     (ofMulActionEquivProdAugmentation k G X h).symm_apply_apply]
 
 end Splitting
 
-end DivisionRingScalars
+end RingScalars
 
 section Field
 
@@ -426,7 +446,7 @@ The subtracted `1` is the trivial quotient `k[X] / ker(augmentation) ≃ k`, so 
 in `k` is needed: the identity holds in every characteristic, including the one dividing `|X|`,
 where the invariant line is *not* a complement.
 
-For a permutation representation the subtracted `1` is the trivial constituent: the character of
+For a monoid action the subtracted `1` is the trivial quotient: the character of
 `k[X]` counts fixed points, so the character here is the number of fixed points less one. -/
 @[simp]
 theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) :
