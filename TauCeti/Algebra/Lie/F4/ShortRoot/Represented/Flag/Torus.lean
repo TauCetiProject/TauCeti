@@ -35,7 +35,8 @@ variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
 private theorem f4ShortRootWeightTorusConj_mem_range_generator
     (s : Fin 4 → Aˣ) (k : f4ChevalleyIndex) :
-    f4ShortRootWeightTorusConjLinearMap s
+    (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))
         (f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   rcases k with α | r
@@ -48,8 +49,9 @@ private theorem f4ShortRootWeightTorusConj_mem_range_generator
           f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
       rw [← hα]
       exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inl α)
-    rw [f4ShortRootWeightTorusConjLinearMap_apply, hα,
-      f4ShortRootWeightTorusGL_conj_root]
+    have hconj := f4ShortRootWeightTorusGL_conj_root (A := A) s a
+    rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
+    rw [Matrix.lieConj_apply, hα, hconj]
     exact Submodule.smul_mem _ _ hgen
   · let a : Fin F4.rank := (F4.lieBasis valid_F4).baseSupportEquiv.symm r
     have hr : f4ModularChevalleyBasis (Sum.inr r) = f4ModularSimpleCoroot a := by
@@ -60,15 +62,17 @@ private theorem f4ShortRootWeightTorusConj_mem_range_generator
           f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
       rw [← hr]
       exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inr r)
-    rw [f4ShortRootWeightTorusConjLinearMap_apply, hr,
-      f4ShortRootWeightTorusGL_conj_simpleCoroot]
+    have hconj := f4ShortRootWeightTorusGL_conj_simpleCoroot (A := A) s a
+    rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
+    rw [Matrix.lieConj_apply, hr, hconj]
     exact hgen
 
 /-- The base-changed represented range is preserved by every short-root weight-torus point. -/
 theorem f4ShortRootWeightTorusConj_mem_representedRange
     (s : Fin 4 → Aˣ) {X : Matrix (Fin 26) (Fin 26) A}
     (hX : X ∈ f4ShortRootRepresentedRangeMatrixBaseChange (A := A)) :
-    f4ShortRootWeightTorusConjLinearMap s X ∈
+    (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s))) X ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   have hX' : X ∈ Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
       f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) :=
@@ -85,7 +89,8 @@ theorem f4ShortRootWeightTorusConj_mem_representedRange
 
 private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
     (s : Fin 4 → Aˣ) (i : Fin 26) :
-    f4ShortRootWeightTorusConjLinearMap s
+    (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))
         (f4ShortRootAdjointMatrixBaseChange (A := A)
           (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
@@ -101,8 +106,9 @@ private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
         (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) =
           f4ModularRootVector α := by
       rw [hi', coe_f4ShortRootLieIdealBasis_symm_inl]
-    rw [f4ShortRootWeightTorusConjLinearMap_apply, hroot,
-      f4ShortRootWeightTorusGL_conj_root]
+    have hconj := f4ShortRootWeightTorusGL_conj_root (A := A) s α
+    rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
+    rw [Matrix.lieConj_apply, hroot, hconj]
     exact Submodule.smul_mem _ _ (hroot ▸ hgen)
   · fin_cases k
     · have hi' : i = 12 :=
@@ -113,9 +119,10 @@ private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
               (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (2 : Fin 4))) ∈
             f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
         simpa only [coe_f4ShortRootLieIdealBasis_twelve] using hgen
-      rw [f4ShortRootWeightTorusConjLinearMap_apply,
-        coe_f4ShortRootLieIdealBasis_twelve,
-        f4ShortRootWeightTorusGL_conj_simpleCoroot]
+      have hconj := f4ShortRootWeightTorusGL_conj_simpleCoroot (A := A) s
+        (Fin.cast rank_F4.symm (2 : Fin 4))
+      rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
+      rw [Matrix.lieConj_apply, coe_f4ShortRootLieIdealBasis_twelve, hconj]
       exact hgen'
     · have hi' : i = 13 :=
         (f4ShortRootWeightIndexEquiv_apply_eq_inr_one_iff i).mp (by simpa using hi)
@@ -125,16 +132,18 @@ private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
               (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (3 : Fin 4))) ∈
             f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
         simpa only [coe_f4ShortRootLieIdealBasis_thirteen] using hgen
-      rw [f4ShortRootWeightTorusConjLinearMap_apply,
-        coe_f4ShortRootLieIdealBasis_thirteen,
-        f4ShortRootWeightTorusGL_conj_simpleCoroot]
+      have hconj := f4ShortRootWeightTorusGL_conj_simpleCoroot (A := A) s
+        (Fin.cast rank_F4.symm (3 : Fin 4))
+      rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
+      rw [Matrix.lieConj_apply, coe_f4ShortRootLieIdealBasis_thirteen, hconj]
       exact hgen'
 
 /-- The base-changed represented ideal is preserved by every short-root weight-torus point. -/
 theorem f4ShortRootWeightTorusConj_mem_representedIdeal
     (s : Fin 4 → Aˣ) {X : Matrix (Fin 26) (Fin 26) A}
     (hX : X ∈ f4ShortRootRepresentedIdealMatrixBaseChange (A := A)) :
-    f4ShortRootWeightTorusConjLinearMap s X ∈
+    (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s))) X ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
   have hX' : X ∈ Submodule.span A (Set.range fun i : Fin 26 =>
       f4ShortRootAdjointMatrixBaseChange (A := A)
@@ -165,11 +174,12 @@ private theorem torus_endOfPoint_mem_ideal
     (f4ShortRootRepresentedIdealMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagIdeal_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
-    (f4ShortRootWeightTorusConjLinearMap s) ?_ ?_ hx
+    ((Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))) ?_ ?_ hx
   · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
-      hg, f4ShortRootWeightTorusConjLinearMap_apply,
+      hg, Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv,
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
   · intro Y hY
     exact f4ShortRootWeightTorusConj_mem_representedIdeal s hY
@@ -189,11 +199,12 @@ private theorem torus_endOfPoint_mem_range
     (f4ShortRootRepresentedRangeMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagRange_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
-    (f4ShortRootWeightTorusConjLinearMap s) ?_ ?_ hx
+    ((Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))) ?_ ?_ hx
   · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
-      hg, f4ShortRootWeightTorusConjLinearMap_apply,
+      hg, Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv,
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
   · intro Y hY
     exact f4ShortRootWeightTorusConj_mem_representedRange s hY

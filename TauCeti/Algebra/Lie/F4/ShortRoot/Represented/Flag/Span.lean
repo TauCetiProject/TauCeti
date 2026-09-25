@@ -430,11 +430,14 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       exact Submodule.subset_span ⟨j', by rw [hj]⟩
     have hmap := hIdeal hjmem
     unfold cotangentFlagIdeal at hmap
-    apply Module.Basis.repr_eq_zero_of_mem_span_range
-      (f4ShortRootCotangentFlagBasis.baseChange A)
-      (fun i : Fin f4ShortRootRepresentedIdealRank =>
-        Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i)) hmap
-    rintro ⟨i', hi'⟩
+    have hsupp :=
+      (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
+        (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
+          Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
+        (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
+    apply Finsupp.notMem_support_iff.mp
+    intro hcoord
+    rcases hsupp hcoord with ⟨i', hi'⟩
     have hiIdeal : i.val < f4ShortRootRepresentedIdealRank := by
       rw [← hi']
       exact i'.isLt
@@ -450,11 +453,14 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
         exact Submodule.subset_span ⟨j', by rw [hj]⟩
       have hmap := hRange hjmem
       unfold cotangentFlagRange at hmap
-      apply Module.Basis.repr_eq_zero_of_mem_span_range
-        (f4ShortRootCotangentFlagBasis.baseChange A)
-        (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-          Fin.castAdd f4ShortRootRepresentedComplementRank i) hmap
-      rintro ⟨i', hi'⟩
+      have hsupp :=
+        (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
+          (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
+            Fin.castAdd f4ShortRootRepresentedComplementRank i)
+          (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
+      apply Finsupp.notMem_support_iff.mp
+      intro hcoord
+      rcases hsupp hcoord with ⟨i', hi'⟩
       have hiRange : i.val < f4ShortRootRepresentedIdealRank + 26 := by
         rw [← hi']
         exact i'.isLt

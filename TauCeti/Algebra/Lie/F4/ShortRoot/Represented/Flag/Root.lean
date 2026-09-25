@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Torus
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Exponential
+public import Mathlib.Algebra.Lie.Matrix
 
 /-!
 # Root-subgroup stability of the represented modular F4 flag
@@ -89,32 +90,13 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
       rw [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span]
       exact Submodule.subset_span (Set.mem_range_self X)
 
-/-- Conjugation by a carrier root-subgroup point, as a linear map on matrices. -/
-noncomputable def f4ShortRootRootConjLinearMap
-    (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
-    Matrix (Fin 26) (Fin 26) A →ₗ[A] Matrix (Fin 26) (Fin 26) A where
-  toFun X :=
-    ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) * X *
-      (((rootSubgroupPoints k A u)⁻¹ : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
-  map_add' X Y := by rw [Matrix.mul_add, Matrix.add_mul]
-  map_smul' c X := by rw [RingHom.id_apply, Matrix.mul_smul, Matrix.smul_mul]
-
-omit [Algebra 𝔽₂ A] in
-@[simp] theorem f4ShortRootRootConjLinearMap_apply
-    (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
-    (X : Matrix (Fin 26) (Fin 26) A) :
-    f4ShortRootRootConjLinearMap k u X =
-      ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) * X *
-        (((rootSubgroupPoints k A u)⁻¹ : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) := by
-  unfold f4ShortRootRootConjLinearMap
-  rfl
-
 /-- Root conjugation carries a represented adjoint matrix to the adjoint matrix of the
 integrally transformed ambient vector. -/
-theorem f4ShortRootRootConjLinearMap_adjoint
+theorem f4ShortRootRoot_lieConj_adjoint
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
-    f4ShortRootRootConjLinearMap k u
+    (Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))
         (f4ShortRootBaseChangeAdjointMatrixLinearMap x) =
       f4ShortRootBaseChangeAdjointMatrixLinearMap
         (f4RootExponential k (Multiplicative.toAdd u) x) := by
@@ -140,6 +122,8 @@ theorem f4ShortRootRootConjLinearMap_adjoint
       _ = R' * E := hraw
       _ = _ := congrArg (R' * ·) hcarrier
   -- The named adjoint matrix map is definitionally `toMatrix B B`.
+  rw [Matrix.lieConj_apply,
+    ← Matrix.GeneralLinearGroup.coe_inv (rootSubgroupPoints k A u : GL (Fin 26) A)]
   change (G : Matrix (Fin 26) (Fin 26) A) * R *
       ((G⁻¹ : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) = R'
   calc
@@ -157,7 +141,8 @@ theorem f4ShortRootRootConj_mem_representedRange
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     {X : Matrix (Fin 26) (Fin 26) A}
     (hX : X ∈ f4ShortRootRepresentedRangeMatrixBaseChange (A := A)) :
-    f4ShortRootRootConjLinearMap k u X ∈
+    (Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A))) X ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   have hX' : X ∈ Submodule.span A (Set.range fun x : f4ModularChevalleyLieAlgebra =>
       f4ShortRootAdjointMatrixBaseChange (A := A) x) :=
@@ -165,14 +150,15 @@ theorem f4ShortRootRootConj_mem_representedRange
   refine Submodule.span_induction ?_ (by simp) ?_ ?_ hX'
   · rintro _ ⟨x, rfl⟩
     -- Rewrite the span generator as the named adjoint matrix.
-    change f4ShortRootRootConjLinearMap k u
+    change (Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))
         (f4ShortRootAdjointMatrixBaseChange (A := A) x) ∈ _
     have heval : f4ShortRootBaseChangeAdjointMatrixLinearMap
         ((TauCeti.cancelBaseChange ℤ 𝔽₂ A
           f4ChevalleyLieLattice) ((1 : A) ⊗ₜ[𝔽₂] x)) =
         f4ShortRootAdjointMatrixBaseChange (A := A) x :=
       f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul x
-    rw [← heval, f4ShortRootRootConjLinearMap_adjoint]
+    rw [← heval, f4ShortRootRoot_lieConj_adjoint]
     exact f4ShortRootBaseChangeAdjointMatrix_mem_range _
   · intro X Y _ _ hX hY
     rw [map_add]
@@ -203,7 +189,8 @@ theorem f4ShortRootRootConj_mem_representedIdeal
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     {X : Matrix (Fin 26) (Fin 26) A}
     (hX : X ∈ f4ShortRootRepresentedIdealMatrixBaseChange (A := A)) :
-    f4ShortRootRootConjLinearMap k u X ∈
+    (Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A))) X ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
   have hX' : X ∈ Submodule.span A (Set.range fun y : f4ShortRootLieIdeal =>
       f4ShortRootAdjointMatrixBaseChange (A := A)
@@ -227,10 +214,11 @@ theorem f4ShortRootRootConj_mem_representedIdeal
             f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul _ _
           _ = _ := one_smul A _
     -- Rewrite the ideal span generator as the matrix of its scalar-extended vector.
-    change f4ShortRootRootConjLinearMap k u
+    change (Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))
         (f4ShortRootAdjointMatrixBaseChange (A := A)
           (y : f4ModularChevalleyLieAlgebra)) ∈ _
-    rw [← heval, f4ShortRootRootConjLinearMap_adjoint,
+    rw [← heval, f4ShortRootRoot_lieConj_adjoint,
       f4RootExponential_intertwines]
     exact f4ShortRootBaseChangeAdjointMatrix_mem_ideal
       (f4ShortRootExponential k (Multiplicative.toAdd u) z)
@@ -256,11 +244,13 @@ private theorem root_endOfPoint_mem_ideal
     (f4ShortRootRepresentedIdealMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagIdeal_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
-    (f4ShortRootRootConjLinearMap k u) ?_ ?_ hx
+    ((Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))) ?_ ?_ hx
   · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
-      hg, f4ShortRootRootConjLinearMap_apply,
+      hg, Matrix.lieConj_apply,
+      ← Matrix.GeneralLinearGroup.coe_inv (rootSubgroupPoints k A u : GL (Fin 26) A),
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
   · intro Y hY
     exact f4ShortRootRootConj_mem_representedIdeal k u hY
@@ -280,11 +270,13 @@ private theorem root_endOfPoint_mem_range
     (f4ShortRootRepresentedRangeMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagRange_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
-    (f4ShortRootRootConjLinearMap k u) ?_ ?_ hx
+    ((Matrix.lieConj ((rootSubgroupPoints k A u : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))) ?_ ?_ hx
   · intro y
     rw [f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_adjointComodule_endOfPoint,
-      hg, f4ShortRootRootConjLinearMap_apply,
+      hg, Matrix.lieConj_apply,
+      ← Matrix.GeneralLinearGroup.coe_inv (rootSubgroupPoints k A u : GL (Fin 26) A),
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply]
   · intro Y hY
     exact f4ShortRootRootConj_mem_representedRange k u hY

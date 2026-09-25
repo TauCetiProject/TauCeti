@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Action
+public import Mathlib.Algebra.Lie.Matrix
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
@@ -380,26 +381,6 @@ theorem f4ShortRootWeightTorusGL_conj_simpleCoroot
   · have hweight := f4ShortRootAdjointMatrix_simpleCoroot_weight_support a i j hcoeff
     rw [hweight]
     rw [mul_right_comm, Units.mul_inv, one_mul]
-
-/-- Send a matrix `X` to its conjugate by the short-root weight-torus matrix. -/
-noncomputable def f4ShortRootWeightTorusConjLinearMap (s : Fin 4 → Aˣ) :
-    Matrix (Fin 26) (Fin 26) A →ₗ[A] Matrix (Fin 26) (Fin 26) A where
-  toFun X :=
-    (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A) * X *
-      (((f4ShortRootWeightTorusGL s)⁻¹ : GL (Fin 26) A) :
-        Matrix (Fin 26) (Fin 26) A)
-  map_add' X Y := by rw [Matrix.mul_add, Matrix.add_mul]
-  map_smul' c X := by rw [RingHom.id_apply, Matrix.mul_smul, Matrix.smul_mul]
-
-omit [Algebra (ZMod 2) A] in
-@[simp] theorem f4ShortRootWeightTorusConjLinearMap_apply
-    (s : Fin 4 → Aˣ) (X : Matrix (Fin 26) (Fin 26) A) :
-    f4ShortRootWeightTorusConjLinearMap s X =
-      (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A) * X *
-        (((f4ShortRootWeightTorusGL s)⁻¹ : GL (Fin 26) A) :
-          Matrix (Fin 26) (Fin 26) A) := by
-  rw [f4ShortRootWeightTorusConjLinearMap]
-  rfl
 
 end TorusConjugation
 
