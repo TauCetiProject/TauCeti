@@ -269,6 +269,7 @@ theorem pointsFppfGroupObjectMap_id (H : _root_.CommHopfAlgCat.{u} R) :
   exact CategoryTheory.Functor.map_id _ _
 
 /-- Formation of the induced morphism on fppf points reverses composition. -/
+@[simp]
 theorem pointsFppfGroupObjectMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
     (g : K ⟶ L) :
     pointsFppfGroupObjectMap (f ≫ g) = pointsFppfGroupObjectMap g ≫ pointsFppfGroupObjectMap f := by
