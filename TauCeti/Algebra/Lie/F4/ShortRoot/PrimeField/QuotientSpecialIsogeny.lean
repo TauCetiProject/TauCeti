@@ -298,8 +298,7 @@ noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A] [Algebra 𝔽
   CommHopfAlgCat.mapMulEquivOfPresentation Q A (GeneralLinear.generatedGroupScheme_def 26 generator)
 
 private theorem groupScheme_X_left : groupScheme.X.left = Spec (CommRingCat.of Q) := by
-  rw [show groupScheme = CommHopfAlgCat.quotientSpec H₂₆ J from
-    GeneralLinear.generatedGroupScheme_def 26 generator]
+  rw [groupScheme_def, definingIdeal_def]
   exact hopfSpec_obj_X_left 𝔽₂ _
 
 private theorem groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A] [Algebra 𝔽₂ A]
