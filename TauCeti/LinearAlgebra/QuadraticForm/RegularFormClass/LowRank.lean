@@ -18,14 +18,9 @@ are isometric exactly when they have the same discriminant `d` and the same Hass
 `⟨-1, -1, -1, -1⟩` both have trivial discriminant and trivial Hasse invariant, since
 `[(-1, -1)]⁶ = 1`, and they are not isometric, one being positive and the other negative definite.
 
-The proof reduces every rank at most three to rank three by adding copies of `⟨1⟩`, which changes
-`d` and `s` in the same way on both sides, and then cancels those copies by Witt cancellation. In
-rank three, scaling by the discriminant makes the discriminant trivial and changes the Hasse
-invariant by a factor that depends only on the discriminant. A ternary form of trivial discriminant
-is `⟨-a, -b, ab⟩`, the pure norm form of the quaternion algebra `ℍ[K,a,b]`, and its Hasse invariant
-is `[(a, b)] · [(-1, -1)]`. Two such forms with the same Hasse invariant therefore come from
-quaternion algebras with the same Brauer class, hence isomorphic, and isomorphic quaternion algebras
-have isometric pure norm forms.
+The class-level theorem is stated for `RegularFormClass K`; its form-level counterpart applies to
+regular forms on finite-dimensional spaces of the same dimension. Use either theorem after proving
+equality of the rank, discriminant, and Hasse invariant, together with the bound `n ≤ 3`.
 
 ## Main results
 
@@ -40,8 +35,6 @@ have isometric pure norm forms.
 
 ## References
 
-* [Tau Ceti roadmap, QuadraticFormInvariants, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/QuadraticFormInvariants/README.md):
-  the classification blueprint using padding, discriminant scaling, and quaternion pure norms.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §3, (3.21).
 -/
