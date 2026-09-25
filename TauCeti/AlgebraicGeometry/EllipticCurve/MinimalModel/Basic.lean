@@ -225,8 +225,8 @@ and `C` is a change of variables with coefficients in `R`, then `C • W` is min
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
 between minimal models of an elliptic curve are exactly those defined over `R`. -/
-theorem isMinimal_baseChange_smul (C : VariableChange R) (W : WeierstrassCurve K)
-    [IsMinimal R W] : IsMinimal R (C.baseChange K • W) := by
+theorem isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) : IsMinimal R (C.baseChange K • W) := by
   have hW : (C • W.integralModel R).baseChange K = C.baseChange K • W := by
     rw [baseChange, ← map_variableChange, ← baseChange, baseChange_integralModel_eq R W]
     rfl

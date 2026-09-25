@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Class
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 
 /-!
@@ -53,22 +54,10 @@ namespace WeierstrassCurve
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
-variable (O : Type*) [CommRing O] [IsDedekindDomain O]
+variable {O : Type*} [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
 /-! ### Minimality at one prime -/
-
-/-- The four components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`. -/
-private theorem mul_inv_components (C D : VariableChange K) :
-    ((C * D⁻¹).u : K) = C.u / D.u ∧
-      (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 ∧
-      (C * D⁻¹).s = (C.s - D.s) / (D.u : K) ∧
-      (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
-  simp only [VariableChange.mul_def, VariableChange.inv_def, Units.val_mul,
-    Units.val_inv_eq_inv_val]
-  refine ⟨by ring, by ring, by ring, by ring⟩
-
-variable {O}
 
 /-- **Minimality at `v` from approximation of a local minimalising change of variables.** If `D`
 carries `W` to a model minimal at `v`, then so does every `C` whose scaling factor has the same
@@ -86,7 +75,14 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
   have hv := v.integers_valuation_localizationAtPrime (K := K)
   have hD : 0 < v.valuation K D.u :=
     zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
-  obtain ⟨hBu, hBr, hBs, hBt⟩ := mul_inv_components C D
+  have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
+    rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
+    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
+    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
+    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
   -- The four components of `C * D⁻¹` are integral at `v`, the first a unit.
   obtain ⟨u, hu'⟩ := hv.exists_of_le_one (r := ((C * D⁻¹).u : K)) (by
     rw [hBu, map_div₀, hu, div_self hD.ne'])
