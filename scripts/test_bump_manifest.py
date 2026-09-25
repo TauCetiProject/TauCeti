@@ -1,9 +1,15 @@
 """Tests for scripts/bump_manifest.py, the whole-manifest check in check-bump.sh step 3."""
 
 import copy
+import json
+import pathlib
+import subprocess
+import sys
 import unittest
 
 from bump_manifest import problems
+
+FIXTURES = pathlib.Path(__file__).resolve().parent / "bump_manifest_fixtures"
 
 REV_OLD, REV_NEW = "a" * 40, "b" * 40
 
@@ -50,12 +56,63 @@ class BumpManifestTest(unittest.TestCase):
     def test_genuine_bump_passes(self):
         self.assertEqual(problems(*fixture()), [])
 
-    def test_manifest_format_version_may_follow_mathlib(self):
+    def test_real_bump_passes(self):
+        load = lambda n: json.loads((FIXTURES / f"{n}.json").read_text())
+        self.assertEqual(problems(load("pr"), load("mathlib"), load("base")), [])
+
+    def test_manifest_format_version_must_be_mathlibs(self):
         pr, ml, base = fixture()
         ml["version"] = pr["version"] = "1.3.0"
         self.assertEqual(problems(pr, ml, base), [])
+        pr["version"] = "1.2.0"  # keeping base's format when mathlib@new moved is rejected
+        self.assertRejected(pr, ml, base, "manifest version")
         pr["version"] = "9.9.9"
         self.assertRejected(pr, ml, base, "manifest version")
+        del pr["version"]
+        self.assertRejected(pr, ml, base, "manifest version")
+
+    def test_comparison_distinguishes_json_types(self):
+        pr, ml, base = fixture()
+        pr["fixedToolchain"] = 0
+        self.assertRejected(pr, ml, base, "top-level manifest fields differ from base")
+        pr, ml, base = fixture()
+        pr["packages"][1]["inherited"] = 1
+        self.assertRejected(pr, ml, base, "does not match mathlib@new")
+
+    def test_url_spelling_is_exact(self):
+        pr, ml, base = fixture()
+        pr["packages"][1]["url"] += ".git"
+        self.assertRejected(pr, ml, base, "does not match mathlib@new")
+
+    def test_top_level_field_removed(self):
+        pr, ml, base = fixture()
+        del pr["lakeDir"]
+        self.assertRejected(pr, ml, base, "top-level manifest fields differ from base")
+
+    def test_package_names_are_validated_in_every_manifest(self):
+        for which in (0, 1, 2):
+            for bad in (None, 7, ["x"], ""):
+                with self.subTest(which=which, bad=bad):
+                    ms = list(fixture())
+                    ms[which]["packages"][-1]["name"] = bad
+                    self.assertRejected(*ms, "without a string name")
+        pr, ml, base = fixture()
+        ml["packages"].append(copy.deepcopy(ml["packages"][0]))
+        self.assertRejected(pr, ml, base, "duplicate package names in mathlib manifest")
+
+    def test_cli_fails_cleanly_on_malformed_input(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            paths = []
+            for i, content in enumerate(('{"packages": [{"name": {"a": 1}}]}', "{}", "[]")):
+                path = pathlib.Path(d) / f"{i}.json"
+                path.write_text(content)
+                paths.append(str(path))
+            script = pathlib.Path(__file__).resolve().parent / "bump_manifest.py"
+            result = subprocess.run([sys.executable, str(script), *paths],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertNotIn("Traceback", result.stderr + result.stdout)
 
     def test_dependency_fields_beyond_the_old_four_are_compared(self):
         for field, value in (("subDir", "../../TauCeti"), ("configFile", "evil.lean"),

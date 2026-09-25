@@ -5,7 +5,8 @@ nominated branch. This module checks that nothing ELSE in the PR's lake-manifest
 what that one fact determines:
 
 * every top-level field (`name`, `packagesDir`, `lakeDir`, `fixedToolchain`, ...) equals the base
-  manifest's, with the same set of keys, and the format `version` is base's or mathlib@new's;
+  manifest's, with the same set of keys, and the format `version` equals mathlib@new's (Lake decodes
+  entries according to `version`, and the entries are mathlib@new's);
 * the mathlib entry equals the base's mathlib entry in every field except `rev`;
 * every other entry equals the same-named entry of mathlib's own manifest at the new rev in every
   field, except that `inherited` is `true` (Lake marks a dependency's dependencies as inherited
@@ -24,6 +25,22 @@ import re
 import sys
 
 
+def same(a, b) -> bool:
+    """JSON equality that distinguishes types (Python's `==` has `True == 1` and `0 == False`)."""
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, dict):
+        return a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return len(a) == len(b) and all(same(x, y) for x, y in zip(a, b))
+    return a == b
+
+
+def differing(a: dict, b: dict, skip=()) -> list[str]:
+    return [k for k in sorted(set(a) | set(b), key=str)
+            if k not in skip and not same(a.get(k, ...), b.get(k, ...))]
+
+
 def problems(pr: dict, ml: dict, base: dict) -> list[str]:
     out: list[str] = []
     for name, m in (("PR", pr), ("mathlib", ml), ("base", base)):
@@ -31,22 +48,22 @@ def problems(pr: dict, ml: dict, base: dict) -> list[str]:
             return [f"{name} manifest is not an object with a `packages` list"]
         if not all(isinstance(p, dict) for p in m["packages"]):
             return [f"{name} manifest has a package entry that is not an object"]
+        names = [p.get("name") for p in m["packages"]]
+        if not all(isinstance(n, str) and n for n in names):
+            return [f"{name} manifest has a package without a string name"]
+        dups = sorted({n for n in names if names.count(n) > 1})
+        if dups:
+            return [f"duplicate package names in {name} manifest: {dups}"]
 
-    # `version` is the manifest format, which the toolchain bump may legitimately move; it must
-    # then be the format mathlib@new itself uses. Every other top-level field equals base.
-    top = lambda m: {k: v for k, v in m.items() if k not in ("packages", "version")}
-    if top(pr) != top(base):
-        keys = sorted(set(top(pr)) | set(top(base)))
-        changed = [k for k in keys if pr.get(k, "<absent>") != base.get(k, "<absent>")]
+    # `version` is the manifest format. Lake decodes every entry according to it, and the entries
+    # are mathlib@new's, so it must be mathlib@new's. Every other top-level field equals base.
+    changed = differing(pr, base, skip=("packages", "version"))
+    if changed:
         out.append(f"top-level manifest fields differ from base: {changed}")
-    if pr.get("version") not in (base.get("version"), ml.get("version")) or "version" not in pr:
-        out.append(f"manifest version {pr.get('version')!r} is neither base's nor mathlib@new's")
+    if "version" not in pr or not same(pr.get("version"), ml.get("version")):
+        out.append(f"manifest version {pr.get('version')!r} is not mathlib@new's "
+                   f"({ml.get('version')!r})")
 
-    names = [p.get("name") for p in pr["packages"]]
-    dups = sorted({n for n in names if names.count(n) > 1}, key=str)
-    if dups:
-        out.append(f"duplicate package names in PR manifest: {dups}")
-        return out
     for p in pr["packages"]:
         if p.get("type") != "git":
             out.append(f"PR pins non-git package {p.get('name')!r} (type {p.get('type')!r})")
@@ -59,25 +76,20 @@ def problems(pr: dict, ml: dict, base: dict) -> list[str]:
     base_ml = [p for p in base["packages"] if p.get("name") == "mathlib"]
     if "mathlib" not in pr_by or len(base_ml) != 1:
         return out + ["expected exactly one `mathlib` package in both the PR and base manifests"]
-    without_rev = lambda p: {k: v for k, v in p.items() if k != "rev"}
-    if without_rev(pr_by["mathlib"]) != without_rev(base_ml[0]):
-        keys = sorted(set(pr_by["mathlib"]) | set(base_ml[0]))
-        changed = [k for k in keys if k != "rev" and
-                   pr_by["mathlib"].get(k, "<absent>") != base_ml[0].get(k, "<absent>")]
+    changed = differing(pr_by["mathlib"], base_ml[0], skip=("rev",))
+    if changed:
         out.append(f"the mathlib entry changes fields other than `rev`: {changed}")
 
     deps = {n: p for n, p in pr_by.items() if n != "mathlib"}
     ml_by = {p.get("name"): p for p in ml["packages"]}
-    only_pr, only_ml = sorted(set(deps) - set(ml_by), key=str), sorted(set(ml_by) - set(deps), key=str)
+    only_pr, only_ml = sorted(set(deps) - set(ml_by)), sorted(set(ml_by) - set(deps))
     if only_pr:
         out.append(f"PR pins deps mathlib@new does not depend on: {only_pr}")
     if only_ml:
         out.append(f"PR is missing deps mathlib@new depends on: {only_ml}")
     for n in sorted(set(deps) & set(ml_by)):
-        expected = dict(ml_by[n], inherited=True)
-        if deps[n] != expected:
-            keys = sorted(set(deps[n]) | set(expected))
-            changed = [k for k in keys if deps[n].get(k, "<absent>") != expected.get(k, "<absent>")]
+        changed = differing(deps[n], dict(ml_by[n], inherited=True))
+        if changed:
             out.append(f"dep {n!r} does not match mathlib@new's entry (fields {changed})")
     return out
 
@@ -91,7 +103,11 @@ def main(argv: list[str]) -> int:
     except Exception as e:
         print(f"cannot parse manifest: {e}")
         return 1
-    found = problems(pr, ml, base)
+    try:
+        found = problems(pr, ml, base)
+    except Exception as e:  # malformed input must fail closed with a message, not a traceback
+        print(f"cannot validate manifest: {type(e).__name__}: {e}")
+        return 1
     if found:
         print(found[0])
         return 1
