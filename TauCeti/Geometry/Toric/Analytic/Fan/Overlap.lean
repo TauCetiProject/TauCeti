@@ -44,7 +44,7 @@ variable (hΦ : Φ.IsRegular)
     (homOfLE inf_le_left)
 
 /-- The left overlap inclusion is the diagram map for the meet inequality. -/
-@[simp] theorem analyticOverlapLeft_eq (σ τ : Φ.cones) :
+theorem analyticOverlapLeft_eq (σ τ : Φ.cones) :
     Φ.analyticOverlapLeft hΦ σ τ =
       (Φ.analyticAffineChartDiagram hΦ).map (homOfLE inf_le_left) := rfl
 
@@ -56,7 +56,7 @@ variable (hΦ : Φ.IsRegular)
     (homOfLE inf_le_right)
 
 /-- The right overlap inclusion is the diagram map for the meet inequality. -/
-@[simp] theorem analyticOverlapRight_eq (σ τ : Φ.cones) :
+theorem analyticOverlapRight_eq (σ τ : Φ.cones) :
     Φ.analyticOverlapRight hΦ σ τ =
       (Φ.analyticAffineChartDiagram hΦ).map (homOfLE inf_le_right) := rfl
 
