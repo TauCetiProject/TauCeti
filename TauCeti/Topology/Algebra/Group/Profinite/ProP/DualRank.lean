@@ -46,8 +46,8 @@ quotient converging to `1` lifts to `G`, which is
   the reverse inequality holds.
 * `TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousFpDual`: **Burnside's basis theorem,
   cardinal form** — the two agree for a profinite pro-`p` group.
-* `TauCeti.finite_continuousFpDual`: the dual of a topologically finitely generated profinite
-  group is finite-dimensional, again with no pro-`p` hypothesis.
+* `TauCeti.finite_continuousFpDual`: the dual of a topologically finitely generated topological
+  group is finite-dimensional, again with no pro-`p` hypothesis and with no compactness.
 * `TauCeti.IsProP.finrank_continuousFpDual_eq_topologicalGeneratorRankNat`: the natural-number
   form of the theorem, for a topologically finitely generated pro-`p` group.
 
@@ -124,14 +124,16 @@ theorem rank_continuousFpDual_le_topologicalGeneratorRank [CompactSpace G]
   obtain ⟨s, hs, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
   exact hcard ▸ rank_continuousFpDual_le_of_convergesToOne hs hgen
 
-/-- **The continuous `𝔽_p`-dual of a topologically finitely generated profinite group is
-finite-dimensional**, its dimension being bounded by the finite topological generator rank. No
-pro-`p` hypothesis is needed. -/
-theorem finite_continuousFpDual [CompactSpace G] [TotallyDisconnectedSpace G]
-    (hfg : IsTopologicallyFinitelyGenerated G) :
-    Module.Finite (ZMod p) (continuousFpDual p G) :=
-  Module.rank_lt_aleph0_iff.mp <| rank_continuousFpDual_le_topologicalGeneratorRank.trans_lt
-    (topologicalGeneratorRank_lt_aleph0_iff.mpr hfg)
+/-- **The continuous `𝔽_p`-dual of a topologically finitely generated topological group is
+finite-dimensional**, its dimension being bounded by the cardinality of a finite topological
+generating set. Neither a pro-`p` hypothesis nor compactness is needed: a finite set converges to
+`1` in any topological group. -/
+theorem finite_continuousFpDual (hfg : IsTopologicallyFinitelyGenerated G) :
+    Module.Finite (ZMod p) (continuousFpDual p G) := by
+  obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
+  exact Module.rank_lt_aleph0_iff.mp <|
+    (rank_continuousFpDual_le_of_convergesToOne s.finite_toSet.convergesToOne hs).trans_lt
+      s.finite_toSet.lt_aleph0
 
 end Restrict
 
