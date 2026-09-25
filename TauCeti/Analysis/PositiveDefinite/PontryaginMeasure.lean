@@ -47,7 +47,34 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_zero
     μ.pontryaginMeasureTransform 0 = (μ.toMeasure.real Set.univ : ℂ) := by
   simp [FiniteMeasure.pontryaginMeasureTransform]
 
+/-- The transform of the zero measure vanishes. -/
+@[simp]
+theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_zero_measure :
+    (0 : FiniteMeasure (PontryaginDual (Multiplicative G))).pontryaginMeasureTransform = 0 := by
+  funext g
+  simp [FiniteMeasure.pontryaginMeasureTransform]
+
+/-- The transform commutes with nonnegative scalar multiplication of finite measures. -/
+@[simp]
+theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_smul
+    (c : NNReal) (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) :
+    (c • μ).pontryaginMeasureTransform = c • μ.pontryaginMeasureTransform := by
+  funext g
+  simp [FiniteMeasure.pontryaginMeasureTransform]
+
 variable [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
+
+/-- The transform commutes with addition of finite measures. -/
+@[simp]
+theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_add
+    (μ ν : FiniteMeasure (PontryaginDual (Multiplicative G))) :
+    (μ + ν).pontryaginMeasureTransform =
+      μ.pontryaginMeasureTransform + ν.pontryaginMeasureTransform := by
+  funext g
+  rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_add,
+    integral_add_measure (PontryaginDual.integrable_eval_ofAdd (μ := μ.toMeasure) g)
+      (PontryaginDual.integrable_eval_ofAdd (μ := ν.toMeasure) g)]
+  rfl
 
 /-- The transform of a finite positive measure on the dual is positive definite. -/
 theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasureTransform
