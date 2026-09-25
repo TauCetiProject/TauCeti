@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import Mathlib.RingTheory.LaurentSeries
-public import TauCeti.NumberTheory.ArithmeticFunction.SigmaCongruence
-public import TauCeti.NumberTheory.ArithmeticFunction.SigmaSeries
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 
 /-!
 # The Tate curve over `ℤ⟦q⟧`
@@ -76,6 +76,7 @@ noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
 @[simp] theorem tateCurve_a₂ : tateCurve.a₂ = 0 := (rfl)
 @[simp] theorem tateCurve_a₃ : tateCurve.a₃ = 0 := (rfl)
 
+@[simp]
 theorem coeff_tateCurve_a₄ (n : ℕ) : coeff n tateCurve.a₄ = -5 * σ 3 n := by
   simp [tateCurve]
 
@@ -100,6 +101,7 @@ theorem tateCurve_a₄ : tateCurve.a₄ = -5 * divisorSumSeries 3 := by
   rw [coeff_tateCurve_a₄, ← map_ofNat C 5, ← map_neg, coeff_C_mul, coeff_divisorSumSeries]
 
 /-- `12 a₆ = -(5 s₃ + 7 s₅)`. -/
+@[simp]
 theorem twelve_mul_tateCurve_a₆ :
     12 * tateCurve.a₆ = -(5 * divisorSumSeries 3 + 7 * divisorSumSeries 5) := by
   ext n
