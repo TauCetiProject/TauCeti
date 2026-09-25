@@ -23,8 +23,8 @@ It sends `[X]` to the class of the complex with `X` in degree zero. A short exac
 gives a distinguished triangle between the corresponding degree-zero complexes in `Dᵇ(A)`, so this
 assignment respects the defining relations of abelian `K₀`.
 
-The comparison is an isomorphism: its inverse sends a bounded derived object to the alternating
-sum of its cohomology classes.
+Classically this map is an isomorphism, with inverse given by the alternating sum of cohomology
+classes; that inverse is not constructed here.
 
 ## Main definitions
 
@@ -33,6 +33,8 @@ sum of its cohomology classes.
 
 ## Main results
 
+* `TauCeti.TriangulatedK0.of_singleFunctor_shortExact` is the triangulated `K₀` relation between
+  the degree-zero objects of a short exact sequence.
 * `TauCeti.AbelianK0.toBoundedDerivedK0_of` computes the map on an object class.
 * `TauCeti.AbelianK0.toBoundedDerivedK0_unique` is the universal characterization of the map.
 
@@ -58,16 +60,20 @@ universe w w' w'' v u
 variable {A : Type u} [Category.{v} A] [Abelian A] [EssentiallySmall.{w} A]
   [HasDerivedCategory.{w'} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)]
 
-namespace AbelianK0
+namespace TriangulatedK0
 
 omit [EssentiallySmall.{w} A] in
 /-- A short exact sequence gives a distinguished triangle in the bounded derived category, so
 its degree-zero objects satisfy the triangulated `K₀` relation. -/
-theorem triangulatedK0Of_singleFunctor_shortExact {S : ShortComplex A} (hS : S.ShortExact) :
-    TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₂) =
-      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₁) +
-        TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₃) :=
-  TriangulatedK0.of_distTriang (DerivedCategory.Bounded.singleTriangleBounded_distinguished hS)
+theorem of_singleFunctor_shortExact {S : ShortComplex A} (hS : S.ShortExact) :
+    of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₂) =
+      of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₁) +
+        of ((DerivedCategory.Bounded.singleFunctor A 0).obj S.X₃) := by
+  simpa using of_distTriang hS.boundedSingleTriangle_distinguished
+
+end TriangulatedK0
+
+namespace AbelianK0
 
 /-- The canonical homomorphism from abelian `K₀` to the triangulated `K₀` of the bounded derived
 category. It sends the class of an object to the class of the complex concentrated in degree
@@ -77,7 +83,7 @@ noncomputable def toBoundedDerivedK0 : AbelianK0 A →+ TriangulatedK0 (DerivedC
     { obj := fun X ↦ TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)
       map_iso := fun _ _ e ↦ TriangulatedK0.of_congr
         ((DerivedCategory.Bounded.singleFunctor A 0).mapIso e)
-      map_shortExact := fun _ hS ↦ triangulatedK0Of_singleFunctor_shortExact hS }
+      map_shortExact := fun _ hS ↦ TriangulatedK0.of_singleFunctor_shortExact hS }
 
 /-- The canonical map to derived `K₀` sends an object class to the class of its degree-zero
 complex. -/
