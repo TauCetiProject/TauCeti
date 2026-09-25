@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # Half-planes bounded by a geodesic line
@@ -129,29 +130,12 @@ theorem union_rightHalfPlane_range_geodesicLine_leftHalfPlane (g : PSL(2, ℝ)) 
   rw [rightHalfPlane, leftHalfPlane, range_geodesicLine, ← Set.smul_set_union,
     ← Set.smul_set_union, this, Set.smul_set_univ]
 
-theorem closure_setOf_re_pos : closure {z : ℍ | 0 < z.re} = {z : ℍ | 0 ≤ z.re} := by
-  rw [show {z : ℍ | 0 < z.re} = UpperHalfPlane.re ⁻¹' Set.Ioi (0 : ℝ) from rfl,
-    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
-      UpperHalfPlane.continuous_re,
-    closure_Ioi]
-  rfl
-
-theorem closure_setOf_re_neg : closure {z : ℍ | z.re < 0} = {z : ℍ | z.re ≤ 0} := by
-  rw [show {z : ℍ | z.re < 0} = UpperHalfPlane.re ⁻¹' Set.Iio (0 : ℝ) from rfl,
-    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
-      UpperHalfPlane.continuous_re,
-    closure_Iio]
-  rfl
-
 /-- The closure of the right half-plane adds exactly the geodesic line, its boundary. -/
 @[simp]
 theorem closure_rightHalfPlane (g : PSL(2, ℝ)) :
     closure (rightHalfPlane g) = rightHalfPlane g ∪ Set.range (geodesicLine g) := by
-  have himg : ∀ s : Set ℍ, g • s = (Homeomorph.smul g) '' s := fun s => rfl
-  rw [rightHalfPlane, range_geodesicLine]
-  simp only [himg]
-  rw [← (Homeomorph.smul g).image_closure, closure_setOf_re_pos]
-  simp only [← himg, ← Set.smul_set_union]
+  rw [rightHalfPlane, closure_smul, closure_setOfPred_lt_re, range_geodesicLine,
+    ← Set.smul_set_union]
   congr 1
   ext z
   simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq, eq_comm]
@@ -160,11 +144,8 @@ theorem closure_rightHalfPlane (g : PSL(2, ℝ)) :
 @[simp]
 theorem closure_leftHalfPlane (g : PSL(2, ℝ)) :
     closure (leftHalfPlane g) = leftHalfPlane g ∪ Set.range (geodesicLine g) := by
-  have himg : ∀ s : Set ℍ, g • s = (Homeomorph.smul g) '' s := fun s => rfl
-  rw [leftHalfPlane, range_geodesicLine]
-  simp only [himg]
-  rw [← (Homeomorph.smul g).image_closure, closure_setOf_re_neg]
-  simp only [← himg, ← Set.smul_set_union]
+  rw [leftHalfPlane, closure_smul, closure_setOfPred_re_lt, range_geodesicLine,
+    ← Set.smul_set_union]
   congr 1
   ext z
   simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq]
