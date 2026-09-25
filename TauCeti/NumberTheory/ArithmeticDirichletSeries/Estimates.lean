@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Convergence
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
@@ -33,6 +34,8 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 
 * `TauCeti.IdealCountingLinearBounds K` packages positive constants `lower` and `upper` with the
   two-sided bound `lower * x ≤ #{I ≠ 0 | N(I) ≤ x} ≤ upper * x`, valid from cutoff `1` on.
+* `TauCeti.card_primePowersLE_isBigO` transfers the upper ideal-count bound to the number of
+  prime-power ideals at most `x`.
 
 ## Main results
 
@@ -65,10 +68,12 @@ prove convergence at `Re s > 1`, and it has no lower bound at all.
 
 ## Roadmap role
 
-This is Layer **5.1** (the ideal-count half) together with Layer **5.1a** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  As that layer demands, the exact abscissa
-is derived from the two-sided linear ideal counts alone: neither the analytic continuation of the
-Dedekind zeta function nor its pole at `s = 1` is used.
+This is Layer **5.1** (the ideal-count half and the prime-power cardinality bound) together with
+Layer **5.1a** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  The prime-power estimate
+uses the injective underlying-ideal map from `primePowersLE`; it is separate from the weighted
+higher-prime-power estimate in `HigherPrimePowers.lean`.  As that layer demands, the exact
+abscissa is derived from the two-sided linear ideal counts alone: neither the analytic continuation
+of the Dedekind zeta function nor its pole at `s = 1` is used.
 
 ## References
 
@@ -208,6 +213,25 @@ theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
     · have h1 : (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} : ℝ)
           ≤ M := by rw [hM]; exact_mod_cast card_absNorm_real_le_mono K hxX.le
       exact h1.trans ((le_max_right _ _).trans (le_mul_of_one_le_right hupos.le hx))
+
+/-- The number of prime-power ideals with absolute norm at most `x` is `O(x)`.  The proof injects
+each prime-power ideal into the underlying nonzero integral ideal and then uses the upper linear
+ideal-count bound. -/
+theorem card_primePowersLE_isBigO (K : Type*) [Field K] [NumberField K] :
+    (fun x : ℝ ↦ ((primePowersLE K x).card : ℝ)) =O[atTop] fun x : ℝ ↦ x := by
+  obtain ⟨b⟩ := idealCount_linearBounds K
+  refine Asymptotics.IsBigO.of_bound b.upper ?_
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+  have hx0 : 0 ≤ x := le_trans (by norm_num) hx
+  rw [Real.norm_of_nonneg (Nat.cast_nonneg _), Real.norm_of_nonneg hx0]
+  have hinj : (primePowersLE K x).card ≤ (idealsLE K x).card :=
+    card_primePowersLE_le_card_idealsLE x
+  have hcard : ((idealsLE K x).card : ℝ) ≤ b.upper * x := by
+    rw [← Nat.card_eq_finsetCard (idealsLE K x)]
+    simpa [idealsLE] using b.card_le x hx
+  calc
+    ((primePowersLE K x).card : ℝ) ≤ ((idealsLE K x).card : ℝ) := by exact_mod_cast hinj
+    _ ≤ b.upper * x := hcard
 
 /-! ### Partial sums of the trivial norm coefficients -/
 
