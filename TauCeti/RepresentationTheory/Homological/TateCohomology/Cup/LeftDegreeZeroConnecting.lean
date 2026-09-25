@@ -44,14 +44,8 @@ theorem δ_cup0H (M : Rep k G) {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
       { τ₁ := Rep.tensorInvariant S.X₁ x ≫ (β_ S.X₁ M).hom
         τ₂ := Rep.tensorInvariant S.X₂ x ≫ (β_ S.X₂ M).hom
         τ₃ := Rep.tensorInvariant S.X₃ x ≫ (β_ S.X₃ M).hom
-        comm₁₂ := by
-          dsimp
-          rw [Category.assoc, ← BraidedCategory.braiding_naturality_left S.f M,
-            ← Category.assoc, ← Rep.hom_comp_tensorInvariant, Category.assoc]
-        comm₂₃ := by
-          dsimp
-          rw [Category.assoc, ← BraidedCategory.braiding_naturality_left S.g M,
-            ← Category.assoc, ← Rep.hom_comp_tensorInvariant, Category.assoc] }
+        comm₁₂ := by simpa using (Rep.hom_comp_tensorInvariant_braiding S.X₁ S.f x).symm
+        comm₂₃ := by simpa using (Rep.hom_comp_tensorInvariant_braiding S.X₂ S.g x).symm }
     rw [cup0H_H0π, cup0H_H0π, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply]
     exact congrArg (fun φ ↦ φ y) (_root_.TateCohomology.δ_naturality hS hMS F n).symm
 
