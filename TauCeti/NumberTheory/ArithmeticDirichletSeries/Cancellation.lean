@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
@@ -332,23 +333,6 @@ theorem continuedLFunctionOfWeight_restrict_of_one_lt_re (χ : UnitaryIdealWeigh
     rw [← UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
     exact summable_idealTerm_of_unitary_of_one_lt_re χ hs)
 
-/-- Two functions holomorphic on the half-plane `Re s > 1 - 1 / [K : ℚ]` that agree to the right
-of `1` agree on the whole half-plane, since it is connected. This is how identities between
-continued `L`-functions pass from the region of absolute convergence across the line `Re s = 1`. -/
-private theorem eq_of_differentiableOn_of_one_lt_re {f g : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
-    (hg : DifferentiableOn ℂ g {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
-    (hfg : ∀ s : ℂ, 1 < s.re → f s = g s) {s : ℂ}
-    (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) : f s = g s := by
-  have hUopen : IsOpen {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
-    isOpen_lt continuous_const Complex.continuous_re
-  refine (hf.analyticOnNhd hUopen).eqOn_of_preconnected_of_eventuallyEq (hg.analyticOnNhd hUopen)
-    (convex_halfSpace_re_gt _).isPreconnected (z₀ := 2) ?_ ?_ hs
-  · simpa using (cancellationExponent_lt_one (K := K)).trans one_lt_two
-  · have htwo : (1 : ℝ) < (2 : ℂ).re := by norm_num
-    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds htwo] with z hz
-    exact hfg z hz
-
 /-- **Deleting finitely many Euler factors, across the line `Re s = 1`.** Under cancellation both
 sides of `TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re` are holomorphic on the
 half-plane `Re s > 1 - 1 / [K : ℚ]`, which is connected, so the identity propagates there from
@@ -369,7 +353,7 @@ theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
     exact (differentiable_const 1).sub ((differentiable_const _).div
       (differentiable_id.const_cpow (.inl h𝔭))
       fun s ↦ by simp [Complex.cpow_eq_zero_iff, h𝔭])
-  exact eq_of_differentiableOn_of_one_lt_re
+  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
     (differentiableOn_continuedLFunctionOfWeight (hχ.restrict _ S.finite_toSet))
     ((differentiableOn_continuedLFunctionOfWeight hχ).mul hcorr.differentiableOn)
     (fun z hz ↦ continuedLFunctionOfWeight_restrict_of_one_lt_re χ S hz) hs
@@ -428,7 +412,8 @@ theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : �
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
     (differentiableOn_continuedLFunctionOfWeight hχ).comp
       (differentiable_id.add_const z).differentiableOn fun s hs ↦ by simpa [hz] using hs
-  exact eq_of_differentiableOn_of_one_lt_re (differentiableOn_continuedLFunctionOfWeight hχz)
+  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
+    (differentiableOn_continuedLFunctionOfWeight hχz)
     hshift (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
     (by rwa [one_div])
 
