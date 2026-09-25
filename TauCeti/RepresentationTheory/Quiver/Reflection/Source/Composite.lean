@@ -28,6 +28,11 @@ representation in the reflection induction for Gabriel's theorem.
 
 ## Main results
 
+* `TauCeti.sourceReflectionFunctorList_nil`, `TauCeti.sourceReflectionFunctorList_cons` and
+  `TauCeti.sourceReflectionFunctorList_cons_obj`: the composite is the identity on the empty list
+  and peels off one source reflection at a time.
+* `TauCeti.isFinDim_sourceReflectionFunctorList_obj`: the composite preserves pointwise
+  finite-dimensionality, without a nonnegativity hypothesis.
 * `TauCeti.indecomposable_and_dimVector_sourceReflectionFunctorList`: if all successive reflected
   dimension vectors are nonnegative, the composite preserves indecomposability and realizes the
   corresponding product of simple reflections on dimension vectors.
@@ -54,98 +59,63 @@ universe u v w x
 /-- **The composite of the source reflection functors along a source-admissible list.** It sends
 representations of `q` to representations of the quiver obtained by reflecting successively at
 the entries of `l`. -/
-noncomputable def sourceReflectionFunctorList (k : Type u) {V : Type v}
-    [fld : Field k] [fV : Fintype V] :
-    ∀ (l : List V) (q : _root_.Quiver.{w} V)
-      (_hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)),
+noncomputable def sourceReflectionFunctorList (k : Type u) {V : Type v} [fld : Field k] :
+    ∀ (l : List V) (q : _root_.Quiver.{w} V),
       Quiver.IsSourceAdmissible q l →
       (@QuiverRep.{u, v, w, max v w x} k V fld q ⥤
         @QuiverRep.{u, v, w, max v w x} k V fld (Quiver.reflectList q l))
-  | [], _, _, _ => 𝟭 _
-  | i :: l, q, hq, hl => by
+  | [], _, _ => 𝟭 _
+  | i :: l, q, hl => by
       letI := q
-      letI := hq
       exact sourceReflectionFunctor i (Quiver.isSourceAdmissible_cons.mp hl).1 ⋙
         sourceReflectionFunctorList k l (Quiver.reflectAt q i)
-          (@Quiver.instFintypeReflectHom V q hq i)
           (Quiver.isSourceAdmissible_cons.mp hl).2
 
-variable {k : Type u} {V : Type v} [fld : Field k] [fV : Fintype V]
+variable {k : Type u} {V : Type v} [fld : Field k]
 
 @[simp]
 theorem sourceReflectionFunctorList_nil (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     (hl : Quiver.IsSourceAdmissible q []) :
-    sourceReflectionFunctorList.{u, v, w, x} k [] q hq hl = 𝟭 _ := by
+    sourceReflectionFunctorList.{u, v, w, x} k [] q hl = 𝟭 _ := by
   rw [sourceReflectionFunctorList]
 
 @[simp]
 theorem sourceReflectionFunctorList_cons (i : V) (l : List V)
     (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     (hl : Quiver.IsSourceAdmissible q (i :: l)) :
-    sourceReflectionFunctorList.{u, v, w, x} k (i :: l) q hq hl =
+    sourceReflectionFunctorList.{u, v, w, x} k (i :: l) q hl =
       sourceReflectionFunctor i (Quiver.isSourceAdmissible_cons.mp hl).1 ⋙
         sourceReflectionFunctorList k l (Quiver.reflectAt q i)
-          (@Quiver.instFintypeReflectHom V q hq i)
           (Quiver.isSourceAdmissible_cons.mp hl).2 := by
   rw [sourceReflectionFunctorList]
   congr
 
-/-- The composite of source reflection functors is additive. -/
-noncomputable instance sourceReflectionFunctorList_additive (l : List V)
-    (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-    (hl : Quiver.IsSourceAdmissible q l) :
-    (sourceReflectionFunctorList.{u, v, w, x} k l q hq hl).Additive := by
-  induction l generalizing q with
-  | nil =>
-      let : _root_.Quiver.{w} V := q
-      rw [sourceReflectionFunctorList_nil]
-      -- Elaboration does not unfold the `reflectList`-indexed category and preadditive instances
-      -- when applying `Functor.instAdditiveId`, so expose the definitionally equal category.
-      change (𝟭 (@QuiverRep.{u, v, w, max v w x} k V fld q)).Additive
-      exact Functor.instAdditiveId
-  | cons i l ih =>
-      let : _root_.Quiver.{w} V := q
-      let : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b) := hq
-      rw [sourceReflectionFunctorList_cons]
-      exact @Functor.instAdditiveComp _ _ _ _ _ _
-        (sourceReflectionFunctor i (Quiver.isSourceAdmissible_cons.mp hl).1)
-        (sourceReflectionFunctor_additive i (Quiver.isSourceAdmissible_cons.mp hl).1)
-        _ _ _
-        (sourceReflectionFunctorList k l (Quiver.reflectAt q i)
-          (@Quiver.instFintypeReflectHom V q hq i)
-          (Quiver.isSourceAdmissible_cons.mp hl).2)
-        (ih (Quiver.reflectAt q i) (@Quiver.instFintypeReflectHom V q hq i)
-          (Quiver.isSourceAdmissible_cons.mp hl).2)
-
 /-- The composite along a nonempty source-admissible list first source-reflects at its head. -/
+@[simp]
 theorem sourceReflectionFunctorList_cons_obj (i : V) (l : List V)
     (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     (hl : Quiver.IsSourceAdmissible q (i :: l))
     (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
-    (sourceReflectionFunctorList.{u, v, w, x} k (i :: l) q hq hl).obj M =
+    (sourceReflectionFunctorList.{u, v, w, x} k (i :: l) q hl).obj M =
       (sourceReflectionFunctorList k l (Quiver.reflectAt q i)
-          (@Quiver.instFintypeReflectHom V q hq i)
           (Quiver.isSourceAdmissible_cons.mp hl).2).obj
         (sourceReflectRep M (Quiver.isSourceAdmissible_cons.mp hl).1) := by
   let : _root_.Quiver.{w} V := q
-  let : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b) := hq
   rw [sourceReflectionFunctorList_cons]
   exact congrArg _ (sourceReflectionFunctor_obj i
     (Quiver.isSourceAdmissible_cons.mp hl).1 M)
 
+variable [Finite V]
+
 /-- Source-reflection composites preserve pointwise finite-dimensionality. -/
 theorem isFinDim_sourceReflectionFunctorList_obj :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
-      (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
+      (_hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
       (hl : Quiver.IsSourceAdmissible q l)
       (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld (Quiver.reflectList q l)
-        ((sourceReflectionFunctorList k l q hq hl).obj M)
+        ((sourceReflectionFunctorList k l q hl).obj M)
   | [], q, hq, hl, M, hfd => by
       rw [sourceReflectionFunctorList_nil]
       exact hfd
@@ -168,10 +138,9 @@ theorem isFinDim_sourceReflectionFunctorList_obj :
 variable {K : Type u} {W : Type v} [fldK : Field K] [fW : Fintype W]
 
 /-- **A source-reflection composite reconstructs an indecomposable along a nonnegative reflection
-word.** If `M` is indecomposable and the image of its dimension vector after every nonempty prefix
-of the source-admissible word is nonnegative, then every source reflection avoids its exceptional
-vertex simple.
-The final representation is indecomposable, and its dimension vector is the product of the simple
+word.** If `M` is an indecomposable with finite-dimensional vertex spaces and the image of its
+dimension vector after every nonempty prefix of the source-admissible word is nonnegative, then the
+final representation is indecomposable and its dimension vector is the product of the simple
 reflections along the word applied to `dimVector M`. -/
 theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W] :
     ∀ (l : List W) (q : _root_.Quiver.{w} W)
@@ -182,9 +151,9 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
       (∀ a : W, FiniteDimensional K (M.obj a)) →
       (∀ r < l.length, 0 ≤ @vertexPreReflectionList W q fW hq _ (l.take (r + 1))
         (fun j : W ↦ (@dimVector K W fldK q M j : ℤ))) →
-      Indecomposable ((sourceReflectionFunctorList K l q hq hl).obj M) ∧
+      Indecomposable ((sourceReflectionFunctorList K l q hl).obj M) ∧
         (fun j : W ↦ (@dimVector K W fldK (Quiver.reflectList q l)
-            ((sourceReflectionFunctorList K l q hq hl).obj M) j : ℤ)) =
+            ((sourceReflectionFunctorList K l q hl).obj M) j : ℤ)) =
           @vertexPreReflectionList W q fW hq _ l
             (fun j : W ↦ (@dimVector K W fldK q M j : ℤ))
   | [], q, hq, hl, M, hM, _, _ => by
@@ -227,8 +196,7 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
       -- Simple reflections are unchanged by reversing the quiver at the preceding vertex.
       calc
         (fun j : W ↦ (@dimVector K W fldK (Quiver.reflectList q (i :: l))
-            ((sourceReflectionFunctorList K l (Quiver.reflectAt q i)
-              (@Quiver.instFintypeReflectHom W q hq i) hl').obj
+            ((sourceReflectionFunctorList K l (Quiver.reflectAt q i) hl').obj
                 (sourceReflectRep M hi)) j : ℤ)) =
             @vertexPreReflectionList W (Quiver.reflectAt q i) fW
               (@Quiver.instFintypeReflectHom W q hq i) _ l

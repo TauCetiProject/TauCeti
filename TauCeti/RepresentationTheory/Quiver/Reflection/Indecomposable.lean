@@ -50,7 +50,8 @@ the first condition vacuous instead.
   the paths through `i` is the identity, or is zero and `M` vanishes away from `i`, with
   `TauCeti.sinkIdempotent_eq_id_or_eq_zero_of_indecomposable` its form at a sink, where the
   hypothesis reads "`π` fixes the image of every arrow into `i`".
-* `TauCeti.exists_ne_zero_span_eq_top_of_forall_subsingleton` and
+* `TauCeti.exists_ne_zero_span_eq_top_of_forall_subsingleton`,
+  `TauCeti.dimVector_eq_single_of_forall_subsingleton` and
   `TauCeti.nonempty_iso_simpleRep_of_forall_subsingleton`: an indecomposable representation
   concentrated at a vertex with no nontrivial closed path is a line there, hence isomorphic to the
   vertex simple.
@@ -350,6 +351,26 @@ theorem exists_ne_zero_span_eq_top_of_forall_subsingleton
   · exact hproj.submodule_eq_top_iff.mpr hid
   · -- the projection onto the line through `y` does not vanish
     exact absurd (Submodule.span_singleton_eq_bot.mp (hproj.submodule_eq_bot_iff.mpr hz)) hy
+
+/-- **An indecomposable representation concentrated at one loopless vertex has the corresponding
+simple dimension vector.** -/
+theorem dimVector_eq_single_of_forall_subsingleton [DecidableEq Q]
+    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
+    (hM : Indecomposable M) (h : ∀ a : Q, a ≠ i → Subsingleton (M.obj a)) :
+    (fun j : Q ↦ (dimVector M j : ℤ)) = Pi.single i 1 := by
+  obtain ⟨y, hy, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
+  have hone : dimVector M i = 1 := by
+    rw [dimVector_apply]
+    exact (finrank_eq_one_iff_of_nonzero (K := k) y hy).mpr hspan
+  have hzero : ∀ j : Q, j ≠ i → dimVector M j = 0 := by
+    intro j hj
+    let : Subsingleton (M.obj ((Paths.of Q).obj j)) := h j hj
+    rw [dimVector_apply]
+    exact Module.finrank_zero_of_subsingleton (R := k)
+  funext j
+  rcases eq_or_ne j i with rfl | hj
+  · rw [Pi.single_eq_same, hone, Nat.cast_one]
+  · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
 
 end Idempotents
 
