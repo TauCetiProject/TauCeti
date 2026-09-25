@@ -46,7 +46,7 @@ singular homology; no ring or module structure is needed.
 The source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -113,9 +113,14 @@ abbrev skeletonPairπ (n : ℕ) : skeletonHomology C R (n + 1) n ⟶ cellularCha
 the skeletal pair followed by the map to the relative homology of the next skeletal pair.  It is
 the connecting morphism of the triple of three consecutive skeleta, by
 `TauCeti.cellularDifferential_eq_singularHomologyδ`. -/
-abbrev cellularDifferential (n : ℕ) :
+@[expose] def cellularDifferential (n : ℕ) :
     cellularChainGroup C R (n + 1) ⟶ cellularChainGroup C R n :=
   skeletonPairδ C R n ≫ skeletonPairπ C R n
+
+/-- The cellular differential is the connecting morphism of the skeletal pair followed by the
+map to the relative homology of the next skeletal pair. -/
+lemma cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ (n : ℕ) :
+    cellularDifferential C R n = skeletonPairδ C R n ≫ skeletonPairπ C R n := rfl
 
 /-- The cellular differential is the connecting morphism of the long exact sequence of the triple
 `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)` of three consecutive skeleta. -/
@@ -134,11 +139,11 @@ lemma skeletonPairπ_comp_skeletonPairδ (n : ℕ) :
 /-- Two consecutive cellular differentials compose to zero. -/
 lemma cellularDifferential_comp_cellularDifferential (n : ℕ) :
     cellularDifferential C R (n + 1) ≫ cellularDifferential C R n = 0 := by
-  simp only [cellularDifferential, Category.assoc,
+  simp only [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ, Category.assoc,
     reassoc_of% skeletonPairπ_comp_skeletonPairδ C R n, zero_comp, comp_zero]
 
 /-- The cellular chain complex of a relative CW complex with coefficients in `R`. -/
-def cellularChainComplex : ChainComplex A ℕ :=
+@[expose] def cellularChainComplex : ChainComplex A ℕ :=
   ChainComplex.of (cellularChainGroup C R) (cellularDifferential C R)
     (cellularDifferential_comp_cellularDifferential C R)
 
@@ -160,8 +165,8 @@ variable (n : ℕ) [IsEmpty (cell C n)]
 /-- A relative CW complex with no `n`-cells has equal `n`-skeleton and `(n-1)`-skeleton. -/
 lemma skeletonLT_succ_eq_of_isEmpty_cell :
     (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) = skeletonLT C (n : ℕ∞) := by
-  rw [show ((n + 1 : ℕ) : ℕ∞) = (n : ℕ∞) + 1 by push_cast; ring,
-    ← skeletonLT_union_iUnion_closedCell_eq_skeletonLT_succ]
+  push_cast
+  rw [← skeletonLT_union_iUnion_closedCell_eq_skeletonLT_succ]
   simp
 
 /-- With no `n`-cells the inclusion `Xⁿ⁻¹ ⟶ Xⁿ` of the skeletal pair is an isomorphism. -/
