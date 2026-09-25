@@ -75,7 +75,7 @@ open scoped ENNReal
 
 /-! ### Curves joining two points -/
 
-section IsCurveJoiningTopological
+section IsCurveJoining
 
 variable {X : Type*} [TopologicalSpace X] {γ : ℝ → X} {x y : X}
 
@@ -102,17 +102,19 @@ theorem IsCurveJoining.joined (h : IsCurveJoining γ x y) : Joined x y :=
      source' := h.source
      target' := h.target }⟩
 
-end IsCurveJoiningTopological
-
-section IsCurveJoining
-
-variable {X : Type*} [PseudoEMetricSpace X] {γ : ℝ → X} {x y : X}
+variable [WeakPseudoEMetricSpace X]
 
 /-- A joining curve is at least as long as the distance between the points it joins. -/
 theorem IsCurveJoining.edist_le (h : IsCurveJoining γ x y) :
     edist x y ≤ eVariationOn γ (Icc 0 1) := by
   simpa only [h.source, h.target] using
     eVariationOn.edist_le γ (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one)
+
+/-- One half of the length-space condition holds in any space: no curve joining `x` to `y` is
+shorter than `edist x y`. -/
+theorem edist_le_iInf_eVariationOn (x y : X) :
+    edist x y ≤ ⨅ (γ : ℝ → X) (_ : IsCurveJoining γ x y), eVariationOn γ (Icc 0 1) :=
+  le_iInf₂ fun _ h => h.edist_le
 
 /-- A continuous curve joining `x` to `y` on an arbitrary parameter interval can be renormalised
 to `[0, 1]` without changing its length. This is how curves produced on other parameter intervals
@@ -121,30 +123,21 @@ theorem exists_isCurveJoining_of_continuousOn {a b : ℝ} (hab : a ≤ b)
     (hγ : ContinuousOn γ (Icc a b)) (ha : γ a = x) (hb : γ b = y) :
     ∃ γ' : ℝ → X, IsCurveJoining γ' x y ∧
       eVariationOn γ' (Icc 0 1) = eVariationOn γ (Icc a b) := by
-  have hmaps : MapsTo (fun t : ℝ => (b - a) * t + a) (Icc 0 1) (Icc a b) := by
+  let φ : ℝ → ℝ := fun t => (b - a) * t + a
+  have hφ : Continuous φ := by fun_prop
+  have hmaps : MapsTo φ (Icc 0 1) (Icc a b) := by
     rintro t ⟨ht0, ht1⟩
+    simp only [φ, mem_Icc]
     constructor <;> nlinarith
-  have hlen : eVariationOn (fun t => γ ((b - a) * t + a)) (Icc 0 1) =
-      eVariationOn γ (Icc a b) := by
-    rcases hab.eq_or_lt with rfl | hlt
-    · simp only [sub_self, zero_mul, zero_add]
-      rw [eVariationOn.subsingleton γ (subsingleton_Icc_of_ge le_rfl)]
-      refine eVariationOn.constant_on (f := fun _ : ℝ => γ a) (s := Icc 0 1) ?_
-      rintro _ ⟨s, -, rfl⟩ _ ⟨t, -, rfl⟩
-      rfl
-    · have hpos : (0 : ℝ) < b - a := sub_pos.2 hlt
-      have hmono : MonotoneOn (fun t : ℝ => (b - a) * t + a) (Icc 0 1) :=
-        fun _ _ _ _ hst => by nlinarith
-      have hcomp : (fun t => γ ((b - a) * t + a)) =
-          γ ∘ fun t => (b - a) * t + a := by
-        funext t
-        rfl
-      rw [hcomp, eVariationOn.comp_eq_of_monotoneOn γ _ hmono]
-      exact congrArg (eVariationOn γ) (by simpa using Set.image_affine_Icc' hpos a 0 1)
-  refine ⟨fun t => γ ((b - a) * t + a), ⟨?_, ?_, ?_⟩, hlen⟩
-  · exact hγ.comp (by fun_prop) hmaps
-  · simpa using ha
-  · simpa using hb
+  have hmono : MonotoneOn φ (Icc 0 1) := fun s _ t _ hst => by
+    simp only [φ]
+    nlinarith
+  have himage : φ '' Icc 0 1 = Icc a b :=
+    hmaps.image_subset.antisymm <| by
+      simpa [φ] using intermediate_value_Icc zero_le_one hφ.continuousOn
+  refine ⟨γ ∘ φ, ⟨hγ.comp hφ.continuousOn hmaps, by simpa [φ] using ha, by simpa [φ] using hb⟩,
+    ?_⟩
+  rw [eVariationOn.comp_eq_of_monotoneOn γ φ hmono, himage]
 
 end IsCurveJoining
 
@@ -160,12 +153,6 @@ class IsLengthSpace (X : Type*) [PseudoEMetricSpace X] : Prop where
   /-- The distance between two points is the infimum of the lengths of the curves joining them. -/
   edist_eq_iInf (x y : X) :
     edist x y = ⨅ (γ : ℝ → X) (_ : IsCurveJoining γ x y), eVariationOn γ (Icc 0 1)
-
-/-- One half of the length-space condition holds in any space: no curve joining `x` to `y` is
-shorter than `edist x y`. -/
-theorem edist_le_iInf_eVariationOn (x y : X) :
-    edist x y ≤ ⨅ (γ : ℝ → X) (_ : IsCurveJoining γ x y), eVariationOn γ (Icc 0 1) :=
-  le_iInf₂ fun _ h => h.edist_le
 
 /-- To check that a space is a length space it suffices to produce, for every pair of points and
 every bound strictly above their distance, a joining curve shorter than that bound. -/
