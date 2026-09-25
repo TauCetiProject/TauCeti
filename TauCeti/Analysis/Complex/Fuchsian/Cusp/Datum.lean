@@ -308,4 +308,13 @@ theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :
   obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.2).exists_cuspDatum_cusp_eq
   exact ⟨D, Subtype.ext (by simp [hD])⟩
 
+/-- A chosen normalized cusp datum representing a cusp orbit of a discrete group. -/
+noncomputable def CuspOrbit.cuspDatum [DiscreteTopology Γ] (C : Γ.CuspOrbit) : Γ.CuspDatum :=
+  (CuspDatum.cuspOrbit_surjective C).choose
+
+@[simp]
+theorem CuspOrbit.cuspOrbit_cuspDatum [DiscreteTopology Γ] (C : Γ.CuspOrbit) :
+    C.cuspDatum.cuspOrbit = C :=
+  (CuspDatum.cuspOrbit_surjective C).choose_spec
+
 end Subgroup

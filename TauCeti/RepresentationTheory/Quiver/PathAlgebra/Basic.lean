@@ -963,6 +963,15 @@ theorem ofArrow_eq_ofPath {a b : Q} (e : a ⟶ b) :
     (ofArrow e : pathAlgebra k Q) = ofPath ⟨a, b, e.toPath⟩ := by
   rw [ofArrow]
 
+/-- A vertex idempotent keeps an arrow exactly when the vertex is its target. -/
+theorem vertexIdempotent_mul_ofArrow [DecidableEq Q] (u : Q) {i j : Q} (b : i ⟶ j) :
+    vertexIdempotent k u * ofArrow b = if j = u then (ofArrow b : pathAlgebra k Q) else 0 := by
+  rw [ofArrow_eq_ofPath]
+  split_ifs with h
+  · subst h
+    exact vertexIdempotent_mul_ofPath _
+  · exact vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm h)
+
 /-- **Extending a path by an arrow.** In the later-factor-first convention the new arrow is the
 left factor, so the product is the path with that arrow consed on. -/
 theorem ofArrow_mul_ofPath {a b c : Q} (e : b ⟶ c) (p : _root_.Quiver.Path a b) :

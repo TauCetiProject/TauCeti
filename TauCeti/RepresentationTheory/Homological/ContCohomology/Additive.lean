@@ -33,6 +33,8 @@ and cup products, need linearity before passing to cohomology.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_additive` and
   `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_linear` install the corresponding
   functor instances.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_subsingleton`: continuous
+  cohomology vanishes on subsingleton coefficients, a consequence of additivity.
 -/
 
 public section
@@ -211,6 +213,21 @@ private theorem coeffMap_add {X Y : TopRep R G} (f g : X ⟶ Y) (n : ℕ) :
 noncomputable instance continuousCohomologyFunctor_additive (n : ℕ) :
     (continuousCohomologyFunctor R G n).Additive where
   map_add {_X _Y} {f g} := coeffMap_add R G f g n
+
+variable {R G} in
+/-- Continuous cohomology vanishes on a coefficient representation whose carrier is a
+subsingleton: the identity of such a representation is the zero morphism, and the additive functor
+`continuousCohomologyFunctor` sends it to the zero endomorphism of the cohomology. -/
+theorem subsingleton_continuousCohomology_of_subsingleton (X : TopRep R G) [Subsingleton X]
+    (n : ℕ) : Subsingleton (continuousCohomology n X) := by
+  have hX : (𝟙 X : X ⟶ X) = 0 :=
+    TopRep.hom_ext
+      (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun _ ↦ Subsingleton.elim _ _))
+  have h : (𝟙 (continuousCohomology n X) : _ ⟶ _) = 0 := by
+    rw [← coeffMap_id X n, hX]
+    exact (continuousCohomologyFunctor R G n).map_zero X X
+  exact ⟨fun x y ↦ (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom x) h).trans
+    (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom y) h).symm⟩
 
 end Additive
 
