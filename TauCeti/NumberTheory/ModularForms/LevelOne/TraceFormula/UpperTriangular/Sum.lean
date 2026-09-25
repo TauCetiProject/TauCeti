@@ -21,7 +21,9 @@ coefficients of `Tₙ^∞` equals `1`. Right multiplication by `g ∈ PSL(2, ℤ
 action, so it permutes the `SL(2, ℤ)`-orbits, and the orbit sums of the right translate `Tₙ^∞ · g`
 are those of `Tₙ^∞` permuted; so they equal `1` too. Hence `Tₙ^∞ (1 - g)` lies in the
 coinvariant kernel of the left action, which is the input for the existence of a solution of
-Popa–Zagier's period relation (A).
+Popa–Zagier's period relation (A). For `g = T ^ j` more is true: right multiplication by `T ^ j`
+keeps matrices upper-triangular, so it permutes the `⟨T⟩`-orbits that meet `ℳₙ^∞`, and
+`Tₙ^∞ (1 - T ^ j)` lies in `(1 - T)·k[ℳₙ]`.
 
 ## Main definitions
 
@@ -36,12 +38,14 @@ Popa–Zagier's period relation (A).
   every `SL(2, ℤ)`-orbit sum of `Tₙ^∞` is `1`.
 * `TauCeti.TraceFormulaMatrixModule.one_sub_ofMulAction_op_upperTriangularSum_mem`:
   `Tₙ^∞ (1 - g)` lies in the coinvariant kernel of the left action of `SL(2, ℤ)`.
+* `TauCeti.TraceFormulaMatrixModule.one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range`:
+  `Tₙ^∞ (1 - T ^ j)` lies in `(1 - T)·k[ℳₙ]`.
 
 ## References
 
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
   J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327. The element `Tₙ^∞` enters
-  the period relation (A) of §1.
+  the period relation (A) of §1; that `Tₙ^∞ (1 - T)` lies in `(1 - T)·ℛₙ` is used in §3.
 -/
 
 public section
@@ -121,5 +125,47 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
     LinearMap.sub_mem_ker_iff]
   ext q
   simp [hn]
+
+open ModularGroup MulOpposite in
+/-- **The right translates of `Tₙ^∞` by powers of `T`.** For `j ∈ ℤ`, the element
+`Tₙ^∞ (1 - T ^ j)` of `k[ℳₙ]` lies in `(1 - T)·k[ℳₙ]`, the range of left multiplication by
+`1 - T`. Popa–Zagier use the case `j = 1` in §3. -/
+theorem one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range [CommRing k] (j : ℤ) :
+    (1 - ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (T : PSL(2, ℤ)) ^ j))
+        (upperTriangularSum k n) ∈
+      LinearMap.range (1 - ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T) := by
+  classical
+  -- right multiplication by `T ^ i` keeps matrices upper-triangular, so for `x ∈ ℳₙ^∞` some
+  -- `γ i x ∈ ⟨T⟩` moves `x • T ^ i` back into `ℳₙ^∞`
+  have key (i : ℤ) : ∀ x ∈ upperTriangularReps n,
+      ∃ γ : Subgroup.zpowers T, γ • op (T : PSL(2, ℤ)) ^ i • x ∈ upperTriangularReps n := by
+    intro x hx
+    obtain ⟨A, hA, rfl⟩ := mem_upperTriangularReps.1 hx
+    rw [← op_zpow, ← QuotientGroup.mk_zpow, op_smul_mk]
+    exact (exists_T_zpow_smul_mk_mem_upperTriangularReps (by rintro rfl; simp at hA)
+      (by simp [coe_T_zpow, Matrix.mul_apply, hA.1])).imp'
+        (fun m ↦ ⟨T ^ m, Subgroup.zpow_mem_zpowers T m⟩) fun _ ↦ id
+  choose! γ hγ using key
+  -- as `ℳₙ^∞` meets each orbit at most once, `x ↦ γ i x • x • T ^ i` permutes `ℳₙ^∞`, with
+  -- inverse `x ↦ γ (-i) x • x • T ^ (-i)`
+  have inv (i i' : ℤ) (hi : i' + i = 0) (x : TraceFormulaMatrixModule n)
+      (hx : x ∈ upperTriangularReps n) :
+      γ i' (γ i x • op (T : PSL(2, ℤ)) ^ i • x) • op (T : PSL(2, ℤ)) ^ i' •
+        γ i x • op (T : PSL(2, ℤ)) ^ i • x = x := by
+    have h := hγ i' _ (hγ i x hx)
+    simp only [← smul_comm (γ i x), smul_smul, ← zpow_add, hi, zpow_zero, one_smul] at h ⊢
+    exact smul_eq_self_of_mem_upperTriangularReps hx h
+  -- so `Tₙ^∞` and `Tₙ^∞ T ^ j` have the same `⟨T⟩`-orbit sums
+  rw [← neg_sub (ofMulAction k SL(2, ℤ) _ T), LinearMap.range_neg, Module.End.one_eq_id,
+    mem_range_ofMulAction_sub_id_iff]
+  simp only [upperTriangularSum, map_sum, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
+    ofMulAction_single, mapDomainLinearMap_single, Finset.sum_sub_distrib, sub_eq_zero]
+  refine (Finset.sum_nbij' (fun x ↦ γ j x • op (T : PSL(2, ℤ)) ^ j • x)
+    (fun x ↦ γ (-j) x • op (T : PSL(2, ℤ)) ^ (-j) • x) ?_ ?_ ?_ ?_ fun x _ ↦ ?_).symm
+  · simpa using hγ j
+  · simpa using hγ (-j)
+  · simpa using inv j (-j) (neg_add_cancel j)
+  · simpa using inv (-j) j (add_neg_cancel j)
+  · simp
 
 end TauCeti.TraceFormulaMatrixModule
