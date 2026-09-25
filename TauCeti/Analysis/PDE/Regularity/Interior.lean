@@ -40,8 +40,11 @@ weak derivative of `u`, tested against the components of `φ A ∇ψ`, which are
 
 ## Main declarations
 
+* `TauCeti.PDE.divMatrixGradient` and `TauCeti.PDE.localizedForcing`: the divergence of the
+  conormal cutoff field and the forcing term in the localized equation.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul`: a cutoff of a weak
-  solution, extended by zero, is a weak solution on the whole space with `L²` data.
+  solution, extended by zero, is a weak solution on the whole space with an explicit `L²` forcing
+  term.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`: near a compact subset
   of `Ω`, a weak solution agrees with a whole-space weak solution.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: interior `H²` regularity.
@@ -67,34 +70,13 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 
-omit [mu.IsAddHaarMeasure] in
-/-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
-private theorem sum_inner_mul_matrixBilinearForm (ξ η : EuclideanSpace ℝ ι) :
-    ∑ i, ⟪ξ, EuclideanSpace.basisFun ι ℝ i⟫_ℝ *
-        matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) η = matrixBilinearForm A ξ η := by
-  conv_rhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr' ξ]
-  simp [map_sum, map_smul]
-
 /-- The divergence `div(A ∇ψ) = ∑ᵢ ∂ᵢ (A ∇ψ)ᵢ` of the conormal field of `ψ`, computed in the
 standard basis. It is the zeroth-order coefficient that commuting the operator `-div(A ∇ ·)` past
 a cutoff `ψ` produces. -/
-private def divMatrixGradient (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
+def divMatrixGradient (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
     (x : EuclideanSpace ℝ ι) : ℝ :=
   ∑ i, lineDeriv ℝ (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) (∇ ψ y)) x
     (EuclideanSpace.basisFun ι ℝ i)
-
-/-- The components `(A ∇ψ)ᵢ` of the conormal field of a smooth `ψ` are smooth. -/
-private theorem contDiff_matrixBilinearForm_gradient {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ ι) :
-    ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
-  (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
-
-/-- The components `(A ∇ψ)ᵢ` of the conormal field are supported where `ψ` is. -/
-private theorem tsupport_matrixBilinearForm_gradient_subset (ψ : EuclideanSpace ℝ ι → ℝ)
-    (η : EuclideanSpace ℝ ι) :
-    tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
-  closure_minimal (fun x hx => by_contra fun hxψ => hx (by
-    simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
 /-- `div(A ∇ψ)` vanishes off the support of `ψ`. -/
 private theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpace ℝ ι → ℝ}
@@ -206,7 +188,7 @@ private theorem setIntegral_value_mul_eq_neg (u : W1p mu Omega 2)
 `-div(A ∇u) = f`:
 
 `-div(A ∇(ψ u)) = ψ f - ⟨∇u, A ∇ψ⟩ - ⟨∇ψ, A ∇u⟩ - u div(A ∇ψ)`. -/
-private def localizedForcing (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
+def localizedForcing (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
     (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) (x : EuclideanSpace ℝ ι) : ℝ :=
   ψ x * f x - matrixBilinearForm A (W1p.gradient u x) (∇ ψ x)
     - matrixBilinearForm A (∇ ψ x) (W1p.gradient u x) - W1p.value u x * divMatrixGradient A ψ x
@@ -468,7 +450,8 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator
 /-- **A cutoff of a weak solution solves an equation on the whole space.** Let `u ∈ H¹(Ω)` be a
 weak solution of `-div(A ∇u) = f` in `Ω` for a constant matrix `A`, with `f ∈ L²(Ω)` and no
 boundary condition, and let `ψ` be smooth and compactly supported in `Ω`. Then `ψ u`, extended by
-zero, is a weak solution of `-div(A ∇w) = g` on the whole space for some `g ∈ L²(ℝⁿ)`, namely
+zero, is a weak solution of `-div(A ∇w) = g` on the whole space for `g ∈ L²(ℝⁿ)` given almost
+everywhere by
 
 `g = ψ f - ⟨∇u, A ∇ψ⟩ - ⟨∇ψ, A ∇u⟩ - u div(A ∇ψ)`, extended by zero.
 
@@ -478,15 +461,29 @@ theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 (fun _ => A) 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {M : ℝ} (hM : 0 ≤ M)
-    (hψM : ∀ x ∈ Omega, |ψ x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M)
-    (hw : W1p.contDiffSMul ψ hψ hM hψM hgradM u ∈ w1p0Submodule mu Omega 2) :
-    ∃ g : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
-      IsWeakSolutionDirichlet (fun _ => A) 0 0 g (W1p0.extendByZeroL le_top ⟨_, hw⟩) := by
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∃ w : W1p0 mu ⊤ 2, ∃ g : Lp ℝ 2
+        (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
+      IsWeakSolutionDirichlet (fun _ => A) 0 0 g w ∧
+        (∀ᵐ x ∂mu, g x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
+          (localizedForcing A ψ f u) x) ∧
+        (∀ᵐ x ∂mu, W1p.value (w : W1p mu ⊤ 2) x =
+          (Omega : Set (EuclideanSpace ℝ ι)).indicator
+            (fun y => ψ y * W1p.value u y) x) ∧
+        ∀ᵐ x ∂mu, W1p.gradient (w : W1p mu ⊤ 2) x =
+          (Omega : Set (EuclideanSpace ℝ ι)).indicator
+            (fun y => ψ y • W1p.gradient u y + W1p.value u y • ∇ ψ y) x := by
   have hΩ := Omega.isOpen.measurableSet
   have hsub : (Omega : Set (EuclideanSpace ℝ ι)) ⊆
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) :=
     SetLike.coe_subset_coe.mpr le_top
+  obtain ⟨M, hM, hψM, hgradM⟩ :=
+    (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
+  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
+  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
+  have hw := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (p := 2) (by norm_num)
+    hψ hM hψM' hgradM' hψc hts u
+  let w : W1p0 mu ⊤ 2 := W1p0.extendByZeroL le_top ⟨_, hw⟩
   -- The forcing term, extended by zero.
   have hG := memLp_localizedForcing (A := A) hψ hψc f u
   have hg : ∀ᵐ x ∂mu, extendByZeroLpₗᵢ ℝ mu hΩ hsub (hG.toLp (localizedForcing A ψ f u)) x =
@@ -506,9 +503,13 @@ theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul
     simpa using memLp_top_const (α := EuclideanSpace ℝ ι)
       (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
       (energyIntegrand A 0 0)
-  exact ⟨_, (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2 fun φ =>
+  refine ⟨w, _, (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2
+    (fun φ => ?_), hg, ?_, ?_⟩
+  · exact
     energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator hu hψ hψc hts
-      (W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hM hψM hgradM u hw) hg φ⟩
+      (W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hM hψM' hgradM' u hw) hg φ
+  · exact W1p.value_extendByZeroL_contDiffSMul_ae hψ hM hψM' hgradM' u hw
+  · exact W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hM hψM' hgradM' u hw
 
 /-- **Localizing a weak solution to the whole space.** Let `u ∈ H¹(Ω)` be a weak solution of
 `-div(A ∇u) = f` in `Ω` for a constant matrix `A`, with `f ∈ L²(Ω)` and no boundary condition.
@@ -531,23 +532,17 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
         (∀ᵐ x ∂mu, x ∈ S → W1p.value (w : W1p mu ⊤ 2) x = W1p.value u x) ∧
         ∀ᵐ x ∂mu, x ∈ S → W1p.gradient (w : W1p mu ⊤ 2) x = W1p.gradient u x := by
   -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
-  obtain ⟨ψ, M, hψ, -, hψ_one, hψc, hts, hM, hψM, hgradM⟩ :=
-    hS.exists_contDiff_cutoff_with_bounds Omega.isOpen hSΩ
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
+  obtain ⟨ψ, hψ, -, hψ_one, hψc, hts⟩ :=
+    hS.exists_contDiff_cutoff Omega.isOpen hSΩ
   have hψ_S : ∀ x ∈ S, ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ_one hx)
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
-  have hw := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (p := 2) (by norm_num) hψ
-    hM hψM' hgradM' hψc hts u
-  obtain ⟨g, hg⟩ :=
-    exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul hu hψ hψc hts hM hψM' hgradM' hw
-  refine ⟨_, g, hg, ?_, ?_⟩
-  · filter_upwards [W1p.value_extendByZeroL_contDiffSMul_ae hψ hM hψM' hgradM' u hw]
-      with x hx hxS
+  obtain ⟨w, g, hg, -, hval, hgrad⟩ :=
+    exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul hu hψ hψc hts
+  refine ⟨w, g, hg, ?_, ?_⟩
+  · filter_upwards [hval] with x hx hxS
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, one_mul]
-  · filter_upwards [W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hM hψM' hgradM' u hw]
-      with x hx hxS
+  · filter_upwards [hgrad] with x hx hxS
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, (hψ_S x hxS).2, one_smul, smul_zero,
       add_zero]
 
