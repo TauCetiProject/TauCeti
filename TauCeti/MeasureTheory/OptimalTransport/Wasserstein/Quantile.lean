@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.Probability.Quantile
+import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # The monotone quantile coupling of two real laws

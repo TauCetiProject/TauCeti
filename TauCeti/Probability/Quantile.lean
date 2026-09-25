@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.CDF
-public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # The quantile function of a real law

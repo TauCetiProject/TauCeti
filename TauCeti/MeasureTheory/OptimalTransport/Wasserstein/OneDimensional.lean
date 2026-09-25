@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile
 public import TauCeti.MeasureTheory.Integral.LayerCake
 
+import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 
 /-!
