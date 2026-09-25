@@ -8,6 +8,7 @@ module
 -- Public: `IsSemisimpleRing` and `IsReduced` are the two clauses of the definition below,
 -- Artin--Wedderburn supplies the shape of the main equivalence, and the semisimplicity of the
 -- quotient by the radical is what makes the definition usable over a finite-dimensional algebra.
+public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 public import TauCeti.RingTheory.Jacobson.FiniteDimensional
