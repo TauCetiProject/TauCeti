@@ -115,11 +115,9 @@ theorem reverse_mul_self (x : evenUnitaryGroup Q) :
 theorem self_mul_reverse (x : evenUnitaryGroup Q) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
       reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 := by
-  exact self_mul_reverse_of_reverse_mul_self
-    (show reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
-        ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-      algebraMap R (CliffordAlgebra Q) 1 by
-        simpa only [map_one] using reverse_mul_self Q x)
+  apply self_mul_reverse_of_reverse_mul_self
+  exact (reverse_mul_self Q x).trans
+    (map_one (algebraMap R (CliffordAlgebra Q))).symm
 
 /-- Reversal of an even unitary Clifford element is its unit inverse after coercion. -/
 @[simp]
