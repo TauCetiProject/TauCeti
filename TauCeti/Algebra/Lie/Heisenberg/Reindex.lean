@@ -19,6 +19,10 @@ import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 Key coefficient identity for the Chevalley commutator via Heisenberg conjugation.
 The reindexing transforms a sum over k with a k/(k!) coefficient into a sum
 over j=k-1 with a 1/(j!) coefficient, using (j+1)/(j+1)! = 1/j!.
+
+This is the technical core for the Heisenberg conjugation formula:
+  exp(uX) * (vY) * exp(-uX) = vY + uv[X,Y]
+which yields the Chevalley commutator [x_α(u), x_β(v)] = x_{α+β}(N(α,β)uv).
 -/
 
 open Finset
