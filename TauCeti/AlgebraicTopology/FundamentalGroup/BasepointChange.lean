@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
+import TauCeti.Algebra.Group.Conj
 import Mathlib.Tactic.Group
 
 /-!
@@ -109,61 +110,58 @@ lemma _root_.FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_pat
     (g : _root_.FundamentalGroup X x₀) :
     IsConj (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g)
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ g) := by
-  let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
-  let δq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk δ
   let αγ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
-    (Groupoid.isoEquivHom _ _).symm γq
+    (Groupoid.isoEquivHom _ _).symm ⟦γ⟧
   let αδ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
-    (Groupoid.isoEquivHom _ _).symm δq
-  have hγhom : αγ.hom = γq := by
-    exact (Groupoid.isoEquivHom (FundamentalGroupoid.mk x₀)
-      (FundamentalGroupoid.mk x₁)).apply_symm_apply γq
-  have hδhom : αδ.hom = δq := by
-    exact (Groupoid.isoEquivHom (FundamentalGroupoid.mk x₀)
-      (FundamentalGroupoid.mk x₁)).apply_symm_apply δq
-  have hγinv : αγ.inv = γq.symm := by
-    apply (cancel_mono γq).1
-    calc
-      αγ.inv ≫ γq = αγ.inv ≫ αγ.hom := by rw [hγhom]
-      _ = 𝟙 (FundamentalGroupoid.mk x₁) := αγ.inv_hom_id
-      _ = γq.symm ≫ γq := by
-        rw [FundamentalGroupoid.id_eq_path_refl]
-        exact (Path.Homotopic.Quotient.symm_trans γq).symm
-  have hδinv : αδ.inv = δq.symm := by
-    apply (cancel_mono δq).1
-    calc
-      αδ.inv ≫ δq = αδ.inv ≫ αδ.hom := by rw [hδhom]
-      _ = 𝟙 (FundamentalGroupoid.mk x₁) := αδ.inv_hom_id
-      _ = δq.symm ≫ δq := by
-        rw [FundamentalGroupoid.id_eq_path_refl]
-        exact (Path.Homotopic.Quotient.symm_trans δq).symm
+    (Groupoid.isoEquivHom _ _).symm ⟦δ⟧
+  -- Mathlib defines path transport as conjugation by the corresponding groupoid isomorphism.
   change IsConj (αγ.conj g) (αδ.conj g)
-  rw [isConj_iff]
-  refine ⟨γq.symm.trans δq, ?_⟩
-  rw [Iso.conj_apply, Iso.conj_apply, _root_.FundamentalGroup.mul_def,
-    _root_.FundamentalGroup.inv_def, hγhom, hδhom, hγinv, hδinv]
-  simp only [FundamentalGroupoid.comp_eq]
-  rw [_root_.FundamentalGroup.mul_def]
-  let c : FundamentalGroupoid.mk x₁ ⟶ FundamentalGroupoid.mk x₁ := γq.symm.trans δq
-  have hinv : (γq.symm.trans δq).symm = δq.symm.trans γq := by
-    apply (cancel_mono c).1
-    calc
-      (γq.symm.trans δq).symm ≫ c = Groupoid.inv c ≫ c := by rfl
-      _ = 𝟙 _ := Groupoid.inv_comp _
-      _ = (δq.symm.trans γq) ≫ c := by
-        -- This puts the categorical identity back into the path-quotient presentation.
-        change Path.Homotopic.Quotient.refl x₁ =
-          (δq.symm.trans γq).trans (γq.symm.trans δq)
-        rw [Path.Homotopic.Quotient.trans_assoc δq.symm γq (γq.symm.trans δq),
-          ← Path.Homotopic.Quotient.trans_assoc γq γq.symm δq,
-          Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans,
-          Path.Homotopic.Quotient.symm_trans]
-  rw [hinv]
-  simp only [Path.Homotopic.Quotient.trans_assoc]
-  rw [← Path.Homotopic.Quotient.trans_assoc γq γq.symm δq,
-    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans,
-    ← Path.Homotopic.Quotient.trans_assoc γq γq.symm (Path.Homotopic.Quotient.trans g δq),
-    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
+  refine isConj_iff.mpr ⟨(αγ.symm ≪≫ αδ).hom, ?_⟩
+  rw [_root_.FundamentalGroup.mul_def, _root_.FundamentalGroup.mul_def,
+    _root_.FundamentalGroup.inv_def]
+  simp only [← FundamentalGroupoid.comp_eq]
+  rw [← _root_.FundamentalGroup.inv_def]
+  change Groupoid.inv (αγ.symm ≪≫ αδ).hom ≫ (αγ.conj g) ≫
+    (αγ.symm ≪≫ αδ).hom = αδ.conj g
+  rw [Groupoid.inv_eq_inv,
+    ← (IsIso.eq_inv_of_hom_inv_id (αγ.symm ≪≫ αδ).hom_inv_id)]
+  simp [Iso.conj_apply, Category.assoc]
+
+/-- The conjugacy class of `g` transported from `x₀` to `x₁`, independent of the chosen path. -/
+noncomputable def conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+    (x₀ x₁ : X) (g : _root_.FundamentalGroup X x₀) :
+    ConjClasses (_root_.FundamentalGroup X x₁) :=
+  ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁ g)
+
+/-- Any path from `x₀` to `x₁` realizes the path-independent conjugacy class of `g`. -/
+theorem mk_transport_eq_conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+    {x₀ x₁ : X} (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
+    ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
+      conjClassAt x₀ x₁ g := by
+  rw [conjClassAt, ConjClasses.mk_eq_mk_iff_isConj]
+  exact _root_.FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_paths
+    γ (PathConnectedSpace.somePath x₀ x₁) g
+
+/-- Transporting a path-independent class along another path gives the class at its endpoint. -/
+theorem map_conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+    {x₀ x₁ x₂ : X} (δ : Path x₁ x₂) (g : _root_.FundamentalGroup X x₀) :
+    ConjClasses.map (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+      (conjClassAt x₀ x₁ g) = conjClassAt x₀ x₂ g := by
+  let γ : Path x₀ x₁ := PathConnectedSpace.somePath x₀ x₁
+  rw [← mk_transport_eq_conjClassAt γ g, ConjClasses.map_mk,
+    ← mk_transport_eq_conjClassAt (γ.trans δ) g]
+  let αγ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm ⟦γ⟧
+  let αδ : FundamentalGroupoid.mk x₁ ≅ FundamentalGroupoid.mk x₂ :=
+    (Groupoid.isoEquivHom _ _).symm ⟦δ⟧
+  have htrans : ((Groupoid.isoEquivHom _ _).symm ⟦γ.trans δ⟧ :
+      FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₂) = αγ ≪≫ αδ := by
+    apply Iso.ext
+    rfl
+  congr 1
+  change αδ.conj (αγ.conj g) =
+    ((Groupoid.isoEquivHom _ _).symm ⟦γ.trans δ⟧).conj g
+  rw [htrans, Iso.trans_conj]
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 

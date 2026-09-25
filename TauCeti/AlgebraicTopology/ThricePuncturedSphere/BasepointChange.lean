@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 /-!
 # Peripheral conjugacy classes at arbitrary basepoints
 
-The three punctures of `ℂ ∖ {0, 1}` determine conjugacy classes in the fundamental group at every
-basepoint. Starting with the fixed peripheral loops at `1/2`, this file transports their classes
-along a path to an arbitrary point. Different paths give conjugate elements, so the resulting
-class is independent of the path.
+The loops at `0` and `1`, together with the product-one element `periphInf`, determine conjugacy
+classes in the fundamental group at every basepoint. Starting with these elements at `1/2`, this
+file transports their classes along a path to an arbitrary point. Different paths give conjugate
+elements, so the resulting class is independent of the path.
 
 The element-level transports are retained because a path is needed to compare fundamental groups
 at different basepoints. The canonical `ConjClasses` values are the path-independent invariants
@@ -52,7 +52,7 @@ noncomputable def periph0At (γ : Path basePt x) : FundamentalGroup ThricePunctu
 noncomputable def periph1At (γ : Path basePt x) : FundamentalGroup ThricePuncturedSphere x :=
   FundamentalGroup.fundamentalGroupMulEquivOfPath γ periph1
 
-/-- The peripheral element at `∞`, transported from the standard basepoint along `γ`. -/
+/-- The product-one element `periphInf`, transported from the standard basepoint along `γ`. -/
 noncomputable def periphInfAt (γ : Path basePt x) : FundamentalGroup ThricePuncturedSphere x :=
   FundamentalGroup.fundamentalGroupMulEquivOfPath γ periphInf
 
@@ -66,50 +66,49 @@ theorem isConj_periph1At_of_paths (γ δ : Path basePt x) :
     IsConj (periph1At γ) (periph1At δ) :=
   FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_paths γ δ periph1
 
-/-- Two paths to the same basepoint give conjugate transported peripheral elements at `∞`. -/
+/-- Two paths to the same basepoint give conjugate transports of `periphInf`. -/
 theorem isConj_periphInfAt_of_paths (γ δ : Path basePt x) :
     IsConj (periphInfAt γ) (periphInfAt δ) :=
   FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_paths γ δ periphInf
 
-private noncomputable def basepointPath (x : ThricePuncturedSphere) : Path basePt x :=
-  PathConnectedSpace.somePath basePt x
-
 /-- The conjugacy class of a positive peripheral loop around `0` at `x`. -/
 noncomputable def periph0ConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  ConjClasses.mk (periph0At (basepointPath x))
+  FundamentalGroup.conjClassAt basePt x periph0
 
 /-- The conjugacy class of a positive peripheral loop around `1` at `x`. -/
 noncomputable def periph1ConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  ConjClasses.mk (periph1At (basepointPath x))
+  FundamentalGroup.conjClassAt basePt x periph1
 
-/-- The conjugacy class of a peripheral loop around `∞` at `x`, with the orientation fixed by
-the product-one convention `periphInf * periph1 * periph0 = 1`. -/
+/-- The conjugacy class transported from the product-one element `periphInf` at `x`.
+Its geometric identification with a loop at infinity belongs to Layer 5.8. -/
 noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  ConjClasses.mk (periphInfAt (basepointPath x))
+  FundamentalGroup.conjClassAt basePt x periphInf
+
+/-- The three transported elements retain the defining product-one relation. -/
+theorem periphInfAt_mul_periph1At_mul_periph0At (γ : Path basePt x) :
+    periphInfAt γ * periph1At γ * periph0At γ = 1 := by
+  simp only [periphInfAt, periph1At, periph0At, ← map_mul,
+    periphInf_mul_periph1_mul_periph0, map_one]
 
 /-- Transport along any path from the standard basepoint realizes the canonical peripheral class
 at `0`. -/
-theorem mk_periph0At_eq_periph0ConjClass (γ : Path basePt x) :
+@[simp] theorem mk_periph0At_eq_periph0ConjClass (γ : Path basePt x) :
     ConjClasses.mk (periph0At γ) = periph0ConjClass x := by
-  rw [periph0ConjClass, ConjClasses.mk_eq_mk_iff_isConj]
-  exact isConj_periph0At_of_paths γ (basepointPath x)
+  exact FundamentalGroup.mk_transport_eq_conjClassAt γ periph0
 
 /-- Transport along any path from the standard basepoint realizes the canonical peripheral class
 at `1`. -/
-theorem mk_periph1At_eq_periph1ConjClass (γ : Path basePt x) :
+@[simp] theorem mk_periph1At_eq_periph1ConjClass (γ : Path basePt x) :
     ConjClasses.mk (periph1At γ) = periph1ConjClass x := by
-  rw [periph1ConjClass, ConjClasses.mk_eq_mk_iff_isConj]
-  exact isConj_periph1At_of_paths γ (basepointPath x)
+  exact FundamentalGroup.mk_transport_eq_conjClassAt γ periph1
 
-/-- Transport along any path from the standard basepoint realizes the canonical peripheral class
-at `∞`. -/
-theorem mk_periphInfAt_eq_periphInfConjClass (γ : Path basePt x) :
+/-- Transport along any path from the standard basepoint realizes the class of `periphInf`. -/
+@[simp] theorem mk_periphInfAt_eq_periphInfConjClass (γ : Path basePt x) :
     ConjClasses.mk (periphInfAt γ) = periphInfConjClass x := by
-  rw [periphInfConjClass, ConjClasses.mk_eq_mk_iff_isConj]
-  exact isConj_periphInfAt_of_paths γ (basepointPath x)
+  exact FundamentalGroup.mk_transport_eq_conjClassAt γ periphInf
 
 /-- Transport of the standard peripheral class at `0` along any path produces the canonical
 class at its endpoint. -/
@@ -127,12 +126,30 @@ theorem map_mk_periph1_eq_periph1ConjClass (γ : Path basePt x) :
   rw [ConjClasses.map_mk]
   exact mk_periph1At_eq_periph1ConjClass γ
 
-/-- Transport of the standard peripheral class at `∞` along any path produces the canonical
-class at its endpoint. -/
+/-- Transport of the standard product-one class along any path produces its class at the
+endpoint. -/
 theorem map_mk_periphInf_eq_periphInfConjClass (γ : Path basePt x) :
     ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom
       (ConjClasses.mk periphInf) = periphInfConjClass x := by
   rw [ConjClasses.map_mk]
   exact mk_periphInfAt_eq_periphInfConjClass γ
+
+/-- The class at `0` is natural under transport between any two basepoints. -/
+theorem map_periph0ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+      (periph0ConjClass x) = periph0ConjClass y :=
+  FundamentalGroup.map_conjClassAt δ periph0
+
+/-- The class at `1` is natural under transport between any two basepoints. -/
+theorem map_periph1ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+      (periph1ConjClass x) = periph1ConjClass y :=
+  FundamentalGroup.map_conjClassAt δ periph1
+
+/-- The class of the product-one element is natural under transport between basepoints. -/
+theorem map_periphInfConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+      (periphInfConjClass x) = periphInfConjClass y :=
+  FundamentalGroup.map_conjClassAt δ periphInf
 
 end TauCeti.ThricePuncturedSphere
