@@ -68,12 +68,16 @@ theorem ofMulAction_coe (g : SL(2, ℤ)) :
   ext
   simp [coe_smul]
 
-/-- The central sign `-1 ∈ SL(2, ℤ)` acts trivially on `k[ℳₙ]`. -/
+/-- The central sign `-1 ∈ SL(2, ℤ)` acts trivially on `ℳₙ`, so `g` and `-g` act on `k[ℳₙ]` in the
+same way. -/
 @[simp]
-theorem ofMulAction_neg_one :
-    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-1) = 1 := by
-  ext
-  simp
+theorem ofMulAction_neg (g : SL(2, ℤ)) :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-g) =
+      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) g := by
+  have h : Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-1) = 1 := by
+    ext
+    simp
+  rw [← neg_one_mul, map_mul, h, one_mul]
 
 open ModularGroup in
 /-- Left multiplication by `S` on `k[ℳₙ]` is an involution: `S² = 1`. -/
@@ -81,14 +85,14 @@ open ModularGroup in
 theorem ofMulAction_S_sq :
     Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S ^ 2 = 1 := by
   -- `S² = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
-  rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg_one]
+  rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg, map_one]
 
 open ModularGroup in
 /-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. -/
 theorem ofMulAction_T_mul_S_pow_three :
     Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) ^ 3 = 1 := by
   -- `U³ = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
-  rw [← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg_one]
+  rw [← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg, map_one]
 
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/

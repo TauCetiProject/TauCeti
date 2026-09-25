@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
@@ -62,7 +63,7 @@ is torsion-free or if `2` and `3` are invertible in `k`.
 
 public section
 
-open MonoidAlgebra MulAction Representation ModularGroup
+open MonoidAlgebra MulAction Representation ModularGroup TauCeti.Matrix.SpecialLinearGroup
 open scoped MatrixGroups RightActions
 
 namespace TauCeti.TraceFormulaMatrixModule
@@ -87,8 +88,8 @@ structure ExchangeRelations (ξ : k[ℳ n]) : Prop where
 
 private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_S_smul {ξ : k[ℳ n]}
     (hξ : ExchangeRelations k n ξ) (h3 : IsSMulRegular k 3) (x : ℳ n) :
-    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ (S • x)) =
-      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ x) := by
+    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦S • x⟧ =
+      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦x⟧ := by
   -- by the second relation, `ξ (1 + U + U²) = (1 + S) η` is fixed by `S` on the left, as
   -- `S (1 + S) = 1 + S`; right multiplication preserves every right coset, so the right coset
   -- sums of `ξ (1 + U + U²)` are three times those of `ξ`
@@ -96,14 +97,14 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_S_smul {ξ : k[ℳ
   refine mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum (s := Finset.range 3)
     (h := fun i ↦ .op ((T : PSL(2, ℤ)) * S) ^ i) (by simpa using h3) ?_ x
   have hsum : ∑ i ∈ Finset.range 3, ρR (.op ((T : PSL(2, ℤ)) * S) ^ i) ξ = (1 + ρL S) η := by
-    rw [hη]
-    simp [Finset.sum_range_succ]
-  rw [hsum, ← Module.End.mul_apply, mul_add, mul_one, ← sq, ofMulAction_S_sq, add_comm]
+    simp [Finset.sum_range_succ, hη]
+  rw [hsum]
+  simp [← Module.End.mul_apply, ← sq, add_comm]
 
 private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_T_mul_S_smul {ξ : k[ℳ n]}
     (hξ : ExchangeRelations k n ξ) (h2 : IsSMulRegular k 2) (x : ℳ n) :
-    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ ((T * S) • x)) =
-      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ x) := by
+    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦(T * S) • x⟧ =
+      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦x⟧ := by
   -- by the first relation, `ξ (1 + S) = (1 + U + U²) η` is fixed by `U` on the left, as
   -- `U (1 + U + U²) = U + U² + U³ = 1 + U + U²`; right multiplication preserves every right
   -- coset, so the right coset sums of `ξ (1 + S)` are twice those of `ξ`
@@ -123,21 +124,19 @@ cancellable in `k`, then the right coset sums of `ξ` are invariant under left m
 theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_smul {ξ : k[ℳ n]}
     (hξ : ExchangeRelations k n ξ) (h2 : IsSMulRegular k 2) (h3 : IsSMulRegular k 3) (g : SL(2, ℤ))
     (x : ℳ n) :
-    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ (g • x)) =
-      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ x) := by
+    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦g • x⟧ =
+      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦x⟧ := by
   set f := ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n)))
   -- the elements of `SL(2, ℤ)` under which the right coset sums of `ξ` are invariant
   let P : Subgroup SL(2, ℤ) :=
-    { carrier := {g | ∀ x, f (Quotient.mk _ (g • x)) = f (Quotient.mk _ x)}
+    { carrier := {g | ∀ x, f ⟦g • x⟧ = f ⟦x⟧}
       mul_mem' := fun {a b} ha hb x ↦ by rw [mul_smul, ha, hb]
       one_mem' := fun x ↦ by rw [one_smul]
       inv_mem' := fun {a} ha x ↦ by simpa using (ha (a⁻¹ • x)).symm }
-  -- `P` contains `S` and `U = T S`, hence `T = U S⁻¹`; and `S` and `T` generate `SL(2, ℤ)`
-  have hS : S ∈ P := hξ.mapDomain_orbitRel_mk_coeff_S_smul h3
-  have hT : T ∈ P := by
-    simpa using P.mul_mem (hξ.mapDomain_orbitRel_mk_coeff_T_mul_S_smul h2) (P.inv_mem hS)
-  exact (Subgroup.closure_le P).2 (Set.insert_subset_iff.2 ⟨hS, Set.singleton_subset_iff.2 hT⟩)
-    (SpecialLinearGroup.SL2Z_generators ▸ Subgroup.mem_top g) x
+  -- `P` contains `S` and `U = T S`, which generate `SL(2, ℤ)`
+  have hP : Subgroup.closure {S, T * S} ≤ P := (Subgroup.closure_le P).2 <| Set.pair_subset
+    (hξ.mapDomain_orbitRel_mk_coeff_S_smul h3) (hξ.mapDomain_orbitRel_mk_coeff_T_mul_S_smul h2)
+  exact hP (closure_S_T_mul_S ▸ Subgroup.mem_top g) x
 
 /-- The right coset sums of a solution `ξ` of the exchange relations (B) are constant on every
 double coset: `⟨ξ, g M h Γ⟩ = ⟨ξ, M Γ⟩` for `g ∈ SL(2, ℤ)` and `h ∈ PSL(2, ℤ)`, if `2` and `3`
@@ -145,8 +144,8 @@ are cancellable in `k`. -/
 theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_smul_op_smul {ξ : k[ℳ n]}
     (hξ : ExchangeRelations k n ξ) (h2 : IsSMulRegular k 2) (h3 : IsSMulRegular k 3) (g : SL(2, ℤ))
     (h : PSL(2, ℤ)) (x : ℳ n) :
-    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ (g • x <• h)) =
-      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) (Quotient.mk _ x) := by
+    ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦g • x <• h⟧ =
+      ξ.coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦x⟧ := by
   -- right multiplication by `h` preserves the right coset of `g • x`
   rw [smul_comm, orbitRel.Quotient.quotient_smul_eq, hξ.mapDomain_orbitRel_mk_coeff_smul h2 h3]
 

@@ -123,8 +123,8 @@ the coefficients of `g • v` along the `H`-orbit of `g • x` is the sum of the
 along the `H`-orbit of `x`. -/
 @[simp]
 theorem mapDomain_orbitRel_mk_coeff_ofMulAction_smul (g : G) (v : k[X]) (x : X) :
-    (ofMulAction k G X g v).coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ (g • x)) =
-      v.coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ x) := by
+    (ofMulAction k G X g v).coeff.mapDomain (Quotient.mk (orbitRel H X)) ⟦g • x⟧ =
+      v.coeff.mapDomain (Quotient.mk (orbitRel H X)) ⟦x⟧ := by
   classical
   -- `g` maps distinct `H`-orbits to distinct `H`-orbits
   have hmk (y : X) : Quotient.mk (orbitRel H X) (g • y) = Quotient.mk _ (g • x) ↔
@@ -142,14 +142,11 @@ theorem mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum {ι : Type*} {s : Fi
     {g : G} {v : k[X]} (hs : IsSMulRegular k #s)
     (hfix : ofMulAction k G X g (∑ i ∈ s, ofMulAction k H X (h i) v) =
       ∑ i ∈ s, ofMulAction k H X (h i) v) (x : X) :
-    v.coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ (g • x)) =
-      v.coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ x) := by
-  have key := mapDomain_orbitRel_mk_coeff_ofMulAction_smul (H := H) g
-    (∑ i ∈ s, ofMulAction k H X (h i) v) x
+    v.coeff.mapDomain (Quotient.mk (orbitRel H X)) ⟦g • x⟧ =
+      v.coeff.mapDomain (Quotient.mk (orbitRel H X)) ⟦x⟧ := by
   -- the `H`-orbit sums of `∑ i ∈ s, h i • v` are `#s` times those of `v`
-  simp only [hfix, coeff_sum, Finsupp.mapDomain_finsetSum,
-    mapDomain_orbitRel_mk_coeff_ofMulAction, Finset.sum_const, Finsupp.smul_apply] at key
-  exact hs key
+  exact hs <| by simpa [hfix, Finsupp.mapDomain_finsetSum] using
+    mapDomain_orbitRel_mk_coeff_ofMulAction_smul (H := H) g (∑ i ∈ s, ofMulAction k H X (h i) v) x
 
 end Commuting
 
