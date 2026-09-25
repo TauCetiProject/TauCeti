@@ -9,20 +9,12 @@ public import TauCeti.Geometry.Toric.Algebraic.DenseTorus
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
 
 /-!
-Interface source: `TauCetiRoadmap/AnalyticToricGeometry/README.md`, Layer 0 item 9
-(global dense torus), using the Layer 0 item 7 zero-cone chart prerequisite.  The torus action
-remains later work.
-
 # The dense torus of a toric fan
 
 The zero cone is a cone of every nonempty finite fan.  This module places the generic dense-torus
 scheme from `Algebraic.DenseTorus` in the toric scheme of a regular fan and records the canonical
 open immersion into the realization.  The compatibility theorem says that this inclusion is
 obtained on every affine chart by the face localization from the zero cone.
-
-This is the zero-cone chart/open-subscheme prerequisite for the global dense-torus layer.  It does
-not replace the fan realization by a second quotient, and it leaves the global torus action and
-the analytic realization to their later roadmap layers.
 
 ## Main declarations
 

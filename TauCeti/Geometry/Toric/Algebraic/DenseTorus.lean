@@ -8,10 +8,6 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.AffineScheme
 
 /-!
-Interface source: `TauCetiRoadmap/AnalyticToricGeometry/README.md`, Layer 0 item 7
-(zero-cone chart/character algebra).  This module supplies the shared zero-cone prerequisite; the
-global torus action remains later work.
-
 # The dense torus of an integral lattice
 
 The zero cone has no nonzero inequalities on integral characters, so its dual semigroup is the
@@ -29,7 +25,7 @@ the fan.
 * `TauCeti.Toric.denseTorusDualEquiv`: the zero-cone dual semigroup is the full character lattice.
 * `TauCeti.Toric.denseTorusDualEquiv_apply` and `_symm_apply`: the two computation lemmas.
 * `TauCeti.Toric.denseTorusCoordinateRingEquiv`: the corresponding algebra equivalence.
-* `TauCeti.Toric.denseTorusCoordinateRingEquiv_single`: its computation on monomials.
+* `TauCeti.Toric.denseTorusCoordinateRingEquiv_single` and `_symm_single`: monomial computations.
 
 ## References
 
@@ -53,7 +49,7 @@ noncomputable abbrev denseTorusScheme (hi : IsIntegralLattice i) : Scheme :=
   affineToricScheme hi (⊥ : PointedCone ℝ V)
 
 /-- The dual semigroup of the zero cone is additively equivalent to the full character lattice. -/
-@[expose] noncomputable def denseTorusDualEquiv (hi : IsIntegralLattice i) :
+noncomputable def denseTorusDualEquiv (hi : IsIntegralLattice i) :
     dualSemigroup hi (⊥ : PointedCone ℝ V) ≃+ (N →+ ℤ) where
   toFun := Subtype.val
   invFun m := ⟨m, by simp⟩
@@ -72,13 +68,15 @@ noncomputable def denseTorusCoordinateRingEquiv (hi : IsIntegralLattice i) :
 @[simp]
 theorem denseTorusDualEquiv_apply (hi : IsIntegralLattice i)
     (m : dualSemigroup hi (⊥ : PointedCone ℝ V)) :
-    denseTorusDualEquiv hi m = (m : N →+ ℤ) := rfl
+    denseTorusDualEquiv hi m = (m : N →+ ℤ) := by
+  simp [denseTorusDualEquiv]
 
 /-- The inverse zero-cone character equivalence records the ambient character as a member of the
 full dual semigroup. -/
 @[simp]
 theorem denseTorusDualEquiv_symm_apply (hi : IsIntegralLattice i) (m : N →+ ℤ) :
-    (denseTorusDualEquiv hi).symm m = ⟨m, by simp⟩ := rfl
+    (denseTorusDualEquiv hi).symm m = ⟨m, by simp⟩ := by
+  simp [denseTorusDualEquiv]
 
 /-- The coordinate-ring equivalence sends a monomial to the monomial of its ambient character. -/
 @[simp]
@@ -88,5 +86,15 @@ theorem denseTorusCoordinateRingEquiv_single (hi : IsIntegralLattice i)
       MonoidAlgebra.single (ofAdd (m : N →+ ℤ)) z := by
   simp [denseTorusCoordinateRingEquiv, MonoidAlgebra.domCongr_single,
     denseTorusDualEquiv_apply]
+
+/-- The inverse coordinate-ring equivalence sends an ambient-character monomial to the monomial
+of its zero-cone dual-semigroup representative. -/
+@[simp]
+theorem denseTorusCoordinateRingEquiv_symm_single (hi : IsIntegralLattice i)
+    (m : N →+ ℤ) (z : ℂ) :
+    (denseTorusCoordinateRingEquiv hi).symm (MonoidAlgebra.single (ofAdd m) z) =
+      MonoidAlgebra.single (ofAdd ((denseTorusDualEquiv hi).symm m)) z := by
+  simp [denseTorusCoordinateRingEquiv, MonoidAlgebra.domCongr_symm,
+    denseTorusDualEquiv_symm_apply]
 
 end TauCeti.Toric
