@@ -13,13 +13,16 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 # Rigidity of measure-preserving real endomaps
 
 A measurable real endomap that preserves a finite measure and lies below the identity almost
-everywhere must be the identity almost everywhere. The proof integrates the bounded increasing
-function `Real.arctan`: invariance makes the two integrals equal, while the pointwise bound makes
-their difference nonnegative.
+everywhere must be the identity almost everywhere.
 
 ## Main results
 
 * `MeasureTheory.Measure.ae_eq_id_of_measurePreserving_of_le` states this rigidity principle.
+  It is the step that turns a domination hypothesis on a real-valued coordinate into an equality
+  almost everywhere, so it is useful whenever one has to rule out a measure-preserving map that
+  moves points downwards: for instance to show that a measure-preserving endomorphism of a finite
+  measure space on `ℝ` which is almost everywhere bounded above by the identity is trivial, and
+  with it that a strictly decreasing measure-preserving self-map of such a space cannot exist.
 -/
 
 public section

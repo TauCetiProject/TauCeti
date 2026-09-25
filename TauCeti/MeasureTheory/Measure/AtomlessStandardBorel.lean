@@ -107,7 +107,7 @@ private noncomputable def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMe
   right_inv_ae := cdf_quantile_ae ν
 
 private noncomputable def embeddingRealMod0MeasureIso (α) [MeasurableSpace α]
-    [StandardBorelSpace α] (μ : Measure α) [IsProbabilityMeasure μ] [Nonempty α] :
+    [StandardBorelSpace α] (μ : Measure α) [Nonempty α] :
     Mod0MeasureIso α ℝ μ (Measure.map (embeddingReal α) μ) :=
   let he := measurableEmbedding_embeddingReal α
   { toFun := embeddingReal α
@@ -121,14 +121,8 @@ private noncomputable def embeddingRealMod0MeasureIso (α) [MeasurableSpace α]
       rw [h, Measure.map_id]
     left_inv_ae := ae_of_all _ he.leftInverse_invFun
     right_inv_ae := by
-      have hrange : Measure.map (embeddingReal α) μ (range (embeddingReal α))ᶜ = 0 := by
-        have h1 : Measure.map (embeddingReal α) μ (range (embeddingReal α)) = 1 := by
-          rw [he.map_apply, preimage_range, measure_univ]
-        rw [measure_compl he.measurableSet_range (measure_ne_top _ _), h1, measure_univ,
-          tsub_self]
-      have hmem : ∀ᵐ y ∂(Measure.map (embeddingReal α) μ), y ∈ range (embeddingReal α) := by
-        rw [ae_iff]
-        exact hrange
+      have hmem : ∀ᵐ y ∂(Measure.map (embeddingReal α) μ), y ∈ range (embeddingReal α) :=
+        ae_map_mem_range he.measurableSet_range he.measurable.aemeasurable
       filter_upwards [hmem] with y hy
       obtain ⟨x, rfl⟩ := hy
       simp only [id_eq]
@@ -141,7 +135,7 @@ private noncomputable def atomless_standardBorel_mod0MeasureIso (α) [Measurable
   have hprob : IsProbabilityMeasure (Measure.map (embeddingReal α) μ) := inferInstance
   have hnull : NullSingletonClass (Measure.map (embeddingReal α) μ) :=
     noAtoms_map_of_injective (measurableEmbedding_embeddingReal α)
-  exact (@embeddingRealMod0MeasureIso α _ _ μ inferInstance hne).trans
+  exact (@embeddingRealMod0MeasureIso α _ _ μ hne).trans
     (@realMod0MeasureIso (Measure.map (embeddingReal α) μ) hprob hnull)
 
 private theorem atomless_standardBorel_toFun_mem (α) [MeasurableSpace α]
