@@ -29,8 +29,9 @@ is Popa--Zagier's product `M · g`, right multiplication by `g` itself; it equal
 For `n ≠ 0` the left action of `PSL(2, ℤ)` is free
 (`TauCeti.TraceFormulaMatrixModule.isCancelSMul`): a matrix of nonzero determinant is cancellable,
 so `g A = ±A` forces `g = ±1` (`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq`).
-Likewise `A g = ±A` forces `g = ±1`, so the right action is free
-(`TauCeti.TraceFormulaMatrixModule.isCancelSMul_mulOpposite`).
+Likewise `A g = ±A` forces `g = ±1`
+(`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq`), so the right action is
+free (`TauCeti.TraceFormulaMatrixModule.isCancelSMul_mulOpposite`).
 
 ## References
 
@@ -529,12 +530,10 @@ theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq (hn : n ≠ 
 /-- For `n ≠ 0`, `PSL(2, ℤ)` acts freely on `ℳₙ` by right multiplication. -/
 theorem TraceFormulaMatrixModule.isCancelSMul_mulOpposite (hn : n ≠ 0) :
     IsCancelSMul PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) := by
-  refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun g x h ↦ ?_
-  induction g using MulOpposite.rec' with | _ g => ?_
-  induction g using QuotientGroup.induction_on with | H g => ?_
-  rw [MulOpposite.op_eq_one_iff, QuotientGroup.eq_one_iff,
+  simp only [isCancelSMul_iff_eq_one_of_smul_eq, MulOpposite.forall, QuotientGroup.forall_mk,
+    MulOpposite.op_eq_one_iff, QuotientGroup.eq_one_iff,
     Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  exact TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq hn h
+  exact fun _ _ ↦ eq_one_or_eq_neg_one_of_op_smul_eq hn
 
 /-- Left and right multiplication on `ℳₙ` commute. -/
 instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :

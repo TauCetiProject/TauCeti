@@ -21,8 +21,9 @@ a set on which `Γ` acts freely and `k[X]` its permutation module over a ring `k
 `ξ ∈ k[X]` is killed by both `1 + S` and `1 + U + U²`; Choie and Zagier call this *acyclicity*.
 Popa and Zagier prove it for `ℚ[ℳ]`, where `ℳ` is the set of integral matrices of positive
 determinant modulo `±1`; their descent applies to any free `X` and any ring `k`. Freeness of the
-action is Mathlib's `IsCancelSMul PSL(2, ℤ) X`. The same holds for a free right action, an action
-of `PSL(2, ℤ)ᵐᵒᵖ`, with `S` and `U` acting by right multiplication.
+action is Mathlib's `IsCancelSMul PSL(2, ℤ) X`. The same holds for a free right action, that is,
+a free action of `PSL(2, ℤ)ᵐᵒᵖ`, with `S` and `U` acting by right multiplication: this is the
+left version for the free left action `g • x = x · g⁻¹`.
 
 The proof is a descent. If `ξ` is killed by both operators then `ξ = (T⁻¹ + T′⁻¹) ξ`, where
 `T′ = U² * S` is the class of `(1 0; 1 1)`, so the coefficients of `ξ` satisfy
@@ -114,30 +115,25 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
   rw [eq_neg_of_add_eq_zero_left e₁, add_comm (ξ.coeff _)]
   exact neg_eq_of_add_eq_zero_right ((add_assoc _ _ _).symm.trans e₂)
 
-/-- **Acyclicity for the right action** (Popa--Zagier, Lemma 2): for a free right
-`PSL(2, ℤ)`-set `X`, that is a free action of `PSL(2, ℤ)ᵐᵒᵖ`, on the permutation module `k[X]`
-the kernels of `1 + S` and `1 + U + U²`, with `S` and `U = T * S` acting by right multiplication,
-are disjoint.
-
-This is the left version for the free left action `g • x = x · g⁻¹`: there `S` acts as right
-multiplication by `S⁻¹ = S`, and `U` as right multiplication by `U⁻¹ = U²`, whose square is `U`. -/
+/-- **Acyclicity for the right action** (Popa--Zagier, Lemma 2): if `PSL(2, ℤ)` acts freely on
+`X` from the right, that is, `PSL(2, ℤ)ᵐᵒᵖ` acts freely on `X`, then on the permutation module
+`k[X]` the kernels of `1 + S` and `1 + U + U²`, with `S` and `U = T * S` acting by right
+multiplication, are disjoint: their intersection is `0`. -/
 theorem disjoint_ker_one_add_op_S_ker_one_add_op_T_mul_S_add_sq {k X : Type*} [Ring k]
     [MulAction PSL(2, ℤ)ᵐᵒᵖ X] [IsCancelSMul PSL(2, ℤ)ᵐᵒᵖ X] :
     Disjoint (LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op S)))
-      (LinearMap.ker
-        (1 + Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) +
-          Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) ^ 2)) := by
-  -- the free left action `g • x = x · g⁻¹`, whose permutation operators are those of `X`
+      (LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) +
+        Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) ^ 2)) := by
+  -- the free left action `g • x = x · g⁻¹`, in which `S`, `U` and `U²` act as right
+  -- multiplication by `S⁻¹ = S`, `U⁻¹ = U²` and `(U²)⁻¹ = U`; apply the left version to it
   let _ : MulAction PSL(2, ℤ) X := .compHom X (MulEquiv.inv' PSL(2, ℤ)).toMonoidHom
   have : IsCancelSMul PSL(2, ℤ) X := isCancelSMul_iff_eq_one_of_smul_eq.mpr fun _ _ h ↦
     inv_eq_one.mp ((MulOpposite.op_eq_one_iff _).mp (IsCancelSMul.eq_one_of_smul h))
   have hρ (g : PSL(2, ℤ)) : Representation.ofMulAction k PSL(2, ℤ) X g =
       Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op g⁻¹) := rfl
-  have hU : Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) ^ 4 =
-      Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ X (.op ((T : PSL(2, ℤ)) * S)) := by
-    rw [← map_pow, ← MulOpposite.op_pow, pow_succ, coe_T_mul_coe_S_pow_three, one_mul]
   have h := disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq (k := k) (X := X)
-  simp only [hρ, coe_S_inv, coe_T_mul_coe_S_inv, MulOpposite.op_pow, map_pow, ← pow_mul, hU] at h
-  rwa [add_right_comm] at h
+  rw [← map_pow] at h
+  simp only [hρ, coe_S_inv, coe_T_mul_coe_S_inv, coe_T_mul_coe_S_sq_inv] at h
+  rwa [add_right_comm, MulOpposite.op_pow, map_pow] at h
 
 end TauCeti.ModularGroup

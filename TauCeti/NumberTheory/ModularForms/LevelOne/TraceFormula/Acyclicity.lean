@@ -22,17 +22,17 @@ The right action of `PSL(2, ℤ)` on `ℳₙ` is free as well
 (`TauCeti.TraceFormulaMatrixModule.isCancelSMul_mulOpposite`), so the same holds for `S` and `U`
 acting on `k[ℳₙ]` by right multiplication.
 
-The hypothesis `n ≠ 0` is needed. On `ℳ₀` the action is not free (`T` fixes the class of
-`(1 0; 0 0)`), and acyclicity fails for a nontrivial ring `k`: `S` swaps the classes of
-`(1 0; 0 0)` and `(0 0; 1 0)`, and `U` permutes them cyclically with the class of `(1 0; 1 0)`,
-so `[(0 0; 1 0)] - [(1 0; 0 0)]` is a nonzero element of both kernels on `k[ℳ₀]`.
+The hypothesis `n ≠ 0` is needed. On `ℳ₀` the left action is not free (`T` fixes the class of
+`(1 0; 0 0)`), and acyclicity for the left action fails for a nontrivial ring `k`: `S` swaps the
+classes of `(1 0; 0 0)` and `(0 0; 1 0)`, and `U` permutes them cyclically with the class of
+`(1 0; 1 0)`, so `[(0 0; 1 0)] - [(1 0; 0 0)]` is a nonzero element of both kernels on `k[ℳ₀]`.
 
 ## Main results
 
 * `TauCeti.TraceFormulaMatrixModule.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq`: for
   `n ≠ 0`, acyclicity of `k[ℳₙ]`, stated with the `SL(2, ℤ)` permutation representation.
-* `TauCeti.TraceFormulaMatrixModule.disjoint_ker_one_add_op_S_ker_one_add_op_T_mul_S_add_sq`:
-  for `n ≠ 0`, acyclicity of `k[ℳₙ]` for the right action of `PSL(2, ℤ)`.
+* `TauCeti.TraceFormulaMatrixModule.disjoint_ker_one_add_op_S_ker_one_add_op_T_mul_S_add_sq`: for
+  `n ≠ 0`, acyclicity of `k[ℳₙ]` for the right action of `PSL(2, ℤ)`.
 
 ## References
 
@@ -67,8 +67,7 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k : Type*} [Ring k] (
 /-- **Acyclicity of `k[ℳₙ]` for the right action** (Popa--Zagier, Lemma 2): for `n ≠ 0`, on the
 permutation module `k[ℳₙ]` of the right action of `PSL(2, ℤ)`, the kernels of `1 + S` and
 `1 + U + U²`, with `S` and `U = T * S` acting by right multiplication, are disjoint. -/
-theorem disjoint_ker_one_add_op_S_ker_one_add_op_T_mul_S_add_sq {k : Type*} [Ring k]
-    (hn : n ≠ 0) :
+theorem disjoint_ker_one_add_op_S_ker_one_add_op_T_mul_S_add_sq {k : Type*} [Ring k] (hn : n ≠ 0) :
     Disjoint
       (LinearMap.ker
         (1 + Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (.op S)))
