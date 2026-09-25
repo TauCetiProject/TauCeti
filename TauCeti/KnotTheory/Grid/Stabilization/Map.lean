@@ -184,10 +184,22 @@ of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
 @[simp] theorem map_centerInclusion_comp_stabilizeXMap :
     (ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-        (homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
-          (ComplexShape.refl_rel ()) ≫
-          (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f ()) ≫
+        (eqToHom (G.stabilizeXCenterComplex_X s R ())) ≫
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+        (ModuleCat.ofHom (G.stabilizeXCenterInclusion s R)) ≫
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+        (eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
         (G.stabilizeXMap s R).f () = 0 := by
+  have h : homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
+      (ComplexShape.refl_rel ()) ≫ (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f () =
+      eqToHom (G.stabilizeXCenterComplex_X s R ()) ≫
+        ModuleCat.ofHom (G.stabilizeXCenterInclusion s R) ≫
+          eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()).symm := by
+    rw [unblockedComplexStabilizeXIsoHomotopyCofiber_inv_f]
+    simp
+  rw [← Functor.map_comp_assoc, ← Functor.map_comp_assoc, Category.assoc, ← h]
   rw [stabilizeXMap]
   simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f]
   simp only [← Category.assoc, ← Functor.map_comp]
