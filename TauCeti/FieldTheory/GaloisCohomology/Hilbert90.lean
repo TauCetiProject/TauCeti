@@ -23,7 +23,8 @@ H¹(Gal(L/K), Lˣ) = 0.
 ```
 
 Specialised to a separable closure this is Hilbert 90 for the absolute Galois group,
-`H¹(G_K, (Kˢ)ˣ) = 0`, which is what makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective.
+`H¹(G_K, (Kˢ)ˣ) = 0`, which is what makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective for
+`n` positive and invertible in `K`.
 
 The proof passes to finite layers. An open normal subgroup `U` of `Gal(L/K)` has a fixed field `F`
 that is finite Galois over `K`; the infinite Galois correspondence identifies `Gal(L/K) ⧸ U` with
@@ -137,7 +138,8 @@ instance subsingleton_H1_unitsCoeff :
 
 /-- **Hilbert 90 for the absolute Galois group**, stated for Mathlib's canonical continuous
 cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This is the form in which the vanishing feeds
-the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective. -/
+the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective for
+`n` positive and invertible in `K`. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
       (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
