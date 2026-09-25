@@ -84,6 +84,11 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
     (hδle : ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
     ¬ Module.Finite k (preprojectiveAlgebra k Q) := by
+  let e : Q ≃ Symmetrify Q :=
+    { toFun := Symmetrify.of.obj
+      invFun := fun v => v
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
   -- The relators are read on the vertices of the doubled quiver, which are those of `Q`.
   have hl (v : Symmetrify Q) : vertexIdempotent k v * localPreprojectiveRelator k (Q := Q) v =
       localPreprojectiveRelator k (Q := Q) v := by
@@ -97,19 +102,30 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
     rw [doubledVertexIdempotent_def k (Q := Q) v] at h
     -- `Symmetrify.of.obj v` is `v` itself (`TauCeti.symmetrify_of_obj`).
     exact h
-  -- An arrow `i ⟶ j` of the doubled quiver is an arrow of `Q` from `i` to `j` or from `j` to `i`;
-  -- `Symmetrify.of.obj i` is `i` itself (`TauCeti.symmetrify_of_obj`).
+  -- The hom type of the doubled quiver is explicitly equivalent to the sum of both directions.
   have hcard (i j : Q) : Fintype.card (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) =
       Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) := by
-    change Fintype.card ((i ⟶ j) ⊕ (j ⟶ i)) = _
-    exact Fintype.card_sum
+    let f : (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) ≃
+        ((i ⟶ j) ⊕ (j ⟶ i)) := Equiv.refl _
+    exact (Fintype.card_congr f).trans Fintype.card_sum
   have hI : preprojectiveIdeal k Q = TwoSidedIdeal.span (Set.range
       (localPreprojectiveRelator k (Q := Q) : Symmetrify Q → pathAlgebra k (Symmetrify Q))) :=
     preprojectiveIdeal_eq_span_range_localPreprojectiveRelator k Q
+  have hδle' (v : Symmetrify Q) :
+      2 * δ (e.symm v) ≤ ∑ w : Symmetrify Q,
+        (Fintype.card (v ⟶ w) : S) * δ (e.symm w) := by
+    obtain ⟨i, rfl⟩ := e.surjective v
+    have hsum := Fintype.sum_equiv e
+      (fun j : Q => ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
+      (fun w : Symmetrify Q => (Fintype.card (e i ⟶ w) : S) * δ (e.symm w))
+      (fun j => by
+        simp only [e.symm_apply_apply]
+        exact congrArg (fun n : ℕ => (n : S) * δ j) (hcard i j).symm)
+    simpa only [e.symm_apply_apply] using (hδle i).trans_eq hsum
   have h := not_module_finite_quotient_span_range_of_two_mul_le_sum (R := Symmetrify Q)
     (localPreprojectiveRelator k (Q := Q)) (localPreprojectiveRelator_mem_grade_two k (Q := Q))
-    hl hr hδ0 hδ fun i => (hδle i).trans_eq (Finset.sum_congr rfl fun j _ =>
-      congrArg (fun n : ℕ => (n : S) * δ j) (hcard i j).symm)
+    hl hr (fun v => hδ0 (e.symm v))
+    (fun h => hδ (funext fun i => by simpa using congrFun h (e i))) hδle'
   -- `h` is about the same quotient, with the finiteness instances of the doubled quiver.
   convert h using 4 <;> exact hI
 
