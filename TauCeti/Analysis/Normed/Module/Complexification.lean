@@ -49,10 +49,10 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   module structure.
 * `TauCeti.Complexification.ofReal`, `TauCeti.Complexification.re_add_I_smul_im`: the real
   embedding, and the decomposition `z = re z + i im z`.
-* `TauCeti.Complexification.norm_le_iff`: the characterization of the Taylor norm by bounds on the
-  real parts of rotations.
+* `TauCeti.Complexification.norm_le_iff`: the characterization of the Taylor seminorm by bounds
+  on the real parts of rotations.
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
-  complex normed space structure, complete when `X` is.
+  complex seminormed space structure, complete when `X` is.
 * `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
 * `ContinuousLinearMap.complexify`: the complex-linear extension of a bounded real operator, with
   `ContinuousLinearMap.norm_complexify` and the bundled
@@ -175,7 +175,7 @@ section Norm
 
 variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- The Taylor norm `‖z‖ = ⨆ w ∈ 𝕋, ‖Re (w • z)‖` on the complexification. -/
+/-- The Taylor seminorm `‖z‖ = ⨆ w ∈ 𝕋, ‖Re (w • z)‖` on the complexification. -/
 instance : Norm (Complexification X) := ⟨fun z ↦ ⨆ w : Circle, ‖((w : ℂ) • z).re‖⟩
 
 theorem norm_def (z : Complexification X) : ‖z‖ = ⨆ w : Circle, ‖((w : ℂ) • z).re‖ := (rfl)
@@ -193,30 +193,31 @@ private theorem bddAbove_range_norm_smul_re (z : Complexification X) :
     rintro _ ⟨w, rfl⟩
     simpa using norm_smul_re_le_aux (w : ℂ) z⟩
 
-/-- The real part of every rotation is bounded by the norm. -/
+/-- The seminorm of the real part of every rotation is bounded by the Taylor seminorm. -/
 theorem norm_circle_smul_re_le (w : Circle) (z : Complexification X) :
     ‖((w : ℂ) • z).re‖ ≤ ‖z‖ :=
   le_ciSup (bddAbove_range_norm_smul_re z) w
 
-/-- The Taylor norm is the least bound on the real parts of all rotations. -/
+/-- The Taylor seminorm is the least bound on the real parts of all rotations. -/
 theorem norm_le_iff {z : Complexification X} {r : ℝ} :
     ‖z‖ ≤ r ↔ ∀ w : Circle, ‖((w : ℂ) • z).re‖ ≤ r :=
   ciSup_le_iff (bddAbove_range_norm_smul_re z)
 
-/-- The norm of the real part is at most the norm. -/
+/-- The seminorm of the real part is at most the Taylor seminorm. -/
 theorem norm_re_le (z : Complexification X) : ‖z.re‖ ≤ ‖z‖ := by
   simpa using norm_circle_smul_re_le 1 z
 
-/-- The norm of the imaginary part is at most the norm. -/
+/-- The seminorm of the imaginary part is at most the Taylor seminorm. -/
 theorem norm_im_le (z : Complexification X) : ‖z.im‖ ≤ ‖z‖ := by
   have h := norm_circle_smul_re_le ⟨-Complex.I, by simp [Submonoid.unitSphere]⟩ z
   simpa using h
 
-/-- The norm is at most the sum of the norms of the two components. -/
+/-- The Taylor seminorm is at most the sum of the seminorms of the two components. -/
 theorem norm_le_norm_re_add_norm_im (z : Complexification X) : ‖z‖ ≤ ‖z.re‖ + ‖z.im‖ :=
   norm_le_iff.2 fun w ↦ by simpa using norm_smul_re_le_aux (w : ℂ) z
 
-/-- The real part of an arbitrary complex multiple is bounded by the product of the norms. -/
+/-- The seminorm of the real part of a complex multiple is bounded by the scalar norm times
+the Taylor seminorm. -/
 theorem norm_smul_re_le (c : ℂ) (z : Complexification X) : ‖(c • z).re‖ ≤ ‖c‖ * ‖z‖ := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp
@@ -263,7 +264,7 @@ theorem seminormedSpaceCore : SeminormedSpace.Core ℂ (Complexification X) wher
 instance instSeminormedAddCommGroup : SeminormedAddCommGroup (Complexification X) :=
   SeminormedAddCommGroup.ofCore seminormedSpaceCore
 
-/-- The complexification carries the complex normed space structure from its Taylor seminorm. -/
+/-- The complexification carries the complex seminormed space structure from its Taylor seminorm. -/
 instance instNormedSpace : NormedSpace ℂ (Complexification X) where
   norm_smul_le c z := (seminormedSpaceCore.norm_smul c z).le
 
