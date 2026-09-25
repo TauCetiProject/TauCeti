@@ -39,6 +39,15 @@ These are what pin the elliptic normal form of `GL₂` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
 characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
 
+Read in the other direction the same basis says that `x` satisfies the quadratic built from its
+own trace and norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`: *some* monic quadratic is satisfied
+because `(1, x)` is a basis, and its coefficients are then computed by the two theorems above. For
+an `x` inside `F` there is no such basis, but the equation is a direct computation from
+`Algebra.trace_algebraMap` and `Algebra.norm_algebraMap`, so it holds for every `x` -- what the
+`x ∉ F` hypothesis buys is not the equation but the *uniqueness* of its coefficients. This is what
+separates the elliptic conjugacy classes of `GL₂(F)` from the split ones, an eigenvalue in `E`
+outside `F` being exactly what a split class does not have.
+
 Over a *finite* base field such an `x` always exists as soon as the quadratic has no root in `F`:
 the quadratic is then irreducible, so `AdjoinRoot` of it is a degree-`2` extension of `F`, and any
 two extensions of a finite field of the same degree are isomorphic
@@ -49,6 +58,8 @@ two extensions of a finite field of the same degree are isomorphic
 * `TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq`: the trace
   and the norm of an element `x` of a degree-`2` extension satisfying `x² = t x - d`, and lying
   outside the base field, are `t` and `d`.
+* `TauCeti.Algebra.mul_self_eq_trace_mul_sub_norm`: conversely, every element of a degree-`2`
+  extension satisfies the quadratic built from its own trace and norm.
 * `TauCeti.exists_mul_self_eq_of_finite`: over a finite field, a quadratic with no root in `F` has
   a root in every degree-`2` extension.
 
@@ -126,6 +137,39 @@ theorem norm_eq_of_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
     Algebra.norm F x = d := by
   rw [Algebra.norm_eq_matrix_det (oneRootBasis hE hx), leftMulMatrix_oneRootBasis hE hx hx2,
     det_companionFinTwo]
+
+/-- An element outside the base field of a degree-`2` extension satisfies *some* monic quadratic
+over that field: the pair `(1, x)` is a basis, so `x * x` is a combination of `1` and `x`. -/
+private theorem exists_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
+    (hx : x ∉ Set.range (algebraMap F E)) :
+    ∃ t d : F, x * x = algebraMap F E t * x - algebraMap F E d := by
+  have hb := coe_oneRootBasis hE hx
+  refine ⟨(oneRootBasis hE hx).repr (x * x) 1, -((oneRootBasis hE hx).repr (x * x) 0), ?_⟩
+  have hsum := (oneRootBasis hE hx).sum_repr (x * x)
+  rw [Fin.sum_univ_two, hb] at hsum
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.smul_def, mul_one,
+    map_neg] at hsum ⊢
+  linear_combination -hsum
+
+/-- **An element of a quadratic extension satisfies the quadratic built from its own trace and
+norm**: the Cayley-Hamilton equation `x² = Tr_{E/F}(x) · x - N_{E/F}(x)` in degree `2`. Together
+with `TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` this
+makes `(Tr x, N x)` the *unique* pair of coefficients of a monic quadratic over `F` satisfied by an
+`x` outside `F`. Inside `F` the equation still holds, `Tr x` being `2 x` and `N x` being `x²`, but
+the pair is no longer unique there, the minimal polynomial being linear. -/
+theorem mul_self_eq_trace_mul_sub_norm (hE : Module.finrank F E = 2) (x : E) :
+    x * x = algebraMap F E (Algebra.trace F E x) * x - algebraMap F E (Algebra.norm F x) := by
+  by_cases hx : x ∈ Set.range (algebraMap F E)
+  · obtain ⟨a, rfl⟩ := hx
+    have ht : Algebra.trace F E (algebraMap F E a) = a + a := by
+      rw [Algebra.trace_algebraMap, hE, two_nsmul]
+    have hn : Algebra.norm F (algebraMap F E a) = a ^ 2 := by
+      rw [Algebra.norm_algebraMap, hE]
+    rw [ht, hn, map_add, map_pow]
+    ring
+  · obtain ⟨t, d, hx2⟩ := exists_mul_self_eq hE hx
+    rw [trace_eq_of_mul_self_eq hE hx hx2, norm_eq_of_mul_self_eq hE hx hx2]
+    exact hx2
 
 end Algebra
 

@@ -106,6 +106,8 @@ The action of the torus on the coordinate lines of the standard representation i
   instead the whole group.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
   centralizer is the whole group.
+* `TauCeti.notMem_range_scalar_diagGL` and `TauCeti.diagGL_eq_scalar`: in size two the diagonal
+  embedding is scalar exactly on the diagonal of `kˣ × kˣ`.
 
 ## References
 
@@ -166,6 +168,16 @@ theorem notMem_range_scalar_diagGL {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
   have h0 : c = (t 0 : k) := by simpa using congrFun (congrFun hc 0) 0
   have h1 : c = (t 1 : k) := by simpa using congrFun (congrFun hc 1) 1
   rw [← h0, ← h1]
+
+/-- **A diagonal element of `GL₂` with equal diagonal entries is the scalar element** of that
+entry. This is the boundary case excluded by `TauCeti.notMem_range_scalar_diagGL`: the diagonal
+embedding in size two is non-scalar exactly off the diagonal of `kˣ × kˣ`. -/
+theorem diagGL_eq_scalar {t : Fin 2 → kˣ} (ht : t 0 = t 1) :
+    diagGL t = Matrix.GeneralLinearGroup.scalar (Fin 2) (t 0) := by
+  refine Units.ext ?_
+  rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ht]
 
 /-- A general-linear element whose underlying matrix is the permutation matrix of `π` moves
 past a diagonal matrix by relabelling its diagonal entries along `π`. -/

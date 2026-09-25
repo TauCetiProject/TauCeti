@@ -69,7 +69,8 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
 
 * `TauCeti.isConj_companionGL`: **rational canonical form inside `GL₂(F)`**, a non-scalar element
   is conjugate to the companion element of its characteristic polynomial.
-* `TauCeti.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class.
+* `TauCeti.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class,
+  and `TauCeti.not_isConj_of_mem_range_scalar`: it is therefore not conjugate to a non-scalar one.
 * `TauCeti.isConj_iff_of_notMem_range_scalar`: **the classification**, two non-scalar elements of
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
@@ -116,6 +117,15 @@ theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
     rw [Units.val_mul, Units.val_mul, ← ha]
     exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
   rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+
+/-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
+scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore
+the coarsest conjugacy invariant of `GL n R`, the one that separates a scalar matrix from the
+Jordan block with the same characteristic polynomial. -/
+theorem not_isConj_of_mem_range_scalar {g h : GL n R}
+    (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n))
+    (hh : (h : Matrix n n R) ∉ Set.range (Matrix.scalar n)) : ¬ IsConj g h := fun hgh =>
+  hh (eq_of_mem_range_scalar_of_isConj hg hgh ▸ hg)
 
 end Invariants
 

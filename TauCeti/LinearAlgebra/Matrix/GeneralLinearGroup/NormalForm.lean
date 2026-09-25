@@ -59,8 +59,25 @@ those with `t` and `d` for an `x` outside `F` satisfying `x² = t x - d`, and
 `TauCeti.exists_mul_self_eq_of_finite` supplies such an `x` over a finite field.
 
 Uniqueness — that the four families are pairwise disjoint and that the parameters are determined up
-to the evident symmetries `(a, b) ↦ (b, a)` and `x ↦ x^q` — is a separate statement and is not
-proved here; `TauCeti.conjClassesGLFinTwoEquiv` already indexes the classes without it.
+to the evident symmetries `(a, b) ↦ (b, a)` and `x ↦ x^q` — is the second half of the file, and it
+runs on the same classification. Being scalar is a conjugacy invariant on its own
+(`TauCeti.not_isConj_of_mem_range_scalar`), which separates the central family from the other
+three; that is the one separation trace and determinant do not make, a scalar and a Jordan block
+with the same eigenvalue having the same characteristic polynomial. Among the three non-central
+families the characteristic polynomial does all the work, and what separates them is how it
+factors: two distinct roots in `F` for `diagGL`, a repeated root for `jordanGL`, and no root in `F`
+for the elliptic form. Reading that off is one equation per pair, and in the elliptic case it needs
+the torus parameter `x` to satisfy the quadratic built from its own trace and norm,
+`TauCeti.Algebra.mul_self_eq_trace_mul_sub_norm`: an eigenvalue of a split or a Jordan form
+lies in `F`, and `x` does not.
+
+None of those statements needs `F` finite, and the split and non-semisimple ones need no extension
+at all. What does need finiteness is the symmetry `x ↦ x^q` of the elliptic parameter, which is
+`TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/ConjugacyClasses.lean`. Together with the results
+here it says that the four families, with their parameters read up to the two symmetries, index the
+conjugacy classes of `GL₂(𝔽_q)` without repetition — the description by named data of the indexing
+that `TauCeti.conjClassesGLFinTwoEquiv` supplies anonymously.
 
 ## Main results
 
@@ -70,6 +87,13 @@ proved here; `TauCeti.conjClassesGLFinTwoEquiv` already indexes the classes with
   determinant.
 * `TauCeti.exists_isConj_normalForm`: **every element of `GL₂(F)`, for `F` finite with a degree-`2`
   extension `E`, is conjugate to one of the four normal forms.**
+* `TauCeti.not_isConj_scalar_diagGL`, `TauCeti.not_isConj_scalar_jordanGL`,
+  `TauCeti.not_isConj_scalar_gl2NonSplitTorusHom`, `TauCeti.not_isConj_diagGL_jordanGL`,
+  `TauCeti.not_isConj_diagGL_gl2NonSplitTorusHom` and
+  `TauCeti.not_isConj_jordanGL_gl2NonSplitTorusHom`: **the four families are pairwise disjoint.**
+* `TauCeti.isConj_scalar_iff`, `TauCeti.isConj_diagGL_iff` and `TauCeti.isConj_jordanGL_iff`:
+  **the parameters inside a family are determined**, the split family up to the transposition of
+  its two eigenvalues and the central and non-semisimple families outright.
 
 ## References
 
@@ -223,5 +247,177 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
     · refine isConj_gl2NonSplitTorusHom_of_trace_of_det hE ?_ ?_ ht.symm hd.symm
       · simpa only [Units.val_mk0] using hxF
       · simpa only [Units.val_mk0] using hx2
+
+/-! ### Uniqueness of the normal form
+
+The four families are pairwise non-conjugate, and inside each family the parameters are determined
+up to the evident symmetry.  Only the order shown is proved; the reverse order follows from
+`IsConj.symm`. -/
+
+/-- The split normal form attached to a repeated eigenvalue is the central one. This is
+`TauCeti.diagGL_eq_scalar` with the family spelled as the pair the normal forms are written
+against. It is what lets the three split statements below whose conclusion survives a repeated
+eigenvalue carry no hypothesis on their two parameters. -/
+private theorem diagGL_pair_eq_scalar {a b : Fˣ} (hab : a = b) :
+    diagGL ![a, b] = Matrix.GeneralLinearGroup.scalar (Fin 2) a :=
+  diagGL_eq_scalar (t := ![a, b]) (by simpa using hab)
+
+/-- **A scalar is not conjugate to a split semisimple normal form.** The hypothesis `b ≠ c` is
+needed: `diagGL ![b, b]` is the scalar `b`. -/
+theorem not_isConj_scalar_diagGL (a : Fˣ) {b c : Fˣ} (hbc : b ≠ c) :
+    ¬ IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a) (diagGL ![b, c]) :=
+  not_isConj_of_mem_range_scalar ⟨(a : F), rfl⟩
+    (notMem_range_scalar_diagGL (t := ![b, c]) (by simpa using hbc))
+
+/-- **A scalar is not conjugate to a Jordan block.** The two have the same characteristic
+polynomial `(X - a)²` when their eigenvalues agree, so this is exactly where trace and determinant
+fail to separate the conjugacy classes of `GL₂(F)`. -/
+theorem not_isConj_scalar_jordanGL (a b : Fˣ) :
+    ¬ IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a) (jordanGL b (1 : F)) :=
+  not_isConj_of_mem_range_scalar ⟨(a : F), rfl⟩
+    (notMem_range_scalar_jordanGL (one_ne_zero (α := F)))
+
+/-- **A scalar is alone in its class**, so two scalars are conjugate only when they are equal. -/
+theorem isConj_scalar_iff (a b : Fˣ) :
+    IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a)
+        (Matrix.GeneralLinearGroup.scalar (Fin 2) b) ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => h ▸ IsConj.refl _⟩
+  have hab := eq_of_mem_range_scalar_of_isConj (⟨(a : F), rfl⟩) h
+  refine Units.ext ?_
+  simpa [Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply] using
+    congrArg (fun g : GL (Fin 2) F => (g : Matrix (Fin 2) (Fin 2) F) 0 0) hab
+
+/-- **A split semisimple normal form is not conjugate to a Jordan block.** For distinct `a` and `b`
+equal traces and determinants would force `(a - b)² = 0`; for `a = b` the left-hand side is a
+scalar, which is not conjugate to a Jordan block either. -/
+theorem not_isConj_diagGL_jordanGL (a b c : Fˣ) :
+    ¬ IsConj (diagGL ![a, b]) (jordanGL c (1 : F)) := by
+  by_cases hab : a = b
+  · rw [diagGL_pair_eq_scalar hab]
+    exact not_isConj_scalar_jordanGL a c
+  intro h
+  obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
+    (notMem_range_scalar_diagGL (t := ![a, b]) (by simpa using hab))
+    (notMem_range_scalar_jordanGL (one_ne_zero (α := F)))).1 h
+  rw [diagGL_coe, Matrix.trace_diagonal, Fin.sum_univ_two, trace_jordanGL] at htrace
+  rw [diagGL_coe, Matrix.det_diagonal, Fin.prod_univ_two, coe_jordanGL,
+    Matrix.det_fin_two_of] at hdet
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, mul_zero, sub_zero] at htrace hdet
+  refine hab (Units.ext (sub_eq_zero.1 (sq_eq_zero_iff.1 ?_)))
+  linear_combination ((a : F) + (b : F) + 2 * (c : F)) * htrace - 4 * hdet
+
+/-- **Two split semisimple normal forms are conjugate exactly when their eigenvalue pairs agree up
+to order.** The transposition `(a, b) ↦ (b, a)` is the Weyl group of the split torus acting on its
+characters, and it is the only identification among these normal forms. No distinctness is asked of
+either pair: when a pair repeats, its normal form is the corresponding scalar, and the statement
+specializes to `TauCeti.isConj_scalar_iff`. -/
+theorem isConj_diagGL_iff (a b c d : Fˣ) :
+    IsConj (diagGL ![a, b]) (diagGL ![c, d]) ↔ (a = c ∧ b = d) ∨ (a = d ∧ b = c) := by
+  by_cases hab : a = b
+  · by_cases hcd : c = d
+    · rw [diagGL_pair_eq_scalar hab, diagGL_pair_eq_scalar hcd, isConj_scalar_iff]
+      refine ⟨fun h => Or.inl ⟨h, hab.symm.trans (h.trans hcd)⟩, ?_⟩
+      rintro (⟨h1, -⟩ | ⟨h1, -⟩)
+      · exact h1
+      · exact h1.trans hcd.symm
+    · rw [diagGL_pair_eq_scalar hab]
+      refine iff_of_false (not_isConj_scalar_diagGL a hcd) ?_
+      rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact hcd (h1.symm.trans (hab.trans h2))
+      · exact hcd (h2.symm.trans (hab.symm.trans h1))
+  · by_cases hcd : c = d
+    · rw [diagGL_pair_eq_scalar hcd]
+      refine iff_of_false (fun h => not_isConj_scalar_diagGL c hab h.symm) ?_
+      rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact hab (h1.trans (hcd.trans h2.symm))
+      · exact hab (h1.trans (hcd.symm.trans h2.symm))
+    · rw [isConj_iff_of_notMem_range_scalar
+        (notMem_range_scalar_diagGL (t := ![a, b]) (by simpa using hab))
+        (notMem_range_scalar_diagGL (t := ![c, d]) (by simpa using hcd))]
+      simp only [diagGL_coe, Matrix.trace_diagonal, Matrix.det_diagonal, Fin.sum_univ_two,
+        Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+      refine ⟨fun ⟨htrace, hdet⟩ => ?_, ?_⟩
+      · have key : ((c : F) - (a : F)) * ((c : F) - (b : F)) = 0 := by
+          linear_combination (-(c : F)) * htrace + hdet
+        rcases mul_eq_zero.1 key with hc | hc
+        · exact Or.inl ⟨Units.ext (sub_eq_zero.1 hc).symm,
+            Units.ext (by linear_combination htrace + hc)⟩
+        · exact Or.inr ⟨Units.ext (by linear_combination htrace + hc),
+            Units.ext (sub_eq_zero.1 hc).symm⟩
+      · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+        · exact ⟨rfl, rfl⟩
+        · exact ⟨add_comm _ _, mul_comm _ _⟩
+
+/-- **Two Jordan blocks are conjugate exactly when their eigenvalues agree**: the non-semisimple
+family carries no symmetry at all. -/
+theorem isConj_jordanGL_iff (a b : Fˣ) :
+    IsConj (jordanGL a (1 : F)) (jordanGL b (1 : F)) ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => h ▸ IsConj.refl _⟩
+  obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
+    (notMem_range_scalar_jordanGL (one_ne_zero (α := F)))
+    (notMem_range_scalar_jordanGL (one_ne_zero (α := F)))).1 h
+  rw [trace_jordanGL, trace_jordanGL] at htrace
+  rw [coe_jordanGL, coe_jordanGL, Matrix.det_fin_two_of, Matrix.det_fin_two_of] at hdet
+  simp only [mul_zero, sub_zero] at hdet
+  exact Units.ext (sub_eq_zero.1 (sq_eq_zero_iff.1 (by
+    linear_combination hdet - (b : F) * htrace)))
+
+section EllipticUniqueness
+
+variable {E : Type*} [Field E] [Algebra F E]
+
+/-- **A scalar is not conjugate to an elliptic normal form.** -/
+theorem not_isConj_scalar_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ) {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+    ¬ IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a) (GL2NonSplitTorusHom F E hE x) :=
+  not_isConj_of_mem_range_scalar ⟨(a : F), rfl⟩
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)
+
+/-- **A split semisimple normal form is not conjugate to an elliptic one.** Equal traces and
+determinants make `x` a root of `(X - a) (X - b)`, so `x` would be `a` or `b`, and both lie in
+`F`. -/
+theorem not_isConj_diagGL_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a b : Fˣ) {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+    ¬ IsConj (diagGL ![a, b]) (GL2NonSplitTorusHom F E hE x) := by
+  by_cases hab : a = b
+  · rw [diagGL_pair_eq_scalar hab]
+    exact not_isConj_scalar_gl2NonSplitTorusHom hE a hx
+  intro h
+  obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
+    (notMem_range_scalar_diagGL (t := ![a, b]) (by simpa using hab))
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).1 h
+  rw [diagGL_coe, Matrix.trace_diagonal, Fin.sum_univ_two,
+    GL2NonSplitTorus.trace_gl2NonSplitTorusHom] at htrace
+  rw [diagGL_coe, Matrix.det_diagonal, Fin.prod_univ_two,
+    ← Matrix.GeneralLinearGroup.val_det_apply,
+    GL2NonSplitTorus.val_det_gl2NonSplitTorusHom] at hdet
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at htrace hdet
+  have hx2 := Algebra.mul_self_eq_trace_mul_sub_norm hE (x : E)
+  rw [← htrace, ← hdet, map_add, map_mul] at hx2
+  have key : ((x : E) - algebraMap F E (a : F)) * ((x : E) - algebraMap F E (b : F)) = 0 := by
+    linear_combination hx2
+  rcases mul_eq_zero.1 key with hroot | hroot
+  · exact hx ⟨(a : F), (sub_eq_zero.1 hroot).symm⟩
+  · exact hx ⟨(b : F), (sub_eq_zero.1 hroot).symm⟩
+
+/-- **A Jordan block is not conjugate to an elliptic normal form.** Equal traces and determinants
+make `x` a double root of `(X - a)²`, so `x` would be `a`, which lies in `F`. -/
+theorem not_isConj_jordanGL_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ) {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+    ¬ IsConj (jordanGL a (1 : F)) (GL2NonSplitTorusHom F E hE x) := by
+  intro h
+  obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
+    (notMem_range_scalar_jordanGL (one_ne_zero (α := F)))
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).1 h
+  rw [trace_jordanGL, two_mul, GL2NonSplitTorus.trace_gl2NonSplitTorusHom] at htrace
+  rw [coe_jordanGL, Matrix.det_fin_two_of, ← Matrix.GeneralLinearGroup.val_det_apply,
+    GL2NonSplitTorus.val_det_gl2NonSplitTorusHom] at hdet
+  simp only [mul_zero, sub_zero] at hdet
+  have hx2 := Algebra.mul_self_eq_trace_mul_sub_norm hE (x : E)
+  rw [← htrace, ← hdet, map_add, map_mul] at hx2
+  refine hx ⟨(a : F), (sub_eq_zero.1 (mul_self_eq_zero.1 ?_)).symm⟩
+  linear_combination hx2
+
+end EllipticUniqueness
 
 end TauCeti
