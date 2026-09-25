@@ -16,6 +16,13 @@ when its preimages under `Sum.inl` and `Sum.inr` are, so the restrictedness cond
 in both directions; the equivalence `restrictedProductSum` is the restriction of
 `Equiv.sumPiEquivProdPi` to the restricted subtypes.
 
+Only the cofinite filter is treated here, on `ι₁ ⊕ ι₂` and on both summands. For an arbitrary
+filter `𝓕` on `ι₁ ⊕ ι₂` the summand filters of the splitting are the comaps `𝓕.comap Sum.inl`
+and `𝓕.comap Sum.inr`, which need not be cofinite: for `𝓕 = 𝓟 (Set.range Sum.inl)` the second
+is `⊥`, and the right factor is the unrestricted product `Π j, G (Sum.inr j)`. The cofinite
+filter is the case in which both comaps are cofinite again, because `Sum.inl` and `Sum.inr` are
+injective (`Function.Injective.comap_cofinite_eq`). That general form is not stated here.
+
 The forward map is continuous for every reference family (`continuous_restrictedProductSum`).
 The inverse is a map out of a product of two restricted products, and its continuity depends on
 the reference family.  On principal stages it is continuous for every family
@@ -47,7 +54,8 @@ variable {ι₁ : Type u₁} {ι₂ : Type u₂} {G : ι₁ ⊕ ι₂ → Type v
 variable [∀ k, Group (G k)]
 
 /-- A restricted product over `ι₁ ⊕ ι₂` is the product of the restricted products over the two
-summands, coordinatewise the identity in both directions. -/
+summands, coordinatewise the identity in both directions. All three restricted products are taken
+over the cofinite filter of their index types. -/
 def restrictedProductSum (U : ∀ k, Subgroup (G k)) :
     (Πʳ k, [G k, (U k : Set (G k))]) ≃*
       (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]) ×

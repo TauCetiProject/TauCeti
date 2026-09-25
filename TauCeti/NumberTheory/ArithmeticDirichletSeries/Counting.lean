@@ -399,6 +399,16 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
   · simpa using (mem_normLE _).mp hv
   · exact HeightOneSpectrum.ext (congrArg Subtype.val h)
 
+/-- There are at most as many prime-power ideals as nonzero integral ideals below any cutoff. -/
+theorem card_primePowersLE_le_card_idealsLE (x : ℝ) :
+    (primePowersLE K x).card ≤ (idealsLE K x).card := by
+  refine Finset.card_le_card_of_injOn
+    (fun A : IdealPrimePower K => (A.1 : (Ideal (𝓞 K))⁰))
+    (fun A hA => ?_) (fun A _ B _ h => ?_)
+  · simpa using (mem_normLE _).mp hA
+  · apply Subtype.ext
+    exact h
+
 variable (K)
 
 /-! ### Summatory functions over ideals and over primes -/

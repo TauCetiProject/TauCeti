@@ -13,9 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnec
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
-import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 
 /-!
 # Borel subgroups of `GLₙ`
@@ -98,43 +96,31 @@ theorem exists_map_inv_mul_mul_map_mem_upperTriangularGroup [IsAlgClosed k]
           pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
           Matrix.GeneralLinearGroup.map (algebraMap k Q) P ∈
         upperTriangularGroup (Fin n) Q := by
-  let _ : Comodule k Q (Fin n → k) :=
-    Comodule.Corestrict (π : coordinateHopfAlgebra k n →ₗc[k] Q)
+  let _ : Comodule k Q (Fin n → k) := Comodule.Corestrict π.toCoalgHom
   obtain ⟨m, b, hb, -⟩ :=
     Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable
-      (H := Q) (M := Fin n → k) hconn hsolv
-  obtain rfl : m = n := by simpa using (Module.finrank_eq_card_basis b).symm
-  let e := Pi.basisFun k (Fin m)
-  let _ := e.invertibleToMatrix b
-  refine ⟨unitOfInvertible (e.toMatrix b), ?_⟩
-  -- The universal `Q`-point acts on `Q ⊗ kᵐ` by the generic matrix `π(X)` in the standard basis
-  -- and by the coefficient matrix of `b` in the basis `b`; compare the two by change of basis.
-  let f := Comodule.endOfPoint (Fin m → k) (AlgHom.id k Q)
-  have he : LinearMap.toMatrix (e.baseChange Q) (e.baseChange Q) f =
-      (genericMatrix k m).map π := by
-    rw [Comodule.toMatrix_endOfPoint, Comodule.coefficientMatrix_corestrict,
-      coefficientMatrix_basisFun]
+      (k := k) (H := Q) (M := Fin n → k) hconn hsolv
+  have hm : m = n := by
+    simpa using (Module.finrank_eq_card_basis b).symm
+  subst m
+  let _ := (Pi.basisFun k (Fin n)).invertibleToMatrix b
+  let P : GL (Fin n) k := unitOfInvertible ((Pi.basisFun k (Fin n)).toMatrix b)
+  let U := Matrix.GeneralLinearGroup.mk'' (Comodule.coefficientMatrix (C := Q) b)
+    (Comodule.isUnit_det_coefficientMatrix b)
+  have hmat : pointsMulEquiv n (toConv π.toAlgHom) *
+      Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
+      Matrix.GeneralLinearGroup.map (algebraMap k Q) P * U := by
+    have h := Module.Basis.coefficientMatrix_mul_toMatrix (C := Q) (Pi.basisFun k (Fin n)) b
+    rw [Comodule.coefficientMatrix_corestrict, coefficientMatrix_basisFun] at h
     ext i j
-    simp
-  have hbasis := basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix
-    (b.baseChange Q) (e.baseChange Q) (b.baseChange Q) (e.baseChange Q) f
-  rw [he, Comodule.toMatrix_endOfPoint, Module.Basis.baseChange_toMatrix_baseChange,
-    Module.Basis.baseChange_toMatrix_baseChange] at hbasis
-  have hinv : (e.toMatrix b)⁻¹ = b.toMatrix e :=
-    Matrix.inv_eq_left_inv (b.toMatrix_mul_toMatrix_flip e)
-  have hmap (g : GL (Fin m) k) :
-      ((Matrix.GeneralLinearGroup.map (algebraMap k Q) g : GL (Fin m) Q) :
-        Matrix (Fin m) (Fin m) Q) = (g : Matrix (Fin m) (Fin m) k).map (algebraMap k Q) := by
-    ext i j
-    exact Matrix.GeneralLinearGroup.map_apply _ i j g
-  have hpoint : ((pointsMulEquiv m (toConv (π : coordinateHopfAlgebra k m →ₐ[k] Q)) :
-      GL (Fin m) Q) : Matrix (Fin m) (Fin m) Q) = (genericMatrix k m).map π := by
-    ext i j
-    simp [pointsMulEquiv_apply, pointToGeneralLinear_apply, genericMatrix_apply]
-  rw [UpperTriangularGroup.mem_iff, Matrix.GeneralLinearGroup.coe_mul,
-    Matrix.GeneralLinearGroup.coe_mul, hmap, hmap, hpoint, Matrix.GeneralLinearGroup.coe_inv,
-    val_unitOfInvertible, hinv, hbasis]
-  simpa using hb
+    simpa only [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.map_apply,
+      val_unitOfInvertible, Matrix.GeneralLinearGroup.val_mk'', P, U,
+      pointsMulEquiv_apply, pointToGeneralLinear_apply, genericMatrix_apply,
+      Matrix.mul_apply, Matrix.map_apply, BialgHom.toCoalgHom_apply,
+      BialgHom.coe_toAlgHom, ofConv_toConv] using congrFun (congrFun h i) j
+  refine ⟨P, ?_⟩
+  rw [map_inv, mul_assoc, hmat, inv_mul_cancel_left]
+  exact UpperTriangularGroup.mem_iff.mpr hb
 
 namespace UpperTriangular
 

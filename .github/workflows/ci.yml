@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read  # scripts/lint-scope.sh reads the merged PRs' labels and branches
 
 # Keep the cache publisher live under a burst of main pushes. GitHub retains at
 # most one running and one pending run in this group: the running build is never
@@ -135,6 +136,7 @@ jobs:
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_lint_scope.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
@@ -325,8 +327,8 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
 
-      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports every
-      # TauCeti/ module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
+      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports the TauCeti/
+      # modules in scope and runs Mathlib's default `#lint` set minus docBlame (simpNF,
       # checkType, synTaut, ...) plus a module-system-reliable docstring scan (the
       # docBlame linter is blind across module boundaries; see the script header),
       # comparing linter-qualified violations against the grandfathered baseline in
@@ -336,6 +338,19 @@ jobs:
       # PR-time enforcement runs inside the
       # bwrap sandbox in pr-build.yml (this lint executes the linted code); this
       # post-merge run is the health check on main, like the audits above.
+      # Like PR builds and the merge queue, this lints only the TauCeti modules the push changed
+      # (the whole library if a merged PR was labelled full-lint or was a lint repair PR); the
+      # daily lint-full.yml run lints everything. Superseded runs of this workflow are cancelled,
+      # so a push's scope can be skipped here, but its merge group already linted it.
+      - name: Decide the environment-lint scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: push
+          BASE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: bash scripts/lint-scope.sh "$RUNNER_TEMP/lint-scope"
+
       - name: Environment lint (default linters + docstring scan vs grandfathered baseline)
         env:
           LAKE_NO_CACHE: "true"

@@ -383,7 +383,11 @@ jobs:
           cd fresh
           lake exe axioms
           lake exe module-system
-          bash scripts/lint-env.sh
+          # The whole-library #lint belongs to lint-full.yml, which turns violations into a repair
+          # PR; here an empty scope keeps the docstring scan and the nolint ratchet without making
+          # this run red for violations that PR is already repairing.
+          : > "$RUNNER_TEMP/no-lint-modules.txt"
+          LINT_ONLY_MODULES="$RUNNER_TEMP/no-lint-modules.txt" bash scripts/lint-env.sh
           bash scripts/lint-style.sh
 
       # --- The advisory signal: does the cache agree with a clean compile? -------------------

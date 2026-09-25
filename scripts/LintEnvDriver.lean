@@ -19,12 +19,14 @@ Lean's task manager. Userspace instructions differ by only about 10%.
 project's pinned Batteries by path. In the sandboxed PR build that happens on the host before any
 candidate code runs, and the executable is mounted read-only; see `lint-env.sh`.
 
-Usage: `lint-env-driver <tag> <marker-file> <modules-file> <linter>...`
+Usage: `lint-env-driver [--only-listed] <tag> <marker-file> <modules-file> <linter>...`
 
 * Imports every module listed (one per line) in `<modules-file>`. `importModules` loads the closure
   at the `private` olean level, as the legacy (non-module) `#lint` driver did; see PRIVATE
   DECLARATIONS in `lint-env.sh`.
-* Runs exactly the named linters on the declarations of the `TauCeti` package.
+* Runs exactly the named linters on the declarations of the `TauCeti` package, or, with
+  `--only-listed`, on just the declarations defined in the listed modules (the TauCeti modules
+  they import are not linted). `lint-env.sh` uses that to lint only what a change touched.
 * Prints the report `#lint` would print. With violations, the header line carries the
   `<tag>:1:0: error: ` prefix that Lean gives an error diagnostic from a driver file named `<tag>`,
   and the exit code is 1. Without violations, the report is printed bare and the exit code is 0.
@@ -43,8 +45,12 @@ open Lean Core Batteries.Tactic.Lint
 def lintedPackage : Name := `TauCeti
 
 unsafe def main (args : List String) : IO UInt32 := do
+  let (onlyListed, args) := match args with
+    | "--only-listed" :: rest => (true, rest)
+    | _ => (false, args)
   let tag :: markerFile :: modulesFile :: linterNames := args
-    | IO.eprintln "usage: lint-env-driver <tag> <marker-file> <modules-file> <linter>..."; return 2
+    | IO.eprintln "usage: lint-env-driver [--only-listed] <tag> <marker-file> <modules-file> \
+        <linter>..."; return 2
   if linterNames.isEmpty then
     IO.eprintln "lint-env-driver: no linters requested"; return 2
   let modules := (← IO.FS.lines modulesFile).filter (!·.isEmpty) |>.map String.toName
@@ -59,6 +65,11 @@ unsafe def main (args : List String) : IO UInt32 := do
   let ctx : Core.Context := { fileName := tag, fileMap := default, options := opts }
   let (failed, report) ← Prod.fst <$> (CoreM.toIO · ctx { env }) do
     let decls ← getDeclsInPackage lintedPackage
+    let decls ← if onlyListed then
+        let env ← getEnv
+        let idxs := modules.filterMap env.getModuleIdx?
+        pure <| decls.filter fun d => (env.getModuleIdxFor? d).any idxs.contains
+      else pure decls
     let linters ← getChecks (slow := true) (runOnly := some (linterNames.map String.toName))
       (runAlways := none)
     -- `getChecks` silently drops an unknown name; `#lint only` rejected it. Keep that behaviour.

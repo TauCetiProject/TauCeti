@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisGroups.Certificate.Routes
+public import TauCeti.FieldTheory.GaloisGroups.Certificate.Check
 
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
@@ -15,13 +15,15 @@ import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
 
 This module records an explicit modular second-root witness for
 `X⁵ + X⁴ - 4X³ - 3X² + 3X + 1`. This witness supplies the extra datum that distinguishes its
-cyclic Galois group from the dihedral possibility. It also reads the label `5T5` of `X⁵ - X - 1`
-off its factorizations modulo `5` and `2` through the symmetric route.
+cyclic Galois group from the dihedral possibility. It also gives a symmetric-route certificate
+for `X⁵ - X - 1`, from its factorizations modulo `5` and `2`, and reads the label `5T5` off it.
 
 ## Main results
 
 * `TauCeti.hasSecondRootInRootField_cyclicQuintic`: the second-root evidence used by the cyclic
   quintic example.
+* `TauCeti.QuinticCertificate.check_symmetric_X_pow_five_sub_X_sub_one`: `X⁵ - X - 1` has a
+  symmetric-route certificate.
 * `TauCeti.hasGaloisLabel_X_pow_five_sub_X_sub_one`: `X⁵ - X - 1` has label `5T5`.
 -/
 
@@ -73,11 +75,10 @@ theorem hasSecondRootInRootField_cyclicQuintic :
       norm_num at this
   simpa only [f] using hsecond
 
-/-- **`X⁵ - X - 1` has label `5T5`.** It is irreducible modulo `5` and has factor degrees `(2,3)`
-modulo `2`, so the symmetric route applies. -/
-theorem hasGaloisLabel_X_pow_five_sub_X_sub_one :
-    HasGaloisLabel ((X ^ 5 - X - 1 : ℤ[X]).map (Int.castRingHom ℚ))
-      (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+/-- `X⁵ - X - 1` has a symmetric-route certificate: it is irreducible modulo `5`, and has factor
+degrees `(2,3)` modulo `2`. Both primes are good, since neither divides its discriminant. -/
+theorem QuinticCertificate.check_symmetric_X_pow_five_sub_X_sub_one :
+    (QuinticCertificate.symmetric 5 2).check (X ^ 5 - X - 1) = true := by
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have hf := monic_X_pow_five_sub_X_sub_one
@@ -86,10 +87,18 @@ theorem hasGaloisLabel_X_pow_five_sub_X_sub_one :
     (hf.separable_map_zmod_iff_not_dvd_discr 5).mp (PerfectField.separable_of_irreducible hirr)
   have hgood2 : IsGoodPrime (X ^ 5 - X - 1) 2 :=
     (isGoodPrime_iff _ 2).mpr not_two_dvd_discr_X_pow_five_sub_X_sub_one
-  have h5 := HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_sub_one_five
-  refine hasGaloisLabel_five_four_of_hasFactorDegrees hf (h5.irreducible_map_rat hf)
-    (HasFactorDegrees.mk hgood2 ?_)
+  rw [QuinticCertificate.check_eq_true_iff, QuinticCertificate.verifies_symmetric_iff]
+  refine ⟨HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_sub_one_five,
+    HasFactorDegrees.mk hgood2 ?_⟩
   rw [factorDegrees_X_pow_five_sub_X_sub_one_two]
   decide
+
+/-- **`X⁵ - X - 1` has label `5T5`.** Its symmetric-route certificate checks. -/
+theorem hasGaloisLabel_X_pow_five_sub_X_sub_one :
+    HasGaloisLabel ((X ^ 5 - X - 1 : ℤ[X]).map (Int.castRingHom ℚ))
+      (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  have h := QuinticCertificate.check_sound monic_X_pow_five_sub_X_sub_one
+    QuinticCertificate.check_symmetric_X_pow_five_sub_X_sub_one
+  rwa [QuinticCertificate.label_symmetric] at h
 
 end TauCeti

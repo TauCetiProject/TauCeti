@@ -38,6 +38,7 @@ series of a profinite group.
 
 ## Main results
 
+* `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
 * `Subgroup.instIsClosedTopologicalClosure`: the topological closure of a subgroup is closed.
 * `TauCeti.instNormal_topologicalClosure_normalClosure`: the closure of a normal closure is
   normal.
@@ -90,6 +91,12 @@ end TauCeti
 namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+omit [IsTopologicalGroup G] in
+/-- The inclusion of a subgroup into a larger subgroup is continuous. -/
+@[fun_prop]
+theorem continuous_inclusion {H K : Subgroup G} (h : H ≤ K) : Continuous (inclusion h) :=
+  continuous_induced_rng.2 continuous_subtype_val
 
 /-- The topological closure of a subgroup is closed. -/
 instance instIsClosedTopologicalClosure (s : Subgroup G) :

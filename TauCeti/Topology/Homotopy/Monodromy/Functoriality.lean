@@ -28,6 +28,8 @@ packages its functoriality in the covering map.
 
 * `IsCoveringMap.fiberMap_monodromy`: a map of covers intertwines monodromy transport
   on their fibres.
+* `IsCoveringMap.permutationRepresentation_eq_of_fiberMap`: a map of covers respecting
+  numberings identifies the numbered monodromy representations.
 * `IsCoveringMap.monodromyNatTrans`: a map of covers induces a natural transformation
   between their monodromy functors.
 * `IsCoveringMap.monodromyNatIso`: an isomorphism of covers induces a natural
@@ -95,6 +97,23 @@ theorem _root_.IsCoveringMap.fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   refine eq_of_heq (HEq.trans (show HEq (Γ.map (q'.comp f)) (Γ.map p') by rw [hcomp]) ?_)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
+
+/-- A map of covers that preserves the numberings of two fibres identifies their numbered
+monodromy representations. -/
+theorem _root_.IsCoveringMap.permutationRepresentation_eq_of_fiberMap
+    {n : ℕ} (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q)
+    (x : X) (ν : p ⁻¹' {x} ≃ Fin n) (ν' : q ⁻¹' {x} ≃ Fin n)
+    (f : C(E, F)) (hf : q ∘ f = p)
+    (hν : ∀ e, ν' (Function.fiberMap f hf x e) = ν e) :
+    ν'.permCongrHom.toMonoidHom.comp (hq.monodromyPerm x) =
+      ν.permCongrHom.toMonoidHom.comp (hp.monodromyPerm x) := by
+  ext γ i
+  obtain ⟨e, rfl⟩ := ν.surjective i
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe]
+  rw [Equiv.permCongr_apply, Equiv.permCongr_apply,
+    Equiv.symm_apply_apply, ← hν e, Equiv.symm_apply_apply,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.coe_monodromyPerm,
+    ← hp.fiberMap_monodromy hq f hf γ e, hν]
 
 /-- A continuous map of covering spaces over `X` induces a natural transformation between
 their monodromy functors. Its component over `x` is the restriction of `f` to the fibre over
