@@ -5,17 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Order.Zorn
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Compactness.Compact
 
 /-!
-# Closed subgroups of a product with a compact factor
+# Closed subgroups of topological groups
+
+This file collects constructions on closed subgroups of a topological group.
+
+An isomorphism of topological groups carries closed subgroups to closed subgroups.  This is
+packaged as an order isomorphism, together with its compatibility with normality: the transport of
+a normal closed subgroup is normal.  An isomorphism carrying one normal subgroup onto another also
+induces an isomorphism of the quotient topological groups, so a normal closed subgroup can be
+transported without changing the topological quotient it defines.
 
 A closed subgroup `H` of `A × G` projecting onto `G`, that is with `∀ g, ∃ a, (a, g) ∈ H`, is a
 closed relation from `G` to `A` defined everywhere. When `A` is compact, the fibre
 `{a | (a, g) ∈ H}` over each `g` is compact, so along a chain of such subgroups the fibres of the
 intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup below any given one.
+
+## Main definitions
+
+* `ContinuousMulEquiv.closedSubgroupOrderIso`: transport of closed subgroups along an isomorphism
+  of topological groups.
+* `ContinuousMulEquiv.quotientCongr`: the induced isomorphism of quotient topological groups.
 
 ## Main results
 
@@ -28,6 +45,118 @@ intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup bel
 public section
 
 namespace TauCeti
+
+section Transport
+
+universe u v
+
+variable {G : Type u} {H : Type v} [Group G] [Group H]
+  [TopologicalSpace G] [TopologicalSpace H]
+
+/-- A topological group isomorphism transports closed subgroups, preserving inclusion. -/
+def _root_.ContinuousMulEquiv.closedSubgroupOrderIso (e : G ≃ₜ* H) :
+    ClosedSubgroup G ≃o ClosedSubgroup H where
+  toFun K :=
+    { toSubgroup := e.toMulEquiv.mapSubgroup K.toSubgroup
+      isClosed' := by
+        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
+        change IsClosed (e '' (K : Set G))
+        exact e.toHomeomorph.isClosed_image.mpr K.isClosed' }
+  invFun L :=
+    { toSubgroup := e.toMulEquiv.mapSubgroup.symm L.toSubgroup
+      isClosed' := by
+        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
+        change IsClosed (e.symm '' (L : Set H))
+        exact e.symm.toHomeomorph.isClosed_image.mpr L.isClosed' }
+  left_inv K :=
+    ClosedSubgroup.toSubgroup_injective (e.toMulEquiv.mapSubgroup.left_inv K.toSubgroup)
+  right_inv L :=
+    ClosedSubgroup.toSubgroup_injective (e.toMulEquiv.mapSubgroup.right_inv L.toSubgroup)
+  map_rel_iff' := e.toMulEquiv.mapSubgroup.map_rel_iff
+
+/-- The underlying subgroup transported by `ContinuousMulEquiv.closedSubgroupOrderIso` is the
+image of the original subgroup. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup
+    (e : G ≃ₜ* H) (K : ClosedSubgroup G) :
+    (e.closedSubgroupOrderIso K).toSubgroup =
+      K.toSubgroup.map e.toMulEquiv.toMonoidHom :=
+  (rfl)
+
+/-- The inverse transport of a closed subgroup is its image under the inverse topological group
+isomorphism. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.closedSubgroupOrderIso_symm_apply_toSubgroup
+    (e : G ≃ₜ* H) (L : ClosedSubgroup H) :
+    (e.closedSubgroupOrderIso.symm L).toSubgroup =
+      L.toSubgroup.map e.symm.toMulEquiv.toMonoidHom :=
+  (rfl)
+
+/-- An element lies in a transported closed subgroup exactly when its inverse image lies in the
+original one. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.mem_closedSubgroupOrderIso (e : G ≃ₜ* H)
+    (K : ClosedSubgroup G) {h : H} : h ∈ e.closedSubgroupOrderIso K ↔ e.symm h ∈ K :=
+  Subgroup.mem_map_equiv
+
+/-- An element lies in an inversely transported closed subgroup exactly when its image lies in the
+original one. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.mem_closedSubgroupOrderIso_symm (e : G ≃ₜ* H)
+    (L : ClosedSubgroup H) {g : G} : g ∈ e.closedSubgroupOrderIso.symm L ↔ e g ∈ L :=
+  Subgroup.mem_map_equiv
+
+/-- The image of an element lies in a transported closed subgroup exactly when the element lies in
+the original one.  This is not marked `@[simp]`: `simp` already reaches `g ∈ K` through
+`ContinuousMulEquiv.mem_closedSubgroupOrderIso` and `ContinuousMulEquiv.symm_apply_apply`. -/
+theorem _root_.ContinuousMulEquiv.apply_mem_closedSubgroupOrderIso (e : G ≃ₜ* H)
+    (K : ClosedSubgroup G) {g : G} : e g ∈ e.closedSubgroupOrderIso K ↔ g ∈ K := by
+  rw [e.mem_closedSubgroupOrderIso, e.symm_apply_apply]
+
+/-- Normality is preserved when a closed subgroup is transported along a topological group
+isomorphism. -/
+instance _root_.ContinuousMulEquiv.instNormalClosedSubgroupOrderIso
+    (e : G ≃ₜ* H) (K : ClosedSubgroup G) [K.toSubgroup.Normal] :
+    (e.closedSubgroupOrderIso K).toSubgroup.Normal :=
+  Subgroup.Normal.map inferInstance e.toMulEquiv.toMonoidHom e.surjective
+
+/-- A topological group isomorphism carrying a normal subgroup onto a normal subgroup induces an
+isomorphism of the quotient topological groups.  This is `QuotientGroup.congr` together with the
+continuity of both directions, which follows from the quotient-map property of the two projections.
+
+For a normal closed subgroup `N : ClosedSubgroup G` the hypothesis holds by `rfl` on the
+transported subgroup, so `e.quotientCongr N (e.closedSubgroupOrderIso N) rfl` is the induced
+isomorphism `G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSubgroup`. -/
+def _root_.ContinuousMulEquiv.quotientCongr (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
+    [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) : G ⧸ N ≃ₜ* H ⧸ M :=
+  ContinuousMulEquiv.mk (QuotientGroup.congr N M e.toMulEquiv he)
+    ((QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr <| by
+      exact (QuotientGroup.continuous_mk.comp e.continuous).congr fun g ↦
+        (QuotientGroup.congr_mk N M e.toMulEquiv he g).symm)
+    ((QuotientGroup.isQuotientMap_mk M).continuous_iff.mpr <| by
+      exact (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
+        (QuotientGroup.congr_mk M N e.toMulEquiv.symm
+          ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
+
+/-- The quotient isomorphism sends the class of an element to the class of its image. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.quotientCongr_mk (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
+    [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (g : G) :
+    e.quotientCongr N M he (g : G ⧸ N) = (e g : H ⧸ M) :=
+  QuotientGroup.congr_mk N M e.toMulEquiv he g
+
+/-- The inverse quotient isomorphism sends the class of an element to the class of its inverse
+image. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.quotientCongr_symm_mk (e : G ≃ₜ* H) (N : Subgroup G)
+    (M : Subgroup H) [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (h : H) :
+    (e.quotientCongr N M he).symm (h : H ⧸ M) = (e.symm h : G ⧸ N) :=
+  (e.quotientCongr N M he).symm_apply_eq.mpr <| by
+    rw [e.quotientCongr_mk, ContinuousMulEquiv.apply_symm_apply]
+
+end Transport
+
+section CompactFactor
 
 variable {A : Type*} [Group A] [TopologicalSpace A] [CompactSpace A]
 variable {G : Type*} [Group G] [TopologicalSpace G]
@@ -66,5 +195,8 @@ theorem _root_.Subgroup.exists_minimal_isClosed_le (R : Subgroup (A × G))
     exact isClosed_biInter fun K hK ↦ (hcs hK).2.1
   · exact Subgroup.forall_exists_mem_sInf_of_isChain ⟨K, hK⟩ hchain.symm
       (fun K hK ↦ (hcs hK).2.1) fun K hK ↦ (hcs hK).2.2
+
+
+end CompactFactor
 
 end TauCeti
