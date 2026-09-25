@@ -160,21 +160,21 @@ def negSumRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeD ι K :=
 
 /-- The matrix underlying a difference-root generator. -/
 @[simp]
-theorem coe_differenceRootGenerator (i j : ι) :
+theorem val_differenceRootGenerator (i j : ι) :
     (differenceRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       differenceRootMatrix i j :=
   by simp [differenceRootGenerator]
 
 /-- The matrix underlying a positive sum-root generator. -/
 @[simp]
-theorem coe_sumRootGenerator (i j : ι) :
+theorem val_sumRootGenerator (i j : ι) :
     (sumRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       sumRootMatrix i j :=
   by simp [sumRootGenerator]
 
 /-- The matrix underlying a negative sum-root generator. -/
 @[simp]
-theorem coe_negSumRootGenerator (i j : ι) :
+theorem val_negSumRootGenerator (i j : ι) :
     (negSumRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       negSumRootMatrix i j :=
   by simp [negSumRootGenerator]
@@ -278,7 +278,7 @@ theorem differenceRootGenerator_chain_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n)
     differenceRootGenerator (K := K) i (chainNext n i hi) =
       rootGenerator (K := K) n hn (.inl i) := by
   apply Subtype.ext
-  rw [coe_differenceRootGenerator, val_rootGenerator_inl, raisingMatrix_of_chain n hn hi]
+  rw [val_differenceRootGenerator, val_rootGenerator_inl, raisingMatrix_of_chain n hn hi]
   rfl
 
 /-- At the fork node, the all-root positive sum generator is the numbered raising generator. -/
@@ -286,7 +286,7 @@ theorem sumRootGenerator_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
     sumRootGenerator (K := K) (forkLeft n hn) (forkRight n hn) =
       rootGenerator (K := K) n hn (.inl (forkRight n hn)) := by
   apply Subtype.ext
-  rw [coe_sumRootGenerator, val_rootGenerator_inl]
+  rw [val_sumRootGenerator, val_rootGenerator_inl]
   have hfork : ¬((forkRight n hn : Fin n) : ℕ) + 1 < n := by
     rw [forkRight_val]
     omega
@@ -299,7 +299,7 @@ theorem differenceRootGenerator_reverse_chain_eq_rootGenerator (n : ℕ) (hn : 4
     differenceRootGenerator (K := K) (chainNext n i hi) i =
       rootGenerator (K := K) n hn (.inr i) := by
   apply Subtype.ext
-  rw [coe_differenceRootGenerator, val_rootGenerator_inr, loweringMatrix_of_chain n hn hi]
+  rw [val_differenceRootGenerator, val_rootGenerator_inr, loweringMatrix_of_chain n hn hi]
   ext (a | a) (b | b) <;>
     simp [differenceRootMatrix, Matrix.fromBlocks, Matrix.single_apply]
 
@@ -308,7 +308,7 @@ theorem negSumRootGenerator_reverse_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ 
     negSumRootGenerator (K := K) (forkRight n hn) (forkLeft n hn) =
       rootGenerator (K := K) n hn (.inr (forkRight n hn)) := by
   apply Subtype.ext
-  rw [coe_negSumRootGenerator, val_rootGenerator_inr]
+  rw [val_negSumRootGenerator, val_rootGenerator_inr]
   have hfork : ¬((forkRight n hn : Fin n) : ℕ) + 1 < n := by
     rw [forkRight_val]
     omega
