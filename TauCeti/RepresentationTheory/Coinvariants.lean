@@ -129,26 +129,24 @@ theorem mapDomain_orbitRel_mk_coeff_ofMulAction_smul (g : G) (v : k[X]) (x : X) 
   -- `g` maps distinct `H`-orbits to distinct `H`-orbits
   have hmk (y : X) : Quotient.mk (orbitRel H X) (g • y) = Quotient.mk _ (g • x) ↔
       Quotient.mk (orbitRel H X) y = Quotient.mk _ x := by
-    simp only [Quotient.eq, orbitRel_apply, mem_orbit_iff]
-    refine ⟨fun ⟨h, hh⟩ ↦ ⟨h, smul_left_cancel g ?_⟩, fun ⟨h, hh⟩ ↦ ⟨h, ?_⟩⟩
-    · rw [smul_comm, hh]
-    · rw [← hh, smul_comm g h x]
+    simp [Quotient.eq, orbitRel_apply, mem_orbit_iff, ← smul_comm g]
   induction v using induction_linear with
   | zero => simp
   | add v w hv hw => simp [Finsupp.mapDomain_add, hv, hw]
   | single y r => simp [Finsupp.single_apply, hmk]
 
-/-- If the actions of `G` and `H` on `X` commute, `h : ι → H` and `g • w = w` for
-`w = ∑ i ∈ s, h i • v`, then the `H`-orbit sums of `v` are invariant under `g`, provided `#s` is
-cancellable in `k`: the orbit sums of `w` are `#s` times those of `v`. -/
-theorem mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum {ι : Type*} {s : Finset ι}
-    {h : ι → H} {g : G} {v : k[X]} (hs : IsSMulRegular k #s)
+/-- If the actions of `G` and `H` on `X` commute, `h : ι → H`, `#s` is cancellable in `k` and
+`g • w = w` for `w = ∑ i ∈ s, h i • v`, then the `H`-orbit sums of `v` are invariant under `g`:
+the coefficients of `v` have the same sum along the `H`-orbits of `g • x` and of `x`. -/
+theorem mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum {ι : Type*} {s : Finset ι} {h : ι → H}
+    {g : G} {v : k[X]} (hs : IsSMulRegular k #s)
     (hfix : ofMulAction k G X g (∑ i ∈ s, ofMulAction k H X (h i) v) =
       ∑ i ∈ s, ofMulAction k H X (h i) v) (x : X) :
     v.coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ (g • x)) =
       v.coeff.mapDomain (Quotient.mk (orbitRel H X)) (Quotient.mk _ x) := by
   have key := mapDomain_orbitRel_mk_coeff_ofMulAction_smul (H := H) g
     (∑ i ∈ s, ofMulAction k H X (h i) v) x
+  -- the `H`-orbit sums of `∑ i ∈ s, h i • v` are `#s` times those of `v`
   simp only [hfix, coeff_sum, Finsupp.mapDomain_finsetSum,
     mapDomain_orbitRel_mk_coeff_ofMulAction, Finset.sum_const, Finsupp.smul_apply] at key
   exact hs key

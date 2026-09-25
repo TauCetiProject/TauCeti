@@ -35,6 +35,9 @@ This file records how they fit together, over an arbitrary coefficient semiring 
   determinant-one matrix `g` is the left representation of `g` itself.
 * `TauCeti.TraceFormulaMatrixModule.ofMulAction_toConjAct`: the conjugation representation of `g`
   is the left representation of `g` after the right representation of `g⁻¹`.
+* `TauCeti.TraceFormulaMatrixModule.ofMulAction_S_sq`,
+  `TauCeti.TraceFormulaMatrixModule.ofMulAction_T_mul_S_pow_three`: on `k[ℳₙ]`, `S² = 1` and
+  `U³ = 1` for `U = T S`, since `S² = U³ = -1` in `SL(2, ℤ)` and `-1` acts trivially.
 
 The left and right representations commute, so `ℛₙ` is a `ℚ[PSL(2, ℤ)]`-bimodule. This is the
 general `TauCeti.commute_ofMulAction` (in `TauCeti.RepresentationTheory.OfMulAction`), applied to
@@ -71,6 +74,21 @@ theorem ofMulAction_neg_one :
     Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-1) = 1 := by
   ext
   simp
+
+open ModularGroup in
+/-- Left multiplication by `S` on `k[ℳₙ]` is an involution: `S² = 1`. -/
+@[simp]
+theorem ofMulAction_S_sq :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S ^ 2 = 1 := by
+  -- `S² = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
+  rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg_one]
+
+open ModularGroup in
+/-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. -/
+theorem ofMulAction_T_mul_S_pow_three :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) ^ 3 = 1 := by
+  -- `U³ = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
+  rw [← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg_one]
 
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/
