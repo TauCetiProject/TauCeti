@@ -794,6 +794,17 @@ theorem W1p.gradient_posPart_ae (hp : p ≠ ∞) (u : W1p mu Omega p) :
   rw [W1p.posPart, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
 
+/-- Truncation above zero is the positive part. -/
+@[simp]
+theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    W1p.posPartAbove hp (le_refl 0) u = W1p.posPart hp u := by
+  apply W1p.ext_value
+  rw [W1p.value_posPart]
+  apply Lp.ext
+  filter_upwards [W1p.value_posPartAbove_ae hp (le_refl 0) u,
+    Lp.coeFn_posPart (W1p.value u)] with x hx hy
+  rw [hx, hy, sub_zero]
+
 end PosPart
 
 end TauCeti

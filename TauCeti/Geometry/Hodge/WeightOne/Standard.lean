@@ -190,25 +190,6 @@ private theorem complexificationEquiv_eigenspace_comap (μ : ℂ) :
       _ = complexificationEquiv (μ • complexificationEquiv.symm x) := by
         rw [map_smul, complexificationEquiv.apply_symm_apply]
 
-private theorem comap_weilOperator (hs : HodgeStructureOn (ℂ ⊗[ℝ] RealSpace)
-    (Hodge.complexificationConjugation RealSpace) 1) :
-    (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator =
-      complexificationEquiv.toLinearMap ∘ₗ hs.weilOperator ∘ₗ
-        complexificationEquiv.symm.toLinearMap := by
-  symm
-  apply (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator_unique
-  intro p x hx
-  rw [LinearMap.comp_apply, LinearMap.comp_apply]
-  have hx' : complexificationEquiv.symm x ∈ hs.piece p := by
-    rw [HodgeStructureOn.comap_piece] at hx
-    exact hx
-  calc
-    complexificationEquiv (hs.weilOperator (complexificationEquiv.symm x)) =
-        complexificationEquiv
-          (Complex.I ^ (2 * p - 1) • complexificationEquiv.symm x) :=
-      congrArg complexificationEquiv (hs.weilOperator_apply_of_mem hx')
-    _ = _ := by rw [map_smul, complexificationEquiv.apply_symm_apply]
-
 /-- The standard effective Hodge structure of weight one on `ℤ × ℤ`. Its degree-one
 filtration is the `i`-eigenspace of `J(x, y) = (-y, x)`. -/
 noncomputable def hodgeStructure :
@@ -266,7 +247,7 @@ theorem hodgeStructure_piece_eq_bot {p : ℤ} (hpzero : p ≠ 0) (hpone : p ≠ 
 @[simp]
 theorem hodgeStructure_weilOperator :
     hodgeStructure.weilOperator = (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap := by
-  rw [hodgeStructure, comap_weilOperator,
+  rw [hodgeStructure, HodgeStructureOn.weilOperator_comap, LinearEquiv.symm_symm,
     realAlmostComplexStructure.hodgeStructure_weilOperator]
   apply LinearMap.ext
   intro x

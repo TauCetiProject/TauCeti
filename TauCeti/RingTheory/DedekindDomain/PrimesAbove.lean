@@ -11,12 +11,12 @@ public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 /-!
 # Primes above a set of primes, and the Selmer group relative to them
 
-Let `R ⊆ B` be Dedekind domains with `B` integral over `R`. For a set `S` of primes of `R`,
+Let `B` be a domain integral over a domain `R`. For a set `S` of primes of `R`,
 `IsDedekindDomain.HeightOneSpectrum.primesAbove R B S` is the set of primes of `B` lying above a
-prime in `S`, i.e. whose contraction `HeightOneSpectrum.under R w` lies in `S`. It is finite when
-`S` is, and it is the set of primes that the Selmer group of the fraction field of `B` is taken
-relative to when the "bad" primes are given downstairs:
-`IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮primesAbove R B S, n⟯`.
+prime in `S`, i.e. whose contraction `HeightOneSpectrum.under R w` lies in `S`. When `B` is a
+Dedekind domain, torsion-free over `R`, it is finite whenever `S` is. It is the set of primes that
+the Selmer group of the fraction field of `B` is taken relative to when the "bad" primes are given
+downstairs: `IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮primesAbove R B S, n⟯`.
 
 ## Main definitions
 
@@ -38,19 +38,10 @@ relative to when the "bad" primes are given downstairs:
 * `IsDedekindDomain.HeightOneSpectrum.finite_liesOver`: finitely many height one primes lie over
   a given one.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil): the `2`-descent bounds the
-image of the descent map inside a Selmer group taken relative to the bad primes, which are given
-downstairs, over the base field, while the group itself lives upstairs, over the étale algebra;
-`selmerGroupAbove` is that group and `primesAbove_finite` keeps it finite. Nothing here mentions a
-curve.
-
 ## Provenance
 
-Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+Adapted from Michael Stoll's `EllipticCurves` project
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `DedekindDomain`. The source carries its own
 `HeightOneSpectrum.below`; at our Mathlib pin that map is `HeightOneSpectrum.under`, which is
 used here instead.
@@ -62,17 +53,20 @@ public section
 
 namespace IsDedekindDomain
 
-variable (R : Type*) [CommRing R] [IsDedekindDomain R]
-  (B : Type*) [CommRing B] [IsDedekindDomain B] [Algebra R B] [Algebra.IsIntegral R B]
+variable (R : Type*) [CommRing R] (B : Type*) [CommRing B] [Algebra R B]
 
 namespace HeightOneSpectrum
+
+section IsDomain
+
+variable [IsDomain R] [IsDomain B] [Algebra.IsIntegral R B]
 
 /-- A height one prime of `B` lies over its own contraction to `R`.
 
 Mathlib's `Ideal.over_under` is this statement for `Ideal.under`, but instance search does not see
 through the `HeightOneSpectrum.asIdeal` projection to reach it, so it is registered here. Results
-stated at `under R w` and consuming a `LiesOver` hypothesis — `HeightOneSpectrum.valuation_liesOver`
-is the one this file exists to feed — do not fire without it. -/
+stated at `under R w` and consuming a `LiesOver` hypothesis, such as
+`HeightOneSpectrum.valuation_liesOver`, do not fire without it. -/
 instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
   ⟨rfl⟩
@@ -95,30 +89,30 @@ lemma primesAbove_mono {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
 lemma primesAbove_empty : primesAbove R B (∅ : Set (HeightOneSpectrum R)) = ∅ :=
   Set.preimage_empty
 
-/-- Only finitely many primes of `B` lie above a finite set of primes of `R`: each fiber
-injects into `Ideal.primesOver`, which is finite for a Dedekind extension. -/
-lemma primesAbove_finite [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum R)}
-    (hS : S.Finite) : (primesAbove R B S).Finite := by
-  have hsub : primesAbove R B S ⊆
-      ⋃ v ∈ S, {w : HeightOneSpectrum B | w.asIdeal ∈ v.asIdeal.primesOver B} :=
-    fun w hw ↦ Set.mem_biUnion hw ⟨w.isPrime, ⟨rfl⟩⟩
-  refine (hS.biUnion fun v _ ↦ ?_).subset hsub
-  have := v.isMaximal
-  exact (IsDedekindDomain.primesOver_finite v.asIdeal B).preimage
-    (fun a _ b _ hab ↦ HeightOneSpectrum.ext hab)
+end IsDomain
+
+/-- Only finitely many primes of `B` lie above a finite set of primes of `R`. -/
+lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
+    [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
+    (primesAbove R B S).Finite := by
+  refine hS.preimage' fun v _ ↦ ?_
+  rcases (primesAbove R B {v}).eq_empty_or_nonempty with h | ⟨w, rfl⟩
+  · exact Set.finite_empty.subset h.subset
+  have := w.isMaximal
+  have : (under R w).asIdeal.IsMaximal := Ideal.IsMaximal.under R w.asIdeal
+  exact ((primesOver_finite (under R w).asIdeal B).preimage asIdeal_injective.injOn).subset
+    fun w' hw' ↦ ⟨w'.isPrime, ⟨congrArg asIdeal hw'.symm⟩⟩
 
 variable {R B}
 
-omit [IsDedekindDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B] in
 /-- A height one prime of `B` taken from the subtype of those lying over `v` lies over `v`. -/
 instance liesOver_val {v : HeightOneSpectrum R}
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     w.1.asIdeal.LiesOver v.asIdeal :=
   w.2
 
-variable (B) [Module.IsTorsionFree R B]
+variable (B) [IsDedekindDomain R] [IsDedekindDomain B] [Module.IsTorsionFree R B]
 
-omit [Algebra.IsIntegral R B] in
 /-- The height one primes of `B` lying over a height one prime `v` of `R` are the primes of `B`
 over `v.asIdeal`, in Mathlib's `Ideal.primesOver` spelling. Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.equivPrimesOver` is the same bijection for the subtype cut out
@@ -130,31 +124,30 @@ noncomputable def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
     Ideal.liesOver_iff_dvd_map w.isPrime.ne_top).trans
       (HeightOneSpectrum.equivPrimesOver B v.ne_bot)
 
-omit [Algebra.IsIntegral R B] in
 @[simp]
 theorem liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal :=
-  by simp [liesOverEquivPrimesOver]
+    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal := by
+  simp [liesOverEquivPrimesOver]
 
-omit [Algebra.IsIntegral R B] in
 @[simp]
 theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
     (Q : v.asIdeal.primesOver B) :
-    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q :=
-  by
-    let _ := v.isMaximal
-    simp only [liesOverEquivPrimesOver]
-    exact congrArg Subtype.val
-      ((HeightOneSpectrum.equivPrimesOver B v.ne_bot).apply_symm_apply Q)
+    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q := by
+  let _ := v.isMaximal
+  simp only [liesOverEquivPrimesOver]
+  exact congrArg Subtype.val
+    ((HeightOneSpectrum.equivPrimesOver B v.ne_bot).apply_symm_apply Q)
 
 /-- Only finitely many height one primes of `B` lie over a given height one prime of `R`. -/
-instance finite_liesOver (v : HeightOneSpectrum R) :
+instance finite_liesOver [Algebra.IsIntegral R B] (v : HeightOneSpectrum R) :
     Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} :=
   have := v.isMaximal
   .of_equiv _ (liesOverEquivPrimesOver B v).symm
 
 end HeightOneSpectrum
+
+variable [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
 
 /-- The `S`-Selmer group of `L`, where `B` is a Dedekind domain with fraction field `L` and `S`
 is a set of primes of `R`: the classes of `Lˣ` modulo `n`-th powers whose valuation is divisible
@@ -163,15 +156,9 @@ def selmerGroupAbove (L : Type*) [Field L] [Algebra B L] [IsFractionRing B L]
     (S : Set (HeightOneSpectrum R)) (n : ℕ) : Subgroup (Lˣ ⧸ (powMonoidHom n : Lˣ →* Lˣ).range) :=
   selmerGroup (R := B) (K := L) (S := HeightOneSpectrum.primesAbove R B S) (n := n)
 
-/-- `selmerGroupAbove` is the ordinary Selmer group taken over the primes above `S`.
-
-The definition says exactly this, but `selmerGroupAbove` is not `@[expose]`, so a downstream
-module cannot see it; this lemma is how such a module rewrites between the two spellings — in
-particular to reach `IsDedekindDomain.selmerGroupPi` and `selmerGroupOfEquiv`, which are stated
-in terms of `selmerGroup`.
-
-Proved by the parenthesised `(rfl)`: the definition is visible here, whereas a bare `rfl` proof of
-an exported statement would ask for `selmerGroupAbove` to be exposed downstream. -/
+/-- `selmerGroupAbove` is the ordinary Selmer group taken over the primes above `S`. This is the
+form in which `IsDedekindDomain.selmerGroupPi` and `selmerGroupOfEquiv`, stated in terms of
+`selmerGroup`, apply to it. -/
 lemma selmerGroupAbove_def (L : Type*) [Field L] [Algebra B L] [IsFractionRing B L]
     (S : Set (HeightOneSpectrum R)) (n : ℕ) :
     selmerGroupAbove R B L S n =

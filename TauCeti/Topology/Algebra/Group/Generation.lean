@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
-public import Mathlib.GroupTheory.Index
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.Topology.Algebra.OpenSubgroup
-import Mathlib.GroupTheory.Schreier
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.Group.Subgroup
+import Mathlib.GroupTheory.Schreier
 
 /-!
 # Topological generation of a topological group
@@ -42,8 +38,6 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   `TauCeti.IsTopologicallyFinitelyGenerated.of_surjective`,
   `TauCeti.IsTopologicallyFinitelyGenerated.quotient`: topological finite generation passes along
   continuous homomorphisms with dense range, along continuous surjections, and to quotients.
-* `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup `U` in a
-  subgroup dense in `U`.
 * `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
@@ -139,37 +133,6 @@ theorem IsTopologicallyFinitelyGenerated.quotient (hG : IsTopologicallyFinitelyG
     (N : Subgroup G) [N.Normal] : IsTopologicallyFinitelyGenerated (G ⧸ N) :=
   hG.of_surjective QuotientGroup.continuous_mk (QuotientGroup.mk'_surjective N)
 
-section OpenSubgroup
-
-variable {D U : Subgroup G}
-
-omit [IsTopologicalGroup G] in
-/-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
-of `D`, is continuous. -/
-theorem _root_.Subgroup.continuous_subgroupOf_codRestrict (D U : Subgroup G) :
-    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
-  continuous_induced_rng.mpr (continuous_subtype_val.comp continuous_subtype_val :
-    Continuous fun x : U.subgroupOf D ↦ ((x : D) : G))
-
-omit [IsTopologicalGroup G] in
-/-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
-inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense
-range. -/
-theorem _root_.Dense.denseRange_subgroupOf_codRestrict (hD : Dense (D : Set G))
-    (hU : IsOpen (U : Set G)) :
-    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) := by
-  -- The range is `D ∩ U`, viewed inside `U`, and `Subtype.val : U → G` is an open map.
-  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2)
-      = (Subtype.val : U → G) ⁻¹' (D : Set G) := by
-    ext x
-    constructor
-    · rintro ⟨y, rfl⟩
-      exact y.1.2
-    · intro hxD
-      exact ⟨⟨⟨x, hxD⟩, x.2⟩, rfl⟩
-  rw [DenseRange, hrange]
-  exact hD.preimage hU.isOpenMap_subtype_val
-
 /-- An open finite-index subgroup of a topologically finitely generated group is topologically
 finitely generated. -/
 theorem IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex
@@ -191,8 +154,6 @@ theorem IsTopologicallyFinitelyGenerated.of_openSubgroup [CompactSpace G]
     (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G) :
     IsTopologicallyFinitelyGenerated (↥U.toSubgroup) :=
   hG.of_openSubgroup_of_finiteIndex U
-
-end OpenSubgroup
 
 /-- Topological finite generation is invariant under topological group isomorphism. -/
 theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :

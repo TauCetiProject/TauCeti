@@ -108,6 +108,24 @@ grind_pattern garding_energyIntegrand_self =>
 /-- Pointwise Gårding lower bound with a mass floor for a uniformly elliptic principal
 coefficient.
 
+For any `ε > 0`, the gradient coefficient is `λ - ε` and the value coefficient is
+`μ - β²/(4ε)`. The estimate also holds when either coefficient is nonpositive. -/
+lemma garding_energyIntegrand_self_of_mass_lower_bound_with_parameter
+    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    {b₀ : EuclideanSpace ℝ n} {c₀ eps : ℝ}
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (heps : 0 < eps) (U : ℝ × EuclideanSpace ℝ n) :
+    (lam - eps) * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (4 * eps)) * U.1 ^ 2
+      ≤ energyIntegrand (a x) b₀ c₀ U U :=
+  garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_with_parameter heps
+    (h.lower_bound hx) hb hc U
+
+grind_pattern garding_energyIntegrand_self_of_mass_lower_bound_with_parameter =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀, 0 < eps,
+  energyIntegrand (a x) b₀ c₀ U U
+
+/-- Pointwise Gårding lower bound with a mass floor for a uniformly elliptic principal
+coefficient.
+
 With drift bound `β` and mass lower bound `μ`, the diagonal energy density is bounded below
 by `(λ / 2)‖∇u‖² + (μ - β² / (2λ))u²`. -/
 lemma garding_energyIntegrand_self_of_mass_lower_bound (h : UniformlyEllipticOn Ω a lam Lam)

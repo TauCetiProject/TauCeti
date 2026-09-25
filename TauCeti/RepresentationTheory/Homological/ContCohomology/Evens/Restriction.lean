@@ -79,7 +79,7 @@ theorem explicitRes2_evensGraphCocycle (U : OpenSubgroup G) (hU : U.toSubgroup.i
     MonoidHom.coe_ofClass, Subgroup.inverseConjugationHom_apply, trivialF2Pairing_apply,
     Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
     AddEquiv.apply_symm_apply]
-  rw [evensGraphCochain_apply_of_mem_of_mem hU hs γ.2 η.2, evensExtend_of_mem γ.2,
+  rw [evensGraphCochain_apply_of_mem_of_mem hs γ.2 η.2, evensExtend_of_mem γ.2,
     evensExtend_of_mem hconj]
 
 end TauCeti.ContCohomology

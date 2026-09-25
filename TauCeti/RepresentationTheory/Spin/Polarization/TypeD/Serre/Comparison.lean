@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.Presentation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.RootGenerators
 
 /-!
@@ -77,10 +78,7 @@ matrix realization.** -/
 theorem typeDSpinSerreRepresentation_eq_comp_serreRepresentation
     (hn : 4 ≤ n) (hline : P.line = ⊥) :
     P.typeDSpinSerreRepresentation b hn =
-      (spinAction Q P).toLieHom.comp
-        ((quadraticLieSubalgebra Q).incl.comp
-          ((P.typeDQuadraticEquiv b hline).toLieHom.comp
-            (TypeDStd.serreRepresentation n hn))) := by
+      (P.typeDSpinLieRep b hline).comp (TypeDStd.serreRepresentation n hn) := by
   apply TauCeti.serre_hom_ext
   · intro i
     rw [P.typeDSpinSerreRepresentation_serreH]

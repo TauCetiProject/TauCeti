@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.Domain
+public import TauCeti.LowDimTopology.Heegaard.MaslovIndex
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -29,6 +30,10 @@ domains are the multiples of `B₁ - B₂`, and the diagram is weakly admissible
 in a bigon, say `B₁`, the periodic domain `A + 2 B₂` has no negative coefficient, so the diagram
 is not weakly admissible.
 
+The regions have Euler characteristics `χ(A) = 0` and `χ(B₁) = χ(B₂) = 1`; the annulus has four
+corners and each bigon has two. With these, the combinatorial Maslov index of each bigon is `1`,
+as for the domain of a holomorphic bigon, and that of the periodic domain `B₁ - B₂` is `0`.
+
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.circleTimesSphere`: the diagram, with its basepoint in a given
@@ -48,6 +53,10 @@ is not weakly admissible.
   admissible exactly when its basepoint lies in the annulus.
 * `TauCeti.HeegaardRegionSystem.not_weaklyAdmissible_circleTimesSphere_one`: with the basepoint
   in a bigon, the diagram is not weakly admissible.
+* `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_single_one`,
+  `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_single_two` and
+  `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_periodic`: both bigons have Maslov
+  index one and the periodic domain has Maslov index zero.
 
 ## References
 
@@ -118,6 +127,16 @@ theorem circleTimesSphere_alphaNext (r : Fin 3) (p : Fin 2) :
 @[simp]
 theorem circleTimesSphere_betaNext (r : Fin 3) (p : Fin 2) :
     (circleTimesSphere r).betaNext p = Equiv.swap 0 1 p := by simp [circleTimesSphere]
+
+/-- The predecessor on the `α`-curve exchanges the two intersection points. -/
+@[simp]
+theorem circleTimesSphere_alphaNext_symm (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).alphaNext.symm p = Equiv.swap 0 1 p := by simp [circleTimesSphere]
+
+/-- The predecessor on the `β`-curve exchanges the two intersection points. -/
+@[simp]
+theorem circleTimesSphere_betaNext_symm (r : Fin 3) (p : Fin 2) :
+    (circleTimesSphere r).betaNext.symm p = Equiv.swap 0 1 p := by simp [circleTimesSphere]
 
 /-- The regions to the left of the two `α`-arcs. -/
 @[simp]
@@ -263,6 +282,34 @@ theorem weaklyAdmissible_circleTimesSphere_iff (r : Fin 3) :
 the periodic domain `A + 2 B₂` has no negative coefficient. -/
 theorem not_weaklyAdmissible_circleTimesSphere_one : ¬ (circleTimesSphere 1).WeaklyAdmissible := by
   simp
+
+/-- The annulus has four corners and each bigon has two. -/
+@[simp]
+theorem cornerCount_circleTimesSphere (r s : Fin 3) :
+    (circleTimesSphere r).cornerCount s = ![4, 2, 2] s := by
+  revert r s
+  simp only [cornerCount_eq_card, cornerRegion_eq]
+  decide
+
+/-- The bigon `B₁`, a disk with two corners, has Maslov index one. -/
+theorem maslovIndex_circleTimesSphere_single_one (r : Fin 3) :
+    (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r 0)
+      (circleTimesSphereGenerator r 1) (Pi.single 1 1) = 1 := by
+  simp [cornerCount_circleTimesSphere, Pi.single_apply]
+  norm_num
+
+/-- The bigon `B₂`, a disk with two corners, has Maslov index one. -/
+theorem maslovIndex_circleTimesSphere_single_two (r : Fin 3) :
+    (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r 0)
+      (circleTimesSphereGenerator r 1) (Pi.single 2 1) = 1 := by
+  simp [cornerCount_circleTimesSphere, Pi.single_apply]
+  norm_num
+
+/-- The periodic domain `B₁ - B₂` has Maslov index zero at both generators. -/
+theorem maslovIndex_circleTimesSphere_periodic (r : Fin 3) (a : Fin 2) :
+    (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r a)
+      (circleTimesSphereGenerator r a) (Pi.single 1 1 - Pi.single 2 1) = 0 := by
+  fin_cases a <;> simp [cornerCount_circleTimesSphere, Pi.single_apply, Fin.sum_univ_three]
 
 end HeegaardRegionSystem
 

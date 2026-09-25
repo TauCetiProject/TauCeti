@@ -12,14 +12,18 @@ public import TauCeti.Algebra.GroupAction.TypeTags
 # Continuity of the distributive action on the additive type tag
 
 `TauCeti.Algebra.GroupAction.TypeTags` makes a monoid `M` acting on a monoid `A` by monoid
-endomorphisms act distributively on `Additive A`. The topology of `Additive A` is that of `A`, and
-the two actions are the same map `M × A → A`, so continuity of one is continuity of the other. This
-file records that as the instance `Additive.continuousSMul`. It is what lets a multiplicative
-coefficient module — a finite discrete `G`-module written multiplicatively, as in the extension
-dictionary — be fed to the continuous cohomology of `Additive M`, whose hypotheses ask for a
-continuous action. Likewise a continuous equivariant homomorphism of such modules stays continuous
-when read additively (`MulDistribMulActionHom.continuous_toAdditive`), as the coefficient maps of
-that cohomology require.
+endomorphisms act distributively on `Additive A`, and a monoid acting distributively on an additive
+monoid `A` act by monoid endomorphisms on `Multiplicative A`. The topology of a type tag is that of
+the underlying type, and the transported action is the same map `M × A → A`, so continuity of one
+is continuity of the other. This file records that as the instances `Additive.continuousSMul` and
+`Multiplicative.continuousSMul`. The first is what lets a multiplicative coefficient module — a
+finite discrete `G`-module written multiplicatively, as in the extension dictionary — be fed to
+the continuous cohomology of `Additive M`, whose hypotheses ask for a continuous action; the
+second lets an additive coefficient module enter a construction stated for multiplicative ones,
+such as the twisted product of a factor set. Likewise a continuous equivariant homomorphism of
+such modules stays continuous when read additively
+(`MulDistribMulActionHom.continuous_toAdditive`), as the coefficient maps of that cohomology
+require.
 -/
 
 public section
@@ -36,6 +40,19 @@ instance continuousSMul [ContinuousSMul M A] : ContinuousSMul M (Additive A) whe
     continuous_ofMul.comp (continuous_fst.smul (continuous_toMul.comp continuous_snd))
 
 end Additive
+
+namespace Multiplicative
+
+variable {M A : Type*} [Monoid M] [AddMonoid A] [DistribMulAction M A] [TopologicalSpace M]
+  [TopologicalSpace A]
+
+/-- The action of `M` on `Multiplicative A` by monoid endomorphisms is continuous when the action
+on `A` is: the two are the same map between the same topological spaces. -/
+instance continuousSMul [ContinuousSMul M A] : ContinuousSMul M (Multiplicative A) where
+  continuous_smul :=
+    continuous_ofAdd.comp (continuous_fst.smul (continuous_toAdd.comp continuous_snd))
+
+end Multiplicative
 
 namespace MulDistribMulActionHom
 

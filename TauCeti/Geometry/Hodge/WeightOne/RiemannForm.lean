@@ -50,6 +50,9 @@ compatibility predicate `TauCeti.SymplecticForm.Compatible` uses the opposite si
   the Riemann forms are exactly the polarizing forms.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.polarization`: the polarized effective weight-one
   Hodge structure of a lattice with a complex structure and a Riemann form.
+* `TauCeti.Hodge.HodgeStructureOn.isRiemannForm_latticeAlmostComplexStructure_iff`: read from the
+  Hodge-structure side, when `V` is flat over `ℤ` the forms polarizing an effective weight-one
+  Hodge structure are exactly the Riemann forms of its complex structure on the realification.
 
 The definitions and conventions follow Birkenhake–Lange, *Complex Abelian Varieties*, §2.1 and
 §4.1, and Mumford, *Abelian Varieties*, §I.3; the Hodge-theoretic reading is Voisin, *Hodge Theory
@@ -188,3 +191,24 @@ theorem isRiemannForm_iff_isPolarization [Module.Flat ℤ V]
   ⟨fun h ↦ h.isPolarization hℂ, isRiemannForm_of_isPolarization⟩
 
 end TauCeti.AlmostComplexStructure
+
+namespace TauCeti.Hodge.HodgeStructureOn
+
+universe u v
+
+variable {V : Type u} {Vℂ : Type v}
+variable [AddCommGroup V] [AddCommGroup Vℂ] [Module ℂ Vℂ]
+variable {ιℂ : V →ₗ[ℤ] Vℂ} {hℂ : IsBaseChange ℂ ιℂ}
+
+/-- **When `V` is flat over `ℤ`, the forms polarizing an effective weight-one Hodge structure are
+exactly the Riemann forms of its complex structure on the realification.** This is
+`TauCeti.AlmostComplexStructure.isRiemannForm_iff_isPolarization` read through the round trip
+`TauCeti.AlmostComplexStructure.latticeHodgeStructureEquiv`: polarized effective weight-one Hodge
+structures on a lattice are the data `(Λ, J, E)` of a polarized abelian variety. -/
+theorem isRiemannForm_latticeAlmostComplexStructure_iff [Module.Flat ℤ V]
+    (hs : HodgeStructure hℂ 1) (h : hs.IsEffective) (E : LinearMap.BilinForm ℤ V) :
+    (hs.latticeAlmostComplexStructure odd_one).IsRiemannForm E ↔ IsPolarization hℂ hs E := by
+  rw [AlmostComplexStructure.isRiemannForm_iff_isPolarization _ hℂ,
+    hs.latticeHodgeStructure_latticeAlmostComplexStructure (hs.isEffective_iff.mp h)]
+
+end TauCeti.Hodge.HodgeStructureOn
