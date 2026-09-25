@@ -137,6 +137,7 @@ lemma skeletonPairπ_comp_skeletonPairδ (n : ℕ) :
   (skeletonPair C (n + 1)).singularHomologyπ_comp_singularHomologyδ R (n + 1) n
 
 /-- Two consecutive cellular differentials compose to zero. -/
+@[simp]
 lemma cellularDifferential_comp_cellularDifferential (n : ℕ) :
     cellularDifferential C R (n + 1) ≫ cellularDifferential C R n = 0 := by
   simp only [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ, Category.assoc,
