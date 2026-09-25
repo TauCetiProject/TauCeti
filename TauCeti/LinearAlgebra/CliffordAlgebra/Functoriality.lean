@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.RingTheory.Flat.Basic
@@ -23,6 +24,9 @@ and scalar action on the right Clifford algebra is faithful.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
+  subalgebras; `CliffordAlgebra.evenEquivOfIsometry_bilin` and
+  `CliffordAlgebra.equivEven_symm_bilin` give its generator-level transport equations.
 * `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
 -/
 
@@ -77,6 +81,46 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
   | ι_mul_ι_mul m₁ m₂ x _ hx =>
       simpa only [map_mul, map_apply_ι, zero_add] using
         SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
+
+/-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
+theorem map_even_eq (e : Q₁.IsometryEquiv Q₂) :
+    (even Q₁).map (equivOfIsometry e).toAlgHom = even Q₂ := by
+  apply le_antisymm
+  · rintro y ⟨x, hx, rfl⟩
+    exact map_mem_even e.toIsometry hx
+  · intro y hy
+    refine ⟨(equivOfIsometry e).symm y, map_mem_even e.symm.toIsometry hy, ?_⟩
+    exact (equivOfIsometry e).apply_symm_apply y
+
+/-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
+the even subalgebras. -/
+noncomputable def evenEquivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
+    even Q₁ ≃ₐ[R] even Q₂ :=
+  ((equivOfIsometry e).subalgebraMap (even Q₁)).trans
+    (Subalgebra.equivOfEq _ _ (map_even_eq e))
+
+/-- After coercion, `evenEquivOfIsometry` agrees with the full Clifford-algebra equivalence. -/
+@[simp]
+theorem coe_evenEquivOfIsometry_apply (e : Q₁.IsometryEquiv Q₂) (x : even Q₁) :
+    (evenEquivOfIsometry e x : CliffordAlgebra Q₂) =
+      equivOfIsometry e (x : CliffordAlgebra Q₁) := by
+  simp [evenEquivOfIsometry]
+
+/-- On a bilinear generator, the restricted equivalence applies the isometry to both vectors. -/
+@[simp]
+theorem evenEquivOfIsometry_bilin (e : Q₁.IsometryEquiv Q₂) (m n : M₁) :
+    evenEquivOfIsometry e ((even.ι Q₁).bilin m n) =
+      (even.ι Q₂).bilin (e m) (e n) := by
+  apply Subtype.ext
+  simp [even.ι, coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
+
+/-- The inverse dimension-shift equivalence on a bilinear generator of the augmented even
+Clifford algebra. -/
+@[simp]
+theorem equivEven_symm_bilin (Q : QuadraticForm R M₁) (x y : M₁ × R) :
+    (equivEven Q).symm ((even.ι (EquivEven.Q' Q)).bilin x y) =
+      (ι Q x.1 + algebraMap R _ x.2) * (ι Q y.1 - algebraMap R _ y.2) := by
+  exact ofEven_ι Q x y
 
 section OrthogonalProduct
 

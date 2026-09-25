@@ -9,6 +9,7 @@ module
 -- notation, quaternion conjugation `star`, and the coordinate linear maps `QuaternionAlgebra.reₗ`
 -- and `QuaternionAlgebra.linearEquivTuple`, all of which occur in the statements below.
 public import Mathlib.Algebra.Quaternion
+public import Mathlib.Algebra.Star.Unitary
 -- `Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv` is imported publicly for
 -- `QuadraticMap.IsometryEquiv` and `QuadraticMap.Equivalent`. It re-exports
 -- `Mathlib.LinearAlgebra.QuadraticForm.Basic`, hence `QuadraticForm`, `QuadraticMap.ofPolar`,
@@ -43,6 +44,8 @@ question about `⟨1, -a, -b, ab⟩`.
 ## Main results
 
 * `QuaternionAlgebra.normForm_mul`: the norm form is multiplicative.
+* `QuaternionAlgebra.mem_unitary_iff_normForm_eq_one`: a quaternion is unitary exactly when its
+  norm form is one.
 * `QuaternionAlgebra.isUnit_iff_normForm_isUnit`: a quaternion is invertible exactly when its norm
   is, and `QuaternionAlgebra.anisotropic_normForm_iff`: over a field, a quaternion algebra is a
   division algebra exactly when its norm form is anisotropic.
@@ -101,6 +104,16 @@ theorem self_mul_star (x : ℍ[R,c₁,c₂,c₃]) :
 theorem star_mul_self (x : ℍ[R,c₁,c₂,c₃]) :
     star x * x = (normForm c₁ c₂ c₃ x : ℍ[R,c₁,c₂,c₃]) := by
   rw [star_comm_self', self_mul_star]
+
+/-- A quaternion is unitary exactly when its norm form is one. -/
+theorem mem_unitary_iff_normForm_eq_one (x : ℍ[R,c₁,c₂,c₃]) :
+    x ∈ unitary ℍ[R,c₁,c₂,c₃] ↔ normForm c₁ c₂ c₃ x = 1 := by
+  rw [Unitary.mem_iff, star_mul_self, self_mul_star, and_self]
+  constructor
+  · intro h
+    simpa using congrArg (fun y : ℍ[R,c₁,c₂,c₃] => y.re) h
+  · intro h
+    simp [h]
 
 @[simp]
 theorem normForm_coe (r : R) : normForm c₁ c₂ c₃ (r : ℍ[R,c₁,c₂,c₃]) = r ^ 2 := by
@@ -238,6 +251,15 @@ variable {R : Type*} [CommRing R]
 theorem normSq_eq_normForm (x : ℍ[R]) :
     normSq x = QuaternionAlgebra.normForm (-1) 0 (-1) x := by
   rw [QuaternionAlgebra.normForm_apply, normSq_def]
+
+/-- A Hamilton quaternion is unitary exactly when its norm-square is one. -/
+theorem mem_unitary_iff_normSq_eq_one (x : ℍ[R]) :
+    x ∈ unitary ℍ[R] ↔ normSq x = 1 := by
+  rw [normSq_eq_normForm, QuaternionAlgebra.mem_unitary_iff_normForm_eq_one]
+
+/-- The quaternion underlying a unitary Hamilton quaternion has norm-square one. -/
+theorem normSq_coe_unitary_eq_one (x : unitary ℍ[R]) : normSq (x : ℍ[R]) = 1 :=
+  (mem_unitary_iff_normSq_eq_one _).mp x.2
 
 end Quaternion
 
