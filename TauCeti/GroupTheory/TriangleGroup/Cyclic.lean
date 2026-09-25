@@ -13,8 +13,9 @@ import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 For a natural number `m`, the signature `(1, m, m)` has triangle group
 `TriangleGroup 1 m m`. The first relator makes `x` trivial, the product relation makes `z = y⁻¹`,
-and the remaining presentation is the cyclic group of order `m`. This file records that
-identification and its cardinality.
+and the remaining presentation is the cyclic group of order `m` when `m > 0`; when `m = 0`,
+it is infinite cyclic. This file records that identification and, for `m > 0`, its finite
+cardinality.
 
 The equivalence is stated with the usual Mathlib multiplicative tag on `ZMod m`; it is a group
 because the additive group `ZMod m` is being reinterpreted multiplicatively.
@@ -77,13 +78,15 @@ private theorem cyclic_order_y (m : ℕ) :
   have h₁' : m ∣ orderOf (y 1 m m) := by simpa [hmap] using h₁
   exact Nat.dvd_antisymm h₂ h₁'
 
-/-- The triangle group `TriangleGroup 1 m m` has cardinality `m`. -/
+/-- For `m > 0`, the triangle group `TriangleGroup 1 m m` has cardinality `m`.
+For `m = 0`, it is infinite cyclic and its `Nat.card` is `0`. -/
 @[simp]
 theorem natCard_one_self_self (m : ℕ) : Nat.card (TriangleGroup 1 m m) = m := by
   exact (orderOf_eq_card_of_zpowers_eq_top (cyclic_zpowers_eq_top m)).symm.trans
     (cyclic_order_y m)
 
-/-- The signature `(1, m, m)` has cyclic triangle group, of order `m`. -/
+/-- For `m > 0`, the signature `(1, m, m)` has cyclic triangle group of order `m`.
+For `m = 0`, it is infinite cyclic. -/
 noncomputable def equivCyclic (m : ℕ) :
     TriangleGroup 1 m m ≃* Multiplicative (ZMod m) :=
   (zmodMulEquivOfGenerator (G := TriangleGroup 1 m m) (g := y 1 m m)
