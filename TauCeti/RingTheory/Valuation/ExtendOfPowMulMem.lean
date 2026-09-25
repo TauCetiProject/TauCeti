@@ -150,8 +150,9 @@ noncomputable def extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ 
 theorem extendOfPowMulMem_apply (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : A) {n : ℕ}
     (hn : s ^ n * a ∈ R) :
-    w.extendOfPowMulMem hs hpow hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n :=
-  extend_aux w hs hw _ hn
+    w.extendOfPowMulMem hs hpow hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n := by
+  simpa only [extendOfPowMulMem, coe_mk, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk] using
+    extend_aux w hs hw _ hn
 
 /-- **The extension restricts to `w`.** -/
 @[simp]
@@ -169,7 +170,7 @@ theorem eq_extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
   ext a
   obtain ⟨n, hn⟩ := hpow a
   have hval : w ⟨s ^ n * a, hn⟩ = w ⟨s, hs⟩ ^ n * v a := by
-    rw [← hv, ← hv, ← map_pow, ← map_mul]
+    rw [← hv ⟨s ^ n * a, hn⟩, ← hv ⟨s, hs⟩, ← map_pow, ← map_mul]
   rw [extendOfPowMulMem_apply w hs hpow hw a hn, hval, mul_right_comm, ← mul_pow,
     mul_inv_cancel₀ hw, one_pow, one_mul]
 
