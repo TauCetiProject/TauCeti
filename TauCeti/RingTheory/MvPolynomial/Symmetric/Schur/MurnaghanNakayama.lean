@@ -25,29 +25,6 @@ polynomials; that expansion is the combinatorial half of the Murnaghan–Nakayam
 characters of the symmetric groups, whose other half is Frobenius's formula identifying the
 coefficients with character values.
 
-## The route
-
-Everything happens on alternants.  By the power-sum rule `TauCeti.psum_mul_alternant`,
-
-`p_r · a_β = ∑_j a_{β + r e_j}`,
-
-where `β` is the family of beta-numbers of `ν` relative to `N`, so that `a_β = s_ν · a_δ` is
-Jacobi's bialternant.  A term in which the raised bead lands on an occupied position has a
-repeated exponent and vanishes.  Every other term is a rim hook: by
-`YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc` the bead moved from row `j` lands at a row `a`
-such that `μ / ν` is a rim hook with `r` cells meeting the rows `a ≤ i ≤ j`, and by
-`YoungDiagram.IsRimHook.update_betaNumber_eq_comp_cycleIcc` the exponents `β + r e_j` are the
-beta-numbers of `μ` rearranged by the cycle `(a a+1 ⋯ j)`, of sign `(-1) ^ (j - a)`, which is
-the height.  Conversely a rim hook is recovered from its bottom row
-(`YoungDiagram.IsRimHook.eq_of_rimHookRows_eq_Icc`), so the surviving terms are indexed by the
-rim hooks exactly once.  This is `TauCeti.psum_mul_alternant_betaNumber`.
-
-Dividing by the Vandermonde alternant `a_δ` turns the alternant identity into the Schur one.  Over
-`ℤ` the alternant `a_δ` is nonzero (`TauCeti.alternant_ne_zero_of_injective`) and `ℤ[x]` is a
-domain, so it can be cancelled; the identity
-over an arbitrary commutative ring is its image under `ℤ → R`, Schur polynomials and power sums
-having integer coefficients.
-
 ## Main statements
 
 * `TauCeti.psum_mul_alternant_betaNumber`: the Murnaghan–Nakayama rule for alternants of
@@ -85,6 +62,8 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
           (diagramOf μ).IsRimHook ν ∧ (diagramOf μ).colLen 0 ≤ N,
         (-1) ^ (diagramOf μ).rimHookHeight ν *
           alternant (Fin N) R (fun j => (diagramOf μ).betaNumber N j) := by
+  -- The power-sum rule expands `p_r * a_β` as the sum of `a_(β + r e_j)` over bead moves.
+  -- The bialternant identity identifies `a_β` with `s_ν * a_δ`.
   set β : Fin N → ℕ := fun j => ν.betaNumber N j with hβ
   rw [psum_mul_alternant]
   -- A bead raised onto an occupied position repeats an exponent, and its alternant vanishes.
@@ -97,7 +76,7 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
       omega
     refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
     rw [Function.update_of_ne hij, Function.update_self, hi]]
-  -- Every other bead move adds a rim hook, whose bottom row is the row of the moved bead.
+  -- Every other bead move adds a rim hook meeting rows `a ≤ i ≤ j`, with `j` its bottom row.
   have hex : ∀ j : Fin N, (∀ i, β i ≠ β j + r) → ∃ μ : (ν.card + r).Partition,
       ((diagramOf μ).IsRimHook ν ∧ (diagramOf μ).colLen 0 ≤ N) ∧
         ∃ a, (diagramOf μ).rimHookRows ν = Icc a (j : ℕ) := by
@@ -107,7 +86,8 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     exact ⟨toPartition μ hcard, by rw [diagramOf_toPartition]; exact ⟨hμ, hμN⟩, a,
       by rw [diagramOf_toPartition, hab]⟩
   choose! f hfS hfrows using hex
-  -- The alternant of a bead move is the signed alternant of the enlarged diagram.
+  -- The resulting beta-numbers differ by the cycle `(a a+1 ⋯ j)`, whose sign is the
+  -- rim hook weight `(-1) ^ (j - a)`.
   have hterm : ∀ (μ : (ν.card + r).Partition) (a : ℕ) (j : Fin N)
       (hμ : (diagramOf μ).IsRimHook ν) (hab : (diagramOf μ).rimHookRows ν = Icc a (j : ℕ)),
       Function.update β j (β j + r) = (fun i : Fin N => (diagramOf μ).betaNumber N i) ∘
@@ -157,7 +137,8 @@ theorem psum_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) {r : ℕ} (hr : 
     psum (Fin N) R r * diagramSchurPoly N R ν =
       ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsRimHook ν,
         (-1) ^ (diagramOf μ).rimHookHeight ν * diagramSchurPoly N R (diagramOf μ) := by
-  -- The identity has integer coefficients, so it suffices to prove it over `ℤ`.
+  -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be
+  -- cancelled in `ℤ[x]`, then map its integer coefficients to the target commutative ring.
   suffices hℤ : psum (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
       ∑ μ : (ν.card + r).Partition with (diagramOf μ).IsRimHook ν,
         (-1) ^ (diagramOf μ).rimHookHeight ν * diagramSchurPoly N ℤ (diagramOf μ) by
