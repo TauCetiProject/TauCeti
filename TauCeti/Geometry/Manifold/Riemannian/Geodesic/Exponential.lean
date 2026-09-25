@@ -47,7 +47,6 @@ a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the
   through the exponential map.
 * `TauCeti.Manifold.mfderiv_riemannianExp_zero`: the differential of the exponential map at `0`
   is the identity.
-* `TauCeti.Manifold.norm_mfderiv_riemannianExp_zero`: in particular it preserves norms.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
   diffeomorphism at `0`.
 * `TauCeti.Manifold.expDomain_eq_univ_iff`: the exponential map at `p` is defined on all of
@@ -312,12 +311,6 @@ itself. -/
     exact congrArg _ hv
   exact hcomp.symm.trans
     ((DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)).trans hv)
-
-/-- At the origin, the differential of `exp_p` preserves the norm of every tangent vector. -/
-@[simp] theorem norm_mfderiv_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M)
-    (v : TangentSpace I p) :
-    ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v‖ = ‖v‖ := by
-  rw [mfderiv_riemannianExp_apply_zero, riemannianExp_zero]
 
 /-- **The differential of the exponential map at the origin is the identity**, under the
 canonical identification `NormedSpace.fromTangentSpace` of the tangent space to `T_p M` at `0`

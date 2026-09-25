@@ -87,8 +87,9 @@ theorem eventually_edist_riemannianExp_smul_le (p : M) (v w : TangentSpace I p) 
   have hgood : ∀ᶠ z in 𝓝 (0 : TangentSpace I p), z ∈ expDomain I M p ∧
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z (w - v)‖ < ‖w - v‖ + η := by
     refine (Filter.eventually_mem_set.2 hdom).and (hcont.eventually (eventually_lt_nhds ?_))
-    simp only [norm_mfderiv_riemannianExp_zero]
-    linarith
+    simp only [mfderiv_riemannianExp_apply_zero]
+    rw [riemannianExp_zero]
+    exact lt_add_of_pos_right (‖w - v‖) hη
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 hgood
   have hsmul : ∀ u : TangentSpace I p, ∀ᶠ t in 𝓝[>] (0 : ℝ), t • u ∈ Metric.ball 0 ρ := by
     intro u
