@@ -18,6 +18,10 @@ underlying rectangle. The new pentagon's bottom row is the recut's first rectang
 This file establishes X-avoidance for that strip in the first recut branch, where the recut's
 first rectangle's bottom row coincides with the original pentagon's bottom row. Both are `x`
 applied to the original rectangle's terminal side.
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 -/
 
 public section

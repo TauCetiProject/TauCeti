@@ -32,6 +32,10 @@ literally the old ones once the rows agree.
 
 * `TauCeti.GridRectanglePentagonDecomposition.pentagon_disjoint_XSet_of_branch1_data`: the
   branch-1 pentagon X-avoidance transfer, from the pentagon's counted membership alone.
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 -/
 
 public section

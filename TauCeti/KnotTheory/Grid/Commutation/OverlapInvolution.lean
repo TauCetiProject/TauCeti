@@ -28,6 +28,10 @@ cases separately.
   the second recut rectangle spans from the original first rectangle's left side to its
   right side with the column-swapped middle state, and the original first's left side lies
   in the original second's open column interval.
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 -/
 
 public section

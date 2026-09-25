@@ -11,15 +11,20 @@ public import TauCeti.KnotTheory.Grid.Commutation.OverlapInvolution
 /-!
 # Turn-row transports for the terminal-side recut
 
-This file discharges the `hturn` hypotheses in
-`OverlapRight.recutRightEqRightFirst`/`recutRightEqRightSecond`: when the rectangle and
-pentagon share their terminal side, the turn row `s` lies in the row span of whichever
-recut rectangle inherits the pentagon's terminal side.
+When the rectangle and pentagon share their terminal side, the turn row `s` lies in the
+row span of whichever recut rectangle inherits the pentagon's terminal side. These
+memberships are the `hturn` side conditions for promoting that recut rectangle to a
+pentagon via `GridPentagonBetween.ofRightEq` in
+`OverlapRight.recutRightEqRightFirst`/`recutRightEqRightSecond`.
 
 The proof mirrors `turn_mem_recut_first_of_left_eq_left` in `Overlap.lean` (the
 common-initial-side case), using `cyclicOrder_of_isEmpty_of_right_eq_right` for the row
 cyclic order and the forced branch data from `OverlapInvolution`
 (`first_terminal_recut_branch_data` / `second_terminal_recut_branch_data`).
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 
 ## Main results
 

@@ -42,6 +42,10 @@ rectangle's and pentagon's X-avoidance over the relevant row intervals.
 
 Each transfer lemma takes only the component membership its proof uses (the rectangle's
 or the pentagon's X-avoidance), not the full counted decomposition.
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 -/
 
 public section
@@ -61,25 +65,23 @@ local notation "b" => finRotate n C.column
 
 /-- Branch-1 recut rectangle X-avoidance transfers to the column-swapped diagram.
 
-When the recut rectangle `R'` has the same covered squares as the original rectangle `R`
-(which is X-avoiding), and the covered-columns iff holds, the transfer lemma gives
-X-avoidance in the swapped diagram. Only the rectangle's X-avoidance is used. -/
+When the recut rectangle `R'`'s covered squares lie inside the original rectangle `R`'s
+covered squares (which are X-avoiding), and the covered-columns iff holds, the transfer
+lemma gives X-avoidance in the swapped diagram. Only the rectangle's X-avoidance is used. -/
 theorem branch1_recut_rectangle_X_avoidance_swap
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (R' : GridRectangle n)
-    (hR'sq : R'.coveredSquares = D.rectangle.toGridRectangle.coveredSquares)
+    (hR'sq : R'.coveredSquares ⊆ D.rectangle.toGridRectangle.coveredSquares)
     (hR'col : R'.coveredColumns = Grid.cIco D.rectangle.left D.rectangle.right) :
     Disjoint R'.coveredSquares (G.swapColumns C.column b).XSet := by
   have hX : Disjoint D.rectangle.toGridRectangle.coveredSquares G.XSet :=
     ((G.mem_unblockedRectangles D.rectangle).mp hrect).2
   have hiff := D.branch1_recut_rectangle_coveredColumns_iff hcommon hone R' hR'col
   have htrans := (G.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns R' hiff).mpr
-  apply htrans
-  rw [hR'sq]
-  exact hX
+  exact htrans (Finset.disjoint_of_subset_left hR'sq hX)
 
 end GridRectanglePentagonDecomposition
 

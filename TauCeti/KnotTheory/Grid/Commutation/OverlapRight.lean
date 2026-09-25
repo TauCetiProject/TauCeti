@@ -35,6 +35,10 @@ The two subcases give different decomposition shapes:
 * `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightSecond`: promote the
   terminal-side recut to a rectangle--pentagon decomposition when the second new rectangle
   carries the original pentagon's terminal side.
+
+Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
+`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
+chain map.
 -/
 
 public section
