@@ -232,9 +232,9 @@ private theorem cutDist_ofMatrix_le_of_eq_min {ρ σ τ : Measure κ} [IsProbabi
 distance** in cut distance: two finite weighted graphs with the same edge weights `b` and arbitrary
 vertex weights `ν`, `ν'` are at cut distance at most `2 ∑ₖ |ν {k} - ν' {k}|`.
 
-Both weightings arise, by moving mass onto one vertex, from the common weighting that keeps
-`min (ν {k}) (ν' {k})` at every other vertex, so this is `cutDist_ofMatrix_le_two_mul_sum_tsub`
-twice and the triangle inequality. -/
+The common weighting keeps `min (ν {k}) (ν' {k})` at every vertex except one, which absorbs the
+remaining mass. Moving either original weighting to this common one applies
+`cutDist_ofMatrix_le_two_mul_sum_tsub`; the triangle inequality completes the bound. -/
 theorem cutDist_ofMatrix_le_two_mul_sum_abs [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
     (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i) :
     cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)

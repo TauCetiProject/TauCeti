@@ -19,10 +19,11 @@ import TauCeti.Probability.Process.EmpiricalMeasure
 /-!
 # Point sampling of a graphon
 
-Draw `n` independent points `y 0, …, y (n - 1)` of the carrier of a graphon `W`. The **`W`-random
-weighted graph** `H(y, W)` has vertex set `Fin n`, all vertices of weight `1 / n`, and edge weights
-`W (y i) (y j)`; as a graphon it is the pullback `W.comap y` of `W` to the uniform carrier on
-`Fin n`. This file proves that it converges to `W` in cut distance in probability:
+Draw `n + 1` independent points `y 0, …, y n` of the carrier of a graphon `W`. The **`W`-random
+weighted graph** `H(y, W)` has vertex set `Fin (n + 1)`, all vertices of weight `1 / (n + 1)`,
+and edge weights `W (y i) (y j)`; as a graphon it is the pullback `W.comap y` of `W` to the
+uniform carrier on `Fin (n + 1)`. This file proves that it converges to `W` in cut distance in
+probability:
 
 `P(ε ≤ δ□(H(y, W), W)) → 0` as `n → ∞`, for every `ε > 0`,
 
@@ -91,22 +92,15 @@ private theorem cutDist_comap_comap_le (U W : Graphon Ω μ) (y : Fin n → Ω) 
   classical
   set K := (U.comap y (measurable_of_finite y) (uniformOn Set.univ)).toSymmKernel -
     (W.comap y (measurable_of_finite y) (uniformOn Set.univ)).toSymmKernel
-  have hK : ∀ a b, K a b = U (y a) (y b) - W (y a) (y b) := fun a b => by simp [K]
-  have hn : (0 : ℝ) < (n : ℝ) ^ 2 := pow_pos (by exact_mod_cast NeZero.pos n) 2
-  refine (cutDist_le_cutNorm_sub _ _).trans (cutNorm_le _ fun S _ T _ => ?_)
-  rw [← Set.coe_toFinset S, ← Set.coe_toFinset T, SymmKernel.rectIntegral_uniformOn_univ,
-    Fintype.card_fin, abs_div, abs_of_pos hn]
-  gcongr
-  calc |∑ a ∈ S.toFinset, ∑ b ∈ T.toFinset, K a b|
-      ≤ ∑ a ∈ S.toFinset, ∑ b ∈ T.toFinset, |K a b| :=
-        (Finset.abs_sum_le_sum_abs _ _).trans
-          (Finset.sum_le_sum fun a _ => Finset.abs_sum_le_sum_abs _ _)
-    _ ≤ ∑ a, ∑ b, |K a b| :=
-        (Finset.sum_le_sum fun a _ => Finset.sum_le_sum_of_subset_of_nonneg
-          (Finset.subset_univ _) fun _ _ _ => abs_nonneg _).trans
-          (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ =>
-            Finset.sum_nonneg fun _ _ => abs_nonneg _)
-    _ = _ := by simp only [hK]
+  let A : SymmKernel (Fin n) (uniformOn Set.univ) :=
+    ⟨fun a b => |K a b|, fun a b => by rw [K.symm],
+      continuous_abs.measurable.comp K.measurable,
+      by obtain ⟨C, hC⟩ := K.exists_bound
+         exact ⟨C, fun a b => by simpa only [abs_abs] using hC a b⟩⟩
+  refine (cutDist_le_cutNorm_sub _ _).trans
+    ((cutNorm_le_integral_abs _ K).trans ?_)
+  have hsum := SymmKernel.rectIntegral_uniformOn_univ A Finset.univ Finset.univ
+  exact le_of_eq (by simpa [SymmKernel.rectIntegral_univ_univ, A, K] using hsum)
 
 /-- **Sampling does not increase the `L¹` distance on average.** The expected `L¹` distance between
 the sampled weighted graphs of `U` and `W` is at most `‖U - W‖₁ + 1 / n`: two distinct sample
@@ -390,9 +384,10 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
   rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
   linarith
 
-/-- **Point sampling converges in cut distance, in probability.** Sample `n` independent points
-`y` of the carrier of a graphon `W`. The weighted graph `H(y, W)` on `Fin n` with uniform vertex
-weights and edge weights `W (y i) (y j)` — the pullback of `W` to the uniform carrier on `Fin n` —
+/-- **Point sampling converges in cut distance, in probability.** Sample `n + 1` independent
+points `y` of the carrier of a graphon `W`. The weighted graph `H(y, W)` on `Fin (n + 1)` with
+uniform vertex weights and edge weights `W (y i) (y j)` — the pullback of `W` to the uniform
+carrier on `Fin (n + 1)` —
 is at cut distance at least `ε` from `W` with probability tending to zero as `n → ∞`, for every
 `ε > 0`. The carrier is an arbitrary probability space. -/
 theorem cutDist_comap_tendsto_inProbability (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
