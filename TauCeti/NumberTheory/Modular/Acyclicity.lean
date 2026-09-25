@@ -90,8 +90,9 @@ private lemma eq_zero_of_coeff_eq_add {k X : Type*} [Ring k] [MulAction PSL(2, �
 permutation module `k[X]` the kernels of `1 + S` and `1 + U + U²`, with `U = T * S`, are
 disjoint: their intersection is `0`.
 
-Freeness is needed: on `k[ℙ¹(ℚ)]`, where `T` fixes `∞`, the element `[0] - [∞]` lies in both
-kernels, since `S` swaps `0` and `∞` while `U` permutes `0`, `∞`, `1` cyclically. -/
+Freeness is needed: for a nontrivial ring `k`, on `k[ℙ¹(ℚ)]`, where `T` fixes `∞`, the nonzero
+element `[0] - [∞]` lies in both kernels, since `S` swaps `0` and `∞` while `U` permutes `0`,
+`∞`, `1` cyclically. -/
 theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
     [MulAction PSL(2, ℤ) X] [IsCancelSMul PSL(2, ℤ) X] :
     Disjoint (LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ) X (S : PSL(2, ℤ))))
@@ -105,7 +106,8 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
   simp only [LinearMap.add_apply, Module.End.one_apply, coeff_add, Finsupp.coe_add, Pi.add_apply,
     Representation.coeff_ofMulAction, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, ← map_pow,
     coe_S_inv, coe_T_mul_coe_S_inv, coe_T_mul_coe_S_sq_inv] at e₁ e₂
-  rw [smul_smul, smul_smul, mul_coe_S_mul_coe_S, coe_T_mul_coe_S_sq_mul_coe_S] at e₂
+  rw [smul_smul, smul_smul, Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S,
+    coe_T_mul_coe_S_sq_mul_coe_S] at e₂
   rw [eq_neg_of_add_eq_zero_left e₁, add_comm (ξ.coeff _)]
   exact neg_eq_of_add_eq_zero_right ((add_assoc _ _ _).symm.trans e₂)
 
