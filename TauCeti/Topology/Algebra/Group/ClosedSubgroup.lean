@@ -90,6 +90,27 @@ theorem _root_.ContinuousMulEquiv.closedSubgroupOrderIso_symm_apply_toSubgroup
       L.toSubgroup.map e.symm.toMulEquiv.toMonoidHom :=
   (rfl)
 
+/-- An element lies in a transported closed subgroup exactly when its inverse image lies in the
+original one. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.mem_closedSubgroupOrderIso (e : G ≃ₜ* H)
+    (K : ClosedSubgroup G) {h : H} : h ∈ e.closedSubgroupOrderIso K ↔ e.symm h ∈ K :=
+  Subgroup.mem_map_equiv
+
+/-- An element lies in an inversely transported closed subgroup exactly when its image lies in the
+original one. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.mem_closedSubgroupOrderIso_symm (e : G ≃ₜ* H)
+    (L : ClosedSubgroup H) {g : G} : g ∈ e.closedSubgroupOrderIso.symm L ↔ e g ∈ L :=
+  Subgroup.mem_map_equiv
+
+/-- The image of an element lies in a transported closed subgroup exactly when the element lies in
+the original one.  This is not marked `@[simp]`: `simp` already reaches `g ∈ K` through
+`ContinuousMulEquiv.mem_closedSubgroupOrderIso` and `ContinuousMulEquiv.symm_apply_apply`. -/
+theorem _root_.ContinuousMulEquiv.apply_mem_closedSubgroupOrderIso (e : G ≃ₜ* H)
+    (K : ClosedSubgroup G) {g : G} : e g ∈ e.closedSubgroupOrderIso K ↔ g ∈ K := by
+  rw [e.mem_closedSubgroupOrderIso, e.symm_apply_apply]
+
 /-- Normality is preserved when a closed subgroup is transported along a topological group
 isomorphism. -/
 instance _root_.ContinuousMulEquiv.instNormalClosedSubgroupOrderIso
@@ -120,7 +141,8 @@ theorem _root_.ContinuousMulEquiv.quotient_mk (e : G ≃ₜ* H) (N : ClosedSubgr
     [N.toSubgroup.Normal] (g : G) :
     e.quotient N (g : G ⧸ N.toSubgroup) =
       (e g : H ⧸ (e.closedSubgroupOrderIso N).toSubgroup) :=
-  (rfl)
+  QuotientGroup.congr_mk N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup e.toMulEquiv
+    (e.closedSubgroupOrderIso_apply_toSubgroup N).symm g
 
 /-- The inverse quotient isomorphism sends the class of an element to the class of its inverse
 image. -/
@@ -129,7 +151,8 @@ theorem _root_.ContinuousMulEquiv.quotient_symm_mk (e : G ≃ₜ* H) (N : Closed
     [N.toSubgroup.Normal] (h : H) :
     (e.quotient N).symm (h : H ⧸ (e.closedSubgroupOrderIso N).toSubgroup) =
       (e.symm h : G ⧸ N.toSubgroup) :=
-  (rfl)
+  (e.quotient N).symm_apply_eq.mpr <| by
+    rw [e.quotient_mk, ContinuousMulEquiv.apply_symm_apply]
 
 end Transport
 
