@@ -814,8 +814,9 @@ variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
   [AddCommMonoid B] [Module k B] (F : Quiver.TotalPath Q → B)
 
 /-- The `k`-linear map extending an assignment of module elements to the basis paths. Its
-algebra-homomorphism upgrade, available when the assignment is multiplicative, is
-`TauCeti.PathAlgebra.liftAlgHom`. -/
+algebra-homomorphism upgrade `TauCeti.PathAlgebra.liftAlgHom` is available when the assignment
+takes values in a `k`-algebra, concatenates composable paths, annihilates products of paths that
+do not meet, and sends the trivial paths to a decomposition of the unit. -/
 noncomputable def liftLinear : pathAlgebra k Q →ₗ[k] B :=
   (pathAlgebraBasis k Q).constr ℕ F
 
@@ -837,10 +838,15 @@ section LiftLinearOne
 
 variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
   [AddCommMonoidWithOne B] [Module k B] (F : Quiver.TotalPath Q → B) [Finite Q]
-  (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
+
+-- The enumeration is the one the unit is built from, `Fintype.ofFinite Q`; a caller holding the
+-- sum over some other `Fintype Q` transports it along `Subsingleton.elim`, as `one_def` does.
+variable (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
 
 include hone in
-private theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
+/-- The linear extension of an assignment sending the trivial paths to a decomposition of `1`
+preserves the unit. -/
+theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
   let _ := Fintype.ofFinite Q
   rw [one_def, map_sum]
   simp only [vertexIdempotent_eq_single, liftLinear_single, one_smul]
@@ -877,11 +883,8 @@ private theorem liftLinear_mul (f g : pathAlgebra k Q) :
       · rw [single_mul_single_of_not_composable hy, map_zero, liftLinear_single, liftLinear_single,
           smul_mul_smul_comm, hzero hy, smul_zero]
 
--- The enumeration is the one the unit is built from, `Fintype.ofFinite Q`; a caller holding the
--- sum over some other `Fintype Q` transports it along `Subsingleton.elim`, as `one_def` does.
 variable [Finite Q]
   (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
-
 
 include hcomp hzero hone in
 /-- **The universal property of the path algebra**: an assignment `F` of elements of a `k`-algebra
