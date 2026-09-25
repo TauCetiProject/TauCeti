@@ -249,8 +249,11 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-/-- `G` acts continuously on the ambient trivial coefficients. -/
-local instance continuousSMul_trivialF2 : ContinuousSMul G (trivialF2 G).V :=
+/-- `G` acts continuously on the ambient trivial coefficients. The name is given explicitly:
+the sibling `Evens` files carry the same local instance, so an anonymous one here would be
+auto-assigned the name `Evens.Restriction` already owns, and the plain name is taken by
+`Evens.Corestriction`. -/
+local instance continuousSMul_trivialF2_ambient : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 /-- The quotient graph cocycle with its values transported to the fixed-point coefficient object
