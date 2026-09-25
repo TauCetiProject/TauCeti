@@ -5,43 +5,53 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Solvable
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Commutator
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Trigonalizable
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.RepresentationTheory.Unipotent.DerivedEigenvector
+import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
+import TauCeti.Algebra.AlgebraicGroup.Derived.Connected
+import TauCeti.Algebra.AlgebraicGroup.Derived.PointClosure
+import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
-# Lie--Kolchin reduction to the derived subgroup
+# The Lie--Kolchin theorem
 
 Let `H` be the coordinate Hopf algebra of a reduced affine group of finite type over an
-algebraically closed field. This file proves the representation-theoretic reduction at the heart
-of Lie--Kolchin: if the derived closed subgroup has only unipotent points, then every nonzero
-finite-dimensional `H`-comodule has a weight vector, and every finite-dimensional comodule is
-upper triangularizable.
+algebraically closed field. This file proves the Lie--Kolchin theorem: if `H` has connected
+spectrum and its group of rational points is solvable, then every nonzero finite-dimensional
+`H`-comodule has a weight vector, and every finite-dimensional comodule is upper
+triangularizable with characters on the diagonal.
 
-The abstract argument applies to a representation `ρ` and a normal subgroup `N` containing the
-commutator subgroup. Kolchin gives a nonzero vector fixed by `N`. The whole group preserves the
-space of `N`-fixed vectors, and its action there factors through the commutative quotient `G/N`.
+The file first proves the representation-theoretic reduction to the derived subgroup: if the
+derived closed subgroup has only unipotent points, the same conclusions hold. The abstract
+argument applies to a representation `ρ` and a normal subgroup `N` containing the commutator
+subgroup. Kolchin gives a nonzero vector fixed by `N`. The whole group preserves the space of
+`N`-fixed vectors, and its action there factors through the commutative quotient `G/N`.
 Simultaneous triangularization of commuting operators then gives a common eigenvector. For an
 affine group, take `N` to be the points of the scheme-theoretic derived subgroup. Point
 separation promotes the resulting point-stable eigenline to a one-dimensional subcomodule.
 
-The remaining geometric step in the general Lie--Kolchin theorem is to prove that the derived
-subgroup of a connected solvable affine group is unipotent.
-
 For a connected group, a nonzero joint weight of the abstract commutator subgroup also
 supplies an ambient weight vector: the joint weight is trivial, so the action on its weight
-space factors through a commutative quotient.
+space factors through a commutative quotient. The Lie--Kolchin theorem follows by induction on
+the derived length of the group of rational points. The derived closed subgroup of a reduced
+connected group is again reduced and connected, and its rational points have strictly smaller
+derived length (`TauCeti.CommHopfAlgCat.derivedSeries_points_derived_eq_bot`). A weight vector
+for the derived subgroup, supplied by induction, is a joint eigenvector of the abstract
+commutator subgroup, and hence yields an ambient weight vector.
 
 ## Main declarations
 
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_nonzeroJointWeight_commutator`: a commutator
   joint weight supplies an ambient weight vector for a connected group.
-
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_forall_isUnipotentPoint_derived`: unipotence of the
   derived subgroup supplies a weight vector in every nonzero finite-dimensional comodule.
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_geometricallyUnipotent_derived`: the same conclusion
@@ -50,6 +60,13 @@ space factors through a commutative quotient.
   the resulting Lie--Kolchin upper-triangular basis.
 * `exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallyUnipotent_derived`:
   the geometric-unipotence formulation of that basis theorem.
+* `TauCeti.Comodule.hasNonzeroWeightVector_of_isSolvable`: every nonzero finite-dimensional
+  representation of a connected solvable group has a weight vector.
+* `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable`: **the
+  Lie--Kolchin theorem**, every finite-dimensional representation of a connected solvable group
+  is upper triangularizable.
+* `exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable`: the same theorem
+  stated with the geometric connectedness and solvability object properties.
 
 The corresponding declarations taking `I` and `hID` apply to any closed subgroup containing the
 derived subgroup.
@@ -310,6 +327,110 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallyUnipote
         ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) :=
   exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallyUnipotent_of_le_derived
     (CommHopfAlgCat.derivedDefiningIdeal H) le_rfl hderived
+
+/-- The induction behind Lie--Kolchin: if the rational points of a reduced connected affine group
+have derived length at most `n`, every nonzero finite-dimensional representation has a weight
+vector.
+
+For `n + 1`, the derived subgroup is again reduced and connected, and its rational points have
+derived length at most `n`. A weight vector for it is a joint eigenvector of the abstract
+commutator subgroup, which then supplies an ambient weight vector. -/
+private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
+    ∀ (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H] [IsReduced H]
+      [ConnectedSpace (PrimeSpectrum H)],
+      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ →
+      ∀ (M : Type w) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
+        [Nontrivial M], HasNonzeroWeightVector k H M := by
+  induction n with
+  | zero =>
+    intro H _ _ _ _ _ hn M _ _ _ _ _
+    rw [derivedSeries_zero] at hn
+    have hone (g : WithConv (H →ₐ[k] k)) : g = 1 := Subgroup.mem_bot.mp (hn ▸ Subgroup.mem_top g)
+    apply hasNonzeroWeightVector_of_pairwise_commute
+    intro g h _
+    rw [hone g, map_one]
+    exact Commute.one_left _
+  | succ n ih =>
+    intro H _ _ _ _ _ hn M _ _ _ _ _
+    let A := _root_.CommHopfAlgCat.of k H
+    let I := CommHopfAlgCat.derivedDefiningIdeal (R := k) H
+    let D := CommHopfAlgCat.quotient A I
+    let q : H →ₐc[k] D := (CommHopfAlgCat.mkQuotient A I).hom
+    let _ : IsReduced D := CommHopfAlgCat.isReduced_quotient_derivedDefiningIdeal A
+    let _ : ConnectedSpace (PrimeSpectrum D) := CommHopfAlgCat.connectedSpace_derived H
+    let _ : Comodule k D M := Corestrict q.toCoalgHom
+    obtain ⟨v, c, hv, -, hvc⟩ := (hasNonzeroWeightVector_iff (k := k) (C := D)).mp
+      (ih D (CommHopfAlgCat.derivedSeries_points_derived_eq_bot hn) M)
+    obtain ⟨c, rfl⟩ := CommHopfAlgCat.mkQuotient_surjective A I c
+    let ρ := basePointsRepresentation (R := k) (H := H) M
+    let N := commutator (WithConv (H →ₐ[k] k))
+    -- Every commutator is a point of the derived subgroup, which scales `v` by its value at `c`.
+    have hmem (x : N) : v ∈ (ρ x).eigenspace (x.val.ofConv c) := by
+      obtain ⟨g, hg⟩ :=
+        CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
+          A I le_rfl (CommAlgCat.of k k) x.2
+      have hinclude : CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of k k) g =
+          AlgHom.mapDomain q g := by
+        rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
+      rw [Module.End.mem_eigenspace_iff, ← hg, CommHopfAlgCat.quotientPointsHom_apply_apply]
+      simp only [ρ, hinclude, ← basePointsRepresentation_corestrict, basePointsRepresentation_apply,
+        endOfPoint_tmul, hvc]
+      simp
+    let χ := unitHomOfJointEigenvector (ρ.comp N.subtype) (fun x ↦ x.val.ofConv c) v hv hmem
+    have hχ : v ∈ ⨅ x : N, (ρ x).eigenspace (χ x) :=
+      (Submodule.mem_iInf _).mpr fun x ↦ by
+        have hχx : (χ x : k) = x.val.ofConv c := unitHomOfJointEigenvector_apply _ _ _ _ _ x
+        rw [hχx]
+        exact hmem x
+    exact hasNonzeroWeightVector_of_nonzeroJointWeight_commutator
+      ⟨χ, (Submodule.ne_bot_iff _).mpr ⟨v, hχ, hv⟩⟩
+
+/-- **Lie--Kolchin, weight-vector form.** If the rational points of a reduced connected affine
+group of finite type over an algebraically closed field form a solvable group, every nonzero
+finite-dimensional representation has a nonzero weight vector: a line on which the group acts
+through a character. -/
+theorem hasNonzeroWeightVector_of_isSolvable
+    [FiniteDimensional k M] [Nontrivial M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
+    HasNonzeroWeightVector k H M := by
+  obtain ⟨n, hn⟩ := Group.IsSolvable.solvable (G := WithConv (H →ₐ[k] k))
+  exact hasNonzeroWeightVector_of_derivedSeries_eq_bot n H hn M
+
+/-- **The Lie--Kolchin theorem.** If the rational points of a reduced connected affine group of
+finite type over an algebraically closed field form a solvable group, every finite-dimensional
+representation admits a basis in which its coefficient matrix is upper triangular, with
+characters on the diagonal. -/
+theorem exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
+    ∃ (n : ℕ) (b : Module.Basis (Fin n) k M),
+      (coefficientMatrix (C := H) b).IsUpperTriangular ∧
+        ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) :=
+  exists_basis_coefficientMatrix_isUpperTriangular_of_weight_vectors
+    fun _ _ _ _ _ _ ↦ hasNonzeroWeightVector_of_isSolvable
+
+/-- **The Lie--Kolchin theorem for the geometric object properties.** Over an algebraically
+closed field, every finite-dimensional representation of a reduced, geometrically connected,
+geometrically solvable affine group of finite type admits a basis in which its coefficient
+matrix is upper triangular, with characters on the diagonal.
+
+These are the connectedness and solvability conditions in the definition of a Borel
+candidate. -/
+theorem exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable
+    [FiniteDimensional k M]
+    (hconn : geometricallyConnectedCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H))
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H)) :
+    ∃ (n : ℕ) (b : Module.Basis (Fin n) k M),
+      (coefficientMatrix (C := H) b).IsUpperTriangular ∧
+        ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) := by
+  let _ : ConnectedSpace (PrimeSpectrum H) :=
+    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mp hconn
+  let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) :=
+    (geometricallySolvablePointsCommHopfAlgProperty_iff k _).mp hsolv
+  let φ : k →ₐ[k] AlgebraicClosure k := Algebra.ofId k (AlgebraicClosure k)
+  let _ : Group.IsSolvable (WithConv (H →ₐ[k] k)) :=
+    Group.isSolvable_of_isSolvable_injective (AlgHom.mapValue_injective φ.injective)
+  exact exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
 
 end Comodule
 

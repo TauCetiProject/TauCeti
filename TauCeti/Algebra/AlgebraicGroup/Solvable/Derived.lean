@@ -39,8 +39,7 @@ pointwise commutator subgroup and the points of the derived group is needed.
 
 This advances Layer 5, "Lie--Kolchin; solvable groups", of the ReductiveGroups roadmap. It is the
 derived-subgroup recursion bridge connecting the existing scheme-theoretic derived subgroup to the
-existing geometric-points solvability predicate. The strict-dimension step and the representation
-induction remain separate.
+existing geometric-points solvability predicate.
 -/
 
 public section
