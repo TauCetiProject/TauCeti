@@ -35,6 +35,8 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
   components and both filtrations.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_comp_weilOperator`: `C ∘ C = (-1)^n`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperatorEquiv`: `C` bundled as a linear automorphism.
+* `TauCeti.Hodge.HodgeStructureOn.weilOperator_comap`: `C` is compatible with transport of Hodge
+  structures along equivalences.
 * `TauCeti.Hodge.HodgeStructureOn.conj_weilOperator`: `C` commutes with the conjugation.
 * `TauCeti.Hodge.HodgeStructureOn.realAlmostComplexStructure`: in odd weight, `C` restricted to the
   real form as an almost complex structure, together with its scalar-extension comparison.
@@ -196,6 +198,19 @@ theorem weilOperatorEquiv_symm_apply (hs : HodgeStructureOn W ω n) (x : W) :
 theorem weilOperator_bijective (hs : HodgeStructureOn W ω n) :
     Function.Bijective hs.weilOperator :=
   hs.weilOperatorEquiv.bijective
+
+/-- The Weil operator of a Hodge structure transported along an equivalence intertwining the
+conjugations is the transported Weil operator. -/
+theorem weilOperator_comap {W' : Type*} [AddCommGroup W'] [Module ℂ W'] {ω' : Conjugation W'}
+    (e : W ≃ₗ[ℂ] W') (he : ∀ x, e (ω.toEquiv x) = ω'.toEquiv (e x))
+    (hs : HodgeStructureOn W' ω' n) :
+    (hs.comap e he).weilOperator =
+      e.symm.toLinearMap ∘ₗ hs.weilOperator ∘ₗ e.toLinearMap := by
+  symm
+  refine (hs.comap e he).weilOperator_unique _ fun p x hx ↦ ?_
+  rw [comap_piece, Submodule.mem_comap, LinearEquiv.coe_coe] at hx
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    hs.weilOperator_apply_of_mem hx, map_smul, LinearEquiv.symm_apply_apply]
 
 /-- In weight one the Weil operator acts on `H^{1,0}` by `i`. Together with the next lemma this
 identifies it with the complex structure of an effective weight-one Hodge structure. -/
