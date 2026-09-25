@@ -32,7 +32,7 @@ theorem isCocomm_of_surjective (f : A →ₗc[R] B) (hf : Function.Surjective f)
   constructor
   ext b
   obtain ⟨a, rfl⟩ := hf b
-  simpa only [CoalgHom.toLinearMap_eq_coe, CoalgHomClass.map_comp_comul_apply,
+  simpa only [CoalgHom.toLinearMap_eq_ofClass, CoalgHomClass.map_comp_comul_apply,
     Coalgebra.comm_comul, LinearMap.comp_apply, LinearEquiv.coe_coe] using
     (TensorProduct.map_comm f.toLinearMap f.toLinearMap (Coalgebra.comul a)).symm
 
