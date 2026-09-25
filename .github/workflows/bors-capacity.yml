@@ -1,0 +1,48 @@
+name: Bors capacity
+
+on:
+  schedule:
+    - cron: "13 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the simulator invariants
+        run: python3 scripts/test_bors_capacity.py
+      - name: Collect the rolling week
+        run: python3 scripts/collect_bors_observations.py > observations.json
+      - name: Model current and 10x rates
+        run: |
+          python3 scripts/bors_capacity.py --observations observations.json \
+            --rate-scales 1,10 --failure-rates 0.001,0.003,0.01 \
+            --caps 8,16,32,64,128,256 > results.jsonl
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          print('| Rate | Per-PR integration failure | Lowest-cost feasible cap |')
+          print('| ---: | ---: | ---: |')
+          for line in open('results.jsonl'):
+              row = json.loads(line)
+              cap = row['recommended_cap']
+              print(f"| {row['scale']:g}× | {row['failure_rate']:.1%} | {cap if cap else 'none'} |")
+          print('\nThe failure rate is a scenario until enough real bors batches have run. '
+                'A missing feasible cap means a single serial CI lane cannot keep up in this model.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bors-capacity-${{ github.run_id }}
+          path: |
+            observations.json
+            results.jsonl
+          retention-days: 30

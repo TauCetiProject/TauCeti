@@ -30,6 +30,10 @@ on:
   # TauCeti/ gets a red scope status; the trusted build harness remains independent of that diff.
   merge_group:
     types: [checks_requested]
+  # Bors dispatches the exact staging SHA. repository_dispatch uses this trusted
+  # default-branch workflow definition, not a candidate's .github/ files.
+  repository_dispatch:
+    types: [tauceti-bors-staging]
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }
@@ -39,10 +43,11 @@ permissions:
   statuses: write
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
+  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha || github.event.client_payload.head_sha }}
   cancel-in-progress: true
 
 env:
+  IS_BATCH: ${{ github.event_name == 'merge_group' || github.event_name == 'repository_dispatch' }}
   # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
@@ -102,7 +107,10 @@ jobs:
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
       - name: Resolve PR head
         id: pr
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
+          BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             # Build the COMBINED merge-group commit (current base + ALL batched PRs, squash-merged by
@@ -119,6 +127,24 @@ jobs:
             STATUS_SHA='${{ github.event.merge_group.head_sha }}'
             NUM="merge-group"   # not a single PR; scope/diff use the combined base..head diff below
             AUTHOR=""           # author was checked before enqueue; strict config validation repeats below
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            REPO='${{ github.repository }}'
+            SHA="$BORS_HEAD_SHA"
+            BASE_REF="$BORS_BASE_SHA"
+            STATUS_SHA="$SHA"
+            NUM="bors-batch"
+            AUTHOR=""
+            [[ "$SHA" =~ ^[0-9a-f]{40}$ && "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "::error::bors dispatch did not contain two commit SHAs"; exit 1;
+            }
+            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/staging" --jq .object.sha)
+            [ "$STAGING_SHA" = "$SHA" ] || {
+              echo "::error::bors staging moved since this dispatch"; exit 1;
+            }
+            relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
+            [ "$relation" = ahead ] || {
+              echo "::error::bors base is not an ancestor of its staging commit"; exit 1;
+            }
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
@@ -138,7 +164,7 @@ jobs:
           # the merge-base attestation, and the scope compare -- then refers to the same base,
           # instead of each step separately racing a branch that moves every few minutes. For
           # merge_group BASE_REF is already the immutable base_sha the queue synthesized on.
-          if [ "${{ github.event_name }}" != "merge_group" ]; then
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
             BASE_SHA=$(gh api "repos/${{ github.repository }}/commits/$BASE_REF" --jq .sha 2>/dev/null) || BASE_SHA=""
             if [ -z "$BASE_SHA" ]; then
               echo "INFRA=1" >> "$GITHUB_ENV"
@@ -185,7 +211,7 @@ jobs:
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           PR_USER: ${{ github.event.pull_request.user.login }}
         run: |
-          if [ "${{ github.event_name }}" = "merge_group" ]; then
+          if [ "${{ env.IS_BATCH }}" = "true" ]; then
             # The whole batch's combined change set vs the trusted base (every batched PR).
             files=$(gh api "repos/${{ github.repository }}/compare/${{ steps.pr.outputs.base_ref }}...${{ steps.pr.outputs.sha }}" --jq '.files[].filename')
             # The compare endpoint caps `.files` at 300. If we hit that, the list may be truncated and
@@ -260,7 +286,7 @@ jobs:
           # A merge group's head descends from its base_sha, so the fallback below is exact
           # there. For an ordinary pull request it is a guess, and the pin question cannot be
           # answered against a guess.
-          if [ "${{ github.event_name }}" != "merge_group" ] && [ "${{ env.MERGEBASE_EXACT }}" != "1" ]; then
+          if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${{ env.MERGEBASE_EXACT }}" != "1" ]; then
             pins_known=0
             echo "::warning::merge base unresolved — pin state unknown"
           else
@@ -321,7 +347,7 @@ jobs:
         # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
         # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
         # size here. (The scope guard's 300-file compare cap still bounds the batch's file count.)
-        if: ${{ github.event_name != 'merge_group' }}
+        if: ${{ env.IS_BATCH != 'true' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           # The file-count cap also backstops the scope guard above: the PR files API lists at
@@ -350,7 +376,7 @@ jobs:
         # PR-only, like the diff-size guard: new files enter the library through a PR, and a
         # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
         # diff lists every line as an addition, so `.additions` is its line count.
-        if: ${{ github.event_name != 'merge_group' }}
+        if: ${{ env.IS_BATCH != 'true' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           long=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
@@ -817,7 +843,7 @@ jobs:
           fi
           # A merge-group head is the exact commit GitHub will land. Stage its outputs after every
           # sandboxed audit so the required build can wait for publication.
-          if [ "${{ github.event_name }}" = "merge_group" ] \
+          if [ "${{ env.IS_BATCH }}" = "true" ] \
              && [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
             echo "STAGE_LAKE_CACHE=1" >> "$GITHUB_ENV"
             echo "::notice::merge-group outputs will be staged for pre-landing publication"
@@ -904,7 +930,7 @@ jobs:
           NUM: ${{ steps.pr.outputs.num }}
           # The immutable commits being built: the merge group's base, or the PR's base commit
           # (a three-dot compare diffs from the merge base), and the exact head.
-          BASE: ${{ github.event_name == 'merge_group' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
+          BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
           HEAD: ${{ steps.pr.outputs.sha }}
           HEAD_REPO: ${{ steps.pr.outputs.repo }}
         run: |
@@ -970,7 +996,7 @@ jobs:
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
-        if: ${{ github.event_name == 'merge_group' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
+        if: ${{ env.IS_BATCH == 'true' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
         run: |
           set -euo pipefail
           test -s pr/.lake/cache-staging/outputs.jsonl
@@ -1037,7 +1063,7 @@ jobs:
           # it was about -- the same SHA can become the head again, two pull requests can share
           # a head, and retargeting does not change the head at all.
           head_moved=0
-          if [ "${{ github.event_name }}" != "merge_group" ]; then
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
             now=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
                     --jq '[.head.sha, .base.ref] | join(" ")' 2>/dev/null) || now=""
             if [ "$now" != "${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}" ]; then
@@ -1127,7 +1153,7 @@ jobs:
           {
             echo "build-state=$state"
             echo "build-description=$desc"
-            if [ "${{ github.event_name }}" = "merge_group" ] && [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
+            if [ "${{ env.IS_BATCH }}" = "true" ] && [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
               echo 'publication-required=true'
             else
               echo 'publication-required=false'
@@ -1135,7 +1161,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           # PR heads are reported immediately. A merge-group head is reported by the finalizer
           # job below, after its exact revision map has reached the public cache endpoint.
-          if [ "${{ github.event_name }}" != "merge_group" ]; then
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
             post_status build "$state" "$desc"
           fi
 
@@ -1194,13 +1220,13 @@ jobs:
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
   finalize-merge-group-build:
     needs: [sandboxed-build, publish-merge-group-cache]
-    if: ${{ always() && github.event_name == 'merge_group' }}
+    if: ${{ always() && (github.event_name == 'merge_group' || github.event_name == 'repository_dispatch') }}
     runs-on: ubuntu-latest
     permissions:
       statuses: write
     env:
       GH_TOKEN: ${{ github.token }}
-      STATUS_SHA: ${{ needs.sandboxed-build.outputs.status-sha }}
+      STATUS_SHA: ${{ needs.sandboxed-build.outputs.status-sha || github.event.client_payload.head_sha || github.event.merge_group.head_sha }}
       BUILD_JOB_RESULT: ${{ needs.sandboxed-build.result }}
       BUILD_STATE: ${{ needs.sandboxed-build.outputs.build-state }}
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
@@ -1211,6 +1237,10 @@ jobs:
       - name: Post the terminal merge-group build status
         run: |
           set -uo pipefail
+          [[ "$STATUS_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::cannot post a batch status without a commit SHA"
+            exit 1
+          }
           if [ "$BUILD_JOB_RESULT" != "success" ] || [ "$BUILD_STATE" != "success" ]; then
             state=failure
             description="${BUILD_DESCRIPTION:-sandboxed merge-group build did not complete}"
