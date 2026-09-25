@@ -184,6 +184,7 @@ theorem weaklyAdmissible_circleTimesSphere_zero : (circleTimesSphere 0).WeaklyAd
 
 /-- The genus-one diagram of `S¹ × S²` is weakly admissible exactly when its basepoint
 lies in the annulus. -/
+@[simp]
 theorem weaklyAdmissible_circleTimesSphere_iff (r : Fin 3) :
     (circleTimesSphere r).WeaklyAdmissible ↔ r = 0 := by
   constructor
@@ -209,7 +210,7 @@ theorem weaklyAdmissible_circleTimesSphere_iff (r : Fin 3) :
 /-- With the basepoint in a bigon, the genus-one diagram of `S¹ × S²` is not weakly admissible:
 the periodic domain `A + 2 B₂` has no negative coefficient. -/
 theorem not_weaklyAdmissible_circleTimesSphere_one : ¬ (circleTimesSphere 1).WeaklyAdmissible := by
-  simpa using (weaklyAdmissible_circleTimesSphere_iff 1).not
+  simp
 
 end HeegaardRegionSystem
 

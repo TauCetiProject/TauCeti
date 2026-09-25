@@ -279,6 +279,7 @@ def IsDomainBetween (x y : H.Generator) (D : Region → ℤ) : Prop :=
   H.alphaArcBoundary (H.alphaBoundary D) = H.generatorChain y - H.generatorChain x ∧
     H.betaArcBoundary (H.betaBoundary D) = H.generatorChain x - H.generatorChain y
 
+@[simp]
 theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
     H.IsDomainBetween x y D ↔
       H.alphaArcBoundary (H.alphaBoundary D) = H.generatorChain y - H.generatorChain x ∧
@@ -287,7 +288,7 @@ theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
 
 /-- The zero domain connects every generator to itself. -/
 theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
-  simp [isDomainBetween_iff]
+  simp
 
 namespace IsDomainBetween
 
@@ -316,6 +317,7 @@ def periodicDomains : AddSubgroup (Region → ℤ) where
   zero_mem' := by simp
   neg_mem' {P} hP := ⟨fun z => by simp [hP.1 z], by simp [hP.2.1], by simp [hP.2.2]⟩
 
+@[simp]
 theorem mem_periodicDomains_iff {P : Region → ℤ} :
     P ∈ H.periodicDomains ↔ (∀ z, P (H.basepoint z) = 0) ∧
       H.alphaArcBoundary (H.alphaBoundary P) = 0 ∧ H.betaArcBoundary (H.betaBoundary P) = 0 :=
@@ -327,13 +329,13 @@ theorem mem_periodicDomains_iff_exists_curves {P : Region → ℤ} :
     P ∈ H.periodicDomains ↔ (∀ z, P (H.basepoint z) = 0) ∧
       (∃ a : Fin n → ℤ, ∀ p, P (H.alphaLeft p) - P (H.alphaRight p) = a (H.alpha p)) ∧
         ∃ b : Fin n → ℤ, ∀ p, P (H.betaLeft p) - P (H.betaRight p) = b (H.beta p) := by
-  simp [mem_periodicDomains_iff, alphaArcBoundary_eq_zero_iff, betaArcBoundary_eq_zero_iff]
+  simp [alphaArcBoundary_eq_zero_iff, betaArcBoundary_eq_zero_iff]
 
 /-- A domain connects every generator to itself and avoids the basepoints exactly when it is
 periodic. -/
 theorem isDomainBetween_self_iff {x : H.Generator} {P : Region → ℤ} :
     H.IsDomainBetween x x P ∧ (∀ z, P (H.basepoint z) = 0) ↔ P ∈ H.periodicDomains := by
-  simp [isDomainBetween_iff, mem_periodicDomains_iff, and_comm, and_assoc]
+  simp [and_comm, and_assoc]
 
 /-- Given a domain `D` connecting `x` to `y`, another domain `D'` connects `x` to `y` with the
 same basepoint multiplicities as `D` exactly when `D' - D` is periodic. So the domains connecting
