@@ -463,7 +463,8 @@ theorem TraceFormulaMatrixModule.op_smul_eq_rightPSL_inv (g : PSL(2, ℤ))
 @[simp]
 theorem TraceFormulaMatrixModule.op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     TraceFormulaMatrixModule.mk A <• (g : PSL(2, ℤ)) =
-      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := (rfl)
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := by
+  rw [op_smul_eq_rightPSL_inv, ← QuotientGroup.mk_inv, rightPSL_coe, right_mk]
 
 /-- Right multiplication by the inverse of a projective class is computed on any representatives:
 the class of `A` times the inverse of the class of `g` is the class of `A * g⁻¹`. This is the form

@@ -5,19 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
-# The group ring of the determinant-`n` matrix module
+# The permutation module of the determinant-`n` matrix module
 
-Popa and Zagier carry out their proof of the Eichler–Selberg trace formula in the group ring
-`ℛₙ = ℚ[ℳₙ]` of the projective determinant-`n` matrix module `ℳₙ`, which is
-`TauCeti.TraceFormulaMatrixModule n`. No new type is introduced for it: `ℛₙ` is Mathlib's
-`MonoidAlgebra ℚ (TraceFormulaMatrixModule n)`, the free `ℚ`-module on `ℳₙ`, which is the space
-of every permutation representation `Representation.ofMulAction ℚ G ℳₙ`. The three actions of
-`PSL(2, ℤ)` on `ℳₙ` give three such representations on `ℛₙ`:
+Popa and Zagier carry out their proof of the Eichler–Selberg trace formula in `ℛₙ = ℚ[ℳₙ]`, the
+free `ℚ`-module on the projective determinant-`n` matrix module `ℳₙ`, which is
+`TauCeti.TraceFormulaMatrixModule n`. (The roadmap calls `ℛₙ` a group ring, but for `n ≠ 1` the
+set `ℳₙ` is not a group: a product of two determinant-`n` matrices has determinant `n²`. What
+`ℛₙ` carries is an action of the group ring `ℚ[PSL(2, ℤ)]` on each side.) No new type is
+introduced for it: `ℛₙ` is Mathlib's `MonoidAlgebra ℚ (TraceFormulaMatrixModule n)`, which is
+the space of every permutation representation `Representation.ofMulAction ℚ G ℳₙ`. The three
+actions of `PSL(2, ℤ)` on `ℳₙ` give three such representations on `ℛₙ`:
 
 * the left action `Representation.ofMulAction ℚ PSL(2, ℤ) ℳₙ`, with `ρ g [M] = [g M]`;
 * the right action `Representation.ofMulAction ℚ PSL(2, ℤ)ᵐᵒᵖ ℳₙ`, with
@@ -35,8 +36,8 @@ This file records how they fit together, over an arbitrary coefficient semiring 
 * `TauCeti.TraceFormulaMatrixModule.ofMulAction_toConjAct`: the conjugation representation of `g`
   is the left representation of `g` after the right representation of `g⁻¹`.
 
-The left and right representations commute, so `ℛₙ` is a bimodule. This is the general
-`Representation.commute_ofMulAction` (in `TauCeti.RepresentationTheory.OfMulAction`), applied to
+The left and right representations commute, so `ℛₙ` is a `ℚ[PSL(2, ℤ)]`-bimodule. This is the
+general `TauCeti.commute_ofMulAction` (in `TauCeti.RepresentationTheory.OfMulAction`), applied to
 the instance `SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ ℳₙ` saying that left and right
 multiplication on `ℳₙ` commute.
 
@@ -59,7 +60,10 @@ variable {k : Type*} [Semiring k] {n : ℤ}
 @[simp]
 theorem ofMulAction_coe (g : SL(2, ℤ)) :
     Representation.ofMulAction k PSL(2, ℤ) (TraceFormulaMatrixModule n) g =
-      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) g := rfl
+      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) g := by
+  -- on basis vectors both sides are `single (g • x) r`, by `coe_smul`
+  ext
+  simp [coe_smul]
 
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/

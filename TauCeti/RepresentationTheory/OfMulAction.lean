@@ -17,13 +17,15 @@ a group `G`, that is, commuting actions of `G` and `Gᵐᵒᵖ`, this makes `k[X
 
 ## Main results
 
-* `Representation.commute_ofMulAction`: commuting actions on `X` give commuting permutation
+* `TauCeti.commute_ofMulAction`: commuting actions on `X` give commuting permutation
   representations on `k[X]`.
 -/
 
 public section
 
-namespace Representation
+namespace TauCeti
+
+open Representation
 
 variable {k G H X : Type*} [Semiring k] [Monoid G] [Monoid H] [MulAction G X] [MulAction H X]
 
@@ -34,4 +36,4 @@ theorem commute_ofMulAction [SMulCommClass G H X] (g : G) (h : H) :
   ext
   simp [smul_comm g h]
 
-end Representation
+end TauCeti
