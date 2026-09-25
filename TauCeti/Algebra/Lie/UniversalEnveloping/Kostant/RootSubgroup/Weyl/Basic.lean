@@ -299,8 +299,7 @@ theorem map_kostantWeylPoints_algHom {B : Type*} [CommRing B] [Algebra ℤ B] (�
         (kostantWeylPoints e h ρ M hM hi hj A z) =
       kostantWeylPoints e h ρ M hM hi hj B
         (TensorProduct.map φ.toLinearMap LinearMap.id z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v => simp
   | add a b ha hb => simp [ha, hb]
 

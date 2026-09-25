@@ -16,9 +16,9 @@ public import Mathlib.Data.Multiset.Sort
 # Counting the cells of a Young diagram by rows
 
 Mathlib's `YoungDiagram.rowLens` records the lengths of the rows of a Young diagram.  This file
-counts the cells of a diagram row by row: the row lengths sum to the number of cells, and the
-first `k` row lengths sum to the number of cells lying in the first `k` rows, whether those
-lengths are summed as `∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Since
+counts the cells of a diagram row by row: the first `k` row lengths sum to the number of cells
+lying in the first `k` rows, whether those lengths are summed as
+`∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Since
 the rows exhaust the cells, the row lengths also determine the diagram
 (`YoungDiagram.rowLen_injective`).  Cutting the same count column by column,
 `YoungDiagram.card_filter_fst_lt_filter_snd_eq` counts the cells of the first `k` rows
@@ -46,13 +46,6 @@ by `YoungDiagram.mem_iff_of_colLen_le_one` and counted by
 public section
 
 namespace YoungDiagram
-
-/-- Transposing a Young diagram preserves its number of cells. -/
-@[simp]
-theorem card_transpose (μ : YoungDiagram) : μ.transpose.card = μ.card := by
-  apply Finset.card_equiv (Equiv.prodComm ℕ ℕ)
-  intro c
-  simp
 
 private theorem sum_list_range (f : ℕ → ℕ) (n : ℕ) :
     ((List.range n).map f).sum = ∑ i ∈ Finset.range n, f i := by
@@ -126,7 +119,7 @@ theorem sum_range_rowLen_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
       aesop
 
 /-- The cells of a Young diagram, counted over any range of rows that contains all of them.  This
-is `YoungDiagram.sum_rowLens` with the range of summation chosen by hand instead of being
+is `YoungDiagram.sum_rowLens_eq_card` with the range of summation chosen by hand instead of being
 the exact number of rows `μ.colLen 0`. -/
 theorem card_eq_sum_range_rowLen (μ : _root_.YoungDiagram) {N : ℕ} (hN : μ.colLen 0 ≤ N) :
     μ.card = ∑ i ∈ Finset.range N, μ.rowLen i := by
@@ -195,11 +188,6 @@ theorem sum_take_rowLens_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
   exact rowLen_eq_zero_of_colLen_le
     (by simpa [lt_min_iff, Finset.mem_range.mp hi] using Finset.mem_range.not.mp hi')
 
-/-- The sum of the row lengths of a Young diagram is its number of cells. -/
-@[simp]
-theorem sum_rowLens (μ : YoungDiagram) : μ.rowLens.sum = μ.card := by
-  rw [_root_.YoungDiagram.rowLens, sum_list_range, ← card_eq_sum_range_rowLen μ le_rfl]
-
 /-- The cells of a Young diagram lying in a fixed column and in one of the first `k` rows are the
 top `min k (colLen j)` cells of that column. -/
 theorem card_filter_fst_lt_filter_snd_eq (lam : YoungDiagram) (k j : ℕ) :
@@ -260,24 +248,15 @@ the single cell in column `0`, so a cell is a cell of the first column, and the 
 exactly as far down as that column does. -/
 theorem mem_iff_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i < μ.colLen 0 ∧ j = 0 := by
-  constructor
-  · intro hij
-    have hlt := _root_.YoungDiagram.mem_iff_lt_rowLen.mp hij
-    have hanti := μ.rowLen_anti 0 i (Nat.zero_le _)
-    have hj : j = 0 := by omega
-    subst hj
-    exact ⟨_root_.YoungDiagram.mem_iff_lt_colLen.mp hij, rfl⟩
-  · rintro ⟨hi, rfl⟩
-    exact _root_.YoungDiagram.mem_iff_lt_colLen.mpr hi
+  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
+    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.rowLen_anti 0 i (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one column are exactly the cells `(i, 0)` with
 `i < μ.colLen 0`: the whole of its first column, and nothing else. -/
 theorem cells_eq_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
     μ.cells = Finset.range (μ.colLen 0) ×ˢ {0} := by
-  ext c
-  obtain ⟨i, j⟩ := c
-  rw [_root_.YoungDiagram.mem_cells, mem_iff_of_rowLen_le_one h, Finset.mem_product,
-    Finset.mem_range, Finset.mem_singleton]
+  ext ⟨i, j⟩
+  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_rowLen_le_one h, eq_comm]
 
 /-- A Young diagram with at most one column has one cell in each of its `μ.colLen 0` rows. -/
 theorem card_eq_colLen_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
@@ -289,24 +268,15 @@ the single cell in row `0`, so a cell is a cell of the first row, and the diagra
 as far right as that row does. -/
 theorem mem_iff_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i = 0 ∧ j < μ.rowLen 0 := by
-  constructor
-  · intro hij
-    have hlt := _root_.YoungDiagram.mem_iff_lt_colLen.mp hij
-    have hanti := μ.colLen_anti 0 j (Nat.zero_le _)
-    have hi : i = 0 := by omega
-    subst hi
-    exact ⟨rfl, _root_.YoungDiagram.mem_iff_lt_rowLen.mp hij⟩
-  · rintro ⟨rfl, hj⟩
-    exact _root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj
+  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
+    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.colLen_anti 0 j (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one row are exactly the cells `(0, j)` with
 `j < μ.rowLen 0`: the whole of its first row, and nothing else. -/
 theorem cells_eq_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
     μ.cells = {0} ×ˢ Finset.range (μ.rowLen 0) := by
-  ext c
-  obtain ⟨i, j⟩ := c
-  rw [_root_.YoungDiagram.mem_cells, mem_iff_of_colLen_le_one h, Finset.mem_product,
-    Finset.mem_singleton, Finset.mem_range]
+  ext ⟨i, j⟩
+  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_colLen_le_one h, eq_comm, and_comm]
 
 /-- A Young diagram with at most one row has one cell in each of its `μ.rowLen 0` columns. -/
 theorem card_eq_rowLen_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :

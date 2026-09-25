@@ -213,7 +213,7 @@ theorem exists_forall_valued_sub_le_and_forall_valued_sub_le_one (a : FiniteAdel
   refine ⟨fun v hv ↦ hS v (Finset.mem_union_left _ hv), fun v ↦ ?_⟩
   by_cases hv : v ∈ s ∪ hD.toFinset
   · exact (hS v hv).trans (exp_le_one_iff.mpr (by omega))
-  · have hN : N v = 0 := multiplicity_eq_zero.mpr fun h ↦
+  · have hN : N v = 0 := multiplicity_eq_zero_of_not_dvd fun h ↦
       hv (Finset.mem_union_right _ (hD.mem_toFinset.mpr h))
     have hkey := key v
     rw [hN, Nat.cast_zero, neg_zero, exp_zero, mul_one] at hkey

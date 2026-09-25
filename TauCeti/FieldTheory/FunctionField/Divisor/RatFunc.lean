@@ -29,6 +29,7 @@ poles.
 
 * `TauCeti.Divisor.principal_irreducible`: `div p = P_(p) - (deg p) · P_∞` for `p` irreducible,
   and its special case `TauCeti.Divisor.principal_X`: `div x = P_(X) - P_∞`.
+* `TauCeti.Divisor.poles_X`: the pole divisor of `x` is `P_∞`.
 * `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)ˣ` has degree
   `max (deg z.num) (deg z.denom)`, which for nonconstant `z` is the degree of `k(x) / k(z)`.
 
@@ -85,6 +86,25 @@ theorem Divisor.principal_X :
         (RatFunc.algebraMap_ne_zero (irreducible_X (R := k)).ne_zero) :=
     Units.ext RatFunc.algebraMap_X.symm
   rw [hX, Divisor.principal_irreducible, natDegree_X, one_nsmul]
+
+/-- **The pole divisor of `x`**: `(x)_∞ = P_∞`.  The function `x` has a simple pole at infinity
+and is regular at every other place. -/
+@[simp]
+theorem Divisor.poles_X :
+    Divisor.poles (IsFunctionField.ratFunc k)
+        (Units.mk0 (RatFunc.X : RatFunc k) RatFunc.X_ne_zero) =
+      WeilDivisor.ofPoint (Place.infty k) := by
+  have hne := Place.adicOfIrreducible_ne_infty (irreducible_X (R := k))
+  refine WeilDivisor.ext fun P ↦ ?_
+  rw [Divisor.coeff_poles, ← Divisor.coeff_principal (IsFunctionField.ratFunc k),
+    Divisor.principal_X, WeilDivisor.coeff_sub]
+  by_cases hP : P = Place.infty k
+  · subst hP
+    simp [WeilDivisor.coeff_ofPoint_of_ne hne.symm]
+  · by_cases hP' : P = Place.adicOfIrreducible (irreducible_X (R := k))
+    · subst hP'
+      simp [WeilDivisor.coeff_ofPoint_of_ne hne]
+    · simp [WeilDivisor.coeff_ofPoint_of_ne hP, WeilDivisor.coeff_ofPoint_of_ne hP']
 
 /-! ### The degree of a rational map -/
 

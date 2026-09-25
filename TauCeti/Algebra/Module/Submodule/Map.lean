@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.Order.SupIndep
+public import Mathlib.LinearAlgebra.Basis.Basic
 
 /-!
 # Finite families of submodules under a linear map
@@ -27,9 +28,27 @@ The finite-set form is what a decomposition of a module into a `Finset` of submo
   whole module is carried to one spanning the range of the map.
 * `LinearMap.supIndep_image_map`: an injective linear map carries an independent finite
   family of submodules to an independent one.
+* `Submodule.map_eq_span_basis`: the image of a based submodule is spanned by the images of
+  its basis vectors.
 -/
 
 public section
+
+namespace Submodule
+
+/-- The image of a based submodule is spanned by the images of its basis vectors. -/
+theorem map_eq_span_basis
+    {R V W ι : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W]
+    (p : Submodule R V) (b : Module.Basis ι R p) (f : V →ₗ[R] W) :
+    p.map f = Submodule.span R (Set.range fun i => f (b i : V)) := by
+  have h := congrArg (Submodule.map (f.comp p.subtype)) b.span_eq
+  rw [Submodule.map_span, Submodule.map_top, LinearMap.range_comp,
+    Submodule.range_subtype] at h
+  simpa only [← Set.range_comp, Function.comp_def, LinearMap.comp_apply,
+    Submodule.subtype_apply] using h.symm
+
+end Submodule
 
 namespace LinearMap
 

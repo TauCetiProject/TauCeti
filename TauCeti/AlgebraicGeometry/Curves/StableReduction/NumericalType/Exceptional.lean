@@ -146,18 +146,8 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
     T.exists_weight_intersection_branch_seven_eq (hc.mono (by omega))
       (fun i hi ↦ hbranch_ne i (by omega)) hbranch_self hbranch_pos
   let r : ℕ → T.Component := fun i ↦ c (6 - i)
-  have hr : T.IsSelfIntersectionMinusTwoChain 6 r := {
-    injOn i hi j hj hij := by
-      have h := hc.injOn (6 - i) (by omega) (6 - j) (by omega) hij
-      omega
-    intersection_self i hi := by
-      exact hc.intersection_self (6 - i) (by omega)
-    intersection_succ_pos i hi := by
-      have h := hc.intersection_succ_pos (5 - i) (by omega)
-      have hsucc : 5 - i + 1 = 6 - i := by omega
-      have hrev : 6 - (i + 1) = 5 - i := by omega
-      rw [hsucc] at h
-      simpa only [r, hrev, T.intersection_comm] using h }
+  have hr : T.IsSelfIntersectionMinusTwoChain 6 r := by
+    simpa [r] using hc.reverse.mono (s := 6) (by omega)
   have hrbranch_ne : ∀ i < 6, branch ≠ r i := by
     intro i hi
     exact hbranch_ne (6 - i) (by omega)

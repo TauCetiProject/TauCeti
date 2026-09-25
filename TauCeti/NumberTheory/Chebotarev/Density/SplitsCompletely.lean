@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Contraction
 public import TauCeti.NumberTheory.Chebotarev.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 
 /-!
 # The completely split primes have density `1 / [L : K]`
@@ -15,10 +16,18 @@ Let `L / K` be a finite Galois extension of number fields. The primes of `𝓞 K
 completely in `L` — the identity fibre `frobeniusPrimeSet K L 1` of the Artin class — have
 Dirichlet density `1 / [L : K]`.
 
+For an extension `E / K` that need not be Galois, a prime of `𝓞 K` splits completely in `E` exactly
+when it splits completely in the Galois closure `N` of `E / K`, so the primes splitting completely
+in `E` have Dirichlet density `1 / [N : K]`. Here `E` is an intermediate field of a finite Galois
+extension `M / K`, and `N` is its normal closure in `M`.
+
 ## Main results
 
 * `NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet_one`: the completely split primes
   have Dirichlet density `1 / [L : K]`.
+* `NumberField.Chebotarev.hasDirichletDensity_setOf_ncard_primesOver_eq_finrank`: the primes
+  splitting completely in an intermediate field `E` of `M / K` have Dirichlet density `1 / [N : K]`,
+  for `N` the normal closure of `E` in `M`.
 
 ## References
 
@@ -75,5 +84,19 @@ theorem hasDirichletDensity_frobeniusPrimeSet_one :
     (fun _ _ ↦ under_mem_frobeniusPrimeSet_one_of_inertiaDeg_eq_one) Module.finrank_pos.ne'
     fun _ h𝔭 ↦ by simpa using card_inertiaDeg_eq_one_fiber_of_mem_frobeniusPrimeSet_one h𝔭.1).mp
       Set.hasDirichletDensity_univ
+
+variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsGalois K M] in
+/-- **The completely split primes of a non-Galois extension.** Let `E` be an intermediate field
+of a finite Galois extension `M / K` of number fields, and let `N` be the normal closure of `E` in
+`M`, the Galois closure of `E / K`. The primes of `𝓞 K` that split completely in `E`, those with
+`[E : K]` primes of `𝓞 E` above them, have Dirichlet density `1 / [N : K]`. -/
+theorem hasDirichletDensity_setOf_ncard_primesOver_eq_finrank (E : IntermediateField K M) :
+    {𝔭 : HeightOneSpectrum (𝓞 K) |
+      (𝔭.asIdeal.primesOver (𝓞 E)).ncard = Module.finrank K E}.HasDirichletDensity
+        (1 / Module.finrank K (IntermediateField.normalClosure K E M)) := by
+  -- A prime splits completely in `E` exactly when it does in the Galois extension `N / K`.
+  have h := hasDirichletDensity_frobeniusPrimeSet_one K (IntermediateField.normalClosure K E M)
+  rw [frobeniusPrimeSet_one_eq_setOf_ncard_primesOver_eq_finrank] at h
+  simpa only [Ideal.ncard_primesOver_normalClosure_eq_finrank_iff] using h
 
 end NumberField.Chebotarev

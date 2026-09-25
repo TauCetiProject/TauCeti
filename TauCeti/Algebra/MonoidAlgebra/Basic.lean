@@ -17,6 +17,8 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
+* The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
+  magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 
 ## References
 
@@ -26,6 +28,21 @@ Injectivity of `single` in its index is Mathlib's `MonoidAlgebra.single_left_inj
 public section
 
 namespace TauCeti
+
+section Commutative
+
+variable {R : Type*} [CommSemiring R] {M : Type*} [Mul M]
+
+/-- The monoid algebra of a commutative magma over a commutative semiring is commutative. This is
+the mixin form of Mathlib's `MonoidAlgebra.nonUnitalCommSemiring`, for a multiplication that is
+commutative without carrying a `CommSemigroup` instance. -/
+instance instIsMulCommutativeMonoidAlgebra [IsMulCommutative M] :
+    IsMulCommutative (MonoidAlgebra R M) where
+  is_comm.comm f g := by
+    have hM := isMulCommutative_iff.mp (inferInstance : IsMulCommutative M)
+    simp [MonoidAlgebra.mul_def, Finsupp.sum, mul_comm, hM, f.coeff.support.sum_comm]
+
+end Commutative
 
 variable {R : Type*} [Ring R] {G : Type*} [One G]
 

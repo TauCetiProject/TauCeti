@@ -112,17 +112,13 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
     (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
     (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
     μ[Xlim | F] =ᵐ[μ] Y := by
-  have hY_meas := integrable_condExp.aestronglyMeasurable.congr (h_condExp 0)
   have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
     have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
                 ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
                   + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
       have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
       rw [this]
-      refine eLpNorm_add_le ?_ ?_ ?_
-      · exact (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
-      · exact integrable_condExp.aestronglyMeasurable.sub hY_meas
-      · norm_num
+      exact eLpNorm_add_le le_rfl
     have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
       have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
         filter_upwards [h_condExp n] with ω hω; simp [hω]
@@ -139,8 +135,7 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
   have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
     le_antisymm
       (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff (integrable_condExp.aestronglyMeasurable.sub hY_meas)
-    one_ne_zero] at h_norm_zero
+  rw [eLpNorm_eq_zero_iff one_ne_zero] at h_norm_zero
   filter_upwards [h_norm_zero] with ω hω
   simp only [Pi.zero_apply] at hω
   exact sub_eq_zero.mp hω

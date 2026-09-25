@@ -34,7 +34,7 @@ theorem exists_comap_eq_of_isIntegral (P : Ideal S) [P.IsPrime]
   let _ : Algebra S T := g.toAlgebra
   have : Algebra.IsIntegral S T := ⟨hg⟩
   obtain ⟨Q, -, hQ, hQP⟩ := exists_ideal_over_prime_of_isIntegral P (⊥ : Ideal T)
-    (by rwa [← RingHom.ker_eq_comap_bot])
+    (by rwa [under_def, RingHom.algebraMap_toAlgebra, ← RingHom.ker_eq_comap_bot])
   exact ⟨Q, hQ, hQP⟩
 
 end Ideal

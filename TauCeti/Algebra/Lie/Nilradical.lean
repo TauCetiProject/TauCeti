@@ -244,7 +244,7 @@ def nilradical : LieIdeal R L :=
 /-- The nilradical of a Noetherian Lie algebra is nilpotent. -/
 instance nilradicalIsNilpotent [IsNoetherian R L] : LieRing.IsNilpotent (nilradical R L) := by
   have hwf := LieSubmodule.wellFoundedGT_of_noetherian R L L
-  rw [← CompleteLattice.isSupClosedCompact_iff_wellFoundedGT] at hwf
+  rw [← isSupClosedCompact_iff_wellFoundedGT] at hwf
   refine hwf { I : LieIdeal R L | LieRing.IsNilpotent I } ⟨⊥, ?_⟩ fun I hI J hJ ↦ ?_
   · exact LieIdeal.isNilpotentBot
   · rw [Set.mem_ofPred_eq] at hI hJ ⊢

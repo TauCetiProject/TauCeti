@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.Coding.Binary.Operations
 public import TauCeti.InformationTheory.Coding.Binary.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.Duality
 public import TauCeti.InformationTheory.Coding.TwoPowTypeII
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -18,6 +20,10 @@ by eight. The two weight-enumerator symmetries underlying this restriction are t
 MacWilliams substitution and invariance under multiplying the second variable by `I`.
 The latter symmetry is stated for any fourth root of unity in a commutative ring, so it
 applies both to evaluation at complex numbers and to polynomials with complex coefficients.
+
+A direct sum of binary codes is Type II exactly when both summands are, and the Type II
+property is invariant under coordinate permutations, monomial equivalences, and semilinear
+equivalences. Over the binary field the latter two are coordinate permutations.
 
 The argument follows the classical weight-enumerator proof of the length restriction;
 see Huffman and Pless, *Fundamentals of Error-Correcting Codes*, Chapter 9.
@@ -55,13 +61,63 @@ theorem _root_.TauCeti.TwoPowCode.isTypeII_one_iff :
   rw [TwoPowCode.isTypeII_iff, IsTypeII, isDoublyEven_iff, and_comm]
   simp
 
+/-! ### Direct sums and equivalences -/
+
+section Operations
+
+variable {κ : Type*} [Fintype κ] {D : LinearCode (ZMod 2) κ}
+
+/-- A direct sum of binary codes is Type II exactly when both summands are Type II. -/
+@[simp]
+theorem isTypeII_directSum_iff : IsTypeII (C.directSum D) ↔ IsTypeII C ∧ IsTypeII D := by
+  simp only [IsTypeII, isDoublyEven_directSum_iff, Submodule.euclideanDual_directSum,
+    Submodule.directSum_inj]
+  tauto
+
+/-- The direct sum of two Type II binary codes is Type II. -/
+theorem IsTypeII.directSum (hC : IsTypeII C) (hD : IsTypeII D) : IsTypeII (C.directSum D) :=
+  isTypeII_directSum_iff.mpr ⟨hC, hD⟩
+
+/-- The Type II property of binary codes is invariant under permutation equivalence. -/
+theorem isTypeII_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
+    IsTypeII C ↔ IsTypeII D :=
+  and_congr (isDoublyEven_iff_of_isPermutationEquivalent h) h.eq_euclideanDual_iff
+
+/-- Permutation equivalence preserves the Type II property of binary codes. -/
+theorem IsTypeII.of_isPermutationEquivalent (hC : IsTypeII C) (h : IsPermutationEquivalent C D) :
+    IsTypeII D :=
+  (isTypeII_iff_of_isPermutationEquivalent h).mp hC
+
+/-- The Type II property of binary codes is invariant under monomial equivalence. -/
+theorem isTypeII_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) :
+    IsTypeII C ↔ IsTypeII D :=
+  isTypeII_iff_of_isPermutationEquivalent (isMonomialEquivalent_iff_isPermutationEquivalent.mp h)
+
+/-- Monomial equivalence preserves the Type II property of binary codes. -/
+theorem IsTypeII.of_isMonomialEquivalent (hC : IsTypeII C) (h : IsMonomialEquivalent C D) :
+    IsTypeII D :=
+  (isTypeII_iff_of_isMonomialEquivalent h).mp hC
+
+/-- The Type II property of binary codes is invariant under semilinear equivalence. -/
+theorem isTypeII_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
+    IsTypeII C ↔ IsTypeII D :=
+  isTypeII_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
+
+/-- Semilinear equivalence preserves the Type II property of binary codes. -/
+theorem IsTypeII.of_isSemilinearEquivalent (hC : IsTypeII C) (h : IsSemilinearEquivalent C D) :
+    IsTypeII D :=
+  (isTypeII_iff_of_isSemilinearEquivalent h).mp hC
+
+end Operations
+
 /-- A Type II binary code has length divisible by eight. -/
 theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   classical
   have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC.eq_euclideanDual
   have hn : Fintype.card ι = 2 * (Fintype.card ι / 2) := by omega
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
-    rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
+    rw [Submodule.natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.card_zmod, Nat.cast_pow,
+      Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
     simpa [aeval_weightEnumerator_diag _ (Set.toFinite _)] using h

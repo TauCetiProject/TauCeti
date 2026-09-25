@@ -44,9 +44,9 @@ multiplication by that scalar is an invertible operator exactly when `z₀` is a
 Applying this at each of the `n` roots of a polynomial whose roots are pairwise distinct, and
 noting that pairwise distinctness persists in a neighbourhood, gives an analytic *ordered*
 parametrization `Ψ` of the whole unordered root tuple:
-`TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`. That is the multiplicity-free
-half of the statement "the inverse elementary symmetric chart is holomorphic"; the diagonal, where
-roots collide, is genuinely harder and is not treated here.
+`TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`. This is the
+multiplicity-free part of the inverse-chart statement. The colliding-point case over `ℂ` is proved
+separately by the contour-integral argument in `TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Note that no ordering of the roots is canonical: the conclusion is the existence of an analytic
 ordered lift of the (unordered) inverse chart, not analyticity of a preferred root function.
@@ -81,11 +81,10 @@ analytically on the elementary symmetric coordinates of one such patch, at multi
 tuples. That is the analytic ingredient for the transition maps of the atlas of
 `TauCeti/Geometry/Manifold/SymmetricPower.lean`. A chart there splits a tuple into the factors
 lying in `k` disjoint patches, of degrees `m 1, …, m k`, and regroups the resulting blocks of
-coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; that assembly is carried out in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. The diagonal, where the points of a tuple
-collide, is not treated here; over `ℂ` it is covered, by contour integration rather than the
-implicit function theorem, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`
-in `TauCeti/Analysis/Polynomial/RootSum.lean`.
+coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; the general blockwise assembly is in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The diagonal, where points collide, is covered
+over `ℂ` by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+`TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Everything is stated over an `RCLike` field, so it covers the real as well as the complex case,
 except for the elementary polynomial calculus, which needs only a nontrivially normed field; only

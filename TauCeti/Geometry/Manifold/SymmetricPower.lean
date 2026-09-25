@@ -14,9 +14,8 @@ public import TauCeti.Topology.Sym.Family
 
 If a Hausdorff space `α` is charted by a proper algebraically closed normed field `K` — the case of
 interest being a Riemann surface, charted by `ℂ` — then its `n`-th symmetric power `Sym α n` is
-charted by `Fin n → K`. This supplies the local-coordinate part of the topological-manifold
-statement in the first clause of Lane F4.1 of the analytic Heegaard Floer roadmap, after
-Ozsváth--Szabó
+charted by `Fin n → K`. This is the local-coordinate part of the manifold structure on the
+symmetric power of a Riemann surface used by Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1).
 
 The chart at an unordered tuple `s` is assembled from three inputs, each already available:
@@ -35,19 +34,14 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
 
 The charts so obtained depend on choices — of the separating neighbourhoods, and of the regrouping
 bijection — so the atlas below is a choice of one chart per point, exactly as much as a charted
-structure asks for. Upgrading it to a *complex* manifold, by exhibiting an atlas whose transition
-maps are holomorphic, is the next step of Lane F4.1 and is not done here; so are the totally real
-tori `T_α`, `T_β`. What is available towards that holomorphy is the analytic ingredient for a
-single coordinate patch at a multiplicity-free coefficient tuple,
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`. Its assembly across the blocks that a chart
-below splits a tuple into, along the regrouping `e`, is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. At colliding points, polynomial-induced
-coordinate maps are handled by `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SymmetricPower.lean`, and a general holomorphic coordinate change, at
-colliding points too, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
-`TauCeti/Analysis/Polynomial/RootSum.lean`.
+structure asks for. Over `ℂ`, the transition between any two of the explicit charts is analytic
+(`TauCeti.contDiffOn_symOpenPartialHomeomorph_trans` in
+`TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`), so that the symmetric power of a
+complex curve is a complex analytic manifold for this charted structure
+(`TauCeti.isManifold_symChartedSpace` in `TauCeti/Geometry/Manifold/SymmetricPower/Manifold.lean`).
+`TauCeti/Geometry/Manifold/SymmetricPower/TotallyReal.lean` proves the tangent-space criterion
+for products of locally parametrized immersed curves, which applies to these tori once their
+attaching curves are locally parametrized.
 
 ## Main declarations
 
@@ -59,6 +53,12 @@ colliding points too, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_
 * `TauCeti.symChartedSpace`: a charted-space structure on `Sym α n` over `Fin n → K`.
 * `TauCeti.symChartedSpace_chartAt` and `TauCeti.symChartedSpace_atlas`: its preferred charts and
   atlas.
+* `TauCeti.mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero` and
+  `TauCeti.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`: the unordered tuples
+  through a fixed point `z` are cut out by one affine equation, with nonzero linear part, in every
+  chart that they meet. For a basepoint `z` of a Heegaard surface this is the divisor
+  `V_z = {z} × Sym^{g-1}(Σ)` of Ozsváth--Szabó, which is therefore an affine hyperplane in
+  elementary symmetric coordinates; its topology is in `TauCeti/Topology/Sym/Cons.lean`.
 -/
 
 public section
@@ -180,6 +180,89 @@ theorem symOpenPartialHomeomorph_target {ι : Type*} [Fintype ι]
     IsOpenEmbedding.toOpenPartialHomeomorph_source, Set.preimage_univ, Set.inter_univ]
   rfl
 
+omit [T2Space α] [ChartedSpace K α] in
+/-- **The unordered tuples through a point satisfy one affine equation in an elementary-symmetric
+chart.** If `z` lies in the `j`-th coordinate patch `V j`, a tuple `s` of the source of the chart
+contains `z` exactly when the monic polynomial whose lower coefficients are the `j`-th block of
+coordinates of `s` vanishes at `φ j z`. -/
+theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*} [Fintype ι]
+    (φ : ι → OpenPartialHomeomorph α K) (V : ι → Set α)
+    (m : ι → ℕ) (hm : ∑ i, m i = n) (hVo : ∀ i, IsOpen (V i))
+    (hVsub : ∀ i, V i ⊆ (φ i).source)
+    (hVdisj : Pairwise (Function.onFun Disjoint V)) (e : (Σ i, Fin (m i)) ≃ Fin n)
+    (hp : Nonempty (∀ i, Sym ↥(V i) (m i))) {j : ι} {z : α} (hz : z ∈ V j) {s : Sym α n}
+    (hs : s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source) :
+    s ∈ Sym.basepointDivisor z ↔ φ j z ^ m j + ∑ k : Fin (m j),
+      symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s (e ⟨j, k⟩) * φ j z ^ (k : ℕ) =
+        0 := by
+  rw [symOpenPartialHomeomorph_source] at hs
+  obtain ⟨p, rfl⟩ := hs
+  -- the coordinates of the `j`-th block are the elementary-symmetric coordinates of the `j`-th part
+  have hblock (k : Fin (m j)) :
+      symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp (Sym.sumSubtype V m hm p) (e ⟨j, k⟩) =
+        Sym.coeffEquiv K (m j) (Sym.map (fun x : ↥(V j) => φ j (x : α)) (p j)) k := by
+    rw [symOpenPartialHomeomorph_apply]
+    exact (piSigmaConstHomeomorph_symm_apply K e _ j k).symm.trans
+      (congrFun (congrFun ((piSigmaConstHomeomorph K e).symm_apply_apply _) j) k)
+  simp only [hblock, Sym.mem_basepointDivisor]
+  rw [← Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero,
+    Sym.mem_sumSubtype_iff (fun i hij hz' => Set.disjoint_left.1 (hVdisj hij) hz' hz) hz,
+    Sym.mem_basepointDivisor, _root_.Sym.mem_map]
+  refine ⟨fun h => ⟨_, h, rfl⟩, ?_⟩
+  rintro ⟨x, hx, hxz⟩
+  obtain rfl : x = ⟨z, hz⟩ := Subtype.ext ((φ j).injOn (hVsub j x.2) (hVsub j hz) hxz)
+  exact hx
+
+omit [T2Space α] [ChartedSpace K α] in
+/-- **The unordered tuples through a point form an affine hyperplane in every elementary-symmetric
+chart that they meet.** If some tuple of the source of the chart contains `z`, then there are a
+nonzero continuous linear functional `ℓ` and a scalar `b` such that a tuple of the source contains
+`z` exactly when its coordinates satisfy `ℓ = b`. -/
+theorem exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph {ι : Type*}
+    [Fintype ι] (φ : ι → OpenPartialHomeomorph α K) (V : ι → Set α)
+    (m : ι → ℕ) (hm : ∑ i, m i = n) (hVo : ∀ i, IsOpen (V i))
+    (hVsub : ∀ i, V i ⊆ (φ i).source)
+    (hVdisj : Pairwise (Function.onFun Disjoint V)) (e : (Σ i, Fin (m i)) ≃ Fin n)
+    (hp : Nonempty (∀ i, Sym ↥(V i) (m i))) {z : α}
+    (hz : ∃ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
+      s ∈ Sym.basepointDivisor z) :
+    ∃ (ℓ : (Fin n → K) →L[K] K) (b : K), ℓ ≠ 0 ∧
+      ∀ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
+        s ∈ Sym.basepointDivisor z ↔
+          ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = b := by
+  obtain ⟨s₀, hs₀, hzs₀⟩ := hz
+  obtain ⟨j, hj⟩ : ∃ j, z ∈ V j := by
+    rw [symOpenPartialHomeomorph_source] at hs₀
+    obtain ⟨p, rfl⟩ := hs₀
+    exact Sym.exists_mem_of_mem_sumSubtype (Sym.mem_basepointDivisor.1 hzs₀)
+  -- the equation is `φ j z ^ m j + ℓ c = 0`, where `ℓ` weights the `j`-th block of coordinates
+  -- by the powers of `φ j z`
+  let ℓ : (Fin n → K) →L[K] K :=
+    ∑ k : Fin (m j), φ j z ^ (k : ℕ) • ContinuousLinearMap.proj (e ⟨j, k⟩)
+  have hℓ (c : Fin n → K) : ℓ c = ∑ k : Fin (m j), c (e ⟨j, k⟩) * φ j z ^ (k : ℕ) := by
+    simp [ℓ, mul_comm]
+  have hiff : ∀ s ∈ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp).source,
+      s ∈ Sym.basepointDivisor z ↔
+        ℓ (symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp s) = -φ j z ^ m j :=
+    fun s hs => by
+      rw [mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero φ V m hm hVo hVsub hVdisj
+        e hp hj hs, hℓ, add_comm, add_eq_zero_iff_eq_neg]
+  refine ⟨ℓ, -φ j z ^ m j, fun hℓ0 => ?_, hiff⟩
+  -- the block of `z` is nonempty, and `ℓ` takes the value `1` on its constant coordinate
+  have hpos : 0 < m j := by
+    refine Nat.pos_of_ne_zero fun h0 => ?_
+    have h := (hiff s₀ hs₀).1 hzs₀
+    rw [hℓ0, h0] at h
+    simp at h
+  have hone : ℓ (Pi.single (e ⟨j, ⟨0, hpos⟩⟩) 1) = 1 := by
+    rw [hℓ, Finset.sum_eq_single ⟨0, hpos⟩]
+    · simp
+    · intro k _ hk
+      simp [hk]
+    · simp
+  rw [hℓ0] at hone
+  exact zero_ne_one hone
+
 /-- The distinct points of an unordered tuple, used as the index of its coordinate patches. -/
 noncomputable def symChartSupport (s : Sym α n) : Finset α :=
   letI := Classical.decEq α
@@ -275,6 +358,20 @@ theorem symChartedSpace_atlas :
     @atlas (Fin n → K) _ (Sym α n) _ (symChartedSpace (K := K)) =
       Set.range (symChartAt (K := K)) :=
   (rfl)
+
+/-- **The unordered tuples through a point form an affine hyperplane in every chart of
+`TauCeti.symChartedSpace` that they meet.** If some tuple of the source of the chosen chart at `t`
+contains `z`, then there are a nonzero continuous linear functional `ℓ` and a scalar `b` such that
+a tuple of that source contains `z` exactly when its coordinates satisfy `ℓ = b`. -/
+theorem exists_continuousLinearMap_ne_zero_mem_iff_symChartAt (z : α) (t : Sym α n)
+    (hz : ∃ s ∈ (symChartAt (K := K) t).source, s ∈ Sym.basepointDivisor z) :
+    ∃ (ℓ : (Fin n → K) →L[K] K) (b : K), ℓ ≠ 0 ∧
+      ∀ s ∈ (symChartAt (K := K) t).source,
+        s ∈ Sym.basepointDivisor z ↔ ℓ (symChartAt (K := K) t s) = b := by
+  obtain ⟨V, m, hm, hVo, hVsub, hVdisj, e, hp, h⟩ := symChartAt_spec (K := K) t
+  rw [h] at hz ⊢
+  exact exists_continuousLinearMap_ne_zero_mem_iff_symOpenPartialHomeomorph _ V m hm hVo hVsub
+    hVdisj e hp hz
 
 /-- Applying the construction with `α := K` charts the symmetric power of the model space by
 affine `n`-space. This is the local model used for `Sym^g(Σ)`. -/

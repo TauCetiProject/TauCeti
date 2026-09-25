@@ -633,7 +633,7 @@ noncomputable instance : CommGroup (tangentKer R A B) :=
 /-- The natural `B`-module structure on the tangent kernel, written additively and
 transported from counit-valued derivations. -/
 noncomputable instance : Module B (Additive (tangentKer R A B)) :=
-  (AddEquiv.toAdditive_toMultiplicative.symm.trans
+  ((AddEquiv.additiveMultiplicative _).symm.trans
     (derivationMulEquivTangentKer R A B).toAdditive).symm.module B
 
 variable (R A B) in
@@ -642,7 +642,7 @@ at the counit point. -/
 noncomputable def derivationLinearEquivTangentKer :
     Derivation R A (Bialgebra.CounitAlgebra R A B) ≃ₗ[B]
       Additive (tangentKer R A B) :=
-  ((AddEquiv.toAdditive_toMultiplicative.symm.trans
+  (((AddEquiv.additiveMultiplicative _).symm.trans
     (derivationMulEquivTangentKer R A B).toAdditive).symm.linearEquiv B).symm
 
 /-- Applying `derivationLinearEquivTangentKer` and removing the additive type tag
@@ -667,8 +667,7 @@ lemma derivationLinearEquivTangentKer_symm_apply_toAdd
     AddEquiv.linearEquiv_apply]
   -- `MulEquiv.toAdditive` has no application lemma, so the final step only removes its
   -- generated additive/multiplicative type tags.
-  exact (AddEquiv.symm_trans_apply
-    AddEquiv.toAdditive_toMultiplicative.symm
+  exact (AddEquiv.symm_trans_apply (AddEquiv.additiveMultiplicative _).symm
     (derivationMulEquivTangentKer R A B).toAdditive ψ).trans rfl
 
 /-- The second component of the tangent point associated to a derivation is the value

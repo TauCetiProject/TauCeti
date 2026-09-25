@@ -60,8 +60,7 @@ generic scalar-action API, since right multiplication is not the module action
 theorem _root_.Algebra.TensorProduct.basis_repr_mul_tmul_one (a : A) (x : A ⊗[K] B) (j : ι) :
     (Algebra.TensorProduct.basis A 𝓑).repr (x * (a ⊗ₜ[K] (1 : B))) j =
       (Algebra.TensorProduct.basis A 𝓑).repr x j * a := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul a' b =>
     rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.TensorProduct.basis_repr_tmul,
       Algebra.TensorProduct.basis_repr_tmul]

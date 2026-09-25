@@ -126,7 +126,9 @@ theorem isTopologicallyFinitelyGenerated_freeProP_of_unique :
     (isTopologicallyFinitelyGenerated_multiplicative_padicInt p)
 
 /-- The free pro-`p` group on one generator has topological generator rank one. -/
-@[simp]
+-- Not `@[simp]`: the general `@[simp]` lemma `topologicalGeneratorRank_freeProP` (for finite `X`)
+-- together with `Cardinal.mk_fintype` and `Fintype.card_unique` already normalises this left-hand
+-- side to `1`, so a `@[simp]` attribute here fails the simpNF linter ("simp can prove this").
 theorem topologicalGeneratorRank_freeProP_of_unique :
     topologicalGeneratorRank (freeProP p X) = 1 := by
   rw [topologicalGeneratorRank_congr (freeProP.equivPadicInt p X),
@@ -134,7 +136,9 @@ theorem topologicalGeneratorRank_freeProP_of_unique :
 
 /-- The natural-number topological generator rank of the free pro-`p` group on one generator
 is one. -/
-@[simp]
+-- Not `@[simp]`: the general `@[simp]` lemma `topologicalGeneratorRankNat_freeProP` (for finite
+-- `X`) together with `Nat.card_eq_fintype_card` and `Fintype.card_unique` already normalises this
+-- left-hand side to `1`, so a `@[simp]` attribute here fails the simpNF linter.
 theorem topologicalGeneratorRankNat_freeProP_of_unique
     (h : IsTopologicallyFinitelyGenerated (freeProP p X)) :
     topologicalGeneratorRankNat (freeProP p X) h = 1 := by

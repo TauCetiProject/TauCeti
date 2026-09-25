@@ -12,6 +12,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The three-dimensional Spin group
@@ -313,6 +314,11 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
       e.injective (congrArg Subtype.val hxy)
     rw [← coe_spinGroupToEven_apply Q x, ← coe_spinGroupToEven_apply Q y]
     exact congrArg Subtype.val heven
+  -- `e` on a root-direction element `1 + c • x`, stated once: `map_add` and `map_smul` need the
+  -- slow `AddHomClass` and `MulActionHomClass` searches on `e`, which the two root cases below
+  -- would otherwise each repeat (0.3 s each).
+  have he (c : K) (x : CliffordAlgebra.even Q) : e (1 + c • x) = 1 + c • e x := by
+    rw [map_add, map_one, map_smul]
   have hpositive (c : K) :
       f (positiveRootLift P b z hz c) =
         (⟨occupiedIndex, vacuumIndex, vacuumIndex_ne_occupiedIndex.symm, c⟩ :
@@ -324,10 +330,10 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
     have heven : spinGroupToEven Q (positiveRootLift P b z hz c) =
         1 + c • evenBivector (Q := Q) (b 0 : V) (z : V) := by
       apply Subtype.ext
-      simpa [evenBivector] using coe_positiveRootLift P b z hz c
-    rw [heven, map_add, map_one, map_smul,
-      spinThreeEquivMatrix_positiveRoot P b z hz hzcoord hV]
-    simp [Matrix.transvection, smul_eq_mul]
+      simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
+        AddMemClass.coe_add, OneMemClass.coe_one] using coe_positiveRootLift P b z hz c
+    rw [heven, he, spinThreeEquivMatrix_positiveRoot P b z hz hzcoord hV]
+    simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
   have hnegative (c : K) :
       f (negativeRootLift P b z hz c) =
         (⟨vacuumIndex, occupiedIndex, vacuumIndex_ne_occupiedIndex, c⟩ :
@@ -339,10 +345,10 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
     have heven : spinGroupToEven Q (negativeRootLift P b z hz c) =
         1 + c • evenBivector (Q := Q) (z : V) (P.dualVector b 0 : V) := by
       apply Subtype.ext
-      simpa [evenBivector] using coe_negativeRootLift P b z hz c
-    rw [heven, map_add, map_one, map_smul,
-      spinThreeEquivMatrix_negativeRoot P b z hz hzcoord hV]
-    simp [Matrix.transvection, smul_eq_mul]
+      simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
+        AddMemClass.coe_add, OneMemClass.coe_one] using coe_negativeRootLift P b z hz c
+    rw [heven, he, spinThreeEquivMatrix_negativeRoot P b z hz hzcoord hV]
+    simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
   -- The two lifted root directions contain every elementary transvection and hence all of `SL₂`.
   have hf_surj : Function.Surjective f := by
     intro g

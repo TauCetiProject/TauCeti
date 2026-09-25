@@ -158,8 +158,7 @@ private theorem counit_lTensor_prod_map {P : Type*} [AddCommMonoid P] [Module R 
     (f : P →ₗ[R] M × N) (t : P ⊗[R] C) :
     Coalgebra.counit.lTensor (M × N) (TensorProduct.map f LinearMap.id t) =
       TensorProduct.map f LinearMap.id (Coalgebra.counit.lTensor P t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul p c => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -340,8 +339,7 @@ private theorem prodLeft_map_prod {P : Type*} [AddCommMonoid P] [Module R P]
     TensorProduct.prodLeft R R M N C
         (TensorProduct.map (f.prod g) LinearMap.id t) =
       (TensorProduct.map f LinearMap.id t, TensorProduct.map g LinearMap.id t) := by
-  refine TensorProduct.induction_on t ?_ ?_ ?_
-  · ext <;> simp
+  refine TensorProduct.inductionOn t ?_ ?_
   · intro p c
     rfl
   · intro t u ht hu

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.Algebra.Module.ZMod
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Int.Order.Units
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.InformationTheory.Hamming
 
@@ -23,6 +26,8 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
 
 * `TauCeti.monomialEquiv u e`: the monomial linear equivalence `(ι → R) ≃ₗ[R] (κ → R)` that
   rescales the `i`-th coordinate by the unit `u i` and moves it to the coordinate `e i`.
+* `TauCeti.signedEquiv u e`: the monomial equivalence induced by integer signs and a coordinate
+  relabelling, available over every commutative ring.
 * `TauCeti.IsMonomialEquivalent`, `TauCeti.IsPermutationEquivalent`: the two resulting
   equivalence relations on linear codes.
 * `TauCeti.monomialGroup R ι`: the group of monomial transformations of `ι → R`.
@@ -55,7 +60,7 @@ Press (2003), §1.6.
 
 public section
 
-open Function
+open Function Matrix
 
 namespace TauCeti
 
@@ -136,6 +141,83 @@ theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι →
 end Fintype
 
 end Monomial
+
+/-! ### Signed coordinate transformations -/
+
+section Signed
+
+variable [CommRing R]
+
+/-- The monomial equivalence which multiplies coordinates by integer signs before relabelling
+them.  It specializes coherently to every commutative ring. -/
+def signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) : (ι → R) ≃ₗ[R] (κ → R) :=
+  monomialEquiv (fun i ↦ Units.map (Int.castRingHom R) (u i)) e
+
+/-- Evaluation of a signed coordinate change. -/
+@[simp]
+theorem signedEquiv_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) (j : κ) :
+    signedEquiv (R := R) u e x j = (u (e.symm j) : R) * x (e.symm j) := by
+  simp [signedEquiv]
+
+/-- The additive homomorphism underlying a signed coordinate change has the same action as the
+ambient linear equivalence. -/
+@[simp]
+theorem signedEquiv_toAddMonoidHom_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) :
+    (signedEquiv (R := R) u e).toAddEquiv.toAddMonoidHom x = signedEquiv u e x := rfl
+
+/-- Signed coordinate changes commute with taking integer coordinates in any commutative ring. -/
+@[simp]
+theorem signedEquiv_intCast (u : ι → ℤˣ) (e : ι ≃ κ) (z : ι → ℤ) :
+    signedEquiv (R := R) u e (fun i ↦ (z i : R)) =
+      fun j ↦ ((signedEquiv (R := ℤ) u e z j : ℤ) : R) := by
+  funext j
+  simp [signedEquiv_apply]
+
+/-- Restricting a rational signed coordinate change to integer scalars does not change its
+underlying function. -/
+@[simp]
+theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
+    (signedEquiv (R := ℚ) u e).restrictScalars ℤ x = signedEquiv u e x := rfl
+
+/-- A monomial coordinate change over `ZMod m` agrees with a signed coordinate change when its
+coordinate units are reductions of integer units. -/
+theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
+    (v : ι → ℤˣ) (hv : ∀ i, (v i : ZMod m) = u i) :
+    monomialEquiv u e = signedEquiv v e := by
+  ext x j
+  rw [monomialEquiv_apply, signedEquiv_apply, hv]
+
+section Fintype
+
+variable [Fintype ι] [Fintype κ]
+
+/-- A signed coordinate change preserves the standard dot product. -/
+@[simp]
+theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
+    signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
+  calc
+    signedEquiv u e x ⬝ᵥ signedEquiv u e y =
+        ((fun i ↦ (u i : R) * x i) ∘ e.symm) ⬝ᵥ
+          ((fun i ↦ (u i : R) * y i) ∘ e.symm) := by
+            congr 1
+    _ = (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) :=
+      comp_equiv_dotProduct_comp_equiv _ _ e.symm
+    _ = x ⬝ᵥ y := by
+      simp only [dotProduct]
+      apply Finset.sum_congr rfl
+      intro i _
+      have hu : (u i : R) ^ 2 = 1 := by
+        calc
+          (u i : R) ^ 2 = (((u i : ℤ) ^ 2 : ℤ) : R) := by norm_cast
+          _ = 1 := by simp only [← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one,
+            Int.cast_one]
+      calc
+        (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
+        _ = x i * y i := by rw [hu]; simp
+
+end Fintype
+
+end Signed
 
 end TauCeti
 

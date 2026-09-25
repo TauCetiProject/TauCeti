@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
+public import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
@@ -34,6 +35,9 @@ field. `TauCeti.Isogeny.comp` therefore lives here rather than beside `TauCeti.I
 * `TauCeti.Isogeny.pullback_injective`: a coordinate pullback satisfying `MapsInfinity` is
   injective.
 * `TauCeti.Isogeny.fieldPullback`: the induced embedding of function fields.
+* `TauCeti.Isogeny.comap_fieldPullback_apply_algebraMap`: a valuation restricted along the
+  pullback, evaluated on an affine function of the target, is the valuation of its coordinate
+  pullback.
 * `TauCeti.Isogeny.comp`: composition of isogenies, with `TauCeti.Isogeny.comp_fieldPullback`
   its function-field law and `TauCeti.Isogeny.id_comp`, `TauCeti.Isogeny.comp_id`,
   `TauCeti.Isogeny.comp_assoc` the unit and associativity laws. The pointedness obligation is
@@ -169,6 +173,15 @@ noncomputable def fieldPullback (φ : Isogeny W₁ W₂) :
 theorem fieldPullback_algebraMap (φ : Isogeny W₁ W₂) (x : W₂.CoordinateRing) :
     φ.fieldPullback (algebraMap W₂.CoordinateRing W₂.FunctionField x) = φ.pullback x := by
   simp [fieldPullback, IsFractionRing.liftAlgHom_apply]
+
+/-- **A restricted valuation, evaluated on an affine function of the target**: it is the value of
+the pullback of that function. -/
+theorem comap_fieldPullback_apply_algebraMap (φ : Isogeny W₁ W₂) {Γ : Type*}
+    [LinearOrderedCommGroupWithZero Γ] (v : Valuation W₁.FunctionField Γ)
+    (c : W₂.CoordinateRing) :
+    (v.comap φ.fieldPullback.toRingHom) (algebraMap W₂.CoordinateRing W₂.FunctionField c) =
+      v (φ.pullback c) := by
+  rw [Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fieldPullback_algebraMap]
 
 /-- **A ring homomorphism agreeing with an isogeny's coordinate pullback is its function-field
 pullback.** `W₂.FunctionField` is a fraction field of `W₂.CoordinateRing`, so a map out of it is

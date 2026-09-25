@@ -108,6 +108,7 @@ def H0ContinuousLinearEquivInvariants :
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
+/-- `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
     (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
@@ -122,6 +123,7 @@ theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
+/-- The inverse of `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :

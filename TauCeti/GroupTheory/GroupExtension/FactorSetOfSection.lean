@@ -394,13 +394,13 @@ section Coboundary
 variable [CommGroup M] {S : GroupExtension M E G} (σ σ' : S.Section) [MulDistribMulAction G M]
   (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S)
 
-/-- **Two normalized sections give cohomologous factor sets.** Combined with
-`TauCeti.FactorSet.nonempty_groupExtensionEquiv`, which turns a coboundary back into an equivalence
-of extensions, this says the class of the factor set in `H²(G, M)` is an invariant of the
-extension. -/
-theorem isMulCoboundary₂_div :
-    IsMulCoboundary₂ fun p : G × G => factorSet σ hσ hact p / factorSet σ' hσ' hact p := by
-  refine ⟨sectionDiff σ σ', fun g h => ?_⟩
+/-- **The factor sets of two normalized sections differ by the coboundary of their difference**,
+with the coboundary spelled as in `groupCohomology.IsMulCoboundary₂`. This is the identity behind
+`TauCeti.GroupExtension.isMulCoboundary₂_div`, stated with its witness visible so that properties of
+the witness, such as its continuity, can be tracked. -/
+theorem factorSet_div_factorSet (g h : G) :
+    factorSet σ hσ hact (g, h) / factorSet σ' hσ' hact (g, h) =
+      g • sectionDiff σ σ' h / sectionDiff σ σ' (g * h) * sectionDiff σ σ' g := by
   have e₁ : (σ g : E) * σ h
       = S.inl (factorSet σ hσ hact (g, h) * sectionDiff σ σ' (g * h)) * σ' (g * h) := by
     rw [map_mul, inl_factorSet, inl_sectionDiff]
@@ -411,7 +411,15 @@ theorem isMulCoboundary₂_div :
     rw [map_mul, map_mul, inl_smul σ hact, inl_sectionDiff, inl_sectionDiff, inl_factorSet]
     group
   have key := S.inl_injective (mul_right_cancel (e₁.symm.trans e₂))
-  rw [div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul, ← key]
+  rw [eq_comm, div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul, ← key]
+
+/-- **Two normalized sections give cohomologous factor sets.** Combined with
+`TauCeti.FactorSet.nonempty_groupExtensionEquiv`, which turns a coboundary back into an equivalence
+of extensions, this says the class of the factor set in `H²(G, M)` is an invariant of the
+extension. -/
+theorem isMulCoboundary₂_div :
+    IsMulCoboundary₂ fun p : G × G => factorSet σ hσ hact p / factorSet σ' hσ' hact p :=
+  ⟨sectionDiff σ σ', fun g h => (factorSet_div_factorSet σ σ' hσ hσ' hact g h).symm⟩
 
 end Coboundary
 

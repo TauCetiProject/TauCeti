@@ -192,8 +192,7 @@ private theorem rid_tprod_detPowerRep_apply (ρ : Representation k (GL (Fin n) k
     (g : GL (Fin n) k) (x : W ⊗[k] k) :
     TensorProduct.rid k W ((ρ.tprod (detPowerRep k n m)) g x)
       = (↑(GeneralLinearGroup.det g ^ m) : k) • ρ g (TensorProduct.rid k W x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul w c =>
     simp only [Representation.tprod_apply, TensorProduct.map_tmul, detPowerRep_apply,
       TensorProduct.rid_tmul, map_smul, smul_smul]
@@ -205,8 +204,7 @@ private theorem lid_detPowerRep_tprod_apply (ρ : Representation k (GL (Fin n) k
     (g : GL (Fin n) k) (x : k ⊗[k] W) :
     TensorProduct.lid k W (((detPowerRep k n m).tprod ρ) g x)
       = (↑(GeneralLinearGroup.det g ^ m) : k) • ρ g (TensorProduct.lid k W x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul c w =>
     simp only [Representation.tprod_apply, TensorProduct.map_tmul, detPowerRep_apply,
       TensorProduct.lid_tmul, map_smul, smul_smul]

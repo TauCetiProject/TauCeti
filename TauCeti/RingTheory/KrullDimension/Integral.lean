@@ -51,7 +51,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
     StrictMono (PrimeSpectrum.comap (algebraMap R S)) := fun P Q h ↦ by
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
-  exact Ideal.IsIntegral.comap_lt_comap ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
+  exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
 
 /-- The Krull dimension of an integral `R`-algebra is at most that of `R`. -/
 theorem ringKrullDim_le_of_isIntegral [Algebra.IsIntegral R S] :

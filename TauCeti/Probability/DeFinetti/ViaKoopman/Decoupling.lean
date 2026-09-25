@@ -300,7 +300,8 @@ private theorem tendsto_setIntegral_mul_of_tendsto_integral_abs
   have hmono : ∀ n, eLpNorm ((fun x ↦ p x * u n x) - fun x ↦ p x * v x) 1 μ
       ≤ eLpNorm ((u n) - v) 1 μ := by
     intro n
-    refine eLpNorm_mono_ae ?_
+    refine eLpNorm_mono_ae ((hp.mul (hu n).aestronglyMeasurable).sub
+      (hp.mul hv.aestronglyMeasurable)) ?_
     filter_upwards [hp_bdd] with x hpx
     simp only [Pi.sub_apply, Real.norm_eq_abs, ← mul_sub, abs_mul]
     exact mul_le_of_le_one_left (abs_nonneg _) ((Real.norm_eq_abs _) ▸ hpx)
@@ -312,7 +313,7 @@ private theorem tendsto_setIntegral_mul_of_tendsto_integral_abs
       Filter.atTop (nhds 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbase
       (fun _ ↦ zero_le) hmono
-  exact tendsto_setIntegral_of_L1' _ (hp.mul hv.aestronglyMeasurable)
+  exact tendsto_setIntegral_of_L1' _
     (Filter.Eventually.of_forall fun n ↦ (hu n).bdd_mul hp hp_bdd) hL1 A
 
 /-- **The last coordinate decouples into the invariant conditional expectation.** Over an invariant

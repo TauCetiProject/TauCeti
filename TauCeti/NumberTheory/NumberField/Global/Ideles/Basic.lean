@@ -94,4 +94,10 @@ theorem toFiniteIdele_ofFiniteIdele (a : (FiniteAdeleRing R K)ˣ) :
     toFiniteIdele R K (ofFiniteIdele R K a) = a :=
   Units.ext (rfl)
 
+/-- The finite component of an idele concentrated at an infinite place is trivial. -/
+@[simp]
+theorem toFiniteIdele_ofCompletion (w : NumberField.InfinitePlace K) (u : w.Completionˣ) :
+    toFiniteIdele R K (ofCompletion R K w u) = 1 :=
+  Units.ext (rfl)
+
 end NumberField.IdeleGroup

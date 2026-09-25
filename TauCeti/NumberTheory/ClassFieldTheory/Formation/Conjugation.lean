@@ -199,7 +199,10 @@ def conjugate (L : NormalLayer G) (g : G) : NormalLayer G where
     ((continuous_mul_const g).comp (continuous_const_mul g⁻¹))
   top := L.top.comap ((MulAut.conj g).symm : G ≃* G)
     ((continuous_mul_const g).comp (continuous_const_mul g⁻¹))
-  top_le_ground _ hx := OpenSubgroup.mem_comap.2 (L.top_le_ground (OpenSubgroup.mem_comap.1 hx))
+  -- A tactic proof is elaborated once `ground` and `top` are known; as a term, the memberships
+  -- are unified against their metavariables, which fails slowly.
+  top_le_ground _ hx := by
+    exact OpenSubgroup.mem_comap.2 (L.top_le_ground (OpenSubgroup.mem_comap.1 hx))
   normal := by
     constructor
     rintro ⟨n, hn⟩ hmem ⟨u, hu⟩
@@ -258,11 +261,13 @@ def conjugateGroundEquiv : L.ground ≃* (L.conjugate g).ground :=
   Subgroup.congrOfMapEq (MulAut.conj g) <| by
     exact Subgroup.map_equiv_eq_comap_symm (MulAut.conj g) _
 
+/-- On elements of `G`, the ground-subgroup equivalence is conjugation `u ↦ g * u * g⁻¹`. -/
 @[simp]
 theorem conjugateGroundEquiv_apply_coe (u : L.ground) :
     ((L.conjugateGroundEquiv g u : (L.conjugate g).ground) : G) = g * u * g⁻¹ :=
   (Subgroup.coe_congrOfMapEq_apply _ _ u).trans (MulAut.conj_apply g u)
 
+/-- On elements of `G`, the inverse ground-subgroup equivalence is conjugation `v ↦ g⁻¹ * v * g`. -/
 @[simp]
 theorem conjugateGroundEquiv_symm_apply_coe (v : (L.conjugate g).ground) :
     (((L.conjugateGroundEquiv g).symm v : L.ground) : G) = g⁻¹ * v * g :=
@@ -288,6 +293,8 @@ theorem map_relativeTop_conjugateGroundEquiv :
 def conjugateGalEquiv : L.Gal ≃* (L.conjugate g).Gal :=
   QuotientGroup.congr _ _ (L.conjugateGroundEquiv g) (L.map_relativeTop_conjugateGroundEquiv g)
 
+/-- The Galois-group equivalence sends the class of a representative `u` to the class of its
+conjugate `g * u * g⁻¹`. -/
 @[simp]
 theorem conjugateGalEquiv_mk (u : L.ground) :
     L.conjugateGalEquiv g (QuotientGroup.mk u) =

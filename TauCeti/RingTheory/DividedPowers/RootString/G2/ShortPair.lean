@@ -71,52 +71,14 @@ private theorem mul_dividedPower_shortPairMonomial (hxy : x * y = y * x + z)
           (dividedPower (b - 1) z * (dividedPower (c + 1) w * dividedPower d s))) else 0) +
         (if 1 < a then (d + 1) • (dividedPower (a - 2) y *
           (dividedPower b z * (dividedPower c w * dividedPower (d + 1) s))) else 0) := by
-  have hxW : Commute x (dividedPower c w) := by
-    simpa using commute_dividedPower_dividedPower hxw 1 c
-  have hxS : Commute x (dividedPower d s) := by
-    simpa using commute_dividedPower_dividedPower hxs 1 d
-  have hsZ : Commute s (dividedPower b z) := by
-    simpa using commute_dividedPower_dividedPower hzs.symm 1 b
-  have hsW : Commute s (dividedPower c w) := by
-    simpa using commute_dividedPower_dividedPower hws.symm 1 c
-  have e0 : x * (dividedPower c w * dividedPower d s) =
-      dividedPower c w * dividedPower d s * x := by
-    rw [← mul_assoc, hxW.eq, mul_assoc, hxS.eq, ← mul_assoc]
-  have e1 : x * (dividedPower b z * (dividedPower c w * dividedPower d s)) =
-      dividedPower b z * (dividedPower c w * dividedPower d s) * x +
-        (if 0 < b then dividedPower (b - 1) z * (2 • w) else 0) *
-          (dividedPower c w * dividedPower d s) := by
-    rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxz (hzw.smul_right 2) b, add_mul,
-      mul_assoc, e0, ← mul_assoc]
-  rw [← mul_assoc, mul_dividedPower_of_commutator_eq_two_nsmul hxy hzy hys a, add_mul,
-    add_mul, mul_assoc, e1, mul_add, ← mul_assoc]
-  have tA : (if 0 < a then dividedPower (a - 1) y * z else 0) *
-      (dividedPower b z * (dividedPower c w * dividedPower d s)) =
-      if 0 < a then (b + 1) • (dividedPower (a - 1) y *
-        (dividedPower (b + 1) z * (dividedPower c w * dividedPower d s))) else 0 := by
-    split_ifs with ha
-    · rw [mul_assoc, ← mul_assoc z, self_mul_dividedPower, smul_mul_assoc, mul_smul_comm]
-    · rw [zero_mul]
-  have tB : dividedPower a y * ((if 0 < b then dividedPower (b - 1) z * (2 • w) else 0) *
-      (dividedPower c w * dividedPower d s)) =
-      if 0 < b then (2 * (c + 1)) • (dividedPower a y *
-        (dividedPower (b - 1) z * (dividedPower (c + 1) w * dividedPower d s))) else 0 := by
-    split_ifs with hb
-    · rw [mul_assoc, smul_mul_assoc, ← mul_assoc w, self_mul_dividedPower, smul_mul_assoc,
-        smul_smul, mul_smul_comm, mul_smul_comm]
-    · rw [zero_mul, mul_zero]
-  have hmove : s * (dividedPower b z * (dividedPower c w * dividedPower d s)) =
-      (d + 1) • (dividedPower b z * (dividedPower c w * dividedPower (d + 1) s)) := by
-    rw [← mul_assoc, hsZ.eq, mul_assoc, ← mul_assoc s, hsW.eq, mul_assoc,
-      self_mul_dividedPower, mul_smul_comm, mul_smul_comm]
-  have tC : (if 1 < a then dividedPower (a - 2) y * s else 0) *
-      (dividedPower b z * (dividedPower c w * dividedPower d s)) =
-      if 1 < a then (d + 1) • (dividedPower (a - 2) y *
-        (dividedPower b z * (dividedPower c w * dividedPower (d + 1) s))) else 0 := by
-    split_ifs with ha
-    · rw [mul_assoc, hmove, mul_smul_comm]
-    · rw [zero_mul]
-  rw [tA, tB, tC]
+  rw [← mul_assoc, mul_dividedPower_of_commutator_eq_two_nsmul hxy hzy hys a]
+  -- Move `x` across the tail `z⁽ᵇ⁾ w⁽ᶜ⁾ s⁽ᵈ⁾`, and absorb the new factor of each of the two terms
+  -- released by `y⁽ᵃ⁾` into its own divided power.
+  simp only [add_mul, mul_add, mul_assoc, mul_ite_zero, ite_zero_mul, mul_smul_comm,
+    ← succ_nsmul_dividedPower_succ_mul, self_mul_dividedPower,
+    (hzs.symm.dividedPower_right b).left_comm, (hws.symm.dividedPower_right c).left_comm,
+    mul_dividedPower_mul_dividedPower_mul_of_commutator_eq_nsmul hxz hxw
+      (hxs.dividedPower_right d) hzw]
   abel
 
 /-! ## The divided-power series of the inner derivation -/

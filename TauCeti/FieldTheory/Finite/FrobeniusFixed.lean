@@ -32,7 +32,9 @@ what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
   outside `K`.
 * `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
   `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
-  as equalities of units, the form in which a character of `Lˣ` consumes them.
+  as equalities of units, the form in which a character of `Lˣ` consumes them, with
+  `TauCeti.FiniteField.units_powMonoidHom_comp_powMonoidHom` the involution as an equality of
+  monoid homomorphisms.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
@@ -157,6 +159,18 @@ theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
 end DivisionRing
 
 variable [Field L] [Algebra K L]
+
+/-- **In a quadratic extension the `q`-power map on units is an involution**, as an equality of
+monoid homomorphisms `Lˣ →* Lˣ`.  This is
+`TauCeti.FiniteField.units_pow_natCard_pow_natCard` read at the level of the maps themselves,
+the form in which it cancels against a character `Lˣ →* M` precomposed with the `q`-power map.
+
+As for its pointwise forms, this is deliberately not a simp lemma: in a context with a `Fintype K`
+instance, `Nat.card K` is not in simp normal form, so the exponent on the left-hand side here never
+survives simp normalization. -/
+theorem units_powMonoidHom_comp_powMonoidHom (h2 : Module.finrank K L = 2) :
+    (powMonoidHom (Nat.card K) : Lˣ →* Lˣ).comp (powMonoidHom (Nat.card K)) = MonoidHom.id Lˣ :=
+  MonoidHom.ext fun a => units_pow_natCard_pow_natCard h2 a
 
 /-- **In a quadratic extension the `q`-th power of an element outside the base field is again
 outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to

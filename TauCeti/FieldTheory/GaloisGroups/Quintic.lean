@@ -9,10 +9,13 @@ public import TauCeti.FieldTheory.GaloisGroups.Label
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 
 import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Solvable
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
+import TauCeti.FieldTheory.Galois.PrimeDegree
 
 /-!
-# The Galois group of a quintic, from its discriminant and its resolvent sextic
+# The Galois group of a quintic
 
 An irreducible separable quintic over a field carries exactly one of the five transitive-group
 labels `5T1`, …, `5T5`. For a monic such quintic, two data constrain the label. Away from
@@ -33,6 +36,7 @@ concluding `5T1` or `5T2`:
 | a square | a root in the base field | `5T1` **or** `5T2` |
 
 The fourth row concludes only that the label is `5T1` or `5T2`.
+An independent criterion identifies `5T1` when the root field has a nonidentity automorphism.
 
 The first two rows need no hypothesis on the resolvent sextic, because they use only the
 unconditional direction of the resolvent criterion, that a solvable Galois group produces a root.
@@ -48,7 +52,10 @@ converse of each row.
 ## Main results
 
 * `TauCeti.existsUnique_hasGaloisLabel_five`: an irreducible separable quintic carries exactly one
-  label.
+  label, and `TauCeti.hasGaloisLabel_five_iff_natCard_gal_eq`: the order of its Galois group
+  recognizes that label.
+* `TauCeti.hasGaloisLabel_five_four_of_surjective_galActionHom`: a quintic whose Galois group
+  acts on its roots by every permutation has the label `5T5`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_five`: the Galois group of a quintic is solvable
   exactly for the labels `5T1`, `5T2` and `5T3`.
 * `TauCeti.HasGaloisLabel.isSquare_discr_iff_five`: **the discriminant reads the parity of the
@@ -59,6 +66,8 @@ converse of each row.
   `TauCeti.hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot`,
   `TauCeti.hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot`: the four rows of the
   table above.
+* `TauCeti.hasGaloisLabel_five_zero_of_exists_rootField_aut_ne_one`: a nonidentity
+  automorphism of a quintic root field identifies the label as `5T1`.
 
 ## References
 
@@ -68,7 +77,7 @@ converse of each row.
 
 public section
 
-open Polynomial
+open Polynomial IntermediateField
 
 namespace TauCeti
 
@@ -86,6 +95,38 @@ theorem existsUnique_hasGaloisLabel_five (hsep : f.Separable) (hirr : Irreducibl
     (hdeg : f.natDegree = 5) : ∃! j : TransitiveGroupIndex 5, HasGaloisLabel f j :=
   existsUnique_hasGaloisLabel hsep hirr hdeg (fun G _ => exists_transitiveGroupLabel_five G)
     fun h h' => h.eq_of_five h'
+
+/-- **The order of the Galois group recognizes the label of a quintic.** An irreducible separable
+quintic has the label `5Tj` exactly when its Galois group has the order of the reference subgroup
+of `5Tj`; the orders `5, 10, 20, 60, 120` of the five labels are pairwise distinct. -/
+theorem hasGaloisLabel_five_iff_natCard_gal_eq (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = 5) (j : TransitiveGroupIndex 5) :
+    HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup 5 j) := by
+  refine ⟨HasGaloisLabel.natCard_gal, fun h => ?_⟩
+  obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
+  have := isPretransitive_referenceSubgroup 5 k
+  have hjk : TransitiveGroupLabel j (referenceSubgroup 5 k) :=
+    (transitiveGroupLabel_five_iff_natCard_eq j _).mpr (hk.natCard_gal.symm.trans h)
+  rwa [hjk.eq_of_five (transitiveGroupLabel_referenceSubgroup 5 k)]
+
+/-- **The full symmetric label from a surjective Galois action.** An irreducible separable quintic
+whose Galois group acts on its roots in some splitting extension by every permutation has the
+label `5T5`. -/
+theorem hasGaloisLabel_five_four_of_surjective_galActionHom (hsep : f.Separable)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5) {E : Type*} [Field E] [Algebra F E]
+    [Fact ((f.map (algebraMap F E)).Splits)]
+    (hsurj : Function.Surjective (Gal.galActionHom f E)) :
+    HasGaloisLabel f (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  classical
+  have hroots : Nat.card (f.rootSet E) = 5 := by
+    rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Fact.out, hdeg]
+  have himage : Nat.card (Gal.galActionHom f E).range = Nat.factorial 5 := by
+    rw [MonoidHom.range_eq_top.mpr hsurj, Subgroup.card_top, Nat.card_perm, hroots]
+  have hgal : Nat.card f.Gal = Nat.factorial 5 := by
+    rw [← natCard_galActionHom_range f E, himage]
+  rw [hasGaloisLabel_five_iff_natCard_gal_eq hsep hirr hdeg, natCard_referenceSubgroup_five_four,
+    hgal]
+  rfl
 
 /-- **Solvability and the quintic labels.** The Galois group of a quintic with a label is solvable
 exactly for the labels `5T1`, `5T2` and `5T3`, the cyclic, dihedral and Frobenius groups. This is a
@@ -189,5 +230,33 @@ theorem hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot (hf : f.Moni
   rcases (by omega : (j : ℕ) = 0 ∨ (j : ℕ) = 1) with hval | hval
   · exact Or.inl ((Fin.ext hval : j = ⟨0, by simp⟩) ▸ hj)
   · exact Or.inr ((Fin.ext hval : j = ⟨1, by simp⟩) ▸ hj)
+
+/-- For an irreducible separable quintic, its label is determined by the order of its Galois
+group. -/
+theorem hasGaloisLabel_five_iff_natCard_gal (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = 5) :
+    HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup 5 j) :=
+  hasGaloisLabel_iff_natCard_gal hsep hirr hdeg fun G _ =>
+    transitiveGroupLabel_five_iff_natCard_eq j G
+
+/-- A quintic whose root field has a nonidentity automorphism over the base field has label
+`5T1`. The field `E` is generated by `x`, whose minimal polynomial is `q`. -/
+theorem hasGaloisLabel_five_zero_of_exists_rootField_aut_ne_one
+    {F : Type*} [Field F] {q : F[X]} (hdeg : q.natDegree = 5)
+    (E : Type*) [Field E] [Algebra F E] (x : E)
+    (hminpoly : minpoly F x = q) (hgen : F⟮x⟯ = ⊤)
+    (hAut : ∃ σ : E ≃ₐ[F] E, σ ≠ 1) :
+    HasGaloisLabel q (⟨0, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hq : q ≠ 0 := by
+    intro h
+    simp [h] at hdeg
+  have hx : IsIntegral F x := minpoly.ne_zero_iff.mp (hminpoly ▸ hq)
+  have hirr : Irreducible q := hminpoly ▸ minpoly.irreducible hx
+  have hprime : q.natDegree.Prime := hdeg ▸ (by decide : Nat.Prime 5)
+  have hsep := separable_of_natDegree_prime_of_exists_aut_ne_one F q hprime E x hminpoly hgen hAut
+  have hcard :=
+    natCard_gal_eq_natDegree_of_prime_of_exists_aut_ne_one F q hprime E x hminpoly hgen hAut
+  apply (hasGaloisLabel_five_iff_natCard_gal hsep hirr hdeg).mpr
+  simpa only [hdeg, natCard_referenceSubgroup_five_zero] using hcard
 
 end TauCeti

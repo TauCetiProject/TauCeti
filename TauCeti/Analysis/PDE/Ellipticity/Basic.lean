@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -42,6 +43,10 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   on the domain.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
+  `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
+  conormal component of a smooth gradient.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
@@ -772,6 +777,33 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
     UniformlyEllipticOn Ω (fun _ => c • (1 : Matrix n n ℝ)) lam Lam :=
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
+
+open Set TopologicalSpace
+open scoped ContDiff Gradient InnerProductSpace
+
+omit [DecidableEq n] in
+/-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
+theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
+    ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
+        matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) η = matrixBilinearForm A ξ η := by
+  conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
+  simp [map_sum, map_smul]
+
+omit [DecidableEq n] in
+/-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
+smooth. -/
+theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
+    {ψ : EuclideanSpace ℝ n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ n) :
+    ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
+  (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
+
+omit [DecidableEq n] in
+/-- The conormal component of a gradient is supported where the function is. -/
+theorem tsupport_matrixBilinearForm_gradient_subset {A : Matrix n n ℝ}
+    (ψ : EuclideanSpace ℝ n → ℝ) (η : EuclideanSpace ℝ n) :
+    tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
+  closure_minimal (fun x hx => by_contra fun hxψ => hx (by
+    simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
 end PDE
 

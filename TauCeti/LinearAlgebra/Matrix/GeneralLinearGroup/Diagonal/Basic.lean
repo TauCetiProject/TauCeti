@@ -28,11 +28,12 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 A family of units indexed by a finite type `ι` is the diagonal of an invertible diagonal matrix,
 and this assignment is a group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`. Its entries,
-its determinant and its injectivity are recorded here, together with the fact that invertibility
-of a diagonal matrix upgrades its diagonal entries to units.  The facts about diagonal matrices
-that involve no general linear group live in `TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one
-used below is that a matrix commuting with a diagonal matrix has no entry away from the diagonal
-wherever that diagonal matrix separates two coordinates.
+its trace, its determinant and its injectivity are recorded here, together with the fact that
+invertibility of a diagonal matrix upgrades its diagonal entries to units.  The facts about
+diagonal matrices that involve no general linear group live in
+`TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one used below is that a matrix commuting with a
+diagonal matrix has no entry away from the diagonal wherever that diagonal matrix separates two
+coordinates.
 
 The image of `diagGL` is gathered into a subgroup
 
@@ -106,6 +107,8 @@ The action of the torus on the coordinate lines of the standard representation i
   instead the whole group.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
   centralizer is the whole group.
+* `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
+  constant family to the corresponding scalar element, and in size two it is scalar *only* there.
 
 ## References
 
@@ -147,6 +150,15 @@ theorem diagGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ)
   rw [diagGL_coe]
   exact Matrix.diagonal_apply ..
 
+/-- The trace of a diagonal element of the general linear group is the sum of its diagonal
+entries. Unlike `TauCeti.det_diagGL` this asks nothing of `k` beyond what `TauCeti.diagGL` itself
+does, so it is stated here rather than beside the determinant. It is deliberately not a `simp`
+lemma: `TauCeti.diagGL_coe` and `Matrix.trace_diagonal` are, so `simp` already rewrites its
+left-hand side and a tag here would not be in simp-normal form. -/
+theorem trace_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
+    (diagGL t : Matrix ι ι k).trace = ∑ i, (t i : k) := by
+  rw [diagGL_coe, Matrix.trace_diagonal]
+
 /-- The diagonal embedding is injective. -/
 theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
     Function.Injective (diagGL (k := k) (ι := ι)) := by
@@ -155,6 +167,14 @@ theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
   apply Units.ext
   have := congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
   simpa using this
+
+/-- **A constant family of units embeds as the corresponding scalar element** of the general linear
+group. Together with `TauCeti.notMem_range_scalar_diagGL` this says that in size two the diagonal
+embedding is scalar exactly on the diagonal of `kˣ × kˣ`. -/
+@[simp]
+theorem diagGL_const {ι : Type*} [Fintype ι] [DecidableEq ι] (a : kˣ) :
+    diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
+  Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
 
 /-- An invertible diagonal matrix with distinct diagonal entries is not scalar. Like `diagGL`
 itself, this needs only a semiring; it is what supplies the non-scalarity — the regularity — of a

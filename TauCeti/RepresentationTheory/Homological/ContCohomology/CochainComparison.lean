@@ -79,10 +79,12 @@ def cochainEquiv0 : M ≃+ (ofDiscreteModule ℤ G M).ρ.coind₁.invariants whe
     ext g
     exact smul_add g m n
 
+/-- `cochainEquiv0` sends `m ∈ M` to the homogeneous `0`-cochain `g ↦ g • m`. -/
 @[simp]
 theorem cochainEquiv0_apply (m : M) (g : G) :
     (cochainEquiv0 G M m).val g = g • m := (rfl)
 
+/-- The inverse of `cochainEquiv0` evaluates a homogeneous `0`-cochain at `1`. -/
 @[simp]
 theorem cochainEquiv0_symm_apply
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.invariants) :
@@ -131,10 +133,14 @@ def cochainEquiv1 : C1 G M ≃+
     simp only [homogeneous1_apply]
     exact smul_add g (c.val (g⁻¹ * h)) (d.val (g⁻¹ * h))
 
+/-- `cochainEquiv1` sends a continuous `1`-cochain `c` to its homogeneous form `(g, h) ↦
+homogeneous1 c g h`, curried. -/
 @[simp]
 theorem cochainEquiv1_apply (c : C1 G M) (g h : G) :
     (cochainEquiv1 G M c).val g h = homogeneous1 c.val g h := (rfl)
 
+/-- The inverse of `cochainEquiv1` sends a homogeneous cochain `c` to the `1`-cochain `g ↦ c 1 g`.
+-/
 @[simp]
 theorem cochainEquiv1_symm_apply
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.invariants) (g : G) :
@@ -256,10 +262,14 @@ def cochainEquiv2 : C2 G M ≃+
     simp only [homogeneous2_apply]
     exact smul_add g (c.val (g⁻¹ * h, h⁻¹ * k)) (d.val (g⁻¹ * h, h⁻¹ * k))
 
+/-- `cochainEquiv2` sends a continuous `2`-cochain `c` to its homogeneous form `(g, h, k) ↦
+homogeneous2 c g h k`, curried. -/
 @[simp]
 theorem cochainEquiv2_apply (c : C2 G M) (g h k : G) :
     (cochainEquiv2 G M c).val g h k = homogeneous2 c.val g h k := (rfl)
 
+/-- The inverse of `cochainEquiv2` sends a homogeneous cochain `c` to the `2`-cochain `(g, h) ↦ c 1
+g (g * h)`. -/
 @[simp]
 theorem cochainEquiv2_symm_apply
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.coind₁.invariants) (g h : G) :
@@ -268,7 +278,9 @@ theorem cochainEquiv2_symm_apply
 /-- The degree-one comparison carries `d1` to Mathlib's homogeneous differential. -/
 theorem d_cochainEquiv1 (c : C1 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom
-        (cochainEquiv1 G M c) =
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv1 G M c :) =
       cochainEquiv2 G M ⟨d1 G M c.val,
         mem_C2_iff.mpr (continuous_d1_apply (mem_C1_iff.mp c.property))⟩ := by
   apply Subtype.ext
@@ -279,7 +291,9 @@ theorem d_cochainEquiv1 (c : C1 G M) :
 theorem cochainEquiv2_symm_d
     (c : (ofDiscreteModule ℤ G M).ρ.coind₁.coind₁.invariants) :
     (cochainEquiv2 G M).symm
-        (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom c) =
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom c :) =
       ⟨d1 G M ((cochainEquiv1 G M).symm c).val,
         mem_C2_iff.mpr (continuous_d1_apply
           (mem_C1_iff.mp ((cochainEquiv1 G M).symm c).property))⟩ := by
@@ -289,7 +303,9 @@ theorem cochainEquiv2_symm_d
 /-- The differential of the degree-two comparison is the homogeneous form of `d2`. -/
 theorem d_cochainEquiv2_apply (c : C2 G M) (g h k l : G) :
     (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3).hom
-        (cochainEquiv2 G M c)).val g h k l =
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv2 G M c :)).val g h k l =
       g • d2 G M c.val (g⁻¹ * h, h⁻¹ * k, k⁻¹ * l) := by
   rw [TopRep.homogeneousCochains.d_apply]
   simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom,
@@ -312,7 +328,9 @@ theorem d_cochainEquiv2_apply (c : C2 G M) (g h k l : G) :
 /-- The degree-two comparison detects precisely the continuous inhomogeneous cocycles. -/
 theorem d_cochainEquiv2_eq_zero_iff (c : C2 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3).hom
-        (cochainEquiv2 G M c) = 0 ↔ c.val ∈ Z2 G M := by
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv2 G M c :) = 0 ↔ c.val ∈ Z2 G M := by
   rw [mem_Z2_iff, and_iff_right (mem_C2_iff.mp c.property), ← d2_apply_eq_zero_iff]
   constructor
   · intro hc
@@ -382,7 +400,9 @@ theorem cochainEquiv1_naturality (c : C1 G M) :
 theorem cochainEquiv2_naturality [LocallyCompactSpace H] (c : C2 G M) :
     ((_root_.ContinuousCohomology.cochainsMap φ
       (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap (fun h m ↦ hf h m))).f 2).hom
-        (cochainEquiv2 G M c) =
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv2 G M c :) =
       cochainEquiv2 H N ⟨cochainsMap2 (φ : H →* G) f c.val,
         mem_C2_iff.mpr (continuous_cochainsMap2 φ f continuous_of_discreteTopology
           (mem_C2_iff.mp c.property))⟩ := by

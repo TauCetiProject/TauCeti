@@ -24,6 +24,8 @@ of squares.
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
   basis is the diagonal matrix of the weights, and its discriminant is their product.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
+* `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: a ternary solution with
+  a nonzero third coordinate gives a nonzero isotropic vector in a diagonal form.
 * `TauCeti.isSquare_prod_mul_prod_of_equivalent`: isometric diagonal forms with unit weights have
   weight products differing by a square.
 -/
@@ -38,32 +40,28 @@ open QuadraticMap
 
 section PairExtension
 
-variable {R : Type u} [CommSemiring R] {n : ℕ}
-variable {w w' : Fin n → R} {i j : Fin n}
+variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] [DecidableEq ι]
+variable {w w' : ι → R} {i j : ι}
 
-private def replacePair (f : (Fin 2 → R) → (Fin 2 → R)) (i j : Fin n)
-    (x : Fin n → R) (k : Fin n) : R :=
+private def replacePair (f : (Fin 2 → R) → (Fin 2 → R)) (i j : ι)
+    (x : ι → R) (k : ι) : R :=
   if k = i then f ![x i, x j] 0 else if k = j then f ![x i, x j] 1 else x k
 
-omit [CommSemiring R] in
+omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_left (f : (Fin 2 → R) → (Fin 2 → R))
-    (i j : Fin n) (x : Fin n → R) : replacePair f i j x i = f ![x i, x j] 0 := by
+    (i j : ι) (x : ι → R) : replacePair f i j x i = f ![x i, x j] 0 := by
   simp [replacePair]
 
-omit [CommSemiring R] in
+omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_right (f : (Fin 2 → R) → (Fin 2 → R))
-    (hij : i ≠ j) (x : Fin n → R) : replacePair f i j x j = f ![x i, x j] 1 := by
+    (hij : i ≠ j) (x : ι → R) : replacePair f i j x j = f ![x i, x j] 1 := by
   simp [replacePair, hij.symm]
 
-omit [CommSemiring R] in
-private theorem finTwo_eta (v : Fin 2 → R) : ![v 0, v 1] = v := by
-  ext k
-  fin_cases k <;> rfl
-
-omit [CommSemiring R] in
+omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
-    (hfg : Function.LeftInverse f g) (hij : i ≠ j) (x : Fin n → R) :
+    (hfg : Function.LeftInverse f g) (hij : i ≠ j) (x : ι → R) :
     replacePair f i j (replacePair g i j x) = x := by
+  have finTwo_eta (v : Fin 2 → R) : ![v 0, v 1] = v := FinVec.etaExpand_eq v
   funext k
   by_cases hki : k = i
   · subst k
@@ -82,7 +80,7 @@ private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
 private def pairLinearEquiv (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j])) :
-    (Fin n → R) ≃ₗ[R] (Fin n → R) where
+    (ι → R) ≃ₗ[R] (ι → R) where
   toFun := replacePair e i j
   invFun := replacePair e.symm i j
   left_inv := replacePair_comp e.symm e e.symm_apply_apply hij
@@ -110,16 +108,6 @@ private def pairLinearEquiv (hij : i ≠ j)
         congrFun (map_smul e a ![x i, x j]) 1
     · simp [replacePair, hki, hkj]
 
-private theorem sum_pair_add_rest (f : Fin n → R) (hij : i ≠ j) :
-    ∑ k, f k = f i + f j + ∑ k ∈ (Finset.univ.erase i).erase j, f k := by
-  calc
-    ∑ k, f k = f i + ∑ k ∈ Finset.univ.erase i, f k :=
-      (Finset.add_sum_erase Finset.univ f (Finset.mem_univ i)).symm
-    _ = f i + (f j + ∑ k ∈ (Finset.univ.erase i).erase j, f k) := by
-      rw [Finset.add_sum_erase (Finset.univ.erase i) f
-        (Finset.mem_erase.mpr ⟨hij.symm, Finset.mem_univ j⟩)]
-    _ = _ := by ac_rfl
-
 private def pairIsometryEquiv (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j]))
@@ -128,7 +116,12 @@ private def pairIsometryEquiv (hij : i ≠ j)
   toLinearEquiv := pairLinearEquiv hij e
   map_app' x := by
     simp only [weightedSumSquares_apply]
-    rw [sum_pair_add_rest _ hij, sum_pair_add_rest _ hij]
+    have sum_pair_add_rest (f : ι → R) :
+        ∑ k, f k = f i + f j + ∑ k ∈ (Finset.univ.erase i).erase j, f k := by
+      rw [← Finset.add_sum_erase _ f (Finset.mem_univ i),
+        ← Finset.add_sum_erase _ f
+          (Finset.mem_erase.mpr ⟨hij.symm, Finset.mem_univ j⟩), add_assoc]
+    rw [sum_pair_add_rest, sum_pair_add_rest]
     simp only [pairLinearEquiv]
     have hpair := e.map_app ![x i, x j]
     simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
@@ -143,6 +136,7 @@ private def pairIsometryEquiv (hij : i ≠ j)
     have hkj : k ≠ j := (Finset.mem_erase.mp hk).1
     simp [replacePair, hki, hkj, hrest k hki hkj]
 
+omit [DecidableEq ι] in
 /-- Replacing two distinct coefficients by an equivalent binary form, while fixing all other
 coefficients, produces an equivalent diagonal form. -/
 theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
@@ -150,6 +144,7 @@ theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
       (weightedSumSquares R ![w' i, w' j]))
     (hrest : ∀ k, k ≠ i → k ≠ j → w k = w' k) :
     (weightedSumSquares R w).Equivalent (weightedSumSquares R w') := by
+  classical
   obtain ⟨e⟩ := hpair
   exact ⟨pairIsometryEquiv hij e hrest⟩
 
@@ -173,6 +168,39 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
       = QuadraticMap.weightedSumSquares R fun i => ((w i : R)) := by
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
+
+/-- Evaluate a diagonal form on a linear combination of three distinct coordinate vectors. -/
+-- Apply before the generic `weightedSumSquares_apply` expansion.
+@[simp high]
+theorem _root_.QuadraticMap.weightedSumSquares_apply_three_single
+    {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι → R)
+    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (x y z : R) :
+    QuadraticMap.weightedSumSquares R a
+      (Pi.single i x + Pi.single j y + Pi.single k z) =
+      a i * x ^ 2 + a j * y ^ 2 + a k * z ^ 2 := by
+  classical
+  rw [QuadraticMap.weightedSumSquares_apply,
+    ← Finset.sum_subset (Finset.subset_univ {i, j, k})]
+  · simp [Finset.sum_insert, hij, hik, hjk, smul_eq_mul, pow_two, add_assoc]
+  · intro l _ hl
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hl
+    simp [hl.1, hl.2.1, hl.2.2]
+
+/-- A ternary solution with a nonzero third coordinate gives a nonzero isotropic vector in a
+diagonal quadratic form. -/
+theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero
+    {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] (a : ι → R)
+    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    {x y z : R} (hz : z ≠ 0)
+    (h : a i * x ^ 2 + a j * y ^ 2 + a k * z ^ 2 = 0) :
+    ¬ (QuadraticMap.weightedSumSquares R a).Anisotropic := by
+  classical
+  let f : ι → R := Pi.single i x + Pi.single j y + Pi.single k z
+  intro hanis
+  have hf : f = 0 := hanis f <| by
+    simpa [f, weightedSumSquares_apply_three_single a hij hik hjk x y z] using h
+  have hz0 : z = 0 := by simpa [f, hik.symm, hjk.symm] using congrFun hf k
+  exact hz hz0
 
 section Discriminant
 

@@ -52,7 +52,7 @@ theorem isPushout_biprod_inl_map {X Y : C} (f : X ⟶ Y) (Z : C)
   (IsPushout.of_coprod_inl_with_id f Z).of_iso
     (Iso.refl X) (biprod.isoCoprod X Z).symm
     (Iso.refl Y) (biprod.isoCoprod Y Z).symm
-    (by simp [coprod.inl_desc]) (by simp) (by ext <;> simp) (by simp [coprod.inl_desc])
+    (by simp) (by simp) (by ext <;> simp) (by simp)
 
 /-- The square formed by a morphism and the corresponding biproduct projections is a pullback. -/
 theorem isPullback_biprod_map_fst {X Y : C} (f : X ⟶ Y) (Z : C)

@@ -69,12 +69,12 @@ instance : CoeFun (EulerProductData K) fun _ ↦ ((Ideal (𝓞 K))⁰) → ℂ w
 @[ext]
 theorem ext {D E : EulerProductData K} (h : ∀ I, D I = E I) : D = E := by
   cases D with
-  | mk D hD =>
+  | mk D _ =>
     cases E with
-    | mk E hE =>
-      have hDE : D = E := funext h
-      subst E
-      rfl
+    | mk E _ =>
+      congr
+      funext I
+      exact h I
 
 /-- The canonical local power series of bundled Euler-product data at a height-one prime. -/
 noncomputable def localPowerSeries (D : EulerProductData K)

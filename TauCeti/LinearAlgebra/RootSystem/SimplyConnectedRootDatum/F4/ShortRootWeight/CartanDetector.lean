@@ -47,4 +47,17 @@ theorem eq_zero_of_f4ShortRootWeight_smul_eq_zero {A : Type*} [AddCommGroup A]
   have hi := LinearMap.congr_fun hφ (Pi.basisFun ℤ (Fin 4) i)
   simpa [φ, φ₀] using hi
 
+/-- The short pinned F₄ roots detect every Cartan coordinate in an additive commutative group. -/
+theorem eq_zero_of_f4Root_smul_eq_zero_on_short {A : Type*} [AddCommGroup A]
+    (c : Fin 4 → A)
+    (hc : ∀ β : Fin 48, f4Length β = 1 → ∑ i, f4Root β i • c i = 0) :
+    c = 0 := by
+  apply eq_zero_of_f4ShortRootWeight_smul_eq_zero
+  intro a
+  by_cases ha : f4ShortRootWeight a = 0
+  · simp only [ha, Pi.zero_apply, zero_smul, Finset.sum_const_zero]
+  · obtain ⟨β, hβ, hroot⟩ :=
+      (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
+    simpa only [← hroot] using hc β hβ
+
 end TauCeti.DynkinType

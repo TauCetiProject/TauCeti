@@ -10,8 +10,8 @@ public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.NumberTheory.Chebotarev.Density.Ramification
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Series
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Series
 
 /-!
 # Chebotarev density for cyclotomic extensions
@@ -56,7 +56,7 @@ private theorem tendsto_primeSum_galoisCharacterWeight_div_log (m : ℕ) [NeZero
   · have hℓ := Real.tendsto_log_one_div_sub_atTop 1
     obtain ⟨B, hB⟩ := MultiplicativeIdealWeight.exists_norm_primeSum_le
       (MonoidHom.norm_galoisCharacterWeight_le_one χ)
-      (cyclotomicCharacterSeriesC_analyticAt_one K F m χ hχ)
+      (analyticAt_cyclotomicCharacterSeriesC_one K F m χ hχ)
       (cyclotomicCharacterSeriesC_ne_zero_at_one K F m χ hχ)
       fun _ ↦ cyclotomicCharacterSeriesC_eq_LSeries K F χ
     refine squeeze_zero_norm' ?_ ((tendsto_const_nhds (x := B)).div_atTop hℓ)

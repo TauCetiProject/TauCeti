@@ -78,13 +78,6 @@ open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
-/-- The pullback of `[n]` sends the generic coordinate to `[n]*x = Φₙ/ΨSqₙ`. -/
-private theorem fieldPullback_mulByIntIsogeny_genericX [W.IsElliptic] {n : ℤ}
-    (hn : psiFunctionField W n ≠ 0) :
-    (mulByIntIsogeny W hn).fieldPullback (genericX W) = mulByIntX W n := by
-  rw [genericX_def, fieldPullback_algebraMap, mulByIntIsogeny_pullback]
-  exact mulByIntPullback_X W hn
-
 /-- **The division-polynomial Wronskian at the generic point**:
 
 `(Φₙ' ΨSqₙ - Φₙ ΨSqₙ') u = n ΨSqₙ² ([n]*u)`,
@@ -127,13 +120,6 @@ theorem wronskian_Φ_ΨSq_mul_invariantDifferentialDenom [W.IsElliptic] {n : ℤ
 
 `[n]*u` is `u` read at the image point `(Φₙ/ΨSqₙ, ωₙ/ψₙ³)`, so clearing `ψₙ³` turns it into the
 left-hand side of `ω_spec`, the identity `ψc` is defined by. -/
-
-/-- The pullback of `[n]` sends the generic `y` to `[n]*y = ωₙ/ψₙ³`. -/
-private theorem fieldPullback_mulByIntIsogeny_genericY [W.IsElliptic] {n : ℤ}
-    (hn : psiFunctionField W n ≠ 0) :
-    (mulByIntIsogeny W hn).fieldPullback (genericY W) = mulByIntY W n := by
-  rw [genericY_def, fieldPullback_algebraMap, mulByIntIsogeny_pullback]
-  exact mulByIntPullback_Y W hn
 
 /-- **The defining identity for `ψc` at the generic point**: `2 ωₙ + a₁ φₙ ψₙ + a₃ ψₙ³ = ψcₙ`. -/
 theorem two_mul_omega_add_eq_psic (n : ℤ) :

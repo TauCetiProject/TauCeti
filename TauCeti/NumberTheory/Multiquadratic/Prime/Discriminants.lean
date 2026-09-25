@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.Data.Rat.Lemmas
+import Mathlib.Algebra.GCDMonoid.FinsetLemmas
+import Mathlib.Data.Int.NatAbs
 import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
@@ -41,6 +43,9 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   the only prime divisor.
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminant_of_ne_of_not_both_even`: distinct prime
   discriminants are coprime, unless both are even.
+* `TauCeti.Multiquadratic.lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even`:
+  for prime discriminants with at most one even member, the least common multiple of their
+  absolute values is that of their product.
 * `TauCeti.Multiquadratic.prod_ne_zero_of_forall_isPrimeDiscriminant` and
   `TauCeti.Multiquadratic.neZero_natAbs_prod_of_forall_isPrimeDiscriminant`: a product of prime
   discriminants is nonzero, so its absolute value is a legitimate Dirichlet character level.
@@ -531,5 +536,17 @@ theorem isCoprime_primeDiscriminant_of_ne_of_not_both_even {D E : ℤ}
     · rw [Int.isCoprime_iff_nat_coprime, oddPrimeDiscriminant_natAbs,
         oddPrimeDiscriminant_natAbs]
       exact (Nat.coprime_primes hp hq).mpr fun hpq => hne (by rw [hpq])
+
+/-- For a family of prime discriminants with at most one even member, the least common multiple
+of their absolute values is the absolute value of their product. -/
+theorem lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ Q ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
+    s.lcm Int.natAbs = (∏ P ∈ s, P).natAbs := by
+  rw [Finset.lcm_eq_prod fun P hP Q hQ hPQ ↦ Int.isCoprime_iff_nat_coprime.mp
+    (isCoprime_primeDiscriminant_of_ne_of_not_both_even (hs P hP) (hs Q hQ) hPQ
+      fun h ↦ hPQ (heven P hP Q hQ h.1 h.2))]
+  exact (map_prod Int.natAbsHom _ s).symm
 
 end TauCeti.Multiquadratic

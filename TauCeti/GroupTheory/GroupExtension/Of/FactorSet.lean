@@ -47,6 +47,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 * `TauCeti.FactorSet.rescaleEquiv`: the equivalence of extensions obtained by rescaling that
   section.
 * `TauCeti.FactorSet.trivial`: the factor set that is constantly `1`.
+* `TauCeti.FactorSet.map`: the pushforward of a factor set along a `G`-equivariant homomorphism of
+  coefficient modules.
 
 ## Main results
 
@@ -140,6 +142,27 @@ theorem smul_apply_inv_left (g : G) : g • α (g⁻¹, g) = α (g, g⁻¹) := b
   rwa [map_one_one, map_one_snd, div_self', div_eq_one] at h
 
 end
+
+/-! ### Pushforward along a coefficient map -/
+
+section Map
+
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (f : M →*[G] N) (α : FactorSet G M)
+
+/-- **Pushforward of a factor set along an equivariant homomorphism of coefficient modules**: the
+factor set `(g, h) ↦ f (α (g, h))` of `G` with values in `N`. -/
+def map : FactorSet G N where
+  toFun p := f (α p)
+  isMulCocycle₂' g h j := by
+    simp only [← map_mul, ← map_smul]
+    exact congrArg f (α.isMulCocycle₂ g h j)
+  map_one_one' := by simp
+
+@[simp]
+theorem map_apply (p : G × G) : α.map f p = f (α p) :=
+  (rfl)
+
+end Map
 
 /-- The **twisted product** `M × G` attached to a factor set `α`: the underlying set of the group
 extension of `G` by `M` that `α` determines, with multiplication

@@ -117,6 +117,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
+/-- `G` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
 local instance : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
@@ -176,8 +177,13 @@ theorem evensGraphCochainClass_def [LocallyCompactSpace G] (U : OpenSubgroup G) 
       (eqToHom (congrArg (continuousCohomology 2)
         (ofDiscreteModule_trivialF2 G))).hom
         (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
-          (evensGraphCocycle U s α hU hs hα)) :=
-  (rfl)
+          (evensGraphCocycle U s α hU hs hα)) := by
+  -- The unfolded body has an auxiliary `_proof_1` where the statement has the
+  -- `DiscreteTopology` instance. A default-transparency `rfl` unfolds `eqToHom` and fails to
+  -- reduce its cast before reaching that argument (6 s); at reducible transparency the
+  -- arguments are compared directly and the proofs agree by proof irrelevance.
+  unfold evensGraphCochainClass
+  with_reducible rfl
 
 private theorem evensGraphCochainClass_eq [LocallyCompactSpace G] (U : OpenSubgroup G)
     (s s' : G) (α : U.toSubgroup →* Multiplicative (ZMod 2))

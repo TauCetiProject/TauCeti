@@ -145,6 +145,7 @@ this very instance, and identifying it with the one it started from is a definit
 
 attribute [local instance] distribMulAction
 
+/-- In the derived action, `g • x` is `ρ(g) x`. -/
 @[simp] lemma distribMulAction_smul (X : TopRep R G) (g : G) (x : X.V) :
     g • x = X.ρ g x := (rfl)
 
@@ -233,6 +234,7 @@ anything about the elements of that module. -/
       map_one' := by ext m; exact one_smul G m
       map_mul' g h := by ext m; exact mul_smul g h m })
 
+/-- The underlying module of `ofDiscreteModule R G M` is `M`. -/
 @[simp] lemma ofDiscreteModule_V : (ofDiscreteModule R G M).V = M := (rfl)
 
 /-- The underlying topological module of `TauCeti.ofDiscreteModule` is discrete. This is
@@ -243,6 +245,7 @@ instance : DiscreteTopology (ofDiscreteModule R G M).V := inferInstanceAs (Discr
 
 variable {R G M}
 
+/-- In `ofDiscreteModule R G M`, the operator of `g` is the given action `m ↦ g • m`. -/
 @[simp] lemma ofDiscreteModule_ρ_apply_apply (g : G) (m : M) :
     (ofDiscreteModule R G M).ρ g m = g • m := (rfl)
 
@@ -406,6 +409,7 @@ constructor, and an exposed definition may only be built from exposed ones. -/
     { toContinuousLinearMap := ⟨f, continuous_of_discreteTopology⟩
       isIntertwining' g := by ext m; exact hf g m }
 
+/-- `ofDiscreteModuleMap f hf` acts on underlying modules as `f`. -/
 @[simp] lemma ofDiscreteModuleMap_hom_apply (f : M →ₗ[R] N)
     (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (m : M) :
     (ofDiscreteModuleMap f hf).hom m = f m := (rfl)
@@ -472,10 +476,13 @@ def ofDiscreteModuleHomAddEquiv :
 
 variable {R G M N}
 
+/-- `ofDiscreteModuleHomAddEquiv` sends a morphism `φ` to its underlying map. -/
 @[simp] lemma ofDiscreteModuleHomAddEquiv_apply_apply
     (φ : ofDiscreteModule R G M ⟶ ofDiscreteModule R G N) (m : M) :
     ofDiscreteModuleHomAddEquiv R G M N φ m = φ.hom m := (rfl)
 
+/-- The inverse of `ofDiscreteModuleHomAddEquiv` sends an intertwining map `f` to the morphism
+acting as `f`. -/
 @[simp] lemma ofDiscreteModuleHomAddEquiv_symm_apply_hom_apply
     (f : Representation.IntertwiningMap (Representation.ofDistribMulAction R G M)
       (Representation.ofDistribMulAction R G N)) (m : M) :
@@ -510,6 +517,7 @@ def ofDiscreteModulePair (φ : H →* G) (f : M →ₗ[R] N)
 -- `simp` reduces the carrier and the operators of the `abbrev` `TopRep.res φ` in implicit type
 -- arguments before it looks a term up, so the `simp` lemmas below that evaluate on it state their
 -- left-hand sides through `dsimp% only`, as in #8315.
+/-- The compatible pair `ofDiscreteModulePair φ f hf` acts on underlying modules as `f`. -/
 @[simp] lemma ofDiscreteModulePair_hom_apply (φ : H →* G) (f : M →ₗ[R] N)
     (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (m : M) :
     (dsimp% only ((ofDiscreteModulePair φ f hf).hom m)) = f m := (rfl)
@@ -583,13 +591,21 @@ are exactly the instances `TauCeti.ofDiscreteModule` and
 structure DiscreteRep where
   /-- the underlying module -/
   V : Type w
+  /-- the additive group structure on `V` -/
   [addCommGroup : AddCommGroup V]
+  /-- the `R`-module structure on `V` -/
   [module : Module R V]
+  /-- the topology on `V` -/
   [topologicalSpace : TopologicalSpace V]
+  /-- the topology on `V` is discrete -/
   [discreteTopology : DiscreteTopology V]
+  /-- the action of `G` on `V` by additive maps -/
   [distribMulAction : DistribMulAction G V]
+  /-- the action of `G` commutes with the scalars -/
   [smulCommClass : SMulCommClass G R V]
+  /-- scalar multiplication by `R` is continuous -/
   [continuousSMulRing : ContinuousSMul R V]
+  /-- the action of `G` is continuous -/
   [continuousSMul : ContinuousSMul G V]
 
 attribute [instance] DiscreteRep.addCommGroup DiscreteRep.module DiscreteRep.topologicalSpace
@@ -649,9 +665,11 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
     (ofDiscreteModuleMap_comp_ofDiscreteModuleMap f.toLinearMap (DiscreteRep.equivariant f)
       g.toLinearMap (DiscreteRep.equivariant g)).symm
 
+/-- `toSmoothDiscrete` sends a discrete representation `X` to `ofDiscreteModule R G X.V`. -/
 @[simp] lemma toSmoothDiscrete_obj_obj (X : DiscreteRep.{u, v, w} R G) :
     ((toSmoothDiscrete R G).obj X).obj = ofDiscreteModule R G X.V := (rfl)
 
+/-- `toSmoothDiscrete` sends a morphism `f` to the morphism acting as `f`. -/
 @[simp] lemma toSmoothDiscrete_map_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
@@ -745,9 +763,11 @@ module, with the action read off from its operators by `TopRep.distribMulAction`
   map_id _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
   map_comp _ _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
 
+/-- `ofSmoothDiscrete` keeps the underlying module of a smooth discrete representation. -/
 @[simp] lemma ofSmoothDiscrete_obj_V (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     ((ofSmoothDiscrete R G).obj X).V = X.obj.V := (rfl)
 
+/-- `ofSmoothDiscrete` sends a morphism `φ` to its underlying linear map. -/
 @[simp] lemma ofSmoothDiscrete_map_toLinearMap_apply {X Y : SmoothDiscreteTopRep.{u, v, w} R G}
     (φ : X ⟶ Y) (x : X.obj.V) :
     ((ofSmoothDiscrete R G).map φ).toLinearMap x = φ.hom.hom x := (rfl)
@@ -772,22 +792,30 @@ every component of the unit and of the counit is an identity morphism. -/
   counitIso := NatIso.ofComponents (fun X ↦ Iso.refl X) fun _ ↦
     ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ fun _ ↦ rfl))
 
+/-- The functor of `discreteRepEquivSmoothTopRep` is `toSmoothDiscrete`. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_functor :
     (discreteRepEquivSmoothTopRep R G).functor = toSmoothDiscrete R G := (rfl)
 
+/-- The inverse functor of `discreteRepEquivSmoothTopRep` is `ofSmoothDiscrete`. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_inverse :
     (discreteRepEquivSmoothTopRep R G).inverse = ofSmoothDiscrete R G := (rfl)
 
+/-- Each component of the unit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_unitIso_hom_app (X : DiscreteRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).unitIso.hom.app X = 𝟙 X := (rfl)
 
+/-- Each component of the inverse of the unit of `discreteRepEquivSmoothTopRep` is an identity
+morphism. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_unitIso_inv_app (X : DiscreteRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).unitIso.inv.app X = 𝟙 X := (rfl)
 
+/-- Each component of the counit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_counitIso_hom_app
     (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).counitIso.hom.app X = 𝟙 X := (rfl)
 
+/-- Each component of the inverse of the counit of `discreteRepEquivSmoothTopRep` is an identity
+morphism. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_counitIso_inv_app
     (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).counitIso.inv.app X = 𝟙 X := (rfl)

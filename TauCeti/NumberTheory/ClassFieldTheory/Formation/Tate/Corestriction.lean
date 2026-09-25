@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Corestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
 /-!
 # Corestriction of finite-layer Tate cohomology
@@ -48,9 +48,10 @@ tower `F ⊆ E ⊆ E' ⊆ K` of ground fields in every degree.
   zero, corestriction is the ground-level norm.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_neg_one_HNegOneπ`: in degree minus one,
   corestriction is the inclusion of norm kernels `kerNormInclusion`.
-* `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_negSucc_succ_comp_isoGroupHomology_hom`: in
-  degrees at most minus two, corestriction is `groupHomology.map` along the inclusion of Galois
-  groups.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_negSucc_succ_comp_negSuccIso_hom`: in degrees
+  at most minus two, corestriction is `groupHomology.map` along the inclusion of Galois groups.
+* `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateCor_zero_H0π`: in degree zero,
+  trivial-coefficient corestriction multiplies an integral representative by the relative degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_trans`: Tate corestriction is functorial
   along a tower of restrictions, in every integer degree.
 
@@ -139,29 +140,25 @@ theorem tateCor_negSucc_succ (T : LayerRestriction small big) (F : Formation G) 
 
 /-- **In degrees at most minus two, layer Tate corestriction is the covariant map on group
 homology** along the inclusion of Galois groups, with the canonical identification of coefficients,
-read through Mathlib's comparison of Tate cohomology with group homology. -/
+read through `TauCeti.TateCohomology.negSuccIso`. -/
 @[reassoc]
-theorem tateCor_negSucc_succ_comp_isoGroupHomology_hom (T : LayerRestriction small big)
-    (F : Formation G) (n : ℕ) :
+theorem tateCor_negSucc_succ_comp_negSuccIso_hom (T : LayerRestriction small big) (F : Formation G)
+    (n : ℕ) :
     T.tateCor F (Int.negSucc (n + 1)) ≫
-        (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-          (by rw [Int.negSucc_eq])).hom.app (big.rep F) =
-      (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-          (by rw [Int.negSucc_eq])).hom.app (small.rep F) ≫
+        (TauCeti.TateCohomology.negSuccIso (big.rep F) (n + 1)).hom =
+      (TauCeti.TateCohomology.negSuccIso (small.rep F) (n + 1)).hom ≫
         groupHomology.map T.galHom (T.repIso F).hom (n + 1) := by
-  rw [tateCor_negSucc_succ, Category.assoc,
-    TauCeti.TateCohomology.negSuccCor_comp_isoGroupHomology_hom, tateRangeIso_hom,
-    ← Category.assoc, TauCeti.TateCohomology.map_comp_isoGroupHomology_hom]
-  -- The comparison with group homology lands in `groupHomology.functor`, whose objects are group
-  -- homology only up to unfolding, so the remaining square is composed as a term.
-  refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_)
-  refine (groupHomology.map_comp _ _ _ _ _).symm.trans ?_
-  refine groupHomology.map_congr (MonoidHom.ext fun γ ↦ ?_) (LinearMap.ext fun x ↦ ?_) (n + 1)
-  · exact MonoidHom.ofInjective_apply T.galHom_injective
-  · -- `simp` leaves the two coercions of the coefficient identification to a function, which
-    -- agree by definition.
-    simp [Representation.equivOfIso]
-    rfl
+  rw [tateCor_negSucc_succ, Category.assoc, TauCeti.TateCohomology.negSuccCor_comp_negSuccIso_hom,
+    tateRangeIso_hom, TauCeti.TateCohomology.map_comp_negSuccIso_hom_assoc,
+    ← groupHomology.map_comp]
+  refine congrArg (_ ≫ ·) (groupHomology.map_congr rfl ?_ (n + 1))
+  refine LinearMap.ext fun x ↦ ?_
+  -- `Representation.equivOfIso` has no apply lemma, so the two coercions of the coefficient
+  -- identification to a function are identified by definition.
+  simp only [Rep.hom_comp, IntertwiningMap.comp_toLinearMap, resMap_hom_toLinearMap,
+    Rep.hom_id, IntertwiningMap.toLinearMap_id, IsIntertwiningMap.toRes_hom_toLinearMap,
+    LinearMap.id_comp]
+  rfl
 
 /-- The **inclusion of norm kernels** along a restriction: an element of the top level `A^V` whose
 norm for the layer `K/E` vanishes has vanishing norm for the layer `K/F`. It moves no element of
@@ -290,23 +287,13 @@ theorem tateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (F 
     congr 1
     refine Subtype.ext (Subtype.ext ?_)
     rw [kerNormInclusion_apply_coe, kerNormInclusion_apply_coe, kerNormInclusion_apply_coe]
-  · rw [← cancel_mono ((TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
-      (by rw [Int.negSucc_eq])).hom.app (c.rep F)), Category.assoc,
-      tateCor_negSucc_succ_comp_isoGroupHomology_hom,
-      tateCor_negSucc_succ_comp_isoGroupHomology_hom (T := T')]
-    have hmap : groupHomology.map (T.trans T').galHom ((T.trans T').repIso F).hom (n + 1) =
-        groupHomology.map T.galHom (T.repIso F).hom (n + 1) ≫
-          groupHomology.map T'.galHom (T'.repIso F).hom (n + 1) := by
-      rw [← groupHomology.map_comp]
-      refine groupHomology.map_congr (galHom_trans T T') (LinearMap.ext fun x ↦ Subtype.ext ?_)
-        (n + 1)
-      exact ((T.trans T').repIso_hom_apply_coe F x).trans
-        ((T'.repIso_hom_apply_coe F _).trans (T.repIso_hom_apply_coe F x)).symm
-    -- The comparison with group homology lands in `groupHomology.functor`, whose objects are group
-    -- homology only up to unfolding, so the squares are composed as terms.
-    refine (congrArg (_ ≫ ·) hmap).trans ((Category.assoc _ _ _).symm.trans ?_)
-    exact (congrArg (· ≫ _)
-      (T.tateCor_negSucc_succ_comp_isoGroupHomology_hom F n).symm).trans (Category.assoc _ _ _)
+  · rw [← cancel_mono (TauCeti.TateCohomology.negSuccIso (c.rep F) (n + 1)).hom, Category.assoc,
+      tateCor_negSucc_succ_comp_negSuccIso_hom, tateCor_negSucc_succ_comp_negSuccIso_hom,
+      tateCor_negSucc_succ_comp_negSuccIso_hom_assoc, ← groupHomology.map_comp]
+    refine congrArg (_ ≫ ·) (groupHomology.map_congr (galHom_trans T T') ?_ (n + 1))
+    refine LinearMap.ext fun x ↦ Subtype.ext ?_
+    exact ((T.trans T').repIso_hom_apply_coe F x).trans
+      ((T'.repIso_hom_apply_coe F _).trans (T.repIso_hom_apply_coe F x)).symm
 
 end Towers
 
@@ -321,7 +308,10 @@ def trivialTateCor (T : LayerRestriction small big) :
       (T.trivialTateRangeIso 0).hom ≫
         TauCeti.TateCohomology.H0Cor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range
   | .ofNat (n + 1) =>
-      (T.trivialTateRangeIso (n + 1)).hom ≫
+      -- The ascription elaborates the comparison before it meets the branch type
+      -- `Int.ofNat (n + 1)`: matched first, the still-pending literal in `n + 1` makes that
+      -- unification fail slowly (see #8346).
+      ((T.trivialTateRangeIso (n + 1)).hom :) ≫
         (TateCohomology.isoGroupCohomology (n + 1)).hom.app
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) ≫
         TauCeti.groupCohomology.corestriction
@@ -343,6 +333,24 @@ theorem trivialTateCor_zero (T : LayerRestriction small big) :
     T.trivialTateCor 0 = (T.trivialTateRangeIso 0).hom ≫
       TauCeti.TateCohomology.H0Cor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range :=
   (rfl)
+
+/-- On an invariant integral representative, degree-zero corestriction multiplies by the
+relative degree. -/
+theorem trivialTateCor_zero_H0π (T : LayerRestriction small big)
+    (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
+    T.trivialTateCor 0 (TauCeti.TateCohomology.H0π _ x) =
+      TauCeti.TateCohomology.H0π _
+        (⟨T.relativeDegree * (x : ℤ), fun _ ↦ rfl⟩ :
+          (Rep.trivial ℤ big.Gal ℤ).ρ.invariants) := by
+  let : Fintype (big.Gal ⧸ T.galHom.range) := Fintype.ofFinite _
+  rw [trivialTateCor_zero, ModuleCat.comp_apply,
+    trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
+  congr 1
+  apply Subtype.ext
+  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
+  · simp only [T.index_range_galHom]
+    simp
+  · exact fun _ ↦ rfl
 
 /-- In a positive degree, trivial-coefficient Tate corestriction is ordinary cohomological
 corestriction after identifying the smaller Galois group with its image. -/

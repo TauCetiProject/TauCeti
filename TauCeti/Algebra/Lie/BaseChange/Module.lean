@@ -30,16 +30,12 @@ variable {R L M N : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 /-- Extending scalars preserves the equivariance of a Lie-module map. -/
 @[simp] theorem baseChange_map_lie (f : M →ₗ⁅R,L⁆ N) (x : A ⊗[R] L) (m : A ⊗[R] M) :
     f.toLinearMap.baseChange A ⁅x, m⁆ = ⁅x, f.toLinearMap.baseChange A m⁆ := by
-  induction x using TensorProduct.induction_on with
-  | zero =>
-      rw [zero_lie (L := A ⊗[R] L) (M := A ⊗[R] M),
-        zero_lie (L := A ⊗[R] L) (M := A ⊗[R] N), map_zero]
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
       rw [add_lie (L := A ⊗[R] L) (M := A ⊗[R] M),
         add_lie (L := A ⊗[R] L) (M := A ⊗[R] N), map_add, hx, hy]
   | tmul a x =>
-      induction m using TensorProduct.induction_on with
-      | zero => simp
+      induction m using TensorProduct.inductionOn with
       | add m n hm hn => simp only [lie_add, map_add, hm, hn]
       | tmul b m => simp
 

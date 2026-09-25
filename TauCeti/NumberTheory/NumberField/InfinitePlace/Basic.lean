@@ -20,6 +20,9 @@ embedding would send that element to a real square root of a negative number. A 
 field, having only complex infinite places, is then unramified at every infinite place in any
 extension, and in degree `2` it has exactly one such place.
 
+Restricting a real place along a field embedding gives a real place, and the real embedding of the
+restriction is the composite of the embeddings.
+
 ## Main results
 
 * `NumberField.IsTotallyReal.of_isUnramifiedAtInfinitePlaces`: an everywhere-unramified
@@ -35,6 +38,8 @@ extension, and in degree `2` it has exactly one such place.
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
+* `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
+  place.
 -/
 
 public section
@@ -149,5 +154,16 @@ theorem InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces :
     (Module.finrank ℚ K - nrRealPlaces K) / 2 = nrComplexPlaces K := by
   have key := card_add_two_mul_card_eq_rank K
   omega
+
+omit [NumberField K] in
+/-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of
+`w` composed with `f`. -/
+@[simp]
+theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →+* K)
+    {w : InfinitePlace K} (hw : w.IsReal) :
+    embedding_of_isReal (hw.comap f) = (embedding_of_isReal hw).comp f := by
+  refine RingHom.ext fun x ↦ Complex.ofReal_injective ?_
+  rw [embedding_of_isReal_apply, RingHom.comp_apply, embedding_of_isReal_apply,
+    comap_embedding_of_isReal _ (hw.comap f), RingHom.comp_apply]
 
 end NumberField

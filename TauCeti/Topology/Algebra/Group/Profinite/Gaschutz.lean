@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.Gaschutz
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 
@@ -136,7 +137,8 @@ theorem exists_comp_eq_and_topologicalClosure_closure_range_eq_top {f : G →* H
       rw [hcomp]
       exact hygen
     · rw [Set.mem_ofPred_eq, map_mul, hfu i, mul_inv_cancel_left]
-  obtain ⟨x, hx⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
+    (fun U ↦ (hclosed U).isCompact) hclosed
   have hxU : ∀ U : OpenNormalSubgroup G, x ∈ C U := Set.mem_iInter.mp hx
   refine ⟨x, funext fun i ↦ Set.mem_iInter.mp (hxU (openNormalSubgroupTop G)).2 i,
     topologicalClosure_closure_eq_top_iff.mpr fun U ↦ ?_⟩

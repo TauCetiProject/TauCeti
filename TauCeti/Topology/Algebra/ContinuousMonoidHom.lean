@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
-# Continuous subgroup inclusion, inverse conjugation, and quotient projection
+# Continuity of homomorphisms and maps involving subgroups and quotients
 
 Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and its coercion
 `ContinuousMonoidHom.toContinuousMonoidHom` applies only to bundled types that already carry a
@@ -17,6 +17,10 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+A homomorphism from a topological group with open kernel is also continuous, for every topology
+on the target. Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
+compact group the common kernel of a family of them is approximated from outside by the common
+kernels of its finite subfamilies.
 -/
 
 public section
@@ -25,7 +29,42 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
+/-- A homomorphism with open kernel out of a topological group is continuous for every topology
+on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousMul G] {F : Type*} [MulOneClass F]
+    [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) : Continuous f := by
+  refine continuous_iff_continuousAt.mpr fun x ↦ tendsto_const_nhds.congr' ?_
+  have hcoset : ∀ᶠ y in nhds x, x⁻¹ * y ∈ f.ker := by
+    have hmul : Filter.Tendsto (fun y ↦ x⁻¹ * y) (nhds x) (nhds 1) := by
+      simpa using (continuous_const_mul x⁻¹).tendsto x
+    exact hmul.eventually (Filter.eventually_mem_set.mpr (hf.mem_nhds (one_mem f.ker)))
+  filter_upwards [hcoset] with y hy
+  calc f x = f x * f (x⁻¹ * y) := by rw [MonoidHom.mem_ker.mp hy, mul_one]
+    _ = f y := by rw [← map_mul, mul_inv_cancel_left]
+
+/-- **A finite subfamily of kernels suffices.** In a compact group, an open set containing the
+common kernel of a family of continuous homomorphisms into a discrete monoid already contains the
+common kernel of a finite subfamily: each kernel is the preimage of the closed point `1`, so this
+is the finite intersection property. -/
+theorem exists_finset_iInter_ker_subset [CompactSpace G] {H : Type*}
+    [Monoid H] [TopologicalSpace H] [DiscreteTopology H] {ι : Type*} (φ : ι → G →ₜ* H)
+    {U : Set G} (hU : IsOpen U) (h : ⋂ j, ((φ j).ker : Set G) ⊆ U) :
+    ∃ F : Finset ι, ⋂ j ∈ F, ((φ j).ker : Set G) ⊆ U := by
+  obtain ⟨F, hF⟩ := hU.isClosed_compl.isCompact.elim_finite_subfamily_closed
+    (fun j ↦ (((φ j).ker : Subgroup G) : Set G))
+    (fun j ↦ by
+      rw [MonoidHom.coe_ker]
+      exact (isClosed_discrete {1}).preimage (φ j).continuous)
+    (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
+  exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
+
 namespace ContinuousMonoidHom
+
+/-- Evaluating a continuous homomorphism assembled from a homomorphism and a continuity proof. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalSpace A] [Monoid B]
+    [TopologicalSpace B] (f : A →* B) (hf : Continuous f) : ⇑(⟨f, hf⟩ : A →ₜ* B) = f :=
+  rfl
 
 -- Both definitions below are exposed: downstream, `TopRep.res` objects taken along them have to
 -- be definitionally the ones taken along the bare `Subgroup.subtype` and `QuotientGroup.mk'`.

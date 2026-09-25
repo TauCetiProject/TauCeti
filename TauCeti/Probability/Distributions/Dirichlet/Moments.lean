@@ -255,15 +255,10 @@ theorem integrableExpSet_inner_dirichletMeasure (θ : EuclideanSpace ℝ ι) :
     have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure h.2
     ext t
     simp only [Set.mem_univ, iff_true, integrableExpSet, Set.mem_ofPred_eq]
-    refine Integrable.mono' (integrable_const (Real.exp (|t| * ‖θ‖))) (by fun_prop) ?_
-    filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
-    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-    refine Real.exp_le_exp.2 ?_
-    calc t * ⟪θ, x⟫ ≤ |t * ⟪θ, x⟫| := le_abs_self _
-      _ = |t| * |⟪θ, x⟫| := abs_mul _ _
-      _ ≤ |t| * (‖θ‖ * ‖x‖) := by gcongr; exact abs_real_inner_le_norm θ x
-      _ ≤ |t| * (‖θ‖ * 1) := by gcongr
-      _ = |t| * ‖θ‖ := by ring
+    refine integrable_exp_mul_of_mem_Icc (a := -‖θ‖) (b := ‖θ‖) (by fun_prop) ?_
+    filter_upwards [ae_norm_le_one_dirichletMeasure (a := a)] with x hx
+    exact abs_le.mp ((abs_real_inner_le_norm θ x).trans
+      (by simpa using mul_le_mul_of_nonneg_left hx (norm_nonneg θ)))
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp [integrableExpSet]
 

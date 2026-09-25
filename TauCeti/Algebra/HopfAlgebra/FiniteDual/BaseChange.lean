@@ -104,8 +104,7 @@ private theorem baseChangeLinearEquiv_mul (a b : K) (φ ψ : ConvolutionDual k H
   rw [LinearMap.convMul_apply, LinearMap.convMul_apply]
   simp only [TensorProduct.comul_tmul, Bialgebra.comul_one, Algebra.TensorProduct.one_def]
   generalize Coalgebra.comul (R := k) (A := H) x = q
-  induction q using TensorProduct.induction_on with
-  | zero => simp
+  induction q using TensorProduct.inductionOn with
   | add q r hq hr =>
       simp only [map_add, hq, hr, mul_add, TensorProduct.tmul_add]
   | tmul y z =>
@@ -142,8 +141,7 @@ private theorem baseChangeAlgEquiv_counit_comp :
       Bialgebra.counitAlgHom K (K ⊗[k] ConvolutionDual k H) := by
   apply AlgHom.ext (R := K) (A := K ⊗[k] ConvolutionDual k H) (B := K)
   intro z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z w hz hw => simp only [map_add, hz, hw]
   | tmul a φ =>
       simp only [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply]
@@ -165,8 +163,7 @@ private theorem baseChangeAlgEquiv_map_comp_comul :
   apply AlgHom.ext (R := K) (A := K ⊗[k] ConvolutionDual k H)
     (B := ConvolutionDual K (K ⊗[k] H) ⊗[K] ConvolutionDual K (K ⊗[k] H))
   intro z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z w hz hw => simp only [map_add, hz, hw]
   | tmul a φ =>
       simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
@@ -185,8 +182,7 @@ private theorem baseChangeAlgEquiv_map_comp_comul :
           _ = a ⊗ₜ[K] 1 := by
             rw [smul_eq_mul, mul_one]
       generalize Coalgebra.comul (R := k) (A := ConvolutionDual k H) φ = q
-      induction q using TensorProduct.induction_on with
-      | zero => simp
+      induction q using TensorProduct.inductionOn with
       | add q r hq hr =>
           simp only [TensorProduct.tmul_add, map_add, hq, hr,
             LinearMap.add_apply, mul_add]
@@ -228,8 +224,7 @@ theorem baseChangeBialgEquiv_naturality {H' : Type x} [Semiring H'] [Bialgebra k
         K ⊗[k] ConvolutionDual k H →ₐc[K] ConvolutionDual K (K ⊗[k] H)).comp
         (Bialgebra.TensorProduct.map (BialgHom.id K K) (map k f)) := by
   ext z x
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z w hz hw =>
       simpa only [map_add, WithConv.ofConv_add,
         TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
