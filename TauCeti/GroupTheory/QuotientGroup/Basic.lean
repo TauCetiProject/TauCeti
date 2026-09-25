@@ -37,6 +37,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
+* `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
 * `TauCeti.quotientBot_smul_eq_self_iff`: a group element fixes a coset of the trivial subgroup
@@ -59,6 +60,13 @@ attribute [simp] Subgroup.quotientEquivOfEq_mk
 namespace TauCeti
 
 variable {G : Type*} [Group G]
+
+/-- An element of a normal subgroup `N` fixes every coset of `N`. -/
+theorem smul_quotient_eq_self_of_mem {N : Subgroup G} [N.Normal] {γ : G} (hγ : γ ∈ N)
+    (u : G ⧸ N) : γ • u = u := by
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective u
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.mk_mul,
+    (QuotientGroup.eq_one_iff γ).2 hγ, one_mul]
 
 /-- The stabilizer of the coset `sH`, for the translation action of `G` on `G ⧸ H`, is the
 conjugate subgroup `sHs⁻¹`.  This is Mathlib's `MulAction.stabilizer_quotient` transported off the

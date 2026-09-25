@@ -26,24 +26,8 @@ cohomological form). Its right-hand side carries the conjugate of `[β]`, not `[
 `α + β` of two homomorphisms to `𝔽₂` is the pointwise product `α * β` of homomorphisms to
 `Multiplicative (ZMod 2)`, and that is how it is written in the statement.
 
-The proof is a cochain computation on the transversal `{1, s}`. Writing `a₁, a_s` and `b₁, b_s`
-for the Shapiro components `TauCeti.ContCohomology.evensB1`, `TauCeti.ContCohomology.evensBs` of
-`α` and `β`, the transversal words turn the value of `α` into `a₁` or `a_s` and the value of the
-conjugate of `β` into `b_s` or `b₁`, up to the constant `β (s²)` off `U`. The difference between the
-corestriction cochain and the polarization of the graph cochain is then the coboundary of
+## Main result
 
-```text
-γ ↦ b₁ γ · a_s γ + β (s²) · (alpha-tilde γ + alpha-tilde (s⁻¹ γ)),
-```
-
-Here alpha-tilde denotes the extension of `α` by zero. Both summands are needed; the second absorbs
-the cup product of `cor α` with the character of `G ⧸ U`.
-
-## Main results
-
-* `TauCeti.ContCohomology.evensExtend_mul_hom`, `TauCeti.ContCohomology.evensB1_mul_hom` and
-  `TauCeti.ContCohomology.evensBs_mul_hom`: the extension by zero and the two Shapiro components
-  are additive in the homomorphism.
 * `TauCeti.ContCohomology.evensGraphCocycle_polarization`: the polarization identity above, in
   explicit `H²(G, 𝔽₂)`.
 
@@ -60,33 +44,6 @@ public section
 namespace TauCeti.ContCohomology
 
 universe u
-
-section Cochain
-
-variable {G : Type u} [Group G] {U : Subgroup G} {s : G} {α β : U →* Multiplicative (ZMod 2)}
-
-/-- The extension by zero is additive in the homomorphism. -/
-@[simp]
-theorem evensExtend_mul_hom (γ : G) :
-    evensExtend U (α * β) γ = evensExtend U α γ + evensExtend U β γ := by
-  by_cases h : γ ∈ U
-  · simp [evensExtend_of_mem h]
-  · simp [evensExtend_of_notMem h]
-
-/-- The first Shapiro component is additive in the homomorphism. -/
-@[simp]
-theorem evensB1_mul_hom (γ : G) :
-    evensB1 U s (α * β) γ = evensB1 U s α γ + evensB1 U s β γ := by
-  by_cases h : γ ∈ U
-  · simp [evensB1_of_mem h]
-  · simp [evensB1_of_notMem h]
-
-/-- The second Shapiro component is additive in the homomorphism. -/
-theorem evensBs_mul_hom (γ : G) :
-    evensBs U s (α * β) γ = evensBs U s α γ + evensBs U s β γ := by
-  simp
-
-end Cochain
 
 section Transversal
 
@@ -159,6 +116,20 @@ private theorem evensExtend_add_evensExtend_inv_mul (hU : U.index = 2) (hs : s �
   · have hsγ : s⁻¹ * γ ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
     rw [evensExtend_of_notMem hγ, zero_add, ite_eq_right hγ, evensBs_apply, evensB1_of_mem hsγ]
 
+/-
+The proof is a cochain computation on the transversal `{1, s}`. Writing `a₁, a_s` and `b₁, b_s`
+for the Shapiro components of `α` and `β`, the transversal words turn the value of `α` into `a₁`
+or `a_s` and the value of the conjugate of `β` into `b_s` or `b₁`, up to the constant `β (s²)` off
+`U`. The difference between the corestriction cochain and the polarization of the graph cochain
+is then the coboundary of
+
+```text
+γ ↦ b₁ γ · a_s γ + β (s²) · (alpha-tilde γ + alpha-tilde (s⁻¹ γ)),
+```
+
+Here alpha-tilde denotes the extension of `α` by zero. Both summands are needed; the second
+absorbs the cup product of `cor α` with the character of `G ⧸ U`.
+-/
 /-- **The polarization of the graph cochain, on cochains.** The polarization of `ν` differs from
 the corestriction over `{1, s}` of the cup product of `α` with the `s`-conjugate of `β` by the
 coboundary of the stated cochain, with `a_s` the second Shapiro component of `α`, `b₁` the first

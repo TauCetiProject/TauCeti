@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.NthRewrite
 
@@ -40,8 +40,7 @@ sum over `G ⧸ N` has exactly those two terms.
   the trivial one and that of any outside element, and
   `TauCeti.sum_quotient_eq_add_of_index_two`: a finite sum over them is the sum of two terms.
 * `TauCeti.smul_mk_one_of_notMem_of_index_two` and `TauCeti.smul_mk_of_notMem_of_index_two`: an
-  element outside a subgroup of index two exchanges the two cosets, while an element inside fixes
-  them (`TauCeti.smul_quotient_eq_self_of_mem`, for any normal subgroup).
+  element outside a subgroup of index two exchanges the two cosets.
 -/
 
 public section
@@ -145,13 +144,6 @@ theorem sum_quotient_eq_add_of_index_two [Fintype (G ⧸ N)] {M : Type*} [AddCom
     ∑ u : G ⧸ N, f u = f (QuotientGroup.mk 1) + f (QuotientGroup.mk s) :=
   Fintype.sum_eq_add _ _ (mk_ne_mk_one_of_notMem hs).symm fun u hu =>
     ((eq_mk_one_or_eq_mk_of_index_two hindex hs u).elim hu.1 hu.2).elim
-
-/-- An element of a normal subgroup `N` fixes every coset of `N`. This applies in particular to a
-subgroup of index two, which is normal (`Subgroup.normal_of_index_eq_two`). -/
-theorem smul_quotient_eq_self_of_mem [N.Normal] {γ : G} (hγ : γ ∈ N) (u : G ⧸ N) : γ • u = u := by
-  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective u
-  rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.mk_mul,
-    (QuotientGroup.eq_one_iff γ).2 hγ, one_mul]
 
 /-- An element outside a subgroup of index two carries the trivial coset to the coset of any
 other element outside it. -/
