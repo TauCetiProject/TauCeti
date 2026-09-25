@@ -14,8 +14,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
 /-!
 # Differential of a matrix root subgroup
 
-The root subgroup `xᵢⱼ : 𝔾ₐ → GLₙ` has derivative `c ↦ c Eᵢⱼ`. In particular, its derivative
-at `1` is the matrix unit which spans the corresponding adjoint root space. The statement works
+The differential of the root subgroup `xᵢⱼ : 𝔾ₐ → GLₙ` at the additive identity sends the
+tangent vector `c` to `c Eᵢⱼ`. In particular, it sends the unit tangent vector to the matrix unit
+which spans the corresponding adjoint root space. The statement works
 over an arbitrary commutative base ring and after extension to any commutative coefficient
 algebra. It identifies the differential of the represented group-scheme morphism, rather than
 only the derivative of an informal matrix formula.
@@ -38,36 +39,9 @@ universe u v
 variable {R : Type u} [CommRing R] {B : Type v} [CommRing B] [Algebra R B]
 variable {n : ℕ} {i j : Fin n}
 
-/-- The root-subgroup coordinate map sends a generic matrix entry to the corresponding entry
-of `1 + X Eᵢⱼ`. -/
-theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin n) :
-    (rootSubgroupCoordinateMap (R := R) (N := n) hij).hom
-      (coordinateHopfAlgebraAlgEquiv R n
-        (coordinateRingMap R n (MvPolynomial.X (a, b)))) =
-      (1 : Matrix (Fin n) (Fin n) (AdditiveGroup.coordinateHopfAlgebra R)) a b +
-        (Matrix.single i j (SymmetricAlgebra.ι R R 1)) a b := by
-  let A := AdditiveGroup.coordinateHopfAlgebra R
-  let q : WithConv (A →ₐ[R] A) := toConv (AlgHom.id R A)
-  let p : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) :=
-    (CommHopfAlgCat.mapPointsFunctor
-      (rootSubgroupCoordinateMap (R := R) (N := n) hij)).app (CommAlgCat.of R A) q
-  have h := congrArg
-    (fun p' : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) ↦
-      (pointsMulEquiv n p' : Matrix (Fin n) (Fin n) A) a b)
-    -- Name the functorial point explicitly: its category-theoretic coercion otherwise hides
-    -- the `WithConv` carrier expected by the matrix point equivalence.
-    (show p = rootSubgroupPoints hij q from
-      mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R A) q)
-  rw [pointsMulEquiv_rootSubgroupPoints, coe_transvectionUnit] at h
-  rw [pointsMulEquiv_apply, pointToGeneralLinear_apply] at h
-  simp only [Matrix.transvection, Matrix.add_apply] at h
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at h
-  simp only [AdditiveGroup.toAdd_gaPointsMulEquiv] at h
-  dsimp [q] at h
-  exact h
-
 /-- The differential of the matrix root subgroup sends an additive tangent vector `c` to
 `c Eᵢⱼ`. This holds over every commutative base ring and coefficient algebra. -/
+@[simp]
 theorem tangentMatrix_derivationComp_rootSubgroup (hij : i ≠ j)
     (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
       (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
@@ -105,6 +79,7 @@ variable {k : Type u} [Field k] {n : ℕ} {i j : Fin n}
 
 /-- The unit tangent vector of `𝔾ₐ` maps to the matrix unit `Eᵢⱼ` in the fixed cotangent-dual
 model of the Lie algebra of `GLₙ`. -/
+@[simp]
 theorem cotangentDual_rootSubgroup_unit (hij : i ≠ j) :
     (Derivation.cotangentLinearEquiv (R := k)
       (A := coordinateHopfAlgebra k n) (B := k)).symm
