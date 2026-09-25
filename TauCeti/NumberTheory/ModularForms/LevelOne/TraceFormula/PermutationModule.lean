@@ -65,6 +65,13 @@ theorem ofMulAction_coe (g : SL(2, ℤ)) :
   ext
   simp [coe_smul]
 
+/-- The central sign `-1 ∈ SL(2, ℤ)` acts trivially on `k[ℳₙ]`. -/
+@[simp]
+theorem ofMulAction_neg_one :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-1) = 1 := by
+  ext
+  simp
+
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/
 @[simp]
