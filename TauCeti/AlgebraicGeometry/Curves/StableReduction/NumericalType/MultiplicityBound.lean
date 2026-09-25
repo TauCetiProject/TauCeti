@@ -698,15 +698,16 @@ private lemma exists_finset_of_isMinusTwoIndex (hg : 2 ≤ T.arithmeticGenus)
   · rintro rfl
     exact hk hx
 
-/-- In a minimal numerical type of genus `g ≥ 2`, a `(-2)`-index `i` has `mᵢ|aᵢᵢ| ≤ 768g - 768`.
-The `(-2)`-indices connected to `i` form a chain, a fork, or a configuration of type `E₆`, `E₇` or
-`E₈`. Long chains and forks are covered by the concavity bound `24g - 24`; in the remaining
-configurations every component lies at distance at most six from a component meeting a component
-that is not a `(-2)`-index, and the doubling bound applies. -/
+/-- In a minimal numerical type of genus `g ≥ 2`, every `(-2)`-index `i` satisfies
+`mᵢ|aᵢᵢ| ≤ 768g - 768`. -/
 private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoIndex
     (hT : T.IsMinimal) (hg : 2 ≤ T.arithmeticGenus) {i : T.Component}
     (hi : T.IsMinusTwoIndex i) :
     (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
+  /- The connected `(-2)`-indices through `i` form a chain, a fork, or an exceptional
+  configuration. Long chains and forks use the concavity bound `24g - 24`. In the remaining
+  configurations, every component lies at distance at most six from a component meeting a
+  non-`(-2)`-index, so the doubling bound applies. -/
   have h : 1 < Fintype.card T.Component := T.one_lt_card_of_intersection_self_ne_zero <| by
     rw [(T.isMinusTwoIndex_iff.mp hi).2]
     have := (T.weight i).pos

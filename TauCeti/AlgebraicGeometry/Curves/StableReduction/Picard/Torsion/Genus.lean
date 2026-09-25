@@ -24,15 +24,6 @@ semistable reduction this is the numerical input which, confronted with the `2g`
 `ℓ`-torsion of the Jacobian, forces the special fibre of a minimal regular model to be reduced
 with nodal singularities.
 
-For a minimal type, the bound `mᵢ|aᵢⱼ| ≤ 768g - 768` of
-`TauCeti.NumericalType.IsMinimal.multiplicity_mul_abs_intersection_le` shows that such an `ℓ`
-divides no multiplicity and no intersection number of two meeting components, so the topological
-bound `TauCeti.NumericalType.finrank_torsion_le_topologicalGenus` applies, and `g_top ≤ g` is
-`TauCeti.NumericalType.IsMinimal.topologicalGenus_le_arithmeticGenus`. A type that is not minimal
-has a `(-1)`-index; contracting it preserves the genus and does not decrease the dimension of the
-`ℓ`-torsion (`TauCeti.NumericalType.finrank_torsion_le_contract`), so induction on the number of
-components reduces the general case to the minimal one.
-
 The statements below only require `ℓ > 768g - 768`, which the bound on minimal types permits;
 this contains the hypothesis `ℓ > 768g` of the Stacks Project.
 
@@ -55,6 +46,10 @@ variable {T : NumericalType.{u}}
 
 namespace IsMinimal
 
+/- For a minimal type, the bound `mᵢ|aᵢⱼ| ≤ 768g - 768` excludes prime divisors
+`ℓ > 768g - 768` of the multiplicities and positive intersection numbers. This permits the
+topological torsion bound; `g_top ≤ g` then gives the genus bound. For a nonminimal type,
+contract a `(-1)`-index and induct on the number of components. -/
 /-- **Prime torsion of a minimal numerical type.** In a minimal numerical type of genus `g ≥ 2`,
 every prime `ℓ > 768g - 768` satisfies `dim_{𝔽_ℓ} Pic(T)[ℓ] ≤ g_top`, the first Betti number of
 the intersection graph ([Stacks, Proposition 55.7.4](https://stacks.math.columbia.edu/tag/0C9X)).

@@ -104,6 +104,7 @@ theorem isTorsionFree_pic_of_card_eq_one (h : Fintype.card T.Component = 1) :
   exact (Submodule.quotEquivOfEqBot _ hbot).injective.moduleIsTorsionFree _ (map_smul _)
 
 /-- A numerical type with a single component has no nonzero prime torsion in its Picard group. -/
+@[simp]
 theorem finrank_torsion_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1) (ℓ : ℕ)
     [Fact ℓ.Prime] : Module.finrank (ZMod ℓ) (T.torsion ℓ) = 0 := by
   have hℓ : ℓ ≠ 0 := (Fact.out : ℓ.Prime).ne_zero
