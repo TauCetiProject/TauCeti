@@ -83,6 +83,7 @@ attribute [local instance high] Algebra.toModule
 
 /-- Root subgroup actions on the product lattice agree with the actions on the two summands,
 after extension to any commutative coefficient ring. -/
+@[simp]
 theorem prodRight_baseChangeKostantExpHom
     {R : Type*} [CommRing R] [Algebra ℤ R]
     (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
@@ -90,8 +91,8 @@ theorem prodRight_baseChangeKostantExpHom
     (hρ : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hσ : IsNilpotent (σ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (t : Multiplicative R) (z : R ⊗[ℤ] M.prod N) :
-    let E := ((M.prodEquiv N).toIntLinearEquiv.baseChange ℤ R _ _).trans
-      (TensorProduct.prodRight ℤ R R M N)
+    let E := fun z => TensorProduct.prodRight ℤ R R M N
+      (((M.prodEquiv N).toIntLinearEquiv.baseChange ℤ R _ _) z)
     E (baseChangeKostantExpHom e h
       ((LinearMap.prodMapAlgHom ℚ V W).comp (ρ.prod σ)) (M.prod N)
       (kostantForm_apply_mem_prod e h ρ σ M N hM hN)

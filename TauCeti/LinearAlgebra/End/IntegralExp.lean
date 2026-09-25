@@ -56,6 +56,7 @@ attribute [local instance high] Algebra.toModule
 
 /-- Scalar extension identifies the integral exponential on a product lattice with the
 componentwise exponentials. The coefficient ring may have arbitrary characteristic. -/
+@[simp]
 theorem prodRight_baseChangeExp
     {R : Type*} [CommRing R] [Algebra ℤ R]
     (x : Module.End ℚ V) (y : Module.End ℚ W)
@@ -63,8 +64,8 @@ theorem prodRight_baseChangeExp
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (hN : ∀ n, ∀ w ∈ N, Associative.dividedPower n y • w ∈ N)
     (hx : IsNilpotent x) (hy : IsNilpotent y) (t : R) (z : R ⊗[ℤ] M.prod N) :
-    let E := ((M.prodEquiv N).toIntLinearEquiv.baseChange ℤ R _ _).trans
-      (TensorProduct.prodRight ℤ R R M N)
+    let E := fun z => TensorProduct.prodRight ℤ R R M N
+      (((M.prodEquiv N).toIntLinearEquiv.baseChange ℤ R _ _) z)
     E (baseChangeExp (x.prodMap y) (M.prod N)
       (dividedPower_prodMap_mem_prod x y M N hM hN) t z) =
       (baseChangeExp x M hM t (E z).1, baseChangeExp y N hN t (E z).2) := by
@@ -80,8 +81,7 @@ theorem prodRight_baseChangeExp
   have hsnd (v : M.prod N) : (((M.prodEquiv N) v).2 : W) = (v : V × W).2 := rfl
   induction z using TensorProduct.inductionOn with
   | tmul r v =>
-      simp only [LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul,
-        TensorProduct.prodRight_tmul]
+      simp only [LinearEquiv.baseChange_tmul, TensorProduct.prodRight_tmul]
       rw [baseChangeExp_tmul_of_pow_eq_zero _ _ _ hxy,
         baseChangeExp_tmul_of_pow_eq_zero _ _ _ hx',
         baseChangeExp_tmul_of_pow_eq_zero _ _ _ hy']
