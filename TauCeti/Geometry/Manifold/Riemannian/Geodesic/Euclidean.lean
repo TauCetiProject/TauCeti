@@ -41,7 +41,8 @@ exponential map, normal domains, and the logarithm can be checked.
   `TauCeti.Manifold.isGeodesicallyCompleteAt_model_space`: the exponential map is defined
   everywhere, so the space is geodesically complete at every point.
 * `TauCeti.Manifold.riemannianExp_model_space`: the exponential map at `p` is translation by `p`.
-* `TauCeti.Manifold.mfderiv_riemannianExp_apply_model_space`: its differential is the identity.
+* `TauCeti.Manifold.mfderiv_riemannianExp_apply_model_space` and
+  `TauCeti.Manifold.fderiv_riemannianExp_apply_model_space`: its differential is the identity.
 * `TauCeti.Manifold.isNormalDomain_model_space` and
   `TauCeti.Manifold.isNormalDomain_ball_model_space`: open star-shaped neighbourhoods of the
   origin, in particular tangent balls, are normal domains.
@@ -268,12 +269,20 @@ private theorem hasMFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace
 
 /-- The differential of the exponential map of a finite-dimensional inner-product space is the
 identity at every tangent vector. -/
-@[simp]
 theorem mfderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
     mfderiv 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v w =
       NormedSpace.fromTangentSpace p w := by
   rw [← tangentSpaceEquivModel_apply]
   exact DFunLike.congr_fun (hasMFDerivAt_riemannianExp_model_space p v).mfderiv w
+
+/-- The Fréchet derivative of the exponential map of a finite-dimensional inner-product space is
+the identity at every tangent vector. This is the simp-normal form of
+`mfderiv_riemannianExp_apply_model_space`. -/
+@[simp]
+theorem fderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
+    fderiv ℝ (riemannianExp 𝓘(ℝ, F) F p) v w = NormedSpace.fromTangentSpace p w := by
+  rw [← mfderiv_eq_fderiv]
+  exact mfderiv_riemannianExp_apply_model_space p v w
 
 /-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
 radius `r` onto the ball of radius `r` about `p`. -/
