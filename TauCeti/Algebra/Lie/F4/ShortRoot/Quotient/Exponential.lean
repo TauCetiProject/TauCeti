@@ -42,7 +42,7 @@ private theorem quadraticPolynomial_congr
   subst y₂
   rfl
 
-private theorem LinearMap.map_quadraticPolynomial
+private theorem map_quadraticPolynomial
     {A M N : Type*} [CommRing A] [AddCommGroup M] [Module A M]
     [AddCommGroup N] [Module A N] (f : M →ₗ[A] N) (t : A) (x₀ x₁ x₂ : M) :
     f (x₀ + t • x₁ + t ^ 2 • x₂) =
@@ -137,7 +137,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
   let q := f4ShortRootBaseChangeQuotient (A := A)
   exact (congrArg q (f4RootExponential_tmul k t x)).trans
-    ((LinearMap.map_quadraticPolynomial q t _ _ _).trans
+    ((map_quadraticPolynomial q t _ _ _).trans
       (quadraticPolynomial_congr t
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)
         (f4ShortRootBaseChangeQuotient_tmul (1 : A)
@@ -438,7 +438,7 @@ theorem f4ShortRootQuotient_rootExponential_pinning
           t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
             f4ShortRootQuotientDividedSquareColumn k a)) =
         f4ShortRootTransportedQuotientPolynomial k t a := by
-    exact (LinearMap.map_quadraticPolynomial E t _ _ _).trans
+    exact (map_quadraticPolynomial E t _ _ _).trans
       (quadraticPolynomial_congr t h₀ h₁ h₂)
   exact hpoly.trans (hmap.trans (f4ShortRootQuotientColumns_eq_exponential k t a))
 
