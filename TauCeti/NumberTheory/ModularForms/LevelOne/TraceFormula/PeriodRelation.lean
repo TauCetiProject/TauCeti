@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangularSum
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Sum
 
 /-!
 # The Popa–Zagier period relation
@@ -23,9 +23,8 @@ than by exhibiting a solution. It is a coinvariance statement. The right transla
 formal sum of another set of representatives of `Γ \ ℳₙ`, so `Tₙ^∞·(1 - S)` has vanishing sums along
 every orbit of `SL(2, ℤ)`, that is, it lies in the coinvariant kernel of the left action. As `S` and
 `T` generate `SL(2, ℤ)`, this kernel is `(1 - S)·ℛₙ + (1 - T)·ℛₙ`, which gives a solution. The
-explicit solution of Popa–Zagier's eq. (15) is not constructed here: they deduce (A) for it from the
-relations (B) and the coset identity `⟨ξ, K⟩ = -1`, and it is deferred to milestone (vi) of the
-`ModularForms` roadmap (Layer 11).
+explicit solution of Popa–Zagier's eq. (15) is not constructed here; they deduce (A) for it from the
+relations (B) and the coset identity `⟨ξ, K⟩ = -1`.
 
 Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3: an element of `ℛₙ` lies in
 `(1 - T)·ℛₙ` if and only if its coefficients sum to zero along every orbit of `Γ_∞ = ⟨T⟩` on `ℳₙ`.

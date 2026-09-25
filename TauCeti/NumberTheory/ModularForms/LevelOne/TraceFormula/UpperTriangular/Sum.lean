@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Basic
 public import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
@@ -32,7 +32,7 @@ Popa–Zagier's period relation (A).
 * `TauCeti.TraceFormulaMatrixModule.coeff_upperTriangularSum`: `Tₙ^∞` is the indicator function
   of `ℳₙ^∞`.
 * `TauCeti.TraceFormulaMatrixModule.upperTriangularSum_zero`: `T₀^∞ = 0`.
-* `TauCeti.TraceFormulaMatrixModule.coeff_mapDomainLinearMap_upperTriangularSum`: for `n ≠ 0`,
+* `TauCeti.TraceFormulaMatrixModule.mapDomain_coeff_upperTriangularSum_apply`: for `n ≠ 0`,
   every `SL(2, ℤ)`-orbit sum of `Tₙ^∞` is `1`.
 * `TauCeti.TraceFormulaMatrixModule.one_sub_ofMulAction_op_upperTriangularSum_mem`:
   `Tₙ^∞ (1 - g)` lies in the coinvariant kernel of the left action of `SL(2, ℤ)`.
@@ -76,11 +76,12 @@ theorem upperTriangularSum_zero : upperTriangularSum k 0 = 0 := by
   simp [upperTriangularSum]
 
 /-- For `n ≠ 0`, every `SL(2, ℤ)`-orbit sum of the coefficients of `Tₙ^∞` is `1`. -/
-theorem coeff_mapDomainLinearMap_upperTriangularSum (hn : n ≠ 0)
+@[simp]
+theorem mapDomain_coeff_upperTriangularSum_apply (hn : n ≠ 0)
     (q : MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) :
-    (mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel SL(2, ℤ) _))
-      (upperTriangularSum k n)).coeff q = 1 := by
-  rw [upperTriangularSum]
+    (upperTriangularSum k n).coeff.mapDomain (Quotient.mk (MulAction.orbitRel SL(2, ℤ) _)) q =
+      1 := by
+  rw [← coeff_mapDomainLinearMap (R := k), upperTriangularSum]
   -- `ℳₙ^∞` meets every orbit exactly once
   exact coeff_mapDomainLinearMap_orbitRel_sum_single
     (fun x ↦ (exists_smul_mem_upperTriangularReps hn x).imp fun _ ↦ (Set.Finite.mem_toFinset _).2)
@@ -88,10 +89,11 @@ theorem coeff_mapDomainLinearMap_upperTriangularSum (hn : n ≠ 0)
 
 /-- For `n ≠ 0` and `g ∈ PSL(2, ℤ)`, every `SL(2, ℤ)`-orbit sum of the coefficients of the right
 translate `Tₙ^∞ · g` is `1`. -/
-theorem coeff_mapDomainLinearMap_ofMulAction_op_upperTriangularSum (hn : n ≠ 0) (g : PSL(2, ℤ))
+@[simp]
+theorem mapDomain_coeff_ofMulAction_op_upperTriangularSum_apply (hn : n ≠ 0) (g : PSL(2, ℤ))
     (q : MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) :
-    (mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel SL(2, ℤ) _))
-      (ofMulAction k PSL(2, ℤ)ᵐᵒᵖ _ (.op g) (upperTriangularSum k n))).coeff q = 1 := by
+    (ofMulAction k PSL(2, ℤ)ᵐᵒᵖ _ (.op g) (upperTriangularSum k n)).coeff.mapDomain
+      (Quotient.mk (MulAction.orbitRel SL(2, ℤ) _)) q = 1 := by
   -- right multiplication by `g` commutes with the left action, so permutes the orbits via `e`
   let e := MulAction.orbitRelQuotientCongr (.refl SL(2, ℤ))
     (MulAction.toPerm (MulOpposite.op g) : Equiv.Perm (TraceFormulaMatrixModule n))
@@ -101,8 +103,9 @@ theorem coeff_mapDomainLinearMap_ofMulAction_op_upperTriangularSum (hn : n ≠ 0
       mapDomainLinearMap k k e ∘ₗ mapDomainLinearMap k k (Quotient.mk _) := by
     ext x : 2
     simp [e]
-  rw [← LinearMap.comp_apply, he, LinearMap.comp_apply, coeff_mapDomainLinearMap,
-    Finsupp.mapDomain_equiv_apply, coeff_mapDomainLinearMap_upperTriangularSum hn]
+  rw [← coeff_mapDomainLinearMap (R := k), ← LinearMap.comp_apply, he, LinearMap.comp_apply,
+    coeff_mapDomainLinearMap, Finsupp.mapDomain_equiv_apply, coeff_mapDomainLinearMap,
+    mapDomain_coeff_upperTriangularSum_apply hn]
 
 end Semiring
 
@@ -117,7 +120,6 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
   simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, Module.End.one_apply,
     LinearMap.sub_mem_ker_iff]
   ext q
-  rw [coeff_mapDomainLinearMap_upperTriangularSum hn,
-    coeff_mapDomainLinearMap_ofMulAction_op_upperTriangularSum hn]
+  simp [hn]
 
 end TauCeti.TraceFormulaMatrixModule
