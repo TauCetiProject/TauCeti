@@ -33,11 +33,11 @@ conjugate of `β` into `b_s` or `b₁`, up to the constant `β (s²)` off `U`. T
 corestriction cochain and the polarization of the graph cochain is then the coboundary of
 
 ```text
-γ ↦ b₁ γ · a_s γ + β (s²) · (α̃ γ + α̃ (s⁻¹ γ)),
+γ ↦ b₁ γ · a_s γ + β (s²) · (alpha-tilde γ + alpha-tilde (s⁻¹ γ)),
 ```
 
-with `α̃` the extension of `α` by zero; both summands are needed, the second one absorbing the cup
-product of `cor α` with the character of `G ⧸ U`.
+Here alpha-tilde denotes the extension of `α` by zero. Both summands are needed; the second absorbs
+the cup product of `cor α` with the character of `G ⧸ U`.
 
 ## Main results
 
@@ -148,7 +148,7 @@ private theorem evensExtend_conj_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (η 
       add_comm]
 
 open scoped Classical in
-/-- The sum `α̃ γ + α̃ (s⁻¹ γ)` of the extension by zero at `γ` and at `s⁻¹ γ` is the first Shapiro
+/-- The sum of the extension by zero at `γ` and at `s⁻¹ γ` is the first Shapiro
 component on `U` and the second one off `U`: exactly one of the two points lies in `U`. -/
 private theorem evensExtend_add_evensExtend_inv_mul (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
     evensExtend U α γ + evensExtend U α (s⁻¹ * γ) =
@@ -161,8 +161,8 @@ private theorem evensExtend_add_evensExtend_inv_mul (hU : U.index = 2) (hs : s �
 
 /-- **The polarization of the graph cochain, on cochains.** The polarization of `ν` differs from
 the corestriction over `{1, s}` of the cup product of `α` with the `s`-conjugate of `β` by the
-coboundary of `γ ↦ b₁ γ · a_s γ + β (s²) · (α̃ γ + α̃ (s⁻¹ γ))`, with `a_s` the second Shapiro
-component of `α`, `b₁` the first one of `β` and `α̃` the extension of `α` by zero. -/
+coboundary of the stated cochain, with `a_s` the second Shapiro component of `α`, `b₁` the first
+one of `β` and alpha-tilde the extension of `α` by zero. -/
 private theorem evensGraphCochain_polarization [Fintype (G ⧸ U)] (hU : U.index = 2)
     (hs : s ∉ U) (γ η : G) :
     evensGraphCochain U s (α * β) (γ, η) - evensGraphCochain U s α (γ, η) -
