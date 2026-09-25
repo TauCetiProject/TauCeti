@@ -381,8 +381,8 @@ theorem closure_upperTriangularGroup_union_range_permutationGL (k : Type u) [Fie
       exact ⟨x * y, mul_mem hx hy, rfl⟩
   rwa [← Units.ext hh]
 
-/-- Left multiplication by an adjacent transposition maps a Bruhat cell `B τ B` into the Bruhat
-cell of another permutation matrix. -/
+/-- Each element of a Bruhat cell `B τ B`, after left multiplication by an adjacent
+transposition, belongs to a permutation double coset. -/
 private theorem exists_permutationGL_swap_mul_mem_doubleCoset (hab : a.val + 1 = b.val)
     {g : GL (Fin m) k} {τ : Equiv.Perm (Fin m)}
     (hg : g ∈ DoubleCoset.doubleCoset (permutationGL (k := k) τ)
