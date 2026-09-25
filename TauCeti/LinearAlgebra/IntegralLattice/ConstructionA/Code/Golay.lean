@@ -137,31 +137,10 @@ instance subsingleton_discriminantBilinearModule :
     discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr hq
 
 /-- The discriminant bilinear group of the Golay lattice has one element. -/
-local instance golayConstructionAIsNondegenerate :
-    (ConstructionA.integralLattice 2 code.toAddSubgroup
-      toZModSubmodule_code_eq_euclideanDual.le).IsNondegenerate :=
-  ConstructionA.isNondegenerate_integralLattice 2 code.toAddSubgroup
-    toZModSubmodule_code_eq_euclideanDual.le
-
 @[simp]
 theorem natCard_discriminantBilinearModule_eq_one :
-    @Fintype.card
-      (@IntegralLattice.discriminantBilinearModule (Fin 24 → ℚ) _ _
-        (ConstructionA.integralLattice 2 code.toAddSubgroup
-          toZModSubmodule_code_eq_euclideanDual.le)
-        golayConstructionAIsNondegenerate)
-      (Fintype.ofFinite _) = 1 := by
-  rw [← @Nat.card_eq_fintype_card _ (Fintype.ofFinite _)]
-  refine @Nat.card_unique _ _ ?_
-  have h : constructionALattice.discriminantBilinearModule.Isometry
-      (@IntegralLattice.discriminantBilinearModule (Fin 24 → ℚ) _ _
-        (ConstructionA.integralLattice 2 code.toAddSubgroup
-          toZModSubmodule_code_eq_euclideanDual.le)
-        golayConstructionAIsNondegenerate) :=
-    (IntegralLattice.Isometry.ofEq constructionALattice_eq_integralLattice)
-      |>.discriminantBilinearIsometry
-  exact (Equiv.subsingleton_congr h.toAddEquiv.toEquiv).mp
-    subsingleton_discriminantBilinearModule
+    Nat.card constructionALattice.discriminantBilinearModule = 1 :=
+  @Nat.card_unique _ inferInstance subsingleton_discriminantBilinearModule
 
 /-- The discriminant quadratic group of the Golay lattice is also trivial. -/
 instance subsingleton_discriminantQuadraticModule :
