@@ -14,7 +14,7 @@ public import Mathlib.Topology.Homotopy.Contractible
 
 The closed Euclidean disk is a closed ball in a finite-dimensional real normed space.  This
 file records the contractibility of the `TopCat` carrier, which is the absolute-space input for
-the later relative calculation for a disk and its boundary.
+the relative calculation for a disk and its boundary.
 -/
 
 @[expose] public section
@@ -24,7 +24,7 @@ noncomputable section
 namespace TauCeti.TopCat
 
 /-- The `n`-dimensional Euclidean disk is contractible. -/
-theorem contractibleSpace_disk (n : ℕ) :
+instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
   change ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
   let hX : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
