@@ -46,7 +46,7 @@ weak derivative of `u`, tested against the components of `φ A ∇ψ`, which are
   solution, extended by zero, is a weak solution on the whole space with an explicit `L²` forcing
   term.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`: near a compact subset
-  of `Ω`, a weak solution agrees with a whole-space weak solution.
+  of `Ω`, a weak solution and its forcing agree with a whole-space weak solution and its forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: interior `H²` regularity.
 
 ## References
@@ -514,7 +514,8 @@ theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul
 /-- **Localizing a weak solution to the whole space.** Let `u ∈ H¹(Ω)` be a weak solution of
 `-div(A ∇u) = f` in `Ω` for a constant matrix `A`, with `f ∈ L²(Ω)` and no boundary condition.
 Near any compact `S ⊆ Ω`, `u` agrees, in value and in gradient, with a weak solution
-`w ∈ H¹(ℝⁿ)` of an equation `-div(A ∇w) = g` on the whole space, with `g ∈ L²(ℝⁿ)`.
+`w ∈ H¹(ℝⁿ)` of an equation `-div(A ∇w) = g` on the whole space, with `g ∈ L²(ℝⁿ)`
+and `g = f` almost everywhere on `S`.
 
 One may take for `w` the product of `u` with a smooth cutoff equal to one near `S` and compactly
 supported in `Ω`, extended by zero
@@ -530,21 +531,42 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
         (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
       IsWeakSolutionDirichlet (fun _ => A) 0 0 g w ∧
         (∀ᵐ x ∂mu, x ∈ S → W1p.value (w : W1p mu ⊤ 2) x = W1p.value u x) ∧
-        ∀ᵐ x ∂mu, x ∈ S → W1p.gradient (w : W1p mu ⊤ 2) x = W1p.gradient u x := by
+        (∀ᵐ x ∂mu, x ∈ S → W1p.gradient (w : W1p mu ⊤ 2) x = W1p.gradient u x) ∧
+        ∀ᵐ x ∂mu, x ∈ S → g x = f x := by
   -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
   obtain ⟨ψ, hψ, -, hψ_one, hψc, hts⟩ :=
     hS.exists_contDiff_cutoff Omega.isOpen hSΩ
   have hψ_S : ∀ x ∈ S, ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ_one hx)
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
-  obtain ⟨w, g, hg, -, hval, hgrad⟩ :=
+  have hdiv_S : ∀ x ∈ S, divMatrixGradient A ψ x = 0 := by
+    intro x hx
+    have hgrad_near : ∀ᶠ y in nhds x, ∇ ψ y = 0 := by
+      filter_upwards [IsOpen.mem_nhds isOpen_interior (hψ_one hx)] with y hy
+      have hev : ψ =ᶠ[nhds y] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 hy
+      exact hev.gradient_eq.trans (gradient_fun_const y 1)
+    unfold divMatrixGradient
+    apply Finset.sum_eq_zero
+    intro i hi
+    have hfield : (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i)
+        (∇ ψ y)) =ᶠ[nhds x] fun _ => 0 := by
+      filter_upwards [hgrad_near] with y hy
+      simp [hy]
+    rw [hfield.lineDeriv_eq]
+    rw [(differentiableAt_const (c := (0 : ℝ))).lineDeriv_eq_fderiv,
+      fderiv_const_apply]
+    simp
+  obtain ⟨w, g, hg, hforce, hval, hgrad⟩ :=
     exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul hu hψ hψc hts
-  refine ⟨w, g, hg, ?_, ?_⟩
+  refine ⟨w, g, hg, ?_, ?_, ?_⟩
   · filter_upwards [hval] with x hx hxS
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, one_mul]
   · filter_upwards [hgrad] with x hx hxS
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, (hψ_S x hxS).2, one_smul, smul_zero,
       add_zero]
+  · filter_upwards [hforce] with x hx hxS
+    rw [hx, indicator_of_mem (hSΩ hxS)]
+    simp [localizedForcing, (hψ_S x hxS).1, (hψ_S x hxS).2, hdiv_S x hxS]
 
 /-- **Interior `H²` regularity for constant coefficients.** Let `A` be a constant, uniformly
 elliptic coefficient matrix, and let `u ∈ H¹(Ω)` be a weak solution of
@@ -567,7 +589,8 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL {lam : ℝ} (hlam : 0
     (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
     ∃ U : Wkp mu V 2 2, Wkp.lowerOrder 1 U =
       W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u := by
-  obtain ⟨w, g, hw, -, hgrad⟩ := exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact hu hV hVΩ
+  obtain ⟨w, g, hw, -, hgrad, -⟩ :=
+    exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact hu hV hVΩ
   have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
     rw [Opens.coe_top, Measure.restrict_univ]
   -- On `V`, the gradient of the localized solution is that of `u`.
