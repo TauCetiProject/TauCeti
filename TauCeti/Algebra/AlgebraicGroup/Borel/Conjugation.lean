@@ -152,8 +152,7 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate (D : HopfIdeal k H)
   · intro hI
     have hImin := ((isBorelOverAlgClosed_iff _ _ _).mp hI).2
     obtain ⟨g, hg⟩ := hcontain I hI
-    have hDg := ((isBorelOverAlgClosed_iff _ _ _).mp (hDB.conjugate g)).2
-    exact ⟨g, le_antisymm (hImin.2 hDg.prop hg) hg⟩
+    exact ⟨g, le_antisymm (hImin.2 (hD.conjugate g) hg) hg⟩
   · rintro ⟨g, rfl⟩
     exact hDB.conjugate g
 
