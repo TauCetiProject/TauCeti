@@ -64,7 +64,7 @@ private theorem existsUnique_restrict_eq_chartRiemannianVolume :
   obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x : M ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   simpa only [chartRiemannianVolume_restrict_source] using
-    Measure.existsUnique_restrict_eq (μ := chartRiemannianVolume (I := I))
+    existsUnique_restrict_eq (μ := chartRiemannianVolume (I := I))
       (fun α : M ↦ (chartAt H α).open_source.measurableSet) ht hcover fun α β ↦ by
         simpa only [extChartAt_source] using chartRiemannianVolume_restrict_overlap (I := I) α β
 

@@ -15,20 +15,17 @@ pairwise overlaps, comes from a single measure as soon as countably many of the 
 space, and that measure is unique. This is the descent step for measures that are only defined
 locally, such as the Riemannian volume, which is given chart by chart.
 
-Existence restricts the prescribed measures to the disjointed pieces of an enumeration of the
-countable subcover and sums them; uniqueness is `MeasureTheory.Measure.ext_of_biUnion_eq_univ`.
-
 ## Main results
 
-* `MeasureTheory.Measure.existsUnique_restrict_eq`: compatible measures on a family of measurable
+* `TauCeti.existsUnique_restrict_eq`: compatible measures on a family of measurable
   sets with a countable subcover glue to a unique measure.
 -/
 
 public section
 
-open Function Set
+open Function MeasureTheory MeasureTheory.Measure Set
 
-namespace MeasureTheory.Measure
+namespace TauCeti
 
 variable {α ι : Type*} [MeasurableSpace α]
 
@@ -65,4 +62,4 @@ theorem existsUnique_restrict_eq {s : ι → Set α} {μ : ι → Measure α}
   rw [restrict_sum _ (hs j), funext hpiece, ← restrict_iUnion hdisj fun n ↦ (hs j).inter (hd n),
     ← inter_iUnion, hdcover, inter_univ]
 
-end MeasureTheory.Measure
+end TauCeti
