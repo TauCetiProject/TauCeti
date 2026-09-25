@@ -158,20 +158,30 @@ inclusion of the off-center complex into `GC⁻(G')`. -/
 @[simp] theorem map_offCenterInclusion_comp_stabilizeXMap :
     ((ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
-        _).map (homotopyCofiber.inr (G.stabilizeXConnectingHom s R) ≫
-          (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv) ≫ G.stabilizeXMap s R =
+        _).map (homotopyCofiber.inr (G.stabilizeXConnectingHom s R)) ≫
+          (((ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+              _).map (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv ≫
+            G.stabilizeXMap s R) =
       ((ModuleCat.restrictScalars
         (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
           _).map (G.stabilizeXOffCenterToCenterHom s R) ≫
         (G.polynomialExtensionIsoStabilizeXCenter s R).inv ≫
           (G.unblockedComplex R).polynomialExtensionEval (MvPolynomial.X s) := by
-  rw [stabilizeXMap, ← Category.assoc, ← Functor.map_comp, Category.assoc,
-    Iso.inv_hom_id_assoc, inr_stabilizeXConeMap, Functor.map_comp, Category.assoc,
-    map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom]
+  calc
+    _ = ((ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+          _).map (homotopyCofiber.inr (G.stabilizeXConnectingHom s R) ≫
+            (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv) ≫
+          G.stabilizeXMap s R := by rw [← Category.assoc, ← Functor.map_comp]
+    _ = _ := by
+      rw [stabilizeXMap, ← Category.assoc, ← Functor.map_comp, Category.assoc,
+        Iso.inv_hom_id_assoc, inr_stabilizeXConeMap, Functor.map_comp, Category.assoc,
+        map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom]
 
 /-- On center states, `stabilizeXMap` vanishes. The first factor includes the center summand
 of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
-@[simp] theorem map_centerInclusion_comp_stabilizeXMap :
+theorem map_centerInclusion_comp_stabilizeXMap :
     (ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         (homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
