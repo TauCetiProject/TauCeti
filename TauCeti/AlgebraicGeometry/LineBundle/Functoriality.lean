@@ -17,7 +17,7 @@ on isomorphism classes of line bundles contravariantly functorial. This is the f
 needed to form the relative Picard functor from line-bundle classes on base changes.
 
 The comparisons are restrictions of Mathlib's `Scheme.Modules.pullbackId` and
-`Scheme.Modules.pullbackComp`; no formalization is vendored.
+`Scheme.Modules.pullbackComp`.
 -/
 
 public section
@@ -50,15 +50,22 @@ def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (InvertibleSheaf X)
     simp [ObjectProperty.isoMk, ObjectProperty.homMk, pullback_map,
       Category.assoc, (Scheme.Modules.pullbackId X).hom.naturality f.hom])
 
+/-- The underlying module of successive line-bundle pullbacks is the corresponding successive
+module pullback. -/
+lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
+    ((pullback g ⋙ pullback f).obj L).obj =
+      (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj L.obj :=
+  (pullback_obj_obj f ((pullback g).obj L)).trans
+    (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_obj g L))
+
 /-- Pullback along a composite is naturally isomorphic to successive pullback of line
 bundles. -/
 def pullbackComp (f : X ⟶ Y) (g : Y ⟶ Z) :
     pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
   NatIso.ofComponents (fun L ↦
     ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-      ((eqToIso (show ((pullback g ⋙ pullback f).obj L).obj =
-          (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj L.obj by
-            simp)) ≪≫ (Scheme.Modules.pullbackComp f g).app L.obj ≪≫
+      ((eqToIso (pullbackComp_obj_obj f g L)) ≪≫
+        (Scheme.Modules.pullbackComp f g).app L.obj ≪≫
         eqToIso (pullback_obj_obj (f ≫ g) L).symm)) (by
     intro L K φ
     apply ObjectProperty.hom_ext
