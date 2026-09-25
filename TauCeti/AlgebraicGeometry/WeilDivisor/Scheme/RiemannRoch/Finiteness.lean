@@ -23,7 +23,8 @@ both apply to every such curve.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_trivial_of_isProper`:
-  `H¹(X, 𝒪_X)` is finite-dimensional for a proper integral curve over `k`.
+  `H¹(X, 𝒪_X)` is finite-dimensional for a proper integral curve over `k` whose codimension-one
+  local rings are discrete valuation rings.
 
 ## References
 
