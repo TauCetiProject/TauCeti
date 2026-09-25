@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 
@@ -124,22 +125,6 @@ private lemma sum_negOnePow_of_homology_eq_of_isZero (X : DerivedCategory A) {s 
         ∑ n ∈ s ∪ t, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X) := fun u hu hu' ↦
     Finset.sum_subset hu fun n _ hn ↦ by rw [of_eq_zero_of_isZero (hu' n hn), smul_zero]
   rw [key s Finset.subset_union_left hs, key t Finset.subset_union_right ht]
-
-/-- An alternating sum of consecutive pairs telescopes to its two end terms. -/
-private lemma sum_Icc_negOnePow_smul_add {G : Type*} [AddCommGroup G] (f : ℤ → G) (a b : ℤ)
-    (hab : a ≤ b) :
-    ∑ n ∈ Finset.Icc a b, (n.negOnePow : ℤ) • (f n + f (n + 1)) =
-      (a.negOnePow : ℤ) • f a + (b.negOnePow : ℤ) • f (b + 1) := by
-  induction b, hab using Int.leInduction with
-  | base => simp [smul_add]
-  | succ b hb ih =>
-    have hins : Finset.Icc a (b + 1) = insert (b + 1) (Finset.Icc a b) := by
-      ext x
-      simp only [Finset.mem_Icc, Finset.mem_insert]
-      omega
-    rw [hins, Finset.sum_insert (by simp), ih, Int.negOnePow_succ]
-    simp only [Units.val_neg, neg_smul, smul_add]
-    abel
 
 omit [HasDerivedCategory.{w'} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
 /-- In an exact sequence `X₁ ⟶ X₂ ⟶ X₃`, the class of `X₁` is the sum of the classes of the two
