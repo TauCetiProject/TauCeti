@@ -31,10 +31,14 @@ it does not require a Poincare--Birkhoff--Witt theorem or any freeness hypothesi
 * `TauCeti.UniversalEnvelopingAlgebra.prodEquivTensor_naturality`: compatibility with maps of
   both Lie-algebra factors.
 * `TauCeti.UniversalEnvelopingAlgebra.prodEquivTensor_symm_tmul`: the inverse on a pure tensor.
+* `TauCeti.AlgHom.prodRepresentation`: the componentwise product of two representations of
+  the same enveloping algebra, with stability of product lattices.
 
 ## Roadmap
 
 This supplies the direct-sum functoriality used in Layer 3 of the LieHighestWeight roadmap.
+The product representation supports the product admissible lattice in Layer 9 of the
+ReductiveGroups roadmap.
 
 ## References
 
@@ -227,3 +231,58 @@ theorem prodEquivTensor_symm_tmul (x : UL) (y : UM) :
     rw [AlgEquiv.ofAlgHom_apply, fromTensor, Algebra.TensorProduct.lift_tmul, fromLeft, fromRight]
 
 end TauCeti.UniversalEnvelopingAlgebra
+
+namespace TauCeti.AlgHom
+
+universe u v w
+
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
+variable {V : Type v} [AddCommGroup V] [Module ℚ V]
+variable {W : Type w} [AddCommGroup W] [Module ℚ W]
+
+/-- The product of two enveloping-algebra representations acts componentwise on the product
+of their carriers. -/
+noncomputable def prodRepresentation
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ W) :
+    _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ (V × W) :=
+  (LinearMap.prodMapAlgHom ℚ V W).comp (ρ.prod σ)
+
+/-- The product representation applies its two factors componentwise. -/
+@[simp]
+theorem prodRepresentation_apply
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ W)
+    (u : _root_.UniversalEnvelopingAlgebra ℚ L) (v : V × W) :
+    prodRepresentation ρ σ u v = (ρ u v.1, σ u v.2) := by
+  simp [prodRepresentation]
+
+/-- Componentwise stability of a product lattice under a set of enveloping-algebra elements. -/
+theorem prodRepresentation_apply_mem_of_mem
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ W)
+    (S : Set (_root_.UniversalEnvelopingAlgebra ℚ L))
+    (M : Submodule ℤ V) (N : Submodule ℤ W)
+    (hM : ∀ u ∈ S, ∀ v ∈ M, ρ u v ∈ M)
+    (hN : ∀ u ∈ S, ∀ w ∈ N, σ u w ∈ N)
+    (u : _root_.UniversalEnvelopingAlgebra ℚ L) (hu : u ∈ S)
+    (v : V × W) (hv : v ∈ M.prod N) :
+    prodRepresentation ρ σ u v ∈ M.prod N := by
+  rw [Submodule.mem_prod] at hv
+  rw [prodRepresentation_apply, Submodule.mem_prod]
+  exact ⟨hM u hu v.1 hv.1, hN u hu v.2 hv.2⟩
+
+/-- A product representation preserves a product lattice if both factors preserve their
+respective lattices under every enveloping-algebra element. -/
+theorem prodRepresentation_apply_mem
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+    (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ W)
+    (M : Submodule ℤ V) (N : Submodule ℤ W)
+    (hM : ∀ u v, v ∈ M → ρ u v ∈ M) (hN : ∀ u w, w ∈ N → σ u w ∈ N)
+    (u : _root_.UniversalEnvelopingAlgebra ℚ L) (v : V × W) (hv : v ∈ M.prod N) :
+    prodRepresentation ρ σ u v ∈ M.prod N :=
+  prodRepresentation_apply_mem_of_mem ρ σ Set.univ M N
+    (by intro a _ b hb; exact hM a b hb)
+    (by intro a _ b hb; exact hN a b hb) u (Set.mem_univ u) v hv
+
+end TauCeti.AlgHom
