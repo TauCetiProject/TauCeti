@@ -80,12 +80,12 @@ theorem mul_coe_S_mul_coe_S (g : PSL(2, ℤ)) : g * S * S = g := by
   rw [mul_assoc, coe_S_mul_coe_S, mul_one]
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
-@[expose] def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
+def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
 
 /-- The matrix of `T′`. -/
 @[simp]
 theorem coe_tPrime : (tPrime : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] :=
-  rfl
+  (rfl)
 
 /-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
 @[simp]

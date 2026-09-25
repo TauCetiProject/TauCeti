@@ -64,7 +64,8 @@ private lemma coe_mul_ne_one {t g : SL(2, ℤ)} (ht : t ∈ ({T, tPrime} : Set S
     (hg : ∀ i j, 0 ≤ g i j) : ((t * g : SL(2, ℤ)) : PSL(2, ℤ)) ≠ 1 := by
   rw [Ne, QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   rintro (h | h) <;> obtain rfl := eq_inv_mul_iff_mul_eq.mpr h <;> rcases ht with rfl | rfl <;>
-    revert hg <;> decide +kernel
+    revert hg <;> simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv, coe_tPrime] <;>
+    decide +kernel
 
 private lemma eq_zero_of_coeff_eq_add {k X : Type*} [Ring k] [MulAction PSL(2, ℤ) X]
     [IsCancelSMul PSL(2, ℤ) X] {ξ : k[X]} (h : ∀ x, ξ.coeff x = ξ.coeff ((T : PSL(2, ℤ)) • x) +
