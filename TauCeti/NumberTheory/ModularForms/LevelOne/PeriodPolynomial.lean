@@ -44,6 +44,7 @@ the Eisenstein series of weight `w + 2`; at `w = 0` it is zero.
 
 ## Main results
 
+* `TauCeti.binaryFormRep_parity_involutive`: the parity action is an involution.
 * `TauCeti.mem_periodPolynomials_binaryFormRep_parity`: for even `w`, the parity involution
   preserves `W_w`.
 * `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials` and
@@ -53,6 +54,8 @@ the Eisenstein series of weight `w + 2`; at `w = 0` it is zero.
   is injective.
 * `TauCeti.mem_evenPeriodPolynomials_eisensteinPeriodPolynomial`: `X^w - Y^w ∈ W_w^+` for even
   `w`.
+* `TauCeti.evenPeriodPolynomials_ne_bot`, `TauCeti.periodPolynomials_ne_bot`: `W_w^+` and `W_w`
+  are nonzero for positive even `w` over a nontrivial ring, witnessed by `X^w - Y^w`.
 
 ## References
 
@@ -207,6 +210,11 @@ private lemma parity_mul_parity :
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
+/-- The parity action `P(X, Y) ↦ P(-X, Y)` is an involution. -/
+theorem binaryFormRep_parity_involutive :
+    Function.Involutive (binaryFormRep R w (op !![-1, 0; 0, 1])) := fun P ↦ by
+  rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, Module.End.one_apply]
+
 /-- For even `w`, the parity involution `P(X, Y) ↦ P(-X, Y)` preserves the period
 polynomials. -/
 theorem mem_periodPolynomials_binaryFormRep_parity (hw : Even w)
@@ -243,18 +251,15 @@ private theorem evenPeriodPolynomials_sup_oddPeriodPolynomials_of_even
     [Invertible (2 : R)] (hw : Even w) :
     evenPeriodPolynomials R w ⊔ oddPeriodPolynomials R w = periodPolynomials R w := by
   refine le_antisymm (sup_le inf_le_left inf_le_left) fun P hP ↦ ?_
-  have hεε : ∀ Q, binaryFormRep R w (op !![-1, 0; 0, 1]) (binaryFormRep R w (op !![-1, 0; 0, 1]) Q)
-      = Q := fun Q ↦ by
-    rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, Module.End.one_apply]
   have hεP := mem_periodPolynomials_binaryFormRep_parity hw hP
   refine Submodule.mem_sup.2 ⟨⅟(2 : R) • (P + binaryFormRep R w (op !![-1, 0; 0, 1]) P), ?_,
     ⅟(2 : R) • (P - binaryFormRep R w (op !![-1, 0; 0, 1]) P), ?_, ?_⟩
   · refine mem_evenPeriodPolynomials_iff.2
       ⟨Submodule.smul_mem _ _ (Submodule.add_mem _ hP hεP), ?_⟩
-    rw [map_smul, map_add, hεε, add_comm]
+    rw [map_smul, map_add, binaryFormRep_parity_involutive, add_comm]
   · refine mem_oddPeriodPolynomials_iff.2
       ⟨Submodule.smul_mem _ _ (Submodule.sub_mem _ hP hεP), ?_⟩
-    rw [map_smul, map_sub, hεε, ← neg_sub, smul_neg]
+    rw [map_smul, map_sub, binaryFormRep_parity_involutive, ← neg_sub, smul_neg]
   · rw [← smul_add, add_add_sub_cancel, ← two_smul R P, smul_smul, invOf_mul_self, one_smul]
 
 /-- A period polynomial cannot be both even and odd when multiplication by `2` is injective. -/
@@ -325,5 +330,26 @@ theorem mem_evenPeriodPolynomials_eisensteinPeriodPolynomial (hw : Even w) :
   refine mem_evenPeriodPolynomials_iff.2 ⟨mem_periodPolynomials_iff.2 ⟨?_, ?_⟩, ?_⟩ <;>
     refine Subtype.ext ?_ <;>
     simp [Fin.sum_univ_two, hw.neg_pow]
+
+/-- For positive `w`, the Eisenstein polynomial `X^w - Y^w` is nonzero. -/
+theorem eisensteinPeriodPolynomial_ne_zero [Nontrivial R] (hw : w ≠ 0) :
+    eisensteinPeriodPolynomial R w ≠ 0 := by
+  intro h
+  have h' := congrArg Subtype.val h
+  rw [coe_eisensteinPeriodPolynomial, ZeroMemClass.coe_zero, sub_eq_zero, X_pow_eq_monomial,
+    X_pow_eq_monomial, (monomial_left_injective one_ne_zero).eq_iff,
+    Finsupp.single_left_inj hw] at h'
+  exact zero_ne_one h'
+
+/-- For positive even `w` over a nontrivial ring, the even period polynomials are nonzero. -/
+theorem evenPeriodPolynomials_ne_bot [Nontrivial R] (hw : Even w) (hw₀ : w ≠ 0) :
+    evenPeriodPolynomials R w ≠ ⊥ :=
+  (Submodule.ne_bot_iff _).2 ⟨_, mem_evenPeriodPolynomials_eisensteinPeriodPolynomial hw,
+    eisensteinPeriodPolynomial_ne_zero hw₀⟩
+
+/-- For positive even `w` over a nontrivial ring, the period polynomials are nonzero. -/
+theorem periodPolynomials_ne_bot [Nontrivial R] (hw : Even w) (hw₀ : w ≠ 0) :
+    periodPolynomials R w ≠ ⊥ :=
+  ne_bot_of_le_ne_bot (evenPeriodPolynomials_ne_bot hw hw₀) inf_le_left
 
 end TauCeti
