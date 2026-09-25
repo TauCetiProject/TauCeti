@@ -51,9 +51,11 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {R S M N : Type*} [Ring R] [Ring S] [SMul R S]
-  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
-  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+section
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
   (G : InternalGrading R M) {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
   (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
 
@@ -79,6 +81,12 @@ theorem coe_decompose_ker (p : ℤ) (z : _root_.LinearMap.ker f) :
       decompose G.piece (z : M) p :=
   DirectSum.map_decompose_restrict G.piece (G.ker hf).piece
     ((_root_.LinearMap.ker f).subtype.restrictScalars R) (fun _ _ ↦ Iff.rfl) p z
+
+end
+
+variable {R S M : Type*} [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  (G : InternalGrading R M) {r : ℤ}
 
 variable {d : M →ₗ[S] M} (hhom : LinearMap.IsHomogeneous d G.piece G.piece r)
   (hd : d ∘ₗ d = 0)

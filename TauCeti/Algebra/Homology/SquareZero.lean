@@ -46,8 +46,8 @@ namespace LinearMap
 
 variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
 
-/-- The image of a linear endomorphism `d`, as a submodule of the kernel of `d`: the elements of
-the kernel that are values of `d`. -/
+/-- The intersection of the image and kernel of a linear endomorphism `d`, viewed as a submodule
+of the kernel. For a square-zero endomorphism, this is its full image. -/
 abbrev boundariesInKer : Submodule S (ker d) :=
   (range d).comap (ker d).subtype
 
