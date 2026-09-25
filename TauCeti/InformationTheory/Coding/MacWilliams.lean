@@ -190,9 +190,20 @@ theorem aeval_inv_smul_weightEnumerator_of_eq_euclideanDual {K : Type*} [Field K
         ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1, X 0 - X 1] := by
     ext1 i
     fin_cases i <;> simp [smul_eq_C_mul, mul_add]
-  rw [hsmul, (Set.isHomogeneous_weightEnumerator _).aeval_smul, aeval_macWilliams_eq_map_aeval,
-    aeval_weightEnumerator_of_eq_euclideanDual hC, map_mul, map_pow, map_natCast, ← mul_assoc,
-    ← map_natCast MvPolynomial.C, ← map_pow, ← map_pow, ← map_mul, hscalar, map_one, one_mul]
+  have hmap :
+      aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1, X 0 - X 1]
+          (C : Set (ι → F)).weightEnumerator =
+        (Nat.card F : MvPolynomial (Fin 2) K) ^ (Fintype.card ι / 2) *
+          MvPolynomial.map (Int.castRingHom K) (C : Set (ι → F)).weightEnumerator := by
+    rw [aeval_macWilliams_eq_map_aeval, aeval_weightEnumerator_of_eq_euclideanDual hC]
+    simp [map_mul, map_pow, map_natCast]
+  have hscalar' :
+      (MvPolynomial.C s⁻¹ : MvPolynomial (Fin 2) K) ^ Fintype.card ι *
+        (Nat.card F : MvPolynomial (Fin 2) K) ^ (Fintype.card ι / 2) = 1 := by
+    simpa only [map_mul, map_pow, map_natCast, map_one] using
+      congrArg (MvPolynomial.C : K →+* MvPolynomial (Fin 2) K) hscalar
+  rw [hsmul, (Set.isHomogeneous_weightEnumerator _).aeval_smul, hmap, ← mul_assoc, hscalar',
+    one_mul]
 
 end Normalized
 
