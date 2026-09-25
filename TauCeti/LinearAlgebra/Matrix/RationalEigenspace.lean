@@ -17,16 +17,16 @@ diagonalized over `k` with unit eigenvalues in `Q`, these eigenspaces span the v
 
 ## Main declarations
 
-* `TauCeti.Matrix.rationalEigenspace`: the subspace of rational eigenvectors.
-* `TauCeti.Matrix.mem_rationalEigenspace`: its membership criterion after scalar extension.
-* `TauCeti.Matrix.iSup_rationalEigenspace_eq_top`: spanning under rational diagonalization.
+* `TauCeti.rationalEigenspace`: the subspace of rational eigenvectors.
+* `TauCeti.mem_rationalEigenspace`: its membership criterion after scalar extension.
+* `TauCeti.iSup_rationalEigenspace_eq_top`: spanning under rational diagonalization.
 -/
 
 public section
 
 open Matrix
 
-namespace TauCeti.Matrix
+namespace TauCeti
 
 variable {k Q : Type*} [Field k] [CommRing Q] [Algebra k Q]
 
@@ -65,4 +65,4 @@ theorem iSup_rationalEigenspace_eq_top {n : Type*} [Fintype n] [DecidableEq n]
   rintro _ ⟨j, rfl⟩
   exact Submodule.mem_iSup_of_mem (t j) (hcol j)
 
-end TauCeti.Matrix
+end TauCeti

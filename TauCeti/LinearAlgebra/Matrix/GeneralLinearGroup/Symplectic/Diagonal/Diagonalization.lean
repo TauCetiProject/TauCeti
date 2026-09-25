@@ -41,7 +41,7 @@ open Matrix
 
 namespace Matrix
 
-open TauCeti.Matrix
+open TauCeti
 
 variable {k Q : Type*} [Field k] [CommRing Q] [Algebra k Q]
 
