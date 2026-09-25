@@ -51,14 +51,16 @@ theorem existsUnique_geometricCharacterExtension
     (C := CommHopfAlgCat.baseChange (K := AlgebraicClosure k) H.obj)).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
         ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH))
-  refine ⟨f.liftBialgHom hspan, ⟨?_, ?_⟩, ?_⟩
-  · exact f.groupLikeMap_liftBialgHom hspan
+  have hlinear := linearIndep_groupLikeVal
+    (R := AlgebraicClosure k) (A := AlgebraicClosure k ⊗[k] H.obj)
+  refine ⟨f.liftBialgHom hlinear hspan, ⟨?_, ?_⟩, ?_⟩
+  · exact f.groupLikeMap_liftBialgHom hlinear hspan
   · intro σ x
     -- The absolute-Galois wrapper uses the scalar action of its underlying algebra automorphism.
-    exact f.liftBialgHom_map_smul hspan
+    exact f.liftBialgHom_map_smul hlinear hspan
       (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) (hf σ) x
   · intro F hF
-    apply f.liftBialgHom_unique hspan F
+    apply f.liftBialgHom_unique hlinear hspan F
     intro x
     exact (GroupLike.val_map F x).symm.trans
       (congrArg (fun g ↦ (g x).val) hF.1)
