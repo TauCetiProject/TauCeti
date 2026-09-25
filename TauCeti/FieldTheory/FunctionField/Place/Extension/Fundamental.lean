@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
--- Proof-only: Dedekind integral closures, the finiteness of normalization without separability,
--- and the tower law for integral closures.
+-- Proof-only: the affine model `R_t`, Dedekind integral closures, the finiteness of normalization
+-- without separability, and the tower law for integral closures.
+import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -140,13 +141,11 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   have hti : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
   have : FiniteDimensional k⟮t⟯ F := hF.finiteDimensional_adjoin htr
   have : FiniteDimensional k⟮t⟯ F' := Module.Finite.trans F F'
-  -- `k[t] ≅ k[X]` is a principal ideal domain, so its integral closure `R` in `F` is an affine
-  -- model of `F / k`, and the integral closure `S` of `R` in `F'` is one of `F' / k'`.
-  have : IsPrincipalIdealRing (Algebra.adjoin k {t}) :=
-    .of_surjective _ (Polynomial.algEquivOfTranscendental k t htr).surjective
+  -- The integral closure `R` of `k[t]` in `F` is an affine model of `F / k`, and the integral
+  -- closure `S` of `R` in `F'` is one of `F' / k'`.
   let R := integralClosure (Algebra.adjoin k {t}) F
-  have : IsDedekindDomain R := integralClosure.isDedekindDomain _ k⟮t⟯ F
-  have : IsFractionRing R F := integralClosure.isFractionRing_of_finite_extension k⟮t⟯ F
+  have : IsDedekindDomain R := isDedekindDomain_integralClosure_adjoin hF htr
+  have : IsFractionRing R F := isFractionRing_integralClosure_adjoin hF htr
   let S := integralClosure R F'
   have : IsDedekindDomain S := integralClosure.isDedekindDomain R F F'
   have : IsFractionRing S F' := integralClosure.isFractionRing_of_finite_extension F F'
@@ -157,8 +156,8 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
       IsIntegralClosure.finite_adjoin_of_transcendental k htr F' S
     exact Module.Finite.of_restrictScalars_finite (Algebra.adjoin k {t}) R S
   -- `P` is finite on `R`, since `t` has no pole at `P`.
-  have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
-    P.mem_integers_of_isIntegral_adjoin hti r.2
+  have hR : ∀ r : R, algebraMap R F r ∈ P.integers :=
+    P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti
   -- `S` contains the constants `k'`, because they are integral over `k ⊆ R`.
   have hk' : ∀ c : k', algebraMap k' F' c ∈ S := fun c ↦
     (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top

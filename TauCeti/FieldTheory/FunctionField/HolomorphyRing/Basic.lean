@@ -49,6 +49,9 @@ None of it needs an exactness hypothesis on the constant field.
 * `TauCeti.holomorphyRing_setOf_subset_integers`: **Stichtenoth, Theorem 3.2.6** — a
   `k`-subalgebra of `F` integrally closed in `F` is the holomorphy ring of the set of places at
   which its functions are regular.
+* `TauCeti.restrictScalars_integralClosure_eq_holomorphyRing`: the same theorem for an arbitrary
+  `k`-subalgebra `R` of `F` — the integral closure of `R` in `F` is the holomorphy ring of the set
+  of places at which the functions of `R` are regular.
 * `TauCeti.coe_holomorphyRing_subset_integers_iff`: **Stichtenoth, Corollary 3.2.8** — the
   functions of `𝒪_S` are all regular at `P` exactly when `P ∈ S`, so `S` is recovered from
   `𝒪_S` and the two constructions are mutually inverse.
@@ -232,6 +235,23 @@ theorem holomorphyRing_setOf_subset_integers (hF : IsFunctionField k F) (R : Sub
     rw [Place.integers_ofValuationSubring]
     exact fun x hx ↦ hRV hx
   exact hzV (Place.integers_ofValuationSubring hF hk hV ▸ hz _ hmem)
+
+/-- **Stichtenoth, Theorem 3.2.6**, for an arbitrary `k`-subalgebra: the integral closure of `R`
+in `F` is the holomorphy ring of the set of places at which all the functions of `R` are regular.
+The integral closure is integrally closed in `F`, so this is
+`TauCeti.holomorphyRing_setOf_subset_integers` for it; a place is regular on the integral closure
+exactly when it is regular on `R`, because valuation rings are integrally closed. -/
+theorem restrictScalars_integralClosure_eq_holomorphyRing (hF : IsFunctionField k F)
+    (R : Subalgebra k F) :
+    (integralClosure R F).restrictScalars k =
+      holomorphyRing {P : Place k F | (R : Set F) ⊆ P.integers} := by
+  have : IsIntegrallyClosedIn ↥((integralClosure R F).restrictScalars k) F :=
+    inferInstanceAs (IsIntegrallyClosedIn ↥(integralClosure R F) F)
+  rw [← holomorphyRing_setOf_subset_integers hF ((integralClosure R F).restrictScalars k)]
+  congr 1
+  ext P
+  refine ⟨fun h z hz ↦ h ((integralClosure R F).algebraMap_mem ⟨z, hz⟩), fun h z hz ↦ ?_⟩
+  exact P.mem_integers_of_isIntegral (fun r ↦ h r.2) hz
 
 /-! ### Recovering the set of places -/
 
