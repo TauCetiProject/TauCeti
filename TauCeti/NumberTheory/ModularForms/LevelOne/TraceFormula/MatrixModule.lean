@@ -26,10 +26,14 @@ The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ
 is Popa--Zagier's product `M · g`, right multiplication by `g` itself; it equals
 `x.rightPSL g⁻¹`. Conjugation `ConjAct.toConjAct g • x` equals `g • x <• g⁻¹`.
 
+For `n ≠ 0` the left action of `PSL(2, ℤ)` is free
+(`TauCeti.TraceFormulaMatrixModule.isCancelSMul`): a matrix of nonzero determinant is cancellable,
+so `g A = ±A` forces `g = ±1` (`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq`).
+
 ## References
 
-* A. Popa and D. Zagier, *A simple proof of the Eichler--Selberg trace formula*,
-  J. Reine Angew. Math. 762 (2020), 105--122, arXiv:1711.00327, Section 2.
+* A. Popa and D. Zagier, *An elementary proof of the Eichler--Selberg trace formula*,
+  J. Reine Angew. Math. 762 (2020), 105--122, arXiv:1711.00327, Section 1.
 -/
 
 public section
@@ -181,6 +185,25 @@ theorem TraceFormulaMatrixModule.coe_smul (g : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) : (g : PSL(2, ℤ)) • x = g • x := by
   rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
     MulAction.toPermHom_apply, MulAction.toPerm_apply]
+
+/-- For `n ≠ 0`, only `±1` in `SL(2, ℤ)` fixes an element of `ℳₙ`. -/
+theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq (hn : n ≠ 0) {g : SL(2, ℤ)}
+    {x : TraceFormulaMatrixModule n} (h : g • x = x) : g = 1 ∨ g = -1 := by
+  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+  -- `A` is cancellable on the right, as its determinant `n` is nonzero
+  have hA := (isRegular_of_isLeftRegular_det (A.2 ▸ IsRegular.of_ne_zero hn).left).right
+  rw [TraceFormulaMatrixModule.smul_mk, TraceFormulaMatrixModule.mk_eq_iff] at h
+  rcases h with h | h <;> [left; right] <;>
+    exact Subtype.ext <| hA <| by simpa [FixedDetMatrices.smul_coe] using congrArg Subtype.val h
+
+/-- For `n ≠ 0`, `PSL(2, ℤ)` acts freely on `ℳₙ`. -/
+theorem TraceFormulaMatrixModule.isCancelSMul (hn : n ≠ 0) :
+    IsCancelSMul PSL(2, ℤ) (TraceFormulaMatrixModule n) := by
+  refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun g x h ↦ ?_
+  induction g using QuotientGroup.induction_on with | H g => ?_
+  rw [QuotientGroup.eq_one_iff, Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  exact TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq hn
+    ((TraceFormulaMatrixModule.coe_smul g x).symm.trans h)
 
 /-- The right multiplication action on `ℳₙ`, expressed as a left action through inversion. -/
 public def TraceFormulaMatrixModule.right (x : TraceFormulaMatrixModule n) (g : SL(2, ℤ)) :

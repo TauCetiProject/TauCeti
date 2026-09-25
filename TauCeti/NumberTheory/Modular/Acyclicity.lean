@@ -9,16 +9,19 @@ public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.RepresentationTheory.Basic
 import TauCeti.GroupTheory.GroupAction.Free
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.NumberTheory.Modular.Relations
 
 /-!
 # Acyclicity of permutation modules of free `PSL(2, ℤ)`-sets
 
 In `Γ = PSL(2, ℤ)` the classes of `S = (0 -1; 1 0)` and `U = T * S = (1 -1; 1 0)` satisfy
-`S² = 1`, `U³ = 1` and `U * S = T`. Let `X` be a set on which `Γ` acts freely and `k[X]` its
-permutation module over a ring `k`. Then no nonzero `ξ ∈ k[X]` is killed by both `1 + S` and
-`1 + U + U²`; Choie and Zagier call this *acyclicity*. Popa and Zagier prove it for `ℚ[ℳ]`, where
-`ℳ` is the set of integral matrices of positive determinant modulo `±1`; their descent applies to
-any free `X` and any ring `k`. Freeness of the action is Mathlib's `IsCancelSMul PSL(2, ℤ) X`.
+`S² = 1`, `U³ = 1` and `U * S = T`; these relations are in
+`TauCeti.NumberTheory.Modular.Relations`, where `U` is written `(T : PSL(2, ℤ)) * S`. Let `X` be
+a set on which `Γ` acts freely and `k[X]` its permutation module over a ring `k`. Then no nonzero
+`ξ ∈ k[X]` is killed by both `1 + S` and `1 + U + U²`; Choie and Zagier call this *acyclicity*.
+Popa and Zagier prove it for `ℚ[ℳ]`, where `ℳ` is the set of integral matrices of positive
+determinant modulo `±1`; their descent applies to any free `X` and any ring `k`. Freeness of the
+action is Mathlib's `IsCancelSMul PSL(2, ℤ) X`.
 
 The proof is a descent. If `ξ` is killed by both operators then `ξ = (T⁻¹ + T′⁻¹) ξ`, where
 `T′ = U² * S` is the class of `(1 0; 1 1)`, so the coefficients of `ξ` satisfy
@@ -30,9 +33,6 @@ freeness.
 
 ## Main results
 
-* `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_T_mul_S_pow_three` and
-  `TauCeti.ModularGroup.coe_T_mul_S_mul_coe_S`: the relations `S² = 1`, `U³ = 1` and `U S = T`
-  in `PSL(2, ℤ)`.
 * `TauCeti.ModularGroup.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq`: for a free
   `PSL(2, ℤ)`-set `X`, the kernels of `1 + S` and `1 + U + U²` on `k[X]` are disjoint.
 
@@ -53,28 +53,6 @@ namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup
 
-/-! ### Relations in `PSL(2, ℤ)` -/
-
-/-- The class of `S` has order dividing `2` in `PSL(2, ℤ)`: in `SL(2, ℤ)`, `S² = -1`. -/
-theorem coe_S_sq : ((S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 2 = 1 := by
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  exact Or.inr (by decide +kernel)
-
-/-- The class of `U = T * S` has order dividing `3` in `PSL(2, ℤ)`: in `SL(2, ℤ)`,
-`(T * S)³ = -1`. -/
-theorem coe_T_mul_S_pow_three : ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 3 = 1 := by
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  exact Or.inr (by decide +kernel)
-
-/-- In `PSL(2, ℤ)`, `U * S = T` for `U = T * S`; in `SL(2, ℤ)` the product is `-T`. -/
-theorem coe_T_mul_S_mul_coe_S :
-    ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) * (S : PSL(2, ℤ)) = (T : PSL(2, ℤ)) := by
-  rw [← QuotientGroup.mk_mul, QuotientGroup.eq,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  exact Or.inr (by decide +kernel)
-
 /-! ### The descent
 
 `tPrime` is Popa--Zagier's `T′ = (1 0; 1 1)`, whose class in `PSL(2, ℤ)` is `U² * S`. The descent
@@ -83,9 +61,9 @@ classes of the matrices in `SL(2, ℤ)` with non-negative entries. -/
 
 private def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
 
-private lemma coe_T_mul_S_sq_mul_coe_S :
-    ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 2 * (S : PSL(2, ℤ)) = (tPrime : PSL(2, ℤ)) := by
-  rw [← QuotientGroup.mk_pow, ← QuotientGroup.mk_mul, QuotientGroup.eq,
+private lemma coe_T_mul_coe_S_sq_mul_coe_S :
+    ((T : PSL(2, ℤ)) * S) ^ 2 * S = (tPrime : PSL(2, ℤ)) := by
+  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_mul, QuotientGroup.eq,
     SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   exact Or.inr (by decide +kernel)
 
@@ -124,20 +102,16 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
     [MulAction PSL(2, ℤ) X] [IsCancelSMul PSL(2, ℤ) X] :
     Disjoint (LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ) X (S : PSL(2, ℤ))))
       (LinearMap.ker
-        (1 + Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) +
-          Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 2)) := by
-  set u : PSL(2, ℤ) := ((T * S : SL(2, ℤ)) : PSL(2, ℤ))
-  have hs : (S : PSL(2, ℤ))⁻¹ = S := inv_eq_of_mul_eq_one_right (by rw [← sq, coe_S_sq])
-  have hu : u⁻¹ = u ^ 2 := inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_T_mul_S_pow_three])
-  have hu2 : (u ^ 2)⁻¹ = u := by rw [← hu, inv_inv]
+        (1 + Representation.ofMulAction k PSL(2, ℤ) X ((T : PSL(2, ℤ)) * S) +
+          Representation.ofMulAction k PSL(2, ℤ) X ((T : PSL(2, ℤ)) * S) ^ 2)) := by
   refine Submodule.disjoint_def.mpr fun ξ h₁ h₂ ↦ eq_zero_of_coeff_eq_add fun x ↦ ?_
   -- the coefficients of `(1 + S) ξ = 0` at `x` and of `(1 + U + U²) ξ = 0` at `S x`
   have e₁ := congrArg (fun η ↦ η.coeff x) (LinearMap.mem_ker.mp h₁)
   have e₂ := congrArg (fun η ↦ η.coeff ((S : PSL(2, ℤ)) • x)) (LinearMap.mem_ker.mp h₂)
   simp only [LinearMap.add_apply, Module.End.one_apply, coeff_add, Finsupp.coe_add, Pi.add_apply,
-    Representation.coeff_ofMulAction, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, ← map_pow, hs,
-    hu, hu2] at e₁ e₂
-  rw [smul_smul, smul_smul, coe_T_mul_S_mul_coe_S, coe_T_mul_S_sq_mul_coe_S] at e₂
+    Representation.coeff_ofMulAction, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, ← map_pow,
+    coe_S_inv, coe_T_mul_coe_S_inv, inv_coe_T_mul_coe_S_sq] at e₁ e₂
+  rw [smul_smul, smul_smul, coe_T_mul_coe_S_mul_coe_S, coe_T_mul_coe_S_sq_mul_coe_S] at e₂
   rw [eq_neg_of_add_eq_zero_left e₁, add_comm (ξ.coeff _)]
   exact neg_eq_of_add_eq_zero_right ((add_assoc _ _ _).symm.trans e₂)
 
