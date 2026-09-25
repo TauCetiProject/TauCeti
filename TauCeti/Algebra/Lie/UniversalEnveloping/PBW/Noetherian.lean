@@ -49,10 +49,6 @@ read in the opposite algebra and is not proved here.
 
 ## References
 
-* `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, Layer 3, the PBW unit's
-  Noetherian consequence: `U(L)` "is left and right **Noetherian** for finite-dimensional `L`, both
-  routed through the associated graded symmetric algebra and filtered-to-graded transfer in reusable
-  ring-theoretic form".
 * J. Dixmier, *Enveloping Algebras*, AMS GSM 11 (1996), §2.3.
 * J. C. McConnell and J. C. Robson, *Noncommutative Noetherian Rings*, Wiley (1987), §1.6.
 -/
