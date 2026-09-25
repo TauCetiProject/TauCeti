@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Comp
 -- Private: the derivative sum and scalar rules are used only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
 
@@ -29,6 +30,9 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
+* `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
+  function is `Cᵐ`.
 -/
 
 public section
@@ -60,5 +64,17 @@ theorem gradient_const_smul (c : 𝕜) :
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_smulₛₗ, RingHomCompTriple.comp_apply, RingHom.id_apply,
     fderiv_const_smul_field, Pi.smul_apply]
+
+/-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
+does. -/
+theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
+  rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
+
+/-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
+is `Cᵐ`, just as its Fréchet derivative is. -/
+theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
+    ContDiff ℝ m (∇ f) :=
+  (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
 
 end TauCeti

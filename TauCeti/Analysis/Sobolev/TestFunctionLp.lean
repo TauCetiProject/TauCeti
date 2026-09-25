@@ -178,12 +178,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-! ### The gradient of a test function -/
 
-/-- The gradient of a test function is smooth. Here `gradient` unfolds as the composition of
-`fderiv` with the inverse Riesz isomorphism. -/
+/-- The gradient of a test function is smooth. -/
 theorem contDiff_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
     ContDiff ℝ ∞ fun x => ∇ (phi : E → ℝ) x :=
-  (InnerProductSpace.toDual ℝ E).symm.contDiff.comp
-    (contDiff_infty_iff_fderiv.mp phi.contDiff).2
+  phi.contDiff.gradient_right (by simp)
 
 /-- The gradient of a test function is continuous. -/
 @[fun_prop]
