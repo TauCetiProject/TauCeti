@@ -71,12 +71,15 @@ namespace Place
 exactly when `x` has no pole at `P`. -/
 @[simp]
 theorem forall_algebraMap_mem_integers_integralClosure_adjoin_iff (P : Place k F) {x : F} :
-    (∀ r : integralClosure (Algebra.adjoin k {x}) F,
-        algebraMap (integralClosure (Algebra.adjoin k {x}) F) F r ∈ P.integers) ↔
+    (∀ a ∈ integralClosure (Algebra.adjoin k {x}) F, P.valuation a ≤ 1) ↔
       x ∈ P.integers :=
-  ⟨fun h ↦ h ⟨x, (integralClosure (Algebra.adjoin k {x}) F).algebraMap_mem
-      ⟨x, Algebra.self_mem_adjoin_singleton k x⟩⟩,
-    fun hx r ↦ P.mem_integers_of_isIntegral_adjoin hx r.2⟩
+  ⟨fun h ↦ by
+      rw [P.mem_integers_iff]
+      exact h x ((integralClosure (Algebra.adjoin k {x}) F).algebraMap_mem
+        ⟨x, Algebra.self_mem_adjoin_singleton k x⟩),
+    fun hx a ha ↦ by
+      rw [← P.mem_integers_iff]
+      exact P.mem_integers_of_isIntegral_adjoin hx ha⟩
 
 end Place
 
@@ -144,7 +147,8 @@ noncomputable def integralClosureAdjoinHeightOneSpectrumEquiv :
     {P : Place k F // x ∈ P.integers} ≃
       HeightOneSpectrum (integralClosure (Algebra.adjoin k {x}) F) :=
   (Equiv.subtypeEquivRight fun P ↦
-      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff).symm).trans
+      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff).symm.trans (by
+        simp only [Subalgebra.algebraMap_apply, Place.mem_integers_iff, Subtype.forall])).trans
     (Place.heightOneSpectrumEquiv k F _)
 
 @[simp]
@@ -152,7 +156,9 @@ theorem integralClosureAdjoinHeightOneSpectrumEquiv_apply
     (P : {P : Place k F // x ∈ P.integers}) :
     integralClosureAdjoinHeightOneSpectrumEquiv x P =
       (P : Place k F).center
-        ((P : Place k F).forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr P.2) :=
+        (fun r : integralClosure (Algebra.adjoin k {x}) F ↦ (P : Place k F).mem_integers_iff.mpr
+          ((P : Place k F).forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr P.2
+            (r : F) r.2)) :=
   Place.heightOneSpectrumEquiv_apply k F _
 
 @[simp]

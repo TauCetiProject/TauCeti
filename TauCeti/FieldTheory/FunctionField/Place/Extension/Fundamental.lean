@@ -156,8 +156,9 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
       IsIntegralClosure.finite_adjoin_of_transcendental k htr F' S
     exact Module.Finite.of_restrictScalars_finite (Algebra.adjoin k {t}) R S
   -- `P` is finite on `R`, since `t` has no pole at `P`.
-  have hR : ∀ r : R, algebraMap R F r ∈ P.integers :=
-    P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti
+  have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
+    P.mem_integers_iff.mpr
+      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.2)
   -- `S` contains the constants `k'`, because they are integral over `k ⊆ R`.
   have hk' : ∀ c : k', algebraMap k' F' c ∈ S := fun c ↦
     (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
