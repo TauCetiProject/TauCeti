@@ -243,7 +243,7 @@ subset of `V`, so they are isomorphic over `V`, compatibly with their inclusions
 (`sheafOverIsoOfRestrictEq_hom_ι`, `sheafOverIsoOfRestrictEq_inv_ι`). -/
 def sheafOverIsoOfRestrictEq (D E : CartierDivisor X) (V : X.Opens) (h : D |_ V = E |_ V) :
     D.sheaf.over V ≅ E.sheaf.over V :=
-  TauCeti.SheafOfModules.Submodule.overIsoOfEq D.submodule E.submodule V fun W i ↦
+  D.submodule.overIsoOfEq E.submodule V fun W i ↦
     (D.submodule_obj (op W)).trans ((sections_congr h i.le).trans (E.submodule_obj (op W)).symm)
 
 /-- The isomorphism `sheafOverIsoOfRestrictEq` is compatible with the inclusions into `𝒦_X`. -/
@@ -251,14 +251,14 @@ def sheafOverIsoOfRestrictEq (D E : CartierDivisor X) (V : X.Opens) (h : D |_ V 
 lemma sheafOverIsoOfRestrictEq_hom_ι (D E : CartierDivisor X) (V : X.Opens)
     (h : D |_ V = E |_ V) :
     (sheafOverIsoOfRestrictEq D E V h).hom ≫ E.sheafι.over V = D.sheafι.over V :=
-  TauCeti.SheafOfModules.Submodule.overIsoOfEq_hom_ι _ _ _ _
+  SheafOfModules.Submodule.overIsoOfEq_hom_ι _ _ _ _
 
 /-- The inverse of `sheafOverIsoOfRestrictEq` is compatible with the inclusions into `𝒦_X`. -/
 @[reassoc (attr := simp)]
 lemma sheafOverIsoOfRestrictEq_inv_ι (D E : CartierDivisor X) (V : X.Opens)
     (h : D |_ V = E |_ V) :
     (sheafOverIsoOfRestrictEq D E V h).inv ≫ D.sheafι.over V = E.sheafι.over V :=
-  TauCeti.SheafOfModules.Submodule.overIsoOfEq_inv_ι _ _ _ _
+  SheafOfModules.Submodule.overIsoOfEq_inv_ι _ _ _ _
 
 /-- For a regular function `a` on `U`, the rational function `f⁻¹ a` is a section of the sheaf of
 the principal divisor of `f` over `U`. -/

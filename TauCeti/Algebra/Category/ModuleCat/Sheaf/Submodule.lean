@@ -22,7 +22,7 @@ land in `N` factors through `N`, uniquely because `N.ι` is a monomorphism.
   factorization itself, with `liftToSubmodule_ι` recording that it does factor the given morphism;
 * `TauCeti.SheafOfModules.Submodule.homOfLE`, the inclusion of one submodule of a sheaf of modules
   into a larger one;
-* `TauCeti.SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules
+* `SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules
   with the same sections over every object above `V`.
 
 No formalization is vendored; the constructions are `AddMonoidHom.codRestrict` applied section by
@@ -129,14 +129,28 @@ lemma homOfLE_ι {N₁ N₂ : M.Submodule} (h : N₁.toSubmodule ≤ N₂.toSubm
     homOfLE h ≫ N₂.ι = N₁.ι :=
   _root_.SheafOfModules.Hom.ext (_root_.PresheafOfModules.Submodule.homOfLE_ι h)
 
+end Submodule
+
+end
+
+end SheafOfModules
+
+end TauCeti
+
+namespace SheafOfModules.Submodule
+
+variable {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}} {M : SheafOfModules.{v} R}
+
+noncomputable section
+
 /-- Two submodules of a sheaf of modules which have the same sections over every object above `V`
 give isomorphic sheaves of modules over `V`, compatibly with their inclusions (`overIsoOfEq_hom_ι`,
 `overIsoOfEq_inv_ι`). -/
 def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
     (h : ∀ (W : C) (_ : W ⟶ V), N₁.toSubmodule.obj (op W) = N₂.toSubmodule.obj (op W)) :
     N₁.toSheafOfModules.over V ≅ N₂.toSheafOfModules.over V :=
-  (_root_.SheafOfModules.fullyFaithfulForget _).preimageIso <|
-    _root_.PresheafOfModules.isoMk
+  (SheafOfModules.fullyFaithfulForget _).preimageIso <|
+    PresheafOfModules.isoMk
       (fun W ↦
         letI := ((N₁.toSheafOfModules.over V).val.obj W).isModule
         letI := ((N₂.toSheafOfModules.over V).val.obj W).isModule
@@ -167,10 +181,6 @@ lemma overIsoOfEq_inv_ι (N₁ N₂ : M.Submodule) (V : C)
   ext W s
   rfl
 
-end Submodule
-
 end
 
-end SheafOfModules
-
-end TauCeti
+end SheafOfModules.Submodule
