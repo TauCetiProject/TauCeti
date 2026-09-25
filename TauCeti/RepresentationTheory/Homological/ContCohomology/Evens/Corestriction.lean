@@ -21,19 +21,9 @@ Let `U` be an open subgroup of index two in a topological group `G`, choose `s �
 cochain.  The individual components are not cocycles, so the formula is necessarily an equality
 between the corestriction class and the class of their sum.
 
-The proof computes corestriction on the two-element transversal `Subgroup.indexTwoTransversal`,
-using the transversal-word formulas `TauCeti.lWord_indexTwoTransversal_*` and the two-term coset
-sum `TauCeti.sum_quotient_eq_add_of_index_two`.  Independence of the transversal then identifies
-this formula with the canonical corestriction in the explicit inhomogeneous model.
-
-Everything here is stated in that explicit inhomogeneous model, because `explicitCor1` is the
-only degree-one corestriction the library has: neither pinned Mathlib nor Tau Ceti carries a
-corestriction on the canonical `continuousCohomology` objects.  This file is therefore the
-model-dependent computation underlying the Evens-norm corestriction identity, not that identity
-itself.  Transporting the formula along `explicitH1AddEquivContinuousCohomology` into a
-statement about canonical classes is immediate once a canonical-model corestriction and its
-degree-one agreement with `explicitCor1` land, and the name `evensNorm_cor_shapiro` is left
-free for that statement.
+Everything here lives in the explicit inhomogeneous model: corestriction is `explicitCor1` and
+both sides of the formula are classes in `H1`.  The formula holds for an arbitrary representative
+`s ∉ U`, which enters the right-hand side through the Shapiro component `b_s`.
 
 ## Main definitions
 
@@ -42,7 +32,8 @@ free for that statement.
 ## Main results
 
 * `TauCeti.ContCohomology.explicitCor1_evensHomCocycleAmbient`: the degree-one corestriction
-  `explicitCor1` of the class of `α` is the class of `evensCorCochain`.
+  `explicitCor1` of the class of `α` is the class of `evensCorCocycle`, the cocycle whose
+  underlying cochain is the Shapiro sum `evensCorCochain`.
 
 ## References
 
