@@ -11,15 +11,11 @@ public import Mathlib.MeasureTheory.Measure.AEMeasurable
 /-!
 # Selecting the point of an almost surely Dirac kernel
 
-A kernel can be Dirac only almost everywhere for a given source
-measure. In that case its atoms form an almost everywhere measurable map. This is the
-measure-relative version of Mathlib's
+A kernel into a nonempty, countably generated measurable space that is Dirac almost
+everywhere for a given source measure agrees almost everywhere with a Dirac kernel
+induced by a measurable map. This is the measure-relative version of Mathlib's
 `ProbabilityTheory.Kernel.IsDeterministic.exists_eq_deterministic`, which assumes a
 deterministic kernel at every source point.
-
-The proof reads membership in a measurable target set from the kernel's value on that set.
-The resulting null-measurable selector is almost everywhere measurable when the target
-sigma algebra is countably generated. In particular, this applies to standard Borel targets.
 -/
 
 public section

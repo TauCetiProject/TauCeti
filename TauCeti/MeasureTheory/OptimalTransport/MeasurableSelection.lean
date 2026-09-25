@@ -13,10 +13,14 @@ public import TauCeti.Probability.Kernel.DiracSelection
 # Recovering a transport map from Dirac conditional laws
 
 If the conditional laws of the second coordinate of a finite coupling are Dirac for
-almost every source point, the coupling is a graph plan. The atom-selection theorem for
-kernels supplies a measurable map, and disintegration identifies the original coupling
-with its graph plan. This is the measure-theoretic step that turns uniqueness of
-conditional transport fibers into a Monge map.
+almost every source point, the coupling is the graph plan of a measurable map with the
+prescribed target law. This turns almost-everywhere singleton conditional transport
+fibers into a Monge map.
+
+## References
+
+* C. Villani, *Optimal Transport: Old and New*, Chapter 10, for the passage from
+  Dirac conditional laws of a transport plan to a Monge map.
 -/
 
 public section
