@@ -31,6 +31,7 @@ its `p`-free factor.
 
 ## Main results
 
+* `TauCeti.pFreePart_mem_powers`: the `p`-free part is a natural power in any monoid.
 * `TauCeti.pFreePart_mul_pPart`: the two factors multiply back to `x`.
 * `TauCeti.commute_pFreePart_pPart`: the two factors commute.
 * `TauCeti.commute_pFreePart`, `TauCeti.commute_pPart`: anything commuting with `x` commutes with
@@ -63,6 +64,11 @@ private noncomputable def pFreeExponent (p : ℕ) (x : G) : ℕ :=
 /-- The power of `x` that gives its **`p`-free part** when `p` is prime and `x` has finite order.
 In a group, together with `TauCeti.pPart p x`, it factors `x` into two commuting elements. -/
 noncomputable def pFreePart (p : ℕ) (x : G) : G := x ^ pFreeExponent p x
+
+/-- The `p`-free part of `x` is a natural power of `x`. -/
+theorem pFreePart_mem_powers (p : ℕ) (x : G) : pFreePart p x ∈ Submonoid.powers x := by
+  rw [pFreePart]
+  exact pow_mem (Submonoid.mem_powers x) _
 
 /-- An element commuting with `x` commutes with the `p`-free part of `x`. -/
 theorem commute_pFreePart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pFreePart p x) :=
@@ -167,17 +173,18 @@ theorem pFreePart_mul_pPart (p : ℕ) (x : G) : pFreePart p x * pPart p x = x :=
 
 /-- The `p`-free part of `x` is a power of `x`. -/
 theorem pFreePart_mem_zpowers (p : ℕ) (x : G) : pFreePart p x ∈ Subgroup.zpowers x := by
-  rw [pFreePart]
-  exact pow_mem (Subgroup.mem_zpowers x) _
+  obtain ⟨n, hn⟩ := (Submonoid.mem_powers_iff _ _).1 (pFreePart_mem_powers p x)
+  rw [← hn]
+  exact Subgroup.npow_mem_zpowers x n
 
 /-- The `p`-part of `x` is a power of `x`. -/
 theorem pPart_mem_zpowers (p : ℕ) (x : G) : pPart p x ∈ Subgroup.zpowers x :=
   mul_mem (inv_mem (pFreePart_mem_zpowers p x)) (Subgroup.mem_zpowers x)
 
 /-- The `p`-free and `p`-parts of `x` commute. -/
-theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPart p x) :=
-  (Commute.refl (pFreePart p x)).inv_right.mul_right
-    ((Commute.refl x).pow_left (pFreeExponent p x))
+theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPart p x) := by
+  rw [pPart, pFreePart]
+  exact (Commute.refl _).inv_right.mul_right ((Commute.refl x).pow_left _)
 
 /-- An element commuting with `x` commutes with the `p`-part of `x`. -/
 theorem commute_pPart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pPart p x) := by
