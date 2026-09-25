@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
@@ -13,11 +12,12 @@ public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 /-!
 # Inflation of the index-two Evens graph cocycle
 
-Let `N` be a normal subgroup contained in an open subgroup `U` of a topological group `G`.
-The image `U / N` is open in `G / N`, has the same index as `U`, and the quotient map restricts
-to a homomorphism `U → U / N`. This file proves that the two-point graph cocycle commutes with
-pullback along that quotient map. Consequently, degree-two inflation carries the graph-cocycle
-class for `U / N` to the graph-cocycle class for `U`.
+Let `N` be a normal subgroup contained in an open subgroup `U` of a topological group `G`. The
+image `U / N` is open in `G / N`, has the same index as `U`, and the quotient map restricts to a
+homomorphism `U → U / N`; these are `TauCeti.quotientOpenSubgroup` and
+`TauCeti.quotientOpenSubgroupMap`. This file proves that the two-point graph cocycle commutes
+with pullback along that quotient map. Consequently, degree-two inflation carries the
+graph-cocycle class for `U / N` to the graph-cocycle class for `U`.
 
 The coefficient object used by explicit inflation is the fixed-point subgroup of the ambient
 trivial `𝔽₂` module. The additive equivalence `trivialF2QuotientEquivFixedPoints` identifies it
@@ -26,17 +26,15 @@ inflation in the class-level statement.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.quotientOpenSubgroup`: the image of an open subgroup in a quotient.
-* `TauCeti.ContCohomology.quotientOpenSubgroupMap`: the restricted quotient homomorphism.
 * `TauCeti.ContCohomology.trivialF2QuotientEquivFixedPoints`: trivial coefficients on the
   quotient identified with the fixed points of the ambient trivial coefficients.
 
 ## Main results
 
-* `TauCeti.ContCohomology.quotientOpenSubgroup_index`: quotienting by a subgroup of `U` preserves
-  the index of `U`.
 * `TauCeti.ContCohomology.evensGraphCochain_quotient`: the graph-cochain formula commutes with the
   quotient map.
+* `TauCeti.ContCohomology.explicitMap2_evensGraphCocycle`: the coefficient identification carries
+  the quotient graph-cocycle class to the class inflated below.
 * `TauCeti.ContCohomology.explicitInfl2_evensGraphCocycle`: inflation of the quotient
   graph-cocycle class is the ambient graph-cocycle class.
 
@@ -53,53 +51,6 @@ public section
 namespace TauCeti.ContCohomology
 
 universe u
-
-section QuotientSubgroup
-
-variable {G : Type u} [Group G] [TopologicalSpace G] (N : Subgroup G) [N.Normal]
-
-/-- The image of an open subgroup `U` in `G / N`, as an open subgroup. -/
-def quotientOpenSubgroup [IsTopologicalGroup G] (U : OpenSubgroup G) : OpenSubgroup (G ⧸ N) where
-  toSubgroup := U.toSubgroup.map (QuotientGroup.mk' N)
-  isOpen' := QuotientGroup.isOpenMap_coe _ U.isOpen'
-
-/-- Membership in `U / N` pulls back to membership in `U` when `N ≤ U`. -/
-@[simp]
-theorem mem_quotientOpenSubgroup_mk_iff [IsTopologicalGroup G]
-    (U : OpenSubgroup G) (hNU : N ≤ U) (g : G) :
-    (g : G ⧸ N) ∈ quotientOpenSubgroup N U ↔ g ∈ U := by
-  change g ∈ Subgroup.comap (QuotientGroup.mk' N)
-    (Subgroup.map (QuotientGroup.mk' N) U.toSubgroup) ↔ g ∈ U.toSubgroup
-  rw [QuotientGroup.comap_map_mk', sup_eq_right.mpr hNU]
-
-/-- Passing from `U` to its image in `G / N` preserves the index when `N ≤ U`. -/
-@[simp]
-theorem quotientOpenSubgroup_index [IsTopologicalGroup G]
-    (U : OpenSubgroup G) (hNU : N ≤ U) :
-    (quotientOpenSubgroup N U).toSubgroup.index = U.toSubgroup.index := by
-  rw [quotientOpenSubgroup, Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU]
-
-/-- The quotient homomorphism restricted from `U` to its image `U / N`. -/
-def quotientOpenSubgroupMap [IsTopologicalGroup G] (U : OpenSubgroup G) :
-    U.toSubgroup →* (quotientOpenSubgroup N U).toSubgroup :=
-  MonoidHom.codRestrict ((QuotientGroup.mk' N).comp U.toSubgroup.subtype)
-    (quotientOpenSubgroup N U).toSubgroup fun u => ⟨u, u.2, rfl⟩
-
-/-- The restricted quotient homomorphism has the expected value in `G / N`. -/
-@[simp]
-theorem coe_quotientOpenSubgroupMap [IsTopologicalGroup G]
-    (U : OpenSubgroup G) (u : U.toSubgroup) :
-    ((quotientOpenSubgroupMap N U u : (quotientOpenSubgroup N U).toSubgroup) : G ⧸ N) =
-      (u : G) :=
-  (rfl)
-
-/-- The restricted quotient homomorphism is continuous. -/
-theorem continuous_quotientOpenSubgroupMap [IsTopologicalGroup G]
-    (U : OpenSubgroup G) :
-    Continuous (quotientOpenSubgroupMap N U) :=
-  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
-
-end QuotientSubgroup
 
 section Coefficients
 
@@ -144,29 +95,6 @@ theorem trivialF2QuotientEquivFixedPoints_smul (q : G ⧸ N)
       coe_smul_fixedPoints_addSubgroup]
     simp
 
-/-- The coefficient equivalence as an equivariant additive homomorphism. -/
-noncomputable def trivialF2QuotientToFixedPoints :
-    (trivialF2 (G ⧸ N)).V →+[G ⧸ N] FixedPoints.addSubgroup N (trivialF2 G).V :=
-  { (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom with
-    map_smul' := trivialF2QuotientEquivFixedPoints_smul N }
-
-/-- The equivariant coefficient homomorphism has the same underlying map as the additive
-equivalence from which it is built. -/
-@[simp]
-theorem trivialF2QuotientToFixedPoints_apply (x : (trivialF2 (G ⧸ N)).V) :
-    trivialF2QuotientToFixedPoints N x = trivialF2QuotientEquivFixedPoints N x :=
-  (rfl)
-
-/-- The equivariant coefficient homomorphism preserves the underlying `ZMod 2` value. -/
-theorem trivialF2Equiv_apply_coe_trivialF2QuotientToFixedPoints
-    (x : (trivialF2 (G ⧸ N)).V) :
-    trivialF2Equiv G
-        ((trivialF2QuotientToFixedPoints N x :
-          FixedPoints.addSubgroup N (trivialF2 G).V) : (trivialF2 G).V) =
-      trivialF2Equiv (G ⧸ N) x := by
-  rw [trivialF2QuotientToFixedPoints_apply,
-    trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints]
-
 end Coefficients
 
 section GraphCochain
@@ -194,8 +122,9 @@ theorem evensExtend_quotient (hNU : N ≤ U)
   by_cases hg : g ∈ U
   · have hq : (g : G ⧸ N) ∈ quotientOpenSubgroup N U :=
       (mem_quotientOpenSubgroup_mk_iff N U hNU g).2 hg
-    rw [evensExtend_of_mem hg, evensExtend_of_mem hq]
-    rfl
+    rw [evensExtend_of_mem hg, evensExtend_of_mem hq, evensInflatedHom, MonoidHom.comp_apply]
+    exact congrArg (fun u => Multiplicative.toAdd (α u))
+      (Subtype.ext (coe_quotientOpenSubgroupMap N U ⟨g, hg⟩))
   · have hq : (g : G ⧸ N) ∉ quotientOpenSubgroup N U :=
       mt (mem_quotientOpenSubgroup_mk_iff N U hNU g).1 hg
     rw [evensExtend_of_notMem hg, evensExtend_of_notMem hq]
@@ -256,34 +185,49 @@ auto-assigned the name `Evens.Restriction` already owns, and the plain name is t
 local instance continuousSMul_trivialF2_ambient : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
-/-- The quotient graph cocycle with its values transported to the fixed-point coefficient object
-expected by explicit inflation. -/
+omit [IsTopologicalGroup G] in
+/-- The coefficient equivalence, paired with the identity homomorphism of `G ⧸ N`, is a
+compatible pair: this is the shape in which `TauCeti.ContCohomology.cocyclesMap2` takes a
+coefficient map. -/
+theorem trivialF2QuotientEquivFixedPoints_id_smul (q : G ⧸ N) (x : (trivialF2 (G ⧸ N)).V) :
+    (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom
+        (ContinuousMonoidHom.id (G ⧸ N) q • x) =
+      q • (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom x := by
+  simpa using trivialF2QuotientEquivFixedPoints_smul N q x
+
+/-- The quotient graph cocycle, which is `evensGraphCocycle` for the open subgroup `U / N` of
+`G / N`, with its values transported to the fixed-point coefficient object expected by explicit
+inflation. -/
 noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
     (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
     (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
     (hα : Continuous α) : Z2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V) :=
-  ⟨fun p => trivialF2QuotientToFixedPoints N
-      ((trivialF2Equiv (G ⧸ N)).symm
-        (evensGraphCochain (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α p)),
-    mem_Z2_iff.2 ⟨
-      (continuous_of_discreteTopology : Continuous (trivialF2QuotientToFixedPoints N)).comp
-        ((continuous_of_discreteTopology : Continuous (trivialF2Equiv (G ⧸ N)).symm).comp
-          (continuous_evensGraphCochain (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α
-            (quotientOpenSubgroup N U).isOpen' hα)),
-      fun q r t => by
-      apply Subtype.ext
-      apply (trivialF2Equiv G).injective
-      induction q using QuotientGroup.induction_on with
-      | H g =>
-        simp only [AddSubgroup.coe_add]
-        rw [coe_quotient_smul_fixedPoints_addSubgroup,
-          coe_smul_fixedPoints_addSubgroup]
-        simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
-          trivialF2Equiv_apply_coe_trivialF2QuotientToFixedPoints,
-          AddEquiv.apply_symm_apply, map_add]
-        exact evensGraphCochain_cocycle_identity
+  cocyclesMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
+      (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
+      (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
+      trivialF2QuotientEquivFixedPoints_id_smul
+    (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
+      ((quotientOpenSubgroup_index N U hNU).trans hU)
+      (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)
+
+/-- **The coefficient identification carries the quotient graph-cocycle class to the class that
+`explicitInfl2_evensGraphCocycle` inflates.** This identifies the input of that theorem with the
+graph-cocycle class of the open subgroup `U / N` of `G / N`. -/
+theorem explicitMap2_evensGraphCocycle (U : OpenSubgroup G) (hNU : N ≤ U)
+    (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    explicitMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
+        (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
+        (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
+        trivialF2QuotientEquivFixedPoints_id_smul
+        (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
           ((quotientOpenSubgroup_index N U hNU).trans hU)
-          (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) (g : G ⧸ N) r t⟩⟩
+          (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα :
+            H2 (G ⧸ N) (trivialF2 (G ⧸ N)).V) =
+      (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
+        H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) :=
+  explicitMap2_mk _ _ _ _ _ _ _ _ _
 
 /-- The fixed-point-valued graph cocycle is obtained by applying the coefficient equivalence
 pointwise to the quotient graph cocycle. -/
@@ -294,10 +238,13 @@ theorem coe_evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
     (hα : Continuous α) :
     (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
         (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N (trivialF2 G).V) =
-      fun p => trivialF2QuotientToFixedPoints N
+      fun p => trivialF2QuotientEquivFixedPoints N
         ((trivialF2Equiv (G ⧸ N)).symm
-          (evensGraphCochain (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α p)) :=
-  (rfl)
+          (evensGraphCochain (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α p)) := by
+  funext p
+  obtain ⟨q, r⟩ := p
+  rw [evensGraphCocycleFixedPoints, cocyclesMap2_apply, coe_evensGraphCocycle]
+  simp
 
 /-- The fixed-point-valued graph cocycle has the same underlying `ZMod 2` value as the quotient
 graph cochain. -/
