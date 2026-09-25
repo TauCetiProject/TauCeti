@@ -15,22 +15,18 @@ public import TauCeti.Geometry.Hodge.Tate.Twist
 The Tate twist `V(m)` of a pure Hodge structure `V` of weight `n` is classically defined as the
 tensor product `V ⊗ ℤ(m)` with the rank-one Tate structure. The construction
 `TauCeti.Hodge.HodgeStructureOn.tateTwist` instead keeps the underlying complex vector space `W`
-and shifts the filtration, `F^p(V(m)) = F^{p+m}(V)`. This file proves that the two agree: Mathlib's
-right unitor `TensorProduct.rid ℂ W : W ⊗[ℂ] ℂ ≃ₗ[ℂ] W` carries the tensor-product Hodge
-structure `V ⊗ ℤ(m)` onto the shifted structure `V(m)`.
+and shifts the filtration, `F^p(V(m)) = F^{p+m}(V)`. This file compares the two on the complex
+side: Mathlib's right unitor `TensorProduct.rid ℂ W : W ⊗[ℂ] ℂ ≃ₗ[ℂ] W` intertwines the
+conjugations, and the complex Hodge components and the Hodge filtration of `V(m)` are the pullbacks
+of those of `V ⊗ ℤ(m)` along its inverse.
 
-The unitor intertwines the conjugations, because the conjugation of the Tate complexification `ℂ`
-is complex conjugation and fixes `1`. On Hodge components, a pure tensor `x ⊗ z` with `x` of
-degree `r` and `z` in the only nonzero Tate component `H^{-m,-m}` has total degree `r - m`, and
-the unitor sends it to `z • x`, of degree `r` in `V`. This gives one inclusion of Hodge
-decompositions of `W`, and an inclusion between two internal direct sum decompositions of the same
-space is an equality. The filtrations, which are recovered from the components, then agree as well.
-
-In particular the weight and filtration shift of `tateTwist` are those of `V ⊗ ℤ(m)`, the Hodge
-numbers of `V ⊗ ℤ(m)` are those of `V` translated by `m`, and `ℤ(k) ⊗ ℤ(m)` is `ℤ(k + m)`.
+Consequently the weight and filtration shift of `tateTwist` are those of `V ⊗ ℤ(m)`, the Hodge
+numbers of `V ⊗ ℤ(m)` are those of `V` translated by `m`, and the Hodge filtration of `ℤ(k + m)`
+is that of `ℤ(k) ⊗ ℤ(m)` along the right unitor `ℂ ⊗[ℂ] ℂ ≃ₗ[ℂ] ℂ`.
 
 The convention follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1, and
-Peters–Steenbrink, *Mixed Hodge Structures*, §2.1.
+Peters–Steenbrink, *Mixed Hodge Structures*, §2.1. The comparison of components adapts the
+decomposition argument of `TauCeti.Hodge.HodgeStructureOn.internalHom_piece_eq_comap`.
 
 ## Main declarations
 
@@ -41,7 +37,8 @@ Peters–Steenbrink, *Mixed Hodge Structures*, §2.1.
   `V(m)` are the pullbacks of those of `V ⊗ ℤ(m)` along the inverse right unitor.
 * `TauCeti.Hodge.HodgeStructureOn.tensorProduct_tate_hodgeNumber`: the Hodge numbers of
   `V ⊗ ℤ(m)` are those of `V` shifted by `m`.
-* `TauCeti.Hodge.tate_add_F_eq_comap`: `ℤ(k) ⊗ ℤ(m)` is `ℤ(k + m)` under the right unitor.
+* `TauCeti.Hodge.tate_add_F_eq_comap`: the Hodge filtration of `ℤ(k + m)` is the pullback of that
+  of `ℤ(k) ⊗ ℤ(m)` along the inverse right unitor.
 -/
 
 public section
@@ -126,9 +123,8 @@ theorem tensorProduct_tate_hodgeNumber (hs : HodgeStructureOn W ω n) (m p : ℤ
 
 end HodgeStructureOn
 
-/-- The tensor product of two Tate structures is a Tate structure: the filtration of
-`ℤ(k + m)` is the pullback of that of `ℤ(k) ⊗ ℤ(m)` along the inverse right unitor
-`ℂ ≃ₗ[ℂ] ℂ ⊗[ℂ] ℂ`. -/
+/-- The Hodge filtration of the Tate structure `ℤ(k + m)` is the pullback of that of
+`ℤ(k) ⊗ ℤ(m)` along the inverse right unitor `ℂ ≃ₗ[ℂ] ℂ ⊗[ℂ] ℂ`. -/
 theorem tate_add_F_eq_comap (k m p : ℤ) :
     (tate (k + m)).F p =
       (((tate k).tensorProduct (tate m)).F p).comap (TensorProduct.rid ℂ ℂ).symm.toLinearMap := by
