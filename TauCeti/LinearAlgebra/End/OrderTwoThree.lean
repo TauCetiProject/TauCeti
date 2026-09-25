@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Module.Submodule.Invariant
-public import Mathlib.Algebra.Module.Submodule.Ker
 public import Mathlib.Algebra.Module.Submodule.Range
-public import TauCeti.RingTheory.Idempotents.SquareRootOne
 
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
+import TauCeti.RingTheory.Idempotents.SquareRootOne
 
 /-!
 # Operators of order two and three: the Choie–Zagier criterion and Popa–Zagier's projection
@@ -36,16 +37,20 @@ unnormalised form needs no invertibility where none is used.
   are disjoint, then `x ∈ range (1 + σ) ⊔ range (1 + υ + υ ^ 2)` exactly when
   `(1 - σ) x ∈ range (1 - υ * σ)`, that is, `ξ ∈ 𝓘 ↔ (1 - S) ξ ∈ (1 - T) ℛ`. The forward direction,
   `TauCeti.End.one_sub_apply_mem_range_one_sub_mul_of_mem_sup`, needs neither hypothesis.
-* `TauCeti.End.exists_mem_sup_apply_sub_mem`: **the existence half of Popa–Zagier's Lemma 3**, for
-  idempotent endomorphisms `e` and `f` and submodules `P` and `Q` with `P` stable under `f` and `Q`
-  stable under `e`: if `e ξ` and `f ξ` lie in `P ⊔ Q`, then `ξ` can be corrected by an element `ι`
-  of `P ⊔ Q` so that `e (ξ - ι) ∈ Q` and `f (ξ - ι) ∈ P`.
+* `TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem`: **the existence half of
+  Popa–Zagier's Lemma 3**, for idempotent endomorphisms `e` and `f` and submodules `P` and `Q`
+  with `P` stable under `f` and `Q` stable under `e`: if `e ξ` and `f ξ` lie in `P ⊔ Q`, then `ξ`
+  can be corrected by an element `ι` of `P ⊔ Q` so that `e (ξ - ι) ∈ Q` and `f (ξ - ι) ∈ P`.
 * `TauCeti.End.exists_mem_sup_one_add_apply_sub_mem`: the same for `e = (1 + σ) / 2` and
   `f = (1 + υ + υ ^ 2) / 3`, stated with the unnormalised operators.
+* `TauCeti.one_sub_mul_one_add_add_sq`: the ring identity
+  `(1 - σ) (1 + υ + υ ^ 2) = (1 - υ σ) (-σ (1 + υ + υ ^ 2))` for `σ ^ 2 = 1` and `υ ^ 3 = 1`.
 * `TauCeti.isIdempotentElem_invOf_three_smul_one_add_add_sq`: `(1 + υ + υ ^ 2) / 3` is idempotent
   when `υ ^ 3 = 1`, the order-three counterpart of `TauCeti.isIdempotentElem_halfOneAdd`.
 * `TauCeti.End.range_one_add_eq_ker_one_sub`, `TauCeti.End.range_one_add_add_sq_eq_ker_one_sub`:
-  the fixed vectors of `σ` and of `υ` are the ranges of `1 + σ` and of `1 + υ + υ ^ 2`.
+  the fixed vectors of `σ` and of `υ` are the ranges of `1 + σ` and of `1 + υ + υ ^ 2`. The
+  inclusions `TauCeti.End.range_one_add_le_ker_one_sub` and
+  `TauCeti.End.range_one_add_add_sq_le_ker_one_sub` need no invertibility.
 * `TauCeti.End.range_mem_invtSubmodule_of_commute`: the range of an endomorphism is stable under
   every endomorphism commuting with it; this is how the stability hypotheses of Lemma 3 are met
   when `P` and `Q` come from the left action and `e`, `f` from the right one.
@@ -59,18 +64,14 @@ The forward direction is the identity `(1 - σ) (1 + υ + υ ^ 2) = (1 - υ σ) 
 `1 - υ σ = (1 - σ) + (1 - υ) σ`, the element `c = (1 - σ) (x - η) = (1 - υ) (σ η)` is killed by
 `1 + σ` and by `1 + υ + υ ^ 2`, so it vanishes by the acyclicity hypothesis (the second half of
 their Lemma 2, which is where the disjointness comes from). Hence `x - η` is fixed by `σ` and
-`σ η` by `υ`, and `x = (x - η) + (1 + σ) (σ η) - σ η`.
+`σ η` by `υ`, and `x = (x - η) + ((1 + σ) η - σ η)`.
 
 The proof of the existence half of Lemma 3 is theirs: with `e ξ = p₁ + q₁` and `f ξ = p₂ + q₂`, the
 correction is `ι = p₁ + q₂`. It uses only that `P` is `f`-stable and `Q` is `e`-stable. The
 uniqueness half and their description of the image of `𝓘` are not needed here.
 
-## Intended consumers
-
-The exchange relations of the trace formula (roadmap `ModularForms`, Layer 11, milestone (v)):
-`TauCeti/NumberTheory/ModularForms/LevelOne/TraceFormula/ExchangeRelations.lean` (planned) shows
-the existence of an element satisfying both Popa–Zagier's period relation (A) and their exchange
-relations (B), combining Lemma 3 with Lemma 1; milestone (vi), Theorem A, builds on it.
+Lemma 3 combined with Lemma 1 yields an element satisfying both Popa–Zagier's period relation (A)
+and their exchange relations (B).
 
 ## Implementation notes
 
@@ -93,34 +94,26 @@ section Ring
 
 variable {A : Type*} [Ring A] {σ υ : A}
 
-private theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) * (1 + σ) = 0 :=
-  calc (1 - σ) * (1 + σ) = 1 - σ ^ 2 := by noncomm_ring
-    _ = 0 := by rw [hσ, sub_self]
+private theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) * (1 + σ) = 0 := by
+  linear_combination (norm := noncomm_ring) -hσ
 
-private theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 :=
-  calc (1 + σ) * (1 - σ) = 1 - σ ^ 2 := by noncomm_ring
-    _ = 0 := by rw [hσ, sub_self]
+private theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 := by
+  linear_combination (norm := noncomm_ring) -hσ
 
 private theorem mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
-    υ * (1 + υ + υ ^ 2) = 1 + υ + υ ^ 2 :=
-  calc υ * (1 + υ + υ ^ 2) = υ + υ ^ 2 + υ ^ 3 := by noncomm_ring
-    _ = 1 + υ + υ ^ 2 := by rw [hυ]; abel
+    υ * (1 + υ + υ ^ 2) = 1 + υ + υ ^ 2 := by
+  linear_combination (norm := noncomm_ring) hυ
 
 private theorem one_add_add_sq_mul_one_sub_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
-    (1 + υ + υ ^ 2) * (1 - υ) = 0 :=
-  calc (1 + υ + υ ^ 2) * (1 - υ) = 1 - υ ^ 3 := by noncomm_ring
-    _ = 0 := by rw [hυ, sub_self]
+    (1 + υ + υ ^ 2) * (1 - υ) = 0 := by
+  linear_combination (norm := noncomm_ring) -hυ
 
-/-- **`(1 - σ) (1 + υ + υ²)` is a left multiple of `1 - υ σ`** when `σ ^ 2 = 1` and `υ ^ 3 = 1`.
+/-- **`(1 - σ) (1 + υ + υ²)` lies in `(1 - υ σ) A`** when `σ ^ 2 = 1` and `υ ^ 3 = 1`.
 This is Popa–Zagier's relation `(1 - S) π_U = (1 - T⁻¹) π_U` for `T = U S`, rewritten through
 `1 - T⁻¹ = (1 - T) (-T⁻¹)`, and it is the forward direction of the Choie–Zagier criterion. -/
 theorem one_sub_mul_one_add_add_sq (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) :
     (1 - σ) * (1 + υ + υ ^ 2) = (1 - υ * σ) * -(σ * (1 + υ + υ ^ 2)) := by
-  have h := mul_one_add_add_sq_of_pow_three_eq_one hυ
-  calc (1 - σ) * (1 + υ + υ ^ 2) = υ * (1 + υ + υ ^ 2) - σ * (1 + υ + υ ^ 2) := by
-        rw [h]; noncomm_ring
-    _ = (1 - υ * σ) * -(σ * (1 + υ + υ ^ 2)) := by
-        rw [sub_mul, one_mul, mul_neg, ← mul_assoc, mul_assoc υ, ← sq, hσ]; noncomm_ring
+  linear_combination (norm := noncomm_ring) -hυ - υ * hσ * (1 + υ + υ ^ 2)
 
 end Ring
 
@@ -133,13 +126,11 @@ averaging idempotent of the cyclic group generated by `υ`, the order-three coun
 `TauCeti.isIdempotentElem_halfOneAdd`. -/
 theorem isIdempotentElem_invOf_three_smul_one_add_add_sq [Invertible (3 : R)] (hυ : υ ^ 3 = 1) :
     IsIdempotentElem ((⅟3 : R) • (1 + υ + υ ^ 2)) := by
-  have h := mul_one_add_add_sq_of_pow_three_eq_one hυ
-  have h2 : υ ^ 2 * (1 + υ + υ ^ 2) = 1 + υ + υ ^ 2 :=
-    calc υ ^ 2 * (1 + υ + υ ^ 2) = υ * (υ * (1 + υ + υ ^ 2)) := by rw [← mul_assoc, ← sq]
-      _ = 1 + υ + υ ^ 2 := by rw [h, h]
+  -- `(1 + υ + υ²)² - 3 (1 + υ + υ²) = (2 + υ) (υ³ - 1)`
   have hN : (1 + υ + υ ^ 2) * (1 + υ + υ ^ 2) = (3 : R) • (1 + υ + υ ^ 2) := by
-    rw [← two_add_one_eq_three, add_smul, two_smul, one_smul, add_mul, add_mul, one_mul, h, h2]
-  rw [IsIdempotentElem, smul_mul_smul_comm, hN, smul_smul, mul_assoc, invOf_mul_self, mul_one]
+    rw [ofNat_smul_eq_nsmul]
+    linear_combination (norm := noncomm_ring) hυ + hυ + υ * hυ
+  rw [IsIdempotentElem, smul_mul_smul_comm, hN, mul_smul, invOf_smul_smul]
 
 end Algebra
 
@@ -148,44 +139,43 @@ namespace End
 open Module LinearMap
 
 /-- **The range of an endomorphism is stable under every endomorphism commuting with it.** -/
-theorem range_mem_invtSubmodule_of_commute {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {f g : End R M} (h : Commute f g) : range f ∈ g.invtSubmodule := by
+theorem range_mem_invtSubmodule_of_commute {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {f g : End R M} (h : Commute f g) : range f ∈ g.invtSubmodule := by
   rintro - ⟨x, rfl⟩
-  exact ⟨g x, by rw [← End.mul_apply, h.eq, End.mul_apply]⟩
+  exact ⟨g x, LinearMap.congr_fun h.eq x⟩
 
 section Semiring
 
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {σ υ : End R M}
 
 /-- For `σ ^ 2 = 1`, the vectors `(1 + σ) x` are fixed by `σ`. -/
-theorem range_one_add_le_ker_one_sub (hσ : σ ^ 2 = 1) : range (1 + σ) ≤ ker (1 - σ) := by
-  rintro - ⟨x, rfl⟩
-  rw [mem_ker, ← End.mul_apply, one_sub_mul_one_add_of_sq_eq_one hσ, zero_apply]
+theorem range_one_add_le_ker_one_sub (hσ : σ ^ 2 = 1) : range (1 + σ) ≤ ker (1 - σ) :=
+  range_le_ker_iff.2 (one_sub_mul_one_add_of_sq_eq_one hσ)
 
-/-- **The fixed vectors of an involution are the range of `1 + σ`**, when `2` is invertible: a
-fixed vector `x` is `(1 + σ) (x / 2)`. -/
+/-- **The fixed vectors of an involution are the range of `1 + σ`**, when `2` is invertible. -/
 theorem range_one_add_eq_ker_one_sub [Invertible (2 : R)] (hσ : σ ^ 2 = 1) :
     range (1 + σ) = ker (1 - σ) := by
-  refine (range_one_add_le_ker_one_sub hσ).antisymm fun x hx => ⟨(⅟2 : R) • x, ?_⟩
+  -- a fixed vector `x` is `(1 + σ) (x / 2)`
+  refine (range_one_add_le_ker_one_sub hσ).antisymm fun x hx ↦ ⟨(⅟2 : R) • x, ?_⟩
   rw [mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hx
-  rw [add_apply, End.one_apply, map_smul, ← hx, ← add_smul, ← two_mul, mul_invOf_self, one_smul]
+  simp [← hx, ← two_smul R]
 
 /-- For `υ ^ 3 = 1`, the vectors `(1 + υ + υ²) x` are fixed by `υ`. -/
 theorem range_one_add_add_sq_le_ker_one_sub (hυ : υ ^ 3 = 1) :
-    range (1 + υ + υ ^ 2) ≤ ker (1 - υ) := by
-  rintro - ⟨x, rfl⟩
-  rw [mem_ker, ← End.mul_apply, sub_mul, one_mul, mul_one_add_add_sq_of_pow_three_eq_one hυ,
-    sub_self, zero_apply]
+    range (1 + υ + υ ^ 2) ≤ ker (1 - υ) :=
+  range_le_ker_iff.2 <| by
+    rw [← End.mul_eq_comp, sub_mul, one_mul, mul_one_add_add_sq_of_pow_three_eq_one hυ, sub_self]
 
-/-- **The fixed vectors of an endomorphism of order three are the range of `1 + υ + υ²`**, when
-`3` is invertible: a fixed vector `x` is `(1 + υ + υ²) (x / 3)`. -/
+/-- **The fixed vectors of an endomorphism `υ` with `υ ^ 3 = 1` are the range of
+`1 + υ + υ²`**, when `3` is invertible. -/
 theorem range_one_add_add_sq_eq_ker_one_sub [Invertible (3 : R)] (hυ : υ ^ 3 = 1) :
     range (1 + υ + υ ^ 2) = ker (1 - υ) := by
-  refine (range_one_add_add_sq_le_ker_one_sub hυ).antisymm fun x hx => ⟨(⅟3 : R) • x, ?_⟩
+  -- a fixed vector `x` is `(1 + υ + υ²) (x / 3)`
+  refine (range_one_add_add_sq_le_ker_one_sub hυ).antisymm fun x hx ↦ ⟨(⅟3 : R) • x, ?_⟩
   rw [mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hx
-  rw [add_apply, add_apply, End.one_apply, sq, End.mul_apply, map_smul, map_smul, ← hx, ← hx,
-    ← add_smul, ← add_smul, ← two_mul, ← add_one_mul, two_add_one_eq_three, mul_invOf_self,
-    one_smul]
+  have h3x : (1 + υ + υ ^ 2 : End R M) x = (3 : R) • x := by
+    simp [sq, ← hx, ← two_add_one_eq_three, add_smul, two_smul]
+  rw [map_smul, h3x, invOf_smul_smul]
 
 /-- **The Choie–Zagier criterion, forward direction** (Popa–Zagier, Lemma 1, `⇒`): for
 `σ ^ 2 = 1` and `υ ^ 3 = 1`, if `x ∈ range (1 + σ) ⊔ range (1 + υ + υ²)` then
@@ -194,9 +184,18 @@ theorem one_sub_apply_mem_range_one_sub_mul_of_mem_sup (hσ : σ ^ 2 = 1) (hυ :
     (hx : x ∈ range (1 + σ) ⊔ range (1 + υ + υ ^ 2)) : (1 - σ) x ∈ range (1 - υ * σ) := by
   obtain ⟨-, ⟨a, rfl⟩, -, ⟨b, rfl⟩, rfl⟩ := Submodule.mem_sup.1 hx
   refine ⟨(-(σ * (1 + υ + υ ^ 2)) : End R M) b, ?_⟩
-  rw [map_add, ← End.mul_apply (1 - σ), ← End.mul_apply (1 - σ),
-    one_sub_mul_one_add_of_sq_eq_one hσ, one_sub_mul_one_add_add_sq hσ hυ, zero_apply, zero_add,
-    End.mul_apply]
+  simp only [map_add, ← End.mul_apply, one_sub_mul_one_add_of_sq_eq_one hσ,
+    one_sub_mul_one_add_add_sq hσ hυ, zero_apply, zero_add]
+
+/-- **The ranges of `1 - σ` and `1 - υ` are disjoint** when `σ ^ 2 = 1`, `υ ^ 3 = 1` and
+`ker (1 + σ)`, `ker (1 + υ + υ²)` are disjoint. -/
+theorem disjoint_range_one_sub_of_disjoint_ker (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1)
+    (hacyc : Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2))) :
+    Disjoint (range (1 - σ)) (range (1 - υ)) := by
+  -- `1 + σ` kills `range (1 - σ)` and `1 + υ + υ²` kills `range (1 - υ)`
+  refine hacyc.mono ?_ ?_ <;> rintro - ⟨y, rfl⟩
+  · rw [mem_ker, ← End.mul_apply, one_add_mul_one_sub_of_sq_eq_one hσ, zero_apply]
+  · rw [mem_ker, ← End.mul_apply, one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ, zero_apply]
 
 end Semiring
 
@@ -208,57 +207,46 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ υ : End R M}
 `2` and `3` invertible and `ker (1 + σ)`, `ker (1 + υ + υ²)` disjoint, a vector `x` lies in
 `range (1 + σ) ⊔ range (1 + υ + υ²)` exactly when `(1 - σ) x ∈ range (1 - υ σ)`.
 
-Popa and Zagier cite this from Choie–Zagier without proof; the converse direction here is ours.
-From `(1 - σ) x = (1 - υ σ) η` the vector `(1 - σ) (x - η) = (1 - υ) (σ η)` is killed by both
-`1 + σ` and `1 + υ + υ²`, hence vanishes, so `x - η` is fixed by `σ` and `σ η` by `υ`, and
-`x = (x - η) + (1 + σ) (σ η) - σ η`. -/
+Popa and Zagier quote this from Choie–Zagier without proof; the argument given here for the
+implication from `(1 - σ) x ∈ range (1 - υ σ)` to `x ∈ range (1 + σ) ⊔ range (1 + υ + υ²)` is
+our own. -/
 theorem one_sub_apply_mem_range_one_sub_mul_iff [Invertible (2 : R)] [Invertible (3 : R)]
-    (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1)
-    (hacyc : Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2))) {x : M} :
-    (1 - σ) x ∈ range (1 - υ * σ) ↔ x ∈ range (1 + σ) ⊔ range (1 + υ + υ ^ 2) := by
+    (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) (hacyc : Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2)))
+    {x : M} : (1 - σ) x ∈ range (1 - υ * σ) ↔ x ∈ range (1 + σ) ⊔ range (1 + υ + υ ^ 2) := by
   refine ⟨fun ⟨η, hη⟩ => ?_, one_sub_apply_mem_range_one_sub_mul_of_mem_sup hσ hυ⟩
+  -- `(1 - σ) (x - η) = (1 - υ) (σ η)` lies in `range (1 - σ) ⊓ range (1 - υ) = ⊥`
   have hc : (1 - σ) (x - η) = (1 - υ) (σ η) := by
     rw [map_sub, ← hη]
-    simp only [sub_apply, End.one_apply, End.mul_apply]
-    abel
-  have h0 : (1 - σ) (x - η) = 0 := by
-    refine Submodule.disjoint_def.1 hacyc _ ?_ ?_
-    · rw [mem_ker, ← End.mul_apply, one_add_mul_one_sub_of_sq_eq_one hσ, zero_apply]
-    · rw [mem_ker, hc, ← End.mul_apply, one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ,
-        zero_apply]
-  have h1 : x - η ∈ range (1 + σ) := (range_one_add_eq_ker_one_sub hσ).ge h0
+    simp [sub_sub_sub_cancel_left]
+  have h0 : (1 - σ) (x - η) = 0 := Submodule.disjoint_def.1
+    (disjoint_range_one_sub_of_disjoint_ker hσ hυ hacyc) _ ⟨_, rfl⟩ ⟨_, hc.symm⟩
+  -- so `x - η` is fixed by `σ`, `σ η` by `υ`, and `x = (x - η) + ((1 + σ) η - σ η)`
+  have h1 : x - η ∈ range (1 + σ) := (range_one_add_eq_ker_one_sub hσ).ge (mem_ker.2 h0)
   have h2 : σ η ∈ range (1 + υ + υ ^ 2) :=
-    (range_one_add_add_sq_eq_ker_one_sub hυ).ge (by rw [mem_ker, ← hc, h0])
-  have hx : x = (x - η) + (1 + σ) (σ η) - σ η := by
-    rw [add_apply, End.one_apply, ← End.mul_apply, ← sq, hσ, End.one_apply]
-    abel
-  rw [hx]
-  exact sub_mem (add_mem (Submodule.mem_sup_left h1) (Submodule.mem_sup_left (mem_range_self _ _)))
-    (Submodule.mem_sup_right h2)
+    (range_one_add_add_sq_eq_ker_one_sub hυ).ge (mem_ker.2 (hc.symm.trans h0))
+  simpa using add_mem (Submodule.mem_sup_left h1) (sub_mem
+    (Submodule.mem_sup_left (mem_range_self (1 + σ) η)) (Submodule.mem_sup_right h2))
 
 /-- **Popa–Zagier's projection, existence half** (Lemma 3): let `e` and `f` be idempotent, `P` a
 submodule stable under `f` and `Q` one stable under `e`. If `e ξ` and `f ξ` lie in `P ⊔ Q`, then
 there is `ι ∈ P ⊔ Q` with `e (ξ - ι) ∈ Q` and `f (ξ - ι) ∈ P`.
 
-Writing `e ξ = p₁ + q₁` and `f ξ = p₂ + q₂`, the correction is `ι = p₁ + q₂`: then
-`e (ξ - ι) = e (q₁ - q₂)` because `e ξ = e (e ξ)`, and `f (ξ - ι) = f (p₂ - p₁)` likewise. In
-Popa–Zagier, `e` and `f` are right multiplication by `π_S` and `π_U`, `P = π_S ℛ`, `Q = π_U ℛ`, and
-`ξ - ι` is the image `ξ - ξ_S - ξ_U` of `ξ` under their projection. -/
-theorem exists_mem_sup_apply_sub_mem {e f : End R M} (he : IsIdempotentElem e)
-    (hf : IsIdempotentElem f) {P Q : Submodule R M} (hP : P ∈ f.invtSubmodule)
-    (hQ : Q ∈ e.invtSubmodule) {ξ : M} (heξ : e ξ ∈ P ⊔ Q) (hfξ : f ξ ∈ P ⊔ Q) :
+In Popa–Zagier, `e` and `f` are right multiplication by `π_S` and `π_U`, `P = π_S ℛ`,
+`Q = π_U ℛ`, and `ξ - ι` is the image `ξ - ξ_S - ξ_U` of `ξ` under their projection. -/
+theorem exists_mem_sup_apply_sub_mem_of_isIdempotentElem {e f : End R M}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) {P Q : Submodule R M}
+    (hP : P ∈ f.invtSubmodule) (hQ : Q ∈ e.invtSubmodule) {ξ : M} (heξ : e ξ ∈ P ⊔ Q)
+    (hfξ : f ξ ∈ P ⊔ Q) :
     ∃ ι ∈ P ⊔ Q, e (ξ - ι) ∈ Q ∧ f (ξ - ι) ∈ P := by
   obtain ⟨p₁, hp₁, q₁, hq₁, h₁⟩ := Submodule.mem_sup.1 heξ
   obtain ⟨p₂, hp₂, q₂, hq₂, h₂⟩ := Submodule.mem_sup.1 hfξ
-  have he' : e ξ = e p₁ + e q₁ := by rw [← map_add, h₁, ← End.mul_apply, he.eq]
-  have hf' : f ξ = f p₂ + f q₂ := by rw [← map_add, h₂, ← End.mul_apply, hf.eq]
+  -- the correction is `ι = p₁ + q₂`: as `e ξ = e (e ξ)` and `f ξ = f (f ξ)`, we get
+  -- `e (ξ - ι) = e (q₁ - q₂)` and `f (ξ - ι) = f (p₂ - p₁)`
+  have he' : e (p₁ + q₁) = e ξ := by rw [h₁, ← End.mul_apply, he.eq]
+  have hf' : f (p₂ + q₂) = f ξ := by rw [h₂, ← End.mul_apply, hf.eq]
   refine ⟨p₁ + q₂, Submodule.add_mem_sup hp₁ hq₂, ?_, ?_⟩
-  · have : e (ξ - (p₁ + q₂)) = e (q₁ - q₂) := by simp only [map_sub, map_add, he']; abel
-    rw [this]
-    exact hQ (sub_mem hq₁ hq₂)
-  · have : f (ξ - (p₁ + q₂)) = f (p₂ - p₁) := by simp only [map_sub, map_add, hf']; abel
-    rw [this]
-    exact hP (sub_mem hp₂ hp₁)
+  · simpa [← he'] using hQ (sub_mem hq₁ hq₂)
+  · simpa [← hf'] using hP (sub_mem hp₂ hp₁)
 
 end Ring
 
@@ -270,23 +258,20 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {σ υ : End R
 for `σ ^ 2 = 1` and `υ ^ 3 = 1` with `2` and `3` invertible, `P` stable under `1 + υ + υ²` and `Q`
 under `1 + σ`, if `(1 + σ) ξ` and `(1 + υ + υ²) ξ` lie in `P ⊔ Q`, then there is `ι ∈ P ⊔ Q` with
 `(1 + σ) (ξ - ι) ∈ Q` and `(1 + υ + υ²) (ξ - ι) ∈ P`. This is
-`TauCeti.End.exists_mem_sup_apply_sub_mem` for the idempotents `(1 + σ) / 2` and
+`TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem` for the idempotents `(1 + σ) / 2` and
 `(1 + υ + υ²) / 3`. -/
 theorem exists_mem_sup_one_add_apply_sub_mem [Invertible (2 : R)] [Invertible (3 : R)]
-    (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) {P Q : Submodule R M}
-    (hP : P ∈ (1 + υ + υ ^ 2).invtSubmodule) (hQ : Q ∈ (1 + σ).invtSubmodule) {ξ : M}
-    (hσξ : (1 + σ) ξ ∈ P ⊔ Q) (hυξ : (1 + υ + υ ^ 2 : End R M) ξ ∈ P ⊔ Q) :
+    (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) {P Q : Submodule R M} (hP : P ∈ (1 + υ + υ ^ 2).invtSubmodule)
+    (hQ : Q ∈ (1 + σ).invtSubmodule) {ξ : M} (hσξ : (1 + σ) ξ ∈ P ⊔ Q)
+    (hυξ : (1 + υ + υ ^ 2 : End R M) ξ ∈ P ⊔ Q) :
     ∃ ι ∈ P ⊔ Q, (1 + σ) (ξ - ι) ∈ Q ∧ (1 + υ + υ ^ 2 : End R M) (ξ - ι) ∈ P := by
-  have hu {c : R} [Invertible c] {g : End R M} {N : Submodule R M} {v : M} :
-      (c • g) v ∈ N ↔ g v ∈ N := by
-    rw [smul_apply, Submodule.smul_mem_iff_of_isUnit _ (isUnit_of_invertible c)]
-  have he := isIdempotentElem_halfOneAdd R (by rwa [← sq] : σ * σ = 1)
-  rw [halfOneAdd_def] at he
-  obtain ⟨ι, hι, h₁, h₂⟩ := exists_mem_sup_apply_sub_mem he
+  have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ)
+    (halfOneAdd_def R σ ▸ isIdempotentElem_halfOneAdd R ((sq σ).symm.trans hσ))
     (isIdempotentElem_invOf_three_smul_one_add_add_sq R hυ)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hP)
-    (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ) (hu.2 hσξ) (hu.2 hυξ)
-  exact ⟨ι, hι, hu.1 h₁, hu.1 h₂⟩
+    (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ)
+  simp only [smul_apply, Submodule.smul_mem_iff''] at key
+  exact key hσξ hυξ
 
 end CommRing
 
