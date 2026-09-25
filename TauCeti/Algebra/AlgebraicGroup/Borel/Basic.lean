@@ -32,7 +32,8 @@ maximality only among subgroups defined over the ground field is not the Borel c
   solvable closed subgroup, before imposing maximality.
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed`: the Borel-subgroup predicate over an algebraically
   closed field.
-* `TauCeti.HopfIdeal.IsBorelOverAlgClosed.of_map_eq`: transport of the algebraically closed
+* `TauCeti.HopfIdeal.IsBorelOverAlgClosed.comapOfIso` and
+  `TauCeti.HopfIdeal.IsBorelOverAlgClosed.of_map_eq`: transport of the algebraically closed
   Borel property across an ambient Hopf-algebra isomorphism.
 * `TauCeti.HopfIdeal.IsBorel`: the Borel-subgroup predicate in Hopf coordinates.
 * `TauCeti.HopfIdeal.IsBorel.comapOfIso_iff`: Borel status is invariant under an ambient
@@ -153,6 +154,15 @@ variable {k : Type u} [Field k]
 variable {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
 variable {I : HopfIdeal k H.obj} {J : HopfIdeal k L.obj}
 
+/-- Pulling an algebraically closed Borel subgroup back across an ambient Hopf-algebra
+isomorphism gives an algebraically closed Borel subgroup in the source. -/
+theorem comapOfIso (hJ : IsBorelOverAlgClosed k L J) (e : H ≅ L) :
+    IsBorelOverAlgClosed k H
+      (J.comapOfSurjective (FiniteTypeCommHopfAlgCat.toBialgHom e.hom)
+        (ConcreteCategory.bijective_of_isIso e.hom).2) :=
+  ⟨hJ.1, FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso
+    (borelQuotientProperty k) J hJ.2 e⟩
+
 /-- Transport the algebraically closed Borel property across an ambient Hopf-algebra
 isomorphism that maps one defining ideal to the other. -/
 theorem of_map_eq (e : H ≅ L)
@@ -160,9 +170,7 @@ theorem of_map_eq (e : H ≅ L)
     (hJ : IsBorelOverAlgClosed k L J) : IsBorelOverAlgClosed k H I := by
   let f := FiniteTypeCommHopfAlgCat.toBialgHom e.hom
   have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.hom
-  have hpull : IsBorelOverAlgClosed k H (J.comapOfSurjective f hf.2) := ⟨hJ.1,
-    FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso
-      (borelQuotientProperty k) J hJ.2 e⟩
+  have hpull : IsBorelOverAlgClosed k H (J.comapOfSurjective f hf.2) := hJ.comapOfIso e
   have hcomap : J.comapOfSurjective f hf.2 = I := by
     rw [← hmap]
     exact HopfIdeal.comapOfSurjective_map_of_bijective I f hf
