@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 
-import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 
@@ -16,18 +15,14 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 
 Let `Γ = PSL(2, ℤ)` act on the projective determinant-`n` matrix module `ℳₙ` by left and by
 right multiplication. For `n > 0` the elementary divisor theorem puts every `M ∈ ℳₙ` into the
-double coset of a diagonal matrix: `M = g · diag(d₀, d₁) · g'` with `g, g' ∈ Γ`, `0 < d₀`,
-`d₀ ∣ d₁` and `d₀ d₁ = n`. Writing `d₀ = a` and `d₁ = am`, the double cosets
+double coset of a diagonal matrix: `M = g · diag(d₀, d₁) · g'` with `g ∈ SL(2, ℤ)`, `g' ∈ Γ`,
+`0 < d₀`, `d₀ ∣ d₁` and `d₀ d₁ = n`. Writing `d₀ = a` and `d₁ = am`, the double cosets
 `Γ (a 0; 0 am) Γ` with `a, m ≥ 1` therefore cover `ℳ = ⋃_{n ≥ 1} ℳₙ`, as in Popa and Zagier's
 decomposition of `ℳ` into double cosets.
 
-The right coset `diag(d₀, d₁) · Γ` consists of the classes of the matrices
-`(d₀ α, d₀ β; d₁ γ, d₁ δ)` with `αδ - βγ = 1`. As the determinant `n = d₀ d₁` is fixed and
-nonzero, these are exactly the determinant-`n` matrices whose first row is divisible by `d₀` and
-whose second row is divisible by `d₁`; for `diag(1, m)` this is Popa and Zagier's description of
-the coset `K₀ = (1 0; 0 m) Γ`. On the other side, the orbit of `diag(d₀, d₁)` under left
-multiplication by `Γ_∞ = ⟨T⟩` consists of the classes of the matrices `(d₀, j d₁; 0, d₁)` with
-`j ∈ ℤ`.
+The right coset `diag(d₀, d₁) · Γ` and the orbit of `diag(d₀, d₁)` under left multiplication by
+`Γ_∞ = ⟨T⟩` are described explicitly below; for `diag(1, m)` the former is Popa and Zagier's coset
+`K₀ = (1 0; 0 m) Γ`.
 
 ## Main definitions
 
@@ -96,18 +91,9 @@ theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) 
     {A : TraceFormulaMatrix n} :
     mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔
       d₀ ∣ A.1 0 0 ∧ d₀ ∣ A.1 0 1 ∧ d₁ ∣ A.1 1 0 ∧ d₁ ∣ A.1 1 1 := by
-  rw [mk_mem_orbit_op_mk_iff]
-  refine ⟨fun ⟨g, hg⟩ ↦ by simp [hg, Matrix.mul_apply], ?_⟩
-  -- `A = diag(d₀, d₁) (a b; c e)`, and `(a b; c e)` has determinant `1` because `A` has
-  -- determinant `d₀ d₁ ≠ 0`
-  rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨e, he⟩⟩
-  have hdet : a * e - b * c = 1 := by
-    have hA := A.2
-    rw [Matrix.det_fin_two, ha, hb, hc, he, ← h] at hA
-    exact mul_left_cancel₀ (h ▸ hn) (by linear_combination hA)
-  refine ⟨⟨!![a, b; c, e], by simp [Matrix.det_fin_two_of, hdet]⟩, ?_⟩
-  rw [A.1.eta_fin_two, ha, hb, hc, he]
-  simp
+  rw [mk_mem_orbit_op_mk_iff, TraceFormulaMatrix.val_diagonal, ← Matrix.diagonal_vec2,
+    Matrix.exists_eq_diagonal_mul_iff (by simp [A.2, h]) (A.2 ▸ IsRegular.of_ne_zero hn).left]
+  simp [Fin.forall_fin_two, and_assoc]
 
 /-- **The `Γ_∞`-orbit of a diagonal matrix**: the class of `A` lies in the orbit of
 `diag(d₀, d₁)` under left multiplication by `Γ_∞ = ⟨T⟩` if and only if
