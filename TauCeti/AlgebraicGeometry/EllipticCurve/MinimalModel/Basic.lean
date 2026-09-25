@@ -220,9 +220,9 @@ theorem isMinimal_of_valuation_Δ_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassC
     valuation_Δ_aux_eq_of_isIntegral R W₂, h]
   exact valuation_Δ_le_of_isMinimal_smul R (C * D) hCD
 
-/-- **A change of variables defined over `R` preserves minimality.** It carries the integral model
-of `W` to an integral model, and its scaling factor is a unit of `R`, so it leaves the valuation of
-the discriminant unchanged. With `valuation_u_eq_one_of_isMinimal_smul` and
+/-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
+and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
+`valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
 between minimal models of an elliptic curve are exactly those defined over `R`. -/
 theorem isMinimal_baseChange_smul (C : VariableChange R) (W : WeierstrassCurve K)
