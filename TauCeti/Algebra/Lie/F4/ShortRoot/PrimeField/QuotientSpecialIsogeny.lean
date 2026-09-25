@@ -36,7 +36,8 @@ or finiteness or simplicity theorem for its fixed-point candidates, is asserted 
 
 public section
 
-open CategoryTheory
+open AlgebraicGeometry CategoryTheory
+open scoped CategoryTheory.MonObj
 open TauCeti.DynkinType
 
 namespace TauCeti.F4ShortRoot.PrimeField
@@ -309,6 +310,67 @@ def specialIsogenyHom : groupScheme ⟶ groupScheme :=
     (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map quotientIsogeny.op ≫
       eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm
 
+/-- The scheme morphism is the spectrum of the quotient-coordinate endomorphism. -/
+theorem specialIsogenyHom_eq_map_quotientIsogeny :
+    specialIsogenyHom =
+      eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map quotientIsogeny.op ≫
+          eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm := by
+  rw [specialIsogenyHom]
+
+/-- A scheme-valued F4 carrier point is a quotient-coordinate Hopf-algebra point. -/
+noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A] :
+    HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) ≃*
+      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) :=
+  CommHopfAlgCat.mapMulEquivOfPresentation Q A
+    (GeneralLinear.generatedGroupScheme_def 26 generator)
+
+private theorem groupScheme_X_left : groupScheme.X.left = Spec (CommRingCat.of Q) := by
+  rw [show groupScheme = CommHopfAlgCat.quotientSpec H₂₆ J from
+    GeneralLinear.generatedGroupScheme_def 26 generator]
+  exact hopfSpec_obj_X_left 𝔽₂ _
+
+private theorem groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
+    (groupSchemePointMulEquiv A q).left =
+      Spec.map (CommRingCat.ofHom (q.ofConv : Q →+* A)) ≫
+        eqToHom groupScheme_X_left.symm := by
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_apply_left Q A
+    (GeneralLinear.generatedGroupScheme_def 26 generator) groupScheme_X_left q
+
+/-- Scheme-valued points of the F4 carrier are its named matrix-valued points. -/
+noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A] :
+    ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) ≃*
+      points A :=
+  (groupSchemePointMulEquiv A).symm.trans (coordinatePointsEquiv A)
+
+@[simp] theorem schemePointsMulEquiv_groupSchemePointMulEquiv
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
+    schemePointsMulEquiv A (groupSchemePointMulEquiv A q) = coordinatePointsEquiv A q := by
+  simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
+
+/-- A coordinate endomorphism acts on scheme-valued points by precomposition. -/
+theorem groupSchemePointMulEquiv_comp_coordinateMap
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A] (phi : Q ⟶ Q)
+    (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
+    groupSchemePointMulEquiv A q ≫
+        (eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
+          (hopfSpec (CommRingCat.of 𝔽₂)).map phi.op ≫
+            eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm).hom.hom =
+      groupSchemePointMulEquiv A (AlgHom.mapDomain phi.hom q) := by
+  have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := 𝔽₂) A (GeneralLinear.generatedGroupScheme_def 26 generator)
+      (GeneralLinear.generatedGroupScheme_def 26 generator)
+      (groupSchemePointMulEquiv A) (groupSchemePointMulEquiv A)
+      (groupSchemePointMulEquiv_apply_left A)
+      (groupSchemePointMulEquiv_apply_left A) phi q
+  have heval :
+      ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
+        AlgHom.mapDomain phi.hom q := rfl
+  rw [heval] at h
+  exact h
+
 /-- The exceptional endomorphism squares to Frobenius as a morphism of group schemes. -/
 @[simp] theorem specialIsogenyHom_comp_self :
     specialIsogenyHom ≫ specialIsogenyHom = frobeniusHom := by
@@ -337,6 +399,32 @@ theorem specialIsogeny_coordinatePointsEquiv (A : Type*) [CommRing A] [Algebra �
     ((CommHopfAlgCat.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)
       ((coordinatePointsEquiv A).symm (coordinatePointsEquiv A q))) = _
   rw [MulEquiv.symm_apply_apply, CommHopfAlgCat.mapPointsFunctor_app_apply]
+
+/-- On scheme-valued points, the carrier special isogeny is the named matrix-valued map. -/
+@[simp] theorem schemePointsMulEquiv_comp_specialIsogenyHom
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) :
+    schemePointsMulEquiv A (p ≫ specialIsogenyHom.hom.hom) =
+      specialIsogeny A (schemePointsMulEquiv A p) := by
+  obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv A).surjective p
+  rw [specialIsogenyHom_eq_map_quotientIsogeny,
+    groupSchemePointMulEquiv_comp_coordinateMap,
+    schemePointsMulEquiv_groupSchemePointMulEquiv,
+    schemePointsMulEquiv_groupSchemePointMulEquiv]
+  exact (specialIsogeny_coordinatePointsEquiv A q).symm
+
+/-- On scheme-valued points, the carrier Frobenius is the named pointwise Frobenius. -/
+@[simp] theorem schemePointsMulEquiv_comp_frobeniusHom
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) :
+    schemePointsMulEquiv A (p ≫ frobeniusHom.hom.hom) =
+      frobenius 1 A (schemePointsMulEquiv A p) := by
+  obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv A).surjective p
+  rw [frobeniusHom_eq_map_frobeniusCoordinateMap,
+    groupSchemePointMulEquiv_comp_coordinateMap,
+    schemePointsMulEquiv_groupSchemePointMulEquiv,
+    schemePointsMulEquiv_groupSchemePointMulEquiv]
+  exact coordinatePointsEquiv_map_frobeniusCoordinateMap A q
 
 /-- The special endomorphism exchanges each signed simple root with its reversed root,
 using the pinned long/short exponent convention. -/
