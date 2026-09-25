@@ -270,8 +270,7 @@ theorem indVirtualCharacterDirectSumBaseChangeRat_surjective_of_nsmul_one_mem
     Function.Surjective (indVirtualCharacterDirectSumBaseChangeRat k G P) := by
   classical
   intro z
-  induction z using TensorProduct.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       obtain ⟨x', rfl⟩ := hx
       obtain ⟨y', rfl⟩ := hy

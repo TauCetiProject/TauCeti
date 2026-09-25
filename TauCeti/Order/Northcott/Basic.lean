@@ -10,18 +10,24 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
+public import Mathlib.Topology.Algebra.Order.Floor
+public import Mathlib.Topology.UniformSpace.Real
 
 /-!
 # Finite real-cutoff carriers for Northcott functions
 
 This file packages the finite carrier selected by a real cutoff for a natural-valued Northcott
-function, together with generic summatory functions over that carrier. For a nonnegative cutoff,
-the carrier agrees with the one selected by its natural floor.
+function, together with generic summatory functions over that carrier. The carrier depends only
+on the integer part of the cutoff, and for a nonnegative cutoff it agrees with the one selected by
+its natural floor.
 -/
 
 public section
 
 namespace TauCeti
+
+open Filter
+open scoped Topology
 
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 
@@ -76,6 +82,13 @@ theorem normLE_eq_normLE_natFloor {x : ℝ} (hx : 0 ≤ x) :
   rw [mem_normLE, mem_normLE_natCast]
   exact ⟨Nat.le_floor, fun hi ↦ (Nat.le_floor_iff hx).mp hi⟩
 
+/-- The inclusive carrier cut off at `x` depends only on the integer part of `x`. -/
+theorem normLE_eq_normLE_of_floor_eq {x y : ℝ} (h : ⌊x⌋ = ⌊y⌋) : normLE N x = normLE N y := by
+  have key (z : ℝ) (i : ι) : (N i : ℝ) ≤ z ↔ ((N i : ℤ)) ≤ ⌊z⌋ := by
+    rw [Int.le_floor, Int.cast_natCast]
+  ext i
+  rw [mem_normLE, mem_normLE, key, key, h]
+
 /-- Below a uniform lower bound for the `N`-values the carrier is empty. -/
 theorem normLE_eq_empty_of_lt {b x : ℝ} (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) :
     normLE N x = ∅ := by
@@ -126,6 +139,18 @@ theorem summatory_eq_summatory_natFloor {M : Type*} [AddCommMonoid M] (w : ι �
     (hx : 0 ≤ x) : summatory N w x = summatory N w (⌊x⌋₊ : ℝ) := by
   rw [summatory, summatory, normLE_eq_normLE_natFloor N hx]
 
+/-- Between two cutoffs `a ≤ b`, the difference of the values of a summatory function is the total
+weight of the indices of `N`-value in `(a, b]`. -/
+theorem summatory_sub_summatory_eq_sum_filter {M : Type*} [AddCommGroup M] (w : ι → M) {a b : ℝ}
+    (hab : a ≤ b) :
+    summatory N w b - summatory N w a = ∑ i ∈ normLE N b with a < N i, w i := by
+  have h : {i ∈ normLE N b | ¬ a < N i} = normLE N a := by
+    ext i
+    simp only [Finset.mem_filter, mem_normLE, not_lt]
+    exact ⟨And.right, fun hi ↦ ⟨hi.trans hab, hi⟩⟩
+  rw [summatory_apply, summatory_apply, ← Finset.sum_filter_add_sum_filter_not (normLE N b)
+    (fun i ↦ a < (N i : ℝ)), h, add_sub_cancel_right]
+
 /-- The summatory function of a pointwise nonnegative real weight is nonnegative. -/
 theorem summatory_nonneg {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (x : ℝ) : 0 ≤ summatory N w x :=
   Finset.sum_nonneg fun i _ ↦ hw i
@@ -138,6 +163,14 @@ theorem summatory_le_summatory {w₁ w₂ : ι → ℝ} (h : ∀ i, w₁ i ≤ w
 /-- A summatory function with nonnegative real weight is monotone in the cutoff. -/
 theorem summatory_mono {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) : Monotone (summatory N w) :=
   fun _ _ hxy ↦ Finset.sum_le_sum_of_subset_of_nonneg (normLE_mono N hxy) fun i _ _ ↦ hw i
+
+/-- A summatory function is continuous from the right: it is constant on each interval
+`[n, n + 1)` with `n` an integer, because the cutoff is inclusive. -/
+theorem continuousWithinAt_summatory_Ici {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
+    (w : ι → M) (x : ℝ) : ContinuousWithinAt (summatory N w) (Set.Ici x) x := by
+  refine continuousWithinAt_const.congr_of_eventuallyEq ?_ rfl
+  filter_upwards [tendsto_pure.mp (tendsto_floor_right_pure_floor x)] with y hy
+  rw [summatory_apply, summatory_apply, normLE_eq_normLE_of_floor_eq N hy]
 
 /-- Changing a weight on a finite set of indices changes the summatory function, for all large
 cutoffs, by the constant total discrepancy over that set. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ENat.LeastBound
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.Topology.Algebra.Group.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
@@ -155,6 +155,25 @@ noncomputable def cohomologicalDimension : ℕ∞ :=
   ⨆ q : Nat.Primes, cohomologicalDimensionAt.{v} q G
 
 variable {p G}
+
+/-- `CohomologicalDimensionLE p G n` holds exactly when continuous cohomology vanishes above
+degree `n` for every discrete `p`-primary torsion `G`-module with continuous action. -/
+theorem cohomologicalDimensionLE_iff {n : ℕ} :
+    CohomologicalDimensionLE.{v} p G n ↔
+      ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) :=
+  Iff.rfl
+
+/-- `StrictCohomologicalDimensionLE p G n` holds exactly when the `p`-primary component of
+continuous cohomology vanishes above degree `n` for every discrete `G`-module with continuous
+action. -/
+theorem strictCohomologicalDimensionLE_iff {n : ℕ} :
+    StrictCohomologicalDimensionLE.{v} p G n ↔
+      ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+        [DistribMulAction G M] [ContinuousSMul G M], ∀ i : ℕ, n < i →
+        AddCommGroup.primaryComponent (continuousCohomology i (ofDiscreteModule ℤ G M)) p = ⊥ :=
+  Iff.rfl
 
 /-- The ordinary vanishing predicate is upward closed in `n`. -/
 theorem CohomologicalDimensionLE.mono {m n : ℕ} (h : CohomologicalDimensionLE.{v} p G m)

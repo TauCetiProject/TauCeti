@@ -61,8 +61,7 @@ private theorem coact_lid_rTensor (l : A →ₗ[k] k) (x : A ⊗[k] V) :
         ((TensorProduct.AlgebraTensorModule.distribBaseChange k A V C).symm
           (coact (R := A) (C := A ⊗[k] C) (M := A ⊗[k] V) x))) := by
   let _ := Comodule.baseChange (R := k) (H := C) (M := V) A
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a v => simp
 
@@ -88,8 +87,7 @@ private noncomputable def descendHom (l : A →ₗ[k] k)
   ext v
   rw [LinearMap.comp_apply, LinearMap.comp_apply, descendLinearMap_apply, coact_lid_rTensor,
     Hom.coe_toLinearMap, ← Hom.map_coact_apply, baseChange_coact, baseChangeCoact_tmul]
-  induction coact (R := k) (C := C) (M := V) v using TensorProduct.induction_on with
-  | zero => simp
+  induction coact (R := k) (C := C) (M := V) v using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
   | tmul u c =>
     rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
@@ -143,8 +141,7 @@ theorem IsCompletelyReducible.of_baseChange [Nontrivial A]
     obtain ⟨z, rfl⟩ := Hom.mem_range.1 hy
     clear hy
     rw [← Hom.coe_toLinearMap, Hom.baseChange_toLinearMap]
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy =>
       rw [map_add, map_add, map_add]
       exact add_mem hx hy

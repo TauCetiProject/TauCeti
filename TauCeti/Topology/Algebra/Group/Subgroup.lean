@@ -15,7 +15,8 @@ import Mathlib.Algebra.Ring.Int.Parity
 
 This file records how subgroup constructions interact with topological closure. It provides
 normality of the closure of a normal closure, the kernel criterion for a closed normal closure,
-and compatibility of multiplicative and additive subgroup closures.
+and compatibility of multiplicative and additive subgroup closures. It also records that a
+dense subgroup meets every open subgroup densely.
 
 Mathlib's theorem that the topological closure of a subgroup is closed is registered as an
 instance, so that the quotient of a topological group by the topological closure of a normal
@@ -38,6 +39,10 @@ series of a profinite group.
 
 ## Main results
 
+* `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
+* `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
+  using `U.subgroupOf D`, is continuous.
+* `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup densely.
 * `Subgroup.instIsClosedTopologicalClosure`: the topological closure of a subgroup is closed.
 * `TauCeti.instNormal_topologicalClosure_normalClosure`: the closure of a normal closure is
   normal.
@@ -89,7 +94,39 @@ end TauCeti
 
 namespace Subgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
+of `D`, is continuous. -/
+theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
+    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
+  (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
+
+/-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
+inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense
+range. -/
+theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
+    (hD : Dense (D : Set G)) (hU : IsOpen (U : Set G)) :
+    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) := by
+  -- The range is `D ∩ U`, viewed inside `U`, and `Subtype.val : U → G` is an open map.
+  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2)
+      = (Subtype.val : U → G) ⁻¹' (D : Set G) := by
+    ext x
+    constructor
+    · rintro ⟨y, rfl⟩
+      exact y.1.2
+    · intro hxD
+      exact ⟨⟨⟨x, hxD⟩, x.2⟩, rfl⟩
+  rw [DenseRange, hrange]
+  exact hD.preimage hU.isOpenMap_subtype_val
+
+variable [IsTopologicalGroup G]
+
+omit [IsTopologicalGroup G] in
+/-- The inclusion of a subgroup into a larger subgroup is continuous. -/
+@[fun_prop]
+theorem continuous_inclusion {H K : Subgroup G} (h : H ≤ K) : Continuous (inclusion h) :=
+  continuous_induced_rng.2 continuous_subtype_val
 
 /-- The topological closure of a subgroup is closed. -/
 instance instIsClosedTopologicalClosure (s : Subgroup G) :

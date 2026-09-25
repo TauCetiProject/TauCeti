@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
+import TauCeti.RepresentationTheory.FDRep
 
 /-!
 # The character table of a finite group
@@ -53,6 +54,9 @@ take their familiar Hermitian form, because inversion conjugates character value
   character table asks for it;
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing.
+* `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
+  in characteristic zero every other row is nonconstant
+  (`TauCeti.exists_irreducibleCharacter_ne_characterDegree`).
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
   Hermitian form over `ℂ`.
@@ -198,6 +202,16 @@ theorem exists_irreducibleCharacter_eq {f : G → k} (hf : f ∈ irreducibleChar
     ∃ i, irreducibleCharacter k i = f :=
   ⟨(finEquivIrreducibleCharacters k G).symm ⟨f, hf⟩,
     congrArg Subtype.val ((finEquivIrreducibleCharacters k G).apply_symm_apply ⟨f, hf⟩)⟩
+
+variable (G) in
+/-- **The trivial character is a row of the character table**: some enumerated irreducible
+character of `G` is the constant function `1`, the character of the trivial one-dimensional
+representation. -/
+theorem exists_irreducibleCharacter_eq_one :
+    ∃ i, irreducibleCharacter k i = fun _ : G => (1 : k) := by
+  have hchar : (Representation.trivial k G k).character = fun _ : G => (1 : k) :=
+    funext fun _ => by rw [Representation.char_trivial, Module.finrank_self, Nat.cast_one]
+  exact exists_irreducibleCharacter_eq k (hchar ▸ character_mem_irreducibleCharacters _)
 
 /-- **The degree of the `i`-th irreducible character**, the dimension of a representation affording
 it. -/
@@ -381,6 +395,27 @@ theorem card_inv_mul_sum_characterTable_mul_characterTable_inv
   exact characterPairing_ofCharacter_irreducibleRepresentation_orthonormal i j
 
 end RowOrthogonality
+
+section Nonconstant
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+
+/-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field of
+characteristic zero, if `i₀` indexes the trivial character, the constant function `1`, and
+`i ≠ i₀`, then the `i`-th irreducible character takes somewhere a value other than its degree,
+which is its value `χᵢ(1)` at the identity (`TauCeti.irreducibleCharacter_one`).
+`TauCeti.exists_irreducibleCharacter_eq_one` supplies such an index `i₀`. -/
+theorem exists_irreducibleCharacter_ne_characterDegree {i₀ i : Fin (Nat.card (ConjClasses G))}
+    (hi₀ : irreducibleCharacter k i₀ = fun _ : G => (1 : k)) (hne : i ≠ i₀) :
+    ∃ g : G, irreducibleCharacter k i g ≠ characterDegree k i := by
+  let _ : Fintype G := Fintype.ofFinite G
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  by_contra! htriv
+  -- row orthogonality of `χᵢ` against the trivial character: `χᵢ(1) = 0`
+  simpa [htriv, hi₀, hne, (characterDegree_pos k i).ne'] using
+    card_inv_mul_sum_characterTable_mul_characterTable_inv (k := k) i i₀
+
+end Nonconstant
 
 section ColumnOrthogonality
 

@@ -75,6 +75,12 @@ noncomputable def d0Relator : freeProP 2 (Fin 3) :=
   freeProP.of 0 ^ 2 * freeProP.of 1 ^ 4 *
     ((freeProP.of 1)⁻¹ * (freeProP.of 2)⁻¹ * freeProP.of 1 * freeProP.of 2)
 
+/-- The relator `A²S⁴(S,Y)`, written out on the free generators. -/
+theorem d0Relator_def :
+    d0Relator = freeProP.of 0 ^ 2 * freeProP.of 1 ^ 4 *
+      ((freeProP.of 1)⁻¹ * (freeProP.of 2)⁻¹ * freeProP.of 1 * freeProP.of 2) :=
+  (rfl)
+
 /-- **`D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩`**, the standard dyadic one-relator pro-`2` group, presented on
 three generators by the single relator `d0Relator`. -/
 noncomputable abbrev demushkinD0 : Type := presentedProP 2 (Fin 3) {d0Relator}

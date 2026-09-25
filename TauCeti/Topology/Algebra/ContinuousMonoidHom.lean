@@ -20,7 +20,9 @@ provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, togeth
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. It also records the pointwise characterization of finite-order continuous
-homomorphisms.
+homomorphisms. Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
+compact group the common kernel of a family of them is approximated from outside by the common
+kernels of its finite subfamilies.
 -/
 
 public section
@@ -60,6 +62,22 @@ theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousMul G] {F : Type*} 
   filter_upwards [hcoset] with y hy
   calc f x = f x * f (x⁻¹ * y) := by rw [MonoidHom.mem_ker.mp hy, mul_one]
     _ = f y := by rw [← map_mul, mul_inv_cancel_left]
+
+/-- **A finite subfamily of kernels suffices.** In a compact group, an open set containing the
+common kernel of a family of continuous homomorphisms into a discrete monoid already contains the
+common kernel of a finite subfamily: each kernel is the preimage of the closed point `1`, so this
+is the finite intersection property. -/
+theorem exists_finset_iInter_ker_subset [CompactSpace G] {H : Type*}
+    [Monoid H] [TopologicalSpace H] [DiscreteTopology H] {ι : Type*} (φ : ι → G →ₜ* H)
+    {U : Set G} (hU : IsOpen U) (h : ⋂ j, ((φ j).ker : Set G) ⊆ U) :
+    ∃ F : Finset ι, ⋂ j ∈ F, ((φ j).ker : Set G) ⊆ U := by
+  obtain ⟨F, hF⟩ := hU.isClosed_compl.isCompact.elim_finite_subfamily_closed
+    (fun j ↦ (((φ j).ker : Subgroup G) : Set G))
+    (fun j ↦ by
+      rw [MonoidHom.coe_ker]
+      exact (isClosed_discrete {1}).preimage (φ j).continuous)
+    (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
+  exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
 
 namespace ContinuousMonoidHom
 

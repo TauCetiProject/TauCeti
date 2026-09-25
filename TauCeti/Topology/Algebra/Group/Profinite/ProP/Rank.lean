@@ -28,6 +28,8 @@ while `Φ(G)` has index `p ^ d(G)`, so `d(H) = d(G)` holds exactly when `ker f �
 * `TauCeti.IsProP.topologicalGeneratorRankNat_eq_finrank_quotient_proPFrattini`: the generator
   rank is the dimension of the Frattini quotient.
 * `TauCeti.IsProP.natCard_quotient_proPFrattini`: the Frattini quotient has order `p ^ d(G)`.
+* `TauCeti.IsProP.topologicalGeneratorRank_quotient_proPFrattini`: a pro-`p` group and its
+  Frattini quotient have the same cardinal topological generator rank.
 * `TauCeti.IsProP.index_proPFrattini_sup_ker`: along a continuous surjection `f : G ↠ H` onto a
   topologically finitely generated pro-`p` group, `Φ(G) ⊔ ker f` has index `p ^ d(H)`.
 * `TauCeti.IsProP.topologicalGeneratorRankNat_eq_iff_ker_le_proPFrattini`: for a continuous
@@ -42,6 +44,8 @@ while `Φ(G)` has index `p ^ d(G)`, so `d(H) = d(G)` holds exactly when `ker f �
 public section
 
 namespace TauCeti
+
+open scoped Cardinal
 
 universe u v
 
@@ -107,6 +111,28 @@ theorem natCard_quotient_proPFrattini (hG : IsProP p G)
       Module.natCard_eq_pow_finrank
     _ = p ^ topologicalGeneratorRankNat G hfg := by
       rw [Nat.card_zmod, hG.topologicalGeneratorRankNat_eq_finrank_quotient_proPFrattini hfg]
+
+/-- **A profinite pro-`p` group and its Frattini quotient have the same topological generator
+rank.** Generation passes to the quotient; conversely a generating set of the quotient converging
+to `1` has a set of representatives converging to `1`, which generates `G` by Burnside's basis
+theorem. -/
+theorem topologicalGeneratorRank_quotient_proPFrattini (hG : IsProP p G) :
+    topologicalGeneratorRank (G ⧸ proPFrattini p G) = topologicalGeneratorRank G := by
+  refine le_antisymm (topologicalGeneratorRank_quotient_le _) ?_
+  obtain ⟨s, hs, hgen, hcard⟩ :=
+    exists_convergesToOne_mk_eq_topologicalGeneratorRank (G ⧸ proPFrattini p G)
+  obtain ⟨t, ht, htimage⟩ :=
+    (proPFrattini p G).exists_convergesToOne_lift_quotient isClosed_proPFrattini hs
+  -- Thin the representatives out to one per element of `s`, so that they are no more numerous.
+  obtain ⟨t', ht'sub, ht'bij⟩ := Set.exists_subset_bijOn t (QuotientGroup.mk' (proPFrattini p G))
+  rw [htimage] at ht'bij
+  calc
+    topologicalGeneratorRank G ≤ #(t' : Set G) :=
+      topologicalGeneratorRank_le (ht.mono ht'sub)
+        ((topologicallyGenerates_iff_frattiniQuotient hG t').mpr
+          (by rw [ht'bij.image_eq]; exact hgen))
+    _ = #(s : Set (G ⧸ proPFrattini p G)) := Cardinal.mk_congr (ht'bij.equiv _)
+    _ = topologicalGeneratorRank (G ⧸ proPFrattini p G) := hcard
 
 section Surjective
 

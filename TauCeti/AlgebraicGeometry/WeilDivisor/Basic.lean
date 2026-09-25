@@ -257,7 +257,7 @@ lemma coeff_pullback {f : X → Y} (hf : Function.Injective f) (D : WeilDivisor 
 lemma pullback_pushforward {f : X → Y} (hf : Function.Injective f) (D : WeilDivisor X) :
     pullback hf (pushforward f D) = D :=
   ext fun x => by
-    rw [coeff_pullback, coeff, coeff, pushforward_apply, Finsupp.mapDomain_apply hf]
+    rw [coeff_pullback, coeff, coeff, pushforward_apply, Finsupp.mapDomain_apply_of_injective hf]
 
 @[simp]
 lemma pullback_ofPoint {f : X → Y} (hf : Function.Injective f) (x : X) :

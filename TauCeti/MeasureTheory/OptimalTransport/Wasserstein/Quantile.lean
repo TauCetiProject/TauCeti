@@ -126,9 +126,10 @@ quantile functions. -/
 theorem eLpNorm_edist_quantileCoupling (p : ℝ≥0∞) (μ ν : Measure ℝ) :
     eLpNorm (fun z : ℝ × ℝ ↦ edist z.1 z.2) p (μ.quantileCoupling ν)
       = eLpNorm (fun t ↦ μ.quantile t - ν.quantile t) p (volume.restrict (Ioo (0 : ℝ) 1)) := by
+  have hq : Measurable fun t ↦ (μ.quantile t, ν.quantile t) := by fun_prop
   rw [Measure.quantileCoupling_def,
-    eLpNorm_map_measure measurable_edist.aestronglyMeasurable (by fun_prop)]
-  exact eLpNorm_congr_enorm_ae
+    eLpNorm_map_measure measurable_edist.aestronglyMeasurable hq.aemeasurable]
+  exact eLpNorm_congr_enorm_ae (measurable_edist.comp hq).aestronglyMeasurable (by fun_prop)
     (.of_forall fun t ↦ by simp [Function.comp_apply, edist_eq_enorm_sub])
 
 /-- The `p`-Wasserstein distance of two real laws is at most the `L^p (0,1)` distance of their

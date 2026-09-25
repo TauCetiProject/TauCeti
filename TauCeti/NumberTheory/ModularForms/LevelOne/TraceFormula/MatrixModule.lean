@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
+import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
+
 /-!
 # Determinant-indexed projective matrix modules
 
@@ -32,6 +34,11 @@ so `g A = ±A` forces `g = ±1` (`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_
 Likewise `A g = ±A` forces `g = ±1`
 (`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq`), so the right action is
 free (`TauCeti.TraceFormulaMatrixModule.isCancelSMul_mulOpposite`).
+
+Elements of the group ring `k[ℳₙ]` are given by weights on integral matrices:
+`TauCeti.TraceFormulaMatrixModule.ofWeight n w B hw`, over any semiring `k`, gives the class of `A`
+the coefficient `w A + w (-A)` (`TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`), a bound `B`
+on the entries of the determinant-`n` matrices of nonzero weight making the support finite.
 
 ## References
 
@@ -94,6 +101,13 @@ def TraceFormulaMatrixModule.mk (A : TraceFormulaMatrix n) : TraceFormulaMatrixM
 theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
     TraceFormulaMatrixModule.mk (-A) = TraceFormulaMatrixModule.mk A :=
   Quotient.sound (Or.inr rfl)
+
+/-- A sign-invariant function of determinant-`n` matrices, descended to `ℳₙ`, takes the class of
+`A` to its value at `A`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.lift_mk {β : Sort*} (f : TraceFormulaMatrix n → β)
+    (h : ∀ A B, A ≈ B → f A = f B) (A : TraceFormulaMatrix n) :
+    Quotient.lift f h (TraceFormulaMatrixModule.mk A) = f A := (rfl)
 
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
 @[simp]
@@ -563,5 +577,41 @@ theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ)) (x : TraceForm
     ConjAct.toConjAct g • x = g • x <• g⁻¹ := by
   rw [op_smul_eq_rightPSL_inv, inv_inv]
   exact toConjAct_smul_eq_conjPSL g x
+
+/-! ### Elements given by weights -/
+
+namespace TraceFormulaMatrixModule
+
+open MonoidAlgebra
+
+variable {k : Type*} [Semiring k] {n : ℤ}
+
+/-- The element of `k[ℳₙ]` in which the class of `A` has coefficient `w A + w (-A)`, for a weight
+`w` on integral matrices that vanishes on every determinant-`n` matrix with an entry larger than
+`B` in absolute value. Its coefficients are given by `coeff_ofWeight_mk`. -/
+noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) :
+    k[TraceFormulaMatrixModule n] :=
+  .ofCoeff <| .ofSupportFinite
+    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.1 + w (-A.1))
+      fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]) <| by
+    -- a class in the support has a representative of nonzero weight
+    refine ((FixedDetMatrices.finite_setOf_abs_le n B).image mk).subset fun x hx ↦ ?_
+    induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+    obtain h | h : w A.1 ≠ 0 ∨ w (-A.1) ≠ 0 := by
+      by_contra! h
+      simp [h] at hx
+    exacts [⟨A, hw A h, rfl⟩, ⟨-A, hw (-A) h, mk_neg A⟩]
+
+/-- The coefficient of the class of `A` in `ofWeight n w B hw` is `w A + w (-A)`. -/
+@[simp]
+theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (A : TraceFormulaMatrix n) :
+    (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
+  simp [ofWeight, Finsupp.ofSupportFinite_coe]
+
+
+end TraceFormulaMatrixModule
 
 end TauCeti

@@ -203,10 +203,11 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
   have hHolder : ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ := by
     let _ : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
     calc ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ eLpNorm (fun x => D x * φ x) 1 (μ.restrict S) :=
-          (enorm_integral_le_lintegral_enorm _).trans_eq eLpNorm_one_eq_lintegral_enorm.symm
+          (enorm_integral_le_lintegral_enorm _).trans_eq
+            (eLpNorm_one_eq_lintegral_enorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
       _ ≤ eLpNorm D 2 (μ.restrict S) * eLpNorm (φ : E → ℝ) 2 (μ.restrict S) := by
           simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_nnnorm (p := 2) (q := 2) (r := 1)
-            hDmeas.restrict φ.aestronglyMeasurable (· * ·) 1
+            (· * ·) 1 continuous_mul hDmeas.restrict φ.aestronglyMeasurable
             (Eventually.of_forall fun _ => by simp [nnnorm_mul])
       _ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ :=
           mul_le_mul' hDbound (eLpNorm_restrict_le _ _ _ _)

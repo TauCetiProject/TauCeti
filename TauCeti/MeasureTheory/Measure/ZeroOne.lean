@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 import TauCeti.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.GroupWithZero.Idempotent
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Zero-one criteria and almost surely constant maps

@@ -36,6 +36,8 @@ have codimension at least two.
 * `TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one`: on a T₀ space all
   of whose points have codimension at most one for the specialization order, a point of
   codimension one is closed.
+* `TauCeti.coheight_le_topologicalKrullDim`: on a T₀ space, the codimension of a point is at
+  most the Krull dimension of the space.
 -/
 
 public section
@@ -76,6 +78,21 @@ theorem isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one {α : Ty
   · exact Set.mem_singleton _
   refine absurd (hdim y) (not_le.mpr ?_)
   simpa [hx] using Order.coheight_strictAnti (lt_of_le_of_ne hyx hne) (by simp [hx])
+
+attribute [local instance] specializationOrder in
+/-- On a T₀ topological space, the codimension of a point for the specialization order is at most
+the Krull dimension of the space. -/
+theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] [T0Space α] (x : α) :
+    (coheight x : WithBot ℕ∞) ≤ topologicalKrullDim α := by
+  -- A chain of specializations `y₀ ⤳ … ⤳ yₙ` gives the chain of irreducible closed sets
+  -- `closure {yₙ} ⊆ … ⊆ closure {y₀}`, strictly increasing since `α` is T₀.
+  let c : α → IrreducibleCloseds α :=
+    fun y ↦ ⟨closure {y}, isIrreducible_singleton.closure, isClosed_closure⟩
+  have hc : StrictMono c := by
+    refine Monotone.strictMono_of_injective (fun y z hyz ↦ ?_) fun y z hyz ↦ ?_
+    · exact specializes_iff_closure_subset.mp hyz
+    · exact (inseparable_iff_closure_eq.mpr (congrArg SetLike.coe hyz)).eq
+  exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
 
 end TauCeti
 

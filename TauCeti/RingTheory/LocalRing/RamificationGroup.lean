@@ -39,6 +39,7 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup G S i`: the `i`-th ramification group, for `i : ℤ`.
 * `TauCeti.IsLocalRing.ramificationGroupReal G S u`: the same family reindexed by a real number
   through `⌈·⌉`, the convention under which the step function is constant on `(i - 1, i]`.
+* `TauCeti.IsLocalRing.RamificationGroupGraded G S i`: the successive quotient `G_i / G_{i+1}`.
 
 ## Main results
 
@@ -146,6 +147,10 @@ theorem ramificationGroup_zero_eq_inertia :
     ramificationGroup G S 0 = Ideal.inertia G (maximalIdeal S) := by
   have h : ((0 : ℤ) + 1).toNat = 1 := by omega
   rw [ramificationGroup_def, h, pow_one]
+
+/-- The successive quotient `G_i / G_{i+1}` of the ramification filtration. -/
+abbrev RamificationGroupGraded (i : ℤ) :=
+  ramificationGroup G S i ⧸ (ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i)
 
 /-- The ramification filtration is decreasing. -/
 theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by

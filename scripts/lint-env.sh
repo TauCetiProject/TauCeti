@@ -194,6 +194,12 @@ BASELINE="$TRUSTED_SCRIPTS/lint-baseline.txt"
 ALLOWLIST="$TRUSTED_SCRIPTS/lint-nolints-allowlist.txt"
 UPDATE=0
 [ "${1:-}" = "--update" ] && UPDATE=1
+# Scoped mode: LINT_ONLY_MODULES names a file listing modules, one per line (in pr-build.yml a
+# trusted, read-only file computed from the PR's changed files). The #lint driver then imports and
+# lints only those TauCeti modules, not the ones they import or the ones that import them; the
+# daily full lint (lint-full.yml) covers the rest. The docstring scan and the nolint ratchet stay
+# library-wide: they are cheap, and their coverage guards need the whole library.
+ONLY_MODULES="${LINT_ONLY_MODULES:-}"
 
 # In the required sandboxed build, route this script's two direct `lean`
 # invocations through the same trusted watchdog as `lake build`; they do not go
@@ -223,6 +229,11 @@ run_driver() {
 }
 
 fail() { echo "::error::lint-env: $*"; echo "LINT-ENV: FAIL — $*"; exit 1; }
+
+if [ -n "$ONLY_MODULES" ]; then
+  [ "$UPDATE" != 1 ] || fail "--update needs the whole library; unset LINT_ONLY_MODULES"
+  [ -f "$ONLY_MODULES" ] || fail "LINT_ONLY_MODULES names $ONLY_MODULES, which is not a file"
+fi
 
 TMP="$(mktemp -d)" || fail "mktemp failed"
 trap 'rm -rf "$TMP"' EXIT
@@ -271,6 +282,15 @@ MODULE_IMPORT_LIST="$TMP/modules.txt"
 tauceti_source_modules "$TMP/source-files" "$MODULE_IMPORT_LIST"
 mods=$(wc -l < "$MODULE_IMPORT_LIST")
 [ "${mods:-0}" -gt 0 ] || fail "found no TauCeti/*.lean modules — the lint is miswired"
+# The modules the #lint driver lints: all of them, or in scoped mode the requested ones that are
+# real TauCeti source modules (deleted or non-TauCeti files drop out here).
+LINT_LIST="$MODULE_IMPORT_LIST"
+if [ -n "$ONLY_MODULES" ]; then
+  LINT_LIST="$TMP/lint-modules.txt"
+  LC_ALL=C comm -12 <(LC_ALL=C sort -u "$ONLY_MODULES") <(LC_ALL=C sort -u "$MODULE_IMPORT_LIST") \
+    > "$LINT_LIST"
+fi
+lint_mods=$(wc -l < "$LINT_LIST")
 
 # --- 1. docstring scan (fast; see the docBlame exclusion rationale above) ----------
 # A LEGACY (non-module) driver with plain imports: the non-module root imports the
@@ -500,11 +520,23 @@ fi
 # --- 3. run it (exit 1 is EXPECTED when the linters report) -----------------------
 # shellcheck disable=SC2086 # $LINTERS is a space-separated list of linter names
 printf '%s\n' "$MARKER" > "$TMP/marker.txt"
-if run_driver "$DRIVER_EXE" "$DRIVER" "$TMP/marker.txt" "$MODULE_IMPORT_LIST" $LINTERS \
-    > "$TMP/out.txt" 2>&1; then
+if [ "$lint_mods" -eq 0 ]; then
+  # Scoped mode with no TauCeti module to lint. This script (trusted code, not the candidate)
+  # writes the clean report the driver prints for an empty set of declarations, so the parser
+  # below runs unchanged.
+  echo "lint-env: no TauCeti module changed; skipping the #lint driver."
+  printf -- '-- Found 0 errors in 0 declarations (plus 0 automatically generated ones) in TauCeti with %s linters\n\n\n-- All linting checks passed!\n%s\n' \
+    "$(echo "$LINTERS" | wc -w)" "$MARKER" > "$TMP/out.txt"
   status=0
 else
-  status=$?
+  driver_flags=()
+  [ -n "$ONLY_MODULES" ] && driver_flags=(--only-listed)
+  if run_driver "$DRIVER_EXE" "${driver_flags[@]}" "$DRIVER" "$TMP/marker.txt" "$LINT_LIST" \
+      $LINTERS > "$TMP/out.txt" 2>&1; then
+    status=0
+  else
+    status=$?
+  fi
 fi
 # Echo each linter's completion trace line into the log. Informational only: nothing below reads
 # these lines, and PR code could print look-alikes. Once Batteries reports per-linter cost on them,
@@ -638,7 +670,11 @@ fi
 # --- 5. combine, then --update or compare against the grandfathered baseline ------
 LC_ALL=C sort -u "$TMP/violations-lint.txt" "$TMP/violations-docscan.txt" > "$TMP/violations.txt"
 total=$(wc -l < "$TMP/violations.txt")
-echo "lint-env: linted $mods modules; $total (linter, declaration) violation(s)."
+if [ -n "$ONLY_MODULES" ]; then
+  echo "lint-env: linted $lint_mods changed module(s) of $mods (docstrings: all $mods); $total (linter, declaration) violation(s)."
+else
+  echo "lint-env: linted $mods modules; $total (linter, declaration) violation(s)."
+fi
 
 if [ "$UPDATE" = 1 ]; then
   cp "$TMP/violations.txt" "$BASELINE"
@@ -646,8 +682,13 @@ if [ "$UPDATE" = 1 ]; then
   exit 0
 fi
 
-# Baseline entries that no longer violate: a ratchet reminder, never a failure.
+# Baseline entries that no longer violate: a ratchet reminder, never a failure. In scoped mode
+# only the docstring scan covered the whole library, so only its entries can be judged.
 LC_ALL=C comm -13 "$TMP/violations.txt" "$BASELINE" > "$TMP/fixed.txt"
+if [ -n "$ONLY_MODULES" ]; then
+  { grep '^docString ' "$TMP/fixed.txt" || true; } > "$TMP/fixed-doc.txt"
+  mv "$TMP/fixed-doc.txt" "$TMP/fixed.txt"
+fi
 if [ -s "$TMP/fixed.txt" ]; then
   echo
   echo "lint-env: RATCHET — $(wc -l < "$TMP/fixed.txt") baseline entr(y/ies) no longer violate."

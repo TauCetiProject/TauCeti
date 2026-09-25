@@ -116,6 +116,14 @@ theorem mem_bruhatCell_iff {g : G} {w : T.WeylGroup} :
     rw [bruhatCell_mk, ← doubleCoset_eq_of_mk_eq T.subgroupB T.subgroupN hm]
     exact hg
 
+/-- A Bruhat cell is the double coset of any of its elements. -/
+theorem bruhatCell_eq_doubleCoset {g : G} {w : T.WeylGroup}
+    (hg : g ∈ T.bruhatCell w) :
+    T.bruhatCell w = DoubleCoset.doubleCoset g T.subgroupB T.subgroupB := by
+  obtain ⟨n, rfl, hn⟩ := T.mem_bruhatCell_iff.mp hg
+  rw [T.bruhatCell_mk]
+  exact (DoubleCoset.doubleCoset_eq_of_mem hn).symm
+
 /-- Every Weyl-indexed Bruhat cell contains a representative from the normalizer subgroup. -/
 theorem exists_mem_bruhatCell (w : T.WeylGroup) :
     ∃ n : T.subgroupN, QuotientGroup.mk n = w ∧ (n : G) ∈ T.bruhatCell w := by

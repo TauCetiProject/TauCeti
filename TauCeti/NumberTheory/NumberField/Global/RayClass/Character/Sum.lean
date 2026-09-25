@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Basic
-public import TauCeti.Order.Northcott
+public import TauCeti.Order.Northcott.Basic
 
 /-!
 # Character sums over the integral ideals of bounded norm

@@ -53,7 +53,7 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
+When a PR is opened, we first let CI run, including the full Mathlib linter set on the modules the PR changes; a daily run lints the whole library and opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 

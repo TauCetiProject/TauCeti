@@ -57,7 +57,7 @@ public noncomputable section
 
 open Filter MulAction Set Topology UpperHalfPlane
 
-open scoped ContDiff Manifold MatrixGroups
+open scoped ComplexConjugate ContDiff Manifold MatrixGroups
 
 namespace Subgroup
 
@@ -145,5 +145,71 @@ theorem mdifferentiable_quotientMk :
   refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
   simp only [mfld_simps]
   exact mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk _ _ (mem_chart_source ℂ _)
+
+variable {Γ} in
+/-- **Holomorphic descent at a free orbit.** A map from the orbit space is holomorphic at the orbit
+of a point with trivial stabilizer as soon as its pullback along the orbit projection is
+holomorphic at that point. -/
+theorem mdifferentiableAt_of_comp_quotientMk {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℂ E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {F : orbitRel.Quotient Γ ℍ → M'} {z : ℍ}
+    (hz : stabilizer Γ z = ⊥) (hF : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z) :
+    MDifferentiableAt 𝓘(ℂ) I' F (Quotient.mk _ z) := by
+  set q : orbitRel.Quotient Γ ℍ := Quotient.mk _ z with hq
+  -- The chart at `q` is centred at a point `g • z` of the orbit of `z`, which is also free.
+  obtain ⟨g, hg⟩ : ∃ g : Γ, g • z = q.out :=
+    mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact (Quotient.out_eq q)))
+  have hm : Nat.card (stabilizer Γ q.out) = 1 := by
+    rw [← hg, stabilizer_smul_eq_stabilizer_map_conj, hz, Subgroup.map_bot, Subgroup.card_bot]
+  set z₀ := q.out with hz₀
+  -- The pullback is holomorphic at `g • z` as well, by invariance under `Γ`.
+  have hFg : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z₀ := by
+    have heq : (F ∘ Quotient.mk (orbitRel Γ ℍ)) =
+        (F ∘ Quotient.mk (orbitRel Γ ℍ)) ∘ (fun τ : ℍ ↦ g⁻¹ • τ) := by
+      funext τ
+      exact congrArg F (Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g⁻¹))).symm
+    rw [heq]
+    refine MDifferentiableAt.comp z₀ ?_
+      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g⁻¹).mdifferentiable (by simp) z₀)
+    rwa [← hg, inv_smul_smul]
+  -- The inverse of the disc coordinate at `z₀`, as a function on `ℂ`.
+  set ψ : ℂ → ℂ := fun w ↦ ((z₀ : ℂ) - conj (z₀ : ℂ) * w) / (1 - w) with hψ
+  have hψτ : ∀ w (hw : ‖w‖ < 1),
+      (discCoordinateHomeomorph z₀).symm (.mk w hw) = ofComplex (ψ w) := fun w hw ↦ by
+    rw [← ofComplex_apply ((discCoordinateHomeomorph z₀).symm _),
+      coe_discCoordinateHomeomorph_symm_apply, Complex.UnitDisc.coe_mk]
+  have hψ0 : ψ 0 = z₀ := by simp [hψ]
+  have hε := chartRadius_pos Γ q.out
+  set hopen := isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out
+  set e := stabilizerBallQuotientChart hε hopen with he
+  -- In the chart at `q`, which has `m = 1`, the map `F` is its pullback composed with `ψ`.
+  have heq : (F ∘ e.symm) =ᶠ[𝓝 0] fun w ↦ (F ∘ Quotient.mk _) (ofComplex (ψ w)) := by
+    have hr : 0 < Real.tanh (chartRadius Γ q.out / 2) := by
+      rw [← Real.tanh_zero]
+      exact Real.tanh_strictMono (by linarith)
+    filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with w hw
+    rw [mem_ball_zero_iff] at hw
+    have := stabilizerBallQuotientChart_symm_pow hε hopen hw
+    rw [hm, pow_one] at this
+    rw [Function.comp_apply, he, this, hψτ w (hw.trans (Real.tanh_lt_one _))]
+    rfl
+  have hq0 : e q = 0 := by
+    have h := stabilizerBallQuotientChart_mk hε hopen (τ := q.out) (by rw [dist_self]; exact hε)
+    rw [Quotient.out_eq] at h
+    rw [he, h, discCoordinate_self, zero_pow Nat.card_pos.ne']
+  rw [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source ℂ q)]
+  simp only [mfld_simps, mdifferentiableWithinAt_univ]
+  rw [chartAt_eq, ← he, hq0]
+  refine MDifferentiableAt.congr_of_eventuallyEq ?_ heq
+  have him : 0 < (ψ 0).im := by
+    rw [hψ0]
+    exact z₀.im_pos
+  have hψd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) ψ 0 :=
+    mdifferentiableAt_iff_differentiableAt.2 ((analyticOnNhd_discCoordinateHomeomorph_symm z₀ 0
+      (Metric.mem_ball_self one_pos)).differentiableAt)
+  have hFg' : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) (ofComplex (ψ 0)) := by
+    rwa [hψ0, ofComplex_apply]
+  have := hFg'.comp 0 ((mdifferentiableAt_ofComplex him).comp 0 hψd)
+  exact this
 
 end Subgroup

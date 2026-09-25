@@ -120,8 +120,7 @@ private theorem invariantsMap_tensor (f : Representation.IntertwiningMap rho tau
         (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative).toAlgHom
         (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative).toAlgHom
       (groupAlgebraInvariantsTensorEquiv rho t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul x y => simp
   | add x y hx hy => simp only [map_add, AddMemClass.coe_add, hx, hy]
 

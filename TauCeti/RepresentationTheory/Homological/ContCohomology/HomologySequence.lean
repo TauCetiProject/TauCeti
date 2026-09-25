@@ -22,7 +22,11 @@ group `G` induces a long exact sequence
 
 of Mathlib's canonical continuous cohomology `continuousCohomology n`, in every degree `n`. This
 file constructs the connecting map `δ` and proves exactness at the three repeating nodes and
-naturality of `δ` in the short exact sequence.
+naturality of `δ` in compatible pairs: along a continuous homomorphism `φ : H →ₜ* G` of compact
+groups, maps of short exact sequences that are equivariant along `φ` carry `δ` over `G` to `δ`
+over `H`. Morphisms of short exact sequences over `G` and restriction to a compact subgroup are the
+two instances stated here; inflation is stated in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.ConnectingMap`.
 
 The construction starts from the short complex of homogeneous-cochain complexes
 `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact`, which becomes a short
@@ -35,7 +39,7 @@ forgotten complexes with the underlying modules of continuous cohomology. This p
 linear map. It is continuous because continuous cohomology of a discrete representation of a
 compact group is discrete (`TauCeti.discreteTopology_continuousCohomology`), so `δ` is a morphism
 in `TopModuleCat ℤ`. The same identification transports the exactness statements and the
-naturality square from `ModuleCat ℤ`.
+naturality squares from `ModuleCat ℤ`.
 
 The coefficient maps are the named `TauCeti.ContinuousCohomology.coeffMap` of the canonical
 coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer meets them.
@@ -52,13 +56,18 @@ coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer mee
 * `TauCeti.ContCohomology.DiscreteShortExact.longExact_exact₁`,
   `longExact_exact₂` and `longExact_exact₃`: exactness at `Hⁿ⁺¹(G, A)`, `Hⁿ(G, B)` and
   `Hⁿ(G, C)`.
+* `TauCeti.ContCohomology.DiscreteShortExact.delta_map`: the maps induced by compatible pairs
+  commute with `δ`.
 * `TauCeti.ContCohomology.DiscreteShortExact.delta_naturality`: a morphism of short exact
   sequences commutes with `δ`.
+* `TauCeti.ContCohomology.DiscreteShortExact.delta_res`: restriction to a compact subgroup
+  commutes with `δ`.
 
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
-  (1.3.2) (the long exact cohomology sequence of a short exact sequence of discrete modules).
+  (1.3.2) (the long exact cohomology sequence of a short exact sequence of discrete modules) and
+  Ch. I, §5 (compatibility of the connecting maps with change of groups).
 -/
 
 public section
@@ -154,6 +163,105 @@ theorem delta_comp_coeffMap_incl (n : ℕ) :
       0 :=
   ConcreteCategory.hom_ext _ _ fun x ↦ (S.longExact_exact₁ n).apply_apply_eq_zero x
 
+section Map
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+  {A' : Type u} [AddCommGroup A'] [TopologicalSpace A'] [DiscreteTopology A']
+    [DistribMulAction H A']
+  {B' : Type u} [AddCommGroup B'] [TopologicalSpace B'] [DiscreteTopology B']
+    [DistribMulAction H B'] [ContinuousSMul H B']
+  {C' : Type u} [AddCommGroup C'] [TopologicalSpace C'] [DiscreteTopology C']
+    [DistribMulAction H C']
+
+omit [CompactSpace G] [CompactSpace H] in
+/-- Compatible pairs `(φ, f)` and `(φ, f')` and equivariant coefficient maps `i` and `j`
+induce a commuting square of homogeneous-cochain complexes when `f' (i m) = j (f m)` for every
+`m : M`. -/
+private theorem cochainsMap_comp_cochainsMap_id
+    {M M' : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [AddCommGroup M'] [TopologicalSpace M'] [DiscreteTopology M']
+    [DistribMulAction G M']
+    {N N' : Type u} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] [AddCommGroup N'] [TopologicalSpace N'] [DiscreteTopology N']
+    [DistribMulAction H N'] (φ : H →ₜ* G)
+    (f : M →+ N) (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (f' : M' →+ N') (hf' : ∀ (h : H) (m : M'), f' (φ h • m) = h • f' m)
+    (i : M →+ M') (hi : ∀ (g : G) (m : M), i (g • m) = g • i m)
+    (j : N →+ N') (hj : ∀ (h : H) (n : N), j (h • n) = h • j n)
+    (hcomm : ∀ m : M, f' (i m) = j (f m)) :
+    cochainsMap φ (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap hf) ≫
+        (continuousCochainsFunctor ℤ H).map (ofDiscreteModuleMap j.toIntLinearMap hj) =
+      (continuousCochainsFunctor ℤ G).map (ofDiscreteModuleMap i.toIntLinearMap hi) ≫
+        cochainsMap φ (ofDiscreteModulePair (φ : H →* G) f'.toIntLinearMap hf') :=
+  -- Both compositions act along `φ`; equality reduces to the coefficient maps on elements.
+  (cochainsMap_comp φ (ContinuousMonoidHom.id H) _ _).symm.trans <|
+    (congrArg (cochainsMap φ) <| by
+      ext (m : M)
+      exact (congrArg j
+        (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap hf m)).trans <|
+          (hcomm m).symm.trans
+            (ofDiscreteModulePair_hom_apply (φ : H →* G) f'.toIntLinearMap hf' (i m)).symm).trans <|
+    cochainsMap_comp (ContinuousMonoidHom.id G) φ _ _
+
+/-- **Naturality of the connecting map in compatible pairs.** Let `φ : H →ₜ* G` be a continuous
+homomorphism of compact groups, `S` a short exact sequence of discrete `G`-modules and `T` one of
+discrete `H`-modules, and let `fA`, `fB`, `fC` be additive maps from the terms of `S` to those of
+`T` that are equivariant along `φ` (`f (φ h • x) = h • f x`) and commute with the inclusions and
+the projections. Then the maps these compatible pairs induce on continuous cohomology carry the
+connecting map of `S` to that of `T`:
+
+```text
+Hⁿ(G, C) ---δ---> Hⁿ⁺¹(G, A)
+   |                  |
+ (φ, fC)            (φ, fA)
+   v                  v
+Hⁿ(H, C') --δ--> Hⁿ⁺¹(H, A')
+```
+
+Coefficient maps (`delta_naturality`, at `φ = id`), restriction (`delta_res`) and inflation
+(`delta_infl`) are instances of this square. -/
+@[reassoc]
+theorem delta_map (T : DiscreteShortExact H A' B' C') (φ : H →ₜ* G)
+    (fA : A →+ A') (fB : B →+ B') (fC : C →+ C')
+    (hA : ∀ (h : H) (a : A), fA (φ h • a) = h • fA a)
+    (hB : ∀ (h : H) (b : B), fB (φ h • b) = h • fB b)
+    (hC : ∀ (h : H) (c : C), fC (φ h • c) = h • fC c)
+    (hincl : ∀ a : A, fB (S.incl a) = T.incl (fA a))
+    (hproj : ∀ b : B, fC (S.proj b) = T.proj (fB b)) (n : ℕ) :
+    S.delta n ≫ map φ (ofDiscreteModulePair (φ : H →* G) fA.toIntLinearMap hA) (n + 1) =
+      map φ (ofDiscreteModulePair (φ : H →* G) fC.toIntLinearMap hC) n ≫ T.delta n := by
+  -- The morphism of short exact sequences of homogeneous-cochain complexes given by the three
+  -- compatible pairs, and its image on the forgotten complexes.
+  let ψ : S.toShortComplex.map (continuousCochainsFunctor ℤ G) ⟶
+      T.toShortComplex.map (continuousCochainsFunctor ℤ H) :=
+    ShortComplex.homMk
+      (cochainsMap φ (ofDiscreteModulePair (φ : H →* G) fA.toIntLinearMap hA))
+      (cochainsMap φ (ofDiscreteModulePair (φ : H →* G) fB.toIntLinearMap hB))
+      (cochainsMap φ (ofDiscreteModulePair (φ : H →* G) fC.toIntLinearMap hC))
+      (cochainsMap_comp_cochainsMap_id φ fA hA fB hB S.incl S.incl_equivariant T.incl
+        T.incl_equivariant hincl)
+      (cochainsMap_comp_cochainsMap_id φ fB hB fC hC S.proj S.proj_equivariant T.proj
+        T.proj_equivariant hproj)
+  let Φ := ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).mapHomologicalComplex _).mapShortComplex.map ψ
+  -- Three commuting squares in `ModuleCat ℤ`: the snake-lemma naturality in the middle, and the
+  -- compatible-pair maps read through `mapHomologyIso` on either side (`forget₂_map_map`).
+  have h := HomologicalComplex.HomologySequence.δ_naturality Φ
+    S.continuousCochainsShortExact_shortExact T.continuousCochainsShortExact_shortExact n (n + 1)
+    rfl
+  have h₁ := (Iso.eq_inv_comp _).1 (forget₂_map_map φ
+    (ofDiscreteModulePair (φ : H →* G) fA.toIntLinearMap hA) (n + 1))
+  have h₃ := (Iso.eq_comp_inv _).2 ((Category.assoc _ _ _).trans
+    (forget₂_map_map φ (ofDiscreteModulePair (φ : H →* G) fC.toIntLinearMap hC) n).symm)
+  apply (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map_injective
+  rw [Functor.map_comp, Functor.map_comp, forget₂_map_delta, forget₂_map_delta]
+  -- Paste the three squares. `Category.assoc` cannot be rewritten here because the objects of the
+  -- two sides agree only after unfolding `continuousCohomology`.
+  exact ((CommSq.mk h₃).horiz_comp ((CommSq.mk h).horiz_comp (CommSq.mk h₁))).w
+
+end Map
+
+section Naturality
+
 variable {A' : Type u} [AddCommGroup A'] [TopologicalSpace A'] [DiscreteTopology A']
     [DistribMulAction G A']
   {B' : Type u} [AddCommGroup B'] [TopologicalSpace B'] [DiscreteTopology B']
@@ -184,33 +292,55 @@ theorem delta_naturality (T : DiscreteShortExact G A' B' C')
       coeffMap (ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ map_smul fC g c)
           n ≫
         T.delta n := by
-  -- The morphism of coefficient short complexes, and its image on forgotten cochain complexes.
+  -- A coefficient map is the compatible pair at `φ = id`.
   -- `_root_.map_smul` is named in full: the bare name also resolves to
   -- `ContinuousCohomology.map_smul`, and elaborating that failed alternative costs 0.05 s each.
-  let φ : S.toShortComplex ⟶ T.toShortComplex :=
-    ShortComplex.homMk
-      (ofDiscreteModuleMap fA.toAddMonoidHom.toIntLinearMap fun g a ↦ _root_.map_smul fA g a)
-      (ofDiscreteModuleMap fB.toAddMonoidHom.toIntLinearMap fun g b ↦ _root_.map_smul fB g b)
-      (ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ _root_.map_smul fC g c)
-      (TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ (hincl a).symm)
-      (TopRep.hom_ext <| DFunLike.ext _ _ fun b : B ↦ (hproj b).symm)
-  let Φ := ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).mapHomologicalComplex _).mapShortComplex.map
-    ((continuousCochainsFunctor ℤ G).mapShortComplex.map φ)
-  -- Three commuting squares in `ModuleCat ℤ`: the snake-lemma naturality in the middle, and the
-  -- coefficient maps read through `mapHomologyIso` on either side. The side squares keep the
-  -- form `forget₂_map_coeffMap` gives them at `φ.τ₁` and `φ.τ₃`: restating them through
-  -- `continuousCochainsShortExact` costs a slow unification per square (2.5 s and 0.5 s).
-  have h := HomologicalComplex.HomologySequence.δ_naturality Φ
-    S.continuousCochainsShortExact_shortExact T.continuousCochainsShortExact_shortExact n (n + 1)
-    rfl
-  have h₁ := (Iso.eq_inv_comp _).1 (forget₂_map_coeffMap φ.τ₁ (n + 1))
-  have h₃ := (Iso.eq_comp_inv _).2 ((Category.assoc _ _ _).trans
-    (forget₂_map_coeffMap φ.τ₃ n).symm)
-  apply (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map_injective
-  rw [Functor.map_comp, Functor.map_comp, forget₂_map_delta, forget₂_map_delta]
-  -- Paste the three squares. `Category.assoc` cannot be rewritten here because the objects of the
-  -- two sides agree only after unfolding `continuousCohomology`.
-  exact ((CommSq.mk h₃).horiz_comp ((CommSq.mk h).horiz_comp (CommSq.mk h₁))).w
+  have hA : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+      fA.toAddMonoidHom.toIntLinearMap (fun g a ↦ _root_.map_smul fA g a) =
+      ofDiscreteModuleMap fA.toAddMonoidHom.toIntLinearMap fun g a ↦ _root_.map_smul fA g a :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  have hC : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+      fC.toAddMonoidHom.toIntLinearMap (fun g c ↦ _root_.map_smul fC g c) =
+      ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ _root_.map_smul fC g c :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [coeffMap_def, coeffMap_def, ← hA, ← hC]
+  exact S.delta_map T (ContinuousMonoidHom.id G) fA.toAddMonoidHom fB.toAddMonoidHom
+    fC.toAddMonoidHom (fun g a ↦ _root_.map_smul fA g a) (fun g b ↦ _root_.map_smul fB g b)
+    (fun g c ↦ _root_.map_smul fC g c) hincl hproj n
+
+end Naturality
+
+/-- **Restriction commutes with the connecting map.** For a compact subgroup `T` of `G`, restricting
+the connecting map of `S` to `T` gives the connecting map of the restricted sequence
+`S.restrict T`:
+
+```text
+Hⁿ(G, C) ---δ---> Hⁿ⁺¹(G, A)
+   |                  |
+  res                res
+   v                  v
+Hⁿ(T, C) ---δ---> Hⁿ⁺¹(T, A)
+```
+
+The restriction of `ofDiscreteModule ℤ G M` to `T` is `ofDiscreteModule ℤ T M` by definition
+(`TauCeti.res_ofDiscreteModule`), which is how the two sides compose. -/
+@[reassoc]
+theorem delta_res (T : Subgroup G) [CompactSpace T] (n : ℕ) :
+    S.delta n ≫ res T (ofDiscreteModule ℤ G A) (n + 1) =
+      res T (ofDiscreteModule ℤ G C) n ≫ (S.restrict T).delta n := by
+  -- Restriction is the compatible pair of the inclusion `T ↪ G` and the identity.
+  have hA : ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype T : T →* G)
+      (AddMonoidHom.id A).toIntLinearMap (fun _ _ ↦ rfl) =
+      𝟙 (TopRep.res (T.subtype : T →* G) (ofDiscreteModule ℤ G A)) :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  have hC : ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype T : T →* G)
+      (AddMonoidHom.id C).toIntLinearMap (fun _ _ ↦ rfl) =
+      𝟙 (TopRep.res (T.subtype : T →* G) (ofDiscreteModule ℤ G C)) :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [res_def, res_def, ← hA, ← hC]
+  exact S.delta_map (S.restrict T) (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id A)
+    (AddMonoidHom.id B) (AddMonoidHom.id C) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ ↦ by simp) (fun _ ↦ by simp) n
 
 end ContCohomology.DiscreteShortExact
 

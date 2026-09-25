@@ -88,8 +88,9 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
   the group elements are distinct, form a closed copy of `Γ` when `R` is Hausdorff, and the
   algebra is commutative exactly when `Γ` is.
 * The instances `IsTopologicalRing`, `ContinuousSMul R`, `CompactSpace`,
-  `TotallyDisconnectedSpace`, `T2Space`, `UniformSpace` and `IsUniformAddGroup`, and the
-  `IsMulCommutative` and `CommRing` instances for commutative `Γ`.
+  `TotallyDisconnectedSpace`, `T2Space`, `UniformSpace` and `IsUniformAddGroup`, the
+  `NoZeroSMulDivisors R` instance for `R` without zero divisors, and the `IsMulCommutative` and
+  `CommRing` instances for commutative `Γ`.
 
 ## References
 
@@ -288,6 +289,17 @@ theorem exists_mem_span_range_of_proj_eq (x : completedGroupAlgebra R Γ)
 
 instance [Nontrivial R] : Nontrivial (completedGroupAlgebra R Γ) :=
   (proj R Γ { toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }).toRingHom.domain_nontrivial
+
+/-- Over a coefficient ring without zero divisors, the completed group algebra has no scalar
+torsion: every nonzero scalar acts injectively, as it does on each coefficient of each level. -/
+instance [NoZeroDivisors R] : NoZeroSMulDivisors R (completedGroupAlgebra R Γ) where
+  eq_zero_or_eq_zero_of_smul_eq_zero {r x} h := by
+    refine or_iff_not_imp_left.mpr fun hr ↦ ext fun U ↦ MonoidAlgebra.coeff_injective
+      (Finsupp.ext fun g ↦ ?_)
+    have hg := congrArg (fun z ↦ (proj R Γ U z).coeff g) h
+    simp only [map_smul, MonoidAlgebra.coeff_smul_apply, smul_eq_mul, map_zero,
+      MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply] at hg
+    simpa using (mul_eq_zero.mp hg).resolve_left hr
 
 /-- The completed group algebra of a commutative group is commutative. -/
 instance [IsMulCommutative Γ] : IsMulCommutative (completedGroupAlgebra R Γ) where

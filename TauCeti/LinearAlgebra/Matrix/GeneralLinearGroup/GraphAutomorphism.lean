@@ -224,10 +224,7 @@ theorem typeAGraphConjugator_mul_self (r : ℕ) :
       congr 1
       simp [Fin.val_rev]
       omega
-    _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := by
-      apply Units.ext
-      rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar]
-      rw [Matrix.scalar_apply]
+    _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := diagGL_const _
 
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔

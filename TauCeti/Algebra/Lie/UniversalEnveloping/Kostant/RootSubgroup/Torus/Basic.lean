@@ -472,8 +472,7 @@ theorem map_kostantTorusPoints (φ : A →+* B) (s : κ → Aˣ) (z : A ⊗[ℤ]
         (TensorProduct.map φ.toIntAlgHom.toLinearMap LinearMap.id z) := by
   -- Both sides are additive, so it suffices to treat a pure tensor, and then to expand its
   -- second factor in the basis.
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add y z hy hz => simp only [map_add, hy, hz]
   | tmul a m =>
       conv_lhs => rw [← b.linearCombination_repr m]

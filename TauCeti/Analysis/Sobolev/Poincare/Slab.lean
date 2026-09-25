@@ -188,6 +188,7 @@ theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc (hab : a ≤ b)
     (hsupp : Function.support g ⊆ Icc a b) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) :
     eLpNorm g p volume ≤ ENNReal.ofReal (b - a) * eLpNorm g' p volume :=
   eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab) (zero_lt_one.trans_le hp).ne' hp'
+    ((continuous_iff_continuousAt.2 fun t => (hg t).continuousAt).aestronglyMeasurable)
     (lintegral_enorm_rpow_le_of_support_subset_Icc hab hg hg' hsupp
       (by simpa using ENNReal.toReal_mono hp' hp))
 
@@ -286,7 +287,7 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
-    (zero_lt_one.trans_le hp).ne' hp' ?_
+    (zero_lt_one.trans_le hp).ne' hp' hu.continuous.aestronglyMeasurable ?_
   set r := p.toReal
   have hmu : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖u x‖ₑ ^ r :=
     (ENNReal.continuous_rpow_const.comp hu.continuous.enorm).measurable
