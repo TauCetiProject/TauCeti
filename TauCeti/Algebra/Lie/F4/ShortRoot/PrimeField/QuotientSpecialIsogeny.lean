@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Carrier.RootPinning
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Carrier.TorusPinning
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Endomorphism
-public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Frobenius
 
 /-!
