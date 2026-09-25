@@ -67,12 +67,9 @@ dividing `q - 1`, where `q` is the cardinality of the residue field.
 ## Implementation notes
 
 The ramification groups are indexed by `ℤ` and the unit filtration by `ℕ`. Every general statement
-below therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`. The
-depth-zero declarations spell their index `(0 : ℤ)` instead, which is its `simp`-normal form:
-that lets the depth-zero `QuotientGroup.mk` lemma carry `@[simp]`, since `simp` demands a
-`simp`-normal left-hand side, and it makes the statements match a goal about `G_0 / G_1` as
-written. The general lemmas are keyed on the cast `(i : ℤ)` and so do not rewrite at that
-spelling; the one proof that needs such a lemma instantiates it at `i = 0` explicitly.
+below therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`, whereas
+the depth-zero declarations fix the index `(0 : ℤ)`, the spelling in which a statement about
+`G_0 / G_1` is met.
 
 ## References
 
@@ -362,6 +359,8 @@ def tameCharacterGraded (hϖ : Irreducible ϖ) :
   (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).toMonoidHom.comp
     (ramificationGroupGradedToUnitFiltrationGraded 0 hϖ)
 
+-- The `(0 : ℤ)` index of the depth-zero declarations is `simp`-normal, unlike the cast `(i : ℤ)`
+-- of the general ones, so this application lemma can carry `@[simp]`.
 @[simp]
 theorem tameCharacterGraded_mk (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (0 : ℤ)) :
