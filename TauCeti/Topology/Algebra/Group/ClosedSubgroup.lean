@@ -123,17 +123,20 @@ normal closed subgroups. -/
 def _root_.ContinuousMulEquiv.quotient (e : G ≃ₜ* H) (N : ClosedSubgroup G)
     [N.toSubgroup.Normal] :
     G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSubgroup :=
+  have he : N.toSubgroup.map e.toMulEquiv.toMonoidHom =
+      (e.closedSubgroupOrderIso N).toSubgroup :=
+    (e.closedSubgroupOrderIso_apply_toSubgroup N).symm
   ContinuousMulEquiv.mk
-    (QuotientGroup.congr N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup e.toMulEquiv rfl)
+    (QuotientGroup.congr N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup e.toMulEquiv he)
     ((QuotientGroup.isQuotientMap_mk N.toSubgroup).continuous_iff.mpr <| by
       exact (QuotientGroup.continuous_mk.comp e.continuous).congr fun g ↦
         (QuotientGroup.congr_mk N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup
-          e.toMulEquiv rfl g).symm)
+          e.toMulEquiv he g).symm)
     ((QuotientGroup.isQuotientMap_mk
       (e.closedSubgroupOrderIso N).toSubgroup).continuous_iff.mpr <| by
         exact (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
           (QuotientGroup.congr_mk (e.closedSubgroupOrderIso N).toSubgroup N.toSubgroup
-            e.toMulEquiv.symm ((Subgroup.map_symm_eq_iff_map_eq _).mpr rfl) h).symm)
+            e.toMulEquiv.symm ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
 
 /-- The quotient isomorphism sends the class of an element to the class of its image. -/
 @[simp]
