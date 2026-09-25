@@ -54,7 +54,8 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
   `IsCoveringMap.exists_monodromy_eq` and
   `IsCoveringMap.monodromy_isPretransitive`: monodromy carries a lift to any lift joined
   to it by a path, so it is transitive on a fibre of a path-connected cover.
-* `IsCoveringMap.joined_monodromy` and `IsCoveringMap.pathConnectedSpace_iff`: conversely a
+* `IsCoveringMap.joined_monodromy`, `IsCoveringMap.exists_mem_fiber_joined`, and
+  `IsCoveringMap.pathConnectedSpace_iff`: conversely a
   point is joined to its image under monodromy, so over a path-connected base the total space is
   path connected exactly when monodromy is transitive on a nonempty fibre.
 * `IsCoveringMap.fiberEquivQuotientRange` and
@@ -182,22 +183,29 @@ theorem _root_.IsCoveringMap.joined_monodromy (hp : IsCoveringMap p) {x y : X}
   obtain ⟨Γ⟩ := hp.liftPathQuotient γ e
   exact ⟨Γ⟩
 
+/-- Over a path-connected base, every point of a cover is joined to a point of any chosen
+fibre. -/
+theorem _root_.IsCoveringMap.exists_mem_fiber_joined [PathConnectedSpace X]
+    (hp : IsCoveringMap p) (x : X) (e : E) :
+    ∃ e' : p ⁻¹' {x}, Joined e (e' : E) :=
+  ⟨_, hp.joined_monodromy
+    (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (p e) x)) ⟨e, rfl⟩⟩
+
 /-- **A cover of a path-connected space is path connected exactly when monodromy is transitive on
 a nonempty fibre.** Every point of the total space is joined to the fibre over `x` by lifting a
 path to `x`, and two points of that fibre are joined by lifting a loop. -/
 theorem _root_.IsCoveringMap.pathConnectedSpace_iff [PathConnectedSpace X] (hp : IsCoveringMap p)
     (x : X) :
     PathConnectedSpace E ↔ Nonempty (p ⁻¹' {x}) ∧
-      ∀ e e' : p ⁻¹' {x}, ∃ γ : FundamentalGroup X x, hp.monodromy γ e = e' := by
-  have hfiber : ∀ e : E, ∃ e' : p ⁻¹' {x}, Joined e e' := fun e =>
-    ⟨_, hp.joined_monodromy (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (p e) x))
-      ⟨e, rfl⟩⟩
+      (letI := hp.fundamentalGroupMulAction x
+       MulAction.IsPretransitive (FundamentalGroup X x) (p ⁻¹' {x})) := by
+  let := hp.fundamentalGroupMulAction x
   refine ⟨fun _ => ?_, fun ⟨⟨e₀⟩, h⟩ => ⟨⟨e₀⟩, fun e e' => ?_⟩⟩
   · obtain ⟨e⟩ := (inferInstance : Nonempty E)
-    exact ⟨⟨(hfiber e).choose⟩, hp.exists_monodromy_eq⟩
-  · obtain ⟨f, hf⟩ := hfiber e
-    obtain ⟨f', hf'⟩ := hfiber e'
-    obtain ⟨γ, rfl⟩ := h f f'
+    exact ⟨⟨(hp.exists_mem_fiber_joined x e).choose⟩, hp.monodromy_isPretransitive x⟩
+  · obtain ⟨f, hf⟩ := hp.exists_mem_fiber_joined x e
+    obtain ⟨f', hf'⟩ := hp.exists_mem_fiber_joined x e'
+    obtain ⟨γ, rfl⟩ := h.exists_smul_eq f f'
     exact (hf.trans (hp.joined_monodromy γ f)).trans hf'.symm
 
 /-! ### The fibre as a coset space -/

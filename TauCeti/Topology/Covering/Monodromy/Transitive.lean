@@ -146,8 +146,7 @@ point of the total space is carried into the fibre by monodromy along any path. 
 theorem nonempty_fiber [PathConnectedSpace X] (p : ConnectedCoveringSpace X) (x : X) :
     Nonempty (⇑p.proj ⁻¹' {x}) := by
   obtain ⟨e⟩ := (inferInstance : Nonempty (p : TopCat))
-  exact ⟨p.isCoveringMap_proj.monodromy
-    (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (p.proj e) x)) ⟨e, rfl⟩⟩
+  exact ⟨(p.isCoveringMap_proj.exists_mem_fiber_joined x e).choose⟩
 
 /-- The ordinary monodromy functor of a connected cover over a path-connected base is transitive
 on every fibre. -/
