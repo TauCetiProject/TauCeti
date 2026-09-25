@@ -100,6 +100,7 @@ instance exposureMeasure_isProbabilityMeasure (n : ℕ) :
 variable (μ) in
 /-- The positions of the exposure source are independent with law `μ`: forgetting the rows of
 coins maps the exposure source to the product `Measure.pi fun _ => μ`. -/
+@[simp]
 theorem map_fst_exposureMeasure (n : ℕ) :
     (exposureMeasure μ n).map (fun x i => (x i).1) = Measure.pi fun _ : Fin n => μ := by
   rw [exposureMeasure_def, Measure.pi_map_pi fun _ => measurable_fst.aemeasurable]
