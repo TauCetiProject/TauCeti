@@ -36,6 +36,7 @@ noncomputable def toMulAut (rho : Representation R G M) :
     exact congrArg
       (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd)) (map_mul rho g h)
 
+/-- The multiplicative automorphism acts by the representation on the underlying module. -/
 @[simp]
 theorem toMulAut_apply (rho : Representation R G M) (g : G)
     (m : Multiplicative M) :
@@ -43,6 +44,7 @@ theorem toMulAut_apply (rho : Representation R G M) (g : G)
   exact congrArg (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd))
     (MonoidHom.coe_toHomUnits rho g)
 
+/-- The inverse multiplicative automorphism acts by the representation of the inverse element. -/
 @[simp]
 theorem toMulAut_symm_apply (rho : Representation R G M)
     (g : G) (m : Multiplicative M) :

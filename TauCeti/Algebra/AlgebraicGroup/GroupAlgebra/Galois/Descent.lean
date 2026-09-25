@@ -141,6 +141,17 @@ theorem groupAlgebraActionSemilinearEquiv_apply
     groupAlgebraActionSemilinearEquiv rho sigma x = groupAlgebraAction rho sigma x := by
   rfl
 
+/-- The inverse semilinear equivalence is the action of the inverse automorphism. -/
+@[simp]
+theorem groupAlgebraActionSemilinearEquiv_symm_apply
+    (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)
+    (x : MonoidAlgebra L (Multiplicative M)) :
+    (groupAlgebraActionSemilinearEquiv rho sigma).symm x =
+      groupAlgebraAction rho sigma⁻¹ x := by
+  change (groupAlgebraAction rho sigma).symm x = _
+  rw [map_inv]
+  rfl
+
 end Semiring
 
 variable [CommSemiring L] [Algebra k L]
