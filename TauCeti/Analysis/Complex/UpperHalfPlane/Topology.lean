@@ -33,7 +33,8 @@ period exactly when the original function is invariant under the corresponding t
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
-* `TauCeti.UpperHalfPlane.closure_setOfPred_lt_re`, `closure_setOfPred_re_lt`.
+* `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
+  `closure_setOfPred_re_lt`.
 
 ## References
 
@@ -166,22 +167,26 @@ lemma periodic_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ} :
           (by simp [add_comm])]
       exact h _
 
+/-- `UpperHalfPlane.re`'s closures and preimages commute, the `ℍ` analogue of
+`Complex.closure_preimage_re`; the shared open-map step behind both half-plane closures
+below. -/
+theorem closure_preimage_re (s : Set ℝ) :
+    closure (UpperHalfPlane.re ⁻¹' s) = UpperHalfPlane.re ⁻¹' closure s :=
+  (UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
+    UpperHalfPlane.continuous_re s).symm
+
 /-- The closure of the open right half-plane of `ℍ` at `0`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_lt_re` for `ℂ`. -/
 theorem closure_setOfPred_lt_re : closure {z : ℍ | 0 < z.re} = {z : ℍ | 0 ≤ z.re} := by
   rw [show {z : ℍ | 0 < z.re} = UpperHalfPlane.re ⁻¹' Set.Ioi (0 : ℝ) from rfl,
-    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
-      UpperHalfPlane.continuous_re,
-    closure_Ioi]
+    closure_preimage_re, closure_Ioi]
   rfl
 
 /-- The closure of the open left half-plane of `ℍ` at `0`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_re_lt` for `ℂ`. -/
 theorem closure_setOfPred_re_lt : closure {z : ℍ | z.re < 0} = {z : ℍ | z.re ≤ 0} := by
   rw [show {z : ℍ | z.re < 0} = UpperHalfPlane.re ⁻¹' Set.Iio (0 : ℝ) from rfl,
-    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
-      UpperHalfPlane.continuous_re,
-    closure_Iio]
+    closure_preimage_re, closure_Iio]
   rfl
 
 end TauCeti.UpperHalfPlane
