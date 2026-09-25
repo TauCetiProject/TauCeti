@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Cochain
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 
@@ -35,8 +36,6 @@ free for that statement.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.evensHomCocycleAmbient`: a continuous homomorphism on `U`, as a
-  continuous `1`-cocycle valued in the ambient coefficient carrier `trivialF2 G`.
 * `TauCeti.ContCohomology.evensCorCocycle`: the sum `b₁ + b_s`, as a continuous `1`-cocycle.
 
 ## Main results
@@ -149,38 +148,6 @@ private theorem lWord_evensTransversal_mk (U : Subgroup G) (s : G)
     rw [lWord_def, hcoset]
     simp [evensTransversal, hs1, hγ]
 
-/-- A continuous homomorphism on a subgroup, regarded as a `1`-cocycle with the ambient group's
-lifted trivial coefficient carrier.  This is the representative to which explicit corestriction
-applies. -/
-noncomputable def evensHomCocycleAmbient (U : OpenSubgroup G)
-    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    Z1 U.toSubgroup (trivialF2 G).V :=
-  ⟨fun h => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h)),
-    mem_Z1_iff.2 ⟨
-      (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
-        (continuous_toAdd.comp hα),
-      fun g h => by
-        let x : (trivialF2 G).V :=
-          (trivialF2Equiv G).symm (Multiplicative.toAdd (α h))
-        have hx : g • x = x := by
-          calc
-            g • x = (g : G) • x := rfl
-            _ = x := trivialF2_ρ_apply_apply G g x
-        rw [hx]
-        dsimp only [x]
-        apply (trivialF2Equiv G).injective
-        simp only [map_add, AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
-        exact add_comm (Multiplicative.toAdd (α g)) (Multiplicative.toAdd (α h))⟩⟩
-
-omit [IsTopologicalGroup G] in
-/-- The underlying cochain of `evensHomCocycleAmbient`. -/
-@[simp]
-theorem coe_evensHomCocycleAmbient (U : OpenSubgroup G)
-    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    (evensHomCocycleAmbient U α hα : U.toSubgroup → (trivialF2 G).V) =
-      fun h => (trivialF2Equiv G).symm (Multiplicative.toAdd (α h)) :=
-  (rfl)
-
 omit [IsTopologicalGroup G] in
 private theorem cochainsCor1_evensTransversal (U : OpenSubgroup G) (s : G)
     (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hU : U.toSubgroup.index = 2)
@@ -188,7 +155,7 @@ private theorem cochainsCor1_evensTransversal (U : OpenSubgroup G) (s : G)
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
     cochainsCor1 G (trivialF2 G).V U.toSubgroup (evensTransversal U.toSubgroup s)
         (evensTransversal_mk U.toSubgroup s hU hs)
-        (evensHomCocycleAmbient U α hα : U.toSubgroup → (trivialF2 G).V) =
+        (evensHomCocycleAmbient U.toSubgroup α hα : U.toSubgroup → (trivialF2 G).V) =
       fun γ => (trivialF2Equiv G).symm (evensCorCochain U.toSubgroup s α γ) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   let _ : Fintype (G ⧸ U.toSubgroup) := U.toSubgroup.fintypeQuotientOfFiniteIndex
@@ -262,7 +229,7 @@ theorem explicitCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (hU : U.toSubgr
     (hα : Continuous α) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
     explicitCor1 G (trivialF2 G).V U.toSubgroup U.isOpen'
-        (evensHomCocycleAmbient U α hα : H1 U.toSubgroup (trivialF2 G).V) =
+        (evensHomCocycleAmbient U.toSubgroup α hα : H1 U.toSubgroup (trivialF2 G).V) =
       (evensCorCocycle U s α hU hs hα : H1 G (trivialF2 G).V) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   rw [explicitCor1_eq_transversal G (trivialF2 G).V U.toSubgroup
