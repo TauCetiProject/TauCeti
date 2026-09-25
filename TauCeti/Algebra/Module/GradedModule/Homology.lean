@@ -13,13 +13,10 @@ public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 Let `G` be an internal integer grading of a module `M` over a ring `R`, and let `d` be a
 square-zero endomorphism of `M`, linear over a ring `S` acting compatibly with `R`, which is
-homogeneous of some degree `r` for `G`. Then the kernel of `d` and its homology `ker d ⧸ im d`
-inherit internal gradings over `R`: the kernel and the image of `d` are homogeneous
-(`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`,
-`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`), so the grading of `M` restricts to the
-kernel and descends to its quotient by the image.
-
-The kernel grading also applies to homogeneous maps between different graded modules.
+homogeneous of some degree `r` for `G`. Then its homology `ker d ⧸ im d` inherits an internal
+grading over `R`: the kernel of `d` carries the grading `TauCeti.InternalGrading.ker`, and the
+image of `d` is homogeneous (`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`), so the
+grading descends to the quotient of the kernel by the image.
 
 The ring `S` of `d` may be larger than the ring `R` of the grading. This is the situation of a
 complex over a polynomial ring whose variables move the degree: the homogeneous pieces are then
@@ -30,13 +27,10 @@ moves every homogeneous piece of the homology by the same degree
 
 ## Main definitions
 
-* `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous linear map.
 * `TauCeti.InternalGrading.homology`: the grading of the homology of a homogeneous endomorphism.
 
 ## Main results
 
-* `TauCeti.InternalGrading.mem_ker_piece`: an element of the kernel is homogeneous exactly when it
-  is homogeneous in `M`.
 * `TauCeti.InternalGrading.mem_homology_piece_iff`: a homology class is homogeneous of degree `p`
   exactly when it is the class of a cycle of degree `p`, and
   `TauCeti.InternalGrading.homologyπ_mem_homology_piece`: the class of a homogeneous cycle is
@@ -50,39 +44,6 @@ public section
 open DirectSum
 
 namespace TauCeti.InternalGrading
-
-section
-
-variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
-  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
-  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
-  (G : InternalGrading R M) {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
-  (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
-
-include hf in
-/-- The internal grading of the kernel of a homogeneous linear map: its degree-`p` piece consists
-of the elements of the kernel lying in the degree-`p` piece of `M`. -/
-noncomputable def ker : InternalGrading R (_root_.LinearMap.ker f) where
-  piece p := (G.piece p).comap ((_root_.LinearMap.ker f).subtype.restrictScalars R)
-  isInternal := DirectSum.isInternal_comap G.piece _ _ Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p z ↦ ⟨⟨_, hf.isHomogeneous_ker p z.2⟩, rfl⟩
-
-/-- An element of the kernel of `f` is homogeneous of degree `p` exactly when it is homogeneous of
-degree `p` in `M`. -/
-@[simp]
-theorem mem_ker_piece {p : ℤ} {z : _root_.LinearMap.ker f} :
-    z ∈ (G.ker hf).piece p ↔ (z : M) ∈ G.piece p :=
-  Iff.rfl
-
-/-- Homogeneous projection in the kernel of `f` is homogeneous projection in `M`. -/
-@[simp]
-theorem coe_decompose_ker (p : ℤ) (z : _root_.LinearMap.ker f) :
-    ((decompose (G.ker hf).piece z p : _root_.LinearMap.ker f) : M) =
-      decompose G.piece (z : M) p :=
-  DirectSum.map_decompose_restrict G.piece (G.ker hf).piece
-    ((_root_.LinearMap.ker f).subtype.restrictScalars R) (fun _ _ ↦ Iff.rfl) p z
-
-end
 
 variable {R S M : Type*} [Ring R] [Ring S] [SMul R S]
   [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
