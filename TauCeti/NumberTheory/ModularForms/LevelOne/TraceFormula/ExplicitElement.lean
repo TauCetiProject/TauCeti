@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Tactic.LinearCombination
-import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
 # Popa–Zagier's explicit Hecke element
@@ -31,9 +30,6 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 
 ## Main definitions
 
-* `TauCeti.TraceFormulaMatrixModule.ofWeight n w B hw`: the element of `k[ℳₙ]` in which the class
-  of `A` has coefficient `w A + w (-A)`, for a weight `w` on integral matrices that vanishes on
-  every determinant-`n` matrix with an entry larger than `B` in absolute value.
 * `TauCeti.PopaZagier.weight M`: twelve times the coefficient of `M` in (15);
   `TauCeti.PopaZagier.weight₁`, ..., `TauCeti.PopaZagier.weight₄`: the same for `T₁`, ..., `T₄`.
 * `TauCeti.TraceFormulaMatrixModule.popaZagierElement k n`: Popa–Zagier's element of `k[ℳₙ]`,
@@ -41,8 +37,6 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 
 ## Main results
 
-* `TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`: the coefficient of the class of `A` in
-  `ofWeight n w B hw` is `w A + w (-A)`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
@@ -64,11 +58,9 @@ The weights are integers, twelve times Popa–Zagier's coefficients, so that ide
 them are statements of integer linear arithmetic. Their definitions are exposed (`@[expose]`) so
 that other modules can unfold them in such identities and evaluate them by `decide +kernel`.
 
-Elements of `k[ℳₙ]` given by a weight on integral matrices, over any semiring `k`, are built by
-`ofWeight`: the class of `A` gets `w A + w (-A)`, and a bound `B` on the entries of the
-determinant-`n` matrices of nonzero weight makes the support finite. The element
-`popaZagierElement k n` is `12⁻¹` times `ofWeight` applied to the integer weight cast to `k`; when
-`12` is invertible in `k`, for instance for `k = ℚ`, its coefficients are Popa–Zagier's.
+The element `popaZagierElement k n` is `12⁻¹` times the element
+`TauCeti.TraceFormulaMatrixModule.ofWeight` built from the integer weight cast to `k`; when `12` is
+invertible in `k`, for instance for `k = ℚ`, its coefficients are Popa–Zagier's.
 
 ## References
 
@@ -249,37 +241,6 @@ end PopaZagier
 namespace TraceFormulaMatrixModule
 
 variable {k : Type*} {n : ℤ}
-
-section Semiring
-
-variable [Semiring k]
-
-/-- The element of `k[ℳₙ]` in which the class of `A` has coefficient `w A + w (-A)`, for a weight
-`w` on integral matrices that vanishes on every determinant-`n` matrix with an entry larger than
-`B` in absolute value. Its coefficients are given by `coeff_ofWeight_mk`. -/
-noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) :
-    k[TraceFormulaMatrixModule n] :=
-  .ofCoeff <| .ofSupportFinite
-    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.1 + w (-A.1))
-      fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]) <| by
-    -- a class in the support has a representative of nonzero weight
-    refine ((FixedDetMatrices.finite_setOf_abs_le n B).image mk).subset fun x hx ↦ ?_
-    induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-    obtain h | h : w A.1 ≠ 0 ∨ w (-A.1) ≠ 0 := by
-      by_contra! h
-      simp [h] at hx
-    exacts [⟨A, hw A h, rfl⟩, ⟨-A, hw (-A) h, mk_neg A⟩]
-
-/-- The coefficient of the class of `A` in `ofWeight n w B hw` is `w A + w (-A)`. -/
-@[simp]
-theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
-    (A : TraceFormulaMatrix n) :
-    (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
-  simp [ofWeight, Finsupp.ofSupportFinite_coe]
-
-end Semiring
 
 /-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to a ring `k`,
 satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a determinant-`n` matrix whose weight
