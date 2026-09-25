@@ -40,10 +40,11 @@ by an explicit prime-power series, not merely chosen on a simply connected regio
 the logarithmic derivative of the `L`-series, whose own prime-power expansion is
 `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree`.
 
-The summability theorem assumes convergence of every local logarithm series. A zero-free
-hypothesis at every prime supplies that local convergence and is needed for the later exponential
-and holomorphy statements: for the finitely many primes with a large tail, the local power series
-may vanish inside the disk, and then its formal logarithm need not converge.
+The summability theorem proves that the outer family of values expressed by the local `tsum`s is
+summable; it does not assume that every inner series converges. The zero-free hypothesis in the
+later statements supplies convergence of every inner series: for the finitely many primes with a
+large tail, the local power series may vanish inside the disk, and then its formal logarithm need
+not converge.
 
 ## Main results
 
@@ -51,8 +52,8 @@ may vanish inside the disk, and then its formal logarithm need not converge.
   logarithm with a small tail converges to the principal logarithm of the local factor.
 * `TauCeti.EulerProductData.differentiableOn_tsum_coeff_localLogSeries_of_zeroFree`: each local
   prime-power logarithm is holomorphic on the half-plane of its zero-free disk.
-* `TauCeti.EulerProductData.summable_tsum_coeff_localLogSeries`: the local prime-power logarithms
-  are summable over the primes.
+* `TauCeti.EulerProductData.summable_tsum_coeff_localLogSeries`: the outer family of values
+  expressed by the local `tsum`s is summable over the primes.
 * `TauCeti.EulerProductData.exp_tsum_tsum_coeff_localLogSeries_eq_LSeries_of_zeroFree`: their sum
   is a logarithm of the `L`-series of the norm coefficients.
 * `TauCeti.EulerProductData.differentiableOn_tsum_tsum_coeff_localLogSeries_of_zeroFree` and
