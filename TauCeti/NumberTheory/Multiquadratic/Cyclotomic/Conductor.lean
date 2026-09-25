@@ -21,17 +21,9 @@ of `ℚ(√D)` is `|D|`. For squarefree integers `d₁, …, dₙ`, the multiqua
 `ℚ(√d₁, …, √dₙ)` lies in `ℚ(ζ_m)` exactly when the least common multiple of the
 `|fundamentalDiscriminant dᵢ|` divides `m`, so that least common multiple is its conductor.
 
-The containments are `TauCeti.Multiquadratic.mem_of_sq_eq_of_isFundamentalDiscriminant`. The
-converse is proved inside a cyclotomic field `K` of level `n` with `|D| ∣ n`. There the Gauss sum
-`g` of the quadratic character `χ_D` is a square root of `D`, and an automorphism fixes `g`
-exactly when `χ_D` is trivial on its cyclotomic character. So if `√D` lies in the level-`m`
-subfield `F`, every automorphism fixing `F` is killed by `χ_D`. By the character correspondence
-`IsCyclotomicExtension.Rat.mem_intermediateFieldEquivSubgroupChar_iff_conductor_dvd`, the
-conductor `|D|` of the primitive character `χ_D` then divides `m`. For an arbitrary field of
-characteristic zero, write the square root as a polynomial `p(ζ)` in a primitive `m`-th root of
-unity `ζ` and evaluate `p` at a primitive `m`-th root of unity in the cyclotomic field of level
-`m |D|`. Both roots have the cyclotomic polynomial as their minimal polynomial, so this
-evaluation is again a square root of `D`.
+The containment direction uses `TauCeti.Multiquadratic.mem_of_sq_eq_of_isFundamentalDiscriminant`;
+the minimality direction uses
+`IsCyclotomicExtension.Rat.mem_intermediateFieldEquivSubgroupChar_iff_conductor_dvd`.
 
 For the classical argument see D. A. Cox, *Primes of the Form x² + ny²*, §3.B, and
 K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 6.
