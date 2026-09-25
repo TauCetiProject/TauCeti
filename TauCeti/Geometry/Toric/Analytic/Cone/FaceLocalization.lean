@@ -68,6 +68,8 @@ identifies the chart of the face biholomorphically with an open subset of the ch
 * `TauCeti.Toric.contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq` and
   `TauCeti.Toric.IsRegularCone.contMDiffOn_faceAffinePointMap_comp_iff`: a map into the chart of
   the face is holomorphic exactly when its composite with the face map is.
+* `TauCeti.Toric.IsRegularCone.faceAffinePointPartialDiffeomorph`: the biholomorphism from a
+  face chart onto the open range of its localization map.
 * `TauCeti.Toric.IsRegularCone.isLocalDiffeomorph_faceAffinePointMap`: for a face of a regular
   cone, the face map is a holomorphic local diffeomorphism.
 
@@ -378,17 +380,18 @@ variable (hi : IsIntegralLattice i) {k l k' l' : ℕ}
 cone and of its face. -/
 theorem contMDiff_faceAffinePointMap (hτσ : τ.IsFaceOf σ) (hσ : IsToricCone i σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) r) (hτ : IsToricCone i τ)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
     (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
     (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω) :
     let _ := affinePointTopology g
     let _ := affinePointTopology h
     let _ := coneChartedSpace hi hσ hB κ g
-    let _ := coneChartedSpace hi hτ hB' κ' h
+    let _ := coneChartedSpace hi (hσ.of_isFaceOf hτσ) hB' κ' h
     ContMDiff 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
       (faceAffinePointMap hi hτσ) := by
   let _ := affinePointTopology g
   let _ := affinePointTopology h
+  let hτ := hσ.of_isFaceOf hτσ
   let _ := coneChartedSpace hi hσ hB κ g
   let _ := coneChartedSpace hi hτ hB' κ' h
   refine (contMDiff_iff_forall_contMDiff_apply_single hi hσ hB κ g).2 fun m ↦ ?_
@@ -401,7 +404,7 @@ is. -/
 theorem contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq (hτσ : τ.IsFaceOf σ)
     (hσ : IsToricCone i σ) (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
     (κ : ToricRay σ ≃ Fin k) (g : AddGeneratingFamily (dualSemigroup hi σ) r)
-    (hτ : IsToricCone i τ) (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ)))
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ)))
     (κ' : ToricRay τ ≃ Fin k') (h : AddGeneratingFamily (dualSemigroup hi τ) r')
     (m : dualSemigroup hi σ)
     (hm : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ)
@@ -411,15 +414,16 @@ theorem contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq (hτσ : τ.IsFace
     let _ := affinePointTopology g
     let _ := affinePointTopology h
     let _ := coneChartedSpace hi hσ hB κ g
-    let _ := coneChartedSpace hi hτ hB' κ' h
+    let _ := coneChartedSpace hi (hσ.of_isFaceOf hτσ) hB' κ' h
     ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (faceAffinePointMap hi hτσ ∘ f) t ↔
       ContMDiffOn I 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) n f t := by
   let _ := affinePointTopology g
   let _ := affinePointTopology h
+  let hτ := hσ.of_isFaceOf hτσ
   let _ := coneChartedSpace hi hσ hB κ g
   let _ := coneChartedSpace hi hτ hB' κ' h
   refine ⟨fun hf ↦ ?_, fun hf ↦
-    (contMDiff_faceAffinePointMap hi hτσ hσ hB κ g hτ hB' κ' h n).comp_contMDiffOn hf⟩
+    (contMDiff_faceAffinePointMap hi hτσ hσ hB κ g hB' κ' h n).comp_contMDiffOn hf⟩
   have hF := (contMDiffOn_iff_forall_contMDiffOn_apply_single hi hσ hB κ g).1 hf
   have hm₀ := realCharacter_eq_zero_of_inf_ker_eq hi hm
   refine (contMDiffOn_iff_forall_contMDiffOn_apply_single hi hτ hB' κ' h).2 fun u ↦ ?_
@@ -436,7 +440,7 @@ namespace IsRegularCone
 exactly when its composite with the face map into the chart of `σ` is. -/
 theorem contMDiffOn_faceAffinePointMap_comp_iff (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) r) (hτ : IsToricCone i τ)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
     (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
     (h : AddGeneratingFamily (dualSemigroup hi τ) r')
     {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
@@ -445,49 +449,104 @@ theorem contMDiffOn_faceAffinePointMap_comp_iff (hσ : IsRegularCone i σ) (hτ�
     let _ := affinePointTopology g
     let _ := affinePointTopology h
     let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
-    let _ := coneChartedSpace hi hτ hB' κ' h
+    let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
     ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (faceAffinePointMap hi hτσ ∘ f) t ↔
       ContMDiffOn I 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) n f t := by
   obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
-  exact contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq hi hτσ hσ.toIsToricCone hB κ g hτ
+  exact contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq hi hτσ hσ.toIsToricCone hB κ g
     hB' κ' h ⟨m, hm⟩ hmτ
 
-/-- For a face `τ` of a regular cone `σ`, the face map is a holomorphic local diffeomorphism from
-the chart of `τ` to the chart of `σ`.  Together with
-`TauCeti.Toric.IsRegularCone.isOpenEmbedding_faceAffinePointMap`, it identifies the chart of `τ`
-biholomorphically with an open subset of the chart of `σ`. -/
-theorem isLocalDiffeomorph_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ)
+/-- The face localization as a biholomorphism from the affine chart of `τ` onto its open image
+in the affine chart of `σ`. -/
+noncomputable def faceAffinePointPartialDiffeomorph (hσ : IsRegularCone i σ)
+    (hτσ : τ.IsFaceOf σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) r) (hτ : IsToricCone i τ)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
     (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
     (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω) :
     let _ := affinePointTopology g
     let _ := affinePointTopology h
     let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
-    let _ := coneChartedSpace hi hτ hB' κ' h
+    let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
+    PartialDiffeomorph 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ))
+      𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
+      (AffineSemigroupComplexPoint (dualSemigroup hi τ))
+      (AffineSemigroupComplexPoint (dualSemigroup hi σ)) n := by
+  let _ := affinePointTopology g
+  let _ := affinePointTopology h
+  let hτ := hσ.toIsToricCone.of_isFaceOf hτσ
+  let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
+  let _ := coneChartedSpace hi hτ hB' κ' h
+  let e := (hσ.isOpenEmbedding_faceAffinePointMap hi hτσ g h).toOpenPartialHomeomorph
+    (faceAffinePointMap hi hτσ)
+  exact
+    { toPartialEquiv := e.toPartialEquiv
+      open_source := e.open_source
+      open_target := e.open_target
+      contMDiffOn_toFun :=
+        (contMDiff_faceAffinePointMap hi hτσ hσ.toIsToricCone hB κ g hB' κ' h n).contMDiffOn
+      contMDiffOn_invFun :=
+        (contMDiffOn_faceAffinePointMap_comp_iff hi hσ hτσ hB κ g hB' κ' h).1
+          (contMDiffOn_id.congr fun y hy ↦ by
+            simpa only [Function.comp_apply, id, OpenPartialHomeomorph.invFun_eq_coe, e,
+              IsOpenEmbedding.toOpenPartialHomeomorph_apply] using e.right_inv hy) }
+
+/-- The face localization partial diffeomorphism has the whole face chart as its source. -/
+theorem faceAffinePointPartialDiffeomorph_source (hσ : IsRegularCone i σ)
+    (hτσ : τ.IsFaceOf σ)
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
+    (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω) :
+    (faceAffinePointPartialDiffeomorph hi hσ hτσ hB κ g hB' κ' h n).source = Set.univ := by
+  simp [faceAffinePointPartialDiffeomorph]
+
+/-- The target of the face localization partial diffeomorphism is the range of the face map. -/
+theorem faceAffinePointPartialDiffeomorph_target (hσ : IsRegularCone i σ)
+    (hτσ : τ.IsFaceOf σ)
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
+    (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω) :
+    (faceAffinePointPartialDiffeomorph hi hσ hτσ hB κ g hB' κ' h n).target =
+      Set.range (faceAffinePointMap hi hτσ) := by
+  simp [faceAffinePointPartialDiffeomorph]
+
+/-- The face localization partial diffeomorphism acts by restricting complex points. -/
+theorem faceAffinePointPartialDiffeomorph_apply (hσ : IsRegularCone i σ)
+    (hτσ : τ.IsFaceOf σ)
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
+    (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi τ)) :
+    faceAffinePointPartialDiffeomorph hi hσ hτσ hB κ g hB' κ' h n x =
+      faceAffinePointMap hi hτσ x := by
+  simp [faceAffinePointPartialDiffeomorph]
+
+/-- The face map is a holomorphic local diffeomorphism from the face chart to the cone chart. -/
+theorem isLocalDiffeomorph_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ)
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) r)
+    (hB' : ∀ ρ, IsPrimitiveGenerator i ρ (B' (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
+    (h : AddGeneratingFamily (dualSemigroup hi τ) r') (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := affinePointTopology h
+    let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
+    let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
     IsLocalDiffeomorph 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
       (faceAffinePointMap hi hτσ) := by
   let _ := affinePointTopology g
   let _ := affinePointTopology h
   let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
-  let _ := coneChartedSpace hi hτ hB' κ' h
-  let e := (hσ.isOpenEmbedding_faceAffinePointMap hi hτσ g h).toOpenPartialHomeomorph
-    (faceAffinePointMap hi hτσ)
-  -- The face map is a holomorphic bijection onto its open range, with holomorphic inverse.
-  let Φ : PartialDiffeomorph 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ))
-      𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) _ _ n :=
-    { toPartialEquiv := e.toPartialEquiv
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun :=
-        (contMDiff_faceAffinePointMap hi hτσ hσ.toIsToricCone hB κ g hτ hB' κ' h n).contMDiffOn
-      contMDiffOn_invFun :=
-        (contMDiffOn_faceAffinePointMap_comp_iff hi hσ hτσ hB κ g hτ hB' κ' h).1
-          (contMDiffOn_id.congr fun y hy ↦ by
-            simpa only [Function.comp_apply, id, OpenPartialHomeomorph.invFun_eq_coe, e,
-              IsOpenEmbedding.toOpenPartialHomeomorph_apply] using e.right_inv hy) }
-  -- `Φ` is the face map on its source, which is everything, by construction of `e`.
-  exact fun _ ↦ PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ Φ (by simp [Φ, e])
+  let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
+  let Φ := faceAffinePointPartialDiffeomorph hi hσ hτσ hB κ g hB' κ' h n
+  have heq : (Φ : _ → _) = faceAffinePointMap hi hτσ := by
+    funext x
+    exact faceAffinePointPartialDiffeomorph_apply hi hσ hτσ hB κ g hB' κ' h n x
+  rw [← heq]
+  exact fun x ↦ Φ.isLocalDiffeomorphAt _ _ _
+    (by rw [faceAffinePointPartialDiffeomorph_source]; exact Set.mem_univ x)
 
 end IsRegularCone
 
