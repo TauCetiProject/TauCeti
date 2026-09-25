@@ -31,6 +31,8 @@ nilpotency makes the exponential a finite sum, hence a polynomial map over any `
 * `TauCeti.DynkinType.pinnedExp_zero`: the exponential at zero is the identity matrix.
 * `TauCeti.DynkinType.pinnedExpNeg`: the uniform lowering exponential `u ↦ exp(u • f_i)`.
 * `TauCeti.DynkinType.pinnedExpNeg_zero`: its value at zero.
+* `TauCeti.DynkinType.pinnedExp_comm_of_matrix_comm`: commuting generators give commuting
+  exponentials, the group-level form of a vanishing Lie bracket.
 
 ## References
 
@@ -105,6 +107,45 @@ theorem pinnedExpNeg_zero (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.ra
   · intro k _ hk
     rw [zero_pow hk]
     simp
+
+/-! ## Commutator relations -/
+
+/-- If the simple raising generators commute as matrices, their uniform exponentials commute.
+This is the group-level reflection of a vanishing Lie bracket: when `⁅e_i, e_j⁆ = 0`, the
+corresponding root subgroups commute. -/
+theorem pinnedExp_comm_of_matrix_comm (R : Type*) [CommRing R] [Algebra ℚ R]
+    (i j : Fin t.rank) (u v : R)
+    (hcomm : ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+             ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
+             ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
+             ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)) :
+    t.pinnedExp ht R i u * t.pinnedExp ht R j v =
+      t.pinnedExp ht R j v * t.pinnedExp ht R i u := by
+  unfold pinnedExp
+  -- Expand both products as double sums
+  rw [Finset.sum_mul_sum, Finset.sum_mul_sum]
+  -- Swap summation order on the left to match the right
+  rw [Finset.sum_comm]
+  apply Finset.sum_congr rfl
+  intro l _
+  apply Finset.sum_congr rfl
+  intro k _
+  -- Term-wise: (c_k • A^k) * (d_l • B^l) = (d_l • B^l) * (c_k • A^k)
+  -- Scalars commute (commutative ring), matrices commute by hypothesis
+  let Ei : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ := (t.lieBasis ht).e i
+  let Ej : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ := (t.lieBasis ht).e j
+  have hmat : ((Ei ^ k).map (algebraMap ℚ R)) * ((Ej ^ l).map (algebraMap ℚ R)) =
+      ((Ej ^ l).map (algebraMap ℚ R)) * ((Ei ^ k).map (algebraMap ℚ R)) := by
+    rw [← Matrix.map_mul, ← Matrix.map_mul]
+    congr 1
+    have hcomm' : Commute Ei Ej := hcomm
+    exact (hcomm'.pow_pow k l).eq
+  -- Distribute scalars: (c • A) * (d • B) = (c * d) • (A * B)
+  simp only [smul_mul_assoc, mul_smul_comm, smul_smul]
+  -- Use matrix commutativity to align the matrix factors
+  rw [hmat]
+  -- Now both sides have (B^l * A^k); scalars commute
+  rw [mul_comm (u ^ k * _) (v ^ l * _)]
 
 end
 
