@@ -60,11 +60,7 @@ by the geometric connectedness and reducedness base-change modules.
 
 ## References
 
-The first three are the compatibilities asked for by the **Base change preserves central
-simplicity, then is a homomorphism** bullet of Layer 6 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
-See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2. The final
-comparison supplies base-change infrastructure for the ReductiveGroups roadmap.
+P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2.
 -/
 
 public section
@@ -78,7 +74,7 @@ universe u v w x
 /-- Pairing the scalar factor against an `R`-linear functional commutes with distributing scalar
 extension over a tensor product. -/
 theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w} {N : Type x}
-    [CommRing R] [CommRing A] [Algebra R A] [AddCommMonoid M] [Module R M]
+    [CommSemiring R] [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] (l : A →ₗ[R] R) (y : A ⊗[R] M) (n : N) :
     TensorProduct.lid R (M ⊗[R] N) (l.rTensor (M ⊗[R] N)
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
@@ -99,11 +95,8 @@ variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
 /-- **Base change distributes over the tensor product**: extending `A ⊗[K] B` to `L` is the same as
 extending each factor and tensoring over `L`.
 
-This is Mathlib's linear equivalence `TensorProduct.AlgebraTensorModule.distribBaseChange` upgraded
-to an algebra equivalence; the multiplicativity is checked on pure tensors, where both sides are
-`(l₁ * l₂) ⊗ₜ (a₁ * a₂)` tensored with `1 ⊗ₜ (b₁ * b₂)`. Nothing beyond the displayed
-commutative-semiring and algebra hypotheses on `K`, `L`, `A` and `B` is assumed: in particular
-neither factor has to be central or simple. -/
+Neither factor has to be commutative, central, or simple. The underlying linear equivalence is
+`TensorProduct.AlgebraTensorModule.distribBaseChange`. -/
 def baseChangeTensorAlgEquiv :
     L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B) :=
   Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
@@ -162,15 +155,8 @@ variable (M : Type*) [CommSemiring M] [Algebra K M] [Algebra L M] [IsScalarTower
 /-- **Base change composes in stages**: for a tower `K → L → M`, extending `A` first to `L` and
 then to `M` is extending it to `M` in one step, `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A`.
 
-The underlying map is Mathlib's linear equivalence
-`TensorProduct.AlgebraTensorModule.cancelBaseChange`, which absorbs `L` into `M`; the content added
-here is that it is multiplicative. That is checked in the easy direction, on the inverse
-`M ⊗[K] A → M ⊗[L] (L ⊗[K] A)`, whose pure tensors are the `m ⊗ₜ[K] a` with `a` in `A` itself, so
-that `LinearMap.map_mul_of_map_mul_tmul` reduces it to `simp`; this is how Mathlib's
-`Algebra.TensorProduct.cancelBaseChange` is built.
-
-That equivalence of Mathlib's is this one under the extra hypothesis that `A` is commutative, which
-the central simple algebras this serves are not. -/
+The underlying linear equivalence is `TensorProduct.AlgebraTensorModule.cancelBaseChange`.
+Unlike `Algebra.TensorProduct.cancelBaseChange`, this allows noncommutative `A`. -/
 def baseChangeTowerAlgEquiv : M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A :=
   (AlgEquiv.ofLinearEquiv (_root_.TensorProduct.AlgebraTensorModule.cancelBaseChange K L M M A).symm
     (by simp [Algebra.TensorProduct.one_def])
@@ -189,14 +175,14 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
 
 end Tower
 
-section CommTower
+section RightTower
 
 variable (K L A M : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
-  [CommSemiring A] [Algebra K A] [CommSemiring M] [Algebra K M] [Algebra L M]
+  [Semiring A] [Algebra K A] [CommSemiring M] [Algebra K M] [Algebra L M]
   [IsScalarTower K L M]
 
 /-- Successive scalar extension, with tensor factors in coordinate-ring order, agrees with direct
-scalar extension. -/
+scalar extension, also for noncommutative `A`. -/
 noncomputable def baseChangeTowerRingEquiv :
     ((L ⊗[K] A) ⊗[L] M) ≃+* (A ⊗[K] M) :=
   (Algebra.TensorProduct.comm L (L ⊗[K] A) M).toRingEquiv.trans
@@ -217,7 +203,7 @@ theorem baseChangeTowerRingEquiv_symm_tmul (a : A) (m : M) :
       (1 ⊗ₜ[K] a) ⊗ₜ[L] m := by
   simp [baseChangeTowerRingEquiv]
 
-end CommTower
+end RightTower
 
 end Algebra.TensorProduct
 
@@ -293,12 +279,8 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
     Algebra.TensorProduct.map (AlgHom.id K L) f
         (Algebra.TensorProduct.map (σ : L →ₐ[K] L) (AlgHom.id K A) x) =
       σ • Algebra.TensorProduct.map (AlgHom.id K L) f x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp only [map_zero, smul_zero]
-  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
-  | tmul a x =>
-      simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, smul_tmul]
-      rfl
+  simp only [smul_def, Algebra.TensorProduct.congr_apply, AlgEquiv.refl_toAlgHom,
+    ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp, AlgHom.id_comp, AlgHom.comp_id]
 
 end ScalarAut
 
