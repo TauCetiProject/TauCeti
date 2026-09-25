@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
@@ -21,10 +22,13 @@ The proof combines the Chinese remainder theorem
 `IsLocalization.AtPrime.equivQuotMaximalIdealPow` between a prime-power quotient and the
 corresponding quotient after localization.
 
-## Main result
+## Main results
 
 * `TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow`: simultaneous approximation of
   finitely many classes in localized prime-power quotients.
+* `TauCeti.DedekindDomain.exists_valuation_sub_le`: the same in valuation form — finitely many
+  elements of the fraction field, each integral at its prime, are simultaneously approximated
+  `v`-adically by one element of the ring.
 
 This is the finite approximation input for the local-to-global patching arguments in
 Silverman, *The Arithmetic of Elliptic Curves*, Chapter VIII, Section 8.
@@ -65,6 +69,39 @@ theorem exists_eq_mod_localized_prime_pow
   rw [← IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk (v i).asIdeal
     (Localization.AtPrime (v i).asIdeal) (n i) a, ha i]
   exact Equiv.apply_symm_apply _ (x i)
+
+/-- **Finite approximation in valuation form.**
+
+For a finite set `S` of height-one primes and elements `x v` of the fraction field with
+`v (x v) ≤ 1` for `v ∈ S`, a single `a : R` satisfies `v (a - x v) ≤ exp (-n v)` for every
+`v ∈ S`. Unlike `exists_eq_mod_localized_prime_pow`, the targets are elements of `K` and the
+approximation is read through the `v`-adic valuations, the form in which local data over the
+fraction field is patched. -/
+theorem exists_valuation_sub_le {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+    (S : Finset (HeightOneSpectrum R)) (n : HeightOneSpectrum R → ℕ)
+    (x : HeightOneSpectrum R → K) (hx : ∀ v ∈ S, v.valuation K (x v) ≤ 1) :
+    ∃ a : R, ∀ v ∈ S,
+      v.valuation K (algebraMap R K a - x v) ≤ WithZero.exp (-(n v : ℤ)) := by
+  -- First approximate each `x v` by an element of `R`, one prime at a time.
+  have hloc (v : S) : ∃ b : R,
+      v.1.valuation K (algebraMap R K b - x v) ≤ WithZero.exp (-(n v : ℤ)) := by
+    obtain ⟨b, hb⟩ := v.1.exists_valuation_sub_lt_of_integer (hx v v.2)
+      (Units.mk0 (WithZero.exp (-(n v : ℤ))) WithZero.exp_ne_zero)
+    exact ⟨b, hb.le⟩
+  choose b hb using hloc
+  -- Then patch the finitely many approximations together by the Chinese remainder theorem.
+  obtain ⟨a, ha⟩ := IsDedekindDomain.exists_forall_sub_mem_ideal (s := S)
+    (fun v : HeightOneSpectrum R ↦ v.asIdeal) n (fun v _ ↦ v.prime)
+    (fun v _ w _ hvw h ↦ hvw (HeightOneSpectrum.ext h)) b
+  refine ⟨a, fun v hv ↦ ?_⟩
+  have hab : v.valuation K (algebraMap R K (a - b ⟨v, hv⟩)) ≤ WithZero.exp (-(n v : ℤ)) := by
+    rw [HeightOneSpectrum.valuation_of_algebraMap, HeightOneSpectrum.intValuation_le_pow_iff_mem]
+    exact ha v hv
+  rw [map_sub] at hab
+  have hsplit : algebraMap R K a - x v = (algebraMap R K a - algebraMap R K (b ⟨v, hv⟩)) +
+      (algebraMap R K (b ⟨v, hv⟩) - x v) := by ring
+  rw [hsplit]
+  exact Valuation.map_add_le _ hab (hb ⟨v, hv⟩)
 
 end TauCeti.DedekindDomain
 
