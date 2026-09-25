@@ -48,6 +48,9 @@ two.
   two arc lengths.
 * `TauCeti.GridRectangle.squares_eq_coveredSquares`: the covered squares are the region
   `GridRectangle.squares` that the marking-avoidance predicate tests.
+* `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval`: X-avoidance
+  transfers across a column swap to a rectangle whose columns are a subinterval of an
+  X-avoiding rectangle's columns and whose rows are contained in its rows.
 
 ## References
 
@@ -205,6 +208,45 @@ theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns (R : Grid
     apply hdisjoint
     · exact (R.mem_coveredSquares_swap_iff_of_coveredColumns h p).mpr hp
     · exact hpX
+
+/-- X-avoidance transfers across a column swap for a rectangle whose columns form a subinterval
+of an X-avoiding rectangle's columns (with rows contained in the original's), provided the
+swapped-out column is not covered.
+
+For `(c, r')` in `R'`'s squares with `(c, r')` in the swapped X-set:
+- if `c = b`, the swap sends it to `(a, r')`, which lies in `R`'s squares (using `a ∈ cIco a r`)
+  and contradicts `R`'s X-avoidance;
+- otherwise the swap fixes `c` (as `c ≠ a` by `ha_not_mem` and `c ≠ b`), and `(c, r')` lies in
+  `R`'s squares via the column subset, again contradicting `R`'s X-avoidance. -/
+theorem disjoint_coveredSquares_XSet_swapColumns_of_subinterval
+    (R R' : GridRectangle n) {a b r : Fin n}
+    (hRcol : R.coveredColumns = Grid.cIco a r)
+    (hR'col : R'.coveredColumns = Grid.cIco b r)
+    (hR'row : R'.coveredRows ⊆ R.coveredRows)
+    (hX : Disjoint R.coveredSquares G.XSet)
+    (har : a ≠ r)
+    (ha_not_mem : a ∉ Grid.cIco b r)
+    (hsub : Grid.cIco b r ⊆ Grid.cIco a r) :
+    Disjoint R'.coveredSquares (G.swapColumns a b).XSet := by
+  rw [Finset.disjoint_left]
+  rintro ⟨c, r'⟩ hc hx
+  rw [GridRectangle.mem_coveredSquares, hR'col] at hc
+  obtain ⟨hc_col, hc_row⟩ := hc
+  rw [G.mem_XSet_swapColumns] at hx
+  by_cases hcb : c = b
+  · subst hcb
+    rw [Equiv.swap_apply_right] at hx
+    have hmem : (a, r') ∈ R.coveredSquares := by
+      rw [GridRectangle.mem_coveredSquares, hRcol]
+      exact ⟨Grid.left_mem_cIco har, hR'row hc_row⟩
+    exact (Finset.disjoint_left.mp hX) hmem hx
+  · have hca : c ≠ a := fun h => ha_not_mem (h ▸ hc_col)
+    have hswap : Equiv.swap a b c = c := Equiv.swap_apply_of_ne_of_ne hca hcb
+    rw [hswap] at hx
+    have hmem : (c, r') ∈ R.coveredSquares := by
+      rw [GridRectangle.mem_coveredSquares, hRcol]
+      exact ⟨hsub hc_col, hR'row hc_row⟩
+    exact (Finset.disjoint_left.mp hX) hmem hx
 
 end GridDiagram
 

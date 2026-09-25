@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap
-public import TauCeti.KnotTheory.Grid.Commutation.OverlapColumns
-public import TauCeti.KnotTheory.Grid.Commutation.OverlapXAvoid
-public import TauCeti.KnotTheory.Grid.Commutation.OverlapBranch2
 
 /-!
 # Countedness pieces for the overlap recut
@@ -22,8 +19,9 @@ In Branch 1 of the recut (`E.second.left = D.rectangle.left`,
 `E.second.right = D.rectangle.right`), the recut rectangle retains the original rectangle's
 sides. Its X-avoidance in the column-swapped diagram follows from the original rectangle's
 X-avoidance via the covered-columns transfer
-(`disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns`), using
-`(Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm`.
+(`disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns`), using the covered-columns
+iff `branch1_recut_rectangle_coveredColumns_iff` (in
+`TauCeti.KnotTheory.Grid.Commutation.Overlap`).
 
 ## Part B: Branch-2 pentagon X-avoidance
 
@@ -35,8 +33,15 @@ rectangle's and pentagon's X-avoidance over the relevant row intervals.
 
 * `TauCeti.GridRectanglePentagonDecomposition.branch1_recut_rectangle_X_avoidance_swap`:
   Branch-1 recut rectangle avoids X in the swapped diagram.
+* `TauCeti.GridRectanglePentagonDecomposition.branch2_X_not_mem_rectangle_rows`: the
+  X-marking of the replaced grid line avoids the original rectangle's row interval.
+* `TauCeti.GridRectanglePentagonDecomposition.branch2_X_not_mem_pentagon_rows`: the
+  X-marking avoids the original pentagon's row interval below the turn.
 * `TauCeti.GridRectanglePentagonDecomposition.branch2_pentagon_strip_X_avoidance`:
   Branch-2 recut pentagon extra strip avoids X.
+
+Each transfer lemma takes only the component membership its proof uses (the rectangle's
+or the pentagon's X-avoidance), not the full counted decomposition.
 -/
 
 public section
@@ -54,43 +59,14 @@ local notation "b" => finRotate n C.column
 ## Part A: Branch-1 recut rectangle X-avoidance in the swapped diagram
 -/
 
-/-- In Branch 1, the recut rectangle's covered columns coincide with the original rectangle's,
-so the covered-columns iff from `OverlapColumns` applies. -/
-theorem branch1_recut_rectangle_coveredColumns_iff
-    (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hcommon : D.rectangle.left = D.pentagon.left)
-    (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (R' : GridRectangle n)
-    (hR'col : R'.coveredColumns = Grid.cIco D.rectangle.left D.rectangle.right) :
-    C.column ∈ R'.coveredColumns ↔ b ∈ R'.coveredColumns := by
-  rw [hR'col]
-  have hl : D.rectangle.left ≠ b := by
-    rw [hcommon]
-    exact D.pentagon.left_ne
-  have hr : D.rectangle.right ≠ b := by
-    have hpen_right : D.pentagon.right = b := D.pentagon.right_eq
-    have hne : D.toRectangleDecomposition.first.right ≠
-        D.toRectangleDecomposition.second.right := by
-      have hcommon' : D.toRectangleDecomposition.first.left =
-          D.toRectangleDecomposition.second.left := by
-        simpa only [D.toRectangleDecomposition_first_left,
-          D.toRectangleDecomposition_second_left] using hcommon
-      intro hright
-      apply D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hone
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon', hright]
-    rw [D.toRectangleDecomposition_first_right, D.toRectangleDecomposition_second_right] at hne
-    rw [hpen_right] at hne
-    exact hne
-  exact (Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm
-
 /-- Branch-1 recut rectangle X-avoidance transfers to the column-swapped diagram.
 
 When the recut rectangle `R'` has the same covered squares as the original rectangle `R`
 (which is X-avoiding), and the covered-columns iff holds, the transfer lemma gives
-X-avoidance in the swapped diagram. -/
+X-avoidance in the swapped diagram. Only the rectangle's X-avoidance is used. -/
 theorem branch1_recut_rectangle_X_avoidance_swap
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hD : D ∈ G.rectanglePentagonDecompositions C x z)
+    (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (R' : GridRectangle n)
@@ -98,8 +74,7 @@ theorem branch1_recut_rectangle_X_avoidance_swap
     (hR'col : R'.coveredColumns = Grid.cIco D.rectangle.left D.rectangle.right) :
     Disjoint R'.coveredSquares (G.swapColumns C.column b).XSet := by
   have hX : Disjoint D.rectangle.toGridRectangle.coveredSquares G.XSet :=
-    ((G.mem_unblockedRectangles D.rectangle).mp
-      ((G.mem_rectanglePentagonDecompositions C D).mp hD).1).2
+    ((G.mem_unblockedRectangles D.rectangle).mp hrect).2
   have hiff := D.branch1_recut_rectangle_coveredColumns_iff hcommon hone R' hR'col
   have htrans := (G.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns R' hiff).mpr
   apply htrans
@@ -117,15 +92,6 @@ combining the original rectangle's X-avoidance (over `cIco (x l) (x r₁)`) with
 pentagon's X-avoidance (over `cIco (x r₁) s`), where `r₁ = D.rectangle.right`.
 -/
 
-/-- Interval nesting: a point in `cIco A B` with `B` strictly inside `cIco A C` lies in
-`cIco A C`. This is the `cIco`-membership version of `cIco_subset_of_mem_cIoo`. -/
-theorem Grid.cIco_subset_cIco_of_mem_cIco {n : ℕ} {A B C s : Fin n}
-    (hmem : s ∈ Grid.cIco A B) (hB : B ∈ Grid.cIoo A C) :
-    s ∈ Grid.cIco A C := by
-  have hunion := Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hB
-  rw [← hunion]
-  exact Finset.mem_union.mpr (Or.inl hmem)
-
 namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {G : GridDiagram n} {C : GridDiagram.ColumnCommutationData G}
@@ -140,12 +106,11 @@ column, so `(b, G.X b)` would lie in the covered squares if `G.X b` were in the 
 contradicting disjointness. -/
 theorem branch2_X_not_mem_rectangle_rows
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hD : D ∈ G.rectanglePentagonDecompositions C x z)
+    (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
     (hbranch : b ∈ Grid.cIoo D.rectangle.left D.rectangle.right) :
     G.X b ∉ Grid.cIco (x D.rectangle.left) (x D.rectangle.right) := by
   have hX : Disjoint D.rectangle.toGridRectangle.coveredSquares G.XSet :=
-    ((G.mem_unblockedRectangles D.rectangle).mp
-      ((G.mem_rectanglePentagonDecompositions C D).mp hD).1).2
+    ((G.mem_unblockedRectangles D.rectangle).mp hrect).2
   intro hmem
   have hb_col : b ∈ D.rectangle.toGridRectangle.coveredColumns := by
     rw [GridRectangle.coveredColumns_def, GridRectangleBetween.toGridRectangle_left,
@@ -168,12 +133,11 @@ Since `D.pentagon.bottom = x D.rectangle.right` (via `D.middle` and `hcommon`), 
 of the pentagon gives the result. -/
 theorem branch2_X_not_mem_pentagon_rows
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hD : D ∈ G.rectanglePentagonDecompositions C x z)
+    (hpent : D.pentagon ∈ G.pentagons C D.middle z)
     (hcommon : D.rectangle.left = D.pentagon.left) :
     G.X b ∉ Grid.cIco (x D.rectangle.right) C.turnRow := by
   have hX : Disjoint D.pentagon.coveredSquares G.XSet :=
-    ((G.mem_pentagons D.pentagon).mp
-      ((G.mem_rectanglePentagonDecompositions C D).mp hD).2).2
+    ((G.mem_pentagons D.pentagon).mp hpent).2
   have hbot : D.pentagon.bottom = x D.rectangle.right := by
     simp only [GridRectangleBetween.bottom_def, hcommon.symm,
       D.rectangle.target_eq_swapColumns, GridState.swapColumns_apply,
@@ -195,19 +159,20 @@ its bottom and the turn row), the two row-interval avoidances combine to cover
 `cIco (x l) s`. -/
 theorem branch2_pentagon_strip_X_avoidance
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hD : D ∈ G.rectanglePentagonDecompositions C x z)
+    (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
+    (hpent : D.pentagon ∈ G.pentagons C D.middle z)
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hbranch : b ∈ Grid.cIoo D.rectangle.left D.rectangle.right)
     (hcyc : x D.rectangle.right ∈ Grid.cIoo (x D.rectangle.left) C.turnRow) :
     G.X b ∉ Grid.cIco (x D.rectangle.left) C.turnRow := by
-  have hrect := D.branch2_X_not_mem_rectangle_rows hD hbranch
-  have hpent := D.branch2_X_not_mem_pentagon_rows hD hcommon
+  have hrect_avoid := D.branch2_X_not_mem_rectangle_rows hrect hbranch
+  have hpent_avoid := D.branch2_X_not_mem_pentagon_rows hpent hcommon
   intro hmem
   have hunion := Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcyc
   rw [← hunion] at hmem
   rcases Finset.mem_union.mp hmem with h | h
-  · exact hrect h
-  · exact hpent h
+  · exact hrect_avoid h
+  · exact hpent_avoid h
 
 end GridRectanglePentagonDecomposition
 

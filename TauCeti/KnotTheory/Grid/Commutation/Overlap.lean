@@ -41,10 +41,18 @@ must distinguish the two cases.
   decomposition retains the generic recut relation, including its covered-square repartition.
 * `TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutLeftEqLeft`: the
   product of the two underlying rectangle weights is preserved.
+* `TauCeti.GridRectanglePentagonDecomposition.branch1_recut_rectangle_coveredColumns_iff`: in
+  Branch 1 the recut rectangle covers the commuted column exactly when it covers the replaced
+  grid line, giving the counted equivalence used to move its X-avoidance to the swapped diagram.
 * `TauCeti.GridRectanglePentagonDecomposition.isRecutOfRightEqRight_recut`: the generic recut
   is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
   exactly one of the two new rectangles has the original pentagon's terminal side.
+
+These are the recut/repartition combinatorics and weight transfers for the pentagon-counting
+commutation chain map of `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
+"Invariance over 𝔽₂" ("Commutation: pentagon-counting chain maps with hexagon-counting
+homotopies").
 
 ## References
 
@@ -365,6 +373,45 @@ theorem OMonomial_mul_OMonomial_recutLeftEqLeft
     GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using h
+
+section CoveredColumns
+
+variable {G : GridDiagram n} {C : GridDiagram.ColumnCommutationData G}
+
+local notation "b" => finRotate n C.column
+
+/-- In Branch 1, the recut rectangle's covered columns coincide with the original rectangle's,
+so the covered-columns transfer applies: the recut rectangle covers the commuted column
+exactly when it covers the replaced grid line. This is the counted equivalence used to move
+X-avoidance of the recut rectangle to the column-swapped diagram. -/
+theorem branch1_recut_rectangle_coveredColumns_iff
+    (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (R' : GridRectangle n)
+    (hR'col : R'.coveredColumns = Grid.cIco D.rectangle.left D.rectangle.right) :
+    C.column ∈ R'.coveredColumns ↔ b ∈ R'.coveredColumns := by
+  rw [hR'col]
+  have hl : D.rectangle.left ≠ b := by
+    rw [hcommon]
+    exact D.pentagon.left_ne
+  have hr : D.rectangle.right ≠ b := by
+    have hpen_right : D.pentagon.right = b := D.pentagon.right_eq
+    have hne : D.toRectangleDecomposition.first.right ≠
+        D.toRectangleDecomposition.second.right := by
+      have hcommon' : D.toRectangleDecomposition.first.left =
+          D.toRectangleDecomposition.second.left := by
+        simpa only [D.toRectangleDecomposition_first_left,
+          D.toRectangleDecomposition_second_left] using hcommon
+      intro hright
+      apply D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hone
+      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon', hright]
+    rw [D.toRectangleDecomposition_first_right, D.toRectangleDecomposition_second_right] at hne
+    rw [hpen_right] at hne
+    exact hne
+  exact (Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm
+
+end CoveredColumns
 
 end GridRectanglePentagonDecomposition
 
