@@ -67,11 +67,11 @@ theorem dist_centroid_le (hs : s.Nonempty) {q : P} {r : ℝ} (h : ∀ i ∈ s, d
     _ = r := by
       rw [← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hs.card_pos.ne'), one_mul]
 
-/-- If the cross-distances between a family and a nonempty subfamily are at most `d`, the
-centroids are at distance at most `(1 - #t / #s) * d`. In particular, the bound is zero when
+/-- If the distances from points outside a nonempty subfamily to points inside it are at most `d`,
+the centroids are at distance at most `(1 - #t / #s) * d`. In particular, the bound is zero when
 the two index sets agree. -/
-theorem dist_centroid_centroid_le_of_subset {d : ℝ}
-    (hd : ∀ i ∈ s, ∀ j ∈ t, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
+theorem dist_centroid_centroid_le_of_subset [DecidableEq ι] {d : ℝ}
+    (hd : ∀ i ∈ s \ t, ∀ j ∈ t, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
     dist (t.centroid ℝ p) (s.centroid ℝ p) ≤ (1 - (#t : ℝ) / #s) * d := by
   classical
   have hs := ht.mono hts
@@ -84,7 +84,7 @@ theorem dist_centroid_centroid_le_of_subset {d : ℝ}
     rw [← centroid_def, vsub_self] at h
     simp only [centroidWeights_apply, ← smul_sum] at h
     exact (smul_eq_zero.mp h).resolve_left (inv_ne_zero (by exact_mod_cast ht.card_pos.ne'))
-  have hdist : ∀ i ∈ s, dist (p i) (t.centroid ℝ p) ≤ d := fun i hi => by
+  have hdist : ∀ i ∈ s \ t, dist (p i) (t.centroid ℝ p) ≤ d := fun i hi => by
     rw [dist_comm]
     exact dist_centroid_le ht fun j hj => by simpa [dist_comm] using hd i hi j hj
   calc
@@ -101,17 +101,20 @@ theorem dist_centroid_centroid_le_of_subset {d : ℝ}
     _ ≤ (#s : ℝ)⁻¹ * (#(s \ t) * d) := by
       gcongr
       simpa using sum_le_card_nsmul (s \ t) (fun i => dist (p i) (t.centroid ℝ p)) d
-        (fun i hi => hdist i (mem_sdiff.mp hi).1)
+        hdist
     _ = (1 - (#t : ℝ) / #s) * d := by
       rw [card_sdiff_of_subset hts, Nat.cast_sub (card_le_card hts)]
       field_simp
 
-/-- If `j ∈ s` and the points `p i`, `i ∈ s`, are at distance at most `d` from `p j`, then the
-centroid lies within `(1 - 1 / #s) * d` of `p j`. -/
-theorem dist_centroid_apply_le {d : ℝ} {j : ι} (hd : ∀ i ∈ s, dist (p i) (p j) ≤ d)
+/-- If `j ∈ s` and the other points `p i`, `i ∈ s.erase j`, are at distance at most `d` from `p j`,
+then the centroid lies within `(1 - 1 / #s) * d` of `p j`. -/
+theorem dist_centroid_apply_le [DecidableEq ι] {d : ℝ} {j : ι}
+    (hd : ∀ i ∈ s.erase j, dist (p i) (p j) ≤ d)
     (hj : j ∈ s) : dist (s.centroid ℝ p) (p j) ≤ (1 - (#s : ℝ)⁻¹) * d := by
   have h := dist_centroid_centroid_le_of_subset (t := {j})
-    (fun i hi k hk => by simpa only [mem_singleton.mp hk] using hd i hi)
+    (fun i hi k hk => by
+      have hi' : i ∈ s.erase j := by simpa only [sdiff_singleton_eq_erase] using hi
+      simpa only [mem_singleton.mp hk] using hd i hi')
     (singleton_subset_iff.mpr hj) (singleton_nonempty j)
   simpa [dist_comm] using h
 
