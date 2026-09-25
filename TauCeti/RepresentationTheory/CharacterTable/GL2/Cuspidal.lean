@@ -332,6 +332,7 @@ virtual characters built from nontrivial additive characters agree exactly when 
 characters of `Eˣ` lie in the same orbit. Classically it is this indexing that the construction
 of the discrete series rests on; that these virtual characters *are* the characters of the
 cuspidal representations is not established here. -/
+@[simp]
 theorem GL2CuspidalVirtualCharacter_eq_iff (θ θ' : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :
     GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ' ↔

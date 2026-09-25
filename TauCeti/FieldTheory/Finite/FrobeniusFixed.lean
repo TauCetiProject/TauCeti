@@ -163,7 +163,11 @@ variable [Field L] [Algebra K L]
 /-- **In a quadratic extension the `q`-power map on units is an involution**, as an equality of
 monoid homomorphisms `Lˣ →* Lˣ`.  This is
 `TauCeti.FiniteField.units_pow_natCard_pow_natCard` read at the level of the maps themselves,
-the form in which it cancels against a character `Lˣ →* M` precomposed with the `q`-power map. -/
+the form in which it cancels against a character `Lˣ →* M` precomposed with the `q`-power map.
+
+As for its pointwise forms, this is deliberately not a simp lemma: in a context with a `Fintype K`
+instance, `Nat.card K` is not in simp normal form, so the exponent on the left-hand side here never
+survives simp normalization. -/
 theorem units_powMonoidHom_comp_powMonoidHom (h2 : Module.finrank K L = 2) :
     (powMonoidHom (Nat.card K) : Lˣ →* Lˣ).comp (powMonoidHom (Nat.card K)) = MonoidHom.id Lˣ :=
   MonoidHom.ext fun a => units_pow_natCard_pow_natCard h2 a
