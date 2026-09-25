@@ -142,6 +142,17 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertIn('--ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR"', run)
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
 
+    def test_empty_repair_pr_exception_covers_dispatched_rebuilds(self):
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
+        (job,) = [j for j in wf["jobs"].values()
+                  if any("Build exact candidate under bwrap" in s.get("name", "")
+                         for s in j.get("steps", []))]
+        run = next(s["run"] for s in job["steps"] if s.get("name", "").startswith("Scope guard"))
+        self.assertIn('"workflow_dispatch" ]; then', run)
+        self.assertIn("[.head.ref, .head.repo.full_name, .user.login]", run)
+        self.assertIn('[[ "$PR_HEAD_REF" == lint-repair/* ]]', run)
+        self.assertIn('[ "$PR_USER" = "tauceti-review-bot[bot]" ]', run)
+
     def test_only_the_full_lint_label_rebuilds(self):
         # pr-build does not run on label changes; a separate workflow dispatches it for full-lint.
         pr_build = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
