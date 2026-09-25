@@ -207,11 +207,6 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
 @[reassoc (attr := simp)]
-lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
-    P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
-  (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
-
-@[reassoc (attr := simp)]
 lemma singularCohomologyπ_comp_singularCohomologyMap (n : ℕ) :
     P.singularCohomologyπ R k M n ≫ TopCat.singularCohomologyMap P.map n = 0 := by
   rw [← HomologicalComplex.homologyMap_comp, (P.singularCochainComplexShortComplex R k M).zero,
@@ -224,7 +219,8 @@ lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m
 
 /-- Exactness at relative cohomology: `Hⁿ(A) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X)` is exact for `n + 1 = m`. -/
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
-    (ShortComplex.mk _ _ (P.singularCohomologyδ_comp_singularCohomologyπ R k M n m h)).Exact :=
+    (ShortComplex.mk _ _
+      ((P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa))).Exact :=
   (P.shortExact_singularCochainComplexShortComplex R k M).homology_exact₁ n m (by simpa)
 
 /-- The map from relative to absolute zeroth singular cohomology is a monomorphism. -/
