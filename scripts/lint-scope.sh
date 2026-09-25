@@ -13,7 +13,9 @@
 #   GH_TOKEN, REPO   GitHub API access and the repository
 #   EVENT            pull_request_target | workflow_dispatch | merge_group | push
 #   NUM              the PR number (pull_request_target, workflow_dispatch)
-#   BASE, HEAD       commit SHAs whose diff is the change (merge_group, push)
+#   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
+#                    the exact head being built, so the scope is bound to that immutable commit
+#   HEAD_REPO        for a PR, the head repository (owner/name), which may be a fork
 # Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
 # `LINT_ONLY_MODULES=` is. It reads only GitHub API metadata, never candidate files.
@@ -34,9 +36,15 @@ full() {
 case "$EVENT" in
   pull_request_target|workflow_dispatch)
     [[ "${NUM:-}" =~ ^[0-9]+$ ]] || full "no PR number"
+    [[ "${BASE:-}" =~ ^[0-9a-f]{40}$ ]] || full "no base commit"
+    [[ "${HEAD:-}" =~ ^[0-9a-f]{40}$ ]] || full "no head commit"
+    [[ "${HEAD_REPO:-}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || full "no head repository"
     prs="$NUM"
-    files=$(gh api --paginate "repos/$REPO/pulls/$NUM/files?per_page=100" \
-      --jq '.[] | [.status, .filename] | @tsv')
+    # Compare the exact commits being built, not the PR's current file list, which can describe a
+    # different head (a push while queued) or base (a retarget).
+    compare=$(gh api "repos/$REPO/compare/$BASE...${HEAD_REPO%%/*}:$HEAD")
+    [ "$(jq '.files | length' <<<"$compare")" -lt 300 ] || full "the compare API's 300-file cap"
+    files=$(jq -r '.files[] | [.status, .filename] | @tsv' <<<"$compare")
     ;;
   merge_group|push)
     [[ "${BASE:-}" =~ ^[0-9a-f]{40}$ && ! "$BASE" =~ ^0+$ ]] || full "no base commit"

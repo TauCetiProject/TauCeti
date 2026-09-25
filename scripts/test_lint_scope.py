@@ -64,31 +64,46 @@ class LintScopeTest(unittest.TestCase):
                 return None
             return pathlib.Path(setting.split("=", 1)[1]).read_text().split()
 
+    PR_ENV = {"EVENT": "pull_request_target", "NUM": "12", "BASE": SHA_A, "HEAD": SHA_B,
+              "HEAD_REPO": "fork/r"}
+    PR_COMPARE = f"repos/o/r/compare/{SHA_A}...fork:{SHA_B}"
+
     def test_pull_request_lints_changed_tauceti_modules(self):
+        # The scope comes from comparing the exact commits being built, across the fork.
         modules = self.run_scope(
-            {"EVENT": "pull_request_target", "NUM": "12"},
-            {"repos/o/r/pulls/12/files": [f("modified", "TauCeti/A/B.lean"),
-                                          f("added", "TauCeti/C.lean"),
-                                          f("renamed", "TauCeti/D'.lean"),
-                                          f("removed", "TauCeti/Gone.lean"),
-                                          f("modified", "README.md"),
-                                          f("modified", "TauCeti/notes.md")],
+            self.PR_ENV,
+            {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A/B.lean"),
+                                         f("added", "TauCeti/C.lean"),
+                                         f("renamed", "TauCeti/D'.lean"),
+                                         f("removed", "TauCeti/Gone.lean"),
+                                         f("modified", "README.md"),
+                                         f("modified", "TauCeti/notes.md")]},
              "repos/o/r/pulls/12": pr()})
         self.assertEqual(modules, ["TauCeti.A.B", "TauCeti.C", "TauCeti.D'"])
 
     def test_no_tauceti_change_lints_nothing(self):
         self.assertEqual(self.run_scope(
-            {"EVENT": "pull_request_target", "NUM": "12"},
-            {"repos/o/r/pulls/12/files": [f("modified", "lake-manifest.json")],
+            self.PR_ENV,
+            {self.PR_COMPARE: {"files": [f("modified", "lake-manifest.json")]},
              "repos/o/r/pulls/12": pr()}), [])
 
+    def test_pull_request_without_commits_lints_everything(self):
+        for missing in ("BASE", "HEAD", "HEAD_REPO"):
+            with self.subTest(missing=missing):
+                self.assertIsNone(self.run_scope(dict(self.PR_ENV, **{missing: ""}), {}))
+
+    def test_compare_cap_lints_everything(self):
+        self.assertIsNone(self.run_scope(
+            self.PR_ENV,
+            {self.PR_COMPARE: {"files": [f("modified", f"TauCeti/M{i}.lean") for i in range(300)]},
+             "repos/o/r/pulls/12": pr()}))
+
     def test_full_lint_label_and_repair_branch_lint_everything(self):
-        files = {"repos/o/r/pulls/12/files": [f("modified", "TauCeti/A.lean")]}
+        files = {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]}}
         for info in (pr(labels=["roadmap/none", "full-lint"]), pr(head_ref="lint-repair/main")):
             with self.subTest(info=info):
                 self.assertIsNone(self.run_scope(
-                    {"EVENT": "pull_request_target", "NUM": "12"},
-                    dict(files, **{"repos/o/r/pulls/12": info})))
+                    self.PR_ENV, dict(files, **{"repos/o/r/pulls/12": info})))
 
     def test_merge_group_reads_prs_from_squash_titles(self):
         compare = {"commits": [{"commit": {"message": "feat: x (#7)\n\nbody"}},
@@ -126,6 +141,16 @@ class PrBuildWiringTest(unittest.TestCase):
         run = job["steps"][sandbox]["run"]
         self.assertIn('--ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR"', run)
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
+
+    def test_only_the_full_lint_label_rebuilds(self):
+        text = (ROOT / ".github" / "workflows" / "pr-build.yml").read_text()
+        wf = yaml.safe_load(text)
+        self.assertIn("labeled", wf[True]["pull_request_target"]["types"])
+        cond = wf["jobs"]["sandboxed-build"]["if"]
+        self.assertIn("github.event.action != 'labeled'", cond)
+        self.assertIn("github.event.label.name == 'full-lint'", cond)
+        # Other labels get their own concurrency group, so they cancel no build in progress.
+        self.assertIn("github.event.label.name != 'full-lint'", wf["concurrency"]["group"])
 
 
 if __name__ == "__main__":

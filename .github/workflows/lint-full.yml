@@ -278,7 +278,12 @@ jobs:
             printf '%s\n' "$REPORT"
             echo '```'
           } > report.md
-          existing=$(gh pr list -R "$REPO" --head "$branch" --state open --json number --jq '.[0].number // empty')
+          # Only the bot's own PR from this repository counts: `gh pr list --head` would also match a
+          # fork's branch of the same name, which would silently suppress the real repair PR.
+          # shellcheck disable=SC2016 # the jq program is single-quoted on purpose
+          existing=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$branch" \
+            --jq '[.[] | select(.head.repo.full_name == $ENV.REPO
+              and .user.login == "tauceti-review-bot[bot]")][0].number // empty')
           if [ -n "$existing" ]; then
             echo "Repair PR #$existing is already open; commenting the current violations."
             gh pr comment "$existing" -R "$REPO" --body-file report.md
