@@ -149,11 +149,12 @@ theorem exists_forall_map_succ_eq_of_compact_t2 [∀ k, TopologicalSpace (S k)]
   refine ⟨s, fun k ↦ ?_⟩
   -- Along `k ≤ k + 1` the transition map is `β k` itself.
   have hk := hs (Nat.le_add_right k 1)
-  simp only [f, F, Functor.ofOpSequence_map_homOfLE_succ] at hk
-  -- `hk` applies the `TopCat` morphism `ofHom ⟨β k, hβ k⟩` through `ConcreteCategory.hom`, which
-  -- `TopCat.hom_ofHom` (stated for `TopCat.Hom.hom`) does not rewrite; the two sides agree by
-  -- unfolding `ofHom`.
-  exact hk
+  change F.map (homOfLE (Nat.le_add_right k 1)).op (s (k + 1)) = s k at hk
+  have hF_apply (x : S (k + 1)) :
+      F.map (homOfLE (Nat.le_add_right k 1)).op x = β k x := by
+    rw [Functor.ofOpSequence_map_homOfLE_succ]
+    exact TopCat.ofHom_apply _ _
+  exact (hF_apply _).symm.trans hk
 
 /-- **Kőnig's lemma, sequential form.** A sequence of nonempty finite types `S k` with one-step
 maps `β k : S (k + 1) → S k` has a compatible family: some `s : ∀ k, S k` satisfies
