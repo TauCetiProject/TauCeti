@@ -106,7 +106,15 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
   have hcard (i j : Q) : Fintype.card (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) =
       Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) := by
     let f : (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) ≃
-        ((i ⟶ j) ⊕ (j ⟶ i)) := Equiv.refl _
+        ((i ⟶ j) ⊕ (j ⟶ i)) :=
+      { toFun := fun e => match e with
+          | .inl a => .inl a
+          | .inr a => .inr a
+        invFun := fun e => match e with
+          | .inl a => .inl a
+          | .inr a => .inr a
+        left_inv := by intro e; cases e <;> rfl
+        right_inv := by intro e; cases e <;> rfl }
     exact (Fintype.card_congr f).trans Fintype.card_sum
   have hI : preprojectiveIdeal k Q = TwoSidedIdeal.span (Set.range
       (localPreprojectiveRelator k (Q := Q) : Symmetrify Q → pathAlgebra k (Symmetrify Q))) :=
