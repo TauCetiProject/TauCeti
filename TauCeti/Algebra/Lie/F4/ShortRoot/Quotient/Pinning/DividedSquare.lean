@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.Basic
+import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 
 /-!
 # Divided-square pinning on the modular F4 quotient
@@ -53,7 +54,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
   let i : F4ShortRootIndex := ⟨f4SpecialIsogenyIndexEquiv β, hi⟩
   let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl i)
   have hlift : f4ShortRootQuotientLift a = f4ModularRootVector β := by
-    unfold f4ShortRootQuotientLift a
+    simp only [f4ShortRootQuotientLift_eq_basis]
     rw [f4LongRootBasisCoordinate_symm_inl,
       f4ModularChevalleyBasis_inl_eq_rootVector,
       f4PinnedRootIndex_f4KillingRootLabel]
@@ -62,7 +63,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
     rw [f4SpecialIsogenyIndex_involutive]
   have hquot : f4ShortRootQuotientDividedSquareColumn k a =
       f4ShortRootSubspace.mkQ (f4ModularRootVector α) := by
-    unfold f4ShortRootQuotientDividedSquareColumn
+    simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact congrArg f4ShortRootSubspace.mkQ
       (f4ModularDividedAdjointSquare_rootVector_opposite k)
@@ -88,7 +89,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
       (f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex k).symm
   have hideal : f4ShortRootIdealDividedSquareColumn (isogenyReverse k) a =
       f4ShortRootLieIdealBasis b := by
-    unfold f4ShortRootIdealDividedSquareColumn
+    simp only [f4ShortRootIdealDividedSquareColumn_apply]
     apply Subtype.ext
     calc
       ((f4ShortRootDividedAdjointSquare (isogenyReverse k)
@@ -132,7 +133,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
-    unfold f4ShortRootQuotientLift
+    simp only [f4ShortRootQuotientLift_eq_basis]
     rw [f4LongRootBasisCoordinate_symm_inl,
       f4ModularChevalleyBasis_inl_eq_rootVector,
       f4PinnedRootIndex_f4KillingRootLabel]
@@ -161,7 +162,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
             (f4OppositeRootIndex (f4SignedSimpleRootIndex k)) := congrArg _ h'
     have hqzero : f4ShortRootQuotientDividedSquareColumn k
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) = 0 := by
-      unfold f4ShortRootQuotientDividedSquareColumn
+      simp only [f4ShortRootQuotientDividedSquareColumn_eq]
       rw [hlift]
       exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
         k β hk hβ hβne
@@ -180,7 +181,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       rw [h, f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex]
     have hizero : f4ShortRootIdealDividedSquareColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) = 0 := by
-      unfold f4ShortRootIdealDividedSquareColumn
+      simp only [f4ShortRootIdealDividedSquareColumn_apply]
       apply Subtype.ext
       calc
         ((f4ShortRootDividedAdjointSquare (isogenyReverse k)
@@ -211,11 +212,11 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_twelve
         (f4ShortRootQuotientDividedSquareColumn k 12) =
       f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 12 := by
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 12 = 0 := by
-      unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
+      simp only [f4ShortRootQuotientDividedSquareColumn_eq, f4ShortRootQuotientLift_eq_basis]
       rw [f4ModularChevalleyBasis_longRootBasisCoordinate_twelve]
       rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 12 = 0 := by
-      unfold f4ShortRootIdealDividedSquareColumn
+      simp only [f4ShortRootIdealDividedSquareColumn_apply]
       apply Subtype.ext
       calc
         ((f4ShortRootDividedAdjointSquare (isogenyReverse k)
@@ -242,11 +243,11 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_thirteen
         (f4ShortRootQuotientDividedSquareColumn k 13) =
       f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 13 := by
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 13 = 0 := by
-      unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
+      simp only [f4ShortRootQuotientDividedSquareColumn_eq, f4ShortRootQuotientLift_eq_basis]
       rw [f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
       rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealDividedSquareColumn (isogenyReverse k) 13 = 0 := by
-      unfold f4ShortRootIdealDividedSquareColumn
+      simp only [f4ShortRootIdealDividedSquareColumn_apply]
       apply Subtype.ext
       calc
         ((f4ShortRootDividedAdjointSquare (isogenyReverse k)
@@ -283,7 +284,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_of_long
     Sum.rec (fun i => f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long k hk i)
     (fun j => by
       fin_cases j
-      -- These two `Fin 2` cases are the central weight coordinates.
+      -- `fin_cases` leaves proof-specific `Fin 2` terms; normalize them to canonical numerals
+      -- before rewriting with the coordinate lemmas.
       · change P (f4ShortRootWeightIndexEquiv.symm (Sum.inr (0 : Fin 2)))
         rw [f4ShortRootWeightIndexEquiv_symm_apply_inr_zero]
         exact f4ShortRootQuotientToIdealEquiv_dividedSquare_twelve k
@@ -320,7 +322,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
   let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)
   have hlift : f4ShortRootQuotientLift a = f4ModularRootVector β := by
-    unfold f4ShortRootQuotientLift a
+    simp only [f4ShortRootQuotientLift_eq_basis]
     rw [f4LongRootBasisCoordinate_symm_inl,
       f4ModularChevalleyBasis_inl_eq_rootVector,
       f4PinnedRootIndex_f4KillingRootLabel]
@@ -329,7 +331,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
     rw [f4SpecialIsogenyIndex_involutive]
   have hquot : f4ShortRootQuotientDividedSquareColumn k a =
       f4ShortRootSubspace.mkQ (f4ModularRootVector γ) := by
-    unfold f4ShortRootQuotientDividedSquareColumn
+    simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
       k β γ hk hβ hγ hadd
@@ -346,7 +348,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
     (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
   have hideal : f4ShortRootIdealFirstColumn (isogenyReverse k) a =
       f4ShortRootLieIdealBasis b := by
-    unfold f4ShortRootIdealFirstColumn
+    simp only [f4ShortRootIdealFirstColumn_apply]
     apply Subtype.ext
     have hsigned : f4SignedSimpleRootIndex (isogenyReverse k) =
         f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) := by
@@ -420,7 +422,7 @@ private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_edge
         norm_num at hlen
         omega
     exact hno δ hδshort hδroot
-  unfold f4ShortRootIdealFirstColumn
+  simp only [f4ShortRootIdealFirstColumn_apply]
   apply Subtype.ext
   calc
     ((f4ShortRootSignedSimpleAdjoint k
@@ -455,7 +457,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
-    unfold f4ShortRootQuotientLift
+    simp only [f4ShortRootQuotientLift_eq_basis]
     rw [f4LongRootBasisCoordinate_symm_inl,
       f4ModularChevalleyBasis_inl_eq_rootVector,
       f4PinnedRootIndex_f4KillingRootLabel]
@@ -503,7 +505,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
     simpa only [hi] using hcomparison
   · have hqzero : f4ShortRootQuotientDividedSquareColumn k
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) = 0 := by
-      unfold f4ShortRootQuotientDividedSquareColumn
+      simp only [f4ShortRootQuotientDividedSquareColumn_eq]
       rw [hlift]
       exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
         k β hk hβ (by
@@ -553,7 +555,7 @@ private theorem f4ShortRootIdealFirstColumn_cartan_eq_zero_of_short
     rw [Int.cast_mul]
     have htwo : ((2 : ℤ) : ZMod 2) = 0 := by decide
     rw [htwo, zero_mul]
-  unfold f4ShortRootIdealFirstColumn
+  simp only [f4ShortRootIdealFirstColumn_apply]
   apply Subtype.ext
   have hcast : Fin.cast rank_F4 (Fin.cast rank_F4.symm s) = s := by
     apply Fin.ext
@@ -585,7 +587,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_twelve_of_s
         (f4ShortRootQuotientDividedSquareColumn k 12) =
       f4ShortRootIdealFirstColumn (isogenyReverse k) 12 := by
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 12 = 0 := by
-    unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
+    simp only [f4ShortRootQuotientDividedSquareColumn_eq, f4ShortRootQuotientLift_eq_basis]
     rw [f4ModularChevalleyBasis_longRootBasisCoordinate_twelve]
     rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealFirstColumn (isogenyReverse k) 12 = 0 := by
@@ -612,7 +614,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_thirteen_of
         (f4ShortRootQuotientDividedSquareColumn k 13) =
       f4ShortRootIdealFirstColumn (isogenyReverse k) 13 := by
   have hqzero : f4ShortRootQuotientDividedSquareColumn k 13 = 0 := by
-    unfold f4ShortRootQuotientDividedSquareColumn f4ShortRootQuotientLift
+    simp only [f4ShortRootQuotientDividedSquareColumn_eq, f4ShortRootQuotientLift_eq_basis]
     rw [f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
     rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
   have hizero : f4ShortRootIdealFirstColumn (isogenyReverse k) 13 = 0 := by
@@ -647,7 +649,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_short
     Sum.rec (fun i => f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short k hk i)
     (fun j => by
       fin_cases j
-      -- These two `Fin 2` cases are the central weight coordinates.
+      -- `fin_cases` leaves proof-specific `Fin 2` terms; normalize them to canonical numerals
+      -- before rewriting with the coordinate lemmas.
       · change P (f4ShortRootWeightIndexEquiv.symm (Sum.inr (0 : Fin 2)))
         rw [f4ShortRootWeightIndexEquiv_symm_apply_inr_zero]
         exact f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_twelve_of_short k hk

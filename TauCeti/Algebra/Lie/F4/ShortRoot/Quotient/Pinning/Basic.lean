@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Action
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 
 /-!
 # Pinned coordinates on the modular F4 quotient
@@ -76,7 +75,7 @@ noncomputable def f4ShortRootQuotientToIdealEquiv :
     f4ShortRootLieIdealBasis (Equiv.refl (Fin 26))
 
 /-- The canonical ambient lift of a quotient coordinate. -/
-@[expose] noncomputable def f4ShortRootQuotientLift (a : Fin 26) :
+noncomputable def f4ShortRootQuotientLift (a : Fin 26) :
     f4ModularChevalleyLieAlgebra :=
   f4ModularChevalleyBasis (f4LongRootBasisCoordinate a)
 
@@ -117,7 +116,7 @@ noncomputable def f4ShortRootQuotientFirstColumn
   rfl
 
 /-- The second divided-power quotient column of a numbered signed simple root. -/
-@[expose] noncomputable def f4ShortRootQuotientDividedSquareColumn
+noncomputable def f4ShortRootQuotientDividedSquareColumn
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :
     f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace :=
   f4ShortRootSubspace.mkQ
@@ -131,7 +130,7 @@ noncomputable def f4ShortRootQuotientFirstColumn
   rfl
 
 /-- The first-order column on the short-root ideal, in its canonical coordinates. -/
-@[expose] noncomputable def f4ShortRootIdealFirstColumn
+noncomputable def f4ShortRootIdealFirstColumn
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) : f4ShortRootLieIdeal :=
   f4ShortRootSignedSimpleAdjoint k (f4ShortRootLieIdealBasis a)
 
@@ -150,7 +149,7 @@ theorem coe_f4ShortRootIdealFirstColumn
   exact coe_f4ShortRootSignedSimpleAdjoint_apply _ _
 
 /-- The second divided-power column on the short-root ideal, in its canonical coordinates. -/
-@[expose] noncomputable def f4ShortRootIdealDividedSquareColumn
+noncomputable def f4ShortRootIdealDividedSquareColumn
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) : f4ShortRootLieIdeal :=
   f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis a)
 

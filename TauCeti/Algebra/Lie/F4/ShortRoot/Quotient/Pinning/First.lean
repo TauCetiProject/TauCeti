@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.Basic
+import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 
 /-!
 # First-order pinning on the modular F4 quotient
@@ -617,7 +618,8 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_of_long
     Sum.rec (fun i => f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long k hk i)
     (fun j => by
       fin_cases j
-      -- The two `Fin 2` cases are exactly the two central weight coordinates.
+      -- `fin_cases` leaves proof-specific `Fin 2` terms; normalize them to canonical numerals
+      -- before rewriting with the coordinate lemmas.
       · change P (f4ShortRootWeightIndexEquiv.symm (Sum.inr (0 : Fin 2)))
         rw [f4ShortRootWeightIndexEquiv_symm_apply_inr_zero]
         exact f4ShortRootQuotientToIdealEquiv_firstColumn_twelve_of_long k hk

@@ -70,13 +70,13 @@ theorem f4ShortRootCarrier_coefficientMatrix_blockTriangular :
       f4ShortRootCotangentFlagWeight f4ShortRootPrimeField_generator_blockTriangular
 
 /-- The ideal step of the adapted cotangent flag as a carrier subcomodule. -/
-@[expose] noncomputable def f4ShortRootCarrierCotangentIdeal :
+noncomputable def f4ShortRootCarrierCotangentIdeal :
     Subcomodule 𝔽₂ f4ShortRootCarrierCoordinateHopfAlgebra f4ShortRootCotangentDual :=
   f4ShortRootCotangentFlagBasis.weightCoordinateSpanSubcomodule
     f4ShortRootCotangentFlagWeight 2 f4ShortRootCarrier_coefficientMatrix_blockTriangular
 
 /-- The represented-range step of the adapted cotangent flag as a carrier subcomodule. -/
-@[expose] noncomputable def f4ShortRootCarrierCotangentRange :
+noncomputable def f4ShortRootCarrierCotangentRange :
     Subcomodule 𝔽₂ f4ShortRootCarrierCoordinateHopfAlgebra f4ShortRootCotangentDual :=
   f4ShortRootCotangentFlagBasis.weightCoordinateSpanSubcomodule
     f4ShortRootCotangentFlagWeight 1 f4ShortRootCarrier_coefficientMatrix_blockTriangular
@@ -183,13 +183,13 @@ private theorem f4ShortRootCarrierCotangentRange_toSubmodule :
         (congrArg Set.range (funext f4ShortRootCotangentFlagBasis_range)))
   exact f4ShortRootCarrierCotangentRange_toSubmodule_span.trans
     ((congrArg (Submodule.span 𝔽₂) hset).trans
-      (TauCeti.mapSubmodule_eq_span_basis f4ShortRootRepresentedRange
+      (Submodule.map_eq_span_basis f4ShortRootRepresentedRange
         f4ShortRootRepresentedRangeBasis f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
 
 private theorem f4ShortRootRepresentedIdealAmbient_eq_map :
     f4ShortRootRepresentedIdealAmbient =
       f4ShortRootRepresentedIdeal.map f4ShortRootRepresentedRange.subtype := by
-  exact (TauCeti.mapSubmodule_eq_span_basis f4ShortRootRepresentedIdeal
+  exact (Submodule.map_eq_span_basis f4ShortRootRepresentedIdeal
     f4ShortRootRepresentedIdealBasis f4ShortRootRepresentedRange.subtype).symm
 
 /-- The represented-ideal step, regarded as a subcomodule of the represented-range step. -/
@@ -197,6 +197,13 @@ noncomputable def f4ShortRootCarrierIdealInRange :
     Subcomodule 𝔽₂ f4ShortRootCarrierCoordinateHopfAlgebra
       f4ShortRootCarrierCotangentRange :=
   f4ShortRootCarrierCotangentIdeal.comap f4ShortRootCarrierCotangentRange.subtype
+
+@[simp] theorem mem_f4ShortRootCarrierIdealInRange
+    (x : f4ShortRootCarrierCotangentRange) :
+    x ∈ f4ShortRootCarrierIdealInRange ↔
+      (x : f4ShortRootCotangentDual) ∈ f4ShortRootCarrierCotangentIdeal := by
+  rw [f4ShortRootCarrierIdealInRange, TauCeti.Subcomodule.mem_comap,
+    TauCeti.Subcomodule.subtype_apply]
 
 /-- The carrier range inherits additive inverses from its module structure over `𝔽₂`. -/
 noncomputable instance f4ShortRootCarrierCotangentRangeAddCommGroup :
@@ -236,7 +243,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     rw [show A = f4ShortRootRepresentedIdeal.map B.subtype from
       f4ShortRootRepresentedIdealAmbient_eq_map]
     exact Submodule.comap_map_eq_of_injective B.injective_subtype _
-  let eEq := TauCeti.subquotientEquivOfEq
+  let eEq := Submodule.subquotientEquivOfEq
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
@@ -326,7 +333,7 @@ noncomputable def f4ShortRootCarrierQuotientProjection :
     f4ShortRootCarrierMiddleEquivQuotient.symm (Submodule.Quotient.mk X) =
       Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X) := by
   simp [f4ShortRootCarrierMiddleEquivQuotient, Submodule.quotEquivOfEq_mk,
-    TauCeti.subquotientEquivOfEq_symm_mk,
+    Submodule.subquotientEquivOfEq_symm_mk,
     f4ShortRootCarrierRepresentedMap, f4ShortRootCarrierRepresentedToSubmodule,
     f4ShortRootCarrierRepresentedAmbientMap]
   congr 2
@@ -360,10 +367,18 @@ theorem f4ShortRootCarrierQuotientProjection_baseChange_comp_representedMap
   rw [← LinearMap.baseChange_comp, hbase]
 
 /-- The coordinate morphism of the 26-dimensional represented carrier subquotient. -/
-@[expose] noncomputable def f4ShortRootQuotientCoordinateBialgHom :
+noncomputable def f4ShortRootQuotientCoordinateBialgHom :
     GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26 →ₐc[𝔽₂]
       f4ShortRootCarrierCoordinateHopfAlgebra :=
   Comodule.coordinateBialgHom f4ShortRootQuotientBasis
+
+@[simp] theorem f4ShortRootQuotientCoordinateBialgHom_X (i j : Fin 26) :
+    f4ShortRootQuotientCoordinateBialgHom
+        (GeneralLinear.coordinateHopfAlgebraAlgEquiv 𝔽₂ 26
+          (GeneralLinear.coordinateRingMap 𝔽₂ 26 (MvPolynomial.X (i, j)))) =
+      Comodule.coefficientMatrix (C := f4ShortRootCarrierCoordinateHopfAlgebra)
+        f4ShortRootQuotientBasis i j := by
+  exact Comodule.coordinateBialgHom_X f4ShortRootQuotientBasis i j
 
 end
 

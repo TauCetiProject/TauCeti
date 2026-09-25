@@ -41,10 +41,10 @@ coefficients made explicit so an externally normalized Smith form can be retaine
 
 public section
 
-namespace TauCeti
+namespace Submodule
 
 /-- The image of a based submodule is spanned by the images of its basis vectors. -/
-theorem mapSubmodule_eq_span_basis
+theorem map_eq_span_basis
     {R V W ι : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     [AddCommMonoid W] [Module R W]
     (p : Submodule R V) (b : Module.Basis ι R p) (f : V →ₗ[R] W) :
@@ -72,9 +72,14 @@ theorem subquotientEquivOfEq_symm_mk
     (subquotientEquivOfEq A B A' B' hA hB).symm (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk
         (show B from ⟨x, by rw [hB]; exact x.property⟩) := by
+  -- The right representative transports `x : B'` back across `hB : B = B'`.
   subst A'
   subst B'
   rfl
+
+end Submodule
+
+namespace TauCeti
 
 section QuotientInterval
 
