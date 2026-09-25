@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
-public import TauCeti.Algebra.Lie.F4.ShortRoot.TorusAction
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.LinearMap.Range
@@ -60,27 +59,44 @@ without any flatness or injectivity hypothesis on its structure map from `ZMod 2
 -/
 
 /-- The base-changed matrix-coordinate range of the short-root adjoint representation. -/
-@[expose] noncomputable def f4ShortRootRepresentedRangeMatrixBaseChange :
+noncomputable def f4ShortRootRepresentedRangeMatrixBaseChange :
     Submodule A (Matrix (Fin 26) (Fin 26) A) :=
   Submodule.span A <| Set.range fun k : f4ChevalleyIndex =>
     f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)
 
+/-- The represented range written as the span of its distinguished Chevalley basis matrices. -/
+theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis :
+    f4ShortRootRepresentedRangeMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
+        f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) := by
+  unfold f4ShortRootRepresentedRangeMatrixBaseChange
+  rfl
+
 /-- Each Chevalley adjoint matrix is in the scalar-extended represented range. -/
-theorem f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (k : f4ChevalleyIndex) :
+@[simp] theorem f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (k : f4ChevalleyIndex) :
     f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k) ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   unfold f4ShortRootRepresentedRangeMatrixBaseChange
   exact Submodule.subset_span (Set.mem_range_self k)
 
 /-- The base-changed matrix-coordinate image of the short-root ideal. -/
-@[expose] noncomputable def f4ShortRootRepresentedIdealMatrixBaseChange :
+noncomputable def f4ShortRootRepresentedIdealMatrixBaseChange :
     Submodule A (Matrix (Fin 26) (Fin 26) A) :=
   Submodule.span A <| Set.range fun i : Fin 26 =>
     f4ShortRootAdjointMatrixBaseChange (A := A)
       (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)
 
+/-- The represented ideal written as the span of its distinguished short-root basis matrices. -/
+theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis :
+    f4ShortRootRepresentedIdealMatrixBaseChange (A := A) =
+      Submodule.span A (Set.range fun i : Fin 26 =>
+        f4ShortRootAdjointMatrixBaseChange (A := A)
+          (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) := by
+  unfold f4ShortRootRepresentedIdealMatrixBaseChange
+  rfl
+
 /-- Each ideal-basis adjoint matrix is in the scalar-extended represented ideal. -/
-theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
+@[simp] theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
     f4ShortRootAdjointMatrixBaseChange (A := A)
         (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by

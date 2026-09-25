@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Span
+public import TauCeti.Algebra.Lie.F4.ShortRoot.TorusAction
 
 /-!
 # Weight-torus stability of the represented modular F4 flag
@@ -76,7 +77,7 @@ theorem f4ShortRootWeightTorusConj_mem_representedRange
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   have hX' : X ∈ Submodule.span A (Set.range fun k : f4ChevalleyIndex =>
       f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k)) :=
-    by simpa only [f4ShortRootRepresentedRangeMatrixBaseChange] using hX
+    by simpa only [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis] using hX
   refine Submodule.span_induction ?_ (by simp) ?_ ?_ hX'
   · rintro _ ⟨k, rfl⟩
     exact f4ShortRootWeightTorusConj_mem_range_generator s k
@@ -148,7 +149,7 @@ theorem f4ShortRootWeightTorusConj_mem_representedIdeal
   have hX' : X ∈ Submodule.span A (Set.range fun i : Fin 26 =>
       f4ShortRootAdjointMatrixBaseChange (A := A)
         (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra)) :=
-    by simpa only [f4ShortRootRepresentedIdealMatrixBaseChange] using hX
+    by simpa only [f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis] using hX
   refine Submodule.span_induction ?_ (by simp) ?_ ?_ hX'
   · rintro _ ⟨i, rfl⟩
     exact f4ShortRootWeightTorusConj_mem_ideal_generator s i
