@@ -87,9 +87,8 @@ structure chosen internally by `Fintype.ofFinite`; the unital instances therefor
 
 ## References
 
-This file implements the path-algebra part of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. II.
+Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
 public section
@@ -668,9 +667,9 @@ noncomputable instance [Ring k] [Finite Q] : Ring (pathAlgebra k Q) where
 
 end Ring
 
-section Algebra
+section NonUnitalCommSemiring
 
-variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+variable {k : Type w} {Q : Type u} [NonUnitalCommSemiring k] [Quiver.{v} Q]
 
 /-- Over a commutative base the multiplication is homogeneous in its right argument. -/
 private theorem mul'_smul (r : k) (f g : Quiver.TotalPath Q →₀ k) :
@@ -685,6 +684,12 @@ private theorem mul'_smul (r : k) (f g : Quiver.TotalPath Q →₀ k) :
     | single y b =>
       rw [Finsupp.smul_single, mul'_single_single, mul'_single_single, smul_singleOption,
         smul_eq_mul, mul_left_comm]
+
+end NonUnitalCommSemiring
+
+section Algebra
+
+variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
 
 instance : SMulCommClass k (pathAlgebra k Q) (pathAlgebra k Q) :=
   ⟨fun r f g => by exact (mul'_smul r f g).symm⟩
@@ -802,21 +807,21 @@ end Basis
 
 namespace PathAlgebra
 
-section Lift
+section LiftLinear
 
-variable (k : Type w) {Q : Type u} {B : Type*} [CommSemiring k] [Quiver.{v} Q]
-  [Semiring B] [Algebra k B] (F : Quiver.TotalPath Q → B)
+variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
+  [AddCommMonoid B] [Module k B] (F : Quiver.TotalPath Q → B)
 
-/-- The `k`-linear map extending an assignment of algebra elements to the basis paths. Its
+/-- The `k`-linear map extending an assignment of module elements to the basis paths. Its
 algebra-homomorphism upgrade, available when the assignment is multiplicative, is
 `TauCeti.PathAlgebra.liftAlgHom`. -/
 noncomputable def liftLinear : pathAlgebra k Q →ₗ[k] B :=
-  (pathAlgebraBasis k Q).constr k F
+  (pathAlgebraBasis k Q).constr ℕ F
 
 /-- The linear extension of an assignment agrees with it on the basis paths. -/
 @[simp]
 theorem liftLinear_ofPath (x : Quiver.TotalPath Q) : liftLinear k F (ofPath x) = F x := by
-  have h := (pathAlgebraBasis k Q).constr_basis k F x
+  have h := (pathAlgebraBasis k Q).constr_basis ℕ F x
   rwa [coe_pathAlgebraBasis] at h
 
 /-- The linear extension of an assignment on a basis path with a coefficient. -/
@@ -824,6 +829,28 @@ theorem liftLinear_ofPath (x : Quiver.TotalPath Q) : liftLinear k F (ofPath x) =
 theorem liftLinear_single (x : Quiver.TotalPath Q) (c : k) :
     liftLinear k F (single x c) = c • F x := by
   rw [single_eq_smul_ofPath, map_smul, liftLinear_ofPath]
+
+end LiftLinear
+
+section LiftLinearOne
+
+variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
+  [AddCommMonoidWithOne B] [Module k B] (F : Quiver.TotalPath Q → B) [Finite Q]
+  (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
+
+include hone in
+private theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
+  let _ := Fintype.ofFinite Q
+  rw [one_def, map_sum]
+  simp only [vertexIdempotent_eq_single, liftLinear_single, one_smul]
+  exact hone
+
+end LiftLinearOne
+
+section Lift
+
+variable (k : Type w) {Q : Type u} {B : Type*} [CommSemiring k] [Quiver.{v} Q]
+  [Semiring B] [Algebra k B] (F : Quiver.TotalPath Q → B)
 
 variable (hcomp : ∀ {a b c : Q} (p : _root_.Quiver.Path a b) (q : _root_.Quiver.Path c a),
     F ⟨a, b, p⟩ * F ⟨c, a, q⟩ = F ⟨c, b, q.comp p⟩)
@@ -854,12 +881,6 @@ private theorem liftLinear_mul (f g : pathAlgebra k Q) :
 variable [Finite Q]
   (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
 
-include hone in
-private theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
-  let _ := Fintype.ofFinite Q
-  rw [one_def, map_sum]
-  simp only [vertexIdempotent_eq_single, liftLinear_single, one_smul]
-  exact hone
 
 include hcomp hzero hone in
 /-- **The universal property of the path algebra**: an assignment `F` of elements of a `k`-algebra
@@ -936,16 +957,16 @@ end Ext
 
 end PathAlgebra
 
-section DivisionRing
+section StrongRankCondition
 
-variable (k : Type w) (Q : Type u) [DivisionRing k] [Quiver.{v} Q]
+variable (k : Type w) (Q : Type u) [Semiring k] [StrongRankCondition k] [Quiver.{v} Q]
 
 /-- The dimension of the path algebra is the number of paths of `Q`. -/
 theorem finrank_pathAlgebra [Fintype (Quiver.TotalPath Q)] :
     Module.finrank k (pathAlgebra k Q) = Fintype.card (Quiver.TotalPath Q) :=
   Module.finrank_eq_card_basis (pathAlgebraBasis k Q)
 
-end DivisionRing
+end StrongRankCondition
 
 namespace PathAlgebra
 
