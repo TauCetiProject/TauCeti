@@ -21,10 +21,6 @@ of `ℚ(√D)` is `|D|`. For squarefree integers `d₁, …, dₙ`, the multiqua
 `ℚ(√d₁, …, √dₙ)` lies in `ℚ(ζ_m)` exactly when the least common multiple of the
 `|fundamentalDiscriminant dᵢ|` divides `m`, so that least common multiple is its conductor.
 
-The containment direction uses `TauCeti.Multiquadratic.mem_of_sq_eq_of_isFundamentalDiscriminant`;
-the minimality direction uses
-`IsCyclotomicExtension.Rat.mem_intermediateFieldEquivSubgroupChar_iff_conductor_dvd`.
-
 For the classical argument see D. A. Cox, *Primes of the Form x² + ny²*, §3.B, and
 K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 6.
 
