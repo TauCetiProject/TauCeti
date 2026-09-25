@@ -149,14 +149,6 @@ private theorem cdf_map_eq_volume_restrict (ν : Measure ℝ) [IsProbabilityMeas
     rw [hset, hrset, measure_univ, Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
 
 
-/-- The pair `{0, 1}` is `volume`-null (both singletons are null). -/
-private lemma ae_not_mem_zero_one :
-    ∀ᵐ u ∂(volume : Measure ℝ), u ∉ ({0, 1} : Set ℝ) := by
-  rw [ae_iff]
-  simp only [not_not, Set.ofPred_mem_eq]
-  exact ((Set.countable_singleton (1 : ℝ)).insert 0).measure_zero volume
-
-
 /-! ### The atomless real-line isomorphism
 
 The existing `Measure.quantile` in `TauCeti.Probability.Quantile` is the generalized inverse
@@ -166,33 +158,14 @@ inverse modulo the null endpoints. -/
 
 private theorem map_quantile_volume_Icc (ν : Measure ℝ) [IsProbabilityMeasure ν] :
     Measure.map ν.quantile (volume.restrict (Set.Icc (0 : ℝ) 1)) = ν := by
-  have hq : Measurable ν.quantile := measurable_quantile ν
-  apply Measure.ext
-  intro t ht
-  rw [Measure.map_apply hq ht, Measure.restrict_apply (hq ht)]
-  have hset : ((Set.Icc (0 : ℝ) 1) ∩ (ν.quantile ⁻¹' t)) =ᵐ[volume]
-      ((Set.Ioo (0 : ℝ) 1) ∩ (ν.quantile ⁻¹' t)) := by
-    filter_upwards [ae_not_mem_zero_one] with x hx
-    apply propext
-    -- Make the interval and quantile coercions explicit in the pointwise set equality.
-    change ((0 ≤ x ∧ x ≤ 1) ∧ ν.quantile x ∈ t) ↔
-      ((0 < x ∧ x < 1) ∧ ν.quantile x ∈ t)
-    constructor
-    · rintro ⟨⟨hx0, hx1⟩, hqt⟩
-      have hx0ne : x ≠ 0 := fun h => hx (by simp [h])
-      have hx1ne : x ≠ 1 := fun h => hx (by simp [h])
-      exact ⟨⟨lt_of_le_of_ne hx0 (Ne.symm hx0ne),
-        lt_of_le_of_ne hx1 hx1ne⟩, hqt⟩
-    · rintro ⟨⟨hx0, hx1⟩, hqt⟩
-      exact ⟨⟨hx0.le, hx1.le⟩, hqt⟩
-  rw [measure_congr (by simpa [inter_comm] using hset)]
-  rw [inter_comm, ← Measure.restrict_apply (hq ht), ← Measure.map_apply hq ht]
-  rw [map_quantile_volume_Ioo ν]
+  simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using
+    (map_quantile_volume_Ioo ν)
 
 private theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν] :
     (fun u => cdf ν (ν.quantile u)) =ᵐ[volume.restrict (Set.Icc 0 1)] id := by
   refine (ae_restrict_iff' measurableSet_Icc).mpr ?_
-  filter_upwards [ae_not_mem_zero_one] with u hu huIcc
+  filter_upwards [Set.Countable.ae_notMem
+      ((Set.countable_singleton (1 : ℝ)).insert 0) volume] with u hu huIcc
   have hu0 : u ≠ 0 := fun h => hu (by simp [h])
   have hu1 : u ≠ 1 := fun h => hu (by simp [h])
   have h0 : 0 < u := lt_of_le_of_ne huIcc.1 (Ne.symm hu0)
