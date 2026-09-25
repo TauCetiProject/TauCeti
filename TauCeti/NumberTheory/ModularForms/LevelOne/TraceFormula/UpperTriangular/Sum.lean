@@ -22,8 +22,9 @@ action, so it permutes the `SL(2, ℤ)`-orbits, and the orbit sums of the right 
 are those of `Tₙ^∞` permuted; so they equal `1` too. Hence `Tₙ^∞ (1 - g)` lies in the
 coinvariant kernel of the left action, which is the input for the existence of a solution of
 Popa–Zagier's period relation (A). For `g = T ^ j` more is true: right multiplication by `T ^ j`
-keeps matrices upper-triangular, so it permutes the `⟨T⟩`-orbits that meet `ℳₙ^∞`, and
-`Tₙ^∞ (1 - T ^ j)` lies in `(1 - T)·k[ℳₙ]`.
+keeps matrices upper-triangular, so it permutes the `⟨T⟩`-orbits that meet `ℳₙ^∞`. Hence
+`Tₙ^∞ · T ^ j` and `Tₙ^∞` have the same `⟨T⟩`-orbit sums, and `Tₙ^∞ (1 - T ^ j)` lies in
+`(1 - T)·k[ℳₙ]`.
 
 ## Main definitions
 
@@ -111,6 +112,39 @@ theorem mapDomain_coeff_ofMulAction_op_upperTriangularSum_apply (hn : n ≠ 0) (
     coeff_mapDomainLinearMap, Finsupp.mapDomain_equiv_apply, coeff_mapDomainLinearMap,
     mapDomain_coeff_upperTriangularSum_apply hn]
 
+open ModularGroup MulOpposite in
+/-- For `j ∈ ℤ`, the `⟨T⟩`-orbit sums of the coefficients of the right translate `Tₙ^∞ · T ^ j` are
+those of `Tₙ^∞`. -/
+@[simp]
+theorem mapDomainLinearMap_ofMulAction_op_T_zpow_upperTriangularSum (j : ℤ) :
+    mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel (Subgroup.zpowers T) _))
+        (ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (T : PSL(2, ℤ)) ^ j)
+          (upperTriangularSum k n)) =
+      mapDomainLinearMap k k (Quotient.mk _) (upperTriangularSum k n) := by
+  -- right multiplication by `T ^ i` keeps matrices upper-triangular, so for `x ∈ ℳₙ^∞` some
+  -- `γ i x ∈ ⟨T⟩` moves `x • T ^ i` back into `ℳₙ^∞`
+  have key (i : ℤ) (x) (hx : x ∈ upperTriangularReps n) :
+      ∃ γ : Subgroup.zpowers T, γ • op (T : PSL(2, ℤ)) ^ i • x ∈ upperTriangularReps n := by
+    obtain ⟨A, hA, rfl⟩ := mem_upperTriangularReps.1 hx
+    rw [← op_zpow, ← QuotientGroup.mk_zpow, op_smul_mk]
+    exact (exists_T_zpow_smul_mk_mem_upperTriangularReps (by rintro rfl; simp at hA)
+      (by simp [coe_T_zpow, Matrix.mul_apply, hA.1])).imp'
+        (fun m ↦ ⟨T ^ m, Subgroup.zpow_mem_zpowers T m⟩) fun _ ↦ id
+  choose! γ hγ using key
+  -- as `ℳₙ^∞` meets each orbit at most once, `x ↦ γ i x • x • T ^ i` permutes `ℳₙ^∞`, with
+  -- inverse `x ↦ γ (-i) x • x • T ^ (-i)`
+  have inv (i : ℤ) (x) (hx : x ∈ upperTriangularReps n) :
+      γ (-i) (γ i x • op (T : PSL(2, ℤ)) ^ i • x) • op (T : PSL(2, ℤ)) ^ (-i) •
+        γ i x • op (T : PSL(2, ℤ)) ^ i • x = x := by
+    have h := hγ (-i) _ (hγ i x hx)
+    simp only [← smul_comm (γ i x), smul_smul, ← zpow_add, neg_add_cancel, zpow_zero,
+      one_smul] at h ⊢
+    exact smul_eq_self_of_mem_upperTriangularReps hx h
+  simp only [upperTriangularSum, map_sum, ofMulAction_single, mapDomainLinearMap_single]
+  exact Finset.sum_nbij' (fun x ↦ γ j x • op (T : PSL(2, ℤ)) ^ j • x)
+    (fun x ↦ γ (-j) x • op (T : PSL(2, ℤ)) ^ (-j) • x) (by simpa using hγ j)
+    (by simpa using hγ (-j)) (by simpa using inv j) (by simpa using inv (-j)) fun _ _ ↦ by simp
+
 end Semiring
 
 /-- **The right translates of `Tₙ^∞` have the same orbit sums.** For `g ∈ PSL(2, ℤ)`, the element
@@ -134,38 +168,10 @@ theorem one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range [CommRing k] 
     (1 - ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (T : PSL(2, ℤ)) ^ j))
         (upperTriangularSum k n) ∈
       LinearMap.range (1 - ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T) := by
-  classical
-  -- right multiplication by `T ^ i` keeps matrices upper-triangular, so for `x ∈ ℳₙ^∞` some
-  -- `γ i x ∈ ⟨T⟩` moves `x • T ^ i` back into `ℳₙ^∞`
-  have key (i : ℤ) : ∀ x ∈ upperTriangularReps n,
-      ∃ γ : Subgroup.zpowers T, γ • op (T : PSL(2, ℤ)) ^ i • x ∈ upperTriangularReps n := by
-    intro x hx
-    obtain ⟨A, hA, rfl⟩ := mem_upperTriangularReps.1 hx
-    rw [← op_zpow, ← QuotientGroup.mk_zpow, op_smul_mk]
-    exact (exists_T_zpow_smul_mk_mem_upperTriangularReps (by rintro rfl; simp at hA)
-      (by simp [coe_T_zpow, Matrix.mul_apply, hA.1])).imp'
-        (fun m ↦ ⟨T ^ m, Subgroup.zpow_mem_zpowers T m⟩) fun _ ↦ id
-  choose! γ hγ using key
-  -- as `ℳₙ^∞` meets each orbit at most once, `x ↦ γ i x • x • T ^ i` permutes `ℳₙ^∞`, with
-  -- inverse `x ↦ γ (-i) x • x • T ^ (-i)`
-  have inv (i i' : ℤ) (hi : i' + i = 0) (x : TraceFormulaMatrixModule n)
-      (hx : x ∈ upperTriangularReps n) :
-      γ i' (γ i x • op (T : PSL(2, ℤ)) ^ i • x) • op (T : PSL(2, ℤ)) ^ i' •
-        γ i x • op (T : PSL(2, ℤ)) ^ i • x = x := by
-    have h := hγ i' _ (hγ i x hx)
-    simp only [← smul_comm (γ i x), smul_smul, ← zpow_add, hi, zpow_zero, one_smul] at h ⊢
-    exact smul_eq_self_of_mem_upperTriangularReps hx h
-  -- so `Tₙ^∞` and `Tₙ^∞ T ^ j` have the same `⟨T⟩`-orbit sums
+  -- `(1 - T)·k[ℳₙ]` is cut out by the `⟨T⟩`-orbit sums, and `Tₙ^∞` and `Tₙ^∞ T ^ j` have the
+  -- same `⟨T⟩`-orbit sums
   rw [← neg_sub (ofMulAction k SL(2, ℤ) _ T), LinearMap.range_neg, Module.End.one_eq_id,
     mem_range_ofMulAction_sub_id_iff]
-  simp only [upperTriangularSum, map_sum, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
-    ofMulAction_single, mapDomainLinearMap_single, Finset.sum_sub_distrib, sub_eq_zero]
-  refine (Finset.sum_nbij' (fun x ↦ γ j x • op (T : PSL(2, ℤ)) ^ j • x)
-    (fun x ↦ γ (-j) x • op (T : PSL(2, ℤ)) ^ (-j) • x) ?_ ?_ ?_ ?_ fun x _ ↦ ?_).symm
-  · simpa using hγ j
-  · simpa using hγ (-j)
-  · simpa using inv j (-j) (neg_add_cancel j)
-  · simpa using inv (-j) j (add_neg_cancel j)
-  · simp
+  simp
 
 end TauCeti.TraceFormulaMatrixModule
