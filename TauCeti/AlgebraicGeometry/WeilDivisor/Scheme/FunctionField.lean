@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Proper
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
 
 /-!
 # Divisors on a scheme of dimension at most one and divisors of its function field
@@ -25,6 +29,11 @@ divisors, coefficientwise order and effectivity, the residue-degree-weighted deg
 divisors. Consequently it also preserves linear equivalence. These comparisons allow the
 scheme-theoretic divisor and principal-parts constructions to use the function-field divisor API.
 
+On global sections, a section of the divisor sheaf `𝒪_X(D)` is a rational function whose order
+at every codimension-one point `x` is at least `-D(x)`, which is exactly membership in the
+Riemann–Roch space `L(D)` of the corresponding function-field divisor. Hence
+`H⁰(X, 𝒪_X(D)) = L(D)`.
+
 ## Main declarations
 
 * `SchemeWeilDivisor.equivFunctionFieldDivisor`: the additive equivalence between divisors on
@@ -33,7 +42,9 @@ scheme-theoretic divisor and principal-parts constructions to use the function-f
 * `SchemeWeilDivisor.equivFunctionFieldDivisor_principalDivisor`: compatibility with principal
   divisors;
 * `SchemeWeilDivisor.linearlyEquivalent_equivFunctionFieldDivisor_iff`: compatibility with
-  linear equivalence.
+  linear equivalence;
+* `SchemeWeilDivisor.globalSectionsEquivRiemannRochSpace`: `Γ(X, 𝒪_X(D)) ≃ L(D)`;
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_dim`: `dim_k H⁰(X, 𝒪_X(D)) = ℓ(D)`.
 
 ## References
 
@@ -217,6 +228,80 @@ theorem relativeDegree_equivFunctionFieldDivisor_symm
       Divisor.degree D := by
   rw [← degree_equivFunctionFieldDivisor (hex := hex) (hdim := hdim),
     (equivFunctionFieldDivisor hex hdim).apply_symm_apply]
+
+/-! ### Global sections and Riemann–Roch spaces -/
+
+section GlobalSections
+
+variable [IsLocallyNoetherian X] (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+  (hdim : ∀ x : X, coheight x ≤ 1)
+
+/-- The top open of an integral scheme is nonempty. -/
+local instance nonemptyTopOpensFunctionField : Nonempty (⊤ : X.Opens) :=
+  ⟨⟨Classical.choice inferInstance, trivial⟩⟩
+
+/-- A rational function is a global section of `𝒪_X(D)` exactly when it lies in the Riemann–Roch
+space of the corresponding function-field divisor.
+
+Not `@[simp]`: the simp lemma `SchemeWeilDivisor.mem_sections` already rewrites the left-hand
+side, and `k`, `hex` and `hdim` do not occur in it, so simp could not instantiate them. -/
+theorem rationalFunctionsEquiv_symm_mem_sections_top_iff (D : SchemeWeilDivisor X)
+    (f : X.functionField) :
+    (Scheme.rationalFunctionsEquiv ⊤).symm f ∈ sections D ⊤ ↔
+      f ∈ riemannRochSpace (equivFunctionFieldDivisor hex hdim D) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp only [map_zero, Submodule.zero_mem]
+  rw [mem_sections_iff, LinearEquiv.apply_symm_apply, mem_riemannRochSpace_iff_neg_le_ord hf,
+    ← (CodimensionOnePoint.equivPlace (k := k) hex hdim).forall_congr_right]
+  simp only [hf, false_or, TopologicalSpace.Opens.mem_top, forall_const,
+    CodimensionOnePoint.equivPlace_apply, coeff_equivFunctionFieldDivisor_toPlace,
+    CodimensionOnePoint.toPlace_ord]
+
+/-- **Global sections of `𝒪_X(D)` form the Riemann–Roch space `L(D)`.** A global section of the
+sheaf of a Weil divisor `D` is a rational function `f` with `ord_x f ≥ -D(x)` at every
+codimension-one point `x`, and the map to the function field identifies these with the
+Riemann–Roch space of the function-field divisor corresponding to `D`. -/
+def globalSectionsEquivRiemannRochSpace (D : SchemeWeilDivisor X) :
+    Γ(sheaf D, ⊤) ≃ₗ[k] riemannRochSpace (equivFunctionFieldDivisor hex hdim D) :=
+  let ι : Γ(sheaf D, ⊤) →ₗ[k] X.functionField :=
+    (Scheme.globalRationalFunctionsEquivFunctionField (k := k) (X := X)).toLinearMap ∘ₗ
+      { toFun := (sheafι D).app ⊤
+        map_add' := map_add _
+        map_smul' c s := by
+          rw [Scheme.Modules.base_smul_globalSections, Scheme.Modules.Hom.app_smul,
+            Scheme.Modules.base_smul_globalSections, RingHom.id_apply] }
+  have hι : Function.Injective ι :=
+    (Scheme.globalRationalFunctionsEquivFunctionField (k := k) (X := X)).injective.comp
+      (sheafι_app_injective D ⊤)
+  have hrange : LinearMap.range ι = riemannRochSpace (equivFunctionFieldDivisor hex hdim D) := by
+    ext f
+    rw [LinearMap.mem_range, ← rationalFunctionsEquiv_symm_mem_sections_top_iff hex hdim,
+      ← SetLike.mem_coe, ← range_sheafι_app D ⊤, Set.mem_range]
+    refine exists_congr fun s ↦ ?_
+    simp only [ι, LinearMap.comp_apply, LinearMap.coe_mk, AddHom.coe_mk,
+      LinearEquiv.coe_coe, Scheme.globalRationalFunctionsEquivFunctionField_apply,
+      LinearEquiv.eq_symm_apply]
+  (LinearEquiv.ofInjective ι hι).trans (LinearEquiv.ofEq _ _ hrange)
+
+/-- The Riemann–Roch space element attached to a global section of `𝒪_X(D)` is its underlying
+rational function. -/
+@[simp]
+lemma coe_globalSectionsEquivRiemannRochSpace_apply (D : SchemeWeilDivisor X)
+    (s : Γ(sheaf D, ⊤)) :
+    (globalSectionsEquivRiemannRochSpace hex hdim D s : X.functionField) =
+      Scheme.rationalFunctionsEquiv ⊤ ((sheafι D).app ⊤ s) := by
+  simp [globalSectionsEquivRiemannRochSpace]
+
+/-- **`dim_k H⁰(X, 𝒪_X(D)) = ℓ(D)`**: the dimension of the zeroth cohomology of `𝒪_X(D)` is the
+dimension of the Riemann–Roch space of the corresponding function-field divisor. -/
+theorem finrank_cohomology_zero_sheaf_eq_dim (D : SchemeWeilDivisor X) :
+    Module.finrank k (Scheme.Modules.Cohomology (sheaf D) 0) =
+      Divisor.dim (equivFunctionFieldDivisor hex hdim D) := by
+  rw [Divisor.dim_def]
+  exact ((Scheme.Modules.cohomologyZeroBaseLinearEquiv k X (sheaf D)).trans
+    (globalSectionsEquivRiemannRochSpace hex hdim D)).finrank_eq
+
+end GlobalSections
 
 variable [IsNoetherian X]
 
