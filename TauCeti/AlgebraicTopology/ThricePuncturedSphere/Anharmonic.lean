@@ -32,8 +32,9 @@ itself. The two involutions `mob01` and `mob1Inf` generate the other four: `mobR
 Pulling covers back along these maps is the topological counterpart of the action of `S₃` on
 permutation triples by permuting the branch points. The identity and `mob01` fix the basepoint
 `b = 1/2`; among the nonidentity maps, only `mob01` does. The other four maps move it, so they
-act on the fundamental group at `b` only after a choice of connecting path, which is why that
-action is well defined only on isomorphism classes of covers.
+induce maps between fundamental groups at different basepoints. A connecting path identifies
+these with automorphisms at `b`, up to inner conjugacy. This choice is separate from their
+canonical pullback action on covers.
 
 The puncture permutations are recorded by identifying each map with the restriction of a Möbius
 transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of an element of
@@ -225,21 +226,25 @@ theorem symm_mob0Inf : mob0Inf.symm = mob0Inf :=
 /-! ### The images of the basepoint -/
 
 /-- `mob1Inf` sends the basepoint to `-1`. -/
+@[simp]
 theorem coe_mob1Inf_basePt : (mob1Inf basePt : ℂ) = -1 := by
   rw [coe_mob1Inf, coe_basePt]
   norm_num
 
 /-- `mob0Inf` sends the basepoint to `2`. -/
+@[simp]
 theorem coe_mob0Inf_basePt : (mob0Inf basePt : ℂ) = 2 := by
   rw [coe_mob0Inf, coe_basePt]
   norm_num
 
 /-- `mobRot` sends the basepoint to `2`. -/
+@[simp]
 theorem coe_mobRot_basePt : (mobRot basePt : ℂ) = 2 := by
   rw [coe_mobRot, coe_basePt]
   norm_num
 
 /-- `mobRotInv` sends the basepoint to `-1`. -/
+@[simp]
 theorem coe_mobRotInv_basePt : (mobRotInv basePt : ℂ) = -1 := by
   rw [coe_mobRotInv, coe_basePt]
   norm_num
