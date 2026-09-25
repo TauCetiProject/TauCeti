@@ -492,8 +492,10 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     fundamentalDiscriminant_ne_zero hd.ne_zero
       (FaithfulSMul.algebraMap_injective ℤ (𝓞 (candidateGenusFieldBase hd))
         (h.trans (map_zero _).symm))
-  have hM : Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-      (fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
+  have hM :
+      Ideal.span
+        {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
+          (fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr hDne)
   obtain ⟨J, hJC, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime C ⟨_, hM⟩
   have hmem : (J : Ideal (𝓞 (candidateGenusFieldBase hd))) ∈
@@ -501,8 +503,10 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
         (genusFieldArtinExcludedPrimes hd) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
-    have hdvdM : v.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-        (fundamentalDiscriminant d)} :=
+    have hdvdM : v.asIdeal ∣
+        Ideal.span
+          {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
+            (fundamentalDiscriminant d)} :=
       Ideal.dvd_span_singleton.mpr <|
         (v.intCast_mem_asIdeal_iff _).mpr ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
     refine v.isPrime.ne_top (top_le_iff.mp ?_)

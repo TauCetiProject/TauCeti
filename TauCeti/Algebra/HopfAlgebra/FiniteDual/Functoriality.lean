@@ -96,8 +96,7 @@ private theorem dualDistribEquiv_tensor_map_apply (f : H →ₐc[k] K)
     dualDistribEquiv k H
         (Algebra.TensorProduct.map (mapAlgHom k f) (mapAlgHom k f) z) (x ⊗ₜ[k] y) =
       dualDistribEquiv k K z (f x ⊗ₜ[k] f y) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z₁ z₂ hz₁ hz₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (fun a b => a + b) hz₁ hz₂
   | tmul phi psi => simp
@@ -115,8 +114,7 @@ noncomputable def map (f : H →ₐc[k] K) :
       apply (dualDistribEquiv k H).injective
       apply LinearMap.ext
       intro xy
-      induction xy using TensorProduct.induction_on with
-      | zero => simp
+      induction xy using TensorProduct.inductionOn with
       | add xy₁ xy₂ hxy₁ hxy₂ =>
           simpa only [map_add, LinearMap.add_apply] using
             congrArg₂ (fun a b => a + b) hxy₁ hxy₂
@@ -220,8 +218,7 @@ private noncomputable def evalAlgHom :
           dualDistribEquiv k H (Coalgebra.comul phi) (x ⊗ₜ[k] y) := by
         rw [LinearMap.convMul_apply]
         generalize Coalgebra.comul (R := k) phi = z
-        induction z using TensorProduct.induction_on with
-        | zero => simp
+        induction z using TensorProduct.inductionOn with
         | add z₁ z₂ hz₁ hz₂ =>
             simpa only [map_add, LinearMap.add_apply] using
               congrArg₂ (fun a b => a + b) hz₁ hz₂
@@ -241,8 +238,7 @@ private theorem convMul_apply_eq_dualDistribEquiv
       dualDistribEquiv k H (phi ⊗ₜ[k] psi) (Coalgebra.comul x) := by
   rw [LinearMap.convMul_apply]
   generalize Coalgebra.comul (R := k) x = z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z₁ z₂ hz₁ hz₂ =>
       simpa only [map_add, LinearMap.add_apply] using
         congrArg₂ (fun a b => a + b) hz₁ hz₂
@@ -255,8 +251,7 @@ private theorem dualDistribEquiv_tensor_eval_apply
           (evalAlgHom k H).toLinearMap z)
           (phi ⊗ₜ[k] psi) =
       dualDistribEquiv k H (phi ⊗ₜ[k] psi) z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z₁ z₂ hz₁ hz₂ =>
       simpa only [map_add, LinearMap.add_apply, WithConv.ofConv_add] using
         congrArg₂ (fun a b => a + b) hz₁ hz₂
@@ -274,8 +269,7 @@ private noncomputable def evalCoalgHom :
     apply (dualDistribEquiv k (ConvolutionDual k H)).injective
     apply LinearMap.ext
     intro phipsi
-    induction phipsi using TensorProduct.induction_on with
-    | zero => simp
+    induction phipsi using TensorProduct.inductionOn with
     | add z₁ z₂ hz₁ hz₂ =>
         simpa only [map_add, LinearMap.add_apply] using
           congrArg₂ (fun a b => a + b) hz₁ hz₂

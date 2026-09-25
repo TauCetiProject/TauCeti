@@ -97,7 +97,7 @@ theorem mulEquiv_mk {K : Type*} (L : Type*) [Field K] [Field L] [Algebra R K]
     rw [← FractionalIdeal.ringEquivOfRingEquiv_trans_apply K (FractionRing R) (FractionRing S),
       ← FractionalIdeal.ringEquivOfRingEquiv_trans_apply K (FractionRing S) L, hf]
   simpa only [Units.coe_mapEquiv, Units.coe_map,
-    FractionalIdeal.canonicalEquiv_eq_ringEquivOfRingEquiv, MonoidHom.coe_coe,
+    FractionalIdeal.canonicalEquiv_eq_ringEquivOfRingEquiv, MonoidHom.coe_ofClass,
     RingEquiv.coe_toMulEquiv] using key I
 
 /-- The identity ring equivalence induces the identity class-group equivalence. -/

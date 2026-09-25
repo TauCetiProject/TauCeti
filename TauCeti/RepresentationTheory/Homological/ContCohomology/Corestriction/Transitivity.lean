@@ -446,7 +446,7 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
             V.subgroupOf U →* V) (AddMonoidHom.id M) f =
         fun x => (f : V → M) (Subgroup.subgroupOfEquivOfLe hVU x) := by
     ext x
-    simp only [cochainsMap1_apply, AddMonoidHom.id_apply, MonoidHom.coe_coe,
+    simp only [cochainsMap1_apply, AddMonoidHom.id_apply, MonoidHom.coe_ofClass,
       ContinuousMonoidHom.coe_coe, Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
   rw [hpull]
   exact cochainsCor1_composite G M U V hVU t Quotient.out_eq s Quotient.out_eq f
@@ -481,7 +481,7 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
           Subgroup.subgroupOfEquivOfLe hVU q.2) := by
     ext q
     obtain ⟨x, y⟩ := q
-    simp only [cochainsMap2_apply, AddMonoidHom.id_apply, MonoidHom.coe_coe,
+    simp only [cochainsMap2_apply, AddMonoidHom.id_apply, MonoidHom.coe_ofClass,
       ContinuousMonoidHom.coe_coe, Subgroup.subgroupOfContinuousMulEquivOfLe_apply]
   rw [hpull]
   exact cochainsCor2_composite G M U V hVU t Quotient.out_eq s Quotient.out_eq f

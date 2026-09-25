@@ -36,7 +36,7 @@ members. -/
 theorem finite_ne_bot_of_iSupIndep_of_isCompactElement {α ι : Type*} [CompleteLattice α]
     {a : ι → α} (ha : iSupIndep a)
     (hc : IsCompactElement (⨆ i, a i)) : {i | a i ≠ ⊥}.Finite := by
-  obtain ⟨s, hs⟩ := CompleteLattice.IsCompactElement.exists_finset_of_le_iSup α hc a le_rfl
+  obtain ⟨s, hs⟩ := hc.exists_finset_of_le_iSup a le_rfl
   refine s.finite_toSet.subset fun i hi ↦ ?_
   by_contra his
   refine hi ((ha i).eq_bot_of_le ((le_iSup a i).trans (hs.trans (iSup₂_le fun j hj ↦ ?_))))

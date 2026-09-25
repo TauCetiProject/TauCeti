@@ -301,7 +301,7 @@ instance : SMulMemClass (HopfIdeal R H) H H where
   smul_mem {I} h {_} hx := I.carrier.mul_mem_left h hx
 
 instance : PartialOrder (HopfIdeal R H) :=
-  .ofSetLike (HopfIdeal R H) H
+  .ofSetLike (HopfIdeal R H)
 
 /-- The underlying ideal of a Hopf ideal. -/
 @[expose] def toIdeal (I : HopfIdeal R H) : Ideal H :=

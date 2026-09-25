@@ -202,7 +202,7 @@ theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
     apply Units.ext
     apply Subtype.ext
     simp only [coe_unitFiltrationToIntegerUnits, x, Units.coe_map,
-      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Subring.coe_subtype]
+      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Subring.coe_subtype]
   refine ⟨x, ?_⟩
   -- Strip the multiplicative type tag to compare the two representatives in the module quotient.
   change Submodule.Quotient.mk (unitFiltrationDifference n x) = Submodule.Quotient.mk a
@@ -255,8 +255,7 @@ theorem unitFiltrationGradedSuccEquivResidueField_ofMul_mk (n : ℕ)
         (IsDiscreteValuationRing.not_a_field 𝒪[K]) (n + 1)).symm
         (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
   rw [unitFiltrationGradedSuccEquivResidueField]
-  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply,
-    MonoidHom.toAdditive_apply_apply, MulEquiv.coe_toMonoidHom, toMul_ofMul,
+  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
   -- What remains only strips the `Additive`/`Multiplicative` tags of the intermediate
   -- equivalence and reads the linear equivalence additively; both are definitional.

@@ -118,9 +118,12 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
     wassersteinEDist 1 μ ν = ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ := by
   refine le_antisymm ?_ ?_
   · refine (wassersteinEDist_le_eLpNorm_quantile_sub 1 μ ν).trans_eq ?_
-    rw [eLpNorm_one_eq_lintegral_enorm]
+    have hq : AEStronglyMeasurable (fun t ↦ μ.quantile t - ν.quantile t)
+        (volume.restrict (Ioo (0 : ℝ) 1)) :=
+      ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
+    rw [eLpNorm_one_eq_lintegral_enorm hq]
     exact lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub μ ν
-  · rw [wassersteinEDist_one_eq_transportCost]
+  · rw [wassersteinEDist_one_eq_transportCost measurable_edist]
     refine le_transportCost fun π hπ ↦ ?_
     have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
     calc ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ

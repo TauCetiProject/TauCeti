@@ -141,7 +141,7 @@ theorem comp_mem_virtualCharacters (φ : G →* H) {f : H → k}
     (hf : f ∈ virtualCharacters k H) : f ∘ φ ∈ virtualCharacters k G := by
   obtain ⟨x, hx⟩ := (mem_range_repRingCharacter_iff (k := k) (G := H)).2 hf
   have hfx : f ∘ φ = repRingCharacter k G (repRingRes k φ x) := by
-    rw [repRingCharacter_repRingRes, ← hx, AddMonoidHom.coe_coe]
+    rw [repRingCharacter_repRingRes, ← hx, AddMonoidHom.coe_ofClass]
   rw [hfx]
   exact repRingCharacter_mem_virtualCharacters _
 
@@ -149,9 +149,9 @@ theorem comp_mem_virtualCharacters (φ : G →* H) {f : H → k}
 with inverse restriction along the inverse isomorphism. -/
 noncomputable def repRingResEquiv (e : G ≃* H) : repRing k H ≃+* repRing k G :=
   have comp_symm : e.toMonoidHom.comp e.symm.toMonoidHom = MonoidHom.id H :=
-    MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm e
+    MulEquiv.toMonoidHom_comp_toMonoidHom_symm e
   have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id G :=
-    MulEquiv.coe_monoidHom_symm_comp_coe_monoidHom e
+    MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
   { repRingRes k e.toMonoidHom with
     invFun := repRingRes k e.symm.toMonoidHom
     left_inv := fun x => by

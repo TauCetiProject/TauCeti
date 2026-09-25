@@ -260,7 +260,7 @@ theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, 
     unitEmbedding R K (Units.map (algebraMap R K) u) ∈ integralUnits R K := by
   refine mem_integralUnits_iff.mpr fun v ↦ ?_
   rw [unitEmbedding_apply, algebraMap_apply, valuedAdicCompletion_eq_valuation', Units.coe_map,
-    MonoidHom.coe_coe, valuation_eq_one_iff_notMem]
+    MonoidHom.coe_ofClass, valuation_eq_one_iff_notMem]
   exact fun h ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
 
 /-- The finite ideles defining the trivial fractional ideal are exactly the everywhere-integral

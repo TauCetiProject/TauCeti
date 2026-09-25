@@ -161,7 +161,7 @@ theorem _root_.Matrix.mem_checkedBy_iff [Fintype ι] {H : Matrix ρ ι F} {x : �
 @[simp]
 theorem _root_.Matrix.le_checkedBy_iff [Fintype ι] {C : LinearCode F ι} {H : Matrix ρ ι F} :
     C ≤ H.checkedBy ↔ ∀ x ∈ C, H *ᵥ x = 0 := by
-  simp only [SetLike.le_def, mem_checkedBy_iff]
+  simp only [IsConcreteLE.le_iff, mem_checkedBy_iff]
 
 /-- Left multiplication can only enlarge the checked code. -/
 theorem _root_.Matrix.checkedBy_le_mul [Fintype ι] [Fintype σ] (P : Matrix σ' σ F)

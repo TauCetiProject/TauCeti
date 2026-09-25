@@ -379,7 +379,7 @@ theorem conorm_principal (hF : IsFunctionField k F) (hF' : IsFunctionField k' F'
 theorem conorm_zeros (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z : Fˣ) :
     conorm k' F' (zeros hF z) = zeros hF' (Units.map (algebraMap F F' : F →* F') z) := by
   refine WeilDivisor.ext fun P' ↦ ?_
-  rw [coeff_conorm, coeff_zeros, coeff_zeros, Units.coe_map, MonoidHom.coe_coe,
+  rw [coeff_conorm, coeff_zeros, coeff_zeros, Units.coe_map, MonoidHom.coe_ofClass,
     Place.ord_algebraMap_restrict k F P' (z : F), mul_max_of_nonneg _ _ (Int.natCast_nonneg _),
     mul_zero]
 

@@ -14,10 +14,8 @@ import Mathlib.Tactic.Group
 /-!
 # Consequences of the index formula
 
-The preimage `H.comap f` of a finite-index subgroup along a group homomorphism again has finite
-index: its index is the relative index of `H` in the range of `f`, which is finite. Adjoining
-the centre to a finite-index subgroup also keeps the index finite, since it only enlarges the
-subgroup.
+Adjoining the centre to a finite-index subgroup keeps the index finite, since it only enlarges
+the subgroup.
 
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
@@ -48,7 +46,6 @@ centre gives the `Γ.withCenter` readings.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
-* `Subgroup.isCoatom_of_index_prime`: a subgroup of prime index is maximal.
 -/
 
 
@@ -143,12 +140,6 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
   -- Stated as an instance because `G ⧸ H` reaches `Quotient` only through `HasQuotient`, which
   -- instance synthesis does not unfold: without this, `Countable (G ⧸ H)` is not found.
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
-
-/-- The preimage of a finite-index subgroup under a group homomorphism has finite index. -/
-@[to_additive]
-instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
-    (f : G' →* G) : (H.comap f).FiniteIndex :=
-  ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
 
 /-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
 has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
@@ -298,14 +289,6 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
-
-/-- A subgroup of prime index is maximal: an intermediate subgroup has index dividing a prime,
-so it is either the subgroup itself or everything. -/
-theorem isCoatom_of_index_prime {H : Subgroup G} (hH : H.index.Prime) : IsCoatom H := by
-  refine ⟨fun h ↦ hH.ne_one (index_eq_one.mpr h), fun K hK ↦ ?_⟩
-  rcases Nat.prime_mul_iff.mp ((relIndex_mul_index hK.le).symm ▸ hH) with ⟨-, hK1⟩ | ⟨-, hHK⟩
-  · exact index_eq_one.mp hK1
-  · exact absurd (relIndex_eq_one.mp hHK) (not_le_of_gt hK)
 
 end Subgroup
 

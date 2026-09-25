@@ -104,7 +104,7 @@ private theorem differentExponent_restrict_add_of_affineModel (P₂ : Place k₂
       (FractionRing.algEquiv C F₂).symm.toRingEquiv ?_
     apply IsLocalization.ringHom_ext A⁰
     ext a
-    simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_ringEquiv,
+    simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
       AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
     rw [IsScalarTower.algebraMap_apply A C F₂, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
   let _ : Module.IsTorsionFree B F₂ := .trans_faithfulSMul B F₁ F₂

@@ -88,8 +88,9 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
     ENNReal.continuous_rpow_const.measurable.comp hdX
   have hcY : Measurable fun z : Y × Y ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.measurable.comp hdY
-  rw [wassersteinEDist_rpow_eq_transportCost hp0 hp, wassersteinEDist_rpow_eq_transportCost hp0 hp,
-    wassersteinEDist_rpow_eq_transportCost hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
+  rw [wassersteinEDist_rpow_eq_transportCost (measurable_edist_toLp_prod hp hdX hdY) hp0 hp,
+    wassersteinEDist_rpow_eq_transportCost hdX hp0 hp,
+    wassersteinEDist_rpow_eq_transportCost hdY hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
     ← transportCost_comp_prodMap (MeasurableEquiv.toLp p (X × Y))
       (MeasurableEquiv.toLp p (X × Y)) hcZ]
   have hsep : (fun z : (X × Y) × X × Y ↦

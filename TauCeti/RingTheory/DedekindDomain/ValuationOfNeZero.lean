@@ -102,7 +102,7 @@ theorem exists_valuationOfNeZero_map_eq (φ : L →+* N) (ψ : B →+* C)
   have : IsScalarTower B C N := .of_algebraMap_eq' hcomp.symm
   have : Module.IsTorsionFree B C := Module.isTorsionFree_iff_algebraMap_injective.mpr hψ
   have : w.asIdeal.LiesOver (comapOfNeBot ψ w hne).asIdeal := ⟨comapOfNeBot_asIdeal ψ w hne⟩
-  refine ⟨(comapOfNeBot ψ w hne).asIdeal.ramificationIdx' w.asIdeal, fun u ↦ ?_⟩
+  refine ⟨w.asIdeal.ramificationIdx B, fun u ↦ ?_⟩
   rw [valuationOfNeZero_eq_iff, WithZero.coe_pow, valuationOfNeZero_eq]
   exact (valuation_liesOver N (comapOfNeBot ψ w hne) w (u : L)).symm
 

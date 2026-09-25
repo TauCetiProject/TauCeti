@@ -44,13 +44,13 @@ theorem exists_continuous_lift_of_compatible_levelSolutions
     intro V U hVU
     ext g
     simpa only [levelSolutionMap_apply, MonoidHom.comp_apply,
-      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] using
+      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using
         congrArg (fun s : LevelSolution α hα f U ↦ s.1 g) (hβ hVU)
   obtain ⟨φ, hφ, _⟩ := existsUnique_monoidHom_mk'_comp_eq
     (fun U ↦ (β U).1.toMonoidHom) hmaps
   have hquot (U : OpenNormalSubgroup A) (g : G) : ((φ g : A) : A ⧸ U.toSubgroup) = (β U).1 g := by
     simpa only [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] using DFunLike.congr_fun (hφ U) g
+      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using DFunLike.congr_fun (hφ U) g
   have hcont : Continuous φ := continuous_iff_forall_continuous_mk.mpr fun U ↦
     (β U).1.continuous.congr fun g ↦ (hquot U g).symm
   refine ⟨⟨φ, hcont⟩, ?_, hφ⟩
@@ -68,11 +68,11 @@ theorem exists_continuous_lift_of_compatible_levelSolutions
     have himage : (φ g)⁻¹ * a ∈
         (U.toSubgroup.map α.toMonoidHom).comap α.toMonoidHom := by
       simpa only [Subgroup.mem_comap, map_mul, map_inv, levelImage_toSubgroup,
-        ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] using QuotientGroup.eq.mp hlevel
+        ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using QuotientGroup.eq.mp hlevel
     simpa only [Subgroup.comap_map_eq, sup_comm] using himage
   have heq : (α (φ g))⁻¹ * α a = 1 := by
     simpa only [MonoidHom.mem_ker, map_mul, map_inv,
-      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] using hmem
+      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using hmem
   exact (inv_mul_eq_one.mp heq).trans ha
 
 end TauCeti

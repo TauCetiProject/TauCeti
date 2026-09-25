@@ -80,7 +80,7 @@ theorem ramificationIndex_adicCompletion :
   rw [← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
   refine TauCeti.ramificationIndex_eq_iff.2 fun x ↦ WithZero.coe_injective ?_
   simpa only [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
-    Units.coe_map, MonoidHom.coe_coe] using
+    Units.coe_map, MonoidHom.coe_ofClass] using
       normalizedValuationWithZero_adicCompletion_algebraMap v w (x : v.adicCompletion K)
 
 /-- **An unramified place gives an unramified completed extension.** If `B` is essentially of

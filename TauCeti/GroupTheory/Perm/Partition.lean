@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
-import Mathlib.Logic.Equiv.Fin.Rotate
+import Mathlib.GroupTheory.Perm.Fin
 
 /-!
 # Cycle types that count fixed points
@@ -662,10 +662,18 @@ end OrbitSizes
 
 The three shapes that the degree-four recognition theorems read off a factorization type. -/
 
-example : Equiv.Perm.fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by decide
+example : Equiv.Perm.fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by
+  rw [Equiv.Perm.fullCycleType_one]
+  rfl
 
-example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by decide
+example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by
+  have h : (0 : Fin 4) ≠ 1 := by decide
+  simp only [Equiv.Perm.fullCycleType, Equiv.Perm.support_swap h, Finset.card_pair h,
+    Fintype.card_fin, Equiv.Perm.isSwap_iff_cycleType.mp (Equiv.Perm.swap_isSwap_iff.mpr h)]
+  rfl
 
-example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by decide
+example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by
+  rw [Equiv.Perm.fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
+    cycleType_finRotate_of_le (by norm_num)]
 
 end TauCeti

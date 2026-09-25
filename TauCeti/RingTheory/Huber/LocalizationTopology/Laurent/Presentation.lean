@@ -106,8 +106,9 @@ noncomputable def laurentRelationIdeal :
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   letI := isHuberRing_locUniformSpace P T s S hden
-  Ideal.span {weightedC _ isWeightFamily_one_weight ((divBy t s : S) : UniformSpace.Completion S) -
-    weightedX _ isWeightFamily_one_weight 0}
+  Ideal.span
+    {weightedC _ isWeightFamily_one_weight ((divBy t s : S) : UniformSpace.Completion S) -
+      weightedX _ isWeightFamily_one_weight 0}
 
 /-- Unfolding lemma for `TauCeti.Huber.PairOfDefinition.laurentRelationIdeal`. -/
 theorem laurentRelationIdeal_def :

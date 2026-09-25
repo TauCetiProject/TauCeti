@@ -158,7 +158,7 @@ theorem mem_top {x : Γ} : x ∈ (⊤ : ConvexSubgroup Γ) :=
 
 /-- Convex subgroups are ordered by inclusion. -/
 instance : PartialOrder (ConvexSubgroup Γ) :=
-  PartialOrder.ofSetLike (ConvexSubgroup Γ) Γ
+  PartialOrder.ofSetLike (ConvexSubgroup Γ)
 
 instance : OrderBot (ConvexSubgroup Γ) where
   bot_le H _ hx := mem_bot.mp hx ▸ one_mem H
@@ -294,7 +294,7 @@ value group. -/
 def comap {Δ F : Type*} [Group Δ] [LinearOrder Δ] [FunLike F Γ Δ]
     [MonoidHomClass F Γ Δ] [OrderHomClass F Γ Δ] (f : F)
     (K : ConvexSubgroup Δ) : ConvexSubgroup Γ where
-  toSubgroup := K.toSubgroup.comap (MonoidHomClass.toMonoidHom f)
+  toSubgroup := K.toSubgroup.comap (MonoidHom.ofClass f)
   ordConnected' := K.ordConnected'.preimage_mono (OrderHomClass.monotone f)
 
 @[simp]

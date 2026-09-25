@@ -130,7 +130,7 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
       (one_mem_riemannRochSpace_iff.mpr hBeff)) fun hEq ↦ ?_
     rw [Divisor.dim_def, ← hEq, finrank_span_singleton (one_ne_zero : (1 : F) ≠ 0)] at hBdim
     omega
-  obtain ⟨x, hxB, hxspan⟩ := SetLike.exists_of_lt hlt
+  obtain ⟨x, hxB, hxspan⟩ := IsConcreteLE.exists_of_lt hlt
   have hxconst : ∀ c : k, algebraMap k F c ≠ x := fun c hc ↦
     hxspan (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
   have hx : Transcendental k x := fun halg ↦

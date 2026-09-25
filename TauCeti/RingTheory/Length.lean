@@ -102,7 +102,7 @@ theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
   obtain ⟨l, hl⟩ := Order.le_krullDim_iff.mp hkd
   -- Pick a witness for each strict step, and span them: the chain survives inside that span.
   have hx : ∀ i : Fin l.length, ∃ x : M, x ∈ l i.succ ∧ x ∉ l i.castSucc := fun i =>
-    SetLike.exists_of_lt (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ))
+    IsConcreteLE.exists_of_lt (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ))
   choose x hx1 hx2 using hx
   set N : Submodule A M := Submodule.span A (Set.range x) with hN
   have hxN : ∀ i, x i ∈ N := fun i => Submodule.subset_span ⟨i, rfl⟩

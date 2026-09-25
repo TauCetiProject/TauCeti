@@ -133,8 +133,7 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
   have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hs'
   -- Every vector of `E ⊗ V` is `1 ⊗ x + s ⊗ y`, using the basis `1, s` of `E`.
   have hdecomp (z : E ⊗[F] V) : ∃ x y : V, z = (1 : E) ⊗ₜ x + s ⊗ₜ y := by
-    induction z using TensorProduct.induction_on with
-    | zero => exact ⟨0, 0, by simp⟩
+    induction z using TensorProduct.inductionOn with
     | tmul e v =>
       obtain ⟨a, b, rfl⟩ :=
         Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul F E hs' e

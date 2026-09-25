@@ -58,8 +58,7 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   have hcomponent (φ : (N →₀ R) →ₗ[R] R) (t : M ⊗[R] (N →₀ R)) :
       TensorProduct.rid R M (φ.lTensor M t) =
         _root_.LinearMap.tensorComponent φ t := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul m n => simp
   have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
@@ -86,8 +85,7 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
   have hleft (z : M ⊗[R] N) :
       TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul m n =>
         simp only [TensorProduct.map_tmul, LinearMap.id_apply]
@@ -118,8 +116,7 @@ variable {T : Type w} [Semiring T] [Algebra R T]
     φ ((b.baseChange S).repr z i) =
       (b.baseChange T).repr
         (TensorProduct.map φ LinearMap.id z) i := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
   | tmul s m => simp
 

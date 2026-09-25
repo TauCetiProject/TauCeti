@@ -141,7 +141,6 @@ theorem pointHom_coordinateBialgHom_apply
     pointHom (coordinateBialgHom k F G q) (toConv (eval k F x)) = q x := by
   rw [← pointsMulEquiv_apply]
   convert DFunLike.congr_fun (pointHom_coordinateBialgHom (k := k) q) x using 1
-  rfl
 
 /-- A connected affine group's homomorphism to a finite constant group is trivial on base-valued
 points. -/

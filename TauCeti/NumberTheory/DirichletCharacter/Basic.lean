@@ -114,7 +114,7 @@ theorem exists_alt_unit_in_coset_with_char_separation {R : Type*} [CommMonoidWit
     ∃ u' : (ZMod N)ˣ,
       ZMod.unitsMap hd u' = ZMod.unitsMap hd u ∧ χ.toUnitHom u' ≠ χ.toUnitHom u := by
   rw [factorsThrough_iff_ker_unitsMap hd] at h_not_fac
-  obtain ⟨v, hv_ker, hv_chi⟩ := SetLike.not_le_iff_exists.mp h_not_fac
+  obtain ⟨v, hv_ker, hv_chi⟩ := IsConcreteLE.not_le_iff_exists.mp h_not_fac
   have hv_ker' : ZMod.unitsMap hd v = 1 := MonoidHom.mem_ker.mp hv_ker
   have hv_chi' : χ.toUnitHom v ≠ 1 := hv_chi ∘ MonoidHom.mem_ker.mpr
   exact ⟨u * v, by rw [map_mul, hv_ker', mul_one],

@@ -58,7 +58,7 @@ theorem unitsMap_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ}
   have hsub : valuation L (σ (x : L) - 1) = valuation L ((x : L) - 1) := by
     simpa only [map_sub, map_one] using σ.valuation_eq ((x : L) - 1)
   rw [mem_unitFiltration_iff_valuation_le hπ, mem_unitFiltration_iff_valuation_le hπ]
-  simp only [Units.coe_map, MonoidHom.coe_coe]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass]
   rw [σ.valuation_eq, hsub]
 
 /-- Every automorphism of a finite extension of a nonarchimedean local field maps each step of

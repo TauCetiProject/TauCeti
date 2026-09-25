@@ -300,8 +300,8 @@ theorem finiteModulesK0Equiv_refl :
     simp only [AddEquiv.coe_toAddMonoidHom, finiteModulesK0Equiv_of, AddEquiv.refl_apply]
     apply ExactK0.of_congr
     apply ObjectProperty.isoMk
-    simpa only [finiteModulesEquivalence_functor_obj_obj, toRingHom_refl, Functor.id_obj] using
-      (ModuleCat.restrictScalarsId R).app M.obj
+    simpa only [finiteModulesEquivalence_functor_obj_obj, toRingHom_eq_coe, toRingHom_refl,
+      Functor.id_obj] using (ModuleCat.restrictScalarsId R).app M.obj
 
 /-- Restriction along the inverse ring isomorphism induces the inverse isomorphism on `G₀`. -/
 @[simp]
@@ -320,7 +320,8 @@ theorem finiteModulesK0Equiv_trans {T : Type u} [Ring T] (e' : S ≃+* T) :
     simp only [AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply, finiteModulesK0Equiv_of]
     apply ExactK0.of_congr
     apply ObjectProperty.isoMk
-    simpa only [finiteModulesEquivalence_functor_obj_obj, toRingHom_trans, Functor.comp_obj] using
+    simpa only [finiteModulesEquivalence_functor_obj_obj, toRingHom_eq_coe, toRingHom_trans,
+      Functor.comp_obj] using
       (ModuleCat.restrictScalarsComp e.toRingHom e'.toRingHom).symm.app M.obj
 
 /-- Restriction along the identity ring isomorphism induces the identity on `K₀(proj R)`. -/
@@ -332,8 +333,8 @@ theorem finiteProjectiveModulesK0Equiv_refl :
       AddEquiv.refl_apply]
     apply ExactK0.of_congr
     apply ObjectProperty.isoMk
-    simpa only [finiteProjectiveModulesEquivalence_functor_obj_obj, toRingHom_refl,
-      Functor.id_obj] using
+    simpa only [finiteProjectiveModulesEquivalence_functor_obj_obj, toRingHom_eq_coe,
+      toRingHom_refl, Functor.id_obj] using
       (ModuleCat.restrictScalarsId R).app M.obj
 
 /-- Restriction along the inverse ring isomorphism induces the inverse isomorphism on `K₀`. -/
@@ -358,8 +359,8 @@ theorem finiteProjectiveModulesK0Equiv_trans {T : Type u} [Ring T] (e' : S ≃+*
       finiteProjectiveModulesK0Equiv_of]
     apply ExactK0.of_congr
     apply ObjectProperty.isoMk
-    simpa only [finiteProjectiveModulesEquivalence_functor_obj_obj, toRingHom_trans,
-      Functor.comp_obj] using
+    simpa only [finiteProjectiveModulesEquivalence_functor_obj_obj, toRingHom_eq_coe,
+      toRingHom_trans, Functor.comp_obj] using
       (ModuleCat.restrictScalarsComp e.toRingHom e'.toRingHom).symm.app M.obj
 
 /-! ### Compatibility with the Cartan map -/

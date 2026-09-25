@@ -147,7 +147,7 @@ theorem isHolomorphicSection_iff {U : Opens (TopCat.of ℂ)} {f : U → E} :
 /-- Being holomorphic is stable under restriction to a smaller open set. -/
 theorem IsHolomorphicSection.mono {U V : Opens (TopCat.of ℂ)} (h : U ≤ V) {f : V → E}
     (hf : IsHolomorphicSection f) :
-    IsHolomorphicSection fun x : U => f ⟨x.1, SetLike.le_def.mp h x.2⟩ := by
+    IsHolomorphicSection fun x : U => f ⟨x.1, IsConcreteLE.le_iff.mp h x.2⟩ := by
   obtain ⟨g, hg, hfg⟩ := hf
   exact ⟨g, hg.mono (SetLike.coe_subset_coe.mpr h), fun x => hfg _⟩
 
@@ -161,7 +161,7 @@ private def holomorphicLocal : TopCat.LocalPredicate fun _ : TopCat.of ℂ => E 
       (Subtype.val_injective.extend_apply f _ x).symm⟩
     obtain ⟨V, hzV, i, g, hg, hfg⟩ := hloc ⟨z, hz⟩
     refine (hg z hzV).congr (Filter.eventuallyEq_of_mem (V.isOpen.mem_nhds hzV) fun y hy => ?_)
-    have hyU : y ∈ U := SetLike.le_def.mp i.le hy
+    have hyU : y ∈ U := IsConcreteLE.le_iff.mp i.le hy
     have hext := Subtype.val_injective.extend_apply f (fun _ => (0 : E)) ⟨y, hyU⟩
     simp only at hext
     rw [hext]
@@ -212,7 +212,7 @@ theorem analyticOnNhd_sectionFun (s : (holomorphicPresheaf E).obj (op U)) :
 
 /-- Restricting a section along an inclusion of open sets restricts its underlying function. -/
 private theorem map_val_apply (i : U ⟶ V) (s : (holomorphicPresheaf E).obj (op V)) (y : U) :
-    ((holomorphicPresheaf E).map i.op s).1 y = s.1 ⟨y.1, SetLike.le_def.mp i.le y.2⟩ := rfl
+    ((holomorphicPresheaf E).map i.op s).1 y = s.1 ⟨y.1, IsConcreteLE.le_iff.mp i.le y.2⟩ := rfl
 
 /-- A function analytic on a neighbourhood of every point of `U`, read as a section over `U`. -/
 def toSection (U : Opens (TopCat.of ℂ)) (g : ℂ → E) (hg : AnalyticOnNhd ℂ g U) :
@@ -237,8 +237,8 @@ theorem germ_eq_iff (hxU : x ∈ U) (hxV : x ∈ V) (s : (holomorphicPresheaf E)
   · intro h
     obtain ⟨W, hxW, iU, iV, hmap⟩ := (holomorphicPresheaf E).germ_eq x hxU hxV s t h
     refine Filter.eventuallyEq_of_mem (W.isOpen.mem_nhds hxW) fun y hy => ?_
-    have hyU : y ∈ U := SetLike.le_def.mp iU.le hy
-    have hyV : y ∈ V := SetLike.le_def.mp iV.le hy
+    have hyU : y ∈ U := IsConcreteLE.le_iff.mp iU.le hy
+    have hyV : y ∈ V := IsConcreteLE.le_iff.mp iV.le hy
     have key := congrArg (fun r : (holomorphicPresheaf E).obj (op W) => r.1 ⟨y, hy⟩) hmap
     rw [sectionFun_coe s ⟨y, hyU⟩, sectionFun_coe t ⟨y, hyV⟩]
     exact key

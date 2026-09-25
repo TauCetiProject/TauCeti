@@ -89,8 +89,9 @@ overlap of a two-piece Laurent cover: killing `1 - XY` makes the class of `Y` in
 of `X`. -/
 noncomputable def laurentIdeal :
     Ideal (weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
-  Ideal.span {1 - weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 *
-    weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1}
+  Ideal.span
+    {1 - weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 *
+      weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1}
 
 /-- Membership in `(1 - XY)` is divisibility by `1 - XY`. -/
 theorem mem_laurentIdeal

@@ -359,7 +359,7 @@ theorem TransitiveGroupLabel.map_conj {n : ℕ} {j : TransitiveGroupIndex n}
   obtain ⟨τ, hτ⟩ := h
   refine ⟨τ * σ⁻¹, ?_⟩
   simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
-    ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
+    ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul]
   simpa [mul_assoc] using hτ
 
 /-- A subgroup and any conjugate subgroup have exactly the same transitive-group labels. -/
@@ -372,7 +372,7 @@ theorem transitiveGroupLabel_map_conj_iff {n : ℕ} {j : TransitiveGroupIndex n}
   · rintro ⟨τ, hτ⟩
     refine ⟨τ * σ, ?_⟩
     simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
-      ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul] at hτ
+      ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul] at hτ
     exact hτ
   · exact fun h => h.map_conj σ
 

@@ -193,6 +193,17 @@ private theorem table_eq_cyclotomicQuotient (e : ℕ)
   exact cyclotomicQuotient_natCast_mul e (table i k)
     (Finset.card_pos.mpr ⟨d.rep k, d.rep_mem_classFinset k⟩)
 
+/-- Read an entry of a two-dimensional `Array.ofFn`.
+
+`Array.getElem_ofFn` proves this in two steps, but as a `simp` lemma it also descends into the
+outer array and rewrites the lookups sitting inside its entries, where the resulting definitional
+check is prohibitively expensive.  This lemma matches the outer pair of lookups only. -/
+private theorem getElem_getElem_ofFn {β : Type*} {n : ℕ} (F : Fin n → Fin n → β)
+    (i k : Fin n) (h₁ : i.val < (Array.ofFn fun a ↦ Array.ofFn (F a)).size)
+    (h₂ : k.val < ((Array.ofFn fun a ↦ Array.ofFn (F a))[i.val]'h₁).size) :
+    ((Array.ofFn fun a ↦ Array.ofFn (F a))[i.val]'h₁)[k.val]'h₂ = F i k := by
+  simp
+
 /-- Enumerate the exact-cyclotomic candidates inspected by the solver.
 
 For every Galois-conjugate root, a permutation chooses how its modular rows align with the
@@ -255,7 +266,8 @@ private theorem conjugateResidueRow_mem_of_mem_candidates (e : ℕ) (he : e = Mo
       (Cyclotomic.conjugateResidues_lift hroot
         (fun l ↦ d.canonicalModularRow q (perms l i) k)) j
   simp only [canonicalModularRow] at hrow
-  simp only [Array.getElem_ofFn, Fin.eta]
+  simp only [getElem_getElem_ofFn]
+  simp only [Array.getElem_ofFn]
   rw [hrow]
   simpa only [canonicalModularRow] using canonicalModularRow_mem d q (perms j i)
 
@@ -372,10 +384,12 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
         exact fun l ↦ hcoeff (base i) k l
       apply CyclotomicCharacterTableData.ext
       · funext i k
-        simp only [output, Array.getElem_ofFn, Fin.eta]
+        simp only [output, getElem_getElem_ofFn]
+        simp only [Array.getElem_ofFn]
         exact homega i k
       · funext i k
-        simp only [output, Array.getElem_ofFn, Fin.eta]
+        simp only [output, getElem_getElem_ofFn]
+        simp only [Array.getElem_ofFn]
         rw [homega]
         exact d.table_eq_cyclotomicQuotient e hspec (base i) k
       · funext i

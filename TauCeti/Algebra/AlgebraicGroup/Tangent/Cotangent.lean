@@ -345,8 +345,7 @@ private lemma tangentScalarExtensionEquivBase_map_smul
     (b : B) (x : B ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R A)) :
     tangentScalarExtensionEquivBase (R := R) (A := A) (B := B) (b • x) =
       b • tangentScalarExtensionEquivBase (R := R) (A := A) (B := B) x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul b' f =>
       ext a
       rw [TensorProduct.smul_tmul', tangentScalarExtensionEquivBase_tmul_apply,

@@ -130,7 +130,7 @@ private lemma exists_minimal_support_mem {ι : Type*} (𝓑 : Basis ι K B)
       ((Algebra.TensorProduct.basis A 𝓑).repr z).support.card <
         ((Algebra.TensorProduct.basis A 𝓑).repr y).support.card → z = 0 := by
   classical
-  obtain ⟨x, hxI, hx0 : x ≠ 0⟩ := SetLike.exists_of_lt (bot_lt_iff_ne_bot.mpr hI : ⊥ < I)
+  obtain ⟨x, hxI, hx0 : x ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hI : ⊥ < I)
   have hex : ∃ n : ℕ, ∃ y ∈ I, y ≠ 0 ∧
       ((Algebra.TensorProduct.basis A 𝓑).repr y).support.card = n := ⟨_, x, hxI, hx0, rfl⟩
   obtain ⟨y₀, hy₀I, hy₀0, hcard⟩ := Nat.find_spec hex

@@ -165,7 +165,7 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
 squares. -/
 theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
     ∃ u : Kˣ, u ∈ unitFiltration K (2 * natCastValuation K 2 h2) ∧ ¬IsSquare u := by
-  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
+  obtain ⟨u, hu, hsq⟩ := IsConcreteLE.not_le_iff_exists.mp
     (not_unitFiltration_le_range_powMonoidHom_two h2)
   exact ⟨u, hu, by
     simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm]

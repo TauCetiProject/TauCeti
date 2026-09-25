@@ -325,7 +325,7 @@ theorem laurentQuotientRingEquiv_coe (ht : t ∈ T') (hsplit : ∀ u ∈ T', u �
       (fun _ : Fin 1 ↦ ({1} : Set (UniformSpace.Completion S))) isWeightFamily_one_weight ⧸
         laurentRelationIdeal P T s t S hden) →+* UniformSpace.Completion S')
       = laurentQuotientRestrictionRingHom P T s t S hden T' S' hden' hTT' ht := by
-  simp only [laurentQuotientRingEquiv, RingEquiv.coe_ringHom_ofRingHom]
+  simp only [laurentQuotientRingEquiv, RingEquiv.toRingHom_ofRingHom]
 /-- The pointwise form of `TauCeti.Huber.PairOfDefinition.laurentQuotientRingEquiv_coe`. -/
 @[simp]
 theorem laurentQuotientRingEquiv_apply (ht : t ∈ T') (hsplit : ∀ u ∈ T', u ∈ T ∨ u = t)
@@ -375,7 +375,7 @@ theorem laurentQuotientRingEquiv_symm_coe (ht : t ∈ T') (hsplit : ∀ u ∈ T'
         laurentRelationIdeal P T s t S hden))
       = laurentQuotientRingHom P T s t S hden T' S' hden' hsplit hcl := by
   simp only [laurentQuotientRingEquiv, RingEquiv.ofRingHom_symm,
-    RingEquiv.coe_ringHom_ofRingHom]
+    RingEquiv.toRingHom_ofRingHom]
 /-- The pointwise form of
 `TauCeti.Huber.PairOfDefinition.laurentQuotientRingEquiv_symm_coe`. -/
 @[simp]

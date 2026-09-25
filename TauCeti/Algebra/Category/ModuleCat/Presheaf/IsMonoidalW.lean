@@ -56,17 +56,13 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
 /-- Tensoring with a presheaf of modules `P` preserves local surjectivity: a section of
 `P ⊗ N'` is locally a sum of elementary tensors whose second factors lift along `f`. -/
 theorem _root_.PresheafOfModules.isLocallySurjective_whiskerLeft
-    (P : PresheafOfModules.{u} (R ⋙ forget₂ _ _)) {N N' : PresheafOfModules.{u} (R ⋙ forget₂ _ _)}
+    (P : PresheafOfModulesOfCommRing.{u} R) {N N' : PresheafOfModulesOfCommRing.{u} R}
     (f : N ⟶ N') [Presheaf.IsLocallySurjective J ((PresheafOfModules.toPresheaf _).map f)] :
     Presheaf.IsLocallySurjective J ((PresheafOfModules.toPresheaf _).map (P ◁ f)) where
   imageSieve_mem {U} t := by
     -- Expose the sectionwise tensor product in order to use tensor-product induction.
     change (P.obj (op U) ⊗ N'.obj (op U) : ModuleCat _) at t
-    induction t using TensorProduct.induction_on with
-    | zero =>
-      refine J.superset_covering ?_ (J.top_mem U)
-      rintro V g -
-      exact ⟨0, (map_zero _).trans (map_zero _).symm⟩
+    induction t using TensorProduct.inductionOn with
     | tmul p n' =>
       refine J.superset_covering ?_
         (Presheaf.imageSieve_mem J ((PresheafOfModules.toPresheaf _).map f) n')
@@ -88,21 +84,19 @@ theorem _root_.PresheafOfModules.isLocallySurjective_whiskerLeft
 injectivity. A section of `free F ⊗ N` killed by `free F ◁ f` has all its coefficients killed by
 `f`, and these finitely many coefficients vanish together on a covering sieve. -/
 theorem _root_.PresheafOfModules.isLocallyInjective_free_whiskerLeft (F : Cᵒᵖ ⥤ Type u)
-    {N N' : PresheafOfModules.{u} (R ⋙ forget₂ _ _)} (f : N ⟶ N')
+    {N N' : PresheafOfModulesOfCommRing.{u} R} (f : N ⟶ N')
     [Presheaf.IsLocallyInjective J ((PresheafOfModules.toPresheaf _).map f)] :
     Presheaf.IsLocallyInjective J
       ((PresheafOfModules.toPresheaf _).map ((PresheafOfModules.free _).obj F ◁ f)) where
   equalizerSieve_mem {U} x y hxy := by
     classical
-    let e := finsuppScalarLeft ((R ⋙ forget₂ _ RingCat).obj U) (N.obj U) (F.obj U)
-    let t : (F.obj U →₀ (R ⋙ forget₂ _ RingCat).obj U) ⊗[(R ⋙ forget₂ _ RingCat).obj U]
-      N.obj U := x - y
+    let e := finsuppScalarLeft (R.obj U) (N.obj U) (F.obj U)
+    let t : (F.obj U →₀ R.obj U) ⊗[R.obj U] N.obj U := x - y
     have ht : (f.app U).hom.lTensor _ t = 0 := (map_sub _ x y).trans (sub_eq_zero.2 hxy)
     have hz : ∀ z ∈ (e t).support, Presheaf.equalizerSieve
         (F := (PresheafOfModules.toPresheaf _).obj N) (e t z) 0 ∈ J U.unop := fun z _ ↦
       Presheaf.equalizerSieve_mem J ((PresheafOfModules.toPresheaf _).map f) _ _ <| by
-        have := congrArg (fun s ↦ finsuppScalarLeft ((R ⋙ forget₂ _ RingCat).obj U) (N'.obj U)
-          (F.obj U) s z) ht
+        have := congrArg (fun s ↦ finsuppScalarLeft (R.obj U) (N'.obj U) (F.obj U) s z) ht
         simp only [finsuppScalarLeft_lTensor_apply, map_zero, Finsupp.coe_zero,
           Pi.zero_apply] at this
         exact this.trans (map_zero _).symm

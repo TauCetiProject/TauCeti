@@ -177,7 +177,7 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
     simpa only [← Divisor.dim_def, E, D] using hdimlt
   have hlt : riemannRochSpace E < riemannRochSpace D :=
     Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
-  obtain ⟨x, hxD, hxE⟩ := SetLike.exists_of_lt hlt
+  obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
   have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
   have hxDord := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxD
   have hxnotE : ¬∀ Q : Place k F, -E.coeff Q ≤ Q.ord x := by

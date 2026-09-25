@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 -- and the transfer lemmas).
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.FieldTheory.Normal.Closure
+import Mathlib.RingTheory.Adjoin.Polynomial.Transcendental
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.PurelyInseparable

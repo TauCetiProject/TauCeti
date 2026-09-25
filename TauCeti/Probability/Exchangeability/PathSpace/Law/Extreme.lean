@@ -104,7 +104,7 @@ theorem ergodic_shift_infinitePi_const (P : ProbabilityMeasure α) :
     Ergodic (shift α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) := by
   have hexchLaw : ExchangeableLaw (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
     exchangeableLaw_infinitePi_const P
-  refine { hexchLaw.contractableLaw.measurePreserving_shift with aeconst_set := ?_ }
+  refine Ergodic.of_preimage_eq hexchLaw.contractableLaw.measurePreserving_shift ?_
   intro s hs hs_shift
   have hs_inv : MeasurableSet[MeasurableSpace.invariants (shift α)] s := ⟨hs, hs_shift⟩
   have hzeroOne := exchangeableSigma_trivial_of_infinitePi P

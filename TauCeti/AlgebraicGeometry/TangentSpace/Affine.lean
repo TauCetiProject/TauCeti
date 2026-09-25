@@ -91,7 +91,7 @@ noncomputable def kernelResidueFieldRingEquiv :
       ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)) :=
   (RingHom.quotientKerEquivOfSurjective (surjective f)).symm.trans
     (IsLocalization.AtPrime.equivQuotMaximalIdeal (RingHom.ker (f : H →+* k))
-      ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)))
+      ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))).toRingEquiv
 
 /-- The residue-field equivalence agrees with the canonical algebra map from the ground field. -/
 @[simp]
@@ -103,13 +103,13 @@ theorem kernelResidueFieldRingEquiv_apply (r : k) :
   -- `ResidueField` is definitionally the quotient by the maximal ideal, but this bridge is
   -- opaque to `RingEquiv.trans_apply` at its default transparency.
   change (IsLocalization.AtPrime.equivQuotMaximalIdeal (RingHom.ker (f : H →+* k))
-      ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)))
+      ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))).toRingEquiv
         ((RingHom.quotientKerEquivOfSurjective (surjective f)).symm r) = _
   have h : (RingHom.quotientKerEquivOfSurjective (surjective f)).symm r =
       Ideal.Quotient.mk (RingHom.ker (f : H →+* k)) (algebraMap k H r) := by
     simpa using RingHom.quotientKerEquivOfSurjective_symm_apply
       (f := (f : H →+* k)) (surjective f) (algebraMap k H r)
-  rw [h,
+  rw [h, AlgEquiv.coe_toRingEquiv,
     IsLocalization.AtPrime.equivQuotMaximalIdeal_apply_mk]
   rw [← IsScalarTower.algebraMap_apply k H
       ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)),

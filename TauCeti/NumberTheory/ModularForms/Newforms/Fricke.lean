@@ -91,7 +91,7 @@ theorem cuspFormsNew_map_normalizedFrickeOperatorCusp (N : ℕ) [NeZero N] (k : 
   refine ⟨(-1 : ℂ) ^ k • normalizedFrickeOperatorCusp k f,
     Submodule.smul_mem _ _ (normalizedFrickeOperatorCusp_mem_cuspFormsNew hf), ?_⟩
   rw [map_smul, normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply, smul_smul,
-    ← mul_zpow, neg_one_mul, neg_neg, one_zpow, one_smul]
+    ← mul_zpow, neg_one_mul, neg_neg, _root_.one_zpow, one_smul]
 
 /-! ### `𝒲_N` commutes with the good Hecke operators on `S_k(N, 1)` -/
 

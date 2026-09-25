@@ -68,8 +68,9 @@ noncomputable def laurentCoverLeIdeal (f : A) : Ideal R₁ :=
 /-- The defining presentation of `laurentCoverLeIdeal`. -/
 theorem laurentCoverLeIdeal_def (f : A) :
     laurentCoverLeIdeal A f =
-      Ideal.span {weightedC _ isWeightFamily_one_weight f -
-        weightedX _ isWeightFamily_one_weight 0} :=
+      Ideal.span
+        {weightedC _ isWeightFamily_one_weight f -
+          weightedX _ isWeightFamily_one_weight 0} :=
   by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≤ 1}`. -/
@@ -86,8 +87,9 @@ noncomputable def laurentCoverGeIdeal (f : A) : Ideal R₁ :=
 /-- The defining presentation of `laurentCoverGeIdeal`. -/
 theorem laurentCoverGeIdeal_def (f : A) :
     laurentCoverGeIdeal A f =
-      Ideal.span {1 - weightedC _ isWeightFamily_one_weight f *
-        weightedX _ isWeightFamily_one_weight 0} :=
+      Ideal.span
+        {1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0} :=
   by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≥ 1}`. -/

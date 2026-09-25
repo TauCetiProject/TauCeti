@@ -61,13 +61,11 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
     (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
     B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
     simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
   | tmul a m =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ =>
       simp only [map_add, hy₁, hy₂]
     | tmul a' m' =>

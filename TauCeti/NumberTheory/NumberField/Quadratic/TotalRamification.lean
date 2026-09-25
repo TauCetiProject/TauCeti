@@ -86,7 +86,7 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
   have hx1 : (x : Ideal (𝓞 K)) = 𝔭 := by rw [hx]
   -- `e(𝔭) ≥ 2`, since it is positive and not `1`.
   have he : 2 ≤ 𝔭.ramificationIdx ℤ :=
-    (Nat.two_le_iff _).mpr ⟨(Ideal.ramificationIdx_pos 𝔭 ℤ).ne', hram⟩
+    (Nat.two_le_iff _).mpr ⟨(Ideal.ramificationIdx_pos ℤ 𝔭).ne', hram⟩
   have hf0 : 1 ≤ 𝔭.inertiaDeg ℤ := Ideal.inertiaDeg_pos 𝔭 ℤ
   -- The summand at `𝔭` is at least `2`, since `e(𝔭) ≥ 2` and `f(𝔭) ≥ 1`.
   have htwo : 2 ≤ 𝔭.ramificationIdx ℤ * 𝔭.inertiaDeg ℤ :=
@@ -105,7 +105,7 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
     by_contra hne
     exact absurd ((Finset.sum_eq_zero_iff.mp hrest) q
         (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ q⟩))
-      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos q.1 ℤ).ne' (Ideal.inertiaDeg_pos q.1 ℤ).ne')
+      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.1).ne' (Ideal.inertiaDeg_pos q.1 ℤ).ne')
   exact ⟨heone, hfone, hx1 ▸ Set.eq_singleton_iff_unique_mem.mpr
     ⟨x.2, fun q hq => congrArg Subtype.val (huniq ⟨q, hq.1, hq.2⟩)⟩⟩
 

@@ -259,7 +259,7 @@ theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     hloc.localInverse.open_source.mem_nhds hloc.localInverse_mem_source
   have hpre : hloc.localInverse ⁻¹' U ∈ 𝓝 (riemannianExp I M p w) :=
     hloc.continuousAt_localInverse.preimage_mem_nhds (by rw [hinv]; exact h.isOpen.mem_nhds hw)
-  refine hloc.localInverse_contMDiffAt.congr_of_eventuallyEq ?_
+  refine hloc.contMDiffAt_localInverse.congr_of_eventuallyEq ?_
   filter_upwards [hsource, hpre] with z hz hzU
   have hzexp : riemannianExp I M p (hloc.localInverse z) = z := hloc.localInverse_right_inv hz
   have hlog := h.riemannianLog_riemannianExp hzU

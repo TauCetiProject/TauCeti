@@ -164,7 +164,7 @@ theorem not_isSimpleGroup_of_card_carrier_eq_prime_pow {g : G} {p k : ℕ} (hp :
     (irreducibleRepresentation ℂ i) (isOfFinOrder_of_finite g).orderOf_pos.ne'
     (pow_orderOf_eq_one g) (by rw [character_irreducibleRepresentation]; exact hnorm)
   rcases hsimple.eq_bot_or_eq_top_of_normal
-    (MonoidHom.ker (irreducibleRepresentation ℂ i)) inferInstance with hker | hker
+    (MonoidHom.ker (irreducibleRepresentation ℂ i)) with hker | hker
   · -- the representation is faithful, so a scalar value makes `g` central
     have hinj : Function.Injective (irreducibleRepresentation ℂ i) :=
       (MonoidHom.ker_eq_bot_iff _).1 hker
@@ -262,7 +262,7 @@ private theorem isSolvable_aux {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (a b : 
           have hgc : g ∈ Subgroup.center G :=
             Subgroup.centralizer_eq_top_iff_subset.1 htop (Set.mem_singleton g)
           have hcenter : Subgroup.center G = ⊤ := by
-            rcases hsimple.eq_bot_or_eq_top_of_normal (Subgroup.center G) inferInstance with h | h
+            rcases hsimple.eq_bot_or_eq_top_of_normal (Subgroup.center G) with h | h
             · exact absurd (by rw [h] at hgc; simpa using hgc) hgne
             · exact h
           exact Group.isSolvable_of_comm fun x y => by

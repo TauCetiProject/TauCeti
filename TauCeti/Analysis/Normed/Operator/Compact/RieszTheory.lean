@@ -175,7 +175,7 @@ private theorem exists_riesz {P Q : Submodule 𝕜 X} (hPQ : P ≤ Q) (hP : IsCl
   have h₁ : IsClosed ((P.comap Q.subtype : Submodule 𝕜 Q) : Set Q) :=
     hP.preimage continuous_subtype_val
   have h₂ : ∃ x : Q, x ∉ P.comap Q.subtype := by
-    obtain ⟨x, hxQ, hxP⟩ := SetLike.exists_of_lt (lt_of_le_of_ne hPQ hne)
+    obtain ⟨x, hxQ, hxP⟩ := IsConcreteLE.exists_of_lt (lt_of_le_of_ne hPQ hne)
     exact ⟨⟨x, hxQ⟩, by simpa using hxP⟩
   obtain ⟨x₀, hx₀norm, hx₀⟩ := riesz_lemma_of_norm_lt hc (R := ‖c‖ + 1) (by linarith) h₁ h₂
   refine ⟨(x₀ : X), x₀.2, hx₀norm, fun y hy => ?_⟩

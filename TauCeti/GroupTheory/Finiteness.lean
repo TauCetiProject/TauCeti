@@ -162,7 +162,7 @@ theorem Group.fg_of_fg_ker_of_fg_range {G H : Type*} [Group G] [Group H] (φ : G
   have h₂ : ((⊤ : Subgroup G) ⊓ φ.ker).FG := by
     rw [top_inf_eq]
     exact (Group.fg_iff_subgroup_fg _).mp ‹Group.FG φ.ker›
-  -- `Group.FG G` is by definition finite generation of `(⊤ : Subgroup G)`
-  exact ⟨Subgroup.fg_of_fg_map_of_fg_inf_ker φ h₁ h₂⟩
+  -- `Group.FG G` is finite generation of `(⊤ : Subgroup G)`
+  exact Group.fg_def.mpr (Subgroup.fg_of_fg_map_of_fg_inf_ker φ h₁ h₂)
 
 end

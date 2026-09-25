@@ -142,7 +142,7 @@ private theorem exists_isAnalyticPoint_isContinuous_of_prime_specialization
     dsimp [u]
     exact haV
   have hu_ne : ∃ a ∈ P.idealOfDefinition, u a ≠ 0 := by
-    obtain ⟨a, haI, hap⟩ := SetLike.not_le_iff_exists.mp hIp
+    obtain ⟨a, haI, hap⟩ := IsConcreteLE.not_le_iff_exists.mp hIp
     refine ⟨a, haI, ?_⟩
     dsimp [u]
     exact (Valuation.ne_zero_iff V.valuation).mpr

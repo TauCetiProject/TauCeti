@@ -301,11 +301,13 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
   set nu := mu.restrict ((⊤ : Opens E) : Set E) with hnu
   set q := W1p.differenceQuotient le_rfl v t (Set.mapsTo_univ (· + t • v) _) u with hq
   -- The inner product against `v` is dominated by `‖v‖` times the gradient.
+  have hmeas : AEStronglyMeasurable (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) nu :=
+    aestronglyMeasurable_const.inner (Lp.aestronglyMeasurable (W1p.gradient u))
   have hinner : eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu
       ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
     calc eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu
         ≤ eLpNorm (‖v‖ • (W1p.gradient u : E → E)) p nu :=
-          eLpNorm_mono_ae (Filter.Eventually.of_forall fun x ↦ by
+          eLpNorm_mono_ae hmeas (Filter.Eventually.of_forall fun x ↦ by
             rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
             exact abs_real_inner_le_norm v _)
       _ = ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by

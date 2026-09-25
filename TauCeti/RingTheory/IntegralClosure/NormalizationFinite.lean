@@ -335,7 +335,7 @@ theorem IsIntegralClosure.isNoetherianRing (K : Type*) [Field K] [Algebra A K] [
   · exact Submodule.fg_bot
   -- A nonzero ideal of an integral extension meets the base ring in a nonzero element.
   obtain ⟨a, ha𝔟, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (Ideal.IsIntegral.comap_ne_bot (A := C) A h0)
+    (Ideal.IsIntegral.under_ne_bot (A := C) A h0)
   -- `C` is an `A`-submodule of `L`, so the length bound makes `C ⧸ aC` a Noetherian `A`-module.
   have hinj : Function.Injective ((Algebra.linearMap C L).restrictScalars A) :=
     IsIntegralClosure.algebraMap_injective C A L

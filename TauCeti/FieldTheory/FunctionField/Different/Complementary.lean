@@ -112,7 +112,7 @@ theorem exists_mem_differentIdeal_ord_eq :
   have hnot : ¬ (centerIntegralClosure k F P').asIdeal ^ (differentExponent k F P' + 1) ∣
       differentIdeal (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F') :=
     fun h ↦ by simpa using (pow_dvd_differentIdeal_iff_le_differentExponent k F P').mp h
-  obtain ⟨y, hy, hyP⟩ := SetLike.not_le_iff_exists.mp (mt Ideal.dvd_iff_le.mpr hnot)
+  obtain ⟨y, hy, hyP⟩ := IsConcreteLE.not_le_iff_exists.mp (mt Ideal.dvd_iff_le.mpr hnot)
   have hy0 : y ≠ 0 := by
     rintro rfl
     exact hyP (zero_mem _)

@@ -131,7 +131,7 @@ private theorem ramificationIdx_eq_and_inertiaDeg_eq :
     P.ramificationIdx 𝓞D = P.ramificationIdx A ∧ P.inertiaDeg 𝓞D = P.inertiaDeg A := by
   obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
   refine eq_and_eq_of_pos_of_le_of_mul_le_mul
-    (ramificationIdx_pos P 𝓞D) (inertiaDeg_pos P 𝓞D)
+    (ramificationIdx_pos 𝓞D P) (inertiaDeg_pos P 𝓞D)
     ((P.under 𝓞D).ramificationIdx_above_le P) (inertiaDeg_above_le (P.under 𝓞D) P) ?_
   have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
     (P.under 𝓞D) B (stabilizer Gal(L/K) P)
@@ -160,7 +160,7 @@ theorem ramificationIdx_under_eq_one : (P.under 𝓞D).ramificationIdx A = 1 := 
   obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
   have h := ramificationIdx_tower (R := A) (P.under 𝓞D) P
   rw [ramificationIdx_eq A K L P D 𝓞D] at h
-  exact (right_eq_mul₀ (ramificationIdx_pos P A).ne').mp h
+  exact (right_eq_mul₀ (ramificationIdx_pos A P).ne').mp h
 
 include K L D P in
 /-- The prime contracted to the decomposition ring has residue degree one over the base,

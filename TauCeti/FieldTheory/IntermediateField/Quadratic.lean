@@ -273,7 +273,7 @@ theorem exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two [NeZero (2 : K)]
     refine bot_le.lt_of_ne fun h => ?_
     rw [← h, IntermediateField.finrank_bot] at hE
     omega
-  obtain ⟨y, hyE, hyb⟩ := SetLike.exists_of_lt hEbot
+  obtain ⟨y, hyE, hyb⟩ := IsConcreteLE.exists_of_lt hEbot
   obtain ⟨hEeq, hdeg⟩ := adjoin_simple_eq_of_finrank_eq_two hE hyE hyb
   have hEfin : FiniteDimensional K E := .of_finrank_pos (by omega)
   have hyint : IsIntegral K y := (IsIntegral.of_finite K (⟨y, hyE⟩ : E)).map E.val

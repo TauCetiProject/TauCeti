@@ -133,7 +133,7 @@ noncomputable def ringOfIntegersQuadraticConj (hmin : minpoly ℤ θ = X ^ 2 - C
 @[simp] theorem coe_ringOfIntegersQuadraticConj (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (x : 𝓞 K) :
     (ringOfIntegersQuadraticConj hmin hgen x : K) = quadraticConj hmin hgen (x : K) := by
-  rw [ringOfIntegersQuadraticConj, RingOfIntegers.mapRingEquiv_apply, AlgEquiv.coe_ringEquiv]
+  rw [ringOfIntegersQuadraticConj, RingOfIntegers.mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
 
 /-- Quadratic conjugation on `𝓞 K` sends the generator `θ` to `-θ`. -/
 @[simp] theorem ringOfIntegersQuadraticConj_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)

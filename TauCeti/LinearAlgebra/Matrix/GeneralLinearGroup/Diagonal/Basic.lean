@@ -366,7 +366,8 @@ theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [Decidable
     (f : k →+* S) (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
   ext i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map, MonoidHom.coe_coe]
+  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map,
+    MonoidHom.coe_ofClass]
   split_ifs <;> simp
 
 /-- If `P` intertwines `M` with a diagonal matrix, there is an intertwining matrix of determinant

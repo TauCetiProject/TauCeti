@@ -91,7 +91,7 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
         ((Rep.indFunctor k S.subtype).map
           ((forget₂ (FDRep k S) (Rep k S)).map f)) ≫
         (Rep.resFunctor S.subtype).map (indFDRepForgetIso B).inv = _
-  rw [Category.assoc, Iso.map_inv_hom_id_assoc]
+  rw [Category.assoc, Iso.inv_hom_id_map_assoc]
   -- `rw` performs this last rewrite as well, but the two sides then still differ in the instance
   -- paths behind the `resFDRep` and `Rep.resFunctor` wrappers, which its closing reducible `rfl`
   -- does not see; `erw` finishes up to those.

@@ -163,7 +163,7 @@ the canonical identity on representatives. -/
 lemma normalizerQuotientEquivMap_refl_mk_congr (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientCongr
-        (by rw [MulEquiv.coe_monoidHom_refl, _root_.Subgroup.map_id] :
+        (by rw [MulEquiv.toMonoidHom_refl, _root_.Subgroup.map_id] :
           H.map ((MulEquiv.refl G : G ≃* G) : G →* G) = H)
       (normalizerQuotientEquivMap H (MulEquiv.refl G) (normalizerQuotientMk H g)) =
       normalizerQuotientMk H g := by
@@ -176,7 +176,7 @@ representatives. -/
 lemma normalizerQuotientEquivMap_trans_mk_congr (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientCongr
-        (by rw [_root_.Subgroup.map_map, ← MulEquiv.coe_monoidHom_trans] :
+        (by rw [_root_.Subgroup.map_map, ← MulEquiv.toMonoidHom_trans] :
           (H.map (e : G →* K)).map (f : K →* L) =
             H.map ((e.trans f : G ≃* L) : G →* L))
       (normalizerQuotientEquivMap (H.map (e : G →* K)) f

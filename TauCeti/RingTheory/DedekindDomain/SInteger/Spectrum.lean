@@ -211,8 +211,9 @@ lemma valuation_integerPrimeOverOfNotMem {v : HeightOneSpectrum R} (hv : v ∉ S
     (integerPrimeOverOfNotMem K S hv) x
   -- the extended ideal *is* the prime above, so Mathlib's `ramificationIdx'_map_self_eq_one` gives
   -- the index directly
-  have hone : Ideal.ramificationIdx' v.asIdeal (integerPrimeOverOfNotMem K S hv).asIdeal = 1 := by
-    rw [integerPrimeOverOfNotMem_asIdeal]
+  have hone : (integerPrimeOverOfNotMem K S hv).asIdeal.ramificationIdx R = 1 := by
+    rw [← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal _ v.ne_bot,
+      integerPrimeOverOfNotMem_asIdeal]
     exact Ideal.ramificationIdx'_map_self_eq_one (integer_map_asIdeal_ne_top K S hv)
       (Ideal.map_ne_bot_of_ne_bot v.ne_bot)
   rwa [hone, pow_one, Algebra.algebraMap_self, RingHom.id_apply, eq_comm] at h

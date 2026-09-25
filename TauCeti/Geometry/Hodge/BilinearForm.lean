@@ -118,7 +118,6 @@ theorem integralFormBaseChange_conj_right (hℂ : IsBaseChange ℂ ιℂ) (Q : L
     integralFormBaseChange hℂ Q (ιℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q (ιℂ x) y) := by
   induction y using hℂ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul z y hy => simp [hy]
   | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂]
@@ -131,7 +130,6 @@ theorem integralFormBaseChange_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearM
     integralFormBaseChange hℂ Q (latticeConj hℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q x y) := by
   induction x using hℂ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_conj_right hℂ Q v y
   | smul z x hx => simp [hx]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
@@ -253,7 +251,6 @@ private theorem integralFormBaseChange_rationalToComplexLinearEquiv_ι (hℚ : I
     integralFormBaseChange hℂ Q (ιℂ v) (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q (ιℚ v) y : ℚ) : ℂ) := by
   induction y using hℚ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul q y hy =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hy]
@@ -268,7 +265,6 @@ theorem integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul (hℚ : IsB
         (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q x y : ℚ) : ℂ) := by
   induction x using hℚ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_rationalToComplexLinearEquiv_ι hℚ hℂ Q v y
   | smul q x hx =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hx]

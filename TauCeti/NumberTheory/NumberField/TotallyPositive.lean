@@ -126,7 +126,7 @@ positive. -/
 theorem mem_totallyPositiveUnits {u : Kˣ} :
     u ∈ totallyPositiveUnits ↔ IsTotallyPositive (u : K) := by
   simp only [totallyPositiveUnits, Subgroup.mem_iInf, Subgroup.mem_comap,
-    Units.mem_posSubgroup, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe,
+    Units.mem_posSubgroup, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     isTotallyPositive_iff]
 
 /-- Every square of a unit is a totally positive unit. -/
@@ -162,7 +162,7 @@ omit [NumberField K] in
 @[simp] theorem mem_totallyPositiveIntegerUnits {u : (𝓞 K)ˣ} :
     u ∈ totallyPositiveIntegerUnits ↔ IsTotallyPositive (algebraMap (𝓞 K) K (u : 𝓞 K)) := by
   simp only [totallyPositiveIntegerUnits, Subgroup.mem_comap, mem_totallyPositiveUnits,
-    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 omit [NumberField K] in
 /-- Every square of an integer unit is a totally positive integer unit. -/

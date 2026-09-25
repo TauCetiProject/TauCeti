@@ -207,7 +207,7 @@ instance isSeparable_fractionRing_integralClosure :
     (FractionRing.algEquiv (integralClosure (P.integers) F') F').symm.toRingEquiv ?_
   apply IsLocalization.ringHom_ext (P.integers)⁰
   ext a
-  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_ringEquiv,
+  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
     AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
   rw [IsScalarTower.algebraMap_apply (P.integers) (integralClosure (P.integers) F') F',
     AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
@@ -348,7 +348,7 @@ theorem restrict_eq_iff_integers_le (P : Place k F) :
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro rfl f hf
     exact (mem_integers_restrict_iff k F P' f).mp hf
-  · refine (eq_of_integers_le (SetLike.le_def.mpr fun f hf ↦ ?_)).symm
+  · refine (eq_of_integers_le (IsConcreteLE.le_iff.mpr fun f hf ↦ ?_)).symm
     exact (mem_integers_restrict_iff k F P' f).mpr (h f hf)
 
 /-- **`P' ∣ P` by valuations**: `P'` lies over `P` exactly when the restriction of its valuation

@@ -78,7 +78,8 @@ theorem gradedBracket_freeProP_two_ne_zero
     (mem_map_of_mem f.toMonoidHom h)
   have hne : ⁅(r 1 : DihedralGroup 4), (sr 0 : DihedralGroup 4)⁆ ≠ 1 := by decide
   rw [pLowerCentralSeries_dihedral_four_two, mem_bot, coe_mk, coe_mk, coe_mk,
-    map_commutatorElement, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe, hf0, hf1] at hm
+    map_commutatorElement, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, hf0,
+    hf1] at hm
   exact hne hm
 
 /-- The `2`-power operator fails additivity on the two canonical generator classes of

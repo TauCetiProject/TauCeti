@@ -53,8 +53,8 @@ theorem unitsMap_algebraMap_mem_unitFiltration {i : ℕ} {x : Kˣ}
         (𝓂[K] ^ i).map (algebraMap 𝒪[K] 𝒪[L]) :=
       Ideal.mem_map_of_mem (algebraMap 𝒪[K] 𝒪[L]) hu
     rw [map_sub, map_one, Ideal.map_pow, map_maximalIdeal_eq_maximalIdeal_pow K L] at hu'
-    simpa only [Units.coe_map, MonoidHom.coe_coe, pow_mul] using hu'
-  · simp only [Units.coe_map, MonoidHom.coe_coe]
+    simpa only [Units.coe_map, MonoidHom.coe_ofClass, pow_mul] using hu'
+  · simp only [Units.coe_map, MonoidHom.coe_ofClass]
     rw [coe_algebraMap_integerRing]
     exact congrArg (algebraMap K L) hux
 

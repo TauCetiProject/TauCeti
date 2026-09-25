@@ -160,7 +160,7 @@ theorem finrank_candidateGenusField_over_candidateGenusFieldBase {d : ℤ} (hd :
       apply RingHom.ext
       intro x
       simpa only [RingHom.comp_apply, IntermediateField.algebraMap_apply,
-        RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_ringEquiv] using heF x)
+        RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv] using heF x)
   rw [hrel]
   simpa only [Nat.card_eq_fintype_card, Fintype.card_coe] using h
 

@@ -55,28 +55,32 @@ variable {X : Type u} [MeasurableSpace X] [EDist X] {p : ℝ≥0∞}
 /-- **The mixture bound for the Wasserstein distance.** For a finite nonzero exponent, the `p`-th
 power of the Wasserstein distance of two finite mixtures with common finite weights is at most the
 weighted sum of the `p`-th powers of the distances of the components. -/
-theorem wassersteinEDist_finset_sum_smul_rpow_le (hp0 : p ≠ 0) (hp : p ≠ ∞) {ι : Type*}
+theorem wassersteinEDist_finset_sum_smul_rpow_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp0 : p ≠ 0) (hp : p ≠ ∞) {ι : Type*}
     (s : Finset ι) {a : ι → ℝ≥0∞} (ha : ∀ i ∈ s, a i ≠ ∞) (μ ν : ι → Measure X) :
     wassersteinEDist p (∑ i ∈ s, a i • μ i) (∑ i ∈ s, a i • ν i) ^ p.toReal
       ≤ ∑ i ∈ s, a i * wassersteinEDist p (μ i) (ν i) ^ p.toReal := by
-  simp only [wassersteinEDist_rpow_eq_transportCost hp0 hp]
+  simp only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
   exact (transportCost_finset_sum_le s _ _ _).trans_eq
     (Finset.sum_congr rfl fun i hi ↦ transportCost_smul (ha i hi) _ _ _)
 
 /-- **The mixture bound for the Wasserstein distance**, for countable mixtures. -/
-theorem wassersteinEDist_sum_smul_rpow_le (hp0 : p ≠ 0) (hp : p ≠ ∞) {ι : Type*} [Countable ι]
+theorem wassersteinEDist_sum_smul_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {ι : Type*} [Countable ι]
     {a : ι → ℝ≥0∞} (ha : ∀ i, a i ≠ ∞) (μ ν : ι → Measure X) :
     wassersteinEDist p (Measure.sum fun i ↦ a i • μ i) (Measure.sum fun i ↦ a i • ν i)
         ^ p.toReal
       ≤ ∑' i, a i * wassersteinEDist p (μ i) (ν i) ^ p.toReal := by
-  simp only [wassersteinEDist_rpow_eq_transportCost hp0 hp, ← transportCost_smul (ha _)]
+  simp only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp, ← transportCost_smul (ha _)]
   exact transportCost_sum_le _ _ _
 
 /-- For a finite nonzero exponent, the `p`-th power of the Wasserstein distance is subadditive
 under adding measures to both arguments. -/
-theorem wassersteinEDist_add_rpow_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ μ' ν ν' : Measure X) :
+theorem wassersteinEDist_add_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ μ' ν ν' : Measure X) :
     wassersteinEDist p (μ + μ') (ν + ν') ^ p.toReal
       ≤ wassersteinEDist p μ ν ^ p.toReal + wassersteinEDist p μ' ν' ^ p.toReal := by
-  simpa only [wassersteinEDist_rpow_eq_transportCost hp0 hp] using transportCost_add_le _ μ μ' ν ν'
+  simpa only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+    using transportCost_add_le _ μ μ' ν ν'
 
 end TauCeti
