@@ -50,6 +50,8 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
   from `K(√(1 + 4c))` exactly when `v_K(b)` is even.
 * `TauCeti.exists_unramified_class`: there is a nonsquare `Δ` of valuation zero whose norms are
   exactly the elements of even valuation.
+* `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
+* `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
 
 ## References
@@ -223,6 +225,29 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
     (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
   rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at this
   exact Int.not_even_one this
+
+/-- An unramified class is not a square: a uniformizer, of odd valuation, is not a norm from
+it. -/
+theorem not_isSquare_of_unramified_class (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    ¬IsSquare a := by
+  intro hsq
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
+  have h := (ha ϖ).mp ((hilbertSymbol_eq_one_iff a ϖ).mp
+    (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
+  rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at h
+  exact Int.not_even_one h
+
+/-- The norm criterion only depends on the square class of `a`. -/
+theorem unramified_class_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ))
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) (b : Kˣ) :
+    (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔ Even (normalizedValuation K b).toAdd := by
+  rw [← hilbertSymbol_eq_one_iff, hilbertSymbol_congr_sq a Δ b b h ⟨b, rfl⟩,
+    hilbertSymbol_eq_one_iff]
+  exact hΔ b
 
 /-- **Evaluation against the unramified class.** If the norms from `K(√Δ)` are exactly the
 elements of even valuation, as for the class of `TauCeti.exists_unramified_class`, then

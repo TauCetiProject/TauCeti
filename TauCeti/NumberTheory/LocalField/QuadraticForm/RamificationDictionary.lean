@@ -286,29 +286,6 @@ private theorem even_of_defectExponent_eq {a : Kˣ} {d : ℤ} (hd : defectExpone
   rwa [← neg_one_mul, map_mul, (normalizedValuation_eq_one_iff (-1)).mpr (by simp), one_mul,
     hxd] at hneg
 
-/-- An unramified class is not a square: a uniformizer, of odd valuation, is not a norm from
-it. -/
-private theorem not_isSquare_of_unramified_class (h2 : (2 : K) ≠ 0) {a : Kˣ}
-    (ha : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
-      Even (normalizedValuation K b).toAdd) :
-    ¬IsSquare a := by
-  intro hsq
-  have : Invertible (2 : K) := invertibleOfNonzero h2
-  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
-  have h := (ha ϖ).mp ((hilbertSymbol_eq_one_iff a ϖ).mp
-    (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
-  rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at h
-  exact Int.not_even_one h
-
-/-- The norm criterion only depends on the square class of `a`. -/
-private theorem unramified_class_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ))
-    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
-      Even (normalizedValuation K b).toAdd) (b : Kˣ) :
-    (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔ Even (normalizedValuation K b).toAdd := by
-  rw [← hilbertSymbol_eq_one_iff, hilbertSymbol_congr_sq a Δ b b h ⟨b, rfl⟩,
-    hilbertSymbol_eq_one_iff]
-  exact hΔ b
-
 /-- **The ramification dictionary.** For `a ∈ Kˣ` of finite defect exponent `δ(a) = d`, that is
 for a nonsquare `a`, the extension `K(√a)/K` is unramified in norm-equation form, meaning that
 `b ∈ Kˣ` is a norm `x² - a y²` exactly when `v_K(b)` is even, if and only if `d` is even. -/
