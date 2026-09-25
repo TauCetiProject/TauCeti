@@ -62,6 +62,7 @@ private theorem spelled_succ_iff {x : X} {a c : ℕ} (hac : a ≤ c) :
   refine ⟨fun h ↦ ⟨fun s h₁ h₂ ↦ h s h₁ (by omega), h _ (by omega) le_rfl⟩, fun h s h₁ h₂ ↦ ?_⟩
   rcases Nat.lt_or_ge s (c + 1) with hs | hs
   · exact h.1 s h₁ (by omega)
+  -- Normalize the final position of the interval to its successor index.
   · rw [show s = c + 1 by omega]
     exact h.2
 
@@ -199,6 +200,7 @@ private theorem spells_letters (s : List (X × ℤ)) (L : ℕ)
     simpa [totalWeight] using hD
   | cons a s ih =>
     refine ⟨(spelled_iff ℓ).2 fun j h₁ h₂ ↦ ?_, ih _ (fun j hj ↦ ?_) ?_⟩
+    -- Normalize `j` to its offset from the start of this syllable's run.
     · rw [show j = L + (j - L) by omega, hℓ _ (by omega), letters, ite_eq_left (by omega)]
     · rw [add_assoc, hℓ _ (by omega), letters, ite_eq_right (by omega), Nat.add_sub_cancel_left]
     · simp only [totalWeight, List.map_cons, List.sum_cons] at hD ⊢
@@ -285,6 +287,7 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
     -- Its entry across the run is a binomial coefficient that is nonzero modulo `p`.
     · intro a b ha hb
       dsimp only at hb ⊢
+      -- Normalize the matrix index difference to the weight of this syllable.
       rw [coe_rep_of_zpow, one_add_shift_pow_apply, ite_eq_left ⟨by omega, by rwa [ha, hb]⟩,
         show (b : ℕ) - a = p ^ padicValInt p e by rw [ha, hb]; simp [weight]]
       refine TauCeti.choose_emod_ne_zero (e := e) (hs0 _ List.mem_cons_self) ?_
@@ -335,6 +338,7 @@ theorem exists_normal_isPGroup_quotient_notMem {w : FreeGroup X} (hw : w ≠ 1) 
     refine ⟨fun b hb ↦ ?_, fun b hb ↦ ?_⟩
     · by_contra h
       exact hb (Matrix.one_apply_ne fun h' ↦ h (by rw [← h']; rfl))
+    -- Normalize a `Fin` index at the initial column to the distinguished zero index.
     · rw [show b = 0 from Fin.ext hb, Matrix.one_apply_eq]
       exact one_ne_zero
   have := (RowInv.mul_rep (letters p s) D s hs 0

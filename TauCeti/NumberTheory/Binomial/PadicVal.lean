@@ -12,8 +12,8 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 /-!
 # Binomial coefficients modulo a prime and `p`-adic valuation
 
-The binomial coefficient at `p ^ v_p(e)` stays nonzero modulo `p` when the upper argument is
-congruent to nonzero `e` modulo a sufficiently large power of `p`.
+The binomial coefficient at `p ^ v_p(e)` stays nonzero modulo `p` when its upper argument is
+the canonical natural-number residue of nonzero `e` modulo a sufficiently large power of `p`.
 -/
 
 public section
@@ -24,8 +24,8 @@ section Binomial
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-/-- If `n ≡ e` modulo a power of `p` beyond `v_p(e)`, then `n.choose (p ^ v_p(e))` is nonzero
-modulo `p`. -/
+/-- If `K` exceeds `v_p(e)`, then the binomial coefficient with upper argument
+`(e % p ^ K).toNat` and lower argument `p ^ v_p(e)` is nonzero modulo `p`. -/
 theorem choose_emod_ne_zero {e : ℤ} (he : e ≠ 0) {K : ℕ} (hK : padicValInt p e < K) :
     (((e % (p ^ K : ℕ)).toNat.choose (p ^ padicValInt p e) : ℕ) : ZMod p) ≠ 0 := by
   set v := padicValInt p e
