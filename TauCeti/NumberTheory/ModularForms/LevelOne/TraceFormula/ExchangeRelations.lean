@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
-import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # The exchange relations of Popa and Zagier
@@ -47,8 +46,7 @@ Right multiplication by `g ∈ Γ` on `ℛₙ` is `Representation.ofMulAction k 
 The right coset `M Γ` is the orbit of `M` under `PSL(2, ℤ)ᵐᵒᵖ`, that is, its class in the
 quotient by `MulAction.orbitRel PSL(2, ℤ)ᵐᵒᵖ ℳₙ`. The coset sums `K ↦ ⟨ξ, K⟩` form the finitely
 supported function `ξ.coeff.mapDomain (Quotient.mk (MulAction.orbitRel PSL(2, ℤ)ᵐᵒᵖ ℳₙ))`, the
-coefficients of the orbit-sum map `MonoidAlgebra.mapDomainLinearMap` of
-`TauCeti.RepresentationTheory.Coinvariants` in simp-normal form.
+coefficients of the orbit-sum map `MonoidAlgebra.mapDomainLinearMap` in simp-normal form.
 
 Popa and Zagier work over `ℚ`. Theorem 2(a) only needs `2` and `3` to be cancellable in `k`,
 which is assumed as `IsSMulRegular k 2` and `IsSMulRegular k 3`; this holds, for instance, if `k`
@@ -95,7 +93,7 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_S_smul {ξ : k[ℳ
   -- sums of `ξ (1 + U + U²)` are three times those of `ξ`
   obtain ⟨η, hη⟩ := hξ.one_add_U_add_U_sq
   refine mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum (s := Finset.range 3)
-    (h := fun i ↦ .op ((T : PSL(2, ℤ)) * S) ^ i) (by simpa using h3) ?_ x
+    (h := fun i ↦ MulOpposite.op ((T : PSL(2, ℤ)) * S) ^ i) (by simpa using h3) ?_ x
   have hsum : ∑ i ∈ Finset.range 3, ρR (.op ((T : PSL(2, ℤ)) * S) ^ i) ξ = (1 + ρL S) η := by
     simp [Finset.sum_range_succ, hη]
   rw [hsum]
@@ -110,7 +108,7 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_T_mul_S_smul {ξ :
   -- coset, so the right coset sums of `ξ (1 + S)` are twice those of `ξ`
   obtain ⟨η, hη⟩ := hξ.one_add_S
   refine mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum (s := Finset.range 2)
-    (h := fun i ↦ .op (S : PSL(2, ℤ)) ^ i) (by simpa using h2) ?_ x
+    (h := fun i ↦ MulOpposite.op (S : PSL(2, ℤ)) ^ i) (by simpa using h2) ?_ x
   have hsum : ∑ i ∈ Finset.range 2, ρR (.op (S : PSL(2, ℤ)) ^ i) ξ =
       (1 + ρL (T * S) + ρL (T * S) ^ 2 : Module.End k k[ℳ n]) η := by
     rw [hη]
