@@ -82,6 +82,11 @@ noncomputable def kernelFork : KernelFork f :=
 theorem kernelFork_ι : (kernelFork f).ι = substructureInclusion X (kerSubstructure f) :=
   rfl
 
+/-- The point of the kernel fork is the object induced on the kernel substructure. -/
+@[simp]
+theorem kernelFork_pt : (kernelFork f).pt = ofSubstructure X (kerSubstructure f) :=
+  rfl
+
 /-- The inclusion of the kernel of the rational map is a kernel. -/
 noncomputable def kernelIsLimit : IsLimit (kernelFork f) :=
   haveI : IsSplitMono (kernelFork f).ι := isSplitMono_substructureInclusion X (kerSubstructure f)
@@ -138,6 +143,11 @@ rational image, along that image. -/
 theorem cokernelCofork_π :
     (cokernelCofork f).π = substructureRetractionOfIsCompl Y (rangeComplement f)
       (rangeSubstructure f) (isCompl_rangeComplement_rangeSubstructure f) :=
+  rfl
+
+/-- The point of the cokernel cofork is the object induced on the image complement. -/
+@[simp]
+theorem cokernelCofork_pt : (cokernelCofork f).pt = ofSubstructure Y (rangeComplement f) :=
   rfl
 
 /-- The projection onto a complement of the rational image, along that image, is a cokernel. -/
