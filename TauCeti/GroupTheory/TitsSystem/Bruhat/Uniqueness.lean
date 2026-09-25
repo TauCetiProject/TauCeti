@@ -14,10 +14,6 @@ The Bruhat cells of a Tits system are indexed injectively by its Weyl group. Tog
 the covering theorem, this gives the disjoint decomposition `G = ⨆ w ∈ W, B w B`: every
 element belongs to exactly one Weyl-indexed cell.
 
-The argument inducts along the simple generators. Multiplying a common cell by a simple
-cell reduces a possible coincidence to one involving the preceding Weyl element, using
-the rank-one multiplication law. The identity-cell separation starts the induction.
-
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 29.1--29.2.
