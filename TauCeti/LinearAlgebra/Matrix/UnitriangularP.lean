@@ -26,7 +26,7 @@ variable (D : ℕ) {p : ℕ}
 
 /-- A strictly upper triangular matrix raised to the power `j` is supported on entries `(a, b)`
 with `a + j ≤ b`. -/
-theorem pow_apply_ne_zero_le {R : Type*} [CommRing R]
+theorem pow_apply_ne_zero_le {R : Type*} [Semiring R]
     {N : Matrix (Fin (D + 1)) (Fin (D + 1)) R} (hN : ∀ a b, b ≤ a → N a b = 0) (j : ℕ)
     (a b : Fin (D + 1)) (h : (N ^ j) a b ≠ 0) : (a : ℕ) + j ≤ b := by
   induction j generalizing b with
