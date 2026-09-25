@@ -103,6 +103,14 @@ theorem span_four_eq_maximalIdeal_pow (h2 : (2 : K) ≠ 0) :
   rw [← he, ← span_natCast_eq_maximalIdeal_pow K 4 h4]
   norm_num
 
+/-- In characteristic different from two, the valuation of `4` is that of `π ^ (2 v_K(2))`, for
+an irreducible element `π` of `𝒪[K]`. -/
+theorem valuation_four_eq_pow (h2 : (2 : K) ≠ 0) {π : 𝒪[K]} (hπ : Irreducible π) :
+    valuation K (4 : K) = valuation K (π : K) ^ (2 * natCastValuation K 2 h2) := by
+  have h := valuation_natCast_eq_pow hπ 2 h2
+  rw [Nat.cast_ofNat] at h
+  rw [show (4 : K) = 2 * 2 by norm_num, map_mul, pow_mul', sq, h]
+
 /-- Every unit of depth `2 v_K(2) + 1` is a square. This includes dyadic local fields;
 only characteristic two itself is excluded. -/
 theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
