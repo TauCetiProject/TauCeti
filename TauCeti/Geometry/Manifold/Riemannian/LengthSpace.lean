@@ -14,9 +14,9 @@ public import TauCeti.Topology.MetricSpace.Length
 The Riemannian distance between two points is the infimum of the *Riemannian* lengths of the `C¹`
 paths joining them. Being a length space asks for the same infimum taken over the *metric* lengths
 — total variations — of all *continuous* paths joining them. The two agree: a continuous path is
-never shorter than the distance between its endpoints, and on a `C¹` path the metric length is the
-Riemannian one, by `TauCeti.Manifold.eVariationOn_eq_pathELength`, so the `C¹` paths already
-realise the infimum.
+never shorter than the distance between its endpoints, and the metric length of a `C¹` path is at
+most its Riemannian length, by `TauCeti.Manifold.eVariationOn_le_pathELength`, so the `C¹` paths
+already realise the infimum.
 
 This is what makes the purely metric notions of `TauCeti/Topology/MetricSpace/Length.lean`
 available on a Riemannian manifold. No completeness is needed here; it is the refinement in which
@@ -42,8 +42,7 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
 
 variable (I) in
 include I in
@@ -54,6 +53,6 @@ theorem isLengthSpace : IsLengthSpace M := by
   refine IsLengthSpace.of_exists_eVariationOn_lt fun x y c hc ↦ ?_
   rw [IsRiemannianManifold.out (I := I) x y] at hc
   obtain ⟨γ, hx, hy, hγ, hlen⟩ := exists_lt_of_riemannianEDist_lt hc
-  exact ⟨γ, ⟨hγ.continuousOn, hx, hy⟩, (eVariationOn_eq_pathELength hγ).trans_lt hlen⟩
+  exact ⟨γ, ⟨hγ.continuousOn, hx, hy⟩, (eVariationOn_le_pathELength hγ).trans_lt hlen⟩
 
 end TauCeti.Manifold

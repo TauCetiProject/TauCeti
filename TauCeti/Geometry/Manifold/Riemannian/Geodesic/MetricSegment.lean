@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 public import TauCeti.Topology.MetricSpace.Length
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -18,9 +18,10 @@ is joined by such a segment. On a Riemannian manifold the segments are the minim
 geodesics: if `v` is a tangent vector at `p` whose norm is the distance from `p` to `exp_p v`, the
 maximal geodesic `t ↦ exp_p (t • v)` is a metric geodesic segment.
 
-When `M` is complete the Hopf–Rinow theorem produces such a `v` for every pair of points, so a
-complete Riemannian manifold is a geodesic space. That the manifold is a *length* space needs no
-completeness; it is `TauCeti.Manifold.isLengthSpace`.
+When `M` is complete, `TauCeti.Manifold.expDomain_eq_univ_of_completeSpace` makes `exp_p` defined
+on all of `T_p M` and `TauCeti.Manifold.exists_riemannianExp_eq_and_norm_eq_dist` then produces
+such a `v` for every pair of points, so a complete Riemannian manifold is a geodesic space. That
+the manifold is a *length* space needs no completeness; it is `TauCeti.Manifold.isLengthSpace`.
 
 ## Main results
 
