@@ -189,7 +189,8 @@ noncomputable def ginzburgOriginalMap : pathAlgebra k Q →ₐ[k] pathAlgebra k 
   (ginzburgMap k).comp (mapAlgHom k Symmetrify.of symmetrify_of_obj_bijective)
 
 /-- The inclusion sends an arrow of `Q` to the corresponding original arrow of the Ginzburg
-quiver. -/
+quiver. Deliberately not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already normalizes
+its left-hand side, and `TauCeti.ginzburgOriginalMap_ofPath_toPath` is the `simp` form. -/
 theorem ginzburgOriginalMap_ofArrow {i j : Q} (a : i ⟶ j) :
     ginzburgOriginalMap k (ofArrow a) = ofArrow (GinzburgHom.double (Sum.inl a)) := by
   rw [ginzburgOriginalMap, AlgHom.comp_apply, mapAlgHom_ofArrow, ginzburgMap_ofArrow,
