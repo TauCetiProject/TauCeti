@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Space
 
@@ -49,9 +50,13 @@ namespace TauCeti.TypeDStd
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K ι : Type*} [CommRing K] [DecidableEq ι]
+variable {K ι : Type*} [DecidableEq ι]
 
 /-! ## Ambient matrices -/
+
+section Ambient
+
+variable [Ring K]
 
 /-- The ambient root matrix of weight `εᵢ - εⱼ`. -/
 def differenceRootMatrix (i j : ι) : Matrix (ι ⊕ ι) (ι ⊕ ι) K :=
@@ -117,9 +122,11 @@ private theorem transpose_single_sub_single (i j : ι) :
   simp only [Matrix.transpose_sub, Matrix.transpose_single]
   abel
 
+end Ambient
+
 section Fintype
 
-variable [Fintype ι]
+variable [CommRing K] [Fintype ι]
 
 /-- A difference-root matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem differenceRootMatrix_mem_typeD (i j : ι) :

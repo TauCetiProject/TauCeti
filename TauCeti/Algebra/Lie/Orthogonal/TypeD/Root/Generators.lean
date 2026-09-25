@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
@@ -264,23 +265,6 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing
   rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
     TauCeti.toLinAlgEquiv_single_apply_basis]
   simp
-
-/-- A block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split type-`D` Lie algebra when its
-off-diagonal blocks are skew-symmetric. -/
-theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
-    (A B C : Matrix ι ι K) (hB : B.transpose = -B) (hC : C.transpose = -C) :
-    Matrix.fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
-  rw [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Membership in `typeD` unfolds to this ambient skew-adjoint matrix equation.
-  change (Matrix.fromBlocks A B C (-A.transpose)).transpose *
-      LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K *
-      (-Matrix.fromBlocks A B C (-A.transpose))
-  simp only [LieAlgebra.Orthogonal.JD, Matrix.fromBlocks_transpose,
-    Matrix.fromBlocks_neg, Matrix.fromBlocks_multiply, Matrix.transpose_neg,
-    Matrix.transpose_transpose, hB, hC, zero_mul, mul_zero, zero_add, add_zero,
-    one_mul, mul_one, neg_neg]
 
 /-- The explicit raising matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem raisingMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
