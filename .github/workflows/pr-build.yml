@@ -43,7 +43,7 @@ permissions:
   statuses: write
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha || github.event.client_payload.head_sha }}
+  group: pr-build-${{ github.event_name == 'repository_dispatch' && 'bors-staging' || github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 env:
