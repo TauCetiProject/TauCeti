@@ -185,11 +185,11 @@ theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
 theorem beta_coe (g : D.Generator) (i : Fin n) : D.beta (g.2 i) = g.1 i :=
   (g.2 i).property.2
 
-/-- An intersection point belongs to a generator exactly when it is the generator's point on
-its own `α`-curve. -/
+/-- An intersection point occurs in a generator exactly when it is the generator's point on its
+own `α`-curve. -/
 @[simp]
-theorem mem_range_point_iff (g : D.Generator) (q : Point) :
-    q ∈ Set.range (D.point g) ↔ D.point g (D.alpha q) = q := by
+theorem exists_point_iff (g : D.Generator) (q : Point) :
+    (∃ i, (g.2 i : Point) = q) ↔ D.point g (D.alpha q) = q := by
   constructor
   · rintro ⟨i, rfl⟩
     simp
@@ -203,7 +203,8 @@ noncomputable def generatorChain (g : D.Generator) : Point → ℤ :=
 @[simp]
 theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
     D.generatorChain g q = if D.point g (D.alpha q) = q then 1 else 0 := by
-  simp only [generatorChain, Set.indicator_apply, mem_range_point_iff, Pi.one_apply]
+  simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
+    Pi.one_apply]
 
 /-- Two generators with the same chosen points are equal. -/
 @[ext]
