@@ -34,6 +34,7 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   directional
   functional of a multivariate Gaussian.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
+* `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real-logarithm counterpart.
 
 ## References
 
@@ -122,5 +123,13 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
       covarianceBilin_multivariateGaussian hS]
     exact (Matrix.inner_toEuclideanCLM S θ θ).symm
   rw [hL, IsGaussian.mgf_dual, hmean, hvar]
+
+/-- The cumulant-generating function of the inner product against a multivariate Gaussian
+vector.  It is the real logarithm of the corresponding moment-generating function. -/
+theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
+    cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
+      t * ⟪θ, m⟫ + t ^ 2 / 2 * ⟪θ, S.toEuclideanLin θ⟫ := by
+  rw [cgf, mgf_inner_multivariateGaussian m θ hS t, Real.log_exp]
 
 end TauCeti.Probability
