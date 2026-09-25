@@ -36,8 +36,11 @@ mathematics is Mathlib's Kőnig lemma for cofiltered systems and is not reproved
 * `TauCeti.exists_forall_map_eq_of_codirected_of_finite`: the finite statement for a
   `DirectedSystem` over a codirected index, the form in which a system of finite quotients is
   usually written.
-* `TauCeti.exists_forall_map_succ_eq_of_finite`: the sequential form, where the system is given
-  by its one-step maps `β k : S (k + 1) → S k`.
+* `TauCeti.exists_forall_map_succ_eq_of_compact_t2`, `TauCeti.exists_forall_map_succ_eq_of_finite`:
+  the sequential forms, where the system is given by its one-step maps `β k : S (k + 1) → S k`.
+* `TauCeti.exists_forall_map_succ_eq_and_forall_eq_of_compact_t2`: along a map of sequential
+  towers of compact Hausdorff spaces that is surjective at every level, compatible families lift;
+  that is, the inverse limit of levelwise surjections of compact spaces is surjective.
 
 ## References
 
@@ -124,27 +127,75 @@ section Sequence
 variable {S : ℕ → Type*} (β : ∀ k, S (k + 1) → S k)
 
 open CategoryTheory in
-/-- **Kőnig's lemma, sequential form.** A sequence of nonempty finite types `S k` with one-step
-maps `β k : S (k + 1) → S k` has a compatible family: some `s : ∀ k, S k` satisfies
-`β k (s (k + 1)) = s k` for every `k`. -/
-theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonempty (S k)] :
-    ∃ s : ∀ k, S k, ∀ k, β k (s (k + 1)) = s k := by
-  -- The one-step maps already assemble into a functor `F : ℕᵒᵖ ⥤ Type _`, so the transition maps
-  -- along `i ≤ j` need not be built by hand: they are `F` on morphisms, and the two laws of an
-  -- inverse system are its functoriality, `F.map_id_apply` and `F.map_comp_apply`. The index `ℕ`
-  -- is directed, so the finite statement above applies to them.
-  let F := Functor.ofOpSequence fun k ↦ ↾(β k)
+/-- **Inverse limits of compact spaces, sequential form.** A sequence of nonempty compact
+Hausdorff spaces `S k` with continuous one-step maps `β k : S (k + 1) → S k` has a compatible
+family: some `s : ∀ k, S k` satisfies `β k (s (k + 1)) = s k` for every `k`. -/
+theorem exists_forall_map_succ_eq_of_compact_t2 [∀ k, TopologicalSpace (S k)]
+    [∀ k, CompactSpace (S k)] [∀ k, T2Space (S k)] [∀ k, Nonempty (S k)]
+    (hβ : ∀ k, Continuous (β k)) : ∃ s : ∀ k, S k, ∀ k, β k (s (k + 1)) = s k := by
+  -- The one-step maps already assemble into a functor `F : ℕᵒᵖ ⥤ TopCat`, so the transition maps
+  -- along `i ≤ j` need not be built by hand: they are `F` on morphisms, continuous because they
+  -- are morphisms of `TopCat`, and the two laws of an inverse system are the functoriality of `F`,
+  -- `F.map_id_apply` and `F.map_comp_apply`. The index `ℕ` is directed, so the directed statement
+  -- above applies to them.
+  let F := Functor.ofOpSequence (X := fun k ↦ TopCat.of (S k)) fun k ↦ TopCat.ofHom ⟨β k, hβ k⟩
   let f : ∀ ⦃i j : ℕ⦄, i ≤ j → S j → S i := fun _ _ h x ↦ F.map (homOfLE h).op x
   have : InverseSystem f :=
     { map_self := fun i x ↦ F.map_id_apply (Opposite.op i) x
       map_map := fun _ _ _ hkj hji x ↦
         (F.map_comp_apply (homOfLE hji).op (homOfLE hkj).op x).symm }
-  obtain ⟨s, hs⟩ := exists_forall_map_eq_of_finite f
+  obtain ⟨s, hs⟩ :=
+    exists_forall_map_eq_of_compact_t2 f fun _ _ h ↦ (F.map (homOfLE h).op).hom.continuous
   refine ⟨s, fun k ↦ ?_⟩
   -- Along `k ≤ k + 1` the transition map is `β k` itself.
-  rw [← TypeCat.ofHom_apply (β k) (s (k + 1)),
-    ← Functor.ofOpSequence_map_homOfLE_succ (fun k ↦ ↾(β k)) k]
-  exact hs (Nat.le_add_right k 1)
+  have hk := hs (Nat.le_add_right k 1)
+  simp only [f, F, Functor.ofOpSequence_map_homOfLE_succ] at hk
+  -- `hk` applies the `TopCat` morphism `ofHom ⟨β k, hβ k⟩` through `ConcreteCategory.hom`, which
+  -- `TopCat.hom_ofHom` (stated for `TopCat.Hom.hom`) does not rewrite; the two sides agree by
+  -- unfolding `ofHom`.
+  exact hk
+
+/-- **Kőnig's lemma, sequential form.** A sequence of nonempty finite types `S k` with one-step
+maps `β k : S (k + 1) → S k` has a compatible family: some `s : ∀ k, S k` satisfies
+`β k (s (k + 1)) = s k` for every `k`. -/
+theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonempty (S k)] :
+    ∃ s : ∀ k, S k, ∀ k, β k (s (k + 1)) = s k := by
+  let _ : ∀ k, TopologicalSpace (S k) := fun _ ↦ ⊥
+  have : ∀ k, DiscreteTopology (S k) := fun _ ↦ ⟨rfl⟩
+  exact exists_forall_map_succ_eq_of_compact_t2 β fun _ ↦ continuous_of_discreteTopology
+
+/-- **Compatible families lift along a map of compact towers.** Let `α k : A (k + 1) → A k` and
+`β k : B (k + 1) → B k` be two towers, the first of compact Hausdorff spaces with continuous
+maps, and let `g k : A k → B k` be continuous maps into T1 spaces commuting with them. Then a
+compatible family `b` of the second tower lifts to a compatible family of the first as soon as
+each `b k` lifts on its own.
+
+In the language of inverse limits: `lim A → lim B` is surjective when every `A k → B k` is.
+No surjectivity of the transition maps `α k` is needed, because compactness of the levels
+replaces the Mittag-Leffler condition. -/
+theorem exists_forall_map_succ_eq_and_forall_eq_of_compact_t2 {A B : ℕ → Type*}
+    [∀ k, TopologicalSpace (A k)] [∀ k, CompactSpace (A k)] [∀ k, T2Space (A k)]
+    [∀ k, TopologicalSpace (B k)] [∀ k, T1Space (B k)]
+    (α : ∀ k, A (k + 1) → A k) (β : ∀ k, B (k + 1) → B k) (g : ∀ k, A k → B k)
+    (hα : ∀ k, Continuous (α k)) (hg : ∀ k, Continuous (g k))
+    (hαβ : ∀ k a, g k (α k a) = β k (g (k + 1) a)) {b : ∀ k, B k}
+    (hb : ∀ k, β k (b (k + 1)) = b k) (hbg : ∀ k, ∃ a, g k a = b k) :
+    ∃ a : ∀ k, A k, (∀ k, α k (a (k + 1)) = a k) ∧ ∀ k, g k (a k) = b k := by
+  -- The fibres `g k ⁻¹' {b k}` are closed, hence compact, nonempty, and `α` maps them into each
+  -- other; a compatible family of fibre points is the required lift.
+  have hS (k : ℕ) : IsClosed (g k ⁻¹' {b k}) := isClosed_singleton.preimage (hg k)
+  have (k : ℕ) : CompactSpace (g k ⁻¹' {b k}) := isCompact_iff_compactSpace.mp (hS k).isCompact
+  have (k : ℕ) : Nonempty (g k ⁻¹' {b k}) :=
+    let ⟨a, ha⟩ := hbg k
+    ⟨⟨a, ha⟩⟩
+  let γ (k : ℕ) (a : g (k + 1) ⁻¹' {b (k + 1)}) : g k ⁻¹' {b k} :=
+    ⟨α k a, by
+      rw [Set.mem_preimage, Set.mem_singleton_iff, hαβ,
+        Set.mem_singleton_iff.mp (Set.mem_preimage.mp a.2), hb]⟩
+  have hγ (k : ℕ) : Continuous (γ k) := ((hα k).comp continuous_subtype_val).subtype_mk _
+  obtain ⟨s, hs⟩ :=
+    exists_forall_map_succ_eq_of_compact_t2 (S := fun k ↦ g k ⁻¹' {b k}) γ hγ
+  exact ⟨fun k ↦ s k, fun k ↦ congrArg Subtype.val (hs k), fun k ↦ (s k).2⟩
 
 end Sequence
 
