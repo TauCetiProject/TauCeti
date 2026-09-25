@@ -63,7 +63,11 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance : ContinuousSMul G (trivialF2 G).V :=
+/-- `G` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete.
+The name is given explicitly: the sibling `Evens` files carry the same local instance
+anonymously, and this file and `Evens.Restriction` would otherwise be auto-assigned the
+same name. -/
+local instance continuousSMul_trivialF2 : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 open scoped Classical in
