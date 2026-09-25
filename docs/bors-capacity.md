@@ -48,11 +48,24 @@ traffic changes; the report checks when a parameter or architecture change
 becomes necessary. The timeout is a generous failure deadline, not a tuning
 knob for throughput.
 
+## Activation
+
+Before the limited pilot, run `scripts/prepare_bors_bypass.py --app-id ID --app-slug
+SLUG` to save the current ruleset and classic branch protection alongside a
+JSON proposal. Review those files, then repeat with `--apply`. The script adds
+only the bors App to both bypass lists; it retains the existing merge queue,
+code-owner rule, and required checks. It does **not** switch traffic. After a
+preselected pilot PR has passed staging CI and bors health is confirmed, set the repository variable
+`MERGE_BACKEND=bors`. To stop new bors approvals, set it back to `queue`;
+disable the bors App installation before doing so if an already-running bors
+batch must be prevented from pushing to `main`.
+
 Run locally:
 
 ```sh
 python3 scripts/test_bors_capacity.py
+python3 scripts/collect_bors_observations.py > observations.json
 python3 scripts/bors_capacity.py \
-  --observations scripts/bors_observations_2026-09-25.json \
+  --observations observations.json \
   --rate-scales 1,10 --failure-rates 0.001,0.003,0.01
 ```
