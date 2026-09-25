@@ -989,25 +989,16 @@ jobs:
   # successful deploy repairs.
   advance-docgen-ref:
     needs: [build-site, deploy]
-    # `!cancelled()` is load-bearing, and its absence is why this job has not run since the
-    # provenance marker was introduced: `docgen` has sat at 93386bc8 while /docs went on being
-    # published, most recently from 5e787449.
+    # `!cancelled()` is required rather than stylistic. A condition with no status function
+    # carries an implicit `success()`, and that check is not satisfied by this job's own needs
+    # succeeding: a skipped job anywhere above it skips it too. `deploy` needs `fallback-site`,
+    # which is skipped whenever the site builds, so without a status function here this job did
+    # not run at all.
     #
-    # A condition with no status function carries an implicit `success()`, and that implicit
-    # check is not satisfied by this job's own needs succeeding -- a skipped job anywhere in the
-    # dependency graph above it is enough to skip it too. `deploy` needs `fallback-site`, which
-    # is skipped on every run where the site builds, so this job was skipped on exactly the runs
-    # that had something to publish, and could only have run after a build-site failure.
-    #
-    # Measured rather than reasoned: a probe workflow with this graph skips the dependent job,
-    # and adding `!cancelled()` makes it run, with everything else held fixed.
-    #
-    # Dropping the implicit `success()` drops it for BOTH needs, so each one it was doing a
-    # job for is restored by hand. `deploy` must have succeeded, or a run whose Pages
-    # deployment failed would move the branch onto documentation that was never published --
-    # the failure mode this job exists to prevent, inverted. `build-site` must have succeeded
-    # too, so the published site is the one it produced rather than a fallback restore, and its
-    # SOURCE_SHA must be the one it read out of the tree it deployed.
+    # Dropping the implicit check drops it for both needs, so each is restored by name. `deploy`
+    # must have succeeded, or the branch would move onto documentation that was never published.
+    # `build-site` must have succeeded, so the published site is the one it produced rather than
+    # a fallback restore, and its SOURCE_SHA is the one read from the tree that was deployed.
     if: ${{ !cancelled()
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
