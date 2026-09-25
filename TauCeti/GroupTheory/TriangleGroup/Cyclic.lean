@@ -38,12 +38,7 @@ private theorem ofAdd_one_zpow_eq_one (d k : ℕ) (h : d ∣ k) :
 
 private theorem ofAdd_neg_one_zpow_eq_one (d k : ℕ) (h : d ∣ k) :
     ((Multiplicative.ofAdd (1 : ZMod d))⁻¹) ^ k = 1 := by
-  change (Multiplicative.ofAdd (-1 : ZMod d)) ^ k = 1
-  apply Multiplicative.toAdd.injective
-  rw [toAdd_pow, nsmul_eq_mul, toAdd_ofAdd]
-  have hk : (k : ZMod d) = 0 := (ZMod.natCast_eq_zero_iff k d).2 h
-  rw [hk]
-  simp
+  rw [inv_pow, ofAdd_one_zpow_eq_one d k h, inv_one]
 
 private def toCyclic (m n : ℕ) :
     TriangleGroup 1 m n →* Multiplicative (ZMod (Nat.gcd m n)) :=
@@ -96,13 +91,13 @@ private theorem cyclic_order_y (m n : ℕ) :
 
 /-- The triangle group `TriangleGroup 1 m n` has cardinality `Nat.gcd m n`.
 For `m = n = 0`, it is infinite cyclic and its `Nat.card` is `0`. -/
+@[simp]
 theorem natCard_one (m n : ℕ) : Nat.card (TriangleGroup 1 m n) = Nat.gcd m n := by
   exact (orderOf_eq_card_of_zpowers_eq_top (cyclic_zpowers_eq_top m n)).symm.trans
     (cyclic_order_y m n)
 
 /-- For `m > 0`, the triangle group `TriangleGroup 1 m m` has cardinality `m`.
 For `m = 0`, it is infinite cyclic and its `Nat.card` is `0`. -/
-@[simp]
 theorem natCard_one_self_self (m : ℕ) : Nat.card (TriangleGroup 1 m m) = m := by
   simpa only [Nat.gcd_self] using natCard_one m m
 
