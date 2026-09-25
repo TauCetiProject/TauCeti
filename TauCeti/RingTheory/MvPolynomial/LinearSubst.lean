@@ -37,6 +37,8 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
+* `MvPolynomial.eq_zero_of_add_self_eq_zero`: a polynomial is zero if adding it to itself is
+  zero and multiplication by `2` is injective on coefficients.
 -/
 
 public section
@@ -46,6 +48,15 @@ open Matrix MulOpposite
 namespace MvPolynomial
 
 variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+omit [Fintype σ] in
+/-- A polynomial is zero if adding it to itself is zero and multiplication by `2` is injective
+on coefficients. -/
+theorem eq_zero_of_add_self_eq_zero (h2 : Function.Injective fun r : R ↦ 2 * r)
+    {p : MvPolynomial σ R} (h : p + p = 0) : p = 0 := by
+  ext m
+  apply h2
+  simpa [two_mul] using congrArg (fun q : MvPolynomial σ R ↦ q.coeff m) h
 
 /-- The linear change of variables `Xᵢ ↦ ∑ⱼ Mᵢⱼ Xⱼ` given by a square matrix `M`. -/
 noncomputable def linearSubst (M : Matrix σ σ R) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=

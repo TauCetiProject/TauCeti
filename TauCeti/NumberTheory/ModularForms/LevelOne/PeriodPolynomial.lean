@@ -257,22 +257,14 @@ private theorem evenPeriodPolynomials_sup_oddPeriodPolynomials_of_even
     rw [map_smul, map_sub, hεε, ← neg_sub, smul_neg]
   · rw [← smul_add, add_add_sub_cancel, ← two_smul R P, smul_smul, invOf_mul_self, one_smul]
 
-private lemma eq_zero_of_add_self_eq_zero
-    (h2 : Function.Injective fun r : R ↦ 2 * r)
-    {P : homogeneousSubmodule (Fin 2) R w} (h : P + P = 0) : P = 0 := by
-  refine Subtype.ext (MvPolynomial.ext _ _ fun m ↦ ?_)
-  have hm : (P : MvPolynomial (Fin 2) R).coeff m + (P : MvPolynomial (Fin 2) R).coeff m = 0 := by
-    simpa using congrArg (fun Q : homogeneousSubmodule (Fin 2) R w ↦
-      (Q : MvPolynomial (Fin 2) R).coeff m) h
-  apply h2
-  simpa [two_mul] using hm
-
 /-- A period polynomial cannot be both even and odd when multiplication by `2` is injective. -/
 theorem disjoint_evenPeriodPolynomials_oddPeriodPolynomials
     (h2 : Function.Injective fun r : R ↦ 2 * r) :
     Disjoint (evenPeriodPolynomials R w) (oddPeriodPolynomials R w) :=
-  Submodule.disjoint_def.2 fun _ hP hP' ↦ eq_zero_of_add_self_eq_zero h2 <| eq_neg_iff_add_eq_zero.1
-    ((mem_evenPeriodPolynomials_iff.1 hP).2.symm.trans (mem_oddPeriodPolynomials_iff.1 hP').2)
+  Submodule.disjoint_def.2 fun _ hP hP' ↦ Subtype.ext <|
+    MvPolynomial.eq_zero_of_add_self_eq_zero h2 <| congrArg Subtype.val <|
+      eq_neg_iff_add_eq_zero.1
+        ((mem_evenPeriodPolynomials_iff.1 hP).2.symm.trans (mem_oddPeriodPolynomials_iff.1 hP').2)
 
 /-- For odd `w`, applying `S` twice negates every degree-`w` binary form. -/
 private lemma binaryFormRep_S_sq_of_odd (hw : Odd w) (P : homogeneousSubmodule (Fin 2) R w) :
@@ -286,7 +278,12 @@ the central element `S² = -1` acts by `-1` but fixes every `P` with `P ∣ S = 
 theorem periodPolynomials_eq_bot_of_odd
     (h2 : Function.Injective fun r : R ↦ 2 * r) (hw : Odd w) :
     periodPolynomials R w = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun P hP ↦ eq_zero_of_add_self_eq_zero h2 ?_
+  refine (Submodule.eq_bot_iff _).2 fun P hP ↦ ?_
+  apply Subtype.ext
+  apply MvPolynomial.eq_zero_of_add_self_eq_zero h2
+  suffices P + P = 0 by
+    simpa using congrArg
+      (fun Q : homogeneousSubmodule (Fin 2) R w ↦ (Q : MvPolynomial (Fin 2) R)) this
   have hSP := eq_neg_of_add_eq_zero_right (mem_periodPolynomials_iff.1 hP).1
   have hSS := binaryFormRep_S_sq_of_odd hw P
   rw [hSP, map_neg, hSP, neg_neg] at hSS
