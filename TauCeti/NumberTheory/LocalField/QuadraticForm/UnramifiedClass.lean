@@ -31,7 +31,8 @@ residue field `𝓀[K]`; such a residue exists because the Artin–Schreier map 
 `x² - (1 + 4c) y² = (x - y)² + (x - y)(2y) - c (2y)²`,
 
 so the norm equation for `Δ` is the one for the norm form `x² + xy - cy²` of
-`QuadraticAlgebra 𝒪[K] c 1`, the ring `𝒪[K][ω]` with `ω² = c + ω`. Its reduction `x² + xy - c̄y²`
+`QuadraticAlgebra 𝒪[K] c 1`, the ring `𝒪[K][ω]` with `ω² = c + ω`. Its reduction
+`x² + xy - residue(c)y²`
 is anisotropic over `𝓀[K]` by the choice of `c`. Hence a value of the form at a primitive integral
 vector is a unit, and every value has even valuation. Conversely the residue norm form is the norm
 of the quadratic extension of the finite field `𝓀[K]`, which is surjective, and Hensel's lemma for
@@ -70,7 +71,7 @@ section NormForm
 variable {c : 𝒪[K]}
 
 /-- If the residue of `c` is not of the form `t² + t`, the residue quadratic algebra
-`𝓀[K][ω]`, `ω² = c̄ + ω`, is a field. -/
+`𝓀[K][ω]`, `ω² = residue(c) + ω`, is a field. -/
 private theorem fact_residue (hc : ∀ t : 𝓀[K], t ^ 2 + t ≠ residue 𝒪[K] c) :
     Fact (∀ r : 𝓀[K], r ^ 2 ≠ residue 𝒪[K] c + 1 * r) :=
   ⟨fun r hr ↦ hc (-r) (by linear_combination hr)⟩
