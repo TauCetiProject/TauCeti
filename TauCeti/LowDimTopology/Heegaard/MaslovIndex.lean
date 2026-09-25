@@ -26,10 +26,10 @@ established.
 Every intersection point `p` is a corner of four regions (with repetition): the regions on the
 two sides of the `α`-arc ending at `p` and of the `α`-arc starting at `p`. The *point measure*
 `n_p(D)` is the average of the multiplicities of `D` at these four corners, and for a generator
-`x = {x₁, …, xₙ}` one puts `n_x(D) = ∑ n_{xᵢ}(D)`. Since `α` and `β` meet transversally, all
-corners of the regions are convex right angles, so the *Euler measure* of a region `R` with `k`
-corners is `χ(R) - k / 4`; it is extended linearly to domains. The Euler characteristics `χ(R)`
-of the regions are not determined by the incidence data, so they are an explicit argument.
+`x = {x₁, …, xₙ}` one puts `n_x(D) = ∑ n_{xᵢ}(D)`. With the standard combinatorial convention
+that every corner contributes one quarter, the *Euler measure* of a region `R` with `k` corners
+is `χ(R) - k / 4`; it is extended linearly to domains. The Euler characteristics `χ(R)` of the
+regions are not determined by the incidence data, so they are an explicit argument.
 
 The key combinatorial fact is that for a domain `D` from `x` to `y` and a domain `E` from `y` to
 `w`, `n_x(E) + n_w(D) = n_y(D) + n_y(E)`. Both sides differ by a corner-averaged intersection
