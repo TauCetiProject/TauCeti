@@ -160,10 +160,13 @@ variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
 indexed by `ι` when such coproducts are exact in `C`: it is the singular chain complex followed by
 homology, and both preserve them. -/
 instance : PreservesColimitsOfShape (Discrete ι)
-    ((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R) :=
-  inferInstanceAs (PreservesColimitsOfShape (Discrete ι)
-    ((AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R ⋙
-      HomologicalComplex.homologyFunctor C _ k))
+    ((AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R) := by
+  have h : (AlgebraicTopology.singularHomologyFunctor.{w} C k).obj R =
+      (AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R ⋙
+        HomologicalComplex.homologyFunctor C _ k := by
+    rfl
+  rw [h]
+  infer_instance
 
 /-- **Additivity of singular homology.** If coproducts indexed by `ι` are exact in `C`, then in
 every degree the singular homology of a disjoint union of spaces, with coefficients in `R`, is the
