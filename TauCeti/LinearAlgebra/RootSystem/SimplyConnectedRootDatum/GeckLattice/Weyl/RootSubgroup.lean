@@ -109,6 +109,7 @@ theorem geckWeylRootIndex_cons (j : Fin t.rank) (l : List (Fin t.rank)) (i : Fin
     geckWeylRootIndex]
 
 /-- The one-letter word `[i]` attaches to the node `i` the negative of the simple root `α_i`. -/
+@[simp]
 theorem root_geckWeylRootIndex_singleton_self (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht [i] i) =
       -(t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
@@ -149,6 +150,7 @@ theorem geckWeylRootSubgroupPoints_apply (l : List (Fin t.rank)) (i : Fin t.rank
   (rfl)
 
 /-- The empty word gives the numbered raising subgroup at node `i`. -/
+@[simp]
 theorem geckWeylRootSubgroupPoints_nil (i : Fin t.rank) (A : Type v) [CommRing A] :
     t.geckWeylRootSubgroupPoints ht [] i A = t.geckRootSubgroupPoints ht (.inl i) A := by
   ext u
@@ -165,6 +167,7 @@ theorem geckWeylRootSubgroupPoints_cons (j : Fin t.rank) (l : List (Fin t.rank))
 
 /-- **The word `[i]` gives the lowering subgroup at node `i`**, with negated parameter: the simple
 Weyl representative at `i` conjugates `xᵢ(u)` to `x₋ᵢ(-u)`. -/
+@[simp]
 theorem geckWeylRootSubgroupPoints_singleton_self (i : Fin t.rank) (A : Type v) [CommRing A]
     (u : A) :
     t.geckWeylRootSubgroupPoints ht [i] i A (Multiplicative.ofAdd u) =
