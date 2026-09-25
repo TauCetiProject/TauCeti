@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Spinor norms under isometries
@@ -15,13 +16,17 @@ An isometry of quadratic spaces carries reflections to reflections with the same
 value. Since reflections generate the orthogonal group, it preserves the orthogonal spinor norm
 and its restriction to the special orthogonal group. This lets spinor-norm computations be
 transported across a change of quadratic coordinates.
+
+## References
+
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
 
-namespace CliffordAlgebra
+namespace QuadraticMap.IsometryEquiv
 
-open TauCeti QuadraticMap
+open TauCeti QuadraticMap CliffordAlgebra
 
 universe u v w
 
@@ -46,7 +51,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
     intro x _
     have h : Invertible (Q' (e x)) := by rw [e.map_app]; infer_instance
     let _ := h
-    -- Membership in the equality locus unfolds to equality of the two homomorphisms.
+    rw [MonoidHom.mem_eqLocus]
     change orthogonalSpinorNorm Q' (e.nondegenerate_iff.mp hQ)
         (QuadraticMap.orthogonalGroupCongr e (reflectionOrthogonal Q x)) =
       orthogonalSpinorNorm Q hQ (reflectionOrthogonal Q x)
@@ -57,6 +62,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
   exact hg
 
 /-- An isometric equivalence preserves the spinor norm on the special orthogonal group. -/
+@[simp]
 theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
     spinorNorm Q' (e.nondegenerate_iff.mp hQ) (e.specialOrthogonalGroupCongr g) =
@@ -71,4 +77,4 @@ theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
     simp
   rw [he, orthogonalSpinorNorm_orthogonalGroupCongr]
 
-end CliffordAlgebra
+end QuadraticMap.IsometryEquiv
