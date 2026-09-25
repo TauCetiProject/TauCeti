@@ -27,7 +27,7 @@ open Set Topology
 
 namespace Subgroup
 
-variable {G F F' : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable {G F F' : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace F] [TopologicalSpace F'] [Zero F']
 
 /-- An identity slice chart for a subgroup makes its subtype inclusion locally flat.

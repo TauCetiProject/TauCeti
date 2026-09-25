@@ -18,7 +18,7 @@ reusable theorem.
 ## Main result
 
 * `Subgroup.exists_isSliceChart_of_isSliceChart` gives a slice chart around every point of a
-  subgroup from one chart around the identity.
+  subgroup from one chart around the identity, with arbitrary model space and slice.
 
 The result is purely topological.  It does not install a manifold structure on the subgroup or
 assert smoothness of the translated charts.
@@ -35,20 +35,20 @@ namespace Subgroup
 
 open Set Topology
 
-variable {G F F' : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
-  [TopologicalSpace F] [TopologicalSpace F'] [Zero F']
+variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
+  [TopologicalSpace P]
 
 /-- An identity slice chart for a subgroup translates to a slice chart around every subgroup point.
 
 The target is the subtype range rather than the carrier set so that the result is immediately in
 the form required by `TauCeti.IsSliceEmbedding` and `TauCeti.IsLocallyFlat`. -/
 theorem exists_isSliceChart_of_isSliceChart (K : Subgroup G)
-    (φ : OpenPartialHomeomorph G (F × F'))
-    (hφ : TauCeti.IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
+    (φ : OpenPartialHomeomorph G P) {S : Set P}
+    (hφ : TauCeti.IsSliceChart φ S (K : Set G))
     (h1 : (1 : G) ∈ φ.source) (g : K) :
-    ∃ ψ : OpenPartialHomeomorph G (F × F'),
+    ∃ ψ : OpenPartialHomeomorph G P,
       (g : G) ∈ ψ.source ∧
-        TauCeti.IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set F'))
+        TauCeti.IsSliceChart ψ S
           (Set.range ((↑) : K → G)) := by
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
