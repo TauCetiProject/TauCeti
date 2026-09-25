@@ -52,7 +52,8 @@ their eigenvalues are mutually inverse. -/
 private theorem stdSymplecticBilinForm_eq_zero_of_mem_rationalEigenspace
     {M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) Q} (hM : Mᵀ * J (Fin m) Q * M = J (Fin m) Q)
     {s r : Qˣ} (hsr : r ≠ s⁻¹) {v w : Fin m ⊕ Fin m → k}
-    (hv : v ∈ rationalEigenspace (k := k) M s) (hw : w ∈ rationalEigenspace (k := k) M r) :
+    (hv : v ∈ rationalEigenspace (k := k) M (s : Q))
+    (hw : w ∈ rationalEigenspace (k := k) M (r : Q)) :
     TauCeti.stdSymplecticBilinForm k m v w = 0 := by
   rw [mem_rationalEigenspace] at hv hw
   rw [TauCeti.stdSymplecticBilinForm_apply]
@@ -95,11 +96,12 @@ theorem exists_mem_symplecticGroup_mul_map_eq_map_mul_diagonal
           diagonal fun x ↦ ((Sum.elim u (fun i ↦ (u i)⁻¹) x : Qˣ) : Q) := by
   classical
   have hM' := SymplecticGroup.mem_iff'.1 hM
-  have hW := iSup_rationalEigenspace_eq_top hP₀ h
+  have hW := iSup_rationalEigenspace_eq_top hP₀ (fun s : Qˣ ↦ (s : Q)) h
   -- A homogeneous symplectic basis.
   obtain ⟨m', b, hb, hbW⟩ :=
     (TauCeti.isAlt_stdSymplecticBilinForm k m).exists_basis_toMatrix_eq_J_of_iSup_eq_top
-      (TauCeti.stdSymplecticBilinForm_nondegenerate k m) (W := rationalEigenspace M)
+      (TauCeti.stdSymplecticBilinForm_nondegenerate k m)
+      (W := fun s : Qˣ ↦ rationalEigenspace M (s : Q))
       (σ := fun s ↦ s⁻¹) inv_involutive hW fun s r hsr v hv w hw ↦
         stdSymplecticBilinForm_eq_zero_of_mem_rationalEigenspace hM' hsr hv hw
   obtain rfl : m = m' := by
