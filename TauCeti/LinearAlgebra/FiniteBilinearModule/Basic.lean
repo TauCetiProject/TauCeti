@@ -45,10 +45,14 @@ restriction to a subgroup can be degenerate.
   the part of the orthogonal complement lying in the subgroup.
 * `TauCeti.FiniteBilinearModule.Isometry.map_orthogonalComplement`: an isometry carries
   orthogonal complements to orthogonal complements.
+* `TauCeti.FiniteBilinearModule.Isometry.comap_orthogonalComplement`: the inverse image of an
+  orthogonal complement under an isometry is the orthogonal complement of the inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalComplementEquiv`: the induced equivalence
   between corresponding orthogonal complements.
 * `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_map_iff`: an isometry transports isotropic
   subgroups.
+* `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_comap_iff`: an isometry transports
+  isotropic subgroups by inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.isLagrangian_map_iff`: an isometry transports Lagrangian
   subgroups.
 * `TauCeti.FiniteBilinearModule.isIsotropic_prod_iff`: isotropy of a product subgroup in an
@@ -866,6 +870,25 @@ theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isomet
     rw [← f.map_pairing (f.symm y) z, f.apply_symm_apply]
     exact hy (f z) (AddSubgroup.mem_map.mpr ⟨z, hz, rfl⟩)
 
+/-- The inverse image of an orthogonal complement under an isometry is the orthogonal complement
+of the inverse image. -/
+@[simp]
+theorem Isometry.comap_orthogonalComplement {B : FiniteBilinearModule} (f : Isometry A B)
+    (K : AddSubgroup B) :
+    A.orthogonalComplement (K.comap f.toAddEquiv) =
+      (B.orthogonalComplement K).comap f.toAddEquiv := by
+  ext x
+  simp only [A.mem_orthogonalComplement_iff, B.mem_orthogonalComplement_iff,
+    AddSubgroup.mem_comap]
+  constructor
+  · intro hx y hy
+    calc
+      B.pairing (f x) y = B.pairing (f x) (f (f.symm y)) := by rw [f.apply_symm_apply]
+      _ = A.pairing x (f.symm y) := f.map_pairing x (f.symm y)
+      _ = 0 := hx (f.symm y) (by simpa using hy)
+  · intro hx y hy
+    exact (f.map_pairing x y).symm.trans (hx (f y) (by simpa using hy))
+
 /-- An isometry restricts to an additive equivalence from the orthogonal complement of a subgroup
 onto the orthogonal complement of its image. -/
 def Isometry.orthogonalComplementEquiv {B : FiniteBilinearModule} (f : Isometry A B)
@@ -917,6 +940,15 @@ theorem Isometry.isIsotropic_map_iff {B : FiniteBilinearModule} (f : Isometry A 
     B.IsIsotropic (H.map f.toAddEquiv) ↔ A.IsIsotropic H := by
   rw [B.isIsotropic_iff_le_orthogonalComplement, A.isIsotropic_iff_le_orthogonalComplement,
     ← f.map_orthogonalComplement, AddSubgroup.map_le_map_iff_of_injective f.toAddEquiv.injective]
+
+/-- An isometry transports isotropic subgroups by inverse image. -/
+@[simp]
+theorem Isometry.isIsotropic_comap_iff {B : FiniteBilinearModule} (f : Isometry A B)
+    (K : AddSubgroup B) :
+    A.IsIsotropic (K.comap f.toAddEquiv) ↔ B.IsIsotropic K := by
+  rw [A.isIsotropic_iff_le_orthogonalComplement, B.isIsotropic_iff_le_orthogonalComplement,
+    f.comap_orthogonalComplement, AddSubgroup.comap_le_comap_of_surjective
+      f.toAddEquiv.surjective]
 
 /-- An isometry transports Lagrangian subgroups. -/
 @[simp]

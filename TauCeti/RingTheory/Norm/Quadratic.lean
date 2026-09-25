@@ -12,12 +12,12 @@ public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 public import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
 
 /-!
-# Trace and norm in a separable quadratic extension
+# Trace and norm in quadratic algebras and separable quadratic extensions
 
 For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
 functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
-`N x = x · σx` (`algebraMap_trace_eq_add`, `algebraMap_norm_eq_mul`). Everything else here is a
-consequence. The headline is the discriminant characterisation of the generators:
+`N x = x · σx` (`algebraMap_trace_eq_add`, `algebraMap_norm_eq_mul`). These give the
+discriminant characterisation of the generators:
 
 * `discrim_eq_zero_iff_mem_range_algebraMap`: the discriminant `t² - 4n` of `X² - tX + n`, the
   characteristic polynomial of multiplication by `θ`, vanishes exactly when `θ ∈ K`. (That
@@ -28,15 +28,17 @@ consequence. The headline is the discriminant characterisation of the generators
 * `exists_discrim_ne_zero` turns that into a choice principle: some `θ` has nonzero
   discriminant, hence generates. This is what a construction over `L/K` picks its generator by.
 
-Three results need neither separability nor a field structure on `L`, and are stated over a
-quadratic `K`-algebra that is only a commutative ring — so they also cover the split algebra
-`K × K` and the non-reduced `K[X]/(X²)`. They see `L` only as a free `K`-module of rank two:
+Three results hold for a commutative quadratic algebra over any nontrivial commutative base
+ring `K`, including bases with zero divisors. `Algebra.IsQuadraticExtension K L` supplies
+freeness and rank two; module-finiteness follows from the positive rank. No Euclidean division,
+domain, or separability hypothesis is needed. This covers quadratic orders over `ℤ`, the split
+algebra `K × K`, and the non-reduced `K[X]/(X²)`:
 
 * `trace_algebraMap_add_algebraMap_mul` and `norm_algebraMap_add_algebraMap_mul` evaluate the
   trace and norm of `b + aθ` — the first by `K`-linearity of the trace, the second from the
   `2 × 2` identity `det (b • 1 + a • M) = b² + ab · tr M + a² · det M`. This is how a statement
   about one generator transfers to another;
-* `discrim_eq_zero_of_mem_range_algebraMap`, the easy half of the characterisation: a rational
+* `discrim_eq_zero_of_mem_range_algebraMap`, the easy half of the characterisation: a scalar
   `θ = c` has `t = 2c` and `n = c²`, so `t² - 4n = 0`.
 
 Separability is genuinely needed for the other half, and hence for `discrim_ne_zero` and
@@ -45,32 +47,28 @@ so `t = 0` and `t² - 4n = 0` for *every* `θ`. In characteristic two `discrim_n
 `t ≠ 0`, reflecting that a separable quadratic extension is then Artin–Schreier rather than
 Kummer.
 
-These are consumed by the extension quadratic twist in
-`TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean`, which advances
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 5 (twists): `exists_discrim_ne_zero` is what the
-twist chooses its generator by, and `discrim_ne_zero` is exactly what makes the twist by a
-generator elliptic.
+These formulas support quadratic twists and computations of norms in quadratic number fields.
+The nonzero-discriminant criterion selects a generator for a separable quadratic extension
+and ensures that twisting by that generator preserves ellipticity.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/RingTheory/Norm/Quadratic.lean` at the roadmap's pin `bc2fe8ff7396`, FLT PR #1088,
+`FLT/Mathlib/RingTheory/Norm/Quadratic.lean` at revision `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`; following this
 repository's convention for adapted material, the upstream authorship is credited here rather
-than in the copyright header. Ported with the source's `@[expose]` dropped, and with the two
-square-root lemmas left to the PR that consumes them.
+than in the copyright header.
 -/
 
 public section
 
 section CommRing
 
-variable (K L : Type*) [Field K] [CommRing L] [Algebra K L]
+variable (K L : Type*) [CommRing K] [Nontrivial K] [CommRing L] [Algebra K L]
 variable [Algebra.IsQuadraticExtension K L]
 
 namespace Algebra.IsQuadraticExtension
 
-/-- The trace of `b + aθ` in a quadratic algebra is `a·tr(θ) + 2b`. Neither separability nor
-invertibility in `L` is needed: this is `K`-linearity of the trace together with
-`tr(b) = [L : K]·b = 2b`. -/
+/-- The trace of `b + aθ` in a commutative quadratic algebra over a nontrivial commutative
+ring is `a·tr(θ) + 2b`. Neither separability nor invertibility in `L` is needed. -/
 @[simp]
 theorem trace_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
     Algebra.trace K L (algebraMap K L b + algebraMap K L a * θ)
@@ -80,11 +78,8 @@ theorem trace_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
   simp only [nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
-/-- The norm of `b + aθ` in a quadratic algebra is `b² + ab·tr(θ) + a²·N(θ)`. Neither
-separability nor invertibility in `L` is needed: in any `K`-basis of `L`, multiplication by
-`b + aθ` has matrix `a • M - (-b) • 1` where `M` is the matrix of multiplication by `θ`, and
-`TauCeti.Matrix.det_smul_sub_smul_one_fin_two` evaluates that pencil determinant as
-`det M · a² + tr M · ab + b²`. -/
+/-- The norm of `b + aθ` in a commutative quadratic algebra over a nontrivial commutative
+ring is `b² + ab·tr(θ) + a²·N(θ)`. Neither separability nor invertibility in `L` is needed. -/
 @[simp]
 theorem norm_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
     Algebra.norm K (algebraMap K L b + algebraMap K L a * θ)
@@ -101,20 +96,15 @@ theorem norm_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
     Algebra.norm_eq_matrix_det bs, key, TauCeti.Matrix.det_smul_sub_smul_one_fin_two]
   ring
 
-/-- The discriminant vanishes on the base field: for `θ = c ∈ K` the trace is `2c` and the norm
-is `c²`, so `t² - 4n = 0`. Neither separability nor invertibility in `L` is needed — only that
-`L` is free of rank two, so this also covers the split algebra `K × K`, where `θ = (c, c)` is the
-statement's content. Over a separable quadratic *extension* it is the converse half of
-`discrim_eq_zero_iff_mem_range_algebraMap`, and it is what lets a construction that chose `θ` by
-*nonzero discriminant* recover that `θ` generates the extension. It is the `a = 0`, `b = c` case
-of the two evaluations above, so it is derived from them rather than recomputed. -/
+/-- The discriminant vanishes on the image of the base ring in a commutative quadratic algebra:
+a scalar `c` has trace `2c` and norm `c²`. This includes split and non-reduced algebras.
+For a separable quadratic field extension, the converse is
+`discrim_eq_zero_iff_mem_range_algebraMap`. -/
 theorem discrim_eq_zero_of_mem_range_algebraMap {θ : L} (hθ : θ ∈ Set.range (algebraMap K L)) :
     Algebra.trace K L θ ^ 2 - 4 * Algebra.norm K θ = 0 := by
   obtain ⟨c, rfl⟩ := hθ
-  have ht := trace_algebraMap_add_algebraMap_mul K L 0 c (0 : L)
-  have hn := norm_algebraMap_add_algebraMap_mul K L 0 c (0 : L)
-  simp only [map_zero, zero_mul, add_zero, mul_zero, zero_add] at ht hn
-  rw [ht, hn]
+  rw [Algebra.trace_algebraMap, Algebra.norm_algebraMap, finrank_eq_two K L]
+  simp only [nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
 end Algebra.IsQuadraticExtension

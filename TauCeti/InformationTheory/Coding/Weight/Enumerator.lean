@@ -331,6 +331,19 @@ theorem weightEnumerator_univ [Finite R] :
 
 end Elementary
 
+/-- On the diagonal, the weight enumerator of a finite set of words is its cardinality
+times the common argument raised to the length. -/
+@[simp]
+theorem aeval_weightEnumerator_diag {ι : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {R : Type*} [CommRing R]
+    {C : Set (∀ i, β i)} (z : R) (hC : C.Finite) :
+    aeval ![z, z] C.weightEnumerator = (Nat.card C : R) * z ^ Fintype.card ι := by
+  classical
+  rw [Set.weightEnumerator_eq_sum hC]
+  simp only [map_sum, map_mul, map_pow, aeval_X, Matrix.cons_val_zero,
+    Matrix.cons_val_one, ← pow_add, Nat.sub_add_cancel hammingNorm_le_card_fintype]
+  simp [nsmul_eq_mul, Nat.card_eq_card_finite_toFinset hC]
+
 /-! ### Monomial equivalence and direct sums -/
 
 variable {ι κ R : Type*} [Fintype ι] [Fintype κ] [DecidableEq R]

@@ -20,9 +20,10 @@ the second is the first with its coefficients cast to `ℚ`.
 
 * `NumberField.RingOfIntegers.minpoly_rat_coe`:
   `minpoly ℚ (x : K) = (minpoly ℤ x).map (algebraMap ℤ ℚ)`.
-* `TauCeti.NumberField.minpoly_rat_eq_of_mem_rootSet`,
-  `TauCeti.NumberField.minpoly_int_eq_of_coe_mem_rootSet`: a root, in another number field, of
-  the minimal polynomial of `x` has the same minimal polynomials over `ℚ` and over `ℤ` as `x`.
+* `TauCeti.NumberField.minpoly_rat_eq_of_mem_rootSet`: a root in a commutative domain over `ℚ`
+  has the same minimal polynomial over `ℚ` as `x`.
+* `TauCeti.NumberField.minpoly_int_eq_of_coe_mem_rootSet`: an algebraic integer in another
+  number field that is a root has the same minimal polynomial over `ℤ` as `x`.
 -/
 
 public section
@@ -45,7 +46,11 @@ namespace TauCeti.NumberField
 
 open Polynomial
 
-variable {K : Type*} [Field K] [NumberField K] {M : Type*} [Field M] [Algebra ℚ M] {θ : 𝓞 K}
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+
+section DomainTarget
+
+variable {M : Type*} [CommRing M] [IsDomain M] [Algebra ℚ M]
 
 /-- A root in `M` of `minpoly ℚ θ` is a root of `minpoly ℤ θ`. -/
 theorem aeval_minpoly_int_eq_zero_of_mem_rootSet {β : M}
@@ -54,15 +59,19 @@ theorem aeval_minpoly_int_eq_zero_of_mem_rootSet {β : M}
   rwa [_root_.NumberField.RingOfIntegers.minpoly_rat_coe, aeval_map_algebraMap] at h
 
 /-- A root in `M` of `minpoly ℚ θ` is an algebraic integer. -/
-theorem isIntegral_of_mem_rootSet {β : M} (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
+theorem isIntegral_of_mem_rootSet {β : M}
+    (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
     IsIntegral ℤ β :=
   ⟨minpoly ℤ θ, minpoly.monic θ.isIntegral, aeval_minpoly_int_eq_zero_of_mem_rootSet hβ⟩
 
 /-- A root in `M` of `minpoly ℚ θ` has that polynomial as its minimal polynomial over `ℚ`. -/
-theorem minpoly_rat_eq_of_mem_rootSet {β : M} (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
+theorem minpoly_rat_eq_of_mem_rootSet {β : M}
+    (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M) :
     minpoly ℚ β = minpoly ℚ (θ : K) :=
   (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible (IsIntegral.of_finite ℚ _))
     (mem_rootSet.mp hβ).2 (minpoly.monic (IsIntegral.of_finite ℚ _))).symm
+
+end DomainTarget
 
 /-- An algebraic integer of a number field `M` that is a root of `minpoly ℚ θ` has the same
 minimal polynomial over `ℤ` as `θ`. -/

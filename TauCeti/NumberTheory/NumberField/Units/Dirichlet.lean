@@ -25,6 +25,8 @@ consume — for instance the exact number of unit square classes in
 
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
+* `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
+  places plus one is the degree.
 -/
 
 public section
@@ -98,5 +100,21 @@ fundamental system is sent to the pair `(ζ, e)`. -/
   rw [unitsMulEquivTorsionProdMultiplicative, MulEquiv.symm_apply_eq, MulEquiv.ofBijective_apply,
     torsionProdMultiplicativeToUnits_apply]
   simp
+
+open scoped Classical in
+/-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
+`#(InfinitePlace F) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
+the one place the rank drops recovers `finrank ℚ F`.
+
+Stated as an addition rather than as `rank F + nrComplexPlaces F = finrank ℚ F - 1`: the
+subtraction on `ℕ` is truncated, and the additive form needs no positivity side condition. -/
+theorem rank_add_nrComplexPlaces_add_one :
+    rank F + InfinitePlace.nrComplexPlaces F + 1 = finrank ℚ F := by
+  have h₁ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces F
+  have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank F
+  -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
+  have h₃ : 0 < Fintype.card (InfinitePlace F) := Fintype.card_pos
+  simp only [Units.rank]
+  omega
 
 end NumberField

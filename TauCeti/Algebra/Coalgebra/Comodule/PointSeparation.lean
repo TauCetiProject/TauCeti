@@ -120,14 +120,12 @@ theorem endOfPoint_eq_iff_eqOn_matrixCoefficientSubalgebra
               (LinearMap.lTensor M k.toLinearMap (coact (R := R) (C := C) m))) φ =
           k (matrixCoefficient (R := R) (C := C) φ m) := by
       rw [matrixCoefficient_def]
-      induction coact (R := R) (C := C) m using TensorProduct.induction_on with
-      | zero => simp
+      induction coact (R := R) (C := C) m using TensorProduct.inductionOn with
       | add x y hx hy => simp [hx, hy]
       | tmul m c => simp
     apply LinearMap.ext
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add z t hz ht => simp [hz, ht]
     | tmul a m =>
         rw [endOfPoint_tmul, endOfPoint_tmul]

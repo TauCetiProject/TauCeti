@@ -562,54 +562,60 @@ private theorem norm_integral_perronFn_horizontal_le_of_one_lt (hx1 : 1 < x) {a 
         linarith
     _ = x ^ c / (|u| * Real.log x) := by ring
 
+/-- **The uniform bound behind the truncated Perron estimate.** For every abscissa `B ≥ c`,
+shifting the contour to `Re s = -B` bounds the truncated integral by the horizontal contribution
+plus the far vertical side. The far side is what vanishes as `B → ∞`. -/
+private theorem norm_integral_perronFn_sub_two_pi_le_of_le (hx1 : 1 < x) (hc : 0 < c)
+    (hT : 0 < T) {B : ℝ} (hcB : c ≤ B) :
+    ‖(∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π‖
+      ≤ 2 * (x ^ c / (T * |Real.log x|)) + x ^ (-B) / c * (2 * T) := by
+  have hx : 0 < x := lt_trans zero_lt_one hx1
+  have hB0 : 0 < B := lt_of_lt_of_le hc hcB
+  have hab : (-B : ℝ) ≤ c := by linarith
+  have hcauchy := integral_perronRectangle_eq_zero (perronDslope x) (-B) c T
+    (differentiable_perronDslope hx.ne').differentiableOn
+  -- Split the entire integrand into the integrand at `x` and the integrand at `1`.
+  rw [integral_perronDslope_comp hx (continuous_horizontalLine (-T))
+      (ofReal_add_mul_I_ne_zero_of_im (neg_ne_zero.2 hT.ne')),
+    integral_perronDslope_comp hx (continuous_horizontalLine T)
+      (ofReal_add_mul_I_ne_zero_of_im hT.ne'),
+    integral_perronDslope_comp hx (continuous_verticalLine c)
+      (ofReal_add_mul_I_ne_zero_of_re hc.ne'),
+    integral_perronDslope_comp hx (continuous_verticalLine (-B))
+      (ofReal_add_mul_I_ne_zero_of_re (neg_ne_zero.2 hB0.ne'))] at hcauchy
+  -- The four sides of the integrand at `1` contribute the residue `2 π i`.
+  have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
+  have e₂ := integral_perronFn_one_vertical hc.ne' T
+  have e₃ := integral_perronFn_one_vertical (neg_ne_zero.2 hB0.ne') T
+  have hres := TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I hc hB0 hT
+  have hmain : I * ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π)
+      = (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (T : ℝ) * I))
+        - (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (-T : ℝ) * I))
+        + I * ∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I) := by
+    linear_combination hcauchy + e₁ + I * e₂ - I * e₃ + hres
+  have hfar : ‖∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I)‖
+      ≤ x ^ (-B) / c * (2 * T) :=
+    norm_integral_perronFn_vertical_le_of_le_abs hx hc hT.le (by rwa [abs_neg, abs_of_pos hB0])
+  rw [← norm_I_mul ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π), hmain]
+  refine (norm_sub_add_I_mul_le _ _ _).trans ?_
+  have h₁ := norm_integral_perronFn_horizontal_le_of_one_lt (u := -T) hx1 hab
+    (neg_ne_zero.2 hT.ne')
+  have h₂ := norm_integral_perronFn_horizontal_le_of_one_lt (u := T) hx1 hab hT.ne'
+  rw [abs_neg, abs_of_pos hT] at h₁
+  rw [abs_of_pos hT] at h₂
+  linarith
+
 private theorem norm_integral_perronFn_sub_two_pi_le_of_one_lt (hx1 : 1 < x) (hc : 0 < c)
     (hT : 0 < T) :
     ‖(∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π‖
       ≤ 2 * (x ^ c / (T * |Real.log x|)) := by
-  have hx : 0 < x := lt_trans zero_lt_one hx1
-  have key : ∀ B, c ≤ B → ‖(∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π‖
-      ≤ 2 * (x ^ c / (T * |Real.log x|)) + x ^ (-B) / c * (2 * T) := by
-    intro B hcB
-    have hB0 : 0 < B := lt_of_lt_of_le hc hcB
-    have hab : (-B : ℝ) ≤ c := by linarith
-    have hcauchy := integral_perronRectangle_eq_zero (perronDslope x) (-B) c T
-      (differentiable_perronDslope hx.ne').differentiableOn
-    -- Split the entire integrand into the integrand at `x` and the integrand at `1`.
-    rw [integral_perronDslope_comp hx (continuous_horizontalLine (-T))
-        (ofReal_add_mul_I_ne_zero_of_im (neg_ne_zero.2 hT.ne')),
-      integral_perronDslope_comp hx (continuous_horizontalLine T)
-        (ofReal_add_mul_I_ne_zero_of_im hT.ne'),
-      integral_perronDslope_comp hx (continuous_verticalLine c)
-        (ofReal_add_mul_I_ne_zero_of_re hc.ne'),
-      integral_perronDslope_comp hx (continuous_verticalLine (-B))
-        (ofReal_add_mul_I_ne_zero_of_re (neg_ne_zero.2 hB0.ne'))] at hcauchy
-    -- The four sides of the integrand at `1` contribute the residue `2 π i`.
-    have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
-    have e₂ := integral_perronFn_one_vertical hc.ne' T
-    have e₃ := integral_perronFn_one_vertical (neg_ne_zero.2 hB0.ne') T
-    have hres := TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I hc hB0 hT
-    have hmain : I * ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π)
-        = (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (T : ℝ) * I))
-          - (∫ σ in (-B)..c, perronFn x ((σ : ℂ) + (-T : ℝ) * I))
-          + I * ∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I) := by
-      linear_combination hcauchy + e₁ + I * e₂ - I * e₃ + hres
-    have hfar : ‖∫ t in (-T)..T, perronFn x (((-B : ℝ) : ℂ) + t * I)‖
-        ≤ x ^ (-B) / c * (2 * T) :=
-      norm_integral_perronFn_vertical_le_of_le_abs hx hc hT.le (by rwa [abs_neg, abs_of_pos hB0])
-    rw [← norm_I_mul ((∫ t in (-T)..T, perronFn x ((c : ℂ) + t * I)) - 2 * π), hmain]
-    refine (norm_sub_add_I_mul_le _ _ _).trans ?_
-    have h₁ := norm_integral_perronFn_horizontal_le_of_one_lt (u := -T) hx1 hab
-      (neg_ne_zero.2 hT.ne')
-    have h₂ := norm_integral_perronFn_horizontal_le_of_one_lt (u := T) hx1 hab hT.ne'
-    rw [abs_neg, abs_of_pos hT] at h₁
-    rw [abs_of_pos hT] at h₂
-    linarith
   have hzero : Tendsto (fun B : ℝ ↦ x ^ (-B) * (2 * T / c)) atTop (𝓝 0) := by
     simpa using ((tendsto_rpow_atBot_of_base_gt_one x hx1).comp
       tendsto_neg_atTop_atBot).mul_const (2 * T / c)
   refine Tendsto.le_of_eventually_le_add hzero ?_
   filter_upwards [eventually_ge_atTop c] with B hB
-  simpa [div_mul_eq_mul_div, mul_div_assoc] using key B hB
+  simpa [div_mul_eq_mul_div, mul_div_assoc] using
+    norm_integral_perronFn_sub_two_pi_le_of_le hx1 hc hT hB
 
 /-- **Above the endpoint the truncated Perron kernel is close to one.**  For `1 < x` it differs
 from `1` by at most `x ^ c / (π * T * |log x|)`. -/

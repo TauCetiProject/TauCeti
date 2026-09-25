@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Span.IntegralDescent
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RepresentationTheory.FDRep
 
@@ -49,6 +50,9 @@ work — a virtual character of norm `1` is, up to sign, an irreducible characte
   irreducible characters weighted by their multiplicities**, and
   `TauCeti.virtualCharacters_eq_closure_irreducibleCharacters`: **the lattice is the `ℤ`-span of
   the irreducible characters**, with `TauCeti.mem_virtualCharacters_iff` its elementwise form.
+* `TauCeti.mem_of_mem_span_of_mem_virtualCharacters`: **a virtual character that is a
+  `ℤ[ζ]`-combination of elements of a subgroup of the lattice is an integer combination of them**,
+  and more generally for any subring of `k` retracting additively onto `ℤ`.
 * `TauCeti.characterPairing_eq_intCast_sum` and `TauCeti.exists_characterPairing_eq_intCast`: **the
   character pairing is integer-valued on the lattice**, computed by the dot product of the integer
   coefficients.
@@ -320,6 +324,21 @@ theorem mem_virtualCharacters_iff {f : G → k} :
       ∑ i, c i • irreducibleCharacter k i :=
     Finset.sum_congr rfl fun i _ => Int.cast_smul_eq_zsmul k (c i) _
   rw [heq, eq_comm]
+
+/-- **Virtual characters descend from `A`-coefficients to integer coefficients.** Let `A` be a
+subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`, such as `ℤ[ζ]` for a root of
+unity `ζ` in characteristic zero (`PowerBasis.exists_linearMap_apply_one`). If `V` is an additive
+subgroup of the virtual characters, then a virtual character that is an `A`-linear combination of
+elements of `V` already lies in `V`: `Submodule.span A V ∩ R(G) = V`. -/
+theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1)
+    {V : AddSubgroup (G → k)} (hV : V ≤ virtualCharacters k G) {f : G → k}
+    (hf : f ∈ virtualCharacters k G) (hfA : f ∈ Submodule.span A (V : Set (G → k))) :
+    f ∈ V := by
+  have h := virtualCharacters_eq_closure_irreducibleCharacters (k := k) (G := G)
+  rw [← range_irreducibleCharacter] at h
+  rw [h] at hV hf
+  exact mem_of_mem_span_of_mem_closure
+    ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t ht hV hf hfA
 
 /-- Reading an integer combination of irreducible characters back inside
 `TauCeti.ClassFunction`. -/

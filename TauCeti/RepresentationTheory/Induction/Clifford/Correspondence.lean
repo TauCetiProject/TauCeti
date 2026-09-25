@@ -44,6 +44,8 @@ The spanning argument uses `le_inertia V`, while the Mackey argument derives mem
 
 * `FDRep.iSup_range_intertwiningMap_inertia_eq_top`: if `U` lies over `V`, the images of the
   intertwiners `V → Res_N U` span `U`.
+* `FDRep.subsingleton_hom_res_mackeyToH_of_not_mem_inertia`: an off-inertia Mackey
+  intertwining space between two irreducibles lying over `V` is trivial.
 * `FDRep.simple_indFDRep_of_inertia`: **induction from the inertia group preserves
   irreducibility** for representations lying over `V`.
 
@@ -128,29 +130,101 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
     exact hv
   · exact congrArg Subrepresentation.toSubmodule h
 
-/-- On the normal subgroup `N`, an intertwiner between the two restrictions of `U` to the Mackey
-subgroup at `s` intertwines `Res_N U` with its conjugate by `s`: the Mackey subgroup contains `N`,
-and on `N` the map `TauCeti.mackeyToH` is conjugation by `s⁻¹`. -/
-private theorem mackey_hom_apply_inclusion {V : FDRep k N} {U : FDRep k (inertia V)} {s : G}
-    (φ : resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) U ⟶
-      (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj U)
-    (n : N) (u : U) :
-    φ.hom.hom.hom (U.ρ (Subgroup.inclusion (le_inertia V) n) u) =
-      U.ρ (Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n)) (φ.hom.hom.hom u) := by
+/-- A linear map out of an irreducible representation of `inertia V` lying over `V` is zero if it
+vanishes on every copy of `V` in the restriction to `N`. -/
+theorem linearMap_eq_zero_of_comp_intertwiningMap_eq_zero (V : FDRep k N)
+    (U : FDRep k (inertia V)) [Simple U]
+    (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V)
+    {W : Type u} [AddCommGroup W] [Module k W] (l : U →ₗ[k] W)
+    (hl : ∀ g : IntertwiningMap V.ρ
+      (U.ρ.comp (Subgroup.inclusion (le_inertia V))), l ∘ₗ g.toLinearMap = 0) :
+    l = 0 := by
+  obtain ⟨f, hf⟩ := liesOver_iff.mp hU
+  have hspan := V.iSup_range_intertwiningMap_inertia_eq_top U
+    ((FDRep.forget₂HomLinearEquiv _ _).symm f).hom fun hzero => hf (by
+      apply Action.Hom.ext
+      ext v
+      exact DFunLike.congr_fun hzero v)
+  refine LinearMap.ker_eq_top.mp (top_le_iff.mp (hspan ▸ iSup_le fun g => ?_))
+  rintro _ ⟨v, rfl⟩
+  exact DFunLike.congr_fun (hl g) v
+
+/-- On the normal subgroup `N`, a Mackey intertwiner at `s` intertwines the restriction of its
+source to `N` with the conjugate by `s` of the restriction of its target: the Mackey subgroup
+contains `N`, and on `N` the map `TauCeti.mackeyToH` is conjugation by `s⁻¹`. -/
+theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {s : G}
+    (φ : resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+      (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B)
+    (n : N) (a : A) :
+    φ.hom.hom.hom (A.ρ (Subgroup.inclusion (le_inertia V) n) a) =
+      B.ρ (Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n)) (φ.hom.hom.hom a) := by
   have hn : ((Subgroup.inclusion (le_inertia V) n : inertia V) : G) ∈ mackeySubgroup s _ _ :=
     mem_mackeySubgroup_iff.mpr ⟨le_inertia V n.2, le_inertia V (by
       simpa using (inferInstance : N.Normal).conj_mem' _ n.2 s)⟩
   have hy : mackeyToH s _ _ ⟨_, Subgroup.mem_subgroupOf.mpr hn⟩ =
       Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n) :=
     Subtype.ext (by simp)
-  have h := congrArg (fun χ => χ.hom.hom u) (φ.comm ⟨_, Subgroup.mem_subgroupOf.mpr hn⟩)
+  have h := congrArg (fun χ => χ.hom.hom a) (φ.comm ⟨_, Subgroup.mem_subgroupOf.mpr hn⟩)
   simp only [FGModuleCat.obj_carrier, ObjectProperty.FullSubcategory.comp_hom,
     ModuleCat.hom_comp, FDRep.hom_hom_action_ρ, LinearMap.coe_comp] at h
-  -- Both restrictions act through `U.ρ`, along the inclusion and along `mackeyToH`.
-  have hres (y) : FDRep.ρ ((Action.res (FGModuleCat k) (mackeyToH s _ _)).obj U) y =
-      U.ρ (mackeyToH s (inertia V) (inertia V) y) := rfl
+  have hres (y) : FDRep.ρ ((Action.res (FGModuleCat k) (mackeyToH s _ _)).obj B) y =
+      B.ρ (mackeyToH s (inertia V) (inertia V) y) := by
+    rw [← FDRep.hom_hom_action_ρ, ← FDRep.hom_hom_action_ρ, Action.res_obj_ρ]
+    exact congrArg (fun f : B.V ⟶ B.V => f.hom.hom)
+      (MonoidHom.comp_apply (Action.ρ B) (mackeyToH s (inertia V) (inertia V)) y)
   rw [hres, hy] at h
   exact h
+
+/-- **A nonzero intertwiner into a conjugate of a representation lying over `V`.**  If `B` is an
+irreducible representation of the inertia group of `V` lying over `V`, and some intertwiner from
+`V` to the conjugate by `s⁻¹` of the restriction of `B` to `N` is nonzero, then `s ∈ inertia V`. -/
+private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [Finite N] [NeZero (Nat.card N : k)]
+    {V : FDRep k N} [Simple V] {B : FDRep k (inertia V)} [Simple B]
+    (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V) {s : G}
+    (h : IntertwiningMap V.ρ ((B.ρ.comp (Subgroup.inclusion (le_inertia V))).comp
+      (MulAut.conjNormal s⁻¹).toMonoidHom)) (hh : h ≠ 0) : s ∈ inertia V := by
+  have hV := FDRep.isIrreducible_of_simple V
+  have := hV.nontrivial
+  -- Schur's lemma makes `h` injective and Maschke's theorem retracts it.
+  obtain ⟨p, hp⟩ := IntertwiningMap.exists_leftInverse_of_injective h
+    ((hV.injective_or_eq_zero h).resolve_right hh)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hp0 : p.toLinearMap ≠ 0 := fun hzero => hv <| by
+    have hpv := DFunLike.congr_fun hp v
+    rwa [IntertwiningMap.comp_apply, IntertwiningMap.id_apply,
+      ← IntertwiningMap.toLinearMap_apply, hzero, eq_comm] at hpv
+  obtain ⟨gB, hgB⟩ :=
+    not_forall.mp (mt (linearMap_eq_zero_of_comp_intertwiningMap_eq_zero V B hB _) hp0)
+  exact (inertia V).inv_mem_iff.mp (p.inv_mem_inertia_of_comp_ne_zero gB hgB)
+
+/-- **Off-inertia Mackey terms vanish.** If `A` and `B` are irreducible representations of the
+inertia group of `V`, both lying over `V`, then an intertwiner from the relevant restriction of
+`A` to the Mackey conjugate of `B` is zero whenever the representative is outside `inertia V`. -/
+theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite N]
+    [NeZero (Nat.card N : k)] (V : FDRep k N) [Simple V]
+    (A B : FDRep k (inertia V)) [Simple A] [Simple B]
+    (hA : A.LiesOver (Subgroup.inclusion (le_inertia V)) V)
+    (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)
+    {s : G} (hs : s ∉ inertia V) :
+    Subsingleton
+      (resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+        (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B) := by
+  refine subsingleton_of_forall_eq 0 fun φ => ?_
+  suffices φ.hom.hom.hom = 0 from Action.Hom.ext (FGModuleCat.hom_ext this)
+  -- `resFDRep` and `Action.res` keep the carriers of `A` and `B`, so `φ` is a linear map `A → B`.
+  let f : A →ₗ[k] B := φ.hom.hom.hom
+  refine linearMap_eq_zero_of_comp_intertwiningMap_eq_zero V A hA f fun g => ?_
+  by_contra hg
+  -- On `N`, `f` intertwines `Res_N A` with the conjugate by `s⁻¹` of `Res_N B`.
+  have hf (n : N) (a : A) : f (A.ρ (Subgroup.inclusion (le_inertia V) n) a) =
+      B.ρ (Subgroup.inclusion (le_inertia V) (MulAut.conjNormal s⁻¹ n)) (f a) :=
+    mackey_hom_apply_inclusion φ n a
+  let h : IntertwiningMap V.ρ ((B.ρ.comp (Subgroup.inclusion (le_inertia V))).comp
+      (MulAut.conjNormal s⁻¹).toMonoidHom) :=
+    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ (f ∘ₗ g.toLinearMap) fun n v => by
+      simp [IntertwiningMap.isIntertwining, hf]
+  exact hs (mem_inertia_of_intertwiningMap_conj_ne_zero hB h fun hzero =>
+    hg (LinearMap.ext fun v => DFunLike.congr_fun hzero v))
 
 end Inertia
 
@@ -168,72 +242,10 @@ Then the representation of `G` induced from `U` is irreducible.
 theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
     [Simple U] (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V) :
     Simple (indFDRep U) := by
-  obtain ⟨f, hf⟩ := liesOver_iff.mp hU
   have : NeZero (Nat.card N : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
-  have hV := FDRep.isIrreducible_of_simple V
-  have : Nontrivial V := _root_.Representation.IsIrreducible.nontrivial hV
-  set ρN := U.ρ.comp (Subgroup.inclusion (le_inertia V))
-  -- The copies of `V` in `Res_N U` span `U`.
-  have hspan : ⨆ g : IntertwiningMap V.ρ ρN, LinearMap.range g.toLinearMap = ⊤ := by
-    refine V.iSup_range_intertwiningMap_inertia_eq_top U
-      ((FDRep.forget₂HomLinearEquiv _ _).symm f).hom fun h0 => hf ?_
-    apply Action.Hom.ext
-    ext v
-    exact DFunLike.congr_fun h0 v
-  -- A linear map on `U` killing every copy of `V` is zero.
-  have hkill {W : Type u} [AddCommGroup W] [Module k W] (l : U →ₗ[k] W)
-      (hl : ∀ g : IntertwiningMap V.ρ ρN, l ∘ₗ g.toLinearMap = 0) : l = 0 := by
-    refine LinearMap.ker_eq_top.mp (top_le_iff.mp (hspan ▸ iSup_le fun g => ?_))
-    rintro _ ⟨v, rfl⟩
-    exact DFunLike.congr_fun (hl g) v
   refine (simple_indFDRep_iff U).mpr ⟨inferInstance, fun s hs => ?_⟩
-  refine mackeyDisjoint_of_forall_eq_zero fun φ => ?_
-  -- On `N`, the Mackey intertwiner `ψ` at `s` intertwines `Res_N U` with its conjugate by `s`.
-  let ψ : U →ₗ[k] U := φ.hom.hom.hom
-  have hψ (n : N) (u : U) : ψ (ρN n u) = ρN (MulAut.conjNormal s⁻¹ n) (ψ u) :=
-    mackey_hom_apply_inclusion φ n u
-  suffices hψ0 : ψ = 0 by
-    apply Action.Hom.ext
-    ext u
-    exact DFunLike.congr_fun hψ0 u
-  by_contra hψ0
-  -- Some copy `g` of `V` is not killed by `ψ`.
-  obtain ⟨g, hg⟩ : ∃ g : IntertwiningMap V.ρ ρN, ψ ∘ₗ g.toLinearMap ≠ 0 := by
-    by_contra! h
-    exact hψ0 (hkill ψ h)
-  -- `ψ ∘ g` embeds `V` into the conjugate of `Res_N U`, and Maschke's theorem retracts it.
-  let h : IntertwiningMap V.ρ (ρN.comp (MulAut.conjNormal s⁻¹).toMonoidHom) :=
-    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ (ψ ∘ₗ g.toLinearMap) fun n v => by
-      simp [IntertwiningMap.isIntertwining, hψ]
-  have hh : Function.Injective h :=
-    (_root_.Representation.IsIrreducible.injective_or_eq_zero h).resolve_right fun h0 =>
-      hg (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
-  obtain ⟨p, hp⟩ := IntertwiningMap.exists_leftInverse_of_injective h hh
-  -- The retraction does not kill every copy of `V`, since it is nonzero.
-  obtain ⟨g₂, hg₂⟩ : ∃ g₂ : IntertwiningMap V.ρ ρN, p.toLinearMap ∘ₗ g₂.toLinearMap ≠ 0 := by
-    by_contra! h2
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    have := DFunLike.congr_fun (hkill p.toLinearMap h2) (h v)
-    rw [LinearMap.zero_apply, IntertwiningMap.coe_toLinearMap, ← IntertwiningMap.comp_apply, hp,
-      IntertwiningMap.id_apply] at this
-    exact hv this
-  -- `p ∘ g₂` is a nonzero intertwiner from `V` to `{}^{s⁻¹} V`, hence an isomorphism by Schur.
-  let qLinear : V →ₗ[k] V := p.toLinearMap ∘ₗ g₂.toLinearMap
-  have qLinear_apply (v : V) : qLinear v = p (g₂ v) := rfl
-  let q : IntertwiningMap V.ρ (conjNormalFDRep s⁻¹ V).ρ :=
-    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ qLinear
-      fun n v => by
-        have hp' := IntertwiningMap.isIntertwining _ _ p (MulAut.conjNormal s n) (g₂ v)
-        simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply,
-          map_inv, MulAut.inv_apply, MulEquiv.symm_apply_apply] at hp'
-        have hc : (conjNormalFDRep s⁻¹ V).ρ n = V.ρ (MulAut.conjNormal s n) := by
-          rw [conjNormalFDRep_ρ, inv_inv]
-        refine (qLinear_apply _).trans <|
-          ((congrArg p (IntertwiningMap.isIntertwining _ _ g₂ n v)).trans hp').trans ?_
-        rw [hc]
-        exact congrArg (V.ρ (MulAut.conjNormal s n)) (qLinear_apply v).symm
-  have hq : q ≠ 0 := fun h0 => hg₂ (LinearMap.ext fun v => DFunLike.congr_fun h0 v)
-  exact hs (by simpa using (inertia V).inv_mem (q.mem_inertia hq))
+  exact (mackeyDisjoint_iff_subsingleton U s).mpr
+    (subsingleton_hom_res_mackeyToH_of_not_mem_inertia V U U hU hU hs)
 
 end Criterion
 

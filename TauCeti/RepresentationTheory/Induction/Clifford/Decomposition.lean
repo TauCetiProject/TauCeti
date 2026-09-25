@@ -30,7 +30,8 @@ The orbit, its inertia-coset indexing and the common Hom-space dimension are alr
 `TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Index.lean` and
 `TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean`.  This file assembles them
 using the irreducible-character basis: pairing either side with an irreducible character counts
-the same constituent, and a transversal contains exactly one representative when it occurs.
+the same constituent, and a transversal contains exactly one representative when it occurs, so
+the two sides agree by `TauCeti.ClassFunction.eq_of_forall_characterPairing_ofCharacter_eq`.
 
 ## Main result
 
@@ -262,6 +263,37 @@ private theorem characterPairing_resFDRep_eq_ite [Fintype G] [Fintype N]
       _ = ((0 : ℕ) : k) := congrArg (fun m : ℕ ↦ (m : k)) hzero
       _ = 0 := Nat.cast_zero
 
+-- Clifford's theorem, class-function form: if `σ` is an irreducible constituent of `Res_N W` and
+-- every irreducible constituent occurs with multiplicity `e`, then the class function of
+-- `Res_N W` is `e` times the sum of the class functions of the conjugates of `σ` over a left
+-- transversal of its inertia group.
+private theorem ofFDRep_resFDRep_eq_smul_sum [Fintype G] [IsAlgClosed k]
+    [Invertible (Nat.card N : k)] (W : FDRep k G) [Simple W]
+    (sigma : Subrepresentation (W.ρ.comp N.subtype)) (hsigma : IsAtom sigma) (e : ℕ)
+    (hcommon : ∀ tau : Subrepresentation (W.ρ.comp N.subtype), IsAtom tau → Module.finrank k
+      (tau.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (W.ρ.comp N.subtype)) = e) :
+    ClassFunction.ofFDRep (resFDRep N W) =
+      (e : k) • ∑ g ∈ inertiaTransversal (FDRep.of sigma.toRepresentation),
+        ClassFunction.ofFDRep (conjNormalFDRep g (FDRep.of sigma.toRepresentation)) := by
+  -- Pairing either side with an irreducible character `χ_U` gives `e` if `U` is a conjugate of
+  -- `σ` and `0` otherwise.
+  let _ : Fintype N := Fintype.ofFinite N
+  let _ : Representation.IsIrreducible (FDRep.of sigma.toRepresentation).ρ :=
+    Representation.isIrreducible_toRepresentation_of_isAtom hsigma
+  refine ClassFunction.eq_of_forall_characterPairing_ofCharacter_eq (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) fun i ↦ ?_
+  let U : FDRep k N := FDRep.of (irreducibleRepresentation k i)
+  have hρU : U.ρ = irreducibleRepresentation k i := FDRep.of_ρ' _
+  let _ : Representation.IsIrreducible U.ρ := by
+    rw [hρU]
+    infer_instance
+  have hU : ClassFunction.ofCharacter (irreducibleRepresentation k i) =
+      ClassFunction.ofFDRep U := by
+    rw [ClassFunction.ofFDRep_eq_ofCharacter, hρU]
+  rw [hU]
+  exact (characterPairing_resFDRep_eq_ite W sigma hsigma U e hcommon).trans
+    (characterPairing_smul_sum_conjNormalFDRep _ U e).symm
+
 /-- **Clifford's theorem, character form.**  The character of the restriction of an irreducible
 representation to a normal subgroup is a positive common multiple of the sum of the distinct
 conjugates of a fixed irreducible constituent, indexed by representatives of the left cosets of its
@@ -278,78 +310,21 @@ theorem clifford_restrict_character [Finite G] [IsAlgClosed k]
       (∀ g : G, ∃! r, r ∈ reps ∧ g⁻¹ * r ∈ inertia V) ∧
       ∀ n : N, W.character (n : G) =
         (e : k) * ∑ g ∈ reps, (conjNormalFDRep g V).character n := by
-  classical
   let _ : Fintype G := Fintype.ofFinite G
-  let _ : Invertible (Nat.card G : k) := hG.invertible
-  let _ : Fintype N := Fintype.ofFinite N
-  have hN : IsUnit (Nat.card N : k) := isUnit_natCard_subgroup N hG
-  let _ : Invertible (Nat.card N : k) := hN.invertible
+  let _ : Invertible (Nat.card N : k) := (isUnit_natCard_subgroup N hG).invertible
   let _ : Representation.IsIrreducible W.ρ := FDRep.isIrreducible_of_simple W
   obtain ⟨sigma, hsigma, -⟩ :=
     Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep (N := N) W.ρ
   let V : FDRep k N := FDRep.of sigma.toRepresentation
   let _ : Representation.IsIrreducible V.ρ :=
     Representation.isIrreducible_toRepresentation_of_isAtom hsigma
-  let _ : Simple V := FDRep.simple_of_isIrreducible V
-  obtain ⟨e, he, hcommon⟩ :=
-    Representation.exists_forall_finrank_linearMap_eq (N := N) W.ρ
-  let reps := inertiaTransversal V
-  refine ⟨V, inferInstance, e, reps, Nat.ne_of_gt he, inertiaTransversal_spec V, ?_⟩
-  let lhs : ClassFunction k N := ClassFunction.ofFDRep (resFDRep N W)
-  let rhs : ClassFunction k N :=
-    (e : k) • ∑ g ∈ reps, ClassFunction.ofFDRep (conjNormalFDRep g V)
-  have hpair : ∀ i : Fin (Nat.card (ConjClasses N)),
-      ClassFunction.characterPairing
-          (ClassFunction.ofCharacter (irreducibleRepresentation k i)) lhs =
-        ClassFunction.characterPairing
-          (ClassFunction.ofCharacter (irreducibleRepresentation k i)) rhs := by
-    intro i
-    let U : FDRep k N := FDRep.of (irreducibleRepresentation k i)
-    let _ : Representation.IsIrreducible U.ρ := by
-      dsimp only [U, FDRep.of_ρ']
-      infer_instance
-    let _ : Simple U := FDRep.simple_of_isIrreducible U
-    have hU : ClassFunction.ofCharacter (irreducibleRepresentation k i) =
-        ClassFunction.ofFDRep U := (ClassFunction.ofFDRep_eq_ofCharacter U).symm
-    rw [hU]
-    have hlhs := characterPairing_resFDRep_eq_ite W sigma hsigma U e hcommon
-    have hrhs := characterPairing_smul_sum_conjNormalFDRep V U e
-    simpa only [lhs, rhs, reps, V] using hlhs.trans hrhs.symm
-  have hclass : lhs = rhs := by
-    calc
-      lhs = ∑ i, ClassFunction.characterPairing
-          (ClassFunction.ofCharacter (irreducibleRepresentation k i)) lhs •
-            ClassFunction.ofCharacter (irreducibleRepresentation k i) :=
-        (ClassFunction.sum_characterPairing_smul_ofCharacter
-          (irreducibleRepresentation k)
-          (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) lhs).symm
-      _ = ∑ i, ClassFunction.characterPairing
-          (ClassFunction.ofCharacter (irreducibleRepresentation k i)) rhs •
-            ClassFunction.ofCharacter (irreducibleRepresentation k i) := by
-        exact Finset.sum_congr rfl fun i _ ↦ by rw [hpair i]
-      _ = rhs := ClassFunction.sum_characterPairing_smul_ofCharacter
-        (irreducibleRepresentation k)
-        (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) rhs
-  intro n
-  have hn := congrArg (fun f : ClassFunction k N ↦ f.1 n) hclass
-  dsimp only [lhs, rhs] at hn
-  simp only [ClassFunction.ofFDRep_apply, FDRep.character_actionRes,
-    Submodule.coe_smul, Pi.smul_apply, smul_eq_mul] at hn
-  let eval : ClassFunction k N →+ k :=
-    (Pi.evalAddMonoidHom (fun _ : N => k) n).comp
-      (ClassFunction k N).subtype.toAddMonoidHom
-  have hsum : (∑ g ∈ reps, ClassFunction.ofFDRep (conjNormalFDRep g V)).1 n =
-      ∑ g ∈ reps, (conjNormalFDRep g V).character n := by
-    calc
-      (∑ g ∈ reps, ClassFunction.ofFDRep (conjNormalFDRep g V)).1 n =
-          eval (∑ g ∈ reps, ClassFunction.ofFDRep (conjNormalFDRep g V)) := rfl
-      _ = ∑ g ∈ reps, eval (ClassFunction.ofFDRep (conjNormalFDRep g V)) :=
-        map_sum eval (fun g ↦ ClassFunction.ofFDRep (conjNormalFDRep g V)) reps
-      _ = ∑ g ∈ reps, (conjNormalFDRep g V).character n := by
-        apply Finset.sum_congr rfl
-        intro g _
-        exact ClassFunction.ofFDRep_apply (conjNormalFDRep g V) n
-  rw [hsum] at hn
-  exact hn
+  obtain ⟨e, he, hcommon⟩ := Representation.exists_forall_finrank_linearMap_eq (N := N) W.ρ
+  refine ⟨V, inferInstance, e, inertiaTransversal V, Nat.ne_of_gt he, inertiaTransversal_spec V,
+    fun n ↦ ?_⟩
+  -- Evaluate the class-function identity at `n`.
+  simpa only [ClassFunction.ofFDRep_apply, FDRep.character_actionRes, Subgroup.coe_subtype,
+    Submodule.coe_smul, Submodule.coe_sum, Pi.smul_apply, Finset.sum_apply, smul_eq_mul] using
+    congrArg (fun f : ClassFunction k N ↦ f.1 n)
+      (ofFDRep_resFDRep_eq_smul_sum W sigma hsigma e hcommon)
 
 end TauCeti

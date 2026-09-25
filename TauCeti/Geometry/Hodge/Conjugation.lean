@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
@@ -46,6 +46,8 @@ models.
   complex subspace.
 * `TauCeti.Hodge.Conjugation.map_comap_eq_comap_map`: an equivalence intertwining two conjugations
   exchanges conjugation with taking preimages of subspaces.
+* `TauCeti.Hodge.Conjugation.map_prod`: a conjugation acting componentwise on a product carries a
+  product subspace to the product of the conjugate subspaces.
 * `TauCeti.Hodge.Conjugation.dual`: the twisted transpose of a conjugation, again a conjugation,
   on the complex dual space, with its pointwise description
   `TauCeti.Hodge.Conjugation.dual_toEquiv_apply`.
@@ -463,8 +465,7 @@ noncomputable def concreteLatticeConj :
   toFun := concreteLatticeConjIntLinear
   map_add' := concreteLatticeConjIntLinear.map_add
   map_smul' c x := by
-    refine TensorProduct.induction_on x ?_ ?_ ?_
-    · simp
+    refine TensorProduct.inductionOn x ?_ ?_
     · intro z v
       simp only [TensorProduct.smul_tmul']
       unfold concreteLatticeConjIntLinear
@@ -559,7 +560,6 @@ theorem latticeConj_unique (hℂ : IsBaseChange ℂ ιℂ)
     c = latticeConj hℂ := by
   ext x
   induction x using hℂ.inductionOn with
-  | zero => simp
   | tmul v => simp [hc]
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]
@@ -698,11 +698,61 @@ theorem integralMapToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
     integralMapToComplex h₁ ι₂ f (latticeConj h₁ x) =
       latticeConj h₂ (integralMapToComplex h₁ ι₂ f x) := by
   induction x using h₁.inductionOn with
-  | zero => simp
   | tmul x => simp
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]
 
 end IntegralMaps
+
+section Prod
+
+variable {V : Type u} {Vℂ : Type v} [AddCommGroup V]
+variable [AddCommGroup Vℂ] [Module ℂ Vℂ] {ιℂ : V →ₗ[ℤ] Vℂ}
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V']
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ} (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+
+/-- A conjugation acting componentwise on a product carries a product subspace to the product of
+the conjugate subspaces.
+
+The hypothesis is what `TauCeti.Hodge.latticeConjugation_prodMap_toEquiv_apply` supplies for the
+canonical conjugation of a product of complexifications. -/
+theorem Conjugation.map_prod {W : Type*} {W' : Type*} [AddCommGroup W] [Module ℂ W]
+    [AddCommGroup W'] [Module ℂ W'] {ω : Conjugation W} {ω' : Conjugation W'}
+    {Ω : Conjugation (W × W')}
+    (hΩ : ∀ x : W × W', Ω.toEquiv x = (ω.toEquiv x.1, ω'.toEquiv x.2))
+    (U : Submodule ℂ W) (U' : Submodule ℂ W') :
+    (U.prod U').map Ω.toEquiv.toLinearMap =
+      (U.map ω.toEquiv.toLinearMap).prod (U'.map ω'.toEquiv.toLinearMap) := by
+  apply SetLike.coe_injective
+  simpa only [Submodule.map_coe, Submodule.prod_coe, LinearEquiv.coe_coe,
+    LinearEquiv.coe_toLinearMap, Prod.map_def, funext hΩ] using
+    Set.prodMap_image_prod (ω.toEquiv : W → W) (ω'.toEquiv : W' → W') (U : Set W) (U' : Set W')
+
+/-- Lattice conjugation acts componentwise on a product of complexifications. -/
+@[simp]
+theorem latticeConj_prodMap (x : Vℂ × V'ℂ) :
+    latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) x =
+      (latticeConj hℂ x.1, latticeConj h'ℂ x.2) := by
+  induction x using (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ).inductionOn with
+  | tmul x => rw [latticeConj_ι]; simp
+  | smul z x hx => simp [hx]
+  | add x y hx hy => simp [hx, hy]
+
+/-- The bundled lattice conjugation of a product of complexifications acts componentwise. -/
+theorem latticeConjugation_prodMap_toEquiv_apply (x : Vℂ × V'ℂ) :
+    (latticeConjugation (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)).toEquiv x =
+      ((latticeConjugation hℂ).toEquiv x.1, (latticeConjugation h'ℂ).toEquiv x.2) := by
+  simp [latticeConjugation_toEquiv_apply, latticeConj_prodMap hℂ h'ℂ]
+
+/-- Conjugation of a product subspace is the product of the conjugate subspaces. -/
+@[simp]
+theorem map_latticeConj_prod (U : Submodule ℂ Vℂ) (U' : Submodule ℂ V'ℂ) :
+    (U.prod U').map (latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)) =
+      (U.map (latticeConj hℂ)).prod (U'.map (latticeConj h'ℂ)) := by
+  simpa only [latticeConjugation_toLinearMap] using
+    Conjugation.map_prod (latticeConjugation_prodMap_toEquiv_apply hℂ h'ℂ) U U'
+
+end Prod
 
 end TauCeti.Hodge

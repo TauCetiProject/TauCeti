@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
 
 /-!

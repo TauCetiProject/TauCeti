@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.TensorProduct.Free
 import Mathlib.Algebra.Algebra.Rat
 import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Geometry.Hodge.BaseChange
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Scalar extension of an integral bilinear form
@@ -39,6 +40,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   conjugation.
 * `TauCeti.Hodge.integralFormBaseChange_nondegenerate`: the complex extension inherits
   nondegeneracy from the integral form.
+* `TauCeti.Hodge.integralFormBaseChange_prod`: scalar extension of a block-diagonal form is
+  block diagonal.
 * `TauCeti.Hodge.integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
@@ -115,7 +118,6 @@ theorem integralFormBaseChange_conj_right (hℂ : IsBaseChange ℂ ιℂ) (Q : L
     integralFormBaseChange hℂ Q (ιℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q (ιℂ x) y) := by
   induction y using hℂ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul z y hy => simp [hy]
   | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂]
@@ -128,7 +130,6 @@ theorem integralFormBaseChange_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearM
     integralFormBaseChange hℂ Q (latticeConj hℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q x y) := by
   induction x using hℂ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_conj_right hℂ Q v y
   | smul z x hx => simp [hx]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
@@ -250,7 +251,6 @@ private theorem integralFormBaseChange_rationalToComplexLinearEquiv_ι (hℚ : I
     integralFormBaseChange hℂ Q (ιℂ v) (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q (ιℚ v) y : ℚ) : ℂ) := by
   induction y using hℚ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul q y hy =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hy]
@@ -265,7 +265,6 @@ theorem integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul (hℚ : IsB
         (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q x y : ℚ) : ℂ) := by
   induction x using hℚ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_rationalToComplexLinearEquiv_ι hℚ hℂ Q v y
   | smul q x hx =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hx]
@@ -273,5 +272,26 @@ theorem integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul (hℚ : IsB
       simp [TensorProduct.tmul_add, h₁, h₂]
 
 end Rational
+
+/-! ### Products -/
+
+section Prod
+
+variable {A : Type*} {V' : Type*} {V_A : Type*} {V'_A : Type*}
+variable [CommRing A] [AddCommGroup V'] [AddCommGroup V_A] [Module A V_A]
+variable [AddCommGroup V'_A] [Module A V'_A]
+variable {ι : V →ₗ[ℤ] V_A} {ι' : V' →ₗ[ℤ] V'_A}
+
+/-- The scalar extension of a block-diagonal integral form is the block-diagonal form of the
+scalar extensions of its two blocks. -/
+@[simp]
+theorem integralFormBaseChange_prod (h : IsBaseChange A ι) (h' : IsBaseChange A ι')
+    (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
+    integralFormBaseChange (IsBaseChange.prodMap ι ι' h h') (Q.prod Q') =
+      (integralFormBaseChange h Q).prod (integralFormBaseChange h' Q') :=
+  (integralFormBaseChange_unique _ _ _ fun x y ↦ by
+    simp [LinearMap.prodMap_apply]).symm
+
+end Prod
 
 end TauCeti.Hodge

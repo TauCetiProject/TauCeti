@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.MeasureTheory.Group.IntegralConvolution
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Moments.Basic
-public import Mathlib.Probability.Distributions.Binomial
-public import Mathlib.Probability.Distributions.Geometric
-public import Mathlib.Probability.Distributions.Poisson.Basic
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
@@ -26,23 +24,13 @@ moment-generating function and show that it turns sums of independent random var
 products.  The file then identifies the generating function of a finite measure on `ℕ` with the
 sum of the power series carrying its singleton masses, so that the generating function is analytic
 on `(-1, 1)` and its Taylor coefficients at the origin recover those masses;
-consequently a law on `ℕ` is determined by its generating function near `0`.  Finally it computes
-the generating functions of the standard discrete families: Bernoulli, binomial, Poisson, and
-geometric, the last one on its exact integrability domain.
-
-These results implement the definition, the generic API, the coefficient-recovery and uniqueness
-statements, and the distribution-specific formulas of the probability-generating-function target
-in `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1.
-
-The Poisson series calculation follows the proof pattern of Mathlib's
-`ProbabilityTheory.charFun_map_cast_poissonMeasure`: both factor the Poisson weights out of the
-exponential power series.  The Bernoulli, binomial, and geometric calculations use Mathlib's
-corresponding measure-integral formulas directly.
+consequently a law on `ℕ` is determined by its generating function near `0`.
 
 ## Main declarations
 
 * `TauCeti.Probability.pgf` — the probability-generating function.
-* `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function.
+* `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function, and
+  `TauCeti.Probability.mgf_id_map_natCast` restates this for the real cast of a law on `ℕ`.
 * `TauCeti.Probability.integrable_pow_of_abs_le_one` — on `[-1, 1]` the integrand is
   integrable under a finite measure.
 * `TauCeti.Probability.IndepFun.pgf_add` and `TauCeti.Probability.iIndepFun.pgf_sum` —
@@ -66,8 +54,6 @@ corresponding measure-integral formulas directly.
   the generating function at `0`, with the corollaries
   `TauCeti.Probability.measure_eq_of_pgf_eqOn` and `TauCeti.Probability.identDistrib_of_pgf_eqOn`
   reading the hypothesis off `(-1, 1)`.
-* `TauCeti.Probability.pgf_bernoulliMeasure`, `pgf_binomial`, `pgf_poissonMeasure`, and
-  `pgf_geometricMeasure` — the standard discrete-family formulas.
 -/
 
 public section
@@ -135,6 +121,13 @@ theorem pgf_exp (X : Ω → ℕ) (μ : Measure Ω) (t : ℝ) :
   congr 1
   funext ω
   rw [Nat.cast_comm, mul_comm]
+
+/-- The moment-generating function of the real cast of a law on `ℕ` is its
+probability-generating function evaluated at `exp t`. -/
+theorem mgf_id_map_natCast (ν : Measure ℕ) (t : ℝ) :
+    mgf id (ν.map (Nat.cast : ℕ → ℝ)) t = pgf id ν (Real.exp t) := by
+  rw [pgf_exp, mgf_id_map .of_discrete]
+  simp only [id_eq]
 
 /-- For a finite measure, the integrand of a probability-generating function is integrable on
 `[-1, 1]`. -/
@@ -369,92 +362,6 @@ theorem identDistrib_of_pgf_eqOn {Ω' : Type*} [MeasurableSpace Ω'] {P : Measur
     (Filter.eventuallyEq_of_mem (Ioo_mem_nhds (by norm_num) (by norm_num)) h)
 
 end Coefficients
-
-section NamedDistributions
-
-open scoped NNReal ProbabilityTheory unitInterval
-
-/-- The probability-generating function of a Bernoulli distribution. -/
-theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :
-    pgf id Ber((1 : ℕ), 0, p) t = 1 - (p : ℝ) + (p : ℝ) * t := by
-  rw [pgf_def, integral_bernoulliMeasure]
-  simp
-  ring
-
-/-- The probability-generating function of a binomial distribution. -/
-theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
-    pgf id (binomial n p) t = (1 - (p : ℝ) + (p : ℝ) * t) ^ n := by
-  -- `add_pow` expands `(x + y) ^ n` with the binomial weights attached to `x`, so the base has to
-  -- be reordered to put the factor `p * t` first.
-  have hbase : 1 - (p : ℝ) + (p : ℝ) * t = (p : ℝ) * t + (1 - (p : ℝ)) := add_comm _ _
-  rw [pgf_def, integral_binomial, ← Nat.range_succ_eq_Iic, hbase, add_pow]
-  simp only [smul_eq_mul, id_eq]
-  apply Finset.sum_congr rfl
-  intro k hk
-  ring
-
-/-- The probability-generating function of a Poisson distribution. -/
-theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
-    pgf id (poissonMeasure r) t = Real.exp ((r : ℝ) * (t - 1)) := by
-  rw [pgf_def, integral_poissonMeasure]
-  simp only [smul_eq_mul, id_eq]
-  calc
-    ∑' n : ℕ, (Real.exp (-r) * (r : ℝ) ^ n / n.factorial) * t ^ n =
-        Real.exp (-r) * ∑' n : ℕ, (((r : ℝ) * t) ^ n / n.factorial) := by
-      rw [← tsum_mul_left]
-      congr with n
-      rw [mul_pow]
-      ring
-    _ = Real.exp (-r) * Real.exp ((r : ℝ) * t) := by
-      rw [(NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * t)).tsum_eq, Real.exp_eq_exp_ℝ]
-    _ = Real.exp ((r : ℝ) * (t - 1)) := by
-      rw [← Real.exp_add]
-      congr 1
-      ring
-
-/-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
-probability-generating function is identically one. -/
-@[simp]
-theorem pgf_geometricMeasure_zero (t : ℝ) : pgf id (geometricMeasure 0) t = 1 := by
-  simp [pgf_def, geometricMeasure]
-
-/-- For a nonzero success probability, the geometric probability-generating-function integrand
-is integrable exactly on the open interval determined by the geometric-series ratio. -/
-theorem integrable_pow_geometricMeasure_iff {p : unitInterval} (hp : p ≠ 0) (t : ℝ) :
-    Integrable (fun n : ℕ => t ^ n) (geometricMeasure p) ↔
-      |(1 - (p : ℝ)) * t| < 1 := by
-  rw [integrable_geometricMeasure_iff hp]
-  have hp0 : (p : ℝ) ≠ 0 := by simpa using hp
-  have hfun : (fun n : ℕ => (1 - (p : ℝ)) ^ n * p * ‖t ^ n‖) =
-      fun n : ℕ => ((1 - (p : ℝ)) * |t|) ^ n * p := by
-    funext n
-    rw [Real.norm_eq_abs, abs_pow, mul_pow]
-    ring
-  rw [hfun, summable_mul_right_iff hp0, summable_geometric_iff_norm_lt_one,
-    Real.norm_eq_abs]
-  simp only [abs_mul, abs_abs, abs_of_nonneg (by grind : 0 ≤ 1 - (p : ℝ))]
-
-/-- The probability-generating function of a geometric distribution with nonzero parameter, on its
-exact integrability domain.  The boundary case `p = 1`, whose law is a Dirac mass at zero, is
-included. -/
-theorem pgf_geometricMeasure {p : unitInterval} (hp : p ≠ 0) {t : ℝ}
-    (ht : |(1 - (p : ℝ)) * t| < 1) :
-    pgf id (geometricMeasure p) t = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by
-  rw [pgf_def, integral_geometricMeasure hp]
-  simp only [smul_eq_mul, id_eq]
-  calc
-    ∑' n : ℕ, ((1 - (p : ℝ)) ^ n * p) * t ^ n =
-        (p : ℝ) * ∑' n : ℕ, ((1 - (p : ℝ)) * t) ^ n := by
-      rw [← tsum_mul_left]
-      congr with n
-      rw [mul_pow]
-      ring
-    _ = (p : ℝ) * (1 - (1 - (p : ℝ)) * t)⁻¹ := by
-      rw [tsum_geometric_of_norm_lt_one]
-      simpa only [Real.norm_eq_abs] using ht
-    _ = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by rw [div_eq_mul_inv]
-
-end NamedDistributions
 
 end Probability
 

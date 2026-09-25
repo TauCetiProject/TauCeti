@@ -48,13 +48,12 @@ variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R 
 primarily an auxiliary construction used to provide `gradedAlgebra`. -/
 noncomputable def GradedAlgebra.ι : M →ₗ[R] ⨁ n, homogeneousSubmodule R M n :=
   DirectSum.lof R ℕ (fun n ↦ homogeneousSubmodule R M n) 1 ∘ₗ
-    (SymmetricAlgebra.ι R M).codRestrict _ fun m ↦ by
-      simpa only [pow_one] using LinearMap.mem_range_self _ m
+    (SymmetricAlgebra.ι R M).codRestrict _ (ι_mem_homogeneousSubmodule R M)
 
 /-- The defining formula for `GradedAlgebra.ι`. -/
 theorem GradedAlgebra.ι_apply (m : M) :
     GradedAlgebra.ι R M m = DirectSum.of (fun n ↦ homogeneousSubmodule R M n) 1
-      ⟨SymmetricAlgebra.ι R M m, by simpa only [pow_one] using LinearMap.mem_range_self _ m⟩ :=
+      ⟨SymmetricAlgebra.ι R M m, ι_mem_homogeneousSubmodule R M m⟩ :=
   (rfl)
 
 /-- A symmetric algebra is graded by its homogeneous pieces, without a freeness assumption on `M`.
@@ -63,7 +62,7 @@ noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) 
   GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (GradedAlgebra.ι R M))
     (by
       ext m
-      simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+      simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
         SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply, DirectSum.coeAlgHom_of,
         AlgHom.coe_id, id_eq])
     -- A homogeneous element is a sum of products of `n` generators, so induction on the power

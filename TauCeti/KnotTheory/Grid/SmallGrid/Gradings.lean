@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Grading.Parity
-public import TauCeti.KnotTheory.Grid.Unknot
+public import TauCeti.KnotTheory.Grid.Unknot.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 

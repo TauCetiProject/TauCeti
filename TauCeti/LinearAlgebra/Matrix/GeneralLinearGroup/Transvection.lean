@@ -9,6 +9,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 -- `TauCeti.diagGL` occurs in the conjugation statement below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+-- `TauCeti.permutationGL` occurs in the permutation-conjugation statement below.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 -- `MonoidHom.noncommCoprod` packages products of commuting one-parameter subgroups.
 public import Mathlib.GroupTheory.NoncommCoprod
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
@@ -71,6 +73,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.det_transvectionUnit` and `TauCeti.transvectionUnit_injective`: a transvection has
   determinant `1`, and distinct parameters give distinct transvections.
 * `TauCeti.diagGL_mul_transvectionUnit_mul_inv`: conjugation by an invertible diagonal matrix.
+* `TauCeti.permutationGL_inv_mul_transvectionUnit_mul_permutationGL`: conjugation by a
+  permutation matrix relabels the two indices.
 * `TauCeti.map_transvectionUnit` and `TauCeti.map_transvectionWeylElement`: transvections and their
   Weyl representatives are natural in the base ring.
 * `TauCeti.transvectionWeylElement_inv`: the representative for the opposite root is the inverse.
@@ -515,6 +519,18 @@ theorem transvectionUnit_mem_of_adjacent {m : ℕ}
     (fun hij hjk hik a => by
       simpa using commutatorElement_transvectionUnit hij hjk hik a 1)
     hadjacent hij c
+
+/-- Conjugating the transvection `xᵢⱼ(c)` by the permutation matrix of `σ` gives the transvection
+`x_{σ⁻¹ i, σ⁻¹ j}(c)`. -/
+@[simp]
+theorem permutationGL_inv_mul_transvectionUnit_mul_permutationGL (σ : Equiv.Perm n)
+    (hij : i ≠ j) (c : A) :
+    (permutationGL (k := A) σ)⁻¹ * transvectionUnit hij c * permutationGL (k := A) σ =
+      transvectionUnit (σ.symm.injective.ne hij) c := by
+  ext a b
+  rw [coe_permutationGL_inv_mul_mul_permutationGL_apply, coe_transvectionUnit,
+    coe_transvectionUnit]
+  simp [Matrix.transvection, Matrix.one_apply, Matrix.single_apply, Equiv.symm_apply_eq]
 
 end Unit
 

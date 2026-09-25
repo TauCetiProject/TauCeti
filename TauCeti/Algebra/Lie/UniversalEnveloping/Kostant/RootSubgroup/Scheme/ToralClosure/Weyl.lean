@@ -7,6 +7,7 @@ module
 
 import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
 
 /-!
@@ -94,13 +95,10 @@ private theorem basisMatrix_kostantWeylProduct (i j : I) (A : Type v) [CommRing 
           kostantRootSubgroupParam e h ρ M hM i (hnil i) (CommAlgCat.of ℤ A)
             (Multiplicative.ofAdd 1)) =
       Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom
-        (kostantWeylGL e h ρ M hM (hnil i) (hnil j) A) := by
-  refine congrArg (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom)
-    (Units.ext ?_)
-  rw [Units.val_mul, Units.val_mul, coe_kostantRootSubgroupParam (i := i),
-    coe_kostantRootSubgroupParam (i := j), toAdd_ofAdd, kostantWeylGL_val]
-  exact (kostantWeylPoints_toLinearMap_eq
-    e h ρ M hM (hnil i) (hnil j) (A := A)).symm
+        (kostantWeylGL e h ρ M hM (hnil i) (hnil j) A) :=
+  congrArg (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom)
+    (kostantWeylGL_eq_kostantRootSubgroupParam_mul e h ρ M hM (hnil i) (hnil j)
+      (CommAlgCat.of ℤ A)).symm
 
 /-! ## The Weyl representative in the carrier -/
 

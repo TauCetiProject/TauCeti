@@ -726,11 +726,8 @@ private noncomputable def claspLoopCount (s : Fin n → Bool) : ℕ :=
 private theorem one_le_claspLoopCount (s : Fin n → Bool) : 1 ≤ claspLoopCount D p q s := by
   have hpos : 0 < orbitCount (D.smoothingTurn (D.smoothingChoice s) *
       reconnect D.edgePair.val p q) := by
-    have : Nonempty (Quotient (SameCycle.setoid
-        (D.smoothingTurn (D.smoothingChoice s) * reconnect D.edgePair.val p q))) :=
-      ⟨Quotient.mk _ p⟩
-    rw [orbitCount_def]
-    exact Nat.card_pos
+    let _ : Nonempty (Fin (4 * n)) := ⟨p⟩
+    exact Equiv.Perm.orbitCount_pos _
   obtain ⟨k, hk⟩ := (D.isPerfectMatching_smoothingTurn (D.smoothingChoice s)).even_orbitCount_mul
     (isPerfectMatching_reconnect D.edgePair.prop p q)
   rw [claspLoopCount]

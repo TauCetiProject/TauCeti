@@ -93,7 +93,8 @@ theorem finrank_eq_totient (K M : Type*) [Field K] [NumberField K] [Field M]
     IsCyclotomicExtension.finrank K₁ (Polynomial.cyclotomic.irreducible_rat (NeZero.pos m))
   have hsup : K₁ ⊔ K₂ = ⊤ :=
     TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top ℚ K M
-      (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ)
+      (IntermediateField.adjoin_eq_top_of_algebra _ _
+        (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ))
   let eK₂ : K ≃+* K₂ := ((IsScalarTower.toAlgHom ℚ K M : K →+* M)).rangeRestrictFieldEquiv
   have hdiscrK₂ : NumberField.discr K₂ = NumberField.discr K :=
     (NumberField.discr_eq_discr_of_ringEquiv (f := eK₂)).symm

@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
+public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.HigherPrimePowers
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Chebyshev's `ψ` for a set of prime ideals, and the removal of the higher prime powers
@@ -54,6 +58,9 @@ system does not get that hypothesis for free; what it has to supply is the domin
   (`TauCeti.primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow`).
 * `TauCeti.normCoeff_vonMangoldt` identifies the coefficient system of the full prime carrier with
   the Layer 1 regrouping of the Layer 2 ideal von Mangoldt function.
+* `TauCeti.primeVonMangoldtCoeff_rat_natGenerator_pow` evaluates the coefficient system of any set
+  of primes of `𝓞 ℚ` at a prime power, and `TauCeti.primeVonMangoldtCoeff_rat_le` bounds it by
+  Mathlib's von Mangoldt function `Λ`.
 
 ## Roadmap role
 
@@ -256,10 +263,8 @@ theorem primePsi_le_ncard_mul_log (hS : S.Finite) (hx : 1 ≤ x) :
   have hmemT : ∀ A ∈ T, ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A
       ≤ x ∧ primePowerBase A ∈ S := by
     intro A hA
-    rw [hTdef, Finset.mem_filter, mem_normLE] at hA
-    refine ⟨?_, hA.2⟩
-    rw [← Nat.cast_pow, ← absNorm_eq_absNorm_primePowerBase_pow]
-    exact hA.1
+    rw [hTdef, Finset.mem_filter] at hA
+    exact ⟨mem_primePowersLE_iff.mp hA.1, hA.2⟩
   have hsub : T ⊆ primePowersLE K x := Finset.filter_subset _ _
   have hzero : ∀ A ∈ primePowersLE K x, A ∉ T →
       {A : IdealPrimePower K | primePowerBase A ∈ S}.indicator primePowerWeight A = 0 := by
@@ -523,5 +528,40 @@ theorem primePsi_eq_sum_range (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
 theorem primePsi_natCast_eq_sum_range (S : Set (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     primePsi K S (n : ℝ) = ∑ m ∈ Finset.range (n + 1), primeVonMangoldtCoeff K S m := by
   rw [primePsi_eq_sum_range, Nat.floor_natCast]
+
+open scoped Classical in
+/-- Over `ℚ`, the coefficient at `p ^ k`, for `p` the rational prime under `v`, is `log p` if
+`v ∈ S` and `0` otherwise. -/
+@[simp]
+theorem primeVonMangoldtCoeff_rat_natGenerator_pow (S : Set (HeightOneSpectrum (𝓞 ℚ)))
+    (v : HeightOneSpectrum (𝓞 ℚ)) {k : ℕ} (hk : 0 < k) :
+    primeVonMangoldtCoeff ℚ S (Rat.HeightOneSpectrum.natGenerator v ^ k) =
+      if v ∈ S then Real.log (Rat.HeightOneSpectrum.natGenerator v) else 0 := by
+  rw [← Rat.HeightOneSpectrum.absNorm_asIdeal]
+  have hJ : ⟨v.asIdeal ^ k, pow_mem (mem_nonZeroDivisors_of_ne_zero v.ne_bot) k⟩ ∈
+      normFiber ℚ (Ideal.absNorm v.asIdeal ^ k) := by simp
+  -- over `ℚ` every norm fibre is a singleton, so this one is `{v ^ k}`
+  obtain ⟨I, hI⟩ := Finset.card_eq_one.mp <| (card_normFiber_eq_dedekindZetaCoeff ℚ <|
+    pow_ne_zero _ <| Ideal.absNorm_eq_zero_iff.not.mpr v.ne_bot).trans (dedekindZetaCoeff_rat _)
+  rw [hI, Finset.mem_singleton] at hJ
+  rw [primeVonMangoldtCoeff_apply, hI, Finset.sum_singleton, ← hJ]
+  split_ifs with h
+  · exact primeVonMangoldtWeight_of_pow_of_mem h hk rfl
+  · exact primeVonMangoldtWeight_of_pow_of_notMem h hk rfl
+
+open ArithmeticFunction in
+/-- Over `ℚ`, the von Mangoldt coefficients of any set of primes are bounded by `Λ`. -/
+theorem primeVonMangoldtCoeff_rat_le (S : Set (HeightOneSpectrum (𝓞 ℚ))) (n : ℕ) :
+    primeVonMangoldtCoeff ℚ S n ≤ Λ n := by
+  by_cases hn : IsPrimePow n
+  · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
+    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
+    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow S v hk, hv, vonMangoldt_apply_pow hk.ne',
+      vonMangoldt_apply_prime hp]
+    split_ifs
+    exacts [le_rfl, Real.log_nonneg (mod_cast hp.one_le)]
+  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow S hn]
+    exact vonMangoldt_nonneg
 
 end TauCeti

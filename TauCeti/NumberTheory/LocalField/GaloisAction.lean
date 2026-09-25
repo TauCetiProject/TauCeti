@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Invariant
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import TauCeti.NumberTheory.LocalField.FiniteExtension
+public import Mathlib.RingTheory.IsGaloisGroup.Basic
+public import Mathlib.RingTheory.Valuation.RamificationGroup
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+public import TauCeti.NumberTheory.LocalField.IntegerRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -30,6 +33,12 @@ extension is Galois, the kernel of this homomorphism is the inertia group in ram
 
 The homomorphism from field automorphisms to residue-field automorphisms is Mathlib's generic
 `MulSemiringAction.toAlgAut` applied to the action constructed here.
+
+## Main results
+
+* `TauCeti.decompositionSubgroup_valuationSubring_eq_top`: every automorphism preserves the
+  valuation subring of `L`, so Mathlib's `ValuationSubring.decompositionSubgroup` is everything.
+* `TauCeti.integerRingFaithfulSMul`: an automorphism is determined by its action on `𝒪[L]`.
 
 ## References
 
@@ -55,6 +64,35 @@ instance integerRingIsInvariantSubring : IsInvariantSubring (L ≃ₐ[K] L) 𝒪
   smul_mem σ x hx := by
     rw [Valuation.mem_integer_iff] at hx ⊢
     simpa only [AlgEquiv.smul_def, σ.valuation_eq] using hx
+
+variable (K L) in
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+open scoped Pointwise in
+/-- Every automorphism of `L/K` preserves the valuation subring of `L`, so its decomposition
+subgroup is the whole automorphism group. -/
+theorem decompositionSubgroup_valuationSubring_eq_top :
+    (valuation L).valuationSubring.decompositionSubgroup K = ⊤ := by
+  ext σ
+  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
+  ext x
+  rw [ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, Valuation.mem_valuationSubring_iff,
+    Valuation.mem_valuationSubring_iff, AlgEquiv.smul_def, σ⁻¹.valuation_eq]
+
+/-- Scalar multiplication by an extension automorphism is compatible with multiplication by an
+integer of the extension. -/
+noncomputable instance integerRingSMulDistribClass :
+    SMulDistribClass (L ≃ₐ[K] L) 𝒪[L] L :=
+  ⟨fun σ x y ↦ by
+    -- Unfolding the two scalar actions identifies the assertion with multiplicativity in `L`.
+    change σ ((x : L) * y) = ((σ • x : 𝒪[L]) : L) * σ y
+    rw [map_mul]
+    rfl⟩
+
+/-- The Galois action on a finite extension restricts to a Galois-group action on its ring of
+integers. -/
+noncomputable instance integerRingIsGaloisGroup [IsGalois K L] :
+    IsGaloisGroup (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] := by
+  apply IsGaloisGroup.of_isFractionRing (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] K L
 
 end TauCeti
 
@@ -84,6 +122,24 @@ omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 theorem integerRingAlgEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     σ.integerRingAlgEquiv x = σ • x :=
   (rfl)
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- Coercing the action on the integer ring to `L` recovers the field automorphism. -/
+@[simp]
+theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
+    ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
+  (rfl)
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- Restricting the scalars of an automorphism along a tower `L/K'/K` does not change its action
+on the ring of integers of `L`. -/
+@[simp]
+theorem restrictScalars_smul_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
+    [TopologicalSpace K'] [IsNonarchimedeanLocalField K'] [Algebra K K'] [Algebra K' L]
+    [IsScalarTower K K' L] [ValuativeExtension K' L] [Module.Finite K' L]
+    (σ : L ≃ₐ[K'] L) (x : 𝒪[L]) :
+    σ.restrictScalars K • x = σ • x :=
+  Subtype.ext (by rw [coe_smul_integerRing, coe_smul_integerRing, restrictScalars_apply])
 
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where
@@ -186,5 +242,17 @@ theorem residueField_toAlgAut_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
       σ.residueFieldEquiv x := by
   simpa only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply] using
     (AlgEquiv.residueFieldEquiv_apply σ x).symm
+
+/-- An automorphism of a finite extension is determined by its action on the ring of integers,
+since every element of `L` becomes integral after multiplication by a nonzero integer of `K`. -/
+instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
+  eq_of_smul_eq_smul {σ τ} h := AlgEquiv.ext fun y ↦ by
+    obtain ⟨a, ha, hay⟩ := exists_algebraMap_mul_mem_integerRing K L y
+    have hσ : ((σ • ⟨_, hay⟩ : 𝒪[L]) : L) = ((τ • ⟨_, hay⟩ : 𝒪[L]) : L) := by rw [h]
+    have ha' : algebraMap K L (a : K) ≠ 0 :=
+      (map_ne_zero _).2 (Subtype.coe_ne_coe.2 ha)
+    rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
+      AlgEquiv.commutes, AlgEquiv.commutes] at hσ
+    exact mul_left_cancel₀ ha' hσ
 
 end TauCeti

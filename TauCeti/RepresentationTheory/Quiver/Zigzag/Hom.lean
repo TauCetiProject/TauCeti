@@ -619,6 +619,18 @@ theorem zigzagProjectiveHomOfDegree_eq_bot_of_three_le (i j : V) {d : ℕ} (hd :
   rw [coe_zigzagProjectiveHom_apply, hgen, mul_zero]
   exact Submodule.coe_zero.symm
 
+/-- Target-shifted homomorphisms vanish below shift `-2`, since the zigzag algebra is concentrated
+in path degrees zero, one, and two. -/
+theorem zigzagProjectiveTargetShiftHom_eq_bot_of_lt_neg_two (i j : V) {d : ℤ} (hd : d < -2) :
+    zigzagProjectiveTargetShiftHom k G i j d = ⊥ := by
+  let n := (-d).toNat
+  have hn : 3 ≤ n := by omega
+  have hd_eq : d = -(n : ℤ) := by
+    simp only [n, Int.toNat_of_nonneg (by omega : 0 ≤ -d)]
+    omega
+  rw [hd_eq, zigzagProjectiveTargetShiftHom_neg_ofNat,
+    zigzagProjectiveHomOfDegree_eq_bot_of_three_le k G i j hn]
+
 /-- **The degree-zero endomorphism space of a vertex projective is one-dimensional.**  It
 contains the identity, by `TauCeti.id_mem_zigzagProjectiveHomOfDegree_zero`. -/
 theorem finrank_zigzagProjectiveHomOfDegree_zero_self (i : V) :

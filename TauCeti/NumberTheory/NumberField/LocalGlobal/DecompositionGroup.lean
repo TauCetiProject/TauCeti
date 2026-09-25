@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
+public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 
 /-!
@@ -22,6 +25,13 @@ isomorphism, `completionCongr`, and restricts it to the decomposition group, the
 decompositionHom v w : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal →* (L_w ≃ₐ[K_v] L_w).
 ```
 
+When `L/K` is Galois this homomorphism is an isomorphism, `decompositionEquiv`: the
+decomposition group of `w` *is* the Galois group of the local extension `L_w/K_v`. Injectivity
+is density of `L` in `L_w`; surjectivity is a count. The decomposition group has `e(w ∣ v) ·
+f(w ∣ v)` elements, that product is the local degree `[L_w : K_v]`, and a finite extension of
+fields has at most `[L_w : K_v]` automorphisms, so the embedding is already onto. The same count
+shows that `L_w/K_v` is itself Galois.
+
 The target place of `completionCongr` is an arbitrary `w'` together with the equation
 `w'.asIdeal = σ • w.asIdeal`, so that no transport along an equality of places is needed.
 Both completions carry the canonical `K_v`-algebra structure of `completionAlgHom`, which is
@@ -33,6 +43,8 @@ available in the `AdicCompletionExtension` scope.
   induced by `σ` when `w' = σ • w`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom`: the action of the decomposition group
   of `w` on `L_w`.
+* `IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`: that action, as an isomorphism onto
+  the local Galois group, when `L/K` is Galois.
 
 ## Main results
 
@@ -44,12 +56,22 @@ available in the `AdicCompletionExtension` scope.
 * `IsDedekindDomain.HeightOneSpectrum.valued_completionCongr`: `completionCongr` preserves the
   completion valuations.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_algebraMap`: the defining property
-  `decompositionHom v w τ x = τ x` for `x ∈ L`.
+  `decompositionHom v w τ x = τ x` for `x ∈ L`; `decompositionHom_algebraMap_ringOfIntegers` is
+  its form on `𝓞 L`, and `valued_decompositionHom` says the action preserves the valuation.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_injective`: the decomposition group
   embeds into `Aut(L_w/K_v)`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_conj`: compatibility with the action of
   `Aut(L/K)` on the places above `v`; conjugating by `σ` corresponds to transporting along
   `completionCongr σ`.
+* `IsDedekindDomain.HeightOneSpectrum.decompositionHom_surjective` and
+  `IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`: for `L/K` Galois the decomposition
+  group of `w` is the Galois group of `L_w/K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion`: for `L/K` Galois the local
+  extension `L_w/K_v` is Galois; and
+  `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: a locally Galois completion
+  has `e(w ∣ v) · f(w ∣ v)` automorphisms.
+* `IsDedekindDomain.HeightOneSpectrum.isCyclic_algEquiv_adicCompletion_of_isUnramifiedAt`: at an
+  unramified place the local Galois group is cyclic of order `f(w ∣ v)`.
 
 ## References
 
@@ -59,7 +81,7 @@ available in the `AdicCompletionExtension` scope.
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain Module NumberField
 open scoped NumberField Pointwise AdicCompletionExtension
 
 namespace IsDedekindDomain.HeightOneSpectrum
@@ -205,6 +227,22 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
       algebraMap L (w.adicCompletion L) ((τ : L ≃ₐ[K] L) x) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
 
+/-- On the ring of integers of `L`, `decompositionHom` is the action of the automorphism. -/
+theorem decompositionHom_algebraMap_ringOfIntegers
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) (x : 𝒪 L) :
+    decompositionHom v w τ (algebraMap (𝒪 L) (w.adicCompletion L) x) =
+      algebraMap (𝒪 L) (w.adicCompletion L) ((τ : L ≃ₐ[K] L) • x) := by
+  rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) x,
+    IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) (_ • x),
+    decompositionHom_algebraMap, NumberField.algebraMap_smul_eq_apply]
+
+/-- The action of the decomposition group on `L_w` preserves the valuation of `L_w`. -/
+@[simp]
+theorem valued_decompositionHom (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal)
+    (x : w.adicCompletion L) :
+    Valued.v (decompositionHom v w τ x) = Valued.v x := by
+  rw [decompositionHom_apply, valued_completionCongr]
+
 variable (v) in
 /-- Each element of the decomposition group acts continuously on `L_w`. -/
 theorem continuous_decompositionHom (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) :
@@ -236,5 +274,97 @@ theorem decompositionHom_conj {w' : HeightOneSpectrum (𝒪 L)} [w'.asIdeal.Lies
   rw [decompositionHom_apply, decompositionHom_apply, completionCongr_symm, completionCongr_trans,
     completionCongr_trans]
   exact completionCongr_congr (by rw [hτ, mul_assoc]) _ _
+
+/-! ### The decomposition group is the local Galois group -/
+
+section IsGalois
+
+variable (v w) [IsGalois K L]
+
+/-- **The decomposition group of `w` has order the local degree.** For `L/K` Galois the
+decomposition group of `w` has `e(w ∣ v) · f(w ∣ v)` elements, and that product is the degree
+of `L_w` over `K_v`. -/
+theorem card_stabilizer_eq_finrank_adicCompletion :
+    Nat.card (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) =
+      finrank (v.adicCompletion K) (w.adicCompletion L) := by
+  have : Finite (𝒪 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  rw [finrank_adicCompletion v w,
+    Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg
+      (R := 𝒪 K) (G := L ≃ₐ[K] L) w.asIdeal]
+
+/-- **The decomposition group of `w` exhausts `Aut(L_w/K_v)`.** For `L/K` Galois every
+`K_v`-algebra automorphism of `L_w` is the continuous extension of an automorphism of `L/K`
+stabilizing `w`. -/
+-- The decomposition group has `[L_w : K_v]` elements and a finite extension of fields has at
+-- most that many automorphisms, so the injection of the previous lemma is already onto.
+theorem decompositionHom_surjective : Function.Surjective (decompositionHom v w) := by
+  refine ((Nat.bijective_iff_injective_and_card (decompositionHom v w)).mpr
+    ⟨decompositionHom_injective v w, le_antisymm ?_ ?_⟩).surjective
+  · exact Nat.card_le_card_of_injective _ (decompositionHom_injective v w)
+  · rw [card_stabilizer_eq_finrank_adicCompletion v w]
+    exact Nat.card_eq_fintype_card.trans_le AlgEquiv.card_le
+
+/-- **The decomposition group of `w` is the Galois group of `L_w/K_v`.** -/
+def decompositionEquiv :
+    MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal ≃*
+      (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) :=
+  MulEquiv.ofBijective (decompositionHom v w)
+    ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩
+
+@[simp]
+theorem coe_decompositionEquiv : ⇑(decompositionEquiv v w) = decompositionHom v w := (rfl)
+
+/-- **A completion of a Galois extension is Galois.** For `L/K` Galois the local extension
+`L_w/K_v` at a finite place `w` of `L` is a Galois extension. -/
+-- The decomposition group of `w` already supplies `[L_w : K_v]` automorphisms.
+theorem isGalois_adicCompletion : IsGalois (v.adicCompletion K) (w.adicCompletion L) :=
+  IsGalois.of_card_aut_eq_finrank _ _
+    ((Nat.card_congr (decompositionEquiv v w).toEquiv).symm.trans
+      (card_stabilizer_eq_finrank_adicCompletion v w))
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion
+
+end IsGalois
+
+section IsGaloisAdicCompletion
+
+variable (v w) [IsGalois (v.adicCompletion K) (w.adicCompletion L)]
+
+/-- **The local Galois group at `w` has order `e(w ∣ v) · f(w ∣ v)`.** -/
+theorem card_algEquiv_adicCompletion :
+    Nat.card (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) =
+      w.asIdeal.ramificationIdx (𝒪 K) * w.asIdeal.inertiaDeg (𝒪 K) := by
+  rw [IsGalois.card_aut_eq_finrank, finrank_adicCompletion v w]
+
+end IsGaloisAdicCompletion
+
+/-! ### The local Galois group at an unramified place -/
+
+section IsUnramifiedAt
+
+variable (v w) [IsGalois (v.adicCompletion K) (w.adicCompletion L)]
+  [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal]
+
+/-- **The local Galois group at an unramified place has order `f(w ∣ v)`.** -/
+theorem card_algEquiv_adicCompletion_of_isUnramifiedAt :
+    Nat.card (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) =
+      w.asIdeal.inertiaDeg (𝒪 K) := by
+  rw [card_algEquiv_adicCompletion v w, Ideal.ramificationIdx_eq_one w.asIdeal (𝒪 K), one_mul]
+
+end IsUnramifiedAt
+
+section IsGaloisUnramifiedAt
+
+variable (v w) [IsGalois K L] [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal]
+
+/-- **The local Galois group at an unramified place is cyclic.** -/
+-- It is the image of the decomposition group of `w`, which an arithmetic Frobenius generates.
+theorem isCyclic_algEquiv_adicCompletion_of_isUnramifiedAt :
+    IsCyclic (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) :=
+  have := Ideal.isCyclic_stabilizer_of_isUnramifiedAt (K := K) w.asIdeal w.ne_bot
+  isCyclic_of_surjective _ (decompositionHom_surjective v w)
+
+end IsGaloisUnramifiedAt
 
 end IsDedekindDomain.HeightOneSpectrum

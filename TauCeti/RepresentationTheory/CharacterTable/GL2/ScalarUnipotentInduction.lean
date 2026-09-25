@@ -49,9 +49,11 @@ character values off the class-function computation:
 * `0` on split regular semisimple and on elliptic elements;
 * `-μ(a)` on a nontrivial Jordan block with eigenvalue `a`, once `ψ` is nontrivial.
 
-Together with `TauCeti.GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom` this supplies the two
-induced class functions whose difference is the cuspidal (discrete series) character of
-`GL₂(𝔽_q)`.  The Gelfand-Graev summand here is the one that carries the degree, since
+Together with `TauCeti.GL2EllipticInduction`, the representation induced from the non-split
+torus, this supplies the two induced characters whose difference is the cuspidal virtual character
+`TauCeti.GL2CuspidalVirtualCharacter` of `GL₂(𝔽_q)`, taken in
+`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal.lean`.  The Gelfand-Graev summand here
+is the one that carries the degree, since
 `[GL₂(F) : Z U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values

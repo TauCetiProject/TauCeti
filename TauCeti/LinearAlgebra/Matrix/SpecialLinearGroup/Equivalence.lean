@@ -24,6 +24,8 @@ merely invertible factors is `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_m
   entries is the determinant.
 * `Matrix.exists_SL_mul_mul_eq_of_mul_mul_eq`: two matrices carried to a common value by
   `SL`-transformations are themselves `SL`-equivalent.
+* `Matrix.exists_eq_diagonal_mul_iff`: a matrix `A` with `det A = ∏ i, d i` a non-zero-divisor
+  lies in `diagonal d * SL` exactly when `d i` divides every entry of the `i`-th row of `A`.
 -/
 
 namespace Matrix
@@ -63,6 +65,20 @@ theorem exists_SL_mul_mul_eq_of_mul_mul_eq {S : Type*} [CommRing S]
   simpa [SpecialLinearGroup.coe_mul, Matrix.mul_assoc, ← map_inv,
     SpecialLinearGroup.coe_GL_coe_matrix] using
     LB.toGL.inv_mul_mul_inv_of_mul_mul_eq RB.toGL h.symm
+
+/-- **Right `SL`-cosets of a diagonal matrix.** If `det A = ∏ i, d i` is a left non-zero-divisor,
+then `A = diagonal d * g` for some `g ∈ SL` exactly when `d i` divides every entry of the `i`-th
+row of `A`. -/
+theorem exists_eq_diagonal_mul_iff {S : Type*} [CommRing S] {d : ι → S} {A : Matrix ι ι S}
+    (hA : A.det = ∏ i, d i) (hA₀ : IsLeftRegular A.det) :
+    (∃ g : SpecialLinearGroup ι S, A = diagonal d * g) ↔ ∀ i j, d i ∣ A i j := by
+  refine ⟨fun ⟨g, hg⟩ i j ↦ by simp [hg, diagonal_mul], fun h ↦ ?_⟩
+  choose B hB using h
+  have hAB : A = diagonal d * of B := by ext i j; simp [diagonal_mul, hB]
+  -- `det A · det B = det A`, and `det A` is cancellable
+  refine ⟨⟨of B, hA₀ ?_⟩, hAB⟩
+  calc A.det * (of B).det = (diagonal d * of B).det := by rw [det_mul, det_diagonal, hA]
+    _ = A.det * 1 := by rw [← hAB, mul_one]
 
 end
 

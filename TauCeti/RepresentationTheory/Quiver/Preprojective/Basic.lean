@@ -280,7 +280,7 @@ end BacktrackProducts
 
 section BacktrackIndependence
 
-variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
 /-- **The backtracks at a vertex are linearly independent.** The head backtracks `a a*` of the
 arrows `a` into `v` and the tail backtracks `a* a` of the arrows out of `v` are pairwise distinct
@@ -462,7 +462,7 @@ end Relator
 
 section GaugedRelatorCorner
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **The corner of the gauged preprojective relator at a vertex**: conjugating `ρ_ε` by the

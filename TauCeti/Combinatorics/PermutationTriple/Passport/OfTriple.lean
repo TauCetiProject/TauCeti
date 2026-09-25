@@ -99,6 +99,18 @@ theorem hasPassport_passportOf (t : ConnectedTriple n) :
 theorem isAdmissible_passportOf (t : ConnectedTriple n) : t.passportOf.IsAdmissible :=
   PassportSpec.isAdmissible_of_hasPassport t.hasPassport_passportOf
 
+/-- The admissible ordered passport attached to a connected triple. -/
+noncomputable def orderedPassportOf (t : ConnectedTriple n) : OrderedPassport n :=
+  ⟨t.passportOf, t.isAdmissible_passportOf⟩
+
+@[simp] theorem coe_orderedPassportOf (t : ConnectedTriple n) :
+    t.orderedPassportOf.1 = t.passportOf := (rfl)
+
+/-- The indexed partition of the attached passport is the full partition of the component. -/
+@[simp] theorem passportOf_partition (t : ConnectedTriple n) (i : Fin 3) :
+    t.passportOf.partition i = (t.1.component i).partition.parts := by
+  fin_cases i <;> simp
+
 /-- A connected triple belongs to `passportOf t` exactly when its monodromy subgroup is conjugate
 to that of `t` and its ordered full cycle data agrees with that of `t`. -/
 theorem hasPassport_passportOf_iff (t t' : ConnectedTriple n) :

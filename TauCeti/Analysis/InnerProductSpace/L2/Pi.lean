@@ -70,7 +70,8 @@ theorem memLp_pi_prod {f : ∀ i, α i → 𝕜} (hf : ∀ i, MemLp (f i) 2 (μ 
     MemLp (fun x : ∀ i, α i => ∏ i, f i (x i)) 2 (Measure.pi μ) := by
   have hmeas : AEStronglyMeasurable (fun x : ∀ i, α i => ∏ i, f i (x i)) (Measure.pi μ) :=
     Finset.aestronglyMeasurable_fun_prod (f := fun i (x : ∀ j, α j) => f i (x i)) _ fun i _ =>
-      (hf i).1.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_eval μ i)
+      (hf i).aestronglyMeasurable.comp_quasiMeasurePreserving
+        (Measure.quasiMeasurePreserving_eval μ i)
   rw [memLp_two_iff_integrable_sq_norm hmeas]
   -- Only the submultiplicative bound `‖∏ aᵢ‖ ≤ ∏ ‖aᵢ‖` is needed, so a normed commutative
   -- ring suffices; the norm need not be multiplicative.
@@ -82,7 +83,7 @@ theorem memLp_pi_prod {f : ∀ i, α i → 𝕜} (hf : ∀ i, MemLp (f i) 2 (μ 
     simp_rw [Finset.univ_eq_empty, Finset.prod_empty]
     exact integrable_const _
   refine (Integrable.fintype_prod_dep
-    (fun i => (memLp_two_iff_integrable_sq_norm (hf i).1).1 (hf i))).mono
+    (fun i => (memLp_two_iff_integrable_sq_norm (hf i).aestronglyMeasurable).1 (hf i))).mono
     (hmeas.norm.pow 2) (Filter.Eventually.of_forall fun x => ?_)
   -- `Finset.norm_prod_le'` needs a nonempty index but, unlike `Finset.norm_prod_le`, no
   -- normalization `‖1‖ = 1`.

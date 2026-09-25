@@ -205,4 +205,23 @@ theorem frobeniusFiberEquiv_symm_apply_asIdeal
     _ = Q.1 := congrArg Subtype.val
       ((p.frobeniusFiberEquiv sigma).apply_symm_apply Q)
 
+/-- **The absolute Frobenius fibre, counted.** The primes of `L` over `p` at which `σ` is an
+arithmetic Frobenius form a single orbit of the centralizer of `σ`, whose stabilizer is `⟨σ⟩`, so
+there are `#Centralizer(σ) / orderOf σ` of them.
+
+This is `Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer` solved for the fibre and
+re-indexed: that theorem states the product and is indexed by ideals lying over `p.asIdeal`, while
+counting arguments over a number field index by `HeightOneSpectrum` primes contracting to `p`.
+`HeightOneSpectrum.frobeniusFiberEquiv` bridges the two indexings, and the division is exact
+because `orderOf σ` is the size of a stabilizer inside the acting group. -/
+theorem frobenius_fiber_card_eq_card_centralizer_div_orderOf (p : HeightOneSpectrum (𝓞 K))
+    {σ : L ≃ₐ[K] L} (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver p.asIdeal]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    Nat.card {R : HeightOneSpectrum (𝓞 L) //
+        R.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) σ R.asIdeal} =
+      Nat.card (Subgroup.centralizer {σ}) / orderOf σ :=
+  (Nat.card_congr (p.frobeniusFiberEquiv σ)).trans <|
+    Nat.eq_div_of_mul_eq_left (orderOf_pos σ).ne'
+      (Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer p.asIdeal Q hσ)
+
 end IsDedekindDomain.HeightOneSpectrum

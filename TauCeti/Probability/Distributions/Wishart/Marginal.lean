@@ -43,9 +43,10 @@ positions.
 
 ## Main results
 
-* `TauCeti.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure` — congruence by a matrix
+* `TauCeti.Probability.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure` — congruence by a
+  matrix
   of full row rank carries the law of scale `S` to the law of scale `M * S * Mᵀ`;
-* `TauCeti.map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure` — a
+* `TauCeti.Probability.map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure` — a
   principal `q × q` submatrix of a nonsingular Wishart matrix has the nonsingular Wishart law of
   the corresponding submatrix of the scale.
 
@@ -64,7 +65,7 @@ open MeasureTheory
 
 open scoped Matrix
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p q : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -258,4 +259,4 @@ theorem map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure
   rw [map_symmetricCongruenceLinearMap_nonsingularWishartMeasure _ hrank hS hn,
     Matrix.transpose_submatrix, Matrix.transpose_one, Matrix.submatrix_one_mul_mul_submatrix_one]
 
-end TauCeti
+end TauCeti.Probability

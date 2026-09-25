@@ -15,12 +15,14 @@ public import TauCeti.LinearAlgebra.Submodule.Prod
 
 This file defines the direct sum of two linear codes on the disjoint union of their coordinate
 types. A word belongs to the direct sum precisely when its restrictions to the two summands belong
-to the respective codes.
+to the respective codes. Inclusion and equality of direct sums are therefore decided summandwise.
 
 The direct sum is identified linearly with the product of the two codes. Consequently its dimension
 is the sum of the dimensions and its cardinality is the product of the cardinalities. Hamming weight
-and distance are additive across the two coordinate summands. Canonical reindexings by the
-commutativity and associativity equivalences for `Sum` give the corresponding code identities.
+and distance are additive across the two coordinate summands; consequently a natural number
+divides all weights of a direct sum exactly when it divides all weights of both summands.
+Canonical reindexings by the commutativity and associativity equivalences for `Sum` give the
+corresponding code identities.
 
 The construction follows the direct-sum convention in Huffman and Pless, *Fundamentals of
 Error-Correcting Codes*, Section 1.6.
@@ -49,6 +51,16 @@ theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → 
     x ∈ directSum C D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := by
   rw [directSum, mem_map_equiv, LinearEquiv.symm_symm, mem_prod]
   rfl
+
+/-- A word of the first code, extended by zeros, belongs to a direct sum. -/
+theorem sumElim_zero_right_mem_directSum {C : Submodule R (ι → R)} (D : Submodule R (κ → R))
+    {x : ι → R} (hx : x ∈ C) : Sum.elim x (0 : κ → R) ∈ directSum C D :=
+  mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩
+
+/-- A word of the second code, extended by zeros, belongs to a direct sum. -/
+theorem sumElim_zero_left_mem_directSum (C : Submodule R (ι → R)) {D : Submodule R (κ → R)}
+    {y : κ → R} (hy : y ∈ D) : Sum.elim (0 : ι → R) y ∈ directSum C D :=
+  mem_directSum_iff.mpr ⟨C.zero_mem, hy⟩
 
 /-- The direct sum is linearly equivalent to the product of its two constituent codes. -/
 def directSumEquivProd (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
@@ -106,6 +118,21 @@ theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
 theorem directSum_mono {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)}
     (hC : C ≤ C') (hD : D ≤ D') : directSum C D ≤ directSum C' D' :=
   map_mono (prod_mono hC hD)
+
+/-- One direct sum lies in another exactly when the constituent codes lie in each other. -/
+@[simp]
+theorem directSum_le_directSum_iff {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+    directSum C D ≤ directSum C' D' ↔ C ≤ C' ∧ D ≤ D' := by
+  refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩, fun h ↦ directSum_mono h.1 h.2⟩
+  · exact (mem_directSum_iff.mp (h (sumElim_zero_right_mem_directSum D hx))).1
+  · exact (mem_directSum_iff.mp (h (sumElim_zero_left_mem_directSum C hy))).2
+
+/-- Two direct sums are equal exactly when their constituent codes are equal. -/
+@[simp]
+theorem directSum_inj {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+    directSum C D = directSum C' D' ↔ C = C' ∧ D = D' := by
+  simp only [le_antisymm_iff, directSum_le_directSum_iff]
+  tauto
 
 /-- Reindexing a direct sum by swapping the coordinate summands swaps the two codes. -/
 @[simp]
@@ -171,6 +198,21 @@ theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → R))
   apply congrArg hammingNorm
   funext i
   cases i <;> simp
+
+/-- All weights of a direct sum are divisible by `k` exactly when this holds in both
+constituent codes. -/
+theorem forall_dvd_hammingNorm_directSum_iff (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) (k : ℕ) :
+    (∀ z ∈ directSum C D, k ∣ hammingNorm z) ↔
+      (∀ x ∈ C, k ∣ hammingNorm x) ∧ ∀ y ∈ D, k ∣ hammingNorm y := by
+  constructor
+  · refine fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩
+    · simpa using h _ (sumElim_zero_right_mem_directSum D hx)
+    · simpa using h _ (sumElim_zero_left_mem_directSum C hy)
+  · rintro ⟨hC, hD⟩ z hz
+    rw [mem_directSum_iff] at hz
+    rw [← Sum.elim_comp_inl_inr z, TauCeti.hammingNorm_sumElim]
+    exact dvd_add (hC _ hz.1) (hD _ hz.2)
 
 /-- Hamming distance is additive on pairs of words in a direct sum. -/
 @[simp]

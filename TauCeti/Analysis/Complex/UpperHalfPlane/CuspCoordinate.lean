@@ -135,6 +135,30 @@ theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
   exact (Function.Periodic.qParam_tendsto hw).comp
     (tendsto_comap_iff.mpr tendsto_comap)
 
+/-- Multiplying by the `k`th integer power of the q-parameter cancels the opposing exponential
+comparison and gives a function bounded at `i∞`. For positive width, nonnegative `k` controls
+growth, while negative `k` controls decay. -/
+theorem isBoundedAtImInfty_qParam_zpow_mul_of_isBigO (w : ℝ) (k : ℤ) {f : ℍ → ℂ}
+    (hf : f =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
+    IsBoundedAtImInfty fun z ↦ Function.Periodic.qParam w z ^ k * f z := by
+  have hq : (fun z : ℍ ↦ Function.Periodic.qParam w z ^ k) =O[atImInfty]
+      fun z ↦ Real.exp (-2 * Real.pi * (k : ℝ) * z.im / w) := by
+    apply Asymptotics.isBigO_of_le
+    intro z
+    simp only [norm_zpow, Function.Periodic.norm_qParam, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _)]
+    rw [← Real.rpow_intCast, ← Real.exp_mul]
+    apply le_of_eq
+    congr 1
+    simp only [UpperHalfPlane.coe_im]
+    ring
+  rw [IsBoundedAtImInfty, BoundedAtFilter]
+  refine (hq.mul hf).congr_right fun z ↦ ?_
+  simp only [Pi.one_apply, ← Real.exp_add]
+  convert Real.exp_zero using 1
+  ring_nf
+
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/
 theorem qParamPuncturedUnitDisc_eq_iff (w : ℝ) (hw : 0 < w) (z z' : ℍ) :

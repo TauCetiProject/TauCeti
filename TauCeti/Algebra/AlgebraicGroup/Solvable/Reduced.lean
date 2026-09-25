@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
-import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.Commutator
 import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.RingTheory.Flat.TensorProduct
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -88,13 +88,9 @@ private theorem map_injective (f : H →ₐc[k] K) (hf : Function.Injective f) (
   induction n with
   | zero => exact hf
   | succ n ih =>
-      -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
-      change Function.Injective
-        (Bialgebra.TensorProduct.map (map f n) (map f n)).toAlgHom.toLinearMap
-      rw [Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.toLinearMap_map,
-        TensorProduct.AlgebraTensorModule.map_eq]
-      exact TensorProduct.map_injective_of_flat_flat
-        (map f n).toAlgHom.toLinearMap (map f n).toAlgHom.toLinearMap ih ih
+      have h := Algebra.TensorProduct.map_injective_of_flat_flat
+        (map f n).toAlgHom (map f n).toAlgHom ih ih
+      rwa [← Bialgebra.TensorProduct.map_toAlgHom, BialgHom.coe_toAlgHom] at h
 
 /-- If the original coordinate algebra is smooth, every universal derived-word value algebra is
 smooth. -/
@@ -321,7 +317,7 @@ private theorem exists_universalDerivedWord_eq_one
   let _ : Algebra.Smooth k (derivedWordCoordinateAlgebra H n) :=
     derivedWordCoordinateAlgebra.smooth hH_smooth n
   let _ : IsReduced (derivedWordCoordinateAlgebra H n) :=
-    isReduced_of_smooth_of_field k (derivedWordCoordinateAlgebra H n)
+    isReduced_of_smooth k (derivedWordCoordinateAlgebra H n)
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro z

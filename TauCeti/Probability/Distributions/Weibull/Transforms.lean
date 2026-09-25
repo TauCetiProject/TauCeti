@@ -10,7 +10,8 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Distributions.Weibull.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Probability.Distributions.Exponential
+import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Exponential moments of the Weibull distribution
@@ -149,11 +150,9 @@ private lemma exp_mul_mul_exp_neg (c t x p : ℝ) :
 
 /-- Every nonpositive exponential rate is integrable under a Weibull measure. -/
 theorem integrable_exp_mul_id_weibullMeasure_of_nonpos (k lam : ℝ) (ht : t ≤ 0) :
-    Integrable (fun x : ℝ => Real.exp (t * x)) (weibullMeasure k lam) := by
-  have h := integrable_exp_mul_of_le (μ := weibullMeasure k lam) (X := fun x : ℝ => -x)
-    (-t) 0 (neg_nonneg.mpr ht) (measurable_id.neg.aemeasurable)
-    ((ae_pos_weibullMeasure k lam).mono fun _ hx => neg_nonpos.mpr hx.le)
-  simpa only [neg_mul_neg] using h
+    Integrable (fun x : ℝ => Real.exp (t * x)) (weibullMeasure k lam) :=
+  integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+    ((ae_pos_weibullMeasure k lam).mono fun _ hx => hx.le)
 
 private lemma integrable_exp_mul_id_weibullMeasure_of_one_lt_of_scale_pos
     (hk : 1 < k) (hlam : 0 < lam) (t : ℝ) :

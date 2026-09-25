@@ -74,11 +74,11 @@ theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι
   have hz' : z i = a := (mem_filter.1 hz).2
   rw [hz']
 
-/-- **A negative lower bound on the fibre sums over the range bounds every fibre sum.** A value
-`k` outside the range of `g` has an empty fibre, so the sum over it is the empty sum `0`, which
-lies above `c` by hypothesis. -/
+/-- **A negative lower bound on the fibre sums over the range bounds every fibre sum.** If
+`c < 0` bounds from below the sum of `F` over each fibre of `g` above a value of `g`, then it
+bounds the sum of `F` over the fibre above any `k`. -/
 theorem lt_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
-    [AddCommMonoid M] [Preorder M] {g : ι → κ} {F : ι → M} {c : M} (hc : c < 0)
+    [AddCommMonoid M] [LT M] {g : ι → κ} {F : ι → M} {c : M} (hc : c < 0)
     (h : ∀ j, c < ∑ i with g i = g j, F i) (k : κ) :
     c < ∑ i with g i = k, F i := by
   by_cases hk : k ∈ Set.range g

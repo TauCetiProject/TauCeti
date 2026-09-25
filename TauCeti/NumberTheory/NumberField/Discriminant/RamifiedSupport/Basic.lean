@@ -29,6 +29,8 @@ automatic.
   discriminant.
 * `TauCeti.NumberField.mem_ramifiedSupport_iff_exists`: equivalently, some prime of `𝓞 L` above
   `v` has ramification index greater than one — so the name is honest.
+* `TauCeti.NumberField.ramifiedSupport_self`: nothing ramifies in the identity extension, so the
+  support of `K / K` is empty.
 * `TauCeti.NumberField.isUnramifiedAway_ramifiedSupport`: primes outside the ramified support are
   unramified throughout the extension.
 
@@ -69,6 +71,20 @@ theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
       ∃ P : (v.asIdeal).primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
   rw [mem_ramifiedSupport]
   exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx v.ne_bot
+
+variable (K) in
+/-- **Nothing ramifies in the identity extension**: the ramified support of `K / K` is empty. -/
+@[simp]
+theorem ramifiedSupport_self : ramifiedSupport K K = ∅ := by
+  -- Mathlib checks by `rfl` that this ring-of-integers algebra instance is `Algebra.id`;
+  -- specializing `relDiscr_self` here relies on that definitional equality.
+  have hrel :
+      @TauCeti.relDiscr (𝓞 K) (𝓞 K) inferInstance inferInstance inferInstance inferInstance
+        (NumberField.inst_ringOfIntegersAlgebra K K) inferInstance inferInstance = ⊤ :=
+    TauCeti.relDiscr_self
+  refine Finset.eq_empty_iff_forall_notMem.mpr fun v hv => ?_
+  rw [mem_ramifiedSupport, hrel, ← Ideal.one_eq_top] at hv
+  exact v.prime.not_dvd_one hv
 
 /-- **Every prime outside the ramified support is unramified.** If a finite place `v` does not
 divide the relative discriminant of `L/K`, then every prime of `L` above `v` is unramified over

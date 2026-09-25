@@ -46,7 +46,7 @@ describes its action.
 * `TauCeti.exists_forall_apply_eq_smul` is **Schur's lemma** for Lie modules: over an algebraically
   closed field, a morphism of a finite-dimensional irreducible `L`-module to itself is a scalar. Its
   companion `TauCeti.eq_of_forall_lie_eq_smul` says that the scalar describing the action of a
-  single element of `L` on a nontrivial module is unique, which is what makes `centralWeight`
+  single element of `L` on a faithful module is unique, which is what makes `centralWeight`
   well defined and linear.
 * `TauCeti.forall_apply_eq_smul_of_apply_eq_smul` and its central-element form
   `TauCeti.forall_lie_eq_smul_of_lie_eq_smul` are the half of Schur's lemma that needs neither
@@ -72,8 +72,9 @@ eigenvalue of the underlying linear map. That is why the ambient hypotheses are
 `FiniteDimensional K M` and `IsAlgClosed K`, exactly the hypotheses of
 `Module.End.exists_eigenvalue`.
 
-`TauCeti.eq_of_forall_lie_eq_smul` is stated over an arbitrary field with a `Nontrivial M`
-hypothesis rather than an irreducibility one, since uniqueness of the scalar needs nothing else.
+`TauCeti.eq_of_forall_lie_eq_smul` is stated for any bracket action and any faithful scalar action,
+rather than under an irreducibility hypothesis, since uniqueness of the scalar needs nothing else.
+A nontrivial module over a division ring is faithful, which is how the central weight uses it.
 
 ## References
 
@@ -97,18 +98,13 @@ universe u v w x
 
 section Uniqueness
 
-variable {K : Type u} [Field K] {L : Type v} [LieRing L]
-variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
+variable {K : Type u} {L : Type v} {M : Type w} [SMul K M] [FaithfulSMul K M] [Bracket L M]
 
-/-- **The scalar by which an element of `L` acts is unique.** On a nontrivial module two scalars
-that both describe the action of `x` agree; no irreducibility is needed. -/
-theorem eq_of_forall_lie_eq_smul [Nontrivial M] {x : L} {c d : K}
-    (hc : ∀ m : M, ⁅x, m⁆ = c • m) (hd : ∀ m : M, ⁅x, m⁆ = d • m) : c = d := by
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  have h : (c - d) • m = 0 := by rw [sub_smul, ← hc m, ← hd m, sub_self]
-  rcases smul_eq_zero.1 h with h' | h'
-  · exact sub_eq_zero.1 h'
-  · exact absurd h' hm
+/-- **The scalar by which an element of `L` acts is unique.** When `K` acts faithfully on `M`, two
+scalars that both describe the action of `x` agree; no irreducibility is needed. -/
+theorem eq_of_forall_lie_eq_smul {x : L} {c d : K}
+    (hc : ∀ m : M, ⁅x, m⁆ = c • m) (hd : ∀ m : M, ⁅x, m⁆ = d • m) : c = d :=
+  FaithfulSMul.eq_of_smul_eq_smul fun m ↦ (hc m).symm.trans (hd m)
 
 end Uniqueness
 
@@ -128,7 +124,7 @@ theorem forall_apply_eq_smul_of_apply_eq_smul (f : M →ₗ⁅K,L⁆ M) {c : K} 
     (h : f m₀ = c • m₀) (m : M) : f m = c • m := by
   have hmem : ∀ y : M, y ∈ (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker ↔ f y = c • y := by
     intro y
-    rw [LieModuleHom.mem_ker, LieModuleHom.sub_apply, LieModuleHom.smul_apply,
+    rw [LieModuleHom.mem_ker, sub_apply, smul_apply,
       LieModuleHom.id_apply, sub_eq_zero]
   have htop : (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker = ⊤ := by
     refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hm₀ ?_

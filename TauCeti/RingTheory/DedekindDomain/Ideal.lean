@@ -153,7 +153,7 @@ This is the coefficient-level form of "a prime power is supported at one prime":
 sum over the primes above a fixed ideal, every term but the matching one vanishes. -/
 theorem multiplicity_eq_zero_of_isPrime_ne {P Q : Ideal B} (hP0 : P ≠ ⊥) [P.IsPrime]
     [Q.IsPrime] (hne : Q ≠ P) : multiplicity Q P = 0 := by
-  refine multiplicity_eq_zero.mpr fun hdvd => hne ?_
+  refine multiplicity_eq_zero_of_not_dvd fun hdvd => hne ?_
   -- `Q ∣ P` means `P ≤ Q`; `P` is maximal and `Q ≠ ⊤`, so the two agree.
   exact (Ideal.IsMaximal.eq_of_le (‹P.IsPrime›.isMaximal hP0) (Ideal.IsPrime.ne_top ‹Q.IsPrime›)
     (Ideal.dvd_iff_le.mp hdvd)).symm

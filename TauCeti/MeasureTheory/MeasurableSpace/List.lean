@@ -14,15 +14,16 @@ Mathlib equips no type of lists with a measurable structure. This file gives `Li
 transported from its length-indexed representation `Σ n, Fin n → α`. Thus each fixed-length stratum
 has the finite product structure, and the list space is their countable disjoint union.
 
-When `α` is countable and discrete, this structure is discrete too. In particular, a process whose
-values are finite words over a countable alphabet, such as the excursion process of a path, has a
-countable discrete value space.
+When `α` is countable with measurable singletons, this structure is discrete. In particular, a
+process whose values are finite words over a countable alphabet, such as the excursion process of a
+path, has a countable discrete value space.
 
 ## Main definitions
 
 * `TauCeti.instMeasurableSpaceList`: the measurable structure on `List α` induced by its
   length-indexed representation.
-* `TauCeti.instDiscreteMeasurableSpaceList`: discreteness when `α` is countable and discrete.
+* `TauCeti.instDiscreteMeasurableSpaceList`: discreteness when `α` is countable with measurable
+  singletons.
 -/
 
 public section
@@ -36,8 +37,9 @@ variable {α : Type*} [MeasurableSpace α]
 instance instMeasurableSpaceList : MeasurableSpace (List α) :=
   MeasurableSpace.comap List.equivSigmaTuple inferInstance
 
-/-- Lists over a countable discrete measurable space form a discrete measurable space. -/
-instance instDiscreteMeasurableSpaceList [Countable α] [DiscreteMeasurableSpace α] :
+/-- Lists over a countable measurable space with measurable singletons form a discrete measurable
+space. -/
+instance instDiscreteMeasurableSpaceList [Countable α] [MeasurableSingletonClass α] :
     DiscreteMeasurableSpace (List α) :=
   ⟨fun s => by
     -- Unfold measurability in the structure pulled back along the list-tuple equivalence.

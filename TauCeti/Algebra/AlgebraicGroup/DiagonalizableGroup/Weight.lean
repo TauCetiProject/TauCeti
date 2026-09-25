@@ -133,7 +133,7 @@ theorem endOfPoint_tmul_comp (π : C →ₐc[R] MonoidAlgebra R X)
             (Comodule.coact (R := R) (C := C) (M := V) v))) := by
   have hπ : (π : C →ₐ[R] MonoidAlgebra R X).toLinearMap =
       (π : C →ₗc[R] MonoidAlgebra R X).toLinearMap := by
-    rw [CoalgHom.toLinearMap_eq_coe]
+    rw [CoalgHom.toLinearMap_eq_ofClass]
     exact BialgHom.toAlgHom_toLinearMap π
   rw [Comodule.endOfPoint_tmul]
   congr 2

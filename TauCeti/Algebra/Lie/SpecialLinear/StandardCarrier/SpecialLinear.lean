@@ -221,7 +221,7 @@ theorem baseChangeDefiningIdeal_eq_specialLinearDefiningHopfIdeal
     (k : Type u) [Field k] [IsAlgClosed k] :
     baseChangeDefiningIdeal r k = SpecialLinear.definingHopfIdeal k (r + 1) := by
   let _ : IsReduced (SpecialLinear.coordinateHopfAlgebra k (r + 1)) :=
-    isReduced_of_smooth_of_field k _
+    isReduced_of_smooth k _
   apply le_antisymm
   · apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := k)
     intro g hg

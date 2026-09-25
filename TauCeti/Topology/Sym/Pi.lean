@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Data.Sym.Pi
 public import TauCeti.Topology.Sym.Basic
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The subspace of unordered tuples with one point in each member of a family
@@ -77,7 +78,7 @@ an embedded product.** For the attaching circles of a Heegaard diagram this says
 theorem isClosedEmbedding_ofFn_subtypeVal (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) :
     IsClosedEmbedding fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
-  haveI (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
+  have (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
   continuous_ofFn_subtypeVal.isClosedEmbedding (ofFn_subtypeVal_injective h)
 
 /-- **The subspace `TauCeti.Sym.pi A` is the product of the members of the family**, for a pairwise
@@ -94,9 +95,11 @@ tuples. -/
 theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
     (piHomeomorph hA h x : Sym α n) = ofFn fun i => (x i : α) := by
-  -- unfold the chain of Mathlib equivalences out of which the homeomorphism is assembled
-  simp [piHomeomorph, Topology.IsEmbedding.toHomeomorph, Homeomorph.setCongr, Set.equivOfEq,
-    Equiv.subtypeEquivProp]
+  -- Evaluate each link of the chain through its application lemma instead of unfolding the
+  -- equivalence it is built from: the application lemmas are stable under changes to those
+  -- definitions, which definitional unfolding is not.
+  simp only [piHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
+    IsEmbedding.toHomeomorph_apply_coe]
 
 end Sym
 

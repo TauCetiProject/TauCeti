@@ -31,8 +31,12 @@ Nevanlinna kernel `(1 + x * z) / (x - z)`.
   non-atomic-at-`1` part of a circle measure.
 * `TauCeti.integral_circle_eq_atom_add_integral_cayleyPushforward`: decomposition of an integral
   over the circle into its atom at `1` and its real-line part.
+* `TauCeti.nevanlinnaKernel_im`, `TauCeti.norm_nevanlinnaKernel_le` and
+  `TauCeti.integrable_nevanlinnaKernel`: the imaginary part of the kernel, its boundedness on the
+  real line, and the resulting integrability against a finite measure.
 * `TauCeti.I_mul_herglotzTransform_cayley_eq`: the resulting Nevanlinna-kernel formula for the
   Cayley-coordinate Herglotz transform.
+* `TauCeti.nevanlinnaKernel_ofReal`: the kernel is real at a real parameter.
 * `TauCeti.exists_isFiniteMeasure_eq_nevanlinnaKernel_add`: the Nevanlinna representation of a
   Pick function by a nonnegative linear coefficient and a finite real-line measure.
 
@@ -246,6 +250,71 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
+/-- The Nevanlinna kernel is the quotient `(1 + x z) / (x - z)`. -/
+theorem nevanlinnaKernel_def (z : ℂ) (x : ℝ) :
+    nevanlinnaKernel z x = (1 + (x : ℂ) * z) / ((x : ℂ) - z) := by
+  rw [nevanlinnaKernel]
+
+/-- The Nevanlinna kernel is measurable in its real variable at every complex parameter. -/
+@[fun_prop]
+theorem measurable_nevanlinnaKernel (z : ℂ) : Measurable (nevanlinnaKernel z) := by
+  unfold nevanlinnaKernel
+  exact (measurable_const.add (Complex.measurable_ofReal.mul_const z)).div
+    (Complex.measurable_ofReal.sub measurable_const)
+
+/-- Away from its pole, the Nevanlinna kernel separates into its affine part and a resolvent. -/
+theorem nevanlinnaKernel_eq_add_div {z : ℂ} {x : ℝ} (h : (x : ℂ) - z ≠ 0) :
+    nevanlinnaKernel z x = z + (1 + z ^ 2) / ((x : ℂ) - z) := by
+  rw [nevanlinnaKernel]
+  field_simp
+  ring
+
+/-- The Nevanlinna kernel is continuous in its complex parameter away from its pole. -/
+theorem continuousAt_nevanlinnaKernel_left {x : ℝ} {z : ℂ} (h : (x : ℂ) ≠ z) :
+    ContinuousAt (fun w => nevanlinnaKernel w x) z := by
+  unfold nevanlinnaKernel
+  exact (continuousAt_const.add (continuousAt_const.mul continuousAt_id)).div
+    (continuousAt_const.sub continuousAt_id) (sub_ne_zero.mpr h)
+
+/-- On the nonpositive real axis, the Nevanlinna kernel is bounded at every parameter with
+positive real part. -/
+theorem norm_nevanlinnaKernel_le_of_nonpos {z : ℂ} {x : ℝ}
+    (hz : 0 < z.re) (hx : x ≤ 0) :
+    ‖nevanlinnaKernel z x‖ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+  have hden : z.re ≤ ‖(x : ℂ) - z‖ := by
+    have hre : |x - z.re| ≤ ‖(x : ℂ) - z‖ := by
+      simpa only [sub_re, ofReal_re] using abs_re_le_norm ((x : ℂ) - z)
+    have hneg : x - z.re < 0 := by linarith
+    rw [abs_of_neg hneg] at hre
+    linarith
+  have hden0 : (x : ℂ) - z ≠ 0 := by
+    rw [← norm_pos_iff]
+    exact lt_of_lt_of_le hz hden
+  have hinv : ‖((x : ℂ) - z)⁻¹‖ ≤ (z.re)⁻¹ := by
+    rw [norm_inv]
+    exact inv_anti₀ hz hden
+  rw [nevanlinnaKernel_eq_add_div hden0, div_eq_mul_inv]
+  calc
+    ‖z + (1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖
+        ≤ ‖z‖ + ‖(1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖ := norm_add_le _ _
+    _ = ‖z‖ + ‖1 + z ^ 2‖ * ‖((x : ℂ) - z)⁻¹‖ := by rw [norm_mul]
+    _ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+      have hone : ‖1 + z ^ 2‖ ≤ 1 + ‖z‖ ^ 2 := by
+        calc
+          ‖1 + z ^ 2‖ ≤ 1 + ‖z ^ 2‖ := by
+            simpa only [norm_one] using norm_add_le (1 : ℂ) (z ^ 2)
+          _ = _ := by rw [norm_pow]
+      rw [div_eq_mul_inv]
+      gcongr
+
+/-- At a real parameter the Nevanlinna kernel is real. -/
+@[simp]
+theorem nevanlinnaKernel_ofReal (t x : ℝ) :
+    nevanlinnaKernel (t : ℂ) x = (((1 + x * t) / (x - t) : ℝ) : ℂ) := by
+  rw [nevanlinnaKernel]
+  push_cast
+  ring
+
 /-- In boundary Cayley coordinates, the Herglotz kernel becomes the Nevanlinna kernel. -/
 theorem I_mul_herglotzKernel_cayley (z : ℂ) (x : ℝ)
     (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :
@@ -287,6 +356,68 @@ theorem I_mul_herglotzKernel_cayley (z : ℂ) (x : ℝ)
   rw [hsum, hsub]
   field_simp [hxz, I_ne_zero]
   ring
+
+/-- The imaginary part of the Nevanlinna kernel.  On the upper half-plane it is positive, and the
+weight `1 + x ^ 2` appearing in the numerator is what turns a Nevanlinna measure into the measure
+of the Stieltjes--Perron inversion formula. -/
+@[simp]
+theorem nevanlinnaKernel_im (z : ℂ) (x : ℝ) :
+    (nevanlinnaKernel z x).im = z.im * (1 + x ^ 2) / normSq ((x : ℂ) - z) := by
+  simp only [nevanlinnaKernel, div_im, normSq_apply, add_re, add_im, one_re, one_im, mul_re,
+    mul_im, ofReal_re, ofReal_im, sub_re, sub_im]
+  ring
+
+/-- The Nevanlinna kernel at a point of the upper half-plane is bounded on the real line, by a
+bound depending only on the distance of the point from the boundary in Cayley coordinates. -/
+theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) (x : ℝ) :
+    ‖nevanlinnaKernel z x‖ ≤ (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) := by
+  have hzim : 0 < z.im := hz
+  have hlt : ‖z - I‖ < ‖z + I‖ := by
+    refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
+    rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq]
+    simp only [normSq_apply, sub_re, sub_im, add_re, add_im, I_re, I_im]
+    nlinarith
+  have hDpos : (0 : ℝ) < ‖z + I‖ := lt_of_le_of_lt (norm_nonneg _) hlt
+  have hEnonneg : (0 : ℝ) ≤ ‖z - I‖ := norm_nonneg _
+  set D := ‖z + I‖ with hD
+  set E := ‖z - I‖ with hE
+  set W := ‖(z - I) / (z + I)‖ with hW
+  have hWeq : D * W = E := by
+    rw [hW, norm_div, ← hD, ← hE]
+    field_simp
+  have hWlt : W < 1 := by nlinarith
+  have hWnonneg : (0 : ℝ) ≤ W := norm_nonneg _
+  have hzeta : ‖(boundaryCayley x : ℂ)‖ = 1 := Circle.norm_coe _
+  have hnum : ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖ ≤ 1 + W := by
+    calc ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖
+        ≤ ‖(boundaryCayley x : ℂ)‖ + W := norm_add_le _ _
+      _ = 1 + W := by rw [hzeta]
+  have hden : 1 - W ≤ ‖(boundaryCayley x : ℂ) - (z - I) / (z + I)‖ := by
+    have := norm_sub_norm_le ((boundaryCayley x : ℂ)) ((z - I) / (z + I))
+    rwa [hzeta] at this
+  have hdenpos : (0 : ℝ) < ‖(boundaryCayley x : ℂ) - (z - I) / (z + I)‖ :=
+    lt_of_lt_of_le (by linarith) hden
+  rw [← I_mul_herglotzKernel_cayley z x hz, norm_mul, norm_I, one_mul, norm_div,
+    div_le_div_iff₀ hdenpos (by nlinarith)]
+  nlinarith [mul_le_mul_of_nonneg_right hnum (by nlinarith : (0 : ℝ) ≤ D - E),
+    mul_le_mul_of_nonneg_left hden (by nlinarith : (0 : ℝ) ≤ D + E)]
+
+/-- The Nevanlinna kernel at a nonreal point is continuous in the real variable. -/
+@[fun_prop]
+theorem continuous_nevanlinnaKernel {z : ℂ} (hz : z.im ≠ 0) :
+    Continuous (nevanlinnaKernel z) := by
+  unfold nevanlinnaKernel
+  refine Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ ?_
+  have := congrArg im h
+  simp only [sub_im, ofReal_im, zero_sub, zero_im, neg_eq_zero] at this
+  exact hz this
+
+/-- The Nevanlinna kernel at a point of the upper half-plane is integrable against every finite
+measure on the real line, so the Nevanlinna representation is an honest Bochner integral. -/
+theorem integrable_nevanlinnaKernel {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet)
+    (mu : Measure ℝ) [IsFiniteMeasure mu] : Integrable (nevanlinnaKernel z) mu :=
+  .of_bound (continuous_nevanlinnaKernel (ne_of_gt hz)).aestronglyMeasurable _
+    (.of_forall (norm_nevanlinnaKernel_le hz))
 
 private theorem I_mul_one_add_cayley_div_one_sub (z : ℂ)
     (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :

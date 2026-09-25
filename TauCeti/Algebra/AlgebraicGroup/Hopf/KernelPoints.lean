@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Points of kernel quotients

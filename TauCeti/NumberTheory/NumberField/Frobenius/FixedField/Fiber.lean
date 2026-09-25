@@ -30,8 +30,6 @@ from `Ideal.eq_of_smul_eq_of_liesOver_under_fixedField`.
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter I, §9.
 -/
 
--- Source: `TauCetiRoadmap/Chebotarev/README.md`, §8.2.
-
 public section
 
 open scoped NumberField Pointwise

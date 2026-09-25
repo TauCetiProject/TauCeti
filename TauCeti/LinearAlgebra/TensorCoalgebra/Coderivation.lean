@@ -253,8 +253,7 @@ theorem rTensor_add_lTensor_rTensor_congr
       LinearMap.rTensor (ReducedTensorWords R M) b₂ (TensorProduct.mapIncl P P w) +
         LinearMap.lTensor (ReducedTensorWords R M) b₂
           (LinearMap.rTensor (ReducedTensorWords R M) τ (TensorProduct.mapIncl P P w)) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp only [map_zero, add_zero]
+  induction w using TensorProduct.inductionOn with
   | tmul u v =>
       simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
         LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]

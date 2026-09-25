@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -42,10 +43,16 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   on the domain.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
+  `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
+  conormal component of a smooth gradient.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
+* `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
+  estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
@@ -162,6 +169,46 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
+
+/-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
+bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by
+`Λ ‖q‖ ‖g‖`, then the cross term in `A(g, z²g + 2zwq)` is absorbed by half of the
+elliptic term and a multiple of `w²‖q‖²`. -/
+theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hlam : 0 < lam) (z w : ℝ) (g q : EuclideanSpace ℝ n)
+    (hlower : lam * ‖g‖ ^ 2 ≤ A.toQuadraticForm' g)
+    (hupper : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖) :
+    lam * (z ^ 2 * ‖g‖ ^ 2) ≤
+      matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g
+        + lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
+  have hexp : matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g =
+      z ^ 2 * A.toQuadraticForm' g + 2 * (z * w) * (q ⬝ᵥ (A *ᵥ g)) := by
+    rw [← matrixBilinearForm_self, ← matrixBilinearForm_apply]
+    simp only [map_add, map_smul, _root_.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
+    ring
+  have hcross : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖ := hupper
+  -- Weighted Young inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and
+  -- `Y = Λ |w| ‖q‖`: Mathlib's `two_mul_le_add_mul_sq` at weight `ε = λ/2`.
+  have hyoung : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
+      lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2 := by
+    have h := two_mul_le_add_mul_sq (a := |z| * ‖g‖) (b := Lam * |w| * ‖q‖)
+      (ε := lam / 2) (by linarith)
+    rwa [inv_div] at h
+  have hzw : |2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))| ≤ 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
+    rw [abs_mul, abs_mul, abs_mul, abs_two]
+    calc 2 * (|z| * |w|) * |q ⬝ᵥ (A *ᵥ g)| ≤ 2 * (|z| * |w|) * (Lam * ‖q‖ * ‖g‖) := by
+          gcongr
+      _ = 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by ring
+  have hsqz : |z| ^ 2 = z ^ 2 := sq_abs z
+  have hsqw : |w| ^ 2 = w ^ 2 := sq_abs w
+  have hyoung' : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
+      lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
+    refine hyoung.trans_eq ?_
+    rw [mul_pow, mul_pow, mul_pow, hsqz, hsqw]
+    ring
+  rw [hexp]
+  nlinarith [neg_abs_le (2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))), sq_nonneg z,
+    mul_le_mul_of_nonneg_left hlower (sq_nonneg z)]
 
 omit [DecidableEq n] in
 /-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
@@ -730,6 +777,33 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
     UniformlyEllipticOn Ω (fun _ => c • (1 : Matrix n n ℝ)) lam Lam :=
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
+
+open Set TopologicalSpace
+open scoped ContDiff Gradient InnerProductSpace
+
+omit [DecidableEq n] in
+/-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
+theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
+    ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
+        matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) η = matrixBilinearForm A ξ η := by
+  conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
+  simp [map_sum, map_smul]
+
+omit [DecidableEq n] in
+/-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
+smooth. -/
+theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
+    {ψ : EuclideanSpace ℝ n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ n) :
+    ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
+  (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
+
+omit [DecidableEq n] in
+/-- The conormal component of a gradient is supported where the function is. -/
+theorem tsupport_matrixBilinearForm_gradient_subset {A : Matrix n n ℝ}
+    (ψ : EuclideanSpace ℝ n → ℝ) (η : EuclideanSpace ℝ n) :
+    tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
+  closure_minimal (fun x hx => by_contra fun hxψ => hx (by
+    simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
 end PDE
 

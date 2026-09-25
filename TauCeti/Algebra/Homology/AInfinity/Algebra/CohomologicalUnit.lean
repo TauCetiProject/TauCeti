@@ -44,8 +44,6 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-! ### Cohomological units -/
 
--- Source: the `CohomologicalUnit` scaffold in `TauCetiRoadmap/DGAInfinity/Suggested.lean`, with
--- its cycle and boundary conditions restated against `cycles` and `boundaries`.
 /-- A chain representative of a unit on the cohomology of an `A∞` algebra.
 
 The representative is a degree-zero cycle.  Its binary products with every cycle differ from that

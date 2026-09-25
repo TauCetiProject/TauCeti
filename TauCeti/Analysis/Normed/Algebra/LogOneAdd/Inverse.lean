@@ -60,14 +60,12 @@ private theorem expSubOne_hasFPowerSeriesAt (A : Type*) [NormedRing A] [NormedAl
   have h := (exp_hasFPowerSeriesAt_zero (𝕂 := ℝ) (𝔸 := A)).sub
     (hasFPowerSeriesAt_const (𝕜 := ℝ) (E := A) (c := (1 : A)) (e := (0 : A)))
   convert h using 1
-  · ext x
-    rfl
-  · ext n v
-    cases n with
-    | zero => simp [expSubOneSeries, expSeries_eq_ofScalars,
-        FormalMultilinearSeries.ofScalars]
-    | succ n => simp [expSubOneSeries, expSeries_eq_ofScalars,
-        FormalMultilinearSeries.ofScalars]
+  ext n v
+  cases n with
+  | zero => simp [expSubOneSeries, expSeries_eq_ofScalars,
+      FormalMultilinearSeries.ofScalars]
+  | succ n => simp [expSubOneSeries, expSeries_eq_ofScalars,
+      FormalMultilinearSeries.ofScalars]
 
 private theorem logSeries_comp_expSeries_real :
     (logOneAddSeries ℝ ℝ).comp (expSeries ℝ ℝ) =

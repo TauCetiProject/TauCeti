@@ -16,6 +16,9 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 -- This import is public: `Gradient` supplies the `∇` of the weak derivative of a test function
 -- below, together with the Riesz correspondence `innerSL` in which that statement is phrased.
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+-- This import is public: `Module.Basis` appears in the hypothesis of
+-- `Module.Basis.hasWeakFDerivOn_of_forall`.
+public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
 # Weak derivatives on an open set
@@ -132,10 +135,16 @@ weaken them for no gain.
   derivative up to almost-everywhere equality on `Ω`.
 * `TauCeti.hasWeakLineDerivOn_zero` and `TauCeti.hasWeakFDerivOn_zero`: the zero function has
   weak derivative `0`.
-* `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul` and their
+* `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
-* `TauCeti.HasWeakLineDerivOn.add_direction` and `.smul_direction`: linearity in the direction,
-  which is what makes the `TauCeti.HasWeakFDerivOn` packaging the right one.
+* `TauCeti.HasWeakLineDerivOn.clm_comp`: a continuous linear map on the codomain passes through
+  the weak derivative, which is how a vector-valued weak derivative is read off its scalar
+  components.
+* `TauCeti.HasWeakLineDerivOn.add_direction`, `.smul_direction`, `.sum_direction` and
+  `TauCeti.hasWeakLineDerivOn_zero_direction`: linearity in the direction, which is what makes
+  the `TauCeti.HasWeakFDerivOn` packaging the right one.
+* `Module.Basis.hasWeakFDerivOn_of_forall`: a candidate weak derivative need only be checked in
+  the directions of a basis.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
@@ -440,6 +449,50 @@ theorem HasWeakLineDerivOn.sub {u₁ u₁' u₂ u₂' : E → F} (h₁ : HasWeak
     HasWeakLineDerivOn μ Ω (u₁ - u₂) (u₁' - u₂') v := by
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
 
+/-- Weak differentiation commutes with a finite sum of functions. -/
+theorem HasWeakLineDerivOn.sum {ι : Type*} [CompleteSpace F] {w w' : ι → E → F} (s : Finset ι)
+    (h : ∀ i ∈ s, HasWeakLineDerivOn μ Ω (w i) (w' i) v) :
+    HasWeakLineDerivOn μ Ω (fun x => ∑ i ∈ s, w i x) (fun x => ∑ i ∈ s, w' i x) v := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.sum_empty]
+      exact hasWeakLineDerivOn_zero
+  | insert a s ha ih =>
+      have key := (h a (Finset.mem_insert_self a s)).add
+        (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+      have e : ∀ z : ι → E → F,
+          (fun x => ∑ i ∈ insert a s, z i x) = z a + fun x => ∑ i ∈ s, z i x :=
+        fun z => funext fun x => by simp [Finset.sum_insert ha]
+      rw [e w, e w']
+      exact key
+
+/-- Weak differentiation commutes with a continuous linear map on the codomain. -/
+theorem HasWeakLineDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (h : HasWeakLineDerivOn μ Ω u u' v) (L : F →L[ℝ] G) :
+    HasWeakLineDerivOn μ Ω (fun x => L (u x)) (fun x => L (u' x)) v := by
+  have := h.completeSpace
+  have hcomp : ∀ w : E → F, LocallyIntegrableOn w Ω μ →
+      LocallyIntegrableOn (fun x => L (w x)) Ω μ := by
+    intro w hw x hx
+    obtain ⟨t, ht, hint⟩ := hw x hx
+    exact ⟨t, ht, L.integrable_comp hint⟩
+  refine ⟨‹CompleteSpace G›, hcomp u h.locallyIntegrableOn,
+    hcomp u' h.locallyIntegrableOn_deriv, fun φ => ?_⟩
+  calc ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • L (u x) ∂μ
+      = L (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u x ∂μ) := by
+        rw [← ContinuousLinearMap.integral_comp_comm L
+          (integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn φ v)]
+        simp
+    _ = L (-∫ x, (φ : E → ℝ) x • u' x ∂μ) := by
+        rw [h.integral_lineDeriv_smul_eq_neg_integral_smul φ]
+    _ = -∫ x, (φ : E → ℝ) x • L (u' x) ∂μ := by
+        rw [map_neg]
+        congr 1
+        rw [← ContinuousLinearMap.integral_comp_comm L
+          (integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn_deriv φ)]
+        simp
+
 /-- Weak Fréchet differentiation is additive. -/
 theorem HasWeakFDerivOn.add {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ] F}
     (h₁ : HasWeakFDerivOn μ Ω u₁ U₁) (h₂ : HasWeakFDerivOn μ Ω u₂ U₂) :
@@ -449,6 +502,12 @@ theorem HasWeakFDerivOn.add {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ]
 theorem HasWeakFDerivOn.sub {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ] F}
     (h₁ : HasWeakFDerivOn μ Ω u₁ U₁) (h₂ : HasWeakFDerivOn μ Ω u₂ U₂) :
     HasWeakFDerivOn μ Ω (u₁ - u₂) (U₁ - U₂) := fun v => (h₁ v).sub (h₂ v)
+
+omit [OpensMeasurableSpace E] in
+/-- In the direction `0` every locally integrable function has weak derivative `0`. -/
+theorem hasWeakLineDerivOn_zero_direction [CompleteSpace F] {u : E → F}
+    (hu : LocallyIntegrableOn u Ω μ) : HasWeakLineDerivOn μ Ω u (0 : E → F) 0 :=
+  ⟨‹CompleteSpace F›, hu, locallyIntegrableOn_zero, fun φ => by simp [lineDeriv_zero]⟩
 
 /-- The weak derivative is additive in the direction of differentiation. Together with
 `TauCeti.HasWeakLineDerivOn.smul_direction` this is what makes packaging the directional weak
@@ -480,6 +539,24 @@ theorem HasWeakLineDerivOn.add_direction {u u₁' u₂' : E → F} {v₁ v₂ : 
   rw [hleft, hright, h₁.integral_lineDeriv_smul_eq_neg_integral_smul φ,
     h₂.integral_lineDeriv_smul_eq_neg_integral_smul φ, neg_add]
 
+/-- The weak derivative is additive over a finite sum of directions. -/
+theorem HasWeakLineDerivOn.sum_direction {ι : Type*} [CompleteSpace F] {u : E → F}
+    {u' : ι → E → F} {w : ι → E} (s : Finset ι) (hu : LocallyIntegrableOn u Ω μ)
+    (h : ∀ i ∈ s, HasWeakLineDerivOn μ Ω u (u' i) (w i)) :
+    HasWeakLineDerivOn μ Ω u (fun x => ∑ i ∈ s, u' i x) (∑ i ∈ s, w i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.sum_empty]
+      exact hasWeakLineDerivOn_zero_direction hu
+  | insert a s ha ih =>
+      have key := (h a (Finset.mem_insert_self a s)).add_direction
+        (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+      have e : (fun x => ∑ i ∈ insert a s, u' i x) = u' a + fun x => ∑ i ∈ s, u' i x :=
+        funext fun x => by simp [Finset.sum_insert ha]
+      rw [e, Finset.sum_insert ha]
+      exact key
+
 end Linearity
 
 /-! ### Scaling the direction -/
@@ -497,6 +574,41 @@ theorem HasWeakLineDerivOn.smul_direction (h : HasWeakLineDerivOn μ Ω u u' v) 
     h.integral_lineDeriv_smul_eq_neg_integral_smul φ, Pi.smul_apply, smul_comm _ c, smul_neg]
 
 end SmulDirection
+
+/-! ### Assembling the directions of a basis -/
+
+section Basis
+
+variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {u : E → F}
+
+/-- **A weak Fréchet derivative is detected on a basis of directions.** If a candidate
+`U : E → E →L[ℝ] F` is a weak derivative of `u` in each direction of a basis of `E`, it is a
+weak derivative of `u` in every direction, since every vector is a finite linear combination
+of basis vectors. Local integrability of `u` is a separate hypothesis because it is not implied
+by the basis directions when `E` is trivial. -/
+theorem _root_.Module.Basis.hasWeakFDerivOn_of_forall {ι : Type*} [CompleteSpace F]
+    (b : Module.Basis ι ℝ E) {U : E → E →L[ℝ] F} (hu : LocallyIntegrableOn u Ω μ)
+    (h : ∀ i, HasWeakLineDerivOn μ Ω u (fun x => U x (b i)) (b i)) :
+    HasWeakFDerivOn μ Ω u U := by
+  classical
+  intro y
+  have hy : ∑ i ∈ (b.repr y).support, b.repr y i • b i = y := by
+    have hrepr := b.linearCombination_repr y
+    rwa [Finsupp.linearCombination_apply, Finsupp.sum] at hrepr
+  have key : HasWeakLineDerivOn μ Ω u
+      (fun x => ∑ i ∈ (b.repr y).support, b.repr y i • U x (b i))
+      (∑ i ∈ (b.repr y).support, b.repr y i • b i) :=
+    HasWeakLineDerivOn.sum_direction _ hu fun i _ => by
+      simpa [Pi.smul_def] using (h i).smul_direction (b.repr y i)
+  have hval : ∀ x, (∑ i ∈ (b.repr y).support, b.repr y i • U x (b i)) = U x y := by
+    intro x
+    have hUy : U x y = U x (∑ i ∈ (b.repr y).support, b.repr y i • b i) := by rw [hy]
+    rw [hUy, map_sum]
+    simp
+  rw [hy] at key
+  exact key.congr_ae_deriv (Filter.Eventually.of_forall hval)
+
+end Basis
 
 /-! ### Classical derivatives are weak derivatives
 

@@ -8,10 +8,12 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.GroupAction.TypeTags
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+-- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # The multiplicative coefficient modules of Galois cohomology
@@ -226,14 +228,14 @@ theorem smul_units_map_algebraMap (g : AbsoluteGaloisGroup K) (a : Kˣ) :
 
 /-- **A unit of `Kˢ` fixed by the whole Galois group comes from `Kˣ`.** This is the fixed-field
 theorem for the separable closure read on units: `InfiniteGalois.mem_range_algebraMap_iff_fixed`
-supplies base-field preimages of the unit and of its inverse, and those preimages are inverse to
-each other in `K` because the structure map is injective. -/
+supplies a base-field preimage of the unit, and `TauCeti.mem_range_iff_exists_units_map_eq`
+promotes it to a unit of `K`. -/
 theorem mem_H0_unitsCoeff_iff {u : UnitsCoeff K} :
     u ∈ H0 (AbsoluteGaloisGroup K) (UnitsCoeff K) ↔
       ∃ a : Kˣ, Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a = u.toMul := by
   rw [FixedPoints.mem_addSubgroup]
   refine ⟨fun hu => ?_, ?_⟩
-  · -- The unit and its inverse are both fixed, so both come from the base field.
+  · -- The unit is fixed, so it comes from the base field.
     have hfixU : ∀ σ : AbsoluteGaloisGroup K,
         Units.map (σ : SeparableClosure K →* SeparableClosure K) u.toMul = u.toMul :=
       fun σ => by simpa using congrArg Additive.toMul (hu σ)
@@ -241,18 +243,9 @@ theorem mem_H0_unitsCoeff_iff {u : UnitsCoeff K} :
         σ ((u.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
           ((u.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) :=
       fun σ => congrArg Units.val (hfixU σ)
-    have hinv : ∀ σ : AbsoluteGaloisGroup K,
-        σ (((u.toMul)⁻¹ : (SeparableClosure K)ˣ) : SeparableClosure K) =
-          (((u.toMul)⁻¹ : (SeparableClosure K)ˣ) : SeparableClosure K) :=
-      fun σ => congrArg
-        (fun v : (SeparableClosure K)ˣ => ((v⁻¹ : (SeparableClosure K)ˣ) : SeparableClosure K))
-        (hfixU σ)
     obtain ⟨a, ha⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 hfix
-    obtain ⟨b, hb⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 hinv
-    have hab : a * b = 1 := (algebraMap K (SeparableClosure K)).injective <| by
-      rw [map_mul, ha, hb, map_one]
-      exact u.toMul.mul_inv
-    exact ⟨⟨a, b, hab, by rwa [mul_comm] at hab⟩, Units.ext ha⟩
+    exact (mem_range_iff_exists_units_map_eq (algebraMap K (SeparableClosure K)) u.toMul).mp
+      ⟨a, ha⟩
   · rintro ⟨a, ha⟩ σ
     refine Additive.toMul.injective ?_
     rw [Additive.toMul_smul, ← ha]

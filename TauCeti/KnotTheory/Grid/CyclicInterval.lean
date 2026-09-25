@@ -631,6 +631,30 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
 
+/-- Replacing a point by its cyclic successor preserves membership in a half-open cyclic interval
+when the successor is not an endpoint. -/
+theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
+    (ha : a ≠ finRotate n c) (hb : b ≠ finRotate n c) :
+    finRotate n c ∈ cIco a b ↔ c ∈ cIco a b := by
+  cases n with
+  | zero => exact c.elim0
+  | succ n =>
+    rw [mem_cIco, mem_cIco]
+    have hc := c.isLt
+    have ha' := a.isLt
+    have hb' := b.isLt
+    have haVal : a.val ≠ (finRotate (n + 1) c).val := fun h => ha (Fin.ext h)
+    have hbVal : b.val ≠ (finRotate (n + 1) c).val := fun h => hb (Fin.ext h)
+    by_cases hlast : c = Fin.last n
+    · have hrot : (finRotate (n + 1) c).val = 0 := by simp [hlast]
+      have hlastVal : c.val = n := by simp [hlast]
+      rw [hrot] at haVal hbVal ⊢
+      split_ifs <;> omega
+    · have hrot : (finRotate (n + 1) c).val = c.val + 1 :=
+        coe_finRotate_of_ne_last hlast
+      rw [hrot] at haVal hbVal ⊢
+      split_ifs <;> omega
+
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
   cases n with
