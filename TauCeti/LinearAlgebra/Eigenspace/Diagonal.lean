@@ -28,14 +28,6 @@ open Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- In a reduced ring, a power of a scalar annihilating an element already makes the scalar
-annihilate that element. -/
-private theorem mul_eq_zero_of_pow_mul_eq_zero [IsReduced R] {a x : R} {k : ℕ}
-    (h : a ^ k * x = 0) : a * x = 0 :=
-  IsNilpotent.eq_zero ⟨k + 1, by
-    calc (a * x) ^ (k + 1) = a ^ k * x * (a * x ^ k) := by ring
-      _ = 0 := by rw [h, zero_mul]⟩
-
 /-- A generalized eigenspace of a diagonal operator over a reduced ring is its eigenspace.
 
 Coordinatewise, a generalized eigenvector satisfies `(d j - μ) ^ k * x j = 0`; reducedness is
@@ -53,14 +45,18 @@ theorem maxGenEigenspace_toLin_diagonal_eq_eigenspace_of_isReduced [IsReduced R]
       rw [Pi.sub_def, ← Matrix.diagonal_sub]
       simp [Module.End.one_eq_id]
     rw [aux, ← Matrix.toLin_pow, Matrix.diagonal_pow, Matrix.toLin_apply_eq_zero_iff] at hk
-    have := mul_eq_zero_of_pow_mul_eq_zero (a := d j - μ) (x := b.repr x j)
-      (by simpa [Matrix.mulVec_diagonal] using hk j)
+    have hpow (a y : R) (n : ℕ) : (a * y) ^ (n + 1) = a ^ n * y * (a * y ^ n) := by
+      ring
+    have hmul : (d j - μ) * b.repr x j = 0 :=
+      IsNilpotent.eq_zero ⟨k + 1, by
+        rw [hpow, show (d j - μ) ^ k * b.repr x j = 0 by
+          simpa [Matrix.mulVec_diagonal] using hk j, zero_mul]⟩
     calc
       b.repr x j * d j = d j * b.repr x j := mul_comm _ _
       _ = μ * b.repr x j := by
         apply sub_eq_zero.mp
         rw [← sub_mul]
-        exact this
+        exact hmul
   have aux (j : ι) : (b.repr x j * d j) • b j = μ • (b.repr x j • b j) := by
     rw [smul_smul, hk j]
   simp [toLin_apply, mulVec_eq_sum, diagonal_apply, aux, ← Finset.smul_sum]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
-public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Eigenspace.Diagonal
 
 /-!
@@ -59,38 +58,63 @@ noncomputable def typeDCoordinateWeight (a : ι ⊕ ι) :
   | .inl i => typeDEpsilon i
   | .inr i => -typeDEpsilon i
 
+/-- The signed coordinate weight on the first summand is `εᵢ`. -/
+@[simp] theorem typeDCoordinateWeight_inl (i : ι) :
+    typeDCoordinateWeight (K := K) (.inl i) = typeDEpsilon i := by
+  simp [typeDCoordinateWeight]
+
+/-- The signed coordinate weight on the second summand is `-εᵢ`. -/
+@[simp] theorem typeDCoordinateWeight_inr (i : ι) :
+    typeDCoordinateWeight (K := K) (.inr i) = -typeDEpsilon i := by
+  simp [typeDCoordinateWeight]
+
 /-- The weight of the matrix entry `(a, b)`, namely the difference of its signed coordinate
 weights. -/
 noncomputable def typeDMatrixWeight (a b : ι ⊕ ι) :
     Module.Dual K (typeDDiagonalCartan K ι) :=
   typeDCoordinateWeight a - typeDCoordinateWeight b
 
+/-- The matrix-entry weight is the difference of its two signed coordinate weights. -/
+theorem typeDMatrixWeight_def (a b : ι ⊕ ι) :
+    typeDMatrixWeight (K := K) a b = typeDCoordinateWeight a - typeDCoordinateWeight b := by
+  simp [typeDMatrixWeight]
+
 /-- The signed coordinate weight evaluates through the corresponding diagonal entry. -/
 @[simp]
 theorem typeDCoordinateWeight_apply (a : ι ⊕ ι) (A : typeDDiagonalCartan K ι) :
-    typeDCoordinateWeight a A =
-      typeDDiagonalValue ((typeDDiagonalEquiv (K := K) (ι := ι)).symm A) a := by
+    typeDCoordinateWeight a A = (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a a := by
   cases a with
   | inl i => simp [typeDCoordinateWeight]
-  | inr i => simp [typeDCoordinateWeight]
+  | inr i => simp [typeDCoordinateWeight, typeD_apply_inr_inr]
 
 /-- The matrix-entry weight evaluates as the difference of the two signed diagonal coordinates. -/
 @[simp]
 theorem typeDMatrixWeight_apply (a b : ι ⊕ ι) (A : typeDDiagonalCartan K ι) :
     typeDMatrixWeight a b A =
-      typeDDiagonalValue ((typeDDiagonalEquiv (K := K) (ι := ι)).symm A) a -
-        typeDDiagonalValue ((typeDDiagonalEquiv (K := K) (ι := ι)).symm A) b := by
+      (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a a -
+        (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) b b := by
   simp [typeDMatrixWeight]
 
-/-- The difference-root weight `εᵢ - εⱼ` on the split diagonal Cartan. -/
+/-- The coordinate-difference weight `εᵢ - εⱼ` on the split diagonal Cartan. -/
 noncomputable def typeDWeightSub (i j : ι) : Module.Dual K (typeDDiagonalCartan K ι) :=
   typeDEpsilon i - typeDEpsilon j
 
-/-- The sum-root weight `εᵢ + εⱼ` on the split diagonal Cartan. -/
+/-- The coordinate-difference weight unfolds to `εᵢ - εⱼ`. -/
+theorem typeDWeightSub_def (i j : ι) :
+    typeDWeightSub (K := K) i j = typeDEpsilon i - typeDEpsilon j := by
+  simp [typeDWeightSub]
+
+/-- The coordinate-sum weight `εᵢ + εⱼ` on the split diagonal Cartan. -/
 noncomputable def typeDWeightAdd (i j : ι) : Module.Dual K (typeDDiagonalCartan K ι) :=
   typeDEpsilon i + typeDEpsilon j
 
-/-- The difference-root weight evaluates as the difference of the corresponding diagonal entries. -/
+/-- The coordinate-sum weight unfolds to `εᵢ + εⱼ`. -/
+theorem typeDWeightAdd_def (i j : ι) :
+    typeDWeightAdd (K := K) i j = typeDEpsilon i + typeDEpsilon j := by
+  simp [typeDWeightAdd]
+
+/-- The coordinate-difference weight evaluates as the difference of the corresponding diagonal
+entries. -/
 @[simp]
 theorem typeDWeightSub_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
     typeDWeightSub i j A =
@@ -98,7 +122,7 @@ theorem typeDWeightSub_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
         (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl j) := by
   simp [typeDWeightSub]
 
-/-- The sum-root weight evaluates as the sum of the corresponding diagonal entries. -/
+/-- The coordinate-sum weight evaluates as the sum of the corresponding diagonal entries. -/
 @[simp]
 theorem typeDWeightAdd_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
     typeDWeightAdd i j A =
@@ -106,7 +130,7 @@ theorem typeDWeightAdd_apply (i j : ι) (A : typeDDiagonalCartan K ι) :
         (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl j) := by
   simp [typeDWeightAdd]
 
-/-- A difference-root weight vanishes when its two coordinates agree. -/
+/-- A coordinate-difference weight vanishes when its two coordinates agree. -/
 @[simp]
 theorem typeDWeightSub_self (i : ι) : typeDWeightSub (K := K) i i = 0 := by
   ext A
@@ -118,26 +142,26 @@ theorem typeDMatrixWeight_self (a : ι ⊕ ι) :
     typeDMatrixWeight (K := K) a a = 0 := by
   simp [typeDMatrixWeight]
 
-/-- The `(inl i, inl j)` matrix-entry weight is the difference-root weight `εᵢ - εⱼ`. -/
+/-- The `(inl i, inl j)` matrix-entry weight is the coordinate difference `εᵢ - εⱼ`. -/
 @[simp]
 theorem typeDMatrixWeight_inl_inl (i j : ι) :
     typeDMatrixWeight (K := K) (.inl i) (.inl j) = typeDWeightSub i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightSub]
 
-/-- The `(inl i, inr j)` matrix-entry weight is the sum-root weight `εᵢ + εⱼ`. -/
+/-- The `(inl i, inr j)` matrix-entry weight is the coordinate sum `εᵢ + εⱼ`. -/
 @[simp]
 theorem typeDMatrixWeight_inl_inr (i j : ι) :
     typeDMatrixWeight (K := K) (.inl i) (.inr j) = typeDWeightAdd i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightAdd]
 
-/-- The `(inr i, inl j)` matrix-entry weight is the negative sum-root weight. -/
+/-- The `(inr i, inl j)` matrix-entry weight is the negative coordinate-sum weight. -/
 @[simp]
 theorem typeDMatrixWeight_inr_inl (i j : ι) :
     typeDMatrixWeight (K := K) (.inr i) (.inl j) = -typeDWeightAdd i j := by
   simp [typeDMatrixWeight, typeDCoordinateWeight, typeDWeightAdd]
   abel
 
-/-- The `(inr i, inr j)` matrix-entry weight is the reversed difference-root weight. -/
+/-- The `(inr i, inr j)` matrix-entry weight is the reversed coordinate-difference weight. -/
 @[simp]
 theorem typeDMatrixWeight_inr_inr (i j : ι) :
     typeDMatrixWeight (K := K) (.inr i) (.inr j) = typeDWeightSub j i := by
@@ -160,20 +184,11 @@ theorem toEnd_typeDDiagonalCartan_matrix_eq_toLin_diagonal (A : typeDDiagonalCar
     Matrix.diagonal_apply_eq, Matrix.stdBasis_eq_single]
   ext a b
   rw [typeDMatrixWeight_apply]
-  have hA := coe_typeDDiagonalEquiv_apply
-    ((typeDDiagonalEquiv (K := K) (ι := ι)).symm A)
-  rw [LinearEquiv.apply_symm_apply] at hA
-  have hAval : A.val.val =
-      typeDDiagonalMatrix ((typeDDiagonalEquiv (K := K) (ι := ι)).symm A) :=
-    congrArg Subtype.val hA
-  -- The bracket is evaluated in the ambient matrix representation; this explicit coercion
-  -- exposes the matrix unit to `typeDDiagonalMatrix_lie_apply` below.
-  change (⁅A.val.val, Matrix.single p.1 p.2 1⁆ : Matrix _ _ K) a b = _
-  rw [hAval, typeDDiagonalMatrix_lie_apply, Matrix.smul_apply]
-  by_cases h : p.1 = a ∧ p.2 = b
-  · rcases h with ⟨rfl, rfl⟩
-    simp
-  · simp [h]
+  simp only [LieSubalgebra.coe_bracket_of_module]
+  have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
+    rw [mem_diagonalCartan_iff_isDiag]
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+  rw [lie_single_of_mem_diagonalCartan hA]
 
 /-- Over a reduced ring, the root spaces for the split diagonal Cartan are honest simultaneous
 eigenspaces rather than merely generalized eigenspaces. -/
@@ -210,9 +225,10 @@ theorem typeDDiagonalCartan_lie_apply (A : typeDDiagonalCartan K ι)
     (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (a b : ι ⊕ ι) :
     ⁅(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K),
         X⁆ a b = typeDMatrixWeight a b A * X a b := by
-  rw [← (typeDDiagonalEquiv (K := K) (ι := ι)).apply_symm_apply A,
-    coe_typeDDiagonalEquiv_apply, typeDDiagonalMatrix_lie_apply, typeDMatrixWeight_apply]
-  simp only [LinearEquiv.symm_apply_apply]
+  have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
+    rw [mem_diagonalCartan_iff_isDiag]
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+  rw [lie_apply_of_mem_diagonalCartan hA, typeDMatrixWeight_apply]
 
 /-- A type-`D` matrix supported on entries of weight `χ` belongs to the `χ` root space. -/
 theorem mem_rootSpace_typeDDiagonalCartan_of_forall

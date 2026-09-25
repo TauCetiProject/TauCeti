@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Eigenspace.Diagonal
 
 /-!
