@@ -286,6 +286,11 @@ cohomology. -/
 def IsQuasiIso (f : AInfinityHom AA BB) : Prop :=
   Function.Bijective f.cohomologyMap
 
+/-- An `A∞` morphism is a quasi-isomorphism exactly when its induced map on cohomology is
+bijective. -/
+theorem isQuasiIso_iff (f : AInfinityHom AA BB) :
+    f.IsQuasiIso ↔ Function.Bijective f.cohomologyMap := Iff.rfl
+
 /-- The identity `A∞` morphism is a quasi-isomorphism. -/
 @[simp]
 theorem isQuasiIso_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsQuasiIso := by
