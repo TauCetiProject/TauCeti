@@ -46,6 +46,8 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 
 * `TauCeti.coveringFiberEquiv`: monodromy along a homotopy class of paths is a bijection between
   the fibres over its endpoints.
+* `IsCoveringMap.toPermHom_eq_monodromyPerm`: the permutation representation of the monodromy
+  action is `IsCoveringMap.monodromyPerm`.
 * `IsCoveringMap.monodromy_eq_self_iff_mem_range`: a loop class of the base fixes the
   chosen lift under monodromy exactly when it is the image of a loop class of the cover.
 * `IsCoveringMap.stabilizer_eq_range`: the same statement for the monodromy
@@ -97,6 +99,13 @@ theorem coveringFiberEquiv_apply (hp : IsCoveringMap p) {x y : X}
     (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {x})) :
     coveringFiberEquiv hp γ e = hp.monodromy γ e :=
   Equiv.ofBijective_apply _ _ _
+
+/-- The permutation representation of the monodromy action of `π₁(X, x)` on the fibre over `x`
+is Mathlib's monodromy homomorphism `IsCoveringMap.monodromyPerm`, which is defined as it. -/
+theorem _root_.IsCoveringMap.toPermHom_eq_monodromyPerm (hp : IsCoveringMap p) (x : X) :
+    letI := hp.fundamentalGroupMulAction x
+    MulAction.toPermHom (FundamentalGroup X x) (p ⁻¹' {x}) = hp.monodromyPerm x :=
+  (rfl)
 
 section
 

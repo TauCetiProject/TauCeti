@@ -111,6 +111,7 @@ theorem permutationTriple_σinf : (permutationTriple ρ).σinf = ρ periphInf :=
 
 /-- The monodromy group of the triple of `ρ` is the image of `ρ`, because `periph0` and
 `periph1` generate the fundamental group. -/
+@[simp]
 theorem monodromyGroup_permutationTriple : (permutationTriple ρ).monodromyGroup = ρ.range := by
   rw [permutationTriple, PermutationTriple.monodromyGroup_ofTwo_map,
     closure_periph0_periph1, MonoidHom.range_eq_map]
@@ -152,29 +153,29 @@ noncomputable def _root_.IsCoveringMap.monodromyTriple (hp : IsCoveringMap p)
 
 variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
 
+/-- The monodromy triple is the triple of the monodromy representation
+`IsCoveringMap.monodromyPerm`, transported to `Fin n` by the numbering `ν`. -/
 theorem _root_.IsCoveringMap.monodromyTriple_def :
     hp.monodromyTriple ν =
-      permutationTriple (ν.permCongrHom.toMonoidHom.comp (hp.monodromyPerm basePt)) :=
-  by
-    unfold IsCoveringMap.monodromyTriple
-    apply congrArg (fun ρ : FundamentalGroup ThricePuncturedSphere basePt →* Perm (Fin n) =>
-      permutationTriple ρ)
-    apply MonoidHom.ext
-    intro γ
-    ext i
-    simp [Equiv.permutationRepresentation_apply, permCongr_apply,
-      IsCoveringMap.coe_monodromyPerm]
-    rfl
+      permutationTriple (ν.permCongrHom.toMonoidHom.comp (hp.monodromyPerm basePt)) := by
+  unfold IsCoveringMap.monodromyTriple
+  rw [← hp.toPermHom_eq_monodromyPerm]
+  refine congrArg permutationTriple (MonoidHom.ext fun γ => Equiv.ext fun i => ?_)
+  simp [permCongr_apply]
 
+/-- The first component of the monodromy triple is the monodromy along the peripheral element at
+`0`, read through the numbering. -/
 @[simp]
 theorem _root_.IsCoveringMap.monodromyTriple_σ0 :
-    (hp.monodromyTriple ν).σ0 = ν.permCongr (hp.monodromyPerm basePt periph0) :=
-  by rw [hp.monodromyTriple_def, permutationTriple_σ0]; rfl
+    (hp.monodromyTriple ν).σ0 = ν.permCongr (hp.monodromyPerm basePt periph0) := by
+  simp [IsCoveringMap.monodromyTriple_def]
 
+/-- The second component of the monodromy triple is the monodromy along the peripheral element at
+`1`, read through the numbering. -/
 @[simp]
 theorem _root_.IsCoveringMap.monodromyTriple_σ1 :
-    (hp.monodromyTriple ν).σ1 = ν.permCongr (hp.monodromyPerm basePt periph1) :=
-  by rw [hp.monodromyTriple_def, permutationTriple_σ1]; rfl
+    (hp.monodromyTriple ν).σ1 = ν.permCongr (hp.monodromyPerm basePt periph1) := by
+  simp [IsCoveringMap.monodromyTriple_def]
 
 /-- The third component of the monodromy triple is the monodromy along the peripheral element at
 `∞`. -/
@@ -185,6 +186,7 @@ theorem _root_.IsCoveringMap.monodromyTriple_σinf :
 
 /-- The monodromy group of the monodromy triple is the image of the monodromy representation,
 transported to `Fin n` by the numbering. -/
+@[simp]
 theorem _root_.IsCoveringMap.monodromyGroup_monodromyTriple :
     (hp.monodromyTriple ν).monodromyGroup =
       (hp.monodromyPerm basePt).range.map ν.permCongrHom.toMonoidHom := by
@@ -194,13 +196,9 @@ theorem _root_.IsCoveringMap.monodromyGroup_monodromyTriple :
 connected. -/
 theorem _root_.IsCoveringMap.isConnected_monodromyTriple_iff :
     (hp.monodromyTriple ν).IsConnected ↔ PathConnectedSpace E := by
-  rw [IsCoveringMap.monodromyTriple_def, isConnected_permutationTriple_iff]
-  let := hp.fundamentalGroupMulAction basePt
-  rw [MonoidHom.range_comp, Equiv.isPretransitive_map_permCongrHom_iff]
-  change n ≠ 0 ∧ MulAction.IsPretransitive
-    (MulAction.toPermHom (FundamentalGroup ThricePuncturedSphere basePt)
-      (p ⁻¹' {basePt})).range (p ⁻¹' {basePt}) ↔ PathConnectedSpace E
-  rw [MulAction.isPretransitive_range_toPermHom_iff]
+  rw [PermutationTriple.isConnected_iff, hp.monodromyGroup_monodromyTriple,
+    Equiv.isPretransitive_map_permCongrHom_iff, ← hp.toPermHom_eq_monodromyPerm,
+    MulAction.isPretransitive_range_toPermHom_iff]
   have hn : n ≠ 0 ↔ Nonempty (p ⁻¹' {basePt}) := by
     rw [ν.nonempty_congr, ← Fin.pos_iff_nonempty, Nat.pos_iff_ne_zero]
   rw [hn, hp.pathConnectedSpace_iff basePt]
