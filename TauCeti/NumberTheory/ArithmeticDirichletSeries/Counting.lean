@@ -399,9 +399,7 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
   · simpa using (mem_normLE _).mp hv
   · exact HeightOneSpectrum.ext (congrArg Subtype.val h)
 
-/-- There are at most as many prime-power ideals as nonzero integral ideals below any cutoff.
-The map to the underlying ideal is injective because the subtype equality determines the
-prime-power structure. -/
+/-- There are at most as many prime-power ideals as nonzero integral ideals below any cutoff. -/
 theorem card_primePowersLE_le_card_idealsLE (x : ℝ) :
     (primePowersLE K x).card ≤ (idealsLE K x).card := by
   refine Finset.card_le_card_of_injOn

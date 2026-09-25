@@ -66,14 +66,12 @@ of the roadmap.
 `#{I ≠ 0 | N(I) ≤ x} ≤ x² 2^[K:ℚ]`, with an explicit constant but the wrong exponent; it cannot
 prove convergence at `Re s > 1`, and it has no lower bound at all.
 
-## Roadmap role
+## Relationship to other estimates
 
-This is Layer **5.1** (the ideal-count half and the prime-power cardinality bound) together with
-Layer **5.1a** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  The prime-power estimate
-uses the injective underlying-ideal map from `primePowersLE`; it is separate from the weighted
-higher-prime-power estimate in `HigherPrimePowers.lean`.  As that layer demands, the exact
-abscissa is derived from the two-sided linear ideal counts alone: neither the analytic continuation
-of the Dedekind zeta function nor its pole at `s = 1` is used.
+The unweighted prime-power cardinality estimate is separate from the weighted higher-prime-power
+estimates in `HigherPrimePowers.lean`.  The abscissa results above depend only on the two-sided
+linear ideal counts, not on the analytic continuation of the Dedekind zeta function or its pole at
+`s = 1`.
 
 ## References
 
@@ -214,9 +212,7 @@ theorem idealCount_linearBounds : Nonempty (IdealCountingLinearBounds K) := by
           ≤ M := by rw [hM]; exact_mod_cast card_absNorm_real_le_mono K hxX.le
       exact h1.trans ((le_max_right _ _).trans (le_mul_of_one_le_right hupos.le hx))
 
-/-- The number of prime-power ideals with absolute norm at most `x` is `O(x)`.  The proof injects
-each prime-power ideal into the underlying nonzero integral ideal and then uses the upper linear
-ideal-count bound. -/
+/-- The number of prime-power ideals with absolute norm at most `x` is `O(x)`. -/
 theorem card_primePowersLE_isBigO (K : Type*) [Field K] [NumberField K] :
     (fun x : ℝ ↦ ((primePowersLE K x).card : ℝ)) =O[atTop] fun x : ℝ ↦ x := by
   obtain ⟨b⟩ := idealCount_linearBounds K
