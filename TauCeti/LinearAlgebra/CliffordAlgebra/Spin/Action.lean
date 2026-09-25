@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
-public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 
 /-!
 # The spin group acting on its quadratic space
@@ -53,15 +50,24 @@ omit [Invertible (2 : R)] in
 private theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
-  change (((pinToLipschitz Q (spinToPin Q x) : lipschitzGroup Q) :
-      (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = _
-  simp only [coe_pinToLipschitz_apply, coe_spinToPin_apply]
+  simp [spinToLipschitz]
 
 /-- The action of a spin element on the generating vectors of its Clifford algebra, transported
 back to the underlying module. It is characterized by
 `ι_spinVectorAction_apply`, which identifies it with conjugation inside the Clifford algebra. -/
 noncomputable def spinVectorAction (x : spinGroup Q) : M ≃ₗ[R] M :=
   lipschitzVectorAction Q (spinToLipschitz Q x)
+
+/-- The identity Spin element acts by the identity linear equivalence. -/
+@[simp]
+theorem spinVectorAction_one : spinVectorAction Q 1 = LinearEquiv.refl R M := by
+  simp [spinVectorAction]
+
+/-- The Spin vector action sends products to composition of linear equivalences. -/
+@[simp]
+theorem spinVectorAction_mul (x y : spinGroup Q) :
+    spinVectorAction Q (x * y) = spinVectorAction Q x * spinVectorAction Q y := by
+  simp [spinVectorAction]
 
 /-- A spin element acts on a vector by conjugation inside the Clifford algebra. -/
 @[simp]
@@ -79,7 +85,7 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
     have hinv :
         (((spinGroup.toUnits x)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
           star (x : CliffordAlgebra Q) := by
-      change (↑(x⁻¹ : spinGroup Q) : CliffordAlgebra Q) = _
+      rw [← map_inv (spinGroup.toUnits (Q := Q)) x]
       rw [← spinGroup.star_eq_inv x]
       exact spinGroup.coe_star
     rw [hunit, hinv]
