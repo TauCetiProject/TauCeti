@@ -65,21 +65,12 @@ theorem isMinimal_iff_m_one_eq_zero (𝒜 : AInfinityAlgebra R A) :
 /-- An `A∞` algebra is minimal exactly when every element is a cycle. -/
 theorem isMinimal_iff_cycles_eq_top (𝒜 : AInfinityAlgebra R A) :
     𝒜.IsMinimal ↔ 𝒜.cycles = ⊤ := by
-  have hcycles : 𝒜.cycles = LinearMap.ker 𝒜.differential := by
-    ext x
-    rw [mem_cycles, LinearMap.mem_ker, differential_apply]
-  rw [isMinimal_def]
-  rw [hcycles, LinearMap.ker_eq_top]
+  rw [isMinimal_def, cycles_def, LinearMap.ker_eq_top]
 
 /-- An `A∞` algebra is minimal exactly when zero is its only boundary. -/
 theorem isMinimal_iff_boundaries_eq_bot (𝒜 : AInfinityAlgebra R A) :
     𝒜.IsMinimal ↔ 𝒜.boundaries = ⊥ := by
-  have hboundaries : 𝒜.boundaries = LinearMap.range 𝒜.differential := by
-    ext x
-    rw [mem_boundaries, LinearMap.mem_range]
-    simp only [differential_apply]
-  rw [isMinimal_def]
-  rw [hboundaries, LinearMap.range_eq_bot]
+  rw [isMinimal_def, boundaries_def, LinearMap.range_eq_bot]
 
 namespace IsMinimal
 

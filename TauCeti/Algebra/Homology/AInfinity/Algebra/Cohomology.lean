@@ -87,6 +87,10 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 def cycles (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
   LinearMap.ker 𝒜.differential
 
+/-- The cycles are the kernel of the differential. -/
+theorem cycles_def (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cycles = LinearMap.ker 𝒜.differential := (rfl)
+
 /-- An element is a cycle exactly when its unary operation vanishes. -/
 @[simp]
 theorem mem_cycles (𝒜 : AInfinityAlgebra R A) {x : A} :
@@ -96,6 +100,10 @@ theorem mem_cycles (𝒜 : AInfinityAlgebra R A) {x : A} :
 /-- The boundaries of an `A∞` algebra are the range of its unary operation. -/
 def boundaries (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
   LinearMap.range 𝒜.differential
+
+/-- The boundaries are the range of the differential. -/
+theorem boundaries_def (𝒜 : AInfinityAlgebra R A) :
+    𝒜.boundaries = LinearMap.range 𝒜.differential := (rfl)
 
 /-- An element is a boundary exactly when it is the unary operation of some element. -/
 @[simp]
