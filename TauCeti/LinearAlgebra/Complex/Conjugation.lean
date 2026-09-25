@@ -375,7 +375,6 @@ theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re �
   simp [realPart]
 
 /-- The real part of a real vector embedded in its complexification is that vector. -/
-@[simp]
 theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
   simp
 
