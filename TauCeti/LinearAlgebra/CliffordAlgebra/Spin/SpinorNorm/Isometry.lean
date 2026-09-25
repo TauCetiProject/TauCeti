@@ -57,7 +57,6 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
   exact hg
 
 /-- An isometric equivalence preserves the spinor norm on the special orthogonal group. -/
-@[simp]
 theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
     spinorNorm Q' (e.nondegenerate_iff.mp hQ) (e.specialOrthogonalGroupCongr g) =
