@@ -19,11 +19,11 @@ and `leftHalfPlane g` are the `g`-images of the two canonical sides, `Set.range 
 cover `ℍ` (`rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane`).
 
 Only the *unordered* pair of sides is determined by `geodesicLine g`: which one is called
-`right` depends on the chosen representing `g`, not on the line's image alone. For
-`g' = g * ⟦!![0, -1; 1, 0]⟧` (determinant `1`, the map `z ↦ -1/z`),
-`Set.range (geodesicLine g') = Set.range (geodesicLine g)` but
-`rightHalfPlane g' = leftHalfPlane g`: `z ↦ -1/z` fixes `{z | z.re = 0}` setwise and sends
-`1 + i` to `-1/2 + i/2`.
+`right` depends on the chosen representing `g`, not on the line's image alone. `swapMatrix`,
+the determinant-`1` matrix representing `z ↦ -1/z`, witnesses this: for `g' = g * swapMatrix`,
+`Set.range (geodesicLine g') = Set.range (geodesicLine g)` (`range_geodesicLine_mul_swapMatrix`)
+but `rightHalfPlane g' = leftHalfPlane g` (`rightHalfPlane_mul_swapMatrix`) — `z ↦ -1/z` fixes
+`{z | z.re = 0}` setwise and sends `1 + i` to `-1/2 + i/2`.
 
 ## Main declarations
 
@@ -43,6 +43,10 @@ Only the *unordered* pair of sides is determined by `geodesicLine g`: which one 
 * `TauCeti.UpperHalfPlane.frontier_rightHalfPlane`, `frontier_leftHalfPlane` — the geodesic line
   is the topological boundary of each half-plane it bounds, via `closure_rightHalfPlane` and
   `closure_leftHalfPlane`.
+* `TauCeti.UpperHalfPlane.swapMatrix` — the matrix of `z ↦ -1/z`, witnessing that `rightHalfPlane`
+  and `leftHalfPlane` depend on the chosen representative of a geodesic line, not just its image:
+  `rightHalfPlane_mul_swapMatrix`, `leftHalfPlane_mul_swapMatrix`, and
+  `range_geodesicLine_mul_swapMatrix`.
 -/
 
 public section
@@ -186,5 +190,85 @@ theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
   rw [frontier, (isOpen_leftHalfPlane g).interior_eq, closure_leftHalfPlane,
     Set.union_sdiff_left]
   exact sdiff_eq_self_iff_disjoint.mpr (disjoint_leftHalfPlane_range_geodesicLine g)
+
+/-! ### `swapMatrix`: the non-canonicity witness
+
+The representing matrix of `z ↦ -1/z`. Multiplying any representative `g` by it fixes the
+geodesic line's image but swaps which half-plane is called `right`, so the labelling is a choice
+of representative, not an invariant of the line. -/
+
+/-- The determinant-`1` matrix `!![0, -1; 1, 0]` representing the Möbius map `z ↦ -1/z`. -/
+def swapMatrixSL : SL(2, ℝ) := ⟨!![0, -1; 1, 0], by norm_num [Matrix.det_fin_two]⟩
+
+/-- The `PSL(2, ℝ)` class of `swapMatrixSL`. -/
+def swapMatrix : PSL(2, ℝ) := (swapMatrixSL : PSL(2, ℝ))
+
+/-- `swapMatrix` acts as `z ↦ -1/z`. -/
+theorem swapMatrix_smul (z : ℍ) :
+    swapMatrix • z = UpperHalfPlane.mk (-z : ℂ)⁻¹ z.im_inv_neg_coe_pos := by
+  change (swapMatrixSL : PSL(2, ℝ)) • z = _
+  rw [pslMk_smul, specialLinearGroup_apply]
+  simp [swapMatrixSL, neg_div, inv_neg]
+
+/-- `z ↦ -1/z` is an involution. -/
+theorem swapMatrix_smul_swapMatrix_smul (z : ℍ) : swapMatrix • swapMatrix • z = z := by
+  rw [swapMatrix_smul, swapMatrix_smul]
+  ext
+  push_cast
+  rw [neg_inv, neg_neg, inv_inv]
+
+/-- `swapMatrix` is its own inverse, by faithfulness of the `PSL(2, ℝ)`-action together with
+`swapMatrix_smul_swapMatrix_smul`. -/
+theorem swapMatrix_mul_self : swapMatrix * swapMatrix = 1 :=
+  eq_of_smul_eq_smul fun z : ℍ ↦ by
+    rw [mul_smul, swapMatrix_smul_swapMatrix_smul, one_smul]
+
+/-- The real part after applying `swapMatrix` is the negated, rescaled real part. -/
+theorem re_swapMatrix_smul (z : ℍ) :
+    (swapMatrix • z : ℍ).re = -z.re / Complex.normSq (z : ℂ) := by
+  rw [swapMatrix_smul]
+  change ((-z : ℂ)⁻¹).re = _
+  rw [Complex.inv_re, Complex.normSq_neg, Complex.neg_re, UpperHalfPlane.coe_re, div_eq_mul_inv]
+
+/-- Multiplying by `swapMatrix` swaps the right and left half-planes: which side is called
+`right` depends on the chosen representative of the geodesic line, not on the line's image
+alone (see `range_geodesicLine_mul_swapMatrix`). -/
+theorem rightHalfPlane_mul_swapMatrix (g : PSL(2, ℝ)) :
+    rightHalfPlane (g * swapMatrix) = leftHalfPlane g := by
+  ext z
+  have hinv : swapMatrix⁻¹ = swapMatrix := inv_eq_of_mul_eq_one_right swapMatrix_mul_self
+  rw [mem_rightHalfPlane_iff, mem_leftHalfPlane_iff, mul_inv_rev, hinv, mul_smul,
+    re_swapMatrix_smul, div_pos_iff]
+  constructor
+  · rintro (⟨h, -⟩ | ⟨h, hpos⟩)
+    · linarith
+    · exact absurd (UpperHalfPlane.normSq_pos _) (by linarith)
+  · intro h
+    exact Or.inl ⟨by linarith, UpperHalfPlane.normSq_pos _⟩
+
+/-- The dual of `rightHalfPlane_mul_swapMatrix`: multiplying by `swapMatrix` swaps the left half
+into the right half. -/
+theorem leftHalfPlane_mul_swapMatrix (g : PSL(2, ℝ)) :
+    leftHalfPlane (g * swapMatrix) = rightHalfPlane g := by
+  ext z
+  have hinv : swapMatrix⁻¹ = swapMatrix := inv_eq_of_mul_eq_one_right swapMatrix_mul_self
+  rw [mem_leftHalfPlane_iff, mem_rightHalfPlane_iff, mul_inv_rev, hinv, mul_smul,
+    re_swapMatrix_smul, div_neg_iff]
+  constructor
+  · rintro (⟨h, hpos⟩ | ⟨h, -⟩)
+    · exact absurd (UpperHalfPlane.normSq_pos (g⁻¹ • z)) (by linarith)
+    · linarith
+  · intro h
+    exact Or.inr ⟨by linarith, UpperHalfPlane.normSq_pos _⟩
+
+/-- Unlike the half-planes, the geodesic line's image is unaffected by multiplying by
+`swapMatrix`: only which side is called `right` depends on the representative. -/
+theorem range_geodesicLine_mul_swapMatrix (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine (g * swapMatrix)) = Set.range (geodesicLine g) := by
+  ext z
+  have hinv : swapMatrix⁻¹ = swapMatrix := inv_eq_of_mul_eq_one_right swapMatrix_mul_self
+  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, mul_inv_rev, hinv, mul_smul,
+    re_swapMatrix_smul, div_eq_zero_iff]
+  simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
 
 end TauCeti.UpperHalfPlane

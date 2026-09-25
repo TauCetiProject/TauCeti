@@ -124,10 +124,12 @@ theorem range_geodesicLine (g : PSL(2, ℝ)) :
     Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
   rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
 
-/-- Membership test for a geodesic line, without unfolding the smul-image. Higher priority
-than `Set.mem_range`, which matches the same term but unfolds to the existential this lemma
-exists to avoid. -/
-@[simp high]
+/-- Membership test for a geodesic line, without unfolding the smul-image. Deliberately not
+`@[simp]`: at default priority it never fires, since `Set.mem_range` already rewrites the same
+term first; at `@[simp high]` it always fires first instead, which regresses the trivial
+self-membership goal `geodesicLine g t ∈ Set.range (geodesicLine g)` (closed by `Set.mem_range`
+together with `exists_apply_eq_apply'`) into the harder `(g⁻¹ • geodesicLine g t).re = 0`. Use
+`rw [mem_range_geodesicLine_iff]` explicitly instead. -/
 theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
