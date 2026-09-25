@@ -105,8 +105,7 @@ theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
 @[simp]
 theorem TraceFormulaMatrixModule.lift_mk {β : Sort*} (f : TraceFormulaMatrix n → β)
     (h : ∀ A B, A ≈ B → f A = f B) (A : TraceFormulaMatrix n) :
-    Quotient.lift f h (TraceFormulaMatrixModule.mk A) = f A :=
-  (rfl)
+    Quotient.lift f h (TraceFormulaMatrixModule.mk A) = f A := (rfl)
 
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
 @[simp]

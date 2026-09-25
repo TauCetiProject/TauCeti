@@ -27,15 +27,6 @@ Popa and Zagier represent classes by matrices with `c ≥ 0`. Every matrix occur
 `c > 0`, or `c = 0 < a`, so at most one of the representatives `±M` of a class occurs, and the
 coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 
-Every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
-value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
-
-Popa and Zagier define their element `ξ` by (14) and show that it equals (15) (Lemma 4(b)). By
-construction from (14) it satisfies the class-weight identity (C). They prove that it satisfies
-the relations (B), `ξ(1 + S) ∈ (1 + U + U²)ℛₙ` and `ξ(1 + U + U²) ∈ (1 + S)ℛₙ` (Theorem 4(a)),
-and that its sum over every right coset `MΓ` is `-1` (Theorem 4(b)); by §3 Corollary 2 it then
-satisfies the period relation (A). This proves their Theorem 1.
-
 ## Main definitions
 
 * `TauCeti.PopaZagier.weight M`: twelve times the coefficient of `M` in (15);
@@ -45,7 +36,8 @@ satisfies the period relation (A). This proves their Theorem 1.
 ## Main results
 
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
-  Lemma 4(a).
+  every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
+  value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk`: the coefficient of the class of
   `A` is `(weight A + weight (-A)) / 12`; it is `weight A / 12` if `c > 0` or `c = 0 < a`
@@ -55,8 +47,12 @@ satisfies the period relation (A). This proves their Theorem 1.
 
 ## Implementation notes
 
+Popa and Zagier define their element by eq. (14) and prove that it equals (15) (Lemma 4(b)); we
+define it by (15).
+
 The weights are integers, twelve times Popa–Zagier's coefficients, so that identities between
-them are statements of integer linear arithmetic.
+them are statements of integer linear arithmetic. Their definitions are exposed (`@[expose]`) so
+that other modules can unfold them in such identities and evaluate them by `decide +kernel`.
 
 ## References
 
@@ -115,30 +111,22 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
 
 /-- **`T₂ = T₁·U`**: the weight of `M = (a b; c d)` in `T₂` is the weight of
 `M U⁻¹ = (-b, a + b; -d, c + d)` in `T₁`, where `U = T S = (1 -1; 1 0)`. -/
-theorem weight₂_eq_weight₁ (a b c d : ℤ) :
-    weight₂ a b c d = weight₁ (-b) (a + b) (-d) (c + d) := by
-  unfold weight₁ weight₂ chainWeight₃
-  split_ifs <;> omega
+theorem weight₂_eq_weight₁ (a b c d : ℤ) : weight₂ a b c d = weight₁ (-b) (a + b) (-d) (c + d) := by
+  grind [weight₁, weight₂, chainWeight₃]
 
 /-! ### Finiteness -/
 
 /-- A matrix `(a b; c d)` of nonzero weight satisfies the inequalities of one of the four sums of
-(15), with the first line relaxed to non-strict inequalities. -/
+(15). -/
 private theorem cases_of_weight_ne_zero {a b c d : ℤ}
     (h : weight₁ a b c d - weight₂ a b c d - weight₃ a b c d - weight₄ a b c d ≠ 0) :
     0 ≤ c ∧ c < a ∧ a - d ≤ -b ∧ -b ≤ c ∨ b < d ∧ d ≤ 0 ∧ -b ≤ a - d ∧ a - d ≤ c ∨
       a ≤ 0 ∧ 0 < c ∧ 0 ≤ a - d ∧ a - d ≤ c ∧ c ≤ -b ∨
       d ≤ 0 ∧ 0 < -b ∧ 0 ≤ a - d ∧ a - d ≤ -b ∧ -b ≤ c := by
-  have h₃ {x y z : ℤ} (h : chainWeight₃ x y z ≠ 0) : x ≤ y ∧ y ≤ z := by
-    unfold chainWeight₃ at h
-    split_ifs at h <;> omega
-  have h₄ {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) : w ≤ x ∧ x ≤ y ∧ y ≤ z := by
-    unfold chainWeight₄ at h
-    split_ifs at h <;> omega
-  rcases (by omega : weight₁ a b c d ≠ 0 ∨ weight₂ a b c d ≠ 0 ∨ weight₃ a b c d ≠ 0 ∨
+  rcases (by lia : weight₁ a b c d ≠ 0 ∨ weight₂ a b c d ≠ 0 ∨ weight₃ a b c d ≠ 0 ∨
       weight₄ a b c d ≠ 0) with h | h | h | h <;>
-    simp only [weight₁, weight₂, weight₃, weight₄] at h <;> split_ifs at h <;>
-    first | exact absurd rfl h | (have := h₃ h; omega) | (have := h₄ h; omega)
+    simp only [weight₁, weight₂, weight₃, weight₄, ite_ne_right_iff] at h <;>
+    grind [chainWeight₃, chainWeight₄]
 
 /-- Every matrix `(a b; c d)` of nonzero weight has positive determinant `n` and entries at most
 `2n` in absolute value. -/
@@ -151,44 +139,41 @@ private theorem bounds_of_weight_ne_zero {a b c d : ℤ}
   · -- `T₁`: `d ≥ a - c ≥ 1` and `n ≥ d (a - c) + a c`
     have : d ≤ a * d - b * c := by nlinarith
     have : a ≤ a * d - b * c := by nlinarith
-    omega
+    lia
   · -- `T₂`: `n ≥ a (d - b) + b d` with `d - b ≥ 1` and `b d ≥ 0`
     have : a ≤ a * d - b * c := by nlinarith
     have : -b ≤ a * d - b * c := by nlinarith
     have : c ≤ 2 * (a * d - b * c) := by nlinarith
-    omega
+    lia
   · -- `T₃`: `n = c (-b) - a (a - d) + a² ≥ c² + a²`
     have : -b ≤ a * d - b * c := by nlinarith
     have : -a ≤ a * d - b * c := by nlinarith
-    omega
+    lia
   · -- `T₄`: `n = c (-b) + d (a - d) + d² ≥ b² + d (-b) + d²`
     have : d * -b + d * d ≤ a * d := by nlinarith
     have : b * b ≤ -b * c := by nlinarith
     have : -b ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (2 * d - b)]
     have : -d ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - 2 * b)]
     have : c ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - b)]
-    omega
+    lia
 
 /-- **Popa–Zagier, Lemma 4(a)**, positivity: every matrix of nonzero weight has positive
 determinant. -/
-theorem det_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
-    0 < M.det := by
-  rw [Matrix.det_fin_two]
-  exact (bounds_of_weight_ne_zero h).1
+theorem det_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) : 0 < M.det :=
+  M.det_fin_two ▸ (bounds_of_weight_ne_zero h).1
 
 /-- **Popa–Zagier, Lemma 4(a)**, finiteness: every matrix of nonzero weight has entries at most
 twice its determinant in absolute value. -/
-theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0)
-    (i j : Fin 2) : |M i j| ≤ 2 * M.det := by
-  obtain ⟨-, h₀₀, h₀₁, h₁₀, h₁₁⟩ := bounds_of_weight_ne_zero h
-  rw [Matrix.det_fin_two]
-  fin_cases i <;> fin_cases j <;> assumption
+theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) (i j : Fin 2) :
+    |M i j| ≤ 2 * M.det := by
+  obtain ⟨-, h⟩ := bounds_of_weight_ne_zero h
+  fin_cases i <;> fin_cases j <;> simp [Matrix.det_fin_two, h]
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
-theorem pos_or_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
+theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
     0 < M 1 0 ∨ M 1 0 = 0 ∧ 0 < M 0 0 := by
   have := cases_of_weight_ne_zero h
-  omega
+  lia
 
 end PopaZagier
 
@@ -201,30 +186,26 @@ variable {n : ℤ}
 /-- The coefficients of Popa–Zagier's element: the class of `A` gets
 `(weight A + weight (-A)) / 12`. -/
 private def popaZagierCoeff (n : ℤ) : TraceFormulaMatrixModule n → ℚ :=
-  Quotient.lift (fun A ↦ ((PopaZagier.weight A.1 + PopaZagier.weight (-A.1) : ℤ) : ℚ) / 12)
-    fun A B h ↦ by
-      rcases h with rfl | rfl
-      · rfl
-      · simp [add_comm]
+  Quotient.lift (fun A ↦ ((PopaZagier.weight A.1 : ℚ) + PopaZagier.weight (-A.1)) / 12)
+    fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]
 
-/-- The classes with nonzero coefficient are classes of matrices with entries in `[-2n, 2n]`. -/
+/-- The coefficients of Popa–Zagier's element have finite support. -/
 private theorem finite_support_popaZagierCoeff (n : ℤ) :
     (Function.support (popaZagierCoeff n)).Finite := by
-  have hbox (A : TraceFormulaMatrix n) (h : PopaZagier.weight A.1 ≠ 0) :
-      (fun i j ↦ A.1 i j) ∈ Set.univ.pi fun _ ↦ Set.univ.pi fun _ ↦ Set.Icc (-(2 * n)) (2 * n) := by
-    have := PopaZagier.abs_le_of_weight_ne_zero h
-    rw [A.2] at this
-    exact Set.mem_univ_pi.2 fun i ↦ Set.mem_univ_pi.2 fun j ↦ abs_le.1 (this i j)
-  refine (((Set.Finite.pi fun _ ↦ Set.Finite.pi fun _ ↦ Set.finite_Icc (-(2 * n)) (2 * n)).preimage
-    (f := fun (A : TraceFormulaMatrix n) i j ↦ A.1 i j)
-    fun A _ B _ h ↦ Subtype.ext h).image mk).subset ?_
-  intro x hx
+  -- matrices of nonzero weight have entries in `[-2n, 2n]`
+  have hbox (A : TraceFormulaMatrix n) (h : PopaZagier.weight A.1 ≠ 0) (i j : Fin 2) :
+      A.1 i j ∈ Set.Icc (-(2 * n)) (2 * n) := by
+    have := PopaZagier.abs_le_of_weight_ne_zero h i j
+    rwa [A.2, abs_le] at this
+  refine (((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦
+    Set.finite_Icc (-(2 * n)) (2 * n)).preimage (f := fun A : TraceFormulaMatrix n ↦ A.1)
+    fun A _ B _ ↦ FixedDetMatrices.ext' _ _).image mk).subset fun x hx ↦ ?_
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  by_cases h : PopaZagier.weight A.1 = 0
-  · refine ⟨-A, hbox (-A) fun h' ↦ hx ?_, mk_neg A⟩
-    simp only [TraceFormulaMatrix.val_neg] at h'
-    simp [popaZagierCoeff, h, h']
-  · exact ⟨A, hbox A h, rfl⟩
+  -- a class in the support has a representative of nonzero weight
+  obtain h | h : PopaZagier.weight A.1 ≠ 0 ∨ PopaZagier.weight (-A.1) ≠ 0 := by
+    by_contra! h
+    simp [popaZagierCoeff, h] at hx
+  exacts [⟨A, hbox A h, rfl⟩, ⟨-A, hbox (-A) h, mk_neg A⟩]
 
 /-- **Popa–Zagier's explicit Hecke element** of `ℚ[ℳₙ]` (written `Tₙ` with a tilde in their
 paper), their eq. (15): `T₁ - T₂ - T₃ - T₄`, where `T₁ = ⟨a - d ≤ -b ≤ c; 0 ≤ c < a⟩`,
@@ -249,9 +230,9 @@ theorem coeff_popaZagierElement_mk_of_pos (A : TraceFormulaMatrix n)
     (popaZagierElement n).coeff (mk A) = PopaZagier.weight A.1 / 12 := by
   have : PopaZagier.weight (-A.1) = 0 := by
     by_contra h
-    have := PopaZagier.pos_or_of_weight_ne_zero h
+    have := PopaZagier.pos_or_eq_zero_and_pos_of_weight_ne_zero h
     simp only [Matrix.neg_apply] at this
-    omega
+    lia
   simp [this]
 
 /-- Twelve times the coefficient of a determinant-one matrix `M` in `1 - π_S - π_U`. -/
@@ -267,31 +248,24 @@ private theorem weight_add_weight_neg_of_mem_box : ∀ a ∈ Finset.Icc (-2 : �
         weightAtOne !![a, b; c, d] := by
   decide +kernel
 
-/-- `12 (1 - π_S - π_U)` on the determinant-one matrices: outside the box `[-2, 2]⁴` both sides
-vanish. -/
+/-- `12 (1 - π_S - π_U)` on the determinant-one matrices. -/
 private theorem weight_add_weight_neg_of_det_eq_one {M : Matrix (Fin 2) (Fin 2) ℤ}
     (hM : M.det = 1) : PopaZagier.weight M + PopaZagier.weight (-M) = weightAtOne M := by
-  obtain ⟨a, b, c, d, rfl⟩ : ∃ a b c d, M = !![a, b; c, d] := ⟨_, _, _, _, M.eta_fin_two⟩
-  rw [Matrix.det_fin_two_of] at hM
-  by_cases hbox : a ∈ Finset.Icc (-2 : ℤ) 2 ∧ b ∈ Finset.Icc (-2 : ℤ) 2 ∧
-      c ∈ Finset.Icc (-2 : ℤ) 2 ∧ d ∈ Finset.Icc (-2 : ℤ) 2
-  · exact weight_add_weight_neg_of_mem_box a hbox.1 b hbox.2.1 c hbox.2.2.1 d hbox.2.2.2 hM
-  simp only [Finset.mem_Icc] at hbox
-  have hN {N : Matrix (Fin 2) (Fin 2) ℤ} (h : N = !![a, b; c, d] ∨ N = -!![a, b; c, d]) :
-      ¬∀ i j, |N i j| ≤ 2 := by
-    rcases h with rfl | rfl <;>
-    · simp only [Fin.forall_fin_two, abs_le, Matrix.of_apply, Matrix.cons_val', Matrix.neg_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
-      omega
-  have hw {N : Matrix (Fin 2) (Fin 2) ℤ} (h : N = !![a, b; c, d] ∨ N = -!![a, b; c, d]) :
-      PopaZagier.weight N = 0 := by
+  by_cases hbox : ∀ i j, |M i j| ≤ 2
+  · have h (i j : Fin 2) : M i j ∈ Finset.Icc (-2 : ℤ) 2 := Finset.mem_Icc.2 (abs_le.1 (hbox i j))
+    rw [Matrix.det_fin_two] at hM
+    rw [M.eta_fin_two]
+    exact weight_add_weight_neg_of_mem_box _ (h 0 0) _ (h 0 1) _ (h 1 0) _ (h 1 1) hM
+  -- outside the box `[-2, 2]⁴` both sides vanish, as `±1`, `±S`, `±U`, `±U²` lie in it
+  have hN {N : Matrix (Fin 2) (Fin 2) ℤ} (hN : ∀ i j, |N i j| ≤ 2) : ¬(N = M ∨ N = -M) := by
+    rintro (rfl | rfl)
+    exacts [hbox hN, hbox (by simpa using hN)]
+  have hw {N : Matrix (Fin 2) (Fin 2) ℤ} (h : N = M ∨ N = -M) : PopaZagier.weight N = 0 := by
+    have hdet : N.det = 1 := by rcases h with rfl | rfl <;> simp [Matrix.det_neg, hM]
     by_contra hw
-    refine hN h fun i j ↦ ?_
-    have hdet : N.det = 1 := by rcases h with rfl | rfl <;> simpa [Matrix.det_fin_two_of]
-    simpa [hdet] using PopaZagier.abs_le_of_weight_ne_zero hw i j
-  rw [hw (.inl rfl), hw (.inr rfl), weightAtOne, ite_eq_right fun h ↦ hN h (by decide),
-    ite_eq_right fun h ↦ hN h (by decide), ite_eq_right fun h ↦ hN h (by decide),
-    ite_eq_right fun h ↦ hN h (by decide)]
+    exact hN (fun i j ↦ by simpa [hdet] using PopaZagier.abs_le_of_weight_ne_zero hw i j) h
+  rw [hw (.inl rfl), hw (.inr rfl), weightAtOne, ite_eq_right (hN (by decide)),
+    ite_eq_right (hN (by decide)), ite_eq_right (hN (by decide)), ite_eq_right (hN (by decide))]
   rfl
 
 /-- **Popa–Zagier's element for `n = 1`** (Popa–Zagier, proof of Theorem 4(b)): in
@@ -310,14 +284,14 @@ theorem popaZagierElement_one :
   ext x
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply,
-    ofMulAction_single, coeff_sub, coeff_add, coeff_smul, coeff_single, Finsupp.coe_sub,
-    Finsupp.coe_add, Finsupp.coe_smul, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
-    Finsupp.single_apply, smul_mk, mk_eq_iff, hext, FixedDetMatrices.smul_coe,
-    TraceFormulaMatrix.val_neg, TraceFormulaMatrix.val_one, mul_one, coeff_popaZagierElement_mk,
-    smul_eq_mul]
+    ofMulAction_single, coeff_sub, coeff_add, coeff_smul, coeff_single, Finsupp.sub_apply,
+    Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_mk, mk_eq_iff, hext,
+    FixedDetMatrices.smul_coe, TraceFormulaMatrix.val_neg, TraceFormulaMatrix.val_one, mul_one,
+    coeff_popaZagierElement_mk, smul_eq_mul]
+  -- both sides are the same combination of the indicators of `±1`, `±S`, `±U`, `±U²`
   rw [← Int.cast_add, weight_add_weight_neg_of_det_eq_one A.2, weightAtOne]
   push_cast
-  split_ifs <;> norm_num
+  ring
 
 end TraceFormulaMatrixModule
 
