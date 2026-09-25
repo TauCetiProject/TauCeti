@@ -40,8 +40,7 @@ variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
 namespace IsCoupling
 
 /-- A finite coupling with almost everywhere Dirac conditional laws is induced by a
-measurable transport map. The map is determined only up to source-almost-everywhere
-equality. -/
+measurable transport map. -/
 theorem exists_graphPlan_of_ae_exists_condKernel_eq_dirac [IsFiniteMeasure π]
     (hπ : IsCoupling π μ ν)
     (hκ : ∀ᵐ x ∂μ, ∃ y : Y, π.condKernel x = Measure.dirac y) :
