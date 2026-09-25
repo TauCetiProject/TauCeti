@@ -26,6 +26,8 @@ every finite place.
 
 ## References
 
+* `TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 6C, item 9 (the Hilbert symbol
+  of two units in odd residue characteristic).
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.2, Theorem 1, the value of the Hilbert
   symbol on two units at an odd prime.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, 63:11.
