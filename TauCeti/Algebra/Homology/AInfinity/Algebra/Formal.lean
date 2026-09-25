@@ -6,16 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Cohomology
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 
 /-!
-# Minimal and formal `A∞` algebras
-
-An `A∞` algebra is *minimal* when its unary operation `m₁` vanishes.  Every element of a minimal
-algebra is then a cycle and no nonzero element is a boundary, so the class map identifies the
-algebra with its cohomology, carrying `m₂` to the cohomology product.  Consequently an `A∞`
-morphism between minimal algebras is a quasi-isomorphism exactly when its linear part is
-bijective.
+# Formal `A∞` algebras
 
 The cohomology `H(A)` of an `A∞` algebra `A` is a graded nonunital algebra, hence an `A∞`
 algebra with zero `m₁`, the cohomology product as `m₂`, and no higher operations; this is
@@ -34,9 +28,6 @@ graded nonunital algebra with zero differential is formal.
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.IsMinimal`: the unary operation vanishes.
-* `TauCeti.AInfinityAlgebra.IsMinimal.cohomologyEquiv`: the identification of a minimal algebra
-  with its cohomology.
 * `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
   only nonzero operation is `m₂`.
 * `TauCeti.AInfinityAlgebra.IsFormal`: existence of an `A∞` quasi-isomorphism to
@@ -44,11 +35,6 @@ graded nonunital algebra with zero differential is formal.
 
 ## Main results
 
-* `TauCeti.AInfinityAlgebra.isMinimal_iff_cycles_eq_top` and
-  `TauCeti.AInfinityAlgebra.isMinimal_iff_boundaries_eq_bot`: minimality in terms of cycles and
-  boundaries.
-* `TauCeti.AInfinityHom.isQuasiIso_iff_bijective_linearPart`: between minimal algebras, a
-  quasi-isomorphism is a morphism with bijective linear part.
 * `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology algebra is
   minimal.
 * `TauCeti.AInfinityAlgebra.IsMinimal.isFormal`: a minimal algebra with vanishing higher operations
@@ -71,111 +57,6 @@ universe uR uA uB
 
 variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
   [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
-
-namespace AInfinityAlgebra
-
-/-! ### Minimal `A∞` algebras -/
-
-/-- An `A∞` algebra is **minimal** when its unary operation `m₁` vanishes. -/
-def IsMinimal (𝒜 : AInfinityAlgebra R A) : Prop :=
-  𝒜.differential = 0
-
-/-- An `A∞` algebra is minimal exactly when its differential vanishes. -/
-theorem isMinimal_def (𝒜 : AInfinityAlgebra R A) : 𝒜.IsMinimal ↔ 𝒜.differential = 0 := Iff.rfl
-
-/-- An `A∞` algebra is minimal exactly when `m₁` vanishes on every input. -/
-theorem isMinimal_iff (𝒜 : AInfinityAlgebra R A) :
-    𝒜.IsMinimal ↔ ∀ x : A, 𝒜.m 1 ![x] = 0 := by
-  simp only [isMinimal_def, LinearMap.ext_iff, differential_apply, LinearMap.zero_apply]
-
-/-- An `A∞` algebra is minimal exactly when every element is a cycle. -/
-theorem isMinimal_iff_cycles_eq_top (𝒜 : AInfinityAlgebra R A) :
-    𝒜.IsMinimal ↔ 𝒜.cycles = ⊤ := by
-  rw [isMinimal_iff, Submodule.eq_top_iff']
-  simp only [mem_cycles]
-
-/-- An `A∞` algebra is minimal exactly when zero is its only boundary. -/
-theorem isMinimal_iff_boundaries_eq_bot (𝒜 : AInfinityAlgebra R A) :
-    𝒜.IsMinimal ↔ 𝒜.boundaries = ⊥ := by
-  rw [isMinimal_iff, Submodule.eq_bot_iff]
-  simp only [mem_boundaries, forall_exists_index, forall_apply_eq_imp_iff]
-
-namespace IsMinimal
-
-variable {𝒜 : AInfinityAlgebra R A}
-
-/-- The unary operation of a minimal `A∞` algebra vanishes. -/
-theorem m_one (h : 𝒜.IsMinimal) (x : Fin 1 → A) : 𝒜.m 1 x = 0 := by
-  obtain ⟨y, rfl⟩ : ∃ y, x = ![y] := ⟨x 0, funext fun i ↦ by fin_cases i; rfl⟩
-  exact (isMinimal_iff 𝒜).1 h y
-
-/-- Every element of a minimal `A∞` algebra is a cycle. -/
-theorem mem_cycles (h : 𝒜.IsMinimal) (x : A) : x ∈ 𝒜.cycles := by
-  rw [AInfinityAlgebra.mem_cycles, h.m_one]
-
-/-- In a minimal `A∞` algebra, the boundaries inside the cycles are trivial. -/
-theorem boundariesInCycles_eq_bot (h : 𝒜.IsMinimal) : 𝒜.boundariesInCycles = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  rw [mem_boundariesInCycles, (isMinimal_iff_boundaries_eq_bot 𝒜).1 h,
-    Submodule.mem_bot] at hx
-  exact Subtype.ext hx
-
-/-- A minimal `A∞` algebra is linearly equivalent to its cohomology: every element is a cycle,
-and no nonzero element is a boundary. -/
-noncomputable def cohomologyEquiv (h : 𝒜.IsMinimal) : A ≃ₗ[R] 𝒜.Cohomology :=
-  (LinearEquiv.ofTop 𝒜.cycles ((isMinimal_iff_cycles_eq_top 𝒜).1 h)).symm ≪≫ₗ
-    (Submodule.quotEquivOfEqBot _ h.boundariesInCycles_eq_bot).symm
-
-/-- The identification of a minimal algebra with its cohomology sends an element to its class. -/
-@[simp]
-theorem cohomologyEquiv_apply (h : 𝒜.IsMinimal) (x : A) :
-    h.cohomologyEquiv x = 𝒜.cohomologyClass (h.mem_cycles x) := by
-  rw [cohomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.ofTop_symm_apply,
-    Submodule.quotEquivOfEqBot_symm_apply, cohomologyClass_eq_mk]
-
-/-- The identification of a minimal algebra with its cohomology carries `m₂` to the cohomology
-product. -/
-theorem cohomologyEquiv_m_two (h : 𝒜.IsMinimal) (x y : A) :
-    h.cohomologyEquiv (𝒜.m 2 ![x, y]) = h.cohomologyEquiv x * h.cohomologyEquiv y := by
-  simp only [cohomologyEquiv_apply, cohomology_mul_eq_cohomologyMul,
-    cohomologyMul_cohomologyClass]
-
-/-- The identification of a minimal algebra with its cohomology preserves degrees. -/
-theorem isHomogeneous_cohomologyEquiv (h : 𝒜.IsMinimal) :
-    LinearMap.IsHomogeneous h.cohomologyEquiv.toLinearMap 𝒜.grading.piece
-      𝒜.cohomologyGrading.piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  rw [add_zero, LinearEquiv.coe_coe, cohomologyEquiv_apply]
-  exact 𝒜.cohomologyClass_mem_cohomologyGrading_piece _ hx
-
-end IsMinimal
-
-end AInfinityAlgebra
-
-namespace AInfinityHom
-
-variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
-
-/-- Between minimal algebras, the map induced on cohomology is the linear part, transported along
-the identifications of the algebras with their cohomology. -/
-theorem cohomologyMap_cohomologyEquiv (hA : AA.IsMinimal) (hB : BB.IsMinimal)
-    (f : AInfinityHom AA BB) (x : A) :
-    f.cohomologyMap (hA.cohomologyEquiv x) = hB.cohomologyEquiv (f.linearPart x) := by
-  simp only [AInfinityAlgebra.IsMinimal.cohomologyEquiv_apply, cohomologyMap_cohomologyClass]
-
-/-- An `A∞` morphism between minimal algebras is a quasi-isomorphism exactly when its linear part
-is bijective. -/
-theorem isQuasiIso_iff_bijective_linearPart (hA : AA.IsMinimal) (hB : BB.IsMinimal)
-    (f : AInfinityHom AA BB) :
-    f.IsQuasiIso ↔ Function.Bijective f.linearPart := by
-  have hcomm : ⇑f.cohomologyMap ∘ ⇑hA.cohomologyEquiv = ⇑hB.cohomologyEquiv ∘ ⇑f.linearPart :=
-    funext (cohomologyMap_cohomologyEquiv hA hB f)
-  rw [isQuasiIso_iff, ← EquivLike.bijective_comp hA.cohomologyEquiv, hcomm,
-    EquivLike.comp_bijective]
-
-end AInfinityHom
 
 namespace AInfinityAlgebra
 
@@ -244,7 +125,7 @@ def IsFormal (𝒜 : AInfinityAlgebra R A) : Prop :=
 
 /-- An `A∞` algebra is formal exactly when it has a quasi-isomorphism to its cohomology `A∞`
 algebra. -/
-theorem isFormal_iff (𝒜 : AInfinityAlgebra R A) :
+theorem isFormal_def (𝒜 : AInfinityAlgebra R A) :
     𝒜.IsFormal ↔ ∃ f : AInfinityHom 𝒜 𝒜.cohomologyAInfinityAlgebra, f.IsQuasiIso := Iff.rfl
 
 variable {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
@@ -270,10 +151,11 @@ private theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.C
 private noncomputable def cohomologyLinearEquiv {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
     𝒜.Cohomology ≃ₗ[R] ℬ.Cohomology :=
   LinearEquiv.ofBijective (f.cohomologyMap : 𝒜.Cohomology →ₗ[R] ℬ.Cohomology)
-    ((AInfinityHom.isQuasiIso_iff f).1 hf)
+    ((AInfinityHom.isQuasiIso_def f).1 hf)
 
 private theorem cohomologyLinearEquiv_apply {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso)
-    (c : 𝒜.Cohomology) : cohomologyLinearEquiv hf c = f.cohomologyMap c := (rfl)
+    (c : 𝒜.Cohomology) : cohomologyLinearEquiv hf c = f.cohomologyMap c := by
+  exact LinearEquiv.ofBijective_apply _ c
 
 /-- The inverse of the map induced on cohomology by a quasi-isomorphism, as a morphism of
 cohomology algebras. -/
