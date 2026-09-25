@@ -18,7 +18,7 @@ subgroup, both over a general field and in the algebraically closed formulation.
 
 This invariance is the half of a conjugacy statement for Borel subgroups that does not depend on
 the existence of a conjugating rational point. Over an algebraically closed field, the generic
-consequences of a theorem conjugating every Borel candidate into a distinguished one are also
+consequences of a theorem conjugating every Borel subgroup into a distinguished candidate are also
 collected here: the distinguished candidate is then a Borel subgroup, the Borel subgroups are
 exactly its conjugates, and any two of them are conjugate. Concrete matrix groups only need to
 supply that group-specific input, which Lie--Kolchin provides for the general linear group.
@@ -31,7 +31,7 @@ supply that group-specific input, which Lie--Kolchin provides for the general li
   `TauCeti.HopfIdeal.isBorelOverAlgClosed_conjugate_iff`: the same invariance for the
   algebraically closed Borel predicate.
 * `TauCeti.HopfIdeal.isBorelOverAlgClosed_of_forall_exists_conjugate_le`: a Borel candidate into
-  which every Borel candidate can be conjugated is a Borel subgroup.
+  which every Borel subgroup can be conjugated is a Borel subgroup.
 * `TauCeti.HopfIdeal.isBorelOverAlgClosed_iff_exists_eq_conjugate`: the Borel subgroups are then
   exactly its conjugates.
 * `TauCeti.HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed`: any two Borel subgroups are
@@ -41,6 +41,8 @@ supply that group-specific input, which Lie--Kolchin provides for the general li
 
 * J. S. Milne, *Algebraic Groups* (2017), Section 17.a.
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), Section 11.1.
+* `TauCeti/Algebra/AlgebraicGroup/Torus/Conjugation.lean`, for the analogous maximal-torus
+  conjugation lemmas.
 -/
 
 public section
@@ -106,28 +108,32 @@ section AlgClosed
 variable {k : Type u} [Field k] [IsAlgClosed k]
 variable {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
 
-/-- **A Borel candidate into which every Borel candidate can be conjugated is a Borel
+/-- **A Borel candidate into which every Borel subgroup can be conjugated is a Borel
 subgroup.** Over an algebraically closed field, if `D` cuts out a smooth, connected, solvable
-closed subgroup and every such closed subgroup lies in a conjugate of it, then `D` is maximal
-among them. -/
+closed subgroup and every Borel subgroup lies in a conjugate of it, then `D` is maximal
+among smooth, connected, solvable closed subgroups. -/
 theorem isBorelOverAlgClosed_of_forall_exists_conjugate_le (D : HopfIdeal k H)
     (hD : IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H, IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) I →
+    (hcontain : ∀ I : HopfIdeal k H, IsBorelOverAlgClosed k
+      (FiniteTypeCommHopfAlgCat.of k H) I →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I) :
     IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) D := by
   obtain ⟨B, hB⟩ := exists_minimal_isBorelCandidate (FiniteTypeCommHopfAlgCat.of k H)
-  obtain ⟨g, hg⟩ := hcontain B hB.prop
+  have hBorel : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) B :=
+    (isBorelOverAlgClosed_iff _ _ _).mpr ⟨inferInstance, hB⟩
+  obtain ⟨g, hg⟩ := hcontain B hBorel
   have hBg : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) (B.conjugate g⁻¹) :=
-    IsBorelOverAlgClosed.conjugate ((isBorelOverAlgClosed_iff _ _ _).mpr ⟨inferInstance, hB⟩) g⁻¹
+    hBorel.conjugate g⁻¹
   have hDB : D ≤ B.conjugate g⁻¹ := by
     simpa using conjugate_mono g⁻¹ hg
   rwa [le_antisymm hDB (((isBorelOverAlgClosed_iff _ _ _).mp hBg).2.2 hD hDB)]
 
 /-- **Over an algebraically closed field, the Borel subgroups are exactly the conjugates of a
-distinguished Borel candidate** into which every Borel candidate can be conjugated. -/
+distinguished Borel candidate** into which every Borel subgroup can be conjugated. -/
 theorem isBorelOverAlgClosed_iff_exists_eq_conjugate (D : HopfIdeal k H)
     (hD : IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H, IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) I →
+    (hcontain : ∀ I : HopfIdeal k H, IsBorelOverAlgClosed k
+      (FiniteTypeCommHopfAlgCat.of k H) I →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
     (I : HopfIdeal k H) :
     IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) I ↔
@@ -136,17 +142,18 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate (D : HopfIdeal k H)
   constructor
   · intro hI
     have hImin := ((isBorelOverAlgClosed_iff _ _ _).mp hI).2
-    obtain ⟨g, hg⟩ := hcontain I hImin.prop
+    obtain ⟨g, hg⟩ := hcontain I hI
     have hDg := ((isBorelOverAlgClosed_iff _ _ _).mp (hDB.conjugate g)).2
     exact ⟨g, le_antisymm (hImin.2 hDg.prop hg) hg⟩
   · rintro ⟨g, rfl⟩
     exact hDB.conjugate g
 
 /-- **Over an algebraically closed field, any two Borel subgroups are conjugate** by a rational
-point, provided every Borel candidate can be conjugated into a distinguished Borel candidate. -/
+point, provided every Borel subgroup can be conjugated into a distinguished Borel candidate. -/
 theorem exists_conjugate_eq_of_isBorelOverAlgClosed (D : HopfIdeal k H)
     (hD : IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) D)
-    (hcontain : ∀ I : HopfIdeal k H, IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) I →
+    (hcontain : ∀ I : HopfIdeal k H, IsBorelOverAlgClosed k
+      (FiniteTypeCommHopfAlgCat.of k H) I →
       ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ I)
     {I J : HopfIdeal k H}
     (hI : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) I)

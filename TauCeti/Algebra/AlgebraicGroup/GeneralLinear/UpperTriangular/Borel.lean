@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
@@ -54,12 +54,16 @@ subgroup is a Borel subgroup of `GLₙ` over every field.
   upper-triangular subgroup.
 * `TauCeti.GeneralLinear.UpperTriangular.exists_conjugate_eq_of_isBorelOverAlgClosed`: any two
   Borel subgroups of `GLₙ` over an algebraically closed field are conjugate.
+* `TauCeti.GeneralLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal`: scalar
+  extension preserves the upper-triangular defining ideal under the coordinate isomorphism.
 
 ## References
 
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), Corollary 10.5 and Theorem 11.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, Sections 17.6 and 21.3.
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 16.30 and Section 17.a.
+* `TauCeti/Algebra/AlgebraicGroup/GeneralLinear/DiagonalTorus/Conjugacy.lean`, for the
+  analogous Hopf-coordinate proof of conjugacy in `GLₙ`.
 -/
 
 public section
@@ -192,18 +196,19 @@ theorem isBorelCandidate_definingHopfIdeal :
 
 variable {k n}
 
-/-- Over an algebraically closed field, every Borel candidate of `GLₙ` is contained in a
+/-- Over an algebraically closed field, every Borel subgroup of `GLₙ` is contained in a
 conjugate of the upper-triangular subgroup. -/
-private theorem exists_conjugate_definingHopfIdeal_le_of_isBorelCandidate [IsAlgClosed k]
+private theorem exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed [IsAlgClosed k]
     (I : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k n))
-    (hI : HopfIdeal.IsBorelCandidate k
+    (hI : HopfIdeal.IsBorelOverAlgClosed k
       (FiniteTypeCommHopfAlgCat.of k (GeneralLinear.coordinateHopfAlgebra k n)) I) :
     ∃ g : WithConv (GeneralLinear.coordinateHopfAlgebra k n →ₐ[k] k),
       (definingHopfIdeal k n).conjugate g ≤ I := by
+  have hIcandidate := ((HopfIdeal.isBorelOverAlgClosed_iff _ _ _).mp hI).2.prop
   let _ : IsReduced (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k n) I) :=
-    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k _).mp hI.smooth).isReduced
-  exact exists_conjugate_definingHopfIdeal_le I hI.geometricallyConnected
-    hI.geometricallySolvable
+    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k _).mp hIcandidate.smooth).isReduced
+  exact exists_conjugate_definingHopfIdeal_le I hIcandidate.geometricallyConnected
+    hIcandidate.geometricallySolvable
 
 variable (k n) in
 /-- **The upper-triangular subgroup of `GLₙ` is a Borel subgroup over an algebraically closed
@@ -214,7 +219,7 @@ theorem isBorelOverAlgClosed_definingHopfIdeal [IsAlgClosed k] :
       (definingHopfIdeal k n) :=
   HopfIdeal.isBorelOverAlgClosed_of_forall_exists_conjugate_le _
     (isBorelCandidate_definingHopfIdeal k n)
-    exists_conjugate_definingHopfIdeal_le_of_isBorelCandidate
+    exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed
 
 /-- **The Borel subgroups of `GLₙ` over an algebraically closed field are exactly the conjugates
 of the upper-triangular subgroup.** The equality is an equality of defining Hopf ideals, hence of
@@ -227,7 +232,7 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate [IsAlgClosed k]
         I = (definingHopfIdeal k n).conjugate g :=
   HopfIdeal.isBorelOverAlgClosed_iff_exists_eq_conjugate _
     (isBorelCandidate_definingHopfIdeal k n)
-    exists_conjugate_definingHopfIdeal_le_of_isBorelCandidate I
+    exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed I
 
 /-- **Any two Borel subgroups of `GLₙ` over an algebraically closed field are conjugate** by a
 rational point of `GLₙ`. -/
@@ -240,11 +245,11 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed [IsAlgClosed k]
     ∃ g : WithConv (GeneralLinear.coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J :=
   HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed _
     (isBorelCandidate_definingHopfIdeal k n)
-    exists_conjugate_definingHopfIdeal_le_of_isBorelCandidate hI hJ
+    exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed hI hJ
 
 /-- The general-linear base-change isomorphism carries the scalar extension of the
 upper-triangular defining ideal to the upper-triangular defining ideal over the new field. -/
-private theorem map_baseChangeHopfIdeal_definingHopfIdeal
+theorem map_baseChangeHopfIdeal_definingHopfIdeal
     (k K : Type u) [Field k] [Field K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal k n)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
