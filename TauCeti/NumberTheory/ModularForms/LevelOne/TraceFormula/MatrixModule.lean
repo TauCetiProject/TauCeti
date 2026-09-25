@@ -455,23 +455,29 @@ instance TraceFormulaMatrixModule.instMulActionMulOppositePSL (n : ℤ) :
     (MulEquiv.inv' PSL(2, ℤ)).symm.toMonoidHom)
 
 /-- Right multiplication by `g` is inverse right multiplication by `g⁻¹`. -/
-theorem TraceFormulaMatrixModule.op_smul_eq_rightPSL (g : PSL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : x <• g = x.rightPSL g⁻¹ :=
-  TraceFormulaMatrixModule.rightPSLHom_apply g⁻¹ x
+theorem TraceFormulaMatrixModule.op_smul_eq_rightPSL_inv (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : x <• g = x.rightPSL g⁻¹ := (rfl)
 
 /-- Right multiplication by a projective class is computed on any representatives: the class of
 `A` times the class of `g` is the class of `A * g`. -/
 @[simp]
 theorem TraceFormulaMatrixModule.op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     TraceFormulaMatrixModule.mk A <• (g : PSL(2, ℤ)) =
-      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := by
-  rw [op_smul_eq_rightPSL, ← QuotientGroup.mk_inv, rightPSL_coe, right_mk]
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := (rfl)
+
+/-- Right multiplication by the inverse of a projective class is computed on any representatives:
+the class of `A` times the inverse of the class of `g` is the class of `A * g⁻¹`. This is the form
+in which `simp` leaves `x <• g⁻¹`, via `MulOpposite.op_inv`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    (MulOpposite.op (g : PSL(2, ℤ)))⁻¹ • TraceFormulaMatrixModule.mk A =
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := by
+  simpa using op_smul_mk g⁻¹ A
 
 /-- Left and right multiplication on `ℳₙ` commute. -/
 instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
     SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
-  smul_comm g h x := by
-    rw [← MulOpposite.op_unop h, op_smul_eq_rightPSL, op_smul_eq_rightPSL, rightPSL_smul]
+  smul_comm g _ x := (rightPSL_smul g _ x).symm
 
 /-- Left multiplication by a determinant-one matrix commutes with right multiplication on `ℳₙ`. -/
 instance TraceFormulaMatrixModule.instSMulCommClassSL (n : ℤ) :
@@ -493,8 +499,9 @@ theorem TraceFormulaMatrixModule.toConjAct_smul_eq_conjPSL (g : PSL(2, ℤ))
 
 /-- Conjugation by `g` is left multiplication by `g` and right multiplication by `g⁻¹`. -/
 @[simp]
-theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ))
-    (x : TraceFormulaMatrixModule n) : ConjAct.toConjAct g • x = g • x <• g⁻¹ := by
-  rw [toConjAct_smul_eq_conjPSL, conjPSL, op_smul_eq_rightPSL, inv_inv]
+theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+    ConjAct.toConjAct g • x = g • x <• g⁻¹ := by
+  rw [op_smul_eq_rightPSL_inv, inv_inv]
+  exact toConjAct_smul_eq_conjPSL g x
 
 end TauCeti
