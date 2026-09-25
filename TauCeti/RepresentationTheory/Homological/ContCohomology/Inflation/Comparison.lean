@@ -22,7 +22,8 @@ identifies the explicit fixed-point module `M ^ N`, as a discrete `G ⧸ N`-modu
 canonical invariants.
 
 This file proves that the comparison isomorphisms between the explicit and the canonical models
-carry the first inflation to the second, in degrees `0`, `1` and `2`. The input is a single
+carry the first inflation to the second in degree `0`, and in degrees `1` and `2` when `G` is
+compact and its action on `M` is continuous. The input is a single
 identity of coefficient morphisms, `ofDiscreteModulePair_quotientMk_subtype`: the canonical
 inflation pair, read through the dictionary, is the compatible pair of explicit inflation. It
 turns canonical inflation after the dictionary into a single compatible-pair pullback in every
