@@ -15,8 +15,9 @@ public import Mathlib.Order.Northcott
 # Finite real-cutoff carriers for Northcott functions
 
 This file packages the finite carrier selected by a real cutoff for a natural-valued Northcott
-function, together with generic summatory functions over that carrier. For a nonnegative cutoff,
-the carrier agrees with the one selected by its natural floor.
+function, together with generic summatory functions over that carrier. The carrier depends only
+on the integer part of the cutoff, and for a nonnegative cutoff it agrees with the one selected by
+its natural floor.
 -/
 
 public section
@@ -76,6 +77,19 @@ theorem normLE_eq_normLE_natFloor {x : ℝ} (hx : 0 ≤ x) :
   rw [mem_normLE, mem_normLE_natCast]
   exact ⟨Nat.le_floor, fun hi ↦ (Nat.le_floor_iff hx).mp hi⟩
 
+/-- The inclusive carrier cut off at `x` depends only on the integer part of `x`. -/
+theorem normLE_eq_normLE_of_floor_eq {x y : ℝ} (h : ⌊x⌋ = ⌊y⌋) : normLE N x = normLE N y := by
+  have key (z : ℝ) (i : ι) : (N i : ℝ) ≤ z ↔ ((N i : ℤ)) ≤ ⌊z⌋ := by
+    rw [Int.le_floor, Int.cast_natCast]
+  ext i
+  rw [mem_normLE, mem_normLE, key, key, h]
+
+/-- An index lies in the carrier at `b` and has `N`-value greater than `a` exactly when its
+`N`-value lies in the half-open interval `(a, b]`. -/
+theorem mem_normLE_filter_lt {a b : ℝ} {i : ι} :
+    i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Set.Ioc a b := by
+  rw [Finset.mem_filter, mem_normLE, Set.mem_Ioc, and_comm]
+
 /-- Below a uniform lower bound for the `N`-values the carrier is empty. -/
 theorem normLE_eq_empty_of_lt {b x : ℝ} (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) :
     normLE N x = ∅ := by
@@ -125,6 +139,18 @@ natural floor. -/
 theorem summatory_eq_summatory_natFloor {M : Type*} [AddCommMonoid M] (w : ι → M) {x : ℝ}
     (hx : 0 ≤ x) : summatory N w x = summatory N w (⌊x⌋₊ : ℝ) := by
   rw [summatory, summatory, normLE_eq_normLE_natFloor N hx]
+
+/-- Between two cutoffs `a ≤ b`, a summatory function increases by the total weight of the
+indices of `N`-value in `(a, b]`. -/
+theorem summatory_sub_summatory_eq_sum_filter {M : Type*} [AddCommGroup M] (w : ι → M) {a b : ℝ}
+    (hab : a ≤ b) :
+    summatory N w b - summatory N w a = ∑ i ∈ normLE N b with a < N i, w i := by
+  have h : {i ∈ normLE N b | ¬ a < N i} = normLE N a := by
+    ext i
+    simp only [Finset.mem_filter, mem_normLE, not_lt]
+    exact ⟨And.right, fun hi ↦ ⟨hi.trans hab, hi⟩⟩
+  rw [summatory_apply, summatory_apply, ← Finset.sum_filter_add_sum_filter_not (normLE N b)
+    (fun i ↦ a < (N i : ℝ)), h, add_sub_cancel_right]
 
 /-- The summatory function of a pointwise nonnegative real weight is nonnegative. -/
 theorem summatory_nonneg {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (x : ℝ) : 0 ≤ summatory N w x :=
