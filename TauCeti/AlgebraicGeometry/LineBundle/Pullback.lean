@@ -19,6 +19,9 @@ classes on `X_T` that the relative Picard functor `T ↦ Pic(X_T)/Pic(T)` is bui
 The generic restriction compatibility used to establish this result is provided by
 `TauCeti.AlgebraicGeometry.Modules.Pullback`.
 
+The map on classes is a function of sets. Compatibility with tensor products, needed to make it
+a monoid homomorphism, requires a pullback–tensor comparison for sheaves of modules.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
@@ -106,7 +109,7 @@ namespace LineBundleClass
 variable {X Y Z : Scheme.{u}}
 
 /-- The pullback of isomorphism classes of line bundles along a morphism of schemes
-`f : X ⟶ Y`. -/
+`f : X ⟶ Y`, as a function of sets. -/
 def pullback (f : X ⟶ Y) : LineBundleClass Y → LineBundleClass X :=
   lift (fun L ↦ mk ((InvertibleSheaf.pullback f).obj L)) fun _ _ ⟨e⟩ ↦
     mk_eq_mk_iff.mpr ⟨(Scheme.Modules.pullback f).mapIso e⟩
