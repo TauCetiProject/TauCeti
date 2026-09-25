@@ -122,10 +122,8 @@ theorem not_anisotropic_of_isLocallyIsotropic_quaternary_of_discr_eq_zero
   obtain rfl : n = 4 := by simpa [hrank] using e.toLinearEquiv.finrank_eq.symm
   -- The diagonal ternary form `⟨w 1, w 2, w 3⟩` is an orthogonal summand of `Q`.
   have hrep : (presentedForm ⟨3, fun i ↦ w i.succ⟩).IsRepresentedBy Q := by
-    let f := (presentedFormConsIsometryEquiv w).toIsometry.comp (QuadraticMap.Isometry.inr _ _)
-    refine (QuadraticMap.isRepresentedBy_iff _ _).mpr ⟨(e.symm.toIsometry.comp f).toLinearMap,
-      e.symm.injective.comp ((presentedFormConsIsometryEquiv w).injective.comp
-        fun _ _ h ↦ congrArg Prod.snd h), (e.symm.toIsometry.comp f).map_app⟩
+    exact (presentedForm_tail_isRepresentedBy w).trans
+      (QuadraticMap.Equivalent.isRepresentedBy ⟨e.symm⟩)
   refine hrep.not_anisotropic (hternary _ rfl ?_)
   exact ((LocallyRepresents.of_isRepresentedBy hrep).isLocallyIsotropic_iff_quaternary hQ hrank
     hdiscr (by simp)).mpr hloc
@@ -145,8 +143,7 @@ theorem not_anisotropic_of_isLocallyIsotropic_quaternary
       p.1 = 3 → (presentedForm p).IsLocallyIsotropic → ¬(presentedForm p).Anisotropic) :
     ¬Q.Anisotropic := by
   obtain ⟨p, hQp⟩ := exists_presentedForm_equivalent Q hQ
-  have hd : RegularFormClass.discr (formClass Q hQ) = squareClass (∏ i, p.2 i) := by
-    rw [formClass_mk Q hQ p hQp, RegularFormClass.discr_mk]
+  have hd := discr_formClass Q hQ p hQp
   by_cases hsq : IsSquare (∏ i, p.2 i)
   · exact not_anisotropic_of_isLocallyIsotropic_quaternary_of_discr_eq_zero hQ hrank
       (by rw [hd, squareClass_eq_zero_iff]; exact hsq) hloc (hternary K)

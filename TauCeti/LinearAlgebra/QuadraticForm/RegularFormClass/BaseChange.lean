@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
@@ -394,11 +395,8 @@ theorem discr_formClass_baseChange_eq_zero (Q : _root_.QuadraticForm K V) (hQ : 
     {d : Kˣ} (hd : RegularFormClass.discr (formClass Q hQ) = squareClass d) {s : L}
     (hs : s * s = algebraMap K L d) :
     RegularFormClass.discr (formClass (Q.baseChange L) (Nondegenerate.baseChange hQ)) = 0 := by
-  have hs0 : s ≠ 0 := by
-    rintro rfl
-    exact d.ne_zero ((algebraMap K L).injective (by rw [← hs, zero_mul, map_zero]))
   rw [formClass_baseChange Q hQ, RegularFormClass.discr_baseChange, hd,
     RingHom.squareClassMap_apply, squareClass_eq_zero_iff]
-  exact ⟨Units.mk0 s hs0, Units.ext (by simpa using hs.symm)⟩
+  exact isSquare_units_val_iff.mp ⟨s, by simpa using hs.symm⟩
 
 end QuadraticForm
