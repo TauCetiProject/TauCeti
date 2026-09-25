@@ -66,12 +66,13 @@ dividing `q - 1`, where `q` is the cardinality of the residue field.
 
 ## Implementation notes
 
-The ramification groups are indexed by `ℤ` and the unit filtration by `ℕ`. Every statement below
-therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`, including at
-depth zero, where the index is spelled `((0 : ℕ) : ℤ)` so that the general lemmas apply to the
-tame character without a cast. That spelling is not `simp`-normal, so the depth-zero
-`QuotientGroup.mk` lemma is left off the `simp` set; the general lemma at index `(i : ℤ)` is on
-it.
+The ramification groups are indexed by `ℤ` and the unit filtration by `ℕ`. Every general statement
+below therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`. The
+depth-zero declarations spell their index `(0 : ℤ)` instead, which is its `simp`-normal form:
+that lets the depth-zero `QuotientGroup.mk` lemma carry `@[simp]`, since `simp` demands a
+`simp`-normal left-hand side, and it makes the statements match a goal about `G_0 / G_1` as
+written. The general lemmas are keyed on the cast `(i : ℤ)` and so do not rewrite at that
+spelling; the one proof that needs such a lemma instantiates it at `i = 0` explicitly.
 
 ## References
 
@@ -184,8 +185,8 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
 
 variable (i) in
 /-- The **quotient homomorphism** attached to a uniformizer `ϖ`: the homomorphism
-`G_i → U(L,i) / U(L,i+1)` carrying `σ` to the class of `σ ϖ / ϖ`. It is not injective, since it
-kills `G_{i+1}`; the map it induces on `G_i / G_{i+1}` is the embedding `θ_i` of
+`G_i → U(L,i) / U(L,i+1)` carrying `σ` to the class of `σ ϖ / ϖ`. It kills `G_{i+1}`, so it may
+fail to be injective; the map it induces on `G_i / G_{i+1}` is the embedding `θ_i` of
 `TauCeti.ramificationGroupGradedToUnitFiltrationGraded`, injective whenever `𝒪[L]` is generated
 by `ϖ` over a base ring whose scalars commute with the action of `G`. -/
 def ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
@@ -330,18 +331,19 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible {ϖ' : �
 with the identification of `U(L,0) / U(L,1)` with the multiplicative group of the residue
 field. It carries `σ` to the residue of `σ ϖ / ϖ`. It kills `G_1`, hence factors through
 `TauCeti.tameCharacterGraded`. -/
-def tameCharacter (hϖ : Irreducible ϖ) : ramificationGroup G 𝒪[L] ((0 : ℕ) : ℤ) →* 𝓀[L]ˣ :=
+def tameCharacter (hϖ : Irreducible ϖ) : ramificationGroup G 𝒪[L] (0 : ℤ) →* 𝓀[L]ˣ :=
   (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).toMonoidHom.comp
     (ramificationGroupToUnitFiltrationGraded 0 hϖ)
 
 theorem coe_tameCharacter_of_val_eq_smul_div (hϖ : Irreducible ϖ)
-    (σ : ramificationGroup G 𝒪[L] ((0 : ℕ) : ℤ)) {y : 𝒪[L]}
+    (σ : ramificationGroup G 𝒪[L] (0 : ℤ)) {y : 𝒪[L]}
     (hy : (y : L) = (σ : G) • (ϖ : L) / (ϖ : L)) :
     (tameCharacter hϖ σ : 𝓀[L]) = IsLocalRing.residue 𝒪[L] y := by
-  rw [tameCharacter]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ramificationGroupToUnitFiltrationGraded_apply,
-    unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+  -- `ramificationGroupToUnitFiltrationGraded_apply` is keyed on the cast index `(i : ℤ)`, which
+  -- does not match the `simp`-normal `(0 : ℤ)` of the statement, so instantiate it at `i = 0`.
+  rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ramificationGroupToUnitFiltrationGraded_apply (i := 0)]
+  simp only [unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
     ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
   refine congrArg _ (Subtype.ext ?_)
   rw [ValuationSubring.coe_unitGroupMulEquiv_apply, coe_uniformizerRatio, hy]
@@ -356,16 +358,13 @@ theorem tameCharacter_eq_of_irreducible {ϖ' : 𝒪[L]} (hϖ : Irreducible ϖ)
 /-- The tame character read on the quotient `G_0 / G_1` it factors through. It is injective
 under the monogenic hypothesis of `TauCeti.tameCharacterGraded_injective`. -/
 def tameCharacterGraded (hϖ : Irreducible ϖ) :
-    RamificationGroupGraded G 𝒪[L] ((0 : ℕ) : ℤ) →* 𝓀[L]ˣ :=
+    RamificationGroupGraded G 𝒪[L] (0 : ℤ) →* 𝓀[L]ˣ :=
   (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).toMonoidHom.comp
     (ramificationGroupGradedToUnitFiltrationGraded 0 hϖ)
 
--- Not a `simp` lemma: the depth-zero index is spelled `((0 : ℕ) : ℤ)` so that the general
--- lemmas apply, and that spelling is not `simp`-normal, so the left-hand side would simplify
--- further. The general `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk` is the `simp`
--- lemma for the underlying map.
+@[simp]
 theorem tameCharacterGraded_mk (hϖ : Irreducible ϖ)
-    (σ : ramificationGroup G 𝒪[L] ((0 : ℕ) : ℤ)) :
+    (σ : ramificationGroup G 𝒪[L] (0 : ℤ)) :
     tameCharacterGraded hϖ (QuotientGroup.mk σ) = tameCharacter hϖ σ := (rfl)
 
 /-- The graded tame character does not depend on the choice of uniformizer. -/
@@ -387,7 +386,7 @@ the multiplicative group of the residue field, which is cyclic because the resid
 finite. -/
 theorem isCyclic_ramificationGroupGraded_zero (hϖ : Irreducible ϖ) {R : Type*} [CommSemiring R]
     [Algebra R 𝒪[L]] [SMulCommClass G R 𝒪[L]] (hadj : Algebra.adjoin R {ϖ} = ⊤) :
-    IsCyclic (RamificationGroupGraded G 𝒪[L] ((0 : ℕ) : ℤ)) :=
+    IsCyclic (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) :=
   isCyclic_of_injective _ (tameCharacterGraded_injective hϖ hadj)
 
 /-- The order of the tame quotient `G_0 / G_1` divides `q - 1`, for `q` the cardinality of the
@@ -395,7 +394,7 @@ residue field, in the monogenic situation. -/
 theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one (hϖ : Irreducible ϖ)
     {R : Type*} [CommSemiring R] [Algebra R 𝒪[L]] [SMulCommClass G R 𝒪[L]]
     (hadj : Algebra.adjoin R {ϖ} = ⊤) :
-    Nat.card (RamificationGroupGraded G 𝒪[L] ((0 : ℕ) : ℤ)) ∣ Nat.card 𝓀[L] - 1 := by
+    Nat.card (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) ∣ Nat.card 𝓀[L] - 1 := by
   rw [← Nat.card_units]
   exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective hϖ hadj)
 
