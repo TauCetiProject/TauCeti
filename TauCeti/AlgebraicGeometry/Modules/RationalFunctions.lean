@@ -537,6 +537,30 @@ theorem rationalFunctionsMul_inv_comp (g : X.functionFieldˣ) :
         rationalFunctionsMul X (g : X.functionField) = 𝟙 _ := by
   rw [← rationalFunctionsMul_mul, g.mul_inv, rationalFunctionsMul_one]
 
+/-- Multiplication by `g⁻¹` then `g` cancels on sections. -/
+@[simp]
+lemma rationalFunctionsMul_app_rationalFunctionsMul_inv_app (g : X.functionFieldˣ)
+    (U : X.Opens) (s : Γ(rationalFunctions X, U)) :
+    Scheme.Modules.Hom.app (rationalFunctionsMul X (g : X.functionField)) U
+        (Scheme.Modules.Hom.app (rationalFunctionsMul X
+          ((g⁻¹ : X.functionFieldˣ) : X.functionField)) U s) = s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U) (rationalFunctionsMul_inv_comp g)) s
+
+/-- Multiplication by `g` then `g⁻¹` cancels on sections. -/
+@[simp]
+lemma rationalFunctionsMul_inv_app_rationalFunctionsMul_app (g : X.functionFieldˣ)
+    (U : X.Opens) (s : Γ(rationalFunctions X, U)) :
+    Scheme.Modules.Hom.app (rationalFunctionsMul X
+        ((g⁻¹ : X.functionFieldˣ) : X.functionField)) U
+        (Scheme.Modules.Hom.app (rationalFunctionsMul X (g : X.functionField)) U s) = s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U) (rationalFunctionsMul_comp_inv g)) s
+
 end Mul
 
 variable [IsIntegral X]

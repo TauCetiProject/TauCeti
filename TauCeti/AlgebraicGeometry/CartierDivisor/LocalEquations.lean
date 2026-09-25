@@ -214,6 +214,43 @@ lemma isLocalEquationAt_of_rationalUnitClass_eq {D : CartierDivisor X} {V : X.Op
     (hx : x ∈ V) : D.IsLocalEquationAt x f :=
   ⟨V, hx, hf⟩
 
+/-- The product of local equations is a local equation of the sum of Cartier divisors. -/
+lemma IsLocalEquationAt.mul {D E : CartierDivisor X} {x : X} {f g : X.functionFieldˣ}
+    (hf : D.IsLocalEquationAt x f) (hg : E.IsLocalEquationAt x g) :
+    (D + E).IsLocalEquationAt x (f * g) := by
+  obtain ⟨V, hxV, hV⟩ := hf
+  obtain ⟨W, hxW, hW⟩ := hg
+  have hx : x ∈ V ⊓ W := ⟨hxV, hxW⟩
+  have : Nonempty V := ⟨⟨x, hxV⟩⟩
+  have : Nonempty W := ⟨⟨x, hxW⟩⟩
+  have : Nonempty (V ⊓ W : X.Opens) := ⟨⟨x, hx⟩⟩
+  refine ⟨V ⊓ W, hx, ?_⟩
+  rw [ofMul_mul, map_add, rationalUnitClass_eq_of_le inf_le_left hV,
+    rationalUnitClass_eq_of_le inf_le_right hW]
+  simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_add]
+
+/-- The inverse of a local equation is a local equation of the negative divisor. -/
+lemma IsLocalEquationAt.inv {D : CartierDivisor X} {x : X} {f : X.functionFieldˣ}
+    (hf : D.IsLocalEquationAt x f) : (-D).IsLocalEquationAt x f⁻¹ := by
+  obtain ⟨V, hx, hV⟩ := hf
+  have : Nonempty V := ⟨⟨x, hx⟩⟩
+  refine ⟨V, hx, ?_⟩
+  rw [ofMul_inv, map_neg, hV]
+  simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
+
+/-- One is a local equation of the zero Cartier divisor at every point. -/
+lemma isLocalEquationAt_zero (x : X) : (0 : CartierDivisor X).IsLocalEquationAt x 1 := by
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨x, Opens.mem_top x⟩⟩
+  refine ⟨⊤, Opens.mem_top x, ?_⟩
+  simp
+
+/-- A principal Cartier divisor has its defining rational function as a local equation. -/
+lemma isLocalEquationAt_principalCartierDivisor (x : X) (f : X.functionFieldˣ) :
+    (principalCartierDivisor X f).IsLocalEquationAt x f := by
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨x, Opens.mem_top x⟩⟩
+  exact isLocalEquationAt_of_rationalUnitClass_eq
+    (principalCartierDivisor_restrict X f ⊤).symm (Opens.mem_top x)
+
 /-- Every Cartier divisor has a local equation at every point. -/
 theorem exists_isLocalEquationAt (D : CartierDivisor X) (x : X) :
     ∃ f : X.functionFieldˣ, D.IsLocalEquationAt x f := by

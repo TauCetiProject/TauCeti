@@ -253,7 +253,7 @@ def sectionMk {D : SchemeWeilDivisor X} {U : X.Opens} (s : Γ(Scheme.rationalFun
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (sheafι D) U) :=
-  Subtype.val_injective
+  TauCeti.SheafOfModules.ι_val_app_injective (submodule D) (op U)
 
 /-- The section of `𝒪_X(D)` built from a rational function includes back into `𝒦_X` as that
 rational function. -/
@@ -274,9 +274,8 @@ lemma sheafι_app_mem (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U
 submodule of `Γ(𝒦_X, U)` which defines it. -/
 @[simp]
 lemma range_sheafι_app (D : SchemeWeilDivisor X) (U : X.Opens) :
-    Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U := by
-  ext t
-  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ sheafι_app_mem D U s, fun ht ↦ ⟨⟨t, ht⟩, rfl⟩⟩
+    Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U :=
+  TauCeti.SheafOfModules.range_ι_val_app (submodule D) (op U)
 
 /-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism: over every open subset it is the
 inclusion of a submodule, hence injective. -/

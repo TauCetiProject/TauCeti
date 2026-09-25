@@ -229,11 +229,8 @@ theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
   have hcancel : ∀ (U : X.Opens) (t : Γ(Scheme.rationalFunctions X, U)),
       Scheme.Modules.Hom.app (Scheme.rationalFunctionsMul X g) U
         (Scheme.Modules.Hom.app (Scheme.rationalFunctionsMul X g') U t) = t := fun U t ↦ by
-    have key := ConcreteCategory.congr_hom
-      (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) (Scheme.rationalFunctionsMul_inv_comp gu)) t
-    simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
-      Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] at key
-    rwa [hgu, hguinv] at key
+    simpa only [hgu, hguinv] using
+      Scheme.rationalFunctionsMul_app_rationalFunctionsMul_inv_app gu U t
   -- the two divisors `F` and `E` have the same sections over every open subset
   have hsec : ∀ U : X.Opens, sections F U = sections E U := by
     intro U

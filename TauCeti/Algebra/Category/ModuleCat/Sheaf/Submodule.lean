@@ -115,6 +115,18 @@ lemma ι_val_app_mem (N : M.Submodule) (U : Cᵒᵖ) (s : N.toSheafOfModules.val
     N.ι.val.app U s ∈ N.toSubmodule.obj U :=
   PresheafOfModules.ι_app_mem N.toSubmodule U s
 
+/-- The inclusion of a submodule sheaf is injective on sections. -/
+lemma ι_val_app_injective (N : M.Submodule) (U : Cᵒᵖ) :
+    Function.Injective (N.ι.val.app U) :=
+  Subtype.val_injective
+
+/-- The image of the inclusion on sections is the defining submodule. -/
+@[simp]
+lemma range_ι_val_app (N : M.Submodule) (U : Cᵒᵖ) :
+    Set.range (N.ι.val.app U) = N.toSubmodule.obj U := by
+  ext s
+  exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ ι_val_app_mem N U t, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
+
 namespace Submodule
 
 /-- The inclusion of a submodule of a sheaf of modules into a larger one. The hypothesis is
