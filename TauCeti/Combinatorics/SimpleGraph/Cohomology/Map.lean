@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-
 public import TauCeti.Combinatorics.SimpleGraph.Cohomology.Basic
+public import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
 
 /-!
 # Changing the coefficients of the first cohomology of a graph
@@ -26,8 +25,8 @@ representative of the connected component of a vertex to that vertex is a vertex
 is, by the hypothesis, a coboundary of a vertex function, and injectivity then makes the coboundary
 of the path product the original cochain.
 
-There is no corresponding surjectivity statement: a coboundary of `B` need not be the image of a
-coboundary, since the values of a vertex function need not lie in the image of `f`.
+No surjectivity statement is developed in this file: the classification results which follow from
+the injectivity below are the reason the map is introduced.
 
 ## Main definitions
 
@@ -43,8 +42,12 @@ coboundary, since the values of a vertex function need not lie in the image of `
   vertex function.
 * `SimpleGraph.oneCochainsMap_injective`: an injective homomorphism of coefficient groups induces
   an injective map on `1`-cochains.
+* `SimpleGraph.oneCochainsMap_id`, `SimpleGraph.oneCochainsMap_comp`: mapping cochains is
+  functorial in the homomorphism of coefficient groups.
 * `SimpleGraph.firstCohomologyMap_mk`: the induced map sends the class of a cochain to the class of
   its image.
+* `SimpleGraph.firstCohomologyMap_id`, `SimpleGraph.firstCohomologyMap_comp`: mapping cohomology
+  classes is functorial in the homomorphism of coefficient groups.
 * `SimpleGraph.firstCohomologyMap_mk_eq_one_iff`: a cochain is a coboundary exactly when its image
   is a coboundary, for an injective homomorphism of coefficient groups.
 * `SimpleGraph.firstCohomologyMap_injective`: **an injective homomorphism of coefficient groups
@@ -63,7 +66,7 @@ public section
 
 namespace SimpleGraph
 
-universe u v z
+universe u v z t
 
 variable {V : Type u} (G : SimpleGraph V)
 
@@ -73,8 +76,7 @@ def oneCochainsMap {A : Type v} {B : Type z} [CommGroup A] [CommGroup B] (f : A 
   toFun σ := ⟨fun d ↦ f ((σ : G.Dart → A) d), by
     rw [mem_oneCochains_iff]
     intro d
-    show f ((σ : G.Dart → A) d.symm) = (f ((σ : G.Dart → A) d))⁻¹
-    rw [oneCochains_apply_symm, map_inv]⟩
+    simp only [oneCochains_apply_symm, map_inv]⟩
   map_one' := by
     ext d
     simp
@@ -90,6 +92,7 @@ theorem oneCochainsMap_apply (f : A →* B) (σ : G.oneCochains A) (d : G.Dart) 
     (G.oneCochainsMap f σ : G.Dart → B) d = f ((σ : G.Dart → A) d) := (rfl)
 
 /-- **A coboundary is carried to the coboundary of the composed vertex function.** -/
+@[simp]
 theorem oneCochainsMap_coboundary (f : A →* B) (φ : V → A) :
     G.oneCochainsMap f (G.coboundary A φ) = G.coboundary B (f ∘ φ) := by
   ext d
@@ -104,6 +107,21 @@ theorem oneCochainsMap_injective (f : A →* B) (hf : Function.Injective f) :
     have h'' := congrFun (congrArg Subtype.val h) d
     rwa [oneCochainsMap_apply, oneCochainsMap_apply] at h''
   exact Subtype.ext (funext fun d => hf (h' d))
+
+/-- Mapping cochains along the identity homomorphism of coefficient groups changes nothing. -/
+@[simp]
+theorem oneCochainsMap_id :
+    G.oneCochainsMap (MonoidHom.id A) = MonoidHom.id (G.oneCochains A) := by
+  ext σ
+  rfl
+
+/-- Mapping cochains along a composite of homomorphisms of coefficient groups is their successive
+mapping. -/
+@[simp]
+theorem oneCochainsMap_comp {C : Type t} [CommGroup C] (f : A →* B) (g : B →* C) :
+    G.oneCochainsMap (g.comp f) = (G.oneCochainsMap g).comp (G.oneCochainsMap f) := by
+  ext σ
+  rfl
 
 /-- **The product of the values of a cochain along a walk telescopes.** If the image of the
 cochain is the coboundary of `ψ`, the value of the cochain on a dart is the quotient of the values
@@ -122,19 +140,6 @@ private theorem prod_eq_div (f : A →* B) (σ : G.oneCochains A) (ψ : V → B)
             rw [Walk.darts_cons, List.map_cons, List.prod_cons, map_mul]
       _ = (ψ v / ψ u) * (ψ w / ψ v) := by rw [hψ _, ih]
       _ = ψ w / ψ u := by rw [div_mul_div_cancel']
-
-/-- The chosen representative of the connected component of a vertex. -/
-private noncomputable def componentRoot (v : V) : V :=
-  (G.connectedComponentMk v).nonempty_supp.some
-
-/-- A chosen walk from the representative of the connected component of a vertex to that vertex. -/
-private noncomputable def componentPath (v : V) : G.Walk (componentRoot G v) v :=
-  (SimpleGraph.ConnectedComponent.exact ((G.connectedComponentMk v).nonempty_supp.some_mem)).some
-
-private theorem componentRoot_eq_of_adj {v w : V} (h : G.Adj v w) :
-    componentRoot G w = componentRoot G v :=
-  congrArg (fun C : G.ConnectedComponent => C.nonempty_supp.some)
-    (SimpleGraph.ConnectedComponent.sound h.symm.reachable)
 
 /-- **A cochain whose image is a coboundary is a coboundary**, for an injective homomorphism of
 coefficient groups. The product of the values of the cochain along the walk from the representative
@@ -172,6 +177,24 @@ theorem firstCohomologyMap_mk (f : A →* B) (σ : G.oneCochains A) :
     G.firstCohomologyMap f (FirstCohomology.mk G A σ) =
       FirstCohomology.mk G B (G.oneCochainsMap f σ) := by
   rw [firstCohomologyMap, FirstCohomology.lift_mk, MonoidHom.comp_apply]
+
+/-- Mapping cohomology classes along the identity homomorphism of coefficient groups changes
+nothing. -/
+@[simp]
+theorem firstCohomologyMap_id :
+    G.firstCohomologyMap (MonoidHom.id A) = MonoidHom.id (G.FirstCohomology A) := by
+  ext x
+  obtain ⟨σ, rfl⟩ := FirstCohomology.mk_surjective x
+  simp only [firstCohomologyMap_mk, oneCochainsMap_id, MonoidHom.id_apply]
+
+/-- Mapping cohomology classes along a composite of homomorphisms of coefficient groups is their
+successive mapping. -/
+@[simp]
+theorem firstCohomologyMap_comp {C : Type t} [CommGroup C] (f : A →* B) (g : B →* C) :
+    G.firstCohomologyMap (g.comp f) = (G.firstCohomologyMap g).comp (G.firstCohomologyMap f) := by
+  ext x
+  obtain ⟨σ, rfl⟩ := FirstCohomology.mk_surjective x
+  simp only [firstCohomologyMap_mk, oneCochainsMap_comp, MonoidHom.comp_apply]
 
 /-- **A `1`-cochain is a coboundary exactly when its image is a coboundary**, for an injective
 homomorphism of coefficient groups. -/

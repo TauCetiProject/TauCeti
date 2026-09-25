@@ -82,6 +82,7 @@ variable {l : Type z} [CommMonoid k] [CommMonoid l]
 /-- **A coefficient homomorphism carries the cohomology class of a parameter to the cohomology
 class of its image**: the class of `c.map f` is the class obtained from the class of `c` by the
 change of coefficients on units `kˣ → lˣ`. -/
+@[simp]
 theorem cohomologyClass_map (f : k →* l) (c : SkewZigzagParameter k G) :
     cohomologyClass l G (c.map f) =
       G.firstCohomologyMap (Units.map f) (cohomologyClass k G c) := by
@@ -110,9 +111,9 @@ theorem cohomologyClass_map_eq_iff (f : k →* l) (hf : Function.Injective (Unit
 
 end BaseChange
 
-/-! ### Scalar extension of the classified relation quotients -/
+/-! ### Detecting the quotient classification after mapping coefficients -/
 
-section BaseChangeAlgebra
+section MapAlgebra
 
 open DoubledQuiver
 
@@ -141,6 +142,6 @@ theorem cohomologyClass_map_eq_iff_exists_vertexFixing_algEquiv (f : k →+* l)
     exact (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f.toMonoidHom) (c := c) (c' := c')
       hf).mpr (cohomologyClass_eq_iff.mp hc)
 
-end BaseChangeAlgebra
+end MapAlgebra
 
 end TauCeti.SkewZigzagParameter
