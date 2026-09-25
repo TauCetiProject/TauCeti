@@ -14,13 +14,14 @@ import TauCeti.Algebra.Lie.Sl2.WeightString
 /-!
 # Chevalley generators from a minuscule weight table
 
-A minuscule representation of a simple Lie algebra is determined by its weights: each weight
-pairs with every simple coroot to `-1`, `0` or `1`, the simple reflections permute the weights, and
-the raising operator at a node moves a weight whose coordinate is `-1` to its reflection and kills
-every other weight, the lowering operator dually. Every nonzero entry of the resulting matrices is
-`1`, so the representation needs no structure constants. Nothing here needs the diagram to be
-simply laced: the spin representation of type `B` and the standard representation of type `C` are
-minuscule as well.
+A minuscule weight table for a generalized Cartan matrix determines a representation of the
+Serre presentation of that matrix: each weight pairs with every simple coroot to `-1`, `0` or `1`,
+the simple reflections permute the weights, and the raising operator at a node moves a weight whose
+coordinate is `-1` to its reflection and kills every other weight, the lowering operator dually.
+Every nonzero entry of the resulting matrices is `1`, so the representation needs no structure
+constants. The main application is to minuscule representations of simple Lie algebras, which are
+determined by such tables. Nothing here needs the diagram to be simply laced: the spin
+representation of type `B` and the standard representation of type `C` are minuscule as well.
 
 This file packages that data as `TauCeti.MinusculeWeightTable` and builds from it the three
 families of integral matrices, proves they are an `sl₂` triple at each node admitting a weight with
