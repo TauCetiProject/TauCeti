@@ -47,9 +47,9 @@ variable (R : Type*) [CommSemiring R]
 /-- Commuting gives an equivalence between disjoint rectangle--pentagon and pentagon--rectangle
 decompositions. This is the bijection underlying the disjoint-domain case of the pentagon
 chain-map weight identity. -/
-def disjointCommuteEquiv (x z : GridState n) :
-    {D : GridRectanglePentagonDecomposition C.column C.turnRow x z // D.HasDisjointSides} ≃
-    {D : GridPentagonRectangleDecomposition C.column C.turnRow x z // D.HasDisjointSides} where
+def disjointCommuteEquiv (a s : Fin n) (x z : GridState n) :
+    {D : GridRectanglePentagonDecomposition a s x z // D.HasDisjointSides} ≃
+    {D : GridPentagonRectangleDecomposition a s x z // D.HasDisjointSides} where
   toFun D := ⟨D.1.commute D.2, D.1.hasDisjointSides_commute D.2⟩
   invFun E := ⟨E.1.commute E.2, E.1.hasDisjointSides_commute E.2⟩
   left_inv D := Subtype.ext (D.1.commute_commute D.2)
@@ -57,19 +57,19 @@ def disjointCommuteEquiv (x z : GridState n) :
 
 /-- The forward map of `disjointCommuteEquiv` acts by `commute`. -/
 @[simp]
-theorem disjointCommuteEquiv_apply (x z : GridState n)
-    (D : {D : GridRectanglePentagonDecomposition C.column C.turnRow x z // D.HasDisjointSides}) :
-    (disjointCommuteEquiv G C x z D : GridPentagonRectangleDecomposition C.column C.turnRow x z) =
+theorem disjointCommuteEquiv_apply (a s : Fin n) (x z : GridState n)
+    (D : {D : GridRectanglePentagonDecomposition a s x z // D.HasDisjointSides}) :
+    (disjointCommuteEquiv a s x z D : GridPentagonRectangleDecomposition a s x z) =
       D.1.commute D.2 := by
   unfold disjointCommuteEquiv
   rfl
 
 /-- The inverse map of `disjointCommuteEquiv` acts by `commute`. -/
 @[simp]
-theorem disjointCommuteEquiv_symm_apply (x z : GridState n)
-    (E : {D : GridPentagonRectangleDecomposition C.column C.turnRow x z // D.HasDisjointSides}) :
-    ((disjointCommuteEquiv G C x z).symm E :
-      GridRectanglePentagonDecomposition C.column C.turnRow x z) =
+theorem disjointCommuteEquiv_symm_apply (a s : Fin n) (x z : GridState n)
+    (E : {D : GridPentagonRectangleDecomposition a s x z // D.HasDisjointSides}) :
+    ((disjointCommuteEquiv a s x z).symm E :
+      GridRectanglePentagonDecomposition a s x z) =
       E.1.commute E.2 := by
   unfold disjointCommuteEquiv
   rfl
