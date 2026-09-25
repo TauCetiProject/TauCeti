@@ -58,6 +58,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
   have hg : g ∈ H := hH.symm ▸ Subgroup.mem_top g
   exact hg
 
+-- `spinorNorm_apply` is already a simp lemma, so this theorem is not in simp-normal form.
 /-- An isometric equivalence preserves the spinor norm on the special orthogonal group. -/
 theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
