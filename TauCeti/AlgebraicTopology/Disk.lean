@@ -69,7 +69,6 @@ abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
           (inferInstance : Mono (TopCat.diskBoundaryInclusion n)))).isEmbedding)
 
 /-- The underlying map of `diskBoundaryPair n` is the standard boundary inclusion. -/
-@[simp]
 lemma diskBoundaryPair_map (n : ℕ) :
     (diskBoundaryPair n).map = TopCat.diskBoundaryInclusion n := (rfl)
 
