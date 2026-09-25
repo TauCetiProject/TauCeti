@@ -334,12 +334,13 @@ theorem summable_norm_coeff_logDeriv_mul_pow_succ (f : ℂ⟦X⟧) (hf0 : consta
     (sum_range_norm_coeff_logDeriv_mul_pow_succ_le f hf0 hr hsum ht)
 
 /-- **A majorant for the coefficients of a formal logarithmic derivative.** Write `aₙ` for the
-coefficients of `f`, where `a₀ = 1`, and let `r ≥ 0`. If `T = ∑ n |aₙ| rⁿ` converges and
-`t = ∑_{n ≥ 1} |aₙ| rⁿ < 1`, then `∑ m, |[Xᵐ] (f'/f)| r ^ (m + 1) ≤ T / (1 - t)`.
+coefficients of `f`, where `a₀ = 1`, and let `r ≥ 0`. If
+`T = ∑ n, n |aₙ| rⁿ` converges and `t = ∑_{n ≥ 1} |aₙ| rⁿ < 1`, then
+`∑ m, |[Xᵐ] (f'/f)| r ^ (m + 1) ≤ T / (1 - t)`.
 
 For the majorant `F(X) = ∑ |aₙ| Xⁿ` this reads `∑ m, |[Xᵐ] (X f'/f)| rᵐ ≤ r F'(r) / (2 - F(r))`.
-No zero-freeness hypothesis is needed beyond `t < 1`, and the bound is uniform in `f`, which is
-what makes it summable over a family of power series. -/
+No zero-freeness hypothesis is needed beyond `t < 1`. For a family, the bound is uniform only
+when `t` is bounded uniformly below `1` and the corresponding values of `T` are controlled. -/
 theorem tsum_norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
     {r : ℝ} (hr : 0 ≤ r) (hsum : Summable fun n : ℕ ↦ n * ‖coeff n f‖ * r ^ n)
     (ht : ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1) < 1) :
