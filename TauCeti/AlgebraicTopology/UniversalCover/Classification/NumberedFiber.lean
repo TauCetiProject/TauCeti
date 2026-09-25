@@ -421,7 +421,7 @@ noncomputable def ConnectedCover.numbering (c : ConnectedCover x n) :
   ν := c.nonempty_equiv_fin.some
   pathConnected := c.pathConnected
 
-/-- A pointed cover with some numbering chosen. -/
+/-- A pointed cover with a chosen numbering of its fibre. -/
 -- Applying the chosen numbering to `c.e` requires its projected cover to be definitionally
 -- `c.cover`.
 @[expose] noncomputable def ConnectedPointedCover.numbering (c : ConnectedPointedCover x n) :
