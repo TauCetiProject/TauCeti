@@ -25,9 +25,9 @@ lattice, and basis use Mathlib's product constructions directly.
 
 public section
 
-open TensorProduct
+open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
-namespace TauCeti.UniversalEnvelopingAlgebra
+namespace UniversalEnvelopingAlgebra
 
 variable {L V W : Type*} [LieRing L] [LieAlgebra ℚ L]
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
@@ -106,4 +106,4 @@ theorem prodRight_baseChangeKostantExpHom
   simp only [coe_baseChangeKostantExpHom]
   exact Module.End.prodRight_baseChangeExp _ _ M N _ _ hρ hσ _ z
 
-end TauCeti.UniversalEnvelopingAlgebra
+end UniversalEnvelopingAlgebra

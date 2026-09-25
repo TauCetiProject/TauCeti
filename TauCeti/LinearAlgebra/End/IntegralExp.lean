@@ -78,8 +78,7 @@ theorem prodRight_baseChangeExp
     simpa [hx', hy'] using h.symm
   have hfst (v : M.prod N) : (((M.prodEquiv N) v).1 : V) = (v : V × W).1 := rfl
   have hsnd (v : M.prod N) : (((M.prodEquiv N) v).2 : W) = (v : V × W).2 := rfl
-  induction z using TensorProduct.induction_on with
-  | zero => apply Prod.ext <;> simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v =>
       simp only [LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul,
         TensorProduct.prodRight_tmul]
