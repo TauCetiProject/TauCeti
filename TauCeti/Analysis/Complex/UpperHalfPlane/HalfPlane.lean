@@ -38,6 +38,9 @@ Only the *unordered* pair of sides is determined by `geodesicLine g`: which one 
   three pieces are pairwise disjoint, and
   `TauCeti.UpperHalfPlane.union_rightHalfPlane_range_geodesicLine_leftHalfPlane` says they cover
   `ℍ`.
+* `TauCeti.UpperHalfPlane.frontier_rightHalfPlane`, `frontier_leftHalfPlane` — the geodesic line
+  is the topological boundary of each half-plane it bounds, via `closure_rightHalfPlane` and
+  `closure_leftHalfPlane`.
 -/
 
 public section
@@ -125,5 +128,57 @@ theorem union_rightHalfPlane_range_geodesicLine_leftHalfPlane (g : PSL(2, ℝ)) 
     · exact Or.inl (Or.inl h)
   rw [rightHalfPlane, leftHalfPlane, range_geodesicLine, ← Set.smul_set_union,
     ← Set.smul_set_union, this, Set.smul_set_univ]
+
+theorem closure_rightHalfPlane_one : closure {z : ℍ | 0 < z.re} = {z : ℍ | 0 ≤ z.re} := by
+  rw [show {z : ℍ | 0 < z.re} = UpperHalfPlane.re ⁻¹' Set.Ioi (0 : ℝ) from rfl,
+    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
+      UpperHalfPlane.continuous_re,
+    closure_Ioi]
+  rfl
+
+theorem closure_leftHalfPlane_one : closure {z : ℍ | z.re < 0} = {z : ℍ | z.re ≤ 0} := by
+  rw [show {z : ℍ | z.re < 0} = UpperHalfPlane.re ⁻¹' Set.Iio (0 : ℝ) from rfl,
+    ← UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
+      UpperHalfPlane.continuous_re,
+    closure_Iio]
+  rfl
+
+/-- The closure of the right half-plane adds exactly the geodesic line, its boundary. -/
+theorem closure_rightHalfPlane (g : PSL(2, ℝ)) :
+    closure (rightHalfPlane g) = rightHalfPlane g ∪ Set.range (geodesicLine g) := by
+  have himg : ∀ s : Set ℍ, g • s = (Homeomorph.smul g) '' s := fun s => rfl
+  rw [rightHalfPlane, range_geodesicLine]
+  simp only [himg]
+  rw [← (Homeomorph.smul g).image_closure, closure_rightHalfPlane_one]
+  simp only [← himg, ← Set.smul_set_union]
+  congr 1
+  ext z
+  simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq, eq_comm]
+
+/-- The closure of the left half-plane adds exactly the geodesic line, its boundary. -/
+theorem closure_leftHalfPlane (g : PSL(2, ℝ)) :
+    closure (leftHalfPlane g) = leftHalfPlane g ∪ Set.range (geodesicLine g) := by
+  have himg : ∀ s : Set ℍ, g • s = (Homeomorph.smul g) '' s := fun s => rfl
+  rw [leftHalfPlane, range_geodesicLine]
+  simp only [himg]
+  rw [← (Homeomorph.smul g).image_closure, closure_leftHalfPlane_one]
+  simp only [← himg, ← Set.smul_set_union]
+  congr 1
+  ext z
+  simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq]
+
+/-- The geodesic line is the boundary of the right half-plane it bounds. -/
+theorem frontier_rightHalfPlane (g : PSL(2, ℝ)) :
+    frontier (rightHalfPlane g) = Set.range (geodesicLine g) := by
+  rw [frontier, (isOpen_rightHalfPlane g).interior_eq, closure_rightHalfPlane,
+    Set.union_sdiff_left]
+  exact sdiff_eq_self_iff_disjoint.mpr (disjoint_rightHalfPlane_range_geodesicLine g)
+
+/-- The geodesic line is the boundary of the left half-plane it bounds. -/
+theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
+    frontier (leftHalfPlane g) = Set.range (geodesicLine g) := by
+  rw [frontier, (isOpen_leftHalfPlane g).interior_eq, closure_leftHalfPlane,
+    Set.union_sdiff_left]
+  exact sdiff_eq_self_iff_disjoint.mpr (disjoint_leftHalfPlane_range_geodesicLine g)
 
 end TauCeti.UpperHalfPlane
