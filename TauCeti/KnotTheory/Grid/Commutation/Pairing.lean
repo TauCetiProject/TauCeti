@@ -15,8 +15,9 @@ a rectangle followed by a pentagon, and a pentagon followed by a rectangle. This
 the bijection between the disjoint parts of these two finite sets.
 
 When the rectangle and pentagon have disjoint vertical side pairs, they commute: swapping the
-order gives a bijection that preserves weights. This is the disjoint-domain case of the
-pentagon--rectangle juxtaposition argument.
+order gives a bijection between the disjoint parts of the two composite domains. This is the
+disjoint-domain case of the pentagon--rectangle juxtaposition argument; establishing that this
+bijection preserves weights is left to the weight-identity argument, not claimed here.
 
 ## Main results
 
