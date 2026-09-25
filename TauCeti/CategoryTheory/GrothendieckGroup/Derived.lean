@@ -28,12 +28,8 @@ sequence in `A` gives a distinguished triangle between the corresponding degree-
 the map is well defined.
 
 The inverse sends the class of a bounded complex `X` to the alternating sum `∑ n, (-1)ⁿ [Hⁿ X]` of
-its cohomology classes. This is additive on distinguished triangles because the long exact
-cohomology sequence of a triangle is cut into short exact pieces by the kernels of its maps, and
-the resulting sum telescopes. It is a left inverse of the degree-zero map, and the degree-zero map
-is surjective: every object of `Dᵇ(A)` is represented by a bounded complex, whose class is already
-in the bounded homotopy category the alternating sum of the classes of its terms
-(`TauCeti.TriangulatedK0.of_bounded_quotient_obj`).
+its cohomology classes. Consequently, the comparison identifies a bounded complex in triangulated
+`K₀` with the alternating sum of its cohomology objects placed in degree zero.
 
 ## Main definitions
 
@@ -161,12 +157,20 @@ private lemma of_homology_obj₁_add_of_homology_obj₃ {T : Triangle (DerivedCa
       of ((homologyFunctor A n).obj T.obj₂) +
         (of (kernel ((homologyFunctor A n).map T.mor₁)) +
           of (kernel ((homologyFunctor A (n + 1)).map T.mor₁))) := by
-  have h₁ := of_kernel_add_of_kernel_of_exact (DerivedCategory.HomologySequence.exact₂ T hT n)
-  have h₂ := of_kernel_add_of_kernel_of_exact
-    (DerivedCategory.HomologySequence.exact₃ T hT n (n + 1))
-  have h₃ := of_kernel_add_of_kernel_of_exact
-    (DerivedCategory.HomologySequence.exact₁ T hT n (n + 1))
-  dsimp only at h₁ h₂ h₃
+  have h₁ : of (kernel ((homologyFunctor A n).map T.mor₂)) +
+      of (kernel ((homologyFunctor A n).map T.mor₁)) =
+        of ((homologyFunctor A n).obj T.obj₁) :=
+    of_kernel_add_of_kernel_of_exact (DerivedCategory.HomologySequence.exact₂ T hT n)
+  have h₂ : of (kernel (DerivedCategory.HomologySequence.δ T n (n + 1))) +
+      of (kernel ((homologyFunctor A n).map T.mor₂)) =
+        of ((homologyFunctor A n).obj T.obj₂) :=
+    of_kernel_add_of_kernel_of_exact
+      (DerivedCategory.HomologySequence.exact₃ T hT n (n + 1))
+  have h₃ : of (kernel ((homologyFunctor A (n + 1)).map T.mor₁)) +
+      of (kernel (DerivedCategory.HomologySequence.δ T n (n + 1))) =
+        of ((homologyFunctor A n).obj T.obj₃) :=
+    of_kernel_add_of_kernel_of_exact
+      (DerivedCategory.HomologySequence.exact₁ T hT n (n + 1))
   rw [← h₁, ← h₂, ← h₃]
   abel
 
@@ -377,8 +381,11 @@ object placed in degree zero. -/
 @[simp]
 lemma boundedDerivedK0Equiv_of (X : A) :
     boundedDerivedK0Equiv A (of X) =
-      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X) :=
-  toBoundedDerivedK0_of X
+      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X) := by
+  calc
+    boundedDerivedK0Equiv A (of X) = toBoundedDerivedK0 (of X) :=
+      DFunLike.congr_fun (boundedDerivedK0Equiv_toAddMonoidHom (A := A)) (of X)
+    _ = _ := toBoundedDerivedK0_of X
 
 /-- The inverse of `TauCeti.AbelianK0.boundedDerivedK0Equiv` sends the class of a bounded complex
 to the alternating sum of the classes of its cohomology objects, summed over any finite set of
