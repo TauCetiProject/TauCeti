@@ -39,13 +39,16 @@ with that property to one that extends homotopies with values in a space in any 
   and of Mathlib's bundled homotopies.
 * `TauCeti.HasHomotopyExtensionProperty.isClosed`: in a Hausdorff space the property forces the
   subset to be closed, so the inclusion is a closed cofibration.
-* `TauCeti.HasHomotopyExtensionProperty.image`: transport of the property for a closed subset
-  along a homeomorphism.
+* `TauCeti.HasHomotopyExtensionProperty.image` and
+  `TauCeti.HasHomotopyExtensionProperty.image_of_isClosed`: transport of the property along a
+  homeomorphism, inside one universe and, for a closed subset, across universes.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Chapter 0, Proposition 0.16.
+  Chapter 0, the section "The Homotopy Extension Property": the retraction criterion and the
+  closedness of a subset with the property in a Hausdorff space are the unnumbered discussion
+  opening that section.
 * G. W. Whitehead, *Elements of Homotopy Theory*, Chapter I.
 -/
 
@@ -206,7 +209,7 @@ theorem HasHomotopyExtensionProperty.exists_retraction (h : HasHomotopyExtension
   refine ⟨⟨fun p => (G p : I × X), continuous_subtype_val.comp G.continuous⟩,
     fun p => (G p).2, ?_⟩
   rintro ⟨t, x⟩ (h0 | hx)
-  · rw [show t = 0 from h0]
+  · obtain rfl : t = 0 := h0
     exact congrArg Subtype.val (hG₀ x)
   · exact congrArg Subtype.val (hG₁ t ⟨x, hx⟩)
 
@@ -253,15 +256,36 @@ theorem HasHomotopyExtensionProperty.isClosed [T2Space X] (h : HasHomotopyExtens
   have hcl : IsClosed (cylinderExtensionDomain A) := by
     rw [← Subtype.range_coe (s := cylinderExtensionDomain A)]
     exact hleft.isClosed_range (r.continuous.subtype_mk _) continuous_subtype_val
+  have hone : (1 : I) ≠ 0 := fun h => one_ne_zero (congrArg Subtype.val h)
   have hpre : A = (fun x : X => ((1 : I), x)) ⁻¹' cylinderExtensionDomain A := by
     ext x
-    simp [show (1 : I) ≠ 0 from fun h => one_ne_zero (congrArg Subtype.val h)]
+    simp [hone]
   exact hpre ▸ hcl.preimage (by fun_prop)
 
-/-- For a closed subset, the homotopy extension property transports along a homeomorphism; the
-two spaces need not live in the same universe.  Closedness enters because the transport goes
-through the retraction characterisation. -/
-theorem HasHomotopyExtensionProperty.image {X' : Type u'} [TopologicalSpace X']
+/-- The homotopy extension property transports along a homeomorphism onto a space in the same
+universe, with no hypothesis on `A`: a homotopy extension problem for `e '' A` is carried back
+along `e` to one for `A`, and its solution carried forward again. -/
+theorem HasHomotopyExtensionProperty.image {X' : Type u} [TopologicalSpace X']
+    (h : HasHomotopyExtensionProperty A) (e : X ≃ₜ X') :
+    HasHomotopyExtensionProperty (e '' A) := by
+  intro Y _ f H hH
+  obtain ⟨G, hG₀, hG₁⟩ :=
+    h (f.comp ⟨e, e.continuous⟩)
+      (H.comp ⟨fun q => (q.1, ⟨e q.2, mem_image_of_mem e q.2.2⟩), by fun_prop⟩)
+      fun a => hH ⟨e a, mem_image_of_mem e a.2⟩
+  refine ⟨G.comp ⟨fun q => (q.1, e.symm q.2), by fun_prop⟩, fun x' => ?_, fun t b => ?_⟩
+  · simpa using hG₀ (e.symm x')
+  · obtain ⟨a, ha, hae⟩ := b.2
+    have hsymm : e.symm (b : X') = a := by rw [← hae, e.symm_apply_apply]
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hsymm]
+    rw [hG₁ t ⟨a, ha⟩]
+    exact congrArg (fun c => H (t, c)) (Subtype.ext hae)
+
+/-- For a closed subset, the homotopy extension property transports along a homeomorphism onto a
+space in an arbitrary universe.  Closedness enters because the cross-universe transport goes
+through the retraction characterisation; for a homeomorphism inside one universe,
+`TauCeti.HasHomotopyExtensionProperty.image` needs no hypothesis on `A`. -/
+theorem HasHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [TopologicalSpace X']
     (h : HasHomotopyExtensionProperty A) (e : X ≃ₜ X') (hA : IsClosed A) :
     HasHomotopyExtensionProperty (e '' A) := by
   obtain ⟨r, hr, hr'⟩ := h.exists_retraction

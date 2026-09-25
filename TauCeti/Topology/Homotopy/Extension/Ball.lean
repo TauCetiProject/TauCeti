@@ -30,7 +30,8 @@ are attached along maps defined on such spheres.
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Chapter 0, Example 0.15.
+  Chapter 0, proof of Proposition 0.16, which retracts `Dⁿ × I` onto `Dⁿ × {0} ∪ ∂Dⁿ × I` by
+  radial projection from the point `(0, 2)`.
 -/
 
 public section
