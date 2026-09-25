@@ -52,6 +52,8 @@ coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer mee
 * `TauCeti.ContCohomology.DiscreteShortExact.longExact_exact₁`,
   `longExact_exact₂` and `longExact_exact₃`: exactness at `Hⁿ⁺¹(G, A)`, `Hⁿ(G, B)` and
   `Hⁿ(G, C)`.
+* `TauCeti.ContCohomology.DiscreteShortExact.longExact_exact`: the three exactness statements
+  packaged as the roadmap's single all-degree long exact sequence assertion.
 * `TauCeti.ContCohomology.DiscreteShortExact.delta_naturality`: a morphism of short exact
   sequences commutes with `δ`.
 
@@ -140,6 +142,19 @@ theorem longExact_exact₃ (n : ℕ) :
   TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (S.forget₂_map_delta n)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
       (S.continuousCochainsShortExact_shortExact.homology_exact₃ n (n + 1) rfl))
+
+/-- Exactness at all three repeating nodes of the long exact sequence, in the order
+`Hⁿ(G, C) → Hⁿ⁺¹(G, A) → Hⁿ⁺¹(G, B)` and `Hⁿ(G, A) → Hⁿ(G, B) → Hⁿ(G, C)`. -/
+theorem longExact_exact (n : ℕ) :
+    Function.Exact
+        (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n)
+        (S.delta n) ∧
+      Function.Exact (S.delta n)
+        (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) ∧
+      Function.Exact
+        (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) n)
+        (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) := by
+  exact ⟨S.longExact_exact₃ n, S.longExact_exact₁ n, S.longExact_exact₂ n⟩
 
 /-- The connecting map kills the image of `Hⁿ(G, B) → Hⁿ(G, C)`. -/
 @[reassoc (attr := simp)]
