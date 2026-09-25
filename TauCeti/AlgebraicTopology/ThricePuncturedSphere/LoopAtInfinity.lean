@@ -21,10 +21,10 @@ Let `δ` be the circle `|z| = 3`, traversed counterclockwise once from the point
 `p₊ = 1/2 + (√35/2)·i`, and let `α₊` be the vertical segment from the basepoint `1/2` up to `p₊`.
 The circle `δ` separates the punctures `0` and `1` from `∞`, and the main theorem is
 
-  `α₊ · δ · ᾱ₊ ≃ γ0 · γ1`
+  `α₊ · δ · α₊.symm ≃ γ0 · γ1`
 
 as paths in `ℂ ∖ {0, 1}`, where `γ0` and `γ1` are the peripheral loops around `0` and `1`.
-Consequently `periph1 * periph0` is the class of `α₊ · δ · ᾱ₊`, and `periphInf` is the class of
+Consequently `periph1 * periph0` is the class of `α₊ · δ · α₊.symm`, and `periphInf` is the class of
 the circle `|z| = 3` traversed **clockwise** in the affine coordinate `z`, transported to the
 basepoint along `α₊`. In the chart `w = 1/z` at `∞` the same circle runs counterclockwise.
 
@@ -42,10 +42,10 @@ concatenation.
 * `TauCeti.ThricePuncturedSphere.δ`: the circle `|z| = 3`, counterclockwise from `pPlus`, with
   `norm_coe_δ`.
 * `TauCeti.ThricePuncturedSphere.αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1`:
-  `α₊ · δ · ᾱ₊ ≃ γ0 · γ1`.
+  `α₊ · δ · α₊.symm ≃ γ0 · γ1`.
 * `TauCeti.ThricePuncturedSphere.periph1_mul_periph0_eq_fromPath`,
   `TauCeti.ThricePuncturedSphere.periphInf_eq_fromPath`: `periph1 * periph0` is the class of
-  `α₊ · δ · ᾱ₊`, and `periphInf` is the class of `α₊ · δ̄ · ᾱ₊`.
+  `α₊ · δ · α₊.symm`, and `periphInf` is the class of `α₊ · δ.symm · α₊.symm`.
 
 ## References
 
