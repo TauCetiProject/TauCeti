@@ -492,6 +492,7 @@ noncomputable def faceAffinePointPartialDiffeomorph (hσ : IsRegularCone i σ)
               IsOpenEmbedding.toOpenPartialHomeomorph_apply] using e.right_inv hy) }
 
 /-- The face localization partial diffeomorphism has the whole face chart as its source. -/
+@[simp]
 theorem faceAffinePointPartialDiffeomorph_source (hσ : IsRegularCone i σ)
     (hτσ : τ.IsFaceOf σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
@@ -502,6 +503,7 @@ theorem faceAffinePointPartialDiffeomorph_source (hσ : IsRegularCone i σ)
   simp [faceAffinePointPartialDiffeomorph]
 
 /-- The target of the face localization partial diffeomorphism is the range of the face map. -/
+@[simp]
 theorem faceAffinePointPartialDiffeomorph_target (hσ : IsRegularCone i σ)
     (hτσ : τ.IsFaceOf σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
@@ -513,6 +515,7 @@ theorem faceAffinePointPartialDiffeomorph_target (hσ : IsRegularCone i σ)
   simp [faceAffinePointPartialDiffeomorph]
 
 /-- The face localization partial diffeomorphism acts by restricting complex points. -/
+@[simp]
 theorem faceAffinePointPartialDiffeomorph_apply (hσ : IsRegularCone i σ)
     (hτσ : τ.IsFaceOf σ)
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
