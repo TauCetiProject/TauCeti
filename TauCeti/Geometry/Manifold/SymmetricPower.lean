@@ -39,7 +39,8 @@ structure asks for. Over `ℂ`, the transition between any two of the explicit c
 `TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`), so that the symmetric power of a
 complex curve is a complex analytic manifold for this charted structure
 (`TauCeti.isManifold_symChartedSpace` in `TauCeti/Geometry/Manifold/SymmetricPower/Manifold.lean`).
-The totally real tori `T_α`, `T_β` are not treated here.
+The tori `T_α`, `T_β` are shown totally real for this complex structure in
+`TauCeti/Geometry/Manifold/SymmetricPower/TotallyReal.lean`.
 
 ## Main declarations
 
