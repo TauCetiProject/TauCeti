@@ -63,6 +63,8 @@ keeps the component spaces reducible for the projection lemmas below. -/
 abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
   TopPair.of (TopCat.diskBoundaryInclusion n) (by
     let hT2 : T2Space (TopCat.disk n) := by
+      -- Typeclass synthesis does not unfold the `TopCat.disk` wrapper, whose carrier is the
+      -- lifted closed ball.
       change T2Space (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
       infer_instance
     exact
