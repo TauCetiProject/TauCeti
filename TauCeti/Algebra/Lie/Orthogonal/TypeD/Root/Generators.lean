@@ -265,15 +265,17 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing
     TauCeti.toLinAlgEquiv_single_apply_basis]
   simp
 
-private theorem fromBlocks_mem_typeD {K : Type*} [CommRing K]
-    (A B C : Matrix (Fin n) (Fin n) K) (hB : B.transpose = -B) (hC : C.transpose = -C) :
-    Matrix.fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD (Fin n) K := by
+/-- A block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split type-`D` Lie algebra when its
+off-diagonal blocks are skew-symmetric. -/
+theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
+    (A B C : Matrix ι ι K) (hB : B.transpose = -B) (hC : C.transpose = -C) :
+    Matrix.fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
   rw [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
     mem_skewAdjointMatricesSubmodule]
   -- Membership in `typeD` unfolds to this ambient skew-adjoint matrix equation.
   change (Matrix.fromBlocks A B C (-A.transpose)).transpose *
-      LieAlgebra.Orthogonal.JD (Fin n) K =
-    LieAlgebra.Orthogonal.JD (Fin n) K *
+      LieAlgebra.Orthogonal.JD ι K =
+    LieAlgebra.Orthogonal.JD ι K *
       (-Matrix.fromBlocks A B C (-A.transpose))
   simp only [LieAlgebra.Orthogonal.JD, Matrix.fromBlocks_transpose,
     Matrix.fromBlocks_neg, Matrix.fromBlocks_multiply, Matrix.transpose_neg,
@@ -285,10 +287,10 @@ theorem raisingMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
     raisingMatrix (K := K) n hn i ∈ LieAlgebra.Orthogonal.typeD (Fin n) K := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [raisingMatrix_of_chain n hn hi]
-    exact fromBlocks_mem_typeD n _ 0 0 (by simp) (by simp)
+    exact fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
   · rw [raisingMatrix_of_fork n hn hi]
     simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      fromBlocks_mem_typeD (K := K) n 0 (forkBlock n hn) 0
+      fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 (forkBlock n hn) 0
       (forkBlock_transpose n hn) (by simp only [Matrix.transpose_zero, neg_zero])
 
 /-- The transpose of an explicit raising matrix is again in the split type-`D` Lie algebra. -/
@@ -297,10 +299,10 @@ theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
   by_cases hi : (i : ℕ) + 1 < n
   · rw [loweringMatrix, raisingMatrix_of_chain n hn hi,
       Matrix.fromBlocks_transpose]
-    exact fromBlocks_mem_typeD n _ 0 0 (by simp) (by simp)
+    exact fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
   · rw [loweringMatrix_of_fork n hn hi]
     simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      fromBlocks_mem_typeD (K := K) n 0 0 (-forkBlock n hn)
+      fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 0 (-forkBlock n hn)
       (by simp only [Matrix.transpose_zero, neg_zero]) (by
       rw [Matrix.transpose_neg, forkBlock_transpose])
 
