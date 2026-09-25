@@ -79,3 +79,15 @@ theorem tensorInvariant_comp_whiskerLeft {N' : Rep k G} (g : N ⟶ N') (y : N.ρ
   simp [hy]
 
 end Rep
+
+namespace TauCeti.Rep
+
+variable {k G : Type u} [CommRing k] [Group G] {M N : _root_.Rep k G}
+
+/-- Braiding the tensor of a vector with an invariant puts the invariant first. -/
+theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
+    (((_root_.Rep.tensorInvariant N x) ≫ (β_ N M).hom).hom y) =
+      (x : M.V) ⊗ₜ[k] y := by
+  simp [_root_.Rep.hom_braiding]
+
+end TauCeti.Rep
