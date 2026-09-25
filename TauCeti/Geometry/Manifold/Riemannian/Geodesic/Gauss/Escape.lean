@@ -108,7 +108,7 @@ theorem IsNormalDomain.pathELength_escape
   have hγT_K : γ T ∈ K :=
     hKclosed.mem_of_tendsto htend
       (eventually_nhdsWithin_of_forall fun t ht => hVK (hbefore t ht.1.le ht.2))
-  change γ T ∈ riemannianExp I M p '' Metric.closedBall 0 r at hγT_K
+  simp only [K] at hγT_K
   rw [← Metric.ball_union_sphere, image_union] at hγT_K
   have hγT_sphere : γ T ∈ riemannianExp I M p '' Metric.sphere 0 r := by
     rcases hγT_K with hball | hsphere

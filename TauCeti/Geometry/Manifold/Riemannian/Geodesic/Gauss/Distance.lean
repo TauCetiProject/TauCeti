@@ -12,23 +12,20 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Minimization
 /-!
 # The Riemannian distance on a normal ball
 
-Let `U` be a normal domain at `p` containing the closed tangent ball of radius `r`.  A `C¹` curve
-from `p` to `exp_p v`, with `‖v‖ ≤ r`, either stays in the normal neighbourhood `exp_p '' U`,
-where the radial geodesic minimizes length, or leaves it, and is then longer than `r` by the
-escape estimate.  Since the Riemannian distance is the infimum of the lengths of such curves,
-the radial geodesic `t ↦ exp_p (t • v)` realizes the distance from `p` to `exp_p v`:
+Let `U` be a normal domain at `p` containing the closed tangent ball of radius `r`. For every
+`v` in that ball, the radial geodesic `t ↦ exp_p (t • v)` realizes the Riemannian distance from
+`p` to `exp_p v`:
 
 `edist p (exp_p v) = ‖v‖`.
 
 Consequently the geodesic balls `exp_p '' ball 0 r` and `exp_p '' closedBall 0 r` are the metric
-balls of radius `r` about `p`.  Moreover, a curve from `p` to a point `q` outside the geodesic ball
-must cross the geodesic sphere `exp_p '' sphere 0 r`, which gives
+balls of radius `r` about `p`. For a point `q` outside the geodesic ball, the distance is
 
 `edist p q = r + infEDist q (exp_p '' sphere 0 r)`.
 
-This last identity is the step by which the distance to a far point is propagated along a
-minimizing geodesic in the proof that an everywhere-defined exponential map yields minimizing
-geodesics between any two points.
+These identities supply the local minimizing theory used to propagate distance along a geodesic
+when proving that an everywhere-defined exponential map yields minimizing geodesics between any
+two points.
 
 ## Main results
 
