@@ -5,44 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.Equiv
+public import Mathlib.RingTheory.Coalgebra.Hom
 
 /-!
 # Cocommutative coalgebras
 
-This file records transport results for cocommutative coalgebras.
+Cocommutativity descends along surjective coalgebra homomorphisms. In particular, it
+transfers across coalgebra equivalences without requiring compatible algebra structures.
 
 ## Main declarations
 
-* `TauCeti.Coalgebra.IsCocomm.of_bialgEquiv`: cocommutativity transfers across a bialgebra
-  equivalence.
+* `CoalgHom.isCocomm_of_surjective`: a surjective image of a cocommutative coalgebra is
+  cocommutative.
 -/
 
 public section
 
-namespace TauCeti.Coalgebra.IsCocomm
+namespace CoalgHom
 
-variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
-  [_root_.Bialgebra R A] [_root_.Bialgebra R B]
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B]
+  [Module R A] [Module R B] [Coalgebra R A] [Coalgebra R B]
 
-/-- Cocommutativity transfers across a bialgebra equivalence. -/
-theorem of_bialgEquiv (e : A ≃ₐc[R] B) [hA : _root_.Coalgebra.IsCocomm R A] :
-    _root_.Coalgebra.IsCocomm R B := by
+/-- A surjective image of a cocommutative coalgebra is cocommutative. -/
+theorem isCocomm_of_surjective (f : A →ₗc[R] B) (hf : Function.Surjective f)
+    [hA : Coalgebra.IsCocomm R A] : Coalgebra.IsCocomm R B := by
   constructor
   ext b
-  apply (TensorProduct.map_bijective e.symm.bijective e.symm.bijective).injective
-  simp only [LinearMap.comp_apply]
-  -- Applying the tensor map to the composite with `TensorProduct.comm` unfolds to this
-  -- expression. There is no propositional compatibility lemma for that coercion-level step;
-  -- the subsequent `TensorProduct.map_comm` is the structural identity used by the proof.
-  change TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-      (TensorProduct.comm R B B (Coalgebra.comul (R := R) b)) = _
-  rw [TensorProduct.map_comm]
-  have hm :
-      TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-          (Coalgebra.comul (R := R) b) =
-        Coalgebra.comul (R := R) (e.symm b) :=
-    CoalgHomClass.map_comp_comul_apply e.symm b
-  rw [hm, Coalgebra.comm_comul]
+  obtain ⟨a, rfl⟩ := hf b
+  simpa only [CoalgHom.toLinearMap_eq_coe, CoalgHomClass.map_comp_comul_apply,
+    Coalgebra.comm_comul, LinearMap.comp_apply, LinearEquiv.coe_coe] using
+    (TensorProduct.map_comm f.toLinearMap f.toLinearMap (Coalgebra.comul a)).symm
 
-end TauCeti.Coalgebra.IsCocomm
+end CoalgHom

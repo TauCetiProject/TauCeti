@@ -14,11 +14,14 @@ import TauCeti.Algebra.Lie.Sl2.WeightString
 /-!
 # Chevalley generators from a minuscule weight table
 
-A minuscule representation of a simply laced simple Lie algebra is determined by its weights: each
-weight pairs with every simple coroot to `-1`, `0` or `1`, the simple reflections permute the
-weights, and the raising operator at a node moves a weight whose coordinate is `-1` to its
-reflection and kills every other weight, the lowering operator dually. Every nonzero entry of the
-resulting matrices is `1`, so the representation needs no structure constants.
+A minuscule weight table for a generalized Cartan matrix determines a representation of the
+Serre presentation of that matrix: each weight pairs with every simple coroot to `-1`, `0` or `1`,
+the simple reflections permute the weights, and the raising operator at a node moves a weight whose
+coordinate is `-1` to its reflection and kills every other weight, the lowering operator dually.
+Every nonzero entry of the resulting matrices is `1`, so the representation needs no structure
+constants. The main application is to minuscule representations of simple Lie algebras, which are
+determined by such tables. Nothing here needs the diagram to be simply laced: the spin
+representation of type `B` and the standard representation of type `C` are minuscule as well.
 
 This file packages that data as `TauCeti.MinusculeWeightTable` and builds from it the three
 families of integral matrices, proves they are an `sl₂` triple at each node admitting a weight with
@@ -26,9 +29,11 @@ coordinate `-1` and that they satisfy the Serre relations, and lifts them to a r
 the Serre presentation. A type-specific carrier
 then supplies only its weight table and reads the whole construction off.
 
-The Cartan matrix is required to be symmetric with diagonal `2` and off-diagonal entries `0` or
-`-1`, which is the simply laced condition; the coordinates are pairings with simple coroots, so
-the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM i j`.
+The Cartan matrix is only required to be a generalized Cartan matrix: diagonal entries `2`,
+nonpositive off-diagonal entries, and `CM i j = 0` exactly when `CM j i = 0`. It follows the
+convention of `Matrix.ToLieAlgebra`, in which `⁅hᵢ, eⱼ⁆ = CM i j • eⱼ`, so `CM i j` is the pairing
+of the `j`-th simple root with the `i`-th simple coroot. The coordinates are pairings with simple
+coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j i`.
 
 ## Main declarations
 
@@ -69,28 +74,29 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- **A minuscule weight table for a simply laced Cartan matrix.** The weights are recorded in
+/-- **A minuscule weight table for a generalized Cartan matrix.** The weights are recorded in
 simple-coroot coordinates, so `weight a i` is the pairing of the `a`-th weight with the `i`-th
 simple coroot, and the simple reflection at `i` acts on the table by `reflection i`. -/
 structure MinusculeWeightTable (B ι : Type*) where
-  /-- The Cartan matrix, with the root index second. -/
+  /-- The Cartan matrix, with the root index second: `cartanMatrix i j` is the pairing of the
+  `j`-th simple root with the `i`-th simple coroot. -/
   cartanMatrix : Matrix B B ℤ
   /-- The weights, in simple-coroot coordinates. -/
   weight : ι → B → ℤ
   /-- The permutation of the table induced by the `i`-th simple reflection. -/
   reflection : B → ι → ι
-  /-- The Cartan matrix is symmetric. -/
-  cartanMatrix_isSymm : cartanMatrix.IsSymm
   /-- The Cartan matrix has diagonal entries `2`. -/
   cartanMatrix_diag : ∀ i, cartanMatrix i i = 2
-  /-- The diagram is simply laced: an off-diagonal entry is `0` or `-1`. -/
-  cartanMatrix_isSimplyLaced : cartanMatrix.IsSimplyLaced
+  /-- The off-diagonal entries of the Cartan matrix are nonpositive. -/
+  cartanMatrix_offDiag_nonpos : ∀ i j, i ≠ j → cartanMatrix i j ≤ 0
+  /-- An entry of the Cartan matrix vanishes exactly when its transpose entry does. -/
+  cartanMatrix_zero_comm : ∀ i j, cartanMatrix i j = 0 ↔ cartanMatrix j i = 0
   /-- Minusculeness: every coordinate of every weight is `-1`, `0` or `1`. -/
   weight_eq_neg_one_or_eq_zero_or_eq_one :
     ∀ a i, weight a i = -1 ∨ weight a i = 0 ∨ weight a i = 1
-  /-- The reflection equation `wt (s_i a) j = wt a j - wt a i * CM i j`. -/
+  /-- The reflection equation `wt (s_i a) j = wt a j - wt a i * CM j i`. -/
   weight_reflection :
-    ∀ i a j, weight (reflection i a) j = weight a j - weight a i * cartanMatrix i j
+    ∀ i a j, weight (reflection i a) j = weight a j - weight a i * cartanMatrix j i
   /-- Distinct indices name distinct weights. -/
   weight_injective : Function.Injective weight
 
@@ -285,18 +291,18 @@ theorem reflection_apply_apply (i : B) (a : ι) : T.reflection i (T.reflection i
     T.weight_reflection_self]
   ring
 
-/-- A reflection at a node orthogonal to `i` leaves the `i`-th coordinate alone. -/
+/-- A reflection at a node orthogonal to `j` leaves the `j`-th coordinate alone. -/
 theorem weight_reflection_of_cartanMatrix_eq_zero (i j : B) (a : ι)
     (hij : T.cartanMatrix i j = 0) :
     T.weight (T.reflection i a) j = T.weight a j := by
-  rw [T.weight_reflection, hij]
+  rw [T.weight_reflection, (T.cartanMatrix_zero_comm i j).mp hij]
   ring
 
 /-- Reflections at two orthogonal nodes commute on the table. -/
 theorem reflection_comm_of_cartanMatrix_eq_zero (i j : B) (a : ι)
     (hij : T.cartanMatrix i j = 0) :
     T.reflection i (T.reflection j a) = T.reflection j (T.reflection i a) := by
-  have hji : T.cartanMatrix j i = 0 := by rw [T.cartanMatrix_isSymm.apply, hij]
+  have hji : T.cartanMatrix j i = 0 := (T.cartanMatrix_zero_comm i j).mp hij
   apply T.weight_injective
   funext k
   rw [T.weight_reflection i (T.reflection j a) k, T.weight_reflection j (T.reflection i a) k,
@@ -343,7 +349,7 @@ private theorem raisingTarget_bind_loweringTarget_of_cartan_eq_zero (i j : B)
     (hij : T.cartanMatrix i j = 0) (a : ι) :
     (T.loweringTarget j a).bind (T.raisingTarget i) =
       (T.raisingTarget i a).bind (T.loweringTarget j) := by
-  have hji : T.cartanMatrix j i = 0 := by rw [T.cartanMatrix_isSymm.apply, hij]
+  have hji : T.cartanMatrix j i = 0 := (T.cartanMatrix_zero_comm i j).mp hij
   by_cases hi : T.weight a i = -1
   · by_cases hj : T.weight a j = 1
     · simp [raisingTarget, loweringTarget, hi, hj,
@@ -357,26 +363,28 @@ private theorem raisingTarget_bind_loweringTarget_of_cartan_eq_zero (i j : B)
         T.weight_reflection_of_cartanMatrix_eq_zero j i a hji]
     · simp [raisingTarget, loweringTarget, hi, hj]
 
-private theorem raisingTarget_bind_loweringTarget_of_cartan_eq_neg_one (i j : B)
-    (hij : T.cartanMatrix i j = -1) (a : ι) :
+private theorem raisingTarget_bind_loweringTarget_of_cartan_neg (i j : B) (hne : i ≠ j)
+    (hij : T.cartanMatrix i j < 0) (a : ι) :
     (T.loweringTarget j a).bind (T.raisingTarget i) =
       (T.raisingTarget i a).bind (T.loweringTarget j) := by
   have hi_lower : -1 ≤ T.weight a i := by
     rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi <;> omega
   have hj_upper : T.weight a j ≤ 1 := by
     rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a j with hj | hj | hj <;> omega
-  have hji : T.cartanMatrix j i = -1 := by rw [T.cartanMatrix_isSymm.apply, hij]
+  have hji : T.cartanMatrix j i < 0 :=
+    (T.cartanMatrix_offDiag_nonpos j i hne.symm).lt_of_ne
+      (mt (T.cartanMatrix_zero_comm i j).mpr hij.ne)
   have hleft : (T.loweringTarget j a).bind (T.raisingTarget i) = none := by
     by_cases hj : T.weight a j = 1
     · have href : T.weight (T.reflection j a) i ≠ -1 := by
-        rw [T.weight_reflection, hj, hji]
+        rw [T.weight_reflection, hj]
         omega
       simp [loweringTarget, raisingTarget, hj, href]
     · simp [loweringTarget, hj]
   have hright : (T.raisingTarget i a).bind (T.loweringTarget j) = none := by
     by_cases hi : T.weight a i = -1
     · have href : T.weight (T.reflection i a) j ≠ 1 := by
-        rw [T.weight_reflection, hi, hij]
+        rw [T.weight_reflection, hi]
         omega
       simp [raisingTarget, loweringTarget, hi, href]
     · simp [raisingTarget, hi]
@@ -385,9 +393,9 @@ private theorem raisingTarget_bind_loweringTarget_of_cartan_eq_neg_one (i j : B)
 private theorem raisingTarget_bind_loweringTarget_of_ne (i j : B) (hij : i ≠ j) (a : ι) :
     (T.loweringTarget j a).bind (T.raisingTarget i) =
       (T.raisingTarget i a).bind (T.loweringTarget j) := by
-  rcases T.cartanMatrix_isSimplyLaced hij with hA | hA
+  rcases (T.cartanMatrix_offDiag_nonpos i j hij).eq_or_lt with hA | hA
   · exact T.raisingTarget_bind_loweringTarget_of_cartan_eq_zero i j hA a
-  · exact T.raisingTarget_bind_loweringTarget_of_cartan_eq_neg_one i j hA a
+  · exact T.raisingTarget_bind_loweringTarget_of_cartan_neg i j hij hA a
 
 /-! ## The Chevalley generators -/
 
@@ -551,7 +559,7 @@ private theorem lie_cartanGeneratorMatrix_eq_smul_of_apply (i j : B) (M : Matrix
   simp only [Matrix.diagonal_apply_eq]
   split_ifs with h
   · obtain ⟨hb, rfl⟩ := h
-    rw [T.weight_reflection, hb, T.cartanMatrix_isSymm.apply]
+    rw [T.weight_reflection, hb]
     simp
   · simp
 
