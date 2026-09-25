@@ -383,6 +383,7 @@ L-function of the weight in the real axis: `L(conj χ, conj s) = conj (L(χ, s))
 This holds at every `s`,
 including the junk values off the region where the defining integral converges, because complex
 conjugation commutes with the Bochner integral. -/
+@[simp]
 theorem continuedLFunctionOfWeight_conj (χ : UnitaryIdealWeight K) (s : ℂ) :
     continuedLFunctionOfWeight χ.conj (conj s) = conj (continuedLFunctionOfWeight χ s) := by
   simp only [continuedLFunctionOfWeight, map_mul, ← integral_conj]
@@ -398,6 +399,7 @@ theorem continuedLFunctionOfWeight_conj (χ : UnitaryIdealWeight K) (s : ℂ) :
 /-- **Imaginary norm twists translate the continued L-function, to the right of `1`.** Twisting
 a unitary weight by `N(I) ^ (-z)` with `Re z = 0` translates its continued L-function by `z` on
 the half-plane `Re s > 1`, where both sides are the norm-regrouped L-series. -/
+@[simp]
 theorem continuedLFunctionOfWeight_normTwist_of_one_lt_re (χ : UnitaryIdealWeight K) {z : ℂ}
     (hz : z.re = 0) {s : ℂ} (hs : 1 < s.re) :
     continuedLFunctionOfWeight (UnitaryIdealWeight.normTwist z hz χ) s =
@@ -416,6 +418,7 @@ then the continued L-function of the twist at `s` is the continued L-function of
 
 In degree `[K : ℚ] > 1` the second cancellation hypothesis follows from the first, by
 `TauCeti.HasCancellation.normTwist`. -/
+@[simp]
 theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : ℂ} (hz : z.re = 0)
     (hχ : HasCancellation χ) (hχz : HasCancellation (UnitaryIdealWeight.normTwist z hz χ))
     {s : ℂ} (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
