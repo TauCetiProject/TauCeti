@@ -24,7 +24,7 @@ noncomputable section
 open CategoryTheory Limits
 universe w v u
 
-namespace TopPair
+namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
@@ -131,4 +131,4 @@ lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :
     exact IsZero.of_epi_zero S.X₂ S.X₃
   simpa only [S] using hzero
 
-end TopPair
+end TauCeti

@@ -56,10 +56,10 @@ lemma diskBoundary_isPathConnected {n : ℕ} (hn : 2 ≤ n) :
 
 end TauCeti.TopCat
 
-namespace TopPair
+namespace TauCeti
 
-/-- The standard pair consisting of the `n`-dimensional disk and its boundary.  The abbreviation
-keeps the component spaces reducible for the projection lemmas below. -/
+/-- The standard pair consisting of the `n`-dimensional disk and its boundary, used to express
+relative singular homology of the disk with respect to its boundary. -/
 abbrev diskBoundaryPair (n : ℕ) : TopPair.{u} :=
   TopPair.of (TopCat.diskBoundaryInclusion n) (by
     let hT2 : T2Space (TopCat.disk n) := by
@@ -86,5 +86,5 @@ lemma diskBoundaryPair_snd (n : ℕ) :
 lemma diskBoundaryPair_map (n : ℕ) :
     (diskBoundaryPair n).map = TopCat.diskBoundaryInclusion n := (rfl)
 
-end TopPair
+end TauCeti
 end
