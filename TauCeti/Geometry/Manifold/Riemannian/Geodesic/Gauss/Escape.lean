@@ -59,7 +59,7 @@ theorem IsNormalDomain.pathELength_escape
     ENNReal.ofReal r ≤ Manifold.pathELength I γ 0 1 := by
   -- Shrink the normal domain to the open ball used for the first exit.
   have hsmall : IsNormalDomain I M p (Metric.ball 0 r) :=
-    h.ball hclosed hr
+    h.ball (Metric.ball_subset_closedBall.trans hclosed) hr
   -- `V` is the open inner image and `K` is its compact closed image.
   set V : Set M := riemannianExp I M p '' Metric.ball 0 r
   set K : Set M := riemannianExp I M p '' Metric.closedBall 0 r

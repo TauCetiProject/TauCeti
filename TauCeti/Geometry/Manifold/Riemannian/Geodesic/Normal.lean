@@ -34,7 +34,7 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
   partial diffeomorphism between a normal domain and its normal neighbourhood.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
-* `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball compactly contained in a normal domain is
+* `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball contained in a normal domain is
   itself a normal domain.
 * `TauCeti.Manifold.isCompact_riemannianExp_image_closedBall`: a closed tangent ball in the
   exponential domain has compact exponential image.
@@ -114,10 +114,10 @@ theorem mono (h : IsNormalDomain I M p U) (hVU : V ⊆ U) (hV : IsOpen V)
   isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.2⟩
 
 omit [I.Boundaryless] in
-/-- A tangent ball whose closure lies in a normal domain is itself a normal domain. -/
-theorem ball (h : IsNormalDomain I M p U) (hU : Metric.closedBall 0 r ⊆ U) (hr : 0 < r) :
+/-- A tangent ball contained in a normal domain is itself a normal domain. -/
+theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
     IsNormalDomain I M p (Metric.ball 0 r) :=
-  h.mono (Metric.ball_subset_closedBall.trans hU) Metric.isOpen_ball (Metric.mem_ball_self hr)
+  h.mono hU Metric.isOpen_ball (Metric.mem_ball_self hr)
     ((convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr))
 
 omit [I.Boundaryless] in

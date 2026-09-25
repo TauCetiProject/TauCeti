@@ -18,6 +18,9 @@ Let `U` be a normal domain at `p` containing the closed tangent ball of radius `
 
 `edist p (exp_p v) = ‖v‖`.
 
+For points strictly inside a tangent ball, its open-ball containment in `U` suffices: choose a
+smaller closed ball around the origin before applying the distance identity.
+
 Consequently the geodesic balls `exp_p '' ball 0 r` and `exp_p '' closedBall 0 r` are the metric
 balls of radius `r` about `p`. For a point `q` outside the geodesic ball, the distance is
 
@@ -32,7 +35,8 @@ two points.
 In the namespace `TauCeti.Manifold.IsNormalDomain`:
 
 * `edist_riemannianExp_eq`: `exp_p` preserves the distance from the centre of a normal ball, and
-  `dist_riemannianExp_eq` its version for an ordinary metric.
+  `dist_riemannianExp_eq` its version for an ordinary metric. The `_of_mem_ball` variants use only
+  open-ball containment.
 * `pathELength_riemannianExp_smul_eq_edist`: the radial geodesic segment realizes the distance
   between its endpoints.
 * `edist_eq_enorm_riemannianLog`: the distance from `p` is the norm of the logarithm.
@@ -109,7 +113,7 @@ private theorem exists_mem_riemannianExp_image_sphere (h : IsNormalDomain I M p 
   by_contra hno
   simp only [not_exists, not_and] at hno
   have hball : IsNormalDomain I M p (Metric.ball 0 r) :=
-    h.ball hU hr
+    h.ball (Metric.ball_subset_closedBall.trans hU) hr
   have hK : IsClosed (riemannianExp I M p '' closedBall 0 r) :=
     (isCompact_riemannianExp_image_closedBall p (hU.trans h.subset_expDomain)).isClosed
   -- The image of the curve is connected, meets the open geodesic ball at `p`, and contains no
@@ -138,6 +142,16 @@ theorem edist_riemannianExp_eq (h : IsNormalDomain I M p U) (hU : closedBall 0 r
   exact le_riemannianEDist_of_forall_le_pathELength fun γ hγ0 hγ1 hγ ↦
     h.enorm_le_pathELength hU hv hγ hγ0 hγ1
 
+/-- The radial distance identity for a vector strictly inside a tangent ball contained in a
+normal domain. -/
+theorem edist_riemannianExp_eq_of_mem_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) :
+    edist p (riemannianExp I M p v) = ‖v‖ₑ := by
+  obtain ⟨s, hvs, hsr⟩ := exists_between (mem_ball_zero_iff.1 hv)
+  exact h.edist_riemannianExp_eq
+    ((Metric.closedBall_subset_ball hsr).trans hU)
+    (mem_closedBall_zero_iff.2 hvs.le)
+
 /-- **A radial geodesic segment in a normal ball is minimizing:** its length is the distance
 between its endpoints. -/
 theorem pathELength_riemannianExp_smul_eq_edist (h : IsNormalDomain I M p U)
@@ -146,12 +160,28 @@ theorem pathELength_riemannianExp_smul_eq_edist (h : IsNormalDomain I M p U)
       edist p (riemannianExp I M p v) := by
   rw [pathELength_riemannianExp_smul_zero_one h (hU hv), h.edist_riemannianExp_eq hU hv]
 
+/-- A radial segment to a point strictly inside a normal tangent ball is minimizing. -/
+theorem pathELength_riemannianExp_smul_eq_edist_of_mem_ball
+    (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U)
+    (hv : v ∈ Metric.ball 0 r) :
+    pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 =
+      edist p (riemannianExp I M p v) := by
+  rw [pathELength_riemannianExp_smul_zero_one h (hU hv),
+    h.edist_riemannianExp_eq_of_mem_ball hU hv]
+
 /-- On a normal ball the distance from the centre is the norm of the Riemannian logarithm. -/
 theorem edist_eq_enorm_riemannianLog (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U)
     (hq : q ∈ riemannianExp I M p '' closedBall 0 r) :
     edist p q = ‖riemannianLog I M p U q‖ₑ := by
   obtain ⟨v, hv, rfl⟩ := hq
   rw [h.riemannianLog_riemannianExp (hU hv), h.edist_riemannianExp_eq hU hv]
+
+/-- On an open normal ball, the distance from the centre is the norm of the logarithm. -/
+theorem edist_eq_enorm_riemannianLog_of_mem_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) (hq : q ∈ riemannianExp I M p '' Metric.ball 0 r) :
+    edist p q = ‖riemannianLog I M p U q‖ₑ := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [h.riemannianLog_riemannianExp (hU hv), h.edist_riemannianExp_eq_of_mem_ball hU hv]
 
 /-- **The distance to a point outside a geodesic ball.**  If the closed tangent ball of radius
 `r ≥ 0` lies in a normal domain at `p` and `q` lies outside the geodesic ball
@@ -187,24 +217,6 @@ theorem edist_eq_ofReal_add_infEDist (h : IsNormalDomain I M p U) (hU : closedBa
         _ ≤ pathELength I γ t 1 :=
           IsRiemannianManifold.edist_le_pathELength (hγ.mono (Icc_subset_Icc ht.1 le_rfl)) ht.2
 
-/-- **Geodesic balls are metric balls.**  If the closed tangent ball of radius `r` lies in a
-normal domain at `p`, then `exp_p` maps the open tangent ball of radius `r` onto the open metric
-ball of radius `r` about `p`. -/
-theorem image_riemannianExp_ball (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U) :
-    riemannianExp I M p '' Metric.ball 0 r = eball p (ENNReal.ofReal r) := by
-  ext q
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    have hvr : ‖v‖ < r := mem_ball_zero_iff.1 hv
-    rw [mem_eball', h.edist_riemannianExp_eq hU (Metric.ball_subset_closedBall hv), ← ofReal_norm]
-    exact (ENNReal.ofReal_lt_ofReal_iff ((norm_nonneg v).trans_lt hvr)).2 hvr
-  · intro hq
-    rw [mem_eball'] at hq
-    have hr : 0 < r := ENNReal.ofReal_pos.1 (pos_of_gt hq)
-    by_contra hqV
-    rw [h.edist_eq_ofReal_add_infEDist hU hr.le hqV] at hq
-    exact (le_self_add).not_gt hq
-
 /-- **Closed geodesic balls are closed metric balls.**  If the closed tangent ball of radius
 `r ≥ 0` lies in a normal domain at `p`, then `exp_p` maps it onto the closed metric ball of radius
 `r` about `p`. -/
@@ -230,6 +242,30 @@ theorem image_riemannianExp_closedBall (h : IsNormalDomain I M p U) (hU : closed
         (sphere_subset_closedBall.trans (hU.trans h.subset_expDomain))).isClosed
     exact image_mono sphere_subset_closedBall ((mem_iff_infEDist_zero_of_closed hS).2 hzero)
 
+/-- **Geodesic balls are metric balls.** If the open tangent ball of radius `r` lies in a normal
+domain at `p`, then its exponential image is the open metric ball of radius `r` about `p`. -/
+theorem image_riemannianExp_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) :
+    riemannianExp I M p '' Metric.ball 0 r = eball p (ENNReal.ofReal r) := by
+  ext q
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    have hvr : ‖v‖ < r := mem_ball_zero_iff.1 hv
+    rw [mem_eball', h.edist_riemannianExp_eq_of_mem_ball hU hv, ← ofReal_norm]
+    exact (ENNReal.ofReal_lt_ofReal_iff ((norm_nonneg v).trans_lt hvr)).2 hvr
+  · intro hq
+    rw [mem_eball'] at hq
+    have hqr : (edist p q).toReal < r := ENNReal.toReal_lt_of_lt_ofReal hq
+    obtain ⟨s, hqs, hsr⟩ := exists_between hqr
+    have hs : 0 ≤ s := (ENNReal.toReal_nonneg).trans hqs.le
+    have hclosed : closedBall 0 s ⊆ U := (Metric.closedBall_subset_ball hsr).trans hU
+    have hqs' : edist p q ≤ ENNReal.ofReal s :=
+      (ENNReal.le_ofReal_iff_toReal_le hq.ne_top hs).2 hqs.le
+    have hqclosed : q ∈ riemannianExp I M p '' closedBall 0 s := by
+      rw [h.image_riemannianExp_closedBall hclosed hs]
+      exact (mem_closedEBall').2 hqs'
+    exact image_mono (Metric.closedBall_subset_ball hsr) hqclosed
+
 end IsNormalDomain
 
 section Metric
@@ -246,6 +282,13 @@ theorem IsNormalDomain.dist_riemannianExp_eq (h : IsNormalDomain I M p U)
     (hU : closedBall 0 r ⊆ U) (hv : v ∈ closedBall 0 r) :
     dist p (riemannianExp I M p v) = ‖v‖ := by
   rw [dist_edist, h.edist_riemannianExp_eq hU hv, toReal_enorm]
+
+/-- The ordinary distance identity for a vector strictly inside a tangent ball contained in a
+normal domain. -/
+theorem IsNormalDomain.dist_riemannianExp_eq_of_mem_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) :
+    dist p (riemannianExp I M p v) = ‖v‖ := by
+  rw [dist_edist, h.edist_riemannianExp_eq_of_mem_ball hU hv, toReal_enorm]
 
 end Metric
 
