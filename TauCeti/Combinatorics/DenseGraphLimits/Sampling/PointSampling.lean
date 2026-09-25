@@ -36,9 +36,9 @@ probability.
 The proof compares `W` with a step graphon `U` close to it in `L¹`.
 
 * Sampling does not increase the `L¹` distance on average: the expected `L¹` distance between the
-  sampled graphs `H(y, W)` and `H(y, U)` is at most `‖W - U‖₁ + 1 / n`, the `1 / n` accounting for
-  the diagonal pairs `(y i, y i)`. By Markov's inequality `H(y, W)` and `H(y, U)` are close with
-  high probability.
+  sampled graphs `H(y, W)` and `H(y, U)` is at most `‖W - U‖₁ + 1 / (n + 1)`, the `1 / (n + 1)`
+  accounting for the diagonal pairs `(y i, y i)`. By Markov's inequality `H(y, W)` and `H(y, U)`
+  are close with high probability.
 * The sample `H(y, U)` of a step graphon is again a weighted graph with the same block values,
   whose vertex weights are the empirical frequencies of the blocks among the sample points.
   Changing the vertex weights of a weighted graph costs at most twice their `ℓ¹` distance

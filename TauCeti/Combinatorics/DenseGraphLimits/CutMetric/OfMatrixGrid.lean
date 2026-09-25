@@ -230,18 +230,16 @@ private theorem cutDist_ofMatrix_le_of_eq_min {ρ σ τ : Measure κ} [IsProbabi
 
 /-- **Changing the vertex weights of a finite weighted graph costs at most twice their `ℓ¹`
 distance** in cut distance: two finite weighted graphs with the same edge weights `b` and arbitrary
-vertex weights `ν`, `ν'` are at cut distance at most `2 ∑ₖ |ν {k} - ν' {k}|`.
-
-The common weighting keeps `min (ν {k}) (ν' {k})` at every vertex except one, which absorbs the
-remaining mass. Moving either original weighting to this common one applies
-`cutDist_ofMatrix_le_two_mul_sum_tsub`; the triangle inequality completes the bound. -/
+vertex weights `ν`, `ν'` are at cut distance at most `2 ∑ₖ |ν {k} - ν' {k}|`. -/
 theorem cutDist_ofMatrix_le_two_mul_sum_abs [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
     (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i) :
     cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
       ≤ 2 * ∑ k, |ν.real {k} - ν'.real {k}| := by
   classical
   obtain ⟨k₀⟩ := nonempty_of_isProbabilityMeasure ν
-  -- The common weighting: the matched mass away from `k₀`, and all the remaining mass at `k₀`.
+  -- The common weighting keeps `min (ν {k}) (ν' {k})` at every vertex except `k₀`, which absorbs
+  -- the remaining mass. Moving either original weighting to this common one applies
+  -- `cutDist_ofMatrix_le_of_eq_min`; the triangle inequality completes the bound.
   set S := ∑ k ∈ Finset.univ.erase k₀, min (ν {k}) (ν' {k})
   have hS : S ≤ 1 := by
     calc S ≤ ∑ k ∈ Finset.univ.erase k₀, ν {k} :=

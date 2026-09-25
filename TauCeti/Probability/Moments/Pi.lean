@@ -24,11 +24,11 @@ vanishes everywhere while the integrability domain is all of `ℝ`.
 These are the facts that turn a quadratic statistic of a Gaussian vector, written in
 eigen-coordinates, into a product of one-dimensional moment-generating functions.
 
-The second moment of a sum of coordinates is simpler still: the variances add
-(`ProbabilityTheory.variance_sum_pi`). For the average of `n` independent copies of one square
-integrable statistic this gives variance `Var[f] / n`, and Chebyshev's inequality turns that into
-the **weak law of large numbers** with an explicit rate: the average deviates from the mean by at
-least `t` with probability at most `Var[f] / (n t²)`.
+The variance of a sum of coordinates is simpler still: the coordinates are independent, so their
+variances add (`ProbabilityTheory.variance_sum_pi`). For the average of `n` independent copies of
+one square integrable statistic this gives variance `Var[f] / n`, and Chebyshev's inequality turns
+that into the **weak law of large numbers** with an explicit rate: the average deviates from the
+mean by at least `t` with probability at most `Var[f] / (n t²)`.
 
 ## Main results
 
@@ -80,15 +80,13 @@ variable {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω} [IsProbabilityMeasu
 
 /-- **The weak law of large numbers, in Chebyshev's form.** Under the product of `|ι|` copies of a
 probability measure `ν`, the average of a square-integrable statistic `f` over the coordinates
-deviates from its mean `∫ f dν` by at least `t` with probability at most `Var[f] / (|ι| t²)`.
-
-The average has variance `Var[f] / |ι|` because the coordinates are independent
-(`ProbabilityTheory.variance_sum_pi`), so this is Chebyshev's inequality
-`ProbabilityTheory.meas_ge_le_variance_div_sq` for it. -/
+deviates from its mean `∫ f dν` by at least `t` with probability at most `Var[f] / (|ι| t²)`. -/
 theorem meas_ge_le_variance_div_card_mul_sq_pi [Nonempty ι] {f : Ω → ℝ} (hf : MemLp f 2 ν)
     {t : ℝ} (ht : 0 < t) :
     (Measure.pi fun _ : ι => ν) {x | t ≤ |(∑ j, f (x j)) / Fintype.card ι - ∫ a, f a ∂ν|} ≤
       ENNReal.ofReal (Var[f; ν] / (Fintype.card ι * t ^ 2)) := by
+  -- The average has variance `Var[f] / |ι|` because the coordinates are independent
+  -- (`variance_sum_pi`), so this is Chebyshev's inequality `meas_ge_le_variance_div_sq` for it.
   have hN : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   have hX : ∀ _ : ι, MemLp (fun a => f a * (Fintype.card ι : ℝ)⁻¹) 2 ν :=
     fun _ => hf.mul_const _
