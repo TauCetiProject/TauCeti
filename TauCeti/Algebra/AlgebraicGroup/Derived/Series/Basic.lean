@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.GroupTheory.Solvable
-public import TauCeti.Algebra.AlgebraicGroup.Derived.PointClosure
+public import TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality
 
 /-!
 # The scheme-theoretic derived series
@@ -15,9 +14,9 @@ Starting with an affine group, repeatedly take the derived closed subgroup. We k
 defining ideals in the original coordinate algebra, pulling back from each quotient at the
 successor step. These ideals increase, since the closed subgroups decrease.
 
-For a reduced finite-type affine group over an algebraically closed field, the `n`th ideal
-is the vanishing ideal of the `n`th abstract derived subgroup of rational points. The resulting
-solvability characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.Derived.Series`.
+The comparison with the abstract derived series of rational points is in
+`TauCeti.Algebra.AlgebraicGroup.Derived.Series.PointClosure`. The resulting solvability
+characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.Derived.Series`.
 
 ## References
 
@@ -32,8 +31,6 @@ namespace CommHopfAlgCat
 noncomputable section
 
 open CategoryTheory TauCeti TauCeti.CommHopfAlgCat WithConv
-
-section CommRing
 
 variable {R : Type*} [CommRing R] (H : _root_.CommHopfAlgCat R)
 
@@ -99,23 +96,6 @@ theorem derivedSeriesDefiningIdeal_eq_augmentation_of_le {m n : ℕ} (hmn : m �
   apply le_antisymm (HopfIdeal.le_augmentation R H _)
   rw [← hm]
   exact derivedSeriesDefiningIdeal_monotone H hmn
-
-end CommRing
-
-variable {k : Type*} [Field k] [IsAlgClosed k] (H : _root_.CommHopfAlgCat k)
-  [Algebra.FiniteType k H] [IsReduced H]
-
-/-- Each scheme-theoretic derived subgroup is the reduced closure of the corresponding
-abstract derived subgroup of rational points. -/
-theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries (n : ℕ) :
-    derivedSeriesDefiningIdeal H n =
-      HopfIdeal.vanishingIdeal (derivedSeries (WithConv (H →ₐ[k] k)) n) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [derivedSeriesDefiningIdeal_succ, ih,
-        comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator,
-        derivedSeries_succ]
 
 end
 
