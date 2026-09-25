@@ -36,9 +36,6 @@ The two subcases give different decomposition shapes:
   terminal-side recut to a rectangle--pentagon decomposition when the second new rectangle
   carries the original pentagon's terminal side.
 
-Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
-chain map.
 -/
 
 public section
@@ -116,6 +113,144 @@ noncomputable def recutRightEqRightFirst
           D.toRectangleDecomposition_second_toGridRectangle] using
         hpentagon)).second }
 
+/-- The intermediate grid state of the terminal-side first-recut promotion is the intermediate
+state of the underlying rectangle recut. -/
+@[simp]
+theorem recutRightEqRightFirst_middle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.top) :
+    (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).middle =
+      (D.toRectangleDecomposition.recut hone
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_middle,
+            D.toRectangleDecomposition_second_toGridRectangle] using
+          hpentagon)).middle := rfl
+
+/-- The promoted pentagon of the terminal-side first-recut promotion is the first new rectangle
+of the underlying recut, promoted via `GridPentagonBetween.ofRightEq`. -/
+@[simp]
+theorem recutRightEqRightFirst_pentagon
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.top) :
+    (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).pentagon =
+      GridPentagonBetween.ofRightEq
+        (D.toRectangleDecomposition.recut hone
+          (by
+            simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+              D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+          (by
+            simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+              D.toRectangleDecomposition_middle,
+              D.toRectangleDecomposition_second_toGridRectangle] using
+            hpentagon)).first
+        (hfirst.trans D.pentagon.right_eq)
+        hturn := rfl
+
+/-- The rectangle of the terminal-side first-recut promotion is the second new rectangle of the
+underlying recut. -/
+@[simp]
+theorem recutRightEqRightFirst_rectangle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).first.top) :
+    (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).rectangle =
+      (D.toRectangleDecomposition.recut hone
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_middle,
+            D.toRectangleDecomposition_second_toGridRectangle] using
+          hpentagon)).second := rfl
+
 /-- Recut a rectangle followed by a pentagon when their unique common side is terminal for
 both, then promote the second new rectangle to a pentagon. This applies when the second recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is supplied
@@ -182,6 +317,144 @@ noncomputable def recutRightEqRightSecond
           hpentagon)).second
       (hsecond.trans D.pentagon.right_eq)
       hturn }
+
+/-- The intermediate grid state of the terminal-side second-recut promotion is the intermediate
+state of the underlying rectangle recut. -/
+@[simp]
+theorem recutRightEqRightSecond_middle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.top) :
+    (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).middle =
+      (D.toRectangleDecomposition.recut hone
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_middle,
+            D.toRectangleDecomposition_second_toGridRectangle] using
+          hpentagon)).middle := rfl
+
+/-- The rectangle of the terminal-side second-recut promotion is the first new rectangle of the
+underlying recut. -/
+@[simp]
+theorem recutRightEqRightSecond_rectangle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.top) :
+    (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).rectangle =
+      (D.toRectangleDecomposition.recut hone
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_middle,
+            D.toRectangleDecomposition_second_toGridRectangle] using
+          hpentagon)).first := rfl
+
+/-- The promoted pentagon of the terminal-side second-recut promotion is the second new rectangle
+of the underlying recut, promoted via `GridPentagonBetween.ofRightEq`. -/
+@[simp]
+theorem recutRightEqRightSecond_pentagon
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.right = D.pentagon.right)
+    (hturn : s ∈ Grid.cIco (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.bottom
+      (D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon)).second.top) :
+    (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).pentagon =
+      GridPentagonBetween.ofRightEq
+        (D.toRectangleDecomposition.recut hone
+          (by
+            simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+              D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+          (by
+            simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+              D.toRectangleDecomposition_middle,
+              D.toRectangleDecomposition_second_toGridRectangle] using
+            hpentagon)).second
+        (hsecond.trans D.pentagon.right_eq)
+        hturn := rfl
 
 end GridRectanglePentagonDecomposition
 

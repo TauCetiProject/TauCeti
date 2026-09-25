@@ -10,9 +10,9 @@ public import TauCeti.KnotTheory.Grid.Commutation.Overlap
 /-!
 # Branch-1 pentagon X-avoidance transfer
 
-Given Branch-1 side data for a rectangle--pentagon decomposition `D`, a pentagon `P` whose
-column interval sits inside the counted pentagon `D.pentagon`'s column interval, and whose
-bottom and top rows agree with `D.pentagon`'s, inherits `D.pentagon`'s X-avoidance.
+Given an X-avoiding pentagon `Q`, a pentagon `P` whose column interval sits inside `Q`'s
+column interval, and whose bottom and top rows agree with `Q`'s, inherits `Q`'s
+X-avoidance.
 
 ## Mathematical context
 
@@ -23,7 +23,8 @@ repartitions the union of the old rectangle and old pentagon into a new rectangl
 `E.rectangle` and a new pentagon `E.pentagon`.
 
 This module proves the branch-1 pentagon piece: in recut branch 1, the new pentagon
-`E.pentagon` is X-avoiding, hence counted. The proof applies
+`E.pentagon` is X-avoiding. (Countedness additionally needs emptiness, proved as
+`D.isEmpty_pentagon_recutLeftEqLeft` in `Overlap`.) The proof applies
 `GridPentagonBetween.disjoint_coveredSquares_XSet_iff` on both sides: the side-column clause
 transfers through the column inclusion, while the column-`a` and column-`b` clauses are
 literally the old ones once the rows agree.
@@ -31,11 +32,8 @@ literally the old ones once the rows agree.
 ## Main results
 
 * `TauCeti.GridRectanglePentagonDecomposition.pentagon_disjoint_XSet_of_branch1_data`: the
-  branch-1 pentagon X-avoidance transfer, from the pentagon's counted membership alone.
+  branch-1 pentagon X-avoidance transfer, from an old pentagon's X-avoidance alone.
 
-Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
-chain map.
 -/
 
 public section
@@ -52,35 +50,37 @@ open Grid
 /-- Branch-1 `X`-avoidance transfer for a pentagon built on a recut first rectangle.
 
 This is the geometric core of counted-ness in branch 1.  If `P` is a pentagon
-whose column interval sits inside the old pentagon's (`hcol`), and whose bottom
-and top rows agree with the old pentagon's (`hbot`, `htop`), then `P` inherits
-`X`-avoidance from the old counted pentagon `D.pentagon`.
+whose column interval sits inside an `X`-avoiding pentagon `Q`'s (`hcol`), and whose
+bottom and top rows agree with `Q`'s (`hbot`, `htop`), then `P` inherits `X`-avoidance
+from `Q`.
+
+Only `Q`'s `X`-avoidance is used: neither its counted membership nor any data from the
+ambient rectangle-pentagon decomposition.
 
 The proof applies `GridPentagonBetween.disjoint_coveredSquares_XSet_iff` on both
 sides: the side-column clause transfers through the column inclusion, while the
 column-`a` and column-`b` clauses are literally the old ones once the rows agree.
 -/
 public theorem pentagon_disjoint_XSet_of_branch1_data
-    (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hpent : D.pentagon ∈ G.pentagons C D.middle z)
-    (P : GridPentagonBetween C.column C.turnRow x y)
-    (hcol : cIco P.left (finRotate n C.column) ⊆
-      cIco D.pentagon.left (finRotate n C.column))
-    (hbot : P.bottom = D.pentagon.bottom)
-    (htop : P.top = D.pentagon.top) :
+    {a s : Fin n} {u v : GridState n}
+    (Q : GridPentagonBetween a s u v)
+    (hX : Disjoint Q.coveredSquares G.XSet)
+    (P : GridPentagonBetween a s x y)
+    (hcol : cIco P.left (finRotate n a) ⊆ cIco Q.left (finRotate n a))
+    (hbot : P.bottom = Q.bottom)
+    (htop : P.top = Q.top) :
     Disjoint P.coveredSquares G.XSet := by
-  have hdisj : Disjoint D.pentagon.coveredSquares G.XSet :=
-    ((G.mem_pentagons D.pentagon).mp hpent).2
-  rw [GridPentagonBetween.disjoint_coveredSquares_XSet_iff] at hdisj ⊢
+  rw [GridPentagonBetween.disjoint_coveredSquares_XSet_iff] at hX ⊢
   rw [hbot, htop]
-  obtain ⟨ha, hb, hc⟩ := hdisj
+  obtain ⟨ha, hb, hc⟩ := hX
   exact ⟨fun c hcne hcmem => ha c hcne (hcol hcmem), hb, hc⟩
 
 /-
 Application note (branch 1):
 
 To show the `recutLeftEqLeft`-promoted pentagon is counted, apply
-`pentagon_disjoint_XSet_of_branch1_data` with:
+`pentagon_disjoint_XSet_of_branch1_data` with `Q := D.pentagon` and `hX` from the
+pentagon's counted membership (`((G.mem_pentagons D.pentagon).mp hpent).2`):
 - `hcol`: from `Grid.cIco_subset_of_mem_cIoo hbranch` after rewriting the recut
   first rectangle's `left` via the branch-1 side equation and `hcommon`;
 - `hbot`: `D.recut_first_bottom_eq_pentagon_bottom_of_branch1` (in `OverlapXAvoid`);

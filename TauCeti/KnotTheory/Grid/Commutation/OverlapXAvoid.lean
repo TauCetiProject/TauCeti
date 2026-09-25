@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap
+public import TauCeti.KnotTheory.Grid.Commutation.OverlapCounted
 public import TauCeti.KnotTheory.Grid.Commutation.Pentagon
 
 /-!
@@ -19,9 +20,6 @@ This file establishes X-avoidance for that strip in the first recut branch, wher
 first rectangle's bottom row coincides with the original pentagon's bottom row. Both are `x`
 applied to the original rectangle's terminal side.
 
-Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
-chain map.
 -/
 
 public section
@@ -80,7 +78,8 @@ public theorem recut_first_bottom_eq_pentagon_bottom_of_branch1
   rw [hnew, hold]
 
 /-- X-avoidance for the `finRotate` strip in the first recut branch. The strip's row interval
-coincides with the original pentagon's, so the original X-avoidance applies. -/
+coincides with the original pentagon's, so the original X-avoidance applies, via the shared
+strip lemma `branch2_X_not_mem_pentagon_rows` (in `OverlapCounted`). -/
 public theorem recut_X_not_mem_of_branch1
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -106,43 +105,13 @@ public theorem recut_X_not_mem_of_branch1
             D.toRectangleDecomposition_middle,
             D.toRectangleDecomposition_second_toGridRectangle] using
             hpentagon)).first.bottom C.turnRow := by
-  have hempty1 : D.toRectangleDecomposition.first.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
-  have hempty2 : D.toRectangleDecomposition.second.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_middle,
-      D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
   -- Get X-avoidance of the original pentagon.
   rw [G.mem_pentagons] at hmem
   obtain ⟨-, hdisjoint⟩ := hmem
-  -- The bottoms coincide, so the intervals are equal.
+  -- The bottoms coincide, so the shared pentagon strip argument applies.
   have hbot := D.recut_first_bottom_eq_pentagon_bottom_of_branch1 hcommon hone
     hrectangle hpentagon hfirstLeft
-  -- Rewrite the goal to use the explicit recut with named proofs.
-  have hgoal : G.X (finRotate n C.column) ∉
-      Grid.cIco (D.toRectangleDecomposition.recut hone hempty1 hempty2).first.bottom C.turnRow := by
-    have heq : (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-            hpentagon)).first.bottom =
-        (D.toRectangleDecomposition.recut hone hempty1 hempty2).first.bottom := rfl
-    rw [heq]
-    rw [hbot]
-    intro hXmem
-    have hmem' : (finRotate n C.column, G.X (finRotate n C.column)) ∈
-        D.pentagon.coveredSquares := by
-      rw [D.pentagon.mem_coveredSquares]
-      exact Or.inr (Or.inr ⟨rfl, hXmem⟩)
-    have hXmem' : (finRotate n C.column, G.X (finRotate n C.column)) ∈ G.XSet := by
-      simp [GridDiagram.XSet]
-    exact Finset.disjoint_left.mp hdisjoint hmem' hXmem'
-  exact hgoal
+  exact branch2_X_not_mem_pentagon_rows D.pentagon hdisjoint _ hbot.symm
 
 end GridRectanglePentagonDecomposition
 

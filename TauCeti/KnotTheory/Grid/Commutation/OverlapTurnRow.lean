@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap
 public import TauCeti.KnotTheory.Grid.Commutation.OverlapInvolution
 
 /-!
@@ -22,9 +21,6 @@ common-initial-side case), using `cyclicOrder_of_isEmpty_of_right_eq_right` for 
 cyclic order and the forced branch data from `OverlapInvolution`
 (`first_terminal_recut_branch_data` / `second_terminal_recut_branch_data`).
 
-Roadmap target: Lane G, milestone 5 ("Invariance over 𝔽₂") of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`: the pentagon-counting commutation
-chain map.
 
 ## Main results
 
@@ -173,7 +169,26 @@ private theorem turn_mem_row_span_of_terminal_side
   have hmem : s ∈ Grid.cIco (x D.toRectangleDecomposition.second.left)
       (x D.toRectangleDecomposition.first.left) := by
     simpa only [hsecondBottom, hsecondTop] using hturn
-  exact Grid.cIco_subset_cIco_of_mem_cIco hmem hrow'
+  exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hmem hrow'
+
+/-- The shared recut construction for the terminal-side overlap: `D.toRectangleDecomposition`
+recut along its common side, with the rectangle emptiness supplied from `hrectangle` and the
+pentagon emptiness from `hpentagon`. Both turn-row transports below work with this single
+recut rather than repeating its construction. -/
+private noncomputable def terminal_recut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    GridRectangleDecomposition x z :=
+  D.toRectangleDecomposition.recut hone
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using
+      hpentagon)
 
 /-- In the common-terminal-side overlap, the first rectangle of the recut still contains the
 pentagon's turn row in its row span, when it carries the pentagon's terminal side. -/
@@ -182,34 +197,12 @@ theorem turn_mem_recut_first_of_right_eq_right
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hfirst : (D.toRectangleDecomposition.recut hone
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using
-        hpentagon)).first.right = D.pentagon.right) :
-    s ∈ Grid.cIco
-      (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).first.bottom
-      (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).first.top := by
+    (hfirst : (D.terminal_recut hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    s ∈ Grid.cIco (D.terminal_recut hone hrectangle hpentagon).first.bottom
+      (D.terminal_recut hone hrectangle hpentagon).first.top := by
+  -- Work with the shared recut construction directly.
+  unfold terminal_recut at hfirst ⊢
   -- The forced branch data: the first recut rectangle spans from the original second
   -- rectangle's left side to the original first rectangle's right side.
   obtain ⟨-, hEfirst_right, hEfirst_left⟩ :=
@@ -284,34 +277,12 @@ theorem turn_mem_recut_second_of_right_eq_right
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hsecond : (D.toRectangleDecomposition.recut hone
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using
-        hpentagon)).second.right = D.pentagon.right) :
-    s ∈ Grid.cIco
-      (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).second.bottom
-      (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).second.top := by
+    (hsecond : (D.terminal_recut hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    s ∈ Grid.cIco (D.terminal_recut hone hrectangle hpentagon).second.bottom
+      (D.terminal_recut hone hrectangle hpentagon).second.top := by
+  -- Work with the shared recut construction directly.
+  unfold terminal_recut at hsecond ⊢
   -- The forced branch data: the second recut rectangle spans from the original first
   -- rectangle's left side to the original first rectangle's right side, with the
   -- column-swapped middle state.

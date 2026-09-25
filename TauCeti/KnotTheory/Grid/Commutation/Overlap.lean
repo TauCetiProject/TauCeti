@@ -47,9 +47,7 @@ must distinguish the two cases.
   exactly one of the two new rectangles has the original pentagon's terminal side.
 
 These are the recut/repartition combinatorics and weight transfers for the pentagon-counting
-commutation chain map of `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
-"Invariance over 𝔽₂" ("Commutation: pentagon-counting chain maps with hexagon-counting
-homotopies").
+commutation chain map.
 
 ## References
 

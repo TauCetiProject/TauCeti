@@ -77,7 +77,7 @@ directions before taking products.
   `Fin.predAbove i`.
 * `TauCeti.Grid.cIco_subset_of_mem_cIoo`: a half-open arc starting strictly inside another is
   contained in it.
-* `TauCeti.Grid.cIco_subset_cIco_of_mem_cIco`: the membership form of that nesting.
+* `TauCeti.Grid.mem_cIco_of_mem_cIco_of_mem_cIoo`: the membership form of that nesting.
 * `TauCeti.Grid.notMem_cIco_finRotate_left`: a point is never in the half-open arc starting at
   its own cyclic successor.
 
@@ -773,7 +773,7 @@ theorem cIco_subset_of_mem_cIoo {a b r : Fin n}
 
 /-- Interval nesting: a point in `cIco A B` with `B` strictly inside `cIco A C` lies in
 `cIco A C`. This is the `cIco`-membership version of `cIco_subset_of_mem_cIoo`. -/
-theorem cIco_subset_cIco_of_mem_cIco {A B C s : Fin n}
+theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
     (hmem : s ∈ cIco A B) (hB : B ∈ cIoo A C) :
     s ∈ cIco A C := by
   have hunion := cIco_union_cIco_eq_cIco_of_mem_cIoo hB
