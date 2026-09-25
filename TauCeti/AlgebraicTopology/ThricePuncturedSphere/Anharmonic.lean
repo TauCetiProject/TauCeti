@@ -30,10 +30,10 @@ itself. The two involutions `mob01` and `mob1Inf` generate the other four: `mobR
 `S₃`).
 
 Pulling covers back along these maps is the topological counterpart of the action of `S₃` on
-permutation triples by permuting the branch points. Only `mob01` fixes the basepoint `b = 1/2`:
-the orbit of `b` is `{1/2, 2, −1}`. So the other five maps act on the fundamental group at `b`
-only after a choice of connecting path, which is why that action is well defined only on
-isomorphism classes of covers.
+permutation triples by permuting the branch points. The identity and `mob01` fix the basepoint
+`b = 1/2`; among the nonidentity maps, only `mob01` does. The other four maps move it, so they
+act on the fundamental group at `b` only after a choice of connecting path, which is why that
+action is well defined only on isomorphism classes of covers.
 
 The puncture permutations are recorded by identifying each map with the restriction of a Möbius
 transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of an element of
@@ -104,6 +104,7 @@ noncomputable def mob1Inf : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere w
   continuous_toFun := continuous_mob1InfFun
   continuous_invFun := continuous_mob1InfFun
 
+/-- `mob1Inf` has the formula `z ↦ z / (z - 1)`. -/
 @[simp]
 theorem coe_mob1Inf (z : ThricePuncturedSphere) : (mob1Inf z : ℂ) = z / (z - 1) := (rfl)
 
@@ -114,7 +115,8 @@ theorem mob1Inf_mob1Inf (z : ThricePuncturedSphere) : mob1Inf (mob1Inf z) = z :=
 
 /-- `mob1Inf` is its own inverse. -/
 @[simp]
-theorem symm_mob1Inf : mob1Inf.symm = mob1Inf := (rfl)
+theorem symm_mob1Inf : mob1Inf.symm = mob1Inf :=
+  Homeomorph.ext fun z ↦ mob1Inf.symm_apply_eq.mpr (mob1Inf_mob1Inf z).symm
 
 /-- The self-homeomorphism `z ↦ 1 / (1 − z)` of the thrice-punctured sphere, the composite
 `mob01 ∘ mob1Inf`. It is the anharmonic transformation rotating the punctures `0 ↦ 1 ↦ ∞ ↦ 0`; it
@@ -134,6 +136,7 @@ theorem mobRot_apply (z : ThricePuncturedSphere) : mobRot z = mob01 (mob1Inf z) 
 /-- `mobRotInv` is `mob1Inf ∘ mob01`. -/
 theorem mobRotInv_apply (z : ThricePuncturedSphere) : mobRotInv z = mob1Inf (mob01 z) := (rfl)
 
+/-- `mobRot` has the formula `z ↦ 1 / (1 - z)`. -/
 @[simp]
 theorem coe_mobRot (z : ThricePuncturedSphere) : (mobRot z : ℂ) = 1 / (1 - z) := by
   have h : (z : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr z.ne_one
@@ -142,6 +145,7 @@ theorem coe_mobRot (z : ThricePuncturedSphere) : (mobRot z : ℂ) = 1 / (1 - z) 
   field_simp
   ring
 
+/-- `mobRotInv` has the formula `z ↦ (z - 1) / z`. -/
 @[simp]
 theorem coe_mobRotInv (z : ThricePuncturedSphere) : (mobRotInv z : ℂ) = (z - 1) / z := by
   have h : (z : ℂ) ≠ 0 := z.ne_zero
@@ -149,18 +153,22 @@ theorem coe_mobRotInv (z : ThricePuncturedSphere) : (mobRotInv z : ℂ) = (z - 1
   field_simp
   ring
 
+/-- `mobRot` and `mobRotInv` are inverse when composed in this order. -/
 @[simp]
 theorem mobRot_mobRotInv (z : ThricePuncturedSphere) : mobRot (mobRotInv z) = z := by
   rw [mobRot_apply, mobRotInv_apply, mob1Inf_mob1Inf, mob01_mob01]
 
+/-- `mobRotInv` and `mobRot` are inverse when composed in this order. -/
 @[simp]
 theorem mobRotInv_mobRot (z : ThricePuncturedSphere) : mobRotInv (mobRot z) = z := by
   rw [mobRot_apply, mobRotInv_apply, mob01_mob01, mob1Inf_mob1Inf]
 
+/-- The inverse of `mobRot` is `mobRotInv`. -/
 @[simp]
 theorem symm_mobRot : mobRot.symm = mobRotInv :=
   Homeomorph.ext fun z ↦ mobRot.symm_apply_eq.mpr (mobRot_mobRotInv z).symm
 
+/-- The inverse of `mobRotInv` is `mobRot`. -/
 @[simp]
 theorem symm_mobRotInv : mobRotInv.symm = mobRot := by
   rw [← symm_mobRot, Homeomorph.symm_symm]
@@ -189,6 +197,7 @@ noncomputable def mob0Inf : ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :
 theorem mob01_mob1Inf_mob01 (z : ThricePuncturedSphere) :
     mob01 (mob1Inf (mob01 z)) = mob0Inf z := (rfl)
 
+/-- `mob0Inf` has the formula `z ↦ 1 / z`. -/
 @[simp]
 theorem coe_mob0Inf (z : ThricePuncturedSphere) : (mob0Inf z : ℂ) = 1 / z := by
   rw [← mob01_mob1Inf_mob01, ← mobRot_apply, coe_mobRot, coe_mob01, sub_sub_cancel]
@@ -215,18 +224,26 @@ theorem symm_mob0Inf : mob0Inf.symm = mob0Inf :=
 
 /-! ### The images of the basepoint -/
 
+/-- `mob1Inf` sends the basepoint to `-1`. -/
+@[simp]
 theorem coe_mob1Inf_basePt : (mob1Inf basePt : ℂ) = -1 := by
   rw [coe_mob1Inf, coe_basePt]
   norm_num
 
+/-- `mob0Inf` sends the basepoint to `2`. -/
+@[simp]
 theorem coe_mob0Inf_basePt : (mob0Inf basePt : ℂ) = 2 := by
   rw [coe_mob0Inf, coe_basePt]
   norm_num
 
+/-- `mobRot` sends the basepoint to `2`. -/
+@[simp]
 theorem coe_mobRot_basePt : (mobRot basePt : ℂ) = 2 := by
   rw [coe_mobRot, coe_basePt]
   norm_num
 
+/-- `mobRotInv` sends the basepoint to `-1`. -/
+@[simp]
 theorem coe_mobRotInv_basePt : (mobRotInv basePt : ℂ) = -1 := by
   rw [coe_mobRotInv, coe_basePt]
   norm_num
