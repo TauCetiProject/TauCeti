@@ -60,12 +60,10 @@ def quotientCoordinateMap : H₂₆ ⟶ Q :=
 private theorem commonKernelLift_comp_quotient (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) :
     (CommHopfAlgCat.commonKernelLift generator j).hom.toAlgHom.comp
         (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom = (generator j).hom.toAlgHom :=
-  congrArg (fun f => f.hom.toAlgHom)
-    (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
+  congrArg (fun f => f.hom.toAlgHom) (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
 
 private theorem root_generator_point (k : Fin 4 ⊕ Fin 4) :
-    ∃ u : Multiplicative (generatorCodomain (.inl k)),
-      GeneralLinear.pointsMulEquiv 26
+    ∃ u : Multiplicative (generatorCodomain (.inl k)), GeneralLinear.pointsMulEquiv 26
           (WithConv.toConv (generator (.inl k)).hom.toAlgHom) =
         F4ShortRoot.rootSubgroupPoints k (generatorCodomain (.inl k)) u := by
   let q : HopfAlgebra.points (H := AdditiveGroup.coordinateHopfAlgebra 𝔽₂)
@@ -79,29 +77,25 @@ private theorem root_generator_point (k : Fin 4 ⊕ Fin 4) :
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inl k)).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
 
-private theorem coe_weightTorusPoints_eq (A : Type) [CommRing A] [Algebra 𝔽₂ A]
-    (s : Fin 4 → Aˣ) :
+private theorem coe_weightTorusPoints_eq (A : Type) [CommRing A] [Algebra 𝔽₂ A] (s : Fin 4 → Aˣ) :
     (weightTorusPoints A s : GL (Fin 26) A) = f4ShortRootWeightTorusGL s := by
   rw [coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
 
-private theorem torus_generator_point :
-    ∃ s : Fin 4 → (generatorCodomain (.inr ()))ˣ,
+private theorem torus_generator_point : ∃ s : Fin 4 → (generatorCodomain (.inr ()))ˣ,
       GeneralLinear.pointsMulEquiv 26
           (WithConv.toConv (generator (.inr ())).hom.toAlgHom) = f4ShortRootWeightTorusGL s := by
   let q : HopfAlgebra.points (H := generatorCodomain (.inr ()))
       (CommAlgCat.of 𝔽₂ (generatorCodomain (.inr ()))) :=
     WithConv.toConv (AlgHom.id 𝔽₂ _)
   refine ⟨SplitTorus.pointsMulEquiv q, ?_⟩
-  have h := (coe_weightTorusPoints_pointsMulEquiv _ q).symm.trans
-    (coe_weightTorusPoints_eq _ _)
+  have h := (coe_weightTorusPoints_pointsMulEquiv _ q).symm.trans (coe_weightTorusPoints_eq _ _)
   -- The generator point is the universal split-torus point in coordinate form.
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inr ())).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
 
-private theorem ideal_le_ker_of_point_eq
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A]
+private theorem ideal_le_ker_of_point_eq {A : Type} [CommRing A] [Algebra 𝔽₂ A]
     (f : H₂₆ →ₐ[𝔽₂] A) (p : points A)
     (hp : GeneralLinear.pointsMulEquiv 26 (WithConv.toConv f) = (p : GL (Fin 26) A)) :
     (J).toIdeal ≤ RingHom.ker f.toRingHom := by
@@ -155,24 +149,20 @@ matrix coefficient morphism of the represented quotient. -/
   exact CommHopfAlgCat.mkQuotient_comp_liftQuotient J quotientCoordinateMap
     commonKernelHopfIdeal_le_ker_quotientCoordinateMap
 
-private theorem quotientIsogeny_point_comp
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
-    (g.comp quotientIsogeny.hom.toAlgHom).comp
-        (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom =
+private theorem quotientIsogeny_point_comp {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
+    (g.comp quotientIsogeny.hom.toAlgHom).comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom =
       g.comp f4ShortRootQuotientCoordinateBialgHom.toAlgHom := by
   have h := congrArg (fun f => g.comp f.hom.toAlgHom) mkQuotient_comp_quotientIsogeny
   simpa only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
     hom_quotientCoordinateMap, AlgHom.comp_assoc] using h
 
 /-- The induced coordinate endomorphism has the prescribed action on every root point. -/
-theorem quotientIsogeny_root
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
+theorem quotientIsogeny_root {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       F4ShortRoot.rootSubgroupPoints k A u) :
-    GeneralLinear.pointsMulEquiv 26
-        (WithConv.toConv ((g.comp quotientIsogeny.hom.toAlgHom).comp
+    GeneralLinear.pointsMulEquiv 26 (WithConv.toConv ((g.comp quotientIsogeny.hom.toAlgHom).comp
           (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       F4ShortRoot.rootSubgroupPoints (isogenyReverse k) A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ isogenyExponent k)) := by
@@ -180,29 +170,24 @@ theorem quotientIsogeny_root
   exact pointsMulEquiv_f4ShortRootQuotientCoordinateBialgHom_root g k u hg
 
 /-- The induced coordinate endomorphism has the prescribed action on every weight-torus point. -/
-theorem quotientIsogeny_torus
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
+theorem quotientIsogeny_torus {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
     (s : Fin 4 → Aˣ)
     (hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       f4ShortRootWeightTorusGL s) :
-    GeneralLinear.pointsMulEquiv 26
-        (WithConv.toConv ((g.comp quotientIsogeny.hom.toAlgHom).comp
+    GeneralLinear.pointsMulEquiv 26 (WithConv.toConv ((g.comp quotientIsogeny.hom.toAlgHom).comp
           (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       f4ShortRootWeightTorusGL (f4SpecialIsogenyTorusMap s) := by
   rw [quotientIsogeny_point_comp]
   exact pointsMulEquiv_f4ShortRootQuotientCoordinateBialgHom_torus g s hg
 
-private theorem quotientIsogeny_square_root
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
+private theorem quotientIsogeny_square_root {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       F4ShortRoot.rootSubgroupPoints k A u) :
-    GeneralLinear.pointsMulEquiv 26
-        (WithConv.toConv (((g.comp quotientIsogeny.hom.toAlgHom).comp
-          quotientIsogeny.hom.toAlgHom).comp
-            (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
+    GeneralLinear.pointsMulEquiv 26 (WithConv.toConv (((g.comp quotientIsogeny.hom.toAlgHom).comp
+          quotientIsogeny.hom.toAlgHom).comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       F4ShortRoot.rootSubgroupPoints k A (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   have h₁ := quotientIsogeny_root g k u hg
   have h₂ := quotientIsogeny_root (g.comp quotientIsogeny.hom.toAlgHom)
@@ -210,24 +195,20 @@ private theorem quotientIsogeny_square_root
   simpa only [toAdd_ofAdd, ← pow_mul,
     isogenyExponent_mul_isogenyExponent_eq_two, isogenyReverse_isogenyReverse] using h₂
 
-private theorem quotientIsogeny_square_torus
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
+private theorem quotientIsogeny_square_torus {A : Type} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A)
     (s : Fin 4 → Aˣ)
     (hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       f4ShortRootWeightTorusGL s) :
-    GeneralLinear.pointsMulEquiv 26
-        (WithConv.toConv (((g.comp quotientIsogeny.hom.toAlgHom).comp
-          quotientIsogeny.hom.toAlgHom).comp
-            (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
+    GeneralLinear.pointsMulEquiv 26 (WithConv.toConv (((g.comp quotientIsogeny.hom.toAlgHom).comp
+          quotientIsogeny.hom.toAlgHom).comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
       f4ShortRootWeightTorusGL (fun i => s i ^ 2) := by
   have h₁ := quotientIsogeny_torus g s hg
   have h₂ := quotientIsogeny_torus (g.comp quotientIsogeny.hom.toAlgHom)
     (f4SpecialIsogenyTorusMap s) h₁
   simpa only [f4SpecialIsogenyTorusMap_apply_apply] using h₂
 
-private theorem points_frobeniusBialgHom
-    {A : Type*} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
+private theorem points_frobeniusBialgHom {A : Type*} [CommRing A] [Algebra 𝔽₂ A] (g : Q →ₐ[𝔽₂] A) :
     GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv ((g.comp (frobeniusBialgHom 𝔽₂ Q).toAlgHom).comp
           (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
@@ -244,8 +225,7 @@ private theorem points_frobeniusBialgHom
   rw [h]
   exact GeneralLinear.pointsMulEquiv_mapValue 26 (FiniteField.frobeniusAlgHom 𝔽₂ A) _
 
-private theorem map_frobenius_root
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A]
+private theorem map_frobenius_root {A : Type} [CommRing A] [Algebra 𝔽₂ A]
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
     Matrix.GeneralLinearGroup.map (FiniteField.frobeniusAlgHom 𝔽₂ A).toRingHom
         (F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A) =
@@ -253,19 +233,15 @@ private theorem map_frobenius_root
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) : GL (Fin 26) A) := by
   have h := congrArg (fun p : points A => (p : GL (Fin 26) A))
     (frobenius_rootSubgroupPoints 1 A k u)
-  simpa only [coe_frobenius, pow_one, coe_rootSubgroupPoints,
-    AlgHom.toRingHom_eq_coe] using h
+  simpa only [coe_frobenius, pow_one, coe_rootSubgroupPoints, AlgHom.toRingHom_eq_coe] using h
 
-private theorem map_frobenius_torus
-    {A : Type} [CommRing A] [Algebra 𝔽₂ A] (s : Fin 4 → Aˣ) :
+private theorem map_frobenius_torus {A : Type} [CommRing A] [Algebra 𝔽₂ A] (s : Fin 4 → Aˣ) :
     Matrix.GeneralLinearGroup.map (FiniteField.frobeniusAlgHom 𝔽₂ A).toRingHom
         (f4ShortRootWeightTorusGL s) =
       f4ShortRootWeightTorusGL (fun i => s i ^ 2) := by
-  have h := congrArg (fun p : points A => (p : GL (Fin 26) A))
-    (frobenius_weightTorusPoints 1 A s)
+  have h := congrArg (fun p : points A => (p : GL (Fin 26) A)) (frobenius_weightTorusPoints 1 A s)
   have hs : s ^ 2 = (fun i => s i ^ 2) := by ext i; rfl
-  simpa only [coe_frobenius, pow_one, coe_weightTorusPoints_eq, hs,
-    AlgHom.toRingHom_eq_coe] using h
+  simpa only [coe_frobenius, pow_one, coe_weightTorusPoints_eq, hs, AlgHom.toRingHom_eq_coe] using h
 
 /-- The represented quotient endomorphism squares to Frobenius as a morphism of coordinate
 Hopf algebras. Equality is tested on the universal generators, over their coordinate algebras. -/
@@ -289,16 +265,14 @@ Hopf algebras. Equality is tested on the universal generators, over their coordi
           F4ShortRoot.rootSubgroupPoints k (generatorCodomain (.inl k)) u := by
         rw [commonKernelLift_comp_quotient]
         exact hu
-      rw [quotientIsogeny_square_root g k u hg, points_frobeniusBialgHom, hg,
-        map_frobenius_root]
+      rw [quotientIsogeny_square_root g k u hg, points_frobeniusBialgHom, hg, map_frobenius_root]
     · obtain ⟨s, hs⟩ := torus_generator_point
       have hg : GeneralLinear.pointsMulEquiv 26
           (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
           f4ShortRootWeightTorusGL s := by
         rw [commonKernelLift_comp_quotient]
         exact hs
-      rw [quotientIsogeny_square_torus g s hg, points_frobeniusBialgHom, hg,
-        map_frobenius_torus]
+      rw [quotientIsogeny_square_torus g s hg, points_frobeniusBialgHom, hg, map_frobenius_torus]
   have halg := congrArg WithConv.ofConv ((GeneralLinear.pointsMulEquiv 26).injective hpoints)
   ext x
   exact DFunLike.congr_fun halg x
@@ -311,8 +285,7 @@ def specialIsogenyHom : groupScheme ⟶ groupScheme :=
       eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm
 
 /-- The scheme morphism is the spectrum of the quotient-coordinate endomorphism. -/
-theorem specialIsogenyHom_eq_map_quotientIsogeny :
-    specialIsogenyHom =
+theorem specialIsogenyHom_eq_map_quotientIsogeny : specialIsogenyHom =
       eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map quotientIsogeny.op ≫
           eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm := by
@@ -322,8 +295,7 @@ theorem specialIsogenyHom_eq_map_quotientIsogeny :
 noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A] :
     HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) :=
-  CommHopfAlgCat.mapMulEquivOfPresentation Q A
-    (GeneralLinear.generatedGroupScheme_def 26 generator)
+  CommHopfAlgCat.mapMulEquivOfPresentation Q A (GeneralLinear.generatedGroupScheme_def 26 generator)
 
 private theorem groupScheme_X_left : groupScheme.X.left = Spec (CommRingCat.of Q) := by
   rw [show groupScheme = CommHopfAlgCat.quotientSpec H₂₆ J from
@@ -332,20 +304,17 @@ private theorem groupScheme_X_left : groupScheme.X.left = Spec (CommRingCat.of Q
 
 private theorem groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
-    (groupSchemePointMulEquiv A q).left =
-      Spec.map (CommRingCat.ofHom (q.ofConv : Q →+* A)) ≫
+    (groupSchemePointMulEquiv A q).left = Spec.map (CommRingCat.ofHom (q.ofConv : Q →+* A)) ≫
         eqToHom groupScheme_X_left.symm := by
   exact CommHopfAlgCat.mapMulEquivOfPresentation_apply_left Q A
     (GeneralLinear.generatedGroupScheme_def 26 generator) groupScheme_X_left q
 
 /-- Scheme-valued points of the F4 carrier are its named matrix-valued points. -/
 noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A] :
-    ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) ≃*
-      points A :=
+    ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) ≃* points A :=
   (groupSchemePointMulEquiv A).symm.trans (coordinatePointsEquiv A)
 
-@[simp] theorem schemePointsMulEquiv_groupSchemePointMulEquiv
-    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+@[simp] theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
     schemePointsMulEquiv A (groupSchemePointMulEquiv A q) = coordinatePointsEquiv A q := by
   simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
@@ -354,8 +323,7 @@ noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ 
 theorem groupSchemePointMulEquiv_comp_coordinateMap
     (A : Type) [CommRing A] [Algebra 𝔽₂ A] (phi : Q ⟶ Q)
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
-    groupSchemePointMulEquiv A q ≫
-        (eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
+    groupSchemePointMulEquiv A q ≫ (eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
           (hopfSpec (CommRingCat.of 𝔽₂)).map phi.op ≫
             eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm).hom.hom =
       groupSchemePointMulEquiv A (AlgHom.mapDomain phi.hom q) := by
@@ -365,11 +333,115 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap
       (groupSchemePointMulEquiv A) (groupSchemePointMulEquiv A)
       (groupSchemePointMulEquiv_apply_left A)
       (groupSchemePointMulEquiv_apply_left A) phi q
-  have heval :
-      ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
+  have heval : ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
         AlgHom.mapDomain phi.hom q := rfl
   rw [heval] at h
   exact h
+
+private theorem groupSchemePointMulEquiv_comp_rootSubgroup (k : Fin 4 ⊕ Fin 4)
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := AdditiveGroup.coordinateHopfAlgebra 𝔽₂) (CommAlgCat.of 𝔽₂ A)) :
+    AdditiveGroup.groupSchemePointMulEquiv A q ≫ (rootSubgroup k).hom.hom =
+      groupSchemePointMulEquiv A
+        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
+            (CommAlgCat.of 𝔽₂ A) q) := by
+  rw [rootSubgroup_def, GeneralLinear.generatorToGeneratedGroupScheme_def]
+  simpa only [Category.assoc, eqToHom_trans] using
+    CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := 𝔽₂) A (GeneralLinear.generatedGroupScheme_def 26 generator)
+      (AdditiveGroup.groupScheme_def 𝔽₂)
+      (groupSchemePointMulEquiv A) (AdditiveGroup.groupSchemePointMulEquiv A)
+      (groupSchemePointMulEquiv_apply_left A)
+      (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
+      (CommHopfAlgCat.commonKernelLift generator (.inl k)) q
+
+private theorem groupSchemePointMulEquiv_comp_weightTorus (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := (DiagonalizableGroup.coordinateRing 𝔽₂
+        (SplitTorus.characterGroup (Fin 4))).obj) (CommAlgCat.of 𝔽₂ A)) :
+    (DiagonalizableGroup.groupSchemePointsMulEquiv
+      (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4))).symm q ≫ weightTorus.hom.hom =
+      groupSchemePointMulEquiv A ((CommHopfAlgCat.mapPointsFunctor
+          (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app (CommAlgCat.of 𝔽₂ A) q) := by
+  rw [weightTorus_def, GeneralLinear.generatorToGeneratedGroupScheme_def]
+  simpa only [Category.assoc, eqToHom_trans] using
+    CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := 𝔽₂) A (GeneralLinear.generatedGroupScheme_def 26 generator)
+      (DiagonalizableGroup.groupScheme_def 𝔽₂ (SplitTorus.characterGroup (Fin 4)))
+      (groupSchemePointMulEquiv A)
+      (DiagonalizableGroup.groupSchemePointsMulEquiv
+        (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4))).symm
+      (groupSchemePointMulEquiv_apply_left A)
+      (DiagonalizableGroup.groupSchemePointsMulEquiv_symm_apply_left
+        (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4)))
+      (CommHopfAlgCat.commonKernelLift generator (.inr ())) q
+
+private theorem coe_coordinatePointsEquiv_commonKernelLift
+    (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (q : HopfAlgebra.points (H := generatorCodomain j) (CommAlgCat.of 𝔽₂ A)) :
+    (coordinatePointsEquiv A ((CommHopfAlgCat.mapPointsFunctor
+        (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q) :
+        GL (Fin 26) A) =
+      GeneralLinear.pointsMulEquiv 26
+        ((CommHopfAlgCat.mapPointsFunctor (generator j)).app (CommAlgCat.of 𝔽₂ A) q) := by
+  calc
+    _ = GeneralLinear.pointsMulEquiv 26
+        (CommHopfAlgCat.quotientPointsHom H₂₆ J (CommAlgCat.of 𝔽₂ A)
+          ((CommHopfAlgCat.mapPointsFunctor
+            (CommHopfAlgCat.commonKernelLift generator j)).app (CommAlgCat.of 𝔽₂ A) q)) := by
+      exact (coe_coordinatePointsEquiv A _).trans (congrArg (GeneralLinear.pointsMulEquiv 26)
+          (CommHopfAlgCat.quotientPointsHom_apply H₂₆ J (CommAlgCat.of 𝔽₂ A) _).symm)
+    _ = _ := congrArg _ (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        J (CommHopfAlgCat.commonKernelLift generator j) (generator j)
+        (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator j)
+        (CommAlgCat.of 𝔽₂ A) q).symm
+
+/-- The public root-subgroup scheme morphism induces the named root points. -/
+@[simp] theorem schemePointsMulEquiv_comp_rootSubgroup (k : Fin 4 ⊕ Fin 4)
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶
+      (AdditiveGroup.groupScheme 𝔽₂).X) :
+    schemePointsMulEquiv A (p ≫ (rootSubgroup k).hom.hom) =
+      rootSubgroupPoints k A (AdditiveGroup.schemePointsMulEquiv A p) := by
+  obtain ⟨q, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
+  rw [groupSchemePointMulEquiv_comp_rootSubgroup]
+  calc _ = coordinatePointsEquiv A
+        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inl k))).app
+            (CommAlgCat.of 𝔽₂ A) q) :=
+      schemePointsMulEquiv_groupSchemePointMulEquiv A _
+    _ = rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv q) := by
+      apply Subtype.ext
+      calc _ = GeneralLinear.pointsMulEquiv 26
+            ((CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of 𝔽₂ A) q) :=
+          coe_coordinatePointsEquiv_commonKernelLift (.inl k) A q
+        _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
+    _ = _ := congrArg (rootSubgroupPoints k A)
+      (AdditiveGroup.schemePointsMulEquiv_groupSchemePointMulEquiv A q).symm
+
+/-- The public weight-torus scheme morphism induces the named torus points. -/
+@[simp] theorem schemePointsMulEquiv_comp_weightTorus (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶
+      (SplitTorus.groupScheme 𝔽₂ (Fin 4)).X) :
+    schemePointsMulEquiv A (p ≫ weightTorus.hom.hom) =
+      weightTorusPoints A (SplitTorus.schemePointsMulEquiv p) := by
+  obtain ⟨q, rfl⟩ := (DiagonalizableGroup.groupSchemePointsMulEquiv
+    (R := 𝔽₂) (A := A) (SplitTorus.characterGroup (Fin 4))).symm.surjective p
+  rw [groupSchemePointMulEquiv_comp_weightTorus]
+  calc _ = coordinatePointsEquiv A
+        ((CommHopfAlgCat.mapPointsFunctor (CommHopfAlgCat.commonKernelLift generator (.inr ()))).app
+            (CommAlgCat.of 𝔽₂ A) q) :=
+      schemePointsMulEquiv_groupSchemePointMulEquiv A _
+    _ = weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
+      apply Subtype.ext
+      calc _ = GeneralLinear.pointsMulEquiv 26
+            ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of 𝔽₂ A) q) :=
+          coe_coordinatePointsEquiv_commonKernelLift (.inr ()) A q
+        _ = _ := (coe_weightTorusPoints_pointsMulEquiv A q).symm
+    _ = _ := by
+      congr 1
+      rw [SplitTorus.schemePointsMulEquiv_eq_freeAbelianCharEquiv,
+        DiagonalizableGroup.schemePointsMulEquiv_eq_pointsMulEquiv_groupSchemePointsMulEquiv,
+        MulEquiv.apply_symm_apply]
+      exact SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv q
 
 /-- The exceptional endomorphism squares to Frobenius as a morphism of group schemes. -/
 @[simp] theorem specialIsogenyHom_comp_self :
