@@ -81,15 +81,6 @@ theorem check_swap (a : F) :
         (-(fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)ᵀ) := by
   ext r (i | i) <;> rfl
 
-/-- After exchanging coordinates, the reindexed generator and check matrix still present
-the same code. The column exchange is explicit in both matrices. -/
-theorem generatedBy_swap_eq_checkedBy_swap (a : F) :
-    ((generator a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).generatedBy =
-      ((check a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).checkedBy := by
-  rw [Matrix.generatedBy_submatrix_equiv, Matrix.checkedBy_submatrix_equiv,
-    checkedBy_check]
-  rfl
-
 /-- Exchanging the coordinates reverses which entry is the information symbol. -/
 theorem mem_generatedBy_swap_iff (a : F) (x : Fin 1 ⊕ Fin 1 → F) :
     x ∈ ((generator a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).generatedBy ↔
