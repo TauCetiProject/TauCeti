@@ -394,13 +394,14 @@ theorem ofMulActionEquivProdAugmentation_symm_apply (h : IsUnit (Fintype.card X 
   nontriviality k
   have hX : Nonempty X :=
     Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h.ne_zero (by simp [h0]))
-  letI := hX
+  let := hX
   -- On a nonempty index type, unfold the composite equivalence to expose its two inverses.
   have hcomp : (ofMulActionEquivProdAugmentation k G X h).symm v =
       (Subrepresentation.equivProdOfIsCompl
           (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).symm
         ((invariantLineEquivTrivial k G X).symm v.1, v.2) := by
-    simp only [ofMulActionEquivProdAugmentation, dif_pos hX]
+    simp only [ofMulActionEquivProdAugmentation, dite_eq_left hX]
+    rfl
   rw [hcomp, Subrepresentation.equivProdOfIsCompl_symm_apply,
     coe_invariantLineEquivTrivial_symm_apply]
 
