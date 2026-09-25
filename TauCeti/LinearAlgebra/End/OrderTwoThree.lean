@@ -57,7 +57,11 @@ unnormalised form needs no invertibility where none is used.
 * `TauCeti.End.range_one_add_eq_ker_one_sub`, `TauCeti.End.range_one_add_add_sq_eq_ker_one_sub`:
   the fixed vectors of `σ` and of `υ` are the ranges of `1 + σ` and of `1 + υ + υ ^ 2`. The
   inclusions `TauCeti.End.range_one_add_le_ker_one_sub` and
-  `TauCeti.End.range_one_add_add_sq_le_ker_one_sub` need no invertibility.
+  `TauCeti.End.range_one_add_add_sq_le_ker_one_sub` need no invertibility, and the reverse
+  inclusions hold inside any submodule `Y` without the order hypotheses:
+  `TauCeti.End.inf_ker_one_sub_le_map_one_add` and
+  `TauCeti.End.inf_ker_one_sub_le_map_one_add_add_sq` (`Y ⊓ ker (1 - σ) ≤ Y.map (1 + σ)` when `2`
+  is invertible, and likewise with `3`).
 
 ## Implementation notes
 
@@ -119,13 +123,25 @@ variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {σ υ : End R
 theorem range_one_add_le_ker_one_sub (hσ : σ ^ 2 = 1) : range (1 + σ) ≤ ker (1 - σ) :=
   range_le_ker_iff.2 (one_sub_mul_one_add_of_sq_eq_one hσ)
 
+/-- When `2` is invertible, a vector `y ∈ Y` fixed by `σ` is `(1 + σ) (y / 2)`. -/
+theorem inf_ker_one_sub_le_map_one_add [Invertible (2 : R)] (Y : Submodule R M) :
+    Y ⊓ ker (1 - σ) ≤ Y.map (1 + σ) := by
+  rintro y ⟨hy, hfix⟩
+  rw [SetLike.mem_coe, mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hfix
+  exact ⟨(⅟2 : R) • y, Y.smul_mem _ hy, by simp [← hfix, ← two_smul R]⟩
+
 /-- **The fixed vectors of an involution are the range of `1 + σ`**, when `2` is invertible. -/
 theorem range_one_add_eq_ker_one_sub [Invertible (2 : R)] (hσ : σ ^ 2 = 1) :
-    range (1 + σ) = ker (1 - σ) := by
-  -- a fixed vector `x` is `(1 + σ) (x / 2)`
-  refine (range_one_add_le_ker_one_sub hσ).antisymm fun x hx ↦ ⟨(⅟2 : R) • x, ?_⟩
-  rw [mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hx
-  simp [← hx, ← two_smul R]
+    range (1 + σ) = ker (1 - σ) :=
+  (range_one_add_le_ker_one_sub hσ).antisymm <| by simpa using inf_ker_one_sub_le_map_one_add ⊤
+
+/-- When `3` is invertible, a vector `y ∈ Y` fixed by `υ` is `(1 + υ + υ²) (y / 3)`. -/
+theorem inf_ker_one_sub_le_map_one_add_add_sq [Invertible (3 : R)] (Y : Submodule R M) :
+    Y ⊓ ker (1 - υ) ≤ Y.map (1 + υ + υ ^ 2) := by
+  rintro y ⟨hy, hfix⟩
+  rw [SetLike.mem_coe, mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hfix
+  refine ⟨(⅟3 : R) • y, Y.smul_mem _ hy, ?_⟩
+  simpa [sq, ← hfix, ← two_add_one_eq_three, add_smul, two_smul] using invOf_smul_smul (3 : R) y
 
 /-- For `υ ^ 3 = 1`, the vectors `(1 + υ + υ²) x` are fixed by `υ`. -/
 theorem range_one_add_add_sq_le_ker_one_sub (hυ : υ ^ 3 = 1) :
@@ -135,13 +151,9 @@ theorem range_one_add_add_sq_le_ker_one_sub (hυ : υ ^ 3 = 1) :
 /-- **The fixed vectors of an endomorphism `υ` with `υ ^ 3 = 1` are the range of
 `1 + υ + υ²`**, when `3` is invertible. -/
 theorem range_one_add_add_sq_eq_ker_one_sub [Invertible (3 : R)] (hυ : υ ^ 3 = 1) :
-    range (1 + υ + υ ^ 2) = ker (1 - υ) := by
-  -- a fixed vector `x` is `(1 + υ + υ²) (x / 3)`
-  refine (range_one_add_add_sq_le_ker_one_sub hυ).antisymm fun x hx ↦ ⟨(⅟3 : R) • x, ?_⟩
-  rw [mem_ker, sub_apply, End.one_apply, sub_eq_zero] at hx
-  have h3x : (1 + υ + υ ^ 2 : End R M) x = (3 : R) • x := by
-    simp [sq, ← hx, ← two_add_one_eq_three, add_smul, two_smul]
-  rw [map_smul, h3x, invOf_smul_smul]
+    range (1 + υ + υ ^ 2) = ker (1 - υ) :=
+  (range_one_add_add_sq_le_ker_one_sub hυ).antisymm <| by
+    simpa using inf_ker_one_sub_le_map_one_add_add_sq ⊤
 
 /-- **The Choie–Zagier criterion, forward direction** (Popa–Zagier, Lemma 1, `⇒`): for
 `σ ^ 2 = 1` and `υ ^ 3 = 1`, if `x ∈ range (1 + σ) ⊔ range (1 + υ + υ²)` then
@@ -208,17 +220,13 @@ theorem mem_sup_range_one_add_mul_one_sub [Invertible (2 : R)] [Invertible (3 : 
       Commute (1 - a) (1 + b) ∧ Commute (1 - a) (1 + b + b ^ 2) :=
     have h' := (Commute.one_left _).sub_left h
     ⟨.add_right (.one_right _) h', .add_right (.add_right (.one_right _) h') (h'.pow_right 2)⟩
-  refine sup_le_sup (α := Submodule R M) ?_ ?_ <| mem_inf_ker_sup_inf_ker_of_mem_sup (hc hσσ').1
+  refine sup_le_sup ((inf_ker_one_sub_le_map_one_add _).trans_eq (range_comp _ _).symm)
+    ((inf_ker_one_sub_le_map_one_add_add_sq _).trans_eq (range_comp _ _).symm) <|
+    mem_inf_ker_sup_inf_ker_of_mem_sup (hc hσσ').1
     (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
     (range_le_ker_iff.2 (one_add_mul_one_sub_of_sq_eq_one hσ'))
     (range_le_ker_iff.2 (one_add_add_sq_mul_one_sub_of_pow_three_eq_one hυ')) hξ
-    (range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ) (range_one_add_le_ker_one_sub hσ hυ'ξ) <;>
-    rintro y ⟨hy, hfix⟩ <;> rw [End.mul_eq_comp, range_comp]
-  -- `y` is fixed by `σ` (resp. `υ`), so it is `(1 + σ) (y / 2)` (resp. `(1 + υ + υ²) (y / 3)`)
-  · exact ⟨(⅟2 : R) • y, Submodule.smul_mem _ _ hy, by simp [← sub_eq_zero.1 hfix, ← two_smul R]⟩
-  · exact ⟨(⅟3 : R) • y, Submodule.smul_mem _ _ hy, by
-      simpa [sq, ← sub_eq_zero.1 hfix, ← two_add_one_eq_three, add_smul, two_smul] using
-        invOf_smul_smul (3 : R) y⟩
+    (range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ) (range_one_add_le_ker_one_sub hσ hυ'ξ)
 
 end Semiring
 

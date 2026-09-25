@@ -23,8 +23,7 @@ right-action form of their Lemma 2), `l₁`, `l₂` the left multiplications by 
 
 ## Main results
 
-* `TauCeti.End.mem_inf_ker_sup_inf_ker_of_mem_sup`: if `ξ ∈ Y ⊔ Z` with `Y ≤ ker r₁`,
-  `Z ≤ ker r₂`, `r₁ ξ ∈ ker l₂` and `r₂ ξ ∈ ker l₁`, then `ξ ∈ Y ⊓ ker l₁ ⊔ Z ⊓ ker l₂`.
+* `TauCeti.End.mem_inf_ker_sup_inf_ker_of_mem_sup`: the splitting statement above.
 
 ## References
 
@@ -38,7 +37,7 @@ namespace TauCeti.End
 
 open Module LinearMap
 
-/-- **Exactness in Popa–Zagier's §3 Theorem 2, for commuting operators**: let `r₁` and `r₂` have
+/-- **Splitting along disjoint kernels of commuting endomorphisms**: let `r₁` and `r₂` have
 disjoint kernels and let `l₁`, `l₂` commute with both. If `ξ ∈ Y ⊔ Z` for submodules `Y ≤ ker r₁`
 and `Z ≤ ker r₂`, and `r₁ ξ ∈ ker l₂`, `r₂ ξ ∈ ker l₁`, then `ξ ∈ Y ⊓ ker l₁ ⊔ Z ⊓ ker l₂`. -/
 theorem mem_inf_ker_sup_inf_ker_of_mem_sup {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
