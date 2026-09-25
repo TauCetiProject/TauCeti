@@ -35,8 +35,6 @@ equality of the rank, discriminant, and Hasse invariant, together with the bound
 
 ## References
 
-* `TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 5, "Classification in dimension at
-  most three", including its proof route through quaternion equivalences on pure norm forms.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §3, (3.21).
 -/
