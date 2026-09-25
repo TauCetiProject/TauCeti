@@ -143,7 +143,7 @@ theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
         simpa using hsquareUnit
   apply MonoidHom.ext
   intro g
-  change orthogonalSpinorNorm Q hQ g = 1
+  rw [MonoidHom.one_apply]
   apply MonoidHom.mem_ker.mp
   rw [hker]
   exact Subgroup.mem_top g

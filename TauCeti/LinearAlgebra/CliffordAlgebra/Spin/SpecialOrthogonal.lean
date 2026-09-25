@@ -181,6 +181,8 @@ theorem mem_even_of_det_lipschitzToOrthogonal_eq_one [Module.Free R M] [Module.F
   have hdet' : lipschitzDet Q x = 1 := by
     rw [lipschitzDet]
     simp only [MonoidHom.comp_apply]
+    -- `lipschitzDet` spells the inclusion into linear equivalences explicitly, while
+    -- `orthogonalDet_apply` exposes the same map through the orthogonal-group coercion.
     rw [show (QuadraticMap.orthogonalGroup Q).subtype (lipschitzToOrthogonal Q x) =
       (lipschitzToOrthogonal Q x : M ≃ₗ[R] M) from
         congrFun (Subgroup.coe_subtype (QuadraticMap.orthogonalGroup Q))
