@@ -27,15 +27,19 @@ jobs:
         run: |
           python3 scripts/bors_capacity.py --observations observations.json \
             --rate-scales 1,10 --failure-rates 0.001,0.003,0.01 \
-            --caps 8,16,32,64,128,256 > results.jsonl
+            --caps 8,16,32,64,128,256 > results-flat.jsonl
+          python3 scripts/bors_capacity.py --observations observations.json \
+            --rate-scales 1,10 --failure-rates 0.001,0.003,0.01 \
+            --caps 8,16,32,64,128,256 --duration-growth 0.05 > results-growth.jsonl
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
-          print('| Rate | Per-PR integration failure | Lowest-cost feasible cap |')
-          print('| ---: | ---: | ---: |')
-          for line in open('results.jsonl'):
-              row = json.loads(line)
-              cap = row['recommended_cap']
-              print(f"| {row['scale']:g}× | {row['failure_rate']:.1%} | {cap if cap else 'none'} |")
+          print('| CI duration growth per batch-size doubling | Rate | Per-PR integration failure | Lowest-cost feasible cap |')
+          print('| ---: | ---: | ---: | ---: |')
+          for path, growth in [('results-flat.jsonl', '0%'), ('results-growth.jsonl', '5%')]:
+              for line in open(path):
+                  row = json.loads(line)
+                  cap = row['recommended_cap']
+                  print(f"| {growth} | {row['scale']:g}× | {row['failure_rate']:.1%} | {cap if cap else 'none'} |")
           print('\nThe failure rate is a scenario until enough real bors batches have run. '
                 'A missing feasible cap means a single serial CI lane cannot keep up in this model.')
           PY
@@ -44,5 +48,6 @@ jobs:
           name: bors-capacity-${{ github.run_id }}
           path: |
             observations.json
-            results.jsonl
+            results-flat.jsonl
+            results-growth.jsonl
           retention-days: 30
