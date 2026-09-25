@@ -175,7 +175,7 @@ private theorem turn_mem_row_span_of_terminal_side
 recut along its common side, with the rectangle emptiness supplied from `hrectangle` and the
 pentagon emptiness from `hpentagon`. Both turn-row transports below work with this single
 recut rather than repeating its construction. -/
-private noncomputable def terminal_recut
+noncomputable def terminal_recut
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
