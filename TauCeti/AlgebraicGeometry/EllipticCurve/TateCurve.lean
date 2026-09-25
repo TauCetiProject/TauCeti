@@ -87,6 +87,7 @@ theorem coeff_tateCurve_a₆ (n : ℕ) :
   simp [tateCurve]
 
 /-- The coefficients of `a₆`: `12 · [qⁿ] a₆ = -(5 σ₃(n) + 7 σ₅(n))`. -/
+-- `coeff_tateCurve_a₆` already simplifies the left-hand side; `simpNF` rejects this as a simp rule.
 theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
     12 * coeff n tateCurve.a₆ = -(5 * σ 3 n + 7 * σ 5 n) := by
   have h : (12 : ℤ) * (((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ) : ℤ) = 5 * σ 3 n + 7 * σ 5 n := by
@@ -95,6 +96,8 @@ theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
   linear_combination -h
 
 /-- `a₄ = -5 s₃`. -/
+-- Keep the coefficient and constant-coefficient simp rules: tagging this makes both redundant
+-- according to `simpNF`.
 theorem tateCurve_a₄ : tateCurve.a₄ = -5 * divisorSumSeries 3 := by
   ext n
   rw [coeff_tateCurve_a₄, ← map_ofNat C 5, ← map_neg, coeff_C_mul, coeff_divisorSumSeries]
