@@ -369,10 +369,15 @@ noncomputable def realPart (W : Type*) [AddCommGroup W] [Module ℝ W] :
     ℂ ⊗[ℝ] W →ₗ[ℝ] W :=
   TensorProduct.lid ℝ W ∘ₗ Complex.reLm.rTensor W
 
+/-- The real part of a pure tensor is its real scalar part acting on the vector. -/
+@[simp]
+theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re • w := by
+  simp [realPart]
+
 /-- The real part of a real vector embedded in its complexification is that vector. -/
 @[simp]
 theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
-  simp [realPart]
+  simp
 
 end Complexification
 
