@@ -13,7 +13,7 @@ import TauCeti.MeasureTheory.Measure.MixtureInjective
 
 The first-stage representation of a separately exchangeable array draws a random law `P` on
 column paths, then independently draws one uniform variable for each row and samples that row
-from `P`. This file names the resulting array law `rowCodingArrayLaw`.
+from `P`. The resulting array law is `rowCodingArrayLaw`.
 
 The law is canonical: its image under currying is the de Finetti barycenter of the law of `P`.
 Consequently, two finite laws on random path measures give the same array law exactly when they
@@ -42,27 +42,6 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
-
-/-- The array law obtained by drawing a random path measure with law `π`, then using independent
-uniform variables to sample one row from that path measure at each row index. -/
-def rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Measure (ℕ × ℕ → α) :=
-  (arrayRowCodingLaw π).map Prod.snd
-
-/-- The defining pushforward expression for `rowCodingArrayLaw`. -/
-theorem rowCodingArrayLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
-    rowCodingArrayLaw π =
-      (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
-        fun q p ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
-  rw [rowCodingArrayLaw, arrayRowCodingLaw_def,
-    Measure.map_map measurable_snd measurable_arrayRowCoding]
-  rfl
-
-/-- A probability law of random path measures gives a probability row-coding array law. -/
-instance instIsProbabilityMeasureRowCodingArrayLaw
-    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π] :
-    IsProbabilityMeasure (rowCodingArrayLaw π) := by
-  rw [rowCodingArrayLaw_def]
-  infer_instance
 
 /-- Separate exchangeability of an array is equivalent to representing its law by a
 column-invariant row-coding array law. -/
@@ -94,7 +73,7 @@ law. This identifies the parameter law from the array law. -/
 @[simp]
 theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
     (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = deFinettiBarycenter π := by
-  rw [rowCodingArrayLaw, map_snd_arrayRowCodingLaw,
+  rw [rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw,
     Measure.map_map (MeasurableEquiv.measurable _) measurable_uncurry]
   have h : (MeasurableEquiv.curry ℕ ℕ α) ∘ Function.uncurry = id := by
     funext x
