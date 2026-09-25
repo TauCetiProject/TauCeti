@@ -270,10 +270,28 @@ end Functor
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
+/-- After forgetting topologies, the map `Hⁿ(G, X) ⟶ Hⁿ(H, Y)` of a compatible pair is the map
+induced on the homology of the forgotten homogeneous-cochain complexes by `cochainsMap φ f`,
+conjugated by the identifications `CategoryTheory.ShortComplex.mapHomologyIso` of that homology
+with the underlying modules of continuous cohomology. -/
+theorem forget₂_map_map {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X : TopRep.{v} R G} {Y : TopRep.{v} R H} (φ : H →ₜ* G) (f : TopRep.res φ X ⟶ Y) (n : ℕ) :
+    (forget₂ (TopModuleCat R) (ModuleCat R)).map (map φ f n) =
+      ((X.homogeneousCochains.sc n).mapHomologyIso
+          (forget₂ (TopModuleCat R) (ModuleCat R))).inv ≫
+        HomologicalComplex.homologyMap
+          (((forget₂ (TopModuleCat R) (ModuleCat R)).mapHomologicalComplex _).map
+            (cochainsMap φ f)) n ≫
+          ((Y.homogeneousCochains.sc n).mapHomologyIso
+            (forget₂ (TopModuleCat R) (ModuleCat R))).hom :=
+  (Iso.eq_inv_comp _).2 (ShortComplex.mapHomologyIso_hom_naturality
+    ((HomologicalComplex.shortComplexFunctor _ _ n).map (cochainsMap φ f))
+    (forget₂ (TopModuleCat R) (ModuleCat R))).symm
+
 /-- After forgetting topologies, the coefficient map `Hⁿ(G, X) ⟶ Hⁿ(G, Y)` is the map induced on
 the homology of the forgotten homogeneous-cochain complexes, conjugated by the identifications
 `CategoryTheory.ShortComplex.mapHomologyIso` of that homology with the underlying modules of
-continuous cohomology. -/
+continuous cohomology. This is `forget₂_map_map` at `φ = id`. -/
 theorem forget₂_map_coeffMap {X Y : TopRep.{v} R G} (f : X ⟶ Y) (n : ℕ) :
     (forget₂ (TopModuleCat R) (ModuleCat R)).map (coeffMap f n) =
       ((X.homogeneousCochains.sc n).mapHomologyIso
@@ -284,9 +302,7 @@ theorem forget₂_map_coeffMap {X Y : TopRep.{v} R G} (f : X ⟶ Y) (n : ℕ) :
           ((Y.homogeneousCochains.sc n).mapHomologyIso
             (forget₂ (TopModuleCat R) (ModuleCat R))).hom := by
   rw [coeffMap_def]
-  exact (Iso.eq_inv_comp _).2 (ShortComplex.mapHomologyIso_hom_naturality
-    ((HomologicalComplex.shortComplexFunctor _ _ n).map ((continuousCochainsFunctor R G).map f))
-    (forget₂ (TopModuleCat R) (ModuleCat R))).symm
+  exact forget₂_map_map (ContinuousMonoidHom.id G) f n
 
 end TauCeti.ContinuousCohomology
 

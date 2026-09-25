@@ -63,6 +63,11 @@ theorem ideleClassNorm_mk (x : IdeleGroup (𝓞 K) K) :
     ideleClassNorm (x : IdeleClassGroup (𝓞 K) K) = ideleNorm x :=
   QuotientGroup.lift_mk _ _ x
 
+/-- The idele class norm of an idele class is a positive real number. -/
+theorem coe_ideleClassNorm_pos (c : IdeleClassGroup (𝓞 K) K) :
+    0 < ((ideleClassNorm c : ℝ≥0) : ℝ) :=
+  NNReal.coe_pos.mpr (ideleClassNorm c).ne_zero.bot_lt
+
 /-- The idele class norm is continuous. -/
 theorem continuous_ideleClassNorm : Continuous (ideleClassNorm (K := K)) :=
   (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr (continuous_ideleNorm (K := K))

@@ -56,6 +56,15 @@ section General
 variable {k : Type u} [Field k]
 variable {H : Type v} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
 
+/-- Conjugating a smooth connected solvable closed subgroup preserves these properties. -/
+theorem IsBorelCandidate.conjugate {I : HopfIdeal k H}
+    (hI : IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) I)
+    (g : WithConv (H →ₐ[k] k)) :
+    IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) (I.conjugate g) := by
+  have h := hI.comapOfIso (HopfAlgebra.pointConjugationFiniteTypeIso g)
+  rw [conjugate_eq_comapOfSurjective]
+  simpa only [HopfAlgebra.pointConjugationFiniteTypeIso_hom] using h
+
 /-- The conjugate of a Borel subgroup by a rational point is a Borel subgroup. -/
 theorem IsBorel.conjugate {I : HopfIdeal k H}
     (hI : IsBorel k (_root_.CommHopfAlgCat.of k H) I)
@@ -143,8 +152,7 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate (D : HopfIdeal k H)
   · intro hI
     have hImin := ((isBorelOverAlgClosed_iff _ _ _).mp hI).2
     obtain ⟨g, hg⟩ := hcontain I hI
-    have hDg := ((isBorelOverAlgClosed_iff _ _ _).mp (hDB.conjugate g)).2
-    exact ⟨g, le_antisymm (hImin.2 hDg.prop hg) hg⟩
+    exact ⟨g, le_antisymm (hImin.2 (hD.conjugate g) hg) hg⟩
   · rintro ⟨g, rfl⟩
     exact hDB.conjugate g
 
