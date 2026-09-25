@@ -27,7 +27,7 @@ included, with the eigenvalue of `U_p = T_p` as their coefficient.
 ## Main results
 
 * `HeckeRing.GL2.Eigenform.LSeries_localFactor_mul_tsum_eq_one`: the factor identity.
-* `HeckeRing.GL2.Eigenform.LSeries_localFactor_tsum`: the sum of prime-power terms.
+* `HeckeRing.GL2.Eigenform.LSeries_tsum_term_prime_pow_eq_inv`: the sum of prime-power terms.
 * `HeckeRing.GL2.Eigenform.LSeries_localFactor_ne_zero`: nonvanishing of each local factor.
 * `HeckeRing.GL2.Eigenform.LSeries_eulerProduct_hasProd`: the Euler product, as a `HasProd`.
 * `HeckeRing.GL2.Eigenform.LSeries_eulerProduct_tprod`: the same, as an equality with `∏'`.
@@ -54,13 +54,14 @@ private theorem prime_cpow_sub (p : Nat.Primes) (k : ℤ) (s : ℂ) :
     Complex.cpow_add _ _ (by exact_mod_cast p.prop.ne_zero), ← Complex.cpow_intCast,
     Int.cast_sub, Int.cast_one]
 
-private theorem LSeriesSummable_qExpansion_coeff (f : Eigenform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
-    LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s := by
-  refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
-  have := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
-  rw [strictWidthInfty_Gamma1] at this
-  exact this.trans_lt (mod_cast hs)
+private theorem localFactor_eq (f : Eigenform N k) (p : Nat.Primes) (s : ℂ) :
+    1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+        ((MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) *
+          (p : ℂ) ^ (-2 * s) =
+      1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+        (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
+          (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
+  rw [mul_assoc, prime_cpow_sub]
 
 /-- For a normalized full eigenform, the quadratic Euler factor times its prime-power sum is
 `1` in the half-plane of absolute convergence. -/
@@ -71,16 +72,18 @@ theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
         (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
           (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s)) *
       (∑' e : ℕ, LSeries.term (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s (p ^ e)) = 1 := by
+  have habs : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s := by
+    simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
   have H := TauCeti.LSeries_localFactor_mul_tsum_eq_one_of_recurrence
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1))
     h₁ p (f.qExpansion_coeff_prime_pow_add_two h₁ p.prop)
-    ((f.LSeriesSummable_qExpansion_coeff hs).comp_injective
-      (Nat.pow_right_injective p.prop.two_le))
-  simpa only [mul_assoc, prime_cpow_sub] using H
+    (habs.comp_injective (Nat.pow_right_injective p.prop.two_le))
+  simpa only [localFactor_eq] using H
 
 /-- The prime-power sum of a normalized full eigenform is the inverse quadratic Euler factor. -/
 @[simp]
-theorem LSeries_localFactor_tsum (f : Eigenform N k)
+theorem LSeries_tsum_term_prime_pow_eq_inv (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (p : Nat.Primes)
     {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
     ∑' e : ℕ, LSeries.term (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s (p ^ e) =
@@ -96,11 +99,8 @@ theorem LSeries_localFactor_ne_zero (f : Eigenform N k)
     {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
     1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
       (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
-        (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) ≠ 0 := by
-  intro hzero
-  have h := f.LSeries_localFactor_mul_tsum_eq_one h₁ p hs
-  rw [hzero] at h
-  simp at h
+        (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) ≠ 0 :=
+  left_ne_zero_of_mul_eq_one (f.LSeries_localFactor_mul_tsum_eq_one h₁ p hs)
 
 /-- **The Euler product of a normalized Hecke eigenform.** For a full Hecke eigenform `f` of
 weight `k` and nebentypus `χ` with `a₁(f) = 1`, and `Re s > k/2 + 1`,
@@ -114,11 +114,14 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
         (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s))⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
+  have habs : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s := by
+    simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
   have H := TauCeti.LSeries_eulerProduct_hasProd_of_recurrence
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
     (f.qExpansion_coeff_mul h₁) (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.LSeriesSummable_qExpansion_coeff hs)
-  simpa only [mul_assoc, prime_cpow_sub] using H
+    habs
+  simpa only [localFactor_eq] using H
 
 /-- **The Euler product of a normalized Hecke eigenform**, as an equality with `∏'`: for a full
 Hecke eigenform `f` with `a₁(f) = 1` and `Re s > k/2 + 1`,
@@ -142,10 +145,14 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
         (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
+  have habs : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s := by
+    simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
   refine (TauCeti.LSeries_eulerProduct_of_recurrence
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
     (f.qExpansion_coeff_mul h₁) (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.LSeriesSummable_qExpansion_coeff hs)).congr fun n ↦ Finset.prod_congr rfl fun p hp ↦ ?_
-  rw [mul_assoc, prime_cpow_sub ⟨p, Nat.prime_of_mem_primesBelow hp⟩]
+    habs).congr fun n ↦
+    Finset.prod_congr rfl fun p hp ↦ ?_
+  rw [localFactor_eq f ⟨p, Nat.prime_of_mem_primesBelow hp⟩ s]
 
 end HeckeRing.GL2.Eigenform
