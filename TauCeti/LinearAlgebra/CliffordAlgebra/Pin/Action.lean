@@ -13,9 +13,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
 # The Pin group acting on its quadratic space by twisted conjugation
 
 The Pin group is the subgroup of the Lipschitz group consisting of elements whose Clifford norm
-`star x * x` is one. This file packages its twisted-conjugation homomorphism, reflection formulas,
-and comparison with the independently defined Spin action. The common Lipschitz action is defined
-in `TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action`.
+`star x * x` is one. This file packages its twisted-conjugation homomorphism and reflection
+formulas. Both the Pin and Spin actions are restrictions of the common Lipschitz action defined in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action`.
 
 ## Main definitions
 
