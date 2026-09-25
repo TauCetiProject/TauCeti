@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Module.Submodule.Map
 /-!
 # Elementary linear-equivalence transport
 
-Evaluation of composed equivalences and transport of submodule stability.
+Transport of submodule stability through an intertwining linear equivalence.
 -/
 
 public section
