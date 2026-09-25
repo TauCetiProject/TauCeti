@@ -37,6 +37,12 @@ cochain out of a compact group into a discrete module has finite image, so a sin
 kills it; that bound propagates through the iterated function spaces of the homogeneous cochain
 complex, and hence to its homology.
 
+For `G : Type u` the coefficient modules `M` range over `Type (max u v)` for an extra universe `v`:
+Mathlib's continuous cohomology needs the coefficients in a universe containing that of `G`, since
+its resolution is built from `C(G, -)`. Since `v` does not appear in the arguments, it is the first
+universe parameter of every definition here and is written explicitly, as in
+`cohomologicalDimensionAt.{v} p G`.
+
 The definitions do not use that `p` is prime; they are meant for prime `p`, where `p`-primary is
 the intended notion.
 
@@ -70,7 +76,7 @@ namespace TauCeti
 
 open CategoryTheory
 
-universe u
+universe v u
 
 variable {p : ℕ}
 
@@ -119,44 +125,45 @@ section CohomologicalDimension
 variable (p) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- `CohomologicalDimensionLE p G n` says that `Hⁱ(G, M)` vanishes for every `i > n` and every
-discrete `p`-primary torsion `G`-module `M` with a continuous action. -/
+discrete `p`-primary torsion `G`-module `M : Type (max u v)` with a continuous action. -/
 def CohomologicalDimensionLE (n : ℕ) : Prop :=
-  ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
     ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M))
 
 /-- `StrictCohomologicalDimensionLE p G n` says that the `p`-primary component of `Hⁱ(G, M)`
-vanishes for every `i > n` and every discrete `G`-module `M` with a continuous action. -/
+vanishes for every `i > n` and every discrete `G`-module `M : Type (max u v)` with a continuous
+action. -/
 def StrictCohomologicalDimensionLE (n : ℕ) : Prop :=
-  ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M] [ContinuousSMul G M], ∀ i : ℕ, n < i →
     AddCommGroup.primaryComponent (continuousCohomology i (ofDiscreteModule ℤ G M)) p = ⊥
 
 /-- The `p`-cohomological dimension of `G`, written `cd_p G`: the least `n` with
 `CohomologicalDimensionLE p G n`, and `⊤` when there is none. -/
 noncomputable def cohomologicalDimensionAt : ℕ∞ :=
-  leastENatBound (CohomologicalDimensionLE p G)
+  leastENatBound (CohomologicalDimensionLE.{v} p G)
 
 /-- The strict `p`-cohomological dimension of `G`, written `scd_p G`: the least `n` with
 `StrictCohomologicalDimensionLE p G n`, and `⊤` when there is none. -/
 noncomputable def strictCohomologicalDimensionAt : ℕ∞ :=
-  leastENatBound (StrictCohomologicalDimensionLE p G)
+  leastENatBound (StrictCohomologicalDimensionLE.{v} p G)
 
 /-- The cohomological dimension of `G`, written `cd G`: the supremum over the primes `q` of the
 `q`-cohomological dimension `cohomologicalDimensionAt q G`. -/
 noncomputable def cohomologicalDimension : ℕ∞ :=
-  ⨆ q : Nat.Primes, cohomologicalDimensionAt q G
+  ⨆ q : Nat.Primes, cohomologicalDimensionAt.{v} q G
 
 variable {p G}
 
 /-- The ordinary vanishing predicate is upward closed in `n`. -/
-theorem CohomologicalDimensionLE.mono {m n : ℕ} (h : CohomologicalDimensionLE p G m)
-    (hmn : m ≤ n) : CohomologicalDimensionLE p G n :=
+theorem CohomologicalDimensionLE.mono {m n : ℕ} (h : CohomologicalDimensionLE.{v} p G m)
+    (hmn : m ≤ n) : CohomologicalDimensionLE.{v} p G n :=
   fun M _ _ _ _ _ hM i hi ↦ h M hM i (hmn.trans_lt hi)
 
 /-- The strict vanishing predicate is upward closed in `n`. -/
-theorem StrictCohomologicalDimensionLE.mono {m n : ℕ} (h : StrictCohomologicalDimensionLE p G m)
-    (hmn : m ≤ n) : StrictCohomologicalDimensionLE p G n :=
+theorem StrictCohomologicalDimensionLE.mono {m n : ℕ} (h : StrictCohomologicalDimensionLE.{v} p G m)
+    (hmn : m ≤ n) : StrictCohomologicalDimensionLE.{v} p G n :=
   fun M _ _ _ _ _ i hi ↦ h M i (hmn.trans_lt hi)
 
 variable (p G)
@@ -164,44 +171,45 @@ variable (p G)
 /-- `cohomologicalDimensionAt p G ≤ n` exactly when `Hⁱ(G, M)` vanishes above `n` for every
 discrete `p`-primary torsion `M`. -/
 @[simp] theorem cohomologicalDimensionAt_le_iff (n : ℕ) :
-    cohomologicalDimensionAt p G ≤ n ↔ CohomologicalDimensionLE p G n :=
+    cohomologicalDimensionAt.{v} p G ≤ n ↔ CohomologicalDimensionLE.{v} p G n :=
   leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- `strictCohomologicalDimensionAt p G ≤ n` exactly when the `p`-primary component of
 `Hⁱ(G, M)` vanishes above `n` for every discrete `M`. -/
 @[simp] theorem strictCohomologicalDimensionAt_le_iff (n : ℕ) :
-    strictCohomologicalDimensionAt p G ≤ n ↔ StrictCohomologicalDimensionLE p G n :=
+    strictCohomologicalDimensionAt.{v} p G ≤ n ↔ StrictCohomologicalDimensionLE.{v} p G n :=
   leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- The `p`-cohomological dimension is infinite exactly when the ordinary vanishing predicate
 holds at no `n`. -/
 @[simp] theorem cohomologicalDimensionAt_eq_top_iff :
-    cohomologicalDimensionAt p G = ⊤ ↔ ∀ n : ℕ, ¬CohomologicalDimensionLE p G n :=
+    cohomologicalDimensionAt.{v} p G = ⊤ ↔ ∀ n : ℕ, ¬CohomologicalDimensionLE.{v} p G n :=
   leastENatBound_eq_top_iff
 
 /-- The strict `p`-cohomological dimension is infinite exactly when the strict vanishing
 predicate holds at no `n`. -/
 @[simp] theorem strictCohomologicalDimensionAt_eq_top_iff :
-    strictCohomologicalDimensionAt p G = ⊤ ↔ ∀ n : ℕ, ¬StrictCohomologicalDimensionLE p G n :=
+    strictCohomologicalDimensionAt.{v} p G = ⊤ ↔
+      ∀ n : ℕ, ¬StrictCohomologicalDimensionLE.{v} p G n :=
   leastENatBound_eq_top_iff
 
 /-- `cohomologicalDimension G ≤ n` exactly when `CohomologicalDimensionLE q G n` holds for every
 prime `q`. -/
 @[simp] theorem cohomologicalDimension_le_iff (n : ℕ) :
-    cohomologicalDimension G ≤ n ↔ ∀ q : ℕ, q.Prime → CohomologicalDimensionLE q G n := by
+    cohomologicalDimension.{v} G ≤ n ↔ ∀ q : ℕ, q.Prime → CohomologicalDimensionLE.{v} q G n := by
   simp only [cohomologicalDimension, iSup_le_iff, cohomologicalDimensionAt_le_iff, Nat.Primes,
     Subtype.forall]
 
 /-- The `p`-cohomological dimension is at most the cohomological dimension, for prime `p`. -/
 theorem cohomologicalDimensionAt_le_cohomologicalDimension (hp : p.Prime) :
-    cohomologicalDimensionAt p G ≤ cohomologicalDimension G :=
-  le_iSup (fun q : Nat.Primes ↦ cohomologicalDimensionAt q G) ⟨p, hp⟩
+    cohomologicalDimensionAt.{v} p G ≤ cohomologicalDimension.{v} G :=
+  le_iSup (fun q : Nat.Primes ↦ cohomologicalDimensionAt.{v} q G) ⟨p, hp⟩
 
 /-- Over a compact group, the strict vanishing predicate implies the ordinary one at the same
 `n`: for `p`-primary torsion coefficients the cohomology is itself `p`-primary torsion, so the
 vanishing of its `p`-primary component is the vanishing of the whole group. -/
 theorem StrictCohomologicalDimensionLE.cohomologicalDimensionLE [CompactSpace G] {n : ℕ}
-    (h : StrictCohomologicalDimensionLE p G n) : CohomologicalDimensionLE p G n := by
+    (h : StrictCohomologicalDimensionLE.{v} p G n) : CohomologicalDimensionLE.{v} p G n := by
   intro M _ _ _ _ _ hM i hi
   have hH := isPPrimaryTorsion_continuousCohomology (ofDiscreteModule ℤ G M) hM i
   exact subsingleton_of_forall_eq 0 fun x ↦ AddSubgroup.mem_bot.1 (h M i hi ▸ hH.mem x)
@@ -209,7 +217,7 @@ theorem StrictCohomologicalDimensionLE.cohomologicalDimensionLE [CompactSpace G]
 /-- **`cd_p ≤ scd_p`** (NSW (3.3.3)): over a compact group, the `p`-cohomological dimension is
 at most the strict `p`-cohomological dimension. -/
 theorem cohomologicalDimensionAt_le_strictCohomologicalDimensionAt [CompactSpace G] :
-    cohomologicalDimensionAt p G ≤ strictCohomologicalDimensionAt p G :=
+    cohomologicalDimensionAt.{v} p G ≤ strictCohomologicalDimensionAt.{v} p G :=
   leastENatBound_antitone fun _ h ↦ h.cohomologicalDimensionLE
 
 end CohomologicalDimension
