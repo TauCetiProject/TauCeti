@@ -126,6 +126,7 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
 
 /-- The cumulant-generating function of the inner product against a multivariate Gaussian
 vector.  It is the real logarithm of the corresponding moment-generating function. -/
+@[simp]
 theorem cgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
     {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
     cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
