@@ -15,6 +15,11 @@ public import Mathlib.CategoryTheory.Shift.SingleFunctorsLift
 
 The single functors into the derived category lift to its bounded subcategory in every degree.
 A short exact sequence then gives a distinguished triangle of bounded single objects.
+
+## References
+
+* Mathlib's `Mathlib/Algebra/Homology/DerivedCategory/Plus.lean`, whose lift of the single
+  functors to the bounded-below derived category supplies the pattern used here.
 -/
 
 @[expose] public section
