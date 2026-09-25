@@ -418,9 +418,10 @@ then the continued L-function of the twist at `s` is the continued L-function of
 
 In degree `[K : ℚ] > 1` the second cancellation hypothesis follows from the first, by
 `TauCeti.HasCancellation.normTwist`. -/
+@[simp]
 theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : ℂ} (hz : z.re = 0)
     (hχ : HasCancellation χ) (hχz : HasCancellation (UnitaryIdealWeight.normTwist z hz χ))
-    {s : ℂ} (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
+    {s : ℂ} (hs : 1 - (Module.finrank ℚ K : ℝ)⁻¹ < s.re) :
     continuedLFunctionOfWeight (UnitaryIdealWeight.normTwist z hz χ) s =
       continuedLFunctionOfWeight χ (s + z) := by
   have hshift : DifferentiableOn ℂ (fun s ↦ continuedLFunctionOfWeight χ (s + z))
@@ -428,7 +429,8 @@ theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : �
     (differentiableOn_continuedLFunctionOfWeight hχ).comp
       (differentiable_id.add_const z).differentiableOn fun s hs ↦ by simpa [hz] using hs
   exact eq_of_differentiableOn_of_one_lt_re (differentiableOn_continuedLFunctionOfWeight hχz)
-    hshift (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw) hs
+    hshift (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
+    (by rwa [one_div])
 
 /-!
 ### The rejection test: weights that are norm twists on their good ideals
