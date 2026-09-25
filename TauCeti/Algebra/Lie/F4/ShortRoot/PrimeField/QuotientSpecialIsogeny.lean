@@ -244,7 +244,7 @@ private theorem map_frobenius_torus {A : Type} [CommRing A] [Algebra 𝔽₂ A] 
   simpa only [coe_frobenius, pow_one, coe_weightTorusPoints_eq, hs, AlgHom.toRingHom_eq_coe] using h
 
 /-- The represented quotient endomorphism squares to Frobenius as a morphism of coordinate
-Hopf algebras. Equality is tested on the universal generators, over their coordinate algebras. -/
+Hopf algebras. -/
 @[simp] theorem quotientIsogeny_comp_self :
     quotientIsogeny ≫ quotientIsogeny = CommHopfAlgCat.ofHom (frobeniusBialgHom 𝔽₂ Q) := by
   apply CommHopfAlgCat.commonKernelLift_hom_ext generator

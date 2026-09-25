@@ -28,8 +28,7 @@ local notation "𝔽₂" => ZMod 2
 attribute [local instance] f4ShortRootAmbientCotangentComodule
 
 /-- An equality of represented vectors under the ambient carrier action descends to the
-modular quotient. Only the inclusion of the represented range is cancelled, not the adjoint
-representation itself. -/
+modular quotient. -/
 theorem f4ShortRootQuotient_endOfPoint_of_represented {A : Type*} [CommRing A] [Algebra 𝔽₂ A]
     (g : f4ShortRootCarrierCoordinateHopfAlgebra →ₐ[𝔽₂] A)
     (x y : A ⊗[𝔽₂] f4ModularChevalleyLieAlgebra)
@@ -63,8 +62,7 @@ theorem f4ShortRootQuotient_endOfPoint_of_represented {A : Type*} [CommRing A] [
     _ = _ := hq y
 
 /-- Matrix coordinates of the scalar-extended represented map are the existing adjoint
-matrices. This identifies the two realizations without choosing representatives in the
-middle quotient. -/
+matrices. -/
 theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
     {A : Type} [CommRing A] [Algebra 𝔽₂ A]
     (x : A ⊗[𝔽₂] f4ModularChevalleyLieAlgebra) :
