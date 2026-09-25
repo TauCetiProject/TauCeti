@@ -35,7 +35,7 @@ lemmas of Heegaard Floer theory.
 
 ## Main declarations
 
-* `TauCeti.exists_nonneg_sum_smul_eq_zero_and_dual_nonneg`: Tucker's key lemma.
+* `TauCeti.exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_pos_at`: Tucker's key lemma.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
@@ -62,7 +62,8 @@ section Field
 variable [Field K] [LinearOrder K] [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
 
 /-- Tucker's key lemma for the vectors indexed by `insert k s`. -/
-private theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_of_finset [DecidableEq ι] (k : ι)
+private theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_pos_at_of_finset [DecidableEq ι]
+    (k : ι)
     (s : Finset ι) (a : ι → V) :
     ∃ x : ι → K, ∃ y : Module.Dual K V, (∀ j ∈ insert k s, 0 ≤ x j ∧ 0 ≤ y (a j)) ∧
       ∑ j ∈ insert k s, x j • a j = 0 ∧ 0 < x k + y (a k) := by
@@ -127,12 +128,13 @@ private theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_of_finset [Decida
 nonnegative linear relation `x` among the `a j` and a linear functional `y` that is nonnegative on
 every `a j`, such that `x k + y (a k) > 0`: either `a k` occurs in a nonnegative relation, or some
 functional nonnegative on the family is strictly positive on `a k`. -/
-theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg [Fintype ι] (a : ι → V) (k : ι) :
+theorem exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_pos_at [Fintype ι] (a : ι → V) (k : ι) :
     ∃ x : ι → K, ∃ y : Module.Dual K V, 0 ≤ x ∧ ∑ j, x j • a j = 0 ∧ (∀ j, 0 ≤ y (a j)) ∧
       0 < x k + y (a k) := by
   classical
   obtain ⟨x, y, hxy, hsum, hpos⟩ :=
-    exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_of_finset (K := K) k (Finset.univ.erase k) a
+    exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_pos_at_of_finset (K := K) k
+      (Finset.univ.erase k) a
   rw [Finset.insert_erase (Finset.mem_univ k)] at hxy hsum
   exact ⟨x, y, fun j => (hxy j (Finset.mem_univ j)).1, hsum,
     fun j => (hxy j (Finset.mem_univ j)).2, hpos⟩
@@ -147,7 +149,8 @@ theorem exists_forall_dual_pos_iff [Fintype ι] (a : ι → V) :
     refine (dotProduct_eq_zero_iff_of_pos hy hx).1 ?_
     simpa [dotProduct, mul_comm] using congrArg y hsum
   · intro h
-    choose x y hx hsum hy hpos using exists_nonneg_sum_smul_eq_zero_and_dual_nonneg (K := K) a
+    choose x y hx hsum hy hpos using
+      exists_nonneg_sum_smul_eq_zero_and_dual_nonneg_pos_at (K := K) a
     refine ⟨∑ k, y k, fun j => ?_⟩
     rw [LinearMap.sum_apply]
     refine Finset.sum_pos' (fun k _ => hy k j) ⟨j, Finset.mem_univ j, ?_⟩
