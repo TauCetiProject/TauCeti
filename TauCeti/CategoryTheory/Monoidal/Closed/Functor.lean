@@ -144,18 +144,18 @@ section InternalHomComparison
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
-/-- If a target tensor-to-internal-Hom comparison is compatible with the image of the
+/-- If target comparisons to a common object `T` are compatible with the image of the
 source tensor comparison, then the internal Hom comparison is an isomorphism.
 
 The hypothesis is the evaluation equation for the transported target comparison.  It is
 the precise compatibility needed when a functor transports a chosen duality structure; it
-is not supplied by arbitrary closed objects alone. -/
+is not supplied by arbitrary closed objects alone.  The common target `T` is arbitrary; the
+tensor object `F.obj A ⊗ F.obj B` is the natural choice when the target comparisons are
+described through the tensorator. -/
 theorem ihomComparison_isIso_of_tensor_comparison
-    (F : C ⥤ D) [F.LaxMonoidal] (A B : C) [Closed A] [Closed (F.obj A)]
-    (t : (ihom (F.obj A)).obj (F.obj B) ≅
-      MonoidalCategoryStruct.tensorObj (F.obj A) (F.obj B))
-    (g : F.obj ((ihom A).obj B) ≅
-      MonoidalCategoryStruct.tensorObj (F.obj A) (F.obj B))
+    (F : C ⥤ D) [F.LaxMonoidal] (A B : C) [Closed A] [Closed (F.obj A)] {T : D}
+    (t : (ihom (F.obj A)).obj (F.obj B) ≅ T)
+    (g : F.obj ((ihom A).obj B) ≅ T)
     (hcompat :
       (MonoidalCategoryStruct.whiskerLeft (F.obj A) g.hom) ≫
           (MonoidalCategoryStruct.whiskerLeft (F.obj A) t.inv) ≫
@@ -205,13 +205,6 @@ private theorem mateEquiv_adjunction_id {C : Type u₁} {D : Type u₂}
     rightUnitor_inv_app, associator_hom_app, associator_inv_app, leftUnitor_hom_app,
     Adjunction.id_unit, Adjunction.id_counit, Category.comp_id, Category.id_comp,
     Functor.comp_map, Functor.map_id, NatTrans.id_app]
-
-private theorem ihomComparison_eq_mateEquiv (F : C ⥤ D) [F.LaxMonoidal]
-    (A : C) [Closed A] [Closed (F.obj A)] :
-    F.ihomComparison A =
-      mateEquiv (ihom.adjunction A) (ihom.adjunction (F.obj A))
-        (laxCommTensorLeft F A) := by
-  rfl
 
 /-- A strong monoidal functor preserves the internal-Hom comparison at the tensor unit. -/
 theorem ihomComparison_unit_isIso (F : C ⥤ D) [F.Monoidal]
@@ -315,7 +308,10 @@ theorem ihomComparison_unit_isIso (F : C ⥤ D) [F.Monoidal]
       (NatTrans.isIso_iff_isIso_app cD).1 hcD (F.obj X)
     exact (isIso_comp_right_iff (cD.app (F.obj X))
       (g := m2.natTrans.app X)).mp hX
-  simpa only [m2, adjC, adjD, S, ihomComparison_eq_mateEquiv] using hm2
+  -- `ihomComparison` is by definition this mate of the tensorator under the two
+  -- tensor--Hom adjunctions, so `m2` is the unit comparison once the local aliases
+  -- are unfolded; that single unfolding is the only step identifying the two.
+  simpa only [m2, adjC, adjD, S, ihomComparison] using hm2
 
 /-- Transport invertibility of an internal-Hom comparison along an isomorphism in its source
 object. -/
@@ -341,7 +337,7 @@ theorem ihomComparison_isIso_of_iso
     unfold MonoidalClosed.pre
     exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
       ((tensoringLeft D).map (F.map e.hom)) hα
-  -- Naturality in the source transports the unit comparison across the isomorphism `e`.
+  -- Naturality in the source transports invertibility from `A'` to `A` across `e`.
   have hnat := ihomComparison_whiskerLeft (F := F) (A := A') (A' := A) e.hom
   have hL : IsIso ((F.ihomComparison A').whiskerBottom
       (MonoidalClosed.pre (F.map e.hom))).natTrans := by
@@ -366,17 +362,6 @@ theorem ihomComparison_isIso_of_iso
   exact (CategoryTheory.isIso_comp_left_iff
     (F.map ((MonoidalClosed.pre e.hom).app X))
     ((F.ihomComparison A).natTrans.app X)).mp hcomp
-
-
-/-- A strong monoidal functor transports invertibility of the internal-Hom comparison from the
-unit to every object isomorphic to it. -/
-theorem ihomComparison_isIso_of_iso_unit
-    (F : C ⥤ D) [F.Monoidal] [Closed (𝟙_ C)] [Closed (F.obj (𝟙_ C))]
-    (A : C) [Closed A] [Closed (F.obj A)]
-    (e : A ≅ (𝟙_ C : C)) :
-    IsIso (F.ihomComparison A).natTrans := by
-  exact ihomComparison_isIso_of_iso F (A' := (𝟙_ C : C))
-    (hA' := ihomComparison_unit_isIso F) e
 
 end InternalHomComparison
 

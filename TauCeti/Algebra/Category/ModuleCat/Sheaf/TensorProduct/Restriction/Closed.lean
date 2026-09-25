@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+-- `Sheaf.Free` belongs to the public API of this file: the comparison below is stated
+-- for the free sheaf `SheafOfModules.free`, and `freePUnitIsoUnit` identifies that
+-- sheaf with the tensor unit.
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 
 /-!
@@ -19,7 +22,7 @@ restrictions. The comparison is natural in both arguments, and its defining equa
 that evaluation after restriction agrees with the restriction of evaluation.
 The named comparison packages the slice site's monoidal and closed instances, which must
 otherwise be supplied locally when applying the generic comparison.  In particular,
-`SheafOfModules.overIhomComparison_free_isIso` proves that restriction preserves the comparison
+`SheafOfModules.overIhomComparison_freePUnit_isIso` proves that restriction preserves the comparison
 for the free rank-one sheaf.
 
 This is the comparison map needed to study local duality and internal Homs on a cover.
@@ -84,13 +87,15 @@ theorem _root_.SheafOfModules.overIhomComparison_ev
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N
 
 /-- Restriction preserves the internal-Hom comparison for the free rank-one sheaf. -/
-theorem _root_.SheafOfModules.overIhomComparison_free_isIso :
+theorem _root_.SheafOfModules.overIhomComparison_freePUnit_isIso :
     IsIso ((_root_.SheafOfModules.overIhomComparison R X
       (_root_.SheafOfModules.free (R := ringCatSheaf R) PUnit)).natTrans) := by
-  apply CategoryTheory.Functor.ihomComparison_isIso_of_iso_unit
-    (F := _root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
-    (A := _root_.SheafOfModules.free (R := ringCatSheaf R) PUnit)
-  exact freePUnitIsoUnit (ringCatSheaf R)
+  -- Transport the comparison at the unit, invertible because restriction is strong
+  -- monoidal, along the isomorphism of the free rank-one sheaf with that unit.
+  exact CategoryTheory.Functor.ihomComparison_isIso_of_iso
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    (hA' := CategoryTheory.Functor.ihomComparison_unit_isIso _)
+    (freePUnitIsoUnit (ringCatSheaf R))
 
 end SheafOfModules
 
