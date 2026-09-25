@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.OverlapInvolution
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Involution
 
 /-!
 # Turn-row transports for the terminal-side recut

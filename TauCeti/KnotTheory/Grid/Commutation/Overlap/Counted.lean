@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
 
 /-!
 # Countedness pieces for the overlap recut

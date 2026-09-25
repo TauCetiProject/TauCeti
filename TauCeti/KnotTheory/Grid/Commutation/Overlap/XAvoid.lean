@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap
-public import TauCeti.KnotTheory.Grid.Commutation.OverlapCounted
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Counted
 public import TauCeti.KnotTheory.Grid.Commutation.Pentagon
 
 /-!
