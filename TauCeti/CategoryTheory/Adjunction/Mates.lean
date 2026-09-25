@@ -13,17 +13,16 @@ import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 /-!
 # Mating a two-square through the identity functors
 
-The unit and the counit of an identity adjunction are the identity maps, so mating a
-two-square whose vertical functors are the identity functors reproduces that two-square: the
-mate is computed on the source objects by left whiskering with the unit of one adjunction and
-right whiskering with the counit of the other, and both are identities.
+`CategoryTheory.mateEquiv_adjunction_id` is the case of the mate bijection
+`CategoryTheory.mateEquiv` in which both adjunctions are identity adjunctions: a two-square
+between the identity functors of the source and target category is its own mate.  Use it to
+normalize a mate that has been routed through the identity functors, so a computation about
+such a square can be read back on the square itself.  It is the two-square counterpart of
+Mathlib's `CategoryTheory.conjugateEquiv_id`.
 
-Recording this once keeps mate computations that route a square through the identity functors
-free of the underlying unit, counit, and whisker calculations. It is the two-square
-counterpart of Mathlib's `CategoryTheory.conjugateEquiv_id`. The internal-Hom comparison of a
-lax monoidal functor is one such computation: at the tensor unit the left unitor identifies the
-unit with left tensoring by the unit, and the remaining mate is taken between the two
-tensor--Hom adjunctions.
+The internal-Hom comparison of a monoidal functor is one such computation: at the tensor unit
+the left unitor identifies the unit with left tensoring by the unit, and the mate that remains
+is taken between the two tensor--Hom adjunctions.
 
 ## Main declaration
 
@@ -42,9 +41,16 @@ variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
 
 /-- The mate of a two-square between the identity functors of the source and target category is
 the two-square itself. -/
+-- `high` priority: Mathlib's generated equational lemma `mateEquiv_apply` is itself a simp lemma
+-- that unfolds the mate, so at the default priority this rule would never fire, and `simpNF`
+-- rejects a simp lemma whose left-hand side another simp lemma already simplifies.
+@[simp high]
 theorem mateEquiv_adjunction_id {G H : C ⥤ D} (α : TwoSquare G (𝟭 C) (𝟭 D) H) :
     mateEquiv (Adjunction.id : (𝟭 C) ⊣ (𝟭 C))
       (Adjunction.id : (𝟭 D) ⊣ (𝟭 D)) α = α := by
+  -- The mate is a whiskered composite of the units and counits of the two adjunctions with the
+  -- component of the square; the unit and the counit of an identity adjunction are the identity
+  -- maps, so every whiskered unit and counit is the identity and only the square survives.
   ext X
   rw [mateEquiv_apply]
   simp only [comp_obj, id_obj, NatTrans.comp_app,
