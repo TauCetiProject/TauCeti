@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
@@ -18,9 +17,12 @@ maps induces on singular chains gives a cochain homotopy on singular cochains, a
 maps induce the same map on singular cohomology.  Maps that are inverse to each other up to
 homotopy therefore induce isomorphisms on singular cohomology.  This is the homotopy axiom of
 Eilenberg--Steenrod for the singular cohomology theory, in both its absolute and its relative
-form.  The chain homotopies it is deduced from are `TopCat.Homotopy`'s
-`singularChainComplexFunctorObjMap`, in Mathlib, for a space, and `TopPair.Homotopy`'s
-`singularChainComplexMap` for a pair.
+form.  The chain homotopies it is deduced from are Mathlib's `SSet.Homotopy.chainComplexMap`,
+applied to the simplicial homotopy `TopCat.Homotopy.toSSet`, for a space, and
+`TopPair.Homotopy.singularChainComplexMap` for a pair.  The homology counterparts are
+`Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean` (F. Odermatt, J. Riou) for a
+space and `TauCeti/AlgebraicTopology/Singular/Homotopy/Invariance.lean` for a pair; this file
+follows their proof plan and API naming for cochains.
 
 ## Main results
 
@@ -59,15 +61,15 @@ singular cochain complexes. -/
 def singularCochainComplexMap :
     _root_.Homotopy (singularCochainComplexMap (R := R) (k := k) (M := M) f)
       (singularCochainComplexMap g) :=
-  (H.singularChainComplexFunctorObjMap R).linearYonedaFunctorMap k M
+  (H.toSSet.chainComplexMap R).linearYonedaFunctorMap k M
 
 /-- The cochain homotopy induced by a homotopy of continuous maps is precomposition with the
 chain homotopy it induces on singular chains. -/
 @[simp]
 lemma singularCochainComplexMap_hom_apply (p q : ℕ) (x : (Y.singularCochainComplex R k M).X p) :
     ConcreteCategory.hom ((H.singularCochainComplexMap R k M).hom p q) x =
-        (H.singularChainComplexFunctorObjMap R).hom q p ≫ x :=
-  (H.singularChainComplexFunctorObjMap R).linearYonedaFunctorMap_hom_apply k M p q x
+        (H.toSSet.chainComplexMap R).hom q p ≫ x :=
+  (H.toSSet.chainComplexMap R).linearYonedaFunctorMap_hom_apply k M p q x
 
 include H in
 /-- Homotopic continuous maps induce the same map on singular cohomology. -/
