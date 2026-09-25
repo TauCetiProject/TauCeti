@@ -304,6 +304,7 @@ lemma unitToSheafPrincipalCartierDivisor_ι (f : X.functionFieldˣ) :
   sheafLift_ι _ _ _
 
 /-- The principal-divisor map sends `a` to `f⁻¹ a` inside the rational-function sheaf. -/
+@[simp]
 lemma unitToSheafPrincipalCartierDivisor_app (f : X.functionFieldˣ)
     (U : X.Opens) (a : Γ(SheafOfModules.unit X.ringCatSheaf, U)) :
     Scheme.Modules.Hom.app (principalCartierDivisor X f).sheafι U
