@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.GeneratedFlag
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
+public import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # The represented flag as a comodule of the prime-field F4 carrier
@@ -139,17 +140,6 @@ private theorem f4ShortRootCotangentFlagRange_weightSet :
       omega
     · rw [f4ShortRootCotangentFlagWeight_of_quotient _ hj j.isLt]
 
-private theorem map_submodule_eq_span_basis
-    {R V W ι : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
-    [AddCommMonoid W] [Module R W]
-    (p : Submodule R V) (b : Module.Basis ι R p) (f : V →ₗ[R] W) :
-    p.map f = Submodule.span R (Set.range fun i => f (b i : V)) := by
-  have h := congrArg (Submodule.map (f.comp p.subtype)) b.span_eq
-  rw [Submodule.map_span, Submodule.map_top, LinearMap.range_comp,
-    Submodule.range_subtype] at h
-  simpa only [← Set.range_comp, Function.comp_def, LinearMap.comp_apply,
-    Submodule.subtype_apply] using h.symm
-
 /-- The image of the represented ideal inside the ambient endomorphism space. -/
 noncomputable abbrev f4ShortRootRepresentedIdealAmbient :
     Submodule 𝔽₂ (Module.End 𝔽₂ f4ShortRootLieIdeal) :=
@@ -193,13 +183,13 @@ private theorem f4ShortRootCarrierCotangentRange_toSubmodule :
         (congrArg Set.range (funext f4ShortRootCotangentFlagBasis_range)))
   exact f4ShortRootCarrierCotangentRange_toSubmodule_span.trans
     ((congrArg (Submodule.span 𝔽₂) hset).trans
-      (map_submodule_eq_span_basis f4ShortRootRepresentedRange
+      (TauCeti.mapSubmodule_eq_span_basis f4ShortRootRepresentedRange
         f4ShortRootRepresentedRangeBasis f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
 
 private theorem f4ShortRootRepresentedIdealAmbient_eq_map :
     f4ShortRootRepresentedIdealAmbient =
       f4ShortRootRepresentedIdeal.map f4ShortRootRepresentedRange.subtype := by
-  exact (map_submodule_eq_span_basis f4ShortRootRepresentedIdeal
+  exact (TauCeti.mapSubmodule_eq_span_basis f4ShortRootRepresentedIdeal
     f4ShortRootRepresentedIdealBasis f4ShortRootRepresentedRange.subtype).symm
 
 /-- The represented-ideal step, regarded as a subcomodule of the represented-range step. -/
@@ -229,33 +219,6 @@ abbrev f4ShortRootCarrierMiddle :=
     (f4ShortRootCarrierIdealInRange.toSubmodule :
       Submodule 𝔽₂ f4ShortRootCarrierCotangentRange))
 
-private noncomputable def subquotientEquivOfEq
-    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') :
-    (↥B ⧸ Submodule.comap B.subtype A) ≃ₗ[R]
-      (↥B' ⧸ Submodule.comap B'.subtype A') := by
-  subst A'
-  subst B'
-  exact LinearEquiv.refl R _
-
-private theorem subquotientEquivOfEq_symm_mk
-    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B') :
-    (subquotientEquivOfEq A B A' B' hA hB).symm (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk
-        (show B from ⟨x, by rw [hB]; exact x.property⟩) := by
-  subst A'
-  subst B'
-  rfl
-
-private theorem quotEquivOfEq_symm_mk
-    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    (A A' : Submodule R M) (hA : A = A') (x : M) :
-    (Submodule.quotEquivOfEq A A' hA).symm (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk x := by
-  subst A'
-  rfl
-
 /-- The middle carrier subquotient is the modular quotient `L / I`, through its represented
 realization `M / J`. -/
 noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
@@ -269,16 +232,17 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
   have hB : f4ShortRootCarrierCotangentRange.toSubmodule = B.map e.toLinearMap :=
     f4ShortRootCarrierCotangentRange_toSubmodule
   have htrace : Submodule.comap B.subtype A = f4ShortRootRepresentedIdeal := by
+    -- `A` is the local name for the represented ideal image.
     rw [show A = f4ShortRootRepresentedIdeal.map B.subtype from
       f4ShortRootRepresentedIdealAmbient_eq_map]
     exact Submodule.comap_map_eq_of_injective B.injective_subtype _
-  let eEq := subquotientEquivOfEq
+  let eEq := TauCeti.subquotientEquivOfEq
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
   let eMap := TauCeti.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
   let eTrace := Submodule.quotEquivOfEq (R := 𝔽₂) (M := ↥B)
-    (Submodule.comap B.subtype A) f4ShortRootRepresentedIdeal htrace
+    f4ShortRootRepresentedIdeal (Submodule.comap B.subtype A) htrace.symm
   let eCarrier := f4ShortRootCarrierRangeEquivToSubmodule
   have hcarrierTrace : f4ShortRootCarrierIdealInRange.toSubmodule.map
       eCarrier.toLinearMap =
@@ -292,6 +256,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
           (TauCeti.Subcomodule.mem_comap.mp
             (TauCeti.Subcomodule.mem_toSubmodule.mp hx))
       have hxy' : (x : f4ShortRootCotangentDual) = y := congrArg Subtype.val hxy
+      -- Membership of the range subtype is membership of its ambient vector.
       change (y : f4ShortRootCotangentDual) ∈ f4ShortRootCarrierCotangentIdeal
       rwa [← hxy']
     · intro hy
@@ -310,7 +275,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
       f4ShortRootCarrierCotangentIdeal.toSubmodule)
     eCarrier hcarrierTrace
   exact eCarrierQuot.trans
-    (eEq.trans (eMap.trans (eTrace.trans
+    (eEq.trans (eMap.trans (eTrace.symm.trans
       (LinearMap.quotientEquivRangeQuotientMap
         (f4ShortRootAdjoint : f4ModularChevalleyLieAlgebra →ₗ[𝔽₂]
           Module.End 𝔽₂ f4ShortRootLieIdeal) f4ShortRootSubspace
@@ -360,8 +325,8 @@ noncomputable def f4ShortRootCarrierQuotientProjection :
     (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootCarrierMiddleEquivQuotient.symm (Submodule.Quotient.mk X) =
       Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X) := by
-  simp [f4ShortRootCarrierMiddleEquivQuotient, quotEquivOfEq_symm_mk,
-    subquotientEquivOfEq_symm_mk,
+  simp [f4ShortRootCarrierMiddleEquivQuotient, Submodule.quotEquivOfEq_mk,
+    TauCeti.subquotientEquivOfEq_symm_mk,
     f4ShortRootCarrierRepresentedMap, f4ShortRootCarrierRepresentedToSubmodule,
     f4ShortRootCarrierRepresentedAmbientMap]
   congr 2
@@ -373,6 +338,7 @@ class. -/
     f4ShortRootCarrierQuotientProjection (f4ShortRootCarrierRepresentedMap X) =
       Submodule.Quotient.mk X := by
   rw [f4ShortRootCarrierQuotientProjection]
+  -- Unfold the projection into transport followed by the quotient map.
   change f4ShortRootCarrierMiddleEquivQuotient
     (Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X)) = _
   rw [← f4ShortRootCarrierMiddleEquivQuotient_symm_mk X,
@@ -381,7 +347,7 @@ class. -/
 /-- The represented adjoint map followed by the carrier quotient projection remains the ordinary
 quotient map after arbitrary scalar extension. -/
 theorem f4ShortRootCarrierQuotientProjection_baseChange_comp_representedMap
-    {A : Type*} [CommSemiring A] [Algebra 𝔽₂ A] :
+    {A : Type*} [Semiring A] [Algebra 𝔽₂ A] :
     f4ShortRootCarrierQuotientProjection.toLinearMap.baseChange A ∘ₗ
         f4ShortRootCarrierRepresentedMap.baseChange A =
       (f4ShortRootSubspace : Submodule 𝔽₂ f4ModularChevalleyLieAlgebra).mkQ.baseChange A := by

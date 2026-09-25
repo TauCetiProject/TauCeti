@@ -43,6 +43,39 @@ public section
 
 namespace TauCeti
 
+/-- The image of a based submodule is spanned by the images of its basis vectors. -/
+theorem mapSubmodule_eq_span_basis
+    {R V W ι : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W]
+    (p : Submodule R V) (b : Module.Basis ι R p) (f : V →ₗ[R] W) :
+    p.map f = Submodule.span R (Set.range fun i => f (b i : V)) := by
+  have h := congrArg (Submodule.map (f.comp p.subtype)) b.span_eq
+  rw [Submodule.map_span, Submodule.map_top, LinearMap.range_comp,
+    Submodule.range_subtype] at h
+  simpa only [← Set.range_comp, Function.comp_def, LinearMap.comp_apply,
+    Submodule.subtype_apply] using h.symm
+
+/-- Transport a subquotient across equalities of its ambient and denominator submodules. -/
+noncomputable def subquotientEquivOfEq
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') :
+    (↥B ⧸ Submodule.comap B.subtype A) ≃ₗ[R]
+      (↥B' ⧸ Submodule.comap B'.subtype A') := by
+  subst A'
+  subst B'
+  exact LinearEquiv.refl R _
+
+/-- The inverse transport takes quotient representatives to the same ambient vector. -/
+theorem subquotientEquivOfEq_symm_mk
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B') :
+    (subquotientEquivOfEq A B A' B' hA hB).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk
+        (show B from ⟨x, by rw [hB]; exact x.property⟩) := by
+  subst A'
+  subst B'
+  rfl
+
 section QuotientInterval
 
 section Order

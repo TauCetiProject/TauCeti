@@ -12,6 +12,11 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.Basic
 
 This file compares the first adjoint columns of long signed-simple roots on the quotient by the
 short-root ideal with the corresponding columns for the reversed short roots on the ideal.
+
+## References
+
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
+* R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 -/
 
 public section
@@ -151,6 +156,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap
       (f4ModularRootVector
         (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)))
       (f4ShortRootLieIdealBasis a) = f4ShortRootLieIdealBasis b := by
+    -- `a` and `b` are the source and target weight-basis labels.
     change f4ShortRootAdjoint
         (f4ModularRootVector
           (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)))
@@ -289,6 +295,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_opposite_of_long
     rw [f4SpecialIsogenyIndex_involutive]
   have hquot : f4ShortRootQuotientFirstColumn k a =
       f4ShortRootSubspace.mkQ (f4ModularCoroot α) := by
+    -- The local label `β` is definitionally the root opposite to `α`.
     rw [f4ShortRootQuotientFirstColumn_eq, hlift,
       show β = f4OppositeRootIndex α from rfl]
     exact congrArg f4ShortRootSubspace.mkQ (f4Modular_lie_rootVector_opposite α)
@@ -299,6 +306,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_opposite_of_long
     rw [hα'eq]
     exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk
   have hinput : (i : Fin 48) = f4OppositeRootIndex α' := by
+    -- Coercing the subtype index `i` exposes its chosen reversed root.
     change f4SpecialIsogenyIndexEquiv β = f4OppositeRootIndex α'
     rw [show β = f4OppositeRootIndex (f4SignedSimpleRootIndex k) by rfl,
       f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex]
@@ -362,6 +370,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long
               (f4OppositeRootIndex (f4SignedSimpleRootIndex k))).2 (by
                 rw [f4Length_opposite, hk])⟩ := by
       apply Subtype.ext
+      -- Subtype equality reduces to equality of root indices.
       change (i : Fin 48) =
         f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k))
       calc
@@ -385,6 +394,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long
       have hmap : f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
           f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
             f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
+        -- The local roots `γ` and `β` are images under the involutive permutation.
         rw [show f4SpecialIsogenyIndexEquiv γ = δ by
             dsimp only [γ]
             simp only [f4SpecialIsogenyIndexEquiv_apply]
@@ -416,6 +426,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long
         · intro δ hδ hδeq
           apply hedge
           refine ⟨δ, hδ, ?_⟩
+          -- Unfold the local preimage `β` before applying involutivity.
           rw [show f4SpecialIsogenyIndexEquiv β = i by
             dsimp only [β]
             simp only [f4SpecialIsogenyIndexEquiv_apply]
@@ -534,6 +545,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_firstColumn_cartan_of_long
         apply congrArg (fun x : f4ModularChevalleyLieAlgebra =>
           -(f4SimplyConnectedRootDatum.pairing α'
             (Fin.castAdd 44 s) : ZMod 2) • x)
+        -- `b` is the weight-basis label of the same ambient root vector.
         change f4ModularRootVector α' =
           (f4ShortRootLieIdealBasis
             (f4ShortRootWeightIndexEquiv.symm (Sum.inl iα)) :
@@ -605,6 +617,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_of_long
     Sum.rec (fun i => f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long k hk i)
     (fun j => by
       fin_cases j
+      -- The two `Fin 2` cases are exactly the two central weight coordinates.
       · change P (f4ShortRootWeightIndexEquiv.symm (Sum.inr (0 : Fin 2)))
         rw [f4ShortRootWeightIndexEquiv_symm_apply_inr_zero]
         exact f4ShortRootQuotientToIdealEquiv_firstColumn_twelve_of_long k hk
