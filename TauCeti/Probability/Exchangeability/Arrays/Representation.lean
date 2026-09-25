@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Coding
+public import TauCeti.Probability.Exchangeability.Arrays.RowCoding
 import TauCeti.MeasureTheory.Measure.MixtureInjective
 
 /-!
@@ -20,8 +20,8 @@ Consequently, two finite laws on random path measures give the same array law ex
 are equal. In particular, the mixing law in the row-coding representation of a separately
 exchangeable array is unique.
 
-This is the first-stage canonicality needed by the Aldous--Hoover representation. The remaining
-step is to resolve the invariant random path law into column and cell noise.
+This first-stage canonicality identifies the invariant random path law independently of a
+chosen directing measure, for its resolution into column and cell noise.
 
 ## References
 
@@ -46,15 +46,16 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 /-- The array law obtained by drawing a random path measure with law `π`, then using independent
 uniform variables to sample one row from that path measure at each row index. -/
 def rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Measure (ℕ × ℕ → α) :=
-  (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
-    fun q p ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2
+  (arrayRowCodingLaw π).map Prod.snd
 
 /-- The defining pushforward expression for `rowCodingArrayLaw`. -/
 theorem rowCodingArrayLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
     rowCodingArrayLaw π =
       (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
         fun q p ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
-  rw [rowCodingArrayLaw]
+  rw [rowCodingArrayLaw, arrayRowCodingLaw_def,
+    Measure.map_map measurable_snd measurable_arrayRowCoding]
+  rfl
 
 /-- A probability law of random path measures gives a probability row-coding array law. -/
 instance instIsProbabilityMeasureRowCodingArrayLaw
@@ -68,15 +69,12 @@ law. This identifies the parameter law from the array law. -/
 @[simp]
 theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
     (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = deFinettiBarycenter π := by
-  have hcode : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
-      fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
-    Measurable.of_eval fun p ↦ measurable_unitIntervalCoding_entry p
-  rw [rowCodingArrayLaw_def, Measure.map_map (MeasurableEquiv.measurable _) hcode]
-  convert map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π using 1
-  apply congrArg (fun f : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) → ℕ → ℕ → α ↦
-    (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map f)
-  funext q i j
-  rfl
+  rw [rowCodingArrayLaw, map_snd_arrayRowCodingLaw,
+    Measure.map_map (MeasurableEquiv.measurable _) measurable_uncurry]
+  have h : (MeasurableEquiv.curry ℕ ℕ α) ∘ Function.uncurry = id := by
+    funext x
+    rfl
+  rw [h, Measure.map_id]
 
 /-- The row-coding array law determines every finite mixing law on path measures. -/
 theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
@@ -88,6 +86,7 @@ theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (
   simpa only [map_curry_rowCodingArrayLaw, deFinettiBarycenter_def] using h'
 
 /-- Equality of finite mixing laws is equivalent to equality of their row-coding array laws. -/
+@[simp]
 theorem rowCodingArrayLaw_eq_iff {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
     [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
