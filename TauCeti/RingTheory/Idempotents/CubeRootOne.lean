@@ -49,8 +49,11 @@ theorem isIdempotentElem_invOf_three_smul_one_add_add_sq [Invertible (3 : R)] (h
     abel
   -- `e = ⅟3 • N` satisfies `3 • e = N`, so `9 • (e * e) = N * N = 3 • N = 9 • e`; cancel `9`
   have h3 (x : A) : (⅟3 : R) • 3 • x = x := by rw [← ofNat_smul_eq_nsmul R, invOf_smul_smul]
-  have he : 3 • (⅟3 : R) • N = N := by rw [← ofNat_smul_eq_nsmul R, smul_invOf_smul]
-  rw [IsIdempotentElem, ← h3 ((⅟3 : R) • N * _), ← h3 (3 • _), ← mul_smul_comm, ← smul_mul_assoc,
-    he, hN, h3]
+  have h3_inj {x y : A} (h : 3 • x = 3 • y) : x = y := by rw [← h3 x, h, h3]
+  set e := (⅟3 : R) • N
+  have he : 3 • e = N := by rw [← ofNat_smul_eq_nsmul R, smul_invOf_smul]
+  have h9 : 3 • 3 • (e * e) = 3 • 3 • e := by
+    rw [← smul_mul_assoc, ← mul_smul_comm, he, hN]
+  exact h3_inj (h3_inj h9)
 
 end TauCeti
