@@ -40,6 +40,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
+* `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
+  `c = 0 < a`, the matrix `-M` has weight zero, so `simp` computes coefficients as `weight M / 12`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
 * `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
   weight dominated by Popa–Zagier's, cast to a ring, in the shape `ofWeight` takes.
@@ -234,6 +236,16 @@ theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ
   have := cases_of_weight_ne_zero h
   lia
 
+/-- With Popa–Zagier's representatives, `c > 0` or `c = 0 < a`, the matrix `-M = (-a -b; -c -d)`
+has weight zero: at most one of the representatives `±M` of a class occurs in (15). -/
+@[simp]
+theorem weight_neg_eq_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (hM : 0 < M 1 0 ∨ M 1 0 = 0 ∧ 0 < M 0 0) :
+    weight (-M) = 0 := by
+  by_contra h
+  have := pos_or_eq_zero_and_pos_of_weight_ne_zero h
+  simp only [Matrix.neg_apply] at this
+  lia
+
 end PopaZagier
 
 /-! ### The element -/
@@ -285,12 +297,7 @@ theorem coeff_popaZagierElement_mk (A : TraceFormulaMatrix n) :
 theorem coeff_popaZagierElement_mk_of_pos (A : TraceFormulaMatrix n)
     (hA : 0 < A.1 1 0 ∨ A.1 1 0 = 0 ∧ 0 < A.1 0 0) :
     (popaZagierElement k n).coeff (mk A) = PopaZagier.weight A.1 / 12 := by
-  have : PopaZagier.weight (-A.1) = 0 := by
-    by_contra h
-    have := PopaZagier.pos_or_eq_zero_and_pos_of_weight_ne_zero h
-    simp only [Matrix.neg_apply] at this
-    lia
-  simp [this]
+  simp [hA]
 
 end DivisionRing
 
