@@ -29,8 +29,11 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 additive group. -/
 @[expose]
 noncomputable def _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform
+    [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
+
+variable [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]
@@ -53,8 +56,6 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_smul
     (c • μ).pontryaginMeasureTransform = c • μ.pontryaginMeasureTransform := by
   funext g
   simp [FiniteMeasure.pontryaginMeasureTransform]
-
-variable [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
 /-- The transform commutes with addition of finite measures. -/
 @[simp]
