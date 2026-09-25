@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.CommSq
+public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 
 /-!
@@ -40,6 +42,8 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietorisShortComplex`: the Mayer–Vietoris short complex of chain complexes.
 * `SSet.shortExact_mayerVietorisShortComplex`: it is short exact for a pushout square whose top
   map is a monomorphism.
+* `SSet.mono_chainComplexMap`: a monomorphism of simplicial sets induces a monomorphism of
+  chain complexes.
 * `SSet.mayerVietorisToBiprod`, `SSet.mayerVietorisFromBiprod`: the maps
   `Hₙ(X₁) ⟶ Hₙ(X₂) ⊞ Hₙ(X₃)` and `Hₙ(X₂) ⊞ Hₙ(X₃) ⟶ Hₙ(X₄)`.
 * `SSet.mayerVietorisδ`: the connecting morphism `Hₙ(X₄) ⟶ Hₘ(X₁)` for `m + 1 = n`.
@@ -63,6 +67,13 @@ attribute [local instance] preservesBinaryBiproduct_of_preservesBiproduct
 universe w v u
 
 namespace SSet
+
+/-- The chain map induced by a monomorphism of simplicial sets is a monomorphism. -/
+instance mono_chainComplexMap {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
+    [Preadditive C] {X Y : SSet.{w}} (f : X ⟶ Y) (R : C) [Mono f] :
+    Mono (chainComplexMap f R) :=
+  HomologicalComplex.mono_of_mono_f _ fun _ ↦
+    inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {X₁ X₂ X₃ X₄ : SSet.{w}} {t : X₁ ⟶ X₂} {l : X₁ ⟶ X₃} {r : X₂ ⟶ X₄} {b : X₃ ⟶ X₄}

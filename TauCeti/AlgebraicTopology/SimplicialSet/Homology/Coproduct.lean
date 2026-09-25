@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
-public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
 
 /-!
@@ -21,7 +19,6 @@ forming a coproduct of copies of `R` preserves colimits; hence so does `X ↦ X.
 
 The case of a coproduct is chain-level additivity: the chain complex of a disjoint union of
 simplicial sets is the coproduct of the chain complexes of the summands.
-The chain map induced by a monomorphism of simplicial sets is also a monomorphism.
 
 ## Sources
 
@@ -70,15 +67,3 @@ instance : PreservesColimitsOfShape J ((SSet.chainComplexFunctor.{w} C).obj R) :
         (SSet.chainComplexFunctor.{w} C).obj R ⋙ HomologicalComplex.eval C _ n from Iso.refl _)
 
 end TauCeti
-
-namespace SSet
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
-  {X Y : SSet.{w}} (f : X ⟶ Y) (R : C)
-
-/-- The chain map induced by a monomorphism of simplicial sets is a monomorphism. -/
-instance mono_chainComplexMap [Mono f] : Mono (chainComplexMap f R) :=
-  HomologicalComplex.mono_of_mono_f _ fun _ ↦
-    inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
-
-end SSet
