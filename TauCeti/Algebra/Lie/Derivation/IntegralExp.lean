@@ -158,11 +158,9 @@ theorem baseChangeExp_lie (D : LieDerivation ℚ L L) (M : LieSubalgebra ℤ L)
         baseChangeExp D.toLinearMap M hM t y⁆ := by
   let _ : LieRing (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieRing ℤ R M
   let _ : LieAlgebra R (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieAlgebra ℤ R M
-  induction x using TensorProduct.induction_on with
-  | zero => rw [zero_lie, map_zero, zero_lie]
+  induction x using TensorProduct.inductionOn with
   | tmul a x =>
-      induction y using TensorProduct.induction_on with
-      | zero => rw [lie_zero, map_zero, lie_zero]
+      induction y using TensorProduct.inductionOn with
       | tmul b y => exact baseChangeExp_tmul_lie D M hM hD t a b x y
       | add y z hy hz =>
           rw [lie_add, map_add, hy, hz]

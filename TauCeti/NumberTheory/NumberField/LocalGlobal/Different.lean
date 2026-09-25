@@ -94,8 +94,7 @@ theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι →
   have hF (ξ : v.adicCompletion K ⊗[K] L) :
       ∑ i, Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) (ξ * (1 ⊗ₜ b i)) •
         ((1 : v.adicCompletion K) ⊗ₜ[K] y i) = ξ := by
-    induction ξ using TensorProduct.induction_on with
-    | zero => simp
+    induction ξ using TensorProduct.inductionOn with
     | add ξ η hξ hη =>
       conv_rhs => rw [← hξ, ← hη]
       simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
@@ -119,8 +118,7 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
         (integralSemilocalToField L v t * (1 ⊗ₜ d)) ∈
       (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).range := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add t u ht hu =>
     rw [map_add, add_mul, map_add]
     exact add_mem ht hu

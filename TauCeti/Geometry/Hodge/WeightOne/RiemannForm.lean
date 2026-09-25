@@ -94,8 +94,7 @@ theorem nondegenerate [Module.Flat ℤ V] (h : IsRiemannForm J E) : E.Nondegener
     intro x hx
     have hreal : ∀ y : Hodge.Realification V, E.baseChange ℝ ((1 : ℝ) ⊗ₜ[ℤ] x) y = 0 := by
       intro y
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | tmul s y => simp [hx y]
       | add y z hy hz => rw [map_add, hy, hz, add_zero]
     -- Invariance with `J x'` and `x'` reads `E (-x') (J x') = E (J x') x'`, and the left side

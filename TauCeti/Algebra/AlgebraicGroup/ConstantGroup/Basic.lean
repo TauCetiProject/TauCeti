@@ -133,8 +133,7 @@ private theorem dualDistribEquiv_apply_single
     ConvolutionDual.dualDistribEquiv R (MonoidAlgebra R G) w
         (MonoidAlgebra.single g 1 ⊗ₜ[R] MonoidAlgebra.single h 1) =
       Algebra.TensorProduct.lift (eval R G g) (eval R G h) (fun _ _ ↦ .all _ _) w := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (fun a b ↦ a + b) hx hy
   | tmul f k =>

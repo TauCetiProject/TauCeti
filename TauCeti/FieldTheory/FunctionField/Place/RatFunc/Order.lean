@@ -58,7 +58,7 @@ theorem ord_adicOfIrreducible_algebraMap {q r : k[X]} (hq : Irreducible q) (hr :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = multiplicity q r := by
   rw [adicOfIrreducible_def, ord_algebraMap_adic _ _ _ hr,
     HeightOneSpectrum.ofIrreducible_asIdeal]
-  exact_mod_cast multiplicity_eq_of_emultiplicity_eq Ideal.emultiplicity_eq_emultiplicity_span
+  exact_mod_cast multiplicity_eq_of_emultiplicity_eq Ideal.emultiplicity_span_eq_emultiplicity
 
 open scoped Classical in
 /-- An irreducible polynomial has order one at the finite place defined by an associated
@@ -69,9 +69,10 @@ theorem ord_adicOfIrreducible_algebraMap_irreducible {q p : k[X]} (hq : Irreduci
       if Associated q p then 1 else 0 := by
   rw [ord_adicOfIrreducible_algebraMap hq hp.ne_zero]
   split_ifs with h
-  · rw [← multiplicity_eq_of_associated_left h, multiplicity_self]
+  · rw [← multiplicity_eq_of_associated_left h,
+      multiplicity_self (.of_not_isUnit hp.not_isUnit hp.ne_zero)]
     norm_num
-  · rw [Nat.cast_eq_zero, multiplicity_eq_zero]
+  · rw [Nat.cast_eq_zero, multiplicity_eq_zero (.of_not_isUnit hq.not_isUnit hp.ne_zero)]
     exact fun hdiv ↦ h (hq.associated_of_dvd hp hdiv)
 
 open scoped Classical in
@@ -127,14 +128,16 @@ theorem ord_adicOfIrreducible_pos_iff {q : k[X]} (hq : Irreducible q) {f : RatFu
     (hf : f ≠ 0) :
     0 < (adicOfIrreducible hq).ord f ↔ q ∣ f.num := by
   rw [ord_adicOfIrreducible hq hf]
+  have hfin : FiniteMultiplicity q f.num :=
+    .of_not_isUnit hq.not_isUnit (RatFunc.num_ne_zero hf)
   constructor
   · intro h
-    apply multiplicity_ne_zero.mp
+    apply (multiplicity_ne_zero hfin).mp
     omega
   · intro hnum
-    have hnum' : multiplicity q f.num ≠ 0 := multiplicity_ne_zero.mpr hnum
+    have hnum' : multiplicity q f.num ≠ 0 := (multiplicity_ne_zero hfin).mpr hnum
     have hden : multiplicity q f.denom = 0 :=
-      multiplicity_eq_zero.mpr
+      multiplicity_eq_zero_of_not_dvd
         (not_dvd_right_of_dvd_left hq f.isCoprime_num_denom hnum)
     omega
 
@@ -147,15 +150,17 @@ theorem ord_adicOfIrreducible_neg_iff {q : k[X]} (hq : Irreducible q) {f : RatFu
   · simp only [ord_zero, lt_self_iff_false, RatFunc.denom_zero, false_iff]
     exact hq.not_dvd_one
   · rw [ord_adicOfIrreducible hq hf]
+    have hfin : FiniteMultiplicity q f.denom :=
+      .of_not_isUnit hq.not_isUnit (RatFunc.denom_ne_zero f)
     constructor
     · intro h
-      apply multiplicity_ne_zero.mp
+      apply (multiplicity_ne_zero hfin).mp
       omega
     · intro hden
       have hnum : multiplicity q f.num = 0 :=
-        multiplicity_eq_zero.mpr
+        multiplicity_eq_zero_of_not_dvd
           (not_dvd_right_of_dvd_left hq f.isCoprime_num_denom.symm hden)
-      have hden' : multiplicity q f.denom ≠ 0 := multiplicity_ne_zero.mpr hden
+      have hden' : multiplicity q f.denom ≠ 0 := (multiplicity_ne_zero hfin).mpr hden
       omega
 
 /-- A nonzero rational function is a unit at `P_q` exactly when `q` divides neither its reduced

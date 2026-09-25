@@ -137,7 +137,7 @@ private theorem stabilizeXCenterInclusion_projection_apply (f : GridChainMinus R
   split_ifs with h
   · obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq h
     simp [stabilizeXCenterInclusion, stabilizeXCenterProjection,
-      Finsupp.mapDomain_apply (GridState.insertPoint_injective _ _)]
+      Finsupp.mapDomain_apply_of_injective (GridState.insertPoint_injective _ _)]
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨x, rfl⟩
     exact h (GridState.insertPoint_apply_newColumn _ _ _)
@@ -150,7 +150,8 @@ private theorem stabilizeXOffCenterInclusion_projection_apply (f : GridChainMinu
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨y, rfl⟩
     exact y.2 h
-  · exact Finsupp.mapDomain_apply Subtype.val_injective _ (⟨y, h⟩ : G.StabilizeXOffCenterState s)
+  · exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
+      (⟨y, h⟩ : G.StabilizeXOffCenterState s)
 
 /-- Every chain of the stabilization is the sum of its center and off-center parts. -/
 @[simp] theorem stabilizeXCenterInclusion_projection_add_offCenter (f : GridChainMinus R (n + 1)) :

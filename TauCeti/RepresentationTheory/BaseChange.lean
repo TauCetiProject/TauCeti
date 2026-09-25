@@ -267,7 +267,6 @@ private theorem intertwiningDefect_homBaseChangeEquiv [Fintype G] [DecidableEq G
       = piBaseChangeEquiv K L V W G
           (TensorProduct.AlgebraTensorModule.lTensor L L (intertwiningDefect ρ σ) x) := by
   induction x with
-  | zero => simp
   | add x y hx hy => simp [hx, hy]
   | tmul a f =>
     funext g

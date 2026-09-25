@@ -96,7 +96,6 @@ theorem HasWeakFDerivOn.differenceQuotient
     (hVO : MapsTo (· + t • w) V Omega) :
     HasWeakFDerivOn mu V (fun x => t⁻¹ • (u (x + t • w) - u x))
       (fun x => t⁻¹ • (U (x + t • w) - U x)) := by
-  convert ((hu.comp_add_right hVO).sub (hu.mono hV)).const_smul t⁻¹ using 1 <;>
-    funext x <;> rfl
+  exact ((hu.comp_add_right hVO).sub (hu.mono hV)).const_smul t⁻¹
 
 end TauCeti

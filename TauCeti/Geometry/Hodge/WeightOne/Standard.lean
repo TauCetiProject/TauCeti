@@ -76,9 +76,6 @@ theorem latticeToComplex_apply (x : Lattice) :
 theorem rationalToComplex_apply (x : RationalSpace) :
     rationalToComplex x = ((x.1 : ℂ), (x.2 : ℂ)) := by
   induction x using isBaseChange_latticeToRational.inductionOn with
-  | zero =>
-      rw [LinearMap.map_zero]
-      ext <;> norm_num
   | tmul x =>
       rw [rationalToComplex, Hodge.rationalToComplexMap_apply_ι]
       simp
@@ -139,8 +136,7 @@ private theorem complexificationEquiv_tmul (z : ℂ) (x : RealSpace) :
 private theorem complexificationEquiv_conj (x : ℂ ⊗[ℝ] RealSpace) :
     complexificationEquiv ((Hodge.complexificationConjugation RealSpace).toEquiv x) =
       coordinateConjugation (complexificationEquiv x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, coordinateConjugation.map_add]
   | tmul z x =>
       rw [Hodge.complexificationConjugation_toEquiv_tmul, complexificationEquiv_tmul,
@@ -150,8 +146,7 @@ private theorem complexificationEquiv_conj (x : ℂ ⊗[ℝ] RealSpace) :
 private theorem complexificationEquiv_J (x : ℂ ⊗[ℝ] RealSpace) :
     complexificationEquiv (realAlmostComplexStructure.toLinearMap.baseChange ℂ x) =
       (LinearEquiv.skewSwap ℂ ℂ ℂ) (complexificationEquiv x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp [complexificationEquiv]
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul z x =>
       rw [LinearMap.baseChange_tmul, complexificationEquiv_tmul, complexificationEquiv_tmul]

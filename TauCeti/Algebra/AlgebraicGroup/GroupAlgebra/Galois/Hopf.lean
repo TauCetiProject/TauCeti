@@ -70,8 +70,7 @@ private noncomputable def tensorBaseChangeEquiv : L ⊗[k] (B ⊗[k] B) ≃ₐ[L
 @[simp]
 private theorem tensorBaseChangeEquiv_one_tmul (t : B ⊗[k] B) :
     tensorBaseChangeEquiv rho (1 ⊗ₜ[k] t) = tensorInclusion rho t := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul x y => simp [tensorBaseChangeEquiv]
   | add x y hx hy => simp [TensorProduct.tmul_add, hx, hy]
 
@@ -97,8 +96,7 @@ private theorem tripleInclusion_tmul (x : B) (t : B ⊗[k] B) :
 private theorem tripleInclusion_assoc_tmul (t : B ⊗[k] B) (z : B) :
     tripleInclusion rho (TensorProduct.assoc k B B B (t ⊗ₜ[k] z)) =
       TensorProduct.assoc L A A A (tensorInclusion rho t ⊗ₜ[L] (z : A)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul x y => simp
   | add x y hx hy => simp [TensorProduct.add_tmul, hx, hy]
 
@@ -111,15 +109,13 @@ private theorem descendedComul_coassoc :
         ((descendedComul rho).toLinearMap.rTensor B t)) =
       TensorProduct.assoc L A A A
         ((Coalgebra.comul (R := L)).rTensor A (tensorInclusion rho t)) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y => simp [tripleInclusion_assoc_tmul]
     | add x y hx hy => simp [hx, hy]
   have hright (t : B ⊗[k] B) :
       tripleInclusion rho ((descendedComul rho).toLinearMap.lTensor B t) =
       (Coalgebra.comul (R := L)).lTensor A (tensorInclusion rho t) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y => simp
     | add x y hx hy => simp [hx, hy]
   apply LinearMap.ext
@@ -137,8 +133,7 @@ private theorem descendedComul_counit_left :
         ((groupAlgebraInvariantsCounit rho).toLinearMap.rTensor B t) : A) =
       TensorProduct.lid L A
         ((Coalgebra.counit (R := L)).rTensor A (tensorInclusion rho t)) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y =>
         simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
           TensorProduct.lid_tmul, tensorInclusion_tmul]
@@ -161,8 +156,7 @@ private theorem descendedComul_counit_right :
         ((groupAlgebraInvariantsCounit rho).toLinearMap.lTensor B t) : A) =
       TensorProduct.rid L A
         ((Coalgebra.counit (R := L)).lTensor A (tensorInclusion rho t)) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y =>
         simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply,
           TensorProduct.rid_tmul, tensorInclusion_tmul]
@@ -218,8 +212,7 @@ private theorem descendedAntipode_left :
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B t) : A) =
       LinearMap.mul' L A
         ((HopfAlgebra.antipode L).rTensor A (tensorInclusion rho t)) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y => simp
     | add x y hx hy => simp [hx, hy]
   apply LinearMap.ext
@@ -244,8 +237,7 @@ private theorem descendedAntipode_right :
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B t) : A) =
       LinearMap.mul' L A
         ((HopfAlgebra.antipode L).lTensor A (tensorInclusion rho t)) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul x y => simp
     | add x y hx hy => simp [hx, hy]
   apply LinearMap.ext

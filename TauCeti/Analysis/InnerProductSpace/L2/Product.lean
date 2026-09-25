@@ -78,13 +78,15 @@ theorem memLp_mul_prod [SFinite ν] {f : α → 𝕜} {g : β → 𝕜}
     (hf : MemLp f 2 μ) (hg : MemLp g 2 ν) :
     MemLp (fun p : α × β => f p.1 * g p.2) 2 (μ.prod ν) := by
   have hfst : AEStronglyMeasurable (fun p : α × β => f p.1) (μ.prod ν) :=
-    hf.1.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
+    hf.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
   have hsnd : AEStronglyMeasurable (fun p : α × β => g p.2) (μ.prod ν) :=
-    hg.1.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
+    hg.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
   have hmeas : AEStronglyMeasurable (fun p : α × β => f p.1 * g p.2) (μ.prod ν) := hfst.mul hsnd
   rw [memLp_two_iff_integrable_sq_norm hmeas]
-  have hf2 : Integrable (fun x => ‖f x‖ ^ 2) μ := (memLp_two_iff_integrable_sq_norm hf.1).1 hf
-  have hg2 : Integrable (fun y => ‖g y‖ ^ 2) ν := (memLp_two_iff_integrable_sq_norm hg.1).1 hg
+  have hf2 : Integrable (fun x => ‖f x‖ ^ 2) μ :=
+    (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf
+  have hg2 : Integrable (fun y => ‖g y‖ ^ 2) ν :=
+    (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
   refine (hf2.mul_prod hg2).congr (Filter.Eventually.of_forall fun p => ?_)
   simp only [norm_mul, mul_pow]
 

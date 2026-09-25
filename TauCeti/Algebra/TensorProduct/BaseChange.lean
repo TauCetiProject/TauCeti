@@ -84,8 +84,7 @@ theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
           (y ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n)))) =
       TensorProduct.lid R M (l.rTensor M y) ⊗ₜ[R] n := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
@@ -109,12 +108,10 @@ def baseChangeTensorAlgEquiv :
   Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
     (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B)
     (fun l₁ l₂ z₁ z₂ => by
-      induction z₁ using TensorProduct.induction_on with
-      | zero => simp
+      induction z₁ using TensorProduct.inductionOn with
       | add x y hx hy => simp [TensorProduct.tmul_add, add_mul, hx, hy]
       | tmul a₁ b₁ =>
-        induction z₂ using TensorProduct.induction_on with
-        | zero => simp
+        induction z₂ using TensorProduct.inductionOn with
         | add x y hx hy => simp [TensorProduct.tmul_add, mul_add, hx, hy]
         | tmul a₂ b₂ => simp [Algebra.TensorProduct.tmul_mul_tmul])
     (by simp [Algebra.TensorProduct.one_def])
@@ -240,8 +237,7 @@ theorem smul_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
 /-- The scalar-factor action is semilinear for the corresponding automorphism of `L`. -/
 theorem smul_smulₛₗ (σ : L ≃ₐ[K] L) (a : L) (x : L ⊗[K] A) :
     σ • (a • x) = σ a • σ • x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [smul_add, hx, hy]
   | tmul b x => simp [TensorProduct.smul_tmul']
 
@@ -293,8 +289,7 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
     Algebra.TensorProduct.map (AlgHom.id K L) f
         (Algebra.TensorProduct.map (σ : L →ₐ[K] L) (AlgHom.id K A) x) =
       σ • Algebra.TensorProduct.map (AlgHom.id K L) f x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp only [map_zero, smul_zero]
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
   | tmul a x =>
       simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, smul_tmul]

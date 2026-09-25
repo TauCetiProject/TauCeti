@@ -14,10 +14,8 @@ import Mathlib.Tactic.Group
 /-!
 # Consequences of the index formula
 
-The preimage `H.comap f` of a finite-index subgroup along a group homomorphism again has finite
-index: its index is the relative index of `H` in the range of `f`, which is finite. Adjoining
-the centre to a finite-index subgroup also keeps the index finite, since it only enlarges the
-subgroup.
+Adjoining the centre to a finite-index subgroup keeps the index finite, since it only enlarges
+the subgroup.
 
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
@@ -143,12 +141,6 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
   -- Stated as an instance because `G ⧸ H` reaches `Quotient` only through `HasQuotient`, which
   -- instance synthesis does not unfold: without this, `Countable (G ⧸ H)` is not found.
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
-
-/-- The preimage of a finite-index subgroup under a group homomorphism has finite index. -/
-@[to_additive]
-instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
-    (f : G' →* G) : (H.comap f).FiniteIndex :=
-  ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
 
 /-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
 has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
