@@ -17,7 +17,7 @@ natural with respect to that isometry.
 ## Main results
 
 * `QuadraticMap.Isometry.lipschitzGroupMap` is the homomorphism induced on Lipschitz groups.
-* `QuadraticMap.Isometry.lipschitzToOrthogonal_map` proves naturality of the Lipschitz action.
+* `QuadraticMap.Isometry.map_lipschitzVectorAction` proves naturality of the Lipschitz action.
 * `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_lipschitzToOrthogonal` packages that result as
   an equality of orthogonal-group homomorphisms.
 -/
@@ -83,7 +83,7 @@ theorem map_lipschitzGroup_inv_coe (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q
 
 /-- The Lipschitz action commutes with the map induced by a quadratic isometry. -/
 @[simp]
-theorem lipschitzToOrthogonal_map [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
+theorem map_lipschitzVectorAction [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
     (x : lipschitzGroup Q₁) (m : M₁) :
     f (CliffordAlgebra.lipschitzVectorAction Q₁ x m) =
       CliffordAlgebra.lipschitzVectorAction Q₂ (f.lipschitzGroupMap x) (f m) := by
@@ -121,6 +121,6 @@ theorem orthogonalGroupCongr_lipschitzToOrthogonal [Invertible (2 : R)]
   -- underlying isometry action required by the reusable naturality theorem.
   change e.toIsometry (CliffordAlgebra.lipschitzVectorAction Q₁ x (e.symm m)) = _
   simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply, e.apply_symm_apply] using
-    e.toIsometry.lipschitzToOrthogonal_map x (e.symm m)
+    e.toIsometry.map_lipschitzVectorAction x (e.symm m)
 
 end QuadraticMap.IsometryEquiv
