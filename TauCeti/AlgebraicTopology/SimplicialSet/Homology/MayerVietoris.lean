@@ -67,6 +67,14 @@ namespace SSet
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {X₁ X₂ X₃ X₄ : SSet.{w}} {t : X₁ ⟶ X₂} {l : X₁ ⟶ X₃} {r : X₂ ⟶ X₄} {b : X₃ ⟶ X₄}
 
+private lemma mayerVietorisShortComplex_f (sq : IsPushout t l r b) :
+    (sq.map ((chainComplexFunctor C).obj R)).shortComplex.f =
+      biprod.lift (chainComplexMap t R) (-chainComplexMap l R) := rfl
+
+private lemma mayerVietorisShortComplex_g (sq : IsPushout t l r b) :
+    (sq.map ((chainComplexFunctor C).obj R)).shortComplex.g =
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) := rfl
+
 /-- **The Mayer–Vietoris short exact sequence of chain complexes.** For a pushout square of
 simplicial sets whose top map is a monomorphism, the Mayer–Vietoris short complex is short
 exact. -/
@@ -75,6 +83,7 @@ lemma shortExact_mayerVietorisShortComplex (sq : IsPushout t l r b) [Mono t] :
   -- The chain complex functor preserves pushouts.
   exact := (sq.map ((chainComplexFunctor C).obj R)).exact_shortComplex
   mono_f := by
+    -- Expose the chain map before typeclass synthesis of its mono instance.
     change Mono (biprod.lift (chainComplexMap t R) (-chainComplexMap l R))
     have : Mono (chainComplexMap t R) := inferInstance
     exact mono_of_mono_fac (biprod.lift_fst (chainComplexMap t R) (-chainComplexMap l R))
@@ -171,21 +180,21 @@ lemma mayerVietorisδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
 @[reassoc (attr := simp)]
 lemma mayerVietorisδ_toBiprod (n m : ℕ) (h : m + 1 = n := by lia) :
     mayerVietorisδ R sq n m h ≫ mayerVietorisToBiprod R t l m = 0 := by
-  have := (shortExact_mayerVietorisShortComplex R sq).δ_comp n m h
+  have hcomp := (shortExact_mayerVietorisShortComplex R sq).δ_comp n m h
+  rw [mayerVietorisShortComplex_f R sq] at hcomp
+  -- Identify the homology objects of the mapped square with the original complexes.
   change (shortExact_mayerVietorisShortComplex R sq).δ n m h ≫
-    HomologicalComplex.homologyMap (biprod.lift (chainComplexMap t R) (-chainComplexMap l R)) m =
-      0 at this
+    HomologicalComplex.homologyMap
+      (biprod.lift (chainComplexMap t R) (-chainComplexMap l R)) m = 0 at hcomp
   rw [mayerVietorisδ, ← homologyMap_lift_comp_homologyBiprodIso_hom]
   exact (Category.assoc _ _ _).symm.trans
-    (((reassoc_of% this) (homologyBiprodIso R m).hom).trans zero_comp)
+    (((reassoc_of% hcomp) (homologyBiprodIso R m).hom).trans zero_comp)
 
 @[reassoc (attr := simp)]
 lemma mayerVietorisFromBiprod_δ (n m : ℕ) (h : m + 1 = n := by lia) :
     mayerVietorisFromBiprod R r b n ≫ mayerVietorisδ R sq n m h = 0 := by
   have := (shortExact_mayerVietorisShortComplex R sq).comp_δ n m h
-  change HomologicalComplex.homologyMap
-    (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) n ≫
-      (shortExact_mayerVietorisShortComplex R sq).δ n m h = 0 at this
+  rw [mayerVietorisShortComplex_g R sq] at this
   rw [← cancel_epi (homologyBiprodIso R n).hom, comp_zero, ← Category.assoc,
     homologyBiprodIso_hom_comp_fromBiprod, mayerVietorisδ]
   exact this
@@ -196,6 +205,7 @@ lemma mayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     ((shortExact_mayerVietorisShortComplex R sq).homology_exact₁ n m h)
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (homologyBiprodIso R m) ?_ ?_
+  -- Identify the homology objects of the mapped square in the two iso components.
   · change (𝟙 (X₄.homology R n)) ≫ mayerVietorisδ R sq n m h =
       (shortExact_mayerVietorisShortComplex R sq).δ n m h ≫ 𝟙 (X₁.homology R m)
     exact (Category.id_comp (mayerVietorisδ R sq n m h)).trans
@@ -213,6 +223,7 @@ lemma mayerVietoris_exact₂ (n : ℕ) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     ((shortExact_mayerVietorisShortComplex R sq).homology_exact₂ n)
   refine ShortComplex.isoMk (Iso.refl _) (homologyBiprodIso R n) (Iso.refl _) ?_ ?_
+  -- Here `change` also identifies the mapped square's homology objects with those of `Xᵢ`.
   · change (𝟙 (X₁.homology R n)) ≫ mayerVietorisToBiprod R t l n =
       HomologicalComplex.homologyMap
         (biprod.lift (chainComplexMap t R) (-chainComplexMap l R)) n ≫
@@ -231,6 +242,7 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     ((shortExact_mayerVietorisShortComplex R sq).homology_exact₃ n m h)
   refine ShortComplex.isoMk (homologyBiprodIso R n) (Iso.refl _) (Iso.refl _) ?_ ?_
+  -- As above, these `change` steps identify the homology objects of the mapped square.
   · change (homologyBiprodIso R n).hom ≫ mayerVietorisFromBiprod R r b n =
       HomologicalComplex.homologyMap
         (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) n ≫
@@ -266,12 +278,14 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
       τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
       τ₃ := chainComplexMap φ₄ R
       comm₁₂ := by
+        -- Expose the two `f` maps to check the square on both biproduct projections.
         change chainComplexMap φ₁ R ≫
             biprod.lift (chainComplexMap t' R) (-chainComplexMap l' R) =
           biprod.lift (chainComplexMap t R) (-chainComplexMap l R) ≫
             biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
         apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
       comm₂₃ := by
+        -- Expose the two `g` maps to check the square on both biproduct inclusions.
         change biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) ≫
             biprod.desc (chainComplexMap r' R) (chainComplexMap b' R) =
           biprod.desc (chainComplexMap r R) (chainComplexMap b R) ≫ chainComplexMap φ₄ R

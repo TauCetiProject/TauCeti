@@ -234,6 +234,7 @@ lemma epi_mayerVietorisFromBiprod_zero :
         ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) 0 ≫
       SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
     have : Epi (SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
+      -- `smallSingularHomologyIso` identifies this inclusion map with an isomorphism.
       change Epi (HomologicalComplex.homologyMap
         (SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R) 0)
       rw [← TauCeti.smallSingularHomologyIso_hom R ![U, V]
