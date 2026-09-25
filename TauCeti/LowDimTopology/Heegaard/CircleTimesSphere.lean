@@ -292,7 +292,6 @@ theorem cornerCount_circleTimesSphere (r s : Fin 3) :
   decide
 
 /-- The bigon `B₁`, a disk with two corners, has Maslov index one. -/
-@[simp]
 theorem maslovIndex_circleTimesSphere_single_one (r : Fin 3) :
     (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r 0)
       (circleTimesSphereGenerator r 1) (Pi.single 1 1) = 1 := by
@@ -300,7 +299,6 @@ theorem maslovIndex_circleTimesSphere_single_one (r : Fin 3) :
   norm_num
 
 /-- The bigon `B₂`, a disk with two corners, has Maslov index one. -/
-@[simp]
 theorem maslovIndex_circleTimesSphere_single_two (r : Fin 3) :
     (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r 0)
       (circleTimesSphereGenerator r 1) (Pi.single 2 1) = 1 := by
@@ -308,7 +306,6 @@ theorem maslovIndex_circleTimesSphere_single_two (r : Fin 3) :
   norm_num
 
 /-- The periodic domain `B₁ - B₂` has Maslov index zero at both generators. -/
-@[simp]
 theorem maslovIndex_circleTimesSphere_periodic (r : Fin 3) (a : Fin 2) :
     (circleTimesSphere r).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator r a)
       (circleTimesSphereGenerator r a) (Pi.single 1 1 - Pi.single 2 1) = 0 := by
