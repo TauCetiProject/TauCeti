@@ -449,7 +449,7 @@ end IsRimHook
 
 namespace IsRimHook
 
-/-- **Removing a rim hook, read on all the beta-numbers at once.**  Let `μ / ν` be a rim hook
+/-- **Adding a rim hook, read on all the beta-numbers at once.**  Let `μ / ν` be a rim hook
 meeting the rows `a ≤ i ≤ b`.  Raising the beta-number of `ν` at the bottom row `b` by the number
 of cells of the hook gives the beta-numbers of `μ`, rearranged by the cycle
 `a ↦ a + 1 ↦ ⋯ ↦ b ↦ a` of the rows the hook meets.  That cycle has sign `(-1) ^ (b - a)`, the
@@ -566,9 +566,14 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
   have hg_lt : ∀ i < a, g i = ν.rowLen i := fun i hi => by simp [hg, hi]
   have hg_a : g a = v - (r - 1 - a) := by simp [hg]
   have hg_mid : ∀ i, a < i → i ≤ j → g i = ν.rowLen (i - 1) + 1 := fun i hai hij => by
-    simp [hg, hij, show ¬ i < a by omega, show i ≠ a by omega]
+    have hnotlt : ¬ i < a := by omega
+    have hne : i ≠ a := by omega
+    simp [hg, hij, hnotlt, hne]
   have hg_gt : ∀ i, j < i → g i = ν.rowLen i := fun i hji => by
-    simp [hg, show ¬ i < a by omega, show i ≠ a by omega, show ¬ i ≤ j by omega]
+    have hnotlt : ¬ i < a := by omega
+    have hne : i ≠ a := by omega
+    have hnotle : ¬ i ≤ j := by omega
+    simp [hg, hnotlt, hne, hnotle]
   have hanti : ∀ {i i'}, i ≤ i' → ν.rowLen i' ≤ ν.rowLen i := fun h => ν.rowLen_anti _ _ h
   -- Row by row, `g` agrees with `ν` outside `[a, j]` and exceeds it inside.
   have hrows : ∀ i, (ν.rowLen i < g i ↔ a ≤ i ∧ i ≤ j) ∧ ν.rowLen i ≤ g i := fun i => by
@@ -605,8 +610,9 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
   have hμ : ∀ i, μ.rowLen i = g i := fun i => by
     by_cases hi : i < r
     · exact rowLen_ofRowLensFin _ _ ⟨i, hi⟩
-    · rw [show μ.rowLen i = 0 from rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi),
-        hg_gt i (by omega)]
+    · have hzero : μ.rowLen i = 0 :=
+        rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi)
+      rw [hzero, hg_gt i (by omega)]
       exact (rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))).symm
   have hμrows : μ.rimHookRows ν = Finset.Icc a j := by
     ext i
