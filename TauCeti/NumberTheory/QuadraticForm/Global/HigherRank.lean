@@ -20,8 +20,6 @@ rank two, three and four, this is the inductive structure of the Hasse–Minkows
 
 ## Main results
 
-* `QuadraticForm.LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod`: if `W` represents a
-  nonzero scalar `a` at every finite and real place, then `⟨-a⟩ ⊥ W` is locally isotropic.
 * `QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic`: if `U ⊥ W` is locally isotropic,
   with `U` regular on a nonzero space and `W` regular of rank at least three, and every locally
   isotropic form `⟨c⟩ ⊥ W` is isotropic over `K`, then `U ⊥ W` is isotropic over `K`.
@@ -77,7 +75,7 @@ theorem _root_.QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic [Nontriv
     (fun w hw => QuadraticForm.exists_atRealPlace_ne_zero_eq_neg (hUW.2 w) hU hw)
     fun b hb hloc => ?_
   -- `⟨-b⟩ ⊥ W` is locally isotropic, hence isotropic, so `W` represents `b` over `K`.
-  have hiso := ih (-b) (neg_ne_zero.mpr hb) (hloc.isLocallyIsotropic_smul_sq_prod hb)
+  have hiso := ih (-b) (neg_ne_zero.mpr hb) hloc.isLocallyIsotropic_smul_sq_prod
   rw [Equivalent.anisotropic_iff ⟨IsometryEquiv.prodComm _ W⟩] at hiso
   exact mem_unitValueSet.mp
     ((mem_unitValueSet_iff_not_anisotropic_prod W hW (Units.mk0 b hb)).mpr hiso)
