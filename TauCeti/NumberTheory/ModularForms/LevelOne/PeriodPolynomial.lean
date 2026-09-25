@@ -26,7 +26,8 @@ The parity involution is `ε = !![-1, 0; 0, 1]`, acting by `P(X, Y) ↦ P(-X, Y)
 preserves `W_w` (because `εSε = -S` and `εUε = SU²S`), and the **even** and **odd** period
 polynomials `W_w^±` are its `±1`-eigenspaces in `W_w`. When `2` is invertible they span `W_w`.
 For odd `w` the central element `S² = -1` acts by `-1`, so `W_w = 0` whenever multiplication by
-`2` is injective on `R`; only even `w`, that is even weight, carries period polynomials.
+`2` is injective on `R`; under this condition only even `w`, that is even weight, carries period
+polynomials.
 
 The Eisenstein polynomial `X^w - Y^w` is an even period polynomial for every even `w`. For
 positive even `w`, over `ℂ`, it is up to a nonzero scalar the extended even period polynomial of
@@ -46,8 +47,8 @@ the Eisenstein series of weight `w + 2`; at `w = 0` it is zero.
 * `TauCeti.mem_periodPolynomials_binaryFormRep_parity`: for even `w`, the parity involution
   preserves `W_w`.
 * `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials` and
-  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` for even
-  `w`, when `2` is invertible (spanning) and multiplication by `2` is injective (disjointness).
+  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` when
+  `2` is invertible (spanning) and multiplication by `2` is injective (disjointness).
 * `TauCeti.periodPolynomials_eq_bot_of_odd`: `W_w = 0` for odd `w` when multiplication by `2`
   is injective.
 * `TauCeti.mem_evenPeriodPolynomials_eisensteinPeriodPolynomial`: `X^w - Y^w ∈ W_w^+` for even
@@ -238,8 +239,8 @@ theorem mem_periodPolynomials_binaryFormRep_parity (hw : Even w)
 
 /-! ### The even and odd parts -/
 
-/-- For even `w` and `2` invertible, the even and odd period polynomials span `W_w`. -/
-theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] (hw : Even w) :
+private theorem evenPeriodPolynomials_sup_oddPeriodPolynomials_of_even
+    [Invertible (2 : R)] (hw : Even w) :
     evenPeriodPolynomials R w ⊔ oddPeriodPolynomials R w = periodPolynomials R w := by
   refine le_antisymm (sup_le inf_le_left inf_le_left) fun P hP ↦ ?_
   have hεε : ∀ Q, binaryFormRep R w (op !![-1, 0; 0, 1]) (binaryFormRep R w (op !![-1, 0; 0, 1]) Q)
@@ -290,6 +291,19 @@ theorem periodPolynomials_eq_bot_of_odd
   have hSS := binaryFormRep_S_sq_of_odd hw P
   rw [hSP, map_neg, hSP, neg_neg] at hSS
   exact eq_neg_iff_add_eq_zero.1 hSS
+
+/-- When `2` is invertible, the even and odd period polynomials span `W_w`. -/
+theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] :
+    evenPeriodPolynomials R w ⊔ oddPeriodPolynomials R w = periodPolynomials R w := by
+  rcases Nat.even_or_odd w with hw | hw
+  · exact evenPeriodPolynomials_sup_oddPeriodPolynomials_of_even hw
+  · have h2 : Function.Injective fun r : R ↦ 2 * r :=
+      (isUnit_of_invertible (2 : R)).mul_right_injective
+    have hle : evenPeriodPolynomials R w ⊔ oddPeriodPolynomials R w ≤
+        periodPolynomials R w := sup_le inf_le_left inf_le_left
+    rw [periodPolynomials_eq_bot_of_odd h2 hw] at hle
+    rw [periodPolynomials_eq_bot_of_odd h2 hw]
+    exact bot_unique hle
 
 /-! ### The Eisenstein polynomial -/
 

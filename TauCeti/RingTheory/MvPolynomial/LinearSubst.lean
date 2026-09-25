@@ -101,24 +101,25 @@ omit [Fintype σ] in
 /-- The scalar action on a monomial induced by `Xᵢ ↦ c Xᵢ`. -/
 private theorem aeval_C_mul_X_monomial (c : R) (d : σ →₀ ℕ) (r : R) :
     MvPolynomial.aeval (fun i ↦ C c * X i) (monomial d r) =
-      c ^ d.sum (fun _ e ↦ e) • monomial d r := by
-  rw [aeval_monomial, Finsupp.prod]
-  simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-  rw [← map_pow, algebraMap_eq, smul_eq_C_mul, monomial_eq, Finsupp.prod]
-  simp only [Finsupp.sum]
-  ring
+      c ^ d.degree • monomial d r := by
+  induction d using Finsupp.induction with
+  | zero => simp
+  | single_add i e d _ _ ih =>
+      rw [monomial_single_add, map_mul, map_pow, aeval_X, ih, map_add,
+        Finsupp.degree_single, pow_add]
+      simp [mul_pow, smul_eq_C_mul, mul_assoc, mul_left_comm, mul_comm]
 
 omit [Fintype σ] in
 /-- Substituting `Xᵢ ↦ c Xᵢ` in a form of degree `n` multiplies it by `cⁿ`. -/
 theorem IsHomogeneous.aeval_C_mul_X {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (c : R) : MvPolynomial.aeval (fun i ↦ C c * X i) p = c ^ n • p := by
-  conv_lhs => rw [p.as_sum]
-  conv_rhs => rw [p.as_sum]
-  rw [map_sum, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun d hd ↦ ?_
-  rw [aeval_C_mul_X_monomial]
-  simp only [Finsupp.sum]
-  rw [← hp.degree_eq_sum_deg_support hd]
+  induction hp using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => simp [ihp, ihq, smul_add]
+  | monomial d r hr =>
+      rw [aeval_C_mul_X_monomial]
+      congr 1
+      exact congrArg (c ^ ·) (by simpa [Finsupp.degree_eq_weight_one, Pi.one_def] using hr)
 
 /-- Rescaling the matrix by `c` rescales a form of degree `n` by `cⁿ`. -/
 theorem IsHomogeneous.linearSubst_smul {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
