@@ -23,12 +23,12 @@ series terminates exactly when the rational-point group is solvable.
 
 public section
 
-namespace TauCeti
-
-open WithConv
+open TauCeti WithConv
 
 variable {k : Type*} [Field k] [IsAlgClosed k] (H : _root_.CommHopfAlgCat k)
   [Algebra.FiniteType k H] [IsReduced H]
+
+namespace CommHopfAlgCat
 
 /-- Scheme-theoretic and abstract derived series reach the identity at the same index. -/
 @[simp] theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
@@ -45,7 +45,11 @@ theorem isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation 
   simp only [derivedSeriesDefiningIdeal_eq_augmentation_iff]
   exact ⟨fun h ↦ h.solvable, fun h ↦ ⟨h⟩⟩
 
-namespace geometricallySolvablePointsCommHopfAlgProperty
+end CommHopfAlgCat
+
+open CommHopfAlgCat
+
+namespace TauCeti.geometricallySolvablePointsCommHopfAlgProperty
 
 /-- Over an algebraically closed field, the geometric-points solvability property of a
 reduced finite-type affine group is equivalent to termination of its derived series. -/
@@ -66,6 +70,4 @@ theorem iff_exists_derivedSeriesDefiningIdeal_eq_augmentation :
     exact Group.isSolvable_of_isSolvable_injective
       (f := AlgHom.mapValue e.symm.toAlgHom) (AlgHom.mapValue_injective e.symm.injective)
 
-end geometricallySolvablePointsCommHopfAlgProperty
-
-end TauCeti
+end TauCeti.geometricallySolvablePointsCommHopfAlgProperty

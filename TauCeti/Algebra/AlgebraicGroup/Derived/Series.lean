@@ -27,11 +27,11 @@ solvability characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.Deri
 
 public section
 
-namespace TauCeti
+namespace CommHopfAlgCat
 
 noncomputable section
 
-open CategoryTheory TauCeti.CommHopfAlgCat WithConv
+open CategoryTheory TauCeti TauCeti.CommHopfAlgCat WithConv
 
 section CommRing
 
@@ -119,4 +119,4 @@ theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries (n : ℕ) :
 
 end
 
-end TauCeti
+end CommHopfAlgCat
