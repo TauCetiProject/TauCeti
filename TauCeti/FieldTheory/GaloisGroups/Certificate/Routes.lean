@@ -99,7 +99,7 @@ theorem hasGaloisLabel_five_zero_of_hasSecondRootInRootField (hf : f.Monic)
   refine hasGaloisLabel_five_zero_of_exists_rootField_aut_ne_one
     (natDegree_map_rat_eq_five hf hdeg) (AdjoinRoot g) (AdjoinRoot.root g) ?_
     (IntermediateField.adjoin_root_eq_top g) hAut
-  rw [AdjoinRoot.minpoly_root hirr.ne_zero, hg.leadingCoeff, inv_one, C_1, mul_one]
+  simpa [hg.leadingCoeff] using AdjoinRoot.minpoly_root hirr.ne_zero
 
 /-- **The dihedral route: `5T2`.** A monic integral quintic, irreducible over `ℚ`, whose
 discriminant is a square, whose resolvent sextic is separable with an integral root, and whose
