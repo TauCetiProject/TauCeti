@@ -75,7 +75,7 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   have hg : Set.EqOn g₁ g₂ (Set.range b') := by
     rintro _ ⟨i, rfl⟩
     simp [g₁, g₂, φ, hb']
-  obtain ⟨a, ha, hax⟩ := exists_smul_mem_span_basis A⁰ b b' hb'
+  obtain ⟨a, ha, hax⟩ := IsLocalization.exists_smul_mem_span_basis A⁰ b b' hb'
     (IsIntegralClosure.algebraMap_injective B A L) x
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
