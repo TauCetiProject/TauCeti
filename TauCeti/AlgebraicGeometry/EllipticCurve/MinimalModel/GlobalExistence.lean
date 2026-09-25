@@ -25,6 +25,9 @@ minimal equation (Corollary VIII.8.3).
 
 * `WeierstrassCurve.globalMinimalityClass_eq_one_iff`: `globalMinimalityClass O E = 1` if and only
   if some change of variables makes `E` globally minimal over `O`.
+* `WeierstrassCurve.exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span`: an integral
+  model with a principal defect ideal has a globally minimal model with the prescribed scaling
+  factor.
 * `WeierstrassCurve.exists_isGlobalMinimal_smul`: over the fraction field of a principal ideal
   domain every elliptic curve has a globally minimal equation.
 
@@ -36,8 +39,8 @@ height-one prime `v` Mathlib supplies a change of variables `Cᵥ = (uᵥ, rᵥ,
 to a model minimal at `v`; comparing obstruction exponents gives `v (uᵥ) = v (g)`, and
 Silverman VII.1.3(d) (`VariableChange.isInteger_r_s_t_of_smul_eq`) makes `rᵥ`, `sᵥ`, `tᵥ`
 integral at `v`. Only finitely many `v` have `fᵥ(W) ≠ 0`, and finite approximation
-(`TauCeti.DedekindDomain.exists_valuation_sub_le`) chooses `r`, `s`, `t ∈ O` close to the local
-data there: `v (r - rᵥ) ≤ v (uᵥ) ^ 2`, `v (s - sᵥ) ≤ v (uᵥ)` and
+(`TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow`) chooses `r`, `s`, `t ∈ O` close to
+the local data there: `v (r - rᵥ) ≤ v (uᵥ) ^ 2`, `v (s - sᵥ) ≤ v (uᵥ)` and
 `v (t - tᵥ - sᵥ (r - rᵥ)) ≤ v (uᵥ) ^ 3`. These are exactly the conditions making
 `C * Cᵥ⁻¹` defined over the localisation at `v`, for `C = (g, r, s, t)`, so `C • W`, which is
 `C * Cᵥ⁻¹` applied to a minimal model, is minimal at `v` (`isMinimal_baseChange_smul`). At the
@@ -166,14 +169,41 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
     ∃ a : O, ∀ v : HeightOneSpectrum O, v.valuation K (algebraMap O K a - x v) ≤
       WithZero.exp (-obstructionExponentAt O v W) ^ m := by
   let S := (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W).toFinset
-  obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_valuation_sub_le S
-    (fun v ↦ m * (obstructionExponentAt O v W).toNat) x fun v _ ↦ hx v
+  have hloc (v : S) : ∃ b : O,
+      v.1.valuation K (algebraMap O K b - x v) ≤
+        WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)) := by
+    obtain ⟨b, hb⟩ := v.1.exists_valuation_sub_lt_of_integer (hx v)
+      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)))
+        WithZero.exp_ne_zero)
+    exact ⟨b, hb.le⟩
+  choose b hb using hloc
+  obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow
+    (fun v : S ↦ v.1) Subtype.val_injective
+    (fun v ↦ m * (obstructionExponentAt O v.1 W).toNat)
+    (fun v ↦ Ideal.Quotient.mk _
+      (algebraMap O (Localization.AtPrime v.1.asIdeal) (b v)))
   refine ⟨a, fun v ↦ ?_⟩
   have : IsIntegral (Localization.AtPrime v.asIdeal) W := IsIntegral.of_isScalarTower (R := O) W
   rw [← Int.toNat_of_nonneg (obstructionExponentAt_nonneg_of_isIntegral O v W),
     ← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, ← Nat.cast_mul]
   by_cases hv : v ∈ S
-  · exact ha v hv
+  · have hab : a - b ⟨v, hv⟩ ∈ v.asIdeal ^
+        (m * (obstructionExponentAt O v W).toNat) := by
+      rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem]
+      apply (IsLocalization.AtPrime.equivQuotMaximalIdealPow v.asIdeal
+        (Localization.AtPrime v.asIdeal) _).injective
+      simpa only [IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk] using ha ⟨v, hv⟩
+    have hab' : v.valuation K (algebraMap O K (a - b ⟨v, hv⟩)) ≤
+        WithZero.exp (-(m * (obstructionExponentAt O v W).toNat : ℤ)) := by
+      rw [← Nat.cast_mul, HeightOneSpectrum.valuation_of_algebraMap,
+        HeightOneSpectrum.intValuation_le_pow_iff_mem]
+      exact hab
+    rw [map_sub] at hab'
+    have hsplit : algebraMap O K a - x v =
+        (algebraMap O K a - algebraMap O K (b ⟨v, hv⟩)) +
+          (algebraMap O K (b ⟨v, hv⟩) - x v) := by ring
+    rw [hsplit]
+    exact Valuation.map_add_le _ hab' (hb ⟨v, hv⟩)
   -- Off `S` the obstruction exponent vanishes, and the bound is integrality.
   have hv' : v ∉ Function.mulSupport fun w : HeightOneSpectrum O ↦
       w.asIdeal ^ (obstructionExponentAt O w W).toNat :=
@@ -183,11 +213,13 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
   exact Valuation.map_sub_le _ (v.valuation_le_one a) (hx v)
 
 /-- **An integral model with principal defect ideal has a globally minimal model**: the patching
-step of Silverman VIII.8.2, with scaling factor a generator `g` of the defect ideal and `r`, `s`,
-`t` chosen by finite approximation of local minimalising changes of variables. -/
-private theorem exists_isGlobalMinimal_smul_of_eq_span (W : WeierstrassCurve K) [W.IsElliptic]
+step of Silverman VIII.8.2. If `g` generates the defect ideal, the returned change has scaling
+factor `g`; its translation parameters are chosen by finite approximation of local minimalising
+changes of variables. -/
+theorem exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span
+    (W : WeierstrassCurve K) [W.IsElliptic]
     [IsIntegral O W] {g : O} (hg : weierstrassDefectIdeal O W = Ideal.span {g}) :
-    ∃ C : VariableChange K, IsGlobalMinimal O (C • W) := by
+    ∃ C : VariableChange K, (C.u : K) = algebraMap O K g ∧ IsGlobalMinimal O (C • W) := by
   choose D hDmin hDu hDr hDs hDt using fun v ↦ exists_isMinimal_smul_valuation O v W
   obtain ⟨r, hr⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 2
     (fun v ↦ (D v).r) hDr
@@ -202,7 +234,7 @@ private theorem exists_isGlobalMinimal_smul_of_eq_span (W : WeierstrassCurve K) 
   have hg₀ : algebraMap O K g ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective O K)).2
       (ne_zero_of_weierstrassDefectIdeal_eq_span W hg)
-  refine ⟨⟨Units.mk0 _ hg₀, algebraMap O K r, algebraMap O K s, algebraMap O K t⟩,
+  refine ⟨⟨Units.mk0 _ hg₀, algebraMap O K r, algebraMap O K s, algebraMap O K t⟩, rfl,
     IsGlobalMinimal.of_forall_isMinimal fun v ↦ ?_⟩
   have := hDmin v
   refine isMinimal_smul_of_valuation_sub_le v W _ (D v) ?_ ?_ ?_ ?_
@@ -232,7 +264,7 @@ theorem globalMinimalityClass_eq_one_iff (E : WeierstrassCurve K) [E.IsElliptic]
       weierstrassDefectClass_def] at h
     have : (weierstrassDefectIdeal O ((integralModel O (D • E)).baseChange K)).IsPrincipal :=
       (ClassGroup.mk0_eq_one_iff _).1 h
-    obtain ⟨C, hC⟩ := exists_isGlobalMinimal_smul_of_eq_span
+    obtain ⟨C, -, hC⟩ := exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span
       ((integralModel O (D • E)).baseChange K)
       (Ideal.span_singleton_generator
         (weierstrassDefectIdeal O ((integralModel O (D • E)).baseChange K))).symm
