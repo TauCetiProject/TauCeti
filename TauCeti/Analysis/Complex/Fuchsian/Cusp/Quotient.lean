@@ -13,12 +13,8 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
 For a normalized cusp datum `D` and a height at least its width, the horodisc at that height is
 precisely invariant under the cusp stabilizer. This file packages the horodisc as an invariant
 subspace for that stabilizer and proves that its orbit space maps by an open embedding into the
-coarse quotient `Γ \\ ℍ`. Thus the q-coordinate on the stabilizer quotient supplies a genuine
-punctured neighbourhood of the corresponding cusp in the coarse quotient, rather than merely a
-coordinate on an abstract stabilizer quotient.
-
-The next compactification step fills this puncture by the cusp point and extends the q-coordinate
-across it.
+coarse quotient `Γ \\ ℍ`. The image is an open subset that can serve as a punctured cusp chart
+domain after compactification, with the q-coordinate supplied by the stabilizer quotient.
 
 ## References
 
@@ -57,7 +53,7 @@ theorem mem_horodiscSubMulAction {A : ℝ} {z : ℍ} :
   Iff.rfl
 
 /-- The map from the cusp-stabilizer quotient of a horodisc to the full coarse quotient. -/
-@[expose] def horodiscQuotientToQuotient (A : ℝ) :
+def horodiscQuotientToQuotient (A : ℝ) :
     orbitRel.Quotient (stabilizer Γ D.cusp) (horodiscSubMulAction D A) →
       orbitRel.Quotient Γ ℍ :=
   Quotient.map' (↑) fun _ _ h ↦ by
@@ -67,7 +63,7 @@ theorem mem_horodiscSubMulAction {A : ℝ} {z : ℍ} :
 @[simp]
 theorem horodiscQuotientToQuotient_mk {A : ℝ} (z : horodiscSubMulAction D A) :
     horodiscQuotientToQuotient D A (Quotient.mk _ z) = Quotient.mk _ (z : ℍ) :=
-  rfl
+  Quotient.map'_mk _ _ _
 
 /-- The local quotient map of a horodisc is continuous. -/
 theorem continuous_horodiscQuotientToQuotient (A : ℝ) :
@@ -109,8 +105,7 @@ theorem quotientMk_eq_iff_qCoordinate_eq [DiscreteTopology Γ] {A : ℝ} (hA : D
       qCoordinate D z = qCoordinate D z' := by
   constructor
   · intro h
-    obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
-    change g • z' = z at hg
+    obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact h))
     have hgmem : g ∈ stabilizer Γ D.cusp :=
       mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hz' (by rw [hg]; exact hz)
     rw [← hg]
@@ -126,17 +121,16 @@ theorem isOpenEmbedding_horodiscQuotientToQuotient [DiscreteTopology Γ] {A : �
   refine .of_continuous_injective_isOpenMap (continuous_horodiscQuotientToQuotient D A) ?_
     (isOpenMap_horodiscQuotientToQuotient D A)
   rintro ⟨z⟩ ⟨z'⟩ h
-  obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
-  change g • (z' : ℍ) = (z : ℍ) at hg
+  obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact h))
   have hgmem : g ∈ stabilizer Γ D.cusp :=
     mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA z'.2 (by rw [hg]; exact z.2)
   exact Quotient.sound <| orbitRel_apply.mpr <|
     SubMulAction.mem_orbit_subMul_iff.mpr ⟨⟨g, hgmem⟩, hg⟩
 
-/-- A high horodisc has open image in the coarse quotient. -/
-theorem isOpen_image_quotientMk_horodisc [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) :
+/-- A horodisc has open image in the coarse quotient. -/
+theorem isOpen_image_quotientMk_horodisc (A : ℝ) :
     IsOpen (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A) := by
   rw [← range_horodiscQuotientToQuotient]
-  exact (isOpenEmbedding_horodiscQuotientToQuotient D hA).isOpen_range
+  exact (isOpenMap_horodiscQuotientToQuotient D A).isOpen_range
 
 end TauCeti.Subgroup.CuspDatum
