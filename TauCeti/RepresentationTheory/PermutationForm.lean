@@ -80,6 +80,8 @@ that file works over an inner-product space, which is unavailable over `ℚ`.
   API this file adapts to a bilinear form, as described in the implementation notes above.
 * G. D. James, *The Representation Theory of the Symmetric Groups*, Chapter 1, where this form is
   introduced on the permutation module of a Young subgroup and used for the submodule theorem.
+* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
+  Layer 3, which asks for the tabloid bilinear form and its orthogonality API.
 -/
 
 public section
