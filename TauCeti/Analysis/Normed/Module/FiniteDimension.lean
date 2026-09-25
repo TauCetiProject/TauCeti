@@ -48,7 +48,8 @@ theorem _root_.ContinuousLinearMap.dual_finrank_eq :
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/
 theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv {V W F : Type*}
     [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] [AddCommGroup W] [TopologicalSpace W] [Module 𝕜 W]
+    [AddCommGroup V] [TopologicalSpace V] [Module 𝕜 V]
+    [AddCommGroup W] [TopologicalSpace W] [Module 𝕜 W]
     [FiniteDimensional 𝕜 W] {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
     (e : (V × F) ≃L[𝕜] W) (e' : (V × F') ≃L[𝕜] W) : Nonempty (F ≃L[𝕜] F') := by
   have : FiniteDimensional 𝕜 (V × F) := e.symm.toLinearEquiv.finiteDimensional

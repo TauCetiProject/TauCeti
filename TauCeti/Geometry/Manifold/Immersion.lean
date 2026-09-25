@@ -233,7 +233,7 @@ end Target
 
 end Iff
 
-/-- A diffeomorphism is an immersion: it is the identity immersion transported by itself. -/
+/-- Every diffeomorphism is an immersion. -/
 theorem _root_.Diffeomorph.isImmersion [IsManifold I n M] [IsManifold I n M']
     (e : M ≃ₘ^n⟮I, I⟯ M') :
     IsImmersion I I n e :=
