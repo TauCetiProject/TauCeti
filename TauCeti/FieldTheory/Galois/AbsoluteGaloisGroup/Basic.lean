@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.IntermediateField.Algebraic
 public import TauCeti.FieldTheory.IntermediateField.Lift
 
 /-!
@@ -73,34 +74,18 @@ namespace TauCeti
 
 variable (F E : Type*) [Field F] [Field E] [Algebra F E]
 
-section Auxiliary
-
-variable {F E}
-
-/-- The preimage of a finite intermediate field `M` of `E/F` under an `F`-algebra map `g` into `E`
-is finite over `F`: it is `F`-isomorphic to its image under `g`, which is contained in `M`. -/
-private theorem finiteDimensional_comap {L : Type*} [Field L] [Algebra F L] (g : L →ₐ[F] E)
-    (M : IntermediateField F E) [FiniteDimensional F M] : FiniteDimensional F (M.comap g) :=
-  have hle : (M.comap g).map g ≤ M := (IntermediateField.map_comap_eq g M).le.trans inf_le_left
-  Module.Finite.of_injective
-    (((IntermediateField.inclusion hle).comp
-      (IntermediateField.equivMap (M.comap g) g).toAlgHom).toLinearMap)
-    ((IntermediateField.inclusion_injective hle).comp
-      (IntermediateField.equivMap (M.comap g) g).injective)
-
-end Auxiliary
-
 section Normal
 
 variable [Normal F E]
 
 /-! ### Restriction to the separable closure -/
 
-namespace AlgEquiv
-
-/-- An `F`-automorphism of a normal extension `E/F` that is the identity on the separable closure
-of `F` in `E` is the identity: what is left of the extension is purely inseparable. -/
-theorem restrictNormalHom_separableClosure_injective :
+omit [Normal F E] in
+/-- An `F`-automorphism of an algebraic extension `E/F` that is the identity on the separable
+closure is the identity: the remaining extension is purely inseparable. Normality of the
+separable closure is needed to form `restrictNormalHom`; `E/F` itself need not be normal. -/
+theorem _root_.AlgEquiv.restrictNormalHom_separableClosure_injective
+    [Algebra.IsAlgebraic F E] [Normal F (separableClosure F E)] :
     Function.Injective
       (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) (separableClosure F E)) := by
   rw [← MonoidHom.ker_eq_bot_iff, IntermediateField.restrictNormalHom_ker]
@@ -110,10 +95,9 @@ theorem restrictNormalHom_separableClosure_injective :
     (IntermediateField.fixingSubgroupEquiv _).toEquiv.subsingleton
   exact Subgroup.eq_bot_of_subsingleton _
 
-end AlgEquiv
-
 variable {F E}
 
+omit [Normal F E] in
 /-- A homomorphism into `Gal(E/F)` lifting the automorphisms of the separable closure is
 continuous.
 
@@ -136,7 +120,7 @@ private theorem continuous_of_algebraMap_comm (s : Gal(separableClosure F E/F) �
   rw [krullTopology_mem_nhds_one_iff]
   -- `M.comap g` is `M ∩ separableClosure F E`.
   set g : separableClosure F E →ₐ[F] E := IsScalarTower.toAlgHom F _ E
-  refine ⟨M.comap g, finiteDimensional_comap g M, fun τ hτ ↦ hMN ?_⟩
+  refine ⟨M.comap g, inferInstance, fun τ hτ ↦ hMN ?_⟩
   -- It is enough that `s τ` fix that intersection, on which it acts through `τ`.
   rw [SetLike.mem_coe, ← IntermediateField.fixingSubgroup_inf_separableClosure M,
     IntermediateField.mem_fixingSubgroup_iff]
