@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister
 # The signed discriminant on the Witt ring and `I/I² ≅ Kˣ/(Kˣ)²`
 
 Adding a hyperbolic plane does not change the signed discriminant `d±`, so `d±` is a well-defined
-function on the Witt ring `W(K)`. It is not additive on all of `W(K)`: `d±(q ⊥ r)` picks up the
+function on the Witt ring `W(K)`. It need not be additive on all of `W(K)`: `d±(q ⊥ r)` picks up the
 sign `(-1)^{mn}` in ranks `m` and `n`. That sign disappears as soon as one summand has even rank.
 So `d±` restricts to an additive map on the fundamental ideal `I(K)`, and this is where the
 *signed* discriminant, rather than the plain one, is forced.
