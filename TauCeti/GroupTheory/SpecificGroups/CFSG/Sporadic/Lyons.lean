@@ -252,8 +252,12 @@ def lyPresentation : GroupPresentation where
     block lengths 80, 160, and 309, matching the figures printed by the source and its total 549; \
     decidable checks verify these lengths and that every reduced word is cyclically reduced. In \
     R_G relator 4 the source prints the right side as the literal word b*c*b^-1*c^-1, not as a \
-    bracketed commutator. The paper proves the presentation by double-coset enumeration. The \
-    independent FiniteSimpleGroups development does not cover Ly."
+    bracketed commutator, and its printed left-side word \
+    d^-1*c^-1*b*a*b^-1*d*c*d*c^-1*d*c^-1*b*a*b^-1*c*d^-1*c*d is misprinted: the stored word has \
+    c^-1 as its seventh letter and b^-1 as its twelfth, the unique word within two letter edits \
+    of the print that holds in a permutation model of Ly built from Sims' presentation. The \
+    paper proves the presentation by double-coset enumeration. The independent \
+    FiniteSimpleGroups development does not cover Ly."
   expectedGeneratorCount := 5
   expectedRelatorCount := 25
   transcribed :=
@@ -299,9 +303,12 @@ theorem lyPresentation_transcriptionNotes :
       reduction gives block lengths 80, 160, and 309, matching the figures printed by the source \
       and its total 549; decidable checks verify these lengths and that every reduced word is \
       cyclically reduced. In R_G relator 4 the source prints the right side as the literal word \
-      b*c*b^-1*c^-1, not as a bracketed commutator. The paper proves the presentation by \
-      double-coset enumeration. The independent FiniteSimpleGroups development does not cover \
-      Ly." := by
+      b*c*b^-1*c^-1, not as a bracketed commutator, and its printed left-side word \
+      d^-1*c^-1*b*a*b^-1*d*c*d*c^-1*d*c^-1*b*a*b^-1*c*d^-1*c*d is misprinted: the stored word \
+      has c^-1 as its seventh letter and b^-1 as its twelfth, the unique word within two letter \
+      edits of the print that holds in a permutation model of Ly built from Sims' presentation. \
+      The paper proves the presentation by double-coset enumeration. The independent \
+      FiniteSimpleGroups development does not cover Ly." := by
   rfl
 
 /-- The generator count recorded for `Ly`. -/
