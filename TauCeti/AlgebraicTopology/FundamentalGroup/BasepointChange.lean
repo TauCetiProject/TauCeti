@@ -149,7 +149,8 @@ theorem _root_.FundamentalGroup.conjClassAt_self
   rw [← _root_.FundamentalGroup.mk_transport_eq_conjClassAt (Path.refl x) g,
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj]
   have hrefl : _root_.FundamentalGroup.fromPath
-      (Path.Homotopic.Quotient.mk (Path.refl x)) = 1 := rfl
+      (Path.Homotopic.Quotient.mk (Path.refl x)) = 1 := by
+    simp only [Path.Homotopic.Quotient.mk_refl, _root_.FundamentalGroup.one_def]
   rw [MulAut.conj_apply, hrefl]
   simp only [one_mul, inv_one, mul_one]
 
