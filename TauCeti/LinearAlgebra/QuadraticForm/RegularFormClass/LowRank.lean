@@ -30,11 +30,13 @@ equality of the rank, discriminant, and Hasse invariant, together with the bound
   discriminant is the class of some `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.eq_iff_discr_eq_and_hasseInvariant_eq`: classes of the same rank at
   most three are equal exactly when their discriminants and Hasse invariants agree.
-* `TauCeti.equivalent_iff_discr_eq_and_hasseInvariant_eq`: the same statement for regular forms
-  on finite-dimensional spaces of the same dimension at most three.
+* `QuadraticForm.equivalent_iff_discr_eq_and_hasseInvariant_eq`: the same statement for regular
+  forms on finite-dimensional spaces of the same dimension at most three.
 
 ## References
 
+* `TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 5, "Classification in dimension at
+  most three", including its proof route through quaternion equivalences on pure norm forms.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §3, (3.21).
 -/
@@ -124,12 +126,23 @@ theorem eq_iff_discr_eq_and_hasseInvariant_eq {x y : RegularFormClass K}
 
 end RegularFormClass
 
+end TauCeti
+
+namespace QuadraticForm
+
+open TauCeti
+
+universe u
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
 /-- **Classification of regular forms in dimension at most three** (Lam V.3.21): two regular
 quadratic forms on finite-dimensional spaces of the same dimension `n ≤ 3` are isometric exactly
 when they have the same discriminant and the same Hasse invariant. -/
 theorem equivalent_iff_discr_eq_and_hasseInvariant_eq {V W : Type*} [AddCommGroup V] [Module K V]
     [FiniteDimensional K V] [AddCommGroup W] [Module K W] [FiniteDimensional K W]
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {R : QuadraticForm K W} (hR : R.Nondegenerate)
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {R : _root_.QuadraticForm K W} (hR : R.Nondegenerate)
     (hdim : Module.finrank K V = Module.finrank K W) (h3 : Module.finrank K V ≤ 3) :
     Q.Equivalent R ↔
       RegularFormClass.discr (formClass Q hQ) = RegularFormClass.discr (formClass R hR) ∧
@@ -139,4 +152,4 @@ theorem equivalent_iff_discr_eq_and_hasseInvariant_eq {V W : Type*} [AddCommGrou
   exact RegularFormClass.eq_iff_discr_eq_and_hasseInvariant_eq (by simpa using hdim)
     (by simpa using h3)
 
-end TauCeti
+end QuadraticForm
