@@ -42,6 +42,7 @@ constraint `d ≤ c` as an explicit `if`.  Coassociativity is then `Finset.sum_c
 * `TauCeti.TensorWords.coaugmentation`: the algebra map, bundled as a coalgebra morphism.
 * `TauCeti.TensorWords.reducedInclusion` and `TauCeti.TensorWords.reducedProjection`: the
   positive-length words as a direct summand.
+* `TauCeti.TensorWords.map`: apply a linear map to every letter of a tensor word.
 
 ## Main results
 
@@ -51,6 +52,11 @@ constraint `d ≤ c` as an explicit `if`.  Coassociativity is then `Finset.sum_c
   coproduct is the reduced coproduct together with its two degenerate cuts.
 * `TauCeti.TensorWords.ker_counit`: the kernel of the counit is the image of the positive-length
   words under `TauCeti.TensorWords.reducedInclusion`.
+* `TauCeti.TensorWords.map_id`, `TauCeti.TensorWords.map_comp` and
+  `TauCeti.TensorWords.deconcatenation_natural`: the letterwise maps are homomorphisms, and
+  deconcatenation is natural with respect to them.
+* `TauCeti.TensorWords.map_comp_reducedInclusion`: on the words of positive length a letterwise map
+  is the inclusion of the corresponding reduced one.
 
 ## References
 
@@ -62,7 +68,7 @@ public section
 
 open scoped BigOperators DirectSum TensorProduct
 
-universe uR uM uN
+universe uR uM uN uP
 
 namespace TauCeti
 
@@ -86,6 +92,11 @@ theorem of_def (n : ℕ) :
 theorem of_tprod_congr {n : ℕ} {x y : Fin n → M} (h : ∀ i, x i = y i) :
     of R M n (PiTensorProduct.tprod R x) = of R M n (PiTensorProduct.tprod R y) := by
   exact congrArg _ (congrArg _ (funext h))
+
+/-- The words of a fixed length generate all tensor words. -/
+theorem iSup_range_of : ⨆ n : ℕ, LinearMap.range (of R M n) = ⊤ := by
+  simpa only [of_def, DirectSum.lof] using
+    (DFinsupp.iSup_range_lsingle (R := R) (M := fun n : ℕ ↦ TensorPower R n M))
 
 /-- Two linear maps out of tensor words agree if they agree on pure tensor words. -/
 theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
@@ -688,6 +699,71 @@ theorem deconcatenation_of_length_one (z : TensorPower R 1 M) :
   rw [reducedInclusion_of, ReducedTensorWords.deconcatenation_of_length_one R M z,
     map_zero, add_zero] at h
   exact h
+
+/-! ## Letterwise maps -/
+
+section Map
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} {P : Type uP} [CommSemiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+
+/-- Apply a linear map to every letter of a tensor word, the empty word included. -/
+noncomputable def map (f : M →ₗ[R] N) : TensorWords R M →ₗ[R] TensorWords R N :=
+  DirectSum.lmap fun _ ↦ PiTensorProduct.map fun _ ↦ f
+
+/-- Mapping a word of a fixed length applies the tensor power of the map in that length. -/
+@[simp]
+theorem map_of (f : M →ₗ[R] N) (n : ℕ) (x : TensorPower R n M) :
+    map f (of R M n x) = of R N n (PiTensorProduct.map (fun _ ↦ f) x) := by
+  simp [map, of_def]
+
+/-- Mapping a pure tensor applies the map to each of its letters. -/
+theorem map_of_tprod (f : M →ₗ[R] N) (n : ℕ) (x : Fin n → M) :
+    map f (of R M n (PiTensorProduct.tprod R x)) =
+      of R N n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
+  simp [map_of]
+
+/-- Mapping the empty word leaves the empty word unchanged. -/
+@[simp]
+theorem map_one (f : M →ₗ[R] N) : map f (1 : TensorWords R M) = (1 : TensorWords R N) := by
+  rw [one_eq_of_zero, map_of, PiTensorProduct.map_tprod, one_eq_of_zero]
+  have hempty : (fun i : Fin 0 => f (i.elim0)) = (fun i : Fin 0 => (i.elim0 : N)) := by
+    funext i
+    exact Fin.elim0 i
+  exact congrArg (of R N 0) (congrArg (PiTensorProduct.tprod R) hempty)
+
+/-- Mapping the identity map over the letters is the identity. -/
+@[simp]
+theorem map_id : map (LinearMap.id : M →ₗ[R] M) = LinearMap.id := by
+  simp only [map, PiTensorProduct.map_id, DirectSum.lmap_id]
+
+/-- Mapping a composite over the letters composes the two letterwise maps. -/
+@[simp]
+theorem map_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
+    map (g ∘ₗ f) = map g ∘ₗ map f := by
+  simp only [map, PiTensorProduct.map_comp, DirectSum.lmap_comp]
+
+/-- Deconcatenation is natural with respect to linear maps of the letters. -/
+theorem deconcatenation_natural (f : M →ₗ[R] N) :
+    deconcatenation R N ∘ₗ map f =
+      TensorProduct.map (map f) (map f) ∘ₗ deconcatenation R M := by
+  apply linearMap_ext R M
+  intro n x
+  simp only [LinearMap.coe_comp, Function.comp_apply]
+  rw [map_of_tprod]
+  simp only [deconcatenation_of, deconcatenationComponent_tprod]
+  simp only [map_sum, TensorProduct.map_tmul, map_of, PiTensorProduct.map_tprod]
+
+/-- On the words of positive length the letterwise map of the coaugmented coalgebra is the
+inclusion of the letterwise map of the reduced one, because the two apply the same map to the same
+letters. -/
+theorem map_comp_reducedInclusion (f : M →ₗ[R] N) :
+    map f ∘ₗ reducedInclusion R M = reducedInclusion R N ∘ₗ ReducedTensorWords.map (R := R) f := by
+  refine ReducedTensorWords.linearMap_ext R M fun n z => ?_
+  simp only [LinearMap.coe_comp, Function.comp_apply, reducedInclusion_of, map_of,
+    ReducedTensorWords.map_of]
+
+end Map
 
 end TensorWords
 

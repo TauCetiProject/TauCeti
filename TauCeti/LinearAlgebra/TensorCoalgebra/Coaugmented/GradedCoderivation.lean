@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 
 /-!
@@ -15,11 +15,11 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 
 `TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation` packages the `q`-twisted co-Leibniz
 rule for the reduced tensor coalgebra `T = ⨁_{n ≥ 1} M^{⊗ n}`.  The coaugmented tensor coalgebra
-`TauCeti.TensorWords = ⨁_{n ≥ 0} M^{⊗ n}` adds the empty word, and the module and bimodule theories
+`TauCeti.TensorWords = ⨆_{n ≥ 0} M^{⊗ n}` adds the empty word, and the module and bimodule theories
 need `b` there as well, because a coderivation over `b` of a cofree comodule cuts a word at its two
-ends as well.  This file provides the coaugmented counterpart: the letterwise maps
-`TauCeti.TensorWords.map` that carry the Koszul twist to tensor words, the total-letter-degree
-pieces, and the `q`-twisted co-Leibniz identity of an endomorphism of tensor words.
+ends as well.  This file provides the coaugmented counterpart: the total-letter-degree pieces, the
+compatibility of the letterwise maps of both presentations, and the `q`-twisted co-Leibniz identity
+of an endomorphism of tensor words.
 
 As in the reduced case the sign is carried by the letterwise extension of the Koszul twist, which
 on the degree-`D` piece is scalar multiplication by `(-1)^(q * D)` and fixes the empty word, so the
@@ -27,16 +27,15 @@ identity takes the sign-free shape
 
 `Δ ∘ b = (b ⊗ 1) ∘ Δ + (1 ⊗ b) ∘ (τ ⊗ 1) ∘ Δ`
 
-in which `τ = TensorWords.map (InternalGrading.koszulTwist G q)` acts on the left half of every cut.
-The coaugmented coproduct has the two degenerate cuts of each word, so a `q`-twisted coderivation
-of the coaugmented coalgebra is expected to annihilate the empty word: each degenerate cut is then
-read off the term in which the nonempty half is differentiated, and vanishes in the other.  The
-predicate `TensorWords.IsGradedCoderivation G q` is this `q`-twisted co-Leibniz condition alone; it
-does not include homogeneity of `b`, and it depends only on the parity of `q`.
+in which `τ = TensorWords.map (InternalGrading.koszulTwist G q)` acts on the left half of every cut;
+the letterwise maps themselves are in `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`,
+which also shows that this `τ` restricts to the reduced twist on the words of positive length.
+Homogeneity of `b` in the total letter degree is a separate condition, recorded by
+`TauCeti.TensorWords.gradedPiece`; the predicate `TensorWords.IsGradedCoderivation G q` is the
+`q`-twisted co-Leibniz condition alone, and it depends only on the parity of `q`.
 
 ## Main definitions
 
-* `TauCeti.TensorWords.map`: apply a linear map to every letter of a tensor word.
 * `TauCeti.TensorWords.gradedPiece`: the words whose letters have total degree `D`.
 * `TauCeti.TensorWords.IsGradedCoderivation`: the `q`-twisted co-Leibniz identity of an endomorphism
   of tensor words.
@@ -65,39 +64,6 @@ namespace TauCeti
 namespace TensorWords
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-! ### Letterwise maps -/
-
-/-- Apply a linear map to every letter of a tensor word, the empty word included. -/
-noncomputable def map (f : M →ₗ[R] M) : TensorWords R M →ₗ[R] TensorWords R M :=
-  DirectSum.lmap fun _ ↦ PiTensorProduct.map fun _ ↦ f
-
-/-- Mapping a word of a fixed length applies the tensor power of the map in that length. -/
-@[simp]
-theorem map_of (f : M →ₗ[R] M) (n : ℕ) (x : TensorPower R n M) :
-    map f (of R M n x) = of R M n (PiTensorProduct.map (fun _ ↦ f) x) := by
-  rw [map, of_def]
-  simp
-
-/-- Mapping a pure tensor applies the map to each of its letters. -/
-theorem map_of_tprod (f : M →ₗ[R] M) (n : ℕ) (x : Fin n → M) :
-    map f (of R M n (PiTensorProduct.tprod R x)) =
-      of R M n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
-  simp [map_of]
-
-/-- Mapping the empty word leaves the empty word unchanged. -/
-@[simp]
-theorem map_one (f : M →ₗ[R] M) : map f (1 : TensorWords R M) = 1 := by
-  rw [one_eq_of_zero, map_of, PiTensorProduct.map_tprod]
-  have hempty : PiTensorProduct.tprod R (fun i : Fin 0 => f (i.elim0))
-      = PiTensorProduct.tprod R (fun i : Fin 0 => (i.elim0 : M)) :=
-    (LinearEquiv.symm_apply_apply
-      (PiTensorProduct.isEmptyEquiv (R := R) (ι := Fin 0) (s := fun _ : Fin 0 => M))
-      _).symm.trans (by
-          simp only [PiTensorProduct.isEmptyEquiv_apply_tprod,
-            PiTensorProduct.isEmptyEquiv_symm_apply, one_smul]
-          exact congrArg (PiTensorProduct.tprod R) (funext fun i => rfl))
-  exact congrArg (of R M 0) hempty
 
 /-! ### The grading by total letter degree -/
 
@@ -137,18 +103,13 @@ theorem mem_gradedPiece_of_tprod (G : InternalGrading R M) {n : ℕ}
     of R M n (PiTensorProduct.tprod R x) ∈ gradedPiece G (∑ i, 𝒟 i) :=
   Submodule.subset_span ⟨n, 𝒟, x, h𝒟, rfl, rfl⟩
 
-/-- The words of a fixed length generate all tensor words. -/
-private theorem iSup_range_of : ⨆ n : ℕ, LinearMap.range (of R M n) = ⊤ := by
-  simpa only [of_def, DirectSum.lof] using
-    (DFinsupp.iSup_range_lsingle (R := R) (M := fun n : ℕ ↦ TensorPower R n M))
-
 /-- The total-degree pieces span the coaugmented tensor words.  In particular, an equality of
 linear maps out of tensor words may be checked separately on these pieces. -/
 theorem iSup_gradedPiece_eq_top (G : InternalGrading R M) :
     ⨆ D : ℤ, gradedPiece G D = ⊤ := by
   classical
   apply le_antisymm le_top
-  rw [← iSup_range_of]
+  rw [← iSup_range_of R M]
   refine iSup_le fun n ↦ ?_
   rintro z ⟨z, rfl⟩
   induction z using PiTensorProduct.induction_on with
@@ -224,19 +185,19 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
 
 /-! ### The `q`-twisted co-Leibniz identity -/
 
-/-- A degree-`q` graded coderivation of the coaugmented tensor coalgebra: an endomorphism `b`
-satisfying the co-Leibniz rule with the Koszul sign of the left cut half,
+/-- A `q`-twisted co-Leibniz condition on an endomorphism `b` of the coaugmented tensor coalgebra:
+the co-Leibniz rule with the Koszul sign of the left cut half,
 
 `Δ ∘ b = (b ⊗ 1) ∘ Δ + (1 ⊗ b) ∘ (τ ⊗ 1) ∘ Δ`,
 
 in which `τ = TensorWords.map (InternalGrading.koszulTwist G q)` is the letterwise extension of the
 Koszul twist and acts on the left half of every cut, exactly as in
-`TauCeti.ReducedTensorWords.IsGradedCoderivation`.  Unlike the reduced coproduct, the coaugmented
-one cuts a word of positive length at its two ends as well, so a coderivation of this kind is
-expected to annihilate the empty word: each degenerate cut is then read off the term in which the
-nonempty half is differentiated, the other term vanishing on it.  This is only the twisted
-co-Leibniz condition, not a homogeneity requirement on `b`; the latter is recorded by
-`TauCeti.TensorWords.gradedPiece`. -/
+`TauCeti.ReducedTensorWords.IsGradedCoderivation`.  This is only the twisted co-Leibniz condition,
+not a homogeneity requirement on `b`; degree-`q` homogeneity in the total letter degree is separate
+and is recorded by `TauCeti.TensorWords.gradedPiece`.  Nor does the condition itself require `b` to
+annihilate the empty word: it is the extensions of *reduced* coderivations by zero on the empty
+word, such as `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`, whose two degenerate cuts
+this identity reads off. -/
 def IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
     (b : TensorWords R M →ₗ[R] TensorWords R M) : Prop :=
   deconcatenation R M ∘ₗ b =
