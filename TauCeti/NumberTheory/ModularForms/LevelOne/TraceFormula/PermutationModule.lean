@@ -13,9 +13,9 @@ public import TauCeti.RepresentationTheory.OfMulAction
 
 Popa and Zagier carry out their proof of the Eichler–Selberg trace formula in `ℛₙ = ℚ[ℳₙ]`, the
 free `ℚ`-module on the projective determinant-`n` matrix module `ℳₙ`, which is
-`TauCeti.TraceFormulaMatrixModule n`. (The roadmap calls `ℛₙ` a group ring, but for `n ≠ 1` the
-set `ℳₙ` is not a group: a product of two determinant-`n` matrices has determinant `n²`. What
-`ℛₙ` carries is an action of the group ring `ℚ[PSL(2, ℤ)]` on each side.) No new type is
+`TauCeti.TraceFormulaMatrixModule n`. For `n ≠ 1` the set `ℳₙ` is not a group, since a product
+of two determinant-`n` matrices has determinant `n²`; `ℛₙ` is the free `ℚ`-module on `ℳₙ`,
+with an action of the group ring `ℚ[PSL(2, ℤ)]` on each side. No new type is
 introduced for it: `ℛₙ` is Mathlib's `MonoidAlgebra ℚ (TraceFormulaMatrixModule n)`, which is
 the space of every permutation representation `Representation.ofMulAction ℚ G ℳₙ`. The three
 actions of `PSL(2, ℤ)` on `ℳₙ` give three such representations on `ℛₙ`:

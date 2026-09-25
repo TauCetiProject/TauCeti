@@ -480,9 +480,7 @@ instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
     SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
   smul_comm g _ x := (rightPSL_smul g _ x).symm
 
-/-- Left multiplication by a determinant-one matrix commutes with right multiplication on `ℳₙ`.
-This is needed alongside the `PSL(2, ℤ)` instance because `simp` rewrites the action of the class
-of `g : SL(2, ℤ)` to the action of `g` itself (`coe_smul`). -/
+/-- Left multiplication by a determinant-one matrix commutes with right multiplication on `ℳₙ`. -/
 instance TraceFormulaMatrixModule.instSMulCommClassSL (n : ℤ) :
     SMulCommClass SL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
   smul_comm g := smul_comm (g : PSL(2, ℤ))
