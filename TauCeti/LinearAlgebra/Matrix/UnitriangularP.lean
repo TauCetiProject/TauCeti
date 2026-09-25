@@ -111,7 +111,7 @@ def unitriangular : Subgroup (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ whe
     exact hu.pow D _
 
 /-- A unit lies in `unitriangular D` iff its underlying matrix is upper unitriangular. -/
-theorem mem_unitriangular {u : (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ} :
+@[simp] theorem mem_unitriangular {u : (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ} :
     u ∈ unitriangular D ↔ IsUnitri p D u :=
   Iff.rfl
 
