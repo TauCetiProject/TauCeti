@@ -33,8 +33,7 @@ theorem eq_of_differentiableOn_of_eq_on_halfPlane {f g : ℂ → ℂ} {a b : ℝ
     isOpen_lt continuous_const Complex.continuous_re
   refine (hf.analyticOnNhd hUopen).eqOn_of_preconnected_of_eventuallyEq (hg.analyticOnNhd hUopen)
     (convex_halfSpace_re_gt a).isPreconnected (z₀ := ((b + 1 : ℝ) : ℂ)) ?_ ?_ hs
-  · change a < ((b + 1 : ℝ) : ℂ).re
-    simp only [Complex.ofReal_re]
+  · simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
     linarith
   · have hb : b < ((b + 1 : ℝ) : ℂ).re := by simp
     filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds hb] with z hz
