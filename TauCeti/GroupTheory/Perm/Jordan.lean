@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Jordan
+import TauCeti.Data.Nat.Factorial.Prime
 import TauCeti.GroupTheory.Commutator
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Sylow
@@ -107,7 +108,7 @@ theorem exists_eqOn_compl_support_mul_mul_inv_mem_zpowers {g x : Perm α}
       refine (card_dvd_of_le inf_le_right).trans (dvd_of_eq ?_)
       rw [← Nat.card_congr (MonoidHom.ofInjective ofSubtype_injective).toEquiv, Nat.card_perm,
         Nat.card_eq_fintype_card, Fintype.card_coe]
-    exact hgp.not_sq_dvd_factorial (h.trans hcard)
+    exact (Nat.Prime.not_sq_dvd_factorial hgp) (h.trans hcard)
   obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd hsq
     (g := ⟨g, hgF⟩) (h := ⟨x * g * x⁻¹, hg'F⟩) (by rw [orderOf_mk, hgc.orderOf])
     (by rw [orderOf_mk, hgc.conj.orderOf, card_support_conj])
