@@ -49,7 +49,8 @@ conjugation action.
   quotient equals the order of the centralizer divided by the order of the member.
 * `ConjClasses.one_div_orderOf_div_card_div_card_carrier_mul_orderOf`: dividing `1 / orderOf σ`
   by that quotient, in a semifield of characteristic zero, leaves `#C / #G`.
-* `ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
+* `ConjClasses.ncard_carrier_mk_eq_card_filter` and
+  `ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
   cardinality of a `Finset`, which makes it computable.
 * `ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
   the group, with `ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
@@ -179,14 +180,23 @@ theorem card_carrier_mk (g : G) :
 /-- **The size of a conjugacy class as a `Finset` cardinality**: the members of the class of `g`
 are the elements of the monoid whose class is that of `g`, so in a finite monoid with decidable
 equality the class size is a count that can be evaluated. -/
+@[simp]
+theorem ncard_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [DecidableEq M]
+    (g : M) :
+    (ConjClasses.mk g).carrier.ncard =
+      {x ∈ (Finset.univ : Finset M) | ConjClasses.mk x = ConjClasses.mk g}.card := by
+  rw [← Set.ncard_coe_finset]
+  congr 1
+  ext x
+  simp [_root_.ConjClasses.mem_carrier_iff_mk_eq]
+
+/-- The size of a conjugacy class as a computable `Finset` cardinality, in `Nat.card` form.
+See `ncard_carrier_mk_eq_card_filter` for the `simp` normal form. -/
 theorem card_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [DecidableEq M]
     (g : M) :
     Nat.card (ConjClasses.mk g).carrier =
       {x ∈ (Finset.univ : Finset M) | ConjClasses.mk x = ConjClasses.mk g}.card := by
-  rw [Nat.card_coe_set_eq, ← Set.ncard_coe_finset]
-  congr 1
-  ext x
-  simp [_root_.ConjClasses.mem_carrier_iff_mk_eq]
+  rw [Nat.card_coe_set_eq, ncard_carrier_mk_eq_card_filter]
 
 /-- **The size of a conjugacy class divides the order of the group**, being the index of a
 centralizer. -/
