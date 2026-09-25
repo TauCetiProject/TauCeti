@@ -33,17 +33,18 @@ variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 /-- Conjugation scales the represented canonical quotient lift by its long-root character,
 with character zero on the two Cartan coordinates. -/
 theorem f4ShortRootWeightTorusConj_quotientLift (s : Fin 4 → Aˣ) (a : Fin 26) :
-    f4ShortRootWeightTorusConjLinearMap s
+    (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))
         (f4ShortRootAdjointMatrixBaseChange (A := A) (f4ShortRootQuotientLift a)) =
       ((torusCharacter s (f4ShortRootQuotientWeight a) : Aˣ) : A) •
         f4ShortRootAdjointMatrixBaseChange (A := A) (f4ShortRootQuotientLift a) := by
   obtain ⟨i | j, rfl⟩ := f4ShortRootWeightIndexEquiv.symm.surjective a
-  · simpa only [f4ShortRootWeightTorusConjLinearMap_apply,
+  · simpa only [Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv,
       f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inl,
       f4ShortRootQuotientWeight_symm_inl,
       f4ModularRootVector_eq_basis] using
         f4ShortRootWeightTorusGL_conj_root s (f4SpecialIsogenyIndexEquiv i)
-  · simpa only [f4ShortRootWeightTorusConjLinearMap_apply,
+  · simpa only [Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv,
       f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inr,
       f4ShortRootQuotientWeight_symm_inr,
       f4ModularSimpleCoroot_eq_basis,
@@ -71,12 +72,13 @@ private theorem cotangent_endOfPoint_torus
     (v : A ⊗[𝔽₂] f4ShortRootCotangentDual) :
     f4ShortRootCotangentBaseChangeMatrixEquiv
         (Comodule.endOfPoint f4ShortRootCotangentDual g v) =
-      f4ShortRootWeightTorusConjLinearMap s
+      (Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+      (Units.invertible (f4ShortRootWeightTorusGL s)))
         (f4ShortRootCotangentBaseChangeMatrixEquiv v) := by
   have h := f4ShortRootCotangentBaseChangeMatrixEquiv_endOfPoint g v
   dsimp only at h
   rw [hg] at h
-  simpa only [f4ShortRootWeightTorusConjLinearMap_apply] using h
+  simpa only [Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv] using h
 
 /-- The actual quotient carrier action is diagonal on the prescribed quotient basis, with
 weights pulled back along the special torus map. -/
@@ -98,14 +100,15 @@ theorem f4ShortRootQuotient_endOfPoint_torus
   let i := f4ShortRootCarrierCotangentRange.subtype.toLinearMap.baseChange A
   let r := f4ShortRootCarrierRepresentedMap.baseChange A
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
+  let C := Matrix.lieConj (f4ShortRootWeightTorusGL s : Matrix (Fin 26) (Fin 26) A)
+    (Units.invertible (f4ShortRootWeightTorusGL s))
   have hmatrix : e (Comodule.endOfPoint f4ShortRootCotangentDual g (i (r x))) =
       e (i (r (c • x))) := by
     calc
-      _ = f4ShortRootWeightTorusConjLinearMap s (e (i (r x))) :=
+      _ = C (e (i (r x))) :=
         cotangent_endOfPoint_torus g s hg _
-      _ = f4ShortRootWeightTorusConjLinearMap s
-          (f4ShortRootAdjointMatrixBaseChange (A := A) (f4ShortRootQuotientLift a)) :=
-        congrArg (f4ShortRootWeightTorusConjLinearMap s)
+      _ = C (f4ShortRootAdjointMatrixBaseChange (A := A) (f4ShortRootQuotientLift a)) :=
+        congrArg C
           (matrixEquiv_representedMap_one_tmul _)
       _ = c • f4ShortRootAdjointMatrixBaseChange (A := A) (f4ShortRootQuotientLift a) :=
         f4ShortRootWeightTorusConj_quotientLift s a

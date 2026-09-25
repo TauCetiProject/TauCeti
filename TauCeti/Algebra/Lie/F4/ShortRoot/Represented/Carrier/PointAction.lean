@@ -152,12 +152,15 @@ private theorem cotangent_endOfPoint_root
     (v : A ⊗[𝔽₂] f4ShortRootCotangentDual) :
     f4ShortRootCotangentBaseChangeMatrixEquiv
         (Comodule.endOfPoint f4ShortRootCotangentDual g v) =
-      f4ShortRootRootConjLinearMap k u
+      (Matrix.lieConj
+        ((F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A) :
+          Matrix (Fin 26) (Fin 26) A)
+        (Units.invertible (F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A)))
         (f4ShortRootCotangentBaseChangeMatrixEquiv v) := by
   have h := f4ShortRootCotangentBaseChangeMatrixEquiv_endOfPoint g v
   dsimp only at h
   rw [hg] at h
-  simpa only [f4ShortRootRootConjLinearMap_apply] using h
+  simpa only [Matrix.lieConj_apply, Matrix.GeneralLinearGroup.coe_inv] using h
 
 /-- The action of a carrier root point on the actual quotient comodule is induced by the
 integral root exponential. -/
@@ -180,19 +183,21 @@ theorem f4ShortRootQuotient_endOfPoint_root
             (TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice x))) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
   let c := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
+  let C := Matrix.lieConj
+    ((F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A) :
+      Matrix (Fin 26) (Fin 26) A)
+    (Units.invertible (F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A))
   let v := f4ShortRootCarrierCotangentRange.subtype.toLinearMap.baseChange A
     (f4ShortRootCarrierRepresentedMap.baseChange A x)
   apply f4ShortRootQuotient_endOfPoint_of_represented
   apply e.injective
   calc
-    _ = f4ShortRootRootConjLinearMap k u (e v) := cotangent_endOfPoint_root g k u hg v
-    _ = f4ShortRootRootConjLinearMap k u
-        (f4ShortRootBaseChangeAdjointMatrixLinearMap (c x)) :=
-      congrArg (f4ShortRootRootConjLinearMap k u)
-        (f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap x)
+    _ = C (e v) := cotangent_endOfPoint_root g k u hg v
+    _ = C (f4ShortRootBaseChangeAdjointMatrixLinearMap (c x)) :=
+      congrArg C (f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap x)
     _ = f4ShortRootBaseChangeAdjointMatrixLinearMap
         (f4RootExponential k (Multiplicative.toAdd u) (c x)) :=
-      f4ShortRootRootConjLinearMap_adjoint k u (c x)
+      f4ShortRootRoot_lieConj_adjoint k u (c x)
     _ = f4ShortRootBaseChangeAdjointMatrixLinearMap
         (c (c.symm (f4RootExponential k (Multiplicative.toAdd u) (c x)))) :=
       congrArg f4ShortRootBaseChangeAdjointMatrixLinearMap (c.apply_symm_apply _).symm
