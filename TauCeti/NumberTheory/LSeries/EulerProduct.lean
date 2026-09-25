@@ -101,26 +101,27 @@ theorem localFactor_ne_zero_of_recurrence (h₁ : a 1 = 1) (p : Primes)
   left_ne_zero_of_mul_eq_one
     (localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence h₁ p hrec hs)
 
-/-- The L-series terms of a coefficient sequence multiplicative on coprime arguments are
-themselves multiplicative on coprime arguments. -/
+/-- The L-series terms of a coefficient sequence multiplicative on nonzero coprime arguments
+are themselves multiplicative on coprime arguments. -/
 theorem term_mul_of_coprime
-    (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
     {m n : ℕ} (hmn : m.Coprime n) : term a s (m * n) = term a s m * term a s n := by
   rcases eq_or_ne m 0 with rfl | hm
   · simp
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn, hmul hmn,
+  rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn,
+    hmul hm hn hmn,
     cast_mul, Complex.natCast_mul_natCast_cpow, mul_div_mul_comm]
 
 /-- **The Euler product with quadratic local factors.** Let `a : ℕ → ℂ` satisfy `a 1 = 1`, be
-multiplicative on coprime arguments, and obey the recurrence
+multiplicative on nonzero coprime arguments, and obey the recurrence
 `a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r)` along the powers of every prime `p`.
 Where its L-series converges absolutely,
 
 `∏_p (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ = L(a, s)`. -/
 theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
-    (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
     (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : LSeriesSummable a s) :
@@ -138,7 +139,7 @@ theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
 hypotheses of `TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`,
 `∏' p, (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ = L(a, s)`. -/
 theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
-    (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
     (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : LSeriesSummable a s) :
@@ -149,7 +150,7 @@ theorem LSeries_eulerProduct_tprod_of_recurrence (h₁ : a 1 = 1)
 products: under the hypotheses of `TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`,
 `∏_{p < n} (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹ → L(a, s)` as `n → ∞`. -/
 theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
-    (hmul : ∀ {m n : ℕ}, m.Coprime n → a (m * n) = a m * a n)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
     (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
       a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
     (hs : LSeriesSummable a s) :

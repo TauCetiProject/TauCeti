@@ -33,6 +33,8 @@ included, with the eigenvalue of `U_p = T_p` as their coefficient.
 * `HeckeRing.GL2.Eigenform.LSeries_eulerProduct_tprod`: the same, as an equality with `∏'`.
 * `HeckeRing.GL2.Eigenform.LSeries_eulerProduct`: the same, as convergence of the finite partial
   products over `Nat.primesBelow n`.
+* `HeckeRing.GL2.Eigenform.L_eulerProduct_hasProd`, `L_eulerProduct_tprod`, and
+  `L_eulerProduct`: the corresponding statements for Mathlib's `ModularForm.L`.
 
 ## References
 
@@ -122,7 +124,8 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
   have H := TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
-    (f.qExpansion_coeff_mul h₁) (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
+    (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
     (f.LSeriesSummable_qExpansion_coeff hs)
   simpa only [localFactor_eq] using H
 
@@ -150,9 +153,53 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
   refine (TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
-    (f.qExpansion_coeff_mul h₁) (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
+    (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
     (f.LSeriesSummable_qExpansion_coeff hs)).congr fun n ↦
     Finset.prod_congr rfl fun p hp ↦ ?_
   rw [localFactor_eq f ⟨p, Nat.prime_of_mem_primesBelow hp⟩ s]
+
+/-- The Euler product of a positive-weight normalized full eigenform, expressed using
+Mathlib's modular-form L-function. -/
+theorem L_eulerProduct_hasProd (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 0 < k)
+    {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
+    HasProd (fun p : Nat.Primes ↦
+        (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s))⁻¹)
+      (ModularForm.L hk f.toCuspForm s) := by
+  have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
+      ModularForm.L hk f.toCuspForm s := by
+    simpa [strictWidthInfty_Gamma1] using
+      CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
+  have H := f.LSeries_eulerProduct_hasProd h₁ hs
+  rwa [hL] at H
+
+/-- The Euler product of a positive-weight normalized full eigenform, as a `tprod`
+identity for Mathlib's modular-form L-function. -/
+theorem L_eulerProduct_tprod (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 0 < k)
+    {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
+    ∏' p : Nat.Primes,
+        (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s))⁻¹ =
+      ModularForm.L hk f.toCuspForm s :=
+  (f.L_eulerProduct_hasProd h₁ hk hs).tprod_eq
+
+/-- The finite Euler products of a positive-weight normalized full eigenform converge to
+Mathlib's modular-form L-function. -/
+theorem L_eulerProduct (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 0 < k)
+    {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
+    Tendsto (fun n : ℕ ↦ ∏ p ∈ n.primesBelow,
+        (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s))⁻¹)
+      atTop (𝓝 (ModularForm.L hk f.toCuspForm s)) := by
+  have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
+      ModularForm.L hk f.toCuspForm s := by
+    simpa [strictWidthInfty_Gamma1] using
+      CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
+  have H := f.LSeries_eulerProduct h₁ hs
+  rwa [hL] at H
 
 end HeckeRing.GL2.Eigenform
