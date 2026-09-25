@@ -89,6 +89,14 @@ theorem f4ShortRootSubspace_mkQ_quotientLift (a : Fin 26) :
       f4ShortRootQuotientBasis a := by
   exact (f4ShortRootQuotientBasis_apply a).symm
 
+/-- The quotient projection on a canonical ambient basis lift, in simplifier normal form. -/
+@[simp] theorem f4ShortRootSubspace_mkQ_basisLift (a : Fin 26) :
+    Submodule.Quotient.mk
+        (f4ModularChevalleyBasis (f4LongRootBasisCoordinate a)) =
+      f4ShortRootQuotientBasis a := by
+  simpa only [f4ShortRootQuotientLift_eq_basis, Submodule.mkQ_apply] using
+    f4ShortRootSubspace_mkQ_quotientLift a
+
 theorem f4ShortRootQuotientToIdealEquiv_mkQ_quotientLift (a : Fin 26) :
     f4ShortRootQuotientToIdealEquiv
         (f4ShortRootSubspace.mkQ (f4ShortRootQuotientLift a)) =

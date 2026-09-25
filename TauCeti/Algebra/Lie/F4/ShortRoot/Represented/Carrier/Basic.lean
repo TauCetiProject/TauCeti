@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
 public import TauCeti.Algebra.Module.Submodule.Quotient
+public import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # The represented flag as a comodule of the prime-field F4 carrier

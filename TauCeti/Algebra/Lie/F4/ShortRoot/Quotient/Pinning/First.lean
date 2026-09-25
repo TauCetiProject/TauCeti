@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.Basic
-import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Centralizer
 
 /-!
 # First-order pinning on the modular F4 quotient
