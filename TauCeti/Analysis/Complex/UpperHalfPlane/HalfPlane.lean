@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+public import TauCeti.NumberTheory.Modular.Orbits
 
 /-!
 # Half-planes bounded by a geodesic line
@@ -197,25 +198,18 @@ The representing matrix of `z ↦ -1/z`. Multiplying any representative `g` by i
 geodesic line's image but swaps which half-plane is called `right`, so the labelling is a choice
 of representative, not an invariant of the line. -/
 
-/-- The determinant-`1` matrix `!![0, -1; 1, 0]` representing the Möbius map `z ↦ -1/z`. -/
-def swapMatrixSL : SL(2, ℝ) := ⟨!![0, -1; 1, 0], by norm_num [Matrix.det_fin_two]⟩
+/-- The `PSL(2, ℝ)` class of `ModularGroup.S`, the existing determinant-`1` matrix
+`!![0, -1; 1, 0]` representing the Möbius map `z ↦ -1/z` (Mathlib's
+`Matrix.SpecialLinearGroup.S`). -/
+def swapMatrix : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
 
-/-- The `PSL(2, ℝ)` class of `swapMatrixSL`. -/
-def swapMatrix : PSL(2, ℝ) := (swapMatrixSL : PSL(2, ℝ))
+/-- `swapMatrix` acts as `ModularGroup.S` does. -/
+theorem swapMatrix_smul (z : ℍ) : swapMatrix • z = _root_.ModularGroup.S • z := by
+  rw [swapMatrix, psl2zToPSL2R_smul, pslMk_smul]
 
-/-- `swapMatrix` acts as `z ↦ -1/z`. -/
-theorem swapMatrix_smul (z : ℍ) :
-    swapMatrix • z = UpperHalfPlane.mk (-z : ℂ)⁻¹ z.im_inv_neg_coe_pos := by
-  change (swapMatrixSL : PSL(2, ℝ)) • z = _
-  rw [pslMk_smul, specialLinearGroup_apply]
-  simp [swapMatrixSL, neg_div, inv_neg]
-
-/-- `z ↦ -1/z` is an involution. -/
+/-- `z ↦ -1/z` is an involution, transported from `TauCeti.ModularGroup.S_smul_S_smul`. -/
 theorem swapMatrix_smul_swapMatrix_smul (z : ℍ) : swapMatrix • swapMatrix • z = z := by
-  rw [swapMatrix_smul, swapMatrix_smul]
-  ext
-  push_cast
-  rw [neg_inv, neg_neg, inv_inv]
+  rw [swapMatrix_smul, swapMatrix_smul, TauCeti.ModularGroup.S_smul_S_smul]
 
 /-- `swapMatrix` is its own inverse, by faithfulness of the `PSL(2, ℝ)`-action together with
 `swapMatrix_smul_swapMatrix_smul`. -/
@@ -223,12 +217,11 @@ theorem swapMatrix_mul_self : swapMatrix * swapMatrix = 1 :=
   eq_of_smul_eq_smul fun z : ℍ ↦ by
     rw [mul_smul, swapMatrix_smul_swapMatrix_smul, one_smul]
 
-/-- The real part after applying `swapMatrix` is the negated, rescaled real part. -/
+/-- The real part after applying `swapMatrix` is the negated, rescaled real part, transported
+from `TauCeti.ModularGroup.re_S_smul`. -/
 theorem re_swapMatrix_smul (z : ℍ) :
     (swapMatrix • z : ℍ).re = -z.re / Complex.normSq (z : ℂ) := by
-  rw [swapMatrix_smul]
-  change ((-z : ℂ)⁻¹).re = _
-  rw [Complex.inv_re, Complex.normSq_neg, Complex.neg_re, UpperHalfPlane.coe_re, div_eq_mul_inv]
+  rw [swapMatrix_smul, TauCeti.ModularGroup.re_S_smul]
 
 /-- Multiplying by `swapMatrix` swaps the right and left half-planes: which side is called
 `right` depends on the chosen representative of the geodesic line, not on the line's image
