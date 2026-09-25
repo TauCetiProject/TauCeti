@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
-public import Mathlib.CategoryTheory.Limits.Preserves.Lattice
+public import TauCeti.AlgebraicGeometry.Modules.Pullback
+public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 
 /-!
@@ -16,27 +16,17 @@ Let `f : X ⟶ Y` be a morphism of schemes. The inverse image `f^* L` of a line 
 is a line bundle on `X`, so pulling back makes line bundles, and their isomorphism classes,
 contravariantly functorial in the scheme. This is the functoriality in `T` of the line-bundle
 classes on `X_T` that the relative Picard functor `T ↦ Pic(X_T)/Pic(T)` is built from.
-Compatibility of pullback with tensor products is not treated here.
-
-The proof is local. Restricting `f^* L` to the preimage `f⁻¹ V` of an open `V ⊆ Y` gives the
-pullback of `L|_V` along the restriction `f ∣_ V : f⁻¹ V ⟶ V`, and the pullback of the structure
-sheaf is the structure sheaf. So a trivializing open cover of `L` pulls back to one of `f^* L`.
+The generic restriction compatibility used to establish this result is provided by
+`TauCeti.AlgebraicGeometry.Modules.Pullback`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso`: `(f^* M)|_{f⁻¹ V}` is the pullback
-  of `M|_V` along `f ∣_ V`;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
   sheaf is invertible;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles;
 * `TauCeti.AlgebraicGeometry.LineBundleClass.pullback`: the induced map on isomorphism classes of
   line bundles, which preserves the trivial class (`LineBundleClass.pullback_one`) and is
   functorial (`LineBundleClass.pullback_id`, `LineBundleClass.pullback_comp`).
-
-The pullback of free sheaves is Mathlib's `SheafOfModules.pullbackObjFreeIso`; the pullback of
-sheaves of modules along a morphism of schemes and its compatibility with restriction to opens and
-composition are Mathlib's `Scheme.Modules.pullback`, `Scheme.Modules.restrictFunctorIsoPullback`
-and `Scheme.Modules.pullbackComp`.
 
 ## References
 
@@ -47,27 +37,6 @@ and `Scheme.Modules.pullbackComp`.
 public section
 
 open CategoryTheory TopologicalSpace
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-universe u
-
-noncomputable section
-
-variable {X Y : Scheme.{u}} (f : X ⟶ Y)
-
-/-- Pullback commutes with restriction to opens: for an open `V ⊆ Y`, the restriction of
-`f^* M` to the preimage `f⁻¹ V` is the pullback of `M|_V` along `f ∣_ V : f⁻¹ V ⟶ V`. -/
-def restrictPullbackObjIso (V : Y.Opens) (M : Y.Modules) :
-    ((pullback f).obj M).restrict (f ⁻¹ᵁ V).ι ≅ (pullback (f ∣_ V)).obj (M.restrict V.ι) :=
-  (restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
-    (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
-    ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
-    (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm
-
-end
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti
 
@@ -86,8 +55,10 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 /-- The pullback of an invertible sheaf along a morphism of schemes is invertible. -/
 instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
     isInvertible X ((Scheme.Modules.pullback f).obj M) := by
-  obtain ⟨ι, V, hV, e⟩ := isInvertible_iff_exists_isOpenCover.mp hM
-  refine isInvertible_iff_exists_isOpenCover.mpr ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦ by
+  obtain ⟨ι, V, hV, e⟩ :=
+    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hM
+  refine TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
+    ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦ by
     let : (SheafOfModules.pushforward.{u} (f ∣_ V i).toRingCatSheafHom).IsRightAdjoint :=
       inferInstanceAs (Scheme.Modules.pushforward (f ∣_ V i)).IsRightAdjoint
     have : IsIso (SheafOfModules.pullbackObjUnitToUnit (f ∣_ V i).toRingCatSheafHom) :=
@@ -105,6 +76,7 @@ variable {X Y : Scheme.{u}}
 
 /-- The pullback of line bundles along a morphism of schemes `f : X ⟶ Y`, as a functor from line
 bundles on `Y` to line bundles on `X`. -/
+@[expose]
 def pullback (f : X ⟶ Y) : InvertibleSheaf Y ⥤ InvertibleSheaf X :=
   (SheafOfModules.isInvertible X).lift
     ((SheafOfModules.isInvertible Y).ι ⋙ Scheme.Modules.pullback f)
@@ -116,6 +88,12 @@ modules. -/
 lemma pullback_obj_obj (f : X ⟶ Y) (L : InvertibleSheaf Y) :
     ((pullback f).obj L).obj = (Scheme.Modules.pullback f).obj L.obj :=
   (rfl)
+
+/-- Pullback acts on a morphism of line bundles by the underlying module pullback. -/
+@[simp]
+lemma pullback_map (f : X ⟶ Y) {L K : InvertibleSheaf Y} (φ : L ⟶ K) :
+    ((pullback f).map φ).hom = (Scheme.Modules.pullback f).map φ.hom :=
+  rfl
 
 end InvertibleSheaf
 
@@ -152,6 +130,7 @@ lemma pullback_id (a : LineBundleClass X) : pullback (𝟙 X) a = a := by
   exact ⟨(Scheme.Modules.pullbackId X).app L.obj⟩
 
 /-- Pulling back line-bundle classes along a composite is the composite of the pullbacks. -/
+@[simp]
 lemma pullback_comp (f : X ⟶ Y) (g : Y ⟶ Z) (a : LineBundleClass Z) :
     pullback (f ≫ g) a = pullback f (pullback g a) := by
   obtain ⟨L, rfl⟩ := mk_surjective a
