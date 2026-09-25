@@ -17,11 +17,10 @@ recut branch.
 
 In Branch 1 of the recut (`E.second.left = D.rectangle.left`,
 `E.second.right = D.rectangle.right`), the recut rectangle retains the original rectangle's
-sides. Its X-avoidance in the column-swapped diagram follows from the original rectangle's
-X-avoidance via the covered-columns transfer
-(`disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns`), using the covered-columns
-iff `branch1_recut_rectangle_coveredColumns_iff` (in
-`TauCeti.KnotTheory.Grid.Commutation.Overlap`).
+column sides. Its X-avoidance in the column-swapped diagram is not yet established: the
+recut rectangle's row span differs from the original's, so its covered squares are not
+contained in the original rectangle's, and the naive subset transfer does not apply.
+This remains an open piece of the branch-1 countedness argument.
 
 ## Part B: Branch-2 pentagon X-avoidance
 
@@ -31,8 +30,6 @@ rectangle's and pentagon's X-avoidance over the relevant row intervals.
 
 ## Main results
 
-* `TauCeti.GridRectanglePentagonDecomposition.branch1_recut_rectangle_X_avoidance_swap`:
-  Branch-1 recut rectangle avoids X in the swapped diagram.
 * `TauCeti.GridRectanglePentagonDecomposition.branch2_X_not_mem_rectangle_rows`: the
   X-marking of the replaced grid line avoids the original rectangle's row interval.
 * `TauCeti.GridRectanglePentagonDecomposition.branch2_X_not_mem_pentagon_rows`: the
@@ -51,39 +48,6 @@ chain map.
 public section
 
 namespace TauCeti
-
-namespace GridRectanglePentagonDecomposition
-
-variable {n : ℕ} {G : GridDiagram n} {C : GridDiagram.ColumnCommutationData G}
-variable {x z : GridState n}
-
-local notation "b" => finRotate n C.column
-
-/-!
-## Part A: Branch-1 recut rectangle X-avoidance in the swapped diagram
--/
-
-/-- Branch-1 recut rectangle X-avoidance transfers to the column-swapped diagram.
-
-When the recut rectangle `R'`'s covered squares lie inside the original rectangle `R`'s
-covered squares (which are X-avoiding), and the covered-columns iff holds, the transfer
-lemma gives X-avoidance in the swapped diagram. Only the rectangle's X-avoidance is used. -/
-theorem branch1_recut_rectangle_X_avoidance_swap
-    (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
-    (hcommon : D.rectangle.left = D.pentagon.left)
-    (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (R' : GridRectangle n)
-    (hR'sq : R'.coveredSquares ⊆ D.rectangle.toGridRectangle.coveredSquares)
-    (hR'col : R'.coveredColumns = Grid.cIco D.rectangle.left D.rectangle.right) :
-    Disjoint R'.coveredSquares (G.swapColumns C.column b).XSet := by
-  have hX : Disjoint D.rectangle.toGridRectangle.coveredSquares G.XSet :=
-    ((G.mem_unblockedRectangles D.rectangle).mp hrect).2
-  have hiff := D.branch1_recut_rectangle_coveredColumns_iff hcommon hone R' hR'col
-  have htrans := (G.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns R' hiff).mpr
-  exact htrans (Finset.disjoint_of_subset_left hR'sq hX)
-
-end GridRectanglePentagonDecomposition
 
 /-!
 ## Part B: Branch-2 pentagon X-avoidance
