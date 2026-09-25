@@ -47,6 +47,10 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
+* `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
+  weight dominated by Popa–Zagier's, cast to a ring, in the shape `ofWeight` takes.
+* `TauCeti.TraceFormulaMatrixModule.popaZagierElement_eq_inv_smul_ofWeight`: the element is `12⁻¹`
+  times the element with the integer weights.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk`: the coefficient of the class of
   `A` is `(weight A + weight (-A)) / 12`; it is `weight A / 12` if `c > 0` or `c = 0 < a`
   (`TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk_of_pos`).
@@ -63,8 +67,8 @@ that other modules can unfold them in such identities and evaluate them by `deci
 Elements of `k[ℳₙ]` given by a weight on integral matrices, over any semiring `k`, are built by
 `ofWeight`: the class of `A` gets `w A + w (-A)`, and a bound `B` on the entries of the
 determinant-`n` matrices of nonzero weight makes the support finite. The element
-`popaZagierElement k n` is `ofWeight` applied to the weight divided by `12` in `k`; when `12` is
-invertible in `k`, for instance for `k = ℚ`, its coefficients are Popa–Zagier's.
+`popaZagierElement k n` is `12⁻¹` times `ofWeight` applied to the integer weight cast to `k`; when
+`12` is invertible in `k`, for instance for `k = ℚ`, its coefficients are Popa–Zagier's.
 
 ## References
 
@@ -277,20 +281,34 @@ theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
 
 end Semiring
 
+/-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to a ring `k`,
+satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a determinant-`n` matrix whose weight
+is nonzero in `k` has entries at most `2 n` in absolute value (Popa–Zagier, Lemma 4(a)). -/
+theorem abs_le_of_intCast_ne_zero [Ring k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
+    (hw : ∀ M, w M ≠ 0 → PopaZagier.weight M ≠ 0) (A : TraceFormulaMatrix n)
+    (h : (w A.1 : k) ≠ 0) (i j : Fin 2) : |A.1 i j| ≤ 2 * n := by
+  simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero
+    (hw _ (ne_zero_of_map (f := Int.castRingHom k) h)) i j
+
 section DivisionRing
 
 variable [DivisionRing k]
 
 variable (k) in
 /-- **Popa–Zagier's explicit Hecke element** of `k[ℳₙ]` (written `Tₙ` with a tilde in their
-paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`), with the weights
-divided by `12` in `k`. Its coefficients are given by `coeff_popaZagierElement_mk`. It is
-Popa–Zagier's element when `12 ≠ 0` in `k`, that is, when `k` has characteristic other than `2`
-and `3`; otherwise it is `0`. -/
+paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`), that is, `12⁻¹`
+times the element with the integer weights. Its coefficients are given by
+`coeff_popaZagierElement_mk`. It is Popa–Zagier's element when `12 ≠ 0` in `k`, that is, when `k`
+has characteristic other than `2` and `3`; otherwise it is `0`. -/
 noncomputable def popaZagierElement (n : ℤ) : k[TraceFormulaMatrixModule n] :=
-  ofWeight n (fun M ↦ (PopaZagier.weight M : k) / 12) (2 * n) fun A h i j ↦ by
-    have h : PopaZagier.weight A.1 ≠ 0 := fun h' ↦ h (by simp [h'])
-    simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero h i j
+  (12 : k)⁻¹ • ofWeight n (fun M ↦ (PopaZagier.weight M : k)) (2 * n)
+    (abs_le_of_intCast_ne_zero fun _ ↦ id)
+
+/-- Popa–Zagier's element is `12⁻¹` times the element with the integer weights. -/
+theorem popaZagierElement_eq_inv_smul_ofWeight :
+    popaZagierElement k n = (12 : k)⁻¹ • ofWeight n (fun M ↦ (PopaZagier.weight M : k)) (2 * n)
+      (abs_le_of_intCast_ne_zero fun _ ↦ id) :=
+  (rfl)
 
 /-- The coefficient of the class of `A` in Popa–Zagier's element is
 `(weight A + weight (-A)) / 12`. -/
@@ -298,7 +316,8 @@ noncomputable def popaZagierElement (n : ℤ) : k[TraceFormulaMatrixModule n] :=
 theorem coeff_popaZagierElement_mk (A : TraceFormulaMatrix n) :
     (popaZagierElement k n).coeff (mk A) =
       ((PopaZagier.weight A.1 : k) + PopaZagier.weight (-A.1)) / 12 := by
-  simp [popaZagierElement, add_div]
+  simpa [popaZagierElement, div_eq_mul_inv] using Eq.symm <|
+    Int.cast_comm (PopaZagier.weight A.1 + PopaZagier.weight (-A.1)) (12⁻¹ : k)
 
 /-- With Popa–Zagier's representatives, `c > 0` or `c = 0 < a`, the coefficient of the class of
 `A = (a b; c d)` is `weight A / 12`. -/
