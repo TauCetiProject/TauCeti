@@ -262,16 +262,7 @@ theorem frobeniusPsi_asymptotic_of_fixedField (C : ConjClasses (L ≃ₐ[K] L))
           =o[atTop] (fun x : ℝ ↦ x)) :
     (fun x : ℝ ↦ frobeniusPsi K L C x -
       (Nat.card C.carrier / Nat.card (L ≃ₐ[K] L) : ℝ) * x) =o[atTop] (fun x : ℝ ↦ x) := by
-  have hdvd := C.card_carrier_mul_orderOf_dvd sigma hsigma
-  have : Nonempty C.carrier := ⟨⟨sigma, hsigma⟩⟩
-  have hC : (Nat.card C.carrier : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hord : (orderOf sigma : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos sigma).ne'
-  have hval : (1 / orderOf sigma : ℝ) /
-      ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) =
-        Nat.card C.carrier / Nat.card (L ≃ₐ[K] L) := by
-    rw [Nat.cast_div hdvd (by push_cast; exact mul_ne_zero hC hord)]
-    push_cast
-    field_simp
-  exact hval ▸ (frobeniusPsi_fixedField_asymptotic_iff C sigma hsigma).mp h
+  exact C.one_div_orderOf_div_card_div_card_carrier_mul_orderOf (K := ℝ) sigma hsigma ▸
+    (frobeniusPsi_fixedField_asymptotic_iff C sigma hsigma).mp h
 
 end NumberField.Chebotarev
