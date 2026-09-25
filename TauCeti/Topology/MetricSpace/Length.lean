@@ -59,10 +59,6 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   path connected.
 * `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
   segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
-
-This is the metric half of the length-space and geodesic-space layer of
-`TauCetiRoadmap/HopfRinow/README.md`; the Riemannian half, that a complete connected Riemannian
-manifold is a geodesic space, needs the minimising geodesics of that roadmap's Layer 3.
 -/
 
 public section
