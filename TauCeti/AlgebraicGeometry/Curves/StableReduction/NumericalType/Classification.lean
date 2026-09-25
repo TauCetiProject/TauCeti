@@ -46,19 +46,6 @@ of `(-2)`-indices is either small or a chain or a fork, the two shapes treated i
 
 * `TauCeti.NumericalType.exists_chain_or_fork_or_exceptional`: the classification above.
 
-## Implementation notes
-
-The Stacks Project leaves the proof of Proposition 55.5.17 to the discussion at the start of
-[Section 55.5](https://stacks.math.columbia.edu/tag/0C7L). The argument here starts from a longest
-chain `c` inside `S`. A component of `S` outside the chain that meets it meets exactly one of its
-components, an interior one: otherwise the chain could be lengthened or would close up into a
-cycle, which `IsSelfIntersectionMinusTwoChain.intersection_eq_zero` excludes. Two such components
-would form either a four-legged star (Stacks, Lemma 55.5.6) or a chain with leaves at both ends
-(Stacks, Lemma 55.5.11), and such a component meeting a further component of `S` would, by
-maximality of `c`, form an affine `E₆` diagram (Stacks, Lemma 55.5.12). So `S` is the chain
-together with at most one leaf. A leaf at the second or penultimate component gives a fork, and
-the affine `E₇` and `E₈` diagrams (Stacks, Lemmas 55.5.15 and 55.5.16) confine every other
-position of the leaf to the exceptional types.
 -/
 
 public section
@@ -202,6 +189,17 @@ private lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain
 
 end IsSelfIntersectionMinusTwoChain
 
+-- The Stacks Project leaves the proof of Proposition 55.5.17 to the discussion at the start of
+-- [Section 55.5](https://stacks.math.columbia.edu/tag/0C7L). The argument here starts from a
+-- longest chain `c` inside `S`. A component of `S` outside the chain that meets it meets exactly
+-- one of its components, an interior one: otherwise the chain could be lengthened or would close
+-- up into a cycle, which `IsSelfIntersectionMinusTwoChain.intersection_eq_zero` excludes. Two
+-- such components would form either a four-legged star (Stacks, Lemma 55.5.6) or a chain with
+-- leaves at both ends (Stacks, Lemma 55.5.11), and such a component meeting a further component
+-- of `S` would, by maximality of `c`, form an affine `E₆` diagram (Stacks, Lemma 55.5.12). So
+-- `S` is the chain together with at most one leaf. A leaf at the second or penultimate component
+-- gives a fork, and the affine `E₇` and `E₈` diagrams (Stacks, Lemmas 55.5.15 and 55.5.16)
+-- confine every other position of the leaf to the exceptional types.
 /-- **Classification of connected proper sets of `(-2)`-indices.** Let `S` be a proper subset of
 the components of a numerical type, each of self-intersection `-2w`, which is connected: every
 nonempty proper subset of `S` meets a component of `S` outside it. Then `S` is the set of
