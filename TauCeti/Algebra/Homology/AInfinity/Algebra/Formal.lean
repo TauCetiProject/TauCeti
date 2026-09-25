@@ -70,67 +70,13 @@ theorem isFormal_def (𝒜 : AInfinityAlgebra R A) :
 
 variable {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
 
-/-- The map induced on cohomology by a quasi-isomorphism, as a linear equivalence. -/
-private noncomputable def cohomologyLinearEquiv {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
-    𝒜.Cohomology ≃ₗ[R] ℬ.Cohomology :=
-  LinearEquiv.ofBijective (f.cohomologyMap : 𝒜.Cohomology →ₗ[R] ℬ.Cohomology)
-    ((AInfinityHom.isQuasiIso_def f).1 hf)
-
-private theorem cohomologyLinearEquiv_apply {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso)
-    (c : 𝒜.Cohomology) : cohomologyLinearEquiv hf c = f.cohomologyMap c := by
-  exact LinearEquiv.ofBijective_apply _ c
-
-/-- The inverse of the map induced on cohomology by a quasi-isomorphism, as a morphism of
-cohomology algebras. -/
-private noncomputable def cohomologyMapInv {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
-    ℬ.Cohomology →ₙₐ[R] 𝒜.Cohomology where
-  toFun := (cohomologyLinearEquiv hf).symm
-  map_smul' := (cohomologyLinearEquiv hf).symm.map_smul
-  map_zero' := (cohomologyLinearEquiv hf).symm.map_zero
-  map_add' := (cohomologyLinearEquiv hf).symm.map_add
-  map_mul' x y := (cohomologyLinearEquiv hf).injective (by
-    rw [LinearEquiv.apply_symm_apply, cohomologyLinearEquiv_apply, map_mul,
-      ← cohomologyLinearEquiv_apply hf, ← cohomologyLinearEquiv_apply hf,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply])
-
-private theorem cohomologyMapInv_apply {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso)
-    (c : ℬ.Cohomology) : cohomologyMapInv hf c = (cohomologyLinearEquiv hf).symm c := by
-  rw [cohomologyMapInv, NonUnitalAlgHom.coe_mk]
-
-/-- The inverse of the map induced on cohomology by a quasi-isomorphism preserves degrees. -/
-private theorem cohomologyMapInv_mem {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {p : ℤ}
-    {c : ℬ.Cohomology} (hc : c ∈ ℬ.cohomologyGrading.piece p) :
-    cohomologyMapInv hf c ∈ 𝒜.cohomologyGrading.piece p := by
-  have he : LinearMap.IsHomogeneous (cohomologyLinearEquiv hf).toLinearMap
-      𝒜.cohomologyGrading.piece ℬ.cohomologyGrading.piece 0 := by
-    rw [LinearMap.isHomogeneous_def]
-    intro q x hx
-    rw [add_zero, LinearEquiv.coe_coe, cohomologyLinearEquiv_apply]
-    exact f.cohomologyMap_mem_cohomologyGrading_piece hx
-  simpa only [cohomologyMapInv_apply, add_zero, LinearEquiv.coe_coe] using
-    he.linearEquiv_symm.map_mem hc
-
-/-- A quasi-isomorphism `𝒜 ⟶ ℬ` identifies the cohomology `A∞` algebras; this is the strict
-morphism in the backward direction, the inverse of the induced map on cohomology. -/
-private noncomputable def cohomologyStrictHomInv {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
-    AInfinityStrictHom ℬ.cohomologyAInfinityAlgebra 𝒜.cohomologyAInfinityAlgebra :=
-  cohomologyStrictHom (cohomologyMapInv hf) (cohomologyMapInv_mem hf)
-
-private theorem cohomologyStrictHomInv_isQuasiIso {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :
-    (cohomologyStrictHomInv hf).toAInfinityHom.IsQuasiIso := by
-  rw [AInfinityHom.isQuasiIso_iff_bijective_linearPart ℬ.isMinimal_cohomologyAInfinityAlgebra
-    𝒜.isMinimal_cohomologyAInfinityAlgebra, AInfinityStrictHom.linearPart_toAInfinityHom,
-    AInfinityStrictHom.coe_toLinearMap, cohomologyStrictHomInv, coe_cohomologyStrictHom,
-    funext (cohomologyMapInv_apply hf)]
-  exact (cohomologyLinearEquiv hf).symm.bijective
-
 /-- Formality is reflected along quasi-isomorphisms: if `𝒜 ⟶ ℬ` is a quasi-isomorphism and `ℬ` is
 formal, then `𝒜` is formal. -/
 theorem IsFormal.of_isQuasiIso {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) (hℬ : ℬ.IsFormal) :
     𝒜.IsFormal := by
   obtain ⟨g, hg⟩ := hℬ
-  exact ⟨(cohomologyStrictHomInv hf).toAInfinityHom.comp (g.comp f),
-    (cohomologyStrictHomInv_isQuasiIso hf).comp (hg.comp hf)⟩
+  exact ⟨(hf.cohomologyStrictHomInv).toAInfinityHom.comp (g.comp f),
+    hf.cohomologyStrictHomInv_isQuasiIso.comp (hg.comp hf)⟩
 
 namespace IsMinimal
 

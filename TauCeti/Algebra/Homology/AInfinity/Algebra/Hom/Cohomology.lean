@@ -46,6 +46,8 @@ solely through the boundary it produces.
   cohomology preserves identities and composition.
 * `TauCeti.AInfinityHom.isQuasiIso_id` and `TauCeti.AInfinityHom.IsQuasiIso.comp`: identities are
   quasi-isomorphisms and quasi-isomorphisms compose.
+* `TauCeti.AInfinityHom.IsQuasiIso.cohomologyStrictHomInv`: a quasi-isomorphism induces an inverse
+  strict quasi-isomorphism between its cohomology `A∞` algebras.
 
 ## References
 
@@ -317,6 +319,106 @@ theorem IsQuasiIso.comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hg : 
     (hf : f.IsQuasiIso) : (g.comp f).IsQuasiIso := by
   rw [IsQuasiIso, cohomologyMap_comp, NonUnitalAlgHom.coe_comp]
   exact Function.Bijective.comp hg hf
+
+namespace IsQuasiIso
+
+/-! ### The inverse map between cohomology algebras -/
+
+/-- The map induced on cohomology by a quasi-isomorphism, as a linear equivalence. -/
+noncomputable def cohomologyLinearEquiv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    AA.Cohomology ≃ₗ[R] BB.Cohomology :=
+  LinearEquiv.ofBijective (f.cohomologyMap : AA.Cohomology →ₗ[R] BB.Cohomology)
+    ((isQuasiIso_def f).1 hf)
+
+/-- The cohomology linear equivalence agrees with the map induced by the morphism. -/
+@[simp]
+theorem cohomologyLinearEquiv_apply {f : AInfinityHom AA BB} (hf : f.IsQuasiIso)
+    (c : AA.Cohomology) : hf.cohomologyLinearEquiv c = f.cohomologyMap c := by
+  exact LinearEquiv.ofBijective_apply _ c
+
+/-- The inverse of the map induced on cohomology by a quasi-isomorphism, as a morphism of
+cohomology algebras. -/
+noncomputable def cohomologyMapInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    BB.Cohomology →ₙₐ[R] AA.Cohomology where
+  toFun := hf.cohomologyLinearEquiv.symm
+  map_smul' := hf.cohomologyLinearEquiv.symm.map_smul
+  map_zero' := hf.cohomologyLinearEquiv.symm.map_zero
+  map_add' := hf.cohomologyLinearEquiv.symm.map_add
+  map_mul' x y := hf.cohomologyLinearEquiv.injective (by
+    rw [LinearEquiv.apply_symm_apply, cohomologyLinearEquiv_apply, map_mul,
+      ← cohomologyLinearEquiv_apply hf, ← cohomologyLinearEquiv_apply hf,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply])
+
+/-- The inverse cohomology algebra map is the inverse linear equivalence. -/
+@[simp]
+theorem cohomologyMapInv_apply {f : AInfinityHom AA BB} (hf : f.IsQuasiIso)
+    (c : BB.Cohomology) : hf.cohomologyMapInv c = hf.cohomologyLinearEquiv.symm c := by
+  rw [cohomologyMapInv, NonUnitalAlgHom.coe_mk]
+
+/-- The inverse of the map induced on cohomology by a quasi-isomorphism preserves degrees. -/
+private theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : ℤ}
+    {c : BB.Cohomology} (hc : c ∈ BB.cohomologyGrading.piece p) :
+    hf.cohomologyMapInv c ∈ AA.cohomologyGrading.piece p := by
+  have he : LinearMap.IsHomogeneous hf.cohomologyLinearEquiv.toLinearMap
+      AA.cohomologyGrading.piece BB.cohomologyGrading.piece 0 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro q x hx
+    rw [add_zero, LinearEquiv.coe_coe, cohomologyLinearEquiv_apply]
+    exact f.cohomologyMap_mem_cohomologyGrading_piece hx
+  simpa only [cohomologyMapInv_apply, add_zero, LinearEquiv.coe_coe] using
+    he.linearEquiv_symm.map_mem hc
+
+/-- A quasi-isomorphism `AA ⟶ BB` identifies the cohomology `A∞` algebras; this is the strict
+morphism in the backward direction, inverse to the map induced on cohomology. -/
+noncomputable def cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    AInfinityStrictHom BB.cohomologyAInfinityAlgebra AA.cohomologyAInfinityAlgebra :=
+  AInfinityAlgebra.cohomologyStrictHom hf.cohomologyMapInv (hf.cohomologyMapInv_mem)
+
+/-- The class map of a cohomology `A∞` algebra is bijective, since its unary operation is zero. -/
+private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
+    Function.Bijective (fun x : AA.Cohomology =>
+      AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+        simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])) := by
+  let C := AA.cohomologyAInfinityAlgebra
+  have hcycle (x : AA.Cohomology) : x ∈ C.cycles := by
+    exact (C.mem_cycles).2 (AA.cohomologyAInfinityAlgebra_m_one_apply _)
+  have hbound (x : AA.Cohomology) (hx : x ∈ C.boundaries) : x = 0 := by
+    obtain ⟨y, hy⟩ := (C.mem_boundaries).1 hx
+    rw [AA.cohomologyAInfinityAlgebra_m_one_apply] at hy
+    exact hy.symm
+  change Function.Bijective (fun x : AA.Cohomology => C.cohomologyClass (hcycle x))
+  constructor
+  · intro x y hxy
+    apply sub_eq_zero.mp
+    exact hbound _ ((C.cohomologyClass_eq_iff (hcycle x) (hcycle y)).1 hxy)
+  · intro z
+    obtain ⟨x, hx, rfl⟩ := C.exists_cohomologyClass_eq z
+    exact ⟨x, rfl⟩
+
+/-- The inverse strict morphism between cohomology `A∞` algebras is a quasi-isomorphism. -/
+theorem cohomologyStrictHomInv_isQuasiIso {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    hf.cohomologyStrictHomInv.toAInfinityHom.IsQuasiIso := by
+  let eA : AA.Cohomology → AA.cohomologyAInfinityAlgebra.Cohomology :=
+    fun x => AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+      simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])
+  let eB : BB.Cohomology → BB.cohomologyAInfinityAlgebra.Cohomology :=
+    fun x => BB.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
+      simp only [AInfinityAlgebra.mem_cycles, BB.cohomologyAInfinityAlgebra_m_one_apply])
+  have hA : Function.Bijective eA := cohomologyModelClass_bijective AA
+  have hB : Function.Bijective eB := cohomologyModelClass_bijective BB
+  have hcomm : ⇑hf.cohomologyStrictHomInv.toAInfinityHom.cohomologyMap ∘ eB =
+      eA ∘ ⇑hf.cohomologyMapInv := by
+    funext x
+    simp only [Function.comp_apply, eA, eB, cohomologyMap_cohomologyClass]
+    congr 1
+    simp only [AInfinityStrictHom.linearPart_toAInfinityHom,
+      AInfinityStrictHom.coe_toLinearMap, cohomologyStrictHomInv,
+      AInfinityAlgebra.coe_cohomologyStrictHom]
+  apply (Function.Bijective.of_comp_iff _ hB).1
+  rw [hcomm]
+  exact hA.comp hf.cohomologyLinearEquiv.symm.bijective
+
+end IsQuasiIso
 
 end AInfinityHom
 
