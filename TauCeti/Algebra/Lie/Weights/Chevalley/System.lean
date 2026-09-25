@@ -58,6 +58,9 @@ the integral root--coroot span.
 * `TauCeti.IsChevalleySystem.intStructureConstant`: that coefficient, named as an integer, with
   `lie_eq_intStructureConstant_zsmul` its defining equation and
   `intStructureConstant_eq_natCast_or_eq_neg_natCast` identifying it as `±(p + 1)`.
+* `TauCeti.IsChevalleySystem.intStructureConstant₂`: the two-argument form `N(α,β)`, vanishing
+  when `α + β` is not a root, with `intStructureConstant₂_skew` (antisymmetry) and
+  `intStructureConstant₂_eq_natCast_or_eq_neg_natCast` (values `±(p + 1)`).
 
 ## References
 
@@ -288,6 +291,108 @@ theorem intStructureConstant_ne_zero
   intro hzero
   refine hx.toIsSl2System.structureConstant_ne_zero α β γ hγ hαβ hα hβ ?_
   rw [← hx.intStructureConstant_cast α β γ hγ hαβ, hzero, Int.cast_zero]
+
+/-! ## Two-argument integer structure constants -/
+
+omit hx in
+/-- The two-argument integer structure constant of a Chevalley system. When `α + β` is a
+nonzero root, this is the integer `N(α,β)` with `⁅x α, x β⁆ = N(α,β) • x(α+β)`; it is `0`
+when `α + β` is not a root. The witness root is unique because the weight coercion is
+injective, so the choice is well-defined. This form is consumed by the Chevalley
+commutator formula. -/
+noncomputable def intStructureConstant₂ {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) : ℤ := by
+  haveI := Classical.propDecidable
+    (∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β))
+  exact if h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β) then
+    hx.intStructureConstant α β (Classical.choose h) (Classical.choose_spec h).1
+      (Classical.choose_spec h).2
+  else
+    0
+
+omit hx in
+/-- The two-argument constant agrees with the three-argument constant on a root sum. -/
+theorem intStructureConstant₂_eq_intStructureConstant {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hγ : γ.IsNonZero) (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant₂ α β = hx.intStructureConstant α β γ hγ hαβ := by
+  have hchoose : ∀ h : ∃ γ' : Weight K H L, γ'.IsNonZero ∧
+      ((γ' : H → K) = (α : H → K) + β),
+      hx.intStructureConstant α β (Classical.choose h) (Classical.choose_spec h).1
+        (Classical.choose_spec h).2 = hx.intStructureConstant α β γ hγ hαβ := by
+    intro h
+    have hγ' : Classical.choose h = γ := by
+      apply DFunLike.coe_injective
+      calc ((Classical.choose h : Weight K H L) : H → K)
+          = (α : H → K) + β := (Classical.choose_spec h).2
+        _ = (γ : H → K) := hαβ.symm
+    subst hγ'
+    rfl
+  unfold intStructureConstant₂
+  split
+  · exact hchoose _
+  · rename_i hneg
+    exact absurd ⟨γ, hγ, hαβ⟩ hneg
+
+omit hx in
+/-- The two-argument constant vanishes when `α + β` is not a root. -/
+@[simp]
+theorem intStructureConstant₂_eq_zero_of_not_isRootSum {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β : Weight K H L)
+    (h : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)) :
+    hx.intStructureConstant₂ α β = 0 := by
+  unfold intStructureConstant₂
+  split
+  · rename_i hpos
+    exact (h hpos).elim
+  · rfl
+
+omit hx in
+/-- Swapping the two input weights negates the two-argument integer structure constant. -/
+theorem intStructureConstant₂_skew {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
+    hx.intStructureConstant₂ β α = -hx.intStructureConstant₂ α β := by
+  classical
+  by_cases h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)
+  · obtain ⟨γ, hγ, hαβ⟩ := h
+    have hβα : (γ : H → K) = (β : H → K) + α := by rw [hαβ, add_comm]
+    have e1 := hx.intStructureConstant₂_eq_intStructureConstant β α γ hγ hβα
+    have e2 := hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ
+    rw [e1, e2]
+    have hcast : ((hx.intStructureConstant β α γ hγ hβα : ℤ) : K)
+        = (((-hx.intStructureConstant α β γ hγ hαβ : ℤ)) : K) := by
+      rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+      exact hx.toIsSl2System.structureConstant_skew α β γ hγ hαβ
+    exact Int.cast_injective hcast
+  · have h' : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧
+        ((γ : H → K) = (β : H → K) + α) := by
+      rintro ⟨γ, hγ, hαβ⟩
+      exact h ⟨γ, hγ, by rw [hαβ, add_comm]⟩
+    rw [hx.intStructureConstant₂_eq_zero_of_not_isRootSum β α h',
+      hx.intStructureConstant₂_eq_zero_of_not_isRootSum α β h, neg_zero]
+
+omit hx in
+/-- On a genuine root sum of nonzero roots, the two-argument constant is `±(p + 1)` for the
+root-string coefficient `p = chainBotCoeff α β`. -/
+theorem intStructureConstant₂_eq_natCast_or_eq_neg_natCast {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hα : α.IsNonZero) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant₂ α β = (chainBotCoeff α β + 1 : ℕ) ∨
+      hx.intStructureConstant₂ α β = -((chainBotCoeff α β + 1 : ℕ) : ℤ) := by
+  rw [hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ]
+  exact hx.intStructureConstant_eq_natCast_or_eq_neg_natCast α β γ hα hβ hγ hαβ
+
+omit hx in
+/-- The defining bracket equation for the two-argument constant on a root sum. -/
+theorem lie_eq_intStructureConstant₂_zsmul {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hγ : γ.IsNonZero) (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ⁅x α, x β⁆ = hx.intStructureConstant₂ α β • x γ := by
+  have heq : hx.intStructureConstant₂ α β = hx.intStructureConstant α β γ hγ hαβ :=
+    hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ
+  rw [heq]
+  exact hx.lie_eq_intStructureConstant_zsmul α β γ hγ hαβ
 
 end IsChevalleySystem
 
