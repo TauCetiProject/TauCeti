@@ -79,11 +79,12 @@ and `α` alone; that is `TauCeti.ContCohomology.evensGraphCochain_sub_evensGraph
 stated at **every** `s'` outside `U` rather than at a chosen one.
 
 Everything below is stated for a plain subgroup `U` together with the hypotheses `U.index = 2`
-where the cocycle identities require it, and `IsOpen (U : Set G)` for continuity. The continuity
-statements need only separately continuous multiplication, since the arguments use fixed
-translations and the fact that an open subgroup is closed. No topology at all is needed for the
-algebraic half: the cocycle laws and the comparison of two elements outside `U` are identities of
-plain functions `G → 𝔽₂`.
+for the cocycle identities and the comparison of two elements outside `U`, and
+`IsOpen (U : Set G)` for continuity. The evaluation of the graph cochain on `U × U` needs neither.
+The continuity statements need only separately continuous multiplication, since the arguments use
+fixed translations and the fact that an open subgroup is closed. No topology at all is needed for
+the algebraic half: the cocycle laws and the comparison of two elements outside `U` are identities
+of plain functions `G → 𝔽₂`.
 
 The `2`-cocycle identity is stated in the form it takes for a trivial action, an equation between
 sums of four values, rather than through `groupCohomology.IsCocycle₂`, whose statement carries a
