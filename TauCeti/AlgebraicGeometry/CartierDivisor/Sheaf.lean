@@ -296,7 +296,7 @@ def unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     fun U a ↦ rationalFunctionsMul_inv_toRationalFunctions_app_mem_sections f U a
 
 /-- `unitToSheafPrincipalCartierDivisor X f`, read inside `𝒦_X`, is multiplication by `f⁻¹`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma unitToSheafPrincipalCartierDivisor_ι (f : X.functionFieldˣ) :
     unitToSheafPrincipalCartierDivisor X f ≫ (principalCartierDivisor X f).sheafι =
       toRationalFunctions X ≫
@@ -361,7 +361,7 @@ lemma unitIsoSheafPrincipalCartierDivisor_hom (f : X.functionFieldˣ) :
 
 /-- The inverse of `unitIsoSheafPrincipalCartierDivisor`, read inside `𝒦_X`, is multiplication by
 `f`: it sends a section `g` of `𝒪_X(div f)` to the regular function `f g`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma unitIsoSheafPrincipalCartierDivisor_inv_toRationalFunctions (f : X.functionFieldˣ) :
     (unitIsoSheafPrincipalCartierDivisor f).inv ≫ toRationalFunctions X =
       (principalCartierDivisor X f).sheafι ≫

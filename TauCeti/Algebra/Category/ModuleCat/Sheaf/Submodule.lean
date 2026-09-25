@@ -123,7 +123,7 @@ lemma ι_val_app_injective (N : M.Submodule) (U : Cᵒᵖ) :
 /-- The image of the inclusion on sections is the defining submodule. -/
 @[simp]
 lemma range_ι_val_app (N : M.Submodule) (U : Cᵒᵖ) :
-    Set.range (N.ι.val.app U) = N.toSubmodule.obj U := by
+    Set.range (N.toSubmodule.ι.app U) = N.toSubmodule.obj U := by
   ext s
   exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ ι_val_app_mem N U t, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
 
