@@ -151,20 +151,11 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
     Tendsto Y atTop (𝓝 0) := by
   have hq : b ^ (-α⁻¹) < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg hb (neg_lt_zero.mpr (inv_pos.mpr hα))
-  have e1 : -α⁻¹ * α = -1 := by field_simp
-  have e2 : -(α ^ 2)⁻¹ * α = -α⁻¹ := by field_simp
-  refine tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY
-    (zero_lt_one.trans hb).le (Real.rpow_nonneg (zero_le_one.trans hb.le) _) hq hα.le
-    ?_ ?_ hrec
-  · rw [← Real.rpow_mul (zero_le_one.trans hb.le), e1, Real.rpow_neg_one,
-      mul_inv_cancel₀ (ne_of_gt (zero_lt_one.trans hb))]
-  · calc C * Y 0 ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by
-          gcongr
-          exact hY 0
-      _ = b ^ (-α⁻¹) := by
-          rw [Real.mul_rpow (Real.rpow_nonneg hC.le _)
-            (Real.rpow_nonneg (zero_le_one.trans hb.le) _),
-            ← Real.rpow_mul hC.le, ← Real.rpow_mul (zero_le_one.trans hb.le), e1, e2,
-            Real.rpow_neg_one, mul_inv_cancel_left₀ hC.ne']
+  have hlim : Tendsto (fun n : ℕ => (b ^ (-α⁻¹)) ^ n * Y 0) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
+      (Real.rpow_nonneg (zero_lt_one.trans hb).le _) hq).mul_const (Y 0)
+  exact squeeze_zero hY
+    (le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow hY hC (zero_lt_one.trans hb) hα h0 hrec)
+    hlim
 
 end TauCeti
