@@ -17,7 +17,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Fppf.Basic
 
 This file relates group-valued presheaves and sheaves on the affine fppf site to group objects in
 type-valued presheaves and sheaves. In particular, it presents the convolution-points sheaf of a
-commutative Hopf algebra as a group object and exposes the group-object sheafification adjunction.
+commutative Hopf algebra as a group object, functorially in the Hopf algebra through
+`pointsFppfGroupObjectMap`, and exposes the group-object sheafification adjunction.
 
 This is infrastructure for the fppf-sheaf-quotient step of Layer 3, "Normality and quotients", in
 the ReductiveGroups roadmap.
@@ -225,6 +226,47 @@ noncomputable def pointsFppfGroupObjectIso (H : _root_.CommHopfAlgCat.{u} R) :
     (pointsPresheafGrp H).X ≅ F
   exact (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).mapIso e ≪≫
     (sheafificationIso F).symm
+
+/-- Precomposition with a morphism `f : H ⟶ K` of commutative Hopf algebras, as a morphism of the
+points presheaves regarded as group objects in type-valued presheaves. -/
+noncomputable def pointsPresheafGrpMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+    pointsPresheafGrp K ⟶ pointsPresheafGrp H :=
+  groupFunctorGrpMap <| Functor.whiskerRight
+    (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R)) (mapPointsFunctor f))
+    GrpCat.uliftFunctor.{u + 1, u}
+
+/-- The morphism of fppf points group objects induced by a morphism `f : H ⟶ K` of commutative
+Hopf algebras: the sheafification of precomposition with `f` on points. -/
+noncomputable def pointsFppfGroupObjectMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+    pointsFppfGroupObject K ⟶ pointsFppfGroupObject H := by
+  let _ : (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
+    Functor.Monoidal.ofChosenFiniteProducts _
+  exact (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp.map
+    (pointsPresheafGrpMap f)
+
+/-- The identity Hopf algebra morphism induces the identity on fppf points. -/
+@[simp]
+theorem pointsFppfGroupObjectMap_id (H : _root_.CommHopfAlgCat.{u} R) :
+    pointsFppfGroupObjectMap (𝟙 H) = 𝟙 _ := by
+  let _ : (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
+    Functor.Monoidal.ofChosenFiniteProducts _
+  have : pointsPresheafGrpMap (𝟙 H) = 𝟙 _ := by
+    rw [pointsPresheafGrpMap, mapPointsFunctor_id]
+    rfl
+  rw [pointsFppfGroupObjectMap, this]
+  exact CategoryTheory.Functor.map_id _ _
+
+/-- Formation of the induced morphism on fppf points reverses composition. -/
+theorem pointsFppfGroupObjectMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
+    (g : K ⟶ L) :
+    pointsFppfGroupObjectMap (f ≫ g) = pointsFppfGroupObjectMap g ≫ pointsFppfGroupObjectMap f := by
+  let _ : (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
+    Functor.Monoidal.ofChosenFiniteProducts _
+  have : pointsPresheafGrpMap (f ≫ g) = pointsPresheafGrpMap g ≫ pointsPresheafGrpMap f := by
+    rw [pointsPresheafGrpMap, mapPointsFunctor_comp]
+    rfl
+  rw [pointsFppfGroupObjectMap, this]
+  exact CategoryTheory.Functor.map_comp _ _ _
 
 /-- The group object in type-valued presheaves underlying a group object in fppf sheaves. -/
 noncomputable def fppfGroupObjectToPresheaf
