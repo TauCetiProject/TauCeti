@@ -284,7 +284,9 @@ variable [DivisionRing k]
 variable (k) in
 /-- **Popa–Zagier's explicit Hecke element** of `k[ℳₙ]` (written `Tₙ` with a tilde in their
 paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`), with the weights
-divided by `12` in `k`. Its coefficients are given by `coeff_popaZagierElement_mk`. -/
+divided by `12` in `k`. Its coefficients are given by `coeff_popaZagierElement_mk`. It is
+Popa–Zagier's element when `12 ≠ 0` in `k`, that is, when `k` has characteristic other than `2`
+and `3`; otherwise it is `0`. -/
 noncomputable def popaZagierElement (n : ℤ) : k[TraceFormulaMatrixModule n] :=
   ofWeight n (fun M ↦ (PopaZagier.weight M : k) / 12) (2 * n) fun A h i j ↦ by
     have h : PopaZagier.weight A.1 ≠ 0 := fun h' ↦ h (by simp [h'])
