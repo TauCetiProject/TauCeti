@@ -42,7 +42,10 @@ TOML
 # Build from sources and build directories only. pr-build.yml exports Lake artifact-cache settings
 # for the whole job, and that cache can hold artifacts from a candidate's build (a merge-group rerun
 # reuses exact-head outputs), so reading it here would let candidate artifacts into the driver.
-(cd "$WS" && env -u LAKE_CACHE_DIR LAKE_ARTIFACT_CACHE=false LAKE_RESTORE_ARTIFACTS=false \
+# An empty LAKE_CACHE_DIR disables Lake's cache directory (unset, Lake falls back to a global one).
+# The other variables could redirect the toolchain, configuration or search paths, so clear them.
+(cd "$WS" && env -u ELAN_TOOLCHAIN -u LAKE_CONFIG -u LEAN_PATH -u LEAN_SRC_PATH \
+  -u LAKE_PKG_URL_MAP LAKE_CACHE_DIR= LAKE_ARTIFACT_CACHE=false LAKE_RESTORE_ARTIFACTS=false \
   LAKE_NO_CACHE=true lake build lint-env-driver)
 install -m 0555 "$WS/.lake/build/bin/lint-env-driver" "$OUT_DIR/lint-env-driver"
 rm -rf "$WS"

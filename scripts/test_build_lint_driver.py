@@ -36,9 +36,14 @@ def index_of(name_fragment):
 class BuildLintDriverTest(unittest.TestCase):
     def test_build_ignores_the_lake_artifact_cache(self):
         build = BUILD[BUILD.index("(cd \"$WS\" && env"):]
-        for setting in ("-u LAKE_CACHE_DIR", "LAKE_ARTIFACT_CACHE=false",
-                        "LAKE_RESTORE_ARTIFACTS=false", "LAKE_NO_CACHE=true"):
-            self.assertIn(setting, build.split("lake build")[0])
+        settings = build.split("lake build")[0]
+        for setting in ("LAKE_CACHE_DIR= ", "LAKE_ARTIFACT_CACHE=false",
+                        "LAKE_RESTORE_ARTIFACTS=false", "LAKE_NO_CACHE=true",
+                        "-u ELAN_TOOLCHAIN", "-u LAKE_CONFIG", "-u LEAN_PATH",
+                        "-u LEAN_SRC_PATH", "-u LAKE_PKG_URL_MAP"):
+            self.assertIn(setting, settings)
+        # Unsetting LAKE_CACHE_DIR would fall back to a global cache instead of disabling it.
+        self.assertNotIn("-u LAKE_CACHE_DIR", settings)
 
     def test_driver_is_built_on_the_host_before_the_sandboxed_build(self):
         driver = index_of("Build the trusted environment-lint driver")
