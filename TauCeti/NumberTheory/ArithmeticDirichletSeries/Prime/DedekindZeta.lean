@@ -19,18 +19,18 @@ function `Λ_K`, whose partial sums are Chebyshev's `ψ_K`.  This file identifie
 series on `Re s > 1` with the negative logarithmic derivative of the Dedekind zeta function:
 
 ```text
-∑ n, Λ_K(n) n^{-s} = ∑_A Λ(A) N(A)^{-s} = -ζ_K'(s) / ζ_K(s),   Re s > 1,
+∑ n, primeVonMangoldtCoeff K Set.univ n · n^{-s} = ∑_A Λ_K(A) N(A)^{-s} = -ζ_K'(s) / ζ_K(s)
 ```
 
-the number-field analogue of Mathlib's
+This is the number-field analogue of Mathlib's
 `ArithmeticFunction.LSeries_vonMangoldt_eq_deriv_riemannZeta_div`. It is the trivial-weight case of
 `TauCeti.MultiplicativeIdealWeight.logDeriv_LSeries_eq_neg_tsum_vonMangoldtTransform`, since the
 trivial weight regroups to `ζ_K` (`TauCeti.dedekindZeta_eq_LSeries_normCoeff_one`) and its von
 Mangoldt transform is `Λ_K`.
 
-Consequently the series half of the boundary data `TauCeti.PrimeBoundaryRemainder K Set.univ 1`
-is no longer a hypothesis: `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta` builds the package
-from a single function `G`, continuous on `Re s ≥ 1`, that agrees with
+The constructor `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta` obtains the series condition of
+the boundary data `TauCeti.PrimeBoundaryRemainder K Set.univ 1` from this identity, and builds the
+package from a single function `G`, continuous on `Re s ≥ 1`, that agrees with
 `-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` on `Re s > 1`.  Producing such a `G` needs the meromorphic
 continuation of `ζ_K` across `Re s = 1`, with a simple pole at `1` and no zeros on that line; this
 file does not supply it.  Given one, `TauCeti.primeIdealTheorem_of_boundary` applied to the
@@ -63,7 +63,7 @@ open IsDedekindDomain
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **The von Mangoldt series of `K` is `-ζ_K'/ζ_K`.** On `Re s > 1` the ideal-indexed series
-`∑_A Λ(A) N(A)^{-s}` converges absolutely to `-ζ_K'(s) / ζ_K(s)`. -/
+`∑_A Λ_K(A) N(A)^{-s}` converges absolutely to `-ζ_K'(s) / ζ_K(s)`. -/
 theorem hasSum_idealTerm_vonMangoldt {s : ℂ} (hs : 1 < s.re) :
     HasSum (idealTerm K IdealArithmeticFunction.vonMangoldt s)
       (-deriv (dedekindZeta K) s / dedekindZeta K s) := by
