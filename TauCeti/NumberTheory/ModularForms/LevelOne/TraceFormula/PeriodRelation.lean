@@ -10,9 +10,9 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTrian
 /-!
 # The Popa–Zagier period relation
 
-Popa and Zagier's proof of the Eichler–Selberg trace formula starts from an element `T̃ₙ` of the
-group ring `ℛₙ = ℚ[ℳₙ]` satisfying the *period relation*
-`(A)  (1 - S)·T̃ₙ - Tₙ^∞·(1 - S) ∈ (1 - T)·ℛₙ`,
+Popa and Zagier's proof of the Eichler–Selberg trace formula starts from an element `ξ` of the
+group ring `ℛₙ = ℚ[ℳₙ]` (written `Tₙ` with a tilde in their paper) satisfying the *period relation*
+`(A)  (1 - S)·ξ - Tₙ^∞·(1 - S) ∈ (1 - T)·ℛₙ`,
 where `S = (0 -1; 1 0)` and `T = (1 1; 0 1)` act on `ℳₙ` by left and right multiplication and
 `Tₙ^∞` is the formal sum of the upper-triangular representatives of `Γ \ ℳₙ`. This file defines
 the predicate `TauCeti.TraceFormulaMatrixModule.PeriodRelation k n ξ` expressing (A) for `ξ ∈ ℛₙ`
@@ -24,7 +24,7 @@ formal sum of another set of representatives of `Γ \ ℳₙ`, so `Tₙ^∞·(1 
 every orbit of `SL(2, ℤ)`, that is, it lies in the coinvariant kernel of the left action. As `S` and
 `T` generate `SL(2, ℤ)`, this kernel is `(1 - S)·ℛₙ + (1 - T)·ℛₙ`, which gives a solution. The
 explicit solution of Popa–Zagier's eq. (15) is not constructed here: they deduce (A) for it from the
-relations (B) and the coset identity `⟨T̃ₙ, K⟩ = -1`, and it is deferred to milestone (vi) of the
+relations (B) and the coset identity `⟨ξ, K⟩ = -1`, and it is deferred to milestone (vi) of the
 `ModularForms` roadmap (Layer 11).
 
 Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3: an element of `ℛₙ` lies in
