@@ -87,8 +87,8 @@ theorem finrank_torsion_le_topologicalGenus_of_lt (hT : T.IsMinimal)
 
 end IsMinimal
 
-/-- Induction on the number of components for
-`TauCeti.NumericalType.finrank_torsion_le_arithmeticGenus`. -/
+/-- A numerical type with `n` components and arithmetic genus `g ≥ 2` has prime
+`ℓ`-torsion rank at most `g` whenever `ℓ > 768g - 768`. -/
 private lemma finrank_torsion_le_arithmeticGenus_of_card_eq (ℓ : ℕ) [Fact ℓ.Prime] {n : ℕ} :
     ∀ T : NumericalType.{u}, Fintype.card T.Component = n → 2 ≤ T.arithmeticGenus →
       768 * T.arithmeticGenus - 768 < ℓ →
