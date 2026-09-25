@@ -179,7 +179,7 @@ private theorem not_mem_range_of_eq_sq_mul_one_add_four_mul (h2 : (2 : K) ≠ 0)
 
 /-- **The unit classes of maximal defect.** Two units of `𝒪[K]` of defect exponent `2 v_K(2)`,
 that is of defect `4 𝒪[K]`, differ by a square. -/
-private theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : Kˣ}
+theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : Kˣ}
     (hu : valuation K (u : K) = 1) (hw : valuation K (w : K) = 1)
     (hδu : defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ))
     (hδw : defectExponent w = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ)) :
