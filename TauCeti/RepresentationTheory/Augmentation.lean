@@ -19,7 +19,8 @@ vectors spans an invariant subrepresentation, called the invariant line. Both co
 defined over any semiring. If `X` is nonempty, the invariant line is equivalent to the trivial
 representation on `k`: every coordinate of a vector in the line is its scalar coefficient.
 
-For finite `X` over a division ring, the augmentation subrepresentation has dimension `|X| - 1`.
+For finite `X` over a ring satisfying the strong rank condition, the augmentation subrepresentation
+has rank `|X| - 1`.
 Over any ring where `|X|` is a unit, the invariant line complements it. The equivalence
 `TauCeti.ofMulActionEquivProdAugmentation` expresses this splitting: its first component is the
 average of the coefficients, and its second subtracts that multiple of the sum of the standard
@@ -259,28 +260,44 @@ end InvariantLineTrivial
 
 section Dimension
 
-variable {k : Type*} [DivisionRing k] {G X : Type*} [Monoid G] [MulAction G X] [Fintype X]
+variable {k : Type*} [Ring k] [StrongRankCondition k] {G X : Type*}
+  [Monoid G] [MulAction G X] [Fintype X]
 
 /-- The augmentation subrepresentation has dimension one less than the cardinality of `X`.  For an
 empty `X` both sides are zero, the subtraction being truncated. -/
 @[simp]
 theorem finrank_augmentationSubrepresentation :
     Module.finrank k (augmentationSubrepresentation k G X).toSubmodule = Fintype.card X - 1 := by
+  classical
   rcases isEmpty_or_nonempty X with hX | hX
   · have hbot : (augmentationSubrepresentation k G X).toSubmodule = ⊥ :=
       Submodule.eq_bot_iff _ |>.mpr fun v _ =>
         MonoidAlgebra.coeff_eq_zero.mp (Finsupp.ext fun x => isEmptyElim x)
     rw [hbot, finrank_bot, Fintype.card_eq_zero]
-  have hcard : Module.finrank k (MonoidAlgebra k X) = Fintype.card X :=
-    (Module.finrank_eq_card_basis (MonoidAlgebra.basis X k)).trans (by simp)
-  have : Module.Finite k (MonoidAlgebra k X) := Module.Finite.of_basis (MonoidAlgebra.basis X k)
-  have hrange : Module.finrank k (LinearMap.range (MonoidAlgebra.basis X k).sumCoords) = 1 := by
-    rw [LinearMap.range_eq_top.mpr MonoidAlgebra.sumCoords_basis_surjective]
-    simp
-  have hsum := LinearMap.finrank_range_add_finrank_ker (MonoidAlgebra.basis X k).sumCoords
-  rw [hrange, hcard] at hsum
-  rw [toSubmodule_augmentationSubrepresentation]
-  omega
+  let x₀ := Classical.arbitrary X
+  let d (x : {x : X // x ≠ x₀}) : MonoidAlgebra k X :=
+    MonoidAlgebra.single x.1 1 - MonoidAlgebra.single x₀ 1
+  have hcoord (i j : {x : X // x ≠ x₀}) :
+      (d j).coeff i.1 = if j = i then 1 else 0 := by
+    simp [d, Finsupp.single_apply, Ne.symm i.property, Subtype.val_inj]
+  have hind : LinearIndependent k d := by
+    refine linearIndependent_iff'.mpr fun s c hc i hi => ?_
+    have := congrArg (fun v : MonoidAlgebra k X => v.coeff i.1) hc
+    simpa [MonoidAlgebra.coeff_smul_apply, hcoord, hi] using this
+  have hspan : LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
+      Submodule.span k (Set.range d) := by
+    rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k X x₀]
+    apply le_antisymm
+    · refine Submodule.span_le.mpr ?_
+      rintro _ ⟨x, rfl⟩
+      by_cases hx : x = x₀
+      · simp [hx]
+      · exact Submodule.subset_span ⟨⟨x, hx⟩, rfl⟩
+    · apply Submodule.span_mono
+      rintro _ ⟨x, rfl⟩
+      exact ⟨x.1, rfl⟩
+  rw [toSubmodule_augmentationSubrepresentation, hspan, finrank_span_eq_card hind]
+  simp
 
 end Dimension
 
