@@ -269,6 +269,7 @@ empty `X` both sides are zero, the subtraction being truncated. -/
 theorem finrank_augmentationSubrepresentation :
     Module.finrank k (augmentationSubrepresentation k G X).toSubmodule = Fintype.card X - 1 := by
   classical
+  have := nontrivial_of_invariantBasisNumber k
   rcases isEmpty_or_nonempty X with hX | hX
   · have hbot : (augmentationSubrepresentation k G X).toSubmodule = ⊥ :=
       Submodule.eq_bot_iff _ |>.mpr fun v _ =>
