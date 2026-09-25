@@ -40,9 +40,10 @@ by an explicit prime-power series, not merely chosen on a simply connected regio
 the logarithmic derivative of the `L`-series, whose own prime-power expansion is
 `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree`.
 
-The zero-free hypothesis at every prime is needed for the summability, exponential, and holomorphy
-statements: for the finitely many primes with a large tail, the local power series may vanish
-inside the disk, and then its formal logarithm need not converge.
+The summability theorem assumes convergence of every local logarithm series. A zero-free
+hypothesis at every prime supplies that local convergence and is needed for the later exponential
+and holomorphy statements: for the finitely many primes with a large tail, the local power series
+may vanish inside the disk, and then its formal logarithm need not converge.
 
 ## Main results
 
