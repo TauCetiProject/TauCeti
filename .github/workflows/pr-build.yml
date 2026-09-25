@@ -51,7 +51,11 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  # The merge queue always builds on Namespace: it is the path every PR must pass through to land,
+  # so it gets the faster machine and never waits for a GitHub slot. Skipping the picker leaves
+  # its answer empty, which `sandboxed-build` reads as Namespace.
   pick-runner:
+    if: github.event_name != 'merge_group'
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
@@ -75,9 +79,11 @@ jobs:
     # labels, confirm them in the organisation that will run the job.
     #
     # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
-    # an explicit `true` from it, including a picker that failed or never ran, means Namespace.
+    # an explicit `true` from it, including a picker that failed, was skipped or never ran, means
+    # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
+    # queue on Namespace should that ever change.
     runs-on: >-
-      ${{ needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+      ${{ github.event_name != 'merge_group' && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
         "nscloud-ubuntu-24.04-amd64-8x16-with-features",
         "namespace-features:container.privileged=true"
       ]') }}

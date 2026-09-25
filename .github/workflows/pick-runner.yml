@@ -18,9 +18,14 @@ name: pick-runner
 # and a slot held by an hour-long build is a slot the short label, merge and notification jobs
 # cannot use. Set the variable to 20 to use every slot.
 #
-# Any failure (API error, timeout, rate limit) answers Namespace, and a caller whose picker did not
-# produce an answer at all also falls back to Namespace, so this job can delay a build by its own
-# runtime but can never stop one.
+# Any failure (API error, timeout, rate limit, more results than one page holds) answers Namespace,
+# and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
+# `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
+# auto-merge key off pr-build's overall conclusion. This job can delay a build by its own runtime
+# but can never stop one.
+#
+# The picker itself needs a GitHub slot. When all 20 are taken it waits for one, and then answers
+# Namespace; the budget's headroom and the churn of short jobs keep that wait short.
 
 on:
   workflow_call:
@@ -39,6 +44,7 @@ jobs:
   pick:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    continue-on-error: true
     outputs:
       github: ${{ steps.pick.outputs.github }}
     steps:
@@ -82,23 +88,28 @@ jobs:
 
           # The calls are independent, so run them eight at a time: one at a time takes most of a
           # minute when the organisation is busy, and every build waits for this answer.
-          # More than 100 active runs in one status is far past the budget whatever they are.
+          # Both listings stop at one page of 100; a larger total fails the call, and so answers
+          # Namespace, rather than silently undercounting.
           export ORG
           runs=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
                    set -o pipefail
                    for status in in_progress queued; do
                      timeout 30 gh api "repos/$ORG/$0/actions/runs?status=$status&per_page=100" \
-                       --jq ".workflow_runs[].id | \"$0 \(.)\"" || exit 1
+                       --jq "if .total_count > 100 then error(\"over 100 runs\") else .workflow_runs[].id | \"$0 \(.)\" end" || exit 1
                    done' | sort -u) \
             || decide false "Could not list the active runs in $ORG: using Namespace."
           # A run that moves from queued to in progress between the two calls appears in both
           # lists; `sort -u` above counts it once.
           counts=$(printf '%s\n' "$runs" | xargs -r -P 8 -n 2 bash -c '
                      timeout 30 gh api "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" --jq \
-                       "[.jobs[] | select(.status == \"in_progress\" or .status == \"queued\")
-                                 | select(any(.labels[]; startswith(\"nscloud-\")) | not)] | length"') \
+                       "if .total_count > 100 then error(\"over 100 jobs\") else
+                          [.jobs[] | select(.status == \"in_progress\" or .status == \"queued\")
+                                   | select(any(.labels[]; startswith(\"nscloud-\")) | not)] | length end"') \
             || decide false "Could not list the jobs of the active runs in $ORG: using Namespace."
           busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
+          # A drained API budget turns every answer into Namespace, so keep it visible.
+          echo "API requests left this hour: $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
+            >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$busy" -le "$BUDGET" ]; then
             decide true "$busy GitHub-hosted jobs busy in $ORG, counting this one (budget $BUDGET): using GitHub."
