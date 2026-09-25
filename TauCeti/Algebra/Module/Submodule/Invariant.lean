@@ -6,14 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Invariant
-public import Mathlib.Algebra.Module.Submodule.Range
 
 /-!
-# Invariant submodules of commuting and idempotent endomorphisms
-
-Two facts about `Module.End.invtSubmodule f`, the submodules stable under an endomorphism `f`.
-
-The range of an endomorphism is stable under every endomorphism commuting with it.
+# Correcting a vector by invariant submodules of two idempotents
 
 Let `e` and `f` be idempotent endomorphisms, `P` a submodule stable under `f` and `Q` one stable
 under `e`. If `e ξ` and `f ξ` lie in `P ⊔ Q`, then `ξ` can be corrected by an element `ι ∈ P ⊔ Q`
@@ -28,8 +23,6 @@ onto `ℬ`.
 
 ## Main results
 
-* `TauCeti.End.range_mem_invtSubmodule_of_commute`: the range of `f` is stable under every `g`
-  commuting with `f`.
 * `TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem`: the correction `ι ∈ P ⊔ Q`
   above exists.
 
@@ -44,11 +37,6 @@ public section
 namespace TauCeti.End
 
 open Module LinearMap
-
-/-- **The range of an endomorphism is stable under every endomorphism commuting with it.** -/
-theorem range_mem_invtSubmodule_of_commute {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {f g : End R M} (h : Commute f g) : range f ∈ g.invtSubmodule :=
-  Function.Semiconj.mapsTo_range (f := f) (fa := g) fun x ↦ LinearMap.congr_fun h.eq x
 
 /-- **Popa–Zagier's projection, existence half** (Lemma 3): let `e` and `f` be idempotent, `P` a
 submodule stable under `f` and `Q` one stable under `e`. If `e ξ` and `f ξ` lie in `P ⊔ Q`, then
