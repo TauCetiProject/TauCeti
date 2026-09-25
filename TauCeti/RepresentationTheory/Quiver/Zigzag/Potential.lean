@@ -39,6 +39,10 @@ trivializes the parameter.
   edge coordinates.
 * `TauCeti.SkewZigzagParameter.transition_mul`: transition factors are multiplicative in the
   parameter.
+* `TauCeti.SkewZigzagParameter.localCoordinate_map`: local coordinates are carried by the
+  monoid homomorphism mapping a parameter.
+* `TauCeti.SkewZigzagParameter.transition_map`: transition factors are carried by the monoid
+  homomorphism mapping a parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_potential`: a vertex potential for the
   transition factors trivializes the parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_walkTransition_eq`: a parameter whose
@@ -55,7 +59,7 @@ namespace TauCeti
 
 open DoubledQuiver
 
-universe u w
+universe u w z
 
 namespace SkewZigzagParameter
 
@@ -111,6 +115,28 @@ theorem transition_mul (c c' : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w
     transition (c * c') h = transition c h * transition c' h := by
   rw [transition_def, transition_def, transition_def, localCoordinate_mul, localCoordinate_mul,
     mul_div_mul_comm]
+
+/-! ### Transition factors under a coefficient homomorphism -/
+
+section Map
+
+variable {l : Type z} [CommMonoid l]
+
+/-- The local coordinates of a mapped parameter are the images of the local coordinates. -/
+@[simp]
+theorem localCoordinate_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V}
+    (h : G.Adj v w) :
+    localCoordinate (c.map f) h = Units.map f (localCoordinate c h) := by
+  unfold localCoordinate
+  exact map_ratio f c h _
+
+/-- The transition factors of a mapped parameter are the images of the transition factors. -/
+@[simp]
+theorem transition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    transition (c.map f) h = Units.map f (transition c h) := by
+  rw [transition_def, transition_def, localCoordinate_map, localCoordinate_map, map_div]
+
+end Map
 
 /-! ### Transition factors along walks -/
 
