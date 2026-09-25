@@ -62,6 +62,13 @@ theorem cup0H_H0π (n : ℤ) (x : M.ρ.invariants) (y : tateCohomology N n) :
         ((Rep.tensorInvariant N x) ≫ (β_ N M).hom) y := by
   rw [cup0H_apply, cupH0_H0π, ← ModuleCat.comp_apply, ← Functor.map_comp]
 
+omit [Fintype G] in
+/-- Braiding the tensor of an invariant with a vector puts the invariant first. -/
+private theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
+    (((Rep.tensorInvariant N x) ≫ (β_ N M).hom).hom y) =
+      (x : M.V) ⊗ₜ[k] y := by
+  simp [Rep.hom_braiding]
+
 /-- In bidegree `(0,0)`, the product is represented by the tensor of the two
 invariants in their original order. -/
 @[simp high]
@@ -69,9 +76,10 @@ theorem cup0H_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
     (dsimp% only (cup0H M N 0 (H0π M x) (H0π N y))) =
       H0π (M ⊗ N) ⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
         simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ := by
-  rw [cup0H_apply, cupH0_H0π_H0π,
-    H0π_comp_tateCohomologyFunctor_map_apply]
-  congr 1
+  rw [cup0H_H0π, H0π_comp_tateCohomologyFunctor_map_apply]
+  apply congrArg (H0π (M ⊗ N))
+  apply Subtype.ext
+  exact tensorInvariant_braiding_hom_apply x (y : N.V)
 
 /-- Naturality of the left degree-zero product in its first coefficient. -/
 theorem cup0H_map_left {M' : Rep k G} (f : M ⟶ M') (n : ℤ)
