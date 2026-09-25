@@ -196,6 +196,8 @@ intersection-chart inclusion. -/
       Φ.analyticOverlapHomeomorph hΦ τ σ := by
   unfold analyticOverlapHomeomorph
   rw [← Φ.analyticOverlapSwapIso_symm hΦ σ τ]
+  -- Closes definitionally: `Homeomorph.symm` of a composite unfolds to the reversed composite
+  -- of inverses, and `TopCat.homeoOfIso f.symm` is `(TopCat.homeoOfIso f).symm` by definition.
   rfl
 
 /-- The two overlap inclusions of a chart with itself coincide. -/
