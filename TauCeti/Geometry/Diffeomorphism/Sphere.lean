@@ -163,10 +163,7 @@ section Continuity
 /-! ### Continuity in the linear isometry
 
 The restriction of a linear isometry to the unit sphere depends continuously on the isometry,
-for the weak Whitney topology on the `C^m` maps between the spheres. The proof extends the family
-to all invertible linear maps `T`, acting by `x ↦ ‖T x‖⁻¹ • T x`. These maps are jointly smooth in
-`T` and `x` on the open set of invertible maps, a manifold, so the smooth-families theorem
-`ContMDiff.continuous_manifoldWeakWhitney` applies; on an isometry the renormalisation is trivial.
+for the weak Whitney topology on the `C^m` maps between the spheres.
 -/
 
 open TopologicalSpace
