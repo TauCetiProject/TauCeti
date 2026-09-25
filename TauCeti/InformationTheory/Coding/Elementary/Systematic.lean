@@ -42,7 +42,6 @@ def check (a : F) : Matrix (Fin 1) (Fin 1 ⊕ Fin 1) F :=
 def code (a : F) : LinearCode F (Fin 1 ⊕ Fin 1) := (generator a).generatedBy
 
 /-- The displayed parity-check matrix cuts out exactly the generated code. -/
-@[simp]
 theorem checkedBy_check (a : F) : (check a).checkedBy = code a := by
   simpa only [generator, check, code] using
     (Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one
@@ -92,7 +91,6 @@ theorem generatedBy_swap_eq_checkedBy_swap (a : F) :
   rfl
 
 /-- Exchanging the coordinates reverses which entry is the information symbol. -/
-@[simp]
 theorem mem_generatedBy_swap_iff (a : F) (x : Fin 1 ⊕ Fin 1 → F) :
     x ∈ ((generator a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).generatedBy ↔
       x (Sum.inl 0) = a * x (Sum.inr 0) := by
