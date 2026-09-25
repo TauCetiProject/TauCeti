@@ -342,21 +342,19 @@ theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
   have hexp : hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
       quaternionClass (-a) (-b) * quaternionClass (-a) (a * b) * quaternionClass (-b) (a * b) := by
     simp [Fin.prod_univ_succ, mul_assoc]
-  have ha : quaternionClass (-a) a = 1 := by
-    simpa using quaternionClass_neg_self (-a)
-  have hb : quaternionClass (-b) b = 1 := by
-    simpa using quaternionClass_neg_self (-b)
-  have h₁ : quaternionClass (-a) (a * b) = quaternionClass (-a) b := by
-    rw [quaternionClass_mul, ha, one_mul]
-  have h₂ : quaternionClass (-b) (a * b) = quaternionClass (-b) a := by
-    rw [quaternionClass_mul, hb, mul_one]
-  rw [hexp, h₁, h₂]
-  simp only [show -a = (-1) * a by rw [neg_one_mul],
-    show -b = (-1) * b by rw [neg_one_mul], quaternionClass_mul, quaternionClass_mul_left]
-  rw [quaternionClass_comm a (-1), quaternionClass_comm b a]
+  -- Write both negations as multiplication by `-1`, expand every symbol bilinearly in `-1`, `a`,
+  -- `b`, and order each symbol as `[(-1, a)]`, `[(-1, b)]` or `[(a, b)]`, using
+  -- `[(c, c)] = [(c, -1)]`.
+  have hna : -a = -1 * a := (neg_one_mul a).symm
+  have hnb : -b = -1 * b := (neg_one_mul b).symm
+  rw [hexp, hna, hnb]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_self a,
+    quaternionClass_self b, quaternionClass_comm a (-1), quaternionClass_comm b (-1),
+    quaternionClass_comm b a]
+  -- Now `[(-1, a)]` and `[(-1, b)]` each occur four times and `[(a, b)]` three times; the symbols
+  -- are `2`-torsion, so only one `[(a, b)]` and the `[(-1, -1)]` survive.
   calc _ = quaternionClass a b * quaternionClass (-1) (-1) *
-        (quaternionClass a b ^ 2 * quaternionClass (-1) a ^ 2 *
-          quaternionClass (-1) b ^ 2) := by
+        (quaternionClass a b * quaternionClass (-1) a ^ 2 * quaternionClass (-1) b ^ 2) ^ 2 := by
           simp only [pow_two]
           ac_rfl
     _ = _ := by simp
