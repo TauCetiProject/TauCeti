@@ -225,25 +225,21 @@ theorem symm_mob0Inf : mob0Inf.symm = mob0Inf :=
 /-! ### The images of the basepoint -/
 
 /-- `mob1Inf` sends the basepoint to `-1`. -/
-@[simp]
 theorem coe_mob1Inf_basePt : (mob1Inf basePt : ℂ) = -1 := by
   rw [coe_mob1Inf, coe_basePt]
   norm_num
 
 /-- `mob0Inf` sends the basepoint to `2`. -/
-@[simp]
 theorem coe_mob0Inf_basePt : (mob0Inf basePt : ℂ) = 2 := by
   rw [coe_mob0Inf, coe_basePt]
   norm_num
 
 /-- `mobRot` sends the basepoint to `2`. -/
-@[simp]
 theorem coe_mobRot_basePt : (mobRot basePt : ℂ) = 2 := by
   rw [coe_mobRot, coe_basePt]
   norm_num
 
 /-- `mobRotInv` sends the basepoint to `-1`. -/
-@[simp]
 theorem coe_mobRotInv_basePt : (mobRotInv basePt : ℂ) = -1 := by
   rw [coe_mobRotInv, coe_basePt]
   norm_num
