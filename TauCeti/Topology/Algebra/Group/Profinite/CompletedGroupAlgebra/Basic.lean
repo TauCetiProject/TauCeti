@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
@@ -39,8 +40,8 @@ multiplication by `R` is continuous when multiplication in `R` is. When every op
 quotient `Γ ⧸ U` is finite, as it is for a compact `Γ` with separately continuous
 multiplication, the completed algebra is a topological ring, and it is compact when `R` is
 compact Hausdorff. It is totally disconnected when `R` is, and the map from `Γ` is continuous.
-It is commutative when `Γ` is, stated as the `IsMulCommutative` mixin so that no second ring
-structure is installed.
+It is commutative when `Γ` is, stated as the `IsMulCommutative` mixin and as a `CommRing`
+structure extending the ring structure, so that no second multiplication is installed.
 
 For a general topological group `Γ` the map `of R Γ` need not be injective and the algebra may be
 commutative without `Γ` being so (both happen for an indiscrete `Γ`, whose only open normal
@@ -75,14 +76,20 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
   inverse-limit topology, and the compatible families form a closed subset of the product.
 * `TauCeti.completedGroupAlgebra.continuous_of`: the group elements depend continuously on the
   group element.
+* `TauCeti.completedGroupAlgebra.exists_mem_span_range_of_proj_eq`,
+  `TauCeti.completedGroupAlgebra.dense_span_range_of`: every element agrees at any given level
+  with an `R`-linear combination of group elements, so the span of the group elements is dense.
+* `TauCeti.completedGroupAlgebra.isUniformInducing_coeffFamily`: over a uniform coefficient ring,
+  the uniformity of the completed group algebra is the one induced along the coefficient map,
+  and the algebra is a uniform additive group when `R` is.
 * `TauCeti.completedGroupAlgebra.of_injective`,
   `TauCeti.completedGroupAlgebra.isClosedEmbedding_of`,
   `TauCeti.completedGroupAlgebra.isMulCommutative_iff`: for profinite `Γ` over a nontrivial `R`,
   the group elements are distinct, form a closed copy of `Γ` when `R` is Hausdorff, and the
   algebra is commutative exactly when `Γ` is.
 * The instances `IsTopologicalRing`, `ContinuousSMul R`, `CompactSpace`,
-  `TotallyDisconnectedSpace` and `T2Space`, and the `IsMulCommutative` instance for
-  commutative `Γ`.
+  `TotallyDisconnectedSpace`, `T2Space`, `UniformSpace` and `IsUniformAddGroup`, and the
+  `IsMulCommutative` and `CommRing` instances for commutative `Γ`.
 
 ## References
 
@@ -268,6 +275,17 @@ theorem proj_surjective (U : OpenNormalSubgroup Γ) : Function.Surjective (proj 
     obtain ⟨x', rfl⟩ := hx
     exact ⟨r • x', map_smul _ _ _⟩
 
+/-- Every element of the completed group algebra agrees at any given level `V` with a finite
+`R`-linear combination of group elements. -/
+theorem exists_mem_span_range_of_proj_eq (x : completedGroupAlgebra R Γ)
+    (V : OpenNormalSubgroup Γ) :
+    ∃ y ∈ Submodule.span R (Set.range (of R Γ)), proj R Γ V y = proj R Γ V x := by
+  refine ⟨(proj R Γ V x).coeff.sum fun q c ↦ c • of R Γ (Quotient.out q), ?_, ?_⟩
+  · exact Submodule.sum_mem _ fun q _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩)
+  · rw [map_finsuppSum]
+    simp only [map_smul, proj_of, QuotientGroup.out_eq', MonoidAlgebra.smul_single', mul_one]
+    exact MonoidAlgebra.sum_coeff_single _
+
 instance [Nontrivial R] : Nontrivial (completedGroupAlgebra R Γ) :=
   (proj R Γ { toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }).toRingHom.domain_nontrivial
 
@@ -277,6 +295,12 @@ instance [IsMulCommutative Γ] : IsMulCommutative (completedGroupAlgebra R Γ) w
     have : IsMulCommutative (Γ ⧸ U.toSubgroup) :=
       (QuotientGroup.mk'_surjective U.toSubgroup).isMulCommutative inferInstance
     rw [map_mul, map_mul, (isMulCommutative_iff.mp inferInstance) (proj R Γ U x)]
+
+/-- The completed group algebra of a commutative group, as a commutative ring: the bundled form of
+the `IsMulCommutative` instance, obtained from Mathlib's scoped construction. The ring structure is
+the existing one, so this installs no second multiplication. -/
+noncomputable instance [IsMulCommutative Γ] : CommRing (completedGroupAlgebra R Γ) :=
+  open scoped IsMulCommutative in inferInstance
 
 section Profinite
 
@@ -389,6 +413,33 @@ theorem continuous_of [SeparatelyContinuousMul Γ] : Continuous (of R Γ) := by
     (f := fun q : Γ ⧸ U.toSubgroup ↦ (MonoidAlgebra.single q (1 : R)).coeff g)).comp
     (QuotientGroup.continuous_mk (N := U.toSubgroup))
 
+/-! ### Density of the group elements -/
+
+/-- **The group elements span a dense subspace.** The `R`-span of the group elements is dense in
+the completed group algebra. -/
+theorem dense_span_range_of :
+    Dense (Submodule.span R (Set.range (of R Γ)) : Set (completedGroupAlgebra R Γ)) := by
+  classical
+  refine (isInducing_coeffFamily R Γ).dense_iff.mpr fun x ↦ mem_closure_iff_nhds.mpr fun t ht ↦ ?_
+  rw [nhds_pi, Filter.mem_pi'] at ht
+  obtain ⟨I, s, hs, hst⟩ := ht
+  -- A level `V` below every level in the finite set `I`.
+  obtain ⟨V, hV⟩ : ∃ V : OpenNormalSubgroup Γ, ∀ U ∈ I, V ≤ U := by
+    clear hst
+    induction I using Finset.induction_on with
+    | empty => exact ⟨openNormalSubgroupTop Γ, by simp⟩
+    | insert U I _ ih =>
+      obtain ⟨V, hV⟩ := ih
+      exact ⟨V ⊓ U, by
+        simp only [Finset.mem_insert, forall_eq_or_imp]
+        exact ⟨inf_le_right, fun W hW ↦ inf_le_left.trans (hV W hW)⟩⟩
+  obtain ⟨y, hy, hyx⟩ := exists_mem_span_range_of_proj_eq R Γ x V
+  refine ⟨coeffFamily R Γ y, hst fun U hU ↦ ?_, Set.mem_image_of_mem _ hy⟩
+  have : proj R Γ U y = proj R Γ U x := by
+    rw [← mapDomain_mapOfLE_proj (hV U hU) y, hyx, mapDomain_mapOfLE_proj]
+  rw [coeffFamily_apply, this, ← coeffFamily_apply]
+  exact mem_of_mem_nhds (hs U)
+
 section FiniteQuotients
 
 /-! The results of this section assume that every open normal quotient `Γ ⧸ U` is finite, so
@@ -470,6 +521,31 @@ theorem isClosedEmbedding_of [IsTopologicalGroup Γ] [CompactSpace Γ] [TotallyD
   (continuous_of R Γ).isClosedEmbedding (of_injective R Γ)
 
 end TopologicalSpace
+
+section UniformSpace
+
+/-! ### The inverse-limit uniformity -/
+
+variable [UniformSpace R]
+
+/-- The inverse-limit uniformity on the completed group algebra: the uniformity induced along the
+coefficient map `coeffFamily R Γ` into the product of copies of `R`. Its topology is the
+inverse-limit topology. -/
+noncomputable instance : UniformSpace (completedGroupAlgebra R Γ) :=
+  (UniformSpace.comap (coeffFamily R Γ) inferInstance).replaceTopology rfl
+
+/-- The uniformity of the completed group algebra is induced along the coefficient map. -/
+theorem isUniformInducing_coeffFamily : IsUniformInducing (coeffFamily R Γ) := ⟨rfl⟩
+
+/-- The coefficient map is a uniform embedding of the completed group algebra into the product,
+over the open normal subgroups `U` and the elements of `Γ ⧸ U`, of copies of `R`. -/
+theorem isUniformEmbedding_coeffFamily : IsUniformEmbedding (coeffFamily R Γ) :=
+  ⟨isUniformInducing_coeffFamily R Γ, coeffFamily_injective R Γ⟩
+
+instance [IsUniformAddGroup R] : IsUniformAddGroup (completedGroupAlgebra R Γ) :=
+  (isUniformInducing_coeffFamily R Γ).isUniformAddGroup (coeffFamily R Γ)
+
+end UniformSpace
 
 end completedGroupAlgebra
 

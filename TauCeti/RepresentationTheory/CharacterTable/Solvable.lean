@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Group.Conj
 public import Mathlib.GroupTheory.Solvable
 import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.CharacterTable.Vanishing
+import TauCeti.GroupTheory.PGroup
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.GroupTheory.Sylow
 
@@ -129,74 +130,61 @@ This is the character-theoretic heart of Burnside's `pᵃqᵇ` theorem: it is wh
 fed into. -/
 theorem not_isSimpleGroup_of_card_carrier_eq_prime_pow {g : G} {p k : ℕ} (hp : p.Prime)
     (hk : k ≠ 0) (hcard : Nat.card (ConjClasses.mk g).carrier = p ^ k) : ¬ IsSimpleGroup G := by
-  classical
   intro hsimple
-  let : Fintype G := Fintype.ofFinite G
-  have hcardC : ((Nat.card G : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  let : Invertible ((Nat.card G : ℕ) : ℂ) := invertibleOfNonzero hcardC
-  have hpk : p ^ k ≠ 1 := (Nat.one_lt_pow hk hp.one_lt).ne'
-  have hgcenter : g ∉ Subgroup.center G := fun hg =>
-    hpk (by rw [← hcard, Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center hg])
-  have hg1 : g ≠ 1 := fun h => hgcenter (by rw [h]; exact Subgroup.one_mem _)
-  -- the trivial character, and its index in the enumeration of the irreducible characters
-  obtain ⟨i₀, hi₀⟩ : ∃ i, irreducibleCharacter ℂ i = fun _ : G => (1 : ℂ) := by
-    have hchar : (Representation.trivial ℂ G ℂ).character = fun _ : G => (1 : ℂ) := by
-      funext x
-      have hx : (Representation.trivial ℂ G ℂ) x = LinearMap.id := LinearMap.ext fun v => by simp
-      simp [Representation.character, hx]
-    have hmem : (fun _ : G => (1 : ℂ)) ∈ irreducibleCharacters ℂ G := by
-      rw [← hchar]
-      exact character_mem_irreducibleCharacters (Representation.trivial ℂ G ℂ)
-    exact exists_irreducibleCharacter_eq ℂ hmem
+  let : Invertible (Nat.card G : ℂ) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  have hgcenter : g ∉ Subgroup.center G := fun hg => (Nat.one_lt_pow hk hp.one_lt).ne' <| by
+    rw [← hcard, Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center hg]
   -- some nontrivial irreducible character survives at `g` with degree prime to `p`
-  obtain ⟨i, hne, hchi, hpdvd⟩ := exists_ne_of_not_dvd_characterDegree hg1 hp hi₀
-  -- its degree is coprime to the class size, so Burnside's vanishing theorem applies
-  have hcop : (Nat.card (ConjClasses.mk g).carrier).Coprime
-      (finrank ℂ (Fin (characterDegree ℂ i) → ℂ)) := by
-    rw [hcard]
-    simpa using Nat.Coprime.pow_left k ((Nat.Prime.coprime_iff_not_dvd hp).2 hpdvd)
-  have hdich := Representation.char_eq_zero_or_norm_char_eq_finrank
-    (irreducibleRepresentation ℂ i) hcop
-  rw [character_irreducibleRepresentation] at hdich
-  rcases hdich with h0 | hnorm
-  · exact hchi h0
-  obtain ⟨μ, -, hμ⟩ := Representation.exists_apply_eq_smul_of_norm_char_eq_finrank
-    (irreducibleRepresentation ℂ i) (isOfFinOrder_of_finite g).orderOf_pos.ne'
-    (pow_orderOf_eq_one g) (by rw [character_irreducibleRepresentation]; exact hnorm)
+  obtain ⟨i₀, hi₀⟩ := exists_irreducibleCharacter_eq_one ℂ G
+  obtain ⟨i, hne, hchi, hpdvd⟩ := exists_ne_of_not_dvd_characterDegree
+    (ne_of_mem_of_not_mem (Subgroup.one_mem _) hgcenter).symm hp hi₀
+  -- its degree is coprime to the class size, so the affording representation sends `g` to a scalar
+  obtain ⟨μ, hμ⟩ := ((irreducibleRepresentation ℂ i).char_eq_zero_or_exists_apply_eq_smul <| by
+    rw [hcard, finrank_fin_fun]; exact (hp.coprime_iff_not_dvd.2 hpdvd).pow_left k).resolve_left
+    (by rwa [character_irreducibleRepresentation])
   rcases hsimple.eq_bot_or_eq_top_of_normal
     (MonoidHom.ker (irreducibleRepresentation ℂ i)) with hker | hker
   · -- the representation is faithful, so a scalar value makes `g` central
-    have hinj : Function.Injective (irreducibleRepresentation ℂ i) :=
-      (MonoidHom.ker_eq_bot_iff _).1 hker
-    refine hgcenter (Subgroup.mem_center_iff.2 fun h => hinj ?_)
+    refine hgcenter (Subgroup.mem_center_iff.2 fun h => (MonoidHom.ker_eq_bot_iff _).1 hker ?_)
     rw [map_mul, map_mul, hμ, mul_smul_comm, smul_mul_assoc, mul_one, one_mul]
-  · -- the representation is trivial, so its character is constant, and row orthogonality
-    -- against the trivial character makes its degree zero
-    have htriv : ∀ h : G, irreducibleCharacter ℂ i h = (characterDegree ℂ i : ℂ) := by
-      intro h
-      have hone : (irreducibleRepresentation ℂ i) h = 1 :=
-        MonoidHom.mem_ker.mp (by rw [hker]; exact Subgroup.mem_top h)
-      rw [← character_irreducibleRepresentation ℂ i]
-      simp [Representation.character, hone]
-    have horth := card_inv_mul_sum_characterTable_mul_conj (G := G) i i₀
-    simp only [hne, ite_false] at horth
-    have hval : ∀ g' : G, characterTable ℂ G i (ConjClasses.mk g') *
-        (starRingEnd ℂ) (characterTable ℂ G i₀ (ConjClasses.mk g'))
-          = (characterDegree ℂ i : ℂ) := by
-      intro g'
-      rw [characterTable_apply, characterTable_apply, htriv, hi₀]
-      simp
-    simp only [hval, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at horth
-    have hcardG : ((Fintype.card G : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-    have hinv : ((Nat.card G : ℕ) : ℂ)⁻¹ ≠ 0 :=
-      inv_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-    have hzero : (characterDegree ℂ i : ℂ) = 0 :=
-      (mul_eq_zero.1 ((mul_eq_zero.1 horth).resolve_left hinv)).resolve_left hcardG
-    exact absurd hzero (by exact_mod_cast (characterDegree_pos (k := ℂ) i).ne')
+  · -- the representation is trivial, so its character is constantly its degree, which the
+    -- character of a nontrivial irreducible representation is not
+    obtain ⟨h, hh⟩ := exists_irreducibleCharacter_ne_characterDegree hi₀ hne
+    rw [← character_irreducibleRepresentation ℂ i] at hh
+    exact hh (by simp [Representation.character, MonoidHom.mem_ker.1 (hker ▸ Subgroup.mem_top h)])
 
 end ClassSize
 
 section Burnside
+
+/-- The simple case of Burnside's `pᵃqᵇ` theorem: a finite simple group whose order divides
+`pᵃqᵇ`, for primes `p` and `q`, is solvable. -/
+private theorem isSolvable_of_isSimpleGroup {G : Type u} [Group G] [Finite G] [IsSimpleGroup G]
+    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) {a b : ℕ} (hdvd : Nat.card G ∣ p ^ a * q ^ b) :
+    Group.IsSolvable G := by
+  have : Fact p.Prime := ⟨hp⟩
+  have : Fact q.Prime := ⟨hq⟩
+  by_cases hqdvd : q ∣ Nat.card G
+  · -- a nontrivial `g` centralizing a Sylow `q`-subgroup `Q` has class size dividing `[G : Q]`
+    obtain ⟨Q⟩ : Nonempty (Sylow q G) := inferInstance
+    obtain ⟨g, -, hg1, hle⟩ := Q.isPGroup'.exists_ne_one_le_centralizer fun h =>
+      Q.not_dvd_index (by rwa [h, Subgroup.index_bot])
+    obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow hp).1 <| (Subgroup.index_dvd_of_le hle).trans <|
+      ((hq.coprime_iff_not_dvd.2 Q.not_dvd_index).symm.pow_right b).dvd_of_dvd_mul_right
+        ((Subgroup.index_dvd_card _).trans hdvd)
+    obtain rfl | hk0 := eq_or_ne k 0
+    · -- the class is a point, so `g` is central, and simplicity makes `G` abelian
+      have hgc : g ∈ Subgroup.center G := Subgroup.centralizer_eq_top_iff_subset.1
+        (Subgroup.index_eq_one.1 (hk.trans (pow_zero p))) (Set.mem_singleton g)
+      have := Subgroup.center_eq_top_iff.1 <| (Subgroup.Normal.eq_bot_or_eq_top
+        (Subgroup.center G)).resolve_left fun h => hg1 (Subgroup.mem_bot.1 (h ▸ hgc))
+      exact inferInstance
+    · exact absurd ‹IsSimpleGroup G› (not_isSimpleGroup_of_card_carrier_eq_prime_pow hp hk0
+        ((ConjClasses.card_carrier_mk g).trans hk))
+  · -- no `q`-torsion: the group is a `p`-group, hence nilpotent
+    have := (IsPGroup.of_card_dvd_pow (p := p) <|
+      ((hq.coprime_iff_not_dvd.2 hqdvd).symm.pow_right b).dvd_of_dvd_mul_right hdvd).isNilpotent
+    exact inferInstance
 
 /-- The induction behind Burnside's `pᵃqᵇ` theorem, on the order of the group. -/
 private theorem isSolvable_aux {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (a b : ℕ) (n : ℕ) :
@@ -204,78 +192,21 @@ private theorem isSolvable_aux {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (a b : 
       Group.IsSolvable G := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-    intro G _ _ hn hdvd
-    have : Fact p.Prime := ⟨hp⟩
-    have : Fact q.Prime := ⟨hq⟩
+    rintro G _ _ rfl hdvd
     rcases subsingleton_or_nontrivial G with hsub | hnt
     · exact inferInstance
-    by_cases hN : ∃ N : Subgroup G, N.Normal ∧ N ≠ ⊥ ∧ N ≠ ⊤
-    · -- split along a proper nontrivial normal subgroup
-      obtain ⟨N, hnorm, hbot, htop⟩ := hN
-      have := hnorm
-      have : Nontrivial N := (Subgroup.nontrivial_iff_ne_bot N).2 hbot
-      have hmul : Nat.card N * N.index = Nat.card G := N.card_mul_index
-      have hidx : 2 ≤ N.index := by
-        have h1 : N.index ≠ 1 := fun hi => htop (Subgroup.index_eq_one.1 hi)
-        have h0 : 0 < N.index := by rw [Subgroup.index_eq_card]; exact Nat.card_pos
-        omega
-      have hsub : 2 ≤ Nat.card N := Finite.one_lt_card
-      refine (Group.isSolvable_iff_subgroup_quotient N).2 ⟨ih (Nat.card N) ?_ N rfl ?_,
-        ih (Nat.card (G ⧸ N)) ?_ (G ⧸ N) rfl ?_⟩
-      · subst hn; nlinarith
-      · exact (Subgroup.card_subgroup_dvd_card N).trans hdvd
-      · rw [← Subgroup.index_eq_card]; subst hn; nlinarith
-      · exact (Subgroup.card_quotient_dvd_card N).trans hdvd
-    · -- no such subgroup: the group is simple
-      push Not at hN
-      have hsimple : IsSimpleGroup G :=
-        { eq_bot_or_eq_top_of_normal := fun N hnorm =>
-            (em (N = ⊥)).imp id fun h => hN N hnorm h }
-      by_cases hqdvd : q ∣ Nat.card G
-      · -- a Sylow `q`-subgroup is nontrivial, and the centre of it supplies the element
-        obtain ⟨Q⟩ : Nonempty (Sylow q G) := inferInstance
-        have hQbot : (Q : Subgroup G) ≠ ⊥ := fun h =>
-          Q.not_dvd_index (by rw [h, Subgroup.index_bot]; exact hqdvd)
-        have : Nontrivial (Q : Subgroup G) := (Subgroup.nontrivial_iff_ne_bot _).2 hQbot
-        have : Nontrivial (Subgroup.center (Q : Subgroup G)) := Q.isPGroup'.center_nontrivial
-        obtain ⟨z, hz1⟩ := exists_ne (1 : Subgroup.center ((Q : Subgroup G)))
-        set g : G := ((z : (Q : Subgroup G)) : G) with hgdef
-        have hgne : g ≠ 1 := fun h => hz1 (Subtype.ext (Subtype.ext h))
-        have hle : (Q : Subgroup G) ≤ Subgroup.centralizer {g} := by
-          intro y hy
-          rw [Subgroup.mem_centralizer_iff]
-          rintro m rfl
-          simpa [hgdef] using
-            (congrArg Subtype.val (Subgroup.mem_center_iff.1 z.2 ⟨y, hy⟩)).symm
-        have hQidx : (Q : Subgroup G).index ∣ p ^ a := by
-          have hcop : ((Q : Subgroup G).index).Coprime (q ^ b) :=
-            Nat.Coprime.pow_right b ((hq.coprime_iff_not_dvd.2 Q.not_dvd_index).symm)
-          exact hcop.dvd_of_dvd_mul_right ((Subgroup.index_dvd_card _).trans hdvd)
-        obtain ⟨k, -, hk⟩ :=
-          (Nat.dvd_prime_pow hp).1 ((Subgroup.index_dvd_of_le hle).trans hQidx)
-        have hclass : Nat.card (ConjClasses.mk g).carrier = p ^ k := by
-          rw [ConjClasses.card_carrier_mk, hk]
-        rcases Nat.eq_zero_or_pos k with rfl | hkpos
-        · -- the class is a point, so `g` is central and simplicity makes `G` abelian
-          have htop : Subgroup.centralizer {g} = ⊤ := Subgroup.index_eq_one.1 (by
-            rw [← ConjClasses.card_carrier_mk, hclass, pow_zero])
-          have hgc : g ∈ Subgroup.center G :=
-            Subgroup.centralizer_eq_top_iff_subset.1 htop (Set.mem_singleton g)
-          have hcenter : Subgroup.center G = ⊤ := by
-            rcases hsimple.eq_bot_or_eq_top_of_normal (Subgroup.center G) with h | h
-            · exact absurd (by rw [h] at hgc; simpa using hgc) hgne
-            · exact h
-          exact Group.isSolvable_of_comm fun x y => by
-            have hy : y ∈ Subgroup.center G := by rw [hcenter]; exact Subgroup.mem_top y
-            exact Subgroup.mem_center_iff.1 hy x
-        · exact absurd hsimple
-            (not_isSimpleGroup_of_card_carrier_eq_prime_pow hp hkpos.ne' hclass)
-      · -- no `q`-torsion: the group is a `p`-group, hence nilpotent
-        have hcop : (Nat.card G).Coprime (q ^ b) :=
-          Nat.Coprime.pow_right b ((hq.coprime_iff_not_dvd.2 hqdvd).symm)
-        have hpg := IsPGroup.of_card_dvd_pow (p := p) (hcop.dvd_of_dvd_mul_right hdvd)
-        have := hpg.isNilpotent
-        exact inferInstance
+    by_cases hN : IsSimpleGroup G
+    · exact isSolvable_of_isSimpleGroup hp hq hdvd
+    -- otherwise split along a proper nontrivial normal subgroup; it and the quotient are smaller
+    obtain ⟨N, hnorm, hbot, htop⟩ : ∃ N : Subgroup G, N.Normal ∧ N ≠ ⊥ ∧ N ≠ ⊤ := by
+      simpa [isSimpleGroup_iff, hnt, not_or] using hN
+    rw [← N.index_mul_card] at ih
+    exact (Group.isSolvable_iff_subgroup_quotient N).2
+      ⟨ih _ (lt_mul_of_one_lt_left Nat.card_pos (N.one_lt_index_of_ne_top htop)) N rfl
+        ((Subgroup.card_subgroup_dvd_card N).trans hdvd),
+        ih _ (lt_mul_of_one_lt_right (Nat.pos_of_ne_zero N.index_ne_zero_of_finite)
+          (N.one_lt_card_iff_ne_bot.2 hbot)) (G ⧸ N) N.index_eq_card.symm
+          ((Subgroup.card_quotient_dvd_card N).trans hdvd)⟩
 
 /-- **Burnside's `pᵃqᵇ` theorem**, in the form the induction runs in: a finite group whose order
 divides a product of two prime powers is solvable. -/

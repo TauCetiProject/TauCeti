@@ -16,6 +16,8 @@ Mathlib's `FixedDetMatrices.reps n` is the set of integral matrices `(a b; 0 d)`
 `n ≠ 0`, the reduction algorithm carries every determinant-`n` matrix into it. This file completes
 that to the statement that `FixedDetMatrices.reps n` is a set of representatives for the action of
 `SL(2, ℤ)` by left multiplication on the determinant-`n` matrices, `n ≠ 0`, and counts it.
+It also records that only finitely many integral matrices of a given determinant have entries
+bounded by a given constant.
 
 ## Main results
 
@@ -24,6 +26,8 @@ that to the statement that `FixedDetMatrices.reps n` is a set of representatives
 * `FixedDetMatrices.eq_of_smul_eq_of_mem_reps`: two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
+* `FixedDetMatrices.finite_setOf_abs_le`: there are only finitely many integral matrices of
+  determinant `n` whose entries are at most `B` in absolute value.
 
 ## References
 
@@ -128,5 +132,13 @@ theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.nat
     ArithmeticFunction.sigma_one_apply,
     ← Nat.sum_divisorsAntidiagonal' fun _ d ↦ d]
   simp
+
+/-- **Finiteness of bounded matrices**: there are only finitely many integral matrices of
+determinant `n` whose entries are at most `B` in absolute value. -/
+theorem finite_setOf_abs_le {m : Type*} [Fintype m] [DecidableEq m] (n B : ℤ) :
+    {A : FixedDetMatrix m ℤ n | ∀ i j, |A.1 i j| ≤ B}.Finite :=
+  ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-B) B).preimage
+    (f := fun A : FixedDetMatrix m ℤ n ↦ (A.1 : m → m → ℤ))
+    Subtype.val_injective.injOn).subset fun _ hA i j ↦ abs_le.mp (hA i j)
 
 end FixedDetMatrices

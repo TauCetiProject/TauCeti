@@ -313,6 +313,49 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
     homotopyCofiber.mapArrowHom, homotopyCofiber.inr_desc_assoc]
   simp
 
+/-- Evaluation from the center cone kills its shifted summand. -/
+@[simp] theorem map_inlX_comp_stabilizeXCenterConeHomotopyEquiv_hom :
+    (ModuleCat.restrictScalars
+      (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+        (homotopyCofiber.inlX
+          ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+            𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ())) ≫
+      (G.stabilizeXCenterConeHomotopyEquiv s R).hom.f () = 0 := by
+  simp only [stabilizeXCenterConeHomotopyEquiv, HomotopyEquiv.ofIso,
+    HomotopyEquiv.trans_hom, HomologicalComplex.comp_f, Iso.trans_hom]
+  have h : (homotopyCofiber.mapHomologicalComplexObjIso
+      ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+        𝟙 (G.stabilizeXCenterComplex s R))
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S))).hom.f () =
+      (homotopyCofiber.mapHomologicalComplexObjXIso
+        ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+          𝟙 (G.stabilizeXCenterComplex s R))
+        (ModuleCat.restrictScalars
+          (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)) ()).hom := by
+    rfl
+  rw [h]
+  have hc :
+      (ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+          (homotopyCofiber.inlX
+            ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+              𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ())) ≫
+        (homotopyCofiber.mapHomologicalComplexObjXIso _
+          (ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)) ()).hom =
+      homotopyCofiber.inlX
+        (((ModuleCat.restrictScalars
+          (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
+            _).map
+          ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+            𝟙 (G.stabilizeXCenterComplex s R))) () () (ComplexShape.refl_rel ()) := by
+    rw [← homotopyCofiber.inlX_mapHomologicalComplexObjXIso_inv,
+      Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  simp only [← Category.assoc]
+  rw [hc]
+  simp
+
 /-- The homotopy inverse of `stabilizeXCenterConeHomotopyEquiv` includes `GC⁻(G)` into the
 summand of the cone given by the center complex, as the constant polynomials of its polynomial
 extension. -/

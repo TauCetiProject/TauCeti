@@ -37,6 +37,8 @@ scaling factor of valuation `1`.
   variables have equal `v (Δ)`.
 * `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_of_isMinimal_smul`: conversely, an integral model
   attaining that valuation is minimal.
+* `WeierstrassCurve.isMinimal_baseChange_smul`: a change of variables defined over `R` carries a
+  minimal model to a minimal model.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
 * `WeierstrassCurve.valuation_Δ_minimal_smul` and
@@ -217,6 +219,24 @@ theorem isMinimal_of_valuation_Δ_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassC
   rw [← Subtype.coe_le_coe, one_smul, valuation_Δ_aux_eq_of_isIntegral R (C • W₂),
     valuation_Δ_aux_eq_of_isIntegral R W₂, h]
   exact valuation_Δ_le_of_isMinimal_smul R (C * D) hCD
+
+/-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
+and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
+`valuation_u_eq_one_of_isMinimal_smul` and
+`VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
+between minimal models of an elliptic curve are exactly those defined over `R`. -/
+theorem isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) : IsMinimal R (C.baseChange K • W) := by
+  have hW : (C • W.integralModel R).baseChange K = C.baseChange K • W := by
+    rw [baseChange, ← map_variableChange, ← baseChange, baseChange_integralModel_eq R W]
+    rfl
+  have : IsIntegral R (C.baseChange K • W) := ⟨⟨C • W.integralModel R, hW.symm⟩⟩
+  refine isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K) rfl ?_
+  have hu : valuation K (maximalIdeal R) (algebraMap R K ↑C.u) = 1 := by
+    rw [valuation_of_algebraMap, intValuation_eq_one_iff_mem_primeCompl]
+    exact (IsLocalRing.notMem_maximalIdeal).2 (Units.isUnit _)
+  rw [variableChange_Δ, map_mul, map_pow]
+  simp [VariableChange.baseChange, hu]
 
 /-- **The scaling factor of a change of variables between two minimal models of an elliptic curve
 has valuation `1`.** Over a discrete valuation ring that says `u` is a **unit**: it and its inverse

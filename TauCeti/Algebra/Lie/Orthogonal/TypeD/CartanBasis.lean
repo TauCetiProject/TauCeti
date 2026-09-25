@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoots
 
@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoot
 The explicit type-D Chevalley generators use the Bourbaki simple roots as diagonal coordinates.
 This file records the ambient independence and Lie-span results for those generators, so later
 split-Cartan constructions can use them as simple-root coordinates. The generator membership and
-coordinate lemmas live with the generator definitions in `RootGenerators.lean`.
+coordinate lemmas live with the generator definitions in `Root/Generators.lean`.
 
 Independence over a commutative domain comes from
 `DynkinType.linearIndependent_typeDSimpleRoot_cast`: the simple-root matrix has determinant

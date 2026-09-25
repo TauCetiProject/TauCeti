@@ -41,6 +41,42 @@ coefficients made explicit so an externally normalized Smith form can be retaine
 
 public section
 
+namespace Submodule
+
+/-- Transport a subquotient across equalities of its ambient and denominator submodules. -/
+noncomputable def subquotientEquivOfEq
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') :
+    (↥B ⧸ Submodule.comap B.subtype A) ≃ₗ[R]
+      (↥B' ⧸ Submodule.comap B'.subtype A') := by
+  subst A'
+  subst B'
+  exact LinearEquiv.refl R _
+
+/-- Forward transport preserves the ambient representative. -/
+@[simp] theorem subquotientEquivOfEq_mk
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B) :
+    subquotientEquivOfEq A B A' B' hA hB (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (show B' from ⟨x, by rw [← hB]; exact x.property⟩) := by
+  subst A'
+  subst B'
+  rfl
+
+/-- The inverse transport takes quotient representatives to the same ambient vector. -/
+@[simp] theorem subquotientEquivOfEq_symm_mk
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B') :
+    (subquotientEquivOfEq A B A' B' hA hB).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk
+        (show B from ⟨x, by rw [hB]; exact x.property⟩) := by
+  -- The right representative transports `x : B'` back across `hB : B = B'`.
+  subst A'
+  subst B'
+  rfl
+
+end Submodule
+
 namespace TauCeti
 
 section QuotientInterval

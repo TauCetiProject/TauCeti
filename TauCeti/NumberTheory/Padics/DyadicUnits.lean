@@ -32,6 +32,13 @@ subgroups are procyclic, while `V^(f)` is not: `[V^(f) : U^(f+1)] = 4` but every
 `[ℤ_2ˣ : V^(f)] = 2^(f-2)` and `[ℤ_2ˣ : U^[f]] = 2^(f-1)`, this is the table from which the
 image of a continuous character `G → ℤ_2ˣ` on a pro-`2` group is read off.
 
+The last column of that table is the index `(A : A²)` of the subgroup of squares, which is the
+numerical invariant of the image of an orientation character that the existence half of the
+classification of Demushkin groups compares with `2 ^ n`. The squares of `U^(f)`, of `V^(f)` and
+of `U^[f]` are all `U^(f+1)`, and the squares of `{±1}` are trivial, so `(A : A²)` is `2` for the
+three procyclic families and `4` for `V^(f)`; for a closed subgroup `A` of `ℤ_2ˣ` it is `1`, `2`
+or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
+
 ## Main declarations
 
 * `TauCeti.unitsPlusMinus f`: `V^(f) = {±1} × U^(f)`, with `TauCeti.mem_unitsPlusMinus_iff`
@@ -48,6 +55,13 @@ image of a continuous character `G → ℤ_2ˣ` on a pro-`2` group is read off.
 * `TauCeti.exists_topologicalClosure_zpowers_eq_of_isClosed_of_neg_one_notMem`: a closed
   subgroup of `ℤ_2ˣ` not containing `-1` is procyclic;
   `TauCeti.not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus`: `V^(f)` is not.
+* `TauCeti.map_powMonoidHom_two_unitsPlusMinus`: `(V^(f))² = U^(f+1)`;
+  `TauCeti.relIndex_map_powMonoidHom_two_unitsPlusMinus`: `(V^(f) : (V^(f))²) = 4`.
+* `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
+  closed `A`;
+  `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
+  `TauCeti.relIndex_map_powMonoidHom_two_eq_one_iff`: the value `4` characterizes the `V^(f)` and
+  the value `1` the trivial subgroup.
 
 ## References
 
@@ -159,6 +173,14 @@ theorem relIndex_unitsPrincipal_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
     fun h ↦ absurd (neg_one_mem_unitsPrincipal_two_iff.mp h) (by omega), fun b hb ↦ ?_⟩
   rw [mul_neg_one]
   exact (mem_unitsPlusMinus_iff.mp hb).symm
+
+/-- `[V^(f) : U^(f+1)] = 4` for `f ≥ 2`. -/
+theorem relIndex_unitsPrincipal_succ_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
+    (unitsPrincipal 2 (f + 1)).relIndex (unitsPlusMinus f) = 4 := by
+  rw [← Subgroup.relIndex_mul_relIndex _ _ _ (unitsPrincipal_antitone 2 (Nat.le_succ f))
+    (unitsPrincipal_le_unitsPlusMinus f), relIndex_unitsPrincipal_unitsPlusMinus hf,
+    relIndex_unitsPrincipal 2 (by omega) 1]
+  norm_num
 
 /-- `[ℤ_2ˣ : V^(f)] = 2 ^ (f - 2)` for `f ≥ 2`. -/
 theorem index_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) : (unitsPlusMinus f).index = 2 ^ (f - 2) := by
@@ -358,10 +380,6 @@ theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 
   rintro ⟨u, hu⟩
   have hu' : u ∈ unitsPlusMinus f :=
     hu ▸ Subgroup.le_topologicalClosure _ (Subgroup.mem_zpowers u)
-  have h4 : (unitsPrincipal 2 (f + 1)).relIndex (unitsPlusMinus f) = 2 ^ 1 * 2 := by
-    rw [← Subgroup.relIndex_mul_relIndex _ _ _ (unitsPrincipal_antitone 2 (Nat.le_succ f))
-      (unitsPrincipal_le_unitsPlusMinus f), relIndex_unitsPrincipal_unitsPlusMinus hf,
-      relIndex_unitsPrincipal 2 (by omega) 1]
   have h2 : (unitsPrincipal 2 (f + 1)).relIndex (unitsPlusMinus f) ∣ 2 := by
     refine Subgroup.relIndex_dvd_two_iff'.mpr
       ⟨u⁻¹, (unitsPlusMinus f).inv_mem hu', fun b hb ↦ ?_⟩
@@ -369,7 +387,75 @@ theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 
     exact (mem_or_inv_mul_mem_of_mem_topologicalClosure_zpowers u _
       (isClosed_unitsPrincipal 2 (f + 1))
       (sq_mem_unitsPrincipal_succ_of_mem_unitsPlusMinus (by omega) hu') hb).symm
-  rw [h4] at h2
+  rw [relIndex_unitsPrincipal_succ_unitsPlusMinus hf] at h2
   norm_num at h2
+
+/-! ### The subgroup of squares and the index `(A : A²)` -/
+
+/-- `(V^(f))² = U^(f+1)` for `f ≥ 2`: the squares of `{±1} × U^(f)` are the squares of `U^(f)`. -/
+@[simp]
+theorem map_powMonoidHom_two_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
+    (unitsPlusMinus f).map (powMonoidHom 2) = unitsPrincipal 2 (f + 1) := by
+  rw [unitsPlusMinus_def, Subgroup.map_sup, map_powMonoidHom_unitsPrincipal (by omega) fun _ ↦ hf,
+    Subgroup.map_powMonoidHom_two_zpowers_neg_one, sup_bot_eq]
+
+/-- `(V^(f) : (V^(f))²) = 4` for `f ≥ 2`. -/
+theorem relIndex_map_powMonoidHom_two_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
+    ((unitsPlusMinus f).map (powMonoidHom 2)).relIndex (unitsPlusMinus f) = 4 := by
+  rw [map_powMonoidHom_two_unitsPlusMinus hf]
+  exact relIndex_unitsPrincipal_succ_unitsPlusMinus hf
+
+/-- **The table of `(A : A²)`.** A nontrivial closed subgroup `A ≤ ℤ_2ˣ` has `(A : A²) = 2`
+unless it is some `V^(f)` with `f ≥ 2`: the three procyclic families `U^(f)`, `{±1}` and `U^[f]`
+have `(A : A²) = 2`, while `V^(f)` has `(A : A²) = 4`. -/
+theorem relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus {A : Subgroup ℤ_[2]ˣ}
+    (hA : IsClosed (A : Set ℤ_[2]ˣ)) (hA' : A ≠ ⊥) :
+    (A.map (powMonoidHom 2)).relIndex A = 2 ∨ ∃ f : ℕ, 2 ≤ f ∧ A = unitsPlusMinus f := by
+  rcases closedSubgroup_units_two_classification hA hA' with ⟨f, hf, rfl⟩ | ⟨f, hf, rfl⟩ | rfl |
+    ⟨f, u, hf, hu, rfl⟩
+  · exact Or.inl (relIndex_map_powMonoidHom_unitsPrincipal (by omega) fun _ ↦ hf)
+  · exact Or.inr ⟨f, hf, rfl⟩
+  · exact Or.inl (Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one
+      PadicInt.units_neg_one_ne_one)
+  · exact Or.inl (relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two hf
+      (neg_mem_unitsPrincipal_two_of_val_eq hu) (neg_notMem_unitsPrincipal_two_succ_of_val_eq hu))
+
+/-- `(A : A²) = 4` exactly for the subgroups `A = V^(f)`, `f ≥ 2`, among the closed subgroups of
+`ℤ_2ˣ`. -/
+theorem relIndex_map_powMonoidHom_two_eq_four_iff {A : Subgroup ℤ_[2]ˣ}
+    (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
+    (A.map (powMonoidHom 2)).relIndex A = 4 ↔ ∃ f : ℕ, 2 ≤ f ∧ A = unitsPlusMinus f := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · rcases eq_or_ne A ⊥ with rfl | hA'
+    · rw [Subgroup.relIndex_eq_one.mpr bot_le] at h
+      omega
+    exact (relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus hA hA').resolve_left
+      (by omega)
+  · rintro ⟨f, hf, rfl⟩
+    exact relIndex_map_powMonoidHom_two_unitsPlusMinus hf
+
+/-- `(A : A²) = 1` exactly for the trivial subgroup, among the closed subgroups of `ℤ_2ˣ`: every
+nontrivial closed subgroup has a non-square. -/
+theorem relIndex_map_powMonoidHom_two_eq_one_iff {A : Subgroup ℤ_[2]ˣ}
+    (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
+    (A.map (powMonoidHom 2)).relIndex A = 1 ↔ A = ⊥ := by
+  refine ⟨fun h ↦ by_contra fun hA' ↦ ?_, fun h ↦ h ▸ Subgroup.relIndex_eq_one.mpr bot_le⟩
+  rcases relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus hA hA' with
+    h2 | ⟨f, hf, rfl⟩
+  · omega
+  · rw [relIndex_map_powMonoidHom_two_unitsPlusMinus hf] at h
+    omega
+
+/-- **`(A : A²) ∈ {1, 2, 4}` for every closed subgroup `A ≤ ℤ_2ˣ`.** -/
+theorem relIndex_map_powMonoidHom_two_eq_one_or_two_or_four {A : Subgroup ℤ_[2]ˣ}
+    (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
+    (A.map (powMonoidHom 2)).relIndex A = 1 ∨ (A.map (powMonoidHom 2)).relIndex A = 2 ∨
+      (A.map (powMonoidHom 2)).relIndex A = 4 := by
+  rcases eq_or_ne A ⊥ with rfl | hA'
+  · exact Or.inl (Subgroup.relIndex_eq_one.mpr bot_le)
+  rcases relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus hA hA' with
+    h2 | ⟨f, hf, rfl⟩
+  · exact Or.inr (Or.inl h2)
+  · exact Or.inr (Or.inr (relIndex_map_powMonoidHom_two_unitsPlusMinus hf))
 
 end TauCeti

@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
 # Deep units are squares, at the sharp depth
@@ -127,12 +128,8 @@ residue characteristic two the witness is `1 + 4c` for any `c` whose residue is 
 characteristic the depth is zero and the statement is that some unit is not a square. -/
 theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     ¬ unitFiltration K (2 * natCastValuation K 2 h2) ≤ (powMonoidHom 2 : Kˣ →* Kˣ).range := by
-  -- The Artin–Schreier map `t ↦ t ^ 2 + t` of the finite residue field identifies `0` and `-1`,
-  -- so it is not surjective.
-  obtain ⟨a, ha⟩ : ∃ a : 𝓀[K], ∀ t, t ^ 2 + t ≠ a := by
-    by_contra! h
-    have hinj := Finite.injective_iff_surjective.mpr h
-    exact one_ne_zero (neg_eq_zero.mp (hinj (a₁ := (-1 : 𝓀[K])) (a₂ := 0) (by ring)))
+  obtain ⟨a, ha_range⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
+  have ha : ∀ t : 𝓀[K], t ^ 2 + t ≠ a := fun t ht => ha_range ⟨t, ht⟩
   obtain ⟨c, rfl⟩ := IsLocalRing.residue_surjective a
   -- `1 + 4c` is a unit: otherwise `2c` would reduce to a solution of `t ^ 2 + t = c`.
   have hu : IsUnit (1 + 4 * c) := by

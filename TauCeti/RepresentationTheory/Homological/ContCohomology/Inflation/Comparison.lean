@@ -78,9 +78,12 @@ variable [IsTopologicalGroup G]
 `ofDiscreteModuleQuotient`, is the pullback along the compatible pair of explicit inflation. -/
 @[reassoc]
 theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
-    TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) n ≫
-        TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) n =
-      _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
+    -- Universes pinned at `.{0, u, u}`, the levels the statement elaborates to: otherwise the
+    -- third level of each constant stays open as `max u ?w`, and the unifier unfolds the
+    -- cohomology objects to compare the two sides (7.5 s).
+    TauCeti.ContinuousCohomology.coeffMap.{0, u, u} (ofDiscreteModuleQuotient G M N) n ≫
+        TauCeti.ContinuousCohomology.infl.{0, u, u} N (ofDiscreteModule ℤ G M) n =
+      _root_.ContinuousCohomology.map.{0, u, u} (ContinuousMonoidHom.quotientMk N)
         (ofDiscreteModulePair (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)
           (FixedPoints.addSubgroup N M).subtype.toIntLinearMap
           (fun g m ↦ subtype_quotientMk_smul G M N g m)) n := by
@@ -95,15 +98,21 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
   -- `map_comp` produces the composite `id.comp (quotientMk N)`, which is `quotientMk N` by `rfl`.
   exact TauCeti.ContinuousCohomology.map_congr rfl HEq.rfl n
 
+-- The three transport lemmas below state their left-hand sides through `dsimp% only` (#8315):
+-- the carriers of the cohomology objects are indexed unreduced, as projections of the
+-- `TopModuleCat` and `ModuleCat` structure literals, while `simp` reduces those projections
+-- before it looks a term up, so the plain form is never found. `infl` and `coeffMap` are pinned
+-- at `.{0, u, u}`, the levels they elaborate to: otherwise their third level stays open as
+-- `max u ?w`, and the unifier unfolds the cohomology objects to compare them (3 s each).
 /-- **Transport of inflation in degree zero.** The degree-zero comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
 @[simp]
 theorem explicitH0Iso_infl
     (x : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
-    TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 0
-        (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 0
-          ((explicitH0IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)) =
+    (dsimp% only (TauCeti.ContinuousCohomology.infl.{0, u, u} N (ofDiscreteModule ℤ G M) 0
+        (TauCeti.ContinuousCohomology.coeffMap.{0, u, u} (ofDiscreteModuleQuotient G M N) 0
+          ((explicitH0IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)))) =
       (explicitH0IsoContinuousCohomology G M).hom (explicitInfl0 G M N x) := by
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl0_eq_explicitMap0]
@@ -120,9 +129,9 @@ inflation to canonical inflation, read through the dictionary morphism
 @[simp]
 theorem explicitIso_infl
     (x : DiscreteH1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
-    TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 1
-        (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 1
-          ((explicitH1IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)) =
+    (dsimp% only (TauCeti.ContinuousCohomology.infl.{0, u, u} N (ofDiscreteModule ℤ G M) 1
+        (TauCeti.ContinuousCohomology.coeffMap.{0, u, u} (ofDiscreteModuleQuotient G M N) 1
+          ((explicitH1IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)))) =
       (explicitH1IsoContinuousCohomology G M).hom
         ((discreteH1Equiv G M).symm
           (explicitInfl1 G M N (discreteH1Equiv (G ⧸ N) (FixedPoints.addSubgroup N M) x))) := by
@@ -138,9 +147,9 @@ inflation to canonical inflation, read through the dictionary morphism
 @[simp]
 theorem explicitIso_infl2
     (x : DiscreteH2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
-    TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 2
-        (TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M N) 2
-          ((explicitH2IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)) =
+    (dsimp% only (TauCeti.ContinuousCohomology.infl.{0, u, u} N (ofDiscreteModule ℤ G M) 2
+        (TauCeti.ContinuousCohomology.coeffMap.{0, u, u} (ofDiscreteModuleQuotient G M N) 2
+          ((explicitH2IsoContinuousCohomology (G ⧸ N) (FixedPoints.addSubgroup N M)).hom x)))) =
       (explicitH2IsoContinuousCohomology G M).hom
         ((discreteH2Equiv G M).symm
           (explicitInfl2 G M N (discreteH2Equiv (G ⧸ N) (FixedPoints.addSubgroup N M) x))) := by

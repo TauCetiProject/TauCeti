@@ -67,6 +67,19 @@ noncomputable def f4ShortRootAdjointMatrix
   LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
     (f4ShortRootAdjoint X)
 
+/-- Base change of a modular short-root adjoint matrix to a value algebra. -/
+noncomputable abbrev f4ShortRootAdjointMatrixBaseChange
+    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+    (X : f4ModularChevalleyLieAlgebra) : Matrix (Fin 26) (Fin 26) A :=
+  (f4ShortRootAdjointMatrix X).map (algebraMap (ZMod 2) A)
+
+/-- Entries of the base-changed adjoint matrix are obtained by applying the structure map. -/
+@[simp] theorem f4ShortRootAdjointMatrixBaseChange_apply
+    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+    (X : f4ModularChevalleyLieAlgebra) (i j : Fin 26) :
+    f4ShortRootAdjointMatrixBaseChange (A := A) X i j =
+      algebraMap (ZMod 2) A (f4ShortRootAdjointMatrix X i j) := rfl
+
 /-- An entry of the adjoint matrix is the corresponding ambient bracket coordinate. -/
 @[simp] theorem f4ShortRootAdjointMatrix_apply
     (X : f4ModularChevalleyLieAlgebra) (i j : Fin 26) :

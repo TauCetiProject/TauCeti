@@ -89,12 +89,16 @@ variable {μ : YoungDiagram}
 
 /-! ## The polytabloids of the two extreme shapes -/
 
+-- The two `simp` lemmas below state their left-hand sides through `dsimp% only` (#8315): the
+-- carrier `(permutationModule _).V` is indexed unreduced, as `Rep.V` of a `Rep` structure
+-- literal, while `simp` reduces it to the underlying monoid algebra before it looks a term up,
+-- so the plain form is never found.
 /-- Every permutation fixes the polytabloid of a tableau all of whose labels share a row: the
 polytabloid is the bare tabloid, and the row group, which is everything, is its stabilizer. -/
 @[simp]
 theorem permutationModule_ρ_polytabloid_of_rowSubgroup_eq_top (t : YoungTableau μ)
     (h : rowSubgroup t = ⊤) (σ : Equiv.Perm (Fin μ.card)) :
-    (permutationModule (shapePartition μ)).ρ σ (polytabloid t) = polytabloid t := by
+    (dsimp% only ((permutationModule (shapePartition μ)).ρ σ (polytabloid t))) = polytabloid t := by
   have hmem : σ ∈ rowSubgroup t := by rw [h]; exact Subgroup.mem_top σ
   rw [polytabloid_eq_single_of_colSubgroup_eq_bot t
       (colSubgroup_eq_bot_of_rowSubgroup_eq_top t h),
@@ -105,7 +109,7 @@ sign: every permutation is then a column permutation of `t`. -/
 @[simp]
 theorem permutationModule_ρ_polytabloid_of_colSubgroup_eq_top (t : YoungTableau μ)
     (h : colSubgroup t = ⊤) (σ : Equiv.Perm (Fin μ.card)) :
-    (permutationModule (shapePartition μ)).ρ σ (polytabloid t) =
+    (dsimp% only ((permutationModule (shapePartition μ)).ρ σ (polytabloid t))) =
       ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid t := by
   have hmem : σ ∈ colSubgroup t := by rw [h]; exact Subgroup.mem_top σ
   rw [← polytabloid_relabel σ t, polytabloid_relabel_of_mem_colSubgroup hmem]

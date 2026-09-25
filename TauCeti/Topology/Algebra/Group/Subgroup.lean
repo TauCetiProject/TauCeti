@@ -52,7 +52,9 @@ series of a profinite group.
 * `Subgroup.toAddSubgroup_topologicalClosure`: converting to an additive subgroup commutes with
   topological closure.
 * `MonoidHom.map_topologicalClosure_le`: a continuous homomorphism maps the topological closure of
-  a subgroup into the topological closure of its image.
+  a subgroup into the topological closure of its image; `MonoidHom.map_topologicalClosure`: with
+  equality when the subgroup's closure is compact and the target Hausdorff.
+  `Subgroup.isClosed_map` says that images of compact subgroups in Hausdorff groups are closed.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
 * `TauCeti.mem_or_inv_mul_mem_of_mem_topologicalClosure_zpowers`: if a closed subgroup `H`
@@ -132,6 +134,22 @@ theorem _root_.MonoidHom.map_topologicalClosure_le (f : G →* H) (hf : Continuo
     (S : Subgroup G) : S.topologicalClosure.map f ≤ (S.map f).topologicalClosure := by
   rw [← SetLike.coe_subset_coe, coe_map, topologicalClosure_coe, topologicalClosure_coe, coe_map]
   exact image_closure_subset_closure_image hf
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- A continuous homomorphism to a Hausdorff group maps compact subgroups to closed subgroups. -/
+theorem isClosed_map [T2Space H] {S : Subgroup G} (hS : IsCompact (S : Set G))
+    (f : G →* H) (hf : Continuous f) : IsClosed (S.map f : Set H) := by
+  rw [coe_map]
+  exact (hS.image hf).isClosed
+
+/-- A continuous homomorphism to a Hausdorff group maps a subgroup's compact topological
+closure onto the topological closure of its image. -/
+theorem _root_.MonoidHom.map_topologicalClosure [T2Space H] (f : G →* H)
+    (hf : Continuous f) (S : Subgroup G) (hS : IsCompact (S.topologicalClosure : Set G)) :
+    S.topologicalClosure.map f = (S.map f).topologicalClosure := by
+  rw [topologicalClosure_coe] at hS
+  rw [← SetLike.coe_set_eq, coe_map, topologicalClosure_coe, topologicalClosure_coe, coe_map]
+  exact image_closure_of_isCompact hS hf.continuousOn
 
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators

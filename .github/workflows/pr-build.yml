@@ -88,6 +88,17 @@ jobs:
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
       - name: Resolve PR head
         id: pr
@@ -853,6 +864,19 @@ jobs:
           bash gate/scripts/perf/prepare-watchdog-toolchain.sh "$watchdog" "$real_lean"
           echo "WATCHDOG_TOOLCHAIN=$watchdog" >> "$GITHUB_ENV"
 
+      # The environment lint's compiled driver, built on the host from the workflow-pinned
+      # scripts/LintEnvDriver.lean against the pinned Batteries checkout, BEFORE any candidate code
+      # runs: once the candidate's build starts it can rewrite .lake/packages/batteries. It is
+      # mounted read-only into the sandbox, and lint-env.sh refuses to compile it there.
+      - name: Build the trusted environment-lint driver (before any candidate code runs)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.elan/bin:$PATH"
+          out="$RUNNER_TEMP/lint-env-driver"
+          bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
+          echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
+
       - name: Build exact candidate under bwrap with workflow-pinned audits, offline
         id: build
         if: ${{ env.INFRA != '1' }}
@@ -886,6 +910,7 @@ jobs:
             --dev /dev --proc /proc --tmpfs /tmp \
             --ro-bind "$HOME/.elan" "$HOME/.elan" \
             --ro-bind "$WATCHDOG_TOOLCHAIN" "$WATCHDOG_TOOLCHAIN" \
+            --ro-bind "$LINT_DRIVER_DIR" "$LINT_DRIVER_DIR" \
             --ro-bind "$PWD/gate" "$PWD/gate" \
             --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
             --remount-ro / \
@@ -896,6 +921,7 @@ jobs:
             --setenv LAKE_RESTORE_ARTIFACTS "${LAKE_RESTORE_ARTIFACTS:-}" \
             --setenv LAKE_CACHE_DIR "${LAKE_CACHE_DIR:-}" \
             --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
+            --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \

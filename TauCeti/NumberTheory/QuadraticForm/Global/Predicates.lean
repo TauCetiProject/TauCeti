@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
 
 /-!
 # Local properties of quadratic forms over number fields
@@ -24,6 +25,8 @@ at least two, representation of regular forms is controlled only by dimension, a
 of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
 makes this omission explicit.
 
+If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic.
+
 -/
 
 -- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, section "The local predicates", and
@@ -33,6 +36,7 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
+open scoped TensorProduct
 
 universe u v w
 
@@ -95,6 +99,48 @@ theorem locallyRepresentsScalar_iff (Q : _root_.QuadraticForm K V) (a : K) :
         ∀ w : {w : InfinitePlace K // w.IsReal},
           QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a) :=
   Iff.rfl
+
+/-- If a quadratic form represents a scalar at every finite and real place, then its
+orthogonal sum with the corresponding one-dimensional negative form is locally isotropic. -/
+theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
+    {W : _root_.QuadraticForm K W} {a : K} (h : W.LocallyRepresentsScalar a) :
+    IsLocallyIsotropic (((-a) • (QuadraticMap.sq : _root_.QuadraticForm K K)).prod W) := by
+  by_cases ha : a = 0
+  · subst a
+    refine (isLocallyIsotropic_iff _).mpr ⟨fun v => ?_, fun w => ?_⟩
+    · rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atFinitePlaceProd _ W v⟩]
+      intro hani
+      have hleft := (QuadraticMap.anisotropic_of_prod hani).1
+      apply ((QuadraticMap.not_anisotropic_iff_exists _).mpr ?_) hleft
+      refine ⟨1 ⊗ₜ 1, ?_, by simp⟩
+      intro hz
+      have h := congrArg (TensorProduct.AlgebraTensorModule.rid K (v.adicCompletion K)
+        (v.adicCompletion K)) hz
+      simp at h
+    · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+      rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
+      intro hani
+      have hleft := (QuadraticMap.anisotropic_of_prod hani).1
+      apply ((QuadraticMap.not_anisotropic_iff_exists _).mpr ?_) hleft
+      refine ⟨1 ⊗ₜ 1, ?_, by simp⟩
+      intro hz
+      have h := congrArg (TensorProduct.AlgebraTensorModule.rid K ℝ ℝ) hz
+      simp at h
+  rw [locallyRepresentsScalar_iff] at h
+  refine (isLocallyIsotropic_iff _).mpr ⟨fun v => ?_, fun w => ?_⟩
+  · rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atFinitePlaceProd _ W v⟩]
+    refine QuadraticMap.not_anisotropic_prod_of_represents_neg
+      (a := -algebraMap K (v.adicCompletion K) a)
+      ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.1 v)
+      (by simpa using ha)
+    simp
+  · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
+    refine QuadraticMap.not_anisotropic_prod_of_represents_neg
+      (a := -embedding_of_isReal w.2 a)
+      ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w)
+      (by simpa using ha)
+    simp
 
 /-- Two quadratic forms over a number field are locally equivalent if their localizations are
 equivalent at every finite and real place. -/

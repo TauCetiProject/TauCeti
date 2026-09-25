@@ -209,7 +209,58 @@ theorem commutator_eq_three_nsmul_of_commute {B : Type*} [Ring B] {x y z w v s :
 
 /-! ## Moving one element across a single normal-ordered monomial -/
 
--- Moving `x` across a normal-ordered monomial `y⁽ᵃ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾ releases four terms: one
+-- Moving `x` across the tail `w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` of a normal-ordered monomial releases one term,
+-- trading a `w` for a `v`.
+private theorem mul_dividedPower_triple (hxw : x * w = w * x + 3 • v) (hxv : Commute x v)
+    (hxs : Commute x s) (hwv : Commute w v) (c d e : ℕ) :
+    x * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
+      dividedPower c w * (dividedPower d v * dividedPower e s) * x +
+        (if 0 < c then (3 * (d + 1)) • (dividedPower (c - 1) w *
+          (dividedPower (d + 1) v * dividedPower e s)) else 0) := by
+  have hxVS : Commute x (dividedPower d v * dividedPower e s) := by
+    simpa using (commute_dividedPower_dividedPower hxv 1 d).mul_right
+      (commute_dividedPower_dividedPower hxs 1 e)
+  rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxw (hwv.smul_right 3) c, add_mul,
+    mul_assoc, hxVS.eq, ← mul_assoc, ite_mul, zero_mul]
+  -- The released `v` is absorbed by `v⁽ᵈ⁾`, as `v v⁽ᵈ⁾ = (d + 1) v⁽ᵈ⁺¹⁾`.
+  rw [mul_assoc (dividedPower (c - 1) w), smul_mul_assoc, ← succ_nsmul_dividedPower_succ_mul,
+    smul_smul, mul_smul_comm]
+
+-- Moving `x` across the tail `z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` of a normal-ordered monomial releases three
+-- terms: one trading a `z` for a `w`, one trading two `z`s for an `s`, and one trading a `w` for
+-- a `v`.
+private theorem mul_dividedPower_quadruple (hxz : x * z = z * x + 2 • w)
+    (hxw : x * w = w * x + 3 • v) (hwz : w * z = z * w + 3 • s) (hxv : Commute x v)
+    (hxs : Commute x s) (hwv : Commute w v) (hzs : Commute z s) (hws : Commute w s)
+    (hvs : Commute v s) (b c d e : ℕ) :
+    x * (dividedPower b z * (dividedPower c w * (dividedPower d v * dividedPower e s))) =
+      dividedPower b z * (dividedPower c w * (dividedPower d v * dividedPower e s)) * x +
+        (if 0 < c then (3 * (d + 1)) • (dividedPower b z * (dividedPower (c - 1) w *
+          (dividedPower (d + 1) v * dividedPower e s))) else 0) +
+        (if 0 < b then (2 * (c + 1)) • (dividedPower (b - 1) z * (dividedPower (c + 1) w *
+          (dividedPower d v * dividedPower e s))) else 0) +
+        (if 1 < b then (3 * (e + 1)) • (dividedPower (b - 2) z * (dividedPower c w *
+          (dividedPower d v * dividedPower (e + 1) s))) else 0) := by
+  have hsWV : Commute s (dividedPower c w * dividedPower d v) := by
+    simpa using (commute_dividedPower_dividedPower hws.symm 1 c).mul_right
+      (commute_dividedPower_dividedPower hvs.symm 1 d)
+  -- The second commutator of `x` with `z` is `2 • (3 • s)`, which is what the divided powers of
+  -- `z` absorb into a single copy of `s`.
+  have haz : (2 • w) * z = z * (2 • w) + 2 • (3 • s) := by
+    rw [smul_mul_assoc, hwz, mul_smul_comm, smul_add]
+  have hmove : s * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
+      (e + 1) • (dividedPower c w * (dividedPower d v * dividedPower (e + 1) s)) := by
+    rw [← mul_assoc (dividedPower c w), ← mul_assoc s, hsWV.eq, mul_assoc,
+      self_mul_dividedPower, mul_smul_comm, mul_assoc]
+  rw [← mul_assoc, mul_dividedPower_of_commutator_eq_two_nsmul hxz haz (hzs.smul_right 3) b,
+    add_mul, add_mul, mul_assoc, mul_dividedPower_triple hxw hxv hxs hwv, mul_add, ← mul_assoc,
+    mul_ite, mul_zero, mul_smul_comm]
+  -- Absorb the new factor of each of the two released terms into its own divided power.
+  rw [ite_mul, ite_mul, zero_mul, mul_assoc (dividedPower (b - 1) z), smul_mul_assoc,
+    ← succ_nsmul_dividedPower_succ_mul, smul_smul, mul_smul_comm,
+    mul_assoc (dividedPower (b - 2) z), smul_mul_assoc, hmove, smul_smul, mul_smul_comm]
+
+-- Moving `x` across a normal-ordered monomial `y⁽ᵃ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` releases four terms: one
 -- trading a `y` for a `z`, one trading a `z` for a `w`, one trading two `z`s for an `s`, and one
 -- trading a `w` for a `v`. The monomials are written right-associated, which is the order in which
 -- `x` meets their factors.
@@ -229,78 +280,14 @@ private theorem mul_dividedPower_quintuple (hxy : x * y = y * x + z)
           (dividedPower c w * (dividedPower d v * dividedPower (e + 1) s)))) else 0) +
         (if 0 < c then (3 * (d + 1)) • (dividedPower a y * (dividedPower b z *
           (dividedPower (c - 1) w * (dividedPower (d + 1) v * dividedPower e s)))) else 0) := by
-  have hxV : Commute x (dividedPower d v) := by
-    simpa using commute_dividedPower_dividedPower hxv 1 d
-  have hxS : Commute x (dividedPower e s) := by
-    simpa using commute_dividedPower_dividedPower hxs 1 e
-  have hsW : Commute s (dividedPower c w) := by
-    simpa using commute_dividedPower_dividedPower hws.symm 1 c
-  have hsV : Commute s (dividedPower d v) := by
-    simpa using commute_dividedPower_dividedPower hvs.symm 1 d
-  -- The second commutator of `x` with `z` is `2 • (3 • s)`, which is what the divided powers of
-  -- `z` absorb into a single copy of `s`.
-  have haz : (2 • w) * z = z * (2 • w) + 2 • (3 • s) := by
-    rw [smul_mul_assoc, hwz, mul_smul_comm, smul_add]
-  -- Push `x` rightwards through the monomial, one factor at a time.
-  have e0 : x * (dividedPower d v * dividedPower e s) =
-      dividedPower d v * dividedPower e s * x := by
-    rw [← mul_assoc, hxV.eq, mul_assoc, hxS.eq, ← mul_assoc]
-  have e1 : x * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
-      dividedPower c w * (dividedPower d v * dividedPower e s) * x +
-        (if 0 < c then dividedPower (c - 1) w * (3 • v) else 0) *
-          (dividedPower d v * dividedPower e s) := by
-    rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxw (hwv.smul_right 3) c, add_mul,
-      mul_assoc, e0, ← mul_assoc]
-  have e2 : x * (dividedPower b z * (dividedPower c w *
-        (dividedPower d v * dividedPower e s))) =
-      dividedPower b z * (dividedPower c w * (dividedPower d v * dividedPower e s)) * x +
-        dividedPower b z * ((if 0 < c then dividedPower (c - 1) w * (3 • v) else 0) *
-          (dividedPower d v * dividedPower e s)) +
-        (if 0 < b then dividedPower (b - 1) z * (2 • w) else 0) *
-          (dividedPower c w * (dividedPower d v * dividedPower e s)) +
-        (if 1 < b then dividedPower (b - 2) z * (3 • s) else 0) *
-          (dividedPower c w * (dividedPower d v * dividedPower e s)) := by
-    rw [← mul_assoc, mul_dividedPower_of_commutator_eq_two_nsmul hxz haz (hzs.smul_right 3) b,
-      add_mul, add_mul, mul_assoc, e1, mul_add, ← mul_assoc]
-  rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxy hyz a, add_mul, mul_assoc, e2,
-    mul_add, mul_add, mul_add, ← mul_assoc]
-  -- Now evaluate the four released terms, absorbing each new factor into its own divided power.
-  have tA : (if 0 < a then dividedPower (a - 1) y * z else 0) *
-      (dividedPower b z * (dividedPower c w * (dividedPower d v * dividedPower e s))) =
-      if 0 < a then (b + 1) • (dividedPower (a - 1) y * (dividedPower (b + 1) z *
-        (dividedPower c w * (dividedPower d v * dividedPower e s)))) else 0 := by
-    split_ifs with ha
-    · rw [mul_assoc, ← mul_assoc z, self_mul_dividedPower, smul_mul_assoc, mul_smul_comm]
-    · rw [zero_mul]
-  have tB : dividedPower a y * ((if 0 < b then dividedPower (b - 1) z * (2 • w) else 0) *
-      (dividedPower c w * (dividedPower d v * dividedPower e s))) =
-      if 0 < b then (2 * (c + 1)) • (dividedPower a y * (dividedPower (b - 1) z *
-        (dividedPower (c + 1) w * (dividedPower d v * dividedPower e s)))) else 0 := by
-    split_ifs with hb
-    · rw [mul_assoc, smul_mul_assoc, ← mul_assoc w, self_mul_dividedPower, smul_mul_assoc,
-        smul_smul, mul_smul_comm, mul_smul_comm]
-    · rw [zero_mul, mul_zero]
-  have hmove : s * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
-      (e + 1) • (dividedPower c w * (dividedPower d v * dividedPower (e + 1) s)) := by
-    rw [← mul_assoc, hsW.eq, mul_assoc, ← mul_assoc s, hsV.eq, mul_assoc,
-      self_mul_dividedPower, mul_smul_comm, mul_smul_comm]
-  have tC : dividedPower a y * ((if 1 < b then dividedPower (b - 2) z * (3 • s) else 0) *
-      (dividedPower c w * (dividedPower d v * dividedPower e s))) =
-      if 1 < b then (3 * (e + 1)) • (dividedPower a y * (dividedPower (b - 2) z *
-        (dividedPower c w * (dividedPower d v * dividedPower (e + 1) s)))) else 0 := by
-    split_ifs with hb
-    · rw [mul_assoc, smul_mul_assoc, hmove, smul_smul, mul_smul_comm, mul_smul_comm]
-    · rw [zero_mul, mul_zero]
-  have tD : dividedPower a y * (dividedPower b z *
-      ((if 0 < c then dividedPower (c - 1) w * (3 • v) else 0) *
-        (dividedPower d v * dividedPower e s))) =
-      if 0 < c then (3 * (d + 1)) • (dividedPower a y * (dividedPower b z *
-        (dividedPower (c - 1) w * (dividedPower (d + 1) v * dividedPower e s)))) else 0 := by
-    split_ifs with hc
-    · rw [mul_assoc, smul_mul_assoc, ← mul_assoc v, self_mul_dividedPower, smul_mul_assoc,
-        smul_smul, mul_smul_comm, mul_smul_comm, mul_smul_comm]
-    · rw [zero_mul, mul_zero, mul_zero]
-  rw [tA, tB, tC, tD]
+  rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxy hyz a, add_mul, mul_assoc,
+    mul_dividedPower_quadruple hxz hxw hwz hxv hxs hwv hzs hws hvs, mul_add, mul_add, mul_add,
+    ← mul_assoc]
+  -- Absorb the `z` released by `y⁽ᵃ⁾` into `z⁽ᵇ⁾`.
+  rw [ite_mul, zero_mul, mul_assoc (dividedPower (a - 1) y), ← succ_nsmul_dividedPower_succ_mul]
+  -- Left multiplication by `y⁽ᵃ⁾` passes through each case split and each scalar, after which the
+  -- four released terms are the stated ones up to the order of summation.
+  simp only [mul_ite, mul_zero, mul_smul_comm]
   abel
 
 /-! ## The divided-power series of the inner derivation -/
@@ -433,99 +420,71 @@ private theorem mul_g2Monomial (hxy : x * y = y * x + z) (hxz : x * z = z * x + 
   rw [mul_dividedPower_quintuple hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs
     (n - b - c - d - 2 * e) b c d e, hA, eqB, eqC, eqD]
 
--- The defining recurrence of the sequence: it is what `dividedPower_mul_of_ad_dividedPower_series`
--- consumes. Each summand of `g2Series n (k + 1)` is reached in four ways, with coefficients
--- `b`, `2c`, `3d`, and `3e`, which add up to `k + 1`.
+-- The four reindexings that identify the families released by `mul_g2Monomial` with the summands
+-- of the next term of the series: releasing a `z`, a `w`, an `s`, or a `v` respectively.
+private theorem sum_g2Monomial_shift_z (n k : ℕ) :
+    ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2},
+        (p.1 + 1) • g2Monomial y z w v s n (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2) =
+      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q := by
+  refine sum_g2Monomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
+    (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) Prod.fst ?_ ?_ ?_ ?_ <;> grind
+
+private theorem sum_g2Monomial_shift_w (n k : ℕ) :
+    ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.1},
+        (2 * (p.2.1 + 1)) • g2Monomial y z w v s n (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2) =
+      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1}, (2 * q.2.1) • g2Monomial y z w v s n q := by
+  refine sum_g2Monomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
+    (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_ <;> grind
+
+private theorem sum_g2Monomial_shift_s (n k : ℕ) :
+    ∑ p ∈ {p ∈ g2SeriesIndex n k | 1 < p.1},
+        (3 * (p.2.2.2 + 1)) • g2Monomial y z w v s n (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1) =
+      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
+        (3 * q.2.2.2) • g2Monomial y z w v s n q := by
+  refine sum_g2Monomial_shift (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
+    (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) (fun q => 3 * q.2.2.2) ?_ ?_ ?_ ?_ <;> grind
+
+private theorem sum_g2Monomial_shift_v (n k : ℕ) :
+    ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.2.1},
+        (3 * (p.2.2.1 + 1)) • g2Monomial y z w v s n (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2) =
+      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
+        (3 * q.2.2.1) • g2Monomial y z w v s n q := by
+  refine sum_g2Monomial_shift (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
+    (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) (fun q => 3 * q.2.2.1) ?_ ?_ ?_ ?_ <;> grind
+
+-- Every summand of the next term of the series is reached with total coefficient
+-- `b + 2c + 3d + 3e = k + 1`.
+private theorem sum_nsmul_g2Monomial_eq_nsmul_g2Series (n k : ℕ) :
+    ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q +
+        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1}, (2 * q.2.1) • g2Monomial y z w v s n q +
+        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
+          (3 * q.2.2.1) • g2Monomial y z w v s n q +
+        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
+          (3 * q.2.2.2) • g2Monomial y z w v s n q =
+      (k + 1) • g2Series y z w v s n (k + 1) := by
+  -- A summand dropped by a filter has coefficient zero, so each filter can be removed.
+  rw [Finset.sum_filter_of_ne, Finset.sum_filter_of_ne, Finset.sum_filter_of_ne,
+    Finset.sum_filter_of_ne, g2Series, Finset.smul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+  · refine Finset.sum_congr rfl fun q hq => ?_
+    rw [← add_smul, ← add_smul, ← add_smul, (mem_g2SeriesIndex.mp hq).2]
+  all_goals exact fun q _ hq => Nat.pos_of_ne_zero fun h => hq <| by simp [h]
+
+-- `ad x` carries the `k`-th term of the series to `k + 1` times the next one: commuting `x` past a
+-- monomial releases a `z`, a `w`, an `s`, or a `v`, so each summand of `g2Series n (k + 1)` with
+-- exponents `(b, c, d, e)` is reached in four ways, with coefficients `b`, `2c`, `3e`, and `3d`
+-- respectively, which add up to `k + 1`.
 private theorem mul_g2Series (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
     (hxw : x * w = w * x + 3 • v) (hwz : w * z = z * w + 3 • s) (hxv : Commute x v)
     (hxs : Commute x s) (hyz : Commute y z) (hwv : Commute w v) (hzs : Commute z s)
     (hws : Commute w s) (hvs : Commute v s) (n k : ℕ) :
     x * g2Series y z w v s n k =
       g2Series y z w v s n k * x + (k + 1) • g2Series y z w v s n (k + 1) := by
-  classical
-  -- The four reindexings that identify the released families with the summands of the next term.
-  have hshiftA : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2},
-        (p.1 + 1) • g2Monomial y z w v s n (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2) =
-      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2.1, q.2.2.2)) (fun q => q.1) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ _
-      simp
-    · rintro ⟨b, c, d, e⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hshiftB : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.1},
-        (2 * (p.2.1 + 1)) • g2Monomial y z w v s n (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2) =
-      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1},
-        (2 * q.2.1) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2.1, p.2.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2.1, q.2.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hp
-      simp [Nat.sub_add_cancel hp.2]
-    · rintro ⟨b, c, d, e⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hshiftC : ∑ p ∈ {p ∈ g2SeriesIndex n k | 1 < p.1},
-        (3 * (p.2.2.2 + 1)) • g2Monomial y z w v s n (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1) =
-      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
-        (3 * q.2.2.2) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1 - 2, p.2.1, p.2.2.1, p.2.2.2 + 1))
-      (fun q => (q.1 + 2, q.2.1, q.2.2.1, q.2.2.2 - 1)) (fun q => 3 * q.2.2.2) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hp
-      simp [show b - 2 + 2 = b from by omega]
-    · rintro ⟨b, c, d, e⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hshiftD : ∑ p ∈ {p ∈ g2SeriesIndex n k | 0 < p.2.1},
-        (3 * (p.2.2.1 + 1)) • g2Monomial y z w v s n (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2) =
-      ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
-        (3 * q.2.2.1) • g2Monomial y z w v s n q := by
-    refine sum_g2Monomial_shift (fun p => (p.1, p.2.1 - 1, p.2.2.1 + 1, p.2.2.2))
-      (fun q => (q.1, q.2.1 + 1, q.2.2.1 - 1, q.2.2.2)) (fun q => 3 * q.2.2.1) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d, e⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d, e⟩ hp
-      simp [Nat.sub_add_cancel hp.2]
-    · rintro ⟨b, c, d, e⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  -- Every summand of the next term is reached with total coefficient `b + 2c + 3d + 3e = k + 1`.
-  have hcombine : ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.1}, q.1 • g2Monomial y z w v s n q +
-        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.1},
-          (2 * q.2.1) • g2Monomial y z w v s n q +
-        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.2},
-          (3 * q.2.2.2) • g2Monomial y z w v s n q +
-        ∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1},
-          (3 * q.2.2.1) • g2Monomial y z w v s n q =
-      (k + 1) • g2Series y z w v s n (k + 1) := by
-    rw [Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      g2Series, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib,
-      ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun q hq => ?_
-    rw [← add_smul, ← add_smul, ← add_smul]
-    congr 1
-    have := (mem_g2SeriesIndex.mp hq).2
-    omega
-  rw [g2Series, Finset.mul_sum, Finset.sum_mul,
-    Finset.sum_congr rfl fun p _ =>
-      mul_g2Monomial hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs n p]
-  simp only [Finset.sum_add_distrib, ← Finset.sum_filter]
-  rw [hshiftA, hshiftB, hshiftC, hshiftD, add_assoc, add_assoc, add_assoc, ← add_assoc _ _
-    (∑ q ∈ {q ∈ g2SeriesIndex n (k + 1) | 0 < q.2.2.1}, (3 * q.2.2.1) • g2Monomial y z w v s n q),
-    ← add_assoc, ← hcombine]
+  rw [g2Series, Finset.mul_sum, Finset.sum_mul]
+  -- Split off the four released families and reindex each onto the summands of the next term.
+  simp only [mul_g2Monomial hxy hxz hxw hwz hxv hxs hyz hwv hzs hws hvs n, Finset.sum_add_distrib,
+    ← Finset.sum_filter, sum_g2Monomial_shift_z, sum_g2Monomial_shift_w, sum_g2Monomial_shift_s,
+    sum_g2Monomial_shift_v, ← sum_nsmul_g2Monomial_eq_nsmul_g2Series]
   abel
 
 /-! ## The straightening rule -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Complement
 public import TauCeti.RingTheory.RootsOfUnity.Finite
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
@@ -24,6 +25,10 @@ characterization says that the lift of `x` is the unique `(q - 1)`-st root of un
 `x`; in particular its image is exactly `μ_{q-1}(R)`, and it is the *only* multiplicative section
 of reduction.
 
+Since the lift is a section of reduction, `Rˣ` is the internal direct product of `μ_{q-1}(R)`
+and the kernel `1 + 𝔪` of reduction on units, the *principal units*: this is the Teichmüller
+splitting `Rˣ ≃* μ_{q-1}(R) × (1 + 𝔪)`, whose inverse is multiplication.
+
 A ring `R` that is moreover integrally closed in an `R`-algebra `A` has the same `(q - 1)`-st
 roots of unity as `A`, since roots of unity are integral. This gives the corresponding
 identification `μ_{q-1}(A) ≃* kˣ`; the case of a fraction ring of `R` is the one used for local
@@ -36,6 +41,9 @@ fields.
 * `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
 * `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
 * `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
+* `TauCeti.isComplement'_rootsOfUnity_ker_unitsMap_residue`,
+  `TauCeti.unitsMulEquivRootsOfUnityProdKerResidue`: the Teichmüller splitting
+  `Rˣ ≃* μ_{q-1}(R) × (1 + 𝔪)`.
 * `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField`: if `R` is integrally closed in an
   `R`-algebra `A`, then `μ_{q-1}(A) ≃* kˣ`.
 
@@ -161,6 +169,84 @@ theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
   rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+
+/-! ### The Teichmüller splitting of the unit group
+
+The Teichmüller lift is a section of reduction `Rˣ → kˣ`, so `Rˣ` is the internal direct product
+of `μ_{q-1}(R)`, the image of the lift, and the kernel `1 + 𝔪` of reduction on units, the
+*principal units*. -/
+
+section Splitting
+
+/-- **The Teichmüller splitting**, as complementary subgroups: every unit of `R` is uniquely the
+product of a `(q - 1)`-st root of unity and a principal unit, that is a unit reducing to `1` in
+the residue field. -/
+theorem isComplement'_rootsOfUnity_ker_unitsMap_residue :
+    (rootsOfUnity (Nat.card (ResidueField R) - 1) R).IsComplement'
+      (Units.map (residue R : R →* ResidueField R)).ker := by
+  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ ?_ ?_
+  · -- A root of unity reducing to `1` is the Teichmüller lift of `1`.
+    refine Subgroup.disjoint_def.mpr fun {ζ} hζ hker ↦ ?_
+    rw [MonoidHom.mem_ker] at hker
+    have h := (teichmuller_eq_iff R (x := 1) (u := ζ)).mpr
+      ⟨(mem_rootsOfUnity _ _).mp hζ, by simpa using congrArg Units.val hker⟩
+    rw [← h, map_one]
+  · -- `u = ω(ū) * (ω(ū)⁻¹ * u)`, and the second factor reduces to `1`.
+    refine Set.eq_univ_of_forall fun u ↦ ?_
+    refine Set.mem_mul.mpr ⟨teichmuller R (Units.map (residue R : R →* ResidueField R) u),
+      ?_, (teichmuller R (Units.map (residue R : R →* ResidueField R) u))⁻¹ * u, ?_, ?_⟩
+    · rw [SetLike.mem_coe, ← range_teichmuller]
+      exact ⟨_, rfl⟩
+    · rw [SetLike.mem_coe, MonoidHom.mem_ker, map_mul, map_inv, unitsMap_residue_teichmuller,
+        inv_mul_cancel]
+    · rw [mul_inv_cancel_left]
+
+/-- **The Teichmüller splitting of the unit group**, `Rˣ ≃* μ_{q-1}(R) × (1 + 𝔪)`: a unit `u`
+goes to the Teichmüller representative `ω(ū)` of its residue class together with the principal
+unit `ω(ū)⁻¹ * u`, and the inverse is multiplication. -/
+noncomputable def unitsMulEquivRootsOfUnityProdKerResidue :
+    Rˣ ≃* rootsOfUnity (Nat.card (ResidueField R) - 1) R ×
+      (Units.map (residue R : R →* ResidueField R)).ker :=
+  (MulEquiv.ofBijective ((rootsOfUnity _ R).subtype.coprod (Units.map _).ker.subtype)
+    ((Subgroup.isComplement_iff_bijective _ _).mp
+      (isComplement'_rootsOfUnity_ker_unitsMap_residue R))).symm
+
+/-- The inverse of the Teichmüller splitting is multiplication, `(ζ, v) ↦ ζ * v`. -/
+@[simp]
+theorem unitsMulEquivRootsOfUnityProdKerResidue_symm_apply
+    (x : rootsOfUnity (Nat.card (ResidueField R) - 1) R ×
+      (Units.map (residue R : R →* ResidueField R)).ker) :
+    (unitsMulEquivRootsOfUnityProdKerResidue R).symm x = x.1 * x.2 :=
+  (rfl)
+
+/-- The root-of-unity component of a unit `u` is the Teichmüller representative of its residue
+class. -/
+@[simp]
+theorem coe_unitsMulEquivRootsOfUnityProdKerResidue_apply_fst (u : Rˣ) :
+    ((unitsMulEquivRootsOfUnityProdKerResidue R u).1 : Rˣ) =
+      teichmuller R (Units.map (residue R : R →* ResidueField R) u) := by
+  have h := (unitsMulEquivRootsOfUnityProdKerResidue R).symm_apply_apply u
+  rw [unitsMulEquivRootsOfUnityProdKerResidue_symm_apply] at h
+  symm
+  rw [teichmuller_eq_iff]
+  refine ⟨(mem_rootsOfUnity _ _).mp (unitsMulEquivRootsOfUnityProdKerResidue R u).1.2, ?_⟩
+  have h' := congrArg (Units.map (residue R : R →* ResidueField R)) h
+  rw [map_mul, MonoidHom.mem_ker.mp (unitsMulEquivRootsOfUnityProdKerResidue R u).2.2,
+    mul_one] at h'
+  exact congrArg Units.val h'
+
+/-- The principal-unit component of a unit `u` is `u` divided by the Teichmüller representative
+of its residue class. -/
+@[simp]
+theorem coe_unitsMulEquivRootsOfUnityProdKerResidue_apply_snd (u : Rˣ) :
+    ((unitsMulEquivRootsOfUnityProdKerResidue R u).2 : Rˣ) =
+      (teichmuller R (Units.map (residue R : R →* ResidueField R) u))⁻¹ * u := by
+  have h := (unitsMulEquivRootsOfUnityProdKerResidue R).symm_apply_apply u
+  rw [unitsMulEquivRootsOfUnityProdKerResidue_symm_apply,
+    coe_unitsMulEquivRootsOfUnityProdKerResidue_apply_fst] at h
+  rw [eq_inv_mul_iff_mul_eq, h]
+
+end Splitting
 
 section IsIntegrallyClosedIn
 

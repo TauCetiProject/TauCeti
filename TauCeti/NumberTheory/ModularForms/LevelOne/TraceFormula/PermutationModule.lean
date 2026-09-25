@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 public import TauCeti.RepresentationTheory.OfMulAction
+import TauCeti.NumberTheory.Modular.Relations
 
 /-!
 # The permutation module of the determinant-`n` matrix module
@@ -35,6 +36,12 @@ This file records how they fit together, over an arbitrary coefficient semiring 
   determinant-one matrix `g` is the left representation of `g` itself.
 * `TauCeti.TraceFormulaMatrixModule.ofMulAction_toConjAct`: the conjugation representation of `g`
   is the left representation of `g` after the right representation of `g⁻¹`.
+* `TauCeti.TraceFormulaMatrixModule.ofMulAction_S_sq`,
+  `TauCeti.TraceFormulaMatrixModule.ofMulAction_T_mul_S_pow_three`: on `k[ℳₙ]`, `S² = 1` and
+  `U³ = 1` for `U = T S`, since `S² = U³ = -1` in `SL(2, ℤ)` and `-1` acts trivially.
+* `TauCeti.TraceFormulaMatrixModule.ofMulAction_op_S_sq`,
+  `TauCeti.TraceFormulaMatrixModule.ofMulAction_op_S_mul_op_T_pow_three`: `S² = 1` and `U³ = 1`
+  for right multiplication on `k[ℳₙ]`, since both relations hold in `PSL(2, ℤ)`.
 
 The left and right representations commute, so `ℛₙ` is a `ℚ[PSL(2, ℤ)]`-bimodule. This is the
 general `TauCeti.commute_ofMulAction` (in `TauCeti.RepresentationTheory.OfMulAction`), applied to
@@ -64,6 +71,54 @@ theorem ofMulAction_coe (g : SL(2, ℤ)) :
   -- on basis vectors both sides are `single (g • x) r`, by `coe_smul`
   ext
   simp [coe_smul]
+
+/-- The central sign `-1 ∈ SL(2, ℤ)` acts trivially on `ℳₙ`, so `g` and `-g` act on `k[ℳₙ]` in the
+same way. -/
+@[simp]
+theorem ofMulAction_neg (g : SL(2, ℤ)) :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-g) =
+      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) g := by
+  have h : Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (-1) = 1 := by
+    ext
+    simp
+  rw [← neg_one_mul, map_mul, h, one_mul]
+
+open _root_.ModularGroup in
+/-- Left multiplication by `S` on `k[ℳₙ]` is an involution: `S² = 1`. -/
+@[simp]
+theorem ofMulAction_S_sq :
+    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S ^ 2 = 1 := by
+  -- `S² = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
+  rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg, map_one]
+
+open _root_.ModularGroup in
+/-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. The left-hand side is the
+simp-normal form of the action of `T * S`. -/
+@[simp]
+theorem ofMulAction_T_mul_S_pow_three :
+    (Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T *
+      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S) ^ 3 = 1 := by
+  -- `U³ = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
+  rw [← map_mul, ← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg, map_one]
+
+open _root_.ModularGroup in
+/-- Right multiplication by `S` on `k[ℳₙ]` is an involution: `S² = 1`. -/
+@[simp]
+theorem ofMulAction_op_S_sq :
+    Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (.op ↑S) ^ 2 = 1 := by
+  rw [← map_pow, ← MulOpposite.op_pow, TauCeti.ModularGroup.coe_S_sq, MulOpposite.op_one, map_one]
+
+open _root_.ModularGroup in
+/-- Right multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. The left-hand side is the
+simp-normal form of the right action of `T * S`: right multiplication by `S` after right
+multiplication by `T`. -/
+@[simp]
+theorem ofMulAction_op_S_mul_op_T_pow_three :
+    (Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (.op ↑S) *
+      Representation.ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (.op ↑T)) ^ 3 =
+        1 := by
+  rw [← map_mul, ← MulOpposite.op_mul, ← map_pow, ← MulOpposite.op_pow,
+    TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three, MulOpposite.op_one, map_one]
 
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/
