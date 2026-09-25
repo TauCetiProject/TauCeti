@@ -31,10 +31,10 @@ lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
     σ ∈ (SSet.Subcomplex.range
       (toSSet.map (ofHom (ContinuousMap.subtypeVal S)))).obj n ↔
       Set.range (X.toSSetObjEquiv n σ) ⊆ S := by
-  change σ ∈ Set.range ((toSSet.map (ofHom (ContinuousMap.subtypeVal S))).app n) ↔ _
-  rw [(IsInducing.subtypeVal : IsInducing
-    (ofHom (ContinuousMap.subtypeVal S))).mem_range_toSSet_map_app_iff n σ]
-  change Set.range (X.toSSetObjEquiv n σ) ⊆ Set.range (Subtype.val : S → X) ↔ _
-  rw [Subtype.range_coe]
+  rw [Subfunctor.range_obj,
+    (IsInducing.subtypeVal : IsInducing
+      (ofHom (ContinuousMap.subtypeVal S))).mem_range_toSSet_map_app_iff n σ]
+  rw [ConcreteCategory.hom_ofHom,
+    show Set.range (⇑(ContinuousMap.subtypeVal S)) = S from Subtype.range_coe]
 
 end TopCat
