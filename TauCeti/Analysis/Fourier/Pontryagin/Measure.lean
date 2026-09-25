@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.PontryaginDualEval
+public import TauCeti.Analysis.Fourier.Pontryagin.DualEval
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 /-!
@@ -63,9 +63,8 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_add
     (μ + ν).pontryaginMeasureTransform =
       μ.pontryaginMeasureTransform + ν.pontryaginMeasureTransform := by
   funext g
-  rw [show (μ + ν).pontryaginMeasureTransform g =
-      ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂(μ + ν).toMeasure from rfl,
-    FiniteMeasure.toMeasure_add,
+  unfold FiniteMeasure.pontryaginMeasureTransform
+  rw [FiniteMeasure.toMeasure_add,
     integral_add_measure (PontryaginDual.integrable_eval_ofAdd (μ := μ.toMeasure) g)
       (PontryaginDual.integrable_eval_ofAdd (μ := ν.toMeasure) g)]
   rfl

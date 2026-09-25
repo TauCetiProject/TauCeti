@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PositiveDefinite.AdditiveCharacter
-public import TauCeti.Analysis.Fourier.PontryaginMeasure
+public import TauCeti.Analysis.Fourier.Pontryagin.Measure
 
 /-!
 # Positive-definite transforms of measures on a Pontryagin dual
