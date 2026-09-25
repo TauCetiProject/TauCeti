@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Basic
 public import TauCeti.NumberTheory.LSeries.ThreeFourOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import Mathlib.NumberTheory.EulerProduct.ExpLog
 
 /-!
 # The 3-4-1 bound for the Euler products of unitary ideal weights
@@ -112,20 +111,6 @@ private theorem threeFourOne_local_nonneg {χ : UnitaryIdealWeight K}
     rw [e₀, e₁, e₂]
     exact LSeries.threeFourOne_re_neg_log_one_sub_nonneg (by positivity) ha1 hnz
 
-/-- The Euler product of a weight bounded by one, in exponential form on `Re s > 1`: the
-prime-indexed sum of principal logarithms converges, and its exponential is the `L`-series. -/
-private theorem summable_and_exp_tsum_eq_LSeries (ψ : MultiplicativeIdealWeight K)
-    (hψ : ∀ I, ‖ψ I‖ ≤ 1) {s : ℂ} (hs : 1 < s.re) :
-    Summable (fun P : HeightOneSpectrum (𝓞 K) ↦
-        -log (1 - ψ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) ∧
-      exp (∑' P : HeightOneSpectrum (𝓞 K),
-        -log (1 - ψ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) =
-        LSeries (normCoeff K ψ.toIdealArithmeticFunction) s := by
-  have h := summable_idealTerm_of_bounded_of_one_lt_re (f := ψ.toIdealArithmeticFunction)
-    (C := 1) (fun I ↦ (ψ.toIdealArithmeticFunction_apply I).symm ▸ hψ I) hs
-  exact ⟨(Summable.clog_one_sub (ψ.summable_div_of_summable_idealTerm h)).neg,
-    ψ.exp_tsum_neg_log_one_sub_eq_LSeries h⟩
-
 /-- **The `3-4-1` bound for unitary ideal weights.** Let `χ` be a unitary weight and `χ₀` a
 weight that is trivial on its good ideals, with every bad prime of `χ₀` a bad prime of `χ`. For
 real `σ > 1` and real `t`, the `L`-series of `χ₀` at `σ` cubed, times that of `χ` at `σ + it` to
@@ -136,12 +121,23 @@ theorem norm_LSeries_threeFourOne_ge_one (χ : UnitaryIdealWeight K)
     1 ≤ ‖LSeries (normCoeff K χ₀.toIdealArithmeticFunction) σ ^ 3 *
       LSeries (normCoeff K χ.toIdealArithmeticFunction) ((σ : ℂ) + I * t) ^ 4 *
       LSeries (normCoeff K (χ ^ 2).toIdealArithmeticFunction) ((σ : ℂ) + 2 * I * t)‖ := by
-  obtain ⟨hs₀, hE₀⟩ := summable_and_exp_tsum_eq_LSeries χ₀ (fun _ ↦ h₀.norm_apply_le_one)
-    (s := σ) (by simpa using hσ)
-  obtain ⟨hs₁, hE₁⟩ := summable_and_exp_tsum_eq_LSeries χ.1 χ.norm_le_one
+  have hS₀ := summable_idealTerm_of_bounded_of_one_lt_re
+    (f := χ₀.toIdealArithmeticFunction) (C := 1) (s := (σ : ℂ))
+    (fun I ↦ (χ₀.toIdealArithmeticFunction_apply I).symm ▸ h₀.norm_apply_le_one) (by simpa using hσ)
+  have hS₁ := summable_idealTerm_of_bounded_of_one_lt_re
+    (f := χ.1.toIdealArithmeticFunction) (C := 1)
+    (fun I ↦ (χ.1.toIdealArithmeticFunction_apply I).symm ▸ χ.norm_le_one I)
     (s := (σ : ℂ) + I * t) (by simpa using hσ)
-  obtain ⟨hs₂, hE₂⟩ := summable_and_exp_tsum_eq_LSeries (χ ^ 2).1 (χ ^ 2).norm_le_one
+  have hS₂ := summable_idealTerm_of_bounded_of_one_lt_re
+    (f := (χ ^ 2).1.toIdealArithmeticFunction) (C := 1)
+    (fun I ↦ ((χ ^ 2).1.toIdealArithmeticFunction_apply I).symm ▸ (χ ^ 2).norm_le_one I)
     (s := (σ : ℂ) + 2 * I * t) (by simpa using hσ)
+  have hs₀ := χ₀.summable_neg_log_one_sub hS₀
+  have hs₁ := χ.1.summable_neg_log_one_sub hS₁
+  have hs₂ := (χ ^ 2).1.summable_neg_log_one_sub hS₂
+  have hE₀ := χ₀.exp_tsum_neg_log_one_sub_eq_LSeries hS₀
+  have hE₁ := χ.1.exp_tsum_neg_log_one_sub_eq_LSeries hS₁
+  have hE₂ := (χ ^ 2).1.exp_tsum_neg_log_one_sub_eq_LSeries hS₂
   simp only [toIdealArithmeticFunction_eq_val]
   rw [← hE₀, ← hE₁, ← hE₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add, norm_exp,
     Real.one_le_exp_iff]
