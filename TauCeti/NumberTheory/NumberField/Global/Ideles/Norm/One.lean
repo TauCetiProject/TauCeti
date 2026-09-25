@@ -36,7 +36,6 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
   closed.
 * `TauCeti.GlobalNumberFields.IdeleClassGroup.comap_normOne`: the ideles whose class has norm one
   are exactly the ideles of norm one.
-
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §16.
@@ -46,7 +45,7 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
 open scoped NNReal
 
 namespace TauCeti.GlobalNumberFields

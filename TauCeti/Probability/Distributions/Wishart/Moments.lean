@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 
 import TauCeti.Analysis.SpecialFunctions.Log.SumLogOneSub
-import TauCeti.LinearAlgebra.Matrix.Trace
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.Probability.Moments.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 

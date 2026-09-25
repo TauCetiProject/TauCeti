@@ -12,10 +12,11 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
 # The degree-zero trace/corestriction comparison
 
 The coinduced trace is developed with the rest of the coinduced-module API in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced`. This file proves that in
-degree zero its composite with the explicit Shapiro isomorphism is exactly the corestriction norm
-`m ↦ ∑ x, t x • m` of `TauCeti.ContCohomology.explicitCor0`: a `G`-invariant element of
-`Coind_U^G M` is the constant function at its value at `1`
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced`, and on the discrete carrier
+in `TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete`. This file proves
+that in degree zero its composite with the explicit Shapiro isomorphism is exactly the
+corestriction norm `m ↦ ∑ x, t x • m` of `TauCeti.ContCohomology.explicitCor0`: a `G`-invariant
+element of `Coind_U^G M` is the constant function at its value at `1`
 (`TauCeti.ContCohomology.apply_eq_apply_one_of_mem_H0`), so the trace of it is the norm of that
 value.
 

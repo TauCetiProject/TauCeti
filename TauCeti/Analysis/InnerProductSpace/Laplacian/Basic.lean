@@ -40,7 +40,10 @@ corollaries, where smoothness re-enters, live in the companion files
 `TauCeti/Analysis/InnerProductSpace/Harmonic/Dilation.lean`.
 
 The file also records the base second-derivative computation `laplacian_norm_sq`
-(`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm.
+(`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm,
+its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial functions
+`x ↦ ρ (‖x‖²)`, and the locality statement `tsupport_laplacian_subset` that `Δ f` vanishes
+wherever `f` vanishes identically.
 
 ## Main declarations
 
@@ -54,6 +57,9 @@ The file also records the base second-derivative computation `laplacian_norm_sq`
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
+* `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
+  `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
+* `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
 -/
 
 public section
@@ -211,5 +217,57 @@ theorem laplacian_norm_sq (x : E) :
     simp [hself]
   rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul, mul_comm]
+
+/-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
+`x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
+@[simp]
+theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDiff ℝ 2 ρ) (x : E) :
+    Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
+      4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
+        2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
+  have hρ1 : ContDiff ℝ 1 (deriv ρ) := hρ.deriv'
+  have hρd : Differentiable ℝ ρ := hρ.differentiable (by norm_num)
+  have hρ'd : Differentiable ℝ (deriv ρ) := hρ1.differentiable one_ne_zero
+  -- The first derivative, by the chain rule through the squared norm.
+  have hfst : fderiv ℝ (fun y : E => ρ (‖y‖ ^ 2)) =
+      fun y => deriv ρ (‖y‖ ^ 2) • (2 • innerSL ℝ y) := by
+    funext y
+    exact ((hρd _).hasDerivAt.comp_hasFDerivAt y
+      (hasStrictFDerivAt_norm_sq y).hasFDerivAt).fderiv
+  -- The second derivative, by the product rule for `c • f` with `c = ρ' ∘ ‖·‖²`.
+  have hc : DifferentiableAt ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x :=
+    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt)
+      |>.differentiableAt
+  have hcd : fderiv ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x =
+      deriv (deriv ρ) (‖x‖ ^ 2) • (2 • innerSL ℝ x) :=
+    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt).fderiv
+  have hi : DifferentiableAt ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x :=
+    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).differentiableAt
+  have hid : fderiv ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x =
+      (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) :=
+    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
+  set b := stdOrthonormalBasis ℝ E
+  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ρ (‖y‖ ^ 2)) b) x]
+  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ρ (‖y‖ ^ 2)) x ![b i, b i] =
+      4 * deriv (deriv ρ) (‖x‖ ^ 2) * ⟪x, b i⟫_ℝ ^ 2 + 2 * deriv ρ (‖x‖ ^ 2) := by
+    intro i
+    rw [iteratedFDeriv_two_apply, hfst, fderiv_fun_smul hc hi, hcd, hid]
+    have hself : (innerSL ℝ (b i)) (b i) = (1 : ℝ) := by
+      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, b.orthonormal.norm_eq_one, one_pow]
+    simp [hself]
+    ring
+  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, ← Finset.mul_sum,
+    b.sum_sq_inner_left x]
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  ring
+
+open Topology in
+/-- The Laplacian vanishes wherever the function vanishes identically: `Δ` is local. -/
+theorem tsupport_laplacian_subset (f : E → F) : tsupport (Δ f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx => ?_) (isClosed_tsupport f)
+  by_contra hxf
+  have h0 : Δ f =ᶠ[𝓝 x] Δ (fun _ : E => (0 : F)) :=
+    laplacian_congr_nhds (notMem_tsupport_iff_eventuallyEq.mp hxf)
+  exact hx (by simpa using h0.eq_of_nhds)
 
 end TauCeti

@@ -24,6 +24,8 @@ of squares.
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
   basis is the diagonal matrix of the weights, and its discriminant is their product.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
+* `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: a ternary solution with
+  a nonzero third coordinate gives a nonzero isotropic vector in a diagonal form.
 * `TauCeti.isSquare_prod_mul_prod_of_equivalent`: isometric diagonal forms with unit weights have
   weight products differing by a square.
 -/
@@ -173,6 +175,37 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
       = QuadraticMap.weightedSumSquares R fun i => ((w i : R)) := by
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
+
+-- Evaluate a diagonal form on three coordinate vectors.
+private theorem weightedSumSquares_three_single
+    {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι → R)
+    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (x y z : R) :
+    QuadraticMap.weightedSumSquares R a
+      (Pi.single i x + Pi.single j y + Pi.single k z) =
+      a i * x ^ 2 + a j * y ^ 2 + a k * z ^ 2 := by
+  classical
+  rw [QuadraticMap.weightedSumSquares_apply,
+    ← Finset.sum_subset (Finset.subset_univ {i, j, k})]
+  · simp [Finset.sum_insert, hij, hik, hjk, smul_eq_mul, pow_two, add_assoc]
+  · intro l _ hl
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hl
+    simp [hl.1, hl.2.1, hl.2.2]
+
+/-- A ternary solution with a nonzero third coordinate gives a nonzero isotropic vector in a
+diagonal quadratic form. -/
+theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero
+    {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] (a : ι → R)
+    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    {x y z : R} (hz : z ≠ 0)
+    (h : a i * x ^ 2 + a j * y ^ 2 + a k * z ^ 2 = 0) :
+    ¬ (QuadraticMap.weightedSumSquares R a).Anisotropic := by
+  classical
+  let f : ι → R := Pi.single i x + Pi.single j y + Pi.single k z
+  intro hanis
+  have hf : f = 0 := hanis f <| by
+    simpa [f, weightedSumSquares_three_single a hij hik hjk x y z] using h
+  have hz0 : z = 0 := by simpa [f, hik.symm, hjk.symm] using congrFun hf k
+  exact hz hz0
 
 section Discriminant
 

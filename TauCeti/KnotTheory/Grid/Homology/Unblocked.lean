@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.Algebra.MvPolynomial.AevalConstX
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
@@ -30,9 +31,16 @@ one of the variables `V_c` (`IsKnot.X_smul_unblockedHomology`). The construction
 choice of a distinguished column. This is the `𝔽[U]`-module structure on the grid homology of a
 knot through which the concordance invariant `τ` is defined.
 
+Concretely, `GH⁻(G)` is the quotient `ker ∂⁻ ⧸ im ∂⁻` of the cycles of `GC⁻(G)` by the boundaries
+(`unblockedHomologyIso`), so every class is the class of a cycle (`unblockedHomologyClass`), and a
+cycle has zero class exactly when it is a boundary. Structure on `GC⁻(G)` that the differential
+respects, such as the Alexander grading, descends to this quotient.
+
 ## Main definitions
 
 * `TauCeti.GridDiagram.unblockedHomology`: the unblocked grid homology `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyIso`: `GH⁻` is `ker ∂⁻ ⧸ im ∂⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyClass`: the class in `GH⁻` of a cycle.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
   unblocked grid homology of a knot grid.
 
@@ -42,6 +50,9 @@ knot through which the concordance invariant `τ` is defined.
   component act identically on `GH⁻`.
 * `TauCeti.GridDiagram.smul_unblockedHomology_eq_rename_smul`: renaming the variables within
   components does not change the action of a polynomial on `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyClass_surjective` and
+  `TauCeti.GridDiagram.unblockedHomologyClass_eq_zero_iff`: every class is the class of a cycle,
+  and a cycle has zero class exactly when it is a boundary.
 * `TauCeti.GridDiagram.IsKnot.isTorsionBySet_unblockedHomology`: for a knot grid, `GH⁻` is
   annihilated by the kernel of `R[V₀, …, V_{n-1}] → R[U]`.
 * `TauCeti.GridDiagram.IsKnot.aeval_smul_unblockedHomology` and
@@ -95,6 +106,72 @@ theorem smul_unblockedHomology_eq_rename_smul (f : Fin n → Fin n)
   | mul_X p c hp =>
     rw [mul_smul, hp, X_smul_unblockedHomology_eq_of_sameCycle (hf c), map_mul,
       MvPolynomial.rename_X, mul_smul]
+
+/-! ### Cycles and boundaries -/
+
+section Quotient
+
+variable (G R)
+
+/-- The unblocked complex with its unique object and differential spelled out, so that its
+homology is the homology of the unblocked grid differential in the sense of
+`LinearMap.homology`. -/
+private noncomputable abbrev unblockedComplex' :
+    HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) where
+  X _ := ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n)
+  d _ _ := ModuleCat.ofHom (G.unblockedDifferential R)
+  d_comp_d' _ _ _ _ _ :=
+    ((G.unblockedDifferential R).shortComplex (G.unblockedDifferential_comp_self_eq_zero R)).zero
+
+/-- The unblocked complex is isomorphic to its spelled-out form `unblockedComplex'`. -/
+private noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblockedComplex' R :=
+  HomologicalComplex.Hom.isoOfComponents (fun i ↦ eqToIso (G.unblockedComplex_X R i)) (by
+    rintro ⟨⟩ ⟨⟩ -
+    simp)
+
+/-- The unblocked grid homology `GH⁻` is the homology `ker ∂⁻ ⧸ im ∂⁻` of the unblocked grid
+differential: the cycles of `GC⁻` modulo the boundaries. -/
+noncomputable def unblockedHomologyIso :
+    G.unblockedHomology R ≅
+      ModuleCat.of (MvPolynomial (Fin n) R)
+        ((G.unblockedDifferential R).homology (G.unblockedDifferential_comp_self_eq_zero R)) :=
+  HomologicalComplex.homologyMapIso (G.unblockedComplexIso R) () ≪≫
+    (G.unblockedComplex' R).homologyIsoSc' () () () rfl rfl ≪≫
+      (G.unblockedDifferential R).homologyIso (G.unblockedDifferential_comp_self_eq_zero R)
+
+/-- The linear map sending a cycle of `GC⁻` to its class in `GH⁻`. -/
+noncomputable def unblockedHomologyClass :
+    LinearMap.ker (G.unblockedDifferential R) →ₗ[MvPolynomial (Fin n) R] G.unblockedHomology R :=
+  (G.unblockedHomologyIso R).inv.hom ∘ₗ
+    (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R)
+
+/-- Under `unblockedHomologyIso`, the class of a cycle is its class modulo the boundaries. -/
+@[simp]
+theorem unblockedHomologyIso_hom_unblockedHomologyClass
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    (G.unblockedHomologyIso R).hom (G.unblockedHomologyClass R z) =
+      (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R) z := by
+  simp [unblockedHomologyClass]
+
+/-- Every class in `GH⁻` is represented by a cycle. -/
+theorem unblockedHomologyClass_surjective : Function.Surjective (G.unblockedHomologyClass R) := by
+  rw [unblockedHomologyClass, LinearMap.coe_comp]
+  exact ((ModuleCat.epi_iff_surjective (G.unblockedHomologyIso R).inv).mp inferInstance).comp
+    ((G.unblockedDifferential R).homologyπ_surjective
+      (G.unblockedDifferential_comp_self_eq_zero R))
+
+/-- A cycle represents zero in `GH⁻` exactly when it is a boundary. -/
+@[simp]
+theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyClass R z = 0 ↔ (z : GridChainMinus R n) ∈
+      LinearMap.range (G.unblockedDifferential R) := by
+  rw [← LinearMap.homologyπ_eq_zero_iff (G.unblockedDifferential R)
+    (G.unblockedDifferential_comp_self_eq_zero R),
+    ← unblockedHomologyIso_hom_unblockedHomologyClass,
+    ← map_zero (G.unblockedHomologyIso R).hom.hom]
+  exact ((ModuleCat.mono_iff_injective _).mp inferInstance).eq_iff.symm
+
+end Quotient
 
 namespace IsKnot
 

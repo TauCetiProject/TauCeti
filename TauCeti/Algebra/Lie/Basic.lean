@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.LinearAlgebra.Basis.Basic
 
 /-!
 # Basic infrastructure for Lie modules
@@ -25,6 +26,8 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 
 ## Main results
+
+* `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
 
 * `TauCeti.LieModuleHom.sum_apply`: a finite sum of morphisms of Lie modules is evaluated
   summandwise.
@@ -262,3 +265,18 @@ theorem _root_.LieHom.map_ad_pow {R L L' : Type*} [CommRing R] [LieRing L] [LieA
     rw [ih, f.map_lie]
 
 end TauCeti
+
+namespace Module.Basis
+
+/-- A bracket coordinate is the sum of the bracket columns weighted by the first argument's
+basis coordinates. -/
+theorem repr_lie_eq_sum {R L ι : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [Fintype ι] (b : Basis ι R L) (X Y : L) (k : ι) :
+    b.repr ⁅X, Y⁆ k = ∑ i : ι, b.repr X i * b.repr ⁅b i, Y⁆ k := by
+  classical
+  conv_lhs => rw [← b.sum_repr X]
+  rw [sum_lie]
+  simp [smul_lie, map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
+    smul_eq_mul]
+
+end Module.Basis

@@ -152,6 +152,37 @@ omit X in
 theorem isZero_leftRegular (n : ℤ) : IsZero (tateCohomology (leftRegular k G) n) :=
   (isZero_indBot k n).of_iso ((tateCohomologyFunctor n).mapIso indBotIsoLeftRegular.symm)
 
+omit X in
+/-- For a finite group, a morphism of representations which is the norm
+`x ↦ ∑ g, B.ρ g (φ (A.ρ g⁻¹ x))` of a linear map `φ : A → B` induces zero on Tate cohomology in
+every degree: it factors through the coinduced representation `Coind_⊥^G A`, whose Tate cohomology
+vanishes. -/
+theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V →ₗ[k] B.V)
+    (hf : ∀ x, f.hom x = ∑ g : G, B.ρ g (φ (A.ρ g⁻¹ x))) (n : ℤ) :
+    (tateCohomologyFunctor n).map f = 0 := by
+  -- `f` is the embedding `x ↦ (h ↦ A.ρ h x)` into `Coind_⊥^G A` followed by
+  -- `u ↦ ∑ h, B.ρ h⁻¹ (φ (u h))`, which is equivariant because `G` acts on `u` by right
+  -- translation.
+  let ψ₀ : coindBot k G A.V →ₗ[k] B.V :=
+    ∑ h : G, B.ρ h⁻¹ ∘ₗ φ ∘ₗ LinearMap.proj h ∘ₗ (coindBotEquivPi k G A.V).toLinearMap
+  let ψ : coindBot k G A.V ⟶ B := Rep.ofHom <|
+    ψ₀.intertwiningMap_of_isIntertwiningMap (ρ := (coindBot k G A.V).ρ) (σ := B.ρ) fun g u ↦ by
+      simp only [ψ₀, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply, map_sum]
+      refine Fintype.sum_equiv (Equiv.mulRight g) _ _ fun h ↦ ?_
+      simp only [Equiv.coe_mulRight, ← Module.End.mul_apply, ← map_mul, mul_inv_rev,
+        mul_inv_cancel_left]
+      rw [coindBot_ρ_apply_coe]
+  have hfac : f = coindBotUnit A ≫ ψ := by
+    ext x
+    simp only [Representation.IntertwiningMap.coe_toLinearMap, Rep.comp_apply, hf, ψ, ψ₀,
+      ConcreteCategory.hom_ofHom, LinearMap.toIntertwiningMap, LinearMap.coe_sum,
+      LinearMap.coe_comp, LinearMap.coe_proj, LinearEquiv.coe_coe, Finset.sum_apply,
+      Function.comp_apply, Function.eval, coindBotEquivPi_apply, coindBotUnit_hom_apply_coe]
+    exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g ↦ by simp
+  rw [hfac, Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
+    ((tateCohomologyFunctor n).map ψ), Limits.comp_zero]
+
 end Fintype
 
 section Restriction

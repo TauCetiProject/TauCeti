@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.StudentT.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
 import TauCeti.Analysis.SpecialFunctions.Beta
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
@@ -28,6 +29,8 @@ exactly for `-1 < q < ν`; the exponential-moment statements read off that sharp
 
 ## Main results
 
+* `integrable_pow_studentTMeasure_iff` — within the nondegenerate family, a natural power is
+  integrable exactly when its degree is less than the degrees of freedom;
 * `integrable_id_studentTMeasure_iff` and `integral_id_studentTMeasure` — within the nondegenerate
   family the mean exists exactly when `1 < ν`, while its Bochner integral is zero for every
   parameter;
@@ -59,50 +62,6 @@ namespace Probability
 variable {ν q x t : ℝ}
 
 /-! ### Polynomial moments -/
-
-private lemma studentTKernel_id_factor (hν : 0 < ν) (x : ℝ) :
-    (x / √(1 + x ^ 2 / ν)) * (1 + x ^ 2 / ν) ^ (-(ν / 2)) =
-      x * (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2)) := by
-  have hbase : 0 < 1 + x ^ 2 / ν := by positivity
-  rw [Real.sqrt_eq_rpow, div_eq_mul_inv, ← Real.rpow_neg hbase.le, mul_assoc,
-    ← Real.rpow_add hbase]
-  congr 2
-  ring
-
-private lemma integrable_id_mul_studentTKernel (hν : 1 < ν) :
-    Integrable (fun x : ℝ =>
-      x * (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2))) := by
-  have hνpos : 0 < ν := lt_trans zero_lt_one hν
-  have hkernel : Integrable (fun x : ℝ => (1 + x ^ 2 / ν) ^ (-(ν / 2))) :=
-    integrable_one_add_sq_div_rpow hνpos (by linarith)
-  have hbounded : ∀ x : ℝ, ‖x / √(1 + x ^ 2 / ν)‖ ≤ √ν := by
-    intro x
-    have hbase : 0 < 1 + x ^ 2 / ν := by positivity
-    rw [Real.norm_eq_abs, abs_div, abs_of_pos (Real.sqrt_pos.mpr hbase),
-      div_le_iff₀ (Real.sqrt_pos.mpr hbase)]
-    have hsq : |x| ^ 2 ≤ (√ν * √(1 + x ^ 2 / ν)) ^ 2 := by
-      rw [sq_abs, mul_pow, Real.sq_sqrt hνpos.le, Real.sq_sqrt hbase.le]
-      have hmul : ν * (1 + x ^ 2 / ν) = ν + x ^ 2 := by field_simp
-      rw [hmul]
-      linarith
-    have hprod_nonneg : 0 ≤ √ν * √(1 + x ^ 2 / ν) :=
-      mul_nonneg (Real.sqrt_nonneg ν) (Real.sqrt_nonneg (1 + x ^ 2 / ν))
-    nlinarith [abs_nonneg x]
-  have hproduct : Integrable (fun x : ℝ =>
-      (x / √(1 + x ^ 2 / ν)) * (1 + x ^ 2 / ν) ^ (-(ν / 2))) :=
-    hkernel.bdd_mul (measurable_id.div
-      (Real.continuous_sqrt.measurable.comp (by fun_prop))).aestronglyMeasurable
-      (ae_of_all _ hbounded)
-  exact hproduct.congr (ae_of_all _ fun x => studentTKernel_id_factor hνpos x)
-
-private theorem integrable_id_studentTMeasure_of_one_lt (hν : 1 < ν) :
-    Integrable id (studentTMeasure ν) := by
-  have hνpos : 0 < ν := lt_trans zero_lt_one hν
-  rw [integrable_studentTMeasure_iff]
-  simp_rw [id_eq, smul_eq_mul, studentTPDFReal_of_pos hνpos]
-  have h := (integrable_id_mul_studentTKernel hν).const_mul
-    (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)))
-  exact h.congr (ae_of_all _ fun x => by ring)
 
 /-- The beta kernel is integrable on the positive half-line precisely for `-1 < q < ν`: the
 exponent at `0` is `(q - 1) / 2` and the tail exponent is `(q - ν - 2) / 2`. -/
@@ -157,53 +116,55 @@ private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq 
   simpa [g, IntegrableOn, integrable_const_mul_iff hc] using
     integrableOn_studentTBetaKernel_Ioi_iff hq
 
-private theorem not_integrable_pow_studentTMeasure (hν : 0 < ν) (q : ℕ)
-    (hνq : ν ≤ (q : ℝ)) :
-    ¬ Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) := by
-  intro hint
-  have hden := (integrable_studentTMeasure_iff (ν := ν)
-    (f := fun x : ℝ => x ^ q)).mp hint
-  have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ (q : ℝ))
-      (Ioi (0 : ℝ)) := by
-    simpa only [Real.rpow_natCast, smul_eq_mul] using hden.integrableOn (s := Ioi (0 : ℝ))
-  exact (not_lt_of_ge hνq) ((integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
-    (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).mp hIoi)
+private lemma studentTPDFReal_abs (ν x : ℝ) : studentTPDFReal ν |x| = studentTPDFReal ν x := by
+  rcases le_total 0 x with hx | hx
+  · rw [abs_of_nonneg hx]
+  · rw [abs_of_nonpos hx, studentTPDFReal_neg]
+
+/-- A natural power is integrable under a nondegenerate Student t law exactly when its degree is
+less than the degrees of freedom. -/
+@[simp]
+theorem integrable_pow_studentTMeasure_iff (hν : 0 < ν) (q : ℕ) :
+    Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) ↔ (q : ℝ) < ν := by
+  constructor
+  · intro hint
+    have hden := (integrable_studentTMeasure_iff (ν := ν)
+      (f := fun x : ℝ => x ^ q)).mp hint
+    have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ (q : ℝ))
+        (Ioi (0 : ℝ)) := by
+      simpa only [Real.rpow_natCast, smul_eq_mul] using hden.integrableOn (s := Ioi (0 : ℝ))
+    exact (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
+      (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).mp hIoi
+  · intro hq
+    rw [integrable_studentTMeasure_iff]
+    simp_rw [smul_eq_mul]
+    have hIoi := (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
+      (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).2 hq
+    have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
+    rw [← integrable_norm_iff (by fun_prop)]
+    simpa only [studentTPDFReal_abs, Real.rpow_natCast, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (studentTPDFReal_nonneg ν _), abs_pow] using habs
 
 /-- The identity is integrable under a nondegenerate Student t law exactly when the number of
 degrees of freedom exceeds one. -/
 @[simp]
 theorem integrable_id_studentTMeasure_iff (hν : 0 < ν) :
     Integrable id (studentTMeasure ν) ↔ 1 < ν := by
-  constructor
-  · intro hint
-    by_contra h
-    have hnot := not_integrable_pow_studentTMeasure hν 1 (by
-      simpa using (not_lt.mp h : ν ≤ 1))
-    have hint' : Integrable (fun x : ℝ => x) (studentTMeasure ν) := by
-      refine hint.congr (ae_of_all _ fun x => ?_)
-      rfl
-    apply hnot
-    simpa only [pow_one] using hint'
-  · exact integrable_id_studentTMeasure_of_one_lt
+  delta id
+  simpa only [pow_one, Nat.cast_one] using integrable_pow_studentTMeasure_iff hν 1
 
 /-- The Bochner integral of the identity under a Student t measure is zero for every parameter,
 including by convention when the identity is not integrable. -/
 @[simp]
 theorem integral_id_studentTMeasure (ν : ℝ) :
     ∫ x, x ∂studentTMeasure ν = 0 := by
-  by_cases hint : Integrable (fun x : ℝ => x) (studentTMeasure ν)
-  · have hpres : MeasurePreserving (fun x : ℝ => -x)
-        (studentTMeasure ν) (studentTMeasure ν) :=
-      ⟨measurable_neg, studentTMeasure_map_neg ν⟩
-    have hrefl : ∫ x, -x ∂studentTMeasure ν = ∫ x, x ∂studentTMeasure ν := by
-      simpa only [Function.comp_apply, id_eq] using
-        hpres.integral_comp (Homeomorph.neg ℝ).measurableEmbedding id
-    have hneg : Integrable (fun x : ℝ => -x) (studentTMeasure ν) := hint.neg
-    have hsum : (∫ x, x ∂studentTMeasure ν) + ∫ x, -x ∂studentTMeasure ν = 0 := by
-      rw [← integral_add hint hneg]
-      simp
-    linarith
-  · exact integral_undef hint
+  have hpres : MeasurePreserving (fun x : ℝ => -x) (studentTMeasure ν) (studentTMeasure ν) :=
+    ⟨measurable_neg, studentTMeasure_map_neg ν⟩
+  have h : (∫ x, -x ∂studentTMeasure ν) = ∫ x, x ∂studentTMeasure ν := by
+    simpa only [Function.comp_apply, id_eq] using
+      hpres.integral_comp (Homeomorph.neg ℝ).measurableEmbedding id
+  rw [integral_neg] at h
+  linarith
 
 private lemma studentTKernel_sq (hν : 0 < ν) (x : ℝ) :
     x ^ 2 * (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2)) =
@@ -225,28 +186,6 @@ private lemma studentTKernel_sq (hν : 0 < ν) (x : ℝ) :
   rw [hshift]
   field_simp
   ring
-
-private lemma integrable_sq_mul_studentTKernel (hν : 2 < ν) :
-    Integrable (fun x : ℝ =>
-      x ^ 2 * (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2))) := by
-  have hνpos : 0 < ν := lt_trans zero_lt_two hν
-  have hshift : Integrable (fun x : ℝ =>
-      (1 + x ^ 2 / ν) ^ (-((ν - 1) / 2))) :=
-    integrable_one_add_sq_div_rpow hνpos (by linarith)
-  have hbase : Integrable (fun x : ℝ =>
-      (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2))) :=
-    integrable_one_add_sq_div_rpow hνpos (by linarith)
-  exact ((hshift.sub hbase).const_mul ν).congr
-    (ae_of_all _ fun x => (studentTKernel_sq hνpos x).symm)
-
-private theorem integrable_sq_studentTMeasure_of_two_lt (hν : 2 < ν) :
-    Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) := by
-  have hνpos : 0 < ν := lt_trans zero_lt_two hν
-  rw [integrable_studentTMeasure_iff]
-  simp_rw [smul_eq_mul, studentTPDFReal_of_pos hνpos]
-  have h := (integrable_sq_mul_studentTKernel hν).const_mul
-    (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)))
-  exact h.congr (ae_of_all _ fun x => by ring)
 
 private lemma beta_sub_beta_add_one (hν : 2 < ν) :
     beta (1 / 2) ((ν - 2) / 2) - beta (1 / 2) (ν / 2) =
@@ -352,15 +291,9 @@ theorem integral_sq_studentTMeasure (hν : 2 < ν) :
 
 /-- Squaring is integrable under a nondegenerate Student t law exactly when the number of degrees
 of freedom exceeds two. -/
-@[simp]
 theorem integrable_sq_studentTMeasure_iff (hν : 0 < ν) :
     Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) ↔ 2 < ν := by
-  constructor
-  · intro hint
-    by_contra h
-    exact not_integrable_pow_studentTMeasure hν 2 (by
-      simpa using (not_lt.mp h : ν ≤ 2)) hint
-  · exact integrable_sq_studentTMeasure_of_two_lt
+  simpa only [Nat.cast_ofNat] using integrable_pow_studentTMeasure_iff hν 2
 
 /-- At or below two degrees of freedom, the second raw moment of a nondegenerate Student t law
 diverges. -/
@@ -377,7 +310,8 @@ theorem variance_id_studentTMeasure (hν : 2 < ν) :
     isProbabilityMeasure_studentTMeasure (lt_trans zero_lt_two hν)
   have hmem : MemLp id 2 (studentTMeasure ν) :=
     (memLp_two_iff_integrable_sq measurable_id'.aestronglyMeasurable).2
-      (by simpa using integrable_sq_studentTMeasure_of_two_lt hν)
+      (by simpa using
+        (integrable_pow_studentTMeasure_iff (lt_trans zero_lt_two hν) 2).2 (by simpa using hν))
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
   rw [integral_sq_studentTMeasure hν, integral_id_studentTMeasure]
@@ -392,33 +326,16 @@ theorem not_integrable_exp_mul_id_studentTMeasure (hν : 0 < ν) {t : ℝ} (ht :
     ¬ Integrable (fun x : ℝ => Real.exp (t * x)) (studentTMeasure ν) := by
   intro hint
   -- reflection in the origin turns the rate `t` into `-t`
-  have hmap : (studentTMeasure ν).map (fun x : ℝ => -x) = studentTMeasure ν :=
-    studentTMeasure_map_neg ν
   have hkey : Integrable (fun y : ℝ => Real.exp (t * y))
       ((studentTMeasure ν).map (fun x : ℝ => -x)) := by
-    rw [hmap]
-    exact hint
-  have hcomp : Integrable (fun x : ℝ => Real.exp (t * (-x))) (studentTMeasure ν) :=
-    (integrable_map_measure hkey.aestronglyMeasurable measurable_neg.aemeasurable).mp hkey
+    rwa [studentTMeasure_map_neg]
   have hneg : Integrable (fun x : ℝ => Real.exp (-t * x)) (studentTMeasure ν) := by
-    simpa [mul_neg] using hcomp
+    simpa [Function.comp_def, mul_neg] using
+      (integrable_map_measure hkey.aestronglyMeasurable measurable_neg.aemeasurable).mp hkey
   -- both one-sided exponential moments would force every polynomial moment to be finite
-  have hmom : Integrable (fun x : ℝ => |x| ^ ν) (studentTMeasure ν) :=
-    integrable_rpow_abs_of_integrable_exp_mul ht hint hneg hν.le
-  have hden : Integrable (fun x : ℝ => studentTPDFReal ν x * |x| ^ ν) :=
-    (integrable_studentTMeasure_iff (ν := ν) (f := fun x : ℝ => |x| ^ ν)).mp hmom
-  have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ ν) (Ioi (0 : ℝ)) := by
-    have h1 : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * |x| ^ ν) (Ioi (0 : ℝ)) :=
-      hden.integrableOn
-    have h2 : ∀ x ∈ Ioi (0 : ℝ), studentTPDFReal ν x * |x| ^ ν = studentTPDFReal ν x * x ^ ν := by
-      intro x hx
-      have hx0 : 0 < x := hx
-      have habs : |x| = x := abs_of_pos hx0
-      rw [habs]
-    exact h1.congr_fun h2 measurableSet_Ioi
-  have hq : -1 < ν := by linarith
-  have : ν < ν := (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν hq).mp hIoi
-  linarith
+  exact (not_lt_of_ge (Nat.le_ceil ν))
+    ((integrable_pow_studentTMeasure_iff hν ⌈ν⌉₊).mp
+      (integrable_pow_of_integrable_exp_mul ht hint hneg ⌈ν⌉₊))
 
 /-- The exponential integrand of a Student t law is integrable exactly at rate zero. -/
 @[simp]

@@ -51,6 +51,8 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
   quotient map, so `1 → M → E_α → G → 1` is an extension of topological groups.
 * `TauCeti.FactorSet.continuous_canonicalSection`: the canonical section is continuous, so the
   extension built from a continuous factor set carries a continuous normalized section.
+* `TauCeti.FactorSet.continuous_map`: the pushforward of a continuous factor set along a continuous
+  equivariant homomorphism of coefficient modules is continuous.
 * `TauCeti.FactorSet.ofMul_mem_Z2_iff`: continuity of a factor set is membership of the explicit
   complex of continuous cochains.
 
@@ -199,6 +201,10 @@ theorem continuous_inl : Continuous (inl α) := by
 theorem continuous_rightHom : Continuous (rightHom α) :=
   Extension.continuous_right.congr fun x => (rightHom_apply α x).symm
 
+/-- The trivial factor set is continuous, being constant. -/
+theorem continuous_trivial : Continuous ⇑(trivial G M) :=
+  continuous_const.congr fun p => (trivial_apply G M p).symm
+
 /-- The canonical section `g ↦ ⟨1, g⟩` of the projection is continuous: the extension built from a
 continuous factor set comes with a continuous normalized section, and
 `TauCeti.GroupExtension.factorSet_canonicalSection` reads the factor set back off it. -/
@@ -240,6 +246,48 @@ theorem isQuotientMap_rightHom : Topology.IsQuotientMap (rightHom α) :=
   (isOpenMap_rightHom α).isQuotientMap (continuous_rightHom α) (rightHom_surjective α)
 
 end Maps
+
+/-! ### Continuity of the pushforward along a coefficient map -/
+
+section Map
+
+variable {N : Type*} [CommGroup N] [TopologicalSpace N] [MulDistribMulAction G N]
+
+/-- The pushforward of a continuous factor set along a continuous equivariant homomorphism of
+coefficient modules is continuous. -/
+theorem continuous_map (f : M →*[G] N) (hf : Continuous f) {α : FactorSet G M}
+    (hα : Continuous ⇑α) : Continuous ⇑(α.map f) :=
+  (hf.comp hα).congr fun p => (map_apply f α p).symm
+
+end Map
+
+/-! ### Continuity of the rescaling equivalence -/
+
+section Rescale
+
+variable {α β : FactorSet G M} {x : G → M}
+  (hx : ∀ g h : G, α (g, h) * x (g * h) = β (g, h) * (g • x h * x g)) (hxc : Continuous x)
+
+include hxc
+
+/-- **The rescaling equivalence between the twisted products of `α` and `β` is continuous** when
+the rescaling function `x` is: under `TauCeti.FactorSet.Extension.homeomorphProd` it is
+`(a, g) ↦ (a * x g, g)`. -/
+theorem continuous_rescaleEquiv [ContinuousMul M] : Continuous ⇑(rescaleEquiv α β x hx) := by
+  refine Extension.isInducing_leftRight.continuous_iff.2 ?_
+  simp only [Function.comp_def, rescaleEquiv_apply]
+  exact (Extension.continuous_left.mul (hxc.comp Extension.continuous_right)).prodMk
+    Extension.continuous_right
+
+/-- The inverse of the rescaling equivalence is continuous as well: it is the rescaling by `x⁻¹`. -/
+theorem continuous_rescaleEquiv_symm [ContinuousMul M] [ContinuousInv M] :
+    Continuous ⇑(rescaleEquiv α β x hx).symm := by
+  refine Extension.isInducing_leftRight.continuous_iff.2 ?_
+  simp only [Function.comp_def, rescaleEquiv_symm_apply]
+  exact (Extension.continuous_left.mul (hxc.comp Extension.continuous_right).inv).prodMk
+    Extension.continuous_right
+
+end Rescale
 
 /-! ### Continuity as membership of the explicit complex of continuous cochains -/
 

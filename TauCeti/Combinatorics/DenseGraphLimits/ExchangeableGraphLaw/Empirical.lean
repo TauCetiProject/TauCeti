@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Mixture
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Unbiased
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.HomDensity
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
@@ -26,10 +27,12 @@ pattern `F` sees the pattern with probability `upperMass F`, so `E[t₀(F, G)] =
 whenever `k ≤ n`. The two densities differ by at most `C(k, 2) / n`, the union bound on
 the proportion of non-injective vertex maps, which gives the **collision estimate**
 `|∫ t(F, ·) d(empiricalMixing L (n + 1)) - upperMass F| ≤ C(k, 2) / (n + 1)`
-and hence convergence of the empirical hom-density averages to the upper masses. Any weak limit
-point of the empirical mixing measures is therefore a mixing measure with the upper masses of `L`,
-which is how the Diaconis–Janson representation of exchangeable graph laws by graphon mixtures is
-obtained.
+and hence convergence of the empirical hom-density averages to the upper masses. Each descended
+density `t(F, ·)` is bounded and continuous, so weak convergence carries these averages to any weak
+limit point `P` of the empirical mixing measures: the mixture law of `P` then has the upper masses
+of `L`, and since upper masses determine an exchangeable graph law, it *is* `L`. This limit
+identification is how the Diaconis–Janson representation of exchangeable graph laws by graphon
+mixtures is obtained.
 
 ## Main definitions
 
@@ -44,7 +47,10 @@ obtained.
 * `TauCeti.DenseGraphLimits.abs_integral_homDensityOnSpace_empiricalMixing_sub_le` — the collision
   estimate;
 * `TauCeti.DenseGraphLimits.tendsto_integral_homDensityOnSpace_empiricalMixing` — the empirical
-  hom-density averages converge to the upper masses.
+  hom-density averages converge to the upper masses;
+* `TauCeti.DenseGraphLimits.mixtureExchangeableLaw_eq_of_tendsto_empiricalMixing` — every weak
+  limit of the empirical mixing measures along a diverging sequence of sample sizes is a mixing
+  measure for the law.
 
 ## References
 
@@ -61,7 +67,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Topology
+open MeasureTheory Filter Topology BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -126,6 +132,26 @@ theorem tendsto_integral_homDensityOnSpace_empiricalMixing {k : ℕ} (F : Simple
     (fun n => ?_) hbound)
   rw [Real.norm_eq_abs]
   exact abs_integral_homDensityOnSpace_empiricalMixing_sub_le L n F
+
+/-- **Limit identification.** A weak limit `P` of the empirical mixing measures of an exchangeable
+graph law `L`, along any diverging sequence of sample sizes, is a mixing measure for `L`: the
+mixture law of `P` is `L`. -/
+theorem mixtureExchangeableLaw_eq_of_tendsto_empiricalMixing {P : ProbabilityMeasure GraphonSpaceI}
+    {φ : ℕ → ℕ} (hφ : Tendsto φ atTop atTop)
+    (hconv : Tendsto (fun m => empiricalMixing L (φ m)) atTop (𝓝 P)) :
+    mixtureExchangeableLaw P = L := by
+  classical
+  -- Both upper masses are limits of the empirical averages of `t(F, ·)`: under `P` by weak
+  -- convergence, under `L` by the collision estimate.
+  refine ExchangeableGraphLaw.ext_upperMass fun k F => ?_
+  rw [upperMass_mixtureExchangeableLaw]
+  -- `t(F, ·)` as a bounded continuous function, with values in `[0, 1]`
+  let f : GraphonSpaceI →ᵇ ℝ :=
+    .mkOfBound ⟨homDensityOnSpace F, continuous_homDensityOnSpace F⟩ 1 fun x y =>
+      Real.dist_le_of_mem_Icc_01 ⟨homDensityOnSpace_nonneg F x, homDensityOnSpace_le_one F x⟩
+        ⟨homDensityOnSpace_nonneg F y, homDensityOnSpace_le_one F y⟩
+  exact tendsto_nhds_unique (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f)
+    ((tendsto_integral_homDensityOnSpace_empiricalMixing L F).comp hφ)
 
 end DenseGraphLimits
 

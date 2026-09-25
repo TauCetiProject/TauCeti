@@ -29,8 +29,6 @@ local fields.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
-  zero-preserving normalized valuation of `K_v` is the inverse of its adic valuation `Valued.v`.
 * `IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion`: the ramification index
   of `L_w / K_v` is `w.asIdeal.ramificationIdx R`.
 * `IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt`: for `B`
@@ -49,22 +47,6 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 open scoped AdicCompletionExtension
 
 namespace IsDedekindDomain.HeightOneSpectrum
-
-section Completion
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-  (v : HeightOneSpectrum R) [Finite (R ⧸ v.asIdeal)]
-
-/-- The zero-preserving normalized valuation of the completion `K_v` is the inverse of its adic
-valuation `Valued.v`. -/
-@[simp]
-theorem normalizedValuationWithZero_adicCompletion (x : v.adicCompletion K) :
-    TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
-  Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
-    (v.valuedAdicCompletion_surjective K) x
-
-end Completion
 
 section Extension
 

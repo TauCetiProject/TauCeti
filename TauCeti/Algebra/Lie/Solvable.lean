@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.Semisimple.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
-# Solvability along Lie homomorphisms, and the radical of a quotient
+# Solvability along Lie homomorphisms, the radical of a quotient, and ideals inside an ideal
 
 Mathlib transports solvability of a Lie algebra along injective and surjective homomorphisms and
 shows that a sum of two solvable ideals is solvable, but it does not record the third and most
@@ -18,6 +18,14 @@ solvable ideal whose quotient is solvable is itself solvable.  This file proves 
 sharper form that an ideal is solvable as soon as its image under some homomorphism is solvable
 and the part of it inside the kernel is, and draws the consequence that the solvable radical is
 carried onto the solvable radical by a surjective homomorphism with solvable kernel.
+
+A last section changes direction and looks inside an ideal rather than along a homomorphism. An
+ideal `J` of `L` contained in an ideal `I` is also an ideal of the Lie algebra `↥I`, namely
+`LieIdeal.restrict I J`, the preimage of `J` under the inclusion `I ↪ L`; the two readings have
+the same elements, so `J` is trivial exactly when its reading inside `I` is, and it is solvable
+exactly when that reading is. Consequently a solvable ideal of `L` lying inside an ideal with
+trivial radical is trivial (`LieIdeal.eq_bot_of_le_of_isSolvable`), which is how a semisimplicity
+hypothesis on one ideal constrains the radical of the whole algebra.
 
 The headline corollary is that the quotient of a Noetherian Lie algebra by its radical has
 trivial radical, so that the radical is the unique solvable ideal with that property.  In
@@ -46,6 +54,13 @@ whole algebra.
   `LieAlgebra.isSolvable_iff_ideal_quotient`: solvability is an extension property.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
   onto the radical.
+* `LieIdeal.restrict`: an ideal of `L` read as an ideal of an ideal `I` of `L`, with
+  `LieIdeal.restrict_eq_bot_iff` and `LieIdeal.isSolvable_restrict_iff` saying that for `J ≤ I`
+  the two readings are trivial, respectively solvable, together, and
+  `LieIdeal.eq_bot_of_le_of_isSolvable`: **a solvable ideal inside an ideal with trivial radical
+  is trivial**.
+* `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
+  isomorphism of Lie algebras.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
@@ -132,6 +147,72 @@ theorem radical_map_eq [IsNoetherian R L] (h : Function.Surjective f)
   calc radical R L' = ((radical R L').comap f).map f := (hmap _).symm
     _ ≤ (radical R L).map f := map_mono ((LieIdeal.solvable_iff_le_radical R L _).mp hcomap)
 
+/-! ### Ideals inside an ideal -/
+
+section Restrict
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- **An ideal of `L`, read inside an ideal `I` of `L`**: the preimage of `J` under the inclusion
+`I ↪ L`.  For `J ≤ I` this presents `J` itself as an ideal of the Lie algebra `↥I`, which is what
+lets the ideal theory of `↥I` speak about ideals of `L` that happen to lie in `I`. -/
+def restrict (I J : LieIdeal R L) : LieIdeal R I :=
+  LieIdeal.comap I.incl J
+
+@[simp]
+theorem mem_restrict {I J : LieIdeal R L} {x : I} : x ∈ I.restrict J ↔ (x : L) ∈ J :=
+  Iff.rfl
+
+/-- The inclusion of `I.restrict J` into `J`: both are the elements of `L` lying in `I` and in
+`J`, presented inside `↥I` and inside `L` respectively. -/
+private def restrictIncl (I J : LieIdeal R L) : ↥(I.restrict J) →ₗ⁅R⁆ ↥J where
+  toFun x := ⟨((x : I) : L), mem_restrict.mp x.2⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_lie' := rfl
+
+private theorem restrictIncl_injective (I J : LieIdeal R L) :
+    Function.Injective (restrictIncl I J) := by
+  intro x y h
+  have h' := Subtype.ext_iff.mp h
+  exact Subtype.ext (Subtype.ext h')
+
+private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
+    Function.Surjective (restrictIncl I J) :=
+  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, rfl⟩
+
+/-- Read inside an ideal, a solvable ideal stays solvable. -/
+instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
+    IsSolvable ↥(I.restrict J) :=
+  (restrictIncl_injective I J).lieAlgebra_isSolvable
+
+/-- An ideal contained in `I` is solvable exactly when it is solvable read inside `I`. -/
+theorem isSolvable_restrict_iff {I J : LieIdeal R L} (h : J ≤ I) :
+    IsSolvable ↥(I.restrict J) ↔ IsSolvable ↥J :=
+  ⟨fun _ => (restrictIncl_surjective h).lieAlgebra_isSolvable, fun _ => isSolvable_restrict I J⟩
+
+/-- An ideal contained in `I` is trivial exactly when it is trivial read inside `I`. -/
+theorem restrict_eq_bot_iff {I J : LieIdeal R L} (h : J ≤ I) : I.restrict J = ⊥ ↔ J = ⊥ := by
+  constructor
+  · refine fun hJ => le_bot_iff.mp fun x hx => ?_
+    have hx' : (⟨x, h hx⟩ : I) ∈ I.restrict J := hx
+    rw [hJ, LieSubmodule.mem_bot] at hx'
+    rw [LieSubmodule.mem_bot]
+    exact congrArg (fun z : I => (z : L)) hx'
+  · rintro rfl
+    refine le_bot_iff.mp fun x hx => ?_
+    have hx' : (x : L) ∈ (⊥ : LieIdeal R L) := mem_restrict.mp hx
+    rw [LieSubmodule.mem_bot] at hx' ⊢
+    exact Subtype.ext hx'
+
+/-- **A solvable ideal contained in an ideal with trivial radical is trivial.**  The ideals of `L`
+lying inside `I` are ideals of `↥I`, and `LieAlgebra.HasTrivialRadical` kills the solvable ones. -/
+theorem eq_bot_of_le_of_isSolvable {I J : LieIdeal R L} [HasTrivialRadical R I] (h : J ≤ I)
+    [IsSolvable ↥J] : J = ⊥ :=
+  (restrict_eq_bot_iff h).mp (HasTrivialRadical.eq_bot_of_isSolvable _)
+
+end Restrict
+
 end LieIdeal
 
 namespace LieAlgebra
@@ -155,6 +236,20 @@ theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
   refine ⟨fun _ => ⟨inferInstance, I.mkQ_surjective.lieAlgebra_isSolvable⟩, fun h => ?_⟩
   obtain ⟨h₁, h₂⟩ := h
   exact isSolvable_of_isSolvable_ker_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
+
+/-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
+
+No finiteness hypothesis is needed: neither Lie algebra has to be Noetherian or
+finite-dimensional. -/
+theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasTrivialRadical R L' :=
+  hasTrivialRadical_of_no_solvable_ideals fun I hI => by
+    have hbot : I.map (e.symm : L' →ₗ⁅R⁆ L) = ⊥ :=
+      HasTrivialRadical.eq_bot_of_isSolvable
+        (hI := LieIdeal.isSolvable_map _ _ e.symm.surjective) _
+    have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
+    rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
+    exact hbot
 
 variable (R L)
 

@@ -22,8 +22,10 @@ invariance, and gives the criterion that, for a form with trivial radical, repre
 equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
 coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
 nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
-whose polar pairing is one. These results provide the basic bridge from value questions to
-isotropy questions, following Lam,
+whose polar pairing is one. If the orthogonal sum of a form with trivial radical and an
+anisotropic form on a nonzero space is isotropic, the two summands therefore share a nonzero
+opposite value. These results provide the basic bridge from value questions to isotropy questions,
+following Lam,
 *Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
 -/
 
@@ -60,6 +62,12 @@ theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
 theorem _root_.QuadraticMap.restrict_isRepresentedBy (Q : QuadraticMap R M N)
     (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
   (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
+
+/-- The right factor of an orthogonal product is represented by the product. -/
+theorem _root_.QuadraticMap.isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
+    {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (Q₂ : QuadraticMap R M₂ N) :
+    Q₂.IsRepresentedBy (Q₁.prod Q₂) :=
+  ⟨Isometry.inr Q₁ Q₂, LinearMap.inr_injective⟩
 
 /-- Every quadratic map is represented by itself. -/
 @[refl]
@@ -195,6 +203,20 @@ theorem _root_.QuadraticMap.Represents.prod
   obtain ⟨w, hw⟩ := h₂
   exact ⟨(v, w), by simp [QuadraticMap.prod_apply, hv, hw]⟩
 
+/-- If one factor represents a nonzero value `a` and the other represents `-a`, then their
+orthogonal product is isotropic. -/
+theorem _root_.QuadraticMap.not_anisotropic_prod_of_represents_neg
+    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommGroup P]
+    [Module R M₁] [Module R M₂] [Module R P]
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a : P}
+    (h₁ : Represents Q₁ a) (h₂ : Represents Q₂ (-a)) (ha : a ≠ 0) :
+    ¬(Q₁.prod Q₂).Anisotropic := by
+  obtain ⟨v, hv⟩ := h₁
+  obtain ⟨w, hw⟩ := h₂
+  intro h
+  have hvw := h (v, w) (by rw [QuadraticMap.prod_apply, hv, hw, add_neg_cancel])
+  exact ha (by rw [← hv, (Prod.mk_eq_zero.mp hvw).1, map_zero])
+
 /-- Representing a value is preserved after multiplying it by the square of any scalar. -/
 theorem _root_.QuadraticMap.Represents.smul_mul_self
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
@@ -258,6 +280,27 @@ theorem _root_.QuadraticMap.Represents.of_isSquare_div {Q : QuadraticForm K V} {
     (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
   obtain ⟨r, hr⟩ := hab
   simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
+
+/-- If the orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero
+space is isotropic, then some nonzero value of the first form is the negative of a value of the
+second (O'Meara, *Introduction to Quadratic Forms*, 66:1). -/
+theorem _root_.QuadraticMap.Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic_prod
+    {V' : Type*} [AddCommGroup V'] [Module K V'] [Nontrivial V']
+    {U : QuadraticForm K V} {W : QuadraticForm K V'} (hW : W.Anisotropic)
+    (hU : U.radical = ⊥) (h : ¬(U.prod W).Anisotropic) :
+    ∃ x y, U x ≠ 0 ∧ U x = -W y := by
+  -- An anisotropic `U` forces both components of an isotropic vector of the sum to be nonzero;
+  -- an isotropic `U` is universal and represents the negative of any nonzero value of `W`.
+  by_cases hUiso : U.Anisotropic
+  · obtain ⟨⟨x, y⟩, hxy, hzero⟩ := (not_anisotropic_iff_exists _).mp h
+    rw [QuadraticMap.prod_apply, add_eq_zero_iff_eq_neg] at hzero
+    refine ⟨x, y, fun hx ↦ hxy ?_, hzero⟩
+    have hx0 : x = 0 := hUiso x hx
+    have hy0 : y = 0 := hW y (by simpa [hx0] using hzero.symm)
+    simp [hx0, hy0]
+  · obtain ⟨y, hy⟩ := exists_ne (0 : V')
+    obtain ⟨x, hx⟩ := represents_of_radical_eq_bot_of_not_anisotropic U hU hUiso (-W y)
+    exact ⟨x, y, by simpa [hx] using fun h ↦ hy (hW y h), hx⟩
 
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/

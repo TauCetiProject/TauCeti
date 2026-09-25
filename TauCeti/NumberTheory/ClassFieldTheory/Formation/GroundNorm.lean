@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Transitivity
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # The norm between the ground levels of a restriction
@@ -61,10 +62,6 @@ variable {small big : NormalLayer G}
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- An open subgroup of the compact group `G` has finite index. -/
-local instance (U : OpenSubgroup G) : U.toSubgroup.FiniteIndex :=
-  Subgroup.finiteIndex_of_finite_quotient
-
 /-- The **norm** `N_{U/U'} : A^{U'} → A^U` along a restriction `U' ≤ U` of ground subgroups: the
 relative degree-zero corestriction `ContCohomology.explicitCor0Le`, read on levels and evaluated by
 `groundNorm_apply_coe`. The subgroup `U'` need not be normal in `U`, so this is not the norm of a
@@ -75,12 +72,16 @@ def groundNorm (T : LayerRestriction small big) (F : Formation G) :
     (ContCohomology.explicitCor0Le G F.toRep.V _ _ T.ground_toSubgroup_le).comp
       (F.levelEquivH0 small.ground).toAddMonoidHom
 
+-- The `simp` lemmas on the norm of an element state their left-hand sides through `dsimp% only`:
+-- `toRep` is an `abbrev`, and `simp` reduces its carrier in implicit type arguments before it looks
+-- a term up, so a left-hand side stated plainly over `F.toRep.V` or its levels is never found.
+-- This follows #8315; see the implementation notes of `Formation/Basic.lean`.
 /-- The norm along a restriction is the sum of the translates by coset representatives, read in the
 ambient module: `N_{U/U'} x = ∑ ρ(g) x` over the representatives `g = q.out` of the cosets
 `q ∈ U/U'`. -/
 @[simp]
 theorem groundNorm_apply_coe (T : LayerRestriction small big) (F : Formation G)
-    (x : F.level small.ground) : (T.groundNorm F x : F.toRep.V) =
+    (x : F.level small.ground) : (dsimp% only (T.groundNorm F x : F.toRep.V)) =
       ∑ᶠ q : big.ground.toSubgroup ⧸ small.ground.toSubgroup.subgroupOf big.ground.toSubgroup,
         F.toRep.ρ (q.out : G) x := by
   rw [groundNorm, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
@@ -93,7 +94,8 @@ theorem groundNorm_apply_coe (T : LayerRestriction small big) (F : Formation G)
 /-- **The norm of an element of the ground level `A^U` is its multiple by the relative degree.** -/
 @[simp]
 theorem groundNorm_groundInclusion (T : LayerRestriction small big) (F : Formation G)
-    (x : F.level big.ground) : T.groundNorm F (T.groundInclusion F x) = T.relativeDegree • x := by
+    (x : F.level big.ground) :
+    (dsimp% only (T.groundNorm F (T.groundInclusion F x))) = T.relativeDegree • x := by
   ext
   rw [groundNorm_apply_coe, groundInclusion_apply_coe]
   -- Every coset representative lies in `U`, so it fixes an element of the ground level `A^U`.

@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Inverting a principal complex power on a sector
+# Principal complex powers: positive real scaling and inversion on a sector
+
+Multiplication of a complex number by a nonnegative real scalar is compatible with principal
+complex powers.  Away from zero, this follows because positive scaling does not cross the branch
+cut of the principal logarithm; the zero cases follow from the totalized definition of `cpow`.
 
 Taking the principal power `u ^ (r⁻¹ : ℝ)` of a nonzero `u` divides its argument by `r`, so
 raising the result back to the power `r` returns `u` — but only as long as the intermediate
@@ -16,9 +20,13 @@ argument stays inside the principal range `(-π, π]`, which is where `Complex.c
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
 
-## Main result
+## Main results
 
-* `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`
+* `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
+  complex base.
+* `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
+  base on a suitable sector.
 -/
 
 public section
@@ -26,6 +34,30 @@ public section
 open Complex
 
 namespace TauCeti
+
+/-- A principal complex power splits across multiplication by a nonnegative real scalar:
+`((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w` for all complex `z` and `w`, without a branch
+hypothesis on `z`.  This generalizes `Complex.mul_cpow_ofReal_nonneg` to a complex second factor;
+the proof follows Mathlib's. -/
+theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
+    ((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w := by
+  rcases eq_or_ne w 0 with (rfl | hw)
+  · simp only [Complex.cpow_zero, mul_one]
+  rcases eq_or_lt_of_le hr with (rfl | hr')
+  · rw [Complex.ofReal_zero, zero_mul, Complex.zero_cpow hw, zero_mul]
+  rcases eq_or_ne z 0 with (rfl | hz)
+  · simp [Complex.zero_cpow hw]
+  rw [Complex.cpow_def_of_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne') hz),
+    Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
+    Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
+  rw [Complex.ofReal_log hr]
+
+/-- A principal complex power with nonzero base takes a finite sum of exponents to the
+corresponding product. -/
+theorem cpow_sum {ι : Type*} {x : ℂ} (hx : x ≠ 0) (f : ι → ℂ) (s : Finset ι) :
+    x ^ (∑ i ∈ s, f i) = ∏ i ∈ s, x ^ f i :=
+  map_sum (⟨⟨fun y ↦ x ^ y, Complex.cpow_zero x⟩,
+    fun y z ↦ Complex.cpow_add y z hx⟩ : ℂ →+ Additive ℂ) f s
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate

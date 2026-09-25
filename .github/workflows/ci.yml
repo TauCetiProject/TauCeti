@@ -90,6 +90,17 @@ jobs:
       staged: ${{ steps.stage.outputs.staged }}
       reported-toolchain: ${{ steps.stage.outputs.toolchain }}
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       - uses: actions/checkout@v4
         with:
           # This job elaborates every TauCeti module, and Lean runs code at elaboration time.
@@ -123,6 +134,7 @@ jobs:
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
+          python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
           python3 scripts/test_web_pins.py
@@ -312,8 +324,8 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
 
-      # Environment lint. Elaborates a generated driver importing every TauCeti/
-      # module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
+      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports every
+      # TauCeti/ module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
       # checkType, synTaut, ...) plus a module-system-reliable docstring scan (the
       # docBlame linter is blind across module boundaries; see the script header),
       # comparing linter-qualified violations against the grandfathered baseline in

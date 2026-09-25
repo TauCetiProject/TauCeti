@@ -81,8 +81,9 @@ of them would rewrite the left-hand side of `TauCeti.ofPath_mem_arrowIdeal_iff` 
 `simpNF` linter rejects.
 
 The arrow ideal is built over a commutative base semiring: the multiplicativity of the filtration,
-which is what makes it an ideal, needs `[CommSemiring k] [Finite Q]` (see the `Multiplicative`
-section). A field is only needed for the radical theorem, which inverts a coordinate.
+which is what makes it an ideal, needs `[CommSemiring k]` (see the `Multiplicative` section), and
+being an `Ideal` needs the unit of the path algebra, hence `[Finite Q]`. A field is only needed for
+the radical theorem, which inverts a coordinate.
 
 ## References
 
@@ -170,11 +171,11 @@ end PathSpan
 
 section Multiplicative
 
--- The filtration is multiplicative for the *unital* path algebra over a commutative base: the
--- proof multiplies through spans on both sides, so it needs both `IsScalarTower` and
--- `SMulCommClass` for `k` on `pathAlgebra k Q`, and those come from the `Algebra` instance, which
--- is where `[CommSemiring k]` and `[Finite Q]` are used.
-variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q] [Finite Q]
+-- The filtration is multiplicative over a commutative base: the proof multiplies through spans on
+-- both sides, so it needs both `IsScalarTower` and `SMulCommClass` for `k` on `pathAlgebra k Q`,
+-- and the latter is where `[CommSemiring k]` is used. Only powers need the unit, hence
+-- `[Finite Q]`.
+variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
 
 /-- **The length filtration is multiplicative**: concatenating a path of length at least `m` with
 one of length at least `n` gives a path of length at least `m + n`. -/
@@ -203,7 +204,7 @@ theorem mul_mem_pathSpan {m n : ℕ} {f g : pathAlgebra k Q} (hf : f ∈ pathSpa
         omega
 
 /-- Powers of an element of the first step of the length filtration climb the filtration. -/
-theorem pow_mem_pathSpan {f : pathAlgebra k Q} (hf : f ∈ pathSpan k Q 1) (n : ℕ) :
+theorem pow_mem_pathSpan [Finite Q] {f : pathAlgebra k Q} (hf : f ∈ pathSpan k Q 1) (n : ℕ) :
     f ^ n ∈ pathSpan k Q n := by
   induction n with
   | zero => simp

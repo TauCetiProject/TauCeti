@@ -29,6 +29,8 @@ produce its functions.
 
 * `WeierstrassCurve.Affine.divisorSum_pointPlace_sub_infinity`: `σ((P) - (O)) = P`, the computation
   rule that fixes `divisorSum` on the divisors it is read off from.
+* `WeierstrassCurve.Affine.divisorSum_ofPoint_sub_ofPoint`: `σ((P) - (Q)) = P - Q`, read through
+  the point--place dictionary.
 * `WeierstrassCurve.Affine.divisorSum_eq_zero_iff`: **a degree-zero divisor is principal exactly
   when its sum is `O`.**
 
@@ -94,6 +96,38 @@ theorem divisorSum_eq_zero_iff {D : (Divisor.degree (k := F) (F := W.FunctionFie
       Divisor.principal W.isFunctionField z = (D : Divisor F W.FunctionField) := by
   rw [divisorSum_apply, AddEquiv.map_eq_zero_iff]
   exact Divisor.degreeZeroClassHom_eq_zero_iff W.isFunctionField
+
+section Dictionary
+
+variable [W.IsElliptic]
+
+omit [IsDedekindDomain W.CoordinateRing] [DecidableEq F] in
+/-- The divisor `(P) - (Q)` of two points has degree zero. -/
+theorem ofPoint_sub_ofPoint_mem_ker_degree (P Q : W.Point) :
+    WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).1 -
+        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).1 ∈
+      (Divisor.degree (k := F) (F := W.FunctionField)).ker := by
+  rw [AddMonoidHom.mem_ker, map_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint,
+    (W.pointEquivDegreeOnePlace P).2, (W.pointEquivDegreeOnePlace Q).2, sub_self]
+
+/-- **`σ((P) - (Q)) = P - Q`**, for the places the point--place dictionary attaches to `P`
+and `Q`. -/
+@[simp]
+theorem divisorSum_ofPoint_sub_ofPoint (P Q : W.Point) :
+    W.divisorSum ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree P Q⟩ = P - Q := by
+  have hO (R : W.Point) : W.divisorSum ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree R 0⟩ = R := by
+    rcases R with _ | ⟨x, y, h⟩
+    · exact (congrArg _ (Subtype.ext (sub_self _))).trans (map_zero _)
+    · convert W.divisorSum_pointPlace_sub_infinity h using 3
+      rw [coe_pointEquivDegreeOnePlace_some, Point.zero_def, coe_pointEquivDegreeOnePlace_zero]
+  have hsplit : (⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree P Q⟩ :
+      (Divisor.degree (k := F) (F := W.FunctionField)).ker) =
+      ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree P 0⟩ -
+        ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree Q 0⟩ :=
+    Subtype.ext (sub_sub_sub_cancel_right _ _ _).symm
+  rw [hsplit, map_sub, hO, hO]
+
+end Dictionary
 
 end WeierstrassCurve.Affine
 

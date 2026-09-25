@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # Extending a submodule basis by a quotient basis, indexed by `Fin (m + n)`
@@ -103,3 +104,31 @@ theorem extensionBasis_repr_natAdd_of_mem (p : Submodule R V) (bp : Basis (Fin m
     (Submodule.Quotient.mk_eq_zero p).mpr hx, map_zero, Finsupp.coe_zero, Pi.zero_apply]
 
 end TauCeti
+
+namespace LinearMap
+
+open Module
+
+variable {k V W : Type*} [CommRing k] [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W] {m n : ℕ}
+variable (f : V →ₗ[k] W) (I : Submodule k V) (hker : LinearMap.ker f ≤ I)
+variable (bImage : Basis (Fin m) k (I.map f.rangeRestrict))
+  (bQuot : Basis (Fin n) k (V ⧸ I))
+
+/-- Extend bases of the image of a submodule and of its quotient to a basis of a map's range. -/
+noncomputable def rangeExtensionBasis : Basis (Fin (m + n)) k f.range :=
+  TauCeti.extensionBasis (I.map f.rangeRestrict) bImage
+    (bQuot.map (LinearMap.quotientEquivRangeQuotientMap f I hker))
+
+/-- The quotient block of the range extension basis is the transported quotient basis. -/
+theorem rangeExtensionBasis_natAdd_mkQ (j : Fin n) :
+    Submodule.Quotient.mk (rangeExtensionBasis f I hker bImage bQuot (Fin.natAdd m j)) =
+      LinearMap.quotientEquivRangeQuotientMap f I hker (bQuot j) := by
+  rw [rangeExtensionBasis, TauCeti.extensionBasis_natAdd_mkQ, Module.Basis.map_apply]
+
+/-- The image block of the range extension basis is the given image basis. -/
+theorem rangeExtensionBasis_castAdd (i : Fin m) :
+    rangeExtensionBasis f I hker bImage bQuot (Fin.castAdd n i) = bImage i := by
+  rw [rangeExtensionBasis, TauCeti.extensionBasis_castAdd]
+
+end LinearMap

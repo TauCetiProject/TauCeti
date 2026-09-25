@@ -33,19 +33,27 @@ The two descriptions match exactly where the cutoff is invisible. A confined for
 the original equation solves the cut-off equation as well, so it always lies on the graph; and
 conversely a point of the graph whose `P`-component `v` is small enough that the uniform bound
 `‖y t‖ ≤ K / (1 - 2 K (2 ε) / α) ‖v‖` on Lyapunov--Perron solutions keeps `y` inside the ball
-carries a confined solution. This is the Lipschitz half of the local stable-manifold theorem; the
-differentiability of the graph map and its tangency to the range of `P` are not established here.
+carries a confined solution. If `N` has derivative zero at the equilibrium, the graph map does too:
+although the radial cutoff need not be differentiable at the boundary sphere, it agrees with `N`
+near zero, and the Lyapunov--Perron solutions tend uniformly to zero with their input parameter.
+Together with `ContinuousLinearMap.apply_localStableGraphMap`, this makes the graph tangent to the
+range of `P` at the equilibrium whenever `P` is the commuting projection of an exponential
+dichotomy.
 
 Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
 `1 - P`, without duplicating the fixed-point argument. When `P` is idempotent this gives the local
 unstable set as a Lipschitz graph over `range (1 - P)`, and when `P` moreover commutes with `A`
-the graph map takes its values in `range P`.
+the graph map takes its values in `range P`. Its derivative also vanishes at the equilibrium when
+the derivative of `N` does.
 
 ## Main declarations
 
 * `ContinuousLinearMap.localStableGraphMap`: the Lyapunov--Perron graph map of the cut-off
   nonlinearity, with `ContinuousLinearMap.lipschitzWith_localStableGraphMap` and
   `ContinuousLinearMap.norm_localStableGraphMap_le` for its Lipschitz constant and cone bound.
+* `ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero` and
+  `ContinuousLinearMap.hasFDerivAt_localUnstableGraphMap_zero`: when the nonlinear remainder has
+  derivative zero at the equilibrium, so do the local stable and unstable graph maps.
 * `ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall`: a forward solution that
   never leaves the ball of radius `r` tends to the equilibrium.
 * `ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: the local
@@ -154,6 +162,23 @@ theorem norm_localStableGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
   norm_lyapunovPerronGraphMap_le hs hu (pos_of_two_mul_mul_lt hsmall)
     (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ
 
+/-- **The local stable graph map is flat at the equilibrium.** If the nonlinear remainder fixes
+the equilibrium and has derivative zero there, then the local stable graph map also has derivative
+zero at the origin. When `P` is the commuting projection of an exponential dichotomy,
+`ContinuousLinearMap.apply_localStableGraphMap` then identifies this as tangency of the graph to
+`range P`. -/
+theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
+    (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
+    HasFDerivAt (localStableGraphMap A P N r hs hu hr hN hsmall)
+      (0 : X →L[ℝ] X) 0 := by
+  have hretract : TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] id :=
+    TauCeti.radialRetraction_eventuallyEq_id (by simpa using hr0)
+  have hcutoff : N ∘ TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] N := by
+    simpa only [Function.comp_id] using hretract.fun_comp N
+  exact hasFDerivAt_lyapunovPerronGraphMap_zero hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
+    (hN'.congr_of_eventuallyEq hcutoff)
+
 omit [CompleteSpace X] in
 /-- **Cutting off is invisible to a confined solution.** A forward curve that never leaves the
 closed ball of radius `r` solves the original equation exactly when it solves the cut-off
@@ -214,10 +239,8 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
   -- The uniform bound on the Lyapunov--Perron solutions of the cut-off equation.
   have hbound : ∀ (ξ : X) (t : ℝ≥0),
       ‖lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall ξ t‖ ≤
-        (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ‖ := fun ξ t ↦ by
-    have h := norm_lyapunovPerronSolution_le hs hu hα hMlip hsmall hM0 (β := 0) le_rfl
-      (by push_cast; linarith) ξ t
-    simpa using h
+        (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ‖ :=
+    norm_lyapunovPerronSolution_le_mul_norm hs hu hα hMlip hsmall hM0
   ext x
   simp only [mem_ofPred_eq, mem_image, mem_inter_iff, mem_range, mem_closedBall_zero_iff]
   constructor
@@ -228,7 +251,10 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
     exact ⟨P (y 0), ⟨⟨y 0, rfl⟩, hPx⟩,
       (invOn_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall hP hAP).1 hfix⟩
   · rintro ⟨v, ⟨⟨w, rfl⟩, hv⟩, rfl⟩
-    have hPP : P (P w) = P w := by rw [← mul_apply_eq_comp P P, hP.eq]
+    have hPP : P (P w) = P w :=
+      (LinearMap.IsIdempotentElem.mem_range_iff
+        (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
+          (LinearMap.mem_range.mpr ⟨w, rfl⟩)
     set γ := lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall
       (P w) with hγ
     have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hr hN hsmall (P w) := by
@@ -333,6 +359,19 @@ theorem localUnstableGraphMap_zero (hN0 : N 0 = 0) :
     localUnstableGraphMap A P N r hs hu hr hN hsmall 0 = 0 := by
   exact localStableGraphMap_zero (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0])
+
+/-- **The local unstable graph map is flat at the equilibrium.** If the nonlinear remainder fixes
+the equilibrium and has derivative zero there, then the local unstable graph map also has
+derivative zero at the origin. -/
+theorem hasFDerivAt_localUnstableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
+    (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
+    HasFDerivAt (localUnstableGraphMap A P N r hs hu hr hN hsmall)
+      (0 : X →L[ℝ] X) 0 := by
+  rw [localUnstableGraphMap]
+  exact hasFDerivAt_localStableGraphMap_zero
+    (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hr0
+    (by simp [hN0]) (by simpa using hN'.neg)
 
 /-- The local unstable graph map has the same Lipschitz bound as the stable graph map. -/
 theorem lipschitzWith_localUnstableGraphMap :

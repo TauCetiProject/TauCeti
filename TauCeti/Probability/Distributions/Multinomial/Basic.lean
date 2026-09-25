@@ -252,7 +252,7 @@ theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     _ = 1 := sum_multinomialWeight_eq_one n p
 
 /-- Every function is integrable against a multinomial law because the law has finite support. -/
-theorem integrable_multinomialMeasure {E : Type*} [NormedAddCommGroup E]
+theorem integrable_multinomialMeasure {E : Type*} [NormedAddGroup E]
     (f : (ι → ℕ) → E) (n : ℕ) (p : StdSimplex NNReal ι) :
     Integrable f (multinomialMeasure n p) := by
   classical

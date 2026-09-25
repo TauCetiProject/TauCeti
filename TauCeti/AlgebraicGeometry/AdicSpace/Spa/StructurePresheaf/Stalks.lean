@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 public import Mathlib.Geometry.RingedSpace.Stalks
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+public import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
 # The presentation-limit presheaf and its stalks as rings
@@ -28,9 +30,10 @@ rational neighbourhood to the stalk.
 ## Main result
 
 `TauCeti.ValuationSpectrum.presentationLimitRationalGerm_res` says that these rational germ
-maps are compatible with the comparison morphisms between rational coordinate rings. It is the
-compatibility needed to define and study the valuation on a stalk from the valuations on its
-rational neighbourhoods.
+maps are compatible with the comparison morphisms between rational coordinate rings.
+`exists_presentationLimitRationalGerm_eq` says every germ comes from a rational coordinate ring,
+and `exists_map_homOfRationalSubsetSubset_eq_zero` says a zero germ restricts to zero on some
+smaller rational neighbourhood.
 
 ## References
 
@@ -261,6 +264,50 @@ theorem presentationLimitRationalGerm_res
   simpa only [Category.assoc] using congrArg
     (fun f ↦ (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫ f)
     ((presentationLimitPresheafInCommRingCat P Aplus).germ_res (homOfLE h) x hx)
+
+variable (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+
+/-- **Every germ is a rational germ**: each element of the stalk at `x` is the germ of an
+element of the coordinate ring `A⟨p⟩` of some rational neighbourhood `R(p)` of `x`. -/
+theorem exists_presentationLimitRationalGerm_eq (x : spa Aplus)
+    (t : (presentationLimitPresheafInCommRingCat P Aplus).stalk x) :
+    ∃ (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+      (hx : x ∈ spaBasicOpen Aplus p.num p.den) (a : _),
+      (presentationLimitRationalGerm hAplus p hp x hx).hom a = t := by
+  obtain ⟨U, hxU, s, rfl⟩ := (presentationLimitPresheafInCommRingCat P Aplus).exists_germ_eq t
+  obtain ⟨p, hp, hxp, hpU⟩ := exists_presentation_mem_spaBasicOpen_le P hxU
+  refine ⟨p, hp, hxp, (presentationLimitRationalIsoInCommRingCat hAplus p hp).hom
+    ((presentationLimitPresheafInCommRingCat P Aplus).map (homOfLE hpU).op s), ?_⟩
+  rw [presentationLimitRationalGerm_def, CommRingCat.comp_apply, Iso.hom_inv_id_apply,
+    TopCat.Presheaf.germ_res_apply]
+
+/-- **A rational germ vanishes only if a restriction does**: if an element of `A⟨p⟩` has zero
+germ at `x`, then its image in the coordinate ring of some smaller rational neighbourhood of `x`
+is already zero. -/
+theorem exists_map_homOfRationalSubsetSubset_eq_zero {x : spa Aplus} {p : Presentation P}
+    {hp : IsOpen (Ideal.span (p.num : Set A) : Set A)} {hx : x ∈ spaBasicOpen Aplus p.num p.den}
+    {a : (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+      p.completionLocObj}
+    (ha : (presentationLimitRationalGerm hAplus p hp x hx).hom a = 0) :
+    ∃ (q : Presentation P) (_ : IsOpen (Ideal.span (q.num : Set A) : Set A))
+      (_ : x ∈ spaBasicOpen Aplus q.num q.den)
+      (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den),
+      ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+        (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))).hom a =
+        0 := by
+  set F := presentationLimitPresheafInCommRingCat P Aplus
+  rw [presentationLimitRationalGerm_def, CommRingCat.comp_apply,
+    ← map_zero (ConcreteCategory.hom (F.germ _ x hx))] at ha
+  obtain ⟨W, hxW, iU, iV, hW⟩ := F.germ_eq x hx hx _ _ ha
+  obtain ⟨q, hq, hxq, hqW⟩ := exists_presentation_mem_spaBasicOpen_le P hxW
+  have h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den := hqW.trans iU.le
+  refine ⟨q, hq, hxq, h, ?_⟩
+  have hres : F.map (homOfLE h).op ((presentationLimitRationalIsoInCommRingCat hAplus p hp).inv a)
+      = 0 := by
+    have := congrArg (F.map (homOfLE hqW).op) hW
+    rwa [map_zero, map_zero, ← CommRingCat.comp_apply, ← F.map_comp] at this
+  rw [← presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom hAplus p q hp hq h,
+    CommRingCat.comp_apply, CommRingCat.comp_apply, hres, map_zero]
 
 end
 

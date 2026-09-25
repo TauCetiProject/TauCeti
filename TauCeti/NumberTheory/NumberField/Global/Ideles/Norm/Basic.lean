@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
 # The idele norm of a number field
@@ -51,6 +53,8 @@ class group.
 * `TauCeti.GlobalNumberFields.continuous_ideleNorm`: the idele norm is continuous, because the
   finite factors are locally constant on the idele group.
 * `TauCeti.GlobalNumberFields.ideleNorm_surjective`: every positive real number is an idele norm.
+* `TauCeti.GlobalNumberFields.mixedEmbedding_norm_eq_ideleNorm`: for an idele whose finite part is
+  an everywhere-integral unit, its idele norm equals the mixed norm of its infinite part.
 
 ## References
 
@@ -137,6 +141,21 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_
     exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v').trans
       (Pi.mulSingle_eq_of_ne h _)
 
+/-- The finite coordinates of a product of ideles, one concentrated at each place of a finite set
+`S` of finite places: the prescribed unit at a place of `S`, and `1` elsewhere. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_prod_ofAdicCompletion
+    [DecidableEq (HeightOneSpectrum R)] (v' : HeightOneSpectrum R)
+    (S : Finset (HeightOneSpectrum R)) (u : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ) :
+    v'.ideleFiniteCoord (∏ v ∈ S, IdeleGroup.ofAdicCompletion R K v (u v)) =
+      if v' ∈ S then u v' else 1 := by
+  rw [map_prod]
+  split_ifs with hv'
+  · rw [Finset.prod_eq_single_of_mem v' hv' fun v _ hv ↦
+      v'.ideleFiniteCoord_ofAdicCompletion_of_ne (Ne.symm hv) (u v)]
+    exact v'.ideleFiniteCoord_ofAdicCompletion_self (u v')
+  · exact Finset.prod_eq_one fun v hv ↦
+      v'.ideleFiniteCoord_ofAdicCompletion_of_ne (ne_of_mem_of_not_mem hv hv').symm (u v)
+
 /-- The infinite coordinates of an idele concentrated at a finite place are trivial. -/
 @[simp]
 theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofAdicCompletion
@@ -166,6 +185,25 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne
     classical
     exact (InfiniteAdeleRing.ofCompletion_apply w u w').trans
       (Pi.mulSingle_eq_of_ne h _)
+
+/-- The infinite coordinates of an idele with trivial infinite components are trivial. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofFiniteIdele
+    (w : InfinitePlace K) (a : (FiniteAdeleRing R K)ˣ) :
+    w.ideleInfiniteCoord (IdeleGroup.ofFiniteIdele R K a) = 1 :=
+  Units.ext <| by
+    rw [coe_ideleInfiniteCoord, IdeleGroup.coe_ofFiniteIdele]
+    rfl
+
+/-- The finite coordinate of an idele built from a finite idele is its original coordinate. -/
+@[simp]
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
+    (v : HeightOneSpectrum R) (a : (FiniteAdeleRing R K)ˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K a) =
+      Units.map (RestrictedProduct.evalMonoidHom _ v) a :=
+  Units.ext <| by
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
+    exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
 
 /-- The finite coordinates of an idele concentrated at an infinite place are trivial. -/
 @[simp]
@@ -233,6 +271,23 @@ theorem coe_ideleNorm (x : IdeleGroup (𝓞 K) K) :
       (∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord x)) *
         ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖ :=
   Real.coe_toNNReal _ (ideleNormAux_nonneg x)
+
+/-- For an idele whose finite part is an everywhere-integral unit, the idele norm is the mixed norm
+of its infinite part. -/
+theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
+    (hz : IdeleGroup.toFiniteIdele (𝓞 K) K z ∈ FiniteAdeleRing.integralUnits (𝓞 K) K) :
+    mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1) =
+      ((ideleNorm z : NNReal) : ℝ) := by
+  have hfin (v : HeightOneSpectrum (𝓞 K)) :
+      ‖(v.ideleFiniteCoord z : v.adicCompletion K)‖ = 1 := by
+    have hv := FiniteAdeleRing.mem_integralUnits_iff.mp hz v
+    rw [IdeleGroup.coe_toFiniteIdele] at hv
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord, FinitePlace.norm_def, hv, map_one, NNReal.coe_one]
+  rw [InfiniteAdeleRing.ringEquiv_mixedSpace_apply,
+    InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace,
+    InfiniteAdeleRing.norm_def]
+  simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
+    infiniteCompletionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord]
 
 /-- **The product formula on ideles**: the idele norm of a principal idele is `1`. -/
 @[simp]

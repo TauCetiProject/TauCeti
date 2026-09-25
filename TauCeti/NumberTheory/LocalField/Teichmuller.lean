@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.NumberTheory.LocalField.Henselian
+public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.RingTheory.Henselian.Teichmuller
 
 /-!
@@ -28,6 +29,8 @@ that the two constructions agree on units.
   when it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmullerLift_unique`: it is the unique zero-preserving multiplicative section of
   reduction.
+* `AlgEquiv.smul_teichmullerLift`: local-field automorphisms commute with the
+  Teichmüller lift through their residue-field action.
 
 ## References
 
@@ -133,5 +136,27 @@ theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
   · rw [map_zero, map_zero]
   · simpa [coe_teichmuller_apply] using
       congrArg (fun g : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ ((g (Units.mk0 a ha) : 𝒪[K]ˣ) : 𝒪[K])) hunits
+
+section Automorphism
+
+variable {K L : Type*}
+  [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- An automorphism of a finite local-field extension carries each Teichmüller representative
+to the representative of its residue-field image. -/
+@[simp]
+theorem _root_.AlgEquiv.smul_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) :
+    σ • teichmullerLift L a =
+      teichmullerLift L (σ • a) := by
+  rw [← AlgEquiv.integerRingAlgEquiv_apply]
+  apply (eq_teichmullerLift_iff L).2
+  constructor
+  · rw [AlgEquiv.integerRingAlgEquiv_apply,
+      IsLocalRing.ResidueField.residue_smul, residue_teichmullerLift]
+  · rw [← map_pow, teichmullerLift_pow_natCard]
+
+end Automorphism
 
 end TauCeti

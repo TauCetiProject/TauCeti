@@ -26,6 +26,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
+  random variable with a multivariate Gaussian law.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
   an image
   of the standard Gaussian.
@@ -62,6 +64,14 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
+theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → EuclideanSpace ℝ ι} {m : EuclideanSpace ℝ ι}
+    {S : Matrix ι ι ℝ} (hX : HasLaw X (multivariateGaussian m S) P) :
+    ∫ ω, X ω ∂P = m := by
+  rw [hX.integral_eq, integral_id_multivariateGaussian]
 
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/

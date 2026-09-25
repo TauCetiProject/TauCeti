@@ -312,4 +312,12 @@ theorem RegularFormClass.signedDiscr_add_hyperbolicClass (x : RegularFormClass K
   rw [hcross]
   abel
 
+/-- Adding any number of hyperbolic planes leaves the signed discriminant unchanged. -/
+theorem RegularFormClass.signedDiscr_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormClass K) :
+    RegularFormClass.signedDiscr (m • hyperbolicClass K + x) = RegularFormClass.signedDiscr x := by
+  induction m with
+  | zero => rw [zero_nsmul, zero_add]
+  | succ m ih =>
+    rw [succ_nsmul, add_right_comm, RegularFormClass.signedDiscr_add_hyperbolicClass, ih]
+
 end TauCeti

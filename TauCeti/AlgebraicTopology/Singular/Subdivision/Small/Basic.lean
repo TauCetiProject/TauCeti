@@ -31,6 +31,8 @@ simplex becomes subordinate to `U` after sufficiently many barycentric subdivisi
 
 ## Main results
 
+* `TauCeti.BarycentricSubdivision.dist_weights_affineMapMk_vertex_le_of_le`: vertices indexed by
+  `i ≤ j` satisfy the finer bound `(j - i) / (k + 1 - i) * d`.
 * `TauCeti.BarycentricSubdivision.dist_weights_affineMapMk_vertex_le`: subdivision shrinks the
   distances between the vertices of an affine simplex by the factor `k / (k + 1)`.
 * `TauCeti.AffineChain.dist_weights_le_of_mem_support_subdivision_iterate`: the vertex tuples of the
@@ -57,6 +59,28 @@ variable {N : Type*} [Fintype N]
 
 namespace BarycentricSubdivision
 
+/-- The distance between subdivision vertices indexed by `i ≤ j` is bounded by
+`(j - i) / (k + 1 - i)` times the original diameter bound. -/
+theorem dist_weights_affineMapMk_vertex_le_of_le {k : ℕ}
+    (v : Fin (k + 1) → StdSimplex ℝ N) {d : ℝ}
+    (hd : ∀ i j, dist ⇑(v i).weights ⇑(v j).weights ≤ d) (π : Perm (Fin (k + 1)))
+    {i j : Fin (k + 1)} (hij : i ≤ j) :
+    dist ⇑(StdSimplex.affineMapMk (R := ℝ) v (vertex π j)).weights
+        ⇑(StdSimplex.affineMapMk (R := ℝ) v (vertex π i)).weights ≤
+      ((j : ℝ) - i) / (k + 1 - i) * d := by
+  -- These vertices are centroids of faces of sizes `k + 1 - j` and `k + 1 - i`.
+  rw [vertex_def, vertex_def, StdSimplex.weights_affineMapMk_subBarycenter,
+    StdSimplex.weights_affineMapMk_subBarycenter]
+  have h := dist_centroid_centroid_le_of_subset (fun a _ b _ ↦ hd a b)
+    (map_subset_map.2 (Ici_subset_Ici.2 hij)) (nonempty_Ici.map (f := π.toEmbedding))
+  simp only [card_map, Fin.card_Ici, Nat.cast_sub (Nat.le_of_lt i.is_lt),
+    Nat.cast_sub (Nat.le_of_lt j.is_lt), Nat.cast_add, Nat.cast_one] at h
+  have hpos : (0 : ℝ) < k + 1 - i := sub_pos.mpr (by exact_mod_cast i.is_lt)
+  have heq : (1 : ℝ) - (k + 1 - j) / (k + 1 - i) = (j - i) / (k + 1 - i) := by
+    field_simp
+    ring
+  rwa [heq] at h
+
 /-- **Barycentric subdivision shrinks simplices.** If the vertices of an affine `k`-simplex in a
 standard simplex are pairwise at distance at most `d`, then so are the vertices of each simplex of
 its barycentric subdivision, up to the factor `k / (k + 1)`. -/
@@ -70,18 +94,13 @@ theorem dist_weights_affineMapMk_vertex_le {k : ℕ} (v : Fin (k + 1) → StdSim
   have key {i j : Fin (k + 1)} (hij : i ≤ j) :
       dist ⇑(StdSimplex.affineMapMk (R := ℝ) v (vertex π j)).weights
           ⇑(StdSimplex.affineMapMk (R := ℝ) v (vertex π i)).weights ≤ k / (k + 1) * d := by
-    rw [vertex_def, vertex_def, StdSimplex.weights_affineMapMk_subBarycenter,
-      StdSimplex.weights_affineMapMk_subBarycenter]
-    refine (dist_centroid_centroid_le_of_subset (fun a _ b _ ↦ hd a b)
-      (map_subset_map.2 (Ici_subset_Ici.2 hij)) nonempty_Ici.map).trans ?_
-    gcongr
-    have hcard : #((Ici i).map π.toEmbedding) ≤ k + 1 := (card_le_univ _).trans_eq (by simp)
-    have hpos : 0 < #((Ici i).map π.toEmbedding) := nonempty_Ici.map.card_pos
-    have hk : (k : ℝ) / (k + 1) = 1 - ((k : ℝ) + 1)⁻¹ := by
-      field_simp
-      ring
-    rw [hk]
-    exact sub_le_sub_left (inv_anti₀ (by exact_mod_cast hpos) (by exact_mod_cast hcard)) 1
+    refine (dist_weights_affineMapMk_vertex_le_of_le v hd π hij).trans ?_
+    apply mul_le_mul_of_nonneg_right _ hd₀
+    have hi : (i : ℝ) < k + 1 := by exact_mod_cast i.is_lt
+    have hj : (j : ℝ) ≤ k := by exact_mod_cast j.is_le
+    have hi₀ : (0 : ℝ) ≤ i := by positivity
+    apply (div_le_div_iff₀ (sub_pos.mpr hi) (by positivity)).mpr
+    nlinarith [mul_nonneg (sub_nonneg.mpr hj) (show (0 : ℝ) ≤ k + 1 by positivity)]
   rcases le_total i j with h | h
   · rw [dist_comm]
     exact key h

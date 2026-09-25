@@ -168,21 +168,21 @@ theorem IsLeftAlmostSplit.factors (hf : IsLeftAlmostSplit f) (Z : C) (g : X ⟶ 
 
 /-- **A right almost split morphism is not an isomorphism**, an isomorphism being a split epi. -/
 theorem IsRightAlmostSplit.not_isIso (hf : IsRightAlmostSplit f) : ¬ IsIso f :=
-  fun _ => hf.not_isSplitEpi inferInstance
+  fun _ ↦ hf.not_isSplitEpi inferInstance
 
 /-- **A left almost split morphism is not an isomorphism**, an isomorphism being a split mono. -/
 theorem IsLeftAlmostSplit.not_isIso (hf : IsLeftAlmostSplit f) : ¬ IsIso f :=
-  fun _ => hf.not_isSplitMono inferInstance
+  fun _ ↦ hf.not_isSplitMono inferInstance
 
 /-- An identity is not right almost split. -/
 @[simp]
 theorem not_isRightAlmostSplit_id (X : C) : ¬ IsRightAlmostSplit (𝟙 X) :=
-  fun hf => hf.not_isIso inferInstance
+  fun hf ↦ hf.not_isIso inferInstance
 
 /-- An identity is not left almost split. -/
 @[simp]
 theorem not_isLeftAlmostSplit_id (X : C) : ¬ IsLeftAlmostSplit (𝟙 X) :=
-  fun hf => hf.not_isIso inferInstance
+  fun hf ↦ hf.not_isIso inferInstance
 
 /-! ### Duality -/
 
@@ -202,13 +202,13 @@ two notions are exchanged by passage to the opposite category. -/
 @[simp]
 theorem isRightAlmostSplit_op_iff : IsRightAlmostSplit f.op ↔ IsLeftAlmostSplit f := by
   constructor
-  · refine fun hf => ⟨fun hs => hf.not_isSplitEpi inferInstance, fun Z g hg => ?_⟩
-    have hg' : ¬ IsSplitEpi g.op := fun hs => hg (isSplitMono_of_isSplitEpi_op g)
+  · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitEpi inferInstance, fun Z g hg ↦ ?_⟩
+    have hg' : ¬ IsSplitEpi g.op := fun hs ↦ hg (isSplitMono_of_isSplitEpi_op g)
     obtain ⟨h, hh⟩ := hf.factors (Opposite.op Z) g.op hg'
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
-  · refine fun hf => ⟨fun hs => hf.not_isSplitMono (isSplitMono_of_isSplitEpi_op f),
-      fun Z g hg => ?_⟩
-    have hg' : ¬ IsSplitMono g.unop := fun hs => hg (inferInstanceAs (IsSplitEpi g.unop.op))
+  · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitMono (isSplitMono_of_isSplitEpi_op f),
+      fun Z g hg ↦ ?_⟩
+    have hg' : ¬ IsSplitMono g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitEpi g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
@@ -216,13 +216,13 @@ theorem isRightAlmostSplit_op_iff : IsRightAlmostSplit f.op ↔ IsLeftAlmostSpli
 @[simp]
 theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit f := by
   constructor
-  · refine fun hf => ⟨fun hs => hf.not_isSplitMono inferInstance, fun Z g hg => ?_⟩
-    have hg' : ¬ IsSplitMono g.op := fun hs => hg (isSplitEpi_of_isSplitMono_op g)
+  · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitMono inferInstance, fun Z g hg ↦ ?_⟩
+    have hg' : ¬ IsSplitMono g.op := fun hs ↦ hg (isSplitEpi_of_isSplitMono_op g)
     obtain ⟨h, hh⟩ := hf.factors (Opposite.op Z) g.op hg'
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
-  · refine fun hf => ⟨fun hs => hf.not_isSplitEpi (isSplitEpi_of_isSplitMono_op f),
-      fun Z g hg => ?_⟩
-    have hg' : ¬ IsSplitEpi g.unop := fun hs => hg (inferInstanceAs (IsSplitMono g.unop.op))
+  · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitMono_op f),
+      fun Z g hg ↦ ?_⟩
+    have hg' : ¬ IsSplitEpi g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitMono g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
@@ -232,9 +232,9 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
 split.** -/
 theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
     IsRightAlmostSplit (f ≫ e.hom) := by
-  refine ⟨fun _ => hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g hg => ?_⟩
+  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g hg ↦ ?_⟩
   have hg' : ¬ IsSplitEpi (g ≫ e.symm.hom) :=
-    fun _ => hg (isSplitEpi_of_isSplitEpi_comp_iso g e.symm)
+    fun _ ↦ hg (isSplitEpi_of_isSplitEpi_comp_iso g e.symm)
   obtain ⟨h, hh⟩ := hf.factors Z (g ≫ e.symm.hom) hg'
   exact ⟨h, by simp [reassoc_of% hh]⟩
 
@@ -242,7 +242,7 @@ theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (e : Y 
 split.** -/
 theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (e : X' ≅ X) :
     IsRightAlmostSplit (e.hom ≫ f) := by
-  refine ⟨fun _ => hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp e.hom f), fun Z g hg => ?_⟩
+  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp e.hom f), fun Z g hg ↦ ?_⟩
   obtain ⟨h, hh⟩ := hf.factors Z g hg
   exact ⟨h ≫ e.inv, by simp [hh]⟩
 
@@ -264,7 +264,7 @@ theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (e : Y �
 @[simp]
 theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
     IsRightAlmostSplit (f ≫ e.hom) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf => ?_, fun hf => hf.comp_iso e⟩
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
   have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
   exact h ▸ hf.comp_iso e.symm
 
@@ -272,7 +272,7 @@ theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
 @[simp]
 theorem isRightAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
     IsRightAlmostSplit (e.hom ≫ f) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf => ?_, fun hf => hf.iso_comp e⟩
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
   have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
   exact h ▸ hf.iso_comp e.symm
 
@@ -280,7 +280,7 @@ theorem isRightAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
 @[simp]
 theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
     IsLeftAlmostSplit (e.hom ≫ f) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf => ?_, fun hf => hf.iso_comp e⟩
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
   have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
   exact h ▸ hf.iso_comp e.symm
 
@@ -288,7 +288,7 @@ theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
 @[simp]
 theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
     IsLeftAlmostSplit (f ≫ e.hom) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf => ?_, fun hf => hf.comp_iso e⟩
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
   have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
   exact h ▸ hf.comp_iso e.symm
 
@@ -315,34 +315,34 @@ theorem IsLeftAlmostSplit.mono_of_mono (hf : IsLeftAlmostSplit f) {Z : C} (g : X
 /-- **An epimorphic right almost split morphism is not a split monomorphism**: a splitting on that
 side would make it an isomorphism. -/
 theorem IsRightAlmostSplit.not_isSplitMono (hf : IsRightAlmostSplit f) [Epi f] :
-    ¬ IsSplitMono f := fun _ => hf.not_isIso (isIso_of_epi_of_isSplitMono f)
+    ¬ IsSplitMono f := fun _ ↦ hf.not_isIso (isIso_of_epi_of_isSplitMono f)
 
 /-- **A monomorphic left almost split morphism is not a split epimorphism**, dually to
 `TauCeti.IsRightAlmostSplit.not_isSplitMono`. -/
 theorem IsLeftAlmostSplit.not_isSplitEpi (hf : IsLeftAlmostSplit f) [Mono f] :
-    ¬ IsSplitEpi f := fun _ => hf.not_isIso (isIso_of_mono_of_isSplitEpi f)
+    ¬ IsSplitEpi f := fun _ ↦ hf.not_isIso (isIso_of_mono_of_isSplitEpi f)
 
 /-- In a balanced category an epimorphic right almost split morphism is not a monomorphism: it
 would otherwise be an isomorphism. -/
 theorem IsRightAlmostSplit.not_mono [Balanced C] (hf : IsRightAlmostSplit f) [Epi f] :
-    ¬ Mono f := fun _ => hf.not_isIso (isIso_of_mono_of_epi f)
+    ¬ Mono f := fun _ ↦ hf.not_isIso (isIso_of_mono_of_epi f)
 
 /-- In a balanced category a monomorphic left almost split morphism is not an epimorphism, dually
 to `TauCeti.IsRightAlmostSplit.not_mono`. -/
 theorem IsLeftAlmostSplit.not_epi [Balanced C] (hf : IsLeftAlmostSplit f) [Mono f] :
-    ¬ Epi f := fun _ => hf.not_isIso (isIso_of_mono_of_epi f)
+    ¬ Epi f := fun _ ↦ hf.not_isIso (isIso_of_mono_of_epi f)
 
 /-- **An epimorphic right almost split morphism is nonzero.** A zero epimorphism forces its target
 to be a zero object, and the zero morphism into a zero object is a split epimorphism. -/
 theorem IsRightAlmostSplit.ne_zero [HasZeroMorphisms C] (hf : IsRightAlmostSplit f) [Epi f] :
-    f ≠ 0 := fun h => by
+    f ≠ 0 := fun h ↦ by
   have hid : 𝟙 Y = 0 := (cancel_epi f).mp (by simp [h])
   exact hf.not_isSplitEpi (IsSplitEpi.mk' ⟨0, by simp [hid]⟩)
 
 /-- **A monomorphic left almost split morphism is nonzero**, dually to
 `TauCeti.IsRightAlmostSplit.ne_zero`. -/
 theorem IsLeftAlmostSplit.ne_zero [HasZeroMorphisms C] (hf : IsLeftAlmostSplit f) [Mono f] :
-    f ≠ 0 := fun h => by
+    f ≠ 0 := fun h ↦ by
   have hid : 𝟙 X = 0 := (cancel_mono f).mp (by simp [h])
   exact hf.not_isSplitMono (IsSplitMono.mk' ⟨0, by simp [hid]⟩)
 
@@ -372,14 +372,14 @@ theorem IsLeftAlmostSplit.exists_isSplitEpi_of_isIrreducibleMorphism (hf : IsLef
 projective, its identity would factor through the epimorphism `f`, which is exactly a section of
 `f`, and `f` is not a split epimorphism. -/
 theorem IsRightAlmostSplit.not_projective (hf : IsRightAlmostSplit f) [Epi f] : ¬ Projective Y :=
-  fun _ => hf.not_isSplitEpi
+  fun _ ↦ hf.not_isSplitEpi
     (IsSplitEpi.mk' ⟨Projective.factorThru (𝟙 Y) f, Projective.factorThru_comp _ _⟩)
 
 /-- **The source of a monomorphic left almost split morphism is not injective**, dually to
 `TauCeti.IsRightAlmostSplit.not_projective`: its identity would factor through the monomorphism
 `f`, retracting it. -/
 theorem IsLeftAlmostSplit.not_injective (hf : IsLeftAlmostSplit f) [Mono f] : ¬ Injective X :=
-  fun _ => hf.not_isSplitMono
+  fun _ ↦ hf.not_isSplitMono
     (IsSplitMono.mk' ⟨Injective.factorThru (𝟙 X) f, Injective.comp_factorThru _ _⟩)
 
 /-! ### Indecomposability of the almost split end -/
@@ -392,7 +392,7 @@ variable [HasZeroMorphisms C] [HasBinaryBiproducts C]
 the right-hand end of an almost-split sequence is a consequence of its lifting property rather
 than a hypothesis on it. -/
 theorem IsRightAlmostSplit.indecomposable (hf : IsRightAlmostSplit f) : Indecomposable Y := by
-  refine ⟨fun hY => hf.not_isSplitEpi (IsSplitEpi.mk' ⟨0, hY.eq_of_src _ _⟩), fun A B e => ?_⟩
+  refine ⟨fun hY ↦ hf.not_isSplitEpi (IsSplitEpi.mk' ⟨0, hY.eq_of_src _ _⟩), fun A B e ↦ ?_⟩
   by_contra hcon
   rw [not_or] at hcon
   obtain ⟨hA, hB⟩ := hcon
@@ -402,7 +402,8 @@ theorem IsRightAlmostSplit.indecomposable (hf : IsRightAlmostSplit f) : Indecomp
     intro h
     obtain ⟨s, hs⟩ := h.exists_splitEpi.some
     have h₁ : s ≫ biprod.inl = e.hom := by
-      rw [← cancel_mono e.inv, e.hom_inv_id, Category.assoc]; exact hs
+      rw [← cancel_mono e.inv, e.hom_inv_id, Category.assoc]
+      exact hs
     refine hB ?_
     rw [IsZero.iff_id_eq_zero]
     calc 𝟙 B = biprod.inr ≫ (e.inv ≫ s ≫ biprod.inl) ≫ biprod.snd := by
@@ -412,7 +413,8 @@ theorem IsRightAlmostSplit.indecomposable (hf : IsRightAlmostSplit f) : Indecomp
     intro h
     obtain ⟨s, hs⟩ := h.exists_splitEpi.some
     have h₁ : s ≫ biprod.inr = e.hom := by
-      rw [← cancel_mono e.inv, e.hom_inv_id, Category.assoc]; exact hs
+      rw [← cancel_mono e.inv, e.hom_inv_id, Category.assoc]
+      exact hs
     refine hA ?_
     rw [IsZero.iff_id_eq_zero]
     calc 𝟙 A = biprod.inl ≫ (e.inv ≫ s ≫ biprod.inr) ≫ biprod.fst := by
@@ -429,7 +431,7 @@ theorem IsRightAlmostSplit.indecomposable (hf : IsRightAlmostSplit f) : Indecomp
 `TauCeti.IsRightAlmostSplit.indecomposable`. -/
 theorem IsLeftAlmostSplit.indecomposable (hf : IsLeftAlmostSplit f) : Indecomposable X := by
   have h := (isRightAlmostSplit_op_iff.mpr hf).indecomposable
-  refine ⟨fun hX => h.1 hX.op, fun A B e => ?_⟩
+  refine ⟨fun hX ↦ h.1 hX.op, fun A B e ↦ ?_⟩
   exact (h.2 (Opposite.op A) (Opposite.op B)
     (e.op.symm ≪≫ biprod.opIso A B)).imp IsZero.unop IsZero.unop
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.Probability.UniformOn
+import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -38,6 +40,8 @@ happens before integration.
 ## Main results
 
 * the additive and scaling laws for `rectIntegral`, and its `L¹` bound;
+* `rectIntegral_uniformOn_univ` — on a finite carrier with the uniform measure, a rectangle
+  integral is a normalized finite sum;
 * `testIntegral_indicator_one` — testing against indicators recovers a rectangle integral;
 * `testIntegral_eq_integral_partialIntegral` — the iterated form.
 
@@ -157,6 +161,26 @@ theorem rectIntegral_comap_preimage {α : Type*} [MeasurableSpace α] {ν : Meas
   rw [rectIntegral_def, rectIntegral_def, ← hmap, key]
   simp only [comap_apply]
   rfl
+
+open ProbabilityTheory in
+/-- **Rectangle integrals on a uniform finite carrier.** On a finite carrier with the uniform
+probability measure, the integral of a kernel over `S × T` is its sum over the rectangle divided by
+the square of the number of points. -/
+theorem rectIntegral_uniformOn_univ {α : Type*} [MeasurableSpace α] [Fintype α]
+    [MeasurableSingletonClass α] (K : SymmKernel α (uniformOn Set.univ)) (S T : Finset α) :
+    K.rectIntegral (uniformOn Set.univ) S T =
+      (∑ x ∈ S, ∑ y ∈ T, (K x y : ℝ)) / (Fintype.card α : ℝ) ^ 2 := by
+  have hsingle : ∀ x : α, (uniformOn (Set.univ : Set α)).real {x} = (Fintype.card α : ℝ)⁻¹ := by
+    intro x
+    simp [measureReal_def, uniformOn_univ, ENNReal.toReal_inv]
+  rw [rectIntegral_eq_setIntegral_setIntegral,
+    setIntegral_finset _ Integrable.of_finite.integrableOn]
+  simp_rw [setIntegral_finset _ Integrable.of_finite.integrableOn, hsingle, smul_eq_mul]
+  rw [Finset.sum_div]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [Finset.mul_sum, Finset.sum_div]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  ring
 
 /-- The integral of a symmetric kernel against a pair of test functions:
 `∫∫ u(x) v(y) K(x,y)`.
