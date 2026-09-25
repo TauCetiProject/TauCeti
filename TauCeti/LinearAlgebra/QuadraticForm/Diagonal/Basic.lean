@@ -170,7 +170,9 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
 
 /-- Evaluate a diagonal form on a linear combination of three distinct coordinate vectors. -/
-theorem _root_.QuadraticMap.weightedSumSquares_three_single
+-- Apply before the generic `weightedSumSquares_apply` expansion.
+@[simp high]
+theorem _root_.QuadraticMap.weightedSumSquares_apply_three_single
     {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι → R)
     {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (x y z : R) :
     QuadraticMap.weightedSumSquares R a
@@ -196,7 +198,7 @@ theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zer
   let f : ι → R := Pi.single i x + Pi.single j y + Pi.single k z
   intro hanis
   have hf : f = 0 := hanis f <| by
-    simpa [f, weightedSumSquares_three_single a hij hik hjk x y z] using h
+    simpa [f, weightedSumSquares_apply_three_single a hij hik hjk x y z] using h
   have hz0 : z = 0 := by simpa [f, hik.symm, hjk.symm] using congrFun hf k
   exact hz hz0
 
