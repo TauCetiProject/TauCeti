@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 
 /-!
@@ -23,6 +24,14 @@ arguments can prove when the two carriers coincide rather than building a second
 The construction follows the Clifford-group conventions of H. B. Lawson and M.-L. Michelsohn,
 *Spin Geometry* (1989), Chapter I §2, and uses Mathlib's `SpinGroup` and Tau Ceti's Clifford
 functoriality API.
+
+## Main results
+
+* `CliffordAlgebra.evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one` characterizes the carrier
+  by the reverse-norm equation.
+* `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
+  `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
+* `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
 -/
 
 public section
@@ -78,6 +87,46 @@ theorem mem_even {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q) :
 theorem mem_unitary {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q) :
     (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) :=
   hx.2
+
+/-- An even Clifford unit lies in `evenUnitaryGroup` exactly when its reverse norm is one. -/
+theorem mem_iff_reverse_mul_self_eq_one {x : (CliffordAlgebra Q)ˣ} :
+    x ∈ evenUnitaryGroup Q ↔
+      (x : CliffordAlgebra Q) ∈ even Q ∧
+        reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1 := by
+  rw [mem_iff]
+  constructor
+  · rintro ⟨heven, hunitary⟩
+    refine ⟨heven, ?_⟩
+    rw [← star_mul_self_eq_reverse_mul_self_of_mem_even heven]
+    exact Unitary.star_mul_self_of_mem hunitary
+  · rintro ⟨heven, hreverse⟩
+    refine ⟨heven, ?_⟩
+    apply x.isUnit.mem_unitary_of_star_mul_self
+    rw [star_mul_self_eq_reverse_mul_self_of_mem_even heven]
+    exact hreverse
+
+/-- The reverse norm of an even unitary Clifford element is one. -/
+theorem reverse_mul_self (x : evenUnitaryGroup Q) :
+    reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+      ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 :=
+  (mem_iff_reverse_mul_self_eq_one Q).mp x.2 |>.2
+
+/-- The right-handed reverse norm of an even unitary Clifford element is one. -/
+theorem self_mul_reverse (x : evenUnitaryGroup Q) :
+    ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+      reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 := by
+  exact self_mul_reverse_of_reverse_mul_self
+    (show reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+        ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) 1 by
+        simpa only [map_one] using reverse_mul_self Q x)
+
+/-- Reversal of an even unitary Clifford element is its unit inverse after coercion. -/
+@[simp]
+theorem reverse_eq_inv (x : evenUnitaryGroup Q) :
+    reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  exact Units.eq_inv_of_mul_eq_one_right (reverse_mul_self Q x)
 
 end evenUnitaryGroup
 
