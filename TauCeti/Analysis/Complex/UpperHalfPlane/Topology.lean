@@ -178,15 +178,21 @@ theorem closure_preimage_re (s : Set ℝ) :
 /-- The closure of the open right half-plane of `ℍ` at `0`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_lt_re` for `ℂ`. -/
 theorem closure_setOfPred_lt_re : closure {z : ℍ | 0 < z.re} = {z : ℍ | 0 ≤ z.re} := by
+  -- `{z | 0 < z.re}` unfolds to the preimage of `Set.Ioi 0` under `re`, both being the same
+  -- predicate `fun z => 0 < z.re` spelled two ways.
   rw [show {z : ℍ | 0 < z.re} = UpperHalfPlane.re ⁻¹' Set.Ioi (0 : ℝ) from rfl,
     closure_preimage_re, closure_Ioi]
+  -- `re ⁻¹' Set.Ici 0` unfolds to `{z | 0 ≤ z.re}` for the same reason, in the other direction.
   rfl
 
 /-- The closure of the open left half-plane of `ℍ` at `0`, the analogue for `ℍ` of
 `Complex.closure_setOfPred_re_lt` for `ℂ`. -/
 theorem closure_setOfPred_re_lt : closure {z : ℍ | z.re < 0} = {z : ℍ | z.re ≤ 0} := by
+  -- `{z | z.re < 0}` unfolds to the preimage of `Set.Iio 0` under `re`, both being the same
+  -- predicate `fun z => z.re < 0` spelled two ways.
   rw [show {z : ℍ | z.re < 0} = UpperHalfPlane.re ⁻¹' Set.Iio (0 : ℝ) from rfl,
     closure_preimage_re, closure_Iio]
+  -- `re ⁻¹' Set.Iic 0` unfolds to `{z | z.re ≤ 0}` for the same reason, in the other direction.
   rfl
 
 end TauCeti.UpperHalfPlane
