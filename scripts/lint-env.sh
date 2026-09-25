@@ -174,6 +174,10 @@
 #     untrusted code has this ceiling; the pr-build bwrap sandbox plus human review
 #     of suspicious `initialize`/`@[init]` code are the outer defense. Everything
 #     short of that deliberate two-step forgery fails closed.
+#   * Residual risk (pre-existing, shared by every audit in the sandbox): the compiled
+#     driver's own code is built before candidate code runs and is mounted read-only, but
+#     like the `lean`-based audits it loads the Batteries, Mathlib and TauCeti `.olean`s from
+#     the candidate-writable `.lake`, which the candidate's build could rewrite.
 #
 # Run from the repo root (or anywhere; it cd's to the root) AFTER `lake build` — it
 # needs the compiled oleans. It does no network I/O and writes only under $TMPDIR, so
@@ -207,9 +211,12 @@ run_lean() {
 
 # The compiled `#lint` driver (step 2) is not a Lean process, so the watchdog does not see it.
 # Give it the same liveness bound as scripts/perf/lean-watchdog.sh in the sandboxed build.
+# `timeout` is resolved here, by absolute path: `lake env` puts candidate-writable
+# `.lake/build/bin` directories first on PATH, where a candidate could plant its own `timeout`.
+TIMEOUT_BIN="$(command -v timeout)" || { echo "lint-env: timeout not found" >&2; exit 1; }
 run_driver() {
   if [ -n "${WATCHDOG_TOOLCHAIN:-}" ]; then
-    lake env timeout --signal=TERM --kill-after=30 3000 "$@"
+    lake env "$TIMEOUT_BIN" --signal=TERM --kill-after=30 3000 "$@"
   else
     lake env "$@"
   fi
@@ -460,42 +467,34 @@ if [ -s "$TMP/nolints-fixed.txt" ]; then
   sed 's/^/  /' "$TMP/nolints-fixed.txt"
 fi
 
-# --- 2. build the compiled #lint driver ------------------------------------------
+# --- 2. obtain the compiled #lint driver -----------------------------------------
 # scripts/LintEnvDriver.lean runs `#lint only $LINTERS in TauCeti` over every TauCeti module and
 # prints exactly the report `lean` printed for the generated driver file this step used to write:
 # the same header, sections and `#check` blocks, with the error-diagnostic prefix `$DRIVER:1:0: `
-# when there are violations, then the nonce marker. It takes about a third less time and a quarter
-# less CPU than elaborating that file with `lake env lean` (measurements in the driver's header).
-# `$DRIVER` no longer names a file: it is only the unpredictable prefix the parser anchors on.
+# when there are violations, then the nonce marker. It imports the closure at the `private` olean
+# level, like the legacy (non-module) driver; see PRIVATE DECLARATIONS above. It takes about a third
+# less time and a quarter less CPU than elaborating that file with `lake env lean`, because
+# Batteries' lint framework and linters run natively instead of in Lean's IR interpreter
+# (measurements in the driver's header). `$DRIVER` no longer names a file: it is only the
+# unpredictable prefix the parser anchors on.
 #
-# The driver is compiled in a throwaway Lake workspace whose only dependency is the candidate's
-# pinned Batteries, by path, so the only code compiled is this trusted source and the pinned
-# Batteries modules it imports, with the candidate's toolchain. It imports the closure at the
-# `private` olean level, like the legacy (non-module) driver; see PRIVATE DECLARATIONS above.
-BATTERIES_DIR="$PROJECT_ROOT/.lake/packages/batteries"
-[ -f "$BATTERIES_DIR/Batteries/Tactic/Lint.lean" ] \
-  || fail "no Batteries checkout at $BATTERIES_DIR; run lake build first"
-DRIVER_WS="$TMP/lint-driver"
-mkdir "$DRIVER_WS" || fail "could not create $DRIVER_WS"
-cp "$TRUSTED_SCRIPTS/LintEnvDriver.lean" "$DRIVER_WS/LintEnvDriver.lean"
-cp "$PROJECT_ROOT/lean-toolchain" "$DRIVER_WS/lean-toolchain"
-cat > "$DRIVER_WS/lakefile.toml" <<TOML
-name = "lint-env-driver"
-
-[[require]]
-name = "batteries"
-path = "$BATTERIES_DIR"
-
-[[lean_exe]]
-name = "lint-env-driver"
-root = "LintEnvDriver"
-supportInterpreter = true
-TOML
-if ! (cd "$DRIVER_WS" && lake build lint-env-driver) > "$TMP/driver-build.txt" 2>&1; then
-  cat "$TMP/driver-build.txt"
-  fail "could not build the compiled #lint driver (scripts/LintEnvDriver.lean) — see output above"
+# scripts/build-lint-driver.sh compiles it against the project's pinned Batteries checkout, which is
+# only trustworthy before candidate code runs: a candidate's build can rewrite
+# .lake/packages/batteries. So in the sandboxed build (WATCHDOG_TOOLCHAIN set) the driver must
+# arrive prebuilt, via LINT_DRIVER_EXE, from pr-build.yml's host-side step, mounted read-only; this
+# script refuses to compile it there. Elsewhere (post-merge CI, local runs) it builds it here.
+if [ -n "${LINT_DRIVER_EXE:-}" ]; then
+  DRIVER_EXE="$LINT_DRIVER_EXE"
+elif [ -n "${WATCHDOG_TOOLCHAIN:-}" ]; then
+  fail "the sandboxed build must supply a prebuilt, read-only driver in LINT_DRIVER_EXE"
+else
+  if ! bash "$TRUSTED_SCRIPTS/build-lint-driver.sh" "$PROJECT_ROOT" \
+      "$TRUSTED_SCRIPTS/LintEnvDriver.lean" "$TMP/lint-driver" > "$TMP/driver-build.txt" 2>&1; then
+    cat "$TMP/driver-build.txt"
+    fail "could not build the compiled #lint driver (scripts/LintEnvDriver.lean) — see output above"
+  fi
+  DRIVER_EXE="$TMP/lint-driver/lint-env-driver"
 fi
-DRIVER_EXE="$DRIVER_WS/.lake/build/bin/lint-env-driver"
 [ -x "$DRIVER_EXE" ] || fail "compiled #lint driver missing at $DRIVER_EXE"
 
 # --- 3. run it (exit 1 is EXPECTED when the linters report) -----------------------
@@ -510,7 +509,7 @@ fi
 # Echo each linter's completion trace line into the log. Informational only: nothing below reads
 # these lines, and PR code could print look-alikes. Once Batteries reports per-linter cost on them,
 # this is how the CI logs record what each linter costs.
-grep -E '^- [A-Za-z]+: \(2/2\) ' "$TMP/out.txt" | sed 's/^/lint-env: trace /' || true
+grep -E '^- [A-Za-z0-9_]+: \(2/2\) ' "$TMP/out.txt" | sed 's/^/lint-env: trace /' || true
 
 # --- 4. locate the linter report and parse it fail-closed -------------------------
 # Two genuine header shapes (see SECURITY MODEL): N > 0 comes as an error diagnostic

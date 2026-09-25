@@ -7,15 +7,17 @@ Human-owned governance machinery, run by `scripts/lint-env.sh`. It does exactly 
 generated `#lint only <linters> in TauCeti` driver used to do, and prints the same report in the
 same format, but as a compiled executable.
 
-It is faster. Measured on the whole library in 2026-09 (16 cores, two runs each, identical reports),
-`lake env lean` on the generated driver took 257s wall and 3,552 CPU-seconds, and this driver took
-169s and 2,543. Userspace instructions differ by only 5% (5.13e12 against 4.85e12); most of the
-saving is kernel time (486s against 88s). Why the frontend spends that kernel time is not
-established.
+It is faster because Batteries' lint framework and linters run natively; under `lean` they are
+interpreted. Measured on the whole library in 2026-09 (16 cores, identical reports): `lake env lean`
+on the generated driver took 257s wall and 3,552 CPU-seconds, this driver compiled took 169s and
+2,543. Running this same source interpreted, with `lake env lean --run`, took 226s and 3,399, with
+35 million context switches against 8 million compiled; most of the extra CPU is kernel time
+(707s against 104s), consistent with interpreted, allocation-heavy linter tasks contending in
+Lean's task manager. Userspace instructions differ by only about 10%.
 
-`lint-env.sh` builds this file into a throwaway Lake workspace that depends on the candidate's
-Batteries by path, so only this trusted source and the pinned Batteries are compiled, and runs it
-under `lake env` from the project root.
+`scripts/build-lint-driver.sh` compiles it in a throwaway Lake workspace that depends on the
+project's pinned Batteries by path. In the sandboxed PR build that happens on the host before any
+candidate code runs, and the executable is mounted read-only; see `lint-env.sh`.
 
 Usage: `lint-env-driver <tag> <marker-file> <modules-file> <linter>...`
 
