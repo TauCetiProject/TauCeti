@@ -21,10 +21,11 @@ of index `p`. Thus every continuous character into the multiplicative encoding
 character-theoretic input to describing the generator rank of a pro-`p` group by its continuous
 `𝔽_p`-valued characters. The lift uses the quotient topology.
 
-The characters with values in `𝔽_p` themselves form the **continuous `𝔽_p`-dual**
-`TauCeti.continuousFpDual p G`, an `𝔽_p`-vector space because `𝔽_p` has exponent `p`. When the group
-is itself elementary abelian, a character of it is in particular a linear functional on it, so
-`TauCeti.continuousFpDualToDual` embeds the continuous dual in the algebraic dual. Conversely
+The characters with values in `ZMod n` themselves form the **continuous `ZMod n`-dual**
+`TauCeti.continuousZModDual n G`, a `ZMod n`-module because `ZMod n` has exponent dividing `n`; for
+prime `p` it is the continuous `𝔽_p`-dual, an `𝔽_p`-vector space. When the group is itself
+elementary abelian, a character of it is in particular a linear functional on it, so
+`TauCeti.continuousZModDualToDual` embeds the continuous dual in the algebraic dual. Conversely
 an open normal subgroup of index `p` has cyclic quotient of order `p` and is therefore the kernel
 of such a character, so the pro-`p` Frattini subgroup is exactly the intersection of the kernels
 of the continuous `𝔽_p`-valued characters. Precomposition with the projection to the Frattini
@@ -33,9 +34,10 @@ of `G`.
 
 ## Main definitions
 
-* `TauCeti.continuousFpDual`: the group of continuous `𝔽_p`-valued characters, written additively.
-* `TauCeti.continuousFpDualToDual`: a continuous `𝔽_p`-valued character of an elementary abelian
-  group, read as a linear functional on it.
+* `TauCeti.continuousZModDual`: the group of continuous `ZMod n`-valued characters, written
+  additively; for prime `p` it is the continuous `𝔽_p`-dual.
+* `TauCeti.continuousZModDualToDual`: a continuous `ZMod p`-valued character of an elementary
+  abelian group, read as a linear functional on it.
 
 ## Main results
 
@@ -59,40 +61,42 @@ namespace TauCeti
 
 universe u
 
-section FpDual
+section ZModDual
 
 variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
 
-/-- The **continuous `𝔽_p`-dual** of a topological group: its group of continuous characters with
-values in `𝔽_p`, written additively so that it is an `𝔽_p`-vector space. It is the discrete
-companion of the compact Frattini quotient: by `TauCeti.frattiniQuotientDualEquiv` a character of
-`G` is the same thing as a character of `G ⧸ proPFrattini p G`, and its dimension is the
-topological generator rank of a pro-`p` group. -/
-abbrev continuousFpDual (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Type u :=
-  Additive (G →ₜ* Multiplicative (ZMod p))
+/-- The **continuous `ZMod n`-dual** of a topological group: its group of continuous characters
+with values in `ZMod n`, written additively so that it is a `ZMod n`-module. For a prime `p` it is
+the continuous `𝔽_p`-dual, an `𝔽_p`-vector space, and it is the discrete companion of the compact
+Frattini quotient: by `TauCeti.frattiniQuotientDualEquiv` a character of `G` is the same thing as a
+character of `G ⧸ proPFrattini p G`, and its dimension is the topological generator rank of a
+pro-`p` group. -/
+abbrev continuousZModDual (n : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Type u :=
+  Additive (G →ₜ* Multiplicative (ZMod n))
 
 /-- The continuous `ZMod n`-valued characters form a `ZMod n`-module: the target has exponent
 dividing `n`, hence so does the character group. -/
-instance instModuleContinuousFpDual : Module (ZMod n) (continuousFpDual n G) :=
+instance instModuleContinuousZModDual : Module (ZMod n) (continuousZModDual n G) :=
   AddCommGroup.zmodModule fun x ↦ by
     apply Additive.toMul.injective
     rw [toMul_nsmul, toMul_zero]
     ext g
     simp [ContinuousMonoidHom.pow_apply, toAdd_pow, nsmul_eq_mul]
 
-end FpDual
+end ZModDual
 
 section ToDual
 
 variable {p : ℕ} {W : Type u} [CommGroup W] [TopologicalSpace W]
   [Module (ZMod p) (Additive W)]
 
-/-- A continuous `𝔽_p`-valued character of an elementary abelian group `W`, read as a linear
-functional on the `𝔽_p`-vector space `Additive W`. It is injective
-(`TauCeti.continuousFpDualToDual_injective`), so the continuous dual is a subspace of the
+/-- A continuous `ZMod p`-valued character of a commutative group `W` whose additive copy is a
+`ZMod p`-module, read as a linear functional on that module; for a prime `p` and an elementary
+abelian `W` this is a functional on the `𝔽_p`-vector space `Additive W`. It is injective
+(`TauCeti.continuousZModDualToDual_injective`), so the continuous dual is a subspace of the
 algebraic dual. -/
-def continuousFpDualToDual :
-    continuousFpDual p W →ₗ[ZMod p] Module.Dual (ZMod p) (Additive W) :=
+def continuousZModDualToDual :
+    continuousZModDual p W →ₗ[ZMod p] Module.Dual (ZMod p) (Additive W) :=
   AddMonoidHom.toZModLinearMap p
     { toFun := fun x ↦ AddMonoidHom.toZModLinearMap p
         { toFun := fun w ↦ Multiplicative.toAdd (Additive.toMul x (Additive.toMul w))
@@ -102,20 +106,20 @@ def continuousFpDualToDual :
       map_add' := fun x y ↦ by ext w; simp }
 
 @[simp]
-theorem continuousFpDualToDual_apply (x : continuousFpDual p W) (w : Additive W) :
-    continuousFpDualToDual x w = Multiplicative.toAdd (Additive.toMul x (Additive.toMul w)) :=
+theorem continuousZModDualToDual_apply (x : continuousZModDual p W) (w : Additive W) :
+    continuousZModDualToDual x w = Multiplicative.toAdd (Additive.toMul x (Additive.toMul w)) :=
   (rfl)
 
-theorem continuousFpDualToDual_injective :
-    Function.Injective (continuousFpDualToDual (p := p) (W := W)) := fun x y h ↦ by
+theorem continuousZModDualToDual_injective :
+    Function.Injective (continuousZModDualToDual (p := p) (W := W)) := fun x y h ↦ by
   apply Additive.toMul.injective
   ext w
   have hw := congrArg (fun f ↦ f (Additive.ofMul w)) h
-  simp only [continuousFpDualToDual_apply, toMul_ofMul] at hw
+  simp only [continuousZModDualToDual_apply, toMul_ofMul] at hw
   exact Multiplicative.toAdd.injective hw
 
-theorem continuousFpDualToDual_eq_zero_iff {x : continuousFpDual p W} {w : Additive W} :
-    continuousFpDualToDual x w = 0 ↔ Additive.toMul w ∈ (Additive.toMul x).ker := by
+theorem continuousZModDualToDual_eq_zero_iff {x : continuousZModDual p W} {w : Additive W} :
+    continuousZModDualToDual x w = 0 ↔ Additive.toMul w ∈ (Additive.toMul x).ker := by
   simp [MonoidHom.mem_ker]
 
 end ToDual
@@ -213,8 +217,8 @@ theorem existsUnique_frattiniQuotient_lift {H : Type*} [Group H]
 `𝔽_p`-vector spaces** from the continuous `𝔽_p`-dual of `G ⧸ proPFrattini p G` onto that of `G`:
 every continuous `𝔽_p`-valued character of `G` kills the pro-`p` Frattini subgroup. -/
 def frattiniQuotientDualEquiv :
-    continuousFpDual p (G ⧸ proPFrattini p G) ≃ₗ[ZMod p] continuousFpDual p G :=
-  let e : continuousFpDual p (G ⧸ proPFrattini p G) ≃+ continuousFpDual p G :=
+    continuousZModDual p (G ⧸ proPFrattini p G) ≃ₗ[ZMod p] continuousZModDual p G :=
+  let e : continuousZModDual p (G ⧸ proPFrattini p G) ≃+ continuousZModDual p G :=
     { Additive.ofMul.symm.trans
         ((frattiniQuotientHomEquiv (H := Multiplicative (ZMod p)) (by simp)).trans
           Additive.ofMul) with
@@ -225,7 +229,7 @@ def frattiniQuotientDualEquiv :
   { e with map_smul' := ZMod.map_smul e }
 
 @[simp]
-theorem frattiniQuotientDualEquiv_apply (x : continuousFpDual p (G ⧸ proPFrattini p G)) (g : G) :
+theorem frattiniQuotientDualEquiv_apply (x : continuousZModDual p (G ⧸ proPFrattini p G)) (g : G) :
     Additive.toMul (frattiniQuotientDualEquiv x) g = Additive.toMul x g := by
   simp [frattiniQuotientDualEquiv, frattiniQuotientHomEquiv_apply]
 

@@ -16,7 +16,7 @@ import TauCeti.Algebra.Module.ZMod.Exponent
 # The generator rank of a pro-`p` group and its continuous `𝔽_p`-dual
 
 For a profinite pro-`p` group `G` the topological generator rank is the dimension of the continuous
-`𝔽_p`-dual `TauCeti.continuousFpDual p G` over `𝔽_p`. This is Burnside's basis theorem as an
+`𝔽_p`-dual `TauCeti.continuousZModDual p G` over `𝔽_p`. This is Burnside's basis theorem as an
 identity of cardinals, with no finiteness hypothesis anywhere; the dual, and not the Frattini
 quotient itself, is the correct object, because at infinite rank the Frattini quotient is a
 vector space of much larger dimension than the rank — a countable product of copies of `ℤ/p` has
@@ -40,15 +40,15 @@ quotient converging to `1` lifts to `G`, which is
 
 ## Main results
 
-* `TauCeti.rank_continuousFpDual_le_topologicalGeneratorRank`: the dimension of the continuous
+* `TauCeti.rank_continuousZModDual_le_topologicalGeneratorRank`: the dimension of the continuous
   `𝔽_p`-dual of a profinite group is at most its topological generator rank.
-* `TauCeti.topologicalGeneratorRank_le_rank_continuousFpDual`: for a profinite `𝔽_p`-vector group
+* `TauCeti.topologicalGeneratorRank_le_rank_continuousZModDual`: for a profinite `𝔽_p`-vector group
   the reverse inequality holds.
-* `TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousFpDual`: **Burnside's basis theorem,
+* `TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`: **Burnside's basis theorem,
   cardinal form** — the two agree for a profinite pro-`p` group.
-* `TauCeti.finite_continuousFpDual`: the dual of a topologically finitely generated topological
+* `TauCeti.finite_continuousZModDual`: the dual of a topologically finitely generated topological
   group is finite-dimensional, again with no pro-`p` hypothesis and with no compactness.
-* `TauCeti.IsProP.finrank_continuousFpDual_eq_topologicalGeneratorRankNat`: the natural-number
+* `TauCeti.IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat`: the natural-number
   form of the theorem, for a topologically finitely generated pro-`p` group.
 
 ## References
@@ -77,27 +77,27 @@ variable [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologic
 Restriction to the set is injective because a character with open kernel is determined by its
 values on a topological generating set, and it lands in the finitely supported functions because
 the kernel of a continuous character is an open neighbourhood of `1`. -/
-theorem rank_continuousFpDual_le_of_convergesToOne {s : Set G} (hs : ConvergesToOne s)
+theorem rank_continuousZModDual_le_of_convergesToOne {s : Set G} (hs : ConvergesToOne s)
     (hgen : (Subgroup.closure s).topologicalClosure = ⊤) :
-    Module.rank (ZMod p) (continuousFpDual p G) ≤ #(s : Set G) := by
+    Module.rank (ZMod p) (continuousZModDual p G) ≤ #(s : Set G) := by
   classical
-  have hopen (x : continuousFpDual p G) :
+  have hopen (x : continuousZModDual p G) :
       IsOpen (((Additive.toMul x).ker : Subgroup G) : Set G) :=
     (MonoidHom.continuous_iff_isOpen_ker _).mp (Additive.toMul x).continuous
-  have hsupp (x : continuousFpDual p G) :
+  have hsupp (x : continuousZModDual p G) :
       (Function.support fun y : s ↦ Multiplicative.toAdd (Additive.toMul x (y : G))).Finite := by
     refine ((convergesToOne_iff.mp hs _
       ((hopen x).mem_nhds (Subgroup.one_mem _))).preimage
         Subtype.val_injective.injOn).subset fun y hy ↦ ?_
     exact ⟨y.2, fun hmem ↦ hy (by simpa [MonoidHom.mem_ker] using hmem)⟩
-  let R : continuousFpDual p G →ₗ[ZMod p] (s →₀ ZMod p) :=
+  let R : continuousZModDual p G →ₗ[ZMod p] (s →₀ ZMod p) :=
     AddMonoidHom.toZModLinearMap p
       { toFun := fun x ↦ Finsupp.ofSupportFinite _ (hsupp x)
         map_zero' := Finsupp.ext fun z ↦ by
           simp [Finsupp.ofSupportFinite_coe]
         map_add' := fun x y ↦ Finsupp.ext fun z ↦ by
           simp [Finsupp.ofSupportFinite_coe, toMul_add] }
-  have hRapply (x : continuousFpDual p G) (y : s) :
+  have hRapply (x : continuousZModDual p G) (y : s) :
       R x y = Multiplicative.toAdd (Additive.toMul x (y : G)) :=
     congrFun Finsupp.ofSupportFinite_coe y
   have hinj : Function.Injective R := fun x y hxy ↦ by
@@ -112,27 +112,27 @@ theorem rank_continuousFpDual_le_of_convergesToOne {s : Set G} (hs : ConvergesTo
     ext z
     exact DFunLike.congr_fun heq z
   calc
-    Module.rank (ZMod p) (continuousFpDual p G) ≤ Module.rank (ZMod p) (s →₀ ZMod p) :=
+    Module.rank (ZMod p) (continuousZModDual p G) ≤ Module.rank (ZMod p) (s →₀ ZMod p) :=
       R.rank_le_of_injective hinj
     _ = #(s : Set G) := by rw [rank_finsupp_self]; simp
 
 /-- **The dimension of the continuous `𝔽_p`-dual of a profinite group is at most its topological
 generator rank.** No pro-`p` hypothesis is needed for this half. -/
-theorem rank_continuousFpDual_le_topologicalGeneratorRank [CompactSpace G]
+theorem rank_continuousZModDual_le_topologicalGeneratorRank [CompactSpace G]
     [TotallyDisconnectedSpace G] :
-    Module.rank (ZMod p) (continuousFpDual p G) ≤ topologicalGeneratorRank G := by
+    Module.rank (ZMod p) (continuousZModDual p G) ≤ topologicalGeneratorRank G := by
   obtain ⟨s, hs, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
-  exact hcard ▸ rank_continuousFpDual_le_of_convergesToOne hs hgen
+  exact hcard ▸ rank_continuousZModDual_le_of_convergesToOne hs hgen
 
 /-- **The continuous `𝔽_p`-dual of a topologically finitely generated topological group is
 finite-dimensional**, its dimension being bounded by the cardinality of a finite topological
 generating set. Neither a pro-`p` hypothesis nor compactness is needed: a finite set converges to
 `1` in any topological group. -/
-theorem finite_continuousFpDual (hfg : IsTopologicallyFinitelyGenerated G) :
-    Module.Finite (ZMod p) (continuousFpDual p G) := by
+theorem finite_continuousZModDual (hfg : IsTopologicallyFinitelyGenerated G) :
+    Module.Finite (ZMod p) (continuousZModDual p G) := by
   obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
   exact Module.rank_lt_aleph0_iff.mp <|
-    (rank_continuousFpDual_le_of_convergesToOne s.finite_toSet.convergesToOne hs).trans_lt
+    (rank_continuousZModDual_le_of_convergesToOne s.finite_toSet.convergesToOne hs).trans_lt
       s.finite_toSet.lt_aleph0
 
 end Restrict
@@ -153,14 +153,14 @@ private theorem proPFrattini_eq_bot_of_isModule : proPFrattini p W = ⊥ :=
 is a finite linear combination of the basis, and the characters cut out the pro-`p` Frattini
 subgroup, which is trivial here. -/
 private theorem eq_one_of_forall_basis_eq_one {ι : Type u}
-    (b : Module.Basis ι (ZMod p) (continuousFpDual p W)) {w : W}
+    (b : Module.Basis ι (ZMod p) (continuousZModDual p W)) {w : W}
     (hw : ∀ j, Additive.toMul (b j) w = 1) : w = 1 := by
   have hev : (Module.Dual.eval (ZMod p) (Additive W) (Additive.ofMul w)).comp
-      continuousFpDualToDual = 0 := by
+      continuousZModDualToDual = 0 := by
     refine b.ext fun j ↦ ?_
     simp [Module.Dual.eval_apply, hw j]
   have hall : ∀ φ : W →ₜ* Multiplicative (ZMod p), w ∈ φ.ker := fun φ ↦ by
-    have h0 : continuousFpDualToDual (Additive.ofMul φ) (Additive.ofMul w) = 0 :=
+    have h0 : continuousZModDualToDual (Additive.ofMul φ) (Additive.ofMul w) = 0 :=
       DFunLike.congr_fun hev (Additive.ofMul φ)
     simpa using h0
   have hbot := proPFrattini_eq_bot_of_isModule (p := p) (W := W)
@@ -175,46 +175,46 @@ value `1` at some point annihilated by all the others. Were it not so, compactne
 *finite* subfamily whose common kernel lies in the kernel of the given vector, making it a linear
 combination of those finitely many others. -/
 private theorem exists_dual_basis {ι : Type u}
-    (b : Module.Basis ι (ZMod p) (continuousFpDual p W)) (i : ι) :
-    ∃ w : Additive W, continuousFpDualToDual (b i) w = 1 ∧
-      ∀ j, j ≠ i → continuousFpDualToDual (b j) w = 0 := by
+    (b : Module.Basis ι (ZMod p) (continuousZModDual p W)) (i : ι) :
+    ∃ w : Additive W, continuousZModDualToDual (b i) w = 1 ∧
+      ∀ j, j ≠ i → continuousZModDualToDual (b j) w = 0 := by
   classical
-  have hexists : ∃ w : Additive W, (∀ j, j ≠ i → continuousFpDualToDual (b j) w = 0) ∧
-      continuousFpDualToDual (b i) w ≠ 0 := by
+  have hexists : ∃ w : Additive W, (∀ j, j ≠ i → continuousZModDualToDual (b j) w = 0) ∧
+      continuousZModDualToDual (b i) w ≠ 0 := by
     by_contra hcon
-    have hsub : ∀ w : Additive W, (∀ j, j ≠ i → continuousFpDualToDual (b j) w = 0) →
-        continuousFpDualToDual (b i) w = 0 := fun w hw ↦ by
+    have hsub : ∀ w : Additive W, (∀ j, j ≠ i → continuousZModDualToDual (b j) w = 0) →
+        continuousZModDualToDual (b i) w = 0 := fun w hw ↦ by
       by_contra h
       exact hcon ⟨w, hw, h⟩
     -- Compactness restricts the hypothesis to a finite set `F` of indices.
     obtain ⟨F, hF⟩ := exists_finset_iInter_ker_subset
       (fun j : {j : ι // j ≠ i} ↦ Additive.toMul (b j.1))
       ((MonoidHom.continuous_iff_isOpen_ker _).mp (Additive.toMul (b i)).continuous)
-      (fun w hw ↦ continuousFpDualToDual_eq_zero_iff.mp
-        (hsub (Additive.ofMul w) fun j hj ↦ continuousFpDualToDual_eq_zero_iff.mpr
+      (fun w hw ↦ continuousZModDualToDual_eq_zero_iff.mp
+        (hsub (Additive.ofMul w) fun j hj ↦ continuousZModDualToDual_eq_zero_iff.mpr
           (by simpa using Set.mem_iInter.mp hw ⟨j, hj⟩)))
     -- On the finite subfamily, `b i` is a linear combination of the others.
     have hker : ⨅ j : {j : {j : ι // j ≠ i} // j ∈ F},
-        LinearMap.ker (continuousFpDualToDual (b j.1.1)) ≤
-          LinearMap.ker (continuousFpDualToDual (b i)) := fun w hw ↦ by
+        LinearMap.ker (continuousZModDualToDual (b j.1.1)) ≤
+          LinearMap.ker (continuousZModDualToDual (b i)) := fun w hw ↦ by
       rw [Submodule.mem_iInf] at hw
-      exact continuousFpDualToDual_eq_zero_iff.mpr
-        (hF (Set.mem_iInter₂.mpr fun j hj ↦ continuousFpDualToDual_eq_zero_iff.mp (hw ⟨j, hj⟩)))
+      exact continuousZModDualToDual_eq_zero_iff.mpr
+        (hF (Set.mem_iInter₂.mpr fun j hj ↦ continuousZModDualToDual_eq_zero_iff.mp (hw ⟨j, hj⟩)))
     have hspan := mem_span_of_iInf_ker_le_ker hker
     set S : Set ι := (fun j : {j : ι // j ≠ i} ↦ j.1) '' (F : Set {j : ι // j ≠ i})
     have hsubset : Set.range (fun j : {j : {j : ι // j ≠ i} // j ∈ F} ↦
-        continuousFpDualToDual (b j.1.1)) ⊆ continuousFpDualToDual '' (b '' S) := by
+        continuousZModDualToDual (b j.1.1)) ⊆ continuousZModDualToDual '' (b '' S) := by
       rintro _ ⟨j, rfl⟩
       exact ⟨b j.1.1, ⟨j.1.1, ⟨j.1, j.2, rfl⟩, rfl⟩, rfl⟩
-    have hmem : continuousFpDualToDual (b i) ∈
-        Submodule.map continuousFpDualToDual (Submodule.span (ZMod p) (b '' S)) := by
+    have hmem : continuousZModDualToDual (b i) ∈
+        Submodule.map continuousZModDualToDual (Submodule.span (ZMod p) (b '' S)) := by
       rw [← Submodule.span_image]
       exact Submodule.span_mono hsubset hspan
     obtain ⟨y, hy, hyeq⟩ := hmem
     exact b.linearIndependent.notMem_span_image
-      (s := S) (fun ⟨j, _, hji⟩ ↦ j.2 hji) (continuousFpDualToDual_injective hyeq ▸ hy)
+      (s := S) (fun ⟨j, _, hji⟩ ↦ j.2 hji) (continuousZModDualToDual_injective hyeq ▸ hy)
   obtain ⟨w, hw0, hwi⟩ := hexists
-  refine ⟨(continuousFpDualToDual (b i) w)⁻¹ • w, ?_, fun j hj ↦ ?_⟩
+  refine ⟨(continuousZModDualToDual (b i) w)⁻¹ • w, ?_, fun j hj ↦ ?_⟩
   · rw [LinearMap.map_smul, smul_eq_mul, inv_mul_cancel₀ hwi]
   · rw [LinearMap.map_smul, hw0 j hj, smul_zero]
 
@@ -222,14 +222,14 @@ omit [IsTopologicalGroup W] [CompactSpace W] [TotallyDisconnectedSpace W] in
 /-- The `i`-th coordinate with respect to a basis of the continuous `𝔽_p`-dual is evaluation at the
 `i`-th vector of a dual basis: both are linear and they agree on the basis. -/
 private theorem coord_eq_apply_dual_basis {ι : Type u}
-    (b : Module.Basis ι (ZMod p) (continuousFpDual p W)) {v : ι → Additive W}
-    (hv1 : ∀ i, continuousFpDualToDual (b i) (v i) = 1)
-    (hv0 : ∀ i j, j ≠ i → continuousFpDualToDual (b j) (v i) = 0) (i : ι)
-    (x : continuousFpDual p W) :
-    b.coord i x = continuousFpDualToDual x (v i) := by
+    (b : Module.Basis ι (ZMod p) (continuousZModDual p W)) {v : ι → Additive W}
+    (hv1 : ∀ i, continuousZModDualToDual (b i) (v i) = 1)
+    (hv0 : ∀ i j, j ≠ i → continuousZModDualToDual (b j) (v i) = 0) (i : ι)
+    (x : continuousZModDual p W) :
+    b.coord i x = continuousZModDualToDual x (v i) := by
   classical
   have hEq : b.coord i =
-      (Module.Dual.eval (ZMod p) (Additive W) (v i)).comp continuousFpDualToDual := by
+      (Module.Dual.eval (ZMod p) (Additive W) (v i)).comp continuousZModDualToDual := by
     refine b.ext fun j ↦ ?_
     rcases eq_or_ne j i with rfl | hji
     · simp [Module.Dual.eval_apply, hv1 j, Module.Basis.coord_apply]
@@ -239,15 +239,15 @@ private theorem coord_eq_apply_dual_basis {ι : Type u}
 /-- **Burnside's basis theorem, cardinal form: the lower bound.** A profinite group whose additive
 copy is an `𝔽_p`-vector space is topologically generated by a dual basis of its continuous
 `𝔽_p`-dual, and such a dual basis converges to `1`. -/
-theorem topologicalGeneratorRank_le_rank_continuousFpDual :
-    topologicalGeneratorRank W ≤ Module.rank (ZMod p) (continuousFpDual p W) := by
+theorem topologicalGeneratorRank_le_rank_continuousZModDual :
+    topologicalGeneratorRank W ≤ Module.rank (ZMod p) (continuousZModDual p W) := by
   classical
-  let b := Module.Basis.ofVectorSpace (ZMod p) (continuousFpDual p W)
+  let b := Module.Basis.ofVectorSpace (ZMod p) (continuousZModDual p W)
   choose v hv1 hv0 using fun i ↦ exists_dual_basis b i
-  set u : Module.Basis.ofVectorSpaceIndex (ZMod p) (continuousFpDual p W) → W :=
+  set u : Module.Basis.ofVectorSpaceIndex (ZMod p) (continuousZModDual p W) → W :=
     fun i ↦ Additive.toMul (v i)
   have hmem_ker : ∀ i j, j ≠ i → u i ∈ ((Additive.toMul (b j)).ker : Subgroup W) := fun i j hj ↦
-    continuousFpDualToDual_eq_zero_iff.mp (hv0 i j hj)
+    continuousZModDualToDual_eq_zero_iff.mp (hv0 i j hj)
   -- The dual basis converges to `1`: away from a finite set of indices it lies in any given
   -- neighbourhood of `1`.
   have hconv : ConvergesToOne (Set.range u) := by
@@ -273,7 +273,7 @@ theorem topologicalGeneratorRank_le_rank_continuousFpDual :
       have hmem : u i ∈ U.toSubgroup :=
         hle (Subgroup.le_topologicalClosure _ (Subgroup.subset_closure ⟨i, rfl⟩))
       rw [← hφ] at hmem
-      exact continuousFpDualToDual_eq_zero_iff.mpr (by simpa using hmem)
+      exact continuousZModDualToDual_eq_zero_iff.mpr (by simpa using hmem)
     have hφone : φ = 1 := by
       have h := congrArg Additive.toMul (b.forall_coord_eq_zero_iff.mp hcoord)
       rwa [toMul_ofMul, toMul_zero] at h
@@ -283,8 +283,8 @@ theorem topologicalGeneratorRank_le_rank_continuousFpDual :
     exact hp.out.ne_one <| hU.symm.trans (Subgroup.index_eq_one.mpr hUtop)
   calc
     topologicalGeneratorRank W ≤ #(Set.range u : Set W) := topologicalGeneratorRank_le hconv hgen
-    _ ≤ #(Module.Basis.ofVectorSpaceIndex (ZMod p) (continuousFpDual p W)) := Cardinal.mk_range_le
-    _ = Module.rank (ZMod p) (continuousFpDual p W) := b.mk_eq_rank''
+    _ ≤ #(Module.Basis.ofVectorSpaceIndex (ZMod p) (continuousZModDual p W)) := Cardinal.mk_range_le
+    _ = Module.rank (ZMod p) (continuousZModDual p W) := b.mk_eq_rank''
 
 end ElementaryAbelian
 
@@ -298,20 +298,20 @@ variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
 /-- **Burnside's basis theorem, cardinal form.** The topological generator rank of a profinite
 pro-`p` group is the dimension of its continuous `𝔽_p`-dual over `𝔽_p`. No finiteness hypothesis is
 needed, and the statement is an identity of cardinals. -/
-theorem IsProP.topologicalGeneratorRank_eq_rank_continuousFpDual (hG : IsProP p G) :
-    topologicalGeneratorRank G = Module.rank (ZMod p) (continuousFpDual p G) := by
-  refine le_antisymm ?_ rank_continuousFpDual_le_topologicalGeneratorRank
+theorem IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual (hG : IsProP p G) :
+    topologicalGeneratorRank G = Module.rank (ZMod p) (continuousZModDual p G) := by
+  refine le_antisymm ?_ rank_continuousZModDual_le_topologicalGeneratorRank
   rw [← hG.topologicalGeneratorRank_quotient_proPFrattini,
     ← (frattiniQuotientDualEquiv (p := p) (G := G)).rank_eq]
-  exact topologicalGeneratorRank_le_rank_continuousFpDual
+  exact topologicalGeneratorRank_le_rank_continuousZModDual
 
 /-- **Burnside's basis theorem, numerical form against the dual.** For a topologically finitely
 generated profinite pro-`p` group the dimension of the continuous `𝔽_p`-dual over `𝔽_p` is the
 natural-number topological generator rank. -/
-theorem IsProP.finrank_continuousFpDual_eq_topologicalGeneratorRankNat (hG : IsProP p G)
+theorem IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) :
-    Module.finrank (ZMod p) (continuousFpDual p G) = topologicalGeneratorRankNat G hfg := by
-  rw [Module.finrank, ← hG.topologicalGeneratorRank_eq_rank_continuousFpDual,
+    Module.finrank (ZMod p) (continuousZModDual p G) = topologicalGeneratorRankNat G hfg := by
+  rw [Module.finrank, ← hG.topologicalGeneratorRank_eq_rank_continuousZModDual,
     ← topologicalGeneratorRankNat_eq_topologicalGeneratorRank hfg, Cardinal.toNat_natCast]
 
 end Burnside
