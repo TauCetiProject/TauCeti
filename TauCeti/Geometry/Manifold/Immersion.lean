@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Immersion
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 
 /-!
@@ -35,11 +35,12 @@ both sides, in order to apply the rule to `e.symm` as well.
 
 * `TauCeti.mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph`: a diffeomorphism pulls a chart
   of the maximal atlas back to a chart of the maximal atlas. This is the only geometric input.
-* `TauCeti.isImmersion_comp_diffeomorph` and `TauCeti.isImmersion_diffeomorph_comp`, together with
+* `TauCeti.isImmersion_comp_diffeomorph` and Mathlib’s `Manifold.IsImmersion.comp_diffeomorph`,
+  together with
   their `Manifold.IsImmersionAt`, `Manifold.IsImmersionAtOfComplement` and
   `Manifold.IsImmersionOfComplement` counterparts and the `_iff` companions of all of them:
   immersions are stable under composition with a diffeomorphism on either side.
-* `TauCeti.isImmersion_diffeomorph`: a diffeomorphism is an immersion.
+* `Diffeomorph.isImmersion`: a diffeomorphism is an immersion.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 
@@ -123,49 +124,12 @@ theorem isImmersionAtOfComplement_comp_diffeomorph [IsManifold I n M']
     simpa only [Function.comp_apply, _root_.Diffeomorph.apply_symm_apply] using
       h.writtenInCharts hy
 
-/-- Postcomposing with a diffeomorphism of the target preserves the immersion normal form at a
-point, with the same complement: the codomain chart of the immersion is pulled back along the
-inverse diffeomorphism, and `e ∘ f` read in the new chart is what `f` was in the old one. -/
-theorem isImmersionAtOfComplement_diffeomorph_comp [IsManifold J n P]
-    {x : M} (h : IsImmersionAtOfComplement F I J n f x) (e : N ≃ₘ^n⟮J, J⟯ P) :
-    IsImmersionAtOfComplement F I J n (e ∘ f) x := by
-  -- The mirror image of the previous proof, on the target side: pulling `h.codChart` back along
-  -- `e.symm` gives a chart whose source is literally `⇑e.symm ⁻¹' h.codChart.source` and whose
-  -- extended map is literally `h.codChart.extend J` precomposed with `e.symm`.
-  have hsource : (e.symm.toHomeomorph.transOpenPartialHomeomorph h.codChart).source
-      = ⇑e.symm ⁻¹' h.codChart.source := rfl
-  have hextend : ⇑((e.symm.toHomeomorph.transOpenPartialHomeomorph h.codChart).extend J)
-      = ⇑(h.codChart.extend J) ∘ ⇑e.symm := rfl
-  refine IsImmersionAtOfComplement.mk_of_charts h.equiv h.domChart
-    (e.symm.toHomeomorph.transOpenPartialHomeomorph h.codChart) h.mem_domChart_source ?_
-    h.domChart_mem_maximalAtlas
-    (mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph e.symm h.codChart_mem_maximalAtlas)
-    (fun y hy => ?_) fun y hy => ?_
-  · rw [hsource]
-    simpa only [Set.mem_preimage, Function.comp_apply, _root_.Diffeomorph.symm_apply_apply] using
-      h.mem_codChart_source
-  · rw [hsource]
-    simpa only [Set.mem_preimage, Function.comp_apply, _root_.Diffeomorph.symm_apply_apply] using
-      h.source_subset_preimage_source hy
-  · -- Reading `e ∘ f` through the pulled-back ambient chart reinstates `e.symm`, which cancels
-    -- the `e`: what is left is exactly `f` read through `h.codChart`.
-    rw [hextend]
-    simpa only [Function.comp_apply, _root_.Diffeomorph.symm_apply_apply] using
-      h.writtenInCharts hy
-
 /-- Precomposing with a diffeomorphism of the source preserves being an immersion at a point. -/
 theorem isImmersionAt_comp_diffeomorph [IsManifold I n M']
     (e : M' ≃ₘ^n⟮I, I⟯ M) {x : M'} (h : IsImmersionAt I J n f (e x)) :
     IsImmersionAt I J n (f ∘ e) x :=
   (isImmersionAtOfComplement_comp_diffeomorph e
     h.isImmersionAtOfComplement_complement).isImmersionAt
-
-/-- Postcomposing with a diffeomorphism of the target preserves being an immersion at a point. -/
-theorem isImmersionAt_diffeomorph_comp [IsManifold J n P]
-    {x : M} (h : IsImmersionAt I J n f x) (e : N ≃ₘ^n⟮J, J⟯ P) :
-    IsImmersionAt I J n (e ∘ f) x :=
-  (isImmersionAtOfComplement_diffeomorph_comp
-    h.isImmersionAtOfComplement_complement e).isImmersionAt
 
 /-- Precomposing an immersion with a fixed complement by a diffeomorphism of the source gives an
 immersion with the same complement. -/
@@ -174,22 +138,10 @@ theorem isImmersionOfComplement_comp_diffeomorph [IsManifold I n M']
     IsImmersionOfComplement F I J n (f ∘ e) :=
   fun x => isImmersionAtOfComplement_comp_diffeomorph e (h (e x))
 
-/-- Postcomposing an immersion with a fixed complement by a diffeomorphism of the target gives an
-immersion with the same complement. -/
-theorem isImmersionOfComplement_diffeomorph_comp [IsManifold J n P]
-    (h : IsImmersionOfComplement F I J n f) (e : N ≃ₘ^n⟮J, J⟯ P) :
-    IsImmersionOfComplement F I J n (e ∘ f) :=
-  fun x => isImmersionAtOfComplement_diffeomorph_comp (h x) e
-
 /-- Reparametrising an immersion by a diffeomorphism of the source gives an immersion. -/
 theorem isImmersion_comp_diffeomorph [IsManifold I n M']
     (e : M' ≃ₘ^n⟮I, I⟯ M) (h : IsImmersion I J n f) : IsImmersion I J n (f ∘ e) :=
   (isImmersionOfComplement_comp_diffeomorph e h.isImmersionOfComplement_complement).isImmersion
-
-/-- Transporting an immersion by a diffeomorphism of the target gives an immersion. -/
-theorem isImmersion_diffeomorph_comp [IsManifold J n P]
-    (h : IsImmersion I J n f) (e : N ≃ₘ^n⟮J, J⟯ P) : IsImmersion I J n (e ∘ f) :=
-  (isImmersionOfComplement_diffeomorph_comp h.isImmersionOfComplement_complement e).isImmersion
 
 section Iff
 
@@ -245,75 +197,53 @@ variable [IsManifold J n N] [IsManifold J n P]
 normal form at a point. -/
 theorem isImmersionAtOfComplement_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) {x : M} :
     IsImmersionAtOfComplement F I J n (e ∘ f) x ↔ IsImmersionAtOfComplement F I J n f x := by
-  refine ⟨fun h => ?_, fun h => isImmersionAtOfComplement_diffeomorph_comp h e⟩
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
   have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
-  have h' := isImmersionAtOfComplement_diffeomorph_comp h e.symm
+  have h' := h.comp_diffeomorph e.symm
   rwa [hcomp] at h'
 
 /-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an immersion
 at a point. -/
 theorem isImmersionAt_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) {x : M} :
     IsImmersionAt I J n (e ∘ f) x ↔ IsImmersionAt I J n f x := by
-  refine ⟨fun h => ?_, fun h => isImmersionAt_diffeomorph_comp h e⟩
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
   have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
-  have h' := isImmersionAt_diffeomorph_comp h e.symm
+  have h' := h.comp_diffeomorph e.symm
   rwa [hcomp] at h'
 
 /-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an immersion
 with a fixed complement. -/
 theorem isImmersionOfComplement_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) :
     IsImmersionOfComplement F I J n (e ∘ f) ↔ IsImmersionOfComplement F I J n f := by
-  refine ⟨fun h => ?_, fun h => isImmersionOfComplement_diffeomorph_comp h e⟩
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
   have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
-  have h' := isImmersionOfComplement_diffeomorph_comp h e.symm
+  have h' := h.comp_diffeomorph e.symm
   rwa [hcomp] at h'
 
 /-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an
 immersion. -/
 theorem isImmersion_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) :
     IsImmersion I J n (e ∘ f) ↔ IsImmersion I J n f := by
-  refine ⟨fun h => ?_, fun h => isImmersion_diffeomorph_comp h e⟩
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
   have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
-  have h' := isImmersion_diffeomorph_comp h e.symm
+  have h' := h.comp_diffeomorph e.symm
   rwa [hcomp] at h'
 
 end Target
 
 end Iff
 
-/-- A diffeomorphism is an immersion: it is the identity immersion transported by itself.
-
-This is the statement Mathlib lists as the `TODO` `Diffeomorph.isImmersion` in
-`Mathlib/Geometry/Manifold/Immersion.lean`; the name is flat here because a `Diffeomorph`
-namespace nested in `TauCeti` would break dot notation on Mathlib's type. -/
-theorem isImmersion_diffeomorph [IsManifold I n M] [IsManifold I n M'] (e : M ≃ₘ^n⟮I, I⟯ M') :
+/-- A diffeomorphism is an immersion: it is the identity immersion transported by itself. -/
+theorem _root_.Diffeomorph.isImmersion [IsManifold I n M] [IsManifold I n M']
+    (e : M ≃ₘ^n⟮I, I⟯ M') :
     IsImmersion I I n e :=
-  (isImmersion_diffeomorph_comp (IsImmersion.id (I := I) (n := n) (M := M)) e).congr rfl
+  ((IsImmersion.id (I := I) (n := n) (M := M)).comp_diffeomorph e).congr rfl
 
 /-! ### Immersions into finite-dimensional models -/
 
 section FiniteDimensional
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
-
-/-- Over a complete field, two complements of the same normed space `E` in a finite-dimensional
-normed space `E'` are continuously linearly isomorphic: both have dimension
-`finrank E' - finrank E`. -/
-theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv
-    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-    (e : (E × F) ≃L[𝕜] E') (e' : (E × F') ≃L[𝕜] E') : Nonempty (F ≃L[𝕜] F') := by
-  have : FiniteDimensional 𝕜 (E × F) := e.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 (E × F') := e'.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 F :=
-    .of_injective (LinearMap.inr 𝕜 E F) LinearMap.inr_injective
-  have : FiniteDimensional 𝕜 F' :=
-    .of_injective (LinearMap.inr 𝕜 E F') LinearMap.inr_injective
-  have : FiniteDimensional 𝕜 E :=
-    .of_injective (LinearMap.inl 𝕜 E F) LinearMap.inl_injective
-  apply FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
-  have h := e.toLinearEquiv.finrank_eq.trans e'.toLinearEquiv.finrank_eq.symm
-  rw [Module.finrank_prod, Module.finrank_prod] at h
-  omega
 
 /-- For a finite-dimensional target model, being an immersion is a pointwise condition: the
 complements at different points are isomorphic, so they can be replaced by a single one. -/
