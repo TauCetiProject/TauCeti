@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
+public import Mathlib.CategoryTheory.Limits.Preserves.Lattice
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 
 /-!
@@ -23,9 +24,8 @@ sheaf is the structure sheaf. So a trivializing open cover of `L` pulls back to 
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.pullbackObjFreeIso` and
-  `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the pullback of a free sheaf of modules
-  is free on the same basis, and the pullback of `𝒪_Y` is `𝒪_X`;
+* `AlgebraicGeometry.Scheme.Modules.pullbackObjFreeIso`: the pullback of a free sheaf of modules
+  is free on the same basis;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso`: `(f^* M)|_{f⁻¹ V}` is the pullback
   of `M|_V` along `f ∣_ V`;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
@@ -69,14 +69,6 @@ def pullbackObjFreeIso (I : Type u) :
     inferInstanceAs (pushforward f).IsRightAdjoint
   SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I
 
-/-- The pullback of the structure sheaf `𝒪_Y` along a morphism of schemes `f : X ⟶ Y` is the
-structure sheaf `𝒪_X`. -/
-def pullbackObjUnitIso :
-    (pullback f).obj (SheafOfModules.unit Y.ringCatSheaf) ≅
-      SheafOfModules.unit X.ringCatSheaf :=
-  (pullback f).mapIso (TauCeti.SheafOfModules.freePUnitIsoUnit Y.ringCatSheaf).symm ≪≫
-    pullbackObjFreeIso f PUnit ≪≫ TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf
-
 /-- Pullback commutes with restriction to opens: for an open `V ⊆ Y`, the restriction of
 `f^* M` to the preimage `f⁻¹ V` is the pullback of `M|_V` along `f ∣_ V : f⁻¹ V ⟶ V`. -/
 def restrictPullbackObjIso (V : Y.Opens) (M : Y.Modules) :
@@ -108,8 +100,12 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
     isInvertible X ((Scheme.Modules.pullback f).obj M) := by
   obtain ⟨ι, V, hV, e⟩ := isInvertible_iff_exists_isOpenCover.mp hM
-  refine isInvertible_iff_exists_isOpenCover.mpr ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦
-    ⟨(Scheme.Modules.pullbackObjUnitIso (f ∣_ V i)).symm ≪≫
+  refine isInvertible_iff_exists_isOpenCover.mpr ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦ by
+    let : (SheafOfModules.pushforward.{u} (f ∣_ V i).toRingCatSheafHom).IsRightAdjoint :=
+      inferInstanceAs (Scheme.Modules.pushforward (f ∣_ V i)).IsRightAdjoint
+    have : IsIso (SheafOfModules.pullbackObjUnitToUnit (f ∣_ V i).toRingCatSheafHom) :=
+      SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
+    exact ⟨(asIso (SheafOfModules.pullbackObjUnitToUnit (f ∣_ V i).toRingCatSheafHom)).symm ≪≫
       (Scheme.Modules.pullback (f ∣_ V i)).mapIso (e i).some ≪≫
       (Scheme.Modules.restrictPullbackObjIso f (V i) M).symm⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
