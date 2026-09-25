@@ -183,6 +183,75 @@ intersection-chart inclusion. -/
   rw [Homeomorph.trans_apply, Homeomorph.trans_apply, IsEmbedding.toHomeomorph_symm_apply]
   exact (Φ.analyticOverlapRight_apply_eq_left_swapIso_hom_apply hΦ σ τ x).symm
 
+/-- Reversing an overlap transition is the transition in the opposite orientation. -/
+@[simp] theorem analyticOverlapHomeomorph_symm (σ τ : Φ.cones) :
+    (Φ.analyticOverlapHomeomorph hΦ σ τ).symm =
+      Φ.analyticOverlapHomeomorph hΦ τ σ := by
+  ext ⟨x, hx⟩
+  obtain ⟨y, rfl⟩ := (Φ.mem_analyticOverlapOpens hΦ τ σ x).1 hx
+  let z := (Φ.analyticOverlapSwapIso hΦ σ τ).inv y
+  have hz : Φ.analyticOverlapHomeomorph hΦ σ τ
+      ⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ =
+      ⟨Φ.analyticOverlapLeft hΦ τ σ y, Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ := by
+    apply Subtype.ext
+    calc
+      (Φ.analyticOverlapHomeomorph hΦ σ τ
+          ⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩).1 =
+        (⟨Φ.analyticOverlapRight hΦ σ τ z,
+          Φ.analyticOverlapRight_mem hΦ σ τ z⟩ :
+          Φ.analyticOverlapOpens hΦ τ σ).1 :=
+        congrArg Subtype.val (Φ.analyticOverlapHomeomorph_apply hΦ σ τ z)
+      _ = (⟨Φ.analyticOverlapLeft hΦ τ σ y,
+          Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ : Φ.analyticOverlapOpens hΦ τ σ).1 := by
+        change Φ.analyticOverlapRight hΦ σ τ z = Φ.analyticOverlapLeft hΦ τ σ y
+        rw [analyticOverlapRight_apply_eq_left_swapIso_hom_apply]
+        apply congrArg
+        change (Φ.analyticOverlapSwapIso hΦ σ τ).hom
+          ((Φ.analyticOverlapSwapIso hΦ σ τ).inv y) = y
+        calc
+          (Φ.analyticOverlapSwapIso hΦ σ τ).hom
+              ((Φ.analyticOverlapSwapIso hΦ σ τ).inv y) = id y := by
+            simpa only [TopCat.coe_comp, TopCat.coe_id, Function.comp_apply] using
+              ConcreteCategory.congr_hom (Φ.analyticOverlapSwapIso hΦ σ τ).inv_hom_id y
+          _ = y := rfl
+  have h : (Φ.analyticOverlapHomeomorph hΦ σ τ).symm
+      ⟨Φ.analyticOverlapLeft hΦ τ σ y, Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ =
+      Φ.analyticOverlapHomeomorph hΦ τ σ
+        ⟨Φ.analyticOverlapLeft hΦ τ σ y, Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ := by
+    calc
+    (Φ.analyticOverlapHomeomorph hΦ σ τ).symm
+        ⟨Φ.analyticOverlapLeft hΦ τ σ y, Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ =
+      (Φ.analyticOverlapHomeomorph hΦ σ τ).symm
+        (Φ.analyticOverlapHomeomorph hΦ σ τ
+          ⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩) := by
+        rw [hz]
+    _ = ⟨Φ.analyticOverlapLeft hΦ σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ :=
+      (Φ.analyticOverlapHomeomorph hΦ σ τ).symm_apply_apply _
+    _ = Φ.analyticOverlapHomeomorph hΦ τ σ
+        ⟨Φ.analyticOverlapLeft hΦ τ σ y, Φ.analyticOverlapLeft_mem hΦ τ σ y⟩ := by
+      apply Subtype.ext
+      calc
+        (⟨Φ.analyticOverlapLeft hΦ σ τ z,
+          Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ : Φ.analyticOverlapOpens hΦ σ τ).1 =
+          (⟨Φ.analyticOverlapRight hΦ τ σ y,
+            Φ.analyticOverlapRight_mem hΦ τ σ y⟩ :
+            Φ.analyticOverlapOpens hΦ σ τ).1 := by
+            change Φ.analyticOverlapLeft hΦ σ τ z = Φ.analyticOverlapRight hΦ τ σ y
+            rw [analyticOverlapRight_apply_eq_left_swapIso_hom_apply]
+            change Φ.analyticOverlapLeft hΦ σ τ
+              ((Φ.analyticOverlapSwapIso hΦ σ τ).inv y) =
+                Φ.analyticOverlapLeft hΦ σ τ ((Φ.analyticOverlapSwapIso hΦ τ σ).hom y)
+            have hswap : (Φ.analyticOverlapSwapIso hΦ σ τ).inv =
+                (Φ.analyticOverlapSwapIso hΦ τ σ).hom := by
+              rw [analyticOverlapSwapIso_inv, analyticOverlapSwapIso_hom]
+            exact congrArg (fun f ↦ Φ.analyticOverlapLeft hΦ σ τ (f y))
+              hswap
+        _ = (Φ.analyticOverlapHomeomorph hΦ τ σ
+          ⟨Φ.analyticOverlapLeft hΦ τ σ y,
+            Φ.analyticOverlapLeft_mem hΦ τ σ y⟩).1 :=
+          (congrArg Subtype.val (Φ.analyticOverlapHomeomorph_apply hΦ τ σ y)).symm
+  exact congrArg Subtype.val h
+
 /-- The two overlap inclusions of a chart with itself coincide. -/
 theorem analyticOverlapRight_self (σ : Φ.cones) :
     Φ.analyticOverlapRight hΦ σ σ = Φ.analyticOverlapLeft hΦ σ σ := by
