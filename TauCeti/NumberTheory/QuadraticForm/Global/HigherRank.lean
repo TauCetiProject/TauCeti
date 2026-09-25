@@ -55,23 +55,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [NumberField K]
   {X Y : Type*} [AddCommGroup X] [Module K X] [AddCommGroup Y] [Module K Y]
 
-/-- If a quadratic form `W` over a number field represents a nonzero scalar `a` at every finite
-and real place, then the orthogonal sum `⟨-a⟩ ⊥ W` is isotropic at every finite and real place. -/
-theorem _root_.QuadraticForm.LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
-    {W : QuadraticForm K Y} {a : K} (h : W.LocallyRepresentsScalar a) (ha : a ≠ 0) :
-    QuadraticForm.IsLocallyIsotropic (((-a) • (sq : QuadraticForm K K)).prod W) := by
-  rw [QuadraticForm.locallyRepresentsScalar_iff] at h
-  refine (QuadraticForm.isLocallyIsotropic_iff _).mpr ⟨fun v => ?_, fun w => ?_⟩
-  · rw [Equivalent.anisotropic_iff ⟨QuadraticForm.atFinitePlaceProd _ W v⟩]
-    refine not_anisotropic_prod_of_represents_neg (a := -algebraMap K (v.adicCompletion K) a)
-      ((represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.1 v) (by simpa using ha)
-    simp
-  · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    rw [Equivalent.anisotropic_iff ⟨QuadraticForm.atRealPlaceProd _ W w⟩]
-    refine not_anisotropic_prod_of_represents_neg (a := -embedding_of_isReal w.2 a)
-      ((represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w) (by simpa using ha)
-    simp
-
 variable [FiniteDimensional K X] [FiniteDimensional K Y]
 
 /-- Let `U` be a regular quadratic form on a nonzero space and `W` a regular quadratic form of rank
