@@ -46,6 +46,9 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 
 ## References
 
+* The Apache-2.0 `frenzymath/Poincare-Conjecture` formalization, revision
+  `24f32e4d600878bfaac6bc2f2f9324175571c321`, especially
+  `DoCarmoLib/Riemannian/Exponential/NormalBallEDist.lean`.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §3, Proposition 3.6 and its
   corollary, and Ch. 7, §2, the proof of Theorem 2.8.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 6, Proposition 6.11 and
@@ -102,27 +105,27 @@ private theorem enorm_le_pathELength (h : IsNormalDomain I M p U) (hU : closedBa
 geodesic sphere of radius `r`. -/
 private theorem exists_mem_riemannianExp_image_sphere (h : IsNormalDomain I M p U)
     (hU : closedBall 0 r ⊆ U) (hr : 0 ≤ r) {γ : ℝ → M} (hγ : ContinuousOn γ (Icc 0 1))
-    (hγ0 : γ 0 = p) (hγ1 : γ 1 ∉ riemannianExp I M p '' ball 0 r) :
+    (hγ0 : γ 0 = p) (hγ1 : γ 1 ∉ riemannianExp I M p '' Metric.ball 0 r) :
     ∃ t ∈ Icc (0 : ℝ) 1, γ t ∈ riemannianExp I M p '' sphere 0 r := by
   rcases eq_or_lt_of_le hr with rfl | hr
   · exact ⟨0, left_mem_Icc.2 zero_le_one, 0, by simp, by rw [hγ0, riemannianExp_zero]⟩
   by_contra hno
   simp only [not_exists, not_and] at hno
-  have hball : IsNormalDomain I M p (ball 0 r) :=
-    h.mono (ball_subset_closedBall.trans hU) isOpen_ball (mem_ball_self hr)
-      ((convex_ball (0 : TangentSpace I p) r).starConvex (mem_ball_self hr))
+  have hball : IsNormalDomain I M p (Metric.ball 0 r) :=
+    h.ball hU hr
   have hK : IsClosed (riemannianExp I M p '' closedBall 0 r) :=
     (isCompact_riemannianExp_image_closedBall p (hU.trans h.subset_expDomain)).isClosed
   -- The image of the curve is connected, meets the open geodesic ball at `p`, and contains no
   -- limit point of the ball outside it, since such a point would lie on the geodesic sphere.
-  have hsub : γ '' Icc 0 1 ⊆ riemannianExp I M p '' ball 0 r := by
+  have hsub : γ '' Icc 0 1 ⊆ riemannianExp I M p '' Metric.ball 0 r := by
     refine (isPreconnected_Icc.image γ hγ).subset_of_closure_inter_subset hball.isOpen_image
       ⟨p, ⟨0, left_mem_Icc.2 zero_le_one, hγ0⟩, hball.self_mem_image⟩ ?_
     rintro x ⟨hx, t, ht, rfl⟩
-    obtain ⟨z, hz, hzx⟩ := hK.closure_subset_iff.2 (image_mono ball_subset_closedBall) hx
-    rcases eq_or_lt_of_le (mem_closedBall_zero_iff.1 hz) with hzr | hzr
-    · exact absurd ⟨z, mem_sphere_zero_iff_norm.2 hzr, hzx⟩ (hno t ht)
-    · exact ⟨z, mem_ball_zero_iff.2 hzr, hzx⟩
+    have hclosure := hK.closure_subset_iff.2 (image_mono Metric.ball_subset_closedBall) hx
+    rw [← Metric.ball_union_sphere, image_union] at hclosure
+    rcases hclosure with hball | hsphere
+    · exact hball
+    · exact absurd hsphere (hno t ht)
   exact hγ1 (hsub ⟨1, right_mem_Icc.2 zero_le_one, rfl⟩)
 
 variable [IsRiemannianManifold I M]
@@ -158,7 +161,7 @@ theorem edist_eq_enorm_riemannianLog (h : IsNormalDomain I M p U) (hU : closedBa
 `exp_p '' ball 0 r`, then the distance from `p` to `q` is `r` plus the distance from `q` to the
 geodesic sphere `exp_p '' sphere 0 r`. -/
 theorem edist_eq_ofReal_add_infEDist (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U)
-    (hr : 0 ≤ r) (hq : q ∉ riemannianExp I M p '' ball 0 r) :
+    (hr : 0 ≤ r) (hq : q ∉ riemannianExp I M p '' Metric.ball 0 r) :
     edist p q = ENNReal.ofReal r + infEDist q (riemannianExp I M p '' sphere 0 r) := by
   have hsphere : ∀ z ∈ sphere (0 : TangentSpace I p) r,
       edist p (riemannianExp I M p z) = ENNReal.ofReal r := fun z hz ↦ by
@@ -191,12 +194,12 @@ theorem edist_eq_ofReal_add_infEDist (h : IsNormalDomain I M p U) (hU : closedBa
 normal domain at `p`, then `exp_p` maps the open tangent ball of radius `r` onto the open metric
 ball of radius `r` about `p`. -/
 theorem image_riemannianExp_ball (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U) :
-    riemannianExp I M p '' ball 0 r = eball p (ENNReal.ofReal r) := by
+    riemannianExp I M p '' Metric.ball 0 r = eball p (ENNReal.ofReal r) := by
   ext q
   constructor
   · rintro ⟨v, hv, rfl⟩
     have hvr : ‖v‖ < r := mem_ball_zero_iff.1 hv
-    rw [mem_eball', h.edist_riemannianExp_eq hU (ball_subset_closedBall hv), ← ofReal_norm]
+    rw [mem_eball', h.edist_riemannianExp_eq hU (Metric.ball_subset_closedBall hv), ← ofReal_norm]
     exact (ENNReal.ofReal_lt_ofReal_iff ((norm_nonneg v).trans_lt hvr)).2 hvr
   · intro hq
     rw [mem_eball'] at hq
@@ -218,17 +221,16 @@ theorem image_riemannianExp_closedBall (h : IsNormalDomain I M p U) (hU : closed
     exact ENNReal.ofReal_le_ofReal (mem_closedBall_zero_iff.1 hv)
   · intro hq
     rw [mem_closedEBall'] at hq
-    by_cases hqV : q ∈ riemannianExp I M p '' ball 0 r
-    · exact image_mono ball_subset_closedBall hqV
+    by_cases hqV : q ∈ riemannianExp I M p '' Metric.ball 0 r
+    · exact image_mono Metric.ball_subset_closedBall hqV
     -- Outside the open geodesic ball, `q` is at distance zero from the compact geodesic sphere.
     rw [h.edist_eq_ofReal_add_infEDist hU hr hqV] at hq
     have hzero : infEDist q (riemannianExp I M p '' sphere 0 r) = 0 :=
       nonpos_iff_eq_zero.1 <| (ENNReal.add_le_add_iff_left ENNReal.ofReal_ne_top).1 <| by
         rwa [add_zero]
     have hS : IsClosed (riemannianExp I M p '' sphere 0 r) :=
-      ((isCompact_sphere (0 : TangentSpace I p) r).image_of_continuousOn
-        ((continuousOn_riemannianExp p).mono
-          (sphere_subset_closedBall.trans (hU.trans h.subset_expDomain)))).isClosed
+      (isCompact_riemannianExp_image_sphere p
+        (sphere_subset_closedBall.trans (hU.trans h.subset_expDomain))).isClosed
     exact image_mono sphere_subset_closedBall ((mem_iff_infEDist_zero_of_closed hS).2 hzero)
 
 end IsNormalDomain
