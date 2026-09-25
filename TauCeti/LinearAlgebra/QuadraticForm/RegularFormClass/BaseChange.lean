@@ -46,6 +46,8 @@ extension, in particular to the completions of a number field.
   class.
 * `QuadraticForm.formClass_baseChange`: the class of an extended form is the extension of its
   class.
+* `QuadraticForm.discr_formClass_baseChange_eq_zero`: a form acquires square discriminant over a
+  field containing a square root of its discriminant.
 * `TauCeti.RegularFormClass.discr_baseChange`: the discriminant commutes with scalar extension.
 -/
 
@@ -385,5 +387,18 @@ theorem formClass_baseChange (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerat
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.baseChange_mk,
     formClass_mk _ _ _ ((hp.baseChange L).trans ⟨presentedFormBaseChange p⟩)]
+
+/-- If the discriminant of a regular form is the class of `d`, then the form has square
+discriminant after scalar extension to a field containing a square root of `d`. -/
+theorem discr_formClass_baseChange_eq_zero (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {d : Kˣ} (hd : RegularFormClass.discr (formClass Q hQ) = squareClass d) {s : L}
+    (hs : s * s = algebraMap K L d) :
+    RegularFormClass.discr (formClass (Q.baseChange L) (Nondegenerate.baseChange hQ)) = 0 := by
+  have hs0 : s ≠ 0 := by
+    rintro rfl
+    exact d.ne_zero ((algebraMap K L).injective (by rw [← hs, zero_mul, map_zero]))
+  rw [formClass_baseChange Q hQ, RegularFormClass.discr_baseChange, hd,
+    RingHom.squareClassMap_apply, squareClass_eq_zero_iff]
+  exact ⟨Units.mk0 s hs0, Units.ext (by simpa using hs.symm)⟩
 
 end QuadraticForm
