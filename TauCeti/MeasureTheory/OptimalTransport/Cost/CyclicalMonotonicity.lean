@@ -28,8 +28,6 @@ support by the Rüschendorf construction. The converse, and the corresponding st
 discontinuous costs, where concentration on a cyclically monotone set replaces the support,
 require additional hypotheses.
 
-This is Layer 2, item 7 of the optimal-transport roadmap.
-
 ## Main statements
 
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
@@ -121,42 +119,6 @@ theorem isCyclicallyMonotone_empty [Preorder M] (c : X × Y → M) :
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp
     · exact absurd (hmem ⟨0, hn⟩) (Set.notMem_empty _)
-
-section PermutedSample
-
-open MeasureTheory
-
-variable [MeasurableSpace X] [MeasurableSpace Y]
-
-/-- Draw independent samples `w i ∼ ρ i` of pairs and pair the source of `w i` with the target of
-`w (σ i)`. Summed over `i`, the laws of these permuted pairs have the same two marginals as
-`∑ i, ρ i`. -/
-private theorem isCoupling_sum_map_pi {n : ℕ} (ρ : Fin n → Measure (X × Y))
-    [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n)) :
-    IsCoupling (Measure.sum fun i ↦ (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2))
-      (Measure.sum ρ).fst (Measure.sum ρ).snd := by
-  have hev : ∀ i, MeasurePreserving (Function.eval i) (Measure.pi ρ) (ρ i) :=
-    measurePreserving_eval ρ
-  -- In both computations the remaining goal holds because `Prod.fst ∘ Function.eval i` is
-  -- `fun w ↦ (w i).1` by definition, and likewise for `Prod.snd`.
-  have hfst : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).fst = (ρ i).fst :=
-    fun i ↦ by
-      rw [Measure.fst_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
-        Measure.fst, ← (hev i).map_eq,
-        Measure.map_map measurable_fst (measurable_pi_apply i)]
-      rfl
-  have hsnd : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).snd = (ρ (σ i)).snd :=
-    fun i ↦ by
-      rw [Measure.snd_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
-        Measure.snd, ← (hev (σ i)).map_eq,
-        Measure.map_map measurable_snd (measurable_pi_apply (σ i))]
-      rfl
-  have h := IsCoupling.sum fun i ↦ (⟨hfst i, hsnd i⟩ : IsCoupling
-    ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) (ρ i).fst (ρ (σ i)).snd)
-  rw [Measure.fst_sum, Measure.snd_sum, ← Measure.sum_comp_equiv σ fun i ↦ (ρ i).snd]
-  exact h
-
-end PermutedSample
 
 section Support
 

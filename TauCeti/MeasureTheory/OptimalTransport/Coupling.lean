@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import Mathlib.MeasureTheory.Measure.Sub
@@ -51,6 +52,8 @@ measures, and the probability case is packaged separately as a subtype of
   maps applied to both coordinates, couples the two pushed-forward products;
 * `TauCeti.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
   exactly when they have the same total mass, the witness being their normalised product;
+* `TauCeti.isCoupling_sum_map_pi` — pairing the source of each of finitely many independent
+  samples with the target of a permuted one preserves both total marginals;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
@@ -389,6 +392,34 @@ mass. -/
 theorem exists_isCoupling_iff [IsFiniteMeasure μ] :
     (∃ π : Measure (X × Y), IsCoupling π μ ν) ↔ μ univ = ν univ :=
   ⟨fun ⟨_, hπ⟩ ↦ hπ.measure_univ_eq, fun h ↦ ⟨_, isCoupling_inv_smul_prod h⟩⟩
+
+/-- Draw independent samples `w i ∼ ρ i` of pairs and pair the source of `w i` with the target of
+`w (σ i)`. Summed over `i`, the laws of these permuted pairs have the same two marginals as
+`∑ i, ρ i`. -/
+theorem isCoupling_sum_map_pi {n : ℕ} (ρ : Fin n → Measure (X × Y))
+    [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n)) :
+    IsCoupling (Measure.sum fun i ↦ (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2))
+      (Measure.sum ρ).fst (Measure.sum ρ).snd := by
+  have hev : ∀ i, MeasurePreserving (Function.eval i) (Measure.pi ρ) (ρ i) :=
+    measurePreserving_eval ρ
+  -- In both computations the remaining goal holds because `Prod.fst ∘ Function.eval i` is
+  -- `fun w ↦ (w i).1` by definition, and likewise for `Prod.snd`.
+  have hfst : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).fst = (ρ i).fst :=
+    fun i ↦ by
+      rw [Measure.fst_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.fst, ← (hev i).map_eq,
+        Measure.map_map measurable_fst (measurable_pi_apply i)]
+      rfl
+  have hsnd : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).snd = (ρ (σ i)).snd :=
+    fun i ↦ by
+      rw [Measure.snd_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.snd, ← (hev (σ i)).map_eq,
+        Measure.map_map measurable_snd (measurable_pi_apply (σ i))]
+      rfl
+  have h := IsCoupling.sum fun i ↦ (⟨hfst i, hsnd i⟩ : IsCoupling
+    ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) (ρ i).fst (ρ (σ i)).snd)
+  rw [Measure.fst_sum, Measure.snd_sum, ← Measure.sum_comp_equiv σ fun i ↦ (ρ i).snd]
+  exact h
 
 section Dirac
 
