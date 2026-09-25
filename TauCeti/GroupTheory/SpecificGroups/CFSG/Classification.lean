@@ -48,8 +48,11 @@ noncomputable instance (i : CFSGIndex) : Group i.Group := by
 universe u
 
 /-- **Classification of finite simple groups, statement only.** Every finite simple group is
-isomorphic to one of the explicitly constructed groups on the classification list. -/
-def ClassificationStatement : Prop :=
+isomorphic to one of the explicitly constructed groups on the classification list.
+
+The definition is exposed so that a module assuming `ClassificationStatement.{u}` can apply it to
+a finite simple group, and a module proving the quantified statement can conclude it. -/
+@[expose] def ClassificationStatement : Prop :=
   ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
     ∃ i : CFSGIndex, Nonempty (G ≃* i.Group)
 
