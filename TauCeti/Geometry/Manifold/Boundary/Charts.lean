@@ -105,32 +105,25 @@ private theorem symm_boundaryParam_mem_boundary (hk : k ≠ 0)
 /-- Reinserting the deleted coordinate recovers the chart value of a boundary point. -/
 private theorem boundaryParam_boundaryProj_chart_apply (hk : k ≠ 0)
     (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M)
-    {q : ↥((𝓡∂ (n + 1)).boundary M)} (hq : (q : M) ∈ e.source) :
-    EuclideanHalfSpace.boundaryParam n (EuclideanHalfSpace.boundaryProj n (e q.1)) = e q.1 := by
+    {x : M} (hx : x ∈ e.source) (hxM : x ∈ (𝓡∂ (n + 1)).boundary M) :
+    EuclideanHalfSpace.boundaryParam n (EuclideanHalfSpace.boundaryProj n (e x)) = e x := by
   simpa only [EuclideanHalfSpace.boundaryProj_coe] using
     EuclideanHalfSpace.boundaryParam_boundaryProj
-      ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hk he hq).1 q.2)
-
-/-- The boundary slice identity, stated with ambient membership as separate data. -/
-private theorem boundaryParam_boundaryProj_chart_apply_of_mem (hk : k ≠ 0)
-    (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) {x : M} (hx : x ∈ e.source)
-    (hxM : x ∈ (𝓡∂ (n + 1)).boundary M) :
-    EuclideanHalfSpace.boundaryParam n (EuclideanHalfSpace.boundaryProj n (e x)) = e x :=
-  boundaryParam_boundaryProj_chart_apply (q := ⟨x, hxM⟩) hk he hx
+      ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hk he hx).1 hxM)
 
 open scoped Classical in
 /-- The boundary chart attached to an ambient chart `e` of `M`: read a boundary point through `e`
 and delete its (vanishing) zeroth coordinate.
 
-The base point `p` only serves as the irrelevant value of the inverse outside the target; the
-boundary of `M` can be empty, so no such value is available otherwise. -/
+The base point `p` witnesses that the boundary is nonempty, which `subtypeCoord` needs to choose an
+irrelevant inverse value outside the target. -/
 private noncomputable def boundaryChart (hk : k ≠ 0) (p : ↥((𝓡∂ (n + 1)).boundary M))
     (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1)))
     (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) :
     OpenPartialHomeomorph ↥((𝓡∂ (n + 1)).boundary M) (EuclideanSpace ℝ (Fin n)) :=
   e.subtypeCoord ((𝓡∂ (n + 1)).boundary M) ⟨p⟩ (EuclideanHalfSpace.boundaryParam n)
     (EuclideanHalfSpace.boundaryProj n) (symm_boundaryParam_mem_boundary hk he)
-    (boundaryParam_boundaryProj_chart_apply_of_mem hk he)
+    (boundaryParam_boundaryProj_chart_apply hk he)
     (fun _ _ => EuclideanHalfSpace.boundaryProj_boundaryParam _)
     EuclideanHalfSpace.continuous_boundaryParam
     EuclideanHalfSpace.continuous_boundaryProj.continuousOn
@@ -167,12 +160,8 @@ private theorem boundaryChart_symm_apply {z : EuclideanSpace ℝ (Fin n)}
     (((boundaryChart hk p e he).symm z : ↥((𝓡∂ (n + 1)).boundary M)) : M) =
       e.symm (EuclideanHalfSpace.boundaryParam n z) := by
   simp only [boundaryChart]
-  exact e.coe_subtypeCoord_symm_apply ((𝓡∂ (n + 1)).boundary M) ⟨p⟩
-    (EuclideanHalfSpace.boundaryParam n) (EuclideanHalfSpace.boundaryProj n)
-    (symm_boundaryParam_mem_boundary hk he) (boundaryParam_boundaryProj_chart_apply_of_mem hk he)
-    (fun _ _ => EuclideanHalfSpace.boundaryProj_boundaryParam _)
-    EuclideanHalfSpace.continuous_boundaryParam
-    EuclideanHalfSpace.continuous_boundaryProj.continuousOn hz
+  apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
+  exact hz
 
 section BoundaryChartedSpace
 

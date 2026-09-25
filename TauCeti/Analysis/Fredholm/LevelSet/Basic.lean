@@ -91,23 +91,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-! ### The chart of a level set at a regular point -/
 
-/-- On the level set `{x | f x = c}` the implicit-function homeomorphism has constant first
-component `c`, so it takes values in the "vertical" slice `{c} × ker f'`. -/
-private theorem implicit_apply_eq_mk (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
-    (hker : f'.ker.ClosedComplemented) {x : E} (hx : f x = c) :
-    hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x =
-      (c, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x).2) :=
-  Prod.ext (by rw [hf.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker, hx]) rfl
-
-/-- On the level set, reinserting the constant first coordinate recovers the implicit-function
-chart value. -/
+/-- On the level set `{x | f x = c}`, reinserting the constant first coordinate recovers the
+implicit-function chart value. -/
 private theorem implicit_mk_snd_eq_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) {x : E}
     (_hx : x ∈ (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).source)
     (hxc : x ∈ {x | f x = c}) :
     (c, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x).2) =
       hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x :=
-  (implicit_apply_eq_mk hf hf' hker hxc).symm
+  Prod.ext (by rw [hf.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker, hxc]) rfl
 
 /-- A point of the slice `{c} × ker f'` in the implicit-function target is the image of a point of
 the level set `{x | f x = c}`. -/
@@ -174,11 +166,8 @@ theorem levelSetChart_symm_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range
       (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (c, k) := by
   rw [levelSetChart_target, Set.mem_preimage] at hk
   simp only [levelSetChart]
-  exact (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).coe_subtypeCoord_symm_apply
-    {x | f x = c} ⟨⟨a, ha⟩⟩ (fun k => (c, k)) Prod.snd
-    (apply_implicit_symm_eq hf hf' hker)
-    (implicit_mk_snd_eq_apply hf hf' hker) (fun _ _ => rfl)
-    (continuous_const.prodMk continuous_id) continuous_snd.continuousOn hk
+  apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
+  exact hk
 
 /-- The chart of a level set is normalised at its base point: it sends `a` to the origin of
 `ker f'`. -/

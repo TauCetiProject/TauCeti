@@ -130,11 +130,16 @@ theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
     (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
     (hπc : ContinuousOn π e.target) {z : Z} (hz : ι z ∈ e.target) :
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
-  classical
-  unfold subtypeCoord
-  -- Expose the selected inverse branch; this lemma is the public equation for that branch.
-  change ((if h : ι z ∈ e.target then ⟨e.symm (ι z), hι h⟩ else Classical.choice hs) : s).1 =
-    e.symm (ι z)
-  rw [dite_eq_left hz]
+  let E := e.subtypeCoord s hs ι π hι hslice hπι hιc hπc
+  have hx : (⟨e.symm (ι z), hι hz⟩ : s) ∈ E.source := by
+    simpa [E] using e.map_target hz
+  have hzE : z ∈ E.target := by
+    simpa [E] using hz
+  have hEq : (⟨e.symm (ι z), hι hz⟩ : s) = E.symm z :=
+    (E.eq_symm_apply hx hzE).2 (by
+      rw [show E (⟨e.symm (ι z), hι hz⟩ : s) = π (e (e.symm (ι z))) by
+        apply OpenPartialHomeomorph.subtypeCoord_apply, e.right_inv hz]
+      exact hπι hz)
+  exact (congrArg Subtype.val hEq).symm
 
 end OpenPartialHomeomorph

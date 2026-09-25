@@ -55,7 +55,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     ∃ (p q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
       (Φ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞),
-      IsCompl p q ∧ (1 : G) ∈ Φ.source ∧
+      IsCompl p q ∧ (1 : G) ∈ Φ.toOpenPartialHomeomorph.source ∧
         IsSliceChart Φ.toOpenPartialHomeomorph
           ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
@@ -73,10 +73,6 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       exact Metric.isOpen_ball.preimage continuous_snd
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
   let Φ := Φ₀.restrOpen V hV
-  let Ψ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞ :=
-    { __ := Φ
-      contMDiffOn_toFun := hf.localInverse.contMDiffOn_toFun.mono inter_subset_left
-      contMDiffOn_invFun := hf.localInverse.contMDiffOn_invFun.mono inter_subset_left }
   have hΦ₀_eq : Φ₀ = hf.localInverse.toOpenPartialHomeomorph := by
     -- `Φ₀` is this wrapper by definition; no chart data is changed here.
     rfl
@@ -86,6 +82,20 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     exact congrArg PartialEquiv.source
       (PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv
         hf.localInverse)
+  have hΦ₀_target_eq : Φ₀.target = hf.localInverse.target := by
+    change hf.localInverse.toOpenPartialHomeomorph.target = hf.localInverse.target
+    exact congrArg PartialEquiv.target
+      (PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv
+        hf.localInverse)
+  let Ψ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞ :=
+    { __ := Φ
+      contMDiffOn_toFun := hf.localInverse.contMDiffOn_toFun.mono (by
+        rw [OpenPartialHomeomorph.restrOpen_source, hΦ₀_source_eq]
+        exact inter_subset_left)
+      contMDiffOn_invFun := hf.localInverse.contMDiffOn_invFun.mono (by
+        rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
+          hΦ₀_target_eq]
+        exact inter_subset_left) }
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
     rw [hΦ₀_eq]
     exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
@@ -111,7 +121,8 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       rw [hzero]
       exact Metric.mem_ball_self hε
   refine ⟨p, q, Ψ, hpq, ?_, ?_⟩
-  · exact h1
+  · change (1 : G) ∈ Φ.source
+    exact h1
   -- `Ψ` was built from `Φ`; expose that underlying open partial homeomorphism here.
   · change IsSliceChart Φ
       ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)

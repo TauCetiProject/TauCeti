@@ -11,13 +11,13 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 # Translating a subgroup slice chart
 
 An identity-neighbourhood slice chart for a subgroup can be transported to every subgroup point
-by left translation.  This is the topological atlas step used after the local Cartan chart: it
-packages the translated source, subgroup cancellation, and unchanged coordinate slice in one
-reusable theorem.
+by left translation. This file defines the translated ambient chart, records its source, target,
+evaluation, and inverse, and proves that translation by a subgroup point preserves the subgroup
+slice.
 
-## Main results
+## Main definitions and results
 
-* `Subgroup.translatedChart` translates an ambient identity chart to a subgroup point.
+* `OpenPartialHomeomorph.translatedChart` translates an ambient chart by a group element.
 * `Subgroup.isSliceChart_translatedChart` shows that translation preserves the subgroup slice.
 
 The result is purely topological.  It does not install a manifold structure on the subgroup or
@@ -31,6 +31,51 @@ assert smoothness of the translated charts.
 
 public section
 
+open Set Topology
+
+namespace OpenPartialHomeomorph
+
+variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
+  [TopologicalSpace P]
+
+/-- Translate an ambient chart by a group element `g`. -/
+def translatedChart (φ : OpenPartialHomeomorph G P) (g : G) : OpenPartialHomeomorph G P :=
+  (Homeomorph.smul g).symm.transOpenPartialHomeomorph φ
+
+/-- The source of a translated chart consists of the points moved into the source of the identity
+chart by multiplication by `g⁻¹`. -/
+@[simp]
+theorem translatedChart_source (φ : OpenPartialHomeomorph G P) (g : G) :
+    (φ.translatedChart g).source = (fun y : G => g⁻¹ * y) ⁻¹' φ.source := by
+  ext y
+  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
+
+/-- Translation does not change the coordinate target of an ambient chart. -/
+@[simp]
+theorem translatedChart_target (φ : OpenPartialHomeomorph G P) (g : G) :
+    (φ.translatedChart g).target = φ.target := by
+  simp [translatedChart]
+
+/-- A translated subgroup chart first moves its argument back to the identity chart. -/
+@[simp]
+theorem translatedChart_apply (φ : OpenPartialHomeomorph G P) (g y : G) :
+    φ.translatedChart g y = φ (g⁻¹ * y) := by
+  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
+
+/-- The inverse of a translated chart applies the original inverse and then translates by `g`. -/
+@[simp]
+theorem translatedChart_symm_apply (φ : OpenPartialHomeomorph G P) (g : G) (p : P) :
+    (φ.translatedChart g).symm p = g * φ.symm p := by
+  simp [translatedChart, smul_eq_mul]
+
+/-- The translated identity chart contains its translating subgroup point in its source. -/
+theorem mem_translatedChart_source (φ : OpenPartialHomeomorph G P)
+    (h1 : (1 : G) ∈ φ.source) (g : G) : g ∈ (φ.translatedChart g).source := by
+  rw [translatedChart_source]
+  simpa using h1
+
+end OpenPartialHomeomorph
+
 namespace Subgroup
 
 open Set Topology
@@ -38,76 +83,25 @@ open Set Topology
 variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace P]
 
-/-- Translate an ambient chart at the subgroup identity to an ambient chart at `g`. -/
-def translatedChart (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (g : K) : OpenPartialHomeomorph G P :=
-  (Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph φ
-
-/-- The source of a translated chart consists of the points moved into the source of the identity
-chart by multiplication by `g⁻¹`. -/
-@[simp]
-theorem translatedChart_source (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (g : K) :
-    (K.translatedChart φ g).source = (fun y : G => (g : G)⁻¹ * y) ⁻¹' φ.source := by
-  rw [translatedChart, Homeomorph.transOpenPartialHomeomorph_source]
-  ext y
-  change (Homeomorph.smul (g : G)).symm y ∈ φ.source ↔ (g : G)⁻¹ * y ∈ φ.source
-  rw [Homeomorph.smul_symm_apply, smul_eq_mul]
-
-/-- Translation does not change the coordinate target of an ambient chart. -/
-@[simp]
-theorem translatedChart_target (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (g : K) : (K.translatedChart φ g).target = φ.target := by
-  simp [translatedChart]
-
-/-- A translated subgroup chart first moves its argument back to the identity chart. -/
-@[simp]
-theorem translatedChart_apply (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (g : K) (y : G) :
-    K.translatedChart φ g y = φ ((g : G)⁻¹ * y) := by
-  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
-
-/-- The inverse of a translated chart applies the original inverse and then translates by `g`. -/
-@[simp]
-theorem translatedChart_symm_apply (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (g : K) (p : P) :
-    (K.translatedChart φ g).symm p = (g : G) * φ.symm p := by
-  simp [translatedChart, smul_eq_mul]
-
-/-- The translated identity chart contains its translating subgroup point in its source. -/
-theorem mem_translatedChart_source (K : Subgroup G) (φ : OpenPartialHomeomorph G P)
-    (h1 : (1 : G) ∈ φ.source) (g : K) :
-    (g : G) ∈ (K.translatedChart φ g).source := by
-  rw [translatedChart_source]
-  simpa using h1
-
 /-- Translating an identity slice chart by a subgroup point preserves the subgroup slice. -/
 theorem isSliceChart_translatedChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
-    TauCeti.IsSliceChart (K.translatedChart φ g) S
+    TauCeti.IsSliceChart (φ.translatedChart (g : G)) S
       (Set.range ((↑) : K → G)) := by
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
-  have he_apply (y : G) : e y = (g : G)⁻¹ * y := by
-    simp [e, Homeomorph.smul_symm_apply, smul_eq_mul]
   have hset : e.source ∩ e ⁻¹' (K : Set G) = (K : Set G) := by
-    ext y
-    constructor
-    · intro hy
-      have hy' : e y ∈ K := hy.2
-      rw [he_apply] at hy'
-      exact (K.mul_mem_cancel_left (K.inv_mem g.property)).mp hy'
-    · intro hy
-      refine ⟨?_, ?_⟩
-      · simp [e]
-      · -- Unfold preimage membership so the subgroup cancellation lemma applies directly.
-        change (g : G)⁻¹ * y ∈ K
-        exact (K.mul_mem_cancel_left (K.inv_mem g.property)).mpr hy
+    have hpre : e ⁻¹' (K : Set G) = K := by
+      rw [show e ⁻¹' (K : Set G) = (fun y : G => (g : G)⁻¹ • y) ⁻¹' K from rfl,
+        Set.preimage_smul_inv, smul_coe_set g.property]
+    rw [hpre]
+    simp [e]
   have hchart := hφ.comp e
   have hset' : e.source ∩ e ⁻¹' (K : Set G) = Set.range ((↑) : K → G) :=
     hset.trans Subtype.range_coe.symm
   rw [hset'] at hchart
-  simpa [translatedChart, e, Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
+  simpa [OpenPartialHomeomorph.translatedChart, e,
+    Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
 
 end Subgroup
