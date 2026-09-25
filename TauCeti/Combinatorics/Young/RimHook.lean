@@ -79,8 +79,8 @@ counts the beads the moving bead jumps over.  Both statements are proved here:
   meets, whose sign is `(-1)` to the height.
 * `YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc`,
   `YoungDiagram.IsRimHook.betaNumber_ne_betaNumber_add` and
-  `YoungDiagram.IsRimHook.eq_of_rimHookRows_eq_Icc`: conversely, raising a bead of `ν` to a free
-  position adds a rim hook with that bottom row, every rim hook arises this way, and it is
+  `YoungDiagram.IsRimHook.eq_of_card_eq_of_rimHookRows_eq_Icc`: conversely, raising a bead of `ν`
+  to a free position adds a rim hook with that bottom row, every rim hook arises this way, and it is
   determined by its bottom row and size.  So the rim hooks of size `s` that can be added to `ν`
   correspond to the beads of `ν` that can move up `s` places.
 
@@ -497,7 +497,7 @@ theorem lt_colLen_of_rimHookRows_eq_Icc (h : IsRimHook μ ν)
 `YoungDiagram.IsRimHook.update_betaNumber_eq_comp_cycleIcc` the beta-numbers of `μ₁` and of `μ₂`
 are rearrangements of the same family, and a strictly decreasing family is determined by its set
 of values. -/
-theorem eq_of_rimHookRows_eq_Icc {μ₁ μ₂ : YoungDiagram} {a₁ a₂ : ℕ} (h₁ : IsRimHook μ₁ ν)
+theorem eq_of_card_eq_of_rimHookRows_eq_Icc {μ₁ μ₂ : YoungDiagram} {a₁ a₂ : ℕ} (h₁ : IsRimHook μ₁ ν)
     (h₂ : IsRimHook μ₂ ν) (hcard : μ₁.card = μ₂.card)
     (hab₁ : μ₁.rimHookRows ν = Finset.Icc a₁ b) (hab₂ : μ₂.rimHookRows ν = Finset.Icc a₂ b) :
     μ₁ = μ₂ := by

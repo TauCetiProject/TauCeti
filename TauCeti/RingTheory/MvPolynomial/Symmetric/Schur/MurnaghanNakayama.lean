@@ -115,7 +115,7 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
       simpa [hβ, card_diagramOf] using hrim.betaNumber_ne_betaNumber_add hab i.isLt hbN
     refine ⟨⟨b, hbN⟩, mem_filter.mpr ⟨mem_univ _, hfree⟩, ?_⟩
     obtain ⟨a', hab'⟩ := hfrows _ hfree
-    exact diagramOf_injective ((hfS _ hfree).1.eq_of_rimHookRows_eq_Icc hrim
+    exact diagramOf_injective ((hfS _ hfree).1.eq_of_card_eq_of_rimHookRows_eq_Icc hrim
       (by rw [card_diagramOf, card_diagramOf]) hab' hab)
   · intro j hj
     obtain ⟨a, hab⟩ := hfrows j (mem_filter.mp hj).2
