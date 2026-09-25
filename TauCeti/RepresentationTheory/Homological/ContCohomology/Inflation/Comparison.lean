@@ -97,6 +97,7 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
 /-- **Transport of inflation in degree zero.** The degree-zero comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
+@[simp]
 theorem explicitH0Iso_infl
     (x : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 0
@@ -105,21 +106,17 @@ theorem explicitH0Iso_infl
       (explicitH0IsoContinuousCohomology G M).hom (explicitInfl0 G M N x) := by
   rw [← ConcreteCategory.comp_apply, coeffMap_ofDiscreteModuleQuotient_comp_infl,
     explicitInfl0_eq_explicitMap0]
-  -- The bundled continuous quotient map has `QuotientGroup.mk'` as its underlying monoid hom.
-  -- Expose this equality in the dependent compatible-pair argument.
-  change _ = (explicitH0IsoContinuousCohomology G M).hom
-    (explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M)
+  simpa only [ContinuousMonoidHom.coe_quotientMk] using
+    (explicitH0Iso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
       (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
       (subtype_quotientMk_smul G M N) x)
-  exact explicitH0Iso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-    (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
-    (subtype_quotientMk_smul G M N) x
 
 variable [ContinuousSMul G M] [CompactSpace G]
 
 /-- **Transport of inflation in degree one.** The degree-one comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
 `ofDiscreteModuleQuotient`. -/
+@[simp]
 theorem explicitIso_infl
     (x : DiscreteH1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     TauCeti.ContinuousCohomology.infl N (ofDiscreteModule ℤ G M) 1
