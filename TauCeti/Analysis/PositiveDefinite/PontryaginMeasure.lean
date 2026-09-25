@@ -43,7 +43,7 @@ noncomputable def pontryaginMeasureTransform
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]
 theorem pontryaginMeasureTransform_zero
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] :
+    (μ : Measure (PontryaginDual (Multiplicative G))) :
     pontryaginMeasureTransform μ 0 = (μ.real Set.univ : ℂ) := by
   simp [pontryaginMeasureTransform]
 
