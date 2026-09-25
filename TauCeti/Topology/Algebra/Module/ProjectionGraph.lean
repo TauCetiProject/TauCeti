@@ -62,6 +62,7 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
   let h : (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) =
       (fun v : M ↦ v + g v) '' (range P ∩ s) := by
     rw [← Subtype.image_preimage_val, image_image]
+  -- Unfold the outer `trans` and identify its `setCongr` equality with `h`.
   change (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) = _
   have hh : (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) =
       ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v : M) :=
@@ -71,6 +72,8 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
       (Subtype.val : (Subtype.val ⁻¹' s : Set (range P)) → range P)) =
       (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) := by
     rw [Set.range_comp, Subtype.range_val]
+  -- `homeomorphImage` is the restricted embedding's `toHomeomorph` followed by
+  -- `setCongr h'`; expose that wrapper to use its application theorem below.
   change (Homeomorph.setCongr h'
     (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v) : M) = _
   have hh' : (Homeomorph.setCongr h'

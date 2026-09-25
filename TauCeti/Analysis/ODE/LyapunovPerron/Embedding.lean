@@ -67,6 +67,8 @@ noncomputable def localStableSetHomeomorph :
     {v : range P | ‖(v : X)‖ ≤ ρ} ≃ₜ
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧
           y 0 = x ∧ MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} :=
+  -- `graphHomeomorph` takes a preimage of the closed ball; this equality identifies
+  -- that preimage with the norm bound in the domain of this homeomorphism.
   (Homeomorph.setCongr (show {v : range P | ‖(v : X)‖ ≤ ρ} =
       Subtype.val ⁻¹' closedBall 0 ρ by
     ext v
@@ -104,6 +106,8 @@ noncomputable def localUnstableSetHomeomorph :
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ∧
           y 0 = x ∧ MapsTo y (Iic 0) (closedBall 0 r)) ∧
           ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ} :=
+  -- The same domain equality transports the unstable norm bound to the
+  -- closed-ball preimage expected by `graphHomeomorph`.
   (Homeomorph.setCongr (show
       {v : range (ContinuousLinearMap.id ℝ X - P) | ‖(v : X)‖ ≤ ρ} =
         Subtype.val ⁻¹' closedBall 0 ρ by
