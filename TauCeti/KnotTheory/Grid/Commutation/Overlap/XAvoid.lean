@@ -79,7 +79,7 @@ public theorem recut_first_bottom_eq_pentagon_bottom_of_branch1
 
 /-- X-avoidance for the `finRotate` strip in the first recut branch. The strip's row interval
 coincides with the original pentagon's, so the original X-avoidance applies, via the shared
-strip lemma `branch2_X_not_mem_pentagon_rows` (in `OverlapCounted`). -/
+strip lemma `branch2_X_not_mem_pentagon_rows` (in `Overlap/Counted`). -/
 public theorem recut_X_not_mem_of_branch1
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
