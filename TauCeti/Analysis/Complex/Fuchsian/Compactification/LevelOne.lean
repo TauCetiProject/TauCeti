@@ -103,6 +103,7 @@ instance instUniqueCuspOrbit : Unique psl2zToPSL2R.range.CuspOrbit where
 
 /-- The level-one modular orbit space becomes compact after its unique cusp orbit is adjoined.
 The compact sets used here are Mathlib's truncated closed modular fundamental domains. -/
+@[instance]
 theorem compactSpace_compactifiedQuotient :
     CompactSpace psl2zToPSL2R.range.CompactifiedQuotient := by
   let Γ := psl2zToPSL2R.range
