@@ -41,14 +41,19 @@ noncomputable def singleFunctors (A : Type u) [Category.{v} A] [Abelian A]
   SingleFunctors.lift (DerivedCategory.singleFunctors A) DerivedCategory.Bounded.ι
     (singleFunctor A) (fun _ ↦ Iso.refl _)
 
+/-- The `n`th bounded single functor is `singleFunctor A n`. -/
+@[simp] lemma singleFunctors_functor (n : ℤ) :
+    (singleFunctors A).functor n = singleFunctor A n :=
+  rfl
+
 /-- Inclusion of a bounded single object recovers the corresponding derived single object. -/
-@[simp] lemma ι_obj_singleFunctor_obj (n : ℤ) (X : A) :
+@[simp] lemma singleFunctor_obj_obj (n : ℤ) (X : A) :
     ((singleFunctor A n).obj X).obj =
       (DerivedCategory.singleFunctor A n).obj X :=
   rfl
 
 /-- Inclusion of a map of bounded single objects recovers the derived single map. -/
-@[simp] lemma ι_map_singleFunctor_map (n : ℤ) {X Y : A} (f : X ⟶ Y) :
+@[simp] lemma singleFunctor_map_hom (n : ℤ) {X Y : A} (f : X ⟶ Y) :
     ((singleFunctor A n).map f).hom =
       (DerivedCategory.singleFunctor A n).map f :=
   rfl
