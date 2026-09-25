@@ -20,7 +20,8 @@ Lipshitz's index formula computes the expected dimension of the moduli space of 
 disks in a Whitney class `φ` from its domain `D` alone:
 `μ(φ) = e(D) + n_x(D) + n_y(D)`. This file defines the right-hand side for the abstract region
 incidence data `TauCeti.HeegaardRegionSystem` and proves that it is additive under juxtaposition
-of domains, the property that makes it a relative grading.
+of domains, a property needed for a relative grading once independence of the choice of domain is
+established.
 
 Every intersection point `p` is a corner of four regions (with repetition): the regions on the
 two sides of the `α`-arc ending at `p` and of the `α`-arc starting at `p`. The *point measure*
@@ -266,6 +267,7 @@ theorem eulerMeasure_apply (χ : Region → ℤ) (D : Region → ℤ) :
   (rfl)
 
 /-- The Euler measure of a single region `R` is `χ(R) - k(R) / 4`. -/
+@[simp]
 theorem eulerMeasure_single (χ : Region → ℤ) (r : Region) :
     H.eulerMeasure χ (Pi.single r 1) = χ r - H.cornerCount r / 4 := by
   simp [Pi.single_apply]
@@ -298,6 +300,7 @@ theorem maslovIndex_apply (χ : Region → ℤ) (x y : H.Generator) (D : Region 
   (rfl)
 
 /-- Reversing a domain negates its Maslov index. -/
+@[simp]
 theorem maslovIndex_neg (χ : Region → ℤ) (x y : H.Generator) (D : Region → ℤ) :
     H.maslovIndex χ y x (-D) = -H.maslovIndex χ x y D := by
   simp only [maslovIndex_apply, map_neg]
