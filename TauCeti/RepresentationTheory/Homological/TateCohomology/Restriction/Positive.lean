@@ -79,7 +79,6 @@ def posRes (n : ℕ) :
     (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).inv.app
       (Rep.res H.subtype M)
 
-set_option backward.isDefEq.respectTransparency false in
 /-- **In positive degrees Tate restriction is the ordinary cohomological restriction** along
 `H.subtype`, read through Mathlib's comparison `TateCohomology.isoGroupCohomology`. -/
 @[reassoc]
@@ -89,10 +88,14 @@ theorem posRes_comp_isoGroupCohomology_hom (n : ℕ) :
           (Rep.res H.subtype M) =
       (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M ≫
         groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype M)) (n + 1) := by
-  -- The comparison maps are components of natural transformations between semireducible
-  -- functors, so the goal is not reassociable at default transparency. It is closed by
-  -- cancelling the comparison isomorphism against its own inverse.
-  simp only [posRes, Category.assoc, Iso.inv_hom_id_app]
-  rfl
+  -- The comparison maps are components of natural isomorphisms between semireducible functors,
+  -- so the goal cannot be rewritten: `groupCohomology.map` lands in `groupCohomology`, while the
+  -- components of `isoGroupCohomology` land in the objects of `groupCohomology.functor`, and the
+  -- two agree only by unfolding that semireducible `def`. The goal is closed instead by cancelling
+  -- the comparison isomorphism against its own inverse, as in
+  -- `TauCeti.TateCohomology.negSuccRes_comp_negSuccIso_hom`.
+  simp only [posRes]
+  exact (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app
+    (Rep.res H.subtype M))).1 (by rfl)
 
 end TauCeti.TateCohomology
