@@ -80,7 +80,7 @@ theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → �
 
 /-- The row-coding array law determines every finite mixing law on path measures. -/
 theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsFiniteMeasure π₁] [IsFiniteMeasure π₂]
+    [IsFiniteMeasure π₁]
     (h : rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂) : π₁ = π₂ := by
   apply TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq
   have h' := congrArg (fun ρ : Measure (ℕ × ℕ → α) ↦
@@ -89,7 +89,7 @@ theorem rowCodingArrayLaw_injective {π₁ π₂ : Measure (ProbabilityMeasure (
 
 /-- Equality of finite mixing laws is equivalent to equality of their row-coding array laws. -/
 theorem rowCodingArrayLaw_eq_iff {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsFiniteMeasure π₁] [IsFiniteMeasure π₂] :
+    [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
   ⟨rowCodingArrayLaw_injective, fun h ↦ congrArg rowCodingArrayLaw h⟩
 
