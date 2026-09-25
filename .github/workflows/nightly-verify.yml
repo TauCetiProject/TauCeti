@@ -90,9 +90,14 @@ jobs:
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
       - name: Raise vm.max_map_count
         run: |
-          sudo -n sysctl -w vm.max_map_count=1048576 || sysctl -w vm.max_map_count=1048576 \
-            || echo "::warning::could not raise vm.max_map_count"
-          echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       - name: Check out main
         uses: actions/checkout@v4
         with:
