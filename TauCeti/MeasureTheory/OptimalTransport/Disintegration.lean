@@ -239,6 +239,25 @@ theorem condDistrib_ae_eq_condKernel (π : Coupling μ ν) :
       π.1.toMeasure.condKernel :=
   π.2.condDistrib_ae_eq_condKernel
 
+/-- A bundled coupling concentrated on a set with almost everywhere subsingleton sections has
+Dirac conditional laws at points of those sections. -/
+theorem ae_exists_condKernel_eq_dirac (π : Coupling μ ν) {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
+    (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
+    ∀ᵐ x ∂μ.toMeasure, ∃ y, (x, y) ∈ s ∧
+      π.1.toMeasure.condKernel x = Measure.dirac y :=
+  π.2.ae_exists_condKernel_eq_dirac hs hsub
+
+/-- Bundled couplings with the same source and almost everywhere the same uniquely determined
+partner in a set are equal. -/
+theorem eq_of_ae_mem_of_subsingleton {ν' : ProbabilityMeasure Y}
+    (π : Coupling μ ν) (π' : Coupling μ ν') {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
+    (hs' : ∀ᵐ z ∂π'.1.toMeasure, z ∈ s)
+    (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
+    π.1.toMeasure = π'.1.toMeasure :=
+  π.2.eq_of_ae_mem_of_subsingleton π'.2 hs hs' hsub
+
 end Coupling
 
 end TauCeti

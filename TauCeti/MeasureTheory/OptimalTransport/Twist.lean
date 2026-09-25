@@ -33,8 +33,8 @@ A plan concentrated on the contact set then has deterministic conditional laws: 
 for `μ`-almost every `x`, the Dirac mass at the unique contact partner of `x`. Once a dual
 optimizer exists, every optimal plan is concentrated on its contact set
 (`TauCeti.IsDualCertificate.of_isOptimalCoupling`), so this gives uniqueness of the optimal plan,
-`TauCeti.IsDualCertificate.eq_of_isOptimalCoupling`. This is the mechanism behind
-the existence and uniqueness of optimal transport maps for twisted costs: the Euclidean quadratic
+`TauCeti.IsDualCertificate.eq_of_isOptimalCoupling`. This gives deterministic conditional laws
+and uniqueness of optimal plans for twisted costs, including the Euclidean quadratic
 cost, for which `Dₓ c (x, y) = x - y` up to the Riesz identification, and the strictly convex
 costs `c (x, y) = h (x - y)`, for which `Dₓ c (x, y) = D h (x - y)`.
 
@@ -47,10 +47,9 @@ against a contact partner.
 The pointwise statements, `TauCeti.hasFDerivAt_eq_of_mem_contactSet` and
 `TauCeti.subsingleton_setOf_mem_contactSet`, use only local feasibility and differentiability of
 the cost sections at the contact partners, with twist asked for on the set where the
-`x`-derivative of the cost exists. The measure-level statements take the standard global form
-of these hypotheses: the cost is differentiable in its first variable and twisted at every
-point. Nothing about semiconcavity of the cost is assumed; the differentiability of `φ` is a
-hypothesis, to be supplied by a Rademacher-type theorem for the potentials at hand.
+`x`-derivative of the cost exists. The measure-level statements require these hypotheses only
+`μ`-almost everywhere. Nothing about semiconcavity of the cost is assumed; the differentiability
+of `φ` is a hypothesis, to be supplied by a Rademacher-type theorem for the potentials at hand.
 
 ## Main statements
 
@@ -58,10 +57,12 @@ hypothesis, to be supplied by a Rademacher-type theorem for the potentials at ha
   at a contact point, and `TauCeti.fderiv_eq_of_mem_contactSet` its `fderiv` form;
 * `TauCeti.subsingleton_setOf_mem_contactSet` — under the twist condition, a point where the
   potential is differentiable has at most one contact partner;
-* `TauCeti.injective_fderiv_norm_sub_sq_div_two` — the quadratic cost `‖x - y‖ ^ 2 / 2` on a
+* `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the quadratic cost `‖x - y‖ ^ 2 / 2` on a
   real inner product space is twisted;
 * `TauCeti.ae_subsingleton_setOf_mem_contactSet` — the contact fibres are almost all
   subsingletons when the potential is differentiable almost everywhere;
+* `TauCeti.IsDualCertificate.ae_exists_condKernel_eq_dirac` — optimal couplings have almost
+  everywhere Dirac conditional laws at contact partners;
 * `TauCeti.IsDualCertificate.eq_of_isOptimalCoupling` — under the same hypotheses, a coupling
   certified by a dual pair is the only optimal coupling.
 
@@ -141,7 +142,7 @@ theorem subsingleton_setOf_mem_contactSet
 
 /-- **The quadratic cost is twisted.** On a real inner product space, the `x`-derivative of the
 cost `‖x - y‖ ^ 2 / 2` at `x` is `⟪x - y, ·⟫`, which determines `y`. -/
-theorem injective_fderiv_norm_sub_sq_div_two {F : Type*} [NormedAddCommGroup F]
+theorem fderiv_norm_sub_sq_div_two_injective {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] (x : F) :
     Function.Injective fun y : F ↦ fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x := by
   have hderiv (y : F) : fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x = innerSL ℝ (x - y) := by
@@ -155,9 +156,10 @@ theorem injective_fderiv_norm_sub_sq_div_two {F : Type*} [NormedAddCommGroup F]
 
 variable [MeasurableSpace E] {μ : Measure E}
 
-/-- **The twist theorem.** For a cost that is differentiable in its first variable with
-`y ↦ Dₓ c (x, y)` injective at every `x`, and a dual feasible pair whose first potential is
-finite near, and differentiable at, `μ`-almost every point, the contact fibres
+/-- **The twist theorem.** If the cost is differentiable in its first variable at contact
+partners and `y ↦ Dₓ c (x, y)` is injective among differentiable sections at almost every `x`,
+and a dual feasible pair has a first potential finite near, and differentiable at,
+`μ`-almost every point, then the contact fibres
 `{y | (x, y) ∈ contactSet c φ ψ}` are subsingletons for `μ`-almost every `x`. Combined with
 `TauCeti.IsCoupling.ae_exists_condKernel_eq_dirac`, a finite coupling of `μ` concentrated on the
 contact set has, for `μ`-almost every `x`, the Dirac mass at the unique contact partner of `x`
@@ -166,18 +168,61 @@ theorem ae_subsingleton_setOf_mem_contactSet (μ : Measure E)
     (hfeas : ∀ x y, φ x + ψ y ≤ (c (x, y) : EReal))
     (hφ : ∀ᵐ x ∂μ,
       (∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) ∧ DifferentiableAt ℝ (fun x' ↦ (φ x').toReal) x)
-    (hc : ∀ x y, DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
-    (htwist : ∀ x, Function.Injective fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x) :
+    (hc : ∀ᵐ x ∂μ, ∀ y, (x, y) ∈ contactSet c φ ψ →
+      DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
+    (htwist : ∀ᵐ x ∂μ, Set.InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x)
+      {y | DifferentiableAt ℝ (fun x' ↦ c (x', y)) x}) :
     ∀ᵐ x ∂μ, {y | (x, y) ∈ contactSet c φ ψ}.Subsingleton := by
-  filter_upwards [hφ] with x ⟨hfin, hdiff⟩
+  filter_upwards [hφ, hc, htwist] with x ⟨hfin, hdiff⟩ hcx htwistx
   exact subsingleton_setOf_mem_contactSet (fun y ↦ .of_forall fun x' ↦ hfeas x' y) hfin hdiff
-    (fun y _ ↦ hc x y) (htwist x).injOn
+    hcx htwistx
 
-variable [MeasurableSpace Y] [StandardBorelSpace Y] [Nonempty Y] {ν : Measure Y}
-  [IsFiniteMeasure μ] {φ : E → ℝ} {ψ : Y → ℝ} {π σ : Measure (E × Y)}
+variable [MeasurableSpace Y] {ν : Measure Y}
+  {φ : E → ℝ} {ψ : Y → ℝ} {π σ : Measure (E × Y)}
+
+/-- A certified dual pair with an almost everywhere differentiable source potential has almost
+everywhere subsingleton contact fibres under the twist condition. -/
+theorem IsDualCertificate.ae_subsingleton_dualContactSet (hc₀ : ∀ z, 0 ≤ c z)
+    (h : IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ)
+    (hφ : ∀ᵐ x ∂μ, DifferentiableAt ℝ φ x)
+    (hc : ∀ᵐ x ∂μ, ∀ y, (x, y) ∈ contactSet c (fun x ↦ (φ x : EReal))
+      (fun y ↦ (ψ y : EReal)) → DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
+    (htwist : ∀ᵐ x ∂μ, Set.InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x)
+      {y | DifferentiableAt ℝ (fun x' ↦ c (x', y)) x}) :
+    ∀ᵐ x ∂μ, {y | (x, y) ∈ dualContactSet (fun z ↦ ENNReal.ofReal (c z)) φ ψ}.Subsingleton := by
+  have hfeas : ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal) := fun x y ↦ by
+    rw [← EReal.coe_add, EReal.coe_le_coe_iff]
+    exact (dualFeasible_ofReal_iff hc₀ φ ψ).1 h.dualFeasible x y
+  have hsub := ae_subsingleton_setOf_mem_contactSet (φ := fun x ↦ (φ x : EReal))
+    (ψ := fun y ↦ (ψ y : EReal)) μ hfeas
+    (hφ.mono fun x hx ↦ ⟨.of_forall fun _ ↦ EReal.coe_ne_bot _, by simpa using hx⟩) hc htwist
+  rwa [← dualContactSet_ofReal hc₀] at hsub
+
+variable [StandardBorelSpace Y] [Nonempty Y]
+
+/-- Every optimal coupling certified by the same dual pair has almost everywhere Dirac
+conditional laws at its contact partners. -/
+theorem IsDualCertificate.ae_exists_condKernel_eq_dirac (hc₀ : ∀ z, 0 ≤ c z)
+    (h : IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ)
+    (hσ : IsOptimalCoupling (fun z ↦ ENNReal.ofReal (c z)) σ μ ν)
+    [IsFiniteMeasure σ]
+    (hcσ : AEMeasurable (fun z ↦ ENNReal.ofReal (c z)) σ)
+    (hφ : ∀ᵐ x ∂μ, DifferentiableAt ℝ φ x)
+    (hc : ∀ᵐ x ∂μ, ∀ y, (x, y) ∈ contactSet c (fun x ↦ (φ x : EReal))
+      (fun y ↦ (ψ y : EReal)) → DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
+    (htwist : ∀ᵐ x ∂μ, Set.InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x)
+      {y | DifferentiableAt ℝ (fun x' ↦ c (x', y)) x}) :
+    ∀ᵐ x ∂μ, ∃ y, (x, y) ∈ dualContactSet (fun z ↦ ENNReal.ofReal (c z)) φ ψ ∧
+      σ.condKernel x = Measure.dirac y := by
+  have hσ' := h.of_isOptimalCoupling hcσ hσ
+  exact hσ'.toIsCoupling.ae_exists_condKernel_eq_dirac hσ'.ae_mem_dualContactSet
+    (h.ae_subsingleton_dualContactSet hc₀ hφ hc htwist)
+
+variable [IsFiniteMeasure μ]
 
 /-- **Uniqueness of the optimal plan for a twisted cost.** Let `c` be a nonnegative real cost,
-differentiable in its first variable, with `y ↦ Dₓ c (x, y)` injective at every `x`. If `π` is
+differentiable at contact partners, with `y ↦ Dₓ c (x, y)` injective on differentiable sections
+at almost every `x`. If `π` is
 certified optimal by a dual pair `(φ, ψ)` whose first potential is differentiable `μ`-almost
 everywhere, then every optimal coupling of `μ` and `ν` whose cost is almost everywhere
 measurable is equal to `π`. -/
@@ -185,20 +230,16 @@ theorem IsDualCertificate.eq_of_isOptimalCoupling (hc₀ : ∀ z, 0 ≤ c z)
     (h : IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ)
     (hσ : IsOptimalCoupling (fun z ↦ ENNReal.ofReal (c z)) σ μ ν)
     (hcσ : AEMeasurable (fun z ↦ ENNReal.ofReal (c z)) σ) (hφ : ∀ᵐ x ∂μ, DifferentiableAt ℝ φ x)
-    (hc : ∀ x y, DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
-    (htwist : ∀ x, Function.Injective fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x) :
+    (hc : ∀ᵐ x ∂μ, ∀ y, (x, y) ∈ contactSet c (fun x ↦ (φ x : EReal))
+      (fun y ↦ (ψ y : EReal)) → DifferentiableAt ℝ (fun x' ↦ c (x', y)) x)
+    (htwist : ∀ᵐ x ∂μ, Set.InjOn (fun y ↦ fderiv ℝ (fun x' ↦ c (x', y)) x)
+      {y | DifferentiableAt ℝ (fun x' ↦ c (x', y)) x}) :
     σ = π := by
   have hσ' := h.of_isOptimalCoupling hcσ hσ
-  have hfeas : ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal) := fun x y ↦ by
-    rw [← EReal.coe_add, EReal.coe_le_coe_iff]
-    exact (dualFeasible_ofReal_iff hc₀ φ ψ).1 h.dualFeasible x y
-  have hsub := ae_subsingleton_setOf_mem_contactSet (φ := fun x ↦ (φ x : EReal))
-    (ψ := fun y ↦ (ψ y : EReal)) μ hfeas
-    (hφ.mono fun x hx ↦ ⟨.of_forall fun _ ↦ EReal.coe_ne_bot _, by simpa using hx⟩) hc htwist
   have := h.toIsCoupling.isFiniteMeasure
   have := hσ.toIsCoupling.isFiniteMeasure
-  rw [← dualContactSet_ofReal hc₀] at hsub
   exact hσ.toIsCoupling.eq_of_ae_mem_of_subsingleton h.toIsCoupling
-    hσ'.ae_mem_dualContactSet h.ae_mem_dualContactSet hsub
+    hσ'.ae_mem_dualContactSet h.ae_mem_dualContactSet
+    (h.ae_subsingleton_dualContactSet hc₀ hφ hc htwist)
 
 end TauCeti
