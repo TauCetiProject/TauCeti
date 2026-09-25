@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Disjoint
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap
 
 /-!
 # Pairing rectangle--pentagon and pentagon--rectangle decompositions
@@ -17,13 +16,14 @@ the bijection between the disjoint parts of these two finite sets.
 
 When the rectangle and pentagon have disjoint vertical side pairs, they commute: swapping the
 order gives a bijection that preserves weights. This is the disjoint-domain case of the
-pentagon--rectangle juxtaposition argument. The overlapping case, where the domains share a
-side and the recut operation repartitions the L-shaped domain, remains to be completed.
+pentagon--rectangle juxtaposition argument.
 
 ## Main results
 
 * `TauCeti.GridDiagram.disjointCommuteEquiv`: commuting gives an equivalence between disjoint
   rectangle--pentagon and pentagon--rectangle decompositions.
+* `TauCeti.GridDiagram.disjointCommuteEquiv_apply`: the forward map acts by `commute`.
+* `TauCeti.GridDiagram.disjointCommuteEquiv_symm_apply`: the inverse map acts by `commute`.
 
 ## References
 
@@ -53,6 +53,25 @@ def disjointCommuteEquiv (x z : GridState n) :
   invFun E := ⟨E.1.commute E.2, E.1.hasDisjointSides_commute E.2⟩
   left_inv D := Subtype.ext (D.1.commute_commute D.2)
   right_inv E := Subtype.ext (E.1.commute_commute E.2)
+
+/-- The forward map of `disjointCommuteEquiv` acts by `commute`. -/
+@[simp]
+theorem disjointCommuteEquiv_apply (x z : GridState n)
+    (D : {D : GridRectanglePentagonDecomposition C.column C.turnRow x z // D.HasDisjointSides}) :
+    (disjointCommuteEquiv G C x z D : GridPentagonRectangleDecomposition C.column C.turnRow x z) =
+      D.1.commute D.2 := by
+  unfold disjointCommuteEquiv
+  rfl
+
+/-- The inverse map of `disjointCommuteEquiv` acts by `commute`. -/
+@[simp]
+theorem disjointCommuteEquiv_symm_apply (x z : GridState n)
+    (E : {D : GridPentagonRectangleDecomposition C.column C.turnRow x z // D.HasDisjointSides}) :
+    ((disjointCommuteEquiv G C x z).symm E :
+      GridRectanglePentagonDecomposition C.column C.turnRow x z) =
+      E.1.commute E.2 := by
+  unfold disjointCommuteEquiv
+  rfl
 
 end GridDiagram
 
