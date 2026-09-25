@@ -41,7 +41,7 @@ Hecke character coming from a ray class character has finite order.
   `raySubgroup 𝔪`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.ofRayClassCharacter_induced`: the pullback is
   unchanged when a ray class character is induced to a larger modulus.
-* `TauCeti.GlobalNumberFields.HeckeCharacter.isOfFinOrder_ofRayClassCharacter`: Hecke characters
+* `TauCeti.GlobalNumberFields.HeckeCharacter.isFiniteOrder_ofRayClassCharacter`: Hecke characters
   coming from ray class characters have finite order.
 
 ## References
@@ -70,6 +70,33 @@ variable {K}
 namespace HeckeCharacter
 
 variable {𝔪 𝔫 : Modulus K}
+
+/-- A Hecke character has **finite order** when it has finite order as an element of the
+commutative group of continuous idele-class characters. -/
+abbrev IsFiniteOrder (χ : HeckeCharacter K) : Prop := IsOfFinOrder χ
+
+/-- A Hecke character has finite order exactly when all of its values have a common positive
+exponent equal to one. -/
+theorem isFiniteOrder_iff (χ : HeckeCharacter K) :
+    χ.IsFiniteOrder ↔ ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 := by
+  constructor
+  · rintro hχ
+    obtain ⟨n, hn, hχn⟩ := hχ.exists_pow_eq_one
+    refine ⟨n, hn, fun c ↦ ?_⟩
+    rw [← ContinuousMonoidHom.pow_apply, hχn]
+    rfl
+  · rintro ⟨n, hn, hχ⟩
+    apply isOfFinOrder_iff_pow_eq_one.mpr
+    refine ⟨n, hn, ?_⟩
+    apply ContinuousMonoidHom.ext
+    intro c
+    rw [ContinuousMonoidHom.pow_apply]
+    exact hχ c
+
+/-- A finite-order Hecke character has a common positive exponent equal to one on all values. -/
+theorem IsFiniteOrder.exists_forall_pow_apply_eq_one {χ : HeckeCharacter K}
+    (hχ : χ.IsFiniteOrder) : ∃ n, 0 < n ∧ ∀ c, χ c ^ n = 1 :=
+  (isFiniteOrder_iff χ).mp hχ
 
 /-- A pulled-back ray class character kills the ray subgroup. -/
 private theorem raySubgroup_le_ker_comp_rayClassQuotient (χ : RayClassCharacter 𝔪) :
@@ -158,8 +185,8 @@ theorem range_ofRayClassCharacter_le (h : 𝔪 ∣ 𝔫) :
 
 /-- **Hecke characters coming from ray class characters have finite order**, since the ray class
 group is finite. -/
-theorem isOfFinOrder_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
-    IsOfFinOrder (ofRayClassCharacter 𝔪 χ) :=
+theorem isFiniteOrder_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
+    (ofRayClassCharacter 𝔪 χ).IsFiniteOrder :=
   (ofRayClassCharacter 𝔪).isOfFinOrder (isOfFinOrder_of_finite χ)
 
 end HeckeCharacter
