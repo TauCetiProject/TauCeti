@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
+public import Mathlib.Algebra.MonoidAlgebra.Defs
 
 /-!
 # Popa–Zagier's explicit Hecke element
@@ -42,8 +43,6 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk`: the coefficient of the class of
   `A` is `(weight A + weight (-A)) / 12`; it is `weight A / 12` if `c > 0` or `c = 0 < a`
   (`TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk_of_pos`).
-* `TauCeti.TraceFormulaMatrixModule.popaZagierElement_one`: for `n = 1` the element is
-  `1 - π_S - π_U`, where `π_S = (1 + S)/2` and `π_U = (1 + U + U²)/3`.
 
 ## Implementation notes
 
@@ -62,7 +61,7 @@ that other modules can unfold them in such identities and evaluate them by `deci
 
 public section
 
-open MonoidAlgebra ModularGroup Representation
+open MonoidAlgebra
 open scoped MatrixGroups
 
 namespace TauCeti
@@ -234,64 +233,6 @@ theorem coeff_popaZagierElement_mk_of_pos (A : TraceFormulaMatrix n)
     simp only [Matrix.neg_apply] at this
     lia
   simp [this]
-
-/-- Twelve times the coefficient of a determinant-one matrix `M` in `1 - π_S - π_U`. -/
-private def weightAtOne (M : Matrix (Fin 2) (Fin 2) ℤ) : ℤ :=
-  2 * (if 1 = M ∨ 1 = -M then 1 else 0) - 6 * (if ↑S = M ∨ ↑S = -M then 1 else 0) -
-    4 * (if ↑(T * S) = M ∨ ↑(T * S) = -M then 1 else 0) -
-    4 * (if ↑((T * S) ^ 2) = M ∨ ↑((T * S) ^ 2) = -M then 1 else 0)
-
-/-- `12 (1 - π_S - π_U)` on the determinant-one matrices in the box `[-2, 2]⁴`. -/
-private theorem weight_add_weight_neg_of_mem_box : ∀ a ∈ Finset.Icc (-2 : ℤ) 2,
-    ∀ b ∈ Finset.Icc (-2 : ℤ) 2, ∀ c ∈ Finset.Icc (-2 : ℤ) 2, ∀ d ∈ Finset.Icc (-2 : ℤ) 2,
-      a * d - b * c = 1 → PopaZagier.weight !![a, b; c, d] + PopaZagier.weight (-!![a, b; c, d]) =
-        weightAtOne !![a, b; c, d] := by
-  decide +kernel
-
-/-- `12 (1 - π_S - π_U)` on the determinant-one matrices. -/
-private theorem weight_add_weight_neg_of_det_eq_one {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (hM : M.det = 1) : PopaZagier.weight M + PopaZagier.weight (-M) = weightAtOne M := by
-  by_cases hbox : ∀ i j, |M i j| ≤ 2
-  · have h (i j : Fin 2) : M i j ∈ Finset.Icc (-2 : ℤ) 2 := Finset.mem_Icc.2 (abs_le.1 (hbox i j))
-    rw [Matrix.det_fin_two] at hM
-    rw [M.eta_fin_two]
-    exact weight_add_weight_neg_of_mem_box _ (h 0 0) _ (h 0 1) _ (h 1 0) _ (h 1 1) hM
-  -- outside the box `[-2, 2]⁴` both sides vanish, as `±1`, `±S`, `±U`, `±U²` lie in it
-  have hN {N : Matrix (Fin 2) (Fin 2) ℤ} (hN : ∀ i j, |N i j| ≤ 2) : ¬(N = M ∨ N = -M) := by
-    rintro (rfl | rfl)
-    exacts [hbox hN, hbox (by simpa using hN)]
-  have hw {N : Matrix (Fin 2) (Fin 2) ℤ} (h : N = M ∨ N = -M) : PopaZagier.weight N = 0 := by
-    have hdet : N.det = 1 := by rcases h with rfl | rfl <;> simp [Matrix.det_neg, hM]
-    by_contra hw
-    exact hN (fun i j ↦ by simpa [hdet] using PopaZagier.abs_le_of_weight_ne_zero hw i j) h
-  rw [hw (.inl rfl), hw (.inr rfl), weightAtOne, ite_eq_right (hN (by decide)),
-    ite_eq_right (hN (by decide)), ite_eq_right (hN (by decide)), ite_eq_right (hN (by decide))]
-  rfl
-
-/-- **Popa–Zagier's element for `n = 1`** (Popa–Zagier, proof of Theorem 4(b)): in
-`ℛ₁ = ℚ[ℳ₁]` it is `1 - π_S - π_U`, where `π_S = (1 + S)/2` and `π_U = (1 + U + U²)/3` with
-`U = T S` act by left multiplication on the class of the identity matrix. -/
-theorem popaZagierElement_one :
-    popaZagierElement 1 =
-      (1 - (2 : ℚ)⁻¹ • (1 + ofMulAction ℚ SL(2, ℤ) (TraceFormulaMatrixModule 1) S) -
-        (3 : ℚ)⁻¹ • (1 + ofMulAction ℚ SL(2, ℤ) (TraceFormulaMatrixModule 1) (T * S) +
-          ofMulAction ℚ SL(2, ℤ) (TraceFormulaMatrixModule 1) ((T * S) ^ 2)))
-        (single (mk 1) 1) := by
-  classical
-  -- `Subtype.ext_iff` does not apply: `TraceFormulaMatrix 1` is not reducibly a subtype
-  have hext (B C : TraceFormulaMatrix 1) : B = C ↔ B.1 = C.1 :=
-    ⟨congrArg _, FixedDetMatrices.ext' _ _⟩
-  ext x
-  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply,
-    ofMulAction_single, coeff_sub, coeff_add, coeff_smul, coeff_single, Finsupp.sub_apply,
-    Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_mk, mk_eq_iff, hext,
-    FixedDetMatrices.smul_coe, TraceFormulaMatrix.val_neg, TraceFormulaMatrix.val_one, mul_one,
-    coeff_popaZagierElement_mk, smul_eq_mul]
-  -- both sides are the same combination of the indicators of `±1`, `±S`, `±U`, `±U²`
-  rw [← Int.cast_add, weight_add_weight_neg_of_det_eq_one A.2, weightAtOne]
-  push_cast
-  ring
 
 end TraceFormulaMatrixModule
 

@@ -55,14 +55,6 @@ instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
 @[simp]
 theorem TraceFormulaMatrix.val_neg (A : TraceFormulaMatrix n) : (-A).1 = -A.1 := rfl
 
-/-- The identity matrix, of determinant one. -/
-instance : One (TraceFormulaMatrix 1) where
-  one := ⟨1, Matrix.det_one⟩
-
-/-- The identity of the determinant-one fibre is the identity matrix. -/
-@[simp]
-theorem TraceFormulaMatrix.val_one : (1 : TraceFormulaMatrix 1).1 = 1 := rfl
-
 instance (n : ℤ) : InvolutiveNeg (TraceFormulaMatrix n) where
   neg_neg A := by
     apply FixedDetMatrices.ext'
