@@ -59,11 +59,20 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  # Runs once a night, so `github.token` has ample API budget and the App's secrets stay out of
+  # this workflow entirely.
+  pick-runner:
+    if: github.repository == 'TauCetiProject/TauCeti'
+    uses: ./.github/workflows/pick-runner.yml
+    permissions:
+      actions: read
+
   # No secrets reach this job. It builds and executes repository code, including a build restored
   # from the public cache, so anything it can read is code-reachable. Reporting lives in a separate
   # job for exactly that reason.
   verify:
-    if: github.repository == 'TauCetiProject/TauCeti'
+    needs: pick-runner
+    if: ${{ !cancelled() && github.repository == 'TauCetiProject/TauCeti' }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
     # at all, for root as well as for the job user. The `-with-features` suffix on the machine
@@ -73,9 +82,14 @@ jobs:
     # labels this organisation does not serve is not rejected: it sits queued with an empty
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true
+    #
+    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
+    # an explicit `true` from it, including a picker that failed or never ran, means Namespace.
+    runs-on: >-
+      ${{ needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+        "nscloud-ubuntu-24.04-amd64-8x16-with-features",
+        "namespace-features:container.privileged=true"
+      ]') }}
     # The from-scratch build alone ran about 49 minutes as ci.yml's Build step before #3715, and the
     # cache-restored build adds roughly 15. Generous headroom, but bounded; a run that hits this
     # still reports, because the report job keys off the job result.

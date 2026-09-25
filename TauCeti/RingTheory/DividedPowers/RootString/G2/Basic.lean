@@ -209,23 +209,6 @@ theorem commutator_eq_three_nsmul_of_commute {B : Type*} [Ring B] {x y z w v s :
 
 /-! ## Moving one element across a single normal-ordered monomial -/
 
--- Moving `x` across the tail `w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` of a normal-ordered monomial releases one term,
--- trading a `w` for a `v`.
-private theorem mul_dividedPower_triple (hxw : x * w = w * x + 3 • v) (hxv : Commute x v)
-    (hxs : Commute x s) (hwv : Commute w v) (c d e : ℕ) :
-    x * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
-      dividedPower c w * (dividedPower d v * dividedPower e s) * x +
-        (if 0 < c then (3 * (d + 1)) • (dividedPower (c - 1) w *
-          (dividedPower (d + 1) v * dividedPower e s)) else 0) := by
-  have hxVS : Commute x (dividedPower d v * dividedPower e s) := by
-    simpa using (commute_dividedPower_dividedPower hxv 1 d).mul_right
-      (commute_dividedPower_dividedPower hxs 1 e)
-  rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxw (hwv.smul_right 3) c, add_mul,
-    mul_assoc, hxVS.eq, ← mul_assoc, ite_mul, zero_mul]
-  -- The released `v` is absorbed by `v⁽ᵈ⁾`, as `v v⁽ᵈ⁾ = (d + 1) v⁽ᵈ⁺¹⁾`.
-  rw [mul_assoc (dividedPower (c - 1) w), smul_mul_assoc, ← succ_nsmul_dividedPower_succ_mul,
-    smul_smul, mul_smul_comm]
-
 -- Moving `x` across the tail `z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` of a normal-ordered monomial releases three
 -- terms: one trading a `z` for a `w`, one trading two `z`s for an `s`, and one trading a `w` for
 -- a `v`.
@@ -241,24 +224,19 @@ private theorem mul_dividedPower_quadruple (hxz : x * z = z * x + 2 • w)
           (dividedPower d v * dividedPower e s))) else 0) +
         (if 1 < b then (3 * (e + 1)) • (dividedPower (b - 2) z * (dividedPower c w *
           (dividedPower d v * dividedPower (e + 1) s))) else 0) := by
-  have hsWV : Commute s (dividedPower c w * dividedPower d v) := by
-    simpa using (commute_dividedPower_dividedPower hws.symm 1 c).mul_right
-      (commute_dividedPower_dividedPower hvs.symm 1 d)
   -- The second commutator of `x` with `z` is `2 • (3 • s)`, which is what the divided powers of
   -- `z` absorb into a single copy of `s`.
   have haz : (2 • w) * z = z * (2 • w) + 2 • (3 • s) := by
     rw [smul_mul_assoc, hwz, mul_smul_comm, smul_add]
-  have hmove : s * (dividedPower c w * (dividedPower d v * dividedPower e s)) =
-      (e + 1) • (dividedPower c w * (dividedPower d v * dividedPower (e + 1) s)) := by
-    rw [← mul_assoc (dividedPower c w), ← mul_assoc s, hsWV.eq, mul_assoc,
-      self_mul_dividedPower, mul_smul_comm, mul_assoc]
+  -- Move `x` past `z⁽ᵇ⁾`, then past `w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾`, of which only `w` fails to commute with `x`.
   rw [← mul_assoc, mul_dividedPower_of_commutator_eq_two_nsmul hxz haz (hzs.smul_right 3) b,
-    add_mul, add_mul, mul_assoc, mul_dividedPower_triple hxw hxv hxs hwv, mul_add, ← mul_assoc,
-    mul_ite, mul_zero, mul_smul_comm]
-  -- Absorb the new factor of each of the two released terms into its own divided power.
-  rw [ite_mul, ite_mul, zero_mul, mul_assoc (dividedPower (b - 1) z), smul_mul_assoc,
-    ← succ_nsmul_dividedPower_succ_mul, smul_smul, mul_smul_comm,
-    mul_assoc (dividedPower (b - 2) z), smul_mul_assoc, hmove, smul_smul, mul_smul_comm]
+    add_mul, add_mul, mul_assoc, mul_dividedPower_mul_dividedPower_mul_of_commutator_eq_nsmul hxw
+      hxv (hxs.dividedPower_right e) hwv]
+  -- Absorb the new factor of each of the two released terms into its own divided power, the `s`
+  -- first commuting past `w⁽ᶜ⁾` and `v⁽ᵈ⁾`.
+  simp only [mul_add, mul_ite_zero, ite_zero_mul, mul_assoc, smul_mul_assoc,
+    ← succ_nsmul_dividedPower_succ_mul, (hws.symm.dividedPower_right c).left_comm,
+    (hvs.symm.dividedPower_right d).left_comm, self_mul_dividedPower, smul_smul, mul_smul_comm]
 
 -- Moving `x` across a normal-ordered monomial `y⁽ᵃ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ v⁽ᵈ⁾ s⁽ᵉ⁾` releases four terms: one
 -- trading a `y` for a `z`, one trading a `z` for a `w`, one trading two `z`s for an `s`, and one

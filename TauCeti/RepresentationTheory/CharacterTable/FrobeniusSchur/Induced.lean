@@ -69,12 +69,9 @@ private theorem sum_filter_mem_character_ρ_indFDRep_sq_eq_zero [Fintype G]
   have hinvψ : (ψ ^ 2)⁻¹ ≠ 1 := (inv_ne_one (a := ψ ^ 2)).mpr hψ
   have hstep (x : N) : Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ
       ((x : G) ^ 2) = (((ψ ^ 2) x : kˣ) : k) + ((((ψ ^ 2)⁻¹) x : kˣ) : k) := by
-    -- `FDRep.character_forget₂_obj` bridges the two character interfaces; its left-hand side is
-    -- the character of the representation carried by `forget₂`, which agrees with this one only
-    -- up to definitional unfolding, so it is composed as a term rather than rewritten.
-    refine ((FDRep.character_forget₂_obj _ _).trans
-      (character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
-        (Subgroup.sq_mem_of_index_two hindex _))).trans ?_
+    rw [FDRep.character_ρ,
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+        (Subgroup.sq_mem_of_index_two hindex _)]
     simp [← SubmonoidClass.mk_pow]
   rw [Finset.sum_subtype (p := (· ∈ N)) _ (fun x => by simp) _,
     Finset.sum_congr rfl fun x _ => hstep x, Finset.sum_add_distrib, hzeroSum _ hψ,
@@ -100,10 +97,9 @@ private theorem sum_filter_notMem_character_ρ_indFDRep_sq [Fintype G] [Decidabl
         2 * (ψ z : k) := by
     intro x hx
     rw [sq_eq_sq_of_notMem_of_index_two hindex hs hinv (Finset.mem_filter.mp hx).2]
-    refine ((FDRep.character_forget₂_obj _ _).trans
-      (character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
-        (Subgroup.sq_mem_of_index_two hindex s))).trans ?_
-    rw [← hzdef, hψz, two_mul]
+    rw [FDRep.character_ρ,
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+        (Subgroup.sq_mem_of_index_two hindex s), ← hzdef, hψz, two_mul]
   rw [Finset.sum_congr rfl houterStep, Finset.sum_const, nsmul_eq_mul,
     card_filter_notMem_eq_card_of_index_two hindex]
 
@@ -118,14 +114,8 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_e
     FDRep.frobeniusSchurIndicator (indFDRep (FDRep.ofLinearCharacter ψ)) =
       (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k) := by
   classical
-  -- `s` lies outside `N`: inside it, `hinv` would make `ψ x` conjugate to `ψ x⁻¹` in the
-  -- commutative group `kˣ`, so equal to it, and that is what `hψ` forbids.
-  have hs : s ∉ N := fun hsN => hψ <| MonoidHom.ext fun x => by
-    have hconj : (⟨s, hsN⟩ : N) * x * (⟨s, hsN⟩ : N)⁻¹ = x⁻¹ :=
-      Subtype.ext (by simpa using hinv (x : G) x.2)
-    have h := isConj_iff_eq.mp (ψ.map_isConj (isConj_iff.mpr ⟨_, hconj⟩))
-    rw [map_inv, eq_inv_iff_mul_eq_one] at h
-    rw [MonoidHom.pow_apply, MonoidHom.one_apply, pow_two, h]
+  -- `s` lies outside `N`: an inverting element inside `N` would force `ψ ^ 2 = 1`.
+  have hs : s ∉ N := fun hsN => hψ (monoidHom_sq_eq_one_of_mem_of_conj_eq_inv hsN hinv ψ)
   have hcast : (Nat.card G : k) = (Nat.card N : k) * 2 := by
     rw [← Subgroup.card_mul_index N, hindex]; push_cast; ring
   have hNunit : IsUnit (Nat.card N : k) := isUnit_of_mul_isUnit_left (hcast ▸ hG)

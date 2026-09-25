@@ -49,11 +49,10 @@ varies the coefficients.
   over a commutative ring. The maps induced by morphisms of sheaves are already linear, so this
   makes the whole long exact sequence one of modules; a dimension count in it needs that.
 
-Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence, so it
-is Layer B infrastructure for `TauCetiRoadmap/JacobianChallenge/README.md`. No formalization is
-vendored: the sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
-`TauCeti/CategoryTheory/Sites/SheafCohomology/LongExactSequence.lean`; exactness of forgetting
-the module structures is `TauCeti/AlgebraicGeometry/Modules/Sheaf.lean`, and the comparison of
+Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence. The
+sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence`; exactness of forgetting the
+module structures is in `TauCeti.AlgebraicGeometry.Modules.Sheaf`, and the comparison of
 degree-zero cohomology with global sections is `Scheme.Modules.cohomologyZeroEquiv`.
 -/
 

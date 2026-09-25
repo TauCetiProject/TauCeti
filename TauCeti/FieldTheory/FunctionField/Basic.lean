@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.FunctionField
 public import TauCeti.FieldTheory.IntermediateField.FieldRange
-public import TauCeti.FieldTheory.TranscendenceDegree
+public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 
 /-!
 # Algebraic function fields of one variable

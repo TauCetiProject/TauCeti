@@ -308,8 +308,6 @@ private noncomputable def modelData (n : ℕ) :
 private noncomputable def pullback {V V' : Type*} [AddCommGroup V] [Module K V]
     [AddCommGroup V'] [Module K V'] {Q : QuadraticForm K V} {Q' : QuadraticForm K V'}
     (e : Q.IsometryEquiv Q') (P : SpinPolarizationData Q') : SpinPolarizationData Q :=
-  have hpolar (x y : V) : QuadraticMap.polar Q' (e x) (e y) = QuadraticMap.polar Q x y := by
-    simpa using e.toIsometry.polar_apply x y
   let eS (S : Submodule K V') : S.comap e.toLinearEquiv.toLinearMap ≃ₗ[K] S :=
     Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (by simp)
   have he (S : Submodule K V') (x) : (eS S x : V') = e x := by simp [eS]
@@ -324,15 +322,16 @@ private noncomputable def pullback {V V' : Type*} [AddCommGroup V] [Module K V]
     pairingEquiv := (eS P.W').trans <| P.pairingEquiv.trans (eS P.W).dualMap
     pairingEquiv_apply y x := by
       simp only [LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, P.pairingEquiv_apply, he,
-        hpolar]
+        e.polar_apply]
     pairing_separatingLeft x hx := (eS P.W).map_eq_zero_iff.mp <| P.pairing_separatingLeft _ <|
-      (eS P.W').surjective.forall.mpr fun y ↦ by rw [he, he, hpolar, hx]
+      (eS P.W').surjective.forall.mpr fun y ↦ by rw [he, he, e.polar_apply, hx]
     lineCoordinate := P.lineCoordinate.comp (eS P.line).toLinearMap
     lineCoordinate_injective := P.lineCoordinate_injective.comp (eS P.line).injective
     lineCoordinate_sq z := by
       rw [LinearMap.comp_apply, LinearEquiv.coe_coe, P.lineCoordinate_sq, he, e.map_app]
-    line_orthogonal_W z x := by rw [← hpolar, ← he P.line, ← he P.W, P.line_orthogonal_W]
-    line_orthogonal_W' z y := by rw [← hpolar, ← he P.line, ← he P.W', P.line_orthogonal_W'] }
+    line_orthogonal_W z x := by rw [← e.polar_apply, ← he P.line, ← he P.W, P.line_orthogonal_W]
+    line_orthogonal_W' z y := by
+      rw [← e.polar_apply, ← he P.line, ← he P.W', P.line_orthogonal_W'] }
 
 private theorem finrank_splitModel {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     Module.finrank R (SplitModel R n) = n := by

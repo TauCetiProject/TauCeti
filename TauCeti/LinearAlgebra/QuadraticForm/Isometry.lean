@@ -18,6 +18,7 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 ## Main results
 
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
+* `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -43,6 +44,14 @@ theorem _root_.QuadraticMap.Isometry.polar_apply {R : Type u} {M₁ : Type v} {M
     polar Q₂ (f x) (f y) = polar Q₁ x y := by
   simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
 
+/-- An isometric equivalence preserves the polarization of a quadratic map. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.polar_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    {N : Type w} [CommSemiring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) (x y : M₁) : polar Q₂ (e x) (e y) = polar Q₁ x y := by
+  simpa using e.toIsometry.polar_apply x y
+
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
@@ -60,24 +69,11 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     [AddCommGroup N] [Module R N]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) : Q₁.Nondegenerate ↔ Q₂.Nondegenerate := by
+  -- This follows the proof of Mathlib's `QuadraticMap.IsometryEquiv.map_radical`
+  -- (`Mathlib/LinearAlgebra/QuadraticForm/Radical.lean`), with the polar kernel for the radical.
   have hpolar : Q₁.polarBilin.ker.map e.toLinearMap = Q₂.polarBilin.ker := by
-    ext y
-    simp only [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.ext_iff,
-      LinearMap.zero_apply, QuadraticMap.polarBilin_apply_apply]
-    constructor
-    · intro hy z
-      calc
-        QuadraticMap.polar Q₂ y z =
-            QuadraticMap.polar Q₂ (e (e.symm y)) (e (e.symm z)) := by simp
-        _ = QuadraticMap.polar Q₁ (e.symm y) (e.symm z) := by
-          simp only [QuadraticMap.polar, ← map_add e, QuadraticMap.IsometryEquiv.map_app]
-        _ = 0 := hy (e.symm z)
-    · intro hy x
-      calc
-        QuadraticMap.polar Q₁ (e.symm y) x =
-            QuadraticMap.polar Q₂ (e (e.symm y)) (e x) := by
-          simp only [QuadraticMap.polar, ← map_add e, QuadraticMap.IsometryEquiv.map_app]
-        _ = 0 := by simpa using hy (e x)
+    ext
+    simp [LinearMap.ext_iff, e.toEquiv.forall_congr_left]
   constructor
   · intro hQ₁
     have hradical := e.map_radical

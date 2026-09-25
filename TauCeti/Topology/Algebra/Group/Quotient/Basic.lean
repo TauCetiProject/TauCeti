@@ -18,6 +18,8 @@ nor total disconnectedness is needed, so the results apply in particular to prof
 
 ## Main results
 
+* `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
+  discrete.
 * `QuotientGroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
   quotient map `G → G ⧸ N` is clopen.
 * `QuotientGroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond,
@@ -29,6 +31,22 @@ public section
 namespace TauCeti
 
 namespace QuotientGroup
+
+section Discrete
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+
+/-- The quotient of a discrete group by any subgroup is discrete. This is Mathlib's
+`QuotientGroup.discreteTopology` read as an instance: in a discrete group every subgroup is open. -/
+@[to_additive TauCeti.QuotientAddGroup.instDiscreteTopology /-- The quotient of a discrete
+additive group by any additive subgroup is discrete. This is Mathlib's
+`QuotientAddGroup.discreteTopology` read as an instance: in a discrete additive group every
+additive subgroup is open. -/]
+instance instDiscreteTopology (H : Subgroup G) : DiscreteTopology (G ⧸ H) :=
+  haveI : ContinuousMul G := ⟨continuous_of_discreteTopology⟩
+  QuotientGroup.discreteTopology (isOpen_discrete _)
+
+end Discrete
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {N : Subgroup G}
   [N.Normal]
