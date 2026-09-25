@@ -466,6 +466,7 @@ theorem toMul_kummerCoeffMap (x : KummerCoeff K n) :
 `Lˢ` over `L` acts on `μₙ(Kˢ)` through its image in the subgroup of `G_K` fixing `σ(L)`, which is
 `g` conjugated by the identification of separable closures. This is the compatibility making
 `(absoluteGaloisGroupEquivFixingSubgroup K L σ, kummerCoeffMap K n L σ)` a compatible pair. -/
+@[simp↓]
 theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
     kummerCoeffMap K n L σ
         ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
@@ -519,6 +520,7 @@ theorem units_map_separableClosureRingEquiv_symm_pow
 /-- **Restriction of a Kummer cocycle class**: restricting the class of `g ↦ g α / α` to `G_L`
 gives the class of `h ↦ h β / β` for the image `β ∈ Lˢ` of the root `α` under the
 identification of separable closures. -/
+@[simp]
 theorem kummerRes_kummerCocycleClass
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     kummerRes K n L σ (Multiplicative.ofAdd (kummerCocycleClass hα)) =
@@ -535,9 +537,12 @@ theorem kummerRes_kummerCocycleClass
 /-- **Restriction of Kummer classes along a field extension**: for a `K`-embedding
 `σ : L →ₐ[K] Kˢ`, restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` sends the Kummer class of `a ∈ Kˣ` to the
 Kummer class of its image in `Lˣ`. -/
-theorem kummerRes_kummerMap (hn : IsUnit (n : K)) (hnL : IsUnit (n : L)) (a : Kˣ) :
+@[simp↓]
+theorem kummerRes_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerRes K n L σ (kummerMap K n hn a) =
-      kummerMap L n hnL (Units.map (algebraMap K L).toMonoidHom a) := by
+      kummerMap L n (by simpa using hn.map (algebraMap K L))
+        (Units.map (algebraMap K L).toMonoidHom a) := by
+  have hnL : IsUnit (n : L) := by simpa using hn.map (algebraMap K L)
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   rw [← ofAdd_toAdd (kummerMap K n hn a), kummerMap_eq_kummerCocycleClass hn hα,
     kummerRes_kummerCocycleClass K n L σ hα,
@@ -547,10 +552,12 @@ theorem kummerRes_kummerMap (hn : IsUnit (n : K)) (hnL : IsUnit (n : L)) (a : K�
 `K`-embedding `σ : L →ₐ[K] Kˢ`, restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` corresponds under the
 Kummer isomorphisms to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ` induced by `K → L`. No
 finiteness of `L/K` is needed. -/
-theorem kummerIso_res (hn : IsUnit (n : K)) (hnL : IsUnit (n : L))
+@[simp↓]
+theorem kummerIso_res (hn : IsUnit (n : K))
     (x : powerClassQuotient Kˣ n) :
     kummerRes K n L σ (kummerIso K n hn x) =
-      kummerIso L n hnL (powerClassMap n (Units.map (algebraMap K L).toMonoidHom) x) := by
+      kummerIso L n (by simpa using hn.map (algebraMap K L))
+        (powerClassMap n (Units.map (algebraMap K L).toMonoidHom) x) := by
   induction x using QuotientGroup.induction_on with
   | H a => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, kummerRes_kummerMap]
 
