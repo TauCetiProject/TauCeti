@@ -110,7 +110,7 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
   have e₂ := congrArg (fun η ↦ η.coeff ((S : PSL(2, ℤ)) • x)) (LinearMap.mem_ker.mp h₂)
   simp only [LinearMap.add_apply, Module.End.one_apply, coeff_add, Finsupp.coe_add, Pi.add_apply,
     Representation.coeff_ofMulAction, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, ← map_pow,
-    coe_S_inv, coe_T_mul_coe_S_inv, inv_coe_T_mul_coe_S_sq] at e₁ e₂
+    coe_S_inv, coe_T_mul_coe_S_inv, coe_T_mul_coe_S_sq_inv] at e₁ e₂
   rw [smul_smul, smul_smul, coe_T_mul_coe_S_mul_coe_S, coe_T_mul_coe_S_sq_mul_coe_S] at e₂
   rw [eq_neg_of_add_eq_zero_left e₁, add_comm (ξ.coeff _)]
   exact neg_eq_of_add_eq_zero_right ((add_assoc _ _ _).symm.trans e₂)

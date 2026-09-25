@@ -22,7 +22,7 @@ corresponding element of `SL(2, ℤ)` is `±1`, that is, central.
 
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_S_inv`: `S² = 1` and `S⁻¹ = S`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
-  `TauCeti.ModularGroup.inv_coe_T_mul_coe_S_sq`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
+  `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_mul_coe_S`: `U * S = T`.
 -/
 
@@ -61,7 +61,7 @@ theorem coe_T_mul_coe_S_inv : ((T : PSL(2, ℤ)) * S)⁻¹ = ((T : PSL(2, ℤ)) 
 
 /-- The inverse of `U²`, for `U = T * S` in `PSL(2, ℤ)`, is `U`. -/
 @[simp]
-theorem inv_coe_T_mul_coe_S_sq : (((T : PSL(2, ℤ)) * S) ^ 2)⁻¹ = (T : PSL(2, ℤ)) * S := by
+theorem coe_T_mul_coe_S_sq_inv : (((T : PSL(2, ℤ)) * S) ^ 2)⁻¹ = (T : PSL(2, ℤ)) * S := by
   rw [← coe_T_mul_coe_S_inv, inv_inv]
 
 /-- In `PSL(2, ℤ)`, `U * S = T` for `U = T * S`; in `SL(2, ℤ)` the product is `-T`. -/
