@@ -206,7 +206,7 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.snd.singularCohomology R k M n ⟶ P.singularCohomology R k M m :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
