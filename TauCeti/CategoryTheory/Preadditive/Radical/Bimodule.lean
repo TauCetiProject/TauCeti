@@ -34,7 +34,7 @@ irreducible morphism exists.
 The left action is antimultiplicative — `(a₁ ≫ a₂) ≫ f` is `a₁` applied after `a₂` — so it is
 recorded as an action of `(End X)ᵐᵒᵖ`, and it descends to `(End X)ᵐᵒᵖ ⧸ rad((End X)ᵐᵒᵖ)`, which is
 again a division ring because the opposite of a local ring is local
-(`TauCeti.IsLocalRing.instMulOpposite`).
+(`IsLocalRing.instMulOpposite`).
 
 ## Main definitions
 

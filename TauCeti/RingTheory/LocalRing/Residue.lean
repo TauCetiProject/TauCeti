@@ -41,8 +41,6 @@ built in `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean`.
   Jacobson radical is a division ring.**
 * `TauCeti.IsLocalRing.mk_jacobson_eq_zero_iff` and `TauCeti.IsLocalRing.isUnit_mk_jacobson_iff`: a
   residue class vanishes exactly on the non-units and is a unit exactly on the units.
-* `TauCeti.IsLocalRing.instMulOpposite`: the opposite of a local ring is local, so that the residue
-  division ring of an opposite endomorphism ring is available too.
 
 ## References
 
@@ -110,18 +108,6 @@ theorem mem_jacobson_iff_not_isUnit {x : R} : x ∈ Ring.jacobson R ↔ ¬ IsUni
       refine absurd (isUnit_of_mul_eq_one_left (a := -((↑u⁻¹ : R) * y)) ?_) hx
       have hstep : -((↑u⁻¹ : R) * y) * x = (↑u⁻¹ : R) * -(y * x) := by noncomm_ring
       rw [hstep, ← hu, u.inv_mul]
-
-/-- **The opposite of a local ring is local.** Being a unit is preserved by `MulOpposite.op` and
-addition is computed on the underlying elements, so the splitting property transports verbatim;
-Mathlib's `RingEquiv.isLocalRing` does not apply, there being no ring equivalence `R ≃+* Rᵐᵒᵖ` in
-general. -/
-instance instMulOpposite : IsLocalRing Rᵐᵒᵖ := by
-  refine _root_.IsLocalRing.of_isUnit_or_isUnit_of_isUnit_add fun a b hab => ?_
-  have hsum : IsUnit (a.unop + b.unop) := by
-    rw [← MulOpposite.unop_add]
-    exact _root_.isUnit_unop.mpr hab
-  exact (_root_.IsLocalRing.isUnit_or_isUnit_of_isUnit_add hsum).imp
-    (fun hu => _root_.isUnit_unop.mp hu) fun hu => _root_.isUnit_unop.mp hu
 
 variable (R) in
 /-- The residue ring of a local ring is nontrivial, the Jacobson radical of a nontrivial ring
