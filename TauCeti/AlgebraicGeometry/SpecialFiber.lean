@@ -16,9 +16,8 @@ one is the quotient by the maximal ideal, while the other is the residue field o
 point. This file gives their canonical equivalence and the resulting comparison of fibres,
 including its projection identities.
 
-The residue-field equivalence uses `Scheme.Spec.residueFieldIso` and
-`Ideal.bijective_algebraMap_quotient_residueField`; the projection comparisons follow the
-generic-point pattern in `TauCeti/AlgebraicGeometry/Fibers.lean`.
+The comparison lets statements about the special fibre be transported between its base-change
+presentation and the fibre over the closed point, while preserving both projections.
 -/
 
 public section
@@ -37,6 +36,8 @@ section ClosedPoint
 variable (R : CommRingCat.{u}) [IsLocalRing R]
 variable {X : Scheme.{u}} (toBase : X ⟶ Spec R)
 
+-- The construction uses Mathlib's `Scheme.Spec.residueFieldIso` and
+-- `Ideal.bijective_algebraMap_quotient_residueField`.
 /-- The two constructions of the residue field at a local ring's closed point agree. -/
 noncomputable def localResidueFieldEquiv :
     ResidueField R ≃+* (Spec R).residueField (closedPoint R) :=
@@ -86,6 +87,8 @@ lemma specLocalResidueFieldIso_hom_fromSpecResidueField :
       (localResidueFieldEquiv_algebraMap R r).symm
   exact (Scheme.Spec.map_comp _ _).symm.trans (congrArg Spec.map h)
 
+-- The projection comparison follows the generic-point pattern in
+-- `TauCeti/AlgebraicGeometry/Fibers.lean`.
 /-- The square defining the special fibre is the scheme-theoretic fibre square over the
 closed point of the base. -/
 lemma isPullback_specialFiber_closedPoint :
