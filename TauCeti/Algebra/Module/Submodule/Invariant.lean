@@ -18,9 +18,13 @@ The range of an endomorphism is stable under every endomorphism commuting with i
 Let `e` and `f` be idempotent endomorphisms, `P` a submodule stable under `f` and `Q` one stable
 under `e`. If `e ξ` and `f ξ` lie in `P ⊔ Q`, then `ξ` can be corrected by an element `ι ∈ P ⊔ Q`
 so that `e (ξ - ι) ∈ Q` and `f (ξ - ι) ∈ P`. This is the existence half of Lemma 3 of Popa and
-Zagier, where `e` and `f` are right multiplication by the idempotents `π_S = (1 + S) / 2` and
-`π_U = (1 + U + U²) / 3` of `PSL(2, ℤ)` on the space `ℛ` spanned by integral matrices of positive
-determinant, `P = π_S ℛ`, `Q = π_U ℛ`, and `ξ - ι` is the image of `ξ` under their projection.
+Zagier. There `ℛ` is the space spanned by integral matrices of positive determinant, on which
+`PSL(2, ℤ)` acts on both sides, and `π_S = (1 + S) / 2` and `π_U = (1 + U + U²) / 3` are
+idempotents. The maps are right multiplications, `e ξ = ξ π_S` and `f ξ = ξ π_U`, while
+`P = π_S ℛ` and `Q = π_U ℛ` are the images of left multiplication by `π_S` and `π_U`; they are
+stable under `f` and `e` because left and right multiplication commute. The hypotheses say that
+`ξ` lies in their set `𝒜`, and `ξ - ι = ξ - ξ_S - ξ_U` is the image of `ξ` under their projection
+onto `ℬ`.
 
 ## Main results
 
