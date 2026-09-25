@@ -12,7 +12,8 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 /-!
 # Elementary facts about permutations
 
-This file records general-purpose facts about permutations: an identity between transpositions,
+This file records general-purpose facts about permutations: a transposition preserves the
+complement of a set containing neither of its swapped points, an identity between transpositions,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
@@ -116,6 +117,11 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
 end Equiv.Perm
 
 namespace TauCeti
+
+/-- A transposition of two points outside `s` maps the complement of `s` to itself. -/
+theorem swap_apply_notMem {α : Type*} [DecidableEq α] {s : Finset α} {a b z : α}
+    (ha : a ∉ s) (hb : b ∉ s) (hz : z ∉ s) : Equiv.swap a b z ∉ s := by
+  rw [Equiv.swap_apply_def]; split_ifs <;> assumption
 
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/

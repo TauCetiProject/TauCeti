@@ -188,10 +188,14 @@ theorem commute_commutatorElement_of_inv_mul_mul_mem_zpowers {g x y : G}
   have hpow : ∀ (z : G) (m : ℤ), z⁻¹ * g ^ m * z = (z⁻¹ * g * z) ^ m := fun z m ↦ by
     simpa using (conj_zpow (a := z⁻¹) (b := g) (i := m)).symm
   -- Conjugating `g` by `y * x` and by `x * y` both give `g ^ (i * k)`.
+  have hxk : x⁻¹ * g ^ k * x = g ^ (i * k) := by
+    rw [hpow, ← hi, ← zpow_mul]
+  have hyi : y⁻¹ * g ^ i * y = g ^ (i * k) := by
+    rw [hpow, ← hk, ← zpow_mul, mul_comm i k]
   have key : (y * x)⁻¹ * g * (y * x) = (x * y)⁻¹ * g * (x * y) := by
     calc (y * x)⁻¹ * g * (y * x) = x⁻¹ * (y⁻¹ * g * y) * x := by group
-      _ = y⁻¹ * (x⁻¹ * g * x) * y := by rw [← hk, hpow, ← hi, ← zpow_mul, mul_comm, zpow_mul,
-          hk, ← hpow, hi]
+      _ = g ^ (i * k) := by rw [← hk, hxk]
+      _ = y⁻¹ * (x⁻¹ * g * x) * y := by rw [← hi, hyi]
       _ = (x * y)⁻¹ * g * (x * y) := by group
   rw [commute_iff_eq, commutatorElement_def]
   calc x * y * x⁻¹ * y⁻¹ * g = x * y * ((y * x)⁻¹ * g * (y * x)) * (y * x)⁻¹ := by group

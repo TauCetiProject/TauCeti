@@ -78,8 +78,12 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   obtain ⟨y, hy⟩ := MulAction.exists_smul_eq G Ph Pg
   refine ⟨y, ?_⟩
   have hmem : y * h * y⁻¹ ∈ ((y • Ph : Sylow p G) : Subgroup G) := by
-    rw [Sylow.coe_subgroup_smul]
-    exact Subgroup.smul_mem_pointwise_smul _ _ _ (Subgroup.mem_zpowers h)
-  rwa [hy] at hmem
+    rw [Sylow.coe_subgroup_smul, ← MulAut.conj_apply]
+    exact Subgroup.smul_mem_pointwise_smul _ _ _ (by
+      simp only [Ph, Sylow.coe_ofCard]
+      exact Subgroup.mem_zpowers h)
+  rw [hy] at hmem
+  simp only [Pg, Sylow.coe_ofCard] at hmem
+  exact hmem
 
 end TauCeti
