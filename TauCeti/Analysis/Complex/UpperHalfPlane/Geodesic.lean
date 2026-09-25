@@ -125,7 +125,6 @@ theorem range_geodesicLine (g : PSL(2, ℝ)) :
   rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
 
 /-- Membership test for a geodesic line, without unfolding the smul-image. -/
-@[simp]
 theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
