@@ -75,19 +75,22 @@ variable {R : Type u} {A : Type u} [CommRing R] [Ring A] [Algebra R A]
 
 /-- The objects of the **one-object differential graded category** of a DG algebra
 `h : IsDGAlgebra 𝒜 d`: a single object `TauCeti.DGSingleObj.star h`, whose Hom complex is the
-underlying cochain complex of `A` and whose composition is multiplication. -/
-@[expose]
-def DGSingleObj (_h : IsDGAlgebra 𝒜 d) : Type := PUnit
+underlying cochain complex of `A` and whose composition is multiplication.
+
+The type is a structure indexed by `h`, so that objects of the categories of different DG
+algebras are not interchangeable. -/
+structure DGSingleObj (h : IsDGAlgebra 𝒜 d) : Type
 
 namespace DGSingleObj
 
 variable (h : IsDGAlgebra 𝒜 d)
 
 /-- The unique object of the one-object differential graded category. -/
-def star : DGSingleObj h := PUnit.unit
+def star : DGSingleObj h := ⟨⟩
 
-instance : Unique (DGSingleObj h) :=
-  inferInstanceAs (Unique PUnit)
+instance : Unique (DGSingleObj h) where
+  default := star h
+  uniq _ := rfl
 
 /-! ### The Hom complex -/
 
