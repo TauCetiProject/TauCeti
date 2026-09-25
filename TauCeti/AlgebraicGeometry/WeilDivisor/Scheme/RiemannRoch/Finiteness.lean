@@ -18,11 +18,7 @@ local rings are discrete valuation rings. Then `H¹(X, 𝒪_X)` is finite-dimens
 This is the finiteness hypothesis under which the genus `g = dim_k H¹(X, 𝒪_X)`
 (`AlgebraicGeometry.Scheme.genus`) and the Riemann–Roch theorem
 (`SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus`) are stated, so
-both apply to every such curve. The proof goes through the function field: `k(X)` is an
-algebraic function field of one variable over `k` because `X` has dimension one
-(`TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff`), `H¹(X, 𝒪_X)` is the repartition
-quotient `A_{k(X)} / (A_{k(X)}(0) + k(X))`, and that quotient is finite-dimensional by Riemann's
-theorem for function fields.
+both apply to every such curve.
 
 ## Main declarations
 
