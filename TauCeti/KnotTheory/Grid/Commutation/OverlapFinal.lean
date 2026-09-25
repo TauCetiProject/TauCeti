@@ -51,41 +51,21 @@ to the weight identity over decompositions. The infrastructure now in place:
 Roadmap: CombinatorialHeegaardFloer
 -/
 
-public section
-
 namespace TauCeti
 
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 
-local notation "b" => finRotate n C.column
-
 variable (R : Type*) [CommSemiring R]
 
 /-!
 ## The weight identity implies the chain map
 
-This is the final implication, proved from `pentagonMap_unblockedDifferential_single_eq_iff`.
 Once the weight identity (step 4 above) is established, the chain-map property follows
-immediately.
+immediately by applying `(pentagonMap_unblockedDifferential_single_eq_iff G C R x).mpr`
+to the weight identity at `x`.
 -/
-
-/-- The pentagon chain-map property follows from the decomposition weight identity.
-
-This is the bridge from combinatorics to the Floer-theoretic statement: the pentagon
-counting map intertwines the unblocked differentials. -/
-theorem pentagon_chain_map_of_weight_identity
-    (hweight : ∀ x z : GridState n,
-      (∑ D ∈ G.rectanglePentagonDecompositions C x z,
-          G.rectanglePentagonWeight C R D) =
-        ∑ D ∈ G.pentagonRectangleDecompositions C x z,
-          G.pentagonRectangleWeight C R D)
-    (x : GridState n) :
-    G.pentagonMap R C (G.unblockedDifferential R (Finsupp.single x 1)) =
-      (G.swapColumns C.column b).unblockedDifferential R
-        (G.pentagonMap R C (Finsupp.single x 1)) :=
-  (pentagonMap_unblockedDifferential_single_eq_iff G C R x).mpr (hweight x)
 
 end GridDiagram
 

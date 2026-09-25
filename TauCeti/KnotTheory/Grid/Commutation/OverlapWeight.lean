@@ -160,13 +160,6 @@ variable {n : ℕ} {G : GridDiagram n}
 
 public section
 
-/-- The added strip of a pentagon (column `b`, rows below the turn) is disjoint from the
-bigon above the turn. Hence an `O`-marking in `cIco s t` cannot lie in the strip rows. -/
-theorem addedStrip_disjoint_bigonAbove {s t pb : Fin n}
-    (h : Disjoint (Grid.cIco pb s) (Grid.cIco s t)) {r : Fin n}
-    (hr : r ∈ Grid.cIco s t) : r ∉ Grid.cIco pb s :=
-  fun hmem => Finset.disjoint_left.mp h hmem hr
-
 end
 
 end GridDiagram

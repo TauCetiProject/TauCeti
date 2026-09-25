@@ -88,8 +88,8 @@ weight preservation from `OMonomial_mul_OMonomial_recutLeftEqLeft` plus the
 disjoint-sides vs. overlapping-sides subsets, with the two bijections covering the
 respective parts. This uses `HasDisjointSides` vs. `HasOneCommonSide` classification.
 
-Once Piece 3 is established, `pentagon_chain_map_of_weight_identity` in `OverlapFinal.lean`
-gives the chain-map theorem immediately.
+Once Piece 3 is established, applying `.mpr` of
+`pentagonMap_unblockedDifferential_single_eq_iff` to the weight identity yields the chain map.
 
 ## What this file proves
 

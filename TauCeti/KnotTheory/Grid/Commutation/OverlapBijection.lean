@@ -49,13 +49,13 @@ and a column-`b` part (identical on both sides once the bottoms agree).
   underlying squares in the original diagram (row containment
   `cIco E.second.bottom E.second.top ⊆ cIco D.rectangle.bottom D.rectangle.top`,
   forced by emptiness), then the covered-columns transfer
-  (`branch1_mem_coveredColumns_iff`).
+  (`(Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm`).
 * Branch-2 pentagon `X`-avoidance: needs the two cyclic-interval lemmas
   identified in `OverlapBranch2` (`cIoo` rotation and half-open covering).
 * Branch-2 rectangle counted-ness: `branch2_direct_X_avoidance` is proved;
   the covered-columns transfer is unavailable in branch 2 (the iff is false
   there), so the swapped-diagram avoidance must be proved directly.
-* Weight preservation: `OverlapWeight` has the added-strip helper; the
+* Weight preservation: `OverlapWeight` sets up the correction-factor framework; the
   correction-equals-one computation and the final weight identity are open.
 * The reverse overlap map / involution and the finite-sum identity are open.
 -/

@@ -23,7 +23,7 @@ In Branch 1 of the recut (`E.second.left = D.rectangle.left`,
 sides. Its X-avoidance in the column-swapped diagram follows from the original rectangle's
 X-avoidance via the covered-columns transfer
 (`disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns`), using
-`branch1_mem_coveredColumns_iff` from `OverlapColumns.lean`.
+`(Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm`.
 
 ## Part B: Branch-2 pentagon X-avoidance
 
@@ -81,7 +81,7 @@ theorem branch1_recut_rectangle_coveredColumns_iff
     rw [D.toRectangleDecomposition_first_right, D.toRectangleDecomposition_second_right] at hne
     rw [hpen_right] at hne
     exact hne
-  exact branch1_mem_coveredColumns_iff D.rectangle.left D.rectangle.right hl hr
+  exact (Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm
 
 /-- Branch-1 recut rectangle X-avoidance transfers to the column-swapped diagram.
 

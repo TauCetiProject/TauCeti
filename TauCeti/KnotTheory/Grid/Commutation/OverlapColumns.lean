@@ -63,13 +63,6 @@ theorem notMem_cIco_finRotate_left (c r : Fin n) : c ∉ Grid.cIco (finRotate n 
       rw [hrot] at hmem hne'
       split_ifs at hmem with h <;> omega
 
-/-- In Branch 2 of the recut (new rectangle's left is the replaced grid line), the commuted
-column is not covered. This is the key fact for analyzing why the naive covered-columns iff
-fails in this branch. -/
-theorem notMem_branch2_coveredColumns (c r : Fin n) :
-    c ∉ Grid.cIco (finRotate n c) r :=
-  notMem_cIco_finRotate_left c r
-
 /-!
 ## Note on the covered-columns iff in Branch 2
 
@@ -92,13 +85,6 @@ Thus `a ∈ coveredColumns ↔ finRotate n a ∈ coveredColumns` is `False ↔ T
 The X-avoidance transfer via `disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns`
 cannot be applied in Branch 2; a direct argument for the swapped diagram is needed.
 -/
-
-/-- Branch 1: when the recut rectangle retains the original left and right sides, the
-covered-columns iff holds via `mem_cIco_finRotate_iff_of_ne`. -/
-theorem branch1_mem_coveredColumns_iff (l r : Fin n)
-    (hl : l ≠ finRotate n a) (hr : r ≠ finRotate n a) :
-    a ∈ Grid.cIco l r ↔ finRotate n a ∈ Grid.cIco l r :=
-  (Grid.mem_cIco_finRotate_iff_of_ne hl hr).symm
 
 end GridRectanglePentagonDecomposition
 
