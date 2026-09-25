@@ -145,13 +145,11 @@ spectrum. -/
 @[simp, reassoc]
 lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
     (specialFiberIsoFiberClosedPoint R toBase).inv ≫
-        pullback.snd toBase (Spec.map (CommRingCat.ofHom (residue R))) ≫
+        (specialFiber R toBase).hom ≫
           (specLocalResidueFieldIso R).hom =
-      toBase.fiberToSpecResidueField (closedPoint R) := by
-  have h := (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
+      toBase.fiberToSpecResidueField (closedPoint R) :=
+  (isPullback_specialFiber_closedPoint R toBase).isoIsPullback_inv_snd _ _
     (IsPullback.of_hasPullback toBase ((Spec R).fromSpecResidueField (closedPoint R)))
-  simp only [specialFiber_hom, ResidueField.algebraMap_eq] at h
-  exact h
 
 end ClosedPoint
 
