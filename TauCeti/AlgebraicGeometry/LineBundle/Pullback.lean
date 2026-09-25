@@ -117,13 +117,6 @@ lemma pullback_obj_obj (f : X ⟶ Y) (L : InvertibleSheaf Y) :
     ((pullback f).obj L).obj = (Scheme.Modules.pullback f).obj L.obj :=
   (rfl)
 
-/-- Forgetting that a line bundle is invertible commutes with pullback: on underlying sheaves of
-modules, `InvertibleSheaf.pullback f` is `Scheme.Modules.pullback f`. -/
-def pullbackCompιIso (f : X ⟶ Y) :
-    pullback f ⋙ (SheafOfModules.isInvertible X).ι ≅
-      (SheafOfModules.isInvertible Y).ι ⋙ Scheme.Modules.pullback f :=
-  ObjectProperty.liftCompιIso _ _ _
-
 end InvertibleSheaf
 
 namespace LineBundleClass
