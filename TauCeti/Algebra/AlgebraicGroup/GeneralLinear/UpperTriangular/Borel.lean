@@ -249,6 +249,7 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed [IsAlgClosed k]
 
 /-- The general-linear base-change isomorphism carries the scalar extension of the
 upper-triangular defining ideal to the upper-triangular defining ideal over the new field. -/
+@[simp]
 theorem map_baseChangeHopfIdeal_definingHopfIdeal
     (k K : Type u) [Field k] [Field K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal k n)).map
