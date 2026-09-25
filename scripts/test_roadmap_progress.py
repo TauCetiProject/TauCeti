@@ -338,6 +338,29 @@ class Tree(unittest.TestCase):
         self.assertEqual(sorted(st["sub_coverage"]), ["Widgets/Gone"])
         self.assertEqual(st["coverage"]["roadmap"], "Widgets")
 
+    def test_a_sub_roadmap_without_a_marker_falls_back_to_its_transcription(self):
+        """The migration case: the umbrella's report carries markers for some children but not this
+        one, which still has a hand transcription bound to exactly that report."""
+        sub_readme = rp.sha256("# Roadmap: sub\n### Layer 0: a\n### Layer 1: b\n")
+        twin_marker = (f'<!--tauceti-coverage:v1 {{"roadmap":"Widgets/Twin","to_sha":"{SHA}","readme_sha":"{sub_readme}",'
+                       '"layers":[{"id":"Layer 0","state":"done"},{"id":"Layer 1","state":"done"}]}-->\n')
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        head, rest = STATUS.split("\n", 1)
+        status.write_text(head + "\n" + twin_marker + rest)
+        hand = {"TauCetiRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
+                                               "readme_sha": sub_readme[:12], "layers": {"Layer 0": "d", "Layer 1": "p"},
+                                               "remaining": {"Layer 1": "the rest of b"}}}
+        rows = {r["id"]: r for r in rp.read_roadmaps(self.root, hand)}
+        sub, twin = rows["TauCetiRoadmap/Widgets/Sub"], rows["TauCetiRoadmap/Widgets/Twin"]
+        self.assertEqual((sub["states"], sub["assessment"]["source"], sub["assessment"]["reason"]),
+                         (["done", "partial"], "hand-read", "ok"))
+        self.assertEqual(sub["assessment"]["remaining"], {"Layer 1": "the rest of b"})
+        self.assertEqual((twin["states"], twin["assessment"]["source"]), (["done", "done"], "marker"))
+        # A transcription bound to an earlier umbrella report is still retired, marker or not.
+        hand["TauCetiRoadmap/Widgets/Sub"]["report_sha"] = "ffffffffffff"
+        sub = {r["id"]: r for r in rp.read_roadmaps(self.root, hand)}["TauCetiRoadmap/Widgets/Sub"]
+        self.assertEqual(sub["assessment"]["reason"], "transcription-retired")
+
     def test_a_malformed_old_transcription_is_dropped_not_fatal(self):
         hand = {"Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
                                    "layers": {"Part A": ["d"], "Part B": "p"}}}
