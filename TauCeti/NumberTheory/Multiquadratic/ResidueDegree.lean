@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Frobenius
+import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -36,12 +37,15 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
 
 ## Main results
 
-* `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_not_dvd`: the inertia group of a prime above
-  an odd `p` dividing no radicand is trivial.
+* `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_not_dvd` and
+  `TauCeti.Multiquadratic.isUnramifiedAt_of_forall_not_dvd`: an odd prime dividing no radicand
+  has trivial inertia and is unramified.
 * `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_forall_legendreSym_eq_one` and
   `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one`: the residue
   degree of a prime above such a `p` is `1` if every `dᵢ` is a quadratic residue mod `p`, and
   `2` if some `dᵢ` is not.
+* `TauCeti.Multiquadratic.ncard_primesOver_mul_inertiaDeg_eq_finrank`: the number of primes
+  above `p` times their residue degree is `[K : ℚ]`.
 * `TauCeti.Multiquadratic.ncard_primesOver_mul_two_eq_finrank`: when some `dᵢ` is a non-residue,
   there are `[K : ℚ] / 2` primes above `p`.
 * `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_one`: under square-class
@@ -62,14 +66,6 @@ namespace TauCeti.Multiquadratic
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {d : ι → ℤ} {r : ι → K}
   {p : ℕ} [Fact p.Prime]
-
-/-- A number field generated over `ℚ` by square roots of integers is Galois over `ℚ`. -/
-private theorem isGalois_rat_of_adjoin_eq_top [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) : IsGalois ℚ K := by
-  have hr' (i : ι) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
-  have hg := isGalois (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr'
-  rw [htop] at hg
-  exact isGalois_iff_isGalois_top.mp hg
 
 /-- **An odd prime dividing no radicand has trivial inertia.** Let `K` be generated over `ℚ` by
 square roots `r i` of integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` with
@@ -107,6 +103,20 @@ theorem inertia_eq_bot_of_forall_not_dvd (hr : ∀ i, r i ^ 2 = algebraMap ℤ K
       exact Q.mul_mem_left _ hRQ
     exact hcop i ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hd)
 
+/-- An odd prime dividing no radicand is unramified in the multiquadratic field. -/
+theorem isUnramifiedAt_of_forall_not_dvd [Finite ι]
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
+    (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] : Algebra.IsUnramifiedAt (𝓞 ℚ) Q := by
+  have : IsGalois ℚ K := by
+    apply isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) ?_ htop
+    intro i
+    rw [hr i]
+    simp
+  exact (Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := ℚ) Q).mpr
+    (inertia_eq_bot_of_forall_not_dvd hr htop hodd hcop Q)
+
 /-- The Frobenius at an odd prime dividing no radicand is an involution. -/
 private theorem isArithFrobAt_pow_two_eq_one (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
@@ -127,13 +137,16 @@ private theorem inertiaDeg_eq_orderOf [Finite ι] (hr : ∀ i, r i ^ 2 = algebra
     (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     Q.inertiaDeg ℤ = orderOf σ := by
-  have := isGalois_rat_of_adjoin_eq_top hr htop
+  have : IsGalois ℚ K := by
+    apply isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) ?_ htop
+    intro i
+    rw [hr i]
+    simp
   have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
     rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
   have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
   have : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
-    (Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := ℚ) Q).mpr
-      (inertia_eq_bot_of_forall_not_dvd hr htop hodd hcop Q)
+    isUnramifiedAt_of_forall_not_dvd hr htop hodd hcop Q
   rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
     Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ
       ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
@@ -147,7 +160,11 @@ theorem inertiaDeg_eq_one_iff_forall_legendreSym_eq_one [Finite ι]
     (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] :
     Q.inertiaDeg ℤ = 1 ↔ ∀ i, legendreSym p (d i) = 1 := by
-  have := isGalois_rat_of_adjoin_eq_top hr htop
+  have : IsGalois ℚ K := by
+    apply isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) ?_ htop
+    intro i
+    rw [hr i]
+    simp
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
   rw [inertiaDeg_eq_orderOf hr htop hodd hcop Q hσ, orderOf_eq_one_iff]
   exact isArithFrobAt_multiquadratic_eq_one_iff d r hr htop hodd hcop Q hσ
@@ -163,7 +180,11 @@ theorem inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one [Finite ι]
     (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] :
     Q.inertiaDeg ℤ = 2 ↔ ∃ i, legendreSym p (d i) = -1 := by
-  have := isGalois_rat_of_adjoin_eq_top hr htop
+  have : IsGalois ℚ K := by
+    apply isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) ?_ htop
+    intro i
+    rw [hr i]
+    simp
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
   have hiff := isArithFrobAt_multiquadratic_eq_one_iff d r hr htop hodd hcop Q hσ
   -- Away from `p ∣ d i`, a Legendre symbol that is not `1` is `-1`.
@@ -177,6 +198,35 @@ theorem inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one [Finite ι]
   refine ⟨fun h h1 => by simp [h1] at h, fun h => ?_⟩
   exact orderOf_eq_prime (isArithFrobAt_pow_two_eq_one hr htop hodd hcop Q hσ) h
 
+/-- **The unramified prime-count formula.** If `K` is generated by square roots of integers
+`d i`, and the odd prime `p` divides none of them, then the number of primes above `p` times
+their common residue degree is `[K : ℚ]`. -/
+theorem ncard_primesOver_mul_inertiaDeg_eq_finrank [Finite ι]
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
+    (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
+  have : IsGalois ℚ K := by
+    apply isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) ?_ htop
+    intro i
+    rw [hr i]
+    simp
+  have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hpne
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
+  have : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
+    isUnramifiedAt_of_forall_not_dvd hr htop hodd hcop Q
+  -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
+  -- prime `Q` has order its residue degree.
+  have horbit : orbit (K ≃ₐ[ℚ] K) Q = (span {(p : ℤ)}).primesOver (𝓞 K) :=
+    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q
+  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
+    ← Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
+    ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
+    IsGalois.card_aut_eq_finrank]
+
 /-- **The number of primes above an odd prime with a non-residue radicand.** Let `K` be
 generated over `ℚ` by square roots of integers `d i`, and let `p` be an odd prime dividing none of
 them such that some `d i` is a quadratic non-residue mod `p`. Then there are exactly `[K : ℚ] / 2`
@@ -187,26 +237,14 @@ theorem ncard_primesOver_mul_two_eq_finrank [Finite ι]
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (hnr : ∃ i, legendreSym p (d i) = -1) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * 2 = finrank ℚ K := by
-  have := isGalois_rat_of_adjoin_eq_top hr htop
   have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
     simpa [Ideal.span_singleton_eq_bot] using hpne
   have : (span {(p : ℤ)}).IsMaximal :=
     ((Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp Fact.out)).isMaximal hp0
   obtain ⟨⟨Q, hQp, hQo⟩⟩ := (inferInstance : Nonempty (primesOver (span {(p : ℤ)}) (𝓞 K)))
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
-  have : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
-    (Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := ℚ) Q).mpr
-      (inertia_eq_bot_of_forall_not_dvd hr htop hodd hcop Q)
-  -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
-  -- prime `Q` has order its residue degree, which is `2`.
-  have horbit : orbit (K ≃ₐ[ℚ] K) Q = (span {(p : ℤ)}).primesOver (𝓞 K) :=
-    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q
-  rw [← (inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one hr htop hodd hcop Q).mpr hnr,
-    ← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
-    ← Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
-    ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
-    IsGalois.card_aut_eq_finrank]
+  rw [← (inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one hr htop hodd hcop Q).mpr hnr]
+  exact ncard_primesOver_mul_inertiaDeg_eq_finrank hr htop hodd hcop Q
 
 /-- **The number of primes above an odd prime with a non-residue radicand, explicitly.** Let `K`
 be generated over `ℚ` by square roots of `n` square-class independent integers `d i` (no nonempty
