@@ -233,10 +233,12 @@ private theorem reducedTotalLength :
 
 /-- Gebhardt's finite presentation of the Lyons sporadic group `Ly` on five generators.
 
-Section 3B of the source proves that these twenty-five relators define `Ly` by extending the
-presentations of `5^(1+4) : GL₂(5)` and `G₂(5)` through two double-coset enumerations. No
-structural property of the resulting `PresentedGroup` is asserted here; the definition records
-only the cited generators and relators. -/
+Section 3B of the source proves that the presentation it computed defines `Ly`, extending the
+presentations of `5^(1+4) : GL₂(5)` and `G₂(5)` through two double-coset enumerations. The
+relators stored here are the printed ones except in the fourth `R_G` relator, whose print is
+misprinted; the stored word there is the one selected by the permutation-model check described
+in the module docstring. No structural property of the resulting `PresentedGroup` is asserted
+here; the definition records only the generators and relators. -/
 def lyPresentation : GroupPresentation where
   generatorNames := ["a", "b", "c", "d", "z"]
   source := "V. Gebhardt, Two Short Presentations for Lyons' Sporadic Simple Group, \
