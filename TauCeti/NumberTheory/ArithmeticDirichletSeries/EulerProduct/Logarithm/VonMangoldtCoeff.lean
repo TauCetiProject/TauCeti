@@ -208,7 +208,7 @@ theorem vonMangoldt_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     refine D.vonMangoldt_eq_zero_of_not_isPrimePow fun h ↦ h.not_isUnit ?_
     simp
   | succ k =>
-    rw [← coe_idealPrimePowerOf_eq_primeIdealPow, vonMangoldt,
+    rw [← HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow, vonMangoldt,
       dite_eq_left (P.idealPrimePowerOf k).2]
     simp
 
@@ -223,7 +223,7 @@ theorem vonMangoldt_ofMultiplicativeIdealWeight (χ : MultiplicativeIdealWeight 
   · obtain ⟨⟨P, k⟩, hPk⟩ := idealPrimePowerEquiv.surjective (⟨A, hA⟩ : IdealPrimePower K)
     have hA' : A = P.primeIdealPow (k + 1) := by
       rw [HeightOneSpectrum.idealPrimePowerEquiv_apply] at hPk
-      rw [← coe_idealPrimePowerOf_eq_primeIdealPow, hPk]
+      rw [← HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow, hPk]
     have hP : Prime ((⟨P.asIdeal, mem_nonZeroDivisors_of_ne_zero P.ne_bot⟩ :
         (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) := Ideal.prime_of_isPrime P.ne_bot P.isPrime
     have hpow : P.primeIdealPow (k + 1) =
@@ -336,7 +336,8 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
     rintro ⟨P, k⟩ ⟨Q, l⟩ hPQ
     refine idealPrimePowerEquiv.injective (Subtype.ext ?_)
     rw [HeightOneSpectrum.idealPrimePowerEquiv_apply, HeightOneSpectrum.idealPrimePowerEquiv_apply,
-      coe_idealPrimePowerOf_eq_primeIdealPow, coe_idealPrimePowerOf_eq_primeIdealPow]
+      HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow,
+      HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow]
     exact hPQ
   refine (hg.summable_iff fun A hA ↦ ?_).mp ?_
   · rw [idealTerm_def, D.vonMangoldt_eq_zero_of_not_isPrimePow fun h ↦ hA ?_, zero_div]
@@ -344,7 +345,7 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
     refine ⟨(P, k), ?_⟩
     rw [HeightOneSpectrum.idealPrimePowerEquiv_apply] at hPk
     beta_reduce
-    rw [← coe_idealPrimePowerOf_eq_primeIdealPow, hPk]
+    rw [← HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow, hPk]
   refine Summable.of_norm ((summable_prod_of_nonneg fun _ ↦ norm_nonneg _).mpr ⟨fun P ↦ ?_, ?_⟩)
   · -- Each fibre converges by zero-freeness at `P`.
     have hloc := (summable_nat_add_iff 1).mpr
@@ -365,11 +366,11 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
         (hlog.congr fun I ↦ (Real.norm_of_nonneg (mul_nonneg (Real.log_natCast_nonneg _)
           (norm_nonneg _))).symm)).congr fun P ↦ tsum_congr fun e ↦ ?_
       rw [Real.norm_of_nonneg (mul_nonneg (Real.log_natCast_nonneg _) (norm_nonneg _)),
-        coe_idealPrimePowerOf_eq_primeIdealPow]
+        HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow]
     have htail : Filter.Tendsto (fun P : HeightOneSpectrum (𝓞 K) ↦ ∑' e : ℕ,
         ‖idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow (e + 1))‖)
         Filter.cofinite (nhds 0) := by
-      simpa only [coe_idealPrimePowerOf_eq_primeIdealPow] using
+      simpa only [HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow] using
         (summable_tsum_norm_idealPrimePowerOf (summable_norm_iff.mpr hssum)).tendsto_cofinite_zero
     refine (hB.mul_left 2).of_norm_bounded_eventually ?_
     filter_upwards [htail.eventually (ge_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2))] with P hP
@@ -409,7 +410,8 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
       sub_zero] at hloc
     rw [neg_mul, neg_neg, ← Complex.ofReal_natCast, ← Complex.ofReal_log (Nat.cast_nonneg _)]
     refine (hloc.mul_left _).congr_fun fun k ↦ ?_
-    rw [coe_idealPrimePowerOf_eq_primeIdealPow, idealTerm_vonMangoldt_primeIdealPow]
+    rw [HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow,
+      idealTerm_vonMangoldt_primeIdealPow]
   convert hsum.hasSum using 1
   rw [tsum_eq_tsum_idealPrimePower_of_support_subset hsum hsupp,
     tsum_congr fun P ↦ (hfib P).tsum_eq, tsum_neg,
