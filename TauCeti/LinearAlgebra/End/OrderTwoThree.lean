@@ -55,6 +55,10 @@ unnormalised form needs no invertibility where none is used.
 * `TauCeti.one_sub_mul_one_add_add_sq`: the ring identity
   `(1 - σ) (1 + υ + υ ^ 2) = (1 - υ σ) (-σ (1 + υ + υ ^ 2))` for `σ ^ 2 = 1` and `υ ^ 3 = 1`, and
   its mirror image `TauCeti.one_add_add_sq_mul_one_sub`, for right multiplications.
+* `TauCeti.one_sub_mul_one_add_of_sq_eq_one`, `TauCeti.one_add_mul_one_sub_of_sq_eq_one`,
+  `TauCeti.one_sub_mul_one_add_add_sq_of_pow_three_eq_one`,
+  `TauCeti.one_add_add_sq_mul_one_sub_of_pow_three_eq_one`: `(1 ∓ σ) (1 ± σ) = 0` for
+  `σ ^ 2 = 1`, and `(1 - υ) (1 + υ + υ ^ 2) = (1 + υ + υ ^ 2) (1 - υ) = 0` for `υ ^ 3 = 1`.
 * `TauCeti.End.range_one_add_eq_ker_one_sub`, `TauCeti.End.range_one_add_add_sq_eq_ker_one_sub`:
   the fixed vectors of `σ` and of `υ` are the ranges of `1 + σ` and of `1 + υ + υ ^ 2`. The
   inclusions `TauCeti.End.range_one_add_le_ker_one_sub` and
@@ -91,18 +95,21 @@ section Ring
 
 variable {A : Type*} [Ring A] {σ υ : A}
 
-private theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) * (1 + σ) = 0 := by
+/-- `(1 - σ) (1 + σ) = 0` for `σ ^ 2 = 1`. -/
+theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) * (1 + σ) = 0 := by
   linear_combination (norm := noncomm_ring) -hσ
 
 /-- `(1 + σ) (1 - σ) = 0` for `σ ^ 2 = 1`. -/
 theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 := by
   linear_combination (norm := noncomm_ring) -hσ
 
-private theorem one_sub_mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
+/-- `(1 - υ) (1 + υ + υ²) = 0` for `υ ^ 3 = 1`. -/
+theorem one_sub_mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
     (1 - υ) * (1 + υ + υ ^ 2) = 0 := by
   linear_combination (norm := noncomm_ring) -hυ
 
-private theorem one_add_add_sq_mul_one_sub_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
+/-- `(1 + υ + υ²) (1 - υ) = 0` for `υ ^ 3 = 1`. -/
+theorem one_add_add_sq_mul_one_sub_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
     (1 + υ + υ ^ 2) * (1 - υ) = 0 := by
   linear_combination (norm := noncomm_ring) -hυ
 

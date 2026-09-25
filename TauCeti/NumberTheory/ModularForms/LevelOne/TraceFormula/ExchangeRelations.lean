@@ -45,8 +45,8 @@ solution of both (A) and (B).
   multiplication.
 * `TauCeti.TraceFormulaMatrixModule.ExchangeRelations.mapDomain_orbitRel_mk_coeff_smul_op_smul`:
   they are constant on every double coset.
-* `TauCeti.TraceFormulaMatrixModule.PeriodRelation.one_add_S_mem_sup`,
-  `TauCeti.TraceFormulaMatrixModule.PeriodRelation.one_add_U_add_U_sq_mem_sup`: for `n ≠ 0`,
+* `TauCeti.TraceFormulaMatrixModule.PeriodRelation.one_add_S_apply_mem_sup`,
+  `TauCeti.TraceFormulaMatrixModule.PeriodRelation.one_add_U_add_U_sq_apply_mem_sup`: for `n ≠ 0`,
   every solution of the period relation (A) lies in `𝒜`.
 * `TauCeti.TraceFormulaMatrixModule.exists_periodRelation_and_exchangeRelations`: some
   `ξ ∈ ℛₙ` satisfies both (A) and (B).
@@ -204,8 +204,8 @@ private theorem PeriodRelation.apply_mem_sup [Invertible (2 : k)] [Invertible (3
 /-- **Solutions of (A) lie in `𝒜`, the relation for `S`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
 `3` invertible in `k`, if `ξ` satisfies the period relation (A), then
 `ξ (1 + S) ∈ (1 + S) k[ℳₙ] + (1 + U + U²) k[ℳₙ]`. -/
-theorem PeriodRelation.one_add_S_mem_sup [Invertible (2 : k)] [Invertible (3 : k)] (hn : n ≠ 0)
-    {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) :
+theorem PeriodRelation.one_add_S_apply_mem_sup [Invertible (2 : k)] [Invertible (3 : k)]
+    (hn : n ≠ 0) {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) :
     (1 + ρR (.op ↑S)) ξ ∈
       LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) :=
   -- on the right, `(1 + S) (1 - S) = 1 - S² = 0`
@@ -216,7 +216,7 @@ theorem PeriodRelation.one_add_S_mem_sup [Invertible (2 : k)] [Invertible (3 : k
 /-- **Solutions of (A) lie in `𝒜`, the relation for `U`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
 `3` invertible in `k`, if `ξ` satisfies the period relation (A), then
 `ξ (1 + U + U²) ∈ (1 + S) k[ℳₙ] + (1 + U + U²) k[ℳₙ]`. -/
-theorem PeriodRelation.one_add_U_add_U_sq_mem_sup [Invertible (2 : k)] [Invertible (3 : k)]
+theorem PeriodRelation.one_add_U_add_U_sq_apply_mem_sup [Invertible (2 : k)] [Invertible (3 : k)]
     (hn : n ≠ 0) {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) :
     (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) + ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 :
       Module.End k k[ℳ n]) ξ ∈
@@ -250,7 +250,7 @@ theorem exists_periodRelation_and_exchangeRelations [Invertible (2 : k)] [Invert
     (by simp) (hr <| (Commute.one_left _).add_left (commute_ofMulAction_one_add_add_sq _ _))
     (hr <| ((Commute.one_left _).add_left (commute_ofMulAction_one_add _ _)).add_left
       ((commute_ofMulAction_one_add _ _).pow_left 2))
-    (hξ.one_add_S_mem_sup hn) (hξ.one_add_U_add_U_sq_mem_sup hn)
+    (hξ.one_add_S_apply_mem_sup hn) (hξ.one_add_U_add_U_sq_apply_mem_sup hn)
   refine ⟨ξ - ι, sub_eq_add_neg ξ ι ▸ hξ.add ?_, h₁, h₂⟩
   exact map_neg (1 - ρL S) ι ▸ neg_mem ((one_sub_S_apply_mem_range_one_sub_T_iff hn).2 hι)
 
