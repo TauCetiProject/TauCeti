@@ -21,8 +21,8 @@ conjugations, and the complex Hodge components and the Hodge filtration of `V(m)
 of those of `V ⊗ ℤ(m)` along its inverse.
 
 Consequently the weight and filtration shift of `tateTwist` are those of `V ⊗ ℤ(m)`, the Hodge
-numbers of `V ⊗ ℤ(m)` are those of `V` translated by `m`, and the Hodge filtration of `ℤ(k + m)`
-is that of `ℤ(k) ⊗ ℤ(m)` along the right unitor `ℂ ⊗[ℂ] ℂ ≃ₗ[ℂ] ℂ`.
+numbers of `V ⊗ ℤ(m)` are those of `V` translated by `m`, and the Hodge components and filtration
+of `ℤ(k + m)` are those of `ℤ(k) ⊗ ℤ(m)` along the right unitor `ℂ ⊗[ℂ] ℂ ≃ₗ[ℂ] ℂ`.
 
 The convention follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1, and
 Peters–Steenbrink, *Mixed Hodge Structures*, §2.1. The comparison of components adapts the
@@ -37,8 +37,9 @@ decomposition argument of `TauCeti.Hodge.HodgeStructureOn.internalHom_piece_eq_c
   `V(m)` are the pullbacks of those of `V ⊗ ℤ(m)` along the inverse right unitor.
 * `TauCeti.Hodge.HodgeStructureOn.tensorProduct_tate_hodgeNumber`: the Hodge numbers of
   `V ⊗ ℤ(m)` are those of `V` shifted by `m`.
-* `TauCeti.Hodge.tate_add_F_eq_comap`: the Hodge filtration of `ℤ(k + m)` is the pullback of that
-  of `ℤ(k) ⊗ ℤ(m)` along the inverse right unitor.
+* `TauCeti.Hodge.tate_add_piece_eq_comap` and `TauCeti.Hodge.tate_add_F_eq_comap`: the Hodge
+  components and filtration of `ℤ(k + m)` are the pullbacks of those of `ℤ(k) ⊗ ℤ(m)` along the
+  inverse right unitor.
 -/
 
 public section
@@ -122,6 +123,17 @@ theorem tensorProduct_tate_hodgeNumber (hs : HodgeStructureOn W ω n) (m p : ℤ
     Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm, LinearEquiv.finrank_map_eq]
 
 end HodgeStructureOn
+
+/-- The Hodge components of the Tate structure `ℤ(k + m)` are the pullbacks of those of
+`ℤ(k) ⊗ ℤ(m)` along the inverse right unitor `ℂ ≃ₗ[ℂ] ℂ ⊗[ℂ] ℂ`. -/
+theorem tate_add_piece_eq_comap (k m p : ℤ) :
+    (tate (k + m)).piece p =
+      (((tate k).tensorProduct (tate m)).piece p).comap
+        (TensorProduct.rid ℂ ℂ).symm.toLinearMap := by
+  rw [← HodgeStructureOn.tateTwist_piece_eq_comap, HodgeStructureOn.tateTwist_piece,
+    tate_piece, tate_piece]
+  have hiff : p = -(k + m) ↔ p + m = -k := by omega
+  simp only [hiff]
 
 /-- The Hodge filtration of the Tate structure `ℤ(k + m)` is the pullback of that of
 `ℤ(k) ⊗ ℤ(m)` along the inverse right unitor `ℂ ≃ₗ[ℂ] ℂ ⊗[ℂ] ℂ`. -/
