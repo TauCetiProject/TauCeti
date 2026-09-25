@@ -48,7 +48,14 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 /-- Recut a rectangle followed by a pentagon when their unique common side is terminal for
 both, then promote the first new rectangle to a pentagon. This applies when the first recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is supplied
-as a hypothesis. -/
+as a hypothesis.
+
+The result is a `GridPentagonRectangleDecomposition` with:
+* `middle`: the middle rectangle of the underlying recut
+* `pentagon`: the first recut rectangle promoted to a pentagon via `GridPentagonBetween.ofRightEq`
+* `rectangle`: the second recut rectangle
+
+Use `.middle`, `.pentagon`, `.rectangle` projections to access the components. -/
 noncomputable def recutRightEqRightFirst
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -115,7 +122,14 @@ noncomputable def recutRightEqRightFirst
 /-- Recut a rectangle followed by a pentagon when their unique common side is terminal for
 both, then promote the second new rectangle to a pentagon. This applies when the second recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is supplied
-as a hypothesis. The result is a rectangle--pentagon decomposition. -/
+as a hypothesis. The result is a rectangle--pentagon decomposition.
+
+The result is a `GridRectanglePentagonDecomposition` with:
+* `middle`: the middle rectangle of the underlying recut
+* `rectangle`: the first recut rectangle
+* `pentagon`: the second recut rectangle promoted to a pentagon via `GridPentagonBetween.ofRightEq`
+
+Use `.middle`, `.rectangle`, `.pentagon` projections to access the components. -/
 noncomputable def recutRightEqRightSecond
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
