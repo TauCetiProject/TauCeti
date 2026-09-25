@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
 # Basic lemmas for the split even orthogonal Lie algebra
@@ -17,8 +18,6 @@ depend on a choice of Cartan subalgebra or root system.
 
 * `Matrix.fromBlocks_mem_typeD`: a block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split
   type-`D` Lie algebra when its off-diagonal blocks are skew-symmetric.
-* `Matrix.transpose_single_sub_single`: transposing the difference of two opposite matrix units
-  negates it.
 -/
 
 public section
@@ -26,14 +25,6 @@ public section
 namespace Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- Transposing the difference of two opposite matrix units negates it. -/
-theorem transpose_single_sub_single {K ι : Type*} [AddCommGroupWithOne K] [DecidableEq ι]
-    (i j : ι) :
-    (single i j (1 : K) - single j i 1).transpose =
-      -(single i j 1 - single j i 1) := by
-  simp only [transpose_sub, transpose_single]
-  abel
 
 /-- A block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split type-`D` Lie algebra when its
 off-diagonal blocks are skew-symmetric. -/

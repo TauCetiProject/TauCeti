@@ -55,7 +55,7 @@ variable {K ι : Type*} [DecidableEq ι]
 
 section Ambient
 
-variable [AddCommGroupWithOne K]
+variable [AddGroupWithOne K]
 
 /-- The ambient root matrix of weight `εᵢ - εⱼ`. -/
 def differenceRootMatrix (i j : ι) : Matrix (ι ⊕ ι) (ι ⊕ ι) K :=
