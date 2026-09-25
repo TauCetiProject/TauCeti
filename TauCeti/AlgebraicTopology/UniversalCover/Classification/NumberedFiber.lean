@@ -79,8 +79,6 @@ positive degree.
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
   §2.7 (the monodromy of a cover is well defined up to the numbering of the fibre).
-* [BelyiMaps roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/BelyiMaps/README.md),
-  Layers 6.1 and 6.3 (the three cover carriers, isomorphism relations, and class quotients).
 -/
 
 public section
@@ -153,18 +151,29 @@ private theorem coe_fiberEquiv_apply {p q : ConnectedCoveringSpace X} (f : p ≅
     (e : ⇑p.proj ⁻¹' {x}) : (fiberEquiv f e : (q : TopCat)) = f.hom.hom.left e.1 :=
   rfl
 
-/- The following three `change` steps expose the total-space map inside the cover-category
-wrappers. `coe_fiberEquiv_apply` removes the fibre-map wrapper first; the identity and composition
-laws then apply to the underlying cover morphisms. -/
+/- The pointwise laws isolate how the cover-category wrappers act on total-space points. -/
+private theorem coverMap_id_apply (p : ConnectedCoveringSpace X) (e : (p : TopCat)) :
+    (Iso.refl p).hom.hom.left e = e :=
+  rfl
+
+private theorem coverMap_comp_apply {p q r : ConnectedCoveringSpace X}
+    (f : p ⟶ q) (g : q ⟶ r) (e : (p : TopCat)) :
+    (f ≫ g).hom.left e = g.hom.left (f.hom.left e) :=
+  rfl
+
+private theorem coverMap_inv_apply {p q : ConnectedCoveringSpace X}
+    (f : p ≅ q) (e : (q : TopCat)) :
+    f.hom.hom.left (f.inv.hom.left e) = e := by
+  rw [← coverMap_comp_apply f.inv f.hom e, f.inv_hom_id]
+  exact coverMap_id_apply q e
+
 private theorem fiberEquiv_refl (p : ConnectedCoveringSpace X) :
     fiberEquiv (x := x) (Iso.refl p) = Equiv.refl _ := by
   apply Equiv.ext
   intro e
   apply Subtype.ext
   rw [coe_fiberEquiv_apply]
-  -- The identity cover morphism acts as the identity on its total space.
-  change (Iso.refl p).hom.hom.left e.1 = e.1
-  simp
+  exact coverMap_id_apply p e.1
 
 private theorem fiberEquiv_symm {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
     fiberEquiv (x := x) f.symm = (fiberEquiv f).symm := by
@@ -174,10 +183,7 @@ private theorem fiberEquiv_symm {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
   rw [Equiv.apply_symm_apply]
   apply Subtype.ext
   rw [coe_fiberEquiv_apply, coe_fiberEquiv_apply]
-  -- The composite of inverse cover morphisms is the identity morphism.
-  change (f.inv ≫ f.hom).hom.left e.1 = e.1
-  rw [f.inv_hom_id]
-  rfl
+  exact coverMap_inv_apply f e.1
 
 private theorem fiberEquiv_trans {p q r : ConnectedCoveringSpace X} (f : p ≅ q) (g : q ≅ r) :
     fiberEquiv (x := x) (f ≪≫ g) = (fiberEquiv f).trans (fiberEquiv g) := by
@@ -186,9 +192,7 @@ private theorem fiberEquiv_trans {p q r : ConnectedCoveringSpace X} (f : p ≅ q
   apply Subtype.ext
   rw [coe_fiberEquiv_apply, Equiv.trans_apply, coe_fiberEquiv_apply,
     coe_fiberEquiv_apply]
-  -- Composition in the cover category composes the underlying total-space maps.
-  change (f.hom ≫ g.hom).hom.left e.1 = g.hom.hom.left (f.hom.hom.left e.1)
-  rfl
+  exact coverMap_comp_apply f.hom g.hom e.1
 
 /-! ### Isomorphisms -/
 
