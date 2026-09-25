@@ -74,7 +74,7 @@ variable {p : ℕ}
 
 section ToDual
 
-variable [NeZero p] {W : Type u} [CommGroup W] [TopologicalSpace W]
+variable {W : Type u} [CommGroup W] [TopologicalSpace W]
   [Module (ZMod p) (Additive W)]
 
 /-- A continuous `𝔽_p`-valued character of an elementary abelian group `W`, read as a linear

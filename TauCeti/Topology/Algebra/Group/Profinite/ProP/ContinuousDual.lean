@@ -74,7 +74,7 @@ abbrev continuousFpDual (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : 
 
 /-- The continuous `ZMod n`-valued characters form a `ZMod n`-module: the target has exponent
 dividing `n`, hence so does the character group. -/
-instance instModuleContinuousFpDual [NeZero n] : Module (ZMod n) (continuousFpDual n G) :=
+instance instModuleContinuousFpDual : Module (ZMod n) (continuousFpDual n G) :=
   AddCommGroup.zmodModule fun x ↦ by
     apply Additive.toMul.injective
     rw [toMul_nsmul, toMul_zero]
