@@ -87,10 +87,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       hf.localInverse.toOpenPartialHomeomorph) x).symm
   have hlocalInverse_toPartialEquiv (x : G) :
       hf.localInverse.toPartialEquiv x = hf.localInverse x := by
-    have hcoe := congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
-      hf.localInverse.toOpenPartialHomeomorph) x
-    change hf.localInverse.toPartialEquiv x = hf.localInverse x at hcoe
-    exact hcoe
+    rfl
   have hΦ₀_source : (1 : G) ∈ Φ₀.source := by
     rw [hΦ₀_source_eq]
     simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source
