@@ -181,7 +181,7 @@ inclusion of the off-center complex into `GC⁻(G')`. -/
 
 /-- On center states, `stabilizeXMap` vanishes. The first factor includes the center summand
 of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
-theorem map_centerInclusion_comp_stabilizeXMap :
+@[simp] theorem map_centerInclusion_comp_stabilizeXMap :
     (ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         (homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
