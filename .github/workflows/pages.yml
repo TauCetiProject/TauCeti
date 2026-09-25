@@ -1002,10 +1002,14 @@ jobs:
     # Measured rather than reasoned: a probe workflow with this graph skips the dependent job,
     # and adding `!cancelled()` makes it run, with everything else held fixed.
     #
-    # The guard that matters is kept and tightened: advance only when build-site itself
-    # succeeded, so the published site is the one it produced, and only when it read a valid
-    # SOURCE_SHA out of the tree it deployed.
-    if: ${{ !cancelled() && needs.build-site.result == 'success'
+    # Dropping the implicit `success()` drops it for BOTH needs, so each one it was doing a
+    # job for is restored by hand. `deploy` must have succeeded, or a run whose Pages
+    # deployment failed would move the branch onto documentation that was never published --
+    # the failure mode this job exists to prevent, inverted. `build-site` must have succeeded
+    # too, so the published site is the one it produced rather than a fallback restore, and its
+    # SOURCE_SHA must be the one it read out of the tree it deployed.
+    if: ${{ !cancelled()
+        && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
