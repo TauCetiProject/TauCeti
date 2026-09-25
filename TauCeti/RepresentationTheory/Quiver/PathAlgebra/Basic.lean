@@ -87,8 +87,9 @@ structure chosen internally by `Fintype.ofFinite`; the unital instances therefor
 
 ## References
 
-Assem--Simson--Skowroński,
-*Elements of the Representation Theory of Associative Algebras I*, Ch. II.
+This file implements the path-algebra part of Layer 0 of
+`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
+Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
 public section
