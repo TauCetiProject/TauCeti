@@ -101,6 +101,22 @@ theorem le_geom_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b q α : ℝ} (hY : 
             exact pow_le_one₀ (mul_nonneg hb (Real.rpow_nonneg hq _)) hbq
         _ = q ^ (n + 1) * Y 0 := by ring
 
+private theorem rpow_neg_inv_pow_ratio_conditions {Y : ℕ → ℝ} {C b α : ℝ}
+    (hY : ∀ n, 0 ≤ Y n) (hC : 0 < C) (hb : 0 < b) (hα : 0 < α)
+    (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) :
+    b * (b ^ (-α⁻¹)) ^ α ≤ 1 ∧ C * Y 0 ^ α ≤ b ^ (-α⁻¹) := by
+  have e1 : -α⁻¹ * α = -1 := by field_simp
+  have e2 : -(α ^ 2)⁻¹ * α = -α⁻¹ := by field_simp
+  constructor
+  · rw [← Real.rpow_mul hb.le, e1, Real.rpow_neg_one, mul_inv_cancel₀ hb.ne']
+  · calc C * Y 0 ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by
+          gcongr
+          exact hY 0
+      _ = b ^ (-α⁻¹) := by
+          rw [Real.mul_rpow (Real.rpow_nonneg hC.le _) (Real.rpow_nonneg hb.le _),
+            ← Real.rpow_mul hC.le, ← Real.rpow_mul hb.le, e1, e2, Real.rpow_neg_one,
+            mul_inv_cancel_left₀ hC.ne']
+
 /-- **Geometric bound, classical threshold.** Let `Y` be a nonnegative sequence with
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
@@ -112,19 +128,8 @@ theorem le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α
     (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹))
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) (n : ℕ) :
     Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0 := by
-  have e1 : -α⁻¹ * α = -1 := by field_simp
-  have e2 : -(α ^ 2)⁻¹ * α = -α⁻¹ := by field_simp
-  refine le_geom_of_le_mul_pow_mul_rpow hY hb.le (Real.rpow_nonneg hb.le _) hα.le ?_ ?_ hrec n
-  · -- The ratio `b ^ (-α⁻¹)` is exactly the one with `b * (b ^ (-α⁻¹)) ^ α = 1`.
-    rw [← Real.rpow_mul hb.le, e1, Real.rpow_neg_one, mul_inv_cancel₀ hb.ne']
-  · -- Raise the threshold to the power `α`.
-    calc C * Y 0 ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by
-          gcongr
-          exact hY 0
-      _ = b ^ (-α⁻¹) := by
-          rw [Real.mul_rpow (Real.rpow_nonneg hC.le _) (Real.rpow_nonneg hb.le _),
-            ← Real.rpow_mul hC.le, ← Real.rpow_mul hb.le, e1, e2, Real.rpow_neg_one,
-            mul_inv_cancel_left₀ hC.ne']
+  obtain ⟨hbq, hq⟩ := rpow_neg_inv_pow_ratio_conditions hY hC hb hα h0
+  exact le_geom_of_le_mul_pow_mul_rpow hY hb.le (Real.rpow_nonneg hb.le _) hα.le hbq hq hrec n
 
 /-- **Convergence to zero from a geometric bound.** If the ratio `q` in
 `le_geom_of_le_mul_pow_mul_rpow` is less than one, then `Y n → 0`. -/
@@ -151,11 +156,9 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
     Tendsto Y atTop (𝓝 0) := by
   have hq : b ^ (-α⁻¹) < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg hb (neg_lt_zero.mpr (inv_pos.mpr hα))
-  have hlim : Tendsto (fun n : ℕ => (b ^ (-α⁻¹)) ^ n * Y 0) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
-      (Real.rpow_nonneg (zero_lt_one.trans hb).le _) hq).mul_const (Y 0)
-  exact squeeze_zero hY
-    (le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow hY hC (zero_lt_one.trans hb) hα h0 hrec)
-    hlim
+  obtain ⟨hbq, hq0⟩ :=
+    rpow_neg_inv_pow_ratio_conditions hY hC (zero_lt_one.trans hb) hα h0
+  exact tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (zero_lt_one.trans hb).le
+    (Real.rpow_nonneg (zero_lt_one.trans hb).le _) hq hα.le hbq hq0 hrec
 
 end TauCeti
