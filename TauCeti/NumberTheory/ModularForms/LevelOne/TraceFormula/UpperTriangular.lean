@@ -77,6 +77,11 @@ theorem mk_mem_upperTriangularReps {A : TraceFormulaMatrix n} :
     mk A ∈ upperTriangularReps n ↔ A ∈ FixedDetMatrices.reps n ∨ -A ∈ FixedDetMatrices.reps n := by
   simp [mem_upperTriangularReps, and_or_left, exists_or]
 
+/-- `ℳ₀^∞` is empty: there are no upper-triangular representatives of determinant `0`. -/
+@[simp]
+theorem upperTriangularReps_zero : upperTriangularReps 0 = ∅ := by
+  simp [upperTriangularReps]
+
 /-- Distinct upper-triangular representatives have distinct projective classes. -/
 theorem mk_injOn_reps : Set.InjOn (mk (n := n)) (FixedDetMatrices.reps n) := by
   intro A hA B hB h
