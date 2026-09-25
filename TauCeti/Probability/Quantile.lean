@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.MeasureTheory.Measure.Stieltjes
-public import Mathlib.Probability.CDF
-public import Mathlib.Topology.Order.LeftRightLim
+public import TauCeti.MeasureTheory.Measure.MeasurePreserving
+public import TauCeti.Probability.Cdf
 
 /-!
 # The quantile function of a real law
@@ -224,22 +222,6 @@ theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] 
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
 
-/-- **CDF continuity from null singletons.** The cumulative distribution function of a
-probability measure on `ℝ` is continuous when every singleton has measure zero. -/
-private theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NullSingletonClass ν] : Continuous (cdf ν) := by
-  have hleft : ∀ x, leftLim (cdf ν) x = cdf ν x := by
-    intro x
-    have hsing : (cdf ν).measure {x} = 0 := by rw [measure_cdf]; exact measure_singleton x
-    rw [StieltjesFunction.measure_singleton] at hsing
-    have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
-    have hz : cdf ν x - leftLim (cdf ν) x ≤ 0 := ENNReal.ofReal_eq_zero.mp hsing
-    exact le_antisymm hle (by linarith)
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
-    ((cdf ν).right_continuous x).rightLim_eq]
-
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/
 private lemma cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν]
@@ -286,6 +268,7 @@ private lemma cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] 
 
 /-- **The probability integral transform.** The CDF of an atomless probability measure on
 `ℝ` pushes the measure forward to Lebesgue measure restricted to `[0, 1]`. -/
+@[simp]
 theorem cdf_map_eq_volume_restrict (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] :
     Measure.map (cdf ν) ν = volume.restrict (Set.Icc (0 : ℝ) 1) := by
@@ -310,43 +293,6 @@ theorem cdf_map_eq_volume_restrict (ν : Measure ℝ) [IsProbabilityMeasure ν]
       simp only [mem_inter_iff, mem_Iic, mem_Icc, and_iff_right_iff_imp]
       rintro ⟨_, hx1⟩; exact le_trans hx1 hy1
     rw [hset, hrset, measure_univ, Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
-
--- A measure-preserving real endomap bounded above by the identity is a.e. the identity.
-private theorem ae_eq_id_of_measurePreserving_of_le {f : ℝ → ℝ} {μ : Measure ℝ}
-    (hf : Measurable f) [IsFiniteMeasure μ] (hmap : Measure.map f μ = μ)
-    (hle : ∀ᵐ x ∂μ, f x ≤ x) : f =ᵐ[μ] id := by
-  have habs : ∀ y : ℝ, ‖Real.arctan y‖ ≤ Real.pi / 2 := fun y => by
-    rw [Real.norm_eq_abs, abs_le]
-    exact ⟨le_of_lt (Real.neg_pi_div_two_lt_arctan y),
-      le_of_lt (Real.arctan_lt_pi_div_two y)⟩
-  have hfint : Integrable (fun x => Real.arctan (f x)) μ :=
-    Integrable.of_bound
-      ((Real.continuous_arctan.measurable.comp hf).aestronglyMeasurable)
-      (Real.pi / 2) (Filter.Eventually.of_forall (fun x => habs _))
-  have hidint : Integrable (fun x => Real.arctan x) μ :=
-    Integrable.of_bound Real.continuous_arctan.aestronglyMeasurable (Real.pi / 2)
-      (Filter.Eventually.of_forall (fun x => habs x))
-  have hint : ∫ x, Real.arctan (f x) ∂μ = ∫ x, Real.arctan x ∂μ := by
-    have hm := integral_map (μ := μ) (φ := f)
-      (f := fun x => Real.arctan x) hf.aemeasurable
-      Real.continuous_arctan.aestronglyMeasurable
-    rw [hmap] at hm
-    rw [← hm]
-  have hmono : ∀ᵐ x ∂μ, Real.arctan (f x) ≤ Real.arctan x := by
-    filter_upwards [hle] with x hx
-    exact Real.arctan_strictMono.monotone hx
-  have hnonneg : 0 ≤ᵐ[μ] (fun x => Real.arctan x - Real.arctan (f x)) := by
-    filter_upwards [hmono] with x hx
-    simp only [Pi.zero_apply]
-    linarith
-  have hzero : ∫ x, (Real.arctan x - Real.arctan (f x)) ∂μ = 0 := by
-    rw [integral_sub hidint hfint, hint, sub_self]
-  have hvanish := (integral_eq_zero_iff_of_nonneg_ae hnonneg (hidint.sub hfint)).mp hzero
-  filter_upwards [hvanish] with x hx
-  have heq : Real.arctan (f x) = Real.arctan x := by
-    simp only [Pi.zero_apply] at hx
-    linarith
-  exact Real.arctan_injective heq
 
 /-- On the closed unit interval, the CDF and quantile are inverse almost everywhere. -/
 theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν] :
