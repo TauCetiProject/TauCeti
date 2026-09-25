@@ -269,14 +269,15 @@ theorem cohomologyMap_mem_cohomologyGrading_piece (f : AInfinityHom AA BB) {p : 
 algebras. -/
 noncomputable def cohomologyStrictHom (f : AInfinityHom AA BB) :
     AInfinityStrictHom AA.cohomologyAInfinityAlgebra BB.cohomologyAInfinityAlgebra :=
-  AInfinityAlgebra.cohomologyStrictHom f.cohomologyMap f.cohomologyMap_mem_cohomologyGrading_piece
+  NonUnitalAlgHom.cohomologyStrictHom f.cohomologyMap
+    f.cohomologyMap_mem_cohomologyGrading_piece
 
 /-- The strict morphism of cohomology `A∞` algebras induced by `f` is the map induced on
 cohomology. -/
 @[simp]
 theorem coe_cohomologyStrictHom (f : AInfinityHom AA BB) :
     ⇑f.cohomologyStrictHom = f.cohomologyMap :=
-  AInfinityAlgebra.coe_cohomologyStrictHom _ _
+  NonUnitalAlgHom.coe_cohomologyStrictHom _ _
 
 /-- Passage to cohomology sends the identity `A∞` morphism to the identity. -/
 @[simp]
@@ -412,13 +413,13 @@ theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : �
 morphism in the backward direction, inverse to the map induced on cohomology. -/
 noncomputable def cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     AInfinityStrictHom BB.cohomologyAInfinityAlgebra AA.cohomologyAInfinityAlgebra :=
-  AInfinityAlgebra.cohomologyStrictHom hf.cohomologyMapInv (hf.cohomologyMapInv_mem)
+  NonUnitalAlgHom.cohomologyStrictHom hf.cohomologyMapInv (hf.cohomologyMapInv_mem)
 
 /-- The inverse strict morphism acts by the inverse cohomology map. -/
 @[simp]
 theorem coe_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     ⇑hf.cohomologyStrictHomInv = hf.cohomologyMapInv :=
-  AInfinityAlgebra.coe_cohomologyStrictHom _ _
+  NonUnitalAlgHom.coe_cohomologyStrictHom _ _
 
 /-- The inverse strict cohomology morphism is a left inverse to the induced strict morphism. -/
 @[simp]
@@ -453,24 +454,15 @@ private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
     ext x
     simp only [Submodule.mem_top, AInfinityAlgebra.mem_cycles,
       AA.cohomologyAInfinityAlgebra_m_one_apply]
-  have hboundaries : AA.cohomologyAInfinityAlgebra.boundariesInCycles = ⊥ := by
-    apply le_antisymm _ bot_le
-    intro x hx
-    apply Subtype.ext
-    have hx' := (AA.cohomologyAInfinityAlgebra.mem_boundariesInCycles).1 hx
-    obtain ⟨y, hy⟩ := (AA.cohomologyAInfinityAlgebra.mem_boundaries).1 hx'
-    rw [AA.cohomologyAInfinityAlgebra_m_one_apply] at hy
-    exact hy.symm
-  let e := AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
-    hcycles hboundaries
+  let e := AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTop hcycles
   have hx (x : AA.Cohomology) : x ∈ AA.cohomologyAInfinityAlgebra.cycles := by
     simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply]
   have heq : (fun x : AA.Cohomology =>
       AA.cohomologyAInfinityAlgebra.cohomologyClass (hx x)) =
       ⇑e := by
     funext x
-    exact (AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
-      hcycles hboundaries x (hx x)).symm
+    exact (AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTop_apply
+      hcycles x (hx x)).symm
   rw [heq]
   exact e.bijective
 
@@ -492,7 +484,7 @@ theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQua
     congr 1
     simp only [AInfinityStrictHom.linearPart_toAInfinityHom,
       AInfinityStrictHom.coe_toLinearMap, cohomologyStrictHomInv,
-      AInfinityAlgebra.coe_cohomologyStrictHom]
+      NonUnitalAlgHom.coe_cohomologyStrictHom]
   apply (Function.Bijective.of_comp_iff _ hB).1
   rw [hcomm]
   exact hA.comp hf.cohomologyLinearEquiv.symm.bijective

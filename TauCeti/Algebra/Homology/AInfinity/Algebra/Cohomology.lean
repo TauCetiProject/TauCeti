@@ -43,8 +43,8 @@ strict morphisms of these `A∞` algebras.
 * `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
 * `TauCeti.AInfinityAlgebra.cohomologyClassLinearMap`: the quotient map from cycles to cohomology.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
-* `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot`: the class-map
-  equivalence when all elements are cycles and boundaries vanish.
+* `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTop`: the class-map equivalence when all
+  elements are cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
 * `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
@@ -54,7 +54,7 @@ strict morphisms of these `A∞` algebras.
   classes of homogeneous cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
   only nonzero operation is `m₂`.
-* `TauCeti.AInfinityAlgebra.cohomologyStrictHom`: a degree-preserving morphism of cohomology
+* `TauCeti.NonUnitalAlgHom.cohomologyStrictHom`: a degree-preserving morphism of cohomology
   algebras as a strict morphism of the cohomology `A∞` algebras.
 
 ## Main results
@@ -190,22 +190,30 @@ through which maps out of cohomology are built by the universal property of the 
 theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
 
-/-- If every element is a cycle and boundaries inside cycles are trivial, the class map is a
-linear equivalence with cohomology. -/
-noncomputable def cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
-    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
-    (hboundaries : 𝒜.boundariesInCycles = ⊥) : A ≃ₗ[R] 𝒜.Cohomology :=
+/-- If every element is a cycle, the differential and hence the boundaries vanish, so the class
+map is a linear equivalence with cohomology. -/
+noncomputable def cohomologyEquivOfCyclesEqTop
+    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤) : A ≃ₗ[R] 𝒜.Cohomology := by
+  have hd : 𝒜.differential = 0 := LinearMap.ker_eq_top.mp (𝒜.cycles_def ▸ hcycles)
+  have hboundaries : 𝒜.boundariesInCycles = ⊥ := by
+    apply le_antisymm _ bot_le
+    intro x hx
+    apply Subtype.ext
+    have hx' := (𝒜.mem_boundariesInCycles).mp hx
+    rw [boundaries_def, hd] at hx'
+    simpa using hx'
+  exact
   (LinearEquiv.ofTop 𝒜.cycles hcycles).symm ≪≫ₗ
     (Submodule.quotEquivOfEqBot _ hboundaries).symm
 
 /-- The equivalence for trivial differential sends an element to its cohomology class. -/
 @[simp]
-theorem cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
+theorem cohomologyEquivOfCyclesEqTop_apply
     (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
-    (hboundaries : 𝒜.boundariesInCycles = ⊥) (x : A) (hx : x ∈ 𝒜.cycles) :
-    𝒜.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot hcycles hboundaries x =
+    (x : A) (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyEquivOfCyclesEqTop hcycles x =
       𝒜.cohomologyClass hx := by
-  rw [cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot, LinearEquiv.trans_apply,
+  rw [cohomologyEquivOfCyclesEqTop, LinearEquiv.trans_apply,
     LinearEquiv.ofTop_symm_apply, Submodule.quotEquivOfEqBot_symm_apply,
     cohomologyClass_eq_mk]
 
@@ -489,7 +497,14 @@ theorem cohomologyAInfinityAlgebra_m_add_three (𝒜 : AInfinityAlgebra R A) (n 
     𝒜.cohomologyAInfinityAlgebra.m (n + 3) = 0 :=
   𝒜.cohomologyAInfinityAlgebra_m_of_three_le (by omega)
 
-variable {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
+end AInfinity
+
+end AInfinityAlgebra
+
+namespace NonUnitalAlgHom
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+  {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
   {ℬ : AInfinityAlgebra R B}
 
 /-- A degree-preserving morphism between cohomology algebras is a strict morphism between the
@@ -511,8 +526,6 @@ theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomolog
     ⇑(cohomologyStrictHom φ hφ) = φ :=
   NonUnitalDGAlgHom.coe_toAInfinityStrictHom _
 
-end AInfinity
-
-end AInfinityAlgebra
+end NonUnitalAlgHom
 
 end TauCeti
