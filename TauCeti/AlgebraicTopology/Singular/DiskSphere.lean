@@ -75,7 +75,7 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
     infer_instance
   let hq : IsIso (TopCat.singularHomology₀ε (TopCat.diskBoundary n : TopCat.{w}) R) := by
     let _ : PathConnectedSpace (TopCat.diskBoundary n : TopCat.{w}) :=
-      TauCeti.TopCat.diskBoundary_isPathConnected hn
+      TauCeti.TopCat.pathConnectedSpace_diskBoundary hn
     infer_instance
   let hcomp : IsIso
       (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map i ≫

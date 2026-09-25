@@ -39,7 +39,7 @@ instance contractibleSpace_disk (n : ℕ) :
   exact h.contractibleSpace_iff.mpr hX
 
 /-- The boundary of the `n`-dimensional disk is path-connected when `n ≥ 2`. -/
-lemma diskBoundary_isPathConnected {n : ℕ} (hn : 2 ≤ n) :
+lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
     PathConnectedSpace (TopCat.diskBoundary n) := by
   -- The `TopCat` carrier is the lift of the metric sphere.
   change PathConnectedSpace (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
