@@ -69,10 +69,6 @@ instance : (linearYonedaFunctor (α := α) k Y).Additive :=
 
 /-- `Hom(-, Y)` takes a chain homotopy between two chain maps `φ, ψ : X ⟶ X'` to a cochain
 homotopy between the two maps `Hom(X', Y) ⟶ Hom(X, Y)` obtained by precomposition. -/
--- `@[expose]` is mandated by the module system: the characteristic lemma
--- `Homotopy.linearYonedaFunctorMap_hom_apply` below reads off the components of this homotopy,
--- and an exported statement may unfold only exposed definitions.
-@[expose]
 noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
     (h : Homotopy φ ψ) :
     Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
@@ -83,7 +79,7 @@ noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C 
 lemma _root_.Homotopy.linearYonedaFunctorMap_hom_apply {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
     (h : Homotopy φ ψ) (i j : α) (g : (X'.linearYonedaObj k Y).X i) :
     ConcreteCategory.hom (X := (X'.linearYonedaObj k Y).X i) (Y := (X.linearYonedaObj k Y).X j)
-      ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := rfl
+      ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := (rfl)
 
 /-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
 complexes which is split in each degree to a short exact sequence
