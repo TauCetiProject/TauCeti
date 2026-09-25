@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Subword
+public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
 
 /-!
 # The identity Bruhat cell is disjoint from the other cells
