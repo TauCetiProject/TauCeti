@@ -150,7 +150,12 @@ private lemma not_intersection_pos_zero (hc : T.IsSelfIntersectionMinusTwoChain 
     {x : T.Component} (hxS : x ∈ S) (hx_ne : ∀ i < t, x ≠ c i)
     (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) :
     ¬ 0 < T.intersection (c 0) x := fun hpos ↦ by
-  have := hmax _ _ (hc.cons hx_ne hx_self (by rwa [T.intersection_comm]))
+  have ht : 0 < t := by
+    have hzero : T.IsSelfIntersectionMinusTwoChain 0 fun _ ↦ x := ⟨by omega, by omega, by omega⟩
+    have := hmax _ _ (hzero.cons (by omega) hx_self (by omega)) fun _ _ ↦ by
+      split_ifs <;> exact hxS
+    omega
+  have := hmax _ _ (hc.cons hx_ne hx_self (fun _ ↦ by rwa [T.intersection_comm]))
     fun i hi ↦ by split_ifs; exacts [hxS, hcS _ (by omega)]
   omega
 
@@ -181,9 +186,9 @@ private lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain
     (hxy : 0 < T.intersection x y) : 2 ≤ r := by
   have hright := hmax _ _
     (((hc.shift (r := r) (s := t - r) (by omega)).cons (fun i hi ↦ hx_ne _ (by omega))
-      hx_self (by simpa [T.intersection_comm] using hx)).cons
+      hx_self (fun _ ↦ by simpa [T.intersection_comm] using hx)).cons
       (fun i hi ↦ by split_ifs; exacts [hyx, hy_ne _ (by omega)])
-      hy_self (by simpa [T.intersection_comm] using hxy))
+      hy_self (fun _ ↦ by simpa [T.intersection_comm] using hxy))
     fun i hi ↦ by split_ifs; exacts [hyS, hxS, hcS _ (by omega)]
   omega
 

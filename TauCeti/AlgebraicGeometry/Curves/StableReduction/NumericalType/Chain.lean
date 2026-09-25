@@ -145,11 +145,11 @@ lemma reverse (hc : T.IsSelfIntersectionMinusTwoChain t c) :
     rw [T.intersection_comm]
     exact hc.intersection_pos (by omega) (by omega)
 
-/-- Prepending a component of self-intersection `-2w` which is not in a chain and meets its first
-component gives a chain one component longer. -/
+/-- Prepending a component of self-intersection `-2w` which is not in a chain and, when the chain
+is nonempty, meets its first component gives a chain one component longer. -/
 lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
     (hx_ne : ∀ i < t, x ≠ c i) (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
-    (hx_pos : 0 < T.intersection x (c 0)) :
+    (hx_pos : 0 < t → 0 < T.intersection x (c 0)) :
     T.IsSelfIntersectionMinusTwoChain (t + 1) fun i ↦ if i = 0 then x else c (i - 1) where
   injOn i hi j hj h := by
     rcases Nat.eq_zero_or_pos i with rfl | hi0 <;> rcases Nat.eq_zero_or_pos j with rfl | hj0
@@ -167,7 +167,7 @@ lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
     · simpa only [hi0.ne', ↓reduceIte] using hc.intersection_self (i - 1) (by omega)
   intersection_succ_pos i hi := by
     rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · simpa using hx_pos
+    · simpa using hx_pos (by omega)
     · simpa only [hi0.ne', Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel] using
         hc.intersection_pos (i := i - 1) (by omega) (by omega)
 
@@ -447,6 +447,7 @@ lemma eq_of_intersection_pos {t : ℕ} {c : ℕ → T.Component}
   -- `x, c s, c (s - 1), …, c r` is a chain whose two ends meet.
   have hd := ((hc.shift (r := r) (s := s - r + 1) (by omega)).reverse).cons
     (fun i hi ↦ hx_ne _ (by omega)) hx_self (by
+      intro _
       rw [T.intersection_comm]
       -- The last position of the shifted block is position `s` in the original chain.
       simpa [show r + (s - r) = s by omega] using hsx)
