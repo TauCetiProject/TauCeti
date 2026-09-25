@@ -38,7 +38,7 @@ variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
 /-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
 additive group. -/
 noncomputable def pontryaginMeasureTransform
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] (g : G) : ℂ :=
+    (μ : Measure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ
 
 /-- At the identity, the transform records the total mass of the measure. -/
