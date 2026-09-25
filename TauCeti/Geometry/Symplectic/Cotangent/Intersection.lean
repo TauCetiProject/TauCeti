@@ -11,10 +11,11 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 /-!
 # Intersections of the zero section with differential graphs
 
-In a linear cotangent space, the zero section meets the graph of `df` precisely at the critical
-points of `f`. At such a point the two tangent spaces are complementary exactly when the Hessian
-is invertible. These are the intersection-point and transversality identifications used when
-comparing Morse theory with the exact Floer theory of a zero section and differential graph.
+In a linear cotangent space, for differentiable `f`, the zero section meets the graph of `df`
+precisely at the critical points of `f`. At a point where `f` and `df` are differentiable, the two
+tangent spaces are complementary exactly when the Hessian is invertible. These identifications
+are used when comparing Morse theory with the exact Floer theory of a zero section and
+differential graph.
 
 The statements use the continuous dual, as does the Liouville form on the normed cotangent model.
 Transversality is the complementarity of the tangent subspaces in the product vector space. In
@@ -40,9 +41,10 @@ coordinate vanishes. -/
     z ∈ strongDualCotangentZeroSection ↔ z.2 = 0 := by
   simp [strongDualCotangentZeroSection, LinearMap.range_inl]
 
-/-- Intersection points of the zero section and differential graph, expressed as a set of pairs,
-are precisely the critical points with their zero cotangent covectors. -/
-theorem strongDualCotangentZeroSection_inter_differential_graph (f : V → ℝ) :
+/-- For differentiable `f`, intersection points of the zero section and differential graph,
+expressed as a set of pairs, are precisely the critical points with zero cotangent covectors. -/
+theorem strongDualCotangentZeroSection_inter_differential_graph (f : V → ℝ)
+    (_hf : Differentiable ℝ f) :
     strongDualCotangentZeroSection.carrier ∩
       Set.range (fun x : V ↦ (x, fderiv ℝ f x)) =
         (fun x : V ↦ (x, (0 : StrongDual ℝ V))) '' {x | fderiv ℝ f x = 0} := by
@@ -106,11 +108,12 @@ theorem isCompl_strongDualCotangentZeroSection_graph_iff
     codisjoint_strongDualCotangentZeroSection_graph_iff]
   rfl
 
-/-- The zero section is transverse to the tangent of the graph of `df` at `x` exactly when the
-Hessian is invertible. The second derivative is viewed as a map into the continuous dual. -/
+/-- When `f` and `df` are differentiable at `x`, the zero section is transverse to the tangent of
+the graph of `df` exactly when the Hessian is invertible. The second derivative is viewed as a map
+into the continuous dual. -/
 theorem isCompl_strongDualCotangentZeroSection_range_fderiv_differential_graph_iff
     [FiniteDimensional ℝ V] {f : V → ℝ} {x : V}
-    (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) :
+    (_hf : DifferentiableAt ℝ f x) (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) :
     IsCompl strongDualCotangentZeroSection
       (LinearMap.range (fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x).toLinearMap) ↔
         (fderiv ℝ (fderiv ℝ f) x).IsInvertible := by
@@ -133,6 +136,7 @@ theorem isNondegenerateCriticalPoint_iff_transverse_differential_graph
       IsCompl strongDualCotangentZeroSection
         (LinearMap.range (fderiv ℝ (fun y : V ↦ (y, fderiv ℝ f y)) x).toLinearMap) := by
   rw [isCompl_strongDualCotangentZeroSection_range_fderiv_differential_graph_iff
+    (hf.differentiableAt (by norm_num))
     (ContDiffAt.hasFDerivAt_fderiv hf le_rfl).differentiableAt]
   exact ⟨fun h ↦ h.isInvertible, fun h ↦ ⟨hf, hcrit, h⟩⟩
 
