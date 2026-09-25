@@ -235,6 +235,21 @@ noncomputable def pointsPresheafGrpMap {H K : _root_.CommHopfAlgCat.{u} R} (f : 
     (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R)) (mapPointsFunctor f))
     GrpCat.uliftFunctor.{u + 1, u}
 
+/-- The identity Hopf algebra morphism induces the identity on points presheaves. -/
+@[simp]
+theorem pointsPresheafGrpMap_id (H : _root_.CommHopfAlgCat.{u} R) :
+    pointsPresheafGrpMap (𝟙 H) = 𝟙 _ := by
+  rw [pointsPresheafGrpMap, mapPointsFunctor_id]
+  rfl
+
+/-- Formation of the induced morphism on points presheaves reverses composition. -/
+@[simp]
+theorem pointsPresheafGrpMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K)
+    (g : K ⟶ L) :
+    pointsPresheafGrpMap (f ≫ g) = pointsPresheafGrpMap g ≫ pointsPresheafGrpMap f := by
+  rw [pointsPresheafGrpMap, mapPointsFunctor_comp]
+  rfl
+
 /-- The morphism of fppf points group objects induced by a morphism `f : H ⟶ K` of commutative
 Hopf algebras: the sheafification of precomposition with `f` on points. -/
 noncomputable def pointsFppfGroupObjectMap {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
@@ -250,10 +265,7 @@ theorem pointsFppfGroupObjectMap_id (H : _root_.CommHopfAlgCat.{u} R) :
     pointsFppfGroupObjectMap (𝟙 H) = 𝟙 _ := by
   let _ : (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
     Functor.Monoidal.ofChosenFiniteProducts _
-  have : pointsPresheafGrpMap (𝟙 H) = 𝟙 _ := by
-    rw [pointsPresheafGrpMap, mapPointsFunctor_id]
-    rfl
-  rw [pointsFppfGroupObjectMap, this]
+  rw [pointsFppfGroupObjectMap, pointsPresheafGrpMap_id]
   exact CategoryTheory.Functor.map_id _ _
 
 /-- Formation of the induced morphism on fppf points reverses composition. -/
@@ -262,10 +274,7 @@ theorem pointsFppfGroupObjectMap_comp {H K L : _root_.CommHopfAlgCat.{u} R} (f :
     pointsFppfGroupObjectMap (f ≫ g) = pointsFppfGroupObjectMap g ≫ pointsFppfGroupObjectMap f := by
   let _ : (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
     Functor.Monoidal.ofChosenFiniteProducts _
-  have : pointsPresheafGrpMap (f ≫ g) = pointsPresheafGrpMap g ≫ pointsPresheafGrpMap f := by
-    rw [pointsPresheafGrpMap, mapPointsFunctor_comp]
-    rfl
-  rw [pointsFppfGroupObjectMap, this]
+  rw [pointsFppfGroupObjectMap, pointsPresheafGrpMap_comp]
   exact CategoryTheory.Functor.map_comp _ _ _
 
 /-- The group object in type-valued presheaves underlying a group object in fppf sheaves. -/
