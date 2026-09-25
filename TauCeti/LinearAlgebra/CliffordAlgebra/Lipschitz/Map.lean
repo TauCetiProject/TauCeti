@@ -43,7 +43,8 @@ theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q�
   | mem x hx =>
       apply Subgroup.subset_closure
       obtain ⟨m, hm⟩ := hx
-      -- The generator set is a preimage under the units coercion; expose that
+      -- `lipschitzGroup` is the closure of the preimage of `Set.range (ι Q₂)`
+      -- under the units coercion.  This `change` only exposes that defining
       -- representation before supplying the mapped Clifford generator.
       change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom x) ∈
         Set.range (CliffordAlgebra.ι Q₂)
@@ -117,7 +118,8 @@ theorem orthogonalGroupCongr_lipschitzToOrthogonal [Invertible (2 : R)]
   rw [TauCeti.QuadraticMap.coe_orthogonalGroupCongr_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply]
-  -- Both sides are bundled linear maps; this unfolds their coercions to the
+  -- The preceding application lemmas leave both sides as bundled linear
+  -- equivalence applications.  This `change` unfolds those coercions to the
   -- underlying isometry action required by the reusable naturality theorem.
   change e.toIsometry (CliffordAlgebra.lipschitzVectorAction Q₁ x (e.symm m)) = _
   simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply, e.apply_symm_apply] using
