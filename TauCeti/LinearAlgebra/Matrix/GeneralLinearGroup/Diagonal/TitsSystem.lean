@@ -230,6 +230,16 @@ theorem glTitsSystem_subgroupN :
       Subgroup.normalizer (diagonalTorus k (n + 1) : Set (GL (Fin (n + 1)) k)) := by
   rw [glTitsSystem]
 
+/-- In the standard `GLₙ₊₁` Tits system, `B ∩ N` is the diagonal torus inside the
+normalizer. -/
+theorem glTitsSystem_mem_intersection (g : (glTitsSystem k n).subgroupN) :
+    g ∈ (glTitsSystem k n).intersection ↔
+      (g : GL (Fin (n + 1)) k) ∈ diagonalTorus k (n + 1) := by
+  change g ∈ (upperTriangularGroup (Fin (n + 1)) k).subgroupOf
+      (GLDiagonalNormalizer k (n + 1)) ↔
+    g ∈ (diagonalTorus k (n + 1)).subgroupOf (GLDiagonalNormalizer k (n + 1))
+  exact SetLike.ext_iff.mp (upperTriangularGroup_subgroupOf_normalizer k (n + 1)) g
+
 /-- The standard representative of the `i`-th simple reflection of the `GLₙ₊₁` Tits system. -/
 def glTitsSystemSimpleRep (i : Fin n) : (glTitsSystem k n).subgroupN :=
   glSimpleRep k n i
