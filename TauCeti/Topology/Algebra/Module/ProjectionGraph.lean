@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
+public import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Graphs over the range of a projection
@@ -50,8 +51,12 @@ to that part, when the vertical component of the graph lies in the kernel of the
 noncomputable def graphHomeomorph (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M → M)
     (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M) :
     (Subtype.val ⁻¹' s : Set (range P)) ≃ₜ (fun v : M ↦ v + g v) '' (range P ∩ s) :=
-  ((isEmbedding_graph P hP g hPg hg).homeomorphImage _).trans <| .setCongr <| by
-    rw [← Subtype.image_preimage_val, image_image]
+  (Homeomorph.setCongr
+    (Set.preimage_image_eq (Subtype.val ⁻¹' s)
+      (isEmbedding_graph P hP g hPg hg).injective).symm).trans <|
+    ((isEmbedding_graph P hP g hPg hg).homeomorphOfSubsetRange
+      (Set.image_subset_range _ _)).trans <| .setCongr <| by
+      rw [← Subtype.image_preimage_val, image_image]
 
 /-- The graph homeomorphism sends `v` to `v + g v`. -/
 @[simp]
@@ -59,29 +64,8 @@ theorem coe_graphHomeomorph_apply (P : M →L[R] M) (hP : IsIdempotentElem P) (g
     (hPg : ∀ v ∈ range P, P (g v) = 0) (hg : ContinuousOn g (range P)) (s : Set M)
     (v : (Subtype.val ⁻¹' s : Set (range P))) :
     (graphHomeomorph P hP g hPg hg s v : M) = (v : M) + g v := by
-  let h : (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) =
-      (fun v : M ↦ v + g v) '' (range P ∩ s) := by
-    rw [← Subtype.image_preimage_val, image_image]
-  -- Unfold the outer `trans` and identify its `setCongr` equality with `h`.
-  change (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) = _
-  have hh : (Homeomorph.setCongr h ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v) : M) =
-      ((isEmbedding_graph P hP g hPg hg).homeomorphImage _ v : M) :=
-    congrArg Subtype.val (Set.equivOfEq_apply h _)
-  rw [hh]
-  let h' : Set.range ((fun v : range P ↦ (v : M) + g v) ∘
-      (Subtype.val : (Subtype.val ⁻¹' s : Set (range P)) → range P)) =
-      (fun v : range P ↦ (v : M) + g v) '' (Subtype.val ⁻¹' s) := by
-    rw [Set.range_comp, Subtype.range_val]
-  -- `homeomorphImage` is the restricted embedding's `toHomeomorph` followed by
-  -- `setCongr h'`; expose that wrapper to use its application theorem below.
-  change (Homeomorph.setCongr h'
-    (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v) : M) = _
-  have hh' : (Homeomorph.setCongr h'
-      (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v) : M) =
-      (((isEmbedding_graph P hP g hPg hg).comp .subtypeVal).toHomeomorph v : M) :=
-    congrArg Subtype.val (Set.equivOfEq_apply h' _)
-  rw [hh']
-  exact IsEmbedding.toHomeomorph_apply_coe _ _
+  simp only [graphHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
+    IsEmbedding.homeomorphOfSubsetRange_apply_coe, Subtype.coe_mk]
 
 /-- The inverse graph homeomorphism is given by the projection. -/
 @[simp]
