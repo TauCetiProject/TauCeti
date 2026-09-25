@@ -23,16 +23,16 @@ to its row interval.
 
 The two subcases give different decomposition shapes:
 * if the first recut rectangle inherits the terminal side, promoting it yields a
-  pentagon--rectangle decomposition (`recutRightEqRight_first`);
+  pentagon--rectangle decomposition (`recutRightEqRightFirst`);
 * if the second recut rectangle inherits the terminal side, promoting it yields a
-  rectangle--pentagon decomposition (`recutRightEqRight_second`).
+  rectangle--pentagon decomposition (`recutRightEqRightSecond`).
 
 ## Main results
 
-* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRight_first`: promote the
+* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightFirst`: promote the
   terminal-side recut to a pentagon--rectangle decomposition when the first new rectangle
   carries the original pentagon's terminal side.
-* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRight_second`: promote the
+* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightSecond`: promote the
   terminal-side recut to a rectangle--pentagon decomposition when the second new rectangle
   carries the original pentagon's terminal side.
 -/
@@ -49,7 +49,7 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 both, then promote the first new rectangle to a pentagon. This applies when the first recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is supplied
 as a hypothesis. -/
-noncomputable def recutRightEqRight_first
+noncomputable def recutRightEqRightFirst
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
@@ -116,7 +116,7 @@ noncomputable def recutRightEqRight_first
 both, then promote the second new rectangle to a pentagon. This applies when the second recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is supplied
 as a hypothesis. The result is a rectangle--pentagon decomposition. -/
-noncomputable def recutRightEqRight_second
+noncomputable def recutRightEqRightSecond
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
