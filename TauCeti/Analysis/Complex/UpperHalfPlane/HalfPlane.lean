@@ -29,10 +29,11 @@ Only the *unordered* pair of sides is determined by `geodesicLine g`: which one 
 
 * `TauCeti.UpperHalfPlane.rightHalfPlane g`, `TauCeti.UpperHalfPlane.leftHalfPlane g` — the two
   open half-planes bounded by `geodesicLine g`, as `g`-translates of the canonical pair for the
-  raw imaginary axis. `mem_rightHalfPlane_iff` and `mem_leftHalfPlane_iff` test membership
-  directly, without unfolding the translate; `rightHalfPlane_one`/`leftHalfPlane_one` and
-  `smul_rightHalfPlane`/`smul_leftHalfPlane` give their value at `g = 1` and their equivariance,
-  matching `Geodesic.lean`'s own API for the line.
+  raw imaginary axis; `rightHalfPlane_def`/`leftHalfPlane_def` restate the body.
+  `mem_rightHalfPlane_iff` and `mem_leftHalfPlane_iff` test membership directly, without
+  unfolding the translate;
+  `rightHalfPlane_one`/`leftHalfPlane_one` and `smul_rightHalfPlane`/`smul_leftHalfPlane` give
+  their value at `g = 1` and their equivariance, matching `Geodesic.lean`'s own API for the line.
 * `TauCeti.UpperHalfPlane.isOpen_rightHalfPlane`, `isOpen_leftHalfPlane` — both are open.
 * `TauCeti.UpperHalfPlane.disjoint_rightHalfPlane_leftHalfPlane`,
   `disjoint_rightHalfPlane_range_geodesicLine`, `disjoint_leftHalfPlane_range_geodesicLine` — the
@@ -60,6 +61,11 @@ def rightHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | 0 < z.re}
 /-- The left half-plane bounded by `geodesicLine g`: the `g`-translate of the points with
 negative real part. -/
 def leftHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | z.re < 0}
+
+theorem rightHalfPlane_def (g : PSL(2, ℝ)) :
+    rightHalfPlane g = g • {z : ℍ | 0 < z.re} := by rfl
+
+theorem leftHalfPlane_def (g : PSL(2, ℝ)) : leftHalfPlane g = g • {z : ℍ | z.re < 0} := by rfl
 
 @[simp]
 theorem mem_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
