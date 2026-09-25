@@ -7,8 +7,9 @@ module
 
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.RepresentationTheory.ToMultiplicative
 
 /-!
 # Automorphism actions on group algebras
@@ -34,6 +35,8 @@ finite-rank free lattice, `D(M)` is a split torus.
 * `TauCeti.GaloisDescent.groupAlgebraAction_single`: its value on a monomial.
 * `TauCeti.GaloisDescent.coeff_groupAlgebraAction`: its coefficient formula.
 * `TauCeti.GaloisDescent.groupAlgebraAction_smul`: semilinearity over the coefficient algebra.
+* `Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom`: compatibility with
+  equivariant exponent maps.
 * `TauCeti.GaloisDescent.groupAlgebraActionSemilinearEquiv`: the semilinear action.
 * `TauCeti.GaloisDescent.groupAlgebraTensorActionSemilinearEquiv`: its tensor-square action.
 * `TauCeti.GaloisDescent.counit_groupAlgebraAction`: compatibility with the counit.
@@ -44,9 +47,8 @@ finite-rank free lattice, `D(M)` is a split torus.
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.23 and Appendix A.64.
 
-This is the automorphism-action step used for semilinear descent in Layer 4, "Tori: split and
-non-split", of the ReductiveGroups roadmap. Taking invariants and identifying their scalar
-extension with the original split coordinate Hopf algebra remain subsequent steps.
+Taking invariants of this action and identifying their scalar extension with the original
+split coordinate Hopf algebra recovers the descended group.
 -/
 
 public section
@@ -60,49 +62,19 @@ scoped[TauCeti.GaloisDescent] attribute [instance]
 
 open scoped TauCeti.GaloisDescent
 
-variable {k L M : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
+variable {k L M : Type*} [CommSemiring k]
 variable [AddCommGroup M]
 
-/-- The exponent-lattice action in multiplicative notation, bundled as a homomorphism. -/
-private noncomputable def exponentAction
-    (rho : Representation ℤ (L ≃ₐ[k] L) M) :
-    (L ≃ₐ[k] L) →* MulAut (Multiplicative M) where
-  toFun sigma :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv ℤ M
-      (rho.asGroupHom sigma)).toAddEquiv.toMultiplicative
-  map_one' := by
-    ext m
-    exact congrArg
-      (fun f : M →ₗ[ℤ] M => Multiplicative.ofAdd (f m.toAdd)) (map_one rho)
-  map_mul' sigma tau := by
-    ext m
-    exact congrArg
-      (fun f : M →ₗ[ℤ] M => Multiplicative.ofAdd (f m.toAdd)) (map_mul rho sigma tau)
+section Semiring
 
-@[simp]
-private theorem exponentAction_apply
-    (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)
-    (m : Multiplicative M) :
-    exponentAction rho sigma m = Multiplicative.ofAdd (rho sigma m.toAdd) := by
-  exact congrArg (fun f : M →ₗ[ℤ] M => Multiplicative.ofAdd (f m.toAdd))
-    (Representation.asGroupHom_apply rho sigma)
-
-@[simp]
-private theorem exponentAction_symm_apply
-    (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)
-    (m : Multiplicative M) :
-    (exponentAction rho sigma).symm m =
-      Multiplicative.ofAdd (rho sigma⁻¹ m.toAdd) := by
-  have hinv : (↑((rho.asGroupHom sigma)⁻¹) : M →ₗ[ℤ] M) = rho sigma⁻¹ := by
-    rw [← map_inv, Representation.asGroupHom_apply]
-  exact congrArg (fun f : M →ₗ[ℤ] M => Multiplicative.ofAdd (f m.toAdd)) hinv
+variable [Semiring L] [Algebra k L]
 
 /-- Coefficient and exponent changes commute on a monoid algebra. -/
-private theorem coefficientAction_commute_exponentAction
-    (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma tau : L ≃ₐ[k] L) :
+private theorem coefficientAction_commute_exponentAction (rho : Representation ℤ (L ≃ₐ[k] L) M)
+    (sigma tau : L ≃ₐ[k] L) :
     Commute
       (MonoidAlgebra.mapRangeAlgAut k (Multiplicative M) sigma)
-      (MonoidAlgebra.domCongrAut (R := k) (A := L) (exponentAction rho tau)) := by
+      (MonoidAlgebra.domCongrAut (R := k) (A := L) (rho.toMulAut tau)) := by
   apply AlgEquiv.ext
   intro x
   ext m
@@ -115,7 +87,7 @@ noncomputable def groupAlgebraAction
     (L ≃ₐ[k] L) →* (MonoidAlgebra L (Multiplicative M) ≃ₐ[k]
       MonoidAlgebra L (Multiplicative M)) :=
   ((MonoidAlgebra.mapRangeAlgAut k (Multiplicative M)).noncommCoprod
-      ((MonoidAlgebra.domCongrAut (R := k) (A := L)).comp (exponentAction rho))
+      ((MonoidAlgebra.domCongrAut (R := k) (A := L)).comp rho.toMulAut)
       (coefficientAction_commute_exponentAction rho)).comp
     { toFun := fun sigma ↦ (sigma, sigma)
       map_one' := rfl
@@ -147,7 +119,8 @@ theorem groupAlgebraAction_smul
     (a : L) (x : MonoidAlgebra L (Multiplicative M)) :
     groupAlgebraAction rho sigma (a • x) =
       sigma a • groupAlgebraAction rho sigma x := by
-  simp [Algebra.smul_def, MonoidAlgebra.coe_algebraMap]
+  ext m
+  simp
 
 /-- The automorphism action packaged as a semilinear equivalence over its automorphism of `L`.
 
@@ -165,10 +138,55 @@ noncomputable def groupAlgebraActionSemilinearEquiv
 theorem groupAlgebraActionSemilinearEquiv_apply
     (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)
     (x : MonoidAlgebra L (Multiplicative M)) :
-    groupAlgebraActionSemilinearEquiv rho sigma x = groupAlgebraAction rho sigma x :=
-  by
-    rw [groupAlgebraActionSemilinearEquiv]
-    rfl
+    groupAlgebraActionSemilinearEquiv rho sigma x = groupAlgebraAction rho sigma x := by
+  rfl
+
+/-- The inverse semilinear equivalence is the action of the inverse automorphism. -/
+@[simp]
+theorem groupAlgebraActionSemilinearEquiv_symm_apply
+    (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)
+    (x : MonoidAlgebra L (Multiplicative M)) :
+    (groupAlgebraActionSemilinearEquiv rho sigma).symm x =
+      groupAlgebraAction rho sigma⁻¹ x := by
+  -- The semilinear wrapper inherits its inverse function from the action's `toAddEquiv`.
+  -- `map_inv` applies to the `AlgEquiv`-valued homomorphism, not this wrapper whose scalar
+  -- twist depends on `sigma`; expose that inherited inverse before using the homomorphism law.
+  change (groupAlgebraAction rho sigma).symm x = _
+  rw [map_inv]
+  rfl
+
+end Semiring
+
+variable [CommSemiring L] [Algebra k L]
+
+section Action
+
+variable {N : Type*} [AddCommGroup N]
+variable {rho : Representation ℤ (L ≃ₐ[k] L) M}
+variable {tau : Representation ℤ (L ≃ₐ[k] L) N}
+
+/-- The map of split group algebras induced by an equivariant exponent map commutes with
+the simultaneous Galois action on coefficients and exponents. -/
+@[simp]
+theorem _root_.Representation.IntertwiningMap.groupAlgebraAction_mapDomainBialgHom
+    (f : Representation.IntertwiningMap rho tau)
+    (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
+    groupAlgebraAction tau sigma
+        (MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative x) =
+      MonoidAlgebra.mapDomainBialgHom L f.toLinearMap.toAddMonoidHom.toMultiplicative
+        (groupAlgebraAction rho sigma x) := by
+  induction x using MonoidAlgebra.induction_on with
+  | of m =>
+      simp only [MonoidAlgebra.of_apply, MonoidAlgebra.mapDomainBialgHom_single,
+        groupAlgebraAction_single, AddMonoidHom.coe_toMultiplicative,
+        Function.comp_apply, toAdd_ofAdd, LinearMap.toAddMonoidHom_coe,
+        Representation.IntertwiningMap.coe_toLinearMap]
+      rw [Representation.IntertwiningMap.isIntertwining rho tau f sigma]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | smul a x hx =>
+      simp only [map_smul, groupAlgebraAction_smul, hx]
+
+end Action
 
 /-- On the tensor square of the coordinate algebra, the automorphism acts on both tensor
 factors. -/
@@ -191,7 +209,7 @@ theorem groupAlgebraTensorActionSemilinearEquiv_tmul
   rw [groupAlgebraTensorActionSemilinearEquiv, TensorProduct.congr_tmul]
   simp only [groupAlgebraActionSemilinearEquiv_apply]
 
-/-- The tensor-square action is semilinear over the coefficient field. -/
+/-- The tensor-square action is semilinear over the coefficient algebra. -/
 @[simp]
 theorem groupAlgebraTensorActionSemilinearEquiv_smul
     (rho : Representation ℤ (L ≃ₐ[k] L) M) (sigma : L ≃ₐ[k] L)

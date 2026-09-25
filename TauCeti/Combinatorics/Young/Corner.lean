@@ -256,16 +256,8 @@ theorem isCorner_transpose : IsCorner μ.transpose c ↔ IsCorner μ c.swap := b
 @[simp]
 theorem corners_transpose (μ : YoungDiagram) :
     corners μ.transpose = (corners μ).image Prod.swap := by
-  ext c
-  constructor
-  · intro hc
-    exact Finset.mem_image.mpr
-      ⟨c.swap, mem_corners.mpr (isCorner_transpose.mp (mem_corners.mp hc)), c.swap_swap⟩
-  · intro hc
-    obtain ⟨d, hd, rfl⟩ := Finset.mem_image.mp hc
-    refine mem_corners.mpr (isCorner_transpose.mpr ?_)
-    rw [Prod.swap_swap]
-    exact mem_corners.mp hd
+  ext ⟨i, j⟩
+  simp [corners, isCorner_transpose]
 
 @[simp]
 theorem erase_transpose (μ : YoungDiagram) (c : ℕ × ℕ) :

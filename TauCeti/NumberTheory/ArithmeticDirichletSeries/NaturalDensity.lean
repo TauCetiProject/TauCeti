@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -43,6 +44,9 @@ whole spectrum have density one and ensures that a fixed finite error disappears
   primes preserves its natural density.
 * `NumberField.Set.hasNaturalDensity_of_finite`: every finite set of prime ideals has natural
   density zero.
+* `NumberField.Set.hasNaturalDensity_of_isLittleO_logIntegral`: if all primes satisfy
+  `π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
+  then `S` has natural density `δ`.
 * `NumberField.Set.isUpperDirichletDensityBound_of_eventually_primeCount_le` and
   `NumberField.Set.isLowerDirichletDensityBound_of_eventually_le_primeCount`: an eventual
   one-sided bound on the proportion of primes of `S` below `x` is the same one-sided bound for
@@ -341,5 +345,25 @@ theorem hasDirichletDensity_of_hasNaturalDensity (h : HasNaturalDensity S δ) :
         exact ((lt_div_iff₀ hx0).1 hx).le
     filter_upwards [isLowerDirichletDensityBound_iff.1 hlow (ε / 2) (half_pos hε)] with s hs
     linarith
+
+open Asymptotics in
+/-- **Natural density from prime-counting asymptotics.** If the primes of `K` satisfy
+`π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
+then `S` has natural density `δ`. -/
+theorem hasNaturalDensity_of_isLittleO_logIntegral
+    (hS : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x)
+    (hU : (fun x ↦ TauCeti.primeCount K Set.univ x - TauCeti.Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x) : HasNaturalDensity S δ := by
+  have hdiff : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.primeCount K Set.univ x)
+      =o[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (hS.sub (hU.const_mul_left δ)).congr_left fun x ↦ by ring
+  have hequiv : TauCeti.primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (hU.add TauCeti.Real.logIntegral_isEquivalent_div_log).congr_left fun x ↦ by simp
+  -- `π_S / π - δ = (π_S - δ π) / π → 0`
+  refine hasNaturalDensity_def.mpr <| (zero_add δ ▸
+    (hdiff.trans_isBigO hequiv.isBigO_symm).tendsto_div_nhds_zero.add_const δ).congr' ?_
+  filter_upwards [(TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0] with x hx
+  grind
 
 end NumberField.Set

@@ -43,6 +43,8 @@ and not surjective.
   injective (the Hopf property).
 * `TauCeti.IsTopologicallyFinitelyGenerated.bijective_of_surjective`: such an endomorphism is
   bijective.
+* `TauCeti.IsTopologicallyFinitelyGenerated.bijective_of_surjective_of_surjective`: a continuous
+  surjection out of such a group that admits a continuous surjection back is bijective.
 * `TauCeti.IsTopologicallyFinitelyGenerated.continuousMulEquivOfSurjective`: it is a
   topological automorphism.
 
@@ -84,6 +86,19 @@ bijective. -/
 theorem bijective_of_surjective (hG : IsTopologicallyFinitelyGenerated G) (hf : Continuous f)
     (hsurj : Function.Surjective f) : Function.Bijective f :=
   ⟨hG.injective_of_surjective hf hsurj, hsurj⟩
+
+/-- **Continuous surjections in both directions are bijective.** If `G` is a topologically
+finitely generated profinite group and `φ : G →* H`, `ψ : H →* G` are continuous surjections,
+then `φ` is bijective. -/
+theorem bijective_of_surjective_of_surjective {H : Type*} [Group H] [TopologicalSpace H]
+    (hG : IsTopologicallyFinitelyGenerated G) {φ : G →* H} {ψ : H →* G} (hφ : Continuous φ)
+    (hφs : Function.Surjective φ) (hψ : Continuous ψ) (hψs : Function.Surjective ψ) :
+    Function.Bijective φ := by
+  -- The endomorphism `ψ ∘ φ` of `G` is surjective, hence bijective by the Hopf property, so `φ`
+  -- is injective.
+  have hinj := hG.injective_of_surjective (f := ψ.comp φ) (hψ.comp hφ) (hψs.comp hφs)
+  rw [MonoidHom.coe_comp] at hinj
+  exact ⟨hinj.of_comp, hφs⟩
 
 /-- A continuous surjective endomorphism of a topologically finitely generated profinite group,
 packaged as a topological automorphism. -/

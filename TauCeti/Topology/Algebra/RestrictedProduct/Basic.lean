@@ -24,6 +24,9 @@ are the shapes in which restricted products appear when a family of local groups
 into an adelic one: the finite adelic points, and the full adelic points with the archimedean
 factor set apart.
 
+Every construction and theorem here is also stated for additive groups (`integralAddSubgroup`,
+`RestrictedProductAddGroup`, `CompactOpenAddSubgroups`, …).
+
 The eventual comparison results are adapted from the FLT project
 (`ImperialCollegeLondon/FLT`, file `TopologicalSpace.lean`, source commit
 `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088, Apache 2.0), whose source file
@@ -50,21 +53,35 @@ variable [∀ i, Group (G i)]
 
 /-- The restricted product of the family `G` relative to the reference subgroups `U`: the
 elements of `Π i, G i` whose coordinates lie in `U i` for all but finitely many `i`. -/
+@[to_additive /-- The restricted product of the family of additive groups `G` relative to the
+reference subgroups `U`: the elements of `Π i, G i` whose coordinates lie in `U i` for all but
+finitely many `i`. -/]
 abbrev RestrictedProductGroup (U : ∀ i, Subgroup (G i)) :=
   Πʳ i, [G i, (U i : Set (G i))]
 
 /-- A restricted product together with a distinguished factor `H` carrying **no** integrality
 condition. -/
+@[to_additive /-- A restricted product of additive groups together with a distinguished factor
+`H` carrying **no** integrality condition. -/]
 abbrev RestrictedProductGroupWithFactor (H : Type w) (U : ∀ i, Subgroup (G i)) :=
   H × RestrictedProductGroup U
 
+/-- The coercion homomorphism from a restricted product to the full product acts as the
+coercion. -/
+@[to_additive (attr := simp)]
+theorem coeMonoidHom_apply (U : ∀ i, Subgroup (G i)) (x : Πʳ i, [G i, (U i : Set (G i))]) :
+    RestrictedProduct.coeMonoidHom x = ⇑x := by
+  rfl
+
 /-- The subgroup of a restricted product cut out by a second family of subgroups. -/
+@[to_additive /-- The additive subgroup of a restricted product cut out by a second family of
+additive subgroups. -/]
 def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
     Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
   (Subgroup.pi Set.univ V).comap RestrictedProduct.coeMonoidHom
 
 /-- Membership means that every coordinate belongs to the corresponding subgroup `V i`. -/
-@[simp]
+@[to_additive (attr := simp)]
 theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
     x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := by
@@ -72,12 +89,14 @@ theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
   simp [RestrictedProduct.coeMonoidHom]
 
 /-- The subgroup whose coordinates lie in the reference subgroup at every index. -/
+@[to_additive /-- The additive subgroup whose coordinates lie in the reference subgroup at every
+index. -/]
 def integralSubgroup (U : ∀ i, Subgroup (G i)) :
     Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
   integralSubgroupOf U U
 
 /-- Membership means that every coordinate belongs to the reference subgroup `U i`. -/
-@[simp]
+@[to_additive (attr := simp)]
 theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
     x ∈ integralSubgroup U ↔ ∀ i, x i ∈ U i := by
@@ -86,6 +105,7 @@ theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Openness when the second family agrees with the reference family eventually. -/
+@[to_additive isOpen_integralAddSubgroupOf_of_eventually_eq]
 theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     (hV : ∀ i, IsOpen (V i : Set (G i)))
     (hUV : ∀ᶠ i in cofinite, U i = V i) :
@@ -141,6 +161,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     · exact hxSc i hi
 
 /-- Compactness when the second family is eventually contained in the reference family. -/
+@[to_additive isCompact_integralAddSubgroupOf_of_eventually_subset]
 theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
     (hV : ∀ i, IsCompact (V i : Set (G i)))
     (hUV : ∀ᶠ i in cofinite, (V i : Set (G i)) ⊆ (U i : Set (G i))) :
@@ -176,6 +197,7 @@ theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
   exact hK.image (RestrictedProduct.continuous_inclusion hS)
 
 /-- Openness of the everywhere-integral subgroup from coordinatewise openness. -/
+@[to_additive]
 theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
@@ -185,13 +207,23 @@ theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
   rfl
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
+@[to_additive]
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hK : ∀ i, IsCompact (U i : Set (G i))) :
     IsCompact (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   simpa [integralSubgroup] using
     isCompact_forall_mem_of_eventually_subset U U hK (.of_forall fun _ ↦ subset_rfl)
 
+/-- A family of compact open additive subgroups, one in each factor. -/
+structure CompactOpenAddSubgroups (G : ι → Type v) [∀ i, AddGroup (G i)]
+    [∀ i, TopologicalSpace (G i)] where
+  /-- The compact open additive subgroup chosen in each factor. -/
+  addSubgroup : ∀ i, OpenAddSubgroup (G i)
+  /-- Compactness of the chosen additive subgroup in each factor. -/
+  isCompact_addSubgroup : ∀ i, IsCompact (addSubgroup i : Set (G i))
+
 /-- A family of compact open subgroups, one in each factor. -/
+@[to_additive CompactOpenAddSubgroups]
 structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] where
   /-- The compact open subgroup chosen in each factor. -/
@@ -199,7 +231,7 @@ structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
   /-- Compactness of the chosen subgroup in each factor. -/
   isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
 
-@[ext]
+@[to_additive (attr := ext)]
 theorem CompactOpenSubgroups.ext {K L : CompactOpenSubgroups G}
     (h : K.subgroup = L.subgroup) : K = L := by
   cases K

@@ -148,14 +148,11 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
   rw [QuadraticMap.not_anisotropic_iff_exists] at h
   obtain ⟨z, hz0, hz⟩ := h
   obtain ⟨x, y, rfl⟩ := hdecomp z
-  let : Invertible (2 : E) := (Invertible.map (algebraMap F E) 2).copy 2 (map_ofNat _ _).symm
-  rw [QuadraticMap.map_add (Q.baseChange E), ← QuadraticMap.polarBilin_apply_apply,
-    polarBilin_baseChange, LinearMap.BilinForm.baseChange_tmul, baseChange_tmul,
-    baseChange_tmul] at hz
+  rw [QuadraticMap.map_add (Q.baseChange E), QuadraticForm.polar_baseChange_tmul,
+    baseChange_tmul, baseChange_tmul] at hz
   -- Read off the coordinates of `Q_E (1 ⊗ x + s ⊗ y)` along the basis `1, s`.
   obtain ⟨hxy, hpolar⟩ := LinearIndependent.pair_iff.mp hli (Q x + d * Q y) (polar Q x y) (by
-    simp only [Algebra.smul_def, one_mul, mul_one, map_add, map_mul,
-      QuadraticMap.polarBilin_apply_apply] at hz ⊢
+    simp only [Algebra.smul_def, one_mul, mul_one, map_add, map_mul] at hz ⊢
     linear_combination hz - algebraMap F E (Q y) * hs)
   have hy : Q y ≠ 0 := by
     intro hy

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Derivative
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
 import TauCeti.RingTheory.FractionalIdeal.Divisibility
 import Mathlib.LinearAlgebra.DirectSum.Finite
 import Mathlib.LinearAlgebra.FreeModule.Norm
@@ -36,6 +36,8 @@ It first records what surjectivity amounts to: every ideal class is trivial or t
 * `WeierstrassCurve.Affine.Point.toClass_surjective`: `toClass` is surjective.
 * `WeierstrassCurve.Affine.Point.toClassEquiv`: the resulting additive equivalence between the
   point group and the ideal class group.
+* `WeierstrassCurve.Affine.Point.toClass_some_eq_ofMul_mk0`: the class of an affine point is the
+  class of its integral ideal `⟨X - x, Y - y⟩`.
 
 ## What this is, mathematically
 
@@ -679,5 +681,27 @@ theorem toClassEquiv_apply (P : W.Point) : toClassEquiv P = toClass P :=
   by
     unfold toClassEquiv
     exact AddEquiv.ofBijective_apply toClass _ P
+
+/-! ## The class of an affine point as an integral ideal -/
+
+/-- **The class of an affine point is the class of its integral ideal** `⟨X - x, Y - y⟩`, when the
+coordinate ring is a Dedekind domain. Mathlib's `toClass_some` states it through the invertible
+fractional ideal `XYIdeal'`; this is the form in which class-group maps defined on integral ideals,
+such as a relative norm, are evaluated. -/
+theorem toClass_some_eq_ofMul_mk0 [IsDedekindDomain W.CoordinateRing] {x y : F}
+    (h : W.Nonsingular x y) :
+    toClass (some x y h) = Additive.ofMul (ClassGroup.mk0
+      ⟨_, mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))⟩) := by
+  have hI : CoordinateRing.XYIdeal W x (C y) ∈ (Ideal W.CoordinateRing)⁰ :=
+    mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))
+  have hmk :
+      ClassGroup.mk W.FunctionField (CoordinateRing.XYIdeal' h) = ClassGroup.mk0 ⟨_, hI⟩ := by
+    rw [← ClassGroup.mk_mk0 W.FunctionField]
+    congr 1
+    exact Units.ext ((CoordinateRing.XYIdeal'_eq h).trans
+      (FractionalIdeal.coe_mk0 W.FunctionField ⟨_, hI⟩).symm)
+  rw [toClass_some, hmk]
+  -- what is left is `g = Additive.ofMul g`, which is the type synonym and nothing else
+  rfl
 
 end WeierstrassCurve.Affine.Point

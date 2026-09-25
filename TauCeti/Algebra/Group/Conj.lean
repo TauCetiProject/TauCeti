@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ConjFinite
+public import Mathlib.Data.Nat.Cast.Field
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
@@ -46,6 +47,8 @@ conjugation action.
 * `ConjClasses.card_div_card_carrier_mul_orderOf_pos`: for a finite group that ratio is positive.
 * `ConjClasses.card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf`: that
   quotient equals the order of the centralizer divided by the order of the member.
+* `ConjClasses.one_div_orderOf_div_card_div_card_carrier_mul_orderOf`: dividing `1 / orderOf σ`
+  by that quotient, in a semifield of characteristic zero, leaves `#C / #G`.
 * `TauCeti.ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
   cardinality of a `Finset`, which makes it computable.
 * `TauCeti.ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
@@ -161,11 +164,10 @@ class is the orbit of `g` under the conjugation action and the centralizer is th
 this is the orbit-stabilizer theorem. -/
 theorem ncard_carrier_mk (g : G) :
     (ConjClasses.mk g).carrier.ncard = (Subgroup.centralizer {g}).index := by
-  have hcomap := (MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
-    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective
   rw [← ConjAct.orbit_eq_carrier_conjClasses, ← MulAction.index_stabilizer,
     Subgroup.centralizer_eq_comap_stabilizer]
-  exact hcomap.symm
+  exact ((MulAction.stabilizer (ConjAct G) g).index_comap_of_surjective
+    (f := ConjAct.toConjAct.toMonoidHom) ConjAct.toConjAct.surjective).symm
 
 /-- **The conjugacy class of a central element is a single point**: nothing moves it. -/
 @[simp]
@@ -294,6 +296,20 @@ theorem card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf {G : T
   subst hσ
   rw [TauCeti.ConjClasses.card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
     Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hindex)]
+
+/-- **Dividing `1 / orderOf σ` by that quotient leaves `#C / #G`.** Since
+`#C.carrier * orderOf σ` divides `#G`, the quotient casts to the exact ratio, and in a semifield of
+characteristic zero `(1 / orderOf σ) / (#G / (#C.carrier * orderOf σ)) = #C.carrier / #G`. -/
+theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group G] [Finite G]
+    {K : Type*} [Semifield K] [CharZero K] (C : ConjClasses G) (σ : G) (hσ : σ ∈ C.carrier) :
+    (1 / orderOf σ : K) / ((Nat.card G / (Nat.card C.carrier * orderOf σ) : ℕ) : K) =
+      Nat.card C.carrier / Nat.card G := by
+  have : Nonempty C.carrier := ⟨⟨σ, hσ⟩⟩
+  have hC : (Nat.card C.carrier : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hord : (orderOf σ : K) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos σ).ne'
+  rw [Nat.cast_div (C.card_carrier_mul_orderOf_dvd σ hσ) (by push_cast; exact mul_ne_zero hC hord)]
+  push_cast
+  rw [div_div_eq_mul_div, one_div_mul_eq_div, mul_div_cancel_right₀ _ hord]
 
 end ConjClasses
 

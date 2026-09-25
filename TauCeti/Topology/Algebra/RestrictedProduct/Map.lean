@@ -12,13 +12,16 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Basic
 
 A family of coordinate homomorphisms induces a homomorphism of restricted products when it
 preserves the reference subgroups at all but finitely many indices. This file records that map,
-its continuity and functoriality, and the stronger everywhere-preserving specialization that maps
-the everywhere-integral subgroup into the everywhere-integral subgroup.
+its continuity and functoriality, the criterion for it to be surjective, and the stronger
+everywhere-preserving specialization that maps the everywhere-integral subgroup into the
+everywhere-integral subgroup.
 
-The distinction between eventual and everywhere preservation is essential: the final theorem
-gives an explicit family for which the eventual map does not preserve the integral subgroup.
+The distinction between eventual and everywhere preservation is essential: the final theorems
+give an explicit family for which the eventual map does not preserve the integral subgroup.
 The construction is the fixed-index specialization of Mathlib's
 `RestrictedProduct.mapAlongMonoidHom`.
+
+The general statements have additive counterparts, such as `addRestrictedProductMap`.
 
 ## References
 
@@ -40,6 +43,9 @@ variable [∀ i, Group (G i)]
 
 /-- The componentwise homomorphism of restricted products induced by a family that eventually
 maps each reference subgroup into the corresponding target subgroup. -/
+@[to_additive addRestrictedProductMap /-- The componentwise additive homomorphism of restricted
+products induced by a family that eventually maps each reference subgroup into the corresponding
+target subgroup. -/]
 def restrictedProductMap {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i)
@@ -49,7 +55,7 @@ def restrictedProductMap {H : ι → Type w} [∀ i, Group (H i)]
   RestrictedProduct.mapAlongMonoidHom G H id tendsto_id φ hφ
 
 /-- Evaluation of a componentwise restricted-product homomorphism at a coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductMap_apply]
 theorem restrictedProductMap_apply {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i)
@@ -60,6 +66,7 @@ theorem restrictedProductMap_apply {H : ι → Type w} [∀ i, Group (H i)]
 
 /-- A componentwise restricted-product homomorphism is continuous when all its coordinate maps
 are continuous. -/
+@[to_additive continuous_addRestrictedProductMap]
 theorem continuous_restrictedProductMap {H : ι → Type w} [∀ i, Group (H i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, TopologicalSpace (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
@@ -72,6 +79,8 @@ theorem continuous_restrictedProductMap {H : ι → Type w} [∀ i, Group (H i)]
 
 /-- The componentwise restricted-product homomorphism when every coordinate map preserves the
 reference subgroup. -/
+@[to_additive addRestrictedProductMapOfForall /-- The componentwise additive homomorphism of
+restricted products when every coordinate map preserves the reference subgroup. -/]
 def restrictedProductMapOfForall {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i) (hφ : ∀ i, Set.MapsTo (φ i) (U i) (U' i)) :
@@ -80,7 +89,7 @@ def restrictedProductMapOfForall {H : ι → Type w} [∀ i, Group (H i)]
   restrictedProductMap U U' φ (.of_forall hφ)
 
 /-- Evaluation of the everywhere-preserving componentwise homomorphism at a coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductMapOfForall_apply]
 theorem restrictedProductMapOfForall_apply {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i) (hφ : ∀ i, Set.MapsTo (φ i) (U i) (U' i))
@@ -89,7 +98,7 @@ theorem restrictedProductMapOfForall_apply {H : ι → Type w} [∀ i, Group (H 
   exact restrictedProductMap_apply U U' φ (.of_forall hφ) x i
 
 /-- The componentwise restricted-product homomorphism induced by identity maps is the identity. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductMap_id]
 theorem restrictedProductMap_id (U : ∀ i, Subgroup (G i)) :
     restrictedProductMap U U (fun i ↦ MonoidHom.id (G i))
         (.of_forall fun _ _ hx ↦ hx) =
@@ -98,7 +107,7 @@ theorem restrictedProductMap_id (U : ∀ i, Subgroup (G i)) :
   rw [restrictedProductMap_apply, MonoidHom.id_apply, MonoidHom.id_apply]
 
 /-- Componentwise restricted-product homomorphisms compose coordinatewise. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductMap_comp]
 theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
     [∀ i, Group (H i)] [∀ i, Group (K i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
@@ -114,8 +123,60 @@ theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
   rw [MonoidHom.comp_apply, restrictedProductMap_apply, restrictedProductMap_apply,
     restrictedProductMap_apply, MonoidHom.comp_apply]
 
+/-- A componentwise restricted-product homomorphism is surjective exactly when every coordinate
+map is surjective and, at all but finitely many indices, the coordinate map carries the source
+reference subgroup onto the target one. Surjectivity of each coordinate map alone is not enough:
+an element of the target may lie in the target reference subgroups at infinitely many indices
+where no preimage lies in the source reference subgroup. -/
+@[to_additive (attr := simp) addRestrictedProductMap_surjective_iff]
+theorem restrictedProductMap_surjective_iff {H : ι → Type w} [∀ i, Group (H i)]
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i →* H i)
+    (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)) :
+    Function.Surjective (restrictedProductMap U U' φ hφ) ↔
+      (∀ i, Function.Surjective (φ i)) ∧
+        ∀ᶠ i in cofinite, Set.SurjOn (φ i) (U i) (U' i) := by
+  classical
+  constructor
+  · intro h
+    refine ⟨fun i z ↦ ?_, ?_⟩
+    · -- Hit the element supported at `i` with value `z`.
+      obtain ⟨x, hx⟩ := h (RestrictedProduct.mulSingle U' i z)
+      refine ⟨x i, ?_⟩
+      rw [← restrictedProductMap_apply U U' φ hφ, hx,
+        RestrictedProduct.mulSingle_eq_same]
+    · -- At each index where `φ j` misses part of `U' j`, pick a missed element; elsewhere pick
+      -- `1`. A preimage of the result must leave `U j` at every index of the first kind.
+      have hmiss : ∀ j, ∃ z ∈ U' j, ¬ Set.SurjOn (φ j) (U j) (U' j) → z ∉ φ j '' U j := by
+        intro j
+        by_cases hj : Set.SurjOn (φ j) (U j) (U' j)
+        · exact ⟨1, one_mem _, fun h ↦ absurd hj h⟩
+        · obtain ⟨z, hz, hz'⟩ := Set.not_subset.mp hj
+          exact ⟨z, hz, fun _ ↦ hz'⟩
+      choose z hzU hz using hmiss
+      obtain ⟨x, hx⟩ := h ⟨z, .of_forall hzU⟩
+      filter_upwards [x.2] with j hxj
+      by_contra hj
+      refine hz j hj ⟨x j, hxj, ?_⟩
+      rw [← restrictedProductMap_apply U U' φ hφ, hx, RestrictedProduct.mk_apply]
+  · rintro ⟨hsurj, hsurjOn⟩ y
+    -- Lift `y i` into `U i` whenever possible, and to an arbitrary preimage otherwise.
+    have hlift : ∀ i, ∃ a, φ i a = y i ∧ (y i ∈ φ i '' U i → a ∈ U i) := by
+      intro i
+      by_cases hi : y i ∈ φ i '' U i
+      · obtain ⟨a, ha, hay⟩ := hi
+        exact ⟨a, hay, fun _ ↦ ha⟩
+      · obtain ⟨a, hay⟩ := hsurj i (y i)
+        exact ⟨a, hay, fun h ↦ absurd h hi⟩
+    choose x hx hxU using hlift
+    refine ⟨⟨x, ?_⟩, ?_⟩
+    · filter_upwards [y.2, hsurjOn] with i hyi hi using hxU i (hi hyi)
+    · ext i
+      exact (restrictedProductMap_apply U U' φ hφ _ i).trans (hx i)
+
 /-- An everywhere-preserving componentwise map sends the integral subgroup into the target
 integral subgroup. -/
+@[to_additive]
 theorem mapsTo_integralSubgroup_of_forall {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i) (hφ : ∀ i, Set.MapsTo (φ i) (U i) (U' i)) :
@@ -126,34 +187,38 @@ theorem mapsTo_integralSubgroup_of_forall {H : ι → Type w} [∀ i, Group (H i
   exact fun i ↦ hφ i ((mem_integralSubgroup U x).mp hx i)
 
 /-- Eventual preservation of reference subgroups does not imply preservation of the integral
-subgroups. The witness uses identity maps on `Multiplicative ℤ`, with the source reference family
+subgroups: an explicit pair of reference families, agreeing at all but one index, for which the
+identity componentwise map does not send the integral subgroup into the target integral subgroup.
+The witness uses copies of `Multiplicative ℤ` indexed by `ℕ`, with the source reference family
 everywhere `⊤` and the target reference family equal to `⊥` at zero and `⊤` elsewhere. -/
+theorem exists_not_map_integralSubgroup_le :
+    ∃ (U U' : ℕ → Subgroup (Multiplicative ℤ)) (h : ∀ᶠ i in cofinite, U i = U' i),
+      ¬ (integralSubgroup U).map
+          (restrictedProductMap U U' (fun _ ↦ MonoidHom.id _)
+            (h.mono fun _ hi _ hx ↦ hi ▸ hx)) ≤
+        integralSubgroup U' := by
+  let U : ℕ → Subgroup (Multiplicative ℤ) := fun _ ↦ ⊤
+  let U' : ℕ → Subgroup (Multiplicative ℤ) := fun i ↦ if i = 0 then ⊥ else ⊤
+  have h : ∀ᶠ i in cofinite, U i = U' i := by
+    filter_upwards [eventually_cofinite_ne 0] with i hi
+    simp [U, U', hi]
+  refine ⟨U, U', h, fun hle ↦ ?_⟩
+  let x : Πʳ i, [Multiplicative ℤ, (U i : Set (Multiplicative ℤ))] :=
+    ⟨fun _ ↦ Multiplicative.ofAdd 1, .of_forall fun i ↦ by simp [U]⟩
+  have hx : restrictedProductMap U U' (fun _ ↦ MonoidHom.id _) _ x ∈ integralSubgroup U' :=
+    hle (Subgroup.mem_map_of_mem _ ((mem_integralSubgroup U x).mpr fun i ↦ by simp [U]))
+  have h0 := (mem_integralSubgroup U' _).mp hx 0
+  rw [restrictedProductMap_apply] at h0
+  simp [U', x] at h0
+
+/-- Eventual preservation of reference subgroups does not imply preservation of the integral
+subgroups; this is the universally quantified form of `exists_not_map_integralSubgroup_le`. -/
 theorem not_forall_mapsTo_integralSubgroup :
     ¬ ∀ (U U' : ℕ → Subgroup (Multiplicative ℤ))
         (φ : ∀ _ : ℕ, Multiplicative ℤ →* Multiplicative ℤ)
         (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)),
         (integralSubgroup U).map (restrictedProductMap U U' φ hφ) ≤
-          integralSubgroup U' := by
-  intro h
-  let U : ℕ → Subgroup (Multiplicative ℤ) := fun _ ↦ ⊤
-  let U' : ℕ → Subgroup (Multiplicative ℤ) := fun i ↦ if i = 0 then ⊥ else ⊤
-  let φ : ∀ _ : ℕ, Multiplicative ℤ →* Multiplicative ℤ := fun _ ↦ MonoidHom.id _
-  have hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i) := by
-    have hne : ∀ᶠ i : ℕ in cofinite, i ≠ 0 := by simp
-    filter_upwards [hne] with i hi
-    simp [U, U', φ, hi]
-  let x : Πʳ i, [Multiplicative ℤ, (U i : Set (Multiplicative ℤ))] :=
-    ⟨fun _ ↦ Multiplicative.ofAdd 1, .of_forall fun i ↦ by simp [U]⟩
-  have hx : x ∈ integralSubgroup U := by
-    rw [mem_integralSubgroup]
-    intro i
-    simp [U]
-  have himage : restrictedProductMap U U' φ hφ x ∈
-      (integralSubgroup U).map (restrictedProductMap U U' φ hφ) :=
-    ⟨x, hx, rfl⟩
-  have htarget := h U U' φ hφ himage
-  have hzero := (mem_integralSubgroup U' _).mp htarget 0
-  rw [restrictedProductMap_apply] at hzero
-  simp [U', φ, x] at hzero
+          integralSubgroup U' :=
+  fun H ↦ let ⟨U, U', _, hne⟩ := exists_not_map_integralSubgroup_le; hne (H U U' _ _)
 
 end TauCeti

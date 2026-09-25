@@ -71,22 +71,22 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
 /-- Almost every conditional law of a jointly exchangeable array, given its corner tail, is
 jointly exchangeable. The almost-sure set works simultaneously for all coordinate permutations. -/
 theorem JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail
-    (hρ : JointlyExchangeable ρ fun p x => x p) :
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p) :
     ∀ᵐ x ∂ρ, JointlyExchangeable
-      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) (fun p y => y p) := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) => y p) 0
-    (fun p _ _ => measurable_pi_apply p)
+      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) (fun p y ↦ y p) := by
+  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
+    (fun p _ _ ↦ measurable_pi_apply p)
   have := hρ.smulInvariantMeasure
   have hinv (g : FinitaryPerm) :
       ∀ᵐ x ∂ρ,
-        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x).map (fun y => g • y) =
-          condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x :=
+        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x).map (fun y ↦ g • y) =
+          condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
     map_condExpKernel_ae_eq_of_invariant hm (measurePreserving_smul g ρ)
-      (fun _ hs => Filter.EventuallyEq.of_eq
+      (fun _ hs ↦ Filter.EventuallyEq.of_eq
         (preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g))
   filter_upwards [ae_all_iff.2 hinv] with x hx
   have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α)
-      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) := by
+      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) := by
     constructor
     intro g s hs
     rw [← Measure.map_apply (measurable_const_smul g) hs, hx g]
@@ -97,66 +97,66 @@ separately exchangeable.** A corner-tail event is fixed by relabelling the two a
 not only diagonally, so the stronger symmetry survives the conditioning. The almost-sure set works
 simultaneously for all pairs of coordinate permutations. -/
 theorem SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail
-    (hρ : SeparatelyExchangeable ρ fun p x => x p) :
+    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) :
     ∀ᵐ x ∂ρ, SeparatelyExchangeable
-      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) (fun p y => y p) := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) => y p) 0
-    (fun p _ _ => measurable_pi_apply p)
+      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) (fun p y ↦ y p) := by
+  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
+    (fun p _ _ ↦ measurable_pi_apply p)
   have hinv (g : FinitaryPerm × FinitaryPerm) :
       ∀ᵐ x ∂ρ,
-        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x).map
+        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x).map
             (pairReindex (FinitaryPerm.toPerm g.1) (FinitaryPerm.toPerm g.2)) =
-          condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x :=
+          condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
     map_condExpKernel_ae_eq_of_invariant hm (hρ.measurePreserving_pairReindex _ _)
-      (fun _ hs => Filter.EventuallyEq.of_eq
+      (fun _ hs ↦ Filter.EventuallyEq.of_eq
         (preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.1)
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)))
   filter_upwards [ae_all_iff.2 hinv] with x hx
-  refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ => ?_
+  refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ ↦ ?_
   have hστ := hx (FinitaryPerm.ofPerm σ hσ, FinitaryPerm.ofPerm τ hτ)
   rwa [FinitaryPerm.toPerm_ofPerm, FinitaryPerm.toPerm_ofPerm] at hστ
 
 /-- Relabelling the array by a permutation does not change conditional probabilities given the
 corner tail. -/
 private theorem JointlyExchangeable.condExp_preimage_relabel_arrayTail
-    (hρ : JointlyExchangeable ρ fun p x => x p) (σ : Equiv.Perm ℕ) {S : Set (ℕ × ℕ → α)}
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p) (σ : Equiv.Perm ℕ) {S : Set (ℕ × ℕ → α)}
     (hS : MeasurableSet S) :
-    ρ⟦(fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) => y (σ p.1, σ p.2)) ⁻¹' S |
-      arrayTail (fun p (y : ℕ × ℕ → α) => y p)⟧ =ᵐ[ρ]
-      ρ⟦S | arrayTail (fun p (y : ℕ × ℕ → α) => y p)⟧ := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) => y p) 0
-    (fun p _ _ => measurable_pi_apply p)
-  have hT : Measurable fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) => y (σ p.1, σ p.2) :=
-    Measurable.of_eval fun p => measurable_pi_apply _
+    ρ⟦(fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) ↦ y (σ p.1, σ p.2)) ⁻¹' S |
+      arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)⟧ =ᵐ[ρ]
+      ρ⟦S | arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)⟧ := by
+  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
+    (fun p _ _ ↦ measurable_pi_apply p)
+  have hT : Measurable fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) ↦ y (σ p.1, σ p.2) :=
+    Measurable.of_eval fun p ↦ measurable_pi_apply _
   refine (condExpKernel_ae_eq_condExp hm (hT hS)).symm.trans (EventuallyEq.trans ?_
     (condExpKernel_ae_eq_condExp hm hS))
   filter_upwards [hρ.ae_jointlyExchangeable_condExpKernel_arrayTail] with x hx
   rw [measureReal_def, measureReal_def, ← Measure.map_apply hT hS, jointlyExchangeable_iff.mp hx σ]
-  exact congrArg (fun m : Measure (ℕ × ℕ → α) => (m S).toReal) Measure.map_id'
+  exact congrArg (fun m : Measure (ℕ × ℕ → α) ↦ (m S).toReal) Measure.map_id'
 
 /-- Square blocks over disjoint finite index sets are conditionally independent given the corner
 tail. -/
 private theorem JointlyExchangeable.condExp_restrict_inter_arrayTail
-    (hρ : JointlyExchangeable ρ fun p x => x p) {I J : Finset ℕ} (hIJ : Disjoint I J)
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p) {I J : Finset ℕ} (hIJ : Disjoint I J)
     {s : Set (↥(I ×ˢ I) → α)} {t : Set (↥(J ×ˢ J) → α)} (hs : MeasurableSet s)
     (ht : MeasurableSet t) :
-    ρ⟦(fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) ⁻¹' s ∩
-        (fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t |
-      arrayTail (fun p (y : ℕ × ℕ → α) => y p)⟧ =ᵐ[ρ]
-      ρ⟦(fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) ⁻¹' s |
-        arrayTail (fun p (y : ℕ × ℕ → α) => y p)⟧ *
-      ρ⟦(fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t |
-        arrayTail (fun p (y : ℕ × ℕ → α) => y p)⟧ := by
+    ρ⟦(fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y) ⁻¹' s ∩
+        (fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t |
+      arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)⟧ =ᵐ[ρ]
+      ρ⟦(fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y) ⁻¹' s |
+        arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)⟧ *
+      ρ⟦(fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t |
+        arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)⟧ := by
   classical
   -- relabelings fixing `I` and pushing `J` past `n`
   choose σ hσI hσJ using fun n ↦ I.exists_perm_eqOn_le_apply J hIJ n
-  have hIT : ∀ n, (fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) ⁻¹' s ∩
-      (fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) => y (σ n p.1, σ n p.2)) ⁻¹'
-        ((fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t) =
-      (fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) => y (σ n p.1, σ n p.2)) ⁻¹'
-        ((fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) ⁻¹' s ∩
-          (fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t) := by
+  have hIT : ∀ n, (fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y) ⁻¹' s ∩
+      (fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) ↦ y (σ n p.1, σ n p.2)) ⁻¹'
+        ((fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t) =
+      (fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) ↦ y (σ n p.1, σ n p.2)) ⁻¹'
+        ((fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y) ⁻¹' s ∩
+          (fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t) := by
     intro n
     rw [Set.preimage_inter]
     congr 1
@@ -166,23 +166,23 @@ private theorem JointlyExchangeable.condExp_restrict_inter_arrayTail
     ext ⟨p, hp⟩
     rw [Finset.mem_product] at hp
     simp [hσI n _ hp.1, hσI n _ hp.2]
-  have hBn : ∀ n, MeasurableSet[arrayTailFamily (fun p (y : ℕ × ℕ → α) => y p) n]
-      ((fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) => y (σ n p.1, σ n p.2)) ⁻¹'
-        ((fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t)) := by
+  have hBn : ∀ n, MeasurableSet[arrayTailFamily (fun p (y : ℕ × ℕ → α) ↦ y p) n]
+      ((fun (y : ℕ × ℕ → α) (p : ℕ × ℕ) ↦ y (σ n p.1, σ n p.2)) ⁻¹'
+        ((fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t)) := by
     intro n
-    have : Measurable[arrayTailFamily (fun p (y : ℕ × ℕ → α) => y p) n]
-        fun y : ℕ × ℕ → α => (J ×ˢ J).restrict fun p : ℕ × ℕ => y (σ n p.1, σ n p.2) := by
-      let : MeasurableSpace (ℕ × ℕ → α) := arrayTailFamily (fun p (y : ℕ × ℕ → α) => y p) n
+    have : Measurable[arrayTailFamily (fun p (y : ℕ × ℕ → α) ↦ y p) n]
+        fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict fun p : ℕ × ℕ ↦ y (σ n p.1, σ n p.2) := by
+      let : MeasurableSpace (ℕ × ℕ → α) := arrayTailFamily (fun p (y : ℕ × ℕ → α) ↦ y p) n
       refine Measurable.of_eval fun q ↦ ?_
       have hq := Finset.mem_product.1 q.2
-      exact measurable_arrayTailFamily_of_le (X := fun p (y : ℕ × ℕ → α) => y p)
+      exact measurable_arrayTailFamily_of_le (X := fun p (y : ℕ × ℕ → α) ↦ y p)
         (hσJ n _ hq.1) (hσJ n _ hq.2)
     exact this ht
   have key := condExp_inter_ae_eq_mul_iInf (μ := ρ)
-    (arrayTailFamily_antitone (fun p (y : ℕ × ℕ → α) => y p))
+    (arrayTailFamily_antitone (fun p (y : ℕ × ℕ → α) ↦ y p))
     (arrayTailFamily_le_ambient 0 fun p _ _ ↦ measurable_pi_apply p)
     ((Finset.measurable_restrict _) hs) hBn
-    (B := (fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y) ⁻¹' t)
+    (B := (fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y) ⁻¹' t)
     (fun n ↦ by
       rw [← arrayTail_eq_iInf_arrayTailFamily]
       exact hρ.condExp_preimage_relabel_arrayTail (σ n) ((Finset.measurable_restrict _) ht))
@@ -197,17 +197,17 @@ jointly dissociated.** Together with
 `JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail`, almost every conditional law
 is a jointly exchangeable, jointly dissociated array law. -/
 theorem JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail
-    (hρ : JointlyExchangeable ρ fun p x => x p) :
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p) :
     ∀ᵐ x ∂ρ, JointlyDissociated
-      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) (fun p y => y p) := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) => y p) 0
-    (fun p _ _ => measurable_pi_apply p)
+      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) (fun p y ↦ y p) := by
+  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
+    (fun p _ _ ↦ measurable_pi_apply p)
   -- for each pair of disjoint finite index sets, the square blocks are conditionally independent,
   -- hence independent under almost every conditional law
   have hfin : ∀ I J : Finset ℕ, Disjoint I J → ∀ᵐ x ∂ρ,
-      IndepFun (fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y)
-        (fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y)
-        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) := by
+      IndepFun (fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y)
+        (fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y)
+        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) := by
     intro I J hIJ
     have hcond := (condIndepFun_iff_condExp_inter_preimage_eq_mul (hm' := hm) (μ := ρ)
       (Finset.measurable_restrict _) (Finset.measurable_restrict _)).2
@@ -221,12 +221,12 @@ theorem JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail
       Kernel.map_apply _ (Finset.measurable_restrict _),
       Kernel.map_apply _ (Finset.measurable_restrict _)] at hx
   have hall : ∀ᵐ x ∂ρ, ∀ I J : Finset ℕ, Disjoint I J →
-      IndepFun (fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y)
-        (fun y : ℕ × ℕ → α => (J ×ˢ J).restrict y)
-        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) := by
+      IndepFun (fun y : ℕ × ℕ → α ↦ (I ×ˢ I).restrict y)
+        (fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict y)
+        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) := by
     simp only [ae_all_iff, Filter.eventually_imp_distrib_left]
     exact hfin
   filter_upwards [hall] with x hx
-  exact (jointlyDissociated_iff_indepFun_restrict fun p => measurable_pi_apply p).2 hx
+  exact (jointlyDissociated_iff_indepFun_restrict fun p ↦ measurable_pi_apply p).2 hx
 
 end TauCeti.Probability

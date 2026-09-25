@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 
 /-!
 # Restriction of finite-layer Tate cohomology
@@ -26,8 +27,8 @@ Galois group is identified with the image of its inclusion into the larger one, 
 The comparison lemmas below identify each branch with the corresponding established map. On
 representatives, degree-zero restriction is the ground-level inclusion and degree-minus-one
 restriction is the relative transfer of norm kernels, and restriction is functorial along a tower
-`F ⊆ E ⊆ E' ⊆ K` in every degree at least minus one. Corestriction after restriction is
-multiplication by the relative degree `[E : F]` in every degree.
+`F ⊆ E ⊆ E' ⊆ K` in every degree. Corestriction after restriction is multiplication by the
+relative degree `[E : F]` in every degree.
 
 ## Main definitions
 
@@ -46,6 +47,8 @@ multiplication by the relative degree `[E : F]` in every degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_zero_H0π` and
   `TauCeti.ClassFieldTheory.LayerRestriction.tateHZeroEquivNormQuotient_tateRes_H0π`: in degree
   zero, restriction is the ground-level inclusion on representatives and norm quotients.
+* `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRes_zero_H0π`: in degree zero,
+  trivial-coefficient restriction is the identity on integral representatives.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_neg_one_HNegOneπ`: in degree minus one,
   restriction is the relative transfer `kerNormTransfer` on representatives.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_tateRes`: `cor ∘ res = [E : F]` in every
@@ -54,6 +57,9 @@ multiplication by the relative degree `[E : F]` in every degree.
   of norm kernels is transitive along a tower modulo the augmentation submodule.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_of_neg_one_le`: Tate restriction is
   functorial along towers in every degree at least minus one.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_eq_comp` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans`: Tate restriction is functorial along
+  towers of layers in every degree.
 
 ## References
 
@@ -174,27 +180,19 @@ def kerNormTransfer (T : LayerRestriction small big) (F : Formation G) :
       (Representation.IsIntertwiningMap.symm (T.isIntertwiningMap_repIso_range F))).comp
     (Representation.relTransferKerNorm (big.rep F).ρ T.galHom.range)
 
-/-- The relative transfer of norm kernels is the relative transfer on the ambient module. -/
-@[simp]
-theorem kerNormTransfer_apply_coe (T : LayerRestriction small big) (F : Formation G)
-    (x : LinearMap.ker (big.rep F).ρ.norm) :
-    (((T.kerNormTransfer F x : LinearMap.ker (small.rep F).ρ.norm) : F.level small.top) :
-        F.toRep.V) =
-      ((Representation.relTransfer (big.rep F).ρ T.galHom.range
-        ((x : F.level big.top) : (big.rep F).V) : F.level big.top) : F.toRep.V) := by
-  rw [kerNormTransfer, LinearMap.comp_apply, TauCeti.TateCohomology.mapKerNorm_apply_coe,
-    Representation.coe_relTransferKerNorm]
-  exact T.repIso_inv_apply_coe F _
-
+-- `dsimp% only` on the left-hand side: see the implementation notes of `Formation/Basic.lean`.
 /-- The norm-kernel transfer is the relative transfer of the image subgroup, read back through
 the identification of coefficient modules. -/
 @[simp]
 theorem kerNormTransfer_apply (T : LayerRestriction small big) (F : Formation G)
     (x : LinearMap.ker (big.rep F).ρ.norm) :
-    ((T.kerNormTransfer F x : LinearMap.ker (small.rep F).ρ.norm) : F.level small.top) =
-      (T.repIso F).inv.hom
-        (Representation.relTransfer (big.rep F).ρ T.galHom.range ((x : F.level big.top))) :=
-  Subtype.ext (by rw [kerNormTransfer_apply_coe, repIso_inv_apply_coe])
+    (dsimp% only (T.kerNormTransfer F x : F.level small.top)) =
+      (T.repIso F).inv.hom (Representation.relTransfer (big.rep F).ρ T.galHom.range x) := by
+  rw [kerNormTransfer, LinearMap.comp_apply, TauCeti.TateCohomology.mapKerNorm_apply_coe,
+    Representation.coe_relTransferKerNorm]
+  -- The linear part of `IsIntertwiningMap.symm (T.isIntertwiningMap_repIso_range F)` is
+  -- `(T.repIso F).inv.hom` by definition of `Representation.equivOfIso`.
+  rfl
 
 /-- **In degree minus one, layer Tate restriction is the relative transfer** on representatives. -/
 theorem tateRes_neg_one_HNegOneπ (T : LayerRestriction small big) (F : Formation G)
@@ -298,6 +296,51 @@ theorem tateRes_trans_of_neg_one_le (T : LayerRestriction a b) (T' : LayerRestri
       exact kerNormTransfer_trans_sub_mem T T' F y
   · exact tateRes_trans_of_nonneg T T' F r (by omega)
 
+-- The degrees below `-1` of `tateRes_trans`, where restriction is the transfer in group homology.
+attribute [local instance] Subgroup.fintypeOfFinite in
+private theorem tateRes_negSucc_succ_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (n : ℕ) : (T.trans T').tateRes F (Int.negSucc (n + 1)) =
+      T'.tateRes F (Int.negSucc (n + 1)) ≫ T.tateRes F (Int.negSucc (n + 1)) := by
+  simp only [tateRes_negSucc_succ, Category.assoc]
+  -- The transfer is transitive along the image of the tower of Galois groups...
+  rw [← TauCeti.TateCohomology.negSuccRes_trans_assoc (c.rep F) (galHom_range_trans_le T T')]
+  refine congrArg (_ ≫ ·) ((Iso.eq_inv_comp _).2 ?_)
+  -- ...and compatible with the identification of the middle Galois group with its image.
+  simp only [tateRangeIso_hom, TauCeti.TateCohomology.map_comp_negSuccRes_assoc (b.rep F)
+    (MonoidHom.ofInjective T'.galHom_injective) (isIntertwiningMap_repIso_range T' F)
+    (galHom_range_map_ofInjective T T') (n + 1)]
+  refine congrArg (_ ≫ ·) ?_
+  -- It remains to compose the identifications of Galois groups and coefficients along the tower.
+  rw [TauCeti.TateCohomology.map_comp_assoc, Iso.comp_inv_eq, Iso.eq_inv_comp]
+  -- `rw [tateRangeIso_hom]` would be far slower here than `simp only`.
+  simp only [tateRangeIso_hom, TauCeti.TateCohomology.map_comp]
+  refine TauCeti.TateCohomology.map_congr (MulEquiv.ext fun γ ↦ Subtype.ext ?_)
+    (LinearMap.ext fun x ↦ Subtype.ext ?_) _
+  · simp [TauCeti.Subgroup.coe_congrOfMapEq_apply, MonoidHom.ofInjective_apply, galHom_trans T T']
+  · exact (T'.repIso_hom_apply_coe F _).trans
+      ((T.repIso_hom_apply_coe F x).trans ((T.trans T').repIso_hom_apply_coe F x).symm)
+
+/-- **Tate restriction is functorial along a tower, in every integer degree**, as an identity of
+morphisms: restricting from `K/F` to `K/E'` is restricting from `K/F` to `K/E` and then from `K/E`
+to `K/E'`. -/
+@[reassoc]
+theorem tateRes_trans_eq_comp (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (r : ℤ) : (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
+  -- The degrees are left to unification: instantiating at the literal `-1` rather than
+  -- `Int.negSucc 0` makes `exact` markedly slower.
+  rcases r with _ | (_ | n)
+  · exact tateRes_trans_of_neg_one_le T T' F _ (by lia)
+  · exact tateRes_trans_of_neg_one_le T T' F _ le_rfl
+  · exact tateRes_negSucc_succ_trans T T' F n
+
+/-- **Tate restriction is functorial along a tower, in every integer degree.** Restricting from
+`K/F` to `K/E` and then to `K/E'` agrees with direct restriction from `K/F` to `K/E'`. -/
+-- Not `@[simp]`: `LayerRestriction` is a `Prop`, so the left-hand side does not mention `T`, `T'`
+-- or the middle layer, and `simp` could never instantiate them.
+theorem tateRes_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (F : Formation G)
+    (r : ℤ) (x : c.TateH F r) : (T.trans T').tateRes F r x = T.tateRes F r (T'.tateRes F r x) := by
+  rw [tateRes_trans_eq_comp, ModuleCat.comp_apply]
+
 end Towers
 
 /-- **Corestriction after restriction is multiplication by the relative degree** `[E : F]`, in
@@ -358,6 +401,21 @@ theorem trivialTateRes_zero (T : LayerRestriction small big) :
       TauCeti.TateCohomology.H0Res (Rep.trivial ℤ big.Gal ℤ) T.galHom.range ≫
         (T.trivialTateRangeIso 0).inv :=
   (rfl)
+
+-- Not `@[simp]`: the `@[simp]` lemma `trivialTateRes_zero` rewrites its left-hand side first, so
+-- `simpNF` rejects it.
+/-- **In degree zero, trivial-coefficient restriction is the identity on integral
+representatives.** The class of an integer in `Hhat⁰(Gal(K/F), ℤ)` restricts to the class of the
+same integer in `Hhat⁰(Gal(K/E), ℤ)`. Corestriction instead multiplies representatives by the
+relative degree `[E : F]` (`trivialTateCor_zero_H0π`). -/
+theorem trivialTateRes_zero_H0π (T : LayerRestriction small big)
+    (x : (Rep.trivial ℤ big.Gal ℤ).ρ.invariants) :
+    T.trivialTateRes 0 (TauCeti.TateCohomology.H0π _ x) =
+      TauCeti.TateCohomology.H0π (Rep.trivial ℤ small.Gal ℤ) ⟨(x : ℤ), fun _ ↦ rfl⟩ := by
+  rw [trivialTateRes_zero, ModuleCat.comp_apply, TauCeti.TateCohomology.H0π_comp_H0Res_apply]
+  -- The range comparison fixes the integral representative, hence so does its inverse.
+  exact (congrArg _ (T.trivialTateRangeIso_hom_H0π ⟨(x : ℤ), fun _ ↦ rfl⟩).symm).trans <|
+    Iso.hom_inv_id_apply _ _
 
 /-- In a positive degree, trivial-coefficient Tate restriction is ordinary cohomological
 restriction to the image subgroup, followed by the range comparison. -/

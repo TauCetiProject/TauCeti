@@ -135,18 +135,23 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
     rw [rightCosetFactor_out]
     simp
 
+-- `simp` reduces the carriers of the `abbrev`s `Rep.coind` and `Rep.ind` in type arguments (of a
+-- coercion, or of `Module.finrank`) before it looks a term up, so the lemmas evaluating the coset
+-- model of coinduction, and `Rep.finrank_ind`, state their left-hand sides through `dsimp% only`,
+-- as in #8315.
 /-- The coset model evaluates a coinduced function at the chosen representative. -/
 @[simp]
 theorem coindSubtypeEquivPi_apply (A : Rep.{w} k S)
     (f : Rep.coind S.subtype A) (q : Quotient (QuotientGroup.rightRel S)) :
-    coindSubtypeEquivPi A f q = f.1 q.out := by
+    (dsimp% only (coindSubtypeEquivPi A f q)) = f.1 q.out := by
   rw [coindSubtypeEquivPi]
   rfl
 
 /-- The inverse coset model extends a value from each representative by `S`-equivariance. -/
 @[simp]
 theorem coindSubtypeEquivPi_symm_apply (A : Rep.{w} k S)
-    (x : Quotient (QuotientGroup.rightRel S) → A) (g : G) : ((coindSubtypeEquivPi A).symm x).1 g =
+    (x : Quotient (QuotientGroup.rightRel S) → A) (g : G) :
+    (dsimp% only (((coindSubtypeEquivPi A).symm x).1 g)) =
       A.ρ (rightCosetFactor (S := S) g) (x (Quotient.mk'' g)) := by
   rw [coindSubtypeEquivPi]
   rfl
@@ -248,10 +253,14 @@ noncomputable instance finiteDimensional_ind [S.FiniteIndex] (A : Rep.{max w u} 
   exact (indSubtypeEquivPi A).symm.finiteDimensional
 
 /-- The dimension of induction from a finite-index subgroup is the index times the original
-dimension. -/
-@[simp]
+dimension.
+
+Not a `simp` lemma: `A` lives in the universe `max w u`, and when `simp` unifies the left-hand side
+with a goal it cannot recover `w` from that universe, so in a universe-polymorphic context the lemma
+fires only with its universes given, as `simp [finrank_ind.{u, v, w}]`. The left-hand side is still
+stated through `dsimp% only`, so that `simp [finrank_ind]` fires when the universes are concrete. -/
 theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k A] :
-    Module.finrank k (Rep.ind S.subtype A) = S.index * Module.finrank k A := by
+    (dsimp% only (Module.finrank k (Rep.ind S.subtype A))) = S.index * Module.finrank k A := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   let := S.fintypeQuotientOfFiniteIndex
   let : Fintype (Quotient (QuotientGroup.rightRel S)) :=

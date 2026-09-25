@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
 import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
@@ -37,6 +38,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 * `Equiv.Perm.lcm_parts_partition`, `Equiv.Perm.sign_of_parts_partition`: the order and the sign
   of a permutation, read off the corrected multiset. These are the two invariants that a single
   exhibited factorization type contributes to the group that exhibits it.
+* `Equiv.Perm.exists_orderOf_eq_iff`: the orders of the permutations of a finite type are exactly
+  the least common multiples of the partitions of its cardinality.
 * `Equiv.Perm.parts_partition_permCongr`: transport along an equivalence `α ≃ β` of the underlying
   types leaves it unchanged. Its ingredient `Equiv.Perm.cycleType_permCongr` is proved here too,
   since Mathlib records only `Equiv.Perm.sign_permCongr`. The form for `Equiv.permCongrHom`, the
@@ -223,6 +226,36 @@ theorem _root_.Equiv.Perm.dvd_of_mem_parts_partition {σ : Equiv.Perm α} {n : �
     (hn : n ∈ σ.partition.parts) : n ∣ orderOf σ := by
   rw [← lcm_parts_partition]
   exact Multiset.dvd_lcm hn
+
+omit [Fintype α] [DecidableEq α] in
+/-- A finite type carries a permutation of order `k` exactly when `k` is the least common multiple
+of the parts of some partition of its cardinality. A partition is realized by a permutation whose
+cycles have its parts of size at least two as lengths, by `Equiv.Perm.exists_with_cycleType_iff`;
+the parts equal to one do not change the least common multiple. -/
+theorem _root_.Equiv.Perm.exists_orderOf_eq_iff [Finite α] {k : ℕ} :
+    (∃ σ : Equiv.Perm α, orderOf σ = k) ↔
+      ∃ p : (Nat.card α).Partition, p.parts.lcm = k := by
+  classical
+  have := Fintype.ofFinite α
+  rw [Nat.card_eq_fintype_card]
+  refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨σ.partition, by rw [lcm_parts_partition, hσ]⟩, fun ⟨p, hp⟩ ↦ ?_⟩
+  -- The parts below two are ones, so dropping them changes neither the order nor the lcm.
+  have hone : p.parts.filter (¬2 ≤ ·) = Multiset.replicate
+      (p.parts.filter (¬2 ≤ ·)).card 1 := by
+    refine Multiset.eq_replicate_card.2 fun i hi ↦ ?_
+    obtain ⟨hi, hi2⟩ := Multiset.mem_filter.1 hi
+    have := p.parts_pos hi
+    omega
+  have hlcm : p.parts.lcm = (p.parts.filter (2 ≤ ·)).lcm := by
+    conv_lhs => rw [← Multiset.filter_add_not (2 ≤ ·) p.parts]
+    rw [Multiset.lcm_add, hone, lcm_replicate_one]
+    simp
+  have hsum : (p.parts.filter (2 ≤ ·)).sum ≤ Fintype.card α :=
+    calc _ ≤ (p.parts.filter (2 ≤ ·)).sum + (p.parts.filter (¬2 ≤ ·)).sum := le_self_add
+      _ = Fintype.card α := by rw [← Multiset.sum_add, Multiset.filter_add_not, p.parts_sum]
+  obtain ⟨σ, hσ⟩ := (exists_with_cycleType_iff α (m := p.parts.filter (2 ≤ ·))).2
+    ⟨hsum, fun i hi ↦ (Multiset.mem_filter.1 hi).2⟩
+  exact ⟨σ, by rw [← lcm_cycleType, hσ, ← hlcm, hp]⟩
 
 /-- The sign of a permutation, read off the parts of `Equiv.Perm.partition`: it is the parity of
 the number of parts, corrected by the ambient cardinality. This is `Equiv.Perm.sign_of_cycleType`

@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
 public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
+public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
 
 /-!
@@ -38,9 +39,12 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup G S i`: the `i`-th ramification group, for `i : ℤ`.
 * `TauCeti.IsLocalRing.ramificationGroupReal G S u`: the same family reindexed by a real number
   through `⌈·⌉`, the convention under which the step function is constant on `(i - 1, i]`.
+* `TauCeti.IsLocalRing.RamificationGroupGraded G S i`: the successive quotient `G_i / G_{i+1}`.
 
 ## Main results
 
+* `TauCeti.IsLocalRing.ramificationGroup_natCast`: at a nonnegative index `G_i` is
+  `Ideal.ramificationGroup` of the maximal ideal.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one` and
   `TauCeti.IsLocalRing.ramificationGroup_antitone`: the filtration starts at `⊤` and decreases.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
@@ -108,6 +112,14 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff, h]
 
+/-- At a nonnegative index, the ramification group of the local ring is the ramification group
+`Ideal.ramificationGroup` of its maximal ideal. -/
+@[simp]
+theorem ramificationGroup_natCast (n : ℕ) :
+    ramificationGroup G S n = (maximalIdeal S).ramificationGroup G n := by
+  have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
+  rw [ramificationGroup_def, Ideal.ramificationGroup_def, h]
+
 /-- At the index `0` the defining condition is congruence modulo the maximal ideal itself. -/
 theorem mem_ramificationGroup_zero_iff {σ : G} :
     σ ∈ ramificationGroup G S 0 ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S := by
@@ -135,6 +147,10 @@ theorem ramificationGroup_zero_eq_inertia :
     ramificationGroup G S 0 = Ideal.inertia G (maximalIdeal S) := by
   have h : ((0 : ℤ) + 1).toNat = 1 := by omega
   rw [ramificationGroup_def, h, pow_one]
+
+/-- The successive quotient `G_i / G_{i+1}` of the ramification filtration. -/
+abbrev RamificationGroupGraded (i : ℤ) :=
+  ramificationGroup G S i ⧸ (ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i)
 
 /-- The ramification filtration is decreasing. -/
 theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by

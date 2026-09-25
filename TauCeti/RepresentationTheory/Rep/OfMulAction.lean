@@ -29,6 +29,7 @@ of `G`-sets into an isomorphism of the permutation representations they carry.
 
 Each isomorphism comes with the lemmas reading it, and its inverse, on the basis of `k[G ⧸ H]`
 indexed by the cosets.
+
 -/
 
 public section
@@ -80,17 +81,21 @@ noncomputable def ofMulActionIsoCongr (e : X ≃ Y) (he : ∀ (g : G) (x : X), e
     Rep.ofMulAction k G X ≅ Rep.ofMulAction k G Y :=
   Rep.mkIso (ofMulActionEquivCongr k e he)
 
+-- `simp` reduces the carriers of the `abbrev`s `Rep.ofMulAction`, `Rep.leftRegular` and
+-- `Rep.trivial` (e.g. to `k[X]`) in implicit type arguments before it looks a term up, so the
+-- `simp` lemmas evaluating this file's isomorphisms on basis elements state their left-hand sides
+-- through `dsimp% only`, as in #8315.
 @[simp]
 theorem ofMulActionIsoCongr_hom_hom_single (e : X ≃ Y)
     (he : ∀ (g : G) (x : X), e (g • x) = g • e x) (x : X) (r : k) :
-    (ofMulActionIsoCongr k e he).hom.hom (MonoidAlgebra.single x r) =
+    (dsimp% only ((ofMulActionIsoCongr k e he).hom.hom (MonoidAlgebra.single x r))) =
       MonoidAlgebra.single (e x) r := by
   simp [ofMulActionIsoCongr, ofMulActionEquivCongr]
 
 @[simp]
 theorem ofMulActionIsoCongr_inv_hom_single (e : X ≃ Y)
     (he : ∀ (g : G) (x : X), e (g • x) = g • e x) (y : Y) (r : k) :
-    (ofMulActionIsoCongr k e he).inv.hom (MonoidAlgebra.single y r) =
+    (dsimp% only ((ofMulActionIsoCongr k e he).inv.hom (MonoidAlgebra.single y r))) =
       MonoidAlgebra.single (e.symm y) r := by
   simp [ofMulActionIsoCongr, ofMulActionEquivCongr]
 
@@ -110,27 +115,30 @@ noncomputable def quotientIsoCongr {H K : Subgroup G} (h : H = K) :
 
 @[simp]
 theorem quotientIsoCongr_hom_hom_single {H K : Subgroup G} (h : H = K) (q : G ⧸ H) (r : k) :
-    (quotientIsoCongr k h).hom.hom (MonoidAlgebra.single q r) =
+    (dsimp% only ((quotientIsoCongr k h).hom.hom (MonoidAlgebra.single q r))) =
       MonoidAlgebra.single (Subgroup.quotientEquivOfEq h q) r :=
   ofMulActionIsoCongr_hom_hom_single k _ _ q r
 
 @[simp]
 theorem quotientIsoCongr_inv_hom_single {H K : Subgroup G} (h : H = K) (q : G ⧸ K) (r : k) :
-    (quotientIsoCongr k h).inv.hom (MonoidAlgebra.single q r) =
+    (dsimp% only ((quotientIsoCongr k h).inv.hom (MonoidAlgebra.single q r))) =
       MonoidAlgebra.single (Subgroup.quotientEquivOfEq h.symm q) r :=
   ofMulActionIsoCongr_inv_hom_single k _ _ q r
 
+-- Not `@[simp]`: `simp` proves it from `quotientIsoCongr_hom_hom_single` and
+-- `Subgroup.quotientEquivOfEq_mk`, so simpNF rejects it. The left-hand side is still stated
+-- through `dsimp% only`, so that `simp only [this lemma]` fires.
 /-- The basis element indexed by the coset of a representative, in the forward direction. -/
-@[simp]
 theorem quotientIsoCongr_hom_hom_single_mk {H K : Subgroup G} (h : H = K) (x : G) (r : k) :
-    (quotientIsoCongr k h).hom.hom (MonoidAlgebra.single (x : G ⧸ H) r) =
+    (dsimp% only ((quotientIsoCongr k h).hom.hom (MonoidAlgebra.single (x : G ⧸ H) r))) =
       MonoidAlgebra.single (x : G ⧸ K) r :=
   quotientIsoCongr_hom_hom_single k h _ r
 
+-- Not `@[simp]`, as for `quotientIsoCongr_hom_hom_single_mk`: `simp` first rewrites the left-hand
+-- side with `quotientIsoCongr_inv_hom_single`.
 /-- The basis element indexed by the coset of a representative, in the inverse direction. -/
-@[simp]
 theorem quotientIsoCongr_inv_hom_single_mk {H K : Subgroup G} (h : H = K) (x : G) (r : k) :
-    (quotientIsoCongr k h).inv.hom (MonoidAlgebra.single (x : G ⧸ K) r) =
+    (dsimp% only ((quotientIsoCongr k h).inv.hom (MonoidAlgebra.single (x : G ⧸ K) r))) =
       MonoidAlgebra.single (x : G ⧸ H) r :=
   quotientIsoCongr_inv_hom_single k h _ r
 
@@ -142,22 +150,25 @@ noncomputable def quotientBotIsoLeftRegular :
 
 @[simp]
 theorem quotientBotIsoLeftRegular_hom_hom_single (q : G ⧸ (⊥ : Subgroup G)) (r : k) :
-    (quotientBotIsoLeftRegular k).hom.hom (MonoidAlgebra.single q r) =
+    (dsimp% only ((quotientBotIsoLeftRegular k).hom.hom (MonoidAlgebra.single q r))) =
       MonoidAlgebra.single (QuotientGroup.quotientBot q) r :=
   ofMulActionIsoCongr_hom_hom_single k QuotientGroup.quotientBot.toEquiv
     quotientBot_equivariant q r
 
+-- Not `@[simp]`: `simp` first rewrites the left-hand side with
+-- `quotientBotIsoLeftRegular_hom_hom_single`, so simpNF rejects it. The left-hand side is still
+-- stated through `dsimp% only`, so that `simp only [this lemma]` fires.
 /-- The basis element indexed by the coset of a representative is sent to that
 representative. -/
-@[simp]
 theorem quotientBotIsoLeftRegular_hom_hom_single_mk (x : G) (r : k) :
-    (quotientBotIsoLeftRegular k).hom.hom (MonoidAlgebra.single (x : G ⧸ (⊥ : Subgroup G)) r) =
+    (dsimp% only ((quotientBotIsoLeftRegular k).hom.hom
+        (MonoidAlgebra.single (x : G ⧸ (⊥ : Subgroup G)) r))) =
       MonoidAlgebra.single x r :=
   quotientBotIsoLeftRegular_hom_hom_single k _ r
 
 @[simp]
 theorem quotientBotIsoLeftRegular_inv_hom_single (x : G) (r : k) :
-    (quotientBotIsoLeftRegular k).inv.hom (MonoidAlgebra.single x r) =
+    (dsimp% only ((quotientBotIsoLeftRegular k).inv.hom (MonoidAlgebra.single x r))) =
       MonoidAlgebra.single (x : G ⧸ (⊥ : Subgroup G)) r :=
   ofMulActionIsoCongr_inv_hom_single k QuotientGroup.quotientBot.toEquiv
     quotientBot_equivariant _ r
@@ -180,13 +191,14 @@ noncomputable def quotientTopIsoTrivial :
 
 @[simp]
 theorem quotientTopIsoTrivial_hom_hom_single (q : G ⧸ (⊤ : Subgroup G)) (r : k) :
-    (quotientTopIsoTrivial k).hom.hom (MonoidAlgebra.single q r) = r := by
+    (dsimp% only ((quotientTopIsoTrivial k).hom.hom (MonoidAlgebra.single q r))) = r := by
   have := QuotientGroup.subsingleton_quotient_top (G := G)
   rw [Subsingleton.elim q 1]
   simp [quotientTopIsoTrivial, Representation.ofMulActionSubsingletonEquivTrivial]
 
 @[simp]
-theorem quotientTopIsoTrivial_inv_hom_apply (r : k) : (quotientTopIsoTrivial k).inv.hom r =
+theorem quotientTopIsoTrivial_inv_hom_apply (r : k) :
+    (dsimp% only ((quotientTopIsoTrivial k).inv.hom r)) =
       MonoidAlgebra.single ((1 : G) : G ⧸ (⊤ : Subgroup G)) r := by
   have := QuotientGroup.subsingleton_quotient_top (G := G)
   simp [quotientTopIsoTrivial, Representation.ofMulActionSubsingletonEquivTrivial]

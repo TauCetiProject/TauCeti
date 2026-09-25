@@ -150,6 +150,16 @@ def refl (L : IntegralLattice V) : Isometry L L where
 @[simp]
 theorem refl_apply (L : IntegralLattice V) (x : V) : refl L x = x := (rfl)
 
+/-- The identity isometry between two equal integral lattices in the same ambient space. -/
+def ofEq {L M : IntegralLattice V} (h : L = M) : Isometry L M :=
+  h ▸ refl L
+
+/-- The identity isometry between equal lattices is the identity on the ambient space. -/
+@[simp]
+theorem ofEq_apply {L M : IntegralLattice V} (h : L = M) (x : V) : ofEq h x = x := by
+  subst h
+  rfl
+
 /-- The inverse of an integral-lattice isometry. -/
 @[symm]
 def symm (e : Isometry L M) : Isometry M L where

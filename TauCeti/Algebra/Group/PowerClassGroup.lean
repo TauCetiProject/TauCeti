@@ -22,6 +22,10 @@ the subgroup is Mathlib's `Subgroup.square G`, by `TauCeti.square_eq_powMonoidHo
   an element to its power class. It is surjective (`TauCeti.powerClassHom_surjective`) with kernel
   `Gⁿ` (`TauCeti.ker_powerClassHom`), so it presents `G ⧸ Gⁿ` as the quotient of `G` by the `n`th
   powers.
+* `TauCeti.powerClassMap`: the map `G ⧸ Gⁿ → H ⧸ Hⁿ` induced by a homomorphism `G →* H`, which
+  carries `n`th powers to `n`th powers. It is functorial (`TauCeti.powerClassMap_id`,
+  `TauCeti.powerClassMap_comp`); for a field extension `L/K` and `f` the map `Kˣ →* Lˣ` it is the
+  map of power classes along which Kummer theory is natural in the field.
 -/
 
 public section
@@ -63,5 +67,45 @@ theorem powerClassHom_apply (g : G) : powerClassHom G n g = QuotientGroup.mk g :
 theorem mem_powerSubgroup_iff {g : G} : g ∈ powerSubgroup G n ↔ ∃ h : G, h ^ n = g := by
   rw [powerSubgroup, MonoidHom.mem_range]
   exact exists_congr fun h => by rw [powMonoidHom_apply]
+
+/-! ### Functoriality -/
+
+variable {H : Type*} [CommGroup H]
+
+/-- A homomorphism carries `n`th powers to `n`th powers: `Gⁿ` lies in the preimage of `Hⁿ`. -/
+theorem powerSubgroup_le_comap (f : G →* H) :
+    powerSubgroup G n ≤ (powerSubgroup H n).comap f := by
+  rintro _ ⟨g, rfl⟩
+  exact ⟨f g, (map_pow f g n).symm⟩
+
+/-- **The map of power classes** `G ⧸ Gⁿ → H ⧸ Hⁿ` induced by a homomorphism `f : G →* H`, the
+class of `g` going to the class of `f g`. -/
+def powerClassMap (f : G →* H) : powerClassQuotient G n →* powerClassQuotient H n :=
+  QuotientGroup.map (powerSubgroup G n) (powerSubgroup H n) f (powerSubgroup_le_comap n f)
+
+/-- `powerClassMap` sends the class of `g` to the class of `f g`. -/
+@[simp]
+theorem powerClassMap_mk (f : G →* H) (g : G) :
+    powerClassMap n f (QuotientGroup.mk g) = QuotientGroup.mk (f g) :=
+  QuotientGroup.map_mk _ _ _ _ g
+
+/-- `powerClassMap` is the map of power classes compatible with `powerClassHom`:
+`powerClassMap n f ∘ powerClassHom G n = powerClassHom H n ∘ f`. -/
+theorem powerClassMap_comp_powerClassHom (f : G →* H) :
+    (powerClassMap n f).comp (powerClassHom G n) = (powerClassHom H n).comp f := by
+  ext g
+  simp
+
+/-- The identity induces the identity on power classes. -/
+@[simp]
+theorem powerClassMap_id : powerClassMap n (MonoidHom.id G) = MonoidHom.id _ := by
+  ext g
+  simp
+
+/-- The map of power classes of a composite is the composite of the maps of power classes. -/
+theorem powerClassMap_comp {P : Type*} [CommGroup P] (f : G →* H) (f' : H →* P) :
+    powerClassMap n (f'.comp f) = (powerClassMap n f').comp (powerClassMap n f) := by
+  ext g
+  simp
 
 end TauCeti

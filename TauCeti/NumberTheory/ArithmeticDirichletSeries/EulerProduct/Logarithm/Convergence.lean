@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.PowerSeries.LogDeriv
+public import TauCeti.Analysis.Complex.PowerSeries.Log.Deriv
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Eval
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 /-!
 # Convergence of logarithmic-derivative series
@@ -22,8 +23,8 @@ logarithmic derivative converges at `N(P) ^ (-s)` for every `s` with `σ < Re(s)
 
 ## Main results
 
-* `TauCeti.EulerProductData.summable_coeff_localLogDerivSeries_of_zeroFree`: convergence of the
-  formal local logarithmic derivative in a zero-free disk.
+* `TauCeti.EulerProductData.summable_norm_coeff_localLogDerivSeries_of_zeroFree`: absolute
+  convergence of the formal local logarithmic derivative in a zero-free disk.
 * `logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries_of_zeroFree`:
   evaluation of the formal series without a separate summability hypothesis.
 * `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree`: the global
@@ -46,6 +47,37 @@ open scoped nonZeroDivisors NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- **Absolute convergence of a local formal logarithmic derivative on a zero-free disk.**
+Suppose the local factor at `P` converges absolutely at the real point `σ`, and its power series
+has no zero in the disk of radius `‖N(P) ^ (-σ)‖`. Then its formal logarithmic derivative
+converges absolutely at `N(P) ^ (-s)` whenever `σ < Re(s)`. -/
+theorem summable_norm_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
+    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
+    (hne : ∀ z : ℂ,
+      ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
+        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
+    (hs : σ < s.re) :
+    Summable fun e : ℕ ↦
+      ‖PowerSeries.coeff e (D.localLogDerivSeries P) *
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e‖ := by
+  -- The canonical local-factor radius bound supplies the analytic disk.
+  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P
+    (LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)) hs
+  -- Zero-freeness lets the analytic logarithmic derivative inherit that radius.
+  have hlog := PowerSeries.summable_norm_coeff_logDeriv_mul_pow_of_zeroFree
+    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
+    (fun z hz' ↦ hne z (by
+      rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
+      exact_mod_cast hz')) hz
+  -- Multiplication by `X` shifts the formal logarithmic derivative by one degree.
+  rw [← summable_nat_add_iff 1]
+  refine (hlog.mul_left ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖).congr fun e ↦ ?_
+  rw [D.localLogDerivSeries_def, PowerSeries.coeff_succ_X_mul, pow_succ', ← norm_mul]
+  congr 1
+  ring
+
 /-- **Convergence of a local formal logarithmic derivative on a zero-free disk.** Suppose the
 local factor at `P` converges absolutely at the real point `σ`, and its power series has no zero
 in the disk of radius `‖N(P) ^ (-σ)‖`. Then its formal logarithmic derivative converges at
@@ -60,58 +92,8 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
     (hs : σ < s.re) :
     Summable fun e : ℕ ↦
       PowerSeries.coeff e (D.localLogDerivSeries P) *
-        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
-  let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
-  let r : NNReal := ‖q‖₊
-  -- Absolute convergence of the local Dirichlet series supplies the analytic radius.
-  have hlocal : Summable fun e : ℕ ↦
-      D (P.primeIdealPow e) * q ^ e := by
-    have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)
-    rw [LSeriesSummable] at hsum
-    have hsum' := hsum.comp_injective <|
-      Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-    refine hsum'.congr fun e ↦ ?_
-    simp only [Function.comp_apply]
-    rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
-        (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      D.localArithmeticFactor_apply_pow]
-    dsimp [q]
-    rw [Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul,
-      Complex.cpow_neg]
-    ring
-  have hcoeff : Summable fun e : ℕ ↦
-      ‖PowerSeries.coeff e (D.localPowerSeries P)‖ * (r : ℝ) ^ e := by
-    refine hlocal.norm.congr fun e ↦ ?_
-    rw [D.coeff_localPowerSeries, norm_mul, norm_pow]
-    rfl
-  have hr : (r : ENNReal) ≤
-      (FormalMultilinearSeries.ofScalars ℂ fun n ↦
-        PowerSeries.coeff n (D.localPowerSeries P)).radius := by
-    apply FormalMultilinearSeries.le_radius_of_summable
-    simpa [FormalMultilinearSeries.ofScalars_norm] using hcoeff
-  have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    -- Unfold the named boundary point to compare the two complex powers by real part.
-    change ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ < ‖q‖
-    dsimp [q]
-    rw [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-      (NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-        (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-    exact Real.rpow_lt_rpow_of_exponent_lt (by
-      exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
-  -- Zero-freeness lets the analytic logarithmic derivative inherit that radius.
-  have hlog := PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree
-    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
-    (fun z hz' ↦ hne z (by
-      rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
-      dsimp [r, q] at hz'
-      exact_mod_cast hz')) hz
-  -- Multiplication by `X` shifts the formal logarithmic derivative by one degree.
-  rw [← summable_nat_add_iff 1]
-  refine (hlog.mul_left ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s))).congr fun e ↦ ?_
-  rw [D.localLogDerivSeries_def, PowerSeries.coeff_succ_X_mul, pow_succ']
-  ring
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e :=
+  (D.summable_norm_coeff_localLogDerivSeries_of_zeroFree P hσ hne hs).of_norm
 
 /-- A local Euler factor is nonzero at `s` if the corresponding local power series is zero-free
 on the disk bounded by the real parameter `σ`, and `σ < Re(s)`. -/
@@ -124,11 +106,7 @@ theorem eulerFactor_ne_zero_of_zeroFree (D : EulerProductData K)
     (hs : σ < s.re) :
     D.eulerFactor P s ≠ 0 := by
   apply D.eulerFactor_ne_zero_of_localPowerSeries_ne_zero P
-  apply hne
-  simp only [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-    (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-  exact Real.rpow_lt_rpow_of_exponent_lt (by
-    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
+  exact hne _ (P.norm_absNorm_cpow_neg_lt (by simpa using hs))
 
 /-- The evaluation of a local formal logarithmic derivative inside a zero-free disk. This is
 `logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries` with coefficient convergence

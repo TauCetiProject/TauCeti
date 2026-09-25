@@ -36,6 +36,14 @@ ordered-monomial theorem for an abelian Lie algebra: the ordering of a monomial 
 information here, since the generators commute, so a monomial is recorded by its exponent
 function `n : κ →₀ ℕ` rather than by a sorted word.
 
+One ring-theoretic finiteness property transfers across the comparison with no further Lie theory:
+`U(L)` is a **domain** over a domain when `L` is free as a module
+(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra. That instance is
+the abelian case of a general Poincaré--Birkhoff--Witt corollary, which over a field holds for every
+Lie algebra; the general statement goes through the associated graded of the PBW filtration and is
+not proved here, the argument below using commutativity of `U(L)`
+throughout.
+
 The comparison also makes `ι` injective on any abelian `L`
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), with no hypothesis on `L` as a module: it
 identifies `ι` with the canonical map `L → S(L)`, which the square-zero extension `R ⊕ L` retracts.
@@ -72,6 +80,8 @@ about a non-abelian `L`.
   an `R`-module.
 * `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`, with
   `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
+* `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
+  as a module over a domain.
 
 ## References
 
@@ -303,5 +313,22 @@ theorem linearIndependent_ι_basis (b : Basis κ R L) :
     ((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
     (LinearMap.ker_eq_bot_of_injective (ι_injective R L))
   simpa [Function.comp_def] using h
+
+/-! ### Domains -/
+
+section Transfer
+
+variable {R L}
+
+/-- **The enveloping algebra of an abelian Lie algebra over a domain is a domain**, when the Lie
+algebra is free as a module: it is then a polynomial algebra over the base ring.
+
+This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is a domain for
+every Lie algebra over a field; the general statement goes through the associated graded of the
+PBW filtration and is not proved here. -/
+instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
+  (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
+
+end Transfer
 
 end TauCeti.UniversalEnvelopingAlgebra

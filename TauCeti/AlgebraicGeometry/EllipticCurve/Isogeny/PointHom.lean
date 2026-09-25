@@ -7,6 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.ToClass
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PushClass
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.PointIdeal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Basic
+-- Proof-only: the pole of `x₂` at the place at infinity of the target.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 
 /-!
 # A class-group map on points associated to an isogeny
@@ -27,9 +31,13 @@ asks of the target; for an elliptic curve it is supplied by
 `WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`. Nothing here needs `W₁` or `W₂` to be
 elliptic.
 
-What is *not* proved here is the geometric reading: that the image of a point is the point lying
-under it, in the sense that its place restricts along `φ` to the place of the image. That
-comparison, and functoriality in `φ` beyond the identity, are separate statements.
+The geometric reading is that the image of a point is the point lying under it, in the sense that
+its place restricts along `φ` to the place of the image. Its first half is proved here: a point of
+`W₁` whose place lies over the point at infinity of `W₂` — a point of the fibre `φ⁻¹(O₂)` — is sent
+to `0`, because its ideal extends to the unit ideal of the intermediate ring
+(`TauCeti.Isogeny.map_XYIdeal_eq_top_of_one_lt_valuation`). The affine half needs the relative norm
+of the prime of the intermediate ring at such a point, which is not computed here; nor is
+functoriality in `φ` beyond the identity.
 
 ## Main definitions
 
@@ -43,6 +51,8 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
   pushed-forward class of `P`, the point–class dictionary being injective.
 * `TauCeti.Isogeny.toPointHom_id`: the map on points induced by the identity isogeny is the
   identity.
+* `TauCeti.Isogeny.toPointHom_some_eq_zero_of_isEquiv_comap_infinityPlace`: a point lying over the
+  point at infinity of the target is sent to `0`.
 
 ## Provenance
 
@@ -61,11 +71,12 @@ it is original here.
 
 public section
 
+open Polynomial WeierstrassCurve.Affine
+open scoped nonZeroDivisors
+
 namespace TauCeti
 
 namespace Isogeny
-
-open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] [DecidableEq F] {W₁ W₂ : WeierstrassCurve.Affine F}
   (φ : Isogeny W₁ W₂) [IsIntegrallyClosed W₂.CoordinateRing]
@@ -114,6 +125,32 @@ theorem toPointHom_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.Coor
   refine AddMonoidHom.ext fun P ↦ ?_
   rw [toPointHom_apply, pushClass_id, AddMonoidHom.id_apply, ← Point.toClassEquiv_apply,
     AddEquiv.symm_apply_apply, AddMonoidHom.id_apply]
+
+local instance [IsIntegrallyClosed W₁.CoordinateRing] : IsDedekindDomain W₁.CoordinateRing :=
+  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
+
+/-- **A point over the point at infinity is sent to `0`.** If the place of the affine point
+`(x, y)` of `W₁` restricts along `φ` to the place at infinity of `W₂` — the point lies in the fibre
+`φ⁻¹(O₂)` — then `φ.toPointHom` sends it to the point at infinity. -/
+@[simp]
+theorem toPointHom_some_eq_zero_of_isEquiv_comap_infinityPlace
+    [IsIntegrallyClosed W₁.CoordinateRing] {x y : F} (h : W₁.Nonsingular x y)
+    (hP : (((CoordinateRing.pointPlace h.1).valuation W₁.FunctionField).comap
+      (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv W₂.infinityPlace) :
+    φ.toPointHom (.some x y h) = 0 := by
+  -- the pulled-back coordinate `φ^* x₂` has a pole at the point, as `x₂` has one at infinity
+  have hpole : 1 < (CoordinateRing.pointPlace h.1).valuation W₁.FunctionField
+      (φ.pullback (algebraMap F[X] W₂.CoordinateRing X)) := by
+    have hx := one_lt_infinityPlace_X W₂
+    rw [← not_le, ← Valuation.isEquiv_iff_val_le_one.mp hP, not_le, Valuation.comap_apply,
+      IsScalarTower.algebraMap_apply F[X] W₂.CoordinateRing W₂.FunctionField] at hx
+    rw [← AlgHom.toRingHom_eq_coe] at hx
+    rwa [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fieldPullback_algebraMap] at hx
+  -- the class of the point is that of its ideal, which extends to the unit ideal
+  rw [toPointHom_eq_iff, Point.toClass_zero, Point.toClass_some_eq_ofMul_mk0 h, pushClass_apply,
+    toMul_ofMul, pushClassMonoidHom_mk0_eq_one_of_map_eq_top φ
+      ⟨_, mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))⟩
+      (φ.map_XYIdeal_eq_top_of_one_lt_valuation h.1 hpole), ofMul_one]
 
 end Isogeny
 

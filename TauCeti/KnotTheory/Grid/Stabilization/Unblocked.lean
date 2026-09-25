@@ -190,7 +190,7 @@ theorem unblockedCoefficient_stabilizeX_eq_zero {y z : GridState (n + 1)}
       exact ⟨hl ▸ Grid.left_mem_cIco r.left_ne_right,
         Grid.castSucc_mem_cIco_succ fun h => hbt (h.trans htop.symm)⟩
     refine Finset.disjoint_left.mp hX hcov ((mem_XSet _ _).mpr ?_)
-    simpa using GridState.splitPoint_apply_splitColumn G.X s.castSucc (G.X s).castSucc s
+    simp
   by_cases hr' : s.succ = r.right
   · -- `c` is the southeast corner, and `r` covers the `X`-marked square northwest of `c`.
     have hbot : r.bottom = (G.X s).succ := by rw [bottom_def, ← r.map_right, ← hr', hz]

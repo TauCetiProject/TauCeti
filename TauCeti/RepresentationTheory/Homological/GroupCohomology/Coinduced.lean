@@ -16,7 +16,9 @@ import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 By Shapiro's lemma, the representation `Coind_⊥^G X` coinduced from the trivial subgroup has
 vanishing cohomology in positive degrees (Milne, *Class Field Theory*, II 1.11–1.12), and so does
 its restriction to any subgroup `S`, since that restriction is again coinduced from the trivial
-subgroup (`Rep.resCoindBotIso`).
+subgroup (`Rep.resCoindBotIso`). For a normal subgroup `S`, the same holds for its `S`-invariants
+as a representation of `G ⧸ S`, which are coinduced from the trivial subgroup of `G ⧸ S`
+(`Rep.quotientToInvariantsCoindBotIso`).
 
 The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in
 `kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
@@ -26,6 +28,8 @@ The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.le
 * `groupCohomology.isZero_coindBot_succ`: `Hⁿ⁺¹(G, Coind_⊥^G X) = 0`.
 * `groupCohomology.isZero_res_coindBot_succ`: `Hⁿ⁺¹(S, Coind_⊥^G X) = 0` for every subgroup
   `S ≤ G`.
+* `TauCeti.groupCohomology.isZero_quotientToInvariants_coindBot_succ`:
+  `Hⁿ⁺¹(G ⧸ S, (Coind_⊥^G X)^S) = 0` for every normal subgroup `S ≤ G`.
 
 ## References
 
@@ -61,3 +65,18 @@ theorem isZero_res_coindBot_succ (S : Subgroup G) (X : Type u) [AddCommGroup X] 
     ((groupCohomology.functor k S (n + 1)).mapIso (resCoindBotIso S X))
 
 end groupCohomology
+
+namespace TauCeti.groupCohomology
+
+open _root_.groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) [S.Normal]
+
+/-- The `S`-invariants of `Coind_⊥^G X` have no cohomology over `G ⧸ S` in positive degrees: they
+are coinduced from the trivial subgroup of `G ⧸ S`. -/
+theorem isZero_quotientToInvariants_coindBot_succ (X : Type u) [AddCommGroup X] [Module k X]
+    (n : ℕ) : Limits.IsZero (groupCohomology ((coindBot k G X).quotientToInvariants S) (n + 1)) :=
+  (isZero_coindBot_succ X n).of_iso
+    ((functor k (G ⧸ S) (n + 1)).mapIso (quotientToInvariantsCoindBotIso S X))
+
+end TauCeti.groupCohomology

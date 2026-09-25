@@ -64,7 +64,8 @@ open scoped Classical in
 by the unit `M ⟶ Indˢᴳ Resˢᴳ M`, followed by the homological Shapiro isomorphism. -/
 def transfer (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     _root_.groupHomology M n ⟶ _root_.groupHomology (Rep.res S.subtype M) n :=
-  (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) ≫
+  -- Universes pinned: left to unification, `max ?w u u = u` slows the composite's type check.
+  (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction.{u, u, u} R S).unit.app M) ≫
     (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).hom
 
 open scoped Classical in
@@ -73,7 +74,8 @@ the unit of the finite-index induction--restriction adjunction. -/
 @[reassoc (attr := simp)]
 theorem transfer_comp_indIso_inv (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     transfer M S n ≫ (_root_.groupHomology.indIso S (Rep.res S.subtype M) n).inv =
-      (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction R S).unit.app M) :=
+      -- Universes pinned: an unsolved `max ?w u u = u` makes this statement slow to elaborate.
+      (_root_.groupHomology.functor R G n).map ((Rep.resIndAdjunction.{u, u, u} R S).unit.app M) :=
   -- Cancelling Shapiro's isomorphism against the definition, rather than rewriting with
   -- `Iso.hom_inv_id`: the two occurrences of `Resˢᴳ M` carry different `Monoid ↥S` instances, so
   -- the rewrite does not match syntactically, while this equation holds by `rfl`.
@@ -126,9 +128,12 @@ open scoped Classical in
 degree zero is the module of coinvariants, and the transfer `H₀(G, M) ⟶ H₀(S, Res_S M)` sends the
 class of `m` to the class of `∑_{q ∈ G ⧸ S} q⁻¹ • m`, the relative transfer
 `Representation.relTransfer`. -/
+-- `simp` reduces the carrier of `ModuleCat.of R M.V` to `M.V` in the implicit arguments of the
+-- coercion before looking the term up, so `dsimp% only` states the left-hand side in that form
+-- (the idiom of #8315).
 @[simp]
 theorem transfer_zero_H0π (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (m : M.V) :
-    transfer M S 0 (_root_.groupHomology.H0π M m) =
+    (dsimp% only (transfer M S 0 (_root_.groupHomology.H0π M m))) =
       _root_.groupHomology.H0π (Rep.res S.subtype M) (Representation.relTransfer M.ρ S m) := by
   -- Shapiro's inverse is injective and is the change-of-group map along `S ≤ G` (`indIso_inv`),
   -- so it suffices to compare both sides as classes in `H₀(G, Ind_S^G Res_S M)`.
@@ -146,7 +151,9 @@ theorem transfer_zero_H0π (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (m : M
     _root_.groupHomology.H0π_comp_H0Iso_hom, ModuleCat.comp_apply, ModuleCat.comp_apply]
   -- Both units are explicit by definition: `resIndAdjunction`'s goes through `coindToInd`, and
   -- `indResAdjunction`'s is `a ↦ ⟦1 ⊗ a⟧`.
-  exact Rep.coinvariantsMk_coindToInd_unit M S m
+  -- The ascription elaborates the lemma before matching it against the goal, about ten times
+  -- cheaper than propagating the goal into its arguments.
+  exact (Rep.coinvariantsMk_coindToInd_unit M S m :)
 
 end DegreeZero
 

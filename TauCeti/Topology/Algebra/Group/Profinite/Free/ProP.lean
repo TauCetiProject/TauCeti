@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProC
+public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 
 /-!
 # Free pro-`p` groups on a type
@@ -16,13 +17,17 @@ uniquely to a continuous homomorphism. Extensionality for homomorphisms out of t
 group only requires a Hausdorff group target, which may live in any universe.
 
 The canonical comparison with the free pro-`C` group for the class of finite `p`-groups is used
-to derive the universal property and functoriality. The file also records that a surjection of
-generating types induces a surjection of free pro-`p` groups.
+to derive the universal property and functoriality, and to see that the generators generate the
+free pro-`p` group topologically. The file also records that a surjection of generating types
+induces a surjection of free pro-`p` groups, and that a topologically finitely generated pro-`p`
+group is a continuous image of the free pro-`p` group on any finite type with at least
+`topologicalGeneratorRankNat` elements.
 
 ## Main definitions
 
 * `TauCeti.freeProP`: the free pro-`p` group on a type.
 * `TauCeti.freeProP.of`: its canonical generators.
+* `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
 * `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
@@ -30,12 +35,19 @@ generating types induces a surjection of free pro-`p` groups.
 ## Main results
 
 * `TauCeti.isProP_freeProP`: a free pro-`p` group is pro-`p`.
+* `TauCeti.freeProP.topologicalClosure_closure_range_of_eq_top`: the generators generate the
+  free pro-`p` group topologically.
+* `TauCeti.isTopologicallyFinitelyGenerated_freeProP`: for finite `X`, the free pro-`p` group on
+  `X` is topologically finitely generated.
 * `TauCeti.freeProP.hom_ext`: homomorphisms agreeing on the generators are equal.
 * `TauCeti.freeProP.existsUnique_lift`: the universal property.
 * `TauCeti.freeProP.lift_surjective`: a topologically generating map lifts to a surjection.
 * `TauCeti.freeProP.map_surjective`: a surjection of generating types induces a surjection.
 * `TauCeti.freeProP.existsUnique_continuousMulEquiv`: the free pro-`p` group is unique up to a
   unique topological isomorphism matching the generators.
+* `TauCeti.IsProP.exists_surjective_freeProP`: a topologically finitely generated pro-`p` group is
+  a continuous image of the free pro-`p` group on any finite type with at least
+  `topologicalGeneratorRankNat` elements.
 * `TauCeti.freeProC.equivFreeProP_of`: the comparison preserves the generators.
 
 ## References
@@ -91,6 +103,16 @@ theorem fromFreeProfiniteGroup_of (x : X) :
 theorem fromFreeProfiniteGroup_surjective :
     Function.Surjective (fromFreeProfiniteGroup p X) :=
   maximalProPQuotient.mk_surjective p (freeProfiniteGroup X)
+
+/-- The canonical homomorphism from the discrete free group on `X` to the free pro-`p` group on
+`X`: the unit of the profinite completion followed by the maximal pro-`p` quotient map. -/
+noncomputable def fromFreeGroup (p : ℕ) (X : Type u) : FreeGroup X →* freeProP p X :=
+  (fromFreeProfiniteGroup p X).toMonoidHom.comp (freeProfiniteGroup.fromFreeGroup X)
+
+/-- `fromFreeGroup` carries the free-group generator at `x` to the generator `of x`. -/
+@[simp]
+theorem fromFreeGroup_of (x : X) : fromFreeGroup p X (FreeGroup.of x) = of x := by
+  simp [fromFreeGroup]
 
 end freeProP
 
@@ -149,6 +171,30 @@ theorem equivFreeProP_symm_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
   simp
 
 end freeProC
+
+namespace freeProP
+
+variable {p : ℕ} {X Y Z : Type u}
+
+/-- The canonical generators of a free pro-`p` group generate it topologically. -/
+theorem topologicalClosure_closure_range_of_eq_top (p : ℕ) (X : Type u) :
+    (Subgroup.closure (Set.range (of : X → freeProP p X))).topologicalClosure = ⊤ := by
+  have h := topologicalClosure_closure_image_eq_top
+    (freeProC.topologicalClosure_closure_range_of_eq_top (finiteGroupClassP.{u} p) X)
+    (f := (freeProC.equivFreeProP p X).toMulEquiv.toMonoidHom)
+    (freeProC.equivFreeProP p X).continuous (freeProC.equivFreeProP p X).surjective.denseRange
+  have hof : ((freeProC.equivFreeProP p X).toMulEquiv.toMonoidHom :
+      freeProC (finiteGroupClassP.{u} p) X → freeProP p X) ∘ freeProC.of = of :=
+    funext fun x ↦ freeProC.equivFreeProP_of p x
+  rwa [← Set.range_comp, hof] at h
+
+end freeProP
+
+/-- The free pro-`p` group on a finite type is topologically finitely generated. -/
+theorem isTopologicallyFinitelyGenerated_freeProP (p : ℕ) (X : Type u) [Finite X] :
+    IsTopologicallyFinitelyGenerated (freeProP p X) :=
+  (Set.finite_range _).isTopologicallyFinitelyGenerated
+    (freeProP.topologicalClosure_closure_range_of_eq_top p X)
 
 namespace freeProP
 
@@ -386,5 +432,34 @@ theorem existsUnique_continuousMulEquiv (hG : IsProP p G) (ι : X → G)
 end Uniqueness
 
 end freeProP
+
+/-! ## Topologically finitely generated pro-`p` groups as images of free pro-`p` groups -/
+
+section Rank
+
+variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- A topologically finitely generated pro-`p` group is a continuous image of the free pro-`p`
+group on any finite type with at least `topologicalGeneratorRankNat G` elements. -/
+theorem IsProP.exists_surjective_freeProP (hG : IsProP p G) (h : IsTopologicallyFinitelyGenerated G)
+    (X : Type u) [Finite X] (hX : topologicalGeneratorRankNat G h ≤ Nat.card X) :
+    ∃ φ : freeProP p X →ₜ* G, Function.Surjective φ := by
+  classical
+  obtain ⟨s, hs, hgen⟩ := exists_finset_card_eq_topologicalGeneratorRankNat h
+  have _ : Fintype X := Fintype.ofFinite X
+  obtain ⟨e⟩ : Nonempty (s ↪ X) :=
+    Function.Embedding.nonempty_of_card_le (by
+      rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, Nat.card_eq_finsetCard, hs]
+      exact hX)
+  -- Send the image of `s` under `e` back to `s`, and everything else to `1`.
+  let f : X → G := Function.extend e Subtype.val fun _ ↦ 1
+  refine ⟨freeProP.lift hG f, freeProP.lift_surjective hG ?_⟩
+  have hsub : (s : Set G) ⊆ Set.range f := fun a ha ↦
+    ⟨e ⟨a, ha⟩, by simp [f, e.injective.extend_apply]⟩
+  refine Dense.mono (SetLike.coe_subset_coe.mpr (Subgroup.closure_mono hsub)) ?_
+  rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hgen, Subgroup.coe_top]
+
+end Rank
 
 end TauCeti

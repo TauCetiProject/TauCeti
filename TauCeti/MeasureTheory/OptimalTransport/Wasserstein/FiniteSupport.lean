@@ -338,10 +338,8 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
   -- the ground distance to the basepoint `u 0`, and its `p`-th moment
   set f : X → ℝ≥0∞ := fun y ↦ edist (u 0) y with hf_def
   have hf_meas : Measurable f := measurable_edist.comp (measurable_const.prodMk measurable_id)
-  have hmom : MemLp f p μ := hμ.memLp hf_meas.aestronglyMeasurable
-  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ := by
-    simpa only [hasFiniteIntegral_iff_enorm, enorm_eq_self, lt_top_iff_ne_top] using
-      (hmom.integrable_enorm_rpow hp0 hp_top).hasFiniteIntegral
+  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ :=
+    (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ
   -- the tail sets decrease to the empty set, so their contribution vanishes
   set A : ℕ → Set X := fun n ↦ {x | n ≤ idx x} with hA_def
   have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦ hidx_meas MeasurableSet.of_discrete

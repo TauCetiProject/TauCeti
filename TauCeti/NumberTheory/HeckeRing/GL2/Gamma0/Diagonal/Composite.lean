@@ -274,7 +274,7 @@ private theorem heckeTScalarCompositeGamma0_eq_heckeTScalarGamma0 :
       have hne : ordCompl[n.minFac] n ≠ 0 := (Nat.ordCompl_pos n.minFac hn).ne'
       rw [heckeTScalarCompositeGamma0_def,
         TauCeti.Nat.primePowerProd_eq_ordProj_mul_ordCompl
-          (fun q w ↦ heckeTScalarGamma0 N q ^ w) hp hn,
+          (fun q w ↦ heckeTScalarGamma0 N q ^ w) n.minFac,
         ← heckeTScalarCompositeGamma0_def, ← heckeTScalarCompositeGamma0_def,
         heckeTScalarCompositeGamma0_prime_pow N hp, ih _ hlt hne, heckeTScalarGamma0_pow,
         heckeTScalarGamma0_mul, Nat.ordProj_mul_ordCompl_eq_self]

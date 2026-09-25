@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
+-- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # Base change of the étale algebra, and the local condition of `2`-descent
@@ -199,18 +201,6 @@ lemma localRes_injective_of_surjective_algebraMap (h : Function.Surjective (alge
 section PointMap
 
 open scoped Classical in
-/-- Transporting an affine point along an equality of curves carries its coordinates unchanged.
-
-The transport itself is Mathlib's `AddEquiv.cast`, which is `Equiv.cast (congrArg _ h)` bundled
-as an `AddEquiv`; this is the one fact about it that mentions `Point.some`, and Mathlib has no
-lemma of that shape because `Point` is not one of its indexed families. -/
-private lemma cast_point_some {W₁ W₂ : Affine K} (h : W₁ = W₂) {x y : K}
-    (hp : W₁.Nonsingular x y) :
-    AddEquiv.cast (M := fun W' : Affine K => W'.Point) h (Point.some x y hp) =
-      Point.some x y (h ▸ hp) := by
-  subst h; rfl
-
-open scoped Classical in
 /-- The base-change homomorphism on points, `W(K) →+ W(L)`: Mathlib's
 `WeierstrassCurve.Affine.Point.map`, aligned with the plain base change `W⁄L` via
 `baseChange_self`. -/
@@ -229,7 +219,7 @@ lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some
   -- proof at `W.map (algebraMap K L)`, and although `W⁄L` is a reducible abbreviation for
   -- exactly that, the elaborator does not unfold it at `instances` transparency, so the two
   -- identically-printing types do not unify without being told the target.
-  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, cast_point_some,
+  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, Point.cast_some,
     Point.map_some]
   rfl
 

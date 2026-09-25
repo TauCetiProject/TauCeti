@@ -56,6 +56,9 @@ rank.
 * `TauCeti.topologicalGeneratorRank_lt_aleph0_iff`: the rank is finite exactly under topological
   finite generation.
 * `TauCeti.topologicalGeneratorRank_eq_zero_iff`: the rank vanishes exactly on the trivial group.
+* `TauCeti.topologicalGeneratorRankNat_le_of_surjective`,
+  `TauCeti.topologicalGeneratorRankNat_congr`: the accessor does not increase along a continuous
+  surjection and is invariant under a topological group isomorphism.
 * `TauCeti.topologicalGeneratorRankNat_eq_topologicalGeneratorRank`: the accessor computes the
   cardinal rank whenever it is available.
 * `TauCeti.topologicalGeneratorRankNat_eq_rank`: on a discrete group the accessor is Mathlib's
@@ -310,6 +313,15 @@ theorem topologicalGeneratorRankNat_le_of_surjective (f : G →* H) (hf : Contin
       ≤ (s.image f).card := topologicalGeneratorRankNat_le _ himg
     _ ≤ s.card := Finset.card_image_le
     _ = topologicalGeneratorRankNat G hG := hcard
+
+/-- The natural-number topological generator rank is invariant under topological isomorphism. -/
+theorem topologicalGeneratorRankNat_congr (e : G ≃ₜ* H) (hG : IsTopologicallyFinitelyGenerated G) :
+    topologicalGeneratorRankNat G hG =
+      topologicalGeneratorRankNat H ((isTopologicallyFinitelyGenerated_congr e).mp hG) :=
+  le_antisymm
+    (topologicalGeneratorRankNat_le_of_surjective (e.symm : H →* G) e.symm.continuous
+      e.symm.surjective _)
+    (topologicalGeneratorRankNat_le_of_surjective (e : G →* H) e.continuous e.surjective hG)
 
 /-- The natural-number accessor computes the cardinal topological generator rank whenever it is
 available. Every theorem that subtracts ranks is stated with the accessor, and this is how it

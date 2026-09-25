@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE6
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Frobenius
@@ -167,6 +167,12 @@ triality. -/
   | ⟨⟨.suzuki _, _⟩, hh⟩ | ⟨⟨.reeG2 _, _⟩, hh⟩ | ⟨⟨.reeF4 _, _⟩, hh⟩ | ⟨⟨.tits, _⟩, hh⟩ =>
       absurd ((usesHalfFrobenius_iff _).mpr trivial) hh
 
+-- `inferInstanceAs` re-synthesizes each parent of `Group` on `AmbientGroup d`, and every such
+-- search tries the `GradedMonoid` instances on `A 0`, which fail only after an algebraic search
+-- on the index subtype (0.9 s over the thirteen branches). Those searches fail regardless, so
+-- disabling the instances here leaves the value unchanged.
+attribute [-instance] GradedMonoid.GradeZero.monoid GradedMonoid.GradeZero.commMonoid
+  GradedMonoid.GradeZero.one GradedMonoid.GradeZero.mul GradedMonoid.instNatPowOfNat in
 /-- The ambient group carries the group structure of the carrier it is on. -/
 instance instGroupAmbientGroup : (d : GraphTwistedIndex) → Group d.AmbientGroup
   | ⟨⟨.A _ _, hv⟩, _⟩ | ⟨⟨.twistedA _ _, hv⟩, _⟩ =>
@@ -615,33 +621,35 @@ theorem frobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   -- As for `steinberg_simpleRootSubgroup`: the branch equations turn the uniform maps into the
   -- family ones, whose pinned Frobenius equation closes the goal.
+  -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
+  -- unifying the family lemma with the goal, which then unfolds the family maps (0.3 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · rw [frobenius_A, simpleRootSubgroup_A]
-    exact TypeALieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_twistedA, simpleRootSubgroup_twistedA]
-    exact TypeALieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_B, simpleRootSubgroup_B]
     exact TypeBLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [frobenius_C, simpleRootSubgroup_C]
     exact TypeCLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [frobenius_D, simpleRootSubgroup_D]
-    exact TypeDDiagramLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeDDiagramLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_twistedD, simpleRootSubgroup_twistedD]
-    exact TypeDDiagramLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeDDiagramLieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_E6, simpleRootSubgroup_E6]
-    exact TypeE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_E7, simpleRootSubgroup_E7]
-    exact TypeE7LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE7LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_E8, simpleRootSubgroup_E8]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [frobenius_F4, simpleRootSubgroup_F4]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [frobenius_G2, simpleRootSubgroup_G2]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [frobenius_twistedE6, simpleRootSubgroup_twistedE6]
-    exact TypeTwistedE6LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedE6LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [frobenius_trialityD4, simpleRootSubgroup_trialityD4]
-    exact TypeTrialityD4LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTrialityD4LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The prime-field Frobenius has the pinned action on every simple root subgroup.** It sends
@@ -655,36 +663,38 @@ theorem primeFrobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.r
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
   -- As for `frobenius_simpleRootSubgroup`: the branch equations turn the uniform maps into the
   -- family ones, whose pinned prime-field Frobenius equation closes the goal.
+  -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
+  -- unifying the family lemma with the goal, which then unfolds the family maps (0.3 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · rw [primeFrobenius_A, simpleRootSubgroup_A]
-    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_twistedA, simpleRootSubgroup_twistedA]
-    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_B, simpleRootSubgroup_B]
     exact TypeBLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [primeFrobenius_C, simpleRootSubgroup_C]
     exact TypeCLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [primeFrobenius_D, simpleRootSubgroup_D]
-    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_twistedD, simpleRootSubgroup_twistedD]
-    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_E6, simpleRootSubgroup_E6]
-    exact TypeE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_E7, simpleRootSubgroup_E7]
-    exact TypeE7LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE7LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_E8, simpleRootSubgroup_E8]
     exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
-      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+      ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [primeFrobenius_F4, simpleRootSubgroup_F4]
     exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
-      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+      ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [primeFrobenius_G2, simpleRootSubgroup_G2]
     exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
-      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+      ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [primeFrobenius_twistedE6, simpleRootSubgroup_twistedE6]
-    exact TypeTwistedE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [primeFrobenius_trialityD4, simpleRootSubgroup_trialityD4]
-    exact TypeTrialityD4LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTrialityD4LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
@@ -695,33 +705,36 @@ exponent the index records, stated once for all thirteen families. On an index o
 order the exponent is one and the two maps agree. -/
 theorem frobenius_eq_primeFrobenius_pow (d : GraphTwistedIndex) :
     d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  -- The family index is left as `_` for unification, not rebuilt with a `by simp` proof: a
+  -- postponed tactic proof blocks unifying the family lemma with the goal, which then unfolds the
+  -- family maps (up to 1 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · rw [frobenius_A, primeFrobenius_A]
-    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow _
   · rw [frobenius_twistedA, primeFrobenius_twistedA]
-    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow _
   · rw [frobenius_B, primeFrobenius_B]
     exact TypeBLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, trivial⟩
   · rw [frobenius_C, primeFrobenius_C]
     exact TypeCLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, trivial⟩
   · rw [frobenius_D, primeFrobenius_D]
-    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow _
   · rw [frobenius_twistedD, primeFrobenius_twistedD]
-    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow _
   · rw [frobenius_E6, primeFrobenius_E6]
-    exact TypeE6LieIndex.steinberg_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeE6LieIndex.steinberg_eq_primeFrobenius_pow _
   · rw [frobenius_E7, primeFrobenius_E7]
-    exact TypeE7LieIndex.steinberg_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeE7LieIndex.steinberg_eq_primeFrobenius_pow _
   · rw [frobenius_E8, primeFrobenius_E8]
-    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow _
   · rw [frobenius_F4, primeFrobenius_F4]
-    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow _
   · rw [frobenius_G2, primeFrobenius_G2]
-    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow _
   · rw [frobenius_twistedE6, primeFrobenius_twistedE6]
-    exact TypeTwistedE6LieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedE6LieIndex.frobenius_eq_primeFrobenius_pow _
   · rw [frobenius_trialityD4, primeFrobenius_trialityD4]
-    exact TypeTrialityD4LieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTrialityD4LieIndex.frobenius_eq_primeFrobenius_pow _
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The Steinberg endomorphism has the pinned action on every simple root subgroup.** It sends
@@ -738,33 +751,35 @@ theorem steinberg_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
   -- family's pinned equation closes the goal; the group structure on the ambient group is, by
   -- definition of `instGroupAmbientGroup`, the family's own. The untwisted branches also unfold
   -- the trivial diagram permutation.
+  -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
+  -- unifying the family lemma with the goal, which then unfolds the family maps (0.3 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · rw [steinberg_A, simpleRootSubgroup_A]
-    exact TypeALieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_twistedA, simpleRootSubgroup_twistedA]
-    exact TypeALieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_B, simpleRootSubgroup_B, diagramPerm_B, Equiv.Perm.one_apply]
     exact TypeBLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [steinberg_C, simpleRootSubgroup_C, diagramPerm_C, Equiv.Perm.one_apply]
     exact TypeCLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
   · rw [steinberg_D, simpleRootSubgroup_D, diagramPerm_D, Equiv.Perm.one_apply]
-    exact TypeDLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeDLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_twistedD, simpleRootSubgroup_twistedD]
-    exact TypeTwistedDLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedDLieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_E6, simpleRootSubgroup_E6, diagramPerm_E6, Equiv.Perm.one_apply]
-    exact TypeE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_E7, simpleRootSubgroup_E7, diagramPerm_E7, Equiv.Perm.one_apply]
-    exact TypeE7LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeE7LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_E8, simpleRootSubgroup_E8, diagramPerm_E8, Equiv.Perm.one_apply]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [steinberg_F4, simpleRootSubgroup_F4, diagramPerm_F4, Equiv.Perm.one_apply]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [steinberg_G2, simpleRootSubgroup_G2, diagramPerm_G2, Equiv.Perm.one_apply]
-    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+    exact UnimodularExceptionalIndex.steinberg_geckRootSubgroup ⟨⟨⟨_, hv⟩, _⟩, h⟩ (.inl i) u
   · rw [steinberg_twistedE6, simpleRootSubgroup_twistedE6]
-    exact TypeTwistedE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedE6LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [steinberg_trialityD4, simpleRootSubgroup_trialityD4]
-    exact TypeTrialityD4LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTrialityD4LieIndex.steinberg_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **On an untwisted index the Steinberg endomorphism is the Frobenius.** The hypothesis
@@ -958,25 +973,27 @@ theorem graphAut_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
   -- On each constructor the branch equations turn the uniform maps into the family ones, whose
   -- pinned equation closes the goal; the untwisted branches also unfold the trivial diagram
   -- permutation and the identity automorphism.
+  -- The family index gets `_` as its proof field, not `by simp`: a postponed tactic proof blocks
+  -- unifying the family lemma with the goal, which then unfolds the family maps (0.3 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · rw [graphAut_A, simpleRootSubgroup_A]
-    exact TypeALieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [graphAut_twistedA, simpleRootSubgroup_twistedA]
-    exact TypeALieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeALieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [graphAut_B, MulAut.one_apply, diagramPerm_B, Equiv.Perm.one_apply]
   · rw [graphAut_C, MulAut.one_apply, diagramPerm_C, Equiv.Perm.one_apply]
   · rw [graphAut_D, MulAut.one_apply, diagramPerm_D, Equiv.Perm.one_apply]
   · rw [graphAut_twistedD, simpleRootSubgroup_twistedD]
-    exact TypeTwistedDLieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedDLieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [graphAut_E6, MulAut.one_apply, diagramPerm_E6, Equiv.Perm.one_apply]
   · rw [graphAut_E7, MulAut.one_apply, diagramPerm_E7, Equiv.Perm.one_apply]
   · rw [graphAut_E8, MulAut.one_apply, diagramPerm_E8, Equiv.Perm.one_apply]
   · rw [graphAut_F4, MulAut.one_apply, diagramPerm_F4, Equiv.Perm.one_apply]
   · rw [graphAut_G2, MulAut.one_apply, diagramPerm_G2, Equiv.Perm.one_apply]
   · rw [graphAut_twistedE6, simpleRootSubgroup_twistedE6]
-    exact TypeTwistedE6LieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTwistedE6LieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   · rw [graphAut_trialityD4, simpleRootSubgroup_trialityD4]
-    exact TypeTrialityD4LieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+    exact TypeTrialityD4LieIndex.graphAut_simpleRootSubgroup ⟨⟨_, hv⟩, _⟩ i u
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The twist order of the index annihilates its graph automorphism**, so `γ = 1` on the nine
@@ -988,24 +1005,27 @@ theorem graphAut_pow_twistOrder (d : GraphTwistedIndex) : d.graphAut ^ d.twistOr
   -- the branch equation reduces the claim to the family's own order relation.
   by_cases hd : d.twistOrder = 1
   · rw [graphAut_eq_one_of_twistOrder_eq_one d hd, one_pow]
+  -- The family index is left as `_` for unification, not rebuilt with a `by simp` proof: a
+  -- postponed tactic proof blocks unifying the family lemma with the goal, which then unfolds the
+  -- family maps (up to 1 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · exact absurd (twistOrder_A hv) hd
   · rw [graphAut_twistedA]
-    exact TypeALieIndex.graphAut_pow_twistOrder ⟨⟨_, hv⟩, by simp⟩
+    exact TypeALieIndex.graphAut_pow_twistOrder _
   · exact absurd (twistOrder_B hv) hd
   · exact absurd (twistOrder_C hv) hd
   · exact absurd (twistOrder_D hv) hd
   · rw [graphAut_twistedD]
-    exact TypeTwistedDLieIndex.graphAut_pow_twistOrder ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedDLieIndex.graphAut_pow_twistOrder _
   · exact absurd (twistOrder_E6 hv) hd
   · exact absurd (twistOrder_E7 hv) hd
   · exact absurd (twistOrder_E8 hv) hd
   · exact absurd (twistOrder_F4 hv) hd
   · exact absurd (twistOrder_G2 hv) hd
   · rw [graphAut_twistedE6]
-    exact TypeTwistedE6LieIndex.graphAut_pow_twistOrder ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedE6LieIndex.graphAut_pow_twistOrder _
   · rw [graphAut_trialityD4]
-    exact TypeTrialityD4LieIndex.graphAut_pow_twistOrder ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTrialityD4LieIndex.graphAut_pow_twistOrder _
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The graph automorphism commutes with the Frobenius, as an identity of endomorphisms**:
@@ -1022,24 +1042,27 @@ theorem graphAut_comp_frobenius (d : GraphTwistedIndex) :
     exact MonoidHom.ext fun g => by
       rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
         MulAut.one_apply, MulAut.one_apply]
+  -- The family index is left as `_` for unification, not rebuilt with a `by simp` proof: a
+  -- postponed tactic proof blocks unifying the family lemma with the goal, which then unfolds the
+  -- family maps (up to 1 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · exact absurd (twistOrder_A hv) hd
   · rw [graphAut_twistedA, frobenius_twistedA]
-    exact TypeALieIndex.graphAut_comp_frobenius ⟨⟨_, hv⟩, by simp⟩
+    exact TypeALieIndex.graphAut_comp_frobenius _
   · exact absurd (twistOrder_B hv) hd
   · exact absurd (twistOrder_C hv) hd
   · exact absurd (twistOrder_D hv) hd
   · rw [graphAut_twistedD, frobenius_twistedD]
-    exact TypeTwistedDLieIndex.graphAut_comp_frobenius ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedDLieIndex.graphAut_comp_frobenius _
   · exact absurd (twistOrder_E6 hv) hd
   · exact absurd (twistOrder_E7 hv) hd
   · exact absurd (twistOrder_E8 hv) hd
   · exact absurd (twistOrder_F4 hv) hd
   · exact absurd (twistOrder_G2 hv) hd
   · rw [graphAut_twistedE6, frobenius_twistedE6]
-    exact TypeTwistedE6LieIndex.graphAut_comp_frobenius ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedE6LieIndex.graphAut_comp_frobenius _
   · rw [graphAut_trialityD4, frobenius_trialityD4]
-    exact TypeTrialityD4LieIndex.graphAut_comp_frobenius ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTrialityD4LieIndex.graphAut_comp_frobenius _
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The Steinberg endomorphism is the graph automorphism composed with the Frobenius**,

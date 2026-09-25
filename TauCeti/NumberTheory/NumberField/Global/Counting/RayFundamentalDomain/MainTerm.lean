@@ -39,24 +39,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-open scoped Classical in
-private theorem measureReal_rayFundamentalDomain_inter_normLeOne (𝔪 : Modulus K) :
-    volume.real (rayFundamentalDomain 𝔪 ∩ {x | mixedEmbedding.norm x ≤ 1}) =
-      (unitsCongruenceSubgroupSupTorsion 𝔪).index *
-        (2 ^ nrRealPlaces K * π ^ nrComplexPlaces K * regulator K) / 2 ^ 𝔪.infinitePart.card := by
-  rw [eq_div_iff (by positivity), mul_comm, measureReal_def]
-  simpa [volume_normLeOne, (regulator_pos K).le] using
-    congrArg ENNReal.toReal (two_pow_mul_volume_rayFundamentalDomain_inter_normLeOne 𝔪)
-
-open scoped Classical in
-private theorem covolume_congruenceLattice_mk0_div_absNorm (𝔪 : Modulus K) (𝔞 : (Ideal (𝓞 K))⁰) :
-    ZLattice.covolume (congruenceLattice 𝔪 (FractionalIdeal.mk0 K 𝔞)) volume /
-        Ideal.absNorm (𝔞 : Ideal (𝓞 K)) =
-      Ideal.absNorm 𝔪.finitePart * √|(discr K : ℝ)| / 2 ^ nrComplexPlaces K := by
-  rw [covolume_congruenceLattice, covolume_idealLattice, FractionalIdeal.coe_mk0,
-    FractionalIdeal.coeIdeal_absNorm, inv_pow, Rat.cast_natCast]
-  field_simp [Ideal.absNorm_ne_zero_of_nonZeroDivisors 𝔞]
-
 private theorem card_unitsCongruenceTorsion_mul_rayClassIdealMainTerm (𝔪 : Modulus K) :
     Nat.card (unitsCongruenceTorsion 𝔪) * rayClassIdealMainTerm 𝔪 =
       (unitsCongruenceSubgroupSupTorsion 𝔪).index *
@@ -86,7 +68,9 @@ theorem measureReal_div_covolume_congruenceLattice_mul_absNorm (𝔪 : Modulus K
           ZLattice.covolume (congruenceLattice 𝔪 (FractionalIdeal.mk0 K 𝔞)) volume *
         Ideal.absNorm (𝔞 : Ideal (𝓞 K)) =
       Nat.card (unitsCongruenceTorsion 𝔪) * rayClassIdealMainTerm 𝔪 := by
-  rw [div_mul_eq_mul_div, ← div_div_eq_mul_div, covolume_congruenceLattice_mk0_div_absNorm,
+  have h := covolume_congruenceLattice_div_absNorm 𝔪 (FractionalIdeal.mk0 K 𝔞)
+  rw [FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast] at h
+  rw [div_mul_eq_mul_div, ← div_div_eq_mul_div, h,
     measureReal_rayFundamentalDomain_inter_normLeOne,
     card_unitsCongruenceTorsion_mul_rayClassIdealMainTerm]
   field_simp

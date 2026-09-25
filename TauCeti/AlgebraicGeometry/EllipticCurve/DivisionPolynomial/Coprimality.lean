@@ -31,6 +31,7 @@ has `X = Z = 0`, so there was no common factor.
   on the characteristic.
 * `WeierstrassCurve.eval_ΨSq_ne_zero_of_zsmul_ne_zero`: the pointwise companion — `ΨSqₙ` does not
   vanish at the `x`-coordinate of a point that `[n]` does not kill.
+* `WeierstrassCurve.evalEval_ψ_ne_zero_of_zsmul_ne_zero`: its bivariate form, for `ψₙ`.
 
 ## Implementation notes
 
@@ -139,6 +140,16 @@ theorem eval_ΨSq_ne_zero_of_zsmul_ne_zero [DecidableEq F] {x y : F}
   have hjac := zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n hψ
   rw [← Jacobian.Point.toAffineAddEquiv_symm_apply, ← map_zsmul] at hjac
   exact (AddEquiv.map_eq_zero_iff _).1 hjac
+
+/-- **`ψₙ` does not vanish at a point that `[n]` does not kill**, the bivariate form of
+`eval_ΨSq_ne_zero_of_zsmul_ne_zero`: `ψₙ(P)² = ΨSqₙ(x)`. -/
+theorem evalEval_ψ_ne_zero_of_zsmul_ne_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) {n : ℤ}
+    (hP : n • (Affine.Point.some _ _ hns) ≠ 0) : (W.ψ n).evalEval x y ≠ 0 := by
+  intro h0
+  refine eval_ΨSq_ne_zero_of_zsmul_ne_zero W hns hP ?_
+  rw [← evalEval_Ψ_sq_eq_eval_ΨSq W hns.1 n, ← evalEval_ψ_eq_evalEval_Ψ W hns.1 n, h0]
+  ring
 
 /-- **`ΨSqₙ` is nonzero on a nonsingular curve, in every characteristic.** Mathlib's
 `ΨSq_ne_zero` assumes `(n : F) ≠ 0` instead; see the module docstring on why neither statement

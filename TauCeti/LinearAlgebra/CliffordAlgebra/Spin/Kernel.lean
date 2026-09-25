@@ -68,9 +68,7 @@ theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
   let a : R := -⅟(Q v)
   have ha : IsUnit a := (isUnit_of_invertible (⅟(Q v))).neg
   let _ : Invertible a := ha.invertible
-  have havQ : IsUnit (Q (a • v)) := by
-    rw [QuadraticMap.map_smul]
-    simpa [smul_eq_mul, mul_assoc] using ha.mul (ha.mul hvQ)
+  have havQ : IsUnit (Q (a • v)) := QuadraticMap.isUnit_apply_smul ha hvQ
   let _ : Invertible (Q (a • v)) := havQ.invertible
   let x := unitι Q (a • v) * unitι Q v
   have hx : (x : CliffordAlgebra Q) = -1 := by
@@ -87,9 +85,8 @@ theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
 /-- The scalar `-1` belongs to the Spin group of a nonzero quadratic form over a field. -/
 theorem neg_one_mem_spinGroup (Q : QuadraticForm K M) (hQ : Q ≠ 0) :
     (-1 : CliffordAlgebra Q) ∈ spinGroup Q := by
-  obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
-  exact neg_one_mem_spinGroup_of_isUnit Q v
-    (isUnit_iff_ne_zero.mpr (by simpa using hv))
+  obtain ⟨v, hv⟩ := QuadraticMap.exists_isUnit_of_ne_zero hQ
+  exact neg_one_mem_spinGroup_of_isUnit Q v hv
 
 namespace spinGroup
 

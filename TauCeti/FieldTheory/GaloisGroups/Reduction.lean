@@ -231,13 +231,14 @@ theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
 
 /-! ### The quintic `X ^ 5 - X - 1` -/
 
-private theorem monic_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).Monic := by
+/-- The polynomial `X ^ 5 - X - 1` is monic. -/
+theorem monic_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).Monic := by
   rw [sub_sub]
   exact monic_X_pow_sub (by compute_degree!)
 
 /-- Modulo `2`, the irreducible factors of `X ^ 5 - X - 1` have the distinct degrees `3` and `2`,
 so the reduction is squarefree, hence separable, and `2` does not divide the discriminant. -/
-private theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
+theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
     ¬ ((2 : ℕ) : ℤ) ∣ (X ^ 5 - X - 1 : ℤ[X]).discr := by
   have hf := monic_X_pow_five_sub_X_sub_one
   rw [← hf.separable_map_zmod_iff_not_dvd_discr, PerfectField.separable_iff_squarefree]

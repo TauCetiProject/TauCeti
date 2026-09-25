@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
@@ -262,39 +262,6 @@ theorem typeDSpinRep_rootGenerator_apply_mem_integralLattice
 
 /-! ## Cartan weights and binomial operators -/
 
-/-- A type-`D` simple-coroot Clifford element acts diagonally on an exterior-basis vector, with
-the corresponding integral spin weight as eigenvalue. -/
-theorem spinAction_typeDSimpleCorootBivector_exteriorBasis
-    (i : Fin n) (s : Finset (Fin n)) :
-    spinAction Q P (P.typeDSimpleCorootBivector b (by omega) i)
-        (b.ExteriorAlgebra s) =
-      (TauCeti.DynkinType.typeDSpinWeight s i : ℚ) • b.ExteriorAlgebra s := by
-  rw [P.typeDSimpleCorootBivector_eq_diagonalBivector b (by omega) i]
-  by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b, ← sub_smul]
-    simpa only [dite_eq_left hnext, algebraMap_int_eq, Int.coe_castRingHom] using
-      (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s)
-        (TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i)).symm
-  · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
-      apply Fin.ext
-      dsimp only
-      omega
-    rw [dite_eq_right hnext, map_add, LinearMap.add_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b, ← add_smul]
-    have hprev :
-        (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) =
-          (⟨n - 2, by omega⟩ : Fin n) := by
-      apply Fin.ext
-      dsimp only
-      omega
-    have hspin : spinWeight ℚ s i = spinWeight ℚ s (⟨n - 1, by omega⟩ : Fin n) :=
-      congrArg (spinWeight ℚ s) hi
-    have hwt := TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i
-    rw [dite_eq_right hnext, hprev, hspin] at hwt
-    simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
-      (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s) hwt).symm
-
 /-- Every exterior-basis vector is a Cartan weight vector for the type-`D` spin representation,
 with its integral simply connected spin weight. -/
 theorem isCartanWeightVector_typeDSpinRep_exteriorBasis (s : Finset (Fin n)) :
@@ -304,7 +271,8 @@ theorem isCartanWeightVector_typeDSpinRep_exteriorBasis (s : Finset (Fin n)) :
   refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (P.typeDSpinRep b hn)).mpr fun i ↦ ?_
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreH b hn]
-  exact P.spinAction_typeDSimpleCorootBivector_exteriorBasis b hn i s
+  simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
+    (P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s)
 
 /-- The integral exterior basis is a Cartan weight basis for the type-`D` spin representation. -/
 theorem isCartanWeightVector_typeDSpinRep_integralLatticeBasis (s : Finset (Fin n)) :
@@ -334,7 +302,9 @@ theorem typeDSpinRep_ringChoose_serreH_apply_mem_integralLattice
   rw [LinearMap.restrictScalars_apply, P.typeDSpinRep_ι b hn,
     P.typeDSpinSerreRepresentation_serreH b hn]
   rw [TauCeti.ringChoose_end_apply_of_apply_eq_smul
-      (P.spinAction_typeDSimpleCorootBivector_exteriorBasis b hn i s),
+      (by
+        simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
+          (P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s)),
     Ring.choose_intCast, Int.cast_smul_eq_zsmul ℚ]
   exact Submodule.smul_mem _ _ (TauCeti.ExteriorAlgebra.basis_mem_integralLattice b s)
 

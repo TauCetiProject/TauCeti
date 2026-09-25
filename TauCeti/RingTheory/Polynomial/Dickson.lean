@@ -40,8 +40,8 @@ on homogeneous polynomials of degree `n`.
 
 * D. Zagier, *The Eichler–Selberg trace formula on `SL₂(ℤ)`*, appendix to S. Lang,
   *Introduction to Modular Forms*, Springer, 1976.
-* A. Popa and D. Zagier, *A simple proof of the Eichler–Selberg trace formula*,
-  J. Ramanujan Math. Soc. (2019), arXiv:1711.00327.
+* A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327.
 -/
 
 public section

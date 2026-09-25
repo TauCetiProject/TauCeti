@@ -212,6 +212,11 @@ theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCouplin
     IsProbabilityMeasure π :=
   ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
 
+/-- The target of a coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+
 /-- Exchanging the two coordinates of a coupling of `μ` and `ν` gives a coupling of `ν`
 and `μ`. -/
 protected theorem swap (hπ : IsCoupling π μ ν) : IsCoupling (π.map Prod.swap) ν μ where

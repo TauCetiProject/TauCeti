@@ -192,6 +192,13 @@ theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
     _ = Nat.card K ^ Fintype.card ι := by
       rw [← pow_add, finrank_add_finrank_euclideanDual]
 
+/-- A self-dual code over a field with `q` elements has `q^(n/2)` words, where `n` is its
+length. -/
+theorem natCard_of_eq_euclideanDual {C : Submodule K (ι → K)} (hC : C = euclideanDual C) :
+    Nat.card C = Nat.card K ^ (Fintype.card ι / 2) := by
+  rw [Module.natCard_eq_pow_finrank (K := K), ← two_mul_finrank_eq_card_of_eq_euclideanDual hC,
+    Nat.mul_div_cancel_left _ two_pos]
+
 end Field
 
 end Submodule
