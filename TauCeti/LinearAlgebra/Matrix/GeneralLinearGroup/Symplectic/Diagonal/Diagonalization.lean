@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.RationalEigenspace
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 
@@ -18,17 +19,8 @@ Then `M` is already diagonalized by a *symplectic* matrix `P` over `k`, and the 
 taken paired, `M P = P diag(u₁, …, uₘ, u₁⁻¹, …, uₘ⁻¹)`: a conjugate of `M` by a rational symplectic
 matrix lies in the paired diagonal torus.
 
-The proof sorts rational vectors by eigenvalue. For a unit `s` of `Q`, the `s`-eigenspace is the
-`k`-subspace of vectors `v` with `M v = s v` after extending scalars. The columns of `P₀` show that
-these subspaces span `k²ᵐ`. Since `M` preserves the standard alternating form `J`, a vector of the
-`s`-eigenspace and a vector of the `r`-eigenspace pair to `vᵀ J w = s r · vᵀ J w`, so they are
-orthogonal unless `r = s⁻¹`. The graded symplectic basis theorem
-`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J_of_iSup_eq_top` then supplies a symplectic
-basis of eigenvectors; its matrix is `P`, and each hyperbolic pair of basis vectors carries
-mutually inverse eigenvalues.
-
-This is the linear algebra that conjugates a diagonalizable subgroup of `Sp₂ₘ` into the paired
-diagonal torus, with `Q` the coordinate ring of the subgroup and `M` its generic point.
+This diagonalization supplies the linear algebra for conjugating a diagonalizable subgroup of
+`Sp₂ₘ` into the paired diagonal torus, with `Q` the coordinate ring of the subgroup.
 
 ## Main declarations
 
@@ -49,40 +41,9 @@ open Matrix
 
 namespace Matrix
 
+open TauCeti.Matrix
+
 variable {k Q : Type*} [Field k] [CommRing Q] [Algebra k Q]
-
-/-- The `k`-subspace of rational vectors which the matrix `M` over `Q` scales by `s`. -/
-private def rationalEigenspace {n : Type*} [Fintype n] (M : Matrix n n Q) (s : Qˣ) :
-    Submodule k (n → k) :=
-  LinearMap.ker (((M.mulVecLin - (s : Q) • LinearMap.id).restrictScalars k) ∘ₗ
-    LinearMap.compLeft (Algebra.linearMap k Q) n)
-
-private theorem mem_rationalEigenspace {n : Type*} [Fintype n] {M : Matrix n n Q} {s : Qˣ}
-    {v : n → k} :
-    v ∈ rationalEigenspace (k := k) M s ↔
-      M *ᵥ (algebraMap k Q ∘ v) = (s : Q) • (algebraMap k Q ∘ v) := by
-  simp [rationalEigenspace, sub_eq_zero, LinearMap.compLeft, Function.comp_def]
-
-/-- If `P₀` diagonalizes `M` with unit eigenvalues, the rational eigenspaces of `M` span, since
-they contain the columns of `P₀`. -/
-private theorem iSup_rationalEigenspace_eq_top {n : Type*} [Fintype n] [DecidableEq n]
-    {M : Matrix n n Q} {P₀ : Matrix n n k} (hP₀ : IsUnit P₀) {t : n → Qˣ}
-    (h : M * P₀.map (algebraMap k Q) = P₀.map (algebraMap k Q) * diagonal fun i ↦ (t i : Q)) :
-    ⨆ s, rationalEigenspace (k := k) M s = ⊤ := by
-  have hcol (j : n) : P₀.col j ∈ rationalEigenspace (k := k) M (t j) := by
-    rw [mem_rationalEigenspace]
-    funext i
-    have hij := congr_fun (congr_fun h i) j
-    rw [mul_diagonal, mul_apply] at hij
-    simp only [map_apply] at hij
-    simp only [mulVec, dotProduct, Function.comp_apply, col_apply, Pi.smul_apply, smul_eq_mul,
-      hij, mul_comm]
-  have hspan : Submodule.span k (Set.range P₀.col) = ⊤ := by
-    rw [← range_mulVecLin, LinearMap.range_eq_top]
-    exact mulVec_surjective_iff_isUnit.2 hP₀
-  refine eq_top_iff.2 (hspan ▸ Submodule.span_le.2 ?_)
-  rintro _ ⟨j, rfl⟩
-  exact Submodule.mem_iSup_of_mem (t j) (hcol j)
 
 variable {m : ℕ}
 

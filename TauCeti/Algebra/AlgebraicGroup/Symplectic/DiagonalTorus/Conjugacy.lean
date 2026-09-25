@@ -17,14 +17,6 @@ point of `Sp₂ₘ`, into the paired diagonal torus. In Hopf coordinates, a clos
 diagonalizable when the group-like elements span its quotient coordinate Hopf algebra, and
 containment is reversed: the conclusion reads `(diagonalTorusDefiningIdeal k m).conjugate g ≤ I`.
 
-The proof views the subgroup inside `GL₂ₘ`. The general-linear argument
-`TauCeti.GeneralLinear.exists_mul_map_eq_map_mul_diagGL` diagonalizes its generic point `M` by a
-rational matrix whose columns are weight vectors. Since `M` preserves the standard alternating
-form, weight spaces pair trivially unless their weights are mutually inverse, and a homogeneous
-symplectic basis of weight vectors turns the diagonalizing matrix into a rational symplectic one,
-`TauCeti.GLSymplecticFin.exists_mul_map_eq_map_mul_diagonal`. After conjugation the generic point
-is a paired diagonal matrix, which is membership in the diagonal torus of `Sp₂ₘ` on points.
-
 As a consequence, every split maximal torus of `Sp₂ₘ` is conjugate to the diagonal torus, and
 any two split maximal tori are conjugate over the base field. Over an algebraically closed field
 every torus is split, so the maximal tori are exactly the conjugates of the diagonal torus, and
