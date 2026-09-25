@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.AdditiveCharacter
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.Analysis.PositiveDefinite.PontryaginDualEval
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 /-!
@@ -26,14 +25,6 @@ namespace TauCeti
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 
-private theorem continuous_character_eval (g : G) :
-    Continuous (fun χ : PontryaginDual (Multiplicative G) =>
-      (χ (Multiplicative.ofAdd g) : ℂ)) := by
-  have h : Continuous (fun χ : (Multiplicative G →ₜ* Circle) =>
-      (χ (Multiplicative.ofAdd g) : Circle)) :=
-    continuous_eval_const (Multiplicative.ofAdd g)
-  exact (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous.comp h
-
 variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
 
 /-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
@@ -41,6 +32,13 @@ additive group. -/
 noncomputable def pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
+
+/-- The defining integral of the Fourier–Stieltjes transform. -/
+theorem pontryaginMeasureTransform_apply
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
+    pontryaginMeasureTransform μ g =
+      ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure := by
+  simp only [pontryaginMeasureTransform]
 
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]
@@ -51,14 +49,6 @@ theorem pontryaginMeasureTransform_zero
 
 variable [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
-private theorem integrable_character_eval
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] (g : G) :
-    Integrable (fun χ : PontryaginDual (Multiplicative G) =>
-      (χ (Multiplicative.ofAdd g) : ℂ)) μ :=
-  (integrable_const (1 : ℝ)).mono'
-    (continuous_character_eval g).aestronglyMeasurable
-    (.of_forall fun χ => by simp)
-
 /-- The transform of a finite positive measure on the dual is positive definite. -/
 theorem isPositiveDefiniteSub_pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) :
@@ -68,7 +58,7 @@ theorem isPositiveDefiniteSub_pontryaginMeasureTransform
   have hint (i j : Fin n) :
       Integrable (fun χ : PontryaginDual (Multiplicative G) =>
         (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ)) μ.toMeasure :=
-    (integrable_character_eval μ (v i - v j)).const_mul _
+    (PontryaginDual.integrable_eval_ofAdd μ (v i - v j)).const_mul _
   have hsum :
       (∫ χ, ∑ i : Fin n, ∑ j : Fin n,
         (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ) ∂μ.toMeasure) =
