@@ -22,6 +22,8 @@ remains canonical.
   the special orthogonal group.
 * `CliffordAlgebra.ker_spinToSpecialOrthogonal` identifies its kernel with that of the
   orthogonal Spin action.
+* `CliffordAlgebra.mem_even_of_det_lipschitzToOrthogonal_eq_one` shows that a Lipschitz element
+  inducing a determinant-one isometry is even.
 * `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identifies its underlying action
   with the Spin action on the quadratic module.
 * `CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal`: followed by the
@@ -29,9 +31,7 @@ remains canonical.
 
 ## References
 
-This advances Layer 2's double-cover target in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -171,6 +171,24 @@ private theorem mem_even_of_involute_eq (Q : QuadraticForm R M) {x : CliffordAlg
       _ = 0 := by rw [hx]; abel
   rw [← hsum, hozero, add_zero]
   exact he
+
+/-- A finite-free Lipschitz element whose orthogonal action has determinant one is even. -/
+theorem mem_even_of_det_lipschitzToOrthogonal_eq_one [Module.Free R M] [Module.Finite R M]
+    (Q : QuadraticForm R M) (x : lipschitzGroup Q)
+    (hdet : QuadraticMap.orthogonalDet Q (lipschitzToOrthogonal Q x) = 1) :
+    ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q := by
+  have hinv := involute_eq_det_smul_of_mem_lipschitz Q x.2
+  have hdet' : lipschitzDet Q x = 1 := by
+    rw [lipschitzDet]
+    simp only [MonoidHom.comp_apply]
+    rw [show (QuadraticMap.orthogonalGroup Q).subtype (lipschitzToOrthogonal Q x) =
+      (lipschitzToOrthogonal Q x : M ≃ₗ[R] M) from
+        congrFun (Subgroup.coe_subtype (QuadraticMap.orthogonalGroup Q))
+          (lipschitzToOrthogonal Q x)]
+    rw [← _root_.QuadraticMap.orthogonalDet_apply]
+    exact hdet
+  rw [hdet', Units.val_one, map_one, one_mul] at hinv
+  exact mem_even_of_involute_eq Q hinv
 
 private theorem det_spinToOrthogonal_eq_one_of_finite_free
     [Module.Free R M] [Module.Finite R M] (Q : QuadraticForm R M) (x : spinGroup Q) :
