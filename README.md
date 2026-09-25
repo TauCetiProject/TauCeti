@@ -113,7 +113,7 @@ This will be an evolving process, and community input is welcome.
 To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
 and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
 
-We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
 
 We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
 
@@ -193,11 +193,11 @@ don't collide with others; see [Coordinating work: intentions and claims](https:
 The reviews above can be run one PR at a time, but most contribution here happens through a
 *worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
 repeatedly until you interrupt it. The exemplar is
-[`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker). With
+[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker). With
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install git+https://github.com/kim-em/TauCetiWorker.git
+uv tool install git+https://github.com/TauCetiProject/TauCetiWorker
 gh auth login     # the worker acts as this account, and tends its PRs
 tauceti doctor    # checklist of everything it needs
 ```
@@ -208,7 +208,7 @@ credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`
 `kiro` rows can stay missing unless you want the sandbox or an alternative agent.
 
 By default, agents run with unrestricted host access; see
-[sandboxing with `--bubble`](https://github.com/kim-em/TauCetiWorker/blob/main/docs/sandbox.md)
+[sandboxing with `--bubble`](https://github.com/TauCetiProject/TauCetiWorker/blob/main/docs/sandbox.md)
 for isolation.
 
 Then survey before you act:
@@ -222,13 +222,13 @@ tauceti work --loop
 Run a bare `tauceti work` before ever using `--loop`, so you see one complete round end to end.
 
 Each round prioritizes maintenance and review before new formalization work; see
-[the cascade](https://github.com/kim-em/TauCetiWorker#what-a-round-does).
+[the cascade](https://github.com/TauCetiProject/TauCetiWorker#what-a-round-does).
 `tauceti work --dry-run` shows what a round would pick without acting.
 
 Subscription pacing can be controlled via
-[`--pace`](https://github.com/kim-em/TauCetiWorker#pacing-against-quota).
+[`--pace`](https://github.com/TauCetiProject/TauCetiWorker#pacing-against-quota).
 For running several workers, see
-[the worker documentation](https://github.com/kim-em/TauCetiWorker#persistent-workers).
+[the worker documentation](https://github.com/TauCetiProject/TauCetiWorker#persistent-workers).
 
 ### Only review
 
