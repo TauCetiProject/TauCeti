@@ -177,11 +177,6 @@ namespace EulerProductData
 
 variable {K : Type*} [Field K] [NumberField K] (D : EulerProductData K)
 
-/-- The prime power indexed by `(P, e)` is the nonzero ideal `P ^ (e + 1)`. -/
-private theorem coe_idealPrimePowerOf_eq_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
-    (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰) = P.primeIdealPow (e + 1) :=
-  Subtype.ext (by simp)
-
 open Classical in
 /-- The **von Mangoldt function** `Λ_D` of Euler-product data. At a prime power `P ^ e` with
 `e ≥ 1` it is `log N(P)` times the degree-`e` coefficient of the local logarithmic-derivative
@@ -219,6 +214,7 @@ theorem vonMangoldt_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
 
 /-- For completely multiplicative data, `Λ_D` is the von Mangoldt transform `A ↦ χ(A) Λ(A)` of
 the weight. -/
+@[simp]
 theorem vonMangoldt_ofMultiplicativeIdealWeight (χ : MultiplicativeIdealWeight K) :
     (ofMultiplicativeIdealWeight χ).vonMangoldt =
       χ.toIdealArithmeticFunction.vonMangoldtTransform := by

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.RingTheory.DedekindDomain.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
@@ -124,6 +125,12 @@ theorem primeIdealPow_injective (P : HeightOneSpectrum (𝓞 K)) :
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
+
+/-- The two representations of the positive power `P ^ (e + 1)` as a nonzero ideal agree. -/
+theorem coe_idealPrimePowerOf_eq_primeIdealPow {K : Type*} [Field K] [NumberField K]
+    (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
+    (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰) = P.primeIdealPow (e + 1) :=
+  Subtype.ext (by simp)
 
 /-- **Every nonzero ideal is eventually supported.** A finite set of height-one primes that
 contains all primes of norm at most `Ideal.absNorm A` already contains every prime divisor of `A`,
