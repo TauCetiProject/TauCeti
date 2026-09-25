@@ -81,11 +81,27 @@ noncomputable def periph1ConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
   FundamentalGroup.conjClassAt basePt x periph1
 
-/-- The conjugacy class transported from the product-one element `periphInf` at `x`.
-Its geometric identification with a loop at infinity belongs to Layer 5.8. -/
+/-- The conjugacy class transported from the product-one element `periphInf` at `x`. -/
 noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
   FundamentalGroup.conjClassAt basePt x periphInf
+
+/-- At the standard basepoint, the peripheral class at `0` is the class of `periph0`. -/
+-- Not `@[simp]` (nor are the two companions below): simp rewrites subterms first, so it would
+-- turn `ConjClasses.map _ (periph0ConjClass basePt)` into
+-- `FundamentalGroup.conjClassAt basePt x periph0` instead of letting `map_periph0ConjClass`
+-- produce the canonical `periph0ConjClass x`.
+theorem periph0ConjClass_basePt : periph0ConjClass basePt = ConjClasses.mk periph0 :=
+  FundamentalGroup.conjClassAt_self basePt periph0
+
+/-- At the standard basepoint, the peripheral class at `1` is the class of `periph1`. -/
+theorem periph1ConjClass_basePt : periph1ConjClass basePt = ConjClasses.mk periph1 :=
+  FundamentalGroup.conjClassAt_self basePt periph1
+
+/-- At the standard basepoint, the class of the product-one element is the class of `periphInf`. -/
+theorem periphInfConjClass_basePt :
+    periphInfConjClass basePt = ConjClasses.mk periphInf :=
+  FundamentalGroup.conjClassAt_self basePt periphInf
 
 /-- The three transported elements retain the defining product-one relation. -/
 theorem periphInfAt_mul_periph1At_mul_periph0At (γ : Path basePt x) :
@@ -135,20 +151,23 @@ theorem map_mk_periphInf_eq_periphInfConjClass (γ : Path basePt x) :
   exact mk_periphInfAt_eq_periphInfConjClass γ
 
 /-- The class at `0` is natural under transport between any two basepoints. -/
-theorem map_periph0ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
-    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+@[simp] theorem map_periph0ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ :
+        FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periph0ConjClass x) = periph0ConjClass y :=
   FundamentalGroup.map_conjClassAt δ periph0
 
 /-- The class at `1` is natural under transport between any two basepoints. -/
-theorem map_periph1ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
-    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+@[simp] theorem map_periph1ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ :
+        FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periph1ConjClass x) = periph1ConjClass y :=
   FundamentalGroup.map_conjClassAt δ periph1
 
 /-- The class of the product-one element is natural under transport between basepoints. -/
-theorem map_periphInfConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
-    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
+@[simp] theorem map_periphInfConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
+    ConjClasses.map (FundamentalGroup.fundamentalGroupMulEquivOfPath δ :
+        FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periphInfConjClass x) = periphInfConjClass y :=
   FundamentalGroup.map_conjClassAt δ periphInf
 
