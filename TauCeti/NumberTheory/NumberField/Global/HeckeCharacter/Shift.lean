@@ -102,7 +102,6 @@ theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     exact MonoidHom.coe_toHomUnits (normPowAux s) c
 
 /-- The absolute value of `‖c‖ ^ s` is `‖c‖ ^ Re s`. -/
-@[simp]
 theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ‖((normPow K s c : ℂˣ) : ℂ)‖ = ((ideleClassNorm c : ℝ≥0) : ℝ) ^ s.re := by
   rw [normPow_apply, Complex.norm_cpow_eq_rpow_re_of_pos (coe_ideleClassNorm_pos c)]
@@ -307,7 +306,6 @@ theorem shift_unitaryPart (χ : HeckeCharacter K) : χ.unitaryPart.shift = 0 := 
   simp [unitaryPart_def]
 
 /-- **The unitary part of a Hecke character takes values of absolute value `1`.** -/
-@[simp]
 theorem norm_unitaryPart (χ : HeckeCharacter K) (c : IdeleClassGroup (𝓞 K) K) :
     ‖((χ.unitaryPart c : ℂˣ) : ℂ)‖ = 1 :=
   (shift_eq_zero_iff _).mp (shift_unitaryPart χ) c
