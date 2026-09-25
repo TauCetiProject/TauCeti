@@ -25,8 +25,7 @@ the lower-triangular matrix `T′ = (1 0; 1 1)`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
 * `TauCeti.ModularGroup.coe_S_mul_coe_S`, `TauCeti.ModularGroup.mul_coe_S_mul_coe_S`: `S * S = 1`
-  and `g * S * S = g`, the product forms of `S² = 1`.
-* `TauCeti.ModularGroup.coe_T_mul_coe_S_mul_coe_S`: `U * S = T`.
+  and `g * S * S = g`, the product forms of `S² = 1`; in particular `U * S = T`.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
@@ -79,10 +78,6 @@ theorem coe_S_mul_coe_S : (S : PSL(2, ℤ)) * S = 1 := by
 @[simp]
 theorem mul_coe_S_mul_coe_S (g : PSL(2, ℤ)) : g * S * S = g := by
   rw [mul_assoc, coe_S_mul_coe_S, mul_one]
-
-/-- In `PSL(2, ℤ)`, `U * S = T` for `U = T * S`; in `SL(2, ℤ)` the product is `-T`. -/
-theorem coe_T_mul_coe_S_mul_coe_S : (T : PSL(2, ℤ)) * S * S = T :=
-  mul_coe_S_mul_coe_S _
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
 @[expose] def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
