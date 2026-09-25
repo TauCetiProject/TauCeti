@@ -628,9 +628,13 @@ theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : �
 
 /-! ## The shape `(n+1, 1)` -/
 
+-- A pre-lemma (`simp↓`): otherwise `simp` first rewrites the carrier of `spechtModule _` to that
+-- of the Specht subrepresentation by `FGModuleCat.of_carrier`, and then, wherever
+-- `TauCeti.finrank_spechtSubrepresentation` is imported, the dimension to a `standardCount`, so
+-- the plain left-hand side is never looked up. The pattern follows #8642.
 /-- **`S^{(n+1,1)}` has dimension `n + 1`**: the Specht module of the shape `(n+1, 1)` of `n + 2`
 is the `(n+1)`-dimensional standard representation of `S_{n+2}`. -/
-@[simp]
+@[simp↓]
 theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
     Module.finrank ℚ (spechtModule (Nat.Partition.singletonSecondRow n)) = n + 1 := by
   exact (finrank_spechtSubrepresentation_of_rowLen

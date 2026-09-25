@@ -144,12 +144,15 @@ theorem trivialTateRangeIso_hom (T : LayerRestriction small big) (r : ℤ) :
       TauCeti.TateCohomology.map T.isIntertwiningMap_trivial_range r := by
   rw [trivialTateRangeIso, TauCeti.TateCohomology.mapIso_hom]
 
+-- Stated through `dsimp% only`: the carriers of the trivial representations here are indexed
+-- unreduced, as `Rep.V` of a `Rep` structure literal, while `simp` reduces them to `ℤ` before it
+-- looks a term up, so the plain form is never found (the convention of #8315).
 /-- In degree zero, the trivial-coefficient range comparison preserves the integral invariant
 representing a Tate class. -/
 @[simp]
 theorem trivialTateRangeIso_hom_H0π (T : LayerRestriction small big)
     (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
-    (T.trivialTateRangeIso 0).hom (TauCeti.TateCohomology.H0π _ x) =
+    (dsimp% only ((T.trivialTateRangeIso 0).hom (TauCeti.TateCohomology.H0π _ x))) =
       TauCeti.TateCohomology.H0π
         (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
         ⟨(x : ℤ), fun _ ↦ rfl⟩ := by
@@ -187,10 +190,11 @@ def trivialRangeRepHom (T : LayerRestriction small big) :
         (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) :=
   Rep.ofHom ⟨LinearMap.id, fun _ ↦ by ext; rfl⟩
 
+-- Stated through `dsimp% only` (#8315), for the reason given at `trivialTateRangeIso_hom_H0π`.
 /-- The trivial range comparison fixes each integer coefficient. -/
 @[simp]
 theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
-    T.trivialRangeRepHom x = x :=
+    (dsimp% only (T.trivialRangeRepHom x)) = x :=
   (rfl)
 
 /-- Below degree minus one, the trivial-coefficient range comparison agrees with the

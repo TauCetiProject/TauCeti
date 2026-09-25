@@ -107,8 +107,10 @@ theorem forget₂_map_delta (n : ℕ) :
           (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).inv ≫
         S.continuousCochainsShortExact_shortExact.δ n (n + 1) rfl ≫
           ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso
-            (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom :=
-  (rfl)
+            (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom := by
+  -- The `rfl` tactic checks the definitional unfolding once; the term `(rfl)` checks it twice,
+  -- once while propagating the expected type and once more against it (0.3 s).
+  rfl
 
 /-- **Exactness at `Hⁿ⁺¹(G, A)`**: the image of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)` is
 the kernel of the coefficient map induced by `A → B`. -/
@@ -182,35 +184,28 @@ theorem delta_naturality (T : DiscreteShortExact G A' B' C')
       coeffMap (ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ map_smul fC g c)
           n ≫
         T.delta n := by
-  set τA := ofDiscreteModuleMap fA.toAddMonoidHom.toIntLinearMap fun g a ↦ map_smul fA g a
-  set τC := ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ map_smul fC g c
   -- The morphism of coefficient short complexes, and its image on forgotten cochain complexes.
+  -- `_root_.map_smul` is named in full: the bare name also resolves to
+  -- `ContinuousCohomology.map_smul`, and elaborating that failed alternative costs 0.05 s each.
   let φ : S.toShortComplex ⟶ T.toShortComplex :=
-    ShortComplex.homMk τA
-      (ofDiscreteModuleMap fB.toAddMonoidHom.toIntLinearMap fun g b ↦ map_smul fB g b) τC
+    ShortComplex.homMk
+      (ofDiscreteModuleMap fA.toAddMonoidHom.toIntLinearMap fun g a ↦ _root_.map_smul fA g a)
+      (ofDiscreteModuleMap fB.toAddMonoidHom.toIntLinearMap fun g b ↦ _root_.map_smul fB g b)
+      (ofDiscreteModuleMap fC.toAddMonoidHom.toIntLinearMap fun g c ↦ _root_.map_smul fC g c)
       (TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ (hincl a).symm)
       (TopRep.hom_ext <| DFunLike.ext _ _ fun b : B ↦ (hproj b).symm)
   let Φ := ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).mapHomologicalComplex _).mapShortComplex.map
     ((continuousCochainsFunctor ℤ G).mapShortComplex.map φ)
   -- Three commuting squares in `ModuleCat ℤ`: the snake-lemma naturality in the middle, and the
-  -- coefficient maps read through `mapHomologyIso` on either side.
+  -- coefficient maps read through `mapHomologyIso` on either side. The side squares keep the
+  -- form `forget₂_map_coeffMap` gives them at `φ.τ₁` and `φ.τ₃`: restating them through
+  -- `continuousCochainsShortExact` costs a slow unification per square (2.5 s and 0.5 s).
   have h := HomologicalComplex.HomologySequence.δ_naturality Φ
     S.continuousCochainsShortExact_shortExact T.continuousCochainsShortExact_shortExact n (n + 1)
     rfl
-  have h₁ : ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso
-          (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom ≫
-        (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map (coeffMap τA (n + 1)) =
-      HomologicalComplex.homologyMap Φ.τ₁ (n + 1) ≫
-        ((T.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso
-          (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom :=
-    (Iso.eq_inv_comp _).1 (forget₂_map_coeffMap τA (n + 1))
-  have h₃ : ((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso
-          (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).inv ≫
-        HomologicalComplex.homologyMap Φ.τ₃ n =
-      (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map (coeffMap τC n) ≫
-        ((T.continuousCochainsShortExact.X₃.sc n).mapHomologyIso
-          (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).inv :=
-    (Iso.eq_comp_inv _).2 ((Category.assoc _ _ _).trans (forget₂_map_coeffMap τC n).symm)
+  have h₁ := (Iso.eq_inv_comp _).1 (forget₂_map_coeffMap φ.τ₁ (n + 1))
+  have h₃ := (Iso.eq_comp_inv _).2 ((Category.assoc _ _ _).trans
+    (forget₂_map_coeffMap φ.τ₃ n).symm)
   apply (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map_injective
   rw [Functor.map_comp, Functor.map_comp, forget₂_map_delta, forget₂_map_delta]
   -- Paste the three squares. `Category.assoc` cannot be rewritten here because the objects of the

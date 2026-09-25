@@ -62,9 +62,12 @@ def _root_.SheafOfModules.overIhomComparison
   CategoryTheory.Functor.ihomComparison
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M
 
+-- A pre-lemma (`simp↓`, as in #8642): otherwise `Functor.comp_obj`, `Functor.id_obj` and
+-- `SheafOfModules.ihom_obj` rewrite the implicit source and target objects of the comparison's
+-- component first, and the left-hand side no longer matches.
 /-- Evaluation characterizes the internal Hom comparison for restriction: after the monoidal
 tensorator it agrees with restricting the evaluation map. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp↓)]
 theorem _root_.SheafOfModules.overIhomComparison_ev
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     (M.over X) ◁ (M.overIhomComparison R X).natTrans.app N ≫

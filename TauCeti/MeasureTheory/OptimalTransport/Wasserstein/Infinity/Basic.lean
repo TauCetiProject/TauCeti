@@ -126,7 +126,7 @@ theorem wassersteinEDist_top_eq_iSup (μ ν : Measure X) [IsProbabilityMeasure �
     (iSup_le fun p ↦ wassersteinEDist_mono_exponent measurable_edist le_top μ ν)
   by_cases hcoup : ∃ π, IsCoupling π μ ν
   · obtain ⟨π₀, hπ₀⟩ := hcoup
-    have : IsProbabilityMeasure ν := ⟨by rw [← hπ₀.measure_univ_eq, measure_univ]⟩
+    have : IsProbabilityMeasure ν := hπ₀.isProbabilityMeasure_right
     obtain ⟨π, hπ, hle⟩ := exists_isCoupling_eLpNorm_top_le_iSup μ ν
     exact (wassersteinEDist_le hπ ∞).trans hle
   · simp [wassersteinEDist_eq_top_of_not_exists_isCoupling hcoup]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.BigOperators
-public import Mathlib.Data.Multiset.Filter
+public import TauCeti.Data.Multiset.Filter
 public import TauCeti.Data.Sym.Basic
 
 /-!
@@ -109,16 +109,6 @@ theorem mem_sumSubtype_iff {j : ι} {a : α} (h : ∀ i, i ≠ j → a ∉ U i)
     exact h i hij x.2
   exact hx
 
-omit [Fintype ι] in
-/-- Filtering distributes over a finite sum of multisets. -/
-private theorem filter_finsetSum (q : α → Prop) [DecidablePred q] (s : Finset ι)
-    (f : ι → Multiset α) :
-    Multiset.filter q (∑ i ∈ s, f i) = ∑ i ∈ s, Multiset.filter q (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert a s ha ih => rw [Finset.sum_insert ha, Multiset.filter_add, ih, Finset.sum_insert ha]
-
 /-- Filtering a concatenation on membership in `U i` recovers its `i`-th part: the other parts
 contribute nothing, being supported in sets disjoint from `U i`. -/
 theorem filter_mem_sumSubtype [∀ i, DecidablePred (· ∈ U i)]
@@ -131,7 +121,7 @@ theorem filter_mem_sumSubtype [∀ i, DecidablePred (· ∈ U i)]
     Multiset.filter_eq_self.2 fun a ha => by
       obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 ha
       exact x.2
-  rw [coe_sumSubtype, filter_finsetSum, Finset.sum_eq_single i, hself]
+  rw [coe_sumSubtype, Multiset.filter_sum, Finset.sum_eq_single i, hself]
   · refine fun j _ hj => Multiset.filter_eq_nil.2 fun a ha => ?_
     obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 ha
     exact Set.disjoint_left.1 (h hj) x.2

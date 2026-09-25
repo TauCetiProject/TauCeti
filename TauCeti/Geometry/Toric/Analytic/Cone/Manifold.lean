@@ -27,6 +27,8 @@ of the finite semigroup generating family used to present the affine complex poi
 The monomials, that is, the character functions of the dual semigroup, are holomorphic on this
 manifold: in the ambient coordinates a monomial is a product of natural powers of the ray
 coordinates and integral powers of the torus coordinates, which do not vanish on the chart.
+Conversely, the ambient coordinates are themselves monomials, so a map into the complex points is
+holomorphic exactly when all of its monomials are; this criterion refers to no coordinates.
 
 ## Main declarations
 
@@ -37,6 +39,9 @@ coordinates and integral powers of the torus coordinates, which do not vanish on
 * `TauCeti.Toric.contMDiff_coneChartAmbient_comp_iff`: a map into the complex points is
   holomorphic exactly when its ambient chart coordinates are.
 * `TauCeti.Toric.contMDiff_apply_single`: every monomial is a holomorphic function.
+* `TauCeti.Toric.contMDiffOn_iff_forall_contMDiffOn_apply_single` and
+  `TauCeti.Toric.contMDiff_iff_forall_contMDiff_apply_single`: a map into the complex points is
+  holomorphic exactly when its value on every monomial is.
 * `TauCeti.Toric.contMDiff_id_coneChartedSpace`: changing the extending basis or the generating
   family preserves the complex structure.
 
@@ -165,6 +170,50 @@ theorem contMDiff_apply_single (g : AddGeneratingFamily (dualSemigroup hi σ) s)
   conv_lhs => rw [← (coneChartEquiv hi hσ hB).symm_apply_apply x]
   rw [coneChartEquiv_symm_apply_single, ← Units.coeHom_apply, map_finsuppProd]
   simp [F, a]
+
+/-- A map into the affine complex points of a regular cone is holomorphic on a set exactly when its
+value on every monomial is.  This is the holomorphic counterpart of
+`TauCeti.Toric.continuous_iff_forall_continuous_apply_single`. -/
+theorem contMDiffOn_iff_forall_contMDiffOn_apply_single {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [TopologicalSpace M]
+    [ChartedSpace H M] (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    {f : M → AffineSemigroupComplexPoint (dualSemigroup hi σ)} {t : Set M} {n : ℕ∞ω} :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n f t ↔
+      ∀ m : dualSemigroup hi σ, ContMDiffOn I 𝓘(ℂ, ℂ) n
+        (fun x ↦ f x (MonoidAlgebra.single (Multiplicative.ofAdd m) 1)) t := by
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ hB κ g
+  refine ⟨fun hf m ↦ (contMDiff_apply_single hi hσ hB κ g m n).comp_contMDiffOn hf,
+    fun hf x hx ↦ ?_⟩
+  have he := isOpenEmbedding_coneChartAmbient hi hσ hB κ g
+  have : Nonempty (AffineSemigroupComplexPoint (dualSemigroup hi σ)) := ⟨f x⟩
+  -- The ambient chart coordinates of `f` are values of `f` on monomials.
+  have hc : ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
+      (coneChartAmbient hi hσ hB κ ∘ f) t := by
+    rw [contMDiffOn_prod_module_iff, contMDiffOn_pi_space, contMDiffOn_pi_space]
+    exact ⟨fun a ↦ (hf (dualSemigroupCoord hi hσ hB (.inl (κ.symm a)))).congr fun y _ ↦ by simp,
+      fun c ↦ (hf (dualSemigroupCoord hi hσ hB (.inr c))).congr fun y _ ↦ by simp⟩
+  refine (((contMDiffOn_isOpenEmbedding_symm he (I := 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)))
+    (n := n)).comp hc fun y _ ↦ mem_range_self _).congr fun y _ ↦ ?_) x hx
+  exact (he.toOpenPartialHomeomorph_left_inv _).symm
+
+/-- A map into the affine complex points of a regular cone is holomorphic exactly when its value
+on every monomial is. -/
+theorem contMDiff_iff_forall_contMDiff_apply_single {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [TopologicalSpace M]
+    [ChartedSpace H M] (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    {f : M → AffineSemigroupComplexPoint (dualSemigroup hi σ)} {n : ℕ∞ω} :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n f ↔
+      ∀ m : dualSemigroup hi σ, ContMDiff I 𝓘(ℂ, ℂ) n
+        fun x ↦ f x (MonoidAlgebra.single (Multiplicative.ofAdd m) 1) := by
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ hB κ g
+  simp only [← contMDiffOn_univ]
+  exact contMDiffOn_iff_forall_contMDiffOn_apply_single hi hσ hB κ g
 
 /-- The identity map between the affine complex-point spaces equipped with two regular coordinate
 systems is holomorphic.  Both the extending basis and the finite generating family used to define

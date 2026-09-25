@@ -5,50 +5,66 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.Topology.Algebra.Module.LinearTopology
+public import Mathlib.Topology.Algebra.LinearTopology
+public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
+public import TauCeti.Topology.Algebra.Module.Quotient
+public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
+public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 
 /-!
-# Compact totally disconnected modules over a compact ring
+# Compact modules over a compact ring
 
-Let `R` be a compact topological ring, or more generally a ring with a compact topology, and let
-`M` be an `R`-module that is a compact, totally disconnected topological additive group on which
-`R` acts continuously. The standard example is a compact module over the Iwasawa algebra
-`ℤ_p[[Γ]]` of a profinite group `Γ`, which is how such modules arise in the study of relation
-modules of pro-`p` groups.
+A **compact module** over a topological ring `R` is a topological `R`-module `M` that is a
+compact, totally disconnected topological additive group with continuous scalar action. For `R`
+compact these are the modules that are inverse limits of finite modules with surjective transition
+maps: the profinite modules. The case of interest is `R = ℤ_p⟦Γ⟧`, the completed group algebra of
+a profinite group `Γ`, whose compact modules are the objects Iwasawa theory and the classification
+of Demushkin groups compute with.
 
-The main result is that the topology of `M` is **`R`-linear**
-(`TauCeti.isLinearTopology_of_compactSpace`): the open submodules form a basis of neighbourhoods
-of `0`. A totally disconnected compact group has a basis of open subgroups at `0`; for an open
-subgroup `V`, the elements `m` with `r • m ∈ V` for every `r : R` form a submodule inside `V`,
-and it is open because the compactness of `R` makes `r • m` uniformly small in `r` for `m` near
-`0` (the tube lemma).
+Two facts make a compact module accessible level by level. First, when `R` is compact, the open
+submodules of a nonarchimedean topological `R`-module form a basis of neighbourhoods of zero: an
+open additive subgroup `V` contains an open submodule, because by compactness of `R` and
+continuity of the action there is a neighbourhood `W` of zero with `R • W ⊆ V`, and the
+submodule spanned by `W` is open and lies in `V`. This is Mathlib's `IsLinearTopology R M`, and
+in a `T1` module it gives separatedness: an element lying in every open submodule is zero.
+Second, when `M` is compact, a compatible family of elements of the quotients `M ⧸ N`, `N` ranging
+over the open submodules, comes from an element of `M`, by Cantor's intersection theorem applied
+to the closed cosets it describes. Together these are the inverse-limit description
+`M ≅ lim_N M ⧸ N` of a compact module over a compact ring.
 
-A linearly topologized T1 module is separated by its open submodules
-(`TauCeti.eq_zero_of_forall_isOpen_submodule_mem`), and a compact one is the inverse limit of its
-quotients by open submodules: a family of classes in the quotients `M ⧸ N`, compatible along the
-maps `Submodule.factor`, comes from a unique element of `M` (`TauCeti.existsUnique_forall_mkQ_eq`).
-The transition maps `Submodule.factor` of that system are surjective by
-`Submodule.factor_surjective`. Levelwise surjections between towers of compact modules induce a
-surjection on inverse limits, which is the topological statement
-`TauCeti.exists_forall_map_succ_eq_and_forall_eq_of_compact_t2`.
+The predicate `IsCompactModule R M` packages the four topological hypotheses so that they can be
+carried as a single hypothesis on a module whose topology is given by hand; its API restates the
+two facts above for it, shows that it passes to quotients by closed submodules, and records the
+witness that a compact totally disconnected topological ring is a compact module over itself.
+
+## Main definitions
+
+* `TauCeti.IsCompactModule R M`: `M` is a compact totally disconnected topological `R`-module.
 
 ## Main results
 
-* `TauCeti.isLinearTopology_of_compactSpace`: a compact totally disconnected topological module
-  over a compact ring is linearly topologized.
-* `TauCeti.eq_zero_of_forall_isOpen_submodule_mem`: in a linearly topologized T1 module, an
-  element lying in every open submodule is `0`.
-* `TauCeti.existsUnique_forall_mkQ_eq`: a compact linearly topologized T1 module is the inverse
-  limit of its quotients by open submodules.
+* `OpenAddSubgroup.exists_submodule_isOpen_subset`: over a compact ring, an open additive subgroup
+  of a topological module contains an open submodule.
+* `TauCeti.NonarchimedeanAddGroup.isLinearTopology`: over a compact ring, a nonarchimedean
+  topological module is linearly topologized.
+* `TauCeti.IsLinearTopology.eq_zero_of_forall_mem_of_isOpen`,
+  `TauCeti.IsLinearTopology.sInf_isOpen_eq_bot`: in a `T1` linearly topologized module the open
+  submodules intersect in zero.
+* `TauCeti.exists_forall_mkQ_eq`: for a compact topological module, the map to compatible
+  families in its quotients by open submodules is surjective.
+* `TauCeti.existsUnique_forall_mkQ_eq`: a compact `T1` linearly topologized module is the
+  inverse limit of its quotients by open submodules.
+* `TauCeti.IsCompactModule.isLinearTopology`,
+  `TauCeti.IsCompactModule.eq_zero_of_forall_mem_of_isOpen`,
+  `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.quotient`,
+  `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
+  quotients by closed submodules, and the self-module witness.
 
 ## References
 
-* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 5.1 (profinite modules over profinite
-  rings) and Proposition 1.1.4 (the compactness argument behind the limit description).
-* J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), §4, where compact
-  modules over `ℤ_p[[Γ]]` carry the classification.
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 5.1.
+* J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), Section 1.5.
 -/
 
 public section
@@ -57,89 +73,229 @@ open Filter Topology
 
 namespace TauCeti
 
-section LinearTopology
-
-variable (R M : Type*) [Ring R] [TopologicalSpace R] [CompactSpace R]
-  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [ContinuousSMul R M] [CompactSpace M] [TotallyDisconnectedSpace M]
-
-/-- **Compact totally disconnected modules over a compact ring are linearly topologized.** If `M`
-is a compact, totally disconnected topological additive group with a continuous action of a ring
-`R` carrying a compact topology, then the open `R`-submodules of `M` form a basis of
-neighbourhoods of `0`. -/
-instance (priority := 100) isLinearTopology_of_compactSpace : IsLinearTopology R M := by
-  refine (isLinearTopology_iff_hasBasis_open_submodule (R := R)).2
-    ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨N, hN, hNU⟩ ↦ mem_of_superset (hN.mem_nhds N.zero_mem) hNU⟩⟩
-  -- An open subgroup `V ⊆ U`, and the submodule of the `m` with `R • m ⊆ V`.
-  obtain ⟨V₀, hVU⟩ := ProfiniteGrp.exist_openNormalAddSubgroup_sub_open_nhds_of_zero
-    isOpen_interior (mem_interior_iff_mem_nhds.mpr hU)
-  let V : AddSubgroup M := V₀.toAddSubgroup
-  have hVo : IsOpen (V : Set M) := V₀.isOpen'
-  -- `V` is `V₀` with its bundled openness forgotten; the two have the same carrier.
-  have hVU' : (V : Set M) ⊆ interior U := hVU
-  let N : Submodule R M :=
-    { carrier := {m | ∀ r : R, r • m ∈ V}
-      add_mem' := fun ha hb r ↦ by simpa only [smul_add] using V.add_mem (ha r) (hb r)
-      zero_mem' := fun r ↦ by simpa only [smul_zero] using V.zero_mem
-      smul_mem' := fun c m hm r ↦ by simpa only [smul_smul] using hm (r * c) }
-  -- The tube lemma: since `R` is compact and `r • 0 = 0 ∈ V` for every `r`, the condition
-  -- `∀ r, r • m ∈ V` holds for all `m` near `0`.
-  have hN : (N : Set M) ∈ 𝓝 0 := by
-    have hV : ∀ r ∈ (Set.univ : Set R),
-        ∀ᶠ z : M × R in 𝓝 ((0 : M), r), z.2 • z.1 ∈ (V : Set M) := fun r _ ↦ by
-      have hcont : Continuous fun z : M × R ↦ z.2 • z.1 := continuous_snd.smul continuous_fst
-      refine hcont.continuousAt.preimage_mem_nhds ?_
-      simpa only [smul_zero] using hVo.mem_nhds V.zero_mem
-    filter_upwards [isCompact_univ.eventually_forall_of_forall_eventually
-      (P := fun m r ↦ r • m ∈ (V : Set M)) hV] with m hm r
-    exact hm r (Set.mem_univ r)
-  refine ⟨N, N.toAddSubgroup.isOpen_of_mem_nhds hN, fun m hm ↦ ?_⟩
-  exact interior_subset (hVU' (SetLike.mem_coe.mpr (by simpa only [one_smul] using hm 1)))
-
-end LinearTopology
-
-section Limit
-
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
-  [IsLinearTopology R M]
 
-/-- **A compact linearly topologized module is the inverse limit of its quotients by open
-submodules.** In a compact T1 module whose topology is `R`-linear, a family of classes
-`x N ∈ M ⧸ N`, one for each open submodule `N`, compatible along the maps
-`Submodule.factor : M ⧸ N' → M ⧸ N` for `N' ≤ N`, is the family of classes of a unique element
-of `M`. -/
-theorem existsUnique_forall_mkQ_eq [IsTopologicalAddGroup M] [CompactSpace M] [T1Space M]
-    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
-    (hx : ∀ (N N' : {N : Submodule R M // IsOpen (N : Set M)}) (h : N'.1 ≤ N.1),
-      Submodule.factor h (x N') = x N) :
-    ∃! m : M, ∀ N, N.1.mkQ m = x N := by
-  -- The fibres of `M → M ⧸ N` over `x N` are cosets of open, hence closed, submodules; they are
-  -- directed by compatibility, so compactness gives a common point.
-  let C (N : {N : Submodule R M // IsOpen (N : Set M)}) : Set M := N.1.mkQ ⁻¹' {x N}
-  have hne (N : {N : Submodule R M // IsOpen (N : Set M)}) : (C N).Nonempty :=
-    N.1.mkQ_surjective (x N)
-  have hcl (N : {N : Submodule R M // IsOpen (N : Set M)}) : IsClosed (C N) := by
-    obtain ⟨m₀, hm₀⟩ := hne N
-    have hC : C N = (· - m₀) ⁻¹' (N.1 : Set M) := by
-      ext m
-      simp only [C, Set.mem_preimage, Set.mem_singleton_iff] at hm₀ ⊢
-      rw [← hm₀, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, SetLike.mem_coe]
-    rw [hC]
-    exact (N.1.toAddSubgroup.isClosed_of_isOpen N.2).preimage (continuous_sub_right m₀)
-  have hdir : Directed (· ⊇ ·) C := fun N N' ↦ by
-    refine ⟨⟨N.1 ⊓ N'.1, N.2.inter N'.2⟩, fun m hm ↦ ?_, fun m hm ↦ ?_⟩ <;>
-    simp only [C, Set.mem_preimage, Set.mem_singleton_iff] at hm ⊢
-    · rw [← hx N ⟨_, N.2.inter N'.2⟩ inf_le_left, ← hm, Submodule.factor_mk]
-    · rw [← hx N' ⟨_, N.2.inter N'.2⟩ inf_le_right, ← hm, Submodule.factor_mk]
-  have : Nonempty {N : Submodule R M // IsOpen (N : Set M)} := ⟨⟨⊤, isOpen_univ⟩⟩
+section CompactRing
+
+variable [TopologicalSpace R] [CompactSpace R] [ContinuousSMul R M]
+
+/-- Over a compact ring `R`, every open additive subgroup `V` of a topological `R`-module
+contains an open submodule: by compactness of `R` there is a neighbourhood `W` of zero with
+`R • W ⊆ V`, and the submodule spanned by `W` is open and contained in `V`. -/
+theorem _root_.OpenAddSubgroup.exists_submodule_isOpen_subset [SeparatelyContinuousAdd M]
+    (V : OpenAddSubgroup M) : ∃ N : Submodule R M, IsOpen (N : Set M) ∧ (N : Set M) ⊆ V := by
+  -- For each scalar `r`, continuity of `(r, 0) ↦ r • 0 = 0` gives neighbourhoods `U r` of `r`
+  -- and `W r` of `0` with `U r • W r ⊆ V`.
+  have key : ∀ r : R, ∃ U ∈ 𝓝 r, ∃ W ∈ 𝓝 (0 : M), ∀ s ∈ U, ∀ m ∈ W, s • m ∈ V := by
+    intro r
+    have h : (fun p : R × M ↦ p.1 • p.2) ⁻¹' (V : Set M) ∈ 𝓝 (r, 0) :=
+      (continuous_smul.continuousAt (x := (r, 0))).preimage_mem_nhds
+        (by simpa using V.mem_nhds_zero)
+    obtain ⟨U, hU, W, hW, hUW⟩ := mem_nhds_prod_iff.mp h
+    exact ⟨U, hU, W, hW, fun s hs m hm ↦ hUW (Set.mk_mem_prod hs hm)⟩
+  choose U hU W hW hUW using key
+  -- Finitely many of the `U r` cover `R`, and the intersection `W₀` of the corresponding `W r`
+  -- is a neighbourhood of zero with `R • W₀ ⊆ V`.
+  obtain ⟨t, -, ht⟩ := isCompact_univ.elim_nhds_subcover U fun r _ ↦ hU r
+  have hW₀ : (⋂ r ∈ t, W r) ∈ 𝓝 (0 : M) := (biInter_finset_mem t).mpr fun r _ ↦ hW r
+  have hsmul : ∀ s : R, ∀ m ∈ ⋂ r ∈ t, W r, s • m ∈ V := by
+    intro s m hm
+    obtain ⟨r, hr, hs⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ s))
+    exact hUW r s hs m (Set.mem_iInter₂.mp hm r hr)
+  refine ⟨Submodule.span R (⋂ r ∈ t, W r), ?_, fun m hm ↦ ?_⟩
+  · exact (Submodule.span R _).toAddSubgroup.isOpen_of_mem_nhds
+      (mem_of_superset hW₀ Submodule.subset_span)
+  · -- Every element of the span is killed into `V` by every scalar, by induction on the span.
+    suffices ∀ s : R, s • m ∈ V by simpa using this 1
+    refine Submodule.span_induction (p := fun m _ ↦ ∀ s : R, s • m ∈ V) ?_ ?_ ?_ ?_ hm
+    · exact fun m hm s ↦ hsmul s m hm
+    · intro s
+      rw [smul_zero]
+      exact zero_mem V
+    · intro x y _ _ hx hy s
+      rw [smul_add]
+      exact add_mem (hx s) (hy s)
+    · intro a x _ hx s
+      rw [smul_smul]
+      exact hx (s * a)
+
+variable (R M) in
+/-- Over a compact ring, a nonarchimedean topological module is linearly topologized: its open
+submodules form a basis of neighbourhoods of zero. -/
+instance (priority := 100) NonarchimedeanAddGroup.isLinearTopology [NonarchimedeanAddGroup M] :
+    IsLinearTopology R M := by
+  refine .mk_of_hasBasis' R (S := Submodule R M) (p := fun N : Submodule R M ↦ IsOpen (N : Set M))
+    (s := id) (hasBasis_iff.mpr fun U ↦ ⟨fun hU ↦ ?_, ?_⟩) fun N r m hm ↦ N.smul_mem r hm
+  · obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
+    obtain ⟨N, hN, hNV⟩ := V.exists_submodule_isOpen_subset (R := R)
+    exact ⟨N, hN, hNV.trans hV⟩
+  · rintro ⟨N, hN, hNU⟩
+    exact mem_of_superset (hN.mem_nhds N.zero_mem) hNU
+
+end CompactRing
+
+section Separated
+
+variable [ContinuousAdd M] [IsLinearTopology R M] [T1Space M]
+
+/-- In a `T1` linearly topologized module, an element lying in every open submodule is zero. -/
+theorem IsLinearTopology.eq_zero_of_forall_mem_of_isOpen {x : M}
+    (h : ∀ N : Submodule R M, IsOpen (N : Set M) → x ∈ N) : x = 0 := by
+  by_contra hx
+  obtain ⟨N, hN, hNx⟩ := (IsLinearTopology.hasBasis_open_submodule R (M := M)).mem_iff.mp
+    (isOpen_compl_singleton.mem_nhds (Set.mem_compl_singleton_iff.mpr (Ne.symm hx)))
+  exact hNx (h N hN) rfl
+
+variable (R M) in
+/-- In a `T1` linearly topologized module, the open submodules intersect in zero. -/
+@[simp]
+theorem IsLinearTopology.sInf_isOpen_eq_bot :
+    sInf {N : Submodule R M | IsOpen (N : Set M)} = ⊥ :=
+  eq_bot_iff.mpr fun _ hx ↦ (Submodule.mem_bot R).mpr <|
+    IsLinearTopology.eq_zero_of_forall_mem_of_isOpen fun N hN ↦ Submodule.mem_sInf.mp hx N hN
+
+end Separated
+
+section Compact
+
+variable [ContinuousAdd M] [CompactSpace M]
+
+/-- **Surjectivity onto compatible families of open quotients.** Every family of elements of
+`M ⧸ N`, with `N` ranging over the open submodules, that is compatible along the factor maps
+`M ⧸ N → M ⧸ N'` for `N ≤ N'` comes from an element of the compact topological module `M`.
+The element is unique when `M` is moreover `T1` and linearly topologized
+(`TauCeti.existsUnique_forall_mkQ_eq`). -/
+theorem exists_forall_mkQ_eq (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+      Submodule.factor h (x N) = x N') :
+    ∃ m : M, ∀ N, N.1.mkQ m = x N := by
+  -- The fibres `C N` of `mkQ` over `x N` are cosets of open, hence closed, subgroups of the
+  -- compact space `M`; they are nonempty and decrease along intersections, so Cantor's
+  -- intersection theorem produces a common point.
+  set C : {N : Submodule R M // IsOpen (N : Set M)} → Set M := fun N ↦ N.1.mkQ ⁻¹' {x N} with hC
+  have hclosed : ∀ N, IsClosed (C N) := fun N ↦ by
+    have := Submodule.Quotient.discreteTopology_of_isOpen N.1 N.2
+    exact isClosed_singleton.preimage N.1.continuous_mkQ
+  have hne : ∀ N, (C N).Nonempty := fun N ↦ N.1.mkQ_surjective (x N)
+  have hdir : Directed (· ⊇ ·) C := by
+    intro N N'
+    have hopen : IsOpen ((N.1 ⊓ N'.1 : Submodule R M) : Set M) := by
+      rw [Submodule.coe_inf]
+      exact N.2.inter N'.2
+    refine ⟨⟨N.1 ⊓ N'.1, hopen⟩, fun m hm ↦ ?_, fun m hm ↦ ?_⟩
+    · rw [hC, Set.mem_preimage, Set.mem_singleton_iff] at hm ⊢
+      rw [← hx (N := ⟨N.1 ⊓ N'.1, hopen⟩) inf_le_left, ← hm, Submodule.factor_mk]
+    · rw [hC, Set.mem_preimage, Set.mem_singleton_iff] at hm ⊢
+      rw [← hx (N := ⟨N.1 ⊓ N'.1, hopen⟩) inf_le_right, ← hm, Submodule.factor_mk]
+  have : Nonempty {N : Submodule R M // IsOpen (N : Set M)} := ⟨⟨⊤, by simp⟩⟩
   obtain ⟨m, hm⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
-    (fun N ↦ (hcl N).isCompact) hcl
-  refine ⟨m, fun N ↦ Set.mem_iInter.mp hm N, fun m' hm' ↦ ?_⟩
-  -- Uniqueness: `m' - m` lies in every open submodule.
-  refine (sub_eq_zero.mp (eq_zero_of_forall_isOpen_submodule_mem R fun N hN ↦ ?_))
-  rw [← Submodule.Quotient.eq]
-  exact (hm' ⟨N, hN⟩).trans (Set.mem_iInter.mp hm ⟨N, hN⟩).symm
+    (fun N ↦ (hclosed N).isCompact) hclosed
+  exact ⟨m, fun N ↦ Set.mem_iInter.mp hm N⟩
 
-end Limit
+/-- **The inverse-limit description of a compact linearly topologized module**: a compatible
+family of elements of the quotients `M ⧸ N` by the open submodules comes from exactly one element
+of `M`. -/
+theorem existsUnique_forall_mkQ_eq [IsLinearTopology R M] [T1Space M]
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+      Submodule.factor h (x N) = x N') :
+    ∃! m : M, ∀ N, N.1.mkQ m = x N := by
+  obtain ⟨m, hm⟩ := exists_forall_mkQ_eq x hx
+  refine ⟨m, hm, fun m' (hm' : ∀ N, N.1.mkQ m' = x N) ↦ ?_⟩
+  rw [← sub_eq_zero]
+  refine IsLinearTopology.eq_zero_of_forall_mem_of_isOpen (R := R) fun N hN ↦ ?_
+  rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, map_sub, hm' ⟨N, hN⟩, hm ⟨N, hN⟩,
+    sub_self]
+
+end Compact
+
+variable [TopologicalSpace R]
+
+variable (R M) in
+-- The predicate and API are adapted from `IsCompactModule` in
+-- `TauCetiRoadmap/ProfiniteProPGroups/Suggested.lean` (`CompactModules`).
+/-- A **compact module** over a topological ring `R`: a topological `R`-module that is a compact,
+totally disconnected topological additive group with continuous scalar action. Over a compact ring
+these are the modules that are inverse limits of finite modules with surjective transition maps.
+The four conditions are bundled as one predicate so that a module whose topology is given by hand
+can carry them as a single hypothesis. -/
+structure IsCompactModule : Prop where
+  /-- the module is a topological additive group -/
+  isTopologicalAddGroup : IsTopologicalAddGroup M
+  /-- the scalar action is continuous -/
+  continuousSMul : ContinuousSMul R M
+  /-- the module is compact -/
+  compactSpace : CompactSpace M
+  /-- the module is totally disconnected -/
+  totallyDisconnectedSpace : TotallyDisconnectedSpace M
+
+namespace IsCompactModule
+
+/-- A compact totally disconnected topological ring is a compact module over itself. -/
+theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] :
+    IsCompactModule R R :=
+  ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
+variable (hM : IsCompactModule R M)
+include hM
+
+/-- A compact module is nonarchimedean: every neighbourhood of zero contains an open additive
+subgroup. -/
+theorem nonarchimedeanAddGroup : NonarchimedeanAddGroup M :=
+  have := hM.isTopologicalAddGroup
+  have := hM.compactSpace
+  have := hM.totallyDisconnectedSpace
+  inferInstance
+
+/-- A compact module is Hausdorff. -/
+theorem t2Space : T2Space M :=
+  have := hM.isTopologicalAddGroup
+  have := hM.totallyDisconnectedSpace
+  inferInstance
+
+/-- A compact module over a compact ring is linearly topologized: its open submodules form a
+basis of neighbourhoods of zero. -/
+theorem isLinearTopology [CompactSpace R] : IsLinearTopology R M :=
+  have := hM.nonarchimedeanAddGroup
+  have := hM.continuousSMul
+  inferInstance
+
+/-- **Separatedness.** In a compact module over a compact ring, an element lying in every open
+submodule is zero. -/
+theorem eq_zero_of_forall_mem_of_isOpen [CompactSpace R] {x : M}
+    (h : ∀ N : Submodule R M, IsOpen (N : Set M) → x ∈ N) : x = 0 :=
+  have := hM.isTopologicalAddGroup
+  have := hM.totallyDisconnectedSpace
+  have := hM.isLinearTopology
+  IsLinearTopology.eq_zero_of_forall_mem_of_isOpen h
+
+/-- **The inverse-limit description.** A compact module over a compact ring is the inverse limit
+of its quotients by the open submodules: a compatible family of elements of those quotients comes
+from exactly one element of the module. -/
+theorem existsUnique_forall_mkQ_eq [CompactSpace R]
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+      Submodule.factor h (x N) = x N') :
+    ∃! m : M, ∀ N, N.1.mkQ m = x N :=
+  have := hM.isTopologicalAddGroup
+  have := hM.compactSpace
+  have := hM.totallyDisconnectedSpace
+  have := hM.isLinearTopology
+  TauCeti.existsUnique_forall_mkQ_eq x hx
+
+/-- **Quotients stay compact.** The quotient of a compact module by a closed submodule is a
+compact module. Closedness is what makes the quotient Hausdorff, and with the nonarchimedean
+property it gives total disconnectedness. -/
+theorem quotient (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModule R (M ⧸ N) := by
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.nonarchimedeanAddGroup
+  have : IsClosed (N : Set M) := hN
+  refine ⟨inferInstance, inferInstance, ⟨?_⟩, inferInstance⟩
+  rw [← Set.image_univ_of_surjective N.mkQ_surjective]
+  exact isCompact_univ.image N.continuous_mkQ
+
+end IsCompactModule
 
 end TauCeti

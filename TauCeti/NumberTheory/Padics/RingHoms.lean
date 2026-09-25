@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Congruence and continuity properties of the truncations of a `p`-adic integer
@@ -36,6 +37,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   exponent is independent of the truncation level, once that level is large enough.
 * `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
   `ZMod (p ^ n)`.
+* `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
+  `ℤ_[p]`.
 -/
 
 public section
@@ -105,6 +108,18 @@ noncomputable def quotientSpanPowEquivZMod (n : ℕ) :
 theorem quotientSpanPowEquivZMod_mk (n : ℕ) (x : ℤ_[p]) :
     quotientSpanPowEquivZMod n (Ideal.Quotient.mk _ x) = toZModPow n x := by
   simp [quotientSpanPowEquivZMod]
+
+/-- Every unit of `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because
+truncation is a surjective local homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the
+target `ZMod 1` is the trivial ring, so there is nothing to lift. -/
+theorem surjective_units_map_toZModPow (n : ℕ) :
+    Function.Surjective (Units.map (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
+  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
+      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

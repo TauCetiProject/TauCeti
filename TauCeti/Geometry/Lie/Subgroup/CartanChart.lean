@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Geometry.Lie.Exponential.ProductChart
+public import TauCeti.Geometry.Lie.Exponential.ProductChart
 public import TauCeti.Geometry.Lie.Subgroup.LocalSeparation
 
 /-!
@@ -44,6 +44,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
+/-- For a closed subgroup, there are a complementary submodule and positive radius such that small
+transverse exponentials lie in the subgroup exactly at zero, while the complementary exponential
+product is a local diffeomorphism at the identity. -/
+theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) :
+    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    ∃ (q : Submodule ℝ (LeftInvariantDerivation I G)) (ε : ℝ),
+      IsCompl ((lieSubalgebraOfSubgroup (I := I) K).toSubmodule) q ∧ 0 < ε ∧
+        (∀ X ∈ q, ‖X‖ < ε →
+          (lieExp (I := I) X ∈ K ↔ X = 0)) ∧
+        IsLocalDiffeomorphAt 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) I ∞
+          (Submodule.lieExpMulLieExp (lieSubalgebraOfSubgroup (I := I) K).toSubmodule q) 0 := by
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  dsimp only
+  let p : Submodule ℝ (LeftInvariantDerivation I G) :=
+    (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
+  obtain ⟨q, hpq⟩ := Submodule.exists_isCompl p
+  obtain ⟨ε, hε, hsep⟩ :=
+    exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint (I := I) hK q hpq.disjoint.symm
+  let hf := Submodule.isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl
+    (I := I) (G := G) p q hpq
+  exact ⟨q, ε, hpq, hε, hsep, hf⟩
+
 /-- Near the identity, a closed subgroup is exactly the exponential image of its Lie algebra.
 This is the local membership criterion for the embedded Lie-subgroup chart. -/
 theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
@@ -55,15 +78,10 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
         X ∈ lieSubalgebraOfSubgroup (I := I) K ∧ lieExp (I := I) X = x) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   dsimp only
-  -- Choose a linear complement and the corresponding transverse separation radius; the
-  -- local product chart then supplies coordinates in the Lie algebra and its complement.
   let p : Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
-  obtain ⟨q, hpq⟩ := Submodule.exists_isCompl p
-  obtain ⟨ε, hε, hsep⟩ :=
-    exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint (I := I) hK q hpq.disjoint.symm
-  let hf := Submodule.isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl
-    (I := I) (G := G) p q hpq
+  obtain ⟨q, ε, hpq, hε, hsep, hf⟩ :=
+    exists_complement_data_of_isClosed_subgroup (I := I) hK
   let A : Set (p × q) := (Prod.snd : p × q → q) ⁻¹' Metric.ball (0 : q) ε
   have hA : A ∈ 𝓝 (0 : p × q) := by
     apply continuousAt_snd.preimage_mem_nhds

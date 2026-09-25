@@ -24,6 +24,10 @@ It also records the `H¹` criterion for taking invariants to preserve a short ex
 part of Mathlib's long exact cohomology sequence. The result for a normal subgroup `S` applies it
 to the restricted sequence and retains the quotient-group action.
 
+Finally, it records an identity satisfied by a `2`-cocycle `f` of a monoid along two adjacent
+commuting squares `d * a' = a * d₁` and `d₁ * b' = b * d₂`: three instances of the cocycle law
+express `d • f (a', b')` through the values of `f` at the sides and diagonals of the squares.
+
 ## Main statements
 
 * `TauCeti.groupCohomology.isZero_H1_of_isTrivial`: `H¹(G, A) = 0` for a trivial representation `A`
@@ -32,6 +36,8 @@ to the restricted sequence and retains the quotient-group action.
   short exact sequence when `H¹(G, X₁) = 0`.
 * `TauCeti.groupCohomology.shortExact_map_quotientToInvariantsFunctor`: taking `S`-invariants
   preserves a short exact sequence whose kernel `X₁` has `H¹(S, X₁) = 0`.
+* `TauCeti.groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul`: the `2`-cocycle identity
+  along two adjacent commuting squares.
 -/
 
 public noncomputable section
@@ -94,5 +100,26 @@ theorem shortExact_map_quotientToInvariantsFunctor {X : ShortComplex (Rep k G)}
       -- rewriting functor composition alone does not identify these fields.
       change ((X.map (resFunctor S.subtype)).map (invariantsFunctor k S)).ShortExact
       exact h)
+
+section IsCocycle₂
+
+variable {K A : Type*} [Monoid K] [AddCommGroup A] [MulAction K A]
+
+/-- A `2`-cocycle identity along two adjacent commuting squares: if `d * a' = a * d₁` and
+`d₁ * b' = b * d₂` in a monoid `K`, then for a `2`-cocycle `f : K × K → A`, `d • f (a', b')` is an
+alternating sum of the values of `f` at the sides of the two squares and at the products `a' * b'`
+and `a * b`. -/
+theorem smul_map_eq_of_isCocycle₂_of_mul_eq_mul {f : K × K → A} (hf : IsCocycle₂ f)
+    {d a' b' a b d₁ d₂ : K} (h₁ : d * a' = a * d₁) (h₂ : d₁ * b' = b * d₂) :
+    d • f (a', b') = a • f (d₁, b') - a • f (b, d₂) - f (d, a' * b') + f (a * b, d₂) +
+      f (d, a') - f (a, d₁) + f (a, b) := by
+  -- The cocycle law at `(d, a', b')`, `(a, d₁, b')` and `(a, b, d₂)`, matched along `h₁`, `h₂`.
+  have e1 := hf d a' b'
+  have e2 := hf a d₁ b'
+  rw [h₁] at e1
+  rw [h₂] at e2
+  linear_combination (norm := abel) -e1 + e2 - hf a b d₂
+
+end IsCocycle₂
 
 end TauCeti.groupCohomology

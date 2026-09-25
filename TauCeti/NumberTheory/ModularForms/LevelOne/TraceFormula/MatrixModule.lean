@@ -21,6 +21,11 @@ group-ring calculations in the Popa--Zagier construction of the trace formula.
 Inverse right multiplication is written as a left action. Its representative formula is
 `A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`.
 
+The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
+`ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
+is Popa--Zagier's product `M · g`, right multiplication by `g` itself; it equals
+`x.rightPSL g⁻¹`. Conjugation `ConjAct.toConjAct g • x` equals `g • x <• g⁻¹`.
+
 ## References
 
 * A. Popa and D. Zagier, *A simple proof of the Eichler--Selberg trace formula*,
@@ -435,5 +440,68 @@ theorem TraceFormulaMatrixModule.conjPSLHom_apply (g : PSL(2, ℤ))
     TraceFormulaMatrixModule.conjPSLHom n g x = x.conjPSL g := by
   unfold TraceFormulaMatrixModule.conjPSLHom
   rfl
+
+/-! ### The right and conjugation actions as `MulAction`s -/
+
+open scoped RightActions
+
+/-- Right multiplication makes `ℳₙ` a right `PSL(2, ℤ)`-set. With `open scoped RightActions`,
+`x <• g`, that is `MulOpposite.op g • x`, is Popa--Zagier's product `M · g`: the class of `A * g`
+for a representative `A` of `x`. It is inverse right multiplication by `g⁻¹`, that is
+`x.rightPSL g⁻¹`. -/
+instance TraceFormulaMatrixModule.instMulActionMulOppositePSL (n : ℤ) :
+    MulAction PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) :=
+  MulAction.compHom _ ((TraceFormulaMatrixModule.rightPSLHom n).comp
+    (MulEquiv.inv' PSL(2, ℤ)).symm.toMonoidHom)
+
+/-- Right multiplication by `g` is inverse right multiplication by `g⁻¹`. -/
+theorem TraceFormulaMatrixModule.op_smul_eq_rightPSL_inv (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : x <• g = x.rightPSL g⁻¹ := (rfl)
+
+/-- Right multiplication by a projective class is computed on any representatives: the class of
+`A` times the class of `g` is the class of `A * g`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    TraceFormulaMatrixModule.mk A <• (g : PSL(2, ℤ)) =
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := by
+  rw [op_smul_eq_rightPSL_inv, ← QuotientGroup.mk_inv, rightPSL_coe, right_mk]
+
+/-- Right multiplication by the inverse of a projective class is computed on any representatives:
+the class of `A` times the inverse of the class of `g` is the class of `A * g⁻¹`. This is the form
+in which `simp` leaves `x <• g⁻¹`, via `MulOpposite.op_inv`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    (MulOpposite.op (g : PSL(2, ℤ)))⁻¹ • TraceFormulaMatrixModule.mk A =
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := by
+  simpa using op_smul_mk g⁻¹ A
+
+/-- Left and right multiplication on `ℳₙ` commute. -/
+instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
+    SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
+  smul_comm g _ x := (rightPSL_smul g _ x).symm
+
+/-- Left multiplication by a determinant-one matrix commutes with right multiplication on `ℳₙ`. -/
+instance TraceFormulaMatrixModule.instSMulCommClassSL (n : ℤ) :
+    SMulCommClass SL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
+  smul_comm g := smul_comm (g : PSL(2, ℤ))
+
+/-- Conjugation makes `ℳₙ` a `ConjAct PSL(2, ℤ)`-set: `ConjAct.toConjAct g` sends the class of
+`A` to the class of `g * A * g⁻¹`, that is `x` to `g • x <• g⁻¹`. -/
+instance TraceFormulaMatrixModule.instMulActionConjActPSL (n : ℤ) :
+    MulAction (ConjAct PSL(2, ℤ)) (TraceFormulaMatrixModule n) :=
+  MulAction.compHom _ ((TraceFormulaMatrixModule.conjPSLHom n).comp
+    ConjAct.ofConjAct.toMonoidHom)
+
+/-- The conjugation action of `ConjAct PSL(2, ℤ)` is `conjPSL`. -/
+theorem TraceFormulaMatrixModule.toConjAct_smul_eq_conjPSL (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : ConjAct.toConjAct g • x = x.conjPSL g :=
+  TraceFormulaMatrixModule.conjPSLHom_apply g x
+
+/-- Conjugation by `g` is left multiplication by `g` and right multiplication by `g⁻¹`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+    ConjAct.toConjAct g • x = g • x <• g⁻¹ := by
+  rw [op_smul_eq_rightPSL_inv, inv_inv]
+  exact toConjAct_smul_eq_conjPSL g x
 
 end TauCeti

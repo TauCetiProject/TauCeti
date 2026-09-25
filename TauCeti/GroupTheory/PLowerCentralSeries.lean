@@ -152,6 +152,21 @@ instance pLowerCentralSeries_normal [S.Normal] (n : ℕ) : (S.pLowerCentralSerie
   rw [normalizer_eq_top] at h
   exact normalizer_eq_top_iff.1 (top_le_iff.1 h)
 
+/-- In the quotient by `λₙ₊₁`, the class of an element of `λₙ` is killed by `p`. -/
+theorem mk_pow_eq_one_of_mem_pLowerCentralSeries [S.Normal] {n : ℕ} {x : G}
+    (hx : x ∈ S.pLowerCentralSeries p n) : (x : G ⧸ S.pLowerCentralSeries p (n + 1)) ^ p = 1 := by
+  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+  exact S.pow_mem_pLowerCentralSeries_succ p hx
+
+/-- In the quotient by `λₙ₊₁`, the classes of two elements of `λₙ` commute. -/
+theorem commute_mk_of_mem_pLowerCentralSeries [S.Normal] {n : ℕ} {x y : G}
+    (hx : x ∈ S.pLowerCentralSeries p n) (hy : y ∈ S.pLowerCentralSeries p n) :
+    Commute (x : G ⧸ S.pLowerCentralSeries p (n + 1)) y := by
+  have hxy := map_commutatorElement (QuotientGroup.mk' (S.pLowerCentralSeries p (n + 1))) x y
+  simp only [QuotientGroup.mk'_apply] at hxy
+  rw [← commutatorElement_eq_one_iff_commute, ← hxy, QuotientGroup.eq_one_iff]
+  exact S.commutator_mem_pLowerCentralSeries_succ p hx (S.pLowerCentralSeries_le p n hy)
+
 /-- The terms of the lower `p`-central series of a characteristic subgroup are characteristic. -/
 instance pLowerCentralSeries_characteristic [S.Characteristic] (n : ℕ) :
     (S.pLowerCentralSeries p n).Characteristic :=

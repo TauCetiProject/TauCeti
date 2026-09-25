@@ -35,6 +35,18 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
   (`map_mk'_limitSubgroup`). Conversely a closed subgroup is cut out by its own images
   (`limitSubgroup_map_mk'`), so the two constructions are mutually inverse.
+* Sequential reconstruction along a sequence `N : ℕ → Subgroup G` of closed subgroups of a
+  compact group with trivial intersection: a coset sequence `x k` has a unique common representative
+  if every representative of `x (k + 1)` also represents `x k`
+  (`existsUnique_forall_mk_eq_of_iInf_eq_bot`). For decreasing `N`, this is the inverse-limit
+  description. When the `N k` are normal and decreasing,
+  a compatible sequence of homomorphisms into the quotients `G ⧸ N k` comes from a unique
+  homomorphism into `G` (`existsUnique_monoidHom_mk'_comp_eq_of_iInf_eq_bot`); when they are
+  normal, a map into `G` is continuous as soon as its composites with the quotient maps are
+  (`continuous_iff_forall_continuous_mk_of_iInf_eq_bot`); and when they are open and decreasing
+  they form a neighbourhood basis of `1` (`hasAntitoneBasis_nhds_one_of_iInf_eq_bot`). The lower
+  `p`-series of a pro-`p` group is a decreasing sequence of closed normal subgroups with trivial
+  intersection, and its terms are open when the group is topologically finitely generated.
 -/
 
 public section
@@ -235,5 +247,110 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
       (Set.mem_iInter.mp hg U).1⟩
 
 end LimitSubgroup
+
+/-! ### Sequential limit descriptions
+
+The limit description of a profinite group runs over all of its open normal subgroups. When a
+sequence `N : ℕ → Subgroup G` of closed subgroups of a compact group `G` has trivial intersection,
+a coset sequence `x k` has a unique common representative if every representative of `x (k + 1)`
+also represents `x k`: the coset fibers are nested. For decreasing `N`, this is the inverse-limit
+description. When the `N k` are normal and decreasing, a compatible sequence of
+homomorphisms into the quotients `G ⧸ N k` is induced by a unique homomorphism into `G`; and when
+they are normal, continuity of a map into `G` can be tested one quotient at a time. When the `N k`
+are open and decreasing, they are a neighbourhood basis of `1`. The lower `p`-series of a pro-`p`
+group is a decreasing sequence of closed normal subgroups with trivial intersection, and its terms
+are open when the group is topologically finitely generated. -/
+
+section Sequential
+
+open Filter Topology
+
+variable {G : Type*} [Group G]
+
+/-- Two elements of a group with the same class modulo every member of a family of subgroups with
+trivial intersection are equal. -/
+theorem eq_of_forall_mk_eq_of_iInf_eq_bot {ι : Type*} {N : ι → Subgroup G} (hN : ⨅ i, N i = ⊥)
+    {x y : G} (h : ∀ i, (x : G ⧸ N i) = (y : G ⧸ N i)) : x = y := by
+  refine inv_mul_eq_one.mp ?_
+  rw [← Subgroup.mem_bot, ← hN, Subgroup.mem_iInf]
+  exact fun i ↦ QuotientGroup.eq.mp (h i)
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G] {N : ℕ → Subgroup G}
+
+/-- **Sequential coset reconstruction in a compact group.** Suppose the closed subgroups `N k`
+of a compact group `G` have trivial intersection, and let `x k : G ⧸ N k`. If every representative
+of `x (k + 1)` also represents `x k`, the coset fibers are nested and have a unique common
+representative in `G`. For decreasing `N`, this is the inverse-limit description of `G` using
+the coset spaces `G ⧸ N k`; normality is not required. -/
+theorem existsUnique_forall_mk_eq_of_iInf_eq_bot [CompactSpace G]
+    (hclosed : ∀ k, IsClosed (N k : Set G)) (hN : ⨅ k, N k = ⊥) (x : ∀ k, G ⧸ N k)
+    (hcompat : ∀ (k : ℕ) (g : G), (g : G ⧸ N (k + 1)) = x (k + 1) → (g : G ⧸ N k) = x k) :
+    ∃! g : G, ∀ k, (g : G ⧸ N k) = x k := by
+  have hcl (k : ℕ) : IsClosed ((QuotientGroup.mk : G → G ⧸ N k) ⁻¹' {x k}) := by
+    have : T1Space (G ⧸ N k) := QuotientGroup.t1Space_iff.mpr (hclosed k)
+    exact isClosed_singleton.preimage QuotientGroup.continuous_mk
+  obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
+    (fun k ↦ (QuotientGroup.mk : G → G ⧸ N k) ⁻¹' {x k}) (fun k g hg ↦ hcompat k g hg)
+    (fun k ↦ QuotientGroup.mk_surjective (x k)) (hcl 0).isCompact hcl
+  exact ⟨g, fun k ↦ Set.mem_iInter.mp hg k, fun g' hg' ↦ eq_of_forall_mk_eq_of_iInf_eq_bot hN
+    fun k ↦ (hg' k).trans (Set.mem_iInter.mp hg k).symm⟩
+
+/-- **Sequential limit description of a compact group, for homomorphisms.** A sequence of
+homomorphisms `x k : H →* G ⧸ N k` into the quotients of a compact group `G` by a decreasing
+sequence of closed normal subgroups with trivial intersection, compatible along the quotient maps,
+is induced by a unique homomorphism `H →* G`. -/
+theorem existsUnique_monoidHom_mk'_comp_eq_of_iInf_eq_bot [CompactSpace G] [∀ k, (N k).Normal]
+    {H : Type*} [MulOneClass H] (hle : ∀ k, N (k + 1) ≤ N k)
+    (hclosed : ∀ k, IsClosed (N k : Set G)) (hN : ⨅ k, N k = ⊥) (x : ∀ k, H →* G ⧸ N k)
+    (hx : ∀ k, (QuotientGroup.mapOfLE (hle k)).comp (x (k + 1)) = x k) :
+    ∃! φ : H →* G, ∀ k, (QuotientGroup.mk' (N k)).comp φ = x k := by
+  -- For a fixed `a : H`, the classes `x k a` form a compatible sequence of cosets, so the
+  -- sequential limit description realizes them by a unique element `φ a`.
+  have hcompat (a : H) (k : ℕ) (g : G) (hg : (g : G ⧸ N (k + 1)) = x (k + 1) a) :
+      (g : G ⧸ N k) = x k a := by
+    rw [← hx k, MonoidHom.comp_apply, ← hg, QuotientGroup.mapOfLE_mk]
+  choose φ hφ using fun a : H ↦
+    (existsUnique_forall_mk_eq_of_iInf_eq_bot hclosed hN (fun k ↦ x k a) (hcompat a)).exists
+  refine ⟨MonoidHom.mk' φ fun a b ↦ eq_of_forall_mk_eq_of_iInf_eq_bot hN fun k ↦ ?_,
+    fun k ↦ MonoidHom.ext (hφ · k), fun ψ hψ ↦ MonoidHom.ext fun a ↦
+      eq_of_forall_mk_eq_of_iInf_eq_bot hN fun k ↦ ?_⟩
+  · -- Multiplicativity is checked in every quotient, where it is that of `x k`.
+    calc (φ (a * b) : G ⧸ N k) = x k (a * b) := hφ (a * b) k
+      _ = x k a * x k b := map_mul _ _ _
+      _ = ((φ a * φ b : G) : G ⧸ N k) := by rw [QuotientGroup.mk_mul, ← hφ a k, ← hφ b k]
+  · exact (DFunLike.congr_fun (hψ k) a).trans (hφ a k).symm
+
+/-- **A decreasing sequence of open subgroups with trivial intersection is a neighbourhood basis
+of `1`** in a compact group. -/
+theorem hasAntitoneBasis_nhds_one_of_iInf_eq_bot [CompactSpace G] (hanti : Antitone N)
+    (hopen : ∀ k, IsOpen (N k : Set G)) (hN : ⨅ k, N k = ⊥) :
+    (𝓝 (1 : G)).HasAntitoneBasis fun k ↦ (N k : Set G) := by
+  have hanti' : Antitone fun k ↦ (N k : Set G) := fun _ _ h ↦ SetLike.coe_subset_coe.mpr (hanti h)
+  refine ⟨hasBasis_iff.mpr fun t ↦ ⟨fun ht ↦ ?_, ?_⟩, hanti'⟩
+  · -- The `N k` are closed and decreasing with intersection `{1}`, so by compactness one of them
+    -- lies inside any neighbourhood of `1`.
+    obtain ⟨k, hk⟩ := exists_subset_nhds_of_compactSpace hanti'.directed_ge
+      (fun k ↦ (N k).isClosed_of_isOpen (hopen k))
+      (by rwa [← Subgroup.coe_iInf, hN, Subgroup.coe_bot, nhdsSet_singleton])
+    exact ⟨k, trivial, hk⟩
+  · rintro ⟨k, -, hk⟩
+    exact mem_of_superset ((hopen k).mem_nhds (N k).one_mem) hk
+
+omit [SeparatelyContinuousMul G] in
+/-- A map into a compact group `G` is continuous exactly when all of its composites with the
+quotient maps `G → G ⧸ N i` are, for any family of closed normal subgroups `N i` with trivial
+intersection: `G` embeds into the product of the Hausdorff quotients `G ⧸ N i`. -/
+theorem continuous_iff_forall_continuous_mk_of_iInf_eq_bot [IsTopologicalGroup G] [CompactSpace G]
+    {ι : Type*} {N : ι → Subgroup G} [∀ i, (N i).Normal] (hclosed : ∀ i, IsClosed (N i : Set G))
+    (hN : ⨅ i, N i = ⊥) {X : Type*} [TopologicalSpace X] {f : X → G} :
+    Continuous f ↔ ∀ i, Continuous fun x ↦ (f x : G ⧸ N i) := by
+  refine ⟨fun hf i ↦ QuotientGroup.continuous_mk.comp hf, fun h ↦ ?_⟩
+  have := hclosed
+  have he : IsInducing fun g : G ↦ fun i ↦ (g : G ⧸ N i) :=
+    ((continuous_pi fun i ↦ QuotientGroup.continuous_mk).isClosedEmbedding fun a b hab ↦
+      eq_of_forall_mk_eq_of_iInf_eq_bot hN fun i ↦ congr_fun hab i).isInducing
+  exact he.continuous_iff.mpr (continuous_pi h)
+
+end Sequential
 
 end TauCeti

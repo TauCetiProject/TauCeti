@@ -14,9 +14,8 @@ public import TauCeti.Topology.Sym.Family
 
 If a Hausdorff space `α` is charted by a proper algebraically closed normed field `K` — the case of
 interest being a Riemann surface, charted by `ℂ` — then its `n`-th symmetric power `Sym α n` is
-charted by `Fin n → K`. This supplies the local-coordinate part of the topological-manifold
-statement in the first clause of Lane F4.1 of the analytic Heegaard Floer roadmap, after
-Ozsváth--Szabó
+charted by `Fin n → K`. This is the local-coordinate part of the manifold structure on the
+symmetric power of a Riemann surface used by Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1).
 
 The chart at an unordered tuple `s` is assembled from three inputs, each already available:
@@ -35,19 +34,12 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
 
 The charts so obtained depend on choices — of the separating neighbourhoods, and of the regrouping
 bijection — so the atlas below is a choice of one chart per point, exactly as much as a charted
-structure asks for. Upgrading it to a *complex* manifold, by exhibiting an atlas whose transition
-maps are holomorphic, is the next step of Lane F4.1 and is not done here; so are the totally real
-tori `T_α`, `T_β`. What is available towards that holomorphy is the analytic ingredient for a
-single coordinate patch at a multiplicity-free coefficient tuple,
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`. Its general blockwise assembly, including
-colliding points over `ℂ`, is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
-`TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The actual transition between two explicit
-charts using one common block partition is proved in
-`TauCeti.analyticAt_symOpenPartialHomeomorph_transition` in
-`TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`. The full atlas still requires
-transition theorems for arbitrary choices of block partitions.
+structure asks for. Over `ℂ`, the transition between any two of the explicit charts is analytic
+(`TauCeti.contDiffOn_symOpenPartialHomeomorph_trans` in
+`TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`), so that the symmetric power of a
+complex curve is a complex analytic manifold for this charted structure
+(`TauCeti.isManifold_symChartedSpace` in `TauCeti/Geometry/Manifold/SymmetricPower/Manifold.lean`).
+The totally real tori `T_α`, `T_β` are not treated here.
 
 ## Main declarations
 

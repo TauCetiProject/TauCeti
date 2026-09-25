@@ -229,8 +229,12 @@ theorem spechtSubrepresentation_toRepresentation_apply_of_rowLen_le_one (h : μ.
 
 /-! ## The partition-indexed Specht modules of the two extreme partitions -/
 
+-- A pre-lemma (`simp↓`): otherwise `simp` first rewrites the carrier of `spechtModule _` to that
+-- of the Specht subrepresentation by `FGModuleCat.of_carrier`, and then, wherever
+-- `TauCeti.finrank_spechtSubrepresentation` is imported, the dimension to a `standardCount`, so
+-- the plain left-hand side is never looked up. The pattern follows #8642.
 /-- **`S^{(n)}` is a line.** -/
-@[simp]
+@[simp↓]
 theorem finrank_spechtModule_indiscrete (n : ℕ) :
     finrank ℚ (spechtModule (Nat.Partition.indiscrete n)) = 1 :=
   finrank_spechtSubrepresentation_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one n)
@@ -255,8 +259,9 @@ theorem spechtModule_indiscrete_ρ_eq_trivial (n : ℕ) :
   DFunLike.ext _ _ fun σ => LinearMap.ext fun x => by
     rw [spechtModule_indiscrete_ρ_apply, Representation.trivial_apply]
 
+-- A pre-lemma (`simp↓`), for the reason given at `finrank_spechtModule_indiscrete`.
 /-- **`S^{(1ⁿ)}` is a line.** -/
-@[simp]
+@[simp↓]
 theorem finrank_spechtModule_ones (n : ℕ) :
     finrank ℚ (spechtModule (Nat.Partition.ones n)) = 1 :=
   finrank_spechtSubrepresentation_of_rowLen_le_one (rowLen_diagramOf_ones_le_one n 0)

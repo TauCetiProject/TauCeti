@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.GroupTheory.Commutator
+public import TauCeti.GroupTheory.PLowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -32,7 +33,9 @@ the **degree-raising law** `⁅λ_j, λ_k⁆ ≤ λ_{j+k+1}`, which lets the gro
 bracket `λ_j ⧸ λ_{j+1} × λ_k ⧸ λ_{k+1} → λ_{j+k+1} ⧸ λ_{j+k+2}` on the graded pieces. Continuous
 homomorphisms carry `λ_k` into `λ_k`, continuous closed surjections (for instance from a compact
 group onto a Hausdorff group) carry it onto `λ_k`, and continuous isomorphisms match the two series
-term by term.
+term by term. Each `λ_k` is the topological closure of the corresponding term of the abstract lower
+`p`-central series `Subgroup.pLowerCentralSeries p ⊤` of the underlying group, so on a discrete
+group the two series agree.
 
 Nothing here assumes `p` prime or `G` profinite. For a profinite `G` and a prime `p`, `λ_1` is the
 pro-`p` Frattini subgroup and, when `G` is topologically finitely generated, every `λ_k` is open;
@@ -56,6 +59,9 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   degree-raising law `⁅λ_j, λ_k⁆ ≤ λ_{j+k+1}`.
 * `MonoidHom.map_pLowerCentralSeries_le`, `MonoidHom.map_pLowerCentralSeries_eq_of_surjective`,
   `ContinuousMulEquiv.map_pLowerCentralSeries_eq`: functoriality of the series.
+* `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
+  `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
+  `p`-central series of the underlying group.
 
 ## References
 
@@ -306,6 +312,41 @@ theorem commutator_mem_pLowerCentralSeries {j k : ℕ} {x y : G}
     (hx : x ∈ pLowerCentralSeries p G j) (hy : y ∈ pLowerCentralSeries p G k) :
     ⁅x, y⁆ ∈ pLowerCentralSeries p G (j + k + 1) :=
   commutator_le.mp (commutator_pLowerCentralSeries_le j k) x hx y hy
+
+/-! ### Comparison with the abstract lower `p`-central series -/
+
+/-- Every term of the lower `p`-series is the topological closure of the corresponding term of the
+abstract lower `p`-central series `Subgroup.pLowerCentralSeries p ⊤` of the underlying group. -/
+theorem pLowerCentralSeries_eq_topologicalClosure (k : ℕ) :
+    pLowerCentralSeries p G k = ((⊤ : Subgroup G).pLowerCentralSeries p k).topologicalClosure := by
+  induction k with
+  | zero =>
+    rw [pLowerCentralSeries_zero, Subgroup.pLowerCentralSeries_zero]
+    exact (top_le_iff.mp (le_topologicalClosure ⊤)).symm
+  | succ k ih =>
+    rw [pLowerCentralSeries_succ, ih, Subgroup.pLowerCentralSeries_succ]
+    refine le_antisymm ((pLowerCentralStep_le_iff (isClosed_topologicalClosure _)).mpr
+      ⟨fun x hx ↦ ?_, ?_⟩) (topologicalClosure_minimal _ (sup_le ((Subgroup.closure_le _).mpr ?_)
+        ((commutator_mono (le_topologicalClosure _) le_rfl).trans
+          (commutator_le_pLowerCentralStep _))) (isClosed_pLowerCentralStep _))
+    · -- `p`-th powers of the closure of `μ_k` lie in the closure of the `p`-th powers of `μ_k`.
+      rw [← SetLike.mem_coe, topologicalClosure_coe] at hx ⊢
+      exact map_mem_closure (f := fun g : G ↦ g ^ p) (continuous_pow p) hx fun y hy ↦
+        mem_sup_left (Subgroup.subset_closure ⟨y, hy, rfl⟩)
+    · rw [commutator_comm]
+      refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+      rw [commutator_comm]
+      exact le_sup_right.trans (le_topologicalClosure _)
+    · rintro _ ⟨x, hx, rfl⟩
+      exact pow_mem_pLowerCentralStep (le_topologicalClosure _ hx)
+
+/-- On a discrete group the lower `p`-series is the abstract lower `p`-central series of the
+group. -/
+theorem pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G] (k : ℕ) :
+    pLowerCentralSeries p G k = (⊤ : Subgroup G).pLowerCentralSeries p k := by
+  rw [pLowerCentralSeries_eq_topologicalClosure]
+  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
+    (le_topologicalClosure _)
 
 /-! ### Functoriality -/
 
