@@ -143,36 +143,6 @@ attribute [local instance] Fintype.ofFinite
 
 variable {V : Type u} {G : SimpleGraph V}
 
-/-- Between two vertices an orientation keeps exactly one of the two darts of an edge, and nothing
-when they are not adjacent: the oriented quiver has, in the two directions together, one arrow
-between adjacent vertices and none between non-adjacent ones. -/
-private theorem card_hom_add_card_hom_orientedQuiver [DecidableRel G.Adj] (o : Orientation G)
-    (i j : V) :
-    Nat.card (OrientedQuiver.vertex G o i ⟶ OrientedQuiver.vertex G o j) +
-        Nat.card (OrientedQuiver.vertex G o j ⟶ OrientedQuiver.vertex G o i) =
-      if G.Adj i j then 1 else 0 := by
-  rw [Nat.card_congr (OrientedQuiver.homEquiv G o i j),
-    Nat.card_congr (OrientedQuiver.homEquiv G o j i)]
-  split_ifs with h
-  · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
-      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
-        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
-      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
-      rw [h1, h2]
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
-      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
-      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
-        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
-      rw [h1, h2]
-  · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
-    have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
-    rw [h1, h2]
-
 variable (k : Type w) [Field k] [Fintype V] [DecidableRel G.Adj]
 
 /-- **The preprojective algebra of an oriented graph carrying a suitable weight is
@@ -188,7 +158,7 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum
         Fintype.card (OrientedQuiver.vertex G o j ⟶ OrientedQuiver.vertex G o i) : ℕ) : S) =
           if G.Adj i j then 1 else 0 := by
     rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
-      card_hom_add_card_hom_orientedQuiver o i j]
+      OrientedQuiver.card_hom_add_card_hom G o i j]
     split_ifs <;> simp
   set e := OrientedQuiver.vertexEquiv G o
   refine not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum k (Q := OrientedQuiver G o)

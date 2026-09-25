@@ -60,11 +60,10 @@ instance finite_pathInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j
   intro p q h
   exact pathInto_injective n j (congrArg Subtype.val h)
 
-/-- Prolonging a path of length `n` by an arrow into `j` gives a path of length `n + 1` into `j`,
-and distinct arrows or paths give distinct prolongations. -/
-theorem card_arrow_mul_card_pathInto_le [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
+/-- Every path of length `n + 1` into `j` has a unique last arrow and a length-`n` prefix. -/
+theorem card_arrow_mul_card_pathInto_eq [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
     (n : ℕ) (j : R) :
-    ∑ i : R, Fintype.card (i ⟶ j) * Nat.card (PathInto R n i) ≤
+    ∑ i : R, Fintype.card (i ⟶ j) * Nat.card (PathInto R n i) =
       Nat.card (PathInto R (n + 1) j) := by
   let g : (Σ i : R, (i ⟶ j) × PathInto R n i) → PathInto R (n + 1) j :=
     fun x => ⟨⟨x.2.2.1.1, x.2.2.1.2.cons x.2.1⟩, by simp [x.2.2.2]⟩
@@ -77,11 +76,18 @@ theorem card_arrow_mul_card_pathInto_le [Fintype R] [∀ a b : R, Fintype (a ⟶
     simp only [Path.cons.injEq, heq_eq_eq, true_and] at h'
     obtain ⟨rfl, rfl⟩ := h'
     rfl
+  have hs : Function.Surjective g := by
+    rintro ⟨⟨s, p⟩, hp⟩
+    cases p with
+    | nil => simp at hp
+    | @cons i _ q b =>
+      simp only [Path.length_cons, Nat.add_right_cancel_iff] at hp
+      exact ⟨⟨i, b, ⟨⟨s, q⟩, hp⟩⟩, rfl⟩
   calc ∑ i : R, Fintype.card (i ⟶ j) * Nat.card (PathInto R n i)
       = Nat.card (Σ i : R, (i ⟶ j) × PathInto R n i) := by
         rw [Nat.card_sigma]
         simp [Nat.card_prod, Nat.card_eq_fintype_card]
-    _ ≤ Nat.card (PathInto R (n + 1) j) := Nat.card_le_card_of_injective g hg
+    _ = Nat.card (PathInto R (n + 1) j) := Nat.card_congr (Equiv.ofBijective g ⟨hg, hs⟩)
 
 variable (k : Type w)
 

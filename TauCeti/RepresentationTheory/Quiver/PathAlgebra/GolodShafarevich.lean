@@ -109,14 +109,6 @@ private theorem vertexIdempotent_mul_rel [DecidableEq R] {r : R → pathAlgebra 
   · rw [h, hl]
   · rw [← hl v, ← mul_assoc, vertexIdempotent_mul_vertexIdempotent_of_ne h, zero_mul]
 
-private theorem vertexIdempotent_mul_ofArrow [DecidableEq R] (u : R) {i j : R} (b : i ⟶ j) :
-    vertexIdempotent k u * ofArrow b = if j = u then (ofArrow b : pathAlgebra k R) else 0 := by
-  rw [ofArrow_eq_ofPath]
-  split_ifs with h
-  · subst h
-    exact vertexIdempotent_mul_ofPath _
-  · exact vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm h)
-
 /-- The relator at a vertex lies in the span of the paths of length two into that vertex. -/
 private theorem rel_mem_pathsInto {r : R → pathAlgebra k R} (h2 : ∀ v, r v ∈ grade k R 2)
     (hl : ∀ v, vertexIdempotent k v * r v = r v) (j : R) : r j ∈ pathsInto k 2 j := by
@@ -470,7 +462,7 @@ theorem sum_card_mul_finrank_map_pathsInto_le_add (r : R → pathAlgebra k R)
   have hdK := finrank_map_add_finrank_relPathsInto r
   have hb := finrank_relPathsInto_add_le h2 hl hr m j
   have hc : ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) ≤
-      Nat.card (PathInto R (m + 2) j) := card_arrow_mul_card_pathInto_le (m + 1) j
+      Nat.card (PathInto R (m + 2) j) := (card_arrow_mul_card_pathInto_eq (m + 1) j).le
   have hsum : ∑ i, Fintype.card (i ⟶ j) * Module.finrank k ((pathsInto k (m + 1) i).map
       (Ideal.Quotient.mkₐ k (TwoSidedIdeal.span (Set.range r)).asIdeal).toLinearMap) +
       ∑ i, Fintype.card (i ⟶ j) * Module.finrank k (relPathsInto r (m + 1) i) =
@@ -522,7 +514,7 @@ theorem not_module_finite_quotient_span_range_of_two_mul_le_sum {S : Type*} [Com
       have := hdK 0 i
       rwa [hK01 0 i (by norm_num), add_zero] at this
     simp only [hi]
-    exact (card_arrow_mul_card_pathInto_le 0 j).trans hj.ge
+    exact (card_arrow_mul_card_pathInto_eq 0 j).le.trans hj.ge
   -- The weighted sums grow linearly but are bounded by `N ∑ δ`.
   have hpos : 0 < ∑ j, δ j := by
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hδ
