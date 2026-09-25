@@ -348,9 +348,13 @@ theorem continuous_evensB1 [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensB1 U s α) := by
   classical
   have hclopen : IsClopen (U : Set G) := ⟨U.isClosed_of_isOpen hopen, hopen⟩
-  exact Continuous.if (by simp [hclopen.frontier_eq])
-    (continuous_evensExtend U α hopen hα)
-    ((continuous_evensExtend U α hopen hα).comp (continuous_mul_const s))
+  have hif : Continuous fun γ => if γ ∈ U then evensExtend U α γ else evensExtend U α (γ * s) :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      (continuous_evensExtend U α hopen hα)
+      ((continuous_evensExtend U α hopen hα).comp (continuous_mul_const s))
+  refine hif.congr fun γ => ?_
+  split_ifs with hγ
+  exacts [(evensB1_of_mem hγ).symm, (evensB1_of_notMem hγ).symm]
 
 /-- The second Shapiro component is the first one translated, hence continuous. -/
 theorem continuous_evensBs [TopologicalSpace G] [SeparatelyContinuousMul G]
@@ -447,10 +451,15 @@ theorem continuous_evensGraphCochain [TopologicalSpace G] [SeparatelyContinuousM
     ⟨(U.isClosed_of_isOpen hopen).preimage continuous_fst, hopen.preimage continuous_fst⟩
   have hb1 : Continuous (evensB1 U s α) := continuous_evensB1 U s α hopen hα
   have hbs : Continuous (evensBs U s α) := continuous_evensBs U s α hopen hα
-  exact Continuous.if (by simp [hclopen.frontier_eq])
-    ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
-    (((hb1.comp continuous_fst).mul (hb1.comp continuous_snd)).add
-      ((hb1.comp continuous_snd).mul (hbs.comp continuous_snd)))
+  have hif : Continuous fun q : G × G => if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
+      else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
+      (((hb1.comp continuous_fst).mul (hb1.comp continuous_snd)).add
+        ((hb1.comp continuous_snd).mul (hbs.comp continuous_snd)))
+  refine hif.congr fun ⟨γ, η⟩ => ?_
+  split_ifs with hγ
+  exacts [(evensGraphCochain_of_mem hγ η).symm, (evensGraphCochain_of_notMem hγ η).symm]
 
 end GraphCochain
 
