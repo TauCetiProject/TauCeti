@@ -99,7 +99,7 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
 (Stichtenoth, Theorem 3.5.10(a)): if `F' = F(y)`, `y` is a root of a monic `ψ ∈ F[X]` whose
 coefficients are regular at the place `P` below `P'`, and `ψ'(y)` is a unit at `P'`, then
 `d(P' ∣ P) = 0`. -/
-theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
+@[simp] theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
     (hgen : F⟮y⟯ = ⊤) {ψ : F[X]} (hψ : ψ.Monic)
     (hcoeff : ∀ i, ψ.coeff i ∈ (P'.restrict k F).integers) (hy : aeval y ψ = 0)
     (hψ' : P'.valuation (aeval y (derivative ψ)) = 1) :
