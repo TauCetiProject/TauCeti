@@ -75,8 +75,11 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     -- `Φ₀` is this wrapper by definition; no chart data is changed here.
     rfl
   have hΦ₀_source_eq : Φ₀.source = hf.localInverse.source := by
-    -- `toOpenPartialHomeomorph` reuses the underlying partial-equivalence source.
-    rfl
+    -- Read the source through the explicit partial-equivalence bridge supplied by Mathlib.
+    change hf.localInverse.toOpenPartialHomeomorph.source = hf.localInverse.source
+    exact congrArg PartialEquiv.source
+      (PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv
+        hf.localInverse)
   let Φ := Φ₀.restrOpen V hV
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
     rw [hΦ₀_eq]
@@ -84,8 +87,10 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       hf.localInverse.toOpenPartialHomeomorph) x).symm
   have hlocalInverse_toPartialEquiv (x : G) :
       hf.localInverse.toPartialEquiv x = hf.localInverse x := by
-    exact congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
+    have hcoe := congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
       hf.localInverse.toOpenPartialHomeomorph) x
+    change hf.localInverse.toPartialEquiv x = hf.localInverse x at hcoe
+    exact hcoe
   have hΦ₀_source : (1 : G) ∈ Φ₀.source := by
     rw [hΦ₀_source_eq]
     simpa only [Submodule.lieExpMulLieExp_zero] using hf.localInverse_mem_source
