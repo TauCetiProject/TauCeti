@@ -12,10 +12,10 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 # Functoriality of Spin groups
 
 A linear isometry of quadratic spaces induces an algebra homomorphism of their Clifford algebras.
-This file proves that the homomorphism preserves the Lipschitz and Spin groups and packages both
-restrictions as group homomorphisms. Isometry equivalences induce group equivalences, and these
-maps commute with the vector actions. The fixed-complement result specializes this naturality to
-an orthogonal summand.
+Using the induced Lipschitz-group homomorphism, this file proves that the Clifford homomorphism
+preserves the Spin group and packages its restriction as a group homomorphism. Isometry
+equivalences induce group equivalences, and these maps commute with the vector actions. The
+fixed-complement result specializes this naturality to an orthogonal summand.
 
 ## Main results
 
