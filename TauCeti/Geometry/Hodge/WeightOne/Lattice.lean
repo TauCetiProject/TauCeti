@@ -236,10 +236,12 @@ theorem latticeComplexification_latticeAlmostComplexStructure (hs : HodgeStructu
 
 /-- An effective integral Hodge structure of weight one is the Hodge structure of its induced
 complex structure on the realification. -/
+@[simp]
 theorem latticeHodgeStructure_latticeAlmostComplexStructure (hs : HodgeStructure hℂ 1)
-    (h : hs.IsEffective) :
+    (h : hs.F 0 = ⊤) :
     (hs.latticeAlmostComplexStructure odd_one).latticeHodgeStructure hℂ = hs :=
-  eq_of_weilOperator_eq (AlmostComplexStructure.isEffective_latticeHodgeStructure _ hℂ) h
+  eq_of_weilOperator_eq (AlmostComplexStructure.isEffective_latticeHodgeStructure _ hℂ)
+    (hs.isEffective_iff.mpr h)
     (by simp)
 
 end TauCeti.Hodge.HodgeStructureOn
@@ -278,7 +280,8 @@ noncomputable def latticeHodgeStructureEquiv (hℂ : IsBaseChange ℂ ιℂ) :
   toFun J := ⟨J.latticeHodgeStructure hℂ, J.isEffective_latticeHodgeStructure hℂ⟩
   invFun hs := hs.1.latticeAlmostComplexStructure odd_one
   left_inv J := J.latticeAlmostComplexStructure_latticeHodgeStructure hℂ
-  right_inv hs := Subtype.ext (hs.1.latticeHodgeStructure_latticeAlmostComplexStructure hs.2)
+  right_inv hs := Subtype.ext
+    (hs.1.latticeHodgeStructure_latticeAlmostComplexStructure (hs.1.isEffective_iff.mp hs.2))
 
 /-- The equivalence sends `J` to its integral weight-one Hodge structure. -/
 @[simp]

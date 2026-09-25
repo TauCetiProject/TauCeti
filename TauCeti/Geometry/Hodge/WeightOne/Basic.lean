@@ -51,9 +51,6 @@ original complex vector space. The almost-complex structure reuses
   complexification of the original almost complex structure.
 * `TauCeti.Hodge.HodgeStructureOn.eq_of_weilOperator_eq`: an effective weight-one Hodge structure
   is determined by its Weil operator.
-* `TauCeti.Hodge.HodgeStructureOn.almostComplexStructure`: the almost complex structure on `U`
-  induced by a Hodge structure of odd weight on `ℂ ⊗[ℝ] U`, which complexifies to the Weil operator
-  (`TauCeti.Hodge.HodgeStructureOn.baseChange_almostComplexStructure`).
 * `TauCeti.AlmostComplexStructure.hodgeStructureEquiv`: almost complex structures on `U` are
   equivalent to effective weight-one Hodge structures on `ℂ ⊗[ℝ] U`.
 
@@ -145,7 +142,8 @@ theorem eq_of_weilOperator_eq {hs hs' : HodgeStructureOn W ω 1} (h : hs.IsEffec
   funext p
   rcases le_or_gt p 0 with hp | hp
   · rw [h.F_eq_top_of_nonpos hp, h'.F_eq_top_of_nonpos hp]
-  rcases (show (1 : ℤ) ≤ p by omega).eq_or_lt with rfl | hp
+  have hp1 : (1 : ℤ) ≤ p := by omega
+  rcases hp1.eq_or_lt with rfl | hp
   · rw [← h.piece_weight_eq_F, ← h'.piece_weight_eq_F, ← hs.eigenspace_weilOperator_I h,
       ← hs'.eigenspace_weilOperator_I h', hC]
   · rw [h.F_eq_bot_of_weight_lt hp, h'.F_eq_bot_of_weight_lt hp]
@@ -302,65 +300,15 @@ open scoped TensorProduct
 
 variable {U : Type*} [AddCommGroup U] [Module ℝ U] {n : ℤ}
 
-/-- The real-linear retraction `c ⊗ₜ u ↦ (re c) • u` of `u ↦ 1 ⊗ₜ u`. -/
-private noncomputable def realPart (U : Type*) [AddCommGroup U] [Module ℝ U] :
-    ℂ ⊗[ℝ] U →ₗ[ℝ] U :=
-  TensorProduct.lid ℝ U ∘ₗ Complex.reLm.rTensor U
-
-private theorem realPart_one_tmul (u : U) : realPart U (1 ⊗ₜ[ℝ] u) = u := by
-  simp [realPart]
-
-/-- The Weil operator of a Hodge structure on a complexification commutes with conjugation, so it
-sends a real vector `1 ⊗ₜ u` to a real vector. -/
-private theorem weilOperator_one_tmul_eq_one_tmul_realPart
-    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (u : U) :
-    hs.weilOperator (1 ⊗ₜ[ℝ] u) = 1 ⊗ₜ[ℝ] realPart U (hs.weilOperator (1 ⊗ₜ[ℝ] u)) := by
-  have hfix : tmulConj U (hs.weilOperator (1 ⊗ₜ[ℝ] u)) = hs.weilOperator (1 ⊗ₜ[ℝ] u) := by
-    have h := hs.conj_weilOperator (1 ⊗ₜ[ℝ] u)
-    rwa [complexificationConjugation_toEquiv_apply, complexificationConjugation_toEquiv_apply,
-      tmulConj_tmul, map_one] at h
-  obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff U _).1 hfix
-  rw [hw, realPart_one_tmul]
-
-/-- The almost complex structure on a real vector space `U` determined by a Hodge structure of odd
-weight on its complexification `ℂ ⊗[ℝ] U`. The Weil operator commutes with conjugation, so it
-preserves the real vectors `1 ⊗ₜ u`, and it squares to `-1` in odd weight. -/
-noncomputable def almostComplexStructure
-    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) :
-    AlmostComplexStructure U where
-  toLinearMap := realPart U ∘ₗ hs.weilOperator.restrictScalars ℝ ∘ₗ TensorProduct.mk ℝ ℂ U 1
-  square_neg := by
-    ext u
-    have h := LinearMap.congr_fun (hs.weilOperator_comp_weilOperator_of_odd hn) (1 ⊗ₜ[ℝ] u)
-    simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, TensorProduct.mk_apply,
-      LinearMap.neg_apply, LinearMap.id_apply] at h ⊢
-    rw [← hs.weilOperator_one_tmul_eq_one_tmul_realPart, h, ← TensorProduct.tmul_neg,
-      realPart_one_tmul]
-
-/-- On a real vector `1 ⊗ₜ u` the Weil operator acts through the induced almost complex
-structure. -/
-@[simp]
-theorem weilOperator_one_tmul
-    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) (u : U) :
-    hs.weilOperator (1 ⊗ₜ[ℝ] u) = 1 ⊗ₜ[ℝ] hs.almostComplexStructure hn u :=
-  hs.weilOperator_one_tmul_eq_one_tmul_realPart u
-
-/-- **The induced almost complex structure complexifies to the Weil operator.** -/
-@[simp]
-theorem baseChange_almostComplexStructure
-    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) :
-    (hs.almostComplexStructure hn).toLinearMap.baseChange ℂ = hs.weilOperator := by
-  ext u
-  simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-    LinearMap.coe_restrictScalars, LinearMap.baseChange_tmul]
-  exact (hs.weilOperator_one_tmul hn u).symm
-
 /-- An effective weight-one Hodge structure on `ℂ ⊗[ℝ] U` is the Hodge structure of its induced
 almost complex structure. -/
+@[simp]
 theorem hodgeStructure_almostComplexStructure
-    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) 1) (h : hs.IsEffective) :
+    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) 1)
+    (h : hs.F 0 = ⊤) :
     (hs.almostComplexStructure odd_one).hodgeStructure = hs :=
-  eq_of_weilOperator_eq (AlmostComplexStructure.isEffective_hodgeStructure _) h (by simp)
+  eq_of_weilOperator_eq (AlmostComplexStructure.isEffective_hodgeStructure _)
+    (hs.isEffective_iff.mpr h) (by simp)
 
 end TauCeti.Hodge.HodgeStructureOn
 
@@ -395,7 +343,8 @@ noncomputable def hodgeStructureEquiv :
   toFun J := ⟨J.hodgeStructure, J.isEffective_hodgeStructure⟩
   invFun hs := hs.1.almostComplexStructure odd_one
   left_inv := almostComplexStructure_hodgeStructure
-  right_inv hs := Subtype.ext (hs.1.hodgeStructure_almostComplexStructure hs.2)
+  right_inv hs := Subtype.ext
+    (hs.1.hodgeStructure_almostComplexStructure (hs.1.isEffective_iff.mp hs.2))
 
 /-- The equivalence sends `J` to its weight-one Hodge structure. -/
 @[simp]
