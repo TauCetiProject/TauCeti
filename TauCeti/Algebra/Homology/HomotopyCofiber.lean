@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.OneObject
 
 /-!
-# The mapping cone of a split monomorphism of complexes
+# Mapping cones of split monomorphisms, and maps of mapping cones
 
 Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short complex of homological complexes which is split in the
 category of complexes: the retraction `r : X₂ ⟶ X₁` of `f` and the section `s : X₃ ⟶ X₂` of `g`
@@ -35,6 +37,15 @@ a direct sum `K ⊕ L`, with `L` a subcomplex, is the mapping cone of the compon
 differential. This is how the unblocked complex of a stabilized grid diagram is presented as a
 mapping cone.
 
+Finally, a morphism of arrows `α` from `φ : F ⟶ G` to `φ' : F' ⟶ G'` induces a map of mapping
+cones `homotopyCofiber.mapArrowHom φ φ' _ α`, and this map is a quasi-isomorphism when `α.left`
+and `α.right` are. The proof compares the degreewise split short exact sequences
+`G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` of `φ` and `φ'`: the third terms are compared
+through the same sequences for `𝟙 F` and `𝟙 F'`, whose middle terms are acyclic by the split case
+above, and the middle terms then by `HomologicalComplex.HomologySequence.quasiIso_τ₂`. This is how
+the stabilization invariance of grid homology passes from the component `H_I^N` of the
+`X`-marking homotopy to the whole stabilized complex.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`: the homotopy equivalence
@@ -46,6 +57,11 @@ mapping cone.
 
 * `CategoryTheory.ShortComplex.Splitting.quasiIso_homotopyCofiberDesc`: the map from the mapping
   cone of `S.f` to `S.X₃` induced by `S.g` is a quasi-isomorphism.
+* `HomologicalComplex.homotopyCofiber.inr_mapArrowHom`,
+  `HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f`,
+  `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`: the components of a map of cones.
+* `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
+  quasi-isomorphisms is a quasi-isomorphism.
 
 ## References
 
@@ -179,5 +195,127 @@ theorem isoOfSplitting_inv_f :
     (isoOfSplitting φ σ hs hr).inv.f () =
       fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ () :=
   (rfl)
+
+end HomologicalComplex.homotopyCofiber
+
+/-! ### Maps of mapping cones -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+open Limits ZeroObject
+
+section MapArrowHom
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {F G F' G' : HomologicalComplex C c} (φ : F ⟶ G) (φ' : F' ⟶ G') [HasHomotopyCofiber φ]
+  [HasHomotopyCofiber φ'] (hc : ∀ j, ∃ i, c.Rel i j) (α : Arrow.mk φ ⟶ Arrow.mk φ')
+
+/-- The map of cones induced by a morphism of arrows `α` restricts to `α.right` on the inclusion
+of the target. -/
+@[reassoc (attr := simp)]
+lemma inr_mapArrowHom : inr φ ≫ mapArrowHom φ φ' hc α = α.right ≫ inr φ' := by
+  simp [mapArrowHom]
+
+/-- On the summand `G` of the mapping cone, the map of cones induced by a morphism of arrows `α`
+is `α.right`. -/
+@[reassoc (attr := simp)]
+lemma inrX_mapArrowHom_f (i : ι) :
+    inrX φ i ≫ (mapArrowHom φ φ' hc α).f i = α.right.f i ≫ inrX φ' i := by
+  simp [mapArrowHom]
+
+/-- On the summand `F` of the mapping cone, the map of cones induced by a morphism of arrows `α`
+is `α.left`. -/
+@[reassoc (attr := simp)]
+lemma inlX_mapArrowHom_f (i j : ι) (hij : c.Rel j i) :
+    inlX φ i j hij ≫ (mapArrowHom φ φ' hc α).f j = α.left.f i ≫ inlX φ' i j hij := by
+  simp [mapArrowHom, inrCompHomotopy_hom _ _ _ _ hij]
+
+end MapArrowHom
+
+section QuasiIso
+
+variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {F G F' G' : HomologicalComplex C c} (φ : F ⟶ G) (φ' : F' ⟶ G') (hc : ∀ j, ∃ i, c.Rel i j)
+
+/-- The projection of the mapping cone of `φ : F ⟶ G` onto the mapping cone of `F ⟶ 0`, which
+forgets the summand `G`. -/
+private noncomputable abbrev toCone₀ : homotopyCofiber φ ⟶ homotopyCofiber (0 : F ⟶ 0) :=
+  mapArrowHom φ 0 hc (Arrow.homMk (𝟙 F) 0)
+
+/-- The degreewise split short exact sequence `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)`
+of a mapping cone. -/
+private noncomputable abbrev coneShortComplex : ShortComplex (HomologicalComplex C c) :=
+  ShortComplex.mk (inr φ) (toCone₀ φ hc) (by ext i; simp)
+
+private lemma coneShortComplex_shortExact : (coneShortComplex φ hc).ShortExact := by
+  refine shortExact_of_degreewise_shortExact _ fun i => ?_
+  have h₀ : IsZero ((0 : HomologicalComplex C c).X i) :=
+    (eval C c i).map_isZero (Limits.isZero_zero _)
+  by_cases hi : c.Rel i (c.next i)
+  · refine ShortComplex.Splitting.shortExact
+      { r := sndX φ i
+        s := fstX (0 : F ⟶ 0) i _ hi ≫ inlX φ _ i hi
+        f_r := by simp
+        s_g := ext_from_X (0 : F ⟶ 0) _ i hi (by simp) (h₀.eq_of_src _ _)
+        id := ext_from_X φ _ i hi (by simp) (by simp) }
+  · have hz : IsZero ((homotopyCofiber (0 : F ⟶ 0)).X i) :=
+      isZero_X (0 : F ⟶ 0) i h₀ fun j hij => absurd (c.next_eq' hij ▸ hij) hi
+    refine ShortComplex.Splitting.shortExact
+      { r := sndX φ i
+        s := 0
+        f_r := by simp
+        s_g := hz.eq_of_src _ _
+        id := by simpa using sndX_inrX φ i hi }
+
+/-- The mapping cone of an identity map is acyclic, so the map of cones of identities induced by
+any map is a quasi-isomorphism. -/
+private lemma quasiIso_mapArrowHom_id (a : F ⟶ F') :
+    QuasiIso (mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk a a)) := by
+  -- The cone of `𝟙 F` is homotopy equivalent to `0`, the cokernel of the split mono `𝟙 F`.
+  let e (K : HomologicalComplex C c) : _root_.HomotopyEquiv (homotopyCofiber (𝟙 K)) 0 :=
+    ShortComplex.Splitting.homotopyCofiberHomotopyEquiv (S := ShortComplex.mk (𝟙 K) 0 (by simp))
+      { r := 𝟙 K
+        s := 0
+        s_g := (Limits.isZero_zero _).eq_of_src _ _ } hc
+  have : QuasiIso (mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk a a) ≫ (e F').hom) := by
+    rw [(Limits.isZero_zero _).eq_of_tgt (_ ≫ (e F').hom) (e F).hom]
+    infer_instance
+  exact quasiIso_of_comp_right _ (e F').hom
+
+/-- **Maps of mapping cones preserve quasi-isomorphisms.** If a morphism of arrows `α` from
+`φ : F ⟶ G` to `φ' : F' ⟶ G'` consists of quasi-isomorphisms, the induced map of mapping cones
+`homotopyCofiber φ ⟶ homotopyCofiber φ'` is a quasi-isomorphism. -/
+lemma quasiIso_mapArrowHom (α : Arrow.mk φ ⟶ Arrow.mk φ') [QuasiIso α.left]
+    [QuasiIso α.right] : QuasiIso (mapArrowHom φ φ' hc α) := by
+  -- Compare the sequences `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` of `φ` and `φ'`.
+  -- Their third terms are compared through the same sequences for `𝟙 F` and `𝟙 F'`, whose middle
+  -- terms are acyclic.
+  let τ₃ := mapArrowHom (0 : F ⟶ 0) (0 : F' ⟶ 0) hc (Arrow.homMk α.left 0)
+  have h₃ : QuasiIso τ₃ := by
+    have := quasiIso_mapArrowHom_id hc α.left
+    refine HomologySequence.quasiIso_τ₃
+      (S₁ := coneShortComplex (𝟙 F) hc) (S₂ := coneShortComplex (𝟙 F') hc)
+      { τ₁ := α.left
+        τ₂ := mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk α.left α.left)
+        τ₃ := τ₃
+        comm₁₂ := by simp
+        comm₂₃ := by
+          simp only [τ₃, ← mapArrowHom_comp]
+          congr 1
+          ext <;> simp }
+      (coneShortComplex_shortExact _ hc) (coneShortComplex_shortExact _ hc) inferInstance this
+  exact HomologySequence.quasiIso_τ₂
+    (S₁ := coneShortComplex φ hc) (S₂ := coneShortComplex φ' hc)
+    { τ₁ := α.right
+      τ₂ := mapArrowHom φ φ' hc α
+      τ₃ := τ₃
+      comm₁₂ := by simp
+      comm₂₃ := by
+        simp only [τ₃, ← mapArrowHom_comp]
+        congr 1
+        ext <;> simp }
+    (coneShortComplex_shortExact φ hc) (coneShortComplex_shortExact φ' hc) inferInstance h₃
+
+end QuasiIso
 
 end HomologicalComplex.homotopyCofiber
