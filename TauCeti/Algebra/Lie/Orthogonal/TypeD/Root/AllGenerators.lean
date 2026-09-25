@@ -24,8 +24,8 @@ generators have a skew pair in the upper-right or lower-left block. The block de
 membership in the split type-`D` Lie algebra immediate from `TypeDStd.fromBlocks_mem_typeD`.
 
 The entry-support criterion for the diagonal Cartan then places each generator in its named root
-space over an arbitrary commutative ring. At the simple roots, the difference and positive-sum
-families agree with the previously defined Bourbaki-numbered raising generators.
+space over an arbitrary commutative ring. At the simple roots, these families agree with the
+previously defined Bourbaki-numbered raising and lowering generators.
 
 ## Main declarations
 
@@ -34,9 +34,8 @@ families agree with the previously defined Bourbaki-numbered raising generators.
 * `TauCeti.TypeDStd.negSumRootGenerator`: a generator of weight `-εᵢ - εⱼ`.
 * `TauCeti.TypeDStd.differenceRootGenerator_mem_rootSpace` and the two sum-root analogues:
   membership in the corresponding root spaces.
-* `TauCeti.TypeDStd.differenceRootGenerator_chain_eq_rootGenerator` and
-  `TauCeti.TypeDStd.sumRootGenerator_fork_eq_rootGenerator`: compatibility with the numbered
-  simple generators.
+* The chain and fork comparison theorems at the end of the file identify these vectors with the
+  numbered raising and lowering generators at the simple roots.
 
 ## References
 
@@ -89,6 +88,28 @@ theorem negSumRootMatrix_def (i j : ι) :
       let C : Matrix ι ι K := Matrix.single i j 1 - Matrix.single j i 1
       Matrix.fromBlocks 0 0 C 0 :=
   (rfl)
+
+/-- Swapping the coordinates negates a positive sum-root matrix. -/
+theorem sumRootMatrix_swap (i j : ι) :
+    sumRootMatrix (K := K) j i = -sumRootMatrix i j := by
+  ext (a | a) (b | b) <;>
+    simp [sumRootMatrix, Matrix.fromBlocks, Matrix.single_apply]
+
+/-- Swapping the coordinates negates a negative sum-root matrix. -/
+theorem negSumRootMatrix_swap (i j : ι) :
+    negSumRootMatrix (K := K) j i = -negSumRootMatrix i j := by
+  ext (a | a) (b | b) <;>
+    simp [negSumRootMatrix, Matrix.fromBlocks, Matrix.single_apply]
+
+/-- A positive sum-root matrix with equal coordinates is zero. -/
+@[simp]
+theorem sumRootMatrix_self (i : ι) : sumRootMatrix (K := K) i i = 0 := by
+  simp [sumRootMatrix]
+
+/-- A negative sum-root matrix with equal coordinates is zero. -/
+@[simp]
+theorem negSumRootMatrix_self (i : ι) : negSumRootMatrix (K := K) i i = 0 := by
+  simp [negSumRootMatrix]
 
 private theorem transpose_single_sub_single (i j : ι) :
     (Matrix.single i j (1 : K) - Matrix.single j i 1).transpose =
@@ -157,6 +178,18 @@ theorem coe_negSumRootGenerator (i j : ι) (hij : i ≠ j) :
       negSumRootMatrix i j :=
   by simp [negSumRootGenerator]
 
+/-- Swapping the coordinates negates a positive sum-root generator. -/
+theorem sumRootGenerator_swap (i j : ι) (hij : i ≠ j) :
+    sumRootGenerator (K := K) j i hij.symm = -sumRootGenerator i j hij := by
+  apply Subtype.ext
+  simpa using sumRootMatrix_swap (K := K) i j
+
+/-- Swapping the coordinates negates a negative sum-root generator. -/
+theorem negSumRootGenerator_swap (i j : ι) (hij : i ≠ j) :
+    negSumRootGenerator (K := K) j i hij.symm = -negSumRootGenerator i j hij := by
+  apply Subtype.ext
+  simpa using negSumRootMatrix_swap (K := K) i j
+
 /-- A difference-root generator is nonzero over a nontrivial ring. -/
 theorem differenceRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
     differenceRootGenerator (K := K) i j hij ≠ 0 := by
@@ -179,10 +212,6 @@ theorem negSumRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
   simp [negSumRootMatrix, Matrix.fromBlocks, hij] at hentry
 
 /-! ## Root-space membership -/
-
-private theorem typeDWeightAdd_comm (i j : ι) :
-    typeDWeightAdd (K := K) i j = typeDWeightAdd j i := by
-  rw [typeDWeightAdd_def, typeDWeightAdd_def, add_comm]
 
 /-- The standard difference-root generator has weight `εᵢ - εⱼ`. -/
 theorem differenceRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
@@ -251,6 +280,30 @@ theorem sumRootGenerator_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
     omega
   rw [raisingMatrix_of_fork n hn hfork]
   rfl
+
+/-- On a chain node, the reversed difference generator is the numbered lowering generator. -/
+theorem differenceRootGenerator_reverse_chain_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n)
+    (i : Fin n) (hi : (i : ℕ) + 1 < n) :
+    differenceRootGenerator (K := K) (chainNext n i hi) i (ne_chainNext n i hi).symm =
+      rootGenerator (K := K) n hn (.inr i) := by
+  apply Subtype.ext
+  rw [coe_differenceRootGenerator, val_rootGenerator_inr, loweringMatrix_of_chain n hn hi]
+  ext (a | a) (b | b) <;>
+    simp [differenceRootMatrix, Matrix.fromBlocks, Matrix.single_apply]
+
+/-- At the fork node, the reversed negative sum generator is the numbered lowering generator. -/
+theorem negSumRootGenerator_reverse_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
+    negSumRootGenerator (K := K) (forkRight n hn) (forkLeft n hn)
+        (forkLeft_ne_forkRight n hn).symm =
+      rootGenerator (K := K) n hn (.inr (forkRight n hn)) := by
+  apply Subtype.ext
+  rw [coe_negSumRootGenerator, val_rootGenerator_inr]
+  have hfork : ¬((forkRight n hn : Fin n) : ℕ) + 1 < n := by
+    rw [forkRight_val]
+    omega
+  rw [loweringMatrix_of_fork n hn hfork]
+  ext (a | a) (b | b) <;>
+    simp [negSumRootMatrix, Matrix.fromBlocks, Matrix.single_apply]
 
 end Fintype
 
