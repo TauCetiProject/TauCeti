@@ -84,25 +84,23 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
     (hδle : ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
     ¬ Module.Finite k (preprojectiveAlgebra k Q) := by
-  let e : Q ≃ Symmetrify Q :=
-    { toFun := Symmetrify.of.obj
-      invFun := fun v => v
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
+  let e : Q ≃ Symmetrify Q := Equiv.ofBijective _ symmetrify_of_obj_bijective
   -- The relators are read on the vertices of the doubled quiver, which are those of `Q`.
   have hl (v : Symmetrify Q) : vertexIdempotent k v * localPreprojectiveRelator k (Q := Q) v =
       localPreprojectiveRelator k (Q := Q) v := by
     have h := doubledVertexIdempotent_mul_localPreprojectiveRelator k (Q := Q) v
     rw [doubledVertexIdempotent_def k (Q := Q) v] at h
-    -- `Symmetrify.of.obj v` is `v` itself (`TauCeti.symmetrify_of_obj`).
-    exact h
+    exact (congrArg
+      (fun x : Symmetrify Q => vertexIdempotent k x * localPreprojectiveRelator k (Q := Q) v)
+      (symmetrify_of_obj (Q := Q) v)).symm.trans h
   have hr (v : Symmetrify Q) : localPreprojectiveRelator k (Q := Q) v * vertexIdempotent k v =
       localPreprojectiveRelator k (Q := Q) v := by
     have h := localPreprojectiveRelator_mul_doubledVertexIdempotent k (Q := Q) v
     rw [doubledVertexIdempotent_def k (Q := Q) v] at h
-    -- `Symmetrify.of.obj v` is `v` itself (`TauCeti.symmetrify_of_obj`).
-    exact h
-  -- The hom type of the doubled quiver is explicitly equivalent to the sum of both directions.
+    exact (congrArg
+      (fun x : Symmetrify Q => localPreprojectiveRelator k (Q := Q) v * vertexIdempotent k x)
+      (symmetrify_of_obj (Q := Q) v)).symm.trans h
+  -- Mathlib defines the arrows of `Symmetrify Q` as a sum, built by `Hom.toPos` and `Hom.toNeg`.
   have hcard (i j : Q) : Fintype.card (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) =
       Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) := by
     let f : (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) ≃
@@ -110,9 +108,7 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
       { toFun := fun e => match e with
           | .inl a => .inl a
           | .inr a => .inr a
-        invFun := fun e => match e with
-          | .inl a => .inl a
-          | .inr a => .inr a
+        invFun := Sum.elim Hom.toPos Hom.toNeg
         left_inv := by intro e; cases e <;> rfl
         right_inv := by intro e; cases e <;> rfl }
     exact (Fintype.card_congr f).trans Fintype.card_sum
