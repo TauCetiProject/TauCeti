@@ -20,12 +20,11 @@ quotient of `Rⁿ`, and the symmetric algebra of a quotient is a quotient of the
 in finitely many variables.
 
 The hypotheses are therefore the same two that make `MonoidAlgebra`-style constructions Noetherian:
-`R` Noetherian and `M` module-finite, with no freeness and no field. They are exactly the
-hypotheses of the abelian enveloping-algebra instance
-`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`, for which the symmetric algebra is the
-commutative model; the general (non-abelian) enveloping algebra consumes this instance through the
-associated graded of its PBW filtration in
-`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian.lean`.
+`R` Noetherian and `M` module-finite, with no freeness and no field. The symmetric algebra is the
+commutative model of an enveloping algebra, and this instance is consumed in that role by
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian.lean`: the symmetric algebra of a Lie
+algebra surjects onto the associated graded of its PBW filtration, which is thereby Noetherian
+under the same two hypotheses.
 
 ## Main results
 
@@ -47,9 +46,7 @@ universe u v
 variable (R : Type u) (M : Type v) [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- **The symmetric algebra of a module finite over a Noetherian commutative ring is Noetherian.**
-Finiteness of `M` presents it as a quotient of `Rⁿ`, whose symmetric algebra is the polynomial ring
-`MvPolynomial (Fin n) R`; the Hilbert basis theorem applies there, and Noetherianity passes to the
-quotient. -/
+Neither freeness of `M` nor a field is needed. -/
 instance instIsNoetherianRing [IsNoetherianRing R] [Module.Finite R M] :
     IsNoetherianRing (_root_.SymmetricAlgebra R M) := by
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M

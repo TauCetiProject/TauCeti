@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous
 public import TauCeti.Algebra.WordFiltration.Noetherian
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Noetherian
@@ -29,11 +30,11 @@ module-finite (`TauCeti.SymmetricAlgebra.instIsNoetherianRing`). So `gr U(L)` is
 Noetherian ring, hence Noetherian, and the transfer carries that down to `U(L)`.
 
 The hypotheses are therefore `R` Noetherian and `L` finite as an `R`-module, with no field, no
-freeness and no abelianness. Over a field this is the Poincaré--Birkhoff--Witt corollary that the
-enveloping algebra of a finite-dimensional Lie algebra is Noetherian, recorded as an `example`
-below; it strengthens, and replaces, the abelian instance that
-`TauCeti/Algebra/Lie/UniversalEnveloping/Abelian.lean` used to carry, where commutativity of `U(L)`
-let the Hilbert basis theorem be applied to it directly.
+freeness and no abelianness. Over a field this specializes to the Poincaré--Birkhoff--Witt
+corollary that the enveloping algebra of a finite-dimensional Lie algebra is Noetherian
+(`TauCeti.UniversalEnvelopingAlgebra.isNoetherianRing_universalEnvelopingAlgebra`). Only left ideals
+are treated, matching Mathlib's `IsNoetherianRing`; the right-handed statement is the same theorem
+read in the opposite algebra and is not proved here.
 
 ## Main results
 
@@ -43,14 +44,10 @@ let the Hilbert basis theorem be applied to it directly.
   `U(L)` is Noetherian as soon as `gr U(L)` is.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **the enveloping algebra of a Lie
   algebra finite over a Noetherian commutative ring is left Noetherian.**
+* `TauCeti.UniversalEnvelopingAlgebra.isNoetherianRing_universalEnvelopingAlgebra`: the same
+  statement for a finite-dimensional Lie algebra over a field.
 
 ## References
-
-This is the "`U(L)` is left and right Noetherian" target of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose
-`isNoetherianRing_universalEnvelopingAlgebra` is the `example` below; the roadmap prescribes the
-filtered-to-graded route taken here. The right-handed half is the same theorem read in the opposite
-algebra and is not proved here.
 
 * J. Dixmier, *Enveloping Algebras*, AMS GSM 11 (1996), §2.3.
 * J. C. McConnell and J. C. Robson, *Noncommutative Noetherian Rings*, Wiley (1987), §1.6.
@@ -89,11 +86,13 @@ Noetherian.** -/
 instance instIsNoetherianRing [IsNoetherianRing R] [Module.Finite R L] : IsNoetherianRing U :=
   isNoetherianRing_of_isNoetherianRing_pbwAssociatedGraded R L
 
--- The Poincaré--Birkhoff--Witt corollary for a finite-dimensional Lie algebra over a field, the
--- roadmap's `isNoetherianRing_universalEnvelopingAlgebra`: no freeness hypothesis survives, since a
--- finite-dimensional vector space is automatically free.
-example {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
-    [Module.Finite K L] : IsNoetherianRing (_root_.UniversalEnvelopingAlgebra K L) :=
+/-- **The enveloping algebra of a finite-dimensional Lie algebra over a field is left Noetherian**,
+the Poincaré--Birkhoff--Witt corollary. This is the classical form of
+`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`; no freeness hypothesis appears, a
+finite-dimensional vector space being automatically free. -/
+theorem isNoetherianRing_universalEnvelopingAlgebra (K : Type u) (L : Type v) [Field K] [LieRing L]
+    [LieAlgebra K L] [FiniteDimensional K L] :
+    IsNoetherianRing (_root_.UniversalEnvelopingAlgebra K L) :=
   inferInstance
 
 end TauCeti.UniversalEnvelopingAlgebra
