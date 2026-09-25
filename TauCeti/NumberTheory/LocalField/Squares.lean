@@ -135,9 +135,8 @@ theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
   apply Units.ext
   simpa [pow_two, haU.unit_spec, ← hux] using congrArg (fun z : 𝒪[K] ↦ (z : K)) ha.symm
 
-/-- A unit of the form `1 + 4m` is a square when the residue of `m` lies in the range of
-`t ↦ t² + t`: writing `m = s² + s + μ` with `μ ∈ 𝓂[K]`, `1 + 4m = (1 + 2s)² + 4μ`, and the quotient
-by `(1 + 2s)²` has depth `2 v_K(2) + 1`. -/
+/-- A unit `w = 1 + 4m` is a square if the residue of `m` lies in the range of
+`t ↦ t² + t`. -/
 theorem isSquare_of_eq_one_add_four_mul (h2 : (2 : K) ≠ 0) {w : Kˣ} {m : 𝒪[K]}
     (hw : (w : K) = 1 + 4 * m) (hwv : valuation K (w : K) = 1)
     (hm : residue 𝒪[K] m ∈ Set.range (fun t : 𝓀[K] => t ^ 2 + t)) : IsSquare w := by

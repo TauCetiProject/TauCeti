@@ -226,8 +226,8 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
   rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at this
   exact Int.not_even_one this
 
-/-- An unramified class is not a square: a uniformizer, of odd valuation, is not a norm from
-it. -/
+/-- If the norms from `K(√a)` are exactly the elements of even normalized valuation, then
+`a` is not a square. -/
 theorem not_isSquare_of_unramified_class (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) :

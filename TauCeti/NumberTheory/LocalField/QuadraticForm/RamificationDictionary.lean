@@ -23,15 +23,9 @@ quadratic defect: for a nonsquare `a`, the extension `K(√a)/K` is unramified, 
 sense, exactly when the defect exponent `δ(a)` is even, and among the unit square classes exactly
 one has defect `4 𝒪[K] = 𝓂[K]^{2e}`, namely the unramified one.
 
-The arithmetic input is the following. A unit `u` of defect exponent `2e` can be written
-`u = ξ² (1 + 4m)` with `m ∈ 𝒪[K]`, and `1 + 4m` is a square as soon as the residue of `m` has the
-form `t² + t`: then `1 + 4m = (1 + 2t)² + 4μ` with `μ ∈ 𝓂[K]`, and the local square theorem
-applies to `1 + 4μ/(1 + 2t)²`, of depth `2e + 1`. In residue characteristic two the range of
-`t ↦ t² + t` has index two in the residue field (`TauCeti.add_mem_range_sq_add_self`), so two
-such units multiply to a square. In odd residue characteristic the unit square classes are
-`1` and one nonsquare class, and there is nothing to prove. Conversely, if every norm from
-`K(√a)` has even valuation, then the defect exponent of `a` is even, because `ξ² - a` is a norm of
-valuation `δ(a)` for an optimal approximation `ξ²` of `a`.
+The square criterion for units of the form `1 + 4m` uses the Artin–Schreier class of the residue
+of `m`. It identifies the nonsquare unit class of even defect exponent and connects that class to
+the norm criterion for unramified quadratic extensions.
 
 ## Main results
 
