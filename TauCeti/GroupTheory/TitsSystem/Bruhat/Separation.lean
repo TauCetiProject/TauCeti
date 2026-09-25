@@ -48,15 +48,14 @@ theorem bruhatCell_one_disjoint_bruhatCell {w : T.WeylGroup} (hw : w ≠ 1) :
   intro x hxone hxw
   rw [T.bruhatCell_one] at hxone
   rw [← hr, T.bruhatCell_mk] at hxw
-  obtain ⟨b₁, hb₁, b₂, hb₂, hxw⟩ := DoubleCoset.mem_doubleCoset.mp hxw
+  have hnot : ¬ Disjoint
+      (DoubleCoset.doubleCoset (1 : G) T.subgroupB T.subgroupB)
+      (DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB) := by
+    rw [Set.not_disjoint_iff]
+    exact ⟨x, by simpa only [doubleCoset_one_self] using hxone, hxw⟩
   have hrB : (r : G) ∈ T.subgroupB := by
-    have hr_eq : (r : G) = (b₁ : G)⁻¹ * x * (b₂ : G)⁻¹ := by
-      rw [hxw]
-      simp only [mul_assoc, inv_mul_cancel_left, mul_inv_cancel, mul_one]
-    rw [hr_eq]
-    exact T.subgroupB.mul_mem
-      (T.subgroupB.mul_mem (T.subgroupB.inv_mem hb₁) hxone)
-      (T.subgroupB.inv_mem hb₂)
+    simpa only [doubleCoset_one_self, SetLike.mem_coe] using
+      (DoubleCoset.mem_doubleCoset_of_not_disjoint hnot)
   have hrinter : r ∈ T.intersection := T.mem_intersection r |>.mpr hrB
   apply hw
   rw [← hr]
