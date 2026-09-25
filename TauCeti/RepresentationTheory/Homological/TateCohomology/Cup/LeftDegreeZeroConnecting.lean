@@ -32,7 +32,7 @@ variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- Cup product with a degree-zero class in the first factor commutes with the connecting map
 in the second factor, provided tensoring the short exact sequence with that first factor
-preserves exactness. -/
+preserves exactness. This is the left-factor/braided analogue of `δ_cupH0`. -/
 theorem δ_cup0H (M : Rep k G) {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
     (hMS : (S.map (tensorLeft M)).ShortExact) (n : ℤ)
     (x : tateCohomology M 0) (y : tateCohomology S.X₃ n) :
