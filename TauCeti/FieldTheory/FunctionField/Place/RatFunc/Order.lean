@@ -28,6 +28,8 @@ rational function field.
   detected by divisibility of the reduced numerator and denominator by `q`.
 * `TauCeti.Place.ord_adicOfIrreducible_algebraMap_irreducible`: an irreducible polynomial has
   order one at the place it defines and order zero elsewhere;
+  `TauCeti.Place.ord_adicOfIrreducible_algebraMap_of_squarefree`: more generally, a squarefree
+  polynomial has order one at the places of its irreducible factors and order zero elsewhere;
   `TauCeti.Place.ord_adicOfIrreducible_X` and its two `simp` specializations spell this out
   for `X`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
@@ -73,6 +75,21 @@ theorem ord_adicOfIrreducible_algebraMap_irreducible {q p : k[X]} (hq : Irreduci
     norm_num
   · rw [Nat.cast_eq_zero, multiplicity_eq_zero]
     exact fun hdiv ↦ h (hq.associated_of_dvd hp hdiv)
+
+open scoped Classical in
+/-- A squarefree polynomial has order one at the finite place of each of its irreducible factors,
+and order zero at every other finite place. -/
+theorem ord_adicOfIrreducible_algebraMap_of_squarefree {q r : k[X]} (hq : Irreducible q)
+    (hr : Squarefree r) :
+    (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = if q ∣ r then 1 else 0 := by
+  rw [ord_adicOfIrreducible_algebraMap hq hr.ne_zero]
+  split_ifs with h
+  · have hle : multiplicity q r ≤ 1 := multiplicity_le_of_emultiplicity_le <| by
+      exact_mod_cast ((squarefree_iff_emultiplicity_le_one r).mp hr q).resolve_right hq.not_isUnit
+    have hpos := multiplicity_pos_of_dvd h
+    omega
+  · rw [Nat.cast_eq_zero, multiplicity_eq_zero]
+    exact h
 
 open scoped Classical in
 /-- Among the finite places, `X` has order one at the place defined by a polynomial associated to

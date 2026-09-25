@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
+public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Radical
+-- Proof-only: `Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one`, the degree of `F' / F`.
+import TauCeti.FieldTheory.KummerExtension
 
 /-!
 # The different of a radical extension `y ^ n = u`
@@ -26,6 +29,12 @@ place when `n` is prime. Both rest on Stichtenoth's Theorem 3.5.10(a) applied to
 For `n = 2` this is the different of `y ^ 2 = f(x)` over `k(x)` in characteristic not two: the
 places over `P` ramify exactly when `ord_P f` is odd, each with different exponent one.
 
+For prime `n` the two cases assemble into a divisor identity. Let `B` be the sum of the places `P`
+of `F` with `n ∤ ord_P u`. Each of them is totally ramified, so `n • Diff(F'/F) = (n - 1) • Con(B)`.
+Taking degrees gives `[k' : k] · deg Diff(F'/F) = (n - 1) · deg B`, and the Hurwitz genus formula
+becomes the closed genus formula of a radical extension of prime exponent,
+`[k' : k] · (2g' - 2) = [F' : F] · (2g - 2) + (n - 1) · deg B`.
+
 ## Main results
 
 * `TauCeti.Place.differentExponent_le_mul_ord_of_pow_eq`: `d(P' ∣ P) ≤ (n - 1) · ord_{P'} z` for
@@ -37,11 +46,17 @@ places over `P` ramify exactly when `ord_P f` is odd, each with different expone
 * `TauCeti.Place.differentExponent_eq_of_pow_eq_of_prime` and
   `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_prime`: the different exponent and ramification
   index at every place of a radical extension `y ^ n = u` with `n` prime.
+* `TauCeti.Divisor.nsmul_different_eq_conorm_of_pow_eq_of_prime`:
+  `n • Diff(F'/F) = (n - 1) • Con(B)` for `n` prime.
+* `TauCeti.Divisor.finrank_mul_degree_different_of_pow_eq_of_prime`:
+  `[k' : k] · deg Diff(F'/F) = (n - 1) · deg B` for `n` prime.
+* `TauCeti.hurwitz_genus_formula_of_pow_eq_of_prime`: the genus of a radical extension of prime
+  exponent.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Proposition 3.7.3 and Theorem 3.5.10.
+  Proposition 3.7.3, Corollary 3.7.4 and Theorem 3.5.10.
 -/
 
 public section
@@ -204,5 +219,103 @@ theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n
     exact (hd ▸ hle).antisymm (Nat.le_of_dvd (ramificationIdx_pos F P') hdiv)
 
 end Place
+
+/-! ### The different divisor of a radical extension of prime exponent -/
+
+section DifferentDivisor
+
+open AlgebraicGeometry
+
+universe u u' v v'
+
+variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
+variable [Field k] [Field k'] [Field F] [Field F']
+variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
+
+namespace Divisor
+
+variable (k' F') (hF : IsFunctionField k F)
+
+/-- **The different divisor of a radical extension of prime exponent** (Stichtenoth,
+Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
+invertible in `k`, then `n • Diff(F'/F) = (n - 1) • Con(B)`, where `B` is the sum of the places `P`
+of `F` with `n ∤ ord_P u`.  Each such place is totally ramified with different exponent `n - 1`
+above it, and every other place is unramified. -/
+theorem nsmul_different_eq_conorm_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
+    n • different k' F' hF = (n - 1) • conorm k' F' (WeilDivisor.ofFinset
+      {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
+  classical
+  refine WeilDivisor.ext fun P' ↦ ?_
+  have hmem : P'.restrict k F ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
+      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ (P'.restrict k F).ord u := by
+    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
+    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
+  rw [WeilDivisor.coeff_nsmul, WeilDivisor.coeff_nsmul, coeff_different, coeff_conorm,
+    WeilDivisor.coeff_ofFinset, Place.differentExponent_eq_of_pow_eq_of_prime k F hp hgen hy hn hu,
+    Place.ramificationIdx_eq_of_pow_eq_of_prime k F hp hgen hy hn hu]
+  by_cases hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u
+  · simp [hdvd, hmem]
+  · simp only [hdvd, hmem, ite_false, not_false_eq_true, ite_true]
+    push_cast [Nat.cast_sub hp.one_le]
+    ring
+
+/-- **The degree of the different of a radical extension of prime exponent** (Stichtenoth,
+Proposition 3.7.3(b) and Corollary 3.7.4): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`,
+`n` is prime and invertible in `k`, and `k' / k` is algebraic, then
+`[k' : k] · deg Diff(F'/F) = (n - 1) · deg B`, where `B` is the sum of the places `P` of `F` with
+`n ∤ ord_P u`. -/
+theorem finrank_mul_degree_different_of_pow_eq_of_prime [Algebra.IsIntegral k k'] {y : F'} {n : ℕ}
+    {u : F} (hp : n.Prime) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0)
+    (hu : u ≠ 0) :
+    (Module.finrank k k' : ℤ) * degree (different k' F' hF) = ((n : ℤ) - 1) * degree
+      (WeilDivisor.ofFinset
+        {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
+  set B := WeilDivisor.ofFinset
+    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u} with hB
+  have hn0 : (n : ℤ) ≠ 0 := by exact_mod_cast hp.ne_zero
+  have hcon := finrank_mul_degree_conorm_of_isSeparable k' F' B
+  have hdeg := congrArg (fun D ↦ (Module.finrank k k' : ℤ) * degree D)
+    (nsmul_different_eq_conorm_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu)
+  simp only [map_nsmul, nsmul_eq_mul, Nat.cast_sub hp.one_le, Nat.cast_one, ← hB] at hdeg
+  -- Either some place has `n ∤ ord_P u`, and then `[F' : F] = n`, or `B = 0`.
+  have key : (n : ℤ) * ((Module.finrank k k' : ℤ) * degree (different k' F' hF)) =
+      n * (((n : ℤ) - 1) * degree B) := by
+    by_cases hS : {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}.Nonempty
+    · obtain ⟨P, hP⟩ := hS
+      have hgcd : Int.gcd n (Valuation.ord P.valuation u) = 1 := by
+        rw [Valuation.ord_def, ← P.ord_def]
+        exact Int.isCoprime_iff_gcd_eq_one.mp
+          ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr (Finset.mem_filter.mp hP).2)
+      rw [Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one P.valuation hgen hy hp.ne_zero hgcd]
+        at hcon
+      linear_combination hdeg + ((n : ℤ) - 1) * hcon
+    · have hB0 : B = 0 := by
+        rw [hB, Finset.not_nonempty_iff_eq_empty.mp hS, WeilDivisor.ofFinset_empty]
+      simp only [hB0, map_zero] at hdeg ⊢
+      linear_combination hdeg
+  exact mul_left_cancel₀ hn0 key
+
+end Divisor
+
+/-- **The genus of a radical extension of prime exponent** (Stichtenoth, Corollary 3.7.4 for
+prime `n`): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and invertible
+in `k`, both fields have exact constants and `k' / k` is finite separable, then
+`[k' : k] · (2g' - 2) = [F' : F] · (2g - 2) + (n - 1) · deg B`, where `B` is the sum of the places
+`P` of `F` with `n ∤ ord_P u`. -/
+theorem hurwitz_genus_formula_of_pow_eq_of_prime [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
+    (hex' : IsIntegrallyClosedIn k' F') {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
+    (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
+      Module.finrank F F' * (2 * genus k F - 2) + ((n : ℤ) - 1) * Divisor.degree
+        (WeilDivisor.ofFinset
+          {P ∈ (Divisor.principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) := by
+  rw [hurwitz_genus_formula hF hF' hex hex',
+    Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu]
+
+end DifferentDivisor
 
 end TauCeti
