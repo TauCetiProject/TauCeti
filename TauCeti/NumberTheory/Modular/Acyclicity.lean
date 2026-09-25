@@ -33,8 +33,8 @@ freeness.
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_T_mul_S_pow_three` and
   `TauCeti.ModularGroup.coe_T_mul_S_mul_coe_S`: the relations `S² = 1`, `U³ = 1` and `U S = T`
   in `PSL(2, ℤ)`.
-* `TauCeti.ModularGroup.ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot`: for a free
-  `PSL(2, ℤ)`-set `X`, the kernels of `1 + S` and `1 + U + U²` on `k[X]` meet in `0`.
+* `TauCeti.ModularGroup.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq`: for a free
+  `PSL(2, ℤ)`-set `X`, the kernels of `1 + S` and `1 + U + U²` on `k[X]` are disjoint.
 
 ## References
 
@@ -115,21 +115,22 @@ private lemma eq_zero_of_coeff_eq_add {k X : Type*} [Ring k] [MulAction PSL(2, �
     · exact ⟨_, ⟨T, .inl rfl, rfl⟩, Finsupp.mem_support_iff.mpr hTx⟩
 
 /-- **Acyclicity** (Popa--Zagier, Lemma 2): if `PSL(2, ℤ)` acts freely on `X`, then on the
-permutation module `k[X]` the kernels of `1 + S` and `1 + U + U²`, with `U = T * S`, meet in `0`.
+permutation module `k[X]` the kernels of `1 + S` and `1 + U + U²`, with `U = T * S`, are
+disjoint: their intersection is `0`.
 
 Freeness is needed: on `k[ℙ¹(ℚ)]`, where `T` fixes `∞`, the element `[0] - [∞]` lies in both
 kernels, since `S` swaps `0` and `∞` while `U` permutes `0`, `∞`, `1` cyclically. -/
-theorem ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot {k X : Type*} [Ring k]
+theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
     [MulAction PSL(2, ℤ) X] [IsCancelSMul PSL(2, ℤ) X] :
-    LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ) X (S : PSL(2, ℤ))) ⊓
-      LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) +
-        Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 2) = ⊥ := by
+    Disjoint (LinearMap.ker (1 + Representation.ofMulAction k PSL(2, ℤ) X (S : PSL(2, ℤ))))
+      (LinearMap.ker
+        (1 + Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) +
+          Representation.ofMulAction k PSL(2, ℤ) X ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) ^ 2)) := by
   set u : PSL(2, ℤ) := ((T * S : SL(2, ℤ)) : PSL(2, ℤ))
   have hs : (S : PSL(2, ℤ))⁻¹ = S := inv_eq_of_mul_eq_one_right (by rw [← sq, coe_S_sq])
   have hu : u⁻¹ = u ^ 2 := inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_T_mul_S_pow_three])
   have hu2 : (u ^ 2)⁻¹ = u := by rw [← hu, inv_inv]
-  refine eq_bot_iff.mpr fun ξ hξ ↦ (Submodule.mem_bot k).mpr (eq_zero_of_coeff_eq_add fun x ↦ ?_)
-  obtain ⟨h₁, h₂⟩ := Submodule.mem_inf.mp hξ
+  refine Submodule.disjoint_def.mpr fun ξ h₁ h₂ ↦ eq_zero_of_coeff_eq_add fun x ↦ ?_
   -- the coefficients of `(1 + S) ξ = 0` at `x` and of `(1 + U + U²) ξ = 0` at `S x`
   have e₁ := congrArg (fun η ↦ η.coeff x) (LinearMap.mem_ker.mp h₁)
   have e₂ := congrArg (fun η ↦ η.coeff ((S : PSL(2, ℤ)) • x)) (LinearMap.mem_ker.mp h₂)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Action.Basic
+public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.Finset.Basic
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Data.Set.Finite.Basic
@@ -15,7 +15,7 @@ import Mathlib.Order.Preorder.Finite
 /-!
 # A descent principle for free actions
 
-Let a group `G` act freely on `X`, and let `E, P ⊆ G` with `1 ∈ P` be such that `e * p ∈ P` and
+Let a monoid `G` act freely on `X`, and let `E, P ⊆ G` with `1 ∈ P` be such that `e * p ∈ P` and
 `e * p ≠ 1` for all `e ∈ E` and `p ∈ P`. Then a finite subset `s ⊆ X` in which every point is
 moved back into `s` by some element of `E` is empty: following such moves from a point of `s`,
 some point must return to itself under a product `e * p ≠ 1`, which freeness forbids.
@@ -35,7 +35,7 @@ public section
 
 namespace TauCeti.MulAction
 
-variable {G X : Type*} [Group G] [MulAction G X]
+variable {G X : Type*} [Monoid G] [MulAction G X]
 
 /-- **Descent for free actions.** If `G` acts freely on `X`, `1 ∈ P`, and `e * p ∈ P` with
 `e * p ≠ 1` for all `e ∈ E`, `p ∈ P`, then a finite set `s` in which every point is moved back

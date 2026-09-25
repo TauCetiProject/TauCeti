@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PermutationModule
 import TauCeti.NumberTheory.Modular.Acyclicity
 
 /-!
@@ -15,7 +14,7 @@ import TauCeti.NumberTheory.Modular.Acyclicity
 For `n ≠ 0`, the left action of `PSL(2, ℤ)` on the projective determinant-`n` matrix module
 `ℳₙ` is free: a determinant-`n` matrix is invertible over `ℚ`, so `g A = ±A` forces `g = ±1`.
 Hence the acyclicity of permutation modules of free `PSL(2, ℤ)`-sets
-(`TauCeti.ModularGroup.ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot`) applies to `k[ℳₙ]`:
+(`TauCeti.ModularGroup.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq`) applies to `k[ℳₙ]`:
 no nonzero element is killed by both `1 + S` and `1 + U + U²`, where `U = T * S`. Popa and
 Zagier state this (their Lemma 2) for `ℚ[ℳ]`, with `ℳ` the integral matrices of positive
 determinant modulo sign; its summands `ℛₙ = ℚ[ℳₙ]` are the case needed for the trace formula.
@@ -30,7 +29,7 @@ so `[(0 0; 1 0)] - [(1 0; 0 0)]` is a nonzero element of both kernels on `k[ℳ�
 * `TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq`: for `n ≠ 0`, only `±1`
   in `SL(2, ℤ)` fixes an element of `ℳₙ`.
 * `TauCeti.TraceFormulaMatrixModule.isCancelSMul`: for `n ≠ 0`, `PSL(2, ℤ)` acts freely on `ℳₙ`.
-* `TauCeti.TraceFormulaMatrixModule.ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot`: for
+* `TauCeti.TraceFormulaMatrixModule.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq`: for
   `n ≠ 0`, acyclicity of `k[ℳₙ]`, stated with the `SL(2, ℤ)` permutation representation.
 
 ## References
@@ -69,17 +68,15 @@ theorem isCancelSMul (hn : n ≠ 0) : IsCancelSMul PSL(2, ℤ) (TraceFormulaMatr
 
 /-- **Acyclicity of `k[ℳₙ]`** (Popa--Zagier, Lemma 2): for `n ≠ 0`, on the permutation module
 `k[ℳₙ]` of the left action of `SL(2, ℤ)`, the kernels of `1 + S` and `1 + U + U²`, with
-`U = T * S`, meet in `0`. -/
-theorem ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot {k : Type*} [Ring k] (hn : n ≠ 0) :
-    LinearMap.ker (1 + Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S) ⊓
-      LinearMap.ker (1 +
+`U = T * S`, are disjoint. -/
+theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k : Type*} [Ring k] (hn : n ≠ 0) :
+    Disjoint
+      (LinearMap.ker (1 + Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S))
+      (LinearMap.ker (1 +
         Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) +
-        Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) ^ 2) = ⊥ := by
+        Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) ^ 2)) := by
   have := isCancelSMul hn
-  -- `g ∈ SL(2, ℤ)` acts on `k[ℳₙ]` as its class in `PSL(2, ℤ)`
-  have hρ (g : SL(2, ℤ)) : Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) g =
-      Representation.ofMulAction k PSL(2, ℤ) (TraceFormulaMatrixModule n) g := by
-    simp [Representation.ofMulAction_def]
-  simpa only [hρ] using ModularGroup.ker_one_add_S_inf_ker_one_add_T_mul_S_add_sq_eq_bot
+  simpa only [← ofMulAction_coe] using
+    ModularGroup.disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq
 
 end TauCeti.TraceFormulaMatrixModule
