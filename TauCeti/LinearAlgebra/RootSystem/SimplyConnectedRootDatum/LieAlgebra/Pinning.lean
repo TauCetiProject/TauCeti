@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -19,9 +20,10 @@ are nilpotent matrices, Cartan generators `h i`, satisfying the Cartan-matrix re
 by the Chevalley involution (`TauCeti.DynkinType.chevalleyInvolution_lieBasis_e`).
 
 This module establishes the Serre-relation bracket vanishings that underlie the Chevalley
-commutator formulas. The uniform exponentials themselves are provided by the existing
-Kostant root-subgroup machinery (`TauCeti.DynkinType.geckRootSubgroupMatrix`); this module
-contributes only the Lie-algebra bracket relations.
+commutator formulas, and applies them through the existing Kostant root-subgroup
+machinery. The uniform exponentials themselves are provided by
+`TauCeti.DynkinType.geckRootSubgroupMatrix`; this module contributes only the bracket
+relations and their direct transfer to the represented pinning.
 
 ## Main results
 
@@ -29,6 +31,9 @@ contributes only the Lie-algebra bracket relations.
   vanishes (`A_{ji} = 0`), the Lie bracket `⁅e_i, e_j⁆ = 0` — the Serre relation.
 * `TauCeti.DynkinType.coe_lieBasis_e_comm_of_cartan_eq_zero`: the corresponding matrix
   commutativity.
+* `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero`: the Chevalley
+  commutator relation (commuting case) for the represented pinning — the existing Kostant
+  commutativity lemma applied through `geckRootSubgroupMatrix`.
 * `TauCeti.DynkinType.lie_lieBasis_e_e_e_of_cartan_eq_neg_one`: for a length-one root
   string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the Heisenberg
   Lie-algebra structure underlying the non-commuting Chevalley commutator formula.
@@ -53,14 +58,9 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (t : DynkinType) (ht : t.Valid)
 
-/-- A scalar multiple of a nilpotent rational matrix, mapped to a `ℚ`-algebra, stays
-nilpotent: map the rational nilpotency along `algebraMap ℚ R`, then scale. This feeds the
-hypotheses of Mathlib's `IsNilpotent.exp` lemmas. -/
-private theorem isNilpotent_smul_map (X : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)
-    (hX : IsNilpotent X) (R : Type*) [CommRing R] [Algebra ℚ R] (u : R) :
-    IsNilpotent (u • (X.map (algebraMap ℚ R))) :=
-  (hX.map (algebraMap ℚ R).mapMatrix).smul u
-
+/-- The Lie bracket of distinct simple raising generators vanishes when the corresponding
+Cartan matrix entry is zero. This is the Serre relation: when `A_{ji} = 0`, the exponent
+`(-Aᵀ_{ij}).toNat = 0`, so `(ad e_i)^0 [e_i, e_j] = [e_i, e_j] = 0`. -/
 theorem lie_lieBasis_e_e_of_cartan_eq_zero (i j : Fin t.rank)
     (hA : t.cartanMatrix j i = 0) :
     ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ = 0 := by
@@ -91,10 +91,25 @@ theorem coe_lieBasis_e_comm_of_cartan_eq_zero (i j : Fin t.rank)
   rw [hbracket, ZeroMemClass.coe_zero] at hcoe
   exact (commute_iff_lie_eq.mpr hcoe.symm).eq
 
-/-- The Chevalley commutator relation (commuting case): when the Cartan matrix entry is zero
-— i.e., when `α_i + α_j` is not a root — the corresponding root subgroups commute. This
-connects the root-theoretic hypothesis to the group-level commutativity via the Serre
-relation and the matrix commutator. -/
+/-- The Chevalley commutator relation (commuting case) for the represented pinning: when
+the Cartan matrix entry is zero — i.e., when `α_i + α_j` is not a root — the corresponding
+numbered root subgroups commute. This is the existing Kostant commutativity lemma
+`TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix` applied to the
+pinning matrices `TauCeti.DynkinType.geckRootSubgroupMatrix`, with the bracket hypothesis
+supplied by the Serre relation
+`TauCeti.DynkinType.lie_lieBasis_e_e_of_cartan_eq_zero`. -/
+theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
+    (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0)
+    (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    Commute (t.geckRootSubgroupMatrix ht (.inl i) f)
+      (t.geckRootSubgroupMatrix ht (.inl j) g) := by
+  have hbracket : ⁅(t.lieBasis ht).rootGenerator (.inl i),
+      (t.lieBasis ht).rootGenerator (.inl j)⁆ = 0 := by
+    simp only [LieAlgebra.Basis.rootGenerator_inl]
+    exact t.lie_lieBasis_e_e_of_cartan_eq_zero ht i j hA
+  exact TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix
+    _ _ _ _ _ _ hbracket _ _ _ _
+
 /-! ## Length-one root strings: Heisenberg Lie algebra structure -/
 
 /-- For a length-one root string (`A_{ji} = -1`, i.e., `α_i + α_j` is a root but
