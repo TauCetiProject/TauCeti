@@ -25,7 +25,8 @@ finite presentations, without assuming any recognition theorem for the presented
 * `TauCeti.ValidLieTypeIndex.Group`: the concrete fixed-point, derived-subgroup, central-quotient
   carrier selected by a valid Lie-type index.
 * `TauCeti.CFSGIndex.Group`: the concrete carrier selected by an index on the classification list.
-* `TauCeti.ClassificationStatement`: every finite simple group is isomorphic to a listed carrier.
+* `TauCeti.ClassificationStatement`: every finite simple group is isomorphic to a listed carrier,
+  with `TauCeti.classificationStatement_iff` stating the quantified proposition it names.
 * `TauCeti.classificationStatement_of_zero`: the universe-zero statement implies the statement in
   every universe.
 
@@ -48,13 +49,18 @@ noncomputable instance (i : CFSGIndex) : Group i.Group := by
 universe u
 
 /-- **Classification of finite simple groups, statement only.** Every finite simple group is
-isomorphic to one of the explicitly constructed groups on the classification list.
-
-The definition is exposed so that a module assuming `ClassificationStatement.{u}` can apply it to
-a finite simple group, and a module proving the quantified statement can conclude it. -/
-@[expose] def ClassificationStatement : Prop :=
+isomorphic to one of the explicitly constructed groups on the classification list. -/
+def ClassificationStatement : Prop :=
   ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
     ∃ i : CFSGIndex, Nonempty (G ≃* i.Group)
+
+/-- The classification statement holds exactly when every finite simple group is isomorphic to
+one of the indexed carriers. -/
+theorem classificationStatement_iff :
+    ClassificationStatement.{u} ↔
+      ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
+        ∃ i : CFSGIndex, Nonempty (G ≃* i.Group) :=
+  Iff.rfl
 
 /-- The universe-zero classification statement implies the statement in every universe. -/
 theorem classificationStatement_of_zero (h : ClassificationStatement.{0}) :
