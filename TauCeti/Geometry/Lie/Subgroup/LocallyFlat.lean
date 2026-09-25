@@ -42,7 +42,8 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart (K : Subgroup G)
   have hflat : TauCeti.IsSliceEmbedding ((univ : Set F) ×ˢ ({0} : Set F'))
       ((↑) : K → G) := by
     refine ⟨IsEmbedding.subtypeVal, fun g => ?_⟩
-    exact K.exists_isSliceChart_of_isSliceChart φ hφ h1 g
+    exact ⟨K.translatedChart φ g, K.mem_translatedChart_source φ h1 g,
+      K.isSliceChart_translatedChart φ hφ g⟩
   exact TauCeti.isLocallyFlat_iff_isSliceEmbedding.mpr hflat
 
 end Subgroup

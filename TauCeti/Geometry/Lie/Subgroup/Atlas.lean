@@ -21,10 +21,10 @@ The complement, transverse separation radius, and local product chart are suppli
 
 ## Main results
 
-* `TauCeti.Lie.exists_isSliceChart_of_isClosed_subgroup` packages the identity slice chart.
+* `TauCeti.Lie.exists_isSliceChart_of_isClosed_subgroup` packages the identity slice chart while
+  retaining its smooth partial-diffeomorphism structure.
 
-The theorem stops at the topological chart interface: it does not install a manifold or Lie-group
-structure on the subgroup subtype.
+The theorem does not install a manifold or Lie-group structure on the subgroup subtype.
 
 ## References
 
@@ -54,9 +54,10 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     ∃ (p q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
-      (Φ : OpenPartialHomeomorph G (p × q)),
+      (Φ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞),
       IsCompl p q ∧ (1 : G) ∈ Φ.source ∧
-        IsSliceChart Φ ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) := by
+        IsSliceChart Φ.toOpenPartialHomeomorph
+          ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   dsimp only
   let p : _root_.Submodule ℝ (LeftInvariantDerivation I G) :=
@@ -71,6 +72,10 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     have hA : IsOpen A := by
       exact Metric.isOpen_ball.preimage continuous_snd
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
+  let Ψ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞ :=
+    { __ := Φ₀.restrOpen V hV
+      contMDiffOn_toFun := hf.localInverse.contMDiffOn_toFun.mono inter_subset_left
+      contMDiffOn_invFun := hf.localInverse.contMDiffOn_invFun.mono inter_subset_left }
   have hΦ₀_eq : Φ₀ = hf.localInverse.toOpenPartialHomeomorph := by
     -- `Φ₀` is this wrapper by definition; no chart data is changed here.
     rfl
@@ -105,62 +110,65 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       change Φ₀ 1 ∈ A
       rw [hzero]
       exact Metric.mem_ball_self hε
-  refine ⟨p, q, Φ, hpq, h1, ?_⟩
+  refine ⟨p, q, Ψ, hpq, ?_, ?_⟩
+  · change (1 : G) ∈ Φ.source
+    exact h1
   -- Unfold the local name `Φ`; the remaining chart equality uses the coercion fact above.
-  change IsSliceChart (Φ₀.restrOpen V hV)
-    ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
-  apply isSliceChart_iff.2
-  intro x hx
-  -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
-  rw [OpenPartialHomeomorph.restrOpen_source] at hx
-  simp only [OpenPartialHomeomorph.coe_restrOpen]
-  -- The remaining changes below unfold the local set aliases `V` and `A`.
-  change x ∈ Φ₀.source ∩ V at hx
-  let z : p × q := Φ₀ x
-  have hxV : x ∈ V := hx.2
-  change x ∈ Φ₀.source ∩ Φ₀ ⁻¹' A at hxV
-  have hzA : z ∈ A := by
-    change Φ₀ x ∈ A
-    exact hxV.2
-  have hzprod : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) *
-      lieExp (I := I) (z.2 : LeftInvariantDerivation I G) = x := by
-    have hright := hf.localInverse_right_inv hx.1
-    have hright' : Submodule.lieExpMulLieExp (I := I) (G := G) p q
-        (hf.localInverse.toPartialEquiv x) = x := by
-      rw [hlocalInverse_toPartialEquiv]
-      exact hright
-    rw [Submodule.lieExpMulLieExp_apply] at hright'
-    have hz_eq : z = hf.localInverse.toPartialEquiv x := by
-      exact hΦ₀_toPartialEquiv x
-    rw [hz_eq]
-    exact hright'
-  have hz2norm : ‖(z.2 : LeftInvariantDerivation I G)‖ < ε := by
-    have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
-      simpa only [A, Set.mem_preimage] using hzA
-    simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA'
-  have hz1K : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) ∈ K :=
-    lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK z.1.property
-  constructor
-  · intro hxK
-    -- Cancel the first exponential inside `K`; separation then forces the transverse term
-    -- to vanish.
-    have hz2K : lieExp (I := I) (z.2 : LeftInvariantDerivation I G) ∈ K := by
-      have hm := K.mul_mem (K.inv_mem hz1K) hxK
-      rw [← hzprod] at hm
-      simpa using hm
-    have hz20 : (z.2 : LeftInvariantDerivation I G) = 0 :=
-      (hsep (z.2 : LeftInvariantDerivation I G) z.2.property hz2norm).mp hz2K
-    exact Set.mem_prod.mpr
-      ⟨Set.mem_univ _, Set.mem_singleton_iff.mpr (Subtype.ext hz20)⟩
-  · intro hz20
-    -- A zero transverse coordinate reduces the product to an exponential from the Lie subalgebra.
-    have hz20' : z.2 = 0 := by
-      exact Set.mem_singleton_iff.mp (Set.mem_prod.mp hz20).2
-    have hzprod' := hzprod
-    rw [hz20'] at hzprod'
-    have hzprod'' : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) = x := by
-      simpa only [Submodule.coe_zero, lieExp_zero, mul_one] using hzprod'
-    rw [← hzprod'']
-    exact hz1K
+  · change IsSliceChart (Φ₀.restrOpen V hV)
+      ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
+    apply isSliceChart_iff.2
+    intro x hx
+    -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
+    rw [OpenPartialHomeomorph.restrOpen_source] at hx
+    simp only [OpenPartialHomeomorph.coe_restrOpen]
+    -- The remaining changes below unfold the local set aliases `V` and `A`.
+    change x ∈ Φ₀.source ∩ V at hx
+    let z : p × q := Φ₀ x
+    have hxV : x ∈ V := hx.2
+    change x ∈ Φ₀.source ∩ Φ₀ ⁻¹' A at hxV
+    have hzA : z ∈ A := by
+      change Φ₀ x ∈ A
+      exact hxV.2
+    have hzprod : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) *
+        lieExp (I := I) (z.2 : LeftInvariantDerivation I G) = x := by
+      have hright := hf.localInverse_right_inv hx.1
+      have hright' : Submodule.lieExpMulLieExp (I := I) (G := G) p q
+          (hf.localInverse.toPartialEquiv x) = x := by
+        rw [hlocalInverse_toPartialEquiv]
+        exact hright
+      rw [Submodule.lieExpMulLieExp_apply] at hright'
+      have hz_eq : z = hf.localInverse.toPartialEquiv x := by
+        exact hΦ₀_toPartialEquiv x
+      rw [hz_eq]
+      exact hright'
+    have hz2norm : ‖(z.2 : LeftInvariantDerivation I G)‖ < ε := by
+      have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
+        simpa only [A, Set.mem_preimage] using hzA
+      simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA'
+    have hz1K : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) ∈ K :=
+      lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK z.1.property
+    constructor
+    · intro hxK
+      -- Cancel the first exponential inside `K`; separation then forces the transverse term
+      -- to vanish.
+      have hz2K : lieExp (I := I) (z.2 : LeftInvariantDerivation I G) ∈ K := by
+        have hm := K.mul_mem (K.inv_mem hz1K) hxK
+        rw [← hzprod] at hm
+        simpa using hm
+      have hz20 : (z.2 : LeftInvariantDerivation I G) = 0 :=
+        (hsep (z.2 : LeftInvariantDerivation I G) z.2.property hz2norm).mp hz2K
+      exact Set.mem_prod.mpr
+        ⟨Set.mem_univ _, Set.mem_singleton_iff.mpr (Subtype.ext hz20)⟩
+    · intro hz20
+      -- A zero transverse coordinate reduces the product to an exponential from the Lie
+      -- subalgebra.
+      have hz20' : z.2 = 0 := by
+        exact Set.mem_singleton_iff.mp (Set.mem_prod.mp hz20).2
+      have hzprod' := hzprod
+      rw [hz20'] at hzprod'
+      have hzprod'' : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) = x := by
+        simpa only [Submodule.coe_zero, lieExp_zero, mul_one] using hzprod'
+      rw [← hzprod'']
+      exact hz1K
 
 end TauCeti.Lie
