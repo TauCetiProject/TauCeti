@@ -279,9 +279,9 @@ theorem topologicalKrullDim_le_add_of_relativeDimensionLE [IsLocallyNoetherian X
   have (x : X) : ∃ (U : Y.Opens) (V : X.Opens), IsAffineOpen U ∧ IsAffineOpen V ∧ x ∈ V ∧
       V ≤ f ⁻¹ᵁ U := by
     obtain ⟨U, hU, hxU, -⟩ :=
-      Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens (show f x ∈ (⊤ : Y.Opens) from trivial)
+      Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens (U := ⊤) (x := f x) (by simp)
     obtain ⟨V, hV, hxV, hVU⟩ :=
-      Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (show x ∈ f ⁻¹ᵁ U from hxU)
+      Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (U := f ⁻¹ᵁ U) (x := x) hxU
     exact ⟨U, V, hU, hV, hxV, hVU⟩
   choose U V hU hV hxV hVU using this
   rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (fun x ↦ (hV x).fromSpec)
