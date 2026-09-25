@@ -148,6 +148,9 @@ theorem groupAlgebraActionSemilinearEquiv_symm_apply
     (x : MonoidAlgebra L (Multiplicative M)) :
     (groupAlgebraActionSemilinearEquiv rho sigma).symm x =
       groupAlgebraAction rho sigma⁻¹ x := by
+  -- The semilinear wrapper inherits its inverse function from the action's `toAddEquiv`.
+  -- `map_inv` applies to the `AlgEquiv`-valued homomorphism, not this wrapper whose scalar
+  -- twist depends on `sigma`; expose that inherited inverse before using the homomorphism law.
   change (groupAlgebraAction rho sigma).symm x = _
   rw [map_inv]
   rfl
