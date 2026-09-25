@@ -76,7 +76,6 @@ noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
 @[simp] theorem tateCurve_a₂ : tateCurve.a₂ = 0 := (rfl)
 @[simp] theorem tateCurve_a₃ : tateCurve.a₃ = 0 := (rfl)
 
-@[simp]
 theorem coeff_tateCurve_a₄ (n : ℕ) : coeff n tateCurve.a₄ = -5 * σ 3 n := by
   simp [tateCurve]
 
@@ -138,7 +137,6 @@ private theorem coeff_tateCurve_a₆_two : coeff 2 tateCurve.a₆ = -23 := by
   norm_num [sigma_apply, Nat.Prime.divisors Nat.prime_two]
 
 /-- `a₄` vanishes at `q = 0`. -/
-@[simp]
 theorem constantCoeff_tateCurve_a₄ : constantCoeff tateCurve.a₄ = 0 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_tateCurve_a₄]
   simp
