@@ -34,9 +34,12 @@ for `μ`-almost every `x`, the Dirac mass at the unique contact partner of `x`. 
 optimizer exists, every optimal plan is concentrated on its contact set
 (`TauCeti.IsDualCertificate.of_isOptimalCoupling`), so this gives uniqueness of the optimal plan,
 `TauCeti.IsDualCertificate.eq_of_isOptimalCoupling`. This gives deterministic conditional laws
-and uniqueness of optimal plans for twisted costs, including the Euclidean quadratic
-cost, for which `Dₓ c (x, y) = x - y` up to the Riesz identification, and the strictly convex
-costs `c (x, y) = h (x - y)`, for which `Dₓ c (x, y) = D h (x - y)`.
+and uniqueness of optimal plans for twisted costs under the stated nonnegativity and
+almost-everywhere differentiability hypotheses. The Euclidean quadratic cost satisfies the
+twist condition since `Dₓ c (x, y) = x - y` up to the Riesz identification. Differentiable,
+strictly convex displacement costs `c (x, y) = h (x - y)` also fit when `h` is nonnegative,
+its sections are differentiable at contact partners, and the potential is differentiable
+`μ`-almost everywhere; then `Dₓ c (x, y) = D h (x - y)`.
 
 The potential `φ` is extended-real valued, as the `c`-concave potentials of
 `TauCeti.cTransformSymm` are. It is differentiated through `EReal.toReal`, and the statements

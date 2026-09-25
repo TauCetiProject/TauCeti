@@ -178,12 +178,13 @@ theorem ae_exists_condKernel_eq_dirac (hπ : IsCoupling π μ ν) {s : Set (X ×
 sections are `μ`-almost all subsingletons, are equal. In particular their target marginals
 agree. -/
 theorem eq_of_ae_mem_of_subsingleton {π' : Measure (X × Y)} {ν' : Measure Y}
-    [IsFiniteMeasure π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ ν') {s : Set (X × Y)}
+    (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ ν') {s : Set (X × Y)}
     (hs : ∀ᵐ z ∂π, z ∈ s) (hs' : ∀ᵐ z ∂π', z ∈ s)
     (hsub : ∀ᵐ x ∂μ, {y | (x, y) ∈ s}.Subsingleton) : π = π' := by
   let _ : IsFiniteMeasure μ := by
     rw [← hπ.fst_eq]
     infer_instance
+  let _ : IsFiniteMeasure π' := hπ'.isFiniteMeasure
   rw [← hπ.compProd_condKernel, ← hπ'.compProd_condKernel]
   refine Measure.compProd_congr ?_
   filter_upwards [hπ.ae_exists_condKernel_eq_dirac hs hsub,
@@ -249,7 +250,7 @@ theorem ae_exists_condKernel_eq_dirac (π : Coupling μ ν) {s : Set (X × Y)}
   π.2.ae_exists_condKernel_eq_dirac hs hsub
 
 /-- Bundled couplings with the same source and almost everywhere the same uniquely determined
-partner in a set are equal. -/
+partner in a set have equal underlying plan measures. -/
 theorem eq_of_ae_mem_of_subsingleton {ν' : ProbabilityMeasure Y}
     (π : Coupling μ ν) (π' : Coupling μ ν') {s : Set (X × Y)}
     (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
