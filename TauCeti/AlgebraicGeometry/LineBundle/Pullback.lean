@@ -24,8 +24,6 @@ sheaf is the structure sheaf. So a trivializing open cover of `L` pulls back to 
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.pullbackObjFreeIso`: the pullback of a free sheaf of modules
-  is free on the same basis;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso`: `(f^* M)|_{f⁻¹ V}` is the pullback
   of `M|_V` along `f ∣_ V`;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
@@ -57,17 +55,6 @@ universe u
 noncomputable section
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
-
-/-- The pullback of the free `𝒪_Y`-module on `I` along a morphism of schemes `f : X ⟶ Y` is the
-free `𝒪_X`-module on `I`. -/
-def pullbackObjFreeIso (I : Type u) :
-    (pullback f).obj (SheafOfModules.free (R := Y.ringCatSheaf) I) ≅
-      SheafOfModules.free (R := X.ringCatSheaf) I :=
-  -- The general pullback of free sheaves needs a left adjoint to the pushforward of sheaves of
-  -- modules along `f`; for schemes it is `Scheme.Modules.pullbackPushforwardAdjunction f`.
-  haveI : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
-  SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I
 
 /-- Pullback commutes with restriction to opens: for an open `V ⊆ Y`, the restriction of
 `f^* M` to the preimage `f⁻¹ V` is the pullback of `M|_V` along `f ∣_ V : f⁻¹ V ⟶ V`. -/
@@ -160,7 +147,9 @@ lemma pullback_mk (f : X ⟶ Y) (L : InvertibleSheaf Y) :
 lemma pullback_one (f : X ⟶ Y) : pullback f 1 = 1 := by
   rw [← mk_trivial, ← mk_trivial, pullback_mk, mk_eq_mk_iff, InvertibleSheaf.pullback_obj_obj,
     InvertibleSheaf.trivial_obj, InvertibleSheaf.trivial_obj]
-  exact ⟨Scheme.Modules.pullbackObjFreeIso f PUnit⟩
+  let : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
+  exact ⟨SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom PUnit⟩
 
 /-- Pulling back along the identity is the identity on line-bundle classes. -/
 @[simp]
