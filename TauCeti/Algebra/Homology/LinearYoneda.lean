@@ -14,9 +14,9 @@ public import Mathlib.CategoryTheory.Abelian.Ext
 For a chain complex `X` in a `k`-linear abelian category `C` and an object `Y : C`, Mathlib's
 `ChainComplex.linearYonedaObj` is the cochain complex of `k`-modules which in degree `i` is the
 module of morphisms `X.X i ⟶ Y`, with differential given by precomposition with the differential
-of `X`.  This file makes the construction a contravariant functor of `X`, and shows that it takes
-a short exact sequence of chain complexes which is split in each degree to a short exact sequence
-of cochain complexes.
+of `X`.  This file makes the construction a contravariant functor of `X`, shows that it takes a
+chain homotopy to a cochain homotopy, and shows that it takes a short exact sequence of chain
+complexes which is split in each degree to a short exact sequence of cochain complexes.
 
 The functor `Hom(-, Y)` is only left exact, so the splitting hypothesis cannot be dropped.  It
 holds for the singular chains of a pair of spaces, which is how the long exact sequence in
@@ -28,6 +28,7 @@ singular cohomology is obtained from the one of chain complexes.
   cochain complexes of `k`-modules.
 * `TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor`: `Hom(-, Y)` preserves short
   exactness of degreewise split sequences.
+* `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
 -/
 
 public section
@@ -65,6 +66,23 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
 instance : (linearYonedaFunctor (α := α) k Y).Additive :=
   inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
     HomologicalComplex.unopFunctor _ _).Additive
+
+/-- `Hom(-, Y)` takes a chain homotopy between two chain maps `φ, ψ : X ⟶ X'` to a cochain
+homotopy between the two maps `Hom(X', Y) ⟶ Hom(X, Y)` obtained by precomposition. -/
+-- `@[expose]` is mandated by the module system: the characteristic lemma
+-- `Homotopy.linearYonedaFunctorMap_hom_apply` below reads off the components of this homotopy,
+-- and an exported statement may unfold only exposed definitions.
+@[expose]
+noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
+    (h : Homotopy φ ψ) :
+    Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
+  (((linearYoneda k C).obj Y).rightOp.mapHomotopy h).unop
+
+/-- The cochain homotopy induced by a chain homotopy `h` is precomposition with `h`. -/
+@[simp]
+lemma _root_.Homotopy.linearYonedaFunctorMap_hom_apply {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
+    (h : Homotopy φ ψ) (i j : α) (g : (X'.linearYonedaObj k Y).X i) :
+    ConcreteCategory.hom ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := rfl
 
 /-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
 complexes which is split in each degree to a short exact sequence
