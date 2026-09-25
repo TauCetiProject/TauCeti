@@ -112,9 +112,8 @@ theorem permutationTriple_σinf : (permutationTriple ρ).σinf = ρ periphInf :=
 /-- The monodromy group of the triple of `ρ` is the image of `ρ`, because `periph0` and
 `periph1` generate the fundamental group. -/
 theorem monodromyGroup_permutationTriple : (permutationTriple ρ).monodromyGroup = ρ.range := by
-  rw [← PermutationTriple.closure_pair_eq_monodromyGroup, permutationTriple_σ0,
-    permutationTriple_σ1, ← Set.image_pair, ← MonoidHom.map_closure, closure_periph0_periph1,
-    MonoidHom.range_eq_map]
+  rw [permutationTriple, PermutationTriple.monodromyGroup_ofTwo_map,
+    closure_periph0_periph1, MonoidHom.range_eq_map]
 
 /-- The triple of `ρ` is connected exactly when `n ≠ 0` and the image of `ρ` acts transitively on
 `Fin n`. -/
