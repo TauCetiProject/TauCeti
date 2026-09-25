@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Cochain
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 
 import Mathlib.GroupTheory.IndexNormal
 
@@ -21,26 +22,27 @@ between the corestriction class and the class of their sum.
 
 The proof computes corestriction with the two-element transversal which sends the trivial coset
 to `1` and the other coset to `s`.  Independence of the transversal then identifies this formula
-with the canonical corestriction in the explicit inhomogeneous model.  The accompanying
-`homClass` constructor places continuous homomorphisms in Mathlib's canonical continuous
-cohomology when that model is needed.
+with the canonical corestriction in the explicit inhomogeneous model.
+
+Everything here is stated in that explicit inhomogeneous model, because `explicitCor1` is the
+only degree-one corestriction the library has: neither pinned Mathlib nor Tau Ceti carries a
+corestriction on the canonical `continuousCohomology` objects.  This file is therefore the
+model-dependent computation underlying the Evens-norm corestriction identity, not that identity
+itself.  Transporting the formula along `explicitH1AddEquivContinuousCohomology` into a
+statement about canonical classes is immediate once a canonical-model corestriction and its
+degree-one agreement with `explicitCor1` land, and the name `evensNorm_cor_shapiro` is left
+free for that statement.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.evensHomCocycle`: a continuous homomorphism to `ZMod 2`, lifted to a
-  continuous `1`-cocycle with coefficients in `trivialF2`.
-* `TauCeti.ContCohomology.homClass`: its class in canonical continuous cohomology, the carrier
-  in which the canonical-model form of the Layer 13 identities is to be stated.
+* `TauCeti.ContCohomology.evensHomCocycleAmbient`: a continuous homomorphism on `U`, as a
+  continuous `1`-cocycle valued in the ambient coefficient carrier `trivialF2 G`.
+* `TauCeti.ContCohomology.evensCorCocycle`: the sum `b₁ + b_s`, as a continuous `1`-cocycle.
 
 ## Main results
 
-* `TauCeti.ContCohomology.evensNorm_cor_shapiro`: the degree-one corestriction `explicitCor1` of
-  the class of `α` is the class of `evensCorCochain`.  The equality is between classes in the
-  explicit inhomogeneous model `H1`: neither pinned Mathlib nor Tau Ceti has a corestriction on
-  the canonical `continuousCohomology` carrier in any degree, so `explicitCor1` is the only
-  corestriction there is to compute with.  Transporting the identity along
-  `explicitH1AddEquivContinuousCohomology` is immediate once a canonical-model corestriction and
-  its degree-one agreement with `explicitCor1` land.
+* `TauCeti.ContCohomology.explicitCor1_evensHomCocycleAmbient`: the degree-one corestriction
+  `explicitCor1` of the class of `α` is the class of `evensCorCochain`.
 
 ## References
 
@@ -52,66 +54,9 @@ cohomology when that model is needed.
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.ContCohomology
 
 universe u
-
-section HomClass
-
-variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-local instance : ContinuousSMul H (trivialF2 H).V :=
-  (isSmoothDiscrete_trivialF2 H).continuousSMul
-
-omit [IsTopologicalGroup H] in
-private theorem evensHomCochain_mem_Z1 (α : H →* Multiplicative (ZMod 2))
-    (hα : Continuous α) :
-    (fun h => (trivialF2Equiv H).symm (Multiplicative.toAdd (α h))) ∈
-      Z1 H (trivialF2 H).V := by
-  refine mem_Z1_iff.2 ⟨?_, ?_⟩
-  · exact (continuous_of_discreteTopology : Continuous (trivialF2Equiv H).symm).comp
-      (continuous_toAdd.comp hα)
-  · intro g h
-    apply (trivialF2Equiv H).injective
-    simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, map_add,
-      AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
-    exact add_comm _ _
-
-/-- A continuous homomorphism to `Multiplicative (ZMod 2)` as a continuous `1`-cocycle with
-coefficients in `trivialF2`. -/
-noncomputable def evensHomCocycle (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    Z1 H (trivialF2 H).V :=
-  ⟨fun h => (trivialF2Equiv H).symm (Multiplicative.toAdd (α h)),
-    evensHomCochain_mem_Z1 α hα⟩
-
-omit [IsTopologicalGroup H] in
-/-- The underlying cochain of `evensHomCocycle`. -/
-@[simp]
-theorem coe_evensHomCocycle (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    (evensHomCocycle α hα : H → (trivialF2 H).V) =
-      fun h => (trivialF2Equiv H).symm (Multiplicative.toAdd (α h)) :=
-  (rfl)
-
-/-- The canonical continuous-cohomology class of a continuous homomorphism
-`H → Multiplicative (ZMod 2)`. -/
-noncomputable def homClass (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    continuousCohomology 1 (trivialF2 H) :=
-  (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H))).hom
-    (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V (evensHomCocycle α hα))
-
-/-- The class `homClass α` is the image of `evensHomCocycle α` under the degree-one comparison. -/
-theorem homClass_def (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    homClass α hα =
-      (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H))).hom
-        (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V
-          (evensHomCocycle α hα)) :=
-  (rfl)
-
-end HomClass
 
 section Corestriction
 
@@ -310,8 +255,9 @@ theorem coe_evensCorCocycle (U : OpenSubgroup G) (s : G)
 /-- At index two, degree-one corestriction is represented by the sum `b₁ + b_s` of the two
 Shapiro components.  Neither summand is a cocycle on its own; the equation is between the
 corestriction class and the class of their sum, in the explicit inhomogeneous model `H1` that
-carries the corestriction `explicitCor1`. -/
-theorem evensNorm_cor_shapiro (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
+carries the corestriction `explicitCor1`.  This is the model computation behind the Evens-norm
+corestriction identity, not a statement about canonical `continuousCohomology` classes. -/
+theorem explicitCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (s : G) (hs : s ∉ U) (α : U.toSubgroup →* Multiplicative (ZMod 2))
     (hα : Continuous α) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
