@@ -178,30 +178,44 @@ theorem one_sub_apply_mem_range_one_sub_mul_iff [Invertible (2 : R)] [Invertible
 
 end Semiring
 
-section CommRing
+section Ring
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {σ υ : End R M}
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ υ : End R M}
 
 /-- **Popa–Zagier's projection for operators of order two and three** (Lemma 3, existence half):
 for `σ ^ 2 = 1` and `υ ^ 3 = 1` with `2` and `3` invertible, `P` stable under `1 + υ + υ²` and `Q`
 under `1 + σ`, if `(1 + σ) ξ` and `(1 + υ + υ²) ξ` lie in `P ⊔ Q`, then there is `ι ∈ P ⊔ Q` with
 `(1 + σ) (ξ - ι) ∈ Q` and `(1 + υ + υ²) (ξ - ι) ∈ P`. This is
 `TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem` for the idempotents `(1 + σ) / 2` and
-`(1 + υ + υ²) / 3`. -/
+`(1 + υ + υ²) / 3`; the ring `R` need not be commutative, since `2` and `3` are central. -/
 theorem exists_mem_sup_one_add_apply_sub_mem [Invertible (2 : R)] [Invertible (3 : R)]
     (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) {P Q : Submodule R M} (hP : P ∈ (1 + υ + υ ^ 2).invtSubmodule)
     (hQ : Q ∈ (1 + σ).invtSubmodule) {ξ : M} (hσξ : (1 + σ) ξ ∈ P ⊔ Q)
     (hυξ : (1 + υ + υ ^ 2 : End R M) ξ ∈ P ⊔ Q) :
     ∃ ι ∈ P ⊔ Q, (1 + σ) (ξ - ι) ∈ Q ∧ (1 + υ + υ ^ 2 : End R M) (ξ - ι) ∈ P := by
+  -- normalise over the commutative ring `Subring.center R`, in which `2` and `3` stay invertible
+  -- and over which `End R M` is an algebra
+  let _ : Invertible (2 : Subring.center R) :=
+    ⟨⟨⅟2, Set.invOf_mem_center (Set.ofNat_mem_center _ _)⟩, Subtype.ext (invOf_mul_self _),
+      Subtype.ext (mul_invOf_self _)⟩
+  let _ : Invertible (3 : Subring.center R) :=
+    ⟨⟨⅟3, Set.invOf_mem_center (Set.ofNat_mem_center _ _)⟩, Subtype.ext (invOf_mul_self _),
+      Subtype.ext (mul_invOf_self _)⟩
   have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ)
-    (halfOneAdd_def R σ ▸ isIdempotentElem_halfOneAdd R ((sq σ).symm.trans hσ))
-    (isIdempotentElem_invOf_three_smul_one_add_add_sq R hυ)
+    (halfOneAdd_def (Subring.center R) σ ▸
+      isIdempotentElem_halfOneAdd (Subring.center R) ((sq σ).symm.trans hσ))
+    (isIdempotentElem_invOf_three_smul_one_add_add_sq (Subring.center R) hυ)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hP)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ)
-  simp only [smul_apply, Submodule.smul_mem_iff''] at key
-  exact key hσξ hυξ
+  simp only [smul_apply] at key
+  obtain ⟨ι, hι, h₁, h₂⟩ :=
+    key (Submodule.smul_of_tower_mem _ _ hσξ) (Submodule.smul_of_tower_mem _ _ hυξ)
+  -- multiply back by `2` and `3`
+  refine ⟨ι, hι, ?_, ?_⟩
+  · simpa using Submodule.smul_of_tower_mem _ (2 : Subring.center R) h₁
+  · simpa using Submodule.smul_of_tower_mem _ (3 : Subring.center R) h₂
 
-end CommRing
+end Ring
 
 end End
 
