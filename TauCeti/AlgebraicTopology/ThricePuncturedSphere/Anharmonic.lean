@@ -225,6 +225,9 @@ theorem symm_mob0Inf : mob0Inf.symm = mob0Inf :=
 
 /-! ### The images of the basepoint -/
 
+-- These are not simp lemmas: the simp formulas `coe_mob1Inf`, `coe_mob0Inf`, `coe_mobRot`,
+-- `coe_mobRotInv` and `coe_basePt` already rewrite each left-hand side, so extra simp attributes
+-- would fail the simpNF linter.
 /-- `mob1Inf` sends the basepoint to `-1`. -/
 theorem coe_mob1Inf_basePt : (mob1Inf basePt : ℂ) = -1 := by
   rw [coe_mob1Inf, coe_basePt]
