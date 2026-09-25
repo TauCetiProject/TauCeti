@@ -222,50 +222,6 @@ theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] 
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
 
-/-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
-`y < 1`. -/
-private lemma cdf_sublevel_measure (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν]
-    (y : ℝ) (hy1 : y < 1) :
-    ν {x | cdf ν x ≤ y} = ENNReal.ofReal y := by
-  set S : Set ℝ := {x | cdf ν x ≤ y}
-  have hScl : IsClosed S := isClosed_Iic.preimage (continuous_cdf_of_noAtoms ν)
-  have hevt : ∀ᶠ x in atTop, y < cdf ν x :=
-    (tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hy1)
-  obtain ⟨M, hM⟩ := eventually_atTop.mp hevt
-  have hSbdd : BddAbove S := by
-    refine ⟨M, fun x hx => ?_⟩
-    by_contra hxM
-    exact absurd (hM x (le_of_lt (not_le.mp hxM))) (not_lt.2 hx)
-  by_cases hSne : S.Nonempty
-  · set q := sSup S
-    have hq_mem : q ∈ S := hScl.csSup_mem hSne hSbdd
-    have hSeq : S = Iic q := by
-      ext x
-      constructor
-      · intro hx; exact le_csSup hSbdd hx
-      · intro hx
-        exact le_trans ((cdf ν).mono hx) hq_mem
-    have hcdfq : cdf ν q = y := by
-      refine le_antisymm hq_mem ?_
-      have htend : Tendsto (cdf ν) (𝓝[>] q) (𝓝 (cdf ν q)) :=
-        ((continuous_cdf_of_noAtoms ν).tendsto q).mono_left nhdsWithin_le_nhds
-      have hevt2 : ∀ᶠ x in 𝓝[>] q, y ≤ cdf ν x := by
-        refine Filter.eventually_of_mem self_mem_nhdsWithin (fun x hx => ?_)
-        have : x ∉ S := fun hxS => absurd (le_csSup hSbdd hxS) (not_le.2 hx)
-        exact le_of_lt (not_le.mp this)
-      exact ge_of_tendsto htend hevt2
-    rw [hSeq, ← ofReal_cdf ν q, hcdfq]
-  · rw [not_nonempty_iff_eq_empty] at hSne
-    have hyle : y ≤ 0 := by
-      have hfor : ∀ᶠ x in atBot, y ≤ cdf ν x := by
-        refine Filter.Eventually.of_forall (fun x => ?_)
-        have : x ∉ S := by rw [hSne]; simp
-        exact le_of_lt (not_le.mp this)
-      exact ge_of_tendsto (tendsto_cdf_atBot ν) hfor
-    have hνS : ν S = 0 := by rw [hSne]; exact measure_empty
-    rw [ENNReal.ofReal_eq_zero.mpr hyle]
-    exact hνS
-
 /-- **The probability integral transform.** The CDF of an atomless probability measure on
 `ℝ` pushes the measure forward to Lebesgue measure restricted to `[0, 1]`. -/
 @[simp]
