@@ -14,13 +14,13 @@ import TauCeti.GroupTheory.Sylow
 # Jordan's theorem for a cycle of prime length
 
 A primitive permutation group of degree `n` that contains a cycle of prime length `p`, with
-`p + 3 ≤ n`, contains the alternating group. This is Jordan's theorem of 1873, and it extends
-Mathlib's `Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem` and
-`Equiv.Perm.alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem` from cycles of length two
-and three to cycles of any prime length. The bound `p + 3 ≤ n` cannot be weakened to `p ≤ n` or
-`p + 1 ≤ n`: the affine group `AGL(1, 5)` is primitive of degree `5` and contains a `5`-cycle,
-and `AGL(1, 8)` is primitive of degree `8` and contains a `7`-cycle. Neither contains the
-alternating group.
+`p + 3 ≤ n`, contains the alternating group. This is Jordan's theorem of 1873, the analogue for
+cycles of arbitrary prime length of Mathlib's
+`Equiv.Perm.subgroup_eq_top_of_isPreprimitive_of_isSwap_mem` and
+`Equiv.Perm.alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem`, which need no bound on
+the degree. The bound `p + 3 ≤ n` cannot be weakened to `p ≤ n` or `p + 1 ≤ n`: the affine group
+`AGL(1, 5)` is primitive of degree `5` and contains a `5`-cycle, and `AGL(1, 8)` is primitive of
+degree `8` and contains a `7`-cycle. Neither contains the alternating group.
 
 Write `Δ` for the set of fixed points of a cycle `g` of prime length `p` in a primitive group `G`.
 The proof has three steps.
@@ -170,19 +170,6 @@ private theorem exists_eqOn_swap_mul_mul_inv_mem_zpowers {g : Perm α} (hgc : g.
   obtain ⟨n, hnG, hn, hng⟩ := exists_eqOn_compl_support_mul_mul_inv_mem_zpowers hgc hgp hg x.2 hxs
   exact ⟨n, hnG, fun z hz ↦ (hn z hz).trans (hxΔ z hz), hng⟩
 
-private theorem exists_cycle_correction {g t : Perm α} (hgc : g.IsCycle) (htg : Commute t g) :
-    ∃ j : ℤ, (∀ z ∈ g.support, (t * (g ^ j)⁻¹) z = z) ∧
-      (∀ z ∉ g.support, (t * (g ^ j)⁻¹) z = t z) := by
-  obtain ⟨hts, j, hj⟩ := hgc.commute_iff.1 htg
-  refine ⟨j, ?_, ?_⟩
-  · intro z hz
-    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← zpow_neg, zpow_apply_mem_support]
-    rw [Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Perm.mul_apply,
-      mul_inv_cancel, Perm.one_apply]
-  · intro z hz
-    rw [Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
-      (notMem_support.1 hz) j).symm]
-
 /-- **Jordan's theorem for a cycle of prime length** (Wielandt, Theorem 13.9). A primitive
 permutation group of degree at least `p + 3` that contains a cycle of prime length `p` contains
 the alternating group. -/
@@ -207,7 +194,7 @@ theorem alternatingGroup_le_of_isPreprimitive_of_isCycle_mem (hG : IsPreprimitiv
   have htg : Commute ⁅n₁⁻¹, n₂⁻¹⁆ g :=
     commute_commutatorElement_of_inv_mul_mul_mem_zpowers (x := n₁⁻¹) (y := n₂⁻¹)
       (by rwa [inv_inv]) (by rwa [inv_inv])
-  obtain ⟨j, hfix, hout⟩ := exists_cycle_correction hgc htg
+  obtain ⟨j, hfix, hout⟩ := hgc.exists_mul_zpow_inv_apply_eq_of_commute htg
   have hτ : ⁅n₁⁻¹, n₂⁻¹⁆ * (g ^ j)⁻¹ = swap c a * swap c b := by
     ext z
     by_cases hz : z ∈ g.support

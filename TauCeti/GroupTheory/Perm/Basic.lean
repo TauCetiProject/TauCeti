@@ -19,7 +19,8 @@ orbit, the orbit relation of an involution, a positive-power representative of a
 periodic orbit, a permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
 is a single cycle on each of its own orbits, and the factorization of an invariant function
-through a map on whose fibres the permutation is a single cycle.
+through a map on whose fibres the permutation is a single cycle, and a correction by a power of
+a cycle for a permutation commuting with it.
 -/
 
 public section
@@ -106,6 +107,22 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+/-- A permutation commuting with a cycle can be corrected by a power of that cycle to fix its
+support pointwise, without changing it outside the support. -/
+theorem IsCycle.exists_mul_zpow_inv_apply_eq_of_commute [Fintype α] [DecidableEq α]
+    {g t : Perm α} (hgc : g.IsCycle) (htg : Commute t g) :
+    ∃ j : ℤ, (∀ z ∈ g.support, (t * (g ^ j)⁻¹) z = z) ∧
+      (∀ z ∉ g.support, (t * (g ^ j)⁻¹) z = t z) := by
+  obtain ⟨hts, j, hj⟩ := hgc.commute_iff.1 htg
+  refine ⟨j, ?_, ?_⟩
+  · intro z hz
+    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← zpow_neg, zpow_apply_mem_support]
+    rw [Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Perm.mul_apply,
+      mul_inv_cancel, Perm.one_apply]
+  · intro z hz
+    rw [Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
+      (notMem_support.1 hz) j).symm]
 
 /-- Transporting a permutation along an equivalence transports its cycles. -/
 @[simp]

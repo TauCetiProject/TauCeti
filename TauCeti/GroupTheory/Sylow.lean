@@ -15,7 +15,8 @@ order `p`. This is the form in which Sylow's theorems are applied to groups such
 order `120` is divisible by `5` but not by `25`, and to their subgroups.
 
 The file also records that `p` times the number of Sylow `p`-subgroups divides the order of the
-group whenever `p` does, and that two elements of order `p` then generate conjugate subgroups.
+group whenever `p` does. When `p ^ 2` does not divide the order, any two elements of order `p`
+generate conjugate subgroups.
 
 ## Main results
 
