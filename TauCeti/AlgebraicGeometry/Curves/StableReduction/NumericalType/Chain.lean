@@ -182,6 +182,7 @@ lemma forall_lt_succ_cons {α : Type*} {P : α → Prop} {x : α} {d : ℕ → �
   · exact hd _ (by omega)
 
 /-- The components of a chain of length `t` form a set of `t` components. -/
+@[simp]
 lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
     #((range t).image c) = t := by
   rw [card_image_of_injOn fun i hi j hj h ↦
@@ -457,6 +458,7 @@ lemma eq_of_intersection_pos {t : ℕ} {c : ℕ → T.Component}
   have hd := ((hc.shift (r := r) (s := s - r + 1) (by omega)).reverse).cons
     (fun i hi ↦ hx_ne _ (by omega)) hx_self (by
       rw [T.intersection_comm]
+      -- The last position of the shifted block is position `s` in the original chain.
       simpa [show r + (s - r) = s by omega] using hsx)
   have h := hd.intersection_eq_zero (by omega) (p := 0) (q := s - r + 1) (by omega) (by omega)
     (by omega) (by omega) (by omega)

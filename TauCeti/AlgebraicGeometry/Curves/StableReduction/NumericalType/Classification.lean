@@ -102,6 +102,7 @@ private lemma false_of_two_leaves (hc : T.IsSelfIntersectionMinusTwoChain t c)
     have hd := hc.shift (r := r - 1) (s := s - r + 3) (by omega)
     refine IsSelfIntersectionMinusTwoFork.not_oppositeFork (t := s - r + 3)
       (c := fun k ↦ c (r - 1 + k)) (right := y) (left := x) ?_ ?_ (by omega) (by omega)
+    -- Convert the two attachment positions from the shifted block back to `s` and `r`.
     · exact ⟨hd, by omega, fun i hi ↦ hy_ne _ (by omega), hy_self, by
         simpa [show r - 1 + (s - r + 1) = s by omega] using hy⟩
     · exact ⟨hd.reverse, by omega, fun i hi ↦ hx_ne _ (by omega), hx_self, by
@@ -119,6 +120,7 @@ private lemma eq_two_and_le_seven (hc : T.IsSelfIntersectionMinusTwoChain t c)
     have h := IsSelfIntersectionMinusTwoChain.intersection_branch_eq_zero T
       (hc.shift (r := r - 3) (s := 7) (by omega)) (by omega) (branch := x)
       (fun i hi ↦ hx_ne _ (by omega)) hx_self
+    -- Position `3` in this shifted seven-component block is the original position `r`.
     simp only [show r - 3 + 3 = r by omega] at h
     omega
   refine ⟨by omega, not_lt.mp fun ht ↦ ?_⟩
@@ -177,6 +179,7 @@ private lemma pos_and_lt_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoC
       hc.not_intersection_pos_zero hcS hmax hxS hx_ne hx_self (h ▸ hx),
     not_le.mp fun h ↦ hc.reverse.not_intersection_pos_zero (fun i hi ↦ hcS _ (by omega)) hmax
       hxS (fun i hi ↦ hx_ne _ (by omega)) hx_self ?_⟩
+  -- The first position of the reversed chain is the original last position `r`.
   simpa [show t - 1 = r by omega] using hx
 
 /-- A leaf meeting a chain and a further component of a longest chain set has at least two
@@ -283,6 +286,13 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
       · exact hc.false_of_two_leaves hcard₂ hyx.symm hx_ne hy_ne hx_self hy_self hr0 hrs hst
           hpos hby
       · exact hc.false_of_two_leaves hcard₂ hyx hy_ne hx_ne hy_self hx_self hs0 hsr hrt hby hpos
+  -- Reversing a chain preserves its component set, by Mathlib's reversal of `range`.
+  have hS_eq_rev : insert x ((range t).image fun i ↦ c (t - 1 - i)) = S := by
+    have himage : (range t).image (fun i ↦ c (t - 1 - i)) = A := by
+      rw [hA_def]
+      simpa only [image_image, Function.comp_def] using
+        congrArg (fun s : Finset ℕ ↦ s.image c) (range_image_pred_top_sub t)
+    rwa [himage]
   -- Read in the appropriate direction, the leaf `x` sits at a fork or an exceptional position.
   right
   by_cases hfork_right : r = t - 2
@@ -292,10 +302,7 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
       fun i hi ↦ hx_ne _ (by omega), hx_self, ?_⟩, ?_⟩
     · have hrev : t - 1 - (t - 2) = r := by omega
       simpa [hrev] using hpos
-    · rw [show (range t).image (fun i ↦ c (t - 1 - i)) = (range t).image c by
-        conv_rhs => rw [← range_image_pred_top_sub t, image_image]
-        rfl]
-      exact hS_eq
+    · exact hS_eq_rev
   right
   by_cases hdir : 2 * r + 1 ≤ t
   · obtain ⟨rfl, ht7⟩ := hc.eq_two_and_le_seven hcard₁ hx_ne hx_self (by omega) hdir hpos
@@ -305,10 +312,7 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
       simpa [hrev] using hpos
     · intro i hi hi3
       exact hx_zero _ (by omega) (by omega)
-    · rw [show (range t).image (fun i ↦ c (t - 1 - i)) = (range t).image c by
-        conv_rhs => rw [← range_image_pred_top_sub t, image_image]
-        rfl]
-      exact hS_eq
+    · exact hS_eq_rev
   · have hpos' : 0 < T.intersection (c (t - 1 - (t - 1 - r))) x := by
       have hrev : t - 1 - (t - 1 - r) = r := by omega
       rwa [hrev]
