@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.ZMod.Power
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
@@ -31,8 +30,16 @@ namespace TriangleGroup
 
 private def toCyclic (m : ℕ) : TriangleGroup 1 m m →* Multiplicative (ZMod m) :=
   lift 1 (Multiplicative.ofAdd (1 : ZMod m))
-    ((Multiplicative.ofAdd (1 : ZMod m))⁻¹) (by simp) (ZMod.ofAdd_one_pow m)
-    (by rw [inv_pow, ZMod.ofAdd_one_pow, inv_one]) (by simp)
+    ((Multiplicative.ofAdd (1 : ZMod m))⁻¹) (by simp)
+    (by
+      apply Multiplicative.toAdd.injective
+      rw [toAdd_pow]
+      simp)
+    (by
+      apply Multiplicative.toAdd.injective
+      rw [toAdd_pow]
+      simp)
+    (by simp)
 
 private theorem toCyclic_y (m : ℕ) :
     toCyclic m (y 1 m m) = Multiplicative.ofAdd (1 : ZMod m) := by
