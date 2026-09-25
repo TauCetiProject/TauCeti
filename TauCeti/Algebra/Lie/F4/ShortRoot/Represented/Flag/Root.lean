@@ -235,12 +235,12 @@ private theorem root_endOfPoint_mem_ideal
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (hg : GeneralLinear.pointsMulEquiv 26 g = rootSubgroupPoints k A u)
     {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
-    (hx : x ∈ cotangentFlagIdeal (A := A)) :
+    (hx : x ∈ f4ShortRootCotangentFlagIdeal (A := A)) :
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-      cotangentFlagIdeal (A := A) := by
+      f4ShortRootCotangentFlagIdeal (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
   refine e.mem_of_preserves_map
-    (cotangentFlagIdeal (A := A))
+    (f4ShortRootCotangentFlagIdeal (A := A))
     (f4ShortRootRepresentedIdealMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagIdeal_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
@@ -261,12 +261,12 @@ private theorem root_endOfPoint_mem_range
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A)
     (hg : GeneralLinear.pointsMulEquiv 26 g = rootSubgroupPoints k A u)
     {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
-    (hx : x ∈ cotangentFlagRange (A := A)) :
+    (hx : x ∈ f4ShortRootCotangentFlagRange (A := A)) :
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-      cotangentFlagRange (A := A) := by
+      f4ShortRootCotangentFlagRange (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
   refine e.mem_of_preserves_map
-    (cotangentFlagRange (A := A))
+    (f4ShortRootCotangentFlagRange (A := A))
     (f4ShortRootRepresentedRangeMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagRange_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)

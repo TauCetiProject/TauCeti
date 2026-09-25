@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Span
 public import TauCeti.Algebra.Lie.F4.ShortRoot.TorusAction
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Weight-torus stability of the represented modular F4 flag
@@ -49,7 +50,7 @@ private theorem f4ShortRootWeightTorusConj_mem_range_generator
         f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularRootVector a) ∈
           f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
       rw [← hα]
-      exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inl α)
+      exact f4ShortRootAdjointMatrixBaseChange_chevalleyBasis_mem_range (Sum.inl α)
     have hconj := f4ShortRootWeightTorusGL_conj_root (A := A) s a
     rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
     rw [Matrix.lieConj_apply, hα, hconj]
@@ -62,7 +63,7 @@ private theorem f4ShortRootWeightTorusConj_mem_range_generator
         f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularSimpleCoroot a) ∈
           f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
       rw [← hr]
-      exact f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (Sum.inr r)
+      exact f4ShortRootAdjointMatrixBaseChange_chevalleyBasis_mem_range (Sum.inr r)
     have hconj := f4ShortRootWeightTorusGL_conj_simpleCoroot (A := A) s a
     rw [Matrix.GeneralLinearGroup.coe_inv] at hconj
     rw [Matrix.lieConj_apply, hr, hconj]
@@ -100,7 +101,7 @@ private theorem f4ShortRootWeightTorusConj_mem_ideal_generator
           (f4ShortRootLieIdealBasis i : f4ModularChevalleyLieAlgebra) ∈
         f4ShortRootRepresentedIdealMatrixBaseChange (A := A) :=
     by simpa only [coe_f4ShortRootLieIdealBasis] using
-      (f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (A := A) i)
+      (f4ShortRootAdjointMatrixBaseChange_idealBasis_mem_ideal (A := A) i)
   rcases hi : f4ShortRootWeightIndexEquiv i with α | k
   · have hi' := congrArg f4ShortRootWeightIndexEquiv.symm hi
     simp only [Equiv.symm_apply_apply] at hi'
@@ -167,12 +168,12 @@ private theorem torus_endOfPoint_mem_ideal
     (s : Fin 4 → Aˣ)
     (hg : GeneralLinear.pointsMulEquiv 26 g = f4ShortRootWeightTorusGL s)
     {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
-    (hx : x ∈ cotangentFlagIdeal (A := A)) :
+    (hx : x ∈ f4ShortRootCotangentFlagIdeal (A := A)) :
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-      cotangentFlagIdeal (A := A) := by
+      f4ShortRootCotangentFlagIdeal (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
   refine e.mem_of_preserves_map
-    (cotangentFlagIdeal (A := A))
+    (f4ShortRootCotangentFlagIdeal (A := A))
     (f4ShortRootRepresentedIdealMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagIdeal_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)
@@ -192,12 +193,12 @@ private theorem torus_endOfPoint_mem_range
     (s : Fin 4 → Aˣ)
     (hg : GeneralLinear.pointsMulEquiv 26 g = f4ShortRootWeightTorusGL s)
     {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
-    (hx : x ∈ cotangentFlagRange (A := A)) :
+    (hx : x ∈ f4ShortRootCotangentFlagRange (A := A)) :
     Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-      cotangentFlagRange (A := A) := by
+      f4ShortRootCotangentFlagRange (A := A) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
   refine e.mem_of_preserves_map
-    (cotangentFlagRange (A := A))
+    (f4ShortRootCotangentFlagRange (A := A))
     (f4ShortRootRepresentedRangeMatrixBaseChange (A := A))
     (f4ShortRootCotangentFlagRange_map (A := A))
     (fun y => Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv y)

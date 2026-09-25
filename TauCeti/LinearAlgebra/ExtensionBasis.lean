@@ -109,7 +109,7 @@ namespace LinearMap
 
 open Module
 
-variable {k V W : Type*} [Field k] [AddCommGroup V] [Module k V]
+variable {k V W : Type*} [CommRing k] [AddCommGroup V] [Module k V]
   [AddCommGroup W] [Module k W] {m n : ℕ}
 variable (f : V →ₗ[k] W) (I : Submodule k V) (hker : LinearMap.ker f ≤ I)
 variable (bImage : Basis (Fin m) k (I.map f.rangeRestrict))

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.LinearMap.Range
-public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Scalar-extended coordinate spans of the represented modular F4 flag
@@ -37,32 +36,32 @@ abbrev f4ShortRootCotangentDual :=
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
 /-- The scalar-extended represented-ideal term of the cotangent flag. -/
-noncomputable def cotangentFlagIdeal :
+noncomputable def f4ShortRootCotangentFlagIdeal :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
 
 /-- Each basis vector in the first adapted block belongs to the ideal term. -/
-theorem cotangentFlagIdeal_mem_basis (i : Fin f4ShortRootRepresentedIdealRank) :
+theorem f4ShortRootCotangentFlagBasis_mem_ideal (i : Fin f4ShortRootRepresentedIdealRank) :
     f4ShortRootCotangentFlagBasis.baseChange A
         (Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i)) ∈
-      cotangentFlagIdeal (A := A) := by
+      f4ShortRootCotangentFlagIdeal (A := A) := by
   exact Submodule.subset_span (Set.mem_range_self i)
 
 /-- The scalar-extended represented-range term of the cotangent flag. -/
-noncomputable def cotangentFlagRange :
+noncomputable def f4ShortRootCotangentFlagRange :
     Submodule A (TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :=
   Submodule.span A <| Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
     f4ShortRootCotangentFlagBasis.baseChange A
       (Fin.castAdd f4ShortRootRepresentedComplementRank i)
 
 /-- Each basis vector in the first two adapted blocks belongs to the range term. -/
-theorem cotangentFlagRange_mem_basis
+theorem f4ShortRootCotangentFlagBasis_mem_range
     (i : Fin (f4ShortRootRepresentedIdealRank + 26)) :
     f4ShortRootCotangentFlagBasis.baseChange A
         (Fin.castAdd f4ShortRootRepresentedComplementRank i) ∈
-      cotangentFlagRange (A := A) := by
+      f4ShortRootCotangentFlagRange (A := A) := by
   exact Submodule.subset_span (Set.mem_range_self i)
 
 /-! ### Stability of the represented flag
@@ -88,7 +87,7 @@ theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span_basis :
   rfl
 
 /-- Each Chevalley adjoint matrix is in the scalar-extended represented range. -/
-@[simp] theorem f4ShortRootRepresentedRangeMatrixBaseChange_mem_basis (k : f4ChevalleyIndex) :
+@[simp] theorem f4ShortRootAdjointMatrixBaseChange_chevalleyBasis_mem_range (k : f4ChevalleyIndex) :
     f4ShortRootAdjointMatrixBaseChange (A := A) (f4ModularChevalleyBasis k) ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   unfold f4ShortRootRepresentedRangeMatrixBaseChange
@@ -111,7 +110,7 @@ theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span_basis :
   rfl
 
 /-- Each ideal-basis adjoint matrix is in the scalar-extended represented ideal. -/
-@[simp] theorem f4ShortRootRepresentedIdealMatrixBaseChange_mem_basis (i : Fin 26) :
+@[simp] theorem f4ShortRootAdjointMatrixBaseChange_idealBasis_mem_ideal (i : Fin 26) :
     f4ShortRootAdjointMatrixBaseChange (A := A)
         (f4ModularChevalleyBasis (f4ShortRootBasisCoordinate i)) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
@@ -361,10 +360,10 @@ endomorphism basis. -/
 /-- Under cotangent-dual matrix coordinates, the first adapted basis block is exactly the
 scalar-extended represented ideal. -/
 theorem f4ShortRootCotangentFlagIdeal_map :
-    (cotangentFlagIdeal (A := A)).map
+    (f4ShortRootCotangentFlagIdeal (A := A)).map
         (f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)).toLinearMap =
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-  rw [cotangentFlagIdeal, LinearMap.map_span,
+  rw [f4ShortRootCotangentFlagIdeal, LinearMap.map_span,
     ← f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq]
   congr 1
   ext X
@@ -381,10 +380,10 @@ theorem f4ShortRootCotangentFlagIdeal_map :
 /-- Under cotangent-dual matrix coordinates, the first two adapted basis blocks are exactly the
 scalar-extended represented range. -/
 theorem f4ShortRootCotangentFlagRange_map :
-    (cotangentFlagRange (A := A)).map
+    (f4ShortRootCotangentFlagRange (A := A)).map
         (f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)).toLinearMap =
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-  rw [cotangentFlagRange, LinearMap.map_span,
+  rw [f4ShortRootCotangentFlagRange, LinearMap.map_span,
     ← f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq]
   congr 1
   ext X
@@ -400,9 +399,9 @@ theorem f4ShortRootCotangentFlagRange_map :
 
 /-- A cotangent vector belongs to the ideal flag term exactly when its matrix coordinates
 belong to the base-changed represented ideal. -/
-@[simp] theorem mem_cotangentFlagIdeal_iff
+@[simp] theorem mem_f4ShortRootCotangentFlagIdeal_iff
     (x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :
-    x ∈ cotangentFlagIdeal (A := A) ↔
+    x ∈ f4ShortRootCotangentFlagIdeal (A := A) ↔
       f4ShortRootCotangentBaseChangeMatrixEquiv (A := A) x ∈
         f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
   rw [← f4ShortRootCotangentFlagIdeal_map, Submodule.mem_map_equiv]
@@ -410,21 +409,21 @@ belong to the base-changed represented ideal. -/
 
 /-- A cotangent vector belongs to the range flag term exactly when its matrix coordinates
 belong to the base-changed represented range. -/
-@[simp] theorem mem_cotangentFlagRange_iff
+@[simp] theorem mem_f4ShortRootCotangentFlagRange_iff
     (x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual) :
-    x ∈ cotangentFlagRange (A := A) ↔
+    x ∈ f4ShortRootCotangentFlagRange (A := A) ↔
       f4ShortRootCotangentBaseChangeMatrixEquiv (A := A) x ∈
         f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
   rw [← f4ShortRootCotangentFlagRange_map, Submodule.mem_map_equiv]
   simp only [LinearEquiv.symm_apply_apply]
 
 /-- The represented ideal is the first step of the represented range flag. -/
-theorem cotangentFlagIdeal_le_range :
-    cotangentFlagIdeal (A := A) ≤ cotangentFlagRange (A := A) := by
+theorem f4ShortRootCotangentFlagIdeal_le_range :
+    f4ShortRootCotangentFlagIdeal (A := A) ≤ f4ShortRootCotangentFlagRange (A := A) := by
   intro x hx
-  exact (mem_cotangentFlagRange_iff x).mpr
+  exact (mem_f4ShortRootCotangentFlagRange_iff x).mpr
     (f4ShortRootRepresentedIdealMatrixBaseChange_le_range
-      ((mem_cotangentFlagIdeal_iff x).mp hx))
+      ((mem_f4ShortRootCotangentFlagIdeal_iff x).mp hx))
 
 /-- The adjoint comodule structure used for the represented cotangent flag. -/
 local instance f4ShortRootCotangentAdjointComodule :
@@ -437,13 +436,13 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     (g : HopfAlgebra.points
       (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26) (CommAlgCat.of 𝔽₂ A))
     (hIdeal : ∀ {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual},
-      x ∈ cotangentFlagIdeal (A := A) →
+      x ∈ f4ShortRootCotangentFlagIdeal (A := A) →
         Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-          cotangentFlagIdeal (A := A))
+          f4ShortRootCotangentFlagIdeal (A := A))
     (hRange : ∀ {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual},
-      x ∈ cotangentFlagRange (A := A) →
+      x ∈ f4ShortRootCotangentFlagRange (A := A) →
         Comodule.endOfPoint f4ShortRootCotangentDual g.ofConv x ∈
-          cotangentFlagRange (A := A)) :
+          f4ShortRootCotangentFlagRange (A := A)) :
     ((Comodule.coefficientMatrix
         (C := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
         f4ShortRootCotangentFlagBasis).map g.ofConv).BlockTriangular
@@ -457,11 +456,11 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 j') :=
       Fin.ext rfl
     have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
-        cotangentFlagIdeal (A := A) := by
+        f4ShortRootCotangentFlagIdeal (A := A) := by
       rw [hj]
-      exact cotangentFlagIdeal_mem_basis j'
+      exact f4ShortRootCotangentFlagBasis_mem_ideal j'
     have hmap := hIdeal hjmem
-    unfold cotangentFlagIdeal at hmap
+    unfold f4ShortRootCotangentFlagIdeal at hmap
     have hsupp :=
       (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
         (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
@@ -480,11 +479,11 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     · let j' : Fin (f4ShortRootRepresentedIdealRank + 26) := ⟨j.val, hjRange⟩
       have hj : j = Fin.castAdd f4ShortRootRepresentedComplementRank j' := Fin.ext rfl
       have hjmem : f4ShortRootCotangentFlagBasis.baseChange A j ∈
-          cotangentFlagRange (A := A) := by
+          f4ShortRootCotangentFlagRange (A := A) := by
         rw [hj]
-        exact cotangentFlagRange_mem_basis j'
+        exact f4ShortRootCotangentFlagBasis_mem_range j'
       have hmap := hRange hjmem
-      unfold cotangentFlagRange at hmap
+      unfold f4ShortRootCotangentFlagRange at hmap
       have hsupp :=
         (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
           (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
