@@ -62,41 +62,54 @@ def rightHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | 0 < z.re}
 negative real part. -/
 def leftHalfPlane (g : PSL(2, ℝ)) : Set ℍ := g • {z : ℍ | z.re < 0}
 
+/-- Restatement of the body of `rightHalfPlane`, unfolded from the `def`. -/
 theorem rightHalfPlane_def (g : PSL(2, ℝ)) :
     rightHalfPlane g = g • {z : ℍ | 0 < z.re} := by rfl
 
+/-- Restatement of the body of `leftHalfPlane`, unfolded from the `def`. -/
 theorem leftHalfPlane_def (g : PSL(2, ℝ)) : leftHalfPlane g = g • {z : ℍ | z.re < 0} := by rfl
 
+/-- Membership test for the right half-plane, without unfolding the smul-image. -/
 @[simp]
 theorem mem_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ rightHalfPlane g ↔ 0 < (g⁻¹ • z : ℍ).re := by
   rw [rightHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
+/-- Membership test for the left half-plane, without unfolding the smul-image. -/
 @[simp]
 theorem mem_leftHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ leftHalfPlane g ↔ (g⁻¹ • z : ℍ).re < 0 := by
   rw [leftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
+/-- The right half-plane of the identity is the canonical `{z | 0 < z.re}`. -/
+@[simp]
 theorem rightHalfPlane_one : rightHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | 0 < z.re} := one_smul _ _
 
+/-- The left half-plane of the identity is the canonical `{z | z.re < 0}`. -/
+@[simp]
 theorem leftHalfPlane_one : leftHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | z.re < 0} := one_smul _ _
 
+/-- Translating a right half-plane by `h` gives the right half-plane of `h * g`. -/
 @[simp]
 theorem smul_rightHalfPlane (h g : PSL(2, ℝ)) :
     h • rightHalfPlane g = rightHalfPlane (h * g) := by
   rw [rightHalfPlane, rightHalfPlane, smul_smul]
 
+/-- Translating a left half-plane by `h` gives the left half-plane of `h * g`. -/
 @[simp]
 theorem smul_leftHalfPlane (h g : PSL(2, ℝ)) :
     h • leftHalfPlane g = leftHalfPlane (h * g) := by
   rw [leftHalfPlane, leftHalfPlane, smul_smul]
 
+/-- The right half-plane bounded by `geodesicLine g` is open. -/
 theorem isOpen_rightHalfPlane (g : PSL(2, ℝ)) : IsOpen (rightHalfPlane g) :=
   (isOpen_lt continuous_const UpperHalfPlane.continuous_re).smul g
 
+/-- The left half-plane bounded by `geodesicLine g` is open. -/
 theorem isOpen_leftHalfPlane (g : PSL(2, ℝ)) : IsOpen (leftHalfPlane g) :=
   (isOpen_lt UpperHalfPlane.continuous_re continuous_const).smul g
 
+/-- The right and left half-planes bounded by the same `geodesicLine g` are disjoint. -/
 theorem disjoint_rightHalfPlane_leftHalfPlane (g : PSL(2, ℝ)) :
     Disjoint (rightHalfPlane g) (leftHalfPlane g) := by
   rw [Set.disjoint_left]
@@ -105,6 +118,7 @@ theorem disjoint_rightHalfPlane_leftHalfPlane (g : PSL(2, ℝ)) :
   rw [mem_leftHalfPlane_iff] at hz'
   linarith
 
+/-- The right half-plane bounded by `geodesicLine g` is disjoint from the line itself. -/
 theorem disjoint_rightHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
     Disjoint (rightHalfPlane g) (Set.range (geodesicLine g)) := by
   rw [Set.disjoint_left]
@@ -113,6 +127,7 @@ theorem disjoint_rightHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
   rw [mem_range_geodesicLine_iff] at hz'
   linarith
 
+/-- The left half-plane bounded by `geodesicLine g` is disjoint from the line itself. -/
 theorem disjoint_leftHalfPlane_range_geodesicLine (g : PSL(2, ℝ)) :
     Disjoint (leftHalfPlane g) (Set.range (geodesicLine g)) := by
   rw [Set.disjoint_left]
