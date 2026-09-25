@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Combinatorics.Young.YoungDiagram
+import TauCeti.Combinatorics.Young.Diagram
 
 /-!
 # Beta-numbers of a Young diagram
@@ -35,6 +36,8 @@ hook-length API and is developed in `TauCeti/Combinatorics/Young/HookLength/Beta
 * `YoungDiagram.betaNumber_lt_betaNumber`: the beta-numbers strictly decrease across the indices
   `i < j < r` inside the bound.
 * `YoungDiagram.injOn_betaNumber`: the beta-numbers of the indices `i < r` are pairwise distinct.
+* `YoungDiagram.eq_of_betaNumber_eq`: a Young diagram with at most `r` rows is determined by its
+  beta-numbers of the indices `i < r`.
 * `YoungDiagram.cast_prod_betaNumber_sub`: casts the product of beta-number differences from
   `ℕ` to `ℤ`.
 
@@ -81,6 +84,20 @@ theorem strictAntiOn_betaNumber (μ : YoungDiagram) (r : ℕ) :
 theorem injOn_betaNumber (μ : YoungDiagram) (r : ℕ) :
     Set.InjOn (μ.betaNumber r) (Set.Iio r) :=
   (μ.strictAntiOn_betaNumber r).injOn
+
+/-- **A Young diagram is determined by its beta-numbers**: two diagrams with at most `r` rows whose
+beta-numbers relative to `r` agree at every index `i < r` are equal.  Inside the bound the row
+lengths are recovered by subtracting the common shift `r - 1 - i`, and outside it both diagrams
+have empty rows. -/
+theorem eq_of_betaNumber_eq {ν : YoungDiagram} (hμ : μ.colLen 0 ≤ r) (hν : ν.colLen 0 ≤ r)
+    (h : ∀ i < r, μ.betaNumber r i = ν.betaNumber r i) : μ = ν := by
+  refine rowLen_injective (funext fun i => ?_)
+  by_cases hi : i < r
+  · have := h i hi
+    rw [betaNumber_def, betaNumber_def] at this
+    omega
+  · rw [rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi)),
+      rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))]
 
 open Finset
 

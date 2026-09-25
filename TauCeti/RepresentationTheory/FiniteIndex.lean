@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # Restricting to a finite-index subgroup and coming back
@@ -34,6 +35,9 @@ form is behind the normalization of the transfer in group homology.
   the unit and the trace is `[G : S] • 𝟙 A`.
 * `TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app`: the same identity
   with coinduction replaced by induction, through Mathlib's identification `Rep.indCoindIso`.
+* `Rep.coinvariantsMk_coindToInd_unit`: in the `G`-coinvariants of `Ind_S^G(Res_S A)`, the
+  unit `A ⟶ Ind_S^G(Res_S A)` sends `a` to the class of `1 ⊗ ∑_{q ∈ G ⧸ S} q⁻¹ • a`, the relative
+  transfer `Representation.relTransfer`.
 
 ## References
 
@@ -133,3 +137,72 @@ theorem resIndAdjunction_unit_app_comp_indResAdjunction_counit_app (A : Rep.{u} 
   exact resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app S A
 
 end TauCeti.Rep
+
+/-! ### The unit of restriction–induction in coinvariants -/
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+-- In the `G`-coinvariants of an induced representation `Ind_S^G A`, the class of `⟦h ⊗ a⟧` does
+-- not depend on `h ∈ G`: the element is `h⁻¹` acting on `⟦1 ⊗ a⟧`.
+private theorem coinvariantsMk_indVMk (S : Subgroup G) (A : Rep k S) (h : G) (a : A.V) :
+    Representation.Coinvariants.mk (Representation.ind S.subtype A.ρ)
+        (Representation.IndV.mk S.subtype A.ρ h a) =
+      Representation.Coinvariants.mk (Representation.ind S.subtype A.ρ)
+        (Representation.IndV.mk S.subtype A.ρ 1 a) := by
+  have hmk : Representation.IndV.mk S.subtype A.ρ h a =
+      Representation.ind S.subtype A.ρ h⁻¹ (Representation.IndV.mk S.subtype A.ρ 1 a) := by
+    rw [Representation.ind_mk, one_mul, inv_inv]
+  rw [hmk, Representation.Coinvariants.mk_self_apply]
+
+-- In the `G`-coinvariants of an induced representation `Ind_S^G A`, acting by `s ∈ S` on the
+-- second factor of `⟦1 ⊗ a⟧` does not change its class: `⟦1 ⊗ s • a⟧ = ⟦s⁻¹ ⊗ a⟧` in `Ind_S^G A`,
+-- and `coinvariantsMk_indVMk` removes the `s⁻¹`.
+private theorem coinvariantsMk_indVMk_one_apply (S : Subgroup G) (A : Rep k S) (s : S) (a : A.V) :
+    Representation.Coinvariants.mk (Representation.ind S.subtype A.ρ)
+        (Representation.IndV.mk S.subtype A.ρ 1 (A.ρ s a)) =
+      Representation.Coinvariants.mk (Representation.ind S.subtype A.ρ)
+        (Representation.IndV.mk S.subtype A.ρ 1 a) := by
+  have hbal : Representation.IndV.mk S.subtype A.ρ 1 (A.ρ s a) =
+      Representation.IndV.mk S.subtype A.ρ (s⁻¹ : S) a := by
+    -- `IndV.mk S.subtype A.ρ h a` is the class of `single h 1 ⊗ₜ a` in the coinvariants of the
+    -- tensor product, where `mk_tmul_inv` moves `s⁻¹` from the left factor to the right one.
+    simpa only [LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
+      InvMemClass.coe_inv, inv_inv, MonoidHom.coe_comp, Subgroup.coe_subtype,
+      Representation.ofMulAction_single, smul_eq_mul, mul_one] using
+      Representation.Coinvariants.mk_tmul_inv ((Representation.leftRegular k G).comp S.subtype)
+        A.ρ (MonoidAlgebra.single 1 1) a s⁻¹
+  rw [hbal, coinvariantsMk_indVMk]
+
+open scoped Classical in
+/-- **The unit of `Res ⊣ Ind`, read in coinvariants, is the relative transfer.** For a
+finite-index subgroup `S ≤ G`, the unit `M ⟶ Ind_S^G Res_S M` sends `m` to `∑ᵢ ⟦gᵢ ⊗ gᵢ • m⟧` over
+right coset representatives `gᵢ`; in the `G`-coinvariants of `Ind_S^G Res_S M` this is the class
+of `⟦1 ⊗ ∑_{q ∈ G ⧸ S} q⁻¹ • m⟧`. The right coset `S g` is matched with the left coset `g⁻¹ S`,
+and each summand depends only on its coset. -/
+theorem coinvariantsMk_coindToInd_unit (M : Rep k G) (S : Subgroup G) [S.FiniteIndex]
+    (m : M.V) :
+    Representation.Coinvariants.mk (Representation.ind S.subtype (res S.subtype M).ρ)
+        (coindToInd (res S.subtype M) (((resCoindAdjunction k S.subtype).unit.app M).hom m)) =
+      Representation.Coinvariants.mk (Representation.ind S.subtype (res S.subtype M).ρ)
+        (Representation.IndV.mk S.subtype (res S.subtype M).ρ 1
+          (Representation.relTransfer M.ρ S m)) := by
+  rw [coindToInd_apply, map_sum, Representation.relTransfer_apply, map_sum, map_sum]
+  refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel S) _ _
+    fun c => ?_
+  induction c using Quotient.inductionOn with
+  | h g =>
+    set q : G ⧸ S := QuotientGroup.quotientRightRelEquivQuotientLeftRel S (Quotient.mk _ g)
+      with hq
+    have hq' : q = ((g⁻¹ : G) : G ⧸ S) := rfl
+    have hs : (q.out : G)⁻¹ * g⁻¹ ∈ S := QuotientGroup.eq.mp (q.out_eq'.trans hq')
+    have hg : (q.out : G)⁻¹ = ((⟨_, hs⟩ : S) : G) * g := by simp
+    have h1 := coinvariantsMk_indVMk S (res S.subtype M) g (M.ρ g m)
+    have h2 := coinvariantsMk_indVMk_one_apply S (res S.subtype M) ⟨_, hs⟩ (M.ρ g m)
+    rw [hg, map_mul, Module.End.mul_apply]
+    exact h1.trans h2.symm
+
+end Rep

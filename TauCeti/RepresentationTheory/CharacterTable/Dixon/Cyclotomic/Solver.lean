@@ -273,6 +273,72 @@ def dixonCyclotomicCharacterTable? (e : ℕ) (he : e = Monoid.exponent G)
     d.cyclotomicCharacterTableChecker e
       output.omega output.table output.degree
 
+/-- The Galois-conjugate reductions of a certified table with injective residue rows renumber the
+solver's canonical modular rows: after a permutation `base` of the table's rows, the reduction at
+the `j`-th conjugate root gives the canonical rows in the order `perms j`, with `perms` the
+identity at the first conjugate. -/
+private theorem exists_perms_canonicalModularRow_eq_conjugateResidues (e : ℕ)
+    (he : e = Monoid.exponent G) (q : DixonPrimeData G)
+    {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
+    {degree : Fin d.numClasses → ℕ} (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
+    (hresidue_injective : ∀ j, Function.Injective fun i k ↦
+      Cyclotomic.conjugateResidues q.root (omega i k) j) :
+    ∃ (base : Equiv.Perm (Fin d.numClasses))
+      (perms : Fin e.totient → Fin d.numClasses → Fin d.numClasses),
+      (∀ (h : 0 < e.totient) i, perms ⟨0, h⟩ i = i) ∧ (∀ j, Function.Injective (perms j)) ∧
+      ∀ j i, d.canonicalModularRow q (perms j i) =
+        fun k ↦ Cyclotomic.conjugateResidues q.root (omega (base i) k) j := by
+  have _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  have hmem (j : Fin e.totient) (i : Fin d.numClasses) :
+      (fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j) ∈
+        d.centralCharacterSearch := by
+    simpa only [Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply] using
+      hspec.map_mem_centralCharacterSearch (Cyclotomic.reduceRingHom q.p _
+        (Cyclotomic.isPrimitiveRoot_conjugateRoot (he ▸ q.isPrimitiveRoot_root) j)) i
+  let residueEquiv (j : Fin e.totient) :
+      Fin d.numClasses ≃ {row // row ∈ d.centralCharacterSearch (F := ZMod q.p)} :=
+    Equiv.ofBijective (Subtype.coind _ (hmem j))
+      ((Fintype.bijective_iff_injective_and_card _).mpr
+        ⟨Subtype.coind_injective _ (hresidue_injective j), by
+          rw [Fintype.card_fin, Fintype.card_coe,
+            d.card_centralCharacterSearch_of_isGoodDixonPrime q.isGoodDixonPrime]⟩)
+  let base : Equiv.Perm (Fin d.numClasses) := (d.modularCentralRowsEquiv q).trans
+    (residueEquiv ⟨0, Nat.totient_pos.mpr (NeZero.pos e)⟩).symm
+  refine ⟨base, fun j ↦ base.trans ((residueEquiv j).trans (d.modularCentralRowsEquiv q).symm),
+    fun _ i ↦ by simp [base], fun j ↦ Equiv.injective _, fun j i ↦ ?_⟩
+  simp [← d.modularCentralRowsEquiv_apply q, residueEquiv]
+
+/-- A certified table is enumerated by the solver once its rows are aligned with the canonical
+modular rows by permutations `perms`, the identity at the first conjugate, and its coefficients lie
+in the balanced residue window. -/
+private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = Monoid.exponent G)
+    (q : DixonPrimeData G)
+    {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
+    {degree : Fin d.numClasses → ℕ} (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
+    (hcoeff : ∀ i k (l : Fin e.totient), 2 * ((omega i k).coeff l).natAbs < q.p)
+    {perms : Fin e.totient → Fin d.numClasses → Fin d.numClasses}
+    (hfirst : ∀ (h : 0 < e.totient) i, perms ⟨0, h⟩ i = i)
+    (hinjective : ∀ j, Function.Injective (perms j))
+    (hrows : ∀ j i, d.canonicalModularRow q (perms j i) =
+      fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j) :
+    ⟨omega, table, degree⟩ ∈ d.dixonCyclotomicCharacterTableCandidates e he q := by
+  let _ : FinEnum (ZMod q.p) :=
+    FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
+  -- `canonicalModularRow` unfolds by `rfl` to the `List.getD` form used by the solver.
+  have homega (i k : Fin d.numClasses) : Cyclotomic.lift e q.root
+      (fun j ↦ (d.modularCentralRowsList q).getD (perms j i) 0 k) = omega i k :=
+    Cyclotomic.lift_eq_of_conjugateResidues_eq (he ▸ q.isPrimitiveRoot_root) (hcoeff i k) <|
+      funext fun j ↦ (congrFun (hrows j i) k).symm
+  simp only [dixonCyclotomicCharacterTableCandidates, List.mem_flatMap, List.mem_map,
+    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
+  -- The searched degree `⟨degree i, _⟩` has value `degree i` by `rfl`, which gives its
+  -- nonvanishing and discharges the sum-of-squares condition and the `degree` field below.
+  refine ⟨perms, ⟨hfirst _, hinjective⟩, fun i ↦ ⟨⟨degree i, Nat.lt_succ_of_le
+    (Nat.le_of_dvd Fintype.card_pos (hspec.degree_dvd i))⟩, Fin.ne_of_gt (hspec.degree_pos i),
+      hspec.degree_dvd i⟩, hspec.sum_degree_sq, ?_⟩
+  refine CyclotomicCharacterTableData.ext (funext₂ fun i k ↦ ?_) (funext₂ fun i k ↦ ?_) rfl <;>
+    simp only [Array.getElem_ofFn, Fin.eta, homega, d.table_eq_cyclotomicQuotient e hspec]
+
 /-- **Completeness criterion for the exact-cyclotomic solver.**  Suppose an exact certified table
 has coefficients within the balanced residue window and every Galois-conjugate reduction gives a
 distinct numbering of the modular central-character search.  Then the solver succeeds.
@@ -290,99 +356,14 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
     (hresidue_injective : ∀ j, Function.Injective fun i ↦
       (fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j)) :
     (d.dixonCyclotomicCharacterTable? e he q).isSome = true := by
-  let _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
-  let firstConjugate : Fin e.totient :=
-    ⟨0, Nat.totient_pos.mpr (Nat.pos_of_ne_zero
-      (he ▸ Monoid.exponent_ne_zero_of_finite))⟩
-  let residueRow (j : Fin e.totient) (i : Fin d.numClasses) :
-      Fin d.numClasses → ZMod q.p :=
-    fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j
-  have hresidue_mem (j : Fin e.totient) (i : Fin d.numClasses) :
-      residueRow j i ∈ d.centralCharacterSearch := by
-    rw [d.mem_centralCharacterSearch]
-    constructor
-    · simp only [residueRow]
-      rw [hspec.central_one]
-      exact congrFun (Cyclotomic.conjugateResidues_one
-        (by simpa only [he] using q.isPrimitiveRoot_root)) j
-    · have hroot :
-          IsPrimitiveRoot (Cyclotomic.conjugateRoot e q.root j) e :=
-        Cyclotomic.isPrimitiveRoot_conjugateRoot
-          (by simpa only [he] using q.isPrimitiveRoot_root) j
-      simpa only [residueRow, Cyclotomic.conjugateResidues_apply,
-        ← Cyclotomic.reduceRingHom_apply q.p _ hroot] using
-          (hspec.central_eigen i).map (Cyclotomic.reduceRingHom q.p _ hroot)
-  let residueEquiv (j : Fin e.totient) :
-      Fin d.numClasses ≃ {row // row ∈ d.centralCharacterSearch (F := ZMod q.p)} :=
-    Equiv.ofBijective (fun i ↦ ⟨residueRow j i, hresidue_mem j i⟩)
-      ((Fintype.bijective_iff_injective_and_card _).mpr ⟨fun i i' h ↦
-        hresidue_injective j (congrArg Subtype.val h), by
-          rw [Fintype.card_fin, Fintype.card_coe,
-            d.card_centralCharacterSearch_of_isGoodDixonPrime q.isGoodDixonPrime]⟩)
-  let base : Equiv.Perm (Fin d.numClasses) :=
-    (d.modularCentralRowsEquiv q).trans (residueEquiv firstConjugate).symm
-  let perms (j : Fin e.totient) (i : Fin d.numClasses) : Fin d.numClasses :=
-    (d.modularCentralRowsEquiv q).symm (residueEquiv j (base i))
-  have hperms_first (i : Fin d.numClasses) : perms firstConjugate i = i := by
-    simp only [perms, base, Equiv.trans_apply, Equiv.apply_symm_apply,
-      Equiv.symm_apply_apply]
-  have hperms_injective (j : Fin e.totient) : Function.Injective (perms j) := by
-    exact (d.modularCentralRowsEquiv q).symm.injective.comp
-      ((residueEquiv j).injective.comp base.injective)
-  let output : d.CyclotomicCharacterTableData e :=
-    { omega := fun i k ↦ omega (base i) k
-      table := fun i k ↦ table (base i) k
-      degree := fun i ↦ degree (base i) }
-  have houtput_spec :
-      d.IsCyclotomicCharacterTableSpec e output.omega output.table output.degree := by
-    refine
-      { central_one := fun i ↦ hspec.central_one (base i)
-        central_eigen := fun i ↦ hspec.central_eigen (base i)
-        degree_pos := fun i ↦ hspec.degree_pos (base i)
-        degree_dvd := fun i ↦ hspec.degree_dvd (base i)
-        sum_degree_sq := ?_
-        degree_mul_central := fun i k ↦ hspec.degree_mul_central (base i) k
-        row_orthogonal := ?_ }
-    · exact (base.bijective.sum_comp fun i ↦ degree i ^ 2).trans hspec.sum_degree_sq
-    · intro i i'
-      simpa only [output, base.injective.eq_iff] using hspec.row_orthogonal (base i) (base i')
-  have hcandidate : output ∈ d.dixonCyclotomicCharacterTableCandidates e he q := by
-    let _ : FinEnum (ZMod q.p) :=
-      FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
-    simp only [dixonCyclotomicCharacterTableCandidates, List.mem_flatMap, List.mem_map,
-      List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
-    refine ⟨perms, ⟨hperms_first, hperms_injective⟩,
-      fun i ↦ ⟨⟨degree (base i), Nat.lt_succ_of_le
-        (Nat.le_of_dvd Fintype.card_pos (hspec.degree_dvd (base i)))⟩,
-        Fin.ne_of_gt (hspec.degree_pos (base i)), hspec.degree_dvd (base i)⟩, ?_, ?_⟩
-    · exact (base.bijective.sum_comp fun i ↦ degree i ^ 2).trans hspec.sum_degree_sq
-    · have homega (i k : Fin d.numClasses) :
-          Cyclotomic.lift e q.root
-              (fun j ↦ (d.modularCentralRowsList q).getD (perms j i) 0 k) = omega (base i) k := by
-        have hconjugate : (fun j ↦ d.canonicalModularRow q (perms j i) k) =
-            Cyclotomic.conjugateResidues q.root (omega (base i) k) := by
-          funext j
-          rw [← d.modularCentralRowsEquiv_apply q (perms j i)]
-          simp only [perms, Equiv.apply_symm_apply, residueEquiv, residueRow,
-            Equiv.ofBijective_apply]
-        simp only [canonicalModularRow] at hconjugate
-        rw [hconjugate]
-        apply Cyclotomic.lift_conjugateResidues
-          (by simpa only [he] using q.isPrimitiveRoot_root)
-        exact fun l ↦ hcoeff (base i) k l
-      apply CyclotomicCharacterTableData.ext
-      · funext i k
-        simp only [output, Array.getElem_ofFn, Fin.eta]
-        exact homega i k
-      · funext i k
-        simp only [output, Array.getElem_ofFn, Fin.eta]
-        rw [homega]
-        exact d.table_eq_cyclotomicQuotient e hspec (base i) k
-      · funext i
-        rfl
+  obtain ⟨base, perms, hfirst, hinjective, hrows⟩ :=
+    d.exists_perms_canonicalModularRow_eq_conjugateResidues e he q hspec hresidue_injective
   rw [dixonCyclotomicCharacterTable?, List.find?_isSome]
-  exact ⟨output, hcandidate,
-    (d.cyclotomicCharacterTableChecker_eq_true_iff e _ _ _).mpr houtput_spec⟩
+  -- `Matrix.submatrix_apply` holds by `rfl`, so `hcoeff` and `hrows` apply to the permuted rows.
+  exact ⟨⟨omega.submatrix base id, table.submatrix base id, degree ∘ base⟩,
+    d.mem_dixonCyclotomicCharacterTableCandidates e he q (hspec.submatrix base)
+      (fun i k ↦ hcoeff (base i) k) hfirst hinjective hrows,
+    (d.cyclotomicCharacterTableChecker_eq_true_iff e _ _ _).mpr (hspec.submatrix base)⟩
 
 /-- Every conjugate residue row of a successful exact-cyclotomic output is one of the rows
 returned by the modular central-character search. -/

@@ -15,8 +15,8 @@ This file records a criterion for a root of unity congruent to `1` modulo an ide
 
 ## Main results
 
-* `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a domain, a root of unity that is congruent
-  to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
+  root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
 -/
 
 public section
@@ -27,9 +27,9 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
-/-- In a commutative domain, a root of unity that is congruent to `1` modulo an ideal not
-containing its order is equal to `1`. -/
-theorem eq_one_of_pow_eq_one_of_sub_one_mem [IsDomain R] {I : Ideal R} {n : ℕ}
+/-- In a commutative ring without zero divisors, a root of unity that is congruent to `1` modulo an
+ideal not containing its order is equal to `1`. -/
+theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n : ℕ}
     (hn : (n : R) ∉ I) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
   by_contra hne
   have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by

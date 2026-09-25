@@ -30,6 +30,10 @@ namespace OpenNormalSubgroup
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
 
+/-- Open normal subgroups compare through their underlying subgroups. -/
+theorem toSubgroup_le {U V : OpenNormalSubgroup G} : U.toSubgroup ≤ V.toSubgroup ↔ U ≤ V :=
+  Iff.rfl
+
 /-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
 def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
     OpenNormalSubgroup G where

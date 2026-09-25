@@ -34,6 +34,8 @@ Number Theory*, Chapter 6.
   attached to the prime discriminant `P`.
 * `TauCeti.Multiquadratic.primeDiscriminantChar_apply_int`: its value on an integer is
   `primeDiscriminantCharFun P`.
+* `TauCeti.Multiquadratic.isQuadratic_primeDiscriminantChar`: it takes only the values
+  `0`, `1`, `-1`.
 * `TauCeti.Multiquadratic.isPrimitive_primeDiscriminantChar`: its conductor is `|P|`.
 -/
 
@@ -99,6 +101,28 @@ theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
   refine MulChar.ne_one_iff.mpr ⟨haunit.unit, ?_⟩
   rw [IsUnit.unit_spec, primeDiscriminantChar_apply_int, ha]
   norm_num
+
+/-- The Dirichlet character attached to a prime discriminant is quadratic. -/
+theorem isQuadratic_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
+    (primeDiscriminantChar P hP).IsQuadratic := by
+  let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
+  intro a
+  by_cases ha : IsUnit a
+  · have haunit : IsUnit ((a.val : ℕ) : ZMod P.natAbs) := by
+      simpa only [ZMod.natCast_zmod_val] using ha
+    have hcop : IsCoprime (a.val : ℤ) P := by
+      simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using
+        (ZMod.isUnit_iff_coprime a.val P.natAbs).mp haunit
+    have hval : primeDiscriminantChar P hP a =
+        primeDiscriminantCharFun P (a.val : ℤ) := by
+      calc
+        _ = primeDiscriminantChar P hP (a.val : ZMod P.natAbs) :=
+          congrArg _ (ZMod.natCast_zmod_val a).symm
+        _ = _ := by simpa only [Int.cast_natCast] using
+          primeDiscriminantChar_apply_int P hP (a.val : ℤ)
+    rw [hval]
+    exact Or.inr (primeDiscriminantCharFun_eq_one_or_eq_neg_one hP hcop)
+  · exact Or.inl (MulChar.map_nonunit _ ha)
 
 /-- **The Dirichlet character of a prime discriminant is primitive.** Its conductor is exactly
 the absolute value of the prime discriminant. -/

@@ -143,7 +143,6 @@ theorem exists_isGroupLikeElem_coact_eq_tmul_of_mem_range {v : M} (hv : v ≠ 0)
       TensorProduct.map (k ∙ v).subtype (LinearMap.id : C →ₗ[k] C) w = v ⊗ₜ[k] contract w := by
     intro w
     induction w with
-    | zero => simp
     | tmul x c =>
         have hx : (x : M) = phi (x : M) • v := by
           obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp x.2

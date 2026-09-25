@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 Over an algebraically closed field of characteristic not two, a regular finite-dimensional
 quadratic form is determined up to equivalence by its dimension.  In particular, every form on a
-space of dimension at least two is isotropic.  These facts justify the omission of complex places
-from the local predicates used by the global local-to-global theory.
+space of dimension at least two is isotropic, and a regular form is isometric to the standard sum
+of squares on `Fin n` exactly when its dimension is `n`.  These facts justify the omission of
+complex places from the local predicates used by the global local-to-global theory.
 
 The same classification also determines representation: one regular form embeds isometrically
 in another exactly when its dimension is no larger, and a regular form represents every scalar
@@ -102,6 +103,21 @@ their dimensions agree. -/
   · rintro ⟨e⟩
     exact e.toLinearEquiv.finrank_eq
   · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
+
+/-- Over an algebraically closed field a regular quadratic form is isometric to the standard sum
+of squares on `Fin n` exactly when its space has dimension `n`. -/
+@[simp]
+theorem _root_.QuadraticForm.equivalent_weightedSumSquares_one_iff_finrank_eq
+    {K W : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
+    [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) (n : ℕ) :
+    Q.Equivalent (weightedSumSquares K (1 : Fin n → K)) ↔ Module.finrank K W = n := by
+  constructor
+  · rintro ⟨e⟩
+    rw [e.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
+  · rintro rfl
+    exact Q.equivalent_weightedSumSquares_of_isAlgClosed
+      (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
 
 /-- A nonzero quadratic form over an algebraically closed field represents every scalar. -/
 theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed

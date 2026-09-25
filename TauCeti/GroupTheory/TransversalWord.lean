@@ -6,6 +6,8 @@ Authors: Claude
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import TauCeti.GroupTheory.Index.Two
+import Mathlib.GroupTheory.IndexNormal
 import Mathlib.Tactic.Group
 
 /-!
@@ -28,8 +30,11 @@ namely `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
-`TauCeti.transversalDiff_mul_lWord`). Continuity of `γ ↦ ℓᵗ_u(γ)` for an open subgroup of a
-topological group is `TauCeti.continuous_lWord`, in
+`TauCeti.transversalDiff_mul_lWord`), and computes the word for a subgroup of index two at the
+two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element `γ` of the
+subgroup it is `γ` at the trivial coset and `s⁻¹ * γ * s` at the other, and on an element outside
+it is `γ * s` and `s⁻¹ * γ` respectively. Continuity of `γ ↦ ℓᵗ_u(γ)` for
+an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
 The transversal is a variable throughout, and no condition is imposed on it except where one is
@@ -144,5 +149,87 @@ theorem transversalDiff_mul_lWord (u : G ⧸ U) (γ : G) :
       lWord U t u γ * transversalDiff U t t' (γ⁻¹ • u) := by
   rw [transversalDiff_def, transversalDiff_def, lWord_def, lWord_def]
   group
+
+end TauCeti
+
+/-! ### The two-element transversal of a subgroup of index two -/
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] {U : Subgroup G}
+
+open scoped Classical in
+/-- The map `G ⧸ U → G` sending the coset of `1` to `1` and every other coset to `s`. For a
+subgroup `U` of index two and `s ∉ U` it is the transversal `{1, s}`
+(`Subgroup.indexTwoTransversal_mk`), the one on which the index-two corestriction formulas are
+computed. -/
+noncomputable def indexTwoTransversal (U : Subgroup G) (s : G) : G ⧸ U → G :=
+  fun u => if u = QuotientGroup.mk 1 then 1 else s
+
+/-- The two-element transversal sends the trivial coset to `1`. -/
+@[simp]
+theorem indexTwoTransversal_mk_one (s : G) :
+    U.indexTwoTransversal s (QuotientGroup.mk 1) = 1 :=
+  ite_eq_left rfl
+
+/-- The two-element transversal sends every nontrivial coset to `s`. -/
+@[simp]
+theorem indexTwoTransversal_of_ne (s : G) {u : G ⧸ U} (hu : u ≠ QuotientGroup.mk 1) :
+    U.indexTwoTransversal s u = s :=
+  ite_eq_right hu
+
+/-- For a subgroup of index two and `s ∉ U`, `U.indexTwoTransversal s` is a transversal. -/
+@[simp]
+theorem indexTwoTransversal_mk (hU : U.index = 2) {s : G} (hs : s ∉ U) (u : G ⧸ U) :
+    (QuotientGroup.mk (U.indexTwoTransversal s u) : G ⧸ U) = u := by
+  rcases TauCeti.eq_mk_one_or_eq_mk_of_index_two hU hs u with rfl | rfl
+  · rw [indexTwoTransversal_mk_one]
+  · rw [indexTwoTransversal_of_ne s (TauCeti.mk_ne_mk_one_of_notMem hs)]
+
+end Subgroup
+
+namespace TauCeti
+
+variable {G : Type*} [Group G] {U : Subgroup G}
+
+/-- At the trivial coset, the transversal word of `U.indexTwoTransversal s` on an element of `U`
+is that element. -/
+@[simp]
+theorem lWord_indexTwoTransversal_mk_one_of_mem (s : G) {γ : G} (hγ : γ ∈ U) :
+    lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ = γ := by
+  rw [lWord_mk_one_of_mem U _ hγ, Subgroup.indexTwoTransversal_mk_one, inv_one, one_mul, mul_one]
+
+/-- At the coset of `s`, the transversal word of `U.indexTwoTransversal s` on an element `γ` of a
+subgroup `U` of index two is the conjugate `s⁻¹ * γ * s`. -/
+@[simp]
+theorem lWord_indexTwoTransversal_mk_of_mem (hU : U.index = 2) {s : G} (hs : s ∉ U) {γ : G}
+    (hγ : γ ∈ U) :
+    lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ = s⁻¹ * γ * s := by
+  have hcoset : γ⁻¹ • (QuotientGroup.mk s : G ⧸ U) = QuotientGroup.mk s := by
+    rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq]
+    have h : (γ⁻¹ * s)⁻¹ * s = s⁻¹ * γ * s := by group
+    rw [h]
+    exact (Subgroup.normal_of_index_eq_two hU).conj_mem' γ hγ s
+  rw [lWord_def, hcoset, Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs)]
+
+/-- At the trivial coset, the transversal word of `U.indexTwoTransversal s` on an element `γ`
+outside a subgroup `U` of index two is `γ * s`. -/
+@[simp]
+theorem lWord_indexTwoTransversal_mk_one_of_notMem (hU : U.index = 2) {s : G} (hs : s ∉ U)
+    {γ : G} (hγ : γ ∉ U) :
+    lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ = γ * s := by
+  rw [lWord_def, smul_mk_one_of_notMem_of_index_two hU hs (mt U.inv_mem_iff.1 hγ),
+    Subgroup.indexTwoTransversal_mk_one,
+    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs), inv_one, one_mul]
+
+/-- At the coset of `s`, the transversal word of `U.indexTwoTransversal s` on an element `γ`
+outside a subgroup `U` of index two is `s⁻¹ * γ`. -/
+@[simp]
+theorem lWord_indexTwoTransversal_mk_of_notMem (hU : U.index = 2) {s : G} (hs : s ∉ U)
+    {γ : G} (hγ : γ ∉ U) :
+    lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ = s⁻¹ * γ := by
+  rw [lWord_def, smul_mk_of_notMem_of_index_two hU hs (mt U.inv_mem_iff.1 hγ),
+    Subgroup.indexTwoTransversal_mk_one,
+    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs), mul_one]
 
 end TauCeti

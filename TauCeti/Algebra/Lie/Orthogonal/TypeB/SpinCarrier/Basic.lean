@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
@@ -12,6 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWe
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
@@ -41,6 +43,8 @@ subgroups is separate from this carrier construction.
 * `TauCeti.TypeBSpinCarrier.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints`: the torus conjugation
   equation on matrix-valued points.
+* `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
+  simple generator acts on the spin module by creation and contraction of exterior coordinates.
 
 ## References
 
@@ -125,6 +129,15 @@ theorem isNilpotent_rep_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k⟩
 
+/-- Every represented numbered root generator has nilpotency class at most two. -/
+theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    nilpotencyClass (rep n
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
+  Nat.sInf_le ((polarization n).typeBSpinRep_simpleRootGenerator_sq
+    (polarizationBasis n) (remainderOne n)
+    (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k)
+
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice
     (u : _root_.UniversalEnvelopingAlgebra ℚ
@@ -136,6 +149,56 @@ theorem rep_kostantForm_mem_lattice
   (polarization n).typeBSpinRep_kostantForm_apply_mem_integralLattice
     (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) hu hv
+
+/-! ## The represented simple generators as exterior operators -/
+
+/-- A nonterminal raising generator contracts the next exterior coordinate and creates its own. -/
+theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inl j.castSucc))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n j.castSucc) *
+        CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.succ) x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_castSucc]
+  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+
+/-- A nonterminal lowering generator contracts its own exterior coordinate and creates the next
+one. -/
+theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inr j.castSucc))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n j.succ) *
+        CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.castSucc) x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inr,
+    TauCeti.typeBSimpleNegativeRootGenerator_castSucc]
+  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+
+/-- The terminal raising generator creates the final exterior coordinate after the grade
+involution. -/
+theorem rep_rootGenerator_inl_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inl (Fin.last n)))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n (Fin.last n)) * CliffordAlgebra.involute x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_last]
+  have h := SpinPolarizationData.typeBSpinRep_shortRootGenerator_apply (polarization n)
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (Fin.last n) x
+  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
+
+/-- The terminal lowering generator contracts the final exterior coordinate and applies the grade
+involution. -/
+theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inr (Fin.last n)))) x =
+      CliffordAlgebra.involute
+        (CliffordAlgebra.contractLeft ((polarizationBasis n).coord (Fin.last n)) x) := by
+  -- `rw` with the terminal-generator equation times out on the concrete carrier here, while
+  -- `simp only` performs the same rewrite.
+  simp only [TauCeti.typeBSimpleRootGeneratorFamily_inr,
+    TauCeti.typeBSimpleNegativeRootGenerator_last]
+  have h := SpinPolarizationData.typeBSpinRep_shortNegativeRootGenerator_apply (polarization n)
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (Fin.last n) x
+  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
 
 /-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
 theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :
@@ -177,6 +240,68 @@ theorem span_range_basisWeight_eq_top :
     · rintro ⟨s, rfl⟩
       exact ⟨Fintype.equivFin (Finset (Fin (n + 1))) s, by simp [signSet]⟩
   rw [hrange, TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top]
+
+/-- The exterior basis vector of the singleton `{i}` has weight `1` at the simple coroot `hᵢ`, so
+the represented coroot is nonzero. -/
+private theorem rep_coroot_ne_zero (i : Fin (n + 1)) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)) ≠ 0 := by
+  intro hzero
+  have hweight :=
+    (isCartanWeightVector_iff (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)).1
+      (isCartanWeightVector_latticeBasis n (Fintype.equivFin (Finset (Fin (n + 1))) {i})) i
+  rw [hzero, LinearMap.zero_apply, coe_latticeBasis] at hweight
+  simp only [basisWeight, signSet, Equiv.symm_apply_apply] at hweight
+  have hone : TauCeti.DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
+    rw [TauCeti.DynkinType.typeBSpinWeight_apply]
+    by_cases hnext : (i : ℕ) + 1 < n + 1
+    · have hnotmax : ¬IsMax i :=
+        not_isMax_of_lt (b := (⟨(i : ℕ) + 1, hnext⟩ : Fin (n + 1))) (by simp [Fin.lt_def])
+      have hsucc : Order.succ i ∉ ({i} : Finset (Fin (n + 1))) := by
+        rw [Finset.mem_singleton, Order.succ_eq_iff_isMax]
+        exact hnotmax
+      simp [hnext, hsucc]
+    · simp [hnext]
+  rw [hone] at hweight
+  simp only [Int.cast_one, one_smul] at hweight
+  exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} hweight.symm
+
+/-- The represented positive and negative simple generators at a common type-`B` node, together
+with the represented simple coroot, form an `sl_2` triple. -/
+theorem isSl2Triple_rep_rootGenerator (i : Fin (n + 1)) :
+    _root_.IsSl2Triple
+      (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)))
+      (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inl i))))
+      (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inr i)))) := by
+  let φ := (polarization n).typeBSpinLieRep (polarizationBasis n) (remainderOne n)
+    (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+  have hrep (x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ) :
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) = φ x := by
+    rw [_root_.UniversalEnvelopingAlgebra.ι_apply, rep, SpinPolarizationData.typeBSpinRep_ι,
+      SpinPolarizationData.typeBSpinLieRep_apply]
+  have hh : φ (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i) ≠ 0 := by
+    rw [← hrep]
+    exact rep_coroot_ne_zero n i
+  have hsource :
+      _root_.IsSl2Triple
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)
+        (TauCeti.typeBSimpleRootGenerator (K := ℚ) i)
+        (TauCeti.typeBSimpleNegativeRootGenerator (K := ℚ) i) := {
+    h_ne_zero := fun hzero ↦ hh (by simp [hzero])
+    lie_e_f := TauCeti.typeBSimpleRootGenerator_lie_negative i
+    lie_h_e_nsmul := by
+      rw [TauCeti.typeBSimpleCorootGenerator_lie_root, CartanMatrix.B_diag]
+      rfl
+    lie_h_f_nsmul := by
+      rw [TauCeti.typeBSimpleCorootGenerator_lie_negativeRoot, CartanMatrix.B_diag]
+      rfl
+  }
+  have htriple := hsource.map φ hh
+  simpa only [hrep, TauCeti.typeBSimpleRootGeneratorFamily_inl,
+    TauCeti.typeBSimpleRootGeneratorFamily_inr] using htriple
 
 /-! ## The closed carrier and its pinned generators -/
 
@@ -394,6 +519,16 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin (n + 1) → Aˣ
 def rootWeight : Fin (n + 1) ⊕ Fin (n + 1) → Fin (n + 1) → ℤ
   | .inl i => CartanMatrix.B (n + 1) i
   | .inr i => -CartanMatrix.B (n + 1) i
+
+/-- The weight of a positive numbered simple-root generator is its row of the Cartan matrix. -/
+@[simp]
+theorem rootWeight_inl (i : Fin (n + 1)) : rootWeight n (.inl i) = CartanMatrix.B (n + 1) i :=
+  (rfl)
+
+/-- The weight of a negative numbered simple-root generator is the negated Cartan row. -/
+@[simp]
+theorem rootWeight_inr (i : Fin (n + 1)) : rootWeight n (.inr i) = -CartanMatrix.B (n + 1) i :=
+  (rfl)
 
 /-- Each numbered root generator is a weight vector for the simple coroots. -/
 theorem lie_coroot_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) (j : Fin (n + 1)) :

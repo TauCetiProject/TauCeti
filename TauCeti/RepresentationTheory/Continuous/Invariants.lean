@@ -17,6 +17,11 @@ action of `G` on it factors through `G ⧸ S`. This file builds that `G ⧸ S`-r
 the unbundled language and in the category `TopRep`, together with the inclusion of the invariants
 back into the ambient object.
 
+It also provides the elementary continuous linear equivalence between an additive subgroup of a
+topological additive group and the invariants of a continuous representation when their underlying
+elements agree. This coefficient-level identification is independent of the quotient-representation
+construction.
+
 These are the continuous counterparts of Mathlib's `Representation.toInvariants`,
 `Representation.quotientToInvariants`, `Representation.quotientToInvariants_lift` and
 `Rep.quotientToInvariantsFunctor`. They are the coefficient half of inflation: the compatible pair
@@ -25,6 +30,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main definitions
 
+* `AddSubgroup.continuousLinearEquivInvariants`: an additive subgroup is continuously linearly
+  equivalent to a representation's invariants when membership agrees.
 * `ContRepresentation.toInvariants`: the representation of `G` on the invariants of `π|_S`.
 * `ContRepresentation.quotientToInvariants`: the representation of `G ⧸ S` on the
   invariants of `π|_S`.
@@ -44,13 +51,40 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 * `TopRep.isIso_invariantsResMap_quotientToInvariantsι`: taking quotient invariants and then
   invariants under the quotient recovers the original invariants.
 
-These declarations live in the root `ContRepresentation` and `TopRep` namespaces, rather than
-under `TauCeti`, so that dot notation on the Mathlib types they extend elaborates.
+These declarations live in the root `AddSubgroup`, `ContRepresentation` and `TopRep` namespaces,
+rather than under `TauCeti`, so that dot notation on the Mathlib types they extend elaborates.
 -/
 
 public section
 
 open CategoryTheory TauCeti.ContRepresentation
+
+namespace AddSubgroup
+
+variable {G M : Type*} [Monoid G] [AddCommGroup M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M]
+
+/-- An additive subgroup of a topological additive group is continuously linearly equivalent to the
+invariants of a continuous representation when they have the same underlying elements. -/
+def continuousLinearEquivInvariants (S : AddSubgroup M) (pi : ContRepresentation ℤ G M)
+    (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) : S ≃L[ℤ] pi.invariants :=
+  ContinuousLinearEquiv.ofEq S.toIntSubmodule pi.invariants
+    (SetLike.ext fun m ↦ (h m).symm)
+
+@[simp]
+theorem continuousLinearEquivInvariants_val (S : AddSubgroup M)
+    (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) (m : S) :
+    (S.continuousLinearEquivInvariants pi h m).1 = m.1 :=
+  (rfl)
+
+@[simp]
+theorem continuousLinearEquivInvariants_symm_val (S : AddSubgroup M)
+    (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S)
+    (m : pi.invariants) :
+    ((S.continuousLinearEquivInvariants pi h).symm m).1 = m.1 :=
+  (rfl)
+
+end AddSubgroup
 
 namespace ContRepresentation
 
@@ -155,9 +189,14 @@ counterpart of `Representation.quotientToInvariants_lift`. -/
     { toContinuousLinearMap := (X.ρ.restrict S.subtype).invariants.subtypeL
       isIntertwining' _ := by ext v; simp [ContRepresentation.restrict_apply_apply] }
 
+-- `simp` reduces the carriers of the `abbrev`s `TopRep.quotientToInvariants` and `TopRep.res`, and
+-- the `abbrev` functor `TopRep.resFunctor`, in implicit type arguments before it looks a term up,
+-- so the `simp` lemmas below state their left-hand sides through `dsimp% only`, as in #8315.
+/-- The inclusion of the `S`-invariants into the ambient object sends an invariant vector to
+itself. -/
 @[simp]
 theorem quotientToInvariantsι_apply (v : (X.ρ.restrict S.subtype).invariants) :
-    quotientToInvariantsι X S v = (v : X) :=
+    (dsimp% only (quotientToInvariantsι X S v)) = (v : X) :=
   (rfl)
 
 -- Exposed: the `rfl`-proof of `coe_quotientToInvariantsMap_apply` below reads off the underlying
@@ -171,10 +210,14 @@ theorem quotientToInvariantsι_apply (v : (X.ρ.restrict S.subtype).invariants) 
         ext v
         simpa [ContIntertwiningMap.mapInvariants_apply] using f.hom.isIntertwining g (v : X) }
 
+/-- The restriction of a morphism `f : X ⟶ Y` to the `S`-invariants sends an invariant vector `v`
+to `f v`. -/
 @[simp]
 theorem coe_quotientToInvariantsMap_apply {X Y : TopRep R G} (f : X ⟶ Y)
     (v : (X.ρ.restrict S.subtype).invariants) :
-    ((quotientToInvariantsMap f S v : (Y.ρ.restrict S.subtype).invariants) : Y) = f.hom (v : X) :=
+    (dsimp% only
+        ((quotientToInvariantsMap f S v : (Y.ρ.restrict S.subtype).invariants) : Y)) =
+      f.hom (v : X) :=
   (rfl)
 
 @[simp]
@@ -192,10 +235,11 @@ theorem quotientToInvariantsMap_comp {X Y Z : TopRep R G} (f : X ⟶ Y) (g : Y �
 /-- The inclusion of the invariants is natural: restricting `f : X ⟶ Y` to the `S`-invariants and
 then including into `Y` is including into `X` and then applying `f`. This is the square that makes
 the compatible pair defining inflation natural in the coefficients. -/
-@[reassoc, simp]
+@[reassoc (attr := simp)]
 theorem quotientToInvariantsMap_comp_quotientToInvariantsι {X Y : TopRep R G} (f : X ⟶ Y) :
-    (resFunctor (QuotientGroup.mk' S : G →* G ⧸ S)).map (quotientToInvariantsMap f S) ≫
-        quotientToInvariantsι Y S = quotientToInvariantsι X S ≫ f := by
+    (dsimp% only ((resFunctor (QuotientGroup.mk' S : G →* G ⧸ S)).map
+        (quotientToInvariantsMap f S) ≫ quotientToInvariantsι Y S)) =
+      quotientToInvariantsι X S ≫ f := by
   ext v
   rfl
 

@@ -203,8 +203,8 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
   have hgu_int : ∫⁻ x in (V : Set E), ‖gu x‖ₑ ∂mu ≠ ∞ := by
     have h1 : MemLp gu 1 (mu.restrict (V : Set E)) :=
       ((Lp.memLp (W1p.gradient u)).mono_measure hres).mono_exponent Fact.out
-    have h2 := h1.2
-    rwa [eLpNorm_one_eq_lintegral_enorm, lt_top_iff_ne_top] at h2
+    rw [← eLpNorm_one_eq_lintegral_enorm h1.aestronglyMeasurable]
+    exact h1.ne
   -- approximation by test functions on `Ω`
   obtain ⟨a, ha_mem, ha_tendsto⟩ := mem_closure_iff_seq_limit.mp
     (W1p.restrictL_mem_closure_range_ofTestFunctionₗ hp hVc hVO u)
@@ -231,9 +231,9 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
   -- an almost-everywhere convergent subsequence of the values
   have hInMeas : TendstoInMeasure (mu.restrict (V : Set E))
       (fun n => ⇑(W1p.value (a n))) atTop fu := by
-    refine tendstoInMeasure_of_tendsto_eLpNorm (p := 1) one_ne_zero
-      (fun n => Lp.aestronglyMeasurable _) hfu_meas ?_
-    simpa only [eLpNorm_one_eq_lintegral_enorm, Pi.sub_apply] using hval1
+    refine tendstoInMeasure_of_tendsto_eLpNorm (p := 1) one_ne_zero (hval1.congr fun n => ?_)
+    rw [eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).sub hfu_meas)]
+    simp only [Pi.sub_apply]
   obtain ⟨ns, hns, hns_ae⟩ := hInMeas.exists_seq_tendsto_ae
   have hsub : ∀ h : ℕ → ℝ≥0∞, Tendsto h atTop (𝓝 0) → Tendsto (fun i => h (ns i)) atTop (𝓝 0) :=
     fun h hh => hh.comp hns.tendsto_atTop
@@ -622,8 +622,8 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
   have hgu_int : ∫⁻ x in (V : Set E), ‖W1p.gradient u x‖ₑ ∂mu ≠ ∞ := by
     have h1 : MemLp (⇑(W1p.gradient u)) 1 (mu.restrict (V : Set E)) :=
       ((Lp.memLp (W1p.gradient u)).mono_measure hres).mono_exponent Fact.out
-    have h2 := h1.2
-    rwa [eLpNorm_one_eq_lintegral_enorm, lt_top_iff_ne_top] at h2
+    rw [← eLpNorm_one_eq_lintegral_enorm h1.aestronglyMeasurable]
+    exact h1.ne
   -- the values converge uniformly, hence in `L¹(V)`
   have hconv1 : Tendsto (fun n => ∫⁻ x in (V : Set E),
       ‖posPartApprox (d n) (W1p.value u x - k) - max (W1p.value u x - k) 0‖ₑ ∂mu)

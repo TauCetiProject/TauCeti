@@ -87,8 +87,7 @@ private theorem assoc_rTensor_transportCoact (e : M ≃ₗ[R] N) (t : M ⊗[R] C
       = TensorProduct.assoc R N C C
           (TensorProduct.map (TensorProduct.map e.toLinearMap LinearMap.id) LinearMap.id
             ((coact (R := R) (C := C) (M := M)).rTensor C t)) := by
-          induction t using TensorProduct.induction_on with
-          | zero => simp [transportCoact, LinearMap.rTensor]
+          induction t using TensorProduct.inductionOn with
           | tmul m c => simp [transportCoact, LinearMap.rTensor]
           | add x y hx hy => simpa using congrArg₂ (· + ·) hx hy
     _ = TensorProduct.map e.toLinearMap (TensorProduct.map LinearMap.id LinearMap.id)
@@ -102,8 +101,7 @@ private theorem comul_lTensor_transport_map (e : M ≃ₗ[R] N) (t : M ⊗[R] C)
     Coalgebra.comul.lTensor N (TensorProduct.map e.toLinearMap LinearMap.id t) =
       TensorProduct.map e.toLinearMap (TensorProduct.map LinearMap.id LinearMap.id)
         (Coalgebra.comul.lTensor M t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -111,8 +109,7 @@ omit [Comodule R C M] in
 private theorem counit_lTensor_transport_map (e : M ≃ₗ[R] N) (t : M ⊗[R] C) :
     Coalgebra.counit.lTensor N (TensorProduct.map e.toLinearMap LinearMap.id t) =
       TensorProduct.map e.toLinearMap LinearMap.id (Coalgebra.counit.lTensor M t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy => simp [hx, hy]
 

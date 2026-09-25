@@ -1,0 +1,313 @@
+name: Daily full lint
+
+# The daily full environment lint. PR builds, the merge queue and post-merge CI lint only the
+# TauCeti modules a change touches (scripts/lint-scope.sh), so a change that breaks lint somewhere
+# else lands on main. This finds it: it lints the whole library at main's tip and, if there are
+# violations not in the grandfathered baseline, opens a repair PR on `lint-repair/main`. That PR
+# starts as an empty commit labelled `full-lint`, so its pr-build is the full lint and shows what
+# to repair; TauCetiWorker's `lint-repair` stage adapts TauCeti/ until it is green, and it merges
+# through the normal review and merge queue, like the daily Mathlib bump (update.yml). While a
+# repair PR is open, later runs comment the current violations on it instead of opening another.
+# stuck_alerts.py raises a Zulip alert when a repair PR stays open too long.
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-full
+  cancel-in-progress: false
+
+env:
+  MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    outputs:
+      outcome: ${{ steps.lint.outputs.outcome }}
+      sha: ${{ steps.lint.outputs.sha }}
+      report: ${{ steps.lint.outputs.report }}
+    steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+      - uses: actions/checkout@v4
+        with:
+          # As in ci.yml: this job runs TauCeti code, so keep GITHUB_TOKEN out of .git/config.
+          persist-credentials: false
+          # Enough history for `lake cache get` to backtrack to a recently-published
+          # ancestor commit (its `--max-revs`) when the tip itself has no mapping yet.
+          # Harmless (just a slightly deeper fetch) when the cache is off.
+          fetch-depth: 100
+
+      - name: Infrastructure policy unit tests
+        run: |
+          PYTHONPATH=scripts python3 scripts/test_loc_graph.py
+          PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
+          PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
+          PYTHONPATH=scripts python3 scripts/test_participant_graph.py
+          PYTHONPATH=scripts python3 scripts/test_pr_stats_graphs.py
+          PYTHONPATH=scripts python3 scripts/test_pr_lifecycle.py
+          PYTHONPATH=scripts python3 scripts/test_pipeline_health.py
+          python3 scripts/pr_status/test_stuck_alerts.py
+          python3 scripts/test_roadmap_label.py
+          PYTHONPATH=scripts python3 scripts/test_housekeeping.py
+          python3 scripts/pr_status/test_pr_labels.py
+          python3 scripts/pr_status/test_zulip.py
+          python3 scripts/pr_status/test_conflicts.py
+          python3 scripts/test_structure_nudge.py
+          python3 scripts/test_workflow_pins.py
+          python3 scripts/test_queue_release.py
+          python3 scripts/test_bwrap_pin.py
+          PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_build_lint_driver.py
+          python3 scripts/test_elan_pin.py
+          python3 scripts/test_duplicate_audit_workflow.py
+          python3 scripts/test_web_pins.py
+          python3 scripts/test_attest_pr_config.py
+          python3 scripts/test_profile_workflow.py
+          python3 scripts/test_lake_cache_probe.py
+          python3 scripts/test_lake_cache_get.py
+          python3 scripts/test_lake_cache_reuse.py
+          PYTHONPATH=. python3 scripts/perf/test_perf.py
+          PYTHONPATH=scripts python3 scripts/test_claims_access.py
+          python3 scripts/test_lint_dot_notation.py
+          python3 scripts/test_check_expired_mathlib_shims.py
+          python3 scripts/test_toolchain_tags.py
+
+      # The two-library split is build convenience, not a trust boundary.
+      # This guard is what actually stops the AI-owned library from inheriting
+      # sorried declarations: TauCeti/ may not import the roadmap/review trees.
+      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
+        run: |
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' TauCeti/ TauCeti.lean; then
+            echo "::error::TauCeti/ and TauCeti.lean must not import TauCetiRoadmap or TauCetiReview"
+            exit 1
+          fi
+
+      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
+      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
+      # import guard it is a textual scan that needs no elaboration, so it runs trusted and
+      # outside the sandbox.
+      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+        run: |
+          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
+            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
+            exit 1
+          fi
+
+      # Restore only Mathlib's compressed, content-addressed `.ltar` download store. This is
+      # deliberately narrower than a cache of the whole multi-gigabyte `./.lake` tree: `lake exe
+      # cache get` remains authoritative, locally selects and unpacks the linked hashes, and
+      # downloads anything this best-effort snapshot does not contain. The exact key makes a
+      # repeated pin cheap; the same-toolchain prefix lets a new Mathlib pin reuse unchanged
+      # blobs. The local action credits the corresponding Mathlib design and owns the shared key
+      # namespace. Bump its `mathlib-ltar-v1` token if an incompatible or poisoned immutable entry
+      # must be abandoned.
+      - name: Restore Mathlib's compressed download cache
+        id: mathlib_ltar_restore
+        uses: ./.github/actions/restore-mathlib-ltars
+        with:
+          project-dir: .
+
+      # Install elan from a pinned leanprover/elan release, verified by SHA-256, then install the
+      # toolchain `lean-toolchain` names. This replaces leanprover/lean-action, which resolved
+      # from a floating major tag and installed elan by piping an unpinned installer to `sh`; with
+      # its build, test, lint and cache inputs all off, toolchain setup was all it did here. The
+      # Mathlib fetch stays an explicit step below so a failed normal fetch can be retried with
+      # `get!`, which force-downloads and unpacks every linked file instead of trusting a possibly
+      # malformed restored `.ltar`. scripts/test_elan_pin.py keeps the copies of the pin honest.
+      - name: Install elan (pinned + checksum) and the toolchain
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install "$(cat lean-toolchain)"
+          lean --version
+          lake --version
+
+      - name: Fetch Mathlib oleans, retrying with a forced full refetch
+        run: |
+          if ! lake exe cache get; then
+            echo "::warning::lake exe cache get failed; forcing a full refetch"
+            lake exe cache get!
+          fi
+
+      # --- Lake artifact-cache restore (dormant until configured) --------------------
+      # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
+      # this, the post-merge run recompiled the whole library from scratch on every push,
+      # spending about 49 minutes to reproduce oleans the merge-queue build had produced
+      # minutes earlier. Because the publisher is serialized, that capped publication at
+      # roughly one snapshot an hour while several commits an hour were landing, and the
+      # permanently stale snapshot is what pushed merge-queue builds onto the roughly
+      # 55 minute cold-cache path.
+      # No-op until the LAKE_CACHE_*_PUBLIC repo variables are set, as on the consuming side.
+      - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: |
+          if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
+            {
+              echo "LAKE_CACHE_DIR=$GITHUB_WORKSPACE/.lake/cache"
+              echo "LAKE_ARTIFACT_CACHE=true"
+              echo "LAKE_RESTORE_ARTIFACTS=true"
+              echo "TAUCETI_CACHE_ENABLED=1"
+            } >> "$GITHUB_ENV"
+            echo "::notice::Lake artifact cache enabled — restoring TauCeti's oleans and building incrementally"
+          else
+            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+          fi
+
+      # Anonymous GETs from the PUBLIC read host, the same trusted, publisher-built data
+      # pr-build restores. The shared script retains hash-verified artifacts between attempts,
+      # then discards the partial cache only if every attempt remains incomplete; see its header.
+      #
+      # What this does NOT establish: that a restored module matches what a compile of the
+      # checked-out source would produce. Lake keys artifacts by an input hash that is a single
+      # UInt64 and explicitly not cryptographic (Lake/Build/Trace.lean carries a TODO to replace
+      # it), so content addressing is a deduplication scheme here, not an integrity guarantee.
+      # Restoring on main also gives up main's former role as the one build that took nothing on
+      # faith. nightly-verify.yml reinstates it on a daily cadence: it rebuilds from source with the
+      # cache off and compares the resulting oleans byte for byte against a cache-restored build of
+      # the same commit. That is a detector, not an equivalent guarantee, and its own header spells
+      # out the exposure window it leaves. The two are a pair; do not enable this restore without
+      # that nightly running.
+      - name: Fetch TauCeti's own oleans from the Lake cache
+        if: ${{ env.TAUCETI_CACHE_ENABLED == '1' }}
+        env:
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; the script hands it the endpoints through a `--service` config.
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: bash scripts/lake-cache-get.sh .
+
+      - name: Save verified Lake archive records before building
+        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
+
+      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
+      # The build globs every TauCeti/ module directly, so nothing depends on a root that
+      # re-exports the library.
+      - name: Build
+        env:
+          # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;
+          # never let the build itself reach a remote cache service. Same rule as the
+          # sandboxed build in pr-build.yml and as the publish step below.
+          LAKE_NO_CACHE: "true"
+        run: lake build
+
+      - name: Full environment lint
+        id: lint
+        env:
+          LAKE_NO_CACHE: "true"
+          LINT_ONLY_MODULES: ""
+        run: |
+          # Not -e: a failing lint is classified below, not fatal here.
+          set +e -uo pipefail
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          bash scripts/lint-env.sh 2>&1 | tee "$RUNNER_TEMP/lint-env.log"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" = 0 ]; then
+            echo "outcome=clean" >> "$GITHUB_OUTPUT"
+          elif grep -qE '^LINT-ENV: FAIL — [0-9]+ new violation' "$RUNNER_TEMP/lint-env.log"; then
+            echo "outcome=violations" >> "$GITHUB_OUTPUT"
+            # The new-violation listing, from its heading up to lint-env.sh's advice.
+            report=$(sed -n '/^lint-env: NEW violation/,/^Fix the declaration/p' "$RUNNER_TEMP/lint-env.log" \
+              | sed '$d' | head -c 60000)
+            delim="EOF_$(od -An -N8 -tx8 /dev/urandom | tr -d ' ')"
+            { echo "report<<$delim"; echo "$report"; echo "$delim"; } >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::the full lint failed for a reason other than new violations; see the log"
+            exit 1
+          fi
+
+  repair:
+    needs: lint
+    if: ${{ needs.lint.outputs.outcome == 'violations' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Open or refresh the lint repair PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          MAIN_SHA: ${{ needs.lint.outputs.sha }}
+          REPORT: ${{ needs.lint.outputs.report }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          branch=lint-repair/main
+          {
+            echo "The daily full lint found environment-lint violations on main at $MAIN_SHA that are not"
+            echo "in the grandfathered baseline ($RUN_URL). PR builds lint only the modules a change"
+            echo "touches, so a change can break lint in a module it did not touch."
+            echo
+            echo '```'
+            printf '%s\n' "$REPORT"
+            echo '```'
+          } > report.md
+          # Only the bot's own PR from this repository counts: `gh pr list --head` would also match a
+          # fork's branch of the same name, which would silently suppress the real repair PR.
+          # shellcheck disable=SC2016 # the jq program is single-quoted on purpose
+          existing=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$branch" \
+            --jq '[.[] | select(.head.repo.full_name == $ENV.REPO
+              and .user.login == "tauceti-review-bot[bot]")][0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Repair PR #$existing is already open; commenting the current violations."
+            gh pr comment "$existing" -R "$REPO" --body-file report.md
+            exit 0
+          fi
+          # An empty commit on main's tree: the PR's first build is the full lint (full-lint label
+          # and the lint-repair/ branch both select it), which shows exactly what to repair.
+          tree=$(gh api "repos/$REPO/git/commits/$MAIN_SHA" --jq .tree.sha)
+          commit=$(gh api "repos/$REPO/git/commits" -f message="chore: repair the environment lint on main" \
+            -f tree="$tree" -f "parents[]=$MAIN_SHA" --jq .sha)
+          if gh api "repos/$REPO/git/ref/heads/$branch" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$branch" -f sha="$commit" -F force=true > /dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$commit" > /dev/null
+          fi
+          gh label create full-lint -R "$REPO" --color d93f0b \
+            --description "Lint the whole library, not just the changed modules" 2>/dev/null || true
+          {
+            cat report.md
+            echo
+            echo "Fix TauCeti/ until this PR's build is green; do not edit the baseline or the nolint"
+            echo "allowlist. TauCetiWorker's \`lint-repair\` stage picks this up."
+            echo
+            echo "Roadmap: none"
+          } > body.md
+          gh pr create -R "$REPO" --head "$branch" --base main --label full-lint \
+            --title "fix: repair the environment lint on main" --body-file body.md

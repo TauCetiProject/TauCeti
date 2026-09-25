@@ -22,9 +22,9 @@ it is the one that decides how general the statement is.
 
 So the count is proved once with rationality as a hypothesis, and a closure assumption enters only
 in a corollary. An algebraically closed base gives rationality outright — no extension of it
-carries new torsion — which is `card_ker_mulByIntIsogeny` below. Keeping the hypothesis explicit is
-what lets the count be read at a base where the torsion is rational for some other reason, without
-the argument being repeated.
+carries new torsion — which is `card_ker_mulByIntIsogeny_of_isAlgClosed` below. Keeping the
+hypothesis explicit is what lets the count be read at a base where the torsion is rational for
+some other reason, without the argument being repeated.
 
 The count is made on embeddings, as for `1 − π_q`: an isogeny here has no map on points. Two
 embeddings of `K(W)` over the pulled-back field move the tautological point of `[n]`, which is
@@ -41,12 +41,14 @@ closure of the pulled-back field, so that is where the torsion difference lives.
 
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_torsion_rational`: **`#ker [n] = n ²`** whenever the
   geometric `n`-torsion is rational and `n` is invertible.
-* `TauCeti.Isogeny.card_ker_mulByIntIsogeny`: the same over an algebraically closed field.
-* `WeierstrassCurve.Affine.natCard_torsionBy`: the count read on Mathlib's intrinsic torsion
-  subgroup.
+* `TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_isAlgClosed`: the same over an algebraically closed
+  field.
+* `WeierstrassCurve.Affine.natCard_torsionBy_of_torsion_rational`: the count read on Mathlib's
+  intrinsic torsion subgroup.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny_of_torsion_rational`: the same at a prime, as `ℓ ²`
   rather than `(ℓ : ℤ).natAbs ^ 2`.
-* `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`: its algebraically closed corollary.
+* `WeierstrassCurve.finite_torsionBy`: finiteness of `E[n]` for nonzero `n`, read on
+  `W.toAffine.Point` itself rather than on the trivial base change `W⁄K`.
 
 The three steps of the argument sketched above — the torsion difference, its rationality, and the
 resulting bound on embeddings — are `private`; nothing outside this module uses them.
@@ -143,7 +145,7 @@ open scoped Classical in
 `Isogeny.ker` counts the base field's points, so the count is the degree exactly when the kernel is
 rational and the isogeny separable. Both obstructions are hypotheses here: rationality is `hrat`,
 separability is `hchar`. An algebraically closed base supplies the first for free, which is
-`card_ker_mulByIntIsogeny`. -/
+`card_ker_mulByIntIsogeny_of_isAlgClosed`. -/
 theorem card_ker_mulByIntIsogeny_of_torsion_rational {n : ℤ} {hn : psiFunctionField W n ≠ 0}
     (hrat : ∀ P : (W.baseChange (AlgebraicClosure W.FunctionField)).toAffine.Point, n • P = 0 →
       P ∈ Set.range (Point.baseChange (W' := W) F (AlgebraicClosure W.FunctionField)))
@@ -158,12 +160,16 @@ theorem card_ker_mulByIntIsogeny_of_torsion_rational {n : ℤ} {hn : psiFunction
 
 open scoped Classical in
 /-- **`#ker [n] = n ²`** over an algebraically closed field, for `n` invertible there: no extension
-of an algebraically closed field carries new torsion, which is the rationality the count needs. -/
-theorem card_ker_mulByIntIsogeny [IsAlgClosed F] {n : ℤ} {hn : psiFunctionField W n ≠ 0}
-    (hchar : (n : F) ≠ 0) :
+of an algebraically closed field carries new torsion, which is the rationality the count needs.
+
+This is the form the separability of the division polynomials is counted against, so it is the one
+that cannot ask only for a separably closed base; `card_ker_mulByIntIsogeny` is that stronger
+statement, proved from this one. -/
+theorem card_ker_mulByIntIsogeny_of_isAlgClosed [IsAlgClosed F] {n : ℤ}
+    {hn : psiFunctionField W n ≠ 0} (hchar : (n : F) ≠ 0) :
     Nat.card (mulByIntIsogeny W hn).ker = n.natAbs ^ 2 :=
   card_ker_mulByIntIsogeny_of_torsion_rational W
-    (fun _ hP ↦ W.mem_range_baseChange_of_zsmul_eq_zero
+    (fun _ hP ↦ W.mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed
       (ne_zero_of_psiFunctionField_ne_zero W hn) hP) hchar
 
 end TauCeti.Isogeny
@@ -185,13 +191,6 @@ theorem natCard_torsionBy_of_torsion_rational {n : ℤ}
       (TauCeti.Isogeny.psiFunctionField_ne_zero W hchar),
     TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_torsion_rational W hrat hchar]
 
-/-- **`#E[n] = n ²`** over an algebraically closed field in which `n` is invertible. -/
-theorem natCard_torsionBy [IsAlgClosed F] {n : ℤ} (hchar : (n : F) ≠ 0) :
-    Nat.card (AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n) = n.natAbs ^ 2 := by
-  rw [← TauCeti.Isogeny.ker_mulByIntIsogeny_eq_torsionBy W
-      (TauCeti.Isogeny.psiFunctionField_ne_zero W hchar),
-    TauCeti.Isogeny.card_ker_mulByIntIsogeny W hchar]
-
 open scoped Classical in
 /-- The `n`-torsion of an elliptic curve is finite for every nonzero integer `n`. -/
 theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
@@ -201,6 +200,20 @@ theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
   infer_instance
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, is finite for nonzero `n`. -/
+theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+    Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
+  have h := W.toAffine.finite_torsionBy hn
+  rwa [Affine.baseChange_self] at h
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 
@@ -219,14 +232,6 @@ theorem card_ker_mulByPrimeIsogeny_of_torsion_rational {l : ℕ} [hl : Fact l.Pr
     Nat.card (mulByPrimeIsogeny W l).ker = l ^ 2 := by
   rw [card_ker_mulByIntIsogeny_of_torsion_rational W hrat (by simpa using hchar),
     Int.natAbs_natCast]
-
--- Not `@[simp]`: `mulByPrimeIsogeny` is an `abbrev`, so `simp` sees through it to
--- `card_ker_mulByIntIsogeny` and `simpNF` rejects the pair as duplicates.
-/-- **`#E[ℓ] = ℓ ²`**, for a prime `ℓ` invertible in an algebraically closed base field. -/
-theorem card_ker_mulByPrimeIsogeny [IsAlgClosed F] {l : ℕ} [hl : Fact l.Prime]
-    (hchar : (l : F) ≠ 0) :
-    Nat.card (mulByPrimeIsogeny W l).ker = l ^ 2 := by
-  rw [card_ker_mulByIntIsogeny W (by simpa using hchar), Int.natAbs_natCast]
 
 end TauCeti.Isogeny
 

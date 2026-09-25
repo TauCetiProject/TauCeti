@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
@@ -19,7 +19,7 @@ the first diagonal coefficient by such a chain. Witt cancellation then reduces t
 coefficients by induction.
 
 The lower bound on the rank is necessary for the relation defined in
-`TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain`: a binary step requires two distinct
+`TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic`: a binary step requires two distinct
 coordinates, so in rank one a diagonal chain is equality of coefficients, whereas isometry only
 determines their square classes. That boundary is recorded there by
 `TauCeti.diagonalChain_fin_one_iff_eq`.

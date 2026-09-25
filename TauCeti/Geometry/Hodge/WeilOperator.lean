@@ -263,7 +263,6 @@ theorem realPointsEquiv_baseChange_realAlmostComplexStructure_apply
         ((LinearMap.baseChange ℂ (hs.realAlmostComplexStructure hn).toLinearMap) x) =
       hs.weilOperator (realPointsEquiv ω.involutive x) := by
   induction x with
-  | zero => simp
   | tmul c x =>
       rw [LinearMap.baseChange_tmul, realPointsEquiv_tmul, realPointsEquiv_tmul,
         coe_realAlmostComplexStructure_apply, map_smul]

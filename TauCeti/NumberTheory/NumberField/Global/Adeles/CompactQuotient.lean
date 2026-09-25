@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 
+import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!

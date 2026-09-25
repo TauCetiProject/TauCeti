@@ -1,0 +1,90 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Codex
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
+public import TauCeti.AlgebraicGeometry.TangentSpace.Dimension
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
+import TauCeti.RingTheory.FiniteType.PointSeparation
+
+/-!
+# Krull dimension and Lie dimension of an affine group
+
+For an affine group of finite type over an algebraically closed field, translation identifies
+the heights of all maximal ideals with the height of the augmentation ideal. Thus the dimension
+of the group is its local dimension at the identity. Krull's height theorem bounds this by the
+dimension of its Lie algebra, with equality exactly when the local ring at the identity is
+regular. No reducedness, smoothness, or connectedness is assumed.
+
+These are the dimension comparisons underlying the tangent-space criterion for smoothness.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §10.a.
+* M. F. Atiyah and I. G. Macdonald, *Introduction to Commutative Algebra*, Chapter 11.
+-/
+
+public section
+
+open AlgebraicGeometry
+
+namespace TauCeti.HopfAlgebra
+
+variable {k H : Type*} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
+  [IsAlgClosed k] [Algebra.FiniteType k H]
+
+/-- The dimension of an affine group over an algebraically closed field equals the height of
+its augmentation ideal. -/
+theorem ringKrullDim_eq_height_augmentation :
+    ringKrullDim H = (Bialgebra.AugmentationIdeal k H).height := by
+  apply le_antisymm
+  · apply (ringKrullDim_le_iff_isMaximal_height_le _).mpr
+    intro m hm
+    let _ := hm
+    obtain ⟨g, hmg, -⟩ := exists_algHom_apply_ne_zero_of_notMem_radical
+      (k := k) (K := k) m (x := 1) (by simpa only [hm.isPrime.radical] using m.one_notMem)
+    have hker : RingHom.ker (g : H →+* k) = m := by
+      exact (hm.eq_of_le (RingHom.ker_ne_top g.toRingHom) hmg).symm
+    rw [← hker, height_kernel_eq_height_augmentation]
+  · exact Ideal.height_le_ringKrullDim_of_isPrime
+
+/-- The local ring at the identity of a finite-type affine group over an algebraically closed
+field has the same dimension as the group. -/
+@[simp]
+theorem ringKrullDim_augmentationStalk :
+    ringKrullDim ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) =
+      ringKrullDim H := by
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height (Bialgebra.AugmentationIdeal k H),
+    ringKrullDim_eq_height_augmentation (k := k)]
+
+/-- The dimension of a finite-type affine group over an algebraically closed field is at most
+the dimension of its Lie algebra. This includes non-reduced group schemes. -/
+theorem ringKrullDim_le_finrank_lie :
+    ringKrullDim H ≤
+      Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+  let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let _ : IsNoetherianRing
+      ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) :=
+    IsLocalization.isNoetherianRing (Bialgebra.AugmentationIdeal k H).primeCompl _ inferInstance
+  rw [Derivation.finrank_eq_finrank_cotangentSpace, ← ringKrullDim_augmentationStalk (k := k)]
+  exact _root_.AlgHom.ringKrullDim_kernelStalk_le_finrank_kernelCotangent
+    (_root_.Bialgebra.counitAlgHom k H)
+
+/-- Lie dimension equals group dimension exactly when the local ring at the identity is
+regular, for a finite-type affine group over an algebraically closed field. -/
+theorem isRegularLocalRing_augmentationStalk_iff :
+    IsRegularLocalRing
+        ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) ↔
+      (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) =
+        ringKrullDim H := by
+  let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let _ : IsNoetherianRing
+      ((Spec (CommRingCat.of H)).presheaf.stalk (Bialgebra.augmentationPoint k H)) :=
+    IsLocalization.isNoetherianRing (Bialgebra.AugmentationIdeal k H).primeCompl _ inferInstance
+  rw [_root_.AlgHom.isRegularLocalRing_kernelStalk_iff,
+    Derivation.finrank_eq_finrank_cotangentSpace, ringKrullDim_augmentationStalk]
+
+end TauCeti.HopfAlgebra

@@ -148,6 +148,7 @@ theorem eLpNorm_sub_setAverage_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ
       ENNReal.ofReal (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) *
         eLpNorm (fderiv ℝ u) p (μ.restrict Ω) :=
   eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) (zero_lt_one.trans_le hp).ne' hp'
+    ((hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const)
     (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩ hΩc hb hu hS hS₀
       (by simpa using ENNReal.toReal_mono hp' hp))
 

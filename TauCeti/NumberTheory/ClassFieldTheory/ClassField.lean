@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Galois.Infinite
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 
 /-!
@@ -168,8 +168,9 @@ theorem galClassFieldEquiv_symm_mk (V : OpenNormalSubgroup (AbsoluteGaloisGroup 
   have : (galClassFieldEquiv V).symm (QuotientGroup.mk σ) =
       InfiniteGalois.normalAutEquivQuotient ⟨V.toSubgroup, V.toOpenSubgroup.isClosed⟩
         (NormalLayer.galOfOpenNormalEquiv V (QuotientGroup.mk σ)) := (rfl)
-  rw [this, NormalLayer.galOfOpenNormalEquiv_mk]
-  exact InfiniteGalois.normalAutEquivQuotient_apply _ _
+  -- Chained as terms: `rw` would type-check its motives over the class field's Galois group.
+  exact this.trans ((congrArg _ (NormalLayer.galOfOpenNormalEquiv_mk V σ)).trans
+    (InfiniteGalois.normalAutEquivQuotient_apply _ _))
 
 /-- Read in `G_F ⧸ V`, `galClassFieldEquiv` sends the restriction of `σ ∈ G_F` to the class field
 to the class of `σ`. -/

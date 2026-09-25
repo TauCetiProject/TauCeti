@@ -130,6 +130,8 @@ public section
 
 namespace TauCeti.ValuationSpectrum
 
+open _root_.TopologicalSpace
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- The rational subset `R(T/s)` of the adic spectrum: the trace on `spa A⁺` of the basic open
@@ -309,6 +311,14 @@ theorem spaBasicOpen_le_spaBasicOpen_iff {Aplus : Subring A} {T T' : Finset A} {
     h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩)).mpr hv),
     fun h _ hv ↦ mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
 
+/-- **Equal basic opens have equal rational subsets**: the presentation data `(T, s)` is not
+determined by the subset it presents, but the subset is determined by the basic open, by
+antisymmetry of `spaBasicOpen_le_spaBasicOpen_iff`. -/
+theorem rationalSubset_eq_of_spaBasicOpen_eq {Aplus : Subring A} {T T' : Finset A} {s s' : A}
+    (h : spaBasicOpen Aplus T s = spaBasicOpen Aplus T' s') :
+    rationalSubset Aplus T s = rationalSubset Aplus T' s' :=
+  (spaBasicOpen_le_spaBasicOpen_iff.mp h.le).antisymm (spaBasicOpen_le_spaBasicOpen_iff.mp h.ge)
+
 open scoped Classical Pointwise in
 /-- **The set-level half of Wedhorn Remark 7.30(5)**: writing `Uᵢ = insert sᵢ Tᵢ` for each
 numerator set augmented by its own denominator,
@@ -324,6 +334,20 @@ theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s�
       = rationalSubset Aplus (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
   rw [rationalSubset_def, rationalSubset_def, rationalSubset_def, ← basicOpenFinset_inter]
   exact (Set.inter_inter_distrib_left _ _ _).symm
+
+/-- The rational open of the common refinement of two presentations is their intersection. -/
+theorem spaBasicOpen_commonRefinement {P : Huber.PairOfDefinition A} (Aplus : Subring A)
+    (p q : P.Presentation) :
+    spaBasicOpen Aplus (p.commonRefinement q).num (p.commonRefinement q).den =
+      spaBasicOpen Aplus p.num p.den ⊓ spaBasicOpen Aplus q.num q.den := by
+  classical
+  apply Opens.ext
+  apply Set.ext
+  intro x
+  simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen,
+    Huber.PairOfDefinition.Presentation.commonRefinement_num,
+    Huber.PairOfDefinition.Presentation.commonRefinement_den, ← rationalSubset_inter,
+    Set.mem_inter_iff]
 
 /-- **A rational subset is the intersection of its one-numerator pieces**:
 `R(T/s) = ⋂ t ∈ T, R({t}/s)` for nonempty `T`. This is the finite-family companion of

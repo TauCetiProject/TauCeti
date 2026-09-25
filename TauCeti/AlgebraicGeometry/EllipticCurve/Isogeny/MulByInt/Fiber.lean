@@ -57,7 +57,7 @@ theorem card_zsmul_fiber [IsAlgClosed F] {n : ℤ} (hchar : (n : F) ≠ 0)
     {T P₀ : (W⁄F).toAffine.Point} (hP₀ : n • P₀ = T) :
     Nat.card {P : (W⁄F).toAffine.Point // n • P = T} = n.natAbs ^ 2 := by
   rw [card_zsmul_fiber_eq_card_ker W (psiFunctionField_ne_zero W hchar) hP₀,
-    card_ker_mulByIntIsogeny W hchar]
+    card_ker_mulByIntIsogeny_of_isAlgClosed W hchar]
 
 end TauCeti.Isogeny
 

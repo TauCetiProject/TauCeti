@@ -34,6 +34,9 @@ trivial coefficient object for that subgroup.
 * `TauCeti.trivialF2_V`: the carrier is `ULift (ZMod 2)`.
 * `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
+* `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
+  carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
+* `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 -/
@@ -83,6 +86,21 @@ theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
 instance : DiscreteTopology (trivialF2 G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod 2)))
 
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- Applying the discrete coefficient dictionary to the carrier of `trivialF2` recovers the
+coefficient object itself.
+
+Comparisons between explicit cocycle groups and continuous cohomology are stated for the
+coefficient object `ofDiscreteModule ℤ G M` attached to a discrete module `M`. Taking
+`M := (trivialF2 G).V`, this equality identifies that object with `trivialF2 G`, so such a
+comparison carries a class computed from explicit cochains into continuous cohomology with
+trivial `𝔽₂` coefficients. -/
+@[simp]
+theorem ofDiscreteModule_trivialF2 :
+    ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
+  ofDiscreteModule_eq_self (trivialF2 G)
+
 /-- Every monoid element acts trivially on `trivialF2 G`.
 
 This is the public action rule of the object, in the same role as
@@ -92,6 +110,25 @@ cannot reach `ContRepresentation.trivial_apply` through it. -/
 theorem trivialF2_ρ_apply_apply (g : G) (x : (trivialF2 G).V) :
     (trivialF2 G).ρ g x = x :=
   ContRepresentation.trivial_apply g x
+
+/-- Multiplication in `𝔽₂`, transported along `trivialF2Equiv` to a biadditive pairing on the
+lifted carrier of `trivialF2 G`. It is the coefficient pairing of the `𝔽₂`-valued cup products
+and of the identities of the Evens norm. -/
+noncomputable def trivialF2Pairing : (trivialF2 G).V →+ (trivialF2 G).V →+ (trivialF2 G).V :=
+  ((AddMonoidHom.mul.comp (trivialF2Equiv G).toAddMonoidHom).compl₂
+    (trivialF2Equiv G).toAddMonoidHom).compr₂ (trivialF2Equiv G).symm.toAddMonoidHom
+
+/-- The pairing multiplies the underlying values in `ZMod 2`. -/
+@[simp]
+theorem trivialF2Pairing_apply (x y : (trivialF2 G).V) :
+    trivialF2Pairing G x y =
+      (trivialF2Equiv G).symm (trivialF2Equiv G x * trivialF2Equiv G y) :=
+  (rfl)
+
+/-- The pairing is `G`-equivariant, the action being trivial. -/
+theorem trivialF2Pairing_smul_smul (g : G) (x y : (trivialF2 G).V) :
+    trivialF2Pairing G (g • x) (g • y) = g • trivialF2Pairing G x y := by
+  simp
 
 variable [TopologicalSpace G]
 

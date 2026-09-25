@@ -59,10 +59,6 @@ variable {K n : Type*} [Field K] [Fintype n]
 
 attribute [local instance] Classical.decEq
 
-private noncomputable abbrev carD (i j : n) :
-    CliffordAlgebra (traceQuadraticForm K n) :=
-  ι (traceQuadraticForm K n) (Matrix.single i j 1)
-
 private theorem polar_single_single_eq_zero (i j k l : n)
     (h : ¬(j = k ∧ l = i)) :
     QuadraticMap.polar (traceQuadraticForm K n)
@@ -75,34 +71,32 @@ private theorem polar_single_single_eq_zero (i j k l : n)
 idempotent off the diagonal. For `i = j` it is the scalar `1/2`. -/
 noncomputable def carOccupationElement (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
-  (2 : K)⁻¹ • (carD i j * carD j i)
+  (2 : K)⁻¹ • (carGenerator (K := K) i j * carGenerator j i)
 
-/-- The occupation element written directly in terms of the two matrix-unit generators. -/
-theorem carOccupationElement_def [decEq : DecidableEq n] (i j : n) :
+/-- The occupation element written in terms of the canonical matrix-unit generators. -/
+theorem carOccupationElement_def (i j : n) :
     carOccupationElement (K := K) i j =
       (2 : K)⁻¹ •
-        (ι (traceQuadraticForm K n) (Matrix.single i j 1) *
-          ι (traceQuadraticForm K n) (Matrix.single j i 1)) := by
-  cases Subsingleton.elim decEq (Classical.decEq n)
+        (carGenerator (K := K) i j * carGenerator j i) := by
   rfl
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
 @[simp]
 theorem carOccupationElement_self (i : n) :
     carOccupationElement (K := K) i i = (2 : K)⁻¹ • 1 := by
-  simp [carOccupationElement, carD]
+  rw [carOccupationElement_def, carGenerator_mul_self]
+  simp
 
 /-- Oppositely oriented off-diagonal occupation elements are orthogonal in this order. -/
 @[simp]
 theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carOccupationElement (K := K) j i = 0 := by
   rw [carOccupationElement, carOccupationElement, smul_mul_assoc, mul_smul_comm, smul_smul]
-  -- Expose the common scalar and reassociate so `simp` can see the nilpotent middle pair.
-  change ((2 : K)⁻¹ * (2 : K)⁻¹) •
-    ((carD (K := K) i j * carD j i) * (carD j i * carD i j)) = 0
-  rw [mul_assoc (carD (K := K) i j) (carD j i) (carD j i * carD i j),
-    ← mul_assoc (carD (K := K) j i) (carD j i) (carD i j)]
-  simp [carD, hij]
+  rw [mul_assoc (carGenerator (K := K) i j) (carGenerator j i)
+      (carGenerator j i * carGenerator i j),
+    ← mul_assoc (carGenerator (K := K) j i) (carGenerator j i)
+      (carGenerator i j)]
+  simp [carGenerator_mul_self, hij]
 
 section Half
 
@@ -114,9 +108,7 @@ diagonal, where both terms are the scalar `1/2`. -/
 theorem carOccupationElement_add_swap (i j : n) :
     carOccupationElement (K := K) i j + carOccupationElement (K := K) j i = 1 := by
   rw [carOccupationElement, carOccupationElement, ← smul_add]
-  have hcar := traceQuadraticForm_ι_single_mul_ι_single_add_swap
-    (R := K) i j j i 1 1
-  simp only [one_mul] at hcar
+  have hcar := carGenerator_mul_add_swap (K := K) i j j i
   rw [hcar, Algebra.smul_def, ← map_mul]
   simp
 
@@ -165,6 +157,7 @@ theorem commute_carOccupationElement {i j k l : n} :
   · rw [commute_iff_lie_eq, carOccupationElement, carOccupationElement]
     rw [Ring.lie_def, smul_mul_assoc, mul_smul_comm, smul_smul,
       smul_mul_assoc, mul_smul_comm, smul_smul, ← smul_sub, ← Ring.lie_def,
+      carGenerator_def, carGenerator_def, carGenerator_def, carGenerator_def,
       lie_ι_mul_ι_ι_mul_ι]
     have hzy : ¬(l = j ∧ i = k) := by
       rintro ⟨rfl, rfl⟩
@@ -202,7 +195,7 @@ theorem glCliffordHom_single_self_eq_sum_occupation (i : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i i 1) =
       ∑ k : n, carOccupationElement (K := K) i k := by
   rw [glCliffordHom_single, Finset.smul_sum]
-  simp only [carOccupationElement, carD]
+  simp only [carOccupationElement]
 
 /-- Orient the diagonal lift using only positive-pair occupation projections. Below `i`, the
 opposite orientation is replaced by its complement. -/

@@ -94,10 +94,13 @@ private theorem coe_cocycles₀Iso_hom (X : TopRep R G) (σ : cocycles X 0) :
       (homogeneousCochains X).iCycles 0 σ :=
   congr($(cocycles₀Iso_hom_comp_kerι X) σ)
 
+-- `(d₀kerIso X :)` synthesizes its instances before its type meets that of `ofIso`'s
+-- argument; otherwise the unifier solves them against the `TopModuleCat.of` projections by
+-- unfolding the kernel and the differential (2.5 s).
 /-- In degree zero the cocycles already are the cohomology, so `zeroIso` may be read off on
 cocycles. -/
 private theorem π_comp_zeroIso_hom (X : TopRep R G) :
-    π X 0 ≫ (zeroIso X).hom = (cocycles₀Iso X).hom ≫ (TopModuleCat.ofIso (d₀kerIso X)).hom := by
+    π X 0 ≫ (zeroIso X).hom = (cocycles₀Iso X).hom ≫ (TopModuleCat.ofIso (d₀kerIso X :)).hom := by
   simp [zeroIso]
 
 /-- **The evaluation formula for `zeroIso`.** A homogeneous `0`-cochain of `X` is a `G`-invariant
@@ -185,9 +188,11 @@ theorem res_comp_zeroIso_hom (S : Subgroup G) (X : TopRep R G) :
 @[reassoc]
 theorem infl_comp_zeroIso_hom (N : Subgroup G) [N.Normal] (X : TopRep R G) :
     TauCeti.ContinuousCohomology.infl N X 0 ≫ (zeroIso X).hom =
-      (zeroIso (TopRep.quotientToInvariants X N)).hom ≫
+      -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
+      -- (This follows the ascription idiom of #8346, for the universe issue fixed in #8353.)
+      ((zeroIso (TopRep.quotientToInvariants X N)).hom ≫
         TopRep.invariantsResMap (QuotientGroup.mk' N : G →* G ⧸ N)
-          (TopRep.quotientToInvariantsι X N) := by
+          (TopRep.quotientToInvariantsι X N) :) := by
   rw [infl_def]
   exact map_comp_zeroIso_hom (ContinuousMonoidHom.quotientMk N)
     (TopRep.quotientToInvariantsι X N)
@@ -213,10 +218,13 @@ noncomputable def degreeZeroClass (X : TopRep R G) (u : X.V) (hu : ∀ g : G, X.
     continuousCohomology 0 X :=
   (zeroIso X).inv ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩
 
+-- `simp` reduces the carrier of the `abbrev` `TopModuleCat.of R X.ρ.invariants`, the target of
+-- `zeroIso X`, in the implicit type arguments of the applied morphism before it looks a term up,
+-- so this `simp` lemma states its left-hand side through `dsimp% only`, as in #8315.
 /-- `zeroIso` recovers the invariant vector a degree-zero class was built from. -/
 @[simp]
 theorem coe_zeroIso_hom_degreeZeroClass (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
-    (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V) = u := by
+    (dsimp% only (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V)) = u := by
   simp [degreeZeroClass]
 
 /-- Every degree-zero class is the class of an invariant vector. -/

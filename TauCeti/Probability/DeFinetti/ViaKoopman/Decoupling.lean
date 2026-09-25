@@ -37,8 +37,6 @@ bridge of `Ergodic/CondExpProjection.lean`, and the invariant conditional law of
 
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1,
   Theorem 1.1.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 5** (Koopman operators and
-  invariant σ-algebras), whose milestone is `deFinetti_viaKoopman`.
 
 ## Main results
 
@@ -98,8 +96,8 @@ variable {α : Type*} [MeasurableSpace α]
 `0, 1, …, r - 1` and the appended coordinate is `r + m`, so the selection is strictly increasing
 whatever the displacement `m`. -/
 private theorem snoc_prefix_strictMono (r m : ℕ) :
-    StrictMono (Fin.snoc (fun i : Fin r => (i : ℕ)) (r + m) : Fin (r + 1) → ℕ) := by
-  refine Fin.strictMono_iff_lt_succ.2 fun i => ?_
+    StrictMono (Fin.snoc (fun i : Fin r ↦ (i : ℕ)) (r + m) : Fin (r + 1) → ℕ) := by
+  refine Fin.strictMono_iff_lt_succ.2 fun i ↦ ?_
   rw [Fin.snoc_castSucc]
   rcases Fin.eq_castSucc_or_eq_last i.succ with ⟨j, hj⟩ | hj
   · rw [hj, Fin.snoc_castSucc]
@@ -120,11 +118,11 @@ This is where the two halves of the argument meet: the left side is what the inv
 controls (each term has the same integral over an invariant event), and the right side is what the
 mean ergodic theorem converges. -/
 private theorem birkhoffAverage_shift_coord_eq {B : Set α} (r n : ℕ) (x : ℕ → α) :
-    birkhoffAverage ℝ (shift α) (fun y : ℕ → α => (B.indicator (fun _ => (1 : ℝ)) (y r))) n x
-      = (n : ℝ)⁻¹ * ∑ m ∈ Finset.range n, B.indicator (fun _ => (1 : ℝ)) (x (r + m)) := by
+    birkhoffAverage ℝ (shift α) (fun y : ℕ → α ↦ (B.indicator (fun _ ↦ (1 : ℝ)) (y r))) n x
+      = (n : ℝ)⁻¹ * ∑ m ∈ Finset.range n, B.indicator (fun _ ↦ (1 : ℝ)) (x (r + m)) := by
   rw [birkhoffAverage, birkhoffSum, smul_eq_mul]
   congr 1
-  refine Finset.sum_congr rfl fun m _ => ?_
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
   rw [shift_iterate_apply]
 
 
@@ -134,15 +132,15 @@ same indicator given the shift-invariant σ-algebra. -/
 private theorem tendsto_integral_abs_birkhoffAverage_indicator_coord
     {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ] (hmp : MeasurePreserving (shift α) ρ ρ)
     {B : Set α} (hB : MeasurableSet B) (r : ℕ) :
-    Filter.Tendsto (fun n => ∫ x,
-        |birkhoffAverage ℝ (shift α) (fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r)) n x
-          - ρ[fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r) |
+    Filter.Tendsto (fun n ↦ ∫ x,
+        |birkhoffAverage ℝ (shift α) (fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r)) n x
+          - ρ[fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r) |
               MeasurableSpace.invariants (shift α)] x| ∂ρ)
       Filter.atTop (nhds 0) := by
-  have hmeas : Measurable fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r) :=
+  have hmeas : Measurable fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r) :=
     (measurable_const.indicator hB).comp (measurable_pi_apply r)
-  have hbdd : ∀ y : ℕ → α, ‖B.indicator (fun _ => (1 : ℝ)) (y r)‖ ≤ 1 := fun y => by
-    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ => (1 : ℝ)) (y r)
+  have hbdd : ∀ y : ℕ → α, ‖B.indicator (fun _ ↦ (1 : ℝ)) (y r)‖ ≤ 1 := fun y ↦ by
+    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ ↦ (1 : ℝ)) (y r)
   exact tendsto_integral_abs_birkhoffAverage_sub_condExp (shift α) hmp
     (MemLp.of_bound hmeas.aestronglyMeasurable 1 (Filter.Eventually.of_forall hbdd))
 
@@ -155,29 +153,29 @@ witness. -/
 theorem condExp_indicator_coord_ae_eq_invariantConditionalProbabilityMeasure
     [StandardBorelSpace α] [Nonempty α] {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
     (hρ : ContractableLaw ρ) {B : Set α} (hB : MeasurableSet B) (r : ℕ) :
-    ρ[fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r) |
+    ρ[fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r) |
         MeasurableSpace.invariants (shift α)]
-      =ᵐ[ρ] fun x => ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real B := by
+      =ᵐ[ρ] fun x ↦ ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real B := by
   classical
   have hle : MeasurableSpace.invariants (shift α) ≤ (inferInstance : MeasurableSpace (ℕ → α)) :=
     MeasurableSpace.invariants_le _
-  have hmeas : ∀ s : ℕ, Measurable fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y s) :=
-    fun s => (measurable_const.indicator hB).comp (measurable_pi_apply s)
-  have hint : ∀ s : ℕ, Integrable (fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y s)) ρ := by
+  have hmeas : ∀ s : ℕ, Measurable fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y s) :=
+    fun s ↦ (measurable_const.indicator hB).comp (measurable_pi_apply s)
+  have hint : ∀ s : ℕ, Integrable (fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y s)) ρ := by
     intro s
     refine ⟨(hmeas s).aestronglyMeasurable, .of_bounded (C := 1)
-      (Filter.Eventually.of_forall fun y => ?_)⟩
-    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ => (1 : ℝ)) (y s)
+      (Filter.Eventually.of_forall fun y ↦ ?_)⟩
+    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ ↦ (1 : ℝ)) (y s)
   -- The witness is the conditional expectation at coordinate `0`.
   have hwit := invariantConditionalProbabilityMeasure_ae_eq_condExp (ρ := ρ) hB
   refine Filter.EventuallyEq.symm (ae_eq_condExp_of_forall_setIntegral_eq hle (hint r)
-    (fun s _ _ => (integrable_condExp.congr hwit.symm).integrableOn) (fun s hs _ => ?_) ?_)
+    (fun s _ _ ↦ (integrable_condExp.congr hwit.symm).integrableOn) (fun s hs _ ↦ ?_) ?_)
   · -- Test against an invariant event: coordinate `r` agrees with coordinate `0`.
     have h0 : ∫ x in s, ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real B ∂ρ
-        = ∫ x in s, B.indicator (fun _ => (1 : ℝ)) (x 0) ∂ρ := by
-      have hint0 : Integrable ((B.indicator fun _ => (1 : ℝ)) ∘ fun x : ℕ → α => x 0) ρ := hint 0
+        = ∫ x in s, B.indicator (fun _ ↦ (1 : ℝ)) (x 0) ∂ρ := by
+      have hint0 : Integrable ((B.indicator fun _ ↦ (1 : ℝ)) ∘ fun x : ℕ → α ↦ x 0) ρ := hint 0
       simpa only [Function.comp_apply] using
-        (setIntegral_congr_ae (hle _ hs) (hwit.mono fun x hx _ => hx)).trans
+        (setIntegral_congr_ae (hle _ hs) (hwit.mono fun x hx _ ↦ hx)).trans
           (setIntegral_condExp hle hint0 hs)
     rw [h0]
     exact (hρ.setIntegral_comp_coord_eq_comp_zero_of_measurableSet_invariants r hs
@@ -195,35 +193,35 @@ private theorem setIntegral_weight_mul_prefix_mul_indicator_displaced_eq
     {w : (ℕ → α) → ℝ} (hw : Measurable[MeasurableSpace.invariants (shift α)] w)
     {g : (Fin r → α) → ℝ} (hg : Measurable g) {B : Set α} (hB : MeasurableSet B)
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) (m : ℕ) :
-    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x (r + m))) ∂ρ
-      = ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x r)) ∂ρ := by
+    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + m))) ∂ρ
+      = ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x r)) ∂ρ := by
   classical
   -- The combined observable on a block of length `r + 1`.
-  set G : (Fin (r + 1) → α) → ℝ := fun y =>
-    g (fun j : Fin r => y j.castSucc) * B.indicator (fun _ => (1 : ℝ)) (y (Fin.last r)) with hG
+  set G : (Fin (r + 1) → α) → ℝ := fun y ↦
+    g (fun j : Fin r ↦ y j.castSucc) * B.indicator (fun _ ↦ (1 : ℝ)) (y (Fin.last r)) with hG
   have hG_meas : Measurable G := by
     refine Measurable.mul ?_ ?_
-    · exact hg.comp (Measurable.of_eval fun j => measurable_pi_apply j.castSucc)
+    · exact hg.comp (Measurable.of_eval fun j ↦ measurable_pi_apply j.castSucc)
     · exact (measurable_const.indicator hB).comp (measurable_pi_apply (Fin.last r))
   -- Reading the combined observable along the displaced selection is the integrand.
   have hcomp : ∀ (d : ℕ) (x : ℕ → α),
-      G (fun i : Fin (r + 1) =>
-          x ((Fin.snoc (fun j : Fin r => (j : ℕ)) (r + d) : Fin (r + 1) → ℕ) i))
-        = g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x (r + d)) := by
+      G (fun i : Fin (r + 1) ↦
+          x ((Fin.snoc (fun j : Fin r ↦ (j : ℕ)) (r + d) : Fin (r + 1) → ℕ) i))
+        = g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)) := by
     intro d x
-    have hpp : (fun j : Fin r => x (j : ℕ)) = prefixProj α r x :=
-      (funext fun i => prefixProj_apply r x i).symm
+    have hpp : (fun j : Fin r ↦ x (j : ℕ)) = prefixProj α r x :=
+      (funext fun i ↦ prefixProj_apply r x i).symm
     simp only [hG, Fin.snoc_castSucc, Fin.snoc_last, hpp]
   -- Every displacement transports onto the prefix, weight and all.
   have key : ∀ d : ℕ,
-      ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x (r + d))) ∂ρ
+      ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d))) ∂ρ
         = ∫ x in A, w x * G (prefixProj α (r + 1) x) ∂ρ := by
     intro d
     calc ∫ x in A, w x * (g (prefixProj α r x)
-            * B.indicator (fun _ => (1 : ℝ)) (x (r + d))) ∂ρ
-        = ∫ x in A, w x * G (fun i : Fin (r + 1) =>
-            x ((Fin.snoc (fun j : Fin r => (j : ℕ)) (r + d) : Fin (r + 1) → ℕ) i)) ∂ρ :=
-          integral_congr_ae (Filter.Eventually.of_forall fun x => by simp only [hcomp])
+            * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d))) ∂ρ
+        = ∫ x in A, w x * G (fun i : Fin (r + 1) ↦
+            x ((Fin.snoc (fun j : Fin r ↦ (j : ℕ)) (r + d) : Fin (r + 1) → ℕ) i)) ∂ρ :=
+          integral_congr_ae (Filter.Eventually.of_forall fun x ↦ by simp only [hcomp])
       _ = ∫ x in A, w x * G (prefixProj α (r + 1) x) ∂ρ :=
           hρ.setIntegral_mul_block_eq_prefixProj_of_strictMono_of_measurable_invariants
             (snoc_prefix_strictMono r d) hA hw hG_meas
@@ -242,40 +240,40 @@ private theorem setIntegral_weight_mul_prefix_mul_indicator_eq_birkhoffAverage
     {B : Set α} (hB : MeasurableSet B)
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A)
     {n : ℕ} (hn : n ≠ 0) :
-    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x r)) ∂ρ
+    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x r)) ∂ρ
       = ∫ x in A, w x * (g (prefixProj α r x)
           * birkhoffAverage ℝ (shift α)
-              (fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r)) n x) ∂ρ := by
+              (fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r)) n x) ∂ρ := by
   classical
   have hw' : Measurable w := hw.mono (MeasurableSpace.invariants_le _) le_rfl
-  have hgm : Measurable fun x : ℕ → α => g (prefixProj α r x) := hg.comp (measurable_prefixProj r)
+  have hgm : Measurable fun x : ℕ → α ↦ g (prefixProj α r x) := hg.comp (measurable_prefixProj r)
   have hbd : ∀ d : ℕ, ∀ᵐ x ∂ρ.restrict A,
-      ‖w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x (r + d)))‖ ≤ 1 := by
+      ‖w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)))‖ ≤ 1 := by
     intro d
     filter_upwards [ae_restrict_of_ae hw_bdd] with x hwx
-    have h0 : (0 : ℝ) ≤ B.indicator (fun _ => (1 : ℝ)) (x (r + d)) :=
-      Set.indicator_apply_nonneg fun _ => zero_le_one
-    have h1 : B.indicator (fun _ => (1 : ℝ)) (x (r + d)) ≤ 1 :=
-      Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
+    have h0 : (0 : ℝ) ≤ B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)) :=
+      Set.indicator_apply_nonneg fun _ ↦ zero_le_one
+    have h1 : B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)) ≤ 1 :=
+      Set.indicator_apply_le' (fun _ ↦ le_rfl) fun _ ↦ zero_le_one
     rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_nonneg h0]
-    have hinner : |g (prefixProj α r x)| * B.indicator (fun _ => (1 : ℝ)) (x (r + d)) ≤ 1 :=
+    have hinner : |g (prefixProj α r x)| * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)) ≤ 1 :=
       (mul_le_mul (hg_bdd _) h1 h0 zero_le_one).trans_eq (one_mul 1)
     exact (mul_le_mul hwx hinner (by positivity) zero_le_one).trans_eq (one_mul 1)
   have hterm : ∀ d : ℕ, Integrable
-      (fun x : ℕ → α => w x * (g (prefixProj α r x)
-        * B.indicator (fun _ => (1 : ℝ)) (x (r + d)))) (ρ.restrict A) := by
+      (fun x : ℕ → α ↦ w x * (g (prefixProj α r x)
+        * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d)))) (ρ.restrict A) := by
     intro d
-    have hm : Measurable fun x : ℕ → α => w x * (g (prefixProj α r x)
-        * B.indicator (fun _ => (1 : ℝ)) (x (r + d))) :=
+    have hm : Measurable fun x : ℕ → α ↦ w x * (g (prefixProj α r x)
+        * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + d))) :=
       hw'.mul (hgm.mul ((measurable_const.indicator hB).comp (measurable_pi_apply (r + d))))
     exact ⟨hm.aestronglyMeasurable, .of_bounded (C := 1) (hbd d)⟩
   have hrhs : ∫ x in A, w x * (g (prefixProj α r x)
       * birkhoffAverage ℝ (shift α)
-          (fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r)) n x) ∂ρ
+          (fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r)) n x) ∂ρ
       = (n : ℝ)⁻¹ * ∑ m ∈ Finset.range n, ∫ x in A, w x * (g (prefixProj α r x)
-          * B.indicator (fun _ => (1 : ℝ)) (x (r + m))) ∂ρ := by
-    rw [← integral_finsetSum _ fun m _ => hterm m, ← integral_const_mul]
-    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          * B.indicator (fun _ ↦ (1 : ℝ)) (x (r + m))) ∂ρ := by
+    rw [← integral_finsetSum _ fun m _ ↦ hterm m, ← integral_const_mul]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
     simp only [birkhoffAverage_shift_coord_eq, ← Finset.mul_sum]
     ring
   rw [hrhs]
@@ -295,27 +293,28 @@ private theorem tendsto_setIntegral_mul_of_tendsto_integral_abs
     {u : ℕ → Ω → ℝ} {v : Ω → ℝ}
     (hp : AEStronglyMeasurable p μ) (hp_bdd : ∀ᵐ x ∂μ, ‖p x‖ ≤ 1)
     (hu : ∀ n, Integrable (u n) μ) (hv : Integrable v μ)
-    (hconv : Filter.Tendsto (fun n => ∫ x, |u n x - v x| ∂μ) Filter.atTop (nhds 0)) :
-    Filter.Tendsto (fun n => ∫ x in A, p x * u n x ∂μ) Filter.atTop
+    (hconv : Filter.Tendsto (fun n ↦ ∫ x, |u n x - v x| ∂μ) Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun n ↦ ∫ x in A, p x * u n x ∂μ) Filter.atTop
       (nhds (∫ x in A, p x * v x ∂μ)) := by
   -- Weighting by `p` does not increase the `L¹` distance, since `|p| ≤ 1`.
-  have hmono : ∀ n, eLpNorm ((fun x => p x * u n x) - fun x => p x * v x) 1 μ
+  have hmono : ∀ n, eLpNorm ((fun x ↦ p x * u n x) - fun x ↦ p x * v x) 1 μ
       ≤ eLpNorm ((u n) - v) 1 μ := by
     intro n
-    refine eLpNorm_mono_ae ?_
+    refine eLpNorm_mono_ae ((hp.mul (hu n).aestronglyMeasurable).sub
+      (hp.mul hv.aestronglyMeasurable)) ?_
     filter_upwards [hp_bdd] with x hpx
     simp only [Pi.sub_apply, Real.norm_eq_abs, ← mul_sub, abs_mul]
     exact mul_le_of_le_one_left (abs_nonneg _) ((Real.norm_eq_abs _) ▸ hpx)
-  have hbase : Filter.Tendsto (fun n => eLpNorm ((u n) - v) 1 μ) Filter.atTop (nhds 0) := by
+  have hbase : Filter.Tendsto (fun n ↦ eLpNorm ((u n) - v) 1 μ) Filter.atTop (nhds 0) := by
     refine TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hu hv ?_
     simpa only [Real.norm_eq_abs] using hconv
   have hL1 : Filter.Tendsto
-      (fun n => eLpNorm ((fun x => p x * u n x) - fun x => p x * v x) 1 μ)
+      (fun n ↦ eLpNorm ((fun x ↦ p x * u n x) - fun x ↦ p x * v x) 1 μ)
       Filter.atTop (nhds 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbase
-      (fun _ => zero_le) hmono
-  exact tendsto_setIntegral_of_L1' _ (hp.mul hv.aestronglyMeasurable)
-    (Filter.Eventually.of_forall fun n => (hu n).bdd_mul hp hp_bdd) hL1 A
+      (fun _ ↦ zero_le) hmono
+  exact tendsto_setIntegral_of_L1' _
+    (Filter.Eventually.of_forall fun n ↦ (hu n).bdd_mul hp hp_bdd) hL1 A
 
 /-- **The last coordinate decouples into the invariant conditional expectation.** Over an invariant
 event, the weighted integral of `𝟙_B` at coordinate `r` equals the weighted integral of its
@@ -333,39 +332,39 @@ theorem setIntegral_weight_mul_prefix_mul_indicator_eq_condExp
     {g : (Fin r → α) → ℝ} (hg : Measurable g) (hg_bdd : ∀ y, |g y| ≤ 1)
     {B : Set α} (hB : MeasurableSet B)
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
-    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x r)) ∂ρ
+    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x r)) ∂ρ
       = ∫ x in A, w x * (g (prefixProj α r x)
-          * ρ[fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r) |
+          * ρ[fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r) |
               MeasurableSpace.invariants (shift α)] x) ∂ρ := by
   classical
   have hw' : Measurable w := hw.mono (MeasurableSpace.invariants_le _) le_rfl
-  have hgm : Measurable fun x : ℕ → α => g (prefixProj α r x) := hg.comp (measurable_prefixProj r)
-  have hind_nonneg : ∀ y : α, 0 ≤ B.indicator (fun _ => (1 : ℝ)) y := fun _ =>
-    Set.indicator_apply_nonneg fun _ => zero_le_one
-  have hind_le : ∀ y : α, B.indicator (fun _ => (1 : ℝ)) y ≤ 1 := fun _ =>
-    Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
-  set φ : (ℕ → α) → ℝ := fun y : ℕ → α => B.indicator (fun _ => (1 : ℝ)) (y r) with hφdef
+  have hgm : Measurable fun x : ℕ → α ↦ g (prefixProj α r x) := hg.comp (measurable_prefixProj r)
+  have hind_nonneg : ∀ y : α, 0 ≤ B.indicator (fun _ ↦ (1 : ℝ)) y := fun _ ↦
+    Set.indicator_apply_nonneg fun _ ↦ zero_le_one
+  have hind_le : ∀ y : α, B.indicator (fun _ ↦ (1 : ℝ)) y ≤ 1 := fun _ ↦
+    Set.indicator_apply_le' (fun _ ↦ le_rfl) fun _ ↦ zero_le_one
+  set φ : (ℕ → α) → ℝ := fun y : ℕ → α ↦ B.indicator (fun _ ↦ (1 : ℝ)) (y r) with hφdef
   have hφ_meas : Measurable φ := (measurable_const.indicator hB).comp (measurable_pi_apply r)
   set F : (ℕ → α) → ℝ := ρ[φ | MeasurableSpace.invariants (shift α)] with hFdef
   have havg_meas : ∀ n : ℕ, Measurable (birkhoffAverage ℝ (shift α) φ n) := by
     intro n
-    have hsum : Measurable fun x : ℕ → α => ∑ m ∈ Finset.range n, φ ((shift α)^[m] x) :=
-      Finset.measurable_sum _ fun m _ => hφ_meas.comp (measurable_shift.iterate m)
+    have hsum : Measurable fun x : ℕ → α ↦ ∑ m ∈ Finset.range n, φ ((shift α)^[m] x) :=
+      Finset.measurable_sum _ fun m _ ↦ hφ_meas.comp (measurable_shift.iterate m)
     exact hsum.const_smul ((n : ℝ)⁻¹)
   have havg_bdd : ∀ (n : ℕ) (x : ℕ → α), ‖birkhoffAverage ℝ (shift α) φ n x‖ ≤ 1 := by
     intro n x
     rw [birkhoffAverage_eq_prefixAverage, prefixAverage_def, Real.norm_eq_abs,
-      abs_of_nonneg (blockAverage_nonneg fun i => hind_nonneg _)]
-    exact blockAverage_le_one fun i => hind_le _
-  have havg_int : ∀ n : ℕ, Integrable (birkhoffAverage ℝ (shift α) φ n) ρ := fun n =>
+      abs_of_nonneg (blockAverage_nonneg fun i ↦ hind_nonneg _)]
+    exact blockAverage_le_one fun i ↦ hind_le _
+  have havg_int : ∀ n : ℕ, Integrable (birkhoffAverage ℝ (shift α) φ n) ρ := fun n ↦
     ⟨(havg_meas n).aestronglyMeasurable,
       .of_bounded (C := 1) (Filter.Eventually.of_forall (havg_bdd n))⟩
   have hF_int : Integrable F ρ := integrable_condExp
-  set c : ℕ → ℝ := fun n => ∫ x in A, w x * (g (prefixProj α r x)
+  set c : ℕ → ℝ := fun n ↦ ∫ x in A, w x * (g (prefixProj α r x)
     * birkhoffAverage ℝ (shift α) φ n x) ∂ρ with hcdef
   have hL : Filter.Tendsto c Filter.atTop
       (nhds (∫ x in A, w x
-        * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x r)) ∂ρ)) := by
+        * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x r)) ∂ρ)) := by
     refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
     filter_upwards [Filter.eventually_gt_atTop 0] with n hn
     simp only [hcdef, hφdef]
@@ -380,7 +379,7 @@ theorem setIntegral_weight_mul_prefix_mul_indicator_eq_condExp
       filter_upwards [hw_bdd] with x hwx
       rw [Real.norm_eq_abs, abs_mul]
       exact (mul_le_mul hwx (hg_bdd _) (abs_nonneg _) zero_le_one).trans_eq (one_mul 1)
-    have hpm : Measurable fun x : ℕ → α => w x * g (prefixProj α r x) := hw'.mul hgm
+    have hpm : Measurable fun x : ℕ → α ↦ w x * g (prefixProj α r x) := hw'.mul hgm
     simpa only [hcdef, mul_assoc] using
       tendsto_setIntegral_mul_of_tendsto_integral_abs (A := A)
         hpm.aestronglyMeasurable hp_bdd havg_int hF_int hconv
@@ -396,7 +395,7 @@ theorem setIntegral_weight_mul_prefix_mul_indicator_eq_invariantConditionalProba
     {g : (Fin r → α) → ℝ} (hg : Measurable g) (hg_bdd : ∀ y, |g y| ≤ 1)
     {B : Set α} (hB : MeasurableSet B)
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
-    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ => (1 : ℝ)) (x r)) ∂ρ
+    ∫ x in A, w x * (g (prefixProj α r x) * B.indicator (fun _ ↦ (1 : ℝ)) (x r)) ∂ρ
       = ∫ x in A, w x * (g (prefixProj α r x)
           * ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real B) ∂ρ := by
   rw [hρ.setIntegral_weight_mul_prefix_mul_indicator_eq_condExp hw hw_bdd hg hg_bdd hB hA]

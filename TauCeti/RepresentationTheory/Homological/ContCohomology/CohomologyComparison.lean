@@ -294,13 +294,16 @@ theorem explicitH1IsoContinuousCohomology_hom_apply (x : DiscreteH1 G M) :
     (explicitH1IsoContinuousCohomology G M).hom x =
       explicitH1AddEquivContinuousCohomology G M (discreteH1Equiv G M x) := (rfl)
 
+-- `simp` reduces the carriers of `TopModuleCat.of ℤ (DiscreteH1 G M)` and of its degree-two
+-- analogue in implicit type arguments before it looks a term up, so the `simp` lemmas evaluating
+-- the inverse comparisons state their left-hand sides through `dsimp% only`, as in #8315.
 /-- The inverse degree-one isomorphism sends a canonical homology class to the discrete carrier
 of the corresponding explicit cocycle class. -/
 @[simp]
 theorem explicitH1IsoContinuousCohomology_inv_apply
     (c : _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 1) :
-    (explicitH1IsoContinuousCohomology G M).inv
-        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c) =
+    (dsimp% only ((explicitH1IsoContinuousCohomology G M).inv
+        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c))) =
       (discreteH1Equiv G M).symm
         (((cocycleEquiv1 G M).symm c : Z1 G M) : H1 G M) := by
   -- Unfold the `TopModuleCat.ofIso` inverse to expose the two composed additive equivalences.
@@ -382,13 +385,15 @@ theorem explicitH2IsoContinuousCohomology_hom_apply (x : DiscreteH2 G M) :
     (explicitH2IsoContinuousCohomology G M).hom x =
       explicitH2AddEquivContinuousCohomology G M (discreteH2Equiv G M x) := (rfl)
 
+-- `dsimp% only` on the left-hand side: see the comment on
+-- `explicitH1IsoContinuousCohomology_inv_apply`.
 /-- The inverse degree-two isomorphism sends a canonical homology class to the discrete carrier
 of the corresponding explicit cocycle class. -/
 @[simp]
 theorem explicitH2IsoContinuousCohomology_inv_apply
     (c : _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 2) :
-    (explicitH2IsoContinuousCohomology G M).inv
-        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 2 c) =
+    (dsimp% only ((explicitH2IsoContinuousCohomology G M).inv
+        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 2 c))) =
       (discreteH2Equiv G M).symm
         (((cocycleEquiv2 G M).symm c : Z2 G M) : H2 G M) := by
   -- Unfold the `TopModuleCat.ofIso` inverse to expose the two composed additive equivalences.

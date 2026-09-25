@@ -5,18 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.KrullDimension
 
 /-!
 # Krull dimension of topological spaces: open covers and closed points
 
-This file records two facts about the topological Krull dimension and the codimension of points.
+This file records facts about the topological Krull dimension and the codimension of points.
 
 The Krull dimension of a space is the supremum of the Krull dimensions of the members of an open
 cover: an irreducible closed subset meeting an open subset `U` is the closure of its trace on `U`,
 so every chain of irreducible closed subsets of the whole space restricts to a chain of the same
 length in any open subset containing a point of its smallest member. For schemes this is what
-reduces dimension computations to affine opens.
+reduces dimension computations to affine opens. Similarly, the preimage of a set under an
+embedding has the Krull dimension of the part of the set lying in the range.
 
 On a T₀ topological space the specialization order is a partial order, so the codimension
 `Order.coheight x` of a point is defined: it is the supremum of the lengths of the chains of
@@ -29,9 +31,13 @@ have codimension at least two.
 * `TauCeti.topologicalKrullDim_eq_iSup_of_isOpenEmbedding`: the Krull dimension of a space
   covered by the ranges of open embeddings is the supremum of the Krull dimensions of their
   domains.
+* `Topology.IsEmbedding.topologicalKrullDim_preimage`: the preimage of a set under an embedding
+  has the Krull dimension of the part of the set in the range.
 * `TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one`: on a T₀ space all
   of whose points have codimension at most one for the specialization order, a point of
   codimension one is closed.
+* `TauCeti.coheight_le_topologicalKrullDim`: on a T₀ space, the codimension of a point is at
+  most the Krull dimension of the space.
 -/
 
 public section
@@ -73,4 +79,31 @@ theorem isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one {α : Ty
   refine absurd (hdim y) (not_le.mpr ?_)
   simpa [hx] using Order.coheight_strictAnti (lt_of_le_of_ne hyx hne) (by simp [hx])
 
+attribute [local instance] specializationOrder in
+/-- On a T₀ topological space, the codimension of a point for the specialization order is at most
+the Krull dimension of the space. -/
+theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] [T0Space α] (x : α) :
+    (coheight x : WithBot ℕ∞) ≤ topologicalKrullDim α := by
+  -- A chain of specializations `y₀ ⤳ … ⤳ yₙ` gives the chain of irreducible closed sets
+  -- `closure {yₙ} ⊆ … ⊆ closure {y₀}`, strictly increasing since `α` is T₀.
+  let c : α → IrreducibleCloseds α :=
+    fun y ↦ ⟨closure {y}, isIrreducible_singleton.closure, isClosed_closure⟩
+  have hc : StrictMono c := by
+    refine Monotone.strictMono_of_injective (fun y z hyz ↦ ?_) fun y z hyz ↦ ?_
+    · exact specializes_iff_closure_subset.mp hyz
+    · exact (inseparable_iff_closure_eq.mpr (congrArg SetLike.coe hyz)).eq
+  exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
+
 end TauCeti
+
+namespace Topology.IsEmbedding
+
+/-- The preimage of a set `Z` under an embedding `e` is homeomorphic to the part of `Z` in the
+range of `e`, so the two have the same Krull dimension. -/
+theorem topologicalKrullDim_preimage {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {e : Y → X} (he : IsEmbedding e) (Z : Set X) :
+    topologicalKrullDim ↥(e ⁻¹' Z) = topologicalKrullDim ↥(Z ∩ Set.range e) := by
+  rw [← Set.preimage_inter_range]
+  exact (he.homeomorphOfSubsetRange Set.inter_subset_right).isHomeomorph.topologicalKrullDim_eq
+
+end Topology.IsEmbedding

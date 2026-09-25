@@ -445,6 +445,11 @@ def powerBoundedSubring : Subring A where
 @[simp]
 theorem mem_powerBoundedSubring {a : A} : a ∈ powerBoundedSubring A ↔ IsPowerBounded a := Iff.rfl
 
+/-- The underlying set of `A°` is the set of power-bounded elements. -/
+@[simp, norm_cast]
+theorem coe_powerBoundedSubring : (powerBoundedSubring A : Set A) = {a | IsPowerBounded a} :=
+  Set.ext fun _ ↦ mem_powerBoundedSubring
+
 variable (A) in
 /-- The ideal `A°°` of topologically nilpotent elements inside `A°`
 (Wedhorn Proposition 5.30). -/
@@ -532,6 +537,17 @@ theorem isPowerBounded_ringEquiv_iff (e : A ≃+* B) (he : Continuous e) (he' : 
       simpa using h.map_of_isOpenMap he'.continuousAt this,
     fun h ↦ h.map_of_isOpenMap he.continuousAt (e.toEquiv.continuous_symm_iff.mp he')⟩
 
+/-- A topological ring isomorphism maps the set of power-bounded elements onto the corresponding
+set in the target. This set-level result applies to semirings, including when the
+`powerBoundedSubring` is not available. -/
+@[simp]
+theorem image_ringEquiv_setOf_isPowerBounded (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) :
+    e '' {a : A | IsPowerBounded a} = {b : B | IsPowerBounded b} := by
+  ext b
+  obtain ⟨a, rfl⟩ := e.surjective b
+  simp [isPowerBounded_ringEquiv_iff e he he']
+
 /-- Topological nilpotence transports along a topological ring isomorphism. -/
 @[simp]
 theorem isTopologicallyNilpotent_ringEquiv_iff (e : A ≃+* B) (he : Continuous e)
@@ -549,11 +565,9 @@ bundled form of `TauCeti.Huber.isPowerBounded_ringEquiv_iff`. -/
 @[simp]
 theorem map_powerBoundedSubring (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :
     (powerBoundedSubring A).map (e : A →+* B) = powerBoundedSubring B := by
-  ext b
-  refine ⟨?_, fun hb ↦ ⟨e.symm b, ?_, e.apply_symm_apply b⟩⟩
-  · rintro ⟨a, ha, rfl⟩
-    exact (isPowerBounded_ringEquiv_iff e he he').mpr ha
-  · exact (isPowerBounded_ringEquiv_iff e he he').mp (by simpa using hb)
+  apply SetLike.coe_injective
+  simpa only [Subring.coe_map, coe_powerBoundedSubring, RingEquiv.coe_toRingHom] using
+    image_ringEquiv_setOf_isPowerBounded e he he'
 
 /-- A topological ring isomorphism restricts to an isomorphism `A° ≃+* B°`. -/
 def powerBoundedSubringEquiv (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :

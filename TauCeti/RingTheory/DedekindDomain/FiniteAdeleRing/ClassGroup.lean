@@ -255,6 +255,14 @@ theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, 
   exact ⟨fun h ↦ ⟨h.le, by rw [h, inv_one]⟩,
     fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
 
+/-- The principal finite idele of a unit of `R` is an everywhere-integral unit. -/
+@[simp 1100] theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :
+    unitEmbedding R K (Units.map (algebraMap R K) u) ∈ integralUnits R K := by
+  refine mem_integralUnits_iff.mpr fun v ↦ ?_
+  rw [unitEmbedding_apply, algebraMap_apply, valuedAdicCompletion_eq_valuation', Units.coe_map,
+    MonoidHom.coe_coe, valuation_eq_one_iff_notMem]
+  exact fun h ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
+
 /-- The finite ideles defining the trivial fractional ideal are exactly the everywhere-integral
 units. -/
 theorem ker_toFractionalIdeal :

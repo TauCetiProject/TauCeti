@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # Bounded subsets of a topological ring
@@ -89,6 +90,15 @@ def IsBounded (S : Set M) : Prop := ∀ U ∈ 𝓝 (0 : M), ∃ V ∈ 𝓝 (0 : 
 /-- Unfolding lemma for `TauCeti.Huber.IsBounded`. -/
 theorem isBounded_iff {S : Set M} :
     IsBounded S ↔ ∀ U ∈ 𝓝 (0 : M), ∃ V ∈ 𝓝 (0 : M), V * S ⊆ U := (Iff.rfl)
+
+/-- Some power of a topologically nilpotent element multiplies a bounded set into any
+neighbourhood of zero. -/
+theorem IsBounded.exists_pow_mul_subset {S U : Set M} {a : M} (hS : IsBounded S)
+    (ha : IsTopologicallyNilpotent a) (hU : U ∈ 𝓝 (0 : M)) :
+    ∃ n : ℕ, {a ^ n} * S ⊆ U := by
+  obtain ⟨V, hV, hVS⟩ := hS U hU
+  obtain ⟨n, hn⟩ := ha.exists_pow_mem_of_mem_nhds hV
+  exact ⟨n, (Set.mul_subset_mul_right (Set.singleton_subset_iff.mpr hn)).trans hVS⟩
 
 /-- Subsets of bounded sets are bounded. -/
 theorem IsBounded.subset {S T : Set M} (hS : IsBounded S) (hTS : T ⊆ S) : IsBounded T :=

@@ -15,15 +15,17 @@ import TauCeti.Probability.Moments.IntegrableExpMul
 # Moments of Fisher's F distribution
 
 This file establishes the sharp moment and exponential-integrability theory of the
-Fisher--Snedecor law: the mean, the second raw moment, the variance, the exact integrability
-thresholds `2 < n` and `4 < n` at which the first two moments diverge, and the exact
-exponential-integrability domain.  The moment results come from a file-internal computation of
-the natural moment of order `q`, which exists exactly when `2 * q < n` and is then a quotient of
-beta functions.  Since the law is positive and has only polynomial decay, its exponential
+Fisher--Snedecor law: all natural moments, the mean, the second raw moment, the variance, the exact
+integrability thresholds at which these moments diverge, and the exact exponential-integrability
+domain. The natural moment of order `q` exists exactly when `2 * q < n` and is then a quotient of
+beta functions. Since the law is positive and has only polynomial decay, its exponential
 moments exist exactly at nonpositive rates.
 
 ## Main results
 
+* `integrable_pow_fisherSnedecorMeasure_iff` gives the sharp natural-moment threshold
+  `2 * q < n`.
+* `integral_pow_fisherSnedecorMeasure` computes every finite natural moment in beta-function form.
 * `integrable_id_fisherSnedecorMeasure_iff` and `integrable_sq_fisherSnedecorMeasure_iff` give
   the two sharp integrability thresholds, hence also the divergence at and below them.
 * `integral_id_fisherSnedecorMeasure` computes the mean.
@@ -133,22 +135,13 @@ private lemma integrableOn_scaled_fisherMomentKernel_iff (hm : 0 < m) (hn : 0 < 
             ring
   rw [mul_zero] at hcomp
   rw [← integrableOn_fisherMomentKernel_iff hm q (Nat.cast_nonneg q), ← hcomp]
-  constructor
-  · intro h
-    have h' : IntegrableOn (fun x : ℝ ↦ C *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using h
-    exact h'.congr_fun heq.symm measurableSet_Ioi
-  · intro h
-    have h' : IntegrableOn (fun x : ℝ ↦ C *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := h.congr_fun heq measurableSet_Ioi
-    simpa [IntegrableOn, integrable_const_mul_iff hC] using h'
+  rw [integrableOn_congr_fun heq measurableSet_Ioi]
+  simp only [IntegrableOn, integrable_const_mul_iff hC]
 
 /-- A natural power is integrable under a valid Fisher--Snedecor law exactly when twice its
 order is below the denominator degrees of freedom. -/
-private theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : ℕ) :
+@[simp]
+theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ q) (fisherSnedecorMeasure m n) ↔ 2 * q < n := by
   rw [integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi]
   have hC : IsUnit (Real.Gamma ((m + n) / 2) /
@@ -160,25 +153,10 @@ private theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < 
           (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) *
         (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
       (Ioi (0 : ℝ)) := fun _ hx ↦ fisherMomentDensity_eq hm hn q hx
-  constructor
-  · intro h
-    have h' := h.congr_fun heq measurableSet_Ioi
-    have hk : IntegrableOn
-        (fun x : ℝ ↦ x ^ (m / 2 + q - 1) *
-          (1 + m * x / n) ^ (-((m + n) / 2))) (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using h'
-    rw [integrableOn_scaled_fisherMomentKernel_iff hm hn q] at hk
-    exact by linarith
-  · intro h
-    have hq : (q : ℝ) < n / 2 := by linarith
-    have hk := (integrableOn_scaled_fisherMomentKernel_iff hm hn q).2 hq
-    have h' : IntegrableOn (fun x ↦
-        (Real.Gamma ((m + n) / 2) /
-          (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using hk
-    exact h'.congr_fun heq.symm measurableSet_Ioi
+  rw [integrableOn_congr_fun heq measurableSet_Ioi]
+  simp only [IntegrableOn, integrable_const_mul_iff hC]
+  rw [← IntegrableOn, integrableOn_scaled_fisherMomentKernel_iff hm hn q]
+  constructor <;> intro h <;> linarith
 
 /-- The identity is integrable under a valid Fisher--Snedecor law exactly above two denominator
 degrees of freedom. -/
@@ -193,7 +171,6 @@ theorem integrable_id_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) :
 
 /-- Squaring is integrable under a valid Fisher--Snedecor law exactly above four denominator
 degrees of freedom. -/
-@[simp]
 theorem integrable_sq_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) :
     Integrable (fun x : ℝ ↦ x ^ 2) (fisherSnedecorMeasure m n) ↔ 4 < n := by
   have h := integrable_pow_fisherSnedecorMeasure_iff hm hn 2
@@ -273,7 +250,8 @@ private lemma betaMomentIntegrand_eq (q : ℕ) {u : ℝ}
       rw [hpowu, hpowv]
 
 /-- The `q`th natural moment of a Fisher--Snedecor law, in beta-function form. -/
-private theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
+@[simp]
+theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
     (hq : 2 * q < n) :
     ∫ x, x ^ q ∂fisherSnedecorMeasure m n =
       (n / m) ^ q * beta (m / 2 + q) (n / 2 - q) / beta (m / 2) (n / 2) := by

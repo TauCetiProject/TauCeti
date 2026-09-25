@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -48,6 +49,11 @@ measure cannot be integrable there.
 * `not_integrableOn_Ioi_of_eventually_le_norm` is the half-line form, and
   `not_integrable_of_eventually_le_atTop` is its real-valued Lebesgue-integrability consequence.
 
+## Reflection across the origin
+
+* `integrable_comp_abs` extends integrability on the positive half-line to an even function on the
+  whole real line by reflection.
+
 ## Kernel averages on the real line
 
 * `integral_kernel_mem_Icc_of_antitoneOn` squeezes the average of a function against a probability
@@ -84,6 +90,22 @@ open scoped ENNReal Function Topology
 namespace TauCeti
 
 namespace MeasureTheory
+
+/-- An even function obtained by composing with absolute value is integrable on the whole real
+line whenever the original function is integrable on the positive half-line. -/
+theorem integrable_comp_abs {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    (hf : IntegrableOn f (Set.Ioi 0)) : Integrable fun x : ℝ => f |x| := by
+  have hIoi : IntegrableOn (fun x : ℝ => f |x|) (Set.Ioi 0) :=
+    hf.congr_fun (fun x hx => by rw [abs_of_pos hx]) measurableSet_Ioi
+  have hIic : IntegrableOn (fun x : ℝ => f |x|) (Set.Iic 0) := by
+    have hIoi' : IntegrableOn (fun x : ℝ => f |x|) (Set.Ioi (-(0 : ℝ))) := by
+      simpa only [neg_zero] using hIoi
+    have hIio : IntegrableOn (fun x : ℝ => f |-x|) (Set.Iio 0) :=
+      hIoi'.comp_neg_Iio (μ := volume) (c := 0)
+    rw [integrableOn_Iic_iff_integrableOn_Iio]
+    simpa only [abs_neg] using hIio
+  rw [← integrableOn_univ, ← Set.Iic_union_Ioi (a := (0 : ℝ))]
+  exact hIic.union hIoi
 
 /-- A function whose norm is eventually at least a positive constant at `atTop` is not integrable
 on any right half-line: it is bounded below in norm on a set of infinite measure. -/
@@ -163,7 +185,7 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
     Tendsto (fun i => eLpNorm (f i - g) 1 μ) l (𝓝 0) := by
   have heq : ∀ i, eLpNorm (f i - g) 1 μ = ENNReal.ofReal (∫ ω, ‖f i ω - g ω‖ ∂μ) := by
     intro i
-    rw [eLpNorm_one_eq_lintegral_enorm,
+    rw [eLpNorm_one_eq_lintegral_enorm ((hf i).sub hg).aestronglyMeasurable,
       ← ofReal_integral_norm_eq_lintegral_enorm ((hf i).sub hg)]
     simp [Pi.sub_apply]
   simp_rw [heq]

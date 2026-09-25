@@ -7,15 +7,14 @@ module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.GroupTheory.Index
-public import Mathlib.RepresentationTheory.Coinduced
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import Mathlib.Algebra.Module.Pi
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
-# The coinduced discrete module of a subgroup
+# The coinduced module of a subgroup
 
 For a topological group `G`, a subgroup `U` and a `U`-module `A`, the **coinduced module**
 ```
@@ -26,38 +25,39 @@ carries the right-translation action `(g • f) x = f (x * g)` of `G`. It is Mil
 (*Profinite Groups*, Thm. 6.10.5), and it is the coefficient module Shapiro's lemma is stated
 against.
 
-This file builds `TauCeti.coind` and the properties Shapiro's lemma and the dimension-shifting
-argument consume:
+This file builds `TauCeti.coind`, as an additive subgroup of `G → A`, and the properties Shapiro's
+lemma and the dimension-shifting argument consume. The coinduced module is carried as a
+*discrete* `G`-module by `TauCeti.DiscreteCoind` in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete`. It is packaged as a
+functor between categories of smooth discrete representations, and compared with Mathlib's
+`Representation.coind`, in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor`.
 
-* it is a `G`-module (`TauCeti.instDistribMulActionCoind`) whose right-translation stabilizers are
-  open for compact `G` (`TauCeti.isOpen_stabilizer_coind`), which is exactly what makes it a
-  *discrete* `G`-module in the sense of a continuous action on a discrete module;
-* it is functorial in `A` along `U`-equivariant additive maps (`TauCeti.coindMap`), the counit
-  being evaluation at `1` (`TauCeti.coindEval`);
-* it is **exact** in `A`: `TauCeti.coindMap_injective`, `TauCeti.coindMap_surjective` and
-  `TauCeti.coindMap_range_eq_ker` send a short exact sequence of discrete `U`-modules to a short
-  exact sequence;
-* it is carried as a *discrete* `G`-module by `TauCeti.DiscreteCoind`, the same additive group
-  with the discrete topology imposed, which is the coefficient object the explicit low-degree
-  cohomology of Layer 2 takes;
-* scalar multiplication is continuous on that discrete carrier for compact `G`, and coefficient
-  maps induce linear maps (`TauCeti.DiscreteCoind.map`);
-* for finite-index `U`, the trace `TauCeti.coindTrace` is additive, `G`-equivariant and natural in
-  the coefficients; `TauCeti.DiscreteCoind.trace` and `TauCeti.coindTraceHom` package it on the
-  discrete carrier and as a morphism of smooth discrete representations;
-* it is packaged as the functor `TauCeti.coindFunctor` between categories of smooth discrete
-  representations;
-* for an open subgroup, every algebraically coinduced function is automatically locally constant,
-  and `TauCeti.topologicalCoindIsoAlgebraic` identifies this construction with Mathlib's
-  `Representation.coind`;
-* the two degenerate subgroups are computed: `TauCeti.mem_coind_bot_iff` characterizes membership
-  in `Coind_1^G A` as local constancy, so it is the group of all locally constant maps `G → A`,
-  the acyclic module of the dimension-shifting argument, and
-  `TauCeti.coindEvalTopEquiv` says `Coind_G^G A` is `A`.
+## Main definitions
+
+* `TauCeti.coind`: the coinduced module `Coind_U^G A`, a `G`-module under right translation
+  (`TauCeti.instDistribMulActionCoind`);
+* `TauCeti.coindEval`: evaluation at `1`, the counit of coinduction;
+* `TauCeti.coindMap`: the functoriality of coinduction in `A` along `U`-equivariant additive maps;
+* `TauCeti.coindTrace`: for finite-index `U`, the trace `f ↦ ∑ x : G ⧸ U, x • f x⁻¹`.
+
+## Main results
+
+* `TauCeti.isOpen_stabilizer_coind`: the right-translation stabilizers are open for compact `G`,
+  which is exactly what makes the coinduced module a *discrete* `G`-module in the sense of a
+  continuous action on a discrete module;
+* `TauCeti.coindMap_injective`, `TauCeti.coindMap_surjective` and
+  `TauCeti.coindMap_range_eq_ker`: coinduction is **exact** in `A`, sending a short exact sequence
+  of discrete `U`-modules to a short exact sequence;
+* `TauCeti.coindTrace_smul` and `TauCeti.coindTrace_coindMap`: the trace is `G`-equivariant and
+  natural in the coefficients;
+* `TauCeti.mem_coind_bot_iff`: membership in `Coind_1^G A` is local constancy, so it is the group
+  of all locally constant maps `G → A`, the acyclic module of the dimension-shifting argument;
+* `TauCeti.coindEvalTopEquiv`: `Coind_G^G A` is `A`.
 
 Surjectivity is where the topology does real work. Lifting a locally constant `U`-equivariant map
 `G → B` through a surjection `A ↠ B` means choosing preimages coherently along the right cosets
-`U \ G`, and the choice has to stay locally constant. Layer 0's continuous section of `G → G ⧸ U`
+`U \ G`, and the choice has to stay locally constant. The continuous section of `G → G ⧸ U`
 (`TauCeti.exists_continuous_section`, Ribes-Zalesskii Prop. 2.2.2) supplies it: inverting turns a
 continuous section of the *left* coset space into a continuous choice `s'` of representatives of
 the *right* cosets, and `g ↦ g * (s' g)⁻¹` is then a continuous `U`-valued cocycle by which the
@@ -71,10 +71,9 @@ representation language: in this file's notation, a `Submodule R C(G, V)` attach
 `ContRepresentation R U V` and the inclusion `U → G`. It is not used here because the
 `ContRepresentation` carrier imposes no continuity of the action in the group variable, which is
 needed by `TauCeti.coindMap_surjective`; `TauCeti.coindEvalTopEquiv` similarly requires continuity
-of each orbit map. It is also not used because the roadmap fixes the unbundled classes
-`[DistribMulAction U A]`, `[DiscreteTopology A]`, `[ContinuousSMul U A]` for this layer, with local
-constancy as a predicate on plain functions rather than a bundled `C(G, A)`. The final construction
-uses the smooth-discrete dictionary to transport this unbundled module to the categorical language.
+of each orbit map. The discrete coefficient modules here are also given by the unbundled classes
+`[DistribMulAction U A]`, `[DiscreteTopology A]`, `[ContinuousSMul U A]`, and local constancy is a
+predicate on plain functions rather than a bundled `C(G, A)`.
 
 For finite-index subgroups, Mathlib's algebraic `Rep.coindResAdjunction` has the trace as its
 counit. Its coinduced object consists of all equivariant functions in `Rep k G`, whereas this file
@@ -88,10 +87,10 @@ because their coefficients live in the purely algebraic category `Rep k G`, whil
 cohomology uses this file's locally constant coinduction on discrete modules.
 
 The trace construction follows Brown, *Cohomology of Groups*, III §9.
-
-This is the "coinduced module" milestone of Layer 7 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`.
 -/
+
+-- Blueprint: Layer 7 (coinduced modules and Shapiro's lemma) of the human-authored roadmap
+-- `TauCetiRoadmap/ProfiniteCohomology/README.md`.
 
 public section
 
@@ -252,12 +251,15 @@ theorem coindMap_apply (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) 
 theorem coindMap_id : coindMap G U (AddMonoidHom.id A) (fun _ _ => rfl) = AddMonoidHom.id _ := by
   ext f g; simp
 
-/-- Coinduction of a composite is the composite of the coinductions. -/
+-- The composition `simp` lemmas take both equivariance hypotheses on the left-hand side and derive
+-- the equivariance of the composite on the right: a hypothesis occurring on the left only inside a
+-- proof is not assigned by unification, and `simp` cannot prove an equivariance for symbolic maps.
+/-- The composite of two coinductions is the coinduction of the composite. -/
 @[simp]
-theorem coindMap_comp (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
+theorem coindMap_comp_coindMap (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a)
     (ψ : B →+ C) (hψ : ∀ (u : U) (b : B), ψ (u • b) = u • ψ b) :
-    coindMap G U (ψ.comp φ) (fun u a => by rw [AddMonoidHom.comp_apply, hφ, hψ]; rfl) =
-      (coindMap G U ψ hψ).comp (coindMap G U φ hφ) := by
+    (coindMap G U ψ hψ).comp (coindMap G U φ hφ) =
+      coindMap G U (ψ.comp φ) (fun u a => by rw [AddMonoidHom.comp_apply, hφ, hψ]; rfl) := by
   ext f g; simp
 
 /-- The counit is natural in the coefficients. -/
@@ -432,7 +434,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
 /-- **Coinduction preserves surjectivity**, and this is where the topology does the work: a
 locally constant `U`-equivariant map `G → B` is lifted through `φ` by choosing preimages along a
 *continuous* factorization of `G` over the right cosets of `U`
-(`TauCeti.exists_continuous_rightCosetFactorization`, from Layer 0's continuous section). The
+(`TauCeti.exists_continuous_rightCosetFactorization`, from the continuous coset section). The
 factor `w g •` is forced — without it the lift is not `U`-equivariant — and it is exactly what
 discreteness of `A` and continuity of the `U`-action make locally constant again.
 
@@ -456,833 +458,6 @@ theorem coindMap_surjective (hU : IsClosed (U : Set G)) (φ : A →+ B)
       ← apply_mul_of_mem_coind F.2 (w g) (r g), hwr g]
 
 end Surjectivity
-
-section DiscreteCarrier
-
-variable (G : Type*) [Group G] [TopologicalSpace G] (U : Subgroup G)
-  (A : Type*) [AddCommGroup A] [DistribMulAction U A]
-
-/-- `Coind_U^G A` **as a discrete `G`-module**: the additive group `TauCeti.coind` carrying the
-discrete topology.
-
-The topology is imposed, not inherited. Viewed as an `AddSubgroup` of `G → A` the coinduced module
-inherits the pointwise topology, in which a basic neighbourhood constrains only finitely many
-values and therefore does not isolate a locally constant function; that is the same trap
-`TauCeti.ContCohomology.DiscreteH1` records for the low-degree cohomology quotients. The
-coefficients of continuous cohomology are *discrete* modules, and
-`TauCeti.isOpen_stabilizer_coind` is exactly the statement that the right-translation action is
-continuous for the discrete topology once `G` is compact
-(`TauCeti.DiscreteCoind.instContinuousSMul`). `TauCeti.DiscreteCoind.toCoind` keeps the
-computations on representatives available.
-
-The body is `@[expose]`d because every carrier instance below transports one from
-`TauCeti.coind` along it, and an exposed instance may only be built from exposed definitions. -/
-@[expose] def DiscreteCoind : Type _ := coind G U A
-
-namespace DiscreteCoind
-
-instance : AddCommGroup (DiscreteCoind G U A) := inferInstanceAs (AddCommGroup (coind G U A))
-
-instance : TopologicalSpace (DiscreteCoind G U A) := ⊥
-
-instance : DiscreteTopology (DiscreteCoind G U A) := ⟨rfl⟩
-
-/-- The additive equivalence between the discrete carrier and the coinduced subgroup: the identity
-on elements, so that a computation performed on the underlying function transfers unchanged. The
-body is `@[expose]`d because the coercion to a function below is defined through it. -/
-@[expose] def toCoind : DiscreteCoind G U A ≃+ coind G U A := AddEquiv.refl _
-
-variable {G U A}
-
-instance instFunLike : FunLike (DiscreteCoind G U A) G A where
-  coe f := ((toCoind G U A f : coind G U A) : G → A)
-  coe_injective _ _ h := (toCoind G U A).injective (Subtype.ext h)
-
-@[ext]
-theorem ext {f f' : DiscreteCoind G U A} (h : ∀ g : G, f g = f' g) : f = f' :=
-  DFunLike.ext _ _ h
-
-@[simp]
-theorem coe_toCoind (f : DiscreteCoind G U A) :
-    ((toCoind G U A f : coind G U A) : G → A) = ⇑f := rfl
-
-@[simp]
-theorem coe_toCoind_symm (f : coind G U A) :
-    ⇑((toCoind G U A).symm f) = (f : G → A) := rfl
-
-/-- The underlying function of an element of `Coind_U^G A` lies in `TauCeti.coind`. -/
-theorem coe_mem (f : DiscreteCoind G U A) : ⇑f ∈ coind G U A := (toCoind G U A f).2
-
-/-- An element of `Coind_U^G A` is locally constant. -/
-theorem isLocallyConstant (f : DiscreteCoind G U A) : IsLocallyConstant ⇑f :=
-  isLocallyConstant_of_mem_coind (coe_mem f)
-
-/-- The defining equivariance `f (u * g) = u • f g`. -/
-@[simp]
-theorem apply_mul (f : DiscreteCoind G U A) (u : U) (g : G) : f ((u : G) * g) = u • f g :=
-  apply_mul_of_mem_coind (coe_mem f) u g
-
-/-- Equivariance at an element of `U`, in simp-normal form. -/
-@[simp]
-theorem apply_coe (f : DiscreteCoind G U A) (u : U) : f (u : G) = u • f 1 := by
-  simpa using apply_mul f u 1
-
-variable (G U A) in
-/-- An element of `Coind_U^G A` from a locally constant `U`-equivariant function. The body is
-`@[expose]`d so that `TauCeti.DiscreteCoind.coe_mk` recovers the function it was built from. -/
-@[expose] def mk (f : G → A) (hlc : IsLocallyConstant f)
-    (heq : ∀ (u : U) (g : G), f ((u : G) * g) = u • f g) : DiscreteCoind G U A :=
-  (toCoind G U A).symm ⟨f, mem_coind_iff.2 ⟨hlc, heq⟩⟩
-
-@[simp]
-theorem coe_mk (f : G → A) (hlc : IsLocallyConstant f)
-    (heq : ∀ (u : U) (g : G), f ((u : G) * g) = u • f g) : ⇑(mk G U A f hlc heq) = f := rfl
-
-@[simp]
-theorem mk_apply (f : G → A) (hlc : IsLocallyConstant f)
-    (heq : ∀ (u : U) (g : G), f ((u : G) * g) = u • f g) (g : G) :
-    mk G U A f hlc heq g = f g := rfl
-
-@[simp]
-theorem coe_zero : ⇑(0 : DiscreteCoind G U A) = 0 := rfl
-
-@[simp]
-theorem coe_add (f f' : DiscreteCoind G U A) : ⇑(f + f') = ⇑f + ⇑f' := rfl
-
-@[simp]
-theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
-
-@[simp]
-theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
-
-section Scalar
-
-variable {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
-
-instance instSMulScalar : SMul R (DiscreteCoind G U A) :=
-  inferInstanceAs (SMul R (coind G U A))
-
-@[simp]
-theorem coe_smul_scalar (r : R) (f : DiscreteCoind G U A) (g : G) :
-    (r • f) g = r • f g := rfl
-
-instance instModuleScalar : Module R (DiscreteCoind G U A) :=
-  Function.Injective.module R (toCoind G U A).toAddMonoidHom
-    (toCoind G U A).injective fun _ _ => rfl
-
-end Scalar
-
-variable (G U A) in
-/-- **Evaluation at `1`** on the discrete carrier, the counit of coinduction. -/
-def eval : DiscreteCoind G U A →+ A := (coindEval G U).comp (toCoind G U A).toAddMonoidHom
-
-@[simp]
-theorem eval_apply (f : DiscreteCoind G U A) : eval G U A f = f 1 := (rfl)
-
-/-- Evaluation at `1` is continuous, the source being discrete. -/
-theorem continuous_eval [TopologicalSpace A] : Continuous (eval G U A) :=
-  continuous_of_discreteTopology
-
-variable (G U A) in
-/-- Evaluation at a point is continuous, the source being discrete. -/
-theorem continuous_apply [TopologicalSpace A] (x : G) :
-    Continuous fun f : DiscreteCoind G U A => f x := continuous_of_discreteTopology
-
-section Action
-
-variable [ContinuousMul G]
-
-instance instDistribMulAction : DistribMulAction G (DiscreteCoind G U A) :=
-  inferInstanceAs (DistribMulAction G (coind G U A))
-
-@[simp]
-theorem coe_smul (g : G) (f : DiscreteCoind G U A) (x : G) : (g • f) x = f (x * g) := (rfl)
-
-/-- The counit is `U`-equivariant for the restriction of the right-translation action. This is the
-compatible-pair hypothesis Shapiro's lemma is an instance of. -/
-theorem eval_smul (u : U) (f : DiscreteCoind G U A) :
-    eval G U A ((u : G) • f) = u • eval G U A f := by simp
-
-/-- The `G`-stabilizer of an element of `Coind_U^G A` is its right-translation stabilizer. -/
-theorem stabilizer_eq (f : DiscreteCoind G U A) :
-    MulAction.stabilizer G f = rightTranslationStabilizer ⇑f := by
-  ext g
-  simp [MulAction.mem_stabilizer_iff, DFunLike.ext_iff]
-
-end Action
-
-section ScalarAction
-
-variable {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
-
-variable [ContinuousMul G] in
-instance instSMulCommClass : SMulCommClass G R (DiscreteCoind G U A) :=
-  ⟨fun g r f => ext fun x => by simp⟩
-
-variable [TopologicalSpace R] [TopologicalSpace A] [DiscreteTopology A]
-  [ContinuousSMul R A] [CompactSpace G]
-
-/-- The scalar orbit map `r ↦ r • f` of a discrete coinduced element is continuous when the group
-`G` is compact and the coefficient module is discrete. Together these orbit maps give the
-`ContinuousSMul R (DiscreteCoind G U A)` instance below. -/
-theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R => r • f := by
-  rw [continuous_discrete_rng]
-  intro y
-  by_cases h : (fun r : R => r • f) ⁻¹' {y} = ∅
-  · rw [h]
-    exact isOpen_empty
-  · obtain ⟨r₀, hr₀⟩ := Set.nonempty_iff_ne_empty.mpr h
-    have hy : r₀ • f = y := hr₀
-    rw [← hy]
-    have hrange : (Set.range f).Finite := f.isLocallyConstant.range_finite
-    have hopen : IsOpen (⋂ a ∈ Set.range f, (fun r : R => r • a) ⁻¹' {r₀ • a}) :=
-      hrange.isOpen_biInter fun a _ =>
-        (isOpen_discrete {r₀ • a}).preimage
-          (continuous_smul.comp (continuous_id.prodMk continuous_const))
-    convert hopen using 1
-    ext r
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_iInter]
-    constructor
-    · intro hr a ha
-      obtain ⟨g, rfl⟩ := ha
-      exact congrArg (· g) hr
-    · intro hr
-      exact ext fun g => hr (f g) ⟨g, rfl⟩
-
-instance instContinuousSMulScalar : ContinuousSMul R (DiscreteCoind G U A) :=
-  ⟨continuous_prod_of_discrete_right.2 continuous_smul_const⟩
-
-end ScalarAction
-
-section Map
-
-variable {R : Type*} [Semiring R] {B C : Type*}
-  [Module R A] [SMulCommClass U R A]
-  [AddCommGroup B] [Module R B] [DistribMulAction U B] [SMulCommClass U R B]
-  [AddCommGroup C] [Module R C] [DistribMulAction U C] [SMulCommClass U R C]
-
-/-- Coinduction of a `U`-equivariant linear map, acting pointwise on locally constant functions. -/
-def map (f : A →ₗ[R] B) (hf : ∀ (u : U) (a : A), f (u • a) = u • f a) :
-    DiscreteCoind G U A →ₗ[R] DiscreteCoind G U B where
-  toAddHom := ((toCoind G U B).symm.toAddMonoidHom.comp
-    ((coindMap G U f.toAddMonoidHom hf).comp (toCoind G U A).toAddMonoidHom)).toAddHom
-  map_smul' _ _ := ext fun _ => map_smul f _ _
-
-private theorem map_apply_impl (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) (g : G) :
-    map f hf a g = f (a g) := rfl
-
-@[simp]
-theorem map_apply (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) (g : G) :
-    map f hf a g = f (a g) := map_apply_impl f hf a g
-
-@[simp]
-theorem map_id :
-    map (G := G) (U := U) (LinearMap.id (R := R) (M := A)) (fun _ _ => rfl) =
-      LinearMap.id := by
-  ext a g
-  rfl
-
-@[simp]
-theorem map_comp (f : A →ₗ[R] B) (hf) (f' : B →ₗ[R] C) (hf') :
-    map (G := G) (U := U) (f'.comp f)
-        (fun u a => by rw [LinearMap.comp_apply, hf, hf']; rfl) =
-      (map (G := G) (U := U) f' hf').comp (map (G := G) (U := U) f hf) := by
-  ext a g
-  rfl
-
-variable (R G U A) in
-/-- Evaluation at `1` as a linear map, the counit of linear coinduction. -/
-def evalLinear : DiscreteCoind G U A →ₗ[R] A where
-  toAddHom := (eval G U A).toAddHom
-  map_smul' _ _ := rfl
-
-private theorem evalLinear_apply_impl (f : DiscreteCoind G U A) :
-    evalLinear (R := R) G U A f = f 1 := rfl
-
-@[simp]
-theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f = f 1 :=
-  evalLinear_apply_impl f
-
-end Map
-
-section Trace
-
-variable [ContinuousMul G] [U.FiniteIndex]
-  {M : Type*} [AddCommGroup M] [DistribMulAction G M]
-
-attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
-
-variable (G U M) in
-/-- The `G`-equivariant additive trace `DiscreteCoind G U M →+[G] M`. -/
-noncomputable def trace : DiscreteCoind G U M →+[G] M where
-  toFun f := coindTrace G U (toCoind G U M f)
-  map_zero' := map_zero _
-  map_add' _ _ := map_add _ _ _
-  map_smul' g f := coindTrace_smul g (toCoind G U M f)
-
-/-- The discrete-carrier trace is the unbundled trace after forgetting the discrete topology. -/
-theorem coindTrace_toCoind (f : DiscreteCoind G U M) :
-    coindTrace G U (toCoind G U M f) = trace G U M f := (rfl)
-
-@[simp]
-theorem trace_apply (f : DiscreteCoind G U M) :
-    trace G U M f = ∑ x : G ⧸ U, x.out • f x.out⁻¹ :=
-  (coindTrace_apply (toCoind G U M f)).trans
-    (Finset.sum_congr rfl fun x _ => coindTraceTerm_out (toCoind G U M f) x)
-
-/-- The discrete-carrier trace computed along an arbitrary transversal. -/
-theorem trace_eq_sum_transversal (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
-    (f : DiscreteCoind G U M) : trace G U M f = ∑ x : G ⧸ U, t x • f (t x)⁻¹ := by
-  rw [← coindTrace_toCoind]
-  simpa only [coe_toCoind] using
-    coindTrace_eq_sum_transversal t ht (toCoind G U M f)
-
-/-- The discrete-carrier trace is natural in `G`-equivariant linear coefficient maps. -/
-theorem trace_map {R N : Type*} [Semiring R] [AddCommGroup N] [DistribMulAction G N]
-    [Module R M] [SMulCommClass G R M] [Module R N] [SMulCommClass G R N]
-    (φ : M →ₗ[R] N) (hφ : ∀ (g : G) (m : M), φ (g • m) = g • φ m)
-    (f : DiscreteCoind G U M) :
-    trace G U N (map φ (fun u m => hφ (u : G) m) f) = φ (trace G U M f) := by
-  exact coindTrace_coindMap (G := G) (U := U) φ.toAddMonoidHom hφ (toCoind G U M f)
-
-/-- The trace is continuous, the source being discrete. -/
-theorem continuous_trace [TopologicalSpace M] : Continuous (trace G U M) :=
-  continuous_of_discreteTopology
-
-section Scalar
-
-variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass G R M]
-
-variable (R G U M) in
-/-- The trace on the discrete carrier as an `R`-linear map. -/
-noncomputable def traceLinear : DiscreteCoind G U M →ₗ[R] M where
-  toAddHom := (trace G U M).toAddHom
-  map_smul' r f := by
-    -- Expose the additive trace under the linear-map coercion before using its sum formula.
-    change trace G U M (r • f) = r • trace G U M f
-    rw [trace_apply, trace_apply, Finset.smul_sum]
-    simp only [coe_smul_scalar]
-    exact Finset.sum_congr rfl fun x _ => smul_comm x.out r (f x.out⁻¹)
-
-@[simp]
-theorem traceLinear_apply (f : DiscreteCoind G U M) :
-    traceLinear (R := R) G U M f = trace G U M f := by
-  -- Expose the additive trace under the linear-map coercion.
-  change trace G U M f = trace G U M f
-  rfl
-
-end Scalar
-
-end Trace
-
-/-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
-on the discrete carrier is continuous, because a locally constant function on a compact group is
-uniformly locally constant. -/
-instance instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
-    ContinuousSMul G (DiscreteCoind G U A) :=
-  continuousSMul_iff_stabilizer_isOpen.2 fun f => by
-    rw [stabilizer_eq]
-    exact isOpen_rightTranslationStabilizer (isLocallyConstant f)
-
-end DiscreteCoind
-
-end DiscreteCarrier
-
-section Bundled
-
-open CategoryTheory
-
-universe u v w
-
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-local instance instDiscreteTopologyOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Monoid G] [TopologicalSpace G]
-    (A : SmoothDiscreteTopRep.{u, v, w} R G) : DiscreteTopology A.obj.V :=
-  A.property.discreteTopology
-
-local instance instContinuousSMulOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    ContinuousSMul G A.obj.V := A.property.continuousSMul
-
-variable (R : Type u) [Ring R] [TopologicalSpace R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  (U : Subgroup G)
-
-/-- The locally constant coinduced module, bundled as a discrete representation of `G`. -/
-noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
-    DiscreteRep.{u, v, max v w} R G where
-  V := DiscreteCoind G U A.V
-  smulCommClass := DiscreteCoind.instSMulCommClass
-  continuousSMulRing := DiscreteCoind.instContinuousSMulScalar
-
-/-- Coinduction from discrete `U`-representations to discrete `G`-representations. -/
-noncomputable def coindDiscreteFunctor :
-    DiscreteRep.{u, v, w} R U ⥤ DiscreteRep.{u, v, max v w} R G where
-  obj := coindDiscreteRep R G U
-  map {A B} f :=
-    (DiscreteCoind.map f.toLinearMap
-      (DiscreteRep.equivariant f)).intertwiningMap_of_isIntertwiningMap _ _ fun g a => by
-        apply DiscreteCoind.ext
-        intro x
-        rfl
-  map_id A := Representation.IntertwiningMap.ext (LinearMap.ext fun a =>
-    DiscreteCoind.ext fun g => by rfl)
-  map_comp f f' := Representation.IntertwiningMap.ext (LinearMap.ext fun a =>
-    DiscreteCoind.ext fun g => by rfl)
-
-private theorem coindDiscreteFunctor_obj_impl (A : DiscreteRep.{u, v, w} R U) :
-    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := rfl
-
-/-- The object part of discrete coinduction is the locally constant coinduced representation. -/
-@[simp]
-theorem coindDiscreteFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
-    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A :=
-  coindDiscreteFunctor_obj_impl R G U A
-
-private theorem coindDiscreteFunctor_map_apply_impl {A B : DiscreteRep.{u, v, w} R U}
-    (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    ((eqToHom (coindDiscreteFunctor_obj R G U A).symm ≫
-      (coindDiscreteFunctor R G U).map f ≫
-      eqToHom (coindDiscreteFunctor_obj R G U B)).toLinearMap a) g =
-        f.toLinearMap (a g) := by
-  -- `coindDiscreteFunctor` is defined objectwise as `coindDiscreteRep`, so both object equalities
-  -- are `rfl` and the `eqToHom` transports around the functor map are identities. No categorical
-  -- lemma discharges a transport along a proof of a definitional equality without unfolding the
-  -- functor, so that one reduction is made here, in a private lemma, and the public statement is
-  -- derived from it; what is left is the underlying map, computed by `DiscreteCoind.map_apply`.
-  change DiscreteCoind.map f.toLinearMap (DiscreteRep.equivariant f) a g = _
-  exact DiscreteCoind.map_apply f.toLinearMap _ a g
-
-/-- Discrete coinduction maps act pointwise on their locally constant functions. The explicit
-object transports identify the opaque functor's objects with `coindDiscreteRep`. -/
-@[simp]
-theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
-    (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
-    ((show ((coindDiscreteFunctor R G U).obj B).ρ.IntertwiningMap
-        (coindDiscreteRep R G U B).ρ from
-        eqToHom (coindDiscreteFunctor_obj R G U B))
-      ((show ((coindDiscreteFunctor R G U).obj A).ρ.IntertwiningMap
-          ((coindDiscreteFunctor R G U).obj B).ρ from
-          (coindDiscreteFunctor R G U).map f)
-        ((show (coindDiscreteRep R G U A).ρ.IntertwiningMap
-            ((coindDiscreteFunctor R G U).obj A).ρ from
-            eqToHom (coindDiscreteFunctor_obj R G U A).symm) a))) g =
-        f.toLinearMap (a g) :=
-  by
-    simpa only [DiscreteRep.comp_toLinearMap, LinearMap.coe_comp,
-      Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply] using
-        coindDiscreteFunctor_map_apply_impl R G U f a g
-
-/-- The locally constant coinduced module, bundled as a smooth discrete representation of `G`. -/
-noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    SmoothDiscreteTopRep.{u, v, max v w} R G :=
-  (toSmoothDiscrete R G).obj (coindDiscreteRep R G U ((ofSmoothDiscrete R U).obj A))
-
-/-- Evaluation at `1` as the coinduction counit, from the restriction of the coinduced
-representation to its coefficient representation. -/
-noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    ContIntertwiningMap (TopRep.res (U.subtype : U →* G) (coindTopRep R G U A).obj).ρ
-      A.obj.ρ where
-  toContinuousLinearMap :=
-    ⟨DiscreteCoind.evalLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
-  isIntertwining' u := by
-    ext f
-    exact DiscreteCoind.eval_smul u f
-
-private theorem coindCounit_apply_impl (A : SmoothDiscreteTopRep.{u, v, w} R U)
-    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 := rfl
-
-@[simp]
-theorem coindCounit_apply (A : SmoothDiscreteTopRep.{u, v, w} R U)
-    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 :=
-  coindCounit_apply_impl R G U A f
-
-/-- The trace packaged as a morphism of smooth discrete `G`-representations for a finite-index
-subgroup `U`. -/
-noncomputable def coindTraceHom [U.FiniteIndex]
-    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
-    (coindTopRep R G U
-      (⟨TopRep.res (U.subtype : U →* G) A.obj,
-        A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
-  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
-  letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
-  let X := coindTopRep R G U
-    (⟨TopRep.res (U.subtype : U →* G) A.obj,
-      A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
-  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
-  exact CategoryTheory.ConcreteCategory.ofHom
-    { toContinuousLinearMap :=
-        ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
-      isIntertwining' g := by
-        ext f
-        exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
-
-@[simp]
-theorem coindTraceHom_apply [U.FiniteIndex]
-    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
-    coindTraceHom R G U A f = DiscreteCoind.trace G U A.obj.V f := by
-  -- Remove the categorical and continuous-linear-map wrappers; the remaining computation is
-  -- exactly the public computation lemma for `DiscreteCoind.traceLinear`.
-  change DiscreteCoind.traceLinear (R := R) G U A.obj.V f = _
-  exact DiscreteCoind.traceLinear_apply f
-
-/-- Coinduction from smooth discrete `U`-representations to smooth discrete
-`G`-representations. -/
-noncomputable def coindFunctor :
-    SmoothDiscreteTopRep.{u, v, w} R U ⥤ SmoothDiscreteTopRep.{u, v, max v w} R G :=
-  ofSmoothDiscrete R U ⋙ coindDiscreteFunctor R G U ⋙ toSmoothDiscrete R G
-
-/-- The object part of smooth discrete coinduction is the bundled locally constant coinduced
-representation. -/
-@[simp]
-theorem coindFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    (coindFunctor R G U).obj A = coindTopRep R G U A :=
-  congrArg (toSmoothDiscrete R G).obj
-    (coindDiscreteFunctor_obj R G U ((ofSmoothDiscrete R U).obj A))
-
-private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w} R U}
-    (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
-    (show DiscreteCoind G U B.obj.V from
-      (eqToHom (coindFunctor_obj R G U A).symm ≫ (coindFunctor R G U).map f ≫
-        eqToHom (coindFunctor_obj R G U B)).hom.hom a) g = f.hom.hom (a g) := by
-  -- Display the three constituent functor maps so their public computation lemmas apply.
-  change (show DiscreteCoind G U B.obj.V from
-    ((toSmoothDiscrete R G).map
-      ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f))).hom.hom a) g = _
-  have htop := toSmoothDiscrete_map_hom_apply (R := R) (G := G)
-    ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f)) a
-  -- The dictionary lemma returns an equality in the underlying carrier; identifying that carrier
-  -- with `DiscreteCoind` makes point evaluation at `g` well typed.
-  have htop' := congrArg (fun b => (show DiscreteCoind G U B.obj.V from b) g) htop
-  have h := coindDiscreteFunctor_map_apply R G U ((ofSmoothDiscrete R U).map f) a g
-  have h' := h.trans
-    (ofSmoothDiscrete_map_toLinearMap_apply (R := R) (G := U) f (a g))
-  exact htop'.trans h'
-
-/-- Smooth discrete coinduction maps act pointwise on their locally constant functions. The
-object transports identify the opaque composite functor's objects with `coindTopRep`. -/
-@[simp]
-theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
-    (f : A ⟶ B) (a : DiscreteCoind G U A.obj.V) (g : G) :
-    (show DiscreteCoind G U B.obj.V from
-      (((eqToHom (congrArg
-          (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G => X.obj)
-          (coindFunctor_obj R G U B))).hom.comp
-        ((coindFunctor R G U).map f).hom.hom).comp
-          (eqToHom (congrArg
-            (fun X : SmoothDiscreteTopRep.{u, v, max v w} R G => X.obj)
-            (coindFunctor_obj R G U A).symm)).hom) a) g = f.hom.hom (a g) := by
-  simpa only [CategoryTheory.ObjectProperty.FullSubcategory.comp_hom,
-    CategoryTheory.ObjectProperty.eqToHom_hom, TopRep.hom_comp] using
-      coindFunctor_map_apply_impl R G U f a g
-
-/-- A transport between equal topological representations acts by casting the carrier. -/
-private theorem topRep_eqToHom_apply {k H : Type*} [Ring k] [TopologicalSpace k] [Monoid H]
-    {X Y : TopRep k H} (h : X = Y) (x : X) :
-    (eqToHom h).hom x = cast (congrArg TopRep.V h) x := by
-  subst h
-  rfl
-
-/-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
-noncomputable def coindCounitNatTrans :
-    coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U ⟶
-      𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U) where
-  app A := ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-      TopRep.ofHom (coindCounit R G U A))
-  naturality {A B} f := by
-    apply ObjectProperty.hom_ext
-    apply TopRep.hom_ext
-    ext a
-    -- Both functors are opaque here, so their objects are identified with `coindTopRep` and
-    -- `TopRep.res` only through the public object lemmas. Every transport along those equations
-    -- is a cast of carriers, and the two public map computations close the square pointwise.
-    revert a
-    intro (a : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj)
-    have eX : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj =
-        TopRep.res (U.subtype : U →* G) ((coindFunctor R G U).obj A).obj :=
-      congrArg (fun X : SmoothDiscreteTopRep R U => X.obj)
-        (smoothDiscreteResFunctor_obj R G U ((coindFunctor R G U).obj A))
-    have eY : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj B)).obj =
-        TopRep.res (U.subtype : U →* G) ((coindFunctor R G U).obj B).obj :=
-      congrArg (fun X : SmoothDiscreteTopRep R U => X.obj)
-        (smoothDiscreteResFunctor_obj R G U ((coindFunctor R G U).obj B))
-    have sA : ((coindFunctor R G U).obj A).obj = (coindTopRep R G U A).obj :=
-      congrArg (fun X : SmoothDiscreteTopRep R G => X.obj) (coindFunctor_obj R G U A)
-    have sB : ((coindFunctor R G U).obj B).obj = (coindTopRep R G U B).obj :=
-      congrArg (fun X : SmoothDiscreteTopRep R G => X.obj) (coindFunctor_obj R G U B)
-    have cX := congrArg TopRep.V eX
-    have cA := congrArg TopRep.V (eX.trans (congrArg (TopRep.res (U.subtype : U →* G)) sA))
-    have h1 : (eqToHom eY).hom
-        (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom
-          ((eqToHom eX.symm).hom (cast cX a))) =
-        ((coindFunctor R G U).map f).hom.hom (cast cX a) :=
-      smoothDiscreteResFunctor_map_apply R G U ((coindFunctor R G U).map f)
-        (cast cX a)
-    have h2 : (show DiscreteCoind G U B.obj.V from (eqToHom sB).hom
-        (((coindFunctor R G U).map f).hom.hom ((eqToHom sA.symm).hom (cast cA a)))) 1 =
-        f.hom.hom ((show DiscreteCoind G U A.obj.V from cast cA a) 1) :=
-      coindFunctor_map_apply R G U f (cast cA a) 1
-    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, cast_cast, cast_eq] at h1
-    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, cast_cast] at h2
-    have h1' := congrArg (cast (congrArg TopRep.V eY).symm) h1
-    rw [cast_cast, cast_eq] at h1'
-    change coindCounit R G U B (TopRep.Hom.hom (eqToHom (C := TopRep R U) _)
-        (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a)) =
-      f.hom.hom (coindCounit R G U A (TopRep.Hom.hom (eqToHom (C := TopRep R U) _) a))
-    rw [topRep_eqToHom_apply, topRep_eqToHom_apply, h1', cast_cast]
-    exact h2
-
-private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    ((coindCounitNatTrans R G U).app A).hom =
-      eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-        TopRep.ofHom (coindCounit R G U A) := rfl
-
-/-- The components of the coinduction counit evaluate at `1`. The object transport identifies the
-restricted opaque coinduced object with the restriction of `coindTopRep`. -/
-@[simp]
-theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} R U)
-    (f : DiscreteCoind G U A.obj.V) :
-    (show ContIntertwiningMap ((coindTopRep R G U A).obj.ρ.restrict U.subtype) A.obj.ρ from
-      ((coindCounitNatTrans R G U).app A).hom.hom.comp
-        (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-          ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-            (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A))).symm)).hom) f =
-      f 1 := by
-  rw [← TopRep.hom_comp, coindCounitNatTrans_app_hom_impl, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
-
-end Bundled
-
-section AlgebraicComparison
-
-open CategoryTheory
-open scoped Pointwise
-
-universe u v w
-
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-section LocallyConstant
-
-variable (R : Type u) [Semiring R]
-  (G : Type v) [Group G] [TopologicalSpace G] [ContinuousMul G]
-
-/-- An algebraically coinduced function from an open subgroup is locally constant when the
-coefficient action is continuous and the coefficient space is discrete. -/
-theorem isLocallyConstant_representationCoindV (U : OpenSubgroup G)
-    {A : Type w} [AddCommMonoid A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
-    [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
-    [ContinuousSMul U.toSubgroup A]
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A)) :
-    IsLocallyConstant f.1 := by
-  -- Around `g`, the function is determined by the orbit map on `U * g`; shrinking `U` to the
-  -- open stabilizer of `f g` makes it constant there.
-  rw [IsLocallyConstant.iff_exists_open]
-  intro g
-  let V : Set U := MulAction.stabilizer U (f.1 g)
-  have hV : IsOpen V := stabilizer_isOpen U (f.1 g)
-  refine ⟨(Subtype.val '' V) * {g},
-    (U.isOpen.isOpenMap_subtype_val V hV).mul_right, ?_, ?_⟩
-  · refine ⟨(1 : G), ?_, g, Set.mem_singleton g, one_mul g⟩
-    exact ⟨(1 : U.toSubgroup), Subgroup.one_mem _, rfl⟩
-  · intro x hx
-    obtain ⟨_, ⟨u, hu, rfl⟩, z, hz, rfl⟩ := hx
-    have : z = g := Set.mem_singleton_iff.mp hz
-    subst z
-    exact (f.2 u g).trans (MulAction.mem_stabilizer_iff.mp hu)
-
-end LocallyConstant
-
-variable (R : Type u) [Ring R] [TopologicalSpace R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (U : OpenSubgroup G)
-  (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
-
-local instance : DiscreteTopology A.obj.V := A.property.discreteTopology
-local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
-local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
-local instance : SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
-  DiscreteCoind.instSMulCommClass (G := G) (U := U.toSubgroup) (A := A.obj.V)
-
-/-- For an open subgroup, locally constant coinduction is linearly equivalent to Mathlib's
-algebraic `Representation.coindV`, which carries the action `Representation.coind`. Both
-directions preserve the underlying function on `G`.
-
-Openness is used only in the inverse direction: it makes every algebraically coinduced function
-locally constant. -/
-noncomputable def discreteCoindEquivAlgebraic :
-    DiscreteCoind G U.toSubgroup A.obj.V ≃ₗ[R]
-      Representation.coindV U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) where
-  toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
-  invFun f := DiscreteCoind.mk G U.toSubgroup A.obj.V f.1
-    (isLocallyConstant_representationCoindV R G U f) fun u g ↦ by
-      simpa using f.2 u g
-  left_inv f := DiscreteCoind.ext fun _ ↦ rfl
-  right_inv f := Subtype.ext rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-/-- The comparison sends a locally constant coinduced function to the same underlying
-algebraically coinduced function. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    (discreteCoindEquivAlgebraic R G U A f).1 g = f g := (rfl)
-
-/-- The inverse comparison sends an algebraically coinduced function to the same underlying
-function, now equipped with its automatic local constancy. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_symm_apply
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
-
-/-- The locally constant/algebraic coinduction comparison intertwines the right-translation
-actions of `G`. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_smul (g : G)
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) :
-    discreteCoindEquivAlgebraic R G U A (g • f) =
-      Representation.coind U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g
-        (discreteCoindEquivAlgebraic R G U A f) := by
-  apply Subtype.ext
-  funext x
-  simp only [Representation.coind_apply, discreteCoindEquivAlgebraic_apply,
-    DiscreteCoind.coe_smul]
-  -- The membership proof inside Mathlib's `coind_apply` blocks `LinearMap.restrict_coe_apply`,
-  -- so the remaining right translation `f (x * g)` is closed definitionally.
-  rfl
-
-variable [CompactSpace G]
-
-/-- Mathlib's algebraic coinduction, equipped with the discrete topology and the continuous
-actions transported from locally constant coinduction. -/
-noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G := by
-  let e := discreteCoindEquivAlgebraic R G U A
-  let V := Representation.coindV U.toSubgroup.subtype
-    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
-  letI : TopologicalSpace
-      V := ⊥
-  letI : DiscreteTopology V := ⟨rfl⟩
-  letI : DistribMulAction G V := e.symm.toAddEquiv.distribMulAction G
-  letI : SMulCommClass G R V := ⟨fun g r f ↦ by
-    apply Subtype.ext
-    funext x
-    rfl⟩
-  -- Both actions on `V` are transported along the single map `e.symm`, a homeomorphism because
-  -- both sides are discrete. Each continuity statement is therefore one instance of
-  -- `Topology.IsInducing.continuousSMul` along `e.symm`, acting as the identity on scalars.
-  let h : V ≃ₜ DiscreteCoind G U.toSubgroup A.obj.V :=
-    { toEquiv := e.symm.toEquiv
-      continuous_toFun := continuous_of_discreteTopology
-      continuous_invFun := continuous_of_discreteTopology }
-  letI : ContinuousSMul R V :=
-    -- `by exact` defers `LinearEquiv.map_smul` until instance synthesis has fixed which scalar
-    -- action on `DiscreteCoind` the transport is taken along.
-    h.isInducing.continuousSMul continuous_id fun {r f} => by exact e.symm.map_smul r f
-  letI : ContinuousSMul G V :=
-    h.isInducing.continuousSMul continuous_id fun {g f} => by
-      rw [e.symm.toEquiv.smul_def g f]
-      exact e.symm_apply_apply _
-  exact { V := V }
-
-/-- The representation carried by `algebraicCoindDiscreteRep` is Mathlib's
-`Representation.coind`, not merely an abstractly isomorphic action. -/
-@[simp]
-theorem algebraicCoindDiscreteRep_ρ :
-    (algebraicCoindDiscreteRep R G U A).ρ =
-      Representation.coind U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := by
-  ext g f : 2
-  -- The action is transported along `e.symm` for `e := discreteCoindEquivAlgebraic`, so
-  -- `g • f = e (g • e.symm f)` by `Equiv.smul_def`; `discreteCoindEquivAlgebraic_smul`
-  -- computes the right-hand side.
-  refine ((discreteCoindEquivAlgebraic R G U A).symm.toEquiv.smul_def g f).trans ?_
-  simp
-
-/-- Algebraic coinduction from an open subgroup, regarded as a smooth discrete topological
-representation. -/
-noncomputable abbrev algebraicCoindAsSmooth : SmoothDiscreteTopRep.{u, v, max v w} R G :=
-  (toSmoothDiscrete R G).obj (algebraicCoindDiscreteRep R G U A)
-
-/-- The discrete representation isomorphism underlying the topological/algebraic comparison. -/
-private noncomputable def discreteCoindIsoAlgebraic :
-    coindDiscreteRep R G U.toSubgroup ((ofSmoothDiscrete R U.toSubgroup).obj A) ≅
-      algebraicCoindDiscreteRep R G U A where
-  hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
-    _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
-  inv :=
-    { toLinearMap := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
-      isIntertwining' :=
-        (discreteCoindEquivAlgebraic R G U A).isIntertwining_symm_isIntertwining fun g ↦
-          LinearMap.ext (discreteCoindEquivAlgebraic_smul R G U A g) }
-  hom_inv_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
-  inv_hom_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply)
-
-/-- Locally constant topological coinduction from an open subgroup agrees with Mathlib's
-algebraic coinduction. The isomorphism is the identity on the underlying equivariant functions. -/
-noncomputable def topologicalCoindIsoAlgebraic :
-    coindTopRep R G U.toSubgroup A ≅ algebraicCoindAsSmooth R G U A := by
-  exact (toSmoothDiscrete R G).mapIso (discreteCoindIsoAlgebraic R G U A)
-
-private theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g =
-      (discreteCoindEquivAlgebraic R G U A f).1 g := by
-  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
-  have h := toSmoothDiscrete_map_hom_apply
-    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
-  exact congrArg (fun b ↦ b.1 g) h
-
--- The codomain carrier `(coindTopRep R G U.toSubgroup A).obj.V` is `DiscreteCoind` only up to
--- unfolding the `toSmoothDiscrete` dictionary, and no lemma can rewrite a type; the `show`
--- names that carrier so that evaluation at `g` elaborates, exactly as in
--- `coindFunctor_map_apply_impl`.
-private theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    (show DiscreteCoind G U.toSubgroup A.obj.V from
-      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g =
-        (discreteCoindEquivAlgebraic R G U A).symm f g := by
-  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
-  have h := toSmoothDiscrete_map_hom_apply
-    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
-  -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
-  -- evaluate at `g`.
-  exact congrArg (fun b ↦ (show DiscreteCoind G U.toSubgroup A.obj.V from b) g) h
-
-/-- The forward map of the topological/algebraic comparison leaves every value unchanged. -/
-@[simp]
-theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g :=
-  (topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl R G U A f g).trans
-    (discreteCoindEquivAlgebraic_apply R G U A f g)
-
-/-- The inverse map of the topological/algebraic comparison leaves every value unchanged. -/
-@[simp]
-theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    -- `show` names the `DiscreteCoind` carrier, as in the auxiliary lemma above.
-    (show DiscreteCoind G U.toSubgroup A.obj.V from
-      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g :=
-  (topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl R G U A f g).trans
-    (discreteCoindEquivAlgebraic_symm_apply R G U A f g)
-
-end AlgebraicComparison
 
 section Degenerate
 

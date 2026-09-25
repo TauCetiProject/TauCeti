@@ -132,8 +132,7 @@ private theorem baseChangeTensorAlgEquiv_counit_comp :
     Bialgebra.counitAlgHom K (K ⊗[k] (H ⊗[k] L)) := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l => simp [smul_smul, mul_comm]
@@ -157,14 +156,12 @@ private theorem _root_.TensorProduct.baseChangeTensorAlgEquiv_comul_aux
           k K k K K K H H (1 ⊗ₜ[K] s ⊗ₜ[k] x) ⊗ₜ[K]
         TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
           k K k K K K L L (1 ⊗ₜ[K] 1 ⊗ₜ[k] y)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
       simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
         congrArg₂ (· + ·) hx₁ hx₂
   | tmul h₁ h₂ =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ =>
         simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
           congrArg₂ (· + ·) hy₁ hy₂
@@ -180,8 +177,7 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
       (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l =>

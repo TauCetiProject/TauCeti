@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.Data.Rat.Lemmas
+import Mathlib.Algebra.GCDMonoid.FinsetLemmas
+import Mathlib.Data.Int.NatAbs
 import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
@@ -41,6 +43,12 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   the only prime divisor.
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminant_of_ne_of_not_both_even`: distinct prime
   discriminants are coprime, unless both are even.
+* `TauCeti.Multiquadratic.lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even`:
+  for prime discriminants with at most one even member, the least common multiple of their
+  absolute values is that of their product.
+* `TauCeti.Multiquadratic.prod_ne_zero_of_forall_isPrimeDiscriminant` and
+  `TauCeti.Multiquadratic.neZero_natAbs_prod_of_forall_isPrimeDiscriminant`: a product of prime
+  discriminants is nonzero, so its absolute value is a legitimate Dirichlet character level.
 -/
 
 public section
@@ -82,6 +90,14 @@ theorem IsEvenPrimeDiscriminant.isPrimeDiscriminant {D : ℤ} (hD : IsEvenPrimeD
 theorem isPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) (hodd : Odd p) :
     IsPrimeDiscriminant (oddPrimeDiscriminant p) :=
   Or.inr ⟨p, hp, hodd, rfl⟩
+
+/-- The absolute value of a prime discriminant is greater than one. -/
+theorem IsPrimeDiscriminant.one_lt_natAbs {D : ℤ} (hD : IsPrimeDiscriminant D) :
+    1 < D.natAbs := by
+  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, _, rfl⟩
+  · rcases hD with rfl | rfl | rfl <;> norm_num
+  · rw [oddPrimeDiscriminant_natAbs]
+    exact hp.one_lt
 
 /-- An odd prime discriminant is not one of the even prime discriminants. -/
 theorem not_isEvenPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ} (hodd : Odd p) :
@@ -481,6 +497,21 @@ theorem IsPrimeDiscriminant.ne_zero {D : ℤ} (hD : IsPrimeDiscriminant D) : D �
   · rcases hev with rfl | rfl | rfl <;> norm_num
   · exact oddPrimeDiscriminant_ne_zero.mpr hp.ne_zero
 
+/-- A product of prime discriminants is nonzero. -/
+theorem prod_ne_zero_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : ∏ P ∈ s, P ≠ 0 :=
+  Finset.prod_ne_zero_iff.mpr fun P hP ↦ (hs P hP).ne_zero
+
+/-- A product of the absolute values of prime discriminants is nonzero. -/
+theorem prod_natAbs_ne_zero_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : ∏ P ∈ s, P.natAbs ≠ 0 :=
+  Finset.prod_ne_zero_iff.mpr fun P hP ↦ Int.natAbs_ne_zero.mpr (hs P hP).ne_zero
+
+/-- The absolute value of a product of prime discriminants is a nonzero level. -/
+theorem neZero_natAbs_prod_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : NeZero (∏ P ∈ s, P).natAbs :=
+  ⟨Int.natAbs_ne_zero.mpr (prod_ne_zero_of_forall_isPrimeDiscriminant hs)⟩
+
 /-- An even prime discriminant is coprime to every odd prime discriminant. -/
 theorem isCoprime_evenPrimeDiscriminant_oddPrimeDiscriminant {D : ℤ} {p : ℕ}
     (hD : IsEvenPrimeDiscriminant D) (hp : Odd p) :
@@ -505,5 +536,17 @@ theorem isCoprime_primeDiscriminant_of_ne_of_not_both_even {D E : ℤ}
     · rw [Int.isCoprime_iff_nat_coprime, oddPrimeDiscriminant_natAbs,
         oddPrimeDiscriminant_natAbs]
       exact (Nat.coprime_primes hp hq).mpr fun hpq => hne (by rw [hpq])
+
+/-- For a family of prime discriminants with at most one even member, the least common multiple
+of their absolute values is the absolute value of their product. -/
+theorem lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ Q ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
+    s.lcm Int.natAbs = (∏ P ∈ s, P).natAbs := by
+  rw [Finset.lcm_eq_prod fun P hP Q hQ hPQ ↦ Int.isCoprime_iff_nat_coprime.mp
+    (isCoprime_primeDiscriminant_of_ne_of_not_both_even (hs P hP) (hs Q hQ) hPQ
+      fun h ↦ hPQ (heven P hP Q hQ h.1 h.2))]
+  exact (map_prod Int.natAbsHom _ s).symm
 
 end TauCeti.Multiquadratic

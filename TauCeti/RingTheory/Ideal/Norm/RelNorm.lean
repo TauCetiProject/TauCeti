@@ -61,7 +61,7 @@ private theorem multiplicity_relNorm_of_not_liesOver (p : Ideal A) [p.IsMaximal]
   have hne : P.under A ≠ p := fun hEq => h ⟨hEq.symm⟩
   rw [Ideal.relNorm_eq_pow_of_isMaximal P (P.under A)]
   -- `p` is prime, so dividing a power of `P.under A` forces `p = P.under A`.
-  refine multiplicity_eq_zero.mpr fun hdvd => hne ?_
+  refine multiplicity_eq_zero_of_not_dvd fun hdvd => hne ?_
   have hle : P.under A ≤ p := Ideal.dvd_iff_le.mp (hpp.dvd_of_dvd_pow hdvd)
   exact (Ideal.IsMaximal.eq_of_le inferInstance (Ideal.IsPrime.ne_top inferInstance) hle)
 
@@ -76,7 +76,9 @@ private theorem multiplicity_relNorm_prime (p : Ideal A) [p.IsMaximal] (hp : p �
   by_cases hlies : P.LiesOver p
   · have hmem : P ∈ (p.primesOver B).toFinset := Set.mem_toFinset.mpr ⟨‹P.IsPrime›, hlies⟩
     rw [Finset.sum_eq_single P (fun Q hQ hQP => ?_) (fun hP => absurd hmem hP)]
-    · rw [multiplicity_self, Nat.mul_one, multiplicity_relNorm_of_liesOver p hp P]
+    · rw [multiplicity_self (FiniteMultiplicity.of_prime_left
+        (Ideal.prime_of_isPrime hP0 ‹P.IsPrime›) hP0), Nat.mul_one,
+        multiplicity_relNorm_of_liesOver p hp P]
     · have hQ' := Set.mem_toFinset.mp hQ
       have : Q.IsPrime := hQ'.1
       rw [Ideal.multiplicity_eq_zero_of_isPrime_ne hP0 hQP, Nat.mul_zero]
@@ -108,18 +110,16 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥) {I : I
     have hx' : x = ⊤ := Ideal.isUnit_iff.mp hx
     subst hx'
     have hptop : multiplicity p (⊤ : Ideal A) = 0 :=
-      multiplicity_eq_zero.mpr fun hdvd =>
+      multiplicity_eq_zero_of_not_dvd fun hdvd =>
         (Ideal.IsPrime.ne_top inferInstance) (top_le_iff.mp (Ideal.dvd_iff_le.mp hdvd))
     rw [Ideal.relNorm_top, hptop]
     refine (Finset.sum_eq_zero fun Q hQ => ?_).symm
     have hQp : Q.IsPrime := (Set.mem_toFinset.mp hQ).1
     have hQtop : multiplicity Q (⊤ : Ideal B) = 0 :=
-      multiplicity_eq_zero.mpr fun hdvd =>
+      multiplicity_eq_zero_of_not_dvd fun hdvd =>
         hQp.ne_top (top_le_iff.mp (Ideal.dvd_iff_le.mp hdvd))
     rw [hQtop, Nat.mul_zero]
   | h₃ J P hJ hP ih =>
-    -- The `≠ ⊥` guard is part of the motive, so it is already introduced here.
-    have hJ' : J ≠ ⊥ := hJ
     have hP0 : P ≠ ⊥ := hP.ne_zero
     have hPprime : P.IsPrime := Ideal.isPrime_of_prime hP
     have hnb : relNorm A P * relNorm A J ≠ ⊥ :=
