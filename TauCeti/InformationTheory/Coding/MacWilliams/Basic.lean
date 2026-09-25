@@ -235,14 +235,27 @@ end TauCeti
 
 namespace Submodule
 
-/-- A self-dual code over a finite field satisfies the division-free MacWilliams
-identity in `ℤ[X, Y]`. -/
+/-- A self-dual code over a finite commutative ring carrying a primitive additive character
+satisfies the division-free MacWilliams identity in `ℤ[X, Y]`. -/
+theorem natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive
+    {ι R S : Type*} [Fintype ι] [CommRing R] [Finite R] [DecidableEq R]
+    [CommRing S] [IsDomain S] [CharZero S] {ψ : AddChar R S}
+    (C : Submodule R (ι → R)) (hψ : ψ.IsPrimitive) (hC : C = Submodule.euclideanDual C) :
+    (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → R)).weightEnumerator =
+      aeval ![X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+        (C : Set (ι → R)).weightEnumerator := by
+  simpa only [← hC] using natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C
+
+/-- A self-dual code over a finite field satisfies the division-free MacWilliams identity
+in `ℤ[X, Y]`. -/
 theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
     {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
     (C : Submodule F (ι → F)) (hC : C = Submodule.euclideanDual C) :
     (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → F)).weightEnumerator =
       aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
-        (C : Set (ι → F)).weightEnumerator := by
-  simpa only [← hC] using natCard_mul_weightEnumerator_euclideanDual C
+        (C : Set (ι → F)).weightEnumerator :=
+  natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive C
+    (AddChar.FiniteField.primitiveChar F ℚ
+      (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim hC
 
 end Submodule

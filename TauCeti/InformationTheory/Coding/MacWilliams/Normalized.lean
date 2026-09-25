@@ -64,10 +64,10 @@ theorem aeval_weightEnumerator_euclideanDual {A : Type*} [CommRing A] [Algebra �
     (x y : A) :
     aeval ![x, y] (Submodule.euclideanDual C : Set (ι → F)).weightEnumerator =
       (Nat.card C : ℚ)⁻¹ •
-        aeval ![x + (Nat.card F - 1 : A) * y, x - y] (C : Set (ι → F)).weightEnumerator := by
-  rw [eq_inv_smul_iff₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne' : (Nat.card C : ℚ) ≠ 0)]
-  simpa only [Algebra.smul_def, map_natCast] using TauCeti.aeval_macWilliams_identity
-    (natCard_mul_weightEnumerator_euclideanDual C) x y
+        aeval ![x + (Nat.card F - 1 : A) * y, x - y] (C : Set (ι → F)).weightEnumerator :=
+  aeval_weightEnumerator_euclideanDual_of_isPrimitive C
+    (AddChar.FiniteField.primitiveChar F ℚ
+      (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim x y
 
 /-- A self-dual code's weight enumerator is fixed by the MacWilliams substitution
 normalized by any invertible square root `s` of the alphabet size, with inverse `t`.
