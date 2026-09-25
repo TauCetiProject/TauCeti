@@ -26,7 +26,7 @@ public section
 
 open AlgebraicGeometry IsLocalRing
 
-namespace TauCeti
+namespace AlgHom
 
 open TauCeti.AlgHom
 
@@ -69,4 +69,4 @@ theorem isRegularLocalRing_kernelStalk_iff
   rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
     finrank_kernelCotangent_eq_finrank_residueFieldCotangent]
 
-end TauCeti
+end AlgHom
