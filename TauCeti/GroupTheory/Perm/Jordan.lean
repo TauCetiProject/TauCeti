@@ -22,21 +22,6 @@ the degree. The bound `p + 3 ≤ n` cannot be weakened to `p ≤ n` or `p + 1 �
 `AGL(1, 5)` is primitive of degree `5` and contains a `5`-cycle, and `AGL(1, 8)` is primitive of
 degree `8` and contains a `7`-cycle. Neither contains the alternating group.
 
-Write `Δ` for the set of fixed points of a cycle `g` of prime length `p` in a primitive group `G`.
-The proof has three steps.
-
-* By Jordan's multiple primitivity criterion `MulAction.IsPreprimitive.isMultiplyPreprimitive`,
-  `G` is `(|Δ| + 1)`-fold primitive, because the subgroup fixing `Δ` pointwise acts transitively,
-  hence primitively, on the `p` points of the support of `g`.
-* The pointwise stabilizer of `Δ` in `G` embeds into the symmetric group on the support of `g`, so
-  its order is not divisible by `p ^ 2`, and `⟨g⟩` is one of its Sylow subgroups. A Frattini
-  argument then shows that every permutation of `Δ` induced by `G` is induced by an element of the
-  normalizer of `⟨g⟩`.
-* For three points `a, b, c` of `Δ`, choose `n₁` and `n₂` in the normalizer of `⟨g⟩` inducing the
-  transpositions `(a b)` and `(b c)` on `Δ`. Their commutator centralizes `g`, so on the support
-  of `g` it is a power of `g`. Correcting by that power leaves a `3`-cycle on `{a, b, c}` in `G`,
-  and Jordan's theorem for `3`-cycles applies.
-
 ## Main results
 
 * `TauCeti.isMultiplyPreprimitive_of_isCycle_mem`: a primitive group containing a cycle of prime
@@ -52,9 +37,8 @@ The proof has three steps.
 * H. Wielandt, *Finite Permutation Groups*, Theorem 13.9, with the Sylow argument of
   Theorem 9.4.
 * J. D. Dixon and B. Mortimer, *Permutation Groups*, Theorem 3.3E.
-
-The first step applies Mathlib's `Mathlib/GroupTheory/GroupAction/Jordan.lean`, by Antoine
-Chambert-Loir, exactly as its proofs for transpositions and `3`-cycles do.
+* Mathlib's `Mathlib/GroupTheory/GroupAction/Jordan.lean`, by Antoine Chambert-Loir, for the
+  related transposition and `3`-cycle results.
 -/
 
 public section
