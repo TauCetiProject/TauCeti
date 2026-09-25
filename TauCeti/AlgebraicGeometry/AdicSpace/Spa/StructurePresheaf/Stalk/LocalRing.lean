@@ -18,11 +18,10 @@ nonunits of `𝒪_{X,x}` then form an ideal: the stalk is a local ring whose max
 support of `v_x`. Consequently `v_x` factors through the residue field of `𝒪_{X,x}`, which is the
 form in which the valuations at the points of a pre-adic space are recorded.
 
-The nontrivial direction is Wedhorn's argument in §8.1. A germ `f` off the support of `v_x` comes
-from an element of the coordinate ring `A⟨T/s⟩` of some rational neighbourhood `R(T/s)` of `x`
-which does not vanish at the point of `Spa (A⟨T/s⟩, A_U⁺)` over `x`. By
-`notMem_supp_iff_exists_isUnit_ringHomOfRationalSubsetSubset` it becomes a unit in the coordinate
-ring of a smaller rational neighbourhood, so its germ is a unit.
+The unit criterion is the concrete description of the local structure of `𝒪_{X,x}`: a germ is
+invertible near `x` exactly when it does not vanish at `x`. The residue-field valuation
+`presentationLimitStalkResidueValuation` is the valuation on the residue field `k(x)` attached to
+`x`; it is the datum Wedhorn's category `𝒱^pre` records at each point (Wedhorn §8.1).
 
 As in `Stalk.Valuation`, `A⁺` is assumed to consist of power-bounded elements and to contain the
 ring of definition of the chosen pair of definition.
@@ -130,6 +129,7 @@ theorem isLocalRing_stalk_presentationLimitPresheafInCommRingCat (x : spa Aplus)
 
 /-- **The maximal ideal of the stalk is the support of the stalk valuation**: the valuation `v_x`
 on the stalk at `x` vanishes exactly on the maximal ideal. -/
+@[simp]
 theorem supp_presentationLimitStalkValuation (x : spa Aplus) :
     letI := isLocalRing_stalk_presentationLimitPresheafInCommRingCat hAplus hP x
     (presentationLimitStalkValuation hAplus hP x).supp =
