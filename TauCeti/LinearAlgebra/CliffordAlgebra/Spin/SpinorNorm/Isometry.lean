@@ -51,11 +51,8 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
     intro x _
     have h : Invertible (Q' (e x)) := by rw [e.map_app]; infer_instance
     let _ := h
-    rw [MonoidHom.mem_eqLocus]
-    change orthogonalSpinorNorm Q' (e.nondegenerate_iff.mp hQ)
-        (QuadraticMap.orthogonalGroupCongr e (reflectionOrthogonal Q x)) =
-      orthogonalSpinorNorm Q hQ (reflectionOrthogonal Q x)
-    rw [QuadraticMap.orthogonalGroupCongr_reflectionOrthogonal,
+    rw [MonoidHom.mem_eqLocus, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      QuadraticMap.orthogonalGroupCongr_reflectionOrthogonal,
       orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
     exact congrArg squareClassHom (by apply Units.ext; simp [e.map_app]))
   have hg : g ∈ H := hH.symm ▸ Subgroup.mem_top g
