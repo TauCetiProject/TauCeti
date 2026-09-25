@@ -130,6 +130,15 @@ theorem geometricallySolvable (hI : IsBorelCandidate k H I) :
       (FiniteTypeCommHopfAlgCat.quotient H I).obj :=
   hI.2.2
 
+/-- Pulling back along an ambient Hopf-algebra isomorphism preserves Borel candidatehood. -/
+theorem comapOfIso (hI : IsBorelCandidate k H I)
+    {L : FiniteTypeCommHopfAlgCat.{u, v} k} (e : L ≅ H) :
+    IsBorelCandidate k L
+      (I.comapOfSurjective (FiniteTypeCommHopfAlgCat.toBialgHom e.hom)
+        (ConcreteCategory.bijective_of_isIso e.hom).2) :=
+  (borelQuotientProperty k).prop_of_iso
+    (FiniteTypeCommHopfAlgCat.quotientIsoOfIso e I).symm hI
+
 end IsBorelCandidate
 
 /-- Over an algebraically closed field, a Hopf ideal defines a Borel subgroup when it is minimal
