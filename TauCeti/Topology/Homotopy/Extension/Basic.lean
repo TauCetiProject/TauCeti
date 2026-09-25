@@ -21,8 +21,8 @@ For closed `A` the property is equivalent to a purely geometric statement: the s
 `{0} × X ∪ I × A` of the cylinder `I × X` is a retract of the whole cylinder.  This is how the
 property is verified in practice, and it is also what frees it from the universe the target
 space `Y` is taken in: the definition below quantifies over targets in the universe of `X`, and
-`TauCeti.HasHomotopyExtensionProperty.exists_homotopy` upgrades a closed subset with that
-property to one that extends homotopies with values in a space in any universe.
+`TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isClosed` upgrades a closed subset
+with that property to one that extends homotopies with values in a space in any universe.
 
 ## Main declarations
 
@@ -33,7 +33,7 @@ property to one that extends homotopies with values in a space in any universe.
   `TauCeti.HasHomotopyExtensionProperty.exists_extension` restating it.
 * `TauCeti.hasHomotopyExtensionProperty_iff_exists_retraction`: **a closed subset has the
   homotopy extension property exactly when `{0} × X ∪ I × A` is a retract of `I × X`.**
-* `TauCeti.HasHomotopyExtensionProperty.exists_homotopy` and
+* `TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isClosed` and
   `TauCeti.HasHomotopyExtensionProperty.exists_homotopy_of_restrict`: for a closed subset,
   extension of homotopies with values in a space in an arbitrary universe, in terms of raw maps
   and of Mathlib's bundled homotopies.
@@ -87,8 +87,8 @@ lemma isClosed_cylinderExtensionDomain (hA : IsClosed A) :
 `A` whose initial map extends to `X` is itself the restriction of a homotopy of maps out of `X`.
 
 Only targets `Y` in the universe of `X` are quantified over here.  For a closed subset this is
-no restriction: `TauCeti.HasHomotopyExtensionProperty.exists_homotopy` then extends homotopies
-with values in a space in an arbitrary universe. -/
+no restriction: `TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isClosed` then
+extends homotopies with values in a space in an arbitrary universe. -/
 def HasHomotopyExtensionProperty (A : Set X) : Prop :=
   ∀ {Y : Type u} [TopologicalSpace Y] (f : C(X, Y)) (H : C(I × A, Y)),
     (∀ a : A, H (0, a) = f a) →
@@ -222,7 +222,7 @@ theorem hasHomotopyExtensionProperty_iff_exists_retraction (hA : IsClosed A) :
 /-- For a closed subset, the homotopy extension property extends homotopies with values in a
 space in an arbitrary universe, not only in the universe of `X`.  The closedness hypothesis is
 what routes the argument through the retraction characterisation, which is universe-free. -/
-theorem HasHomotopyExtensionProperty.exists_homotopy (hA : IsClosed A)
+theorem HasHomotopyExtensionProperty.exists_extension_of_isClosed (hA : IsClosed A)
     (h : HasHomotopyExtensionProperty A) {Y : Type v} [TopologicalSpace Y] (f : C(X, Y))
     (H : C(I × A, Y)) (hH : ∀ a : A, H (0, a) = f a) :
     ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) :=
@@ -231,13 +231,14 @@ theorem HasHomotopyExtensionProperty.exists_homotopy (hA : IsClosed A)
 
 /-- For a closed subset, the homotopy extension property in terms of bundled homotopies: a
 homotopy starting at the restriction of `f : C(X, Y)` to `A` is the restriction of a homotopy
-starting at `f`.  As in `TauCeti.HasHomotopyExtensionProperty.exists_homotopy`, closedness lets
-`Y` live in any universe. -/
+starting at `f`.  As in `TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isClosed`,
+closedness lets `Y` live in any universe. -/
 theorem HasHomotopyExtensionProperty.exists_homotopy_of_restrict (hA : IsClosed A)
     (h : HasHomotopyExtensionProperty A) {Y : Type v} [TopologicalSpace Y] (f : C(X, Y))
     {g : C(A, Y)} (H : (f.restrict A).Homotopy g) :
     ∃ (f' : C(X, Y)) (G : f.Homotopy f'), ∀ (t : I) (a : A), G (t, (a : X)) = H (t, a) := by
-  obtain ⟨G, hG₀, hG₁⟩ := h.exists_homotopy hA f H.toContinuousMap fun a => H.apply_zero a
+  obtain ⟨G, hG₀, hG₁⟩ :=
+    h.exists_extension_of_isClosed hA f H.toContinuousMap fun a => H.apply_zero a
   exact ⟨⟨fun x => G (1, x), by fun_prop⟩,
     { toContinuousMap := G, map_zero_left := hG₀, map_one_left := fun _ => rfl }, hG₁⟩
 
