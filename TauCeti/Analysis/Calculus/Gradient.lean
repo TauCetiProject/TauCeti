@@ -67,6 +67,7 @@ theorem gradient_const_smul (c : 𝕜) :
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
+@[simp]
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
 
