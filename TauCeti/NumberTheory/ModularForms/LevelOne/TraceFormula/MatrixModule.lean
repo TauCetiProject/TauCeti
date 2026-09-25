@@ -475,6 +475,25 @@ theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormu
       TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := by
   simpa using op_smul_mk g⁻¹ A
 
+/-- The class of `A` lies in the right coset of the class of `B` exactly when `A = B g` for some
+`g ∈ SL(2, ℤ)`; the sign ambiguity of the classes is absorbed into `g`. -/
+theorem TraceFormulaMatrixModule.mk_mem_orbit_op_mk_iff {A B : TraceFormulaMatrix n} :
+    TraceFormulaMatrixModule.mk A ∈
+        MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
+      ∃ g : SL(2, ℤ), A.1 = B.1 * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
+  rw [MulAction.mem_orbit_iff]
+  constructor
+  · rintro ⟨γ, hγ⟩
+    obtain ⟨γ, rfl⟩ := MulOpposite.op_surjective γ
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective γ
+    rcases mk_eq_iff.mp ((op_smul_mk g B).symm.trans hγ) with hg | hg
+    · exact ⟨g, by simp [← hg]⟩
+    · exact ⟨-g, by simp [← neg_eq_iff_eq_neg.mpr hg]⟩
+  · rintro ⟨g, hg⟩
+    refine ⟨.op (g : PSL(2, ℤ)), (op_smul_mk g B).trans (congrArg mk ?_)⟩
+    apply FixedDetMatrices.ext'
+    rw [val_traceFormulaMatrixRight, inv_inv, hg]
+
 /-- Left and right multiplication on `ℳₙ` commute. -/
 instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
     SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
