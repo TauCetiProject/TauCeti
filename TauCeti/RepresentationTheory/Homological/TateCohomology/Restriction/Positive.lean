@@ -109,7 +109,6 @@ theorem posRes_comp_isoGroupCohomology_hom (n : ℕ) :
   exact (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app
     (Rep.res H.subtype M))).1 (by rfl)
 
-set_option backward.isDefEq.respectTransparency false in
 omit [Fintype G] in
 @[reassoc]
 private theorem map_subgroupOf_trans {K H : Subgroup G} (hKH : K ≤ H) (n : ℕ) :
@@ -182,7 +181,6 @@ private theorem posRes_cancel_comparison {K H : Subgroup G} (hKH : K ≤ H) (n :
   simp only [Category.assoc]
   simp only [← Category.assoc, Iso.inv_hom_id, Category.id_comp, hkey]
 
-set_option backward.isDefEq.respectTransparency false in
 /-- **Tate restriction in positive degrees is transitive along a tower of subgroups** `K ≤ H ≤ G`:
 restricting from `G` to `H` and then from `H` to `K` is restriction from `G` to `K`, once
 `K.subgroupOf H` is identified with `K` by the Tate map along `Subgroup.subgroupOfEquivOfLe hKH`.
