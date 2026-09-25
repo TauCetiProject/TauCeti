@@ -74,6 +74,15 @@ private theorem isNilpotent_smul_map (X : Matrix (t.GeckIndex ht) (t.GeckIndex h
 
 /-! ## The uniform exponential -/
 
+/-- The uniform exponential of a scalar multiple of a mapped rational matrix, via Mathlib's
+`IsNilpotent.exp`. This is the shared body of the raising and lowering pinning exponentials
+(`TauCeti.DynkinType.pinnedExp` and `TauCeti.DynkinType.pinnedExpNeg`), which differ only in
+the generator fed in. -/
+private def pinnedExpAux (X : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)
+    (R : Type*) [CommRing R] [Algebra ℚ R] (u : R) :
+    Matrix (t.GeckIndex ht) (t.GeckIndex ht) R :=
+  IsNilpotent.exp (u • (X.map (algebraMap ℚ R)))
+
 /-- The uniform exponential of the `i`-th simple raising generator: `exp(u • e_i)` as a
 matrix over any `ℚ`-algebra. This is Mathlib's `IsNilpotent.exp` applied to the scalar
 multiple of the generator mapped along `algebraMap ℚ R`; nilpotency
@@ -81,25 +90,23 @@ multiple of the generator mapped along `algebraMap ℚ R`; nilpotency
 hence a polynomial map. -/
 def pinnedExp (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) (u : R) :
     Matrix (t.GeckIndex ht) (t.GeckIndex ht) R :=
-  IsNilpotent.exp (u • (((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ).map
-    (algebraMap ℚ R)))
+  t.pinnedExpAux ht ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) R u
 
 /-- The exponential at `u = 0` is the identity matrix, by `IsNilpotent.exp_zero`. -/
 theorem pinnedExp_zero (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) :
     t.pinnedExp ht R i 0 = 1 := by
-  simp [pinnedExp]
+  simp [pinnedExp, pinnedExpAux]
 
 /-- The uniform lowering exponential `u ↦ exp(u • f_i)`, as `IsNilpotent.exp` of the scalar
 multiple of the mapped lowering generator. -/
 def pinnedExpNeg (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) (u : R) :
     Matrix (t.GeckIndex ht) (t.GeckIndex ht) R :=
-  IsNilpotent.exp (u • (((t.lieBasis ht).f i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ).map
-    (algebraMap ℚ R)))
+  t.pinnedExpAux ht ((t.lieBasis ht).f i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) R u
 
 /-- The lowering exponential at `u = 0` is the identity matrix, by `IsNilpotent.exp_zero`. -/
 theorem pinnedExpNeg_zero (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) :
     t.pinnedExpNeg ht R i 0 = 1 := by
-  simp [pinnedExpNeg]
+  simp [pinnedExpNeg, pinnedExpAux]
 
 /-! ## Commutator relations -/
 
@@ -116,20 +123,14 @@ theorem pinnedExp_comm_of_matrix_comm (R : Type*) [CommRing R] [Algebra ℚ R]
              ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)) :
     t.pinnedExp ht R i u * t.pinnedExp ht R j v =
       t.pinnedExp ht R j v * t.pinnedExp ht R i u := by
-  have hmap : ((((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
-        (algebraMap ℚ R)) *
-      ((((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
-        (algebraMap ℚ R)) =
-      ((((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
-        (algebraMap ℚ R)) *
-      ((((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
-        (algebraMap ℚ R)) := by
-    rw [← Matrix.map_mul, ← Matrix.map_mul, hcomm]
   have hcomm' : Commute
       ((((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
         (algebraMap ℚ R))
       ((((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
-        (algebraMap ℚ R)) := hmap
+        (algebraMap ℚ R)) := by
+    -- Map the commutativity along `algebraMap ℚ R` via Mathlib's `Commute.map`
+    -- (`Commute` is definitionally the equation, so `hcomm` serves directly).
+    simpa using Commute.map (show Commute _ _ from hcomm) (algebraMap ℚ R).mapMatrix
   have hC : Commute
       (u • ((((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)).map
         (algebraMap ℚ R)))
@@ -142,7 +143,7 @@ theorem pinnedExp_comm_of_matrix_comm (R : Type*) [CommRing R] [Algebra ℚ R]
   have h2 := t.isNilpotent_smul_map ht
     ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)
     (t.isNilpotent_coe_lieBasis_e ht j) R v
-  unfold pinnedExp
+  unfold pinnedExp pinnedExpAux
   rw [← IsNilpotent.exp_add_of_commute hC h1 h2,
     ← IsNilpotent.exp_add_of_commute hC.symm h2 h1, add_comm]
 
@@ -221,60 +222,9 @@ theorem pinnedExp_mul_pinnedExp_neg (R : Type*) [CommRing R] [Algebra ℚ R]
   have h := t.isNilpotent_smul_map ht
     ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)
     (t.isNilpotent_coe_lieBasis_e ht i) R u
-  unfold pinnedExp
+  unfold pinnedExp pinnedExpAux
   rw [neg_smul]
   exact IsNilpotent.exp_mul_exp_neg_self h
-
-/-! ## Exponential conjugation (Heisenberg case) -/
-
-/-- Moving a power of `X` past `Y` in the Heisenberg case:
-`X^k * Y = Y * X^k + k • ([X,Y] * X^(k-1))`.
-By induction on `k`, using that `[X, [X,Y]] = 0` (so `X` commutes with `[X,Y]`). -/
-private theorem move_past_pow {n : Type*} [Fintype n] [DecidableEq n]
-    (R : Type*) [CommRing R]
-    (X Y : Matrix n n R)
-    (hdouble : X * (X * Y - Y * X) = (X * Y - Y * X) * X)
-    (k : ℕ) :
-    X ^ k * Y = Y * X ^ k + (k : R) • ((X * Y - Y * X) * X ^ (k - 1)) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    set C := X * Y - Y * X with hCdef
-    have hXY : X * Y = Y * X + C := by rw [hCdef]; abel
-    have hXpow : (k : R) • (C * (X * X ^ (k - 1))) = (k : R) • (C * X ^ k) := by
-      by_cases hk : k = 0
-      · subst hk; simp
-      · congr 1
-        congr 1
-        have hkk : k - 1 + 1 = k := by omega
-        calc X * X ^ (k - 1) = X ^ ((k - 1) + 1) := (pow_succ' X (k - 1)).symm
-          _ = X ^ k := by rw [hkk]
-    have hY : Y * X * X ^ k = Y * X ^ (k + 1) := by
-      rw [mul_assoc, ← pow_succ']
-    -- Main computation
-    calc X ^ (k + 1) * Y
-        = X * (X ^ k * Y) := by rw [pow_succ', mul_assoc]
-      _ = X * (Y * X ^ k + (k : R) • (C * X ^ (k - 1))) := by rw [ih]
-      _ = X * (Y * X ^ k) + X * ((k : R) • (C * X ^ (k - 1))) := by rw [mul_add]
-      _ = (X * Y) * X ^ k + (k : R) • (X * (C * X ^ (k - 1))) := by
-          rw [← mul_assoc X Y (X ^ k), mul_smul_comm]
-      _ = (Y * X + C) * X ^ k + (k : R) • ((X * C) * X ^ (k - 1)) := by
-          rw [hXY, ← mul_assoc X C (X ^ (k - 1))]
-      _ = (Y * X + C) * X ^ k + (k : R) • ((C * X) * X ^ (k - 1)) := by rw [hdouble]
-      _ = Y * X * X ^ k + C * X ^ k + (k : R) • (C * X ^ k) := by
-          rw [add_mul, mul_assoc C X (X ^ (k - 1)), hXpow]
-      _ = Y * X ^ (k + 1) + C * X ^ k + (k : R) • (C * X ^ k) := by rw [hY]
-      _ = Y * X ^ (k + 1) + ((k + 1 : ℕ) : R) • (C * X ^ k) := by
-          have h2 : C * X ^ k + (k : R) • (C * X ^ k)
-              = ((k + 1 : ℕ) : R) • (C * X ^ k) := by
-            nth_rewrite 1 [← one_smul R (C * X ^ k)]
-            rw [← add_smul]
-            congr 1
-            push_cast
-            ring
-          rw [add_assoc (Y * X ^ (k + 1)) (C * X ^ k) ((k : R) • (C * X ^ k)), h2]
-      _ = Y * X ^ (k + 1) + ((k + 1 : ℕ) : R) • (C * X ^ ((k + 1) - 1)) := by
-          rw [Nat.add_sub_cancel]
 
 end
 

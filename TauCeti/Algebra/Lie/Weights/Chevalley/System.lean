@@ -64,9 +64,11 @@ the integral root--coroot span.
   `intStructureConstant₂_neg_neg` (negating both roots negates the constant),
   `intStructureConstant₂_neg_swap` (swap-negation preserves it), and
   `intStructureConstant₂_cyclic_mul_killingForm` (cyclic symmetry up to Killing pairings).
-* `TauCeti.IsChevalleySystem.intStructureConstant_neg_neg` and
+* `TauCeti.IsChevalleySystem.intStructureConstant_skew`,
+  `TauCeti.IsChevalleySystem.intStructureConstant_neg_neg`, and
   `TauCeti.IsChevalleySystem.intStructureConstant_cyclic_mul_killingForm`: the three-argument
-  forms of the negation and cyclic symmetries, from which the two-argument versions follow.
+  forms of the skew, negation, and cyclic symmetries, from which the two-argument versions
+  follow.
 
 ## References
 
@@ -298,6 +300,17 @@ theorem intStructureConstant_ne_zero
   refine hx.toIsSl2System.structureConstant_ne_zero α β γ hγ hαβ hα hβ ?_
   rw [← hx.intStructureConstant_cast α β γ hγ hαβ, hzero, Int.cast_zero]
 
+/-- Swapping the two input roots negates the integer structure constant. This is the integral
+transfer of `TauCeti.IsSl2System.structureConstant_skew`, via the cast characterization. -/
+theorem intStructureConstant_skew
+    (α β γ : Weight K H L) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β)
+    (hβα : (γ : H → K) = (β : H → K) + α) :
+    hx.intStructureConstant β α γ hγ hβα = -hx.intStructureConstant α β γ hγ hαβ := by
+  refine Int.cast_injective (α := K) ?_
+  rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+  exact hx.toIsSl2System.structureConstant_skew α β γ hγ hαβ
+
 /-- **Negating both roots negates the integer structure constant.** The Chevalley involution
 sends the defining bracket equation `⁅x α, x β⁆ = N • x γ` to
 `⁅x (-α), x (-β)⁆ = -N • x (-γ)`; uniqueness of the integer coefficient identifies the
@@ -394,14 +407,9 @@ theorem intStructureConstant₂_skew {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L 
   by_cases h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)
   · obtain ⟨γ, hγ, hαβ⟩ := h
     have hβα : (γ : H → K) = (β : H → K) + α := by rw [hαβ, add_comm]
-    have e1 := hx.intStructureConstant₂_eq_intStructureConstant β α γ hγ hβα
-    have e2 := hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ
-    rw [e1, e2]
-    have hcast : ((hx.intStructureConstant β α γ hγ hβα : ℤ) : K)
-        = (((-hx.intStructureConstant α β γ hγ hαβ : ℤ)) : K) := by
-      rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
-      exact hx.toIsSl2System.structureConstant_skew α β γ hγ hαβ
-    exact Int.cast_injective hcast
+    rw [hx.intStructureConstant₂_eq_intStructureConstant β α γ hγ hβα,
+      hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ]
+    exact hx.intStructureConstant_skew α β γ hγ hαβ hβα
   · have h' : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧
         ((γ : H → K) = (β : H → K) + α) := by
       rintro ⟨γ, hγ, hαβ⟩
