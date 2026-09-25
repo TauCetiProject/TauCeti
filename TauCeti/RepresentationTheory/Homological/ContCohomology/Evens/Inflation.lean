@@ -106,6 +106,13 @@ def evensInflatedHom
     U.toSubgroup →* Multiplicative (ZMod 2) :=
   α.comp (quotientOpenSubgroupMap N U)
 
+/-- The pulled-back homomorphism evaluates the original at the image in `U / N`. -/
+@[simp]
+theorem evensInflatedHom_apply
+    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)) (u : U.toSubgroup) :
+    evensInflatedHom U α u = α (quotientOpenSubgroupMap N U u) :=
+  (rfl)
+
 /-- Pullback of a continuous homomorphism on `U / N` is continuous on `U`. -/
 theorem continuous_evensInflatedHom
     {α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)}
@@ -120,7 +127,7 @@ theorem evensExtend_quotient (hNU : N ≤ U)
   by_cases hg : g ∈ U
   · have hq : (g : G ⧸ N) ∈ quotientOpenSubgroup N U :=
       (mem_quotientOpenSubgroup_mk_iff N U hNU g).2 hg
-    rw [evensExtend_of_mem hg, evensExtend_of_mem hq, evensInflatedHom, MonoidHom.comp_apply]
+    rw [evensExtend_of_mem hg, evensExtend_of_mem hq, evensInflatedHom_apply]
     exact congrArg (fun u => Multiplicative.toAdd (α u))
       (Subtype.ext (coe_quotientOpenSubgroupMap N U ⟨g, hg⟩))
   · have hq : (g : G ⧸ N) ∉ quotientOpenSubgroup N U :=
@@ -183,18 +190,6 @@ auto-assigned the name `Evens.Restriction` already owns, and the plain name is t
 local instance continuousSMul_trivialF2_ambient : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
-omit [IsTopologicalGroup G] in
-/-- The coefficient equivalence, paired with the identity homomorphism of `G ⧸ N`, is a
-compatible pair: this is the shape in which `TauCeti.ContCohomology.cocyclesMap2` takes a
-coefficient map. It is private because it only repeats
-`trivialF2QuotientEquivFixedPoints_smul` in the argument shape `cocyclesMap2` expects. -/
-private theorem trivialF2QuotientEquivFixedPoints_id_smul (q : G ⧸ N)
-    (x : (trivialF2 (G ⧸ N)).V) :
-    (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom
-        (ContinuousMonoidHom.id (G ⧸ N) q • x) =
-      q • (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom x := by
-  simpa using trivialF2QuotientEquivFixedPoints_smul N q x
-
 /-- The quotient graph cocycle, which is `evensGraphCocycle` for the open subgroup `U / N` of
 `G / N`, with its values transported to the fixed-point coefficient object expected by explicit
 inflation. -/
@@ -205,7 +200,7 @@ noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤
   cocyclesMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
       (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-      trivialF2QuotientEquivFixedPoints_id_smul
+      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
     (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
       ((quotientOpenSubgroup_index N U hNU).trans hU)
       (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)

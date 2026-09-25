@@ -170,6 +170,13 @@ theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
       (u : G) :=
   (rfl)
 
+/-- The restricted quotient homomorphism is surjective: every element of `U / N` is the image
+of an element of `U`. -/
+theorem quotientOpenSubgroupMap_surjective (U : OpenSubgroup G) :
+    Function.Surjective (quotientOpenSubgroupMap N U) := by
+  rintro ⟨-, u, hu, rfl⟩
+  exact ⟨⟨u, hu⟩, rfl⟩
+
 /-- The restricted quotient homomorphism is continuous. -/
 theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
     Continuous (quotientOpenSubgroupMap N U) :=
