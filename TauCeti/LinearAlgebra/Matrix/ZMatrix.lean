@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import TauCeti.LinearAlgebra.Matrix.QuadraticForm
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.Compact
@@ -33,17 +33,6 @@ arguments for algebras attached to a graph whose form `2I - A` is not positive d
 * `Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef`: the same for a symmetric real Z-matrix that
   is not positive definite.
 
-## Implementation notes
-
-The vector is a minimizer of the quadratic form `z ↦ zᵀ M z` on the standard simplex, which is
-compact. Replacing a vector by its entrywise absolute value can only lower the form of a Z-matrix,
-so the minimum is nonpositive. Moving mass from a coordinate in the support of the minimizer `δ` to
-any other coordinate cannot lower the form, so `(M δ)ᵢ` is the smallest entry of `M δ` when
-`δᵢ > 0`; averaging against `δ` bounds it by the minimum value. Off the support,
-`(M δ)ᵢ = ∑_{j ≠ i} Mᵢⱼ δⱼ ≤ 0` because `M` is a Z-matrix. No eigenvalue theory is used. The
-standard simplex is written out as `{z | 0 ≤ z ∧ ∑ k, z k = 1}`, since Mathlib's set-valued
-`stdSimplex` is deprecated.
-
 ## References
 
 * V. G. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4, Theorem 4.3, where the
@@ -58,62 +47,6 @@ namespace Matrix
 open Finset
 
 variable {n : Type*} [Fintype n]
-
-/-- The quadratic form of a symmetric matrix along the line through `y` in the direction `d`. -/
-private lemma dotProduct_mulVec_add_smul {M : Matrix n n ℝ} (hM : M.IsSymm) (y d : n → ℝ)
-    (t : ℝ) :
-    (y + t • d) ⬝ᵥ M *ᵥ (y + t • d) =
-      y ⬝ᵥ M *ᵥ y + 2 * t * (d ⬝ᵥ M *ᵥ y) + t ^ 2 * (d ⬝ᵥ M *ᵥ d) := by
-  have h : y ⬝ᵥ M *ᵥ d = d ⬝ᵥ M *ᵥ y := by
-    rw [dotProduct_mulVec, ← mulVec_transpose, hM.eq, dotProduct_comm]
-  simp only [mulVec_add, mulVec_smul, add_dotProduct, dotProduct_add, smul_dotProduct,
-    dotProduct_smul, smul_eq_mul, h]
-  ring
-
-/-- At a minimizer `y` of the quadratic form of a symmetric matrix on the standard simplex, the
-entry `(M y)ᵢ` at a coordinate in the support of `y` is the smallest entry of `M y`. -/
-private lemma mulVec_apply_le_of_isMinOn {M : Matrix n n ℝ} (hM : M.IsSymm) {y : n → ℝ}
-    (hy : 0 ≤ y ∧ ∑ k, y k = 1)
-    (hmin : IsMinOn (fun z ↦ z ⬝ᵥ M *ᵥ z) {z | 0 ≤ z ∧ ∑ k, z k = 1} y)
-    {i : n} (hi : 0 < y i) (j : n) :
-    (M *ᵥ y) i ≤ (M *ᵥ y) j := by
-  classical
-  -- Move mass `t` from the coordinate `i` to the coordinate `j`.
-  set d : n → ℝ := Pi.single j 1 - Pi.single i 1
-  have hd : d ⬝ᵥ M *ᵥ y = (M *ᵥ y) j - (M *ᵥ y) i := by
-    simp [d, sub_dotProduct]
-  have hmem (t : ℝ) (ht : 0 ≤ t) (hti : t ≤ y i) :
-      0 ≤ y + t • d ∧ ∑ k, (y + t • d) k = 1 := by
-    refine ⟨fun k ↦ ?_, ?_⟩
-    · have hk : 0 ≤ y k := hy.1 k
-      simp only [d, Pi.zero_apply, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul,
-        Pi.single_apply]
-      split_ifs with hkj hki <;> subst_vars <;> linarith
-    · simp only [d, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, sum_add_distrib,
-        ← mul_sum, sum_sub_distrib, sum_pi_single', mem_univ, ite_true, sub_self, mul_zero,
-        add_zero, hy.2]
-  have hkey (t : ℝ) (ht : 0 < t) (hti : t ≤ y i) :
-      0 ≤ 2 * ((M *ᵥ y) j - (M *ᵥ y) i) + t * (d ⬝ᵥ M *ᵥ d) := by
-    have h := isMinOn_iff.mp hmin _ (hmem t ht.le hti)
-    simp only [dotProduct_mulVec_add_smul hM, hd] at h
-    have h' : 0 ≤ t * (2 * ((M *ᵥ y) j - (M *ᵥ y) i) + t * (d ⬝ᵥ M *ᵥ d)) := by
-      nlinarith
-    exact (mul_nonneg_iff_of_pos_left ht).mp h'
-  by_contra hlt
-  push Not at hlt
-  -- A small enough step strictly lowers the form.
-  set a := (M *ᵥ y) j - (M *ᵥ y) i
-  set c := d ⬝ᵥ M *ᵥ d
-  have ha : 0 < -a := by simp only [a]; linarith
-  set t := min (y i) (-a / (|c| + 1))
-  have ht : 0 < t := lt_min hi (div_pos ha (by positivity))
-  have htc : t * c < -a :=
-    calc t * c ≤ t * |c| := mul_le_mul_of_nonneg_left (le_abs_self c) ht.le
-      _ ≤ -a / (|c| + 1) * |c| := mul_le_mul_of_nonneg_right (min_le_right _ _) (abs_nonneg c)
-      _ < -a := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-        nlinarith [abs_nonneg c]
-  linarith [hkey t ht (min_le_left _ _)]
 
 /-- **A symmetric Z-matrix with a nonpositive value of its form is nonpositive on a nonnegative
 vector.**
@@ -168,7 +101,8 @@ theorem exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos {M : Matrix n n 
   rcases hyi.lt_or_eq with hi | hi
   · calc (M *ᵥ y) i = ∑ j, y j * (M *ᵥ y) i := by rw [← sum_mul, hy.2, one_mul]
       _ ≤ ∑ j, y j * (M *ᵥ y) j := sum_le_sum fun j _ ↦
-          mul_le_mul_of_nonneg_left (mulVec_apply_le_of_isMinOn hM hy hmin hi j) (hy.1 j)
+          mul_le_mul_of_nonneg_left
+            (TauCeti.Matrix.mulVec_apply_le_of_isMinOn hM hy hmin hi j) (hy.1 j)
       _ = y ⬝ᵥ M *ᵥ y := rfl
       _ ≤ y₀ ⬝ᵥ M *ᵥ y₀ := isMinOn_iff.mp hmin _ hy₀
       _ ≤ 0 := hqy₀
