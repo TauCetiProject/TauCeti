@@ -69,23 +69,22 @@ theorem kerSubstructure_WQ : (kerSubstructure f).WQ = LinearMap.ker f.hom.toRatL
 
 /-- The kernel fork of a morphism of polarizable rational Hodge structures: the inclusion of the
 rational Hodge substructure on the kernel of its rational map. -/
--- Exposure is required for the dependent point and structure-map lemmas below to elaborate.
-@[expose]
 noncomputable def kernelFork : KernelFork f :=
   KernelFork.ofι (substructureInclusion X (kerSubstructure f)) <| by
     apply Hom.ext
     ext x
     simpa using (kerSubstructure_WQ f).le x.2
 
-/-- The structure map of the kernel fork is the inclusion of the kernel substructure. -/
-@[simp]
-theorem kernelFork_ι : (kernelFork f).ι = substructureInclusion X (kerSubstructure f) :=
-  rfl
-
 /-- The point of the kernel fork is the object induced on the kernel substructure. -/
 @[simp]
 theorem kernelFork_pt : (kernelFork f).pt = ofSubstructure X (kerSubstructure f) :=
-  rfl
+  (rfl)
+
+/-- The structure map of the kernel fork is the inclusion of the kernel substructure. -/
+@[simp]
+theorem kernelFork_ι : (kernelFork f).ι =
+    (kernelFork_pt f).symm ▸ substructureInclusion X (kerSubstructure f) :=
+  (rfl)
 
 /-- The inclusion of the kernel of the rational map is a kernel. -/
 noncomputable def kernelIsLimit : IsLimit (kernelFork f) :=
@@ -128,8 +127,6 @@ theorem isCompl_rangeComplement_rangeSubstructure :
 
 /-- The cokernel cofork of a morphism of polarizable rational Hodge structures: the projection of
 the target onto a complement of the rational image, along that image. -/
--- Exposure is required for the dependent point and structure-map lemmas below to elaborate.
-@[expose]
 noncomputable def cokernelCofork : CokernelCofork f :=
   CokernelCofork.ofπ (substructureRetractionOfIsCompl Y (rangeComplement f) (rangeSubstructure f)
     (isCompl_rangeComplement_rangeSubstructure f)) <| by
@@ -137,18 +134,19 @@ noncomputable def cokernelCofork : CokernelCofork f :=
     ext x
     simp
 
+/-- The point of the cokernel cofork is the object induced on the image complement. -/
+@[simp]
+theorem cokernelCofork_pt : (cokernelCofork f).pt = ofSubstructure Y (rangeComplement f) :=
+  (rfl)
+
 /-- The structure map of the cokernel cofork is the projection onto the chosen complement of the
 rational image, along that image. -/
 @[simp]
 theorem cokernelCofork_π :
-    (cokernelCofork f).π = substructureRetractionOfIsCompl Y (rangeComplement f)
-      (rangeSubstructure f) (isCompl_rangeComplement_rangeSubstructure f) :=
-  rfl
-
-/-- The point of the cokernel cofork is the object induced on the image complement. -/
-@[simp]
-theorem cokernelCofork_pt : (cokernelCofork f).pt = ofSubstructure Y (rangeComplement f) :=
-  rfl
+    (cokernelCofork f).π = (cokernelCofork_pt f).symm ▸
+      substructureRetractionOfIsCompl Y (rangeComplement f)
+        (rangeSubstructure f) (isCompl_rangeComplement_rangeSubstructure f) :=
+  (rfl)
 
 /-- The projection onto a complement of the rational image, along that image, is a cokernel. -/
 noncomputable def cokernelIsColimit : IsColimit (cokernelCofork f) :=
