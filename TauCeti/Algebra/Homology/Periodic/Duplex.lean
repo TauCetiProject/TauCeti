@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory
-public import Mathlib.Data.ZMod.Defs
+public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Curved.Duplex
 
 /-!
@@ -51,20 +51,6 @@ universe w' v u
 namespace TauCeti
 
 open CategoryTheory Limits
-
-namespace HomologicalComplex
-
-/-- Morphisms of two-periodic complexes are determined by their components in degrees `0`
-and `1`. -/
-theorem hom_ext_two {C : Type u} [Category.{v} C] [Preadditive C]
-    {K L : _root_.HomologicalComplex C (ComplexShape.up (ZMod 2))} {f g : K ⟶ L}
-    (h₀ : f.f 0 = g.f 0) (h₁ : f.f 1 = g.f 1) : f = g := by
-  ext i
-  match i with
-  | 0 => exact h₀
-  | 1 => exact h₁
-
-end HomologicalComplex
 
 namespace CurvedDuplex
 
@@ -344,7 +330,6 @@ variable (C R) in
 /-- The homotopy category of curved duplexes of curvature zero is equivalent to Mathlib's
 homotopy category of two-periodic complexes, through the functor induced by
 `CurvedDuplex.toPeriodicComplex`. -/
-@[expose]
 noncomputable def periodicComplexEquivalence :
     HomotopyCategory C (0 : R) ≌ _root_.HomotopyCategory C (ComplexShape.up (ZMod 2)) :=
   (toPeriodicComplex C R).asEquivalence
@@ -352,14 +337,14 @@ noncomputable def periodicComplexEquivalence :
 /-- The functor of the homotopy-category equivalence is the induced periodic-complex functor. -/
 @[simp]
 theorem periodicComplexEquivalence_functor :
-    (periodicComplexEquivalence C R).functor = toPeriodicComplex C R := rfl
+    (periodicComplexEquivalence C R).functor = toPeriodicComplex C R := (rfl)
 
 instance : (periodicComplexEquivalence C R).functor.Additive := by
-  change (toPeriodicComplex C R).Additive
+  rw [periodicComplexEquivalence_functor]
   infer_instance
 
 instance : (periodicComplexEquivalence C R).functor.Linear R := by
-  change (toPeriodicComplex C R).Linear R
+  rw [periodicComplexEquivalence_functor]
   infer_instance
 
 /-- The equivalence of homotopy categories is induced by `CurvedDuplex.toPeriodicComplex`. -/

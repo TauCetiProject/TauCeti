@@ -125,17 +125,6 @@ section map
 variable (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
   (hF : I ≤ J.comap F)
 
-private theorem kerIdeal_comp_quotientFunctor :
-    (F ⋙ J.quotientFunctor).kerIdeal = J.comap F := by
-  ext X Y f
-  simp only [Functor.mem_kerIdeal_hom, Functor.comp_map, J.quotientFunctor_map_eq_zero_iff,
-    mem_comap_hom]
-
-private theorem map_eq_lift :
-    I.map J F hF = I.lift (F ⋙ J.quotientFunctor)
-      (by simpa only [kerIdeal_comp_quotientFunctor] using hF) :=
-  Quotient.lift_unique' I.rel _ _ (by rw [I.quotientFunctor_comp_map, Quotient.lift_spec])
-
 /-- Two morphisms of `C` have the same image under the quotient functor followed by the induced
 functor exactly when `F` sends their difference into `J`. -/
 theorem map_map_quotientFunctor_map_eq_iff {X Y : C} (f g : X ⟶ Y) :
