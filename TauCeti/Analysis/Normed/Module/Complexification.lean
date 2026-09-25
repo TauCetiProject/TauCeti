@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Tactic.Module
 
 /-!
-# The complexification of a real normed space
+# The complexification of a real seminormed space
 
 For a real normed space `X`, the complexification `X_ℂ = X ⊕ i X` is the complex vector space of
 formal sums `x + i y` with `x y : X`, where `(a + b i) • (x + i y) = (a x - b y) + i (b x + a y)`.
@@ -38,6 +38,10 @@ estimate for real operators, such as a growth bound `‖S t‖ ≤ M e^{ω t}` f
 or a bound `‖Rⁿ‖ ≤ C` on the powers of one operator, holds verbatim for their complexifications.
 (On a real Hilbert space the Taylor norm is in general not the Hilbert norm `√(‖x‖² + ‖y‖²)`; the
 two are equivalent.)
+
+The construction, estimates, product equivalence, and extension of bounded operators also work
+for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed only to obtain the
+`NormedAddCommGroup` instance from this seminormed structure.
 
 ## Main declarations
 
@@ -83,30 +87,30 @@ namespace Complexification
 
 section Module
 
-variable {X : Type*} [AddCommGroup X]
+variable {X : Type*}
 
-instance : Zero (Complexification X) := ⟨⟨0, 0⟩⟩
+instance [Zero X] : Zero (Complexification X) := ⟨⟨0, 0⟩⟩
 
-instance : Add (Complexification X) := ⟨fun z w ↦ ⟨z.re + w.re, z.im + w.im⟩⟩
+instance [Add X] : Add (Complexification X) := ⟨fun z w ↦ ⟨z.re + w.re, z.im + w.im⟩⟩
 
-instance : Neg (Complexification X) := ⟨fun z ↦ ⟨-z.re, -z.im⟩⟩
+instance [Neg X] : Neg (Complexification X) := ⟨fun z ↦ ⟨-z.re, -z.im⟩⟩
 
-instance : Sub (Complexification X) := ⟨fun z w ↦ ⟨z.re - w.re, z.im - w.im⟩⟩
+instance [Sub X] : Sub (Complexification X) := ⟨fun z w ↦ ⟨z.re - w.re, z.im - w.im⟩⟩
 
-instance : SMul ℕ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
+instance [SMul ℕ X] : SMul ℕ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
 
-instance : SMul ℤ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
+instance [SMul ℤ X] : SMul ℤ (Complexification X) := ⟨fun n z ↦ ⟨n • z.re, n • z.im⟩⟩
 
-@[simp] theorem zero_re : (0 : Complexification X).re = 0 := (rfl)
-@[simp] theorem zero_im : (0 : Complexification X).im = 0 := (rfl)
-@[simp] theorem add_re (z w : Complexification X) : (z + w).re = z.re + w.re := (rfl)
-@[simp] theorem add_im (z w : Complexification X) : (z + w).im = z.im + w.im := (rfl)
-@[simp] theorem neg_re (z : Complexification X) : (-z).re = -z.re := (rfl)
-@[simp] theorem neg_im (z : Complexification X) : (-z).im = -z.im := (rfl)
-@[simp] theorem sub_re (z w : Complexification X) : (z - w).re = z.re - w.re := (rfl)
-@[simp] theorem sub_im (z w : Complexification X) : (z - w).im = z.im - w.im := (rfl)
+@[simp] theorem zero_re [Zero X] : (0 : Complexification X).re = 0 := (rfl)
+@[simp] theorem zero_im [Zero X] : (0 : Complexification X).im = 0 := (rfl)
+@[simp] theorem add_re [Add X] (z w : Complexification X) : (z + w).re = z.re + w.re := (rfl)
+@[simp] theorem add_im [Add X] (z w : Complexification X) : (z + w).im = z.im + w.im := (rfl)
+@[simp] theorem neg_re [Neg X] (z : Complexification X) : (-z).re = -z.re := (rfl)
+@[simp] theorem neg_im [Neg X] (z : Complexification X) : (-z).im = -z.im := (rfl)
+@[simp] theorem sub_re [Sub X] (z w : Complexification X) : (z - w).re = z.re - w.re := (rfl)
+@[simp] theorem sub_im [Sub X] (z w : Complexification X) : (z - w).im = z.im - w.im := (rfl)
 
-instance : AddCommGroup (Complexification X) :=
+instance [AddCommGroup X] : AddCommGroup (Complexification X) :=
   Function.Injective.addCommGroup (fun z : Complexification X ↦ (z.re, z.im))
     (fun _ _ h ↦ by
       simp only [Prod.mk.injEq] at h
@@ -115,12 +119,12 @@ instance : AddCommGroup (Complexification X) :=
     (fun _ _ ↦ (rfl))
 
 /-- The embedding `x ↦ x + i 0` of a real vector space into its complexification. -/
-def ofReal (x : X) : Complexification X := ⟨x, 0⟩
+def ofReal [Zero X] (x : X) : Complexification X := ⟨x, 0⟩
 
-@[simp] theorem ofReal_re (x : X) : (ofReal x).re = x := (rfl)
-@[simp] theorem ofReal_im (x : X) : (ofReal x).im = 0 := (rfl)
+@[simp] theorem ofReal_re [Zero X] (x : X) : (ofReal x).re = x := (rfl)
+@[simp] theorem ofReal_im [Zero X] (x : X) : (ofReal x).im = 0 := (rfl)
 
-variable [Module ℝ X]
+variable [AddCommGroup X] [Module ℝ X]
 
 /-- Complex scalars act by `(a + b i) • (x + i y) = (a x - b y) + i (b x + a y)`. -/
 instance : SMul ℂ (Complexification X) :=
@@ -147,12 +151,12 @@ instance : Module ℂ (Complexification X) where
 /-- Real scalars act componentwise. -/
 @[simp]
 theorem real_smul_re (r : ℝ) (z : Complexification X) : (r • z).re = r • z.re := by
-  rw [← Complex.coe_smul, smul_re, Complex.ofReal_re, Complex.ofReal_im, zero_smul, sub_zero]
+  simp [← Complex.coe_smul]
 
 /-- Real scalars act componentwise. -/
 @[simp]
 theorem real_smul_im (r : ℝ) (z : Complexification X) : (r • z).im = r • z.im := by
-  rw [← Complex.coe_smul, smul_im, Complex.ofReal_re, Complex.ofReal_im, zero_smul, zero_add]
+  simp [← Complex.coe_smul]
 
 /-- Every element of the complexification is `re + i im`. -/
 theorem re_add_I_smul_im (z : Complexification X) :
@@ -169,7 +173,7 @@ end Module
 
 section Norm
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The Taylor norm `‖z‖ = ⨆ w ∈ 𝕋, ‖Re (w • z)‖` on the complexification. -/
 instance : Norm (Complexification X) := ⟨fun z ↦ ⨆ w : Circle, ‖((w : ℂ) • z).re‖⟩
@@ -235,8 +239,8 @@ theorem norm_ofReal (x : X) : ‖ofReal x‖ = ‖x‖ :=
   le_antisymm ((norm_le_norm_re_add_norm_im _).trans (by simp)) (by
     simpa using norm_re_le (ofReal x))
 
-/-- The Taylor norm satisfies the axioms of a complex normed space. -/
-theorem normedSpaceCore : NormedSpace.Core ℂ (Complexification X) where
+/-- The Taylor seminorm satisfies the axioms of a complex seminormed space. -/
+theorem seminormedSpaceCore : SeminormedSpace.Core ℂ (Complexification X) where
   norm_nonneg := norm_nonneg'
   norm_smul c z := by
     have hle : ∀ (c : ℂ) (z : Complexification X), ‖c • z‖ ≤ ‖c‖ * ‖z‖ := fun c z ↦
@@ -256,22 +260,12 @@ theorem normedSpaceCore : NormedSpace.Core ℂ (Complexification X) where
     rw [smul_add, add_re]
     exact (norm_add_le _ _).trans (add_le_add (norm_circle_smul_re_le u z)
       (norm_circle_smul_re_le u w))
-  norm_eq_zero_iff z := by
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · ext
-      · exact norm_le_zero_iff.1 (h ▸ norm_re_le z)
-      · exact norm_le_zero_iff.1 (h ▸ norm_im_le z)
-    · subst h
-      exact le_antisymm (norm_le_iff.2 fun w ↦ by simp)
-        (by simpa using norm_circle_smul_re_le 1 (0 : Complexification X))
+instance instSeminormedAddCommGroup : SeminormedAddCommGroup (Complexification X) :=
+  SeminormedAddCommGroup.ofCore seminormedSpaceCore
 
-instance instNormedAddCommGroup : NormedAddCommGroup (Complexification X) :=
-  NormedAddCommGroup.ofCore normedSpaceCore
-
-/-- The complexification of a real normed space is a complex normed space under the Taylor
-norm. -/
-instance instNormedSpace : NormedSpace ℂ (Complexification X) :=
-  NormedSpace.ofCore normedSpaceCore
+/-- The complexification carries the complex normed space structure from its Taylor seminorm. -/
+instance instNormedSpace : NormedSpace ℂ (Complexification X) where
+  norm_smul_le c z := (seminormedSpaceCore.norm_smul c z).le
 
 variable (X)
 
@@ -329,12 +323,21 @@ theorem equivProd_apply (z : Complexification X) : equivProd X z = (z.re, z.im) 
 @[simp]
 theorem equivProd_symm_apply (p : X × X) : (equivProd X).symm p = ⟨p.1, p.2⟩ := (rfl)
 
-/-- The complexification of a real Banach space is a complex Banach space. -/
+/-- The complexification is complete whenever the original real seminormed space is complete. -/
 instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X) :=
-  (completeSpace_iff_isComplete_range (equivProd X).isUniformEmbedding.isUniformInducing).2
-    ((equivProd X).surjective.range_eq ▸ isComplete_univ)
+  ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
+    (equivProd X).surjective).2 inferInstance
 
 end Norm
+
+/-- The Taylor seminorm is a norm when the original real seminorm is a norm. -/
+instance instNormedAddCommGroup {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] :
+    NormedAddCommGroup (Complexification X) where
+  eq_of_dist_eq_zero {z w} h := by
+    rw [dist_eq_norm] at h
+    ext
+    · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_re_le (z - w)))
+    · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_im_le (z - w)))
 
 end Complexification
 
@@ -344,8 +347,8 @@ namespace ContinuousLinearMap
 
 open TauCeti TauCeti.Complexification
 
-variable {X Y Z : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y]
-  [NormedSpace ℝ Y] [NormedAddCommGroup Z] [NormedSpace ℝ Z]
+variable {X Y Z : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X] [SeminormedAddCommGroup Y]
+  [NormedSpace ℝ Y] [SeminormedAddCommGroup Z] [NormedSpace ℝ Z]
 
 /-- The complexification `T_ℂ (x + i y) = T x + i T y` of a bounded real operator, a bounded
 complex-linear operator. -/
