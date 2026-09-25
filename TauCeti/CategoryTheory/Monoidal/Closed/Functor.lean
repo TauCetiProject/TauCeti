@@ -32,6 +32,12 @@ definition and characteristic formulas follow the mate-based development in
   functor;
 * `CategoryTheory.Functor.ihomComparison_ev`: its characteristic equation against evaluation;
 * `CategoryTheory.Functor.ihomComparison_app_eq_curry`: its componentwise curry formula;
+* `CategoryTheory.Functor.ihomComparison_isIso_of_tensor_comparison`: an explicit
+  compatibility criterion which turns that formula into an isomorphism;
+* `CategoryTheory.Functor.ihomComparison_unit`: invertibility at the tensor unit for a
+  strong monoidal functor;
+* `CategoryTheory.Functor.ihomComparison_isIso_of_iso_unit`: transport of that result to
+  an object isomorphic to the unit;
 * `CategoryTheory.Functor.coev_ihomComparison`: its characteristic equation against
   coevaluation;
 * `CategoryTheory.Functor.ihomComparison_whiskerLeft`: its naturality in the source of the
@@ -131,5 +137,225 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
     Functor.whiskerLeft_app, curriedTensor_map_app, Functor.whiskerRight_app,
     laxCommTensorLeft_app]
   rw [Functor.LaxMonoidal.μ_natural_left]
+
+
+section StrongMonoidalComparison
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- If a target tensor-to-internal-Hom comparison is compatible with the image of the
+source tensor comparison, then the internal Hom comparison is an isomorphism.
+
+The hypothesis is the evaluation equation for the transported target comparison.  It is
+the precise compatibility needed when a functor transports a chosen duality structure; it
+is not supplied by arbitrary closed objects alone. -/
+theorem ihomComparison_isIso_of_tensor_comparison
+    (F : C ⥤ D) [F.Monoidal] (A B : C) [Closed A] [Closed (F.obj A)]
+    (t : (ihom (F.obj A)).obj (F.obj B) ≅
+      MonoidalCategoryStruct.tensorObj (F.obj A) (F.obj B))
+    (g : F.obj ((ihom A).obj B) ≅
+      MonoidalCategoryStruct.tensorObj (F.obj A) (F.obj B))
+    (hcompat :
+      (MonoidalCategoryStruct.whiskerLeft (F.obj A) g.hom) ≫
+          (MonoidalCategoryStruct.whiskerLeft (F.obj A) t.inv) ≫
+            (ihom.ev (F.obj A)).app (F.obj B) =
+        Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
+          F.map ((ihom.ev A).app B)) :
+    IsIso ((ihomComparison F A).natTrans.app B) := by
+  let γ : F.obj ((ihom A).obj B) ≅ (ihom (F.obj A)).obj (F.obj B) :=
+    g.trans t.symm
+  have hγ : IsIso γ.hom := by
+    dsimp [γ]
+    infer_instance
+  let α : F.obj ((ihom A).obj B) ⟶ (ihom (F.obj A)).obj (F.obj B) := by
+    simpa only [Functor.comp_obj] using (ihomComparison F A).natTrans.app B
+  have hγeq : γ.hom = MonoidalClosed.curry
+      (Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
+        F.map ((ihom.ev A).app B)) := by
+    have h : MonoidalClosed.uncurry γ.hom =
+        MonoidalClosed.uncurry (MonoidalClosed.curry
+          (Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
+            F.map ((ihom.ev A).app B))) := by
+      dsimp [γ]
+      rw [MonoidalClosed.uncurry_eq, MonoidalClosed.uncurry_curry]
+      rw [MonoidalCategory.whiskerLeft_comp]
+      simpa only [Category.assoc, Functor.id_obj] using hcompat
+    exact MonoidalClosed.uncurry_injective h
+  have hαeq : α = MonoidalClosed.curry
+      (Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
+        F.map ((ihom.ev A).app B)) := by
+    dsimp [α]
+    rw [ihomComparison_app_eq_curry]
+  have hα : IsIso α := by
+    rw [hαeq, ← hγeq]
+    exact hγ
+  simpa only [α, Functor.comp_obj] using hα
+
+/-- A strong monoidal functor preserves the internal-Hom comparison at the tensor unit. -/
+theorem ihomComparison_unit (F : C ⥤ D) [F.Monoidal]
+    [Closed (𝟙_ C)] [Closed (F.obj (𝟙_ C))] :
+    IsIso (F.ihomComparison (𝟙_ C)).natTrans := by
+  -- Compare the two tensor--Hom adjunctions with identity adjunctions using the
+  -- left-unitors.  The remaining tensorator is a strong monoidal natural isomorphism.
+  let adjC :
+      CategoryTheory.MonoidalCategory.tensorLeft (C := C) (𝟙_ C) ⊣ ihom (𝟙_ C) :=
+    ihom.adjunction (𝟙_ C)
+  let adjD :
+      CategoryTheory.MonoidalCategory.tensorLeft (C := D) (F.obj (𝟙_ C)) ⊣
+        CategoryTheory.ihom (C := D) (F.obj (𝟙_ C)) :=
+    ihom.adjunction (F.obj (𝟙_ C))
+  let adjIC : (𝟭 C) ⊣ (𝟭 C) := Adjunction.id
+  let adjID : (𝟭 D) ⊣ (𝟭 D) := Adjunction.id
+  let qC : (𝟭 C) ≅ CategoryTheory.MonoidalCategory.tensorLeft (C := C) (𝟙_ C) :=
+    (MonoidalCategory.leftUnitorNatIso C).symm
+  let eD : (𝟙_ D : D) ≅ F.obj (𝟙_ C) := Functor.Monoidal.εIso F
+  let eTL :
+      CategoryTheory.MonoidalCategory.tensorLeft (C := D) (𝟙_ D) ≅
+        CategoryTheory.MonoidalCategory.tensorLeft (C := D) (F.obj (𝟙_ C)) :=
+    Functor.mapIso (CategoryTheory.MonoidalCategory.tensoringLeft D) eD
+  let qD : (𝟭 D) ≅
+      CategoryTheory.MonoidalCategory.tensorLeft (C := D) (F.obj (𝟙_ C)) :=
+    (MonoidalCategory.leftUnitorNatIso D).symm.trans eTL
+  let S : CategoryTheory.TwoSquare F
+      (CategoryTheory.MonoidalCategory.tensorLeft (C := C) (𝟙_ C))
+      (CategoryTheory.MonoidalCategory.tensorLeft (C := D) (F.obj (𝟙_ C))) F :=
+    laxCommTensorLeft F (𝟙_ C)
+  let S0 := S.whiskerRight (R := 𝟭 D) qD.hom
+  let S1 := S0.whiskerLeft (L' := 𝟭 C) qC.symm.hom
+  let m0 := mateEquiv adjIC adjID S1
+  let m1 := mateEquiv adjC adjID S0
+  let m2 := mateEquiv adjC adjD S
+  let cC := conjugateEquiv adjIC adjC qC.symm.hom
+  let cD := conjugateEquiv adjD adjID qD.hom
+  have hleft := conjugateEquiv_mateEquiv_vcomp adjIC adjC adjID qC.symm.hom S0
+  have hright := mateEquiv_conjugateEquiv_vcomp adjC adjD adjID S qD.hom
+  have hS1 : IsIso S1.natTrans := by
+    -- The whiskered square is a composite of the unitors and the tensorator.
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro X
+    dsimp [S1, S0, TwoSquare.whiskerLeft, TwoSquare.whiskerRight]
+    have hqDall : IsIso qD.hom := qD.isIso_hom
+    have hqD : IsIso (qD.hom.app (F.obj X)) :=
+      (NatTrans.isIso_iff_isIso_app qD.hom).1 hqDall (F.obj X)
+    have hS : IsIso (S.natTrans.app X) := by
+      -- `S` is a `TwoSquare`; expose its stored tensorator component explicitly.
+      dsimp [S]
+      rw [laxCommTensorLeft_app]
+      exact (Functor.Monoidal.μIso F (𝟙_ C) X).isIso_hom
+    have hcomp : IsIso (qD.hom.app (F.obj X) ≫
+        (S.natTrans.app X ≫ F.map (qC.inv.app X))) := by
+      apply (isIso_comp_left_iff (qD.hom.app (F.obj X))
+        (g := S.natTrans.app X ≫ F.map (qC.inv.app X))).2
+      apply (isIso_comp_right_iff (F.map (qC.inv.app X))
+        (g := S.natTrans.app X)).2
+      exact hS
+    simpa only [Category.assoc] using hcomp
+  have hm0 : IsIso m0.natTrans := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro X
+    dsimp [m0, mateEquiv, adjIC, adjID]
+    have hX : IsIso (S1.natTrans.app X) :=
+      (NatTrans.isIso_iff_isIso_app S1.natTrans).1 hS1 X
+    simpa using hX
+  have hcC : IsIso cC := by
+    dsimp [cC]
+    have hq : IsIso (qC.symm.hom) := qC.symm.isIso_hom
+    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ adjIC adjC (qC.symm.hom) hq
+  have hcD : IsIso cD := by
+    dsimp [cD]
+    have hq : IsIso (qD.hom) := qD.isIso_hom
+    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ adjD adjID (qD.hom) hq
+  have htrace1 : IsIso (m1.whiskerTop cC).natTrans := by
+    -- Conjugate the first identity mate back across the source unitor.
+    change IsIso (((mateEquiv adjC adjID) S0).whiskerTop
+      ((conjugateEquiv adjIC adjC) qC.symm.hom)).natTrans
+    rw [← hleft]
+    exact hm0
+  have hm1 : IsIso m1.natTrans := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro X
+    have hX : IsIso ((m1.whiskerTop cC).natTrans.app X) :=
+      (NatTrans.isIso_iff_isIso_app (m1.whiskerTop cC).natTrans).1 htrace1 X
+    dsimp [TwoSquare.whiskerTop] at hX ⊢
+    have hfc : IsIso (F.map (cC.app X)) := F.map_isIso _
+    exact (isIso_comp_left_iff (F.map (cC.app X))
+      (g := m1.natTrans.app X)).mp hX
+  have htrace2 : IsIso (m2.whiskerBottom cD).natTrans := by
+    -- Conjugate the target identity mate back across the target unitor and unit map.
+    change IsIso (((mateEquiv adjC adjD) S).whiskerBottom
+      ((conjugateEquiv adjD adjID) qD.hom)).natTrans
+    rw [← hright]
+    exact hm1
+  have hm2 : IsIso m2.natTrans := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro X
+    have hX : IsIso ((m2.whiskerBottom cD).natTrans.app X) :=
+      (NatTrans.isIso_iff_isIso_app (m2.whiskerBottom cD).natTrans).1 htrace2 X
+    dsimp [TwoSquare.whiskerBottom] at hX ⊢
+    have hcd : IsIso (cD.app (F.obj X)) :=
+      (NatTrans.isIso_iff_isIso_app cD).1 hcD (F.obj X)
+    exact (isIso_comp_right_iff (cD.app (F.obj X))
+      (g := m2.natTrans.app X)).mp hX
+  simpa [m2, adjC, adjD, S, CategoryTheory.Functor.ihomComparison] using hm2
+
+/-- If the unit comparison is invertible, the comparison is invertible on every object
+isomorphic to the unit. -/
+theorem ihomComparison_isIso_of_iso_unit
+    (F : C ⥤ D) [F.Monoidal] [Closed (𝟙_ C)] [Closed (F.obj (𝟙_ C))]
+    (A : C) [Closed A] [Closed (F.obj A)]
+    (hunit : IsIso (F.ihomComparison (𝟙_ C)).natTrans)
+    (e : A ≅ (𝟙_ C : C)) :
+    IsIso (F.ihomComparison A).natTrans := by
+  have hpre : IsIso (MonoidalClosed.pre e.hom) := by
+    have hα : IsIso ((tensoringLeft C).map e.hom) := by
+      rw [NatTrans.isIso_iff_isIso_app]
+      intro Z
+      exact MonoidalCategory.whiskerRight_isIso e.hom Z
+    unfold MonoidalClosed.pre
+    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
+      ((tensoringLeft C).map e.hom) hα
+  have hpreF : IsIso (MonoidalClosed.pre (F.map e.hom)) := by
+    have hα : IsIso ((tensoringLeft D).map (F.map e.hom)) := by
+      rw [NatTrans.isIso_iff_isIso_app]
+      intro Z
+      exact MonoidalCategory.whiskerRight_isIso (F.map e.hom) Z
+    unfold MonoidalClosed.pre
+    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
+      ((tensoringLeft D).map (F.map e.hom)) hα
+  -- Naturality in the source transports the unit comparison across the isomorphism `e`.
+  have hnat := ihomComparison_whiskerLeft (F := F) (A := (𝟙_ C)) (A' := A) e.hom
+  have hL : IsIso ((F.ihomComparison (𝟙_ C)).whiskerBottom
+      (MonoidalClosed.pre (F.map e.hom))).natTrans := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro X
+    have hbase : IsIso ((F.ihomComparison (𝟙_ C)).natTrans.app X) :=
+      (NatTrans.isIso_iff_isIso_app (F.ihomComparison (𝟙_ C)).natTrans).1 hunit X
+    have hp : IsIso ((MonoidalClosed.pre (F.map e.hom)).app (F.obj X)) :=
+      (NatTrans.isIso_iff_isIso_app (MonoidalClosed.pre (F.map e.hom))).1 hpreF (F.obj X)
+    dsimp [TwoSquare.whiskerBottom]
+    exact (CategoryTheory.isIso_comp_left_iff _ _).mpr hp
+  have hR : IsIso ((F.ihomComparison A).whiskerTop
+      (MonoidalClosed.pre e.hom)).natTrans := by
+    rw [← hnat]
+    exact hL
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro X
+  have hcomp :=
+    ((NatTrans.isIso_iff_isIso_app
+      ((F.ihomComparison A).whiskerTop
+        (MonoidalClosed.pre e.hom)).natTrans).1 hR) X
+  simp only [TwoSquare.whiskerTop, Functor.whiskerRight] at hcomp
+  have hpreX : IsIso ((MonoidalClosed.pre e.hom).app X) :=
+    (NatTrans.isIso_iff_isIso_app (MonoidalClosed.pre e.hom)).1 hpre X
+  have hmapX : IsIso (F.map ((MonoidalClosed.pre e.hom).app X)) := by
+    exact CategoryTheory.Functor.map_isIso F _
+  -- The remaining whiskered comparison is invertible because its precomposition is.
+  exact (CategoryTheory.isIso_comp_left_iff
+    (F.map ((MonoidalClosed.pre e.hom).app X))
+    ((F.ihomComparison A).natTrans.app X)).mp hcomp
+
+end StrongMonoidalComparison
+
 
 end CategoryTheory.Functor

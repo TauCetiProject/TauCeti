@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 
 /-!
 # Internal Hom and restriction of sheaves of modules
@@ -17,7 +18,9 @@ canonical comparison from the restriction of an internal Hom to the internal Hom
 restrictions. The comparison is natural in both arguments, and its defining equation says
 that evaluation after restriction agrees with the restriction of evaluation.
 The named comparison packages the slice site's monoidal and closed instances, which must
-otherwise be supplied locally when applying the generic comparison.
+otherwise be supplied locally when applying the generic comparison.  In particular,
+`SheafOfModules.overIhomComparison_free` proves that restriction preserves the comparison
+for the free rank-one sheaf.
 
 This is the comparison map needed to study local duality and internal Homs on a cover.
 It is not asserted to be an isomorphism for arbitrary sheaves of modules.
@@ -79,6 +82,16 @@ theorem _root_.SheafOfModules.overIhomComparison_ev
           ((ihom.ev M).app N) :=
   CategoryTheory.Functor.ihomComparison_ev
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N
+
+/-- Restriction preserves the internal-Hom comparison for the free rank-one sheaf. -/
+theorem _root_.SheafOfModules.overIhomComparison_free :
+    IsIso ((_root_.SheafOfModules.overIhomComparison R X
+      (_root_.SheafOfModules.free (R := ringCatSheaf R) PUnit)).natTrans) := by
+  apply CategoryTheory.Functor.ihomComparison_isIso_of_iso_unit
+    (F := _root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    (A := _root_.SheafOfModules.free (R := ringCatSheaf R) PUnit)
+  · exact CategoryTheory.Functor.ihomComparison_unit _
+  · exact freePUnitIsoUnit (ringCatSheaf R)
 
 end SheafOfModules
 
