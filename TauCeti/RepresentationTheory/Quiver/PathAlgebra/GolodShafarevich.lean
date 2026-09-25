@@ -54,7 +54,8 @@ finite dimension `N`, then `d_N(j) ≤ N` would give `s_N ≤ N ∑_j δ_j`, con
 ## Main results
 
 * `TauCeti.PathAlgebra.pathsInto`: the span of the paths of length `n` ending at `j`, with its
-  characterization `TauCeti.PathAlgebra.mem_pathsInto_iff` as the degree-`n` part of `e_j kR`.
+  characterization `TauCeti.PathAlgebra.mem_pathsInto_iff` as the degree-`n` part of `e_j kR`
+  and its dimension `TauCeti.PathAlgebra.finrank_pathsInto`, the number of such paths.
 * `TauCeti.PathAlgebra.sum_card_mul_finrank_map_pathsInto_le_add`: the Anick-type inequality
   `∑_{b : i ⟶ j} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)` for the dimensions of the images of these
   spans in the quotient.
@@ -201,6 +202,7 @@ private theorem vertexIdempotent_mul_mem_pathsInto {n : ℕ} (j : R) {x : pathAl
 
 /-- **The span of the paths of length `n` into `j` is the degree-`n` part of the corner
 `e_j kR`.** -/
+@[simp]
 theorem mem_pathsInto_iff {n : ℕ} {j : R} {x : pathAlgebra k R} :
     x ∈ pathsInto k n j ↔ x ∈ grade k R n ∧ vertexIdempotent k j * x = x :=
   ⟨fun hx => ⟨pathsInto_le_grade n j hx, vertexIdempotent_mul_of_mem_pathsInto hx⟩,
@@ -309,8 +311,11 @@ instance finiteDimensional_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] 
     (j : R) : FiniteDimensional k (pathsInto k n j) :=
   FiniteDimensional.span_of_finite k (Set.finite_range _)
 
-private theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j : R) :
-    Module.finrank k (pathsInto k n j) = Nat.card (PathInto R n j) := by
+/-- The dimension of the span of the paths of length `n` into `j` is the number of such paths:
+distinct paths are linearly independent in the path algebra. -/
+theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j : R) :
+    Module.finrank k (pathsInto k n j) =
+      Nat.card {p : Σ s : R, Path s j // p.2.length = n} := by
   have := Fintype.ofFinite (PathInto R n j)
   have hli : LinearIndependent k
       fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R) := by
@@ -671,7 +676,8 @@ theorem sum_card_mul_finrank_map_pathsInto_le_add (r : R → pathAlgebra k R)
         ∑ i, Fintype.card (i ⟶ j) * Nat.card (PathInto R (m + 1) i) := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun i _ => by rw [← mul_add, hdK]
-  rw [finrank_pathsInto] at hb
+  have e1 : Module.finrank k (pathsInto k m j) = Nat.card (PathInto R m j) :=
+    finrank_pathsInto k m j
   have e2 := hdK (m + 2) j
   have e0 := hdK m j
   omega
