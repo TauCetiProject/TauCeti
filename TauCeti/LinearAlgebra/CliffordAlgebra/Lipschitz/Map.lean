@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 
 /-!
 # Functoriality of Lipschitz groups
@@ -88,13 +88,11 @@ theorem lipschitzToOrthogonal_map [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂)
     f (CliffordAlgebra.lipschitzVectorAction Q₁ x m) =
       CliffordAlgebra.lipschitzVectorAction Q₂ (f.lipschitzGroupMap x) (f m) := by
   apply CliffordAlgebra.ι_injective Q₂
-  rw [← CliffordAlgebra.map_apply_ι (f := f)
+  simp only [← CliffordAlgebra.map_apply_ι (f := f)
       (CliffordAlgebra.lipschitzVectorAction Q₁ x m),
-    CliffordAlgebra.ι_lipschitzVectorAction_apply,
-    CliffordAlgebra.ι_lipschitzVectorAction_apply, map_mul, map_mul,
-    CliffordAlgebra.map_involute]
-  rw [← f.coe_lipschitzGroupMap_apply x, f.map_lipschitzGroup_inv_coe,
-    CliffordAlgebra.map_apply_ι]
+    CliffordAlgebra.ι_lipschitzVectorAction_apply, map_mul,
+    CliffordAlgebra.map_involute, ← f.coe_lipschitzGroupMap_apply x,
+    f.map_lipschitzGroup_inv_coe, CliffordAlgebra.map_apply_ι]
 
 end QuadraticMap.Isometry
 
