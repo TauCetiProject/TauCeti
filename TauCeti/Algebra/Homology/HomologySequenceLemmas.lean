@@ -13,9 +13,9 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 Let `φ : S₁ ⟶ S₂` be a morphism between two short exact sequences of homological complexes in an
 abelian category. Mathlib's `HomologicalComplex.HomologySequence.quasiIso_τ₃` shows that `φ.τ₃`
 is a quasi-isomorphism when `φ.τ₁` and `φ.τ₂` are. This file proves the corresponding statement
-for the middle map: `φ.τ₂` is a quasi-isomorphism when `φ.τ₁` and `φ.τ₃` are. As in Mathlib, it
-comes from the four lemmas applied to the homology sequences of `S₁` and `S₂`, degree by degree,
-with separate conditions for injectivity and surjectivity.
+for the middle map: `φ.τ₂` is a quasi-isomorphism when `φ.τ₁` and `φ.τ₃` are. This lets one
+transfer a quasi-isomorphism to the middle terms of short exact sequences after comparing their
+outer terms, as for the short exact sequences associated with maps of mapping cones.
 
 ## Main results
 
@@ -26,10 +26,6 @@ with separate conditions for injectivity and surjectivity.
 * `HomologicalComplex.HomologySequence.quasiIso_τ₂`: if `φ.τ₁` and `φ.τ₃` are
   quasi-isomorphisms, so is `φ.τ₂`.
 
-## References
-
-This is one of the lemmas listed as a TODO in `Mathlib.Algebra.Homology.HomologySequenceLemmas`,
-and its proof follows the proofs of the lemmas about `φ.τ₃` there.
 -/
 
 public section

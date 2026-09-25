@@ -38,13 +38,10 @@ differential. This is how the unblocked complex of a stabilized grid diagram is 
 mapping cone.
 
 Finally, a morphism of arrows `α` from `φ : F ⟶ G` to `φ' : F' ⟶ G'` induces a map of mapping
-cones `homotopyCofiber.mapArrowHom φ φ' _ α`, and this map is a quasi-isomorphism when `α.left`
-and `α.right` are. The proof compares the degreewise split short exact sequences
-`G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` of `φ` and `φ'`: the third terms are compared
-through the same sequences for `𝟙 F` and `𝟙 F'`, whose middle terms are acyclic by the split case
-above, and the middle terms then by `HomologicalComplex.HomologySequence.quasiIso_τ₂`. This is how
-the stabilization invariance of grid homology passes from the component `H_I^N` of the
-`X`-marking homotopy to the whole stabilized complex.
+cones `homotopyCofiber.mapArrowHom φ φ' _ α`. If both components of `α` are
+quasi-isomorphisms, so is the induced map of cones. For grid stabilization, this transfers a
+quasi-isomorphism on the off-center states to the comparison map for the whole stabilized
+complex.
 
 ## Main definitions
 

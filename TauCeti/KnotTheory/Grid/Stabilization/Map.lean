@@ -34,7 +34,8 @@ three pieces already available:
 
 On off-center chains the composite `stabilizeXMap` is `H_I^N` followed by the evaluation
 `V_{s.castSucc} ↦ V_s` that merges the two variables of the new block
-(`map_offCenterInclusion_comp_stabilizeXMap`). Since maps of mapping cones induced by
+(`map_offCenterInclusion_comp_stabilizeXMap`). It vanishes on center chains
+(`map_centerInclusion_comp_stabilizeXMap`). Since maps of mapping cones induced by
 quasi-isomorphisms are quasi-isomorphisms
 (`HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`), `stabilizeXMap` is a
 quasi-isomorphism as soon as `H_I^N` is (`quasiIso_stabilizeXMap`). This reduces the
@@ -53,6 +54,9 @@ quasi-isomorphism, which is not proved here.
   both maps are quasi-isomorphisms if `H_I^N` is.
 * `TauCeti.GridDiagram.map_offCenterInclusion_comp_stabilizeXMap`: on off-center chains,
   `stabilizeXMap` is `H_I^N` followed by evaluation at `V_s`.
+* `TauCeti.GridDiagram.inlX_stabilizeXConeMap` and
+  `TauCeti.GridDiagram.map_centerInclusion_comp_stabilizeXMap`: the cone map is the identity on
+  the center summand, while `stabilizeXMap` vanishes there.
 
 ## References
 
@@ -104,6 +108,17 @@ theorem inr_stabilizeXConeMap :
       G.stabilizeXOffCenterToCenterHom s R ≫ homotopyCofiber.inr _ := by
   simp [stabilizeXConeMap, stabilizeXConeArrowHom]
 
+/-- On the center summand, `stabilizeXConeMap` is the identity into the center summand of
+the target cone. -/
+@[reassoc (attr := simp)]
+theorem inlX_stabilizeXConeMap :
+    homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
+        (ComplexShape.refl_rel ()) ≫ (G.stabilizeXConeMap s R).f () =
+      homotopyCofiber.inlX
+        ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
+          𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ()) := by
+  simp [stabilizeXConeMap, stabilizeXConeArrowHom]
+
 /-- The map of cones `stabilizeXConeMap` is a quasi-isomorphism if `H_I^N` is. -/
 theorem quasiIso_stabilizeXConeMap [QuasiIso (G.stabilizeXOffCenterToCenterHom s R)] :
     QuasiIso (G.stabilizeXConeMap s R) := by
@@ -153,6 +168,22 @@ theorem map_offCenterInclusion_comp_stabilizeXMap :
   rw [stabilizeXMap, ← Category.assoc, ← Functor.map_comp, Category.assoc,
     Iso.inv_hom_id_assoc, inr_stabilizeXConeMap, Functor.map_comp, Category.assoc,
     map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom]
+
+/-- On center states, `stabilizeXMap` vanishes. The first factor includes the center summand
+of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
+theorem map_centerInclusion_comp_stabilizeXMap :
+    (ModuleCat.restrictScalars
+      (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+        (homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()
+          (ComplexShape.refl_rel ()) ≫
+          (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f ()) ≫
+        (G.stabilizeXMap s R).f () = 0 := by
+  rw [stabilizeXMap]
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f]
+  simp only [← Category.assoc, ← Functor.map_comp]
+  simp only [Category.assoc, ← HomologicalComplex.comp_f, Iso.inv_hom_id,
+    HomologicalComplex.id_f]
+  simp [inlX_stabilizeXConeMap, map_inlX_comp_stabilizeXCenterConeHomotopyEquiv_hom]
 
 end GridDiagram
 
