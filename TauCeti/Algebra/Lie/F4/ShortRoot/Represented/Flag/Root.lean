@@ -80,8 +80,7 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
   let e := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   rw [← e.apply_symm_apply x]
   generalize e.symm x = z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simpa using add_mem hx hy
   | tmul a X =>
       rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
@@ -173,8 +172,7 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_ideal
     f4ShortRootBaseChangeAdjointMatrixLinearMap
         (f4ShortRootBaseChangeInclusion z) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simpa using add_mem hx hy
   | tmul a y =>
       rw [f4ShortRootBaseChangeInclusion_tmul]

@@ -206,6 +206,23 @@ noncomputable def f4ShortRootCarrierIdealInRange :
   rw [f4ShortRootCarrierIdealInRange, TauCeti.Subcomodule.mem_comap,
     TauCeti.Subcomodule.subtype_apply]
 
+/-- The additive group of `𝔽₂`, taken along its ring structure.
+
+This pins one side of an instance diamond that Mathlib opened upstream. `AddCommGroup G` is now
+derivable from `[IsSimpleAddGroup G] [AddGroup.IsNilpotent G]`, and both hypotheses hold of
+`ZMod p` at a prime `p`, so for `𝔽₂` instance search reaches that route before
+`Ring.toAddCommGroup`. The two structures are equal but not syntactically so, and the
+`AddCommMonoid` underlying the simple-nilpotent one is not the one recorded in `Module 𝔽₂ 𝔽₂`.
+`LinearMap.addCommGroup` therefore cannot discharge its `[Module R₂ N₂]` argument, which leaves
+`AddCommGroup (M →ₗ[𝔽₂] 𝔽₂)` unsynthesizable, and with it `AddCommGroup f4ShortRootCotangentDual`
+and every additive group built from it. Pinning the ring path restores all of them.
+
+The pin is `local`, so no competing `AddCommGroup 𝔽₂` escapes this file; the instances below are
+closed terms that importers can use without it. It must not be `private`, though: those instances
+sit in a `public section`, so their values are elaborated in exporting mode, where private
+constants are invisible. -/
+local instance zmodTwoAddCommGroupOfRing : AddCommGroup 𝔽₂ := Ring.toAddCommGroup
+
 /-- The carrier range inherits additive inverses from its module structure over `𝔽₂`. -/
 noncomputable instance f4ShortRootCarrierCotangentRangeAddCommGroup :
     AddCommGroup f4ShortRootCarrierCotangentRange :=

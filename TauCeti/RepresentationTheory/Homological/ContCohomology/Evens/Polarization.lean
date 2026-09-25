@@ -244,7 +244,7 @@ theorem evensGraphCocycle_polarization (U : OpenSubgroup G) (hU : U.toSubgroup.i
     apply (trivialF2Equiv G).injective
     simp only [trivialF2Equiv_symm_apply, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
       map_add, map_sub, trivialF2Equiv_apply, AddSubgroupClass.coe_sub, coe_evensGraphCocycle,
-      coe_evensHomCocycleAmbient, cocyclesMap1_coe, cochainsMap1_apply, MonoidHom.coe_coe,
+      coe_evensHomCocycleAmbient, cocyclesMap1_coe, cochainsMap1_apply, MonoidHom.coe_ofClass,
       Subgroup.inverseConjugationHom_apply, DistribSMul.toAddMonoidHom_apply,
       trivialF2Pairing_apply, coe_cocyclesCor2, Pi.sub_apply, cochainsCor2_apply,
       Subgroup.mk_smul, map_sum]
