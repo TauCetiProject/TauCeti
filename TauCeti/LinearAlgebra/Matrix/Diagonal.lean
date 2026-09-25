@@ -77,7 +77,7 @@ end Commute
 
 end TauCeti
 
-namespace LinearMap
+namespace Module.Basis
 
 /-- A map diagonal on a basis has that diagonal matrix in the basis coordinates. -/
 theorem toMatrix_eq_diagonal_of_basis
@@ -94,4 +94,4 @@ theorem toMatrix_eq_diagonal_of_basis
     simp
   · simp [h, Ne.symm h]
 
-end LinearMap
+end Module.Basis

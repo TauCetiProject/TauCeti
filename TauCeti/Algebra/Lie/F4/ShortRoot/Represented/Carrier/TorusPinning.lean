@@ -153,7 +153,7 @@ theorem pointsMulEquiv_f4ShortRootQuotientCoordinateBialgHom_torus
       pointsMulEquiv_comp_f4ShortRootQuotientCoordinateBialgHom g
     _ = Matrix.diagonal (fun a =>
         ((torusCharacter (f4SpecialIsogenyTorusMap s) (f4ShortRootWeight a) : Aˣ) : A)) :=
-      LinearMap.toMatrix_eq_diagonal_of_basis _ _ _
+      (f4ShortRootQuotientBasis.baseChange A).toMatrix_eq_diagonal_of_basis _ _
         (f4ShortRootQuotient_endOfPoint_torus g s hg)
     _ = _ := (TauCeti.diagGL_coe _).symm
 
