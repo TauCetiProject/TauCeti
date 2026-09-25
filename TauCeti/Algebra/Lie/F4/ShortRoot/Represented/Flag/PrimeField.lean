@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Root
-public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Carrier
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 
 /-!

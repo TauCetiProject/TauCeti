@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Torus
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Exponential
-public import Mathlib.Algebra.Lie.Matrix
 
 /-!
 # Root-subgroup stability of the represented modular F4 flag
