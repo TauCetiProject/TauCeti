@@ -29,11 +29,10 @@ follow from it.
 * `CategoryTheory.Sheaf.H.map_g_surjective`, `H.subsingleton_X₂`, `H.subsingleton_X₃` and
   `H.subsingleton_X₁`, the vanishing consequences that the sequence is normally used for.
 
-Sheaf cohomology on the small Zariski site of a scheme is the cohomology of a sheaf of modules,
-so this is Layer B infrastructure for `TauCetiRoadmap/JacobianChallenge/README.md`; see
-`TauCeti/AlgebraicGeometry/Cohomology/LongExactSequence.lean`. No formalization is vendored: the
-underlying long exact sequence is Mathlib's `CategoryTheory.Sheaf.H.longSequence_exact₁'`,
-`longSequence_exact₂'` and `longSequence_exact₃'`.
+The underlying exactness statements are Mathlib's `CategoryTheory.Sheaf.H.longSequence_exact₁'`,
+`longSequence_exact₂'` and `longSequence_exact₃'`. Sheaf cohomology on the small Zariski site of a
+scheme is the cohomology of a sheaf of modules; the module-level form of the sequence is in
+`TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence`.
 -/
 
 public section
