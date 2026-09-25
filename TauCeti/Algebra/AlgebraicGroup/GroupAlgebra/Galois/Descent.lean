@@ -238,11 +238,9 @@ theorem groupAlgebraTensorActionSemilinearEquiv_map_mul
     groupAlgebraTensorActionSemilinearEquiv rho sigma (x * y) =
       groupAlgebraTensorActionSemilinearEquiv rho sigma x *
         groupAlgebraTensorActionSemilinearEquiv rho sigma y := by
-  induction x using TensorProduct.induction_on with
-  | zero => rw [zero_mul, map_zero, zero_mul]
+  induction x using TensorProduct.inductionOn with
   | tmul x₁ x₂ =>
-      induction y using TensorProduct.induction_on with
-      | zero => rw [mul_zero, map_zero, mul_zero]
+      induction y using TensorProduct.inductionOn with
       | tmul y₁ y₂ =>
           simp only [Algebra.TensorProduct.tmul_mul_tmul,
             groupAlgebraTensorActionSemilinearEquiv_tmul, map_mul]
@@ -255,8 +253,7 @@ theorem groupAlgebraTensorActionSemilinearEquiv_one
     (rho : Representation ℤ (L ≃ₐ[k] L) M)
     (t : MonoidAlgebra L (Multiplicative M) ⊗[L] MonoidAlgebra L (Multiplicative M)) :
     groupAlgebraTensorActionSemilinearEquiv rho 1 t = t := by
-  induction t using TensorProduct.induction_on with
-  | zero => exact map_zero _
+  induction t using TensorProduct.inductionOn with
   | tmul x y =>
       rw [groupAlgebraTensorActionSemilinearEquiv_tmul]
       simp
@@ -270,8 +267,7 @@ theorem groupAlgebraTensorActionSemilinearEquiv_mul
     groupAlgebraTensorActionSemilinearEquiv rho (sigma * tau) t =
       groupAlgebraTensorActionSemilinearEquiv rho sigma
         (groupAlgebraTensorActionSemilinearEquiv rho tau t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => rw [map_zero, map_zero, map_zero]
+  induction t using TensorProduct.inductionOn with
   | tmul x y =>
       rw [groupAlgebraTensorActionSemilinearEquiv_tmul,
         groupAlgebraTensorActionSemilinearEquiv_tmul,

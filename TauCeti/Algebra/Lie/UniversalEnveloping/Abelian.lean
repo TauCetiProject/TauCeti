@@ -113,9 +113,9 @@ instance instCommRing : CommRing U :=
   { (inferInstance : Ring U) with
     mul_comm := fun a b ↦ by
       -- the canonical generators commute, their commutator being the image of the bracket
-      have hgen : ∀ x ∈ Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)),
-          ∀ y ∈ Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)), x * y = y * x := by
-        rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
+      have hgen : (Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L))).Pairwise
+          Commute := by
+        rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ -
         exact commute_of_lie_eq_zero (AlgHom.id R U) (trivial_lie_zero L L x y)
       -- and those generators generate `U(L)` as an `R`-algebra
       have hcomm := _root_.Algebra.isMulCommutative_adjoin R hgen
@@ -160,7 +160,7 @@ private theorem liftSym_ι (x : L) :
 private theorem liftSym_comp_liftι :
     (liftSym R L).comp (liftι R L) = AlgHom.id R (SymmetricAlgebra R L) := by
   ext x
-  simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+  simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
     AlgHom.coe_id, id_eq, liftι_ι, liftSym_ι]
 
 private theorem liftSym_liftι (s : SymmetricAlgebra R L) : liftSym R L (liftι R L s) = s :=

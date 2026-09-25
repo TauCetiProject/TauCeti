@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
-public import TauCeti.Order.Northcott
+public import TauCeti.Order.Northcott.Basic
 
 /-!
 # Counting the integral ideals of a ray class
@@ -22,7 +22,8 @@ The carrier is `integralIdealsPrimeTo 𝔪`, the monoid on which `idealClass` is
 coprimality and nonvanishing are forced by the type rather than imposed as side conditions; the
 zero ideal and ideals sharing a prime with the finite part cannot enter the count.
 
-Finiteness is not proved here.  `TauCeti.Order.Northcott` already fixes the project's convention
+Finiteness is not proved here. `TauCeti.Order.Northcott.Basic` already fixes the project's
+convention
 for counting by an *inclusive real* cutoff, and supplies `finite_setOf_natCast_le` for any
 natural-valued Northcott function.  All this file adds is the `Northcott` instance for the absolute
 norm on `integralIdealsPrimeTo 𝔪`; the finiteness, and with it `normLE`, `summatory` and
@@ -78,7 +79,7 @@ instance (𝔪 : Modulus K) :
     (Ring.HasFiniteQuotients.finite_absNorm_le (S := 𝓞 K) B).preimage Subtype.val_injective.injOn
 
 /-- The nonzero integral ideals prime to `𝔪` of norm at most a real bound form a finite type. The
-cutoff is real, and inclusive, per the convention `TauCeti.Order.Northcott` fixes. -/
+cutoff is real, and inclusive, per the convention `TauCeti.Order.Northcott.Basic` fixes. -/
 instance (𝔪 : Modulus K) (x : ℝ) :
     Finite {I : integralIdealsPrimeTo 𝔪 // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} :=
   (TauCeti.finite_setOf_natCast_le _ x).to_subtype

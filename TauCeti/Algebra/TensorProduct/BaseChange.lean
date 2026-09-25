@@ -80,8 +80,7 @@ theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
           (y ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n)))) =
       TensorProduct.lid R M (l.rTensor M y) ⊗ₜ[R] n := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
@@ -102,12 +101,10 @@ def baseChangeTensorAlgEquiv :
   Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
     (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B)
     (fun l₁ l₂ z₁ z₂ => by
-      induction z₁ using TensorProduct.induction_on with
-      | zero => simp
+      induction z₁ using TensorProduct.inductionOn with
       | add x y hx hy => simp [TensorProduct.tmul_add, add_mul, hx, hy]
       | tmul a₁ b₁ =>
-        induction z₂ using TensorProduct.induction_on with
-        | zero => simp
+        induction z₂ using TensorProduct.inductionOn with
         | add x y hx hy => simp [TensorProduct.tmul_add, mul_add, hx, hy]
         | tmul a₂ b₂ => simp [Algebra.TensorProduct.tmul_mul_tmul])
     (by simp [Algebra.TensorProduct.one_def])
@@ -226,8 +223,7 @@ theorem smul_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
 /-- The scalar-factor action is semilinear for the corresponding automorphism of `L`. -/
 theorem smul_smulₛₗ (σ : L ≃ₐ[K] L) (a : L) (x : L ⊗[K] A) :
     σ • (a • x) = σ a • σ • x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [smul_add, hx, hy]
   | tmul b x => simp [TensorProduct.smul_tmul']
 

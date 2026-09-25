@@ -22,7 +22,8 @@ For a set `s` of *retained* coordinates, puncturing and shortening are exchanged
 sum is the direct sum of the duals. A monomial transformation which rescales coordinates by units
 `u` acts on the dual through the contragredient transformation, which rescales by the inverse
 units `u⁻¹` and relabels the coordinates in the same way; in particular, monomially (respectively
-permutation) equivalent codes have monomially (respectively permutation) equivalent duals.
+permutation) equivalent codes have monomially (respectively permutation) equivalent duals, and a
+coordinate permutation preserves Euclidean self-duality.
 
 ## Main statements
 
@@ -163,6 +164,15 @@ theorem IsPermutationEquivalent.euclideanDual {C : Submodule R (ι → R)}
   have h := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
   rw [inv_one, monomialEquiv_one] at h
   exact h.symm
+
+/-- Permutation equivalence preserves Euclidean self-duality. -/
+theorem IsPermutationEquivalent.eq_euclideanDual_iff {C : Submodule R (ι → R)}
+    {D : Submodule R (κ → R)} (h : IsPermutationEquivalent C D) :
+    C = C.euclideanDual ↔ D = D.euclideanDual := by
+  obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
+  have hdual := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
+  rw [inv_one, monomialEquiv_one] at hdual
+  rw [hdual, (map_injective_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective).eq_iff]
 
 end Monomial
 

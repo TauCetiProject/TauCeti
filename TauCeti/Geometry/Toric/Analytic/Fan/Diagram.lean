@@ -188,7 +188,7 @@ theorem isLocallyDirected_analyticAffineChartDiagram (hΦ : Φ.IsRegular) :
       (Φ.isFaceOf_of_le υ.2 (Φ.inf_mem τ.2 υ.2) inf_le_right) x = xυ := by
     apply heυ
     rw [faceAffinePointMap_faceAffinePointMap, hx, h']
-  refine ⟨⟨τ.1 ⊓ υ.1, Φ.inf_mem τ.2 υ.2⟩,
+  refine ⟨τ ⊓ υ,
     homOfLE (Subtype.coe_le_coe.1 inf_le_left),
     homOfLE (Subtype.coe_le_coe.1 inf_le_right), x, ?_, ?_⟩
   · exact hτ

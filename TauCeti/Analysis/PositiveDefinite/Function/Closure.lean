@@ -49,9 +49,7 @@ variable {M : Type*} [AddMonoid M] [StarAddMonoid M]
 /-- Positive-definite functions are closed under multiplication by a nonnegative real scalar. -/
 theorem real_smul {r : ℝ} {F : M → ℂ} (hr : 0 ≤ r) (hF : IsPositiveDefinite F) :
     IsPositiveDefinite (fun x => r • F x) := by
-  convert hF.const_mul (k := (r : ℂ)) (by exact_mod_cast hr) using 1
-  ext x
-  exact Algebra.smul_def r (F x)
+  exact hF.const_mul (k := (r : ℂ)) (by exact_mod_cast hr)
 
 /-- Finite nonnegative complex-weighted sums of positive-definite functions are positive
 definite. This is the finite-mixture form used when the weights are already complex scalars with

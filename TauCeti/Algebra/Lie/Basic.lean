@@ -29,8 +29,6 @@ This file supplies general constructions for Lie modules that are missing from M
 
 * `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
 
-* `TauCeti.LieModuleHom.sum_apply`: a finite sum of morphisms of Lie modules is evaluated
-  summandwise.
 * `TauCeti.LieModuleHom.instFiniteDimensional`: the morphism space of two finite-dimensional Lie
   modules is finite-dimensional.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
@@ -152,22 +150,6 @@ end LieModuleEquiv
 namespace LieModuleHom
 
 /-! ### Morphism spaces of Lie modules -/
-
-section Sum
-
-variable {ι : Type w₂}
-
-/-- A finite sum of morphisms of Lie modules is evaluated summandwise. -/
-@[simp]
-theorem sum_apply {s : Finset ι} (F : ι → (M →ₗ⁅R,L⁆ N)) (m : M) :
-    (∑ i ∈ s, F i) m = ∑ i ∈ s, F i m := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s ha ih =>
-      rw [Finset.sum_insert ha, Finset.sum_insert ha, _root_.LieModuleHom.add_apply, ih]
-
-end Sum
 
 /-- The morphism space of two finite-dimensional Lie modules is finite-dimensional: by
 `LieModule.maxTrivLinearMapEquivLieModuleHom` it is the maximal trivial submodule of the

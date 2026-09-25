@@ -53,8 +53,7 @@ theorem val_groupLikeScalarTowerEquiv
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k A) x.val := by
   simp only [groupLikeScalarTowerEquiv, MulEquiv.trans_apply,
     groupLikeBaseChangeEquiv_apply, GroupLike.val_mapEquiv, val_groupLikeBaseChange]
-  induction x.val using TensorProduct.induction_on with
-  | zero => simp
+  induction x.val using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul a b => simp [Algebra.smul_def]
 
@@ -72,8 +71,7 @@ theorem groupLikeScalarTowerEquiv_smul
       σ • groupLikeScalarTowerEquiv (K := K) hspan x := by
   apply _root_.GroupLike.val_injective
   simp only [ScalarAut.val_smul, val_groupLikeScalarTowerEquiv]
-  induction x.val using TensorProduct.induction_on with
-  | zero => simp
+  induction x.val using TensorProduct.inductionOn with
   | add x y hx hy => simp only [smul_add, map_add, hx, hy]
   | tmul a b => simp only [ScalarAut.smul_tmul, Algebra.TensorProduct.map_tmul,
       IsScalarTower.toAlgHom_apply, AlgHom.id_apply, hστ]

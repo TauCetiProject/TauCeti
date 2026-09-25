@@ -111,7 +111,8 @@ theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
   calc eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega)
       ≤ atTop.liminf fun i => eLpNorm (W1p.value (v (ns i)) : E → ℝ) q (mu.restrict Omega) :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ => Lp.aestronglyMeasurable _) _ hae
+        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ => Lp.aestronglyMeasurable _) _
+          (Lp.aestronglyMeasurable _) hae
     _ ≤ atTop.liminf fun i => (C : ℝ≥0∞) * ‖W1p.gradient (v (ns i))‖ₑ :=
         liminf_le_liminf (.of_forall fun i => hv (ns i))
     _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
@@ -133,7 +134,8 @@ theorem W1p.eLpNorm_value_le_of_forall_testFunction {q : ENNReal} {C : ℝ≥0}
   have hvalue : eLpNorm (W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) : E → ℝ) q
       (mu.restrict Omega) = eLpNorm (phi : E → ℝ) q mu := by
     rw [W1p.value_ofTestFunctionₗ, eLpNorm_congr_ae (testFunctionLp_apply_ae p phi),
-      eLpNorm_restrict_eq_of_support_subset ((subset_tsupport _).trans phi.tsupport_subset)]
+      eLpNorm_restrict_eq_of_support_subset phi.aestronglyMeasurable
+        ((subset_tsupport _).trans phi.tsupport_subset)]
   have hgradient : ‖W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi)‖ₑ =
       eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu := by
     rw [W1p.gradient_ofTestFunctionₗ, enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
@@ -249,8 +251,7 @@ theorem W1p.memLp_value_of_mem_w1p0Submodule (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     MemLp (W1p.value u : E → ℝ) pstar (mu.restrict Omega) :=
-  ⟨Lp.aestronglyMeasurable _,
-    lt_of_le_of_lt (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp hu) (by finiteness)⟩
+  lt_of_le_of_lt (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp hu) (by finiteness)
 
 /-- The `p⋆`-integrability of an element of `W^{1,p}_0(Ω)`, packaged for the subtype. -/
 theorem W1p0.memLp_value (hpstar : pstar ≠ ∞)

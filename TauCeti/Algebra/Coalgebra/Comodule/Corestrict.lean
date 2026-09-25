@@ -83,8 +83,7 @@ private theorem comul_lTensor_corestrict_map (f : C →ₗc[R] D) (t : M ⊗[R] 
     Coalgebra.comul.lTensor M (TensorProduct.map LinearMap.id f.toLinearMap t) =
       TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
         (Coalgebra.comul.lTensor M t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c =>
       simp [CoalgHomClass.map_comp_comul_apply]
   | add x y hx hy =>
@@ -94,8 +93,7 @@ omit [Comodule R C M] in
 private theorem counit_lTensor_corestrict_map (f : C →ₗc[R] D) (t : M ⊗[R] C) :
     Coalgebra.counit.lTensor M (TensorProduct.map LinearMap.id f.toLinearMap t) =
       Coalgebra.counit.lTensor M t := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy =>
       simpa using congrArg₂ (· + ·) hx hy

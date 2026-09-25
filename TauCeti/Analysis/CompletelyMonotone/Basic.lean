@@ -174,17 +174,13 @@ theorem iff_neg_one_pow_mul_iteratedDerivWithin_nonneg (hs : UniqueDiffOn ℝ s)
 theorem add {g : ℝ → ℝ} (hf : CompletelyMonotoneOn f s) (hg : CompletelyMonotoneOn g s) :
     CompletelyMonotoneOn (f + g) s := by
   rw [completelyMonotoneOn_iff_absolutelyMonotoneOn_comp_neg] at hf hg ⊢
-  convert AbsolutelyMonotoneOn.add hf hg using 1
-  ext u
-  rfl
+  exact AbsolutelyMonotoneOn.add hf hg
 
 /-- A nonnegative scalar multiple of a completely monotone function is completely monotone. -/
 theorem smul {c : ℝ} (hf : CompletelyMonotoneOn f s) (hc : 0 ≤ c) :
     CompletelyMonotoneOn (c • f) s := by
   rw [completelyMonotoneOn_iff_absolutelyMonotoneOn_comp_neg] at hf ⊢
-  convert AbsolutelyMonotoneOn.smul hf hc using 1
-  ext u
-  rfl
+  exact AbsolutelyMonotoneOn.smul hf hc
 
 end CompletelyMonotoneOn
 

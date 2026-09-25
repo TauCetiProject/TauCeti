@@ -41,12 +41,14 @@ theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F : Type*} [MeasurableSpace 
     (hlim : ∀ᵐ x ∂m, ∀ᶠ n in l, f n x = g x) :
     Tendsto (fun n => eLpNorm (f n - g) q m) l (𝓝 0) := by
   have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
-  simp_rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq]
+  refine Tendsto.congr' (hf.mono fun n hn =>
+    (eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
+      (hn.sub hg.aestronglyMeasurable)).symm) ?_
   have hlint : Tendsto (fun n => ∫⁻ x, ‖(f n - g) x‖ₑ ^ q.toReal ∂m) l (𝓝 0) := by
     have hdom := tendsto_lintegral_filter_of_dominated_convergence' (μ := m)
       (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
       (fun x => (ENNReal.ofReal C * ‖g x‖ₑ) ^ q.toReal)
-      (hf.mono fun n hn => (hn.sub hg.1).enorm.pow_const _)
+      (hf.mono fun n hn => (hn.sub hg.aestronglyMeasurable).enorm.pow_const _)
       (hbound.mono fun _ hn => hn.mono fun x hx => by
         refine ENNReal.rpow_le_rpow ?_ hr.le
         rw [Pi.sub_apply, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC]
@@ -55,7 +57,7 @@ theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F : Type*} [MeasurableSpace 
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le]
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)]
         exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)
-          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg.2).ne)
+          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg).ne)
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
         simp [hn, ENNReal.zero_rpow_of_pos hr]))
     simpa only [lintegral_zero] using hdom

@@ -185,8 +185,7 @@ private theorem evalTripleEquiv_tmul_apply
     (phi : ConvolutionDual k H) (w : ConvolutionDual k H ⊗[k] ConvolutionDual k H) (x y z : H) :
     evalTripleEquiv k H (phi ⊗ₜ[k] w) (x ⊗ₜ[k] (y ⊗ₜ[k] z)) =
       phi.ofConv x * dualDistribEquiv k H w (y ⊗ₜ[k] z) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [TensorProduct.tmul_add, map_add, LinearMap.add_apply, mul_add]
         using congrArg₂ (· + ·) hw₁ hw₂
@@ -197,8 +196,7 @@ private theorem evalTripleEquiv_assoc_tmul_apply
     evalTripleEquiv k H ((TensorProduct.assoc k _ _ _).toLinearMap (w ⊗ₜ[k] chi))
         (x ⊗ₜ[k] (y ⊗ₜ[k] z)) =
       dualDistribEquiv k H w (x ⊗ₜ[k] y) * chi.ofConv z := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [TensorProduct.add_tmul, map_add, LinearMap.add_apply, add_mul]
         using congrArg₂ (· + ·) hw₁ hw₂
@@ -213,8 +211,7 @@ private theorem evalTripleEquiv_assoc_comul_rTensor_apply
           ((Coalgebra.comul (R := k) (A := ConvolutionDual k H)).rTensor _ w))
         (x ⊗ₜ[k] (y ⊗ₜ[k] z)) =
       dualDistribEquiv k H w ((x * y) ⊗ₜ[k] z) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hw₁ hw₂
   | tmul phi psi =>
@@ -227,8 +224,7 @@ private theorem evalTripleEquiv_comul_lTensor_apply
         ((Coalgebra.comul (R := k) (A := ConvolutionDual k H)).lTensor _ w)
         (x ⊗ₜ[k] (y ⊗ₜ[k] z)) =
       dualDistribEquiv k H w (x ⊗ₜ[k] (y * z)) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hw₁ hw₂
   | tmul phi psi =>
@@ -240,8 +236,7 @@ private theorem lid_counit_rTensor_apply
     ((TensorProduct.lid k (ConvolutionDual k H))
         ((Coalgebra.counit (R := k) (A := ConvolutionDual k H)).rTensor _ w)).ofConv x =
       dualDistribEquiv k H w ((1 : H) ⊗ₜ[k] x) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, WithConv.ofConv_add, LinearMap.add_apply]
         using congrArg₂ (· + ·) hw₁ hw₂
@@ -255,8 +250,7 @@ private theorem rid_counit_lTensor_apply
     ((TensorProduct.rid k (ConvolutionDual k H))
         ((Coalgebra.counit (R := k) (A := ConvolutionDual k H)).lTensor _ w)).ofConv x =
       dualDistribEquiv k H w (x ⊗ₜ[k] (1 : H)) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, WithConv.ofConv_add, LinearMap.add_apply]
         using congrArg₂ (· + ·) hw₁ hw₂
@@ -273,13 +267,11 @@ noncomputable instance instCoalgebra : Coalgebra k (ConvolutionDual k H) where
     apply (evalTripleEquiv k H).injective
     apply LinearMap.ext
     intro xyz
-    induction xyz using TensorProduct.induction_on with
-    | zero => simp
+    induction xyz using TensorProduct.inductionOn with
     | add xyz₁ xyz₂ hxyz₁ hxyz₂ =>
         simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hxyz₁ hxyz₂
     | tmul x yz =>
-        induction yz using TensorProduct.induction_on with
-        | zero => simp
+        induction yz using TensorProduct.inductionOn with
         | add yz₁ yz₂ hyz₁ hyz₂ =>
             simpa only [TensorProduct.tmul_add, map_add, LinearMap.add_apply]
               using congrArg₂ (· + ·) hyz₁ hyz₂
@@ -378,8 +370,7 @@ noncomputable instance instBialgebra : Bialgebra k (ConvolutionDual k H) :=
       apply (dualDistribEquiv k H).injective
       apply LinearMap.ext
       intro xy
-      induction xy using TensorProduct.induction_on with
-      | zero => simp
+      induction xy using TensorProduct.inductionOn with
       | add xy₁ xy₂ hxy₁ hxy₂ =>
           simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hxy₁ hxy₂
       | tmul x y =>
@@ -413,8 +404,7 @@ private theorem dualDistribEquiv_comm_apply
   have hcomm :
       (tensorUnwrap k H) (TensorProduct.comm k _ _ w) =
         TensorProduct.comm k _ _ ((tensorUnwrap k H) w) := by
-    induction w using TensorProduct.induction_on with
-    | zero => simp
+    induction w using TensorProduct.inductionOn with
     | add w₁ w₂ hw₁ hw₂ => simpa only [map_add] using congrArg₂ (· + ·) hw₁ hw₂
     | tmul phi psi => simp [tensorUnwrap]
   rw [dualDistribEquiv_apply, dualDistribEquiv_apply, hcomm]
@@ -427,8 +417,7 @@ noncomputable instance instIsCocomm : Coalgebra.IsCocomm k (ConvolutionDual k H)
     apply (dualDistribEquiv k H).injective
     apply LinearMap.ext
     intro xy
-    induction xy using TensorProduct.induction_on with
-    | zero => simp
+    induction xy using TensorProduct.inductionOn with
     | add xy₁ xy₂ hxy₁ hxy₂ =>
         simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hxy₁ hxy₂
     | tmul x y =>
@@ -464,8 +453,7 @@ private theorem ofConv_mul_apply
     (w : ConvolutionDual k H ⊗[k] ConvolutionDual k H) (x : H) :
     (LinearMap.mul' k (ConvolutionDual k H) w).ofConv x =
       dualDistribEquiv k H w (Coalgebra.comul x) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, WithConv.ofConv_add, LinearMap.add_apply]
         using congrArg₂ (· + ·) hw₁ hw₂
@@ -473,8 +461,7 @@ private theorem ofConv_mul_apply
       rw [LinearMap.mul'_apply]
       rw [LinearMap.convMul_apply]
       generalize Coalgebra.comul (R := k) (A := H) x = z
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z₁ z₂ hz₁ hz₂ =>
           simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hz₁ hz₂
       | tmul y z =>
@@ -487,13 +474,11 @@ private theorem dualDistribEquiv_map_antipode_left_apply
           LinearMap.id w) z =
       dualDistribEquiv k H w
         (TensorProduct.map (HopfAlgebra.antipode k (A := H)) LinearMap.id z) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hw₁ hw₂
   | tmul phi psi =>
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z₁ z₂ hz₁ hz₂ =>
           simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hz₁ hz₂
       | tmul x y =>
@@ -508,13 +493,11 @@ private theorem dualDistribEquiv_map_antipode_right_apply
           (HopfAlgebra.antipode k (A := ConvolutionDual k H)) w) z =
       dualDistribEquiv k H w
         (TensorProduct.map LinearMap.id (HopfAlgebra.antipode k (A := H)) z) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add w₁ w₂ hw₁ hw₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hw₁ hw₂
   | tmul phi psi =>
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z₁ z₂ hz₁ hz₂ =>
           simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hz₁ hz₂
       | tmul x y =>

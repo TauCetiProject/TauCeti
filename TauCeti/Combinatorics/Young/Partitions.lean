@@ -44,7 +44,7 @@ theorem rowLens_diagramOf {n : ℕ} (μ : n.Partition) :
 /-- The Young diagram of a partition has the size of the partition. -/
 @[simp]
 theorem card_diagramOf {n : ℕ} (μ : n.Partition) : (diagramOf μ).card = n := by
-  rw [← YoungDiagram.sum_rowLens, rowLens_diagramOf, ← Multiset.sum_coe, Multiset.sort_eq]
+  rw [← YoungDiagram.sum_rowLens_eq_card, rowLens_diagramOf, ← Multiset.sum_coe, Multiset.sort_eq]
   exact μ.parts_sum
 
 /-- The row lengths of the Young diagram of a partition are its decreasingly sorted parts, padded
@@ -99,7 +99,7 @@ theorem colLen_zero_diagramOf {n : ℕ} (ν : n.Partition) :
 def toPartition {n : ℕ} (μ : YoungDiagram) (h : μ.card = n) : n.Partition where
   parts := μ.rowLens
   parts_pos := fun {x} hx => μ.pos_of_mem_rowLens x (Multiset.mem_coe.mp hx)
-  parts_sum := by rw [Multiset.sum_coe, YoungDiagram.sum_rowLens, h]
+  parts_sum := by rw [Multiset.sum_coe, YoungDiagram.sum_rowLens_eq_card, h]
 
 /-- The parts of the partition of a sized Young diagram are its row lengths. -/
 @[simp]

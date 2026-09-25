@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -16,6 +17,12 @@ Generic facts about the quotient of a topological group by a normal subgroup, ph
 unbundled classes `[Group G] [TopologicalSpace G] [IsTopologicalGroup G]`: neither compactness
 nor total disconnectedness is needed, so the results apply in particular to profinite groups.
 
+## Main definitions
+
+* `TauCeti.quotientOpenSubgroup`: the image of an open subgroup of `G` in `G ⧸ N`, as an open
+  subgroup.
+* `TauCeti.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
+
 ## Main results
 
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
@@ -24,6 +31,8 @@ nor total disconnectedness is needed, so the results apply in particular to prof
   quotient map `G → G ⧸ N` is clopen.
 * `QuotientGroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond,
   as lattices, to the open normal subgroups of `G` containing `N`.
+* `TauCeti.quotientOpenSubgroup_index`: quotienting by a subgroup of `U` preserves the index
+  of `U`.
 -/
 
 public section
@@ -116,5 +125,63 @@ theorem comapMk'OpenNormalOrderIso_symm_apply_toSubgroup
   (rfl)
 
 end QuotientGroup
+
+section OpenSubgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] (N : Subgroup G)
+  [N.Normal]
+
+/-- The image of an open subgroup `U` in `G / N`, as an open subgroup. -/
+def quotientOpenSubgroup (U : OpenSubgroup G) : OpenSubgroup (G ⧸ N) where
+  toSubgroup := U.toSubgroup.map (QuotientGroup.mk' N)
+  isOpen' := QuotientGroup.isOpenMap_coe _ U.isOpen'
+
+/-- The subgroup underlying `quotientOpenSubgroup` is the image subgroup. -/
+theorem toSubgroup_quotientOpenSubgroup (U : OpenSubgroup G) :
+    (quotientOpenSubgroup N U).toSubgroup = U.toSubgroup.map (QuotientGroup.mk' N) :=
+  (rfl)
+
+/-- Membership in `U / N` pulls back to membership in `U` when `N ≤ U`. -/
+@[simp]
+theorem mem_quotientOpenSubgroup_mk_iff (U : OpenSubgroup G) (hNU : N ≤ U) (g : G) :
+    (g : G ⧸ N) ∈ quotientOpenSubgroup N U ↔ g ∈ U := by
+  -- `QuotientGroup.mk'_apply` rewrites the coercion `(g : G ⧸ N)` as an application of the
+  -- homomorphism `QuotientGroup.mk' N`, which is the shape `Subgroup.mem_comap` matches.
+  rw [← OpenSubgroup.mem_toSubgroup, toSubgroup_quotientOpenSubgroup, ← QuotientGroup.mk'_apply,
+    ← Subgroup.mem_comap, QuotientGroup.comap_map_mk', sup_eq_right.mpr hNU,
+    OpenSubgroup.mem_toSubgroup]
+
+/-- Passing from `U` to its image in `G / N` preserves the index when `N ≤ U`. -/
+@[simp]
+theorem quotientOpenSubgroup_index (U : OpenSubgroup G) (hNU : N ≤ U) :
+    (quotientOpenSubgroup N U).toSubgroup.index = U.toSubgroup.index := by
+  rw [toSubgroup_quotientOpenSubgroup, Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU]
+
+/-- The quotient homomorphism restricted from `U` to its image in `G / N`. -/
+def quotientOpenSubgroupMap (U : OpenSubgroup G) :
+    U.toSubgroup →* (quotientOpenSubgroup N U).toSubgroup :=
+  MonoidHom.codRestrict ((QuotientGroup.mk' N).comp U.toSubgroup.subtype)
+    (quotientOpenSubgroup N U).toSubgroup fun u => ⟨u, u.2, rfl⟩
+
+/-- The restricted quotient homomorphism has the expected value in `G / N`. -/
+@[simp]
+theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
+    ((quotientOpenSubgroupMap N U u : (quotientOpenSubgroup N U).toSubgroup) : G ⧸ N) =
+      (u : G) :=
+  (rfl)
+
+/-- The restricted quotient homomorphism is surjective: every element of the image of `U` in
+`G / N` is the image of an element of `U`. -/
+theorem quotientOpenSubgroupMap_surjective (U : OpenSubgroup G) :
+    Function.Surjective (quotientOpenSubgroupMap N U) := by
+  rintro ⟨-, u, hu, rfl⟩
+  exact ⟨⟨u, hu⟩, rfl⟩
+
+/-- The restricted quotient homomorphism is continuous. -/
+theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
+    Continuous (quotientOpenSubgroupMap N U) :=
+  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+
+end OpenSubgroup
 
 end TauCeti
