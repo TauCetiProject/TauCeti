@@ -15,12 +15,11 @@ A dissociated exchangeable graph law is the sampling law of a single graphon on 
 (`exists_graphon_of_isDissociated`). Together with `isDissociated_sampleExchangeableLaw` this
 identifies the dissociated exchangeable graph laws with the sampling laws of graphons.
 
-The graphon comes from a mixing measure of the law, which exists by
-`exists_mixtureExchangeableLaw_eq`. Under any mixing measure of a dissociated law, every
+Under any mixing measure of a dissociated law (`exists_mixtureExchangeableLaw_eq`), every
 homomorphism density is almost surely equal to the corresponding upper mass
-(`ae_homDensityOnSpace_eq_upperMass_of_isDissociated`), and a graphon class in the full-measure set
-on which this holds for all finite patterns at once has the upper masses of the law. The theorem
-does not say that the mixing measure is a Dirac mass or that the graphon is unique.
+(`ae_homDensityOnSpace_eq_upperMass_of_isDissociated`), so all homomorphism-density coordinates are
+almost surely constant at once. This does not say that the mixing measure is a Dirac mass, and
+neither the mixing measure nor the graphon is claimed to be unique.
 
 ## Main results
 
@@ -50,15 +49,15 @@ namespace DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 /-- Under a mixing measure of a dissociated exchangeable graph law, each homomorphism density is
-almost surely constant, equal to the upper mass of the pattern. Dissociation makes the upper mass of
-two disjoint copies of `F` the square of the upper mass of `F`, so `t(F, ·)` has second moment equal
-to the square of its mean, and hence variance zero. -/
+almost surely constant, equal to the upper mass of the pattern. -/
 theorem ae_homDensityOnSpace_eq_upperMass_of_isDissociated
     (P : ProbabilityMeasure (GraphonSpace Ω μ)) (h : (mixtureExchangeableLaw P).IsDissociated)
     {k : ℕ} (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
     ∀ᵐ x ∂(P : Measure (GraphonSpace Ω μ)),
       homDensityOnSpace F x = (mixtureExchangeableLaw P).upperMass F := by
   classical
+  -- two disjoint copies of `F` have density `t(F, ·)²`, so by dissociation the second moment of
+  -- `t(F, ·)` is the square of its mean, and its variance is zero
   have hsq : ∀ x : GraphonSpace Ω μ,
       homDensityOnSpace ((F ⊕g F).map finSumFinEquiv.toEmbedding) x =
         homDensityOnSpace F x ^ 2 := by
