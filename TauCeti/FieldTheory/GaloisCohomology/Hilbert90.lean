@@ -136,9 +136,8 @@ instance subsingleton_H1_unitsCoeff :
   subsingleton_H1_additive_units
 
 /-- **Hilbert 90 for the absolute Galois group**, stated for Mathlib's canonical continuous
-cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This transports the explicit vanishing
-`TauCeti.subsingleton_H1_unitsCoeff`, proved from finite-level Hilbert 90 through the
-finite-quotient colimit, across the degree-one comparison isomorphism. -/
+cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This is the form in which the vanishing feeds
+the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
       (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
