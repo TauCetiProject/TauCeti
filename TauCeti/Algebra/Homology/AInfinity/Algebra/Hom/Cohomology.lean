@@ -464,13 +464,14 @@ private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
     exact hy.symm
   let e := AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
     hcycles hboundaries
+  have hx (x : AA.Cohomology) : x ∈ AA.cohomologyAInfinityAlgebra.cycles := by
+    simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply]
   have heq : (fun x : AA.Cohomology =>
-      AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
-        simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])) =
+      AA.cohomologyAInfinityAlgebra.cohomologyClass (hx x)) =
       ⇑e := by
     funext x
     exact (AA.cohomologyAInfinityAlgebra.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
-      hcycles hboundaries x).symm
+      hcycles hboundaries x (hx x)).symm
   rw [heq]
   exact e.bijective
 

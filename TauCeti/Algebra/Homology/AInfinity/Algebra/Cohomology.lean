@@ -194,9 +194,9 @@ noncomputable def cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot
 @[simp]
 theorem cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
     (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
-    (hboundaries : 𝒜.boundariesInCycles = ⊥) (x : A) :
+    (hboundaries : 𝒜.boundariesInCycles = ⊥) (x : A) (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot hcycles hboundaries x =
-      𝒜.cohomologyClass (show x ∈ 𝒜.cycles by rw [hcycles]; trivial) := by
+      𝒜.cohomologyClass hx := by
   rw [cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot, LinearEquiv.trans_apply,
     LinearEquiv.ofTop_symm_apply, Submodule.quotEquivOfEqBot_symm_apply,
     cohomologyClass_eq_mk]

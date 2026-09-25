@@ -113,7 +113,8 @@ noncomputable def cohomologyEquiv (h : 𝒜.IsMinimal) : A ≃ₗ[R] 𝒜.Cohomo
 @[simp]
 theorem cohomologyEquiv_apply (h : 𝒜.IsMinimal) (x : A) :
     h.cohomologyEquiv x = 𝒜.cohomologyClass (h.mem_cycles x) := by
-  simp only [cohomologyEquiv, cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply]
+  exact 𝒜.cohomologyEquivOfCyclesEqTopOfBoundariesInCyclesEqBot_apply
+    ((isMinimal_iff_cycles_eq_top 𝒜).1 h) h.boundariesInCycles_eq_bot x (h.mem_cycles x)
 
 /-- The identification of a minimal algebra with its cohomology carries `m₂` to the cohomology
 product. -/
