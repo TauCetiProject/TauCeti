@@ -32,18 +32,6 @@ on `F / k(x)`:
 The places missing from the finite chart are the poles of `x`, of which there are finitely many
 (`TauCeti.Place.finite_setOf_ord_neg`).
 
-That `R_x` is moreover a finite `k[x]`-module, in any finite extension of `k(x)`, is
-`TauCeti.IsIntegralClosure.finite_adjoin_of_transcendental`. The Dedekind property rests on the
-fact that integral closures of Dedekind domains in finite, possibly inseparable, extensions are
-Dedekind (`TauCeti.integralClosure.isDedekindDomain`), applied to `k[x] ≅ k[X]`. The description
-by places is Stichtenoth's Theorem 3.2.6
-(`TauCeti.restrictScalars_integralClosure_eq_holomorphyRing`) for `k[x]`, whose functions are all
-regular at a place exactly when `x` is (`TauCeti.Place.adjoin_le_integers_iff`).
-
-Since the Dedekind property and the fraction field depend on the hypotheses that `F / k` is a
-function field and that `x` is transcendental, they are theorems rather than instances; a consumer
-installs them with `have` before using the affine-model API on `R_x`.
-
 ## Main results
 
 * `TauCeti.isDedekindDomain_integralClosure_adjoin` and
@@ -80,8 +68,8 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 namespace Place
 
 /-- **The finite chart of `R_x`**: a place `P` is finite on the integral closure of `k[x]` in `F`
-exactly when `x` has no pole at `P`. One direction is `x ∈ R_x`; the other is
-`TauCeti.Place.mem_integers_of_isIntegral_adjoin`. -/
+exactly when `x` has no pole at `P`. -/
+@[simp]
 theorem forall_algebraMap_mem_integers_integralClosure_adjoin_iff (P : Place k F) {x : F} :
     (∀ r : integralClosure (Algebra.adjoin k {x}) F,
         algebraMap (integralClosure (Algebra.adjoin k {x}) F) F r ∈ P.integers) ↔
@@ -151,12 +139,7 @@ variable (x : F) [IsDedekindDomain (integralClosure (Algebra.adjoin k {x}) F)]
   [IsFractionRing (integralClosure (Algebra.adjoin k {x}) F) F]
 
 /-- **The places at which `x` has no pole are the height one primes of `R_x`** (Stichtenoth,
-Section III.2). Once `R_x` is known to be a Dedekind domain with fraction field `F` — which
-`TauCeti.isDedekindDomain_integralClosure_adjoin` and
-`TauCeti.isFractionRing_integralClosure_adjoin` supply for an algebraic function field and a
-transcendental `x` — its finite chart consists of the places at which `x` is regular, by
-`TauCeti.Place.forall_algebraMap_mem_integers_integralClosure_adjoin_iff`, so this is
-`TauCeti.Place.heightOneSpectrumEquiv` for `R_x`, read along that identification of subtypes. -/
+Section III.2). -/
 noncomputable def integralClosureAdjoinHeightOneSpectrumEquiv :
     {P : Place k F // x ∈ P.integers} ≃
       HeightOneSpectrum (integralClosure (Algebra.adjoin k {x}) F) :=

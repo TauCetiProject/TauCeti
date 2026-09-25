@@ -237,10 +237,7 @@ theorem holomorphyRing_setOf_subset_integers (hF : IsFunctionField k F) (R : Sub
   exact hzV (Place.integers_ofValuationSubring hF hk hV ▸ hz _ hmem)
 
 /-- **Stichtenoth, Theorem 3.2.6**, for an arbitrary `k`-subalgebra: the integral closure of `R`
-in `F` is the holomorphy ring of the set of places at which all the functions of `R` are regular.
-The integral closure is integrally closed in `F`, so this is
-`TauCeti.holomorphyRing_setOf_subset_integers` for it; a place is regular on the integral closure
-exactly when it is regular on `R`, because valuation rings are integrally closed. -/
+in `F` is the holomorphy ring of the set of places at which all the functions of `R` are regular. -/
 theorem restrictScalars_integralClosure_eq_holomorphyRing (hF : IsFunctionField k F)
     (R : Subalgebra k F) :
     (integralClosure R F).restrictScalars k =
