@@ -18,17 +18,6 @@ every finite and real place. This file shows that `Q` is isotropic over `K` as s
 locally isotropic regular form of rank `n - 1` is isotropic over `K`. Together with the cases of
 rank two, three and four, this is the inductive structure of the Hasse–Minkowski theorem.
 
-Write `Q ≅ U ⊥ W` with `U` binary and `W` of rank `n - 2 ≥ 3`. The form `W` is anisotropic at only
-finitely many finite places, and at each finite or real place where it is anisotropic, local
-isotropy of `Q` gives local vectors `x_v` of `U` and `y_v` of `W` with `U(x_v) = -W(y_v) ≠ 0`.
-Weak approximation of vectors then produces one global vector `x` of `U` with `b := U(x) ≠ 0` such
-that `-b` is represented by `W` at every finite and real place. So `⟨b⟩ ⊥ W`, of rank `n - 1`, is
-locally isotropic; the induction hypothesis makes it isotropic over `K`, hence `W` represents `-b`
-over `K`, and the two global vectors give an isotropic vector of `U ⊥ W`.
-
-The summand `U` need not be binary for this argument: any regular form on a nonzero space works,
-which is how `QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic` is stated.
-
 ## Main results
 
 * `QuadraticForm.LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod`: if `W` represents a
@@ -45,6 +34,16 @@ which is how `QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic` is state
   five.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §3.2, Theorem 8, the case `n ≥ 5`.
 -/
+
+/- Write `Q ≅ U ⊥ W` with `U` binary and `W` of rank `n - 2 ≥ 3`. The form `W` is anisotropic
+at only finitely many finite places, and at each finite or real place where it is anisotropic,
+local isotropy of `Q` gives vectors `x_v` of `U` and `y_v` of `W` with
+`U(x_v) = -W(y_v) ≠ 0`. Weak approximation of vectors then produces a global vector `x` of `U`
+with `b := U(x) ≠ 0` such that `-b` is represented by `W` at every finite and real place.
+Thus `⟨b⟩ ⊥ W` is locally isotropic; the induction hypothesis makes it isotropic over `K`,
+hence `W` represents `-b` over `K`, and the two global vectors give an isotropic vector of
+`U ⊥ W`. The summand `U` need not be binary for this argument: any regular form on a nonzero
+space works, as in `QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic`. -/
 
 public section
 
