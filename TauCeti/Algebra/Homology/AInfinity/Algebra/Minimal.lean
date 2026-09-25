@@ -28,7 +28,7 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   algebra is minimal exactly when the differential vanishes.
 * `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology `A∞` algebra is
   minimal.
-* `TauCeti.AInfinityHom.isQuasiIso_iff_bijective_linearPart`: between minimal algebras, a
+* `TauCeti.AInfinityHom.isQuasiIso_iff_linearPart_bijective`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 
 ## References
@@ -166,7 +166,7 @@ theorem cohomologyMap_cohomologyEquiv (hA : AA.IsMinimal) (hB : BB.IsMinimal)
 
 /-- An `A∞` morphism between minimal algebras is a quasi-isomorphism exactly when its linear part
 is bijective. -/
-theorem isQuasiIso_iff_bijective_linearPart (hA : AA.IsMinimal) (hB : BB.IsMinimal)
+theorem isQuasiIso_iff_linearPart_bijective (hA : AA.IsMinimal) (hB : BB.IsMinimal)
     (f : AInfinityHom AA BB) :
     f.IsQuasiIso ↔ Function.Bijective f.linearPart := by
   have hcomm : ⇑f.cohomologyMap ∘ ⇑hA.cohomologyEquiv = ⇑hB.cohomologyEquiv ∘ ⇑f.linearPart :=

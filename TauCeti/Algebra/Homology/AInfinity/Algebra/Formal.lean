@@ -16,9 +16,9 @@ algebra with zero `m₁`, the cohomology product as `m₂`, and no higher operat
 when it admits an `A∞` quasi-isomorphism to this `A∞` algebra.  Over a field every `A∞`
 quasi-isomorphism has an `A∞` inverse up to homotopy, so there the direction of the
 quasi-isomorphism is immaterial.
-Minimal models are exactly what distinguishes the two notions: the cohomology of a minimal algebra
-is the algebra itself, but formality asks in addition that the higher operations can be removed up
-to quasi-isomorphism.
+Minimal models are exactly what distinguishes the two notions: a minimal algebra is identified
+with its cohomology as a graded algebra via `m₂`, while formality additionally asks that its higher
+operations can be removed up to quasi-isomorphism.
 
 Formality is reflected along quasi-isomorphisms: if `A ⟶ B` is a quasi-isomorphism and `B` is
 formal, then so is `A`, because a quasi-isomorphism identifies the two cohomology algebras
@@ -76,7 +76,7 @@ theorem IsFormal.of_isQuasiIso {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) (
     𝒜.IsFormal := by
   obtain ⟨g, hg⟩ := hℬ
   exact ⟨(hf.cohomologyStrictHomInv).toAInfinityHom.comp (g.comp f),
-    hf.cohomologyStrictHomInv_isQuasiIso.comp (hg.comp hf)⟩
+    hf.isQuasiIso_cohomologyStrictHomInv.comp (hg.comp hf)⟩
 
 namespace IsMinimal
 
@@ -105,7 +105,7 @@ private noncomputable def toCohomology (h : 𝒜.IsMinimal) (hm : ∀ n, 3 ≤ n
 identification with its cohomology is a strict isomorphism. -/
 theorem isFormal (h : 𝒜.IsMinimal) (hm : ∀ n, 3 ≤ n → 𝒜.m n = 0) : 𝒜.IsFormal := by
   refine ⟨(h.toCohomology hm).toAInfinityHom, ?_⟩
-  rw [AInfinityHom.isQuasiIso_iff_bijective_linearPart h 𝒜.isMinimal_cohomologyAInfinityAlgebra,
+  rw [AInfinityHom.isQuasiIso_iff_linearPart_bijective h 𝒜.isMinimal_cohomologyAInfinityAlgebra,
     AInfinityStrictHom.linearPart_toAInfinityHom]
   exact h.cohomologyEquiv.bijective
 
