@@ -12,9 +12,9 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Exponential
 /-!
 # Root pinning of the represented F4 quotient comodule
 
-The actual carrier action on its represented middle quotient agrees with the special-isogeny
-root formulas. The comparison descends the integral conjugation identity and then uses the
-structural quotient-column pinning; it does not compute a new matrix table.
+The carrier action on its represented middle quotient reverses the numbered roots with the
+prescribed long- and short-root exponents. These formulas provide the root pinning of the
+characteristic-two F4 carrier special isogeny.
 
 ## References
 

@@ -13,10 +13,9 @@ public import TauCeti.LinearAlgebra.LinearMap.QuadraticPolynomial
 /-!
 # Integral root exponentials on the modular F₄ quotient
 
-This file transports the integral Chevalley root exponential through reduction modulo two and the
-quotient by the modular short-root ideal.  The resulting formula is valid over every commutative
-`ZMod 2`-algebra.  Its three terms are stated using the genuine integral adjoint action, so the
-concrete quotient column formulas can identify them without choosing representatives.
+The reduced integral Chevalley root exponential acts on the modular F4 short-root quotient by a
+three-term quadratic formula over every commutative `ZMod 2`-algebra. The formula identifies the
+quotient root columns used in the special-isogeny pinning.
 
 ## References
 

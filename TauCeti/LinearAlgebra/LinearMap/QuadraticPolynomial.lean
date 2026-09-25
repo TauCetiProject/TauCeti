@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Module.LinearMap.Basic
 /-!
 # Quadratic expressions in modules
 
-Congruence and linear-map evaluation for a three-term quadratic expression.
+Three-term expressions of the form `x₀ + t • x₁ + t ^ 2 • x₂` occur in root-exponential actions.
+The lemmas here preserve these formulas under coefficientwise equality and linear maps, allowing
+root-exponential expressions to be compared after changing modules.
 -/
 
 public section

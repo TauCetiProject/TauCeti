@@ -13,9 +13,9 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Torus
 /-!
 # Torus pinning of the represented F4 quotient comodule
 
-The canonical lifts of the quotient basis are torus eigenvectors. Descending their represented
-adjoint images through the carrier quotient identifies its torus action with the special
-character-lattice map.
+The weight-torus action on the represented F4 quotient is diagonal in its canonical basis, with
+weights given by the special character-lattice map. This torus pinning and the root formulas
+characterize the carrier special isogeny on its generators.
 
 ## References
 
