@@ -144,7 +144,6 @@ theorem maximalProPQuotientEquivZModPowLimit_mk (x : zHat) :
 
 /-- The inverse-limit comparison sends the class of the generator of `ℤ̂` to the compatible
 family of residues of `1`. -/
-@[simp]
 theorem maximalProPQuotientEquivZModPowLimit_mk_gen :
     maximalProPQuotientEquivZModPowLimit p
         (gen : maximalProPQuotient p zHat) =
@@ -155,7 +154,6 @@ theorem maximalProPQuotientEquivZModPowLimit_mk_gen :
 
 /-- The `n`th coordinate of the inverse-limit comparison is reduction modulo `p ^ n` after
 the canonical map from `ℤ̂` to `ℤ_p`. -/
-@[simp]
 theorem maximalProPQuotientEquivZModPowLimit_mk_proj (x : zHat) (n : ℕ) :
     PadicInt.inverseLimit.proj p n
         (maximalProPQuotientEquivZModPowLimit p
@@ -165,7 +163,6 @@ theorem maximalProPQuotientEquivZModPowLimit_mk_proj (x : zHat) (n : ℕ) :
     PadicInt.inverseLimit.proj_apply, PadicInt.toInverseLimit_apply]
 
 /-- Each coordinate of the image of the generator of `ℤ̂` in the inverse limit is `1`. -/
-@[simp]
 theorem maximalProPQuotientEquivZModPowLimit_mk_gen_proj (n : ℕ) :
     PadicInt.inverseLimit.proj p n
         (maximalProPQuotientEquivZModPowLimit p
