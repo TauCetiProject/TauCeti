@@ -90,7 +90,8 @@ namespace LineBundleClass
 
 variable {X Y Z : Scheme.{u}}
 
-/-- Pullback of an isomorphism class of line bundles along a scheme morphism. -/
+/-- Pullback of an isomorphism class of line bundles along a scheme morphism.
+This is the underlying class map; tensor-product compatibility requires a separate comparison. -/
 def pullback (f : X ⟶ Y) (a : LineBundleClass Y) : LineBundleClass X :=
   lift (fun L ↦ mk ((InvertibleSheaf.pullback f).obj L)) (fun _ _ ⟨e⟩ ↦
     mk_eq_mk_iff.mpr ⟨(SheafOfModules.isInvertible X).ι.mapIso
