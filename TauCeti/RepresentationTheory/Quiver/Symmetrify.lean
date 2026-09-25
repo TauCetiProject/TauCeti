@@ -17,7 +17,6 @@ This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` cons
 ## Main results
 
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
-* `TauCeti.card_symmetrify_hom`: hence their number is `#(a ⟶ b) + #(b ⟶ a)`.
 
 ## References
 
@@ -64,12 +63,5 @@ vertices, hence bijective on them. -/
 theorem symmetrify_of_obj_bijective {Q : Type u} [Quiver.{v} Q] :
     Function.Bijective (Symmetrify.of (V := Q)).obj :=
   Function.bijective_id
-
-/-- The doubled quiver has `#(a ⟶ b) + #(b ⟶ a)` arrows from `a` to `b`. -/
-theorem card_symmetrify_hom {Q : Type u} [Quiver.{v} Q] [∀ i j : Q, Fintype (i ⟶ j)] (a b : Q) :
-    Fintype.card (Symmetrify.of.obj a ⟶ Symmetrify.of.obj b) =
-      Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) := by
-  change Fintype.card ((a ⟶ b) ⊕ (b ⟶ a)) = _
-  exact Fintype.card_sum
 
 end TauCeti
