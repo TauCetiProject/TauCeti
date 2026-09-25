@@ -81,12 +81,12 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
   rw [← e.apply_symm_apply x]
   generalize e.symm x = z
   induction z using TensorProduct.inductionOn with
-  | add x y hx hy => simpa using add_mem hx hy
   | tmul a X =>
       rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
       apply Submodule.smul_mem
       rw [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span]
       exact Submodule.subset_span (Set.mem_range_self X)
+  | add x y hx hy => simpa using add_mem hx hy
 
 /-- Root conjugation carries a represented adjoint matrix to the adjoint matrix of the
 integrally transformed ambient vector. -/
@@ -173,13 +173,13 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_ideal
         (f4ShortRootBaseChangeInclusion z) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
   induction z using TensorProduct.inductionOn with
-  | add x y hx hy => simpa using add_mem hx hy
   | tmul a y =>
       rw [f4ShortRootBaseChangeInclusion_tmul]
       rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
       apply Submodule.smul_mem
       rw [f4ShortRootRepresentedIdealMatrixBaseChange_eq_span]
       exact Submodule.subset_span (Set.mem_range_self y)
+  | add x y hx hy => simpa using add_mem hx hy
 
 /-- Carrier root-subgroup conjugation preserves the represented ideal matrix span. -/
 theorem f4ShortRootRootConj_mem_representedIdeal

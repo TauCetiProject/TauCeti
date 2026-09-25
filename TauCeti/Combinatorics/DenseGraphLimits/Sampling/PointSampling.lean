@@ -339,11 +339,11 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
   set U := countableStepGraphonAvg W k
   have hL : ∫ p, |U p.1 p.2 - W p.1 p.2| ∂(μ.prod μ) < τ := by
     have h := ENNReal.toReal_lt_of_lt_ofReal hk
-    have hm : AEStronglyMeasurable
+    have hmeas : AEStronglyMeasurable
         ((fun z : Ω × Ω => U z.1 z.2) - fun z : Ω × Ω => W z.1 z.2) (μ.prod μ) :=
       (U.measurable.sub W.measurable).aestronglyMeasurable
-    rw [eLpNorm_one_eq_lintegral_enorm hm, ← integral_norm_eq_lintegral_enorm
-      (f := (fun z : Ω × Ω => U z.1 z.2) - fun z : Ω × Ω => W z.1 z.2) hm] at h
+    rw [eLpNorm_one_eq_lintegral_enorm hmeas,
+      ← integral_norm_eq_lintegral_enorm hmeas] at h
     simpa only [Pi.sub_apply, Real.norm_eq_abs] using h
   -- It factors through the part index of its partition.
   set P := Finpartition.countablePartition Ω k

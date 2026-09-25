@@ -224,9 +224,13 @@ constants are invisible. -/
 local instance zmodTwoAddCommGroupOfRing : AddCommGroup 𝔽₂ := Ring.toAddCommGroup
 
 /-- The carrier range inherits additive inverses from its module structure over `𝔽₂`. -/
+private noncomputable local instance f4ShortRootCotangentDualAddCommGroup :
+    AddCommGroup f4ShortRootCotangentDual :=
+  Module.addCommMonoidToAddCommGroup 𝔽₂
+
 noncomputable instance f4ShortRootCarrierCotangentRangeAddCommGroup :
     AddCommGroup f4ShortRootCarrierCotangentRange :=
-  inferInstanceAs (AddCommGroup f4ShortRootCarrierCotangentRange.toSubmodule)
+  Module.addCommMonoidToAddCommGroup 𝔽₂
 
 private noncomputable def f4ShortRootCarrierRangeEquivToSubmodule :
     f4ShortRootCarrierCotangentRange ≃ₗ[𝔽₂]
@@ -261,7 +265,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     rw [show A = f4ShortRootRepresentedIdeal.map B.subtype from
       f4ShortRootRepresentedIdealAmbient_eq_map]
     exact Submodule.comap_map_eq_of_injective B.injective_subtype _
-  let eEq := Submodule.subquotientEquivOfEq
+  let eEq := Submodule.subquotientEquivOfEq (R := 𝔽₂) (M := f4ShortRootCotangentDual)
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
