@@ -33,12 +33,9 @@ satisfies (B), then `⟨ξ, g K⟩ = ⟨ξ, K⟩` for every `g ∈ Γ` and every
 
 Solutions of (B) that also satisfy the period relation (A) exist (§1, proved in §3). Let
 `𝓘 = (1 + S) ℛₙ + (1 + U + U²) ℛₙ`, the right ideal of §3, eq. (5), and
-`𝒜 = {ξ | ξ (1 + S) ∈ 𝓘, ξ (1 + U + U²) ∈ 𝓘}`. By the Choie–Zagier criterion (§3, Lemma 1),
-`ξ ∈ 𝓘` if and only if `(1 - S) ξ ∈ (1 - T) ℛₙ`; the reverse direction uses the acyclicity of
-`ℛₙ` (§3, Lemma 2), which holds for `n ≠ 0`. Multiplying (A) on the right by `1 + S` and by
-`1 + U + U²` then shows that every solution of (A) lies in `𝒜`. Lemma 3 corrects an element
-`ξ ∈ 𝒜` by some `ι ∈ 𝓘` so that `ξ - ι` satisfies (B), and `ξ - ι` still satisfies (A), since
-`(1 - S) ι ∈ (1 - T) ℛₙ` by the Choie–Zagier criterion.
+`𝒜 = {ξ | ξ (1 + S) ∈ 𝓘, ξ (1 + U + U²) ∈ 𝓘}`. For `n ≠ 0`, every solution of (A) lies in `𝒜`,
+by the Choie–Zagier criterion (§3, Lemma 1); Lemma 3 then corrects it by an element of `𝓘` to a
+solution of both (A) and (B).
 
 ## Main definitions and results
 
@@ -71,10 +68,7 @@ which is assumed as `IsSMulRegular k 2` and `IsSMulRegular k 3`; this holds, for
 is torsion-free or if `2` and `3` are invertible in `k`.
 
 The ideal `𝓘` is the sum of the ranges of left multiplication by `1 + S` and by `1 + U + U²`, with
-`U` written `T * S` in `SL(2, ℤ)`: the unnormalised operators replace Popa and Zagier's idempotents
-`π_S = (1 + S) / 2` and `π_U = (1 + U + U²) / 3`, which have the same ranges when `2` and `3` are
-invertible in `k`, as assumed here. For `n = 0` the existence of solutions of (A) and (B) is
-immediate, as `T₀^∞ = 0` and `ξ = 0` is a solution.
+`U` written `T * S` in `SL(2, ℤ)`.
 
 ## References
 
@@ -185,13 +179,6 @@ section CommRing
 
 variable [CommRing k]
 
--- right multiplication by `S` and by `U` on `k[ℳₙ]`: `S² = 1` and `U³ = 1`
-private theorem ofMulAction_op_S_sq : ρR (.op ↑S) ^ 2 = 1 := by
-  simp [← map_pow, ← MulOpposite.op_pow]
-
-private theorem ofMulAction_op_T_mul_S_pow_three : ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 3 = 1 := by
-  simp [← map_pow, ← MulOpposite.op_pow, -MulOpposite.op_mul]
-
 -- left multiplications commute with right multiplications, hence with the right multiplications
 -- by `1 + h` and `1 + h + h²`
 private theorem commute_ofMulAction_one_add (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
@@ -202,36 +189,17 @@ private theorem commute_ofMulAction_one_add_add_sq (g : SL(2, ℤ)) (h : PSL(2, 
     Commute (ρL g) (1 + ρR (.op h) + ρR (.op h) ^ 2) :=
   (commute_ofMulAction_one_add g h).add_right ((commute_ofMulAction _ _).pow_right 2)
 
--- the Choie–Zagier criterion (§3, Lemma 1) on `k[ℳₙ]`, as `U S = T`
-private theorem one_sub_S_apply_mem_range_one_sub_T_iff [Invertible (2 : k)] [Invertible (3 : k)]
-    (hn : n ≠ 0) {x : k[ℳ n]} : (1 - ρL S) x ∈ LinearMap.range (1 - ρL T) ↔
-      x ∈ LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) := by
-  rw [← End.one_sub_apply_mem_range_one_sub_mul_iff ofMulAction_S_sq (by simp)
-    (disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq hn),
-    show ρL (T * S) * ρL S = ρL T by simp [mul_assoc, ← sq]]
-
--- Popa and Zagier's argument that solutions of (A) lie in `𝒜`: let `g` and `M` be endomorphisms
--- of `k[ℳₙ]` commuting with the left multiplications by `S` and `T`, such as right
--- multiplications, with `g (1 - S) = M (1 - T)` on the right. Applying `g` to (A) and using
--- `Tₙ^∞ (1 - T) ∈ (1 - T) k[ℳₙ]` gives `(1 - S) g ξ ∈ (1 - T) k[ℳₙ]`, hence
--- `g ξ ∈ (1 + S) k[ℳₙ] + (1 + U + U²) k[ℳₙ]` by the Choie–Zagier criterion.
+-- applying `f` to (A), `(1 - S) f ξ ∈ (1 - T) k[ℳₙ]`, so `f ξ ∈ 𝓘` by the Choie–Zagier criterion
 private theorem PeriodRelation.apply_mem_sup [Invertible (2 : k)] [Invertible (3 : k)] (hn : n ≠ 0)
-    {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) {g M : Module.End k k[ℳ n]} (hS : Commute (ρL S) g)
-    (hT : Commute (ρL T) g) (hM : Commute (ρL T) M)
-    (hgM : g * (1 - ρR (.op ↑S)) = M * (1 - ρR (.op ↑T))) :
-    g ξ ∈ LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) := by
-  rw [← one_sub_S_apply_mem_range_one_sub_T_iff hn]
-  -- `(1 - S) ξ - Tₙ^∞ (1 - S) = (1 - T) y` and `Tₙ^∞ (1 - T) = (1 - T) z`
-  obtain ⟨y, hy⟩ := periodRelation_iff.1 h
-  obtain ⟨z, hz⟩ := one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range (k := k) (n := n) 1
-  have hSξ := LinearMap.congr_fun ((Commute.one_left g).sub_left hS).eq ξ
-  have hTy := LinearMap.congr_fun ((Commute.one_left g).sub_left hT).eq y
-  have hTz := LinearMap.congr_fun ((Commute.one_left M).sub_left hM).eq z
-  have hgM' := LinearMap.congr_fun hgM (upperTriangularSum k n)
-  simp only [Module.End.mul_apply, zpow_one] at hSξ hTy hTz hgM' hz
-  -- `(1 - T) (g y + M z) = g ((1 - S) ξ - Tₙ^∞ (1 - S)) + g (Tₙ^∞ (1 - S)) = g ((1 - S) ξ)`
-  refine ⟨g y + M z, ?_⟩
-  simp only [map_add, hTy, hTz, hy, hz, map_sub, ← hgM', sub_add_cancel, hSξ]
+    {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) {f : Module.End k k[ℳ n]}
+    (hf : ∀ g, Commute (ρL g) f)
+    (hfT : f ((1 - ρR (.op ↑S)) (upperTriangularSum k n)) ∈ LinearMap.range (1 - ρL T)) :
+    f ξ ∈ LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) := by
+  have hr : LinearMap.range (1 - ρL T) ∈ f.invtSubmodule :=
+    Function.Semiconj.mapsTo_range (LinearMap.congr_fun ((Commute.one_left f).sub_left (hf T)).eq)
+  rw [← one_sub_S_apply_mem_range_one_sub_T_iff hn, ← Module.End.mul_apply,
+    ((Commute.one_left f).sub_left (hf S)).eq, Module.End.mul_apply]
+  simpa using add_mem (hr (periodRelation_iff.1 h)) hfT
 
 /-- **Solutions of (A) lie in `𝒜`, the relation for `S`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
 `3` invertible in `k`, if `ξ` satisfies the period relation (A), then
@@ -241,8 +209,9 @@ theorem PeriodRelation.one_add_S_mem_sup [Invertible (2 : k)] [Invertible (3 : k
     (1 + ρR (.op ↑S)) ξ ∈
       LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) :=
   -- on the right, `(1 + S) (1 - S) = 1 - S² = 0`
-  h.apply_mem_sup hn (commute_ofMulAction_one_add _ _) (commute_ofMulAction_one_add _ _)
-    (Commute.zero_right _) (by rw [one_add_mul_one_sub_of_sq_eq_one ofMulAction_op_S_sq, zero_mul])
+  h.apply_mem_sup hn (commute_ofMulAction_one_add · _)
+    (by rw [← Module.End.mul_apply, one_add_mul_one_sub_of_sq_eq_one ofMulAction_op_S_sq,
+      LinearMap.zero_apply]; exact zero_mem _)
 
 /-- **Solutions of (A) lie in `𝒜`, the relation for `U`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
 `3` invertible in `k`, if `ξ` satisfies the period relation (A), then
@@ -253,30 +222,16 @@ theorem PeriodRelation.one_add_U_add_U_sq_mem_sup [Invertible (2 : k)] [Invertib
       Module.End k k[ℳ n]) ξ ∈
       LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) := by
   have hc (g : SL(2, ℤ)) : Commute (ρL g) _ := commute_ofMulAction_one_add_add_sq g (↑T * ↑S)
+  refine h.apply_mem_sup hn hc ?_
   -- on the right, `(1 + U + U²) (1 - S) = -((1 + U + U²) S) (1 - T)`, as `S U = T`
-  refine h.apply_mem_sup hn (hc S) (hc T)
-    ((hc T).mul_right (commute_ofMulAction _ (MulOpposite.op (S : PSL(2, ℤ))))).neg_right ?_
-  rw [one_add_add_sq_mul_one_sub ofMulAction_op_S_sq ofMulAction_op_T_mul_S_pow_three, ← map_mul,
-    ← MulOpposite.op_mul, mul_assoc, ← sq, ModularGroup.coe_S_sq, mul_one]
-
--- Popa and Zagier's Lemma 3 on `k[ℳₙ]`: a solution `ξ` of (A) lies in `𝒜`, so some `ι ∈ 𝓘` has
--- `ξ - ι ∈ ℬ`; the ranges of left multiplications are stable under right multiplications
-private theorem PeriodRelation.exists_mem_sup_exchangeRelations_sub [Invertible (2 : k)]
-    [Invertible (3 : k)] (hn : n ≠ 0) {ξ : k[ℳ n]} (h : PeriodRelation k n ξ) :
-    ∃ ι ∈ LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2),
-      ExchangeRelations k n (ξ - ι) := by
-  have hP : Commute (1 + ρL S)
-      (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) + ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2) :=
-    (Commute.one_left _).add_left (commute_ofMulAction_one_add_add_sq _ _)
-  have hQ : Commute (1 + ρL (T * S) + ρL (T * S) ^ 2) (1 + ρR (.op ↑S)) :=
-    ((Commute.one_left _).add_left (commute_ofMulAction_one_add _ _)).add_left
-      ((commute_ofMulAction_one_add _ _).pow_left 2)
-  have hr {f g : Module.End k k[ℳ n]} (hfg : Commute f g) : LinearMap.range f ∈ g.invtSubmodule :=
-    Function.Semiconj.mapsTo_range (LinearMap.congr_fun hfg.eq)
-  obtain ⟨ι, hι, h₁, h₂⟩ := End.exists_mem_sup_one_add_apply_sub_mem ofMulAction_op_S_sq
-    ofMulAction_op_T_mul_S_pow_three (hr hP) (hr hQ) (h.one_add_S_mem_sup hn)
-    (h.one_add_U_add_U_sq_mem_sup hn)
-  exact ⟨ι, hι, h₁, h₂⟩
+  rw [← Module.End.mul_apply, one_add_add_sq_mul_one_sub ofMulAction_op_S_sq
+    (by simp : ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 3 = 1), ← map_mul, ← MulOpposite.op_mul,
+    mul_assoc, ← sq, ModularGroup.coe_S_sq, mul_one, Module.End.mul_apply]
+  have hr {f g : Module.End k k[ℳ n]} (h : Commute f g) : LinearMap.range f ∈ g.invtSubmodule :=
+    Function.Semiconj.mapsTo_range (LinearMap.congr_fun h.eq)
+  refine hr (((Commute.one_left _).sub_left (hc T)).mul_right ((Commute.one_left _).sub_left
+    (commute_ofMulAction _ _))).neg_right ?_
+  simpa using one_sub_ofMulAction_op_T_zpow_upperTriangularSum_mem_range (k := k) (n := n) 1
 
 variable (k n) in
 /-- **Solutions of both (A) and (B) exist** (Popa–Zagier, §1; proved in §3 after Lemma 3): if `2`
@@ -287,13 +242,17 @@ theorem exists_periodRelation_and_exchangeRelations [Invertible (2 : k)] [Invert
   rcases eq_or_ne n 0 with rfl | hn
   · -- `T₀^∞ = 0`, so `ξ = 0` is a solution
     exact ⟨0, by simp [periodRelation_iff], by constructor <;> simp⟩
-  -- a solution `ξ` of (A) is corrected by some `ι ∈ 𝓘` to a solution of (B); by the Choie–Zagier
-  -- criterion, `(1 - S) ι ∈ (1 - T) k[ℳₙ]`, so `ξ - ι` still satisfies (A)
+  have hr {f g : Module.End k k[ℳ n]} (h : Commute f g) : LinearMap.range f ∈ g.invtSubmodule :=
+    Function.Semiconj.mapsTo_range (LinearMap.congr_fun h.eq)
+  -- Lemma 3 corrects `ξ` by some `ι ∈ 𝓘` to a solution of (B); by Lemma 1, `ξ - ι` satisfies (A)
   obtain ⟨ξ, hξ⟩ := exists_periodRelation k n
-  obtain ⟨ι, hι, hB⟩ := hξ.exists_mem_sup_exchangeRelations_sub hn
-  refine ⟨ξ - ι, sub_eq_add_neg ξ ι ▸ hξ.add ?_, hB⟩
-  rw [map_neg]
-  exact neg_mem ((one_sub_S_apply_mem_range_one_sub_T_iff hn).2 hι)
+  obtain ⟨ι, hι, h₁, h₂⟩ := End.exists_mem_sup_one_add_apply_sub_mem ofMulAction_op_S_sq
+    (by simp) (hr <| (Commute.one_left _).add_left (commute_ofMulAction_one_add_add_sq _ _))
+    (hr <| ((Commute.one_left _).add_left (commute_ofMulAction_one_add _ _)).add_left
+      ((commute_ofMulAction_one_add _ _).pow_left 2))
+    (hξ.one_add_S_mem_sup hn) (hξ.one_add_U_add_U_sq_mem_sup hn)
+  refine ⟨ξ - ι, sub_eq_add_neg ξ ι ▸ hξ.add ?_, h₁, h₂⟩
+  exact map_neg (1 - ρL S) ι ▸ neg_mem ((one_sub_S_apply_mem_range_one_sub_T_iff hn).2 hι)
 
 end CommRing
 

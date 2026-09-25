@@ -113,10 +113,8 @@ theorem one_sub_mul_one_add_add_sq (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) :
     (1 - σ) * (1 + υ + υ ^ 2) = (1 - υ * σ) * -(σ * (1 + υ + υ ^ 2)) := by
   linear_combination (norm := noncomm_ring) -hυ - υ * hσ * (1 + υ + υ ^ 2)
 
-/-- **`(1 + υ + υ²) (1 - σ)` lies in `A (1 - σ υ)`** when `σ ^ 2 = 1` and `υ ^ 3 = 1`: the mirror
-image of `TauCeti.one_sub_mul_one_add_add_sq`. When `σ` and `υ` are the right multiplications by
-`S` and `U`, so that `σ υ` is right multiplication by `U S = T`, this is Popa–Zagier's relation
-`(1 - S) π_U = (1 - T⁻¹) π_U`, rewritten through `1 - T⁻¹ = (1 - T) (-T⁻¹)`. -/
+/-- `(1 + υ + υ²) (1 - σ) = -((1 + υ + υ²) σ) (1 - σ υ)` for `σ ^ 2 = 1` and `υ ^ 3 = 1`: the
+mirror image of `TauCeti.one_sub_mul_one_add_add_sq`, for right multiplications. -/
 theorem one_add_add_sq_mul_one_sub (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) :
     (1 + υ + υ ^ 2) * (1 - σ) = -((1 + υ + υ ^ 2) * σ) * (1 - σ * υ) := by
   linear_combination (norm := noncomm_ring) -hυ - (1 + υ + υ ^ 2) * hσ * υ
