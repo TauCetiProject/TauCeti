@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Space
 
@@ -56,7 +55,7 @@ variable {K ι : Type*} [DecidableEq ι]
 
 section Ambient
 
-variable [Ring K]
+variable [AddCommGroupWithOne K]
 
 /-- The ambient root matrix of weight `εᵢ - εⱼ`. -/
 def differenceRootMatrix (i j : ι) : Matrix (ι ⊕ ι) (ι ⊕ ι) K :=
@@ -151,69 +150,68 @@ theorem negSumRootMatrix_mem_typeD (i j : ι) :
 
 /-! ## Bundled generators -/
 
-/-- The standard type-`D` root generator of weight `εᵢ - εⱼ`, for distinct indices. -/
-def differenceRootGenerator (i j : ι) (_hij : i ≠ j) :
-    LieAlgebra.Orthogonal.typeD ι K :=
+/-- The standard type-`D` matrix of weight `εᵢ - εⱼ`, bundled in the orthogonal Lie algebra. -/
+def differenceRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeD ι K :=
   ⟨differenceRootMatrix i j, differenceRootMatrix_mem_typeD i j⟩
 
-/-- The standard type-`D` root generator of weight `εᵢ + εⱼ`, for distinct indices. -/
-def sumRootGenerator (i j : ι) (_hij : i ≠ j) : LieAlgebra.Orthogonal.typeD ι K :=
+/-- The standard type-`D` matrix of weight `εᵢ + εⱼ`, bundled in the orthogonal Lie algebra. -/
+def sumRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeD ι K :=
   ⟨sumRootMatrix i j, sumRootMatrix_mem_typeD i j⟩
 
-/-- The standard type-`D` root generator of weight `-εᵢ - εⱼ`, for distinct indices. -/
-def negSumRootGenerator (i j : ι) (_hij : i ≠ j) : LieAlgebra.Orthogonal.typeD ι K :=
+/-- The standard type-`D` matrix of weight `-εᵢ - εⱼ`, bundled in the orthogonal Lie algebra. -/
+def negSumRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeD ι K :=
   ⟨negSumRootMatrix i j, negSumRootMatrix_mem_typeD i j⟩
 
 /-- The matrix underlying a difference-root generator. -/
 @[simp]
-theorem coe_differenceRootGenerator (i j : ι) (hij : i ≠ j) :
-    (differenceRootGenerator (K := K) i j hij : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
+theorem coe_differenceRootGenerator (i j : ι) :
+    (differenceRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       differenceRootMatrix i j :=
   by simp [differenceRootGenerator]
 
 /-- The matrix underlying a positive sum-root generator. -/
 @[simp]
-theorem coe_sumRootGenerator (i j : ι) (hij : i ≠ j) :
-    (sumRootGenerator (K := K) i j hij : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
+theorem coe_sumRootGenerator (i j : ι) :
+    (sumRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       sumRootMatrix i j :=
   by simp [sumRootGenerator]
 
 /-- The matrix underlying a negative sum-root generator. -/
 @[simp]
-theorem coe_negSumRootGenerator (i j : ι) (hij : i ≠ j) :
-    (negSumRootGenerator (K := K) i j hij : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
+theorem coe_negSumRootGenerator (i j : ι) :
+    (negSumRootGenerator (K := K) i j : Matrix (ι ⊕ ι) (ι ⊕ ι) K) =
       negSumRootMatrix i j :=
   by simp [negSumRootGenerator]
 
 /-- Swapping the coordinates negates a positive sum-root generator. -/
-theorem sumRootGenerator_swap (i j : ι) (hij : i ≠ j) :
-    sumRootGenerator (K := K) j i hij.symm = -sumRootGenerator i j hij := by
+theorem sumRootGenerator_swap (i j : ι) :
+    sumRootGenerator (K := K) j i = -sumRootGenerator i j := by
   apply Subtype.ext
   simpa using sumRootMatrix_swap (K := K) i j
 
 /-- Swapping the coordinates negates a negative sum-root generator. -/
-theorem negSumRootGenerator_swap (i j : ι) (hij : i ≠ j) :
-    negSumRootGenerator (K := K) j i hij.symm = -negSumRootGenerator i j hij := by
+theorem negSumRootGenerator_swap (i j : ι) :
+    negSumRootGenerator (K := K) j i = -negSumRootGenerator i j := by
   apply Subtype.ext
   simpa using negSumRootMatrix_swap (K := K) i j
 
 /-- A difference-root generator is nonzero over a nontrivial ring. -/
-theorem differenceRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
-    differenceRootGenerator (K := K) i j hij ≠ 0 := by
+theorem differenceRootGenerator_ne_zero [Nontrivial K] (i j : ι) :
+    differenceRootGenerator (K := K) i j ≠ 0 := by
   intro h
   have hentry := congrFun (congrFun (congrArg Subtype.val h) (.inl i)) (.inl j)
   simp [differenceRootMatrix, Matrix.fromBlocks] at hentry
 
 /-- A positive sum-root generator is nonzero over a nontrivial ring. -/
 theorem sumRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
-    sumRootGenerator (K := K) i j hij ≠ 0 := by
+    sumRootGenerator (K := K) i j ≠ 0 := by
   intro h
   have hentry := congrFun (congrFun (congrArg Subtype.val h) (.inl i)) (.inr j)
   simp [sumRootMatrix, Matrix.fromBlocks, hij] at hentry
 
 /-- A negative sum-root generator is nonzero over a nontrivial ring. -/
 theorem negSumRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
-    negSumRootGenerator (K := K) i j hij ≠ 0 := by
+    negSumRootGenerator (K := K) i j ≠ 0 := by
   intro h
   have hentry := congrFun (congrFun (congrArg Subtype.val h) (.inr i)) (.inl j)
   simp [negSumRootMatrix, Matrix.fromBlocks, hij] at hentry
@@ -221,8 +219,8 @@ theorem negSumRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
 /-! ## Root-space membership -/
 
 /-- The standard difference-root generator has weight `εᵢ - εⱼ`. -/
-theorem differenceRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
-    differenceRootGenerator (K := K) i j hij ∈
+theorem differenceRootGenerator_mem_rootSpace (i j : ι) :
+    differenceRootGenerator (K := K) i j ∈
       LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j) := by
   apply mem_rootSpace_typeDDiagonalCartan_of_forall
   intro a b hab
@@ -245,8 +243,8 @@ theorem differenceRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
     · simp [differenceRootGenerator, differenceRootMatrix, Matrix.fromBlocks, hib]
 
 /-- The standard positive sum-root generator has weight `εᵢ + εⱼ`. -/
-theorem sumRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
-    sumRootGenerator (K := K) i j hij ∈
+theorem sumRootGenerator_mem_rootSpace (i j : ι) :
+    sumRootGenerator (K := K) i j ∈
       LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j) := by
   apply mem_rootSpace_typeDDiagonalCartan_of_forall
   intro a b hab
@@ -255,8 +253,8 @@ theorem sumRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
   all_goals split_ifs with h <;> simp_all [typeDWeightAdd_comm]
 
 /-- The standard negative sum-root generator has weight `-εᵢ - εⱼ`. -/
-theorem negSumRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
-    negSumRootGenerator (K := K) i j hij ∈
+theorem negSumRootGenerator_mem_rootSpace (i j : ι) :
+    negSumRootGenerator (K := K) i j ∈
       LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j) := by
   apply mem_rootSpace_typeDDiagonalCartan_of_forall
   intro a b hab
@@ -269,7 +267,7 @@ theorem negSumRootGenerator_mem_rootSpace (i j : ι) (hij : i ≠ j) :
 /-- On a chain node, the all-root difference generator is the numbered raising generator. -/
 theorem differenceRootGenerator_chain_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n)
     (i : Fin n) (hi : (i : ℕ) + 1 < n) :
-    differenceRootGenerator (K := K) i (chainNext n i hi) (ne_chainNext n i hi) =
+    differenceRootGenerator (K := K) i (chainNext n i hi) =
       rootGenerator (K := K) n hn (.inl i) := by
   apply Subtype.ext
   rw [coe_differenceRootGenerator, val_rootGenerator_inl, raisingMatrix_of_chain n hn hi]
@@ -277,8 +275,7 @@ theorem differenceRootGenerator_chain_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n)
 
 /-- At the fork node, the all-root positive sum generator is the numbered raising generator. -/
 theorem sumRootGenerator_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
-    sumRootGenerator (K := K) (forkLeft n hn) (forkRight n hn)
-        (forkLeft_ne_forkRight n hn) =
+    sumRootGenerator (K := K) (forkLeft n hn) (forkRight n hn) =
       rootGenerator (K := K) n hn (.inl (forkRight n hn)) := by
   apply Subtype.ext
   rw [coe_sumRootGenerator, val_rootGenerator_inl]
@@ -291,7 +288,7 @@ theorem sumRootGenerator_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
 /-- On a chain node, the reversed difference generator is the numbered lowering generator. -/
 theorem differenceRootGenerator_reverse_chain_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n)
     (i : Fin n) (hi : (i : ℕ) + 1 < n) :
-    differenceRootGenerator (K := K) (chainNext n i hi) i (ne_chainNext n i hi).symm =
+    differenceRootGenerator (K := K) (chainNext n i hi) i =
       rootGenerator (K := K) n hn (.inr i) := by
   apply Subtype.ext
   rw [coe_differenceRootGenerator, val_rootGenerator_inr, loweringMatrix_of_chain n hn hi]
@@ -300,8 +297,7 @@ theorem differenceRootGenerator_reverse_chain_eq_rootGenerator (n : ℕ) (hn : 4
 
 /-- At the fork node, the reversed negative sum generator is the numbered lowering generator. -/
 theorem negSumRootGenerator_reverse_fork_eq_rootGenerator (n : ℕ) (hn : 4 ≤ n) :
-    negSumRootGenerator (K := K) (forkRight n hn) (forkLeft n hn)
-        (forkLeft_ne_forkRight n hn).symm =
+    negSumRootGenerator (K := K) (forkRight n hn) (forkLeft n hn) =
       rootGenerator (K := K) n hn (.inr (forkRight n hn)) := by
   apply Subtype.ext
   rw [coe_negSumRootGenerator, val_rootGenerator_inr]
