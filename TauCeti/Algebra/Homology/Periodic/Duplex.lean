@@ -33,7 +33,8 @@ homological-complex vocabulary instead of duplicating it:
   `CurvedDuplex.ofPeriodicComplex` up to the isomorphism
   `CurvedDuplex.HomotopyCategory.quotientCompPeriodicComplexEquivalenceInverseIso`.
 
-A curved duplex of nonzero curvature is not a complex, and no such comparison is made for it.
+For nonzero curvature, the composites need not vanish, so a curved duplex need not be a complex;
+this file makes no comparison outside curvature zero.
 
 ## References
 
