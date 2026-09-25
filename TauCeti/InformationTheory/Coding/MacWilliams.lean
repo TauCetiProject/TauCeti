@@ -8,6 +8,7 @@ module
 public import TauCeti.InformationTheory.Coding.CharacterSum
 public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 public import TauCeti.InformationTheory.Hamming
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # The MacWilliams identity
@@ -32,6 +33,12 @@ any finite commutative ring carrying a primitive additive character with values 
 characteristic zero domain, such as `ZMod m`; the finite-field statement is the specialization
 to `AddChar.FiniteField.primitiveChar`.
 
+Over a field of characteristic zero the identity can be divided by `#C`, giving the normalized
+form `W_{C⊥}(X, Y) = (#C)⁻¹ W_C(X + (q - 1) Y, X - Y)`. For a self-dual code of length `n`,
+`#C = q^(n/2)`, so the MacWilliams substitution multiplies `W_C` by `q^(n/2)`. Since `W_C` is
+homogeneous of degree `n`, this says that `W_C` is invariant under the normalized transform
+`(X, Y) ↦ ((X + (q - 1) Y) / √q, (X - Y) / √q)`.
+
 ## Main statements
 
 * `Submodule.sum_addChar_dotProduct_smul_weightMonomial`: the Fourier transform of the weight
@@ -40,6 +47,12 @@ to `AddChar.FiniteField.primitiveChar`.
   identity over a finite commutative ring with a primitive additive character.
 * `Submodule.natCard_mul_weightEnumerator_euclideanDual`: the MacWilliams identity over a finite
   field.
+* `Submodule.map_weightEnumerator_euclideanDual`: the normalized MacWilliams identity, with
+  coefficients in a field of characteristic zero.
+* `Submodule.aeval_weightEnumerator_of_eq_euclideanDual`: the integral MacWilliams symmetry
+  `W_C(X + (q - 1) Y, X - Y) = q^(n/2) W_C(X, Y)` of a self-dual code.
+* `Submodule.aeval_inv_smul_weightEnumerator_of_eq_euclideanDual`: the weight enumerator of a
+  self-dual code is invariant under the normalized MacWilliams transform.
 
 ## References
 
@@ -116,5 +129,71 @@ theorem natCard_mul_weightEnumerator_euclideanDual {F : Type*} [Field F] [Finite
   natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive
     (AddChar.FiniteField.primitiveChar F ℚ
       (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim C
+
+section Normalized
+
+variable {F : Type*} [Field F] [Finite F] [DecidableEq F]
+
+/-- The MacWilliams substitution commutes with changing the coefficients from `ℤ` to `K`. -/
+private theorem aeval_macWilliams_eq_map_aeval (K : Type*) [CommRing K] (q : ℕ)
+    (W : MvPolynomial (Fin 2) ℤ) :
+    aeval ![X 0 + (q - 1 : MvPolynomial (Fin 2) K) * X 1, X 0 - X 1] W =
+      MvPolynomial.map (Int.castRingHom K)
+        (aeval ![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] W) := by
+  rw [map_aeval, aeval_eq_eval₂Hom]
+  congr 1
+  refine ringHom_ext (fun r ↦ by simp) fun i ↦ ?_
+  fin_cases i <;> simp
+
+/-- **The normalized MacWilliams identity**: for a linear code `C` over a finite field with `q`
+elements, `W_{C⊥}(X, Y) = (#C)⁻¹ W_C(X + (q - 1) Y, X - Y)`, with coefficients in any field `K` of
+characteristic zero. -/
+theorem map_weightEnumerator_euclideanDual (K : Type*) [Field K] [CharZero K]
+    (C : Submodule F (ι → F)) :
+    MvPolynomial.map (Int.castRingHom K) (euclideanDual C : Set (ι → F)).weightEnumerator =
+      (Nat.card C : K)⁻¹ • aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1, X 0 - X 1]
+        (C : Set (ι → F)).weightEnumerator := by
+  rw [eq_inv_smul_iff₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'), aeval_macWilliams_eq_map_aeval,
+    ← natCard_mul_weightEnumerator_euclideanDual, map_mul, map_natCast, smul_eq_C_mul,
+    map_natCast]
+
+/-- The weight enumerator of a Euclidean self-dual code over a field with `q` elements is fixed by
+the MacWilliams substitution up to the factor `q^(n/2)`, where `n` is the length:
+`W_C(X + (q - 1) Y, X - Y) = q^(n/2) W_C(X, Y)` in `ℤ[X, Y]`. -/
+theorem aeval_weightEnumerator_of_eq_euclideanDual {C : Submodule F (ι → F)}
+    (hC : C = euclideanDual C) :
+    aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+        (C : Set (ι → F)).weightEnumerator =
+      (Nat.card F : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
+        (C : Set (ι → F)).weightEnumerator := by
+  have h := natCard_mul_weightEnumerator_euclideanDual C
+  rw [← hC, natCard_of_eq_euclideanDual hC, Nat.cast_pow] at h
+  exact h.symm
+
+/-- The weight enumerator of a Euclidean self-dual code over a field with `q` elements is invariant
+under the normalized MacWilliams transform `(X, Y) ↦ ((X + (q - 1) Y) / s, (X - Y) / s)`, where
+`s` is a square root of `q` in a field `K` of characteristic zero. -/
+theorem aeval_inv_smul_weightEnumerator_of_eq_euclideanDual {K : Type*} [Field K] [CharZero K]
+    {s : K} (hs : s ^ 2 = Nat.card F) {C : Submodule F (ι → F)} (hC : C = euclideanDual C) :
+    aeval ![s⁻¹ • (X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1), s⁻¹ • (X 0 - X 1)]
+        (C : Set (ι → F)).weightEnumerator =
+      MvPolynomial.map (Int.castRingHom K) (C : Set (ι → F)).weightEnumerator := by
+  have hs0 : s ≠ 0 := by
+    rintro rfl
+    simp [eq_comm, Nat.card_pos.ne'] at hs
+  -- Since `n = 2k` is even, `s⁻¹ ^ n * q ^ (n / 2) = (s⁻¹ * s) ^ n = 1`.
+  have hscalar : s⁻¹ ^ Fintype.card ι * (Nat.card F : K) ^ (Fintype.card ι / 2) = 1 := by
+    rw [← two_mul_finrank_eq_card_of_eq_euclideanDual hC, Nat.mul_div_cancel_left _ two_pos, ← hs,
+      ← pow_mul, ← mul_pow, inv_mul_cancel₀ hs0, one_pow]
+  have hsmul : ![s⁻¹ • (X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1), s⁻¹ • (X 0 - X 1)] =
+      (MvPolynomial.C s⁻¹ : MvPolynomial (Fin 2) K) •
+        ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) K) * X 1, X 0 - X 1] := by
+    ext1 i
+    fin_cases i <;> simp [smul_eq_C_mul, mul_add]
+  rw [hsmul, (Set.isHomogeneous_weightEnumerator _).aeval_smul, aeval_macWilliams_eq_map_aeval,
+    aeval_weightEnumerator_of_eq_euclideanDual hC, map_mul, map_pow, map_natCast, ← mul_assoc,
+    ← map_natCast MvPolynomial.C, ← map_pow, ← map_pow, ← map_mul, hscalar, map_one, one_mul]
+
+end Normalized
 
 end Submodule

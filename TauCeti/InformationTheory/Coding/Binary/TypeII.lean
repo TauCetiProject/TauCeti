@@ -61,7 +61,8 @@ theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC.eq_euclideanDual
   have hn : Fintype.card ι = 2 * (Fintype.card ι / 2) := by omega
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
-    rw [natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.cast_pow, Nat.cast_ofNat]
+    rw [Submodule.natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.card_zmod, Nat.cast_pow,
+      Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
     simpa [aeval_weightEnumerator_diag _ (Set.toFinite _)] using h
