@@ -31,7 +31,7 @@ it does not require a Poincare--Birkhoff--Witt theorem or any freeness hypothesi
 * `TauCeti.UniversalEnvelopingAlgebra.prodEquivTensor_naturality`: compatibility with maps of
   both Lie-algebra factors.
 * `TauCeti.UniversalEnvelopingAlgebra.prodEquivTensor_symm_tmul`: the inverse on a pure tensor.
-* `TauCeti.AlgHom.prodRepresentation`: the componentwise product of two representations of
+* `AlgHom.prodRepresentation`: the componentwise product of two representations of
   the same enveloping algebra, with stability of product lattices.
 
 ## Roadmap
@@ -232,7 +232,7 @@ theorem prodEquivTensor_symm_tmul (x : UL) (y : UM) :
 
 end TauCeti.UniversalEnvelopingAlgebra
 
-namespace TauCeti.AlgHom
+namespace AlgHom
 
 universe u v w
 
@@ -285,4 +285,4 @@ theorem prodRepresentation_apply_mem
     (by intro a _ b hb; exact hM a b hb)
     (by intro a _ b hb; exact hN a b hb) u (Set.mem_univ u) v hv
 
-end TauCeti.AlgHom
+end AlgHom
