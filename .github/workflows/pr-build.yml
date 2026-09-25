@@ -23,9 +23,7 @@ name: pr-build
 
 on:
   pull_request_target:
-    # `labeled` so that adding `full-lint` rebuilds with the whole-library lint; runs for any other
-    # label skip their jobs and, through their own concurrency group, cancel nothing.
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
   # build the COMBINED merge-group commit exactly as GitHub synthesized it and post the `build`
   # status on it so the queue's required check is satisfied. A combined diff that reaches outside
@@ -41,7 +39,7 @@ permissions:
   statuses: write
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}${{ (github.event.action == 'labeled' && github.event.label.name != 'full-lint') && format('-label-{0}', github.run_id) || '' }}
+  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 env:
@@ -56,8 +54,6 @@ jobs:
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
-    # A `labeled` event rebuilds only for the `full-lint` label.
-    if: ${{ github.event.action != 'labeled' || github.event.label.name == 'full-lint' }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
     # at all, for root as well as for the job user. The `-with-features` suffix on the machine

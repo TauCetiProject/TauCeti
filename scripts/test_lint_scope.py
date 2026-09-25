@@ -143,15 +143,15 @@ class PrBuildWiringTest(unittest.TestCase):
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
 
     def test_only_the_full_lint_label_rebuilds(self):
-        text = (ROOT / ".github" / "workflows" / "pr-build.yml").read_text()
-        wf = yaml.safe_load(text)
-        self.assertIn("labeled", wf[True]["pull_request_target"]["types"])
-        cond = wf["jobs"]["sandboxed-build"]["if"]
-        self.assertIn("github.event.action != 'labeled'", cond)
-        self.assertIn("github.event.label.name == 'full-lint'", cond)
-        # Other labels get their own concurrency group, so they cancel no build in progress.
-        self.assertIn("github.event.label.name != 'full-lint'", wf["concurrency"]["group"])
-
+        # pr-build does not run on label changes; a separate workflow dispatches it for full-lint.
+        pr_build = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
+        self.assertNotIn("labeled", pr_build[True]["pull_request_target"]["types"])
+        self.assertIn("workflow_dispatch", pr_build[True])
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "full-lint-label.yml").read_text())
+        self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled"])
+        (job,) = wf["jobs"].values()
+        self.assertEqual(job["if"], "${{ github.event.label.name == 'full-lint' }}")
+        self.assertIn("gh workflow run pr-build.yml", job["steps"][0]["run"])
 
 if __name__ == "__main__":
     unittest.main()
