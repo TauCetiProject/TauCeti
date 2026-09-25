@@ -29,6 +29,7 @@ every finite place.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.2, Theorem 1, the value of the Hilbert
   symbol on two units at an odd prime.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, 63:11.
+* Quadratic Form Invariants roadmap, Layer 6C, item 9.
 -/
 
 public section

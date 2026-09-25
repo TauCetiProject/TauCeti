@@ -37,6 +37,7 @@ invariant of a global form.
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 63:11, 66:6 and 71:18.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.2, Theorem 1.
+* Global Quadratic Forms roadmap, Layer 4.4.
 -/
 
 public section
