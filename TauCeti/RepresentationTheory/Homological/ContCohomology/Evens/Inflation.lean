@@ -158,7 +158,6 @@ theorem trivialF2QuotientToFixedPoints_apply (x : (trivialF2 (G ⧸ N)).V) :
   (rfl)
 
 /-- The equivariant coefficient homomorphism preserves the underlying `ZMod 2` value. -/
-@[simp]
 theorem trivialF2Equiv_apply_coe_trivialF2QuotientToFixedPoints
     (x : (trivialF2 (G ⧸ N)).V) :
     trivialF2Equiv G
@@ -299,7 +298,6 @@ theorem coe_evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
 
 /-- The fixed-point-valued graph cocycle has the same underlying `ZMod 2` value as the quotient
 graph cochain. -/
-@[simp]
 theorem trivialF2Equiv_evensGraphCocycleFixedPoints_apply (U : OpenSubgroup G) (hNU : N ≤ U)
     (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
     (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
