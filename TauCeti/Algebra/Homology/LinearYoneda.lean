@@ -82,7 +82,8 @@ noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C 
 @[simp]
 lemma _root_.Homotopy.linearYonedaFunctorMap_hom_apply {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
     (h : Homotopy φ ψ) (i j : α) (g : (X'.linearYonedaObj k Y).X i) :
-    ConcreteCategory.hom ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := rfl
+    ConcreteCategory.hom (X := (X'.linearYonedaObj k Y).X i) (Y := (X.linearYonedaObj k Y).X j)
+      ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := rfl
 
 /-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
 complexes which is split in each degree to a short exact sequence
