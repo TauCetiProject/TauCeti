@@ -29,6 +29,8 @@ nilpotency makes the exponential a finite sum, hence a polynomial map over any `
 ## Main results
 
 * `TauCeti.DynkinType.pinnedExp_zero`: the exponential at zero is the identity matrix.
+* `TauCeti.DynkinType.pinnedExpNeg`: the uniform lowering exponential `u ↦ exp(u • f_i)`.
+* `TauCeti.DynkinType.pinnedExpNeg_zero`: its value at zero.
 
 ## References
 
@@ -65,6 +67,32 @@ def pinnedExp (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) (u : R) 
 theorem pinnedExp_zero (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) :
     t.pinnedExp ht R i 0 = 1 := by
   unfold pinnedExp
+  have h0mem : (0 : ℕ) ∈ Finset.range (Fintype.card (t.GeckIndex ht)) := by
+    simp only [Finset.mem_range]
+    have hpos : 0 < t.numRoots := t.numRoots_pos ht
+    have hcard : Fintype.card (t.GeckIndex ht)
+        = Fintype.card (t.rationalBase ht).support + t.numRoots := by
+      simp [GeckIndex, Fintype.card_sum]
+    omega
+  rw [Finset.sum_eq_single_of_mem _ h0mem]
+  · simp
+  · intro k _ hk
+    rw [zero_pow hk]
+    simp
+
+/-- The uniform lowering exponential `u ↦ exp(u • f_i)`, defined as the same finite sum with
+the lowering generator. -/
+def pinnedExpNeg (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) (u : R) :
+    Matrix (t.GeckIndex ht) (t.GeckIndex ht) R :=
+  ∑ k ∈ Finset.range (Fintype.card (t.GeckIndex ht)),
+    (u ^ k * algebraMap ℚ R ((k.factorial : ℚ))⁻¹) •
+      (((t.lieBasis ht).f i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) ^ k).map
+        (algebraMap ℚ R)
+
+/-- The lowering exponential at `u = 0` is the identity matrix. -/
+theorem pinnedExpNeg_zero (R : Type*) [CommRing R] [Algebra ℚ R] (i : Fin t.rank) :
+    t.pinnedExpNeg ht R i 0 = 1 := by
+  unfold pinnedExpNeg
   have h0mem : (0 : ℕ) ∈ Finset.range (Fintype.card (t.GeckIndex ht)) := by
     simp only [Finset.mem_range]
     have hpos : 0 < t.numRoots := t.numRoots_pos ht
