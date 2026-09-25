@@ -18,8 +18,10 @@ public import Mathlib.Topology.Compactness.Compact
 This file collects constructions on closed subgroups of a topological group.
 
 An isomorphism of topological groups carries closed subgroups to closed subgroups.  This is
-packaged as an order isomorphism, together with its compatibility with normality and quotients:
-a normal closed subgroup can be transported without changing the topological quotient it defines.
+packaged as an order isomorphism, together with its compatibility with normality: the transport of
+a normal closed subgroup is normal.  An isomorphism carrying one normal subgroup onto another also
+induces an isomorphism of the quotient topological groups, so a normal closed subgroup can be
+transported without changing the topological quotient it defines.
 
 A closed subgroup `H` of `A × G` projecting onto `G`, that is with `∀ g, ∃ a, (a, g) ∈ H`, is a
 closed relation from `G` to `A` defined everywhere. When `A` is compact, the fibre
@@ -30,7 +32,7 @@ intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup bel
 
 * `ContinuousMulEquiv.closedSubgroupOrderIso`: transport of closed subgroups along an isomorphism
   of topological groups.
-* `ContinuousMulEquiv.quotient`: the induced isomorphism of topological quotient groups.
+* `ContinuousMulEquiv.quotientCongr`: the induced isomorphism of quotient topological groups.
 
 ## Main results
 
@@ -118,44 +120,39 @@ instance _root_.ContinuousMulEquiv.instNormalClosedSubgroupOrderIso
     (e.closedSubgroupOrderIso K).toSubgroup.Normal :=
   Subgroup.Normal.map inferInstance e.toMulEquiv.toMonoidHom e.surjective
 
-/-- A topological group isomorphism induces an isomorphism between the quotients by corresponding
-normal closed subgroups. -/
-def _root_.ContinuousMulEquiv.quotient (e : G ≃ₜ* H) (N : ClosedSubgroup G)
-    [N.toSubgroup.Normal] :
-    G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSubgroup :=
-  have he : N.toSubgroup.map e.toMulEquiv.toMonoidHom =
-      (e.closedSubgroupOrderIso N).toSubgroup :=
-    (e.closedSubgroupOrderIso_apply_toSubgroup N).symm
-  ContinuousMulEquiv.mk
-    (QuotientGroup.congr N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup e.toMulEquiv he)
-    ((QuotientGroup.isQuotientMap_mk N.toSubgroup).continuous_iff.mpr <| by
+/-- A topological group isomorphism carrying a normal subgroup onto a normal subgroup induces an
+isomorphism of the quotient topological groups.  This is `QuotientGroup.congr` together with the
+continuity of both directions, which follows from the quotient-map property of the two projections.
+
+For a normal closed subgroup `N : ClosedSubgroup G` the hypothesis holds by `rfl` on the
+transported subgroup, so `e.quotientCongr N (e.closedSubgroupOrderIso N) rfl` is the induced
+isomorphism `G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSubgroup`. -/
+def _root_.ContinuousMulEquiv.quotientCongr (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
+    [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) : G ⧸ N ≃ₜ* H ⧸ M :=
+  ContinuousMulEquiv.mk (QuotientGroup.congr N M e.toMulEquiv he)
+    ((QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr <| by
       exact (QuotientGroup.continuous_mk.comp e.continuous).congr fun g ↦
-        (QuotientGroup.congr_mk N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup
-          e.toMulEquiv he g).symm)
-    ((QuotientGroup.isQuotientMap_mk
-      (e.closedSubgroupOrderIso N).toSubgroup).continuous_iff.mpr <| by
-        exact (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
-          (QuotientGroup.congr_mk (e.closedSubgroupOrderIso N).toSubgroup N.toSubgroup
-            e.toMulEquiv.symm ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
+        (QuotientGroup.congr_mk N M e.toMulEquiv he g).symm)
+    ((QuotientGroup.isQuotientMap_mk M).continuous_iff.mpr <| by
+      exact (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
+        (QuotientGroup.congr_mk M N e.toMulEquiv.symm
+          ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
 
 /-- The quotient isomorphism sends the class of an element to the class of its image. -/
 @[simp]
-theorem _root_.ContinuousMulEquiv.quotient_mk (e : G ≃ₜ* H) (N : ClosedSubgroup G)
-    [N.toSubgroup.Normal] (g : G) :
-    e.quotient N (g : G ⧸ N.toSubgroup) =
-      (e g : H ⧸ (e.closedSubgroupOrderIso N).toSubgroup) :=
-  QuotientGroup.congr_mk N.toSubgroup (e.closedSubgroupOrderIso N).toSubgroup e.toMulEquiv
-    (e.closedSubgroupOrderIso_apply_toSubgroup N).symm g
+theorem _root_.ContinuousMulEquiv.quotientCongr_mk (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
+    [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (g : G) :
+    e.quotientCongr N M he (g : G ⧸ N) = (e g : H ⧸ M) :=
+  QuotientGroup.congr_mk N M e.toMulEquiv he g
 
 /-- The inverse quotient isomorphism sends the class of an element to the class of its inverse
 image. -/
 @[simp]
-theorem _root_.ContinuousMulEquiv.quotient_symm_mk (e : G ≃ₜ* H) (N : ClosedSubgroup G)
-    [N.toSubgroup.Normal] (h : H) :
-    (e.quotient N).symm (h : H ⧸ (e.closedSubgroupOrderIso N).toSubgroup) =
-      (e.symm h : G ⧸ N.toSubgroup) :=
-  (e.quotient N).symm_apply_eq.mpr <| by
-    rw [e.quotient_mk, ContinuousMulEquiv.apply_symm_apply]
+theorem _root_.ContinuousMulEquiv.quotientCongr_symm_mk (e : G ≃ₜ* H) (N : Subgroup G)
+    (M : Subgroup H) [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) (h : H) :
+    (e.quotientCongr N M he).symm (h : H ⧸ M) = (e.symm h : G ⧸ N) :=
+  (e.quotientCongr N M he).symm_apply_eq.mpr <| by
+    rw [e.quotientCongr_mk, ContinuousMulEquiv.apply_symm_apply]
 
 end Transport
 

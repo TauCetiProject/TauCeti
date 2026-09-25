@@ -337,7 +337,7 @@ computed on elements of `SeparableClosure K` by `coe_absoluteGaloisGroupRestrict
 than on the isomorphisms themselves, because `Field.absoluteGaloisGroup K` carries its own derived
 group and topology instances, so an equation between the isomorphisms is not usable by `rw`.
 Closed subgroups and their normal quotients transport along this comparison through
-`ContinuousMulEquiv.closedSubgroupOrderIso` and `ContinuousMulEquiv.quotient`. -/
+`ContinuousMulEquiv.closedSubgroupOrderIso` and `ContinuousMulEquiv.quotientCongr`. -/
 def absoluteGaloisGroupRestrictEquiv :
     Field.absoluteGaloisGroup K ≃ₜ* AbsoluteGaloisGroup K :=
   separableClosureRestrictEquiv K (AlgebraicClosure K)
