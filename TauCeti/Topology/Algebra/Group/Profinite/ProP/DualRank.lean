@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Algebra.Module.ZMod.Exponent
 
 /-!
 # The generator rank of a pro-`p` group and its continuous `𝔽_p`-dual
@@ -36,11 +37,6 @@ finitely many of the others. Choosing a point separating it from the others give
 which converges to `1` and generates `W` topologically. Finally a generating set of the Frattini
 quotient converging to `1` lifts to `G`, which is
 `TauCeti.IsProP.topologicalGeneratorRank_quotient_proPFrattini`.
-
-## Main definitions
-
-* `TauCeti.continuousFpDualToDual`: a continuous `𝔽_p`-valued character of an elementary abelian
-  group, read as a linear functional on it.
 
 ## Main results
 
@@ -69,46 +65,6 @@ open scoped Cardinal
 universe u
 
 variable {p : ℕ}
-
-/-! ### The continuous dual inside the algebraic dual -/
-
-section ToDual
-
-variable {W : Type u} [CommGroup W] [TopologicalSpace W]
-  [Module (ZMod p) (Additive W)]
-
-/-- A continuous `𝔽_p`-valued character of an elementary abelian group `W`, read as a linear
-functional on the `𝔽_p`-vector space `Additive W`. It is injective
-(`TauCeti.continuousFpDualToDual_injective`), so the continuous dual is a subspace of the
-algebraic dual. -/
-def continuousFpDualToDual :
-    continuousFpDual p W →ₗ[ZMod p] Module.Dual (ZMod p) (Additive W) :=
-  AddMonoidHom.toZModLinearMap p
-    { toFun := fun x ↦ AddMonoidHom.toZModLinearMap p
-        { toFun := fun w ↦ Multiplicative.toAdd (Additive.toMul x (Additive.toMul w))
-          map_zero' := by simp
-          map_add' := fun a b ↦ by simp [toMul_add] }
-      map_zero' := by ext w; simp
-      map_add' := fun x y ↦ by ext w; simp }
-
-@[simp]
-theorem continuousFpDualToDual_apply (x : continuousFpDual p W) (w : Additive W) :
-    continuousFpDualToDual x w = Multiplicative.toAdd (Additive.toMul x (Additive.toMul w)) :=
-  (rfl)
-
-theorem continuousFpDualToDual_injective :
-    Function.Injective (continuousFpDualToDual (p := p) (W := W)) := fun x y h ↦ by
-  apply Additive.toMul.injective
-  ext w
-  have hw := congrArg (fun f ↦ f (Additive.ofMul w)) h
-  simp only [continuousFpDualToDual_apply, toMul_ofMul] at hw
-  exact Multiplicative.toAdd.injective hw
-
-theorem continuousFpDualToDual_eq_zero_iff {x : continuousFpDual p W} {w : Additive W} :
-    continuousFpDualToDual x w = 0 ↔ Additive.toMul w ∈ (Additive.toMul x).ker := by
-  simp [MonoidHom.mem_ker]
-
-end ToDual
 
 /-! ### The dual is no larger than a generating set -/
 
@@ -173,31 +129,13 @@ end Restrict
 
 section ElementaryAbelian
 
-section Exponent
-
-variable {W : Type u} [CommGroup W] [hW : Module (ZMod p) (Additive W)]
-
-include hW in
-/-- A `ZMod p`-module structure on `Additive W` makes `W` of exponent dividing `p`. -/
-private theorem exponent_dvd_of_isModule : Monoid.exponent W ∣ p :=
-  Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun w ↦ by
-    have h := congrArg Additive.toMul (ZModModule.char_nsmul_eq_zero (n := p) (Additive.ofMul w))
-    rwa [toMul_nsmul, toMul_ofMul, toMul_zero] at h
-
-include hW in
-private theorem isProP_of_isModule [TopologicalSpace W] : IsProP p W :=
-  IsPGroup.isProP fun w ↦ ⟨1, by
-    simpa using Monoid.exponent_dvd_iff_forall_pow_eq_one.mp exponent_dvd_of_isModule w⟩
-
-end Exponent
-
 variable [hp : Fact p.Prime] {W : Type u} [CommGroup W] [TopologicalSpace W]
   [IsTopologicalGroup W] [CompactSpace W] [TotallyDisconnectedSpace W]
   [hW : Module (ZMod p) (Additive W)]
 
 include hW in
 private theorem proPFrattini_eq_bot_of_isModule : proPFrattini p W = ⊥ :=
-  (proPFrattini_eq_bot_iff hp.out).mpr ⟨inferInstance, exponent_dvd_of_isModule⟩
+  (proPFrattini_eq_bot_iff hp.out).mpr ⟨inferInstance, exponent_dvd_of_module_zmod⟩
 
 /-- A basis of the continuous `𝔽_p`-dual separates the points of `W`: every continuous character
 is a finite linear combination of the basis, and the characters cut out the pro-`p` Frattini
@@ -314,7 +252,7 @@ theorem topologicalGeneratorRank_le_rank_continuousFpDual :
     exact hxU (hVU (hF (Set.mem_iInter₂.mpr fun j hj ↦ hmem_ker i j fun h ↦ hiF (h ▸ hj))))
   -- The dual basis generates: a character killing all of it has all coordinates `0`.
   have hgen : (Subgroup.closure (Set.range u)).topologicalClosure = ⊤ := by
-    have hProP : IsProP p W := isProP_of_isModule
+    have hProP : IsProP p W := isProP_of_module_zmod
     refine hProP.eq_top_of_forall_not_le_openNormalSubgroup_index_eq
       (Subgroup.isClosed_topologicalClosure _) fun U hU hle ↦ ?_
     obtain ⟨φ, hφ⟩ := exists_continuousMonoidHom_ker_eq hU

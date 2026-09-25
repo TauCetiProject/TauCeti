@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
@@ -21,7 +22,9 @@ character-theoretic input to describing the generator rank of a pro-`p` group by
 `𝔽_p`-valued characters. The lift uses the quotient topology.
 
 The characters with values in `𝔽_p` themselves form the **continuous `𝔽_p`-dual**
-`TauCeti.continuousFpDual p G`, an `𝔽_p`-vector space because `𝔽_p` has exponent `p`. Conversely
+`TauCeti.continuousFpDual p G`, an `𝔽_p`-vector space because `𝔽_p` has exponent `p`. When the group
+is itself elementary abelian, a character of it is in particular a linear functional on it, so
+`TauCeti.continuousFpDualToDual` embeds the continuous dual in the algebraic dual. Conversely
 an open normal subgroup of index `p` has cyclic quotient of order `p` and is therefore the kernel
 of such a character, so the pro-`p` Frattini subgroup is exactly the intersection of the kernels
 of the continuous `𝔽_p`-valued characters. Precomposition with the projection to the Frattini
@@ -31,6 +34,8 @@ of `G`.
 ## Main definitions
 
 * `TauCeti.continuousFpDual`: the group of continuous `𝔽_p`-valued characters, written additively.
+* `TauCeti.continuousFpDualToDual`: a continuous `𝔽_p`-valued character of an elementary abelian
+  group, read as a linear functional on it.
 
 ## Main results
 
@@ -40,9 +45,6 @@ of `G`.
   of a continuous `𝔽_p`-valued character.
 * `TauCeti.proPFrattini_eq_iInf_ker`: the pro-`p` Frattini subgroup is the intersection of the
   kernels of the continuous `𝔽_p`-valued characters.
-* `TauCeti.exists_finset_iInter_ker_subset`: in a compact group, an open set containing the common
-  kernel of a family of continuous homomorphisms into a discrete group already contains the common
-  kernel of a finite subfamily.
 * `TauCeti.frattiniQuotientDualEquiv`: the continuous `𝔽_p`-dual of the Frattini quotient is the
   continuous `𝔽_p`-dual of `G`.
 
@@ -57,12 +59,9 @@ namespace TauCeti
 
 universe u
 
-variable {p : ℕ} [Fact p.Prime]
-variable {G : Type u} [Group G] [TopologicalSpace G]
-
 section FpDual
 
-variable {n : ℕ}
+variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
 
 /-- The **continuous `𝔽_p`-dual** of a topological group: its group of continuous characters with
 values in `𝔽_p`, written additively so that it is an `𝔽_p`-vector space. It is the discrete
@@ -82,6 +81,47 @@ instance instModuleContinuousFpDual : Module (ZMod n) (continuousFpDual n G) :=
     simp [ContinuousMonoidHom.pow_apply, toAdd_pow, nsmul_eq_mul]
 
 end FpDual
+
+section ToDual
+
+variable {p : ℕ} {W : Type u} [CommGroup W] [TopologicalSpace W]
+  [Module (ZMod p) (Additive W)]
+
+/-- A continuous `𝔽_p`-valued character of an elementary abelian group `W`, read as a linear
+functional on the `𝔽_p`-vector space `Additive W`. It is injective
+(`TauCeti.continuousFpDualToDual_injective`), so the continuous dual is a subspace of the
+algebraic dual. -/
+def continuousFpDualToDual :
+    continuousFpDual p W →ₗ[ZMod p] Module.Dual (ZMod p) (Additive W) :=
+  AddMonoidHom.toZModLinearMap p
+    { toFun := fun x ↦ AddMonoidHom.toZModLinearMap p
+        { toFun := fun w ↦ Multiplicative.toAdd (Additive.toMul x (Additive.toMul w))
+          map_zero' := by simp
+          map_add' := fun a b ↦ by simp [toMul_add] }
+      map_zero' := by ext w; simp
+      map_add' := fun x y ↦ by ext w; simp }
+
+@[simp]
+theorem continuousFpDualToDual_apply (x : continuousFpDual p W) (w : Additive W) :
+    continuousFpDualToDual x w = Multiplicative.toAdd (Additive.toMul x (Additive.toMul w)) :=
+  (rfl)
+
+theorem continuousFpDualToDual_injective :
+    Function.Injective (continuousFpDualToDual (p := p) (W := W)) := fun x y h ↦ by
+  apply Additive.toMul.injective
+  ext w
+  have hw := congrArg (fun f ↦ f (Additive.ofMul w)) h
+  simp only [continuousFpDualToDual_apply, toMul_ofMul] at hw
+  exact Multiplicative.toAdd.injective hw
+
+theorem continuousFpDualToDual_eq_zero_iff {x : continuousFpDual p W} {w : Additive W} :
+    continuousFpDualToDual x w = 0 ↔ Additive.toMul w ∈ (Additive.toMul x).ker := by
+  simp [MonoidHom.mem_ker]
+
+end ToDual
+
+variable {p : ℕ} [Fact p.Prime]
+variable {G : Type u} [Group G] [TopologicalSpace G]
 
 /-- The pro-`p` Frattini subgroup lies in the kernel of every continuous homomorphism to a
 discrete group of cardinality `p`. -/
@@ -129,21 +169,6 @@ theorem proPFrattini_eq_iInf_ker [ContinuousMul G] :
   refine mem_proPFrattini_iff.mpr fun U hU ↦ ?_
   obtain ⟨φ, hφ⟩ := exists_continuousMonoidHom_ker_eq hU
   exact hφ ▸ Subgroup.mem_iInf.mp hx φ
-
-/-- **A finite subfamily of characters suffices.** In a compact group, an open set containing the
-common kernel of a family of continuous homomorphisms into a discrete group already contains the
-common kernel of a finite subfamily: the kernels are closed, so this is the finite intersection
-property. -/
-theorem exists_finset_iInter_ker_subset [IsTopologicalGroup G] [CompactSpace G] {H : Type*}
-    [Group H] [TopologicalSpace H] [DiscreteTopology H] {ι : Type*} (φ : ι → G →ₜ* H)
-    {U : Set G} (hU : IsOpen U) (h : ⋂ j, ((φ j).ker : Set G) ⊆ U) :
-    ∃ F : Finset ι, ⋂ j ∈ F, ((φ j).ker : Set G) ⊆ U := by
-  obtain ⟨F, hF⟩ := hU.isClosed_compl.isCompact.elim_finite_subfamily_closed
-    (fun j ↦ (((φ j).ker : Subgroup G) : Set G))
-    (fun j ↦ Subgroup.isClosed_of_isOpen _
-      ((MonoidHom.continuous_iff_isOpen_ker _).mp (φ j).continuous))
-    (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
-  exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
 
 /-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms
 from the quotient with continuous homomorphisms from `G` for a discrete target of cardinality
