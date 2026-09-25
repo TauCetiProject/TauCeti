@@ -52,6 +52,10 @@ is killed by two.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
   `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
   `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
+* `TauCeti.RegularFormClass.eq_one_of_rank_eq_one_of_discr_eq_zero`: a rank-one class of trivial
+  discriminant is `⟨1⟩`.
+* `TauCeti.RegularFormClass.mk_rankOne_mul_self`: scaling twice by the same unit is the identity,
+  `⟨a⟩ ⊗ ⟨a⟩ ≅ ⟨1⟩`.
 * `TauCeti.RegularFormClass.signedDiscr_mk_rankOne`: `d±⟨a⟩ = squareClass a`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
@@ -167,6 +171,33 @@ theorem discr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
       rank x • squareClass a + discr x := by
   rw [discr_mul, rank_mk, one_nsmul, discr_mk, Fin.prod_univ_one]
+
+/-- A class of rank one and trivial discriminant is the class `⟨1⟩`: in rank one the discriminant
+is a complete invariant. -/
+theorem eq_one_of_rank_eq_one_of_discr_eq_zero {x : RegularFormClass K}
+    (hr : x.rank = 1) (hd : discr x = 0) : x = 1 := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    rw [rank_mk] at hr
+    subst hr
+    rw [discr_mk, Fin.prod_univ_one, squareClass_eq_zero_iff] at hd
+    obtain ⟨t, ht⟩ := hd
+    dsimp only at ht
+    rw [← mk_rankOne_one, mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+      presentedForm_eq_weightedSumSquares_coe]
+    refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares (fun _ => t) ?_⟩
+    intro i
+    fin_cases i
+    simp [ht, pow_two]
+
+/-- **Scaling by a unit is an involution up to isometry**: `⟨a⟩ ⊗ ⟨a⟩ ≅ ⟨a²⟩ ≅ ⟨1⟩`. -/
+theorem mk_rankOne_mul_self (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ *
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ = 1 := by
+  refine eq_one_of_rank_eq_one_of_discr_eq_zero (by simp) ?_
+  rw [discr_mk_rankOne_mul, rank_mk, discr_mk, Fin.prod_univ_one, one_nsmul, ← two_nsmul,
+    ZModModule.char_nsmul_eq_zero 2]
 
 /-! ### The signed discriminant -/
 
