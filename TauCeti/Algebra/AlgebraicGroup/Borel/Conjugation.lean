@@ -65,16 +65,6 @@ theorem IsBorelCandidate.conjugate {I : HopfIdeal k H}
   rw [conjugate_eq_comapOfSurjective]
   simpa only [HopfAlgebra.pointConjugationFiniteTypeIso_hom] using h
 
-/-- Conjugation preserves maximal smooth connected solvable closed subgroups over an
-algebraically closed field. -/
-theorem IsBorelOverAlgClosed.conjugate {I : HopfIdeal k H}
-    (hI : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) I)
-    (g : WithConv (H →ₐ[k] k)) :
-    IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) (I.conjugate g) := by
-  apply hI.of_map_eq (HopfAlgebra.pointConjugationFiniteTypeIso g)
-  rw [conjugate_eq_comapOfSurjective, HopfAlgebra.pointConjugationFiniteTypeIso_hom]
-  exact map_comapOfSurjective _ _ _
-
 /-- The conjugate of a Borel subgroup by a rational point is a Borel subgroup. -/
 theorem IsBorel.conjugate {I : HopfIdeal k H}
     (hI : IsBorel k (_root_.CommHopfAlgCat.of k H) I)

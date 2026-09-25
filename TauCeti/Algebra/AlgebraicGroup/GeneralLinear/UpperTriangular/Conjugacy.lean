@@ -37,7 +37,7 @@ open CategoryTheory WithConv
 
 namespace TauCeti.GeneralLinear
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -48,7 +48,7 @@ attribute [local instance] standardComodule
 /-- A matrix-valued point given by a bialgebra morphism from `O(GLₙ)` into a reduced,
 connected, solvable Hopf algebra of finite type is triangularized by a rational matrix. -/
 theorem exists_mul_map_eq_map_mul_upperTriangular
-    {Q : Type u} [CommRing Q] [HopfAlgebra k Q] [Algebra.FiniteType k Q]
+    {Q : Type v} [CommRing Q] [HopfAlgebra k Q] [Algebra.FiniteType k Q]
     [IsReduced Q]
     (hconn : geometricallyConnectedCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k Q))
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k Q))
