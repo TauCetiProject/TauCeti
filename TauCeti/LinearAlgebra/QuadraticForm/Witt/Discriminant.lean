@@ -54,9 +54,6 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter II, §2, where the
   signed discriminant is shown to induce `I/I² ≅ Kˣ/(Kˣ)²`.
-* `TauCetiRoadmap/QuadraticFormInvariants/Suggested.lean`, Layer 4's `signedDiscrHom`,
-  `signedDiscrHom_surjective`, and `signedDiscrHom_eq_zero_iff`, whose target signatures this
-  module follows.
 -/
 
 public section
