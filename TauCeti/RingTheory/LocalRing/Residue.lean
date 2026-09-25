@@ -111,11 +111,6 @@ theorem mem_jacobson_iff_not_isUnit {x : R} : x ∈ Ring.jacobson R ↔ ¬ IsUni
       have hstep : -((↑u⁻¹ : R) * y) * x = (↑u⁻¹ : R) * -(y * x) := by noncomm_ring
       rw [hstep, ← hu, u.inv_mul]
 
-variable (R) in
-/-- The Jacobson radical of a local ring is a proper ideal, `1` being a unit. -/
-theorem jacobson_ne_top : Ring.jacobson R ≠ ⊤ := fun h =>
-  mem_jacobson_iff_not_isUnit.mp (h ▸ Submodule.mem_top) isUnit_one
-
 /-- **The opposite of a local ring is local.** Being a unit is preserved by `MulOpposite.op` and
 addition is computed on the underlying elements, so the splitting property transports verbatim;
 Mathlib's `RingEquiv.isLocalRing` does not apply, there being no ring equivalence `R ≃+* Rᵐᵒᵖ` in
@@ -129,8 +124,10 @@ instance instMulOpposite : IsLocalRing Rᵐᵒᵖ := by
     (fun hu => _root_.isUnit_unop.mp hu) fun hu => _root_.isUnit_unop.mp hu
 
 variable (R) in
+/-- The residue ring of a local ring is nontrivial, the Jacobson radical of a nontrivial ring
+being proper by `Ring.jacobson_lt_top`. -/
 instance instNontrivialQuotientJacobson : Nontrivial (R ⧸ Ring.jacobson R) :=
-  Ideal.Quotient.nontrivial_iff.mpr (jacobson_ne_top R)
+  Ideal.Quotient.nontrivial_iff.mpr (Ring.jacobson_lt_top R).ne
 
 /-- **A residue class modulo the Jacobson radical vanishes exactly on the non-units.** -/
 @[simp]
