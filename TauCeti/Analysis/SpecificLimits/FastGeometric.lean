@@ -9,15 +9,15 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Fast geometric convergence of superlinear recurrences
+# Geometric bounds and convergence of superlinear recurrences
 
 Let `Y : ℕ → ℝ` be a nonnegative sequence satisfying the superlinear recurrence
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
-with `α ≥ 0`. The factor `b ^ n` may grow geometrically, but if the starting value is small
-enough the power `1 + α` wins and `Y` decays geometrically. In its classical form, for `C > 0`,
-`b > 1`, `α > 0`,
+with `b ≥ 0` and `α ≥ 0`. If `q ≥ 0`, `b * q ^ α ≤ 1`, and `C * Y 0 ^ α ≤ q`, then
+`Y n ≤ q ^ n * Y 0`. When `q < 1`, this bound implies `Y n → 0`. In its classical form, for
+`C > 0`, `b > 1`, `α > 0`,
 
 `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)` implies `Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0`, so `Y n → 0`.
 
@@ -34,11 +34,14 @@ The general statement `TauCeti.le_geom_of_le_mul_pow_mul_rpow` only asks for a r
 
 ## Main declarations
 
-* `TauCeti.le_geom_of_le_mul_pow_mul_rpow`: geometric decay `Y n ≤ q ^ n * Y 0` of a
+* `TauCeti.le_geom_of_le_mul_pow_mul_rpow`: geometric bound `Y n ≤ q ^ n * Y 0` for a
   superlinear recurrence from a small start.
 * `TauCeti.le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow`: the same bound at the classical
   threshold `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)`, with ratio `b ^ (-α⁻¹)`.
-* `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow`: for `b > 1`, the sequence tends to zero.
+* `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one`: for `q < 1`, the sequence
+  tends to zero.
+* `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow`: convergence at the classical threshold
+  when `b > 1`.
 
 ## References
 
@@ -58,7 +61,7 @@ namespace TauCeti
 
 open Filter Topology
 
-/-- **Fast geometric convergence.** Let `Y` be a nonnegative sequence with
+/-- **Geometric bound.** Let `Y` be a nonnegative sequence with
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
@@ -98,7 +101,7 @@ theorem le_geom_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b q α : ℝ} (hY : 
             exact pow_le_one₀ (mul_nonneg hb (Real.rpow_nonneg hq _)) hbq
         _ = q ^ (n + 1) * Y 0 := by ring
 
-/-- **Fast geometric convergence, classical threshold.** Let `Y` be a nonnegative sequence with
+/-- **Geometric bound, classical threshold.** Let `Y` be a nonnegative sequence with
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
@@ -123,7 +126,19 @@ theorem le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α
             ← Real.rpow_mul hC.le, ← Real.rpow_mul hb.le, e1, e2, Real.rpow_neg_one,
             mul_inv_cancel_left₀ hC.ne']
 
-/-- **Fast geometric convergence to zero.** Let `Y` be a nonnegative sequence with
+/-- **Convergence to zero from a geometric bound.** If the ratio `q` in
+`le_geom_of_le_mul_pow_mul_rpow` is less than one, then `Y n → 0`. -/
+theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one {Y : ℕ → ℝ}
+    {C b q α : ℝ} (hY : ∀ n, 0 ≤ Y n) (hb : 0 ≤ b) (hq : 0 ≤ q) (hq1 : q < 1)
+    (hα : 0 ≤ α) (hbq : b * q ^ α ≤ 1) (h0 : C * Y 0 ^ α ≤ q)
+    (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) :
+    Tendsto Y atTop (𝓝 0) := by
+  have hlim : Tendsto (fun n : ℕ => q ^ n * Y 0) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hq hq1).mul_const (Y 0)
+  exact squeeze_zero hY (le_geom_of_le_mul_pow_mul_rpow hY hb hq hα hbq h0 hrec) hlim
+
+/-- **Fast geometric convergence to zero, classical threshold.** Let `Y` be a nonnegative
+sequence with
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
@@ -136,11 +151,20 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
     Tendsto Y atTop (𝓝 0) := by
   have hq : b ^ (-α⁻¹) < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg hb (neg_lt_zero.mpr (inv_pos.mpr hα))
-  have hlim : Tendsto (fun n : ℕ => (b ^ (-α⁻¹)) ^ n * Y 0) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
-      (Real.rpow_nonneg (zero_le_one.trans hb.le) _) hq).mul_const (Y 0)
-  exact squeeze_zero hY
-    (le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow hY hC (zero_lt_one.trans hb) hα h0 hrec)
-    hlim
+  have e1 : -α⁻¹ * α = -1 := by field_simp
+  have e2 : -(α ^ 2)⁻¹ * α = -α⁻¹ := by field_simp
+  refine tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY
+    (zero_lt_one.trans hb).le (Real.rpow_nonneg (zero_le_one.trans hb.le) _) hq hα.le
+    ?_ ?_ hrec
+  · rw [← Real.rpow_mul (zero_le_one.trans hb.le), e1, Real.rpow_neg_one,
+      mul_inv_cancel₀ (ne_of_gt (zero_lt_one.trans hb))]
+  · calc C * Y 0 ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by
+          gcongr
+          exact hY 0
+      _ = b ^ (-α⁻¹) := by
+          rw [Real.mul_rpow (Real.rpow_nonneg hC.le _)
+            (Real.rpow_nonneg (zero_le_one.trans hb.le) _),
+            ← Real.rpow_mul hC.le, ← Real.rpow_mul (zero_le_one.trans hb.le), e1, e2,
+            Real.rpow_neg_one, mul_inv_cancel_left₀ hC.ne']
 
 end TauCeti
