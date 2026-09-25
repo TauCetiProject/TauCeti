@@ -167,7 +167,6 @@ theorem geckWeylRootSubgroupPoints_cons (j : Fin t.rank) (l : List (Fin t.rank))
 
 /-- **The word `[i]` gives the lowering subgroup at node `i`**, with negated parameter: the simple
 Weyl representative at `i` conjugates `xᵢ(u)` to `x₋ᵢ(-u)`. -/
-@[simp]
 theorem geckWeylRootSubgroupPoints_singleton_self (i : Fin t.rank) (A : Type v) [CommRing A]
     (u : A) :
     t.geckWeylRootSubgroupPoints ht [i] i A (Multiplicative.ofAdd u) =
