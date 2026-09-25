@@ -13,21 +13,16 @@ public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 # Inflation of the index-two Evens graph cocycle
 
 Let `N` be a normal subgroup contained in an open subgroup `U` of a topological group `G`. The
-image `U / N` is open in `G / N`, has the same index as `U`, and the quotient map restricts to a
-homomorphism `U → U / N`; these are `TauCeti.quotientOpenSubgroup` and
+image of `U` in `G / N` is open, has the same index as `U`, and the quotient map restricts to a
+homomorphism from `U` onto it; these are `TauCeti.quotientOpenSubgroup` and
 `TauCeti.quotientOpenSubgroupMap`. This file proves that the two-point graph cocycle commutes
 with pullback along that quotient map. Consequently, degree-two inflation carries the
-graph-cocycle class for `U / N` to the graph-cocycle class for `U`.
+graph-cocycle class for the image of `U` to the graph-cocycle class for `U`.
 
 The coefficient object used by explicit inflation is the fixed-point subgroup of the ambient
-trivial `𝔽₂` module. The additive equivalence `trivialF2QuotientEquivFixedPoints` identifies it
-with the trivial `𝔽₂` module constructed directly on `G / N`; its forward map is used before
+trivial `𝔽₂` module. It is identified with the trivial `𝔽₂` module constructed directly on
+`G / N` by `TauCeti.trivialF2QuotientEquivFixedPoints`, whose forward map is used before
 inflation in the class-level statement.
-
-## Main definitions
-
-* `TauCeti.ContCohomology.trivialF2QuotientEquivFixedPoints`: trivial coefficients on the
-  quotient identified with the fixed points of the ambient trivial coefficients.
 
 ## Main results
 
@@ -50,70 +45,28 @@ namespace TauCeti.ContCohomology
 
 universe u
 
-section Coefficients
-
-variable {G : Type u} [Group G] (N : Subgroup G) [N.Normal]
-
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-/-- Trivial `𝔽₂` coefficients on `G / N` are additively equivalent to the `N`-fixed points of
-the ambient trivial coefficients. -/
-noncomputable def trivialF2QuotientEquivFixedPoints :
-    (trivialF2 (G ⧸ N)).V ≃+ FixedPoints.addSubgroup N (trivialF2 G).V where
-  toFun x := ⟨(trivialF2Equiv G).symm (trivialF2Equiv (G ⧸ N) x), by
-    rw [FixedPoints.mem_addSubgroup]
-    intro n
-    simp only [Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]⟩
-  invFun x := (trivialF2Equiv (G ⧸ N)).symm (trivialF2Equiv G x.1)
-  left_inv x := by simp
-  right_inv x := by ext; simp
-  map_add' x y := by
-    apply Subtype.ext
-    apply (trivialF2Equiv G).injective
-    simp
-
-/-- The coefficient equivalence does not change the underlying `ZMod 2` value. -/
-@[simp]
-theorem trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints
-    (x : (trivialF2 (G ⧸ N)).V) :
-    trivialF2Equiv G (trivialF2QuotientEquivFixedPoints N x : (trivialF2 G).V) =
-      trivialF2Equiv (G ⧸ N) x := by
-  simp [trivialF2QuotientEquivFixedPoints]
-
-/-- The coefficient equivalence is equivariant for the quotient actions. -/
-theorem trivialF2QuotientEquivFixedPoints_smul (q : G ⧸ N)
-    (x : (trivialF2 (G ⧸ N)).V) :
-    trivialF2QuotientEquivFixedPoints N (q • x) =
-      q • trivialF2QuotientEquivFixedPoints N x := by
-  apply Subtype.ext
-  induction q using QuotientGroup.induction_on with
-  | H g =>
-    apply (trivialF2Equiv G).injective
-    rw [coe_quotient_smul_fixedPoints_addSubgroup,
-      coe_smul_fixedPoints_addSubgroup]
-    simp
-
-end Coefficients
-
 section GraphCochain
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {N : Subgroup G} [N.Normal] (U : OpenSubgroup G)
 
-/-- A homomorphism on `U / N`, pulled back to `U` along the quotient map. -/
+/-- A homomorphism on the image of `U` in `G / N`, pulled back to `U` along the quotient
+map. -/
 def evensInflatedHom
     (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)) :
     U.toSubgroup →* Multiplicative (ZMod 2) :=
   α.comp (quotientOpenSubgroupMap N U)
 
-/-- The pulled-back homomorphism evaluates the original at the image in `U / N`. -/
+/-- The pulled-back homomorphism evaluates the original at the image of its argument in
+`G / N`. -/
 @[simp]
 theorem evensInflatedHom_apply
     (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)) (u : U.toSubgroup) :
     evensInflatedHom U α u = α (quotientOpenSubgroupMap N U u) :=
   (rfl)
 
-/-- Pullback of a continuous homomorphism on `U / N` is continuous on `U`. -/
+/-- Pullback of a continuous homomorphism on the image of `U` in `G / N` is continuous
+on `U`. -/
 theorem continuous_evensInflatedHom
     {α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)}
     (hα : Continuous α) : Continuous (evensInflatedHom U α) :=
@@ -145,16 +98,16 @@ theorem evensB1_quotient (hNU : N ≤ U) (s : G)
     rw [evensB1_of_mem hg, evensB1_of_mem hq, evensExtend_quotient U hNU]
   · have hq : (g : G ⧸ N) ∉ quotientOpenSubgroup N U :=
       mt (mem_quotientOpenSubgroup_mk_iff N U hNU g).1 hg
-    rw [evensB1_of_notMem hg, evensB1_of_notMem hq, evensExtend_quotient U hNU]
-    rfl
+    rw [evensB1_of_notMem hg, evensB1_of_notMem hq, evensExtend_quotient U hNU,
+      QuotientGroup.mk_mul]
 
 /-- The second Shapiro component commutes with pullback from `G / N`. -/
 theorem evensBs_quotient (hNU : N ≤ U) (s : G)
     (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2)) (g : G) :
     evensBs U.toSubgroup s (evensInflatedHom U α) g =
       evensBs (quotientOpenSubgroup N U).toSubgroup (s : G ⧸ N) α (g : G ⧸ N) := by
-  rw [evensBs_apply, evensBs_apply, evensB1_quotient U hNU]
-  rfl
+  rw [evensBs_apply, evensBs_apply, evensB1_quotient U hNU, QuotientGroup.mk_mul,
+    QuotientGroup.mk_inv]
 
 /-- **The two-point graph cochain commutes with the quotient map.** This is the cochain-level
 inflation identity: the graph cochain of a class on `U / N`, evaluated on the images of two

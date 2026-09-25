@@ -157,7 +157,7 @@ theorem quotientOpenSubgroup_index (U : OpenSubgroup G) (hNU : N ≤ U) :
     (quotientOpenSubgroup N U).toSubgroup.index = U.toSubgroup.index := by
   rw [toSubgroup_quotientOpenSubgroup, Subgroup.index_map_mk'_eq_index_sup, sup_eq_left.mpr hNU]
 
-/-- The quotient homomorphism restricted from `U` to its image `U / N`. -/
+/-- The quotient homomorphism restricted from `U` to its image in `G / N`. -/
 def quotientOpenSubgroupMap (U : OpenSubgroup G) :
     U.toSubgroup →* (quotientOpenSubgroup N U).toSubgroup :=
   MonoidHom.codRestrict ((QuotientGroup.mk' N).comp U.toSubgroup.subtype)
@@ -170,8 +170,8 @@ theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
       (u : G) :=
   (rfl)
 
-/-- The restricted quotient homomorphism is surjective: every element of `U / N` is the image
-of an element of `U`. -/
+/-- The restricted quotient homomorphism is surjective: every element of the image of `U` in
+`G / N` is the image of an element of `U`. -/
 theorem quotientOpenSubgroupMap_surjective (U : OpenSubgroup G) :
     Function.Surjective (quotientOpenSubgroupMap N U) := by
   rintro ⟨-, u, hu, rfl⟩
