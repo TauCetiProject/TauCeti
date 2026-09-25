@@ -40,7 +40,9 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 ## Attribution
 
 The characterization uses Mathlib's `exists_open_between_and_isCompact_closure`
-to find relatively compact open neighborhoods of individual points.
+to find relatively compact open neighborhoods of individual points. Extension by zero rests on
+Mathlib's `LocallyIntegrableOn.integrableOn_compact_subset`, which gives integrability on the
+compact support.
 -/
 
 public section
