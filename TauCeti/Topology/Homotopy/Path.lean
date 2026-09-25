@@ -217,6 +217,15 @@ theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient
   -- topology (`inferInstanceAs`), so `IsOpen S` unfolds to openness of the `mk`-preimage.
   Iff.rfl
 
+/-- The concatenation identity `Path.Homotopic.mk_subpath_trans_mk_subpath` with endpoints
+recast to given points. This cuts a path into pieces with prescribed, named endpoints. -/
+theorem subpath_cast_trans {x y : X} (p : Path x y) (a b c : unitInterval) {x₀ x₁ x₂ : X}
+    (h₀ : x₀ = p a) (h₁ : x₁ = p b) (h₂ : x₂ = p c) :
+    trans (mk ((p.subpath a b).cast h₀ h₁)) (mk ((p.subpath b c).cast h₁ h₂)) =
+      mk ((p.subpath a c).cast h₀ h₂) := by
+  subst h₀ h₁ h₂
+  simp
+
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
