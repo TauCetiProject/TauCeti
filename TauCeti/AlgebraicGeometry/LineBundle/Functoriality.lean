@@ -53,7 +53,7 @@ def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (InvertibleSheaf X)
 
 /-- The underlying module of successive line-bundle pullbacks is the corresponding successive
 module pullback. -/
-lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
+private lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
     ((pullback g ⋙ pullback f).obj L).obj =
       (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj L.obj :=
   (pullback_obj_obj f ((pullback g).obj L)).trans
