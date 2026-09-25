@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.RepresentationTheory.Simple.Basic
 
 /-!
@@ -183,14 +184,14 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       exact GL2NonSplitTorus.coe_unitsEquiv_apply hE u⁻¹
     rw [hinv, ← GL2EllipticInduction_def]
     split_ifs with hu
-    · obtain ⟨a, rfl⟩ := (Units.coe_mem_range_algebraMap_iff _).mp hu
+    · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) _).mp hu
       rw [map_inv, GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap,
         ← map_inv, character_GL2EllipticInduction_scalar]
       simp only [map_inv, Units.val_inv_eq_inv_val]
       field_simp
       rw [Nat.card_eq_fintype_card]
     · have huinv : ((u⁻¹ : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
-        simpa only [Units.coe_inv_mem_range_algebraMap_iff] using hu
+        simpa only [coe_inv_mem_range_iff] using hu
       rw [character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ huinv]
       simp [mul_add, inv_pow]
   rw [← (GL2NonSplitTorus.unitsEquiv hE).toEquiv.sum_comp]
@@ -222,7 +223,7 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       have hab' := congrArg (fun u : {u : Eˣ // p u} => ((u : Eˣ) : E)) hab
       exact (algebraMap F E).injective hab'
     · rintro ⟨u, hu⟩
-      obtain ⟨a, ha⟩ := (Units.coe_mem_range_algebraMap_iff u).mp hu
+      obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) u).mp hu
       exact ⟨a, Subtype.ext ha⟩
   let e : Fˣ ≃ {u : Eˣ // p u} := Equiv.ofBijective f hf
   have hcardBase : (Finset.univ.filter p).card = Fintype.card F - 1 := by

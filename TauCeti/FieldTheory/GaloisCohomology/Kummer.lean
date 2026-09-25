@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.PowerClassGroup
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 
 /-!
@@ -53,6 +54,8 @@ isomorphism** `TauCeti.kummerIso`.
   `Kˣ →* Multiplicative (H¹(G_K, μₙ))`.
 * `TauCeti.kummerClassMap`: the induced map on the power classes `Kˣ ⧸ (Kˣ)ⁿ`.
 * `TauCeti.kummerIso`: the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)`.
+* `TauCeti.kummerIsoTransport`: the Kummer isomorphism after an equivariant identification of
+  the roots of unity with another discrete coefficient module.
 
 ## Main results
 
@@ -64,6 +67,8 @@ isomorphism** `TauCeti.kummerIso`.
   `TauCeti.kummerMap_eq_one_iff` the pointwise form.
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
+* `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
+  degree-one comparison isomorphism.
 
 ## References
 
@@ -341,5 +346,85 @@ theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
 theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
+
+/-! ### The Kummer map against canonical continuous cohomology -/
+
+/-- **The canonical Kummer map** from units of `K` to Mathlib's continuous cohomology of the
+Kummer coefficient module. It is the explicit Kummer map transported through the degree-one
+comparison isomorphism. -/
+noncomputable def kummerMapCanonical (hn : IsUnit (n : K)) :
+    Kˣ →* Multiplicative
+      (continuousCohomology 1
+        (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) :=
+  AddMonoidHom.toMultiplicativeRight <|
+    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+      (KummerCoeff K n)).toAddMonoidHom.comp
+        (AddMonoidHom.toMultiplicativeRight.symm (kummerMap K n hn))
+
+/-- **The explicit and canonical Kummer maps agree.** The degree-one comparison sends the
+explicit Kummer class of a unit to its canonical continuous-cohomology class. -/
+@[simp]
+theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
+  rw [kummerMapCanonical, AddMonoidHom.toMultiplicativeRight_apply_apply, toAdd_ofAdd,
+    AddMonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
+    AddEquiv.coe_toAddMonoidHom]
+
+/-! ### Transport to another coefficient model -/
+
+/-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
+transports continuity of the Galois action to that module. -/
+theorem kummerIsoTransportContinuousSMul
+    (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
+    [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
+    (e : KummerCoeff K n ≃+ μ)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
+    ContinuousSMul (AbsoluteGaloisGroup K) μ := by
+  have hinv (g : AbsoluteGaloisGroup K) (x : μ) : e.symm (g • x) = g • e.symm x := by
+    exact AddEquiv.symm_map_smul_of_map_smul e hequiv g x
+  let h : μ ≃ₜ KummerCoeff K n :=
+    { toEquiv := e.symm.toEquiv
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+  exact h.isInducing.continuousSMul continuous_id fun {g x} => hinv g x
+
+/-- **The Kummer isomorphism transported to another discrete model of `μₙ`.** The identification
+of coefficients must be `G_K`-equivariant; a bare additive equivalence would not determine the
+same Galois module and hence would not induce an equivalence on cohomology. -/
+def kummerIsoTransport (hn : IsUnit (n : K))
+    (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
+    [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
+    (e : KummerCoeff K n ≃+ μ)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
+    by
+      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      exact powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) := by
+  letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+  exact (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
+    explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
+      continuous_of_discreteTopology continuous_of_discreteTopology hequiv
+
+/-- Transporting the Kummer isomorphism applies the original Kummer isomorphism and then the
+coefficient equivalence on `H¹`. -/
+@[simp]
+theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
+    (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
+    [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
+    (e : KummerCoeff K n ≃+ μ)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
+    (x : powerClassQuotient Kˣ n) :
+    by
+      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      exact kummerIsoTransport K n hn μ e hequiv x =
+        Multiplicative.ofAdd
+          (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
+            continuous_of_discreteTopology continuous_of_discreteTopology hequiv
+            (Multiplicative.toAdd (kummerIso K n hn x))) := by
+  let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
+  rw [kummerIsoTransport, MulEquiv.trans_apply,
+    AddEquiv.toMultiplicative_apply_apply, AddMonoidHom.toMultiplicative_apply_apply,
+    AddEquiv.coe_toAddMonoidHom]
 
 end TauCeti

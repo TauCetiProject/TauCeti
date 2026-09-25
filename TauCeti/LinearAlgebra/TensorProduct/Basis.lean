@@ -28,6 +28,8 @@ index a scalar extension consists of pure tensors.
   corresponding basis vector.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
+* `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended endomorphisms
+  are obtained by mapping entries.
 -/
 
 public section
@@ -140,6 +142,14 @@ section Matrix
 variable {S : Type v} [CommSemiring S] [Algebra R S]
 variable {T : Type w} [CommSemiring T] [Algebra R T]
 variable [Fintype ι] [DecidableEq ι]
+
+/-- The matrix of a scalar-extended endomorphism is the entrywise scalar extension of its
+matrix in the original basis. -/
+theorem toMatrix_baseChange_baseChange (b : Basis ι R M) (f : M →ₗ[R] M) :
+    LinearMap.toMatrix (b.baseChange S) (b.baseChange S) (f.baseChange S) =
+      (LinearMap.toMatrix b b f).map (algebraMap R S) := by
+  ext i j
+  simp [LinearMap.toMatrix_apply, baseChange_apply, Algebra.smul_def]
 
 /-- Matrices in base-changed bases commute with a scalar map when the corresponding
 endomorphisms are intertwined by tensor-product base change. -/

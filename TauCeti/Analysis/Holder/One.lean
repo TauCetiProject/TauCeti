@@ -25,7 +25,8 @@ therefore uniquely determined, and `C1HolderSpace.ext` only asks for equality of
 
 This is the first positive-order member of the bounded global `C^{k,α}` scale used in Schauder
 estimates.  It extends `TauCeti.HolderSpace`, which supplies the order-zero member and the complete
-space in which the derivative fields converge.
+space in which the derivative fields converge.  The file also proves the closed derivative-graph
+lemma shared by the higher-order constructions.
 
 ## Main declarations
 
@@ -33,6 +34,8 @@ space in which the derivative fields converge.
 * `TauCeti.C1HolderSpace.valueL`: the continuous linear map forgetting the derivative.
 * `TauCeti.C1HolderSpace.fderivL`: the continuous linear map returning the Hölder derivative.
 * `TauCeti.C1HolderSpace.instCompleteSpace`: the Banach-space structure.
+* `TauCeti.isClosed_setOf_hasFDerivAt`: closedness of the bounded-continuous
+  derivative graph.
 
 ## References
 
@@ -55,6 +58,26 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The set of bounded continuous fields satisfying the Fréchet derivative identity is closed. -/
+theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] :
+    IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
+      ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} := by
+  rw [← isSeqClosed_iff_isClosed]
+  intro J j hJ hjlim x
+  apply hasFDerivAt_of_tendstoUniformly
+      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
+      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
+  · exact BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+      ((continuous_snd.tendsto j).comp hjlim)
+  · intro n y
+    exact hJ n y
+  · intro y
+    exact ((BoundedContinuousFunction.evalCLM 𝕜 y).continuous.tendsto j.1).comp
+      (continuous_fst.tendsto j |>.comp hjlim)
+
 namespace C1HolderSpace
 
 /-- The ambient jet space for bounded `C^{1,α}` maps: a bounded continuous value field paired with
@@ -67,7 +90,7 @@ private abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
 -- The module system requires exposure while the declarations below construct and project through
--- this graph alias.  The final `irreducible` attribute restores the abstraction boundary.
+-- this graph alias. The final `irreducible` attribute restores the abstraction boundary.
 @[expose] def _root_.TauCeti.C1HolderSpace : Type _ :=
   let graph : Submodule ℝ ((E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)) :=
     { carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
@@ -113,8 +136,10 @@ private theorem norm_toJet (f : C1HolderSpace α E F) : ‖toJet f‖ = ‖f‖ 
   Submodule.norm_coe f
 
 /-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
-instance : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
+instance instCoeFun : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
   ⟨fun f ↦ f.1.1⟩
+
+attribute [irreducible] instCoeFun
 
 /-- The underlying bounded continuous function of a bounded `C^{1,α}` map. -/
 def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.1.1
@@ -131,7 +156,9 @@ private theorem fderiv_eq_snd (f : C1HolderSpace α E F) :
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C1HolderSpace α E F) (x : E) :
-    toBoundedContinuousFunction f x = f x := (rfl)
+    toBoundedContinuousFunction f x = f x := by
+  rw [instCoeFun]
+  rfl
 
 /-- Construct a bounded `C^{1,α}` map from a function, its Hölder derivative, and the derivative
 identity. -/
@@ -156,7 +183,9 @@ def const (c : F) : C1HolderSpace α E F :=
     exact hasFDerivAt_const (x := x) (c := c)
 
 @[simp]
-theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := (rfl)
+theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := by
+  rw [← toBoundedContinuousFunction_apply, const, toBoundedContinuousFunction_mk]
+  exact BoundedContinuousFunction.const_apply' x c
 
 /-- A constant bounded `C^{1,α}` map has zero derivative. -/
 @[simp]
@@ -166,7 +195,9 @@ theorem fderiv_const (c : F) : fderiv (const (α := α) (E := E) c) = 0 := by
 /-- The recorded derivative is the Fréchet derivative of the underlying function. -/
 theorem hasFDerivAt (f : C1HolderSpace α E F) (x : E) :
     HasFDerivAt (f : E → F) (fderiv f x) x :=
-  f.2 x
+  by
+    rw [instCoeFun, fderiv]
+    exact f.2 x
 
 /-- The derivative accessor agrees with Mathlib's `fderiv`. -/
 @[simp]
@@ -206,17 +237,18 @@ theorem memHolder_fderiv (f : C1HolderSpace α E F) :
 theorem ext {f g : C1HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
   have hvalue : toBoundedContinuousFunction f = toBoundedContinuousFunction g := by
     ext x
+    rw [toBoundedContinuousFunction_apply, toBoundedContinuousFunction_apply]
     exact h x
   apply Subtype.ext
   apply Prod.ext hvalue
   apply HolderSpace.ext
   intro x
   calc
-    fderiv f x = _root_.fderiv ℝ (f : E → F) x := (fderiv_eq f x).symm
-    _ = _root_.fderiv ℝ (g : E → F) x := by
-      congr 1
-      exact congrArg DFunLike.coe hvalue
-    _ = fderiv g x := fderiv_eq g x
+      fderiv f x = _root_.fderiv ℝ (f : E → F) x := (fderiv_eq f x).symm
+      _ = _root_.fderiv ℝ (g : E → F) x := by
+        congr 1
+        exact funext h
+      _ = fderiv g x := fderiv_eq g x
 
 /-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
 def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
@@ -276,14 +308,15 @@ theorem zero_apply (x : E) : (0 : C1HolderSpace α E F) x = 0 := by
 @[simp]
 theorem add_apply (f g : C1HolderSpace α E F) (x : E) :
     (f + g) x = f x + g x := by
-  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add]
-  rfl
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add,
+    BoundedContinuousFunction.add_apply, toBoundedContinuousFunction_apply,
+    toBoundedContinuousFunction_apply]
 
 @[simp]
 theorem smul_apply (c : ℝ) (f : C1HolderSpace α E F) (x : E) :
     (c • f) x = c • f x := by
-  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul]
-  rfl
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul,
+    BoundedContinuousFunction.smul_apply, toBoundedContinuousFunction_apply]
 
 /-- The `C^{1,α}` norm is the maximum of the supremum norm of the function and the
 supremum-plus-Hölder norm of its derivative. -/
@@ -309,43 +342,25 @@ theorem norm_fderiv_le (f : C1HolderSpace α E F) : ‖fderiv f‖ ≤ ‖f‖ :
   simpa only [Submodule.norm_coe] using
     norm_snd_le (toJet f)
 
-/-- The derivative graph defining `C1HolderSpace` is closed. -/
+/-- The first-order derivative graph defining `C1HolderSpace` is closed. -/
 private theorem isClosed_c1HolderSpace :
-    IsClosed {J : C1HolderJet α E F | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
-  rw [← isSeqClosed_iff_isClosed]
-  intro J j hJ hjlim x
-  apply hasFDerivAt_of_tendstoUniformly
-      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
-      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
-  · have hder : Tendsto (fun n ↦ (J n).2) atTop (𝓝 j.2) :=
-      (continuous_snd.tendsto j).comp hjlim
-    have hcontinuous : Continuous
-        (HolderSpace.toBoundedContinuousFunction :
-          HolderSpace α E (E →L[ℝ] F) → E →ᵇ (E →L[ℝ] F)) := by
-      have h := (HolderSpace.toBoundedContinuousFunctionCLM
-        (α := α) (X := E) (Y := E →L[ℝ] F)).continuous
-      apply h.congr
-      exact fun f ↦ HolderSpace.toBoundedContinuousFunctionCLM_apply f
-    have hderBCF : Tendsto
-        (fun n ↦ (J n).2.toBoundedContinuousFunction) atTop
-        (𝓝 j.2.toBoundedContinuousFunction) :=
-      (hcontinuous.tendsto j.2).comp hder
-    have huni := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp hderBCF
-    have hseq : (fun n y ↦ (J n).2 y) =
-        (fun n y ↦ (J n).2.toBoundedContinuousFunction y) := by
-      funext n y
-      exact (HolderSpace.toBoundedContinuousFunction_apply (J n).2 y).symm
-    have hlim : (fun y ↦ j.2 y) =
-        (fun y ↦ j.2.toBoundedContinuousFunction y) := by
-      funext y
-      exact (HolderSpace.toBoundedContinuousFunction_apply j.2 y).symm
-    rw [hseq, hlim]
-    exact huni
-  · intro n y
-    exact hJ n y
-  · intro y
-    exact ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto j.1).comp
-      (continuous_fst.tendsto j |>.comp hjlim)
+    IsClosed {J : C1HolderJet α E F |
+      ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
+  let forgetHolder : C1HolderJet α E F →
+      (E →ᵇ F) × (E →ᵇ (E →L[ℝ] F)) :=
+    fun J ↦ (J.1, HolderSpace.toBoundedContinuousFunctionCLM J.2)
+  have hcontinuous : Continuous forgetHolder :=
+    continuous_fst.prodMk
+      (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp continuous_snd)
+  have hset : {J : C1HolderJet α E F |
+        ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} =
+      forgetHolder ⁻¹' {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
+    ext J
+    simp only [forgetHolder, Set.mem_ofPred_eq, Set.mem_preimage,
+      HolderSpace.toBoundedContinuousFunctionCLM_apply,
+      HolderSpace.toBoundedContinuousFunction_apply]
+  rw [hset]
+  exact (isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
 
 /-- Bounded `C^{1,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :
@@ -353,7 +368,8 @@ noncomputable instance instCompleteSpace [CompleteSpace F] :
   unfold C1HolderSpace
   exact (isClosed_c1HolderSpace (α := α) (E := E) (F := F)).completeSpace_coe
 
-attribute [irreducible] _root_.TauCeti.C1HolderSpace
+attribute [irreducible] instNormedAddCommGroup instNormedSpace
+  _root_.TauCeti.C1HolderSpace
 
 end C1HolderSpace
 

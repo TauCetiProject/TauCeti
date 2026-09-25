@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 
 /-!
 # The fifth cyclotomic polynomial over a field containing `√5`
@@ -46,14 +46,12 @@ variable {E : Type*} [Field E] [NeZero (2 : E)]
 Source: Sharifi, *Algebraic Number Theory*, Lemma 3.2.2 (`ℚ(√5) ⊆ ℚ(µ_5)`), made explicit. -/
 theorem cyclotomic_five_eq_mul_of_sq_eq_five {s : E} (hs : s ^ 2 = 5) :
     cyclotomic 5 E = (X ^ 2 - C ((s - 1) / 2) * X + 1) * (X ^ 2 - C ((-s - 1) / 2) * X + 1) := by
-  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
   have h2 : (2 : E) ≠ 0 := NeZero.ne 2
   have e1 : (s - 1) / 2 + (-s - 1) / 2 = -1 := by field_simp; ring
   have e2 : (s - 1) / 2 * ((-s - 1) / 2) = -1 := by field_simp; linear_combination (-1 : E) * hs
   have key : C ((s - 1) / 2) + C ((-s - 1) / 2) = (-1 : E[X]) := by rw [← C_add, e1, C_neg, C_1]
   have key2 : C ((s - 1) / 2) * C ((-s - 1) / 2) = (-1 : E[X]) := by rw [← C_mul, e2, C_neg, C_1]
-  rw [cyclotomic_prime]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one, zero_add]
+  rw [cyclotomic_five]
   linear_combination (X ^ 3 + X) * key - X ^ 2 * key2
 
 /-- **`Φ_5` is reducible over a field containing `√5`.**
@@ -72,4 +70,3 @@ theorem not_irreducible_cyclotomic_five_of_sq_eq_five (h5 : ∃ x : E, x ^ 2 = 5
     simpa [hdeg] using natDegree_eq_zero_of_isUnit h
 
 end Polynomial
-

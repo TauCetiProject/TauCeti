@@ -111,8 +111,7 @@ private theorem retractPath_mapPath {a b : Q} (p : Path a b) :
   | nil => rw [Prefunctor.mapPath_nil, retractPath]; exact vertexIdempotent_eq_ofPath k a
   | cons p f ih =>
     rw [Prefunctor.mapPath_cons, retractPath]
-    exact (congrArg (ofArrow f * ·) ih).trans (by
-      rw [ofArrow_eq_ofPath, ofPath_mul_ofPath_of_comp, Path.comp_toPath_eq_cons])
+    exact (congrArg (ofArrow f * ·) ih).trans (ofArrow_mul_ofPath f p)
 
 variable [Finite Q]
 

@@ -33,13 +33,17 @@ rewritable.
   laws.
 * `TauCeti.QuotientGroup.mapOfLE_comp_mk'`: composing it with the quotient map of `G` modulo
   `V` gives the quotient map of `G` modulo `U`.
+* `TauCeti.QuotientGroup.map_comp_mapOfLE` and `TauCeti.QuotientGroup.mapOfLE_comp_map`: it
+  commutes with the homomorphisms `QuotientGroup.map` induced by a homomorphism `G →* H` on the
+  quotients.
 * `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
 
 ## Usage
 
-Work with `mapOfLE` through the five lemmas above: `mapOfLE_mk` evaluates it on classes,
-`mapOfLE_refl`, `mapOfLE_comp` and `mapOfLE_comp_mk'` simplify identities and composites, and
-`mapOfLE_surjective` feeds constructions that need a surjection, such as `Sylow.mapSurjective`.
+Work with `mapOfLE` through the lemmas above: `mapOfLE_mk` evaluates it on classes,
+`mapOfLE_refl`, `mapOfLE_comp`, `mapOfLE_comp_mk'`, `map_comp_mapOfLE` and `mapOfLE_comp_map`
+simplify identities and composites, and `mapOfLE_surjective` feeds constructions that need a
+surjection, such as `Sylow.mapSurjective`.
 To identify `mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
 `QuotientGroup.induction_on` and `mapOfLE_mk`.
 -/
@@ -84,6 +88,24 @@ through the quotient map of `G` modulo `V`. -/
 theorem mapOfLE_comp_mk' [U.Normal] [V.Normal] (hVU : V ≤ U) :
     (mapOfLE hVU).comp (_root_.QuotientGroup.mk' V) = _root_.QuotientGroup.mk' U :=
   MonoidHom.ext fun g ↦ mapOfLE_mk hVU g
+
+/-- The homomorphism `G ⧸ U →* H ⧸ N` induced by `f` composed with the quotient homomorphism
+`G ⧸ V →* G ⧸ U` is the homomorphism `G ⧸ V →* H ⧸ N` induced by `f`. -/
+@[simp]
+theorem map_comp_mapOfLE {H : Type*} [Group H] {N : Subgroup H} [N.Normal] [U.Normal] [V.Normal]
+    (hVU : V ≤ U) (f : G →* H) (h : U ≤ N.comap f) :
+    (_root_.QuotientGroup.map U N f h).comp (mapOfLE hVU) =
+      _root_.QuotientGroup.map V N f (hVU.trans h) :=
+  _root_.QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun g ↦ by simp)
+
+/-- The quotient homomorphism `H ⧸ M →* H ⧸ N` composed with the homomorphism `G ⧸ U →* H ⧸ M`
+induced by `f` is the homomorphism `G ⧸ U →* H ⧸ N` induced by `f`. -/
+@[simp]
+theorem mapOfLE_comp_map {H : Type*} [Group H] {M N : Subgroup H} [M.Normal] [N.Normal]
+    [U.Normal] (hMN : M ≤ N) (f : G →* H) (h : U ≤ M.comap f) :
+    (mapOfLE hMN).comp (_root_.QuotientGroup.map U M f h) =
+      _root_.QuotientGroup.map U N f (h.trans (Subgroup.comap_mono hMN)) :=
+  _root_.QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun g ↦ by simp)
 
 /-- The quotient homomorphism `G ⧸ V →* G ⧸ U` is surjective. -/
 theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :

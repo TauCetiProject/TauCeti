@@ -34,6 +34,8 @@ to define the Riemannian exponential map by evaluation at time one.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
   geodesics defined for all time.
 * `TauCeti.Manifold.maximalGeodesic_smul` is homogeneity in the initial velocity and time.
+* `TauCeti.Manifold.alongCurve_curveVelocity_maximalGeodesic_eq_zero` is the geodesic equation for
+  the unrestricted velocity of the maximal geodesic on its maximal interval.
 
 ## References
 
@@ -45,7 +47,7 @@ to define the Riemannian exponential map by evaluation at time one.
 
 public section
 
-open Bundle Function Manifold Set
+open Bundle CovariantDerivative Function Manifold Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -229,6 +231,17 @@ time belongs to the corresponding maximal interval. -/
       _ = γ (a * t) := rfl
       _ = maximalGeodesic I M p v (a * t) :=
         (hγ.eqOn_maximalGeodesic hatbc).symm
+
+/-- The unrestricted covariant acceleration of a maximal geodesic vanishes at every point of its
+maximal interval. -/
+theorem alongCurve_curveVelocity_maximalGeodesic_eq_zero {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    alongCurve (leviCivitaConnection I M) (maximalGeodesic I M p v)
+      (curveVelocity I (maximalGeodesic I M p v)) t = 0 := by
+  rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M)
+    (maximalGeodesic I M p v) isOpen_geodesicInterval ht]
+  exact (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).isGeodesicCurveOn
+    |>.alongCurveWithin_curveVelocityWithin_eq_zero t ht
 
 omit [T2Space (TangentBundle I M)] in
 /-- Outside its maximal interval, the total maximal geodesic takes its junk value `p`. -/

@@ -49,6 +49,8 @@ choice: replacing `s` by `h₁ s h₂` with `h₁ ∈ H` and `h₂ ∈ K` leaves
   identity double coset split off.
 * `TauCeti.finrank_hom_indFDRep_mackey_erase`: the same split for intertwining-space dimensions,
   whose identity-coset term is `dim End_H A`.
+* `TauCeti.finrank_hom_res_mackeyToH_one`: the Mackey term at the identity representative has
+  the same dimension as the ordinary intertwining space over `H`.
 * `TauCeti.finrank_hom_res_mackeyToH_of_normal`: for normal `H`, a Mackey term has the same
   dimension as the ordinary intertwining space from `A` to `{}^s A`.
 * `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`: a term of the formula does not depend
@@ -303,6 +305,36 @@ theorem finrank_hom_indFDRep_mackey_erase [Finite G] [CharZero k] (A : FDRep k H
   have hG : IsUnit (Nat.card G : k) :=
     isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   exact_mod_cast natCast_finrank_hom_indFDRep_mackey_erase hG A
+
+/-- At the identity representative, the Mackey intertwining space has the same dimension as the
+ordinary intertwining space over the subgroup. -/
+theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
+    Module.finrank k
+        (resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
+          (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B) =
+      Module.finrank k (A ⟶ B) := by
+  have hsubtype : ((mackeySubgroup 1 H H).subgroupOf H).subtype =
+      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
+    ext y
+    exact congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply (H := H) (s := (1 : G))
+      (one_mem H) y).symm
+  have hmackey : mackeyToH 1 H H =
+      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
+    ext y
+    rw [coe_mackeyToH_apply]
+    simp only [MulEquiv.coe_toMonoidHom]
+    simpa only [inv_one, one_mul, mul_one] using
+      congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply
+        (H := H) (s := (1 : G)) (one_mem H) y).symm
+  let e := mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)
+  have hsource : resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A =
+      (Action.res (FGModuleCat k) e.toMonoidHom).obj A :=
+    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj A) (by simpa [e] using hsubtype)
+  have htarget : (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B =
+      (Action.res (FGModuleCat k) e.toMonoidHom).obj B :=
+    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj B) (by simpa [e] using hmackey)
+  rw [hsource, htarget]
+  exact finrank_hom_res_mulEquiv e A B
 
 /-- For a normal subgroup, the dimension of a Mackey intertwining space equals the dimension of
 the ordinary intertwining space from `A` to its conjugate `{}^s A`. -/

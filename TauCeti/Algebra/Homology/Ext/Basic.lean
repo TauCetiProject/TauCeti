@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Transport and exactness lemmas for `Ext` groups
@@ -104,21 +105,10 @@ theorem subsingleton_ext_of_isZero_right (X : C) (hY : IsZero Y) (n : ℕ) :
 
 section DimensionShift
 
-/-- The first map in the cokernel sequence of a monomorphism is a monomorphism. -/
-instance mono_cokernelSequence_f {X Y : C} (f : X ⟶ Y) [Mono f] :
-    Mono (ShortComplex.cokernelSequence f).f :=
-  (inferInstance : Mono f)
-
 /-- The middle object in a cokernel sequence is injective when the target of its first map is. -/
 instance injective_cokernelSequence_X₂ {X Y : C} (f : X ⟶ Y) [Injective Y] :
     Injective (ShortComplex.cokernelSequence f).X₂ :=
   (inferInstance : Injective Y)
-
-omit [HasExt C] in
-/-- The cokernel sequence of a monomorphism is short exact. -/
-lemma cokernelSequence_shortExact {X Y : C} (f : X ⟶ Y) [Mono f] :
-    (ShortComplex.cokernelSequence f).ShortExact :=
-  { exact := ShortComplex.cokernelSequence_exact _ }
 
 /-- A dimension-shift criterion along a short exact sequence with injective middle term: if
 composition with its extension class vanishes, then the next `Ext` group is subsingleton. -/

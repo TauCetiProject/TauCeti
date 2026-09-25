@@ -28,6 +28,9 @@ import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import Mathlib.FieldTheory.Finite.Trace
+-- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
+-- surjectivity half of the classification.
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # The conjugacy classes of `GL₂` over a field
@@ -308,15 +311,14 @@ theorem bijective_mk_conjRepGLFinTwo :
   · intro C
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
-    · obtain ⟨a, ha⟩ := hg
-      have ha0 : a ≠ 0 := by
-        rintro rfl
-        have h1 : (g : Matrix (Fin 2) (Fin 2) F) *
-            ((g⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) = 1 := by
-          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-        rw [← ha, map_zero, zero_mul] at h1
-        exact zero_ne_one h1
-      exact ⟨Sum.inl (Units.mk0 a ha0), congrArg ConjClasses.mk (Units.ext ha)⟩
+    · obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (Matrix.scalar (Fin 2)) g).mp hg
+      -- `Matrix.GeneralLinearGroup.scalar` is `Units.map` of `Matrix.scalar`, but the two spell
+      -- the coercion to a monoid homomorphism differently, so compare the underlying matrices
+      -- instead of unfolding either definition.
+      have hrep : conjRepGLFinTwo (Sum.inl a) = g := by
+        rw [conjRepGLFinTwo_inl, ← ha]
+        exact Units.ext (by simp)
+      exact ⟨Sum.inl a, congrArg ConjClasses.mk hrep⟩
     · exact ⟨Sum.inr ((g : Matrix (Fin 2) (Fin 2) F).trace, Matrix.GeneralLinearGroup.det g),
         ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_companionGL hg).symm⟩
 

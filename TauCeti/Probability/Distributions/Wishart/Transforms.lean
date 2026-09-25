@@ -48,20 +48,25 @@ two normalizing constants is the determinant power; where it is not, the cone in
 
 ## Main results
 
-* `TauCeti.mem_integrableExpSet_trace_mul_wishartGramMeasure_iff` — at a positive degree, the
+* `TauCeti.Probability.mem_integrableExpSet_trace_mul_wishartGramMeasure_iff` — at a positive
+  degree, the
   exact exponential-integrability domain of the trace statistic;
-* `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt` and
-  `TauCeti.mgf_trace_mul_wishartGramMeasure` — its moment-generating function on that domain, in
+* `TauCeti.Probability.mgf_trace_mul_wishartGramMeasure_sqrt` and
+  `TauCeti.Probability.mgf_trace_mul_wishartGramMeasure` — its moment-generating function on that
+  domain, in
   terms of the sandwich `√S * Θ * √S` and, for positive-semidefinite `S`, of `Θ * S`;
-* `TauCeti.cgf_trace_mul_wishartGramMeasure_sqrt` and
-  `TauCeti.cgf_trace_mul_wishartGramMeasure` — the matching cumulant-generating functions;
-* `TauCeti.integral_exp_neg_trace_mul_wishartGramMeasure` — the Laplace transform over the
+* `TauCeti.Probability.cgf_trace_mul_wishartGramMeasure_sqrt` and
+  `TauCeti.Probability.cgf_trace_mul_wishartGramMeasure` — the matching cumulant-generating
+  functions;
+* `TauCeti.Probability.integral_exp_neg_trace_mul_wishartGramMeasure` — the Laplace transform over
+  the
   positive-semidefinite cone, the specialization of the moment-generating function to `t = -1`;
-* `TauCeti.mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff`,
-  `TauCeti.mgf_trace_mul_nonsingularWishartMeasure` with its sandwich form
-  `TauCeti.mgf_trace_mul_nonsingularWishartMeasure_sqrt`,
-  `TauCeti.cgf_trace_mul_nonsingularWishartMeasure` and
-  `TauCeti.integral_exp_neg_trace_mul_nonsingularWishartMeasure` — the same four results for the
+* `TauCeti.Probability.mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff`,
+  `TauCeti.Probability.mgf_trace_mul_nonsingularWishartMeasure` with its sandwich form
+  `TauCeti.Probability.mgf_trace_mul_nonsingularWishartMeasure_sqrt`,
+  `TauCeti.Probability.cgf_trace_mul_nonsingularWishartMeasure` and
+  `TauCeti.Probability.integral_exp_neg_trace_mul_nonsingularWishartMeasure` — the same four results
+  for the
   nonsingular density family, with its real degree in place of the natural one.
 
 ## References
@@ -77,7 +82,7 @@ open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
   {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} {t : ℝ}
@@ -88,10 +93,10 @@ variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 finite exponential moments of every order. -/
 theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ) :
-    integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure 0 S) = Set.univ := by
-  refine Set.eq_univ_of_forall fun t => ?_
+  refine Set.eq_univ_of_forall fun t ↦ ?_
   rw [integrableExpSet, Set.mem_ofPred_eq, wishartGramMeasure_zero]
   exact integrable_dirac' (selfAdjoint.continuous_exp_trace_mul_coe Θ t).stronglyMeasurable
     enorm_lt_top
@@ -101,7 +106,7 @@ function is constantly `1`. -/
 theorem mgf_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
     (t : ℝ) :
-    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure 0 S) t = 1 := by
   rw [mgf, wishartGramMeasure_zero,
@@ -112,7 +117,7 @@ theorem mgf_trace_mul_wishartGramMeasure_zero
 theorem cgf_trace_mul_wishartGramMeasure_zero
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (S : Matrix (Fin p) (Fin p) ℝ)
     (t : ℝ) :
-    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure 0 S) t = 0 := by
   rw [cgf, mgf_trace_mul_wishartGramMeasure_zero, Real.log_one]
@@ -130,23 +135,23 @@ the covariance of the Gaussian factors: Mathlib totalizes them to Dirac masses, 
 zero, and the pencil is the identity. -/
 theorem mem_integrableExpSet_trace_mul_wishartGramMeasure_iff (hν : 0 < ν)
     (S : Matrix (Fin p) (Fin p) ℝ) (t : ℝ) :
-    t ∈ integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    t ∈ integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) ↔
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef := by
   have hne : Nonempty (Fin ν) := ⟨⟨0, hν⟩⟩
   have hfactor := integrableExpSet_sum_pi
-    (μ := fun _ : Fin ν => multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S)
-    fun _ : Fin ν => fun x : EuclideanSpace ℝ (Fin p) =>
+    (μ := fun _ : Fin ν ↦ multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S)
+    fun _ : Fin ν ↦ fun x : EuclideanSpace ℝ (Fin p) ↦
       ⟪x, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin x⟫
   have htransport : t ∈ integrableExpSet
-      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
         (wishartGramMeasure ν S) ↔
       t ∈ integrableExpSet
-        (fun X : Fin ν → EuclideanSpace ℝ (Fin p) =>
+        (fun X : Fin ν → EuclideanSpace ℝ (Fin p) ↦
           ∑ r, ⟪X r, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin (X r)⟫)
-        (Measure.pi fun _ : Fin ν => multivariateGaussian 0 S) := by
+        (Measure.pi fun _ : Fin ν ↦ multivariateGaussian 0 S) := by
     rw [wishartGramMeasure_eq_map_pi]
     simp only [integrableExpSet, Set.mem_ofPred_eq]
     rw [integrable_map_measure (selfAdjoint.continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable
@@ -155,7 +160,7 @@ theorem mem_integrableExpSet_trace_mul_wishartGramMeasure_iff (hν : 0 < ν)
   rw [htransport, hfactor, Set.mem_iInter,
     ← mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff S
       (selfAdjoint.isHermitian_coe Θ) t]
-  exact ⟨fun h => h (Classical.arbitrary _), fun h _ => h⟩
+  exact ⟨fun h ↦ h (Classical.arbitrary _), fun h _ ↦ h⟩
 
 /-! ### The moment- and cumulant-generating functions -/
 
@@ -164,7 +169,7 @@ exponential-integrability domain it is the `-ν / 2` power of the determinant of
 `1 - (2 * t) • (√S * Θ * √S)`, for every degree and every scale matrix. -/
 theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) t =
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
@@ -173,7 +178,7 @@ theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fi
   rw [wishartGramMeasure_eq_map_pi, mgf_map measurable_wishartGram.aemeasurable
       (selfAdjoint.continuous_exp_trace_mul_coe Θ t).aestronglyMeasurable, Function.comp_def]
   simp only [trace_mul_coe_wishartGram]
-  rw [mgf_sum_pi (fun _ : Fin ν => fun x : EuclideanSpace ℝ (Fin p) =>
+  rw [mgf_sum_pi (fun _ : Fin ν ↦ fun x : EuclideanSpace ℝ (Fin p) ↦
       ⟪x, (Θ : Matrix (Fin p) (Fin p) ℝ).toEuclideanLin x⟫) t,
     Finset.prod_const, Finset.card_univ, Fintype.card_fin,
     mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S (selfAdjoint.isHermitian_coe Θ) ht,
@@ -183,7 +188,7 @@ theorem mgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fi
 moment-generating function on the same domain. -/
 theorem cgf_trace_mul_wishartGramMeasure_sqrt (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) t =
       -(ν : ℝ) / 2 *
@@ -196,7 +201,7 @@ pencil of the product `Θ * S`, which is the classical form of the Wishart momen
 function. -/
 theorem mgf_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) t =
       (1 - (2 * t) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S)).det ^ (-(ν : ℝ) / 2 : ℝ) := by
@@ -207,7 +212,7 @@ theorem mgf_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
 the real logarithm of the determinant of the pencil of `Θ * S`. -/
 theorem cgf_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (wishartGramMeasure ν S) t =
       -(ν : ℝ) / 2 * Real.log (1 - (2 * t) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S)).det := by
@@ -233,14 +238,14 @@ theorem integral_exp_neg_trace_mul_wishartGramMeasure (ν : ℕ) (hS : S.PosSemi
   have ht : (1 - (2 * (-1 : ℝ)) •
       (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef := by
     rw [hB.1.posDef_one_sub_smul_iff]
-    exact fun j => by nlinarith [hB.eigenvalues_nonneg j]
+    exact fun j ↦ by nlinarith [hB.eigenvalues_nonneg j]
   have hpencil : (1 : Matrix (Fin p) (Fin p) ℝ) -
       (2 * (-1 : ℝ)) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S) =
       1 + (2 : ℝ) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S) := by
     have hcoeff : (2 * (-1 : ℝ)) = -2 := by norm_num
     rw [hcoeff, neg_smul, sub_neg_eq_add]
   rw [← hpencil, ← mgf_trace_mul_wishartGramMeasure ν hS ht, mgf]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun A => by simp only [neg_one_mul])
+  exact integral_congr_ae (Filter.Eventually.of_forall fun A ↦ by simp only [neg_one_mul])
 
 /-! ### The nonsingular density family -/
 
@@ -252,13 +257,13 @@ normalizing constant untouched. -/
 private theorem nonsingularWishartPDFReal_mul_exp_trace_mul (n t : ℝ)
     (S : Matrix (Fin p) (Fin p) ℝ)
     (Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         nonsingularWishartPDFReal n S A *
           Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) *
             (A : Matrix (Fin p) (Fin p) ℝ)).trace)) =
       Set.indicator {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
-        fun A => ((2 : ℝ) ^ (n * (p : ℝ) / 2) * S.det ^ (n / 2) *
+        fun A ↦ ((2 : ℝ) ^ (n * (p : ℝ) / 2) * S.det ^ (n / 2) *
             multivariateGamma p (n / 2))⁻¹ *
           ((A : Matrix (Fin p) (Fin p) ℝ).det ^ (n / 2 - ((p : ℝ) + 1) / 2) *
             Real.exp (-((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)) *
@@ -302,10 +307,10 @@ private theorem integral_posDef_det_rpow_mul_exp_neg_trace_pencil (hn : (p : ℝ
 tilted cone integrand against `TauCeti.symmetricLebesgue`, up to the Wishart constant. -/
 private theorem integrable_exp_trace_mul_nonsingularWishartMeasure_iff_integrableOn
     (hS : S.PosDef) (hn : (p : ℝ) - 1 < n) (t : ℝ) :
-    Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         Real.exp (t * ((Θ : Matrix (Fin p) (Fin p) ℝ) *
           (A : Matrix (Fin p) (Fin p) ℝ)).trace)) (nonsingularWishartMeasure n S) ↔
-      IntegrableOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      IntegrableOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (A : Matrix (Fin p) (Fin p) ℝ).det ^ (n / 2 - ((p : ℝ) + 1) / 2) *
             Real.exp (-((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)) *
               (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2))
@@ -319,7 +324,7 @@ private theorem integrable_exp_trace_mul_nonsingularWishartMeasure_iff_integrabl
       multivariateGamma p (n / 2))⁻¹) := isUnit_iff_ne_zero.2 (inv_ne_zero hpos.ne')
   rw [nonsingularWishartMeasure_of_posDef hS hn,
     integrable_withDensity_iff_integrable_smul' (measurable_nonsingularWishartPDF n S)
-      (Filter.Eventually.of_forall fun A => (nonsingularWishartPDF_ne_top n S A).lt_top)]
+      (Filter.Eventually.of_forall fun A ↦ (nonsingularWishartPDF_ne_top n S A).lt_top)]
   simp only [smul_eq_mul, toReal_nonsingularWishartPDF hS hn]
   rw [nonsingularWishartPDFReal_mul_exp_trace_mul n t S Θ,
     integrable_indicator_iff (measurableSet_posDefMatrix p)]
@@ -339,7 +344,7 @@ exactly when its matrix is positive definite; that matrix is the congruence of t
 `(CFC.sqrt S)⁻¹`. -/
 theorem mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n) (t : ℝ) :
-    t ∈ integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    t ∈ integrableExpSet (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (nonsingularWishartMeasure n S) ↔
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef := by
@@ -351,17 +356,17 @@ theorem mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff (hS : S.Pos
       -(((2 : ℝ)⁻¹ • (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ))) *
           (A : Matrix (Fin p) (Fin p) ℝ)).trace =
         -((S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)) *
-          (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := fun A => by
+          (A : Matrix (Fin p) (Fin p) ℝ)).trace / 2 := fun A ↦ by
     rw [Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
     ring
-  refine ⟨fun hint => ?_, fun hB => ?_⟩
+  refine ⟨fun hint ↦ ?_, fun hB ↦ ?_⟩
   · -- Off the positive-definite pencil the cone integral diverges.
     by_contra hB
     have hherm : (((2 : ℝ)⁻¹ • (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)))).IsHermitian :=
       ((hS.inv.isHermitian.sub ((selfAdjoint.isHermitian_coe Θ).smul
         (IsSelfAdjoint.all (2 * t : ℝ)))).smul (IsSelfAdjoint.all ((2 : ℝ)⁻¹)))
     refine not_integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul (a := n / 2) hherm
-      (fun hhalfpd => hB ?_) (by linarith) ?_
+      (fun hhalfpd ↦ hB ?_) (by linarith) ?_
     · have hdouble := hhalfpd.smul (by norm_num : (0 : ℝ) < 2)
       rwa [smul_smul, mul_inv_cancel₀ (two_ne_zero' ℝ), one_smul] at hdouble
     · simpa only [hhalf] using hint
@@ -380,7 +385,7 @@ The tilted density integrates to the multivariate Gamma integral at the scale
 pencil determinant. -/
 theorem mgf_trace_mul_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (nonsingularWishartMeasure n S) t =
       (1 - (2 * t) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S)).det ^ (-n / 2 : ℝ) := by
@@ -395,7 +400,7 @@ theorem mgf_trace_mul_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) 
     ring
   rw [mgf, nonsingularWishartMeasure_of_posDef hS hn,
     integral_withDensity_eq_integral_toReal_smul (measurable_nonsingularWishartPDF n S)
-      (Filter.Eventually.of_forall fun A => (nonsingularWishartPDF_ne_top n S A).lt_top)]
+      (Filter.Eventually.of_forall fun A ↦ (nonsingularWishartPDF_ne_top n S A).lt_top)]
   simp only [smul_eq_mul, toReal_nonsingularWishartPDF hS hn]
   rw [nonsingularWishartPDFReal_mul_exp_trace_mul n t S Θ,
     integral_indicator (measurableSet_posDefMatrix p), integral_const_mul,
@@ -414,7 +419,7 @@ theorem mgf_trace_mul_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) 
 that the spectral characteristic function continues. -/
 theorem mgf_trace_mul_nonsingularWishartMeasure_sqrt (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    mgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (nonsingularWishartMeasure n S) t =
       (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).det
@@ -426,7 +431,7 @@ theorem mgf_trace_mul_nonsingularWishartMeasure_sqrt (hS : S.PosDef) (hn : (p : 
 logarithm of the moment-generating function on the same domain. -/
 theorem cgf_trace_mul_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (ht : (1 - (2 * t) • (CFC.sqrt S * (Θ : Matrix (Fin p) (Fin p) ℝ) * CFC.sqrt S)).PosDef) :
-    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+    cgf (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace)
       (nonsingularWishartMeasure n S) t =
       -n / 2 * Real.log (1 - (2 * t) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S)).det := by
@@ -457,6 +462,6 @@ theorem integral_exp_neg_trace_mul_nonsingularWishartMeasure (hS : S.PosDef)
       1 + (2 : ℝ) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S) := by
     rw [hcoeff, neg_smul, sub_neg_eq_add]
   rw [← hpencil, ← mgf_trace_mul_nonsingularWishartMeasure hS hn ht, mgf]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun A => by simp only [neg_one_mul])
+  exact integral_congr_ae (Filter.Eventually.of_forall fun A ↦ by simp only [neg_one_mul])
 
-end TauCeti
+end TauCeti.Probability

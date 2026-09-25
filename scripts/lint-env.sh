@@ -355,12 +355,12 @@ if ! run_lean "$DOCDRIVER" > "$TMP/docscan.txt" 2>&1; then
   cat "$TMP/docscan.txt"
   fail "driver failure: the docstring-scan driver did not elaborate cleanly — see output above"
 fi
-nsets=$(grep -c "^LINTERSET \(base\|tacticAlt\) $LINTERSETMARKER\$" "$TMP/docscan.txt" || true)
+nsets=$(grep -cE "^LINTERSET (base|tacticAlt) $LINTERSETMARKER\$" "$TMP/docscan.txt" || true)
 if [ "${nsets:-0}" -ne 1 ]; then
   cat "$TMP/docscan.txt"
   fail "driver failure: expected exactly 1 selected-linter-set line, found ${nsets:-0}"
 fi
-selected_linters=$(sed -n "s/^LINTERSET \(base\|tacticAlt\) $LINTERSETMARKER\$/\1/p" "$TMP/docscan.txt")
+selected_linters=$(sed -nE "s/^LINTERSET (base|tacticAlt) $LINTERSETMARKER\$/\1/p" "$TMP/docscan.txt")
 case "$selected_linters" in
   base) LINTERS="$LINTERS_BASE" ;;
   tacticAlt) LINTERS="$LINTERS_TACTIC_ALT" ;;

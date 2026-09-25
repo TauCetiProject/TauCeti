@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
+public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -28,6 +29,9 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `isProP_iff`: the defining property, as a lemma usable outside this module.
 * `IsPGroup.isProP`: an abstract `p`-group with any topology is pro-`p`.
 * `isProP_iff_isPGroup`: for a discrete topology, pro-`p` agrees with `IsPGroup`.
+* `isProP_multiplicative_zmod_pow`: the discrete cyclic group `ℤ/pⁿ` is pro-`p`.
+* `IsProP.exists_forall_pow_pow_eq_one`: each finite quotient of a pro-`p` group is killed by
+  a power of `p`.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
 * `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
@@ -86,12 +90,24 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
     ((QuotientGroup.quotientMulEquivOfEq (openNormalSubgroupBot_toSubgroup G)).trans
       QuotientGroup.quotientBot)
 
+/-- The finite cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
+pro-`p`. -/
+theorem isProP_multiplicative_zmod_pow (p n : ℕ) [Fact p.Prime] :
+    IsProP p (Multiplicative (ZMod (p ^ n))) :=
+  (IsPGroup.of_card (n := n) (by simp [Nat.card_eq_fintype_card])).isProP
+
 end Discrete
 
 namespace IsProP
 
 variable {G : Type u} [Group G] [TopologicalSpace G]
 variable {H : Type v} [Group H] [TopologicalSpace H]
+
+/-- Each finite quotient of a pro-`p` group is killed by a single power of `p`: the exponent
+in `IsPGroup` can be chosen uniformly in the element. -/
+theorem exists_forall_pow_pow_eq_one [IsTopologicalGroup G] [CompactSpace G] (hG : IsProP p G)
+    (U : OpenNormalSubgroup G) : ∃ n : ℕ, ∀ g : G ⧸ U.toSubgroup, g ^ p ^ n = 1 :=
+  isPGroup_iff_exists_pow_pow_eq_one.mp (isProP_iff.mp hG U)
 
 /-- A continuous surjective image of a pro-`p` group is pro-`p`. -/
 theorem of_surjective (hG : IsProP p G) (f : G →* H) (hf : Continuous f)

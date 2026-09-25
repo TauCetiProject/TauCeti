@@ -80,6 +80,8 @@ intersection form on the vectors supported on a proper subset of the components 
 
 * `TauCeti.NumericalType.exists_weight_intersection_triple_mem`: the classification of the
   weights and the intersection number of two meeting `(-2)`-indices.
+* `TauCeti.NumericalType.intersection_eq_max_weight`: two meeting `(-2)`-indices have
+  intersection number the larger of their two weights.
 * `TauCeti.NumericalType.intersection_eq_zero_of_intersection_pos_of_intersection_pos`: two
   `(-2)`-indices meeting a common third one do not meet each other.
 * `TauCeti.NumericalType.exists_weight_intersection_quintuple_mem`: the classification of the
@@ -153,6 +155,20 @@ theorem exists_weight_intersection_triple_mem (hcard : 2 < Fintype.card T.Compon
     | omega
     | (refine ⟨T.weight i, ?_⟩; omega)
     | (refine ⟨T.weight j, ?_⟩; omega)
+
+/-- Two meeting components `i` and `j` of self-intersections `aᵢᵢ = -2wᵢ` and `aⱼⱼ = -2wⱼ` in a
+numerical type with more than two components have `aᵢⱼ = max(wᵢ, wⱼ)`. This is the uniform
+reading of the five weight patterns of
+[Stacks, Tag 0C7M](https://stacks.math.columbia.edu/tag/0C7M). -/
+theorem intersection_eq_max_weight (hcard : 2 < Fintype.card T.Component)
+    {i j : T.Component} (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ))) (hij : 0 < T.intersection i j) :
+    T.intersection i j = max (T.weight i : ℤ) (T.weight j : ℤ) := by
+  obtain ⟨w, hmem⟩ := T.exists_weight_intersection_triple_mem hcard hi hj hij
+  have hw : (0 : ℤ) < w := by simp
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
+  rcases hmem with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ <;>
+    rw [h₁, h₂, h₃] <;> omega
 
 /-! ### Three components -/
 

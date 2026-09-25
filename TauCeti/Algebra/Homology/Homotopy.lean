@@ -9,18 +9,25 @@ public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 
 /-!
-# Chain homotopies descend to quotient complexes
+# Constructions on chain homotopies
 
-Let `p : L ⟶ M` exhibit `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'`
-be any morphism of complexes.  A chain homotopy between morphisms `L ⟶ L'` whose components send
-the image of `u` into the kernel of `p'` then descends to a chain homotopy between the induced
-morphisms `M ⟶ M'`.  `Homotopy.descCokernel` performs that descent.
+Two constructions producing new chain homotopies from old ones.
 
+`Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
+`M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
+complexes.  A chain homotopy between morphisms `L ⟶ L'` whose components send the image of `u`
+into the kernel of `p'` then descends to a chain homotopy between the induced morphisms `M ⟶ M'`.
 Only the source side is assumed to be a degreewise cokernel; on the target side the hypothesis is
 the bare vanishing `u.f i ≫ HL.hom i j ≫ p'.f j = 0`, which is what the universal property needs.
 This is the mechanism behind homotopy invariance of relative homology, where `M` is the relative
 chain complex of a pair, that is, the degreewise cokernel of the chains of the subspace, and the
 vanishing holds because the homotopy restricts to the subspace.
+
+`Homotopy.idPow` iterates a chain homotopy from the identity of `K` to an endomorphism `s`: it
+exhibits every power `sᵐ` as homotopic to the identity, through the explicit operator
+`∑_{k < m} sᵏ ≫ h`.  Its components are needed, and not just the existence of some homotopy, when
+`m` is allowed to vary from one summand of `K` to another, as in the proof that small singular
+chains for an open cover include as a chain homotopy equivalence.
 -/
 
 @[expose] public section
@@ -87,3 +94,57 @@ lemma π_descCokernel_hom (hf : p ≫ fM = fL ≫ p') (hg : p ≫ gM = gL ≫ p'
   π_descCokernelHom HL u p p' hw hp hcomm i j
 
 end Homotopy
+
+section Pow
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K : HomologicalComplex C c} {s : K ⟶ K}
+
+namespace HomologicalComplex
+
+/-- Degreewise recursion for the powers of a chain endomorphism. -/
+lemma pow_f_succ (m : ℕ) (i : ι) :
+    (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
+  rw [pow_succ', End.mul_def, comp_f]
+
+end HomologicalComplex
+
+namespace Homotopy
+
+/-- Iterating a chain homotopy from the identity.  If `h` is a chain homotopy from the identity of
+`K` to a chain endomorphism `s`, then `h.idPow m` is a chain homotopy from the identity to the
+`m`-th power of `s`, whose operator in bidegree `(i, j)` is `∑_{k < m} (sᵏ)ᵢ ≫ hᵢⱼ`. -/
+@[no_expose]
+def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m) where
+  hom i j := ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j
+  zero i j hij := by simp [h.zero i j hij]
+  comm i := by
+    have hdn : dNext i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom := by
+      simp only [dNext, AddMonoidHom.mk'_apply, Preadditive.comp_sum]
+      exact Finset.sum_congr rfl fun k _ ↦ (HomologicalComplex.Hom.comm_assoc _ _ _ _).symm
+    have hpv : prevD i (fun a b ↦ ∑ k ∈ Finset.range m, (End.of s ^ k).f a ≫ h.hom a b) =
+        ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ prevD i h.hom := by
+      simp only [prevD, AddMonoidHom.mk'_apply, Preadditive.sum_comp, Category.assoc]
+    have hstep : ∀ k ∈ Finset.range m, (End.of s ^ k).f i ≫ dNext i h.hom +
+        (End.of s ^ k).f i ≫ prevD i h.hom =
+        (End.of s ^ k).f i - (End.of s ^ (k + 1)).f i := fun k _ ↦ by
+      have hsum : dNext i h.hom + prevD i h.hom = 𝟙 (K.X i) - s.f i := by
+        have hc := h.comm i
+        rw [HomologicalComplex.id_f] at hc
+        rw [hc]
+        abel
+      rw [← Preadditive.comp_add, hsum, Preadditive.comp_sub, Category.comp_id,
+        HomologicalComplex.pow_f_succ]
+    rw [hdn, hpv, ← Finset.sum_add_distrib, Finset.sum_congr rfl hstep,
+      Finset.sum_range_sub' (fun k ↦ (End.of s ^ k).f i) m, pow_zero, End.one_def,
+      HomologicalComplex.id_f]
+    abel
+
+@[simp]
+lemma idPow_hom (h : Homotopy (𝟙 K) s) (m : ℕ) (i j : ι) :
+    (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).f i ≫ h.hom i j := (rfl)
+
+end Homotopy
+
+end Pow

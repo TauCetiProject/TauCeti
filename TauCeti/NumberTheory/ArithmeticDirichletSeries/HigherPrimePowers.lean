@@ -263,10 +263,8 @@ theorem higherPrimePowerTheta_le_card_primesLE_mul_log
   have hmemT : ∀ A ∈ T, ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A
       ≤ x ∧ 2 ≤ primePowerExponent A := by
     intro A hA
-    rw [hTdef, Finset.mem_filter, mem_normLE] at hA
-    refine ⟨?_, hA.2⟩
-    rw [← Nat.cast_pow, ← absNorm_eq_absNorm_primePowerBase_pow]
-    exact hA.1
+    rw [hTdef, Finset.mem_filter] at hA
+    exact ⟨mem_primePowersLE_iff.mp hA.1, hA.2⟩
   have hsub : T ⊆ primePowersLE K x := Finset.filter_subset _ _
   have hzero : ∀ A ∈ primePowersLE K x, A ∉ T → higherPrimePowerWeight A = 0 := by
     intro A hA hAT

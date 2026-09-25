@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+-- Non-public: the logarithmic derivative of a principal power is used only in a proof.
+import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 
 /-!
 # Principal powers of `z - x` on the upper half-plane
@@ -85,13 +87,9 @@ lemma sub_cpow_eq_exp_mul_sub_cpow_of_im_pos {z : ℂ} (hz : 0 < z.im) (x : ℝ)
 part is the simple fraction `r / (z - x)`. -/
 lemma logDeriv_sub_cpow_of_im_pos {z : ℂ} (hz : 0 < z.im) (x r : ℝ) :
     logDeriv (fun w : ℂ => (w - (x : ℂ)) ^ (r : ℂ)) z = (r : ℂ) / (z - (x : ℂ)) := by
-  have hslit := sub_ofReal_mem_slitPlane_of_im_pos hz x
-  have hbase : z - (x : ℂ) ≠ 0 := slitPlane_ne_zero hslit
-  have hpow : (z - (x : ℂ)) ^ (r : ℂ) ≠ 0 := sub_cpow_ne_zero_of_im_pos hz x r
-  rw [logDeriv_apply,
-    ((hasDerivAt_id' z).sub_const (x : ℂ)).cpow_const hslit |>.deriv,
-    mul_one, Complex.cpow_sub _ _ hbase, Complex.cpow_one]
-  field_simp
+  rw [logDeriv_fun_cpow (f := fun w : ℂ => w - (x : ℂ)) (by fun_prop)
+    (sub_ofReal_mem_slitPlane_of_im_pos hz x), logDeriv_apply, deriv_sub_const, deriv_id'',
+    mul_one_div]
 
 end TauCeti
 

@@ -45,7 +45,9 @@ arbitrary monomial is the expected mixed monomial in the coordinates.
 * `TauCeti.Toric.regularAffinePointEquiv`: the mixed coordinates of the complex points of a split
   affine semigroup, with `TauCeti.Toric.regularAffinePointEquiv_fst_apply`,
   `TauCeti.Toric.val_regularAffinePointEquiv_snd_apply` and
-  `TauCeti.Toric.regularAffinePointEquiv_symm_apply_single` computing the two directions.
+  `TauCeti.Toric.regularAffinePointEquiv_symm_apply_single` computing the two directions, and
+  `TauCeti.Toric.apply_single_ne_zero_iff_regularAffinePointEquiv_fst_ne_zero` characterizing
+  monomial nonvanishing.
 * `TauCeti.Toric.continuous_regularAffinePointEquiv` and
   `TauCeti.Toric.continuous_regularAffinePointEquiv_symm`: both directions are continuous for the
   monomial-embedding topology of any finite generating family.
@@ -107,6 +109,22 @@ theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) �
     freeCommMonoidCharEquiv_symm_apply_ofAdd, MulEquiv.symm_trans_apply,
     MonoidHom.toHomUnitsMulEquiv_symm_apply, MonoidHom.comp_apply,
     freeAbelianCharEquiv_symm_apply_ofAdd, Units.coeHom_apply]
+
+/-- A monomial is nonzero at a complex point exactly when every free-commutative-monoid
+coordinate occurring in its support is nonzero. The free-abelian-coordinate factor is always a
+unit. -/
+theorem apply_single_ne_zero_iff_regularAffinePointEquiv_fst_ne_zero
+    (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ))) (x : AffineSemigroupComplexPoint S) (s : S) :
+    x (MonoidAlgebra.single (ofAdd s) 1) ≠ 0 ↔
+      ∀ i ∈ (e s).1.support, (regularAffinePointEquiv e x).1 i ≠ 0 := by
+  obtain ⟨z, rfl⟩ := (regularAffinePointEquiv e).symm.surjective x
+  rw [regularAffinePointEquiv_symm_apply_single, mul_ne_zero_iff, Finsupp.prod_ne_zero_iff]
+  simp only [Equiv.apply_symm_apply]
+  constructor
+  · rintro ⟨hz, -⟩ i hi hzero
+    exact hz i hi (by simp [hzero, Finsupp.mem_support_iff.mp hi])
+  · intro hz
+    exact ⟨fun i hi ↦ pow_ne_zero _ (hz i hi), Units.ne_zero _⟩
 
 /-- The coordinate of a complex point indexed by `i : ι` is its value on the monomial of the
 `i`-th generator of the free commutative monoid factor. -/

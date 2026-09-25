@@ -13,7 +13,8 @@ import TauCeti.Probability.Distributions.Gaussian.Measurability
 /-!
 # Parameter measurability of the Gaussian-Gram Wishart family
 
-This file proves that `TauCeti.wishartGramMeasure` is measurable jointly in its natural degree and
+This file proves that `TauCeti.Probability.wishartGramMeasure` is measurable jointly in its natural
+degree and
 scale matrix.  The scale is first presented by all its coordinates, as required for a
 matrix-parameterized probability kernel.  A second theorem restricts the scale to the symmetric
 matrix carrier used by the Wishart law.
@@ -25,9 +26,11 @@ defined for every real square matrix.
 
 ## Main results
 
-* `TauCeti.measurable_wishartGramMeasure` — joint measurability in the natural degree and all
+* `TauCeti.Probability.measurable_wishartGramMeasure` — joint measurability in the natural degree
+  and all
   coordinates of the scale matrix;
-* `TauCeti.measurable_wishartGramMeasure_selfAdjoint` — the corresponding result when the scale
+* `TauCeti.Probability.measurable_wishartGramMeasure_selfAdjoint` — the corresponding result when
+  the scale
   ranges over the symmetric-matrix carrier.
 
 ## References
@@ -43,7 +46,7 @@ open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ}
 
@@ -55,7 +58,7 @@ private theorem measurable_wishartGramMeasure_fixedDegree (nu : ℕ) :
     fun S => ⟨multivariateGaussian 0 (Matrix.of S), inferInstance⟩
   have hgaussian : Measurable gaussian := by
     apply Measurable.subtype_mk
-    exact TauCeti.measurable_multivariateGaussian.comp
+    exact TauCeti.Probability.measurable_multivariateGaussian.comp
       (measurable_const.prodMk measurable_id)
   -- `ProbabilityMeasure.toMeasure_pi` is a `rfl` lemma, so the product kernel can be stated
   -- directly as the `Measure.pi` appearing in `wishartGramMeasure_eq_map_pi`.
@@ -89,4 +92,4 @@ theorem measurable_wishartGramMeasure_selfAdjoint :
   exact measurable_wishartGramMeasure.comp
     (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
 
-end TauCeti
+end TauCeti.Probability

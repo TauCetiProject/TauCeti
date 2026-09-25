@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
@@ -44,6 +45,12 @@ shows that cancellation passes to the restriction (`TauCeti.HasCancellation.rest
 propagates to the whole half-plane `Re s > 1 - 1 / d`
 (`TauCeti.continuedLFunctionOfWeight_restrict`).
 
+In number-field degree greater than one, cancellation is also invariant under purely imaginary
+norm twists (`TauCeti.hasCancellation_normTwist_iff`). Abel summation supplies this because the
+cancellation exponent `1 - 1 / [K : ℚ]` is then positive. The degree-one case is deliberately not
+claimed: the defining bound has exponent zero, while the absolute bound for the Abel integral is
+logarithmic.
+
 Cancellation is a hypothesis about the partial sums themselves. It cannot be replaced by
 finiteness of the image of `χ` or of a quotient through which it factors: the values of a weight
 factoring through a finite quotient of the free group on the prime ideals can be prescribed
@@ -70,7 +77,7 @@ public section
 
 namespace TauCeti
 
-open Filter Asymptotics IsDedekindDomain
+open Filter Asymptotics IsDedekindDomain MeasureTheory
 open scoped nonZeroDivisors NumberField Topology
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -138,6 +145,53 @@ theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
       UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, ← map_sum,
       Complex.norm_conj]
   simp only [HasCancellation, h]
+
+/-- **Cancellation survives an imaginary norm twist in number-field degree greater than one.**
+If the ideal partial sums of `χ` are `O(x ^ (1 - 1 / [K : ℚ]))`, then multiplying the value
+at an ideal `I` by `N(I) ^ (-z)` for `Re z = 0` preserves the same bound, provided `[K : ℚ] > 1`.
+
+The degree hypothesis is exactly what makes the cancellation exponent positive: Abel summation
+bounds the integral term by a constant times `x ^ (1 - 1 / [K : ℚ])`. -/
+theorem HasCancellation.normTwist {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    (z : ℂ) (hz : z.re = 0) (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) := by
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  have hθ : 0 < θ := by
+    have hK' : (1 : ℝ) < Module.finrank ℚ K := by exact_mod_cast hK
+    exact sub_pos.mpr ((div_lt_one (by linarith)).mpr hK')
+  obtain ⟨C, hC⟩ := hχ
+  refine ⟨max C 0 * (1 + ‖z‖ / θ), fun x hx ↦ ?_⟩
+  have hC' (t : ℝ) (ht : 1 ≤ t) :
+      ‖idealSummatory K χ.toIdealArithmeticFunction t‖ ≤ max C 0 * t ^ θ :=
+    by
+      simpa only [θ] using (hC t ht).trans
+        (mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg (by linarith) θ))
+  have htwist : (UnitaryIdealWeight.normTwist z hz χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I *
+        (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      UnitaryIdealWeight.toIdealArithmeticFunction_apply, UnitaryIdealWeight.val_normTwist,
+      MultiplicativeIdealWeight.normTwist_apply]
+  rw [htwist]
+  simpa only [θ] using
+    norm_idealSummatory_mul_cpow_le_of_summatory_le K χ.toIdealArithmeticFunction hx hθ z hz
+      fun t ht ↦ hC' t ht.1
+
+/-- **Cancellation is invariant under imaginary norm twists in degree greater than one.**
+Cancellation may be transported freely across an imaginary norm twist in either direction, so a
+character-family argument can normalize away such a twist when `[K : ℚ] > 1`. -/
+@[simp]
+theorem hasCancellation_normTwist_iff {χ : UnitaryIdealWeight K} (z : ℂ) (hz : z.re = 0)
+    (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) ↔ HasCancellation χ := by
+  have hnz : (-z).re = 0 := by simp [hz]
+  constructor
+  · intro h
+    have := h.normTwist (-z) hnz hK
+    simpa only [UnitaryIdealWeight.normTwist_normTwist, neg_add_cancel,
+      UnitaryIdealWeight.normTwist_zero] using this
+  · exact fun h ↦ h.normTwist z hz hK
 
 /-!
 ### Deleting finitely many Euler factors

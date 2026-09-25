@@ -36,10 +36,12 @@ identity reads `1 = 1` for every admissible `p`, including `p = 0` and `p = 1`.
 
 ## Main results
 
-* `TauCeti.binomial_tail_eq_regularizedIncompleteBeta` — the tail `I_p(m, n - m + 1)`;
-* `TauCeti.sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta` — the same identity written as a
+* `TauCeti.Probability.binomial_tail_eq_regularizedIncompleteBeta` — the tail `I_p(m, n - m + 1)`;
+* `TauCeti.Probability.sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta` — the same identity
+  written as a
   partial sum of binomial weights, which is the classical form;
-* `TauCeti.binomial_cumulative_eq_regularizedIncompleteBeta` — the complementary cumulative mass
+* `TauCeti.Probability.binomial_cumulative_eq_regularizedIncompleteBeta` — the complementary
+  cumulative mass
   `I_{1-p}(n - m, m + 1)`.
 
 ## References
@@ -57,7 +59,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Set
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {m n : ℕ}
 
@@ -177,4 +179,4 @@ theorem binomial_cumulative_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : un
   rw [hcompl, htail, probReal_univ] at this
   linarith
 
-end TauCeti
+end TauCeti.Probability

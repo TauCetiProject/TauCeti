@@ -218,6 +218,17 @@ theorem absNorm_eq_absNorm_primePowerBase_pow (A : IdealPrimePower K) :
       Ideal.absNorm (primePowerBase A).asIdeal ^ primePowerExponent A := by
   rw [← primePowerBase_pow_primePowerExponent A, map_pow]
 
+/-- **Membership in the prime-power cutoff, read off the base and the exponent.** The cutoff
+bounds a prime power's own absolute norm, and that norm is `N(𝔭) ^ k`, so membership is exactly
+the bound the counting arguments use. Both steps are equivalences, so this is an `iff`.
+
+Deliberately not `@[simp]`: `mem_normLE` already carries `@[simp, grind =]` on the same
+reducible head and would compete with it. -/
+theorem mem_primePowersLE_iff {x : ℝ} {A : IdealPrimePower K} :
+    A ∈ primePowersLE K x ↔
+      ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A ≤ x := by
+  rw [mem_normLE, absNorm_eq_absNorm_primePowerBase_pow, Nat.cast_pow]
+
 /-- The absolute norm of a prime-power ideal is a prime power: `N(𝔭 ^ k) = p ^ (f k)` for the
 rational prime `p` below `𝔭` and the residue degree `f`. -/
 theorem isPrimePow_absNorm (A : IdealPrimePower K) :
@@ -391,6 +402,15 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
 variable (K)
 
 /-! ### Summatory functions over ideals and over primes -/
+
+/-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
+the summatory function by the value of the twist at that cutoff. -/
+theorem summatory_mul_eq_mul_summatory_of_le {ι 𝕜 : Type*} (N : ι → ℕ) [Northcott N]
+    [NonUnitalCommSemiring 𝕜] {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜) (g : ℝ → 𝕜) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
 
 /-- The inclusive summatory function of a weight on the nonzero integral ideals of `𝓞 K`. -/
 noncomputable abbrev idealSummatory {M : Type*} [AddCommMonoid M]

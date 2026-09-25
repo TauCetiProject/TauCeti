@@ -40,6 +40,8 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
+* `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
+  homomorphism has finite index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -114,6 +116,8 @@ abbrev rangeCompHom (φ₁ : A →* B) (φ₂ : B →* C) : φ₁.range →* (φ
 
 /-- If the ranges of `φ₁` and `φ₂` have finite index, then the range of their composite has
 finite index. -/
+@[to_additive /-- If the ranges of two additive homomorphisms have finite index, then the
+range of their composite has finite index. -/]
 theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.range.FiniteIndex]
     [φ₂.range.FiniteIndex] : (φ₂.comp φ₁).range.FiniteIndex := by
   refine ⟨?_⟩
@@ -170,6 +174,14 @@ theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
   rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
     relIndex_comap]
   exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
+
+/-- The image of a finite-index subgroup under a surjective homomorphism has finite index. -/
+@[to_additive /-- The image of a finite-index additive subgroup under a surjective homomorphism
+has finite index. -/]
+theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G) [H.FiniteIndex]
+    (f : G →* N) (hf : Function.Surjective f) {K : Subgroup N} (h : H.map f = K) :
+    K.FiniteIndex :=
+  ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —

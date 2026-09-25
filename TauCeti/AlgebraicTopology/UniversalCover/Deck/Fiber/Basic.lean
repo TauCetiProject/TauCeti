@@ -7,31 +7,31 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Basic
 public import Mathlib.GroupTheory.GroupAction.Basic
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 /-!
 # The action of deck transformations on a fibre
 
-A deck transformation preserves every fibre of the projection. This file packages that
-restriction as a multiplicative homomorphism from the deck transformation group to the
-homeomorphism group of a chosen fibre, and records the induced action on that fibre.
+A deck transformation preserves every fibre of the projection, so each fibre of `p` is a
+`deck p`-stable subset of the total space. This file records that fibre as a `SubMulAction`,
+so that the action of `deck p` on it is the restriction of the tautological action on the total
+space and the two agree on underlying points by definition, and packages the same restriction as
+a multiplicative homomorphism to the homeomorphism group of the fibre.
 
-This is bookkeeping for the universal-covers roadmap: the later comparison between deck
-transformations and the fundamental group, and the regular-cover statements, use the action of
-deck transformations on individual fibres rather than only on the total space.
+The comparison between deck transformations and the fundamental group, and the regular-cover
+statements, use the action of deck transformations on individual fibres rather than only on the
+total space.
 
 ## Main definitions
 
 * `TauCeti.Deck.fiberHomeomorphHom`: the homomorphism
-  `Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b})`.
-* `TauCeti.Deck.instFiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
-* `TauCeti.Deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality
-  on the underlying point.
-
-## References
-
-This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 0.4
-(`Deck p` as the deck transformation group), and the later deck-group action on fibres in
-Stages 1 and 2.
+  `deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b})`.
+* `TauCeti.Deck.fiberSubMulAction`: the fibre over `b` as a `deck p`-stable subset of the
+  total space, and `TauCeti.Deck.instFiberMulAction`: the action of `deck p` it carries.
+* `deck.fiber_stabilizer_eq_stabilizer_coe`: the stabilizer of a fibre point is the
+  stabilizer of the underlying point of the total space, and
+  `deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality on the
+  underlying point.
 -/
 
 public section
@@ -45,122 +45,95 @@ variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 /-- The homomorphism from deck transformations to homeomorphisms of the fibre over `b`.
 
 It sends a deck transformation to its restriction to the subtype `p ⁻¹' {b}`. -/
-@[expose] def fiberHomeomorphHom (p : E → B) (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
-  toFun φ := fiberHomeomorph φ b
+def fiberHomeomorphHom (p : E → B) (b : B) : deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
+  toFun φ := deck.fiberHomeomorph φ b
   map_one' := by
     ext e
-    rfl
+    simp
   map_mul' φ ψ := by
     ext e
-    rfl
+    simp
 
 /-- The fibre homomorphism evaluates by applying the deck transformation to the underlying
 point of the fibre. -/
 @[simp]
-lemma fiberHomeomorphHom_apply (φ : Deck p) (e : p ⁻¹' {b}) :
-    fiberHomeomorphHom p b φ e = fiberHomeomorph φ b e :=
-  rfl
-
-/-- On underlying points, the fibre homomorphism is evaluation of the underlying
-homeomorphism. -/
-@[simp]
-lemma fiberHomeomorphHom_apply_coe (φ : Deck p) (e : p ⁻¹' {b}) :
-    (fiberHomeomorphHom p b φ e : E) = φ.1 e.1 :=
-  rfl
-
-/-- The fibre homomorphism sends the identity deck transformation to the identity
-homeomorphism of the fibre. -/
-@[simp]
-lemma fiberHomeomorphHom_one :
-    fiberHomeomorphHom p b (1 : Deck p) = 1 := by
-  exact (fiberHomeomorphHom p b).map_one
-
-/-- The fibre homomorphism sends products of deck transformations to products of fibre
-homeomorphisms. -/
-@[simp]
-lemma fiberHomeomorphHom_mul (φ ψ : Deck p) :
-    fiberHomeomorphHom p b (φ * ψ) = fiberHomeomorphHom p b φ * fiberHomeomorphHom p b ψ := by
-  exact (fiberHomeomorphHom p b).map_mul φ ψ
-
-/-- The fibre homomorphism sends inverses of deck transformations to inverses of fibre
-homeomorphisms. -/
-@[simp]
-lemma fiberHomeomorphHom_inv (φ : Deck p) :
-    fiberHomeomorphHom p b φ⁻¹ = (fiberHomeomorphHom p b φ)⁻¹ := by
-  exact (fiberHomeomorphHom p b).map_inv φ
+lemma _root_.deck.fiberHomeomorphHom_apply (φ : deck p) (e : p ⁻¹' {b}) :
+    fiberHomeomorphHom p b φ e = deck.fiberHomeomorph φ b e :=
+  (rfl)
 
 /-- The fibre homeomorphism associated to the identity deck transformation is the identity. -/
 @[simp]
-lemma fiberHomeomorph_one :
-    fiberHomeomorph (1 : Deck p) b = 1 := by
-  exact fiberHomeomorphHom_one
+lemma _root_.deck.fiberHomeomorph_one :
+    deck.fiberHomeomorph (1 : deck p) b = 1 :=
+  map_one (fiberHomeomorphHom p b)
 
 /-- The fibre homeomorphism associated to a product is the product of the associated fibre
 homeomorphisms. -/
 @[simp]
-lemma fiberHomeomorph_mul (φ ψ : Deck p) :
-    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
-  exact fiberHomeomorphHom_mul φ ψ
+lemma _root_.deck.fiberHomeomorph_mul (φ ψ : deck p) :
+    deck.fiberHomeomorph (φ * ψ) b = deck.fiberHomeomorph φ b * deck.fiberHomeomorph ψ b :=
+  map_mul (fiberHomeomorphHom p b) φ ψ
 
 /-- The fibre homeomorphism associated to an inverse is the inverse of the associated fibre
 homeomorphism. -/
 @[simp]
-lemma fiberHomeomorph_inv (φ : Deck p) :
-    fiberHomeomorph φ⁻¹ b = (fiberHomeomorph φ b)⁻¹ := by
-  exact fiberHomeomorphHom_inv φ
+lemma _root_.deck.fiberHomeomorph_inv (φ : deck p) :
+    deck.fiberHomeomorph φ⁻¹ b = (deck.fiberHomeomorph φ b)⁻¹ :=
+  map_inv (fiberHomeomorphHom p b) φ
 
 /-- The fibre homeomorphism associated to a natural-number power is the corresponding power
 of the associated fibre homeomorphism. -/
 @[simp]
-lemma fiberHomeomorph_pow (φ : Deck p) (n : ℕ) :
-    fiberHomeomorph (φ ^ n) b = fiberHomeomorph φ b ^ n := by
-  exact (fiberHomeomorphHom p b).map_pow φ n
+lemma _root_.deck.fiberHomeomorph_pow (φ : deck p) (n : ℕ) :
+    deck.fiberHomeomorph (φ ^ n) b = deck.fiberHomeomorph φ b ^ n :=
+  map_pow (fiberHomeomorphHom p b) φ n
 
 /-- The fibre homeomorphism associated to an integer power is the corresponding power of the
 associated fibre homeomorphism. -/
 @[simp]
-lemma fiberHomeomorph_zpow (φ : Deck p) (n : ℤ) :
-    fiberHomeomorph (φ ^ n) b = fiberHomeomorph φ b ^ n := by
-  exact (fiberHomeomorphHom p b).map_zpow φ n
+lemma _root_.deck.fiberHomeomorph_zpow (φ : deck p) (n : ℤ) :
+    deck.fiberHomeomorph (φ ^ n) b = deck.fiberHomeomorph φ b ^ n :=
+  map_zpow (fiberHomeomorphHom p b) φ n
+
+/-- The fibre of `p` over `b`, as a `deck p`-stable subset of the total space: a deck
+transformation fixes the value of `p`, hence maps the fibre over `b` to itself.
+
+The body is exposed because the subtype it denotes has to be recognised as the fibre
+`p ⁻¹' {b}` itself, which is what lets the generic `SubMulAction` API apply to the fibre
+action. -/
+@[expose]
+def fiberSubMulAction (p : E → B) (b : B) : SubMulAction (deck p) E where
+  carrier := p ⁻¹' {b}
+  smul_mem' φ _ he := (deck.proj_smul φ _).trans he
 
 /-- Deck transformations act on each fibre by restricting their action on the total space. -/
-instance instFiberMulAction : MulAction (Deck p) (p ⁻¹' {b}) :=
-  MulAction.compHom (p ⁻¹' {b}) (fiberHomeomorphHom p b)
-
-/-- The fibre action is evaluation of the fibre homeomorphism. -/
-lemma fiber_smul_eq_fiberHomeomorph (φ : Deck p) (e : p ⁻¹' {b}) :
-    φ • e = fiberHomeomorph φ b e :=
-  rfl
+instance instFiberMulAction : MulAction (deck p) (p ⁻¹' {b}) :=
+  (fiberSubMulAction p b).mulAction
 
 /-- On underlying points, the fibre action is evaluation of the underlying deck
 transformation. -/
 @[simp]
-lemma fiber_smul_coe (φ : Deck p) (e : p ⁻¹' {b}) : ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1 :=
-  rfl
+lemma _root_.deck.fiber_smul_coe (φ : deck p) (e : p ⁻¹' {b}) :
+    ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1 :=
+  (SubMulAction.val_smul (p := fiberSubMulAction p b) φ e).trans (deck.smul_eq_apply φ e.1)
 
-/-- The projection value of a point in the fibre is unchanged after the restricted deck
-action. -/
-lemma map_fiber_smul (φ : Deck p) (e : p ⁻¹' {b}) :
-    p (φ • e : E) = b := by
-  exact (φ • e).2
+/-- The fibre action is evaluation of the fibre homeomorphism. -/
+lemma _root_.deck.fiber_smul_eq_fiberHomeomorph (φ : deck p) (e : p ⁻¹' {b}) :
+    φ • e = deck.fiberHomeomorph φ b e :=
+  Subtype.ext ((deck.fiber_smul_coe φ e).trans (deck.fiberHomeomorph_apply φ b e).symm)
 
-/-- The restricted deck action keeps points in the fibre over `b`. -/
-lemma fiber_smul_mem (φ : Deck p) (e : p ⁻¹' {b}) : (φ • e : E) ∈ p ⁻¹' {b} := by
-  exact map_fiber_smul φ e
-
-/-- The restricted fibre action agrees with the ambient action on the total space after
-coercing out of the fibre subtype. -/
-lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
-    ((φ • e : p ⁻¹' {b}) : E) = φ • (e : E) := by
-  trans φ.1 e.1
-  · exact fiber_smul_coe φ e
-  · exact (smul_eq_apply φ (e : E)).symm
+/-- The stabilizer of a point of the fibre is the stabilizer of the underlying point of the
+total space. -/
+lemma _root_.deck.fiber_stabilizer_eq_stabilizer_coe (e : p ⁻¹' {b}) :
+    MulAction.stabilizer (deck p) e = MulAction.stabilizer (deck p) (e : E) :=
+  SubMulAction.stabilizer_of_subMul (p := fiberSubMulAction p b) e
 
 /-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
 @[grind =]
-lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
-    φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
-  simp [Subtype.ext_iff, fiber_smul_eq_fiberHomeomorph]
+lemma _root_.deck.mem_fiber_stabilizer_iff_coe (φ : deck p) (e : p ⁻¹' {b}) :
+    φ ∈ MulAction.stabilizer (deck p) e ↔ φ.1 e.1 = e.1 := by
+  rw [deck.fiber_stabilizer_eq_stabilizer_coe]
+  simp
 
 end Deck
 

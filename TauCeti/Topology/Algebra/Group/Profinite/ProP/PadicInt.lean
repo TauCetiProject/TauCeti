@@ -7,9 +7,10 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 import Mathlib.NumberTheory.Padics.RingHoms
-import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 
 /-!
 # The additive group of the p-adic integers
@@ -19,8 +20,12 @@ pro-`p` group. Indeed, every open subgroup contains the kernel of a truncation
 `ℤ_[p] → ZMod (p ^ n)`, so its quotient is a quotient of a finite `p`-group.
 
 The element `1 : ℤ_[p]` topologically generates this group because the integers are dense in
-the `p`-adic integers. Consequently its topological generator rank is one. These facts supply
-the `ℤ_p` example used when identifying the free pro-`p` group on one generator.
+the `p`-adic integers. Consequently its topological generator rank is one.
+
+The group is moreover the pro-`p` group on one generator: for every pro-`p` group `P` and
+`a : P`, the `p`-adic power `l ↦ a ^ l` is the unique continuous homomorphism
+`Multiplicative ℤ_[p] →ₜ* P` sending `1` to `a`. This universal property is what identifies
+`Multiplicative ℤ_[p]` with the free pro-`p` group on one generator.
 
 ## Main results
 
@@ -29,6 +34,10 @@ the `ℤ_p` example used when identifying the free pro-`p` group on one generato
   generates `Multiplicative ℤ_[p]`.
 * `TauCeti.topologicalGeneratorRank_multiplicative_padicInt`: its topological generator rank is
   one.
+* `TauCeti.IsProP.padicPowHom`: the continuous homomorphism `Multiplicative ℤ_[p] →ₜ* P` into a
+  pro-`p` group `P` sending `1` to a given element, namely the `p`-adic power.
+* `TauCeti.IsProP.existsUnique_continuousMonoidHom_multiplicative_padicInt`: the universal
+  property, that this homomorphism is the unique one with that value at `1`.
 
 ## References
 
@@ -138,5 +147,89 @@ theorem topologicalGeneratorRank_multiplicative_padicInt (p : ℕ) [Fact p.Prime
     (isTopologicallyFinitelyGenerated_multiplicative_padicInt p),
     topologicalGeneratorRankNat_multiplicative_padicInt]
   simp
+
+/-! ## The universal property of `ℤ_p` among pro-`p` groups -/
+
+/-- Two continuous homomorphisms out of the additive group of the `p`-adic integers into a
+Hausdorff monoid that agree at `1` are equal. -/
+@[ext]
+theorem continuousMonoidHom_ext_multiplicative_padicInt {p : ℕ} [Fact p.Prime] {Q : Type*}
+    [Monoid Q] [TopologicalSpace Q] [T2Space Q] {f g : Multiplicative ℤ_[p] →ₜ* Q}
+    (h : f (Multiplicative.ofAdd 1) = g (Multiplicative.ofAdd 1)) : f = g :=
+  ContinuousMonoidHom.toMonoidHom_injective
+    (MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top
+      (topologicallyGenerates_ofAdd_one_padicInt p) f.continuous g.continuous
+      (Set.eqOn_singleton.mpr h))
+
+namespace IsProP
+
+variable {p : ℕ} [Fact p.Prime] {P : Type*} [Group P] [TopologicalSpace P]
+  [IsTopologicalGroup P] [CompactSpace P] [TotallyDisconnectedSpace P]
+
+/-- **The `p`-adic power as a homomorphism out of `ℤ_p`.** For an element `a` of a pro-`p`
+group, `hP.padicPowHom a` is the continuous homomorphism `Multiplicative ℤ_[p] →ₜ* P` sending
+`l` to the `p`-adic power `a ^ l`, so `1 ↦ a`. It is the unique continuous homomorphism with
+that value at `1`, by `TauCeti.IsProP.padicPowHom_unique`. -/
+noncomputable def padicPowHom (hP : IsProP p P) (a : P) : Multiplicative ℤ_[p] →ₜ* P where
+  toFun l := hP.padicPow a l.toAdd
+  map_one' := by simp
+  map_mul' l l' := by simp
+  continuous_toFun :=
+    hP.continuous_padicPow.comp (continuous_toAdd.prodMk continuous_const)
+
+/-- The homomorphism `TauCeti.IsProP.padicPowHom` evaluates as the `p`-adic power. -/
+@[simp]
+theorem padicPowHom_apply (hP : IsProP p P) (a : P) (l : Multiplicative ℤ_[p]) :
+    hP.padicPowHom a l = hP.padicPow a l.toAdd :=
+  (rfl)
+
+/-- The homomorphism `TauCeti.IsProP.padicPowHom a` sends `1` to `a`. -/
+theorem padicPowHom_ofAdd_one (hP : IsProP p P) (a : P) :
+    hP.padicPowHom a (Multiplicative.ofAdd 1) = a := by
+  simp
+
+/-- A continuous homomorphism from the additive group of `ℤ_[p]` into a pro-`p` group is the
+`p`-adic power map of its value at `1`. -/
+theorem eq_padicPowHom (hP : IsProP p P) (f : Multiplicative ℤ_[p] →ₜ* P) :
+    f = hP.padicPowHom (f (Multiplicative.ofAdd 1)) :=
+  continuousMonoidHom_ext_multiplicative_padicInt (by simp)
+
+/-- A continuous homomorphism from the additive group of `ℤ_[p]` into a pro-`p` group sending
+`1` to `a` is `TauCeti.IsProP.padicPowHom a`. -/
+theorem padicPowHom_unique (hP : IsProP p P) {a : P} (f : Multiplicative ℤ_[p] →ₜ* P)
+    (hf : f (Multiplicative.ofAdd 1) = a) : f = hP.padicPowHom a :=
+  continuousMonoidHom_ext_multiplicative_padicInt (by simp [hf])
+
+/-- **The universal property of `ℤ_p` among pro-`p` groups.** For every element `a` of a pro-`p`
+group there is a unique continuous homomorphism from the additive group of `ℤ_[p]` sending `1`
+to `a`. -/
+theorem existsUnique_continuousMonoidHom_multiplicative_padicInt (hP : IsProP p P) (a : P) :
+    ∃! f : Multiplicative ℤ_[p] →ₜ* P, f (Multiplicative.ofAdd 1) = a :=
+  ⟨hP.padicPowHom a, hP.padicPowHom_ofAdd_one a, fun f hf ↦ hP.padicPowHom_unique f hf⟩
+
+/-- The homomorphism `TauCeti.IsProP.padicPowHom` is natural in the target. -/
+@[simp]
+theorem comp_padicPowHom {Q : Type*} [Group Q] [TopologicalSpace Q] [IsTopologicalGroup Q]
+    [CompactSpace Q] [TotallyDisconnectedSpace Q] (hP : IsProP p P) (hQ : IsProP p Q)
+    (g : P →ₜ* Q) (a : P) : g.comp (hP.padicPowHom a) = hQ.padicPowHom (g a) :=
+  continuousMonoidHom_ext_multiplicative_padicInt (by simp)
+
+/-- In the additive group of `ℤ_[p]`, the `p`-adic power of `1` by `l` is `l` itself. -/
+@[simp]
+theorem padicPow_ofAdd_one_padicInt (p : ℕ) [Fact p.Prime] (l : ℤ_[p]) :
+    (isProP_multiplicative_padicInt p).padicPow (Multiplicative.ofAdd 1) l =
+      Multiplicative.ofAdd l :=
+  ((isProP_multiplicative_padicInt p).eq_padicPow_of_continuous
+    (f := fun l : ℤ_[p] ↦ Multiplicative.ofAdd l) continuous_ofAdd
+    (fun k ↦ by rw [← ofAdd_nsmul, nsmul_one]) l).symm
+
+/-- The `p`-adic power homomorphism of `1` in the additive group of `ℤ_[p]` is the identity. -/
+@[simp]
+theorem padicPowHom_ofAdd_one_padicInt (p : ℕ) [Fact p.Prime] :
+    (isProP_multiplicative_padicInt p).padicPowHom (Multiplicative.ofAdd 1) =
+      ContinuousMonoidHom.id (Multiplicative ℤ_[p]) :=
+  continuousMonoidHom_ext_multiplicative_padicInt (by simp)
+
+end IsProP
 
 end TauCeti

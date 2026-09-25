@@ -63,11 +63,8 @@ locally path-connected space.)
 
 ## References
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8, first bullet: the
-correspondence between *pointed* connected covers of `(X, x₀)` and subgroups of `π₁(X, x₀)`. It
-consumes the lifting criterion recorded in Stage 2, item 6
-(`TauCeti.Topology.Homotopy.Covering`), and the recovered-subgroup API of
-`TauCeti.Topology.Homotopy.Monodromy.Basic`. No Mathlib infrastructure is vendored: the lifting
+It consumes the lifting criterion in `TauCeti.Topology.Homotopy.Covering` and the
+recovered-subgroup API of `TauCeti.Topology.Homotopy.Monodromy.Basic`. The lifting
 criterion `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le` is Junyan Xu's, in
 `Mathlib.Topology.Homotopy.Lifting`, while the uniqueness of lifts
 `IsCoveringMap.eq_of_comp_eq` is Thomas Browning's, in `Mathlib.Topology.Covering.Basic`, where
@@ -237,14 +234,14 @@ theorem _root_.IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_symm_apply (f : 
 
 /-- Pointed covers recovering the same subgroup of `π₁(X, x)` have isomorphic deck transformation
 groups, by conjugation along the comparison homeomorphism. -/
-noncomputable def _root_.IsCoveringMap.deckMulEquivOfRangeEq : Deck p ≃* Deck q :=
+noncomputable def _root_.IsCoveringMap.deckMulEquivOfRangeEq : deck p ≃* deck q :=
   Deck.conjMulEquiv (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange)
     (IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply hp hq hpe hqf hrange)
 
 /-- The deck-group isomorphism attached to two pointed covers with the same recovered subgroup is
 conjugation by the comparison homeomorphism. -/
 @[simp]
-theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : Deck p) (f : F) :
+theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : deck p) (f : F) :
     ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).1 f) =
       IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange
         (φ.1 ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
@@ -253,7 +250,7 @@ theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_apply_coe (φ : Deck p) (f : 
 /-- The inverse of that deck-group isomorphism is conjugation by the inverse comparison
 homeomorphism. -/
 @[simp]
-theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_symm_apply_coe (ψ : Deck q) (e : E) :
+theorem _root_.IsCoveringMap.deckMulEquivOfRangeEq_symm_apply_coe (ψ : deck q) (e : E) :
     (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).1 e) =
       (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm
         (ψ.1 (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=

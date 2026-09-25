@@ -77,20 +77,13 @@ variable {A R : Type*} [CommRing A] [Ring R] [Algebra A R]
 
 /-! ### Integrality after passing to a quotient -/
 
-/-- Evaluating a polynomial over `A` at `x` and then reducing mod `J` is evaluating it at the
-reduction of `x`: the structure map to `R ⧸ J` factors through `R`. -/
-private theorem eval₂_quotient (x : R) (J : Ideal R) [J.IsTwoSided] (f : A[X]) :
-    eval₂ (algebraMap A (R ⧸ J)) (Ideal.Quotient.mk J x) f
-      = Ideal.Quotient.mk J (eval₂ (algebraMap A R) x f) := by
-  rw [hom_eval₂, Ideal.Quotient.mk_comp_algebraMap]
-
 /-- **Integrality in a quotient is a monic polynomial landing in the ideal.** The reduction of `x`
 is integral over `A` in `R ⧸ J` exactly when some monic polynomial over `A` sends `x` into `J`. -/
 theorem isIntegral_quotient_iff (x : R) (J : Ideal R) [J.IsTwoSided] :
     IsIntegral A (Ideal.Quotient.mk J x) ↔
       ∃ f : A[X], f.Monic ∧ eval₂ (algebraMap A R) x f ∈ J := by
   refine exists_congr fun f ↦ and_congr_right fun _ ↦ ?_
-  rw [eval₂_quotient, Ideal.Quotient.eq_zero_iff_mem]
+  rw [← Ideal.Quotient.mk_comp_algebraMap, ← hom_eval₂, Ideal.Quotient.eq_zero_iff_mem]
 
 end Quotient
 

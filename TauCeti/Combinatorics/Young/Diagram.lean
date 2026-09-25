@@ -260,24 +260,15 @@ the single cell in column `0`, so a cell is a cell of the first column, and the 
 exactly as far down as that column does. -/
 theorem mem_iff_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i < μ.colLen 0 ∧ j = 0 := by
-  constructor
-  · intro hij
-    have hlt := _root_.YoungDiagram.mem_iff_lt_rowLen.mp hij
-    have hanti := μ.rowLen_anti 0 i (Nat.zero_le _)
-    have hj : j = 0 := by omega
-    subst hj
-    exact ⟨_root_.YoungDiagram.mem_iff_lt_colLen.mp hij, rfl⟩
-  · rintro ⟨hi, rfl⟩
-    exact _root_.YoungDiagram.mem_iff_lt_colLen.mpr hi
+  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
+    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.rowLen_anti 0 i (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one column are exactly the cells `(i, 0)` with
 `i < μ.colLen 0`: the whole of its first column, and nothing else. -/
 theorem cells_eq_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
     μ.cells = Finset.range (μ.colLen 0) ×ˢ {0} := by
-  ext c
-  obtain ⟨i, j⟩ := c
-  rw [_root_.YoungDiagram.mem_cells, mem_iff_of_rowLen_le_one h, Finset.mem_product,
-    Finset.mem_range, Finset.mem_singleton]
+  ext ⟨i, j⟩
+  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_rowLen_le_one h, eq_comm]
 
 /-- A Young diagram with at most one column has one cell in each of its `μ.colLen 0` rows. -/
 theorem card_eq_colLen_of_rowLen_le_one {μ : YoungDiagram} (h : μ.rowLen 0 ≤ 1) :
@@ -289,24 +280,15 @@ the single cell in row `0`, so a cell is a cell of the first row, and the diagra
 as far right as that row does. -/
 theorem mem_iff_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) {i j : ℕ} :
     (i, j) ∈ μ ↔ i = 0 ∧ j < μ.rowLen 0 := by
-  constructor
-  · intro hij
-    have hlt := _root_.YoungDiagram.mem_iff_lt_colLen.mp hij
-    have hanti := μ.colLen_anti 0 j (Nat.zero_le _)
-    have hi : i = 0 := by omega
-    subst hi
-    exact ⟨rfl, _root_.YoungDiagram.mem_iff_lt_rowLen.mp hij⟩
-  · rintro ⟨rfl, hj⟩
-    exact _root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj
+  grind [_root_.YoungDiagram.mem_cells, _root_.YoungDiagram.mem_iff_lt_colLen,
+    _root_.YoungDiagram.mem_iff_lt_rowLen, μ.colLen_anti 0 j (Nat.zero_le _)]
 
 /-- The cells of a Young diagram with at most one row are exactly the cells `(0, j)` with
 `j < μ.rowLen 0`: the whole of its first row, and nothing else. -/
 theorem cells_eq_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
     μ.cells = {0} ×ˢ Finset.range (μ.rowLen 0) := by
-  ext c
-  obtain ⟨i, j⟩ := c
-  rw [_root_.YoungDiagram.mem_cells, mem_iff_of_colLen_le_one h, Finset.mem_product,
-    Finset.mem_singleton, Finset.mem_range]
+  ext ⟨i, j⟩
+  simp [_root_.YoungDiagram.mem_cells, mem_iff_of_colLen_le_one h, eq_comm, and_comm]
 
 /-- A Young diagram with at most one row has one cell in each of its `μ.rowLen 0` columns. -/
 theorem card_eq_rowLen_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :

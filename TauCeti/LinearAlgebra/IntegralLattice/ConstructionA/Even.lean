@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Discriminant
+public import TauCeti.InformationTheory.Coding.TwoPowTypeII
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
@@ -22,13 +23,16 @@ q_m(c) = (∑ i, lift (cᵢ)²) / (2m)  mod ℤ
 
 of the standard coordinate discriminant module over `ℤ/m`, which exists when `m` is even. So
 for even `m` the Construction A lattice of `C` is even exactly when `C` is a quadratically
-isotropic subgroup of that module. For odd `m` and a nonempty coordinate type the lattice is
-never even, because it always contains a coordinate vector of norm `m`.
+isotropic subgroup of that module, equivalently when every codeword has Euclidean weight
+divisible by `2m`. For odd `m` and a nonempty coordinate type the lattice is never even, because
+it always contains a coordinate vector of norm `m`.
 
 At `m = 2` the quadratic value is a quarter of the Hamming weight, so evenness of the lattice is
 divisibility of all codeword weights by four; for a doubly-even Euclidean self-dual binary code
 the unimodularity criterion and the positive definiteness of the normalized dot product then say
-that the lattice is definite, even, and unimodular.
+that the lattice is definite, even, and unimodular. More generally, over `ℤ/2^r` with `r ≥ 1` a
+self-orthogonal code has an even unimodular Construction A lattice exactly when it is a Type II
+code: self-dual with every Euclidean weight divisible by `2^(r+1)`.
 
 ## References
 
@@ -37,6 +41,9 @@ that the lattice is definite, even, and unimodular.
   general `ℤ/m` normalization.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 7, §§2, 6,
   for Construction A and its Type II form.
+* S. T. Dougherty, T. A. Gulliver, and M. Harada, *Type II self-dual codes over finite rings and
+  even unimodular lattices*, J. Algebraic Combin. **9** (1999), 233–250, for Type II codes over
+  `ℤ/2^r` and their even unimodular Construction A lattices.
 -/
 
 public section
@@ -92,6 +99,15 @@ theorem isEven_integralLattice_iff (hm : Even (m : ℕ)) (C : AddSubgroup (ι �
   rw [isEven_integralLattice_iff_isIsotropic m hm,
     isIsotropic_coordinatePower_zmodStandard_quadratic_iff]
 
+/-- Over an even modulus, a Construction A lattice is even exactly when every codeword has
+Euclidean weight divisible by `2m`. -/
+theorem isEven_integralLattice_iff_euclideanWeight (hm : Even (m : ℕ))
+    (C : AddSubgroup (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    (integralLattice m C hC).IsEven ↔ ∀ x ∈ C, 2 * (m : ℕ) ∣ euclideanWeight x := by
+  rw [isEven_integralLattice_iff_isIsotropic m hm,
+    isIsotropic_coordinatePower_zmodStandard_quadratic_iff_euclideanWeight]
+
 /-- Over an odd modulus a Construction A lattice is never even: the coordinate vector `m eᵢ`
 has norm `m`. -/
 theorem not_isEven_integralLattice_of_odd (hm : Odd (m : ℕ)) [Nonempty ι]
@@ -134,5 +150,43 @@ theorem isEven_integralLattice_two_iff_isDoublyEven (C : LinearCode (ZMod 2) ι)
   rw [BinaryCode.isDoublyEven_iff]
   refine (isEven_integralLattice_two_iff C.toAddSubgroup hC).trans ?_
   simp only [Submodule.mem_toAddSubgroup]
+
+/-! ## Type II codes over `ℤ/2^r` -/
+
+variable {r : ℕ}
+
+/-- **Over `ℤ/2^r` with `r ≥ 1`, a self-orthogonal code has an even unimodular Construction A
+lattice exactly when it is a Type II code.** -/
+theorem isEven_and_isUnimodular_integralLattice_iff_isTypeII (hr : r ≠ 0)
+    (C : AdditiveCode (ZMod (2 ^ r)) ι)
+    (hC : AddSubgroup.toZModSubmodule (2 ^ r) C ≤
+      (AddSubgroup.toZModSubmodule (2 ^ r) C).euclideanDual) :
+    (integralLattice (2 ^ r) C hC).IsEven ∧ (integralLattice (2 ^ r) C hC).IsUnimodular ↔
+      TwoPowCode.IsTypeII r C := by
+  -- The lattice is built over `ℤ/↑(2 ^ r : ℕ+)`, which is `ℤ/2^r` only up to unfolding the
+  -- coercion `ℕ+ → ℕ`, so the criteria are chained in term mode rather than rewritten.
+  have hm : Even ((2 ^ r : ℕ+) : ℕ) := by
+    rw [PNat.pow_coe, PNat.val_ofNat]
+    exact (Nat.even_pow' hr).mpr even_two
+  have h2 : 2 * ((2 ^ r : ℕ+) : ℕ) = 2 ^ (r + 1) := by
+    rw [PNat.pow_coe, PNat.val_ofNat, pow_succ']
+  refine ((isEven_integralLattice_iff_euclideanWeight (2 ^ r) hm C hC).and
+    (isUnimodular_integralLattice_iff (2 ^ r) C hC)).trans ?_
+  refine (and_comm.trans (Iff.rfl.and (forall₂_congr fun x _ ↦ ?_))).trans
+    TwoPowCode.isTypeII_iff.symm
+  -- the two sides differ only in `2 * ↑(2 ^ r)` and in how the alphabet of `x` is written
+  rw [h2]
+  rfl
+
+/-- The Construction A lattice of a Type II code over `ℤ/2^r`, `r ≥ 1`, is even. -/
+theorem isEven_integralLattice_of_isTypeII (hr : r ≠ 0) {C : AdditiveCode (ZMod (2 ^ r)) ι}
+    (hC : TwoPowCode.IsTypeII r C) : (integralLattice (2 ^ r) C hC.le_euclideanDual).IsEven :=
+  ((isEven_and_isUnimodular_integralLattice_iff_isTypeII hr C _).mpr hC).1
+
+/-- The Construction A lattice of a Type II code over `ℤ/2^r`, `r ≥ 1`, is unimodular. -/
+theorem isUnimodular_integralLattice_of_isTypeII {C : AdditiveCode (ZMod (2 ^ r)) ι}
+    (hC : TwoPowCode.IsTypeII r C) :
+    (integralLattice (2 ^ r) C hC.le_euclideanDual).IsUnimodular :=
+  (isUnimodular_integralLattice_iff (2 ^ r) C hC.le_euclideanDual).mpr hC.eq_euclideanDual
 
 end TauCeti.ConstructionA

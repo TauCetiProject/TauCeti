@@ -56,7 +56,8 @@ available in the `AdicCompletionExtension` scope.
 * `IsDedekindDomain.HeightOneSpectrum.valued_completionCongr`: `completionCongr` preserves the
   completion valuations.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_algebraMap`: the defining property
-  `decompositionHom v w τ x = τ x` for `x ∈ L`.
+  `decompositionHom v w τ x = τ x` for `x ∈ L`; `decompositionHom_algebraMap_ringOfIntegers` is
+  its form on `𝓞 L`, and `valued_decompositionHom` says the action preserves the valuation.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_injective`: the decomposition group
   embeds into `Aut(L_w/K_v)`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_conj`: compatibility with the action of
@@ -225,6 +226,22 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
     decompositionHom v w τ (algebraMap L (w.adicCompletion L) x) =
       algebraMap L (w.adicCompletion L) ((τ : L ≃ₐ[K] L) x) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
+
+/-- On the ring of integers of `L`, `decompositionHom` is the action of the automorphism. -/
+theorem decompositionHom_algebraMap_ringOfIntegers
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) (x : 𝒪 L) :
+    decompositionHom v w τ (algebraMap (𝒪 L) (w.adicCompletion L) x) =
+      algebraMap (𝒪 L) (w.adicCompletion L) ((τ : L ≃ₐ[K] L) • x) := by
+  rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) x,
+    IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) (_ • x),
+    decompositionHom_algebraMap, NumberField.algebraMap_smul_eq_apply]
+
+/-- The action of the decomposition group on `L_w` preserves the valuation of `L_w`. -/
+@[simp]
+theorem valued_decompositionHom (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal)
+    (x : w.adicCompletion L) :
+    Valued.v (decompositionHom v w τ x) = Valued.v x := by
+  rw [decompositionHom_apply, valued_completionCongr]
 
 variable (v) in
 /-- Each element of the decomposition group acts continuously on `L_w`. -/

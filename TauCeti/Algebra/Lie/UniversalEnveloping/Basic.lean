@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.UniversalEnveloping
+public import Mathlib.RingTheory.FiniteType
 
 /-!
 # Basic results on universal enveloping algebras
@@ -19,10 +20,16 @@ additional structures such as filtrations, bialgebras, or antipodes.
   generated, as an algebra, by its canonical Lie generators.
 * `TauCeti.UniversalEnvelopingAlgebra.induction_ι`: the induction principle on the canonical Lie
   generators that the previous statement supplies.
+* `TauCeti.UniversalEnvelopingAlgebra.instFiniteType`: a universal enveloping algebra is an algebra
+  of finite type over the base ring as soon as the Lie algebra is finite as a module.
 * `TauCeti.UniversalEnvelopingAlgebra.representation`: the algebra homomorphism `U(L) → End M`
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
+* `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
+  detected on the canonical Lie generators alone.
+* `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
+  generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: an algebra representation maps the bracket of
   canonical Lie generators to the bracket of their images.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι_eq_smul`: a Lie-bracket eigenvector remains one
@@ -81,6 +88,24 @@ theorem induction_ι {p : U → Prop}
   | algebraMap r => exact algebraMap r
   | add a b _ _ ha hb => exact add a b ha hb
   | mul a b _ _ ha hb => exact mul a b ha hb
+
+variable {R L} in
+/-- **The enveloping algebra of a Lie algebra which is finite as a module is an `R`-algebra of
+finite type**: a finite spanning set of `L` generates `U(L)` as an algebra, the canonical Lie
+generators of `U(L)` generating it
+(`TauCeti.UniversalEnvelopingAlgebra.adjoin_range_ι`). -/
+instance instFiniteType [Module.Finite R L] : Algebra.FiniteType R U := by
+  classical
+  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := R) (M := L)
+  -- the span of the image of a spanning set of `L` is the whole of the image of `L`
+  have hrange : ((Submodule.span R
+      (⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U) ''
+        (S : Set L)) : Submodule R U) : Set U) =
+      Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)) := by
+    rw [← Submodule.map_span, hS, ← LinearMap.range_eq_map, LinearMap.coe_range,
+      LieHom.coe_toLinearMap]
+  exact ⟨S.image ⇑((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U), by
+    rw [Finset.coe_image, ← _root_.Algebra.adjoin_span, hrange, adjoin_range_ι R L]⟩
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 
@@ -207,5 +232,53 @@ theorem mul_eq_mul_add_zsmul_of_lie_eq
   simpa using
     (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
       (p := 1) (q := 1) (r := c) (n := 1) (by simpa using hab))
+
+
+section Center
+
+variable (R L)
+
+/-- **Centrality in `U(L)` is detected on the canonical Lie generators.**  An element of `U(L)`
+is central exactly when it brackets to zero against every canonical Lie generator, because those
+generators generate `U(L)` as an algebra and the elements commuting with a fixed element form a
+subalgebra. -/
+theorem mem_center_iff_forall_lie_ι {u : U} :
+    u ∈ Subalgebra.center R U ↔
+      ∀ x : L, ⁅u, _root_.UniversalEnvelopingAlgebra.ι R x⁆ = 0 := by
+  refine ⟨fun hu x => ?_, fun h => ?_⟩
+  · rw [LieRing.of_associative_ring_bracket,
+      ← Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x), sub_self]
+  · -- The centralizer of `u` is a subalgebra containing every Lie generator, hence everything.
+    have hgen : (⊤ : Subalgebra R U) ≤ Subalgebra.centralizer R {u} := by
+      rw [← adjoin_range_ι R L]
+      refine Algebra.adjoin_le ?_
+      rintro _ ⟨x, rfl⟩
+      refine (Subalgebra.mem_centralizer_iff R).mpr fun g hg => ?_
+      rw [Set.mem_singleton_iff] at hg
+      subst hg
+      have hx := h x
+      rw [LieRing.of_associative_ring_bracket] at hx
+      exact sub_eq_zero.mp hx
+    exact Subalgebra.mem_center_iff.mpr fun b =>
+      ((Subalgebra.mem_centralizer_iff R).mp (hgen (Set.mem_univ b)) u rfl).symm
+
+variable {R L}
+
+/-- **The iterated commutator with a Lie generator, read on the Lie generators.**  Bracketing
+`n` times with `ι x` inside `U(L)` sends `ι y` to the image of the `n`-fold adjoint action of `x`
+on `y`; that is, `ι` intertwines `LieAlgebra.ad R L x` with the inner derivation of `U(L)`
+attached to `ι x`. -/
+theorem ad_ι_pow_apply_ι (x y : L) (n : ℕ) :
+    (LieAlgebra.ad R U (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n)
+        (_root_.UniversalEnvelopingAlgebra.ι R y) =
+      _root_.UniversalEnvelopingAlgebra.ι R ((LieAlgebra.ad R L x ^ n) y) := by
+  induction n generalizing y with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply,
+      ← LieHom.map_lie (_root_.UniversalEnvelopingAlgebra.ι R), ih, pow_succ,
+      Module.End.mul_apply, LieAlgebra.ad_apply]
+
+end Center
 
 end TauCeti.UniversalEnvelopingAlgebra

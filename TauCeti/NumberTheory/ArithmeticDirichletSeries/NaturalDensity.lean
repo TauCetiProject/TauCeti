@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -43,6 +44,9 @@ whole spectrum have density one and ensures that a fixed finite error disappears
   primes preserves its natural density.
 * `NumberField.Set.hasNaturalDensity_of_finite`: every finite set of prime ideals has natural
   density zero.
+* `NumberField.Set.hasNaturalDensity_of_isLittleO_logIntegral`: if all primes satisfy
+  `π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
+  then `S` has natural density `δ`.
 * `NumberField.Set.isUpperDirichletDensityBound_of_eventually_primeCount_le` and
   `NumberField.Set.isLowerDirichletDensityBound_of_eventually_le_primeCount`: an eventual
   one-sided bound on the proportion of primes of `S` below `x` is the same one-sided bound for
@@ -97,15 +101,20 @@ theorem hasNaturalDensity_empty :
     HasNaturalDensity (∅ : Set (HeightOneSpectrum (𝓞 K))) 0 := by
   simp [hasNaturalDensity_def]
 
+/-- The all-prime count is eventually nonzero, so the quotient defining natural density is
+eventually well formed.  This is the side condition every density computation below needs
+before it may divide by `primeCount K Set.univ`. -/
+private theorem eventually_primeCount_univ_ne_zero :
+    ∀ᶠ x : ℝ in atTop,
+      TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x ≠ 0 :=
+  ((TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0).mono fun _ hx => hx.ne'
+
 /-- The set of all prime ideals has natural density one. -/
 @[simp]
 theorem hasNaturalDensity_univ :
     HasNaturalDensity (Set.univ : Set (HeightOneSpectrum (𝓞 K))) 1 := by
   rw [hasNaturalDensity_def]
-  have hne : ∀ᶠ x : ℝ in atTop,
-      TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x ≠ 0 :=
-    ((TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0).mono
-      fun _ hx => hx.ne'
+  have hne := eventually_primeCount_univ_ne_zero (K := K)
   exact tendsto_const_nhds.congr' (hne.mono fun _ hx => (div_self hx).symm)
 
 /-- A natural density is nonnegative. -/
@@ -154,10 +163,7 @@ theorem hasNaturalDensity_biUnion_finset {ι : Type*} {s : Finset ι}
 theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
     HasNaturalDensity Sᶜ (1 - δ) := by
   rw [hasNaturalDensity_def] at hS ⊢
-  have hne : ∀ᶠ x : ℝ in atTop,
-      TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x ≠ 0 :=
-    ((TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0).mono
-      fun _ hx => hx.ne'
+  have hne := eventually_primeCount_univ_ne_zero (K := K)
   refine (tendsto_const_nhds.sub hS).congr' (hne.mono fun x hx => ?_)
   simp only
   rw [← div_self hx, ← sub_div]
@@ -261,6 +267,18 @@ private theorem primeSummatory_indicator_sub (S : Set (HeightOneSpectrum (𝓞 K
       TauCeti.primeCount K S x - c * TauCeti.primeCount K Set.univ x := by
   simp [TauCeti.primeSummatory_apply, TauCeti.primeCount_apply, Finset.sum_sub_distrib, mul_comm]
 
+/-- Near `1` from the right, the all-prime Dirichlet sum is eventually positive and eventually
+exceeds `C / ε`, equivalently `C < ε` times the sum.  Both hold because the sum diverges as
+`s → 1⁺`. -/
+private theorem eventually_lt_mul_primeIdealZetaSum_univ {C ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ s in 𝓝[>] (1 : ℝ), 1 < s ∧
+      0 < primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s ∧
+      C < ε * primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s := by
+  filter_upwards [self_mem_nhdsWithin,
+    (TauCeti.tendsto_primeIdealZetaSum_univ_atTop (K := K)).eventually_gt_atTop (max (C / ε) 0)]
+    with s (hs : 1 < s) hP
+  exact ⟨hs, (le_max_right _ _).trans_lt hP, (div_lt_iff₀' hε).1 ((le_max_left _ _).trans_lt hP)⟩
+
 /-- **Upper natural bounds are upper Dirichlet bounds.** If eventually at most the proportion `c`
 of the primes of norm at most `x` lie in `S`, then `c` is an upper Dirichlet-density bound for
 `S`. -/
@@ -274,12 +292,8 @@ theorem isUpperDirichletDensityBound_of_eventually_primeCount_le {c : ℝ}
       rw [primeSummatory_indicator_sub]
       linarith)
   refine isUpperDirichletDensityBound_iff.2 fun ε hε ↦ ?_
-  filter_upwards [self_mem_nhdsWithin,
-    (TauCeti.tendsto_primeIdealZetaSum_univ_atTop (K := K)).eventually_gt_atTop (max (C / ε) 0)]
-    with s (hs : 1 < s) hP
-  have hP0 : 0 < primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s :=
-    (le_max_right _ _).trans_lt hP
-  have hCP := (div_lt_iff₀' hε).1 ((le_max_left _ _).trans_lt hP)
+  filter_upwards [eventually_lt_mul_primeIdealZetaSum_univ (K := K) (C := C) hε]
+    with s ⟨hs, hP0, hCP⟩
   have := hC s hs
   rw [tsum_indicator_sub_mul_rpow S c hs] at this
   rw [div_lt_iff₀ hP0, add_mul]
@@ -302,12 +316,8 @@ theorem isLowerDirichletDensityBound_of_eventually_le_primeCount {c : ℝ}
         primeSummatory_indicator_sub]
       linarith)
   refine isLowerDirichletDensityBound_iff.2 fun ε hε ↦ ?_
-  filter_upwards [self_mem_nhdsWithin,
-    (TauCeti.tendsto_primeIdealZetaSum_univ_atTop (K := K)).eventually_gt_atTop (max (C / ε) 0)]
-    with s (hs : 1 < s) hP
-  have hP0 : 0 < primeIdealZetaSum (Set.univ : Set (HeightOneSpectrum (𝓞 K))) s :=
-    (le_max_right _ _).trans_lt hP
-  have hCP := (div_lt_iff₀' hε).1 ((le_max_left _ _).trans_lt hP)
+  filter_upwards [eventually_lt_mul_primeIdealZetaSum_univ (K := K) (C := C) hε]
+    with s ⟨hs, hP0, hCP⟩
   have := hC s hs
   simp only [neg_mul, tsum_neg, tsum_indicator_sub_mul_rpow S c hs] at this
   rw [lt_div_iff₀ hP0, sub_mul]
@@ -335,5 +345,25 @@ theorem hasDirichletDensity_of_hasNaturalDensity (h : HasNaturalDensity S δ) :
         exact ((lt_div_iff₀ hx0).1 hx).le
     filter_upwards [isLowerDirichletDensityBound_iff.1 hlow (ε / 2) (half_pos hε)] with s hs
     linarith
+
+open Asymptotics in
+/-- **Natural density from prime-counting asymptotics.** If the primes of `K` satisfy
+`π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
+then `S` has natural density `δ`. -/
+theorem hasNaturalDensity_of_isLittleO_logIntegral
+    (hS : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x)
+    (hU : (fun x ↦ TauCeti.primeCount K Set.univ x - TauCeti.Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x) : HasNaturalDensity S δ := by
+  have hdiff : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.primeCount K Set.univ x)
+      =o[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (hS.sub (hU.const_mul_left δ)).congr_left fun x ↦ by ring
+  have hequiv : TauCeti.primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (hU.add TauCeti.Real.logIntegral_isEquivalent_div_log).congr_left fun x ↦ by simp
+  -- `π_S / π - δ = (π_S - δ π) / π → 0`
+  refine hasNaturalDensity_def.mpr <| (zero_add δ ▸
+    (hdiff.trans_isBigO hequiv.isBigO_symm).tendsto_div_nhds_zero.add_const δ).congr' ?_
+  filter_upwards [(TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0] with x hx
+  grind
 
 end NumberField.Set

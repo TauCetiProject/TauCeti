@@ -24,8 +24,9 @@ is the `L^p (0,1)` distance of the two quantile functions. Every `p`-Wasserstein
 real laws is therefore at most that explicit one-dimensional integral.
 
 The reverse inequality — that the monotone coupling is optimal, so that the bound below is an
-identity — is a separate result about the rearrangement inequality for the costs `|x - y| ^ p` and
-is not proved here.
+identity — is a separate result. At the exponent `1` it is
+`TauCeti.wassersteinEDist_one_eq_eLpNorm_quantile_sub`; for a general exponent it is a
+rearrangement inequality for the costs `|x - y| ^ p`, which is not proved here.
 
 ## Main definitions
 

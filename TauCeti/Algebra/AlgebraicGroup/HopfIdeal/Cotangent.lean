@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 

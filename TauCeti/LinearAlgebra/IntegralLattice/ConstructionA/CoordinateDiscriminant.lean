@@ -167,6 +167,19 @@ theorem discriminantEquiv_mk_intCast (z : ι → ℤ) :
       fun i ↦ ((z i : ZMod (m : ℕ))) := by
   rw [discriminantEquiv_mk, toCoordinate_dualCarrierIntEquiv]
 
+/-- Reduction of a quotient representative whose underlying dual vector has integer coordinates.
+This form is independent of the proof that the displayed vector belongs to the dual carrier. -/
+theorem discriminantEquiv_mk_of_intCast (z : ι → ℤ)
+    (hz : (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).dualCarrier) :
+    discriminantEquiv m ι
+        (Submodule.Quotient.mk (⟨(fun i ↦ (z i : ℚ)), hz⟩ : (zeroLattice m ι).dualCarrier)) =
+      fun i ↦ ((z i : ZMod (m : ℕ))) := by
+  have hrep : (⟨(fun i ↦ (z i : ℚ)), hz⟩ : (zeroLattice m ι).dualCarrier) =
+      dualCarrierIntEquiv m ι z := by
+    apply Subtype.ext
+    exact (coe_dualCarrierIntEquiv_apply m ι z).symm
+  rw [hrep, discriminantEquiv_mk_intCast]
+
 /-- The inverse identification sends a word to the discriminant class of any coordinatewise
 integer lift. -/
 @[simp]

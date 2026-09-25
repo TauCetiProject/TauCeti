@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
 
@@ -33,6 +34,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
+* `TauCeti.exists_isPGroup_quotient_notMem_of_pow_pow_eq_one`: in a finite commutative
+  group, an element of `p`-power order survives in some `p`-group quotient.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
   `p`.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
@@ -89,6 +92,30 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
   refine hC ((?_ : p ∣ orderOf g).trans ?_)
   · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
   · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+
+open scoped IsMulCommutative in
+/-- In a finite commutative group, a nontrivial element of `p`-power order survives in some
+`p`-group quotient: there is a subgroup `N` with `A ⧸ N` a `p`-group and `a ∉ N`. The subgroup
+is the kernel of raising to the power `ordCompl[p] (Nat.card A)`, the part of the group order
+prime to `p`. -/
+theorem exists_isPGroup_quotient_notMem_of_pow_pow_eq_one {A : Type*} [Group A]
+    [IsMulCommutative A] [Finite A] [hp : Fact p.Prime] {a : A} {k : ℕ} (ha : a ^ p ^ k = 1)
+    (ha1 : a ≠ 1) : ∃ N : Subgroup A, IsPGroup p (A ⧸ N) ∧ a ∉ N := by
+  let f : A →* A := powMonoidHom (ordCompl[p] (Nat.card A))
+  refine ⟨f.ker, ?_, fun h ↦ ha1 ?_⟩
+  · -- The quotient by the kernel is the range, whose elements are killed by `ordProj[p]`.
+    refine IsPGroup.of_equiv ?_ (QuotientGroup.quotientKerEquivRange f).symm
+    rintro ⟨_, b, rfl⟩
+    refine ⟨(Nat.card A).factorization p, ?_⟩
+    rw [Subtype.ext_iff, Subgroup.coe_pow, OneMemClass.coe_one]
+    simp only [f, powMonoidHom_apply]
+    rw [← pow_mul, mul_comm, Nat.ordProj_mul_ordCompl_eq_self, pow_card_eq_one']
+  · -- An element of `p`-power order killed by a power prime to `p` is trivial.
+    rw [MonoidHom.mem_ker] at h
+    simp only [f, powMonoidHom_apply] at h
+    exact orderOf_eq_one_iff.mp <| Nat.eq_one_of_dvd_coprimes
+      ((Nat.coprime_ordCompl hp.out Nat.card_pos.ne').pow_left k)
+      (orderOf_dvd_of_pow_eq_one ha) (orderOf_dvd_of_pow_eq_one h)
 
 /-- A maximal subgroup of a finite `p`-group has index `p`. -/
 theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime]

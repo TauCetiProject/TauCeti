@@ -41,7 +41,7 @@ open scoped Classical in
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
 sum beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from below. -/
 theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOrder γ]
-    [Preorder β] [AddCommMonoid β] (s : Finset ι) {a : ι → γ} {e : ι → β}
+    [LT β] [AddCommMonoid β] (s : Finset ι) {a : ι → γ} {e : ι → β}
     {p : γ} {c : β} (hc : c < 0)
     (hp : c < Finset.sum (s.filter (fun i => a i = p)) e)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :

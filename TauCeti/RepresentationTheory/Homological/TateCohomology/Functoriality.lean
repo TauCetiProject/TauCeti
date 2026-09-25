@@ -43,6 +43,8 @@ invariants of its conjugate through the resulting map in degree two.
 * `TauCeti.TateCohomology.complexMap`: the induced map of Tate complexes.
 * `TauCeti.TateCohomology.map`: the induced map in a single integer degree.
 * `TauCeti.TateCohomology.mapIso`: the induced isomorphism, for `φ` a linear equivalence.
+* `TauCeti.TateCohomology.negSuccIso`: Mathlib's identification of Tate cohomology in degree
+  `-(n+1)` with group homology in degree `n`, as an isomorphism of the two modules.
 * `TauCeti.TateCohomology.resIso`: the packaged natural isomorphism
   `Res(e) ⋙ tateCohomologyFunctor n ≅ tateCohomologyFunctor n`.
 
@@ -55,11 +57,15 @@ invariants of its conjugate through the resulting map in degree two.
 * `TauCeti.TateCohomology.map_comp_isoGroupCohomology_hom`: in positive degrees the construction
   is `groupCohomology.map` along `e.symm`.
 * `TauCeti.TateCohomology.map_comp_isoGroupHomology_hom`: in degrees at most `-2` it is
-  `groupHomology.map` along `e`.
+  `groupHomology.map` along `e`; `TauCeti.TateCohomology.map_comp_negSuccIso_hom` restates this
+  through `TauCeti.TateCohomology.negSuccIso`, which `TauCeti.TateCohomology.negSuccIso_hom`
+  identifies with Mathlib's comparison.
 * `TauCeti.TateCohomology.map_comp_H0IsoNormQuotient_hom`: in degree zero the construction is
   the map induced on the quotient of invariants by the norm image.
 * `TauCeti.TateCohomology.HNegOneπ_comp_map`: in degree `-1` the construction sends the class of
   a norm-zero element to the class of its image (`TauCeti.TateCohomology.mapKerNorm`).
+* `TauCeti.TateCohomology.H0π_comp_tateCohomologyFunctor_map`: in degree zero, Mathlib's
+  coefficient functoriality sends the class of an invariant to the class of its image.
 
 ## References
 
@@ -495,6 +501,30 @@ theorem map_comp_isoGroupHomology_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
   -- `homologyMap` of `chainsMap`, and `tateCohomology M m` is the homology of `tateComplex M`.
   exact key
 
+variable (M) in
+/-- Tate cohomology in degree `-(n+1)`, for `n > 0`, is group homology in degree `n`: the
+component at `M` of Mathlib's comparison `TateCohomology.isoGroupHomology`. -/
+def negSuccIso (n : ℕ) [NeZero n] :
+    tateCohomology M (Int.negSucc n) ≅ groupHomology M n :=
+  (_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).app M
+
+variable (M) in
+/-- `TauCeti.TateCohomology.negSuccIso` is the component at `M` of Mathlib's comparison
+`TateCohomology.isoGroupHomology`. -/
+theorem negSuccIso_hom (n : ℕ) [NeZero n] :
+    (negSuccIso M n).hom =
+      ((_root_.TateCohomology.isoGroupHomology (Int.negSucc n) n (Int.negSucc_eq n)).app M).hom :=
+  (rfl)
+
+/-- **In degrees `-(n+1)` with `n > 0` the construction is the ordinary homological
+change-of-group map** along `e`, read through `TauCeti.TateCohomology.negSuccIso`. -/
+@[reassoc (attr := simp)]
+theorem map_comp_negSuccIso_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) (n : ℕ) [NeZero n] :
+    map hφ (Int.negSucc n) ≫ (negSuccIso N n).hom =
+      (negSuccIso M n).hom ≫ groupHomology.map (e : G →* H) (IsIntertwiningMap.toRes hφ) n :=
+  map_comp_isoGroupHomology_hom hφ _ n (Int.negSucc_eq n)
+
 /-- **Restricting the coefficients along an isomorphism of finite groups does not change Tate
 cohomology**, naturally in the coefficients. -/
 def resIso (e : G ≃* H) (n : ℤ) :
@@ -543,6 +573,19 @@ theorem natCard_tateCohomology_eq {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
     (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
     Nat.card (tateCohomology M n) = Nat.card (tateCohomology N n) :=
   Nat.card_congr (mapIso he n).toLinearEquiv.toEquiv
+
+/-- In degree zero, the map induced by a morphism of representations of one finite group sends
+the class of an invariant to the class of its image. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem H0π_comp_tateCohomologyFunctor_map {M N : Rep R G} (f : M ⟶ N) :
+    H0π M ≫ (tateCohomologyFunctor 0).map f = (Rep.invariantsFunctor R G).map f ≫ H0π N := by
+  have hf : M.ρ.IsIntertwiningMap (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  -- `map_refl` produces `Rep.ofHom ⟨f.hom.toLinearMap, _⟩`, which is `f` by structure eta.
+  have h : map hf 0 = (tateCohomologyFunctor 0).map f := map_refl hf 0
+  rw [← h, H0π_comp_map]
+  -- `mapInvariants hf` restricts `f` to the invariants, which is how `Rep.invariantsFunctor` acts.
+  rfl
 
 end Degrees
 

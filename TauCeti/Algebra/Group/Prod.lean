@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Prod
 
 /-!
-# Homomorphisms out of a product of monoids
+# Homomorphisms out of a product of monoids, and products of isomorphisms
 
 A product of two monoids is their coproduct in commutative monoids: a homomorphism
 `M × N →* P` with `P` commutative is the same data as a pair of homomorphisms `M →* P` and
@@ -17,10 +17,15 @@ separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `Mono
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
 
+The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
+multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`.
+
 ## Main definitions
 
 * `MonoidHom.coprodEquiv`: the multiplicative equivalence `((M →* P) × (N →* P)) ≃* (M × N →* P)`
   for `P` a commutative monoid.
+* `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
+  componentwise, and its inverse is the product of the inverses.
 -/
 
 public section
@@ -54,3 +59,21 @@ theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
 
 end MonoidHom
+
+namespace MulEquiv
+
+variable {M N M' N' : Type*} [MulOneClass M] [MulOneClass N] [MulOneClass M'] [MulOneClass N']
+
+/-- The product of two multiplicative isomorphisms acts componentwise. -/
+@[to_additive (attr := simp) prodCongr_apply
+/-- The product of two additive isomorphisms acts componentwise. -/]
+theorem prodCongr_apply (f : M ≃* M') (g : N ≃* N') (x : M × N) :
+    f.prodCongr g x = (f x.1, g x.2) := (rfl)
+
+/-- The inverse of a product of two multiplicative isomorphisms is the product of the inverses. -/
+@[to_additive (attr := simp) prodCongr_symm
+/-- The inverse of a product of two additive isomorphisms is the product of the inverses. -/]
+theorem prodCongr_symm (f : M ≃* M') (g : N ≃* N') :
+    (f.prodCongr g).symm = f.symm.prodCongr g.symm := (rfl)
+
+end MulEquiv

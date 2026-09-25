@@ -39,6 +39,12 @@ specializations to the Artin fibres and to `ramifiedPrimes K L` are Chebotarev-s
 and `0` is not additive along a partition. The fibre identity therefore carries a summability
 hypothesis, and only a per-fibre one: nothing here needs the series over all primes to converge.
 
+For `1 < s`, discharge that hypothesis with
+`fun C ↦ TauCeti.summable_absNorm_rpow_subtype_of_one_lt (frobeniusPrimeSet K L C) hs`.
+The generic arbitrary-subtype theorem already has exactly the required type, so no
+Chebotarev-specific convergence specialization is needed. Accordingly, this module deliberately
+exposes only the general, summability-parameterized results rather than thin `_of_one_lt` wrappers.
+
 ## References
 
 The Artin-class partition of the unramified primes and the bound on the ramified contribution are
@@ -70,7 +76,8 @@ Artin fibres of all conjugacy classes of `Gal(L/K)` gives the sum over the compl
 `ramifiedPrimes K L`, provided each fibre series converges.
 
 Summability is what makes the fibre sums add; see the module docstring. It is needed only on each
-fibre, which `Summable.subtype` supplies from summability over all primes. -/
+fibre. On `1 < s`, it is supplied directly by
+`TauCeti.summable_absNorm_rpow_subtype_of_one_lt (frobeniusPrimeSet K L C) hs`. -/
 theorem sum_primeIdealZetaSum_frobeniusPrimeSet
     (hsum : ∀ C : ConjClasses (L ≃ₐ[K] L),
       Summable fun 𝔭 : frobeniusPrimeSet K L C ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :

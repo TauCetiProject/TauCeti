@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 
 /-!
 # Refining quasi-coherent data
@@ -21,10 +21,12 @@ pullbacks it is a left adjoint, so it maps presentations to presentations
 `M.over X` with `M.over Y`.
 
 The same restriction applies to local generators (`SheafOfModules.LocalGeneratorsData`), and it
-preserves local freeness and finiteness of the generating families. Generating sections are
-transported along the identification `SheafOfModules.overFunctorMap` by Mathlib's
-`SheafOfModules.GeneratingSections.equivOfIso`, whose generating morphism is computed by
-`SheafOfModules.GeneratingSections.equivOfIso_apply_π`.
+preserves local freeness and finiteness of the generating families. Both restriction along an
+arrow and the transport of the next paragraph are instances of one construction,
+`SheafOfModules.GeneratingSections.mapIso`, from the lower-level generating-sections transport
+module: generating sections are carried along a colimit-preserving functor by Mathlib's
+`SheafOfModules.GeneratingSections.map` and then read through an isomorphism by
+`SheafOfModules.GeneratingSections.equivOfIso`.
 
 This lets two quasi-coherent sheaves be presented on a common refinement of their covers, which is
 how the tensor product and the biproduct of quasi-coherent sheaves are shown to be quasi-coherent.
@@ -105,42 +107,6 @@ theorem _root_.SheafOfModules.Presentation.isIso_map_generators_π (h : IsIso P.
 
 end Map
 
-section GeneratingSections
-
-variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
-  [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  {M N : SheafOfModules.{u} R}
-
-/-- Transporting generating sections along an isomorphism preserves their index type. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.equivOfIso_apply_I (e : M ≅ N)
-    (σ : M.GeneratingSections) : (GeneratingSections.equivOfIso e σ).I = σ.I :=
-  rfl
-
-/-- Transporting generating sections along an isomorphism `e` composes the generating morphism
-with `e`. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.equivOfIso_apply_π (e : M ≅ N)
-    (σ : M.GeneratingSections) : (GeneratingSections.equivOfIso e σ).π = σ.π ≫ e.hom :=
-  GeneratingSections.ofEpi_π _ _
-
-/-- Transporting generating sections along an isomorphism preserves an invertible generating
-morphism. -/
-instance _root_.SheafOfModules.GeneratingSections.isIso_equivOfIso_π (e : M ≅ N)
-    (σ : M.GeneratingSections) [hσ : IsIso σ.π] : IsIso (GeneratingSections.equivOfIso e σ).π := by
-  rw [GeneratingSections.equivOfIso_apply_π]
-  exact IsIso.comp_isIso' hσ inferInstance
-
-/-- Transporting generating sections along an isomorphism preserves finiteness. -/
-instance _root_.SheafOfModules.GeneratingSections.isFiniteType_equivOfIso (e : M ≅ N)
-    (σ : M.GeneratingSections) [hσ : σ.IsFiniteType] :
-    (GeneratingSections.equivOfIso e σ).IsFiniteType where
-  finite := by
-    rw [GeneratingSections.equivOfIso_apply_I]
-    exact hσ.finite
-
-end GeneratingSections
-
 variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
@@ -162,43 +128,40 @@ def _root_.SheafOfModules.QuasicoherentData.ofRefinement {M : SheafOfModules.{u}
       ((overFunctorMap R (map i)).hom.app M)
 
 /-- Generating sections of `M.over X` restricted along `f : Y ⟶ X` to generating sections of
-`M.over Y`: they are mapped by the restriction functor `overMap R f`, which is identified with
+`M.over Y`: they are carried by the restriction functor `overMap R f`, which is identified with
 restriction to `Y` by `overFunctorMap`. -/
-@[expose]
 def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (M.over Y).GeneratingSections :=
-  GeneratingSections.equivOfIso ((overFunctorMap R f).app M)
-    (G.map (overMap R f) (overMapUnitIso f).symm)
+  G.mapIso (overMap R f) (overMapUnitIso f).symm ((overFunctorMap R f).app M)
 
 /-- Restricting generating sections preserves their index type. -/
 @[simp]
 theorem _root_.SheafOfModules.GeneratingSections.restrict_I {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (G.restrict f).I = G.I :=
-  (rfl)
+  GeneratingSections.mapIso_I _ _ _ _
 
 /-- The generating morphism of restricted generating sections is obtained by mapping the original
-generating morphism and then applying the comparison with restriction to `Y`. -/
+generating morphism and then applying the comparison with restriction to `Y`, read along the
+identification `restrict_I` of the index types. -/
 @[simp]
 theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) :
-    (G.restrict f).π =
+    eqToHom (congrArg free (GeneratingSections.restrict_I G f).symm) ≫ (G.restrict f).π =
       ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
-        (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom := by
-  simp only [GeneratingSections.restrict, GeneratingSections.equivOfIso_apply_π,
-    GeneratingSections.map_π_eq]
-  rfl
+        (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom :=
+  GeneratingSections.mapIso_π _ _ _ _
 
 /-- Restricting generating sections preserves an invertible generating morphism. -/
 instance _root_.SheafOfModules.GeneratingSections.isIso_restrict_π {M : SheafOfModules.{u} R}
     {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X) [IsIso G.π] :
     IsIso (G.restrict f).π :=
-  GeneratingSections.isIso_equivOfIso_π _ _
+  GeneratingSections.isIso_mapIso_π _ _ _ _
 
 /-- Restricting generating sections preserves finiteness. -/
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_restrict
     {M : SheafOfModules.{u} R} {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X)
     [hG : G.IsFiniteType] : (G.restrict f).IsFiniteType :=
-  GeneratingSections.isFiniteType_equivOfIso _ _
+  GeneratingSections.isFiniteType_mapIso _ _ _ _
 
 /-- Local generators for `M` transported to a refining covering family `Y`: each `Y i` maps to the
 member `q.X (index i)` of the original cover by `map i`, and the generators of `M.over (Y i)` are

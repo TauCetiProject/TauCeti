@@ -316,9 +316,6 @@ noncomputable instance : CommMonoid (MultiplicativeIdealWeight K) where
     · simp
     · simp [one_apply, hI]
   mul_comm χ ψ := by ext I; simp [mul_comm]
-  npow := npowRec
-  npow_zero := by intros; rfl
-  npow_succ := by intros; rfl
 
 @[simp]
 theorem isGood_one_iff {I : Ideal (𝓞 K)} :
@@ -819,9 +816,6 @@ noncomputable instance : CommMonoid (UnitaryIdealWeight K) where
   one_mul χ := Subtype.ext (by simp only [val_mul, val_one]; exact one_mul _)
   mul_one χ := Subtype.ext (by simp only [val_mul, val_one]; exact mul_one _)
   mul_comm χ ψ := Subtype.ext (by simp only [val_mul]; exact mul_comm _ _)
-  npow := npowRec
-  npow_zero := by intros; rfl
-  npow_succ := by intros; rfl
 
 /-- **Finite-order weights are unitary.** If a positive power of `χ` takes the value `1` at
 every good prime — as for a finite-order Hecke character — then `χ` is unitary. -/
@@ -851,6 +845,20 @@ noncomputable def normTwist (z : ℂ) (hz : z.re = 0) (χ : UnitaryIdealWeight K
 @[simp]
 theorem val_normTwist (z : ℂ) (hz : z.re = 0) (χ : UnitaryIdealWeight K) :
     (normTwist z hz χ).1 = MultiplicativeIdealWeight.normTwist z χ.1 := (rfl)
+
+/-- The zero norm twist acts trivially on unitary weights. -/
+@[simp]
+theorem normTwist_zero (χ : UnitaryIdealWeight K) : normTwist 0 (by simp) χ = χ :=
+  Subtype.ext (by rw [val_normTwist, MultiplicativeIdealWeight.normTwist_zero])
+
+/-- Successive imaginary norm twists of a unitary weight combine by adding their parameters. -/
+@[simp]
+theorem normTwist_normTwist (z w : ℂ) (hz : z.re = 0) (hw : w.re = 0)
+    (χ : UnitaryIdealWeight K) :
+    normTwist z hz (normTwist w hw χ) = normTwist (z + w) (by simp [hz, hw]) χ :=
+  Subtype.ext (by
+    rw [val_normTwist, val_normTwist, val_normTwist,
+      MultiplicativeIdealWeight.normTwist_normTwist])
 
 /-- **The modulus of an arbitrary norm twist.** At a good ideal, twisting a unitary weight by
 `z` gives modulus `N(I) ^ (-Re z)`; only the purely imaginary twists therefore stay unitary. -/

@@ -80,6 +80,8 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
+* `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
+  against a finite measure of finite first moment;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
@@ -585,6 +587,23 @@ theorem HasFiniteMoment.memLp
   obtain ⟨x₀, hx₀⟩ := h
   exact (memLp_edist_iff_of_edist_ne_top hx₀.1 hd (edist_ne_top x x₀)).1 hx₀
 
+/-- A Lipschitz real function is integrable against a finite measure with finite first moment: it
+grows at most linearly in the distance to a basepoint. These are the test functions of the
+Kantorovich–Rubinstein formula for `W₁`. -/
+theorem HasFiniteMoment.integrable_of_lipschitzWith [OpensMeasurableSpace X] {ν : Measure X}
+    [IsFiniteMeasure ν] (h : HasFiniteMoment 1 ν) {K : ℝ≥0} {f : X → ℝ}
+    (hf : LipschitzWith K f) : Integrable f ν := by
+  obtain ⟨x₀, hx₀⟩ := h
+  have hd : Measurable fun y ↦ dist y x₀ := (continuous_id.dist continuous_const).measurable
+  have hint : Integrable (fun y ↦ dist y x₀) ν :=
+    memLp_one_iff_integrable.1 ((memLp_dist_iff_memLp_edist hd.aestronglyMeasurable).2 hx₀)
+  refine ((integrable_const |f x₀|).add (hint.const_mul K)).mono'
+    hf.continuous.aestronglyMeasurable (.of_forall fun y ↦ ?_)
+  have hy := hf.dist_le_mul y x₀
+  rw [Real.dist_eq] at hy
+  simp only [Pi.add_apply, Real.norm_eq_abs]
+  linarith [abs_sub_abs_le_abs_sub (f y) (f x₀)]
+
 /-- A finite measure carried by a finite set has finite `p`-moment for every exponent: the ground
 distance to a basepoint is bounded on that finite set. -/
 theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure X}
@@ -602,6 +621,16 @@ theorem hasFiniteMoment_iff_memLp_edist {x : X} {ν : Measure X}
     (hd : AEStronglyMeasurable (fun y ↦ edist x y) ν) [IsFiniteMeasure ν] :
     HasFiniteMoment p ν ↔ MemLp (fun y ↦ edist x y) p ν :=
   ⟨fun h ↦ h.memLp hd, fun h ↦ ⟨x, h⟩⟩
+
+/-- For a finite nonzero exponent `p`, the finite-moment condition for a finite measure is
+equivalent to finiteness of its `p`-moment about any basepoint. -/
+theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X) (ν : Measure X) [IsFiniteMeasure ν] :
+    HasFiniteMoment p ν ↔ ∫⁻ y, edist x y ^ p.toReal ∂ν ≠ ∞ := by
+  rw [hasFiniteMoment_iff_memLp_edist (x := x) measurable_edist_right.aestronglyMeasurable]
+  rw [MemLp, and_iff_right measurable_edist_right.aestronglyMeasurable,
+    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp, lt_top_iff_ne_top]
+  simp only [enorm_eq_self]
 
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/

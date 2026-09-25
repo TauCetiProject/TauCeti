@@ -107,7 +107,7 @@ theorem f4ShortRootBasisCoordinate_injective :
       exact i.property
     · simp only [f4ShortRootBasisCoordinate, h, mem_f4ShortChevalleyIndices_iff,
         f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndex_baseSupportEquiv]
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
       fin_cases k <;> simp [f4ShortSimpleIndex]
   · intro hx
     rcases x with α | j
@@ -118,7 +118,7 @@ theorem f4ShortRootBasisCoordinate_injective :
       refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inl i), ?_⟩
       simp only [f4ShortRootBasisCoordinate, Equiv.apply_symm_apply]
       exact congrArg Sum.inl (f4KillingRootLabel_f4PinnedRootIndex α)
-    · have hx' : f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3 :=
+    · have hx' : f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3 :=
         f4ChevalleyIndexIsShort_inr_iff j |>.mp
           (mem_f4ShortChevalleyIndices_iff (Sum.inr j) |>.mp hx)
       rcases hx' with h2 | h3
@@ -129,7 +129,7 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 0 := by
           apply Fin.ext
           have hv := congrArg Fin.val h2
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndexEquiv_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans
@@ -141,7 +141,7 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 1 := by
           apply Fin.ext
           have hv := congrArg Fin.val h3
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndexEquiv_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans
@@ -225,6 +225,33 @@ theorem coe_f4ShortRootLieIdealBasis_symm_inr (k : Fin 2) :
       f4ModularChevalleyLieAlgebra) = f4ModularSimpleCoroot (f4ShortSimpleIndex k) := by
   rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis]
   exact coe_f4ShortRootBasis_symm_inr k
+
+/-- A basis coordinate whose short-root weight is the root `i` has the modular root vector of
+`i` as its underlying element. -/
+theorem coe_f4ShortRootLieIdealBasis_of_weight_eq_root (b : Fin 26) (i : Fin 48)
+    (hi : f4Length i = 1) (h : f4ShortRootWeight b = f4Root i) :
+    (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) =
+      f4ModularRootVector i := by
+  have hb : b = f4ShortRootWeightIndexEquiv.symm (Sum.inl ⟨i, hi⟩) := by
+    apply f4ShortRootWeightIndexEquiv.injective
+    rw [Equiv.apply_symm_apply]
+    exact (f4ShortRootWeightIndexEquiv_apply_eq_inl_iff _ _).2 h
+  rw [hb]
+  exact coe_f4ShortRootLieIdealBasis_symm_inl ⟨i, hi⟩
+
+/-- Ideal coordinate twelve is the short simple coroot at index two. -/
+theorem coe_f4ShortRootLieIdealBasis_twelve :
+    (f4ShortRootLieIdealBasis 12 : f4ModularChevalleyLieAlgebra) =
+      f4ModularSimpleCoroot (Fin.cast rank_F4.symm (2 : Fin 4)) := by
+  rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis]
+  exact coe_f4ShortRootBasis_twelve
+
+/-- Ideal coordinate thirteen is the short simple coroot at index three. -/
+theorem coe_f4ShortRootLieIdealBasis_thirteen :
+    (f4ShortRootLieIdealBasis 13 : f4ModularChevalleyLieAlgebra) =
+      f4ModularSimpleCoroot (Fin.cast rank_F4.symm (3 : Fin 4)) := by
+  rw [coe_f4ShortRootLieIdealBasis, ← coe_f4ShortRootBasis]
+  exact coe_f4ShortRootBasis_thirteen
 
 /-- Coordinates in the ideal basis agree with the corresponding ambient Chevalley coordinates. -/
 @[simp] theorem f4ShortRootLieIdealBasis_repr_apply (y : f4ShortRootLieIdeal) (i : Fin 26) :

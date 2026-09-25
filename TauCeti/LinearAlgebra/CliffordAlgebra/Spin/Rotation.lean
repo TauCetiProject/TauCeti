@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # Rotations in real Spin groups

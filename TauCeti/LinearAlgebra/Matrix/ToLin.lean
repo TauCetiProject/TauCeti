@@ -42,8 +42,8 @@ namespace TauCeti
 /-- **A matrix unit acts on a basis by a single coordinate.** The endomorphism attached to
 `Matrix.single p q v` sends the basis vector indexed by the column `q` to `v • bas p`, and every
 other basis vector to `0`. -/
-theorem toLinAlgEquiv_single_apply_basis {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
-    [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
+theorem toLinAlgEquiv_single_apply_basis {R : Type*} [CommSemiring R] {M : Type*}
+    [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
     (bas : Module.Basis n R M) (p q : n) (v : R) (c : n) :
     Matrix.toLinAlgEquiv bas (Matrix.single p q v) (bas c) =
       (if q = c then v else 0) • bas p := by

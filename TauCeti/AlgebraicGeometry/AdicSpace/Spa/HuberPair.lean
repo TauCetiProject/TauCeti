@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.RingTheory.Huber.Pair
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # Maps of adic spectra for Huber pairs
 
@@ -131,7 +133,7 @@ private theorem spaComap_quotientHom_eq (S : Pair A) (J : Ideal A) :
   funext v
   apply Subtype.ext
   have hev : ((quotientSpaHomeomorph S J) v).1 = v.1 := by
-    exact congr_arg Subtype.val (Set.equivOfEq_apply (quotient_spa_eq S J) v)
+    exact congr_arg Subtype.val (Homeomorph.setCongr_apply (quotient_spa_eq S J) v)
   calc
     ((quotientHom S J).spaComap v).1 =
         ValuationSpectrum.comap (Ideal.Quotient.mk J) v.1 := by

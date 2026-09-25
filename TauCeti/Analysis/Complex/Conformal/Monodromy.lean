@@ -16,8 +16,7 @@ import Mathlib.Topology.UniformSpace.Compact
 Analytic continuation along a path is unique (`Continuation/Basic.lean`), but the germ it
 delivers at the far end may depend on the path. The **monodromy theorem** says that it only
 depends on the path up to homotopy: if a germ continues along every path of a homotopy rel
-endpoints, all those continuations end at the same germ. This is the L4 milestone of the
-conformal-mapping roadmap that `Continuation/Basic.lean` left as a follow-up.
+endpoints, all those continuations end at the same germ.
 
 The theorem is proved here in the form that does **not** hold the endpoints fixed. A homotopy of
 paths whose endpoints move carries the initial germs along the path `t ↦ h (t, 0)` swept out by
@@ -122,12 +121,6 @@ file:
 continuation along the path they sweep out, whereas the abstract theorem is rel endpoints and
 concludes with an equality of two lifted points.
 
-This advances the conformal-mapping roadmap's L4 target "the monodromy theorem (continuations
-along homotopic paths agree)" (see `ConformalMapping/README.md`). L4 is not covered by the
-roadmap's shim-deletion clause for the upstream Mathlib Riemann-mapping effort
-(leanprover-community/mathlib4#33505), which contains no reflection, continuation or monodromy
-material.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 8 §1.
@@ -161,7 +154,7 @@ private lemma exists_isOpen_locallyEq_and_dist_lt (hf : IsAnalyticContinuationAl
   have h₁ : ∀ᶠ u in 𝓝[s] t, dist (γ u) (γ t) < ε :=
     Metric.tendsto_nhds.1 (hf.continuousOn t ht) _ hε
   obtain ⟨V, hVo, htV, hVsub⟩ := mem_nhdsWithin.1 (h₁.and (hf.locallyEq t ht))
-  exact ⟨V, hVo, htV, fun u hu => ⟨(hVsub hu).2, (hVsub hu).1⟩⟩
+  exact ⟨V, hVo, htV, fun u hu ↦ ⟨(hVsub hu).2, (hVsub hu).1⟩⟩
 
 /-- **Sampling a compact parameter set.** Compactness turns the purely local data of a
 continuation into a *uniform* package: one radius `ρ > 0`, a sampling `i` of parameter times, and
@@ -183,26 +176,26 @@ private lemma exists_uniform_sampling (hf : IsAnalyticContinuationAlong f γ s) 
       (∀ t ∈ s, ∀ᶠ u in 𝓝[s] t,
         (f u =ᶠ[𝓝 (γ u)] f (i t)) ∧ dist (γ u) (γ (i t)) < R t / 4) := by
   -- A disc of analyticity for each carried germ.
-  choose! r hr hra using fun t (ht : t ∈ s) =>
+  choose! r hr hra using fun t (ht : t ∈ s) ↦
     AnalyticAt.exists_ball_analyticOnNhd (hf.analyticAt t ht)
   -- An open parameter neighbourhood on which the germ is constant and the path barely moves.
   have hV : ∀ t ∈ s, ∃ V : Set X, IsOpen V ∧ t ∈ V ∧
-      ∀ u ∈ V ∩ s, (f u =ᶠ[𝓝 (γ u)] f t) ∧ dist (γ u) (γ t) < r t / 4 := fun t ht =>
+      ∀ u ∈ V ∩ s, (f u =ᶠ[𝓝 (γ u)] f t) ∧ dist (γ u) (γ t) < r t / 4 := fun t ht ↦
     exists_isOpen_locallyEq_and_dist_lt hf ht (by have hrt := hr t ht; linarith)
   choose! V hVo hVt hVmem using hV
-  obtain ⟨T, hTs, hTcov⟩ := hs.elim_nhds_subcover V fun t ht => (hVo t ht).mem_nhds (hVt t ht)
+  obtain ⟨T, hTs, hTcov⟩ := hs.elim_nhds_subcover V fun t ht ↦ (hVo t ht).mem_nhds (hVt t ht)
   have hTne : T.Nonempty := by
     obtain ⟨t, ht⟩ := hsne
     obtain ⟨j, hj, -⟩ := mem_iUnion₂.1 (hTcov ht)
     exact ⟨j, hj⟩
-  choose! i hiT hiV using fun t (ht : t ∈ s) => mem_iUnion₂.1 (hTcov ht)
-  have hmem : ∀ t ∈ s, i t ∈ s := fun t ht => hTs _ (hiT t ht)
+  choose! i hiT hiV using fun t (ht : t ∈ s) ↦ mem_iUnion₂.1 (hTcov ht)
+  have hmem : ∀ t ∈ s, i t ∈ s := fun t ht ↦ hTs _ (hiT t ht)
   have hρpos : 0 < T.inf' hTne r / 4 := by
-    have hinf : 0 < T.inf' hTne r := (Finset.lt_inf'_iff hTne).2 fun j hj => hr j (hTs j hj)
+    have hinf : 0 < T.inf' hTne r := (Finset.lt_inf'_iff hTne).2 fun j hj ↦ hr j (hTs j hj)
     linarith
-  refine ⟨T.inf' hTne r / 4, hρpos, i, fun t => r (i t), hmem, fun t ht => ?_,
-    fun t ht => hra _ (hmem t ht), fun t ht => hVmem (i t) (hmem t ht) t ⟨hiV t ht, ht⟩,
-    fun t ht => ?_⟩
+  refine ⟨T.inf' hTne r / 4, hρpos, i, fun t ↦ r (i t), hmem, fun t ht ↦ ?_,
+    fun t ht ↦ hra _ (hmem t ht), fun t ht ↦ hVmem (i t) (hmem t ht) t ⟨hiV t ht, ht⟩,
+    fun t ht ↦ ?_⟩
   · have hinf := Finset.inf'_le r (hiT t ht)
     linarith
   · have hnear : ∀ᶠ u in 𝓝[s] t, u ∈ V (i t) :=
@@ -226,8 +219,8 @@ theorem exists_representatives (hf : IsAnalyticContinuationAlong f γ s) (hs : I
   rcases s.eq_empty_or_nonempty with rfl | hsne
   · exact ⟨1, one_pos, 0, by simp, by simp, by simp⟩
   obtain ⟨ρ, hρpos, i, R, hmem, hR, hra, key, hloc⟩ := exists_uniform_sampling hf hs hsne
-  refine ⟨ρ, hρpos, fun t => f (i t), fun t ht => ?_, fun t ht => (key t ht).1.symm,
-    fun t ht => ?_⟩
+  refine ⟨ρ, hρpos, fun t ↦ f (i t), fun t ht ↦ ?_, fun t ht ↦ (key t ht).1.symm,
+    fun t ht ↦ ?_⟩
   · refine (hra t ht).mono (ball_subset_ball' ?_)
     have hdt := (key t ht).2
     have hRt := hR t ht
@@ -246,7 +239,7 @@ theorem exists_representatives (hf : IsAnalyticContinuationAlong f γ s) (hs : I
         ((convex_ball _ _).inter (convex_ball _ _)).isPreconnected
         ⟨mem_ball.2 (by have hdu := (key u hus).2; linarith),
           mem_ball.2 (by linarith [hju.2])⟩ (((key u hus).1.symm).trans hju.1)
-    refine fun z hz => hEq ⟨?_, ?_⟩
+    refine fun z hz ↦ hEq ⟨?_, ?_⟩
     · refine ball_subset_ball' ?_ hz
       have htri : dist (γ t) (γ (i u)) ≤ dist (γ t) (γ u) + dist (γ u) (γ (i u)) := dist_triangle ..
       have hsymm : dist (γ t) (γ u) = dist (γ u) (γ t) := dist_comm ..
@@ -270,7 +263,7 @@ theorem exists_isAnalyticContinuationAlong_of_dist_lt (hf : IsAnalyticContinuati
       ∀ γ' : X → ℂ, ContinuousOn γ' s → (∀ t ∈ s, dist (γ' t) (γ t) < ρ) →
         IsAnalyticContinuationAlong F γ' s := by
   obtain ⟨ρ, hρ, F, hF₁, hF₂, hF₃⟩ := hf.exists_representatives hs
-  refine ⟨ρ, hρ, F, hF₂, fun γ' hγ' hd => ⟨hγ', fun t ht => hF₁ t ht _ (mem_ball.2 (hd t ht)), ?_⟩⟩
+  refine ⟨ρ, hρ, F, hF₂, fun γ' hγ' hd ↦ ⟨hγ', fun t ht ↦ hF₁ t ht _ (mem_ball.2 (hd t ht)), ?_⟩⟩
   intro t ht
   have hmem : ∀ᶠ u in 𝓝[s] t, γ' u ∈ ball (γ t) ρ :=
     (hγ' t ht) (isOpen_ball.mem_nhds (mem_ball.2 (hd t ht)))
@@ -297,7 +290,7 @@ theorem exists_forall_eventuallyEq_of_dist_lt (hf : IsAnalyticContinuationAlong 
         ∀ ⦃a : X⦄, a ∈ s → ∀ ⦃b : X⦄, b ∈ s →
           g a =ᶠ[𝓝 (γ' a)] F a → g b =ᶠ[𝓝 (γ' b)] F b := by
   obtain ⟨ρ, hρ, F, hF, hcont⟩ := hf.exists_isAnalyticContinuationAlong_of_dist_lt hs
-  exact ⟨ρ, hρ, F, hF, fun γ' g hd hg _ ha _ hb h₀ =>
+  exact ⟨ρ, hρ, F, hF, fun γ' g hd hg _ ha _ hb h₀ ↦
     hg.eventuallyEq (hcont γ' hg.continuousOn hd) hsc ha hb h₀⟩
 
 /-- **Stability of the terminal germ under uniform perturbation of the path.** For a continuation
@@ -316,9 +309,10 @@ theorem exists_eventuallyEq_of_dist_lt (hf : IsAnalyticContinuationAlong f γ s)
       (∀ t ∈ s, dist (γ' t) (γ t) < ρ) → γ' a = γ a → γ' b = γ b →
       IsAnalyticContinuationAlong g γ' s → g a =ᶠ[𝓝 (γ a)] f a → g b =ᶠ[𝓝 (γ b)] f b := by
   obtain ⟨ρ, hρ, F, hF, hkey⟩ := hf.exists_forall_eventuallyEq_of_dist_lt hs hsc
-  refine ⟨ρ, hρ, fun γ' g hd hga hgb hg hstart => ?_⟩
+  refine ⟨ρ, hρ, fun γ' g hd hga hgb hg hstart ↦ ?_⟩
   have h₀ : g a =ᶠ[𝓝 (γ' a)] F a := by
-    rw [hga]; exact hstart.trans (hF a ha).symm
+    rw [hga]
+    exact hstart.trans (hF a ha).symm
   have h₁ := hkey γ' g hd hg ha hb h₀
   rw [hgb] at h₁
   exact h₁.trans (hF b hb)
@@ -338,7 +332,7 @@ private lemma eventually_eventuallyEq_of_continuousAt {Z : Type*} [TopologicalSp
     {t₀ : Z} {F G : ℂ → E} (hc : ContinuousAt c t₀) (hF : AnalyticAt ℂ F (c t₀))
     (hG : AnalyticAt ℂ G (c t₀)) (h : F =ᶠ[𝓝 (c t₀)] G) :
     ∀ᶠ t in 𝓝 t₀, F =ᶠ[𝓝 (c t)] G :=
-  hc.eventually ((eventually_eventuallyEq_iff_of_analyticAt hF hG).mono fun _ hiff => hiff.mpr h)
+  hc.eventually ((eventually_eventuallyEq_iff_of_analyticAt hF hG).mono fun _ hiff ↦ hiff.mpr h)
 
 /-- **The monodromy theorem for a free homotopy of paths.** Let `h` be a continuous map of the
 square, read as a family of paths `h (t, ·)` whose *endpoints are allowed to move*, and suppose a
@@ -353,17 +347,17 @@ which both edges are constant, where "continues along a constant path" degenerat
 germ throughout". -/
 theorem monodromy_theorem_of_free_homotopy {h : I × I → ℂ} (hh : Continuous h)
     {f : I → I → ℂ → E}
-    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x => h (t, x)) univ)
-    (hstart : IsAnalyticContinuationAlong (fun t => f t 0) (fun t => h (t, 0)) univ) :
-    IsAnalyticContinuationAlong (fun t => f t 1) (fun t => h (t, 1)) univ := by
-  have hedge : ∀ y : I, Continuous fun t : I => h (t, y) := fun y => by fun_prop
-  refine ⟨(hedge 1).continuousOn, fun t _ => (hf t).analyticAt 1 (mem_univ 1), ?_⟩
+    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x ↦ h (t, x)) univ)
+    (hstart : IsAnalyticContinuationAlong (fun t ↦ f t 0) (fun t ↦ h (t, 0)) univ) :
+    IsAnalyticContinuationAlong (fun t ↦ f t 1) (fun t ↦ h (t, 1)) univ := by
+  have hedge : ∀ y : I, Continuous fun t : I ↦ h (t, y) := fun y ↦ by fun_prop
+  refine ⟨(hedge 1).continuousOn, fun t _ ↦ (hf t).analyticAt 1 (mem_univ 1), ?_⟩
   intro t₀ _
   rw [nhdsWithin_univ]
   obtain ⟨ρ, hρ, F, hF, hkey⟩ :=
     (hf t₀).exists_forall_eventuallyEq_of_dist_lt isCompact_univ isPreconnected_univ
   -- The representative of the row at `t₀` still matches `f t₀` at the points a moving edge reaches.
-  have hedgeEq : ∀ y : I, ∀ᶠ t in 𝓝 t₀, F y =ᶠ[𝓝 (h (t, y))] f t₀ y := fun y =>
+  have hedgeEq : ∀ y : I, ∀ᶠ t in 𝓝 t₀, F y =ᶠ[𝓝 (h (t, y))] f t₀ y := fun y ↦
     eventually_eventuallyEq_of_continuousAt (hedge y).continuousAt
       (((hf t₀).analyticAt y (mem_univ y)).congr (hF y (mem_univ y)).symm)
       ((hf t₀).analyticAt y (mem_univ y)) (hF y (mem_univ y))
@@ -378,7 +372,7 @@ theorem monodromy_theorem_of_free_homotopy {h : I × I → ℂ} (hh : Continuous
   have hstart₀ : ∀ᶠ t in 𝓝 t₀, f t 0 =ᶠ[𝓝 (h (t, 0))] f t₀ 0 := by
     simpa using hstart.locallyEq t₀ (mem_univ t₀)
   filter_upwards [hclose, hedgeEq 0, hedgeEq 1, hstart₀] with t hct hz₀ hz₁ hs₀
-  exact (hkey (fun x => h (t, x)) (f t) (fun x _ => hct x) (hf t) (mem_univ 0) (mem_univ 1)
+  exact (hkey (fun x ↦ h (t, x)) (f t) (fun x _ ↦ hct x) (hf t) (mem_univ 0) (mem_univ 1)
     (hs₀.trans hz₀.symm)).trans hz₁
 
 /-- **The monodromy theorem.** Let `h` be a homotopy rel endpoints between two paths from `z₀` to
@@ -391,20 +385,21 @@ allowed to move the endpoints and whose conclusion is correspondingly a continua
 path the terminal point sweeps out rather than a single germ at `z₁`. -/
 theorem monodromy_theorem {z₀ z₁ : ℂ} {p₀ p₁ : Path z₀ z₁} (h : p₀.Homotopy p₁)
     {f : I → I → ℂ → E}
-    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x => h (t, x)) univ)
+    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x ↦ h (t, x)) univ)
     (hstart : ∀ t, f t 0 =ᶠ[𝓝 z₀] f 0 0) (t : I) :
     f t 1 =ᶠ[𝓝 z₁] f 0 1 := by
-  have hsrc : ∀ u : I, h (u, 0) = z₀ := fun u => by simp
-  have htgt : ∀ u : I, h (u, 1) = z₁ := fun u => by simp
-  have hstart' : IsAnalyticContinuationAlong (fun u => f u 0) (fun u => h (u, 0)) univ := by
-    refine ⟨by simp only [hsrc]; exact continuousOn_const, fun u _ => ?_,
-      fun u _ => .of_forall fun v => ?_⟩
+  have hsrc : ∀ u : I, h (u, 0) = z₀ := fun u ↦ by simp
+  have htgt : ∀ u : I, h (u, 1) = z₁ := fun u ↦ by simp
+  have hstart' : IsAnalyticContinuationAlong (fun u ↦ f u 0) (fun u ↦ h (u, 0)) univ := by
+    refine ⟨by simp only [hsrc]; exact continuousOn_const, fun u _ ↦ ?_,
+      fun u _ ↦ .of_forall fun v ↦ ?_⟩
     · simpa [hsrc] using (hf u).analyticAt 0 (mem_univ 0)
-    · rw [hsrc]; exact (hstart v).trans (hstart u).symm
+    · rw [hsrc]
+      exact (hstart v).trans (hstart u).symm
   have hend := monodromy_theorem_of_free_homotopy (map_continuous h) hf hstart'
-  have hconst : IsAnalyticContinuationAlong (fun _ : I => f 0 1) (fun u => h (u, 1)) univ :=
+  have hconst : IsAnalyticContinuationAlong (fun _ : I ↦ f 0 1) (fun u ↦ h (u, 1)) univ :=
     .const (by simp only [htgt]; exact continuousOn_const)
-      fun u _ => by simpa [htgt] using (hf 0).analyticAt 1 (mem_univ 1)
+      fun u _ ↦ by simpa [htgt] using (hf 0).analyticAt 1 (mem_univ 1)
   simpa [htgt] using
     hend.eventuallyEq hconst isPreconnected_univ (mem_univ 0) (mem_univ t) .rfl
 
@@ -417,8 +412,8 @@ This is the statement that makes monodromy an invariant of the free homotopy cla
 it is out of reach of `TauCeti.monodromy_theorem`, whose homotopies must fix the base point. -/
 theorem monodromy_theorem_of_free_homotopy_loop {h : I × I → ℂ} (hh : Continuous h)
     (hloop : ∀ t : I, h (t, 1) = h (t, 0)) {f : I → I → ℂ → E}
-    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x => h (t, x)) univ)
-    (hstart : IsAnalyticContinuationAlong (fun t => f t 0) (fun t => h (t, 0)) univ)
+    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x ↦ h (t, x)) univ)
+    (hstart : IsAnalyticContinuationAlong (fun t ↦ f t 0) (fun t ↦ h (t, 0)) univ)
     (hbase : f 0 1 =ᶠ[𝓝 (h (0, 0))] f 0 0) (t : I) :
     f t 1 =ᶠ[𝓝 (h (t, 0))] f t 0 := by
   have hend := monodromy_theorem_of_free_homotopy hh hf hstart
@@ -434,14 +429,15 @@ can be analytically continued along every path of a simply connected domain is s
 there: no loop in such a domain can create a new branch. -/
 theorem monodromy_theorem_of_homotopy_refl {z₀ : ℂ} {p : Path z₀ z₀}
     (h : p.Homotopy (Path.refl z₀)) {f : I → I → ℂ → E}
-    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x => h (t, x)) univ)
+    (hf : ∀ t, IsAnalyticContinuationAlong (f t) (fun x ↦ h (t, x)) univ)
     (hstart : ∀ t, f t 0 =ᶠ[𝓝 z₀] f 0 0) :
     f 0 1 =ᶠ[𝓝 z₀] f 0 0 := by
-  have hconst : (fun x : I => h (1, x)) = fun _ : I => z₀ := by
-    funext x; simp
-  have hc : IsAnalyticContinuationAlong (f 1) (fun _ : I => z₀) univ := hconst ▸ hf 1
-  have hc' : IsAnalyticContinuationAlong (fun _ : I => f 1 0) (fun _ : I => z₀) univ :=
-    .const continuousOn_const fun _ _ => hc.analyticAt 0 (mem_univ 0)
+  have hconst : (fun x : I ↦ h (1, x)) = fun _ : I ↦ z₀ := by
+    funext x
+    simp
+  have hc : IsAnalyticContinuationAlong (f 1) (fun _ : I ↦ z₀) univ := hconst ▸ hf 1
+  have hc' : IsAnalyticContinuationAlong (fun _ : I ↦ f 1 0) (fun _ : I ↦ z₀) univ :=
+    .const continuousOn_const fun _ _ ↦ hc.analyticAt 0 (mem_univ 0)
   have hloop : f 1 1 =ᶠ[𝓝 z₀] f 1 0 :=
     hc.eventuallyEq hc' isPreconnected_univ (mem_univ 0) (mem_univ 1) .rfl
   exact (monodromy_theorem h hf hstart 1).symm.trans (hloop.trans (hstart 1))
@@ -453,9 +449,9 @@ case is of course trivial — a single-valued function carries a single germ; th
 content exactly when the continuations are not all restrictions of one function.) -/
 example {z₀ z₁ : ℂ} {p₀ p₁ : Path z₀ z₁} (h : p₀.Homotopy p₁) {U : Set ℂ} {F : ℂ → ℂ}
     (hU : IsOpen U) (hF : DifferentiableOn ℂ F U) (hmaps : ∀ q : I × I, h q ∈ U) :
-    (∀ t, IsAnalyticContinuationAlong ((fun _ _ : I => F) t) (fun x => h (t, x)) univ) ∧
-      ∀ t : I, (fun _ _ : I => F) t 0 =ᶠ[𝓝 z₀] (fun _ _ : I => F) 0 0 :=
-  ⟨fun t => .of_differentiableOn hU hF (h.toHomotopy.curry t).continuous.continuousOn
-    fun x _ => hmaps (t, x), fun _ => .rfl⟩
+    (∀ t, IsAnalyticContinuationAlong ((fun _ _ : I ↦ F) t) (fun x ↦ h (t, x)) univ) ∧
+      ∀ t : I, (fun _ _ : I ↦ F) t 0 =ᶠ[𝓝 z₀] (fun _ _ : I ↦ F) 0 0 :=
+  ⟨fun t ↦ .of_differentiableOn hU hF (h.toHomotopy.curry t).continuous.continuousOn
+    fun x _ ↦ hmaps (t, x), fun _ ↦ .rfl⟩
 
 end TauCeti
