@@ -112,7 +112,7 @@ theorem eq_of_rowCodingArrayLaw_eq {π₁ π₂ : Measure (ProbabilityMeasure (�
 
 /-- Equality of finite mixing laws is equivalent to equality of their row-coding array laws. -/
 @[simp]
-theorem rowCodingArrayLaw_eq_iff {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
+theorem rowCodingArrayLaw_inj {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
     [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
   ⟨eq_of_rowCodingArrayLaw_eq, fun h ↦ congrArg rowCodingArrayLaw h⟩
