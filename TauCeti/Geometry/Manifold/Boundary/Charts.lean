@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Model
-public import TauCeti.Geometry.Manifold.LocallyFlat.ChartRestriction
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # The boundary of a manifold with boundary is a manifold
@@ -128,11 +128,12 @@ private noncomputable def boundaryChart (hk : k ≠ 0) (p : ↥((𝓡∂ (n + 1)
     (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1)))
     (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) :
     OpenPartialHomeomorph ↥((𝓡∂ (n + 1)).boundary M) (EuclideanSpace ℝ (Fin n)) :=
-  e.subtypeCoord ((𝓡∂ (n + 1)).boundary M) p (EuclideanHalfSpace.boundaryParam n)
+  e.subtypeCoord ((𝓡∂ (n + 1)).boundary M) ⟨p⟩ (EuclideanHalfSpace.boundaryParam n)
     (EuclideanHalfSpace.boundaryProj n) (symm_boundaryParam_mem_boundary hk he)
     (boundaryParam_boundaryProj_chart_apply_of_mem hk he)
-    EuclideanHalfSpace.boundaryProj_boundaryParam
-    EuclideanHalfSpace.continuous_boundaryParam EuclideanHalfSpace.continuous_boundaryProj
+    (fun _ _ => EuclideanHalfSpace.boundaryProj_boundaryParam _)
+    EuclideanHalfSpace.continuous_boundaryParam
+    EuclideanHalfSpace.continuous_boundaryProj.continuousOn
 
 variable {hk : k ≠ 0} {p : ↥((𝓡∂ (n + 1)).boundary M)}
   {he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M}
@@ -141,19 +142,22 @@ variable {hk : k ≠ 0} {p : ↥((𝓡∂ (n + 1)).boundary M)}
 @[simp]
 private theorem boundaryChart_source :
     (boundaryChart hk p e he).source = Subtype.val ⁻¹' e.source := by
-  simp [boundaryChart]
+  unfold boundaryChart
+  apply OpenPartialHomeomorph.subtypeCoord_source
 
 /-- The target of a boundary chart is the ambient target, pulled back to the hyperplane. -/
 @[simp]
 private theorem boundaryChart_target :
     (boundaryChart hk p e he).target = EuclideanHalfSpace.boundaryParam n ⁻¹' e.target := by
-  simp [boundaryChart]
+  unfold boundaryChart
+  apply OpenPartialHomeomorph.subtypeCoord_target
 
 /-- A boundary chart reads a point through the ambient chart and deletes the zeroth coordinate. -/
 @[simp]
 private theorem boundaryChart_apply (q : ↥((𝓡∂ (n + 1)).boundary M)) :
     boundaryChart hk p e he q = EuclideanHalfSpace.boundaryProj n (e q.1) := by
-  simp [boundaryChart]
+  unfold boundaryChart
+  apply OpenPartialHomeomorph.subtypeCoord_apply
 
 /-- On its target, the inverse of a boundary chart is the inverse of the ambient chart applied to
 the parametrized point. -/
@@ -163,11 +167,12 @@ private theorem boundaryChart_symm_apply {z : EuclideanSpace ℝ (Fin n)}
     (((boundaryChart hk p e he).symm z : ↥((𝓡∂ (n + 1)).boundary M)) : M) =
       e.symm (EuclideanHalfSpace.boundaryParam n z) := by
   simp only [boundaryChart]
-  exact e.coe_subtypeCoord_symm_apply ((𝓡∂ (n + 1)).boundary M) p
+  exact e.coe_subtypeCoord_symm_apply ((𝓡∂ (n + 1)).boundary M) ⟨p⟩
     (EuclideanHalfSpace.boundaryParam n) (EuclideanHalfSpace.boundaryProj n)
     (symm_boundaryParam_mem_boundary hk he) (boundaryParam_boundaryProj_chart_apply_of_mem hk he)
-    EuclideanHalfSpace.boundaryProj_boundaryParam
-    EuclideanHalfSpace.continuous_boundaryParam EuclideanHalfSpace.continuous_boundaryProj hz
+    (fun _ _ => EuclideanHalfSpace.boundaryProj_boundaryParam _)
+    EuclideanHalfSpace.continuous_boundaryParam
+    EuclideanHalfSpace.continuous_boundaryProj.continuousOn hz
 
 section BoundaryChartedSpace
 

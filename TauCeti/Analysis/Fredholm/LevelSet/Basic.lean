@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Regular level sets of a Fredholm map
@@ -98,6 +99,16 @@ private theorem implicit_apply_eq_mk (hf : HasStrictFDerivAt f f' a) (hf' : f'.r
       (c, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x).2) :=
   Prod.ext (by rw [hf.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker, hx]) rfl
 
+/-- On the level set, reinserting the constant first coordinate recovers the implicit-function
+chart value. -/
+private theorem implicit_mk_snd_eq_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) {x : E}
+    (_hx : x ∈ (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).source)
+    (hxc : x ∈ {x | f x = c}) :
+    (c, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x).2) =
+      hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x :=
+  (implicit_apply_eq_mk hf hf' hker hxc).symm
+
 /-- A point of the slice `{c} × ker f'` in the implicit-function target is the image of a point of
 the level set `{x | f x = c}`. -/
 private theorem apply_implicit_symm_eq (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
@@ -106,25 +117,6 @@ private theorem apply_implicit_symm_eq (hf : HasStrictFDerivAt f f' a) (hf' : f'
     f ((hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (c, k)) = c := by
   rw [← hf.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker,
     (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).right_inv hk]
-
-open scoped Classical in
-/-- The inverse of `TauCeti.levelSetChart`: the implicit function of `f` at the constant value `c`,
-returned as a point of the level set. The base point `a` only serves as the irrelevant value
-outside the target, where no membership proof is available. -/
-private noncomputable def levelSetChartSymm (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
-    (hker : f'.ker.ClosedComplemented) (ha : f a = c) (k : ↥f'.ker) : ↥{x | f x = c} :=
-  if h : f ((hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (c, k)) = c then
-    ⟨_, h⟩
-  else ⟨a, ha⟩
-
-/-- On the slice `{c} × ker f'` in the implicit-function target, `TauCeti.levelSetChartSymm` is the
-implicit function itself. -/
-private theorem levelSetChartSymm_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
-    (hker : f'.ker.ClosedComplemented) (ha : f a = c) {k : ↥f'.ker}
-    (hk : (c, k) ∈ (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).target) :
-    (levelSetChartSymm hf hf' hker ha k : E) =
-      (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (c, k) := by
-  rw [levelSetChartSymm, dite_eq_left (apply_implicit_symm_eq hf hf' hker hk)]
 
 /-- The chart of the level set `{x | f x = c}` at a point `a` where `f` is strictly differentiable
 with surjective derivative `f'` of complemented kernel: it sends `x` to the projection of `x - a`
@@ -137,49 +129,10 @@ noncomputable def levelSetChart (hf : HasStrictFDerivAt f f' a) (hf' : f'.range 
     (hker : f'.ker.ClosedComplemented) (ha : f a = c) :
     OpenPartialHomeomorph ↥{x | f x = c} ↥f'.ker :=
   let Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
-  { toFun := fun z => (Φ z.1).2
-    invFun := levelSetChartSymm hf hf' hker ha
-    source := Subtype.val ⁻¹' Φ.source
-    target := (fun k => (c, k)) ⁻¹' Φ.target
-    map_source' := by
-      intro z hz
-      have hz2 : f z.1 = c := z.2
-      rw [Set.mem_preimage, ← implicit_apply_eq_mk hf hf' hker hz2]
-      exact Φ.map_source hz
-    map_target' := by
-      intro k hk
-      rw [Set.mem_preimage, levelSetChartSymm_apply hf hf' hker ha hk]
-      exact Φ.map_target hk
-    left_inv' := by
-      intro z hz
-      have hz2 : f z.1 = c := z.2
-      have h2 : Φ z.1 = (c, (Φ z.1).2) := implicit_apply_eq_mk hf hf' hker hz2
-      have hk : (c, (Φ z.1).2) ∈ Φ.target := by rw [← h2]; exact Φ.map_source hz
-      refine Subtype.ext ?_
-      rw [levelSetChartSymm_apply hf hf' hker ha hk, ← h2, Φ.left_inv hz]
-    right_inv' := by
-      intro k hk
-      rw [levelSetChartSymm_apply hf hf' hker ha hk, Φ.right_inv hk]
-    open_source := Φ.open_source.preimage continuous_subtype_val
-    open_target := Φ.open_target.preimage (continuous_const.prodMk continuous_id)
-    continuousOn_toFun :=
-      (Φ.continuousOn.comp continuous_subtype_val.continuousOn fun _ hz => hz).snd
-    continuousOn_invFun := by
-      rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
-      exact ContinuousOn.congr
-        (Φ.continuousOn_symm.comp
-          (continuous_const.prodMk continuous_id).continuousOn fun _ hk => hk)
-        fun k hk => levelSetChartSymm_apply hf hf' hker ha hk }
-
-/- `levelSetChart` is built as an explicit `OpenPartialHomeomorph` literal, so the four lemmas
-below read its `source`, `target`, `toFun` and `invFun` fields off that literal by unfolding the
-definition and projecting — stable reductions, since the fields are written out in this file. They
-are the only declarations that rely on it: every other proof, here and downstream, rewrites with
-them instead. The unfolding is spelled out with `unfold` rather than left to `rfl`: `levelSetChart`
-is not `@[expose]`d, so under the module system a bare `rfl` in an exported theorem is rejected
-with "Not a definitional equality … all definitions that need to be unfolded to prove this theorem
-must be exposed". Only the private `levelSetChart_symm_eq`, which is not exported, closes by
-`rfl`. -/
+  Φ.subtypeCoord {x | f x = c} ⟨⟨a, ha⟩⟩ (fun k => (c, k)) Prod.snd
+    (apply_implicit_symm_eq hf hf' hker)
+    (implicit_mk_snd_eq_apply hf hf' hker) (fun _ _ => rfl)
+    (continuous_const.prodMk continuous_id) continuous_snd.continuousOn
 
 /-- The source of the chart of a level set is the source of Mathlib's implicit-function
 homeomorphism, seen inside the level set. -/
@@ -188,7 +141,7 @@ theorem levelSetChart_source (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = �
     (levelSetChart hf hf' hker ha).source =
       Subtype.val ⁻¹' (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).source := by
   unfold levelSetChart
-  rfl
+  apply OpenPartialHomeomorph.subtypeCoord_source
 
 /-- The target of the chart of a level set is the slice `{c} × ker f'` of the target of Mathlib's
 implicit-function homeomorphism, read in `ker f'`. -/
@@ -198,21 +151,18 @@ theorem levelSetChart_target (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = �
       (fun k => (c, k)) ⁻¹'
         (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).target := by
   unfold levelSetChart
-  rfl
+  apply OpenPartialHomeomorph.subtypeCoord_target
 
 /-- The chart of a level set is computed by the projection onto `ker f'` chosen by `hker`, applied
 to `x - a`. -/
 theorem levelSetChart_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) (ha : f a = c) (z : ↥{x | f x = c}) :
     levelSetChart hf hf' hker ha z = Classical.choose hker (z.1 - a) := by
-  unfold levelSetChart
+  rw [show levelSetChart hf hf' hker ha z =
+      (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker z.1).2 by
+    unfold levelSetChart
+    apply OpenPartialHomeomorph.subtypeCoord_apply]
   exact congrArg Prod.snd (hf.implicitToOpenPartialHomeomorphOfComplemented_apply hf' hker z.1)
-
-/-- The inverse of the chart of a level set is `TauCeti.levelSetChartSymm`. -/
-private theorem levelSetChart_symm_eq (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
-    (hker : f'.ker.ClosedComplemented) (ha : f a = c) :
-    ⇑(levelSetChart hf hf' hker ha).symm = levelSetChartSymm hf hf' hker ha :=
-  rfl
 
 /-- On its target, the inverse of the chart of a level set is the implicit function of `f` at the
 constant value `c`: the inverse of Mathlib's implicit-function homeomorphism, read on the slice
@@ -223,8 +173,12 @@ theorem levelSetChart_symm_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range
     (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E) =
       (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (c, k) := by
   rw [levelSetChart_target, Set.mem_preimage] at hk
-  rw [levelSetChart_symm_eq]
-  exact levelSetChartSymm_apply hf hf' hker ha hk
+  simp only [levelSetChart]
+  exact (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).coe_subtypeCoord_symm_apply
+    {x | f x = c} ⟨⟨a, ha⟩⟩ (fun k => (c, k)) Prod.snd
+    (apply_implicit_symm_eq hf hf' hker)
+    (implicit_mk_snd_eq_apply hf hf' hker) (fun _ _ => rfl)
+    (continuous_const.prodMk continuous_id) continuous_snd.continuousOn hk
 
 /-- The chart of a level set is normalised at its base point: it sends `a` to the origin of
 `ker f'`. -/

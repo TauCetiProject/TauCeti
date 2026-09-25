@@ -72,8 +72,9 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     have hA : IsOpen A := by
       exact Metric.isOpen_ball.preimage continuous_snd
     simpa only [V] using Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source hA
+  let Φ := Φ₀.restrOpen V hV
   let Ψ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞ :=
-    { __ := Φ₀.restrOpen V hV
+    { __ := Φ
       contMDiffOn_toFun := hf.localInverse.contMDiffOn_toFun.mono inter_subset_left
       contMDiffOn_invFun := hf.localInverse.contMDiffOn_invFun.mono inter_subset_left }
   have hΦ₀_eq : Φ₀ = hf.localInverse.toOpenPartialHomeomorph := by
@@ -85,7 +86,6 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     exact congrArg PartialEquiv.source
       (PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv
         hf.localInverse)
-  let Φ := Φ₀.restrOpen V hV
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
     rw [hΦ₀_eq]
     exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
@@ -111,16 +111,14 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       rw [hzero]
       exact Metric.mem_ball_self hε
   refine ⟨p, q, Ψ, hpq, ?_, ?_⟩
-  · change (1 : G) ∈ Φ.source
-    exact h1
-  -- Unfold the local name `Φ`; the remaining chart equality uses the coercion fact above.
-  · change IsSliceChart (Φ₀.restrOpen V hV)
+  · exact h1
+  -- `Ψ` was built from `Φ`; expose that underlying open partial homeomorphism here.
+  · change IsSliceChart Φ
       ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
     apply isSliceChart_iff.2
     intro x hx
     -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
     rw [OpenPartialHomeomorph.restrOpen_source] at hx
-    simp only [OpenPartialHomeomorph.coe_restrOpen]
     -- The remaining changes below unfold the local set aliases `V` and `A`.
     change x ∈ Φ₀.source ∩ V at hx
     let z : p × q := Φ₀ x
