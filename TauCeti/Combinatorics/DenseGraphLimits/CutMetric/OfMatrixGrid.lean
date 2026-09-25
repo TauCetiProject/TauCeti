@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
+import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Coupling.Shift
 import TauCeti.MeasureTheory.Measure.FiniteMeasure
@@ -26,7 +27,9 @@ rounded down and the remaining vertex absorbs the slack
 (`TauCeti.exists_nat_weights_of_sum_eq_one`).  Comparing the two weightings then needs a coupling
 of them, and the one used here (`TauCeti.MeasureTheory.shiftCoupling`) keeps the matched mass on the
 diagonal, where the overlaid difference vanishes, and sends the slack to the absorbing vertex; the
-cost is twice the transferred mass.
+cost is twice the transferred mass.  Two arbitrary weightings are compared through the common
+weighting that keeps the smaller of the two weights at every vertex but one, which costs twice
+their `ℓ¹` distance.
 
 ## Main definitions
 
@@ -41,6 +44,8 @@ cost is twice the transferred mass.
   grid of multiples of `1 / (N + 1)`, at a cost of `1 / (N + 1)`;
 * `TauCeti.DenseGraphLimits.cutDist_ofMatrix_le_two_mul_sum_tsub` -- transferring vertex weight
   onto one designated vertex costs at most twice the transferred mass;
+* `TauCeti.DenseGraphLimits.cutDist_ofMatrix_le_two_mul_sum_abs` -- changing the vertex weights
+  arbitrarily costs at most twice their `ℓ¹` distance;
 * `TauCeti.DenseGraphLimits.exists_gridWeightMeasure_cutDist_le` -- the vertex weights can be taken
   on the grid of multiples of `1 / N`, at a cost of `2 n / N`.
 
@@ -196,6 +201,80 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
               rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
           _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
           _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
+
+/-- Moving a weighting `ρ` to one that keeps `min (ρ {k}) (σ {k})` at every vertex but `k₀` costs at
+most twice the mass by which `ρ` exceeds `σ`. -/
+private theorem cutDist_ofMatrix_le_of_eq_min {ρ σ τ : Measure κ} [IsProbabilityMeasure ρ]
+    [IsProbabilityMeasure τ] (hτ : ∀ k, k ≠ k₀ → τ {k} = min (ρ {k}) (σ {k}))
+    (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i) :
+    cutDist (Graphon.ofMatrix ρ b hb) (Graphon.ofMatrix τ b hb)
+      ≤ 2 * (∑ k, (ρ {k} - σ {k})).toReal := by
+  have hdom : ∀ k, k ≠ k₀ → τ {k} ≤ ρ {k} := fun k hk => (hτ k hk).trans_le (min_le_left _ _)
+  refine (cutDist_ofMatrix_le_two_mul_sum_tsub hdom b hb).trans ?_
+  have hsum : ∑ k, ρ {k} = ∑ k, τ {k} :=
+    ρ.sum_singleton_eq_one.trans τ.sum_singleton_eq_one.symm
+  have hk₀ : ρ {k₀} ≤ τ {k₀} :=
+    le_of_sum_eq_of_forall_ne_le (f := fun k => ρ {k}) (g := fun k => τ {k})
+      (Finset.mem_univ k₀) hsum
+      (by rw [ρ.sum_singleton_eq_one]; exact ENNReal.one_ne_top) fun k _ hk => hdom k hk
+  have hle : ∑ k, (ρ {k} - τ {k}) ≤ ∑ k, (ρ {k} - σ {k}) := by
+    refine Finset.sum_le_sum fun k _ => ?_
+    rcases eq_or_ne k k₀ with rfl | hk
+    · rw [tsub_eq_zero_of_le hk₀]
+      exact zero_le
+    · rw [hτ k hk, tsub_min]
+  refine mul_le_mul_of_nonneg_left (ENNReal.toReal_mono ?_ hle) (by norm_num)
+  refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
+  calc ∑ k, (ρ {k} - σ {k}) ≤ ∑ k, ρ {k} := Finset.sum_le_sum fun k _ => tsub_le_self
+    _ = 1 := ρ.sum_singleton_eq_one
+
+/-- **Changing the vertex weights of a finite weighted graph costs at most twice their `ℓ¹`
+distance** in cut distance: two finite weighted graphs with the same edge weights `b` and arbitrary
+vertex weights `ν`, `ν'` are at cut distance at most `2 ∑ₖ |ν {k} - ν' {k}|`.
+
+Both weightings arise, by moving mass onto one vertex, from the common weighting that keeps
+`min (ν {k}) (ν' {k})` at every other vertex, so this is `cutDist_ofMatrix_le_two_mul_sum_tsub`
+twice and the triangle inequality. -/
+theorem cutDist_ofMatrix_le_two_mul_sum_abs [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
+    (b : κ → κ → Set.Icc (0 : ℝ) 1) (hb : ∀ i j, b i j = b j i) :
+    cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
+      ≤ 2 * ∑ k, |ν.real {k} - ν'.real {k}| := by
+  classical
+  obtain ⟨k₀⟩ := nonempty_of_isProbabilityMeasure ν
+  -- The common weighting: the matched mass away from `k₀`, and all the remaining mass at `k₀`.
+  set S := ∑ k ∈ Finset.univ.erase k₀, min (ν {k}) (ν' {k})
+  have hS : S ≤ 1 := by
+    calc S ≤ ∑ k ∈ Finset.univ.erase k₀, ν {k} :=
+          Finset.sum_le_sum fun k _ => min_le_left _ _
+      _ ≤ ∑ k, ν {k} := Finset.sum_le_sum_of_subset (Finset.erase_subset _ _)
+      _ = 1 := ν.sum_singleton_eq_one
+  set w : κ → ℝ≥0∞ := fun k => if k = k₀ then 1 - S else min (ν {k}) (ν' {k})
+  have hw : ∑ k, w k = 1 := by
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ k₀),
+      Finset.sum_congr rfl fun k hk => (by simp [w, Finset.ne_of_mem_erase hk] :
+        w k = min (ν {k}) (ν' {k}))]
+    simpa [w] using tsub_add_cancel_of_le hS
+  let τ : Measure κ := (PMF.ofFintype w hw).toMeasure
+  have : IsProbabilityMeasure τ := PMF.toMeasure.isProbabilityMeasure _
+  have hτ : ∀ k, k ≠ k₀ → τ {k} = min (ν {k}) (ν' {k}) := fun k hk => by
+    rw [PMF.toMeasure_apply_singleton _ _ (MeasurableSet.singleton k)]
+    simp [w, hk]
+  have h₁ := cutDist_ofMatrix_le_of_eq_min hτ b hb
+  have h₂ := cutDist_ofMatrix_le_of_eq_min (ρ := ν') (σ := ν)
+    (fun k hk => (hτ k hk).trans (min_comm _ _)) b hb
+  have hfin : ∀ (ρ : Measure κ) [IsProbabilityMeasure ρ] (k : κ), ρ {k} ≠ ⊤ :=
+    fun ρ _ k => measure_ne_top ρ _
+  have hreal : (∑ k, (ν {k} - ν' {k})).toReal + (∑ k, (ν' {k} - ν {k})).toReal =
+      ∑ k, |ν.real {k} - ν'.real {k}| := by
+    rw [ENNReal.toReal_sum fun k _ => ENNReal.sub_ne_top (hfin ν k),
+      ENNReal.toReal_sum fun k _ => ENNReal.sub_ne_top (hfin ν' k), ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ => ENNReal.toReal_sub_add_toReal_sub (hfin ν k) (hfin ν' k)
+  calc cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb)
+      ≤ cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix τ b hb) +
+          cutDist (Graphon.ofMatrix ν' b hb) (Graphon.ofMatrix τ b hb) := by
+        rw [cutDist_comm (Graphon.ofMatrix ν' b hb)]
+        exact cutDist_triangle _ _ _
+    _ ≤ _ := by linarith
 
 end WeightShift
 
