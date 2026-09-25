@@ -22,7 +22,7 @@ homological-complex vocabulary instead of duplicating it:
 * `CurvedDuplex.periodicComplexEquivalence` is the equivalence between curved duplexes of
   curvature zero and two-periodic complexes, with functor `CurvedDuplex.toPeriodicComplex` and
   inverse `CurvedDuplex.ofPeriodicComplex`;
-* `CurvedDuplex.nonempty_homotopy_toPeriodicComplex_map_iff` identifies the null-homotopic
+* `CurvedDuplex.nonempty_homotopy_toPeriodicComplex_map_zero_iff` identifies the null-homotopic
   morphisms `d h + h d` of duplexes with the morphisms of two-periodic complexes homotopic to
   zero in Mathlib's sense, and `CurvedDuplex.kerIdeal_toPeriodicComplex_comp_quotient` restates
   this as an equality of ideals;
@@ -52,6 +52,20 @@ namespace TauCeti
 
 open CategoryTheory Limits
 
+namespace HomologicalComplex
+
+/-- Morphisms of two-periodic complexes are determined by their components in degrees `0`
+and `1`. -/
+theorem hom_ext_two {C : Type u} [Category.{v} C] [Preadditive C]
+    {K L : _root_.HomologicalComplex C (ComplexShape.up (ZMod 2))} {f g : K ⟶ L}
+    (h₀ : f.f 0 = g.f 0) (h₁ : f.f 1 = g.f 1) : f = g := by
+  ext i
+  match i with
+  | 0 => exact h₀
+  | 1 => exact h₁
+
+end HomologicalComplex
+
 namespace CurvedDuplex
 
 variable (C : Type u) [Category.{v} C] [Preadditive C] (R : Type w') [Semiring R] [Linear R C]
@@ -77,8 +91,8 @@ def toPeriodicComplex :
         | 1, 1 => 0
       shape := fun
         | 0, 0, _ => rfl
-        | 0, 1, h => absurd rfl h
-        | 1, 0, h => absurd rfl h
+        | 0, 1, h => absurd (ComplexShape.up_mk 0 1 rfl) h
+        | 1, 0, h => absurd (ComplexShape.up_mk 1 0 rfl) h
         | 1, 1, _ => rfl
       d_comp_d' := fun
         | 0, 0, _, _, _ => zero_comp
@@ -97,15 +111,9 @@ def toPeriodicComplex :
         | 1, 0, _ => f.comm₁
         | 1, 1, _ => by simp }
   map_id _ := by
-    ext i
-    match i with
-    | 0 => rfl
-    | 1 => rfl
+    apply HomologicalComplex.hom_ext_two <;> rfl
   map_comp _ _ := by
-    ext i
-    match i with
-    | 0 => rfl
-    | 1 => rfl
+    apply HomologicalComplex.hom_ext_two <;> rfl
 
 /-- The curved duplex of curvature zero attached to a two-periodic complex `K`: its components
 are `K.X 0` and `K.X 1`, and its differentials are `K.d 0 1` and `K.d 1 0`. -/
@@ -159,17 +167,11 @@ theorem toPeriodicComplex_map_f_one {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y)
 
 instance : (toPeriodicComplex C R).Additive where
   map_add {_ _ _ _} := by
-    ext i
-    match i with
-    | 0 => simp
-    | 1 => simp
+    apply HomologicalComplex.hom_ext_two <;> simp
 
 instance : (toPeriodicComplex C R).Linear R where
   map_smul {_ _ _ _} := by
-    ext i
-    match i with
-    | 0 => simp
-    | 1 => simp
+    apply HomologicalComplex.hom_ext_two <;> simp
 
 instance : (ofPeriodicComplex C R).Additive where
 
@@ -177,8 +179,8 @@ instance : (ofPeriodicComplex C R).Linear R where
 
 variable (C R)
 
--- The equivalence is exposed so that its functor and inverse unfold to `toPeriodicComplex` and
--- `ofPeriodicComplex`.
+-- The component equations below, as well as the generated functor and inverse equations,
+-- require this definition to unfold across module boundaries.
 @[expose] public section
 
 /-- **Curved duplexes of curvature zero are two-periodic complexes**: the functors
@@ -195,20 +197,50 @@ def periodicComplexEquivalence :
         | 0 => Iso.refl _
         | 1 => Iso.refl _)
       (fun
-        | 0, 0, h => absurd h (by decide)
+        | 0, 0, h => absurd h (by rw [ComplexShape.up_Rel]; decide)
         | 0, 1, _ => by simp
         | 1, 0, _ => by simp
-        | 1, 1, h => absurd h (by decide)))
+        | 1, 1, h => absurd h (by rw [ComplexShape.up_Rel]; decide)))
     (fun _ ↦ by
-      ext i
-      match i with
-      | 0 => simp [HomologicalComplex.Hom.isoOfComponents]
-      | 1 => simp [HomologicalComplex.Hom.isoOfComponents])
+      apply HomologicalComplex.hom_ext_two <;> simp)
   functor_unitIso_comp _ := by
-    ext i
-    match i with
-    | 0 => simp [HomologicalComplex.Hom.isoOfComponents]
-    | 1 => simp [HomologicalComplex.Hom.isoOfComponents]
+    apply HomologicalComplex.hom_ext_two <;> simp
+
+@[simp]
+theorem periodicComplexEquivalence_unitIso_hom_app_f₀ (X : CurvedDuplex C (0 : R)) :
+    ((periodicComplexEquivalence C R).unitIso.hom.app X).f₀ = 𝟙 X.X₀ := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_unitIso_hom_app_f₁ (X : CurvedDuplex C (0 : R)) :
+    ((periodicComplexEquivalence C R).unitIso.hom.app X).f₁ = 𝟙 X.X₁ := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_unitIso_inv_app_f₀ (X : CurvedDuplex C (0 : R)) :
+    ((periodicComplexEquivalence C R).unitIso.inv.app X).f₀ = 𝟙 X.X₀ := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_unitIso_inv_app_f₁ (X : CurvedDuplex C (0 : R)) :
+    ((periodicComplexEquivalence C R).unitIso.inv.app X).f₁ = 𝟙 X.X₁ := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_counitIso_hom_app_f_zero
+    (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
+    ((periodicComplexEquivalence C R).counitIso.hom.app K).f 0 = 𝟙 (K.X 0) := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_counitIso_hom_app_f_one
+    (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
+    ((periodicComplexEquivalence C R).counitIso.hom.app K).f 1 = 𝟙 (K.X 1) := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_counitIso_inv_app_f_zero
+    (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
+    ((periodicComplexEquivalence C R).counitIso.inv.app K).f 0 = 𝟙 (K.X 0) := rfl
+
+@[simp]
+theorem periodicComplexEquivalence_counitIso_inv_app_f_one
+    (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
+    ((periodicComplexEquivalence C R).counitIso.inv.app K).f 1 = 𝟙 (K.X 1) := rfl
 
 end
 
@@ -225,11 +257,12 @@ instance : (ofPeriodicComplex C R).IsEquivalence :=
 /-- A morphism of curved duplexes of curvature zero is null-homotopic, that is of the form
 `d h + h d` for an odd map `h`, exactly when the corresponding morphism of two-periodic complexes
 is homotopic to zero. -/
-theorem nonempty_homotopy_toPeriodicComplex_map_iff {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
+theorem nonempty_homotopy_toPeriodicComplex_map_zero_iff
+    {X Y : CurvedDuplex C (0 : R)} (f : X ⟶ Y) :
     Nonempty (Homotopy ((toPeriodicComplex C R).map f) 0) ↔
       ∃ h₀ h₁, nullHomotopicMap h₀ h₁ = f := by
-  have r₀₁ : (ComplexShape.up (ZMod 2)).Rel 0 1 := rfl
-  have r₁₀ : (ComplexShape.up (ZMod 2)).Rel 1 0 := rfl
+  have r₀₁ : (ComplexShape.up (ZMod 2)).Rel 0 1 := ComplexShape.up_mk 0 1 rfl
+  have r₁₀ : (ComplexShape.up (ZMod 2)).Rel 1 0 := ComplexShape.up_mk 1 0 rfl
   constructor
   · rintro ⟨H⟩
     refine ⟨H.hom 0 1, H.hom 1 0, ?_⟩
@@ -255,6 +288,20 @@ theorem nonempty_homotopy_toPeriodicComplex_map_iff {X Y : CurvedDuplex C (0 : R
                 | 0 => by rw [dNext_eq _ r₀₁, prevD_eq _ r₁₀]; simp
                 | 1 => by rw [dNext_eq _ r₁₀, prevD_eq _ r₀₁]; simp }⟩
 
+/-- Two duplex morphisms become homotopic periodic-complex morphisms exactly when their
+difference is null-homotopic. -/
+theorem nonempty_homotopy_toPeriodicComplex_map_iff
+    {X Y : CurvedDuplex C (0 : R)} (f g : X ⟶ Y) :
+    Nonempty (Homotopy ((toPeriodicComplex C R).map f) ((toPeriodicComplex C R).map g)) ↔
+      ∃ h₀ h₁, nullHomotopicMap h₀ h₁ = f - g := by
+  constructor
+  · rintro ⟨H⟩
+    exact (nonempty_homotopy_toPeriodicComplex_map_zero_iff (f - g)).1
+      ⟨by simpa only [Functor.map_sub] using Homotopy.equivSubZero H⟩
+  · intro h
+    obtain ⟨H⟩ := (nonempty_homotopy_toPeriodicComplex_map_zero_iff (f - g)).2 h
+    exact ⟨Homotopy.equivSubZero.symm (by simpa only [Functor.map_sub] using H)⟩
+
 /-- The null-homotopic morphisms of curved duplexes of curvature zero are exactly the morphisms
 sent to zero in Mathlib's homotopy category of two-periodic complexes. -/
 theorem kerIdeal_toPeriodicComplex_comp_quotient :
@@ -263,7 +310,7 @@ theorem kerIdeal_toPeriodicComplex_comp_quotient :
       nullHomotopic C (0 : R) := by
   ext X Y f
   rw [Functor.mem_kerIdeal_hom, Functor.comp_map, _root_.HomotopyCategory.quotient_map_eq_zero_iff,
-    nonempty_homotopy_toPeriodicComplex_map_iff, mem_nullHomotopic_iff]
+    nonempty_homotopy_toPeriodicComplex_map_zero_iff, mem_nullHomotopic_iff]
 
 /-! ### The homotopy category -/
 
@@ -276,36 +323,44 @@ noncomputable abbrev toPeriodicComplex :
     HomotopyCategory C (0 : R) ⥤ _root_.HomotopyCategory C (ComplexShape.up (ZMod 2)) :=
   (nullHomotopic C (0 : R)).lift _ kerIdeal_toPeriodicComplex_comp_quotient.ge
 
-instance : (toPeriodicComplex C R).Faithful := by
-  refine Functor.faithful_of_comp_essSurj _ (nullHomotopic C (0 : R)).quotientFunctor
-    fun X Y f g hfg ↦ ?_
-  obtain ⟨f, rfl⟩ := (nullHomotopic C (0 : R)).quotientFunctor.map_surjective f
-  obtain ⟨g, rfl⟩ := (nullHomotopic C (0 : R)).quotientFunctor.map_surjective g
-  simp only [Quotient.lift_map_functor_map] at hfg
-  rw [MorphismIdeal.quotientFunctor_map_eq_iff, ← kerIdeal_toPeriodicComplex_comp_quotient,
-    Functor.mem_kerIdeal_hom, Functor.map_sub, hfg, sub_self]
+@[simp]
+theorem toPeriodicComplex_obj_quotientFunctor_obj (X : CurvedDuplex C (0 : R)) :
+    (toPeriodicComplex C R).obj ((nullHomotopic C (0 : R)).quotientFunctor.obj X) =
+      (_root_.HomotopyCategory.quotient _ _).obj ((CurvedDuplex.toPeriodicComplex C R).obj X) :=
+  rfl
 
-instance : (toPeriodicComplex C R).Full :=
-  Functor.full_of_comp_essSurj _ (nullHomotopic C (0 : R)).quotientFunctor fun _ _ φ ↦
-    ⟨(nullHomotopic C (0 : R)).quotientFunctor.map
-      ((CurvedDuplex.toPeriodicComplex C R ⋙ _root_.HomotopyCategory.quotient _ _).preimage φ),
-      (CurvedDuplex.toPeriodicComplex C R ⋙ _root_.HomotopyCategory.quotient _ _).map_preimage φ⟩
+@[simp]
+theorem toPeriodicComplex_map_quotientFunctor_map {X Y : CurvedDuplex C (0 : R)}
+    (f : X ⟶ Y) :
+    (toPeriodicComplex C R).map ((nullHomotopic C (0 : R)).quotientFunctor.map f) =
+      (_root_.HomotopyCategory.quotient _ _).map ((CurvedDuplex.toPeriodicComplex C R).map f) :=
+  rfl
 
-instance : (toPeriodicComplex C R).EssSurj where
-  mem_essImage K := by
-    obtain ⟨X, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
-      (CurvedDuplex.toPeriodicComplex C R ⋙ _root_.HomotopyCategory.quotient _ _) K
-    exact ⟨(nullHomotopic C (0 : R)).quotientFunctor.obj X, ⟨e⟩⟩
-
-instance : (toPeriodicComplex C R).IsEquivalence where
+instance : (toPeriodicComplex C R).IsEquivalence :=
+  MorphismIdeal.isEquivalence_lift _ _ kerIdeal_toPeriodicComplex_comp_quotient.ge
+    kerIdeal_toPeriodicComplex_comp_quotient.le
 
 variable (C R) in
 /-- The homotopy category of curved duplexes of curvature zero is equivalent to Mathlib's
 homotopy category of two-periodic complexes, through the functor induced by
 `CurvedDuplex.toPeriodicComplex`. -/
+@[expose]
 noncomputable def periodicComplexEquivalence :
     HomotopyCategory C (0 : R) ≌ _root_.HomotopyCategory C (ComplexShape.up (ZMod 2)) :=
   (toPeriodicComplex C R).asEquivalence
+
+/-- The functor of the homotopy-category equivalence is the induced periodic-complex functor. -/
+@[simp]
+theorem periodicComplexEquivalence_functor :
+    (periodicComplexEquivalence C R).functor = toPeriodicComplex C R := rfl
+
+instance : (periodicComplexEquivalence C R).functor.Additive := by
+  change (toPeriodicComplex C R).Additive
+  infer_instance
+
+instance : (periodicComplexEquivalence C R).functor.Linear R := by
+  change (toPeriodicComplex C R).Linear R
+  infer_instance
 
 /-- The equivalence of homotopy categories is induced by `CurvedDuplex.toPeriodicComplex`. -/
 theorem quotientFunctor_comp_periodicComplexEquivalence_functor :
@@ -321,9 +376,10 @@ noncomputable def quotientCompPeriodicComplexEquivalenceInverseIso :
     _root_.HomotopyCategory.quotient C (ComplexShape.up (ZMod 2)) ⋙
         (periodicComplexEquivalence C R).inverse ≅
       ofPeriodicComplex C R ⋙ (nullHomotopic C (0 : R)).quotientFunctor :=
-  (Functor.leftUnitor _).symm ≪≫
-    Functor.isoWhiskerRight (CurvedDuplex.periodicComplexEquivalence C R).counitIso.symm _ ≪≫
-    Functor.associator _ _ _ ≪≫
+  -- First identify `Q ⋙ inverse` with `(of ⋙ to) ⋙ Q ⋙ inverse` using the counit,
+  -- then identify `to ⋙ Q` with `Q_duplex ⋙ functor` and cancel the unit.
+  ((CurvedDuplex.periodicComplexEquivalence C R).invFunIdAssoc
+    (_root_.HomotopyCategory.quotient _ _ ⋙ (periodicComplexEquivalence C R).inverse)).symm ≪≫
     Functor.isoWhiskerLeft (ofPeriodicComplex C R)
       ((Functor.associator _ _ _).symm ≪≫
         Functor.isoWhiskerRight
