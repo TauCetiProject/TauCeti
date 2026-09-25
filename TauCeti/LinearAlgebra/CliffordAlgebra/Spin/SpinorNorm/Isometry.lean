@@ -32,15 +32,17 @@ universe u v w
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
   {V : Type v} {W : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+  [AddCommGroup W] [Module K W]
   {Q : QuadraticForm K V} {Q' : QuadraticForm K W}
 
 /-- An isometric equivalence preserves the orthogonal spinor norm. -/
 @[simp]
 theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.orthogonalGroup Q) :
-    orthogonalSpinorNorm Q' (e.nondegenerate_iff.mp hQ)
+    @orthogonalSpinorNorm K W _ _ _ e.toLinearEquiv.finiteDimensional _ Q'
+      (e.nondegenerate_iff.mp hQ)
       (QuadraticMap.orthogonalGroupCongr e g) = orthogonalSpinorNorm Q hQ g := by
+  let _ : FiniteDimensional K W := e.toLinearEquiv.finiteDimensional
   let H : Subgroup (QuadraticMap.orthogonalGroup Q) :=
     @MonoidHom.eqLocus (QuadraticMap.orthogonalGroup Q) _
       (Multiplicative (SquareClassGroup K)) _
@@ -62,8 +64,10 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
 /-- An isometric equivalence preserves the spinor norm on the special orthogonal group. -/
 theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
-    spinorNorm Q' (e.nondegenerate_iff.mp hQ) (e.specialOrthogonalGroupCongr g) =
+    @spinorNorm K W _ _ _ e.toLinearEquiv.finiteDimensional _ Q'
+      (e.nondegenerate_iff.mp hQ) (e.specialOrthogonalGroupCongr g) =
       spinorNorm Q hQ g := by
+  let _ : FiniteDimensional K W := e.toLinearEquiv.finiteDimensional
   rw [spinorNorm_apply, spinorNorm_apply]
   have he : QuadraticMap.specialOrthogonalToOrthogonal Q'
         (e.specialOrthogonalGroupCongr g) =
