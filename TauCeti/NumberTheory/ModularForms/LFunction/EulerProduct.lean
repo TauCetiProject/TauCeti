@@ -65,14 +65,6 @@ private theorem localFactor_eq (f : Eigenform N k) (p : Nat.Primes) (s : ℂ) :
           (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
   rw [mul_assoc, prime_cpow_sub]
 
-/-- The coefficient L-series of a full eigenform converges absolutely in its standard
-half-plane of convergence. -/
-theorem LSeriesSummable_qExpansion_coeff (f : Eigenform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
-    LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s := by
-  simpa only [strictWidthInfty_Gamma1] using
-    CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
-
 /-- For a normalized full eigenform, the quadratic Euler factor times its prime-power sum is
 `1` in the half-plane of absolute convergence. -/
 theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
@@ -85,7 +77,9 @@ theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
   have H := TauCeti.LSeries.localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1))
     h₁ p (f.qExpansion_coeff_prime_pow_add_two h₁ p.prop)
-    ((f.LSeriesSummable_qExpansion_coeff hs).comp_injective
+    ((by simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs :
+        LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s).comp_injective
       (Nat.pow_right_injective p.prop.two_le))
   simpa only [localFactor_eq] using H
 
@@ -126,7 +120,8 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
     (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.LSeriesSummable_qExpansion_coeff hs)
+    (by simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs)
   simpa only [localFactor_eq] using H
 
 /-- **The Euler product of a normalized Hecke eigenform**, as an equality with `∏'`: for a full
@@ -155,7 +150,8 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
     (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.LSeriesSummable_qExpansion_coeff hs)).congr fun n ↦
+    (by simpa only [strictWidthInfty_Gamma1] using
+      CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs)).congr fun n ↦
     Finset.prod_congr rfl fun p hp ↦ ?_
   rw [localFactor_eq f ⟨p, Nat.prime_of_mem_primesBelow hp⟩ s]
 
