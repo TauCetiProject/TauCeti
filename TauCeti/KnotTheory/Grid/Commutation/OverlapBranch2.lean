@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap
 
 /-!
-# Direct X-avoidance for the branch-2 recut rectangle
+# Branch-2 recut rectangle X-avoidance
 
 In Branch 2 of the `recutLeftEqLeft` construction, the new rectangle `E.second` spans the
 columns `cIco (finRotate n a) D.rectangle.right`. The covered-columns iff
@@ -23,7 +23,7 @@ Indeed, for the recut rectangle `E.second` with `E.second.left = finRotate n a` 
 - `a ∈ cIco (finRotate n a) (D.rectangle.right)` is false by
   `Grid.notMem_cIco_finRotate_left`.
 
-This file proves the X-avoidance directly via the general column-subinterval transfer
+This file proves the X-avoidance via the general column-subinterval transfer
 `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval` (in
 `TauCeti.KnotTheory.Grid.Rectangle.Squares`): when a rectangle `R'` has rows contained in
 an X-avoiding rectangle `R`'s rows and its columns form a subinterval not containing the
@@ -32,8 +32,9 @@ whether the column is the swapped one.
 
 ## Main results
 
-* `TauCeti.GridRectanglePentagonDecomposition.branch2_direct_X_avoidance`: the Branch 2
-  recut rectangle avoids the X-markings of the column-swapped diagram, from its side data.
+* `TauCeti.GridRectanglePentagonDecomposition.branch2_recut_rectangle_X_avoidance_swap`:
+  the Branch 2 recut rectangle avoids the X-markings of the column-swapped diagram, from
+  its side data.
 -/
 
 public section
@@ -44,7 +45,7 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {x z : GridState n} {G : GridDiagram n} {C : GridDiagram.ColumnCommutationData G}
 
-/-- Direct X-avoidance for the Branch 2 recut rectangle in the column-swapped diagram.
+/-- X-avoidance for the Branch 2 recut rectangle in the column-swapped diagram.
 
 The recut rectangle `R'` is given by its side data: in Branch 2 it spans the columns
 `cIco (finRotate n C.column) D.rectangle.right` with rows contained in `D.rectangle`'s
@@ -56,7 +57,7 @@ This is the missing piece for `recutLeftEqLeft` counted-ness in Branch 2, where 
 covered-columns iff is false and the transfer lemma does not apply. Only the original
 rectangle's X-avoidance is used, so the hypothesis is just its membership in the
 unblocked rectangles rather than the full counted decomposition. -/
-theorem branch2_direct_X_avoidance
+theorem branch2_recut_rectangle_X_avoidance_swap
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hrect : D.rectangle ∈ G.unblockedRectangles x D.middle)
     (R' : GridRectangle n)
