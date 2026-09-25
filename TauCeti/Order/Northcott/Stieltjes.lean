@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.Order.Northcott
+public import TauCeti.Order.Northcott.Basic
 
 /-!
 # Stieltjes functions from Northcott summatory functions
