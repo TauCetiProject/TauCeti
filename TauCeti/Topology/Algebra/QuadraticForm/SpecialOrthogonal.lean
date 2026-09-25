@@ -37,9 +37,7 @@ noncomputable section
 
 universe u v w
 
-attribute [local instance] Classical.decEq
-
-variable {n : Type u} [Fintype n]
+variable {n : Type u} [Fintype n] [DecidableEq n]
   {R : Type v} [CommRing R] [TopologicalSpace R]
   {N : Type w} [AddCommMonoid N] [Module R N]
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+public import TauCeti.Geometry.Lie.Exponential.Matrix.Compatibility
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialOrthogonal
+public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 /-!
@@ -19,9 +21,11 @@ infinitesimal actions.
 
 ## Main results
 
+* `unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_so` identifies the Lie
+  subalgebra of the positive-definite carrier with the real orthogonal Lie algebra in canonical
+  matrix coordinates.
 * `TauCeti.Lie.forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff_mem_so`
-  identifies the positive-definite carrier's exponential lines in the canonical Lie-algebra
-  coordinates of the general linear group.
+  gives the underlying exponential-line characterization.
 -/
 
 public section
@@ -34,7 +38,12 @@ noncomputable section
 namespace TauCeti.Lie
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Classical.decEq
+
+/-- The matrix topology selected by the operator norm used for the general linear Lie group. -/
+local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] [DecidableEq n] :
+    TopologicalSpace (Matrix n n ℝ) :=
+  (Matrix.linftyOpNormedRing (n := n) (α := ℝ)).toNonUnitalNormedRing
+    |>.toNormedAddCommGroup |>.toPseudoMetricSpace |>.toUniformSpace |>.toTopologicalSpace
 
 /-- In the canonical matrix coordinates of the general linear Lie algebra, an element generates a
 one-parameter subgroup in the range of the positive-definite `realCliffordForm n 0`
@@ -57,5 +66,27 @@ theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordFor
     rw [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff]
     simpa only [unitsLieAlgebraLieEquiv_symm_apply,
       lieExp_generalLinearGroup_coe] using h t
+
+/-- A matrix belongs to the real orthogonal Lie algebra exactly when its inverse image under the
+canonical units Lie equivalence belongs to the Lie subalgebra of the positive-definite
+`realCliffordForm n 0` special-orthogonal carrier. -/
+theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_so
+    (n : ℕ) (A : Matrix (Fin n) (Fin n) ℝ) :
+    (unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℝ)).symm A ∈
+        lieSubalgebraOfSubgroup
+          (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+            (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :
+              Subgroup (Matrix (Fin n) (Fin n) ℝ)ˣ) ↔
+      A ∈ LieAlgebra.Orthogonal.so (Fin n) ℝ := by
+  have hclosed : IsClosed
+      ((MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :
+          Subgroup (Matrix (Fin n) (Fin n) ℝ)ˣ) :
+        Set (Matrix (Fin n) (Fin n) ℝ)ˣ) := by
+    rw [MonoidHom.coe_range]
+    exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n
+  rw [mem_lieSubalgebraOfSubgroup hclosed]
+  simpa only [map_smul] using
+    forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff_mem_so n A
 
 end TauCeti.Lie
