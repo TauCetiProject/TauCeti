@@ -38,13 +38,13 @@ namespace TauCeti
 
 open ContCohomology
 
-universe u
+universe u v
 
 variable {p : ℕ} [Fact p.Prime]
 
 namespace freeProP
 
-variable {X : Type u} {M : Type u} [CommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+variable {X : Type u} {M : Type v} [CommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [Finite M] [MulDistribMulAction (freeProP p X) M] [ContinuousSMul (freeProP p X) M]
 
 /-- **The transgression of a minimal presentation is an isomorphism.** Let `F = freeProP p X`

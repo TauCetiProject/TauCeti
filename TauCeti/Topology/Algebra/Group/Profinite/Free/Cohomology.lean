@@ -45,7 +45,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 open ContCohomology
 
@@ -57,7 +57,7 @@ namespace freeProP
 
 section Cohomology
 
-variable {M : Type u} [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M] [CompactSpace M]
+variable {M : Type v} [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M] [CompactSpace M]
   [TotallyDisconnectedSpace M] [MulDistribMulAction (freeProP p X) M]
   [ContinuousSMul (freeProP p X) M]
 
