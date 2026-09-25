@@ -63,8 +63,9 @@ proved here is upgraded to analyticity in
 `TauCeti/Analysis/Polynomial/SimpleRoots/Basic.lean`, and its assembly across the blocks of an
 elementary-symmetric chart, including colliding points over `ℂ`, is in
 `TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The complex atlas is
-`TauCeti.isManifold_symChartedSpace`, and the tori `T_α`, `T_β` are shown totally real in it by
-`TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`. For transition maps at colliding
+`TauCeti.isManifold_symChartedSpace`; the tangent-space criterion for products of locally
+parametrized immersed curves is `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`.
+For transition maps at colliding
 tuples, this file also handles the case induced by a univariate polynomial; the general
 holomorphic case over `ℂ` is
 `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in

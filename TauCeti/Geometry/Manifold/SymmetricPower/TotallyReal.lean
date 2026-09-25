@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.SymmetricPower.Transition
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-public import TauCeti.LinearAlgebra.TotallyReal.Basic
+public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -30,31 +30,18 @@ is an immersion at `(t₁, …, tₙ)` in every chart of `Sym α n`, and its tan
 multiplication by `i` only in `0`, and spans with it. When `γᵢ` locally parametrizes the `i`-th
 attaching curve `αᵢ` of a Heegaard diagram, `Γ` locally parametrizes the torus `T_α = α₁ × ⋯ × αₙ`
 (`TauCeti.Sym.pi`, `TauCeti.Sym.ofFn_mem_pi`), whose points are always such tuples of distinct
-points because attaching curves are pairwise disjoint. So this is the tangential content of the
-statement that the tori `T_α`, `T_β` are totally real submanifolds of `Sym^g(Σ)` of half its real
-dimension, which serve as the boundary conditions for the holomorphic disks of Ozsváth–Szabó; that
-they are embedded, closed tori is `TauCeti.Sym.piHomeomorph`.
+points because attaching curves are pairwise disjoint. Thus, after supplying those local
+parametrizations, the result gives the tangent-space criterion needed for the tori in the
+holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, closed-torus result is
+`TauCeti.Sym.piHomeomorph`.
 
 ## Main declarations
 
-* `TauCeti.isTotallyReal_range_pi_smulRight`: the real span of nonzero vectors, one in each
-  coordinate of `ι → ℂ`, is totally real.
 * `TauCeti.differentiableAt_symChartAt_ofFn`: the product of the curves, read in a chart of the
   symmetric power, is real-differentiable.
-* `TauCeti.injective_fderiv_symChartAt_ofFn`: it is an immersion.
+* `TauCeti.fderiv_symChartAt_ofFn_injective`: it is an immersion.
 * `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`: its tangent space is maximal
   totally real.
-
-## Implementation notes
-
-Near a tuple of distinct points there is an elementary-symmetric chart with one block per point; the
-elementary symmetric function of a single point is minus that point, so in this chart `Γ` is `s ↦
-(-φᵢ(γᵢ(sᵢ)))ᵢ` for surface coordinates `φᵢ`, and its derivative is the diagonal map `τ ↦ (-τᵢ vᵢ)ᵢ`
-built from the velocity vectors `vᵢ`. Its range is totally real of real dimension `n` because each
-`vᵢ` is nonzero (`TauCeti.isTotallyReal_range_pi_smulRight`). Any other chart differs from this one
-by a holomorphic transition (`TauCeti.analyticAt_symOpenPartialHomeomorph_transition`) whose
-derivative is complex-linear and injective, and such maps preserve total reality
-(`TauCeti.IsTotallyReal.map`); the dimension count then gives maximality.
 
 ## References
 
@@ -69,33 +56,6 @@ open Filter Topology
 open scoped Manifold
 
 namespace TauCeti
-
-/-! ### The linear model -/
-
-section Model
-
-variable {ι : Type*}
-
-/-- **The real span of nonzero vectors, one in each coordinate, is totally real.** For nonzero
-`v i : ℂ`, the image of the real-linear map `τ ↦ (τ i • v i)ᵢ` from `ι → ℝ` to `ι → ℂ` meets its
-image under multiplication by `i` only in `0`. -/
-theorem isTotallyReal_range_pi_smulRight {v : ι → ℂ} (hv : ∀ i, v i ≠ 0) :
-    IsTotallyReal (AlmostComplexStructure.ofComplexModule (ι → ℂ)).toLinearMap
-      (LinearMap.range (LinearMap.pi fun i => (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ).smulRight
-        (v i))) := by
-  rw [isTotallyReal_iff, Submodule.disjoint_def]
-  rintro _ ⟨τ, rfl⟩ ⟨_, ⟨σ, rfl⟩, hσ⟩
-  funext i
-  have h := congrFun hσ i
-  simp only [AlmostComplexStructure.ofComplexModule, LinearMap.restrictScalars_apply,
-    LinearMap.lsmul_apply, LinearMap.pi_apply, LinearMap.smulRight_apply, LinearMap.proj_apply,
-    Pi.smul_apply, Complex.real_smul, smul_eq_mul] at h ⊢
-  -- `σ i * i * v i = τ i * v i` forces `σ i * i = τ i`, whose real part is `τ i = 0`
-  have h' : (σ i : ℂ) * Complex.I = τ i := mul_right_cancel₀ (hv i) (by rw [← h]; ring)
-  have hτ : τ i = 0 := by simpa using (congrArg Complex.re h').symm
-  simp [hτ]
-
-end Model
 
 /-! ### Products of curves in the symmetric power -/
 
@@ -256,7 +216,7 @@ theorem differentiableAt_symChartAt_ofFn (hinj : Function.Injective fun i => γ 
 `γ i` in a complex curve have nonzero velocity at `t₀ i` and pass there through pairwise distinct
 points, then `t ↦ {γ₁(t₁), …, γₙ(tₙ)}`, read in any chart of the symmetric power, has injective
 derivative at `t₀`. -/
-theorem injective_fderiv_symChartAt_ofFn (hinj : Function.Injective fun i => γ i (t₀ i))
+theorem fderiv_symChartAt_ofFn_injective (hinj : Function.Injective fun i => γ i (t₀ i))
     (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
     (hv : ∀ i, HasDerivAt (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (v i) (t₀ i))
     (hv0 : ∀ i, v i ≠ 0) (s : Sym α n)
@@ -271,8 +231,9 @@ theorem injective_fderiv_symChartAt_ofFn (hinj : Function.Injective fun i => γ 
 curves `γ i` in a complex curve have nonzero velocity at `t₀ i` and pass there through pairwise
 distinct points, then in every chart of the symmetric power the tangent space of
 `t ↦ {γ₁(t₁), …, γₙ(tₙ)}` at `t₀` is a maximal totally real subspace of `Fin n → ℂ`: it is
-complementary to its image under multiplication by `i`. For attaching curves of a Heegaard
-diagram this says that the torus `T_α` is a totally real submanifold of `Sym^g(Σ)`. -/
+complementary to its image under multiplication by `i`. Applied to local parametrizations of
+pairwise disjoint attaching curves, this supplies the required tangent-space criterion for the
+corresponding torus in `Sym^g(Σ)`. -/
 theorem isMaximalTotallyReal_range_fderiv_symChartAt_ofFn
     (hinj : Function.Injective fun i => γ i (t₀ i))
     (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
