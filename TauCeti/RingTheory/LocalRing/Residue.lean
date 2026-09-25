@@ -138,8 +138,10 @@ theorem mk_jacobson_eq_zero_iff {x : R} :
     Ideal.Quotient.mk (Ring.jacobson R) x = 0 ↔ ¬ IsUnit x :=
   Ideal.Quotient.eq_zero_iff_mem.trans mem_jacobson_iff_not_isUnit
 
-/-- **A residue class modulo the Jacobson radical is a unit exactly on the units.** -/
-@[simp]
+/-- **A residue class modulo the Jacobson radical is a unit exactly on the units.**
+
+Not a `simp` lemma: the quotient is a division ring, so `simp` already rewrites the left-hand
+side through `isUnit_iff_ne_zero` and `mk_jacobson_eq_zero_iff`. -/
 theorem isUnit_mk_jacobson_iff {x : R} :
     IsUnit (Ideal.Quotient.mk (Ring.jacobson R) x) ↔ IsUnit x := by
   refine ⟨fun hu => not_not.mp fun hx => ?_, fun hx => hx.map _⟩
