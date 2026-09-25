@@ -41,8 +41,8 @@ only where the statement forces it.
   isomorphisms of its source and target, so it descends to the arrows of a skeleton.
 * `TauCeti.not_isIrreducibleMorphism_zero`: **a zero morphism is never irreducible**, and its
   consequence `TauCeti.IsIrreducibleMorphism.ne_zero`.
-* `TauCeti.IsIrreducibleMorphism.mono_or_epi`: **an irreducible morphism with an image in a category
-  with equalizers is a monomorphism or an epimorphism**, and by
+* `TauCeti.IsIrreducibleMorphism.mono_or_epi`: **an irreducible morphism with an image whose
+  factor map is epi is a monomorphism or an epimorphism**, and by
   `TauCeti.IsIrreducibleMorphism.not_mono_and_epi` never both in a balanced category, so there,
   as in an abelian category, `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi` is a genuine
   dichotomy.
@@ -66,8 +66,8 @@ and target, but irreducibility in that subcategory need not imply irreducibility
 category.
 
 The dichotomy `mono_or_epi` is proved by feeding the image factorization `f = e ≫ i` to the
-definition: `e` is epi (the category has equalizers), so if it splits it is an isomorphism and `f`
-is mono; `i` is mono, so if it splits it is an isomorphism and `f` is epi.
+definition: when `e` is epi, as it is in a category with equalizers, if it splits it is an
+isomorphism and `f` is mono; `i` is mono, so if it splits it is an isomorphism and `f` is epi.
 
 ## References
 
@@ -247,9 +247,9 @@ epimorphism**. -/
 theorem IsIrreducibleMorphism.not_mono_and_epi [Balanced C] (hf : IsIrreducibleMorphism f) :
     ¬ (Mono f ∧ Epi f) := fun ⟨_, _⟩ => hf.not_isIso (isIso_of_mono_of_epi f)
 
-/-- An irreducible morphism with an image in a category with equalizers is a monomorphism or an
+/-- An irreducible morphism with an image whose factor map is epi is a monomorphism or an
 epimorphism. -/
-theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImage f]
+theorem IsIrreducibleMorphism.mono_or_epi [HasImage f] [Epi (factorThruImage f)]
     (hf : IsIrreducibleMorphism f) : Mono f ∨ Epi f := by
   rcases hf.factors (factorThruImage f) (image.ι f) (image.fac f) with h | h
   · refine Or.inl ?_
@@ -261,15 +261,15 @@ theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImage f]
     rw [← image.fac f]
     infer_instance
 
-/-- An irreducible morphism with an image in a balanced category with equalizers is a
+/-- An irreducible morphism in a balanced category with an image whose factor map is epi is a
 monomorphism exactly when it fails to be an epimorphism. -/
-theorem IsIrreducibleMorphism.mono_iff_not_epi [HasEqualizers C] [Balanced C] [HasImage f]
+theorem IsIrreducibleMorphism.mono_iff_not_epi [Balanced C] [HasImage f] [Epi (factorThruImage f)]
     (hf : IsIrreducibleMorphism f) : Mono f ↔ ¬ Epi f :=
   ⟨fun hm he => hf.not_mono_and_epi ⟨hm, he⟩, fun he => hf.mono_or_epi.resolve_right he⟩
 
-/-- An irreducible morphism with an image in a balanced category with equalizers is an
+/-- An irreducible morphism in a balanced category with an image whose factor map is epi is an
 epimorphism exactly when it fails to be a monomorphism. -/
-theorem IsIrreducibleMorphism.epi_iff_not_mono [HasEqualizers C] [Balanced C] [HasImage f]
+theorem IsIrreducibleMorphism.epi_iff_not_mono [Balanced C] [HasImage f] [Epi (factorThruImage f)]
     (hf : IsIrreducibleMorphism f) : Epi f ↔ ¬ Mono f :=
   ⟨fun he hm => hf.not_mono_and_epi ⟨hm, he⟩, fun hm => hf.mono_or_epi.resolve_left hm⟩
 
