@@ -79,7 +79,7 @@ def divMatrixGradient (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ
     (EuclideanSpace.basisFun ι ℝ i)
 
 /-- `div(A ∇ψ)` vanishes off the support of `ψ`. -/
-private theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpace ℝ ι → ℝ}
+@[simp] theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) {x : EuclideanSpace ℝ ι} (hx : x ∉ tsupport ψ) :
     divMatrixGradient A ψ x = 0 := by
   refine Finset.sum_eq_zero fun i _ => ?_
@@ -92,7 +92,7 @@ private theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpac
   simp
 
 /-- `div(A ∇ψ)` is continuous for smooth `ψ`. -/
-private theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
+theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) : Continuous (divMatrixGradient A ψ) := by
   refine continuous_finsetSum _ fun i _ => ?_
   have hh : ContDiff ℝ ∞ (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i)
@@ -195,7 +195,7 @@ def localizedForcing (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
 
 /-- The localized forcing term is square integrable, since each of its terms is an `L²(Ω)`
 function times a bounded one. -/
-private theorem memLp_localizedForcing {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+theorem memLp_localizedForcing {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (hψc : HasCompactSupport ψ) (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
     MemLp (localizedForcing A ψ f u) 2 (mu.restrict Omega) := by
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
