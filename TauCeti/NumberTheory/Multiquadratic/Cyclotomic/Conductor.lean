@@ -12,10 +12,10 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 /-!
 # The conductor of a quadratic field
 
-A quadratic field of fundamental discriminant `D` has exact cyclotomic level `|D|`: within
-`ℚ(ζ_|D|)`, it cannot lie in a cyclotomic subfield at a proper divisor level. This is the
-quadratic exact-level building block for explicit Kronecker–Weber constructions of
-multiquadratic fields. For the classical argument see D. A. Cox,
+Within `ℚ(ζ_|D|)`, a quadratic field of fundamental discriminant `D` cannot lie in a
+cyclotomic subfield at a proper divisor level of `|D|`. This gives the divisor-level
+minimality step for explicit Kronecker–Weber constructions of multiquadratic fields.
+For the classical argument see D. A. Cox,
 *Primes of the Form x² + ny²*, §3.B.
 -/
 
