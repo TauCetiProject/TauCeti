@@ -63,12 +63,6 @@ theorem _root_.QuadraticMap.restrict_isRepresentedBy (Q : QuadraticMap R M N)
     (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
   (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
 
-/-- The left factor of an orthogonal product is represented by the product. -/
-theorem _root_.QuadraticMap.isRepresentedBy_prod_left (Q₁ : QuadraticMap R M N)
-    {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (Q₂ : QuadraticMap R M₂ N) :
-    Q₁.IsRepresentedBy (Q₁.prod Q₂) :=
-  ⟨Isometry.inl Q₁ Q₂, LinearMap.inl_injective⟩
-
 /-- The right factor of an orthogonal product is represented by the product. -/
 theorem _root_.QuadraticMap.isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
     {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (Q₂ : QuadraticMap R M₂ N) :

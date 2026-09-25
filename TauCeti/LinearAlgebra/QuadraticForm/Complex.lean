@@ -167,8 +167,9 @@ theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
       omega
     obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed
       (Q.prod S) R hprod hR hrank
-    exact (QuadraticMap.isRepresentedBy_prod_left Q S).trans
-      (QuadraticMap.Equivalent.isRepresentedBy ⟨e⟩)
+    rw [QuadraticMap.isRepresentedBy_iff]
+    exact ⟨(e.toIsometry.comp (QuadraticMap.Isometry.inl Q S)).toLinearMap,
+      e.injective.comp LinearMap.inl_injective, fun x ↦ by simp⟩
 
 /-- A regular quadratic form on a space of positive rank over an algebraically closed field
 represents every scalar. The positive-rank hypothesis supplies nontriviality directly, so no
