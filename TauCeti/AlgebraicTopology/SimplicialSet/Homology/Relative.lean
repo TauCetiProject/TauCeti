@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.CategoryTheory.Limits.Preserves.SigmaConst
 
 /-!
 # Naturality in relative simplicial homology
@@ -18,9 +19,11 @@ of these short exact sequences, and deduces that the connecting morphism is natu
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
 It also records that the quotient maps from ambient to relative homology are natural in the pair:
-they commute with morphisms of simplicial-set pairs, and that a morphism of pairs which is a
-quasi-isomorphism on subcomplexes and on ambient simplicial sets is a quasi-isomorphism on relative
-chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
+they commute with morphisms of simplicial-set pairs. The short exact sequence of chain complexes
+of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the injection of
+the `n`-simplices of `X` into those of `Y`. A morphism of pairs which is a quasi-isomorphism on
+subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative chains
+(`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -29,7 +32,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits
+open CategoryTheory Limits Opposite Simplicial
 
 universe w
 
@@ -61,6 +64,11 @@ lemma chainComplexShortComplexMap_τ₂ {P P' : SSetPair.{w}} (f : P ⟶ P') (R 
 lemma chainComplexShortComplexMap_τ₃ {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C) :
     (chainComplexShortComplexMap f R).τ₃ = chainComplexMap f R := by
   rw [chainComplexShortComplexMap.eq_def]
+
+/-- In each degree, the map from the chains of the subobject of a pair of simplicial sets to the
+chains of the ambient simplicial set is a split monomorphism. -/
+instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexMap P.hom R).f n) :=
+  inferInstanceAs (IsSplitMono ((sigmaConst.obj R).map (P.hom.app (op ⦋n⦌))))
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

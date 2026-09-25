@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Transfer
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
+import TauCeti.GroupTheory.Transfer
 
 /-!
 # Maps between abelianized Galois groups of finite normal layers
@@ -28,7 +29,8 @@ induces `LayerRestriction.inclusionHom` on abelianizations. In the other directi
 `LayerRestriction.transferHom` is the group-theoretic transfer (Verlagerung). It is formed by
 identifying `Gal(K/E)` with the range of the inclusion, applying Mathlib's `MonoidHom.transfer`,
 and then using the universal property of the abelianization. The index of that range is the
-relative degree `[E : F]`.
+relative degree `[E : F]`. Like the inclusion, the transfer is functorial along a tower of
+restrictions, because the group-theoretic transfer is transitive (`MonoidHom.transfer_transfer`).
 
 For a refinement `L/F` of `K/F`, the quotient map
 
@@ -47,6 +49,8 @@ Conjugation of a layer similarly induces an equivalence on abelianizations from
   inclusion of Galois groups.
 * `TauCeti.ClassFieldTheory.LayerRestriction.transferHom`: group-theoretic transfer between the
   same abelianizations, in the opposite direction.
+* `TauCeti.ClassFieldTheory.LayerRestriction.transferHom_trans`: the transfer is functorial along
+  a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRefinement.quotientHom`: the map on abelianizations induced by a
   quotient of Galois groups.
 * `NormalLayer.conjugateGalEquiv_abelianizationCongr_one`: conjugation by one is the identity on
@@ -133,6 +137,41 @@ theorem transferHom_of (T : LayerRestriction small big) (x : big.Gal) :
         (Abelianization.of.comp
           (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom) x) :=
   (rfl)
+
+/-- Transfer on abelianized Galois groups is functorial along a tower of restrictions: for
+`F ⊆ E ⊆ E' ⊆ K`, the transfer `Gal(K/F)^ab → Gal(K/E')^ab` is the transfer
+`Gal(K/F)^ab → Gal(K/E)^ab` followed by the transfer `Gal(K/E)^ab → Gal(K/E')^ab`. -/
+theorem transferHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    (T.trans T').transferHom = T.transferHom.comp T'.transferHom := by
+  have hle := galHom_range_trans_le T T'
+  -- Transported along `T'.galHom`, the transfer from `Gal(K/E)` to the image of `Gal(K/E')` is
+  -- the transfer from the image of `Gal(K/E)` to that of `Gal(K/E')`, both inside `Gal(K/F)`.
+  -- The identification `subgroupOfEquivOfLe` enters as a coercion, the form `transfer_transfer`
+  -- is stated in.
+  have htransport : (MonoidHom.transfer (Abelianization.of.comp
+        (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom)).comp
+        (MonoidHom.ofInjective T'.galHom_injective).symm.toMonoidHom =
+      MonoidHom.transfer ((Abelianization.of.comp
+        (MonoidHom.ofInjective (T.trans T').galHom_injective).symm.toMonoidHom).comp
+        (MonoidHomClass.toMonoidHom (Subgroup.subgroupOfEquivOfLe hle))) := by
+    ext z
+    obtain ⟨m, rfl⟩ := (MonoidHom.ofInjective T'.galHom_injective).surjective z
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply]
+    refine (MonoidHom.transfer_apply_of_mulEquiv _ _ (galHom_range_map_ofInjective T T') _
+      (fun h ↦ congrArg Abelianization.of ((T.trans T').galHom_injective ?_)) m).symm
+    simp only [MulEquiv.coe_toMonoidHom, MonoidHom.apply_ofInjective_symm]
+    simp [galHom_trans T T', MonoidHom.ofInjective_apply]
+  refine AddMonoidHom.ext fun x ↦ ?_
+  obtain ⟨x, rfl⟩ := Additive.ofMul.surjective x
+  obtain ⟨y, rfl⟩ : ∃ y, Abelianization.of y = x := QuotientGroup.mk_surjective x
+  rw [AddMonoidHom.comp_apply, transferHom_of, transferHom_of, transferHom,
+    MonoidHom.toAdditive_apply_apply, toMul_ofMul]
+  -- Naturality in the target (`transfer_comp`) moves the outer `Abelianization.lift` inside the
+  -- transfer to `Gal(K/E)`, where it becomes the inner transfer transported along `T'.galHom`;
+  -- `htransport` and the tower law `transfer_transfer` then give the transfer of `T.trans T'`.
+  rw [← MonoidHom.comp_apply (Abelianization.lift _), ← MonoidHom.transfer_comp,
+    ← MonoidHom.comp_assoc, ← Abelianization.lift_symm_apply, Equiv.symm_apply_apply, htransport,
+    MonoidHom.transfer_transfer]
 
 end LayerRestriction
 

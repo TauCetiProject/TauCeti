@@ -78,14 +78,12 @@ private theorem lid_map_contractLeft_tensorCombine {M : FGComoduleCat.{u, v, u} 
             (x ⊗ₜ[k] y))) =
       LinearMap.mul' k H
         (TensorProduct.map (dualTensorHom k M H x) (LinearMap.id : H →ₗ[k] H) y) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x z hx hz =>
       simpa only [TensorProduct.add_tmul, map_add, TensorProduct.map_add_left,
         LinearMap.add_apply] using congrArg₂ (· + ·) hx hz
   | tmul φ a =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y z hy hz =>
           simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hy hz
       | tmul m b =>

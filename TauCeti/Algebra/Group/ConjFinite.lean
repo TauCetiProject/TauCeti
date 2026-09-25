@@ -45,8 +45,7 @@ theorem card_carrier_mk_one : Nat.card (_root_.ConjClasses.mk (1 : G)).carrier =
   rw [carrier_mk_one]
   simp
 
-/-- **A conjugacy class of a finite monoid has positive size**: it contains any of its
-representatives. -/
+/-- **A conjugacy class of a finite monoid has positive size.** -/
 theorem card_carrier_pos [Finite G] (C : _root_.ConjClasses G) : 0 < Nat.card C.carrier := by
   obtain ⟨g, rfl⟩ := C.exists_rep
   have : Nonempty (_root_.ConjClasses.mk g).carrier := ⟨⟨g, _root_.ConjClasses.mem_carrier_mk⟩⟩

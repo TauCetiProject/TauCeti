@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.Finrank

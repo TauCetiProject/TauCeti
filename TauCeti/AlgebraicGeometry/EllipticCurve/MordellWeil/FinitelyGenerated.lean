@@ -18,13 +18,14 @@ public import TauCeti.NumberTheory.NumberField.IntegralClosure
 The descent is complete: the weak Mordell–Weil theorem gives that `E(K)/2E(K)` is finite, the
 naïve height satisfies the approximate parallelogram law and the Northcott property, and Mathlib's
 descent engine `AddCommGroup.fg_of_descent'` turns those two into finite generation of `E(K)`.
+Finiteness of the torsion subgroup comes out of the same two inputs and is Mathlib's
+`WeierstrassCurve.Affine.finite_torsion`.
 
 The statements are named for their conclusions, per the roadmap: no declaration is called
 `mordellWeil`, and the classical name appears in docstrings only.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.finite_torsion` : the torsion subgroup of `E(K)` is finite.
 * `WeierstrassCurve.Affine.fg_point` : `E(K)` is finitely generated, for a curve in the normal
   form `y² = f(x)` over the fraction field of a Dedekind domain, under per-factor class-group and
   unit-group finiteness.
@@ -65,15 +66,6 @@ section Northcott
 
 variable [AdmissibleAbsValues F] [Northcott (logHeight₁ (K := F))]
 variable [DecidableEq F] [W.toAffine.IsElliptic]
-
-/-- The torsion subgroup of `E(F)` is finite, for any field `F` carrying admissible absolute
-values whose `logHeight₁` satisfies the Northcott property. No number field is needed: the
-descent uses only the approximate parallelogram law and Northcott finiteness, both of which are
-available at that generality. A number field is one such `F`, via
-`Mathlib/NumberTheory/Height/NumberField.lean`. -/
-theorem finite_torsion : Finite (AddCommGroup.torsion W.Point) := by
-  obtain ⟨C, hC⟩ := approx_parallelogram_law W
-  exact AddCommGroup.finite_torsion_of_descent' hC
 
 /-- **The Mordell–Weil theorem**, general version: `E(K)` is finitely generated, for an elliptic
 curve `E` given by an equation `y² = f(x)` with a monic cubic `f` (`a₁ = a₃ = 0`) over a field `K`

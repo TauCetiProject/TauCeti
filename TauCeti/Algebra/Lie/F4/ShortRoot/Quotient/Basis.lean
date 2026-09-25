@@ -114,7 +114,7 @@ the twenty-four long roots and the two long simple coroots. -/
       omega
     · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
         mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndex, Equiv.symm_apply_apply]
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
       fin_cases k <;> simp [f4LongSimpleIndex]
   · intro hx
     rcases x with α | j
@@ -133,33 +133,32 @@ the twenty-four long roots and the two long simple coroots. -/
       simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
       apply congrArg Sum.inl
       dsimp only [i]
-      simp only [f4SpecialIsogenyIndexEquiv_apply]
-      rw [f4SpecialIsogenyIndex_involutive]
+      rw [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
       exact f4KillingRootLabel_f4PinnedRootIndex α
-    · have hne : ¬(f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3) := by
+    · have hne : ¬(f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3) := by
         simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
           f4ChevalleyIndexIsShort_inr_iff] using hx
-      have hj : f4PinnedSimpleIndex j = 0 ∨ f4PinnedSimpleIndex j = 1 := by
+      have hj : f4PinnedSimpleIndexEquiv j = 0 ∨ f4PinnedSimpleIndexEquiv j = 1 := by
         omega
       rcases hj with h0 | h1
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 1), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
-        rw [← (F4.lieBasis valid_F4).baseSupportEquiv.apply_symm_apply j]
-        apply congrArg (F4.lieBasis valid_F4).baseSupportEquiv
-        apply Fin.ext
-        have := congrArg Fin.val h0
-        simp only [f4PinnedSimpleIndex, Fin.val_cast] at this
-        simpa [f4LongSimpleIndex] using this.symm
+        apply f4PinnedSimpleIndexEquiv.injective
+        have hnode : f4PinnedSimpleIndexEquiv
+            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 1)) = 0 := by
+          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_one,
+            Fin.cast_cast, Fin.cast_eq_self]
+        exact hnode.trans h0.symm
       · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 0), ?_⟩
         simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
         apply congrArg Sum.inr
-        rw [← (F4.lieBasis valid_F4).baseSupportEquiv.apply_symm_apply j]
-        apply congrArg (F4.lieBasis valid_F4).baseSupportEquiv
-        apply Fin.ext
-        have := congrArg Fin.val h1
-        simp only [f4PinnedSimpleIndex, Fin.val_cast] at this
-        simpa [f4LongSimpleIndex] using this.symm
+        apply f4PinnedSimpleIndexEquiv.injective
+        have hnode : f4PinnedSimpleIndexEquiv
+            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 0)) = 1 := by
+          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_zero,
+            Fin.cast_cast, Fin.cast_eq_self]
+        exact hnode.trans h1.symm
 
 /-- The coordinate complement to the modular short-root subspace. -/
 def f4LongRootComplement : Submodule (ZMod 2) f4ModularChevalleyLieAlgebra :=
@@ -226,7 +225,7 @@ noncomputable def f4ShortRootQuotientBasis :
       isCompl_f4ShortRootSubspace_f4LongRootComplement).symm
 
 /-- Each quotient basis vector is the class of its complementary Chevalley basis vector. -/
-@[simp] theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
+theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
     f4ShortRootQuotientBasis a =
       Submodule.Quotient.mk (f4ModularChevalleyBasis (f4LongRootBasisCoordinate a)) := by
   rw [f4ShortRootQuotientBasis, Basis.map_apply,
@@ -259,6 +258,20 @@ theorem f4ShortRootQuotientBasis_thirteen :
         (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (0 : Fin 4))) := by
   rw [f4ShortRootQuotientBasis_apply,
     f4ModularChevalleyBasis_longRootBasisCoordinate_thirteen]
+
+/-- A long-root lift is the quotient basis vector indexed by its short special-map image. -/
+@[simp] theorem f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis
+    (γ : Fin 48) (hγ : f4Length γ = 2) :
+    Submodule.Quotient.mk (f4ModularRootVector γ) =
+      f4ShortRootQuotientBasis
+        (f4ShortRootWeightIndexEquiv.symm (Sum.inl
+          ⟨f4SpecialIsogenyIndexEquiv γ, by
+            exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩)) := by
+  rw [f4ShortRootQuotientBasis_symm_inl]
+  apply congrArg f4ShortRootSubspace.mkQ
+  apply congrArg f4ModularRootVector
+  exact (f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv γ).symm
+
 
 end
 

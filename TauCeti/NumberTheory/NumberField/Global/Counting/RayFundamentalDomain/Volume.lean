@@ -25,6 +25,8 @@ sign at the `s` real places of the infinite part therefore divides the volume of
 * `TauCeti.GlobalNumberFields.two_pow_mul_volume_rayFundamentalDomain_inter_normLeOne`:
   `2 ^ s` times the volume of the norm-one section of `rayFundamentalDomain 𝔪` is the index of
   `unitsCongruenceSubgroupSupTorsion 𝔪` times the volume of `normLeOne K`.
+* `TauCeti.GlobalNumberFields.measureReal_rayFundamentalDomain_inter_normLeOne`: the same
+  volume as an explicit real number, the index times `2 ^ r₁ · π ^ r₂ · Reg_K / 2 ^ s`.
 
 ## References
 
@@ -35,7 +37,8 @@ public section
 
 open MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
 open NumberField.mixedEmbedding.fundamentalCone TauCeti.NumberField.mixedEmbedding
-open scoped Pointwise
+open NumberField.Units
+open scoped Pointwise Real
 
 namespace TauCeti.GlobalNumberFields
 
@@ -70,5 +73,19 @@ theorem two_pow_mul_volume_rayFundamentalDomain_inter_normLeOne (𝔪 : Modulus 
     ← volume_eq_two_pow_mul_volume_inter_pos _ (by simp) (.iUnion hm),
     measure_iUnion (pairwise_disjoint_rayUnitRepresentative_smul_normLeOne 𝔪) hm]
   simp [ENat.card_eq_coe_natCard, Subgroup.index]
+
+open scoped Classical in
+/-- **The real volume of the norm-≤-one section of the ray fundamental domain.**  With `s` real
+places in the infinite part of `𝔪`, the section of `rayFundamentalDomain 𝔪` of norm at most one
+has real volume `i · 2 ^ r₁ · π ^ r₂ · Reg_K / 2 ^ s`, where `i` is the index of
+`unitsCongruenceSubgroupSupTorsion 𝔪`, `r₁` and `r₂` are the numbers of real and complex places
+of `K`, and `Reg_K` is its regulator. -/
+theorem measureReal_rayFundamentalDomain_inter_normLeOne (𝔪 : Modulus K) :
+    volume.real (rayFundamentalDomain 𝔪 ∩ {x | mixedEmbedding.norm x ≤ 1}) =
+      (unitsCongruenceSubgroupSupTorsion 𝔪).index *
+        (2 ^ nrRealPlaces K * π ^ nrComplexPlaces K * regulator K) / 2 ^ 𝔪.infinitePart.card := by
+  rw [eq_div_iff (by positivity), mul_comm, measureReal_def]
+  simpa [volume_normLeOne, (regulator_pos K).le] using
+    congrArg ENNReal.toReal (two_pow_mul_volume_rayFundamentalDomain_inter_normLeOne 𝔪)
 
 end TauCeti.GlobalNumberFields

@@ -46,6 +46,9 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 * `Rep.leftRegularIsoCoindBot`: for a finite group, `k[G] ≅ coindBot k G k`.
 * `Rep.resCoindBotIso`, `Rep.resIndBotIso`: restrictions to a subgroup, again coinduced,
   respectively induced, from the trivial subgroup.
+* `Rep.quotientToInvariantsCoindBotIso`: the invariants under a normal subgroup `S` of a
+  representation coinduced from the trivial subgroup, coinduced from the trivial subgroup of
+  `G ⧸ S`.
 
 ## References
 
@@ -438,5 +441,71 @@ theorem indBotEquivFinsupp_resIndBotIso_inv_hom_apply (X : Type u) [AddCommGroup
     LinearEquiv.symm_symm, Finsupp.uncurry_apply, Prod.fst_swap, Prod.snd_swap]
 
 end Restriction
+
+section Invariants
+
+variable (S : Subgroup G) (X : Type u) [AddCommGroup X] [Module k X]
+
+/-- An `S`-invariant function `G → X` in `Coind_⊥^G X` is constant on the cosets of `S`. -/
+private theorem coindBot_apply_eq_of_mem_invariants
+    {f : coindBot k G X} (hf : f ∈ Representation.invariants ((coindBot k G X).ρ.comp S.subtype))
+    {a b : G} (hab : (a : G ⧸ S) = b) : f.1 a = f.1 b := by
+  obtain ⟨s, rfl⟩ : ∃ s : S, b = a * s := ⟨⟨a⁻¹ * b, QuotientGroup.eq.1 hab⟩, by simp⟩
+  exact (congrArg (fun f : coindBot k G X => f.1 a) (hf s)).symm
+
+variable [S.Normal]
+
+/-- For a normal subgroup `S`, the `S`-invariants of the representation coinduced from the trivial
+subgroup of `G` are coinduced from the trivial subgroup of `G ⧸ S`: an `S`-invariant function on
+`G` is a function on `G ⧸ S`, `f ↦ (y ↦ f y.out)`
+(`quotientToInvariantsCoindBotIso_hom_hom_apply_coe`). -/
+def quotientToInvariantsCoindBotIso :
+    (coindBot k G X).quotientToInvariants S ≅ coindBot k (G ⧸ S) X :=
+  mkIso <| .mk
+    { toFun f := ⟨fun y => f.1.1 y.out, fun g _ => by
+        obtain rfl : g = 1 := Subsingleton.elim g 1
+        simp⟩
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      invFun F := ⟨⟨fun g => F.1 g, fun g _ => by
+        obtain rfl : g = 1 := Subsingleton.elim g 1
+        simp⟩, fun s => by
+        ext g
+        exact congrArg F.1 (QuotientGroup.mk_mul_of_mem g s.2)⟩
+      left_inv f := by
+        ext g
+        exact coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)
+      right_inv F := by
+        ext y
+        exact congrArg F.1 (QuotientGroup.out_eq' y) }
+    fun y => by
+      induction y using QuotientGroup.induction_on with | H g => ?_
+      ext f y
+      exact coindBot_apply_eq_of_mem_invariants S X f.2 (by simp)
+
+/-- The `S`-invariants of a coinduced representation, as a function on `G ⧸ S`: `f ↦ (y ↦ f y.out)`.
+-/
+@[simp]
+theorem quotientToInvariantsCoindBotIso_hom_hom_apply_coe
+    (f : (coindBot k G X).quotientToInvariants S) (y : G ⧸ S) :
+    (dsimp% only (((quotientToInvariantsCoindBotIso S X).hom.hom f).1 y)) = f.1.1 y.out :=
+  (rfl)
+
+/-- An invariant function has the same value at a representative and at the chosen representative
+of its coset. Together with `quotientToInvariantsCoindBotIso_hom_hom_apply_coe`, this evaluates
+the forward isomorphism on cosets of representatives. -/
+@[simp]
+theorem quotientToInvariants_coindBot_apply_out_mk
+    (f : (coindBot k G X).quotientToInvariants S) (g : G) :
+    f.1.1 (QuotientGroup.mk g : G ⧸ S).out = f.1.1 g := by
+  exact coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)
+
+/-- A function on `G ⧸ S`, as an `S`-invariant function on `G`: `F ↦ (g ↦ F ⟦g⟧)`. -/
+@[simp]
+theorem quotientToInvariantsCoindBotIso_inv_hom_apply_coe_coe (F : coindBot k (G ⧸ S) X) (g : G) :
+    (dsimp% only (((quotientToInvariantsCoindBotIso S X).inv.hom F).1.1 g)) = F.1 g :=
+  (rfl)
+
+end Invariants
 
 end Rep

@@ -12,13 +12,13 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 # Fractional ideals of ideles
 
 This file relates the fractional ideal of an idele's finite component to its valuations at
-finite places.
+finite places. It also gives a norm-one idele representative of every ideal class.
 -/
 
 public section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
-  IsDedekindDomain.FiniteAdeleRing NumberField
+  IsDedekindDomain.FiniteAdeleRing NumberField NumberField.InfinitePlace
 open scoped NumberField
 
 namespace TauCeti.GlobalNumberFields
@@ -36,3 +36,32 @@ theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
     HeightOneSpectrum.coe_ideleFiniteCoord]
 
 end TauCeti.GlobalNumberFields
+
+namespace ClassGroup
+
+open TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Every ideal class is the class of the finite part of an idele of norm one. -/
+theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
+    ∃ b : IdeleGroup (𝓞 K) K, ideleNorm b = 1 ∧
+      FiniteAdeleRing.toClassGroup (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K b) = c := by
+  obtain ⟨f, hf⟩ := FiniteAdeleRing.toClassGroup_surjective (R := 𝓞 K) (K := K) c
+  -- Correct the norm at one infinite place, which does not change the finite part.
+  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  obtain ⟨x, hx⟩ := exists_infiniteCompletionNormalizedAbsValue_eq w
+    ((ideleNorm (IdeleGroup.ofFiniteIdele (𝓞 K) K f))⁻¹ : NNReal).coe_nonneg
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [map_zero] at hx
+    exact Units.ne_zero _ (by exact_mod_cast hx.symm)
+  refine ⟨IdeleGroup.ofFiniteIdele (𝓞 K) K f * IdeleGroup.ofCompletion (𝓞 K) K w (Units.mk0 x hx0),
+    ?_, ?_⟩
+  · ext
+    rw [map_mul, Units.val_mul, NNReal.coe_mul, coe_ideleNorm_ofCompletion, Units.val_mk0, hx]
+    simp
+  · rw [map_mul, map_mul, IdeleGroup.toFiniteIdele_ofFiniteIdele,
+      IdeleGroup.toFiniteIdele_ofCompletion, map_one, mul_one, hf]
+
+end ClassGroup

@@ -465,8 +465,7 @@ noncomputable def concreteLatticeConj :
   toFun := concreteLatticeConjIntLinear
   map_add' := concreteLatticeConjIntLinear.map_add
   map_smul' c x := by
-    refine TensorProduct.induction_on x ?_ ?_ ?_
-    · simp
+    refine TensorProduct.inductionOn x ?_ ?_
     · intro z v
       simp only [TensorProduct.smul_tmul']
       unfold concreteLatticeConjIntLinear
@@ -561,7 +560,6 @@ theorem latticeConj_unique (hℂ : IsBaseChange ℂ ιℂ)
     c = latticeConj hℂ := by
   ext x
   induction x using hℂ.inductionOn with
-  | zero => simp
   | tmul v => simp [hc]
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]
@@ -700,7 +698,6 @@ theorem integralMapToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
     integralMapToComplex h₁ ι₂ f (latticeConj h₁ x) =
       latticeConj h₂ (integralMapToComplex h₁ ι₂ f x) := by
   induction x using h₁.inductionOn with
-  | zero => simp
   | tmul x => simp
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]
@@ -738,7 +735,6 @@ theorem latticeConj_prodMap (x : Vℂ × V'ℂ) :
     latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) x =
       (latticeConj hℂ x.1, latticeConj h'ℂ x.2) := by
   induction x using (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ).inductionOn with
-  | zero => simp only [map_zero, Prod.fst_zero, Prod.snd_zero]; rfl
   | tmul x => rw [latticeConj_ι]; simp
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]

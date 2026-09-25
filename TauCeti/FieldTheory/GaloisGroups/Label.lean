@@ -48,7 +48,9 @@ by the degree alone, and in degree two by separability and irreducibility.
 ## Main results
 
 * `TauCeti.hasGaloisLabel_iff_forall`: the label does not depend on the numbering of the roots.
-* `TauCeti.HasGaloisLabel.natCard_gal`: the order of the Galois group is that of the reference.
+* `TauCeti.HasGaloisLabel.natCard_gal`: the order of the Galois group is that of the reference,
+  and `TauCeti.hasGaloisLabel_iff_natCard_gal`: conversely, the order determines the label in every
+  degree where it determines the label of a transitive subgroup.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
@@ -163,6 +165,16 @@ theorem HasGaloisLabel.natCard_gal (h : HasGaloisLabel f j) :
   rw [← he.natCard_eq, Subgroup.card_map_of_injective e.permCongrHom.injective,
     natCard_galActionHom_range]
 
+/-- The order of a permutation of the roots induced by the Galois group of a polynomial with a
+label divides the order of the reference subgroup. The roots may be taken in any field where the
+polynomial splits. -/
+theorem HasGaloisLabel.orderOf_dvd_natCard_referenceSubgroup (h : HasGaloisLabel f j)
+    {E : Type*} [Field E] [Algebra F E] [Fact ((f.map (algebraMap F E)).Splits)]
+    {σ : Perm (f.rootSet E)} (hσ : σ ∈ (Gal.galActionHom f E).range) :
+    orderOf σ ∣ Nat.card (referenceSubgroup n j) := by
+  rw [← h.natCard_gal, ← natCard_galActionHom_range f E]
+  exact Subgroup.orderOf_dvd_natCard _ hσ
+
 /-- A polynomial with a label is irreducible, because every reference subgroup is transitive.
 There are no labels in degree zero, so no degree hypothesis is needed. -/
 theorem HasGaloisLabel.irreducible (h : HasGaloisLabel f j) : Irreducible f := by
@@ -221,6 +233,22 @@ theorem existsUnique_hasGaloisLabel (hsep : f.Separable) (hirr : Irreducible f)
     ∃! i : TransitiveGroupIndex n, HasGaloisLabel f i :=
   (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg hex).elim fun i hi =>
     ⟨i, hi, fun _ hk => hk.eq_of huniq hi⟩
+
+/-- **A label is recognized by its order, as soon as the classification says so.** A separable
+irreducible polynomial of degree `n` carries the label `j` exactly when its Galois group has the
+order of the reference subgroup, provided a transitive subgroup of `Equiv.Perm (Fin n)` carries
+the label `j` exactly when it has that order. -/
+theorem hasGaloisLabel_iff_natCard_gal (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = n)
+    (h : ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
+      (TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup n j))) :
+    HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup n j) := by
+  refine ⟨HasGaloisLabel.natCard_gal, fun hcard => ?_⟩
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  let e' := e.trans (finCongr hdeg)
+  refine ⟨hsep, hdeg, e', (h _ ((isPretransitive_map_range_galActionHom_iff hsep
+    (hdeg ▸ hirr.natDegree_pos) e').mpr hirr)).mpr ?_⟩
+  rwa [Subgroup.card_map_of_injective e'.permCongrHom.injective, natCard_galActionHom_range]
 
 /-- The Galois image of a polynomial with a label acts primitively on the roots exactly when the
 reference subgroup acts primitively. -/

@@ -378,6 +378,8 @@ noncomputable def periodicFunctor (g : G) : Rep R G ⥤ ChainComplex (ModuleCat 
   chainComplexFunctor R g ⋙
     (forget₂ (Rep R G) (ModuleCat R)).mapHomologicalComplex (ComplexShape.down ℕ)
 
+/-- In every degree, `periodicFunctor` sends a morphism of representations to its underlying linear
+map. -/
 @[simp]
 theorem periodicFunctor_map_f (f : M ⟶ N) (i : ℕ) :
     ((periodicFunctor R g).map f).f i = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
@@ -394,6 +396,7 @@ noncomputable def periodicFunctorObjIso (M : Rep R G) :
         HomologicalComplex.alternatingConst_d, ComplexShape.down_Rel, ↓reduceIte, hj] <;>
       ext <;> rfl)
 
+/-- The periodic chain complex functor sends zero morphisms to zero morphisms. -/
 instance : (periodicFunctor R g).PreservesZeroMorphisms where
   map_zero X Y := by
     ext i : 2
@@ -447,26 +450,32 @@ noncomputable def periodicScIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (by ext; simp [sub_hom, applyAsHom, norm]) (by ext; simp [sub_hom, applyAsHom, norm])
     (fun _ _ => ComplexShape.down_nat_odd_add) down_rel_prev (down_rel_next hj0) hj
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the first object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₁ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₁ = 𝟙 _ := (rfl)
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the middle object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₂ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₂ = 𝟙 _ := (rfl)
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the last object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₃ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₃ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the first object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₁ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₁ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the middle object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₂ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₂ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the last object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₃ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₃ = 𝟙 _ := (rfl)
@@ -483,11 +492,13 @@ noncomputable def periodicHomologyIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0
     ((periodicFunctor R g).obj M).homology j ≅ (subCompNormHom M g).homology :=
   ShortComplex.homologyMapIso (periodicScIsoEven M g hj hj0)
 
+/-- `periodicHomologyIsoOdd` is the map on homology induced by `periodicScIsoOdd`. -/
 @[simp]
 theorem periodicHomologyIsoOdd_hom {j : ℕ} (hj : Odd j) :
     (periodicHomologyIsoOdd M g hj).hom = ShortComplex.homologyMap (periodicScIsoOdd M g hj).hom :=
   (rfl)
 
+/-- `periodicHomologyIsoEven` is the map on homology induced by `periodicScIsoEven`. -/
 @[simp]
 theorem periodicHomologyIsoEven_hom {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicHomologyIsoEven M g hj hj0).hom =
@@ -505,14 +516,17 @@ noncomputable def normHomCompSubMap (f : M ⟶ N) : normHomCompSub M g ⟶ normH
   comm₁₂ := by ext x; simp [norm_apply, Representation.norm, map_sum, hom_comm_apply]
   comm₂₃ := by ext x; simp [sub_hom, applyAsHom, hom_comm_apply]
 
+/-- On the first object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₁ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₁ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the middle object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₂ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₂ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the last object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₃ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
@@ -526,14 +540,17 @@ noncomputable def subCompNormHomMap (f : M ⟶ N) : subCompNormHom M g ⟶ subCo
   comm₁₂ := by ext x; simp [sub_hom, applyAsHom, hom_comm_apply]
   comm₂₃ := by ext x; simp [norm_apply, Representation.norm, map_sum, hom_comm_apply]
 
+/-- On the first object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₁ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₁ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the middle object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₂ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₂ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the last object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₃ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)

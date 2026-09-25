@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.NumberedSymmetry
@@ -124,8 +124,7 @@ theorem map_kostantNumberedSymmetryMatrix {A : Type v} {B : Type v'} [CommRing A
         (AddEquiv.baseChangeInvariantRestrictUnit
             (R := B) θ.toAddEquiv M hθM).val
           (TensorProduct.map φ.toIntAlgHom.toLinearMap LinearMap.id z) := by
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul a m =>
         simp only [TensorProduct.map_tmul, AlgHom.toLinearMap_apply, LinearMap.id_apply,
@@ -234,13 +233,12 @@ theorem kostantNumberedSymmetryPoints_pow_eq_one (A : Type v) [CommRing A]
       exact hm)
   rw [kostantNumberedSymmetryPoints, ← map_pow, hX, map_one]
 
-/-- The coordinate Hopf-algebra automorphism recovered from conjugation on points. -/
+/-- The coordinate Hopf-algebra automorphism recovered from conjugation on points: conjugation by
+the integral numbered-symmetry matrix. -/
 noncomputable def kostantNumberedSymmetryCoordinateIso :
     GeneralLinear.coordinateHopfAlgebra ℤ n ≅
       GeneralLinear.coordinateHopfAlgebra ℤ n :=
-  CommHopfAlgCat.innerConjugationIso (GeneralLinear.coordinateHopfAlgebra ℤ n)
-    ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := ℤ) n).symm
-      (kostantNumberedSymmetryMatrix M b θ hθM ℤ))
+  GeneralLinear.conjCoordinateIso (kostantNumberedSymmetryMatrix M b θ hθM ℤ)
 
 /-- On algebra-valued points, the recovered coordinate automorphism is conjugation by the
 base-changed numbered-symmetry matrix. -/
@@ -255,18 +253,8 @@ theorem pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso
           GeneralLinear.pointsMulEquiv n f *
         (kostantNumberedSymmetryMatrix M b θ hθM A)⁻¹ := by
   rw [kostantNumberedSymmetryCoordinateIso,
-    CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
-    HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv]
-  have hext : GeneralLinear.pointsMulEquiv n
-      (HopfAlgebra.extendPoint (GeneralLinear.coordinateHopfAlgebra ℤ n) A
-        ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := ℤ) n).symm
-          (kostantNumberedSymmetryMatrix M b θ hθM ℤ))) =
-      kostantNumberedSymmetryMatrix M b θ hθM A := by
-    rw [← HopfAlgebra.mapValue_extendPoint _ (A := CommAlgCat.of ℤ ℤ)
-      (Algebra.ofId ℤ A),
-      HopfAlgebra.extendPoint_self, GeneralLinear.pointsMulEquiv_mapValue,
-      MulEquiv.apply_symm_apply, map_kostantNumberedSymmetryMatrix]
-  rw [hext]
+    GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso,
+    map_kostantNumberedSymmetryMatrix]
 
 /-- On points over a value ring in any universe, precomposition with the coordinate
 automorphism is conjugation by the base-changed numbered-symmetry matrix. -/

@@ -94,7 +94,8 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   (η : unit S ≅ F.obj (unit R))
 
 /-- The image of a finite presentation under a colimit-preserving functor is finite. -/
-instance [P.IsFinite] : (P.map F η).IsFinite where
+instance _root_.SheafOfModules.Presentation.isFinite_map [P.IsFinite] :
+    (P.map F η).IsFinite where
   isFiniteType_generators := ⟨by simp only [Presentation.map_generators_I]; infer_instance⟩
   isFiniteType_relations := ⟨by simp only [Presentation.map_relations_I]; infer_instance⟩
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.UniformIntegrable
+public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
 public import TauCeti.Topology.MetricSpace.DisplacementTail
 
@@ -69,7 +71,9 @@ namespace TauCeti
 
 section Tails
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+variable {X : Type*} [PseudoMetricSpace X]
+
+variable [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
 /-- **Uniformly small moment tails.** For a finite nonzero exponent `p`, along a weakly convergent
@@ -85,17 +89,73 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (hp0 : p ≠ 0) (
       ∂(μs i : Measure X) ≤ ε := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   set g : X → ℝ≥0 := fun y ↦ nndist x y ^ p.toReal
-  have hg : Continuous g :=
-    (NNReal.continuous_rpow_const hq.le).comp (continuous_const.nndist continuous_id)
-  have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal := by
-    rw [ENNReal.coe_rpow_of_nonneg _ hq.le, edist_nndist]
-  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg h (by simpa only [hcoe] using hμ)
+  have hg : Continuous g := continuous_nndist_rpow_const hq.le x
+  have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal :=
+    coe_nndist_rpow hq.le x y
+  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg h
+    (by simpa only [hcoe] using hμ)
     (by simpa only [hcoe] using hlim) hε
   refine ⟨R ^ p.toReal⁻¹, hR.mono fun i hi ↦ ?_⟩
   have hset : {y | R ^ p.toReal⁻¹ ≤ nndist x y} = {y | R ≤ g y} := by
     ext y
     exact NNReal.rpow_inv_le_iff hq
   simpa only [hset, hcoe] using hi
+
+/-- The part of a moment coming from the open region beyond a radius is a weakly lower
+semicontinuous function of the law, its integrand being lower semicontinuous. -/
+theorem lowerSemicontinuous_setLIntegral_edist_rpow {q : ℝ} (x : X) (r : ℝ≥0) :
+    LowerSemicontinuous fun ν : ProbabilityMeasure X ↦
+      ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂(ν : Measure X) := by
+  have hU : IsOpen {y | r < nndist x y} :=
+    isOpen_lt continuous_const (continuous_const.nndist continuous_id)
+  have hG : Continuous fun y ↦ edist x y ^ q :=
+    ENNReal.continuous_rpow_const.comp (continuous_const.edist continuous_id)
+  simp_rw [← lintegral_indicator hU.measurableSet]
+  refine lowerSemicontinuous_lintegral_probabilityMeasure <|
+    lowerSemicontinuous_iff_isOpen_preimage.2 fun a ↦ ?_
+  convert hU.inter ((isOpen_Ioi (a := a)).preimage hG) using 1
+  ext y
+  by_cases hy : r < nndist x y <;> simp [hy]
+
+/-- A moment of a probability measure is at most the `q`-th power of a radius plus the part of
+the moment coming from the open region beyond that radius. -/
+theorem lintegral_edist_rpow_le_add {q : ℝ} (hq : 0 ≤ q) (ν : Measure X)
+    [IsProbabilityMeasure ν] (x : X) (r : ℝ≥0) :
+    ∫⁻ y, edist x y ^ q ∂ν ≤ (r : ℝ≥0∞) ^ q +
+      ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂ν := by
+  have hU : MeasurableSet {y | r < nndist x y} :=
+    measurableSet_lt measurable_const (continuous_const.nndist continuous_id).measurable
+  calc ∫⁻ y, edist x y ^ q ∂ν
+      ≤ ∫⁻ y, (r : ℝ≥0∞) ^ q +
+          {y | r < nndist x y}.indicator (fun y ↦ edist x y ^ q) y ∂ν := by
+        refine lintegral_mono fun y ↦ ?_
+        by_cases hy : r < nndist x y
+        · simp [hy]
+        · rw [indicator_of_notMem (s := {y | r < nndist x y}) hy, add_zero, edist_nndist]
+          gcongr
+          exact_mod_cast not_lt.1 hy
+    _ = (r : ℝ≥0∞) ^ q + ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂ν := by
+        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
+          lintegral_indicator hU]
+
+/-- Along a weakly convergent family of laws whose `q`-moments have uniformly small tails over the
+open regions beyond some radii, the `q`-moments converge to the `q`-moment of the limit. -/
+theorem tendsto_lintegral_edist_rpow {q : ℝ} (hq : 0 < q) {γ : Type*} {L : Filter γ}
+    {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X} (h : Tendsto μs L (𝓝 μ)) (x : X)
+    (htail : ∀ ε : ℝ≥0∞, 0 < ε → ∃ r : ℝ≥0, ∀ᶠ i in L,
+      ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂(μs i : Measure X) ≤ ε) :
+    Tendsto (fun i ↦ ∫⁻ y, edist x y ^ q ∂(μs i : Measure X)) L
+      (𝓝 (∫⁻ y, edist x y ^ q ∂(μ : Measure X))) := by
+  simp_rw [← coe_nndist_rpow hq.le x]
+  refine tendsto_lintegral_of_tendsto_probabilityMeasure
+    (continuous_nndist_rpow_const hq.le x) h
+    fun ε hε ↦ ?_
+  obtain ⟨r, hr⟩ := htail ε hε
+  refine ⟨(r + 1) ^ q, hr.mono fun i hi ↦ ?_⟩
+  have hsub : {y | (r + 1) ^ q ≤ nndist x y ^ q} ⊆ {y | r < nndist x y} :=
+    fun y hy ↦ (lt_add_one r).trans_le ((NNReal.rpow_le_rpow_iff hq).1 hy)
+  simp_rw [coe_nndist_rpow hq.le x]
+  exact (lintegral_mono_set hsub).trans hi
 
 end Tails
 
@@ -120,7 +180,14 @@ continuous function on the `p`-Wasserstein space. -/
 theorem continuous_lintegral_edist_rpow (hp : p ≠ ∞) (x : X) :
     Continuous fun μ : WassersteinSpace p X ↦
       ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) := by
-  simp_rw [← eLpNorm_rpow_eq_lintegral (zero_lt_one.trans_le Fact.out).ne' hp]
+  -- The measure varies, so the measurability side condition of `eLpNorm_rpow_eq_lintegral` has
+  -- to be supplied once per measure rather than left to `simp_rw` to instantiate.
+  have h : ∀ μ : WassersteinSpace p X,
+      ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X)
+        = eLpNorm (fun y ↦ edist x y) p ((μ : ProbabilityMeasure X) : Measure X) ^ p.toReal :=
+    fun _ ↦ (eLpNorm_rpow_eq_lintegral (zero_lt_one.trans_le Fact.out).ne' hp
+      (measurable_const.edist measurable_id).aemeasurable).symm
+  simp_rw [h]
   exact (ENNReal.continuous_rpow_const).comp (continuous_eLpNorm_edist x)
 
 omit [SecondCountableTopology X] [StandardBorelSpace X] in
@@ -128,9 +195,7 @@ omit [SecondCountableTopology X] [StandardBorelSpace X] in
 private theorem lintegral_edist_rpow_ne_top (hp : p ≠ ∞) (μ : WassersteinSpace p X) (x : X) :
     ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≠ ∞ := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  rw [← eLpNorm_rpow_eq_lintegral hp0 hp]
-  exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
-    ((hasFiniteMoment μ).memLp measurable_edist_right.aestronglyMeasurable).eLpNorm_ne_top
+  exact hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x _ |>.1 (hasFiniteMoment μ)
 
 /-- **Uniform integrability of moments along a `W_p`-convergent family.** For a finite exponent
 `1 ≤ p < ∞`, along a family converging in the `p`-Wasserstein distance the `p`-moments about any
@@ -166,7 +231,7 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
   -- It suffices that the transport cost of `edist ^ p` tends to `0`.
   suffices hc : Tendsto (fun i ↦ transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
       (μs i : Measure X) (μ : Measure X)) L (𝓝 0) by
-    simp_rw [wassersteinEDist_eq_transportCost_rpow hp0 hp]
+    simp_rw [wassersteinEDist_eq_transportCost_rpow measurable_edist hp0 hp]
     simpa [Function.comp_def, ENNReal.zero_rpow_of_pos (inv_pos.2 hq)] using
       ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp hc
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_

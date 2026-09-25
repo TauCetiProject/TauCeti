@@ -50,12 +50,6 @@ theorem exists_iInf_eq_of_lowerSemicontinuous [CompactSpace X] [Nonempty X] {f :
     (hf.lowerSemicontinuousOn univ).exists_isMinOn univ_nonempty isCompact_univ
   exact ⟨x₀, le_antisymm (iInf_le _ x₀) (le_iInf fun x => hx₀ (mem_univ x))⟩
 
-/-- Restricting a jointly lower semicontinuous function to a horizontal slice keeps it lower
-semicontinuous. -/
-private theorem lowerSemicontinuous_slice {f : X × Y → β} (hf : LowerSemicontinuous f) (y : Y) :
-    LowerSemicontinuous fun x : X => f (x, y) :=
-  hf.comp (continuous_id.prodMk continuous_const)
-
 /-- The infimum of a jointly lower semicontinuous function over a compact first factor is a lower
 semicontinuous function of the second variable.
 
@@ -77,7 +71,7 @@ theorem lowerSemicontinuous_iInf_of_compactSpace [CompactSpace X] {f : X × Y �
   refine Filter.eventually_of_mem (hv.mem_nhds (hy₀v rfl)) fun y hy => ?_
   -- The bound holds at every point of the slice over `y`, and the infimum there is attained.
   obtain ⟨x₀, hx₀⟩ :=
-    exists_iInf_eq_of_lowerSemicontinuous (lowerSemicontinuous_slice hf y)
+    exists_iInf_eq_of_lowerSemicontinuous (hf.comp (Continuous.prodMk_left y))
   exact lt_of_lt_of_le (huv ⟨hu (mem_univ x₀), hy⟩) hx₀.ge
 
 end TauCeti

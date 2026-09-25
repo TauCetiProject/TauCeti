@@ -317,6 +317,18 @@ noncomputable instance : CommMonoid (MultiplicativeIdealWeight K) where
     · simp [one_apply, hI]
   mul_comm χ ψ := by ext I; simp [mul_comm]
 
+/-- A positive power of a weight is computed pointwise. The exponent must be nonzero: `χ ^ 0` is
+the trivial weight, which vanishes at `⊥`, while `χ ⊥ ^ 0 = 1`. -/
+@[simp]
+theorem pow_apply (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0) (I : Ideal (𝓞 K)) :
+    (χ ^ n) I = χ I ^ n := by
+  induction n with
+  | zero => exact absurd rfl hn
+  | succ n ih =>
+    rcases eq_or_ne n 0 with rfl | h
+    · rw [zero_add, pow_one, pow_one]
+    · rw [pow_succ, pow_succ, mul_apply, ih h]
+
 @[simp]
 theorem isGood_one_iff {I : Ideal (𝓞 K)} :
     (1 : MultiplicativeIdealWeight K).IsGood I ↔ I ≠ ⊥ := by
@@ -456,6 +468,21 @@ to its bad primes; equivalently it is a norm twist on its good ideals with param
 (`TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff`). -/
 def IsTrivialOnGood (χ : MultiplicativeIdealWeight K) : Prop :=
   ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = 1
+
+/-- A weight trivial on its good ideals takes the value `1` at each of them. -/
+@[simp]
+theorem IsTrivialOnGood.apply_eq_one {χ : MultiplicativeIdealWeight K} (h : χ.IsTrivialOnGood)
+    {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : χ I = 1 :=
+  h I hI
+
+/-- A weight trivial on its good ideals takes only the values `0` and `1`, so it is bounded by one
+on every ideal. -/
+theorem IsTrivialOnGood.norm_apply_le_one {χ : MultiplicativeIdealWeight K}
+    (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 := by
+  by_cases hI : χ.IsGood I
+  · rw [h.apply_eq_one hI, norm_one]
+  · rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, norm_zero]
+    exact zero_le_one
 
 /-- The norm twists with parameter `0` on the good ideals are the weights that are trivial
 there. -/
@@ -816,6 +843,12 @@ noncomputable instance : CommMonoid (UnitaryIdealWeight K) where
   one_mul χ := Subtype.ext (by simp only [val_mul, val_one]; exact one_mul _)
   mul_one χ := Subtype.ext (by simp only [val_mul, val_one]; exact mul_one _)
   mul_comm χ ψ := Subtype.ext (by simp only [val_mul]; exact mul_comm _ _)
+
+@[simp]
+theorem val_pow (χ : UnitaryIdealWeight K) (n : ℕ) : (χ ^ n).1 = χ.1 ^ n := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, val_one]
+  | succ n ih => rw [pow_succ, pow_succ, val_mul, ih]
 
 /-- **Finite-order weights are unitary.** If a positive power of `χ` takes the value `1` at
 every good prime — as for a finite-order Hecke character — then `χ` is unitary. -/

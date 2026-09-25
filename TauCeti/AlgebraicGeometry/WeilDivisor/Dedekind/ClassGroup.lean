@@ -115,10 +115,10 @@ lemma classGroupAddEquiv_divisorClass_fractionalIdealDivisor (I : (FractionalIde
   -- applying `MulEquiv.toAdditive_apply_symm_apply`.
   change (MulEquiv.toAdditive (ClassGroup.equiv K)).symm
       (Additive.ofMul (QuotientGroup.mk' (toPrincipalIdeal R K).range I)) = _
-  rw [MulEquiv.toAdditive_apply_symm_apply, MonoidHom.coe_toAdditive]
-  -- `MonoidHom.coe_toAdditive` leaves `Additive.ofMul (… (Additive.toMul (Additive.ofMul _)))`;
-  -- collapse the `toMul ∘ ofMul` type-tag round-trip (again a definitional identity with no
-  -- applicable rewrite lemma) so the two sides differ only inside `Additive.ofMul`.
+  rw [MulEquiv.toAdditive_apply_symm_apply]
+  -- What is left is `Additive.ofMul (… (Additive.toMul (Additive.ofMul _)))`; collapse the
+  -- `toMul ∘ ofMul` type-tag round-trip (again a definitional identity with no applicable rewrite
+  -- lemma) so the two sides differ only inside `Additive.ofMul`.
   change Additive.ofMul
       ((ClassGroup.equiv K).symm (QuotientGroup.mk' (toPrincipalIdeal R K).range I))
       = Additive.ofMul (ClassGroup.mk K I)

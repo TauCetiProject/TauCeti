@@ -127,6 +127,7 @@ import zulip as zp  # noqa: E402
 
 REPO = core.REPO
 LKG_BRANCH = "hopscotch/lkg-bump"  # keep in sync with update.yml's LKG_BRANCH
+LINT_REPAIR_BRANCH = "lint-repair/main"  # keep in sync with lint-full.yml
 
 # Keys we generate use only this alphabet; the marker is anchored to the final
 # line and its key validated against this grammar, so untrusted text that happens
@@ -139,6 +140,9 @@ MARKER_RE = re.compile(r"<!--stuck:v1 (" + KEY_RE.pattern + r")-->\s*\Z")
 # Each scheduler threshold is ~2-3x the workflow's cadence, generous enough to
 # ride out GitHub's routine scheduled-run delays without false-firing.
 BUMP_STUCK_HOURS = 24
+# A lint repair PR starts red by design and needs a worker round or two; two days open means the
+# worker is not getting it green on its own.
+LINT_REPAIR_STUCK_HOURS = 48
 PIN_STALE_DAYS = 4
 STRANDED_HOURS = 6
 # Evictions since the current readiness, within the window, before a bounce counts as a loop.
@@ -157,6 +161,7 @@ FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
     "update.yml":            ("daily mathlib bump",       30),
+    "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
     "housekeeping.yml":      ("queue housekeeping",        7),
     "zulip-healthcheck.yml": ("zulip healthcheck",        15),
@@ -267,6 +272,29 @@ def detect_stuck_bump():
                     f"**Fix:** open the failing build, and land whatever fix it needs "
                     f"together with the pin move in one human-owned PR, so the bump "
                     f"can resume."),
+            })
+    return out
+
+
+def detect_stuck_lint_repair():
+    prs = gh_stream(
+        f"/repos/{REPO}/pulls?state=open&head=TauCetiProject:{LINT_REPAIR_BRANCH}&per_page=5",
+        jq='.[] | {number, created_at}', paginate=False)
+    out = []
+    for pr in prs:
+        # Clock off the PR's age, as for the bump: the daily full lint comments on an open
+        # repair PR rather than replacing it, so a healthy one merges well inside the window.
+        if hours_since(pr["created_at"]) >= LINT_REPAIR_STUCK_HOURS:
+            out.append({
+                "key": f"stuck-lint-repair/{pr['number']}",
+                "title": "Lint repair wedged — the full-lint repair PR has been open two days",
+                "body": (
+                    f"The lint repair PR https://github.com/{REPO}/pull/{pr['number']} has been "
+                    f"open over {LINT_REPAIR_STUCK_HOURS}h. Main carries environment-lint "
+                    f"violations that PR builds do not see, because they lint only the modules "
+                    f"a change touches.\n\n"
+                    f"**Fix:** check why TauCetiWorker's `lint-repair` stage is not greening it "
+                    f"(budget exhausted, or a violation it cannot fix), and fix TauCeti/ by hand."),
             })
     return out
 
@@ -820,6 +848,7 @@ def detect_stale_fkb():
 # so a detector that raises marks exactly its own alerts "unknown" for the run.
 DETECTORS = [
     ("stuck-bump", detect_stuck_bump),
+    ("stuck-lint-repair", detect_stuck_lint_repair),
     ("stale-pin", detect_stale_pin),
     ("stranded-pr", detect_stranded_prs),
     ("eviction-loop", detect_eviction_loops),

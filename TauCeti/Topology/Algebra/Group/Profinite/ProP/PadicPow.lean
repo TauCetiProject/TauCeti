@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 
 /-!
 # Exponentiation of a pro-`p` group by the `p`-adic integers
@@ -37,16 +38,20 @@ abelian pro-`p` groups is stated.
 ## Main results
 
 * `TauCeti.IsProP.mk_padicPow`: the defining description of the power in each finite quotient.
-* `TauCeti.IsProP.padicPow_natCast`, `TauCeti.IsProP.padicPow_intCast`: the power extends the
-  natural and integer powers.
+* `TauCeti.IsProP.padicPow_natCast`, `TauCeti.IsProP.padicPow_ofNat`,
+  `TauCeti.IsProP.padicPow_intCast`: the power extends the natural and integer powers.
 * `TauCeti.IsProP.padicPow_add`, `TauCeti.IsProP.padicPow_mul`: the exponent laws; and
   `TauCeti.IsProP.inv_padicPow`, `TauCeti.IsProP.mul_padicPow` in the base, the latter for
   commuting elements.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`, `TauCeti.IsProP.map_padicPow`: the power is the
   unique continuous extension of the natural powers, and continuous homomorphisms preserve it.
+* `TauCeti.IsProP.padicPow_ofAdd_apply_one`: along a continuous additive homomorphism
+  `g : ℤ_[p] →+ X`, the `p`-adic power of `ofAdd (g 1)` in `Multiplicative X` is `ofAdd ∘ g`.
 * `TauCeti.IsProP.module_smul`, `TauCeti.IsProP.continuousSMul_module`: the module structure
   acts by the `p`-adic power, and is topological.
+* `TauCeti.IsProP.smul_padicPow`, `TauCeti.IsProP.smulCommClass_module`: continuous actions
+  by group endomorphisms commute with `p`-adic powers and the resulting scalar action.
 
 ## References
 
@@ -138,6 +143,12 @@ theorem padicPow_natCast (hA : IsProP p A) (a : A) (k : ℕ) :
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
   rw [hA.mk_padicPow a _ (hn _), QuotientGroup.mk_pow]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq k n) (hn _)
+
+/-- The `p`-adic power by a numeral is the corresponding natural power. -/
+@[simp]
+theorem padicPow_ofNat (hA : IsProP p A) (a : A) (n : ℕ) [n.AtLeastTwo] :
+    hA.padicPow a ofNat(n) = a ^ OfNat.ofNat n := by
+  simpa using hA.padicPow_natCast a (OfNat.ofNat n)
 
 /-- The `p`-adic power by `0` is trivial. -/
 @[simp]
@@ -237,6 +248,12 @@ theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalG
   intro k
   simp
 
+/-- A continuous action by group endomorphisms commutes with `p`-adic powers. -/
+theorem smul_padicPow {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ A]
+    [ContinuousConstSMul Γ A] (hA : IsProP p A) (γ : Γ) (a : A) (l : ℤ_[p]) :
+    γ • hA.padicPow a l = hA.padicPow (γ • a) l :=
+  hA.map_padicPow hA (MulDistribMulAction.toMonoidHom A γ) (continuous_const_smul γ) a l
+
 /-- The `p`-adic power is multiplicative on commuting base elements. -/
 @[simp]
 theorem mul_padicPow (hA : IsProP p A) (a b : A) (hab : Commute a b) (l : ℤ_[p]) :
@@ -285,7 +302,35 @@ theorem continuousSMul_module (hA : IsProP p A) :
   -- by `TauCeti.IsProP.module_smul`.
   ⟨hA.continuous_padicPow⟩
 
+/-- **A continuous action by group endomorphisms is `ℤ_p`-linear**: it commutes with the scalar
+action of `TauCeti.IsProP.module`. -/
+theorem smulCommClass_module {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ A]
+    [ContinuousConstSMul Γ A] (hA : IsProP p A) :
+    letI := hA.module
+    SMulCommClass Γ ℤ_[p] (Additive A) :=
+  letI := hA.module
+  ⟨fun γ l x ↦ by
+    simp only [hA.module_smul, ← Additive.ofMul_smul, Additive.toMul_smul, hA.smul_padicPow]⟩
+
 end CommGroup
+
+
+section Multiplicative
+
+variable {p : ℕ} [Fact p.Prime] {X : Type u} [AddGroup X] [TopologicalSpace X]
+  [IsTopologicalAddGroup X] [CompactSpace X] [TotallyDisconnectedSpace X]
+
+/-- Along a continuous additive homomorphism `g : ℤ_[p] →+ X` into an additive group whose
+multiplicative type tag is pro-`p`, the `p`-adic power of `ofAdd (g 1)` is `ofAdd ∘ g`: the
+exponent acts through `g`. This computes the `p`-adic powers in a product of pro-`p` groups
+coordinatewise. -/
+theorem padicPow_ofAdd_apply_one (hX : IsProP p (Multiplicative X)) (g : ℤ_[p] →+ X)
+    (hg : Continuous g) (l : ℤ_[p]) :
+    hX.padicPow (Multiplicative.ofAdd (g 1)) l = Multiplicative.ofAdd (g l) :=
+  (hX.eq_padicPow_of_continuous (f := fun l ↦ Multiplicative.ofAdd (g l))
+    (continuous_ofAdd.comp hg) (fun k ↦ by rw [← ofAdd_nsmul, ← map_nsmul, nsmul_one]) l).symm
+
+end Multiplicative
 
 end IsProP
 

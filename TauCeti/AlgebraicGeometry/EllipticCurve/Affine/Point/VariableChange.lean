@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+-- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The isomorphism of point groups induced by a change of variables
@@ -28,7 +30,8 @@ group isomorphism `(C • W).Point ≃+ W.Point`.
 
 Transport of the point group along an equality of curves — needed to use a `C • W = W'` fact on
 points — is Mathlib's `AddEquiv.cast`, instantiated at `fun V ↦ V.toAffine.Point`; this file adds
-no wrapper for it.
+no wrapper for it. Its value on a point given by coordinates is `Point.cast_some`
+(`Affine/Point/Basic.lean`).
 
 ## Implementation notes
 
@@ -126,20 +129,6 @@ variable [DecidableEq F] [W.IsElliptic]
 and the statements below do not even typecheck. The underlying map and its injectivity hold for an
 arbitrary Weierstrass curve over a field, and the transformation laws they rest on for an
 arbitrary Weierstrass curve over a commutative ring. -/
-
-/-- What Mathlib's `AddEquiv.cast` — transport of the point group along an equality of Weierstrass
-curves — does to a point given by coordinates. The equiv itself is `AddEquiv.cast` and is not
-restated here; only its value needs a name, since Mathlib states `cast` through `Equiv.cast` and
-so gives no equation for it. Public because the quadratic-twist point isomorphism rewrites with
-it as well; within this file it is used only by `equivVariableChange_symm_some`. -/
--- not `@[simp]`: Mathlib's `AddEquiv.cast_apply` is itself a simp lemma and rewrites this
--- left-hand side to the raw `cast` first, so `simpNF` reports the statement is not in
--- simp-normal form and the lemma could never fire. It is used by `rw`, which is syntactic.
-lemma cast_some {V V' : WeierstrassCurve F} (h : V = V') {x y : F}
-    (hns : V.toAffine.Nonsingular x y) :
-    AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h (some x y hns)
-      = some x y (h ▸ hns) := by
-  subst h; rfl
 
 /-- The group homomorphism `(C • W).Point →+ W.Point` induced by the admissible change of
 variables, as scaffolding: its `map_add'` is what `equivVariableChange` is built from. Private,

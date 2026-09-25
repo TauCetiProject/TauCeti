@@ -54,9 +54,8 @@ theorem aeval_weightEnumerator_add_sub_of_eq_euclideanDual (hC : C = C.euclidean
     aeval ![X 0 + X 1, X 0 - X 1] (C : Set (ι → ZMod 2)).weightEnumerator =
       (2 : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
         (C : Set (ι → ZMod 2)).weightEnumerator := by
-  have h := Submodule.natCard_mul_weightEnumerator_euclideanDual C
-  rw [← hC, natCard_of_eq_euclideanDual hC] at h
-  norm_num [Nat.card_eq_fintype_card] at h ⊢
-  exact h.symm
+  have h := Submodule.aeval_weightEnumerator_of_eq_euclideanDual hC
+  norm_num [Nat.card_eq_fintype_card] at h
+  exact h
 
 end TauCeti.BinaryCode

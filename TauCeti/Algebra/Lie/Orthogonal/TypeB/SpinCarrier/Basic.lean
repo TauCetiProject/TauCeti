@@ -43,6 +43,8 @@ subgroups is separate from this carrier construction.
 * `TauCeti.TypeBSpinCarrier.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints`: the torus conjugation
   equation on matrix-valued points.
+* `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
+  simple generator acts on the spin module by creation and contraction of exterior coordinates.
 
 ## References
 
@@ -127,6 +129,15 @@ theorem isNilpotent_rep_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k⟩
 
+/-- Every represented numbered root generator has nilpotency class at most two. -/
+theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    nilpotencyClass (rep n
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
+  Nat.sInf_le ((polarization n).typeBSpinRep_simpleRootGenerator_sq
+    (polarizationBasis n) (remainderOne n)
+    (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k)
+
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice
     (u : _root_.UniversalEnvelopingAlgebra ℚ
@@ -138,6 +149,56 @@ theorem rep_kostantForm_mem_lattice
   (polarization n).typeBSpinRep_kostantForm_apply_mem_integralLattice
     (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) hu hv
+
+/-! ## The represented simple generators as exterior operators -/
+
+/-- A nonterminal raising generator contracts the next exterior coordinate and creates its own. -/
+theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inl j.castSucc))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n j.castSucc) *
+        CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.succ) x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_castSucc]
+  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+
+/-- A nonterminal lowering generator contracts its own exterior coordinate and creates the next
+one. -/
+theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inr j.castSucc))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n j.succ) *
+        CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.castSucc) x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inr,
+    TauCeti.typeBSimpleNegativeRootGenerator_castSucc]
+  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+
+/-- The terminal raising generator creates the final exterior coordinate after the grade
+involution. -/
+theorem rep_rootGenerator_inl_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inl (Fin.last n)))) x =
+      ExteriorAlgebra.ι ℚ (polarizationBasis n (Fin.last n)) * CliffordAlgebra.involute x := by
+  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_last]
+  have h := SpinPolarizationData.typeBSpinRep_shortRootGenerator_apply (polarization n)
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (Fin.last n) x
+  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
+
+/-- The terminal lowering generator contracts the final exterior coordinate and applies the grade
+involution. -/
+theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inr (Fin.last n)))) x =
+      CliffordAlgebra.involute
+        (CliffordAlgebra.contractLeft ((polarizationBasis n).coord (Fin.last n)) x) := by
+  -- `rw` with the terminal-generator equation times out on the concrete carrier here, while
+  -- `simp only` performs the same rewrite.
+  simp only [TauCeti.typeBSimpleRootGeneratorFamily_inr,
+    TauCeti.typeBSimpleNegativeRootGenerator_last]
+  have h := SpinPolarizationData.typeBSpinRep_shortNegativeRootGenerator_apply (polarization n)
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (Fin.last n) x
+  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
 
 /-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
 theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :

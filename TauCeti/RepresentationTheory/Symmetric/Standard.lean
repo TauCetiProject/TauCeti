@@ -311,7 +311,7 @@ theorem isAtom_augmentationSubrepresentation (h2 : 2 ≤ Fintype.card α)
       intro w hw
       have hw' : w ∈ LinearMap.ker (MonoidAlgebra.basis α k).sumCoords :=
         mem_augmentationSubrepresentation_iff.mp hw
-      rw [ker_sumCoords_basis_eq_span k α x] at hw'
+      rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k α x] at hw'
       exact Submodule.span_le.mpr (by
         rintro _ ⟨z, rfl⟩
         exact single_sub_single_mem_of_ne_of_single_sub_single_mem hxy hdiff z) hw'

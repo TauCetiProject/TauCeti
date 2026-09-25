@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.TransversalWord
 
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.GroupTheory.Index
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # Corestriction in degrees zero, one and two
@@ -275,6 +276,30 @@ theorem map_cochainsCor1 {N : Type w} [AddCommGroup N] [DistribMulAction G N] (�
     φ (cochainsCor1 G M U t ht f γ) = cochainsCor1 G N U t ht (fun x => φ (f x)) γ := by
   simp [map_sum, hφ]
 
+omit [U.FiniteIndex] in
+/-- The `1`-cocycle law of a cochain `c` on `G` at the factorization
+`t (γ • u) * ℓᵗ_{γ • u}(γ) = γ * t u` of `TauCeti.transversal_smul_mul_lWord`: the value of `c` at
+the transversal word `ℓᵗ_{γ • u}(γ)`, translated by `t (γ • u)`, is
+`γ • c (t u) - c (t (γ • u)) + c γ`. -/
+theorem smul_apply_lWord_of_isCocycle₁ {c : G → M} (hc : groupCohomology.IsCocycle₁ c) (γ : G)
+    (u : G ⧸ U) : t (γ • u) • c (lWord U t (γ • u) γ) = γ • c (t u) - c (t (γ • u)) + c γ := by
+  -- Both sides of the rearranged goal are cocycle expansions of `c (γ * t u)`.
+  rw [sub_add_eq_add_sub, eq_sub_iff_add_eq, ← hc, ← hc, transversal_smul_mul_lWord]
+
+omit [U.FiniteIndex] in
+/-- The `1`-cocycle law of a cochain `f` on `U` at the factorization
+`ℓᵗ_u(γ * η) = ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η)` of `TauCeti.lWord_mul_lWord`, translated by `t u`: the
+translated value at `ℓᵗ_u(γ * η)` is the translated value at `ℓᵗ_u(γ)` plus the value at
+`ℓᵗ_{γ⁻¹ • u}(η)` translated by `γ * t (γ⁻¹ • u)`. -/
+theorem smul_apply_lWord_mul_of_isCocycle₁ {f : U → M} (hf : groupCohomology.IsCocycle₁ f)
+    (γ η : G) (u : G ⧸ U) :
+    t u • f ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ =
+      t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ +
+        (γ * t (γ⁻¹ • u)) • f ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ := by
+  have hmul : (⟨_, lWord_mem U t ht u γ⟩ : U) * ⟨_, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
+      ⟨_, lWord_mem U t ht u (γ * η)⟩ := Subtype.ext (lWord_mul_lWord U t u γ η)
+  rw [← hmul, hf, Subgroup.smul_def, smul_add, smul_smul, transversal_mul_lWord, add_comm]
+
 /-- **The corestriction of a `1`-cocycle is a `1`-cocycle.** The factor `t u •` is what makes this
 true: the transversal identity `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` of
 `TauCeti.transversal_mul_lWord` is what converts the `U`-cocycle law for `f` into the `G`-cocycle
@@ -282,21 +307,9 @@ law for `cor¹_t f`, and the reindexed sum is what produces the leading `γ •`
 theorem cochainsCor1_isCocycle₁ {f : U → M} (hf : groupCohomology.IsCocycle₁ f) :
     groupCohomology.IsCocycle₁ (cochainsCor1 G M U t ht f) := by
   intro γ η
-  -- The cocycle law for `f` at the factorization `ℓᵗ_u(γη) = ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η)`.
-  have key : ∀ u : G ⧸ U,
-      t u • f ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ =
-        γ • (t (γ⁻¹ • u) • f ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩) +
-          t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ := by
-    intro u
-    have hmul : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-          ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
-    rw [← hmul, hf, smul_add, Subgroup.mk_smul, smul_smul, transversal_mul_lWord, mul_smul]
-  simp only [cochainsCor1_apply]
-  rw [Finset.sum_congr rfl fun u _ => key u, Finset.sum_add_distrib, ← Finset.smul_sum,
-    sum_translate G U
-      (fun u => t u • f ⟨lWord U t u η, lWord_mem U t ht u η⟩) γ⁻¹]
+  simp only [cochainsCor1_apply, smul_apply_lWord_mul_of_isCocycle₁ G M U t ht hf γ η, mul_smul,
+    Finset.sum_add_distrib, ← Finset.smul_sum]
+  rw [sum_translate G U (fun u => t u • f ⟨lWord U t u η, lWord_mem U t ht u η⟩) γ⁻¹, add_comm]
 
 /-- The degree-one corestriction of a coboundary is the coboundary of the degree-zero
 corestriction. -/
@@ -320,6 +333,30 @@ theorem cochainsCor1_mem_B1 {f : U → M} (hf : f ∈ B1 U M) :
   rw [hfd, cochainsCor1_d0]
   exact d0_mem_B1 _
 
+omit [U.FiniteIndex] in
+/-- The summand identity behind `cochainsCor1_changeTransversal`. For a `1`-cocycle `f` on `U`,
+with `D v ∈ U` the transversal difference `(t v)⁻¹ * t' v`, the `t'`-summand at `u` is the
+`t`-summand plus `γ • (t (γ⁻¹ • u) • f (D (γ⁻¹ • u))) - t u • f (D u)`. -/
+private theorem cochainsCor1_changeTransversal_summand (t' : G ⧸ U → G)
+    (ht' : ∀ u : G ⧸ U, (QuotientGroup.mk (t' u) : G ⧸ U) = u) (D : G ⧸ U → U)
+    (hD : ∀ v, (D v : G) = transversalDiff U t t' v) {f : U → M} (hf : groupCohomology.IsCocycle₁ f)
+    (γ : G) (u : G ⧸ U) :
+    t' u • f ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩ =
+      γ • (t (γ⁻¹ • u) • f (D (γ⁻¹ • u))) +
+        t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ - t u • f (D u) := by
+  -- The `1`-cocycle law of `f`, applied along the identity intertwining the two words by the
+  -- transversal difference: `D u * ℓᵗ'_u(γ) = ℓᵗ_u(γ) * D (γ⁻¹ • u)`.
+  have hmul : D u * ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩ =
+      ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ * D (γ⁻¹ • u) := Subtype.ext <| by
+    rw [Subgroup.coe_mul, Subgroup.coe_mul, hD, hD]
+    exact transversalDiff_mul_lWord U t t' u γ
+  have h1 := hf (D u) ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩
+  rw [hmul, hf] at h1
+  -- `h1 : ℓᵗ_u(γ) • f (D (γ⁻¹ • u)) + f ℓᵗ_u(γ) = D u • f ℓᵗ'_u(γ) + f (D u)`.
+  rw [← transversal_mul_transversalDiff U t t' u, ← hD, mul_smul, ← Subgroup.smul_def,
+    eq_sub_of_add_eq h1.symm, smul_sub, smul_add, Subgroup.mk_smul, smul_smul,
+    transversal_mul_lWord, mul_smul]
+
 /-- **Change of transversal in degree one, as an explicit coboundary.** Two transversals give
 corestriction cochains differing by `d⁰` of the degree-zero corestriction of the values of `f` on
 the transversal difference `TauCeti.transversalDiff`. Unlike in degree zero, the two cochains are
@@ -331,37 +368,12 @@ theorem cochainsCor1_changeTransversal (t' : G ⧸ U → G)
       d0 G M (∑ v : G ⧸ U,
         t v • f ⟨transversalDiff U t t' v, transversalDiff_mem U t t' ht ht' v⟩) := by
   ext γ
-  set D : G ⧸ U → U := fun v =>
-    ⟨transversalDiff U t t' v, transversalDiff_mem U t t' ht ht' v⟩ with hD
-  have key : ∀ u : G ⧸ U,
-      t' u • f ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩ =
-        γ • (t (γ⁻¹ • u) • f (D (γ⁻¹ • u))) +
-          t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ - t u • f (D u) := by
-    intro u
-    set L : U := ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ with hL
-    set L' : U := ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩
-    -- The two words are intertwined by the transversal difference: `D u * L' = L * D (γ⁻¹ • u)`.
-    have hmul : D u * L' = L * D (γ⁻¹ • u) :=
-      Subtype.ext (transversalDiff_mul_lWord U t t' u γ)
-    have h1 := hf (D u) L'
-    rw [hmul, hf L (D (γ⁻¹ • u))] at h1
-    -- `h1 : ℓᵗ_u(γ) • f (D (γ⁻¹ • u)) + f ℓᵗ_u(γ) = d_u • f ℓᵗ'_u(γ) + f (D u)`.
-    have h2 : (D u : G) • f L' =
-        (L : G) • f (D (γ⁻¹ • u)) + f L - f (D u) := by
-      rw [← Subgroup.smul_def, ← Subgroup.smul_def]
-      exact eq_sub_of_add_eq h1.symm
-    calc t' u • f L'
-        = (t u * (D u : G)) • f L' := by rw [hD, transversal_mul_transversalDiff]
-      _ = t u • ((D u : G) • f L') := mul_smul _ _ _
-      _ = t u • ((L : G) • f (D (γ⁻¹ • u))) + t u • f L - t u • f (D u) := by
-          rw [h2, smul_sub, smul_add]
-      _ = (t u * lWord U t u γ) • f (D (γ⁻¹ • u)) + t u • f L - t u • f (D u) := by
-          rw [← mul_smul, hL]
-      _ = γ • (t (γ⁻¹ • u) • f (D (γ⁻¹ • u))) + t u • f L - t u • f (D u) := by
-          rw [transversal_mul_lWord, mul_smul]
+  set D : G ⧸ U → U := fun v => ⟨transversalDiff U t t' v, transversalDiff_mem U t t' ht ht' v⟩
   simp only [cochainsCor1_apply, Pi.add_apply, d0_apply]
-  rw [Finset.sum_congr rfl fun u _ => key u, Finset.sum_sub_distrib, Finset.sum_add_distrib,
-    ← Finset.smul_sum, sum_translate G U (fun u => t u • f (D u)) γ⁻¹]
+  rw [Finset.sum_congr rfl fun u _ =>
+      cochainsCor1_changeTransversal_summand G M U t ht t' ht' D (fun _ => rfl) hf γ u,
+    Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.smul_sum,
+    sum_translate G U (fun u => t u • f (D u)) γ⁻¹]
   abel
 
 /-- **`cor¹_t ∘ res¹` on cochains**, with its correction term: for a `1`-cocycle `c` on `G`,
@@ -372,14 +384,10 @@ theorem cochainsCor1_res {c : G → M} (hc : groupCohomology.IsCocycle₁ c) :
     cochainsCor1 G M U t ht (fun x : U => c (x : G)) =
       U.index • c + d0 G M (∑ u : G ⧸ U, c (t u)) := by
   ext γ
-  have key : ∀ u : G ⧸ U,
-      t u • c (lWord U t u γ) = γ • c (t (γ⁻¹ • u)) + c γ - c (t u) := by
-    intro u
-    have h1 := hc (t u) (lWord U t u γ)
-    rw [transversal_mul_lWord, hc γ (t (γ⁻¹ • u))] at h1
-    exact eq_sub_of_add_eq h1.symm
+  have key (u : G ⧸ U) : t u • c (lWord U t u γ) = γ • c (t (γ⁻¹ • u)) - c (t u) + c γ := by
+    simpa only [smul_inv_smul] using smul_apply_lWord_of_isCocycle₁ G M U t hc γ (γ⁻¹ • u)
   simp only [cochainsCor1_apply, Pi.add_apply, Pi.smul_apply, d0_apply]
-  rw [Finset.sum_congr rfl fun u _ => key u, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+  rw [Finset.sum_congr rfl fun u _ => key u, Finset.sum_add_distrib, Finset.sum_sub_distrib,
     ← Finset.smul_sum, sum_translate G U (fun u => c (t u)) γ⁻¹, Finset.sum_const,
     Finset.card_univ, ← Nat.card_eq_fintype_card, ← U.index_eq_card]
   abel
@@ -611,6 +619,46 @@ theorem cochainsCor2_d1 (c : U → M) :
     sum_translate G U
       (fun u : G ⧸ U => t u • c ⟨lWord U t u η, lWord_mem U t ht u η⟩) γ⁻¹]
 
+omit [U.FiniteIndex] in
+/-- The summand identity behind `cochainsCor2_changeTransversal`. For a `2`-cocycle `f` on `U`,
+with `D v ∈ U` the transversal difference `(t v)⁻¹ * t' v`, the `t'`-summand at `u` is the
+`t`-summand plus the `u`-summand of `d¹` of the correction cochain
+`γ ↦ ∑ v, t v • (f (D v, ℓᵗ'_v γ) - f (ℓᵗ_v γ, D (γ⁻¹ • v)))`, before reindexing. -/
+private theorem cochainsCor2_changeTransversal_summand (t' : G ⧸ U → G)
+    (ht' : ∀ u : G ⧸ U, (QuotientGroup.mk (t' u) : G ⧸ U) = u) (D : G ⧸ U → U)
+    (hD : ∀ v, (D v : G) = transversalDiff U t t' v) {f : U × U → M}
+    (hf : groupCohomology.IsCocycle₂ f) (γ η : G) (u : G ⧸ U) :
+    t' u • f (⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩,
+        ⟨lWord U t' (γ⁻¹ • u) η, lWord_mem U t' ht' (γ⁻¹ • u) η⟩) =
+      γ • (t (γ⁻¹ • u) •
+            (f (D (γ⁻¹ • u), ⟨lWord U t' (γ⁻¹ • u) η, lWord_mem U t' ht' (γ⁻¹ • u) η⟩) -
+              f (⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩,
+                D (η⁻¹ • γ⁻¹ • u)))) -
+          t u • (f (D u, ⟨lWord U t' u (γ * η), lWord_mem U t' ht' u (γ * η)⟩) -
+            f (⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩, D ((γ * η)⁻¹ • u))) +
+          t u • (f (D u, ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩) -
+            f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩, D (γ⁻¹ • u))) +
+        t u • f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩,
+          ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩) := by
+  -- Three applications of the `2`-cocycle law of `f`
+  -- (`TauCeti.groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul`), matched along identities
+  -- between words: the transversal difference intertwines the two families of words,
+  -- `D v * ℓᵗ'_v(g) = ℓᵗ_v(g) * D (g⁻¹ • v)`, and each family multiplies.
+  have hD' : ∀ v g, D v * ⟨lWord U t' v g, lWord_mem U t' ht' v g⟩ =
+      ⟨lWord U t v g, lWord_mem U t ht v g⟩ * D (g⁻¹ • v) := fun v g => Subtype.ext <| by
+    rw [Subgroup.coe_mul, Subgroup.coe_mul, hD, hD]
+    exact transversalDiff_mul_lWord U t t' v g
+  have hmul : ∀ (s : G ⧸ U → G) (hs : ∀ u : G ⧸ U, (QuotientGroup.mk (s u) : G ⧸ U) = u),
+      (⟨lWord U s u γ, lWord_mem U s hs u γ⟩ : U) *
+          ⟨lWord U s (γ⁻¹ • u) η, lWord_mem U s hs (γ⁻¹ • u) η⟩ =
+        ⟨lWord U s u (γ * η), lWord_mem U s hs u (γ * η)⟩ :=
+    fun s _ => Subtype.ext (lWord_mul_lWord U s u γ η)
+  rw [← transversal_mul_transversalDiff U t t' u, ← hD, mul_smul, ← Subgroup.smul_def,
+    groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul hf (hD' u γ) (hD' (γ⁻¹ • u) η),
+    hmul t' ht', hmul t ht, mul_inv_rev]
+  simp only [smul_add, smul_sub, Subgroup.mk_smul, smul_smul, transversal_mul_lWord]
+  abel
+
 /-- **Change of transversal in degree two, as an explicit coboundary.** Two transversals give
 degree-two corestriction cochains differing by `d¹` of the `1`-cochain
 
@@ -630,74 +678,31 @@ theorem cochainsCor2_changeTransversal (t' : G ⧸ U → G)
           f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩,
             ⟨transversalDiff U t t' (γ⁻¹ • u),
               transversalDiff_mem U t t' ht ht' (γ⁻¹ • u)⟩))) := by
-  ext q
-  obtain ⟨γ, η⟩ := q
-  set D : G ⧸ U → U := fun v =>
-    ⟨transversalDiff U t t' v, transversalDiff_mem U t t' ht ht' v⟩ with hD
-  have key : ∀ u : G ⧸ U,
-      t' u • f (⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩,
-          ⟨lWord U t' (γ⁻¹ • u) η, lWord_mem U t' ht' (γ⁻¹ • u) η⟩) =
-        γ • (t (γ⁻¹ • u) •
-              (f (D (γ⁻¹ • u), ⟨lWord U t' (γ⁻¹ • u) η, lWord_mem U t' ht' (γ⁻¹ • u) η⟩) -
-                f (⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩,
-                  D (η⁻¹ • γ⁻¹ • u)))) -
-            t u • (f (D u, ⟨lWord U t' u (γ * η), lWord_mem U t' ht' u (γ * η)⟩) -
-              f (⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩, D ((γ * η)⁻¹ • u))) +
-            t u • (f (D u, ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩) -
-              f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩, D (γ⁻¹ • u))) +
-          t u • f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩,
-            ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩) := by
-    intro u
-    set a : U := ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ with ha
-    set b : U := ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩
-    set a' : U := ⟨lWord U t' u γ, lWord_mem U t' ht' u γ⟩
-    set b' : U := ⟨lWord U t' (γ⁻¹ • u) η, lWord_mem U t' ht' (γ⁻¹ • u) η⟩
-    -- The five identities between words that the three cocycle applications are matched along.
-    have hDa : D u * a' = a * D (γ⁻¹ • u) :=
-      Subtype.ext (transversalDiff_mul_lWord U t t' u γ)
-    have hDb : D (γ⁻¹ • u) * b' = b * D (η⁻¹ • γ⁻¹ • u) :=
-      Subtype.ext (transversalDiff_mul_lWord U t t' (γ⁻¹ • u) η)
-    have ha'b' : a' * b' = ⟨lWord U t' u (γ * η), lWord_mem U t' ht' u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t' u γ η)
-    have hab : a * b = ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
-    have hDmul : D ((γ * η)⁻¹ • u) = D (η⁻¹ • γ⁻¹ • u) := by rw [mul_inv_rev, mul_smul]
-    -- Three applications of the `U`-cocycle law, solved for the term each one contributes.
-    have h1 := hf (D u) a' b'
-    rw [hDa, ha'b'] at h1
-    have e1 : (D u : U) • f (a', b') =
-        f (a * D (γ⁻¹ • u), b') + f (D u, a') -
-          f (D u, ⟨lWord U t' u (γ * η), lWord_mem U t' ht' u (γ * η)⟩) := by
-      rw [h1]; abel
-    have h2 := hf a (D (γ⁻¹ • u)) b'
-    rw [hDb] at h2
-    have e2 : f (a * D (γ⁻¹ • u), b') =
-        a • f (D (γ⁻¹ • u), b') + f (a, b * D (η⁻¹ • γ⁻¹ • u)) - f (a, D (γ⁻¹ • u)) := by
-      rw [← h2]; abel
-    have h3 := hf a b (D (η⁻¹ • γ⁻¹ • u))
-    rw [hab] at h3
-    have e3 : f (a, b * D (η⁻¹ • γ⁻¹ • u)) =
-        f (⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩, D (η⁻¹ • γ⁻¹ • u)) + f (a, b) -
-          a • f (b, D (η⁻¹ • γ⁻¹ • u)) := by
-      rw [h3]; abel
-    have hstep : (D u : U) • f (a', b') =
-        a • f (D (γ⁻¹ • u), b') - a • f (b, D (η⁻¹ • γ⁻¹ • u)) -
-              f (D u, ⟨lWord U t' u (γ * η), lWord_mem U t' ht' u (γ * η)⟩) +
-              f (⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩, D (η⁻¹ • γ⁻¹ • u)) +
-            f (D u, a') - f (a, D (γ⁻¹ • u)) + f (a, b) := by
-      rw [e1, e2, e3]; abel
-    have hta : t' u • f (a', b') = t u • ((D u : U) • f (a', b')) := by
-      rw [Subgroup.smul_def, ← mul_smul, hD, transversal_mul_transversalDiff]
-    rw [hta, hstep, hDmul, ha]
-    simp only [smul_add, smul_sub, Subgroup.mk_smul, smul_smul]
-    rw [transversal_mul_lWord]
-    abel
+  ext ⟨γ, η⟩
+  set D : G ⧸ U → U := fun v => ⟨transversalDiff U t t' v, transversalDiff_mem U t t' ht ht' v⟩
   simp only [cochainsCor2_apply, Pi.add_apply, d1_apply]
-  rw [Finset.sum_congr rfl fun u _ => key u, Finset.sum_add_distrib, Finset.sum_add_distrib,
-    Finset.sum_sub_distrib, ← Finset.smul_sum,
+  rw [Finset.sum_congr rfl fun u _ =>
+      cochainsCor2_changeTransversal_summand G M U t ht t' ht' D (fun _ => rfl) hf γ η u,
+    Finset.sum_add_distrib, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.smul_sum,
     sum_translate G U (fun v : G ⧸ U => t v •
       (f (D v, ⟨lWord U t' v η, lWord_mem U t' ht' v η⟩) -
         f (⟨lWord U t v η, lWord_mem U t ht v η⟩, D (η⁻¹ • v)))) γ⁻¹]
+  abel
+
+omit [U.FiniteIndex] in
+/-- The summand identity behind `cochainsCor2_res`. For a `2`-cocycle `c` on `G`, the `u`-summand
+of `cor²_t (res c)` at `(γ, η)` is `c (γ, η)` plus terms that sum, after reindexing, to `d¹` of the
+correction cochain `γ ↦ ∑ v, (c (t v, ℓᵗ_v γ) - c (γ, t v))`. -/
+private theorem cochainsCor2_res_summand {c : G × G → M} (hc : groupCohomology.IsCocycle₂ c)
+    (γ η : G) (u : G ⧸ U) :
+    t u • c (lWord U t u γ, lWord U t (γ⁻¹ • u) η) =
+      γ • c (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) - γ • c (η, t (η⁻¹ • γ⁻¹ • u)) +
+            c (γ * η, t ((γ * η)⁻¹ • u)) - c (t u, lWord U t u (γ * η)) +
+          c (t u, lWord U t u γ) - c (γ, t (γ⁻¹ • u)) + c (γ, η) := by
+  -- Three applications of the `G`-cocycle law of `c`, along the factorizations
+  -- `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` and `t v * ℓᵗ_v(η) = η * t (η⁻¹ • v)`.
+  rw [groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul hc (transversal_mul_lWord U t u γ)
+    (transversal_mul_lWord U t (γ⁻¹ • u) η), lWord_mul_lWord, mul_inv_rev, mul_smul]
   abel
 
 /-- **`cor²_t ∘ res²` on cochains**, with its correction term: for a continuous `2`-cocycle `c` on
@@ -708,37 +713,9 @@ The correction term is again genuinely there, and it is a coboundary, which is w
 theorem cochainsCor2_res {c : G × G → M} (hc : groupCohomology.IsCocycle₂ c) :
     cochainsCor2 G M U t ht (fun q : U × U => c ((q.1 : G), (q.2 : G))) =
       U.index • c + d1 G M (fun γ => ∑ u : G ⧸ U, (c (t u, lWord U t u γ) - c (γ, t u))) := by
-  ext q
-  obtain ⟨γ, η⟩ := q
-  have key : ∀ u : G ⧸ U,
-      t u • c (lWord U t u γ, lWord U t (γ⁻¹ • u) η) =
-        γ • c (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) - γ • c (η, t (η⁻¹ • γ⁻¹ • u)) +
-              c (γ * η, t ((γ * η)⁻¹ • u)) - c (t u, lWord U t u (γ * η)) +
-            c (t u, lWord U t u γ) - c (γ, t (γ⁻¹ • u)) + c (γ, η) := by
-    intro u
-    -- The three applications of the `G`-cocycle law of `c`, along the factorizations
-    -- `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` and `t v * ℓᵗ_v(η) = η * t (η⁻¹ • v)`.
-    have hsmul : ((γ * η)⁻¹ • u : G ⧸ U) = η⁻¹ • γ⁻¹ • u := by rw [mul_inv_rev, mul_smul]
-    have h1 := hc (t u) (lWord U t u γ) (lWord U t (γ⁻¹ • u) η)
-    rw [transversal_mul_lWord, lWord_mul_lWord] at h1
-    have e1 : t u • c (lWord U t u γ, lWord U t (γ⁻¹ • u) η) =
-        c (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + c (t u, lWord U t u γ) -
-          c (t u, lWord U t u (γ * η)) := by
-      rw [h1]; abel
-    have h2 := hc γ (t (γ⁻¹ • u)) (lWord U t (γ⁻¹ • u) η)
-    rw [transversal_mul_lWord] at h2
-    have e2 : c (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) =
-        γ • c (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + c (γ, η * t (η⁻¹ • γ⁻¹ • u)) -
-          c (γ, t (γ⁻¹ • u)) := by
-      rw [← h2]; abel
-    have h3 := hc γ η (t (η⁻¹ • γ⁻¹ • u))
-    have e3 : c (γ, η * t (η⁻¹ • γ⁻¹ • u)) =
-        c (γ * η, t (η⁻¹ • γ⁻¹ • u)) + c (γ, η) - γ • c (η, t (η⁻¹ • γ⁻¹ • u)) := by
-      rw [h3]; abel
-    rw [e1, e2, e3, hsmul]
-    abel
+  ext ⟨γ, η⟩
   simp only [cochainsCor2_apply, Pi.add_apply, Pi.smul_apply, d1_apply]
-  rw [Finset.sum_congr rfl fun u _ => key u]
+  rw [Finset.sum_congr rfl fun u _ => cochainsCor2_res_summand G M U t hc γ η u]
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.smul_sum, smul_sub,
     Finset.sum_const, Finset.card_univ]
   rw [← Nat.card_eq_fintype_card, ← U.index_eq_card,

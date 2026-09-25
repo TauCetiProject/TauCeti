@@ -28,6 +28,8 @@ logarithm bound along the reals. It also records the coarser estimate
 * `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
+  `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
 ## References
 
@@ -121,3 +123,21 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 
   linarith [(abs_le.mp h).1]
 
 end Real
+
+namespace Complex
+
+/-- For complex `z` with `‖z‖ ≤ 1 / 2`, the quadratic remainder `-log (1 - z) - z` has norm at most
+`‖z‖ ^ 2`. -/
+theorem norm_neg_log_one_sub_sub_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 2) :
+    ‖-log (1 - z) - z‖ ≤ ‖z‖ ^ 2 := by
+  have h := norm_log_one_add_sub_self_le (z := -z) (by simpa using hz.trans_lt one_half_lt_one)
+  rw [norm_neg, ← sub_eq_add_neg, ← norm_neg, sub_neg_eq_add, neg_add] at h
+  have h2 : (1 - ‖z‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) two_pos]
+    linarith
+  calc ‖-log (1 - z) - z‖ ≤ ‖z‖ ^ 2 * (1 - ‖z‖)⁻¹ / 2 := by
+        rwa [sub_eq_add_neg]
+    _ ≤ ‖z‖ ^ 2 * 2 / 2 := by gcongr
+    _ = ‖z‖ ^ 2 := by ring
+
+end Complex

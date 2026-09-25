@@ -137,7 +137,7 @@ private theorem stabilizeXCenterInclusion_projection_apply (f : GridChainMinus R
   split_ifs with h
   · obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq h
     simp [stabilizeXCenterInclusion, stabilizeXCenterProjection,
-      Finsupp.mapDomain_apply (GridState.insertPoint_injective _ _)]
+      Finsupp.mapDomain_apply_of_injective (GridState.insertPoint_injective _ _)]
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨x, rfl⟩
     exact h (GridState.insertPoint_apply_newColumn _ _ _)
@@ -150,7 +150,8 @@ private theorem stabilizeXOffCenterInclusion_projection_apply (f : GridChainMinu
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨y, rfl⟩
     exact y.2 h
-  · exact Finsupp.mapDomain_apply Subtype.val_injective _ (⟨y, h⟩ : G.StabilizeXOffCenterState s)
+  · exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
+      (⟨y, h⟩ : G.StabilizeXOffCenterState s)
 
 /-- Every chain of the stabilization is the sum of its center and off-center parts. -/
 @[simp] theorem stabilizeXCenterInclusion_projection_add_offCenter (f : GridChainMinus R (n + 1)) :
@@ -235,6 +236,25 @@ theorem stabilizeXCenterDifferential_single_apply (x y : GridState n) :
     G.stabilizeXCenterDifferential s R (Finsupp.single x 1) y =
       rename s.castSucc.succAbove (G.unblockedCoefficient R x y) := by
   simp [stabilizeXCenterDifferential]
+
+/-- On chains with coefficients renamed from `R[V₀, …, V_{n-1}]`, the center differential is the
+unblocked differential of `G` followed by the renaming of the coefficients. -/
+@[simp]
+theorem stabilizeXCenterDifferential_mapRange_rename (f : GridChainMinus R n) :
+    G.stabilizeXCenterDifferential s R
+        (Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _) f) =
+      Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _)
+        (G.unblockedDifferential R f) := by
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [Finsupp.mapRange_add (map_add _), map_add, hf, hg, map_add,
+      Finsupp.mapRange_add (map_add _)]
+  | single x a =>
+    refine Finsupp.ext fun y => ?_
+    rw [Finsupp.mapRange_single, ← Finsupp.smul_single_one x (rename _ a), map_smul,
+      ← Finsupp.smul_single_one x a, map_smul]
+    simp
 
 /-- The matrix coefficients of the off-center differential are those of the unblocked
 differential of the stabilization. -/

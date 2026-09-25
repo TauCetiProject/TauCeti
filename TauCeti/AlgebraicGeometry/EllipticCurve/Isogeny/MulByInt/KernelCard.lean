@@ -47,6 +47,8 @@ closure of the pulled-back field, so that is where the torsion difference lives.
   intrinsic torsion subgroup.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny_of_torsion_rational`: the same at a prime, as `ℓ ²`
   rather than `(ℓ : ℤ).natAbs ^ 2`.
+* `WeierstrassCurve.finite_torsionBy`: finiteness of `E[n]` for nonzero `n`, read on
+  `W.toAffine.Point` itself rather than on the trivial base change `W⁄K`.
 
 The three steps of the argument sketched above — the torsion difference, its rationality, and the
 resulting bound on embeddings — are `private`; nothing outside this module uses them.
@@ -198,6 +200,20 @@ theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
   infer_instance
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, is finite for nonzero `n`. -/
+theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+    Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
+  have h := W.toAffine.finite_torsionBy hn
+  rwa [Affine.baseChange_self] at h
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 

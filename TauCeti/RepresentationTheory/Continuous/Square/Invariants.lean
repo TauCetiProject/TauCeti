@@ -105,7 +105,6 @@ theorem tensorSquareEquivEnd_tprod_apply (hπ : IsUnitary π) (g : G) (t : V ⊗
     tensorSquareEquivEnd e (tprod π π g t) (conjCLM e (π g) u)
       = π g (tensorSquareEquivEnd e t u) := by
   induction t with
-  | zero => simp
   | tmul v w =>
       rw [ContRepresentation.tprod_apply, TensorProduct.mapL_apply, TensorProduct.map_tmul]
       simp only [ContinuousLinearMap.coe_coe, tensorSquareEquivEnd_tmul_apply]

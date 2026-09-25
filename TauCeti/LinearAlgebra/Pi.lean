@@ -10,12 +10,13 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
-# Supports and determinants of finite dependent products
+# Supports, splittings and determinants of finite dependent products
 
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `ι → M` consists of the families
 vanishing outside `s` — the `Pi` analogue of `Finsupp.supported`. This file records that
-complementary supports meet in `⊥`. It also records the determinant of a coordinatewise
-endomorphism of a finite dependent product, which is used in finite-product norm calculations.
+complementary supports meet in `⊥`. It also records the linear splitting of a dependent product
+along a predicate on the indices, and the determinant of a coordinatewise endomorphism of a finite
+dependent product, which is used in finite-product norm calculations.
 
 Mathlib has `Set.disjoint_pi`, but that is about `Set.pi` and characterises disjointness through
 the fibres; it says nothing about the submodules cut out by a support condition.
@@ -24,6 +25,8 @@ the fibres; it says nothing about the submodules cut out by a support condition.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
+  splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearMap.det_pi_of_apply_eq_dependent`: the determinant of a coordinatewise endomorphism of a
   finite dependent product is the product of the determinants on its factors.
 -/
@@ -47,6 +50,31 @@ public theorem disjoint_pi_compl_bot_of_disjoint {ι : Type*} {s t : Set ι} (h 
     · exact hs i hi
 
 end Submodule
+
+namespace LinearEquiv
+
+variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+/-- Splits the indices of the module `∀ i, M i` along the predicate `p`. This is
+`Equiv.piEquivPiSubtypeProd` as a `LinearEquiv`. -/
+public def piEquivPiSubtypeProd :
+    ((i : ι) → M i) ≃ₗ[R] ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i) where
+  toEquiv := Equiv.piEquivPiSubtypeProd p M
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+public theorem piEquivPiSubtypeProd_apply (f : (i : ι) → M i) :
+    piEquivPiSubtypeProd R p M f =
+      (fun i : {x : ι // p x} ↦ f i, fun i : {x : ι // ¬p x} ↦ f i) := (rfl)
+
+@[simp]
+public theorem piEquivPiSubtypeProd_symm_apply
+    (f : ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i)) (i : ι) :
+    (piEquivPiSubtypeProd R p M).symm f i = if h : p i then f.1 ⟨i, h⟩ else f.2 ⟨i, h⟩ := (rfl)
+
+end LinearEquiv
 
 namespace TauCeti
 

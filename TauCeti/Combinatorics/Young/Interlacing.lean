@@ -269,20 +269,14 @@ theorem content_restrict (T : BoundedSSYT (n + 1) μ) (hν : restrictShape T = �
     (hi : i < n) :
     SemistandardYoungTableau.content (restrict T ν hν).1 i
       = SemistandardYoungTableau.content T.1 i := by
+  rw [SemistandardYoungTableau.content_apply, SemistandardYoungTableau.content_apply]
   have hcells : (ν.cells.filter fun c => (restrict T ν hν).1 c.1 c.2 = i)
       = μ.cells.filter fun c => T.1 c.1 c.2 = i := by
     ext c
     obtain ⟨a, b⟩ := c
     simp only [Finset.mem_filter, _root_.YoungDiagram.mem_cells, restrict_apply]
-    constructor
-    · rintro ⟨hc, hT⟩
-      rw [ite_eq_left hc] at hT
-      exact ⟨((mem_iff_of_restrictShape_eq hν).mp hc).1, hT⟩
-    · rintro ⟨hc, hT⟩
-      have hmem : ((a, b) : ℕ × ℕ) ∈ ν :=
-        (mem_iff_of_restrictShape_eq hν).mpr ⟨hc, by rw [hT]; exact hi⟩
-      exact ⟨hmem, by rw [ite_eq_left hmem]; exact hT⟩
-  rw [SemistandardYoungTableau.content_apply, SemistandardYoungTableau.content_apply, hcells]
+    grind [mem_iff_of_restrictShape_eq]
+  rw [hcells]
 
 /-- **Restoring the top letter, as a filling**: keep the entries of `T` on `ν` and write the letter
 `n` on every cell of `μ / ν`.  Columns stay strict because `ν` interlaces `μ`, so no column of
@@ -343,16 +337,10 @@ entries. -/
 @[simp]
 theorem restrictShape_extend (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) :
     restrictShape (extend h T) = ν := by
-  refine _root_.YoungDiagram.ext (Finset.ext fun c => ?_)
+  ext c
   obtain ⟨i, j⟩ := c
   simp only [_root_.YoungDiagram.mem_cells, mem_restrictShape, extend_apply]
-  constructor
-  · rintro ⟨hμ, hlt⟩
-    by_contra hν
-    rw [ite_eq_right hν, ite_eq_left hμ] at hlt
-    exact absurd hlt (lt_irrefl n)
-  · intro hν
-    exact ⟨h.le hν, by rw [ite_eq_left hν]; exact entry_lt T hν⟩
+  grind [SetLike.le_def.mp h.le, entry_lt]
 
 /-- **The branching bijection, fibrewise.**  The tableaux of shape `μ` in the letters `{0, …, n}`
 whose sub-shape of small entries is a given `ν` are exactly the tableaux of shape `ν` in the

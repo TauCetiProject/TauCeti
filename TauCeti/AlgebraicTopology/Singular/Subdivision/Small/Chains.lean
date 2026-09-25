@@ -28,6 +28,8 @@ small-chain equivalence and prove excision.
 * `TopCat.smallSingularSubcomplexMap`: a covered map restricts to the small subcomplexes.
 * `TopCat.preimage_smallSingularSubcomplex`: the preimage of a small subcomplex along a map is
   the small subcomplex of the preimage family.
+* `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
+  family maps into the small subcomplex.
 * `TauCeti.AffineChain.smallSingularChain`: push affine chains forward along a small simplex
   with values in the small-chain complex.
 * `TauCeti.AffineChain.exists_singularChain_small_factor`: a pushed-forward affine chain supported
@@ -108,6 +110,29 @@ lemma preimage_smallSingularSubcomplex (f : Y ⟶ X) :
       Y.smallSingularSubcomplex (fun i ↦ f ⁻¹' U i) := by
   ext n σ
   simp [Set.range_comp, Set.image_subset_iff]
+
+/-- The singular simplicial set of a subset `S` contained in a member `U i` of the family maps into
+the small singular subcomplex of the family: every singular simplex of `S` is small. -/
+def toSmallSingularSubcomplex {S : Set X} {i : ι} (h : S ⊆ U i) :
+    TopCat.toSSet.obj (TopCat.of S) ⟶ (X.smallSingularSubcomplex U : SSet) :=
+  SSet.Subcomplex.lift (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal S))) (by
+    rintro n _ ⟨σ, rfl⟩
+    rw [mem_smallSingularSubcomplex_iff, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app,
+      ContinuousMap.coe_comp, Set.range_comp]
+    exact ⟨i, (Set.image_subset_range _ _).trans fun _ ⟨x, hx⟩ ↦ hx ▸ h x.2⟩)
+
+@[reassoc (attr := simp)]
+lemma toSmallSingularSubcomplex_ι {S : Set X} {i : ι} (h : S ⊆ U i) :
+    toSmallSingularSubcomplex U h ≫ (X.smallSingularSubcomplex U).ι =
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal S)) :=
+  SSet.Subcomplex.lift_ι _ _
+
+@[simp]
+lemma toSmallSingularSubcomplex_app_coe {S : Set X} {i : ι} (h : S ⊆ U i) {n : SimplexCategoryᵒᵖ}
+    (σ : (TopCat.toSSet.obj (TopCat.of S)).obj n) :
+    dsimp% ((toSmallSingularSubcomplex U h).app n σ).val =
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal S))).app n σ :=
+  SSet.Subcomplex.lift_app_coe _ _ _
 
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 

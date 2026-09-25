@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.IsSepClosed
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionRank
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionSurjective
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Rank
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Surjective
 
 /-!
 # Torsion over a separably closed field
@@ -21,11 +21,16 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
 
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny` and `WeierstrassCurve.Affine.natCard_torsionBy`:
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
+* `WeierstrassCurve.natCard_torsionBy`: the same count read on `W.toAffine.Point` itself,
+  rather than on the trivial base change `W⁄K`.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
 * `WeierstrassCurve.Affine.zsmulTorsionSqHom_surjective` and
   `WeierstrassCurve.Affine.exists_zsmul_eq_of_zsmul_eq_zero`: `[n]` carries `E[n ²]` onto `E[n]`.
+* `WeierstrassCurve.Affine.exists_point_zsmul_eq_of_zsmul_eq_zero` and
+  `WeierstrassCurve.Affine.natCard_setOf_zsmul_eq_zero`: the same two facts on the points of `W`
+  itself rather than of `W⁄F`.
 
 ## References
 
@@ -108,6 +113,41 @@ theorem exists_zsmul_eq_of_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0)
     (fun _ hP ↦ W.mem_range_baseChange_of_zsmul_eq_zero_of_isSepClosed
       (by push_cast; exact pow_ne_zero 2 hchar) hP) hchar hT
 
+/-- **Every `n`-torsion point of `W` is `n` times a point of `W`**, over a separably closed field
+in which `n` is invertible. -/
+theorem exists_point_zsmul_eq_of_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) {T : W.Point}
+    (hT : n • T = 0) : ∃ R : W.Point, n • R = T := by
+  obtain ⟨P, hP, -⟩ := W.exists_zsmul_eq_of_zsmul_eq_zero hchar
+    (T := Point.equivBaseChangeSelf W T) (by rw [← map_zsmul, hT, map_zero])
+  exact ⟨(Point.equivBaseChangeSelf W).symm P, by rw [← map_zsmul, hP, AddEquiv.symm_apply_apply]⟩
+
+open scoped Classical in
+/-- **`#E[n] = n ²`** over a separably closed field in which `n` is invertible, counted on the
+points of `W` themselves. -/
+theorem natCard_setOf_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) :
+    Nat.card {R : W.Point | n • R = 0} = n.natAbs ^ 2 := by
+  rw [← W.natCard_torsionBy hchar]
+  refine Nat.card_congr ((Point.equivBaseChangeSelf W).toEquiv.subtypeEquiv fun R ↦ ?_)
+  simp only [Set.mem_ofPred_eq, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe]
+  refine ⟨fun h ↦ (Submodule.mem_torsionBy_iff _ _).mpr ?_, fun h ↦ ?_⟩
+  · rw [← map_zsmul, h, map_zero]
+  · have := (Submodule.mem_torsionBy_iff _ _).mp h
+    rwa [← map_zsmul, AddEquiv.map_eq_zero_iff] at this
+
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] [IsSepClosed K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, has order `n.natAbs ^ 2` when `n` is invertible in `K`. -/
+theorem natCard_torsionBy {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) = n.natAbs ^ 2 := by
+  have h := W.toAffine.natCard_torsionBy hn
+  rwa [Affine.baseChange_self] at h
+
+end WeierstrassCurve
 
 end

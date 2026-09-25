@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
+public import Mathlib.CategoryTheory.Triangulated.Subcategory
 
 /-!
 # Triangulated `K₀` of a pretriangulated category
@@ -46,6 +47,9 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
 * `TauCeti.TriangulatedK0.of_distTriang`: the defining relation, with
   `TauCeti.TriangulatedK0.of_biprod` and `TauCeti.TriangulatedK0.of_eq_zero_of_isZero` its
   biproduct and zero-object consequences.
+* `TauCeti.TriangulatedK0.of_fullSubcategory_distTriang`: in a full triangulated subcategory, a
+  distinguished triangle of the ambient category with vertices in the subcategory gives the
+  defining relation.
 * `TauCeti.TriangulatedK0.of_shift_one` and `TauCeti.TriangulatedK0.of_shift`: the class of a
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
@@ -375,6 +379,31 @@ lemma mapEquiv_toAddMonoidHom (e : C ≌ D) [e.functor.CommShift ℤ] [e.inverse
   PresentedK0.mapEquiv_toAddMonoidHom e _ _
 
 end Equivalence
+
+section FullSubcategory
+
+variable (P : ObjectProperty C) [P.IsTriangulated] [EssentiallySmall.{w'} P.FullSubcategory]
+
+omit [EssentiallySmall.{w} C] in
+/-- In triangulated `K₀` of a full triangulated subcategory, a distinguished triangle of the
+ambient category whose three vertices lie in the subcategory gives the defining relation. The
+triangle need not be one of the subcategory: its connecting morphism is only required to exist in
+the ambient category. -/
+theorem of_fullSubcategory_distTriang {T : Triangle C} (hT : T ∈ distTriang C) (h₁ : P T.obj₁)
+    (h₂ : P T.obj₂) (h₃ : P T.obj₃) :
+    (of (⟨T.obj₂, h₂⟩ : P.FullSubcategory) : TriangulatedK0 P.FullSubcategory) =
+      of (⟨T.obj₁, h₁⟩ : P.FullSubcategory) + of (⟨T.obj₃, h₃⟩ : P.FullSubcategory) := by
+  -- Complete the first morphism to a distinguished triangle of the subcategory; its third vertex
+  -- is isomorphic to `T.obj₃` in the ambient category, hence in the subcategory.
+  obtain ⟨Z, g, h, hT'⟩ := distinguished_cocone_triangle
+    (P.fullyFaithfulι.preimage T.mor₁ : (⟨T.obj₁, h₁⟩ : P.FullSubcategory) ⟶ ⟨T.obj₂, h₂⟩)
+  have e := Triangle.π₃.mapIso (isoTriangleOfIso₁₂ _ _ (P.ι.map_distinguished _ hT') hT
+    (Iso.refl _) (Iso.refl _)
+    ((Category.comp_id _).trans ((P.fullyFaithfulι.map_preimage (X := ⟨T.obj₁, h₁⟩)
+      (Y := ⟨T.obj₂, h₂⟩) T.mor₁).trans (Category.id_comp _).symm)))
+  exact (of_distTriang hT').trans (congrArg (_ + ·) (of_congr (P.fullyFaithfulι.preimageIso e)))
+
+end FullSubcategory
 
 section Comparison
 

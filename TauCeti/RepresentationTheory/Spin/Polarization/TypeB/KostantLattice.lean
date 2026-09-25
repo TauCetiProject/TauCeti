@@ -115,7 +115,9 @@ theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
       rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
         P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
 
-private theorem typeBSpinRep_longRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
+/-- The long-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
+exterior coordinate and then creates the `i`-th one. -/
+theorem typeBSpinRep_longRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
     (x : ExteriorAlgebra K P.W) :
     P.typeBSpinRep b z hz
         (_root_.UniversalEnvelopingAlgebra.ι K (typeBLongRootGenerator i j hij)) x =

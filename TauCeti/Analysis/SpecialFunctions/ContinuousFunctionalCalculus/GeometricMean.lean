@@ -67,8 +67,8 @@ variable [SeparatelyContinuousMul A]
 theorem conjSqrt_nonneg (c : A) (hb : 0 ≤ b := by cfc_tac) : 0 ≤ conjSqrt c b := by
   simpa using conjSqrt_monotone (c := c) hb
 
-/-- Moving a factor across a pair of square-root conjugations. This is pure associativity, and it
-is the only computation behind the Riccati identities below. -/
+/-- A factor between two square-root conjugations by `c` moves inside a single conjugation by
+`c`, where it is itself conjugated by `c`. -/
 theorem conjSqrt_mul_mul_conjSqrt (c y w z : A) :
     conjSqrt c y * w * conjSqrt c z = conjSqrt c (y * conjSqrt c w * z) := by
   simp only [conjSqrt_apply, mul_assoc]

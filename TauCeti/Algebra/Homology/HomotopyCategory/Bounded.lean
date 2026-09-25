@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
+public import TauCeti.Algebra.Homology.EssentiallySmall
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The homotopy category of bounded cochain complexes
@@ -30,6 +33,11 @@ The construction follows the organization of Mathlib's bounded-below category
 * `TauCeti.HomotopyCategory.bounded`: the corresponding property in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded`: the homotopy category of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes.
+
+The homotopy category of bounded complexes over an essentially small category is essentially
+small (through `HomotopyCategory.essentiallySmall` and
+`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`), so it has a triangulated
+Grothendieck group.
 
 ## References
 
@@ -62,6 +70,19 @@ lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
     exact ⟨a, b, ha, hb⟩
   · rintro ⟨a, b, ha, hb⟩
     exact ⟨⟨a, ha⟩, b, hb⟩
+
+/-- A cochain complex is bounded exactly when it vanishes outside a finite set of degrees. -/
+lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
+    CochainComplex.bounded C K ↔ ∃ s : Finset ℤ, ∀ n ∉ s, IsZero (K.X n) := by
+  rw [CochainComplex.bounded_iff]
+  constructor
+  · rintro ⟨a, b, ha, hb⟩
+    exact ⟨Finset.Icc a b, fun n hn ↦ K.isZero_X_of_notMem_Icc a b hn⟩
+  · rintro ⟨s, hs⟩
+    obtain ⟨a, ha⟩ := s.bddBelow
+    obtain ⟨b, hb⟩ := s.bddAbove
+    exact ⟨a, b, (K.isStrictlyGE_iff a).2 fun i hi ↦ hs i fun h ↦ absurd (ha h) (not_le.2 hi),
+      (K.isStrictlyLE_iff b).2 fun i hi ↦ hs i fun h ↦ absurd (hb h) (not_le.2 hi)⟩
 
 instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms where
   of_iso := by

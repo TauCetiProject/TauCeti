@@ -15,15 +15,13 @@ import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 This file records how the affine map `y ↦ c • y +ᵥ x` pulls metric balls, closed balls, and
 spheres back to their corresponding sets centered at zero.
 
-The scalars carry no algebraic structure at all: `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E]` is
-the whole assumption, since `NormSMulClass` is exactly the tie between the action and the two
-norms that these computations run on. Accordingly the scale is constrained by `0 < ‖c‖` rather
-than by `c ≠ 0`, which is not even statable without a zero.
+The preimage formulas need only `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E]` on the
+scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres only require
+`‖c‖ ≠ 0`. Over a normed division ring these conditions are equivalent to `c ≠ 0`, via
+`norm_pos_iff` and `norm_ne_zero_iff` respectively.
 
-Over a `NormedDivisionRing` the two agree by `norm_pos_iff`. A caller holding `hc : c ≠ 0` passes
-`norm_pos_iff.2 hc`, or discharges the side goal with `simp [hc]`; bare `simp` does not close it,
-because its discharger rewrites `0 < ‖c‖` to `¬c = 0` and then does not reach for `hc` in the
-local context.
+The range formula identifies a positive real scaling of the unit sphere with the sphere
+of that radius in a seminormed real vector space.
 -/
 
 public section
@@ -55,21 +53,19 @@ theorem preimage_smul_vadd_closedBall (x : P) {c : 𝕜} (hc : 0 < ‖c‖) (r :
   exact mul_le_mul_iff_right₀ hc
 
 /-- The affine map `y ↦ c • y +ᵥ x` pulls the sphere of radius `‖c‖ * r` about `x`
-back to the sphere of radius `r` about `0`. -/
+back to the sphere of radius `r` about `0`, provided `‖c‖ ≠ 0`. -/
 @[simp]
-theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : 0 < ‖c‖) (r : ℝ) :
+theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : ℝ) :
     ((fun y : E ↦ c • y +ᵥ x) ⁻¹' Metric.sphere x (‖c‖ * r)) = Metric.sphere 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_sphere, dist_vadd_left, dist_zero_right, norm_smul]
-  constructor
-  · exact mul_left_cancel₀ hc.ne'
-  · exact congrArg ((· * ·) ‖c‖)
+  exact mul_right_inj' hc
 
 end Preimage
 
 section Range
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The image of the unit sphere under scaling by a positive real `c` is the sphere of radius
 `c`. -/

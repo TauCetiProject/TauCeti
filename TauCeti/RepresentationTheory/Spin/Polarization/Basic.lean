@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!

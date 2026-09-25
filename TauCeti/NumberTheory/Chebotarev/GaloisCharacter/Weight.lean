@@ -51,6 +51,8 @@ primes is what makes the ramified Euler factors drop out as `(1 - 0)⁻¹ = 1`.
 * `MonoidHom.galoisCharacterWeight_one`: the weight of the trivial character is the indicator of
   the ideals prime to the ramified primes, so its `L`-series is the Dedekind zeta function with the
   ramified Euler factors deleted.
+* `MonoidHom.galoisCharacterWeight_mul`: the weight of a product of characters is the product of
+  their weights.
 * `MonoidHom.val_galoisCharacterUnitaryWeight`: the unitary packaging has the same underlying
   weight.
 
@@ -248,6 +250,23 @@ theorem galoisCharacterWeight_one :
   · simp only [h, not_false_eq_true, ↓reduceIte]
     rw [galoisCharacterWeight_apply_of_unramified _ 𝔭
         (not_not.mp (mt (mem_ramifiedPrimes_iff 𝔭).mpr h)), MonoidHom.one_apply, Units.val_one]
+
+/-- **The weight of a product of characters is the product of their weights.** Both sides vanish
+at the ramified primes and agree with `χ ψ` of the Artin symbol at the others. The weight of the
+trivial character is not the trivial weight (`galoisCharacterWeight_one`), so this is
+multiplicativity without a unit. -/
+@[simp]
+theorem galoisCharacterWeight_mul (χ ψ : (L ≃ₐ[K] L) →* ℂˣ) :
+    galoisCharacterWeight (L := L) (χ * ψ) =
+      galoisCharacterWeight (L := L) χ * galoisCharacterWeight (L := L) ψ := by
+  refine TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum fun 𝔭 ↦ ?_
+  rw [TauCeti.MultiplicativeIdealWeight.mul_apply]
+  by_cases h : 𝔭 ∈ ramifiedPrimes K L
+  · simp only [(galoisCharacterWeight_apply_eq_zero_iff _ 𝔭).mpr h, mul_zero]
+  · have hur := not_not.mp (mt (mem_ramifiedPrimes_iff 𝔭).mpr h)
+    rw [galoisCharacterWeight_apply_of_unramified _ 𝔭 hur,
+      galoisCharacterWeight_apply_of_unramified _ 𝔭 hur,
+      galoisCharacterWeight_apply_of_unramified _ 𝔭 hur, MonoidHom.mul_apply, Units.val_mul]
 
 /-- **The weight of a Galois character is unitary.** Its values have modulus `1` at every
 unramified prime, and `0` at the ramified ones — which is exactly the `UnitaryIdealWeight`

@@ -204,7 +204,8 @@ theorem manifoldWeakWhitneyTopology_self :
     apply ContinuousMap.ext
     intro y
     simp only [Function.comp_apply, ContinuousMap.comp_apply]
-    convert (chartIteratedFDeriv_self_apply f 0 m hm (toTarget y)).symm using 1 <;> rfl
+    convert (chartIteratedFDeriv_self_apply f 0 m hm (toTarget y)).symm using 1
+    rfl
   · apply continuous_id_iff_le.mp
     let : TopologicalSpace C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ :=
       ContMDiffMap.weakWhitneyTopology
@@ -216,7 +217,7 @@ theorem manifoldWeakWhitneyTopology_self :
         (E := E) (F := F) (n := n) m hm)
     have hchart : Continuous (fun f : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ ↦
         chartIteratedFDeriv f x m hm) := by
-      convert h using 1 <;> try rfl
+      convert h using 1
       funext f
       apply ContinuousMap.ext
       intro z

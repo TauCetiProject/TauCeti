@@ -37,7 +37,8 @@ These are the ingredients of the standard comparison between split `K₀` of an 
 and the triangulated `K₀` of its bounded homotopy category, which sends a bounded complex to the
 alternating sum of the classes of its terms: homotopy invariance makes that assignment well
 defined on the objects of the homotopy category, and the mapping-cone formula makes it additive
-on distinguished triangles.
+on distinguished triangles. The comparison itself is proved in
+`TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy`.
 
 ## Main definitions
 
@@ -201,6 +202,11 @@ on `s` once `s` contains the support of a bounded complex. -/
 noncomputable def eulerChar (s : Finset ℤ) : SplitK0 C :=
   ∑ n ∈ s, ((n.negOnePow : ℤ)) • of (K.X n)
 
+/-- The Euler characteristic is the alternating sum of the classes of the terms. -/
+theorem eulerChar_def (s : Finset ℤ) :
+    eulerChar K s = ∑ n ∈ s, ((n.negOnePow : ℤ)) • of (K.X n) := by
+  rw [eulerChar]
+
 @[simp] theorem eulerChar_empty : eulerChar K ∅ = 0 := Finset.sum_empty
 
 @[simp] theorem eulerChar_insert {s : Finset ℤ} {n : ℤ} (hn : n ∉ s) :
@@ -234,6 +240,23 @@ theorem eulerChar_mappingCone (f : K ⟶ L) (s : Finset ℤ) :
     eulerChar (CochainComplex.mappingCone f) s =
       eulerChar L s - eulerChar K (s.map (Equiv.addRight (1 : ℤ)).toEmbedding) := by
   simpa [eulerChar] using (ofInvariant C).sum_negOnePow_obj_X_mappingCone f s
+
+/-- The Euler characteristic of a mapping cone, for complexes supported on finite sets of degrees:
+`χ(cone f) = χ(L) - χ(K)`, each summed over a finite set of degrees containing its support. -/
+theorem eulerChar_mappingCone_of_isZero (f : K ⟶ L) {s t u : Finset ℤ}
+    (hs : ∀ n ∉ s, IsZero (K.X n)) (ht : ∀ n ∉ t, IsZero (L.X n))
+    (hu : ∀ n ∉ u, IsZero ((CochainComplex.mappingCone f).X n)) :
+    eulerChar (CochainComplex.mappingCone f) u = eulerChar L t - eulerChar K s := by
+  -- Sum over a common range `v`, containing the supports of the cone and of `L`, and whose
+  -- translate `v + 1` contains the support of `K`.
+  set v : Finset ℤ := u ∪ t ∪ s.map (Equiv.addRight (-1 : ℤ)).toEmbedding with hv
+  have hK : ∀ n, n ∉ v.map (Equiv.addRight (1 : ℤ)).toEmbedding → IsZero (K.X n) := fun n hn ↦
+    hs n fun hns ↦ hn (Finset.mem_map_equiv.2 (by simp [hv, hns]))
+  have hL : ∀ n ∉ v, IsZero (L.X n) := fun n hn ↦ ht n fun h ↦ hn (by simp [hv, h])
+  have hcone : ∀ n ∉ v, IsZero ((CochainComplex.mappingCone f).X n) := fun n hn ↦
+    hu n fun h ↦ hn (by simp [hv, h])
+  rw [eulerChar_eq_eulerChar_of_isZero _ hu hcone, eulerChar_mappingCone,
+    eulerChar_eq_eulerChar_of_isZero _ hL ht, eulerChar_eq_eulerChar_of_isZero _ hK hs]
 
 variable [HasZeroObject C]
 

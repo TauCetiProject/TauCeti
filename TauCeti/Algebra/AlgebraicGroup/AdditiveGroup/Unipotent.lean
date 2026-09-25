@@ -257,8 +257,7 @@ theorem coactDecomposition_apply (v : V) (n : ℕ) :
     _ = _root_.LinearMap.tensorComponent (coeff R n)
         (Comodule.coact (R := R) (C := SymmetricAlgebra R R) v) := by
       induction Comodule.coact (R := R) (C := SymmetricAlgebra R R) v using
-        TensorProduct.induction_on with
-      | zero => simp
+        TensorProduct.inductionOn with
       | add x y hx hy => simp only [map_add, hx, hy]
       | tmul m x => simp [coeff]
 

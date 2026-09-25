@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile
 public import TauCeti.MeasureTheory.Integral.LayerCake
 
+import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 
 /-!
@@ -16,17 +17,13 @@ import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 On the real line the transport problem for the ground distance is solved explicitly: for two
 probability laws `μ` and `ν` on `ℝ`,
 
-`W₁ (μ, ν) = ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ = ‖μ.quantile - ν.quantile‖_{L¹ (0, 1)}`,
+`W₁ (μ, ν) = ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ`,
 
-the area between the two cumulative distribution functions, equivalently the `L¹` distance of the
-two quantile functions on the unit interval. The monotone coupling
-`MeasureTheory.Measure.quantileCoupling` attains it, so the monotone rearrangement of two real
-laws is an optimal transport plan for the ground distance.
+the area between the two cumulative distribution functions. This is an identity in `[0, ∞]` and
+needs no moment hypothesis: its two sides are infinite together, so laws with divergent first
+moments are covered as they stand.
 
-Both identities are identities in `[0, ∞]` and need no moment hypothesis: their two sides are
-infinite together, so laws with divergent first moments are covered as they stand.
-
-One measure-theoretic identity, proved in `TauCeti.MeasureTheory.Integral.LayerCake`, drives both,
+One measure-theoretic identity, proved in `TauCeti.MeasureTheory.Integral.LayerCake`, drives it,
 `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff`: the `L¹` distance of two real
 functions is the integral, over the levels `s`, of the measure of the set where exactly one of them
 is at most `s`. On the two coordinates of a transport plan it rewrites the transport objective as
@@ -36,18 +33,16 @@ of the two marginal masses. On the two quantile functions it rewrites the object
 plan as the integral of exactly those gaps, by the Galois property of the quantile. Lower bound and
 attained value therefore meet.
 
-Exponents `p > 1` are not covered: the argument uses that the ground cost is the distance itself,
-and the one-dimensional formula for the costs `|x - y| ^ p` is a rearrangement statement with an
-unrelated proof.
+The quantile form of this identity, `W₁ (μ, ν) = ‖μ.quantile - ν.quantile‖_{L¹ (0, 1)}`, is the
+exponent-one case of `TauCeti.wassersteinEDist_eq_eLpNorm_quantile_sub`, which holds for every
+exponent `1 ≤ p ≤ ∞`; the cumulative-distribution form is special to the exponent one.
 
 ## Main statements
 
+* `TauCeti.lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub` — the `L¹ (0, 1)` distance of
+  the two quantile functions is the area between the two cumulative distribution functions;
 * `TauCeti.wassersteinEDist_one_eq_lintegral_enorm_cdf_sub` — the Wasserstein distance at
-  exponent one is the area between the two cumulative distribution functions;
-* `TauCeti.wassersteinEDist_one_eq_eLpNorm_quantile_sub` — it is also the `L¹ (0, 1)` distance of
-  the two quantile functions;
-* `MeasureTheory.Measure.isOptimalCoupling_quantileCoupling` — the monotone coupling is an optimal
-  plan for the ground distance.
+  exponent one is that area.
 
 ## References
 
@@ -74,7 +69,7 @@ the level `s` has mass at least the gap between the two cumulative distribution 
 theorem enorm_cdf_sub_le_measure_symmDiff {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     {π : Measure (ℝ × ℝ)} (hπ : IsCoupling π μ ν) (s : ℝ) :
     ‖cdf μ s - cdf ν s‖ₑ ≤ π ({z : ℝ × ℝ | z.1 ≤ s} ∆ {z : ℝ × ℝ | z.2 ≤ s}) := by
-  let : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   have hfst : {z : ℝ × ℝ | z.1 ≤ s} = Iic s ×ˢ univ := by ext z; simp
   have hsnd : {z : ℝ × ℝ | z.2 ≤ s} = univ ×ˢ Iic s := by ext z; simp
@@ -111,20 +106,10 @@ theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure
   have hmeas : MeasurableSet ({t | μ.quantile t ≤ s} ∆ {t | ν.quantile t ≤ s}) :=
     (measurableSet_le (Measure.measurable_quantile μ) measurable_const).symmDiff
       (measurableSet_le (Measure.measurable_quantile ν) measurable_const)
-  rw [Measure.restrict_apply hmeas, hset]
-  refine le_antisymm ?_ ?_
-  · calc volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) ∩ Ioo (0 : ℝ) 1)
-        ≤ volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s))) :=
-          measure_mono inter_subset_left
-      _ = ‖cdf μ s - cdf ν s‖ₑ := by
-          rw [Real.volume_Ioc, max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
-  · calc ‖cdf μ s - cdf ν s‖ₑ
-        = volume (Ioo (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s))) := by
-          rw [Real.volume_Ioo, max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
-      _ ≤ volume (Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) ∩ Ioo (0 : ℝ) 1) := by
-          refine measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ?_⟩
-          exact ⟨lt_of_le_of_lt (le_min (cdf_nonneg μ s) (cdf_nonneg ν s)) ht.1,
-            lt_of_lt_of_le ht.2 (max_le (cdf_le_one μ s) (cdf_le_one ν s))⟩
+  rw [Measure.restrict_apply hmeas, hset,
+    volume_Ioc_inter_Ioo_zero_one (le_min (cdf_nonneg μ s) (cdf_nonneg ν s))
+      (max_le (cdf_le_one μ s) (cdf_le_one ν s)),
+    max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
 
 /-- **The one-dimensional Kantorovich formula.** The Wasserstein distance at exponent one of two
 probability laws on `ℝ` is the area between their cumulative distribution functions. -/
@@ -133,9 +118,12 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
     wassersteinEDist 1 μ ν = ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ := by
   refine le_antisymm ?_ ?_
   · refine (wassersteinEDist_le_eLpNorm_quantile_sub 1 μ ν).trans_eq ?_
-    rw [eLpNorm_one_eq_lintegral_enorm]
+    have hq : AEStronglyMeasurable (fun t ↦ μ.quantile t - ν.quantile t)
+        (volume.restrict (Ioo (0 : ℝ) 1)) :=
+      ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
+    rw [eLpNorm_one_eq_lintegral_enorm hq]
     exact lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub μ ν
-  · rw [wassersteinEDist_one_eq_transportCost]
+  · rw [wassersteinEDist_one_eq_transportCost measurable_edist]
     refine le_transportCost fun π hπ ↦ ?_
     have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
     calc ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ
@@ -146,31 +134,6 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
             measurable_snd.aemeasurable).symm
       _ = ∫⁻ z, edist z.1 z.2 ∂π := by simp_rw [edist_eq_enorm_sub]
 
-/-- **The one-dimensional quantile formula.** The Wasserstein distance at exponent one of two
-probability laws on `ℝ` is the `L¹ (0, 1)` distance of their quantile functions. -/
-theorem wassersteinEDist_one_eq_eLpNorm_quantile_sub (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] :
-    wassersteinEDist 1 μ ν
-      = eLpNorm (fun t ↦ μ.quantile t - ν.quantile t) 1 (volume.restrict (Ioo (0 : ℝ) 1)) := by
-  rw [wassersteinEDist_one_eq_lintegral_enorm_cdf_sub, eLpNorm_one_eq_lintegral_enorm,
-    lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub]
-
 end RealLaws
 
 end TauCeti
-
-namespace MeasureTheory.Measure
-
-/-- **The monotone rearrangement is optimal.** The monotone coupling of two real laws minimizes
-the transport objective of the ground distance. -/
-theorem isOptimalCoupling_quantileCoupling (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] :
-    TauCeti.IsOptimalCoupling (fun z : ℝ × ℝ ↦ edist z.1 z.2) (μ.quantileCoupling ν) μ ν where
-  toIsCoupling := μ.isCoupling_quantileCoupling ν
-  lintegral_eq := by
-    rw [← TauCeti.wassersteinEDist_one_eq_transportCost,
-      TauCeti.wassersteinEDist_one_eq_eLpNorm_quantile_sub,
-      ← TauCeti.eLpNorm_edist_quantileCoupling 1 μ ν, eLpNorm_one_eq_lintegral_enorm]
-    exact lintegral_congr fun z ↦ by simp
-
-end MeasureTheory.Measure

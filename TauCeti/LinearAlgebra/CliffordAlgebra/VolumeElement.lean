@@ -84,10 +84,6 @@ the values `Q vᵢ` is a unit.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The odd-dimensional case": the centre of a Clifford algebra is the scalars in even
-  dimension and a rank-two algebra in odd dimension, whose two central idempotents split the odd
-  Clifford algebra into two matrix blocks.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §3.
 -/
@@ -102,14 +98,6 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 variable {Q : QuadraticForm R M}
 
 /-! ### Moving a vector across the volume element -/
-
-/-- Cancelling a repeated sign: `(-1) ^ (n + m) * (-1) ^ n = (-1) ^ m`, the bookkeeping that the
-two-sided computation of `prod_map_ι_append_cons_mul_ι` runs on. -/
-private theorem neg_one_pow_add_mul_neg_one_pow (n m : ℕ) :
-    ((-1 : R) ^ (n + m)) * (-1) ^ n = (-1) ^ m := by
-  rw [← pow_add]
-  have : n + m + n = m + 2 * n := by omega
-  rw [this, pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
 
 /-- **A vector orthogonal to every factor crosses the volume element at the cost of `(-1) ^ n`**,
 `n` the number of factors: each transposition with a factor contributes one sign. -/
@@ -148,7 +136,7 @@ private theorem prod_map_ι_append_cons_mul_ι {l₁ l₂ : List M} {a : M}
     simp only [List.map_append, List.map_cons, List.prod_append, List.prod_cons]
   -- Crossing `l₁` right-to-left costs the same sign, which is its own inverse.
   have hsq : ((-1 : R) ^ l₁.length) * (-1) ^ l₁.length = 1 := by
-    simpa using neg_one_pow_add_mul_neg_one_pow (R := R) l₁.length 0
+    simp [← mul_pow]
   calc ((l₁ ++ a :: l₂).map (ι Q)).prod * ι Q a
       = (l₁.map (ι Q)).prod * (ι Q a * ((l₂.map (ι Q)).prod * ι Q a)) := by
         rw [hmid]; simp only [mul_assoc]
@@ -157,7 +145,7 @@ private theorem prod_map_ι_append_cons_mul_ι {l₁ l₂ : List M} {a : M}
         rw [prod_map_ι_mul_ι_of_forall_isOrtho h₂, mul_smul_comm, mul_smul_comm]
     _ = ((-1 : R) ^ (l₁.length + l₂.length)) • ((((-1 : R) ^ l₁.length)
           • ((l₁.map (ι Q)).prod * ι Q a)) * (ι Q a * (l₂.map (ι Q)).prod)) := by
-        rw [smul_mul_assoc, smul_smul, neg_one_pow_add_mul_neg_one_pow]
+        rw [smul_mul_assoc, smul_smul, pow_add, mul_right_comm, hsq, one_mul]
         simp only [mul_assoc]
     _ = ((-1 : R) ^ (l₁.length + l₂.length))
           • (ι Q a * ((l₁ ++ a :: l₂).map (ι Q)).prod) := by
