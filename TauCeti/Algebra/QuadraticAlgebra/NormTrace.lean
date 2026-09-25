@@ -38,8 +38,13 @@ variable {R : Type*} [CommRing R] {a b : R}
 `z.re² + b z.re z.im - a z.im²`. -/
 @[simp]
 theorem algebraNorm_eq_norm (z : QuadraticAlgebra R a b) : Algebra.norm R z = z.norm := by
-  rw [Algebra.norm_apply, ← det_toLinearMap_eq_norm]
-  congr 1
+  have hmul : Algebra.lmul R (QuadraticAlgebra R a b) z =
+      DistribSMul.toLinearMap R (QuadraticAlgebra R a b) z := by
+    apply LinearMap.ext
+    intro x
+    simp only [Algebra.coe_lmul_eq_mul, DistribSMul.toLinearMap_apply,
+      LinearMap.mul_apply', smul_eq_mul]
+  rw [Algebra.norm_apply, hmul, det_toLinearMap_eq_norm]
 
 /-- The algebra trace of `QuadraticAlgebra R a b` over `R` is its explicit trace
 `2 z.re + b z.im`. -/

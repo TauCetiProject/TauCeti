@@ -12,7 +12,7 @@ import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
-import TauCeti.NumberTheory.LocalField.Squares
+import TauCeti.RingTheory.Finite.ArtinSchreier
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.RingTheory.Norm.Henselian
 
@@ -202,7 +202,8 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
     ∃ Δ : Kˣ, ¬IsSquare Δ ∧ (normalizedValuation K Δ).toAdd = 0 ∧
       ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
         Even (normalizedValuation K b).toAdd := by
-  obtain ⟨a, ha⟩ := exists_residue_not_sq_add_self (K := K)
+  obtain ⟨a, ha_range⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
+  have ha : ∀ t : 𝓀[K], t ^ 2 + t ≠ a := fun t ht => ha_range ⟨t, ht⟩
   obtain ⟨c, rfl⟩ := residue_surjective a
   -- `1 + 4c = -((1 - 2)² + (1 - 2) · 2 - c · 2²)` is a unit.
   have hΔ : IsUnit (1 + 4 * c) := by
