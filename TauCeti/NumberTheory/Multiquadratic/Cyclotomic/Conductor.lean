@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.QuadraticCharacter
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -24,18 +25,6 @@ public section
 open IntermediateField
 
 namespace TauCeti.Multiquadratic
-
-/-- `galEquivZMod` agrees with the `zeta_spec` power action: both record the exponent by which
-`σ` acts on the chosen primitive root, so they are compared through their action on it. -/
-private theorem galEquivZMod_eq_zeta_spec_autToPow (n : ℕ) [NeZero n]
-    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
-    (σ : Gal(K/ℚ)) :
-    IsCyclotomicExtension.Rat.galEquivZMod n K σ =
-      (IsCyclotomicExtension.zeta_spec n ℚ K).autToPow ℚ σ := by
-  have hζ := IsCyclotomicExtension.zeta_spec n ℚ K
-  have h := (IsCyclotomicExtension.Rat.galEquivZMod_apply_of_pow_eq n K σ hζ.pow_eq_one).symm.trans
-    (hζ.autToPow_spec ℚ σ).symm
-  exact Units.ext <| ZMod.val_injective n <| hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h
 
 /-- If a cyclotomic subfield of `ℚ(ζ_|D|)` at level `m ∣ |D|` contains `ℚ(√D)`, then
 `|D| ∣ m`; hence `m = |D|`. -/
@@ -68,7 +57,7 @@ theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic (D : ℤ)
         exact hσ
       simpa only [IntermediateField.fixingSubgroup_fixedField] using hfix
     have hval := (mem_fundamentalDiscriminantCharacterSubgroup_iff D hD σ).mp hker
-    rw [galEquivZMod_eq_zeta_spec_autToPow]
+    rw [TauCeti.IsCyclotomicExtension.Rat.galEquivZMod_eq_zeta_spec_autToPow]
     simpa only [MulChar.ringHomComp_apply, map_one] using
       congrArg (Int.castRingHom ℂ) hval
   have hbase : ℚ⟮fundamentalDiscriminantGaussSum D hD⟯ ≤ F := by
