@@ -37,7 +37,7 @@ variable [MeasurableSpace (_root_.PontryaginDual (Multiplicative G))]
 
 /-- Evaluation of a Pontryagin character is integrable against a finite measure. -/
 theorem integrable_eval_ofAdd
-    (μ : Measure (_root_.PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] (g : G) :
+    {μ : Measure (_root_.PontryaginDual (Multiplicative G))} [IsFiniteMeasure μ] (g : G) :
     Integrable (fun χ : _root_.PontryaginDual (Multiplicative G) =>
       (χ (Multiplicative.ofAdd g) : ℂ)) μ :=
   (integrable_const (1 : ℝ)).mono'
