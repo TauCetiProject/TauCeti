@@ -30,9 +30,10 @@ tail of `D` at `P`, measured at `σ`, has norm sum less than `1`, the local powe
 whole disk of radius `N(P) ^ (-σ)` into the slit plane, and `ℓ_P(s)` is then exactly
 `Complex.log` of the local factor for `Re(s) > σ`. Absolute convergence of the ideal-indexed series
 at `σ` makes those tails summable over `P`, so this holds for all but finitely many primes,
-uniformly on the half-plane. The principal logarithms of the local factors are summable, and each
-is bounded by `3 / 2` times the prime-power tail at `σ`; this gives both convergence of
-`∑ P, ℓ_P(s)` and the locally uniform bounds needed for holomorphy.
+uniformly on the half-plane. The principal logarithms of the local factors are summable. At
+primes whose tail is at most `1 / 2`, the local logarithm is bounded by `3 / 2` times that tail;
+the finitely many exceptional local logarithms are bounded on smaller half-planes by their
+absolutely convergent norm sums. These bounds give convergence of `∑ P, ℓ_P(s)` and holomorphy.
 
 The result is a holomorphic logarithm of the `L`-series on the whole half-plane `Re(s) > σ`, given
 by an explicit prime-power series, not merely chosen on a simply connected region. Its derivative is
@@ -46,7 +47,7 @@ inside the disk, and then its formal logarithm need not converge.
 ## Main results
 
 * `TauCeti.EulerProductData.tsum_coeff_localLogSeries_eq_log_eulerFactor`: a local prime-power
-  logarithm with a small tail is the principal logarithm of the local factor.
+  logarithm with a small tail converges to the principal logarithm of the local factor.
 * `TauCeti.EulerProductData.differentiableOn_tsum_coeff_localLogSeries_of_zeroFree`: each local
   prime-power logarithm is holomorphic on the half-plane of its zero-free disk.
 * `TauCeti.EulerProductData.summable_tsum_coeff_localLogSeries`: the local prime-power logarithms
@@ -78,8 +79,9 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **A local prime-power logarithm with a small tail is the principal logarithm.** Suppose the
 local series at `P` converges absolutely at the real point `σ`, and its prime-power tail there has
 norm sum less than `1`. Then for `Re(s) > σ` the evaluated formal logarithm of the local factor is
-`Complex.log` of the local factor. No zero-free hypothesis is needed: the small tail keeps the
-local power series in the slit plane on the whole disk of radius `N(P) ^ (-σ)`. -/
+`Complex.log` of the local factor, and the logarithm series converges. No zero-free hypothesis is
+needed: the small tail keeps the local power series in the slit plane on the whole disk of radius
+`N(P) ^ (-σ)`. -/
 theorem tsum_coeff_localLogSeries_eq_log_eulerFactor (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
     (hσ : Summable fun e : ℕ ↦
@@ -87,9 +89,11 @@ theorem tsum_coeff_localLogSeries_eq_log_eulerFactor (D : EulerProductData K)
     (hP : ∑' e : ℕ,
       ‖idealTerm K D.toIdealArithmeticFunction σ (P.primeIdealPow (e + 1))‖ < 1)
     (hs : σ < s.re) :
-    ∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
-        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e =
-      Complex.log (D.eulerFactor P s) := by
+    (Summable fun e : ℕ ↦ PowerSeries.coeff e (D.localLogSeries P) *
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) ∧
+      ∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
+          ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e =
+        Complex.log (D.eulerFactor P s) := by
   let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
   let a : ℕ → ℂ := fun e ↦ PowerSeries.coeff e (D.localPowerSeries P)
   have hterm (e : ℕ) : ‖a e‖ * ‖q‖ ^ e =
@@ -128,8 +132,10 @@ theorem tsum_coeff_localLogSeries_eq_log_eulerFactor (D : EulerProductData K)
     exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
   have h := PowerSeries.hasSum_coeff_logOf_mul_pow_of_slitPlane (D.localPowerSeries P)
     (D.constantCoeff_localPowerSeries P) hr hslit hx
-  rw [D.localLogSeries_def, h.tsum_eq]
-  simp only [D.coeff_localPowerSeries, D.localPowerSeries_eval_eq_eulerFactor]
+  constructor
+  · simpa only [D.localLogSeries_def] using h.summable
+  · rw [D.localLogSeries_def, h.tsum_eq]
+    simp only [D.coeff_localPowerSeries, D.localPowerSeries_eval_eq_eulerFactor]
 
 /-- **Each local prime-power logarithm is holomorphic.** If the local series at `P` converges
 absolutely at the real point `σ` and the local power series has no zero in the disk of radius
@@ -184,19 +190,17 @@ private theorem eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor (D : Eul
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e =
         Complex.log (D.eulerFactor P s) :=
   (D.eventually_tsum_norm_idealTerm_primeIdealPow_succ_lt hσ).mono fun P hP s hs ↦
-    D.tsum_coeff_localLogSeries_eq_log_eulerFactor P
-      (hσ.comp_injective P.primeIdealPow_injective) (hP.trans (by norm_num)) hs
+    (D.tsum_coeff_localLogSeries_eq_log_eulerFactor P
+      (hσ.comp_injective P.primeIdealPow_injective) (hP.trans (by norm_num)) hs).2
 
 /-- **The local prime-power logarithms are summable over the primes.** If the ideal-indexed series
-converges absolutely at the real point `σ` and every local power series is zero-free on the disk of
-radius `N(P) ^ (-σ)`, then for `Re(s) > σ` the evaluated formal logarithms of the local factors
-each converge, and form a summable family over the height-one primes. -/
+converges absolutely at the real point `σ` and the local logarithm series converge at `s`, then for
+`Re(s) > σ` their sums form a summable family over the height-one primes. -/
 theorem summable_tsum_coeff_localLogSeries (D : EulerProductData K) {σ : ℝ} {s : ℂ}
     (hσ : Summable (idealTerm K D.toIdealArithmeticFunction σ))
-    (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
-      ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
-        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
-          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
+    (hlocal : ∀ P : HeightOneSpectrum (𝓞 K), Summable fun e : ℕ ↦
+      PowerSeries.coeff e (D.localLogSeries P) *
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e)
     (hs : σ < s.re) :
     (∀ P : HeightOneSpectrum (𝓞 K), Summable fun e : ℕ ↦
       PowerSeries.coeff e (D.localLogSeries P) *
@@ -204,13 +208,11 @@ theorem summable_tsum_coeff_localLogSeries (D : EulerProductData K) {σ : ℝ} {
       Summable fun P : HeightOneSpectrum (𝓞 K) ↦
         ∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
-  refine ⟨fun P ↦ ?_, ?_⟩
-  · exact (D.summable_norm_coeff_localLogSeries_of_zeroFree P
-      (D.LSeriesSummable_localArithmeticFactor hσ P) (hne P) hs).of_norm
-  · exact (D.summable_log_eulerFactor
-      (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_cofinite <|
-      (D.eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor hσ).mono
-        fun _ hP ↦ (hP s hs).symm
+  refine ⟨hlocal, ?_⟩
+  exact (D.summable_log_eulerFactor
+    (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_cofinite <|
+    (D.eventually_tsum_coeff_localLogSeries_eq_log_eulerFactor hσ).mono
+      fun _ hP ↦ (hP s hs).symm
 
 /-- **The prime-power expansion of the logarithm.** Suppose the ideal-indexed series converges
 absolutely at the real point `σ` and every local power series is zero-free on the disk of radius
@@ -228,7 +230,9 @@ theorem exp_tsum_tsum_coeff_localLogSeries_eq_LSeries_of_zeroFree (D : EulerProd
         PowerSeries.coeff e (D.localLogSeries P) *
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) =
       LSeries (normCoeff K D.toIdealArithmeticFunction) s := by
-  have hprod := (D.summable_tsum_coeff_localLogSeries hσ hne hs).2.hasSum.cexp
+  have hlocal P := (D.summable_norm_coeff_localLogSeries_of_zeroFree P
+    (D.LSeriesSummable_localArithmeticFactor hσ P) (hne P) hs).of_norm
+  have hprod := (D.summable_tsum_coeff_localLogSeries hσ hlocal hs).2.hasSum.cexp
   refine hprod.unique ((D.hasProd_eulerFactor
     (summable_idealTerm_of_re_le_re K (by simpa using hs.le) hσ)).congr_fun fun P ↦ ?_)
   exact D.exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree P
@@ -249,7 +253,8 @@ private theorem norm_tsum_coeff_localLogSeries_le_of_tsum_norm_le (D : EulerProd
         ‖idealTerm K D.toIdealArithmeticFunction σ (P.primeIdealPow (e + 1))‖ := by
   have hdev := D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re hσ (z := s)
     (by simpa using hs.le)
-  rw [D.tsum_coeff_localLogSeries_eq_log_eulerFactor P hσ (hP.trans_lt (by norm_num)) hs,
+  rw [(D.tsum_coeff_localLogSeries_eq_log_eulerFactor P hσ
+    (hP.trans_lt (by norm_num)) hs).2,
     ← add_sub_cancel 1 (D.eulerFactor P s)]
   exact (Complex.norm_log_one_add_half_le_self (hdev.trans hP)).trans (by gcongr)
 
