@@ -268,7 +268,9 @@ theorem prodRepresentation_apply_mem_of_mem
   exact ⟨hM u hu v.1 hv.1, hN u hu v.2 hv.2⟩
 
 /-- A product representation preserves a product lattice if both factors preserve their
-respective lattices under every enveloping-algebra element. -/
+respective lattices under every enveloping-algebra element. This specializes
+`prodRepresentation_apply_mem_of_mem` to the full enveloping algebra, accepting the usual
+unrestricted stability hypotheses directly. -/
 theorem prodRepresentation_apply_mem
     (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
     (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ W)
