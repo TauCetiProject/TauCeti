@@ -83,13 +83,11 @@ theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
 /-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
 theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x‖ = min ‖x‖ r := by
-  rcases le_total ‖x‖ r with h | h
-  · rw [radialRetraction_of_norm_le h, min_eq_left h]
-  · rw [radialRetraction_of_le_norm h, norm_smul, Real.norm_eq_abs, min_eq_right h]
-    rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
-    · rw [← hx, mul_zero]
-      exact (le_antisymm (h.trans_eq hx.symm) hr).symm
-    · rw [abs_of_nonneg (by positivity), div_mul_cancel₀ _ hx.ne']
+  by_cases hx : x = 0
+  · simp [hx, hr]
+  rw [radialRetraction, norm_smul, Real.norm_of_nonneg (by positivity),
+    min_mul_of_nonneg _ _ (norm_nonneg x), one_mul,
+    div_mul_cancel₀ _ (norm_ne_zero_iff.2 hx)]
 
 theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
     radialRetraction r x ∈ closedBall (0 : E) r := by
@@ -97,6 +95,7 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
   exact min_le_right _ _
 
 /-- The radial retraction is idempotent for nonnegative radius. -/
+@[simp]
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
     radialRetraction r (radialRetraction r x) = radialRetraction r x :=
   radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 (radialRetraction_mem_closedBall hr x))
@@ -105,8 +104,8 @@ theorem mapsTo_radialRetraction (hr : 0 ≤ r) :
     MapsTo (radialRetraction (E := E) r) univ (closedBall 0 r) :=
   fun x _ ↦ radialRetraction_mem_closedBall hr x
 
-/-- The radial retraction moves the point of larger norm by at most twice the distance between the
-two points.  This is the asymmetric half of `TauCeti.lipschitzWith_radialRetraction`. -/
+/-- The radial retraction distorts distance by at most a factor of two when the points are
+ordered by norm. This is the asymmetric half of `TauCeti.lipschitzWith_radialRetraction`. -/
 private theorem norm_radialRetraction_sub_le (hr : 0 ≤ r) (hyx : ‖y‖ ≤ ‖x‖) :
     ‖radialRetraction r x - radialRetraction r y‖ ≤ 2 * ‖x - y‖ := by
   rcases le_total ‖x‖ r with hxr | hrx
@@ -114,9 +113,7 @@ private theorem norm_radialRetraction_sub_le (hr : 0 ≤ r) (hyx : ‖y‖ ≤ �
     linarith [norm_nonneg (x - y)]
   rcases eq_or_lt_of_le hr with hr0 | hr0
   · -- A ball of radius `0` collapses the whole space to the origin.
-    rw [radialRetraction_of_le_norm (hr0 ▸ norm_nonneg x),
-      radialRetraction_of_le_norm (hr0 ▸ norm_nonneg y), ← hr0]
-    simp [norm_nonneg]
+    simp [← hr0, radialRetraction, norm_nonneg]
   have hx0 : 0 < ‖x‖ := hr0.trans_le hrx
   rw [radialRetraction_of_le_norm hrx]
   have hxy : ‖x‖ - ‖y‖ ≤ ‖x - y‖ := norm_sub_norm_le x y
@@ -161,8 +158,7 @@ theorem lipschitzWith_radialRetraction (hr : 0 ≤ r) :
   rw [dist_eq_norm, dist_eq_norm, NNReal.coe_ofNat]
   rcases le_total ‖y‖ ‖x‖ with h | h
   · exact norm_radialRetraction_sub_le hr h
-  · rw [← norm_neg, neg_sub, ← norm_neg (x - y), neg_sub]
-    exact norm_radialRetraction_sub_le hr h
+  · simpa only [norm_sub_rev] using norm_radialRetraction_sub_le hr h
 
 end TauCeti
 
@@ -170,7 +166,7 @@ end TauCeti
 radius `r` into a globally Lipschitz map, at the cost of doubling the constant.  The new map still
 agrees with the old one on that ball, by `TauCeti.radialRetraction_of_norm_le`. -/
 theorem LipschitzOnWith.comp_radialRetraction {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [PseudoMetricSpace F] {f : E → F} {c : ℝ≥0} {r : ℝ}
+    [NormedSpace ℝ E] [PseudoEMetricSpace F] {f : E → F} {c : ℝ≥0} {r : ℝ}
     (hf : LipschitzOnWith c f (closedBall 0 r)) (hr : 0 ≤ r) :
     LipschitzWith (c * 2) (f ∘ TauCeti.radialRetraction r) :=
   lipschitzOnWith_univ.1 <| hf.comp
