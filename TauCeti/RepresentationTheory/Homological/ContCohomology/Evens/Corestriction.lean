@@ -21,9 +21,10 @@ Let `U` be an open subgroup of index two in a topological group `G`, choose `s �
 cochain.  The individual components are not cocycles, so the formula is necessarily an equality
 between the corestriction class and the class of their sum.
 
-The proof computes corestriction with the two-element transversal which sends the trivial coset
-to `1` and the other coset to `s`.  Independence of the transversal then identifies this formula
-with the canonical corestriction in the explicit inhomogeneous model.
+The proof computes corestriction on the two-element transversal `Subgroup.indexTwoTransversal`,
+using the transversal-word formulas `TauCeti.lWord_indexTwoTransversal_*` and the two-term coset
+sum `TauCeti.sum_quotient_eq_add_of_index_two`.  Independence of the transversal then identifies
+this formula with the canonical corestriction in the explicit inhomogeneous model.
 
 Everything here is stated in that explicit inhomogeneous model, because `explicitCor1` is the
 only degree-one corestriction the library has: neither pinned Mathlib nor Tau Ceti carries a
@@ -70,114 +71,26 @@ same name. -/
 local instance continuousSMul_trivialF2 : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
-open scoped Classical in
-private noncomputable def evensTransversal (U : Subgroup G) (s : G) : G ⧸ U → G :=
-  fun q => if q = QuotientGroup.mk 1 then 1 else s
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-private theorem quotient_eq_one_or_mk_of_index_two (U : Subgroup G) (s : G)
-    (hU : U.index = 2) (hs : s ∉ U) (q : G ⧸ U) :
-    q = QuotientGroup.mk 1 ∨ q = QuotientGroup.mk s := by
-  by_cases hq : q = QuotientGroup.mk 1
-  · exact Or.inl hq
-  · right
-    rw [← Quotient.out_eq' q]
-    apply QuotientGroup.eq.2
-    have hout : Quotient.out q ∉ U := by
-      intro hout
-      apply hq
-      rw [← Quotient.out_eq' q]
-      exact QuotientGroup.eq.2 (by simpa using hout)
-    exact (Subgroup.mul_mem_iff_of_index_two hU).2
-      (iff_of_false (mt U.inv_mem_iff.1 hout) hs)
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-private theorem evensTransversal_mk (U : Subgroup G) (s : G)
-    (hU : U.index = 2) (hs : s ∉ U) (q : G ⧸ U) :
-    QuotientGroup.mk (evensTransversal U s q) = q := by
-  rcases quotient_eq_one_or_mk_of_index_two U s hU hs q with hq | hq
-  · rw [evensTransversal, ite_eq_left hq]
-    exact hq.symm
-  · have hne : q ≠ QuotientGroup.mk 1 := by
-      intro h
-      apply hs
-      simpa using QuotientGroup.eq.1 (hq.symm.trans h)
-    rw [evensTransversal, ite_eq_right hne]
-    exact hq.symm
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-private theorem quotient_mk_ne_one (U : Subgroup G) {s : G} (hs : s ∉ U) :
-    (QuotientGroup.mk s : G ⧸ U) ≠ QuotientGroup.mk 1 := by
-  intro h
-  exact hs (by simpa using QuotientGroup.eq.1 h)
-
-open scoped Classical in
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-private theorem lWord_evensTransversal_one (U : Subgroup G) (s : G)
-    (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    lWord U (evensTransversal U s) (QuotientGroup.mk 1) γ =
-      if γ ∈ U then γ else γ * s := by
-  by_cases hγ : γ ∈ U
-  · have hcoset : γ⁻¹ • (QuotientGroup.mk 1 : G ⧸ U) = QuotientGroup.mk 1 := by
-      apply QuotientGroup.eq.2
-      simpa using hγ
-    rw [lWord_def, hcoset]
-    simp [evensTransversal, hγ]
-  · have hγs : γ * s ∈ U :=
-      (Subgroup.mul_mem_iff_of_index_two hU).2 (iff_of_false hγ hs)
-    have hcoset : γ⁻¹ • (QuotientGroup.mk 1 : G ⧸ U) = QuotientGroup.mk s := by
-      apply QuotientGroup.eq.2
-      simpa using hγs
-    rw [lWord_def, hcoset]
-    simp [evensTransversal, hγ, quotient_mk_ne_one U hs]
-
-open scoped Classical in
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-private theorem lWord_evensTransversal_mk (U : Subgroup G) (s : G)
-    (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    lWord U (evensTransversal U s) (QuotientGroup.mk s) γ =
-      if γ ∈ U then s⁻¹ * γ * s else s⁻¹ * γ := by
-  have hs1 := quotient_mk_ne_one U hs
-  by_cases hγ : γ ∈ U
-  · have hcoset : γ⁻¹ • (QuotientGroup.mk s : G ⧸ U) = QuotientGroup.mk s := by
-      apply QuotientGroup.eq.2
-      simpa [mul_assoc] using (Subgroup.normal_of_index_eq_two hU).conj_mem γ hγ s⁻¹
-    rw [lWord_def, hcoset]
-    simp [evensTransversal, hs1, hγ]
-  · have hcoset : γ⁻¹ • (QuotientGroup.mk s : G ⧸ U) = QuotientGroup.mk 1 := by
-      apply QuotientGroup.eq.2
-      have hsInv : s⁻¹ ∉ U := mt U.inv_mem_iff.1 hs
-      exact (by simpa using
-        (Subgroup.mul_mem_iff_of_index_two hU).2 (iff_of_false hsInv hγ))
-    rw [lWord_def, hcoset]
-    simp [evensTransversal, hs1, hγ]
-
 omit [IsTopologicalGroup G] in
-private theorem cochainsCor1_evensTransversal (U : OpenSubgroup G) (s : G)
+private theorem cochainsCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (s : G)
     (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hU : U.toSubgroup.index = 2)
     (hs : s ∉ U) (hα : Continuous α) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-    cochainsCor1 G (trivialF2 G).V U.toSubgroup (evensTransversal U.toSubgroup s)
-        (evensTransversal_mk U.toSubgroup s hU hs)
+    cochainsCor1 G (trivialF2 G).V U.toSubgroup (U.toSubgroup.indexTwoTransversal s)
+        (Subgroup.indexTwoTransversal_mk hU hs)
         (evensHomCocycleAmbient U.toSubgroup α hα : U.toSubgroup → (trivialF2 G).V) =
       fun γ => (trivialF2Equiv G).symm (evensCorCochain U.toSubgroup s α γ) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   let _ : Fintype (G ⧸ U.toSubgroup) := U.toSubgroup.fintypeQuotientOfFiniteIndex
   funext γ
-  rw [cochainsCor1_apply]
-  have hne := (quotient_mk_ne_one U.toSubgroup hs).symm
-  rw [Fintype.sum_eq_add (QuotientGroup.mk 1 : G ⧸ U.toSubgroup)
-    (QuotientGroup.mk s) hne (fun q hq => False.elim <|
-      (quotient_eq_one_or_mk_of_index_two U.toSubgroup s hU hs q).elim hq.1 hq.2)]
-  simp only [evensTransversal, ite_eq_right (quotient_mk_ne_one U.toSubgroup hs),
-    TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, coe_evensHomCocycleAmbient]
+  rw [cochainsCor1_apply, sum_quotient_eq_add_of_index_two hU hs]
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, coe_evensHomCocycleAmbient]
   apply (trivialF2Equiv G).injective
   simp only [map_add, AddEquiv.apply_symm_apply, evensCorCochain_apply]
   by_cases hγ : γ ∈ U
-  · simp_rw [lWord_evensTransversal_one U.toSubgroup s hU hs,
-      lWord_evensTransversal_mk U.toSubgroup s hU hs]
-    have hγ' : γ ∈ U.toSubgroup := hγ
-    simp_rw [ite_eq_left hγ']
+  · have hγ' : γ ∈ U.toSubgroup := hγ
+    simp_rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ',
+      lWord_indexTwoTransversal_mk_of_mem hU hs hγ']
     rw [evensB1_of_mem hγ, evensBs_apply]
     have hsγ : s⁻¹ * γ ∉ U := by
       intro h
@@ -187,10 +100,9 @@ private theorem cochainsCor1_evensTransversal (U : OpenSubgroup G) (s : G)
       by simpa only [inv_inv] using
         (Subgroup.normal_of_index_eq_two hU).conj_mem γ hγ s⁻¹
     rw [evensExtend_of_mem hγ, evensB1_of_notMem hsγ, evensExtend_of_mem hconj]
-  · simp_rw [lWord_evensTransversal_one U.toSubgroup s hU hs,
-      lWord_evensTransversal_mk U.toSubgroup s hU hs]
-    have hγ' : γ ∉ U.toSubgroup := hγ
-    simp_rw [ite_eq_right hγ']
+  · have hγ' : γ ∉ U.toSubgroup := hγ
+    simp_rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ',
+      lWord_indexTwoTransversal_mk_of_notMem hU hs hγ']
     rw [evensB1_of_notMem hγ, evensBs_apply]
     have hsγ : s⁻¹ * γ ∈ U :=
       (Subgroup.mul_mem_iff_of_index_two hU).2
@@ -237,11 +149,11 @@ theorem explicitCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (hU : U.toSubgr
       (evensCorCocycle U s α hU hs hα : H1 G (trivialF2 G).V) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   rw [explicitCor1_eq_transversal G (trivialF2 G).V U.toSubgroup
-    (evensTransversal U.toSubgroup s) (evensTransversal_mk U.toSubgroup s hU hs) U.isOpen']
+    (U.toSubgroup.indexTwoTransversal s) (Subgroup.indexTwoTransversal_mk hU hs) U.isOpen']
   rw [explicitCor1Transversal_mk]
   apply congrArg (fun z : Z1 G (trivialF2 G).V => (z : H1 G (trivialF2 G).V))
   apply Subtype.ext
-  rw [coe_cocyclesCor1, cochainsCor1_evensTransversal U s α hU hs hα]
+  rw [coe_cocyclesCor1, cochainsCor1_evensHomCocycleAmbient U s α hU hs hα]
   exact (coe_evensCorCocycle U s α hU hs hα).symm
 
 end Corestriction
