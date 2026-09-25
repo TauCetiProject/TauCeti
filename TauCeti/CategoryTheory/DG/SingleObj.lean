@@ -48,14 +48,6 @@ construction.
 * `TauCeti.DGSingleObj.dgHomEquiv_dgComp`: composition is multiplication in the reversed order,
   with the Koszul sign `(-1) ^ (p * q)`.
 
-## Implementation notes
-
-The category is built from Keller-ordered data through `TauCeti.DGCategoryData.ofKeller`, so the
-Leibniz rule, associativity and unit laws of the category are exactly those of multiplication.
-The lemmas about `TauCeti.DGSingleObj.homComplexData` are the simp normal forms reached through
-`TauCeti.DGCategoryData.dgComp_toDGCategory` and its siblings; the corresponding lemmas about
-`dgComp`, `dgId` and `dgDifferential` fire first, as `simp↓` lemmas.
-
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 1.
@@ -175,27 +167,29 @@ noncomputable def dgHomEquiv (X Y : DGSingleObj h) (n : ℤ) : DGHom R n X Y ≃
 
 /-- The differential of the explicit Hom-complex data is the differential of the algebra. -/
 @[simp]
-theorem homComplexData_d_apply {X Y : DGSingleObj h} (n : ℤ) (f : DGHom R n X Y) :
+private theorem homComplexData_d_apply {X Y : DGSingleObj h} (n : ℤ) (f : DGHom R n X Y) :
     (dgHomEquiv X Y (n + 1) ((((homComplexData h).hom X Y).d n (n + 1)).hom f) : A) =
       d (dgHomEquiv X Y n f) :=
   homComplexXEquiv_d h n f
 
 /-- The identity of the explicit Hom-complex data is the unit of the algebra. -/
 @[simp]
-theorem homComplexData_id (X : DGSingleObj h) :
+private theorem homComplexData_id (X : DGSingleObj h) :
     (dgHomEquiv X X 0 ((homComplexData h).id X) : A) = 1 :=
   homComplexXEquiv_one h
 
 /-- The composition of the explicit Hom-complex data is multiplication in the reversed order,
 with the Koszul sign `(-1) ^ (p * q)`. -/
 @[simp]
-theorem homComplexData_comp {X Y Z : DGSingleObj h} {p q n : ℤ} (hpq : p + q = n)
+private theorem homComplexData_comp {X Y Z : DGSingleObj h} {p q n : ℤ} (hpq : p + q = n)
     (f : DGHom R p X Y) (g : DGHom R q Y Z) :
     (dgHomEquiv X Z n ((homComplexData h).comp p q n hpq f g) : A) =
-      (p * q).negOnePow • (dgHomEquiv Y Z q g * dgHomEquiv X Y p f) :=
-  -- The enriched-order composition of Keller-ordered data is signed Keller composition, by
-  -- `DGCategoryData.ofKeller_comp`.
-  (congrArg Subtype.val (map_zsmul_unit (homComplexXEquiv h n) _
+      (p * q).negOnePow • (dgHomEquiv Y Z q g * dgHomEquiv X Y p f) := by
+  have hcomp : (homComplexData h).comp p q n hpq f g =
+      (p * q).negOnePow • kellerComp h q p n (by omega) g f := by
+    rfl
+  rw [hcomp]
+  exact (congrArg Subtype.val (map_zsmul_unit (homComplexXEquiv h n) _
     (kellerComp h q p n (by omega) g f))).trans
       (congrArg _ (homComplexXEquiv_kellerComp h q p n _ g f))
 
@@ -203,8 +197,9 @@ theorem homComplexData_comp {X Y Z : DGSingleObj h} {p q n : ℤ} (hpq : p + q =
 algebra. -/
 @[simp↓]
 theorem dgHomEquiv_dgDifferential {X Y : DGSingleObj h} (n : ℤ) (f : DGHom R n X Y) :
-    (dgHomEquiv X Y (n + 1) (dgDifferential R n f) : A) = d (dgHomEquiv X Y n f) :=
-  homComplexData_d_apply n f
+    (dgHomEquiv X Y (n + 1) (dgDifferential R n f) : A) = d (dgHomEquiv X Y n f) := by
+  rw [(homComplexData h).dgDifferential_toDGCategory n f]
+  exact homComplexData_d_apply n f
 
 /-- The identity of the one-object differential graded category is the unit of the algebra. -/
 @[simp↓]
