@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.Basic.Finite.Defs
 
 /-!
 # Edge maps for wide subquivers
@@ -36,6 +37,10 @@ namespace TauCeti.WideSubquiver
 
 variable {V : Type u} [Quiver.{v, u} V]
 
+/-- A wide subquiver has the same finite vertex type as its ambient quiver. -/
+instance instFinite [Finite V] (H : _root_.WideSubquiver V) : Finite H :=
+  Finite.of_equiv V (Equiv.refl V)
+
 /-- Total arrows of a wide subquiver are equivalent to its set of ambient total arrows. -/
 def totalEquivSet (H : _root_.WideSubquiver V) :
     Quiver.Total H ≃ {e : Quiver.Total V // e ∈ wideSubquiverEquivSetTotal H} where
@@ -57,11 +62,10 @@ def totalEquivSet (H : _root_.WideSubquiver V) :
 
 /-- Forget the orientation tag of an edge in a symmetrified wide subquiver. -/
 def totalWideSubquiverSymmetrify (T : _root_.WideSubquiver (Quiver.Symmetrify V))
-    (e : Quiver.Total T) : Quiver.Total (Quiver.wideSubquiverSymmetrify T) := by
-  rcases e with ⟨a, b, ⟨f, hf⟩⟩
-  cases f using Sum.casesOn with
-  | inl f => exact ⟨a, b, ⟨f, Or.inl hf⟩⟩
-  | inr f => exact ⟨b, a, ⟨f, Or.inr hf⟩⟩
+    (e : Quiver.Total T) : Quiver.Total (Quiver.wideSubquiverSymmetrify T) :=
+  match e with
+  | ⟨a, b, ⟨Sum.inl f, hf⟩⟩ => ⟨a, b, ⟨f, Or.inl hf⟩⟩
+  | ⟨a, b, ⟨Sum.inr f, hf⟩⟩ => ⟨b, a, ⟨f, Or.inr hf⟩⟩
 
 /-- An arrow belongs to the symmetrification exactly when either orientation belongs to `T`. -/
 @[simp] theorem mem_wideSubquiverSymmetrify_iff (T : _root_.WideSubquiver (Quiver.Symmetrify V))
@@ -74,13 +78,13 @@ def totalWideSubquiverSymmetrify (T : _root_.WideSubquiver (Quiver.Symmetrify V)
     (T : _root_.WideSubquiver (Quiver.Symmetrify V))
     {a b : V} (e : @Quiver.Hom V _ a b) (he : Sum.inl e ∈ T a b) :
     totalWideSubquiverSymmetrify T ⟨a, b, ⟨Sum.inl e, he⟩⟩ = ⟨a, b, ⟨e, Or.inl he⟩⟩ := by
-  simp [totalWideSubquiverSymmetrify]
+  rfl
 
 /-- The forward map reverses an edge tagged with the reverse orientation. -/
 @[simp] theorem totalWideSubquiverSymmetrify_apply_inr
     (T : _root_.WideSubquiver (Quiver.Symmetrify V))
     {a b : V} (e : @Quiver.Hom V _ b a) (he : Sum.inr e ∈ T a b) :
     totalWideSubquiverSymmetrify T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := by
-  simp [totalWideSubquiverSymmetrify]
+  rfl
 
 end TauCeti.WideSubquiver

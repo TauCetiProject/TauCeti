@@ -6,6 +6,7 @@ Authors: David Wärn, The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
+public import TauCeti.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.Combinatorics.Quiver.Arborescence
 public import TauCeti.Combinatorics.Quiver.WideSubquiver
 
@@ -43,18 +44,6 @@ public section
 universe u
 
 namespace TauCeti
-
-namespace FreeGroupBasis
-
-/-- Mathlib does not expose the generator computation for `ofUniqueLift`; keep its single
-necessary unfold behind this private bridge. -/
-private theorem ofUniqueLift_apply {G : Type u} [Group G] (X : Type u) (of : X → G)
-    (h : ∀ {H : Type u} [Group H] (f : X → H), ∃! F : G →* H, ∀ a, F (of a) = f a)
-    (x : X) : FreeGroupBasis.ofUniqueLift X of h x = of x := by
-  change FreeGroup.lift of (FreeGroup.of x) = _
-  exact FreeGroup.lift_apply_of
-
-end FreeGroupBasis
 
 namespace WideSubquiver
 
