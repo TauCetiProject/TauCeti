@@ -98,6 +98,7 @@ def normPow (s : ℂ) : HeckeCharacter K where
 theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ((normPow K s c : ℂˣ) : ℂ) = (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ s :=
   by
+    -- Expose the monoid homomorphism stored in the continuous homomorphism.
     change ((normPowAux s).toHomUnits c : ℂ) = normPowAux s c
     exact MonoidHom.coe_toHomUnits (normPowAux s) c
 
@@ -136,9 +137,11 @@ private lemma coe_diagonalIdele (t : ℝ) :
         (algebraMap ℝ (mixedSpace K) (Real.exp t)), 1) :=
   by
     unfold diagonalIdele
+    -- An idele is a unit of the adele product; expose that product to simplify `Units.map`.
     change ((Units.map _ _ : (InfiniteAdeleRing K × FiniteAdeleRing (𝓞 K) K)ˣ) :
       InfiniteAdeleRing K × FiniteAdeleRing (𝓞 K) K) = _
     simp only [Units.coe_map, MonoidHom.comp_apply, MonoidHom.inl_apply, Units.val_mk0]
+    -- The remaining coercion of the mixed-space ring equivalence is definitional.
     rfl
 
 private lemma diagonalIdele_add (t u : ℝ) :
@@ -226,6 +229,7 @@ def shift (χ : HeckeCharacter K) : ℝ :=
   (exists_norm_apply_eq_rpow χ).choose
 
 /-- **The absolute value of a Hecke character is the shift-th power of the idele class norm.** -/
+@[simp]
 theorem norm_apply_eq_rpow_shift (χ : HeckeCharacter K) (c : IdeleClassGroup (𝓞 K) K) :
     ‖(χ c : ℂ)‖ = ((ideleClassNorm c : ℝ≥0) : ℝ) ^ χ.shift :=
   (exists_norm_apply_eq_rpow χ).choose_spec c
