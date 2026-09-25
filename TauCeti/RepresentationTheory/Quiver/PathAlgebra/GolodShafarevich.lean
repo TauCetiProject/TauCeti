@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Order.BigOperators.WeightedGrowth
-public import TauCeti.Combinatorics.Quiver.BoundedPaths
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 
