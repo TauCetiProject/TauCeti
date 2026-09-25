@@ -155,7 +155,7 @@ theorem quasiIso_stabilizeXMap [QuasiIso (G.stabilizeXOffCenterToCenterHom s R)]
 evaluation `V_{s.castSucc} ↦ V_s` of the polynomial extension of `GC⁻(G)`. Here
 `homotopyCofiber.inr _ ≫ (unblockedComplexStabilizeXIsoHomotopyCofiber G s R).inv` is the
 inclusion of the off-center complex into `GC⁻(G')`. -/
-theorem map_offCenterInclusion_comp_stabilizeXMap :
+@[simp] theorem map_offCenterInclusion_comp_stabilizeXMap :
     ((ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
         _).map (homotopyCofiber.inr (G.stabilizeXConnectingHom s R) ≫
@@ -171,7 +171,7 @@ theorem map_offCenterInclusion_comp_stabilizeXMap :
 
 /-- On center states, `stabilizeXMap` vanishes. The first factor includes the center summand
 of the cone into `GC⁻(G')`, with scalars restricted to `A`. -/
-theorem map_centerInclusion_comp_stabilizeXMap :
+@[simp] theorem map_centerInclusion_comp_stabilizeXMap :
     (ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         (homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () ()

@@ -314,7 +314,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
   simp
 
 /-- Evaluation from the center cone kills its shifted summand. -/
-theorem map_inlX_comp_stabilizeXCenterConeHomotopyEquiv_hom :
+@[simp] theorem map_inlX_comp_stabilizeXCenterConeHomotopyEquiv_hom :
     (ModuleCat.restrictScalars
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         (homotopyCofiber.inlX
