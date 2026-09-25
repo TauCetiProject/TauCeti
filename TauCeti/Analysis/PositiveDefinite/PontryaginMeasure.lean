@@ -35,7 +35,7 @@ private theorem continuous_character_eval (g : G) :
 
 variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
 
-/-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
+/-- The Fourier–Stieltjes transform of a measure on the Pontryagin dual of an
 additive group. -/
 noncomputable def pontryaginMeasureTransform
     (μ : Measure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
@@ -44,7 +44,7 @@ noncomputable def pontryaginMeasureTransform
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]
 theorem pontryaginMeasureTransform_zero
-    (μ : Measure (PontryaginDual (Multiplicative G))) [IsFiniteMeasure μ] :
+    (μ : Measure (PontryaginDual (Multiplicative G))) :
     pontryaginMeasureTransform μ 0 = (μ.real Set.univ : ℂ) := by
   simp [pontryaginMeasureTransform]
 
