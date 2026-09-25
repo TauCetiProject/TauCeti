@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Binomial
-public import TauCeti.Algebra.Ring.Commutator
+import TauCeti.Algebra.Ring.Commutator
 
 /-!
 # Polynomial evaluation across a semiconjugacy relation

@@ -36,6 +36,7 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
   additive shift commuting with the element being powered.
 * `TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq`: the mirrored orientation,
   moving an element across a power standing to its left.
+* `TauCeti.Associative.pow_mul_eq_add_nsmul_mul_pow`: the mirrored shifted-factor form.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq`: a commutator commuting with both of its
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
@@ -45,35 +46,6 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 public section
 
 namespace TauCeti.Associative
-
-variable {A : Type*} [Ring A] {x y : A} {c : ℤ}
-
-/-- If `y` has integer eigenvalue `c` for commutation with `x`, then moving `x` past `yⁿ`
-adds `n * c` copies of `yⁿ`. -/
-theorem mul_pow_eq_pow_mul_add_zsmul (hxy : x * y - y * x = c • y) (n : ℕ) :
-    x * y ^ n = y ^ n * x + ((n : ℤ) * c) • y ^ n := by
-  have hy : x * y = y * x + c • y := by
-    rw [← hxy]
-    abel
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    calc x * y ^ (n + 1) = x * y ^ n * y := by rw [pow_succ, ← mul_assoc]
-      _ = (y ^ n * x + ((n : ℤ) * c) • y ^ n) * y := by rw [ih]
-      _ = y ^ n * (x * y) + ((n : ℤ) * c) • y ^ (n + 1) := by
-          rw [add_mul, mul_assoc, smul_mul_assoc, ← pow_succ]
-      _ = y ^ n * (y * x + c • y) + ((n : ℤ) * c) • y ^ (n + 1) := by rw [hy]
-      _ = y ^ (n + 1) * x + (c + (n : ℤ) * c) • y ^ (n + 1) := by
-          rw [mul_add, ← mul_assoc, ← pow_succ, mul_smul_comm, ← pow_succ, add_assoc, ← add_smul]
-      _ = y ^ (n + 1) * x + (((n + 1 : ℕ) : ℤ) * c) • y ^ (n + 1) := by
-          push_cast
-          ring_nf
-
-/-- The shifted-factor form of `mul_pow_eq_pow_mul_add_zsmul`. -/
-theorem mul_pow_eq_pow_mul_add_intCast (hxy : x * y - y * x = c • y) (n : ℕ) :
-    x * y ^ n = y ^ n * (x + (c : A) * (n : A)) := by
-  rw [mul_pow_eq_pow_mul_add_zsmul hxy, zsmul_eq_mul', mul_add, Int.cast_mul,
-    Int.cast_natCast, (Nat.cast_commute n (c : A)).eq]
 
 section PowerCommutator
 
@@ -136,7 +108,43 @@ theorem pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq {x y z : A}
     MulOpposite.unop_op, MulOpposite.unop_smul] at h
   rwa [← (hxz.pow_left (n - 1)).eq] at h
 
+/-- Moving an element past a power standing to its left accumulates the additive shift,
+provided that shift commutes with the element being powered. -/
+theorem pow_mul_eq_add_nsmul_mul_pow {a x c : A} (h : x * a = (a + c) * x)
+    (hc : Commute c x) (n : ℕ) :
+    x ^ n * a = (a + n • c) * x ^ n := by
+  cases n with
+  | zero => simp
+  | succ n =>
+      have hxa : x * a = a * x + c * x := by simpa only [add_mul] using h
+      rw [pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq hxa
+        (hc.symm.mul_right (Commute.refl x)), Nat.add_sub_cancel, add_mul,
+        smul_mul_assoc, ← mul_assoc, (hc.symm.pow_left n).eq, mul_assoc, ← pow_succ]
+
 end PowerCommutator
+
+section IntegerShift
+
+variable {A : Type*} [Ring A] {x y : A} {c : ℤ}
+
+/-- Moving an element past a power of an integer-eigenvector for its commutator shifts
+that element by the eigenvalue times the exponent. -/
+theorem mul_pow_eq_pow_mul_add_intCast (hxy : x * y - y * x = c • y) (n : ℕ) :
+    x * y ^ n = y ^ n * (x + (c : A) * (n : A)) := by
+  have h : x * y = y * (x + (c : A)) := by
+    rw [mul_add, ← zsmul_eq_mul', ← hxy]
+    abel
+  simpa only [nsmul_eq_mul'] using
+    mul_pow_eq_pow_mul_add_nsmul h (Int.cast_commute c y) n
+
+/-- If `y` has integer eigenvalue `c` for commutation with `x`, then moving `x` past `yⁿ`
+adds `n * c` copies of `yⁿ`. -/
+theorem mul_pow_eq_pow_mul_add_zsmul (hxy : x * y - y * x = c • y) (n : ℕ) :
+    x * y ^ n = y ^ n * x + ((n : ℤ) * c) • y ^ n := by
+  rw [mul_pow_eq_pow_mul_add_intCast hxy, zsmul_eq_mul', mul_add, Int.cast_mul,
+    Int.cast_natCast, (Nat.cast_commute n (c : A)).eq]
+
+end IntegerShift
 
 section CentralCommutator
 
