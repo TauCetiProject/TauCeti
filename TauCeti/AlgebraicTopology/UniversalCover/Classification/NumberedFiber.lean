@@ -153,12 +153,16 @@ private theorem coe_fiberEquiv_apply {p q : ConnectedCoveringSpace X} (f : p ≅
     (e : ⇑p.proj ⁻¹' {x}) : (fiberEquiv f e : (q : TopCat)) = f.hom.hom.left e.1 :=
   rfl
 
+/- The following three `change` steps expose the total-space map inside the cover-category
+wrappers. `coe_fiberEquiv_apply` removes the fibre-map wrapper first; the identity and composition
+laws then apply to the underlying cover morphisms. -/
 private theorem fiberEquiv_refl (p : ConnectedCoveringSpace X) :
     fiberEquiv (x := x) (Iso.refl p) = Equiv.refl _ := by
   apply Equiv.ext
   intro e
   apply Subtype.ext
   rw [coe_fiberEquiv_apply]
+  -- The identity cover morphism acts as the identity on its total space.
   change (Iso.refl p).hom.hom.left e.1 = e.1
   simp
 
@@ -170,6 +174,7 @@ private theorem fiberEquiv_symm {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
   rw [Equiv.apply_symm_apply]
   apply Subtype.ext
   rw [coe_fiberEquiv_apply, coe_fiberEquiv_apply]
+  -- The composite of inverse cover morphisms is the identity morphism.
   change (f.inv ≫ f.hom).hom.left e.1 = e.1
   rw [f.inv_hom_id]
   rfl
@@ -181,6 +186,7 @@ private theorem fiberEquiv_trans {p q r : ConnectedCoveringSpace X} (f : p ≅ q
   apply Subtype.ext
   rw [coe_fiberEquiv_apply, Equiv.trans_apply, coe_fiberEquiv_apply,
     coe_fiberEquiv_apply]
+  -- Composition in the cover category composes the underlying total-space maps.
   change (f.hom ≫ g.hom).hom.left e.1 = g.hom.hom.left (f.hom.hom.left e.1)
   rfl
 
