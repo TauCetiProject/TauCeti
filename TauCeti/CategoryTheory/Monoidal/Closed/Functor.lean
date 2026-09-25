@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import TauCeti.CategoryTheory.Adjunction.Mates
 public import TauCeti.CategoryTheory.Monoidal.Functor
+-- Non-public: the mate through the identity adjunctions and the invertibility of precomposing an
+-- internal Hom with an isomorphism are used only inside the proofs of the declarations below.
+import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
 # Internal Hom comparison for monoidal functors
@@ -192,20 +196,6 @@ theorem ihomComparison_isIso_of_tensor_comparison
     exact hγ
   simpa only [α, Functor.comp_obj] using hα
 
-/-- The mate through the two identity adjunctions is the original two-square. -/
-private theorem mateEquiv_adjunction_id {C : Type u₁} {D : Type u₂}
-    [Category.{v₁} C] [Category.{v₂} D]
-    {G H : C ⥤ D} (α : TwoSquare G (𝟭 C) (𝟭 D) H) :
-    mateEquiv (Adjunction.id : (𝟭 C) ⊣ (𝟭 C))
-      (Adjunction.id : (𝟭 D) ⊣ (𝟭 D)) α = α := by
-  ext X
-  rw [mateEquiv_apply]
-  simp only [comp_obj, id_obj, NatTrans.comp_app,
-    Functor.id_obj, Functor.id_map, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-    rightUnitor_inv_app, associator_hom_app, associator_inv_app, leftUnitor_hom_app,
-    Adjunction.id_unit, Adjunction.id_counit, Category.comp_id, Category.id_comp,
-    Functor.comp_map, Functor.map_id, NatTrans.id_app]
-
 /-- A strong monoidal functor preserves the internal-Hom comparison at the tensor unit. -/
 theorem ihomComparison_unit_isIso (F : C ⥤ D) [F.Monoidal]
     [Closed (𝟙_ C)] [Closed (F.obj (𝟙_ C))] :
@@ -321,22 +311,9 @@ theorem ihomComparison_isIso_of_iso
     (hA' : IsIso (F.ihomComparison A').natTrans)
     (e : A ≅ A') :
     IsIso (F.ihomComparison A).natTrans := by
-  have hpre : IsIso (MonoidalClosed.pre e.hom) := by
-    have hα : IsIso ((tensoringLeft C).map e.hom) := by
-      rw [NatTrans.isIso_iff_isIso_app]
-      intro Z
-      exact MonoidalCategory.whiskerRight_isIso e.hom Z
-    unfold MonoidalClosed.pre
-    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
-      ((tensoringLeft C).map e.hom) hα
-  have hpreF : IsIso (MonoidalClosed.pre (F.map e.hom)) := by
-    have hα : IsIso ((tensoringLeft D).map (F.map e.hom)) := by
-      rw [NatTrans.isIso_iff_isIso_app]
-      intro Z
-      exact MonoidalCategory.whiskerRight_isIso (F.map e.hom) Z
-    unfold MonoidalClosed.pre
-    exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
-      ((tensoringLeft D).map (F.map e.hom)) hα
+  have hpre : IsIso (MonoidalClosed.pre e.hom) := MonoidalClosed.pre_isIso e
+  have hpreF : IsIso (MonoidalClosed.pre (F.map e.hom)) :=
+    MonoidalClosed.pre_isIso (F.mapIso e)
   -- Naturality in the source transports invertibility from `A'` to `A` across `e`.
   have hnat := ihomComparison_whiskerLeft (F := F) (A := A') (A' := A) e.hom
   have hL : IsIso ((F.ihomComparison A').whiskerBottom
