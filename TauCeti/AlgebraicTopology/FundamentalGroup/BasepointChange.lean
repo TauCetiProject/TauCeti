@@ -128,28 +128,32 @@ lemma _root_.FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_pat
   simp [Iso.conj_apply, Category.assoc]
 
 /-- The conjugacy class of `g` transported from `x₀` to `x₁`, independent of the chosen path. -/
-noncomputable def conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+noncomputable def _root_.FundamentalGroup.conjClassAt
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
     (x₀ x₁ : X) (g : _root_.FundamentalGroup X x₀) :
     ConjClasses (_root_.FundamentalGroup X x₁) :=
   ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁ g)
 
 /-- Any path from `x₀` to `x₁` realizes the path-independent conjugacy class of `g`. -/
-theorem mk_transport_eq_conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+theorem _root_.FundamentalGroup.mk_transport_eq_conjClassAt
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
     {x₀ x₁ : X} (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
     ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
-      conjClassAt x₀ x₁ g := by
-  rw [conjClassAt, ConjClasses.mk_eq_mk_iff_isConj]
+      _root_.FundamentalGroup.conjClassAt x₀ x₁ g := by
+  rw [_root_.FundamentalGroup.conjClassAt, ConjClasses.mk_eq_mk_iff_isConj]
   exact _root_.FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_paths
     γ (PathConnectedSpace.somePath x₀ x₁) g
 
 /-- Transporting a path-independent class along another path gives the class at its endpoint. -/
-theorem map_conjClassAt {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
+theorem _root_.FundamentalGroup.map_conjClassAt
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
     {x₀ x₁ x₂ : X} (δ : Path x₁ x₂) (g : _root_.FundamentalGroup X x₀) :
     ConjClasses.map (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ).toMonoidHom
-      (conjClassAt x₀ x₁ g) = conjClassAt x₀ x₂ g := by
+      (_root_.FundamentalGroup.conjClassAt x₀ x₁ g) =
+        _root_.FundamentalGroup.conjClassAt x₀ x₂ g := by
   let γ : Path x₀ x₁ := PathConnectedSpace.somePath x₀ x₁
-  rw [← mk_transport_eq_conjClassAt γ g, ConjClasses.map_mk,
-    ← mk_transport_eq_conjClassAt (γ.trans δ) g]
+  rw [← _root_.FundamentalGroup.mk_transport_eq_conjClassAt γ g, ConjClasses.map_mk,
+    ← _root_.FundamentalGroup.mk_transport_eq_conjClassAt (γ.trans δ) g]
   let αγ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
     (Groupoid.isoEquivHom _ _).symm ⟦γ⟧
   let αδ : FundamentalGroupoid.mk x₁ ≅ FundamentalGroupoid.mk x₂ :=
