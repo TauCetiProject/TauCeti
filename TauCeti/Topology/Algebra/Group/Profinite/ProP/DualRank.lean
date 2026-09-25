@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Topology.Algebra.Group.Profinite.DualRank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.Module.ZMod.Exponent
 
 /-!
@@ -22,10 +22,8 @@ quotient itself, is the correct object, because at infinite rank the Frattini qu
 vector space of much larger dimension than the rank — a countable product of copies of `ℤ/p` has
 rank `ℵ₀` and Frattini quotient of dimension `2 ^ ℵ₀`.
 
-One inequality holds for every profinite group: a continuous character is trivial on all but
-finitely many members of a generating set converging to `1`, and a character is determined by its
-values on such a set, so restriction embeds the dual in the finitely supported `𝔽_p`-valued
-functions on the set.
+One inequality holds for every profinite group and is proved without any pro-`p` hypothesis, as
+`TauCeti.rank_continuousZModDual_le_topologicalGeneratorRank`.
 
 The other inequality is the dual-basis construction, and it is where compactness and the
 elementary abelian hypothesis enter. Over the Frattini quotient `W`, the common kernel of a basis
@@ -40,14 +38,10 @@ quotient converging to `1` lifts to `G`, which is
 
 ## Main results
 
-* `TauCeti.rank_continuousZModDual_le_topologicalGeneratorRank`: the dimension of the continuous
-  `𝔽_p`-dual of a profinite group is at most its topological generator rank.
 * `TauCeti.topologicalGeneratorRank_le_rank_continuousZModDual`: for a profinite `𝔽_p`-vector group
-  the reverse inequality holds.
+  the dimension of the continuous `𝔽_p`-dual bounds the topological generator rank from above.
 * `TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`: **Burnside's basis theorem,
   cardinal form** — the two agree for a profinite pro-`p` group.
-* `TauCeti.finite_continuousZModDual`: the dual of a topologically finitely generated topological
-  group is finite-dimensional, again with no pro-`p` hypothesis and with no compactness.
 * `TauCeti.IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat`: the natural-number
   form of the theorem, for a topologically finitely generated pro-`p` group.
 
@@ -66,76 +60,6 @@ open scoped Cardinal
 universe u
 
 variable {p : ℕ}
-
-/-! ### The dual is no larger than a generating set -/
-
-section Restrict
-
-variable [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- **A generating set converging to `1` bounds the dimension of the continuous `𝔽_p`-dual.**
-Restriction to the set is injective because a character with open kernel is determined by its
-values on a topological generating set, and it lands in the finitely supported functions because
-the kernel of a continuous character is an open neighbourhood of `1`. -/
-theorem rank_continuousZModDual_le_of_convergesToOne {s : Set G} (hs : ConvergesToOne s)
-    (hgen : (Subgroup.closure s).topologicalClosure = ⊤) :
-    Module.rank (ZMod p) (continuousZModDual p G) ≤ #(s : Set G) := by
-  classical
-  have hopen (x : continuousZModDual p G) :
-      IsOpen (((Additive.toMul x).ker : Subgroup G) : Set G) :=
-    (MonoidHom.continuous_iff_isOpen_ker _).mp (Additive.toMul x).continuous
-  have hsupp (x : continuousZModDual p G) :
-      (Function.support fun y : s ↦ Multiplicative.toAdd (Additive.toMul x (y : G))).Finite := by
-    refine ((convergesToOne_iff.mp hs _
-      ((hopen x).mem_nhds (Subgroup.one_mem _))).preimage
-        Subtype.val_injective.injOn).subset fun y hy ↦ ?_
-    exact ⟨y.2, fun hmem ↦ hy (by simpa [MonoidHom.mem_ker] using hmem)⟩
-  let R : continuousZModDual p G →ₗ[ZMod p] (s →₀ ZMod p) :=
-    AddMonoidHom.toZModLinearMap p
-      { toFun := fun x ↦ Finsupp.ofSupportFinite _ (hsupp x)
-        map_zero' := Finsupp.ext fun z ↦ by
-          simp [Finsupp.ofSupportFinite_coe]
-        map_add' := fun x y ↦ Finsupp.ext fun z ↦ by
-          simp [Finsupp.ofSupportFinite_coe, toMul_add] }
-  have hRapply (x : continuousZModDual p G) (y : s) :
-      R x y = Multiplicative.toAdd (Additive.toMul x (y : G)) :=
-    congrFun Finsupp.ofSupportFinite_coe y
-  have hinj : Function.Injective R := fun x y hxy ↦ by
-    apply Additive.toMul.injective
-    have heq : ((Additive.toMul x : G →ₜ* Multiplicative (ZMod p)) : G →* Multiplicative (ZMod p))
-        = ((Additive.toMul y : G →ₜ* Multiplicative (ZMod p)) : G →* Multiplicative (ZMod p)) :=
-      MonoidHom.eq_of_eqOn_of_isOpen_ker hgen (hopen x) (hopen y) fun w hw ↦ by
-        have h₁ := hRapply x ⟨w, hw⟩
-        have h₂ := hRapply y ⟨w, hw⟩
-        rw [hxy] at h₁
-        exact Multiplicative.toAdd.injective (h₁.symm.trans h₂)
-    ext z
-    exact DFunLike.congr_fun heq z
-  calc
-    Module.rank (ZMod p) (continuousZModDual p G) ≤ Module.rank (ZMod p) (s →₀ ZMod p) :=
-      R.rank_le_of_injective hinj
-    _ = #(s : Set G) := by rw [rank_finsupp_self]; simp
-
-/-- **The dimension of the continuous `𝔽_p`-dual of a profinite group is at most its topological
-generator rank.** No pro-`p` hypothesis is needed for this half. -/
-theorem rank_continuousZModDual_le_topologicalGeneratorRank [CompactSpace G]
-    [TotallyDisconnectedSpace G] :
-    Module.rank (ZMod p) (continuousZModDual p G) ≤ topologicalGeneratorRank G := by
-  obtain ⟨s, hs, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
-  exact hcard ▸ rank_continuousZModDual_le_of_convergesToOne hs hgen
-
-/-- **The continuous `𝔽_p`-dual of a topologically finitely generated topological group is
-finite-dimensional**, its dimension being bounded by the cardinality of a finite topological
-generating set. Neither a pro-`p` hypothesis nor compactness is needed: a finite set converges to
-`1` in any topological group. -/
-theorem finite_continuousZModDual (hfg : IsTopologicallyFinitelyGenerated G) :
-    Module.Finite (ZMod p) (continuousZModDual p G) := by
-  obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
-  exact Module.rank_lt_aleph0_iff.mp <|
-    (rank_continuousZModDual_le_of_convergesToOne s.finite_toSet.convergesToOne hs).trans_lt
-      s.finite_toSet.lt_aleph0
-
-end Restrict
 
 /-! ### Dual bases in a profinite elementary abelian group -/
 
