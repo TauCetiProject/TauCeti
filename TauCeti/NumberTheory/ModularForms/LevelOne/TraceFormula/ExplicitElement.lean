@@ -122,13 +122,11 @@ private theorem cases_of_weight_ne_zero {a b c d : ℤ}
     0 ≤ c ∧ c < a ∧ a - d ≤ -b ∧ -b ≤ c ∨ b < d ∧ d ≤ 0 ∧ -b ≤ a - d ∧ a - d ≤ c ∨
       a ≤ 0 ∧ 0 < c ∧ 0 ≤ a - d ∧ a - d ≤ c ∧ c ≤ -b ∨
       d ≤ 0 ∧ 0 < -b ∧ 0 ≤ a - d ∧ a - d ≤ -b ∧ -b ≤ c := by
-  rcases (by lia : weight₁ a b c d ≠ 0 ∨ weight₂ a b c d ≠ 0 ∨ weight₃ a b c d ≠ 0 ∨
-      weight₄ a b c d ≠ 0) with h | h | h | h <;>
-    simp only [weight₁, weight₂, weight₃, weight₄, ite_ne_right_iff] at h <;>
-    grind [chainWeight₃, chainWeight₄]
+  simp only [weight₁, weight₂, weight₃, weight₄] at h
+  split_ifs at h <;> grind [chainWeight₃, chainWeight₄]
 
-/-- Every matrix `(a b; c d)` of nonzero weight has positive determinant `n` and entries at most
-`2n` in absolute value. -/
+/-- Every matrix `(a b; c d)` of nonzero weight has positive determinant `ad - bc` and entries at
+most twice its determinant in absolute value. -/
 private theorem bounds_of_weight_ne_zero {a b c d : ℤ}
     (h : weight₁ a b c d - weight₂ a b c d - weight₃ a b c d - weight₄ a b c d ≠ 0) :
     0 < a * d - b * c ∧ |a| ≤ 2 * (a * d - b * c) ∧ |b| ≤ 2 * (a * d - b * c) ∧
@@ -149,9 +147,7 @@ private theorem bounds_of_weight_ne_zero {a b c d : ℤ}
     have : -a ≤ a * d - b * c := by nlinarith
     lia
   · -- `T₄`: `n = c (-b) + d (a - d) + d² ≥ b² + d (-b) + d²`
-    have : d * -b + d * d ≤ a * d := by nlinarith
-    have : b * b ≤ -b * c := by nlinarith
-    have : -b ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (2 * d - b)]
+    have : -b ≤ a * d - b * c := by nlinarith [sq_nonneg (2 * d - b)]
     have : -d ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - 2 * b)]
     have : c ≤ 2 * (a * d - b * c) := by nlinarith [sq_nonneg (d - b)]
     lia
@@ -192,25 +188,20 @@ private def popaZagierCoeff (n : ℤ) : TraceFormulaMatrixModule n → ℚ :=
 private theorem finite_support_popaZagierCoeff (n : ℤ) :
     (Function.support (popaZagierCoeff n)).Finite := by
   -- matrices of nonzero weight have entries in `[-2n, 2n]`
-  have hbox (A : TraceFormulaMatrix n) (h : PopaZagier.weight A.1 ≠ 0) (i j : Fin 2) :
-      A.1 i j ∈ Set.Icc (-(2 * n)) (2 * n) := by
-    have := PopaZagier.abs_le_of_weight_ne_zero h i j
-    rwa [A.2, abs_le] at this
-  refine (((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦
-    Set.finite_Icc (-(2 * n)) (2 * n)).preimage (f := fun A : TraceFormulaMatrix n ↦ A.1)
-    fun A _ B _ ↦ FixedDetMatrices.ext' _ _).image mk).subset fun x hx ↦ ?_
-  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+  have hfin : {A : TraceFormulaMatrix n | PopaZagier.weight A.1 ≠ 0}.Finite :=
+    ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-(2 * n)) (2 * n)).preimage
+      Subtype.val_injective.injOn).subset fun A h i j ↦ by
+        simpa [A.2, abs_le] using PopaZagier.abs_le_of_weight_ne_zero h i j
   -- a class in the support has a representative of nonzero weight
-  obtain h | h : PopaZagier.weight A.1 ≠ 0 ∨ PopaZagier.weight (-A.1) ≠ 0 := by
-    by_contra! h
-    simp [popaZagierCoeff, h] at hx
-  exacts [⟨A, hbox A h, rfl⟩, ⟨-A, hbox (-A) h, mk_neg A⟩]
+  refine (hfin.image mk).subset fun x hx ↦ ?_
+  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+  by_cases h : PopaZagier.weight A.1 = 0
+  · exact ⟨-A, by simpa [popaZagierCoeff, h] using hx, mk_neg A⟩
+  · exact ⟨A, h, rfl⟩
 
 /-- **Popa–Zagier's explicit Hecke element** of `ℚ[ℳₙ]` (written `Tₙ` with a tilde in their
-paper), their eq. (15): `T₁ - T₂ - T₃ - T₄`, where `T₁ = ⟨a - d ≤ -b ≤ c; 0 ≤ c < a⟩`,
-`T₂ = ⟨-b ≤ a - d ≤ c; b < d ≤ 0⟩`, `T₃ = ⟨0 ≤ a - d ≤ c ≤ -b; a ≤ 0 < c⟩` and
-`T₄ = ⟨0 ≤ a - d ≤ -b ≤ c; d ≤ 0 < -b⟩`. See `coeff_popaZagierElement_mk` for its
-coefficients. -/
+paper), their eq. (15): `T₁ - T₂ - T₃ - T₄` (see `TauCeti.PopaZagier.weight`). Its coefficients
+are given by `coeff_popaZagierElement_mk`. -/
 noncomputable def popaZagierElement (n : ℤ) : ℚ[TraceFormulaMatrixModule n] :=
   .ofCoeff (.ofSupportFinite (popaZagierCoeff n) (finite_support_popaZagierCoeff n))
 
