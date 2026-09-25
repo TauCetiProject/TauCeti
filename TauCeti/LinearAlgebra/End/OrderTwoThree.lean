@@ -53,7 +53,8 @@ unnormalised form needs no invertibility where none is used.
   `range ((1 + σ) (1 - σ')) ⊔ range ((1 + υ + υ ^ 2) (1 - υ'))`, that is, an element of their
   `ℬ` (6) whose right coset sums vanish lies in `𝒥 = π_S ℛ (1 - π_S) + π_U ℛ (1 - π_U)` (7).
 * `TauCeti.one_sub_mul_one_add_add_sq`: the ring identity
-  `(1 - σ) (1 + υ + υ ^ 2) = (1 - υ σ) (-σ (1 + υ + υ ^ 2))` for `σ ^ 2 = 1` and `υ ^ 3 = 1`.
+  `(1 - σ) (1 + υ + υ ^ 2) = (1 - υ σ) (-σ (1 + υ + υ ^ 2))` for `σ ^ 2 = 1` and `υ ^ 3 = 1`, and
+  its mirror image `TauCeti.one_add_add_sq_mul_one_sub`, for right multiplications.
 * `TauCeti.End.range_one_add_eq_ker_one_sub`, `TauCeti.End.range_one_add_add_sq_eq_ker_one_sub`:
   the fixed vectors of `σ` and of `υ` are the ranges of `1 + σ` and of `1 + υ + υ ^ 2`. The
   inclusions `TauCeti.End.range_one_add_le_ker_one_sub` and
@@ -93,7 +94,8 @@ variable {A : Type*} [Ring A] {σ υ : A}
 private theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) * (1 + σ) = 0 := by
   linear_combination (norm := noncomm_ring) -hσ
 
-private theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 := by
+/-- `(1 + σ) (1 - σ) = 0` for `σ ^ 2 = 1`. -/
+theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 := by
   linear_combination (norm := noncomm_ring) -hσ
 
 private theorem one_sub_mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
@@ -110,6 +112,14 @@ This is Popa–Zagier's relation `(1 - S) π_U = (1 - T⁻¹) π_U` for `T = U S
 theorem one_sub_mul_one_add_add_sq (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) :
     (1 - σ) * (1 + υ + υ ^ 2) = (1 - υ * σ) * -(σ * (1 + υ + υ ^ 2)) := by
   linear_combination (norm := noncomm_ring) -hυ - υ * hσ * (1 + υ + υ ^ 2)
+
+/-- **`(1 + υ + υ²) (1 - σ)` lies in `A (1 - σ υ)`** when `σ ^ 2 = 1` and `υ ^ 3 = 1`: the mirror
+image of `TauCeti.one_sub_mul_one_add_add_sq`. For the right multiplications `σ` by `S` and `υ` by
+`U`, so that `σ υ` is right multiplication by `U S = T`, this is Popa–Zagier's relation
+`(1 - S) π_U = (1 - T⁻¹) π_U`, rewritten through `1 - T⁻¹ = (1 - T) (-T⁻¹)`. -/
+theorem one_add_add_sq_mul_one_sub (hσ : σ ^ 2 = 1) (hυ : υ ^ 3 = 1) :
+    (1 + υ + υ ^ 2) * (1 - σ) = -((1 + υ + υ ^ 2) * σ) * (1 - σ * υ) := by
+  linear_combination (norm := noncomm_ring) -hυ - (1 + υ + υ ^ 2) * hσ * υ
 
 end Ring
 
