@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
@@ -32,12 +33,14 @@ atom while vanishing on every singleton.
   Borel space is a.e. constant on every positive finite-mass measurable atom;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — an a.e.-measurable map from a
   positive finite-mass measurable atom into a standard Borel space has the corresponding point
-  mass as its restricted pushforward.
+  mass as its restricted pushforward;
+* `MeasureTheory.Measure.noAtoms_map_of_injective` — an injective measurable embedding preserves
+  the property that singletons have measure zero.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory Set
 
 namespace TauCeti
 
@@ -105,6 +108,20 @@ theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
       Measure.map_congr hy
     _ = μ.restrict A Set.univ • Measure.dirac y := Measure.map_const _ _
     _ = μ A • Measure.dirac y := by rw [Measure.restrict_apply_univ]
+
+/-- An injective measurable embedding sends a measure with null singletons to a measure with
+null singletons. -/
+theorem _root_.MeasureTheory.Measure.noAtoms_map_of_injective
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    (hf : MeasurableEmbedding f) : NullSingletonClass (Measure.map f μ) := by
+  refine ⟨fun y => ?_⟩
+  rw [hf.map_apply]
+  have hsub : (f ⁻¹' {y}).Subsingleton := by
+    intro a ha b hb
+    simp only [mem_preimage, mem_singleton_iff] at ha hb
+    exact hf.injective (ha.trans hb.symm)
+  exact hsub.measure_zero μ
 
 end MeasureTheory
 
