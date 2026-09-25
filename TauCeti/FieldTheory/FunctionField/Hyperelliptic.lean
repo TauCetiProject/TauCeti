@@ -235,7 +235,7 @@ open _root_.Polynomial
 /-- The places of `k(x)` at which a squarefree polynomial `f` has odd order are those of the
 irreducible factors of `f`, each a simple zero, and the place at infinity exactly when `deg f` is
 odd.  As divisors: they sum to `div f + (deg f + deg f % 2) · P_∞`. -/
-theorem Divisor.radicalBranch_eq_principal_add_natDegree_nsmul_infty {f : k[X]}
+theorem Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty {f : k[X]}
     (hf : Squarefree f) :
     radicalBranch (IsFunctionField.ratFunc k) 2 (algebraMap k[X] (RatFunc k) f)
         (RatFunc.algebraMap_ne_zero hf.ne_zero) =
@@ -244,8 +244,6 @@ theorem Divisor.radicalBranch_eq_principal_add_natDegree_nsmul_infty {f : k[X]}
         (f.natDegree + f.natDegree % 2) • WeilDivisor.ofPoint (Place.infty k) := by
   classical
   refine WeilDivisor.ext fun P ↦ ?_
-  change Divisor.radicalBranch (IsFunctionField.ratFunc k) 2
-    (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf.ne_zero) P = _
   rw [Divisor.coeff_radicalBranch (IsFunctionField.ratFunc k) P
     (RatFunc.algebraMap_ne_zero hf.ne_zero)]
   simp only [WeilDivisor.coeff_add, Divisor.coeff_principal, Units.val_mk0,
@@ -289,7 +287,8 @@ theorem Divisor.degree_different_eq_natDegree_add_mod_of_sq_eq (h2 : (2 : k) ≠
   have hu : algebraMap k[X] (RatFunc k) f ≠ 0 := RatFunc.algebraMap_ne_zero hf.ne_zero
   have h := Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k F
     (IsFunctionField.ratFunc k) Nat.prime_two hgen hy (by exact_mod_cast h2) hu
-  rw [Divisor.radicalBranch_eq_principal_add_natDegree_nsmul_infty hf, Divisor.degree_add,
+  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
+    Divisor.degree_add,
     Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint, Place.degree_infty] at h
   norm_num at h
   exact_mod_cast h
@@ -320,18 +319,18 @@ theorem genus_eq_natDegree_sub_one_div_two_of_sq_eq (h2 : (2 : k) ≠ 0)
           ⟨algebraMap k (RatFunc k) c', by rw [← IsScalarTower.algebraMap_apply, hc']⟩)
       exact IntermediateField.bot_eq_top_iff_finrank_eq_one.mp (hbot ▸ hgen)
     · exact finrank_eq_two_of_sq_eq_of_squarefree hf (Nat.pos_of_ne_zero hm) hgen hy
+  -- Hurwitz: `2g - 2 = [F : k(x)] · (0 - 2) + deg f + deg f % 2`.
   have : FiniteDimensional (RatFunc k) F :=
     Algebra.finiteDimensional_of_pow_eq hgen hy two_ne_zero
-  have : Algebra.IsSeparable (RatFunc k) F := Algebra.isSeparable_of_pow_eq hgen hy (by
-    rw [← map_natCast (algebraMap k (RatFunc k))]
-    exact (_root_.map_ne_zero _).mpr (by exact_mod_cast h2)) hu
-  -- Hurwitz: `2g - 2 = [F : k(x)] · (0 - 2) + deg f + deg f % 2`.
-  have h := hurwitz_genus_formula (IsFunctionField.ratFunc k)
+  have h := hurwitz_genus_formula_of_pow_eq_of_prime (IsFunctionField.ratFunc k)
     (isFunctionField_iff_functionField.mpr inferInstance) isIntegrallyClosedIn_ratFunc hex
-  rw [Divisor.degree_different_eq_natDegree_add_mod_of_sq_eq h2 hf hgen hy, genus_ratFunc,
-    Module.finrank_self, hN] at h
+    Nat.prime_two hgen hy (by exact_mod_cast h2) hu
+  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
+    Divisor.degree_add, Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint,
+    Place.degree_infty, genus_ratFunc, Module.finrank_self, hN] at h
+  norm_num at h
   by_cases hm : f.natDegree = 0 <;>
-    simp only [hm, ↓reduceIte, Nat.cast_ofNat, Nat.cast_one] at h <;> omega
+    simp only [hm, ↓reduceIte] at h <;> omega
 
 end SquareRoot
 

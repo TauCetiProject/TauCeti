@@ -243,34 +243,25 @@ not divisible by the exponent. -/
 noncomputable def radicalBranch (n : ℕ) (u : F) (hu : u ≠ 0) : Divisor k F :=
   WeilDivisor.ofFinset {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}
 
+/-- The coefficient of a radical branch divisor is one at its branch places and zero elsewhere. -/
+@[simp]
+theorem coeff_radicalBranch (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
+    (radicalBranch hF n u hu).coeff P = if (n : ℤ) ∣ P.ord u then 0 else 1 := by
+  classical
+  have hmem : P ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
+      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ P.ord u := by
+    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
+    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
+  rw [radicalBranch, WeilDivisor.coeff_ofFinset]
+  simp [hmem]
+
 /-- A place occurs in the radical branch divisor exactly when the exponent does not divide the
 order of the radicand there. -/
 theorem mem_support_radicalBranch_iff (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
     P ∈ (radicalBranch hF n u hu).support ↔ ¬ (n : ℤ) ∣ P.ord u := by
   classical
-  have hmem : P ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
-      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ P.ord u := by
-    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
-    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
-  rw [Finsupp.mem_support_iff, radicalBranch]
-  change WeilDivisor.coeff (WeilDivisor.ofFinset
-    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) P ≠ 0 ↔ _
-  rw [WeilDivisor.coeff_ofFinset]
-  simp [hmem]
-
-/-- The coefficient of a radical branch divisor is one at its branch places and zero elsewhere. -/
-theorem coeff_radicalBranch (P : Place k F) {n : ℕ} {u : F} (hu : u ≠ 0) :
-    radicalBranch hF n u hu P = if (n : ℤ) ∣ P.ord u then 0 else 1 := by
-  classical
-  have hmem : P ∈ {P ∈ (principal hF (Units.mk0 u hu)).support |
-      ¬ (n : ℤ) ∣ P.ord u} ↔ ¬ (n : ℤ) ∣ P.ord u := by
-    rw [Finset.mem_filter, mem_support_principal_iff, Units.val_mk0, and_iff_right_iff_imp]
-    exact fun h h0 ↦ h (h0 ▸ dvd_zero _)
-  rw [radicalBranch]
-  change WeilDivisor.coeff (WeilDivisor.ofFinset
-    {P ∈ (principal hF (Units.mk0 u hu)).support | ¬ (n : ℤ) ∣ P.ord u}) P = _
-  rw [WeilDivisor.coeff_ofFinset]
-  simp [hmem]
+  rw [WeilDivisor.mem_support_iff, coeff_radicalBranch]
+  split_ifs <;> simp [*]
 
 /-- **The different divisor of a radical extension of prime exponent** (Stichtenoth,
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
@@ -285,7 +276,6 @@ theorem nsmul_different_eq_nsmul_conorm_of_pow_eq_of_prime {y : F'} {n : ℕ} {u
   rw [WeilDivisor.coeff_nsmul, WeilDivisor.coeff_nsmul, coeff_different, coeff_conorm,
     Place.differentExponent_eq_of_pow_eq_of_prime k F hp hgen hy hn hu,
     Place.ramificationIdx_eq_of_pow_eq_of_prime k F hp hgen hy hn hu]
-  change _ = _ * (_ * radicalBranch hF n u hu (P'.restrict k F))
   rw [coeff_radicalBranch hF (P'.restrict k F) hu]
   by_cases hdvd : (n : ℤ) ∣ (P'.restrict k F).ord u
   · simp [hdvd]
@@ -328,6 +318,7 @@ theorem finrank_mul_degree_different_of_pow_eq_of_prime [Algebra.IsIntegral k k'
 
 end Divisor
 
+omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 /-- **The genus of a radical extension of prime exponent** (Stichtenoth, Corollary 3.7.4 for
 prime `n`): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and invertible
 in `k`, both fields have exact constants and `k' / k` is finite separable, then
@@ -340,6 +331,11 @@ theorem hurwitz_genus_formula_of_pow_eq_of_prime [FiniteDimensional k k'] [Algeb
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       Module.finrank F F' * (2 * genus k F - 2) + ((n : ℤ) - 1) * Divisor.degree
         (Divisor.radicalBranch hF n u hu) := by
+  have : FiniteDimensional F F' := Algebra.finiteDimensional_of_pow_eq hgen hy hp.ne_zero
+  have hnF : (n : F) ≠ 0 := by
+    rw [← map_natCast (algebraMap k F)]
+    exact (_root_.map_ne_zero _).mpr hn
+  have : Algebra.IsSeparable F F' := Algebra.isSeparable_of_pow_eq hgen hy hnF hu
   rw [hurwitz_genus_formula hF hF' hex hex',
     Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu]
 
