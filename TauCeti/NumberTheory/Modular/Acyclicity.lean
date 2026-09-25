@@ -70,7 +70,7 @@ private lemma eq_zero_of_coeff_eq_add {k X : Type*} [Ring k] [MulAction PSL(2, �
     [IsCancelSMul PSL(2, ℤ) X] {ξ : k[X]} (h : ∀ x, ξ.coeff x = ξ.coeff ((T : PSL(2, ℤ)) • x) +
       ξ.coeff ((tPrime : PSL(2, ℤ)) • x)) : ξ = 0 := by
   have hE : ∀ t ∈ ({1, T, tPrime} : Set SL(2, ℤ)), ∀ i j, 0 ≤ t i j := by
-    rintro _ (rfl | rfl | rfl) i j <;> fin_cases i <;> fin_cases j <;> decide
+    rintro _ (rfl | rfl | rfl) i j <;> fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T]
   rw [← coeff_eq_zero, ← Finsupp.support_eq_empty]
   refine MulAction.eq_empty_of_forall_exists_smul_mem (G := PSL(2, ℤ)) (E := (↑) '' {T, tPrime})
     (P := (↑) '' {g : SL(2, ℤ) | ∀ i j, 0 ≤ g i j}) ⟨1, hE 1 (.inl rfl), rfl⟩ ?_ fun x hx ↦ ?_
