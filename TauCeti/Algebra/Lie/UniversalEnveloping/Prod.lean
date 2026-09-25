@@ -20,6 +20,7 @@ inclusions.
 
 This construction uses only the universal properties of enveloping algebras and tensor products;
 it does not require a Poincare--Birkhoff--Witt theorem or any freeness hypothesis.
+The componentwise product representation preserves products of stable lattices.
 
 ## Main results
 
@@ -33,12 +34,6 @@ it does not require a Poincare--Birkhoff--Witt theorem or any freeness hypothesi
 * `TauCeti.UniversalEnvelopingAlgebra.prodEquivTensor_symm_tmul`: the inverse on a pure tensor.
 * `AlgHom.prodRepresentation`: the componentwise product of two representations of
   the same enveloping algebra, with stability of product lattices.
-
-## Roadmap
-
-This supplies the direct-sum functoriality used in Layer 3 of the LieHighestWeight roadmap.
-The product representation supports the product admissible lattice in Layer 9 of the
-ReductiveGroups roadmap.
 
 ## References
 

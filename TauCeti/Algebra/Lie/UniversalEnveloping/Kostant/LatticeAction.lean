@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Exponential
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit
-public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Prod
 
 /-!
