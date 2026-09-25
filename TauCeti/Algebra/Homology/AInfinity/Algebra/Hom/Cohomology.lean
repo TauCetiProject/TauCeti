@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Cohomology
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Basic
 
 /-!
 # Cohomology of a morphism of A-infinity algebras
@@ -397,7 +396,7 @@ theorem cohomologyMap_comp_cohomologyMapInv {f : AInfinityHom AA BB} (hf : f.IsQ
   exact hf.cohomologyLinearEquiv.apply_symm_apply c
 
 /-- The inverse of the map induced on cohomology by a quasi-isomorphism preserves degrees. -/
-private theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : ℤ}
+theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : ℤ}
     {c : BB.Cohomology} (hc : c ∈ BB.cohomologyGrading.piece p) :
     hf.cohomologyMapInv c ∈ AA.cohomologyGrading.piece p := by
   have he : LinearMap.IsHomogeneous hf.cohomologyLinearEquiv.toLinearMap
