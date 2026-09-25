@@ -28,11 +28,12 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 A family of units indexed by a finite type `ι` is the diagonal of an invertible diagonal matrix,
 and this assignment is a group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`. Its entries,
-its determinant and its injectivity are recorded here, together with the fact that invertibility
-of a diagonal matrix upgrades its diagonal entries to units.  The facts about diagonal matrices
-that involve no general linear group live in `TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one
-used below is that a matrix commuting with a diagonal matrix has no entry away from the diagonal
-wherever that diagonal matrix separates two coordinates.
+its trace, its determinant and its injectivity are recorded here, together with the fact that
+invertibility of a diagonal matrix upgrades its diagonal entries to units.  The facts about
+diagonal matrices that involve no general linear group live in
+`TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one used below is that a matrix commuting with a
+diagonal matrix has no entry away from the diagonal wherever that diagonal matrix separates two
+coordinates.
 
 The image of `diagGL` is gathered into a subgroup
 
@@ -148,6 +149,15 @@ theorem diagGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ)
     diagGL t i j = if i = j then (t i : k) else 0 := by
   rw [diagGL_coe]
   exact Matrix.diagonal_apply ..
+
+/-- The trace of a diagonal element of the general linear group is the sum of its diagonal
+entries. Unlike `TauCeti.det_diagGL` this asks nothing of `k` beyond what `TauCeti.diagGL` itself
+does, so it is stated here rather than beside the determinant. It is deliberately not a `simp`
+lemma: `TauCeti.diagGL_coe` and `Matrix.trace_diagonal` are, so `simp` already rewrites its
+left-hand side and a tag here would not be in simp-normal form. -/
+theorem trace_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
+    (diagGL t : Matrix ι ι k).trace = ∑ i, (t i : k) := by
+  rw [diagGL_coe, Matrix.trace_diagonal]
 
 /-- The diagonal embedding is injective. -/
 theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :

@@ -117,7 +117,7 @@ variable {F : Type*} [Field F]
 The normal forms below are written against the pair `![a, b]` and the Jordan parameter `1`, while
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/Diagonal/Basic.lean` and
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/ScalarUnipotent.lean` state non-scalarity, the
-trace and the determinant for a general family and a general off-diagonal entry. These five private
+trace and the determinant for a general family and a general off-diagonal entry. These six private
 lemmas do that adaptation once, so that no proof below recomputes the trace, the determinant or the
 non-scalarity of a normal form from its matrix entries. -/
 
@@ -143,10 +143,10 @@ private theorem notMem_range_scalar_jordanGL_one (a : Fˣ) :
     (jordanGL a (1 : F) : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) :=
   notMem_range_scalar_jordanGL (one_ne_zero (α := F))
 
-/-- The trace of the split normal form. -/
+/-- The trace of the split normal form, read off the general `TauCeti.trace_diagGL`. -/
 private theorem trace_diagGL_pair (a b : Fˣ) :
     (diagGL ![a, b] : Matrix (Fin 2) (Fin 2) F).trace = (a : F) + b := by
-  rw [diagGL_coe, Matrix.trace_diagonal, Fin.sum_univ_two]
+  rw [trace_diagGL, Fin.sum_univ_two]
   simp
 
 /-- The determinant of the split normal form, read off the unit-level `TauCeti.det_diagGL`. -/
@@ -415,10 +415,21 @@ theorem not_isConj_diagGL_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a b
   · exact hx ⟨(b : F), (sub_eq_zero.1 hroot).symm⟩
 
 /-- **A Jordan block is not conjugate to an elliptic normal form.** Equal traces and determinants
-make `x` a double root of `(X - a)²`, so `x` would be `a`, which lies in `F`. -/
-theorem not_isConj_jordanGL_one_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ) {x : Eˣ}
-    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+make `x` a double root of `(X - a)²`, so `x` would be `a`, which lies in `F`. No hypothesis is
+needed on `x`: a torus parameter inside `F` gives the corresponding scalar, which is not conjugate
+to a Jordan block either. -/
+theorem not_isConj_jordanGL_one_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ)
+    (x : Eˣ) :
     ¬ IsConj (jordanGL a (1 : F)) (GL2NonSplitTorusHom F E hE x) := by
+  by_cases hx : (x : E) ∈ Set.range (algebraMap F E)
+  · obtain ⟨c, hc⟩ := hx
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      exact x.ne_zero (by simpa using hc.symm)
+    have hxc : x = Units.map (algebraMap F E : F →* E) (Units.mk0 c hc0) :=
+      Units.ext (by simpa using hc.symm)
+    rw [hxc, GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap]
+    exact fun h => not_isConj_scalar_jordanGL_one _ a h.symm
   intro h
   obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
     (notMem_range_scalar_jordanGL_one a)
