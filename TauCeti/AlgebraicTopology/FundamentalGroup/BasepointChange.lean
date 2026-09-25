@@ -147,9 +147,11 @@ theorem _root_.FundamentalGroup.conjClassAt_self
     (x : X) (g : _root_.FundamentalGroup X x) :
     _root_.FundamentalGroup.conjClassAt x x g = ConjClasses.mk g := by
   rw [← _root_.FundamentalGroup.mk_transport_eq_conjClassAt (Path.refl x) g,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply,
-    Path.Homotopic.Quotient.mk_refl, ← _root_.FundamentalGroup.one_def, one_mul, inv_one,
-    mul_one]
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj]
+  have hrefl : _root_.FundamentalGroup.fromPath
+      (Path.Homotopic.Quotient.mk (Path.refl x)) = 1 := rfl
+  rw [MulAut.conj_apply, hrefl]
+  simp only [one_mul, inv_one, mul_one]
 
 /-- Transporting a path-independent class along another path gives the class at its endpoint. -/
 @[simp]
