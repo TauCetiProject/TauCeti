@@ -80,7 +80,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
   have hvU (i : ι) : v i ∈ frontier U \ {p} := by
     obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
     have he₁ := he i
-    refine ⟨mem_frontier_of_forall_mem_iff_abs_arg_lt hUo hρ hb ?_ ?_ hU, fun h => hpv ⟨i, h⟩⟩
+    refine ⟨mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU, fun h => hpv ⟨i, h⟩⟩
     · nlinarith [Real.pi_pos, he₁.1]
     · nlinarith [Real.pi_pos, he₁.2]
   choose x hx hfx using fun i => hfR.surjOn (hvU i)

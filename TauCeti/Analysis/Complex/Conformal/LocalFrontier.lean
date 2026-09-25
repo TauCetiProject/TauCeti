@@ -64,11 +64,10 @@ theorem abs_arg_div_eq_of_mem_frontier {v b z : ℂ} {ρ α : ℝ} (hb : b ≠ 0
     exact hzU
   exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
 
-/-- If an open set `U` coincides near `v`, away from `v` itself, with the open sector
+/-- If a set `U` coincides near `v`, away from `v` itself, with the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α ∈ (0, π]`, then the vertex `v` lies on the frontier
-of `U`: the ray `arg ((z - v) / b) = 0` inside the sector approaches `v`, while the opposite ray
-`arg ((z - v) / b) = π` outside it keeps `U` from being a neighbourhood of `v`. -/
-theorem mem_frontier_of_forall_mem_iff_abs_arg_lt (hUo : IsOpen U) {v b : ℂ} {ρ α : ℝ}
+of `U`: the rays `arg ((z - v) / b) = 0` and `π` inside and outside the sector approach `v`. -/
+theorem mem_frontier_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ}
     (hρ : 0 < ρ) (hb : b ≠ 0) (hα₀ : 0 < α) (hα : α ≤ Real.pi)
     (hU : ∀ z ∈ ball v ρ, z ≠ v → (z ∈ U ↔ |((z - v) / b).arg| < α)) : v ∈ frontier U := by
   -- the ray `t ↦ v + (s * t) * b` leaves `v` in the direction `s * b`
@@ -81,13 +80,12 @@ theorem mem_frontier_of_forall_mem_iff_abs_arg_lt (hUo : IsOpen U) {v b : ℂ} {
       with t ht (htpos : 0 < t)
     refine ⟨htpos, ?_⟩
     rw [hU _ ht (by simp [hs, htpos.ne', hb]), add_sub_cancel_left, mul_div_cancel_right₀ _ hb]
-  rw [hUo.frontier_eq]
-  refine ⟨mem_closure_of_tendsto (hlim 1) ?_, fun hv => ?_⟩
+  rw [frontier_eq_closure_inter_closure]
+  refine ⟨mem_closure_of_tendsto (hlim 1) ?_, mem_closure_of_tendsto (hlim (-1)) ?_⟩
   · filter_upwards [hmem 1 one_ne_zero] with t ⟨ht, h⟩
     rw [h, arg_ofReal_of_nonneg (by positivity), abs_zero]
     exact hα₀
-  · obtain ⟨t, ⟨ht, h⟩, htU⟩ :=
-      ((hmem (-1) (by norm_num)).and ((hlim (-1)).eventually (hUo.mem_nhds hv))).exists
+  · filter_upwards [hmem (-1) (by norm_num)] with t ⟨ht, h⟩ htU
     have harg := h.mp htU
     rw [arg_ofReal_of_neg (by linarith), abs_of_pos Real.pi_pos] at harg
     exact harg.not_ge hα
