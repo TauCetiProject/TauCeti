@@ -51,15 +51,13 @@ of fraction fields.
 * `TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top`: an algebra generator of a
   domain also generates its fraction field over any intermediate base field.
 
-## Implementation notes
+## Generating sets
 
-`adjoin_sup_fieldRange_eq_top` takes its hypothesis as `Algebra.adjoin L t = ⊤` — generation
-as an `L`-*algebra* — rather than as `IntermediateField.adjoin L t = ⊤`, because that is the
-form the cyclotomic API supplies (`IsCyclotomicExtension.adjoin_primitive_root_eq_top`, with
-`t = {ζ}`). The two forms agree for algebraic generators; algebra generation is stronger in general.
-Taking the algebra form avoids making the cyclotomic callers convert. The statement is set-valued
-rather than single-generator because the induction over `Algebra.adjoin` never inspects `t`: the
-generator case is just `IntermediateField.subset_adjoin`.
+The compositum criterion allows an arbitrary set of field generators, so it applies to extensions
+that need several generators or contain transcendental elements. It expresses generation over a
+larger base as generation by the same set together with that base inside a single extension.
+For a cyclotomic extension, the singleton consisting of a primitive root suffices; its algebra
+generation hypothesis implies field generation by `IntermediateField.adjoin_eq_top_of_algebra`.
 
 `adjoin_sup_fieldRange_eq_top` is adapted from the Birkbeck–Brasca Chebotarev density project,
 where the step is inlined into a larger `adjoin_induction`.
@@ -119,12 +117,13 @@ tower. This is the input to Mathlib's compositum engines
 case `t = {ζ}` is the one the cyclotomic compositum uses; it is obtained by specialisation. -/
 theorem adjoin_sup_fieldRange_eq_top (K L M : Type*) [Field K] [Field L] [Field M]
     [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M] {t : Set M}
-    (hadj : Algebra.adjoin L t = ⊤) :
+    (hadj : IntermediateField.adjoin L t = ⊤) :
     IntermediateField.adjoin K t ⊔ (IsScalarTower.toAlgHom K L M).fieldRange = ⊤ := by
   refine top_le_iff.mp fun x _ ↦ ?_
-  have hx : x ∈ Algebra.adjoin L t := hadj ▸ Algebra.mem_top
-  refine Algebra.adjoin_induction (fun y hy ↦ ?_) (fun r ↦ ?_)
-    (fun a b _ _ ha hb ↦ add_mem ha hb) (fun a b _ _ ha hb ↦ mul_mem ha hb) hx
+  have hx : x ∈ IntermediateField.adjoin L t := hadj ▸ IntermediateField.mem_top
+  refine IntermediateField.adjoin_induction L (fun y hy ↦ ?_) (fun r ↦ ?_)
+    (fun a b _ _ ha hb ↦ add_mem ha hb) (fun a _ ha ↦ inv_mem ha)
+    (fun a b _ _ ha hb ↦ mul_mem ha hb) hx
   · exact le_sup_left (α := IntermediateField K M) (IntermediateField.subset_adjoin K t hy)
   · exact le_sup_right (α := IntermediateField K M) ⟨r, rfl⟩
 
