@@ -95,7 +95,6 @@ theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
   linear_combination -h
 
 /-- `a₄ = -5 s₃`. -/
-@[simp]
 theorem tateCurve_a₄ : tateCurve.a₄ = -5 * divisorSumSeries 3 := by
   ext n
   rw [coeff_tateCurve_a₄, ← map_ofNat C 5, ← map_neg, coeff_C_mul, coeff_divisorSumSeries]
@@ -139,6 +138,7 @@ private theorem coeff_tateCurve_a₆_two : coeff 2 tateCurve.a₆ = -23 := by
   norm_num [sigma_apply, Nat.Prime.divisors Nat.prime_two]
 
 /-- `a₄` vanishes at `q = 0`. -/
+@[simp]
 theorem constantCoeff_tateCurve_a₄ : constantCoeff tateCurve.a₄ = 0 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_tateCurve_a₄]
   simp
