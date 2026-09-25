@@ -44,6 +44,7 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietorisδ`: the connecting morphism `Hₙ(X₄) ⟶ Hₘ(X₁)` for `m + 1 = n`.
 * `SSet.mayerVietoris_exact₁`, `SSet.mayerVietoris_exact₂`, `SSet.mayerVietoris_exact₃`:
   exactness at `Hₘ(X₁)`, at `Hₙ(X₂) ⊞ Hₙ(X₃)` and at `Hₙ(X₄)`.
+* `SSet.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
 
 ## References
@@ -239,6 +240,18 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
       (shortExact_mayerVietorisShortComplex R sq).δ n m h ≫ 𝟙 (X₁.homology R m)
     exact (Category.id_comp (mayerVietorisδ R sq n m h)).trans
       (Category.comp_id (mayerVietorisδ R sq n m h)).symm
+
+include sq in
+/-- The map `H₀(X₂) ⊞ H₀(X₃) ⟶ H₀(X₄)` at the end of the Mayer–Vietoris sequence is an
+epimorphism. -/
+lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) := by
+  have hepi : Epi ((homologyBiprodIso R 0).hom ≫ mayerVietorisFromBiprod R r b 0) := by
+    rw [homologyBiprodIso_hom_comp_fromBiprod]
+    have : Epi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f 0) :=
+      ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
+        (shortExact_mayerVietorisShortComplex R sq) 0).epi_g
+    exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
+  exact (epi_comp_iff_of_epi (homologyBiprodIso R 0).hom _).1 hepi
 
 /-- **Naturality of the Mayer–Vietoris connecting morphism** in maps of pushout squares. -/
 @[reassoc]

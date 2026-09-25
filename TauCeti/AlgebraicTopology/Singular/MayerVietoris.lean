@@ -39,6 +39,7 @@ of `X`.
   the maps of singular simplicial sets induced by the inclusions.
 * `TopCat.mayerVietoris_exact₁`, `TopCat.mayerVietoris_exact₂`, `TopCat.mayerVietoris_exact₃`:
   exactness at `Hₘ(U ∩ V)`, at `Hₙ(U) ⊞ Hₙ(V)` and at `Hₙ(X)`.
+* `TopCat.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
 * `TopCat.mayerVietorisδ_naturality`: naturality of the connecting morphism.
 
 ## References
@@ -220,6 +221,29 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   · dsimp only
     rw [Iso.refl_hom, Category.comp_id, TauCeti.smallSingularHomologyIso_hom,
     homologyMap_ι_comp_mayerVietorisδ R hU hV hUV n m h]
+
+include hU hV hUV in
+/-- The map `H₀(U) ⊞ H₀(V) ⟶ H₀(X)` at the end of the Mayer–Vietoris sequence is an
+epimorphism. -/
+lemma epi_mayerVietorisFromBiprod_zero :
+    Epi (SSet.mayerVietorisFromBiprod R (toSSet.map (ofHom (ContinuousMap.subtypeVal U)))
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) 0) := by
+  have hepi : Epi (SSet.mayerVietorisFromBiprod R
+      (toSmallSingularSubcomplex ![U, V] (Matrix.cons_val_zero U ![V]).superset)
+      (toSmallSingularSubcomplex ![U, V]
+        ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) 0 ≫
+      SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
+    have : Epi (SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
+      change Epi (HomologicalComplex.homologyMap
+        (SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R) 0)
+      rw [← TauCeti.smallSingularHomologyIso_hom R ![U, V]
+        (isOpen_vecCons hU hV) (iUnion_vecCons hUV)]
+      infer_instance
+    have := SSet.epi_mayerVietorisFromBiprod_zero R
+      (isPushout_toSSet_inter_smallSingularSubcomplex U V)
+    exact epi_comp _ _
+  rw [mayerVietorisFromBiprod_comp_homologyMap_ι] at hepi
+  exact hepi
 
 variable {Y : TopCat.{w}} {U' V' : Set Y} (hU' : IsOpen U') (hV' : IsOpen V')
   (hUV' : U' ∪ V' = Set.univ) (f : X ⟶ Y) (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')
