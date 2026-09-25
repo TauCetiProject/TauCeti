@@ -113,8 +113,9 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_T_mul_S_smul {ξ :
       (1 + ρL (T * S) + ρL (T * S) ^ 2 : Module.End k k[ℳ n]) η := by
     rw [hη]
     simp [Finset.sum_range_succ]
-  rw [hsum, ← Module.End.mul_apply, mul_add, mul_add, mul_one, ← sq, ← pow_succ',
-    ofMulAction_T_mul_S_pow_three, ← add_rotate]
+  have hU : ρL (T * S) ^ 3 = 1 := by simp
+  rw [hsum, ← Module.End.mul_apply, mul_add, mul_add, mul_one, ← sq, ← pow_succ', hU,
+    ← add_rotate]
 
 /-- **Popa–Zagier, §3 Theorem 2(a).** If `ξ` satisfies the exchange relations (B) and `2`, `3` are
 cancellable in `k`, then the right coset sums of `ξ` are invariant under left multiplication:

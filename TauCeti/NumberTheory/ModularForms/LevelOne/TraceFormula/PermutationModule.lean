@@ -88,11 +88,14 @@ theorem ofMulAction_S_sq :
   rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg, map_one]
 
 open ModularGroup in
-/-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. -/
+/-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. The left-hand side is the
+simp-normal form of the action of `T * S`. -/
+@[simp]
 theorem ofMulAction_T_mul_S_pow_three :
-    Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) (T * S) ^ 3 = 1 := by
+    (Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T *
+      Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S) ^ 3 = 1 := by
   -- `U³ = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
-  rw [← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg, map_one]
+  rw [← map_mul, ← map_pow, show (T * S) ^ 3 = -1 by decide +kernel, ofMulAction_neg, map_one]
 
 /-- Conjugation by `g` on `k[ℳₙ]` is left multiplication by `g` after right multiplication by
 `g⁻¹`. -/
