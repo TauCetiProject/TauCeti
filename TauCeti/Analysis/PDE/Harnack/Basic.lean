@@ -76,14 +76,15 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_div_pow_mul_of_nonneg
     setIntegral_mono_set hint ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hnonneg))
       (ball_subset_ball' hxy).eventuallyLE
   rw [(hu.mono (closedBall_subset_closedBall' hxy)).setIntegral_ball_eq,
-    hu.setIntegral_ball_eq, smul_eq_mul, smul_eq_mul, measureReal_def, measureReal_def,
-    μ.addHaar_ball_of_pos x hr, μ.addHaar_ball_of_pos y hs, ENNReal.toReal_mul,
-    ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
-    ENNReal.toReal_ofReal (by positivity)] at hle
+    hu.setIntegral_ball_eq] at hle
+  simp only [smul_eq_mul, measureReal_def, μ.addHaar_ball_of_pos x hr,
+    μ.addHaar_ball_of_pos y hs, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (pow_nonneg hr.le _), ENNReal.toReal_ofReal (pow_nonneg hs.le _)] at hle
   have hB : 0 < (μ (ball 0 1)).toReal :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   rw [div_pow, div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
-  nlinarith
+  refine le_of_mul_le_mul_left ?_ hB
+  nlinarith [hle]
 
 /-- **The local Harnack inequality.** If `u` is harmonic and nonnegative on `ball c (4 * r)`, then
 any two of its values on `ball c r` are within the factor `3 ^ n` of each other, where `n` is the
@@ -176,12 +177,12 @@ nonnegative on `U` satisfies `u x ≤ C * u y` for all `x, y ∈ K`; that is,
 `sup_K u ≤ C * inf_K u`. -/
 theorem _root_.IsCompact.harnack_inequality {K U : Set E} (hK : IsCompact K) (hU : IsOpen U)
     (hUc : IsPreconnected U) (hKU : K ⊆ U) :
-    ∃ C, ∀ u : E → ℝ, HarmonicOnNhd u U → (∀ z ∈ U, 0 ≤ u z) →
+    ∃ C, 0 ≤ C ∧ ∀ u : E → ℝ, HarmonicOnNhd u U → (∀ z ∈ U, 0 ≤ u z) →
       ∀ x ∈ K, ∀ y ∈ K, u x ≤ C * u y := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · exact ⟨0, by simp⟩
+  · exact ⟨0, le_rfl, by simp⟩
   obtain ⟨C, hC, h⟩ := exists_forall_isHarnackPair hK hU hUc hKU hx₀
-  exact ⟨C * C, fun u hu h0 x hx y hy ↦
+  exact ⟨C * C, mul_nonneg hC hC, fun u hu h0 x hx y hy ↦
     ((h x hx).1.trans hC (h y hy).2) u hu h0⟩
 
 end TauCeti
