@@ -100,9 +100,9 @@ private theorem one_sub_mul_one_add_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 - σ) *
 private theorem one_add_mul_one_sub_of_sq_eq_one (hσ : σ ^ 2 = 1) : (1 + σ) * (1 - σ) = 0 := by
   linear_combination (norm := noncomm_ring) -hσ
 
-private theorem mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
-    υ * (1 + υ + υ ^ 2) = 1 + υ + υ ^ 2 := by
-  linear_combination (norm := noncomm_ring) hυ
+private theorem one_sub_mul_one_add_add_sq_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
+    (1 - υ) * (1 + υ + υ ^ 2) = 0 := by
+  linear_combination (norm := noncomm_ring) -hυ
 
 private theorem one_add_add_sq_mul_one_sub_of_pow_three_eq_one (hυ : υ ^ 3 = 1) :
     (1 + υ + υ ^ 2) * (1 - υ) = 0 := by
@@ -140,9 +140,8 @@ open Module LinearMap
 
 /-- **The range of an endomorphism is stable under every endomorphism commuting with it.** -/
 theorem range_mem_invtSubmodule_of_commute {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    {f g : End R M} (h : Commute f g) : range f ∈ g.invtSubmodule := by
-  rintro - ⟨x, rfl⟩
-  exact ⟨g x, LinearMap.congr_fun h.eq x⟩
+    {f g : End R M} (h : Commute f g) : range f ∈ g.invtSubmodule :=
+  Function.Semiconj.mapsTo_range (f := f) (fa := g) fun x ↦ LinearMap.congr_fun h.eq x
 
 section Semiring
 
@@ -163,8 +162,7 @@ theorem range_one_add_eq_ker_one_sub [Invertible (2 : R)] (hσ : σ ^ 2 = 1) :
 /-- For `υ ^ 3 = 1`, the vectors `(1 + υ + υ²) x` are fixed by `υ`. -/
 theorem range_one_add_add_sq_le_ker_one_sub (hυ : υ ^ 3 = 1) :
     range (1 + υ + υ ^ 2) ≤ ker (1 - υ) :=
-  range_le_ker_iff.2 <| by
-    rw [← End.mul_eq_comp, sub_mul, one_mul, mul_one_add_add_sq_of_pow_three_eq_one hυ, sub_self]
+  range_le_ker_iff.2 (one_sub_mul_one_add_add_sq_of_pow_three_eq_one hυ)
 
 /-- **The fixed vectors of an endomorphism `υ` with `υ ^ 3 = 1` are the range of
 `1 + υ + υ²`**, when `3` is invertible. -/
