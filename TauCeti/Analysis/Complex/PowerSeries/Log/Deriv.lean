@@ -18,9 +18,8 @@ of convergence, then its formal logarithmic derivative converges throughout that
 
 The zero-free hypothesis is essential: the radius of the logarithmic derivative is limited by the
 nearest zero of the original series, even when the original series converges farther.
-Quantitatively, if the coefficients of `f - 1` have absolute sum `t < 1` on the circle of radius
-`r`, then no zero can lie inside, and the coefficient recurrence `(f'/f) f = f'` bounds the
-absolute coefficient sum of `f'/f` there explicitly in terms of that of `f'`.
+Quantitatively, if the coefficients of `f - 1` have absolute sum less than one on a circle, the
+file gives an explicit bound for the absolute coefficient sum of `f'/f` there.
 
 ## Main results
 
@@ -29,8 +28,7 @@ absolute coefficient sum of `f'/f` there explicitly in terms of that of `f'`.
 * `PowerSeries.summable_norm_coeff_logDeriv_mul_pow_of_zeroFree`: absolute convergence of the
   formal logarithmic derivative throughout a zero-free convergence disk.
 * `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le`: an explicit bound for the absolute
-  coefficient sum of the formal logarithmic derivative when `f` is close to `1`, derived from the
-  coefficient recurrence `(f'/f) f = f'`.
+  coefficient sum of the formal logarithmic derivative when `f` is close to `1`.
 -/
 
 public section
@@ -267,7 +265,11 @@ private theorem norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (hf0 : cons
       rw [add_mul, Finset.sum_mul]
       congr 1
       refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [show m + 1 = (i + 1) + (m - i) by have := Finset.mem_range.mp hi; omega, pow_add]
+      -- Split the power between the shifted index and its complementary index.
+      have hindex : m + 1 = (i + 1) + (m - i) := by
+        have hi' := Finset.mem_range.mp hi
+        omega
+      rw [hindex, pow_add]
       ring
 
 /-- The partial sums of the majorant series of the formal logarithmic derivative are bounded by
@@ -304,7 +306,10 @@ private theorem sum_range_norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (
     calc
       ∑ k ∈ Finset.range (N - (i + 1)), c (i + 1 + k - i) =
           ∑ k ∈ Finset.range (N - (i + 1)), c (k + 1) :=
-        Finset.sum_congr rfl fun k _ ↦ by rw [show i + 1 + k - i = k + 1 by omega]
+        Finset.sum_congr rfl fun k _ ↦ by
+          -- Reindex after removing the outer index `i`.
+          have hindex : i + 1 + k - i = k + 1 := by omega
+          rw [hindex]
       _ ≤ t := hc_summable.sum_le_tsum _ fun n _ ↦ by positivity
   have hU : ∑ m ∈ Finset.range N, u m ≤
       ∑' n : ℕ, n * ‖coeff n f‖ * r ^ n + t * ∑ m ∈ Finset.range N, u m := by

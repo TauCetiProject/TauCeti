@@ -56,11 +56,10 @@ whose weight `log N(I)` dominates `‖Λ(I)‖` by `norm_vonMangoldt_le_log`. Pa
 `(𝔭, k)`-indexed sum to the ideal-indexed one is
 `TauCeti.tsum_eq_tsum_idealPrimePower_of_support_subset`.
 
-For general `D` the local coefficients of `X F_𝔭'/F_𝔭` are not bounded by those of `F_𝔭`, so the
-comparison goes through the majorant `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le`: at
-every prime whose prime-power tail has absolute sum at most `1/2`, the local von Mangoldt terms
-are at most twice the `log`-weighted terms of `D`. Absolute convergence of `D` leaves only
-finitely many other primes, and at each of them zero-freeness gives local convergence.
+For general `D`, `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le` supplies the local
+majorant that gives absolute convergence of the von Mangoldt series. The general coefficient
+identity applies to data with an absolute-convergence point `σ` and zero-free local series on the
+corresponding disks.
 
 ## References
 
@@ -197,6 +196,7 @@ noncomputable def vonMangoldt : IdealArithmeticFunction K := fun A ↦
   else 0
 
 /-- `Λ_D` vanishes off the prime-power ideals. -/
+@[simp]
 theorem vonMangoldt_eq_zero_of_not_isPrimePow {A : (Ideal (𝓞 K))⁰}
     (hA : ¬ IsPrimePow (A : Ideal (𝓞 K))) : D.vonMangoldt A = 0 := by
   rw [vonMangoldt, dite_eq_right hA]
