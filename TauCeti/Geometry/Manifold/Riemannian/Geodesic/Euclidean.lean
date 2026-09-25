@@ -286,7 +286,6 @@ theorem fderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(
 
 /-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
 radius `r` onto the ball of radius `r` about `p`. -/
-@[simp]
 theorem image_riemannianExp_ball_model_space (p : F) (r : ℝ) :
     riemannianExp 𝓘(ℝ, F) F p '' Metric.ball (0 : TangentSpace 𝓘(ℝ, F) p) r =
       Metric.ball p r := by
@@ -330,7 +329,6 @@ theorem isNormalDomain_ball_model_space (p : F) {r : ℝ} (hr : 0 < r) :
 
 /-- The Riemannian logarithm of a finite-dimensional inner-product space at `p` sends `q` to
 `q - p`, read in `T_p F`, whenever this vector lies in the chosen set of tangent vectors. -/
-@[simp]
 theorem riemannianLog_model_space {p q : F} {U : Set (TangentSpace 𝓘(ℝ, F) p)}
     (hq : (NormedSpace.fromTangentSpace p).symm (q - p) ∈ U) :
     riemannianLog 𝓘(ℝ, F) F p U q = (NormedSpace.fromTangentSpace p).symm (q - p) := by
