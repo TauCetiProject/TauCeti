@@ -139,6 +139,10 @@ theorem spinEquivCarrier_apply (g : d.toTypeBLieIndex.AmbientGroup) :
           d.carrierRank_toTypeBLieIndex g) :=
   (rfl)
 
+-- This lemma and `spinEquivPinned_simpleRootSubgroup` state their left-hand sides through
+-- `dsimp% only` (#8315): the types of the left-hand side are indexed unreduced, with projections
+-- of `Subtype.mk` and `CommRingCat.of` literals, while `simp` reduces those projections before
+-- it looks a term up, so the plain form is never found.
 /-- **The carrier identification matches the Bourbaki-numbered simple root subgroups.** The spin
 carrier's raising subgroup at node `i` of `B₂` goes to the symplectic carrier's raising subgroup
 at the exchanged `C₂` node, which is the node `TauCeti.RankTwoBLieIndex.carrierNode` assigns to
@@ -146,7 +150,7 @@ at the exchanged `C₂` node, which is the node `TauCeti.RankTwoBLieIndex.carrie
 @[simp]
 theorem spinEquivCarrier_simpleRootSubgroup (i : Fin d.1.1.rank)
     (u : Multiplicative d.1.1.Closure) :
-    d.spinEquivCarrier (d.toTypeBLieIndex.simpleRootSubgroup i u) =
+    (dsimp% only (d.spinEquivCarrier (d.toTypeBLieIndex.simpleRootSubgroup i u))) =
       d.1.simpleRootSubgroup i u := by
   rw [spinEquivCarrier_apply, TypeBLieIndex.simpleRootSubgroup_def, cast_rootSubgroupPoints,
     RankTwoBLieIndex.simpleRootSubgroup_def]
@@ -196,7 +200,7 @@ subgroups**: `e (x_i(u)) = x'_i(u)` for the pinned simple root subgroups `x'_i` 
 @[simp]
 theorem spinEquivPinned_simpleRootSubgroup (i : Fin d.1.1.rank)
     (u : Multiplicative d.1.1.Closure) :
-    d.spinEquivPinned (d.toTypeBLieIndex.simpleRootSubgroup i u) =
+    (dsimp% only (d.spinEquivPinned (d.toTypeBLieIndex.simpleRootSubgroup i u))) =
       d.1.pinnedSimpleRootSubgroup i u := by
   rw [spinEquivPinned_apply, spinEquivCarrier_simpleRootSubgroup,
     RankTwoBLieIndex.carrierEquivPinned_simpleRootSubgroup]

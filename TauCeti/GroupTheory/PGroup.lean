@@ -38,6 +38,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   group, an element of `p`-power order survives in some `p`-group quotient.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
   `p`.
+* `IsPGroup.exists_ne_one_le_centralizer`: a nontrivial finite `p`-subgroup lies in the
+  centralizer of one of its nontrivial elements.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
 * `IsPGroup.quotient_comap`: if `H ⧸ N` is a `p`-group and `f : G →* H`, then `G ⧸ N.comap f`
   is a `p`-group.
@@ -150,6 +152,16 @@ theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime
   rw [hKbot, Subgroup.index_eq_card] at hKindex
   exact (Subgroup.index_eq_card (H := H)).trans <|
     (Nat.card_congr QuotientGroup.quotientBot.toEquiv).symm.trans hKindex
+
+/-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
+elements, namely of any nontrivial element of the centre of `P`. -/
+theorem _root_.IsPGroup.exists_ne_one_le_centralizer [Fact p.Prime] {P : Subgroup G} [Finite P]
+    (hP : IsPGroup p P) (hne : P ≠ ⊥) : ∃ g ∈ P, g ≠ 1 ∧ P ≤ Subgroup.centralizer {g} := by
+  have : Nontrivial P := (Subgroup.nontrivial_iff_ne_bot P).2 hne
+  obtain ⟨z, hz1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hP.bot_lt_center.ne'
+  refine ⟨z.1, z.1.2, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
+  rw [Subgroup.mem_centralizer_singleton_iff]
+  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.2 ⟨y, hy⟩)
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]

@@ -36,6 +36,8 @@ are the `SL(2, ℤ)`-orbits, and this file works with the latter throughout: `Γ
 
 * `TauCeti.TraceFormulaMatrixModule.exists_smul_mem_upperTriangularReps`: for `n ≠ 0`, every
   `SL(2, ℤ)`-orbit of `ℳₙ` meets `ℳₙ^∞`.
+* `TauCeti.TraceFormulaMatrixModule.exists_T_zpow_smul_mk_mem_upperTriangularReps`: for `n ≠ 0`,
+  the class of an upper-triangular matrix can be moved into `ℳₙ^∞` by a power of `T`.
 * `TauCeti.TraceFormulaMatrixModule.smul_eq_self_of_mem_upperTriangularReps`: an element of
   `SL(2, ℤ)` that moves one element of `ℳₙ^∞` into `ℳₙ^∞` fixes it.
 * `TauCeti.TraceFormulaMatrixModule.ncard_upperTriangularReps`: `|ℳₙ^∞| = σ₁(|n|)`.
@@ -105,6 +107,19 @@ theorem exists_smul_mem_upperTriangularReps (hn : n ≠ 0) (x : TraceFormulaMatr
     ∃ g : SL(2, ℤ), g • x ∈ upperTriangularReps n := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   exact (FixedDetMatrices.exists_smul_mem_reps hn A).imp fun g hg ↦ ⟨g • A, hg, (smul_mk g A).symm⟩
+
+open ModularGroup in
+/-- For `n ≠ 0`, the class of an upper-triangular matrix of determinant `n` can be moved into
+`ℳₙ^∞` by a power of `T`. -/
+theorem exists_T_zpow_smul_mk_mem_upperTriangularReps (hn : n ≠ 0) {A : TraceFormulaMatrix n}
+    (hA : A.1 1 0 = 0) : ∃ m : ℤ, T ^ m • mk A ∈ upperTriangularReps n := by
+  -- `FixedDetMatrices.reduce A` is `T ^ m • A` or `T ^ m • S • S • A`, and `S * S = -1`
+  obtain ⟨m, hm⟩ : ∃ m : ℤ, T ^ m • mk A = mk (FixedDetMatrices.reduce A) := by
+    by_cases ha : 0 < A.1 0 0
+    · exact ⟨_, by rw [FixedDetMatrices.reduce_of_pos hA ha, smul_mk]⟩
+    · exact ⟨_, by rw [FixedDetMatrices.reduce_of_not_pos hA ha, ← smul_mk, ← smul_mk,
+        ← smul_mk, ← mul_smul S S, show S * S = -1 from Subtype.ext S_mul_S_eq, neg_one_smul]⟩
+  exact ⟨m, _, FixedDetMatrices.reduce_mem_reps hn A, hm.symm⟩
 
 /-- **Uniqueness of upper-triangular representatives**: if `g : SL(2, ℤ)` moves an element of
 `ℳₙ^∞` into `ℳₙ^∞`, then it fixes that element. -/

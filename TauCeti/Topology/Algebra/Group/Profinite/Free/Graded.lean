@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
-public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 
 /-!

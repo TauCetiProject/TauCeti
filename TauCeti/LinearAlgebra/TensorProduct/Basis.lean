@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
@@ -26,6 +26,8 @@ index a scalar extension consists of pure tensors.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
   every element of a scalar extension is the pure tensor of its unique coordinate with the
   corresponding basis vector.
+* `Module.Basis.baseChange_toMatrix_baseChange`: change-of-basis matrices between base-changed
+  bases are obtained by mapping entries.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 * `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended endomorphisms
@@ -138,6 +140,15 @@ section Matrix
 
 variable {S : Type v} [CommSemiring S] [Algebra R S]
 variable {T : Type w} [CommSemiring T] [Algebra R T]
+
+/-- The change-of-basis matrix between two base-changed bases is the entrywise scalar extension
+of the change-of-basis matrix between the original bases. -/
+@[simp] theorem baseChange_toMatrix_baseChange {ι' : Type*} (b : Basis ι R M)
+    (b' : Basis ι' R M) :
+    (b.baseChange S).toMatrix (b'.baseChange S) = (b.toMatrix b').map (algebraMap R S) := by
+  ext i j
+  simp [toMatrix_apply, baseChange_apply, Algebra.smul_def]
+
 variable [Fintype ι] [DecidableEq ι]
 
 /-- The matrix of a scalar-extended endomorphism is the entrywise scalar extension of its

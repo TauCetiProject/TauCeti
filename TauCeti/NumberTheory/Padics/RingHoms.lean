@@ -39,6 +39,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `ZMod (p ^ n)`.
 * `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
   `ℤ_[p]`.
+* `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
+  finite of cardinality `p`.
 -/
 
 public section
@@ -46,6 +48,15 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
+instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+  Finite.of_equiv _ residueField.symm.toEquiv
+
+variable (p) in
+/-- The residue field of `ℤ_p` has `p` elements. -/
+theorem card_residueField : Nat.card (IsLocalRing.ResidueField ℤ_[p]) = p := by
+  rw [Nat.card_congr residueField.toEquiv, Nat.card_zmod]
 
 /-- The truncation `toZModPow n x` is the class of the natural number `x.appr n`. -/
 theorem toZModPow_eq_natCast_appr (x : ℤ_[p]) (n : ℕ) :

@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
-public import TauCeti.Topology.Algebra.Group.Profinite.Presentation
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MinimalPresentation
 
 /-!
 # The standard dyadic Demushkin presentation `D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩`
@@ -24,6 +24,11 @@ an abelian group and `2 · 0 + 4 · 1 = 0`, so it descends to a continuous surje
 `D₀ ↠ ℤ/2`. Hence `D₀` is nontrivial: the marked generator `S` is not the identity. The
 marked generators topologically generate `D₀`, so `D₀` is topologically finitely generated, and a
 continuous homomorphism out of `D₀` is determined by its values on `A`, `S` and `Y`.
+
+The presentation is moreover minimal: the relator is a product of two squares and a commutator,
+so it lies in the Frattini subgroup of the free pro-`2` group on three generators, and therefore
+`D₀` has topological generator rank exactly `3`. This is the rank `n = 3` of the Demushkin
+invariants of `D₀`.
 
 ## Main definitions
 
@@ -46,6 +51,9 @@ continuous homomorphism out of `D₀` is determined by its values on `A`, `S` an
 * `TauCeti.d0_topologicallyGenerates`: `A`, `S`, `Y` topologically generate `D₀`.
 * `TauCeti.isTopologicallyFinitelyGenerated_demushkinD0`: `D₀` is topologically finitely
   generated.
+* `TauCeti.d0Relator_mem_proPFrattini`: the relator lies in the Frattini subgroup of the free
+  pro-`2` group, so the presentation of `D₀` is minimal.
+* `TauCeti.topologicalGeneratorRankNat_demushkinD0`: `D₀` has topological generator rank `3`.
 
 ## References
 
@@ -66,6 +74,12 @@ namespace TauCeti
 noncomputable def d0Relator : freeProP 2 (Fin 3) :=
   freeProP.of 0 ^ 2 * freeProP.of 1 ^ 4 *
     ((freeProP.of 1)⁻¹ * (freeProP.of 2)⁻¹ * freeProP.of 1 * freeProP.of 2)
+
+/-- The relator `A²S⁴(S,Y)`, written out on the free generators. -/
+theorem d0Relator_def :
+    d0Relator = freeProP.of 0 ^ 2 * freeProP.of 1 ^ 4 *
+      ((freeProP.of 1)⁻¹ * (freeProP.of 2)⁻¹ * freeProP.of 1 * freeProP.of 2) :=
+  (rfl)
 
 /-- **`D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩`**, the standard dyadic one-relator pro-`2` group, presented on
 three generators by the single relator `d0Relator`. -/
@@ -258,5 +272,25 @@ theorem d0_topologicallyGenerates :
 theorem isTopologicallyFinitelyGenerated_demushkinD0 :
     IsTopologicallyFinitelyGenerated demushkinD0 :=
   (Set.toFinite {d0A, d0S, d0Y}).isTopologicallyFinitelyGenerated d0_topologicallyGenerates
+
+/-- The relator `A²S⁴(S,Y)` lies in the Frattini subgroup of the free pro-`2` group on three
+generators: `A²` and `S⁴ = (S²)²` are squares and `(S,Y) = ⁅S⁻¹, Y⁻¹⁆` is a commutator. -/
+theorem d0Relator_mem_proPFrattini : d0Relator ∈ proPFrattini 2 (freeProP 2 (Fin 3)) := by
+  refine mul_mem (mul_mem (pow_mem_proPFrattini _) ?_) ?_
+  · have h : (freeProP.of (1 : Fin 3) : freeProP 2 (Fin 3)) ^ 4 = (freeProP.of 1 ^ 2) ^ 2 := by
+      rw [← pow_mul]
+    rw [h]
+    exact pow_mem_proPFrattini _
+  · simpa [commutatorElement_def] using commutator_le_proPFrattini Nat.prime_two
+      (Subgroup.commutator_mem_commutator (Subgroup.mem_top (freeProP.of (1 : Fin 3))⁻¹)
+        (Subgroup.mem_top (freeProP.of (2 : Fin 3))⁻¹))
+
+/-- **`D₀` has topological generator rank `3`**: its presentation on `A`, `S`, `Y` is minimal,
+because the relator lies in the Frattini subgroup of the free pro-`2` group. -/
+@[simp]
+theorem topologicalGeneratorRankNat_demushkinD0 :
+    topologicalGeneratorRankNat demushkinD0 isTopologicallyFinitelyGenerated_demushkinD0 = 3 := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff {d0Relator}).mpr
+    (Set.singleton_subset_iff.mpr d0Relator_mem_proPFrattini)
 
 end TauCeti

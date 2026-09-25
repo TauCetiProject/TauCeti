@@ -358,6 +358,13 @@ theorem mk_eq_one_iff (r : freeProP p X) :
   change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
   exact QuotientGroup.eq_one_iff r
 
+/-- The kernel of the quotient map onto a presented pro-`p` group is the closed normal closure of
+the relators. -/
+@[simp] theorem ker_mk :
+    (mk p rels : freeProP p X →* presentedProP p X rels).ker =
+      (Subgroup.normalClosure rels).topologicalClosure :=
+  Subgroup.ext fun r ↦ MonoidHom.mem_ker.trans (mk_eq_one_iff r)
+
 /-- The generators generate the presented pro-`p` group topologically. -/
 theorem dense_closure_range_of :
     Dense ((Subgroup.closure (Set.range (of p rels)) : Subgroup (presentedProP p X rels)) :

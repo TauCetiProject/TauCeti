@@ -25,6 +25,8 @@ condition can change at the finitely many indices where the families differ.  Th
 The resulting transport of double-coset spaces is in
 `TauCeti.Topology.Algebra.RestrictedProduct.Congr.DoubleCoset`.
 
+The general statements have additive counterparts, such as `addRestrictedProductCongr`.
+
 ## References
 
 * N. Bourbaki, *General Topology*.
@@ -45,6 +47,9 @@ variable [∀ i, Group (G i)]
 
 /-- The multiplicative equivalence between the restricted products with respect to two reference
 families that agree at all but finitely many indices. It is the identity in every coordinate. -/
+@[to_additive addRestrictedProductCongr /-- The additive equivalence between the restricted
+products with respect to two reference families that agree at all but finitely many indices. It is
+the identity in every coordinate. -/]
 def restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (Πʳ i, [G i, (U i : Set (G i))]) ≃* (Πʳ i, [G i, (U' i : Set (G i))]) :=
@@ -54,7 +59,7 @@ def restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     exact Set.bijOn_id _
 
 /-- The change-of-family equivalence is the identity in every coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_apply]
 theorem restrictedProductCongr_apply (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i)
     (x : Πʳ i, [G i, (U i : Set (G i))]) (i : ι) :
@@ -65,6 +70,7 @@ theorem restrictedProductCongr_apply (U U' : ∀ i, Subgroup (G i))
 
 Not a `simp` lemma: `simp` proves it from `restrictedProductCongr_symm` and
 `restrictedProductCongr_apply`. -/
+@[to_additive addRestrictedProductCongr_symm_apply]
 theorem restrictedProductCongr_symm_apply (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i)
     (y : Πʳ i, [G i, (U' i : Set (G i))]) (i : ι) :
@@ -72,6 +78,7 @@ theorem restrictedProductCongr_symm_apply (U U' : ∀ i, Subgroup (G i))
   restrictedProductCongrRight_symm_apply U U' _ _ y i
 
 /-- The change-of-family equivalence is continuous, for every pair of reference families. -/
+@[to_additive continuous_addRestrictedProductCongr]
 theorem continuous_restrictedProductCongr [∀ i, TopologicalSpace (G i)]
     (U U' : ∀ i, Subgroup (G i)) (h : ∀ᶠ i in cofinite, U i = U' i) :
     Continuous (restrictedProductCongr U U' h) :=
@@ -79,13 +86,14 @@ theorem continuous_restrictedProductCongr [∀ i, TopologicalSpace (G i)]
 
 /-- The inverse of the change-of-family equivalence is continuous, for every pair of reference
 families. -/
+@[to_additive continuous_addRestrictedProductCongr_symm]
 theorem continuous_restrictedProductCongr_symm [∀ i, TopologicalSpace (G i)]
     (U U' : ∀ i, Subgroup (G i)) (h : ∀ᶠ i in cofinite, U i = U' i) :
     Continuous (restrictedProductCongr U U' h).symm :=
   continuous_restrictedProductCongrRight_symm U U' _ _ fun _ ↦ continuous_id
 
 /-- The change-of-family equivalence from a family to itself is the identity. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_refl]
 theorem restrictedProductCongr_refl (U : ∀ i, Subgroup (G i)) :
     restrictedProductCongr U U (.of_forall fun _ ↦ rfl) =
       MulEquiv.refl (Πʳ i, [G i, (U i : Set (G i))]) := by
@@ -94,7 +102,7 @@ theorem restrictedProductCongr_refl (U : ∀ i, Subgroup (G i)) :
 
 /-- The inverse of the change-of-family equivalence is the change-of-family equivalence in the
 opposite direction. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_symm]
 theorem restrictedProductCongr_symm (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (restrictedProductCongr U U' h).symm =
@@ -104,7 +112,7 @@ theorem restrictedProductCongr_symm (U U' : ∀ i, Subgroup (G i))
 
 /-- Two successive changes of family compose to the change of family between the outer two
 families. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_trans]
 theorem restrictedProductCongr_trans (U U' U'' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) (h' : ∀ᶠ i in cofinite, U' i = U'' i) :
     (restrictedProductCongr U U' h).trans (restrictedProductCongr U' U'' h') =
@@ -116,6 +124,7 @@ theorem restrictedProductCongr_trans (U U' U'' : ∀ i, Subgroup (G i))
 
 /-- Naturality of the change-of-family equivalence with respect to componentwise maps: changing
 the family before or after applying a componentwise map gives the same homomorphism. -/
+@[to_additive addRestrictedProductCongr_naturality]
 theorem restrictedProductCongr_naturality {H : ι → Type w} [∀ i, Group (H i)]
     (U U' : ∀ i, Subgroup (G i)) (V V' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i)
@@ -130,6 +139,7 @@ theorem restrictedProductCongr_naturality {H : ι → Type w} [∀ i, Group (H i
 
 /-- As a monoid homomorphism, the change-of-family equivalence is the componentwise map induced
 by the identity homomorphisms. -/
+@[to_additive coe_addMonoidHom_addRestrictedProductCongr]
 theorem coe_monoidHom_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (restrictedProductCongr U U' h :

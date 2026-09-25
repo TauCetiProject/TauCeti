@@ -18,8 +18,9 @@ fibers: a permutation of the curve indices and an intersection point in each pai
 
 The curve count `n` is independent of surface genus. For a multi-pointed diagram of genus `g`
 with `k` basepoints on each side, the usual curve count is `g + k - 1`; this file records only
-that count and the incidence data. Surface regions, basepoints, domains, and admissibility are
-not encoded here; they are needed to define the differential.
+that count and the incidence data. Abstract region incidence data, basepoints, domains, and
+admissibility are recorded on top of it in `TauCeti.LowDimTopology.Heegaard.Domain`; they are
+needed to define the differential.
 
 ## Main definitions
 
@@ -35,6 +36,8 @@ not encoded here; they are needed to define the differential.
   bijective `β`-labels.
 * `TauCeti.HeegaardIntersectionSystem.point` and `TauCeti.HeegaardIntersectionSystem.betaEquiv`:
   accessors for the chosen point and its curve matching.
+* `TauCeti.HeegaardIntersectionSystem.generatorChain`: the `0`-chain of the points of a
+  generator.
 
 ## References
 
@@ -181,6 +184,27 @@ theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
 @[simp]
 theorem beta_coe (g : D.Generator) (i : Fin n) : D.beta (g.2 i) = g.1 i :=
   (g.2 i).property.2
+
+/-- An intersection point occurs in a generator exactly when it is the generator's point on its
+own `α`-curve. -/
+@[simp]
+theorem exists_point_iff (g : D.Generator) (q : Point) :
+    (∃ i, (g.2 i : Point) = q) ↔ D.point g (D.alpha q) = q := by
+  constructor
+  · rintro ⟨i, rfl⟩
+    simp
+  · intro h
+    exact ⟨_, h⟩
+
+/-- The `0`-chain of a generator: the indicator function of its intersection points. -/
+noncomputable def generatorChain (g : D.Generator) : Point → ℤ :=
+  (Set.range (D.point g)).indicator 1
+
+@[simp]
+theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
+    D.generatorChain g q = if D.point g (D.alpha q) = q then 1 else 0 := by
+  simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
+    Pi.one_apply]
 
 /-- Two generators with the same chosen points are equal. -/
 @[ext]

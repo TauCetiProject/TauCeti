@@ -56,6 +56,8 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
+* `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of the pure
+  quaternion norm form `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
@@ -329,6 +331,33 @@ theorem hasseInvariant_sq (x : RegularFormClass K) : hasseInvariant x ^ 2 = 1 :=
     refine prod_eq_one fun i _ => ?_
     rw [← prod_pow]
     exact prod_eq_one fun j _ => quaternionClass_sq _ _
+
+/-- **The Hasse invariant of a pure quaternion norm form**: the ternary form `⟨-a, -b, ab⟩`, which
+is the norm form of `ℍ[K,a,b]` on its pure quaternions, has Hasse invariant
+`[(a, b)] · [(-1, -1)]`. -/
+@[simp 1100]
+theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
+    hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      quaternionClass a b * quaternionClass (-1) (-1) := by
+  have hexp : hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      quaternionClass (-a) (-b) * quaternionClass (-a) (a * b) * quaternionClass (-b) (a * b) := by
+    simp [Fin.prod_univ_succ, mul_assoc]
+  -- Write both negations as multiplication by `-1`, expand every symbol bilinearly in `-1`, `a`,
+  -- `b`, and order each symbol as `[(-1, a)]`, `[(-1, b)]` or `[(a, b)]`, using
+  -- `[(c, c)] = [(c, -1)]`.
+  have hna : -a = -1 * a := (neg_one_mul a).symm
+  have hnb : -b = -1 * b := (neg_one_mul b).symm
+  rw [hexp, hna, hnb]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_self a,
+    quaternionClass_self b, quaternionClass_comm a (-1), quaternionClass_comm b (-1),
+    quaternionClass_comm b a]
+  -- Now `[(-1, a)]` and `[(-1, b)]` each occur four times and `[(a, b)]` three times; the symbols
+  -- are `2`-torsion, so only one `[(a, b)]` and the `[(-1, -1)]` survive.
+  calc _ = quaternionClass a b * quaternionClass (-1) (-1) *
+        (quaternionClass a b * quaternionClass (-1) a ^ 2 * quaternionClass (-1) b ^ 2) ^ 2 := by
+          simp only [pow_two]
+          ac_rfl
+    _ = _ := by simp
 
 end RegularFormClass
 
