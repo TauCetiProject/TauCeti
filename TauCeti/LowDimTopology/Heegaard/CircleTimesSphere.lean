@@ -150,6 +150,7 @@ def circleTimesSphereGenerator (r : Fin 3) (a : Fin 2) : (circleTimesSphere r).G
     (fun _ => Subsingleton.elim _ _)
 
 /-- The unique point chosen by `circleTimesSphereGenerator r a` is `a`. -/
+@[simp 1100]
 theorem circleTimesSphereGenerator_point (r : Fin 3) (a : Fin 2) (i : Fin 1) :
     (circleTimesSphere r).point (circleTimesSphereGenerator r a) i = a := by
   simp [circleTimesSphereGenerator]
