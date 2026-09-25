@@ -29,12 +29,18 @@ cohomology when that model is needed.
 
 * `TauCeti.ContCohomology.evensHomCocycle`: a continuous homomorphism to `ZMod 2`, lifted to a
   continuous `1`-cocycle with coefficients in `trivialF2`.
-* `TauCeti.ContCohomology.homClass`: its class in canonical continuous cohomology.
+* `TauCeti.ContCohomology.homClass`: its class in canonical continuous cohomology, the carrier
+  in which the canonical-model form of the Layer 13 identities is to be stated.
 
 ## Main results
 
-* `TauCeti.ContCohomology.evensNorm_cor_shapiro`: degree-one corestriction is represented by
-  `evensCorCochain`.
+* `TauCeti.ContCohomology.evensNorm_cor_shapiro`: the degree-one corestriction `explicitCor1` of
+  the class of `α` is the class of `evensCorCochain`.  The equality is between classes in the
+  explicit inhomogeneous model `H1`: neither pinned Mathlib nor Tau Ceti has a corestriction on
+  the canonical `continuousCohomology` carrier in any degree, so `explicitCor1` is the only
+  corestriction there is to compute with.  Transporting the identity along
+  `explicitH1AddEquivContinuousCohomology` is immediate once a canonical-model corestriction and
+  its degree-one agreement with `explicitCor1` land.
 
 ## References
 
@@ -303,7 +309,8 @@ theorem coe_evensCorCocycle (U : OpenSubgroup G) (s : G)
 
 /-- At index two, degree-one corestriction is represented by the sum `b₁ + b_s` of the two
 Shapiro components.  Neither summand is a cocycle on its own; the equation is between the
-corestriction class and the class of their sum. -/
+corestriction class and the class of their sum, in the explicit inhomogeneous model `H1` that
+carries the corestriction `explicitCor1`. -/
 theorem evensNorm_cor_shapiro (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (s : G) (hs : s ∉ U) (α : U.toSubgroup →* Multiplicative (ZMod 2))
     (hα : Continuous α) :
