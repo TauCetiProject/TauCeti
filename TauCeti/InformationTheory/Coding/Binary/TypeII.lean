@@ -22,8 +22,8 @@ The latter symmetry is stated for any fourth root of unity in a commutative ring
 applies both to evaluation at complex numbers and to polynomials with complex coefficients.
 
 A direct sum of binary codes is Type II exactly when both summands are, and the Type II
-property is invariant under coordinate permutations. Over the binary field monomial and
-semilinear equivalences are coordinate permutations, so it is invariant under these as well.
+property is invariant under coordinate permutations, monomial equivalences, and semilinear
+equivalences. Over the binary field the latter two are coordinate permutations.
 
 The argument follows the classical weight-enumerator proof of the length restriction;
 see Huffman and Pless, *Fundamentals of Error-Correcting Codes*, Chapter 9.
@@ -88,12 +88,20 @@ theorem IsTypeII.of_isPermutationEquivalent (hC : IsTypeII C) (h : IsPermutation
     IsTypeII D :=
   (isTypeII_iff_of_isPermutationEquivalent h).mp hC
 
-/-- The Type II property of binary codes is invariant under semilinear, hence also under
-monomial, equivalence: over the binary field these are coordinate permutations. -/
+/-- The Type II property of binary codes is invariant under monomial equivalence. -/
+theorem isTypeII_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) :
+    IsTypeII C ↔ IsTypeII D :=
+  isTypeII_iff_of_isPermutationEquivalent (isMonomialEquivalent_iff_isPermutationEquivalent.mp h)
+
+/-- Monomial equivalence preserves the Type II property of binary codes. -/
+theorem IsTypeII.of_isMonomialEquivalent (hC : IsTypeII C) (h : IsMonomialEquivalent C D) :
+    IsTypeII D :=
+  (isTypeII_iff_of_isMonomialEquivalent h).mp hC
+
+/-- The Type II property of binary codes is invariant under semilinear equivalence. -/
 theorem isTypeII_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
     IsTypeII C ↔ IsTypeII D :=
-  isTypeII_iff_of_isPermutationEquivalent <| isMonomialEquivalent_iff_isPermutationEquivalent.mp <|
-    isSemilinearEquivalent_iff_isMonomialEquivalent.mp h
+  isTypeII_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
 
 /-- Semilinear equivalence preserves the Type II property of binary codes. -/
 theorem IsTypeII.of_isSemilinearEquivalent (hC : IsTypeII C) (h : IsSemilinearEquivalent C D) :

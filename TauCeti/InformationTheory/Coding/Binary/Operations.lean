@@ -107,10 +107,20 @@ theorem isEven_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
     IsEven C ↔ IsEven D :=
   isEven_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
 
+/-- Semilinear equivalence preserves evenness of binary codes. -/
+theorem IsEven.of_isSemilinearEquivalent (hC : IsEven C) (h : IsSemilinearEquivalent C D) :
+    IsEven D :=
+  (isEven_iff_of_isSemilinearEquivalent h).mp hC
+
 /-- Double evenness of binary codes is invariant under semilinear equivalence. -/
 theorem isDoublyEven_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
     IsDoublyEven C ↔ IsDoublyEven D :=
   isDoublyEven_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
+
+/-- Semilinear equivalence preserves double evenness of binary codes. -/
+theorem IsDoublyEven.of_isSemilinearEquivalent (hC : IsDoublyEven C)
+    (h : IsSemilinearEquivalent C D) : IsDoublyEven D :=
+  (isDoublyEven_iff_of_isSemilinearEquivalent h).mp hC
 
 end BinaryCode
 
