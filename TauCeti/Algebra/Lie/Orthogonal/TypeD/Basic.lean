@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
-public import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
 # Basic lemmas for the split even orthogonal Lie algebra
