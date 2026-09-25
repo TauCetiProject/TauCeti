@@ -294,7 +294,7 @@ private theorem expCoeff_binomial (R : Type*) [CommRing R] [Algebra ℚ R]
         have hkk : ((k.factorial:ℚ) * (((n-k).factorial:ℚ))) ≠ 0 :=
           mul_ne_zero hk0 hnk0
         field_simp
-        calc (n.factorial:ℚ) 
+        calc (n.factorial:ℚ)
             = (n.choose k:ℚ) * (k.factorial:ℚ) * (((n-k).factorial:ℚ)) := hchoose.symm
           _ = (k.factorial:ℚ) * (((n-k).factorial:ℚ)) * (n.choose k:ℚ) := by ring
       conv_rhs => rw [← h1]
@@ -459,6 +459,87 @@ theorem pinnedExp_mul_pinnedExp_neg (R : Type*) [CommRing R] [Algebra ℚ R]
     rw [hE'def, ← Matrix.map_pow]
   rw [hident u, hident (-u)]
   exact exp_mul_exp_neg_aux (t.GeckIndex ht) R _ hNpos E' hE'N u
+
+/-- The exponential coefficient satisfies `c_k(u) * k = u * c_{k-1}(u)` for `k ≥ 1`.
+This is `u^k/k! * k = u * u^(k-1)/(k-1)!`, using `k! = k * (k-1)!`. -/
+private theorem expCoeff_mul_nat (R : Type*) [CommRing R] [Algebra ℚ R]
+    (k : ℕ) (hk : 1 ≤ k) (u : R) :
+    (expCoeff R k u) * (k : R) = u * (expCoeff R (k - 1) u) := by
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+  simp only [Nat.add_sub_cancel]
+  unfold expCoeff
+  have hpow : u ^ (m + 1) = u * u ^ m := pow_succ' u m
+  rw [hpow]
+  have h2 : ((m + 1).factorial : ℚ)⁻¹ * ((m + 1 : ℕ) : ℚ) = (m.factorial : ℚ)⁻¹ := by
+    have hm1 : ((m + 1 : ℕ) : ℚ) ≠ 0 := by exact_mod_cast (by omega : m + 1 ≠ 0)
+    have hfact : ((m + 1).factorial : ℚ) = ((m + 1 : ℕ) : ℚ) * (m.factorial : ℚ) := by
+      rw [Nat.factorial_succ, Nat.cast_mul]
+    rw [hfact, mul_inv]
+    calc ((m + 1 : ℕ) : ℚ)⁻¹ * (m.factorial : ℚ)⁻¹ * ((m + 1 : ℕ) : ℚ)
+        = (m.factorial : ℚ)⁻¹ * (((m + 1 : ℕ) : ℚ)⁻¹ * ((m + 1 : ℕ) : ℚ)) := by ring
+      _ = (m.factorial : ℚ)⁻¹ * 1 := by
+          congr 1
+          exact inv_mul_cancel₀ hm1
+      _ = (m.factorial : ℚ)⁻¹ := by rw [mul_one]
+  have h1 : (algebraMap ℚ R (((m + 1).factorial : ℚ)⁻¹)) * (((m + 1 : ℕ)) : R)
+      = algebraMap ℚ R ((m.factorial : ℚ)⁻¹) := by
+    rw [← map_natCast (algebraMap ℚ R) (m + 1), ← map_mul, h2]
+  calc ((u * u ^ m) * (algebraMap ℚ R (((m + 1).factorial : ℚ)⁻¹))) * (((m + 1 : ℕ)) : R)
+      = (u * u ^ m) * ((algebraMap ℚ R (((m + 1).factorial : ℚ)⁻¹)) * (((m + 1 : ℕ)) : R)) := by
+          ring
+    _ = (u * u ^ m) * (algebraMap ℚ R ((m.factorial : ℚ)⁻¹)) := by rw [h1]
+    _ = u * (u ^ m * (algebraMap ℚ R ((m.factorial : ℚ)⁻¹))) := by ring
+
+/-! ## Exponential conjugation (Heisenberg case) -/
+
+/-- Moving a power of `X` past `Y` in the Heisenberg case:
+`X^k * Y = Y * X^k + k • ([X,Y] * X^(k-1))`.
+By induction on `k`, using that `[X, [X,Y]] = 0` (so `X` commutes with `[X,Y]`). -/
+private theorem move_past_pow {n : Type*} [Fintype n] [DecidableEq n]
+    (R : Type*) [CommRing R]
+    (X Y : Matrix n n R)
+    (hdouble : X * (X * Y - Y * X) = (X * Y - Y * X) * X)
+    (k : ℕ) :
+    X ^ k * Y = Y * X ^ k + (k : R) • ((X * Y - Y * X) * X ^ (k - 1)) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    set C := X * Y - Y * X with hCdef
+    have hXY : X * Y = Y * X + C := by rw [hCdef]; abel
+    have hXpow : (k : R) • (C * (X * X ^ (k - 1))) = (k : R) • (C * X ^ k) := by
+      by_cases hk : k = 0
+      · subst hk; simp
+      · congr 1
+        congr 1
+        have hkk : k - 1 + 1 = k := by omega
+        calc X * X ^ (k - 1) = X ^ ((k - 1) + 1) := (pow_succ' X (k - 1)).symm
+          _ = X ^ k := by rw [hkk]
+    have hY : Y * X * X ^ k = Y * X ^ (k + 1) := by
+      rw [mul_assoc, ← pow_succ']
+    -- Main computation
+    calc X ^ (k + 1) * Y
+        = X * (X ^ k * Y) := by rw [pow_succ', mul_assoc]
+      _ = X * (Y * X ^ k + (k : R) • (C * X ^ (k - 1))) := by rw [ih]
+      _ = X * (Y * X ^ k) + X * ((k : R) • (C * X ^ (k - 1))) := by rw [mul_add]
+      _ = (X * Y) * X ^ k + (k : R) • (X * (C * X ^ (k - 1))) := by
+          rw [← mul_assoc X Y (X ^ k), mul_smul_comm]
+      _ = (Y * X + C) * X ^ k + (k : R) • ((X * C) * X ^ (k - 1)) := by
+          rw [hXY, ← mul_assoc X C (X ^ (k - 1))]
+      _ = (Y * X + C) * X ^ k + (k : R) • ((C * X) * X ^ (k - 1)) := by rw [hdouble]
+      _ = Y * X * X ^ k + C * X ^ k + (k : R) • (C * X ^ k) := by
+          rw [add_mul, mul_assoc C X (X ^ (k - 1)), hXpow]
+      _ = Y * X ^ (k + 1) + C * X ^ k + (k : R) • (C * X ^ k) := by rw [hY]
+      _ = Y * X ^ (k + 1) + ((k + 1 : ℕ) : R) • (C * X ^ k) := by
+          have h2 : C * X ^ k + (k : R) • (C * X ^ k)
+              = ((k + 1 : ℕ) : R) • (C * X ^ k) := by
+            nth_rewrite 1 [← one_smul R (C * X ^ k)]
+            rw [← add_smul]
+            congr 1
+            push_cast
+            ring
+          rw [add_assoc (Y * X ^ (k + 1)) (C * X ^ k) ((k : R) • (C * X ^ k)), h2]
+      _ = Y * X ^ (k + 1) + ((k + 1 : ℕ) : R) • (C * X ^ ((k + 1) - 1)) := by
+          rw [Nat.add_sub_cancel]
 
 end
 
