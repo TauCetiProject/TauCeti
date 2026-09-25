@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 /-!
 # Algebraicity from transcendence degree in towers
 
-This file records consequences of Mathlib's transcendence-degree tower formula
-`lift_trdeg_add_eq` for injective towers of commutative rings with no zero divisors at the top.
+This file records consequences of Mathlib's transcendence-degree tower inequality
+`lift_trdeg_add_le` for injective towers of commutative rings.
 
 ## Main results
 
@@ -27,21 +27,21 @@ namespace TauCeti
 universe u v w
 
 variable {R : Type u} {S : Type v} {A : Type w}
-variable [CommRing R] [Nontrivial R] [CommRing S] [CommRing A] [NoZeroDivisors A]
+variable [CommRing R] [Nontrivial R] [CommRing S] [CommRing A]
 variable [Algebra R S] [Algebra S A] [Algebra R A] [IsScalarTower R S A]
 variable [FaithfulSMul R S] [FaithfulSMul S A]
 
 /-- In an injective tower `R → S → A`, if `A` has the same finite transcendence degree over
 `R` and `S`, then `S` is algebraic over `R`. Finiteness allows cancellation in the
-transcendence-degree tower formula. -/
+transcendence-degree tower inequality. -/
 theorem isAlgebraic_of_trdeg_eq (h : Algebra.trdeg S A = Algebra.trdeg R A)
     (hfin : Algebra.trdeg R A < Cardinal.aleph0) : Algebra.IsAlgebraic R S := by
   rw [← trdeg_eq_zero_iff]
-  have hz : Cardinal.lift.{w} (Algebra.trdeg R S) = 0 :=
-    (Cardinal.add_right_inj_of_lt_aleph0
+  have hz : Cardinal.lift.{w} (Algebra.trdeg R S) ≤ 0 :=
+    (Cardinal.add_le_add_iff_of_lt_aleph0
       (γ := Cardinal.lift.{v} (Algebra.trdeg R A))
       (Cardinal.lift_lt_aleph0.mpr hfin)).mp
-      (by simpa only [h, zero_add] using lift_trdeg_add_eq R S A)
+      (by simpa only [h, zero_add] using (lift_trdeg_add_le (R := R) (S := S) (A := A)))
   simpa using hz
 
 /-- In an injective tower `R → S → A`, if `A` has transcendence degree one over both
