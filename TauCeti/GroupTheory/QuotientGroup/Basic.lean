@@ -62,6 +62,7 @@ namespace TauCeti
 variable {G : Type*} [Group G]
 
 /-- An element of a normal subgroup `N` fixes every coset of `N`. -/
+@[simp]
 theorem smul_quotient_eq_self_of_mem {N : Subgroup G} [N.Normal] {γ : G} (hγ : γ ∈ N)
     (u : G ⧸ N) : γ • u = u := by
   obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective u
