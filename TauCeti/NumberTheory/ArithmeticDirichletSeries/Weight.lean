@@ -470,6 +470,7 @@ def IsTrivialOnGood (χ : MultiplicativeIdealWeight K) : Prop :=
   ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = 1
 
 /-- A weight trivial on its good ideals takes the value `1` at each of them. -/
+@[simp]
 theorem IsTrivialOnGood.apply_eq_one {χ : MultiplicativeIdealWeight K} (h : χ.IsTrivialOnGood)
     {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : χ I = 1 :=
   h I hI
