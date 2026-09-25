@@ -51,9 +51,19 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  pick-runner:
+    uses: ./.github/workflows/pick-runner.yml
+    permissions:
+      actions: read
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    needs: pick-runner
+    if: ${{ !cancelled() }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
     # at all, for root as well as for the job user. The `-with-features` suffix on the machine
@@ -63,9 +73,14 @@ jobs:
     # labels this organisation does not serve is not rejected: it sits queued with an empty
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true
+    #
+    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
+    # an explicit `true` from it, including a picker that failed or never ran, means Namespace.
+    runs-on: >-
+      ${{ needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+        "nscloud-ubuntu-24.04-amd64-8x16-with-features",
+        "namespace-features:container.privileged=true"
+      ]') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
