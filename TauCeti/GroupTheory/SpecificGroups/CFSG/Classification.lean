@@ -53,13 +53,6 @@ def ClassificationStatement : Prop :=
   ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
     ∃ i : CFSGIndex, Nonempty (G ≃* i.Group)
 
-/-- The classification statement holds exactly when every finite simple group is isomorphic
-to one of the indexed carriers. -/
-theorem classificationStatement_iff :
-    ClassificationStatement.{u} ↔
-      ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
-        ∃ i : CFSGIndex, Nonempty (G ≃* i.Group) := Iff.rfl
-
 /-- The universe-zero classification statement implies the statement in every universe. -/
 theorem classificationStatement_of_zero (h : ClassificationStatement.{0}) :
     ClassificationStatement.{u} :=

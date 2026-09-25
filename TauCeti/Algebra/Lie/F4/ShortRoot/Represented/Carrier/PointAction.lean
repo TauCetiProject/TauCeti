@@ -92,6 +92,7 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
       LinearEquiv.coe_toLinearMap,
       f4ShortRootCotangentBaseChangeMatrixEquiv_apply,
       GeneralLinear.tangentMatrix_tangentScalarExtensionEquiv_tmul]
+    -- The cotangent matrix map and scalar extension reduce to the same pure-tensor action.
     change a • (GeneralLinear.cotangentDualMatrixEquiv
         (f4ShortRootCarrierRepresentedMap X : f4ShortRootCotangentDual)).map _ =
       f4ShortRootBaseChangeAdjointMatrixLinearMap

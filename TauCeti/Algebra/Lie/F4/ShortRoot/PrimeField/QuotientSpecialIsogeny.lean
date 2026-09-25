@@ -22,8 +22,8 @@ the carrier's coordinate Hopf algebra.
 `specialIsogenyHom` and `specialIsogenyHom_comp_self` expose the corresponding group-scheme
 endomorphism and its square.
 `specialIsogeny` transports this construction to the existing matrix-valued carrier points, with
-its numbered root action and Frobenius square. These supply the special endomorphism selected by
-the Ree F4 and Tits branches in L2 of `TauCetiRoadmap/CFSGStatement/README.md`.
+its numbered root action and Frobenius square. These supply the exceptional endomorphisms used
+for the Ree F4 and Tits families.
 
 The carrier is explicit; no identification with the pinned simply connected F4 group scheme,
 or finiteness or simplicity theorem for its fixed-point candidates, is asserted here.
@@ -73,6 +73,7 @@ private theorem root_generator_point (k : Fin 4 ⊕ Fin 4) :
   refine ⟨AdditiveGroup.gaPointsMulEquiv q, ?_⟩
   have h := (coe_rootSubgroupPoints_gaPointsMulEquiv k _ q).symm.trans
     (coe_rootSubgroupPoints k _ _)
+  -- The generator point is the universal additive-group point in coordinate form.
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inl k)).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
@@ -93,6 +94,7 @@ private theorem torus_generator_point :
   refine ⟨SplitTorus.pointsMulEquiv q, ?_⟩
   have h := (coe_weightTorusPoints_pointsMulEquiv _ q).symm.trans
     (coe_weightTorusPoints_eq _ _)
+  -- The generator point is the universal split-torus point in coordinate form.
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv ((AlgHom.id 𝔽₂ _).comp (generator (.inr ())).hom.toAlgHom)) = _ at h
   simpa only [AlgHom.id_comp] using h
@@ -307,18 +309,10 @@ def specialIsogenyHom : groupScheme ⟶ groupScheme :=
     (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map quotientIsogeny.op ≫
       eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm
 
-/-- The exceptional carrier morphism is the spectrum of the quotient isogeny. -/
-theorem specialIsogenyHom_eq_map_quotientIsogeny :
-    specialIsogenyHom =
-      eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map quotientIsogeny.op ≫
-          eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm := by
-  rfl
-
 /-- The exceptional endomorphism squares to Frobenius as a morphism of group schemes. -/
 @[simp] theorem specialIsogenyHom_comp_self :
     specialIsogenyHom ≫ specialIsogenyHom = frobeniusHom := by
-  rw [specialIsogenyHom_eq_map_quotientIsogeny, frobeniusHom_eq_map_frobeniusCoordinateMap]
+  rw [specialIsogenyHom, frobeniusHom_eq_map_frobeniusCoordinateMap]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   congr 1
   rw [← Category.assoc]
@@ -338,6 +332,7 @@ theorem specialIsogeny_coordinatePointsEquiv (A : Type) [CommRing A] [Algebra �
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
     specialIsogeny A (coordinatePointsEquiv A q) =
       coordinatePointsEquiv A (WithConv.toConv (q.ofConv.comp quotientIsogeny.hom.toAlgHom)) := by
+  -- Unfold the composed monoid homomorphism to expose its coordinate point.
   change coordinatePointsEquiv A
     ((CommHopfAlgCat.mapPointsFunctor quotientIsogeny).app (CommAlgCat.of 𝔽₂ A)
       ((coordinatePointsEquiv A).symm (coordinatePointsEquiv A q))) = _
@@ -345,7 +340,7 @@ theorem specialIsogeny_coordinatePointsEquiv (A : Type) [CommRing A] [Algebra �
 
 /-- The special endomorphism exchanges each signed simple root with its reversed root,
 using the pinned long/short exponent convention. -/
-theorem specialIsogeny_rootSubgroupPoints (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+@[simp] theorem specialIsogeny_rootSubgroupPoints (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
     specialIsogeny A (rootSubgroupPoints k A u) =
       rootSubgroupPoints (isogenyReverse k) A
@@ -359,6 +354,32 @@ theorem specialIsogeny_rootSubgroupPoints (A : Type) [CommRing A] [Algebra 𝔽�
   apply quotientIsogeny_root
   rw [← coe_coordinatePointsEquiv, hq, coe_rootSubgroupPoints]
 
+/-- The special isogeny applies the exceptional torus parameter map. -/
+@[simp] theorem specialIsogeny_weightTorusPoints (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (s : Fin 4 → Aˣ) :
+    specialIsogeny A (weightTorusPoints A s) =
+      weightTorusPoints A (f4SpecialIsogenyTorusMap s) := by
+  let q := (coordinatePointsEquiv A).symm (weightTorusPoints A s)
+  have hq : coordinatePointsEquiv A q = weightTorusPoints A s :=
+    (coordinatePointsEquiv A).apply_symm_apply _
+  apply Subtype.ext
+  rw [← hq, specialIsogeny_coordinatePointsEquiv, coe_coordinatePointsEquiv]
+  rw [WithConv.ofConv_toConv, coe_weightTorusPoints_eq]
+  apply quotientIsogeny_torus
+  rw [← coe_coordinatePointsEquiv, hq, coe_weightTorusPoints_eq]
+
+/-- The special isogeny commutes with extension of the coefficient algebra. -/
+@[simp] theorem pointsMap_specialIsogeny {A B : Type} [CommRing A] [CommRing B]
+    [Algebra 𝔽₂ A] [Algebra 𝔽₂ B] (f : A →ₐ[𝔽₂] B) (g : points A) :
+    pointsMap f (specialIsogeny A g) = specialIsogeny B (pointsMap f g) := by
+  obtain ⟨q, rfl⟩ := (coordinatePointsEquiv A).surjective g
+  rw [specialIsogeny_coordinatePointsEquiv,
+    ← coordinatePointsEquiv_mapPoints f q,
+    specialIsogeny_coordinatePointsEquiv,
+    ← coordinatePointsEquiv_mapPoints f
+      (WithConv.toConv (q.ofConv.comp quotientIsogeny.hom.toAlgHom))]
+  rfl
+
 /-- Squaring the special endomorphism gives the prime-field Frobenius on all carrier points. -/
 @[simp] theorem specialIsogeny_specialIsogeny (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (g : points A) : specialIsogeny A (specialIsogeny A g) = frobenius 1 A g := by
@@ -369,6 +390,7 @@ theorem specialIsogeny_rootSubgroupPoints (A : Type) [CommRing A] [Algebra 𝔽�
   have hs := congrArg (fun f => f.hom.toAlgHom) quotientIsogeny_comp_self
   simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
     CommHopfAlgCat.hom_ofHom] at hs
+  -- Both sides are the same universal matrix point after composing coordinate maps.
   change GeneralLinear.pointsMulEquiv 26
     (WithConv.toConv (((q.ofConv.comp quotientIsogeny.hom.toAlgHom).comp
       quotientIsogeny.hom.toAlgHom).comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) = _

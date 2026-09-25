@@ -183,7 +183,7 @@ theorem frobeniusCoordinateMap_def :
 
 /-- Evaluating the coordinate Frobenius is the named Frobenius on matrix-valued points. -/
 theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
-    (A : Type) [CommRing A] [Algebra (ZMod 2) A]
+    (A : Type*) [CommRing A] [Algebra (ZMod 2) A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of (ZMod 2) A)) :
     coordinatePointsEquiv A (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
       frobenius 1 A (coordinatePointsEquiv A q) := by
@@ -200,6 +200,7 @@ theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
     simp only [frobeniusCoordinateMap_def, CommHopfAlgCat.hom_ofHom,
       AlgHom.comp_apply, BialgHom.coe_toAlgHom, TauCeti.frobeniusBialgHom_apply,
       FiniteField.coe_frobeniusAlgHom, map_pow]
+  -- Unfold point evaluation through the quotient to use the coordinate Frobenius identity.
   change GeneralLinear.pointsMulEquiv 26 (WithConv.toConv
     ((q.ofConv.comp frobeniusCoordinateMap.hom.toAlgHom).comp _)) = _
   rw [h]

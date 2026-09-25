@@ -111,6 +111,7 @@ theorem f4ShortRootBaseChangeQuotient_tmul
     (a : A) (x : f4ChevalleyLieLattice) :
     f4ShortRootBaseChangeQuotient (a ⊗ₜ[ℤ] x) =
       a ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] x) := by
+  -- Unfold the composite quotient map to apply scalar-tower cancellation on a pure tensor.
   change (f4ShortRootSubspace.mkQ.baseChange A)
       ((TauCeti.cancelBaseChange ℤ (ZMod 2) A
         f4ChevalleyLieLattice).symm (a ⊗ₜ[ℤ] x)) = _
