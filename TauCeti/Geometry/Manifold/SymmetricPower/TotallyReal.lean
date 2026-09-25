@@ -195,7 +195,7 @@ private theorem injective_and_isTotallyReal_comp_pi_smulRight
   · exact smul_left_injective ℝ (hv0 i) <| (diagonalSmulRight_apply v τ i).symm.trans
       ((congrFun h i).trans (diagonalSmulRight_apply v τ' i))
   · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, coe_diagonalSmulRight]
-    refine (isTotallyReal_range_pi_smulRight hv0).map hT' ?_
+    refine (isTotallyReal_range_pi_smulRight).map hT' ?_
     refine LinearMap.ext fun c => ?_
     simp [AlmostComplexStructure.ofComplexModule]
 
