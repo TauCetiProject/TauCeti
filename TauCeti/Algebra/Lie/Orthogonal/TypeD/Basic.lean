@@ -15,21 +15,31 @@ depend on a choice of Cartan subalgebra or root system.
 
 ## Main results
 
-* `TauCeti.TypeDStd.fromBlocks_mem_typeD`: a block matrix `[[A, B], [C, -Aᵀ]]` belongs to the
-  split type-`D` Lie algebra when its off-diagonal blocks are skew-symmetric.
+* `Matrix.fromBlocks_mem_typeD`: a block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split
+  type-`D` Lie algebra when its off-diagonal blocks are skew-symmetric.
+* `Matrix.transpose_single_sub_single`: transposing the difference of two opposite matrix units
+  negates it.
 -/
 
 public section
 
-namespace TauCeti.TypeDStd
+namespace Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Transposing the difference of two opposite matrix units negates it. -/
+theorem transpose_single_sub_single {K ι : Type*} [AddCommGroupWithOne K] [DecidableEq ι]
+    (i j : ι) :
+    (single i j (1 : K) - single j i 1).transpose =
+      -(single i j 1 - single j i 1) := by
+  simp only [transpose_sub, transpose_single]
+  abel
 
 /-- A block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split type-`D` Lie algebra when its
 off-diagonal blocks are skew-symmetric. -/
 theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
     (A B C : Matrix ι ι K) (hB : B.transpose = -B) (hC : C.transpose = -C) :
-    Matrix.fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
+    fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
   rw [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
     mem_skewAdjointMatricesSubmodule]
   -- Membership in `typeD` unfolds to this ambient skew-adjoint matrix equation.
@@ -42,4 +52,4 @@ theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Finty
     Matrix.transpose_transpose, hB, hC, zero_mul, mul_zero, zero_add, add_zero,
     one_mul, mul_one, neg_neg]
 
-end TauCeti.TypeDStd
+end Matrix

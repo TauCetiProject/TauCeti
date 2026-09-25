@@ -135,8 +135,8 @@ private def forkBlock {K : Type*} [Ring K] : Matrix (Fin n) (Fin n) K :=
 
 private theorem forkBlock_transpose {K : Type*} [Ring K] :
     (forkBlock (K := K) n hn).transpose = -forkBlock n hn := by
-  rw [forkBlock, Matrix.transpose_sub, Matrix.transpose_single, Matrix.transpose_single]
-  abel
+  simpa only [forkBlock] using Matrix.transpose_single_sub_single (K := K)
+    (forkLeft n hn) (forkRight n hn)
 
 /-- The ambient raising matrix for the simple root at zero-based index `i`, namely Bourbaki node
 `i + 1`, of type `Dₙ`.
@@ -271,10 +271,10 @@ theorem raisingMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
     raisingMatrix (K := K) n hn i ∈ LieAlgebra.Orthogonal.typeD (Fin n) K := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [raisingMatrix_of_chain n hn hi]
-    exact fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
   · rw [raisingMatrix_of_fork n hn hi]
     simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 (forkBlock n hn) 0
+      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 (forkBlock n hn) 0
       (forkBlock_transpose n hn) (by simp only [Matrix.transpose_zero, neg_zero])
 
 /-- The transpose of an explicit raising matrix is again in the split type-`D` Lie algebra. -/
@@ -283,10 +283,10 @@ theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
   by_cases hi : (i : ℕ) + 1 < n
   · rw [loweringMatrix, raisingMatrix_of_chain n hn hi,
       Matrix.fromBlocks_transpose]
-    exact fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
   · rw [loweringMatrix_of_fork n hn hi]
     simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 0 (-forkBlock n hn)
+      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 0 (-forkBlock n hn)
       (by simp only [Matrix.transpose_zero, neg_zero]) (by
       rw [Matrix.transpose_neg, forkBlock_transpose])
 
