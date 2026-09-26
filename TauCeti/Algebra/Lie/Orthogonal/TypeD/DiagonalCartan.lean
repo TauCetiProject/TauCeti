@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+
 /-!
 # The diagonal Cartan subalgebra of the split orthogonal Lie algebra of type D
 
@@ -381,13 +383,9 @@ coordinate functional. -/
 @[simp]
 theorem typeDWeightEquiv_single (i : ι) :
     typeDWeightEquiv (K := K) (Pi.single i 1) = typeDEpsilon i := by
-  ext A
-  simp only [typeDWeightEquiv_apply, Pi.single_apply]
-  rw [Finset.sum_eq_single i]
-  · simp
-  · intro j _ hji
-    simp [hji]
-  · simp
+  simpa only [typeDWeightEquiv, typeDEpsilon] using
+    Basis.equivFun_symm_single
+      (typeDDiagonalCartanBasis (K := K) (ι := ι)).dualBasis i
 
 /-- In coordinates, the functional `εᵢ` is the standard coordinate vector at `i`. -/
 @[simp]

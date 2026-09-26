@@ -60,9 +60,12 @@ theorem typeD_apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inr j) =
       -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl i) := by
   have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
     skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
   rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
     LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
   have h := congr_fun (congr_fun hA (.inl i)) (.inr j)
@@ -74,9 +77,12 @@ theorem typeD_apply_inl_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j) =
       -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inr i) := by
   have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
     skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
   rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
     LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
   have h := congr_fun (congr_fun hA (.inr j)) (.inr i)
@@ -87,9 +93,12 @@ theorem typeD_apply_inr_inl (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j) =
       -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr j) (.inl i) := by
   have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
     skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
   rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
     LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
   have h := congr_fun (congr_fun hA (.inl j)) (.inl i)
