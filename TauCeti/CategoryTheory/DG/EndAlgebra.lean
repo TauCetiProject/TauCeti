@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Algebra
-public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.Algebra.Module.GradedModule.GradedObject
 public import TauCeti.CategoryTheory.DG.SingleObj
 
