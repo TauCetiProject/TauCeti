@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Two
-public import Mathlib.RingTheory.LocalRing.Defs
+public import Mathlib.Algebra.CharP.Frobenius
+public import Mathlib.GroupTheory.Index
+public import TauCeti.RingTheory.LocalRing.Basic
 
-import Mathlib.Algebra.CharP.Frobenius
 import Mathlib.Data.Set.Card
-import Mathlib.GroupTheory.Index
 
 /-!
 # The Artin–Schreier map `t ↦ t² + t` on a finite ring
@@ -35,35 +34,26 @@ theorem exists_not_mem_range_sq_add_self (R : Type*) [Ring R] [Finite R] [Nontri
   have hinj := Finite.injective_iff_surjective.mpr hsurj
   exact one_ne_zero (neg_eq_zero.mp (hinj (a₁ := (-1 : R)) (a₂ := 0) (by simp [pow_two])))
 
+/-- On a finite commutative local ring of characteristic two, the Artin–Schreier map
+`frobenius R 2 + id` has range of index two. -/
+theorem index_range_frobenius_two_add_id (R : Type*) [CommRing R] [IsLocalRing R] [Finite R]
+    [CharP R 2] :
+    ((frobenius R 2).toAddMonoidHom + AddMonoidHom.id R).range.index = 2 := by
+  rw [AddSubgroup.index_range]
+  have hker : (((frobenius R 2).toAddMonoidHom + AddMonoidHom.id R).ker : Set R) =
+      {0, 1} := by
+    ext t
+    simp [frobenius_def]
+  rw [← SetLike.coe_sort_coe, hker, Nat.card_coe_set_eq, Set.ncard_pair zero_ne_one]
+
 /-- On a finite commutative local ring of characteristic two, the sum of two elements outside
 the range of `t ↦ t² + t` lies in the range. -/
 theorem add_mem_range_sq_add_self {R : Type*} [CommRing R] [IsLocalRing R] [Finite R]
     [CharP R 2] {a b : R} (ha : a ∉ Set.range (fun t : R => t ^ 2 + t))
     (hb : b ∉ Set.range (fun t : R => t ^ 2 + t)) :
     a + b ∈ Set.range (fun t : R => t ^ 2 + t) := by
-  -- In characteristic two, `t ↦ t² + t` is additive.
-  let f : R →+ R := (frobenius R 2).toAddMonoidHom + AddMonoidHom.id R
-  have hf (t : R) : f t = t ^ 2 + t := by simp [f, frobenius_def]
-  -- Its kernel is `{0, 1}`, of cardinality two.
-  have hker : Nat.card f.ker = 2 := by
-    have : (f.ker : Set R) = {0, 1} := by
-      ext t
-      simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, hf,
-        Set.mem_insert_iff, Set.mem_singleton_iff]
-      constructor
-      · intro ht
-        have hmul : t * (t + 1) = 0 := by simpa [mul_add, pow_two] using ht
-        rcases IsLocalRing.isUnit_or_isUnit_of_add_one (a := t) (b := t + 1)
-          (by simp [← add_assoc, CharTwo.add_self_eq_zero]) with hu | hu
-        · exact Or.inr (by simpa [CharTwo.add_eq_zero] using hu.mul_right_eq_zero.mp hmul)
-        · exact Or.inl (hu.mul_left_eq_zero.mp hmul)
-      · rintro (rfl | rfl) <;> simp [CharTwo.add_self_eq_zero]
-    rw [← SetLike.coe_sort_coe, this, Nat.card_coe_set_eq, Set.ncard_pair zero_ne_one]
-  have hindex : f.range.index = 2 := by
-    rw [AddSubgroup.index_range, hker]
-  have hrange : ∀ x, x ∈ f.range ↔ x ∈ Set.range (fun t : R => t ^ 2 + t) := fun x => by
-    simp only [AddMonoidHom.mem_range, Set.mem_range, hf]
-  rw [← hrange, AddSubgroup.add_mem_iff_of_index_two hindex, hrange, hrange]
-  exact iff_of_false ha hb
+  have h := AddSubgroup.add_mem_iff_of_index_two (index_range_frobenius_two_add_id R)
+    (a := a) (b := b)
+  simpa [AddMonoidHom.mem_range, frobenius_def, ← Set.mem_range, ha, hb] using h
 
 end TauCeti
