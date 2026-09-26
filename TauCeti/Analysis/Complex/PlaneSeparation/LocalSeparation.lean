@@ -78,7 +78,7 @@ theorem IsJordanCurve.connectedComponentIn_eq_or_eq_of_local_cover
 /-- If a Jordan curve agrees with a line in a neighbourhood of one of its points, its filled
 hull minus the curve is any bounded complementary component. The point `x` selects such a
 component; no convexity of the curve or of that component is required. -/
-theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn_of_locally_line
+theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line
     {C : Set ℂ} (hC : IsJordanCurve C) {p x : ℂ} {r : ℝ} (hr : 0 < r)
     (v : ℂ) (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0)
     (hx : x ∈ filledHull C \ C) :
