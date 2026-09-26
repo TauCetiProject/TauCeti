@@ -34,6 +34,17 @@ variable (T : NumericalType.{u})
 /-- The numerical Picard classes of total degree zero. -/
 abbrev degreeZero : Submodule ℤ T.Pic := LinearMap.ker T.degree
 
+/-- A numerical Picard class belongs to the degree-zero subgroup exactly when it has
+total degree zero. -/
+@[simp]
+lemma mem_degreeZero {x : T.Pic} : x ∈ T.degreeZero ↔ T.degree x = 0 :=
+  LinearMap.mem_ker
+
+/-- A degree-zero numerical Picard class has total degree zero. -/
+@[simp]
+lemma degree_coe_degreeZero (x : T.degreeZero) : T.degree (x : T.Pic) = 0 :=
+  x.property
+
 /-- The total-degree map of a numerical type has rank one: the class supported at any
 component has nonzero degree. -/
 theorem finrank_range_degree : Module.finrank ℤ (LinearMap.range T.degree) = 1 := by
@@ -79,9 +90,8 @@ theorem degree_eq_zero_iff_exists_smul_eq_zero (x : T.Pic) :
     obtain ⟨n, hn⟩ := htor (x := ⟨x, hx⟩)
     exact ⟨n, nonZeroDivisors.coe_ne_zero n, congrArg Subtype.val hn⟩
   · rintro ⟨n, hn, hx⟩
-    have h := congrArg T.degree hx
-    simp only [map_smul, map_zero, smul_eq_mul] at h
-    exact (mul_eq_zero.mp h).resolve_left hn
+    by_contra hdeg
+    exact T.smul_ne_zero_of_degree_ne_zero hdeg hn hx
 
 end NumericalType
 
