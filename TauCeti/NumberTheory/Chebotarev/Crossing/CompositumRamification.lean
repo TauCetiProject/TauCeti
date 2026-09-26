@@ -42,6 +42,9 @@ above `m` and form a finite set.
 ## References
 
 * L. Washington, *Introduction to Cyclotomic Fields*, Chapter 2.
+* `IsCyclotomicExtension.Rat.ramificationIdx_eq` in
+  `Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal` supplies the ramification-index formula
+  used by `mem_ramifiedPrimes_of_natCast_mem`.
 * R. Sharifi, *Algebraic Number Theory*, the proof of Theorem 7.2.2, where the auxiliary
   cyclotomic compositum adds ramification only above the auxiliary prime.
 -/

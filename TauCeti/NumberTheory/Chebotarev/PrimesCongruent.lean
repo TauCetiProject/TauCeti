@@ -36,6 +36,29 @@ open IsCyclotomicExtension
 
 namespace NumberField.Chebotarev
 
+section Cyclotomic
+
+variable {K : Type*} [Field K] [NumberField K] {m : ℕ} [NeZero m]
+  {F : Type*} [Field F] [NumberField F] [Algebra K F] [IsGalois K F]
+  [IsCyclotomicExtension {m} K F]
+
+/-- Away from the level, the cyclotomic Frobenius fibre is characterized by the norm modulo
+that level. Unramifiedness follows from the condition on the level. -/
+theorem mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm {ζ : F} (hζ : IsPrimitiveRoot ζ m)
+    (σ : F ≃ₐ[K] F) {𝔭 : HeightOneSpectrum (𝓞 K)} (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal) :
+    𝔭 ∈ frobeniusPrimeSet K F (ConjClasses.mk σ) ↔
+      (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  have hur (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
+      Algebra.IsUnramifiedAt (𝓞 K) Q := by
+    by_contra hQ
+    refine hm ((Ideal.mem_of_liesOver Q 𝔭.asIdeal _).mpr ?_)
+    simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)
+      (IsCyclotomicExtension.natCast_mem_differentIdeal K F m)
+  rw [mem_frobeniusPrimeSet_mk_iff_restrictNormal_autToPow (L := K) hm hur hζ]
+  exact and_iff_right (mem_frobeniusPrimeSet_self 𝔭 _)
+
+end Cyclotomic
+
 variable (F : Type*) [Field F] [NumberField F] (n : ℕ) [NeZero n]
   [IsCyclotomicExtension {n} ℚ F]
 
