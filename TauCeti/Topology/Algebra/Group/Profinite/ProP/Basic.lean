@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
+public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
@@ -137,6 +138,11 @@ Hausdorff and profinite, not whether its open-normal quotients are `p`-groups. -
 theorem quotient (hG : IsProP p G) (N : Subgroup G) [N.Normal] : IsProP p (G ⧸ N) :=
   hG.of_surjective (QuotientGroup.mk' N) QuotientGroup.continuous_mk
     (QuotientGroup.mk'_surjective N)
+
+/-- The topological abelianization of a pro-`p` group is pro-`p`. -/
+theorem topologicalAbelianization [IsTopologicalGroup G] (hG : IsProP p G) :
+    IsProP p (TopologicalAbelianization G) :=
+  hG.quotient _
 
 /-- The top subgroup of a pro-`p` group, with its subspace topology, is pro-`p`. -/
 theorem top (hG : IsProP p G) : IsProP p (⊤ : Subgroup G) :=

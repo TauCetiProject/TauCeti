@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
-public import TauCeti.Topology.Algebra.Group.Profinite.Presentation
+public import TauCeti.Topology.Algebra.Group.Profinite.Presentation.Basic
 
 /-!
 # Minimal presentations of pro-`p` groups
