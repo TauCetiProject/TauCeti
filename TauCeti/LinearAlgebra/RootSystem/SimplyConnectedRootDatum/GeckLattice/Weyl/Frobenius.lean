@@ -105,6 +105,15 @@ def geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.rank) :
   (t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A).toMonoidHom.comp
     (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k))
 
+/-- The fixed-root-subgroup map is the composite of the root-subgroup parametrization over the
+fixed subring with the equivalence onto the fixed points of the Geck carrier. -/
+theorem geckWeylRootSubgroupFixedPoints_apply (l : List (Fin t.rank)) (i : Fin t.rank)
+    (u : Multiplicative (frobeniusFixedSubring A p k)) :
+    t.geckWeylRootSubgroupFixedPoints ht p k A l i u =
+      t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A
+        (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k) u) := by
+  rw [geckWeylRootSubgroupFixedPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+
 /-- The fixed-root-subgroup map is the original root-subgroup parametrization after including the
 parameter from the Frobenius-fixed subring into `A`. -/
 @[simp]
@@ -114,10 +123,7 @@ theorem coe_geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.r
       t.geckWeylRootSubgroupPoints ht l i A
         (Multiplicative.ofAdd
           ((Multiplicative.toAdd u : frobeniusFixedSubring A p k) : A)) := by
-  change
-    ((t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A
-        (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k) u) :
-        fixedSubgroup (t.geckFrobenius ht p k A)) : t.geckPoints ht A) = _
+  rw [t.geckWeylRootSubgroupFixedPoints_apply ht p k A]
   apply Subtype.ext
   rw [coe_geckPointsMulEquivFixedSubgroupGeckFrobenius]
   have h := congrArg Subtype.val
@@ -152,8 +158,8 @@ theorem map_subtype_range_geckWeylRootSubgroupFixedPoints_eq
       Multiplicative.ofAdd ⟨Multiplicative.toAdd u, hu'⟩
     refine ⟨t.geckWeylRootSubgroupFixedPoints ht p k A l i u', ⟨u', rfl⟩, ?_⟩
     have hroot := t.coe_geckWeylRootSubgroupFixedPoints ht p k A l i u'
-    have hparam := congrArg (t.geckWeylRootSubgroupPoints ht l i A) (ofAdd_toAdd u)
-    simpa only [Subgroup.coe_subtype] using hroot.trans hparam
+    rw [Subgroup.coe_subtype, hroot]
+    simp only [u', toAdd_ofAdd, ofAdd_toAdd]
 
 end
 
