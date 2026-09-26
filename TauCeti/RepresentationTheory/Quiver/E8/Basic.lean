@@ -20,8 +20,7 @@ The Euler and Tits forms are computed in `TauCeti.RepresentationTheory.Quiver.E8
 ## Main definitions and results
 
 * `TauCeti.Quiver.E8` and `TauCeti.Quiver.E8.vertexEquiv`: the quiver and its eight nodes.
-* `TauCeti.Quiver.E8.arrow` and `TauCeti.Quiver.E8.exists_eq_arrow`: construction and elimination
-  of arrows from directed edges.
+* `TauCeti.Quiver.E8.homEquiv`: arrows are exactly the adjacent pairs directed upward.
 * `TauCeti.Quiver.E8.card_hom` and `TauCeti.Quiver.E8.isAcyclic`: the arrow count and acyclicity,
   derived from the linear-order orientation.
 
@@ -83,33 +82,36 @@ instance : _root_.Quiver.IsThin E8 := by
 noncomputable instance (i j : E8) : Fintype (i ⟶ j) :=
   Fintype.ofFinite _
 
+/-- The arrows of the `E₈` quiver from node `i` to node `j` are exactly the edges with `i < j`.
+This characterizes the hom spaces without unfolding the quiver instance. -/
+def homEquiv (i j : Fin 8) :
+    (vertexEquiv i ⟶ vertexEquiv j) ≃
+      {_h : (diagramGraph (CartanMatrix.E 8)).Adj i j // i < j} where
+  toFun e := by
+    have e' : OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
+        (Orientation.ofLinearOrder _) i ⟶
+        OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
+          (Orientation.ofLinearOrder _) j := e
+    obtain ⟨h, ho⟩ := OrientedQuiver.homEquiv _ _ i j e'
+    exact ⟨h, by simpa only [Orientation.mem_ofLinearOrder_iff] using ho⟩
+  invFun p := by
+    change OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
+      (Orientation.ofLinearOrder _) i ⟶
+      OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8)) (Orientation.ofLinearOrder _) j
+    exact OrientedQuiver.arrow _ _ p.1
+      (by simpa only [Orientation.mem_ofLinearOrder_iff] using p.2)
+  left_inv e := Subsingleton.elim _ _
+  right_inv p := Subsingleton.elim _ _
+
 /-- **The arrows of the `E₈` quiver**: there is exactly one arrow `i ⟶ j` when the nodes `i < j`
 are joined by an edge of the `E₈` diagram, and there are no others. -/
 theorem card_hom (i j : Fin 8) :
     Fintype.card (vertexEquiv i ⟶ vertexEquiv j) =
       if i < j ∧ (diagramGraph (CartanMatrix.E 8)).Adj i j then 1 else 0 := by
-  rw [Fintype.card_eq_nat_card, vertexEquiv_apply, vertexEquiv_apply]
-  exact OrientedQuiver.card_hom_ofLinearOrder _ i j
-
-/-- Construct the arrow from `i` to `j` when they are adjacent and `i < j`. -/
-def arrow {i j : Fin 8} (h : (diagramGraph (CartanMatrix.E 8)).Adj i j) (hij : i < j) :
-    vertexEquiv i ⟶ vertexEquiv j := by
-  change OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
-    (Orientation.ofLinearOrder _) i ⟶
-    OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8)) (Orientation.ofLinearOrder _) j
-  exact OrientedQuiver.arrow _ _ h (by simpa only [Orientation.mem_ofLinearOrder_iff] using hij)
-
-/-- Every arrow of the oriented `E₈` quiver comes from an edge directed from its smaller node to
-its larger node. -/
-theorem exists_eq_arrow {i j : Fin 8} (e : vertexEquiv i ⟶ vertexEquiv j) :
-    ∃ (h : (diagramGraph (CartanMatrix.E 8)).Adj i j) (hij : i < j), e = arrow h hij := by
-  have e' : OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
-      (Orientation.ofLinearOrder _) i ⟶
-      OrientedQuiver.vertex (diagramGraph (CartanMatrix.E 8))
-        (Orientation.ofLinearOrder _) j := e
-  obtain ⟨h, ho⟩ := OrientedQuiver.homEquiv _ _ i j e'
-  exact ⟨h, (by simpa only [Orientation.mem_ofLinearOrder_iff] using ho),
-    Subsingleton.elim _ _⟩
+  rw [Fintype.card_eq_nat_card, Nat.card_congr (homEquiv i j)]
+  have h := OrientedQuiver.card_hom_ofLinearOrder (diagramGraph (CartanMatrix.E 8)) i j
+  rw [Nat.card_congr (OrientedQuiver.homEquiv _ _ i j)] at h
+  simpa only [Orientation.mem_ofLinearOrder_iff] using h
 
 /-- The orientation of the `E₈` quiver is acyclic. -/
 theorem isAcyclic : Quiver.IsAcyclic E8 := by
