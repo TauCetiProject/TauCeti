@@ -354,8 +354,9 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     · obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl
         (principalCartierDivisor_restrict X f U).symm).mp ht
       refine ⟨a, (rationalFunctionsEquiv U).injective ?_⟩
-      -- The isomorphism criterion exposes the composite map at the presheaf level; unfold
-      -- that wrapper to use the section-level multiplication lemmas.
+      -- The isomorphism criterion states the goal with `φ.val.app (op U)`, while the
+      -- multiplication lemmas use `Scheme.Modules.Hom.app φ U`. The latter is defined from the
+      -- former, and Mathlib has no lemma relating them, so we restate the goal.
       change rationalFunctionsEquiv U (Scheme.Modules.Hom.app (rationalFunctionsMul X
         ((f⁻¹ : X.functionFieldˣ) : X.functionField)) U
         (Scheme.Modules.Hom.app (toRationalFunctions X) U a)) = _
