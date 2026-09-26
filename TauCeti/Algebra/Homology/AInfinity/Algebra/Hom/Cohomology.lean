@@ -269,8 +269,7 @@ theorem cohomologyMap_mem_cohomologyGrading_piece (f : AInfinityHom AA BB) {p : 
 algebras. -/
 noncomputable def cohomologyStrictHom (f : AInfinityHom AA BB) :
     AInfinityStrictHom AA.cohomologyAInfinityAlgebra BB.cohomologyAInfinityAlgebra :=
-  NonUnitalAlgHom.cohomologyStrictHom f.cohomologyMap
-    f.cohomologyMap_mem_cohomologyGrading_piece
+  f.cohomologyMap.cohomologyStrictHom f.cohomologyMap_mem_cohomologyGrading_piece
 
 /-- The strict morphism of cohomology `A∞` algebras induced by `f` is the map induced on
 cohomology. -/
@@ -414,8 +413,7 @@ theorem cohomologyMapInv_mem_cohomologyGrading_piece {f : AInfinityHom AA BB}
 morphism in the backward direction, inverse to the map induced on cohomology. -/
 noncomputable def cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     AInfinityStrictHom BB.cohomologyAInfinityAlgebra AA.cohomologyAInfinityAlgebra :=
-  NonUnitalAlgHom.cohomologyStrictHom hf.cohomologyMapInv
-    (hf.cohomologyMapInv_mem_cohomologyGrading_piece)
+  hf.cohomologyMapInv.cohomologyStrictHom hf.cohomologyMapInv_mem_cohomologyGrading_piece
 
 /-- The inverse strict morphism acts by the inverse cohomology map. -/
 @[simp]

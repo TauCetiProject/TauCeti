@@ -54,7 +54,7 @@ strict morphisms of these `A∞` algebras.
   classes of homogeneous cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
   only nonzero operation is `m₂`.
-* `TauCeti.NonUnitalAlgHom.cohomologyStrictHom`: a degree-preserving morphism of cohomology
+* `NonUnitalAlgHom.cohomologyStrictHom`: a degree-preserving morphism of cohomology
   algebras as a strict morphism of the cohomology `A∞` algebras.
 
 ## Main results
@@ -501,7 +501,13 @@ end AInfinity
 
 end AInfinityAlgebra
 
+end TauCeti
+
 namespace NonUnitalAlgHom
+
+open TauCeti
+
+universe uR uA uB
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
@@ -523,9 +529,7 @@ noncomputable def cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Coh
 /-- The strict morphism of cohomology `A∞` algebras induced by `φ` is `φ` itself. -/
 @[simp]
 theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology) (hφ) :
-    ⇑(cohomologyStrictHom φ hφ) = φ :=
+    ⇑(φ.cohomologyStrictHom hφ) = φ :=
   NonUnitalDGAlgHom.coe_toAInfinityStrictHom _
 
 end NonUnitalAlgHom
-
-end TauCeti
