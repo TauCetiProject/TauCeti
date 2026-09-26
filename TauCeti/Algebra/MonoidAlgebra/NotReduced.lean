@@ -9,7 +9,9 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Nilpotent.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import Mathlib.GroupTheory.Perm.Cycle.Type
 
 /-!
 # A monoid algebra is non-reduced in the presence of `p`-torsion
@@ -30,6 +32,8 @@ nilpotent and `R[G]` is not reduced.
 * `TauCeti.isNilpotent_single_sub_one`: the element `single g 1 - 1` is nilpotent.
 * `TauCeti.not_isReduced_monoidAlgebra`: `R[G]` is not reduced when `G` has nontrivial
   `p`-torsion and `R` has characteristic `p`.
+* `TauCeti.not_isReduced_monoidAlgebra_of_not_isUnit_card`: over a field, noninvertibility
+  of the order of a finite commutative group forces its group algebra to be non-reduced.
 
 ## References
 
@@ -72,5 +76,25 @@ theorem not_isReduced_monoidAlgebra [Nontrivial R] {g : G} (hg : g ≠ 1) (hgp :
   have := h
   exact single_sub_one_ne_zero hg
     (isNilpotent_iff_eq_zero.mp (isNilpotent_single_sub_one (R := R) p hgp))
+
+/-- If the order of a finite commutative group vanishes in a field, its group algebra is
+non-reduced. Cauchy's theorem supplies a nontrivial element of order the characteristic. -/
+theorem not_isReduced_monoidAlgebra_of_not_isUnit_card
+    (k G : Type*) [Field k] [CommGroup G] [Finite G]
+    (h : ¬ IsUnit (Nat.card G : k)) : ¬ IsReduced (MonoidAlgebra k G) := by
+  rw [isUnit_iff_ne_zero] at h
+  have hdiv : ringChar k ∣ Nat.card G :=
+    (CharP.cast_eq_zero_iff k (ringChar k) _).mp (not_ne_iff.mp h)
+  have hp : (ringChar k).Prime :=
+    (CharP.char_is_prime_or_zero k (ringChar k)).resolve_right
+      (fun hzero => Nat.card_pos.ne' (zero_dvd_iff.mp (hzero ▸ hdiv)))
+  let : Fact (ringChar k).Prime := ⟨hp⟩
+  obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' (G := G) (ringChar k) hdiv
+  have hgne : g ≠ 1 := by
+    intro hgone
+    simp only [hgone, orderOf_one] at hg
+    exact hp.ne_one hg.symm
+  exact not_isReduced_monoidAlgebra (R := k) (ringChar k) hgne
+    (hg ▸ pow_orderOf_eq_one g)
 
 end TauCeti
