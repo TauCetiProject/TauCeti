@@ -40,10 +40,11 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- If a local unit has finite quadratic defect exponent `d`, then every principal unit of
 depth `2 v_K(2) - d + 1` is a norm from its quadratic extension. -/
-theorem unitFiltration_le_quadraticNormSubgroup_of_defectExponent (h2 : (2 : K) ≠ 0)
+theorem unitFiltration_le_quadraticNormSubgroup_of_defectExponent_eq (h2 : (2 : K) ≠ 0)
     {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℕ}
     (hd : defectExponent a = (d : ℤ)) :
-    unitFiltration K (2 * natCastValuation K 2 h2 - d + 1) ≤ quadraticNormSubgroup (a : K) := by
+    unitFiltration K (2 * dyadicLevel K h2 - d + 1) ≤ quadraticNormSubgroup (a : K) := by
+  rw [dyadicLevel_def]
   have hnsq : ¬IsSquare a := by
     rw [← defectExponent_eq_top_iff, hd]
     exact WithTop.coe_ne_top
