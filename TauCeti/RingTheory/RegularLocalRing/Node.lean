@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.Polynomial
+public import Mathlib.RingTheory.RegularLocalRing.Polynomial
+public import TauCeti.RingTheory.LocalRing.Polynomial
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RegularLocalRing.Polynomial
+public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 
 /-!
 # Constant coefficients in polynomial local rings
