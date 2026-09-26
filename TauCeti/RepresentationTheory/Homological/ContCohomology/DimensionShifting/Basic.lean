@@ -6,17 +6,21 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Separation.Connected
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Acyclic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
 
 /-!
-# Acyclicity of `Coind_1^G` and dimension shifting in low degrees
+# Acyclicity of `Coind_1^G` and dimension shifting
 
 For a profinite group `G`, the coinduced module `Coind_1^G A` of the trivial subgroup, which is the
 group of all locally constant maps `G → A` (`TauCeti.mem_coind_bot_iff`), has vanishing
-continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the trivial
-subgroup of a totally disconnected group is closed, and a trivial group has no cohomology in
-positive degrees.
+explicit continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the
+trivial subgroup of a totally disconnected group is closed, and a trivial group has no cohomology
+in positive degrees. In every positive degree, and for any compact `G`, the canonical continuous
+cohomology of `Coind_1^G A` vanishes by
+`TauCeti.ContCohomology.subsingleton_continuousCohomology_discreteCoind_bot`.
 
 Every discrete `G`-module `M` embeds into this acyclic module by its orbit maps,
 
@@ -38,6 +42,16 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
 (`TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_bijective_of_subsingleton`, in
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LongExact.lean`).
 
+In every positive degree the same short exact sequence, fed to the long exact sequence of Mathlib's
+canonical continuous cohomology and to the all-degree acyclicity of `Coind_1^G M`, gives
+
+```text
+Hⁱ⁺²(G, M) ≅ Hⁱ⁺¹(G, Coind_1^G M ⧸ M)
+```
+
+for every compact group `G` (`TauCeti.ContCohomology.dimensionShiftIso`), through the connecting
+map, which is bijective (`TauCeti.ContCohomology.coindBotShortExact_delta_bijective`).
+
 ## Main definitions
 
 * `TauCeti.ContCohomology.coindBotEmbedding`: the orbit-map embedding `M → Coind_1^G M`.
@@ -48,12 +62,17 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
   connecting map `δ¹`.
 * `TauCeti.ContCohomology.explicitDimensionShift0`: the cokernel of
   `H⁰(G, Coind_1^G M) → H⁰(G, Coind_1^G M ⧸ M)` is `H¹(G, M)`, through `δ⁰`.
+* `TauCeti.ContCohomology.dimensionShiftIso`: **dimension shifting in every positive degree**,
+  `Hⁱ⁺¹(G, Coind_1^G M ⧸ M) ≅ Hⁱ⁺²(G, M)` for the canonical continuous cohomology, through the
+  connecting map.
 
 ## Main statements
 
 * `TauCeti.ContCohomology.subsingleton_H1_discreteCoind_bot` and
   `subsingleton_H2_discreteCoind_bot`: **acyclicity of `Coind_1^G A`** in degrees one and two,
   for profinite `G`.
+* `TauCeti.ContCohomology.coindBotShortExact_delta_bijective`: the connecting map
+  `Hⁱ⁺¹(G, Coind_1^G M ⧸ M) → Hⁱ⁺²(G, M)` is bijective, for compact `G`.
 
 ## Implementation notes
 
@@ -278,5 +297,48 @@ theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
     QuotientAddGroup.kerLift_mk]
 
 end DimensionShift
+
+/-! ### Dimension shifting in every degree -/
+
+section DimensionShiftAll
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- **The connecting map of the dimension-shifting sequence is bijective in every positive
+degree**: `δ : Hⁿ⁺¹(G, Coind_1^G M ⧸ M) → Hⁿ⁺²(G, M)` for a compact group `G`, because
+`Coind_1^G M` is acyclic in degrees `n + 1` and `n + 2`. -/
+theorem coindBotShortExact_delta_bijective (n : ℕ) :
+    Function.Bijective ((coindBotShortExact G M).delta (n + 1)).hom := by
+  refine ⟨fun x y hxy => ?_, fun y => ?_⟩
+  · -- exactness at `Hⁿ⁺¹(G, Coind_1^G M ⧸ M)`, the preceding term being zero
+    rw [← sub_eq_zero, ← map_sub] at hxy
+    obtain ⟨a, ha⟩ := ((coindBotShortExact G M).longExact_exact₃ (n + 1) (x - y)).1 hxy
+    rw [Subsingleton.elim a 0, map_zero] at ha
+    exact sub_eq_zero.1 ha.symm
+  · -- exactness at `Hⁿ⁺²(G, M)`, the following term being zero
+    exact ((coindBotShortExact G M).longExact_exact₁ (n + 1) y).1 (Subsingleton.elim _ _)
+
+/-- **Dimension shifting in every positive degree**, `Hⁿ⁺¹(G, Coind_1^G M ⧸ M) ≅ Hⁿ⁺²(G, M)` for
+a compact group `G`, as an isomorphism of Mathlib's canonical continuous cohomology: the
+connecting map of `TauCeti.ContCohomology.coindBotShortExact` is bijective, and both sides are
+discrete. Its explicit degree-one instance is `TauCeti.ContCohomology.explicitDimensionShift1`. -/
+noncomputable def dimensionShiftIso (n : ℕ) :
+    continuousCohomology (n + 1) (ofDiscreteModule ℤ G (DimensionShiftQuotient G M)) ≅
+      continuousCohomology (n + 2) (ofDiscreteModule ℤ G M) :=
+  TopModuleCat.ofIso
+    { LinearEquiv.ofBijective ((coindBotShortExact G M).delta (n + 1)).hom.toLinearMap
+        (coindBotShortExact_delta_bijective G M n) with
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+
+/-- The dimension-shifting isomorphism is the connecting map. -/
+@[simp]
+theorem dimensionShiftIso_hom (n : ℕ) :
+    (dimensionShiftIso G M n).hom = (coindBotShortExact G M).delta (n + 1) :=
+  (rfl)
+
+end DimensionShiftAll
 
 end TauCeti.ContCohomology

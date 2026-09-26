@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 
 /-!
@@ -212,13 +213,6 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {Y Z : TopRep.{v} R G}
 
-/-- The action on the successor level of the coinduced resolution, evaluated at a point. -/
-private theorem resolutionX_succ_ρ_apply_apply (X : TopRep.{v} R G) (n : ℕ)
-    (k : G) (F : C(G, (TopRep.resolutionX X n).V)) (y : G) :
-    ((TopRep.resolutionX X (n + 1)).ρ k F) y =
-      (TopRep.resolutionX X n).ρ k (F (k⁻¹ * y)) := by
-  exact ContRepresentation.coind₁_apply_apply (TopRep.resolutionX X n).ρ k F y
-
 variable [LocallyCompactSpace G]
 
 /-- A continuous family `σ : G × Z → Y` of maps, transported to every level of the coinduced
@@ -258,13 +252,13 @@ private theorem ρ_levelLift (σ : C(G × Z.V, Y.V))
       ((TopRep.resolutionX Y (n + 1)).ρ k (levelLift σ (n + 1) (h, φ))) y =
           (TopRep.resolutionX Y n).ρ k
             ((levelLift σ (n + 1) (h, φ)) (k⁻¹ * y)) :=
-        resolutionX_succ_ρ_apply_apply Y n k _ y
+        TopRep.resolutionX_succ_ρ_apply_apply Y n k _ y
       _ = levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k (φ (k⁻¹ * y))) := by
         rw [levelLift_succ_apply]
         exact ρ_levelLift σ hσ n k h (φ (k⁻¹ * y))
       _ = (levelLift σ (n + 1)
           (k * h, (TopRep.resolutionX Z (n + 1)).ρ k φ)) y := by
-        rw [levelLift_succ_apply, resolutionX_succ_ρ_apply_apply]
+        rw [levelLift_succ_apply, TopRep.resolutionX_succ_ρ_apply_apply]
 
 /-- **Invariant cochains lift along a map with an equivariant continuous family of sections.** If
 `σ : G × Z → Y` is continuous, `g (σ (h, z)) = z` and `k • σ (h, z) = σ (k h, k • z)`, then every
@@ -283,7 +277,7 @@ theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y
     calc
       ((TopRep.resolutionX Y (n + 1)).ρ k L) y =
           (TopRep.resolutionX Y n).ρ k (L (k⁻¹ * y)) :=
-        resolutionX_succ_ρ_apply_apply Y n k L y
+        TopRep.resolutionX_succ_ρ_apply_apply Y n k L y
       _ = levelLift σ n (y, F₀ y) := by
         -- The invariant condition is stated for the successor resolution; unfold its action
         -- to apply the equivariance rule for `levelLift` at level `n`.

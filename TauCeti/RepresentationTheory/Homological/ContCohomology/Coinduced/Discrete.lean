@@ -40,7 +40,10 @@ and the one Shapiro's lemma is stated against.
   scalar multiplication is continuous;
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
-  in the coefficients.
+  in the coefficients;
+* `TauCeti.DiscreteCoind.ofContinuousMap`: a continuous map into a discrete group as an element of
+  `Coind_1^G A`, with `TauCeti.DiscreteCoind.smul_ofContinuousMap` computing the translation
+  action on it.
 -/
 
 public section
@@ -387,5 +390,34 @@ instance instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
 end DiscreteCoind
 
 end DiscreteCarrier
+
+/-! ### The coinduced module of the trivial subgroup -/
+
+section Bot
+
+variable (G : Type*) [Group G] [TopologicalSpace G]
+  (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction (⊥ : Subgroup G) A]
+
+namespace DiscreteCoind
+
+/-- A continuous map from `G` to a discrete group `A`, as an element of `Coind_1^G A`: it is
+locally constant, and the equivariance condition for the trivial subgroup is empty. -/
+def ofContinuousMap (f : C(G, A)) : DiscreteCoind G ⊥ A :=
+  mk G ⊥ A f ((IsLocallyConstant.iff_continuous _).2 f.continuous) fun u g => by
+    rw [Subsingleton.elim u 1, one_smul, OneMemClass.coe_one, one_mul]
+
+@[simp]
+theorem ofContinuousMap_apply (f : C(G, A)) (g : G) : ofContinuousMap G A f g = f g := (rfl)
+
+/-- Right translation on `Coind_1^G A` is precomposition with right multiplication. -/
+@[simp]
+theorem smul_ofContinuousMap [ContinuousMul G] (g : G) (f : C(G, A)) :
+    g • ofContinuousMap G A f = ofContinuousMap G A (f.comp (ContinuousMap.mulRight g)) :=
+  ext fun _ => rfl
+
+end DiscreteCoind
+
+end Bot
 
 end TauCeti
