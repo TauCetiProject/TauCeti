@@ -91,7 +91,6 @@ theorem sourceReflectionFunctorList_cons (i : V) (l : List V)
   congr
 
 /-- The composite along a nonempty source-admissible list first source-reflects at its head. -/
-@[simp]
 theorem sourceReflectionFunctorList_cons_obj (i : V) (l : List V)
     (q : _root_.Quiver.{w} V)
     (hl : Quiver.IsSourceAdmissible q (i :: l))
