@@ -38,9 +38,6 @@ criterion from `TauCeti.RepresentationTheory.Induction.Ideal` then gives the int
 
 ## References
 
-This completes the "Brauer's induction theorem" target in Layer 6 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md).
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II,
   Section 10.3, Theorem 18.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Chapter 8.
@@ -56,31 +53,6 @@ universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
 
-private theorem mul_mem_span_indVirtualCharacters (A : Subring k)
-    (P : Subgroup G → Prop) {f u : G → k}
-    (hf : f ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)))
-    (hu : u ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k))) :
-    f * u ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)) := by
-  let M := Submodule.span A (indVirtualCharacters k G P : Set (G → k))
-  have hleft {x y : G → k} (hx : x ∈ indVirtualCharacters k G P) (hy : y ∈ M) :
-      x * y ∈ M := by
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-        exact Submodule.subset_span <|
-          mul_mem_indVirtualCharacters (indVirtualCharacters_le_virtualCharacters hx) hy
-    | zero => simp
-    | add y z _ _ hy hz => simpa [mul_add] using M.add_mem hy hz
-    | smul a y _ hy =>
-        rw [mul_smul_comm]
-        exact M.smul_mem a hy
-  induction hf using Submodule.span_induction with
-  | mem x hx => exact hleft hx hu
-  | zero => simp
-  | add x y _ _ hx hy => simpa [add_mul] using M.add_mem hx hy
-  | smul a x _ hx =>
-      rw [smul_mul_assoc]
-      exact M.smul_mem a hx
-
 private theorem prod_nsmul_one_sub_mem_span (A : Subring k) (P : Subgroup G → Prop)
     {f : G → k} (hf : f ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)))
     (s : Finset ℕ) :
@@ -90,7 +62,8 @@ private theorem prod_nsmul_one_sub_mem_span (A : Subring k) (P : Subgroup G → 
   induction s using Finset.induction_on with
   | empty => simpa only [Finset.prod_empty, one_nsmul, sub_self] using M.zero_mem
   | @insert n s hn ih =>
-      have hmul := mul_mem_span_indVirtualCharacters A P hf ih
+      have hmul := mul_mem_span_indVirtualCharacters A P
+        (Submodule.span_mono indVirtualCharacters_le_virtualCharacters hf) ih
       have hnsmul : n • ((∏ i ∈ s, (i • (1 : G → k) - f)) -
           s.prod id • (1 : G → k)) ∈ M := M.nsmul_mem ih n
       have hprodsmul : s.prod id • f ∈ M := M.nsmul_mem hf (s.prod id)
@@ -110,13 +83,10 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
   have hn : 0 < n := Nat.card_pos
   let _ : NeZero n := ⟨hn.ne'⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot k n
-  let B : Subalgebra ℤ k := Algebra.adjoin ℤ ({ζ} : Set k)
-  let A : Subring k := B.toSubring
   have hζint : IsIntegral ℤ ζ := hζ.isIntegral hn
-  let pb : PowerBasis ℤ B := Algebra.adjoin.powerBasis' hζint
-  obtain ⟨t, ht⟩ := pb.exists_linearMap_apply_one
+  obtain ⟨A, hroots, t, ht⟩ := exists_subring_retraction_of_primitiveRoot hζ hζint
   let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr hn.ne')
-  rw [indVirtualCharacters_eq_virtualCharacters_iff_forall_prime A t.toAddMonoidHom ht]
+  rw [indVirtualCharacters_eq_virtualCharacters_iff_forall_prime A t ht]
   intro p hp
   let _ : Fact p.Prime := ⟨hp⟩
   obtain ⟨ψ, hψp, hψspan⟩ := exists_mem_span_indVirtualCharacters_isPElementary_not_dvd
@@ -130,11 +100,6 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
     obtain ⟨g, -, rfl⟩ := Finset.mem_image.mp ha
     exact hψp g
   refine ⟨m, hm, ?_⟩
-  have hroots : ∀ x : k, x ^ Nat.card G = 1 → x ∈ A := by
-    intro x hx
-    obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hx
-    rw [← hi]
-    exact Subalgebra.mem_toSubring.mpr <| Subalgebra.pow_mem B (Algebra.subset_adjoin rfl) i
   have hpElem : indVirtualCharacters k G (fun E ↦ IsPElementary p E) ≤
       indVirtualCharacters k G (fun E ↦ IsElementary E) :=
     indVirtualCharacters_mono fun _ hE ↦ isElementary_def.mpr ⟨p, hp, hE⟩
@@ -156,15 +121,9 @@ direct-sum formulation of
 `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_isElementary`. -/
 theorem indVirtualCharacterDirectSumAddHom_isElementary_surjective [CharZero k] [IsAlgClosed k] :
     Function.Surjective
-      (indVirtualCharacterDirectSumAddHom k G (fun E ↦ IsElementary E)) := by
-  intro f
-  have hf : (f : G → k) ∈ indVirtualCharacters k G (fun E ↦ IsElementary E) := by
-    rw [indVirtualCharacters_eq_virtualCharacters_isElementary]
-    exact f.2
-  rw [← range_subtype_comp_indVirtualCharacterDirectSumAddHom] at hf
-  obtain ⟨x, hx⟩ := hf
-  refine ⟨x, Subtype.ext ?_⟩
-  exact hx
+      (indVirtualCharacterDirectSumAddHom k G (fun E ↦ IsElementary E)) :=
+  indVirtualCharacterDirectSumAddHom_surjective_iff.mpr
+    indVirtualCharacters_eq_virtualCharacters_isElementary
 
 end ClassFunction
 
