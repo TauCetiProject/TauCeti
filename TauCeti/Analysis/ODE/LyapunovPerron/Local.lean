@@ -88,10 +88,14 @@ noncomputable section
 
 namespace TauCeti
 
-/-- A positive truncation radius `ρ` small enough that the Lyapunov--Perron bound
-`K / (1 - 2 K (2 ε) / α)` on a solution whose input parameter has norm at most `ρ` keeps that
-solution inside the ball of confinement of radius `r`. This is the bound on `ρ` that the local
-stable and unstable set descriptions below, and the homeomorphisms built from them in
+/-- A positive radius `ρ` satisfying `K / (1 - 2 K (2 ε) / α) * ρ ≤ r`. Nothing beyond `0 < r` is
+assumed, so the coefficient is an arbitrary real number and may well be negative.
+
+Under the smallness hypothesis `2 K (2 ε) < α` that every caller below supplies, that coefficient
+is the Lyapunov--Perron bound on a solution in terms of its input parameter, and the inequality
+then says that an input parameter of norm at most `ρ` keeps the solution inside the ball of
+confinement of radius `r`. This is the bound on `ρ` that the local stable and unstable set
+descriptions below, and the homeomorphisms built from them in
 `TauCeti/Analysis/ODE/LyapunovPerron/Embedding.lean`, all assume. -/
 theorem exists_pos_lyapunovPerronBound_mul_le (K α ε : ℝ≥0) {r : ℝ} (hr0 : 0 < r) :
     ∃ ρ > 0, (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r :=

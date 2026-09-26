@@ -37,8 +37,8 @@ a closed ball in the spectral subspace it is a graph over, hence to a Euclidean 
 dimension of that subspace. This is where the Morse index acquires its geometric meaning: the
 local unstable set is a disk of dimension the Morse index, and the local stable set a disk of
 complementary dimension. At the two extreme indices one of the disks is a single point: the zero
-displacement, which is the critical point `x` in these centred coordinates and always belongs to
-both sets.
+displacement, which is the critical point `x` in these centred coordinates and, as soon as both
+radii are nonnegative, belongs to both sets.
 
 ## Main declarations
 
@@ -57,8 +57,8 @@ both sets.
   closed disks of dimension the ambient dimension minus the Morse index, respectively the Morse
   index.
 * `zero_mem_localInvariantSet`, with `IsNondegenerateCriticalPoint.zero_mem_localStableSet` and
-  `IsNondegenerateCriticalPoint.zero_mem_localUnstableSet`: every such set contains the zero
-  displacement, which is the critical point `x` in centred coordinates.
+  `IsNondegenerateCriticalPoint.zero_mem_localUnstableSet`: every such set with nonnegative radii
+  contains the zero displacement, which is the critical point `x` in centred coordinates.
 * `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero` and
   `IsNondegenerateCriticalPoint.exists_localStableSet_eq_singleton_of_morseIndex_eq_finrank`: at a
   local minimum, respectively a local maximum, the degenerate one of the two disks is exactly the
@@ -102,9 +102,10 @@ theorem mem_localInvariantSet {s : Set ℝ} {Q : E →L[ℝ] E} {r rho : ℝ} {z
         MapsTo y s (closedBall 0 r)) ∧ ‖Q z‖ ≤ rho :=
   Iff.rfl
 
-/-- At a critical point the zero displacement belongs to every such set, whatever the time set,
-the projection and the two radii: the constant displacement trajectory `y = 0`, which represents
-the equilibrium at `x`, solves the centred equation and stays in every ball. -/
+/-- At a critical point the zero displacement belongs to every such set with nonnegative radii,
+whatever the time set and the projection: the constant displacement trajectory `y = 0`, which
+represents the equilibrium at `x`, solves the centred equation and stays in every ball of
+nonnegative radius. -/
 theorem zero_mem_localInvariantSet (hx : ∇ f x = 0) (s : Set ℝ) (Q : E →L[ℝ] E) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ localInvariantSet f x s Q r rho :=
   ⟨⟨fun _ ↦ 0, (isIntegralCurve_const fun _ ↦ by simp [hx]).isIntegralCurveOn _, rfl,
@@ -113,6 +114,23 @@ theorem zero_mem_localInvariantSet (hx : ∇ f x = 0) (s : Set ℝ) (Q : E →L[
 end
 
 variable [FiniteDimensional ℝ E]
+
+/-- The closed ball of radius `rho` in a subspace `V` of `E`, presented through a set `s` equal to
+that subspace, is homeomorphic to the closed ball of the same radius in the Euclidean space of the
+dimension of `V`. Both disk theorems below read their Euclidean coordinates off this
+homeomorphism, taking for `s` the range of a spectral projection. -/
+private def euclideanClosedBallHomeomorph {s : Set E} {V : Submodule ℝ E} (hs : s = (V : Set E))
+    {n : ℕ} (hn : Module.finrank ℝ V = n) (rho : ℝ) :
+    {v : s | ‖(v : E)‖ ≤ rho} ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin n)) rho :=
+  (Homeomorph.subtype (Homeomorph.setCongr hs)
+      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
+    (Homeomorph.subtype
+      (p := fun v : (V : Set E) ↦ ‖(v : E)‖ ≤ rho)
+      (q := fun w ↦ w ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) rho)
+      ((stdOrthonormalBasis ℝ V).reindex (finCongr hn)).repr.toHomeomorph
+      (fun v ↦ by
+        simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
+          LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
 
 namespace IsNondegenerateCriticalPoint
 
@@ -402,17 +420,7 @@ theorem exists_localStableSet_homeomorph_closedBall (h : IsNondegenerateCritical
         (h.contDiffAt.stableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_stableProjection
-    exact (Homeomorph.subtype (Homeomorph.setCongr hrange)
-      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
-      (Homeomorph.subtype
-        (p := fun v : (h.contDiffAt.stableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
-        (q := fun w ↦ w ∈ closedBall
-          (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E - morseIndex f x))) rho)
-        ((stdOrthonormalBasis ℝ h.contDiffAt.stableLinearSubspace).reindex
-          (finCongr hk)).repr.toHomeomorph
-        (fun v ↦ by
-          simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
-            LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
+    exact euclideanClosedBallHomeomorph hrange hk rho
 
 /-- **The local unstable set at a Morse critical point is a closed disk whose dimension is the
 Morse index.** For suitable radii `r` and `rho`, the initial displacements of backward
@@ -434,26 +442,17 @@ theorem exists_localUnstableSet_homeomorph_closedBall (h : IsNondegenerateCritic
       rw [← h.unstableProjection_def]
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_unstableProjection
-    exact (Homeomorph.subtype (Homeomorph.setCongr hrange)
-      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
-      (Homeomorph.subtype
-        (p := fun v : (h.contDiffAt.unstableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
-        (q := fun w ↦ w ∈ closedBall (0 : EuclideanSpace ℝ (Fin (morseIndex f x))) rho)
-        ((stdOrthonormalBasis ℝ h.contDiffAt.unstableLinearSubspace).reindex
-          (finCongr h.contDiffAt.finrank_unstableLinearSubspace)).repr.toHomeomorph
-        (fun v ↦ by
-          simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
-            LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
+    exact euclideanClosedBallHomeomorph hrange h.contDiffAt.finrank_unstableLinearSubspace rho
 
 /-- The zero displacement, which represents the critical point `x` in centred coordinates, lies
-in the local stable set: the constant displacement trajectory `y = 0` solves the centred
-negative-gradient equation and stays in every ball. -/
+in the local stable set of any nonnegative radii: the constant displacement trajectory `y = 0`
+solves the centred negative-gradient equation and stays in every ball of nonnegative radius. -/
 theorem zero_mem_localStableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ h.localStableSet r rho :=
   zero_mem_localInvariantSet h.gradient_eq_zero _ _ hr hrho
 
 /-- The zero displacement, which represents the critical point `x` in centred coordinates, lies
-in the local unstable set. -/
+in the local unstable set of any nonnegative radii. -/
 theorem zero_mem_localUnstableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ h.localUnstableSet r rho :=
   zero_mem_localInvariantSet h.gradient_eq_zero _ _ hr hrho
