@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Pairing
+public import TauCeti.KnotTheory.Grid.Commutation.Disjoint
 
 /-!
 # The disjoint contribution to the pentagon chain-map equation
@@ -37,28 +37,23 @@ theorem sum_rectanglePentagonWeight_disjoint_eq_sum_pentagonRectangleWeight_disj
       ∑ D ∈ (G.pentagonRectangleDecompositions C x z).filter
         (fun D => D.HasDisjointSides), G.pentagonRectangleWeight C R D := by
   classical
-  refine Finset.sum_bij
-    (fun D hD => D.commute (Finset.mem_filter.mp hD).2) ?_ ?_ ?_ ?_
+  refine Finset.sum_bij'
+    (fun D hD => D.commute (Finset.mem_filter.mp hD).2)
+    (fun E hE => E.commute (Finset.mem_filter.mp hE).2) ?_ ?_ ?_ ?_ ?_
   · intro D hD
     have h := Finset.mem_filter.mp hD
     exact Finset.mem_filter.mpr
       ⟨G.commute_mem_pentagonRectangleDecompositions C D h.2 h.1,
         D.hasDisjointSides_commute h.2⟩
-  · intro D hD E hE heq
-    have hD' := (Finset.mem_filter.mp hD).2
-    have hE' := (Finset.mem_filter.mp hE).2
-    have h : (⟨D, hD'⟩ : {D : GridRectanglePentagonDecomposition C.column
-        C.turnRow x z // D.HasDisjointSides}) = ⟨E, hE'⟩ :=
-      (disjointCommuteEquiv C.column C.turnRow x z).injective
-        (Subtype.ext (by simpa only [disjointCommuteEquiv_apply] using heq))
-    exact congrArg Subtype.val h
   · intro E hE
     have h := Finset.mem_filter.mp hE
-    refine ⟨E.commute h.2, ?_, ?_⟩
-    · exact Finset.mem_filter.mpr
-        ⟨G.commute_mem_rectanglePentagonDecompositions C E h.2 h.1,
-          E.hasDisjointSides_commute h.2⟩
-    · exact E.commute_commute h.2
+    exact Finset.mem_filter.mpr
+      ⟨G.commute_mem_rectanglePentagonDecompositions C E h.2 h.1,
+        E.hasDisjointSides_commute h.2⟩
+  · intro D hD
+    exact D.commute_commute (Finset.mem_filter.mp hD).2
+  · intro E hE
+    exact E.commute_commute (Finset.mem_filter.mp hE).2
   · intro D hD
     exact (G.pentagonRectangleWeight_commute_rectanglePentagon C R D
       (Finset.mem_filter.mp hD).2).symm
