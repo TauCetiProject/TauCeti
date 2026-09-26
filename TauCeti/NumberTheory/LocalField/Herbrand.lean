@@ -13,8 +13,8 @@ import Mathlib.Topology.Order.IntermediateValue
 /-!
 # The Herbrand function and the upper numbering
 
-Let `L/K` be a finite extension of nonarchimedean local fields, with lower ramification groups
-`G_u = G_{⌈u⌉}` of `G = Aut(L/K)` indexed by real `u ≥ -1`. The **Herbrand function** is
+Let `L/K` be a finite Galois extension of nonarchimedean local fields, with lower ramification
+groups `G_u = G_{⌈u⌉}` of `G = Gal(L/K)` indexed by real `u ≥ -1`. The **Herbrand function** is
 
 `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]`,
 
@@ -36,8 +36,9 @@ The **upper numbering** of the ramification groups is `G^v = G_{ψ(v)}`, so that
 `G^{φ(u)} = G_u`. Its point is the compatibility with quotients, `(G/H)^v = G^v H / H` for `H`
 normal, which the lower numbering lacks; that theorem is not proved here.
 
-For a Galois extension `G` is the Galois group and `φ` is the classical Herbrand function; the
-definitions make sense for any finite extension, with `G` the automorphism group.
+The Herbrand function and the upper numbering are defined only for Galois `L/K`: for a
+non-Galois extension the automorphism group does not carry the ramification of `L/K`, and the
+classical `φ_{L/K}` is instead defined through a Galois closure.
 
 ## Main definitions
 
@@ -218,12 +219,14 @@ private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) :
 
 /-! ### The Herbrand function and its inverse -/
 
-/-- The **Herbrand function** `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]` of a finite extension of
-local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inverse Herbrand function
+/-- The **Herbrand function** `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]` of a finite Galois extension
+of local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inverse Herbrand function
 `ψ_{L/K}`. The integral formula is `coe_herbrand`. -/
-def herbrandOrderIso : RamificationIndexDomain ≃o RamificationIndexDomain :=
+def herbrandOrderIso [IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
   StrictMono.orderIsoOfSurjective (herbrandFun K L) (herbrandFun_strictMono K L)
     (herbrandFun_surjective K L)
+
+variable [IsGalois K L]
 
 /-- The **Herbrand function** `φ_{L/K}`, the forward map of `herbrandOrderIso K L`. -/
 def herbrand (u : RamificationIndexDomain) : RamificationIndexDomain :=
@@ -244,7 +247,8 @@ theorem herbrandOrderIso_symm_apply (v : RamificationIndexDomain) :
   (rfl)
 
 /-- The integral formula for the Herbrand function:
-`φ_{L/K}(u) = ∫_0^u #G_t / #G_0 dt`, where `#G_t / #G_0 = 1 / [G_0 : G_t]`. -/
+`φ_{L/K}(u) = ∫_0^u #G_t / #G_0 dt`. For `t > -1` the group `G_t` is a subgroup of `G_0` and
+`#G_t / #G_0 = 1 / [G_0 : G_t]`, so this holds almost everywhere on the interval of integration. -/
 theorem coe_herbrand (u : RamificationIndexDomain) :
     (herbrand K L u : ℝ) = ∫ t in (0 : ℝ)..u,
       (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
@@ -256,11 +260,13 @@ private theorem coe_herbrand_eq_herbrandReal (u : RamificationIndexDomain) :
     (herbrand K L u : ℝ) = herbrandReal K L u :=
   (coe_herbrand K L u).trans (herbrandReal_def K L u).symm
 
+/-- The Herbrand function undoes its inverse: `φ(ψ(v)) = v`. -/
 @[simp]
 theorem herbrand_inverseHerbrand (v : RamificationIndexDomain) :
     herbrand K L (inverseHerbrand K L v) = v :=
   (herbrandOrderIso K L).apply_symm_apply v
 
+/-- The inverse Herbrand function undoes the Herbrand function: `ψ(φ(u)) = u`. -/
 @[simp]
 theorem inverseHerbrand_herbrand (u : RamificationIndexDomain) :
     inverseHerbrand K L (herbrand K L u) = u :=
@@ -310,6 +316,7 @@ theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : 
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
 
+omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
     herbrandReal K L u =
       (∑ i ∈ Finset.Icc 1 n, (Nat.card (lowerRamificationGroup K L i) : ℝ) +
@@ -350,14 +357,22 @@ theorem coe_herbrand_of_coe_eq_natCast (m : ℕ) {u : RamificationIndexDomain} (
 
 /-! ### The upper numbering -/
 
-/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of a finite extension of local
-fields, for `v ≥ -1`, where `ψ = inverseHerbrand K L`. -/
+/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of a finite Galois extension of
+local fields, for `v ≥ -1`, where `ψ = inverseHerbrand K L`. -/
 def upperRamificationGroup (v : RamificationIndexDomain) : Subgroup (L ≃ₐ[K] L) :=
   lowerRamificationGroupReal K L (inverseHerbrand K L v)
 
 theorem upperRamificationGroup_def (v : RamificationIndexDomain) :
     upperRamificationGroup K L v = lowerRamificationGroupReal K L (inverseHerbrand K L v) :=
   (rfl)
+
+variable {K L} in
+/-- Membership in the upper ramification groups: `σ ∈ G^v ↔ σ ∈ G_{ψ(v)}`. -/
+@[simp]
+theorem mem_upperRamificationGroup_iff {v : RamificationIndexDomain} {σ : L ≃ₐ[K] L} :
+    σ ∈ upperRamificationGroup K L v ↔
+      σ ∈ lowerRamificationGroupReal K L (inverseHerbrand K L v) := by
+  rw [upperRamificationGroup_def]
 
 /-- The upper and lower numberings are related by `G^{φ(u)} = G_u`. -/
 @[simp]
