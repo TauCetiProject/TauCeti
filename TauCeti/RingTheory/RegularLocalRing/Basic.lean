@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
-public import Mathlib.RingTheory.KrullDimension.Regular
+public import TauCeti.RingTheory.KrullDimension.Regular
+public import TauCeti.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Square
@@ -38,8 +39,8 @@ and Nakayama's lemma gives `P = 0`.
 
 Supporting declarations include:
 
-* `TauCeti.Ideal.span_insert_erase_eq_span_of_isUnit`: a generator with a unit coefficient can be
-  replaced by its linear combination;
+* `TauCeti.Submodule.span_insert_erase_eq_span_of_isUnit`: a generator with a unit coefficient
+  can be replaced by its linear combination;
 * `TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_add_one_le`: for `x ∈ 𝔪 \ 𝔪²`, the
   maximal ideal of `R ⧸ (x)` needs at least one generator fewer than `𝔪`;
 * `TauCeti.IsLocalRing.exists_mem_maximalIdeal_notMem_sq_notMem_minimalPrimes`: in positive
@@ -65,39 +66,6 @@ open IsLocalRing Ideal Pointwise _root_.IsRegularLocalRing
 
 variable {R : Type u} [CommRing R]
 
-namespace Ideal
-
-/-- If one coefficient of `x` in a finite span is a unit, then `x` can replace that generator. -/
-theorem span_insert_erase_eq_span_of_isUnit [DecidableEq R] {s : Finset R} {i x : R} {f : R → R}
-    (hi : i ∈ s) (hf : ∑ a ∈ s, f a • a = x) (hfi : IsUnit (f i)) :
-    span ((insert x (s.erase i)) : Set R) = span (s : Set R) := by
-  classical
-  apply le_antisymm
-  · rw [span_le]
-    intro y hy
-    simp only [Set.mem_insert_iff] at hy
-    rcases hy with rfl | hy
-    · rw [← hf]
-      exact sum_mem fun a ha ↦ (span (s : Set R)).smul_mem _
-        (subset_span (Finset.mem_coe.mpr ha))
-    · exact subset_span (Finset.mem_coe.mpr (Finset.mem_of_mem_erase hy))
-  · rw [span_le]
-    intro y hy
-    by_cases h : y = i
-    · subst y
-      have hsum : f i • i + ∑ a ∈ s.erase i, f a • a = x := by
-        rw [Finset.add_sum_erase _ (fun a ↦ f a • a) hi, hf]
-      have hmem : f i * i ∈ span ((insert x (s.erase i)) : Set R) := by
-        rw [← smul_eq_mul, eq_sub_of_add_eq hsum]
-        exact sub_mem (subset_span (Set.mem_insert_iff.mpr (Or.inl rfl)))
-          (sum_mem fun a ha ↦ (span ((insert x (s.erase i)) : Set R)).smul_mem _
-            (subset_span (Set.mem_insert_of_mem x (Finset.mem_coe.mpr ha))))
-      exact (Ideal.unit_mul_mem_iff_mem _ hfi).mp hmem
-    · exact subset_span (Set.mem_insert_of_mem x
-        (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨h, hy⟩)))
-
-end Ideal
-
 namespace IsLocalRing
 
 variable [IsLocalRing R]
@@ -122,8 +90,8 @@ theorem spanFinrank_map_maximalIdeal_quotient_add_one_le (hfg : (maximalIdeal R)
   set q := Ideal.Quotient.mk (span {x})
   have hmap : (maximalIdeal R).map q = span ((s.erase i).image q : Set (R ⧸ span {x})) := by
     rw [← hspan]
-    rw [Ideal.submodule_span_eq]
-    rw [← Ideal.span_insert_erase_eq_span_of_isUnit hi hf hfi, Ideal.map_span,
+    rw [← TauCeti.Submodule.span_insert_erase_eq_span_of_isUnit hi hf hfi,
+      Ideal.submodule_span_eq, Ideal.map_span,
       Set.image_insert_eq]
     rw [show q x = 0 from Ideal.Quotient.eq_zero_iff_mem.mpr
       (mem_span_singleton_self x), Ideal.span_insert_zero, Finset.coe_image]
@@ -161,22 +129,6 @@ theorem exists_mem_maximalIdeal_notMem_sq_notMem_minimalPrimes [IsNoetherianRing
 end IsLocalRing
 
 open TauCeti.IsLocalRing
-
-/-- In a Noetherian ring, for `x` in the Jacobson radical outside every minimal prime,
-`dim R ⧸ (x) + 1 = dim R`. -/
-@[stacks 0B52 "the equality case"]
-theorem
-  ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
-    [IsNoetherianRing R] {x : R} (hmin : ∀ p ∈ minimalPrimes R, x ∉ p)
-    (hx : x ∈ Ring.jacobson R) :
-    ringKrullDim (R ⧸ span {x}) + 1 = ringKrullDim R := by
-  have h : span {x} = x • (⊤ : Ideal R) := by simp [← Submodule.ideal_span_singleton_smul]
-  have hann : Module.annihilator R R = ⊥ :=
-    Module.annihilator_eq_bot.mpr ((faithfulSMul_iff_algebraMap_injective R R).mpr fun _ _ h ↦ h)
-  rw [ringKrullDim_eq_of_ringEquiv (quotientEquivAlgOfEq R h).toRingEquiv,
-    ← Module.supportDim_quotient_eq_ringKrullDim, ← Module.supportDim_self_eq_ringKrullDim]
-  exact Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson
-    (by rwa [hann]) ((Module.annihilator R R).ringJacobson_le_jacobson hx)
 
 namespace IsRegularLocalRing
 

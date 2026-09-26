@@ -29,6 +29,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
+* `TauCeti.Submodule.span_insert_erase_eq_span_of_isUnit`: a generator with a unit coefficient
+  can be replaced by its linear combination.
 * `Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
   `I ⊔ J` are controlled by the corresponding power of the two-sided ideal `J`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
@@ -86,6 +88,56 @@ theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i
     LinearMap.range_eq_top.mpr (Function.surjective_eval i)] at this
 
 end Pi
+
+end Ideal
+
+namespace TauCeti.Submodule
+
+variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
+
+/-- If one coefficient of `x` in a finite span is a unit, then `x` can replace that generator. -/
+theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x : M}
+    {f : M → A} (hi : i ∈ s) (hf : ∑ a ∈ s, f a • a = x) (hfi : IsUnit (f i)) :
+    _root_.Submodule.span A ((insert x (s.erase i)) : Set M) =
+      _root_.Submodule.span A (s : Set M) := by
+  classical
+  apply le_antisymm
+  · rw [Submodule.span_le]
+    intro y hy
+    simp only [Set.mem_insert_iff] at hy
+    rcases hy with rfl | hy
+    · rw [← hf]
+      exact (_root_.Submodule.span A (s : Set M)).sum_mem fun a ha ↦
+        (_root_.Submodule.span A (s : Set M)).smul_mem _
+          (Submodule.subset_span (Finset.mem_coe.mpr ha))
+    · exact Submodule.subset_span (Finset.mem_coe.mpr (Finset.mem_of_mem_erase hy))
+  · rw [Submodule.span_le]
+    intro y hy
+    by_cases h : y = i
+    · subst y
+      have hsum : f i • i + ∑ a ∈ s.erase i, f a • a = x := by
+        rw [Finset.add_sum_erase _ (fun a ↦ f a • a) hi, hf]
+      have hmem : f i • i ∈ _root_.Submodule.span A ((insert x (s.erase i)) : Set M) := by
+        have hxmem : x ∈ _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
+          Submodule.subset_span (Set.mem_insert_iff.mpr (Or.inl rfl))
+        have hsmem : (∑ a ∈ s.erase i, f a • a) ∈
+            _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
+          (_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).sum_mem fun a ha ↦
+            (_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).smul_mem _
+              (Submodule.subset_span (Set.mem_insert_of_mem x (Finset.mem_coe.mpr ha)))
+        have hsub : x - (∑ a ∈ s.erase i, f a • a) ∈
+            _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
+          _root_.Submodule.sub_mem (_root_.Submodule.span A ((insert x (s.erase i)) : Set M))
+            hxmem hsmem
+        rwa [eq_sub_of_add_eq hsum]
+      exact ((_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).smul_mem_iff_of_isUnit
+        hfi).mp hmem
+    · exact Submodule.subset_span (Set.mem_insert_of_mem x
+        (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨h, hy⟩)))
+
+end TauCeti.Submodule
+
+namespace Ideal
 
 section Span
 
