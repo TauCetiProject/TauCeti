@@ -109,9 +109,8 @@ theorem spinToSpecialOrthogonal_surjective_iff_of_not_anisotropic (Q : Quadratic
     exact spinToSpecialOrthogonal_surjective_of_isSquare_apply Q hQ fun v _ ↦ by
       simpa using (hsq (unitOfInvertible (Q v))).map (Units.coeHom K)
 
-/-- **The Spin action is not surjective on rational points.** On the rational hyperbolic plane
-the proper isometry of spinor norm `[2]` has no preimage in `Spin`, because `2` is not a square
-in `ℚ`. The kernel of the Spin action is finite, yet the map on `ℚ`-points is not onto. -/
+/-- The Spin action on the special orthogonal group of the rational hyperbolic plane is not
+surjective on rational points. -/
 theorem not_surjective_spinToSpecialOrthogonal_hyperbolicPlane_rat :
     ¬ Function.Surjective (spinToSpecialOrthogonal (hyperbolicPlane ℚ)) := by
   have hiso : ¬ (hyperbolicPlane ℚ).Anisotropic := fun h ↦ by
