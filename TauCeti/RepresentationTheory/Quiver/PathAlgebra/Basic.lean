@@ -846,6 +846,7 @@ variable (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver
 include hone in
 /-- The linear extension of an assignment sending the trivial paths to a decomposition of `1`
 preserves the unit. -/
+@[simp]
 theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
   let _ := Fintype.ofFinite Q
   rw [one_def, map_sum]
