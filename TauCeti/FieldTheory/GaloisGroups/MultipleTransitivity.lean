@@ -8,6 +8,9 @@ module
 public import TauCeti.FieldTheory.GaloisGroups.Stabilizer
 public import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.RingTheory.Polynomial.Roots
+
 /-!
 # Double transitivity of polynomial Galois groups
 
@@ -34,6 +37,45 @@ universe u
 
 variable {F : Type u} [Field F] {p : F[X]}
 
+-- The point stabilizer acting on the other roots is `Gal(L/F⟮x⟯)` acting on the roots of the
+-- quotient.
+private theorem isPretransitive_ofStabilizer_iff [IsGalois F p.SplittingField] (hsep : p.Separable)
+    (x : p.rootSet p.SplittingField) :
+    IsPretransitive (stabilizer p.Gal x) (SubMulAction.ofStabilizer p.Gal x) ↔
+      IsPretransitive Gal(p.SplittingField/F⟮(x : p.SplittingField)⟯)
+        (((p.map (algebraMap F F⟮(x : p.SplittingField)⟯)) /ₘ
+          (X - C (IntermediateField.AdjoinSimple.gen F (x : p.SplittingField)))).rootSet
+            p.SplittingField) := by
+  -- `x` is a root of `p` over `F⟮x⟯`, and a simple one since `p` is separable.
+  have hx := (AdjoinSimple.isRoot_map_gen_iff x.1).mpr (mem_rootSet'.mp x.2).2
+  have hx' := hsep.map.eval₂_derivative_ne_zero (RingHom.id _) hx
+  -- So the roots of the quotient are the roots of `p` other than `x`; `simp only` matches the
+  -- instances of `rootSet_map` in `hroots` much more cheaply than `rw`.
+  have hroots := rootSet_divByMonic_X_sub_C (E := p.SplittingField) hx hx'
+  simp only [rootSet_map, AdjoinSimple.algebraMap_gen] at hroots
+  -- Hence `y ↦ y` is a bijection onto the roots of the quotient; the target set is read off from
+  -- `hroots` rather than restated.
+  let eRoots : SubMulAction.ofStabilizer p.Gal x ≃ (_ : Set p.SplittingField) :=
+    { toFun := fun y ↦ ⟨y, (Set.ext_iff.mp hroots _).mpr ⟨(y : p.rootSet p.SplittingField).2,
+        fun h ↦ (SubMulAction.mem_ofStabilizer_iff p.Gal x).mp y.2
+          (Subtype.ext (Set.mem_singleton_iff.mp h))⟩⟩
+      invFun := fun z ↦
+        have hz := (Set.ext_iff.mp hroots _).mp z.2
+        ⟨⟨z, hz.1⟩, (SubMulAction.mem_ofStabilizer_iff p.Gal x).mpr
+          fun h ↦ hz.2 (Set.mem_singleton_iff.mpr (congrArg Subtype.val h))⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  -- The root bijection is equivariant after identifying the stabilizer with `Gal(L/F⟮x⟯)`.
+  let φ := IsGaloisGroup.mulEquivCongr (stabilizer p.Gal x)
+    Gal(p.SplittingField/F⟮(x : p.SplittingField)⟯) F⟮(x : p.SplittingField)⟯ p.SplittingField
+  -- `(e :)` elaborates the transfer before unifying it with the goal, which avoids synthesizing
+  -- the subtype actions a second time.
+  refine (isPretransitive_congr (f := ⟨eRoots, fun g y ↦ Subtype.ext ?_⟩) φ.surjective
+    eRoots.bijective :)
+  -- Compare the two subtype actions in `L`: both sides are `g` applied to `y`.
+  simp only [eRoots, Equiv.coe_fn_mk, rootSet.coe_smul, φ, IsGaloisGroup.mulEquivCongr_apply_smul,
+    SubMulAction.val_smul, Subgroup.smul_def, Gal.coe_smul, Gal.smul_eq_apply]
+
 /-- **Double transitivity of a polynomial Galois group is irreducibility over a root field.**
 For an irreducible separable polynomial of degree at least two, the Galois action on its roots is
 doubly pretransitive exactly when, after adjoining a chosen root `x`, the quotient
@@ -50,150 +92,27 @@ theorem is_two_pretransitive_iff_irreducible_divByMonic
           (X - C (IntermediateField.AdjoinSimple.gen F (x : p.SplittingField)))) := by
   let K := F⟮(x : p.SplittingField)⟯
   let L := p.SplittingField
-  let a : K := IntermediateField.AdjoinSimple.gen F (x : L)
-  let q : K[X] := p.map (algebraMap F K) /ₘ (X - C a)
-  -- First identify `q`: it has degree `deg p - 1`, is separable, and splits in `L`.
-  have hp0 : p ≠ 0 := hp.ne_zero
-  have hpmap0 : p.map (algebraMap F K) ≠ 0 :=
-    (Polynomial.map_ne_zero_iff (algebraMap F K).injective).mpr hp0
-  have hroot : (p.map (algebraMap F K)).IsRoot a := by
-    rw [Polynomial.IsRoot.def]
-    apply (algebraMap K L).injective
-    rw [map_zero, ← Polynomial.eval₂_at_apply, ← Polynomial.eval_map]
-    simp only [a, K, L, IntermediateField.AdjoinSimple.algebraMap_gen]
-    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq F K L]
-    rw [Polynomial.eval_map]
-    simpa only [L, Polynomial.aeval_def] using (mem_rootSet.mp x.2).2
-  have hfactor : (X - C a) * q = p.map (algebraMap F K) := by
-    exact Polynomial.mul_divByMonic_eq_iff_isRoot.mpr hroot
-  have hqdeg : q.natDegree = p.natDegree - 1 := by
-    dsimp only [q]
-    rw [Polynomial.natDegree_divByMonic _ (Polynomial.monic_X_sub_C _),
-      Polynomial.natDegree_map,
-      Polynomial.natDegree_X_sub_C]
-  have hq0 : q ≠ 0 := by
-    intro h
-    rw [h, Polynomial.natDegree_zero] at hqdeg
-    omega
+  let q : K[X] := p.map (algebraMap F K) /ₘ (X - C (AdjoinSimple.gen F (x : L)))
+  -- First identify `q`: it is separable, has degree `deg p - 1`, and splits in `L`. `Iff.mpr`
+  -- (not `.mpr`) lets the expected root statement drive the elaboration of the root fact.
   have hqdvd : q ∣ p.map (algebraMap F K) :=
-    ⟨X - C a, by rw [mul_comm, hfactor]⟩
-  have hqsep : q.Separable := hsep.map.of_dvd hqdvd
-  have hpSplits : (p.map (algebraMap F L)).Splits :=
-    IsSplittingField.splits L p
-  have hpKSplits : ((p.map (algebraMap F K)).map (algebraMap K L)).Splits := by
-    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq F K L]
-    exact hpSplits
-  have hqSplits : (q.map (algebraMap K L)).Splits :=
-    hpKSplits.of_dvd
-      ((Polynomial.map_ne_zero_iff (algebraMap K L).injective).mpr hpmap0)
-      (Polynomial.map_dvd _ hqdvd)
-  let _ : Fact ((q.map (algebraMap K L)).Splits) := ⟨hqSplits⟩
-  have hqdegPos : 0 < q.natDegree := by omega
-  have hderiv : (p.map (algebraMap F K)).derivative.eval a ≠ 0 := by
-    simpa only [Polynomial.aeval_def, Algebra.algebraMap_self, Polynomial.eval₂_id] using
-      hsep.map.aeval_derivative_ne_zero
-      (Polynomial.IsRoot.def.mp hroot)
-  have hqevala : q.eval a ≠ 0 := by
-    rw [← hfactor, Polynomial.derivative_mul, Polynomial.derivative_X_sub_C] at hderiv
-    simpa only [Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_one,
-      Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C, one_mul, sub_self, zero_mul,
-      add_zero] using hderiv
-  -- Consequently, the roots of `q` in `L` are exactly the roots of `p` other than `x`.
-  have hqroot_iff (y : p.rootSet L) :
-      (y : L) ∈ q.rootSet L ↔ y ≠ x := by
-    rw [mem_rootSet]
-    constructor
-    · rintro ⟨_, hy⟩ hyx
-      subst y
-      apply hqevala
-      apply (algebraMap K L).injective
-      rw [map_zero, ← Polynomial.eval₂_at_apply]
-      simpa only [a, K, L, IntermediateField.AdjoinSimple.algebraMap_gen,
-        Polynomial.aeval_def] using hy
-    · intro hyx
-      refine ⟨hq0, ?_⟩
-      have heval := congrArg (fun f : K[X] ↦ aeval (y : L) f) hfactor
-      have hpEval : aeval (y : L) (p.map (algebraMap F K)) = 0 := by
-        rw [Polynomial.aeval_def, ← Polynomial.eval_map, Polynomial.map_map,
-          ← IsScalarTower.algebraMap_eq F K L]
-        rw [Polynomial.eval_map]
-        simpa only [L, Polynomial.aeval_def] using (mem_rootSet.mp y.2).2
-      rw [hpEval] at heval
-      simp only [map_mul, aeval_X, aeval_C, map_sub, sub_mul] at heval
-      rw [← sub_mul, mul_eq_zero] at heval
-      exact heval.resolve_left (sub_ne_zero.mpr fun h ↦ hyx <| Subtype.ext <| by
-        simpa only [a, K, L, IntermediateField.AdjoinSimple.algebraMap_gen] using h)
-  let qRootToPRoot (z : q.rootSet L) : p.rootSet L :=
-    ⟨z, by
-      rw [mem_rootSet]
-      refine ⟨hp0, ?_⟩
-      have hzq : aeval (z : L) q = 0 := aeval_eq_zero_of_mem_rootSet z.2
-      have hzpK : aeval (z : L) (p.map (algebraMap F K)) = 0 :=
-        aeval_eq_zero_of_dvd_aeval_eq_zero hqdvd hzq
-      rw [Polynomial.aeval_def, ← Polynomial.eval_map, Polynomial.map_map,
-        ← IsScalarTower.algebraMap_eq F K L] at hzpK
-      rw [Polynomial.eval_map] at hzpK
-      simpa only [L, Polynomial.aeval_def] using hzpK⟩
-  let eRoots : SubMulAction.ofStabilizer p.Gal x ≃ q.rootSet L :=
-    { toFun := fun y ↦ ⟨y, (hqroot_iff y).2 y.2⟩
-      invFun := fun z ↦ ⟨qRootToPRoot z, (hqroot_iff (qRootToPRoot z)).1 z.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  -- The root bijection is equivariant after identifying the point stabilizer with `Gal(L/K)`.
-  let _ : IsGalois F L := IsGalois.of_separable_splitting_field hsep
-  let _ : IsGaloisGroup p.Gal F L := by
-    simpa only [L] using
-      (inferInstance : IsGaloisGroup p.Gal F p.SplittingField)
-  let _ : IsPretransitive p.Gal (p.rootSet L) := isPretransitive_of_irreducible hp
-  have hstabilizer : stabilizer p.Gal x = K.fixingSubgroup := by
-    exact stabilizer_eq_fixingSubgroup_adjoin_simple x
-  let _ : IsGaloisGroup (stabilizer p.Gal x) K L := by
-    exact IsGaloisGroup.of_fixedPoints_eq p.Gal F p.SplittingField
-      (stabilizer p.Gal x) K <| by
-        have hfixed : IntermediateField.fixedField (stabilizer p.Gal x) = K := by
-          rw [hstabilizer, IsGalois.fixedField_fixingSubgroup]
-        exact hfixed
-  let φ : stabilizer p.Gal x ≃* Gal(L/K) :=
-    IsGaloisGroup.mulEquivCongr (stabilizer p.Gal x) Gal(L/K) K L
-  let eAction :
-      SubMulAction.ofStabilizer p.Gal x →ₑ[φ] q.rootSet L :=
-    { toFun := eRoots
-      map_smul' := fun g y ↦ by
-        apply Subtype.ext
-        -- Unfold the two subtype actions to compare their values in `L`.
-        change g • (y : L) = φ g • (y : L)
-        exact (IsGaloisGroup.mulEquivCongr_apply_smul
-          (stabilizer p.Gal x) Gal(L/K) K L g (y : L)).symm }
-  have hstabilizerAction :
-      IsPretransitive (stabilizer p.Gal x) (SubMulAction.ofStabilizer p.Gal x) ↔
-        IsPretransitive Gal(L/K) (q.rootSet L) :=
-    isPretransitive_congr (f := eAction) φ.surjective eRoots.bijective
-  -- Both `Gal(L/K)` and `q.Gal` have the same orbits on these roots: the fibres of `minpoly K`.
-  have hrootActions :
-      IsPretransitive Gal(L/K) (q.rootSet L) ↔
-        IsPretransitive q.Gal (q.rootSet L) := by
-    constructor
-    · intro h
-      refine ⟨fun y z ↦ ?_⟩
-      have hz : (z : L) ∈ orbit Gal(L/K) (y : L) := by
-        obtain ⟨g, hg⟩ := h.exists_smul_eq y z
-        exact ⟨g, congrArg Subtype.val hg⟩
-      have hmin : minpoly K (z : L) = minpoly K (y : L) :=
-        (Normal.minpoly_eq_iff_mem_orbit L).mpr hz
-      exact (mem_orbit_iff_minpoly_eq L).mpr hmin
-    · intro h
-      refine ⟨fun y z ↦ ?_⟩
-      have hz : z ∈ orbit q.Gal y := h.exists_smul_eq y z
-      have hmin : minpoly K (z : L) = minpoly K (y : L) :=
-        (mem_orbit_iff_minpoly_eq L).mp hz
-      obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit L).mp hmin
-      exact ⟨g, Subtype.ext hg⟩
+    Dvd.intro_left _ (mul_divByMonic_eq_iff_isRoot.mpr
+      (Iff.mpr (AdjoinSimple.isRoot_map_gen_iff x.1) (mem_rootSet'.mp x.2).2))
+  have hqdeg : 0 < q.natDegree := by
+    rw [natDegree_divByMonic _ (monic_X_sub_C _), natDegree_map, natDegree_X_sub_C]
+    exact Nat.sub_pos_of_lt hdeg
+  have : Fact (q.map (algebraMap K L)).Splits := by
+    refine ⟨.of_dvd ?_ (by simp [hp.ne_zero]) (map_dvd _ hqdvd)⟩
+    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq]
+    exact SplittingField.splits p
+  have : IsGalois F L := IsGalois.of_separable_splitting_field hsep
+  -- `p.Gal` acts transitively on the roots of `p`; the type is left to the lemma, since restating
+  -- it re-synthesizes the root action.
+  have := isPretransitive_of_irreducible hp
   -- Double transitivity is transitivity of the point stabilizer on the complement; the ordinary
   -- root-orbit criterion then turns the latter into irreducibility of `q`.
-  have hmain : IsMultiplyPretransitive p.Gal (p.rootSet L) 2 ↔ Irreducible q := by
-    rw [SubMulAction.ofStabilizer.isMultiplyPretransitive,
-      MulAction.is_one_pretransitive_iff, hstabilizerAction, hrootActions,
-      isPretransitive_iff_irreducible L hqsep hqdegPos]
-  simpa only [L, q, K, a] using hmain
+  rw [SubMulAction.ofStabilizer.isMultiplyPretransitive (a := x), is_one_pretransitive_iff,
+    isPretransitive_ofStabilizer_iff hsep x, isPretransitive_algEquiv_rootSet_iff L,
+    isPretransitive_iff_irreducible L (hsep.map.of_dvd hqdvd) hqdeg]
 
 end TauCeti

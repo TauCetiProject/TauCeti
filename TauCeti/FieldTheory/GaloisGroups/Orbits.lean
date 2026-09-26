@@ -49,6 +49,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   of the root action is equivalent to irreducibility of `p`.
 * `TauCeti.isPretransitive_range_galActionHom`: the Galois image of an irreducible polynomial,
   as a group of permutations of the roots, is transitive.
+* `TauCeti.isPretransitive_algEquiv_rootSet_iff`: in a normal splitting extension `E`, the
+  automorphism group `Gal(E/F)` is transitive on the roots exactly when `p.Gal` is.
 * `TauCeti.mem_orbit_iff_minpoly_eq_splittingField`,
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
@@ -263,6 +265,21 @@ theorem isPretransitive_range_galActionHom (hp : Irreducible p) :
     MulAction.IsPretransitive (Gal.galActionHom p E).range (p.rootSet E) := by
   rw [Gal.galActionHom, MulAction.isPretransitive_range_toPermHom_iff]
   exact Gal.galAction_isPretransitive p E hp
+
+/-- In a normal extension `E` in which `p` splits, the automorphism group `Gal(E/F)` acts
+transitively on the roots of `p` in `E` exactly when the Galois group `p.Gal` does. This lets
+transitivity criteria stated for `p.Gal`, such as `TauCeti.isPretransitive_iff_irreducible`, be
+used for `Gal(E/F)`.
+
+Normality cannot be dropped: for `p = X ^ 2 - 2` over `ℚ` and `E = ℚ(α)` with `α` the real fourth
+root of `2`, both automorphisms of `E` fix `α ^ 2 = √2`, so `Gal(E/ℚ)` fixes each root of `p`,
+whereas `p.Gal` swaps them. -/
+theorem isPretransitive_algEquiv_rootSet_iff [Normal F E] :
+    MulAction.IsPretransitive Gal(E/F) (p.rootSet E) ↔
+      MulAction.IsPretransitive p.Gal (p.rootSet E) :=
+  -- The action of `Gal(E/F)` factors through the surjective restriction to `p.Gal`.
+  MulAction.isPretransitive_congr (f := ⟨id, fun g x ↦ Subtype.ext <| by simp⟩)
+    (Gal.restrict_surjective p E) Function.bijective_id
 
 /-! ## The action inside the splitting field -/
 
