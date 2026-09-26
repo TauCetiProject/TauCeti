@@ -80,12 +80,20 @@ theorem radical_neg (Q : QuadraticMap R M P) : (-Q).radical = Q.radical := by
   ext x
   simp only [QuadraticMap.mem_radical_iff', neg_apply, neg_eq_zero, neg_inj]
 
-/-- Negating a quadratic map does not change its nondegeneracy, when `2` is invertible in the
-coefficient ring. -/
+/-- Negating a quadratic map does not change its nondegeneracy. -/
 @[simp]
-theorem nondegenerate_neg [Invertible (2 : R)] (Q : QuadraticMap R M P) :
+theorem nondegenerate_neg (Q : QuadraticMap R M P) :
     (-Q).Nondegenerate ↔ Q.Nondegenerate := by
-  rw [nondegenerate_iff_radical_eq_bot, nondegenerate_iff_radical_eq_bot, radical_neg]
+  have hpolar : (-Q).polarBilin = -Q.polarBilin := by
+    ext x y
+    simp only [polarBilin_apply_apply, neg_apply, LinearMap.neg_apply, polar]
+    abel
+  have hker : (-Q).polarBilin.ker = Q.polarBilin.ker := by rw [hpolar, LinearMap.ker_neg]
+  constructor
+  · rintro ⟨h, hrank⟩
+    refine ⟨by simpa only [radical_neg] using h, hker.symm ▸ hrank⟩
+  · rintro ⟨h, hrank⟩
+    refine ⟨by simpa only [radical_neg] using h, hker ▸ hrank⟩
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
