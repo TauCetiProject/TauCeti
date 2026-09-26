@@ -82,13 +82,13 @@ theorem _root_.GroupExtension.exists_splitting_continuous_freeProP
     (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hM : IsProP p M) : ∃ s : S.Splitting, Continuous ⇑s := by
   have hE : IsProP p E' := S.isProP hinl hrh hM (isProP_freeProP p X)
+  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
   let π : E' →ₜ* freeProP p X := ⟨S.rightHom, hrh⟩
+  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
   obtain ⟨s, hs⟩ :=
     (isProjective_of_hasPGroupSolutions (hasPGroupSolutions_freeProP p X)).exists_continuous_lift
       hE π S.rightHom_surjective (ContinuousMonoidHom.id _)
   exact ⟨GroupExtension.Splitting.mk s.toMonoidHom fun y ↦ by
-    have hy := DFunLike.congr_fun hs y
-    change S.rightHom (s y) = y at hy
-    exact hy, s.continuous⟩
+    simpa [hπ] using DFunLike.congr_fun hs y, s.continuous⟩
 
 end TauCeti
