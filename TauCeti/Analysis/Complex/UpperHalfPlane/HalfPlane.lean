@@ -18,13 +18,14 @@ and `leftHalfPlane g` are the `g`-images of the two canonical sides, `Set.range 
 (via `range_geodesicLine`) is the `g`-image of the axis, and the three are pairwise disjoint and
 cover `ℍ` (`rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane`).
 
-Only the *unordered* pair of sides is determined by `geodesicLine g`: which one is called
-`right` depends on the chosen representing `g`, not on the line's image alone, and the two sides
-are genuinely distinct (`rightHalfPlane_ne_leftHalfPlane`). `pslS`, the element of `PSL(2, ℝ)`
-representing `z ↦ -1/z`, witnesses the non-canonicity: for `g' = g * pslS`,
+The labelling is not determined by `geodesicLine g` alone: which side is called `right` depends
+on the chosen representing `g`, and the two sides are genuinely distinct
+(`rightHalfPlane_ne_leftHalfPlane`). `pslS`, the element of `PSL(2, ℝ)` representing `z ↦ -1/z`,
+witnesses this non-canonicity: for `g' = g * pslS`,
 `Set.range (geodesicLine g') = Set.range (geodesicLine g)` (`range_geodesicLine_mul_pslS`)
 but `rightHalfPlane g' = leftHalfPlane g` (`rightHalfPlane_mul_pslS`) — `z ↦ -1/z` fixes
-`{z | z.re = 0}` setwise and sends `1 + i` to `-1/2 + i/2`.
+`{z | z.re = 0}` setwise and sends `1 + i` to `-1/2 + i/2`. That every pair of representatives
+with the same line image gives the same *unordered* pair of sides is not proved here.
 
 ## Main declarations
 
@@ -46,10 +47,10 @@ but `rightHalfPlane g' = leftHalfPlane g` (`rightHalfPlane_mul_pslS`) — `z ↦
 * `TauCeti.UpperHalfPlane.frontier_rightHalfPlane`, `frontier_leftHalfPlane` — the geodesic line
   is the topological boundary of each half-plane it bounds, via `closure_rightHalfPlane` and
   `closure_leftHalfPlane`.
-* `TauCeti.UpperHalfPlane.rightHalfPlane_mul_pslS`, `leftHalfPlane_mul_pslS`, and
-  `range_geodesicLine_mul_pslS` — witness that `rightHalfPlane`/`leftHalfPlane` depend on the
-  chosen representative of a geodesic line, not just its image (`pslS`, the `PSL(2, ℝ)` element
-  of `z ↦ -1/z`, is defined in `PSL/Action.lean`).
+* `TauCeti.UpperHalfPlane.rightHalfPlane_mul_pslS`, `leftHalfPlane_mul_pslS` — witness that
+  `rightHalfPlane`/`leftHalfPlane` depend on the chosen representative of a geodesic line, not
+  just its image (`pslS`, the `PSL(2, ℝ)` element of `z ↦ -1/z`, is defined in `PSL/Action.lean`;
+  `Geodesic.lean`'s `range_geodesicLine_mul_pslS` is the companion fact for the line itself).
 -/
 
 public section
@@ -211,17 +212,13 @@ theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
 /-! ### The non-canonicity witness
 
 `pslS` (defined in `PSL/Action.lean`, the `PSL(2, ℝ)` element of `z ↦ -1/z`). Multiplying any
-representative `g` by it fixes the geodesic line's image but swaps which half-plane is called
-`right`, so the labelling is a choice of representative, not an invariant of the line. -/
-
-/-- The common computation behind the three `_mul_pslS` lemmas below. -/
-private theorem re_inv_mul_pslS_smul (g : PSL(2, ℝ)) (z : ℍ) :
-    ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
-  rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
+representative `g` by it fixes the geodesic line's image (`range_geodesicLine_mul_pslS` in
+`Geodesic.lean`) but swaps which half-plane is called `right`, so the labelling is a choice of
+representative, not an invariant of the line. -/
 
 /-- Multiplying by `pslS` swaps the right and left half-planes: which side is called `right`
 depends on the chosen representative of the geodesic line, not on the line's image alone (see
-`range_geodesicLine_mul_pslS`). -/
+`Geodesic.lean`'s `range_geodesicLine_mul_pslS`). -/
 theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     rightHalfPlane (g * pslS) = leftHalfPlane g := by
   ext z
@@ -235,14 +232,5 @@ theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
   ext z
   rw [mem_leftHalfPlane_iff, mem_rightHalfPlane_iff, re_inv_mul_pslS_smul,
     div_lt_iff₀ (UpperHalfPlane.normSq_pos _), zero_mul, neg_lt_zero]
-
-/-- Unlike the half-planes, the geodesic line's image is unaffected by multiplying by `pslS`:
-only which side is called `right` depends on the representative. -/
-theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
-    Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
-  ext z
-  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_inv_mul_pslS_smul,
-    div_eq_zero_iff]
-  simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
 
 end TauCeti.UpperHalfPlane

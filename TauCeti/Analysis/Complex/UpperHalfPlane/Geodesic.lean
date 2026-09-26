@@ -47,6 +47,8 @@ one through two prescribed points is not.
   — every geodesic line, as a set, is a `g`-translate of the imaginary axis `{z | z.re = 0}`.
 * `TauCeti.UpperHalfPlane.mem_range_geodesicLine_iff` — membership test for a geodesic line,
   without unfolding the smul-image.
+* `TauCeti.UpperHalfPlane.range_geodesicLine_mul_pslS` — a geodesic line's image is unaffected by
+  multiplying its representative by `pslS`.
 -/
 
 public section
@@ -133,5 +135,15 @@ together with `exists_apply_eq_apply'`) into the harder `(g⁻¹ • geodesicLin
 theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
+
+/-- Unlike `HalfPlane.lean`'s half-planes, the geodesic line's image is unaffected by
+multiplying by `pslS` (the `PSL(2, ℝ)` element of `z ↦ -1/z`, defined in `PSL/Action.lean`): only
+which side is called `right` depends on the representative. -/
+theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
+  ext z
+  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_inv_mul_pslS_smul,
+    div_eq_zero_iff]
+  simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
 
 end TauCeti.UpperHalfPlane

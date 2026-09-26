@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -39,8 +39,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
-* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)`, an involution of `ℍ`
-  (`pslS_smul_pslS_smul`, `pslS_inv`) negating the real part (`re_pslS_smul`).
+* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)` (`pslS_def`), an
+  involution of `ℍ` (`pslS_smul_pslS_smul`, `pslS_inv`) reversing the sign of the real part, up
+  to the `normSq` factor (`re_pslS_smul`).
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -190,6 +191,9 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
 `z ↦ -1/z`) in `PSL(2, ℝ)`. -/
 noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
 
+/-- Restatement of `pslS` at the group level, through `sl2zToPSL2R : SL(2, ℤ) →* PSL(2, ℝ)`. -/
+theorem pslS_def : pslS = sl2zToPSL2R _root_.ModularGroup.S := psl2zToPSL2R_mk _
+
 /-- `pslS` acts as `ModularGroup.S` does. -/
 theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
   rw [pslS, psl2zToPSL2R_smul, pslMk_smul]
@@ -207,11 +211,16 @@ theorem pslS_mul_self : pslS * pslS = 1 :=
 @[simp]
 theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 
-/-- `pslS` negates the real part and divides by the norm-square. -/
+/-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
   rw [pslS_smul, modular_S_smul]
-  simp [Complex.inv_re]
-  ring
+  change ((-τ : ℂ)⁻¹).re = _
+  simp only [Complex.inv_re, Complex.normSq_neg, Complex.neg_re, UpperHalfPlane.coe_re, neg_div]
+
+/-- The common computation behind the half-plane and geodesic-line `_mul_pslS` lemmas. -/
+theorem re_inv_mul_pslS_smul (g : PSL(2, ℝ)) (z : ℍ) :
+    ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
+  rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
 
 /-- The `PSL(2, ℤ)`-action on `ℍ` is faithful, through the injective descent
 `psl2zToPSL2R` and the faithfulness of the `PSL(2, ℝ)`-action. -/
