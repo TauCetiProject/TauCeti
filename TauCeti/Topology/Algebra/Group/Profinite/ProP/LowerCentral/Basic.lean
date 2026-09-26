@@ -17,10 +17,10 @@ commutators `⁅G, G⁆`. This file records that `P₁` is contained in the pro-
 `Φ`. The containment gives a quotient map `G ⧸ P₁ → G ⧸ Φ`, so a family generating `G` modulo
 `P₁` generates `G` modulo `Φ` as well.
 
-The result is stated at its natural scope: the only hypothesis is that `p` is prime, and `G`
-is an arbitrary topological group — neither compactness nor finite generation is assumed. It
-feeds the Layer 8 example of the ProfiniteProPGroups roadmap, the equality `λ₁(G) = Φ(G)` for
-finitely generated pro-`p` groups, for which this containment is one of the two inclusions.
+Only the containment `P₁ ≤ Φ` is proved here. The reverse containment, and hence the equality
+`P₁ = Φ` that holds for finitely generated pro-`p` groups, is not established in this file. The
+hypotheses are minimal: `p` is prime and `G` is an arbitrary topological group, with neither
+compactness nor finite generation assumed.
 
 ## Main results
 
