@@ -24,8 +24,9 @@ is now available in every integer degree `r`.
 In degrees `≥ 1` the Tate complex is the complex of inhomogeneous cochains, so restriction is the
 ordinary restriction of group cohomology, transported through Mathlib's comparison
 `TateCohomology.isoGroupCohomology`. On a cochain this is the formula already used by
-`TauCeti.groupCohomology.map`: a cochain on `H` is pulled back to a cochain on `G` by
-`g ↦ f ∘ g` and composed with the identity on the restricted coefficient module.
+`TauCeti.groupCohomology.map`: a cochain `c` on `G` is pulled back to `H` along the subgroup
+inclusion, `(h₁ ⋯ hₙ) ↦ c (h₁ ⋯ hₙ)`, and composed with the identity on the restricted
+coefficient module.
 
 ## Main definitions
 
@@ -36,29 +37,20 @@ ordinary restriction of group cohomology, transported through Mathlib's comparis
 * `TauCeti.TateCohomology.posRes_comp_isoGroupCohomology_hom`: positive-degree Tate restriction is
   the ordinary cohomological restriction `TauCeti.groupCohomology.map` along `H.subtype`, read
   through Mathlib's comparison `TateCohomology.isoGroupCohomology`.
+* `TauCeti.TateCohomology.posRes_natural`: positive-degree Tate restriction is natural in the
+  coefficient module, the discrete counterpart of
+  `TauCeti.ContinuousCohomology.coeffMap_comp_res`.
 * `TauCeti.TateCohomology.posRes_trans`: positive-degree Tate restriction is transitive along a
   tower of subgroups, the counterpart of `TauCeti.TateCohomology.negSuccRes_trans`.
 
-## Remaining work
-
-Restriction in positive degrees is not yet shown compatible with a group isomorphism carrying the
-subgroup onto its image, the positive-degree counterpart of
-`TauCeti.TateCohomology.map_comp_negSuccRes`, nor natural in the coefficient module. Corestriction
-in positive degrees is also still missing, and the roadmap's
-`cor ∘ res = [G:H]` needs it.
-
-The tower case required one structural observation that is worth recording, because it is not
-obvious from the statement of the theorem. Mathlib's `Rep.res` does **not** compose: for
-`K ≤ H ≤ G` the composite `Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M)` is not
-definitionally `Rep.res K.subtype M`, and the two have different carrier types (`↥(K.subgroupOf H)`
-versus `↥K`), so that equality cannot even be stated as an equation of `Rep`s. The composite is
-therefore related to the single restriction only through the map along
-`Subgroup.subgroupOfEquivOfLe hKH` built from `TauCeti.Subgroup.subtype_comp_subgroupOfEquivOfLe`
-and `TauCeti.Rep.isIntertwiningMap_res_res`, which is why the statement of `posRes_trans` carries
-that middle term. Cancelling the three comparison isomorphisms in one pass is not possible: the
-helper `posRes_cancel_comparison` exists because the comparison isomorphisms must be typed with
-`TauCeti.groupCohomology` rather than with `(TauCeti.groupCohomology.functor _ _ _).obj _`, the two
-not being definitionally equal at `.instances` transparency.
+One structural observation is worth recording, because it is not obvious from the statement of
+`posRes_trans`. Mathlib's `Rep.res` does **not** compose: for `K ≤ H ≤ G` the composite
+`Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M)` is not definitionally
+`Rep.res K.subtype M`, and the two have different carrier types (`↥(K.subgroupOf H)` versus `↥K`),
+so that equality cannot even be stated as an equation of `Rep`s. The composite is therefore related
+to the single restriction only through the map along `Subgroup.subgroupOfEquivOfLe hKH` built from
+`TauCeti.Subgroup.subtype_comp_subgroupOfEquivOfLe` and `TauCeti.Rep.isIntertwiningMap_res_res`,
+which is why the statement of `posRes_trans` carries that middle term.
 
 ## References
 
@@ -92,7 +84,7 @@ def posRes (n : ℕ) :
 
 /-- **In positive degrees Tate restriction is the ordinary cohomological restriction** along
 `H.subtype`, read through Mathlib's comparison `TateCohomology.isoGroupCohomology`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem posRes_comp_isoGroupCohomology_hom (n : ℕ) :
     posRes M H n ≫
         (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
@@ -108,6 +100,85 @@ theorem posRes_comp_isoGroupCohomology_hom (n : ℕ) :
   simp only [posRes]
   exact (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app
     (Rep.res H.subtype M))).1 (by rfl)
+
+/-- The key square for `posRes_natural`, with the two comparison isomorphisms of each group given as
+arguments. Passing them as arguments typed with `tateCohomology` and `TauCeti.groupCohomology`,
+rather than taking the components of `TateCohomology.isoGroupCohomology` directly, is what makes
+the square well typed at `.instances` transparency and therefore rewritable, exactly as in
+`posRes_cancel_comparison`. -/
+private theorem posRes_natural_key {N : Rep.{u} R G} (f : M ⟶ N) (n : ℕ)
+    (iG : tateCohomology M ((n + 1 : ℕ)) ≅ groupCohomology M (n + 1))
+    (iN : tateCohomology N ((n + 1 : ℕ)) ≅ groupCohomology N (n + 1))
+    (jM : tateCohomology (Rep.res H.subtype M) ((n + 1 : ℕ)) ≅
+      groupCohomology (Rep.res H.subtype M) (n + 1))
+    (jN : tateCohomology (Rep.res H.subtype N) ((n + 1 : ℕ)) ≅
+      groupCohomology (Rep.res H.subtype N) (n + 1))
+    (rN : tateCohomology N ((n + 1 : ℕ)) ⟶ tateCohomology (Rep.res H.subtype N) ((n + 1 : ℕ)))
+    (rM : tateCohomology M ((n + 1 : ℕ)) ⟶ tateCohomology (Rep.res H.subtype M) ((n + 1 : ℕ)))
+    (hrN : rN = iN.hom ≫ groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype N)) (n + 1) ≫
+      jN.inv)
+    (hrM : rM = iG.hom ≫ groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype M)) (n + 1) ≫
+      jM.inv)
+    (hf : (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map f ≫ iN.hom
+      = iG.hom ≫ groupCohomology.map (MonoidHom.id G) f (n + 1))
+    (hg : (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map ((Rep.resFunctor H.subtype).map f)
+      = jM.hom ≫ groupCohomology.map (MonoidHom.id ↥H) ((Rep.resFunctor H.subtype).map f) (n + 1)
+        ≫ jN.inv)
+    (hres : groupCohomology.map (MonoidHom.id G) f (n + 1) ≫
+        groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype N)) (n + 1) ≫ jN.inv
+      = groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype M)) (n + 1) ≫
+        groupCohomology.map (MonoidHom.id ↥H) ((Rep.resFunctor H.subtype).map f) (n + 1) ≫
+          jN.inv) :
+    (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map f ≫ rN
+      = rM ≫ (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
+          ((Rep.resFunctor H.subtype).map f) := by
+  rw [hrN, hrM, ← Category.assoc, ← Category.assoc, hf, hg]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← hres]
+
+/-- **Positive-degree Tate restriction is natural in the coefficient module**: restricting along
+`H.subtype` after a map of `G`-representations is restriction along the restricted map, in Tate
+degree `n + 1`. The discrete counterpart of `TauCeti.ContinuousCohomology.coeffMap_comp_res`. -/
+@[reassoc]
+theorem posRes_natural {N : Rep.{u} R G} (f : M ⟶ N) (n : ℕ) :
+    (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map f ≫ posRes N H n
+      = posRes M H n ≫ (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
+          ((Rep.resFunctor H.subtype).map f) := by
+  -- The naturality of the two comparison isomorphisms, and of `TauCeti.groupCohomology.resNatTrans`
+  -- for the two coefficient maps, restated with `TauCeti.groupCohomology` typing so that
+  -- `posRes_natural_key` can rewrite with them: the components of
+  -- `TateCohomology.isoGroupCohomology` land in `(TauCeti.groupCohomology.functor _ _ _).obj _`,
+  -- which is not syntactically `TauCeti.groupCohomology`, so the `NatTrans` and `NatIso`
+  -- naturality do not match the goal as stated.
+  have hf : (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map f ≫
+      (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app N =
+      (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M ≫
+        groupCohomology.map (MonoidHom.id G) f (n + 1) :=
+    NatTrans.naturality
+      (self := (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom) f
+  have hg : (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map ((Rep.resFunctor H.subtype).map f) =
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app (Rep.res H.subtype M)
+        ≫ groupCohomology.map (MonoidHom.id ↥H) ((Rep.resFunctor H.subtype).map f) (n + 1) ≫
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).inv.app
+        (Rep.res H.subtype N) :=
+    (NatIso.naturality_2 (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1))
+      ((Rep.resFunctor H.subtype).map f)).symm
+  have hres : groupCohomology.map (MonoidHom.id G) f (n + 1) ≫
+        groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype N)) (n + 1) ≫
+          (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).inv.app
+            (Rep.res H.subtype N)
+      = groupCohomology.map H.subtype (𝟙 (Rep.res H.subtype M)) (n + 1) ≫
+        groupCohomology.map (MonoidHom.id ↥H) ((Rep.resFunctor H.subtype).map f) (n + 1) ≫
+          (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).inv.app
+            (Rep.res H.subtype N) :=
+    congrArg (fun x => x ≫
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).inv.app (Rep.res H.subtype N))
+      (NatTrans.naturality (groupCohomology.resNatTrans (k := R) H.subtype (n + 1)) f)
+  exact posRes_natural_key M H f n
+    (iG := (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app M)
+    (iN := (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app N)
+    (jM := (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app (Rep.res H.subtype M))
+    (jN := (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app (Rep.res H.subtype N))
+    (rN := posRes N H n) (rM := posRes M H n) (hrN := rfl) (hrM := rfl) hf hg hres
 
 omit [Fintype G] in
 @[reassoc]
