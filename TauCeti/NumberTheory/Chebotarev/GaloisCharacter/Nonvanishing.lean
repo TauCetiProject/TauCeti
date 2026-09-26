@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.ThreeFourOne
 import TauCeti.Analysis.Asymptotics.InvSubOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
 import TauCeti.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
@@ -59,8 +60,7 @@ theorem MonoidHom.LSeries_galoisCharacterWeight_ne_zero (χ : (F ≃ₐ[K] F) �
     (hs : 1 < s.re) :
     LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction) s ≠ 0 :=
   χ.galoisCharacterWeight.LSeries_ne_zero_of_summable_idealTerm
-    (summable_idealTerm_of_bounded_of_one_lt_re (C := 1)
-      (fun I ↦ by simpa using χ.galoisCharacterUnitaryWeight.norm_le_one I) hs)
+    (χ.summable_idealTerm_galoisCharacterWeight hs)
 
 namespace NumberField.Chebotarev
 
@@ -80,7 +80,8 @@ private theorem exists_differentiableAt_eqOn_LSeries_galoisCharacterWeight_one :
     have hmem : {z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} ∈ 𝓝 s :=
       (isOpen_lt continuous_const continuous_re).mem_nhds <| by
         rw [Set.mem_ofPred_eq, hs]
-        exact sub_lt_self 1 (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))
+        simpa only [Set.mem_ofPred_eq, hs] using
+          setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.ge
     exact (hG.differentiableAt hmem).add
       ((differentiableAt_const ρ).div (differentiableAt_id.sub_const 1) (sub_ne_zero.mpr hs1))
   · dsimp only

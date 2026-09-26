@@ -28,6 +28,8 @@ contributes the prime zeta sum over the unramified primes.
   height-one prime, ramified or not.
 * `MonoidHom.norm_galoisCharacterWeight_le_one`: the weight of a Galois character is bounded by
   `1`.
+* `MonoidHom.summable_idealTerm_galoisCharacterWeight`: the ideal series of a Galois character
+  converges absolutely on `Re s > 1`.
 * `MonoidHom.primeSum_galoisCharacterWeight_one`: the prime sum of the trivial character is the
   prime zeta sum over the unramified primes.
 * `AlgEquiv.natCard_mul_primeIdealZetaSum_frobeniusPrimeSet`: for `t > 1`, `#Gal(L/K)` times the
@@ -48,6 +50,14 @@ namespace MonoidHom
 theorem norm_galoisCharacterWeight_le_one (χ : (L ≃ₐ[K] L) →* ℂˣ) (I : Ideal (𝓞 K)) :
     ‖galoisCharacterWeight (L := L) χ I‖ ≤ 1 := by
   simpa using χ.galoisCharacterUnitaryWeight.norm_le_one I
+
+/-- The ideal series of a Galois character weight converges absolutely on `Re s > 1`. -/
+theorem summable_idealTerm_galoisCharacterWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    Summable (idealTerm K χ.galoisCharacterWeight.toIdealArithmeticFunction s) :=
+  summable_idealTerm_of_bounded_of_one_lt_re
+    (MultiplicativeIdealWeight.norm_toIdealArithmeticFunction_le_one
+      (χ.norm_galoisCharacterWeight_le_one)) hs
 
 variable (K L) in
 /-- The prime sum of the trivial character is the prime zeta sum over the unramified primes. -/
@@ -94,10 +104,7 @@ theorem natCard_mul_primeIdealZetaSum_frobeniusPrimeSet [IsMulCommutative (L ≃
   simp only [MultiplicativeIdealWeight.primeSum_def, ← tsum_mul_left]
   rw [← Summable.tsum_finsetSum fun χ _ ↦
       ((MonoidHom.galoisCharacterWeight χ).summable_div_of_summable_idealTerm
-        (summable_idealTerm_of_bounded_of_one_lt_re
-          (MultiplicativeIdealWeight.norm_toIdealArithmeticFunction_le_one
-            (MonoidHom.norm_galoisCharacterWeight_le_one χ))
-          (by simpa using ht))).mul_left _,
+        (χ.summable_idealTerm_galoisCharacterWeight (by simpa using ht))).mul_left _,
     Set.ofReal_primeIdealZetaSum, ← tsum_mul_left]
   refine tsum_congr fun P ↦ ?_
   simp only [mul_div_assoc', ← Finset.sum_div, sum_inv_mul_galoisCharacterWeight_apply_eq_ite]

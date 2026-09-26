@@ -11,6 +11,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Bas
 import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -35,6 +36,8 @@ primes deleted, which continues across `Re s = 1` apart from a single simple pol
 
 * `NumberField.Chebotarev.cyclotomicCharacterSeriesC_eq_LSeries`: on `Re s > 1` it is the
   `L`-series of `galoisCharacterWeight χ`.
+* `NumberField.Chebotarev.logDeriv_cyclotomicCharacterSeriesC`: the logarithmic derivative
+  agrees with that of the character `L`-series on `Re s > 1`.
 * `NumberField.Chebotarev.differentiableOn_cyclotomicCharacterSeriesC`: for `F = K(μ_m)` and
   `χ` nontrivial it is holomorphic on `Re s > 1 - 1 / [K : ℚ]`.
 * `NumberField.Chebotarev.analyticAt_cyclotomicCharacterSeriesC_one`: for `F = K(μ_m)` and `χ`
@@ -94,6 +97,18 @@ theorem cyclotomicCharacterSeriesC_eq_LSeries (χ : (F ≃ₐ[K] F) →* ℂˣ) 
   rw [cyclotomicCharacterSeriesC]
   split_ifs with h
   exacts [h.choose_spec.2 s hs, rfl]
+
+variable (K F) in
+/-- **The logarithmic derivative on `Re s > 1`.** For every finite Galois extension `F / K` and
+every character `χ` of `Gal(F/K)`, the logarithmic derivative of the continued series
+`cyclotomicCharacterSeriesC K F χ` is that of the `L`-series of `galoisCharacterWeight χ` on
+`Re s > 1`, where the two functions agree on a neighbourhood. -/
+theorem logDeriv_cyclotomicCharacterSeriesC (χ : (F ≃ₐ[K] F) →* ℂˣ) {s : ℂ} (hs : 1 < s.re) :
+    logDeriv (cyclotomicCharacterSeriesC K F χ) s =
+      logDeriv (LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction)) s :=
+  (logDeriv_congr_nhds <| eventually_of_mem
+    ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+      fun _ hz ↦ cyclotomicCharacterSeriesC_eq_LSeries K F χ hz).eq_of_nhds
 
 variable (K F) in
 /-- **The trivial character: a single simple pole on `Re s = 1`.** For every finite Galois
@@ -213,14 +228,6 @@ private theorem exists_sum_galoisCharacterWeight_pow_eq [IsMulCommutative (F ≃
       fun h1 hj ↦ ?_⟩
     simp [hj, artinSymbol_out_eq_one_of_mem_frobeniusPrimeSet_one hP h1]
 
--- For `Re s > 1` the ideal series of a Galois character weight converges absolutely.
-private theorem summable_idealTerm_galoisCharacterWeight (ψ : (F ≃ₐ[K] F) →* ℂˣ) {s : ℂ}
-    (hs : 1 < s.re) :
-    Summable (idealTerm K ψ.galoisCharacterWeight.toIdealArithmeticFunction s) := by
-  simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-    MonoidHom.val_galoisCharacterUnitaryWeight] using
-    summable_idealTerm_of_unitary_of_one_lt_re ψ.galoisCharacterUnitaryWeight hs
-
 -- For `σ > 1`, summing over the characters the Euler-product logarithm series of their `L`-series
 -- gives the real series `∑_{P, e} r(P, e) / (N(P) ^ σ) ^ (e + 1) / (e + 1)`, where `r(P, e)` is
 -- the character sum of the `(e + 1)`-th powers of the weights at `P`.
@@ -232,7 +239,7 @@ private theorem hasSum_sum_taylorSeries_galoisCharacterWeight {r : HeightOneSpec
         (ψ.galoisCharacterWeight pe.1.asIdeal / (Ideal.absNorm pe.1.asIdeal : ℂ) ^ (σ : ℂ)) ^
           (pe.2 + 1) / ((pe.2 : ℂ) + 1)) := by
   have hs (ψ : (F ≃ₐ[K] F) →* ℂˣ) :=
-    summable_idealTerm_galoisCharacterWeight ψ (s := σ) (by simpa using hσ)
+    ψ.summable_idealTerm_galoisCharacterWeight (K := K) (s := σ) (by simpa using hσ)
   refine (hasSum_sum fun (ψ : (F ≃ₐ[K] F) →* ℂˣ) _ ↦ (Complex.summable_taylorSeries_neg_log
     (ψ.galoisCharacterWeight.summable_div_of_summable_idealTerm (hs ψ))
     (ψ.galoisCharacterWeight.norm_div_lt_one_of_summable_idealTerm (hs ψ))).hasSum).congr_fun
@@ -261,7 +268,8 @@ private theorem tendsto_norm_prod_LSeries_atTop [IsMulCommutative (F ≃ₐ[K] F
   have hsum := hasSum_sum_taylorSeries_galoisCharacterWeight hr hσ
   -- The product of the `L`-series is the exponential of the real series.
   rw [← Finset.prod_congr rfl fun ψ _ ↦ MultiplicativeIdealWeight.exp_tsum_prime_pow_eq_LSeries _
-      (summable_idealTerm_galoisCharacterWeight ψ (s := σ) (by simpa using hσ)),
+      (ψ.summable_idealTerm_galoisCharacterWeight (K := K) (s := σ)
+        (by simpa using hσ)),
     ← Complex.exp_sum, ← hsum.tsum_eq, ← Complex.ofReal_tsum, Complex.norm_exp_ofReal,
     Set.primeIdealZetaSum_def, ← tsum_mul_left]
   refine le_trans ?_ ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp _))
