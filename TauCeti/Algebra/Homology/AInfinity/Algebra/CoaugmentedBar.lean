@@ -27,9 +27,9 @@ extended to all tensor words by
 `TauCeti.TensorWords.extendReduced`, and the module
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Extension` proves there that the extension
 preserves the square-zero law, the homogeneity in the total letter degree, and the `q`-twisted
-co-Leibniz identity.  The four results of this file are the four applications of those three lemmas
-to `TauCeti.AInfinityAlgebra.barDifferential`; the coaugmented co-Leibniz identity itself, the
-letterwise maps, and the total-letter-degree pieces are in
+co-Leibniz identity.  The results of this file are the applications of those three lemmas to
+`TauCeti.AInfinityAlgebra.barDifferential`, together with the empty-word case; the coaugmented
+co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pieces are in
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.GradedCoderivation` and
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`.
 
