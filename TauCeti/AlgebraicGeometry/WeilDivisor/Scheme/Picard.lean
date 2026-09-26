@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.RationalTrivialization
-public import TauCeti.AlgebraicGeometry.Modules.RationalEmbedding
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.TensorProduct
 
@@ -22,18 +21,16 @@ The divisor is read off from the rational embedding of `L`. A rank-one trivializ
 dense open subset realizes `L` inside the sheaf `𝒦_X` of rational functions
 (`Scheme.Modules.rationalTrivializationHom`), and over the domain `V` of any local rank-one
 trivialization the image consists of the regular multiples of one nonzero rational function
-`f_V`. On overlaps these functions differ by regular units, so the classes of `f_V⁻¹` glue to a
-Cartier divisor, whose Weil divisor `D` has coefficient `-ord_y f_V` at each codimension-one point
-`y ∈ V`. A rational function `g` then lies in the image of `L` over an open subset of `V` exactly
-when `g / f_V` has no poles there, which by the algebraic Hartogs' principle is the order bound
-defining `𝒪_X(D)`.
+`f_V`. The classes of the `f_V⁻¹` glue to a Cartier divisor
+(`Scheme.Modules.exists_cartierDivisor_restrict_eq`), whose Weil divisor `D` has coefficient
+`-ord_y f_V` at each codimension-one point `y ∈ V`. A rational function `g` then lies in the image
+of `L` over an open subset of `V` exactly when `g / f_V` has no poles there, which by the algebraic
+Hartogs' principle is the order bound defining `𝒪_X(D)`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_eq`: the local basis
-  functions of a rationally trivialized line bundle glue to a Cartier divisor;
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_coeff_eq_neg_ord`: the corresponding Weil
-  divisor;
+* `AlgebraicGeometry.Scheme.Modules.exists_coeff_eq_neg_ord`: the Weil divisor of a rationally
+  trivialized line bundle;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isoSheafOfCoeffEq`: the isomorphism `L ≅ 𝒪_X(D)`
   through which the rational embedding of `L` factors (`isoSheafOfCoeffEq_hom_sheafι`);
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.toLineBundleClass_surjective` and
@@ -58,102 +55,6 @@ namespace AlgebraicGeometry
 universe u
 
 noncomputable section
-
-/-- Every point lies in the domain of a rank-one trivialization of a line bundle. -/
-private lemma exists_mem_trivialization {X : Scheme.{u}} (M : X.Modules)
-    [SheafOfModules.isInvertible X M] (x : X) :
-    ∃ (V : X.Opens) (_ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
-      x ∈ V := by
-  let t := SheafOfModules.LocalTrivializations.ofIsInvertible M
-  have ht : ⨆ i, t.X i = ⊤ := by
-    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
-  have hx : x ∈ ⨆ i, t.X i := by
-    rw [ht]
-    exact Opens.mem_top _
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
-  exact ⟨t.X i, t.iso i, hi⟩
-
-open _root_.AlgebraicGeometry.Scheme.Modules in
-/-- On a nonempty open subset `W` of the domain of a rank-one trivialization `t`, the rational
-function of a section is a regular multiple of the rational function of the basis section of
-`t`. -/
-private lemma exists_rationalFunction_eq_mul {X : Scheme.{u}} [IrreducibleSpace X] (M : X.Modules)
-    {U V W : X.Opens} (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X)) [Nonempty V] [Nonempty W]
-    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V)
-    (s : Γ(M, W)) :
-    ∃ r : Γ(X, W), rationalFunction M e hU W s =
-      X.germToFunctionField W r * (trivializationGeneratorRationalUnit M e hU t : _) := by
-  have hs : rationalFunction M e hU W s ∈ Set.range (rationalFunction M e hU W) := ⟨s, rfl⟩
-  rw [range_rationalFunction M e hU t i] at hs
-  obtain ⟨r, hr⟩ := hs
-  exact ⟨r, by rw [hr, rationalFunction_map, coe_trivializationGeneratorRationalUnit]⟩
-
-open _root_.AlgebraicGeometry.Scheme.Modules in
-/-- On a nonempty open subset `W` of the domains of two rank-one trivializations of a sheaf of
-modules, the rational functions of their basis sections have the same Cartier-divisor class: they
-differ by a regular unit on `W`. -/
-theorem
-    _root_.AlgebraicGeometry.Scheme.Modules.rationalUnitClass_trivializationGeneratorRationalUnit_eq
-    {X : Scheme.{u}}
-    [IsIntegral X] (M : X.Modules) {U V₁ V₂ W : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X))
-    (t₁ : SheafOfModules.free (R := X.ringCatSheaf.over V₁) PUnit ≅ M.over V₁)
-    (t₂ : SheafOfModules.free (R := X.ringCatSheaf.over V₂) PUnit ≅ M.over V₂)
-    (i₁ : W ⟶ V₁) (i₂ : W ⟶ V₂) [Nonempty V₁] [Nonempty V₂] [Nonempty W] :
-    Scheme.rationalUnitClass X W
-        (Additive.ofMul (trivializationGeneratorRationalUnit M e hU t₁)) =
-      Scheme.rationalUnitClass X W
-        (Additive.ofMul (trivializationGeneratorRationalUnit M e hU t₂)) := by
-  obtain ⟨r, hr⟩ := exists_rationalFunction_trivializationGenerator_eq_mul M e hU t₁ t₂ i₁ i₂
-  rw [rationalFunction_map, rationalFunction_map] at hr
-  have h : trivializationGeneratorRationalUnit M e hU t₁ =
-      Units.map (X.germToFunctionField W).hom r * trivializationGeneratorRationalUnit M e hU t₂ :=
-    Units.ext (by simpa using hr)
-  rw [h, ofMul_mul, map_add, Scheme.rationalUnitClass_germToFunctionField_eq_zero, zero_add]
-
-open _root_.AlgebraicGeometry.Scheme.Modules in
-/-- **The Cartier divisor of a rationally trivialized line bundle.** Let `M` be a line bundle on
-an integral scheme, with a chosen rank-one trivialization on a dense open subset. There is a
-Cartier divisor whose restriction to the domain `V` of every nonempty rank-one trivialization `t`
-is the class of the inverse of the rational function of the basis section of `t`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_eq
-    {X : Scheme.{u}} [IsIntegral X] (M : X.Modules)
-    [SheafOfModules.isInvertible X M] {U : X.Opens}
-    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X)) :
-    ∃ E : Scheme.CartierDivisor X, ∀ (V : X.Opens) [Nonempty V]
-      (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
-      E |_ V = Scheme.rationalUnitClass X V
-        (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU t)) := by
-  let ι := {p : Σ V : X.Opens, (SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅
-    M.over V) // Nonempty p.1}
-  let W : ι → X.Opens := fun p ↦ p.1.1
-  let sf : ∀ p : ι, ((Scheme.cartierDivisorSheaf X).obj.obj (op (W p)) : Type u) := fun p ↦
-    have := p.2
-    Scheme.rationalUnitClass X p.1.1
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.1.2))
-  have hcompat : TopCat.Presheaf.IsCompatible (Scheme.cartierDivisorSheaf X).obj W sf := by
-    intro p q
-    have := p.2
-    have := q.2
-    have : Nonempty (W p ⊓ W q : X.Opens) := by
-      simpa using nonempty_preirreducible_inter (W p).isOpen (W q).isOpen
-        (by simpa using p.2) (by simpa using q.2)
-    have hp := Scheme.rationalUnitClass_restrict X (U := W p) (V := W p ⊓ W q) inf_le_left
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.1.2))
-    have hq := Scheme.rationalUnitClass_restrict X (U := W q) (V := W p ⊓ W q) inf_le_right
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU q.1.2))
-    refine hp.trans (hq.trans ?_).symm
-    rw [map_neg, map_neg, rationalUnitClass_trivializationGeneratorRationalUnit_eq M e hU
-      p.1.2 q.1.2 (homOfLE inf_le_left) (homOfLE inf_le_right)]
-  have hcover : ⊤ ≤ iSup W := fun x _ ↦ by
-    obtain ⟨V, t, hx⟩ := exists_mem_trivialization M x
-    exact Opens.mem_iSup.mpr ⟨⟨⟨V, t⟩, ⟨⟨x, hx⟩⟩⟩, hx⟩
-  obtain ⟨E, hE, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' W ⊤
-    (fun _ ↦ homOfLE le_top) hcover sf hcompat
-  exact ⟨E, fun V _ t ↦ hE ⟨⟨V, t⟩, inferInstance⟩⟩
 
 open _root_.AlgebraicGeometry.Scheme.Modules in
 /-- **The Weil divisor of a rationally trivialized line bundle.** On a Noetherian integral scheme,
@@ -200,7 +101,7 @@ theorem rationalTrivializationHom_app_mem_sections
     Hom.app (rationalTrivializationHom M e hU) W s ∈ sections D W := by
   refine mem_sections.mpr fun y hy ↦ ?_
   have : Nonempty W := ⟨⟨y, hy⟩⟩
-  obtain ⟨V, t, hyV⟩ := exists_mem_trivialization M (y : X)
+  obtain ⟨V, t, hyV⟩ := M.exists_mem_trivialization (y : X)
   have : Nonempty V := ⟨⟨y, hyV⟩⟩
   have : Nonempty (W ⊓ V : X.Opens) := ⟨⟨y, hy, hyV⟩⟩
   rw [rationalFunctionsEquiv_rationalTrivializationHom_app,
@@ -237,7 +138,7 @@ theorem exists_rationalTrivializationHom_app_eq
       fun ⟨x, hx⟩ ↦ hW ⟨⟨x, hx⟩⟩
     have := Scheme.subsingleton_rationalFunctions W hbot
     exact ⟨0, Subsingleton.elim _ _⟩
-  choose V t hV using fun x : W ↦ exists_mem_trivialization M (x : X)
+  choose V t hV using fun x : W ↦ M.exists_mem_trivialization (x : X)
   let W' : W → X.Opens := fun x ↦ W ⊓ V x
   have hW' : ∀ x, Nonempty (W' x) := fun x ↦ ⟨⟨x, x.2, hV x⟩⟩
   have hV' : ∀ x, Nonempty (V x) := fun x ↦ ⟨⟨x, hV x⟩⟩
