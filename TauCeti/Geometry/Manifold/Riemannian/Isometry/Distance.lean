@@ -55,7 +55,7 @@ private theorem riemannianEDist_apply_le (Φ : RiemannianIsometry I J M N) (x y 
 /-- A smooth Riemannian isometry preserves Riemannian extended distance, including between
 points in distinct connected components. -/
 @[simp]
-theorem riemannianEDist_apply (Φ : RiemannianIsometry I J M N) (x y : M) :
+theorem riemannianEDist_eq (Φ : RiemannianIsometry I J M N) (x y : M) :
     Manifold.riemannianEDist J (Φ x) (Φ y) = Manifold.riemannianEDist I x y := by
   apply le_antisymm (riemannianEDist_apply_le Φ x y)
   simpa using riemannianEDist_apply_le Φ.symm (Φ x) (Φ y)
@@ -76,21 +76,50 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A smooth Riemannian isometry preserves the ambient extended distance when each ambient
 distance agrees with its Riemannian distance. -/
 @[simp]
-theorem edist_apply (Φ : RiemannianIsometry I J M N) (x y : M) :
+theorem edist_eq (Φ : RiemannianIsometry I J M N) (x y : M) :
     edist (Φ x) (Φ y) = edist x y := by
   rw [IsRiemannianManifold.out (I := J), IsRiemannianManifold.out (I := I),
-    Φ.riemannianEDist_apply]
+    Φ.riemannianEDist_eq]
 
 /-- A smooth Riemannian isometry between spaces equipped with their Riemannian extended distances
 is an isometry equivalence. -/
 def toIsometryEquiv (Φ : RiemannianIsometry I J M N) : M ≃ᵢ N where
   toEquiv := Φ.toDiffeomorph.toEquiv
-  isometry_toFun := fun x y ↦ Φ.edist_apply x y
+  isometry_toFun := fun x y ↦ Φ.edist_eq x y
 
 include hM hN in
 @[simp]
 theorem toIsometryEquiv_apply (Φ : RiemannianIsometry I J M N) (x : M) :
     Φ.toIsometryEquiv x = Φ x := by rfl
+
+/-- The metric equivalence of the inverse is the inverse metric equivalence. -/
+@[simp]
+theorem toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
+    Φ.symm.toIsometryEquiv = Φ.toIsometryEquiv.symm := by
+  ext x
+  apply Φ.toIsometryEquiv.injective
+  simp
+
+/-- The identity Riemannian isometry induces the identity metric equivalence. -/
+@[simp]
+theorem toIsometryEquiv_refl :
+    (RiemannianIsometry.refl I M).toIsometryEquiv = IsometryEquiv.refl M := by
+  ext x
+  rw [toIsometryEquiv_apply, RiemannianIsometry.refl_apply]
+  simp only [IsometryEquiv.coe_eq_toEquiv, IsometryEquiv.refl, Equiv.refl_apply]
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [PseudoEMetricSpace P] [ChartedSpace H'' P]
+  [RiemannianBundle (fun z : P ↦ TangentSpace K z)] [hP : IsRiemannianManifold K P]
+
+/-- The metric equivalence of a composite is the composite metric equivalence. -/
+@[simp]
+theorem toIsometryEquiv_trans (Φ : RiemannianIsometry I J M N)
+    (Ψ : RiemannianIsometry J K N P) :
+    (Φ.trans Ψ).toIsometryEquiv = Φ.toIsometryEquiv.trans Ψ.toIsometryEquiv := by
+  ext x
+  simp
 
 end Ambient
 
