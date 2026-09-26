@@ -15,8 +15,7 @@ A sequence in the compact cut-distance quotient of unit-interval graphons conver
 the homomorphism density of every finite simple graph converges. Thus finite-graph densities give
 all the coordinates needed to test convergence of dense graph limits.
 
-The result combines continuity of homomorphism density with separation of graphons and compactness
-of the graphon space. See Lovász, *Large Networks and Graph Limits*, Theorem 11.5.
+See Lovász, *Large Networks and Graph Limits*, Theorem 11.5.
 -/
 
 public section
