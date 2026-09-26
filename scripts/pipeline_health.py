@@ -375,7 +375,7 @@ def analyse(
         })
 
     result = {
-        "schema_version": 4,
+        "schema_version": 5,
         "repo": snapshot.get("repo"),
         "generated_at": iso_z(now),
         "snapshot_fetched_at": snapshot.get("fetched_at"),
@@ -434,9 +434,83 @@ MIN_COMPLETIONS = 3          # below this a median dwell is noise
 # genuinely low-traffic stage is not judged on dwell at all, which is the right
 # way round: it has not supplied the evidence to be judged on.
 MIN_STALL_COHORT = 20
-GROWTH_PER_HOUR = 0.05       # arrivals must outpace departures by a real margin
+# Arrivals must outpace departures by a real margin, and "real" has to be read against how much
+# is moving through the stage. An absolute floor on its own was the whole test once, and it aged
+# badly: it was set when the busiest stage ran at a few pull requests an hour, and at forty an
+# hour it started firing on rounding. The published report for 2026-09-22 called awaiting-review
+# an anomaly for "arriving at 40.33/h and leaving at 40.25/h" -- a gap of 0.08/h, two pull
+# requests either way across a twenty-four hour window, on a stage whose depth was ten. Nothing
+# was wrong with it.
+#
+# So a stage must clear BOTH: the absolute floor, which keeps a quiet stage from being flagged on
+# a fraction of a pull request a day, and the fraction, which keeps a busy one from being flagged
+# on noise. The fraction is what does the work now -- at forty an hour it asks for two an hour,
+# roughly fifty pull requests a day that arrived and did not leave -- and the floor still governs
+# every stage quieter than one an hour, which is what it was chosen for.
+GROWTH_PER_HOUR = 0.05
+GROWTH_FRACTION = 0.05       # of the arrival rate, when there is no service rate to use instead
+# What actually decides it, whenever the stage has a baseline service rate: how much EXTRA WORK
+# piled up, measured in hours the stage would need at its normal pace to clear it.
+#
+# A fraction of arrivals cannot be the whole test. It is equivalent to demanding that departures
+# fall below 95% of arrivals, so any smaller persistent loss is invisible for ever rather than
+# merely needing more evidence: a stage taking forty an hour and clearing thirty-nine gains
+# twenty-four pull requests a day, and stays under a 5%-of-forty margin at every window length.
+# The stall test does not catch it either -- if 97.5% of spells still finish quickly, both the
+# median dwell and the survival at twice it stay healthy while the queue grows all week.
+#
+# Drain time separates the two cases the fraction could not. The 2026-09-22 false positive was
+# 1.9 pull requests over twenty-four hours against a service rate of 24.6/h, which is under five
+# minutes of extra work. The forty-in/thirty-nine-out leak is twenty-four against the same rate,
+# which is an hour. This is an operational policy, not a confidence level, and it is stated in
+# the unit the decision is actually about.
+GROWTH_DRAIN_HOURS = 0.5
+# And at least one whole pull request must have accumulated, so a nearly dormant stage cannot
+# clear the drain budget on a fraction of an item.
+GROWTH_MIN_NET = 1.0
 SLOWDOWN_FACTOR = 2.0        # multiple of normal dwell that counts as a stall
 THROUGHPUT_FRACTION = 0.75   # of baseline, below which something is wrong
+
+
+def growth_margin(entered_per_hour: float) -> float:
+    """How far arrivals must outpace departures before that means anything, as a rate.
+
+    The fallback test, used when a stage has no baseline service rate to price its backlog
+    against. Scales with the stage's own traffic, so the same question is asked of a stage
+    taking one pull request an hour and one taking forty. See GROWTH_FRACTION.
+    """
+    return max(GROWTH_PER_HOUR, GROWTH_FRACTION * (entered_per_hour or 0.0))
+
+
+def added_drain_hours(growth: float, baseline_left_per_hour: float,
+                      window_hours: float) -> float | None:
+    """Hours of extra work the window's net arrivals added, at the stage's normal pace.
+
+    `growth * window_hours` is the net change in the stage's inventory over the window, and
+    dividing by what the stage normally clears per hour turns that into the quantity anyone
+    actually cares about: how much longer there is to wait because of it.
+
+    None when the stage has no baseline throughput to divide by, which is not the same as zero
+    -- a stage that has never cleared anything has not been measured to be fast.
+    """
+    if not baseline_left_per_hour or baseline_left_per_hour <= 0:
+        return None
+    return (growth * window_hours) / baseline_left_per_hour
+
+
+def _severity(item: dict) -> tuple:
+    """Rank one anomaly, worst first under `reverse=True`.
+
+    Filling stages lead, ordered by how much extra work piled up. Everything after them is in
+    the list because it is STALLED, so it is ordered by how stuck it is -- not by growth, which
+    failed its own test. Ordering the whole list on growth let a stage sitting just under its
+    margin outrank a completely frozen one, and widening that margin made the case far more
+    likely to arise than it had been. Growth survives only as a tie-break.
+    """
+    return (item["filling"],
+            (item["added_drain_hours"] or 0.0) if item["filling"] else 0.0,
+            item["surviving_at_stall_horizon"] or 0.0,
+            item["growth_per_hour"])
 
 
 def anomalies(result: dict) -> list[dict]:
@@ -483,7 +557,16 @@ def anomalies(result: dict) -> list[dict]:
         # it is not evidence of a new performance failure.
         established = (stage["baseline_left_count"] >= MIN_COMPLETIONS
                        or stage["baseline_entered_per_hour"] > 0)
-        filling = growth > GROWTH_PER_HOUR and established
+        margin = growth_margin(stage["entered_per_hour"])
+        net_added = growth * result["window_hours"]
+        drain = added_drain_hours(growth, stage["baseline_left_per_hour"],
+                                  result["window_hours"])
+        if drain is None:
+            # No service rate to price the backlog against, so fall back to the rate margin.
+            filling = established and growth > margin
+        else:
+            filling = (established and net_added >= GROWTH_MIN_NET
+                       and drain > GROWTH_DRAIN_HOURS)
         # Strictly above a half, which is what makes this exactly the claim that
         # the median has reached the horizon: `median_dwell` declares the median
         # at the first duration where survival falls to a half or below, so a
@@ -497,9 +580,16 @@ def anomalies(result: dict) -> list[dict]:
             continue
         reasons = []
         if filling:
+            if drain is None:
+                detail = (f"a gap of {growth:.2f}/h against the {margin:.2f}/h this stage's "
+                          "traffic requires")
+            else:
+                detail = (f"{net_added:.0f} more in than out, which is {drain:.1f}h of extra "
+                          "work at its normal pace")
             reasons.append(
                 f"arriving at {stage['entered_per_hour']:.2f}/h and leaving at "
-                f"{stage['left_per_hour']:.2f}/h, so it is filling faster than it drains"
+                f"{stage['left_per_hour']:.2f}/h, {detail}, so it is filling faster "
+                "than it drains"
             )
         if stalled:
             reasons.append(
@@ -511,6 +601,16 @@ def anomalies(result: dict) -> list[dict]:
             "stage": stage["stage"],
             "depth": stage["depth"],
             "growth_per_hour": growth,
+            # Published so a reader can see what the gap was measured against, rather than
+            # having to know the constants to tell 0.08/h on a busy stage from 0.08/h on a
+            # quiet one.
+            "growth_margin_per_hour": margin,
+            # Both decisions, stated rather than implied. `filling: false` used to be the only
+            # way to learn that an anomaly was a stall, which made the machine contract turn on
+            # a reader knowing that the two are the only reasons to be in this list.
+            "filling": filling,
+            "stalled": stalled,
+            "added_drain_hours": drain,
             "slowdown_factor": slowdown,
             "surviving_at_stall_horizon": surviving,
             "why": "; ".join(reasons),
@@ -519,10 +619,7 @@ def anomalies(result: dict) -> list[dict]:
     # on the survival, since that is what `stalled` was decided on and it is
     # available whenever the decision was; the ratio is null for the stages too
     # slow to estimate, which are the worst rather than the least of them.
-    found.sort(key=lambda item: (item["growth_per_hour"] > GROWTH_PER_HOUR,
-                                 item["growth_per_hour"],
-                                 item["surviving_at_stall_horizon"] or 0.0),
-               reverse=True)
+    found.sort(key=_severity, reverse=True)
     return found
 
 

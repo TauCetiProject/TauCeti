@@ -66,6 +66,17 @@ theorem isPreprimitive_map_permCongrHom_iff (e : α ≃ β) (G : Subgroup (Perm 
   (isPreprimitive_congr (e.permCongrHom.subgroupMap G).surjective
     (f := permCongrHomMulActionHom e G) e.bijective).symm
 
+/-- **Reading a permutation group through two equivalences differs by exactly one conjugation**,
+by the re-indexing permutation `e.symm.trans e'`. So the transported subgroup is well defined
+only up to conjugacy, while the group itself is canonical. -/
+theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α)) :
+    G.map e'.permCongrHom.toMonoidHom =
+      Subgroup.map (MulAut.conj (e.symm.trans e')) (G.map e.permCongrHom.toMonoidHom) := by
+  rw [Subgroup.map_map]
+  congr 1
+  ext σ x
+  simp [Equiv.permCongrHom_coe]
+
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
 /-- Transport along an equivalence preserves containment in the alternating group, since it

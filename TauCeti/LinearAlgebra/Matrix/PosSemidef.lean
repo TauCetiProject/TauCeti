@@ -5,31 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Analysis.Matrix.Order
-public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
 # Positive-semidefinite matrix algebra
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
-It provides rank-one and constant matrices, finite pointwise sums and Schur products, Schur powers,
+It provides rank-one and constant matrices, finite Schur products, Schur powers,
 and the quadratic-form characterization.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
-
-They supply the matrix prerequisites for Part C of the `OneParameterSemigroups` roadmap, including
-the positive-definite-function/kernel correspondence and the GNS/Kolmogorov decomposition. No
-Mathlib code is vendored.
 
 ## Main declarations
 
 * `TauCeti.posSemidef_rankOne`: rank-one positive-semidefinite matrices.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
-* `TauCeti.posSemidef_finset_sum`: finite pointwise sums.
-* `TauCeti.posSemidef_schur_finset_prod` and `TauCeti.posSemidef_schur_pow`: finite Schur
+* `TauCeti.posSemidef_schur_finset_prod` and `Matrix.PosSemidef.hadamard_pow`: finite Schur
   products and Schur powers.
 
 ## References
@@ -73,29 +66,17 @@ private theorem posSemidef_of_support_posSemidef {R : Type u}
     rw [Finset.sum_subtype x.support (by intro a; rfl)]
   simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
 
-private theorem matrixOf_star_mul_eq_vecMulVec {R : Type u}
-    [Ring R] [StarRing R] (g : α → R) :
-    Matrix.of (fun a b => star (g a) * g b) = Matrix.vecMulVec (star g) g := by
-  ext a b
-  simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply]
-
-private theorem star_mul_matrix_isHermitian {R : Type u}
-    [Ring R] [StarRing R] (g : α → R) :
-    (Matrix.of fun a b => star (g a) * g b).IsHermitian := by
-  rw [matrixOf_star_mul_eq_vecMulVec]
-  ext a b
-  simp [Matrix.conjTranspose_apply, Matrix.vecMulVec_apply, Pi.star_apply]
-
 /-- The rank-one matrix `(a, b) ↦ star (g a) · g b` is positive semidefinite for an arbitrary
 index type. Such matrices are elementary building blocks for positive-semidefinite matrices;
 taking `g ≡ 1` gives the constant matrix `1`. -/
 theorem posSemidef_rankOne {R : Type u}
     [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R] (g : α → R) :
     Matrix.PosSemidef (fun a b => star (g a) * g b) := by
-  refine posSemidef_of_support_posSemidef _ (star_mul_matrix_isHermitian g) ?_
-  intro x
-  exact (matrixOf_star_mul_eq_vecMulVec (g := fun i : x.support => g (i : α))).symm ▸
-    Matrix.posSemidef_vecMulVec_star_self _
+  refine posSemidef_of_support_posSemidef (fun a b => star (g a) * g b) ?_ fun x => ?_
+  · exact Matrix.IsHermitian.ext fun a b => by simp
+  · convert Matrix.posSemidef_vecMulVec_star_self (fun a : x.support => g a) using 1
+    ext a b
+    simp [Matrix.vecMulVec_apply]
 
 /-- The constant matrix with value `1` is positive semidefinite. -/
 theorem posSemidef_const_one {R : Type u}
@@ -105,17 +86,15 @@ theorem posSemidef_const_one {R : Type u}
 
 /-- A nonnegative constant gives a positive-semidefinite constant matrix. -/
 theorem posSemidef_const_of_nonneg {R : Type u}
-    [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+    [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
     {c : R} (hc : 0 ≤ c) : Matrix.PosSemidef (fun _ _ : α => c) := by
-  have h := (posSemidef_const_one (R := R) (α := α)).smul hc
-  have heq : c • (fun _ _ : α => (1 : R)) = fun _ _ : α => c := by
-    ext
-    simp
-  exact heq ▸ h
+  have heq : (Matrix.diagonal (fun _ : Unit => c)).submatrix (fun _ : α => ())
+      (fun _ : α => ()) = fun _ _ : α => c := by ext; simp
+  rw [← heq]
+  exact (Matrix.PosSemidef.diagonal (fun _ => hc)).submatrix _
 
-/-- The quadratic-form characterization of an arbitrary-index positive-semidefinite matrix. The
-reverse direction constructs positivity from conjugate symmetry and finite quadratic-form
-nonnegativity without unfolding `Matrix.PosSemidef`. -/
+/-- The quadratic-form characterization of an arbitrary-index positive-semidefinite matrix:
+conjugate symmetry and nonnegativity on every finite family, allowing repeated indices. -/
 theorem posSemidef_iff_finite_sum {R : Type u} [Ring R] [PartialOrder R] [StarRing R]
     {K : α → α → R} :
     Matrix.PosSemidef K ↔
@@ -126,21 +105,14 @@ theorem posSemidef_iff_finite_sum {R : Type u} [Ring R] [PartialOrder R] [StarRi
   refine ⟨fun hK => ⟨fun a b => ?_, ?_⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
   · exact hK.isHermitian.apply b a
   · intro ι _ v x
-    have hgram : Matrix.PosSemidef fun i j => K (v i) (v j) := by
-      have h := hK.submatrix v
-      have heq : Matrix.submatrix (Matrix.of K) v v = fun i j => K (v i) (v j) := by
-        apply Matrix.ext
-        intro i j
-        rw [Matrix.submatrix_apply, Matrix.of_apply]
-      exact heq ▸ h
-    have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp hgram).2 x
-    simpa [dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply, Finset.mul_sum,
-      mul_assoc, mul_left_comm, mul_comm] using h
+    simpa only [dotProduct, Matrix.mulVec, Matrix.submatrix, Matrix.of_apply, Pi.star_apply,
+      Finset.mul_sum, mul_assoc] using (hK.submatrix v).dotProduct_mulVec_nonneg x
   refine posSemidef_of_support_posSemidef K ?_ ?_
   · ext a b
     rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply]
     exact hsymm b a
   · intro x
+    -- Realize the support in the universe quantified over by `hpos`.
     let e : ULift (Fin (Fintype.card x.support)) ≃ x.support :=
       Equiv.ulift.trans (Fintype.equivFin x.support).symm
     refine (Matrix.posSemidef_submatrix_equiv e).mp ?_
@@ -157,42 +129,28 @@ theorem posSemidef_iff_finite_sum {R : Type u} [Ring R] [PartialOrder R] [StarRi
       refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
       exact mul_assoc _ _ _
 
-/-- Finite pointwise sums of positive-semidefinite matrices are positive semidefinite. -/
-theorem posSemidef_finset_sum {R : Type u}
-    [Ring R] [PartialOrder R] [StarRing R] [AddLeftMono R]
-    {ι : Type w} {s : Finset ι}
-    {K : ι → α → α → R} (hK : ∀ i ∈ s, Matrix.PosSemidef (K i)) :
-    Matrix.PosSemidef (fun a b => ∑ i ∈ s, K i a b) := by
-  have h := Matrix.posSemidef_sum s hK
-  have heq : (∑ i ∈ s, K i) = fun a b => ∑ i ∈ s, K i a b := by
-    apply Matrix.ext
-    intro a b
-    simp
-  exact heq ▸ h
-
 variable {𝕜 : Type u} [RCLike 𝕜]
 
 /-- Finite pointwise Schur products of positive-semidefinite matrices are positive semidefinite. -/
 theorem posSemidef_schur_finset_prod {ι : Type w} {s : Finset ι}
     {K : ι → α → α → 𝕜} (hK : ∀ i ∈ s, Matrix.PosSemidef (K i)) :
     Matrix.PosSemidef (fun a b => ∏ i ∈ s, K i a b) := by
-  have h := Finset.prod_induction K Matrix.PosSemidef
-    (fun _ _ hA hB => hA.hadamard hB) posSemidef_const_one hK
   have heq : (∏ i ∈ s, K i) = fun a b => ∏ i ∈ s, K i a b := by ext; simp
-  exact heq ▸ h
+  rw [← heq]
+  exact Finset.prod_induction K Matrix.PosSemidef
+    (fun _ _ hA hB => hA.hadamard hB) posSemidef_const_one hK
+
+end TauCeti
 
 /-- Schur powers of a positive-semidefinite matrix are positive semidefinite. -/
-theorem posSemidef_schur_pow {K : α → α → 𝕜} (hK : Matrix.PosSemidef K) (n : ℕ) :
+theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α → α → 𝕜}
+    (hK : Matrix.PosSemidef K) (n : ℕ) :
     Matrix.PosSemidef (fun a b => K a b ^ n) := by
   induction n with
   | zero =>
-      simpa using posSemidef_const_one (R := 𝕜) (α := α)
+      simpa using TauCeti.posSemidef_const_one (R := 𝕜) (α := α)
   | succ n ih =>
-      have heq : (fun a b => K a b ^ (n + 1)) =
-          Matrix.hadamard (Matrix.of fun a b => K a b ^ n) (Matrix.of K) := by
-        apply Matrix.ext
-        intro a b
+      have heq : (Matrix.of fun a b => K a b ^ n) ⊙ Matrix.of K = (fun a b => K a b ^ (n + 1)) := by
+        ext
         rw [Matrix.hadamard_apply, Matrix.of_apply, Matrix.of_apply, pow_succ]
-      exact heq.symm ▸ ih.hadamard hK
-
-end TauCeti
+      exact heq ▸ ih.hadamard hK

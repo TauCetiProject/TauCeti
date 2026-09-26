@@ -65,6 +65,10 @@ by the projectives themselves.
 * `TauCeti.ExactStructure.split_enoughProjectives` and
   `TauCeti.ExactStructure.abelian_enoughProjectives`: the corresponding enough-projective
   calibrations.
+* `TauCeti.ExactStructure.isProjective_map_adjoint`: a left adjoint preserves relative
+  projectives when its right adjoint is conflation-exact.
+* `TauCeti.ExactStructure.isProjective_map_equivalence_iff`: conflation-exact equivalences
+  preserve and reflect projectivity.
 * `TauCeti.ExactStructure.nonempty_iso_biprod_of_projective`: **Schanuel's lemma**, that two
   conflations over the same object with projective middle terms have stably isomorphic kernels.
 * `TauCeti.ExactStructure.exists_conflation_biprod_of_conflation_of_projective`: **the horseshoe
@@ -98,8 +102,8 @@ identifies its kernel in one step.
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, Section 7,
   where finite resolutions and the resolution theorem consume this closure property.
 * `Mathlib/CategoryTheory/Preadditive/Projective/Basic.lean`, whose `factorThru`,
-  `factorThru_comp` and isomorphism, zero-object and biproduct closure API for absolute
-  projectivity is the layout adapted here to the relative setting, and
+  `factorThru_comp`, `Adjunction.map_projective`, and isomorphism, zero-object and biproduct
+  closure API for absolute projectivity is the layout adapted here to the relative setting, and
   `Mathlib/Algebra/Homology/ShortComplex/ShortExact.lean`, whose
   `CategoryTheory.ShortComplex.ShortExact.splittingOfProjective` is the balanced-category
   ancestor of `TauCeti.ExactStructure.splittingOfProjective`.
@@ -114,7 +118,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
@@ -219,6 +223,50 @@ theorem abelian_isProjective_iff {A : Type u} [Category.{v} A] [Abelian A] (X : 
     have : Epi p := (abelian_isDeflation_iff p).mp hp
     exact h.factors f p
 
+section Functor
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D]
+variable {F : C ⥤ D} {G : D ⥤ C} [F.Additive] [G.Additive]
+
+omit [F.Additive] [G.Additive] in
+/-- A left adjoint carries relative projectives to relative projectives when its right adjoint
+carries deflations to deflations. -/
+theorem isProjective_map_adjoint_of_map_isDeflation (E : ExactStructure C)
+    (E' : ExactStructure D) (adj : F ⊣ G)
+    (hG : ∀ ⦃X Y : D⦄ (p : X ⟶ Y), E'.IsDeflation p → E.IsDeflation (G.map p))
+    {Q : C} (hQ : E.isProjective Q) :
+    E'.isProjective (F.obj Q) := by
+  intro X Y p hp f
+  obtain ⟨g, hg⟩ := hQ (hG p hp) (adj.unit.app Q ≫ G.map f)
+  refine ⟨F.map g ≫ adj.counit.app X, ?_⟩
+  rw [Category.assoc, ← adj.counit_naturality, ← Category.assoc, ← F.map_comp, hg]
+  simp
+
+omit [F.Additive] in
+/-- A left adjoint carries relative projectives to relative projectives when its right adjoint is
+conflation-exact. -/
+theorem isProjective_map_adjoint (E : ExactStructure C) (E' : ExactStructure D)
+    (adj : F ⊣ G) (hG : E'.IsConflationExact E G) {Q : C} (hQ : E.isProjective Q) :
+    E'.isProjective (F.obj Q) :=
+  E.isProjective_map_adjoint_of_map_isDeflation E' adj
+    (fun ⦃_ _⦄ _ hp ↦ hG.map_isDeflation hp) hQ
+
+/-- A conflation-exact equivalence preserves and reflects relative projectivity. -/
+theorem isProjective_map_equivalence_iff (E : ExactStructure C) (E' : ExactStructure D)
+    (e : C ≌ D) [e.functor.Additive]
+    (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) (Q : C) :
+    E'.isProjective (e.functor.obj Q) ↔ E.isProjective Q := by
+  let _ : e.symm.functor.Additive := inferInstanceAs e.inverse.Additive
+  constructor
+  · intro hQ
+    exact E.isProjective.prop_of_iso (e.unitIso.app Q).symm
+      (E'.isProjective_map_adjoint E e.symm.toAdjunction hF hQ)
+  · exact E.isProjective_map_adjoint E' e.toAdjunction hG
+
+end Functor
+
 /-- A projective presentation of `X` relative to `E` is a conflation `K → P → X` whose
 middle term is `E`-projective. -/
 structure ProjectivePresentation (E : ExactStructure C) (X : C) where
@@ -243,6 +291,47 @@ structure EnoughProjectives (E : ExactStructure C) : Prop where
   presentation : ∀ X : C, Nonempty (E.ProjectivePresentation X)
 
 namespace ProjectivePresentation
+
+section Functor
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D]
+variable {E' : ExactStructure D} {X : C} {F : C ⥤ D} [F.Additive]
+
+/-- The image of a relative projective presentation under a conflation-exact functor that carries
+relative projectives to relative projectives. -/
+def map (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    E'.ProjectivePresentation (F.obj X) where
+  K := F.obj P.K
+  P := F.obj P.P
+  i := F.map P.i
+  p := F.map P.p
+  zero := by rw [← F.map_comp, P.zero, F.map_zero]
+  conflation := hF.map_conflation P.conflation
+  isProjective := (E'.isProjective.prop_inverseImage_iff F _).mp (hPP' _ P.isProjective)
+
+@[simp] theorem map_K (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    (P.map hF hPP').K = F.obj P.K := by
+  simp [map]
+
+@[simp] theorem map_P (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    (P.map hF hPP').P = F.obj P.P := by
+  simp [map]
+
+@[simp] theorem map_i (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    HEq (P.map hF hPP').i (F.map P.i) := by
+  simp [map]
+
+@[simp] theorem map_p (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    HEq (P.map hF hPP').p (F.map P.p) := by
+  simp [map]
+
+end Functor
 
 /-- The tautological projective presentation in the split exact structure. -/
 noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentation X where
@@ -290,6 +379,41 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
 @[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
     HEq (abelian X).p (Projective.π X) := (HEq.rfl)
+
+section Comparison
+
+variable {X Y : C}
+
+/- The comparison maps in this section are dual to those for injective presentations in
+`TauCeti.CategoryTheory.Exact.Injective`. -/
+
+/-- The lift of `f : X ⟶ Y` to the projective middle terms of relative projective
+presentations `P` of `X` and `Q` of `Y`, chosen by relative projectivity of `P.P`. -/
+noncomputable def middleMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.P ⟶ Q.P :=
+  P.isProjective.factorThru (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The chosen middle-term map lifts `f` across the two deflations. -/
+@[reassoc (attr := simp)]
+theorem middleMap_comp_p (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.middleMap Q f ≫ Q.p = P.p ≫ f :=
+  P.isProjective.factorThru_comp (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The morphism induced by `f : X ⟶ Y` on the kernel terms of relative projective
+presentations, through the chosen lift `TauCeti.ExactStructure.ProjectivePresentation.middleMap`
+of the projective middle terms. -/
+noncomputable def kernelMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.K ⟶ Q.K :=
+  (E.isKernelCokernelPair _ Q.conflation).lift (P.i ≫ P.middleMap Q f) (by
+    rw [Category.assoc, P.middleMap_comp_p, ← Category.assoc, P.zero, zero_comp])
+
+/-- The induced morphism on kernel terms makes the square on the two inflations commute. -/
+@[reassoc (attr := simp)]
+theorem kernelMap_comp_i (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.kernelMap Q f ≫ Q.i = P.i ≫ P.middleMap Q f :=
+  (E.isKernelCokernelPair _ Q.conflation).lift_f _ _
+
+end Comparison
 
 end ProjectivePresentation
 

@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # `Extⁿ` over the dual numbers is free of rank one in every degree
@@ -203,8 +204,6 @@ variable (F : Type u) [Field F]
 
 /-- The dual numbers over a field are an Artinian ring, being a two-dimensional algebra. -/
 instance : IsArtinianRing (DualNumber F) :=
-  have : IsScalarTower F (DualNumber F) (DualNumber F) :=
-    ⟨fun a x y ↦ by ext <;> simp [mul_add, mul_assoc]⟩
   have : Module.Finite F (DualNumber F) := inferInstanceAs (Module.Finite F (F × F))
   IsArtinianRing.of_finite F _
 

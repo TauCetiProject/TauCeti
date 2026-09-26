@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -161,15 +162,17 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
       (integerUnitsEquivProd u).2.2
     rw [powMonoidHom_apply] at hz
-    have hpow : teichmuller K α ^ n = teichmuller K (α ^ n) :=
-      (map_pow (teichmuller K) α n).symm
-    have hu' : teichmuller K (α ^ n) *
+    have hpow : TauCeti.teichmuller 𝒪[K] α ^ n =
+        TauCeti.teichmuller 𝒪[K] (α ^ n) :=
+      (map_pow (TauCeti.teichmuller 𝒪[K]) α n).symm
+    have hu' : TauCeti.teichmuller 𝒪[K] (α ^ n) *
         unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 = u := by
       calc
         _ = integerUnitsProdHom (K := K) (α ^ n, (integerUnitsEquivProd u).2) :=
           (integerUnitsProdHom_apply (K := K) _).symm
         _ = u := hu
-    refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (teichmuller K α) * z, ?_⟩
+    refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
+      (TauCeti.teichmuller 𝒪[K] α) * z, ?_⟩
     rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
       ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
       hpow, hu']
@@ -245,7 +248,9 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
-  have : Finite μ := .of_equiv _ (rootsOfUnityFieldEquivResidueFieldUnits K).symm.toEquiv
+  have : Finite μ := .of_equiv _
+    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      𝒪[K] K).symm.toEquiv
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
@@ -359,8 +364,7 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
 theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = 4 := by
-  have h2K : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
   have hchar : ringChar K ≠ 2 := fun h ↦ h2K (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
   rw [card_powerClasses_of_isUnit (by exact_mod_cast h2),
     (IsPrimitiveRoot.neg_one (ringChar K) hchar).card_rootsOfUnity]

@@ -30,6 +30,8 @@ a corollary.
 
 ## Main results
 
+* `HeckeRing.GL2.Newform.eq_of_forall_prime_eigenvalue_eq`: a newform is determined by its
+  eigenvalues at the primes not dividing the level.
 * `HeckeRing.GL2.Newform.eq_of_forall_notMem_eigenvalue_eq`: strong multiplicity one, on the
   eigenvalues.
 * `HeckeRing.GL2.Newform.eq_of_forall_notMem_qExpansion_coeff_eq`: Miyake's own form, on the
@@ -63,14 +65,15 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- **The difference of two newforms with the same eigenvalue system is a ring eigenvector at
-every good prime**, with that shared eigenvalue. At a prime the ring generator acts as the
+/-- **The difference of two newforms with the same eigenvalue at a good prime is a ring
+eigenvector there**, with that shared eigenvalue. At a prime the ring generator acts as the
 classical operator on each of `f` and `g`, and the two eigenvalues agree by hypothesis, so the
 difference is scaled by the common value. -/
-private theorem exists_heckeRingHomCuspCharSpace_sub_eq_smul {f g : Newform N k}
-    (hall : ∀ (n : ℕ+) (hn : Nat.Coprime n N), f.eigenvalue n hn = g.eigenvalue n hn)
+private theorem exists_heckeRingHomCuspCharSpace_sub_eq_smul {f g : Newform N k} {p : ℕ}
+    (hp : p.Prime) (hpN : Nat.Coprime p N)
+    (hfg : f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpN)
     {d : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hd : d = f.toCuspForm - g.toCuspForm)
-    (hdχ : d ∈ cuspFormCharSpace k f.χ) (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N) :
+    (hdχ : d ∈ cuspFormCharSpace k f.χ) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N p) ⟨d, hdχ⟩
       = c • ⟨d, hdχ⟩ := by
   have : NeZero p := ⟨hp.ne_zero⟩
@@ -80,24 +83,21 @@ private theorem exists_heckeRingHomCuspCharSpace_sub_eq_smul {f g : Newform N k}
   simp only [PNat.mk_coe, heckeTCompositeGamma0_prime N hp,
     heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k _ hp, LinearMap.coe_restrict_apply,
     Submodule.coe_smul] at hf' hg' ⊢
-  rw [hd, map_sub, hf', hg', ← hall ⟨p, hp.pos⟩ hpN, smul_sub]
+  rw [hd, map_sub, hf', hg', ← hfg, smul_sub]
 
-/-- **Strong multiplicity one** (Miyake, Theorem 4.6.12, fixed level and nebentypus): two
-newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues agree at every index
-coprime to `N` outside a finite set are equal. -/
-theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
-    {S : Finset ℕ}
-    (h : ∀ (n : ℕ+) (hn : Nat.Coprime n N), (n : ℕ) ∉ S → f.eigenvalue n hn = g.eigenvalue n hn) :
+/-- **A newform is determined by its eigenvalues at the good primes**: two newforms of level
+`N`, weight `k` and the same nebentypus with the same eigenvalue at every prime not dividing `N`
+are equal. -/
+theorem Newform.eq_of_forall_prime_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
+    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
+      f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpN) :
     f = g := by
-  -- the eigenvalues agree at every good index
-  have hall : ∀ (n : ℕ+) (hn : Nat.Coprime n N), f.eigenvalue n hn = g.eigenvalue n hn :=
-    fun n hn ↦ EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem h hn
   -- the difference is a good Hecke eigenvector with `a₁ = 0`
   set d : CuspForm ((Gamma1 N).map (mapGL ℝ)) k := f.toCuspForm - g.toCuspForm with hd
   have hdχ : d ∈ cuspFormCharSpace k f.χ :=
     Submodule.sub_mem _ f.mem_charSpace (hχ ▸ g.mem_charSpace)
   have heig := fun p hp hpN ↦
-    exists_heckeRingHomCuspCharSpace_sub_eq_smul hall hd hdχ p hp hpN
+    exists_heckeRingHomCuspCharSpace_sub_eq_smul hp hpN (h p hp hpN) hd hdχ
   have h1 : (qExpansion 1 d).coeff 1 = 0 := by
     rw [hd, FunLike.coe_sub,
       ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub, f.isNorm,
@@ -107,6 +107,16 @@ theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.�
     eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew
       (F := ⟨d, hdχ⟩) heig h1 (Submodule.sub_mem _ f.isNew g.isNew)
   exact Newform.ext (sub_eq_zero.mp hd0)
+
+/-- **Strong multiplicity one** (Miyake, Theorem 4.6.12, fixed level and nebentypus): two
+newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues agree at every index
+coprime to `N` outside a finite set are equal. -/
+theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
+    {S : Finset ℕ}
+    (h : ∀ (n : ℕ+) (hn : Nat.Coprime n N), (n : ℕ) ∉ S → f.eigenvalue n hn = g.eigenvalue n hn) :
+    f = g :=
+  Newform.eq_of_forall_prime_eigenvalue_eq hχ fun p hp hpN ↦
+    EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem h (p := ⟨p, hp.pos⟩) hpN
 
 /-- **Strong multiplicity one, on Fourier coefficients** (Miyake's own form of Theorem 4.6.12):
 two newforms of level `N`, weight `k` and the same nebentypus whose `q`-expansion coefficients

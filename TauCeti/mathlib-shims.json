@@ -171,7 +171,7 @@
   {
     "note": "Ported from mathlib4#38009 (Chris Birkbeck), https://github.com/leanprover-community/mathlib4/pull/38009",
     "sources": [
-      "TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum.lean"
+      "TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum/Basic.lean"
     ],
     "modules": [
       "Mathlib.RingTheory.Valuation.ValuationSpectrum"

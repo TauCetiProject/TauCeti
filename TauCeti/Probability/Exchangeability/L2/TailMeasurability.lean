@@ -119,8 +119,7 @@ theorem Contractable.exists_tailProcess_measurable_cesaro_limit_of_memLp {μ : M
         (by simpa [Real.norm_eq_abs] using ha₀_lim r)
     have hmeasure : TendstoInMeasure μ
         (fun m => blockAverage (fun i ω => f (X i ω)) (fun j : Fin (m + 1) => r + j)) atTop a₀ :=
-      tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero
-        (fun m => (hg_int r m).aestronglyMeasurable) ha₀_int.aestronglyMeasurable hL1
+      tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero hL1
     obtain ⟨ns, -, hae⟩ := hmeasure.exists_seq_tendsto_ae
     exact TauCeti.MeasureTheory.aestronglyMeasurable_of_tendsto_ae' (m := tailFamily X r)
       (fun k => (measurable_tailFamily_blockAverage hf

@@ -95,7 +95,7 @@ theorem card_stabilizer_eq_card_inertia_mul_finSepDegree (p : Ideal R) [p.IsMaxi
       (Subgroup.subgroupOfEquivOfLe (inertia_le_stabilizer (M := G) P)).toEquiv,
     AddSubgroup.subgroupOf_inertia]
 
-variable [IsDedekindDomain R] [IsDedekindDomain S] [Module.Finite R S] [Module.Flat R S]
+variable [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
 
 /-- The order of the decomposition group is `e * f`, without a separability hypothesis on the
 residue extension. -/
@@ -107,7 +107,7 @@ theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.I
     simpa only [Nat.card_prod] using
       Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup G P)
   have hfund := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn p S G
-  exact mul_right_injective₀ (IsDedekindDomain.primesOver_ncard_ne_zero p S)
+  exact mul_right_injective₀ (left_ne_zero_of_mul (horbit.trans_ne Nat.card_pos.ne'))
     (by simpa only [mul_comm] using horbit.trans hfund.symm)
 
 /-- The order of the decomposition group is the product of the ramification index and inertia

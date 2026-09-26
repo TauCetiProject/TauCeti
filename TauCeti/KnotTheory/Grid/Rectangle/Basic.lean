@@ -59,6 +59,9 @@ convention the Maslov and Alexander gradings use. `GridRectangle.squares_eq_cove
   for a grid state, quantified over the columns strictly inside it, and
   `TauCeti.GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo`, its form for an oriented
   rectangle and its source state.
+* `TauCeti.GridRectangleBetween.isEmpty_of_right_eq_finRotate`: a rectangle one column wide is
+  empty.
+* `TauCeti.GridRectangle.avoidsMarkings_iff_forall`: marking avoidance tested column by column.
 * `TauCeti.GridRectangleBetween.toGridRectangle_eq`: the toroidal rectangle underlying an
   oriented rectangle, in terms of its two side columns.
 
@@ -328,6 +331,19 @@ theorem avoidsMarkings_iff (G : GridDiagram n) :
     R.AvoidsMarkings G ↔
       Disjoint R.squares G.OSet ∧ Disjoint R.squares G.XSet := by
   rw [AvoidsMarkings, Finset.disjoint_union_right]
+
+/-- A rectangle avoids markings exactly when, in each column of squares it covers, neither the
+`O` marking nor the `X` marking of that column lies in a covered row. -/
+theorem avoidsMarkings_iff_forall (G : GridDiagram n) :
+    R.AvoidsMarkings G ↔
+      ∀ c ∈ R.columnSquares, G.O c ∉ R.rowSquares ∧ G.X c ∉ R.rowSquares := by
+  simp only [AvoidsMarkings, Finset.disjoint_left, Finset.mem_union, not_or, Prod.forall,
+    mem_squares, GridDiagram.mem_OSet, GridDiagram.mem_XSet]
+  constructor
+  · intro h c hc
+    exact ⟨fun hO => (h c (G.O c) ⟨hc, hO⟩).1 rfl, fun hX => (h c (G.X c) ⟨hc, hX⟩).2 rfl⟩
+  · rintro h c r ⟨hc, hr⟩
+    exact ⟨fun hO => (h c hc).1 (hO ▸ hr), fun hX => (h c hc).2 (hX ▸ hr)⟩
 
 /-- Marking avoidance is unchanged by swapping the `O` and `X` markings, since it only refers to
 the union of the two marking sets. -/
@@ -674,6 +690,11 @@ its interior. -/
 def IsEmpty : Prop :=
   R.toGridRectangle.IsEmptyFor x
 
+/-- Emptiness of an oriented rectangle is emptiness of its underlying toroidal rectangle for the
+source state. -/
+theorem isEmpty_iff_toGridRectangle_isEmptyFor :
+    R.IsEmpty ↔ R.toGridRectangle.IsEmptyFor x := Iff.rfl
+
 /-- The finite set of empty oriented rectangles from `x` to `y`. -/
 noncomputable def emptyRectangles (x y : GridState n) : Finset (GridRectangleBetween x y) := by
   classical
@@ -706,7 +727,8 @@ theorem emptyRectangles_subset_all (x y : GridState n) :
 theorem emptyRectangles_eq_all_of_le_two (hn : n ≤ 2) (x y : GridState n) :
     emptyRectangles x y = all x y := by
   ext R
-  simp [isEmpty_of_le_two hn R]
+  simp only [mem_emptyRectangles, mem_all]
+  exact ⟨fun _ => trivial, fun _ => isEmpty_of_le_two hn R⟩
 
 /-- There are no empty rectangles from a grid state to itself. -/
 @[simp]
@@ -738,6 +760,12 @@ differential use: it quantifies over columns rather than over grid points. -/
 theorem isEmpty_iff_forall_notMem_cIoo :
     R.IsEmpty ↔ ∀ c ∈ Grid.cIoo R.left R.right, x c ∉ Grid.cIoo R.bottom R.top :=
   R.toGridRectangle.isEmptyFor_iff_forall_notMem_cIoo x
+
+/-- A rectangle between states whose terminal side is the cyclic successor of its initial side
+is empty: no column lies strictly between two cyclically consecutive ones. -/
+theorem isEmpty_of_right_eq_finRotate (h : R.right = finRotate n R.left) : R.IsEmpty := by
+  rw [isEmpty_iff_forall_notMem_cIoo, h, Grid.cIoo_finRotate_eq_empty]
+  exact fun c hc => absurd hc (Finset.notMem_empty c)
 
 /-- If a target-state point lies on a side column, then it is not in the associated
 rectangle's interior. -/

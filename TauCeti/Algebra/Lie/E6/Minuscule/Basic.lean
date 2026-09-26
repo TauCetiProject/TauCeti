@@ -72,18 +72,17 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 6) (Fin 27) where
   cartanMatrix := (CartanMatrix.E 6)ᵀ
   weight := e6MinusculeWeight
   reflection i := e6MinusculeReflection i
-  cartanMatrix_isSymm := by
-    rw [CartanMatrix.E_transpose]
-    exact CartanMatrix.E_isSymm 6
   cartanMatrix_diag i := by
     rw [Matrix.transpose_apply, CartanMatrix.E_diag]
-  cartanMatrix_isSimplyLaced := by
-    rw [Matrix.isSimplyLaced_transpose]
-    exact CartanMatrix.isSimplyLaced_E 6
+  cartanMatrix_offDiag_nonpos i j hij := by
+    rw [CartanMatrix.E_transpose]
+    exact CartanMatrix.E_off_diag_nonpos 6 i j hij
+  cartanMatrix_zero_comm i j := by
+    rw [CartanMatrix.E_transpose, (CartanMatrix.E_isSymm 6).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
   weight_reflection i a j := by
-    rw [Matrix.transpose_apply, (CartanMatrix.E_isSymm 6).apply]
+    rw [Matrix.transpose_apply]
     exact e6MinusculeWeight_reflection_apply i a j
   weight_injective := e6MinusculeWeight_injective
 

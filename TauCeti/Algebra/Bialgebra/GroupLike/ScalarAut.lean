@@ -43,7 +43,6 @@ variable [Semiring A] [Bialgebra K A]
 theorem counit_smul (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
     counit (R := L) (σ • x) = σ (counit (R := L) x) := by
   induction x with
-  | zero => rw [smul_zero, map_zero, map_zero]
   | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy, map_add]
   | tmul a x => simp
 
@@ -53,12 +52,10 @@ theorem comul_smul (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
       TensorProduct.map (semilinearMap (A := A) σ)
         (semilinearMap (A := A) σ) (comul x) := by
   induction x with
-  | zero => rw [smul_zero, map_zero, map_zero]
   | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy, map_add]
   | tmul a x =>
       rw [smul_tmul, TensorProduct.comul_tmul, TensorProduct.comul_tmul]
       induction comul (R := K) x with
-      | zero => simp only [tmul_zero, map_zero]
       | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
       | tmul x₁ x₂ =>
           rw [CommSemiring.comul_apply L a, CommSemiring.comul_apply L (σ a)]

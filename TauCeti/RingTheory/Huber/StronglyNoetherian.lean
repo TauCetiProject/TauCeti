@@ -10,7 +10,9 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.RingTheory.Polynomial.Basic
 
+import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
 
 /-!
@@ -61,6 +63,9 @@ discrete case below is proved through it.
   since then the separated completion does nothing. Completeness is an explicit hypothesis
   rather than an instance because it must be stated against the group uniformity introduced
   below, not against whichever `UniformSpace A` a consumer has in scope.
+* `Ideal.isClosed_weightedRestrictedSubring_one_weight`: every ideal in an
+  uncompleted restricted-series ring over a complete Hausdorff strongly noetherian Tate ring is
+  closed.
 
 * `TauCeti.Huber.IsStronglyNoetherian.of_surjective`: strong noetherianness passes along a
   continuous surjection carrying neighbourhoods of zero onto neighbourhoods of zero, out of a
@@ -111,6 +116,8 @@ runs one level up, on `TauCeti.Huber.weightedMapCompletion`, and the bridge is d
 subring at the trivial weight family, which is exactly that map's shape.
 -/
 
+open scoped Uniformity
+
 public section
 
 namespace TauCeti.Huber
@@ -133,6 +140,33 @@ class IsStronglyNoetherian : Prop where
 instance (k : ℕ) [IsStronglyNoetherian A] :
     IsNoetherianRing (restrictedMvPowerSeriesCompletion k A) :=
   IsStronglyNoetherian.isNoetherianRing k
+
+/-! ### Closed ideals in the uncompleted restricted-series ring -/
+
+section ClosedIdeal
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStronglyNoetherian A]
+
+/-- **Every ideal of `A⟨X₁, …, Xₖ⟩` is closed**, for a complete Hausdorff strongly noetherian Tate
+ring `A`. No finite generation of the ideal is required, and the statement holds for every `k` at
+once, so a caller with a relation ideal in any number of variables may close it without further
+hypotheses. -/
+-- Noetherian because the restricted-series ring agrees with its completed version, and metrisable
+-- because `A`'s uniformity is countably generated: the two hypotheses of
+-- `isClosed_of_isNoetherian`.
+theorem _root_.Ideal.isClosed_weightedRestrictedSubring_one_weight {k : ℕ}
+    (I : Ideal (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)) :
+    IsClosed (I : Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)) := by
+  have _ := isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionEquiv k A)
+  have _ : (𝓤 (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  exact isClosed_of_isNoetherian I
+
+end ClosedIdeal
 
 /-! ### The discrete case -/
 

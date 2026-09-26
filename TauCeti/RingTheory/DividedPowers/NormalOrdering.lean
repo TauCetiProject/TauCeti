@@ -49,6 +49,8 @@ class-two formula is the case `d k = y⁽ⁿ⁻ᵏ⁾ z⁽ᵏ⁾`, truncated to 
   when its commutator with the base commutes with that base.
 * `TauCeti.Associative.mul_dividedPower_of_commutator_eq'`: the same identity for an exponent that
   is not syntactically a successor.
+* `TauCeti.Associative.mul_dividedPower_mul_dividedPower_mul_of_commutator_eq_nsmul`: move one
+  element across a monomial `z⁽ᵇ⁾ w⁽ᶜ⁾ t` when its commutator with `z` is a multiple of `w`.
 * `TauCeti.Associative.dividedPower_mul_of_ad_dividedPower_series`: coefficient-one normal ordering
   against an arbitrary divided-power series for the inner derivation.
 * `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq`: the coefficient-one
@@ -103,6 +105,31 @@ theorem mul_dividedPower_of_commutator_eq' {x y z : A} (hxy : x * y = y * x + z)
   cases n with
   | zero => simp
   | succ n => simpa using mul_dividedPower_of_commutator_eq hxy hyz n
+
+/-- **Moving one element across a divided-power monomial.** Suppose `x * z = z * x + k • w`, where
+`w` commutes with `x` and `z`, and `t` commutes with `x`. Then `x` passes through
+`z⁽ᵇ⁾ w⁽ᶜ⁾ t` at the cost of one term, which trades a `z` for a `w`:
+
+```text
+x z⁽ᵇ⁾ w⁽ᶜ⁾ t = z⁽ᵇ⁾ w⁽ᶜ⁾ t x + k (c + 1) z⁽ᵇ⁻¹⁾ w⁽ᶜ⁺¹⁾ t,
+```
+
+the second term being present exactly when `b` is positive. Compared with
+`mul_dividedPower_of_commutator_eq'`, the released `w` is already absorbed into `w⁽ᶜ⁺¹⁾`. The factor
+`t` stands for the part of a normal-ordered monomial that `x` commutes with; `t = 1` covers a
+monomial ending in `w⁽ᶜ⁾`. -/
+theorem mul_dividedPower_mul_dividedPower_mul_of_commutator_eq_nsmul {x z w t : A} {k : ℕ}
+    (hxz : x * z = z * x + k • w) (hxw : Commute x w) (hxt : Commute x t) (hzw : Commute z w)
+    (b c : ℕ) :
+    x * (dividedPower b z * (dividedPower c w * t)) =
+      dividedPower b z * (dividedPower c w * t) * x +
+        if 0 < b then (k * (c + 1)) • (dividedPower (b - 1) z * (dividedPower (c + 1) w * t))
+        else 0 := by
+  rw [← mul_assoc, mul_dividedPower_of_commutator_eq' hxz (hzw.smul_right k) b, add_mul,
+    ((hxw.dividedPower_right c).mul_right hxt).right_comm, ite_zero_mul]
+  -- The released `w` is absorbed by `w⁽ᶜ⁾`, as `w w⁽ᶜ⁾ = (c + 1) w⁽ᶜ⁺¹⁾`.
+  rw [mul_assoc (dividedPower (b - 1) z), smul_mul_assoc, ← succ_nsmul_dividedPower_succ_mul,
+    smul_smul, mul_smul_comm]
 
 -- This weighted-sum identity is the bookkeeping behind the induction in the normal-ordering
 -- theorem. The first sum records the term in which `x` passes through `y`; the second records the
@@ -215,28 +242,17 @@ private theorem mul_classTwoSeries {x y z : A} (hxy : x * y = y * x + z) (hxz : 
     (hyz : Commute y z) (n k : ℕ) :
     x * classTwoSeries y z n k =
       classTwoSeries y z n k * x + (k + 1) • classTwoSeries y z n (k + 1) := by
-  have hxzk : ∀ j, Commute x (dividedPower j z) := fun j ↦ by
-    simpa using commute_dividedPower_dividedPower hxz 1 j
-  rcases lt_trichotomy k n with hkn | hkn | hkn
-  · have hnk : n - k = (n - (k + 1)) + 1 := by omega
-    have hstep : x * dividedPower (n - k) y =
-        dividedPower (n - k) y * x + dividedPower (n - (k + 1)) y * z := by
-      rw [hnk]
-      exact mul_dividedPower_of_commutator_eq hxy hyz _
-    rw [classTwoSeries_eq_of_le hkn.le, classTwoSeries_eq_of_le hkn]
-    calc x * (dividedPower (n - k) y * dividedPower k z)
-        = x * dividedPower (n - k) y * dividedPower k z := by rw [mul_assoc]
-      _ = dividedPower (n - k) y * (x * dividedPower k z) +
-            dividedPower (n - (k + 1)) y * (z * dividedPower k z) := by
-          rw [hstep, add_mul, mul_assoc, mul_assoc]
-      _ = _ := by
-          rw [(hxzk k).eq, ← mul_assoc, self_mul_dividedPower, mul_smul_comm]
-  · have hnk : n - k = 0 := by omega
-    rw [classTwoSeries_eq_of_le hkn.le, classTwoSeries_eq_zero_of_lt (by omega), hnk,
-      dividedPower_zero, one_mul, smul_zero, add_zero]
-    exact (hxzk k).eq
-  · rw [classTwoSeries_eq_zero_of_lt hkn, classTwoSeries_eq_zero_of_lt (by omega), mul_zero,
-      zero_mul, smul_zero, add_zero]
+  rcases lt_trichotomy k n with hkn | rfl | hkn
+  · -- Below `k = n` the `y`-exponent `n - k` is a successor, which is the form
+    -- `mul_dividedPower_of_commutator_eq` needs.
+    have hnk : n - k = n - (k + 1) + 1 := by lia
+    -- Move `x` past the `y`-power, then past the `z`-power.
+    rw [classTwoSeries_eq_of_le hkn.le, classTwoSeries_eq_of_le hkn, hnk, ← mul_assoc,
+      mul_dividedPower_of_commutator_eq hxy hyz, add_mul, mul_assoc, mul_assoc,
+      (hxz.dividedPower_right k).eq, self_mul_dividedPower, mul_smul_comm, ← mul_assoc]
+  · rw [classTwoSeries_eq_of_le le_rfl, classTwoSeries_eq_zero_of_lt k.lt_succ_self, Nat.sub_self,
+      dividedPower_zero, one_mul, smul_zero, add_zero, (hxz.dividedPower_right k).eq]
+  · simp [classTwoSeries_eq_zero_of_lt, hkn, hkn.trans k.lt_succ_self]
 
 /-- **Coefficient-one normal ordering for divided powers with central commutator.** Suppose
 `x * y = y * x + z`, and `z` commutes with both `x` and `y`. Then

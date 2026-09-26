@@ -35,7 +35,7 @@ theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Fiel
   classical
   -- `{1, x}` is linearly independent over `ℚ` because `x` lies outside the base field.
   have hli : LinearIndependent ℚ ![1, x] :=
-    linearIndependent_one_of_notMem_range_algebraMap ℚ K (by simpa using hx)
+    TauCeti.linearIndependent_one_of_notMem_range_algebraMap ℚ K (by simpa using hx)
   -- A linearly independent family of `finrank` vectors is a basis.
   have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
     rw [Fintype.card_fin]; exact hfin.symm

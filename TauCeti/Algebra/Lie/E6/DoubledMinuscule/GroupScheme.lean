@@ -40,8 +40,8 @@ in which the two blocks are laid out along the fifty-four matrix coordinates, an
 `matrixWeight` are the basis and weight family read in that order. Every declaration below is
 stated in the resulting `Fin 54` coordinates.
 
-The root characters are not redefined: `TauCeti.E6Minuscule.rootGeneratorWeight` and
-`TauCeti.E6Minuscule.lie_serreH_rootGenerator` are statements about the type-`E₆` Serre algebra
+The root characters are not redefined: `TauCeti.E6.rootGeneratorWeight` and
+`TauCeti.E6.lie_serreH_rootGenerator` are statements about the type-`E₆` Serre algebra
 alone, with no reference to a representation of it, so the pinning equation below is stated and
 proved against them.
 
@@ -383,7 +383,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 6 → Aˣ) :
 
 /-- **Conjugation by the doubled minuscule weight torus acts on each numbered root subgroup through
 its positive or negative pinned simple-root character.** The character is
-`TauCeti.E6Minuscule.rootGeneratorWeight`, which reads a row of the type-`E₆` Cartan matrix and
+`TauCeti.E6.rootGeneratorWeight`, which reads a row of the type-`E₆` Cartan matrix and
 mentions no representation, so it is the same one the `27`-dimensional carrier is pinned by. -/
 @[simp]
 theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing A]
@@ -399,15 +399,14 @@ theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing
           (Multiplicative.ofAdd
             ((TauCeti.torusCharacter
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
-              (TauCeti.E6Minuscule.rootGeneratorWeight k) : A) * u)) ≫
+              (TauCeti.E6.rootGeneratorWeight k) : A) * u)) ≫
         (rootSubgroup k).hom.hom := by
   have hroot : ∀ j : Fin 6,
       ⁅serreH ℚ (CartanMatrix.E 6)ᵀ j,
           serreRootGenerator (CartanMatrix.E 6)ᵀ k⁆ =
-        (TauCeti.E6Minuscule.rootGeneratorWeight k j : ℚ) •
+        (TauCeti.E6.rootGeneratorWeight k j : ℚ) •
           serreRootGenerator (CartanMatrix.E 6)ᵀ k := by
-    rw [← TauCeti.E6Minuscule.weightTable_cartanMatrix]
-    exact TauCeti.E6Minuscule.lie_serreH_rootGenerator k
+    exact TauCeti.E6.lie_serreH_rootGenerator k
   exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
     _ _ _ _ _ _ _ isCartanWeightVector_matrixBasis
     isNilpotent_rep_serreRootGenerator A hroot s u

@@ -32,6 +32,11 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   zero, provided the exponents tend to infinity.
 * `IsAdic.isTopologicallyNilpotent_of_mem` : in a ring whose topology is `I`-adic, every element
   of `I` is topologically nilpotent.
+* `IsAdic.isTopologicallyNilpotent_iff_mem_radical` : conversely, a topologically nilpotent
+  element has a power in `I`, so the topologically nilpotent elements are exactly the radical
+  of `I`.
+* `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
+  `IsAdic` counterpart of `Ideal.isLinearTopology`.
 
 ## Provenance
 
@@ -78,5 +83,25 @@ nilpotent. -/
 theorem isTopologicallyNilpotent_of_mem (hI : IsAdic I) {a : R} (ha : a ∈ I) :
     IsTopologicallyNilpotent a :=
   hI.tendsto_zero_of_mem_pow (.of_forall (Ideal.pow_mem_pow ha)) Filter.tendsto_id
+
+/-- In a ring whose topology is the `I`-adic one, the topologically nilpotent elements are exactly
+the elements of the radical of `I`: a power of a topologically nilpotent element lies in the open
+ideal `I`, and if `a ^ n ∈ I` then `a ^ m ∈ I ^ k` as soon as `m ≥ n * k`. -/
+theorem isTopologicallyNilpotent_iff_mem_radical (hI : IsAdic I) {a : R} :
+    IsTopologicallyNilpotent a ↔ a ∈ I.radical := by
+  refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := ha.exists_pow_mem_of_mem_nhds ((hI.isOpen_pow 1).mem_nhds (by simp))
+    exact Ideal.mem_radical_iff.mpr ⟨n, by simpa using hn⟩
+  · obtain ⟨n, hn⟩ := Ideal.mem_radical_iff.mp ha
+    refine hI.hasBasis_nhds_zero.tendsto_right_iff.2 fun k _ ↦
+      Filter.eventually_atTop.2 ⟨n * k, fun m hm ↦ ?_⟩
+    rw [← Nat.add_sub_of_le hm, pow_add, pow_mul]
+    exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hn k)
+
+/-- A ring whose topology is the `I`-adic one is linearly topologized: the powers of `I` form a
+neighbourhood basis of zero consisting of ideals. This is the `IsAdic` counterpart of
+`Ideal.isLinearTopology`. -/
+theorem isLinearTopology (hI : IsAdic I) : IsLinearTopology R R :=
+  hI ▸ I.isLinearTopology
 
 end IsAdic

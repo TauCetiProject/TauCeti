@@ -43,6 +43,8 @@ the one for `B` is transported from it along the involution `z ↦ 1 − z`, whi
   `π₁(B, 1/2) ≃* ℤ`, with the value lemmas `leftOpenFundamentalGroupMulEquivInt_periph0Left` and
   `rightOpenFundamentalGroupMulEquivInt_periph1Right`.
 * `zpowers_periph0Left`, `zpowers_periph1Right`: each class generates its fundamental group.
+* `isPathConnected_leftOpen`, `isPathConnected_rightOpen`: `A` and `B` are path connected, being
+  homotopy equivalent to a circle.
 
 ## References
 
@@ -198,6 +200,23 @@ theorem rightOpenFundamentalGroupMulEquivInt_periph1Right :
   rw [rightOpenFundamentalGroupMulEquivInt, MulEquiv.trans_apply, (MulEquiv.symm_apply_eq _).mpr
     homeomorphMulEquivOfEq_mob01LeftRight_periph0Left.symm,
     leftOpenFundamentalGroupMulEquivInt_periph0Left]
+
+/-! ### Path-connectedness -/
+
+/-- `A = {re z < 1}` is path connected: it is homotopy equivalent to the circle `|z| = 1/2`. -/
+theorem isPathConnected_leftOpen : IsPathConnected leftOpen := by
+  have : PathConnectedSpace (sphere (0 : ℂ) (1 / 2)) := by
+    refine isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere ?_ 0 one_half_pos.le)
+    rw [Complex.rank_real_complex]
+    exact Nat.one_lt_ofNat
+  have := (starConvex_halfPlane.sphereHomotopyEquiv one_half_pos
+    sphere_subset_halfPlane).pathConnectedSpace
+  exact isPathConnected_iff_pathConnectedSpace.2 leftOpenHomeomorph.symm.pathConnectedSpace
+
+/-- `B = {0 < re z}` is path connected, being homeomorphic to `A` by `z ↦ 1 − z`. -/
+theorem isPathConnected_rightOpen : IsPathConnected rightOpen := by
+  have := isPathConnected_iff_pathConnectedSpace.1 isPathConnected_leftOpen
+  exact isPathConnected_iff_pathConnectedSpace.2 mob01LeftRight.pathConnectedSpace
 
 /-! ### Generation -/
 

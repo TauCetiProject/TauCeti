@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.NumberField.Minpoly
 
 /-!
@@ -71,27 +72,8 @@ def IntegralPrimitiveElement (K : Type*) [Field K] [NumberField K] : Type _ :=
 theorem adjoin_rat_eq_top_of_adjoin_int_eq_top {θ : 𝓞 K}
     (h : Algebra.adjoin ℤ {θ} = (⊤ : Subalgebra ℤ (𝓞 K))) :
     Algebra.adjoin ℚ {(θ : K)} = ⊤ := by
-  have key : ∀ c : 𝓞 K, algebraMap (𝓞 K) K c ∈ IntermediateField.adjoin ℚ {(θ : K)} := by
-    intro c
-    have hc : c ∈ Algebra.adjoin ℤ ({θ} : Set (𝓞 K)) := h ▸ Algebra.mem_top
-    induction hc using Algebra.adjoin_induction with
-    | mem y hy =>
-        rw [Set.mem_singleton_iff] at hy
-        subst hy
-        exact IntermediateField.mem_adjoin_simple_self ℚ _
-    | algebraMap n =>
-        have hn : algebraMap (𝓞 K) K (algebraMap ℤ (𝓞 K) n) = (n : K) := by
-          rw [← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-          simp
-        rw [hn]
-        exact intCast_mem _ n
-    | add x y _ _ hx hy => rw [map_add]; exact add_mem hx hy
-    | mul x y _ _ hx hy => rw [map_mul]; exact mul_mem hx hy
-  rw [← IntermediateField.adjoin_eq_top_iff_of_isAlgebraic
-    (fun x _ ↦ IsAlgebraic.of_finite ℚ x), eq_top_iff]
-  intro x _
-  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (𝓞 K) x
-  exact div_mem (key a) (key b)
+  rw [← IntermediateField.adjoin_eq_top_iff_of_isAlgebraic (fun x _ ↦ IsAlgebraic.of_finite ℚ x)]
+  exact TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top (K := ℚ) (L := K) h
 
 namespace IntegralPrimitiveElement
 

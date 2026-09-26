@@ -39,4 +39,17 @@ theorem eq_smul_of_repr_support_subset_singleton (b : Module.Basis ι K V) {w : 
         congrArg _ (Finsupp.support_subset_singleton.1 h)
     _ = b.repr w i • b i := b.repr_symm_single i _
 
+/-- A linear map carrying one basis to another preserves the corresponding coordinates. -/
+theorem repr_map_eq_of_map_basis
+    {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N]
+    (b : Module.Basis ι R M) (c : Module.Basis ι R N) (f : M →ₗ[R] N)
+    (hf : ∀ i, f (b i) = c i) (x : M) : c.repr (f x) = b.repr x := by
+  have h : c.repr.toLinearMap ∘ₗ f = b.repr.toLinearMap := by
+    apply b.ext
+    intro i
+    exact (congrArg c.repr (hf i)).trans
+      ((c.repr_self i).trans (b.repr_self i).symm)
+  exact DFunLike.congr_fun h x
+
 end Module.Basis

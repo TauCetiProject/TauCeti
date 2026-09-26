@@ -122,6 +122,7 @@ def coindBotEmbedding : M →+ DiscreteCoind G ⊥ M where
   map_zero' := DiscreteCoind.ext fun x => smul_zero x
   map_add' m m' := DiscreteCoind.ext fun x => smul_add x m m'
 
+/-- The embedding `M → Coind_1^G M` sends `m` to its orbit map `x ↦ x • m`. -/
 @[simp]
 theorem coindBotEmbedding_apply (m : M) (x : G) : coindBotEmbedding G M m x = x • m := (rfl)
 
@@ -141,11 +142,14 @@ theorem coindBotEmbedding_smul [ContinuousMul G] (g : G) (m : M) :
 
 namespace DimensionShiftQuotient
 
+/-- `Coind_1^G M ⧸ M` is an additive group, as a quotient of `Coind_1^G M`. -/
 instance : AddCommGroup (DimensionShiftQuotient G M) :=
   inferInstanceAs (AddCommGroup (DiscreteCoind G ⊥ M ⧸ (coindBotEmbedding G M).range))
 
+/-- `Coind_1^G M ⧸ M` carries the discrete topology. -/
 instance : TopologicalSpace (DimensionShiftQuotient G M) := ⊥
 
+/-- The topology on `Coind_1^G M ⧸ M` is discrete. -/
 instance : DiscreteTopology (DimensionShiftQuotient G M) := ⟨rfl⟩
 
 /-- The projection `Coind_1^G M → Coind_1^G M ⧸ M`. -/
@@ -153,6 +157,7 @@ instance : DiscreteTopology (DimensionShiftQuotient G M) := ⟨rfl⟩
 
 variable {G M}
 
+/-- The projection `Coind_1^G M → Coind_1^G M ⧸ M` is surjective. -/
 theorem mk_surjective : Function.Surjective (mk G M) := QuotientAddGroup.mk'_surjective _
 
 /-- A coinduced element dies in the quotient exactly when it is an orbit map. -/
@@ -161,6 +166,8 @@ theorem mk_eq_zero_iff {f : DiscreteCoind G ⊥ M} :
     mk G M f = 0 ↔ f ∈ (coindBotEmbedding G M).range :=
   QuotientAddGroup.eq_zero_iff f
 
+/-- Induction on `Coind_1^G M ⧸ M`: a property of the classes of all coinduced elements holds for
+every element of the quotient. -/
 @[elab_as_elim]
 theorem induction_on {motive : DimensionShiftQuotient G M → Prop} (q : DimensionShiftQuotient G M)
     (h : ∀ f : DiscreteCoind G ⊥ M, motive (mk G M f)) : motive q :=
@@ -213,9 +220,13 @@ def coindBotShortExact :
   proj_surjective := DimensionShiftQuotient.mk_surjective
   exact _ := DimensionShiftQuotient.mk_eq_zero_iff
 
+/-- The first map of the dimension-shifting short exact sequence is the embedding `M → Coind_1^G M`.
+-/
 @[simp]
 theorem coindBotShortExact_incl : (coindBotShortExact G M).incl = coindBotEmbedding G M := (rfl)
 
+/-- The second map of the dimension-shifting short exact sequence is the projection `Coind_1^G M →
+Coind_1^G M ⧸ M`. -/
 @[simp]
 theorem coindBotShortExact_proj :
     (coindBotShortExact G M).proj = DimensionShiftQuotient.mk G M := (rfl)
@@ -238,6 +249,8 @@ noncomputable def explicitDimensionShift1 : H1 G (DimensionShiftQuotient G M) �
   AddEquiv.ofBijective (coindBotShortExact G M).explicitDelta1
     (coindBotShortExact G M).explicitDelta1_bijective_of_subsingleton
 
+/-- The dimension-shifting isomorphism `H¹(G, Coind_1^G M ⧸ M) ≃ H²(G, M)` is the connecting map
+`δ¹`. -/
 @[simp]
 theorem explicitDimensionShift1_apply (x : H1 G (DimensionShiftQuotient G M)) :
     explicitDimensionShift1 G M x = (coindBotShortExact G M).explicitDelta1 x := (rfl)
@@ -253,6 +266,8 @@ noncomputable def explicitDimensionShift0 :
     (QuotientAddGroup.quotientKerEquivOfSurjective _
       (coindBotShortExact G M).explicitDelta0_surjective_of_subsingleton)
 
+/-- The dimension-shifting isomorphism onto `H¹(G, M)` sends the class of `x ∈ H⁰(G, Coind_1^G M ⧸
+M)` to `δ⁰ x`. -/
 @[simp]
 theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
     explicitDimensionShift0 G M x = (coindBotShortExact G M).explicitDelta0 x := by

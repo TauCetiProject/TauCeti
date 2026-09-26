@@ -90,6 +90,13 @@ theorem canonicalCharacteristic_apply (v : V) :
     P.canonicalCharacteristic v = -P.weight v - 2 := by
   simp only [canonicalCharacteristic]
 
+/-- If every plumbing framing is `-2`, the canonical characteristic covector is zero. -/
+theorem canonicalCharacteristic_eq_zero_of_weight_eq_neg_two
+    (hweight : ∀ v : V, P.weight v = -2) : P.canonicalCharacteristic = 0 := by
+  funext v
+  rw [P.canonicalCharacteristic_apply, hweight]
+  simp
+
 /-- The canonical covector is characteristic. -/
 @[simp, grind .]
 theorem isCharacteristicVector_canonicalCharacteristic :

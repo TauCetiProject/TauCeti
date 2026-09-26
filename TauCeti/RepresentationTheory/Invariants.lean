@@ -37,6 +37,9 @@ Finally, a nontrivial irreducible representation has no nonzero invariant vector
 the Haar integral of a nontrivial irreducible character vanish. A dimension-based corollary handles
 the common case where nontriviality follows from the dimension being other than one.
 
+Taking invariants under a normal subgroup `S`, Mathlib's `Rep.quotientToInvariantsFunctor`, is an
+additive functor from representations of `G` to representations of `G ⧸ S`.
+
 ## Main results
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
@@ -49,6 +52,7 @@ the common case where nontriviality follows from the dimension being other than 
   nonzero invariant vector.
 * `Representation.IsIrreducible.invariants_eq_bot_of_finrank_ne_one`: the dimension-based
   specialization.
+* `Rep.quotientToInvariantsFunctor` is additive.
 -/
 public section
 
@@ -141,3 +145,13 @@ theorem invariants_eq_ker_apply_sub (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     Representation.mem_invariants_iff_of_forall_mem_zpowers M.ρ g hg x
 
 end Rep.FiniteCyclicGroup
+
+namespace TauCeti
+
+variable {k G : Type*} [CommRing k] [Group G] (S : Subgroup G) [S.Normal]
+
+/-- Taking `S`-invariants is additive, so it maps short complexes of representations of `G` to
+short complexes of representations of `G ⧸ S`. -/
+instance : (Rep.quotientToInvariantsFunctor k S).Additive where
+
+end TauCeti

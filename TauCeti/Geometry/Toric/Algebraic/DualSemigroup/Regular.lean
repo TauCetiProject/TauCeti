@@ -29,6 +29,7 @@ generated.
 * `TauCeti.Toric.regularDualSemigroupEquiv`: the regular-coordinate equivalence of the dual
   semigroup attached to a basis extending the primitive ray generators, with
   `TauCeti.Toric.coe_regularDualSemigroupEquiv_fst_apply`,
+  `TauCeti.Toric.realCharacter_apply_primitiveGenerator`,
   `TauCeti.Toric.regularDualSemigroupEquiv_snd_apply`,
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inl` and
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inr` computing both directions.
@@ -98,6 +99,16 @@ theorem coe_regularDualSemigroupEquiv_fst_apply (m : dualSemigroup hi σ) (ρ : 
     ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℤ) = (m : N →+ ℤ) (b (Sum.inl ρ)) := by
   have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.2 ρ
   simp [regularDualSemigroupEquiv, hm]
+
+/-- Evaluating the real character of a dual-semigroup element at a primitive ray generator gives
+the corresponding regular ray coordinate, viewed in `ℝ`. -/
+theorem realCharacter_apply_primitiveGenerator (m : dualSemigroup hi σ) (ρ : ToricRay σ) :
+    hi.realCharacter (m : N →+ ℤ) (i (primitiveGenerator hi hσ ρ)) =
+      ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℝ) := by
+  rw [hi.realCharacter_apply,
+    ← (hb ρ).eq_primitiveGenerator hi hσ,
+    ← coe_regularDualSemigroupEquiv_fst_apply]
+  norm_cast
 
 /-- The complementary coordinates of a character in the dual semigroup are its values on the
 complementary basis vectors. -/
@@ -229,24 +240,16 @@ theorem nonempty_dualSemigroup_addEquiv (hi : IsIntegralLattice i) (hσ : IsRegu
     Nonempty (dualSemigroup hi σ ≃+
       (ToricRay σ →₀ ℕ) × (Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) →₀ ℤ)) := by
   classical
-  obtain ⟨b, r, hb⟩ := hσ.exists_basis_finrank
-  have _ : Fintype (ToricRay σ) := Fintype.ofInjective r r.injective
-  -- Split the basis indices into the rays and their complement.
-  let C := {j : Fin (Module.finrank ℤ N) // j ∉ Set.range r}
-  have hC : Fintype.card C = Module.finrank ℤ N - Nat.card (ToricRay σ) := by
-    rw [Fintype.card_subtype_compl, Fintype.card_fin, Set.card_range_of_injective r.injective,
-      Nat.card_eq_fintype_card]
-  let e : ToricRay σ ⊕ Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) ≃
-      Fin (Module.finrank ℤ N) :=
-    (Equiv.sumCongr (Equiv.ofInjective r r.injective) (Fintype.equivFinOfCardEq hC).symm).trans
-      (Equiv.sumCompl fun j ↦ j ∈ Set.range r)
-  -- By construction the splitting sends each ray to its own basis index.
-  have he : ∀ ρ, e (Sum.inl ρ) = r ρ := by
-    intro ρ
-    simp only [e, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl]
-    rw [Equiv.sumCompl_apply_inl, Equiv.ofInjective_apply]
-  exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e.symm)
-    fun ρ ↦ by simpa [he] using hb.isPrimitiveGenerator_apply ρ⟩
+  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
+  let _ := ToricRay.finite_of_fg hσ.fg
+  let _ := Fintype.ofFinite (ToricRay σ)
+  have hl : l = Module.finrank ℤ N - Nat.card (ToricRay σ) := by
+    have hrank : Module.finrank ℤ N = Nat.card (ToricRay σ) + l := by
+      simpa [Nat.card_sum] using Module.finrank_eq_card_basis b
+    omega
+  let e := Equiv.sumCongr (Equiv.refl (ToricRay σ)) (finCongr hl)
+  exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e)
+    fun ρ ↦ by simpa [e] using hb ρ⟩
 
 /-- The dual semigroup of a regular cone is finitely generated. -/
 theorem fg_dualSemigroup (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) :

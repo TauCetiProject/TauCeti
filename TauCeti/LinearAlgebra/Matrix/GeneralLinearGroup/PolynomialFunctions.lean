@@ -22,7 +22,8 @@ are the coordinate-level bookkeeping behind the polynomial and rational represen
 coefficients lie in one of them.
 
 The rational condition is stated multiplicatively, as `det ^ m * f` being polynomial, so that no
-inverse is taken and both subalgebras live over an arbitrary commutative ring;
+inverse is taken and it lives over an arbitrary commutative ring, as the polynomial condition does
+over an arbitrary commutative semiring;
 `TauCeti.Matrix.GeneralLinearGroup.mem_rationalFunctions_iff_inv` is the equivalent `(det ^ m)⁻¹`
 form over a field.
 
@@ -56,6 +57,47 @@ namespace TauCeti
 
 namespace Matrix.GeneralLinearGroup
 
+section CommSemiring
+
+variable {k : Type u} [CommSemiring k] {n : ℕ}
+
+variable (k n) in
+/-- **The polynomial functions on `GL n k`**: those `f : GL (Fin n) k → k` obtained by evaluating a
+polynomial in the matrix entries, that is, the range of the algebra map sending the variable indexed
+by `(i, j)` to the `(i, j)` entry. -/
+noncomputable def polynomialFunctions : Subalgebra k (GL (Fin n) k → k) :=
+  (MvPolynomial.aeval fun p : Fin n × Fin n =>
+    fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k) p.1 p.2).range
+
+/-- Evaluating the generator of `TauCeti.Matrix.GeneralLinearGroup.polynomialFunctions` at a group
+element is evaluation of the polynomial at the entries of that element. -/
+private theorem aeval_entry_apply (P : MvPolynomial (Fin n × Fin n) k) (g : GL (Fin n) k) :
+    (MvPolynomial.aeval fun p : Fin n × Fin n =>
+        fun h : GL (Fin n) k => (h : Matrix (Fin n) (Fin n) k) p.1 p.2) P g
+      = MvPolynomial.eval (fun p => (g : Matrix (Fin n) (Fin n) k) p.1 p.2) P := by
+  simpa [MvPolynomial.aeval_eq_eval] using MvPolynomial.comp_aeval_apply
+    (fun p : Fin n × Fin n => fun h : GL (Fin n) k => (h : Matrix (Fin n) (Fin n) k) p.1 p.2)
+    (Pi.evalAlgHom k (fun _ : GL (Fin n) k => k) g) P
+
+/-- **Membership in the polynomial functions**: `f` is polynomial exactly when some polynomial in
+the matrix entries evaluates to `f g` at every `g`. -/
+theorem mem_polynomialFunctions {f : GL (Fin n) k → k} :
+    f ∈ polynomialFunctions k n ↔ ∃ P : MvPolynomial (Fin n × Fin n) k, ∀ g : GL (Fin n) k,
+      f g = MvPolynomial.eval (fun p => (g : Matrix (Fin n) (Fin n) k) p.1 p.2) P := by
+  constructor
+  · rintro ⟨P, rfl⟩
+    exact ⟨P, fun g => aeval_entry_apply P g⟩
+  · rintro ⟨P, hP⟩
+    exact ⟨P, funext fun g => (aeval_entry_apply P g).trans (hP g).symm⟩
+
+/-- The matrix entries themselves are polynomial functions. -/
+@[simp]
+theorem entry_mem_polynomialFunctions (i j : Fin n) :
+    (fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k) i j) ∈ polynomialFunctions k n :=
+  mem_polynomialFunctions.mpr ⟨X (i, j), fun g => by simp⟩
+
+end CommSemiring
+
 section CommRing
 
 variable {k : Type u} [CommRing k] {n : ℕ}
@@ -70,13 +112,6 @@ theorem eval_entries_det_mvPolynomialX (g : GL (Fin n) k) :
   congr 1
 
 variable (k n)
-
-/-- **The polynomial functions on `GL n k`**: those `f : GL (Fin n) k → k` obtained by evaluating a
-polynomial in the matrix entries, that is, the range of the algebra map sending the variable indexed
-by `(i, j)` to the `(i, j)` entry. -/
-noncomputable def polynomialFunctions : Subalgebra k (GL (Fin n) k → k) :=
-  (MvPolynomial.aeval fun p : Fin n × Fin n =>
-    fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k) p.1 p.2).range
 
 /-- **The rational functions on `GL n k`**: those `f : GL (Fin n) k → k` some determinant power of
 which is polynomial in the matrix entries.  Stated multiplicatively, as `det ^ m * f` being
@@ -105,27 +140,6 @@ noncomputable def rationalFunctions : Subalgebra k (GL (Fin n) k → k) where
 
 variable {k n}
 
-/-- Evaluating the generator of `TauCeti.Matrix.GeneralLinearGroup.polynomialFunctions` at a group
-element is evaluation of the polynomial at the entries of that element. -/
-private theorem aeval_entry_apply (P : MvPolynomial (Fin n × Fin n) k) (g : GL (Fin n) k) :
-    (MvPolynomial.aeval fun p : Fin n × Fin n =>
-        fun h : GL (Fin n) k => (h : Matrix (Fin n) (Fin n) k) p.1 p.2) P g
-      = MvPolynomial.eval (fun p => (g : Matrix (Fin n) (Fin n) k) p.1 p.2) P := by
-  simpa [MvPolynomial.aeval_eq_eval] using MvPolynomial.comp_aeval_apply
-    (fun p : Fin n × Fin n => fun h : GL (Fin n) k => (h : Matrix (Fin n) (Fin n) k) p.1 p.2)
-    (Pi.evalAlgHom k (fun _ : GL (Fin n) k => k) g) P
-
-/-- **Membership in the polynomial functions**: `f` is polynomial exactly when some polynomial in
-the matrix entries evaluates to `f g` at every `g`. -/
-theorem mem_polynomialFunctions {f : GL (Fin n) k → k} :
-    f ∈ polynomialFunctions k n ↔ ∃ P : MvPolynomial (Fin n × Fin n) k, ∀ g : GL (Fin n) k,
-      f g = MvPolynomial.eval (fun p => (g : Matrix (Fin n) (Fin n) k) p.1 p.2) P := by
-  constructor
-  · rintro ⟨P, rfl⟩
-    exact ⟨P, fun g => aeval_entry_apply P g⟩
-  · rintro ⟨P, hP⟩
-    exact ⟨P, funext fun g => (aeval_entry_apply P g).trans (hP g).symm⟩
-
 /-- **Membership in the rational functions**: `f` is rational exactly when some determinant power
 `det ^ m` makes `det ^ m * f` the evaluation of a polynomial in the matrix entries. -/
 theorem mem_rationalFunctions {f : GL (Fin n) k → k} :
@@ -140,12 +154,6 @@ theorem polynomialFunctions_le_rationalFunctions :
   intro f hf
   obtain ⟨P, hP⟩ := mem_polynomialFunctions.mp hf
   exact ⟨P, 0, fun g => by simp [hP g]⟩
-
-/-- The matrix entries themselves are polynomial functions. -/
-@[simp]
-theorem entry_mem_polynomialFunctions (i j : Fin n) :
-    (fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k) i j) ∈ polynomialFunctions k n :=
-  mem_polynomialFunctions.mpr ⟨X (i, j), fun g => by simp⟩
 
 /-- The determinant is a polynomial function. -/
 @[simp]

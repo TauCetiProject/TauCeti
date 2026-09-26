@@ -113,12 +113,16 @@ def maximalAbelianLayer (V : OpenNormalSubgroup G) : OpenNormalSubgroup G :=
       Subgroup.isOpen_mono le_sup_left V.toOpenSubgroup.isOpen⟩,
     Subgroup.sup_normal _ _⟩
 
+/-- The subgroup underlying the maximal abelian sublayer of `V` is the join of `V` with the closure
+of the commutator subgroup of `G`. -/
 @[simp]
 theorem toSubgroup_maximalAbelianLayer (V : OpenNormalSubgroup G) :
     (maximalAbelianLayer V).toSubgroup =
       V.toSubgroup ⊔ (commutator G).topologicalClosure :=
   (rfl)
 
+/-- An element lies in the maximal abelian sublayer of `V` exactly when it lies in the join of `V`
+with the closure of the commutator subgroup of `G`. -/
 @[simp]
 theorem mem_maximalAbelianLayer {V : OpenNormalSubgroup G} {x : G} :
     x ∈ maximalAbelianLayer V ↔

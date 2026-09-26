@@ -8,9 +8,12 @@ generate the complete map with --no-build --rehash -o, packing cache misses.
 --rehash is essential: hash archive bytes rather than trusting potentially stale
 or candidate-written .ltar.hash sidecars beside the new links.
 
-Temporary workaround for https://github.com/leanprover/lean4/pull/15189: remove this
-once the pinned Lake retains downloaded archives itself. Unknown formats and failed
-hard links simply forgo the optimization; archive payloads are never copied.
+Temporary workaround: remove this script and its snapshot/reconnect workflow calls
+once the pinned Lean includes https://github.com/leanprover/lean4/pull/15231, which
+supersedes https://github.com/leanprover/lean4/pull/15189 and lets Lake reuse restored
+archives for later output mapping while preserving platform independence.
+Unknown formats and failed hard links simply forgo the optimization; archive
+payloads are never copied.
 """
 
 from __future__ import annotations

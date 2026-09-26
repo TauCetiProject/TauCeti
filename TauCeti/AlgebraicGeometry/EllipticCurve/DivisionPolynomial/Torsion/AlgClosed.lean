@@ -17,14 +17,18 @@ import Mathlib.RingTheory.Adjoin.Field
 # Torsion points over an algebraically closed field are already rational
 
 Over an algebraically closed `F`, a torsion point of `W` with coordinates in an extension `Ω` has
-its coordinates in `F`: the extension buys no new torsion.
+its coordinates in `F`: the extension buys no new torsion. No condition on the index is needed,
+because an algebraically closed field also extracts the inseparable roots that a torsion point of
+an index divisible by the characteristic has; the companion statements over a merely separably
+closed field ask for an invertible index in exchange.
 
 ## Main results
 
-* `WeierstrassCurve.mem_range_x_of_zsmul_eq_zero`: over an algebraically closed `F`, the
-  `x`-coordinate of an `n`-torsion point of `W` over an extension lies in the image of `F`.
-* `WeierstrassCurve.mem_range_baseChange_of_zsmul_eq_zero`: such an `n`-torsion point is
-  therefore the base change of one over `F`.
+* `WeierstrassCurve.mem_range_x_of_zsmul_eq_zero_of_isAlgClosed`: over an algebraically closed
+  `F`, the `x`-coordinate of an `n`-torsion point of `W` over an extension lies in the image
+  of `F`.
+* `WeierstrassCurve.mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed`: such an `n`-torsion
+  point is therefore the base change of one over `F`.
 
 ## References
 
@@ -42,7 +46,7 @@ variable {F : Type*} [Field F] [IsAlgClosed F] (W : WeierstrassCurve F) [W.IsEll
 
 /-- **The `x`-coordinate of a torsion point is rational** when the base field is algebraically
 closed: integrality then puts it in the image of `F`. -/
-theorem mem_range_x_of_zsmul_eq_zero {n : ℤ} (hn : n ≠ 0) {x y : Ω}
+theorem mem_range_x_of_zsmul_eq_zero_of_isAlgClosed {n : ℤ} (hn : n ≠ 0) {x y : Ω}
     (hns : (W.baseChange Ω).toAffine.Nonsingular x y)
     (htors : n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0) :
     x ∈ Set.range (algebraMap F Ω) :=
@@ -53,7 +57,7 @@ theorem mem_range_x_of_zsmul_eq_zero {n : ℤ} (hn : n ≠ 0) {x y : Ω}
 No field extension of an algebraically closed `F` buys new torsion: the coordinates of a torsion
 point are integral over `F`, hence already in it. So the `n`-torsion of `W` over `Ω` is the base
 change of the `n`-torsion over `F`, for every extension `Ω` and not only an algebraic one. -/
-theorem mem_range_baseChange_of_zsmul_eq_zero [DecidableEq F] [DecidableEq Ω] {n : ℤ}
+theorem mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed [DecidableEq F] [DecidableEq Ω] {n : ℤ}
     (hn : n ≠ 0)
     {P : (W.baseChange Ω).toAffine.Point} (h : n • P = 0) :
     P ∈ Set.range (Affine.Point.baseChange (W' := W) F Ω) := by
@@ -63,7 +67,7 @@ theorem mem_range_baseChange_of_zsmul_eq_zero [DecidableEq F] [DecidableEq Ω] {
       have h' := congrArg (Jacobian.Point.toAffineAddEquiv (W.baseChange Ω)).symm h
       rw [map_zsmul, map_zero] at h'
       simpa using h'
-    obtain ⟨x₀, hx₀⟩ := W.mem_range_x_of_zsmul_eq_zero hn hns hJac
+    obtain ⟨x₀, hx₀⟩ := W.mem_range_x_of_zsmul_eq_zero_of_isAlgClosed hn hns hJac
     obtain ⟨y₀, hy₀⟩ := W.mem_range_y_of_equation_of_mem_range_x hns.left hx₀
     subst hx₀
     subst hy₀

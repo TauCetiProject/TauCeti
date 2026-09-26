@@ -53,6 +53,9 @@ independence theorem.
 * `TauCeti.ExactStructure.eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq`: a resolution
   whose alternating class is shared by every finite `P`-resolution of the same object computes
   `TauCeti.ExactStructure.eulerClassOf`.
+* `TauCeti.ExactStructure.FiniteResolution.eulerClassFullSubcategory_map`: the Euler class of the
+  image of a finite resolution under a conflation-exact functor is the alternating sum of the
+  classes of the images of its terms.
 * `TauCeti.ExactK0.mem_propClasses_iff`: membership in the generator set `propClasses E P` is
   being the class of an object satisfying `P`.
 * `TauCeti.ExactK0.closure_propClasses_eq_top`: if every object admits a finite `P`-resolution,
@@ -71,7 +74,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe w v u
+universe w w' v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C} {P : ObjectProperty C}
@@ -242,6 +245,27 @@ Euler class in the ambient exact Grothendieck group. -/
       rfl
 
 end FullSubcategory
+
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [LocallySmall.{w'} D] {E' : ExactStructure D} {P' : ObjectProperty D}
+  [ObjectProperty.EssentiallySmall.{w'} P'] [P'.ContainsZero] [P'.IsClosedUnderBinaryProducts]
+  {F : C ⥤ D} [F.Additive] {X : C}
+
+/-- **The Euler class of an image resolution.** Applying a conflation-exact functor carrying `P`
+into `P'` to a finite `P`-resolution gives a finite `P'`-resolution whose Euler class is the
+alternating sum of the classes of the images of the terms. -/
+theorem eulerClassFullSubcategory_map (hP' : E'.IsExtensionClosed P')
+    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    (r : E.FiniteResolution P X) :
+    (r.map hF hPP').eulerClassFullSubcategory hP' =
+      r.foldAlternating fun Z hZ => ExactK0.of (⟨F.obj Z, hPP' Z hZ⟩ : P'.FullSubcategory) := by
+  induction r with
+  | base hX => simp
+  | step hQ i p zero hp r ih => simp [ih]
+
+end Map
 
 end ExactStructure.FiniteResolution
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
-import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet
+import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Basic
 
 /-!
 # Independence of the genus characters of a quadratic field

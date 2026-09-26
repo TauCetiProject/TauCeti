@@ -22,8 +22,9 @@ separate generalisation to arrange. The accessor form is useful when the coordin
 a definition, such as evaluation at a translated generic point.
 
 The junk value `0` is harmless: every result that uses coordinates geometrically assumes the point
-is nonzero. Nothing here needs a field, ellipticity, or the group law; the two map lemmas need field
-hypotheses only because Mathlib's `Point.map` does.
+is nonzero. Nothing here needs ellipticity. The two map lemmas need field hypotheses only because
+Mathlib's `Point.map` does, and `cast_some` only because point addition does: it records that
+transporting a point along an equality of curves keeps its coordinates.
 
 ## Main definitions
 
@@ -39,6 +40,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
+* `WeierstrassCurve.Affine.Point.cast_some`: `AddEquiv.cast` along an equality of curves keeps the
+  coordinates of a point.
 
 The coordinate accessors support `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5, whose
 translation-action milestone evaluates functions at translates of the generic point.
@@ -143,5 +146,26 @@ theorem yCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
   cases P with
   | zero => exact f.toRingHom.map_zero.symm
   | some x y h => (rfl)
+
+section Cast
+
+variable {F : Type*} [Field F] [DecidableEq F]
+
+/-- What Mathlib's `AddEquiv.cast` — transport of the point group along an equality of Weierstrass
+curves — does to a point given by coordinates: it keeps them. The equiv itself is `AddEquiv.cast`
+and is not restated here; only its value needs a name, since Mathlib states `cast` through
+`Equiv.cast` and so gives no equation for it. It is used by the variable-change and quadratic-twist
+point isomorphisms and by the base-change point map `WeierstrassCurve.Affine.pointMap`
+(`MordellWeil/LocalCondition.lean`). -/
+-- not `@[simp]`: Mathlib's `AddEquiv.cast_apply` is itself a simp lemma and rewrites this
+-- left-hand side to the raw `cast` first, so `simpNF` reports the statement is not in
+-- simp-normal form and the lemma could never fire. It is used by `rw`, which is syntactic.
+lemma cast_some {V V' : WeierstrassCurve F} (h : V = V') {x y : F}
+    (hns : V.toAffine.Nonsingular x y) :
+    AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h (some x y hns)
+      = some x y (h ▸ hns) := by
+  subst h; rfl
+
+end Cast
 
 end WeierstrassCurve.Affine.Point

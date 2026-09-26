@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.BigOperators
-public import Mathlib.Data.Multiset.Filter
+public import TauCeti.Data.Multiset.Filter
 public import TauCeti.Data.Sym.Basic
 
 /-!
@@ -32,6 +32,8 @@ cast.
 
 * `TauCeti.Sym.sumSubtype`: the concatenation of a family of unordered tuples of points of the
   members of the family, as an unordered `n`-tuple of points of `α`.
+* `TauCeti.Sym.mem_sumSubtype_iff`: if a point of `U j` belongs to no other member, it lies in the
+  concatenation exactly when it lies in the `j`-th part.
 * `TauCeti.Sym.filter_mem_sumSubtype` and `TauCeti.Sym.sumSubtype_injective`: for a pairwise
   disjoint family the concatenation determines all of its parts.
 * `TauCeti.Sym.mem_range_sumSubtype`: its range consists of the tuples supported in the union of
@@ -93,15 +95,19 @@ theorem exists_mem_of_mem_sumSubtype {a : α} {hn : ∑ i, m i = n} {p : ∀ i, 
   obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 hi
   exact ⟨i, x.2⟩
 
-omit [Fintype ι] in
-/-- Filtering distributes over a finite sum of multisets. -/
-private theorem filter_finsetSum (q : α → Prop) [DecidablePred q] (s : Finset ι)
-    (f : ι → Multiset α) :
-    Multiset.filter q (∑ i ∈ s, f i) = ∑ i ∈ s, Multiset.filter q (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert a s ha ih => rw [Finset.sum_insert ha, Multiset.filter_add, ih, Finset.sum_insert ha]
+/-- If the fixed point belongs to no other member of the family, it lies in a concatenated tuple
+exactly when it lies in the `j`-th part. -/
+theorem mem_sumSubtype_iff {j : ι} {a : α} (h : ∀ i, i ≠ j → a ∉ U i)
+    {hn : ∑ i, m i = n} {p : ∀ i, Sym (U i) (m i)} (ha : a ∈ U j) :
+    a ∈ sumSubtype U m hn p ↔ (⟨a, ha⟩ : U j) ∈ p j := by
+  rw [← _root_.Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum]
+  refine ⟨?_, fun hp => ⟨j, Finset.mem_univ j, Multiset.mem_map.2 ⟨_, hp, rfl⟩⟩⟩
+  rintro ⟨i, -, hi⟩
+  obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 hi
+  obtain rfl : i = j := by
+    by_contra hij
+    exact h i hij x.2
+  exact hx
 
 /-- Filtering a concatenation on membership in `U i` recovers its `i`-th part: the other parts
 contribute nothing, being supported in sets disjoint from `U i`. -/
@@ -115,7 +121,7 @@ theorem filter_mem_sumSubtype [∀ i, DecidablePred (· ∈ U i)]
     Multiset.filter_eq_self.2 fun a ha => by
       obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 ha
       exact x.2
-  rw [coe_sumSubtype, filter_finsetSum, Finset.sum_eq_single i, hself]
+  rw [coe_sumSubtype, Multiset.filter_sum, Finset.sum_eq_single i, hself]
   · refine fun j _ hj => Multiset.filter_eq_nil.2 fun a ha => ?_
     obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 ha
     exact Set.disjoint_left.1 (h hj) x.2

@@ -121,7 +121,7 @@ theorem isLocallyDirected_affineToricDiagram (hΦ : Φ.IsRegular) :
       inf_le_right) x = xυ := by
     apply (faceAffineToricSchemeMap Φ.lattice hυσ).isOpenEmbedding.injective
     rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp, hx, h']
-  exact ⟨⟨τ.1 ⊓ υ.1, Φ.inf_mem τ.2 υ.2⟩, homOfLE (Subtype.coe_le_coe.1 inf_le_left),
+  exact ⟨τ ⊓ υ, homOfLE (Subtype.coe_le_coe.1 inf_le_left),
     homOfLE (Subtype.coe_le_coe.1 inf_le_right), x, hτ, hυ⟩
 
 /-! ### The toric scheme of a regular fan -/
@@ -217,20 +217,20 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 @[reassoc]
 theorem affineToricOverlapLeft_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
     Φ.affineToricOverlapLeft σ τ ≫ Φ.affineToricChartι hΦ σ =
-      Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
+      Φ.affineToricChartι hΦ (σ ⊓ τ) := by
   simpa only [affineToricOverlapLeft_def] using
     faceAffineToricSchemeMap_comp_affineToricChartι hΦ
-      (τ := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩) (σ := σ)
+      (τ := σ ⊓ τ) (σ := σ)
       (Φ.inf_isFaceOf_left σ.2 τ.2)
 
 /-- The right overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
 @[reassoc]
 theorem affineToricOverlapRight_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ : Φ.cones) :
     Φ.affineToricOverlapRight σ τ ≫ Φ.affineToricChartι hΦ τ =
-      Φ.affineToricChartι hΦ ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩ := by
+      Φ.affineToricChartι hΦ (σ ⊓ τ) := by
   simpa only [affineToricOverlapRight_def] using
     faceAffineToricSchemeMap_comp_affineToricChartι hΦ
-      (τ := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩) (σ := τ)
+      (τ := σ ⊓ τ) (σ := τ)
       (Φ.inf_isFaceOf_right σ.2 τ.2)
 
 /-- The two inclusions of a pairwise overlap into the toric scheme agree. -/
@@ -258,7 +258,7 @@ theorem affineToricChartι_eq_affineToricChartι_iff (hΦ : Φ.IsRegular)
   have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
     isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
   have := isLocallyDirected_affineToricDiagram hΦ
-  let στ : Φ.cones := ⟨σ.1 ⊓ τ.1, Φ.inf_mem σ.2 τ.2⟩
+  let στ : Φ.cones := σ ⊓ τ
   refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
   · obtain ⟨κ, fσ, fτ, (w : Φ.affineToricChart κ), hwx, hwy⟩ :=
       (Scheme.IsLocallyDirected.ι_eq_ι_iff Φ.affineToricDiagram).1 h

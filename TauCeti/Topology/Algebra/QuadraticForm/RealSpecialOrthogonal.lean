@@ -32,6 +32,8 @@ transpose, so the resulting map is continuous for the induced topology.
   compact.
 * `TauCeti.QuadraticMap.instCompactSpaceSpecialOrthogonalGroupRealCliffordForm`: the associated
   special orthogonal group is compact.
+* `TauCeti.QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm`: the
+  positive-definite real special-orthogonal carrier is closed in its general-linear ambient group.
 -/
 
 public section
@@ -45,6 +47,8 @@ universe u
 namespace QuadraticMap
 
 noncomputable section
+
+section ClassicalDecEq
 
 attribute [local instance] Classical.decEq
 
@@ -129,6 +133,19 @@ instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
     CompactSpace (specialOrthogonalGroup (realCliffordForm n 0)) := by
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   exact instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
+
+end ClassicalDecEq
+
+/-- The real special-orthogonal carrier is closed in its general-linear ambient group. -/
+theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : ℕ) :
+    let _ : DecidableEq (Fin (n + 0)) := Classical.decEq _
+    IsClosed (Set.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0))) := by
+  dsimp
+  have hc : IsCompact (Set.univ : Set (specialOrthogonalGroup (realCliffordForm n 0))) :=
+    isCompact_univ
+  simpa only [Set.image_univ] using
+    (hc.image (isEmbedding_specialOrthogonalToGeneralLinear
+      (realCliffordForm n 0)).continuous).isClosed
 
 end
 

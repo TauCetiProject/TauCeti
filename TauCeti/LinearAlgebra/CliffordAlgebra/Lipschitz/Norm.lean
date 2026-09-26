@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
@@ -24,6 +24,9 @@ norm: the Clifford norm descends modulo squares through the kernel of that actio
 * `CliffordAlgebra.self_mul_star_eq_algebraMap_lipschitzNorm`: its second
   characteristic Clifford-product equation.
 * `CliffordAlgebra.lipschitzNorm_unitι`: its value on a generating vector.
+* `CliffordAlgebra.mem_pinGroup_iff_lipschitzNorm_eq_one`: the Pin group is cut out of the
+  Lipschitz group by this norm.
+* `CliffordAlgebra.lipschitzNorm_scalarUnits`: the norm of a scalar unit is its square.
 
 ## References
 
@@ -203,14 +206,30 @@ theorem lipschitzNorm_unitι (Q : QuadraticForm R V) (v : V) [Invertible (Q v)] 
     algebraMap R (CliffordAlgebra Q) (-Q v)
   exact h.symm.trans (map_neg _ _).symm
 
-/-- The Clifford norm of a Pin element is one. -/
+/-- A Lipschitz element lies in the Pin group exactly when its `lipschitzNorm` is one. -/
 @[simp]
-theorem lipschitzNorm_pinToLipschitz (Q : QuadraticForm R V) (p : pinGroup Q) :
-    lipschitzNorm Q (pinToLipschitz Q p) = 1 := by
+theorem mem_pinGroup_iff_lipschitzNorm_eq_one (Q : QuadraticForm R V) (x : lipschitzGroup Q) :
+    ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ pinGroup Q ↔ lipschitzNorm Q x = 1 := by
+  rw [pinGroup.units_mem_iff, Unitary.mem_iff, star_mul_self_eq_algebraMap_lipschitzNorm,
+    self_mul_star_eq_algebraMap_lipschitzNorm, and_self, ← map_one (algebraMap R _),
+    (algebraMap_injective Q).eq_iff, ← Units.val_one, Units.val_inj]
+  exact and_iff_right x.2
+
+/-- A Lipschitz element equal to a scalar unit has norm equal to the square of that scalar. -/
+theorem lipschitzNorm_eq_of_coe_eq_algebraMap {Q : QuadraticForm R V}
+    {x : lipschitzGroup Q} {a : Rˣ}
+    (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) a) : lipschitzNorm Q x = a * a := by
   apply Units.ext
   apply algebraMap_injective Q
-  rw [← star_mul_self_eq_algebraMap_lipschitzNorm]
-  simpa only [coe_pinToLipschitz_apply, Units.val_one, map_one] using
-    pinGroup.coe_star_mul_self p
+  rw [← star_mul_self_eq_algebraMap_lipschitzNorm, hx, star_algebraMap, ← map_mul,
+    Units.val_mul]
+
+/-- The norm of a scalar unit in the Lipschitz group is its square. -/
+@[simp]
+theorem lipschitzNorm_scalarUnits {Q : QuadraticForm R V}
+    (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
+    lipschitzNorm Q (scalarUnits Q hQ a) = a * a :=
+  lipschitzNorm_eq_of_coe_eq_algebraMap (coe_scalarUnits hQ a)
 
 end CliffordAlgebra

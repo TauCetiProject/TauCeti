@@ -45,8 +45,14 @@ file supplies exactly such diagonal lower bounds without packaging them.
 that file are instantiated here: a domain trapped between two hyperplanes and a domain contained
 in a ball, whose Poincaré constants are the slab width `t - s` and the diameter bound `2R`. In
 both cases the drift smallness condition `βP < λ` is what makes the resulting constant positive,
-and with no drift it is vacuous. This is *not* a claim that coercivity fails otherwise: when it
-is genuinely unavailable the Fredholm alternative (Lane D, item 18) replaces Lax--Milgram.
+and with no drift it is vacuous.
+
+A mass floor `δ` satisfying `β² < 4λδ` gives another route. Choose `0 < ε < λ` with
+`β² < 4εδ`; the coercivity constant is `min (λ - ε) (δ - β²/(4ε))`, on any open domain,
+including all of Euclidean space. The theorem
+`TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`
+therefore needs no geometric or Poincaré hypothesis. These are sufficient conditions; when
+coercivity is unavailable the Fredholm alternative (Lane D, item 18) replaces Lax--Milgram.
 
 ## The `-Δ` payoff
 
@@ -70,11 +76,15 @@ the constructed one, so it is available before, and independently of, uniqueness
   `H¹₀(Ω)`, with `TauCeti.PDE.norm_dirichletForcing_le`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet`: the weak formulation of `L u = f` in `Ω`, `u = 0` on
   `∂Ω`.
+* `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
+  enough to test the weak formulation against `C_c^∞(Ω)`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`.
 * `TauCeti.PDE.weakSolutionDirichlet` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`: the Lax--Milgram solution and the
   existence-and-uniqueness theorem.
 * `TauCeti.PDE.norm_le_of_isWeakSolutionDirichlet`: the energy estimate `‖u‖ ≤ ‖f‖/C`.
+* `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
+  existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -97,7 +107,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open scoped Distributions ENNReal InnerProductSpace
 
 section Domain
 
@@ -176,6 +186,40 @@ def IsWeakSolutionDirichlet (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2)
           = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsWeakSolutionDirichlet, dirichletForcing_apply_eq_setIntegral]
+
+/-- **Testing against test functions suffices.** When the energy density is essentially bounded,
+so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak
+equation `a(u, φ) = ∫_Ω f φ` holds for every test function `φ ∈ C_c^∞(Ω)`: both sides are
+continuous in the test function, and `H¹₀(Ω)` is the closure of `C_c^∞(Ω)`. -/
+theorem isWeakSolutionDirichlet_iff_forall_testFunction
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet a b c f u ↔
+      ∀ φ : 𝓓(Omega, ℝ),
+        energyFormH1 a b c (u : W1p mu Omega 2) (W1p.ofTestFunctionₗ mu Omega 2 φ)
+          = ∫ x in Omega, f x * φ x ∂mu := by
+  -- The forcing functional at a test function is the integral against it.
+  have hforce : ∀ φ : 𝓓(Omega, ℝ), ⟪f, W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ
+      = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
+    have h := dirichletForcing_apply_eq_setIntegral f
+      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule (p := 2) φ⟩
+    rw [dirichletForcing_apply] at h
+    refine h.trans (integral_congr_ae ?_)
+    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
+    rw [W1p.value_ofTestFunctionₗ, hx]
+  refine ⟨fun h φ => ?_, fun h v => ?_⟩
+  · rw [← hforce]
+    exact (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (dirichletForcing_apply f _)
+  · have hclosed : IsClosed {v : W1p mu Omega 2 |
+        energyFormH1L hcoeff (u : W1p mu Omega 2) v = ⟪f, W1p.value v⟫_ℝ} :=
+      isClosed_eq (energyFormH1L hcoeff _).continuous
+        (((innerSL ℝ f).continuous.comp W1p.valueL.continuous).congr fun v => by
+          simp only [Function.comp_apply, innerSL_apply_apply]
+          exact congrArg _ (W1p.valueL_apply v))
+    have hmem := w1p0Submodule_subset_of_isClosed hclosed
+      (fun φ => by simpa only [Set.mem_ofPred_eq, energyFormH1L_apply, hforce] using h φ) v.2
+    rw [dirichletForcing_apply, ← energyFormH1L_apply hcoeff]
+    exact hmem
 
 /-- **The energy estimate.** Any weak solution is bounded in `H¹` by the `L²` norm of the data,
 with the coercivity constant as the only other ingredient. The estimate is stated for every
@@ -263,6 +307,40 @@ theorem existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (f : Lp ℝ 2 (mu.restrict Omega)) :
     ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u :=
   existsUnique_isWeakSolutionDirichlet hcoeff (isCoercive_energyFormH1L0 hcoeff hC hlower) f
+
+/-- Existence and uniqueness on an arbitrary open domain under the mass-floor condition
+`β² < 4λδ`. A Young parameter between `β²/(4δ)` and `λ` makes the gradient and value
+coefficients positive. No domain boundedness, Poincaré inequality, or symmetry of the
+principal coefficient is required. -/
+theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound
+    [DecidableEq ι] {lam Lam beta gamma delta : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_lower : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), delta ≤ c x)
+    (hmass : beta ^ 2 < 4 * lam * delta) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u := by
+  have hdelta : 0 < delta := by
+    have : 0 < 4 * lam * delta := lt_of_le_of_lt (sq_nonneg beta) hmass
+    exact (mul_pos_iff_of_pos_left (mul_pos (by norm_num) h.pos)).mp this
+  have hquot : beta ^ 2 / (4 * delta) < lam := by
+    apply (div_lt_iff₀ (mul_pos (by norm_num) hdelta)).mpr
+    nlinarith [hmass]
+  obtain ⟨eps, hlo, hhi⟩ := exists_between hquot
+  have heps : 0 < eps := lt_of_le_of_lt (by positivity) hlo
+  have hdefect : beta ^ 2 / (4 * eps) < delta := by
+    apply (div_lt_iff₀ (mul_pos (by norm_num) heps)).mpr
+    have hmul := (div_lt_iff₀ (mul_pos (by norm_num) hdelta)).mp hlo
+    nlinarith [hmul]
+  exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
+    (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+      (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
+    (lt_min (sub_pos.mpr hhi) (sub_pos.mpr hdefect))
+    (fun w => h.min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound_with_parameter ha hb hc
+      hb_bound hc_bound hc_lower heps w) f
 
 /-! ### The Laplacian model -/
 

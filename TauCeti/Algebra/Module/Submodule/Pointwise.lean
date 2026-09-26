@@ -34,7 +34,7 @@ open scoped Pointwise
 
 namespace Submodule
 
-variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
+variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
 /-- **The ambient-scalar bridge.** Membership in `rⁿ • M₀` is stated in Mathlib's terms with the
 subring scalar `r : S`, while a caller typically holds the ambient `s : A`. This is the crossing,

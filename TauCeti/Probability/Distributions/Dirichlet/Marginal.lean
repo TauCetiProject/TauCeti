@@ -80,10 +80,10 @@ theorem map_sum_dirichletMeasure [DecidableEq ι] {a : ι → ℝ} (ha : ∀ i, 
   have hscpos : 0 < ∑ i ∈ sᶜ, a i := Finset.sum_pos (fun j _ ↦ ha j) hsc
   have hblock : HasLaw (fun x : ι → ℝ ↦ ∑ i ∈ s, x i) (gammaMeasure (∑ i ∈ s, a i) 1)
       (Measure.pi fun k ↦ gammaMeasure (a k) 1) :=
-    iIndepFun.hasLaw_sum_gammaMeasure hindep one_pos hs (fun j _ ↦ ha j) fun j _ ↦ hlaw j
+    hindep.hasLaw_sum_gammaMeasure one_pos hs (fun j _ ↦ ha j) fun j _ ↦ hlaw j
   have hrest : HasLaw (fun x : ι → ℝ ↦ ∑ i ∈ sᶜ, x i) (gammaMeasure (∑ i ∈ sᶜ, a i) 1)
       (Measure.pi fun k ↦ gammaMeasure (a k) 1) :=
-    iIndepFun.hasLaw_sum_gammaMeasure hindep one_pos hsc (fun j _ ↦ ha j) fun j _ ↦ hlaw j
+    hindep.hasLaw_sum_gammaMeasure one_pos hsc (fun j _ ↦ ha j) fun j _ ↦ hlaw j
   have hpair : IndepFun (fun x : ι → ℝ ↦ ∑ i ∈ s, x i) (fun x ↦ ∑ i ∈ sᶜ, x i)
       (Measure.pi fun k ↦ gammaMeasure (a k) 1) := by
     have h := (hindep.indepFun_finset s sᶜ disjoint_compl_right fun j ↦ measurable_pi_apply j).comp

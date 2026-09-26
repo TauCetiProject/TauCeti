@@ -38,6 +38,8 @@ The denominator need not be listed even when it is a numerator: `({f, 1}, 1)` wi
   `A⟨X₁, …, Xₖ⟩`.
 * `TauCeti.Huber.PairOfDefinition.rationalQuotientRingEquiv`: the identification of the quotient
   with `A⟨T/s⟩`.
+* `TauCeti.Huber.PairOfDefinition.rationalQuotientHom`: the identification precomposed with the
+  quotient map, presenting `A⟨T/s⟩` directly as a quotient of `A⟨X₁, …, Xₖ⟩`.
 
 ## Main results
 
@@ -54,6 +56,15 @@ The denominator need not be listed even when it is a numerator: `({f, 1}, 1)` wi
   compatible with the structure maps from `A`.
 * `TauCeti.Huber.PairOfDefinition.continuous_rationalQuotientRingEquiv` and its `symm` form: the
   identification is one of topological rings.
+* `TauCeti.Huber.PairOfDefinition.rationalQuotientHom_surjective`,
+  `TauCeti.Huber.PairOfDefinition.continuous_rationalQuotientHom`,
+  `TauCeti.Huber.PairOfDefinition.rationalQuotientHom_weightedC`,
+  `TauCeti.Huber.PairOfDefinition.rationalQuotientHom_weightedX` and
+  `TauCeti.Huber.PairOfDefinition.rationalQuotientHom_weightedC_mul_weightedX`: the presentation
+  map is a continuous surjection, and its values on constants and on the relations.
+* `TauCeti.Huber.PairOfDefinition.rationalQuotientHom_eq_zero_iff_mem`: the kernel of the
+  presentation map is the relation ideal, as an iff usable in both directions. Together with the
+  bullet above these characterise a map out of `A⟨T/s⟩` without mentioning the quotient.
 
 ## References
 
@@ -432,6 +443,117 @@ theorem continuous_rationalQuotientRingEquiv_symm :
     letI := isTopologicalRing_locUniformSpace P T s S hden
     Continuous (rationalQuotientRingEquiv P T s S hden t ht hsplit hspan hcl).symm :=
   continuous_completionToRationalQuotient P T s S hden t hsplit hspan hcl
+
+/-- **The presentation map `A⟨X₁, …, Xₖ⟩ → A⟨T/s⟩`**: the quotient map by the relation ideal
+`(tᵢ - s Xᵢ)` followed by `rationalQuotientRingEquiv`. It exhibits the completed rational
+localisation as a quotient of a restricted power-series ring in one stroke, which is what a
+caller wanting generators and relations for `A⟨T/s⟩` needs: it is surjective
+(`rationalQuotientHom_surjective`) and continuous (`continuous_rationalQuotientHom`), sends a
+constant to its image under the structure map (`rationalQuotientHom_weightedC`), takes the
+relations to zero (`rationalQuotientHom_weightedC_mul_weightedX`), and has the relation ideal for
+its kernel (`rationalQuotientHom_eq_zero_iff_mem`). Its hypotheses are those of
+`rationalQuotientRingEquiv`. -/
+noncomputable def rationalQuotientHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
+      UniformSpace.Completion S :=
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  (rationalQuotientRingEquiv P T s S hden t ht hsplit hspan hcl).toRingHom.comp
+    (Ideal.Quotient.mk _)
+
+/-- **The presentation map is surjective**: every element of `A⟨T/s⟩` is the image of a restricted
+power series. This is what lets a statement about `A⟨T/s⟩` be checked on restricted power series,
+as the Laurent-cover chase does. -/
+theorem rationalQuotientHom_surjective :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Function.Surjective (rationalQuotientHom P T s S hden t ht hsplit hspan hcl) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [rationalQuotientHom, RingEquiv.toRingHom_eq_coe, RingHom.coe_comp, RingEquiv.coe_toRingHom]
+  exact (RingEquiv.surjective _).comp Ideal.Quotient.mk_surjective
+
+/-- **The presentation map is continuous.** With `rationalQuotientHom_surjective` this is what
+makes it usable as a presentation of the topological ring `A⟨T/s⟩`: a continuous map out of
+`A⟨T/s⟩` may be tested after composing with it, by
+`TauCeti.Huber.weightedRestrictedSubring_ringHom_ext_of_continuous`. -/
+theorem continuous_rationalQuotientHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Continuous (rationalQuotientHom P T s S hden t ht hsplit hspan hcl) :=
+  (continuous_rationalQuotientRingEquiv P T s S hden t ht hsplit hspan hcl).comp continuous_quot_mk
+
+/-- **The presentation map on constants** is the structure map `A → A⟨T/s⟩`. -/
+@[simp]
+theorem rationalQuotientHom_weightedC (a : A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    rationalQuotientHom P T s S hden t ht hsplit hspan hcl
+        (weightedC _ isWeightFamily_one_weight a) =
+      toCompletionLoc P T s S hden a :=
+  rationalQuotientRingEquiv_quotientMk_weightedC P T s S hden t ht hsplit hspan hcl a
+
+/-- **The presentation map sends `Xᵢ` to `tᵢ/s`.** -/
+@[simp]
+theorem rationalQuotientHom_weightedX (i : Fin k) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    rationalQuotientHom P T s S hden t ht hsplit hspan hcl
+        (weightedX _ isWeightFamily_one_weight i) =
+      ((divBy (t i) s : S) : UniformSpace.Completion S) :=
+  rationalQuotientRingEquiv_quotientMk_weightedX P T s S hden t ht hsplit hspan hcl i
+
+/-- **The presentation map takes the relations to zero**: the images of the constant `s` and of
+the variable `Xᵢ` multiply to the image of the constant `tᵢ`. This is the relation `tᵢ - s Xᵢ`
+read in `A⟨T/s⟩`, and it is stated this way rather than as `Xᵢ ↦ tᵢ/s` so that it can be used
+without naming the fraction; where `s` is invertible in `A⟨T/s⟩` it determines the image of
+`Xᵢ`. Unlike the neighbouring normal-form rules this one is not `@[simp]`, and cannot be: `simp`
+rewrites the left factor by `rationalQuotientHom_weightedC` and then by `toCompletionLoc_apply`,
+so this left-hand side is not in simp normal form. Use it with `rw`, or state the goal with the
+left factor already rewritten. -/
+theorem rationalQuotientHom_weightedC_mul_weightedX (i : Fin k) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    rationalQuotientHom P T s S hden t ht hsplit hspan hcl
+          (weightedC _ isWeightFamily_one_weight s) *
+        rationalQuotientHom P T s S hden t ht hsplit hspan hcl
+          (weightedX _ isWeightFamily_one_weight i) =
+      rationalQuotientHom P T s S hden t ht hsplit hspan hcl
+        (weightedC _ isWeightFamily_one_weight (t i)) := by
+  rw [rationalQuotientHom, RingHom.comp_apply, RingHom.comp_apply, RingHom.comp_apply, ← map_mul,
+    rationalRelationIdeal_quotientMk_weightedC_mul_weightedX]
+
+/-- **The kernel of the presentation map is the relation ideal**: a restricted power series is
+taken to zero exactly when it lies in `(t₁ - s X₁, …, tₖ - s Xₖ)`. Read left to right this turns
+a vanishing statement in `A⟨T/s⟩` back into a membership in `A⟨X₁, …, Xₖ⟩`; read right to left it
+is `rationalRelationIdeal`'s defining property carried through the quotient map, so a caller can
+also use it to show that a value of the presentation map vanishes. Together with
+`rationalQuotientHom_surjective`, `rationalQuotientHom_weightedC` and
+`rationalQuotientHom_weightedC_mul_weightedX` it presents `A⟨T/s⟩` by generators and relations
+without mentioning the quotient. -/
+@[simp]
+theorem rationalQuotientHom_eq_zero_iff_mem
+    {u : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight} :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    rationalQuotientHom P T s S hden t ht hsplit hspan hcl u = 0 ↔
+      u ∈ rationalRelationIdeal t s := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [rationalQuotientHom, RingEquiv.toRingHom_eq_coe, RingHom.comp_apply, RingEquiv.coe_toRingHom,
+    map_eq_zero_iff _ (RingEquiv.injective _), Ideal.Quotient.eq_zero_iff_mem]
 
 end Identification
 

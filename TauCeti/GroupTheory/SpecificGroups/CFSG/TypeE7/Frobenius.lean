@@ -46,6 +46,13 @@ asserted to be finite, perfect, or simple.
 * `TauCeti.TypeE7LieIndex.mem_fixedSubgroup_steinberg_iff`: a carrier point is fixed
   exactly when its entries lie in the field of definition.
 
+* `TauCeti.TypeE7LieIndex.primeFrobenius`, with
+  `TauCeti.TypeE7LieIndex.coe_primeFrobenius_apply`,
+  `TauCeti.TypeE7LieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeE7LieIndex.primeFrobenius_weightTorusPoints` and
+  `TauCeti.TypeE7LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its entrywise
+  and pinned simple-root-subgroup equations, its action on the weight torus, and the Steinberg
+  endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
@@ -105,6 +112,57 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank)
   rw [steinberg_def, simpleRootSubgroup_def,
     E7Minuscule.frobenius_rootSubgroupPoints,
     d.1.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the minuscule `E₇` carrier**, the `p`-power map for `p` the
+defining characteristic. The Steinberg endomorphism of the family, which is its `q`-power
+Frobenius, is the `e`-th power of this map, for `e` the field exponent the index records, by
+`steinberg_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  E7Minuscule.frobenius d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the carrier's Frobenius at exponent one. -/
+-- Not `@[simp]`, for the reason `steinberg_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius = E7Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 56) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
+        Matrix (Fin 56) (Fin 56) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
+        Matrix (Fin 56) (Fin 56) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using
+    E7Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, E7Minuscule.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.E7Minuscule.frobenius_pow` states the carrier's iteration law in.
+/-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
+field exponent the index records. -/
+theorem steinberg_eq_primeFrobenius_pow :
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, steinberg_def, E7Minuscule.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius preserves the weight torus and raises each coordinate to the
+`p`-th power**, that is, `Frob_p (t(s)) = t(s ^ p)`. -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin 7 → d.1.Closureˣ) :
+    d.primeFrobenius (E7Minuscule.weightTorusPoints d.1.Closure s) =
+      E7Minuscule.weightTorusPoints d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, E7Minuscule.frobenius_weightTorusPoints, pow_one]
 
 /-- **The minuscule-carrier Frobenius preserves the weight torus and raises each coordinate to the
 `q`-th power**, that is, `Frob_q (t(s)) = t(s ^ q)`. -/

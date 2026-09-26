@@ -174,18 +174,15 @@ theorem tensorCombine_assoc (x : M ⊗[R] C) (y : N ⊗[R] C) (z : P ⊗[R] C) :
           (tensorCombine (R := R) (C := C) (M := M) (N := N) (x ⊗ₜ[R] y) ⊗ₜ[R] z)) =
       tensorCombine (R := R) (C := C) (M := M) (N := N ⊗[R] P)
         (x ⊗ₜ[R] tensorCombine (R := R) (C := C) (M := N) (N := P) (y ⊗ₜ[R] z)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
     simpa only [add_tmul, LinearMap.map_add] using congrArg₂ (· + ·) hx₁ hx₂
   | tmul m c =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ =>
       simpa only [tmul_add, add_tmul, LinearMap.map_add] using congrArg₂ (· + ·) hy₁ hy₂
     | tmul n d =>
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z₁ z₂ hz₁ hz₂ =>
         simpa only [tmul_add, LinearMap.map_add] using congrArg₂ (· + ·) hz₁ hz₂
       | tmul p e => simp [mul_assoc]
@@ -208,8 +205,7 @@ theorem tensorCombine_lid (r : R) (x : M ⊗[R] C) :
         (tensorCombine (R := R) (C := C) (M := R) (N := M)
           ((r ⊗ₜ[R] (1 : C)) ⊗ₜ[R] x)) =
       r • x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
     simpa only [tmul_add, LinearMap.map_add, smul_add] using congrArg₂ (· + ·) hx hy
   | tmul m c =>
@@ -232,8 +228,7 @@ theorem tensorCombine_rid (x : M ⊗[R] C) (r : R) :
         (tensorCombine (R := R) (C := C) (M := M) (N := R)
           (x ⊗ₜ[R] (r ⊗ₜ[R] (1 : C)))) =
       r • x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
     simpa only [add_tmul, LinearMap.map_add, smul_add] using congrArg₂ (· + ·) hx hy
   | tmul m c =>
@@ -264,13 +259,11 @@ theorem tensorCombine_comm (x : M ⊗[R] C) (y : N ⊗[R] C) :
     TensorProduct.map (TensorProduct.comm R M N).toLinearMap LinearMap.id
         (tensorCombine (R := R) (C := C) (M := M) (N := N) (x ⊗ₜ[R] y)) =
       tensorCombine (R := R) (C := C) (M := N) (N := M) (y ⊗ₜ[R] x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
     simpa only [add_tmul, tmul_add, LinearMap.map_add] using congrArg₂ (· + ·) hx₁ hx₂
   | tmul m c =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ =>
       simpa only [tmul_add, add_tmul, LinearMap.map_add] using congrArg₂ (· + ·) hy₁ hy₂
     | tmul n d => simp [mul_comm]
@@ -351,12 +344,10 @@ theorem lTensor_comp_tensorCombine (φ : C →ₐ[R] D) :
       tensorCombine (R := R) (C := D) (M := M) (N := N) ∘ₗ
         TensorProduct.map (φ.toLinearMap.lTensor M) (φ.toLinearMap.lTensor N) := by
   refine TensorProduct.ext' fun x y => ?_
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
   | tmul m c =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
     | tmul n d => simp
 
@@ -375,12 +366,10 @@ theorem comm_tensorCombine_eq_distribBaseChange_symm_tmul
         (tensorCombine (R := R) (C := A) (M := M) (N := N) (p ⊗ₜ[R] q)) =
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
         (TensorProduct.comm R M A p ⊗ₜ[A] TensorProduct.comm R N A q) := by
-  induction p using TensorProduct.induction_on with
-  | zero => simp
+  induction p using TensorProduct.inductionOn with
   | add p p' hp hp' => simpa only [add_tmul, map_add] using congrArg₂ (fun a b ↦ a + b) hp hp'
   | tmul m a =>
-      induction q using TensorProduct.induction_on with
-      | zero => simp
+      induction q using TensorProduct.inductionOn with
       | add q q' hq hq' =>
           simpa only [tmul_add, map_add] using congrArg₂ (fun x y ↦ x + y) hq hq'
       | tmul n b => simp
@@ -405,12 +394,10 @@ theorem assoc_comp_tensorCombine_rTensor_comp_tensorCombine :
         TensorProduct.map (TensorProduct.assoc R M C C).toLinearMap
           (TensorProduct.assoc R N C C).toLinearMap := by
   refine TensorProduct.ext_fourfold' fun w x y z => ?_
-  induction w using TensorProduct.induction_on with
-  | zero => simp
+  induction w using TensorProduct.inductionOn with
   | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
   | tmul m a =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add p q hp hq => simp only [add_tmul, tmul_add, map_add, hp, hq]
     | tmul n b => simp [Algebra.TensorProduct.tmul_mul_tmul]
 

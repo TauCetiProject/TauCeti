@@ -230,7 +230,7 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
           setIntegral_le_integral hg.norm (Eventually.of_forall fun x => norm_nonneg _)
       _ = (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
           rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable,
-            eLpNorm_one_eq_lintegral_enorm]
+            eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable]
   have hLevyReal : Tendsto
       (fun n => (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal) atTop (𝓝 0) := by
     simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
@@ -293,12 +293,11 @@ theorem condExp_inter_ae_eq_mul_iInf [IsFiniteMeasure μ]
   have hbound : ∀ n, eLpNorm (μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧) 1 μ ≤
       eLpNorm (μ⟦A | 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧) 1 μ := fun n =>
     (eLpNorm_congr_ae (hDn n)).le.trans
-      ((eLpNorm_condExp_le_eLpNorm _ le_rfl).trans (eLpNorm_indicator_le _))
+      ((eLpNorm_condExp_le_eLpNorm _ le_rfl).trans
+        (eLpNorm_indicator_le _ (h𝔽' n _ (hB' n))))
   have hzero : eLpNorm (μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧) 1 μ = 0 :=
     le_antisymm (ge_of_tendsto' (tendsto_eLpNorm_condExp_iInf hanti h𝔽 _) hbound) bot_le
-  rw [eLpNorm_eq_zero_iff (((stronglyMeasurable_condExp.sub
-    (stronglyMeasurable_condExp.mul stronglyMeasurable_condExp)).mono
-      ((h𝒢𝔽 0).trans h𝔽)).aestronglyMeasurable) one_ne_zero] at hzero
+  rw [eLpNorm_eq_zero_iff one_ne_zero] at hzero
   filter_upwards [hzero] with ω hω
   exact sub_eq_zero.1 hω
 

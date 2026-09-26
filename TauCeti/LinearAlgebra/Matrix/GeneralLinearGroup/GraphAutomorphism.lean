@@ -224,10 +224,7 @@ theorem typeAGraphConjugator_mul_self (r : ℕ) :
       congr 1
       simp [Fin.val_rev]
       omega
-    _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := by
-      apply Units.ext
-      rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar]
-      rw [Matrix.scalar_apply]
+    _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := diagGL_const _
 
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔
@@ -479,7 +476,7 @@ theorem map_typeAGraphConjugator {B : Type*} [CommRing B] (f : A →+* B) (r : �
       typeAGraphConjugator r B := by
   apply Units.ext
   ext i j
-  simp [typeAGraphConjugator, typeAGraphSign]
+  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
 
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]

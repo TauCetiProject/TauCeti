@@ -71,7 +71,6 @@ private lemma liftEquiv_map_mul
       AlgHom.convMul_apply, TensorProduct.comul_tmul, Bialgebra.comul_one,
       Algebra.TensorProduct.one_def] using this
   induction Coalgebra.comul (R := k) a with
-  | zero => simp only [tmul_zero, map_zero]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
   | tmul a₁ a₂ =>
       simp only [Algebra.TensorProduct.lift_tmul, AlgebraTensorModule.tensorTensorTensorComm_tmul,

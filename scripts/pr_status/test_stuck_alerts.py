@@ -606,5 +606,34 @@ class FailingSchedulerTest(unittest.TestCase):
         self.assertEqual(sa.key_prefix("failing-scheduler/pages.yml"), "failing-scheduler")
 
 
+class StuckLintRepairTest(unittest.TestCase):
+    """The daily full lint's repair PR (lint-full.yml) escalates once it has been open too long."""
+
+    @staticmethod
+    def pr(number, hours):
+        when = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=hours)
+        return {"number": number, "created_at": when.strftime("%Y-%m-%dT%H:%M:%SZ")}
+
+    def detect(self, prs):
+        seen = []
+        self.addCleanup(setattr, sa, "gh_stream", sa.gh_stream)
+        sa.gh_stream = lambda path, **k: seen.append(path) or prs
+        out = sa.detect_stuck_lint_repair()
+        self.assertIn(f"head=TauCetiProject:{sa.LINT_REPAIR_BRANCH}", seen[0])
+        return out
+
+    def test_an_old_repair_pr_alerts(self):
+        alerts = self.detect([self.pr(7, sa.LINT_REPAIR_STUCK_HOURS + 1)])
+        self.assertEqual([a["key"] for a in alerts], ["stuck-lint-repair/7"])
+        self.assertIn("/pull/7", alerts[0]["body"])
+
+    def test_a_young_repair_pr_does_not(self):
+        self.assertEqual(self.detect([self.pr(7, 1)]), [])
+
+    def test_the_detector_and_scheduler_are_registered(self):
+        self.assertIn("lint-full.yml", sa.SCHEDULERS)
+        self.assertEqual(sa.key_prefix("stuck-lint-repair/7"), "stuck-lint-repair")
+
+
 if __name__ == "__main__":
     unittest.main()

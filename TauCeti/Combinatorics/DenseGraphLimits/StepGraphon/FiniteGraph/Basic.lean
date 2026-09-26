@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
+public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
+public import Mathlib.Probability.UniformOn
 
 /-!
 # A finite graph as a graphon
@@ -42,6 +44,8 @@ and measurability is a composition through the countable discrete space `ℕ × 
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.finiteGraphGraphon` — the graphon of a finite graph.
+* `TauCeti.DenseGraphLimits.finiteGraphGraphonOnFin` — the same graph on the uniform finite
+  carrier.
 
 ## Main results
 
@@ -53,6 +57,8 @@ and measurability is a composition through the countable discrete space `ℕ × 
   `TauCeti.DenseGraphLimits.finiteGraphGraphon_apply_of_not_adj`,
   `TauCeti.DenseGraphLimits.finiteGraphGraphon_apply_of_cellIdx_eq` — the value in terms of the
   adjacency of `G` itself, on `Fin m`;
+* `TauCeti.DenseGraphLimits.finiteGraphGraphon_eq_comap` — the unit-interval graphon is the
+  pullback of the uniform finite-carrier graphon;
 * `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility.
 
 ## References
@@ -68,7 +74,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti.unitInterval
+open MeasureTheory ProbabilityTheory TauCeti.unitInterval
 
 open scoped unitInterval
 
@@ -156,6 +162,32 @@ theorem finiteGraphGraphon_apply_fin (G : SimpleGraph (Fin m)) [DecidableRel G.A
     (hm : 0 < m) (x y : I) : finiteGraphGraphon G x y =
       if G.Adj ⟨cellIdx m x, cellIdx_lt hm x⟩ ⟨cellIdx m y, cellIdx_lt hm y⟩ then 1 else 0 :=
   finiteGraphGraphon_apply_of_cellIdx_eq rfl rfl
+
+open scoped Classical in
+/-- A graph on `Fin m` as a graphon on its uniform finite carrier. -/
+def finiteGraphGraphonOnFin [NeZero m] (G : SimpleGraph (Fin m)) :
+    Graphon (Fin m) (uniformOn Set.univ) :=
+  Graphon.ofMatrix _ (fun i j => if G.Adj i j then 1 else 0) fun i j => by
+    simp only [G.adj_comm]
+
+open scoped Classical in
+/-- The uniform finite-carrier graphon is the adjacency indicator of `G`. -/
+@[simp]
+theorem finiteGraphGraphonOnFin_apply [NeZero m] (G : SimpleGraph (Fin m)) (i j : Fin m) :
+    finiteGraphGraphonOnFin G i j = if G.Adj i j then 1 else 0 := by
+  simp [finiteGraphGraphonOnFin, apply_ite Subtype.val]
+
+open scoped Classical in
+/-- The graphon of a finite graph is the pullback of its uniform-carrier graphon along the cells of
+the unit interval. -/
+theorem finiteGraphGraphon_eq_comap [NeZero m] (G : SimpleGraph (Fin m)) :
+    finiteGraphGraphon G =
+      (finiteGraphGraphonOnFin G).comap (cellFin m) measurable_cellFin volume := by
+  ext x y
+  have hcell : ∀ z : I, cellFin m z = ⟨cellIdx m z, cellIdx_lt (NeZero.pos m) z⟩ := fun z =>
+    Fin.ext (coe_cellFin z)
+  rw [finiteGraphGraphon_apply_fin G (NeZero.pos m), Graphon.comap_apply,
+    finiteGraphGraphonOnFin_apply, hcell, hcell]
 
 variable {V : Type*} [Fintype V]
 

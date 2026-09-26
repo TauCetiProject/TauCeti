@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import TauCeti.NumberTheory.HeckeRing.One
 
+import TauCeti.GroupTheory.Coset.Basic
+
 /-!
 # Hecke rings: associativity
 
@@ -118,11 +120,8 @@ for each `i` separately rather than summed over a finite index. -/
 private lemma exists_out_smul_eq {H₁ H₂ : Subgroup G} (k : G) (u : H₁)
     (i : DecompQuotient H₁ H₂ k) :
     ∃ c : H₁, ((u • i).out : G) = (u : G) * (i.out : G) * (c : G) ∧ k⁻¹ * (c : G) * k ∈ H₂ := by
-  refine ⟨(u * i.out)⁻¹ * (u • i).out, ?_, conj_mem_of_mk_eq k ?_⟩
-  · rw [← Subgroup.coe_mul, ← Subgroup.coe_mul, mul_inv_cancel_left]
-  · refine Eq.trans ?_ (QuotientGroup.out_eq' _).symm
-    rw [← smul_eq_mul]
-    exact MulAction.Quotient.mk_smul_out _ u i
+  refine ⟨(u * i.out)⁻¹ * (u • i).out, ?_, conj_mem_of_mk_eq k (QuotientGroup.mk_out_smul u i).symm⟩
+  rw [← Subgroup.coe_mul, ← Subgroup.coe_mul, mul_inv_cancel_left]
 
 /-- Shimura's multiplicity is invariant under left translation of the target by `Γ₁`.
 

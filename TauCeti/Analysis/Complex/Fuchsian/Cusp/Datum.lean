@@ -207,6 +207,19 @@ theorem isCuspPoint : Γ.IsCuspPoint D.cusp :=
   isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
     ⟨D.generator, D.generator_mem_stabilizer, D.isParabolic_generator⟩
 
+/-- The cusp orbit represented by a cusp datum. -/
+noncomputable def cuspOrbit : Γ.CuspOrbit :=
+  Γ.cuspOrbitMk ⟨D.cusp, mem_cuspPoints.mpr D.isCuspPoint⟩
+
+@[simp]
+theorem cuspOrbit_val : (D.cuspOrbit : Γ.BoundaryOrbit) = Quotient.mk'' D.cusp :=
+  cuspOrbitMk_val _
+
+/-- Two cusp data represent the same cusp orbit exactly when their cusps are `Γ`-equivalent. -/
+theorem cuspOrbit_eq_iff (D' : Γ.CuspDatum) :
+    D.cuspOrbit = D'.cuspOrbit ↔ D.cusp ∈ orbit Γ D'.cusp :=
+  cuspOrbitMk_eq_iff _ _
+
 /-- The stabilizer of the cusp consists of the integer powers of the selected generator. -/
 theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ, D.generator ^ n = g := by
   rw [← D.zpowers_generator, mem_zpowers_iff]
@@ -286,5 +299,22 @@ theorem IsCuspPoint.exists_cuspDatum_cusp_eq [DiscreteTopology Γ] {c : OnePoint
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) c ∞
   obtain ⟨D, hD, -⟩ := hc.exists_cuspDatum hσ
   exact ⟨D, hD⟩
+
+/-- Every cusp orbit of a discrete subgroup of `PSL(2, ℝ)` is represented by a cusp datum. -/
+theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :
+    Function.Surjective (CuspDatum.cuspOrbit (Γ := Γ)) := by
+  intro C
+  obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+  obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.2).exists_cuspDatum_cusp_eq
+  exact ⟨D, Subtype.ext (by simp [hD])⟩
+
+/-- A chosen normalized cusp datum representing a cusp orbit of a discrete group. -/
+noncomputable def CuspOrbit.cuspDatum [DiscreteTopology Γ] (C : Γ.CuspOrbit) : Γ.CuspDatum :=
+  (CuspDatum.cuspOrbit_surjective C).choose
+
+@[simp]
+theorem CuspOrbit.cuspOrbit_cuspDatum [DiscreteTopology Γ] (C : Γ.CuspOrbit) :
+    C.cuspDatum.cuspOrbit = C :=
+  (CuspDatum.cuspOrbit_surjective C).choose_spec
 
 end Subgroup

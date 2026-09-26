@@ -41,6 +41,8 @@ defect ideal they assemble into, and its class in `ClassGroup O` are not defined
 
 ## Main results
 
+* `WeierstrassCurve.count_span_Δ_eq_ord_Δ`: the exponent of a prime in the discriminant
+  ideal is the additive valuation of the discriminant.
 * `WeierstrassCurve.count_span_Δ_eq_localMinimalDiscriminantValuation`: at a prime where the
   equation is minimal, the exponent of `𝔭ᵥ` in `(Δ W)` is `v (Δ_min,ᵥ)`.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_le_count_span_Δ`: for an integral equation
@@ -100,6 +102,17 @@ private theorem valuation_Δ_eq_exp_neg_count (v : HeightOneSpectrum O) {W : Wei
     v.valuation K W.Δ = WithZero.exp
       (-((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors : ℤ)) := by
   rw [← hd, valuation_of_algebraMap, v.intValuation_if_neg (ne_zero_of_algebraMap_eq_Δ hd)]
+
+/-- **The exponent of `𝔭ᵥ` in the discriminant ideal is the additive valuation of the
+discriminant.** This is the bridge between unique factorisation of the principal ideal `(d)` and
+the order function used by the local obstruction exponent. -/
+theorem count_span_Δ_eq_ord_Δ (W : WeierstrassCurve K) (v : HeightOneSpectrum O)
+    [W.IsElliptic] {d : O} (hd : algebraMap O K d = W.Δ) :
+    ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors : ℤ) =
+      (v.valuation K).ord W.Δ := by
+  symm
+  exact (Valuation.ord_eq_iff_valuation_eq_exp_neg _ W.isUnit_Δ.ne_zero).2
+    (valuation_Δ_eq_exp_neg_count v hd)
 
 /-- **At a prime where the equation is minimal, the exponent of `𝔭ᵥ` in the discriminant is
 `v (Δ_min,ᵥ)`.** Here `d` is a global integral representative of `Δ W`, supplied separately by
@@ -194,6 +207,14 @@ theorem count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation
     minimalDiscriminantIdeal, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors O) K le_rfl]
   simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
   exact FractionalIdeal.count_finprod K v _ hexp
+
+/-- The defining prime-power factorisation of the minimal discriminant ideal. Outside this module
+the body of `minimalDiscriminantIdeal` is not exposed, so this is the interface for unfolding
+it. -/
+theorem minimalDiscriminantIdeal_def (W : WeierstrassCurve K) [W.IsElliptic] :
+    minimalDiscriminantIdeal O W = ∏ᶠ v : HeightOneSpectrum O,
+      v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
+  rw [minimalDiscriminantIdeal]
 
 variable {O}
 

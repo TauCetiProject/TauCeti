@@ -12,6 +12,9 @@ public import TauCeti.Algebra.CentralSimple.Degree
 -- `Mathlib.Algebra.Quaternion` is imported publicly because `ℍ[ℝ]` occurs in the statement of the
 -- classification.
 public import Mathlib.Algebra.Quaternion
+-- `Mathlib.Basic.Real.Basic` is imported publicly because `ℝ` is the base field of every statement
+-- below: `Mathlib.Algebra.Quaternion` supplies `ℍ[·]` over an arbitrary base but not `ℝ` itself.
+public import Mathlib.Basic.Real.Basic
 -- Non-public: the maximal subfield supplying the degree bound
 -- (`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`), the quaternion basis that builds
 -- the isomorphism (`QuaternionAlgebra.Basis`), and the classification of the algebraic extensions

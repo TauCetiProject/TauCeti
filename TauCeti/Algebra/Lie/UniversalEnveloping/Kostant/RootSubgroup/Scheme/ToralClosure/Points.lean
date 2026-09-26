@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Presentation
 
 /-!
 # Points of the toral Kostant closure
@@ -50,9 +51,7 @@ generation theorem and is not asserted here.
 
 The construction is the pointwise face of the split torus and root-subgroup carrier in the
 Chevalley--Demazure construction; see J. E. Humphreys, *Linear Algebraic Groups*, §26, and
-R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1. It advances "The
-Chevalley--Demazure construction" and "Points over an algebraically closed field" targets in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
+R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 -/
 
 public section
@@ -61,7 +60,7 @@ open CategoryTheory TensorProduct WithConv
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v w
+universe u v w v'
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -191,6 +190,44 @@ theorem coe_kostantToralWeightTorusPoints (A : Type v) [CommRing A] (s : κ → 
       kostantTorusMatrix M b wt s := by
   rw [kostantToralWeightTorusPoints]
   rfl
+
+/-- The integral-points presentation of the toral Kostant closure. -/
+noncomputable abbrev kostantToralPointsPresentation (A : Type v) [CommRing A] :
+    GeneralLinear.IntegralPointsPresentation n
+      (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A :=
+  ⟨kostantToralPointsSubgroup e h ρ M hM hnil b wt A,
+    kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A⟩
+
+/-- The presented toral-closure root point is natural in the value ring. -/
+@[simp]
+theorem map_kostantToralRootSubgroupPoints
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (i : I) (u : Multiplicative A) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A u) =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i B
+        (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_kostantToralRootSubgroupPoints, coe_kostantToralRootSubgroupPoints,
+    map_kostantRootSubgroupMatrix,
+    AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
+
+/-- The presented toral-closure weight-torus point is natural in the value ring. -/
+@[simp]
+theorem map_kostantToralWeightTorusPoints
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (s : κ → Aˣ) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s) =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt B
+        (fun i ↦ Units.map (f : A →* B) (s i)) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_kostantToralWeightTorusPoints, coe_kostantToralWeightTorusPoints]
+  exact map_kostantTorusMatrix (M := M) (b := b) (wt := wt) f s
 
 /-- The pinning equation in the matrix-valued points of the toral Kostant closure. If `e i` has
 Cartan weight `α`, conjugation by the weight-torus point `s` rescales the root-subgroup

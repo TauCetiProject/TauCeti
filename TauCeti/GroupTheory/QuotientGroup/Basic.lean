@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # Left translation on a coset space
@@ -36,12 +37,15 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
+* `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
 * `TauCeti.quotientBot_smul_eq_self_iff`: a group element fixes a coset of the trivial subgroup
   only when it is the identity.
 * `Subgroup.sum_eq_sum_leftCosets` and `Subgroup.sum_eq_sum_rightCosets`: split a finite sum
   along the left or right cosets of a subgroup.
+* `QuotientGroup.eq_subgroupOf`: two elements of a subgroup `H` lie in the same left coset of
+  `N.subgroupOf H` exactly when they lie in the same left coset of `N`.
 -/
 
 public section
@@ -49,9 +53,21 @@ public section
 open MulAction
 open scoped Pointwise
 
+-- Mathlib's `Subgroup.quotientEquivOfEq_mk` (a `rfl` lemma) is not a `simp` lemma. With it, `simp`
+-- carries the class of a representative across an equality of subgroups.
+attribute [simp] Subgroup.quotientEquivOfEq_mk
+
 namespace TauCeti
 
 variable {G : Type*} [Group G]
+
+/-- An element of a normal subgroup `N` fixes every coset of `N`. -/
+@[simp]
+theorem smul_quotient_eq_self_of_mem {N : Subgroup G} [N.Normal] {γ : G} (hγ : γ ∈ N)
+    (u : G ⧸ N) : γ • u = u := by
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective u
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.mk_mul,
+    (QuotientGroup.eq_one_iff γ).2 hγ, one_mul]
 
 /-- The stabilizer of the coset `sH`, for the translation action of `G` on `G ⧸ H`, is the
 conjugate subgroup `sHs⁻¹`.  This is Mathlib's `MulAction.stabilizer_quotient` transported off the
@@ -110,16 +126,19 @@ theorem quotientBot_smul_eq_self_iff (g : G) (q : G ⧸ (⊥ : Subgroup G)) :
   · rintro rfl
     exact one_smul _ _
 
+/-- Two elements of a subgroup `H` lie in the same left coset of `N.subgroupOf H` exactly when they
+lie in the same left coset of `N`. -/
+theorem _root_.QuotientGroup.eq_subgroupOf {H N : Subgroup G} {x y : H} :
+    (QuotientGroup.mk x : H ⧸ N.subgroupOf H) = QuotientGroup.mk y ↔
+      ((x : G) : G ⧸ N) = ((y : G) : G ⧸ N) := by
+  rw [QuotientGroup.eq, QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul,
+    Subgroup.coe_inv]
+
 section Finite
 
+attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
+
 variable {M : Type*} [AddCommMonoid M] [Fintype G] (H : Subgroup G)
-
-/-- A subgroup of a finite group is a finite type. -/
-noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
-
-/-- The quotient of a finite group by a subgroup is a finite type. -/
-noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
-  H.fintypeQuotientOfFiniteIndex
 
 /-- Every element of a finite group `G` is uniquely the product of the `Quotient.out`
 representative of a left coset of `H` and an element of `H`. -/

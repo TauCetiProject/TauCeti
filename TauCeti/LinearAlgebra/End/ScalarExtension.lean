@@ -62,8 +62,7 @@ value algebras is semilinear over `f`. -/
 theorem rTensor_algHom_smul (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
     LinearMap.rTensor M f.toLinearMap (a • z) =
       f a • LinearMap.rTensor M f.toLinearMap z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul x m => simp [TensorProduct.smul_tmul', smul_eq_mul, map_mul]
   | add x y hx hy => simp [smul_add, hx, hy]
 
@@ -75,13 +74,11 @@ private theorem distribBaseChange_symm_rTensor_tmul
         (LinearMap.rTensor M f.toLinearMap u ⊗ₜ[B] LinearMap.rTensor N f.toLinearMap v) =
       LinearMap.rTensor (M ⊗[R] N) f.toLinearMap
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm (u ⊗ₜ[A] v)) := by
-  induction u using TensorProduct.induction_on with
-  | zero => simp
+  induction u using TensorProduct.inductionOn with
   | add u₁ u₂ hu₁ hu₂ =>
       simp only [map_add, TensorProduct.add_tmul, hu₁, hu₂]
   | tmul a m =>
-      induction v using TensorProduct.induction_on with
-      | zero => simp
+      induction v using TensorProduct.inductionOn with
       | add v₁ v₂ hv₁ hv₂ =>
           simp only [map_add, TensorProduct.tmul_add, hv₁, hv₂]
       | tmul b n =>
@@ -280,13 +277,11 @@ theorem distribBaseChange_comp_mapValue (f : A →ₐ[R] B)
         (TensorProduct.AlgebraTensorModule.distribBaseChange R B M N).symm.toLinearMap := by
   apply TensorProduct.AlgebraTensorModule.ext
   intro x y
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
       simp only [TensorProduct.add_tmul, map_add, hx₁, hx₂]
   | tmul b m =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ hy₁ hy₂ =>
           simp only [TensorProduct.tmul_add, map_add, hy₁, hy₂]
       | tmul c n =>

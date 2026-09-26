@@ -160,7 +160,7 @@ noncomputable def permutationModuleSingletonSecondRowEquivProd (n : ℕ) :
         (standardRepresentation ℚ (Fin (n + 2)))) :=
   (Representation.equivOfIso (permutationModuleSingletonSecondRowIso n)).trans
     ((ofMulActionEquivProdAugmentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))
-        (by rw [Fintype.card_fin]; positivity)).trans
+        (by rw [isUnit_iff_ne_zero, Fintype.card_fin]; positivity)).trans
       (Representation.Equiv.mk (LinearEquiv.refl ℚ _) fun g => by
         rw [toRepresentation_augmentationSubrepresentation]
         simp))
@@ -176,7 +176,7 @@ theorem permutationModuleSingletonSecondRowEquivProd_apply (n : ℕ)
     (v : (permutationModule (Nat.Partition.singletonSecondRow n)).V) :
     permutationModuleSingletonSecondRowEquivProd n v =
       ofMulActionEquivProdAugmentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))
-        (by rw [Fintype.card_fin]; positivity)
+        (by rw [isUnit_iff_ne_zero, Fintype.card_fin]; positivity)
         ((permutationModuleSingletonSecondRowIso n).hom.hom v) :=
   -- `(rfl)`, not `rfl`: the body of `permutationModuleSingletonSecondRowEquivProd` is not
   -- `@[expose]`d, so this must not be inferred `@[defeq]`.
@@ -200,7 +200,7 @@ theorem permutationModuleSingletonSecondRowEquivProd_symm_apply (n : ℕ)
   have hcomp : (permutationModuleSingletonSecondRowEquivProd n).symm v =
       (permutationModuleSingletonSecondRowIso n).inv.hom
         ((ofMulActionEquivProdAugmentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))
-          (by rw [Fintype.card_fin]; positivity)).symm v) := (rfl)
+          (by rw [isUnit_iff_ne_zero, Fintype.card_fin]; positivity)).symm v) := (rfl)
   rw [hcomp, ofMulActionEquivProdAugmentation_symm_apply]
 
 /-- **The character of `M^{(n+1,1)}` is `1` plus the character of the standard representation.**

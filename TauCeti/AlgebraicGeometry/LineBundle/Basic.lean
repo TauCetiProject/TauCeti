@@ -28,7 +28,10 @@ over an arbitrary site. This file only packages it over a scheme:
 * `InvertibleSheaf.free X I` is the free sheaf on an indexing type with exactly one element, and
   `InvertibleSheaf.trivial X` is the globally free rank-one sheaf;
 * `SheafOfModules.isInvertible_unit` records that the structure sheaf `𝒪_X`, as a sheaf of
-  modules over itself, is invertible.
+  modules over itself, is invertible;
+* `SheafOfModules.isInvertible_iff_exists_isOpenCover` characterizes invertible sheaves on a
+  scheme as those whose restrictions to the open subschemes of some open cover are isomorphic to
+  the structure sheaves of those open subschemes.
 
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
@@ -137,6 +140,39 @@ noncomputable def unitIsoRestrict
     (AlgebraicGeometry.Scheme.Modules.overFunctorEquiv U).app M
 
 end SheafOfModules.LocalTrivializations
+
+namespace AlgebraicGeometry.SheafOfModules
+
+open _root_.AlgebraicGeometry TopologicalSpace
+
+universe u
+
+variable {X : Scheme.{u}} {M : X.Modules}
+
+/-- A sheaf of modules on a scheme is invertible exactly when an open cover of the scheme
+trivializes it: on every member `W` of the cover, its restriction to the open subscheme `W` is
+isomorphic to the structure sheaf `𝒪_W`. -/
+theorem isInvertible_iff_exists_isOpenCover :
+    isInvertible X M ↔ ∃ (ι : Type u) (W : ι → X.Opens), IsOpenCover W ∧
+      ∀ i, Nonempty (_root_.SheafOfModules.unit (W i : Scheme).ringCatSheaf ≅
+        M.restrict (W i).ι) := by
+  constructor
+  · intro hM
+    let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
+    exact ⟨t.I, t.X, (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop,
+      fun i ↦ ⟨TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict (t.iso i)⟩⟩
+  · rintro ⟨ι, W, hW, e⟩
+    -- On each `W i`, transport the trivialization `𝒪_{W i} ≅ M|_{W i}` of `(W i).toScheme`-modules
+    -- back to the slice site over `W i` along the equivalence `Scheme.Modules.overEquiv`.
+    exact TauCeti.SheafOfModules.LocalTrivializations.isInvertible (M := M)
+      { I := ι
+        X := W
+        coversTop := (Opens.coversTop_iff (X : Type u) W).mpr hW
+        iso i := TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (W i)) ≪≫
+          (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
+            ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm) }
+
+end AlgebraicGeometry.SheafOfModules
 
 end TauCeti
 

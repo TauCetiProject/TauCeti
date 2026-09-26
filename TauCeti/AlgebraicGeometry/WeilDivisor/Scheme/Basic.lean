@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 
@@ -22,9 +23,9 @@ with finite support entirely in codimension one, and
 `SchemeWeilDivisor.equivFiniteCodimensionOneCycles` identifies the two descriptions.
 
 The coefficient, support, effectivity, and point-divisor API is inherited directly from
-`WeilDivisor`; no scheme-specific copies of those declarations are introduced. The one fact
-recorded here about the points themselves is `CodimensionOnePoint.eq_of_specializes`: a
-codimension-one point has no codimension-one generization other than itself.
+`WeilDivisor`; no scheme-specific copies of those declarations are introduced. The
+codimension-one points themselves are supplied by
+`TauCeti.AlgebraicGeometry.CodimensionOnePoint`.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve:
 Weil divisors `⊕_x ℤ`", by supplying the scheme-theoretic codimension-one specialization needed
@@ -40,22 +41,6 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 universe u
-
-/-- A codimension-one point of a scheme. Such a point is the generic point of a prime divisor. -/
-abbrev CodimensionOnePoint (X : Scheme.{u}) : Type u :=
-  {x : X // coheight x = 1}
-
-/-- A codimension-one point admits no codimension-one generization other than itself: a strict
-generization has strictly smaller coheight, and both points have coheight one. -/
-lemma CodimensionOnePoint.eq_of_specializes {X : Scheme.{u}} {x y : CodimensionOnePoint X}
-    (h : (y : X) ⤳ (x : X)) : y = x := by
-  by_contra hne
-  have hne' : (x : X) ≠ (y : X) := fun hxy ↦ hne (Subtype.ext hxy.symm)
-  have hlt : (x : X) < (y : X) :=
-    ⟨h, fun hxy ↦ hne' (Inseparable.eq (inseparable_iff_specializes_and.mpr ⟨hxy, h⟩))⟩
-  have hy := Order.coheight_strictAnti hlt (by simp [y.property])
-  rw [x.property, y.property] at hy
-  exact absurd hy (lt_irrefl 1)
 
 /-- A Weil divisor on a scheme is a finite formal integer sum of its codimension-one points. -/
 abbrev SchemeWeilDivisor (X : Scheme.{u}) : Type u :=

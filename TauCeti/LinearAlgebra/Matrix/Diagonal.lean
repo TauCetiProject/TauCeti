@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -55,7 +56,7 @@ theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
 section Commute
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsCancelMulZero k]
+variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
 
 /-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
 matrix separates the coordinates `i` and `j`. -/
@@ -75,3 +76,22 @@ theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
 end Commute
 
 end TauCeti
+
+namespace Module.Basis
+
+/-- A map diagonal on a basis has that diagonal matrix in the basis coordinates. -/
+theorem toMatrix_eq_diagonal_of_basis
+    {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (f : M →ₗ[R] M) (c : ι → R)
+    (hf : ∀ i, f (b i) = c i • b i) :
+    LinearMap.toMatrix b b f = Matrix.diagonal c := by
+  ext i j
+  simp only [LinearMap.toMatrix_apply, hf, map_smul, Module.Basis.repr_self,
+    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, Matrix.diagonal_apply]
+  by_cases h : i = j
+  · subst j
+    simp
+  · simp [h, Ne.symm h]
+
+end Module.Basis

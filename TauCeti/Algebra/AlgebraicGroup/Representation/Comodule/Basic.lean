@@ -356,8 +356,7 @@ private theorem counit_rTensor_universalGeneratorDown
         Coalgebra.counit.rTensor V
           (TensorProduct.map ULift.algEquiv.toLinearMap LinearMap.id z) := by
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add z t hz ht => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hz ht
     | tmul a n =>
         rw [GeneralLinear.scalarExtensionMap_tmul]
@@ -522,8 +521,7 @@ private theorem liftTensorSquare_iterated_tmul
       liftedIncludeRightAlgHom (R := R) (H := H) V a •
         GeneralLinear.scalarExtensionMap (V := V)
           (CommAlgCat.ofHom (liftedIncludeLeftAlgHom (R := R) (H := H) V)) z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z t hz ht =>
       simpa only [map_add, TensorProduct.add_tmul, smul_add] using
         congrArg₂ (fun x y ↦ x + y) hz ht
@@ -569,8 +567,7 @@ private theorem recoveredCoaction_iterate_eq_include_actions
           (GeneralLinear.scalarExtensionMap (V := V)
             (CommAlgCat.ofHom (liftedIncludeRightAlgHom (R := R) (H := H) V)) z) := by
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add z w hz hw => simpa only [map_add] using congrArg₂ (fun p q ↦ p + q) hz hw
     | tmul a n =>
         rw [GeneralLinear.scalarExtensionMap_tmul]
@@ -589,8 +586,7 @@ private theorem scalarExtensionMap_comul_eq_liftTensorSquare
       liftTensorSquare (R := R) (H := H) (V := V)
         (Coalgebra.comul.rTensor V
           (TensorProduct.map ULift.algEquiv.toLinearMap LinearMap.id z)) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z t hz ht => simpa only [map_add] using congrArg₂ (fun x y ↦ x + y) hz ht
   | tmul a n =>
       rw [GeneralLinear.scalarExtensionMap_tmul, ofHom_liftedComul_apply,
@@ -708,8 +704,7 @@ theorem toComodule_ofComodule (rho : Comodule R H V) :
   apply LinearMap.ext
   intro v
   rw [toComodule_coact_apply, ofComodule_action_universal_one_tmul]
-  induction rho.coact v using TensorProduct.induction_on with
-  | zero => simp
+  induction rho.coact v using TensorProduct.inductionOn with
   | add z t hz ht => simpa only [map_add] using congrArg₂ (fun x y ↦ x + y) hz ht
   | tmul n h =>
       simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.comm_tmul]
@@ -745,8 +740,7 @@ theorem ofComodule_toComodule
     rw [ofComodule_action_universal_one_tmul, toComodule_coact_apply]
     induction (Theta.action (CommAlgCat.of R (ULift.{max u v w} H))
         (toConv ULift.algEquiv.symm.toAlgHom)).val (1 ⊗ₜ[R] v)
-        using TensorProduct.induction_on with
-    | zero => simp
+        using TensorProduct.inductionOn with
     | add z t hz ht => simpa only [map_add] using congrArg₂ (fun x y ↦ x + y) hz ht
     | tmul h n =>
         simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.comm_tmul]

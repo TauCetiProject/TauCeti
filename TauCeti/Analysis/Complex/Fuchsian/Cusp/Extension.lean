@@ -78,6 +78,11 @@ value at zero is Mathlib's `limUnder` extension. -/
 def cuspExtension (D : Γ.CuspDatum) (f : ℍ → ℂ) : ℂ → ℂ :=
   UpperHalfPlane.cuspFunction D.width fun z ↦ f (D.scaling⁻¹ • z)
 
+/-- The cusp extension is Mathlib's periodic cusp function applied after inverse scaling. -/
+theorem cuspExtension_def (D : Γ.CuspDatum) (f : ℍ → ℂ) :
+    cuspExtension D f =
+      UpperHalfPlane.cuspFunction D.width fun z ↦ f (D.scaling⁻¹ • z) := (rfl)
+
 /-- An invariant function is recovered by evaluating its cusp extension in the normalized
 q-coordinate. -/
 @[simp]

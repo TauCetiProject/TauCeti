@@ -267,6 +267,11 @@ theorem coe_mob01 (z : ThricePuncturedSphere) : (mob01 z : ℂ) = 1 - z := by
 theorem mob01_mob01 (z : ThricePuncturedSphere) : mob01 (mob01 z) = z :=
   Subtype.ext (by simp)
 
+/-- `mob01` is its own inverse. -/
+@[simp]
+theorem symm_mob01 : mob01.symm = mob01 :=
+  Homeomorph.ext fun z ↦ mob01.symm_apply_eq.mpr (mob01_mob01 z).symm
+
 end ThricePuncturedSphere
 
 end TauCeti

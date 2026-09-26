@@ -81,7 +81,9 @@ theorem wassersteinEDist_map_le_mul_eLpNorm
         simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd]
       rw [eLpNorm_map_measure hdY.aestronglyMeasurable (hf.prodMap hf).aemeasurable, hcomp]
     _ ≤ K * eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π := by
-      apply eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul'
+      have hmeas : Measurable fun z : X × X ↦ edist (f z.1) (f z.2) :=
+        hdY.comp (hf.prodMap hf)
+      apply eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul' hmeas.aestronglyMeasurable
       exact .of_forall fun z ↦ by
         simpa only [enorm_eq_self, ENNReal.smul_def] using hLip.edist_le_mul z.1 z.2
 
@@ -274,7 +276,8 @@ theorem wassersteinEDist_map_prod_le (hdX : Measurable fun z : X × X ↦ edist 
         wassersteinEDist_le (hπ.map_prod η hf hf) p
     _ ≤ eLpNorm (fun w : (X × X) × H ↦ edist w.1.1 w.1.2) p (π.prod η) := by
         rw [eLpNorm_map_measure hdY.aestronglyMeasurable hg.aemeasurable]
-        exact eLpNorm_mono_enorm fun w ↦ by
+        exact eLpNorm_mono_enorm
+          ((hdY.comp hg).aestronglyMeasurable (μ := π.prod η)) fun w ↦ by
           simpa only [Function.comp_apply, enorm_eq_self, ENNReal.coe_one, one_mul] using
             (hfi w.2).edist_le_mul w.1.1 w.1.2
     _ = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π :=

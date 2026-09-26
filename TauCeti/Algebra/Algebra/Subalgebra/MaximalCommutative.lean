@@ -96,8 +96,8 @@ theorem centralizer_eq_self_of_forall_finrank_le {L : Subalgebra K A} [IsMulComm
   refine le_antisymm (fun x hx ↦ ?_)
     (fun y hy ↦ (Subalgebra.mem_centralizer_iff K).2 fun z hz ↦ setLike_mul_comm hz hy)
   -- The elements of `insert x L` commute pairwise.
-  have hcomm : ∀ a ∈ insert x (L : Set A), ∀ b ∈ insert x (L : Set A), a * b = b * a := by
-    rintro a (rfl | ha) b (rfl | hb)
+  have hcomm : (insert x (L : Set A)).Pairwise Commute := by
+    rintro a (rfl | ha) b (rfl | hb) -
     · rfl
     · exact ((Subalgebra.mem_centralizer_iff K).1 hx b hb).symm
     · exact (Subalgebra.mem_centralizer_iff K).1 hx a ha

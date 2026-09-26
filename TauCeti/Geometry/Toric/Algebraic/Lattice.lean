@@ -121,7 +121,7 @@ theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
 theorem IsIntegralLattice.span_range_eq_top (h : IsIntegralLattice i) :
     Submodule.span ℝ (Set.range i) = ⊤ := by
   refine top_unique fun v _ ↦ ?_
-  refine h.isBaseChange.inductionOn v _ (Submodule.zero_mem _)
+  exact h.isBaseChange.inductionOn v
     (fun n ↦ Submodule.subset_span ⟨n, rfl⟩) (fun r _ hn ↦ Submodule.smul_mem _ r hn)
     (fun _ _ h₁ h₂ ↦ Submodule.add_mem _ h₁ h₂)
 

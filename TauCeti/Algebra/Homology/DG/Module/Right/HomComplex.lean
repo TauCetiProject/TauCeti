@@ -225,6 +225,17 @@ theorem dgRightModuleHomComplex_d (hM : IsDGRightModule h ℳ dM)
       ModuleCat.ofHom (dgRightModuleCochains.differential (hM := hM) (hN := hN) p) := by
   apply CochainComplex.of_d
 
+/-- The differential of the Hom complex, evaluated on a homogeneous cochain, is the graded
+commutator with the module differentials. -/
+@[simp↓]
+theorem dgRightModuleHomComplex_d_apply (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN) (p : ℤ) (f : (dgRightModuleHomComplex hM hN).X p) :
+    ((dgRightModuleHomComplex hM hN).d p (p + 1)).hom f =
+      dgRightModuleCochains.differential (hM := hM) (hN := hN) p f := by
+  rw [dgRightModuleHomComplex_d]
+  exact LinearMap.congr_fun
+    (ModuleCat.hom_ofHom (dgRightModuleCochains.differential (hM := hM) (hN := hN) p)) f
+
 /-- Closed degree-zero cochains in the Hom complex are exactly morphisms of differential graded
 right modules. -/
 def dgRightModuleHomEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
@@ -298,5 +309,23 @@ theorem dgRightModuleHomLinearEquivZeroCocycles_toEquiv (hM : IsDGRightModule h 
     (hN : IsDGRightModule h ℳN dN) :
     (dgRightModuleHomLinearEquivZeroCocycles hM hN).toEquiv =
       dgRightModuleHomEquivZeroCocycles hM hN := (rfl)
+
+/-- The zero-cocycle associated linearly to a DG right-module morphism has the same underlying
+map. -/
+@[simp]
+theorem dgRightModuleHomLinearEquivZeroCocycles_apply (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN) (f : DGRightModuleHom hM hN) (x : M) :
+    ((dgRightModuleHomLinearEquivZeroCocycles hM hN f).1.1 : M →ₗ[Aᵐᵒᵖ] N) x = f x :=
+  (rfl)
+
+/-- The DG right-module morphism associated linearly to a zero-cocycle has the same underlying
+map. -/
+@[simp]
+theorem dgRightModuleHomLinearEquivZeroCocycles_symm_apply (hM : IsDGRightModule h ℳ dM)
+    (hN : IsDGRightModule h ℳN dN)
+    (f : LinearMap.ker
+      (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0)) (x : M) :
+    (dgRightModuleHomLinearEquivZeroCocycles hM hN).symm f x = (f.1.1 : M →ₗ[Aᵐᵒᵖ] N) x :=
+  (rfl)
 
 end TauCeti

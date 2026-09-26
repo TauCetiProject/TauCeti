@@ -55,6 +55,8 @@ extension.
   (Stichtenoth, Definition 3.1.8).
 * `TauCeti.Divisor.conorm_principal`: the conorm of `div z` is the divisor of the image of `z`
   (Stichtenoth, Proposition 3.1.9).
+* `TauCeti.Divisor.conorm_zeros` and `TauCeti.Divisor.conorm_poles`: the conorm of the zero and
+  pole divisors of `z` are those of the image of `z`.
 * `TauCeti.Divisor.conorm_injective`: the conorm is injective.
 * `TauCeti.Divisor.finrank_mul_degree_conorm`: **the degree of a conorm**,
   `[k' : k] · deg (Con D) = [F' : F] · deg D` for an algebraic function field, without a
@@ -371,6 +373,21 @@ theorem conorm_principal (hF : IsFunctionField k F) (hF' : IsFunctionField k' F'
     simp
   rw [coeff_conorm, coeff_principal, coeff_principal, hz,
     Place.ord_algebraMap_restrict k F P' (z : F)]
+
+/-- The conorm of the zero divisor `(z)₀` is the zero divisor of the image of `z` in `F'`. -/
+@[simp]
+theorem conorm_zeros (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z : Fˣ) :
+    conorm k' F' (zeros hF z) = zeros hF' (Units.map (algebraMap F F' : F →* F') z) := by
+  refine WeilDivisor.ext fun P' ↦ ?_
+  rw [coeff_conorm, coeff_zeros, coeff_zeros, Units.coe_map, MonoidHom.coe_coe,
+    Place.ord_algebraMap_restrict k F P' (z : F), mul_max_of_nonneg _ _ (Int.natCast_nonneg _),
+    mul_zero]
+
+/-- The conorm of the pole divisor `(z)_∞` is the pole divisor of the image of `z` in `F'`. -/
+@[simp]
+theorem conorm_poles (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z : Fˣ) :
+    conorm k' F' (poles hF z) = poles hF' (Units.map (algebraMap F F' : F →* F') z) := by
+  rw [poles_eq_zeros_inv, poles_eq_zeros_inv, conorm_zeros k' F' hF hF', map_inv]
 
 /-- The conorm carries principal divisors to principal divisors. -/
 theorem conorm_mem_principalSubgroup (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')

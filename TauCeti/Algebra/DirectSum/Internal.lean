@@ -33,6 +33,9 @@ kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le
 The file also specializes the compactness bound
 `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
+
+Finally, `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition
+to any submodule that contains the canonical components of each of its elements.
 -/
 
 public section
@@ -356,3 +359,27 @@ theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M
   exact (Submodule.Quotient.mk_eq_zero (p := U)).mpr (hc j).1
 
 end TauCeti
+
+namespace DirectSum.IsInternal
+
+/-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
+contains every canonical component of each of its elements, then it is the internal sum of its
+intersections with the original summands. -/
+theorem iSup_inf_eq_of_component_mem
+    {S V κ : Type*} [Semiring S] [AddCommMonoid V] [Module S V] [DecidableEq κ]
+    {A : κ → Submodule S V} (h : DirectSum.IsInternal A) (p : Submodule S V)
+    (hp : ∀ (m : V), m ∈ p → ∀ i,
+      (((LinearEquiv.ofBijective (DirectSum.coeLinearMap A) h).symm m i : A i) : V) ∈ p) :
+    ⨆ i, p ⊓ A i = p := by
+  classical
+  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun m hm ↦ ?_
+  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap A) h
+  have hsum : m = ∑ i ∈ (e.symm m).support, ((e.symm m i : A i) : V) := by
+    conv_lhs => rw [← e.apply_symm_apply m, ← DirectSum.sum_support_of (e.symm m)]
+    rw [map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ DirectSum.coeLinearMap_of A i (e.symm m i)
+  rw [hsum]
+  exact Submodule.sum_mem _ fun i _ ↦
+    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
+
+end DirectSum.IsInternal

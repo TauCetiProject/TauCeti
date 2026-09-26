@@ -59,7 +59,7 @@ cycles; its underlying ideal is two-sided, so the cohomology algebra uses Mathli
 This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 1, item "DG algebras, categories,
 modules, and bimodules", specifically its first request for "cycles, boundaries, and the induced
 graded cohomology algebra".  The induced grading reuses
-`TauCeti.GradedAlgebra.gradedAlgebraGradeQuot` from
+`TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece` from
 `TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient`, whose construction follows Mathlib PR
 [#36501](https://github.com/leanprover-community/mathlib4/pull/36501) by Antoine Chambert-Loir.
 
@@ -202,13 +202,13 @@ theorem isHomogeneous_boundaries (h : IsDGAlgebra 𝒜 d) :
 homogeneous cycles of degree `p`. -/
 noncomputable abbrev cohomologyGrading (h : IsDGAlgebra 𝒜 d) (p : ℤ) :
     Submodule R h.Cohomology :=
-  GradedAlgebra.gradeQuot h.cyclesDeg h.boundaries.asIdeal p
+  GradedAlgebra.quotientPiece h.cyclesDeg h.boundaries.asIdeal p
 
-@[simp]
+/-- A class has degree `p` exactly when it has a homogeneous cycle representative of degree `p`. -/
 lemma mem_cohomologyGrading (h : IsDGAlgebra 𝒜 d) {p : ℤ} {x : h.Cohomology} :
     x ∈ h.cohomologyGrading p ↔
       ∃ z : h.cycles, (z : A) ∈ 𝒜 p ∧ Ideal.Quotient.mk h.boundaries.asIdeal z = x :=
-  (GradedAlgebra.mem_gradeQuot_iff h.cyclesDeg h.boundaries.asIdeal).trans (by
+  (GradedAlgebra.mem_quotientPiece_iff h.cyclesDeg h.boundaries.asIdeal).trans (by
     simp only [h.mem_cyclesDeg])
 
 /-- A cohomology class vanishes exactly when the cycle representing it is a boundary: the kernel
@@ -228,7 +228,7 @@ theorem quotientMk_map_eq_zero (h : IsDGAlgebra 𝒜 d) (a : A) :
 grading on a quotient by a homogeneous ideal. -/
 noncomputable instance instGradedAlgebraCohomologyGrading (h : IsDGAlgebra 𝒜 d) :
     GradedAlgebra h.cohomologyGrading :=
-  GradedAlgebra.gradedAlgebraGradeQuot h.cyclesDeg h.boundaries.asIdeal
+  GradedAlgebra.gradedAlgebraQuotientPiece h.cyclesDeg h.boundaries.asIdeal
     h.isHomogeneous_boundaries
 
 end IsDGAlgebra

@@ -57,8 +57,8 @@ end TauCeti
 
 namespace SubMulAction
 
-/-- A group action remains properly discontinuous on every invariant subspace. -/
-theorem properlyDiscontinuousSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
+/-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
+theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
     [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S where
   finite_disjoint_inter_image {K L} hK hL := by
     refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image

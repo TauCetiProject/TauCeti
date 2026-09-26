@@ -15,9 +15,9 @@ For `H ≤ π₁(X, x₀)`, the orbit quotient `UniversalCover x₀ / H` is a co
 through `UniversalCover.subgroupQuotientProj`. This file computes its deck transformation
 group:
 
-  `Deck (subgroupQuotientProj x₀ H) ≃* N(H) ⧸ H`,
+  `deck (subgroupQuotientProj x₀ H) ≃* N(H) ⧸ H`,
 
-and, when `H` is normal, `Deck (subgroupQuotientProj x₀ H) ≃* π₁(X, x₀) ⧸ H`. Both are the
+and, when `H` is normal, `deck (subgroupQuotientProj x₀ H) ≃* π₁(X, x₀) ⧸ H`. Both are the
 specialisation to the universal cover of
 `TauCeti.Deck.IsQuotientCoveringMap.normalizerQuotientDeckMulEquiv`.
 
@@ -38,9 +38,7 @@ Taking `H = ⊥` recovers the deck group of the universal cover itself; taking `
 
 ## References
 
-This completes the deck-group half of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It consumes the based-path universal cover
-adapted from Kim Morrison's
+It consumes the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), Mathlib's
 quotient-covering-map interface due to Junyan Xu, and the covering-map property of
 `subgroupQuotientProj` proved in
@@ -62,7 +60,7 @@ variable (x₀ : X) (H : Subgroup (FundamentalGroup X x₀))
 def deckSubgroupQuotientProjEquiv :
     (Subgroup.normalizer (H : Set (FundamentalGroup X x₀))) ⧸
         H.subgroupOf (Subgroup.normalizer (H : Set (FundamentalGroup X x₀)))
-      ≃* Deck (subgroupQuotientProj x₀ H) :=
+      ≃* deck (subgroupQuotientProj x₀ H) :=
   Deck.IsQuotientCoveringMap.normalizerQuotientDeckMulEquiv
     (isQuotientCoveringMap (x₀ := x₀)) (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
     (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H)
@@ -95,7 +93,7 @@ theorem deckSubgroupQuotientProjEquiv_mk_symm_apply
 /-- **For a normal subgroup `H ◁ π₁(X, x₀)`, the deck group of the cover attached to `H` is
 `π₁(X, x₀) ⧸ H`**, so that cover is regular. -/
 def deckSubgroupQuotientProjEquivOfNormal [H.Normal] :
-    FundamentalGroup X x₀ ⧸ H ≃* Deck (subgroupQuotientProj x₀ H) :=
+    FundamentalGroup X x₀ ⧸ H ≃* deck (subgroupQuotientProj x₀ H) :=
   Deck.IsQuotientCoveringMap.quotientDeckMulEquivOfNormal
     (isQuotientCoveringMap (x₀ := x₀)) (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
     (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H)

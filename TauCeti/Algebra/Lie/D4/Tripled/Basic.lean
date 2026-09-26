@@ -75,12 +75,14 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 4) (Fin 24) where
   cartanMatrix := CartanMatrix.D 4
   weight := d4TripledWeight
   reflection i := d4TripledReflection i
-  cartanMatrix_isSymm := CartanMatrix.D_isSymm 4
   cartanMatrix_diag i := CartanMatrix.D_diag (n := 4) i
-  cartanMatrix_isSimplyLaced := CartanMatrix.isSimplyLaced_D 4
+  cartanMatrix_offDiag_nonpos := CartanMatrix.D_off_diag_nonpos 4
+  cartanMatrix_zero_comm i j := by rw [(CartanMatrix.D_isSymm 4).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-  weight_reflection := d4TripledWeight_reflection_apply
+  weight_reflection i a j := by
+    rw [(CartanMatrix.D_isSymm 4).apply]
+    exact d4TripledWeight_reflection_apply i a j
   weight_injective := d4TripledWeight_injective
 
 /-- The Cartan matrix of the tripled type-`D₄` weight table is the `D₄` Cartan matrix. -/

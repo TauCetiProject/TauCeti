@@ -77,9 +77,7 @@ theorem mem_range_algebraMap_of_apply_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {
     x ∈ Set.range (algebraMap K L) := by
   rw [IsGalois.mem_range_algebraMap_iff_fixed]
   intro φ
-  rcases algEquiv_eq_one_or_eq K L hσ φ with rfl | rfl
-  · exact AlgEquiv.one_apply x
-  · exact hx
+  rcases algEquiv_eq_one_or_eq K L hσ φ with rfl | rfl <;> simp_all
 
 /-- **A nontrivial automorphism moves every element outside the base field.** The difference
 `σ x - x` is the square root of the discriminant of `x`'s minimal polynomial, so this is exactly
@@ -122,8 +120,7 @@ noncomputable def quadraticCharacter : (L ≃ₐ[K] L) →* ℤˣ where
 theorem quadraticCharacter_eq_one_iff {σ : L ≃ₐ[K] L} :
     quadraticCharacter K L σ = 1 ↔ σ = 1 := by
   classical
-  simp only [quadraticCharacter, MonoidHom.coe_mk, OneHom.coe_mk]
-  split <;> simp_all
+  simp [quadraticCharacter]
 
 /-- Off the identity the quadratic character takes the value `-1`, there being nowhere else to
 go in `ℤˣ`. -/

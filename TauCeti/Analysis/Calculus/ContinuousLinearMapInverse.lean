@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Inverting and differentiating continuous linear maps
@@ -17,9 +18,6 @@ perturbation criterion: a map differing from a continuous linear equivalence `L`
 derivative of a differentiable inverse family of continuous linear maps at an invertible base
 point, including its action on a varying vector; that is the analytic input for differentiating a
 vector-field pullback along a parametric family.
-
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main results
 
@@ -35,10 +33,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
 
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section
@@ -103,34 +97,6 @@ end Perturbation
 
 variable {t₀ : 𝕜} {A : 𝕜 → E →L[𝕜] F} {A' : E →L[𝕜] F} {w : 𝕜 → F} {w' : F}
 
-/-- **Invertibility persists where the inverse family is continuous.** If `A t₀` is invertible and
-`t ↦ (A t).inverse` is continuous at `t₀`, then `A t` is invertible for every `t` near `t₀`. -/
-private theorem eventually_isInvertible_of_isInvertible_of_continuousAt_inverse
-    (hA0Inv : (A t₀).IsInvertible) (hcont : ContinuousAt (fun t => (A t).inverse) t₀) :
-    ∀ᶠ t in 𝓝 t₀, (A t).IsInvertible := by
-  -- The continuity argument below needs the inverse at `t₀` to be nonzero, which fails exactly
-  -- when `E` is a subsingleton; in that case all maps involved are zero and invertibility is
-  -- instead immediate from the induced subsingleton structures.
-  by_cases hE : Subsingleton E
-  · rcases hA0Inv with ⟨e, _⟩
-    let _ : Subsingleton E := hE
-    let _ : Subsingleton F := e.toEquiv.symm.subsingleton
-    exact Filter.Eventually.of_forall fun t => by
-      -- Between subsingleton spaces every continuous linear map is the zero map.
-      have hAt_zero : A t = 0 := Subsingleton.elim _ _
-      rw [hAt_zero, isInvertible_zero_iff]
-      exact ⟨inferInstance, inferInstance⟩
-  · have hInv0Inv : ((A t₀).inverse).IsInvertible := hA0Inv.inverse
-    have hInv0 : (A t₀).inverse ≠ 0 := by
-      intro hzero
-      rw [hzero, isInvertible_zero_iff] at hInv0Inv
-      exact hE hInv0Inv.2
-    filter_upwards [hcont.eventually_ne hInv0] with t ht
-    by_contra hAt
-    -- A non-invertible map has zero `inverse`, contradicting continuity near the nonzero inverse
-    -- at the base point.
-    exact ht (inverse_of_not_isInvertible hAt)
-
 /-- The derivative of an inverse family of continuous linear maps, assuming the family is
 invertible at the base point and the inverse family is differentiable there. -/
 theorem HasDerivAt.clm_inverse (hA : HasDerivAt A A' t₀)
@@ -139,7 +105,7 @@ theorem HasDerivAt.clm_inverse (hA : HasDerivAt A A' t₀)
     HasDerivAt (fun t => (A t).inverse)
       (-((A t₀).inverse.comp (A'.comp (A t₀).inverse))) t₀ := by
   have hAInv : ∀ᶠ t in 𝓝 t₀, (A t).IsInvertible :=
-    eventually_isInvertible_of_isInvertible_of_continuousAt_inverse hA0Inv hInvDiff.continuousAt
+    hA0Inv.eventually_of_tendsto_inverse hInvDiff.continuousAt
   let B' : F →L[𝕜] E := _root_.deriv (fun t => (A t).inverse) t₀
   have hInvRaw : HasDerivAt (fun t => (A t).inverse) B' t₀ := hInvDiff.hasDerivAt
   have hB'eq : B' = -((A t₀).inverse.comp (A'.comp (A t₀).inverse)) := by

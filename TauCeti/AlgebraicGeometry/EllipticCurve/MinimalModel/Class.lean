@@ -1,0 +1,232 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DefectIdeal
+public import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+
+/-!
+# The Weierstrass class of an elliptic curve
+
+Let `O` be a Dedekind domain with fraction field `K`. An integral elliptic Weierstrass equation
+`W` has a defect ideal `𝔍_W`, whose exponent at a height-one prime is the local obstruction to
+minimality. Under an admissible change of variables `C`, two integral equations satisfy
+
+`𝔍_(C • W) · (C.u) = 𝔍_W`.
+
+Consequently their defect ideals determine the same element of `ClassGroup O`. This file packages
+that element as `weierstrassDefectClass`, defines its inverse `weierstrassClass` in Silverman's
+orientation, and constructs the choice-independent curve-level invariant
+`globalMinimalityClass`.
+
+## Main definitions
+
+* `WeierstrassCurve.weierstrassDefectClass`: the positive defect class `[𝔍_W]` of an integral
+  equation.
+* `WeierstrassCurve.weierstrassClass`: the inverse class `[𝔍_W]⁻¹`, in Silverman's orientation.
+* `WeierstrassCurve.globalMinimalityClass`: the choice-independent defect class of a curve over
+  `K`.
+
+## Main results
+
+* `WeierstrassCurve.globalMinimalityClass_eq_weierstrassDefectClass`: comparison with an integral
+  model.
+* `WeierstrassCurve.globalMinimalityClass_variableChange`: invariance under an admissible change
+  of variables.
+* `WeierstrassCurve.IsGlobalMinimal.weierstrassDefectClass_eq_one`: a globally minimal equation
+  has trivial defect class.
+
+## References
+
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VIII.8.
+-/
+
+public section
+
+namespace WeierstrassCurve
+
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
+open scoped nonZeroDivisors
+
+variable (O : Type*) [CommRing O] [IsDedekindDomain O]
+  {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
+
+private noncomputable def defectClassOfIsIntegral (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral O W] : ClassGroup O :=
+  ClassGroup.mk0 ⟨weierstrassDefectIdeal O W,
+    mem_nonZeroDivisors_iff_ne_zero.mpr (weierstrassDefectIdeal_ne_bot O W)⟩
+
+private theorem defectClassOfIsIntegral_smul (W : WeierstrassCurve K) [W.IsElliptic]
+    (C : VariableChange K) [IsIntegral O W] [IsIntegral O (C • W)] :
+    defectClassOfIsIntegral O (C • W) = defectClassOfIsIntegral O W := by
+  rw [defectClassOfIsIntegral, defectClassOfIsIntegral, ← ClassGroup.mk_mk0 K,
+    ← ClassGroup.mk_mk0 K]
+  rw [← mul_one (ClassGroup.mk K _), ← ClassGroup.mk_toPrincipalIdeal C.u, ← map_mul]
+  apply congrArg (ClassGroup.mk K)
+  apply Units.ext
+  exact coe_weierstrassDefectIdeal_smul_mul_toPrincipalIdeal O W C
+
+private theorem defectClassOfIsIntegral_congr {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic]
+    [W₂.IsElliptic] [IsIntegral O W₁] [IsIntegral O W₂] (h : W₁ = W₂) :
+    defectClassOfIsIntegral O W₁ = defectClassOfIsIntegral O W₂ := by
+  subst W₂
+  rfl
+
+private theorem defectClassOfIsIntegral_smul_eq_smul (E : WeierstrassCurve K) [E.IsElliptic]
+    (C D : VariableChange K) [IsIntegral O (C • E)] [IsIntegral O (D • E)] :
+    defectClassOfIsIntegral O (C • E) = defectClassOfIsIntegral O (D • E) := by
+  have hcurve : (D * C⁻¹) • (C • E) = D • E := by
+    rw [← mul_smul, mul_assoc, inv_mul_cancel C, mul_one]
+  let _ : IsIntegral O ((D * C⁻¹) • (C • E)) := hcurve ▸ inferInstance
+  exact (defectClassOfIsIntegral_smul O (C • E) (D * C⁻¹)).symm.trans
+    (defectClassOfIsIntegral_congr O hcurve)
+
+/-- **The positive Weierstrass defect class** `[𝔍_W]` of an integral equation `W` over `O`.
+
+This convention records the excess of the equation's discriminant over the minimal discriminant.
+It is inverse to `weierstrassClass`, the orientation used in Silverman VIII.8. -/
+noncomputable def weierstrassDefectClass (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] : ClassGroup O := by
+  let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  exact defectClassOfIsIntegral O (W.baseChange K)
+
+/-- The positive Weierstrass defect class is the ideal class of the defect ideal. -/
+@[simp]
+theorem weierstrassDefectClass_def (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] :
+    let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+    weierstrassDefectClass (K := K) O W =
+      ClassGroup.mk0 ⟨weierstrassDefectIdeal O (W.baseChange K),
+        mem_nonZeroDivisors_iff_ne_zero.mpr
+          (weierstrassDefectIdeal_ne_bot O (W.baseChange K))⟩ := by
+  rw [weierstrassDefectClass, defectClassOfIsIntegral]
+
+/-- **The Weierstrass class in Silverman's orientation**, namely the inverse `[𝔍_W]⁻¹` of the
+positive defect class. -/
+noncomputable def weierstrassClass (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] : ClassGroup O :=
+  (weierstrassDefectClass (K := K) O W)⁻¹
+
+/-- The Weierstrass class is the inverse of the positive defect class. -/
+@[simp]
+theorem weierstrassClass_eq_inv_weierstrassDefectClass (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] :
+    weierstrassClass (K := K) O W = (weierstrassDefectClass (K := K) O W)⁻¹ := by
+  rw [weierstrassClass]
+
+/-- **The curve-level global-minimality obstruction.** It is the defect class of any integral
+equation obtained from `E`; the change-of-variables formula makes the choice immaterial. -/
+noncomputable def globalMinimalityClass (E : WeierstrassCurve K) [E.IsElliptic] :
+    ClassGroup O :=
+  let C := Classical.choose (exists_smul_isIntegral O E)
+  let _ : IsIntegral O (C • E) := Classical.choose_spec (exists_smul_isIntegral O E)
+  defectClassOfIsIntegral O (C • E)
+
+private theorem globalMinimalityClass_eq_defectClassOfIsIntegral_smul
+    (E : WeierstrassCurve K) [E.IsElliptic]
+    (C : VariableChange K) [IsIntegral O (C • E)] :
+    globalMinimalityClass O E = defectClassOfIsIntegral O (C • E) := by
+  let D := Classical.choose (exists_smul_isIntegral O E)
+  have hD : IsIntegral O (D • E) := Classical.choose_spec (exists_smul_isIntegral O E)
+  let _ : IsIntegral O (D • E) := hD
+  unfold globalMinimalityClass
+  exact defectClassOfIsIntegral_smul_eq_smul O E D C
+
+/-- The curve-level obstruction agrees with the defect class of every integral model. -/
+@[simp]
+theorem globalMinimalityClass_eq_weierstrassDefectClass (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] :
+    globalMinimalityClass (K := K) O (W.baseChange K) =
+      weierstrassDefectClass (K := K) O W := by
+  let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  have hone : (1 : VariableChange K) • W.baseChange K = W.baseChange K := one_smul _ _
+  let _ : IsIntegral O ((1 : VariableChange K) • W.baseChange K) := hone.symm ▸ inferInstance
+  rw [weierstrassDefectClass]
+  simpa only [one_smul] using
+    globalMinimalityClass_eq_defectClassOfIsIntegral_smul O (W.baseChange K)
+      (1 : VariableChange K)
+
+/-- The global-minimality obstruction is invariant under an admissible change of variables. -/
+@[simp]
+theorem globalMinimalityClass_variableChange (E : WeierstrassCurve K) [E.IsElliptic]
+    (C : VariableChange K) :
+    globalMinimalityClass O (C • E) = globalMinimalityClass O E := by
+  obtain ⟨D, hD⟩ := exists_smul_isIntegral O E
+  let _ : IsIntegral O (D • E) := hD
+  have hcurve : (D * C⁻¹) • (C • E) = D • E := by
+    rw [← mul_smul, mul_assoc, inv_mul_cancel C, mul_one]
+  let _ : IsIntegral O ((D * C⁻¹) • (C • E)) := hcurve ▸ inferInstance
+  calc
+    globalMinimalityClass O (C • E) =
+        defectClassOfIsIntegral O ((D * C⁻¹) • (C • E)) :=
+      globalMinimalityClass_eq_defectClassOfIsIntegral_smul O (C • E) (D * C⁻¹)
+    _ = defectClassOfIsIntegral O (D • E) :=
+      defectClassOfIsIntegral_congr O hcurve
+    _ = globalMinimalityClass O E :=
+      (globalMinimalityClass_eq_defectClassOfIsIntegral_smul O E D).symm
+
+/-- Compare the curve-level obstruction with an integral model presented together with an
+admissible change of variables to the target curve. -/
+theorem globalMinimalityClass_eq_weierstrassDefectClass_of_variableChange
+    (W : WeierstrassCurve O) [(W.baseChange K).IsElliptic]
+    (E : WeierstrassCurve K) [E.IsElliptic]
+    (C : VariableChange K) (hC : C • (W.baseChange K) = E) :
+    globalMinimalityClass O E = weierstrassDefectClass (K := K) O W := by
+  subst E
+  exact (globalMinimalityClass_variableChange O (W.baseChange K) C).trans
+    (globalMinimalityClass_eq_weierstrassDefectClass O W)
+
+/-- Integral models related over `K` have the same positive defect class. -/
+theorem weierstrassDefectClass_eq_of_variableChange
+    (W₁ W₂ : WeierstrassCurve O)
+    [(W₁.baseChange K).IsElliptic] [(W₂.baseChange K).IsElliptic]
+    (C : VariableChange K) (hC : C • (W₁.baseChange K) = W₂.baseChange K) :
+    weierstrassDefectClass (K := K) O W₁ = weierstrassDefectClass (K := K) O W₂ := by
+  exact
+    (globalMinimalityClass_eq_weierstrassDefectClass_of_variableChange O W₁
+      (W₂.baseChange K) C hC).symm.trans
+        (globalMinimalityClass_eq_weierstrassDefectClass O W₂)
+
+/-- Integral models related over `K` have the same Weierstrass class. -/
+theorem weierstrassClass_eq_of_variableChange
+    (W₁ W₂ : WeierstrassCurve O)
+    [(W₁.baseChange K).IsElliptic] [(W₂.baseChange K).IsElliptic]
+    (C : VariableChange K) (hC : C • (W₁.baseChange K) = W₂.baseChange K) :
+    weierstrassClass (K := K) O W₁ = weierstrassClass (K := K) O W₂ := by
+  rw [weierstrassClass_eq_inv_weierstrassDefectClass,
+    weierstrassClass_eq_inv_weierstrassDefectClass,
+    weierstrassDefectClass_eq_of_variableChange O W₁ W₂ C hC]
+
+/-- A globally minimal integral equation has trivial positive defect class. -/
+theorem IsGlobalMinimal.weierstrassDefectClass_eq_one {W : WeierstrassCurve O}
+    [(W.baseChange K).IsElliptic] (hW : IsGlobalMinimal O (W.baseChange K)) :
+    weierstrassDefectClass (K := K) O W = 1 := by
+  let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  have hJ : weierstrassDefectIdeal O (W.baseChange K) = ⊤ :=
+    (weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (W.baseChange K)).2 hW
+  rw [weierstrassDefectClass, defectClassOfIsIntegral]
+  apply (ClassGroup.mk0_eq_one_iff _).2
+  rw [hJ]
+  exact top_isPrincipal
+
+/-- A globally minimal integral equation has trivial Weierstrass class. -/
+theorem IsGlobalMinimal.weierstrassClass_eq_one {W : WeierstrassCurve O}
+    [(W.baseChange K).IsElliptic] (hW : IsGlobalMinimal O (W.baseChange K)) :
+    weierstrassClass (K := K) O W = 1 := by
+  rw [weierstrassClass_eq_inv_weierstrassDefectClass, hW.weierstrassDefectClass_eq_one, inv_one]
+
+/-- Triviality is unchanged by passing between the positive defect convention and Silverman's
+inverse convention. -/
+theorem weierstrassClass_eq_one_iff (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] :
+    weierstrassClass (K := K) O W = 1 ↔
+      weierstrassDefectClass (K := K) O W = 1 := by
+  simp only [weierstrassClass_eq_inv_weierstrassDefectClass, inv_eq_one]
+
+end WeierstrassCurve
+
+end

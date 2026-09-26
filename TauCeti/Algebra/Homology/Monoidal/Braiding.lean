@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
-public import Mathlib.Algebra.Homology.Monoidal
-public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import TauCeti.Algebra.Homology.Monoidal.Summand
 
 /-!
 # The Koszul braiding on cochain complexes of modules
@@ -41,10 +38,10 @@ exactly when the summand map is scaled by `(-1)^{p * q}`.
   two hexagon identities.
 * `TauCeti.koszulBraidingHom_comp`: the braiding is symmetric.
 
-Two auxiliary equations, `TauCeti.whiskerLeft_eq_mapBifunctorMap` and
-`TauCeti.whiskerRight_eq_mapBifunctorMap`, record that the whiskerings of
-`CochainComplex (ModuleCat R) ℤ` are `HomologicalComplex.mapBifunctorMap`; Mathlib builds the
-monoidal structure from that totalization but states no component lemma for `◁` and `▷`.
+The two auxiliary equations `HomologicalComplex.whiskerLeft_eq_mapBifunctorMap` and
+`HomologicalComplex.whiskerRight_eq_mapBifunctorMap` of
+`TauCeti/Algebra/Homology/Monoidal/Summand.lean`, which record that the whiskerings of
+`CochainComplex (ModuleCat R) ℤ` are `HomologicalComplex.mapBifunctorMap`, are used throughout.
 
 This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
 tensor-coalgebra infrastructure", specifically "Complete the symmetric monoidal structure on
@@ -84,23 +81,6 @@ namespace TauCeti
 universe v
 
 variable (R : Type v) [CommRing R]
-
-/-- Left whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the identity and
-the given morphism.  Mathlib defines the monoidal structure on homological complexes through
-`HomologicalComplex.mapBifunctorMap`, but states no component lemma for `◁`. -/
-lemma whiskerLeft_eq_mapBifunctorMap (X : CochainComplex (ModuleCat.{v} R) ℤ)
-    {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) :
-    X ◁ g = HomologicalComplex.mapBifunctorMap (𝟙 X) g
-      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
-  rfl
-
-/-- Right whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the given
-morphism and the identity; the counterpart of `TauCeti.whiskerLeft_eq_mapBifunctorMap`. -/
-lemma whiskerRight_eq_mapBifunctorMap {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
-    (Z : CochainComplex (ModuleCat.{v} R) ℤ) :
-    f ▷ Z = HomologicalComplex.mapBifunctorMap f (𝟙 Z)
-      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
-  rfl
 
 /-- The bidegree-`(p, q)` component of the Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the braiding of
 `ModuleCat R` on the summand `X.X p ⊗ Y.X q`, carrying the Koszul sign `(-1)^{p * q}`. -/
@@ -216,7 +196,8 @@ lemma koszulBraidingHom_naturality_left {X Y : CochainComplex (ModuleCat.{v} R) 
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    whiskerRight_eq_mapBifunctorMap, whiskerLeft_eq_mapBifunctorMap]
+    HomologicalComplex.whiskerRight_eq_mapBifunctorMap,
+    HomologicalComplex.whiskerLeft_eq_mapBifunctorMap]
   simp only [HomologicalComplex.ι_mapBifunctorMap_assoc, ι_koszulBraidingHom_assoc,
     ι_koszulBraidingHom, koszulBraidingSummand, HomologicalComplex.id_f,
     CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp, Category.assoc,
@@ -232,7 +213,8 @@ lemma koszulBraidingHom_naturality_right (X : CochainComplex (ModuleCat.{v} R) �
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    whiskerLeft_eq_mapBifunctorMap, whiskerRight_eq_mapBifunctorMap]
+    HomologicalComplex.whiskerLeft_eq_mapBifunctorMap,
+    HomologicalComplex.whiskerRight_eq_mapBifunctorMap]
   simp only [HomologicalComplex.ι_mapBifunctorMap_assoc, ι_koszulBraidingHom_assoc,
     ι_koszulBraidingHom, koszulBraidingSummand, HomologicalComplex.id_f,
     CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp, Category.assoc,
@@ -304,13 +286,6 @@ private lemma up_r_of {p q r j : ℤ} (h : p + q + r = j) :
     ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
       (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j := h
 
-private lemma associator_hom_f (j : ℤ) :
-    (α_ X Y Z).hom.f j =
-      (HomologicalComplex.mapBifunctorAssociatorX
-        (curriedAssociatorNatIso (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ)
-        (ComplexShape.up ℤ) (ComplexShape.up ℤ) j).hom :=
-  rfl
-
 /- Mathlib's `mapBifunctor₁₂.ι_eq` and `mapBifunctor₂₃.ι_eq` are stated for the raw totalization
 `HomologicalComplex.mapBifunctor`; these two restatements spell the same equations with the
 monoidal `⊗`, which is the form in which the hexagon and its ingredients occur. -/
@@ -319,10 +294,8 @@ private lemma ι₁₂_eq (p q r pq j : ℤ) (hpq : p + q = pq) (hj : p + q + r 
     HomologicalComplex.mapBifunctor₁₂.ι (curriedTensor (ModuleCat.{v} R))
         (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
         p q r j (up_r_of hj) =
-      (HomologicalComplex.ιMapBifunctor X Y (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) p q pq hpq ▷ Z.X r) ≫
-        HomologicalComplex.ιMapBifunctor (X ⊗ Y) Z (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) pq r j (by dsimp; omega) := by
+      (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
+        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j (by omega) := by
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq (curriedTensor (ModuleCat.{v} R))
     (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
     p q r pq j hpq (by dsimp; omega)]
@@ -333,10 +306,8 @@ private lemma ι₂₃_eq (p q r qr j : ℤ) (hqr : q + r = qr) (hj : p + q + r 
     HomologicalComplex.mapBifunctor₂₃.ι (curriedTensor (ModuleCat.{v} R))
         (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
         (ComplexShape.up ℤ) p q r j (up_r_of hj) =
-      (X.X p ◁ HomologicalComplex.ιMapBifunctor Y Z (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) q r qr hqr) ≫
-        HomologicalComplex.ιMapBifunctor X (Y ⊗ Z) (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) p qr j (by dsimp; omega) := by
+      (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
+        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j (by omega) := by
   rw [HomologicalComplex.mapBifunctor₂₃.ι_eq (curriedTensor (ModuleCat.{v} R))
     (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
     (ComplexShape.up ℤ) p q r qr j hqr (by dsimp; omega)]
@@ -355,21 +326,16 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
             (curriedTensor (ModuleCat.{v} R)) Y Z X (ComplexShape.up ℤ) (ComplexShape.up ℤ)
             (ComplexShape.up ℤ) q r p j (up_r_of (by have := up_r_eq h; omega))) := by
   have h' := up_r_eq h
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, associator_hom_f,
-    HomologicalComplex.ι_mapBifunctorAssociatorX_hom_assoc]
-  dsimp only [bifunctorComp₁₂, bifunctorComp₂₃, bifunctorComp₁₂Obj, bifunctorComp₂₃Obj]
-  rw [MonoidalCategory.curriedAssociatorNatIso_hom_app_app_app,
-    ι₂₃_eq R X Y Z p q r (q + r) j rfl h',
-    Category.assoc, ι_koszulBraidingHom_assoc,
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    ι₁₂_eq R X Y Z p q r (p + q) j rfl h',
+    Category.assoc,
+    HomologicalComplex.ι_ι_associator_hom_assoc,
+    ι_koszulBraidingHom_assoc,
     whiskerLeft_comp_koszulBraidingSummand_assoc R X (Y ⊗ Z) _ p (q + r) j
-      (HomologicalComplex.ιMapBifunctor Y Z (curriedTensor (ModuleCat.{v} R))
-        (ComplexShape.up ℤ) q r (q + r) rfl),
-    ← ι₁₂_eq R Y Z X q r p (q + r) j rfl (by omega),
-    associator_hom_f]
+      (HomologicalComplex.ιTensorObj Y Z q r (q + r) rfl)]
   simp only [Linear.units_smul_comp, Category.assoc]
-  rw [HomologicalComplex.ι_mapBifunctorAssociatorX_hom,
-    MonoidalCategory.curriedAssociatorNatIso_hom_app_app_app, Linear.comp_units_smul]
-  rfl
+  rw [HomologicalComplex.ι_ι_associator_hom, Linear.comp_units_smul,
+    ← ι₂₃_eq R Y Z X q r p (r + p) j rfl (by omega)]
 
 private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     (h : ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
@@ -386,20 +352,16 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
             (ComplexShape.up ℤ) q r p j (up_r_of (by have := up_r_eq h; omega))) := by
   have h' := up_r_eq h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ι₁₂_eq R X Y Z p q r (p + q) j rfl h',
-    Category.assoc, whiskerRight_eq_mapBifunctorMap,
+    ι₁₂_eq R X Y Z p q r (q + p) j (by omega) h',
+    Category.assoc, HomologicalComplex.whiskerRight_eq_mapBifunctorMap,
     HomologicalComplex.ι_mapBifunctorMap_assoc]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, Category.id_comp]
   simp only [curriedTensor_map_app]
   rw [← MonoidalCategory.comp_whiskerRight_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
     units_smul_whiskerRight, MonoidalCategory.comp_whiskerRight,
     Linear.units_smul_comp, Category.assoc,
-    ← ι₁₂_eq_assoc R Y X Z q p r (p + q) j (by omega) (by omega),
-    associator_hom_f, HomologicalComplex.ι_mapBifunctorAssociatorX_hom_assoc]
-  dsimp only [bifunctorComp₁₂, bifunctorComp₂₃, bifunctorComp₁₂Obj, bifunctorComp₂₃Obj]
-  rw [ι₂₃_eq_assoc R Y X Z q p r (p + r) j (by omega) (by omega),
-    MonoidalCategory.curriedAssociatorNatIso_hom_app_app_app,
-    whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
+    HomologicalComplex.ι_ι_associator_hom_assoc,
+    HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, NatTrans.id_app,
     Category.id_comp]
   simp only [curriedTensor_obj_map]

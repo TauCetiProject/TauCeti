@@ -262,38 +262,46 @@ private theorem positive_iota_mul_carHighestWeightVector_eq_zero
     apply carPositiveUnits_ortho hij
     simpa only [carPositiveRootPairs, Finset.mem_filter, Finset.mem_univ, true_and] using hr
 
-private noncomputable abbrev carD (i j : n) :
-    CliffordAlgebra (traceQuadraticForm K n) :=
-  CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1)
+private theorem positive_carGenerator_mul_carHighestWeightVector_eq_zero
+    {i j : n} (hij : i < j) :
+    carGenerator (K := K) i j * carHighestWeightVector K n = 0 := by
+  rw [carGenerator_def]
+  rw [Subsingleton.elim (Classical.decEq n) (inferInstance : DecidableEq n),
+    positive_iota_mul_carHighestWeightVector_eq_zero hij]
 
 private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) (k : n) :
-    carD i k * carD k j * carHighestWeightVector K n = 0 := by
+    carGenerator (K := K) i k * carGenerator (K := K) k j * carHighestWeightVector K n = 0 := by
   by_cases hkj : k < j
-  · rw [mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hkj, mul_zero]
+  · calc
+      carGenerator (K := K) i k * carGenerator k j * carHighestWeightVector K n =
+      carGenerator i k * (carGenerator k j * carHighestWeightVector K n) :=
+        mul_assoc _ _ _
+      _ = 0 := by
+        rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hkj, mul_zero]
   · have hik : i < k := lt_of_lt_of_le hij (le_of_not_gt hkj)
-    rw [traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired i k k j 1 1
-      (by intro h; exact (ne_of_lt hij) h.2.symm), neg_mul, mul_assoc,
-      positive_iota_mul_carHighestWeightVector_eq_zero hik, mul_zero, neg_zero]
+    rw [carGenerator_mul_comm_of_not_paired i k k j
+      (by intro h; exact (ne_of_lt hij) h.2.symm), neg_mul, mul_assoc]
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hik, mul_zero, neg_zero]
 
 private theorem diagonalTerm_mul_carHighestWeightVector (i k : n) :
-    carD i k * carD k i * carHighestWeightVector K n =
+    carGenerator (K := K) i k * carGenerator (K := K) k i * carHighestWeightVector K n =
       if k < i then 0 else if k = i then carHighestWeightVector K n
       else (2 : K) • carHighestWeightVector K n := by
   rcases lt_trichotomy k i with hki | rfl | hik
   · simp only [hki, ↓reduceIte]
-    rw [mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hki, mul_zero]
-  · simp [carD]
+    rw [mul_assoc]
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hki, mul_zero]
+  · simp
   · simp only [not_lt_of_ge hik.le, ne_of_gt hik, ↓reduceIte]
-    have hcar := traceQuadraticForm_ι_single_mul_ι_single_add_swap
-      (R := K) i k k i 1 1
+    have hcar := carGenerator_mul_add_swap (K := K) i k k i
     have hmul := congrArg
       (fun x : CliffordAlgebra (traceQuadraticForm K n) =>
         x * carHighestWeightVector K n) hcar
-    simp only [add_mul, mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hik,
-      mul_zero, add_zero] at hmul
+    simp only [add_mul, mul_assoc] at hmul
+    rw [positive_carGenerator_mul_carHighestWeightVector_eq_zero hik, mul_zero, add_zero] at hmul
     rw [mul_assoc]
-    simpa [carD, Algebra.smul_def] using hmul
+    simpa [Algebra.smul_def] using hmul
 
 private theorem diagonalScalarSum (i : n) :
     (∑ k : n, if k = i then (1 : K) else if i < k then 2 else 0) =
@@ -314,7 +322,7 @@ private theorem diagonalScalarSum (i : n) :
       rw [hfirst, hsecond]
 
 private theorem diagonalTerm_mul_carHighestWeightVector_eq_smul (i k : n) :
-    carD i k * carD k i * carHighestWeightVector K n =
+    carGenerator (K := K) i k * carGenerator (K := K) k i * carHighestWeightVector K n =
       (if k = i then (1 : K) else if i < k then 2 else 0) •
         carHighestWeightVector K n := by
   rw [diagonalTerm_mul_carHighestWeightVector]
@@ -324,7 +332,7 @@ private theorem diagonalTerm_mul_carHighestWeightVector_eq_smul (i k : n) :
   · simp [hik, ne_of_gt hik, not_lt_of_ge hik.le]
 
 private theorem diagonalSum_mul_carHighestWeightVector (i : n) :
-    (∑ k : n, carD i k * carD k i) * carHighestWeightVector K n =
+    (∑ k : n, carGenerator (K := K) i k * carGenerator (K := K) k i) * carHighestWeightVector K n =
       (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •
         carHighestWeightVector K n := by
   rw [Finset.sum_mul]
@@ -339,9 +347,14 @@ private theorem glCliffordHom_single_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
     (@glCliffordHom K n inferInstance inferInstance h2) (Matrix.single i j 1) *
       carHighestWeightVector K n = 0 := by
-  rw [glCliffordHom_single, smul_mul_assoc, Finset.sum_mul]
-  simp only [raisingTerm_mul_carHighestWeightVector_eq_zero hij,
-    Finset.sum_const_zero, smul_zero]
+  rw [glCliffordHom_single (decEq := inferInstance), smul_mul_assoc, Finset.sum_mul]
+  have hsum : (∑ k : n,
+      carGenerator (K := K) i k * carGenerator k j *
+          carHighestWeightVector K n) = 0 := by
+    apply Finset.sum_eq_zero
+    intro k hk
+    exact raisingTerm_mul_carHighestWeightVector_eq_zero hij k
+  rw [hsum, smul_zero]
 
 private theorem raising_lie_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
@@ -353,8 +366,25 @@ private theorem diagonal_lie_carHighestWeightVector (i : n) :
     ⁅Matrix.single i i (1 : K), carHighestWeightVector K n⁆ =
       ((2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K))) •
         carHighestWeightVector K n := by
-  rw [car_lie_def, glCliffordHom_single, smul_mul_assoc,
-    diagonalSum_mul_carHighestWeightVector i, smul_smul]
+  rw [car_lie_def, glCliffordHom_single (decEq := inferInstance), smul_mul_assoc]
+  have hsum := diagonalSum_mul_carHighestWeightVector (K := K) i
+  have hsum' :
+      (∑ k : n,
+          carGenerator (K := K) i k * carGenerator k i) *
+          carHighestWeightVector K n =
+        (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •
+          carHighestWeightVector K n := by
+    exact hsum
+  calc
+    (2 : K)⁻¹ •
+        ((∑ k : n,
+            carGenerator (K := K) i k * carGenerator k i) *
+          carHighestWeightVector K n) =
+      (2 : K)⁻¹ •
+        ((1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •
+          carHighestWeightVector K n) := congrArg ((2 : K)⁻¹ • ·) hsum'
+    _ = ((2 : K)⁻¹ * (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K))) •
+        carHighestWeightVector K n := by rw [smul_smul]
 
 /-- The ordered product of all positive matrix-unit Clifford generators is a highest-weight vector
 for the left `gl_n`-action on the CAR algebra. Its weight at `i` is half of one plus twice the

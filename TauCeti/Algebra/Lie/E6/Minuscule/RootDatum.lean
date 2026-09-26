@@ -75,6 +75,8 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti.E6Minuscule
 
+open TauCeti.E6
+
 open DynkinType
 
 /-! ## The numbered subgroups sit at the named simple roots -/

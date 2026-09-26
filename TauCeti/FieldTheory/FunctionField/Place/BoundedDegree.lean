@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+public import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Over a finite constant field there are finitely many places of bounded degree
@@ -96,12 +97,11 @@ theorem finite_setOf_degree_le (hF : IsFunctionField k F) [Finite k] (r : ℕ) :
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   let e := RatFunc.algEquivOfTranscendental x hx
   let : Algebra (RatFunc k) k⟮x⟯ := e.toRingEquiv.toRingHom.toAlgebra
-  let : Algebra (RatFunc k) F :=
-    ((IsScalarTower.toAlgHom k k⟮x⟯ F).comp e.toAlgHom).toRingHom.toAlgebra
-  have : IsScalarTower (RatFunc k) k⟮x⟯ F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k (RatFunc k) F :=
-    .of_algebraMap_eq fun c ↦
-      (((IsScalarTower.toAlgHom k k⟮x⟯ F).comp e.toAlgHom).commutes c).symm
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have : IsScalarTower (RatFunc k) k⟮x⟯ F := .of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_ratFuncAlgebraOfTranscendental_apply]
+    rfl
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
   have : Module.Finite (RatFunc k) k⟮x⟯ :=
     Module.Finite.of_surjective (Algebra.linearMap (RatFunc k) k⟮x⟯) e.surjective
   have : FiniteDimensional (RatFunc k) F := Module.Finite.trans k⟮x⟯ F

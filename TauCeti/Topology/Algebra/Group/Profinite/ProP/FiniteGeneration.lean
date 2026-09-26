@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
-import TauCeti.Topology.Algebra.Group.OpenSubgroup
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
 
 /-!
 # Finite generation and the Frattini quotient

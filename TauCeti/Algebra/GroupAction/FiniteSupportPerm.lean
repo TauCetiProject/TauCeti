@@ -13,6 +13,7 @@ public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Logic.Embedding.Set
+public import Mathlib.Data.Finset.Sort
 import Mathlib.Algebra.Group.Pointwise.Set.Finite
 import Mathlib.Logic.Equiv.Fin.Basic
 -- Non-public: `Finset.countable`, the index of the covering used for countability of `finitary`.
@@ -317,6 +318,40 @@ theorem exists_prodCongrRight_mem_finitary_apply_eq_on_finset {ι β : Type*}
     have hmem : p.2 ∈ (F.filter fun q => q.1 = p.1).image Prod.snd :=
       Finset.mem_image.2 ⟨p, hpfilter, rfl⟩
     simpa [τ, hrow] using (hσ p.1).2 p.2 hmem
+
+
+/-- Two disjoint finite sets of cardinalities `k` and `l` are the images of the two windows of
+`Fin (k + l)` under a finitely supported permutation of `ℕ`. -/
+theorem exists_finite_compl_fixedBy_castAdd_natAdd (I J : Finset ℕ) (hIJ : Disjoint I J)
+    {k l : ℕ} (hI : I.card = k) (hJ : J.card = l) :
+    ∃ σ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite ∧
+      (∀ i : Fin k, σ (Fin.castAdd l i) = I.orderEmbOfFin hI i) ∧
+      ∀ j : Fin l, σ (Fin.natAdd k j) = J.orderEmbOfFin hJ j := by
+  let f : Fin (k + l) → ℕ :=
+    Fin.append (fun i => I.orderEmbOfFin hI i) (fun j => J.orderEmbOfFin hJ j)
+  have hf : Function.Injective f :=
+    Fin.append_injective_iff.2 ⟨(I.orderEmbOfFin hI).injective, (J.orderEmbOfFin hJ).injective,
+      fun i j => hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI i) (J.orderEmbOfFin_mem hJ j)⟩
+  obtain ⟨σ, hσfin, hσ⟩ :=
+    exists_finite_compl_fixedBy_apply_eq Fin.valEmbedding ⟨f, hf⟩
+  refine ⟨σ, hσfin, fun i => ?_, fun j => ?_⟩
+  · simpa [f, Fin.append_left] using hσ (Fin.castAdd l i)
+  · simpa [f, Fin.append_right] using hσ (Fin.natAdd k j)
+
+/-- A permutation agreeing on the window `[k, k + l)` with the enumeration of `J` maps the window
+onto `J`. -/
+theorem map_Ico_eq_of_forall_apply_eq_orderEmbOfFin {σ : Equiv.Perm ℕ} {J : Finset ℕ} {k l : ℕ}
+    (hJ : J.card = l) (h : ∀ j : Fin l, σ (k + j) = J.orderEmbOfFin hJ j) :
+    (Finset.Ico k (k + l)).map σ.toEmbedding = J := by
+  ext n; simp only [Finset.mem_map, Finset.mem_Ico, Equiv.coe_toEmbedding]
+  constructor
+  · rintro ⟨i, ⟨hki, hik⟩, rfl⟩
+    have := h ⟨i - k, by omega⟩
+    simp only [Nat.add_sub_cancel' hki] at this
+    rw [this]; exact J.orderEmbOfFin_mem hJ _
+  · intro hn
+    obtain ⟨j, hj⟩ := Set.mem_range.mp ((J.range_orderEmbOfFin hJ) ▸ (Finset.mem_coe.mpr hn))
+    exact ⟨k + j, ⟨by omega, by omega⟩, by rw [h j, hj]⟩
 
 end Equiv.Perm
 

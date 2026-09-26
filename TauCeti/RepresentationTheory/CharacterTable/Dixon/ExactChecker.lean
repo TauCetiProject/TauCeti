@@ -140,6 +140,27 @@ theorem table_index_one (i : Fin d.numClasses) : table i (d.index 1) = (degree i
   have hconvert := h.degree_mul_central i (d.index 1)
   simpa only [h.central_one, mul_one, hcard, Nat.cast_one, one_mul] using hconvert.symm
 
+/-- Permuting the rows of a certified central-character table, of its ordinary table and of its
+degree vector by the same permutation gives a certified table. -/
+theorem submatrix (σ : Equiv.Perm (Fin d.numClasses)) :
+    d.IsExactCharacterTableSpec conj (omega.submatrix σ id) (table.submatrix σ id)
+      (degree ∘ σ) where
+  -- `Matrix.submatrix_apply` and `Function.comp_apply` hold by `rfl`, so each field is the
+  -- corresponding field of `h` at the permuted rows.
+  central_one i := h.central_one (σ i)
+  central_eigen i := h.central_eigen (σ i)
+  degree_pos i := h.degree_pos (σ i)
+  degree_dvd i := h.degree_dvd (σ i)
+  sum_degree_sq := (Equiv.sum_comp σ fun i ↦ degree i ^ 2).trans h.sum_degree_sq
+  degree_mul_central i := h.degree_mul_central (σ i)
+  row_orthogonal i j := (h.row_orthogonal (σ i) (σ j)).trans (if_congr σ.injective.eq_iff rfl rfl)
+
+/-- A ring homomorphism into a finite field maps every certified central-character row into the
+modular central-character search. -/
+theorem map_mem_centralCharacterSearch {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+    (f : R →+* F) (i : Fin d.numClasses) : (fun k ↦ f (omega i k)) ∈ d.centralCharacterSearch :=
+  d.mem_centralCharacterSearch.mpr ⟨by rw [h.central_one, map_one], (h.central_eigen i).map f⟩
+
 /-- Mapping a certified central row preserves the common-eigenrow condition. -/
 private theorem central_eigen_map (f : R →+* ℂ) (i : Fin d.numClasses) :
     d.IsModularEigenrow (fun j => f (omega i j)) :=

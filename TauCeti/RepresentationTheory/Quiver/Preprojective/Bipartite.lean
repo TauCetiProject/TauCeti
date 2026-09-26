@@ -61,7 +61,7 @@ universe u v w
 
 section Gauge
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A cornerwise comparison of the gauged relator with the signless relator reads off the
@@ -117,7 +117,7 @@ end Gauge
 
 section Obstruction
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A closed walk of odd length obstructs the signless comparison.** If the doubled quiver has a

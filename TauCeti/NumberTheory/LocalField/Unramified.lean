@@ -50,6 +50,7 @@ directions.
   stays a uniformizer of `L`.
 * `TauCeti.isUnramified_iff_inertiaDegree_eq_finrank`: `L/K` is unramified exactly when
   `f(L/K) = [L : K]`.
+* `TauCeti.IsUnramified.isTamelyRamified`: an unramified extension is tamely ramified.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
   exactly when both steps of a tower `M/L/K` are.
@@ -167,6 +168,13 @@ theorem isUnramified_iff_inertiaDegree_eq_finrank :
 theorem IsUnramified.inertiaDegree_eq_finrank [IsUnramified K L] :
     inertiaDegree K L = Module.finrank K L :=
   (isUnramified_iff_inertiaDegree_eq_finrank K L).1 ‹_›
+
+variable (K L) in
+/-- An unramified extension of nonarchimedean local fields is tamely ramified: its ramification
+index `1` is prime to the residue characteristic. -/
+theorem IsUnramified.isTamelyRamified [IsUnramified K L] : IsTamelyRamified K L := by
+  rw [isTamelyRamified_iff, IsUnramified.ramificationIndex_eq_one, Nat.dvd_one]
+  exact (CharP.prime_ringChar 𝓀[K]).ne_one
 
 section Tower
 

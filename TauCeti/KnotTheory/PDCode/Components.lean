@@ -34,6 +34,12 @@ def crossingTurn (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
     ((PDCode.crossingSlotEquiv n).permCongr
       (Equiv.prodCongr (Equiv.refl (Fin n)) PDCode.oppositeCrossingSlot))
 
+/-- The defining equation for the crossing traversal permutation. -/
+theorem crossingTurn_def (D : PDCode n) :
+    D.crossingTurn = D.halfEdge.permCongr
+      ((crossingSlotEquiv n).permCongr
+        (Equiv.prodCongr (Equiv.refl _) oppositeCrossingSlot)) := (rfl)
+
 /-- The component traversal moves across an arc and then through a crossing. -/
 def componentPerm (D : PDCode n) : Equiv.Perm (Fin (4 * n)) :=
   D.crossingTurn * D.edgePair.val
@@ -96,9 +102,35 @@ half-edges. -/
 noncomputable def crossingComponentCount (D : PDCode n) : ℕ :=
   orbitCount D.componentPerm / 2
 
+/-- Crossing traversal is a perfect matching of the half-edge labels. -/
+theorem isPerfectMatching_crossingTurn (D : PDCode n) :
+    IsPerfectMatching D.crossingTurn := by
+  refine isPerfectMatching_iff.mpr ⟨D.crossingTurn_apply_apply, ?_⟩
+  intro h hh
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
+  rw [crossingTurn_crossing, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+    (crossingSlotEquiv n).apply_eq_iff_eq, Prod.mk.injEq] at hh
+  exact Fin.oppositeCrossingSlot_ne _ hh.2
+
+/-- The directed crossing traversal orbits come in pairs. -/
+theorem even_orbitCount_componentPerm (D : PDCode n) :
+    Even (orbitCount D.componentPerm) :=
+  (D.isPerfectMatching_crossingTurn).even_orbitCount_mul D.edgePair.prop
+
 /-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
 theorem crossingComponentCount_def (D : PDCode n) :
     D.crossingComponentCount = orbitCount D.componentPerm / 2 := (rfl)
+
+/-- A code with a crossing has at least one crossing-bearing component. -/
+theorem crossingComponentCount_pos (D : PDCode n) (hn : n ≠ 0) :
+    0 < D.crossingComponentCount := by
+  have hpos : 0 < orbitCount D.componentPerm := by
+    let _ : Nonempty (Fin (4 * n)) := ⟨⟨0, by omega⟩⟩
+    exact Equiv.Perm.orbitCount_pos D.componentPerm
+  obtain ⟨k, hk⟩ := D.even_orbitCount_componentPerm
+  rw [crossingComponentCount_def, hk]
+  omega
 
 /-- A code with no crossing visits has no crossing-bearing components. -/
 @[simp] theorem crossingComponentCount_eq_zero (D : PDCode 0) :
@@ -125,6 +157,12 @@ noncomputable abbrev componentCount (D : PDCode n) : ℕ :=
 /-- The total component count is the sum of crossing-bearing and crossing-free components. -/
 theorem componentCount_eq (D : PDCode n) :
     D.componentCount = D.crossingComponentCount + D.crossinglessComponentCount := rfl
+
+/-- A code with a nonzero crossing count has at least one component. -/
+theorem componentCount_pos (D : PDCode n) (hn : n ≠ 0) : 0 < D.componentCount := by
+  rw [componentCount_eq]
+  exact Nat.lt_of_lt_of_le (D.crossingComponentCount_pos hn)
+    (Nat.le_add_right _ _)
 
 /-- Mirroring preserves the total number of components. -/
 @[simp] theorem componentCount_mirror (D : PDCode n) :

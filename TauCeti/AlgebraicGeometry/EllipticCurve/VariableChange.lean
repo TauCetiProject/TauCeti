@@ -25,6 +25,9 @@ That cocycle comparison lands on a product `C * [-1]`, whose four components are
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
 components of `[-1]` at each use.
 
+Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
+
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
@@ -113,6 +116,31 @@ enough. -/
 @[simp] lemma map_mul (φ : R →+* A) (C D : VariableChange R) :
     (C * D).map φ = C.map φ * D.map φ :=
   _root_.map_mul (VariableChange.mapHom φ) C D
+
+/-! ### Components of `C * D⁻¹`
+
+`C * D⁻¹` is the change of variables carrying `D • W` to `C • W`. Its components are the
+differences of those of `C` and `D`, rescaled by powers of `D.u⁻¹`. -/
+
+/-- The scaling factor of `C * D⁻¹` is `C.u * D.u⁻¹`. -/
+@[simp] lemma mul_inv_u (C D : VariableChange R) : (C * D⁻¹).u = C.u * D.u⁻¹ :=
+  rfl
+
+/-- The translation `r` of `C * D⁻¹` is `(C.r - D.r) * D.u⁻¹ ^ 2`. -/
+@[simp] lemma mul_inv_r (C D : VariableChange R) : (C * D⁻¹).r = (C.r - D.r) * ↑D.u⁻¹ ^ 2 := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The shear `s` of `C * D⁻¹` is `(C.s - D.s) * D.u⁻¹`. -/
+@[simp] lemma mul_inv_s (C D : VariableChange R) : (C * D⁻¹).s = (C.s - D.s) * ↑D.u⁻¹ := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The translation `t` of `C * D⁻¹` is `(C.t - D.t - D.s * (C.r - D.r)) * D.u⁻¹ ^ 3`. -/
+@[simp] lemma mul_inv_t (C D : VariableChange R) :
+    (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) * ↑D.u⁻¹ ^ 3 := by
+  simp only [mul_def, inv_def]
+  ring
 
 end VariableChange
 

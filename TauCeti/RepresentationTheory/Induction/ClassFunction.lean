@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import Mathlib.GroupTheory.GroupAction.Quotient
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
 import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # The induced class function
@@ -281,12 +282,9 @@ theorem indClassFun_mem_classFunction [S.FiniteIndex] (hf : f ∈ ClassFunction 
   calc indClassFun S f (c * g * c⁻¹)
       = ∑ t : G ⧸ S, indTerm f g (c⁻¹ * Quotient.out t) := by
         simp only [indClassFun, indTerm_conj]
-    _ = ∑ t : G ⧸ S, indTerm f g (Quotient.out ((c⁻¹ : G) • t)) := by
-        refine Finset.sum_congr rfl fun t _ => indTerm_eq_of_mk_eq hf _ _ _ ?_
-        rw [← smul_eq_mul, MulAction.Quotient.mk_smul_out, QuotientGroup.out_eq']
-    _ = ∑ t : G ⧸ S, indTerm f g (Quotient.out t) :=
-        Fintype.sum_equiv (MulAction.toPerm (c⁻¹ : G)) _ _ fun _ => rfl
-    _ = indClassFun S f g := rfl
+    _ = indClassFun S f g :=
+        Fintype.sum_equiv (MulAction.toPerm c⁻¹) _ _ fun t =>
+          indTerm_eq_of_mk_eq hf _ _ _ (QuotientGroup.mk_out_smul _ t).symm
 
 end ClassFun
 

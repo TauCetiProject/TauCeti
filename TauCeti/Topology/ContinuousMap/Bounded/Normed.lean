@@ -26,7 +26,8 @@ open scoped NNReal BoundedContinuousFunction
 
 namespace TauCeti
 
-variable {T X Y : Type*} [TopologicalSpace T] [NormedAddCommGroup X] [NormedAddCommGroup Y]
+variable {T X Y : Type*} [TopologicalSpace T] [SeminormedAddCommGroup X]
+  [SeminormedAddCommGroup Y]
   {N : X → Y} {ε : ℝ≥0}
 
 /-- Postcomposition by an `ε`-Lipschitz map `N` has norm at most

@@ -17,6 +17,8 @@ points with singular zero-simplices. Faces of singular simplices obtained by pre
 affine simplices are also expressed in terms of their vertex maps.
 This transfers naturality of simplicial vertex classes to singular homology, giving naturality
 of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
+Along an inducing map, a singular simplex of the target is induced from the source exactly when
+its image lies in the range (`Topology.IsInducing.mem_range_toSSet_map_app_iff`).
 -/
 
 public section
@@ -82,3 +84,28 @@ lemma toSSetObjEquiv_symm_comp_affineMapMk_δ {X : TopCat.{u}} {m n : ℕ}
   simp [h]
 
 end TauCeti.TopCat
+
+namespace Topology.IsInducing
+
+open TauCeti.TopCat in
+/-- A singular simplex of `X` is induced from `Y` along an inducing map `f : Y ⟶ X` exactly when
+its image lies in the range of `f`. -/
+lemma mem_range_toSSet_map_app_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsInducing f)
+    (n : SimplexCategoryᵒᵖ) (σ : (TopCat.toSSet.obj X).obj n) :
+    σ ∈ Set.range ((TopCat.toSSet.map f).app n) ↔
+      Set.range (X.toSSetObjEquiv n σ) ⊆ Set.range f := by
+  constructor
+  · rintro ⟨τ, rfl⟩
+    rw [toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp]
+    exact Set.image_subset_range _ _
+  · intro h
+    choose g hg using fun t ↦ h (Set.mem_range_self t)
+    have hgc : Continuous g := hf.continuous_iff.mpr (by
+      convert (X.toSSetObjEquiv n σ).continuous using 1
+      exact funext hg)
+    refine ⟨(Y.toSSetObjEquiv n).symm ⟨g, hgc⟩, ?_⟩
+    rw [toSSet_map_app_toSSetObjEquiv_symm, Equiv.symm_apply_eq]
+    ext t
+    exact hg t
+
+end Topology.IsInducing

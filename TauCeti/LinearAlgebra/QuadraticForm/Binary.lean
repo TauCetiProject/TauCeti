@@ -46,6 +46,8 @@ represented value carries the whole content of the first theorem: every quadrati
   forced second coefficient present the same form.
 * `TauCeti.isSquare_mul_mul_of_equivalent_binary`: isometric binary forms have equal
   discriminants modulo squares.
+* `TauCeti.apply_mul_eq_of_equivalent_binary`: a multiplicative pairing constant on isometric
+  binary forms agrees on their discriminants.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
 
 ## References
@@ -224,6 +226,29 @@ theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : R)] {a b c d : R�
   simp only [Units.val_mul, LinearEquiv.coe_det]
   linear_combination ((c : R) * d) * hdisc
 
+/-- A pairing that is multiplicative in its first argument and constant on the coefficients of
+isometric binary forms takes the same values at the two discriminants of isometric binary forms. -/
+theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*} [CommMonoid M]
+    {F : Rˣ → Rˣ → M} (hmul : ∀ a b c, F (a * b) c = F a c * F b c)
+    (hF : ∀ a b c d : Rˣ, (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+      (weightedSumSquares R ![(c : R), (d : R)]) → F a b = F c d)
+    {a b c d : Rˣ} (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+      (weightedSumSquares R ![(c : R), (d : R)])) (x : Rˣ) :
+    F (a * b) x = F (c * d) x := by
+  -- Squares are invisible to `F` in the first argument, since `⟨1, x⟩ ≅ ⟨t², x⟩`.
+  have hsq (t : Rˣ) : F (t * t) x = F 1 x := by
+    refine hF (t * t) x 1 x
+      ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![t, 1] ?_⟩
+    refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩ <;> simp [pow_two]
+  obtain ⟨s, hs⟩ := isSquare_mul_mul_of_equivalent_binary h
+  symm
+  calc F (c * d) x = F (c * d * 1) x := by rw [mul_one]
+    _ = F (c * d) x * F ((a * b) * (a * b)) x := by rw [hmul, hsq]
+    _ = F ((a * b * (c * d)) * (a * b)) x := by
+      rw [← hmul]
+      ac_rfl
+    _ = F (a * b) x := by rw [hs, hmul, hsq, ← hmul, one_mul]
+
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they
 represent a common unit.
@@ -243,6 +268,35 @@ theorem equivalent_binary_iff [Invertible (2 : R)] (a b c d : Rˣ) :
   exact mem_unitValueSet_binary_left _ _
 
 end CommRing
+
+/-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
+theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
+    (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
+  constructor
+  · intro hQ ⟨z, hz⟩
+    have hzero : weightedSumSquares F ![(1 : F), 1] ![z, 1] = 0 := by
+      simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+        Matrix.cons_val_one, one_mul]
+      rw [← hz]
+      simp
+    have hh := hQ ![z, 1] hzero
+    have : (1 : F) = 0 := by simpa using congrArg (fun f : Fin 2 → F => f 1) hh
+    exact one_ne_zero this
+  · intro hsq x hx
+    have hxy : x 0 ^ 2 + x 1 ^ 2 = 0 := by
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two] using hx
+    have hy : x 1 = 0 := by
+      by_contra hy
+      apply hsq
+      refine ⟨x 0 / x 1, ?_⟩
+      rw [← _root_.sq, div_pow]
+      field_simp
+      linear_combination -hxy
+    have hx0 : x 0 = 0 := by
+      have hx0sq : x 0 ^ 2 = 0 := by simpa [hy] using hxy
+      exact (sq_eq_zero_iff).mp hx0sq
+    funext i
+    fin_cases i <;> simp [hx0, hy]
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once

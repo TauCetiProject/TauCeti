@@ -27,6 +27,8 @@ automorphism orbits of divisors.
 
 * `TauCeti.mem_riemannRochSpace_smul_iff` and `TauCeti.riemannRochSpace_map_smul`: `σ` carries
   `L(D)` onto `L(σ • D)`, pointwise and as a submodule;
+* `TauCeti.apply_eq_self_of_mem_riemannRochSpace_of_degree_lt_card`: an automorphism fixing more
+  rational places than the degree of a fixed divisor acts trivially on its Riemann–Roch space;
 * `TauCeti.Divisor.dim_smul`: `ℓ(σ • D) = ℓ(D)`.
 
 ## References
@@ -40,6 +42,8 @@ automorphism orbits of divisors.
 public section
 
 namespace TauCeti
+
+open AlgebraicGeometry
 
 universe u v v'
 
@@ -94,6 +98,40 @@ theorem riemannRochSpaceEquivSmul_symm_apply (f : riemannRochSpace (σ • D)) :
     ((riemannRochSpaceEquivSmul σ D).symm f : F') = σ.symm (f : F') := by
   rw [riemannRochSpaceEquivSmul, LinearEquiv.ofSubmodules_symm_apply]
   rfl
+
+/-- **An automorphism fixing enough rational places fixes a Riemann–Roch space pointwise.** Let
+`σ` fix the divisor `D`, and let `T` be a finite set of rational places outside the support of
+`D`, each fixed by `σ`. If `deg D < #T`, then `σ z = z` for every `z ∈ L(D)`. -/
+theorem apply_eq_self_of_mem_riemannRochSpace_of_degree_lt_card (hF : IsFunctionField k F')
+    {σ : F' ≃ₐ[F] F'} {D : Divisor k F'} (hD : σ • D = D) {T : Finset (Place k F')}
+    (hT : ∀ Q ∈ T, Q.degree = 1 ∧ σ • Q = Q ∧ D.coeff Q = 0)
+    (hdeg : Divisor.degree D < T.card) {z : F'} (hz : z ∈ riemannRochSpace D) : σ z = z := by
+  classical
+  have hσz : σ z ∈ riemannRochSpace D := by
+    simpa only [hD] using (mem_riemannRochSpace_smul_iff σ D).mpr hz
+  have hw : σ z - z ∈ riemannRochSpace D := (riemannRochSpace D).sub_mem hσz hz
+  by_contra hne
+  have hw0 : σ z - z ≠ 0 := sub_ne_zero.mpr hne
+  -- The difference vanishes at every place of `T`, so it lies in `L(D - ∑_{Q ∈ T} Q)`.
+  have hmem : σ z - z ∈ riemannRochSpace (D - WeilDivisor.ofFinset T) := by
+    refine (mem_riemannRochSpace_iff_neg_le_ord hw0).mpr fun Q ↦ ?_
+    by_cases hQ : Q ∈ T
+    · obtain ⟨hQdeg, hQσ, hQD⟩ := hT Q hQ
+      have hzQ : z ∈ Q.integers := by
+        simpa [hQD] using mem_riemannRochSpace_iff.mp hz Q
+      have hpos := (Q.valuation_lt_one_iff_ord_pos hw0).mp
+        (Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one σ Q hQσ hQdeg hzQ)
+      simp only [WeilDivisor.coeff_sub, WeilDivisor.coeff_ofFinset, hQ, ite_true, hQD]
+      omega
+    · simpa [hQ] using (mem_riemannRochSpace_iff_neg_le_ord hw0).mp hw Q
+  have hdegT : Divisor.degree (WeilDivisor.ofFinset T : Divisor k F') = T.card := by
+    rw [Divisor.degree_eq_weightedDegree, WeilDivisor.weightedDegree_ofFinset,
+      Finset.sum_congr rfl fun Q hQ ↦ by rw [(hT Q hQ).1, Nat.cast_one]]
+    simp
+  have hbot := riemannRochSpace_eq_bot_of_degree_neg hF
+    (D := D - WeilDivisor.ofFinset T) (by rw [Divisor.degree_sub, hdegT]; omega)
+  rw [hbot, Submodule.mem_bot] at hmem
+  exact hw0 hmem
 
 namespace Divisor
 

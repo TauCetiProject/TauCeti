@@ -84,7 +84,7 @@ variable {μ : YoungDiagram}
 /-- The number of labels below `m` that the `μ`-tableau `t` places in one of its first `i + 1`
 rows.  It depends on `t` only through its tabloid. -/
 def rowCount (t : YoungTableau μ) (m i : ℕ) : ℕ :=
-  (Finset.univ.filter fun k : Fin μ.card => (k : ℕ) < m ∧ rowIndex t k ≤ i).card
+  (Finset.univ.filter fun k : Fin μ.card ↦ (k : ℕ) < m ∧ rowIndex t k ≤ i).card
 
 theorem rowCount_congr {t u : YoungTableau μ} (h : rowIndex t = rowIndex u) (m i : ℕ) :
     rowCount t m i = rowCount u m i := by
@@ -99,14 +99,14 @@ theorem rowCount_succ (t : YoungTableau μ) (k : Fin μ.card) (i : ℕ) :
     simp
   rw [rowCount, rowCount, Finset.card_filter, Finset.card_filter, hsingle,
     ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x _ => ?_
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
   rcases lt_trichotomy (x : ℕ) (k : ℕ) with h | h | h
-  · have hx : x ≠ k := fun he => absurd (congrArg Fin.val he) h.ne
+  · have hx : x ≠ k := fun he ↦ absurd (congrArg Fin.val he) h.ne
     simp [h, Nat.lt_succ_of_lt h, hx]
   · have hx : x = k := Fin.ext h
     subst hx
     simp
-  · have hx : x ≠ k := fun he => absurd (congrArg Fin.val he) h.ne'
+  · have hx : x ≠ k := fun he ↦ absurd (congrArg Fin.val he) h.ne'
     simp [Nat.not_lt.mpr h.le, Nat.not_lt.mpr h, hx]
 
 /-- **The counts determine the rows.**  A tableau puts a label in the first row for which the
@@ -141,23 +141,23 @@ many as those that `u` does. -/
 def TabloidDominates (t u : YoungTableau μ) : Prop :=
   ∀ m i : ℕ, rowCount u m i ≤ rowCount t m i
 
-theorem tabloidDominates_refl (t : YoungTableau μ) : TabloidDominates t t := fun _ _ => le_rfl
+theorem tabloidDominates_refl (t : YoungTableau μ) : TabloidDominates t t := fun _ _ ↦ le_rfl
 
 theorem TabloidDominates.trans {t u v : YoungTableau μ} (h : TabloidDominates t u)
-    (h' : TabloidDominates u v) : TabloidDominates t v := fun m i => (h' m i).trans (h m i)
+    (h' : TabloidDominates u v) : TabloidDominates t v := fun m i ↦ (h' m i).trans (h m i)
 
 /-- **Dominance depends on the tableaux only through their tabloids.** -/
 theorem tabloidDominates_congr {t t' u u' : YoungTableau μ} (ht : tabloid t = tabloid t')
     (hu : tabloid u = tabloid u') : TabloidDominates t u ↔ TabloidDominates t' u' := by
   rw [tabloid_eq_iff_rowIndex_eq] at ht hu
-  exact forall_congr' fun m => forall_congr' fun i => by
+  exact forall_congr' fun m ↦ forall_congr' fun i ↦ by
     rw [rowCount_congr ht m i, rowCount_congr hu m i]
 
 /-- **Dominance is antisymmetric up to equality of tabloids.** -/
 theorem TabloidDominates.antisymm {t u : YoungTableau μ} (h : TabloidDominates t u)
     (h' : TabloidDominates u t) : tabloid t = tabloid u :=
   tabloid_eq_iff_rowIndex_eq.mpr
-    (rowIndex_eq_of_rowCount_eq fun m _ i _ => le_antisymm (h' m i) (h m i))
+    (rowIndex_eq_of_rowCount_eq fun m _ i _ ↦ le_antisymm (h' m i) (h m i))
 
 /-- A numerical refinement of dominance: the total of all the counts that can differ.  Dominance
 increases it, and a dominating tableau of no greater weight has the same rows
@@ -167,20 +167,20 @@ private def rowWeight (t : YoungTableau μ) : ℕ :=
 
 private theorem rowWeight_congr {t u : YoungTableau μ} (h : rowIndex t = rowIndex u) :
     rowWeight t = rowWeight u := by
-  refine Finset.sum_congr rfl fun m _ => Finset.sum_congr rfl fun i _ => rowCount_congr h m i
+  refine Finset.sum_congr rfl fun m _ ↦ Finset.sum_congr rfl fun i _ ↦ rowCount_congr h m i
 
 private theorem rowWeight_le_of_tabloidDominates {t u : YoungTableau μ} (h : TabloidDominates t u) :
     rowWeight u ≤ rowWeight t :=
-  Finset.sum_le_sum fun m _ => Finset.sum_le_sum fun i _ => h m i
+  Finset.sum_le_sum fun m _ ↦ Finset.sum_le_sum fun i _ ↦ h m i
 
 /-- **Dominance with no gain of weight is equality of tabloids.** -/
 private theorem rowIndex_eq_of_tabloidDominates {t u : YoungTableau μ} (h : TabloidDominates t u)
     (hw : rowWeight t ≤ rowWeight u) : rowIndex u = rowIndex t := by
   have hinner := (Finset.sum_eq_sum_iff_of_le
-    fun m (_ : m ∈ Finset.range (μ.card + 1)) => Finset.sum_le_sum fun i _ => h m i).mp
+    fun m (_ : m ∈ Finset.range (μ.card + 1)) ↦ Finset.sum_le_sum fun i _ ↦ h m i).mp
       (le_antisymm (rowWeight_le_of_tabloidDominates h) hw)
-  refine rowIndex_eq_of_rowCount_eq fun m hm i hi => ?_
-  exact (Finset.sum_eq_sum_iff_of_le fun i _ => h m i).mp
+  refine rowIndex_eq_of_rowCount_eq fun m hm i hi ↦ ?_
+  exact (Finset.sum_eq_sum_iff_of_le fun i _ ↦ h m i).mp
     (hinner m (Finset.mem_range.mpr (Nat.lt_succ_of_le hm))) i (Finset.mem_range.mpr hi)
 
 /-! ### A column permutation lowers the tabloid of a standard tableau -/
@@ -197,8 +197,8 @@ private theorem card_filter_le_of_isLowerSet {α : Type*} [LinearOrder α]
     exact (Finset.card_le_card (Finset.filter_subset _ _)).trans hcard
   · obtain ⟨a, ha, hpa⟩ : ∃ a ∈ A, ¬ p a := by
       by_contra hc
-      exact hall fun x hx => not_not.mp fun hpx => hc ⟨x, hx, hpx⟩
-    refine Finset.card_le_card fun y hy => ?_
+      exact hall fun x hx ↦ not_not.mp fun hpx ↦ hc ⟨x, hx, hpx⟩
+    refine Finset.card_le_card fun y hy ↦ ?_
     obtain ⟨hyC, hpy⟩ := Finset.mem_filter.mp hy
     have hlt : y < a := by
       rcases lt_trichotomy y a with h | h | h
@@ -218,45 +218,45 @@ theorem tabloidDominates_relabel_of_mem_colSubgroup (T : StandardYoungTableau μ
   intro m i
   -- index the labels of the relabelled tableau by their preimages
   have hreindex : rowCount (relabel q T.toTableau) m i =
-      (Finset.univ.filter fun x : Fin μ.card =>
+      (Finset.univ.filter fun x : Fin μ.card ↦
         ((q x : Fin μ.card) : ℕ) < m ∧ rowIndex T.toTableau x ≤ i).card := by
-    refine Finset.card_equiv (q⁻¹ : Equiv.Perm (Fin μ.card)) fun k => ?_
+    refine Finset.card_equiv (q⁻¹ : Equiv.Perm (Fin μ.card)) fun k ↦ ?_
     simp [rowIndex_relabel]
   -- both counts split over the columns of `T`
   have hmemJ : ∀ x : Fin μ.card,
-      colIndex T.toTableau x ∈ Finset.image (colIndex T.toTableau) Finset.univ := fun x =>
+      colIndex T.toTableau x ∈ Finset.image (colIndex T.toTableau) Finset.univ := fun x ↦
     Finset.mem_image_of_mem _ (Finset.mem_univ x)
   rw [hreindex, rowCount,
     Finset.card_eq_sum_card_fiberwise (f := colIndex T.toTableau)
-      (t := Finset.image (colIndex T.toTableau) Finset.univ) fun x _ => hmemJ x,
+      (t := Finset.image (colIndex T.toTableau) Finset.univ) fun x _ ↦ hmemJ x,
     Finset.card_eq_sum_card_fiberwise (f := colIndex T.toTableau)
-      (t := Finset.image (colIndex T.toTableau) Finset.univ) fun x _ => hmemJ x]
-  refine Finset.sum_le_sum fun j _ => ?_
+      (t := Finset.image (colIndex T.toTableau) Finset.univ) fun x _ ↦ hmemJ x]
+  refine Finset.sum_le_sum fun j _ ↦ ?_
   -- the labels of column `j` in the first `i + 1` rows, and their images under `q`
   set A : Finset (Fin μ.card) :=
-    Finset.univ.filter fun x => colIndex T.toTableau x = j ∧ rowIndex T.toTableau x ≤ i with hA
-  have hleft : ((Finset.univ.filter fun x : Fin μ.card =>
+    Finset.univ.filter fun x ↦ colIndex T.toTableau x = j ∧ rowIndex T.toTableau x ≤ i with hA
+  have hleft : ((Finset.univ.filter fun x : Fin μ.card ↦
         ((q x : Fin μ.card) : ℕ) < m ∧ rowIndex T.toTableau x ≤ i).filter
-      fun x => colIndex T.toTableau x = j) =
-      A.filter fun x => ((q x : Fin μ.card) : ℕ) < m := by
+      fun x ↦ colIndex T.toTableau x = j) =
+      A.filter fun x ↦ ((q x : Fin μ.card) : ℕ) < m := by
     ext x
     simp only [hA, Finset.mem_filter, Finset.mem_univ, true_and]
     tauto
-  have hright : ((Finset.univ.filter fun x : Fin μ.card =>
-        (x : ℕ) < m ∧ rowIndex T.toTableau x ≤ i).filter fun x => colIndex T.toTableau x = j) =
-      A.filter fun x : Fin μ.card => (x : ℕ) < m := by
+  have hright : ((Finset.univ.filter fun x : Fin μ.card ↦
+        (x : ℕ) < m ∧ rowIndex T.toTableau x ≤ i).filter fun x ↦ colIndex T.toTableau x = j) =
+      A.filter fun x : Fin μ.card ↦ (x : ℕ) < m := by
     ext x
     simp only [hA, Finset.mem_filter, Finset.mem_univ, true_and]
     tauto
   rw [hleft, hright]
   -- the image of `A` under `q` is another set of that many labels of the column
-  have himage : (A.filter fun x : Fin μ.card => ((q x : Fin μ.card) : ℕ) < m).card =
-      ((A.image q).filter fun y : Fin μ.card => (y : ℕ) < m).card := by
+  have himage : (A.filter fun x : Fin μ.card ↦ ((q x : Fin μ.card) : ℕ) < m).card =
+      ((A.image q).filter fun y : Fin μ.card ↦ (y : ℕ) < m).card := by
     rw [Finset.filter_image, Finset.card_image_of_injective _ q.injective]
   rw [himage]
-  refine card_filter_le_of_isLowerSet (S := Finset.univ.filter fun x => colIndex T.toTableau x = j)
-    (fun y hy => ?_) (le_of_eq (Finset.card_image_of_injective _ q.injective))
-    (fun x hx y hy hlt => ?_) fun _ _ hxy hx => (Fin.lt_def.mp hxy).trans hx
+  refine card_filter_le_of_isLowerSet (S := Finset.univ.filter fun x ↦ colIndex T.toTableau x = j)
+    (fun y hy ↦ ?_) (le_of_eq (Finset.card_image_of_injective _ q.injective))
+    (fun x hx y hy hlt ↦ ?_) fun _ _ hxy hx ↦ (Fin.lt_def.mp hxy).trans hx
   · obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hy
     simp only [hA, Finset.mem_filter, Finset.mem_univ, true_and] at hx ⊢
     rw [hcol x]
@@ -275,13 +275,13 @@ open YoungTableau
 a nonzero coefficient, one of largest weight has a tabloid that no other standard polytabloid of
 the combination reaches, so its coefficient is read off the combination. -/
 theorem linearIndependent_polytabloid (μ : YoungDiagram) :
-    LinearIndependent ℚ fun T : StandardYoungTableau μ => polytabloid T.toTableau := by
+    LinearIndependent ℚ fun T : StandardYoungTableau μ ↦ polytabloid T.toTableau := by
   classical
   rw [linearIndependent_iff']
   intro s g hsum T₁ hT₁
   by_contra hg
-  obtain ⟨T₀, hT₀, hmax⟩ := Finset.exists_max_image (s.filter fun T => g T ≠ 0)
-    (fun T => rowWeight T.toTableau) ⟨T₁, Finset.mem_filter.mpr ⟨hT₁, hg⟩⟩
+  obtain ⟨T₀, hT₀, hmax⟩ := Finset.exists_max_image (s.filter fun T ↦ g T ≠ 0)
+    (fun T ↦ rowWeight T.toTableau) ⟨T₁, Finset.mem_filter.mpr ⟨hT₁, hg⟩⟩
   obtain ⟨hT₀s, hg₀⟩ := Finset.mem_filter.mp hT₀
   -- no other standard polytabloid of the combination reaches the tabloid of `T₀`
   have hzero : ∀ T ∈ s, T ≠ T₀ →
@@ -290,7 +290,7 @@ theorem linearIndependent_polytabloid (μ : YoungDiagram) :
     rcases eq_or_ne (g T) 0 with h0 | h0
     · simp [h0]
     have hvanish : (polytabloid T.toTableau).coeff (tabloid T₀.toTableau) = 0 := by
-      refine polytabloid_coeff_eq_zero_of_forall_ne _ fun q hq hcontra => hTne ?_
+      refine polytabloid_coeff_eq_zero_of_forall_ne _ fun q hq hcontra ↦ hTne ?_
       have hdom : TabloidDominates T.toTableau (relabel q T.toTableau) :=
         tabloidDominates_relabel_of_mem_colSubgroup T hq
       have hrow : rowIndex (relabel q T.toTableau) = rowIndex T₀.toTableau := by
@@ -321,7 +321,7 @@ definition, and every one of them is a combination of the standard ones by
 `TauCeti.YoungTableau.polytabloid_mem_span_polytabloid_standard`. -/
 theorem spechtSubrepresentation_eq_span_standard (μ : YoungDiagram) :
     (spechtSubrepresentation μ).toSubmodule =
-      Submodule.span ℚ (Set.range fun T : StandardYoungTableau μ => polytabloid T.toTableau) := by
+      Submodule.span ℚ (Set.range fun T : StandardYoungTableau μ ↦ polytabloid T.toTableau) := by
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rw [spechtSubrepresentation_toSubmodule]
     refine Submodule.span_le.mpr ?_
@@ -339,9 +339,15 @@ noncomputable def standardPolytabloidBasis (μ : YoungDiagram) :
   (Module.Basis.span (linearIndependent_polytabloid μ)).map
     (LinearEquiv.ofEq _ _ (spechtSubrepresentation_eq_span_standard μ).symm)
 
+-- The `simp` lemmas below state their left-hand sides through `dsimp% only` (#8315): the carrier
+-- `(permutationModule _).V` of the coercion and of the submodule is indexed unreduced, as
+-- `Rep.V` of a `Rep` structure literal, while `simp` reduces it to the underlying monoid
+-- algebra before it looks a term up, so the plain form is never found.
+/-- The basis vector of the standard polytabloid basis indexed by a standard Young tableau `T` is
+the polytabloid of `T`. -/
 @[simp]
 theorem coe_standardPolytabloidBasis (μ : YoungDiagram) (T : StandardYoungTableau μ) :
-    (standardPolytabloidBasis μ T : (permutationModule (shapePartition μ)).V) =
+    (dsimp% only (standardPolytabloidBasis μ T : (permutationModule (shapePartition μ)).V)) =
       polytabloid T.toTableau := by
   simp [standardPolytabloidBasis]
 
@@ -353,10 +359,16 @@ noncomputable def spechtModuleStandardBasis {n : ℕ} (μ : n.Partition) :
     Module.Basis (StandardYoungTableau (diagramOf μ)) ℚ (spechtModule μ) :=
   standardPolytabloidBasis (diagramOf μ)
 
+-- `simp` also rewrites the `FGModuleCat` carrier of `spechtModule μ` by
+-- `FGModuleCat.of_carrier` before it looks this left-hand side up, so it is stated with that
+-- rewrite applied as well.
+/-- The basis vector of the standard basis of the Specht module `S^μ` indexed by a standard Young
+tableau `T` is the polytabloid of `T`. -/
 @[simp]
 theorem coe_spechtModuleStandardBasis {n : ℕ} (μ : n.Partition)
     (T : StandardYoungTableau (diagramOf μ)) :
-    (spechtModuleStandardBasis μ T : (permutationModule (shapePartition (diagramOf μ))).V) =
+    (dsimp% only [FGModuleCat.of_carrier]
+        (spechtModuleStandardBasis μ T : (permutationModule (shapePartition (diagramOf μ))).V)) =
       polytabloid T.toTableau :=
   coe_standardPolytabloidBasis (diagramOf μ) T
 
@@ -364,13 +376,17 @@ theorem coe_spechtModuleStandardBasis {n : ℕ} (μ : n.Partition)
 f^μ`. -/
 @[simp]
 theorem finrank_spechtSubrepresentation (μ : YoungDiagram) :
-    Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule = standardCount μ := by
+    (dsimp% only (Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule)) =
+      standardCount μ := by
   rw [standardCount_def]
   exact Module.finrank_eq_card_basis (standardPolytabloidBasis μ)
 
+-- Not a `simp` lemma: `simp` rewrites the carrier of `spechtModule μ` by
+-- `FGModuleCat.of_carrier` to that of the Specht subrepresentation, and then
+-- `finrank_spechtSubrepresentation` proves this statement, so no form of this left-hand side is
+-- ever looked up.
 /-- **The dimension of the Specht module `S^μ` of a partition `μ` of `n` is the number `f^μ` of
 standard Young tableaux of shape `μ`.** -/
-@[simp]
 theorem finrank_spechtModule {n : ℕ} (μ : n.Partition) :
     Module.finrank ℚ (spechtModule μ) = standardCount (diagramOf μ) :=
   finrank_spechtSubrepresentation (diagramOf μ)

@@ -65,6 +65,9 @@ uses this file.
   with `i < j`, and, over a domain away from characteristic two,
   `TauCeti.strictUpperTriangular_toSubmodule_eq_iSup_rootSpace` reads this as the sum of the root
   spaces of the positive roots.
+* `𝔫⁺` is a free module of finite rank over any commutative ring, the entries strictly above the
+  diagonal being free coordinates: this is where the `Module.Free` and `Module.Finite` instances
+  for `TauCeti.strictUpperTriangular R n` come from.
 
 ## Implementation notes
 
@@ -392,6 +395,36 @@ theorem strictUpperTriangular_toSubmodule_eq_iSup_rootSpace [IsDomain R] (h2 : (
   rw [strictUpperTriangular_toSubmodule_eq_iSup]
   exact iSup_congr fun i => iSup_congr fun j => iSup_congr fun hij =>
     (rootSpace_glWeightSub_eq_span h2 hij.ne).symm
+
+/-! ### `𝔫⁺` is free on the raising operators -/
+
+/-- **Coordinates on `𝔫⁺`.** A strictly upper triangular matrix is exactly its family of entries
+strictly above the diagonal, and those entries are arbitrary.
+
+This is the coordinate system behind the `Module.Free` and `Module.Finite` instances below, and,
+as with the coordinates on `sl n R` in `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, it is
+private: the two instances are the public content. -/
+private def strictUpperTriangularEquivFun :
+    strictUpperTriangular R n ≃ₗ[R] ({p : n × n // p.1 < p.2} → R) where
+  toFun A p := (A : Matrix n n R) p.1.1 p.1.2
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun g := ⟨of fun i j => if h : i < j then g ⟨(i, j), h⟩ else 0,
+    mem_strictUpperTriangular_iff.mpr fun _ _ hij => dite_eq_right (not_lt.mpr hij)⟩
+  left_inv A := Subtype.ext <| Matrix.ext fun i j => by
+    by_cases hij : i < j
+    · simp [hij]
+    · simp [hij, mem_strictUpperTriangular_iff.mp A.2 i j (not_lt.mp hij)]
+  right_inv g := funext fun _ => dite_eq_left _
+
+/-- **`𝔫⁺` is a free module**, on the raising matrix units `Eᵢⱼ` with `i < j`: the entries above
+the diagonal are free coordinates. -/
+instance : Module.Free R (strictUpperTriangular R n) :=
+  Module.Free.of_basis (Module.Basis.ofEquivFun (strictUpperTriangularEquivFun R n))
+
+/-- **`𝔫⁺` is a finite module**, the entries above the diagonal being finite in number. -/
+instance : Module.Finite R (strictUpperTriangular R n) :=
+  Module.Finite.of_basis (Module.Basis.ofEquivFun (strictUpperTriangularEquivFun R n))
 
 /-! ### The opposite nilpotent subalgebra `𝔫⁻` -/
 

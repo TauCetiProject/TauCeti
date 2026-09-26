@@ -36,7 +36,8 @@ positive, and take independent real coordinates indexed by the on-or-below diago
 * a strictly lower coordinate has the standard Gaussian law `gaussianReal 0 1`.
 
 Then the random symmetric matrix `L * Lᵀ` built from these coordinates has the standard Wishart
-density, which is the law `TauCeti.nonsingularWishartMeasure n 1`. Since `L ↦ L * Lᵀ` is the
+density, which is the law `TauCeti.Probability.nonsingularWishartMeasure n 1`. Since `L ↦ L * Lᵀ` is
+the
 inverse of the Cholesky factorization on the positive-definite cone, reading the implication
 backwards gives the Bartlett decomposition: lift the Wishart law to the cone, factor, and the
 on-or-below-diagonal entries of the Cholesky factor are independent, the diagonal entry `T i i`
@@ -50,19 +51,24 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
 
 ## Main declarations
 
-* `TauCeti.bartlettCoordinateMeasure` — the coordinate measure of one Cholesky coordinate; for
+* `TauCeti.Probability.bartlettCoordinateMeasure` — the coordinate measure of one Cholesky
+  coordinate; for
   `(p : ℝ) - 1 < n` it is the chi or standard Gaussian law of that coordinate.
-* `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of independent
+* `TauCeti.Probability.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` — the Gram matrix of
+  independent
   coordinates with these laws has the standard Wishart density.
-* `TauCeti.map_sq_bartlettCoordinateMeasure_of_eq` and
-  `TauCeti.isProbabilityMeasure_bartlettCoordinateMeasure` — the square of a diagonal coordinate
+* `TauCeti.Probability.map_sq_bartlettCoordinateMeasure_of_eq` and
+  `TauCeti.Probability.isProbabilityMeasure_bartlettCoordinateMeasure` — the square of a diagonal
+  coordinate
   is chi-squared, and every coordinate law is normalized.
-* `TauCeti.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` — the standard Wishart law is
+* `TauCeti.Probability.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` — the standard
+  Wishart law is
   the Gram image of the product of the coordinate laws.
-* `TauCeti.map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure` — the Cholesky
+* `TauCeti.Probability.map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure` — the Cholesky
   coordinates of the lifted standard Wishart law are that product, the Bartlett decomposition at
   the level of measures.
-* `TauCeti.bartlett_nonsingularWishartMeasure` — its random-variable form: independence of the
+* `TauCeti.Probability.bartlett_nonsingularWishartMeasure` — its random-variable form: independence
+  of the
   Cholesky entries together with their chi-squared and standard Gaussian laws.
 
 ## References
@@ -80,7 +86,7 @@ open MeasureTheory ProbabilityTheory Real Set
 
 open scoped ENNReal Matrix
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ}
 
@@ -90,7 +96,7 @@ on the positive half-line with the chi density formula for `n - i` degrees of fr
 strictly lower position it is the standard Gaussian law. The definition places no condition on
 `n`: the diagonal measure is the chi probability law only when `0 < n - i`, which holds for every
 `i < p` under the nonzero-dimensional hypothesis `(p : ℝ) - 1 < n` of
-`TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`. -/
+`TauCeti.Probability.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`. -/
 def bartlettCoordinateMeasure (n : ℝ) (ij : lowerTriangle p) : Measure ℝ :=
   if ij.1.1 = ij.1.2 then
     (volume.restrict (Ioi (0 : ℝ))).withDensity fun t ↦ ENNReal.ofReal
@@ -115,7 +121,8 @@ theorem bartlettCoordinateMeasure_of_ne (n : ℝ) {ij : lowerTriangle p} (h : ij
     bartlettCoordinateMeasure n ij = gaussianReal 0 1 :=
   ite_eq_right_iff.2 fun h' ↦ absurd h' h
 
-/-- The real density of `TauCeti.bartlettCoordinateMeasure n ij` against Lebesgue measure. -/
+/-- The real density of `TauCeti.Probability.bartlettCoordinateMeasure n ij` against Lebesgue
+measure. -/
 private def bartlettCoordinatePDFReal (n : ℝ) (ij : lowerTriangle p) (t : ℝ) : ℝ :=
   if ij.1.1 = ij.1.2 then
     (Ioi (0 : ℝ)).indicator (fun t ↦ (2 : ℝ) ^ (1 - (n - ij.1.1) / 2) /
@@ -355,8 +362,10 @@ theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 
 /-! ### The Bartlett decomposition -/
 
 /-- **The standard Wishart law is the Gram image of the Bartlett coordinates.** This is
-`TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` with the density on the right
-recognised as `TauCeti.nonsingularWishartMeasure n 1`: at the scale `1` both the inverse scale in
+`TauCeti.Probability.map_lowerTriangleGram_pi_bartlettCoordinateMeasure` with the density on the
+right
+recognised as `TauCeti.Probability.nonsingularWishartMeasure n 1`: at the scale `1` both the inverse
+scale in
 the exponential weight and the scale determinant in the normalizing constant disappear. -/
 theorem nonsingularWishartMeasure_one_eq_map_lowerTriangleGram (hn : (p : ℝ) - 1 < n) :
     nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ) =
@@ -374,10 +383,11 @@ theorem nonsingularWishartMeasure_one_eq_map_lowerTriangleGram (hn : (p : ℝ) -
   · rw [nonsingularWishartPDF_of_not_posDef n _ hA]
 
 /-- **The Bartlett decomposition of the standard Wishart law.** Lift
-`TauCeti.nonsingularWishartMeasure n 1` to the positive-definite cone, where Cholesky
+`TauCeti.Probability.nonsingularWishartMeasure n 1` to the positive-definite cone, where Cholesky
 factorization is defined, and read the on-or-below-diagonal entries of the factor: the resulting
 law is the product of the Bartlett coordinate laws. Cholesky factorization inverts the Gram map
-of `TauCeti.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`, and the product law lives on the
+of `TauCeti.Probability.map_lowerTriangleGram_pi_bartlettCoordinateMeasure`, and the product law
+lives on the
 positive-diagonal region where that inversion is valid. -/
 theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : ℝ) - 1 < n) :
     ((nonsingularWishartMeasure n (1 : Matrix (Fin p) (Fin p) ℝ)).comap
@@ -458,4 +468,4 @@ theorem bartlett_nonsingularWishartMeasure {Ω : Type*} {mΩ : MeasurableSpace �
     have h := hcoord ⟨(i, j), hij.le⟩
     rwa [bartlettCoordinateMeasure_of_ne n (fun h' ↦ absurd h' hij.ne')] at h
 
-end TauCeti
+end TauCeti.Probability

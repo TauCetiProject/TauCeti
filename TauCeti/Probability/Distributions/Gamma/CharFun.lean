@@ -23,7 +23,7 @@ imaginary axis.
 
 ## Main result
 
-* `TauCeti.charFun_gammaMeasure` gives the characteristic function of the gamma law.
+* `TauCeti.Probability.charFun_gammaMeasure` gives the characteristic function of the gamma law.
 
 ## References
 
@@ -41,7 +41,7 @@ open Filter MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal NNReal Topology
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {a r : ℝ}
 
@@ -97,4 +97,4 @@ theorem charFun_gammaMeasure (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
   rw [complexMGF_id_mul_I] at this
   simpa only [gammaComplexMGF, mul_comm] using this
 
-end TauCeti
+end TauCeti.Probability

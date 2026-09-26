@@ -121,6 +121,17 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyZeroBaseLinearEquiv_appl
     cohomologyZeroBaseLinearEquiv R X M x = cohomologyZeroEquiv M x := by
   exact cohomologyZeroLinearEquiv_apply M x
 
+/-- The base-linear identification of degree-zero cohomology with global sections is natural in
+the coefficient sheaf: it carries the degree-zero cohomology map of `f` to the global-sections
+map of `f`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality
+    (f : M ⟶ N) (x : Cohomology M 0) :
+    cohomologyZeroBaseLinearEquiv R X N (cohomologyMapBaseLinear R X f 0 x) =
+      f.app ⊤ (cohomologyZeroBaseLinearEquiv R X M x) := by
+  rw [cohomologyZeroBaseLinearEquiv_apply, cohomologyZeroBaseLinearEquiv_apply,
+    cohomologyMapBaseLinear_apply]
+  exact cohomologyZeroEquiv_naturality f x
+
 end Scheme.Modules
 
 end

@@ -61,14 +61,22 @@ subsets avoids having to choose one.
 The presheaf built here is **not identified with Wedhorn's `𝒪_X`**, and is named for what it is
 rather than for what it is expected to become. Wedhorn indexes by rational *subsets* `U ⊆ V`, which
 presupposes that `𝒪_X(U)` is well defined; here the index is presentations, so the value depends a
-priori on presentation data. Two results close the gap:
+priori on presentation data. Two ingredients toward closing the gap are available:
 
 * refinement maps between two presentations of the *same* rational subset are isomorphisms, so that
-  `p ↦ A⟨p.num / p.den⟩` descends to a function of the subset. The isomorphism is supplied by
-  `TauCeti.ValuationSpectrum.presentationRingEquivOfEq` when `A⁺` consists of power-bounded
-  elements; and
-* the presentation index is then cofinal in the subset index, so the two limits agree. This one is
-  not yet available.
+  `p ↦ A⟨p.num / p.den⟩` descends to a function of the subset. This is
+  `TauCeti.ValuationSpectrum.isIso_restrictionHom_of_rationalSubset_eq`, when `A⁺` consists of
+  power-bounded elements; and
+* the presentation index is cofinal in the subset index. This is expressed by
+  `TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex` in
+  `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality`; its `Initial` instance is
+  the categorical comparison needed for limits.
+
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SubsetLimit` constructs the
+coordinate-ring diagram on rational subsets and its comparison with the presentation diagram, and
+puts these ingredients together into
+`TauCeti.ValuationSpectrum.presentationLimitIsoRationalSubsetLimit`. What that leaves open is the
+restriction maps: the two limits are identified value by value, not as presheaves.
 
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
@@ -354,6 +362,16 @@ noncomputable def presentationLimitπToPresentation (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
     presentationLimit (P := P) Aplus V ⟶ i.pres.completionLocObj :=
   presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i)
+
+/-- The transported projection is the projection followed by the transport. -/
+-- The body of `presentationLimitπToPresentation` is not exposed, so this is the defining equation
+-- a consumer in another module has. It is deliberately not `@[simp]`: tagging it takes
+-- `presentationLimitπ_comp_restriction` out of simp-normal form, confirmed with
+-- `scripts/lint-env.sh`.
+theorem presentationLimitπToPresentation_eq (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimitπToPresentation Aplus V i =
+      presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := (rfl)
 
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/

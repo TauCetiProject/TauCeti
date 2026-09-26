@@ -280,16 +280,48 @@ theorem cup11ProjectionHomotopy_apply (α : G → M) (β : U → N) (γ : G) :
     cup11ProjectionHomotopy G M N P U μ t ht α β γ =
       ∑ u : G ⧸ U, μ (α (t u)) (t u • β ⟨lWord U t u γ, lWord_mem U t ht u γ⟩) := (rfl)
 
+/-- Translating the homotopy: `γ • kᵗ(η)` pairs `γ • α (t u)` against `(γ * t u) • β (ℓᵗ_u η)`. -/
+private theorem smul_cup11ProjectionHomotopy
+    (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y) (α : G → M) (β : U → N)
+    (γ η : G) :
+    γ • cup11ProjectionHomotopy G M N P U μ t ht α β η =
+      ∑ u : G ⧸ U, μ (γ • α (t u)) ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
+  simp only [cup11ProjectionHomotopy_apply, Finset.smul_sum, ← hequiv, mul_smul]
+
+omit [DistribMulAction G M] [DistribMulAction G P] in
+/-- The homotopy at a product: by the `1`-cocycle law of `β`, `kᵗ(γη)` is `kᵗ(γ)` plus the sum
+pairing `α (t (γ • u))` against `(γ * t u) • β (ℓᵗ_u η)`. -/
+private theorem cup11ProjectionHomotopy_mul (α : G → M) {β : U → N}
+    (hβ : groupCohomology.IsCocycle₁ β) (γ η : G) :
+    cup11ProjectionHomotopy G M N P U μ t ht α β (γ * η) =
+      cup11ProjectionHomotopy G M N P U μ t ht α β γ +
+        ∑ u : G ⧸ U, μ (α (t (γ • u)))
+          ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
+  -- The cocycle law of `β` at `ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η) = ℓᵗ_u(γ * η)` splits each summand.
+  simp only [cup11ProjectionHomotopy_apply, smul_apply_lWord_mul_of_isCocycle₁ G N U t ht hβ γ η,
+    map_add, Finset.sum_add_distrib]
+  -- Reindex the second sum by translation by `γ`.
+  refine congrArg _ (Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun u => ?_).symm
+  simp only [MulAction.toPerm_apply, inv_smul_smul]
+
+/-- The corestriction side of the `(1,1)` projection formula, reindexed by translation by `γ` so
+that its second pairing argument is `(γ * t u) • β (ℓᵗ_u η)`; the cocycle law of `α` then turns
+its first pairing argument into `γ • α (t u) - α (t (γ • u)) + α γ`. -/
+private theorem cochainsCor2_cup11_res_eq_sum
+    (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y) {α : G → M}
+    (hα : groupCohomology.IsCocycle₁ α) (β : U → N) (γ η : G) :
+    cochainsCor2 G P U t ht (fun q : U × U => μ (α (q.1 : G)) ((q.1 : G) • β q.2)) (γ, η) =
+      ∑ u : G ⧸ U, μ (γ • α (t u) - α (t (γ • u)) + α γ)
+        ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
+  rw [cochainsCor2_apply]
+  refine (Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun u => ?_).symm
+  simp only [MulAction.toPerm_apply, inv_smul_smul]
+  rw [← smul_apply_lWord_of_isCocycle₁ G M U t hα, ← hequiv, smul_smul, transversal_smul_mul_lWord]
+
 /-- **The `(1,1)` projection formula on cochains, up to the explicit coboundary.** For a `1`-cocycle
 `α` of `G` and a `1`-cocycle `β` of `U`, the difference between the corestriction of the cup of
 `α|_U` with `β` and the cup of `α` with the corestriction of `β` is `d¹` of
-`TauCeti.ContCohomology.cup11ProjectionHomotopy`.
-
-The whole content is the transversal identity `TauCeti.transversal_smul_mul_lWord`, applied twice:
-once to move the factor `t u •` of the corestriction across the pairing on the left-hand side, and
-once, through the cocycle law for `α`, to turn the value `t (γ • u) • α (ℓᵗ_{γ • u} γ)` that
-appears there into `γ • α (t u) - α (t (γ • u)) + α γ`. The first two of those three terms are
-what `d¹` of the homotopy contributes and the third is the right-hand side. -/
+`TauCeti.ContCohomology.cup11ProjectionHomotopy`. -/
 theorem cup11ProjectionHomotopy_spec
     (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
     {α : G → M} (hα : groupCohomology.IsCocycle₁ α)
@@ -299,58 +331,19 @@ theorem cup11ProjectionHomotopy_spec
         cup11ProjectionHomotopy G M N P U μ t ht α β γ =
       cochainsCor2 G P U t ht (fun q : U × U => μ (α (q.1 : G)) ((q.1 : G) • β q.2)) (γ, η) -
         μ (α γ) (γ • cochainsCor1 G N U t ht β η) := by
-  -- The four sums below are all indexed so that their second pairing argument is
+  -- The whole content is the transversal identity `TauCeti.transversal_smul_mul_lWord`, applied
+  -- twice: once to move the factor `t u •` of the corestriction across the pairing on the
+  -- left-hand side, and once, through the cocycle law for `α`, to turn the value
+  -- `t (γ • u) • α (ℓᵗ_{γ • u} γ)` that appears there into `γ • α (t u) - α (t (γ • u)) + α γ`.
+  -- The first two of those three terms are what `d¹` of the homotopy contributes and the third is
+  -- the right-hand side.
+  -- The rewrites below index all four sums so that their second pairing argument is
   -- `(γ * t u) • β (ℓᵗ_u η)`; only the first argument differs.
-  have h1 : γ • cup11ProjectionHomotopy G M N P U μ t ht α β η =
-      ∑ u : G ⧸ U, μ (γ • α (t u))
-        ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
-    rw [cup11ProjectionHomotopy_apply, Finset.smul_sum]
-    exact Finset.sum_congr rfl fun u _ => by rw [← hequiv, mul_smul]
-  have h2 : cup11ProjectionHomotopy G M N P U μ t ht α β (γ * η) =
-      cup11ProjectionHomotopy G M N P U μ t ht α β γ +
-        ∑ u : G ⧸ U, μ (α (t (γ • u)))
-          ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
-    have hsplit : ∀ u : G ⧸ U,
-        μ (α (t u)) (t u • β ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩) =
-          μ (α (t u)) (t u • β ⟨lWord U t u γ, lWord_mem U t ht u γ⟩) +
-            μ (α (t u)) ((γ * t (γ⁻¹ • u)) •
-              β ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩) := by
-      intro u
-      have hmul : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-          ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-            ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-        Subtype.ext (lWord_mul_lWord U t u γ η)
-      rw [← hmul, hβ, Subgroup.smul_def, smul_add, smul_smul, transversal_mul_lWord, map_add]
-      abel
-    rw [cup11ProjectionHomotopy_apply, cup11ProjectionHomotopy_apply,
-      Finset.sum_congr rfl fun u _ => hsplit u, Finset.sum_add_distrib]
-    refine congrArg _ (Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun u => ?_).symm
-    simp only [MulAction.toPerm_apply, inv_smul_smul]
-  -- The cocycle law for `α` at the factorization `t (γ • u) * ℓᵗ_{γ • u}(γ) = γ * t u`.
-  have hkey : ∀ u : G ⧸ U, t (γ • u) • α (lWord U t (γ • u) γ) =
-      γ • α (t u) - α (t (γ • u)) + α γ := by
-    intro u
-    have h := hα (t (γ • u)) (lWord U t (γ • u) γ)
-    rw [transversal_smul_mul_lWord, hα γ (t u)] at h
-    have h' : t (γ • u) • α (lWord U t (γ • u) γ) = γ • α (t u) + α γ - α (t (γ • u)) := by
-      rw [h]; abel
-    rw [h']; abel
-  have h3 : cochainsCor2 G P U t ht
-      (fun q : U × U => μ (α (q.1 : G)) ((q.1 : G) • β q.2)) (γ, η) =
-        ∑ u : G ⧸ U, μ (γ • α (t u) - α (t (γ • u)) + α γ)
-          ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
-    rw [cochainsCor2_apply]
-    refine (Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun u => ?_).symm
-    rw [← hkey u]
-    simp only [MulAction.toPerm_apply, inv_smul_smul]
-    rw [← hequiv, smul_smul, transversal_smul_mul_lWord]
-  have h4 : μ (α γ) (γ • cochainsCor1 G N U t ht β η) =
-      ∑ u : G ⧸ U, μ (α γ) ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
-    rw [cochainsCor1_apply, Finset.smul_sum, map_sum]
-    exact Finset.sum_congr rfl fun u _ => by rw [mul_smul]
-  rw [h1, h2, h3, h4]
-  simp only [map_sub, map_add, AddMonoidHom.sub_apply, AddMonoidHom.add_apply,
-    Finset.sum_add_distrib, Finset.sum_sub_distrib]
+  rw [smul_cup11ProjectionHomotopy G M N P U μ t ht hequiv,
+    cup11ProjectionHomotopy_mul G M N P U μ t ht α hβ,
+    cochainsCor2_cup11_res_eq_sum G M N P U μ t ht hequiv hα]
+  simp only [cochainsCor1_apply, Finset.smul_sum, map_sum, mul_smul, map_sub, map_add,
+    AddMonoidHom.sub_apply, AddMonoidHom.add_apply, Finset.sum_add_distrib, Finset.sum_sub_distrib]
   abel
 
 end CupOneOneHomotopy

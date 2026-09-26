@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.FinTrdeg
 public import Mathlib.NumberTheory.FunctionField
+public import TauCeti.FieldTheory.IntermediateField.FieldRange
+public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 
 /-!
 # Algebraic function fields of one variable
@@ -16,12 +17,14 @@ It proves that every transcendental element is a valid parameter and generates a
 of its own, compares the intrinsic notion with Mathlib's chosen-parameter `FunctionField`, and
 characterizes it by finite generation and transcendence degree one.
 
+It then records how the notion behaves along a change of the field on either side: a finite
+extension of `F` is again a function field over `k`, an algebraic descent `F / E` preserves
+transcendence degree one and makes `E` a function field over `k`, and an intermediate field `k'`
+of `F / k` is a legitimate base for `F` exactly when `k' / k` is algebraic
+(`TauCeti.isFunctionField_base_iff_isAlgebraic`).
+
 The definition and the independence-of-parameter result follow Stichtenoth, *Algebraic Function
 Fields and Codes*, second edition, Definition 1.1.1 and Remark 1.1.2.
-
-The proof of independence of the parameter adapts Mathlib's
-`FunctionField.finiteDimensional_of_adjoin_transcendental` to the intrinsic predicate defined
-here. No code from external formalizations is used.
 -/
 
 public section
@@ -32,7 +35,7 @@ namespace TauCeti
 
 open IntermediateField
 
-universe u v
+universe u v w
 
 variable (k : Type u) (F : Type v) [Field k] [Field F] [Algebra k F]
 
@@ -56,6 +59,8 @@ theorem exists_transcendental (hF : IsFunctionField k F) : ∃ x : F, Transcende
 field is finite over the intermediate field it generates. -/
 theorem finiteDimensional_adjoin (hF : IsFunctionField k F) {y : F}
     (hy : Transcendental k y) : FiniteDimensional k⟮y⟯ F := by
+  -- This proof adapts Mathlib's `FunctionField.finiteDimensional_of_adjoin_transcendental` to
+  -- the intrinsic predicate defined here.
   obtain ⟨x, hx, hfinite⟩ := hF
   let Fyx := restrictScalars k k⟮y⟯⟮x⟯
   let Fxy := restrictScalars k k⟮x⟯⟮y⟯
@@ -199,6 +204,17 @@ theorem isFunctionField_iff_trdeg_eq_one [Algebra.EssFiniteType k F] :
   let : Algebra.IsAlgebraic k⟮x⟯ F := trdeg_eq_zero_iff.mp hzero
   exact ⟨x, hx, Algebra.finite_of_essFiniteType_of_isAlgebraic⟩
 
+/-- An algebraic extension of an algebraic function field still has transcendence degree one over
+the base field, whether or not it is again finitely generated. -/
+theorem IsFunctionField.trdeg_eq_one_of_isAlgebraic {E : Type*} [Field E] [Algebra k E]
+    [Algebra F E] [IsScalarTower k F E] [Algebra.IsAlgebraic F E] (hF : IsFunctionField k F) :
+    Algebra.trdeg k E = 1 := by
+  apply Cardinal.lift_injective
+  rw [← lift_trdeg_add_eq k F E,
+    trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic F E), Cardinal.lift_zero,
+    add_zero, hF.trdeg_eq_one, Cardinal.lift_one]
+  simp
+
 /-- A finite extension of an algebraic function field is an algebraic function field over the
 same base field. No separability hypothesis is needed. -/
 theorem IsFunctionField.finite_extension {E : Type*} [Field E] [Algebra k E] [Algebra F E]
@@ -207,10 +223,107 @@ theorem IsFunctionField.finite_extension {E : Type*} [Field E] [Algebra k E] [Al
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   let : Algebra.EssFiniteType k E := Algebra.EssFiniteType.comp k F E
   rw [isFunctionField_iff_trdeg_eq_one]
-  apply Cardinal.lift_injective
-  rw [← lift_trdeg_add_eq k F E,
-    trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic F E), Cardinal.lift_zero,
-    add_zero, hF.trdeg_eq_one, Cardinal.lift_one]
-  simp
+  exact hF.trdeg_eq_one_of_isAlgebraic
+
+/-- If `F / k` is a function field and `F / E` is algebraic, then `E / k` has transcendence
+degree one. -/
+theorem IsFunctionField.trdeg_eq_one_of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
+    [Algebra E F] [IsScalarTower k E F] [Algebra.IsAlgebraic E F]
+    (hF : IsFunctionField k F) : Algebra.trdeg k E = 1 := by
+  apply Cardinal.lift_injective.{v, w}
+  have h := lift_trdeg_add_eq k E F
+  rw [trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic E F),
+    Cardinal.lift_zero, add_zero, hF.trdeg_eq_one, Cardinal.lift_one] at h
+  simpa using h
+
+/-- If `F / k` is a function field and `F / E` is algebraic, then `E / k` is a function field.
+A transcendental element of `E` is a rational parameter for both `F` and `E`. -/
+theorem IsFunctionField.of_isAlgebraic_top {E : Type w} [Field E] [Algebra k E]
+    [Algebra E F] [IsScalarTower k E F] [Algebra.IsAlgebraic E F]
+    (hF : IsFunctionField k F) : IsFunctionField k E := by
+  have htr : Algebra.trdeg k E = 1 := hF.trdeg_eq_one_of_isAlgebraic_top
+  have htrans : Algebra.Transcendental k E := trdeg_ne_zero_iff.mp (htr ▸ one_ne_zero)
+  obtain ⟨x, hx⟩ := htrans.transcendental
+  have hxF : Transcendental k (algebraMap E F x) :=
+    (transcendental_algebraMap_iff (algebraMap E F).injective).2 hx
+  let f : k⟮x⟯ →ₐ[k] F := (IsScalarTower.toAlgHom k E F).comp (k⟮x⟯).val
+  have hrange : f.fieldRange = k⟮algebraMap E F x⟯ := by
+    simp only [f, IntermediateField.fieldRange_comp_val, IntermediateField.adjoin_map,
+      Set.image_singleton, IsScalarTower.coe_toAlgHom']
+  have hfinite : FiniteDimensional f.fieldRange F := by
+    rw [hrange]
+    exact hF.finiteDimensional_adjoin hxF
+  have hfiniteF : FiniteDimensional k⟮x⟯ F := by
+    let : FiniteDimensional f.fieldRange F := hfinite
+    exact AlgHom.finiteDimensional_of_fieldRange f (fun z ↦ by
+      simpa only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+        IntermediateField.coe_val, IntermediateField.algebraMap_apply] using
+        (IsScalarTower.algebraMap_apply k⟮x⟯ E F z))
+  let : FiniteDimensional k⟮x⟯ F := hfiniteF
+  exact ⟨x, hx, FiniteDimensional.left k⟮x⟯ E F⟩
+
+/-! ### Change of base field -/
+
+section BaseChange
+
+variable {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
+
+/-- An intermediate field `k'` between `k` and an algebraic function field `F / k` over which `F`
+is again an algebraic function field is algebraic over `k`. -/
+theorem IsFunctionField.isAlgebraic_base (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F) : Algebra.IsAlgebraic k k' :=
+  isAlgebraic_of_trdeg_eq_one hF.trdeg_eq_one hF'.trdeg_eq_one
+
+/-- Enlarging the base field of an algebraic function field by an algebraic extension inside it
+leaves an algebraic function field (Stichtenoth, Corollary 1.1.16 and Definition 3.1.1): the new
+base contributes no transcendence. -/
+theorem IsFunctionField.of_isAlgebraic (hF : IsFunctionField k F) [Algebra.IsAlgebraic k k'] :
+    IsFunctionField k' F := by
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have : Algebra.EssFiniteType k' F := Algebra.EssFiniteType.of_comp k k' F
+  rw [isFunctionField_iff_trdeg_eq_one]
+  have h := lift_trdeg_add_eq k k' F
+  rw [trdeg_eq_zero_iff.mpr ‹Algebra.IsAlgebraic k k'›, hF.trdeg_eq_one] at h
+  simpa using h
+
+/-- Shrinking the base field of an algebraic function field along a finite extension leaves an
+algebraic function field: if `F` is a function field over `k'` and `k'` is finite over `k`, then
+`F` is a function field over `k`.  This is the converse of
+`TauCeti.IsFunctionField.of_isAlgebraic` for the finite extensions that
+`TauCeti.IsFunctionField.finiteDimensional_base` produces. -/
+theorem IsFunctionField.of_finiteDimensional (hF' : IsFunctionField k' F)
+    [FiniteDimensional k k'] : IsFunctionField k F := by
+  have : Algebra.EssFiniteType k' F := hF'.essFiniteType
+  have : Algebra.EssFiniteType k F := Algebra.EssFiniteType.comp k k' F
+  rw [isFunctionField_iff_trdeg_eq_one]
+  have h := lift_trdeg_add_eq k k' F
+  rw [trdeg_eq_zero_iff.mpr (Algebra.IsAlgebraic.of_finite k k'), hF'.trdeg_eq_one] at h
+  simpa using h.symm
+
+/-- An intermediate field of an algebraic function field `F / k` is a legitimate base field for
+`F` exactly when it is algebraic over `k`. -/
+theorem isFunctionField_base_iff_isAlgebraic (hF : IsFunctionField k F) :
+    IsFunctionField k' F ↔ Algebra.IsAlgebraic k k' :=
+  ⟨hF.isAlgebraic_base, fun h ↦ have := h; hF.of_isAlgebraic⟩
+
+end BaseChange
+
+/-! ### Extensions of function fields -/
+
+section Extension
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F']
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra.IsAlgebraic F F']
+
+/-- **The base field of an extension of function fields is algebraic over the base field below**
+(Stichtenoth, Definition 3.1.1 and the remark following it): in the tower of an extension
+`F' / k'` of `F / k` with `F' / F` algebraic, the algebraicity of `k' / k` is not an assumption
+but a theorem. -/
+theorem IsFunctionField.isAlgebraic_baseExtension (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') : Algebra.IsAlgebraic k k' :=
+  isAlgebraic_of_trdeg_eq_one (hF.trdeg_eq_one_of_isAlgebraic (E := F')) hF'.trdeg_eq_one
+
+end Extension
 
 end TauCeti

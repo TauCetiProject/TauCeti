@@ -82,7 +82,7 @@ theorem adjointLieEquiv_one
     (A : CommAlgCat.{max u v} R) :
     adjointLieEquiv (R := R) (H := H) A 1 = 1 := by
   ext x
-  rw [adjointLieEquiv_apply, LieEquiv.one_apply]
+  rw [adjointLieEquiv_apply, one_apply_eq_self]
   exact congrArg
     (fun e : LinearMap.GeneralLinearGroup A
         (A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) => e.val x)
@@ -112,7 +112,7 @@ theorem adjointLieEquiv_symm
     (fun e : LieEquiv A (A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H))
         (A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) => e x)
     (adjointLieEquiv_mul (R := R) (H := H) A g g⁻¹)
-  simpa only [mul_inv_cancel, adjointLieEquiv_one, LieEquiv.one_apply,
+  simpa only [mul_inv_cancel, adjointLieEquiv_one, one_apply_eq_self,
     LieEquiv.trans_apply] using h
 
 end Derivation

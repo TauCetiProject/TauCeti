@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 
 /-!

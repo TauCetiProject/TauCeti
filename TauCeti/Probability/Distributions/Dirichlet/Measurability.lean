@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-import TauCeti.Probability.Distributions.Measurability
+import TauCeti.Probability.Distributions.Gamma.Measurability
 
 /-!
 # Parameter measurability of the Dirichlet distribution
@@ -37,70 +36,31 @@ namespace Probability
 
 variable {ι : Type*} [Fintype ι]
 
-/-- An everywhere-probability extension of the unit-rate Gamma family. -/
-private def validGammaMeasure (a : ℝ) : Measure ℝ :=
-  if 0 < a then gammaMeasure a 1 else Measure.dirac 0
-
-private theorem isProbabilityMeasure_validGammaMeasure (a : ℝ) :
-    IsProbabilityMeasure (validGammaMeasure a) := by
-  rw [validGammaMeasure]
-  split_ifs with ha
-  · exact isProbabilityMeasure_gammaMeasure ha one_pos
-  · infer_instance
-
-private theorem measurable_validGammaMeasure : Measurable validGammaMeasure := by
-  unfold validGammaMeasure
-  refine Measurable.ite (measurableSet_lt measurable_const measurable_id) ?_ measurable_const
-  fun_prop
-
-private def gammaProbability (a : ℝ) : ProbabilityMeasure ℝ :=
-  ⟨validGammaMeasure a, isProbabilityMeasure_validGammaMeasure a⟩
-
-private theorem measurable_gammaProbability : Measurable gammaProbability := by
-  exact measurable_validGammaMeasure.subtype_mk
-
-private def dirichletSource (a : ι → ℝ) : Measure (ι → ℝ) :=
-  (ProbabilityMeasure.pi fun i ↦ gammaProbability (a i)).toMeasure
-
-private theorem measurable_dirichletSource : Measurable (dirichletSource (ι := ι)) := by
-  exact TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure
-    (Ω := ι → ℝ) (ι := ι) (α := fun _ ↦ ℝ) (fun i a ↦ gammaProbability (a i))
-    fun i ↦ measurable_gammaProbability.comp (measurable_pi_apply i)
-
-private theorem dirichletSource_of_pos {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
-    dirichletSource a = Measure.pi fun i ↦ gammaMeasure (a i) 1 := by
-  rw [dirichletSource, ProbabilityMeasure.toMeasure_pi]
-  congr 1
-  funext i
-  simp [gammaProbability, validGammaMeasure, ha i]
-
 /-- **The Dirichlet family is measurable in its concentration vector.** -/
 @[fun_prop]
 theorem measurable_dirichletMeasure :
     Measurable fun a : ι → ℝ ↦ dirichletMeasure a := by
   classical
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · have hzero : (fun a : ι → ℝ ↦ dirichletMeasure a) = fun _ ↦ 0 := by
-      funext a
-      exact dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hι) h.1
-    rw [hzero]
-    exact measurable_const
-  let _ : Nonempty ι := hι
   have hformula : (fun a : ι → ℝ ↦ dirichletMeasure a) = fun a ↦
-      if ∀ i, 0 < a i then (dirichletSource a).map dirichletNormalize else 0 := by
+      if Nonempty ι ∧ ∀ i, 0 < a i then
+        (Measure.pi fun i ↦ gammaMeasure (a i) 1).map dirichletNormalize else 0 := by
     funext a
-    by_cases ha : ∀ i, 0 < a i
-    · rw [dirichletMeasure_of_pos ha, ite_eq_left ha]
-      rw [dirichletSource_of_pos ha]
-    · rw [dirichletMeasure_eq_zero_of_invalid (by simp [ha]), ite_eq_right ha]
+    split_ifs with ha
+    · let _ : Nonempty ι := ha.1
+      exact dirichletMeasure_of_pos ha.2
+    · exact dirichletMeasure_eq_zero_of_invalid ha
   rw [hformula]
-  have hpos : MeasurableSet {a : ι → ℝ | ∀ i, 0 < a i} :=
-    measurableSet_setOfPred.2 <| .forall fun i ↦
-      measurableSet_setOfPred.1 <| measurableSet_lt measurable_const (measurable_pi_apply i)
-  exact Measurable.ite hpos
-    ((Measure.measurable_map dirichletNormalize measurable_dirichletNormalize).comp
-      measurable_dirichletSource)
-    measurable_const
+  refine Measurable.ite ?_ ?_ measurable_const
+  · exact MeasurableSet.inter (MeasurableSet.const (Nonempty ι))
+      (measurableSet_setOfPred.2 <| .forall fun i ↦
+        measurableSet_setOfPred.1 <| measurableSet_lt measurable_const (measurable_pi_apply i))
+  · simp_rw [pi_gammaMeasure_eq_withDensity]
+    refine (Measure.measurable_map dirichletNormalize measurable_dirichletNormalize).comp
+      (measurable_withDensity ?_)
+    refine Finset.measurable_prod _ fun i _ ↦ ?_
+    have hcoord : Measurable
+        (fun q : (ι → ℝ) × (ι → ℝ) ↦ ((q.1 i, (1 : ℝ)), q.2 i)) := by fun_prop
+    exact measurable_uncurry_gammaPDF.comp hcoord
 
 end Probability
 

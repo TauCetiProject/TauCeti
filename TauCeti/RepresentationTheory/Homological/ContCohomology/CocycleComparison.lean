@@ -48,7 +48,9 @@ Unlike the degree-two comparison, this needs no local compactness: the degree-on
 comparison is a plain currying, whose inverse is evaluation. -/
 noncomputable def cocycleEquiv1 :
     Z1 G M ≃+ _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 1 :=
-  ({ toFun c := ⟨cochainEquiv1 G M ⟨c.val, Z1_le_C1 G M c.property⟩,
+  -- Ascribed: typed on its own, the cochain meets the kernel's carrier in one cheap check.
+  -- (This follows the ascription idiom of #8346.)
+  ({ toFun c := ⟨(cochainEquiv1 G M ⟨c.val, Z1_le_C1 G M c.property⟩ :),
         (d_cochainEquiv1_eq_zero_iff G M _).mpr c.property⟩
      invFun c := ⟨((cochainEquiv1 G M).symm c.val).val,
         (d_cochainEquiv1_eq_zero_iff G M _).mp (by
@@ -67,9 +69,11 @@ noncomputable def cocycleEquiv1 :
          ⟨c.val, Z1_le_C1 G M c.property⟩ ⟨d.val, Z1_le_C1 G M d.property⟩ } :
       Z1 G M ≃+ TopModuleCat.ker
         ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2)).trans
-    (Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
+    -- Ascribed: elaborated alone, the `_` is read off `cyclesIsKernel`, not unified via the kernel.
+    -- (This follows the ascription idiom of #8346.)
+    ((Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesIsKernel 1 2
-        (by simp))).toContinuousLinearEquiv.toAddEquiv
+        (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared one-cocycle is the existing cochain comparison. -/
 @[simp]
@@ -101,7 +105,9 @@ with the same primitive under the degree-zero cochain comparison. -/
 theorem cocycleEquiv1_d0 (m : M) :
     cocycleEquiv1 G M ⟨d0 G M m, B1_le_Z1 G M (d0_mem_B1 m)⟩ =
       (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).toCycles 0 1
-        (cochainEquiv0 G M m) := by
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv0 G M m :) := by
   apply (cocycleEquiv1 G M).symm.injective
   apply Subtype.ext
   funext g
@@ -170,7 +176,9 @@ variable [LocallyCompactSpace G]
 homogeneous cochain complex. -/
 noncomputable def cocycleEquiv2 :
     Z2 G M ≃+ _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 2 :=
-  ({ toFun c := ⟨cochainEquiv2 G M ⟨c.val, Z2_le_C2 G M c.property⟩,
+  -- Ascribed: typed on its own, the cochain meets the kernel's carrier in one cheap check.
+  -- (This follows the ascription idiom of #8346.)
+  ({ toFun c := ⟨(cochainEquiv2 G M ⟨c.val, Z2_le_C2 G M c.property⟩ :),
         (d_cochainEquiv2_eq_zero_iff G M _).mpr c.property⟩
      invFun c := ⟨((cochainEquiv2 G M).symm c.val).val,
         (d_cochainEquiv2_eq_zero_iff G M _).mp (by
@@ -189,9 +197,11 @@ noncomputable def cocycleEquiv2 :
          ⟨c.val, Z2_le_C2 G M c.property⟩ ⟨d.val, Z2_le_C2 G M d.property⟩ } :
       Z2 G M ≃+ TopModuleCat.ker
         ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3)).trans
-    (Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
+    -- Ascribed: elaborated alone, the `_` is read off `cyclesIsKernel`, not unified via the kernel.
+    -- (This follows the ascription idiom of #8346.)
+    ((Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesIsKernel 2 3
-        (by simp))).toContinuousLinearEquiv.toAddEquiv
+        (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared cocycle is the existing cochain comparison. -/
 @[simp]
@@ -225,7 +235,9 @@ theorem cocycleEquiv2_d1 (c : C1 G M) :
         ⟨d1 G M c.val, B2_le_Z2 G M
           (mem_B2_iff.mpr ⟨c.val, mem_C1_iff.mp c.property, rfl⟩)⟩ =
       (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).toCycles 1 2
-        (cochainEquiv1 G M c) := by
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv1 G M c :) := by
   apply (cocycleEquiv2 G M).symm.injective
   apply Subtype.ext
   funext ⟨g, h⟩

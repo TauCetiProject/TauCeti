@@ -48,6 +48,9 @@ restriction with a single `G`-orbit.
   `{}^g A ≅ A`.
 * `Representation.IntertwiningMap.mem_inertia`: a nonzero intertwiner from an irreducible
   representation to one of its conjugates puts the conjugating element in the inertia group.
+* `Representation.IntertwiningMap.inv_mem_inertia_of_comp_ne_zero`: if an intertwiner from `V`
+  followed by one from a conjugate back to `V` is nonzero, the inverse conjugator is in the inertia
+  group.
 * `TauCeti.le_inertia`: the inertia group contains `N`.
 * `TauCeti.inertia_congr`: isomorphic representations have the same inertia group, so the inertia
   group is an invariant of the isomorphism class.
@@ -160,5 +163,24 @@ theorem mem_inertia {V : FDRep k N} [Simple V] {g : G}
     ⟨IntertwiningMap.ofBijective q
       ((_root_.Representation.IsIrreducible.bijective_or_eq_zero q).resolve_right hq)⟩
   exact mem_inertia_iff.mpr ⟨i.symm⟩
+
+/-- If an intertwiner `g : V → σ` followed by an intertwiner `p` from the conjugate of `σ` by `s⁻¹`
+back to `V` is nonzero, then the composite is a nonzero intertwiner `V → {}^{s⁻¹} V`, so `s⁻¹` lies
+in the inertia group `TauCeti.inertia V` of `V`. -/
+theorem inv_mem_inertia_of_comp_ne_zero {V : FDRep k N} [Simple V] {W : Type*}
+    [AddCommMonoid W] [Module k W] {σ : Representation k N W} {s : G}
+    (p : IntertwiningMap (σ.comp (MulAut.conjNormal s⁻¹).toMonoidHom) V.ρ)
+    (g : IntertwiningMap V.ρ σ) (hpg : p.toLinearMap ∘ₗ g.toLinearMap ≠ 0) : s⁻¹ ∈ inertia V := by
+  -- `{}^{s⁻¹} V` has the same underlying space as `V` (`conjNormalFDRep_V`), so the composite
+  -- `p ∘ g`, an endomorphism of that space, is a candidate intertwiner `V → {}^{s⁻¹} V`.
+  let pg : V →ₗ[k] V := p.toLinearMap ∘ₗ g.toLinearMap
+  let q : IntertwiningMap V.ρ (conjNormalFDRep s⁻¹ V).ρ :=
+    LinearMap.intertwiningMap_of_isIntertwiningMap _ _ pg fun n v => by
+      have hp := IntertwiningMap.isIntertwining _ _ p (MulAut.conjNormal s n) (g v)
+      simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply, map_inv,
+        MulAut.inv_apply, MulEquiv.symm_apply_apply] at hp
+      rw [conjNormalFDRep_ρ, inv_inv]
+      exact (congrArg p (IntertwiningMap.isIntertwining _ _ g n v)).trans hp
+  exact q.mem_inertia fun hzero => hpg (LinearMap.ext fun v => DFunLike.congr_fun hzero v)
 
 end Representation.IntertwiningMap

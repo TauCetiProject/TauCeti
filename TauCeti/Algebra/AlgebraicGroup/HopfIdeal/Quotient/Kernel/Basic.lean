@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
-public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
@@ -66,6 +66,12 @@ theorem kernelHopfIdeal_def (f : H ⟶ K) :
   -- definitional unfolding once, explicitly.
   change (HopfIdeal.augmentation R H).map f.hom = _
   rfl
+
+/-- The scheme-theoretic kernel of a morphism of affine groups is normal. -/
+theorem isNormal_kernelHopfIdeal (f : H ⟶ K) :
+    (kernelHopfIdeal f).IsNormal := by
+  rw [kernelHopfIdeal_def]
+  exact ((isCentral_augmentation H).isNormal).map f.hom
 
 /-- The underlying ideal of the kernel Hopf ideal is the extension of the augmentation
 ideal. -/

@@ -29,7 +29,7 @@ material, as `AdjoinRoot.eq_mulRight_of_root_mul` in `TauCeti.RingTheory.AdjoinR
 
 ## Main results
 
-* `TauCeti.isNilpotent_root_X_pow`: the class of `X` is nilpotent in `R[X]/(Xⁿ⁺¹)`.
+* `TauCeti.isNilpotent_root_X_pow`: the class of `X` is nilpotent in `R[X]/(Xⁿ)`.
 * `TauCeti.isLocalRing_adjoinRoot_X_pow`: over a local ring `R`, so is `R[X]/(Xⁿ⁺¹)`.
 
 The dimension of `R[X]/(Xⁿ)` over `R` is not recorded here: `AdjoinRoot f` is by definition
@@ -64,49 +64,42 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
-/-- **The class of `X` is nilpotent in `R[X]/(Xⁿ⁺¹)`**: its `(n + 1)`-st power is the class of the
-relator. -/
+/-- **The class of `X` is nilpotent in `R[X]/(Xⁿ)`**: its `n`-th power vanishes. -/
 theorem isNilpotent_root_X_pow (n : ℕ) :
-    IsNilpotent (AdjoinRoot.root ((X : R[X]) ^ (n + 1))) :=
-  ⟨n + 1, by rw [← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self]⟩
+    IsNilpotent (AdjoinRoot.root ((X : R[X]) ^ n)) :=
+  ⟨n, by rw [← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self]⟩
 
 /-- The evaluation `R[X]/(Xⁿ⁺¹) → R` at `0` is well defined: `Xⁿ⁺¹` vanishes at `0`. -/
 private theorem eval₂_id_zero_X_pow_eq_zero (n : ℕ) :
     ((X : R[X]) ^ (n + 1)).eval₂ (RingHom.id R) 0 = 0 := by
   simp
 
-/-- **An element of `R[X]/(Xⁿ⁺¹)` with vanishing constant term is nilpotent.** Such an element is
-the class of a polynomial divisible by `X`, hence a multiple of the nilpotent class of `X`. -/
+/-- **An element of `R[X]/(Xⁿ⁺¹)` with vanishing constant term is nilpotent.** -/
 private theorem isNilpotent_of_lift_eq_zero_X_pow {n : ℕ} {x : AdjoinRoot ((X : R[X]) ^ (n + 1))}
     (hx : AdjoinRoot.lift (RingHom.id R) (0 : R) (eval₂_id_zero_X_pow_eq_zero n) x = 0) :
     IsNilpotent x := by
   induction x using AdjoinRoot.induction_on with
   | ih p =>
-    have hp : p.coeff 0 = 0 := by
-      rw [Polynomial.coeff_zero_eq_eval_zero]
-      simpa [AdjoinRoot.lift_mk, Polynomial.eval] using hx
+    have hp : p.coeff 0 = 0 := by simpa using hx
     obtain ⟨q, rfl⟩ := Polynomial.X_dvd_iff.mpr hp
     rw [map_mul, AdjoinRoot.mk_X]
-    exact (Commute.all _ _).isNilpotent_mul_right (isNilpotent_root_X_pow n)
+    exact (Commute.all _ _).isNilpotent_mul_right (isNilpotent_root_X_pow (n + 1))
 
-/-- An element of `R[X]/(Xⁿ⁺¹)` whose constant term is a unit is a unit: it is the sum of that unit
-and a nilpotent. -/
+/-- An element of `R[X]/(Xⁿ⁺¹)` whose constant term is a unit is a unit. -/
 private theorem isUnit_of_isUnit_lift_X_pow {n : ℕ} {x : AdjoinRoot ((X : R[X]) ^ (n + 1))}
     (hx : IsUnit (AdjoinRoot.lift (RingHom.id R) (0 : R) (eval₂_id_zero_X_pow_eq_zero n) x)) :
     IsUnit x := by
   set c := AdjoinRoot.lift (RingHom.id R) (0 : R) (eval₂_id_zero_X_pow_eq_zero n) x with hc
   have hker : AdjoinRoot.lift (RingHom.id R) (0 : R) (eval₂_id_zero_X_pow_eq_zero n)
       (x - algebraMap R _ c) = 0 := by
-    rw [map_sub, ← hc, AdjoinRoot.algebraMap_eq, AdjoinRoot.lift_of, RingHom.id_apply, sub_self]
+    simp [hc]
   have hunit : IsUnit (algebraMap R (AdjoinRoot ((X : R[X]) ^ (n + 1))) c) :=
     hx.map (algebraMap R _)
   have := (isNilpotent_of_lift_eq_zero_X_pow hker).isUnit_add_left_of_commute hunit
     (Commute.all _ _)
   rwa [add_sub_cancel] at this
 
-/-- **The truncated polynomial algebra `R[X]/(Xⁿ⁺¹)` over a local ring is a local ring.** An element
-is a unit exactly when its constant term is, since the elements of vanishing constant term are
-nilpotent; so of `x` and `1 - x` at least one has a unit constant term. -/
+/-- **The truncated polynomial algebra `R[X]/(Xⁿ⁺¹)` over a local ring is a local ring.** -/
 instance isLocalRing_adjoinRoot_X_pow [IsLocalRing R] (n : ℕ) :
     IsLocalRing (AdjoinRoot ((X : R[X]) ^ (n + 1))) := by
   have : Nontrivial (AdjoinRoot ((X : R[X]) ^ (n + 1))) :=

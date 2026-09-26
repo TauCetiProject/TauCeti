@@ -180,9 +180,14 @@ theorem isConnected_chebyshevTriple : chebyshevTriple.IsConnected := by
 /-- The triple of `z ↦ 4z(1 - z)` has two unramified sheets over `0`, and one double point over each
 of `1` and `∞`. -/
 theorem cycleData_chebyshevTriple : chebyshevTriple.cycleData = ({1, 1}, {2}, {2}) := by
+  have hone : (1 : Perm (Fin 2)).partition.parts = {1, 1} := by
+    simp [Multiset.replicate_succ]
+  have hswap : (swap (0 : Fin 2) 1).partition.parts = {2} := by
+    rw [parts_partition_swap (by decide)]
+    simp
   simp only [Prod.ext_iff, cycleData_σ0, cycleData_σ1, cycleData_σinf, chebyshevTriple_σ0,
     chebyshevTriple_σ1, chebyshevTriple_σinf]
-  decide
+  exact ⟨hone, hswap, hswap⟩
 
 /-- The cover `z ↦ 4z(1 - z)` is a sphere: its Euler characteristic is `2`. -/
 theorem eulerChar_chebyshevTriple : chebyshevTriple.eulerChar = 2 := by
@@ -193,6 +198,11 @@ theorem eulerChar_chebyshevTriple : chebyshevTriple.eulerChar = 2 := by
 theorem genus_chebyshevTriple : chebyshevTriple.genus = 0 := by
   rw [genus_def, eulerChar_chebyshevTriple]
   norm_num
+
+/-- The orders of the components of the triple of `z ↦ 4z(1 - z)` are `(1, 2, 2)`. -/
+theorem orderTriple_chebyshevTriple : chebyshevTriple.orderTriple = (1, 2, 2) := by
+  rw [orderTriple_eq_lcm_cycleData, cycleData_chebyshevTriple]
+  decide
 
 /-! ### The torus triple -/
 
@@ -227,9 +237,21 @@ theorem isConnected_torusTriple : torusTriple.IsConnected :=
 
 /-- The torus triple is totally ramified over `0` and `1`, and has two double points over `∞`. -/
 theorem cycleData_torusTriple : torusTriple.cycleData = ({4}, {4}, {2, 2}) := by
+  have hrot : (finRotate 4).partition.parts = {4} := parts_partition_finRotate four_ne_zero
+  -- the square of the rotation of `Fin 4` is the product of the two disjoint transpositions
+  have hinf : ((finRotate 4 ^ 2)⁻¹ : Perm (Fin 4)).partition.parts = {2, 2} := by
+    have hsq : (finRotate 4 ^ 2 : Perm (Fin 4)) = swap 0 2 * swap 1 3 := by decide
+    have hct : (finRotate 4 ^ 2 : Perm (Fin 4)).cycleType = {2, 2} := by
+      rw [hsq]
+      exact cycleType_swap_mul_swap_of_nodup (by decide)
+    have hsupp : (finRotate 4 ^ 2 : Perm (Fin 4)).support.card = 4 := by
+      rw [← sum_cycleType, hct]
+      simp
+    rw [parts_partition_inv, parts_partition, hct, hsupp]
+    simp
   simp only [Prod.ext_iff, cycleData_σ0, cycleData_σ1, cycleData_σinf, torusTriple_σ0,
     torusTriple_σ1, torusTriple_σinf]
-  decide
+  exact ⟨hrot, hrot, hinf⟩
 
 /-- The torus triple has one cycle over each of `0` and `1`, and two over `∞`. -/
 theorem cycleCounts_torusTriple : torusTriple.cycleCounts = (1, 1, 2) := by
@@ -366,9 +388,13 @@ theorem isConnected_s3Triple : s3Triple.IsConnected :=
 /-- The triple `s3Triple` is totally ramified over `0`, and has one double point and one
 unramified sheet over each of `1` and `∞`. -/
 theorem cycleData_s3Triple : s3Triple.cycleData = ({3}, {2, 1}, {2, 1}) := by
+  have hrot : (finRotate 3).partition.parts = {3} := parts_partition_finRotate three_ne_zero
+  have hswap : ∀ x y : Fin 3, x ≠ y → (swap x y).partition.parts = {2, 1} := fun x y h => by
+    rw [parts_partition_swap h]
+    simp [Multiset.replicate_succ]
   simp only [Prod.ext_iff, cycleData_σ0, cycleData_σ1, cycleData_σinf, s3Triple_σ0, s3Triple_σ1,
     s3Triple_σinf]
-  decide
+  exact ⟨hrot, hswap 0 1 (by decide), hswap 1 2 (by decide)⟩
 
 /-- The triple `s3Triple` has Euler characteristic `2`. -/
 theorem eulerChar_s3Triple : s3Triple.eulerChar = 2 := by

@@ -13,8 +13,8 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 
 Two facts about a subring `R` of a topological ring `B` that involve no further structure: the
 underlying set of `Subring.topologicalClosure` is the closure of the underlying set of `R`, and
-the integral closure of `R` in `B` is open as soon as `R` is, for which only continuity of
-addition is needed.
+the integral closure of `R` in `B` is open as soon as `R` is, for which only separate continuity
+of addition is needed.
 
 The first is the `Subring` case of the family `Subsemigroup.coe_topologicalClosure`,
 `Submonoid.coe_topologicalClosure`, `Subsemiring.topologicalClosure_coe`; Mathlib stops short of
@@ -48,11 +48,11 @@ theorem topologicalClosure_coe (S : Subring R) :
 
 end Subring
 
-variable {B : Type*} [CommRing B] [TopologicalSpace B] [ContinuousAdd B]
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [SeparatelyContinuousAdd B]
 
 /-- The integral closure of an open subring `R` of `B` is open: it contains `R` itself, as the
-image of `algebraMap`, and an additive subgroup containing an open one is open. Only continuity
-of addition on `B` is used, not the full additive topological group structure. -/
+image of `algebraMap`, and an additive subgroup containing an open one is open. Only separate
+continuity of addition on `B` is used, not the full additive topological group structure. -/
 theorem isOpen_integralClosure_toSubring {R : Subring B} (hR : IsOpen (R : Set B)) :
     IsOpen ((integralClosure R B).toSubring : Set B) :=
   AddSubgroup.isOpen_mono (H₁ := R.toAddSubgroup)

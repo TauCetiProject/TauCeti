@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Covering.Deck
 public import Mathlib.Topology.Homeomorph.Lemmas
-public import TauCeti.Topology.Algebra.ConstMulAction
+public import TauCeti.Logic.Function.Fiber
 
 /-!
 # Deck transformations of a map
 
-For a map `p : E → B`, its deck transformations are the homeomorphisms of `E` over `B`,
-viewed as a subgroup of the homeomorphism group `E ≃ₜ E`. For a covering projection `p` this
-subgroup is the classical deck transformation group.
+For a map `p : E → B`, its deck transformations are the homeomorphisms of `E` over `B`. Mathlib
+collects them as the subgroup `deck p` of the homeomorphism group `E ≃ₜ E`; for a covering
+projection `p` this subgroup is the classical deck transformation group.
 
-The action of `Deck p` on the total space is inherited, by subgroup transfer, from the
+This file adds the fibre API that the rest of the deck-transformation development uses.
+In particular, `deck.fiberHomeomorph` restricts a deck transformation to each fibre of `p`.
+
+The action of `deck p` on the total space is inherited, by subgroup transfer, from the
 tautological action of the ambient homeomorphism group `E ≃ₜ E` on `E`
 (`Homeomorph.applyMulAction`). Each deck transformation preserves `p`, hence
 preserves every fibre of `p`.
@@ -25,87 +29,54 @@ injective map leaves it unchanged (`TauCeti.deck_comp_of_injective`).
 
 ## References
 
-The construction follows the shape of Kim Morrison's mathlib4#40135.
+The `deck` construction is due to Kim Morrison in
+[mathlib4#40135](https://github.com/leanprover-community/mathlib4/pull/40135).
 -/
 
 public section
 
 namespace TauCeti
 
-variable {E B : Type*} [TopologicalSpace E] (p : E → B)
-
-/-- The deck transformations of a map `p : E → B`, as the subgroup of homeomorphisms of `E`
-which commute with `p`. For a covering projection, this is the usual deck transformation
-group. -/
-@[expose] def Deck : Subgroup (E ≃ₜ E) where
-  carrier := {φ | ∀ e, p (φ e) = p e}
-  one_mem' e := rfl
-  mul_mem' hφ hψ e := by
-    rw [Homeomorph.mul_apply, hφ, hψ]
-  inv_mem' := by
-    intro φ hφ e
-    have h := hφ (φ⁻¹ e)
-    simpa only [Homeomorph.inv_apply, Homeomorph.apply_symm_apply] using h.symm
+variable {E B : Type*} [TopologicalSpace E] {p : E → B}
 
 namespace Deck
 
-variable {p}
-
-/-- A homeomorphism lies in `Deck p` exactly when it preserves `p` pointwise. -/
-@[simp]
-lemma mem_iff (φ : E ≃ₜ E) : φ ∈ Deck p ↔ ∀ e, p (φ e) = p e :=
-  Iff.rfl
-
-/-- A deck transformation preserves the projection map pointwise. -/
-lemma map_proj (φ : Deck p) (e : E) : p (φ.1 e) = p e :=
-  φ.2 e
-
-/-- A deck transformation preserves each fibre of the projection. -/
-lemma mapsTo_fiber (φ : Deck p) (b : B) : Set.MapsTo φ.1 (p ⁻¹' {b}) (p ⁻¹' {b}) := by
-  intro e he
-  simpa only [Set.mem_preimage, Set.mem_singleton_iff, map_proj] using he
-
-/-- The inverse of a deck transformation also preserves each fibre of the projection. -/
-lemma mapsTo_fiber_symm (φ : Deck p) (b : B) :
-    Set.MapsTo φ.1.symm (p ⁻¹' {b}) (p ⁻¹' {b}) := by
-  intro e he
-  simp only [Set.mem_preimage, Set.mem_singleton_iff] at he ⊢
-  rw [← map_proj φ (φ.1.symm e), Homeomorph.apply_symm_apply]
-  exact he
-
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
 the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
-@[expose] def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
-  φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
+def _root_.deck.fiberHomeomorph (φ : deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
+  φ.1.subtype fun e => ⟨
+    fun he ↦ Function.mapsTo_fiber φ.1 (deck.comp_eq φ) b he,
+    fun he ↦ by
+      simpa using Function.mapsTo_fiber (φ⁻¹ : deck p).1 (deck.comp_eq φ⁻¹) b he⟩
 
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
-lemma fiberHomeomorph_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    (fiberHomeomorph φ b e : E) = φ.1 e.1 :=
-  rfl
+lemma _root_.deck.fiberHomeomorph_apply (φ : deck p) (b : B) (e : p ⁻¹' {b}) :
+    (deck.fiberHomeomorph φ b e : E) = φ.1 e.1 :=
+  (rfl)
 
 /-- On points, the inverse fibre homeomorphism induced by a deck transformation is
 evaluation of the inverse homeomorphism. -/
 @[simp]
-lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
-  rfl
+lemma _root_.deck.fiberHomeomorph_symm_apply (φ : deck p) (b : B) (e : p ⁻¹' {b}) :
+    ((deck.fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
+  (rfl)
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
 homeomorphism. The action itself is inherited, by subgroup transfer, from the tautological
 action of `E ≃ₜ E` on `E`. -/
 @[simp]
-lemma smul_eq_apply (φ : Deck p) (e : E) : φ • e = φ.1 e :=
+lemma _root_.deck.smul_eq_apply (φ : deck p) (e : E) : φ • e = φ.1 e :=
   rfl
 
 /-- Applying the inverse deck transformation is evaluation of the inverse homeomorphism. -/
 @[simp]
-lemma inv_smul_eq_symm_apply (φ : Deck p) (e : E) : (φ⁻¹ : Deck p) • e = φ.1.symm e :=
+lemma _root_.deck.inv_smul_eq_symm_apply (φ : deck p) (e : E) : (φ⁻¹ : deck p) • e = φ.1.symm e :=
   rfl
 
--- `FaithfulSMul (Deck p) E` and `ContinuousConstSMul (Deck p) E` are inherited from Mathlib's
--- generic subgroup action and `TauCeti.Subgroup.continuousConstSMul`; `Deck p` is a `Subgroup`.
+-- `FaithfulSMul (deck p) E` is inherited from Mathlib's generic subgroup action, and
+-- `ContinuousConstSMul (deck p) E` comes with Mathlib's `deck`.
 
 end Deck
 
@@ -115,9 +86,9 @@ variable {E B B' : Type*} [TopologicalSpace E]
 
 /-- Postcomposing a map with an injection does not change its deck group. -/
 theorem deck_comp_of_injective {f : B → B'} (hf : Function.Injective f) (p : E → B) :
-    Deck (f ∘ p) = Deck p := by
+    deck (f ∘ p) = deck p := by
   ext φ
-  simp only [Deck.mem_iff, Function.comp_apply, hf.eq_iff]
+  simp only [deck.mem_iff, funext_iff, Function.comp_apply, hf.eq_iff]
 
 end Injective
 

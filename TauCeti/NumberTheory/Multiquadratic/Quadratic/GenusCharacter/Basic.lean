@@ -273,6 +273,18 @@ theorem genusCharFun_eq_one_or_eq_neg_one {s : Finset ℤ}
     (Or.inl rfl)
     fun P hP => primeDiscriminantCharFun_eq_one_or_eq_neg_one (hs P hP) (hcop P hP)
 
+/-- At `-1`, the product character of prime discriminants is the sign of their product. -/
+theorem genusCharFun_neg_one_eq_sign_prod {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
+    genusCharFun s (-1) = (∏ P ∈ s, P).sign := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert P s hP ih =>
+      simp only [Finset.mem_insert, forall_eq_or_imp] at hs
+      rw [genusCharFun_def, Finset.prod_insert hP, Finset.prod_insert hP,
+        primeDiscriminantCharFun_neg_one hs.1, ← genusCharFun_def, ih hs.2, Int.sign_mul]
+
 /-- **The genus characters are trivial on the values of the principal form.** For a
 prime-discriminant factorization `D = ∏ P ∈ s, P` and any subset `t ⊆ s`, the genus character
 indexed by `t` is trivial at every integer coprime to the product of the factors in `t` that the

@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import TauCeti.Algebra.Module.LinearMap.Defs
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # Isogenies of root pairings
@@ -225,38 +227,6 @@ def smulId [Module.Free ℤ M] [Module.Finite ℤ M] [Module.Free ℤ N] [Module
     (smulId P c).exponent i = c := by
   rw [smulId]
 
-/-- The composite of two linear maps with finite-index images again has finite-index image. -/
-private lemma finiteIndex_range_comp (g : M₂ →ₗ[R] M₃) (f : M →ₗ[R] M₂)
-    (hf : f.range.toAddSubgroup.FiniteIndex)
-    (hgf : g.range.toAddSubgroup.FiniteIndex) : (g ∘ₗ f).range.toAddSubgroup.FiniteIndex := by
-  rw [AddSubgroup.finiteIndex_iff]
-  let A := (g ∘ₗ f).range.toAddSubgroup
-  let B := g.range.toAddSubgroup
-  have hAB : A ≤ B := by
-    intro x hx
-    obtain ⟨y, hy⟩ := hx
-    exact ⟨f y, hy⟩
-  rw [← AddSubgroup.relIndex_mul_index hAB]
-  apply mul_ne_zero
-  · have hA : A = f.range.toAddSubgroup.map g.toAddMonoidHom := by
-      ext x
-      simp only [A, AddSubgroup.mem_map]
-      constructor
-      · rintro ⟨y, rfl⟩
-        exact ⟨f y, ⟨y, rfl⟩, rfl⟩
-      · rintro ⟨_, ⟨y, rfl⟩, rfl⟩
-        exact ⟨y, rfl⟩
-    have hB : B = (⊤ : AddSubgroup M₂).map g.toAddMonoidHom := by
-      ext x
-      -- Membership in the range of `g` is definitionally the displayed existential for the
-      -- image of the top subgroup.
-      change (∃ y, g y = x) ↔ ∃ y, y ∈ (⊤ : AddSubgroup M₂) ∧ g y = x
-      simp
-    rw [hA, hB, AddSubgroup.relIndex_map_map, top_sup_eq, AddSubgroup.relIndex_top_right]
-    let _ : f.range.toAddSubgroup.FiniteIndex := hf
-    exact (AddSubgroup.finiteIndex_of_le le_sup_left).index_ne_zero
-  · exact hgf.index_ne_zero
-
 /-- The composite of two isogenies, whose exponent at an index is the product of the exponent of
 the first at that index and the exponent of the second at its image. -/
 def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
@@ -268,10 +238,22 @@ def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
   exponent_pos i := mul_pos (f.exponent_pos i) (g.exponent_pos (f.indexEquiv i))
   weightMap_injective := g.weightMap_injective.comp f.weightMap_injective
   coweightMap_injective := f.coweightMap_injective.comp g.coweightMap_injective
-  weightMap_finiteIndex := finiteIndex_range_comp g.weightMap f.weightMap
-    f.weightMap_finiteIndex g.weightMap_finiteIndex
-  coweightMap_finiteIndex := finiteIndex_range_comp f.coweightMap g.coweightMap
-    g.coweightMap_finiteIndex f.coweightMap_finiteIndex
+  weightMap_finiteIndex := by
+    have : f.weightMap.toAddMonoidHom.range.FiniteIndex := by
+      simpa only [LinearMap.range_toAddSubgroup] using f.weightMap_finiteIndex
+    have : g.weightMap.toAddMonoidHom.range.FiniteIndex := by
+      simpa only [LinearMap.range_toAddSubgroup] using g.weightMap_finiteIndex
+    simpa only [LinearMap.range_toAddSubgroup, LinearMap.toAddMonoidHom_comp] using
+      AddMonoidHom.finiteIndex_range_comp f.weightMap.toAddMonoidHom
+        g.weightMap.toAddMonoidHom
+  coweightMap_finiteIndex := by
+    have : g.coweightMap.toAddMonoidHom.range.FiniteIndex := by
+      simpa only [LinearMap.range_toAddSubgroup] using g.coweightMap_finiteIndex
+    have : f.coweightMap.toAddMonoidHom.range.FiniteIndex := by
+      simpa only [LinearMap.range_toAddSubgroup] using f.coweightMap_finiteIndex
+    simpa only [LinearMap.range_toAddSubgroup, LinearMap.toAddMonoidHom_comp] using
+      AddMonoidHom.finiteIndex_range_comp g.coweightMap.toAddMonoidHom
+        f.coweightMap.toAddMonoidHom
   weight_coweight_transpose x y := by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, g.weight_coweight_transpose,
       f.weight_coweight_transpose]

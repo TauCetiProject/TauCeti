@@ -230,12 +230,12 @@ theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
         obtain ⟨a, b, ha, hb, heq⟩ :=
           TauCeti.IntermediateField.exists_add_mul_of_mem_sup_adjoin_sq hx2 hmem
         -- `(a + b·root n)² = y² = algebraMap K L r ∈ sqrtTower`, while `root n ∉ sqrtTower`; hence
-        -- the cross-term coefficient vanishes (`Quadratic.mul_eq_zero_of_add_mul_sq_mem`).
+        -- the cross-term coefficient vanishes (`TauCeti.mul_eq_zero_of_add_mul_sq_mem`).
         have hab_mem : (a + b * root n) ^ 2 ∈ sqrtTower (K := K) root n := by
           rw [← heq, hy]
           exact (sqrtTower (K := K) root n).algebraMap_mem r
         have hab : a * b = 0 :=
-          TauCeti.IntermediateField.mul_eq_zero_of_add_mul_sq_mem hx2 hnext ha hb hab_mem
+          TauCeti.mul_eq_zero_of_add_mul_sq_mem hx2 hnext ha hb hab_mem
         rcases mul_eq_zero.mp hab with ha0 | hb0
         · exact exists_sq_mul_prod_of_eq_mul_root d root (hroot n)
             (radicand_ne_zero_of_root_notMem d root (hroot n) hnext) hb

@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChang
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 public import TauCeti.RingTheory.Norm.Quadratic
+-- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The quadratic twist of a Weierstrass curve: definition and invariants

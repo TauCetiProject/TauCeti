@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
-public import TauCeti.FieldTheory.FunctionField.HolomorphyRing
+public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 
 /-!
 # Affine models: the place of a height one prime, and the two-way correspondence
@@ -76,10 +76,12 @@ namespace Place
 universe u v w
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
-  {R : Type w} [CommRing R] [IsDedekindDomain R] [Algebra k R] [Algebra R F]
-  [IsScalarTower k R F] [IsFractionRing R F]
+  {R : Type w} [CommRing R] [Algebra k R] [Algebra R F]
+  [IsScalarTower k R F]
 
 section OfPrime
+
+variable [IsDedekindDomain R] [IsFractionRing R F]
 
 variable (k F)
 
@@ -118,6 +120,8 @@ theorem valuation_ofPrime_algebraMap_lt_one_iff {r : R} :
 end OfPrime
 
 section Correspondence
+
+variable [IsDedekindDomain R] [IsFractionRing R F]
 
 variable (k F)
 
@@ -211,10 +215,11 @@ noncomputable def residueHom : R →ₐ[k] P.ResidueField :=
       exact congrArg (IsLocalRing.residue _)
         (Subtype.ext (IsScalarTower.algebraMap_apply k R F c).symm) }
 
-omit [IsDedekindDomain R] [IsFractionRing R F] in
 @[simp]
 theorem residueHom_apply (r : R) :
     P.residueHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
+
+variable [IsFractionRing R F]
 
 /-- **The kernel of evaluation at `P` is the centre of `P` on the model**: this is the
 evaluation-map form of `TauCeti.Place.mem_center_asIdeal`, which says the same thing about the
@@ -224,6 +229,8 @@ theorem ker_residueHom : RingHom.ker (P.residueHom hR) = (P.center hR).asIdeal :
   ext r
   rw [RingHom.mem_ker, residueHom_apply, P.residue_eq_zero_iff_valuation_lt_one,
     P.mem_center_asIdeal hR]
+
+variable [IsDedekindDomain R]
 
 /-- **Every residue at a place finite on an affine model is the residue of an element of the
 model.** This is Mathlib's approximation theorem for the adic valuation of the centre, at the
@@ -263,6 +270,8 @@ theorem degree_eq_finrank_quotient_center :
 end ResidueField
 
 section ResidueFieldOfPrime
+
+variable [IsDedekindDomain R] [IsFractionRing R F]
 
 variable (k F) (𝔭 : HeightOneSpectrum R)
 

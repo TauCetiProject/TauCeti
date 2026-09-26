@@ -122,15 +122,18 @@ noncomputable def invariantsInclusion (hVU : V ≤ U) :
     invariants (A.ρ.comp U.subtype) →ₗ[k] invariants (A.ρ.comp V.subtype) :=
   Submodule.inclusion (invariants_le A hVU)
 
+/-- The inclusion `A^U ↪ A^V` moves no element of `A`. -/
 @[simp]
 theorem invariantsInclusion_apply_coe (hVU : V ≤ U) (m : invariants (A.ρ.comp U.subtype)) :
     (invariantsInclusion A hVU m : A) = (m : A) :=
   (rfl)
 
+/-- The inclusion of `A^U` into itself is the identity. -/
 @[simp]
 theorem invariantsInclusion_refl : invariantsInclusion A (le_refl U) = LinearMap.id :=
   (rfl)
 
+/-- Inclusions of invariants compose: `A^U ↪ A^V ↪ A^W` is the inclusion `A^U ↪ A^W`. -/
 @[simp]
 theorem invariantsInclusion_comp (hWV : W ≤ V) (hVU : V ≤ U) :
     (invariantsInclusion A hWV).comp (invariantsInclusion A hVU) =
@@ -151,17 +154,20 @@ def continuousFiniteQuotientMap (hVU : V ≤ U) :
   toMonoidHom := QuotientGroup.mapOfLE hVU
   continuous_toFun := continuous_of_discreteTopology
 
+/-- The map `G ⧸ V → G ⧸ U` sends the class of `g` to the class of `g`. -/
 @[simp]
 theorem continuousFiniteQuotientMap_mk (hVU : V ≤ U) (g : G) :
     continuousFiniteQuotientMap G hVU (g : G ⧸ V.toSubgroup) = (g : G ⧸ U.toSubgroup) :=
   QuotientGroup.mapOfLE_mk hVU g
 
+/-- The map `G ⧸ U → G ⧸ U` along `U ≤ U` is the identity. -/
 @[simp]
 theorem continuousFiniteQuotientMap_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientMap G (le_refl U) = ContinuousMonoidHom.id _ := by
   ext q
   exact DFunLike.congr_fun QuotientGroup.mapOfLE_refl q
 
+/-- The maps between finite quotients compose: `G ⧸ W → G ⧸ V → G ⧸ U` is `G ⧸ W → G ⧸ U`. -/
 @[simp]
 theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
     (continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV) =
@@ -196,6 +202,7 @@ noncomputable def transitionPair (hVU : V ≤ U) :
   Rep.ofHom ⟨invariantsInclusion A hVU,
     fun x ↦ LinearMap.ext (invariantsInclusion_equivariant A hVU x)⟩
 
+/-- The underlying linear map of the transition pair is the inclusion `A^U ↪ A^V`. -/
 @[simp]
 theorem transitionPair_hom_toLinearMap (hVU : V ≤ U) :
     (transitionPair A hVU).hom.toLinearMap = invariantsInclusion A hVU :=
@@ -244,11 +251,14 @@ transformation `groupCohomology.infNatTrans`. -/
     Rep k G ⥤ ModuleCat.{u} k :=
   Rep.quotientToInvariantsFunctor k U ⋙ groupCohomology.functor k (G ⧸ U) n
 
+/-- `finiteLevelFunctor k U n` sends `A` to `Hⁿ(G ⧸ U, A^U)`. -/
 @[simp]
 theorem finiteLevelFunctor_obj (U : Subgroup G) [U.Normal] (n : ℕ) (A : Rep k G) :
     (finiteLevelFunctor k U n).obj A = groupCohomology (A.quotientToInvariants U) n :=
   (rfl)
 
+/-- `finiteLevelFunctor k U n` sends `f : A ⟶ B` to the map `Hⁿ(G ⧸ U, A^U) ⟶ Hⁿ(G ⧸ U, B^U)`
+induced by `f` on `U`-invariants. -/
 @[simp]
 theorem finiteLevelFunctor_map (U : Subgroup G) [U.Normal] (n : ℕ) (f : A ⟶ B) :
     (finiteLevelFunctor k U n).map f =
@@ -323,12 +333,15 @@ from the `U`-level to the `V`-level for `V ≤ U`, opposite to the quotient homo
   map_id _ := finiteLevelTransition_refl A _ n
   map_comp f g := finiteLevelTransition_comp A (leOfHom g.unop) (leOfHom f.unop) n
 
+/-- The finite-quotient system of `A` sends `U` to `Hⁿ(G ⧸ U, A^U)`. -/
 @[simp]
 theorem finiteQuotientSystem_obj (n : ℕ) (U : (OpenNormalSubgroup G)ᵒᵖ) :
     (finiteQuotientSystem A n).obj U =
       groupCohomology (A.quotientToInvariants U.unop.toSubgroup) n :=
   (rfl)
 
+/-- The finite-quotient system of `A` sends an inclusion `V ≤ U` to the transition map `Hⁿ(G ⧸ U,
+A^U) ⟶ Hⁿ(G ⧸ V, A^V)`. -/
 @[simp]
 theorem finiteQuotientSystem_map (n : ℕ) {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
     (finiteQuotientSystem A n).map f = finiteLevelTransition A (leOfHom f.unop) n :=
@@ -347,11 +360,14 @@ coefficients. -/
   map_comp f g :=
     NatTrans.ext <| funext fun U => (finiteLevelFunctor k U.unop.toSubgroup n).map_comp f g
 
+/-- `finiteQuotientSystemFunctor k G n` sends `A` to its finite-quotient system. -/
 @[simp]
 theorem finiteQuotientSystemFunctor_obj (n : ℕ) (A : Rep k G) :
     (finiteQuotientSystemFunctor k G n).obj A = finiteQuotientSystem A n :=
   (rfl)
 
+/-- At `U`, the finite-quotient system of `f : A ⟶ B` is the map `Hⁿ(G ⧸ U, A^U) ⟶ Hⁿ(G ⧸ U, B^U)`
+induced by `f`. -/
 @[simp]
 theorem finiteQuotientSystemFunctor_map_app (n : ℕ) {A B : Rep k G} (f : A ⟶ B)
     (U : (OpenNormalSubgroup G)ᵒᵖ) :

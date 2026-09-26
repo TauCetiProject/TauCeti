@@ -30,7 +30,7 @@ public section
 
 open scoped Nat NNReal Real
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Real Set
 
@@ -162,4 +162,4 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
       _ = _ := integral_neg _
   linarith
 
-end TauCeti
+end TauCeti.Probability

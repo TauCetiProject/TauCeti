@@ -172,4 +172,20 @@ theorem cuspOrbitMk_surjective {Γ : Subgroup PSL(2, ℝ)} :
   obtain ⟨c, hc, hC⟩ := C.property
   exact ⟨⟨c, hc⟩, Subtype.ext hC⟩
 
+/-- The cusp points of a countable subgroup form a countable set: each is the fixed point of one
+of its parabolic elements. -/
+theorem countable_setOf_isCuspPoint (Γ : Subgroup PSL(2, ℝ)) [Countable Γ] :
+    {c | Γ.IsCuspPoint c}.Countable :=
+  (Set.countable_range fun g : Γ ↦
+    ProjectiveSpecialLinearGroup.parabolicFixedPoint (g : PSL(2, ℝ))).mono fun _ hc ↦ by
+      obtain ⟨g, -, hg⟩ := isCuspPoint_iff_exists_parabolicFixedPoint_eq.mp hc
+      exact ⟨g, hg⟩
+
+instance instCountableCuspPoints (Γ : Subgroup PSL(2, ℝ)) [Countable Γ] : Countable Γ.cuspPoints :=
+  (countable_setOf_isCuspPoint Γ).to_subtype
+
+/-- A countable subgroup of `PSL(2, ℝ)` has countably many cusp orbits. -/
+instance instCountableCuspOrbit (Γ : Subgroup PSL(2, ℝ)) [Countable Γ] : Countable Γ.CuspOrbit :=
+  cuspOrbitMk_surjective.countable
+
 end Subgroup

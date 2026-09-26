@@ -130,11 +130,10 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
       rintro rfl
       exact d.ne_zero (by rw [← hr, mul_zero])
     exact hdsq ⟨Units.mk0 r hr0, Units.ext hr.symm⟩
-  have hli := linearIndependent_one_of_notMem_range_algebraMap F E hs'
+  have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hs'
   -- Every vector of `E ⊗ V` is `1 ⊗ x + s ⊗ y`, using the basis `1, s` of `E`.
   have hdecomp (z : E ⊗[F] V) : ∃ x y : V, z = (1 : E) ⊗ₜ x + s ⊗ₜ y := by
-    induction z using TensorProduct.induction_on with
-    | zero => exact ⟨0, 0, by simp⟩
+    induction z using TensorProduct.inductionOn with
     | tmul e v =>
       obtain ⟨a, b, rfl⟩ :=
         Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul F E hs' e
@@ -148,14 +147,11 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
   rw [QuadraticMap.not_anisotropic_iff_exists] at h
   obtain ⟨z, hz0, hz⟩ := h
   obtain ⟨x, y, rfl⟩ := hdecomp z
-  let : Invertible (2 : E) := (Invertible.map (algebraMap F E) 2).copy 2 (map_ofNat _ _).symm
-  rw [QuadraticMap.map_add (Q.baseChange E), ← QuadraticMap.polarBilin_apply_apply,
-    polarBilin_baseChange, LinearMap.BilinForm.baseChange_tmul, baseChange_tmul,
-    baseChange_tmul] at hz
+  rw [QuadraticMap.map_add (Q.baseChange E), QuadraticForm.polar_baseChange_tmul,
+    baseChange_tmul, baseChange_tmul] at hz
   -- Read off the coordinates of `Q_E (1 ⊗ x + s ⊗ y)` along the basis `1, s`.
   obtain ⟨hxy, hpolar⟩ := LinearIndependent.pair_iff.mp hli (Q x + d * Q y) (polar Q x y) (by
-    simp only [Algebra.smul_def, one_mul, mul_one, map_add, map_mul,
-      QuadraticMap.polarBilin_apply_apply] at hz ⊢
+    simp only [Algebra.smul_def, one_mul, mul_one, map_add, map_mul] at hz ⊢
     linear_combination hz - algebraMap F E (Q y) * hs)
   have hy : Q y ≠ 0 := by
     intro hy

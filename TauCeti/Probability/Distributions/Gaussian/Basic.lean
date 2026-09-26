@@ -21,12 +21,12 @@ relation and the Gaussian Hermite basis both do).
 
 ## Main statements
 
-* `TauCeti.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
+* `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 open ProbabilityTheory Real
 
@@ -38,4 +38,4 @@ theorem gaussianPDFReal_zero_one (x : ℝ) :
   simp only [NNReal.coe_one, mul_one, sub_zero]
   rw [show -x ^ 2 / 2 = -(x ^ 2 / 2) from by ring]
 
-end TauCeti
+end TauCeti.Probability

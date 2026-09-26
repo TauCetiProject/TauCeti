@@ -82,7 +82,7 @@ private theorem schwarzChristoffelRegularFactor_ofReal (a e : ι → ℝ) (p : �
   rw [schwarzChristoffelRegularFactor,
     schwarzChristoffelContinuedIntegrand_ofReal _ _
       (fun i _ hip ↦ lt_of_le_of_ne hip i.property)
-      (fun _ _ hip ↦ hip)]
+      (fun _ _ hip ↦ hip), schwarzChristoffelDensity_def]
   exact congrArg Complex.ofReal (Finset.prod_subtype (p := fun i ↦ a i ≠ p)
     (Finset.univ.filter fun i ↦ a i ≠ p) (by simp) (fun i ↦ |p - a i| ^ e i)).symm
 

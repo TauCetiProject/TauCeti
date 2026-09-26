@@ -7,6 +7,7 @@ module
 
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Index.Basic
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Profinite index in a subgroup tower
@@ -98,7 +99,6 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
         ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
     have hVne : ((H.subgroupOf K) ⊔ V.toSubgroup).index ≠ 0 := by
-      have : V.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
       exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
     rw [Subgroup.index_map_mk'_eq_index_sup,
       relIndex_map_quotient_eq_index_sup_comap H K hHK N,

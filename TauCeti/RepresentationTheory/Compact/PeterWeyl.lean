@@ -92,6 +92,7 @@ the span `TauCeti.modelSubmodule` of the matrix coefficients of the models insid
 
 ## Main statements
 
+* `TauCeti.IrrepModel.dim_pos`: a model has positive dimension, its carrier being nonzero.
 * `TauCeti.IsIrrepSkeleton.matrixCoeff_mem`: every matrix coefficient of a finite-dimensional
   unitary continuous representation is a linear combination of the models' matrix coefficients.
 * `TauCeti.IsIrrepSkeleton.dense_modelSubmodule`: those coefficients are uniformly dense in
@@ -166,6 +167,11 @@ noncomputable def oneDimensionalEquiv :
 noncomputable def basis (m : IrrepModel 𝕜 G) :
     OrthonormalBasis (Fin m.dim) 𝕜 (EuclideanSpace 𝕜 (Fin m.dim)) :=
   EuclideanSpace.basisFun (Fin m.dim) 𝕜
+
+/-- **A model of an irreducible representation has positive dimension.** Equivalently, its carrier
+`EuclideanSpace 𝕜 (Fin dim)` is nonzero, so its index type `Fin dim` is nonempty. -/
+theorem dim_pos (m : IrrepModel 𝕜 G) : 0 < m.dim := by
+  simpa using Representation.IsIrreducible.finrank_pos m.isIrreducible
 
 end IrrepModel
 

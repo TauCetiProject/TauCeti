@@ -69,9 +69,10 @@ layer deferred above.
   presentation by a cofactor shrinks the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_le` : refinement of bundled
   presentations shrinks the rational subset.
-* `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : a numerator already
+* `TauCeti.ValuationSpectrum.rationalSubset_union_of_forall_vle` and
+  `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : numerators already
   dominated by the denominator throughout `R(T/s)` may be adjoined to `T` without changing the
-  subset.
+  subset, a finite set of them at a time or one at a time.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_self` : the denominator may be inserted
   among the numerators.
 * `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
@@ -128,6 +129,8 @@ layer deferred above.
 public section
 
 namespace TauCeti.ValuationSpectrum
+
+open _root_.TopologicalSpace
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
@@ -222,6 +225,19 @@ theorem rationalSubset_insert_self (Aplus : Subring A) (T : Finset A) (s : A) :
   rw [rationalSubset_def, rationalSubset_def, basicOpenFinset_insert_self]
 
 open scoped Classical in
+/-- **Numerators dominated by the denominator may be adjoined for free.** If every element of
+`T'` is dominated by `s` at every point of `R(T/s)`, then adjoining all of `T'` to the
+numerators leaves the rational subset unchanged.
+
+Only `T'` is constrained, and only where it has to be: nothing is asked of the ideal `T' · A`,
+and the domination is required at the points of `R(T/s)` alone rather than throughout
+`spa A⁺`. The one-numerator case is `rationalSubset_insert_of_forall_vle`. -/
+theorem rationalSubset_union_of_forall_vle (Aplus : Subring A) (T T' : Finset A) (s : A)
+    (hT' : ∀ u ∈ T', ∀ v ∈ rationalSubset Aplus T s, v.toValuativeRel.vle u s) :
+    rationalSubset Aplus (T ∪ T') s = rationalSubset Aplus T s := by
+  grind [mem_rationalSubset_iff]
+
+open scoped Classical in
 /-- **A numerator dominated by the denominator may be adjoined for free.** If every point of
 `R(T/s)` satisfies `v(u) ≤ v(s)`, then adjoining `u` to the numerators does not change the
 rational subset.
@@ -232,15 +248,8 @@ already satisfied there. -/
 theorem rationalSubset_insert_of_forall_vle (Aplus : Subring A) (T : Finset A) (s u : A)
     (hu : ∀ v ∈ rationalSubset Aplus T s, v.toValuativeRel.vle u s) :
     rationalSubset Aplus (insert u T) s = rationalSubset Aplus T s := by
-  refine Set.Subset.antisymm
-    (rationalSubset_subset_rationalSubset_of_subset Aplus (Finset.subset_insert u T) s)
-    fun v hv ↦ ?_
-  have hv' := (mem_rationalSubset_iff Aplus T s v).mp hv
-  refine (mem_rationalSubset_iff Aplus _ s v).mpr ⟨hv'.1, fun t ht ↦ ?_, hv'.2.2⟩
-  let _ := v.toValuativeRel
-  rcases Finset.mem_insert.mp ht with rfl | ht
-  · exact hu v hv
-  · exact hv'.2.1 t ht
+  rw [Finset.insert_eq, Finset.union_comm]
+  exact rationalSubset_union_of_forall_vle Aplus T {u} s (by simpa using hu)
 
 open scoped Classical in
 /-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
@@ -302,6 +311,14 @@ theorem spaBasicOpen_le_spaBasicOpen_iff {Aplus : Subring A} {T T' : Finset A} {
     h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩)).mpr hv),
     fun h _ hv ↦ mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
 
+/-- **Equal basic opens have equal rational subsets**: the presentation data `(T, s)` is not
+determined by the subset it presents, but the subset is determined by the basic open, by
+antisymmetry of `spaBasicOpen_le_spaBasicOpen_iff`. -/
+theorem rationalSubset_eq_of_spaBasicOpen_eq {Aplus : Subring A} {T T' : Finset A} {s s' : A}
+    (h : spaBasicOpen Aplus T s = spaBasicOpen Aplus T' s') :
+    rationalSubset Aplus T s = rationalSubset Aplus T' s' :=
+  (spaBasicOpen_le_spaBasicOpen_iff.mp h.le).antisymm (spaBasicOpen_le_spaBasicOpen_iff.mp h.ge)
+
 open scoped Classical Pointwise in
 /-- **The set-level half of Wedhorn Remark 7.30(5)**: writing `Uᵢ = insert sᵢ Tᵢ` for each
 numerator set augmented by its own denominator,
@@ -317,6 +334,20 @@ theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s�
       = rationalSubset Aplus (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
   rw [rationalSubset_def, rationalSubset_def, rationalSubset_def, ← basicOpenFinset_inter]
   exact (Set.inter_inter_distrib_left _ _ _).symm
+
+/-- The rational open of the common refinement of two presentations is their intersection. -/
+theorem spaBasicOpen_commonRefinement {P : Huber.PairOfDefinition A} (Aplus : Subring A)
+    (p q : P.Presentation) :
+    spaBasicOpen Aplus (p.commonRefinement q).num (p.commonRefinement q).den =
+      spaBasicOpen Aplus p.num p.den ⊓ spaBasicOpen Aplus q.num q.den := by
+  classical
+  apply Opens.ext
+  apply Set.ext
+  intro x
+  simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen,
+    Huber.PairOfDefinition.Presentation.commonRefinement_num,
+    Huber.PairOfDefinition.Presentation.commonRefinement_den, ← rationalSubset_inter,
+    Set.mem_inter_iff]
 
 /-- **A rational subset is the intersection of its one-numerator pieces**:
 `R(T/s) = ⋂ t ∈ T, R({t}/s)` for nonempty `T`. This is the finite-family companion of

@@ -229,7 +229,7 @@ private lemma baseChangeMap_genericFiber (E : FiniteDVRExtension R K)
   unfold baseChange
   -- Taking `Over.Hom.left` turns the composite in `hCore` into the composite in the goal;
   -- the remaining conversions identify the chosen pullback presentations definitionally.
-  convert congrArg Over.Hom.left hCore using 1 <;> rfl
+  exact congrArg Over.Hom.left hCore
 
 /-- Base change of a morphism of models. -/
 noncomputable def baseChangeMap (E : FiniteDVRExtension R K)

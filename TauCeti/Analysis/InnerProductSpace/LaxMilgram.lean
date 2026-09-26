@@ -45,7 +45,7 @@ open scoped InnerProductSpace
 
 namespace IsCoercive
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-- A coercive form has nonnegative diagonal. -/

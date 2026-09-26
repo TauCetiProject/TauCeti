@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Fin
-public import TauCeti.KnotTheory.Grid.Unknot
+public import TauCeti.KnotTheory.Grid.Unknot.Basic
 import TauCeti.GroupTheory.Perm.CyclePower
 
 /-!

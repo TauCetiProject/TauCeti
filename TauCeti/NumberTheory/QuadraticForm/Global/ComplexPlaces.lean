@@ -27,8 +27,18 @@ that is isotropic at one finite place is already isotropic over the number field
 represented at one finite place is either zero or represented by a nonzero form.  Representation
 is stated for regular forms, where dimension is the only complex invariant.
 
+The complex half of the archimedean classification is therefore stated here as well: through a
+complex embedding a regular form is classified by its rank alone, and it is isometric to the
+standard sum of squares on `Fin n` exactly when its rank is `n`.  The predicate results below are
+consequences.  The real half, which needs the real-signature theory, lives in
+`TauCeti.NumberTheory.QuadraticForm.Global.Signature`.
+
 ## Main results
 
+* `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
+  regular forms are classified by their rank.
+* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one_iff_finrank_eq`: the
+  localization is the standard sum of squares on `Fin n` exactly when the rank is `n`.
 * `QuadraticForm.IsLocallyIsotropic.not_anisotropic_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresentsScalar.represents_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresents.isRepresentedBy_atComplexEmbedding`
@@ -38,7 +48,7 @@ is stated for regular forms, where dimension is the only complex invariant.
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField NumberField.InfinitePlace
+open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap
 open scoped TensorProduct
 
 universe u v w
@@ -48,6 +58,32 @@ namespace QuadraticForm
 variable {K : Type u} [Field K] [NumberField K]
 variable {V : Type v} [AddCommGroup V] [Module K V]
 variable {W : Type w} [AddCommGroup W] [Module K W]
+
+omit [NumberField K] in
+/-- Through a complex embedding regular quadratic forms are classified by their rank alone. -/
+@[simp]
+theorem equivalent_atComplexEmbedding_iff_finrank_eq [FiniteDimensional K V]
+    [FiniteDimensional K W] {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) ↔
+      Module.finrank K V = Module.finrank K W := by
+  let _ : Algebra K ℂ := w.embedding.toAlgebra
+  rw [equivalent_iff_finrank_eq_of_isAlgClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
+      (Nondegenerate.atComplexEmbedding hR w), Module.finrank_baseChange,
+    Module.finrank_baseChange]
+
+omit [NumberField K] in
+/-- Through a complex embedding a regular quadratic form is isometric to the standard sum of
+squares on `Fin n` exactly when its global rank is `n`. -/
+@[simp]
+theorem equivalent_atComplexEmbedding_weightedSumSquares_one_iff_finrank_eq
+    [FiniteDimensional K V]
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) (n : ℕ) :
+    (Q.atComplexEmbedding w).Equivalent (weightedSumSquares ℂ (1 : Fin n → ℂ)) ↔
+      Module.finrank K V = n := by
+  let _ : Algebra K ℂ := w.embedding.toAlgebra
+  rw [equivalent_weightedSumSquares_one_iff_finrank_eq _ (Nondegenerate.atComplexEmbedding hQ w),
+    Module.finrank_baseChange]
 
 /-- A locally isotropic quadratic form is isotropic after scalar extension along the complex
 embedding of every infinite place. -/
@@ -103,11 +139,7 @@ theorem LocallyEquivalent.equivalent_atComplexEmbedding [FiniteDimensional K V]
     [FiniteDimensional K W] {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) (h : Q.LocallyEquivalent R)
     (w : InfinitePlace K) :
-    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) := by
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  rw [atComplexEmbedding_def, atComplexEmbedding_def]
-  exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed _ _
-    (Nondegenerate.baseChange hQ) (Nondegenerate.baseChange hR)
-    (by rw [Module.finrank_baseChange, Module.finrank_baseChange, h.finrank_eq])
+    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) :=
+  (equivalent_atComplexEmbedding_iff_finrank_eq hQ hR w).mpr h.finrank_eq
 
 end QuadraticForm

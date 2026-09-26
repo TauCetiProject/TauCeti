@@ -105,7 +105,9 @@ section TerminalRoot
 variable {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1)
 
-private theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
+/-- A positive short-root operator creates its exterior coordinate after the grade involution,
+scaled by the line coordinate of the distinguished remainder vector. -/
+theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
     (x : ExteriorAlgebra K P.W) :
     P.typeBSpinRep b z hz
         (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortRootGenerator i)) x =
@@ -116,7 +118,9 @@ private theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line _ z), map_mul,
     Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_lineOperator]
 
-private theorem typeBSpinRep_shortNegativeRootGenerator_apply (i : Fin (n + 1))
+/-- A negative short-root operator contracts its exterior coordinate and applies the grade
+involution, scaled by the line coordinate of the distinguished remainder vector. -/
+theorem typeBSpinRep_shortNegativeRootGenerator_apply (i : Fin (n + 1))
     (x : ExteriorAlgebra K P.W) :
     P.typeBSpinRep b z hz
         (_root_.UniversalEnvelopingAlgebra.ι K (typeBShortNegativeRootGenerator i)) x =

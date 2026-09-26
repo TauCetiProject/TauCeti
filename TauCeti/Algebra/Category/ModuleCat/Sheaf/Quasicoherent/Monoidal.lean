@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Presentation
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
 public import TauCeti.CategoryTheory.Sites.CoversTop
 
 /-!

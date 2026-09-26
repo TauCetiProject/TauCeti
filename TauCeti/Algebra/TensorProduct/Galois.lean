@@ -43,14 +43,12 @@ theorem tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A)
     GaloisDescent.range_eq_invariants_of_liftBaseChange_surjective
       (k := k) (L := L) (ρ := ρ) (f := f)
       (fun σ a y ↦ by
-        induction y using TensorProduct.induction_on with
-        | zero => simp
+        induction y using TensorProduct.inductionOn with
         | add x y hx hy => simp only [smul_add, map_add, hx, hy]
         | tmul b c => simp [ρ, TensorProduct.smul_tmul', map_mul])
       (fun σ a ↦ by simp [ρ, f])
       (fun y ↦ ⟨y, by
-        induction y using TensorProduct.induction_on with
-        | zero => simp
+        induction y using TensorProduct.inductionOn with
         | add x y hx hy => simp only [map_add, hx, hy]
         | tmul a b =>
             simp only [LinearMap.liftBaseChange_tmul, f, TensorProduct.mk_apply]

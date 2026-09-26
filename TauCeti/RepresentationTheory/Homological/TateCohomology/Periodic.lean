@@ -227,59 +227,50 @@ theorem tateCohomologyIsoEven_zero (hg : ∀ x, x ∈ Subgroup.zpowers g) (h0 : 
     tateCohomologyIsoEven M g hg 0 h0 = tateCohomologyIso₀ M g hg := by
   rfl
 
+-- These `simp` lemmas take the parity hypothesis exactly as it occurs on the left-hand side and
+-- derive any other parity fact on the right: a hypothesis occurring on the left only inside a
+-- proof is not assigned by unification, and `simp` cannot prove it for a symbolic degree.
 /-- In a positive even degree, the all-degree comparison is the composite through ordinary
 group cohomology. -/
 @[simp]
 theorem tateCohomologyIsoEven_ofNat_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
-    (hk : Even (k + 1)) :
+    (hk : Even ((k : ℤ) + 1)) :
     let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
       ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
     let _ : CommGroup G := IsCyclic.commGroup
-    tateCohomologyIsoEven M g hg ((k : ℤ) + 1) hk.natCast =
+    tateCohomologyIsoEven M g hg ((k : ℤ) + 1) hk =
       (TateCohomology.isoGroupCohomology (k + 1)).app M ≪≫
-        groupCohomologyIsoEven M g hg (k + 1) hk := by
-  let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
-    ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
-  let _ : CommGroup G := IsCyclic.commGroup
+        groupCohomologyIsoEven M g hg (k + 1) ((Int.even_coe_nat (k + 1)).1 hk) := by
   rfl
 
 /-- In a degree at most `-2`, the all-degree even comparison is the composite through ordinary
 group homology in the corresponding odd degree. -/
 @[simp]
 theorem tateCohomologyIsoEven_negSucc (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
-    (hk : Odd k) :
+    (hk : Even (Int.negSucc k)) :
     let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
       ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
     let _ : CommGroup G := IsCyclic.commGroup
-    tateCohomologyIsoEven M g hg (Int.negSucc k) (by
-      rcases hk with ⟨a, ha⟩
-      refine ⟨-(a + 1 : ℤ), ?_⟩
-      norm_num [Int.negSucc_eq, ha]
-      ring) =
-      (let _ : NeZero k := ⟨hk.pos.ne'⟩
+    tateCohomologyIsoEven M g hg (Int.negSucc k) hk =
+      (let hk' : Odd k := by simpa [Int.negSucc_eq, parity_simps] using hk
+       let _ : NeZero k := ⟨hk'.pos.ne'⟩
        let _ := Classical.decEq G
-       (TateCohomology.isoGroupHomology (Int.negSucc k) k (by
-          rw [Int.negSucc_eq])).app M ≪≫ groupHomologyIsoOdd M g hg k hk) := by
-  let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
-    ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
-  let _ : CommGroup G := IsCyclic.commGroup
+       (TateCohomology.isoGroupHomology (Int.negSucc k) k rfl).app M ≪≫
+         groupHomologyIsoOdd M g hg k hk') := by
   rfl
 
 /-- In a positive odd degree, the all-degree comparison is the composite through ordinary group
 cohomology. -/
 @[simp]
-theorem tateCohomologyIsoOdd_ofNat (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ)
-    (hk : Odd k) :
+theorem tateCohomologyIsoOdd_ofNat (hg : ∀ x, x ∈ Subgroup.zpowers g) (k : ℕ) (hk : Odd (k : ℤ)) :
     let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
       ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
     let _ : CommGroup G := IsCyclic.commGroup
-    tateCohomologyIsoOdd M g hg (k : ℤ) hk.natCast =
-      (let _ : NeZero k := ⟨hk.pos.ne'⟩
+    tateCohomologyIsoOdd M g hg (k : ℤ) hk =
+      (let hk' : Odd k := (Int.odd_coe_nat k).1 hk
+       let _ : NeZero k := ⟨hk'.pos.ne'⟩
        (TateCohomology.isoGroupCohomology k).app M ≪≫
-         groupCohomologyIsoOdd M g hg k hk) := by
-  let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
-    ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
-  let _ : CommGroup G := IsCyclic.commGroup
+         groupCohomologyIsoOdd M g hg k hk') := by
   rfl
 
 /-- In degree `-1`, the all-degree odd comparison is `tateCohomologyIsoNegOne`. -/
@@ -293,21 +284,15 @@ theorem tateCohomologyIsoOdd_negOne (hg : ∀ x, x ∈ Subgroup.zpowers g)
 group homology in the corresponding nonzero even degree. -/
 @[simp]
 theorem tateCohomologyIsoOdd_negSucc_succ (hg : ∀ x, x ∈ Subgroup.zpowers g) (j : ℕ)
-    (hj : Even (j + 1)) :
+    (hj : Odd (Int.negSucc (j + 1))) :
     let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
       ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
     let _ : CommGroup G := IsCyclic.commGroup
-    tateCohomologyIsoOdd M g hg (Int.negSucc (j + 1)) (by
-      rcases hj with ⟨a, ha⟩
-      refine ⟨-(a : ℤ) - 1, ?_⟩
-      norm_num [Int.negSucc_eq, ha]
-      ring) =
-      (let _ := Classical.decEq G
-       (TateCohomology.isoGroupHomology (Int.negSucc (j + 1)) (j + 1) (by
-          rw [Int.negSucc_eq])).app M ≪≫ groupHomologyIsoEven M g hg (j + 1) hj) := by
-  let _ : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
-    ⟨g, (Subgroup.zpowers g).eq_top_iff'.mpr hg⟩
-  let _ : CommGroup G := IsCyclic.commGroup
+    tateCohomologyIsoOdd M g hg (Int.negSucc (j + 1)) hj =
+      (let hj' : Even (j + 1) := by simpa [Int.negSucc_eq, parity_simps] using hj
+       let _ := Classical.decEq G
+       (TateCohomology.isoGroupHomology (Int.negSucc (j + 1)) (j + 1) rfl).app M ≪≫
+         groupHomologyIsoEven M g hg (j + 1) hj') := by
   rfl
 
 /-- The generator-dependent comparison underlying two-periodicity. It compares two degrees of the
@@ -327,25 +312,27 @@ def periodicIsoOfGenerator (hg : ∀ x, x ∈ Subgroup.zpowers g) (m n : ℤ)
   · exact (tateCohomologyIsoOdd M g hg m (Int.not_even_iff_odd.mp hm)).trans
       (tateCohomologyIsoOdd M g hg n (Int.not_even_iff_odd.mp (hpar.not.mp hm))).symm
 
+-- The parity of `m` is derived from `hmn` and `hn` on the right-hand side, so that `simp` needs
+-- no hypothesis it cannot assign by unification.
 /-- In even degrees, `periodicIsoOfGenerator` is the comparison obtained by identifying both Tate
-groups with the even homology object of the periodic resolution. -/
-@[simp, reassoc]
-theorem periodicIsoOfGenerator_hom_comp_tateCohomologyIsoEven_hom
-    (hg : ∀ x, x ∈ Subgroup.zpowers g) (m n : ℤ) (hmn : m ≡ n [ZMOD 2])
-    (hm : Even m) (hn : Even n) :
+groups with the even homology object of the periodic resolution. Only `n` is assumed even: `m` is
+then even because `m ≡ n [ZMOD 2]`. -/
+@[reassoc (attr := simp)]
+theorem periodicIsoOfGenerator_hom_comp_tateCohomologyIsoEven_hom (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (m n : ℤ) (hmn : m ≡ n [ZMOD 2]) (hn : Even n) :
     (periodicIsoOfGenerator M g hg m n hmn).hom ≫ (tateCohomologyIsoEven M g hg n hn).hom =
-      (tateCohomologyIsoEven M g hg m hm).hom := by
-  simp [periodicIsoOfGenerator, hm]
+      (tateCohomologyIsoEven M g hg m (Int.even_iff.2 (hmn.eq.trans (Int.even_iff.1 hn)))).hom := by
+  simp [periodicIsoOfGenerator, Int.even_iff.2 (hmn.eq.trans (Int.even_iff.1 hn))]
 
 /-- In odd degrees, `periodicIsoOfGenerator` is the comparison obtained by identifying both Tate
-groups with the odd homology object of the periodic resolution. -/
-@[simp, reassoc]
-theorem periodicIsoOfGenerator_hom_comp_tateCohomologyIsoOdd_hom
-    (hg : ∀ x, x ∈ Subgroup.zpowers g) (m n : ℤ) (hmn : m ≡ n [ZMOD 2])
-    (hm : Odd m) (hn : Odd n) :
+groups with the odd homology object of the periodic resolution. Only `n` is assumed odd: `m` is
+then odd because `m ≡ n [ZMOD 2]`. -/
+@[reassoc (attr := simp)]
+theorem periodicIsoOfGenerator_hom_comp_tateCohomologyIsoOdd_hom (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (m n : ℤ) (hmn : m ≡ n [ZMOD 2]) (hn : Odd n) :
     (periodicIsoOfGenerator M g hg m n hmn).hom ≫ (tateCohomologyIsoOdd M g hg n hn).hom =
-      (tateCohomologyIsoOdd M g hg m hm).hom := by
-  simp [periodicIsoOfGenerator, Int.not_even_iff_odd.mpr hm]
+      (tateCohomologyIsoOdd M g hg m (Int.odd_iff.2 (hmn.eq.trans (Int.odd_iff.1 hn)))).hom := by
+  simp [periodicIsoOfGenerator, Int.not_even_iff.2 (hmn.eq.trans (Int.odd_iff.1 hn))]
 
 end Generator
 
@@ -391,6 +378,8 @@ noncomputable def periodicFunctor (g : G) : Rep R G ⥤ ChainComplex (ModuleCat 
   chainComplexFunctor R g ⋙
     (forget₂ (Rep R G) (ModuleCat R)).mapHomologicalComplex (ComplexShape.down ℕ)
 
+/-- In every degree, `periodicFunctor` sends a morphism of representations to its underlying linear
+map. -/
 @[simp]
 theorem periodicFunctor_map_f (f : M ⟶ N) (i : ℕ) :
     ((periodicFunctor R g).map f).f i = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
@@ -407,6 +396,7 @@ noncomputable def periodicFunctorObjIso (M : Rep R G) :
         HomologicalComplex.alternatingConst_d, ComplexShape.down_Rel, ↓reduceIte, hj] <;>
       ext <;> rfl)
 
+/-- The periodic chain complex functor sends zero morphisms to zero morphisms. -/
 instance : (periodicFunctor R g).PreservesZeroMorphisms where
   map_zero X Y := by
     ext i : 2
@@ -460,26 +450,32 @@ noncomputable def periodicScIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (by ext; simp [sub_hom, applyAsHom, norm]) (by ext; simp [sub_hom, applyAsHom, norm])
     (fun _ _ => ComplexShape.down_nat_odd_add) down_rel_prev (down_rel_next hj0) hj
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the first object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₁ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₁ = 𝟙 _ := (rfl)
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the middle object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₂ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₂ = 𝟙 _ := (rfl)
 
+/-- The odd-degree identification `periodicScIsoOdd` is the identity on the last object. -/
 @[simp]
 theorem periodicScIsoOdd_hom_τ₃ {j : ℕ} (hj : Odd j) :
     (periodicScIsoOdd M g hj).hom.τ₃ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the first object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₁ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₁ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the middle object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₂ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₂ = 𝟙 _ := (rfl)
 
+/-- The even-degree identification `periodicScIsoEven` is the identity on the last object. -/
 @[simp]
 theorem periodicScIsoEven_hom_τ₃ {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicScIsoEven M g hj hj0).hom.τ₃ = 𝟙 _ := (rfl)
@@ -496,11 +492,13 @@ noncomputable def periodicHomologyIsoEven {j : ℕ} (hj : Even j) (hj0 : j ≠ 0
     ((periodicFunctor R g).obj M).homology j ≅ (subCompNormHom M g).homology :=
   ShortComplex.homologyMapIso (periodicScIsoEven M g hj hj0)
 
+/-- `periodicHomologyIsoOdd` is the map on homology induced by `periodicScIsoOdd`. -/
 @[simp]
 theorem periodicHomologyIsoOdd_hom {j : ℕ} (hj : Odd j) :
     (periodicHomologyIsoOdd M g hj).hom = ShortComplex.homologyMap (periodicScIsoOdd M g hj).hom :=
   (rfl)
 
+/-- `periodicHomologyIsoEven` is the map on homology induced by `periodicScIsoEven`. -/
 @[simp]
 theorem periodicHomologyIsoEven_hom {j : ℕ} (hj : Even j) (hj0 : j ≠ 0) :
     (periodicHomologyIsoEven M g hj hj0).hom =
@@ -518,14 +516,17 @@ noncomputable def normHomCompSubMap (f : M ⟶ N) : normHomCompSub M g ⟶ normH
   comm₁₂ := by ext x; simp [norm_apply, Representation.norm, map_sum, hom_comm_apply]
   comm₂₃ := by ext x; simp [sub_hom, applyAsHom, hom_comm_apply]
 
+/-- On the first object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₁ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₁ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the middle object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₂ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₂ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the last object, `normHomCompSubMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem normHomCompSubMap_τ₃ (f : M ⟶ N) :
     (normHomCompSubMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
@@ -539,14 +540,17 @@ noncomputable def subCompNormHomMap (f : M ⟶ N) : subCompNormHom M g ⟶ subCo
   comm₁₂ := by ext x; simp [sub_hom, applyAsHom, hom_comm_apply]
   comm₂₃ := by ext x; simp [norm_apply, Representation.norm, map_sum, hom_comm_apply]
 
+/-- On the first object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₁ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₁ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the middle object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₂ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₂ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)
 
+/-- On the last object, `subCompNormHomMap g f` is the underlying linear map of `f`. -/
 @[simp]
 theorem subCompNormHomMap_τ₃ (f : M ⟶ N) :
     (subCompNormHomMap g f).τ₃ = ModuleCat.ofHom (Hom.hom f).toLinearMap := (rfl)

@@ -44,33 +44,15 @@ degree-of-freedom power. -/
 private lemma sq_div_const_rpow_studentTBetaExponent (hν : 0 < ν) (q : ℝ) {z : ℝ}
     (hz : 0 < z) :
     (z ^ 2 / ν) ^ ((q - 1) / 2) = z ^ (q - 1) * ν ^ (-((q - 1) / 2)) := by
-  set e := (q - 1) / 2 with he
-  have hz0 : 0 ≤ z := hz.le
-  have hdiv : (z ^ 2 / ν) ^ e = (z ^ 2) ^ e / ν ^ e := by
-    rw [Real.div_rpow (by positivity) hν.le]
-  have hz2 : (z ^ 2) ^ e = z ^ (q - 1) := by
-    have hzpow : z ^ (2 * e) = (z ^ (2 : ℝ)) ^ e := Real.rpow_mul hz0 2 e
-    have hz2' : (z ^ (2 : ℕ)) = z ^ (2 : ℝ) := by
-      simp
-    have hzpow2 : (z ^ (2 : ℕ)) ^ e = z ^ (2 * e) := by
-      rw [hz2']
-      exact hzpow.symm
-    rw [hzpow2]
-    have heq : 2 * e = q - 1 := by simp [he]; ring
-    rw [heq]
-  have hνinv : (ν ^ e)⁻¹ = ν ^ (-e) := by
-    have h : ν ^ (-e) = (ν ^ e)⁻¹ := Real.rpow_neg hν.le e
-    exact h.symm
-  rw [hdiv, hz2, div_eq_mul_inv, hνinv, he]
+  rw [Real.div_rpow (sq_nonneg z) hν.le, ← Real.rpow_natCast z 2,
+    ← Real.rpow_mul hz.le]
+  have he : (2 : ℝ) * ((q - 1) / 2) = q - 1 := by ring
+  rw [Nat.cast_ofNat, he, div_eq_mul_inv, ← Real.rpow_neg hν.le]
 
 /-- The sample powers left by the Jacobian combine to `z ^ q`. -/
-private lemma rpow_sub_one_mul_self (q : ℝ) {z : ℝ} (hz : 0 < z) :
+private lemma rpow_sub_one_mul_self (q : ℝ) {z : ℝ} (hz : z ≠ 0) :
     z ^ (q - 1) * z = z ^ q := by
-  have h : z ^ (q - 1) * z = z ^ (q - 1) * z ^ (1 : ℝ) := by
-    rw [Real.rpow_one]
-  rw [h, ← Real.rpow_add hz]
-  congr 1
-  ring
+  rw [Real.rpow_sub_one hz, div_mul_cancel₀ _ hz]
 
 /-- The powers of `ν` introduced by the square chart and the Jacobian cancel. -/
 private lemma studentT_chart_nu_powers_cancel (hν : 0 < ν) (q : ℝ) :
@@ -83,7 +65,7 @@ private lemma studentT_chart_nu_powers_cancel (hν : 0 < ν) (q : ℝ) :
 
 /-- The non-kernel scalar part of the transformed weighted density reduces to the expected
 normalizing constant times `z ^ q`. -/
-private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : 0 < z)
+private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : z ≠ 0)
     (C : ℝ) :
     C * ν ^ ((q + 1) / 2) / 2 * (2 * z / ν) *
         (z ^ (q - 1) * ν ^ (-((q - 1) / 2))) = C * z ^ q := by
@@ -129,7 +111,7 @@ lemma abs_deriv_smul_studentTPDFReal (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : 0 
       C * (1 + z ^ 2 / ν) ^ (-((ν + 1) / 2)) * z ^ q := by
     have h71 : C * ν ^ ((q + 1) / 2) / 2 * (2 * z / ν) *
           (z ^ (q - 1) * ν ^ (-((q - 1) / 2))) = C * z ^ q :=
-      studentT_chart_scalar_part hν q hz C
+      studentT_chart_scalar_part hν q hz.ne' C
     rw [h71]; ring
   have hgoal : (2 * z / ν) * (C * ν ^ ((q + 1) / 2) / 2 *
         (z ^ (q - 1) * ν ^ (-((q - 1) / 2)) *

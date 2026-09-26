@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {f : 𝕜 → 𝕜} {z₀ : 𝕜}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {z₀ : 𝕜}
 
 /-- The order is additive when taking a finite product of analytic functions. -/
 theorem analyticOrderAt_prod {ι : Type*} {s : Finset ι} {F : ι → 𝕜 → 𝕜}
@@ -47,7 +47,8 @@ theorem analyticOrderAt_prod {ι : Type*} {s : Finset ι} {F : ι → 𝕜 → �
 
 /-- The analytic order of `q ↦ f (q ^ N)` at `0` is `N` times the analytic order of `f`
 at `0`. -/
-lemma analyticOrderAt_comp_pow_zero (hf : AnalyticAt 𝕜 f 0) {N : ℕ} (hN : 0 < N) :
+lemma analyticOrderAt_comp_pow_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f 0) {N : ℕ} (hN : 0 < N) :
     analyticOrderAt (fun q : 𝕜 ↦ f (q ^ N)) 0 = analyticOrderAt f 0 * N := by
   set g : 𝕜 → 𝕜 := fun q ↦ q ^ N with hg_def
   have hzero : g 0 = 0 := zero_pow hN.ne'

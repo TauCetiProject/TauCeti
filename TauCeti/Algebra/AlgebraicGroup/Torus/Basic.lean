@@ -140,10 +140,10 @@ theorem torusCommHopfAlgProperty.isCocomm
         (SplitTorus.characterGroup (ULift.{u} (Fin n)))).obj := inferInstance
   let hbase : _root_.Coalgebra.IsCocomm (AlgebraicClosure k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj :=
-    Coalgebra.IsCocomm.of_bialgEquiv
-      (_root_.CommHopfAlgCat.ofIso <|
-        (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
-          (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i) (hA := hsplit)
+    let e := _root_.CommHopfAlgCat.ofIso <|
+      (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
+        (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i
+    e.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e.toCoalgEquiv.surjective (hA := hsplit)
   exact Coalgebra.IsCocomm.of_baseChange (h := hbase)
 
 /-- The category of finite-type torus coordinate Hopf algebras over a field.

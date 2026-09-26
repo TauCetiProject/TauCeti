@@ -326,6 +326,11 @@ theorem differential_apply (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.differential x = 𝒜.m 1 ![x] := by
   simp [differential, MultilinearMap.curryRight_apply]
 
+/-- The unary operation raises the degree by one. -/
+theorem differential_mem_piece (𝒜 : AInfinityAlgebra R A) {p : ℤ} {x : A}
+    (hx : x ∈ 𝒜.grading.piece p) : 𝒜.differential x ∈ 𝒜.grading.piece (p + 1) := by
+  simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![x] (fun _ ↦ by simpa using hx)
+
 /-- On a single letter the Taylor map is the unary operation: the suspension sign of a word of
 length one is trivial. -/
 @[simp]
@@ -377,6 +382,13 @@ def mul (𝒜 : AInfinityAlgebra R A) : A →ₗ[R] A →ₗ[R] A :=
 theorem mul_apply (𝒜 : AInfinityAlgebra R A) (x y : A) : 𝒜.mul x y = 𝒜.m 2 ![x, y] := by
   simp [mul]
 
+/-- The binary operation has degree zero. -/
+theorem mul_mem_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {x y : A}
+    (hx : x ∈ 𝒜.grading.piece p) (hy : y ∈ 𝒜.grading.piece q) :
+    𝒜.mul x y ∈ 𝒜.grading.piece (p + q) := by
+  have h := (𝒜.m_degree 2 two_pos).map_mem ![p, q] ![x, y] fun i ↦ by fin_cases i <;> simpa
+  simpa using h
+
 /-- On a two-letter word the Taylor map is the binary operation, with the suspension sign carried
 by the degree-one Koszul twist of the first letter. -/
 theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
@@ -407,9 +419,7 @@ theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
   rw [hcons] at hs
   rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, hcons, hexp] at hs
   have hs' : 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
-      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := by
-    convert hs using 1
-    congr
+      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := hs
   simp only [L, Q, LinearMap.compl₂_apply, LinearMap.compr₂_apply, LinearMap.comp_apply,
     𝒜.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast, one_mul, map_smul]
   rw [ReducedTensorWords.prepend_ofLetter]
@@ -464,10 +474,9 @@ theorem m_one_koszulTwist (𝒜 : AInfinityAlgebra R A) (x : A) :
   have h : 𝒜.differential ∘ₗ 𝒜.grading.koszulTwist 1 =
       -(𝒜.grading.koszulTwist 1 ∘ₗ 𝒜.differential) := by
     refine 𝒜.grading.linearMap_ext fun p y hy ↦ ?_
-    have hdy : 𝒜.differential y ∈ 𝒜.grading.piece (p + 1) := by
-      simpa using (𝒜.m_degree 1 one_pos).map_mem (fun _ ↦ p) ![y] (fun _ ↦ by simpa using hy)
     rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
-      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul, 𝒜.grading.koszulTwist_apply_of_mem hdy,
+      𝒜.grading.koszulTwist_apply_of_mem hy, map_smul,
+      𝒜.grading.koszulTwist_apply_of_mem (𝒜.differential_mem_piece hy),
       ← neg_smul]
     congr 1
     simp [Int.negOnePow_succ]

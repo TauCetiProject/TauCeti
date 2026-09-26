@@ -91,6 +91,18 @@ of `(X, B)` and of `(X, A)`. -/
 noncomputable abbrev singularChainComplexShortComplex : ShortComplex (ChainComplex C ℕ) :=
   ShortComplex.mk _ _ (T.singularChainComplexMap_innerToTotal_comp_totalToOuter R)
 
+/-- The morphism from the relative singular chain sequence of the pair `(X, A)` to that of the
+triple `(X, A, B)` given by the quotient maps modulo the chains of `B`. -/
+@[simps]
+private noncomputable def outerPairToShortComplexMap :
+    (outerPair.obj T).singularChainComplexShortComplex R ⟶
+      T.singularChainComplexShortComplex R where
+  τ₁ := (innerPair.obj T).singularChainComplexπ R
+  τ₂ := (totalPair.obj T).singularChainComplexπ R
+  τ₃ := 𝟙 _
+  comm₁₂ := T.singularChainComplexπ_comp_innerToTotal R
+  comm₂₃ := (T.singularChainComplexπ_comp_totalToOuter R).trans (Category.comp_id _).symm
+
 /-- The morphism of relative singular chain sequences induced by a morphism of triples, used to
 prove the naturality of the connecting morphism. -/
 private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
@@ -165,6 +177,22 @@ lemma singularHomology_exact_total (n : ℕ) :
 lemma singularHomology_exact_outer (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularHomologyδ R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₃ n m (by simpa)
+
+/-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
+`(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
+connecting morphisms of a filtration compose to zero. -/
+@[reassoc]
+lemma singularHomologyδ_eq_comp_singularHomologyπ (n m : ℕ) (h : m + 1 = n := by lia) :
+    T.singularHomologyδ R n m h =
+      (outerPair.obj T).singularHomologyδ R n m h ≫
+        (innerPair.obj T).singularHomologyπ R m := by
+  have key := HomologicalComplex.HomologySequence.δ_naturality
+    (outerPairToShortComplexMap T R)
+    ((outerPair.obj T).shortExact_singularChainComplexShortComplex R)
+    (T.shortExact_singularChainComplexShortComplex R) n m (by simpa)
+  simp only [outerPairToShortComplexMap_τ₁, outerPairToShortComplexMap_τ₃,
+    HomologicalComplex.homologyMap_id, Category.id_comp] at key
+  exact key.symm
 
 /-- The connecting morphism of the long exact sequence of a triple is natural: for a morphism of
 triples `φ : (X, A, B) ⟶ (X', A', B')`, following `Hₙ(X, A) ⟶ Hₘ(A, B)` by the map induced by `φ`

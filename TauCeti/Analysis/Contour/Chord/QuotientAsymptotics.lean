@@ -76,8 +76,8 @@ variable {γ : ℝ → ℂ} {t₀ : ℝ} {s L : ℂ}
 Specialises to the one-sided limits at `u = Ioi t₀` (right) and `u = Iio t₀` (left). -/
 theorem chord_quotient_tendsto {u : Set ℝ} (hu : t₀ ∉ u)
     (h_deriv : HasDerivWithinAt γ L u t₀) (h_at : γ t₀ = s) :
-    Tendsto (fun t : ℝ => (γ t - s) / ((t - t₀ : ℝ) : ℂ)) (𝓝[u] t₀) (𝓝 L) := by
-  refine ((hasDerivWithinAt_iff_tendsto_slope' hu).mp h_deriv).congr fun t => ?_
+    Tendsto (fun t : ℝ ↦ (γ t - s) / ((t - t₀ : ℝ) : ℂ)) (𝓝[u] t₀) (𝓝 L) := by
+  refine ((hasDerivWithinAt_iff_tendsto_slope' hu).mp h_deriv).congr fun t ↦ ?_
   rw [slope_def_module, h_at, Complex.real_smul, Complex.ofReal_inv, inv_mul_eq_div]
 
 /-- **The normalized chord is eventually close to `1`**: for any `ρ > 0`, eventually along
@@ -87,8 +87,8 @@ private theorem eventually_normalized_chord_close {u : Set ℝ} (hu : t₀ ∉ u
     ∀ᶠ t in 𝓝[u] t₀, ‖(γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)) - 1‖ ≤ ρ := by
   have h_div := (chord_quotient_tendsto hu h_deriv h_at).div_const L
   rw [div_self hL] at h_div
-  have h_one : Tendsto (fun t : ℝ => (γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)))
-      (𝓝[u] t₀) (𝓝 1) := h_div.congr fun t => by rw [div_div, mul_comm]
+  have h_one : Tendsto (fun t : ℝ ↦ (γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)))
+      (𝓝[u] t₀) (𝓝 1) := h_div.congr fun t ↦ by rw [div_div, mul_comm]
   filter_upwards [Metric.tendsto_nhds.mp h_one ρ hρ_pos] with t ht
   rw [dist_eq_norm] at ht
   exact ht.le
@@ -102,7 +102,7 @@ theorem exists_normalized_chord_bound_right
       ‖(γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)) - 1‖ ≤ ρ := by
   obtain ⟨c, hc, h⟩ := mem_nhdsGT_iff_exists_Ioc_subset.mp
     (eventually_normalized_chord_close self_notMem_Ioi h_deriv h_at hL hρ_pos)
-  exact ⟨c - t₀, sub_pos.mpr hc, fun t ht => h ⟨ht.1, by linarith [ht.2]⟩⟩
+  exact ⟨c - t₀, sub_pos.mpr hc, fun t ht ↦ h ⟨ht.1, by linarith [ht.2]⟩⟩
 
 /-- **Fixed-radius normalized chord bound (left side)**: the counterpart of
 `exists_normalized_chord_bound_right` on `[t₀ - r, t₀)`. -/
@@ -113,17 +113,19 @@ theorem exists_normalized_chord_bound_left
       ‖(γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)) - 1‖ ≤ ρ := by
   obtain ⟨c, hc, h⟩ := mem_nhdsLT_iff_exists_Ico_subset.mp
     (eventually_normalized_chord_close self_notMem_Iio h_deriv h_at hL hρ_pos)
-  exact ⟨t₀ - c, sub_pos.mpr hc, fun t ht => h ⟨by linarith [ht.1], ht.2⟩⟩
+  exact ⟨t₀ - c, sub_pos.mpr hc, fun t ht ↦ h ⟨by linarith [ht.1], ht.2⟩⟩
 
 /-- **Slit-plane condition for quotients near `1`.** If `‖z - 1‖ ≤ 1/4` and `‖w - 1‖ ≤ 1/4`,
 then `z / w ∈ Complex.slitPlane`: the quotient stays in the unit ball around `1`. -/
 theorem div_mem_slitPlane_of_close_to_one {z w : ℂ} (hz : ‖z - 1‖ ≤ 1 / 4) (hw : ‖w - 1‖ ≤ 1 / 4) :
     z / w ∈ Complex.slitPlane := by
-  have hw_ne : w ≠ 0 := fun hw_eq => by
+  have hw_ne : w ≠ 0 := fun hw_eq ↦ by
     rw [hw_eq, zero_sub, norm_neg, norm_one] at hw
     linarith
   have h_zw : ‖z - w‖ ≤ 1 / 2 := by
-    calc ‖z - w‖ = ‖(z - 1) - (w - 1)‖ := by congr 1; ring
+    calc ‖z - w‖ = ‖(z - 1) - (w - 1)‖ := by
+          congr 1
+          ring
       _ ≤ ‖z - 1‖ + ‖w - 1‖ := norm_sub_le _ _
       _ ≤ 1 / 4 + 1 / 4 := add_le_add hz hw
       _ = 1 / 2 := by ring
@@ -153,8 +155,8 @@ theorem chord_quotient_mem_slitPlane (hL : L ≠ 0) {a b : ℝ}
     (ha : ‖(γ a - s) / (L * ((a - t₀ : ℝ) : ℂ)) - 1‖ ≤ 1 / 4)
     (hb : ‖(γ b - s) / (L * ((b - t₀ : ℝ) : ℂ)) - 1‖ ≤ 1 / 4) (hab : 0 < (b - t₀) / (a - t₀)) :
     (γ b - s) / (γ a - s) ∈ Complex.slitPlane := by
-  have ha_ne : (a - t₀ : ℝ) ≠ 0 := fun h => by simp [h] at hab
-  have hb_ne : (b - t₀ : ℝ) ≠ 0 := fun h => by simp [h] at hab
+  have ha_ne : (a - t₀ : ℝ) ≠ 0 := fun h ↦ by simp [h] at hab
+  have hb_ne : (b - t₀ : ℝ) ≠ 0 := fun h ↦ by simp [h] at hab
   have hL_a : L * ((a - t₀ : ℝ) : ℂ) ≠ 0 :=
     mul_ne_zero hL (Complex.ofReal_ne_zero.mpr ha_ne)
   have hL_b : L * ((b - t₀ : ℝ) : ℂ) ≠ 0 :=
@@ -183,7 +185,7 @@ theorem exists_chord_quotient_mem_slitPlane_right
       (γ b - s) / (γ a - s) ∈ Complex.slitPlane := by
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_right h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
-  refine ⟨r, hr_pos, fun a b ha hab hb => ?_⟩
+  refine ⟨r, hr_pos, fun a b ha hab hb ↦ ?_⟩
   exact chord_quotient_mem_slitPlane hL (hr_close a ⟨ha, by linarith⟩)
     (hr_close b ⟨by linarith, hb⟩) (div_pos (by linarith) (by linarith))
 
@@ -197,7 +199,7 @@ theorem exists_chord_quotient_mem_slitPlane_left
       (γ b - s) / (γ a - s) ∈ Complex.slitPlane := by
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
-  refine ⟨r, hr_pos, fun a b ha hab hb => ?_⟩
+  refine ⟨r, hr_pos, fun a b ha hab hb ↦ ?_⟩
   exact chord_quotient_mem_slitPlane hL (hr_close a ⟨ha, by linarith⟩)
     (hr_close b ⟨by linarith, hb⟩)
     (div_pos_of_neg_of_neg (by linarith) (by linarith))
@@ -206,8 +208,8 @@ theorem exists_chord_quotient_mem_slitPlane_left
 eventually, and `(c ε : ℂ) * f ε → Q`, then `arg (f ε) → arg Q`. -/
 theorem arg_tendsto_of_pos_mul_tendsto {α : Type*} {l : Filter α} {c : α → ℝ} {f : α → ℂ}
     {Q : ℂ} (hQ : Q ∈ Complex.slitPlane) (hc : ∀ᶠ ε in l, 0 < c ε)
-    (h : Tendsto (fun ε => ((c ε : ℝ) : ℂ) * f ε) l (𝓝 Q)) :
-    Tendsto (fun ε => (f ε).arg) l (𝓝 Q.arg) := by
+    (h : Tendsto (fun ε ↦ ((c ε : ℝ) : ℂ) * f ε) l (𝓝 Q)) :
+    Tendsto (fun ε ↦ (f ε).arg) l (𝓝 Q.arg) := by
   refine ((Complex.continuousAt_arg hQ).tendsto.comp h).congr' ?_
   filter_upwards [hc] with ε hε
   exact Complex.arg_real_mul _ hε
@@ -217,9 +219,9 @@ theorem arg_tendsto_of_pos_mul_tendsto {α : Type*} {l : Filter α} {c : α → 
 blow-up and exposes the limit `1`, without changing the argument. -/
 theorem tendsto_arg_neg_tangent_div_chord_nhdsLT (h_at : γ t₀ = s) (hL : L ≠ 0)
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) :
-    Tendsto (fun t => ((-L) / (γ t - s)).arg) (𝓝[<] t₀) (𝓝 0) := by
+    Tendsto (fun t ↦ ((-L) / (γ t - s)).arg) (𝓝[<] t₀) (𝓝 0) := by
   have hq := (chord_quotient_tendsto self_notMem_Iio h_deriv h_at).inv₀ hL
-  have hscaled : Tendsto (fun t => (((t₀ - t : ℝ) : ℂ) * ((-L) / (γ t - s))))
+  have hscaled : Tendsto (fun t ↦ (((t₀ - t : ℝ) : ℂ) * ((-L) / (γ t - s))))
       (𝓝[<] t₀) (𝓝 1) := by
     convert hq.const_mul L using 1
     · funext t
@@ -241,11 +243,11 @@ theorem tendsto_arg_neg_tangent_div_chord_nhdsLT (h_at : γ t₀ = s) (hL : L �
 nonzero tangent limit and does not change the argument. -/
 theorem tendsto_arg_chord_div_tangent_nhdsGT (h_at : γ t₀ = s) (hL : L ≠ 0)
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) :
-    Tendsto (fun t => ((γ t - s) / L).arg) (𝓝[>] t₀) (𝓝 0) := by
+    Tendsto (fun t ↦ ((γ t - s) / L).arg) (𝓝[>] t₀) (𝓝 0) := by
   have hq := (chord_quotient_tendsto self_notMem_Ioi h_deriv h_at).div_const L
   rw [div_self hL] at hq
   have hscaled : Tendsto
-      (fun t => ((((t - t₀)⁻¹ : ℝ) : ℂ) * ((γ t - s) / L)))
+      (fun t ↦ ((((t - t₀)⁻¹ : ℝ) : ℂ) * ((γ t - s) / L)))
       (𝓝[>] t₀) (𝓝 1) := by
     refine hq.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with t ht
@@ -265,24 +267,24 @@ theorem arg_annular_quotient_tendsto_right
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) (h_at : γ t₀ = s) {δ : ℝ → ℝ} {r : ℝ}
     (h_slit : (γ (t₀ + r) - s) / L ∈ Complex.slitPlane) (hδ_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < δ ε)
     (hδ_to_zero : Tendsto δ (𝓝[>] (0 : ℝ)) (𝓝[>] (0 : ℝ))) :
-    Tendsto (fun ε : ℝ => Complex.arg ((γ (t₀ + r) - s) / (γ (t₀ + δ ε) - s)))
+    Tendsto (fun ε : ℝ ↦ Complex.arg ((γ (t₀ + r) - s) / (γ (t₀ + δ ε) - s)))
       (𝓝[>] (0 : ℝ)) (𝓝 ((γ (t₀ + r) - s) / L).arg) := by
-  have hL : L ≠ 0 := fun h0 => by
+  have hL : L ≠ 0 := fun h0 ↦ by
     rw [h0, div_zero] at h_slit
     exact Complex.zero_notMem_slitPlane h_slit
-  have h_compose : Tendsto (fun ε : ℝ => t₀ + δ ε) (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) := by
+  have h_compose : Tendsto (fun ε : ℝ ↦ t₀ + δ ε) (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) := by
     rw [tendsto_nhdsWithin_iff]
-    refine ⟨?_, hδ_pos.mono fun ε hε => by simpa using hε⟩
+    refine ⟨?_, hδ_pos.mono fun ε hε ↦ by simpa using hε⟩
     simpa using tendsto_const_nhds.add
       (hδ_to_zero.mono_right nhdsWithin_le_nhds : Tendsto δ (𝓝[>] (0 : ℝ)) (𝓝 0))
-  have h_chord : Tendsto (fun ε : ℝ => (γ (t₀ + δ ε) - s) / ((δ ε : ℝ) : ℂ))
+  have h_chord : Tendsto (fun ε : ℝ ↦ (γ (t₀ + δ ε) - s) / ((δ ε : ℝ) : ℂ))
       (𝓝[>] (0 : ℝ)) (𝓝 L) :=
     ((chord_quotient_tendsto self_notMem_Ioi h_deriv h_at).comp h_compose).congr
-      fun ε => by simp [Function.comp_apply, add_sub_cancel_left]
+      fun ε ↦ by simp [Function.comp_apply, add_sub_cancel_left]
   refine arg_tendsto_of_pos_mul_tendsto h_slit hδ_pos ?_
   have h_recip := (h_chord.inv₀ hL).const_mul (γ (t₀ + r) - s)
   rw [← div_eq_mul_inv] at h_recip
-  exact h_recip.congr fun ε => by rw [inv_div]; ring
+  exact h_recip.congr fun ε ↦ by rw [inv_div]; ring
 
 /-- **Left annular quotient argument convergence**: along a positive cutoff `δ(ε) → 0⁺`, the
 argument of the annular quotient `(γ (t₀ - δ ε) - s) / (γ (t₀ - r) - s)` converges to the
@@ -291,22 +293,22 @@ theorem arg_annular_quotient_tendsto_left
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) (h_at : γ t₀ = s) {δ : ℝ → ℝ} {r : ℝ}
     (h_slit : (-L) / (γ (t₀ - r) - s) ∈ Complex.slitPlane) (hδ_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < δ ε)
     (hδ_to_zero : Tendsto δ (𝓝[>] (0 : ℝ)) (𝓝[>] (0 : ℝ))) :
-    Tendsto (fun ε : ℝ => Complex.arg ((γ (t₀ - δ ε) - s) / (γ (t₀ - r) - s)))
+    Tendsto (fun ε : ℝ ↦ Complex.arg ((γ (t₀ - δ ε) - s) / (γ (t₀ - r) - s)))
       (𝓝[>] (0 : ℝ)) (𝓝 ((-L) / (γ (t₀ - r) - s)).arg) := by
-  have h_compose : Tendsto (fun ε : ℝ => t₀ - δ ε) (𝓝[>] (0 : ℝ)) (𝓝[<] t₀) := by
+  have h_compose : Tendsto (fun ε : ℝ ↦ t₀ - δ ε) (𝓝[>] (0 : ℝ)) (𝓝[<] t₀) := by
     rw [tendsto_nhdsWithin_iff]
-    refine ⟨?_, hδ_pos.mono fun ε hε => by simpa using hε⟩
+    refine ⟨?_, hδ_pos.mono fun ε hε ↦ by simpa using hε⟩
     simpa using tendsto_const_nhds.sub
       (hδ_to_zero.mono_right nhdsWithin_le_nhds : Tendsto δ (𝓝[>] (0 : ℝ)) (𝓝 0))
-  have h_chord : Tendsto (fun ε : ℝ => (γ (t₀ - δ ε) - s) / ((δ ε : ℝ) : ℂ))
+  have h_chord : Tendsto (fun ε : ℝ ↦ (γ (t₀ - δ ε) - s) / ((δ ε : ℝ) : ℂ))
       (𝓝[>] (0 : ℝ)) (𝓝 (-L)) :=
     ((chord_quotient_tendsto self_notMem_Iio h_deriv h_at).comp h_compose).neg.congr
-      fun ε => by
+      fun ε ↦ by
         simp only [Function.comp_apply]
         rw [show t₀ - δ ε - t₀ = -δ ε from by ring, Complex.ofReal_neg, div_neg, neg_neg]
   refine arg_tendsto_of_pos_mul_tendsto h_slit
-    (hδ_pos.mono fun ε hε => inv_pos.mpr hε) ?_
-  refine (h_chord.div_const (γ (t₀ - r) - s)).congr fun ε => ?_
+    (hδ_pos.mono fun ε hε ↦ inv_pos.mpr hε) ?_
+  refine (h_chord.div_const (γ (t₀ - r) - s)).congr fun ε ↦ ?_
   push_cast
   ring
 
@@ -325,7 +327,7 @@ theorem exists_chord_div_tangent_mem_slitPlane_right
     ∃ r > 0, ∀ r', 0 < r' → r' ≤ r → (γ (t₀ + r') - s) / L ∈ Complex.slitPlane := by
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_right h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
-  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le => ?_⟩
+  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le ↦ ?_⟩
   have h_close : ‖(γ (t₀ + r') - s) / (L * ((r' : ℝ) : ℂ)) - 1‖ ≤ 1 / 4 := by
     rw [show ((r' : ℝ) : ℂ) = (((t₀ + r') - t₀ : ℝ) : ℂ) from by push_cast; ring]
     exact hr_close (t₀ + r') ⟨by linarith, by linarith⟩
@@ -347,7 +349,7 @@ theorem exists_neg_tangent_div_chord_mem_slitPlane_left
       (-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane := by
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
-  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le => ?_⟩
+  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le ↦ ?_⟩
   set q : ℂ := (γ (t₀ - r') - s) / (L * ((r' : ℝ) : ℂ)) with hq_def
   have hq_close : ‖-q - 1‖ ≤ 1 / 4 := by
     have h_close := hr_close (t₀ - r') ⟨by linarith, by linarith⟩
@@ -358,7 +360,7 @@ theorem exists_neg_tangent_div_chord_mem_slitPlane_left
     intro h0
     rw [h0, neg_zero, zero_sub, norm_neg, norm_one] at hq_close
     norm_num at hq_close
-  have h_γ_ne : γ (t₀ - r') - s ≠ 0 := fun h0 => hq_ne (by rw [hq_def, h0, zero_div])
+  have h_γ_ne : γ (t₀ - r') - s ≠ 0 := fun h0 ↦ hq_ne (by rw [hq_def, h0, zero_div])
   have h_eq_target : (-L) / (γ (t₀ - r') - s) = (((1 / r' : ℝ)) : ℂ) * (-1 / q) := by
     have hr'_ne : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
     rw [hq_def]
@@ -394,10 +396,10 @@ theorem exists_crossing_slitPlane_radius {γ : ℝ → ℂ} {t₀ : ℝ} {s L_R 
   have hr₄ : min (min r₁ r₂) (min r₃ r₄) ≤ r₄ := (min_le_right _ _).trans (min_le_right _ _)
   refine ⟨min (min r₁ r₂) (min r₃ r₄),
     lt_min (lt_min hr₁_pos hr₂_pos) (lt_min hr₃_pos hr₄_pos), ?_, ?_, ?_, ?_⟩
-  · exact fun a b ha hab hb => h₁ a b ha hab (by linarith)
-  · exact fun a b ha hab hb => h₂ a b (by linarith) hab hb
-  · exact fun r' hr' hle => h₃ r' hr' (hle.trans hr₃)
-  · exact fun r' hr' hle => h₄ r' hr' (hle.trans hr₄)
+  · exact fun a b ha hab hb ↦ h₁ a b ha hab (by linarith)
+  · exact fun a b ha hab hb ↦ h₂ a b (by linarith) hab hb
+  · exact fun r' hr' hle ↦ h₃ r' hr' (hle.trans hr₃)
+  · exact fun r' hr' hle ↦ h₄ r' hr' (hle.trans hr₄)
 
 end TauCeti.Contour
 

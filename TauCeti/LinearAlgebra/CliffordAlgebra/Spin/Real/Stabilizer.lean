@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonalStabilizer
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Stabilizer
 
 /-!
 # The lower-rank subgroup of a compact real Spin group

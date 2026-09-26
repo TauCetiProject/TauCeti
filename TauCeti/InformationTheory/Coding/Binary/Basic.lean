@@ -151,15 +151,6 @@ theorem one_mem_of_eq_euclideanDual (hC : C = C.euclideanDual) :
   rw [hC]
   exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_le_euclideanDual hC.le)
 
-/-- A self-dual binary code has `2^(n/2)` words, where `n` is its length. -/
-theorem natCard_of_eq_euclideanDual (hC : C = C.euclideanDual) :
-    Nat.card C = 2 ^ (Fintype.card ι / 2) := by
-  have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC
-  rw [Module.natCard_eq_pow_finrank (K := ZMod 2)]
-  simp only [Nat.card_eq_fintype_card, ZMod.card]
-  congr 1
-  omega
-
 end BinaryCode
 
 end TauCeti

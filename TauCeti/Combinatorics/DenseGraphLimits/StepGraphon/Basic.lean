@@ -135,6 +135,26 @@ theorem stepGraphon_apply (P : Finpartition (Set.univ : Set Ω))
     stepGraphon (μ := μ) P hP val hsymm x y = (val p q : ℝ) :=
   stepValue_apply P val hx hy
 
+open MeasureTheory in
+/-- A step graphon is strongly measurable with respect to the σ-algebra recording the partition
+part of each coordinate, since it is a function of the pair of part indices. -/
+theorem stronglyMeasurable_comap_stepGraphon (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p)
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p) :
+    StronglyMeasurable[MeasurableSpace.comap
+      (Prod.map P.indexedPartition.index P.indexedPartition.index)
+      (⊤ : MeasurableSpace (P.parts × P.parts))]
+      (fun z : Ω × Ω => stepGraphon (μ := μ) P hP val hsymm z.1 z.2) := by
+  let : MeasurableSpace (P.parts × P.parts) := ⊤
+  have hvalue : (fun z : Ω × Ω => stepGraphon (μ := μ) P hP val hsymm z.1 z.2) =
+      (fun pq : P.parts × P.parts => (val pq.1 pq.2 : ℝ)) ∘
+        Prod.map P.indexedPartition.index P.indexedPartition.index := by
+    funext z
+    exact stepGraphon_apply P hP val hsymm (P.indexedPartition.mem_index z.1)
+      (P.indexedPartition.mem_index z.2)
+  rw [hvalue]
+  exact (measurable_of_countable _).stronglyMeasurable.comp_measurable (comap_measurable _)
+
 /-- Two step graphons on a fixed partition are equal exactly when their block matrices agree. -/
 @[simp]
 theorem stepGraphon_inj (P : Finpartition (Set.univ : Set Ω))

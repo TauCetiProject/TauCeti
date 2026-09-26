@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.ZMod.Two
 public import TauCeti.InformationTheory.Coding.Binary.Basic
+public import TauCeti.InformationTheory.Coding.Weight.Euclidean
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 
@@ -54,6 +55,8 @@ a lattice.
   isotropy read off any coordinatewise integer lift.
 * `TauCeti.isIsotropic_coordinatePower_zmodStandard_quadratic_iff`: quadratic isotropy over an
   even `ℤ/m` is divisibility of the sum of squared canonical representatives by `2m`.
+* `TauCeti.isIsotropic_coordinatePower_zmodStandard_quadratic_iff_euclideanWeight`: equivalently,
+  divisibility of every Euclidean weight by `2m`.
 * `TauCeti.isIsotropic_coordinatePower_zmodStandard_two_iff_isDoublyEven`: over `ℤ/2` quadratic
   isotropy is double evenness.
 
@@ -233,6 +236,21 @@ theorem isIsotropic_coordinatePower_zmodStandard_quadratic_iff
     AddCircle.coe_intCast_div_natCast_eq_zero_iff
       (Nat.mul_ne_zero (by norm_num) (NeZero.ne m))]
   exact Int.natCast_dvd_natCast
+
+/-- Quadratic isotropy of an additive code over an even `ℤ/m` means that every codeword has
+Euclidean weight divisible by `2m`. -/
+theorem isIsotropic_coordinatePower_zmodStandard_quadratic_iff_euclideanWeight
+    (C : AdditiveCode (ZMod m) ι) :
+    ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C ↔
+      ∀ x ∈ C, 2 * m ∣ euclideanWeight x := by
+  rw [FiniteQuadraticModule.isIsotropic_def]
+  refine forall₂_congr fun x _ ↦ ?_
+  -- evaluate the quadratic value on the least absolute lifts of the coordinates
+  have hlift : (fun i ↦ (((x i).valMinAbs : ℤ) : ZMod m)) = x :=
+    funext fun i ↦ ZMod.coe_valMinAbs (x i)
+  conv_lhs => rw [← hlift]
+  rw [coordinatePower_zmodStandard_quadratic_intCast_eq_zero_iff, ← natCast_euclideanWeight]
+  exact_mod_cast Iff.rfl
 
 /-- The quadratic value of a binary word is a quarter of its Hamming weight. -/
 theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :

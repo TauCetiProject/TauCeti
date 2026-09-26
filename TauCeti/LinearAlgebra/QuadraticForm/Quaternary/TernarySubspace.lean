@@ -17,7 +17,9 @@ hyperbolic planes. Such a space has a two-dimensional totally isotropic subspace
 every subspace of dimension at least three nontrivially.
 
 The resulting equivalence between isotropy of the restricted and ambient forms is the
-field-theoretic step used in the square-discriminant case of the quaternary Hasse principle.
+field-theoretic step used in the square-discriminant case of the quaternary Hasse principle. It is
+also stated for an arbitrary form of dimension at least three represented by the ambient form,
+which is the version that transfers through scalar extension.
 
 ## Main results
 
@@ -26,6 +28,8 @@ field-theoretic step used in the square-discriminant case of the quaternary Hass
 * `QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finrank_ge_three`: isotropy of a
   restriction of dimension at least three is equivalent to isotropy of its regular quaternary
   ambient form when the latter has square discriminant.
+* `QuadraticMap.Nondegenerate.not_anisotropic_of_isRepresentedBy_of_finrank_ge_three`: the same
+  conclusion for any form of dimension at least three represented by such an ambient form.
 
 ## References
 
@@ -120,5 +124,21 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_iff_of_finran
   constructor
   · exact (Q.restrict_isRepresentedBy U).not_anisotropic
   · exact hQ.not_anisotropic_restrict_of_finrank_ge_three U hUrank hrank hdiscr
+
+/-- Over a field in which two is invertible, a form of dimension at least three represented by a
+regular quaternary isotropic form with square discriminant is isotropic. -/
+theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_of_isRepresentedBy_of_finrank_ge_three
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {W : Type*} [AddCommGroup W] [Module K W]
+    {R : QuadraticForm K W} (hRQ : R.IsRepresentedBy Q) (hRrank : 3 ≤ Module.finrank K W)
+    (hrank : Module.finrank K V = 4)
+    (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) (hiso : ¬ Q.Anisotropic) :
+    ¬ R.Anisotropic := by
+  obtain ⟨f, hf, hfR⟩ := (isRepresentedBy_iff R Q).mp hRQ
+  have hU := hQ.not_anisotropic_restrict_of_finrank_ge_three (LinearMap.range f)
+    (by rwa [LinearMap.finrank_range_of_inj hf]) hrank hdiscr hiso
+  rw [not_anisotropic_iff_exists] at hU ⊢
+  obtain ⟨⟨_, y, rfl⟩, hy0, hy⟩ := hU
+  refine ⟨y, fun h ↦ hy0 (by simp [h]), ?_⟩
+  rwa [← hfR]
 
 end TauCeti

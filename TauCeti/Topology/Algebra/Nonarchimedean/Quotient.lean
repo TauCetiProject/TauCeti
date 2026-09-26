@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -28,7 +29,8 @@ Both instances factor through one transport lemma,
 continuous at the identity, which is all the quotient map is ever used for here. The group
 instance applies it to `QuotientGroup.mk'`, and the ring instance applies
 its additive form to `Ideal.Quotient.mk` through `QuotientRing.isOpenMap_coe` — so no
-identification of `R ⧸ I` with a quotient by `I.toAddSubgroup` is involved.
+identification of `R ⧸ I` with a quotient by `I.toAddSubgroup` is involved. The module instance
+applies the additive form to `Submodule.mkQ` through `Submodule.isOpenMap_mkQ` in the same way.
 
 The consumer is the universal property of a rational localisation
 (`TauCeti.Huber.PairOfDefinition.existsUnique_continuous_ringHom_completion_locTopology`), which
@@ -41,6 +43,8 @@ universal property to `C ⧸ a` needs exactly the ring instance below.
 * `QuotientGroup.instNonarchimedeanGroup`, and its additive form
   `QuotientAddGroup.instNonarchimedeanAddGroup`: `G ⧸ N` is nonarchimedean when `G` is.
 * `Ideal.Quotient.instNonarchimedeanRing`: `R ⧸ I` is nonarchimedean when `R` is.
+* `Submodule.Quotient.instNonarchimedeanAddGroup`: `M ⧸ N` is nonarchimedean when the topological
+  module `M` is.
 
 ## References
 
@@ -78,3 +82,15 @@ instance instNonarchimedeanRing : NonarchimedeanRing (R ⧸ I) :=
   { is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
 
 end Ideal.Quotient
+
+namespace Submodule.Quotient
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [NonarchimedeanAddGroup M] (N : Submodule R M)
+
+/-- A quotient of a nonarchimedean topological module by a submodule is nonarchimedean. The
+quotient map is continuous and open, so the additive transport lemma applies directly. -/
+instance instNonarchimedeanAddGroup : NonarchimedeanAddGroup (M ⧸ N) :=
+  .nonarchimedean_of_isOpenMap N.mkQ.toAddMonoidHom N.continuous_mkQ.continuousAt N.isOpenMap_mkQ
+
+end Submodule.Quotient

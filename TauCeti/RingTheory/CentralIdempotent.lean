@@ -203,7 +203,7 @@ end IsSimpleRing
 
 section ProdSurjection
 
-variable {F A B : Type*} [CommSemiring F] [Ring A] [Algebra F A] [Ring B] [Algebra F B]
+variable {F A B : Type*} [CommSemiring F] [Semiring A] [Algebra F A] [Ring B] [Algebra F B]
 
 /-- **A surjection onto a simple ring from a product of two copies of an algebra factors through a
 coordinate.** The image of `(1, 0)` is a central idempotent of `B`, hence `0` or `1`

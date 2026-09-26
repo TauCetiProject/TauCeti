@@ -14,6 +14,8 @@ Generated files:
 * ``rolling-seven-day-history.svg`` — merge throughput, authors, and latency;
 * ``cumulative-merges-by-contributor.svg``;
 * ``cumulative-reviews-by-contributor.svg``;
+* ``merges-by-roadmap-and-contributor.svg`` and ``reviews-by-roadmap-and-contributor.svg``
+  — who works on which roadmap, over a trailing window;
 * ``pr-stats.json`` — definitions, exact contributor totals, and plotted series.
 
 Contributor charts deliberately draw only the top N contributors plus one aggregate
@@ -41,7 +43,9 @@ from datetime import date, datetime, time as day_time, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
-from chart_style import BAR_BG, MUTED, PALETTE, base_css, card_rect, css_px
+from chart_style import (
+    BAR_BG, BG, MUTED, PALETTE, REFERENCE_WIDTH, TEXT, base_css, card_rect, css_px,
+)
 # The lifecycle rules live in one module because two readers of the same label
 # timelines have to agree about what they mean, and once did not.
 from pr_lifecycle import (  # noqa: F401  (re-exported for existing callers)
@@ -74,8 +78,54 @@ ASSET_NAMES = [
     "rolling-seven-day-history.svg",
     "cumulative-merges-by-contributor.svg",
     "cumulative-reviews-by-contributor.svg",
+    "merges-by-roadmap-and-contributor.svg",
+    "reviews-by-roadmap-and-contributor.svg",
     "pr-stats.json",
 ]
+
+ROADMAP_PREFIX = "roadmap/"
+# `none` says the work belongs to no roadmap and `Unknown` says nobody has decided yet.
+# Neither names an area, so neither earns a column.
+ROADMAP_EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
+# Trailing window for the who-works-where charts. The questions they answer are all
+# forward-looking -- who could review this, which roadmap rests on one person -- and a
+# whole-history cut answers them with the project's past: a roadmap that finished in July
+# would hold its column for ever while an active one could not get in.
+ROADMAP_WINDOW_DAYS = 90
+ROADMAP_LIMIT = 15
+# Rows. Twenty keeps every cell wide enough to carry its own number, which is what makes the
+# chart readable as a static image with no hover to fall back on.
+ROADMAP_CONTRIBUTOR_LIMIT = 20
+# One hue, dark to light, because the surface is dark: on #101936 the bright end is the loud
+# one. Lightness is monotonic across the ramp (the property a sequential scale actually needs;
+# the categorical CVD validator does not apply and would fail it by construction). Every step
+# carries an ink choice at 4.2:1 or better -- see ROADMAP_INK.
+ROADMAP_RAMP = ["#1a4c57", "#1f6b7c", "#24899c", "#3cb0ba", "#5eead4"]
+# Which ink each step takes. The two dark steps take the page's text colour (8.5:1 and 5.4:1);
+# the three light ones take the page background (4.2:1, 6.7:1, 11.7:1).
+ROADMAP_INK = [TEXT, TEXT, BG, BG, BG]
+# Sentinels for the two aggregates, in a namespace neither a GitHub login nor a roadmap label
+# can occupy: a login cannot contain `/` and every roadmap key here starts with `roadmap/`.
+# Deliberately NOT a NUL, which would prove uniqueness more cheaply and fail far worse: NUL is
+# illegal in XML, so one missed special case downstream would make the whole SVG unparsable
+# rather than merely mislabelled.
+OTHER_ROADMAP = "other/roadmaps"
+OTHER_CONTRIBUTOR = "other/contributors"
+# Minimum viewBox width for the grids. They are served at `width: 100%`, so a narrow viewBox is
+# scaled UP; matching the other cards keeps a sparse grid the same size on the page as a full one.
+REFERENCE_HEATMAP_WIDTH = 1500
+# Rough width of a character as a fraction of the font size, for this sans face at these sizes.
+# Only used to reserve space, so erring high costs a little whitespace and erring low costs a
+# collision; 0.55 is measured against the longest real roadmap names rather than guessed.
+HEADING_ASPECT = 0.55
+# The lowest subtitle baseline chart_frame emits (y = 72 + 22 for a second line). Rotated
+# column headings have to clear it.
+HEADING_SUBTITLE_FLOOR = 94
+# XML 1.0 forbids most control characters outright, and no amount of entity escaping makes them
+# legal -- a NUL in a label would produce a file no parser will read. GitHub documents label
+# names as general strings and explicitly allows emoji, so this is not a theoretical input.
+XML_FORBIDDEN = re.compile(
+    "[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF]")
 HOUR_EDGES = [0, 1, 2, 4, 8, 12, 24, 48, 72, 120, math.inf]
 HOUR_LABELS = [
     "<1h", "1–2h", "2–4h", "4–8h", "8–12h", "12–24h",
@@ -175,7 +225,7 @@ query($owner:String!, $name:String!, $cursor:String) {
       nodes {
         number createdAt updatedAt mergedAt closedAt state isDraft
         author { login }
-        labels(first:30) { nodes { name } }
+        labels(first:100) { nodes { name } pageInfo { hasNextPage } }
       }
     }
   }
@@ -187,7 +237,7 @@ query($owner:String!, $name:String!, $number:Int!, $cursor:String) {
   repository(owner:$owner, name:$name) {
     pullRequest(number:$number) {
       mergedAt closedAt state isDraft
-      labels(first:30) { nodes { name } }
+      labels(first:100) { nodes { name } pageInfo { hasNextPage } }
       timelineItems(first:100, after:$cursor, itemTypes:[LABELED_EVENT]) {
         pageInfo { hasNextPage endCursor }
         nodes { ... on LabeledEvent { createdAt label { name } } }
@@ -701,25 +751,45 @@ def rolling_metrics(prs: list[dict], last_full_day: date, history_days: int) -> 
     return rows
 
 
+def utc_day(moment: datetime) -> date:
+    """The UTC calendar day of an instant, whatever offset it arrived with."""
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc).date()
+
+
 def cumulative_chart_series(
     events: Iterable[tuple[datetime, str]], start: date, end: date, limit: int,
     cutoff: datetime | None = None,
 ) -> tuple[list[str], list[str], dict[str, list[int]], Counter]:
-    """Build bounded plotted series while retaining exact totals for every login."""
-    events = [
+    """Build bounded plotted series while retaining exact totals for every login.
+
+    `cutoff` bounds what is COUNTED; `end` bounds what is PLOTTED. They are different
+    questions, and collapsing them into one silently rewrites a published contract:
+    pr-stats.json documents its contributor totals as exact through the snapshot instant, and
+    the charts stop at the last completed UTC day so that a few hours of the current day
+    cannot read as a downturn. A contributor whose only merge landed this morning is therefore
+    in the totals and not yet on the line, which is what both of those promises require.
+    """
+    known = [
         (timestamp, name) for timestamp, name in events
-        if timestamp.date() <= end and (cutoff is None or timestamp <= cutoff)
+        if cutoff is None or timestamp <= cutoff
     ]
-    totals = Counter(name for _, name in events)
+    totals = Counter(name for _, name in known)
     selected = sorted(totals, key=lambda name: (-totals[name], name.casefold()))[:limit]
     selected_set = set(selected)
     omitted = len(totals) - len(selected)
     other = f"Other ({omitted:,} contributors)" if omitted else None
     names = selected + ([other] if other else [])
     daily = Counter()
-    for timestamp, name in events:
+    for timestamp, name in known:
+        # Normalized, not `timestamp.date()`. parse_dt keeps whatever offset the snapshot
+        # carried, and the day boundary this is bucketing against is a UTC one.
+        day = utc_day(timestamp)
+        if day > end:
+            continue
         group = name if name in selected_set else other
-        daily[(timestamp.date(), group)] += 1
+        daily[(day, group)] += 1
     running = Counter()
     series = {name: [] for name in names}
     dates = []
@@ -731,6 +801,131 @@ def cumulative_chart_series(
             series[name].append(running[name])
         day += timedelta(days=1)
     return dates, names, series, totals
+
+
+def roadmap_of(labels: Iterable[str]) -> str | None:
+    """The single roadmap a PR belongs to, or None when that is not a settled question.
+
+    Exactly one `roadmap/<Area>` label, ignoring `none` and `Unknown`. Two area labels is not
+    a PR that counts half towards each: it is a PR nobody has decided about, and splitting it
+    would put made-up numbers in a chart about who works where.
+
+    Deliberately *not* scripts/loc_roadmap_graph.py's rule, which also drops PRs whose title
+    marks them as maintenance. That chart measures mathematics landed, where a refactor is
+    genuinely not new material. This one measures who works on what, and somebody who keeps
+    the PDE build honest is a person the PDE roadmap depends on.
+    """
+    areas = [name for name in labels
+             if name.startswith(ROADMAP_PREFIX) and name not in ROADMAP_EXCLUDE]
+    return areas[0] if len(areas) == 1 else None
+
+
+def roadmap_matrix(
+    prs: list[dict], scoreboards: list[dict], last_full_day: date,
+    window_days: int = ROADMAP_WINDOW_DAYS, roadmap_limit: int = ROADMAP_LIMIT,
+    contributor_limit: int = ROADMAP_CONTRIBUTOR_LIMIT,
+) -> dict:
+    """Who merged and who reviewed, per roadmap, over the trailing window.
+
+    Both slices are a local join over the snapshot this module already fetches: each PR record
+    carries its author and its labels, and each scoreboard carries the PR it was posted on. No
+    extra API call.
+
+    Columns are the roadmaps with the most merges in the window, so the chart tracks where the
+    project is working now. Rows are the busiest contributors in that same window, counted per
+    chart, because the people merging and the people reviewing are not the same set.
+    """
+    start = last_full_day - timedelta(days=window_days - 1)
+    end = last_full_day
+
+    def within(stamp: str | None) -> bool:
+        # utc_day, not .date(): `last_full_day` is a UTC day and parse_dt keeps whatever offset
+        # the snapshot carried, so an offline fixture with an offset would cross the boundary
+        # in the wrong direction. Same fix as the cumulative charts and loc_roadmap_graph.
+        return bool(stamp) and start <= utc_day(parse_dt(stamp)) <= end
+
+    area_of_pr = {pr["number"]: roadmap_of(pr["labels"]) for pr in prs}
+
+    merges = Counter()
+    for pr in prs:
+        area = area_of_pr[pr["number"]]
+        if area and within(pr.get("merged_at")):
+            merges[(pr["author"], area)] += 1
+
+    reviews = Counter()
+    for board in scoreboards:
+        area = area_of_pr.get(board["pr"])
+        if area and within(board.get("created_at")):
+            reviews[(board["user"], area)] += 1
+
+    # Ranked on merges alone, and used for both charts, so the two are read against the same
+    # columns in the same order. Reviews follow the work rather than defining their own areas.
+    by_area = Counter()
+    for (_, area), count in merges.items():
+        by_area[area] += count
+    # Explicit tie-break. `most_common` keeps encounter order for equal counts, which at the
+    # fifteen-roadmap boundary means the columns depend on the order pull requests came back in.
+    ranked = sorted(by_area, key=lambda area: (-by_area[area], area.casefold(), area))
+    columns = ranked[:roadmap_limit]
+    bundled = set(ranked[roadmap_limit:])
+    # Areas that only ever appear in reviews still belong in the remainder rather than nowhere.
+    bundled |= {area for _, area in reviews if area not in columns}
+
+    def fold(counts: Counter) -> Counter:
+        folded = Counter()
+        for (who, area), count in counts.items():
+            folded[(who, OTHER_ROADMAP if area in bundled else area)] += count
+        return folded
+
+    return {
+        "window_days": window_days,
+        "from": start.isoformat(),
+        "to": end.isoformat(),
+        "columns": columns,
+        "bundled": sorted(bundled),
+        # The UNFOLDED counts, which is what the charts promise is "in JSON". Folding is a
+        # rendering decision -- it exists so a grid stays legible -- and once both axes have
+        # been folded the original distribution is gone: `bundled` keeps the roadmap names and
+        # the row totals keep the people, but not who did what where. Published as records
+        # rather than as a composite key so no consumer has to know how the key was joined.
+        "exact": {
+            "merges": _records(merges),
+            "reviews": _records(reviews),
+        },
+        "merges": _slice(fold(merges), columns, bundled, contributor_limit),
+        "reviews": _slice(fold(reviews), columns, bundled, contributor_limit),
+    }
+
+
+def _records(counts: Counter) -> list[dict]:
+    """One record per (contributor, roadmap) pair, ordered biggest first then by name."""
+    return [
+        {"contributor": who, "roadmap": area, "count": count}
+        for (who, area), count in sorted(
+            counts.items(), key=lambda item: (-item[1], item[0][0].casefold(), item[0][1]))
+    ]
+
+
+def _slice(folded: Counter, columns: list[str], bundled: set[str],
+           contributor_limit: int) -> dict:
+    """Bound one matrix to its busiest contributors, keeping the rest as one row."""
+    axis = columns + ([OTHER_ROADMAP] if bundled else [])
+    totals = Counter()
+    for (who, _), count in folded.items():
+        totals[who] += count
+    ranked = [who for who, _ in sorted(totals.items(), key=lambda kv: (-kv[1], kv[0].casefold()))]
+    rows = ranked[:contributor_limit]
+    spare = set(ranked[contributor_limit:])
+    cells = Counter()
+    for (who, area), count in folded.items():
+        cells[(OTHER_CONTRIBUTOR if who in spare else who, area)] += count
+    return {
+        "axis": axis,
+        "rows": rows + ([OTHER_CONTRIBUTOR] if spare else []),
+        "omitted_contributors": len(spare),
+        "counts": {f"{who}\t{area}": count for (who, area), count in cells.items()},
+        "totals_by_contributor": dict(totals.most_common()),
+    }
 
 
 def histogram(values: Iterable[float]) -> list[int]:
@@ -968,6 +1163,181 @@ def log_ticks(maximum: int) -> list[int]:
     return sorted(set(ticks))
 
 
+def heat_buckets(maximum: int) -> list[int]:
+    """Lower bound of each ramp step, for a count distribution with a long tail.
+
+    Geometric rather than equal-width: one person with forty merges in an area and everybody
+    else with one or two is the normal shape here, and equal-width buckets would paint all of
+    those the same colour. Returned lower-inclusive and strictly increasing, so a legend can
+    print them and short ramps (a maximum of one or two) collapse rather than repeat.
+    """
+    if maximum <= 1:
+        return [1]
+    edges = []
+    for index in range(len(ROADMAP_RAMP)):
+        # Divided by the number of steps, not by one fewer: the top edge has to land BELOW the
+        # maximum so the brightest bucket covers a range. Spacing the edges across the closed
+        # interval instead puts the last one exactly on the maximum, which spends a whole ramp
+        # step on the single busiest cell.
+        edge = int(round(maximum ** (index / len(ROADMAP_RAMP))))
+        if not edges or edge > edges[-1]:
+            edges.append(max(edge, 1))
+    return edges
+
+
+def heat_step(value: int, edges: list[int]) -> int:
+    step = 0
+    for index, edge in enumerate(edges):
+        if value >= edge:
+            step = index
+    return step
+
+
+def render_roadmap_heatmap(
+    path: Path, title: str, noun: str, matrix: dict, slice_key: str,
+) -> None:
+    """One contributor-by-roadmap grid: rows are people, columns are roadmaps, cells are counts.
+
+    Deliberately a grid rather than fifteen small multiples. The questions it answers -- who
+    knows this area, which roadmap rests on one person, where is somebody spending their
+    effort -- are all comparisons across both axes at once, and small multiples make you scan
+    between cards to do any of them. The cumulative charts already cover change over time.
+
+    Every non-zero cell carries its own number. These are published as static <img>, so there
+    is no hover to fall back on, and the printed value is what makes a cell readable when its
+    colour sits mid-ramp. Zero is drawn as nothing at all: absence should be quiet, and on a
+    sparse grid an empty cell is easier to skip than a dark one.
+    """
+    data = matrix[slice_key]
+    axis, rows = data["axis"], data["rows"]
+    counts = data["counts"]
+
+    def count_of(who: str, area: str) -> int:
+        return counts.get(f"{who}\t{area}", 0)
+
+    def clip(text: str, limit: int) -> str:
+        # The column headings are rotated 45 degrees, so their length is vertical as well as
+        # horizontal: a long enough label climbs out of the header band and over the subtitle.
+        # Today's longest roadmap is about fourteen characters and the band holds a little over
+        # twenty, but nothing stops somebody naming one `roadmap/AlgebraicNumberTheory`.
+        #
+        # Elided in the MIDDLE rather than the tail, so two roadmaps sharing a long prefix stay
+        # distinguishable -- `AlgebraicNumberTheory` and `AlgebraicTopologySeminar` differ only
+        # after nine characters, and a prefix clip would render them identically.
+        text = XML_FORBIDDEN.sub("", text)
+        if len(text) <= limit:
+            return text
+        head = (limit - 1) // 2
+        return text[:head] + "…" + text[len(text) - (limit - 1 - head):]
+
+    def column_label(area: str) -> str:
+        return (f"Other ({len(matrix['bundled'])})" if area == OTHER_ROADMAP
+                else clip(area[len(ROADMAP_PREFIX):], 20))
+
+    def row_label(who: str) -> str:
+        return (f"Other ({data['omitted_contributors']:,})"
+                if who == OTHER_CONTRIBUTOR else clip(who, 24))
+
+    left = 230
+    cell_w, cell_h, gap = 74, 26, 2
+    # The right reserve has to hold the LAST heading, which is rotated 45 degrees and so runs
+    # up and to the right past its own column. Forty units did not, so a clipped label could
+    # still cross the viewBox edge.
+    right = 150
+    # Floored at the reference width because the page renders these at `width: 100%`: a grid
+    # with one or two columns would otherwise be scaled up into an enormous near-space card
+    # of mostly whitespace.
+    width = max(REFERENCE_HEATMAP_WIDTH, left + len(axis) * cell_w + right)
+    # The header band is sized from the longest heading rather than fixed, because a heading
+    # rotated 45 degrees reaches upward by its own length over root two -- and css_px scales a
+    # design-space 12 to about 18 user units at this width, so `RepresentationTheory` reaches
+    # 143 units. A fixed 232-unit band put it through the subtitle, which is what the first
+    # render against real roadmap names showed; the synthetic fixtures all had shorter names.
+    # HEADING_SUBTITLE_FLOOR is the lowest subtitle baseline chart_frame writes.
+    heading_font = 12 * width / REFERENCE_WIDTH
+    longest = max((len(column_label(area)) for area in axis), default=0)
+    reach = longest * heading_font * HEADING_ASPECT / 1.414
+    top = max(232, int(HEADING_SUBTITLE_FLOOR + 26 + reach))
+    height = top + len(rows) * cell_h + 72
+    maximum = max(counts.values(), default=0)
+    edges = heat_buckets(maximum)
+
+    parts = chart_frame(
+        width=width, height=height, left=55, aria_label=title, title=title,
+        subtitle=[
+            # Not `noun.capitalize()`, which lowercases the rest and turns "merged PRs" into
+            # "Merged prs".
+            f"Count of {noun} per contributor per roadmap, "
+            f"{matrix['from']}–{matrix['to']} ({matrix['window_days']} days)",
+            f"columns are the {len(matrix['columns'])} roadmaps with the most merges in that "
+            f"window; exact counts for every contributor and roadmap in JSON",
+        ],
+        css=f'.rowlab{{font-size:{css_px(width, 12.5)};text-anchor:end}}'
+            f'.collab{{font-size:{css_px(width, 12)}}}'
+            f'.cellval{{font-size:{css_px(width, 11.5)};text-anchor:middle;'
+            'font-variant-numeric:tabular-nums}'
+            f'.scale{{font-size:{css_px(width, 11.5)};fill:{MUTED}}}',
+    )
+
+    # Column headings, rotated so a long roadmap name does not force the columns apart.
+    for index, area in enumerate(axis):
+        x = left + index * cell_w + cell_w / 2
+        parts.append(
+            f'<text x="{x:.1f}" y="{top - 10}" class="collab" '
+            f'fill="{MUTED if area == OTHER_ROADMAP else TEXT}" '
+            f'transform="rotate(-45 {x:.1f} {top - 10})">'
+            f'{html.escape(column_label(area))}</text>'
+        )
+
+    for row_index, who in enumerate(rows):
+        y = top + row_index * cell_h
+        parts.append(
+            f'<text x="{left - 14}" y="{y + cell_h / 2 + 4:.1f}" class="rowlab" '
+            f'fill="{MUTED if who == OTHER_CONTRIBUTOR else TEXT}">'
+            f'{html.escape(row_label(who))}</text>'
+        )
+        for col_index, area in enumerate(axis):
+            value = count_of(who, area)
+            if not value:
+                continue
+            step = heat_step(value, edges)
+            x = left + col_index * cell_w
+            parts.append(
+                f'<rect x="{x + gap / 2:.1f}" y="{y + gap / 2:.1f}" '
+                f'width="{cell_w - gap}" height="{cell_h - gap}" rx="3" '
+                f'fill="{ROADMAP_RAMP[step]}"/>'
+            )
+            parts.append(
+                f'<text x="{x + cell_w / 2:.1f}" y="{y + cell_h / 2 + 4:.1f}" '
+                f'class="cellval" fill="{ROADMAP_INK[step]}">{value:,}</text>'
+            )
+
+    # The scale, so the colour is readable as magnitude rather than decoration.
+    legend_y = top + len(rows) * cell_h + 28
+    if not maximum:
+        # Nothing was drawn, so a colour scale would describe an encoding the reader cannot see
+        # anywhere -- and `heat_buckets(0)` yields a lone "1" entry, which reads as "somebody
+        # has one" rather than "nobody has any". Say what is actually true instead.
+        parts.append(f'<text x="{left - 14}" y="{legend_y + 12}" class="rowlab" '
+                     f'fill="{MUTED}">no roadmap-attributed {html.escape(noun)} '
+                     'in this window</text>')
+        parts.append("</svg>")
+        atomic_write(path, "".join(parts) + "\n")
+        return
+    parts.append(f'<text x="{left - 14}" y="{legend_y + 12}" class="rowlab" '
+                 f'fill="{MUTED}">{html.escape(noun)}</text>')
+    for index, edge in enumerate(edges):
+        x = left + index * 92
+        upper = edges[index + 1] - 1 if index + 1 < len(edges) else maximum
+        label = f"{edge:,}" if upper <= edge else f"{edge:,}–{upper:,}"
+        parts.append(f'<rect x="{x}" y="{legend_y}" width="20" height="14" rx="3" '
+                     f'fill="{ROADMAP_RAMP[index]}"/>')
+        parts.append(f'<text x="{x + 26}" y="{legend_y + 12}" class="scale">{label}</text>')
+
+    parts.append("</svg>")
+    atomic_write(path, "".join(parts) + "\n")
+
+
 def render_cumulative_contributors(
     path: Path, title: str, noun: str, dates: list[str], names: list[str],
     series: dict[str, list[int]], totals: Counter, total_contributors: int,
@@ -1062,12 +1432,19 @@ def generate(
         (parse_dt(item["created_at"]), item["user"])
         for item in data.get("scoreboards") or []
     ]
+    # `last_full_day`, not `snapshot.date()`: the snapshot is taken every three hours, so ending
+    # the series on the current day plotted whatever had merged by then as though it were a whole
+    # day. On a cumulative curve that is not visibly "incomplete" -- it is a flat final segment
+    # and an end-of-line total that is simply short, both of which redraw steeper on the next run.
+    # The rolling chart has always ended here for the same reason; these two now agree with it.
     merge_dates, merge_names, merge_series, merge_totals = cumulative_chart_series(
-        merge_events, project_start, snapshot.date(), contributor_limit, snapshot,
+        merge_events, project_start, last_full_day, contributor_limit, snapshot,
     )
     review_dates, review_names, review_series, review_totals = cumulative_chart_series(
-        review_events, project_start, snapshot.date(), contributor_limit, snapshot,
+        review_events, project_start, last_full_day, contributor_limit, snapshot,
     )
+
+    roadmaps = roadmap_matrix(prs, data.get("scoreboards") or [], last_full_day)
 
     metrics = {
         "schema_version": 1,
@@ -1089,6 +1466,7 @@ def generate(
         "cumulative_reviews_plotted": review_series,
         "merge_totals_by_contributor": dict(merge_totals.most_common()),
         "review_totals_by_contributor": dict(review_totals.most_common()),
+        "by_roadmap_and_contributor": roadmaps,
         "rejected_scoreboard_comments": data.get("rejected_scoreboard_comments") or {},
     }
     out_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -1111,6 +1489,14 @@ def generate(
             "Reviews by contributor", "reviews",
             review_dates, review_names, review_series,
             review_totals, len(review_totals),
+        )
+        render_roadmap_heatmap(
+            staging / "merges-by-roadmap-and-contributor.svg",
+            "Merged PRs by roadmap and contributor", "merged PRs", roadmaps, "merges",
+        )
+        render_roadmap_heatmap(
+            staging / "reviews-by-roadmap-and-contributor.svg",
+            "Reviews by roadmap and contributor", "reviews", roadmaps, "reviews",
         )
         atomic_write(
             staging / "pr-stats.json",

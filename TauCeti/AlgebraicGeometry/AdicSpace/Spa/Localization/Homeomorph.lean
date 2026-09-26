@@ -34,6 +34,8 @@ completion map and is intentionally not identified here.
 
 * `TauCeti.ValuationSpectrum.spaLocalizationHomeomorph_apply_val`: the forward map is pullback
   along `A → A(T/s)`.
+* `TauCeti.ValuationSpectrum.val_comp_spaLocalizationHomeomorph`: composing the homeomorphism
+  with the inclusion into `Spa(A, A⁺)` is `spaComap`.
 * `TauCeti.ValuationSpectrum.comap_spaLocalizationHomeomorph_symm_apply`: the inverse extends a
   point of the rational subset.
 
@@ -54,7 +56,9 @@ namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber TauCeti.Huber.PairOfDefinition TauCeti.Localization
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A S : Type*} [CommRing A] [CommRing S] [Algebra A S]
+
+variable [TopologicalSpace A] [IsTopologicalRing A]
 
 open scoped Classical in
 /-- Pullback along `A → A(T/s)`, corestricted from the adic spectrum of the topological
@@ -70,10 +74,8 @@ noncomputable def spaLocalizationToRationalSubset (P : PairOfDefinition A) (Aplu
   have _ := isTopologicalRing_locTopology P T s S hden
   let Bplus := (integralClosure ↥(Algebra.adjoin Aplus
     (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring
-  have hplus : ∀ a ∈ Aplus, algebraMap A S a ∈ Bplus := fun a ha ↦
-    Subalgebra.algebraMap_mem (integralClosure _ S)
-      (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
-        ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))))
+  have hplus : ∀ a ∈ Aplus, algebraMap A S a ∈ Bplus :=
+    algebraMap_mem_integralClosure_adjoin_plus Aplus T s S
   let f : spa Bplus → spa Aplus :=
     spaComap (algebraMap A S) (continuous_algebraMap_locTopology P T s S hden)
       Aplus Bplus hplus
@@ -163,6 +165,21 @@ theorem spaLocalizationHomeomorph_apply_val (P : PairOfDefinition A) (Aplus : Su
   intro v
   rw [spaLocalizationHomeomorph, Topology.IsEmbedding.toHomeomorphOfSurjective_apply]
   exact spaLocalizationToRationalSubset_apply_val P Aplus T s S hden v
+
+/-- The homeomorphism of `spaLocalizationHomeomorph`, followed by the inclusion of `R(T/s)` into
+`Spa(A, A⁺)`, is pullback along `A → A(T/s)`. -/
+lemma val_comp_spaLocalizationHomeomorph (P : PairOfDefinition A) (Aplus : Subring A)
+    (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locTopology P T s S hden
+    Subtype.val ∘ ⇑(spaLocalizationHomeomorph P Aplus hP T s S hden) =
+      spaComap (algebraMap A S) (continuous_algebraMap_locTopology P T s S hden) Aplus _
+        (algebraMap_mem_integralClosure_adjoin_plus Aplus T s S) := by
+  let _ := locTopology P T s S hden
+  funext v
+  apply Subtype.ext
+  rw [spaComap_val]
+  exact spaLocalizationHomeomorph_apply_val P Aplus hP T s S hden v
 
 /-- Pulling the valuation supplied by the inverse homeomorphism back to `A` recovers the
 original point of `R(T/s)`. -/

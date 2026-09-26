@@ -166,8 +166,7 @@ theorem mem_adjointWeightSpace_iff_universalPointAction
               (TensorProduct.map
                 (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toLinearMap LinearMap.id z))) =
         GeneralLinear.scalarExtensionMap (V := V) (CommAlgCat.ofHom phi) z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add a b ha hb => simpa only [map_add] using congrArg₂ (fun p q ↦ p + q) ha hb
     | tmul a y =>
         simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.comm_tmul]
@@ -274,7 +273,7 @@ private theorem map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace
     TensorProduct.map_map, LinearMap.comp_id] at h
   have hπ : (π : H →ₐ[R] MonoidAlgebra R M).toLinearMap =
       (π : H →ₗc[R] MonoidAlgebra R M).toLinearMap := by
-    rw [CoalgHom.toLinearMap_eq_coe]
+    rw [CoalgHom.toLinearMap_eq_ofClass]
     exact BialgHom.toAlgHom_toLinearMap π
   rw [hπ] at h
   exact h
@@ -297,7 +296,7 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
       (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toAlgHom
   have hπ : (π : H →ₐ[R] MonoidAlgebra R M).toLinearMap =
       (π : H →ₗc[R] MonoidAlgebra R M).toLinearMap := by
-    rw [CoalgHom.toLinearMap_eq_coe]
+    rw [CoalgHom.toLinearMap_eq_ofClass]
     exact BialgHom.toAlgHom_toLinearMap π
   have hq : q.toLinearMap =
       ((π : H →ₗc[R] MonoidAlgebra R M).toLinearMap ∘ₗ

@@ -67,7 +67,8 @@ the function vanishes outside `Omega`, so the restriction may be dropped. -/
 theorem enorm_testFunctionLp_eq_eLpNorm (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖testFunctionLp (mu := mu) q phi‖ₑ = eLpNorm (phi : E → ℝ) q mu := by
   rw [Lp.enorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
-    eLpNorm_restrict_eq_of_support_subset ((subset_tsupport _).trans phi.tsupport_subset)]
+    eLpNorm_restrict_eq_of_support_subset phi.continuous.aestronglyMeasurable
+      ((subset_tsupport _).trans phi.tsupport_subset)]
 
 @[simp]
 theorem testFunctionLp_add (q : ENNReal) (phi psi : 𝓓(Omega, ℝ)) :
@@ -178,12 +179,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-! ### The gradient of a test function -/
 
-/-- The gradient of a test function is smooth. Here `gradient` unfolds as the composition of
-`fderiv` with the inverse Riesz isomorphism. -/
+/-- The gradient of a test function is smooth. -/
 theorem contDiff_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
     ContDiff ℝ ∞ fun x => ∇ (phi : E → ℝ) x :=
-  (InnerProductSpace.toDual ℝ E).symm.contDiff.comp
-    (contDiff_infty_iff_fderiv.mp phi.contDiff).2
+  phi.contDiff.gradient_right (by simp)
 
 /-- The gradient of a test function is continuous. -/
 @[fun_prop]
@@ -233,9 +232,16 @@ may be dropped, and `‖∇ phi x‖ = ‖fderiv ℝ phi x‖`. -/
 theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖gradientTestFunctionLp (mu := mu) q phi‖ₑ =
       eLpNorm (fderiv ℝ (phi : E → ℝ)) q mu := by
+  have hgrad : AEStronglyMeasurable (fun x => ∇ (phi : E → ℝ) x) mu :=
+    ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
+      (hasCompactSupport_gradient_testFunction phi)).aestronglyMeasurable
+  have hfderiv : AEStronglyMeasurable (fderiv ℝ (phi : E → ℝ)) mu :=
+    ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
+      |>.stronglyMeasurable_of_hasCompactSupport
+        (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
   rw [Lp.enorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
-    eLpNorm_restrict_eq_of_support_subset (support_gradient_testFunction_subset phi),
-    eLpNorm_congr_norm_ae
+    eLpNorm_restrict_eq_of_support_subset hgrad (support_gradient_testFunction_subset phi),
+    eLpNorm_congr_norm_ae hgrad hfderiv
       (ae_of_all _ fun x => norm_gradient_eq_norm_fderiv (𝕜 := ℝ) (phi : E → ℝ) x)]
 
 @[simp]

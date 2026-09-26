@@ -56,11 +56,11 @@ private def graphonDegree (W : Graphon Ω μ) (x : Ω) : ℝ := ∫ y, W x y ∂
 private theorem integrable_graphonDegree (W : Graphon Ω μ) :
     Integrable (graphonDegree W) μ := by
   -- The definition is private so the expected function does not unfold under `simpa` here.
-  change Integrable (fun x => ∫ y, W x y ∂μ) μ
+  change Integrable (fun x ↦ ∫ y, W x y ∂μ) μ
   exact (integrable_edge_integrand W).integral_prod_left
 
 private theorem integrable_graphon_slice (W : Graphon Ω μ) (x : Ω) :
-    Integrable (fun y => W x y) μ := by
+    Integrable (fun y ↦ W x y) μ := by
   apply (integrable_const (1 : ℝ)).mono
     ((W.measurable.comp measurable_prodMk_left).aestronglyMeasurable)
   filter_upwards [] with y
@@ -68,15 +68,15 @@ private theorem integrable_graphon_slice (W : Graphon Ω μ) (x : Ω) :
     abs_of_nonneg (W.nonneg x y), norm_one] using W.le_one x y
 
 private theorem graphonDegree_nonneg (W : Graphon Ω μ) (x : Ω) : 0 ≤ graphonDegree W x := by
-  exact integral_nonneg fun y => W.nonneg x y
+  exact integral_nonneg fun y ↦ W.nonneg x y
 
 private theorem graphonDegree_le_one (W : Graphon Ω μ) (x : Ω) : graphonDegree W x ≤ 1 := by
   have h := integral_mono (integrable_graphon_slice W x) (integrable_const (1 : ℝ))
-    (fun y => W.le_one x y)
+    (fun y ↦ W.le_one x y)
   simpa [graphonDegree] using h
 
 private theorem integrable_graphonDegree_sq (W : Graphon Ω μ) :
-    Integrable (fun x => graphonDegree W x ^ 2) μ := by
+    Integrable (fun x ↦ graphonDegree W x ^ 2) μ := by
   apply (integrable_const (1 : ℝ)).mono
     ((integrable_graphonDegree W).aestronglyMeasurable.pow 2)
   filter_upwards [] with x
@@ -94,8 +94,8 @@ private theorem integral_graphonDegree_sq_ge (W : Graphon Ω μ) :
   simpa [measureReal_def, IsProbabilityMeasure.measure_univ] using h
 
 private theorem integrable_triple_graphon_edge (W : Graphon Ω μ) :
-    Integrable (fun p : Ω × Ω × Ω => W p.1 p.2.1) (μ.prod (μ.prod μ)) := by
-  have hm : Measurable (fun p : Ω × Ω × Ω => W p.1 p.2.1) :=
+    Integrable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1) (μ.prod (μ.prod μ)) := by
+  have hm : Measurable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1) :=
     W.measurable.comp (measurable_fst.prodMk (measurable_fst.comp measurable_snd))
   apply (integrable_const (1 : ℝ)).mono
     hm.aestronglyMeasurable
@@ -104,13 +104,13 @@ private theorem integrable_triple_graphon_edge (W : Graphon Ω μ) :
     abs_of_nonneg (W.nonneg _ _)] using W.le_one p.1 p.2.1
 
 private theorem integrable_triple_graphon_two_edges_left (W : Graphon Ω μ) :
-    Integrable (fun p : Ω × Ω × Ω => W p.1 p.2.1 * W p.1 p.2.2)
+    Integrable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1 * W p.1 p.2.2)
       (μ.prod (μ.prod μ)) := by
   apply (integrable_const (1 : ℝ)).mono
     (by
-      have hxy : Measurable (fun p : Ω × Ω × Ω => W p.1 p.2.1) :=
+      have hxy : Measurable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1) :=
         W.measurable.comp (measurable_fst.prodMk (measurable_fst.comp measurable_snd))
-      have hxz : Measurable (fun p : Ω × Ω × Ω => W p.1 p.2.2) :=
+      have hxz : Measurable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.2) :=
         W.measurable.comp (measurable_fst.prodMk (measurable_snd.comp measurable_snd))
       exact (hxy.mul hxz).aestronglyMeasurable)
   filter_upwards [] with p
@@ -134,12 +134,12 @@ private theorem integral_triple_graphon_two_edges_left (W : Graphon Ω μ) :
   simp only [graphonDegree, pow_two]
 
 private theorem integrable_pair_graphon_mixed (W : Graphon Ω μ) (x : Ω) :
-    Integrable (fun p : Ω × Ω => W x p.1 * W p.1 p.2) (μ.prod μ) := by
+    Integrable (fun p : Ω × Ω ↦ W x p.1 * W p.1 p.2) (μ.prod μ) := by
   apply (integrable_const (1 : ℝ)).mono
     (by
-      have h₁ : Measurable (fun p : Ω × Ω => W x p.1) :=
+      have h₁ : Measurable (fun p : Ω × Ω ↦ W x p.1) :=
         W.measurable.comp (measurable_const.prodMk measurable_fst)
-      have h₂ : Measurable (fun p : Ω × Ω => W p.1 p.2) :=
+      have h₂ : Measurable (fun p : Ω × Ω ↦ W p.1 p.2) :=
         W.measurable
       exact (h₁.mul h₂).aestronglyMeasurable)
   filter_upwards [] with p
@@ -149,13 +149,13 @@ private theorem integrable_pair_graphon_mixed (W : Graphon Ω μ) (x : Ω) :
   simpa only [one_mul] using mul_le_mul (W.le_one _ _) (W.le_one _ _) h₂ (by norm_num)
 
 private theorem integrable_triple_graphon_two_edges_right (W : Graphon Ω μ) :
-    Integrable (fun p : Ω × Ω × Ω => W p.1 p.2.1 * W p.2.1 p.2.2)
+    Integrable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1 * W p.2.1 p.2.2)
       (μ.prod (μ.prod μ)) := by
   apply (integrable_const (1 : ℝ)).mono
     (by
-      have h₁ : Measurable (fun p : Ω × Ω × Ω => W p.1 p.2.1) :=
+      have h₁ : Measurable (fun p : Ω × Ω × Ω ↦ W p.1 p.2.1) :=
         W.measurable.comp (measurable_fst.prodMk (measurable_fst.comp measurable_snd))
-      have h₂ : Measurable (fun p : Ω × Ω × Ω => W p.2.1 p.2.2) :=
+      have h₂ : Measurable (fun p : Ω × Ω × Ω ↦ W p.2.1 p.2.2) :=
         W.measurable.comp (measurable_fst.comp measurable_snd |>.prodMk
           (measurable_snd.comp measurable_snd))
       exact (h₁.mul h₂).aestronglyMeasurable)
@@ -175,20 +175,20 @@ private theorem integral_triple_graphon_two_edges_right (W : Graphon Ω μ) :
     simp only [integral_const_mul, graphonDegree]
   rw [integral_prod _ (integrable_triple_graphon_two_edges_right W)]
   simp_rw [hinner]
-  have hpair : Integrable (fun p : Ω × Ω => W p.1 p.2 * graphonDegree W p.2) (μ.prod μ) := by
-    have hdprod : Integrable (fun p : Ω × Ω => graphonDegree W p.2) (μ.prod μ) :=
+  have hpair : Integrable (fun p : Ω × Ω ↦ W p.1 p.2 * graphonDegree W p.2) (μ.prod μ) := by
+    have hdprod : Integrable (fun p : Ω × Ω ↦ graphonDegree W p.2) (μ.prod μ) :=
       (integrable_graphonDegree W).comp_snd μ
     have h := hdprod.mul_bdd W.measurable.aestronglyMeasurable
-      (ae_of_all _ fun p => by
+      (ae_of_all _ fun p ↦ by
         -- This rewrites the `uncurry W` norm bound supplied by `W.measurable`.
         change ‖W p.1 p.2‖ ≤ 1
         simpa only [Real.norm_eq_abs, abs_of_nonneg (W.nonneg _ _)] using
           W.le_one p.1 p.2)
     -- `W` is a two-variable function while its measurable theorem is stated for `uncurry W`.
-    change Integrable (fun p : Ω × Ω => graphonDegree W p.2 * W p.1 p.2) (μ.prod μ) at h
+    change Integrable (fun p : Ω × Ω ↦ graphonDegree W p.2 * W p.1 p.2) (μ.prod μ) at h
     simpa only [mul_comm] using h
   have hpair_swap :
-      Integrable (fun p : Ω × Ω => W p.2 p.1 * graphonDegree W p.1) (μ.prod μ) := by
+      Integrable (fun p : Ω × Ω ↦ W p.2 p.1 * graphonDegree W p.1) (μ.prod μ) := by
     exact hpair.swap
   rw [← integral_prod _ hpair, ← integral_prod_swap]
   -- `integral_prod_swap` leaves the coordinate permutation in projection notation.
@@ -210,7 +210,7 @@ private theorem integral_goodman_witness_nonneg (W : Graphon Ω μ) :
     0 ≤ ∫ p : Ω × Ω × Ω,
       W p.1 p.2.1 * (1 - W p.1 p.2.2) * (1 - W p.2.1 p.2.2)
         ∂(μ.prod (μ.prod μ)) := by
-  exact integral_nonneg fun p => by
+  exact integral_nonneg fun p ↦ by
     exact mul_nonneg (mul_nonneg (W.nonneg _ _) (sub_nonneg.mpr (W.le_one _ _)))
       (sub_nonneg.mpr (W.le_one _ _))
 
@@ -229,17 +229,17 @@ private theorem integral_goodman_witness_expand (W : Graphon Ω μ) :
   have h₂ := integrable_triple_graphon_two_edges_left W
   have h₃ := integrable_triple_graphon_two_edges_right W
   have h₄ := integrable_triangle_integrand W
-  have h₁₂ : Integrable (fun p : Ω × Ω × Ω =>
+  have h₁₂ : Integrable (fun p : Ω × Ω × Ω ↦
       W p.1 p.2.1 - W p.1 p.2.1 * W p.1 p.2.2) (μ.prod (μ.prod μ)) := h₁.sub h₂
-  have h₁₂₃ : Integrable (fun p : Ω × Ω × Ω =>
+  have h₁₂₃ : Integrable (fun p : Ω × Ω × Ω ↦
       W p.1 p.2.1 - W p.1 p.2.1 * W p.1 p.2.2 -
         W p.1 p.2.1 * W p.2.1 p.2.2) (μ.prod (μ.prod μ)) := h₁₂.sub h₃
-  have hpoint : (fun p : Ω × Ω × Ω =>
+  have hpoint : (fun p : Ω × Ω × Ω ↦
       W p.1 p.2.1 * (1 - W p.1 p.2.2) * (1 - W p.2.1 p.2.2)) =
-      (fun p : Ω × Ω × Ω =>
+      (fun p : Ω × Ω × Ω ↦
         W p.1 p.2.1 - W p.1 p.2.1 * W p.1 p.2.2 -
           W p.1 p.2.1 * W p.2.1 p.2.2) +
-        (fun p : Ω × Ω × Ω =>
+        (fun p : Ω × Ω × Ω ↦
           W p.1 p.2.1 * W p.1 p.2.2 * W p.2.1 p.2.2) := by
     funext p
     simp only [Pi.add_apply]
@@ -263,13 +263,13 @@ private def twoStepIntegral (W : Graphon Ω μ) (x z : Ω) : ℝ :=
   ∫ y, W x y * W y z ∂μ
 
 private theorem integrable_twoStep_integrand (W : Graphon Ω μ) :
-    Integrable (fun p : (Ω × Ω) × Ω => W p.1.1 p.2 * W p.2 p.1.2)
+    Integrable (fun p : (Ω × Ω) × Ω ↦ W p.1.1 p.2 * W p.2 p.1.2)
       ((μ.prod μ).prod μ) := by
   apply (integrable_const (1 : ℝ)).mono
     (by
-      have h₁ : Measurable (fun p : (Ω × Ω) × Ω => W p.1.1 p.2) :=
+      have h₁ : Measurable (fun p : (Ω × Ω) × Ω ↦ W p.1.1 p.2) :=
         W.measurable.comp ((measurable_fst.comp measurable_fst).prodMk measurable_snd)
-      have h₂ : Measurable (fun p : (Ω × Ω) × Ω => W p.2 p.1.2) :=
+      have h₂ : Measurable (fun p : (Ω × Ω) × Ω ↦ W p.2 p.1.2) :=
         W.measurable.comp
           (measurable_snd.prodMk (measurable_snd.comp measurable_fst))
       exact (h₁.mul h₂).aestronglyMeasurable)
@@ -280,17 +280,17 @@ private theorem integrable_twoStep_integrand (W : Graphon Ω μ) :
   simpa only [one_mul] using mul_le_mul (W.le_one _ _) (W.le_one _ _) h₂ (by norm_num)
 
 private theorem integrable_twoStep (W : Graphon Ω μ) :
-    Integrable (fun p : Ω × Ω => twoStepIntegral W p.1 p.2) (μ.prod μ) := by
+    Integrable (fun p : Ω × Ω ↦ twoStepIntegral W p.1 p.2) (μ.prod μ) := by
   -- Unfold the local two-step notation so the product-measure integrability lemma applies.
-  change Integrable (fun p : Ω × Ω => ∫ y, W p.1 y * W y p.2 ∂μ) (μ.prod μ)
+  change Integrable (fun p : Ω × Ω ↦ ∫ y, W p.1 y * W y p.2 ∂μ) (μ.prod μ)
   exact (integrable_twoStep_integrand W).integral_prod_left
 
 private theorem twoStep_nonneg (W : Graphon Ω μ) (x z : Ω) :
     0 ≤ twoStepIntegral W x z := by
-  exact integral_nonneg fun y => mul_nonneg (W.nonneg _ _) (W.nonneg _ _)
+  exact integral_nonneg fun y ↦ mul_nonneg (W.nonneg _ _) (W.nonneg _ _)
 
 private theorem integrable_twoStep_slice (W : Graphon Ω μ) (x z : Ω) :
-    Integrable (fun y => W x y * W y z) μ := by
+    Integrable (fun y ↦ W x y * W y z) μ := by
   apply (integrable_const (1 : ℝ)).mono
     ((W.measurable.comp (measurable_const.prodMk measurable_id)).mul
       (W.measurable.comp (measurable_id.prodMk measurable_const))).aestronglyMeasurable
@@ -304,13 +304,13 @@ private theorem integrable_twoStep_slice (W : Graphon Ω μ) (x z : Ω) :
 private theorem twoStep_le_one (W : Graphon Ω μ) (x z : Ω) :
     twoStepIntegral W x z ≤ 1 := by
   have h := integral_mono (integrable_twoStep_slice W x z) (integrable_const (1 : ℝ))
-    (fun y => by
+    (fun y ↦ by
       simpa only [one_mul] using
         mul_le_mul (W.le_one x y) (W.le_one y z) (W.nonneg y z) (by norm_num))
   simpa [twoStepIntegral, one_mul, mul_one] using h
 
 private theorem integrable_twoStep_sq (W : Graphon Ω μ) :
-    Integrable (fun p : Ω × Ω => twoStepIntegral W p.1 p.2 ^ 2) (μ.prod μ) := by
+    Integrable (fun p : Ω × Ω ↦ twoStepIntegral W p.1 p.2 ^ 2) (μ.prod μ) := by
   apply (integrable_const (1 : ℝ)).mono
     ((integrable_twoStep W).aestronglyMeasurable.pow 2)
   filter_upwards [] with p
@@ -340,7 +340,7 @@ private theorem integral_twoStep_eq_degree_sq (W : Graphon Ω μ) :
     ((MeasurePreserving.id μ).prod Measure.measurePreserving_swap).comp
       (measurePreserving_prodAssoc μ μ μ)
   calc
-    (∫ z, (fun p : (Ω × Ω) × Ω => W p.1.1 p.2 * W p.2 p.1.2) z
+    (∫ z, (fun p : (Ω × Ω) × Ω ↦ W p.1.1 p.2 * W p.2 p.1.2) z
         ∂((μ.prod μ).prod μ)) =
         ∫ q : Ω × Ω × Ω, W q.1 q.2.1 * W q.2.1 q.2.2
           ∂(μ.prod (μ.prod μ)) := by
@@ -369,8 +369,8 @@ private theorem homDensity_cycleGraph_four_eq_twoStep_sq (W : Graphon Ω μ) :
       apply integral_congr_ae
       filter_upwards [] with q
       rw [integral_prod_mul
-        (fun y : Ω => W q.1 y * W y q.2)
-        (fun y : Ω => W q.2 y * W y q.1)]
+        (fun y : Ω ↦ W q.1 y * W y q.2)
+        (fun y : Ω ↦ W q.2 y * W y q.1)]
     _ = ∫ q : Ω × Ω, twoStepIntegral W q.1 q.2 ^ 2 ∂(μ.prod μ) := by
       apply integral_congr_ae
       filter_upwards [] with q
@@ -434,7 +434,7 @@ theorem sidorenko_cycleGraph_four (W : Graphon Ω μ) :
     homDensity (SimpleGraph.cycleGraph 4) W ≥
       homDensity (⊤ : SimpleGraph (Fin 2)) W ^ 4 := by
   have hmean := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
-    (fun p : Ω × Ω => twoStepIntegral W p.1 p.2) Set.univ
+    (fun p : Ω × Ω ↦ twoStepIntegral W p.1 p.2) Set.univ
     (measure_ne_top (μ.prod μ) Set.univ)
     (by simpa using integrable_twoStep W)
     (by simpa using integrable_twoStep_sq W)

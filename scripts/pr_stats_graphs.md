@@ -1,6 +1,6 @@
 # Pull-request statistics graphs
 
-`pr_stats_graphs.py` regenerates the five pull-request statistics assets intended for
+`pr_stats_graphs.py` regenerates the seven pull-request statistics assets intended for
 the Tau Ceti Statistics page:
 
 ```sh
@@ -44,8 +44,12 @@ It requires an authenticated `gh` CLI. In GitHub Actions, set `GH_TOKEN` to
   commenters without requiring the read-only Actions token to enumerate collaborators; a
   contributor who has authored a merged PR is inside this statistics trust boundary.
 - Seven-day metrics use complete UTC calendar days. Merge latency is PR creation to
-  merge time among PRs merged in that trailing window. Cumulative contributor histories
-  include events through the snapshot time, including the current partial UTC day.
+  merge time among PRs merged in that trailing window. Every chart is PLOTTED through the
+  last complete UTC day: regenerated every three hours, a final point holding only part of
+  the current day reads as a downturn rather than as an unfinished day, and redraws higher
+  on the next run. The contributor TOTALS in `pr-stats.json` are unaffected and remain exact
+  through the snapshot instant, so somebody whose first merge landed this morning appears in
+  the totals before appearing on the line.
 
 ## Reproducible and offline runs
 
@@ -86,7 +90,7 @@ state transitions stop generation rather than publishing a mislabelled clock. Is
 comments and their v1 metadata are filtered and parsed by `gh` before reaching Python,
 so full scoreboard bodies do not accumulate in memory.
 
-All six outputs are rendered in a staging directory and promoted only after every
+All eight outputs are rendered in a staging directory and promoted only after every
 chart and the JSON payload succeeds. A failed scheduled fetch therefore keeps the
 previous coherent asset set.
 

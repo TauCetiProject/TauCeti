@@ -209,7 +209,16 @@ enlargement, that is the block matrix
 ```
 -/
 def enlargeRow (V : Matrix ι ι R) (η : ι → R) : Matrix (ι ⊕ Fin 2) (ι ⊕ Fin 2) R :=
-  (enlargeColumn Vᵀ η)ᵀ
+  fromBlocks V 0 (enlargeBlock η)ᵀ !![0, 0; 1, 0]
+
+/-- A row enlargement is the transpose of the column enlargement of the transpose. -/
+theorem enlargeRow_def (V : Matrix ι ι R) (η : ι → R) :
+    enlargeRow V η = (enlargeColumn Vᵀ η)ᵀ := by
+  ext (i | i) (j | j)
+  · simp [enlargeRow, enlargeColumn, Matrix.transpose_apply]
+  · fin_cases j <;> simp [enlargeRow, enlargeColumn, Matrix.transpose_apply]
+  · fin_cases i <;> simp [enlargeRow, enlargeColumn, Matrix.transpose_apply]
+  · fin_cases i <;> fin_cases j <;> simp [enlargeRow, enlargeColumn, Matrix.transpose_apply]
 
 /-- The old block of a row enlargement is the original matrix. -/
 @[simp]
@@ -414,7 +423,7 @@ theorem det_alexanderMatrix_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
 enlargement. -/
 theorem det_alexanderMatrix_enlargeRow (V : Matrix ι ι R) (η : ι → R) :
     (alexanderMatrix (enlargeRow V η)).det = T 1 * (alexanderMatrix V).det := by
-  rw [enlargeRow, det_alexanderMatrix_transpose, det_alexanderMatrix_enlargeColumn,
+  rw [enlargeRow_def, det_alexanderMatrix_transpose, det_alexanderMatrix_enlargeColumn,
     det_alexanderMatrix_transpose]
 
 /-- **The Alexander polynomial is unchanged by a column enlargement of the Seifert matrix.** The
@@ -432,7 +441,7 @@ theorem alexander_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
 @[simp]
 theorem alexander_enlargeRow (V : Matrix ι ι R) (η : ι → R) :
     alexander (enlargeRow V η) = alexander V := by
-  rw [enlargeRow, alexander_transpose, alexander_enlargeColumn, alexander_transpose]
+  rw [enlargeRow_def, alexander_transpose, alexander_enlargeColumn, alexander_transpose]
 
 /-- **The Alexander polynomial of a genus-one Seifert matrix**: for `V = !![a, b; c, d]`,
 

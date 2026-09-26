@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Rational
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
+import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
@@ -36,6 +37,8 @@ coefficients of an operator with integral eigenvalues are what the Kostant form 
   `isNilpotent_rep_serreRootGenerator`: the represented root generators are square-zero.
 * `TauCeti.MinusculeWeightTable.isCartanWeightVector_single`: each standard coordinate vector is a
   Cartan weight vector with its weight in the table.
+* `TauCeti.MinusculeWeightTable.isSl2Triple_rep_serreRootGenerator`: the represented positive,
+  negative, and Cartan generators at a node form an `sl₂` triple.
 * `TauCeti.MinusculeWeightTable.rep_serreKostantForm_mem_lattice`: the Serre Kostant form carries
   `TauCeti.coordinateLattice` into itself.
 * `TauCeti.MinusculeWeightTable.Symmetry.moduleEquiv_rep_ι_serreRootGenerator`: the coordinate
@@ -115,6 +118,50 @@ theorem isNilpotent_rep_serreRootGenerator (k : B ⊕ B) :
     IsNilpotent (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.serreRootGenerator T.cartanMatrix k))) :=
   ⟨2, T.rep_serreRootGenerator_pow_two k⟩
+
+/-- The represented Cartan, positive, and negative Serre generators at a node form an `sl₂`
+triple whenever the weight table contains a weight of nonzero coordinate at that node. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : B) (hi : ∃ a, T.weight a i ≠ 0) :
+    _root_.IsSl2Triple
+      (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ T.cartanMatrix i)))
+      (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inl i))))
+      (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inr i)))) := by
+  obtain ⟨a, ha⟩ := hi
+  let toEnd : Matrix ι ι ℚ →ₗ⁅ℚ⁆ Module.End ℚ (ι → ℚ) :=
+    (Matrix.toLinAlgEquiv' (R := ℚ) (n := ι)).toAlgHom.toLieHom
+  have hEnd : toEnd (T.cartanGeneratorMatrixQ i) ≠ 0 := by
+    simpa only [toEnd, AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply, map_zero] using
+      (Matrix.toLinAlgEquiv' (R := ℚ) (n := ι)).injective.ne
+        (T.isSl2TripleQ i ⟨a, ha⟩).h_ne_zero
+  have h := (T.isSl2TripleQ i ⟨a, ha⟩).map toEnd hEnd
+  -- `IsSl2Triple.map` retains the bundled Lie-hom application; expose the equivalent matrix
+  -- action so the three representation equations below can rewrite it.
+  change _root_.IsSl2Triple
+    (Matrix.toLinAlgEquiv' (T.cartanGeneratorMatrixQ i))
+    (Matrix.toLinAlgEquiv' (T.raisingMatrixQ i))
+    (Matrix.toLinAlgEquiv' (T.loweringMatrixQ i)) at h
+  have hH : Matrix.toLinAlgEquiv' (T.cartanGeneratorMatrixQ i) =
+      T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ T.cartanMatrix i)) := by
+    apply LinearMap.ext
+    intro v
+    rw [T.rep_ι_apply, T.rationalSerreRepresentation_serreH, Matrix.toLinAlgEquiv'_apply]
+  have hE : Matrix.toLinAlgEquiv' (T.raisingMatrixQ i) =
+      T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inl i))) := by
+    apply LinearMap.ext
+    intro v
+    rw [TauCeti.serreRootGenerator_inl, T.rep_ι_apply,
+      T.rationalSerreRepresentation_serreE, Matrix.toLinAlgEquiv'_apply]
+  have hF : Matrix.toLinAlgEquiv' (T.loweringMatrixQ i) =
+      T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inr i))) := by
+    apply LinearMap.ext
+    intro v
+    rw [TauCeti.serreRootGenerator_inr, T.rep_ι_apply,
+      T.rationalSerreRepresentation_serreF, Matrix.toLinAlgEquiv'_apply]
+  rwa [hH, hE, hF] at h
 
 /-! ## Stability of the coordinate lattice -/
 

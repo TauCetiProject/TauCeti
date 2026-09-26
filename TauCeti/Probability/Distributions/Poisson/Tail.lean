@@ -31,19 +31,20 @@ tail above `0`, whose mass `1 - exp (-r)` is `P(1, r)` by `TauCeti.regularizedGa
 Read the other way round, the resulting identity is the classical duality between a Poisson law of
 rate `r` and a gamma law of integer shape: a Poisson variable of rate `r` exceeds `n` exactly as
 often as the `(n + 1)`-st arrival of a unit-rate Poisson process occurs before time `r`, which is
-the event `TauCeti.measureReal_Iic_gammaMeasure` measures.
+the event `TauCeti.Probability.measureReal_Iic_gammaMeasure` measures.
 
 ## Main results
 
-* `TauCeti.poissonMeasure_tail_eq_regularizedGamma` — the upper tail `Po(r) {k | n < k}` is
-  `P(n + 1, r)`;
-* `TauCeti.poissonMeasure_real_Iic` — the complementary cumulative mass `1 - P(n + 1, r)`;
-* `TauCeti.sum_range_poissonMeasure_real_singleton` — the same identity written as the classical
-  partial sum `∑ k ≤ n, exp (-r) * r ^ k / k !`;
-* `TauCeti.cdf_map_cast_poissonMeasure` — the cumulative distribution function of the real-valued
-  law `Po(ℝ, r)`, a step function with its jumps at the natural numbers;
-* `TauCeti.measureReal_lt_of_hasLaw_poissonMeasure` and
-  `TauCeti.measureReal_le_of_hasLaw_poissonMeasure` — the random-variable corollaries.
+* `TauCeti.Probability.poissonMeasure_tail_eq_regularizedGamma` — the upper tail
+  `Po(r) {k | n < k}` is `P(n + 1, r)`;
+* `TauCeti.Probability.poissonMeasure_real_Iic` — the complementary cumulative mass
+  `1 - P(n + 1, r)`;
+* `TauCeti.Probability.sum_range_poissonMeasure_real_singleton` — the same identity written as the
+  classical partial sum `∑ k ≤ n, exp (-r) * r ^ k / k !`;
+* `TauCeti.Probability.cdf_map_cast_poissonMeasure` — the cumulative distribution function of the
+  real-valued law `Po(ℝ, r)`, a step function with its jumps at the natural numbers;
+* `TauCeti.Probability.measureReal_lt_of_hasLaw_poissonMeasure` and
+  `TauCeti.Probability.measureReal_le_of_hasLaw_poissonMeasure` — the random-variable corollaries.
 
 ## References
 
@@ -56,7 +57,7 @@ public section
 open MeasureTheory ProbabilityTheory Real Set
 open scoped NNReal Nat
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {r : ℝ≥0} {n : ℕ}
 
@@ -118,7 +119,7 @@ theorem poissonMeasure_tail_eq_regularizedGamma (r : ℝ≥0) (n : ℕ) :
     ring
 
 /-- The cumulative mass of a Poisson law, complementary to
-`TauCeti.poissonMeasure_tail_eq_regularizedGamma`. -/
+`TauCeti.Probability.poissonMeasure_tail_eq_regularizedGamma`. -/
 @[simp]
 theorem poissonMeasure_real_Iic (r : ℝ≥0) (n : ℕ) :
     Po(r).real (Iic n) = 1 - regularizedGamma (n + 1) (r : ℝ) := by
@@ -127,8 +128,8 @@ theorem poissonMeasure_real_Iic (r : ℝ≥0) (n : ℕ) :
     simp only [mem_Iic, mem_compl_iff, mem_ofPred_eq, not_lt]
   rw [hcompl, probReal_compl_eq_one_sub .of_discrete, poissonMeasure_tail_eq_regularizedGamma]
 
-/-- The classical partial-sum form of `TauCeti.poissonMeasure_real_Iic`: the first `n + 1` Poisson
-masses sum to `1 - P(n + 1, r)`. Expanding the summand with
+/-- The classical partial-sum form of `TauCeti.Probability.poissonMeasure_real_Iic`: the first
+`n + 1` Poisson masses sum to `1 - P(n + 1, r)`. Expanding the summand with
 `ProbabilityTheory.poissonMeasure_real_singleton` writes the left-hand side as
 `∑ k ≤ n, exp (-r) * r ^ k / k !`. -/
 theorem sum_range_poissonMeasure_real_singleton (r : ℝ≥0) (n : ℕ) :
@@ -182,4 +183,4 @@ theorem measureReal_le_of_hasLaw_poissonMeasure {Ω : Type*} [MeasurableSpace Ω
   rw [hX.measureReal_eq (p := fun k : ℕ => k ≤ n) .of_discrete, Iic_def]
   exact poissonMeasure_real_Iic r n
 
-end TauCeti
+end TauCeti.Probability

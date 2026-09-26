@@ -19,8 +19,7 @@ import TauCeti.Probability.Exchangeability.FiniteMarginals
 # Contractability API
 
 This file records basic lemmas for `Contractable` processes. The definitions live in
-`TauCeti.Probability.Exchangeability.Basic`; this file is the Layer 0 home for
-contractability-specific API.
+`TauCeti.Probability.Exchangeability.Basic`.
 
 The main result is `Exchangeable.contractable`: every exchangeable sequence with a.e. measurable
 coordinates is contractable. The file also provides
@@ -75,7 +74,7 @@ theorem Contractable.identDistrib_block {μ : Measure Ω} {X : ℕ → Ω → α
     (hX : Contractable μ X) {m : ℕ} {k l : Fin m → ℕ} (hk : StrictMono k) (hl : StrictMono l)
     (hk_meas : ∀ r, AEMeasurable (X (k r)) μ)
     (hl_meas : ∀ r, AEMeasurable (X (l r)) μ) :
-    IdentDistrib (fun ω r => X (k r) ω) (fun ω r => X (l r) ω) μ μ where
+    IdentDistrib (fun ω r ↦ X (k r) ω) (fun ω r ↦ X (l r) ω) μ μ where
   aemeasurable_fst := AEMeasurable.of_eval hk_meas
   aemeasurable_snd := AEMeasurable.of_eval hl_meas
   map_eq := by
@@ -87,8 +86,8 @@ theorem Contractable.identDistrib_coord {μ : Measure Ω} {X : ℕ → Ω → α
     {i j : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ) :
     IdentDistrib (X i) (X j) μ μ := by
   have hblock := hX.identDistrib_block
-    (Subsingleton.strictMono (fun _ : Fin 1 => i))
-    (Subsingleton.strictMono (fun _ : Fin 1 => j)) (fun _ => hi_meas) (fun _ => hj_meas)
+    (Subsingleton.strictMono (fun _ : Fin 1 ↦ i))
+    (Subsingleton.strictMono (fun _ : Fin 1 ↦ j)) (fun _ ↦ hi_meas) (fun _ ↦ hj_meas)
   have hcomp := hblock.comp (measurable_pi_apply (0 : Fin 1))
   convert hcomp using 1 <;> funext ω <;> simp [Function.comp]
 
@@ -97,8 +96,8 @@ integrability of `f ∘ X i` for one coordinate `i` gives it for every coordinat
 theorem Contractable.integrable_comp {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
     [BorelSpace E] {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
     (hX_ae : ∀ n, AEMeasurable (X n) μ) {f : α → E} (hf : Measurable f) {i : ℕ}
-    (hf_int : Integrable (fun ω => f (X i ω)) μ) (j : ℕ) :
-    Integrable (fun ω => f (X j ω)) μ :=
+    (hf_int : Integrable (fun ω ↦ f (X i ω)) μ) (j : ℕ) :
+    Integrable (fun ω ↦ f (X j ω)) μ :=
   ((hX.identDistrib_coord (hX_ae i) (hX_ae j)).comp hf).integrable_snd hf_int
 
 /-- **Membership in `L^p` is a coordinate-free property of an observable.** For a contractable
@@ -106,8 +105,8 @@ process, `MemLp (f ∘ X i) p` for one coordinate `i` gives it for every coordin
 theorem Contractable.memLp_comp {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
     [BorelSpace E] {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
     (hX_ae : ∀ n, AEMeasurable (X n) μ) {f : α → E} (hf : Measurable f) {p : ℝ≥0∞} {i : ℕ}
-    (hf_Lp : MemLp (fun ω => f (X i ω)) p μ) (j : ℕ) :
-    MemLp (fun ω => f (X j ω)) p μ :=
+    (hf_Lp : MemLp (fun ω ↦ f (X i ω)) p μ) (j : ℕ) :
+    MemLp (fun ω ↦ f (X j ω)) p μ :=
   ((hX.identDistrib_coord (hX_ae i) (hX_ae j)).comp hf).memLp_snd hf_Lp
 
 /-- **Increasing pairs of a contractable process are identically distributed.** For a
@@ -117,14 +116,14 @@ theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α}
     {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
     (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
     (hij : i < j) (hkl : k < l) :
-    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ := by
+    IdentDistrib (fun ω ↦ (X i ω, X j ω)) (fun ω ↦ (X k ω, X l ω)) μ μ := by
   have hblock := hX.identDistrib_block (strictMono_vecEmpty.vecCons hij)
     (strictMono_vecEmpty.vecCons hkl)
-    (fun r => by
+    (fun r ↦ by
       fin_cases r
       · simpa [Matrix.cons_val_zero] using hi_meas
       · simpa [Matrix.cons_val_one] using hj_meas)
-    (fun r => by
+    (fun r ↦ by
       fin_cases r
       · simpa [Matrix.cons_val_zero] using hk_meas
       · simpa [Matrix.cons_val_one] using hl_meas)
@@ -136,17 +135,17 @@ theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α}
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
     {φ : ℕ → ℕ} (hφ : StrictMono φ) :
-    Contractable μ (fun n ω => X (φ n) ω) := by
+    Contractable μ (fun n ω ↦ X (φ n) ω) := by
   intro m k hk
   calc
-    blockLaw μ (fun n ω => X (φ n) ω) k =
+    blockLaw μ (fun n ω ↦ X (φ n) ω) k =
         blockLaw μ X (φ ∘ k) := by
       simp only [blockLaw_def, Function.comp_apply]
     _ = prefixLaw μ X m := h.map (hφ.comp hk)
-    _ = blockLaw μ (fun n ω => X (φ n) ω) (fun i : Fin m => i.val) := by
-      have := (h.map (hφ.comp (Fin.val_strictMono : StrictMono (fun i : Fin m => i.val)))).symm
+    _ = blockLaw μ (fun n ω ↦ X (φ n) ω) (fun i : Fin m ↦ i.val) := by
+      have := (h.map (hφ.comp (Fin.val_strictMono : StrictMono (fun i : Fin m ↦ i.val)))).symm
       simpa only [blockLaw_def, Function.comp_apply] using this
-    _ = prefixLaw μ (fun n ω => X (φ n) ω) m := by
+    _ = prefixLaw μ (fun n ω ↦ X (φ n) ω) m := by
       simp only [prefixLaw_def]
 
 /-- **An exchangeable sequence has the prefix law along any injective finite selection:**
@@ -164,29 +163,31 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     omega
   simpa using
     (hX.exchangeableAt N).blockLaw_eq_prefixLaw_of_injective
-      (fun i : Fin n => (⟨k i, hk_bound i⟩ : Fin N))
-      (fun _ _ h => hk (congrArg Fin.val h))
-      (fun j : Fin N => hX_meas j.val)
+      (fun i : Fin n ↦ (⟨k i, hk_bound i⟩ : Fin N))
+      (fun _ _ h ↦ hk (congrArg Fin.val h))
+      (fun j : Fin N ↦ hX_meas j.val)
 
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
 strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
 de Finetti–Ryll-Nardzewski equivalence. -/
 theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
-  fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
+  fun _ k hk ↦ Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
 
 /-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
 `StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/
 theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
     (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
-    MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
-  refine ⟨Measurable.of_eval fun k => measurable_pi_apply (φ k), ?_⟩
-  have : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_def]; infer_instance
+    MeasurePreserving (fun x : ℕ → α ↦ fun k ↦ x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
+  refine ⟨Measurable.of_eval fun k ↦ measurable_pi_apply (φ k), ?_⟩
+  have : IsFiniteMeasure (pathLaw μ X) := by
+    rw [pathLaw_def]
+    infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
   rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,
     map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) n]
-  exact hX n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
+  exact hX n (fun i : Fin n ↦ φ i.val) (hφ.comp Fin.val_strictMono)
 
 /-- Contractability is equivalent to invariance of the path law under every strictly increasing
 time-reindexing `ℕ → ℕ`. This is the path-law form of spreadability/contractability. -/
@@ -194,16 +195,16 @@ theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ �
     [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     Contractable μ X ↔
       ∀ φ : ℕ → ℕ, StrictMono φ →
-        (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) = pathLaw μ X := by
+        (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X := by
   constructor
   · intro hX φ hφ
     exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
   · intro hX m k hk
     obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
-    have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α m)) (hX φ hφ)
+    have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
     rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
       map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
-    have hidx : (fun i : Fin m => φ i.val) = k := by
+    have hidx : (fun i : Fin m ↦ φ i.val) = k := by
       funext i
       exact hφ_eq i
     simpa [hidx] using hmap
@@ -214,7 +215,7 @@ theorem contractable_iff_forall_measurePreserving_reindex {μ : Measure Ω} {X :
     [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     Contractable μ X ↔
       ∀ φ : ℕ → ℕ, StrictMono φ →
-        MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
+        MeasurePreserving (fun x : ℕ → α ↦ fun k ↦ x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
   rw [contractable_iff_forall_map_reindex_pathLaw hX_meas]
   constructor
   · intro hX φ hφ
@@ -226,9 +227,9 @@ theorem contractable_iff_forall_measurePreserving_reindex {μ : Measure Ω} {X :
 along `φ` gives the same path law as reading it along the identity. -/
 theorem Contractable.map_reindex_pathLaw_eq {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
     (hX : Contractable μ X) (hX_ae : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
-    μ.map (fun ω (i : ℕ) => X (φ i) ω) = pathLaw μ X := by
-  calc μ.map (fun ω (i : ℕ) => X (φ i) ω)
-      = (pathLaw μ X).map (fun x : ℕ → α => fun i => x (φ i)) :=
+    μ.map (fun ω (i : ℕ) ↦ X (φ i) ω) = pathLaw μ X := by
+  calc μ.map (fun ω (i : ℕ) ↦ X (φ i) ω)
+      = (pathLaw μ X).map (fun x : ℕ → α ↦ fun i ↦ x (φ i)) :=
         (map_reindex_pathLaw μ hX_ae φ).symm
     _ = pathLaw μ X := (hX.measurePreserving_reindex hX_ae hφ).map_eq
 
@@ -236,8 +237,8 @@ theorem Contractable.map_reindex_pathLaw_eq {μ : Measure Ω} {X : ℕ → Ω �
 theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
     (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) :=
-  Contractable.measurePreserving_reindex hX hX_meas (φ := fun k => k + 1)
-    (fun _ _ h => Nat.add_lt_add_right h 1)
+  Contractable.measurePreserving_reindex hX hX_meas (φ := fun k ↦ k + 1)
+    (fun _ _ h ↦ Nat.add_lt_add_right h 1)
 
 /-- **A head below the tail start joins the tail exactly as the path law does.** For a contractable
 process and a strictly increasing tail selection `g`, the joint law of `X h` with the tail
@@ -246,17 +247,17 @@ head/tail split `f ↦ (f 0, fun n ↦ f (n + 1))`. -/
 private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {g : ℕ → ℕ} (hg : StrictMono g)
     {h : ℕ} (hh : h < g 0) :
-    μ.map (fun ω => (X h ω, fun n => X (g n) ω))
-      = (pathLaw μ X).map (fun f : ℕ → α => (f 0, fun n => f (n + 1))) := by
-  let headTail : (ℕ → α) → α × (ℕ → α) := fun f => (f 0, fun n => f (n + 1))
+    μ.map (fun ω ↦ (X h ω, fun n ↦ X (g n) ω))
+      = (pathLaw μ X).map (fun f : ℕ → α ↦ (f 0, fun n ↦ f (n + 1))) := by
+  let headTail : (ℕ → α) → α × (ℕ → α) := fun f ↦ (f 0, fun n ↦ f (n + 1))
   have hheadTail_meas : Measurable headTail :=
-    (measurable_pi_apply 0).prodMk (Measurable.of_eval fun n => measurable_pi_apply (n + 1))
+    (measurable_pi_apply 0).prodMk (Measurable.of_eval fun n ↦ measurable_pi_apply (n + 1))
   -- strictly-monotone time-reindexing preserves the path law of a contractable process
   have hreindex : ∀ φ : ℕ → ℕ, StrictMono φ →
-      μ.map (fun ω (i : ℕ) => X (φ i) ω) = pathLaw μ X :=
-    fun φ hφ => hX.map_reindex_pathLaw_eq hX_ae hφ
+      μ.map (fun ω (i : ℕ) ↦ X (φ i) ω) = pathLaw μ X :=
+    fun φ hφ ↦ hX.map_reindex_pathLaw_eq hX_ae hφ
   -- the selection `(h, g 0, g 1, …)` is strictly monotone, and splitting it recovers the pair
-  set φ : ℕ → ℕ := fun i => if i = 0 then h else g (i - 1) with hφdef
+  set φ : ℕ → ℕ := fun i ↦ if i = 0 then h else g (i - 1) with hφdef
   have hφmono : StrictMono φ := by
     intro a b hab
     simp only [hφdef]
@@ -269,11 +270,13 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
   have hφ0 : φ 0 = h := by simp [hφdef]
   -- the tail-index identity, stated explicitly rather than left to definitional reduction
   have hφsucc : ∀ n, φ (n + 1) = g n := by
-    intro n; simp only [hφdef]; rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
-  have hpath_ae : AEMeasurable (fun ω (i : ℕ) => X (φ i) ω) μ :=
-    AEMeasurable.of_eval fun i => hX_ae (φ i)
-  have hfun : (fun ω => (X h ω, fun n => X (g n) ω))
-      = headTail ∘ (fun ω (i : ℕ) => X (φ i) ω) := by
+    intro n
+    simp only [hφdef]
+    rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
+  have hpath_ae : AEMeasurable (fun ω (i : ℕ) ↦ X (φ i) ω) μ :=
+    AEMeasurable.of_eval fun i ↦ hX_ae (φ i)
+  have hfun : (fun ω ↦ (X h ω, fun n ↦ X (g n) ω))
+      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) := by
     funext ω
     simp only [headTail, Function.comp_apply, hφ0, hφsucc]
   rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
@@ -284,14 +287,14 @@ tail selection `g`, and two head indices `j, k` below the tail start `g 0`, the 
 head coordinate `X j` with the tail `(X (g 0), X (g 1), …)` equals the joint law of `X k` with
 the **same** tail:
 ```
-μ.map (fun ω => (X j ω, fun n => X (g n) ω)) = μ.map (fun ω => (X k ω, fun n => X (g n) ω)).
+μ.map (fun ω ↦ (X j ω, fun n ↦ X (g n) ω)) = μ.map (fun ω ↦ (X k ω, fun n ↦ X (g n) ω)).
 ```
 -/
 theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {g : ℕ → ℕ} (hg : StrictMono g)
     {j k : ℕ} (hj : j < g 0) (hk : k < g 0) :
-    μ.map (fun ω => (X j ω, fun n => X (g n) ω))
-      = μ.map (fun ω => (X k ω, fun n => X (g n) ω)) := by
+    μ.map (fun ω ↦ (X j ω, fun n ↦ X (g n) ω))
+      = μ.map (fun ω ↦ (X k ω, fun n ↦ X (g n) ω)) := by
   rw [map_prod_tail_eq_pathLaw_map hX hX_ae hg hj, map_prod_tail_eq_pathLaw_map hX hX_ae hg hk]
 
 end Probability

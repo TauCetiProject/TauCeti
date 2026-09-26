@@ -13,7 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Base change of Hopf ideals
@@ -111,8 +111,7 @@ private theorem hom_baseChangeMap_mkQuotient_apply (J : HopfIdeal k H)
     (y : K ⊗[k] H) :
     (baseChangeMap (K := K) (mkQuotient H J)).hom y =
       Algebra.TensorProduct.map (AlgHom.id k K) (Ideal.Quotient.mkₐ k J.toIdeal) y := by
-  induction y using TensorProduct.induction_on with
-  | zero => rw [map_zero, map_zero]
+  induction y using TensorProduct.inductionOn with
   | tmul s h =>
     rw [baseChangeMap_apply_tmul, Algebra.TensorProduct.map_tmul, mkQuotient_apply,
       AlgHom.id_apply]
@@ -287,8 +286,7 @@ the image of its counit: the unit splits the base-changed counit, factorwise on 
 private theorem sub_algebraMap_counit_mem_baseChangeHopfIdeal_augmentation (y : K ⊗[k] H) :
     y - algebraMap K (K ⊗[k] H) (Coalgebra.counit (R := K) y) ∈
       baseChangeHopfIdeal (K := K) (HopfIdeal.augmentation k H) := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | tmul s x =>
     have hx : x - Coalgebra.counit (R := k) x • (1 : H) ∈ HopfIdeal.augmentation k H := by
       rw [HopfIdeal.mem_augmentation, map_sub, map_smul, Bialgebra.counit_one, smul_eq_mul,

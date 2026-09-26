@@ -50,6 +50,7 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
   projections from the Sobolev space, with `TauCeti.W1p.value_coe` and
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
+* `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset.
 
@@ -480,6 +481,13 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (W1p.value u)
       (fun x => innerSL ℝ (W1p.gradient u x)) :=
   (mem_w1pSubmodule_iff_hasWeakFDerivOn u.1).mp u.2
+
+/-- The weak gradient of a Sobolev function is locally integrable on the domain, as its value
+component is. -/
+theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
+    LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
+  locallyIntegrableOn_of_locallyIntegrable_restrict
+    ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
 
 /-- **A Sobolev function vanishing on an open subset has vanishing weak gradient there.** The
 weak gradient is determined almost everywhere by the function on every open set

@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.LinearAlgebra.Matrix.Notation
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
@@ -90,11 +89,6 @@ two-strand case above is the part of it that the presentation alone can see.
 * L. H. Kauffman, *State models and the Jones polynomial*, Topology 26 (1987), 395-407.
 * The quotient presentation and universal-property API follow the construction pattern in
   `Mathlib.LinearAlgebra.CliffordAlgebra.Basic`.
-
-This is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), whose knot-polynomial bullet asks for the Jones
-polynomial "from the Kauffman bracket on a diagram and from the Temperley-Lieb / Jones
-representation of a braid".
 -/
 
 public section
@@ -116,6 +110,19 @@ inductive Rel [CommSemiring R] : FreeAlgebra R (Fin (n - 1)) → FreeAlgebra R (
       Rel (FreeAlgebra.ι R i * FreeAlgebra.ι R j * FreeAlgebra.ι R i) (FreeAlgebra.ι R i)
   | distant {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
       Rel (FreeAlgebra.ι R i * FreeAlgebra.ι R j) (FreeAlgebra.ι R j * FreeAlgebra.ι R i)
+
+variable {R} in
+/-- The matrix `!![0, 0; 1, δ]`, idempotent up to `δ`: the matrix of left multiplication by the
+single Temperley-Lieb generator on two strands, read in the pair `(1, e)`. -/
+private def twoStrandMatrix [Zero R] [One R] : Matrix (Fin 2) (Fin 2) R := !![0, 0; 1, δ]
+
+variable {R} in
+/-- The two-strand matrix is idempotent up to `δ`, which is the sole Temperley-Lieb relation on
+two strands. -/
+private theorem twoStrandMatrix_mul_self [NonAssocSemiring R] :
+    twoStrandMatrix δ * twoStrandMatrix δ = δ • twoStrandMatrix δ := by
+  simp only [twoStrandMatrix, Matrix.mul_fin_two, Matrix.smul_of, Matrix.smul_vec2,
+    smul_eq_mul, mul_zero, zero_mul, zero_add, add_zero, mul_one]
 
 end TemperleyLieb
 
@@ -200,11 +207,10 @@ prescribed value. -/
 @[simp]
 theorem lift_e (f : Fin (n - 1) → A) (hself) (hadj) (hdist) (i : Fin (n - 1)) :
     lift (δ := δ) f hself hadj hdist (e δ i) = f i := by
-  have h : lift (δ := δ) f hself hadj hdist (e δ i) = FreeAlgebra.lift R f (FreeAlgebra.ι R i) :=
-    RingQuot.liftAlgHom_mkAlgHom_apply R _ _ _
-  rw [h, FreeAlgebra.lift_ι_apply]
+  exact (RingQuot.liftAlgHom_mkAlgHom_apply R _ _ _).trans (FreeAlgebra.lift_ι_apply _ _)
 
 /-- Two algebra maps out of the Temperley-Lieb algebra agreeing on the generators are equal. -/
+@[ext high]
 theorem hom_ext {F G : TemperleyLieb R δ n →ₐ[R] A} (h : ∀ i, F (e δ i) = G (e δ i)) :
     F = G :=
   RingQuot.ringQuot_ext' R F G <| FreeAlgebra.hom_ext (funext h)
@@ -215,8 +221,7 @@ end Lift
 theorem adjoin_range_e : Algebra.adjoin R (Set.range (e δ (n := n))) = ⊤ := by
   have hrange : Set.range (e δ (n := n))
       = mkAlgHom R δ n '' Set.range (FreeAlgebra.ι R (X := Fin (n - 1))) := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext fun i => mkAlgHom_ι i)
+    simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
   rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
 
@@ -264,18 +269,6 @@ theorem algEquivOfLeOne_apply (h : n ≤ 1) (x : TemperleyLieb R δ n) :
 theorem algEquivOfLeOne_symm_apply (h : n ≤ 1) (r : R) :
     (algEquivOfLeOne δ h).symm r = algebraMap R (TemperleyLieb R δ n) r := by
   simp only [algEquivOfLeOne, AlgEquiv.ofAlgHom_symm_apply, Algebra.ofId_apply]
-
-/-- The matrix `!![0, 0; 1, δ]`, idempotent up to `δ`: the matrix of left multiplication by the
-single Temperley-Lieb generator on two strands, read in the pair `(1, e)`. -/
-private def twoStrandMatrix : Matrix (Fin 2) (Fin 2) R := !![0, 0; 1, δ]
-
-/-- The two-strand matrix is idempotent up to `δ`, which is the sole Temperley-Lieb relation on
-two strands. -/
-private theorem twoStrandMatrix_mul_self :
-    twoStrandMatrix δ * twoStrandMatrix δ = δ • twoStrandMatrix δ := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [twoStrandMatrix, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- A two-dimensional representation of the two-strand Temperley-Lieb algebra. On two strands
 there is a single generator and the adjacency and distance relations are vacuous, so the sole
@@ -373,8 +366,7 @@ theorem crossing_mul_crossing_mul_crossing {i j : Fin (n - 1)}
   rw [crossing_mul_crossing, crossing_def]
   simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, smul_smul, one_mul, mul_one,
     hEF, e_mul_self]
-  match_scalars
-  all_goals ring
+  module
 
 /-- Crossings on two strands sharing a strand satisfy the braid relation when their coefficients
 obey the natural polynomial relation. -/

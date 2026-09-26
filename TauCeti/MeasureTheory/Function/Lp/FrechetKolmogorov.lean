@@ -140,7 +140,6 @@ variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
 private theorem eLpNorm_sub_le_of_approx_of_dist_bdd_on {K : Set α}
     (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hK : MeasurableSet K) {f f' A A' : α → F} {η : ℝ}
-    (hf : AEStronglyMeasurable f mu) (hf' : AEStronglyMeasurable f' mu)
     (hA : AEStronglyMeasurable A mu) (hA' : AEStronglyMeasurable A' mu)
     (hη : 0 ≤ η) (hmid : ∀ x ∈ K, dist (A x) (A' x) ≤ η) :
     eLpNorm (f - f') p mu ≤
@@ -152,7 +151,7 @@ private theorem eLpNorm_sub_le_of_approx_of_dist_bdd_on {K : Set α}
   have htail_sub : eLpNorm (Kᶜ.indicator (f - f')) p mu ≤
       eLpNorm (Kᶜ.indicator f) p mu + eLpNorm (Kᶜ.indicator f') p mu := by
     rw [Set.indicator_sub']
-    exact eLpNorm_sub_le (hf.indicator hK.compl) (hf'.indicator hK.compl) hp
+    exact eLpNorm_sub_le hp
   have hnear : eLpNorm (K.indicator (f - f')) p mu ≤
       eLpNorm (A - f) p mu +
         (ENNReal.ofReal η * mu K ^ (1 / p.toReal) + eLpNorm (A' - f') p mu) := by
@@ -162,19 +161,18 @@ private theorem eLpNorm_sub_le_of_approx_of_dist_bdd_on {K : Set α}
       congr 1
       abel
     rw [hdecomp]
-    refine (eLpNorm_add_le ((hf.sub hA).indicator hK)
-      (((hA.sub hA').indicator hK).add ((hA'.sub hf').indicator hK)) hp).trans ?_
-    refine add_le_add ?_ ((eLpNorm_add_le ((hA.sub hA').indicator hK)
-      ((hA'.sub hf').indicator hK) hp).trans (add_le_add ?_ ?_))
-    · refine (eLpNorm_indicator_le _).trans ?_
+    refine (eLpNorm_add_le hp).trans ?_
+    refine add_le_add ?_ ((eLpNorm_add_le hp).trans (add_le_add ?_ ?_))
+    · refine (eLpNorm_indicator_le _ hK).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
-    · exact eLpNorm_indicator_sub_le_of_dist_bdd mu hp' hK hη hmid
-    · exact eLpNorm_indicator_le _
+    · exact eLpNorm_indicator_sub_le_of_dist_bdd mu hp' hK.nullMeasurableSet hη
+        ((hA.sub hA').indicator hK) hmid
+    · exact eLpNorm_indicator_le _ hK
   calc
     eLpNorm (f - f') p mu
         ≤ eLpNorm (K.indicator (f - f')) p mu + eLpNorm (Kᶜ.indicator (f - f')) p mu := by
           conv_lhs => rw [hsplit]
-          exact eLpNorm_add_le ((hf.sub hf').indicator hK) ((hf.sub hf').indicator hK.compl) hp
+          exact eLpNorm_add_le hp
     _ ≤ eLpNorm (A - f) p mu +
           (ENNReal.ofReal η * mu K ^ (1 / p.toReal) + eLpNorm (A' - f') p mu) +
           (eLpNorm (Kᶜ.indicator f) p mu + eLpNorm (Kᶜ.indicator f') p mu) :=
@@ -195,10 +193,11 @@ private theorem eLpNorm_indicator_compl_le_of_approx_of_bound
     ext x
     by_cases hxK : x ∈ K <;> by_cases hxs : x ∈ s <;> simp [hxK, hxs]
   rw [hsplit]
-  refine (eLpNorm_add_le (hf.indicator (hK.compl.inter hs.compl))
-    (hf.indicator (hK.compl.inter hs)) hp).trans ?_
+  refine (eLpNorm_add_le hp).trans ?_
+  have hmeas : AEStronglyMeasurable ((Kᶜ ∩ sᶜ).indicator f) mu :=
+    hf.indicator (hK.compl.inter hs.compl)
   have hfirst : eLpNorm ((Kᶜ ∩ sᶜ).indicator f) p mu ≤ ε :=
-    (eLpNorm_mono_enorm fun x =>
+    (eLpNorm_mono_enorm hmeas fun x =>
       enorm_indicator_le_of_subset inter_subset_right _ x).trans htail
   have hsecond : eLpNorm ((Kᶜ ∩ s).indicator f) p mu ≤ ε + ε := by
     have hsplit' : (Kᶜ ∩ s).indicator f =
@@ -207,16 +206,16 @@ private theorem eLpNorm_indicator_compl_le_of_approx_of_bound
       congr 1
       abel
     rw [hsplit']
-    refine (eLpNorm_add_le ((hf.sub hA).indicator (hK.compl.inter hs))
-      (hA.indicator (hK.compl.inter hs)) hp).trans (add_le_add ?_ ?_)
-    · refine (eLpNorm_indicator_le _).trans ?_
+    refine (eLpNorm_add_le hp).trans (add_le_add ?_ ?_)
+    · refine (eLpNorm_indicator_le _ (hK.compl.inter hs)).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
       exact happrox
     · have hA' : eLpNorm ((Kᶜ ∩ s).indicator A) p mu ≤
           B * mu (s ∩ Kᶜ) ^ (1 / p.toReal) := by
         have hbound' := eLpNorm_indicator_sub_le_of_dist_bdd (p := p) mu hp'
-          (hK.compl.inter hs) ENNReal.toReal_nonneg
-          (c := B.toReal) (f := A) (g := 0) (fun x _ => by
+          (hK.compl.inter hs).nullMeasurableSet ENNReal.toReal_nonneg
+          (c := B.toReal) (f := A) (g := 0)
+          (by simpa using hA.indicator (hK.compl.inter hs)) (fun x _ => by
             simpa only [mem_closedBall, Pi.zero_apply, dist_zero_right, dist_comm] using hbound x)
         simpa only [Pi.zero_apply, sub_zero, ENNReal.ofReal_toReal hBt, inter_comm] using hbound'
       exact hA'.trans hsmall
@@ -341,7 +340,7 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
         ≤ eLpNorm (A - ⇑f) p mu +
             (ENNReal.ofReal η * W + eLpNorm (A' - ⇑f') p mu) +
             (eLpNorm (Kᶜ.indicator ⇑f) p mu + eLpNorm (Kᶜ.indicator ⇑f') p mu) :=
-          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hmeasK hfm hf'm hAm hA'm hη.le hmid
+          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hmeasK hAm hA'm hη.le hmid
       _ ≤ ε₁ + (ENNReal.ofReal (ε / 4) + ε₁) +
             ((ε₁ + ε₁ + ε₁) + (ε₁ + ε₁ + ε₁)) := by
           exact add_le_add

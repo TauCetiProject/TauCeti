@@ -117,8 +117,8 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
-  ⟨congr e π, continuous_congr e hπ, he, e v,
-    ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w, (matrixCoeff_congr_adjoint e hπ v w).symm⟩
+  ⟨congr e π, continuous_congr e hπ, he, e v, ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
+    (matrixCoeff_congr_adjoint e (continuous_congr e hπ) v w).symm⟩
 
 end Unitarization
 

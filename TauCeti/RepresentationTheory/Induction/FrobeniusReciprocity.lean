@@ -98,9 +98,11 @@ private noncomputable def indResFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B
     (indFDRep A ⟶ B) ≃ₗ[k] (A ⟶ resFDRep S B) :=
   -- `resFDRep` is an abbreviation for `Action.res`, so its image under `forget₂` is `Rep.res`
   -- definitionally and the restriction side needs no comparison isomorphism.
+  -- The universes of `Rep.indResHomEquiv` are pinned: left to unification, the constraint
+  -- `max ?w u u = u` makes elaborating this composite cost about a second (see #8353).
   (FDRep.forget₂HomLinearEquiv (indFDRep A) B).symm.trans <|
     ((Linear.homCongr k (indFDRepForgetIso A) (Iso.refl _)).trans
-      (Rep.indResHomEquiv S.subtype _ _)).trans
+      (Rep.indResHomEquiv.{u, u, u, u} S.subtype _ _)).trans
         (FDRep.forget₂HomLinearEquiv A (resFDRep S B))
 
 /-- The intertwining space out of an induced representation has the same dimension as the
@@ -121,11 +123,14 @@ It is private: only `finrank_hom_resFDRep` is intended as API. -/
 private noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
     (resFDRep S B ⟶ A) ≃ₗ[k] (B ⟶ indFDRep A) :=
   -- `Rep.indCoindIso` picks coset representatives, so it wants the coset relation to be decidable.
+  -- The universes of `Rep.resCoindHomEquiv` and `Rep.indCoindIso` are pinned: left to
+  -- unification, the constraints `max ?w u = u` make this composite cost about a second
+  -- (see #8353).
   letI : DecidableRel ⇑(QuotientGroup.rightRel S) := Classical.decRel _
   (FDRep.forget₂HomLinearEquiv (resFDRep S B) A).symm.trans <|
-    (Rep.resCoindHomEquiv S.subtype _ _).trans <|
+    (Rep.resCoindHomEquiv.{u, u, u, u} S.subtype _ _).trans <|
       (Linear.homCongr k (Iso.refl _)
-        ((indFDRepForgetIso A).trans (Rep.indCoindIso _)).symm).trans
+        ((indFDRepForgetIso A).trans (Rep.indCoindIso.{u, u, u} _)).symm).trans
           (FDRep.forget₂HomLinearEquiv B (indFDRep A))
 
 /-- The dimension form of the second reciprocity. -/

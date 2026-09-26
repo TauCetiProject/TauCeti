@@ -56,6 +56,7 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   valuation is the inverse of any surjective `ℤᵐ⁰`-valued valuation compatible with `K`.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
+* `TauCeti.even_toAdd_normalizedValuation_of_isSquare`: a square has even normalized valuation.
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
 * `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
   strong triangle inequality.
@@ -233,6 +234,11 @@ free, so a unit of finite order has normalized valuation `1`. -/
 theorem normalizedValuation_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
     normalizedValuation K x = 1 :=
   ((normalizedValuation K).isOfFinOrder hx).eq_one'
+
+/-- A square has even normalized valuation. -/
+theorem even_toAdd_normalizedValuation_of_isSquare {a : Kˣ} (ha : IsSquare a) :
+    Even (normalizedValuation K a).toAdd :=
+  even_toAdd_iff.mpr (ha.map (normalizedValuation K))
 
 /-- The normalized valuation reverses the order of Mathlib's valuation. -/
 theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :

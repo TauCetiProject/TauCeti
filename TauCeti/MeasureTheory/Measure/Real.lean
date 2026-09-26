@@ -5,21 +5,23 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.CDF
 
 /-!
-# Real measures and the squaring map
+# Elementary real-measure identities and the squaring map
 
-Squaring loses the sign of a real number and nothing else, so it determines a measure on the line
-as soon as the measure cannot tell the two signs apart. This file records the two readings of that
-observation. For a reflection-invariant finite measure, the pushforward under squaring is a
-complete invariant: the square records the mass of intervals symmetric about zero, while
-reflection invariance makes the two complementary tails equal. For a measure carried by the
-nonnegative half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the
-measure outright.
+This file records elementary identities about measures on the real line. In particular, squaring
+loses the sign of a real number and nothing else, so it determines a measure on the line as soon as
+the measure cannot tell the two signs apart. For a reflection-invariant finite measure, the
+pushforward under squaring is a complete invariant: the square records the mass of intervals
+symmetric about zero, while reflection invariance makes the two complementary tails equal. For a
+measure carried by the nonnegative half-line, squaring is undone by `Real.sqrt`, so the pushforward
+determines the measure outright.
 
 ## Main results
 
+* `TauCeti.volume_Ioc_inter_Ioo_zero_one` — the portion of an interval in the open unit interval;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -32,7 +34,14 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti
 
-namespace MeasureTheory
+/-- The part of a subinterval `Ioc a b` of `[0, 1]` lying in the open unit interval has the full
+length `b - a`: the two intervals differ at most at the endpoint `1`. -/
+@[simp]
+theorem volume_Ioc_inter_Ioo_zero_one {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1) :
+    volume (Ioc a b ∩ Ioo 0 1) = ENNReal.ofReal (b - a) := by
+  refine le_antisymm ((measure_mono inter_subset_left).trans_eq Real.volume_Ioc) ?_
+  rw [← Real.volume_Ioo]
+  exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ha.trans_lt ht.1, ht.2.trans_le hb⟩
 
 /-- Two reflection-invariant finite measures on `ℝ` are equal if their pushforwards under
 squaring are equal. -/
@@ -167,7 +176,5 @@ theorem _root_.MeasureTheory.Measure.map_sqrt_map_sq (μ : Measure ℝ) (hμ : �
   refine (Measure.map_congr ?_).trans Measure.map_id
   filter_upwards [hμ] with t ht
   simpa using Real.sqrt_sq ht
-
-end MeasureTheory
 
 end TauCeti

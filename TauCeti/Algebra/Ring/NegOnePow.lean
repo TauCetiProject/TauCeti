@@ -79,16 +79,16 @@ theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
 
 end
 
-variable {A : Type uA} [AddCommMonoid A] [Module R A]
+variable {A : Type uA}
 
 /-- The scalar `(-1) ^ e` acts as an involution. -/
 @[simp]
-theorem negOnePowCast_smul_negOnePowCast_smul (e : ℤ) (a : A) :
+theorem negOnePowCast_smul_negOnePowCast_smul [MulAction R A] (e : ℤ) (a : A) :
     negOnePowCast R e • (negOnePowCast R e • a) = a := by
   rw [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul]
 
 @[simp]
-theorem negOnePowCast_smul_eq_zero_iff (e : ℤ) (a : A) :
+theorem negOnePowCast_smul_eq_zero_iff [AddMonoid A] [DistribMulAction R A] (e : ℤ) (a : A) :
     negOnePowCast R e • a = 0 ↔ a = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   rw [← negOnePowCast_smul_negOnePowCast_smul (R := R) e a, h, smul_zero]

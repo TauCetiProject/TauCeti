@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-public import TauCeti.Probability.Distributions.PDFInstances
+public import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # The density of the Dirichlet distribution in a simplex chart

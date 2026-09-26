@@ -156,9 +156,7 @@ theorem image_comap_algebraMap_spa_subset_rationalSubset (P : PairOfDefinition A
   let _ := locTopology P T s S hden
   rintro _ ⟨w, hw, rfl⟩
   exact comap_mem_rationalSubset (continuous_algebraMap_locTopology P T s S hden)
-    (fun a ha ↦ Subalgebra.algebraMap_mem (integralClosure _ S)
-      (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
-        ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))))) T s
+    (algebraMap_mem_integralClosure_adjoin_plus Aplus T s S) T s
     (IsLocalization.Away.mul_invSelf s)
     (fun t ht ↦ by
       rw [algebraMap_mul_invSelf]

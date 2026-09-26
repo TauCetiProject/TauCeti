@@ -305,6 +305,23 @@ theorem exchangeableGraphLawEquivInfinite_symm_law (L : InfiniteExchangeableGrap
     (exchangeableGraphLawEquivInfinite.symm L).law k = L.law.map (·.restrictFin k) :=
   (rfl)
 
+/-- **A window read along an embedding of labels has the law of the window of its length.** -/
+theorem InfiniteExchangeableGraphLaw.map_comap_restrictFin (L : InfiniteExchangeableGraphLaw)
+    {k l : ℕ} (f : Fin l ↪ Fin k) :
+    L.law.map (fun G : SimpleGraph ℕ => SimpleGraph.comap ⇑f (G.restrictFin k))
+      = L.law.map (·.restrictFin l) := by
+  have := (exchangeableGraphLawEquivInfinite.symm L).consistent f
+  simp only [exchangeableGraphLawEquivInfinite_symm_law] at this
+  rwa [Measure.map_map (SimpleGraph.measurable_comap _) (SimpleGraph.measurable_restrictFin _)]
+    at this
+
+/-- The second of two consecutive windows has the law of the window of its length. -/
+theorem InfiniteExchangeableGraphLaw.map_comap_natAdd_restrictFin (L : InfiniteExchangeableGraphLaw)
+    (k l : ℕ) :
+    L.law.map (fun G : SimpleGraph ℕ => SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)))
+      = L.law.map (·.restrictFin l) :=
+  L.map_comap_restrictFin (Fin.natAddEmb k)
+
 end DenseGraphLimits
 
 end TauCeti

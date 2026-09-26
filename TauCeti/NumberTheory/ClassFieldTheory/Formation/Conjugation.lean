@@ -46,13 +46,10 @@ quotient `A^U / N_{U/V}(A^V)`, the group the Artin map of a class formation land
 zero the cohomological map is the action of `g` on the ground level
 (`NormalLayer.groundLevelEquiv_conjugateCohomologyIso_zero_apply`), and conjugation carries the
 norm of a layer to the norm of the conjugate layer
-(`NormalLayer.conjugateGroundLevelEquiv_norm`), hence its norm subgroup onto the norm subgroup
+(`NormalLayer.norm_conjugateCoefficientEquiv`), hence its norm subgroup onto the norm subgroup
 there (`NormalLayer.map_normSubgroup_conjugateGroundLevelEquiv`). Finally,
 `NormalLayer.tateHZeroEquivNormQuotient_conjugateTateIso_apply` identifies degree-zero Tate
 conjugation with the resulting map on norm quotients.
-
-The conjugation map on abelianized Galois groups needs no declaration of its own: it is
-Mathlib's `MulEquiv.abelianizationCongr` applied to `NormalLayer.conjugateGalEquiv`.
 
 ## Main definitions
 
@@ -91,12 +88,12 @@ Mathlib's `MulEquiv.abelianizationCongr` applied to `NormalLayer.conjugateGalEqu
   `TauCeti.ClassFieldTheory.NormalLayer.isIntertwiningMap_conjugateCoefficientEquiv`.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv_conjugateCohomologyIso_zero_apply`: in
   degree zero, conjugation of cohomology is the action of `g` on the ground level.
-* `TauCeti.ClassFieldTheory.NormalLayer.conjugateGroundLevelEquiv_norm` and
+* `TauCeti.ClassFieldTheory.NormalLayer.norm_conjugateCoefficientEquiv` and
   `TauCeti.ClassFieldTheory.NormalLayer.map_normSubgroup_conjugateGroundLevelEquiv`: conjugation
   commutes with the norm of a layer and carries its norm subgroup onto that of the conjugate
   layer.
-* `TauCeti.ClassFieldTheory.NormalLayer.conjugateNormQuotientEquiv_normQuotientMk`: conjugation on
-  norm quotients sends the class of a representative to the class of its conjugate.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateNormQuotientEquiv_mk`: conjugation on norm
+  quotients sends the class of a representative to the class of its conjugate.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient_conjugateTateIso_apply`:
   conjugation commutes with the canonical identification of degree-zero Tate cohomology with the
   norm quotient.
@@ -162,17 +159,31 @@ def levelConjEquiv (g : G) {U U' : OpenSubgroup G}
   left_inv a := Subtype.ext (F.toRep.ρ.inv_self_apply g a)
   right_inv b := Subtype.ext (F.toRep.ρ.self_inv_apply g b)
 
+-- The `simp` lemmas below state their left-hand sides through `dsimp% only`, following #8315;
+-- see the implementation notes of `Formation/Basic.lean`.
+/-- `levelConjEquiv` acts by `g` on underlying elements. -/
 @[simp]
 theorem levelConjEquiv_apply_coe (g : G) {U U' : OpenSubgroup G}
     (h : ∀ x : G, g * x * g⁻¹ ∈ U' ↔ x ∈ U) (a : F.level U) :
-    ((F.levelConjEquiv g h a : F.level U') : F.toRep.V) = F.toRep.ρ g a :=
+    (dsimp% only (F.levelConjEquiv g h a : F.toRep.V)) = F.toRep.ρ g a :=
   (rfl)
 
+/-- The inverse of `levelConjEquiv` acts by `g⁻¹` on underlying elements. -/
 @[simp]
 theorem levelConjEquiv_symm_apply_coe (g : G) {U U' : OpenSubgroup G}
     (h : ∀ x : G, g * x * g⁻¹ ∈ U' ↔ x ∈ U) (b : F.level U') :
-    (((F.levelConjEquiv g h).symm b : F.level U) : F.toRep.V) = F.toRep.ρ g⁻¹ b :=
+    (dsimp% only ((F.levelConjEquiv g h).symm b : F.toRep.V)) = F.toRep.ρ g⁻¹ b :=
   (rfl)
+
+/-- Conjugating a level by `h` and then by `g` agrees on underlying elements with conjugating by
+`g * h`. -/
+theorem levelConjEquiv_comp_apply_coe (g h : G)
+    {U₁ U₂ U₃ U₄ : OpenSubgroup G}
+    (hh : ∀ x : G, h * x * h⁻¹ ∈ U₂ ↔ x ∈ U₁)
+    (hg : ∀ x : G, g * x * g⁻¹ ∈ U₃ ↔ x ∈ U₂)
+    (hgh : ∀ x : G, (g * h) * x * (g * h)⁻¹ ∈ U₄ ↔ x ∈ U₁) (a : F.level U₁) :
+    (((F.levelConjEquiv g hg) (F.levelConjEquiv h hh a) : F.level U₃) : F.toRep.V) =
+      ((F.levelConjEquiv (g * h) hgh a : F.level U₄) : F.toRep.V) := by simp
 
 end Formation
 
@@ -188,7 +199,10 @@ def conjugate (L : NormalLayer G) (g : G) : NormalLayer G where
     ((continuous_mul_const g).comp (continuous_const_mul g⁻¹))
   top := L.top.comap ((MulAut.conj g).symm : G ≃* G)
     ((continuous_mul_const g).comp (continuous_const_mul g⁻¹))
-  top_le_ground _ hx := OpenSubgroup.mem_comap.2 (L.top_le_ground (OpenSubgroup.mem_comap.1 hx))
+  -- A tactic proof is elaborated once `ground` and `top` are known; as a term, the memberships
+  -- are unified against their metavariables, which fails slowly.
+  top_le_ground _ hx := by
+    exact OpenSubgroup.mem_comap.2 (L.top_le_ground (OpenSubgroup.mem_comap.1 hx))
   normal := by
     constructor
     rintro ⟨n, hn⟩ hmem ⟨u, hu⟩
@@ -220,7 +234,7 @@ theorem conjugate_one : L.conjugate 1 = L := by
   ext x <;> simp
 
 /-- **Conjugation of layers composes**, so it is an action of the ambient group on the layers of
-a formation. -/
+a formation. The later conjugating element `g` occurs on the left in the product `g * h`. -/
 @[simp]
 theorem conjugate_conjugate : (L.conjugate h).conjugate g = L.conjugate (g * h) := by
   ext x <;> simp [mul_assoc]
@@ -245,14 +259,15 @@ theorem conj_mem_top_conjugate {x : G} :
 conjugate. -/
 def conjugateGroundEquiv : L.ground ≃* (L.conjugate g).ground :=
   Subgroup.congrOfMapEq (MulAut.conj g) <| by
-    rw [Subgroup.map_equiv_eq_comap_symm]
-    rfl
+    exact Subgroup.map_equiv_eq_comap_symm (MulAut.conj g) _
 
+/-- On elements of `G`, the ground-subgroup equivalence is conjugation `u ↦ g * u * g⁻¹`. -/
 @[simp]
 theorem conjugateGroundEquiv_apply_coe (u : L.ground) :
     ((L.conjugateGroundEquiv g u : (L.conjugate g).ground) : G) = g * u * g⁻¹ :=
   (Subgroup.coe_congrOfMapEq_apply _ _ u).trans (MulAut.conj_apply g u)
 
+/-- On elements of `G`, the inverse ground-subgroup equivalence is conjugation `v ↦ g⁻¹ * v * g`. -/
 @[simp]
 theorem conjugateGroundEquiv_symm_apply_coe (v : (L.conjugate g).ground) :
     (((L.conjugateGroundEquiv g).symm v : L.ground) : G) = g⁻¹ * v * g :=
@@ -278,11 +293,22 @@ theorem map_relativeTop_conjugateGroundEquiv :
 def conjugateGalEquiv : L.Gal ≃* (L.conjugate g).Gal :=
   QuotientGroup.congr _ _ (L.conjugateGroundEquiv g) (L.map_relativeTop_conjugateGroundEquiv g)
 
+/-- The Galois-group equivalence sends the class of a representative `u` to the class of its
+conjugate `g * u * g⁻¹`. -/
 @[simp]
 theorem conjugateGalEquiv_mk (u : L.ground) :
     L.conjugateGalEquiv g (QuotientGroup.mk u) =
       QuotientGroup.mk (L.conjugateGroundEquiv g u) :=
-  (rfl)
+  QuotientGroup.congr_mk _ _ _ _ u
+
+/-- The inverse Galois-group equivalence sends the class of a representative to the class of its
+inverse-conjugate. -/
+@[simp]
+theorem conjugateGalEquiv_symm_mk (v : (L.conjugate g).ground) :
+    (L.conjugateGalEquiv g).symm (QuotientGroup.mk v) =
+      QuotientGroup.mk ((L.conjugateGroundEquiv g).symm v) := by
+  apply (L.conjugateGalEquiv g).injective
+  rw [MulEquiv.apply_symm_apply, conjugateGalEquiv_mk, MulEquiv.apply_symm_apply]
 
 /-- **A conjugate layer has a Galois group of the same order.** This is the simp-normal form of
 `degree_conjugate`: `simp` rewrites `degree` to `Fintype.card` of the Galois group via
@@ -303,35 +329,36 @@ theorem degree_conjugate : (L.conjugate g).degree = L.degree := by
 def conjugateCoefficientEquiv : F.level L.top ≃ₗ[ℤ] F.level (L.conjugate g).top :=
   F.levelConjEquiv g fun _ ↦ L.conj_mem_top_conjugate g
 
+-- The `simp` lemmas below state their left-hand sides through `dsimp% only`, following #8315;
+-- see the implementation notes of `Formation/Basic.lean`.
+/-- The coefficient equivalence acts by `g` on underlying elements. -/
 @[simp]
 theorem conjugateCoefficientEquiv_apply_coe (x : F.level L.top) :
-    ((L.conjugateCoefficientEquiv F g x : F.level (L.conjugate g).top) : F.toRep.V) =
-      F.toRep.ρ g x :=
+    (dsimp% only (L.conjugateCoefficientEquiv F g x : F.toRep.V)) = F.toRep.ρ g x :=
   (rfl)
+
+/-- The inverse coefficient equivalence acts by `g⁻¹` on underlying elements. -/
+@[simp]
+theorem conjugateCoefficientEquiv_symm_apply_coe (y : F.level (L.conjugate g).top) :
+    (dsimp% only ((L.conjugateCoefficientEquiv F g).symm y : F.toRep.V)) = F.toRep.ρ g⁻¹ y :=
+  F.levelConjEquiv_symm_apply_coe g _ y
 
 /-- **Conjugation on the ground level of a layer:** acting by `g` is an isomorphism
 `A^U ≃ A^{gUg⁻¹}`. This is the map the Artin map of a class formation is conjugated by. -/
 def conjugateGroundLevelEquiv : F.level L.ground ≃ₗ[ℤ] F.level (L.conjugate g).ground :=
   F.levelConjEquiv g fun _ ↦ L.conj_mem_ground_conjugate g
 
+/-- The ground-level equivalence acts by `g` on underlying elements. -/
 @[simp]
 theorem conjugateGroundLevelEquiv_apply_coe (x : F.level L.ground) :
-    ((L.conjugateGroundLevelEquiv F g x : F.level (L.conjugate g).ground) : F.toRep.V) =
-      F.toRep.ρ g x :=
+    (dsimp% only (L.conjugateGroundLevelEquiv F g x : F.toRep.V)) = F.toRep.ρ g x :=
   (rfl)
 
-/-- On a representative of the Galois group, the coefficient isomorphism intertwines the two
-actions by the identity `g · (u · x) = (gug⁻¹) · (g · x)`. -/
-theorem conjugateCoefficientEquiv_rep_mk_apply (u : L.ground) (x : F.level L.top) :
-    L.conjugateCoefficientEquiv F g ((L.rep F).ρ (QuotientGroup.mk u) x) =
-      ((L.conjugate g).rep F).ρ (L.conjugateGalEquiv g (QuotientGroup.mk u))
-        (L.conjugateCoefficientEquiv F g x) := by
-  refine Subtype.ext ?_
-  rw [conjugateGalEquiv_mk, conjugateCoefficientEquiv_apply_coe, rep_ρ_mk_apply_coe,
-    rep_ρ_mk_apply_coe, conjugateGroundEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe]
-  simp only [← Module.End.mul_apply, ← map_mul]
-  congr 1
-  group
+/-- The inverse ground-level equivalence acts by `g⁻¹` on underlying elements. -/
+@[simp]
+theorem conjugateGroundLevelEquiv_symm_apply_coe (y : F.level (L.conjugate g).ground) :
+    (dsimp% only ((L.conjugateGroundLevelEquiv F g).symm y : F.toRep.V)) = F.toRep.ρ g⁻¹ y :=
+  F.levelConjEquiv_symm_apply_coe g _ y
 
 /-- **The isomorphisms of Galois groups and of coefficient modules intertwine:**
 `g · (γ · x) = (gγg⁻¹) · (g · x)`. -/
@@ -339,7 +366,13 @@ theorem conjugateCoefficientEquiv_rep_apply (γ : L.Gal) (x : F.level L.top) :
     L.conjugateCoefficientEquiv F g ((L.rep F).ρ γ x) =
       ((L.conjugate g).rep F).ρ (L.conjugateGalEquiv g γ) (L.conjugateCoefficientEquiv F g x) := by
   induction γ using QuotientGroup.induction_on with
-  | H u => exact L.conjugateCoefficientEquiv_rep_mk_apply F g u x
+  | H u =>
+    refine Subtype.ext ?_
+    rw [conjugateGalEquiv_mk, conjugateCoefficientEquiv_apply_coe, rep_ρ_mk_apply_coe,
+      rep_ρ_mk_apply_coe, conjugateGroundEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe]
+    simp only [← Module.End.mul_apply, ← map_mul]
+    congr 1
+    group
 
 /-- Conjugation is a **compatible pair** of a group isomorphism and an isomorphism of coefficient
 modules, the datum `TauCeti.TateCohomology.mapIso` consumes. -/
@@ -389,29 +422,32 @@ theorem groundLevelEquiv_conjugateCohomologyIso_zero_apply (x : L.H F 0) :
 
 /-- **Conjugation commutes with the norm of a layer:** the isomorphism of Galois groups permutes
 the summands of `N_{U/V}`. -/
-theorem conjugateGroundLevelEquiv_norm (x : F.level L.top) :
+theorem norm_conjugateCoefficientEquiv (x : F.level L.top) :
     (L.conjugate g).norm F (L.conjugateCoefficientEquiv F g x) =
       L.conjugateGroundLevelEquiv F g (L.norm F x) := by
   refine Subtype.ext ?_
-  rw [norm_apply_coe, conjugateGroundLevelEquiv_apply_coe, norm_apply_coe]
-  have hnorm := LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm
-    (L.isIntertwiningMap_conjugateCoefficientEquiv F g)) x
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hnorm
-  have hnorm' := congrArg (fun y : F.level (L.conjugate g).top ↦ (y : F.toRep.V)) hnorm.symm
+  have hsource : ((L.norm F x : F.level L.ground) : F.toRep.V) =
+      (((L.rep F).ρ.norm x : F.level L.top) : F.toRep.V) := by
+    simp [Representation.norm]
+  have htarget : (((L.conjugate g).norm F (L.conjugateCoefficientEquiv F g x) :
+      F.level (L.conjugate g).ground) : F.toRep.V) =
+      ((((L.conjugate g).rep F).ρ.norm (L.conjugateCoefficientEquiv F g x) :
+        F.level (L.conjugate g).top) : F.toRep.V) := by
+    simp [Representation.norm]
   calc
-    ∑ γ, ((((L.conjugate g).rep F).ρ γ (L.conjugateCoefficientEquiv F g x) :
-        F.level (L.conjugate g).top) : F.toRep.V) =
-        (((∑ γ, ((L.conjugate g).rep F).ρ γ)
-          (L.conjugateCoefficientEquiv F g x) : F.level (L.conjugate g).top) : F.toRep.V) := by
-      simp
+    _ = ((((L.conjugate g).rep F).ρ.norm (L.conjugateCoefficientEquiv F g x) :
+        F.level (L.conjugate g).top) : F.toRep.V) := htarget
     _ = ((L.conjugateCoefficientEquiv F g ((L.rep F).ρ.norm x) :
-          F.level (L.conjugate g).top) : F.toRep.V) := by
-      simpa only [LinearMap.comp_apply, Representation.norm] using hnorm'
-    _ = F.toRep.ρ g ((L.rep F).ρ.norm x) :=
+        F.level (L.conjugate g).top) : F.toRep.V) := congrArg Subtype.val
+      (LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm
+        (L.isIntertwiningMap_conjugateCoefficientEquiv F g)) x).symm
+    _ = F.toRep.ρ g (((L.rep F).ρ.norm x : F.level L.top) : F.toRep.V) :=
       L.conjugateCoefficientEquiv_apply_coe F g _
-    _ = F.toRep.ρ g (∑ γ, ((L.rep F).ρ γ x : F.level L.top)) := by
-      congr 1
-      simp [Representation.norm]
+    _ = F.toRep.ρ g ((L.norm F x : F.level L.ground) : F.toRep.V) :=
+      congrArg (F.toRep.ρ g) hsource.symm
+    _ = ((L.conjugateGroundLevelEquiv F g (L.norm F x) :
+        F.level (L.conjugate g).ground) : F.toRep.V) :=
+      (L.conjugateGroundLevelEquiv_apply_coe F g _).symm
 
 /-- **Conjugation carries the norm subgroup of a layer onto the norm subgroup of the conjugate
 layer**, so it descends to an isomorphism of the norm quotients the Artin map of a class
@@ -420,15 +456,13 @@ theorem map_normSubgroup_conjugateGroundLevelEquiv :
     (L.normSubgroup F).map (L.conjugateGroundLevelEquiv F g).toLinearMap =
       (L.conjugate g).normSubgroup F := by
   ext y
-  rw [Submodule.mem_map, mem_normSubgroup]
+  simp only [Submodule.mem_map, mem_normSubgroup]
   constructor
-  · rintro ⟨z, hz, rfl⟩
-    obtain ⟨x, rfl⟩ := (L.mem_normSubgroup F).1 hz
-    exact ⟨L.conjugateCoefficientEquiv F g x, L.conjugateGroundLevelEquiv_norm F g x⟩
+  · rintro ⟨z, ⟨x, rfl⟩, rfl⟩
+    exact ⟨L.conjugateCoefficientEquiv F g x, L.norm_conjugateCoefficientEquiv F g x⟩
   · rintro ⟨w, rfl⟩
-    refine ⟨L.norm F ((L.conjugateCoefficientEquiv F g).symm w),
-      (L.mem_normSubgroup F).2 ⟨_, rfl⟩, ?_⟩
-    rw [LinearEquiv.coe_coe, ← L.conjugateGroundLevelEquiv_norm F g,
+    refine ⟨L.norm F ((L.conjugateCoefficientEquiv F g).symm w), ⟨_, rfl⟩, ?_⟩
+    rw [LinearEquiv.coe_coe, ← L.norm_conjugateCoefficientEquiv F g,
       LinearEquiv.apply_symm_apply]
 
 /-- **Conjugation on the norm quotient:** acting by `g` on the ground level descends through the
@@ -437,19 +471,23 @@ def conjugateNormQuotientEquiv : L.NormQuotient F ≃+ (L.conjugate g).NormQuoti
   (Submodule.Quotient.equiv _ _ (L.conjugateGroundLevelEquiv F g)
     (L.map_normSubgroup_conjugateGroundLevelEquiv F g)).toAddEquiv
 
+-- The `simp` lemmas below state their left-hand sides through `dsimp% only`, following #8315;
+-- see the implementation notes of `Formation/Basic.lean`.
 /-- Conjugation on norm quotients sends the class of a ground-level element to the class of its
 conjugate. -/
 @[simp]
-theorem conjugateNormQuotientEquiv_normQuotientMk (x : F.level L.ground) :
-    L.conjugateNormQuotientEquiv F g (L.normQuotientMk F x) =
-      (L.conjugate g).normQuotientMk F (L.conjugateGroundLevelEquiv F g x) := by
-  rw [normQuotientMk_apply, normQuotientMk_apply, conjugateNormQuotientEquiv,
-    LinearEquiv.coe_toAddEquiv]
-  exact (Submodule.Quotient.equiv_apply (L.normSubgroup F)
-    ((L.conjugate g).normSubgroup F) (L.conjugateGroundLevelEquiv F g)
-    (L.map_normSubgroup_conjugateGroundLevelEquiv F g) (Submodule.Quotient.mk x)).trans
-      (Submodule.mapQ_apply (L.normSubgroup F) ((L.conjugate g).normSubgroup F)
-        (L.conjugateGroundLevelEquiv F g).toLinearMap x)
+theorem conjugateNormQuotientEquiv_mk (x : F.level L.ground) :
+    (dsimp% only (L.conjugateNormQuotientEquiv F g (Submodule.Quotient.mk x))) =
+      Submodule.Quotient.mk (L.conjugateGroundLevelEquiv F g x) := by
+  simp [conjugateNormQuotientEquiv]
+
+/-- The inverse norm-quotient equivalence sends the class of a ground-level element to the class
+of its inverse conjugate. -/
+@[simp]
+theorem conjugateNormQuotientEquiv_symm_mk (y : F.level (L.conjugate g).ground) :
+    (dsimp% only ((L.conjugateNormQuotientEquiv F g).symm (Submodule.Quotient.mk y))) =
+      Submodule.Quotient.mk ((L.conjugateGroundLevelEquiv F g).symm y) := by
+  simp [conjugateNormQuotientEquiv]
 
 /-- In degree zero, conjugation on Tate cohomology is conjugation on the norm quotient. -/
 theorem tateHZeroEquivNormQuotient_conjugateTateIso_apply (x : L.TateH F 0) :
@@ -458,8 +496,9 @@ theorem tateHZeroEquivNormQuotient_conjugateTateIso_apply (x : L.TateH F 0) :
   induction x using TateCohomology.H0_induction_on with
   | h y =>
     rw [conjugateTateIso, TateCohomology.mapIso_hom,
-      TateCohomology.H0π_comp_map_apply, tateHZeroEquivNormQuotient_H0π,
-      tateHZeroEquivNormQuotient_H0π, conjugateNormQuotientEquiv_normQuotientMk]
+      TauCeti.TateCohomology.H0π_comp_map_apply, tateHZeroEquivNormQuotient_H0π,
+      tateHZeroEquivNormQuotient_H0π, normQuotientMk_apply, normQuotientMk_apply,
+      conjugateNormQuotientEquiv_mk]
     congr 1
     apply Subtype.ext
     rw [groundLevelEquiv_apply_coe, conjugateGroundLevelEquiv_apply_coe,
@@ -474,11 +513,6 @@ induces satisfy the matching laws. On subgroups and levels these are stated on u
 where no transport is needed; on cohomology they are stated up to the `eqToIso` along those two
 equalities of layers. -/
 
-/-- Conjugating the ground subgroup by `1` is the identity on underlying elements. -/
-theorem conjugateGroundEquiv_one_apply_coe (u : L.ground) :
-    ((L.conjugateGroundEquiv 1 u : (L.conjugate 1).ground) : G) = u := by
-  simp
-
 /-- Conjugating the ground subgroup by `h` and then by `g` is conjugating it by `g * h`. -/
 theorem conjugateGroundEquiv_conjugateGroundEquiv_apply_coe (u : L.ground) :
     (((L.conjugate h).conjugateGroundEquiv g (L.conjugateGroundEquiv h u) :
@@ -487,32 +521,18 @@ theorem conjugateGroundEquiv_conjugateGroundEquiv_apply_coe (u : L.ground) :
   simp only [conjugateGroundEquiv_apply_coe]
   group
 
-/-- Conjugating the coefficient module of a layer by `1` is the identity on underlying elements. -/
-theorem conjugateCoefficientEquiv_one_apply_coe (x : F.level L.top) :
-    ((L.conjugateCoefficientEquiv F 1 x : F.level (L.conjugate 1).top) : F.toRep.V) = x := by
-  rw [conjugateCoefficientEquiv_apply_coe, map_one, Module.End.one_apply]
-
 /-- Conjugating the coefficient module of a layer by `h` and then by `g` is conjugating it by
 `g * h`. -/
 theorem conjugateCoefficientEquiv_conjugateCoefficientEquiv_apply_coe (x : F.level L.top) :
     (((L.conjugate h).conjugateCoefficientEquiv F g (L.conjugateCoefficientEquiv F h x) :
         F.level ((L.conjugate h).conjugate g).top) : F.toRep.V) =
-      (L.conjugateCoefficientEquiv F (g * h) x : F.level (L.conjugate (g * h)).top) := by
-  rw [conjugateCoefficientEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe,
-    conjugateCoefficientEquiv_apply_coe, map_mul, Module.End.mul_apply]
-
-/-- Conjugating the ground level of a layer by `1` is the identity on underlying elements. -/
-theorem conjugateGroundLevelEquiv_one_apply_coe (x : F.level L.ground) :
-    ((L.conjugateGroundLevelEquiv F 1 x : F.level (L.conjugate 1).ground) : F.toRep.V) = x := by
-  rw [conjugateGroundLevelEquiv_apply_coe, map_one, Module.End.one_apply]
+      (L.conjugateCoefficientEquiv F (g * h) x : F.level (L.conjugate (g * h)).top) := by simp
 
 /-- Conjugating the ground level of a layer by `h` and then by `g` is conjugating it by `g * h`. -/
 theorem conjugateGroundLevelEquiv_conjugateGroundLevelEquiv_apply_coe (x : F.level L.ground) :
     (((L.conjugate h).conjugateGroundLevelEquiv F g (L.conjugateGroundLevelEquiv F h x) :
         F.level ((L.conjugate h).conjugate g).ground) : F.toRep.V) =
-      (L.conjugateGroundLevelEquiv F (g * h) x : F.level (L.conjugate (g * h)).ground) := by
-  rw [conjugateGroundLevelEquiv_apply_coe, conjugateGroundLevelEquiv_apply_coe,
-    conjugateGroundLevelEquiv_apply_coe, map_mul, Module.End.mul_apply]
+      (L.conjugateGroundLevelEquiv F (g * h) x : F.level (L.conjugate (g * h)).ground) := by simp
 
 private theorem conjugateGalEquiv_trans_cast_eq {L' : NormalLayer G}
     (hL : L.conjugate g = L') (e : L.Gal ≃* L'.Gal)
@@ -557,7 +577,7 @@ private theorem conjugateNormQuotientEquiv_trans_cast_eq {L' : NormalLayer G}
     (hL : L.conjugate g = L') (e : L.NormQuotient F ≃+ L'.NormQuotient F)
     (he : ∀ (x : F.level L.ground) (y : F.level L'.ground),
       (y : F.toRep.V) = F.toRep.ρ g x →
-      e (L.normQuotientMk F x) = L'.normQuotientMk F y) :
+      e (Submodule.Quotient.mk x) = Submodule.Quotient.mk y) :
     (L.conjugateNormQuotientEquiv F g).trans
         (AddEquiv.cast (M := fun K : NormalLayer G => K.NormQuotient F) hL) = e := by
   subst hL
@@ -565,8 +585,7 @@ private theorem conjugateNormQuotientEquiv_trans_cast_eq {L' : NormalLayer G}
   intro z
   induction z using Submodule.Quotient.induction_on with
   | _ x =>
-    rw [← normQuotientMk_apply, AddEquiv.trans_apply,
-      conjugateNormQuotientEquiv_normQuotientMk]
+    rw [AddEquiv.trans_apply, conjugateNormQuotientEquiv_mk]
     exact (he x _ (L.conjugateGroundLevelEquiv_apply_coe F g x)).symm
 
 /-- **Conjugation by `1` is the identity on the norm quotient**, after transporting along
@@ -593,8 +612,7 @@ theorem conjugateNormQuotientEquiv_trans_conjugateNormQuotientEquiv :
   apply L.conjugateNormQuotientEquiv_trans_cast_eq F (g * h)
     (L.conjugate_conjugate g h).symm
   intro x y hy
-  rw [AddEquiv.trans_apply, conjugateNormQuotientEquiv_normQuotientMk,
-    conjugateNormQuotientEquiv_normQuotientMk]
+  rw [AddEquiv.trans_apply, conjugateNormQuotientEquiv_mk, conjugateNormQuotientEquiv_mk]
   congr 1
   exact Subtype.ext <|
     (L.conjugateGroundLevelEquiv_conjugateGroundLevelEquiv_apply_coe F g h x).trans
@@ -616,12 +634,9 @@ private theorem groupCohomologyMap_eq_conjugateCohomologyIso_hom {L' : NormalLay
   · refine MonoidHom.ext fun γ ↦ ?_
     induction γ using QuotientGroup.induction_on with
     | H v =>
-      refine (hf ((L.conjugateGroundEquiv g).symm v) v
-        (by rw [conjugateGroundEquiv_symm_apply_coe]; group)).trans ?_
-      rw [← MulEquiv.symm_apply_apply (L.conjugateGalEquiv g)
-        (QuotientGroup.mk ((L.conjugateGroundEquiv g).symm v)), conjugateGalEquiv_mk,
-        MulEquiv.apply_symm_apply]
-      rfl
+      exact (hf ((L.conjugateGroundEquiv g).symm v) v
+        (by rw [conjugateGroundEquiv_symm_apply_coe]; group)).trans
+          (L.conjugateGalEquiv_symm_mk g v).symm
   · exact LinearMap.ext fun x ↦ Subtype.ext (hφ x)
 
 /-- **Conjugation by `1` is the identity on ordinary cohomology**, up to the transport along
@@ -651,8 +666,7 @@ theorem conjugateCohomologyIso_trans_conjugateCohomologyIso (n : ℕ) :
       MulEquiv.symm_apply_eq, MulEquiv.symm_apply_eq, conjugateGalEquiv_mk, conjugateGalEquiv_mk]
     exact congrArg QuotientGroup.mk <| Subtype.ext <| by
       rw [huv, conjugateGroundEquiv_conjugateGroundEquiv_apply_coe, conjugateGroundEquiv_apply_coe]
-  · exact (L.conjugateCoefficientEquiv_conjugateCoefficientEquiv_apply_coe F g h x).trans
-      (L.conjugateCoefficientEquiv_apply_coe F (g * h) x)
+  · simp
 
 /-- Any Tate map of a compatible pair whose group part is conjugation by `g` on representatives and
 whose coefficient part acts by `g` is `conjugateTateIso`, up to the transport along an equality of
@@ -699,8 +713,7 @@ theorem conjugateTateIso_trans_conjugateTateIso (r : ℤ) :
   · rw [MulEquiv.trans_apply, conjugateGalEquiv_mk, conjugateGalEquiv_mk]
     exact congrArg QuotientGroup.mk <| Subtype.ext <| by
       rw [huv, conjugateGroundEquiv_conjugateGroundEquiv_apply_coe, conjugateGroundEquiv_apply_coe]
-  · exact (L.conjugateCoefficientEquiv_conjugateCoefficientEquiv_apply_coe F g h x).trans
-      (L.conjugateCoefficientEquiv_apply_coe F (g * h) x)
+  · simp
 
 end NormalLayer
 

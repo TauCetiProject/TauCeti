@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.BaseChange
 
 /-!
 # Linearly reductive commutative Hopf algebras
@@ -29,6 +31,8 @@ equivalent in characteristic zero.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty`: linear reductivity as an object property.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty_monoidAlgebra`: every commutative group algebra
   has the property.
+* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_baseChange`: the property descends along
+  field extensions.
 * `TauCeti.LinearlyReductiveCommHopfAlgCat`: the corresponding full subcategory.
 
 ## References
@@ -49,7 +53,7 @@ namespace TauCeti
 open CategoryTheory
 open scoped MonoidAlgebra
 
-universe u v
+universe u v w
 
 /-- The object property selecting commutative Hopf algebras for which every finite-dimensional
 comodule is completely reducible. It tests carriers in the base field's universe, which suffices
@@ -82,6 +86,16 @@ theorem linearlyReductiveCommHopfAlgProperty_monoidAlgebra
       (CommHopfAlgCat.of k (MonoidAlgebra k G)) :=
   (linearlyReductiveCommHopfAlgProperty_iff k _).2
     (Coalgebra.isLinearlyReductive_monoidAlgebra k G)
+
+/-- **Linear reductivity descends along field extensions.** A commutative Hopf algebra over `k`
+is linearly reductive as soon as its scalar extension to some extension field `K` is. -/
+theorem linearlyReductiveCommHopfAlgProperty.of_baseChange {k : Type u} [Field k]
+    (K : Type w) [Field K] [Algebra k K] {H : CommHopfAlgCat.{v} k}
+    (hH : linearlyReductiveCommHopfAlgProperty K (CommHopfAlgCat.baseChange (K := K) H)) :
+    linearlyReductiveCommHopfAlgProperty k H :=
+  (linearlyReductiveCommHopfAlgProperty_iff k H).2
+    (Coalgebra.IsLinearlyReductive.of_baseChange K
+      ((linearlyReductiveCommHopfAlgProperty_iff K _).1 hH))
 
 /-- The category of linearly reductive commutative Hopf algebras over a field. -/
 abbrev LinearlyReductiveCommHopfAlgCat (k : Type u) [Field k] :=

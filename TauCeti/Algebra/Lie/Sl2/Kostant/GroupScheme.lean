@@ -410,9 +410,12 @@ theorem map_rankOneCarrierRootSubgroupPoint
         (Multiplicative.ofAdd (f (Multiplicative.toAdd t))) := by
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  rw [coe_rankOneCarrierRootSubgroupPoint, coe_rankOneCarrierRootSubgroupPoint,
-    map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
-    RingHom.toIntAlgHom_apply]
+  have hh := congrArg Subtype.val
+    (map_kostantToralRootSubgroupPoints e h ρ M hM hnil b rankOneWeight f i t)
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map] at hh
+  simpa only [coe_rankOneCarrierRootSubgroupPoint, rankOneCarrierRootSubgroupPoint,
+    rankOneCarrierRootSubgroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.subgroupCongr_symm_apply, coe_kostantToralRootSubgroupPoints] using hh
 
 /-- The induced map carries a torus point coordinatewise along the value-ring map. -/
 @[simp]
@@ -424,10 +427,12 @@ theorem map_rankOneCarrierTorusPoint
       rankOneCarrierTorusPoint B (fun i ↦ Units.map (f : A →* B) (s i)) := by
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  simp only [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
+  have hh := congrArg Subtype.val
+    (map_kostantToralWeightTorusPoints e h ρ M hM hnil b rankOneWeight f s)
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map] at hh
+  simpa only [rankOneCarrierTorusPoint, rankOneCarrierTorusHom,
     MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    coe_kostantToralWeightTorusPoints]
-  exact map_kostantTorusMatrix M b rankOneWeight f s
+    coe_kostantToralWeightTorusPoints] using hh
 
 /-- The represented rank-one weight torus on points of a value algebra. -/
 noncomputable def rankOneTorusPoints (A : CommAlgCat.{u} ℤ) :

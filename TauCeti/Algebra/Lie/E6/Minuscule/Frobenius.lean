@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
 
@@ -37,7 +38,8 @@ simplicity statement is involved.
 * `TauCeti.E6Minuscule.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
   subgroup.
 * `TauCeti.E6Minuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
-* `TauCeti.E6Minuscule.frobenius_zero` and `frobenius_add`: its iteration laws.
+* `TauCeti.E6Minuscule.frobenius_zero`, `frobenius_add` and `frobenius_pow`: its iteration
+  laws.
 * `TauCeti.E6Minuscule.map_subtype_fixedSubgroup_frobenius_eq`: the identification of its fixed
   points with points over the fixed subring.
 
@@ -126,6 +128,16 @@ theorem frobenius_add (m : ℕ) :
   rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
     GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation A)]
 
+/-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
+Frobenius of the minuscule `E₆` carrier's point group, in the endomorphism monoid of its points,
+is its `p ^ (k * m)`-power Frobenius. -/
+-- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
+-- structure before the power is elaborated.
+theorem frobenius_pow (m : ℕ) :
+    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius p j A) (frobenius_zero p A)
+    (fun a b => frobenius_add p a A b) k m
+
 /-- A minuscule-carrier point is fixed by Frobenius exactly when all of its matrix entries lie in
 the Frobenius-fixed subring. -/
 @[simp]
@@ -147,6 +159,5 @@ theorem map_subtype_fixedSubgroup_frobenius_eq :
     TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_frobeniusFixedSubring]
 
 end
-
 
 end TauCeti.E6Minuscule

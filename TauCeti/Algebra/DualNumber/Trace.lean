@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
+public import TauCeti.Algebra.DualNumber.Basic
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
@@ -31,13 +31,6 @@ namespace TauCeti
 universe w
 
 variable (k : Type w) [CommSemiring k]
-
--- The coordinatewise module structure used by `DualNumber` is compatible with multiplication,
--- but Mathlib does not provide this scalar-tower instance for `TrivSqZeroExt`.
-local instance dualNumberIsScalarTower :
-    IsScalarTower k (DualNumber k) (DualNumber k) where
-  smul_assoc r x y := by
-    ext <;> simp [mul_add, mul_assoc, mul_comm, mul_left_comm, add_comm]
 
 /-- The Frobenius pairing on the dual numbers, obtained by taking the infinitesimal coefficient
 of a product. -/

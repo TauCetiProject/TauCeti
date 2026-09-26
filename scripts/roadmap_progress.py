@@ -22,7 +22,10 @@ Three kinds of evidence go into the output, and the page keeps them apart:
   of the status header, and the README it assessed (`readme_sha`, a hash of that README's text,
   which must match the README the layers were read from), and lists every layer id exactly once
   with a legal state; each entry may also carry a one-line `remaining` note, what the next
-  contributor would pick up. That is what this page will accept, offered as a proposal to
+  contributor would pick up. An umbrella roadmap's report carries one such marker per
+  sub-roadmap as well, naming it `Parent/Child` and bound to that sub-roadmap's own README; a
+  sub-roadmap reads its own marker from the umbrella's report and nothing else there. That is
+  what this page will accept, offered as a proposal to
   TauCetiProgress, not a contract it has agreed to; a marker without the README binding is left
   unassessed with a reason rather than applied to whatever README happens to be current. Until
   TauCetiProgress emits such a marker,
@@ -216,13 +219,37 @@ def iso_z(when: dt.datetime) -> str:
     return when.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def coverage_markers(text: str) -> tuple[object, dict]:
+    """The coverage markers of a STATUS.md: the roadmap's own (the first that does not name a
+    sub-roadmap, or None) and its sub-roadmaps', by the `Parent/Child` id each names (first wins).
+
+    A marker whose JSON does not parse names nothing, so it is taken as the roadmap's own and
+    reported as `MALFORMED` there, never silently dropped.
+    """
+    own, subs = None, {}
+    for name, body in _MARKER_RE.findall(text):
+        if name != COVERAGE_MARKER:
+            continue
+        try:
+            obj = json.loads(body)
+        except json.JSONDecodeError:
+            obj = MALFORMED
+        roadmap = obj.get("roadmap") if isinstance(obj, dict) else None
+        if isinstance(roadmap, str) and "/" in roadmap:
+            subs.setdefault(roadmap, obj)
+        elif own is None:
+            own = obj
+    return own, subs
+
+
 def parse_status(text: str) -> dict | None:
-    """The header, at-a-glance paragraph, frontier and coverage marker of a STATUS.md."""
+    """The header, at-a-glance paragraph, frontier and coverage markers of a STATUS.md."""
     m = markers(text)
     head = m.get(STATUS_MARKER)
     if not isinstance(head, dict) or not isinstance(head.get("to_sha"), str) or not head["to_sha"]:
         return None
     ts = head.get("ts")
+    own, subs = coverage_markers(text)
     return {
         "to_sha": head["to_sha"],
         "ts": iso_z(parse_ts(ts)) if parse_ts(ts) else None,
@@ -230,7 +257,8 @@ def parse_status(text: str) -> dict | None:
         "glance": _paragraph_after(text, "**At a glance.**"),
         "frontier": _frontier(text),
         "report_sha": sha256(text),
-        "coverage": m.get(COVERAGE_MARKER),
+        "coverage": own,
+        "sub_coverage": subs,
     }
 
 
@@ -337,7 +365,8 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
                  inherit: dict | None = None, links: dict | None = None) -> dict | None:
     """One roadmap row. `inherit` is a parent's parsed STATUS.md for a sub-roadmap without its
     own: TauCetiProgress reports an umbrella roadmap as one unit, so its report is the only
-    account of the sub-roadmaps, and hand transcriptions for them are bound to that report."""
+    account of the sub-roadmaps. It carries a marker per sub-roadmap, and hand transcriptions for
+    one without a marker are bound to that report."""
     readme = dirpath / "README.md"
     if not readme.is_file():
         return None
@@ -386,11 +415,13 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
     if not layers or not st:
         return row
     a = row["assessment"]
-    if st["coverage"] is not None and not inherited:
-        states, why = states_from_marker(st["coverage"], name, layers, st["to_sha"], row["readme_sha"])
+    own_id = f"{parent}/{name}" if inherited else name
+    marker = st["sub_coverage"].get(own_id) if inherited else st["coverage"]
+    if marker is not None:
+        states, why = states_from_marker(marker, own_id, layers, st["to_sha"], row["readme_sha"])
         if states:
             row["states"], a["source"], a["reason"] = states, "marker", "ok"
-            a["remaining"] = remaining_notes(st["coverage"].get("layers"), row["layer_ids"])
+            a["remaining"] = remaining_notes(marker.get("layers"), row["layer_ids"])
         else:
             a["reason"], a["detail"] = "invalid-marker", why
         return row

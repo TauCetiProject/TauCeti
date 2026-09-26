@@ -51,8 +51,7 @@ theorem tensorComponent_map {M' : Type x} {N' : Type y}
     (phi : N' →ₗ[R] R) (f : M →ₗ[R] M') (g : N →ₗ[R] N') (t : M ⊗[R] N) :
     tensorComponent phi (TensorProduct.map f g t) =
       f (tensorComponent (phi.comp g) t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul m n => simp
 

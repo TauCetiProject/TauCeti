@@ -26,8 +26,8 @@ whose first component is `v_K` and whose inverse sends `(n, u)` to `π ^ n * u`,
 
 whose first component is reduction and whose inverse sends `(α, y)` to `ω(α) * y`, where `ω` is
 the Teichmüller lift. Since `ω` identifies `𝓀[K]ˣ` with the group `μ_{q-1}` of `(q-1)`-st roots
-of unity of `𝒪[K]` (`TauCeti.range_teichmuller`), the second isomorphism is the splitting of the
-units of `𝒪[K]` into their prime-to-`p` torsion and the principal units.
+of unity of `𝒪[K]` (`TauCeti.range_teichmuller`), the second isomorphism is the
+splitting of the units of `𝒪[K]` into their prime-to-`p` torsion and the principal units.
 
 Both splittings come from the same mechanism: an exact sequence of abelian groups with a
 distinguished section. For the first, the surjection is `v_K`, whose kernel is `U(K,0)`
@@ -180,12 +180,14 @@ lift. It is the section-and-inclusion map of the reduction sequence
 `1 → U(K,1) → 𝒪[K]ˣ → 𝓀[K]ˣ → 1`, and `integerUnitsProdHom_bijective` shows that it splits
 it. -/
 def integerUnitsProdHom : 𝓀[K]ˣ × unitFiltration K 1 →* 𝒪[K]ˣ :=
-  (teichmuller K).coprod (unitFiltrationToIntegerUnits 1)
+  (TauCeti.teichmuller 𝒪[K]).coprod (unitFiltrationToIntegerUnits 1)
 
 /-- The defining formula of `integerUnitsProdHom`. -/
 @[simp]
 theorem integerUnitsProdHom_apply (p : 𝓀[K]ˣ × unitFiltration K 1) :
-    integerUnitsProdHom p = teichmuller K p.1 * unitFiltrationToIntegerUnits 1 p.2 := (rfl)
+    integerUnitsProdHom p =
+      TauCeti.teichmuller 𝒪[K] p.1 * unitFiltrationToIntegerUnits 1 p.2 :=
+  by simp [integerUnitsProdHom]
 
 /-- **The Teichmüller lift splits the units of `𝒪[K]`.** Every unit of `𝒪[K]` is uniquely the
 product of a `(q-1)`-st root of unity and a principal unit. -/
@@ -198,20 +200,24 @@ theorem integerUnitsProdHom_bijective :
     -- Reduction reads off the `𝓀[K]ˣ`-coordinate, since the other factor reduces to `1`.
     have hres := congrArg (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K])) h
     rw [map_mul, unitsMap_residue_unitFiltrationToIntegerUnits_one, mul_one, map_one,
-      unitsMap_residue_teichmuller] at hres
+      TauCeti.unitsMap_residue_teichmuller] at hres
     rw [hres, map_one, one_mul] at h
     exact Prod.ext hres (unitFiltrationToIntegerUnits_injective 1 (by simp [h]))
   · intro u
     set α := Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u with hα
-    have hw : Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) ((teichmuller K α)⁻¹ * u) = 1 := by
-      rw [map_mul, map_inv, unitsMap_residue_teichmuller, ← hα, inv_mul_cancel]
-    have hres : residue 𝒪[K] ((((teichmuller K α)⁻¹ * u : 𝒪[K]ˣ) : 𝒪[K])) = 1 := by
+    have hw : Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K])
+        ((TauCeti.teichmuller 𝒪[K] α)⁻¹ * u) = 1 := by
+      rw [map_mul, map_inv, TauCeti.unitsMap_residue_teichmuller, ← hα,
+        inv_mul_cancel]
+    have hres : residue 𝒪[K]
+        ((((TauCeti.teichmuller 𝒪[K] α)⁻¹ * u : 𝒪[K]ˣ) : 𝒪[K])) = 1 := by
       simpa using congrArg Units.val hw
-    have hmem : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) ((teichmuller K α)⁻¹ * u) ∈
-        unitFiltration K 1 := (mem_unitFiltration_one_iff_residue_eq_one _).mpr hres
+    have hmem : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
+        ((TauCeti.teichmuller 𝒪[K] α)⁻¹ * u) ∈ unitFiltration K 1 :=
+      (mem_unitFiltration_one_iff_residue_eq_one _).mpr hres
     refine ⟨(α, ⟨_, hmem⟩), ?_⟩
     have hcoe : unitFiltrationToIntegerUnits 1 (⟨_, hmem⟩ : unitFiltration K 1) =
-        (teichmuller K α)⁻¹ * u :=
+        (TauCeti.teichmuller 𝒪[K] α)⁻¹ * u :=
       Units.map_injective (f := (Subring.subtype 𝒪[K] : 𝒪[K] →* K)) Subtype.coe_injective
         (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits])
     rw [integerUnitsProdHom_apply, hcoe]
@@ -235,14 +241,16 @@ theorem fst_integerUnitsEquivProd (u : 𝒪[K]ˣ) :
     (integerUnitsEquivProd u).1 = Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u := by
   conv_rhs => rw [← (integerUnitsEquivProd (K := K)).symm_apply_apply u]
   rw [integerUnitsEquivProd_symm_apply, integerUnitsProdHom_apply, map_mul,
-    unitsMap_residue_unitFiltrationToIntegerUnits_one, mul_one, unitsMap_residue_teichmuller]
+    unitsMap_residue_unitFiltrationToIntegerUnits_one, mul_one,
+    TauCeti.unitsMap_residue_teichmuller]
 
 /-- The principal-unit component of the Teichmüller splitting is `u` divided by the Teichmüller
 representative of its residue. -/
 @[simp]
 theorem unitFiltrationToIntegerUnits_snd_integerUnitsEquivProd (u : 𝒪[K]ˣ) :
     unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 =
-      (teichmuller K (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u))⁻¹ * u := by
+      (TauCeti.teichmuller 𝒪[K]
+        (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u))⁻¹ * u := by
   have h := (integerUnitsEquivProd (K := K)).symm_apply_apply u
   rw [integerUnitsEquivProd_symm_apply, integerUnitsProdHom_apply,
     fst_integerUnitsEquivProd] at h

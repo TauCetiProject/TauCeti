@@ -30,6 +30,10 @@ Stieltjes/Bernstein-function correspondences requested by the one-parameter-semi
 * `TauCeti.RepresentsStieltjes`: a measure and two nonnegative coefficients represent a function
   by the Stieltjes formula on `(0, ∞)`.
 * `TauCeti.IsStieltjesFunction`: existence of a Stieltjes representation.
+* `TauCeti.measurable_stieltjesWeight` and `TauCeti.integrable_stieltjesWeight`: the weight is
+  measurable, and every finite measure satisfies the weight condition.
+* `TauCeti.lintegral_inv_le_of_forall_integral_inv_add_le`: an affine bound on the Stieltjes
+  transform of a Stieltjes measure on `ℝ≥0` near the origin bounds `∫ y, y⁻¹ ∂ν`.
 * `TauCeti.IsStieltjesFunction.add`, `TauCeti.IsStieltjesFunction.smul`: Stieltjes functions form
   a convex cone.
 * `TauCeti.isStieltjesFunction_const`, `TauCeti.isStieltjesFunction_inv`,
@@ -47,7 +51,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -73,6 +77,21 @@ theorem representsStieltjes_iff {μ : Measure ℝ≥0} {a b : ℝ≥0} {f : ℝ 
         ∀ t : ℝ, 0 < t → f t = (a : ℝ) / t + (b : ℝ) + ∫ x, (t + (x : ℝ))⁻¹ ∂μ :=
   Iff.rfl
 
+/-- The standard Stieltjes weight is measurable. -/
+@[fun_prop]
+theorem measurable_stieltjesWeight : Measurable stieltjesWeight := by
+  rw [funext stieltjesWeight_apply]
+  fun_prop
+
+/-- The standard Stieltjes weight is bounded by `1`, so it is integrable against every finite
+measure. -/
+theorem integrable_stieltjesWeight (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
+    Integrable stieltjesWeight μ := by
+  refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (.of_forall fun x => ?_)
+  have h1x : (0 : ℝ) < 1 + (x : ℝ) := by positivity
+  rw [stieltjesWeight_apply, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr h1x)]
+  exact inv_le_one_of_one_le₀ (by simp [x.coe_nonneg])
+
 /-- The Stieltjes kernel is integrable at every positive parameter when its standard weight is. -/
 theorem integrable_inv_add {μ : Measure ℝ≥0} (hμ : Integrable stieltjesWeight μ)
     {t : ℝ} (ht : 0 < t) : Integrable (fun x : ℝ≥0 => (t + (x : ℝ))⁻¹) μ := by
@@ -95,6 +114,58 @@ theorem integrable_inv_add {μ : Measure ℝ≥0} (hμ : Integrable stieltjesWei
       rw [← mul_inv]
       exact (inv_le_inv₀ htx (mul_pos ht h1x)).2 hmul
     exact hinv.trans <| mul_le_mul_of_nonneg_right (le_max_right _ _) (inv_nonneg.mpr h1x.le)
+
+/-- If the Stieltjes transform of a measure on `ℝ≥0` satisfying the standard weighted
+integrability condition is bounded by `c + C t` at every positive parameter `t`, then
+`∫ y, y⁻¹ ∂ν ≤ c`: the parameter may be sent to zero.  The bound is stated as a lower Lebesgue
+integral because `y ↦ y⁻¹` is unbounded, and the conclusion carries in particular the finiteness
+of that integral. -/
+theorem lintegral_inv_le_of_forall_integral_inv_add_le {ν : Measure ℝ≥0}
+    (hν : Integrable stieltjesWeight ν)
+    {c C : ℝ} (h : ∀ t : ℝ, 0 < t → (∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν) ≤ c + C * t) :
+    ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν ≤ ENNReal.ofReal c := by
+  set u : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1) with hu
+  have hupos : ∀ n, 0 < u n := fun n => by positivity
+  have huanti : Antitone u := by
+    intro m n hmn
+    have hle : (m : ℝ) ≤ (n : ℝ) := by exact_mod_cast hmn
+    simp only [hu]
+    gcongr
+  have hu0 : Tendsto u atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  set F : ℕ → ℝ≥0 → ℝ≥0∞ := fun n y => (ENNReal.ofReal (u n) + (y : ℝ≥0∞))⁻¹ with hF
+  have hFmeas : ∀ n, Measurable (F n) := fun n => by fun_prop
+  have hFmono : Monotone F := by
+    intro m n hmn y
+    exact ENNReal.inv_le_inv' (by gcongr; exact huanti hmn)
+  have hsup : ∀ y : ℝ≥0, ⨆ n, F n y = (y : ℝ≥0∞)⁻¹ := by
+    intro y
+    have htend : Tendsto (fun n => F n y) atTop (𝓝 ((y : ℝ≥0∞))⁻¹) := by
+      have h1 : Tendsto (fun n => ENNReal.ofReal (u n) + (y : ℝ≥0∞)) atTop
+          (𝓝 (0 + (y : ℝ≥0∞))) := by
+        refine Tendsto.add ?_ tendsto_const_nhds
+        simpa using ENNReal.tendsto_ofReal hu0
+      simpa [hF] using tendsto_inv_iff.2 h1
+    exact tendsto_nhds_unique (tendsto_atTop_iSup fun m n hmn => hFmono hmn y) htend
+  have hint : ∀ t : ℝ, 0 < t → Integrable (fun y : ℝ≥0 => (t + (y : ℝ))⁻¹) ν :=
+    fun t ht => integrable_inv_add hν ht
+  have hFint : ∀ n, ∫⁻ y : ℝ≥0, F n y ∂ν
+      = ENNReal.ofReal (∫ y : ℝ≥0, (u n + (y : ℝ))⁻¹ ∂ν) := by
+    intro n
+    rw [ofReal_integral_eq_lintegral_ofReal (hint _ (hupos n))
+      (.of_forall fun y => by positivity)]
+    refine lintegral_congr fun y => ?_
+    rw [hF, ENNReal.ofReal_inv_of_pos (by positivity),
+      ENNReal.ofReal_add (hupos n).le y.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+  have hrw : ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν = ⨆ n, ∫⁻ y : ℝ≥0, F n y ∂ν := by
+    rw [← lintegral_iSup hFmeas hFmono]
+    exact lintegral_congr fun y => (hsup y).symm
+  rw [hrw]
+  refine le_of_tendsto_of_tendsto'
+    (tendsto_atTop_iSup fun m n hmn => lintegral_mono (hFmono hmn))
+    (ENNReal.tendsto_ofReal (by simpa using tendsto_const_nhds.add (hu0.const_mul C)))
+    fun n => ?_
+  rw [hFint n]
+  exact ENNReal.ofReal_le_ofReal (h _ (hupos n))
 
 namespace RepresentsStieltjes
 

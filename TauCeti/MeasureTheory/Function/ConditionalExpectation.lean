@@ -22,6 +22,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `condExp_ae_eq_integral_of_forall_zero_or_one`: conditioning on a `μ`-trivial σ-algebra — one
   all of whose sets have measure `0` or `1` — is integrating: `μ[f | m']` is a.e. the constant
   `∫ f ∂μ`.
+- `ae_eq_condExp_of_forall_setIntegral_fiber_eq`: conditional-expectation uniqueness can be
+  checked on the fibers of a countable-valued observation.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -110,17 +112,13 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
     (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
     (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
     μ[Xlim | F] =ᵐ[μ] Y := by
-  have hY_meas := integrable_condExp.aestronglyMeasurable.congr (h_condExp 0)
   have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
     have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
                 ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
                   + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
       have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
       rw [this]
-      refine eLpNorm_add_le ?_ ?_ ?_
-      · exact (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
-      · exact integrable_condExp.aestronglyMeasurable.sub hY_meas
-      · norm_num
+      exact eLpNorm_add_le le_rfl
     have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
       have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
         filter_upwards [h_condExp n] with ω hω; simp [hω]
@@ -137,8 +135,7 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
   have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
     le_antisymm
       (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff (integrable_condExp.aestronglyMeasurable.sub hY_meas)
-    one_ne_zero] at h_norm_zero
+  rw [eLpNorm_eq_zero_iff one_ne_zero] at h_norm_zero
   filter_upwards [h_norm_zero] with ω hω
   simp only [Pi.zero_apply] at hω
   exact sub_eq_zero.mp hω
@@ -169,6 +166,31 @@ theorem condExp_ae_eq_integral_of_forall_zero_or_one {Ω : Type*} {m0 : Measurab
     have hsr : μ.real s = 1 := by
       rw [Measure.real, h1, ENNReal.toReal_one]
     rw [hsr, one_smul]
+
+/-- To identify a conditional expectation given a countable-valued observation, it suffices to
+compare integrals on its fibers. The candidate must be integrable and measurable with respect to
+the observation's σ-algebra. -/
+theorem ae_eq_condExp_of_forall_setIntegral_fiber_eq
+    {Ω ι E : Type*} [MeasurableSpace Ω] [MeasurableSpace ι] [Countable ι]
+    [MeasurableSingletonClass ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {μ : Measure Ω} {X : Ω → ι} (hX : Measurable X)
+    [SigmaFinite (μ.trim hX.comap_le)] {f g : Ω → E}
+    (hf : Integrable f μ) (hg : Integrable g μ)
+    (hgm : AEStronglyMeasurable[MeasurableSpace.comap X ‹MeasurableSpace ι›] g μ)
+    (hfg : ∀ i, ∫ x in X ⁻¹' {i}, g x ∂μ = ∫ x in X ⁻¹' {i}, f x ∂μ) :
+    g =ᵐ[μ] μ[f | MeasurableSpace.comap X ‹MeasurableSpace ι›] := by
+  refine ae_eq_condExp_of_forall_setIntegral_eq hX.comap_le hf
+    (fun _ _ _ => hg.integrableOn) ?_ hgm
+  rintro _ ⟨s, _, rfl⟩ _
+  have hs : X ⁻¹' s = ⋃ i : s, X ⁻¹' {i.val} := by
+    ext x
+    simp
+  have hmeas (i : s) : MeasurableSet (X ⁻¹' {i.val}) := hX (measurableSet_singleton _)
+  have hdisj : Pairwise (Function.onFun Disjoint fun i : s => X ⁻¹' {i.val}) :=
+    (pairwise_disjoint_fiber X).comp_of_injective Subtype.val_injective
+  rw [hs, integral_iUnion hmeas hdisj hg.integrableOn,
+    integral_iUnion hmeas hdisj hf.integrableOn]
+  exact tsum_congr fun i => hfg i.val
 
 end MeasureTheory
 

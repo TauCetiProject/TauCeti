@@ -69,6 +69,16 @@ theorem sheafificationIso_inv_naturality {R : Sheaf J RingCat.{u}} {M N : SheafO
   rw [Iso.comp_inv_eq, assoc, Iso.eq_inv_comp, sheafificationIso_hom, sheafificationIso_hom]
   exact ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.naturality f).symm
 
+/-- The inverse direction of `sheafificationIso_inv_naturality`. -/
+@[reassoc]
+theorem sheafificationIso_hom_naturality {R : Sheaf J RingCat.{u}} {M N : SheafOfModules.{v} R}
+    (f : M ⟶ N) :
+    (PresheafOfModules.sheafification (𝟙 R.obj)).map f.val ≫ (sheafificationIso R N).hom =
+      (sheafificationIso R M).hom ≫ f := by
+  rw [← cancel_epi (sheafificationIso R M).inv, Iso.inv_hom_id_assoc,
+    ← Category.assoc, ← sheafificationIso_inv_naturality, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id]
+
 end SheafOfModules
 
 end

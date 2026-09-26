@@ -68,7 +68,7 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 Half the dimension `2 ^ dim W` of the spinor module `⋀·W`, so `2 ^ (l - 1)` for a polarization of
 a `2l`-dimensional space, where `dim W = l` by
-`TauCeti.SpinPolarizationData.finrank_W_of_finrank_eq_two_mul`. The hypothesis `W ≠ ⊥` rules out
+`TauCeti.SpinPolarizationData.finrank_W_eq_of_finrank_eq_two_mul`. The hypothesis `W ≠ ⊥` rules out
 the degenerate case `⋀·W = K`, which is entirely even. -/
 theorem finrank_spinPlus (hW : P.W ≠ ⊥) :
     finrank K (spinPlus Q P) = 2 ^ (finrank K P.W - 1) := by

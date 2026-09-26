@@ -8,13 +8,13 @@ module
 -- The home of `Complex.isAlgClosed`: the scalar half of Schur's lemma, which the first
 -- orthogonality relation below runs on, needs `IsAlgClosed ℂ`.
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import TauCeti.Analysis.Normed.Module.Multilinear
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
 public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 public import TauCeti.RepresentationTheory.Continuous.Schur
 public import TauCeti.RepresentationTheory.SU2.Borel
 public import TauCeti.RepresentationTheory.SU2.Completeness
 public import TauCeti.RepresentationTheory.SU2.Irreducible
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The symmetric powers exhaust the irreducibles of `SU(2)`

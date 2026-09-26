@@ -38,6 +38,8 @@ solely through the boundary it produces.
   multiplicative up to a boundary.
 * `TauCeti.AInfinityHom.cohomologyMap_cohomologyClass`: the induced map sends the class of a cycle
   to the class of its image.
+* `TauCeti.AInfinityHom.cohomologyMap_mem_cohomologyGrading_piece`: the induced map preserves the
+  grading of cohomology.
 * `TauCeti.AInfinityHom.cohomologyMap_id` and `TauCeti.AInfinityHom.cohomologyMap_comp`: passage to
   cohomology preserves identities and composition.
 * `TauCeti.AInfinityHom.isQuasiIso_id` and `TauCeti.AInfinityHom.IsQuasiIso.comp`: identities are
@@ -247,6 +249,14 @@ theorem cohomologyMap_cohomologyClass (f : AInfinityHom AA BB) {x : A} (hx : x �
     f.cohomologyMap (AA.cohomologyClass hx) =
       BB.cohomologyClass (f.linearPart_mem_cycles hx) :=
   f.mapQ_cohomologyClass hx
+
+/-- The map induced on cohomology by an `A∞` morphism preserves degrees. -/
+theorem cohomologyMap_mem_cohomologyGrading_piece (f : AInfinityHom AA BB) {p : ℤ}
+    {c : AA.Cohomology} (hc : c ∈ AA.cohomologyGrading.piece p) :
+    f.cohomologyMap c ∈ BB.cohomologyGrading.piece p := by
+  obtain ⟨x, hx, hxp, rfl⟩ := AA.mem_cohomologyGrading_piece_iff.1 hc
+  rw [cohomologyMap_cohomologyClass]
+  exact BB.cohomologyClass_mem_cohomologyGrading_piece _ (f.linearPart_mem hxp)
 
 /-- Passage to cohomology sends the identity `A∞` morphism to the identity. -/
 @[simp]

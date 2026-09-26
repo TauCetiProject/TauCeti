@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Basic
+public import TauCeti.Algebra.Lie.E6.RootCharacters
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -58,6 +59,8 @@ universe v
 
 namespace TauCeti.E6Minuscule
 
+open TauCeti.E6
+
 local notation "Λ" => TauCeti.coordinateLattice (Fin 27)
 local notation "𝓑" => TauCeti.coordinateLatticeBasis (Fin 27)
 
@@ -69,53 +72,6 @@ open scoped CategoryTheory.MonObj TensorProduct
 attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
-
-/-! ## Root characters -/
-
-/-- The character through which the Cartan torus acts on a positive or negative numbered
-type-`E₆` root generator. -/
-def rootGeneratorWeight : Fin 6 ⊕ Fin 6 → Fin 6 → ℤ
-  | .inl i => fun j ↦ CartanMatrix.E 6 i j
-  | .inr i => fun j ↦ -CartanMatrix.E 6 i j
-
-@[simp]
-theorem rootGeneratorWeight_inl (i j : Fin 6) :
-    rootGeneratorWeight (.inl i) j = CartanMatrix.E 6 i j := by
-  rw [rootGeneratorWeight]
-
-@[simp]
-theorem rootGeneratorWeight_inr (i j : Fin 6) :
-    rootGeneratorWeight (.inr i) j = -CartanMatrix.E 6 i j := by
-  rw [rootGeneratorWeight]
-
-/-- The character of a raising generator is the corresponding simple root of the pinned
-simply connected type-`E₆` root datum. -/
-theorem rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex (i : Fin 6) :
-    rootGeneratorWeight (.inl i) = e6Root (e6SimpleIndex i) := by
-  ext j
-  rw [rootGeneratorWeight_inl, root_e6SimpleIndex]
-
-/-- The character of a lowering generator is the negative of the corresponding simple root. -/
-theorem rootGeneratorWeight_inr_eq_neg_e6Root_e6SimpleIndex (i : Fin 6) :
-    rootGeneratorWeight (.inr i) = -e6Root (e6SimpleIndex i) := by
-  ext j
-  rw [rootGeneratorWeight_inr, Pi.neg_apply, root_e6SimpleIndex]
-
-/-- The numbered Serre root generators are weight vectors for the Cartan generators. -/
-theorem lie_serreH_rootGenerator (k : Fin 6 ⊕ Fin 6) (j : Fin 6) :
-    ⁅TauCeti.serreH ℚ weightTable.cartanMatrix j,
-        TauCeti.serreRootGenerator weightTable.cartanMatrix k⁆ =
-      ((rootGeneratorWeight k j : ℤ) : ℚ) •
-        TauCeti.serreRootGenerator weightTable.cartanMatrix k := by
-  cases k with
-  | inl i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inl, weightTable_cartanMatrix,
-        Matrix.transpose_apply,
-        rootGeneratorWeight_inl]
-  | inr i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inr, weightTable_cartanMatrix,
-        Matrix.transpose_apply,
-        rootGeneratorWeight_inr]
 
 /-! ## The pinned carrier -/
 
@@ -374,6 +330,8 @@ theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing
         (rootSubgroup k).hom.hom :=
   kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
       _ _ _ _ _ _ _ weightTable.isCartanWeightVector_coordinateLatticeBasis
-      weightTable.isNilpotent_rep_serreRootGenerator A (lie_serreH_rootGenerator k) s u
+      weightTable.isNilpotent_rep_serreRootGenerator A
+      (by intro j; rw [weightTable_cartanMatrix]; exact lie_serreH_rootGenerator k j)
+      s u
 
 end TauCeti.E6Minuscule

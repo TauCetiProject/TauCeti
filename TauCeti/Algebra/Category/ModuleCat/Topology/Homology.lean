@@ -39,6 +39,27 @@ public section
 
 open CategoryTheory Limits
 
+namespace TopModuleCat
+
+variable {R : Type*} [Ring R] [TopologicalSpace R]
+
+/-- Exactness of a pair of composable maps of topological modules follows from exactness of the
+maps of modules they become after forgetting topologies, up to conjugation by isomorphisms. -/
+theorem exact_of_forget₂_map_eq {X₁ X₂ X₃ : TopModuleCat R} {f : X₁ ⟶ X₂}
+    {g : X₂ ⟶ X₃} {Y₁ Y₂ Y₃ : ModuleCat R} {f' : Y₁ ⟶ Y₂} {g' : Y₂ ⟶ Y₃}
+    {e₁ : Y₁ ≅ (forget₂ (TopModuleCat R) (ModuleCat R)).obj X₁}
+    {e₂ : Y₂ ≅ (forget₂ (TopModuleCat R) (ModuleCat R)).obj X₂}
+    {e₃ : Y₃ ≅ (forget₂ (TopModuleCat R) (ModuleCat R)).obj X₃}
+    (hf : (forget₂ (TopModuleCat R) (ModuleCat R)).map f = e₁.inv ≫ f' ≫ e₂.hom)
+    (hg : (forget₂ (TopModuleCat R) (ModuleCat R)).map g = e₂.inv ≫ g' ≫ e₃.hom)
+    (h : Function.Exact f' g') : Function.Exact f g :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := e₁.toLinearEquiv) (e₂ := e₂.toLinearEquiv)
+    (e₃ := e₃.toLinearEquiv) (g₁₂ := f.hom.toLinearMap) (g₂₃ := g.hom.toLinearMap)
+    (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₁).1 hf.symm).symm)
+    (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₂).1 hg.symm).symm) h
+
+end TopModuleCat
+
 namespace CategoryTheory.ShortComplex
 
 variable {R : Type*} [Ring R] [TopologicalSpace R] (S : ShortComplex (TopModuleCat R))

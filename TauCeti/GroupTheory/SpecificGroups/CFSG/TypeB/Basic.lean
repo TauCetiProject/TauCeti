@@ -42,9 +42,10 @@ of the `i`-th raising subgroup as the `i`-th simple root of the type-`B` root da
 The spin carrier takes no rank hypothesis beyond the one the subtype supplies, so everything below
 is stated for every validated type-`B` index, the rank-two members `B₂(q)` included. Those members
 are also served, beside the Suzuki family that shares their diagram, by the rank-two type-`C`
-carrier of `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`, reached through
-`TauCeti.TypeB2LieIndex`; the two carriers of the `B₂` diagram are not identified with each other
-here.
+carrier of `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean`, reached through
+`TauCeti.TypeB2LieIndex`. The two carriers of the `B₂` diagram are identified with each other, and
+the spin carrier of `B₂(q)` with the pinned `Sp₄/ℤ` scheme points, in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/SpinAgreement.lean`.
 
 The spin carrier rather than the Geck carrier is used because the Geck carrier is built from the
 adjoint representation, so its weights span the whole character lattice exactly in the types `E₈`,
@@ -81,6 +82,12 @@ once one is proved.
 * `TauCeti.TypeBLieIndex.FixedPoints` and `TauCeti.TypeBLieIndex.Group`: that fixed group and the
   candidate group of `Bₙ(q)`, its derived central quotient.
 
+* `TauCeti.TypeBLieIndex.primeFrobenius`, with
+  `TauCeti.TypeBLieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeBLieIndex.primeFrobenius_weightTorusPoints` and
+  `TauCeti.TypeBLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the split spin weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
@@ -93,7 +100,7 @@ once one is proved.
 -/
 
 -- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD`, which attaches the type-`D` spin
--- carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC` for the rank
+-- carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic` for the rank
 -- offset of the carrier.
 
 public section
@@ -152,8 +159,10 @@ theorem cartanMatrix_B_carrierNode (i j : Fin d.1.rank) :
 /-- **The ambient group this file attaches to a validated type-`B` index**: the points of the
 explicit full-weight type-`B` spin Chevalley carrier at the index's rank, over the algebraic
 closure of its prime field. It is infinite. No finiteness, reductivity, pinning or maximality
-statement is attached to it, and it is not claimed to be the points of the pinned simply connected
-group scheme of type `Bₙ`, no identification of the two carriers being proved. -/
+statement is attached to it. In rank two, `TauCeti.TypeB2LieIndex.spinEquivPinned` identifies it
+with the points of the pinned `Sp₄/ℤ` group scheme; in higher rank it is not claimed to be the
+points of the pinned simply connected group scheme of type `Bₙ`, no such identification being
+proved. -/
 abbrev AmbientGroup : Type := TypeBSpinCarrier.points d.carrierRank d.1.Closure
 
 /-- The ambient group carries a group structure; the carrier being a subgroup of a general linear
@@ -250,6 +259,63 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
+/-- **The prime-field Frobenius of the spin carrier attached to a validated type-`B` index**, the
+`p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
+`e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma, for the reason `frobenius_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius = TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^
+            d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using TypeBSpinCarrier.coe_frobenius_apply d.carrierRank
+    d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.TypeBSpinCarrier.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, TypeBSpinCarrier.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of the split spin weight torus to the
+`p`-th power.** -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.primeFrobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure s) =
+      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, TypeBSpinCarrier.frobenius_weightTorusPoints, pow_one]
+
 /-- **The Frobenius raises every coordinate of the split spin weight torus to the `q`-th
 power.** -/
 @[simp]
@@ -284,9 +350,11 @@ ambient group, `q` being the field order the index records. The family is untwis
 automorphism and no half-Frobenius enters; `TauCeti.TypeBLieIndex.diagramPerm_eq_one` records that
 the diagram permutation attached to the index is trivial.
 
-It is formed on the spin carrier, which is not identified with the pinned simply connected group
-scheme of type `Bₙ`; it transfers to that pinned group only along such an identification, and not
-before. -/
+It is formed on the spin carrier. In rank two, `TauCeti.TypeB2LieIndex.spinEquivPinned_steinberg`
+shows that the identification of that carrier with the pinned `Sp₄/ℤ` points intertwines it with
+the pinned `q`-power Frobenius; in higher rank the carrier is not identified with the pinned simply
+connected group scheme of type `Bₙ`, and the map transfers to that pinned group only along such an
+identification, and not before. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup := d.frobenius
 
 /-- The Steinberg map of a type-`B` index is the carrier's Frobenius. -/

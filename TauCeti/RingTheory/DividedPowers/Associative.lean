@@ -88,6 +88,30 @@ section ModuleEnd
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
+/-- Evaluate a divided power of a rational endomorphism on a vector. -/
+theorem dividedPower_apply (f : Module.End ℚ V) (n : ℕ) (v : V) :
+    dividedPower n f • v = (n.factorial : ℚ)⁻¹ • (f ^ n) v := by
+  simp only [dividedPower_def, Module.End.smul_def, LinearMap.smul_apply]
+
+/-- A divided power vanishes on a vector exactly when the ordinary power does. -/
+theorem dividedPower_apply_eq_zero_iff (f : Module.End ℚ V) (n : ℕ) (v : V) :
+    dividedPower n f • v = 0 ↔ (f ^ n) v = 0 := by
+  rw [dividedPower_apply]
+  constructor
+  · intro h
+    have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+    have h' := congrArg (fun z : V => (n.factorial : ℚ) • z) h
+    simpa [smul_smul, hn] using h'
+  · intro h
+    rw [h, smul_zero]
+
+/-- If a divided power annihilates a vector, so does the next ordinary power. -/
+theorem pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
+    (f : Module.End ℚ V) (n : ℕ) (v : V)
+    (h : dividedPower n f • v = 0) : (f ^ (n + 1)) v = 0 := by
+  have hz := (dividedPower_apply_eq_zero_iff f n v).mp h
+  rw [pow_succ', Module.End.mul_apply, hz, map_zero]
+
 /-- Divided powers of a nilpotent endomorphism preserve a set containing zero if all terms below
 the nilpotency bound preserve it. -/
 theorem dividedPower_apply_mem_of_pow_eq_zero
@@ -160,6 +184,13 @@ theorem commute_dividedPower_dividedPower {x y : A} (hxy : Commute x y) (m n : �
     Commute (dividedPower m x) (dividedPower n y) := by
   simpa only [dividedPower_def] using
     ((hxy.pow_pow m n).smul_left (m.factorial : ℚ)⁻¹).smul_right (n.factorial : ℚ)⁻¹
+
+/-- An element commuting with `y` commutes with every divided power of `y`. This is the case
+`m = 1` of `commute_dividedPower_dividedPower`. -/
+@[simp]
+theorem _root_.Commute.dividedPower_right {x y : A} (hxy : Commute x y) (n : ℕ) :
+    Commute x (dividedPower n y) :=
+  (hxy.pow_right n).smul_right _
 
 /-- The rational coefficient identity behind multiplication of divided powers. -/
 private theorem inv_factorial_mul_inv_factorial (m n : ℕ) :

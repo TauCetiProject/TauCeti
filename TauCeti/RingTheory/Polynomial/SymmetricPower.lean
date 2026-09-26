@@ -53,6 +53,8 @@ are separate later steps.
 * `TauCeti.Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
   `TauCeti.Sym.coeffEquiv_apply` naming its coordinates as the signed elementary symmetric
   functions and `TauCeti.Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
+* `TauCeti.Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
+  divisor is characterized by an affine equation in the chart.
 * `TauCeti.Sym.coeffEquiv_one_apply` and `TauCeti.Sym.coeffEquiv_two_apply`: the chart in degrees
   one and two, pinning down the sign convention.
 * `TauCeti.Sym.toMonic_ofFn` and `TauCeti.Sym.coeffEquiv_ofFn_apply`: read on an ordered tuple
@@ -336,6 +338,17 @@ determines. -/
 theorem coeffEquiv_symm_apply (f : Fin n → K) : (((coeffEquiv K n).symm f : Sym K n) : Multiset K) =
       (Polynomial.monicOfCoeff f).roots := by
   rw [← roots_toMonic ((coeffEquiv K n).symm f), toMonic_coeffEquiv_symm]
+
+/-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
+point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the
+coordinates of `s` vanishes at `a`. For `0 < n`, the equation has coefficient `1` on the
+constant coordinate. In degree zero it reads `1 = 0`, so its locus is empty. -/
+theorem mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero {a : K} {s : Sym K n} :
+    s ∈ basepointDivisor a ↔ a ^ n + ∑ i : Fin n, coeffEquiv K n s i * a ^ (i : ℕ) = 0 := by
+  simp only [mem_basepointDivisor]
+  have h := toMonic_coeffEquiv_symm (coeffEquiv K n s)
+  rw [Equiv.symm_apply_apply] at h
+  rw [← _root_.Sym.mem_coe, mem_iff_isRoot, h, IsRoot.def, Polynomial.eval_monicOfCoeff]
 
 /-- In degree one the chart is negation: the single coordinate of a one-point tuple is minus that
 point. -/

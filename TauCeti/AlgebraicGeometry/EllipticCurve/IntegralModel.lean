@@ -16,14 +16,17 @@ import Mathlib.Tactic.Field
 
 A change of variables `D : VariableChange K` carrying one integral Weierstrass model to another
 need not be integral itself: its scaling factor `D.u` is a unit of `K`, and `D.r`, `D.s`, `D.t` are
-elements of `K`. This file shows that when `R` is integrally closed in `K`, as soon as `D.u` comes
-from a unit of `R` the rest follows — `D` is the base change of a `VariableChange R`. Two further
-facts about integral models sit beside it: over a domain with fraction field `K` every equation
-has an integral model, obtained by clearing a common denominator of the coefficients, and
-integrality is inherited by a larger ring of a tower.
+elements of `K`. This file shows that when `R` is integrally closed in `K`, as soon as `D.u` lies
+in `R` so do `D.r`, `D.s` and `D.t`, and hence that when `D.u` comes from a unit of `R`, `D` is the
+base change of a `VariableChange R`. Two further facts about integral models sit beside it: over a
+domain with fraction field `K` every equation has an integral model, obtained by clearing a common
+denominator of the coefficients, and integrality is inherited by a larger ring of a tower.
 
 ## Main results
 
+* `WeierstrassCurve.VariableChange.isInteger_r_s_t_of_smul_eq`: for `R` integrally closed in `K`,
+  if `D • W₁ = W₂` with `W₁` and `W₂` integral over `R` and `D.u ∈ R`, then `D.r`, `D.s` and
+  `D.t` lie in `R` (Silverman VII.1.3(d)).
 * `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`: for `R` integrally closed in
   `K` (`IsIntegrallyClosedIn R K`), if `D • W₁ = W₂` with `W₁` and `W₂` integral over `R` and `D.u`
   the image of a unit of `R`, then `D = C₀.baseChange K` for some `C₀ : VariableChange R`.
@@ -76,9 +79,10 @@ The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 commit is FLT PR #1088, "Quadratic twist to split multiplicative reduction". The mathematics is
 unchanged: the same three polynomials, the same `linear_combination` certificates. The single
 66-line proof is split into the three integrality arguments plus their assembly, so that no
-declaration exceeds the length cap. Two hypotheses are weakened relative to the source, which
-states the descent for a discrete valuation ring: the integrality certificates need only
-`Algebra R K`, and the assembly needs only `IsIntegrallyClosedIn R K`.
+declaration exceeds the length cap. Three hypotheses are weakened relative to the source, which
+states the descent for a discrete valuation ring and a unit scaling factor: the integrality
+certificates need only `Algebra R K` and a scaling factor in `R`, and the assembly needs only
+`IsIntegrallyClosedIn R K`.
 -/
 
 public section
@@ -98,8 +102,8 @@ where the roots are pulled back into `R`. -/
 /-- **`r` is integral**: it is a root of the monic quartic obtained from the `b₆`- and
 `b₈`-relations as `b₈-relation − r · b₆-relation`. -/
 private theorem isIntegral_r_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsIntegral R W₁]
-    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : Rˣ)
-    (hau : algebraMap R K ↑u₀ = ↑D.u) : _root_.IsIntegral R D.r := by
+    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : R)
+    (hau : algebraMap R K u₀ = ↑D.u) : _root_.IsIntegral R D.r := by
   have hb₆ : (↑D.u : K) ^ 6 * W₂.b₆
       = W₁.b₆ + 2 * D.r * W₁.b₄ + D.r ^ 2 * W₁.b₂ + 4 * D.r ^ 3 := by
     rw [← hD, variableChange_b₆]
@@ -111,8 +115,8 @@ private theorem isIntegral_r_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
     simp only [Units.val_inv_eq_inv_val]
     field
   refine ⟨.X ^ 4 + (.C (-(W₁.integralModel R).b₄) * .X ^ 2
-      + .C (-(2 * (W₁.integralModel R).b₆) - (↑u₀ : R) ^ 6 * (W₂.integralModel R).b₆) * .X
-      + .C ((↑u₀ : R) ^ 8 * (W₂.integralModel R).b₈ - (W₁.integralModel R).b₈)),
+      + .C (-(2 * (W₁.integralModel R).b₆) - u₀ ^ 6 * (W₂.integralModel R).b₆) * .X
+      + .C (u₀ ^ 8 * (W₂.integralModel R).b₈ - (W₁.integralModel R).b₈)),
     Polynomial.monic_X_pow_add (by compute_degree!), ?_⟩
   rw [← Polynomial.aeval_def]
   simp only [map_add, map_sub, map_neg, map_mul, map_pow, map_ofNat, Polynomial.aeval_X,
@@ -124,15 +128,15 @@ private theorem isIntegral_r_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
 /-- **`s` is integral**, given an integral representative `rR` of `r`: it is a root of the monic
 quadratic coming from the `a₂`-relation. -/
 private theorem isIntegral_s_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsIntegral R W₁]
-    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : Rˣ)
-    (hau : algebraMap R K ↑u₀ = ↑D.u) (rR : R) (hrR : algebraMap R K rR = D.r) :
+    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : R)
+    (hau : algebraMap R K u₀ = ↑D.u) (rR : R) (hrR : algebraMap R K rR = D.r) :
     _root_.IsIntegral R D.s := by
   have ha₂ : (↑D.u : K) ^ 2 * W₂.a₂ = W₁.a₂ - D.s * W₁.a₁ + 3 * D.r - D.s ^ 2 := by
     rw [← hD, variableChange_a₂]
     simp only [Units.val_inv_eq_inv_val]
     field
   refine IsIntegral.of_sq_add_mul_add_eq_zero (b := algebraMap R K (W₁.integralModel R).a₁)
-    (c := algebraMap R K ((↑u₀ : R) ^ 2 * (W₂.integralModel R).a₂
+    (c := algebraMap R K (u₀ ^ 2 * (W₂.integralModel R).a₂
       - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap ?_
   simp only [map_sub, map_mul, map_pow, map_ofNat]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₂_eq R W₂, hau, hrR]
@@ -141,8 +145,8 @@ private theorem isIntegral_s_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
 /-- **`t` is integral**, given an integral representative `rR` of `r`: it is a root of the monic
 quadratic coming from the `a₆`-relation. -/
 private theorem isIntegral_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsIntegral R W₁]
-    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : Rˣ)
-    (hau : algebraMap R K ↑u₀ = ↑D.u) (rR : R) (hrR : algebraMap R K rR = D.r) :
+    [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : R)
+    (hau : algebraMap R K u₀ = ↑D.u) (rR : R) (hrR : algebraMap R K rR = D.r) :
     _root_.IsIntegral R D.t := by
   have ha₆ : (↑D.u : K) ^ 6 * W₂.a₆ = W₁.a₆ + D.r * W₁.a₄ + D.r ^ 2 * W₁.a₂ + D.r ^ 3
       - D.t * W₁.a₃ - D.t ^ 2 - D.r * D.t * W₁.a₁ := by
@@ -153,7 +157,7 @@ private theorem isIntegral_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
   -- written as a subtraction so the sign of the `a₆(W₂)` term cannot be misread across the wrap.
   refine IsIntegral.of_sq_add_mul_add_eq_zero
     (b := algebraMap R K ((W₁.integralModel R).a₃ + rR * (W₁.integralModel R).a₁))
-    (c := algebraMap R K ((↑u₀ : R) ^ 6 * (W₂.integralModel R).a₆
+    (c := algebraMap R K (u₀ ^ 6 * (W₂.integralModel R).a₆
       - ((W₁.integralModel R).a₆ + rR * (W₁.integralModel R).a₄
         + rR ^ 2 * (W₁.integralModel R).a₂ + rR ^ 3)))
     isIntegral_algebraMap isIntegral_algebraMap ?_
@@ -173,6 +177,22 @@ section Descent
 
 variable [IsIntegrallyClosedIn R K]
 
+/-- **A change of variables between two integral models has integral translation parameters as soon
+as its scaling factor lies in `R`** (Silverman, *AEC*, Proposition VII.1.3(d)). `R` is assumed
+integrally closed in `K`, `W₁` and `W₂` integral over `R`, and `D.u` the image of `u₀ : R`, which
+need not be a unit: this is the case of a change of variables carrying an integral model to a
+minimal one, whose scaling factor has the valuation of the obstruction to minimality. -/
+theorem isInteger_r_s_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K}
+    [IsIntegral R W₁] [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : R)
+    (hau : algebraMap R K u₀ = ↑D.u) :
+    IsLocalization.IsInteger R D.r ∧ IsLocalization.IsInteger R D.s ∧
+      IsLocalization.IsInteger R D.t := by
+  obtain ⟨rR, hrR⟩ :=
+    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_r_of_smul_eq R D hD u₀ hau)
+  exact ⟨⟨rR, hrR⟩,
+    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_s_of_smul_eq R D hD u₀ hau rR hrR),
+    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_t_of_smul_eq R D hD u₀ hau rR hrR)⟩
+
 /-- **A change of variables between two integral models whose scaling factor is a unit of `R` is
 the base change of a change of variables over `R`.** `R` is assumed integrally closed in `K`; `W₁`
 and `W₂` integral over `R`; and `D.u` the image of `u₀ : Rˣ`. The witness has that same `u₀` as its
@@ -180,12 +200,7 @@ scaling factor. -/
 theorem exists_baseChange_eq_of_smul_eq {W₁ W₂ : WeierstrassCurve K}
     [IsIntegral R W₁] [IsIntegral R W₂] (D : VariableChange K) (hD : D • W₁ = W₂) (u₀ : Rˣ)
     (hau : algebraMap R K ↑u₀ = ↑D.u) : ∃ C₀ : VariableChange R, C₀.baseChange K = D := by
-  obtain ⟨rR, hrR⟩ :=
-    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_r_of_smul_eq R D hD u₀ hau)
-  obtain ⟨sR, hsR⟩ :=
-    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_s_of_smul_eq R D hD u₀ hau rR hrR)
-  obtain ⟨tR, htR⟩ :=
-    IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_t_of_smul_eq R D hD u₀ hau rR hrR)
+  obtain ⟨⟨rR, hrR⟩, ⟨sR, hsR⟩, ⟨tR, htR⟩⟩ := isInteger_r_s_t_of_smul_eq R D hD (↑u₀) hau
   exact ⟨⟨u₀, rR, sR, tR⟩, VariableChange.ext (Units.ext hau) hrR hsR htR⟩
 
 end Descent

@@ -389,6 +389,25 @@ theorem isGlDominantIntegral_glHalfStaircase {F : Type*} [Field F] [CharZero F] 
   have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
   exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
 
+/-- Lowering one entry of the half-shifted staircase preserves `gl n` dominance. -/
+theorem isGlDominantIntegral_glHalfStaircase_sub_single {F : Type*} [Field F] [CharZero F]
+    (N : ℕ) (t : Fin N) :
+    IsGlDominantIntegral (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) := by
+  rw [isGlDominantIntegral_iff]
+  intro i j hij
+  have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  by_cases hi : i = t <;> by_cases hj : j = t
+  · subst j
+    omega
+  · subst i
+    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hj]
+    exact ⟨0, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+  · subst j
+    simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi]
+    exact ⟨2, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+  · simp only [Pi.sub_apply, Pi.single_apply, ite_eq_right hi, ite_eq_right hj]
+    exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
+
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`
 and dominance for a semisimple Lie algebra: the entries of a dominant `gl n` weight are free, only

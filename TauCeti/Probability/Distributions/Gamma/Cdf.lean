@@ -37,13 +37,15 @@ completion check of the same layer.
 
 ## Main results
 
-* `TauCeti.cdf_gammaMeasure_eq` — the closed-form cdf `P(a, r * x)`;
-* `TauCeti.measureReal_Iic_gammaMeasure` — the same in measure form;
-* `TauCeti.measureReal_Ioc_gammaMeasure` — the mass of a bounded interval, as a difference of two
+* `TauCeti.Probability.cdf_gammaMeasure_eq` — the closed-form cdf `P(a, r * x)`;
+* `TauCeti.Probability.measureReal_Iic_gammaMeasure` — the same in measure form;
+* `TauCeti.Probability.measureReal_Ioc_gammaMeasure` — the mass of a bounded interval, as a
+  difference of two
   values of `P(a, ·)`;
-* `TauCeti.measureReal_Ioi_gammaMeasure` — the upper tail `1 - P(a, r * x)`;
-* `TauCeti.continuous_cdf_gammaMeasure` — the cdf is continuous, so a gamma law has no atoms;
-* `TauCeti.measureReal_le_of_hasLaw_gammaMeasure` — the random-variable corollary.
+* `TauCeti.Probability.measureReal_Ioi_gammaMeasure` — the upper tail `1 - P(a, r * x)`;
+* `TauCeti.Probability.continuous_cdf_gammaMeasure` — the cdf is continuous, so a gamma law has no
+  atoms;
+* `TauCeti.Probability.measureReal_le_of_hasLaw_gammaMeasure` — the random-variable corollary.
 
 ## References
 
@@ -58,7 +60,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {a r x : ℝ}
 
@@ -172,4 +174,4 @@ theorem measureReal_le_of_hasLaw_gammaMeasure {Ω : Type*} [MeasurableSpace Ω] 
   rw [hX.measureReal_eq (p := fun y : ℝ => y ≤ x) measurableSet_Iic, Set.Iic_def]
   exact measureReal_Iic_gammaMeasure ha hr x
 
-end TauCeti
+end TauCeti.Probability

@@ -90,11 +90,6 @@ theorem spinRotationPath_apply (hx : Q x = 1) (hy : Q y = 1)
     Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul, zero_mul,
     zero_add, mul_comm]
 
-private theorem spinTwoBasis_norm (i : Fin 2) :
-    realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) i) = 1 := by
-  fin_cases i <;>
-    norm_num [realCliffordForm_apply, Fin.sum_univ_two, Pi.basisFun_apply, Pi.single_apply]
-
 private theorem spinTwoBasis_add_norm :
     realCliffordForm 2 0
       (Pi.basisFun ℝ (Fin 2) 0 + Pi.basisFun ℝ (Fin 2) 1) = 2 := by
@@ -104,8 +99,11 @@ private theorem spinTwoBasis_add_norm :
 private theorem spinTwoBasis_isOrtho :
     (realCliffordForm 2 0).IsOrtho
       (Pi.basisFun ℝ (Fin 2) 0) (Pi.basisFun ℝ (Fin 2) 1) := by
-  rw [QuadraticMap.isOrtho_def, spinTwoBasis_add_norm, spinTwoBasis_norm,
-    spinTwoBasis_norm]
+  have h0 : realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) 0) = 1 := by
+    simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 0
+  have h1 : realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) 1) = 1 := by
+    simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 1
+  rw [QuadraticMap.isOrtho_def, spinTwoBasis_add_norm, h0, h1]
   norm_num
 
 /-- The identity and the canonical scalar `-1` are joined in the compact group `Spin(2)`. -/
@@ -115,7 +113,9 @@ theorem joined_one_negOne_realCliffordSpinGroupZero_two :
         (nondegenerate_realCliffordForm 2 0).ne_zero) := by
   exact ⟨spinRotationPath (realCliffordForm 2 0)
     (Pi.basisFun ℝ (Fin 2) 0) (Pi.basisFun ℝ (Fin 2) 1)
-      (spinTwoBasis_norm 0) (spinTwoBasis_norm 1) spinTwoBasis_isOrtho⟩
+      (by simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 0)
+      (by simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 1)
+      spinTwoBasis_isOrtho⟩
 
 /-- The identity and the canonical scalar `-1` are joined in every compact Spin group of
 dimension at least two. -/

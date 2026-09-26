@@ -9,16 +9,16 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv
 
 /-!
-# Multiplication by `i` on a complex normed space
+# Multiplication by `i` on a complex seminormed space
 
-Multiplication by `i` is a real continuous linear automorphism of any complex normed space, with
+Multiplication by `i` is a real continuous linear automorphism of any complex seminormed space, with
 inverse multiplication by `-i`.  It is the conjugating operator by which complex linearity of a
 real-linear map is tested.
 
 ## Main definitions and results
 
 * `Complex.I_smul_neg_I_smul` and `Complex.neg_I_smul_I_smul`: multiplication by `i` and by `-i`
-  are mutually inverse on a complex module.
+  are mutually inverse on any type with a complex multiplication action.
 * `Complex.smulIEquiv`: multiplication by `i` as a real continuous linear equivalence, with
   `smulIEquiv_apply` and `smulIEquiv_symm_apply`.
 -/
@@ -27,9 +27,9 @@ public section
 
 namespace Complex
 
-section Module
+section MulAction
 
-variable {X : Type*} [AddCommGroup X] [Module ℂ X]
+variable {X : Type*} [MulAction ℂ X]
 
 theorem I_smul_neg_I_smul (x : X) : I • (-I • x) = x := by
   rw [smul_smul, mul_neg, I_mul_I, neg_neg, one_smul]
@@ -37,13 +37,13 @@ theorem I_smul_neg_I_smul (x : X) : I • (-I • x) = x := by
 theorem neg_I_smul_I_smul (x : X) : -I • (I • x) = x := by
   rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
 
-end Module
+end MulAction
 
-section Normed
+section Seminormed
 
-variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℂ X]
+variable (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℂ X]
 
-/-- Multiplication by `i` as a real continuous linear equivalence of a complex normed space. -/
+/-- Multiplication by `i` as a real continuous linear equivalence of a complex seminormed space. -/
 noncomputable def smulIEquiv : X ≃L[ℝ] X :=
   ContinuousLinearEquiv.smulLeft (Units.mk0 I I_ne_zero)
 
@@ -57,7 +57,7 @@ theorem smulIEquiv_apply (x : X) : smulIEquiv X x = I • x := by
 theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := by
   rw [ContinuousLinearEquiv.symm_apply_eq, smulIEquiv_apply, I_smul_neg_I_smul]
 
-end Normed
+end Seminormed
 
 end Complex
 

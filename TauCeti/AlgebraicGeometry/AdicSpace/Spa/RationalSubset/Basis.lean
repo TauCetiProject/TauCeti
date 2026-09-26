@@ -86,6 +86,7 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 open Set Topology _root_.TopologicalSpace TauCeti TauCeti.Huber
+  TauCeti.Huber.PairOfDefinition
 open scoped Pointwise
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
@@ -249,6 +250,20 @@ theorem isTopologicalBasis_spaRationalFamily_of_pairOfDefinition
       let yI : spvOfIdeal P.extendedIdealOfDefinition hfg :=
         ⟨y, spa_subset_spvOfIdeal P Aplus y.property⟩
       exact hVO (a := yI) hy
+
+/-- Every neighbourhood of a point of `Spa(A,A⁺)` contains the rational subset of an admissible
+presentation containing the point. -/
+theorem exists_presentation_mem_spaBasicOpen_le (P : PairOfDefinition A) {Aplus : Subring A}
+    {U : Opens (spa Aplus)}
+    {x : spa Aplus} (hx : x ∈ U) :
+    ∃ p : Presentation P, IsOpen (Ideal.span (p.num : Set A) : Set A) ∧
+      x ∈ spaBasicOpen Aplus p.num p.den ∧ spaBasicOpen Aplus p.num p.den ≤ U := by
+  obtain ⟨W, hW, hxW, hWU⟩ :=
+    (isTopologicalBasis_spaRationalFamily_of_pairOfDefinition P Aplus).exists_subset_of_mem_open
+      hx U.isOpen
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalFamily_iff.mp hW
+  exact ⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, mem_spaBasicOpen.mpr hxW,
+    fun y hy ↦ hWU (mem_spaBasicOpen.mp hy)⟩
 
 /-- **Rational subsets form a basis of `Spa(A,A⁺)`**, without choosing a pair of definition
 of the Huber ring. -/

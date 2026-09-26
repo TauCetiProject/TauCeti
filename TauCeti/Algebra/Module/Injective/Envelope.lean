@@ -121,7 +121,7 @@ whose composite with `f` is injective is itself injective. -/
 theorem isInjectiveEnvelope_iff_forall_injective [Module.Injective R Q] {f : M →ₗ[R] Q}
     (hf : Function.Injective f) :
     IsInjectiveEnvelope f ↔
-      ∀ {Q' : Type w} [AddCommGroup Q'] [Module R Q'] (h : Q →ₗ[R] Q'),
+      ∀ {Q' : Type w} [AddCommMonoid Q'] [Module R Q'] (h : Q →ₗ[R] Q'),
         Function.Injective (h ∘ₗ f) → Function.Injective h := by
   rw [← isEssential_range_iff_forall_injective hf]
   exact ⟨fun henv => henv.isEssential_range, fun hess => ⟨‹_›, hf, hess⟩⟩

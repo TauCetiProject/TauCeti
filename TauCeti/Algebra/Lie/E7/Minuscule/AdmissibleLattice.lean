@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Basic
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
+import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
@@ -29,6 +30,8 @@ the full-weight type-`E₇` Chevalley--Demazure carrier in Layer 9 of the Reduct
 
 * `TauCeti.E7Minuscule.rationalSerreRepresentation`: the rational minuscule representation.
 * `TauCeti.E7Minuscule.rep`: its extension to the universal enveloping algebra.
+* `TauCeti.E7Minuscule.isSl2Triple_rep_serreRootGenerator`: the represented generators at every
+  simple node form an `sl₂` triple.
 * `TauCeti.E7Minuscule.isNilpotent_rep_serreRootGenerator`: the simple-root generators act
   nilpotently.
 * `TauCeti.E7Minuscule.lattice`: the coordinate `ℤ`-lattice in the rational module.
@@ -112,6 +115,14 @@ theorem isSerreSystemRat :
     rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_F_F i j
 
+/-- At each simple node, the three rational minuscule generator matrices form an `sl₂` triple. -/
+theorem isSl2TripleRat (i : Fin 7) :
+    _root_.IsSl2Triple (cartanMatrixRat i) (raisingMatrixRat i) (loweringMatrixRat i) :=
+  (isSl2Triple i).map (matrixIntCastLieHom ℚ) fun hzero ↦
+    (isSl2Triple i).h_ne_zero <| by
+      ext a b
+      simpa using congrFun (congrFun hzero a) b
+
 /-- The rational `56`-dimensional minuscule representation of the type-`E₇` Serre
 presentation. -/
 noncomputable def rationalSerreRepresentation :
@@ -150,6 +161,34 @@ noncomputable def rep :
 theorem rep_ι_apply (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7)) (v : Fin 56 → ℚ) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v = rationalSerreRepresentation x *ᵥ v := by
   simp [rep]
+
+/-- The enveloping-algebra inclusion acts through the represented rational matrix, read as an
+endomorphism by `Matrix.toLinAlgEquiv'`. -/
+private theorem rep_ι_eq_toLinAlgEquiv' (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7)) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
+      Matrix.toLinAlgEquiv' (rationalSerreRepresentation x) := by
+  apply LinearMap.ext
+  intro v
+  rw [rep_ι_apply, Matrix.toLinAlgEquiv'_apply]
+
+/-- The represented positive and negative simple generators at a common type-`E₇` node, together
+with the represented Cartan generator, form an `sl₂` triple. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 7) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ (CartanMatrix.E 7) i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inr i)))) := by
+  have hne : Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56) (cartanMatrixRat i) ≠ 0 := fun hz ↦
+    (isSl2TripleRat i).h_ne_zero
+      ((Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56)).injective (hz.trans (map_zero _).symm))
+  have h := (isSl2TripleRat i).map
+    (Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56)).toAlgHom.toLieHom hne
+  simp only [AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply] at h
+  rw [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr]
+  simpa only [rep_ι_eq_toLinAlgEquiv', rationalSerreRepresentation_serreH,
+    rationalSerreRepresentation_serreE, rationalSerreRepresentation_serreF] using h
 
 /-- Every rational minuscule raising matrix squares to zero. -/
 @[simp]

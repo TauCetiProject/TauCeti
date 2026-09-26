@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Transforms
 
 import TauCeti.Analysis.SpecialFunctions.Log.SumLogOneSub
-import TauCeti.LinearAlgebra.Matrix.Trace
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.Probability.Moments.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
@@ -36,32 +36,39 @@ variance of the statistic; polarization gives covariances, and the symmetrized e
 
 The last two sections specialize these results to the two Wishart families: the Gaussian-Gram
 family `wishartGramMeasure ν S`, whose trace transform is
-`TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt`, and the nonsingular density family
+`TauCeti.Probability.mgf_trace_mul_wishartGramMeasure_sqrt`, and the nonsingular density family
 `nonsingularWishartMeasure n S`, whose trace transform is
-`TauCeti.mgf_trace_mul_nonsingularWishartMeasure_sqrt`. The Gaussian-Gram family carries a
+`TauCeti.Probability.mgf_trace_mul_nonsingularWishartMeasure_sqrt`. The Gaussian-Gram family carries
+a
 natural degree and any scale, while the density family carries a real degree above `p - 1` and a
 positive-definite scale, so neither list of moments subsumes the other.
 
 ## Main results
 
-* `TauCeti.isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow`: a Wishart trace transform, even at a
+* `TauCeti.Probability.isProbabilityMeasure_of_mgf_trace_mul_eq_det_rpow`: a Wishart trace
+  transform, even at a
   single `Θ`, forces total mass `1`;
-* `TauCeti.memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow`,
-  `TauCeti.memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow` and
-  `TauCeti.memLp_id_of_mgf_trace_mul_eq_det_rpow` give finite moments of all orders for trace
+* `TauCeti.Probability.memLp_trace_mul_of_mgf_trace_mul_eq_det_rpow`,
+  `TauCeti.Probability.memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow` and
+  `TauCeti.Probability.memLp_id_of_mgf_trace_mul_eq_det_rpow` give finite moments of all orders for
+  trace
   statistics, entries and the matrix itself;
-* `TauCeti.integral_trace_mul_of_mgf_trace_mul_eq_det_rpow`,
-  `TauCeti.variance_trace_mul_of_mgf_trace_mul_eq_det_rpow` and
-  `TauCeti.covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow` compute the mean and variance of a
+* `TauCeti.Probability.integral_trace_mul_of_mgf_trace_mul_eq_det_rpow`,
+  `TauCeti.Probability.variance_trace_mul_of_mgf_trace_mul_eq_det_rpow` and
+  `TauCeti.Probability.covariance_trace_mul_of_mgf_trace_mul_eq_det_rpow` compute the mean and
+  variance of a
   trace statistic and the covariance of two;
-* `TauCeti.integral_id_of_mgf_trace_mul_eq_det_rpow`,
-  `TauCeti.integral_coe_apply_of_mgf_trace_mul_eq_det_rpow` and
-  `TauCeti.covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow` give the Bochner mean and the
+* `TauCeti.Probability.integral_id_of_mgf_trace_mul_eq_det_rpow`,
+  `TauCeti.Probability.integral_coe_apply_of_mgf_trace_mul_eq_det_rpow` and
+  `TauCeti.Probability.covariance_coe_apply_of_mgf_trace_mul_eq_det_rpow` give the Bochner mean and
+  the
   entrywise mean and covariance;
-* `TauCeti.integral_id_wishartGramMeasure`, `TauCeti.covariance_coe_apply_wishartGramMeasure` and
+* `TauCeti.Probability.integral_id_wishartGramMeasure`,
+  `TauCeti.Probability.covariance_coe_apply_wishartGramMeasure` and
   their companions specialize all of these to the Gaussian-Gram family;
-* `TauCeti.integral_id_nonsingularWishartMeasure`,
-  `TauCeti.covariance_coe_apply_nonsingularWishartMeasure` and their companions do the same for
+* `TauCeti.Probability.integral_id_nonsingularWishartMeasure`,
+  `TauCeti.Probability.covariance_coe_apply_nonsingularWishartMeasure` and their companions do the
+  same for
   the nonsingular density family.
 
 ## References
@@ -77,7 +84,7 @@ open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace Matrix MatrixOrder NNReal Topology
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))}
   {S : Matrix (Fin p) (Fin p) ℝ} {n : ℝ}
@@ -611,4 +618,4 @@ theorem covariance_coe_apply_nonsingularWishartMeasure (i j k l : Fin p) :
 
 end Nonsingular
 
-end TauCeti
+end TauCeti.Probability

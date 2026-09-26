@@ -361,6 +361,14 @@ theorem supportedPart_empty (hf : f 1 = 1) : supportedPart f ∅ = delta := by
   · rw [supportedPart_apply_of_isPrimeTo_compl (hiff.mpr rfl), delta_one, hf]
   · rw [supportedPart_apply_of_not_isPrimeTo_compl fun h ↦ hA (hiff.mp h), delta_of_ne_one hA]
 
+/-- **A surviving `{P}`-part is a power of `P`.**  The restriction to the powers of a single prime
+kills every ideal not prime to `{P}ᶜ`, and for a single prime that condition is exactly being a
+power of `P`. -/
+private theorem exists_eq_pow_of_supportedPart_singleton_apply_ne_zero
+    {P : HeightOneSpectrum (𝓞 K)} {I : (Ideal (𝓞 K))⁰} (hI : supportedPart f {P} I ≠ 0) :
+    ∃ m : ℕ, (I : Ideal (𝓞 K)) = P.asIdeal ^ m :=
+  Ideal.isPrimeTo_compl_singleton_iff.mp (isPrimeTo_compl_of_supportedPart_apply_ne_zero hI)
+
 /-- **Only the `S`-part/`P`-part pair survives.**  Where `A` is `P ^ n` times an ideal `B` prime to
 `Sᶜ`, and `C` is that power of `P`, every pair of the antidiagonal of `A` other than `(B, C)`
 contributes zero to the convolution. -/
@@ -373,8 +381,8 @@ private theorem supportedPart_mul_eq_zero_of_ne {P : HeightOneSpectrum (𝓞 K)}
   intro p hp hne
   by_contra hp0
   have h1 := isPrimeTo_compl_of_supportedPart_apply_ne_zero (left_ne_zero_of_mul hp0)
-  obtain ⟨m, h2⟩ := Ideal.isPrimeTo_compl_singleton_iff.mp
-    (isPrimeTo_compl_of_supportedPart_apply_ne_zero (right_ne_zero_of_mul hp0))
+  obtain ⟨m, h2⟩ :=
+    exists_eq_pow_of_supportedPart_singleton_apply_ne_zero (right_ne_zero_of_mul hp0)
   have hmul : (p.1 : Ideal (𝓞 K)) * (p.2 : Ideal (𝓞 K)) = (A : Ideal (𝓞 K)) := by
     rw [← Submonoid.coe_mul, Ideal.mem_divisorsAntidiagonal.mp hp]
   have heq : P.asIdeal ^ m * (p.1 : Ideal (𝓞 K)) = P.asIdeal ^ n * (B : Ideal (𝓞 K)) := by
@@ -392,8 +400,8 @@ private theorem isPrimeTo_compl_insert_of_supportedPart_mul_ne_zero
     (hp0 : supportedPart f S p.1 * supportedPart f {P} p.2 ≠ 0) :
     Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (insert P S)ᶜ := by
   have h1 := isPrimeTo_compl_of_supportedPart_apply_ne_zero (left_ne_zero_of_mul hp0)
-  obtain ⟨m, h2⟩ := Ideal.isPrimeTo_compl_singleton_iff.mp
-    (isPrimeTo_compl_of_supportedPart_apply_ne_zero (right_ne_zero_of_mul hp0))
+  obtain ⟨m, h2⟩ :=
+    exists_eq_pow_of_supportedPart_singleton_apply_ne_zero (right_ne_zero_of_mul hp0)
   rw [← congrArg Subtype.val (Ideal.mem_divisorsAntidiagonal.mp hp), Submonoid.coe_mul]
   refine Ideal.isPrimeTo_mul_iff.mpr
     ⟨h1.mono (Set.compl_subset_compl.mpr (Set.subset_insert P S)), ?_⟩
@@ -437,10 +445,6 @@ theorem normCoeff_supportedPart_singleton (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) :
     normCoeff K (supportedPart f {P}) = localArithmeticFactor f P := by
   have h2 : 2 ≤ Ideal.absNorm P.asIdeal := NumberField.HeightOneSpectrum.one_lt_absNorm P
-  have hpow : ∀ I : (Ideal (𝓞 K))⁰,
-      supportedPart f ({P} : Set (HeightOneSpectrum (𝓞 K))) I ≠ 0 →
-      ∃ j : ℕ, (I : Ideal (𝓞 K)) = P.asIdeal ^ j := fun _ hI ↦
-    Ideal.isPrimeTo_compl_singleton_iff.mp (isPrimeTo_compl_of_supportedPart_apply_ne_zero hI)
   ext n
   rw [normCoeff_eq_sum_normFiber]
   by_cases hn : ∃ k : ℕ, Ideal.absNorm P.asIdeal ^ k = n
@@ -453,7 +457,7 @@ theorem normCoeff_supportedPart_singleton (f : IdealArithmeticFunction K)
         supportedPart f ({P} : Set (HeightOneSpectrum (𝓞 K))) I = 0 := by
       intro I hI hIC
       by_contra hI0
-      obtain ⟨j, hj⟩ := hpow I hI0
+      obtain ⟨j, hj⟩ := exists_eq_pow_of_supportedPart_singleton_apply_ne_zero hI0
       have hjk : Ideal.absNorm P.asIdeal ^ j = Ideal.absNorm P.asIdeal ^ k := by
         rw [← map_pow, ← hj]
         exact (mem_normFiber K).mp hI
@@ -465,7 +469,7 @@ theorem normCoeff_supportedPart_singleton (f : IdealArithmeticFunction K)
   · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq f P hn]
     refine Finset.sum_eq_zero fun I hI ↦ ?_
     by_contra hI0
-    obtain ⟨j, hj⟩ := hpow I hI0
+    obtain ⟨j, hj⟩ := exists_eq_pow_of_supportedPart_singleton_apply_ne_zero hI0
     exact hn ⟨j, by rw [← map_pow, ← hj]; exact (mem_normFiber K).mp hI⟩
 
 /-- **The finite Euler product.** For a multiplicative ideal arithmetic function, the norm

@@ -29,7 +29,45 @@ def count_lines(repo, commit, pathspecs):
     return sum(int(line.rsplit(":", 1)[1]) for line in out.splitlines())
 
 
-def series(repo, pathspecs, ref):
+def completed_days(dated, today=None):
+    """Drop any day that is not over yet, in UTC.
+
+    Takes any sequence of `(iso date, ...)` pairs and filters on the date, so it works on the
+    `(day, commit)` pairs read out of git as well as on finished `(day, count)` points.
+
+    The chart is regenerated every three hours, so the newest point was usually a few hours old
+    -- a day with only part of its commits in it. On a cumulative count that does not read as
+    "incomplete", it reads as "growth slowed down": the final segment rises by whatever landed
+    before lunchtime and then flattens, and the same point is redrawn steeper each time the
+    workflow runs. Plotting only finished days costs at most one day of latency and makes every
+    segment mean the same thing.
+
+    `today` is a parameter so tests do not depend on the clock. Days at or after it are dropped
+    rather than just the last one, because a commit can carry a future committer timestamp.
+    """
+    if today is None:
+        today = dt.datetime.now(dt.timezone.utc).date()
+    return [row for row in dated if dt.date.fromisoformat(row[0]) < today]
+
+
+def carry_to(points, last_day):
+    """Extend the series forward to `last_day`, carrying the final count.
+
+    The same argument as carry_quiet_days, applied to the end rather than the middle: after
+    the last commit on this ref nothing about the ref changed, so the count on every later day
+    is still the count at that commit. Without this the right edge sits wherever activity last
+    happened, and since dropping the unfinished current day moves that edge, a chart could
+    appear to stop three days earlier than it did on the previous run.
+
+    True for any `--ref`, not only HEAD. The series describes the tree at that ref, and the
+    tree at a historical ref does not change either.
+    """
+    if not points or dt.date.fromisoformat(points[-1][0]) >= last_day:
+        return points
+    return carry_quiet_days(points + [(last_day.isoformat(), points[-1][1])])
+
+
+def series(repo, pathspecs, ref, today=None):
     # The last commit to land on each day that touched the files, keyed by
     # committer timestamp: that records when the code actually entered the repo,
     # whereas author dates can predate their parents. Convert the timestamp to a
@@ -51,8 +89,42 @@ def series(repo, pathspecs, ref):
         timestamp, commit = line.split()
         day = dt.datetime.fromtimestamp(int(timestamp), dt.timezone.utc).date().isoformat()
         day_commit[day] = commit
-    return [(date, count_lines(repo, commit, pathspecs))
-            for date, commit in sorted(day_commit.items())]
+    if today is None:
+        today = dt.datetime.now(dt.timezone.utc).date()
+    # Trimmed before counting, not after: count_lines shells out to `git grep` over the whole
+    # tree for each day kept, so there is no reason to price a day that will be discarded.
+    kept = completed_days(sorted(day_commit.items()), today)
+    points = carry_quiet_days([(date, count_lines(repo, commit, pathspecs))
+                               for date, commit in kept])
+    return carry_to(points, today - dt.timedelta(days=1))
+
+
+def carry_quiet_days(points):
+    """Fill in the days on which nothing landed, carrying the last count forward.
+
+    A day with no matching commit is not missing data: the files were all still
+    there, unchanged, and `wc -l` on that day would have returned the previous
+    day's number. Sampling only commit days left those stretches as a single
+    long segment with no points on it -- the line was right, but the chart said
+    "no data here" where it should have said "nothing changed here", and the
+    two look quite different when one of them is a three-day pause. Tau Ceti has
+    two such stretches so far (2026-06-05..08 and 2026-07-12..14).
+
+    Every date between the first and the last therefore gets a point. The ends
+    are left alone: there is nothing to carry forward from before the first
+    commit, and extending past the last one would invent a measurement.
+    """
+    filled = []
+    for date, value in points:
+        if filled:
+            day = dt.date.fromisoformat(filled[-1][0]) + dt.timedelta(days=1)
+            end = dt.date.fromisoformat(date)
+            carried = filled[-1][1]
+            while day < end:
+                filled.append((day.isoformat(), carried))
+                day += dt.timedelta(days=1)
+        filled.append((date, value))
+    return filled
 
 
 def nice_ceil(x):
@@ -150,6 +222,6 @@ if __name__ == "__main__":
     a = ap.parse_args()
     data = series(a.repo, a.pathspecs, a.ref)
     if not data:
-        sys.exit("no commits matched pathspecs")
+        sys.exit("no commits matched pathspecs on a day that has finished")
     render(data, a.title, a.accent, a.out)
     print(f"wrote {a.out}: {len(data)} points, latest {data[-1][1]:,}")

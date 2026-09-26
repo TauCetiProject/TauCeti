@@ -6,19 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
-# Geodesics in inner-product spaces
+# Geodesics and the exponential map in inner-product spaces
 
 This file identifies the Riemannian geodesics of a finite-dimensional real inner-product space.
 Its standard Riemannian metric is constant, so the Levi-Civita connection has vanishing
 Christoffel map and affine lines are geodesics. Consequently their maximal intervals are all of
 `ℝ`, and the chosen maximal geodesic with initial point `p` and velocity `v` is `t ↦ p + t • v`.
 
+It follows that the exponential map at `p` is defined on all of `T_p F` and is translation by `p`,
+under the canonical identification `NormedSpace.fromTangentSpace` of `T_p F` with `F`, so its
+differential is the identity everywhere.  Every open neighbourhood of the origin that is
+star-shaped at the origin is therefore a normal domain.  In particular the tangent ball of radius
+`r > 0` is a normal domain whose normal neighbourhood is `Metric.ball p r`, and on it the
+Riemannian logarithm is `q ↦ q - p`.
+
 These formulas include the zero-dimensional space. They provide the flat model against which the
-domain and value of the Riemannian exponential map can be checked.
+exponential map, normal domains, and the logarithm can be checked.
 
 ## Main results
 
@@ -30,10 +37,23 @@ domain and value of the Riemannian exponential map can be checked.
 * `TauCeti.Manifold.geodesicInterval_model_space`: every affine initial condition exists for all
   time.
 * `TauCeti.Manifold.maximalGeodesic_model_space`: the chosen maximal geodesic is the affine line.
+* `TauCeti.Manifold.expDomain_model_space` and
+  `TauCeti.Manifold.isGeodesicallyCompleteAt_model_space`: the exponential map is defined
+  everywhere, so the space is geodesically complete at every point.
+* `TauCeti.Manifold.riemannianExp_model_space`: the exponential map at `p` is translation by `p`.
+* `TauCeti.Manifold.mfderiv_riemannianExp_apply_model_space` and
+  `TauCeti.Manifold.fderiv_riemannianExp_apply_model_space`: its differential is the identity.
+* `TauCeti.Manifold.isNormalDomain_model_space` and
+  `TauCeti.Manifold.isNormalDomain_ball_model_space`: open star-shaped neighbourhoods of the
+  origin, in particular tangent balls, are normal domains.
+* `TauCeti.Manifold.image_riemannianExp_ball_model_space`: the exponential image of the tangent
+  ball of radius `r` is the ball of radius `r` about `p`.
+* `TauCeti.Manifold.riemannianLog_model_space` and
+  `TauCeti.Manifold.riemannianLog_ball_model_space`: the logarithm sends `q` to `q - p`.
 
 ## References
 
-* M. P. do Carmo, *Riemannian Geometry*, Chapter 3, §2.
+* M. P. do Carmo, *Riemannian Geometry*, Chapter 3, §§2–3.
 -/
 
 public section
@@ -206,6 +226,131 @@ theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     exact heq.symm
   · rintro ⟨p, v, rfl⟩
     exact isGeodesicCurve_add_smul p v
+
+/-! ### The exponential map and the logarithm -/
+
+/-- The exponential map of a finite-dimensional inner-product space is defined on every tangent
+vector. -/
+@[simp]
+theorem expDomain_model_space (p : F) : expDomain 𝓘(ℝ, F) F p = univ :=
+  eq_univ_of_forall fun v ↦ mem_expDomain_iff.2 <| by
+    rw [geodesicInterval_model_space p v]
+    exact mem_univ 1
+
+/-- A finite-dimensional inner-product space is geodesically complete at every point. -/
+theorem isGeodesicallyCompleteAt_model_space (p : F) : IsGeodesicallyCompleteAt 𝓘(ℝ, F) F p :=
+  expDomain_eq_univ_iff.1 (expDomain_model_space p)
+
+/-- The exponential map of a finite-dimensional inner-product space at `p` is translation by
+`p`, under the canonical identification `NormedSpace.fromTangentSpace` of `T_p F` with `F`. -/
+@[simp]
+theorem riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    riemannianExp 𝓘(ℝ, F) F p v = p + NormedSpace.fromTangentSpace p v :=
+  (riemannianExp_def p v).trans <| (maximalGeodesic_model_space p v 1).trans <|
+    congrArg (p + ·) (one_smul ℝ (NormedSpace.fromTangentSpace p v))
+
+/-- The identification `NormedSpace.fromTangentSpace p`, typed with the instances that the
+Riemannian metric induces on `T_p F`, so that it can be differentiated. -/
+private def tangentSpaceEquivModel (p : F) : TangentSpace 𝓘(ℝ, F) p ≃L[ℝ] F :=
+  ContinuousLinearEquiv.refl ℝ F
+
+omit [FiniteDimensional ℝ F] in
+-- Both maps are the identity of `F`; they differ only in the instances elaborated on `T_p F`.
+private theorem tangentSpaceEquivModel_apply (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    tangentSpaceEquivModel p v = NormedSpace.fromTangentSpace p v := (rfl)
+
+private theorem hasMFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    HasMFDerivAt 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v
+      (tangentSpaceEquivModel p : TangentSpace 𝓘(ℝ, F) p →L[ℝ] F) := by
+  have hexp : riemannianExp 𝓘(ℝ, F) F p = fun u ↦ p + tangentSpaceEquivModel p u :=
+    funext fun u ↦ by rw [riemannianExp_model_space, tangentSpaceEquivModel_apply]
+  rw [hexp]
+  exact hasMFDerivAt_iff_hasFDerivAt.2 ((tangentSpaceEquivModel p).hasFDerivAt.const_add p)
+
+/-- The differential of the exponential map of a finite-dimensional inner-product space is the
+identity at every tangent vector. -/
+theorem mfderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
+    mfderiv 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v w =
+      NormedSpace.fromTangentSpace p w := by
+  rw [← tangentSpaceEquivModel_apply]
+  exact DFunLike.congr_fun (hasMFDerivAt_riemannianExp_model_space p v).mfderiv w
+
+/-- The Fréchet derivative of the exponential map of a finite-dimensional inner-product space is
+the identity at every tangent vector. This is the simp-normal form of
+`mfderiv_riemannianExp_apply_model_space`. -/
+@[simp]
+theorem fderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
+    fderiv ℝ (riemannianExp 𝓘(ℝ, F) F p) v w = NormedSpace.fromTangentSpace p w := by
+  rw [← mfderiv_eq_fderiv]
+  exact mfderiv_riemannianExp_apply_model_space p v w
+
+/-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
+radius `r` onto the ball of radius `r` about `p`. -/
+theorem image_riemannianExp_ball_model_space (p : F) (r : ℝ) :
+    riemannianExp 𝓘(ℝ, F) F p '' Metric.ball (0 : TangentSpace 𝓘(ℝ, F) p) r =
+      Metric.ball p r := by
+  ext q
+  simp only [mem_image, Metric.mem_ball, riemannianExp_model_space, dist_eq_norm, sub_zero]
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    rw [norm_tangentSpace_vectorSpace] at hv
+    rw [add_sub_cancel_left]
+    exact hv
+  · intro hq
+    refine ⟨(NormedSpace.fromTangentSpace p).symm (q - p), ?_, ?_⟩
+    · rw [norm_tangentSpace_vectorSpace]
+      exact hq
+    · rw [ContinuousLinearEquiv.apply_symm_apply, add_sub_cancel]
+
+/-- In a finite-dimensional inner-product space, every open neighbourhood of the origin that is
+star-shaped at the origin is a normal domain. -/
+theorem isNormalDomain_model_space (p : F) {U : Set (TangentSpace 𝓘(ℝ, F) p)} (hU : IsOpen U)
+    (h0 : 0 ∈ U) (hstar : StarConvex ℝ 0 U) : IsNormalDomain 𝓘(ℝ, F) F p U := by
+  let _ : T2Space (ModelProd F F) := Prod.t2Space
+  let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
+    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
+  refine ⟨hU, h0, hstar, (expDomain_model_space p).symm ▸ subset_univ U, fun v _ w _ h ↦ ?_,
+    fun v ↦ ?_⟩
+  · simp only [riemannianExp_model_space, add_right_inj] at h
+    exact (NormedSpace.fromTangentSpace p).injective h
+  · have hsmooth := contMDiffOn_riemannianExp (I := 𝓘(ℝ, F)) (M := F) p
+    rw [expDomain_model_space] at hsmooth
+    exact isLocalDiffeomorphAt_of_mfderiv_eq hsmooth isOpen_univ (mem_univ _)
+      BoundarylessManifold.isInteriorPoint (by simp)
+      (hasMFDerivAt_riemannianExp_model_space p v.1).mfderiv.symm
+
+/-- In a finite-dimensional inner-product space, every tangent ball of positive radius is a
+normal domain; its normal neighbourhood is the ball of the same radius about the base point
+(`image_riemannianExp_ball_model_space`). -/
+theorem isNormalDomain_ball_model_space (p : F) {r : ℝ} (hr : 0 < r) :
+    IsNormalDomain 𝓘(ℝ, F) F p (Metric.ball (0 : TangentSpace 𝓘(ℝ, F) p) r) :=
+  isNormalDomain_model_space p Metric.isOpen_ball (Metric.mem_ball_self hr)
+    ((convex_ball (0 : TangentSpace 𝓘(ℝ, F) p) r).starConvex (Metric.mem_ball_self hr))
+
+/-- The Riemannian logarithm of a finite-dimensional inner-product space at `p` sends `q` to
+`q - p`, read in `T_p F`, whenever this vector lies in the chosen set of tangent vectors. -/
+theorem riemannianLog_model_space {p q : F} {U : Set (TangentSpace 𝓘(ℝ, F) p)}
+    (hq : (NormedSpace.fromTangentSpace p).symm (q - p) ∈ U) :
+    riemannianLog 𝓘(ℝ, F) F p U q = (NormedSpace.fromTangentSpace p).symm (q - p) := by
+  have hex : ∃ v ∈ U, riemannianExp 𝓘(ℝ, F) F p v = q :=
+    ⟨_, hq, by rw [riemannianExp_model_space, ContinuousLinearEquiv.apply_symm_apply,
+      add_sub_cancel]⟩
+  have heq := invFunOn_eq hex
+  rw [← riemannianLog_def, riemannianExp_model_space] at heq
+  exact (NormedSpace.fromTangentSpace p).eq_symm_apply.2 (eq_sub_of_add_eq' heq)
+
+/-- On the ball of radius `r` about `p` in a finite-dimensional inner-product space, the
+Riemannian logarithm relative to the tangent ball of radius `r` sends `q` to `q - p`, read in
+`T_p F`. -/
+@[simp]
+theorem riemannianLog_ball_model_space {p q : F} {r : ℝ} (hq : q ∈ Metric.ball p r) :
+    riemannianLog 𝓘(ℝ, F) F p (Metric.ball 0 r) q =
+      (NormedSpace.fromTangentSpace p).symm (q - p) := by
+  rw [← image_riemannianExp_ball_model_space p r] at hq
+  obtain ⟨v, hv, rfl⟩ := hq
+  apply riemannianLog_model_space
+  rwa [riemannianExp_model_space, add_sub_cancel_left,
+    ContinuousLinearEquiv.symm_apply_apply]
 
 end TauCeti.Manifold
 

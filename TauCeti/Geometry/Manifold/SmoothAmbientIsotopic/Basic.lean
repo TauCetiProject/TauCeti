@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Topology.Homotopy.AmbientIsotopic.Basic
 
 /-!

@@ -126,7 +126,6 @@ private theorem assoc_symm_lTensor_comul_natural (t : N ⊗[R] C) : (TensorProdu
       ((SMulMemClass.subtype N).rTensor C).rTensor C
         ((TensorProduct.assoc R N C C).symm (Coalgebra.comul.lTensor N t)) := by
   induction t with
-  | zero => simp
   | tmul n c =>
       simp only [LinearMap.rTensor_def, LinearMap.lTensor_def, TensorProduct.map_tmul,
         LinearMap.id_coe, id_eq]

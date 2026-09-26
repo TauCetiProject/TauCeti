@@ -29,7 +29,7 @@ tensoring an invertible sheaf with a globally trivial rank-one sheaf preserves i
 These are the local computations used after refining two trivializing covers to a common cover:
 both factors are the standard free rank-one sheaf there, so their tensor product is again
 trivial. Restriction compatibility is provided by
-`TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction`.
+`TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal`.
 -/
 
 public section

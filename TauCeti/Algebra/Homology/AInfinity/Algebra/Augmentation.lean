@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Projection
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
 /-!
@@ -151,17 +151,14 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/
 noncomputable def reducedGrading (ε : 𝒜.Augmentation) :
-    InternalGrading R ε.augmentationIdeal where
-  piece p := (𝒜.grading.piece p).comap ε.augmentationIdeal.subtype
-  isInternal := DirectSum.isInternal_comap 𝒜.grading.piece
-    (fun p ↦ (𝒜.grading.piece p).comap ε.augmentationIdeal.subtype)
-    ε.augmentationIdeal.subtype Subtype.val_injective (fun _ _ ↦ Iff.rfl)
-    fun p x ↦ ⟨⟨DirectSum.decompose 𝒜.grading.piece (x : A) p,
-      ε.decompose_mem_augmentationIdeal x p⟩, rfl⟩
+    InternalGrading R ε.augmentationIdeal :=
+  𝒜.grading.submodule ε.augmentationIdeal fun p x hx ↦
+    ε.decompose_mem_augmentationIdeal ⟨x, hx⟩ p
 
 @[simp]
 theorem reducedGrading_piece (ε : 𝒜.Augmentation) (p : ℤ) :
-    ε.reducedGrading.piece p = (𝒜.grading.piece p).comap ε.augmentationIdeal.subtype := (rfl)
+    ε.reducedGrading.piece p = (𝒜.grading.piece p).comap ε.augmentationIdeal.subtype :=
+  𝒜.grading.submodule_piece _ _ p
 
 /-- Every `A∞` operation preserves the reduced augmentation ideal when all its inputs lie there. -/
 theorem m_mem_augmentationIdeal (ε : 𝒜.Augmentation) (n : ℕ)

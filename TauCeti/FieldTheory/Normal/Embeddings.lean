@@ -79,7 +79,7 @@ instance isPretransitiveAlgHom [Normal F M] :
   -- Transport `φ`'s field range onto `ψ`'s, then lift that isomorphism to `M` by normality.
   exists_smul_eq φ ψ :=
     ⟨(φ.equivFieldRange.symm.trans ψ.equivFieldRange).liftNormal M, AlgHom.ext fun x => by
-      rw [smul_algHom_apply]
+      rw [AlgEquiv.smul_algHom_apply]
       exact AlgHom.liftNormal_equivFieldRange_apply φ ψ x⟩
 
 end AlgEquiv

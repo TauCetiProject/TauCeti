@@ -59,27 +59,23 @@ variable {P Q : Subgroup G}
 conjugate of any given Sylow pro-`p` subgroup. -/
 theorem IsProP.exists_le_map_conj (hQ : IsProP p Q) (hP : IsProPSylow p P) :
     ∃ g : G, Q ≤ P.map (MulAut.conj g).toMonoidHom := by
-  -- At each finite level the image of `P` is an ordinary Sylow subgroup.
-  let PSylow (U : OpenNormalSubgroup G) : Sylow p (G ⧸ U.toSubgroup) :=
-    (hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U)
-  have hPSylow (U : OpenNormalSubgroup G) :
-      (PSylow U : Subgroup (G ⧸ U.toSubgroup)) = P.map (QuotientGroup.mk' U.toSubgroup) :=
-    IsPGroup.toSylow_coe _ _
-  -- The elements that conjugate `P` past `Q` in the quotient by `U`.
+  -- The elements that conjugate `P` past `Q` in the quotient by `U`, using that at each finite
+  -- level the image of `P` is an ordinary Sylow subgroup.
   let conjugators (U : OpenNormalSubgroup G) : Set (G ⧸ U.toSubgroup) :=
-    {x | Q.map (QuotientGroup.mk' U.toSubgroup) ≤ (x • PSylow U : Sylow p (G ⧸ U.toSubgroup))}
+    {x | Q.map (QuotientGroup.mk' U.toSubgroup) ≤
+      (x • hP.toSylow U : Sylow p (G ⧸ U.toSubgroup))}
   let t (U : OpenNormalSubgroup G) : Set G := QuotientGroup.mk' U.toSubgroup ⁻¹' conjugators U
   have mem_t {U : OpenNormalSubgroup G} {g : G} : g ∈ t U ↔
       Q.map (QuotientGroup.mk' U.toSubgroup) ≤
         (P.map (MulAut.conj g).toMonoidHom).map (QuotientGroup.mk' U.toSubgroup) := by
     simp only [t, conjugators, Set.mem_preimage, Set.mem_ofPred_eq, Sylow.coe_subgroup_smul,
-      QuotientGroup.mk'_apply, Subgroup.map_map_conj, hPSylow]
+      QuotientGroup.mk'_apply, Subgroup.map_map_conj, IsProPSylow.toSylow_coe]
     -- Mathlib defines the pointwise `MulAut` action on subgroups as `Subgroup.map`
     -- (`Subgroup.pointwise_smul_def` is `rfl`) and provides no rewrite lemma to `toMonoidHom`.
     exact Iff.rfl
   have ht_nonempty (U : OpenNormalSubgroup G) : (t U).Nonempty := by
     obtain ⟨S, hS⟩ := (hQ.isPGroup_map_mk' U).exists_le_sylow
-    obtain ⟨x, hx⟩ := MulAction.exists_smul_eq (G ⧸ U.toSubgroup) (PSylow U) S
+    obtain ⟨x, hx⟩ := MulAction.exists_smul_eq (G ⧸ U.toSubgroup) (hP.toSylow U) S
     obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective U.toSubgroup x
     refine ⟨g, ?_⟩
     simp only [t, conjugators, Set.mem_preimage, Set.mem_ofPred_eq, hx]
@@ -131,18 +127,14 @@ theorem IsProPSylow.eq_of_le (hP : IsProPSylow p P) (hQ : IsProP p Q) (hPQ : P �
   rw [Subgroup.eq_iInf_sup_openNormalSubgroup P hP.isClosed]
   refine le_iInf fun U ↦ ?_
   -- The image of `P` in `G ⧸ U` is a Sylow subgroup, so the `p`-group above it is no bigger.
-  have hPU : ((hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U) :
-      Subgroup (G ⧸ U.toSubgroup)) = P.map (QuotientGroup.mk' U.toSubgroup) :=
-    IsPGroup.toSylow_coe _ _
   have himage : Q.map (QuotientGroup.mk' U.toSubgroup) =
       P.map (QuotientGroup.mk' U.toSubgroup) := by
-    have hle : ((hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U) :
-        Subgroup (G ⧸ U.toSubgroup)) ≤ Q.map (QuotientGroup.mk' U.toSubgroup) := by
-      rw [hPU]
+    have hle : (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup)) ≤
+        Q.map (QuotientGroup.mk' U.toSubgroup) := by
+      rw [hP.toSylow_coe]
       exact Subgroup.map_mono hPQ
-    have hmax := ((hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U)).is_maximal'
-      (hQ.isPGroup_map_mk' U) hle
-    rwa [hPU] at hmax
+    have hmax := (hP.toSylow U).is_maximal' (hQ.isPGroup_map_mk' U) hle
+    rwa [hP.toSylow_coe] at hmax
   calc Q ≤ (Q.map (QuotientGroup.mk' U.toSubgroup)).comap (QuotientGroup.mk' U.toSubgroup) :=
         Subgroup.le_comap_map _ _
     _ = P ⊔ U.toSubgroup := by

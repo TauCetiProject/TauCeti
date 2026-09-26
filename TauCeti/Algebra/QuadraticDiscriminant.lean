@@ -14,7 +14,10 @@ import Mathlib.Data.Rat.Floor
 Mathlib's `discrim_le_zero` shows that a quadratic polynomial over a linearly ordered field which
 is non-negative at every point of the field has non-positive discriminant. This file supplies two
 facts about the homogeneous two-variable form `a * x ^ 2 + b * x * y + c * y ^ 2` that it does not
-give: the reverse implication, and an integral version whose hypothesis is much weaker.
+give: the reverse implication, and an integral version whose hypothesis is much weaker. It also
+records two elementary facts about discriminants used for positive definite integral forms: a
+negative discriminant together with `0 ≤ a` forces `0 < a`, and an integral discriminant is `0` or
+`1` modulo `4`.
 
 The integral version is the substantial one, and it is worth being precise about what makes it
 substantial. Over a *field*, non-negativity along a single line `y = y₀ ≠ 0` already forces
@@ -40,11 +43,16 @@ conclusion to every `(x, y)`.
   non-negativity of `a x² + b x y + c y²` in `x` alone forces `discrim a b c ≤ 0`.
 * `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd`: the same conclusion from non-negativity
   on `{(x, y) : d ∤ x ∧ d ∤ y}`, for any non-unit `d`.
+* `pos_of_nonneg_of_discrim_lt_zero`: a quadratic of negative discriminant with `0 ≤ a` has
+  `0 < a`.
+* `Int.discrim_emod_four`: `discrim a b c % 4 = b % 2`, so an integral discriminant is `0` or `1`
+  modulo `4`.
 
-Both are proved from a common lemma in which `x` runs over an arithmetic progression rather than
-all of `ℤ`. Only one `x` is ever used — the member of the progression nearest the minimum of the
-restricted form — so thinning the line to gap `m` costs exactly a factor `m` in the height
-hypothesis, which the choice of `y` absorbs; `m = 1` is the full line.
+The two `Int.discrim_le_zero_…` results are proved from a common lemma in which `x` runs over an
+arithmetic progression rather than all of `ℤ`. Only one `x` is ever used — the member of the
+progression nearest the minimum of the restricted form — so thinning the line to gap `m` costs
+exactly a factor `m` in the height hypothesis, which the choice of `y` absorbs; `m = 1` is the full
+line.
 
 The weaker hypothesis constraining only `y` is not stated separately: it is strictly stronger
 than the one above, so a caller holding it applies the same theorem through
@@ -81,6 +89,12 @@ theorem nonneg_of_discrim_le_zero {R : Type*} [CommRing R] [LinearOrder R]
   -- The completed square `4a·Q = (2ax + by)² + (4ac − b²)y²` uses no division.
   have hb : 0 ≤ 4 * a * c - b ^ 2 := by rw [discrim] at hd; linarith
   nlinarith [sq_nonneg (2 * a * x + b * y), mul_nonneg hb (sq_nonneg y)]
+
+/-- A quadratic of negative discriminant with a non-negative leading coefficient has a positive
+one: at `a = 0` the discriminant is `b ^ 2`, which is not negative. -/
+theorem pos_of_nonneg_of_discrim_lt_zero {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a b c : R} (ha : 0 ≤ a) (hd : discrim a b c < 0) : 0 < a :=
+  ha.lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
 
 /-- Some member of the progression `x₀ + m * ℤ` puts `2 a x + z` within `a * m` of zero, for any
 constant `z`.
@@ -278,3 +292,10 @@ theorem Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd {a b c d : ℤ} (hd 
     linarith
   have hyd : ¬ d ∣ y := hdm _
   exact discrim_le_zero_of_nonneg_on_progression hm0 hheight fun k => h _ y (hdm k) hyd
+
+
+/-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
+division by `4`, so it is `0` or `1` modulo `4`. -/
+@[simp]
+theorem Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
+  rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]

@@ -21,9 +21,12 @@
 #      Its new rev is also one whose master-push build completed, so its oleans are in the
 #      cache (see step 2b).
 #   3. The PR manifest's package set, MINUS mathlib, is EXACTLY mathlib's own
-#      lake-manifest at the new rev, field-for-field (type/url/rev/inputRev) — no
-#      package added, removed, renamed, retyped (e.g. a `path` dep), duplicated, or
-#      re-pointed independently of the trusted mathlib.
+#      lake-manifest at the new rev, comparing WHOLE entries (only `inherited` may differ,
+#      and must be true) — no package added, removed, renamed, retyped (e.g. a `path`
+#      dep), duplicated, re-pointed, or re-configured (`subDir`, `configFile`,
+#      `manifestFile`, `scope`) independently of the trusted mathlib. The mathlib entry
+#      differs from base only in `rev`, and every top-level field (`packagesDir`,
+#      `lakeDir`, ...) equals base. See scripts/bump_manifest.py.
 #   4. lean-toolchain moves monotonically forward on the leanprover/lean4 channel
 #      AND equals mathlib's lean-toolchain at the new rev.
 #
@@ -171,42 +174,8 @@ ML_MANIFEST="$(gh api "repos/$ML_SLUG/contents/lake-manifest.json?ref=$ML_REV_P"
 ML_TMP="$(mktemp)"; trap 'rm -f "$ML_TMP"' EXIT
 printf '%s' "$ML_MANIFEST" > "$ML_TMP"
 
-derived_msg="$(python3 - "$PR/lake-manifest.json" "$ML_TMP" <<'PY'
-import json,sys,re
-def norm_url(u):
-    u=(u or "").rstrip("/")
-    return u[:-4] if u.endswith(".git") else u
-def load(p):
-    return json.load(open(p)).get("packages",[])
-pr, ml = load(sys.argv[1]), load(sys.argv[2])
-
-def tup(p):  # the identity we require to match, field-for-field
-    return (p.get("type"), norm_url(p.get("url")), p.get("rev"), p.get("inputRev"))
-
-# PR manifest: no dup names, every package is git pinned to a 40-hex SHA.
-prnames=[p.get("name") for p in pr]
-dups=sorted({n for n in prnames if prnames.count(n)>1})
-if dups: print(f"duplicate package names in PR manifest: {dups}"); sys.exit(1)
-for p in pr:
-    if p.get("type")!="git":
-        print(f"PR pins non-git package '{p.get('name')}' (type {p.get('type')!r}); only git deps derived from mathlib are allowed"); sys.exit(1)
-    if not re.fullmatch(r"[0-9a-f]{40}", p.get("rev") or ""):
-        print(f"PR dep '{p.get('name')}' rev is not a 40-hex commit SHA"); sys.exit(1)
-
-# The PR's deps, minus mathlib, must be EXACTLY mathlib's own deps — same names, same fields.
-pr_by  = {p.get("name"): p for p in pr if p.get("name")!="mathlib"}
-ml_by  = {p.get("name"): p for p in ml}
-only_pr = sorted(set(pr_by) - set(ml_by))
-only_ml = sorted(set(ml_by) - set(pr_by))
-if only_pr: print(f"PR pins deps mathlib@new does not depend on: {only_pr}"); sys.exit(1)
-if only_ml: print(f"PR is missing deps mathlib@new depends on: {only_ml}"); sys.exit(1)
-for n in pr_by:
-    if tup(pr_by[n]) != tup(ml_by[n]):
-        print(f"dep '{n}' does not match mathlib@new (PR {tup(pr_by[n])} vs mathlib {tup(ml_by[n])})"); sys.exit(1)
-print("OK")
-PY
-)" || fail "${derived_msg:-transitive pins do not match mathlib@$ML_REV_P}"
-echo "bump-guard: all transitive pins match mathlib@$ML_REV_P exactly."
+derived_msg="$(python3 "$(dirname "$0")/bump_manifest.py" "$PR/lake-manifest.json" "$ML_TMP" "$BASE/lake-manifest.json")" || fail "${derived_msg:-transitive pins do not match mathlib@$ML_REV_P}"
+echo "bump-guard: the manifest matches mathlib@$ML_REV_P and base in every field but mathlib's rev."
 
 # --- 4. toolchain: monotonic forward AND consistent with mathlib --------------
 TC_B="$(tr -d '[:space:]' <"$BASE/lean-toolchain" 2>/dev/null)"

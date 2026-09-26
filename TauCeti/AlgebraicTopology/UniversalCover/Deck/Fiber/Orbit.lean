@@ -14,11 +14,11 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular.Basic
 
 This file packages the quotient of a single fibre by the restricted deck action. Mathlib
 already provides the generic orbit quotient `MulAction.orbitRel.Quotient`; the declarations
-here are the deck-specific spelling and transport API needed by the universal-covers roadmap
-when pointed covers are compared with unpointed covers.
+here are the deck-specific spelling and transport API used when pointed covers are compared
+with unpointed covers.
 
 For a map `p : E → B` and a base point `b : B`, `Deck.FiberOrbitQuotient p b` is the set of
-orbits of the action of `Deck p` on the fibre `p ⁻¹' {b}`. An over-base homeomorphism
+orbits of the action of `deck p` on the fibre `p ⁻¹' {b}`. An over-base homeomorphism
 identifies the corresponding quotients by transporting fibre points and conjugating deck
 transformations. Regularity of the deck action is equivalently surjectivity of `p` together
 with each of these fibre-orbit quotients being a subsingleton.
@@ -36,8 +36,7 @@ with each of these fibre-orbit quotients being a subsingleton.
 
 ## References
 
-This supplies a bookkeeping prerequisite for the Tau Ceti universal-covers roadmap, Stage 2:
-the pointed/unpointed connected-cover correspondence records how chosen lifts vary up to the
+The pointed/unpointed connected-cover correspondence records how chosen lifts vary up to the
 deck action, and regular covers are exactly those whose deck action is transitive on fibres.
 -/
 
@@ -52,7 +51,7 @@ variable {E F G B : Type*} [TopologicalSpace E] [TopologicalSpace F] [Topologica
 
 /-- The quotient of the fibre over `b` by the restricted action of the deck group. -/
 abbrev FiberOrbitQuotient (p : E → B) (b : B) : Type _ :=
-  MulAction.orbitRel.Quotient (Deck p) (p ⁻¹' {b})
+  MulAction.orbitRel.Quotient (deck p) (p ⁻¹' {b})
 
 /-- The deck orbit class of a point in one fibre. -/
 @[expose] def fiberOrbitClass (e : p ⁻¹' {b}) : FiberOrbitQuotient p b :=
@@ -67,7 +66,7 @@ lemma fiberOrbitClass_eq_mk (e : p ⁻¹' {b}) :
 orbit. This uses the orientation of `MulAction.orbitRel_apply`: the left point is a member of
 the orbit of the right point. -/
 lemma fiberOrbitClass_eq_iff (e e' : p ⁻¹' {b}) :
-    fiberOrbitClass e = fiberOrbitClass e' ↔ e ∈ MulAction.orbit (Deck p) e' := by
+    fiberOrbitClass e = fiberOrbitClass e' ↔ e ∈ MulAction.orbit (deck p) e' := by
   rw [fiberOrbitClass_eq_mk, fiberOrbitClass_eq_mk, Quotient.eq'', MulAction.orbitRel_apply]
 
 /-- An over-base homeomorphism identifies deck-orbit quotients of corresponding fibres. -/
@@ -154,7 +153,7 @@ lemma isRegular_iff_surjective_subsingleton_fiberOrbitQuotient :
     IsRegular p ↔ Function.Surjective p ∧ ∀ b : B, Subsingleton (FiberOrbitQuotient p b) := by
   rw [isRegular_iff]
   refine and_congr_right fun _ => forall_congr' fun b => ?_
-  exact MulAction.pretransitive_iff_subsingleton_quotient (Deck p) (p ⁻¹' {b})
+  exact MulAction.pretransitive_iff_subsingleton_quotient (deck p) (p ⁻¹' {b})
 
 namespace IsRegular
 

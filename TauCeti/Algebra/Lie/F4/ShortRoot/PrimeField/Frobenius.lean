@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 public import TauCeti.FieldTheory.Finite.Frobenius
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
@@ -15,6 +16,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
 This file defines the Frobenius endomorphisms of the carrier's matrix-valued points. The
 finite-field Frobenius algebra homomorphism exists for every `ZMod 2`-algebra, including the zero
 ring, so the coefficient formula and all functor laws need no separate characteristic hypothesis.
+The coordinate and group-scheme Frobenius maps are also exposed as `frobeniusCoordinateMap`
+and `frobeniusHom`.
 
 ## Main declarations
 
@@ -154,6 +157,72 @@ theorem map_subtype_fixedSubgroup_frobenius_eq (m : ℕ) (A : Type v) [CommRing 
     TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_subalgebra 26 definingIdeal _,
     points_eq_hopfIdealPointsSubgroup A, TauCeti.FiniteField.frobeniusFixedSubalgebra_def,
     _root_.Matrix.GeneralLinearGroup.range_map_val_equalizer]
+
+/-! ## Frobenius of the carrier group scheme -/
+
+open AlgebraicGeometry CategoryTheory
+
+local notation "Q" => CommHopfAlgCat.quotient
+  (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
+  (CommHopfAlgCat.commonKernelHopfIdeal generator)
+
+/-- The squaring Frobenius of the carrier coordinate Hopf algebra. -/
+noncomputable def frobeniusCoordinateMap : Q ⟶ Q :=
+  CommHopfAlgCat.ofHom (TauCeti.frobeniusBialgHom (ZMod 2) Q)
+
+/-- The coordinate Frobenius is the canonical Frobenius bialgebra homomorphism. -/
+theorem frobeniusCoordinateMap_def :
+    frobeniusCoordinateMap = CommHopfAlgCat.ofHom (TauCeti.frobeniusBialgHom (ZMod 2) Q) := by
+  rfl
+
+/-- The Frobenius coordinate morphism squares each function on the carrier. -/
+@[simp] theorem frobeniusCoordinateMap_apply (x : Q) :
+    frobeniusCoordinateMap.hom x = x ^ 2 := by
+  rw [frobeniusCoordinateMap_def, CommHopfAlgCat.hom_ofHom,
+    TauCeti.frobeniusBialgHom_apply, ZMod.card]
+
+/-- Evaluating the coordinate Frobenius is the named Frobenius on matrix-valued points. -/
+theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
+    (A : Type*) [CommRing A] [Algebra (ZMod 2) A]
+    (q : HopfAlgebra.points (H := Q) (CommAlgCat.of (ZMod 2) A)) :
+    coordinatePointsEquiv A (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
+      frobenius 1 A (coordinatePointsEquiv A q) := by
+  apply Subtype.ext
+  rw [coe_coordinatePointsEquiv, coe_frobenius, coe_coordinatePointsEquiv]
+  have h : (q.ofConv.comp frobeniusCoordinateMap.hom.toAlgHom).comp
+      (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
+        (CommHopfAlgCat.commonKernelHopfIdeal generator)).hom.toAlgHom =
+      (FiniteField.frobeniusAlgHom (ZMod 2) A).comp
+        (q.ofConv.comp (CommHopfAlgCat.mkQuotient
+          (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
+          (CommHopfAlgCat.commonKernelHopfIdeal generator)).hom.toAlgHom) := by
+    ext x
+    simp only [frobeniusCoordinateMap_def, CommHopfAlgCat.hom_ofHom,
+      AlgHom.comp_apply, BialgHom.coe_toAlgHom, TauCeti.frobeniusBialgHom_apply,
+      FiniteField.coe_frobeniusAlgHom, map_pow]
+  -- Unfold point evaluation through the quotient to use the coordinate Frobenius identity.
+  change GeneralLinear.pointsMulEquiv 26 (WithConv.toConv
+    ((q.ofConv.comp frobeniusCoordinateMap.hom.toAlgHom).comp _)) = _
+  rw [h]
+  simp only [pow_one]
+  exact GeneralLinear.pointsMulEquiv_mapValue 26 (FiniteField.frobeniusAlgHom (ZMod 2) A)
+    (WithConv.toConv (q.ofConv.comp (CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
+      (CommHopfAlgCat.commonKernelHopfIdeal generator)).hom.toAlgHom))
+
+/-- The characteristic-two Frobenius of the explicit F4 carrier group scheme. -/
+noncomputable def frobeniusHom : groupScheme ⟶ groupScheme :=
+  eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
+    (hopfSpec (CommRingCat.of (ZMod 2))).map frobeniusCoordinateMap.op ≫
+      eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm
+
+/-- The carrier Frobenius is represented by its coordinate Frobenius morphism. -/
+theorem frobeniusHom_eq_map_frobeniusCoordinateMap :
+    frobeniusHom =
+      eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator) ≫
+        (hopfSpec (CommRingCat.of (ZMod 2))).map frobeniusCoordinateMap.op ≫
+          eqToHom (GeneralLinear.generatedGroupScheme_def 26 generator).symm := by
+  rfl
 
 end PrimeField
 

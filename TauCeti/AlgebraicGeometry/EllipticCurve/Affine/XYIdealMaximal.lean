@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 
+-- Proof-only: membership in the ideal of a point, as a span of two polynomials.
+import Mathlib.RingTheory.Polynomial.Ideal
+
 /-!
 # Ideals of points of a Weierstrass curve
 
@@ -26,6 +29,8 @@ want a field.
 
 * `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_ne_bot`: `XYIdeal W x y` is nonzero, over
   any nontrivial commutative base.
+* `WeierstrassCurve.Affine.CoordinateRing.mk_mem_XYIdeal_iff`: a class lies in the ideal of a
+  point exactly when its representative vanishes there.
 * `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal`: `XYIdeal W x y` is maximal
   for any `y : F[X]` solving the Weierstrass equation at `x`, matching the generality of
   `XYIdeal` and `quotientXYIdealEquiv` themselves.
@@ -168,6 +173,26 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.mem_XYIdeal_iff_evalAlgHom
 end EvalKernel
 
 end CommRing
+
+section Membership
+
+variable {R : Type*} [CommRing R] {W : _root_.WeierstrassCurve.Affine R} {x : R}
+
+/-- **A class lies in the ideal of a point exactly when its representative vanishes there.**
+The ideal `⟨X - x, Y - y⟩` collects the classes of the polynomials that vanish at `(x, y)`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.mk_mem_XYIdeal_iff {y : R}
+    (h : W.Equation x y) (p : R[X][Y]) :
+    CoordinateRing.mk W p ∈ CoordinateRing.XYIdeal W x (C y) ↔ p.evalEval x y = 0 := by
+  -- `mem_XYIdeal_iff_evalAlgHom_eq_zero` and `evalAlgHom_mk` are stated over a base change; at the
+  -- trivial one they apply to `W` itself, but only through an equation rather than by unification,
+  -- which would have to unfold `baseChange` and does not terminate.
+  have hself : (W⁄R) = W := WeierstrassCurve.map_id W
+  have h' : (W⁄R).toAffine.Equation x y := by rw [hself]; exact h
+  rw [CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero h', CoordinateRing.evalAlgHom_mk h' p]
+  simp only [Algebra.algebraMap_self, Polynomial.mapRingHom_id, Polynomial.map_id]
+
+end Membership
 
 variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} {x : F}
 

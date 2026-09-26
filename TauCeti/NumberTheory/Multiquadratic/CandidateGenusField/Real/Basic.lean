@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
-public import TauCeti.NumberTheory.NumberField.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 import Mathlib.NumberTheory.NumberField.CMField
 import Mathlib.RingTheory.RingHom.Unramified

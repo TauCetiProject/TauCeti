@@ -254,7 +254,9 @@ theorem exists_nat_weights_wassersteinEDist_le
     (hb_sum.trans ha_sum.symm)).trans ?_
   -- the excess mass is at most `1 / M` at each atom, so its `L^p` seminorm is below `ε`
   refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-  rw [eLpNorm_rpow_eq_lintegral hp0 hp]
+  have hanchor : Measurable fun x : X ↦ edist x x₀ :=
+    hd.comp (measurable_id.prodMk measurable_const)
+  rw [eLpNorm_rpow_eq_lintegral hp0 hp hanchor.aemeasurable]
   have hint : ∫⁻ x, edist x x₀ ^ p.toReal ∂(∑ y ∈ s, (a y - b y) • Measure.dirac y)
       = ∑ y ∈ s, (a y - b y) * edist y x₀ ^ p.toReal := by
     simp [lintegral_smul_measure]
@@ -291,11 +293,14 @@ theorem exists_map_range_wassersteinEDist_le
   have hT_meas : Measurable fun x ↦ u (Nat.find (hidx x)) :=
     Measurable.of_discrete.comp hidx_meas
   refine ⟨fun x ↦ u (Nat.find (hidx x)), hT_meas, fun x ↦ ⟨_, rfl⟩, ?_⟩
+  have hdisp : Measurable fun x ↦ edist x (u (Nat.find (hidx x))) :=
+    hd.comp (measurable_id.prodMk hT_meas)
   refine (wassersteinEDist_map_le hd hT_meas.aemeasurable p).trans ?_
-  refine le_trans (eLpNorm_mono_enorm (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
+  refine le_trans (eLpNorm_mono_enorm hdisp.aestronglyMeasurable
+    (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
   · simpa [edist_dist] using ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le
   · rcases eq_or_ne p 0 with rfl | hp0
-    · simp
+    · simp [eLpNorm_exponent_zero aestronglyMeasurable_const]
     · rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero ν)]
       simp
 
@@ -338,10 +343,8 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
   -- the ground distance to the basepoint `u 0`, and its `p`-th moment
   set f : X → ℝ≥0∞ := fun y ↦ edist (u 0) y with hf_def
   have hf_meas : Measurable f := measurable_edist.comp (measurable_const.prodMk measurable_id)
-  have hmom : MemLp f p μ := hμ.memLp hf_meas.aestronglyMeasurable
-  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ := by
-    simpa only [hasFiniteIntegral_iff_enorm, enorm_eq_self, lt_top_iff_ne_top] using
-      (hmom.integrable_enorm_rpow hp0 hp_top).hasFiniteIntegral
+  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ :=
+    (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ
   -- the tail sets decrease to the empty set, so their contribution vanishes
   set A : ℕ → Set X := fun n ↦ {x | n ≤ idx x} with hA_def
   have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦ hidx_meas MeasurableSet.of_discrete
@@ -385,7 +388,7 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
       exact self_le_add_left _ _
   have hind : eLpNorm ((A n).indicator f) p μ ≤ c := by
     refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-    rw [eLpNorm_rpow_eq_lintegral hp0 hp_top]
+    rw [eLpNorm_rpow_eq_lintegral hp0 hp_top (hf_meas.indicator (hA_meas n)).aemeasurable]
     refine le_trans (le_of_eq (lintegral_congr fun y ↦ ?_)) hn
     by_cases hy : y ∈ A n
     · simp [Set.indicator_of_mem hy]
@@ -394,10 +397,11 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
       ≤ eLpNorm (fun x ↦ edist x (T x)) p μ :=
         wassersteinEDist_map_le measurable_edist hT_meas.aemeasurable p
     _ ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
-        eLpNorm_mono_enorm fun x ↦ by simpa using hbound x
+        eLpNorm_mono_enorm
+          (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
+          fun x ↦ by simpa using hbound x
     _ ≤ eLpNorm (fun _ : X ↦ ENNReal.ofReal δ) p μ + eLpNorm ((A n).indicator f) p μ :=
-        eLpNorm_add_le aestronglyMeasurable_const
-          (hf_meas.indicator (hA_meas n)).aestronglyMeasurable hp
+        eLpNorm_add_le hp
     _ ≤ c + c := by
         refine add_le_add (le_of_eq ?_) hind
         rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero μ)]

@@ -40,7 +40,8 @@ orthogonal, and self-paired to `n! · √(2π)`, in `L²` of the Gaussian weight
 
 The closed form of the density itself, `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`, is a fact
 about the Gaussian distribution rather than about the Hermite family, and lives in
-`TauCeti.Probability.Distributions.Gaussian.Basic` as `TauCeti.gaussianPDFReal_zero_one`.
+`TauCeti.Probability.Distributions.Gaussian.Basic` as
+`TauCeti.Probability.gaussianPDFReal_zero_one`.
 
 The Hermite lowering identities `Polynomial.derivative_hermite`,
 `Polynomial.iterate_derivative_hermite` are reused from
@@ -51,7 +52,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Polynomial ProbabilityTheory Real
+open MeasureTheory Polynomial TauCeti.Probability ProbabilityTheory Real
 
 /-- **Integrability of a polynomial against the Gaussian weight** `e^{-x²/2}`: every real
 polynomial, evaluated pointwise and multiplied by the Gaussian weight, is Lebesgue-integrable. -/

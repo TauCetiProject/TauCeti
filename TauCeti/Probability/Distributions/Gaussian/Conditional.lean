@@ -29,7 +29,7 @@ with Mathlib's regular conditional distribution.
 
 ## Main results
 
-* `TauCeti.condDistrib_multivariateGaussian` — the conditional-distribution formula.
+* `TauCeti.Probability.condDistrib_multivariateGaussian` — the conditional-distribution formula.
 
 ## References
 
@@ -53,7 +53,7 @@ variable {ι κ : Type*}
 /-- The affine conditional-mean formula for the `ι`-block given the `κ`-block.
 Its interpretation as a conditional-law parameter requires a positive-semidefinite joint
 covariance and a positive-definite observed covariance block, as in
-`TauCeti.condDistrib_multivariateGaussian`. -/
+`TauCeti.Probability.condDistrib_multivariateGaussian`. -/
 noncomputable def gaussianCondMean [Fintype ι] [Fintype κ] [DecidableEq κ]
     (m : EuclideanSpace ℝ (ι ⊕ κ))
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) (x₂ : EuclideanSpace ℝ κ) :
@@ -83,7 +83,7 @@ variable {ι κ : Type*}
 /-- The Schur-complement formula for the conditional covariance of the `ι`-block.
 Its interpretation as a conditional-law parameter requires a positive-semidefinite joint
 covariance and a positive-definite observed covariance block, as in
-`TauCeti.condDistrib_multivariateGaussian`. -/
+`TauCeti.Probability.condDistrib_multivariateGaussian`. -/
 noncomputable def gaussianCondCov [Fintype κ] [DecidableEq κ]
     (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) : Matrix ι ι ℝ :=
   S.submatrix Sum.inl Sum.inl -
@@ -169,7 +169,8 @@ namespace EuclideanSpace
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
 /-- The Gaussian Markov kernel given by the conditional-law formula.
-`TauCeti.condDistrib_multivariateGaussian` identifies it with the conditional distribution when
+`TauCeti.Probability.condDistrib_multivariateGaussian` identifies it with the conditional
+distribution when
 the joint covariance is positive semidefinite and the observed covariance block is positive
 definite. -/
 noncomputable def gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
@@ -205,7 +206,7 @@ instance isMarkovKernel_gaussianCondKernel (m : EuclideanSpace ℝ (ι ⊕ κ))
 
 end EuclideanSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
@@ -469,4 +470,4 @@ theorem condDistrib_multivariateGaussian {Ω : Type*} [MeasurableSpace Ω] {P : 
   rw [gaussianResidualMatrix_mulVec]
   ext <;> simp
 
-end TauCeti
+end TauCeti.Probability

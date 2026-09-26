@@ -56,6 +56,12 @@ noncomputable def coordinate (D : Γ.CuspDatum) (z : ℍ) : ℂ :=
 theorem coordinate_apply (D : Γ.CuspDatum) (z : ℍ) :
     coordinate D z = Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ) := (rfl)
 
+/-- Applying the inverse scaling before the cusp coordinate recovers the ordinary q-parameter. -/
+@[simp]
+theorem coordinate_inv_smul (D : Γ.CuspDatum) (z : ℍ) :
+    coordinate D (D.scaling⁻¹ • z) = Function.Periodic.qParam D.width z := by
+  rw [coordinate_apply, smul_inv_smul]
+
 /-- The exponential cusp coordinate never vanishes on the upper half-plane. -/
 @[simp]
 theorem coordinate_ne_zero (D : Γ.CuspDatum) (z : ℍ) : coordinate D z ≠ 0 := by
@@ -225,6 +231,16 @@ theorem mdifferentiable_qCoordinate :
   rw [qCoordinate_eq_comp]
   exact (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
     ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
+
+/-- The normalized q-coordinate, regarded as a complex-valued function, is holomorphic. -/
+theorem mdifferentiable_coordinate :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (coordinate D) := by
+  have hcoordinate : coordinate D =
+      (fun q : {q : 𝔻 // q ≠ 0} ↦ ((q : 𝔻) : ℂ)) ∘ qCoordinate D :=
+    funext fun z ↦ (coe_qCoordinate D z).symm
+  rw [hcoordinate]
+  exact TauCeti.Complex.UnitDisc.mdifferentiable_coe_punctured.comp
+    (mdifferentiable_qCoordinate D)
 
 /-- A scaled horodisc is exactly the inverse image of a punctured disc under the
 q-coordinate. -/

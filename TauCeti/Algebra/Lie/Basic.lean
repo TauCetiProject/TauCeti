@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.LinearAlgebra.Basis.Basic
 
 /-!
 # Basic infrastructure for Lie modules
@@ -26,8 +27,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 ## Main results
 
-* `TauCeti.LieModuleHom.sum_apply`: a finite sum of morphisms of Lie modules is evaluated
-  summandwise.
+* `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
+
 * `TauCeti.LieModuleHom.instFiniteDimensional`: the morphism space of two finite-dimensional Lie
   modules is finite-dimensional.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
@@ -150,22 +151,6 @@ namespace LieModuleHom
 
 /-! ### Morphism spaces of Lie modules -/
 
-section Sum
-
-variable {ι : Type w₂}
-
-/-- A finite sum of morphisms of Lie modules is evaluated summandwise. -/
-@[simp]
-theorem sum_apply {s : Finset ι} (F : ι → (M →ₗ⁅R,L⁆ N)) (m : M) :
-    (∑ i ∈ s, F i) m = ∑ i ∈ s, F i m := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s ha ih =>
-      rw [Finset.sum_insert ha, Finset.sum_insert ha, _root_.LieModuleHom.add_apply, ih]
-
-end Sum
-
 /-- The morphism space of two finite-dimensional Lie modules is finite-dimensional: by
 `LieModule.maxTrivLinearMapEquivLieModuleHom` it is the maximal trivial submodule of the
 finite-dimensional space of all linear maps between them. -/
@@ -262,3 +247,18 @@ theorem _root_.LieHom.map_ad_pow {R L L' : Type*} [CommRing R] [LieRing L] [LieA
     rw [ih, f.map_lie]
 
 end TauCeti
+
+namespace Module.Basis
+
+/-- A bracket coordinate is the sum of the bracket columns weighted by the first argument's
+basis coordinates. -/
+theorem repr_lie_eq_sum {R L ι : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [Fintype ι] (b : Basis ι R L) (X Y : L) (k : ι) :
+    b.repr ⁅X, Y⁆ k = ∑ i : ι, b.repr X i * b.repr ⁅b i, Y⁆ k := by
+  classical
+  conv_lhs => rw [← b.sum_repr X]
+  rw [sum_lie]
+  simp [smul_lie, map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
+    smul_eq_mul]
+
+end Module.Basis

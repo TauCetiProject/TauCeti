@@ -79,6 +79,11 @@ noncomputable abbrev suspensionDeflation (X : C) :
     hE.suspensionInjective X ⟶ hE.suspensionObj X :=
   (hE.suspensionPresentation X).p
 
+/-- The inflation of the chosen suspension presentation of `X` is an inflation of `E`. -/
+theorem isInflation_suspensionInflation (X : C) :
+    E.IsInflation (hE.suspensionInflation X) :=
+  E.isInflation_f (hE.suspensionPresentation X).conflation
+
 /-- Suspension from the exact category to its stable quotient, built from the chosen injective
 presentations. -/
 public noncomputable def suspensionToStable : C ⥤ E.ProjectiveStableCategory :=

@@ -128,6 +128,14 @@ theorem splitPoint_apply_splitColumn (x : GridState n) (newColumn newRow : Fin (
       newRow := by
   simp [splitPoint]
 
+/-- When the new column is inserted immediately before the split column, the split column moves
+to its successor and contains the new row. -/
+@[simp]
+theorem splitPoint_castSucc_apply_succ (x : GridState n) (newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    x.splitPoint splitColumn.castSucc newRow splitColumn splitColumn.succ = newRow := by
+  simpa using x.splitPoint_apply_splitColumn splitColumn.castSucc newRow splitColumn
+
 /-- Away from the split column, `splitPoint` embeds old points in the inserted grid. -/
 @[simp]
 theorem splitPoint_apply_succAbove (x : GridState n) (newColumn newRow : Fin (n + 1))

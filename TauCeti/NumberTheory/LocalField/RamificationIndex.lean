@@ -35,6 +35,8 @@ filtration.
 
 * `TauCeti.ramificationIndex`: the ramification index `e(L/K)` of an extension of
   nonarchimedean local fields.
+* `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
+  divide, respectively divides, the ramification index.
 
 ## Main results
 
@@ -51,14 +53,16 @@ filtration.
 * `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
   `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
+* `TauCeti.isTamelyRamified_iff_natCast_ne_zero`: `L/K` is tamely ramified exactly when `e(L/K)`
+  is nonzero in the residue field of `K`.
 
 ## Implementation notes
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def`, every public theorem about it assumes compatibility, which makes the
-restricted valuation trivial on the units of `𝒪[K]` and hence a power of `v_K`. Finiteness of
-`L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
+about it assumes compatibility, which makes the restricted valuation trivial on the units of
+`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -120,6 +124,46 @@ private theorem natCast_ramificationIndex_eq {m : ℤ} (hm : 0 ≤ m)
   · refine eq_top_iff.2 fun y _ ↦ Subgroup.mem_zpowers_iff.2 ⟨y.toAdd, ?_⟩
     apply Multiplicative.toAdd.injective
     simp
+
+section Tame
+
+variable (K L)
+
+/-- An extension of nonarchimedean local fields is **tamely ramified** when the residue
+characteristic does not divide its ramification index. For a general valued field tameness also
+asks for a separable residue extension; that condition is automatic here, the residue fields of
+nonarchimedean local fields being finite. -/
+def IsTamelyRamified : Prop :=
+  ¬ ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- An extension of nonarchimedean local fields is **wildly ramified** when the residue
+characteristic divides its ramification index. -/
+def IsWildlyRamified : Prop :=
+  ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- The defining condition of tame ramification. -/
+theorem isTamelyRamified_iff :
+    IsTamelyRamified K L ↔ ¬ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- The defining condition of wild ramification. -/
+theorem isWildlyRamified_iff :
+    IsWildlyRamified K L ↔ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- An extension is wildly ramified exactly when it is not tamely ramified. -/
+@[simp]
+theorem not_isTamelyRamified_iff : ¬ IsTamelyRamified K L ↔ IsWildlyRamified K L := not_not
+
+/-- An extension is tamely ramified exactly when it is not wildly ramified. -/
+@[simp]
+theorem not_isWildlyRamified_iff : ¬ IsWildlyRamified K L ↔ IsTamelyRamified K L := Iff.rfl
+
+/-- An extension is tamely ramified exactly when its ramification index is nonzero in the
+residue field of `K`. -/
+theorem isTamelyRamified_iff_natCast_ne_zero :
+    IsTamelyRamified K L ↔ (ramificationIndex K L : 𝓀[K]) ≠ 0 :=
+  (ringChar.spec 𝓀[K] _).not.symm
+
+end Tame
 
 variable [ValuativeExtension K L]
 

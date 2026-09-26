@@ -26,25 +26,29 @@ affine subspace, so it is singular with respect to Lebesgue measure and has no d
 it.
 
 The nondegenerate case comes from the isotropic product density
-(`TauCeti.pi_gaussianReal_eq_withDensity`) by an affine change of variables along the square root
+(`TauCeti.Probability.pi_gaussianReal_eq_withDensity`) by an affine change of variables along the
+square root
 of the covariance, which contributes the Jacobian `√(det S)` and turns the isotropic quadratic
 form into the one of `S⁻¹`.
 
 ## Main definitions
 
-* `TauCeti.multivariateGaussianPDFReal` — the real-valued density;
-* `TauCeti.multivariateGaussianPDF` — its `ℝ≥0∞`-valued companion.
+* `TauCeti.Probability.multivariateGaussianPDFReal` — the real-valued density;
+* `TauCeti.Probability.multivariateGaussianPDF` — its `ℝ≥0∞`-valued companion.
 
 ## Main results
 
-* `TauCeti.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι` is Lebesgue
+* `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
+  is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
-* `TauCeti.multivariateGaussian_eq_withDensity` — the density presentation of the law;
-* `TauCeti.hasPDF_of_hasLaw_multivariateGaussian` and
-  `TauCeti.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF` bridge
+* `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
+* `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
+  `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
+  bridge
   and the identification of `MeasureTheory.pdf`;
-* `TauCeti.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
-* `TauCeti.mutuallySingular_multivariateGaussian_volume` — singularity at every covariance
+* `TauCeti.Probability.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
+* `TauCeti.Probability.mutuallySingular_multivariateGaussian_volume` — singularity at every
+  covariance
   parameter that is not positive definite.
 
 ## References
@@ -59,20 +63,21 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal RealInnerProductSpace MatrixOrder Matrix.Norms.L2Operator
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The **density of the multivariate Gaussian law** with mean `m` and covariance `S`, as a real
 number. It is the density of `multivariateGaussian m S` when `S` is positive definite
-(`TauCeti.multivariateGaussian_eq_withDensity`); at every other `S` that law has no density with
-respect to Lebesgue measure (`TauCeti.mutuallySingular_multivariateGaussian_volume`). -/
+(`TauCeti.Probability.multivariateGaussian_eq_withDensity`); at every other `S` that law has no
+density with
+respect to Lebesgue measure (`TauCeti.Probability.mutuallySingular_multivariateGaussian_volume`). -/
 def multivariateGaussianPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     (x : EuclideanSpace ℝ ι) : ℝ :=
   (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * S.det ^ (-(1 : ℝ) / 2) *
     exp (-⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫ / 2)
 
-/-- The `ℝ≥0∞`-valued companion to `TauCeti.multivariateGaussianPDFReal`. -/
+/-- The `ℝ≥0∞`-valued companion to `TauCeti.Probability.multivariateGaussianPDFReal`. -/
 def multivariateGaussianPDF (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     (x : EuclideanSpace ℝ ι) : ℝ≥0∞ :=
   ENNReal.ofReal (multivariateGaussianPDFReal m S x)
@@ -272,4 +277,4 @@ theorem rnDeriv_multivariateGaussian_of_not_posDef (hS : ¬ S.PosDef)
   Measure.MutuallySingular.rnDeriv_ae_eq_zero
     (mutuallySingular_multivariateGaussian_volume hS m)
 
-end TauCeti
+end TauCeti.Probability

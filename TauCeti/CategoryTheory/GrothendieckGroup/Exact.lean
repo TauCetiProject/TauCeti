@@ -262,12 +262,18 @@ theorem induction_on {motive : ExactK0 E → Prop} (x : ExactK0 E) (zero : motiv
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
 
-variable {G : Type*} [AddCommGroup G]
+section HomExt
+
+variable {G : Type*} [AddMonoid G]
 
 /-- Two homomorphisms out of exact `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
 theorem hom_ext {f g : ExactK0 E →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   PresentedK0.hom_ext h
+
+end HomExt
+
+variable {G : Type*} [AddCommGroup G]
 
 variable (E) in
 /-- An additive invariant for exact `K₀`: a function on objects of `C`, constant on isomorphism

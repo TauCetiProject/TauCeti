@@ -31,7 +31,7 @@ resulting measure is a probability measure, and it is concentrated on the standa
   one-element coordinate type.
 * `TauCeti.Probability.isProbabilityMeasure_dirichletMeasure_iff` characterizes exactly when this
   totalized measure is a probability measure.
-* `TauCeti.ae_pos_sum_pi_gammaMeasure` shows that the zero-denominator locus is null.
+* `TauCeti.Probability.ae_pos_sum_pi_gammaMeasure` shows that the zero-denominator locus is null.
 * `TauCeti.Probability.ae_mem_stdSimplex_dirichletMeasure` and
   `TauCeti.Probability.ae_sum_eq_one_dirichletMeasure` give the standard-simplex support.
 

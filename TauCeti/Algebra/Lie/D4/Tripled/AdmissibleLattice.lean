@@ -24,6 +24,8 @@ needed to construct the tripled type-`D₄` Chevalley carrier.
 ## Main declarations
 
 * `TauCeti.D4Tripled.rep`: the rational representation of the universal enveloping algebra.
+* `TauCeti.D4Tripled.isSl2Triple_rep_serreRootGenerator`: the represented generators at every
+  node form an `sl₂` triple.
 * `TauCeti.D4Tripled.lattice`: the coordinate `ℤ`-lattice in the rational module.
 * `TauCeti.D4Tripled.rep_kostantForm_mem_lattice`: the generic Kostant form preserves the
   lattice.
@@ -65,6 +67,19 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
     IsNilpotent (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.serreRootGenerator weightTable.cartanMatrix k))) :=
   weightTable.isNilpotent_rep_serreRootGenerator k
+
+/-- The represented Cartan, positive, and negative Serre generators at every node form an `sl₂`
+triple: each simple-coroot coordinate takes the value `-1` on some tripled weight. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 4) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ weightTable.cartanMatrix i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inr i)))) := by
+  obtain ⟨a, ha⟩ := exists_d4TripledWeight_apply_eq_neg_one i
+  exact weightTable.isSl2Triple_rep_serreRootGenerator i
+    ⟨a, by rw [weightTable_weight, ha]; decide⟩
 
 /-! ## The admissible coordinate lattice -/
 

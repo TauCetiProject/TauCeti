@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import TauCeti.Topology.Algebra.Group.Quotient
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Profinite groups: quotients by normal subgroups, and open subgroups
@@ -37,6 +37,8 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
   refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
+* `exists_openNormalSubgroup_lt_card_quotient`: an infinite profinite group has finite
+  quotients of arbitrarily large order.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
 * `Subgroup.isOpen_of_index_sup_openNormalSubgroup_le`: a closed subgroup whose joins with
@@ -127,6 +129,38 @@ theorem _root_.Subgroup.iInf_openNormalSubgroup_eq_bot :
     (⨅ U : OpenNormalSubgroup G, U.toSubgroup) = ⊥ := by
   simpa using (Subgroup.eq_iInf_sup_openNormalSubgroup (⊥ : Subgroup G)
     isClosed_singleton).symm
+
+/-- **An infinite profinite group has arbitrarily large finite quotients.** For every `n` there
+is an open normal subgroup `U` with `n < |G ⧸ U|`. -/
+theorem exists_openNormalSubgroup_lt_card_quotient [Infinite G] (n : ℕ) :
+    ∃ U : OpenNormalSubgroup G, n < Nat.card (G ⧸ U.toSubgroup) := by
+  classical
+  -- Any `n + 1` distinct elements are separated by an open normal subgroup avoiding the finitely
+  -- many quotients `x⁻¹ * y` of distinct ones among them, which do not include `1`.
+  obtain ⟨s, hs⟩ := Infinite.exists_subset_card_eq G (n + 1)
+  set t : Finset G := ((s ×ˢ s).filter fun q ↦ q.1 ≠ q.2).image fun q ↦ q.1⁻¹ * q.2
+  have hopen : IsOpen ((t : Set G)ᶜ) := t.finite_toSet.isClosed.isOpen_compl
+  have hone : (1 : G) ∈ (t : Set G)ᶜ := by
+    simp only [t, Finset.coe_image, Finset.coe_filter, Set.mem_compl_iff, Set.mem_image,
+      Set.mem_ofPred_eq, not_exists, not_and]
+    rintro ⟨x, y⟩ ⟨-, hxy⟩ h
+    exact hxy (inv_mul_eq_one.mp h)
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen hone
+  refine ⟨U, ?_⟩
+  -- Distinct elements of `s` have distinct classes modulo `U`.
+  have hinj : Set.InjOn (QuotientGroup.mk (s := U.toSubgroup)) (s : Set G) := by
+    intro x hx y hy hxy
+    by_contra hne
+    refine hU (QuotientGroup.eq.mp hxy)
+      (Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨(x, y), ?_, rfl⟩))
+    exact Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hx, hy⟩, hne⟩
+  have := Fintype.ofFinite (G ⧸ U.toSubgroup)
+  calc n < s.card := by omega
+    _ = (s.image (QuotientGroup.mk (s := U.toSubgroup))).card :=
+      (Finset.card_image_of_injOn hinj).symm
+    _ ≤ Nat.card (G ⧸ U.toSubgroup) := by
+      rw [Nat.card_eq_fintype_card]
+      exact Finset.card_le_univ _
 
 /-- A closed subgroup `H` of a profinite group whose joins `H ⊔ N` with the open normal
 subgroups `N` have uniformly bounded index is open.

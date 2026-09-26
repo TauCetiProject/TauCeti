@@ -71,7 +71,7 @@ theorem IsQuadraticZigzagRelator.eq_zero (hG : ∀ i, (G.neighborSet i).Subsingl
     exact sub_self _
 
 /-- **When every vertex has at most one neighbour, the quadratic zigzag ideal is zero.** -/
-theorem quadraticZigzagIdeal_eq_bot [Finite V] (hG : ∀ i, (G.neighborSet i).Subsingleton) :
+theorem quadraticZigzagIdeal_eq_bot (hG : ∀ i, (G.neighborSet i).Subsingleton) :
     quadraticZigzagIdeal k G = ⊥ := by
   rw [quadraticZigzagIdeal_eq_span, eq_bot_iff, TwoSidedIdeal.span_le]
   intro x hx

@@ -109,6 +109,15 @@ theorem coe_blockAverage (p q : P.parts) :
     (blockAverage P W p q : ℝ) = ⨍ z in (p : Set Ω) ×ˢ (q : Set Ω), W z.1 z.2 ∂(μ.prod μ) := by
   rw [blockAverage]
 
+/-- The rectangle average is the rectangle integral divided by the product of the two part
+measures.  On a null rectangle both sides are zero, since the inverse of `0` is `0`. -/
+theorem coe_blockAverage_eq_inv_mul_rectIntegral (p q : P.parts) :
+    (blockAverage P W p q : ℝ) =
+      (μ.real (p : Set Ω) * μ.real (q : Set Ω))⁻¹ *
+        W.toSymmKernel.rectIntegral μ (p : Set Ω) (q : Set Ω) := by
+  rw [coe_blockAverage, setAverage_eq, measureReal_prod_prod, smul_eq_mul,
+    SymmKernel.rectIntegral_def, Graphon.coe_toSymmKernel]
+
 end BlockAverage
 
 /-- The block-average step graphon of `W` with respect to a measurable finite partition `P`.

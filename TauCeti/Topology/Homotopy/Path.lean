@@ -217,15 +217,6 @@ theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient
   -- topology (`inferInstanceAs`), so `IsOpen S` unfolds to openness of the `mk`-preimage.
   Iff.rfl
 
-/-- In the path-homotopy quotient, concatenating adjacent subpaths of `p` gives the larger
-subpath from the first endpoint to the last endpoint. -/
-@[simp]
-theorem subpath_trans {x y : X} (p : Path x y) (a b c : unitInterval) :
-    trans (mk (p.subpath a b)) (mk (p.subpath b c)) =
-      mk (p.subpath a c) := by
-  simp only [← mk_trans, eq]
-  exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
-
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by

@@ -41,23 +41,21 @@ open Complex Metric Filter Topology
 
 namespace TauCeti
 
-/-- A continuous zero-free function on a sphere is bounded below there by a positive constant,
-compactness of the sphere supplying the bound.
+/-- A continuous zero-free function on a sphere is bounded below there by a positive constant.
 
 No hypothesis on the radius. At `ρ = 0` the sphere is the set of points at zero distance from
 `a` — the single point `a` when `E` is a metric space, but not in general, since the domain is
 only assumed pseudometric. For `ρ < 0` it is empty, nothing is attained, and the bound holds
 vacuously. -/
 theorem exists_pos_le_norm_of_mem_sphere {E F : Type*} [PseudoMetricSpace E] [ProperSpace E]
-    [NormedAddCommGroup F] {f : E → F} {a : E} {ρ : ℝ}
+    [NormedAddGroup F] {f : E → F} {a : E} {ρ : ℝ}
     (hcont : ContinuousOn f (sphere a ρ)) (hne : ∀ z ∈ sphere a ρ, f z ≠ 0) :
     ∃ δ > 0, ∀ z ∈ sphere a ρ, δ ≤ ‖f z‖ :=
   (isCompact_sphere a ρ).exists_forall_le' hcont.norm fun z hz => norm_pos_iff.mpr (hne z hz)
 
 /-- **A function with no zero off the centre does not vanish identically there.** If `f` is
 nonzero at every point of an open ball of positive radius other than its centre `a`, then `f`
-has finite analytic order at `a`: were the order `⊤`, `f` would vanish on a whole
-neighbourhood of `a`, and that neighbourhood meets the ball away from `a`.
+has finite analytic order at `a`.
 
 Nothing is assumed about `f a`, which may or may not be zero, nor about analyticity of `f`. -/
 theorem analyticOrderAt_ne_top_of_forall_ne_zero {f : ℂ → ℂ} {a : ℂ} {ρ : ℝ} (hρ : 0 < ρ)
@@ -79,10 +77,8 @@ theorem analyticOrderAt_ne_top_of_forall_ne_zero {f : ℂ → ℂ} {a : ℂ} {ρ
 in an open set `U` lies in a finite set `S`, then `f` does not vanish identically near any point of
 `U`, so `analyticOrderAt f z ≠ ⊤` there.
 
-The point `z` itself is allowed to be a zero — indeed to lie in `S` — since vanishing identically
-near `z` would force a whole punctured neighbourhood of zeros, of which all but finitely many are
-outside `S`. This is the finite-set form of
-`TauCeti.analyticOrderAt_ne_top_of_forall_ne_zero`, and reduces to it on a small enough ball. -/
+The point `z` itself is allowed to be a zero, indeed to lie in `S`. This is the finite-set form
+of `TauCeti.analyticOrderAt_ne_top_of_forall_ne_zero`. -/
 theorem analyticOrderAt_ne_top_of_zeros_subset {f : ℂ → ℂ} {U : Set ℂ} {S : Finset ℂ} {z : ℂ}
     (hU : IsOpen U) (hz : z ∈ U) (hzeros : ∀ w ∈ U, f w = 0 → w ∈ S) :
     analyticOrderAt f z ≠ ⊤ := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Normal scheme-theoretic images
@@ -39,7 +39,7 @@ ideal. Over a field all these flatness conditions are automatic.
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §10.20.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§16--17.
 * The tensor-kernel identity is `ker_lTensor_eq_rightTensorIdeal` from
-  `TauCeti.Algebra.HopfAlgebra.Kernel`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
+  `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
 
 Applied to multiplication from the semidirect product of two normal closed subgroups, the lifted
 action is simultaneous ambient conjugation and the image is their normal product.

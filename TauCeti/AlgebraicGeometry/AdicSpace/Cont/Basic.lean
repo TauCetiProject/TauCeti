@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.Algebra.Ring.Ideal
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 
 /-!

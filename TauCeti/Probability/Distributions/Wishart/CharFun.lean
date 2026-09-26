@@ -34,14 +34,18 @@ can cross the branch cut.
 * `selfAdjoint.charFun_eq_complexMGF_trace_mul` — on the symmetric subspace, the characteristic
   function at `Θ` is the complex moment-generating function of the trace statistic at
   `Complex.I`.
-* `TauCeti.charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow` — the spectral characteristic function of
+* `TauCeti.Probability.charFun_eq_exp_of_mgf_trace_mul_eq_det_rpow` — the spectral characteristic
+  function of
   any law on the symmetric subspace whose trace moment-generating function is a real power of a
   Hermitian pencil determinant.
-* `TauCeti.charFun_wishartGramMeasure` — the characteristic function of the Gaussian-Gram Wishart
+* `TauCeti.Probability.charFun_wishartGramMeasure` — the characteristic function of the
+  Gaussian-Gram Wishart
   law, at every degree and every scale matrix.
-* `TauCeti.charFun_nonsingularWishartMeasure` — the characteristic function of the nonsingular
+* `TauCeti.Probability.charFun_nonsingularWishartMeasure` — the characteristic function of the
+  nonsingular
   density family, the same formula with the real degree in place of the natural one.
-* `TauCeti.nonsingularWishartMeasure_conv_nonsingularWishartMeasure` — at a fixed scale the
+* `TauCeti.Probability.nonsingularWishartMeasure_conv_nonsingularWishartMeasure` — at a fixed scale
+  the
   degrees of the nonsingular family add under convolution, since the exponent is linear in the
   degree.
 
@@ -74,7 +78,7 @@ theorem charFun_eq_complexMGF_trace_mul {p : ℕ}
 
 end selfAdjoint
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ}
 
@@ -135,7 +139,8 @@ theorem charFun_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
 it is the exponential of `-n / 2` times the sum of the principal logarithms of `1 - 2 * I * λ`
 over the eigenvalues `λ` of the Hermitian sandwich `√S * Θ * √S`.
 
-This is the Gaussian-Gram formula of `TauCeti.charFun_wishartGramMeasure` with the natural degree
+This is the Gaussian-Gram formula of `TauCeti.Probability.charFun_wishartGramMeasure` with the
+natural degree
 `ν` replaced by the real degree `n`. Agreeing on characteristic functions is one ingredient of an
 identification of the two families where both are defined; that identification is not proved
 here. -/
@@ -179,4 +184,4 @@ theorem nonsingularWishartMeasure_conv_nonsingularWishartMeasure {n₁ n₂ : �
     ring_nf
   · simp [nonsingularWishartMeasure_of_not_posDef _ hS]
 
-end TauCeti
+end TauCeti.Probability

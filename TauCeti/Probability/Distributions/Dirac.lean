@@ -19,15 +19,16 @@ under a Dirac measure. The moment-generating function is already available in Ma
 
 ## Main results
 
-* `TauCeti.cdf_dirac` — the cdf of a real Dirac measure;
+* `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` — the quantile function of a Dirac measure;
-* `TauCeti.integrableExpSet_dirac` — every exponential moment exists under a Dirac measure;
-* `TauCeti.cgf_dirac'` — the cumulant-generating function under a Dirac measure.
+* `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
+  measure;
+* `TauCeti.Probability.cgf_dirac'` — the cumulant-generating function under a Dirac measure.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Set
 
@@ -53,11 +54,11 @@ theorem cgf_dirac' {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass �
     cgf X (Measure.dirac ω) t = t * X ω := by
   rw [cgf, mgf_dirac', Real.log_exp]
 
-end TauCeti
+end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
-open ProbabilityTheory Set TauCeti
+open ProbabilityTheory Set TauCeti.Probability
 
 /-- At every level in `Ioc 0 1`, including the endpoint level `1`, the quantile function of a
 Dirac law is its atom. -/
@@ -66,9 +67,9 @@ theorem quantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 < t) (h1 : t ≤ 1) : (dirac 
   rw [quantile_def]
   refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf (dirac a) h0) ?_)
     (le_csInf ⟨a, ?_⟩ fun x hx ↦ ?_)
-  · simpa [TauCeti.cdf_dirac] using h1
-  · simpa [TauCeti.cdf_dirac] using h1
+  · simpa [TauCeti.Probability.cdf_dirac] using h1
+  · simpa [TauCeti.Probability.cdf_dirac] using h1
   · by_contra hxa
-    exact absurd hx (by simpa [TauCeti.cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
+    exact absurd hx (by simpa [TauCeti.Probability.cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
 
 end MeasureTheory.Measure

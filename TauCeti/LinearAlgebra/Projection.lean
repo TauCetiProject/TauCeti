@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Projection
+public import TauCeti.Order.SupIndep
 
 /-!
 # Projections onto the summands of an internal direct sum
 
 Mathlib's `Submodule.projectionOnto` projects a module onto one of two complementary submodules.
 A family `Q` of submodules that is `iSupIndep` and spans the whole module presents each `Q i` as
-complementary to the supremum of the other summands, so each summand inherits such a projection.
+complementary to the supremum of the other summands (`iSupIndep.isCompl_biSup_ne`), so each
+summand inherits such a projection.
 
-This file records that complement, `TauCeti.isCompl_biSup_ne`, and the projections it produces,
-`TauCeti.internalProjection`. Their pointwise behaviour and kernel are Mathlib's lemmas about
-`Submodule.projectionOnto`, restated for the specialization. The one fact that goes beyond a
-single projection is that over a finite index type the projections sum to the identity,
-`TauCeti.sum_coe_internalProjection`.
+This file records these projections, `TauCeti.internalProjection`. Their pointwise behaviour and
+kernel are Mathlib's lemmas about `Submodule.projectionOnto`, restated for the specialization.
+The one fact that goes beyond a single projection is that over a finite index type the projections
+sum to the identity, `TauCeti.sum_coe_internalProjection`.
 
 ## Main definitions
 
@@ -27,13 +29,13 @@ single projection is that over a finite index type the projections sum to the id
 
 ## Main results
 
-* `TauCeti.isCompl_biSup_ne`: a summand of an internal direct sum decomposition is complementary to
-  the supremum of the other summands.
 * `TauCeti.internalProjection_surjective`: the projection onto `Q i` is surjective.
 * `TauCeti.ker_internalProjection`: the kernel of the projection onto `Q i` is the supremum of the
   other summands.
 * `TauCeti.sum_coe_internalProjection`: over a finite index type the projections onto the summands
   sum to the identity.
+* `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
+  component supplied by the inverse direct-sum equivalence is the internal projection.
 
 ## Implementation notes
 
@@ -51,17 +53,11 @@ universe u v w
 variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
 variable {ι : Type w} {Q : ι → Submodule A M}
 
-/-- A summand of an internal direct sum decomposition is complementary to the supremum of the other
-summands: independence gives disjointness, and spanning gives codisjointness. -/
-theorem isCompl_biSup_ne (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) :
-    IsCompl (Q i) (⨆ j, ⨆ (_ : j ≠ i), Q j) :=
-  ⟨hQi i, codisjoint_iff.mpr (by rw [← hQt]; exact (iSup_split_single Q i).symm)⟩
-
 /-- The projection of `M` onto the summand `Q i` of an internal direct sum decomposition, along the
 supremum of the other summands. -/
 noncomputable def internalProjection (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) :
     M →ₗ[A] Q i :=
-  (Q i).projectionOnto _ (isCompl_biSup_ne hQi hQt i)
+  (Q i).projectionOnto _ (hQi.isCompl_biSup_ne hQt i)
 
 /-- The projection onto `Q i` fixes the elements of `Q i`. -/
 theorem internalProjection_apply_of_mem (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) {i : ι} {x : M}
@@ -92,7 +88,7 @@ theorem internalProjection_apply_of_ne (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = �
 /-- The projection onto `Q i` is surjective, being the identity on `Q i`. -/
 theorem internalProjection_surjective (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) :
     Function.Surjective (internalProjection hQi hQt i) :=
-  Submodule.projectionOnto_surjective (isCompl_biSup_ne hQi hQt i)
+  Submodule.projectionOnto_surjective (hQi.isCompl_biSup_ne hQt i)
 
 /-- The kernel of the projection onto `Q i` is the supremum of the other summands. -/
 @[simp]
@@ -124,3 +120,33 @@ theorem sum_coe_internalProjection [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i
   simpa using hx
 
 end TauCeti
+
+namespace DirectSum.IsInternal
+
+variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+variable {ι : Type w} [DecidableEq ι] {Q : ι → Submodule A M}
+
+/-- The component supplied by the inverse of the canonical internal-direct-sum equivalence is the
+projection onto that summand. -/
+theorem coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+    (h : DirectSum.IsInternal Q) (i : ι) (x : M) :
+    ((LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) h).symm x i : M) =
+      (TauCeti.internalProjection h.submodule_iSupIndep h.submodule_iSup_eq_top i x : M) := by
+  have hx : x ∈ ⨆ j, Q j := by
+    rw [h.submodule_iSup_eq_top]
+    exact Submodule.mem_top
+  induction hx using Submodule.iSup_induction' with
+  | mem j y hy =>
+      rcases eq_or_ne j i with rfl | hji
+      · rw [h.ofBijective_coeLinearMap_of_mem hy,
+          TauCeti.internalProjection_apply_of_mem h.submodule_iSupIndep
+            h.submodule_iSup_eq_top hy]
+      · rw [h.ofBijective_coeLinearMap_of_mem_ne hji hy,
+          TauCeti.internalProjection_apply_eq_zero_of_mem_of_ne h.submodule_iSupIndep
+            h.submodule_iSup_eq_top hji hy]
+  | zero => simp
+  | add x y _ _ hx hy =>
+      simpa only [map_add, DirectSum.add_apply, Submodule.coe_add] using
+        congrArg₂ (fun a b ↦ a + b) hx hy
+
+end DirectSum.IsInternal

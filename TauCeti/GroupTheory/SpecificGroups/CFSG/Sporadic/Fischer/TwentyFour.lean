@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Presentation.Coxeter
+public import TauCeti.GroupTheory.Presentation.SchreierIndexTwo
 
 /-!
 # A transcribed presentation of the third Fischer group
@@ -64,8 +65,12 @@ with the source rather than checking it against a published number.
 Nothing here asserts that the presented group is nontrivial, finite, simple, of any particular
 order, or isomorphic to another realization. Kim and Michler prove that the commutator subgroup of
 the displayed source presentation is `Fi₂₄'`; Reidemeister--Schreier rewriting transfers that
-presentation to the subgroup. The independent read-through below checks that transfer against the
-cited source; it is an audit artifact, not a Lean theorem identifying the presented group.
+presentation to the subgroup. That transfer is a theorem here:
+`TauCeti.Sporadic.fi24PrimeGroupMulEquivCommutator` identifies the group presented by
+the row with the commutator subgroup of the group `TauCeti.Sporadic.Fi24AutomorphismGroup`
+presented by the eighty source relators, through the general index-two rewriting theorem
+`TauCeti.IsSchreierIndexTwoSource.mulEquivCommutator`. The independent read-through below then
+checks the source relators, and only them, against the cited source.
 
 ## Independent source-to-Lean read-through
 
@@ -103,8 +108,11 @@ dropped or duplicated.
 
 Lemma 6.2(c) identifies the commutator subgroup and gives the generators `ab` through `ak`. The
 connected exponent-three graph makes all twelve source generators equal in the abelianization,
-while sending each of them to the nontrivial element of `C₂` kills all the source relators. Hence
-that parity map has the commutator subgroup as its index-two kernel. The rewrite was then checked
+`TauCeti.Sporadic.abelianizationOf_fi24AutomorphismGroup_of`, while sending each of them to the
+nontrivial element of `C₂` kills all the source relators. Hence that parity map has the commutator
+subgroup as its index-two kernel,
+`TauCeti.Sporadic.commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom`. The rewrite
+was then checked
 definition by definition: `fi24SchreierFactors` toggles the transversal representative after every
 source letter, omits `a`, and records `(ax)⁻¹` and `ax` in alternating positions. Starting in the
 two possible representatives gives the rewrites of `r` and `a r a`. The twelve square relations
@@ -123,6 +131,19 @@ the additional explicit-construction comparison does not apply to this row.
 * `TauCeti.Sporadic.fi24AutomorphismRelators`: all eighty source relators for `Fi₂₄'·2`.
 * `TauCeti.Sporadic.fi24SchreierRewrite`: the Reidemeister--Schreier rewrite of a source relator.
 * `TauCeti.Sporadic.fi24PrimePresentation`: the Reidemeister--Schreier presentation of `Fi₂₄'`.
+* `TauCeti.Sporadic.Fi24AutomorphismGroup` and `TauCeti.Sporadic.fi24ParityHom`: the group
+  presented by the eighty source relators, and its parity homomorphism onto `C₂`.
+* `TauCeti.Sporadic.fi24PrimeGroupMulEquivCommutator`: the group presented by the
+  row is the commutator subgroup of `TauCeti.Sporadic.Fi24AutomorphismGroup`.
+
+## Main results
+
+* `TauCeti.Sporadic.isSchreierIndexTwoSource_fi24`: the source presentation and the rewritten
+  source relators satisfy the hypotheses of index-two Reidemeister--Schreier rewriting.
+* `TauCeti.Sporadic.relatorSet_fi24PrimeRelators`: the row's relations are the
+  Reidemeister--Schreier relators of the source words.
+* `TauCeti.Sporadic.commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom`: the commutator subgroup
+  of the source presented group is the kernel of its parity homomorphism.
 
 Every definition here has its body sealed, and each is pinned by a public characteristic equation
 named after it: the `_def` theorems below, the evaluation lemmas
@@ -661,5 +682,247 @@ theorem fi24PrimePresentation_totalLength : fi24PrimePresentation.totalLength = 
   simp only [Function.comp_def, List.length_map, Relator.length_toWord]
   rw [fi24PrimeRelators_def, sum_map_length_flatMap_fi24SchreierRewrite,
     sum_countP_fi24RewrittenSourceRelators]
+
+/-! ## The row presents the commutator subgroup of the source presentation
+
+The source relators present `Fi₂₄'·2`, and the row is the Reidemeister--Schreier rewrite of the
+source words other than the squares for the transversal `{1, a}`. The general theorem
+`TauCeti.IsSchreierIndexTwoSource.mulEquivCommutator` identifies the rewritten presented group with
+the commutator subgroup of the source presented group, once the source presentation is checked to be
+one by involutions with even-length relators, its Schreier generators are matched with the row's
+generator indices, and the source generators are shown to agree in the abelianization. -/
+
+/-- **The group presented by the eighty source relators**, Hall--Soicher's presentation of
+`Fi₂₄'·2`. Nothing here asserts that it is finite or identifies it with any other realization. -/
+abbrev Fi24AutomorphismGroup : Type :=
+  PresentedGroup (Relator.relatorSet fi24AutomorphismRelators)
+
+/-- Every Coxeter relation of the source diagram holds in the source presented group, in either
+order of the two generators. -/
+theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
+    (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
+      fi24AutomorphismCoxeterMatrix i j = 1 := by
+  have hmem : fi24AutomorphismCoxeterMatrix.relation i j ∈
+      Subgroup.normalClosure (Relator.relatorSet fi24AutomorphismRelators) := by
+    rw [fi24AutomorphismRelators_def, normalClosure_relatorSet_coxeterRelators_append]
+    exact Subgroup.subset_normalClosure (Or.inl ⟨(i, j), rfl⟩)
+  have key := PresentedGroup.mk_eq_one_iff.mpr hmem
+  rw [CoxeterMatrix.relation, map_pow, map_mul] at key
+  exact key
+
+/-- Every source generator is an involution in the source presented group. -/
+theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
+    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 := by
+  have key := fi24AutomorphismGroup_of_mul_of_pow i i
+  rwa [fi24AutomorphismCoxeterMatrix.diagonal, pow_one] at key
+
+/-- **All source generators agree in the abelianization of the source presented group.** Two
+generators joined by an edge of the diagram are involutions whose product has order dividing
+three, so they coincide in any abelian quotient, and the diagram is connected. -/
+theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
+    Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+      Abelianization.of (PresentedGroup.of 0) := by
+  have step : ∀ i j : Fin 12, fi24AutomorphismCoxeterMatrix i j = 3 →
+      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+        Abelianization.of (PresentedGroup.of j) := by
+    intro i j hij
+    set u := Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) with hu
+    set v := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup) with hv
+    have hu2 : u * u = 1 := by
+      rw [hu, ← map_mul, fi24AutomorphismGroup_of_mul_of_self, map_one]
+    have hv2 : v * v = 1 := by
+      rw [hv, ← map_mul, fi24AutomorphismGroup_of_mul_of_self, map_one]
+    have huv : (u * v) ^ 3 = 1 := by
+      rw [hu, hv, ← map_mul, ← map_pow, ← hij, fi24AutomorphismGroup_of_mul_of_pow, map_one]
+    have huv1 : u * v = 1 := by
+      calc u * v = (u * v) ^ 2 * (u * v) := by
+            rw [mul_pow, sq, sq, hu2, hv2, one_mul, one_mul]
+        _ = (u * v) ^ 3 := (pow_succ _ 2).symm
+        _ = 1 := huv
+    rw [mul_eq_one_iff_eq_inv] at huv1
+    rw [huv1, inv_eq_of_mul_eq_one_right hv2]
+  have edge : ∀ i j : Fin 12, (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges →
+      i ≠ j →
+      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+        Abelianization.of (PresentedGroup.of j) := fun i j hij hne =>
+    step i j (by rw [fi24AutomorphismCoxeterMatrix_apply]; simp [hne, hij])
+  rw [fi24AutomorphismEdges_def] at edge
+  -- Walk the connected diagram `l - k - a - b - c - d - e - f - g - j`, `d - h - i`, back to `a`.
+  have h1 := edge 1 0 (by decide) (by decide)
+  have h2 := (edge 2 1 (by decide) (by decide)).trans h1
+  have h3 := (edge 3 2 (by decide) (by decide)).trans h2
+  have h4 := (edge 4 3 (by decide) (by decide)).trans h3
+  have h5 := (edge 5 4 (by decide) (by decide)).trans h4
+  have h6 := (edge 6 5 (by decide) (by decide)).trans h5
+  have h7 := (edge 7 3 (by decide) (by decide)).trans h3
+  have h8 := (edge 8 7 (by decide) (by decide)).trans h7
+  have h9 := (edge 9 6 (by decide) (by decide)).trans h6
+  have h10 := edge 10 0 (by decide) (by decide)
+  have h11 := (edge 11 10 (by decide) (by decide)).trans h10
+  fin_cases i
+  exacts [rfl, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11]
+
+/-- The source words the row rewrites: the compiled words of the sixty-six off-diagonal Coxeter
+relators and of the two displayed relations. -/
+def fi24SourceWords : Set (PresentationWord (Fin 12)) :=
+  {w | ∃ r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators, r.toWord = w}
+
+theorem mem_fi24SourceWords {w : PresentationWord (Fin 12)} :
+    w ∈ fi24SourceWords ↔
+      ∃ r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators, r.toWord = w :=
+  Iff.rfl
+
+/-- The off-diagonal source relators are Coxeter relators of the source diagram. -/
+private theorem mem_coxeterRelators_of_mem_fi24SourcePairRelators {r : Relator (Fin 12)}
+    (hr : r ∈ fi24SourcePairRelators) : r ∈ coxeterRelators fi24AutomorphismCoxeterMatrix := by
+  rw [fi24SourcePairRelators_def] at hr
+  obtain ⟨z, -, rfl⟩ := List.mem_map.mp hr
+  induction z using Sym2.ind with
+  | _ i j => exact mem_coxeterRelators_iff.mpr ⟨i, j, rfl⟩
+
+/-- Every rewritten source relator is a source relator. -/
+private theorem mem_fi24AutomorphismRelators_of_mem_append {r : Relator (Fin 12)}
+    (hr : r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators) :
+    r ∈ fi24AutomorphismRelators := by
+  rw [fi24AutomorphismRelators_def, List.mem_append]
+  rcases List.mem_append.mp hr with hr | hr
+  · exact Or.inl (mem_coxeterRelators_of_mem_fi24SourcePairRelators hr)
+  · exact Or.inr hr
+
+/-- **The source presentation is an index-two Reidemeister--Schreier source**: its generators are
+involutions, the rewritten source words have even length and are relations, and every source
+relator is a rewritten source word or the square of a generator. -/
+theorem isSchreierIndexTwoSource_fi24 :
+    IsSchreierIndexTwoSource (Relator.relatorSet fi24AutomorphismRelators) fi24SourceWords where
+  of_mul_of := fi24AutomorphismGroup_of_mul_of_self
+  even_length := by
+    rintro w ⟨r, hr, rfl⟩
+    exact even_length_of_mem_fi24AutomorphismRelators r
+      (mem_fi24AutomorphismRelators_of_mem_append hr)
+  mk_mk_eq_one := by
+    rintro w ⟨r, hr, rfl⟩
+    rw [Relator.toWord_toFreeGroup]
+    exact PresentedGroup.one_of_mem
+      (Relator.mem_relatorSet.mpr ⟨r, mem_fi24AutomorphismRelators_of_mem_append hr, rfl⟩)
+  eq_mk_or_eq_of_mul_of := by
+    intro r hr
+    obtain ⟨t, ht, rfl⟩ := Relator.mem_relatorSet.mp hr
+    rw [fi24AutomorphismRelators_def, List.mem_append] at ht
+    rcases ht with ht | ht
+    · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp ht
+      by_cases hij : i = j
+      · subst hij
+        refine Or.inr ⟨i, ?_⟩
+        simp [CoxeterMatrix.relation]
+      · have hmem : coxeterRelator fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup ∈
+            fi24SourcePairRelators := by
+          rw [fi24SourcePairRelators_def]
+          refine List.mem_map.mpr ⟨s(i, j), List.mem_filter.mpr
+            ⟨List.mk_mem_sym2 (List.mem_finRange i) (List.mem_finRange j), ?_⟩, rfl⟩
+          simpa [inf_eq_sup] using hij
+        exact Or.inl ⟨_, ⟨_, List.mem_append_left _ hmem, rfl⟩, Relator.toWord_toFreeGroup _⟩
+    · exact Or.inl ⟨_, ⟨_, List.mem_append_right _ ht, rfl⟩, Relator.toWord_toFreeGroup _⟩
+
+/-- **The parity homomorphism of the source presented group**, sending each of the twelve source
+generators to the nontrivial element of `C₂`. -/
+def fi24ParityHom : Fi24AutomorphismGroup →* Multiplicative (ZMod 2) :=
+  isSchreierIndexTwoSource_fi24.parityHom
+
+@[simp]
+theorem fi24ParityHom_of (i : Fin 12) :
+    fi24ParityHom (PresentedGroup.of i) = Multiplicative.ofAdd 1 :=
+  isSchreierIndexTwoSource_fi24.parityHom_of i
+
+/-- **The commutator subgroup of the source presented group is the kernel of its parity
+homomorphism**, the source generators all agreeing in the abelianization. -/
+theorem commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom :
+    commutator Fi24AutomorphismGroup = fi24ParityHom.ker :=
+  isSchreierIndexTwoSource_fi24.commutator_eq_ker_parityHom 0
+    abelianizationOf_fi24AutomorphismGroup_of
+
+/-- The indexing of the Schreier generators by the row: the source generator `x ≠ a` at index `i`
+names the Schreier generator `a x` at index `i - 1`. -/
+def fi24SchreierEquiv : {x : Fin 12 // x ≠ 0} ≃ Fin 11 := (finSuccAboveEquiv (0 : Fin 12)).symm
+
+theorem fi24SchreierEquiv_apply (i : Fin 12) (h : i ≠ 0) :
+    fi24SchreierEquiv ⟨i, h⟩ = i.pred h := by
+  rw [fi24SchreierEquiv, Equiv.symm_apply_eq, finSuccAboveEquiv_apply]
+  ext
+  simp
+
+/-- The row's rewrite of a source word is the general Reidemeister--Schreier rewrite for the
+transversal `{1, a}`, read through the row's indexing of the Schreier generators. -/
+private theorem toWord_foldr_fi24SchreierFactors (positive : Bool) (w : PresentationWord (Fin 12)) :
+    ((fi24SchreierFactors positive w).foldr Relator.mul ((Relator.gen 0).pow 0)).toWord =
+      schreierWord 0 fi24SchreierEquiv positive w := by
+  induction w generalizing positive with
+  | nil => simp
+  | cons p w ih =>
+    obtain ⟨i, s⟩ := p
+    rw [fi24SchreierFactors_cons, schreierWord_cons]
+    by_cases hi : i = 0
+    · simp only [hi, ↓reduceDIte, List.nil_append]
+      exact ih (!positive)
+    · have hv : i.val ≠ 0 := fun h => hi (Fin.ext h)
+      have ht : fi24TargetGenerator i hv = fi24SchreierEquiv ⟨i, hi⟩ := by
+        rw [fi24SchreierEquiv_apply]
+        ext
+        simp
+      simp only [hv, hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive), ht]
+      cases positive
+      · simp [FreeGroup.invRev]
+      · simp
+
+/-- The row's rewrite of a source relator compiles to the general Reidemeister--Schreier rewrite of
+its compiled word. -/
+theorem toWord_fi24SchreierRewrite (positive : Bool) (r : Relator (Fin 12)) :
+    (fi24SchreierRewrite positive r).toWord =
+      schreierWord 0 fi24SchreierEquiv positive r.toWord := by
+  rw [fi24SchreierRewrite_def, toWord_foldr_fi24SchreierFactors]
+
+/-- **The row's relations are the Reidemeister--Schreier relators of the source words.** -/
+theorem relatorSet_fi24PrimeRelators :
+    Relator.relatorSet fi24PrimeRelators =
+      schreierRelators 0 fi24SchreierEquiv fi24SourceWords := by
+  ext r
+  simp only [Relator.mem_relatorSet, mem_schreierRelators, fi24PrimeRelators_def, List.mem_flatMap,
+    List.mem_cons, List.not_mem_nil, or_false, mem_fi24SourceWords]
+  constructor
+  · rintro ⟨t, ⟨r', hr', rfl | rfl⟩, rfl⟩
+    · exact ⟨false, r'.toWord, ⟨r', hr', rfl⟩,
+        by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+    · exact ⟨true, r'.toWord, ⟨r', hr', rfl⟩,
+        by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+  · rintro ⟨positive, w, ⟨r', hr', rfl⟩, rfl⟩
+    refine ⟨fi24SchreierRewrite positive r', ⟨r', hr', ?_⟩,
+      by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+    cases positive <;> simp
+
+/-- **The group presented by the `Fi₂₄'` row is the commutator subgroup of the group presented by
+the source relators.** The Schreier generator `ax` at row index `i` goes to the product `a x` of the
+source generators, `TauCeti.Sporadic.coe_fi24PrimeGroupMulEquivCommutator_of`.
+
+This identifies the transcribed row with the subgroup that Kim and Michler prove to be `Fi₂₄'`. It
+asserts nothing about the order or the structure of either side. -/
+noncomputable def fi24PrimeGroupMulEquivCommutator :
+    fi24PrimePresentation.Group ≃* ↥(commutator Fi24AutomorphismGroup) :=
+  fi24PrimePresentation.mulEquivCommutator isSchreierIndexTwoSource_fi24 0 fi24SchreierEquiv
+    abelianizationOf_fi24AutomorphismGroup_of
+    (congrArg Subgroup.normalClosure relatorSet_fi24PrimeRelators)
+
+/-- The identification sends the row generator at index `i`, the Schreier generator `a x` for the
+source generator `x` at index `i + 1`, to the product `a x` in the source presented group. -/
+theorem coe_fi24PrimeGroupMulEquivCommutator_of (i : Fin 11) :
+    (fi24PrimeGroupMulEquivCommutator
+        (PresentedGroup.of
+          (Fin.cast (by simp [GroupPresentation.generatorCount, fi24PrimePresentation]) i)) :
+      Fi24AutomorphismGroup) =
+      PresentedGroup.of 0 * PresentedGroup.of i.succ := by
+  -- The generic evaluation lemma gives `a x` for `x = fi24SchreierEquiv.symm i`, which is `i + 1`
+  -- by definition of `finSuccAboveEquiv` at the pivot `0`.
+  refine (GroupPresentation.coe_mulEquivCommutator_of fi24PrimePresentation
+    isSchreierIndexTwoSource_fi24 0 fi24SchreierEquiv abelianizationOf_fi24AutomorphismGroup_of
+    _ _).trans ?_
+  rfl
 
 end TauCeti.Sporadic

@@ -113,6 +113,21 @@ theorem IsNondegenerate.card_mul_card_orthogonalComplement (hA : A.IsNondegenera
   rw [mul_comm, ← A.pairingRestrict_ker H, ← hindex]
   exact (A.pairingRestrict H).ker.card_mul_index
 
+/-- An isotropic subgroup of a nondegenerate finite bilinear module is Lagrangian when its
+squared order is the order of the ambient module. -/
+theorem IsIsotropic.isLagrangian_of_card_sq_eq {H : AddSubgroup A}
+    (hH : A.IsIsotropic H) (hA : A.IsNondegenerate)
+    (hcard : Nat.card H ^ 2 = Nat.card A) : A.IsLagrangian H := by
+  rw [A.isLagrangian_def]
+  apply AddSubgroup.eq_of_le_of_card_ge
+    (A.isIsotropic_iff_le_orthogonalComplement H |>.mp hH)
+  have hmul := IsNondegenerate.card_mul_card_orthogonalComplement A hA H
+  rw [pow_two] at hcard
+  have hcard' : Nat.card H = Nat.card (A.orthogonalComplement H) := by
+    apply Nat.mul_left_cancel (Nat.card_pos (α := H))
+    exact hcard.trans hmul.symm
+  exact hcard'.ge
+
 /-- Double orthogonal complementation is the identity in a nondegenerate finite bilinear module. -/
 theorem IsNondegenerate.orthogonalComplement_orthogonalComplement
     (hA : A.IsNondegenerate) (H : AddSubgroup A) :

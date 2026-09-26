@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
@@ -41,6 +42,9 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
   agree.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
   the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
+* `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
+  the rational prime it corresponds to, and `Rat.HeightOneSpectrum.exists_absNorm_eq` shows
+  every rational prime arises this way.
 -/
 
 public section
@@ -142,3 +146,24 @@ theorem primesOver_under_ringOfIntegers_rat_eq {M : Type*} [Field M] [NumberFiel
       ← Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)})]
 
 end Ideal
+
+namespace Rat.HeightOneSpectrum
+
+open IsDedekindDomain
+
+/-- The absolute norm of a height-one prime of `𝓞 ℚ` is the rational prime generating its image
+in `ℤ`. -/
+@[simp]
+theorem absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
+    Ideal.absNorm v.asIdeal = natGenerator v := by
+  rw [← Ideal.absNorm_map_of_ringEquiv (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)),
+    ← span_natGenerator, Ideal.absNorm_span_singleton]
+  simp
+
+/-- Every rational prime is the absolute norm of a height-one prime of `𝓞 ℚ`. -/
+theorem exists_absNorm_eq {p : ℕ} (hp : p.Prime) :
+    ∃ v : HeightOneSpectrum (𝓞 ℚ), Ideal.absNorm v.asIdeal = p :=
+  let ⟨v, hv⟩ := (primesEquiv (R := 𝓞 ℚ)).surjective ⟨p, hp⟩
+  ⟨v, (absNorm_asIdeal v).trans (congrArg Subtype.val hv)⟩
+
+end Rat.HeightOneSpectrum

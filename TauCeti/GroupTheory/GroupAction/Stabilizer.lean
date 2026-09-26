@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -16,13 +17,21 @@ import TauCeti.GroupTheory.QuotientGroup.Basic
 # Point stabilisers: their cardinality, and when they are normal
 
 A count defined through a point stabiliser is useful only alongside the rules for moving it.
-Two such rules are recorded here, both consequences of Mathlib machinery rather than new
-mathematics, and both stated for `Nat.card` because that is the form a numerical invariant of
+Three such rules are recorded here, all consequences of Mathlib machinery rather than new
+mathematics, and all stated for `Nat.card` because that is the form a numerical invariant of
 an orbit is wanted in. The first of them is what lets the count descend to the orbit space, so
 that descent is recorded here as well, as the definition `cardStabilizerOnOrbit`.
 
 *Along an orbit* the stabiliser order does not change: related points have conjugate
 stabilisers, by `MulAction.stabilizerEquivStabilizerOfOrbitRel`.
+
+*Along an equivariant injection* it does not change either: a map `α → β` carrying the action of
+`G` to that of `H` along a group isomorphism `G ≃* H`, and separating the point from its
+translates, identifies the stabilisers. So when the map is an equivalence, the equivalence of
+orbit spaces it induces, `TauCeti.MulAction.orbitRelQuotientCongr`, preserves
+`cardStabilizerOnOrbit`, and so does the splitting `TauCeti.MulAction.orbitRelQuotientSumEquiv` of
+the orbit space of an action on a sum `α ⊕ β`. These are what move a weighted count of orbits from
+one action to another.
 
 *Along a surjection* it divides: if `f : G →* H` is onto and the two actions agree at the point
 in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` times its
@@ -40,6 +49,14 @@ normality of it is equivalent to freeness of the action of the image.
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
   `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+* `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
+  to another along a group isomorphism, if it separates the point from its translates.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
+  `TauCeti.MulAction.orbitRelQuotientCongr` induced by an equivariant equivalence preserves the
+  stabiliser orders.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm`: the splitting
+  `TauCeti.MulAction.orbitRelQuotientSumEquiv` of the orbit space of an action on `α ⊕ β`
+  preserves the stabiliser orders.
 * `TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer`: the stabiliser order divides by
   `Nat.card f.ker` along a surjection `f`, with
   `TauCeti.card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient` the quotient-map
@@ -105,6 +122,52 @@ theorem cardStabilizerOnOrbit_mk (a : α) :
       Nat.card (MulAction.stabilizer G a) := by
   unfold cardStabilizerOnOrbit
   rfl
+
+section Congr
+
+variable {H β : Type*} [Group H] [MulAction H β]
+
+/-- **Stabiliser orders are preserved by an equivariant injection**: if `f : α → β` carries the
+`G`-action at `a` to the `H`-action along a group isomorphism `φ : G ≃* H`, and separates `a`
+from its translates, then `φ` maps the stabiliser of `a` onto that of `f a`, so the two have the
+same order.
+
+Both hypotheses are asked for only at `a`, as that is all the count needs: a caller holding an
+equivariant injective `f` supplies `fun g ↦ hφ g a` and `fun _ h ↦ hf h`. -/
+theorem card_stabilizer_congr (φ : G ≃* H) {f : α → β} (a : α)
+    (hφ : ∀ g : G, f (g • a) = φ g • f a) (hf : ∀ g : G, f (g • a) = f a → g • a = a) :
+    Nat.card (MulAction.stabilizer H (f a)) = Nat.card (MulAction.stabilizer G a) :=
+  Nat.card_congr (φ.toEquiv.subtypeEquiv fun g ↦ by
+    simpa [← hφ] using ⟨congrArg f, hf g⟩).symm
+
+/-- `MulAction.orbitRelQuotientCongr` preserves the stabiliser order of an orbit. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientCongr (φ : G ≃* H) (e : α ≃ β)
+    (he : ∀ (g : G) (a : α), e (g • a) = φ g • e a) (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientCongr φ e he q) = cardStabilizerOnOrbit q :=
+  Quotient.inductionOn' q fun a ↦ by simpa only [MulAction.orbitRelQuotientCongr_mk,
+    cardStabilizerOnOrbit_mk] using card_stabilizer_congr φ a (he · a) fun _ h ↦ e.injective h
+
+end Congr
+
+section Sum
+
+variable {β : Type*} [MulAction G β]
+
+/-- `MulAction.orbitRelQuotientSumEquiv` preserves the stabiliser order of an orbit: the orbit it
+sends to `Sum.inl q` or to `Sum.inr q` has the stabiliser order of `q`. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm
+    (s : MulAction.orbitRel.Quotient G α ⊕ MulAction.orbitRel.Quotient G β) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSumEquiv.symm s) =
+      s.elim cardStabilizerOnOrbit cardStabilizerOnOrbit := by
+  rcases s with (q | q) <;> induction q using Quotient.inductionOn' <;>
+    simp only [MulAction.orbitRelQuotientSumEquiv_symm_inl_mk,
+      MulAction.orbitRelQuotientSumEquiv_symm_inr_mk, cardStabilizerOnOrbit_mk, Sum.elim_inl,
+      Sum.elim_inr] <;>
+    exact card_stabilizer_congr (.refl G) _ (by simp) (by simp)
+
+end Sum
 
 /-- **A surjection of acting groups divides stabiliser orders by its kernel**: if `f : G →* H`
 is surjective and the `H`-action agrees with the `G`-action along `f` *at the point `a`*, then
@@ -195,7 +258,7 @@ theorem card_stabilizer_subgroupOf {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ) 
     MonoidHom.ker_eq_bot _ (Subgroup.subgroupOfEquivOfLe hle).injective]
   simp
 
-open MulAction in
+open _root_.MulAction in
 open scoped Pointwise in
 /-- **The stabiliser of a coset and the stabiliser of the translated point have the same order.**
 The class of `g` in `G ⧸ H` is stabilised inside `stabilizer G p` by exactly as many elements as

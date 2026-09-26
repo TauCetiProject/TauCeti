@@ -8,16 +8,18 @@ module
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import TauCeti.Probability.Distributions.ChiSquared
 import Mathlib.Algebra.Order.Star.Real
+import Mathlib.Analysis.Matrix.PosDef
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!
 # The nonsingular Wishart family
 
-The nonsingular Wishart law `TauCeti.nonsingularWishartMeasure n S` is the law on the
+The nonsingular Wishart law `TauCeti.Probability.nonsingularWishartMeasure n S` is the law on the
 symmetric-matrix subspace whose density against `TauCeti.symmetricLebesgue` is
 `(det A) ^ ((n - p - 1) / 2) * exp (-trace (S⁻¹ * A) / 2)`, normalized by
 `2 ^ (n p / 2) * (det S) ^ (n / 2) * Γ_p(n / 2)` and supported on the positive-definite cone.
@@ -36,32 +38,42 @@ constant leave the density equal to `1`, so for `-1 < n` the law is that Dirac m
 
 ## Main definitions
 
-* `TauCeti.nonsingularWishartPDFReal` and `TauCeti.nonsingularWishartPDF` — the Wishart density,
+* `TauCeti.Probability.nonsingularWishartPDFReal` and `TauCeti.Probability.nonsingularWishartPDF` —
+  the Wishart density,
   real- and `ℝ≥0∞`-valued.
-* `TauCeti.nonsingularWishartMeasure` — the nonsingular Wishart law.
+* `TauCeti.Probability.nonsingularWishartMeasure` — the nonsingular Wishart law.
 
 ## Main results
 
-* `TauCeti.nonsingularWishartPDFReal_pos_iff` — at a valid degree and scale the density is
+* `TauCeti.Probability.nonsingularWishartPDFReal_pos_iff` — at a valid degree and scale the density
+  is
   positive exactly on the positive-definite cone.
-* `TauCeti.nonsingularWishartMeasure_of_posDef` — at a valid degree and scale the law is the
+* `TauCeti.Probability.nonsingularWishartMeasure_of_posDef` — at a valid degree and scale the law is
+  the
   density against `TauCeti.symmetricLebesgue`, while
-  `TauCeti.nonsingularWishartMeasure_of_not_posDef` and
-  `TauCeti.nonsingularWishartMeasure_of_le` describe the two invalid branches.
-* `TauCeti.ae_posDef_nonsingularWishartMeasure` — the sampled matrix is positive definite almost
-  everywhere, so by `TauCeti.map_subtype_val_comap_nonsingularWishartMeasure` the law is recovered
+  `TauCeti.Probability.nonsingularWishartMeasure_of_not_posDef` and
+  `TauCeti.Probability.nonsingularWishartMeasure_of_le` describe the two invalid branches.
+* `TauCeti.Probability.ae_posDef_nonsingularWishartMeasure` — the sampled matrix is positive
+  definite almost
+  everywhere, so by `TauCeti.Probability.map_subtype_val_comap_nonsingularWishartMeasure` the law is
+  recovered
   from its lift to the cone.
-* `TauCeti.hasPDF_of_hasLaw_nonsingularWishartMeasure` and
-  `TauCeti.rnDeriv_nonsingularWishartMeasure` — a Wishart random matrix has a density against
+* `TauCeti.Probability.hasPDF_of_hasLaw_nonsingularWishartMeasure` and
+  `TauCeti.Probability.rnDeriv_nonsingularWishartMeasure` — a Wishart random matrix has a density
+  against
   `TauCeti.symmetricLebesgue`, and at a valid degree and scale the law's Radon–Nikodym
-  derivative is `TauCeti.nonsingularWishartPDF`.
-* `TauCeti.nonsingularWishartMeasure_zero` — in dimension zero the law is the Dirac mass at
+  derivative is `TauCeti.Probability.nonsingularWishartPDF`.
+* `TauCeti.Probability.nonsingularWishartMeasure_zero` — in dimension zero the law is the Dirac mass
+  at
   the unique symmetric matrix, hence a probability measure.
-* `TauCeti.map_symmetricFinOneEquiv_nonsingularWishartMeasure` — in dimension one the law is the
+* `TauCeti.Probability.map_symmetricFinOneEquiv_nonsingularWishartMeasure` — in dimension one the
+  law is the
   chi-squared law with `n` degrees of freedom, scaled by the variance.
-* `TauCeti.measurable_nonsingularWishartMeasure` — the law is measurable jointly in its real
+* `TauCeti.Probability.measurable_nonsingularWishartMeasure` — the law is measurable jointly in its
+  real
   degree and every coordinate of its scale matrix, and
-  `TauCeti.measurable_nonsingularWishartMeasure_selfAdjoint` is the form with the scale ranging
+  `TauCeti.Probability.measurable_nonsingularWishartMeasure_selfAdjoint` is the form with the scale
+  ranging
   over the symmetric-matrix carrier.
 
 ## References
@@ -79,7 +91,7 @@ open MeasureTheory
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -287,7 +299,7 @@ theorem measurable_uncurry_nonsingularWishartPDF (p : ℕ) :
 
 open Classical in
 /-- The **nonsingular Wishart law** of real degree `n` and positive-definite scale `S`: the
-density `TauCeti.nonsingularWishartPDF` against `TauCeti.symmetricLebesgue`. Outside the
+density `TauCeti.Probability.nonsingularWishartPDF` against `TauCeti.symmetricLebesgue`. Outside the
 classical parameter range — a scale that is not positive definite, or a degree at most `p - 1`,
 which in positive dimension is where the density stops being integrable — the definition sets the
 measure to zero. -/
@@ -391,7 +403,7 @@ theorem hasPDF_of_hasLaw_nonsingularWishartMeasure
     rwa [withDensity_zero, ← nonsingularWishartMeasure_of_not_posDef n hS]
 
 /-- The density against `TauCeti.symmetricLebesgue` of a random symmetric matrix with a
-nonsingular Wishart law is `TauCeti.nonsingularWishartPDF`. -/
+nonsingular Wishart law is `TauCeti.Probability.nonsingularWishartPDF`. -/
 theorem pdf_eq_nonsingularWishartPDF_of_hasLaw_nonsingularWishartMeasure (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n) (hX : HasLaw X (nonsingularWishartMeasure n S) P) :
     pdf X P (symmetricLebesgue p) =ᵐ[symmetricLebesgue p] nonsingularWishartPDF n S :=
@@ -540,4 +552,4 @@ theorem measurable_nonsingularWishartMeasure_selfAdjoint :
   measurable_nonsingularWishartMeasure.comp
     (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
 
-end TauCeti
+end TauCeti.Probability

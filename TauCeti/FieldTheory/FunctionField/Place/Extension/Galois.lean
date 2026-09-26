@@ -45,6 +45,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 * `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
   `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
+* `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism fixing
+  a rational place has the same residue on every regular function at that place.
 * `TauCeti.Place.degree_smul`: the action preserves the degree of a place over the constants.
 * `TauCeti.Place.restrict_smul`, `TauCeti.Place.ramificationIdx_smul` and
   `TauCeti.Place.relativeDegree_smul`: the action preserves the fibres of
@@ -114,6 +116,22 @@ theorem valuation_smul (x : F') : (σ • P).valuation x = P.valuation (σ.symm 
 /-- The action moves the valuation along `σ`. -/
 theorem valuation_smul_apply (x : F') : (σ • P).valuation (σ x) = P.valuation x := by
   simp
+
+/-- **An automorphism fixing a rational place has the same residue on regular functions**: if
+`σ` fixes the place `P` of degree one, then `σ z` and `z` have the same residue at `P` for every
+`z` regular at `P`, that is, `v_P (σ z - z) < 1`. -/
+theorem valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one (hσ : σ • P = P)
+    (hP : P.degree = 1) {z : F'} (hz : z ∈ P.integers) : P.valuation (σ z - z) < 1 := by
+  obtain ⟨c, hc⟩ := P.degree_eq_one_iff_forall_exists_valuation_sub_lt_one.mp hP z hz
+  have hfix : σ (algebraMap k F' c) = algebraMap k F' c := by
+    rw [IsScalarTower.algebraMap_apply k F F', AlgEquiv.commutes]
+  have hval : P.valuation (σ (z - algebraMap k F' c)) = P.valuation (z - algebraMap k F' c) := by
+    conv_lhs => rw [← hσ]
+    exact valuation_smul_apply σ P _
+  have hsub : σ z - z = σ (z - algebraMap k F' c) - (z - algebraMap k F' c) := by
+    rw [map_sub, hfix, sub_sub_sub_cancel_right]
+  rw [hsub]
+  exact (P.valuation.map_sub _ _).trans_lt (max_lt (hval ▸ hc) hc)
 
 /-- The order function of `σ • P` is the order function of `P` composed with `σ⁻¹`. -/
 @[simp]

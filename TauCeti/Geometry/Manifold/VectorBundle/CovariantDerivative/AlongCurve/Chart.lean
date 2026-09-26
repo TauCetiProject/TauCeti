@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.CoordinateChange
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Change
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Tangent
 
 /-!

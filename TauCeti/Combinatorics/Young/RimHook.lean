@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Corner
+import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
 # Rim hooks of a Young diagram
@@ -72,6 +74,15 @@ counts the beads the moving bead jumps over.  Both statements are proved here:
   `YoungDiagram.IsRimHook.betaNumber_eq_betaNumber_succ` describing the other beta-numbers.
 * `YoungDiagram.IsRimHook.card_filter_betaNumber`: the height of a rim hook is the number of
   beta-numbers of `μ` that the moved bead jumps over.
+* `YoungDiagram.IsRimHook.update_betaNumber_eq_comp_cycleIcc`: the beta-numbers of `ν` with the
+  bead of the bottom row raised are those of `μ`, rearranged by the cycle of the rows the hook
+  meets, whose sign is `(-1)` to the height.
+* `YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc`,
+  `YoungDiagram.IsRimHook.betaNumber_ne_betaNumber_add` and
+  `YoungDiagram.IsRimHook.eq_of_card_eq_of_rimHookRows_eq_Icc`: conversely, raising a bead of `ν`
+  to a free position adds a rim hook with that bottom row, every rim hook arises this way, and it is
+  determined by its bottom row and size.  So the rim hooks of size `s` that can be added to `ν`
+  correspond to the beads of `ν` that can move up `s` places.
 
 ## References
 
@@ -433,5 +444,197 @@ theorem card_filter_betaNumber (h : IsRimHook μ ν) (hab : μ.rimHookRows ν = 
   omega
 
 end IsRimHook
+
+/-! ### Adding a rim hook moves one bead up -/
+
+namespace IsRimHook
+
+/-- **Adding a rim hook, read on all the beta-numbers at once.**  Let `μ / ν` be a rim hook
+meeting the rows `a ≤ i ≤ b`.  Raising the beta-number of `ν` at the bottom row `b` by the number
+of cells of the hook gives the beta-numbers of `μ`, rearranged by the cycle
+`a ↦ a + 1 ↦ ⋯ ↦ b ↦ a` of the rows the hook meets.  That cycle has sign `(-1) ^ (b - a)`, the
+sign of the height of the hook (`Fin.sign_cycleIcc_of_le`). -/
+theorem update_betaNumber_eq_comp_cycleIcc (h : IsRimHook μ ν)
+    (hab : μ.rimHookRows ν = Finset.Icc a b) (hbr : b < r) :
+    Function.update (fun i : Fin r => ν.betaNumber r i) ⟨b, hbr⟩
+        (ν.betaNumber r b + (μ.card - ν.card)) =
+      (fun i : Fin r => μ.betaNumber r i) ∘
+        Fin.cycleIcc ⟨a, (h.le_of_rimHookRows_eq_Icc hab).trans_lt hbr⟩ ⟨b, hbr⟩ := by
+  have hle := h.le_of_rimHookRows_eq_Icc hab
+  have hcard := h.card_add_betaNumber hab hbr
+  have hlt := h.card_lt
+  have : NeZero r := ⟨by omega⟩
+  funext ⟨i, hi⟩
+  have hout : i < a ∨ b < i → ν.betaNumber r i = μ.betaNumber r i := fun hi' =>
+    betaNumber_eq_of_notMem_rimHookRows h.le (by rw [hab]; simp only [Finset.mem_Icc]; omega)
+  simp only [Function.comp_apply]
+  rcases lt_or_ge i a with hia | hai
+  · rw [Fin.cycleIcc_of_lt (Fin.mk_lt_mk.mpr hia),
+      Function.update_of_ne (by simp only [ne_eq, Fin.mk.injEq]; omega)]
+    exact hout (Or.inl hia)
+  rcases lt_trichotomy i b with hib | rfl | hbi
+  · rw [Fin.cycleIcc_of_ge_of_lt (Fin.mk_le_mk.mpr hai) (Fin.mk_lt_mk.mpr hib),
+      Function.update_of_ne (by simp only [ne_eq, Fin.mk.injEq]; omega), Fin.val_add,
+      Fin.val_one', Nat.add_mod_mod, Nat.mod_eq_of_lt (by omega : i + 1 < r)]
+    exact h.betaNumber_eq_betaNumber_succ hab hai hib hbr
+  · rw [Fin.cycleIcc_of_last (Fin.mk_le_mk.mpr hle), Function.update_self]
+    dsimp only
+    omega
+  · rw [Fin.cycleIcc_of_gt (Fin.mk_lt_mk.mpr hbi),
+      Function.update_of_ne (by simp only [ne_eq, Fin.mk.injEq]; omega)]
+    exact hout (Or.inr hbi)
+
+/-- The bottom row of a rim hook lies above the first empty row of the larger diagram. -/
+theorem lt_colLen_of_rimHookRows_eq_Icc (h : IsRimHook μ ν)
+    (hab : μ.rimHookRows ν = Finset.Icc a b) : b < μ.colLen 0 := by
+  have hb := rowLen_lt_of_rimHookRows_eq_Icc hab (h.le_of_rimHookRows_eq_Icc hab) le_rfl
+  by_contra hb'
+  rw [rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp hb')] at hb
+  omega
+
+/-- **A rim hook is determined by its size and its bottom row.**  Two rim hooks `μ₁ / ν` and
+`μ₂ / ν` with the same number of cells and the same bottom row have the same larger diagram: by
+`YoungDiagram.IsRimHook.update_betaNumber_eq_comp_cycleIcc` the beta-numbers of `μ₁` and of `μ₂`
+are rearrangements of the same family, and a strictly decreasing family is determined by its set
+of values. -/
+theorem eq_of_card_eq_of_rimHookRows_eq_Icc {μ₁ μ₂ : YoungDiagram} {a₁ a₂ : ℕ} (h₁ : IsRimHook μ₁ ν)
+    (h₂ : IsRimHook μ₂ ν) (hcard : μ₁.card = μ₂.card)
+    (hab₁ : μ₁.rimHookRows ν = Finset.Icc a₁ b) (hab₂ : μ₂.rimHookRows ν = Finset.Icc a₂ b) :
+    μ₁ = μ₂ := by
+  set r := max (μ₁.colLen 0) (μ₂.colLen 0)
+  have hbr : b < r := (h₁.lt_colLen_of_rimHookRows_eq_Icc hab₁).trans_le (le_max_left _ _)
+  have hu := (h₁.update_betaNumber_eq_comp_cycleIcc hab₁ hbr).symm.trans
+    (hcard ▸ h₂.update_betaNumber_eq_comp_cycleIcc hab₂ hbr)
+  have hanti : ∀ μ : YoungDiagram, StrictAnti fun i : Fin r => μ.betaNumber r i :=
+    fun μ _ _ hij => μ.betaNumber_lt_betaNumber hij (Fin.is_lt _)
+  have hrange := congrArg Set.range hu
+  rw [EquivLike.range_comp, EquivLike.range_comp,
+    (hanti μ₁).range_inj_of_wellFoundedGT (hanti μ₂)] at hrange
+  exact eq_of_betaNumber_eq (le_max_left _ _) (le_max_right _ _)
+    fun i hi => congrFun hrange ⟨i, hi⟩
+
+/-- **The bead moved by a rim hook lands on a free position**: raising the beta-number of `ν` at
+the bottom row of a rim hook `μ / ν` by the number of cells of the hook gives a value that is not
+a beta-number of `ν`.  This is the converse of
+`YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc`. -/
+theorem betaNumber_ne_betaNumber_add (h : IsRimHook μ ν)
+    (hab : μ.rimHookRows ν = Finset.Icc a b) (hir : i < r) (hbr : b < r) :
+    ν.betaNumber r i ≠ ν.betaNumber r b + (μ.card - ν.card) := by
+  intro hi
+  have hlt := h.card_lt
+  have hib : i ≠ b := by
+    rintro rfl
+    omega
+  -- The raised family is a rearrangement of the beta-numbers of `μ`, hence injective.
+  have hinj : Function.Injective (Function.update (fun i : Fin r => ν.betaNumber r i) ⟨b, hbr⟩
+      (ν.betaNumber r b + (μ.card - ν.card))) := by
+    have hμ : Function.Injective fun i : Fin r => μ.betaNumber r i :=
+      fun _ _ hkl => Fin.ext (μ.injOn_betaNumber r (Fin.is_lt _) (Fin.is_lt _) hkl)
+    rw [h.update_betaNumber_eq_comp_cycleIcc hab hbr]
+    exact hμ.comp (Equiv.injective _)
+  have := @hinj ⟨i, hir⟩ ⟨b, hbr⟩ (by
+    rw [Function.update_of_ne (by simpa [Fin.ext_iff] using hib), Function.update_self, ← hi])
+  exact hib (Fin.mk.inj_iff.mp this)
+
+end IsRimHook
+
+/-- **Adding a rim hook moves one bead up.**  Let `ν` have at most `r` rows, and suppose that
+raising its beta-number at the row `j < r` by `s` produces a value that is not already a
+beta-number of `ν` (which forces `s > 0`).  Then there is a rim hook `μ / ν` with `s` cells whose
+bottom row is `j`, and `μ` still has at most `r` rows.  This is the converse of
+`YoungDiagram.IsRimHook.card_add_betaNumber`: the moved bead lands at the first row `a` whose
+beta-number falls below the new value, and the rows `a < i ≤ j` are the beads it jumps over. -/
+theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) (hjr : j < r)
+    (hfree : ∀ i < r, ν.betaNumber r i ≠ ν.betaNumber r j + s) :
+    ∃ μ, IsRimHook μ ν ∧ μ.colLen 0 ≤ r ∧ μ.card = ν.card + s ∧
+      ∃ a, μ.rimHookRows ν = Finset.Icc a j := by
+  classical
+  have hs : 0 < s :=
+    Nat.pos_of_ne_zero fun hs => hfree j hjr (by rw [hs, Nat.add_zero])
+  set v := ν.betaNumber r j + s with hv
+  have hex : ∃ i, ν.betaNumber r i < v := ⟨j, by omega⟩
+  -- The moved bead lands at the first row `a` whose beta-number is smaller than `v`.
+  set a := Nat.find hex with ha
+  have hav : ν.betaNumber r a < v := Nat.find_spec hex
+  have haj : a ≤ j := Nat.find_min' hex (by omega)
+  have hbefore : ∀ i < a, v < ν.betaNumber r i := fun i hi =>
+    lt_of_le_of_ne (Nat.not_lt.mp (Nat.find_min hex hi)) fun hi' => hfree i (by omega) hi'.symm
+  simp only [betaNumber_def] at hav hbefore
+  -- The row lengths of the enlarged diagram.
+  set g : ℕ → ℕ := fun i => if i < a then ν.rowLen i else if i = a then v - (r - 1 - a)
+    else if i ≤ j then ν.rowLen (i - 1) + 1 else ν.rowLen i with hg
+  have hg_lt : ∀ i < a, g i = ν.rowLen i := fun i hi => by simp [hg, hi]
+  have hg_a : g a = v - (r - 1 - a) := by simp [hg]
+  have hg_mid : ∀ i, a < i → i ≤ j → g i = ν.rowLen (i - 1) + 1 := fun i hai hij => by
+    have hnotlt : ¬ i < a := by omega
+    have hne : i ≠ a := by omega
+    simp [hg, hij, hnotlt, hne]
+  have hg_gt : ∀ i, j < i → g i = ν.rowLen i := fun i hji => by
+    have hnotlt : ¬ i < a := by omega
+    have hne : i ≠ a := by omega
+    have hnotle : ¬ i ≤ j := by omega
+    simp [hg, hnotlt, hne, hnotle]
+  have hanti : ∀ {i i'}, i ≤ i' → ν.rowLen i' ≤ ν.rowLen i := fun h => ν.rowLen_anti _ _ h
+  -- Row by row, `g` agrees with `ν` outside `[a, j]` and exceeds it inside.
+  have hrows : ∀ i, (ν.rowLen i < g i ↔ a ≤ i ∧ i ≤ j) ∧ ν.rowLen i ≤ g i := fun i => by
+    rcases lt_trichotomy i a with hia | rfl | hai
+    · rw [hg_lt i hia]
+      omega
+    · rw [hg_a]
+      omega
+    rcases le_or_gt i j with hij | hji
+    · have := hanti (Nat.sub_le i 1)
+      rw [hg_mid i hai hij]
+      omega
+    · rw [hg_gt i hji]
+      omega
+  have hgmono : Antitone g := antitone_nat_of_succ_le fun i => by
+    have h1 := hanti (Nat.le_succ i)
+    rcases lt_trichotomy (i + 1) a with hia | hia | hia
+    · rw [hg_lt _ hia, hg_lt i (by omega)]
+      exact h1
+    · have := hbefore i (by omega)
+      rw [hia, hg_a, hg_lt i (by omega)]
+      omega
+    rcases le_or_gt (i + 1) j with hij | hji
+    · rw [hg_mid _ hia hij, Nat.add_sub_cancel]
+      rcases eq_or_lt_of_le (Nat.le_of_lt_succ hia) with rfl | hai
+      · rw [hg_a]
+        omega
+      · rw [hg_mid i hai (by omega)]
+        have := hanti (Nat.sub_le i 1)
+        omega
+    · rw [hg_gt _ hji]
+      exact h1.trans (hrows i).2
+  set μ := ofRowLensFin (fun i : Fin r => g i) fun _ _ h => hgmono h
+  have hμ : ∀ i, μ.rowLen i = g i := fun i => by
+    by_cases hi : i < r
+    · exact rowLen_ofRowLensFin _ _ ⟨i, hi⟩
+    · have hzero : μ.rowLen i = 0 :=
+        rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi)
+      rw [hzero, hg_gt i (by omega)]
+      exact (rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))).symm
+  have hμrows : μ.rimHookRows ν = Finset.Icc a j := by
+    ext i
+    rw [mem_rimHookRows, hμ, (hrows i).1, Finset.mem_Icc]
+  have hrim : IsRimHook μ ν :=
+    { le := le_of_forall_rowLen_le fun i => (hμ i).symm ▸ (hrows i).2
+      ne := fun h => by
+        have := (hrows a).1.mpr ⟨le_rfl, haj⟩
+        rw [← hμ, ← h] at this
+        exact lt_irrefl _ this
+      ordConnected := by
+        have hset : {i | ν.rowLen i < μ.rowLen i} = Set.Icc a j := by
+          ext i
+          simp only [Set.mem_ofPred_eq, hμ, (hrows _).1, Set.mem_Icc]
+        rw [hset]
+        exact Set.ordConnected_Icc
+      rowLen_succ := fun i hi hi' => by
+        rw [hμ, (hrows _).1] at hi hi'
+        rw [hμ, hg_mid _ (by omega) hi'.2, Nat.add_sub_cancel] }
+  refine ⟨μ, hrim, colLen_zero_ofRowLensFin_le _ _, ?_, a, hμrows⟩
+  have hcard := hrim.card_add_betaNumber hμrows hjr
+  rw [betaNumber_def, hμ, hg_a] at hcard
+  omega
 
 end YoungDiagram

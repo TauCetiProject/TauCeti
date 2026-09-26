@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Restriction of first-order Sobolev functions
@@ -25,6 +27,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
+* `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
+  finite-measure subset depends continuously on the Sobolev function.
 
 ## References
 
@@ -42,7 +46,7 @@ open scoped Distributions ENNReal Gradient
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega U V : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+  {Omega U V : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {S : Set E}
 
 /-! ### Restriction of ambient jets -/
 
@@ -228,5 +232,31 @@ theorem W1p.restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (u : W1p mu Om
       (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
   exact ((W1p.value_restrictL_ae hV (W1p.restrictL hU u)).trans hsecond).trans
     (W1p.value_restrictL_ae (hV.trans hU) u).symm
+
+/-! ### Subset averages -/
+
+omit [FiniteDimensional ℝ E] in
+/-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
+measure depends continuously on the function. -/
+theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
+    (hSfin : mu S ≠ ∞) :
+    Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
+  have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
+    Measure.restrict_restrict_of_subset hSU
+  have hmeas : (mu.restrict (U : Set E)) S = mu S := by
+    rw [← Measure.restrict_apply_univ, hrs, Measure.restrict_apply_univ]
+  have hEq : ∀ v : W1p mu U p, (⨍ y in S, W1p.value v y ∂mu) =
+      (mu.real S)⁻¹ * ∫ y in S, W1p.valueL v y ∂(mu.restrict (U : Set E)) := fun v => by
+    rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
+  have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
+    rw [hmeas]
+    exact hSfin.lt_top
+  have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
+      ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
+    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
+      hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
+  simp only [hEq]
+  exact continuous_const.mul
+    (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
 
 end TauCeti

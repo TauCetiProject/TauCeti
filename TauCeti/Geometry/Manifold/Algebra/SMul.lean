@@ -8,14 +8,17 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
-# Diffeomorphisms from pointwise-smooth group actions
+# Smooth translations and diffeomorphisms from group actions
 
 This file packages the action of an element of a group with a `ContMDiffConstSMul` instance as a
 self-diffeomorphism. Unlike `Diffeomorph.smul`, this construction does not require a manifold
-structure on the acting group or joint smoothness of the action.
+structure on the acting group or joint smoothness of the action. Smooth multiplication supplies
+the required smoothness of individual left translations via a self-action instance, as does
+smooth addition for additive translations.
 
-## Main declaration
+## Main declarations
 
+* `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
   group action.
 -/
@@ -23,6 +26,15 @@ structure on the acting group or joint smoothness of the action.
 public section
 
 open scoped ContDiff Manifold
+
+/-- Smooth multiplication makes each left translation smooth. -/
+@[to_additive /-- Smooth addition makes each left translation smooth. -/]
+instance ContMDiffMul.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} [Mul G] [TopologicalSpace G] [ChartedSpace H G]
+    {n : ℕ∞ω} [ContMDiffMul I n G] : ContMDiffConstSMul I n G G where
+  contMDiff_const_smul _ := contMDiff_mul_left
 
 namespace Diffeomorph
 

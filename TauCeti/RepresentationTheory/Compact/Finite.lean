@@ -70,6 +70,8 @@ measure computation has just identified.
 * `TauCeti.lpHaarProbEquivFun`: **`L²(G)` is `G → 𝕜`**, by the linear equivalence taking an `Lp`
   class to its values; the previous item is its injectivity and finiteness is its surjectivity.
   Nothing in it depends on the exponent, so it is stated for every `p`.
+* `TauCeti.finiteDimensional_lp_haarProb` and `TauCeti.finrank_lp_haarProb`: **`Lp` of a finite
+  discrete group is finite-dimensional, of dimension `|G|`**, being that space of functions.
 * `TauCeti.inner_Lp_haarProb_eq_inv_mul_sum`: **the `L²(G)` inner product is the normalized
   Hermitian pairing** `|G|⁻¹ ∑ x, conj (f x) · g x` of those values, with
   `TauCeti.inner_toLp_haarProb_eq_inv_mul_sum` the form for two continuous functions.
@@ -163,7 +165,9 @@ orthogonality of the summands, which needs the inner product Mathlib's complemen
 purely algebraic conclusion, that `π.toRepresentation.asModule` is a semisimple
 `MonoidAlgebra 𝕜 G`-module whenever `|G|` is invertible in `𝕜`, is Mathlib's own instance and is
 neither restated nor reproved here. Peter-Weyl for a finite group, that `peterWeylBasis` is the
-matrix-coefficient basis of `k[G]`, is not proved here either.
+matrix-coefficient basis of the functions on `G`, is proved in
+`TauCeti/RepresentationTheory/Compact/DegreeSum.lean`, on top of the identification
+`TauCeti.lpHaarProbEquivFun` built below.
 -/
 
 public section
@@ -363,6 +367,22 @@ theorem lpHaarProbEquivFun_symm_apply [Fact (1 ≤ p)] (f : G → 𝕜) :
   Lp.ext (.of_eq
     ((coeFn_lpHaarProbEquivFun_symm G f).trans
       (coeFn_toLp_haarProb G ⟨f, continuous_of_discreteTopology⟩).symm))
+
+variable (𝕜 p) in
+/-- **`Lp` of a finite discrete group is finite-dimensional.** It is the space `G → 𝕜` of all
+functions on `G`, by `TauCeti.lpHaarProbEquivFun`. -/
+instance finiteDimensional_lp_haarProb : FiniteDimensional 𝕜 (Lp 𝕜 p (haarProb G)) := by
+  have : Fintype G := Fintype.ofFinite G
+  exact Module.Finite.equiv (lpHaarProbEquivFun G 𝕜 p).symm
+
+variable (𝕜 p) in
+/-- **`Lp` of a finite discrete group has dimension the order of the group.** No exponent
+condition is needed: the identification with `G → 𝕜` of `TauCeti.lpHaarProbEquivFun` holds for
+every `p`. -/
+theorem finrank_lp_haarProb : Module.finrank 𝕜 (Lp 𝕜 p (haarProb G)) = Nat.card G := by
+  have : Fintype G := Fintype.ofFinite G
+  rw [(lpHaarProbEquivFun G 𝕜 p).finrank_eq, Module.finrank_fintype_fun_eq_card,
+    Nat.card_eq_fintype_card]
 
 end LpEquiv
 

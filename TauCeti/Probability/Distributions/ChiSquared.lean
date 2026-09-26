@@ -8,8 +8,9 @@ module
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Gamma.CharFun
-public import TauCeti.Probability.Distributions.Measurability
-public import TauCeti.Probability.Distributions.PDFInstances
+public import TauCeti.Probability.Distributions.Gamma.Measurability
+public import TauCeti.Probability.Distributions.Gamma.PDF
+public import Mathlib.Probability.Distributions.Exponential
 
 /-!
 # The chi-squared distribution

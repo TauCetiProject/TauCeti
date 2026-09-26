@@ -20,7 +20,7 @@ semiring.
 * `Matrix.GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq`: inverting a two-sided
   invertible transformation.
 * `Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
-  equivalence of index types.
+  equivalence of index types, with `Equiv.reindexGL_refl` and `Equiv.reindexGL_symm`.
 -/
 
 namespace Matrix.GeneralLinearGroup
@@ -67,6 +67,19 @@ def reindexGL : GL n R ≃* GL p R :=
 theorem coe_reindexGL (M : GL n R) :
     (reindexGL e R M : Matrix p p R) = (M : Matrix n n R).submatrix e.symm e.symm := by
   simp [reindexGL, Units.coe_mapEquiv, Matrix.reindex_apply]
+
+/-- Reindexing along the identity equivalence is the identity. -/
+@[simp]
+theorem reindexGL_refl : (Equiv.refl n).reindexGL R = MulEquiv.refl (GL n R) := by
+  ext M i j
+  simp
+
+/-- Reindexing along the inverse equivalence is the inverse isomorphism. -/
+theorem reindexGL_symm : e.symm.reindexGL R = (e.reindexGL R).symm := by
+  refine MulEquiv.ext fun M => (e.reindexGL R).injective ?_
+  rw [MulEquiv.apply_symm_apply]
+  ext i j
+  simp
 
 end
 

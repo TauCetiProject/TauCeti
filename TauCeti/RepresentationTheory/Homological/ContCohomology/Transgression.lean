@@ -134,8 +134,11 @@ exist when `G` is profinite and `N` is closed (`TauCeti.ContCohomology.transgres
 the class of the descended coboundary `TauCeti.ContCohomology.IsTransgressionLift.cocycle` is the
 transgression of the class of `c`. -/
 structure IsTransgressionLift (c : N → M) (f : G → M) : Prop where
+  /-- the cochain `f` is continuous -/
   continuous : Continuous f
+  /-- `f` extends `c` along right `N`-translation: `f (g * n) = f g + g • c n` -/
   apply_mul : ∀ (g : G) (n : N), f (g * n) = f g + g • c n
+  /-- `f g` trivialises the difference between `c` and its conjugate by `g` -/
   smul_conj_sub : ∀ (g : G) (n : N),
     g • c (inverseConjugationHom N g n) - c n = d0 N M (f g) n
 

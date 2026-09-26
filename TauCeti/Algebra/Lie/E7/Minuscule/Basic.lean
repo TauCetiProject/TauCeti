@@ -31,6 +31,7 @@ reflection tables.
 
 * `TauCeti.E7Minuscule.cartanMatrix`, `raisingMatrix`, and `loweringMatrix`: the integral Cartan,
   raising, and lowering matrices.
+* `TauCeti.E7Minuscule.isSl2Triple`: the three matrices at a simple node form an `sl₂` triple.
 * `TauCeti.E7Minuscule.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`.
 * `TauCeti.E7Minuscule.serreRepresentation`: the induced representation of the type-`E₇` Serre
   Lie algebra.
@@ -72,12 +73,14 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 7) (Fin 56) where
   cartanMatrix := CartanMatrix.E 7
   weight := e7MinusculeWeight
   reflection i := e7MinusculeReflection i
-  cartanMatrix_isSymm := CartanMatrix.E_isSymm 7
   cartanMatrix_diag := CartanMatrix.E_diag 7
-  cartanMatrix_isSimplyLaced := CartanMatrix.isSimplyLaced_E 7
+  cartanMatrix_offDiag_nonpos := CartanMatrix.E_off_diag_nonpos 7
+  cartanMatrix_zero_comm i j := by rw [(CartanMatrix.E_isSymm 7).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-  weight_reflection := e7MinusculeWeight_reflection_apply
+  weight_reflection i a j := by
+    rw [(CartanMatrix.E_isSymm 7).apply]
+    exact e7MinusculeWeight_reflection_apply i a j
   weight_injective := e7MinusculeWeight_injective
 
 /-- The Cartan matrix of the type-`E₇` minuscule weight table is the `E₇` Cartan matrix. -/
@@ -135,6 +138,11 @@ theorem loweringMatrix_apply (i : Fin 7) (a b : Fin 56) :
     weightTable.loweringMatrix_apply i a b
 
 /-! ## Chevalley--Serre relations -/
+
+/-- At each simple node, the three integral minuscule generator matrices form an `sl₂` triple. -/
+theorem isSl2Triple (i : Fin 7) :
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) :=
+  weightTable.isSl2Triple i (exists_e7MinusculeWeight_apply_eq_neg_one i)
 
 /-- The integral minuscule generator matrices satisfy the Chevalley--Serre relations of type
 `E₇`, in Bourbaki numbering. -/

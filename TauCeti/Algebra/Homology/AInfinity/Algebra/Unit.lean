@@ -35,7 +35,6 @@ namespace AInfinityAlgebra
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
--- Source: `TauCetiRoadmap/DGAInfinity/Suggested.lean`.
 /-- A **strict unit** for an uncurved `A∞` algebra in the Keller convention.
 
 The unit has degree zero, is closed under `m₁`, and is a two-sided unit for `m₂`.  Every operation

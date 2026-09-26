@@ -43,6 +43,8 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
 
 * `TauCeti.alternant_eq_sum`: the Leibniz expansion of the alternant as a signed sum of monomials,
   and `TauCeti.coeff_alternant` with `TauCeti.coeff_alternant_of_injective` its coefficients.
+* `TauCeti.alternant_ne_zero_of_injective`: an alternant of pairwise distinct exponents is
+  nonzero.
 * `TauCeti.isHomogeneous_alternant`: `a_α` is homogeneous of degree `∑ i, α i`.
 * `TauCeti.rename_alternant`: `a_α` is antisymmetric, permuting the variables by `e` multiplying
   it by `sign e`.
@@ -130,6 +132,14 @@ theorem coeff_alternant_of_injective {α : σ → ℕ} (hα : Function.Injective
     refine absurd (mem_filter.2 ⟨mem_univ _, ?_⟩) h
     funext i
     simp
+
+/-- **An alternant of pairwise distinct exponents is nonzero**: the monomial `∏ᵢ X_i ^ α i`
+occurs in it with coefficient `1`. -/
+theorem alternant_ne_zero_of_injective [Nontrivial R] {α : σ → ℕ} (hα : Function.Injective α) :
+    alternant σ R α ≠ 0 := by
+  intro h
+  have := coeff_alternant_of_injective (R := R) hα 1
+  simp [h] at this
 
 /-- An alternant is homogeneous of degree the total of its exponents. -/
 theorem isHomogeneous_alternant (α : σ → ℕ) :

@@ -184,6 +184,32 @@ theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
   ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
 
+/-- An orientation has one arrow, in total across the two directions, over each edge. -/
+theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
+    Nat.card (vertex G o i ⟶ vertex G o j) +
+        Nat.card (vertex G o j ⟶ vertex G o i) =
+      if G.Adj i j then 1 else 0 := by
+  rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
+  split_ifs with h
+  · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
+      rw [h1, h2]
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
+      rw [h1, h2]
+  · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
+    have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
+    rw [h1, h2]
+
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
   obj i := DoubledQuiver.vertexEquiv G ((vertexEquiv G o).symm i)

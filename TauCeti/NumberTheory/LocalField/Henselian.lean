@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LocalField.Basic
-public import Mathlib.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Henselianity of nonarchimedean local fields
@@ -32,9 +32,9 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The integer ring of a nonarchimedean local field is a Henselian local ring: it is local and
 complete for the topology of its maximal ideal. -/
 instance henselianLocalRing_integer : HenselianLocalRing 𝒪[K] where
-  is_henselian f hf a₀ h₁ h₂ := by
-    let := IsTopologicalAddGroup.rightUniformSpace K
-    have := isUniformAddGroup_of_addCommGroup (G := K)
-    exact (IsAdicComplete.henselianRing 𝒪[K] 𝓂[K]).is_henselian f hf a₀ h₁ (h₂.map _)
+  is_henselian := by
+    let _ := IsTopologicalAddGroup.rightUniformSpace K
+    let _ := isUniformAddGroup_of_addCommGroup (G := K)
+    exact IsAdicComplete.henselianLocalRing 𝒪[K] |>.is_henselian
 
 end TauCeti

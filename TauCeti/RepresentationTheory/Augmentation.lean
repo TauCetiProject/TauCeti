@@ -11,113 +11,62 @@ public import TauCeti.RepresentationTheory.FDRep
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
-# The augmentation subrepresentation of a permutation representation
+# The augmentation subrepresentation of a free-module action
 
-A permutation representation `k[X]` of a group `G` on a `G`-set `X` always carries two canonical
-subrepresentations, visible before anything is known about `G`: the **invariant line** spanned by
-the sum of the standard basis, and the **augmentation subrepresentation** cut out by the vanishing
-of the sum of the coefficients.  Neither uses more than the fact that `G` permutes the standard
-basis, which leaves the coefficient sum unchanged.
+For a monoid action on `X`, the augmentation subrepresentation of `k[X]` consists of the vectors
+whose coefficients sum to zero. For a group action on finite `X`, the sum of the standard basis
+vectors spans an invariant subrepresentation, called the invariant line. Both constructions are
+defined over any semiring. If `X` is nonempty, the invariant line is equivalent to the trivial
+representation on `k`: every coordinate of a vector in the line is its scalar coefficient.
 
-For a finite `X` whose cardinality is invertible in `k` the two are complementary, so `k[X]` splits
-as a line carrying the trivial representation plus a representation of dimension `|X| - 1`.  That
-splitting is recorded as an equivalence of representations
-`TauCeti.ofMulActionEquivProdAugmentation`, whose first factor is the trivial representation on `k`
-itself: a scalar names the multiple it takes of the sum of the standard basis.  It is the source of
-the *deleted* permutation representations, of which the standard representation of the symmetric
-group in `TauCeti.RepresentationTheory.Symmetric.Standard` is the first example.
+For finite `X` over a ring satisfying the strong rank condition, the augmentation subrepresentation
+has rank `|X| - 1`.
+Over any ring where `|X|` is a unit, the invariant line complements it. The equivalence
+`TauCeti.ofMulActionEquivProdAugmentation` expresses this splitting: its first component is the
+average of the coefficients, and its second subtracts that multiple of the sum of the standard
+basis. For empty `X`, both subrepresentations are zero and are still complementary.
 
-## Main definitions
+Over a field, the character of the augmentation subrepresentation is the character of the induced
+free-module action minus the trivial character, provided `X` is finite and nonempty. The identity
+holds even when the characteristic divides `|X|`, so the invariant line is not a complement.
+These constructions underlie the standard representation of the symmetric group.
 
-* `TauCeti.permutationSum`: the sum of the standard basis of `k[X]`, for a finite `X`.
-* `TauCeti.invariantLine`: the line spanned by `TauCeti.permutationSum`, as a subrepresentation.
-* `TauCeti.augmentationSubrepresentation`: the kernel of the augmentation, as a subrepresentation.
-* `TauCeti.invariantLineEquivTrivial`: for a nonempty `X` over a domain, the invariant line is the
-  trivial representation on `k` itself.
-* `TauCeti.ofMulActionEquivProdAugmentation`: when `|X|` is invertible in `k`, the permutation
-  representation is the trivial representation plus the augmentation subrepresentation.
+## Main definitions and results
 
-## Main results
-
-* `TauCeti.sumCoords_basis_ofMulAction`: the augmentation is invariant, which is what makes the
-  augmentation subrepresentation a subrepresentation.
-* `TauCeti.ofMulAction_permutationSum`: the sum of the standard basis is fixed, which is what makes
-  the invariant line one.
-* `TauCeti.toRepresentation_invariantLine`: the invariant line carries the trivial representation,
-  and `TauCeti.finrank_invariantLine` says it is a line.
-* `TauCeti.ker_sumCoords_basis_eq_span`: the augmentation subrepresentation is spanned by the
-  differences of the standard basis vectors from a fixed one.
-* `TauCeti.isCompl_invariantLine_augmentationSubrepresentation`: when `|X|` is invertible in `k`,
-  or `X` is empty, the two subrepresentations are complementary.
-* `TauCeti.finrank_augmentationSubrepresentation`: the augmentation subrepresentation has
-  dimension `|X| - 1`.
-* `TauCeti.character_augmentationSubrepresentation`: for a nonempty `X`, its character is the
-  character of `k[X]` less `1`, the trivial quotient contributing that `1`.
-* `TauCeti.ofMulActionEquivProdAugmentation_apply_fst` and
-  `TauCeti.coe_ofMulActionEquivProdAugmentation_apply_snd`: the two components a vector splits
-  into are the average of its coefficients and what subtracting that multiple of the sum of the
-  standard basis leaves.
+* `TauCeti.augmentationSubrepresentation`: the kernel of the coefficient sum.
+* `TauCeti.permutationSum` and `TauCeti.invariantLine`: the sum of the standard basis and its span.
+* `TauCeti.invariantLineEquivTrivial`: the invariant line as the trivial representation on `k`.
+* `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
+  differences of standard basis vectors from a fixed one.
+* `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
+  are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.
+* `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
+* `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
+* `TauCeti.character_augmentationSubrepresentation`: the character is the free-module character
+  minus `1`.
 
 ## Implementation notes
 
-The augmentation used here is Mathlib's `Module.Basis.sumCoords` of the standard basis
-`MonoidAlgebra.basis X k`, a `k`-linear map on the free module `k[X]` of an arbitrary index type
-`X`, because that is what a permutation representation acts on.  Nothing is restated about it:
-`TauCeti.MonoidAlgebra.basis_repr` of `TauCeti.Algebra.MonoidAlgebra.Basis` is the bridge from that
-basis to `MonoidAlgebra.coeff` that Mathlib does not record, and the generic `Module.Basis` API
-computes with the augmentation once it is available.  The augmentation is therefore *not* an
-instance
-of `TauCeti.MonoidAlgebra.augmentation` of `TauCeti.Algebra.MonoidAlgebra.Exactness`, which is the
-ring homomorphism `k[M] →+* k` of a monoid algebra: a `G`-set carries no multiplication, so there
-is no ring structure on `k[X]` for a ring homomorphism to be defined on.  On the overlap, `X` a
-monoid, the two maps agree, both sending `single x a` to `a`.
-
-Invertibility of `|X|` in `k`, rather than an ordered field or an averaging operator, is what the
-splitting needs, and for a nonempty `X` over a nontrivial `k` it is the sharp hypothesis: if
-`|X| = 0` in `k` then `permutationSum` is a nonzero element of the augmentation subrepresentation,
-so the invariant line meets it and the two are not complementary.  For an empty `X`, or a trivial
-`k`, every module in sight is zero and the two are complementary whatever `|X|` is in `k`; the
-empty case is the first disjunct of `TauCeti.isCompl_invariantLine_augmentationSubrepresentation`.
-The character identity `TauCeti.character_augmentationSubrepresentation` needs no such hypothesis:
-the `1` it subtracts is the trace of a rank-one projection onto a line transverse to the
-augmentation subrepresentation, and such a line exists whether or not the *invariant* line is one.
+The augmentation is `Module.Basis.sumCoords` for `MonoidAlgebra.basis X k`. This linear map
+requires no multiplication on `X`, unlike the ring homomorphism augmenting a monoid algebra.
+The two maps agree when `X` is a monoid: both send `single x a` to `a`.
 
 ## References
 
-* J.-P. Serre, *Linear Representations of Finite Groups*, §2.3, where the permutation
-  representation of a group on a finite set is split into the invariant line and its complement.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles", which asks for the standard representation of the
-  symmetric group as the complement of the trivial one in a permutation module.
+* J.-P. Serre, *Linear Representations of Finite Groups*, §2.3.
 -/
 
 public section
 
 namespace TauCeti
 
-/-! ### The augmentation -/
-
-section Augmentation
-
-variable {k : Type*} [Semiring k] {X : Type*}
-
-/-- The **augmentation** of `k[X]` is `Module.Basis.sumCoords` of the standard basis: the linear
-map sending an element to the sum of its coefficients.  It is surjective as soon as there is a
-standard basis vector to hit `1`. -/
-theorem sumCoords_basis_surjective [Nonempty X] :
-    Function.Surjective (MonoidAlgebra.basis X k).sumCoords := fun a =>
-  ⟨MonoidAlgebra.single (Classical.arbitrary X) a, by simp⟩
-
-end Augmentation
-
 /-! ### The augmentation subrepresentation -/
 
 section Subrep
 
-variable (k : Type*) [CommSemiring k] (G X : Type*) [Group G] [MulAction G X]
+variable (k : Type*) [Semiring k] (G X : Type*) [Monoid G] [MulAction G X]
 
-/-- The augmentation is invariant: a group element permutes the standard basis, so it does not
-change the sum of the coefficients. -/
+/-- The coefficient sum is invariant under the induced action on the free module. -/
 @[simp]
 theorem sumCoords_basis_ofMulAction (g : G) (v : MonoidAlgebra k X) :
     (MonoidAlgebra.basis X k).sumCoords (Representation.ofMulAction k G X g v) =
@@ -126,7 +75,7 @@ theorem sumCoords_basis_ofMulAction (g : G) (v : MonoidAlgebra k X) :
       Finsupp.mapDomain (g • ·) v.coeff := by
     simp [Representation.ofMulAction_def]
   simp only [Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr, hcoeff]
-  exact Finsupp.sum_mapDomain_index_inj (MulAction.injective g)
+  exact Finsupp.sum_mapDomain_index (fun _ => rfl) (fun _ _ _ => rfl)
 
 /-- The **augmentation subrepresentation** of `k[X]`: the elements whose coefficients sum to
 zero. -/
@@ -155,7 +104,7 @@ end Subrep
 
 section SubrepRing
 
-variable {k : Type*} [CommRing k] {G X : Type*} [Group G] [MulAction G X]
+variable {k : Type*} [Ring k] {G X : Type*} [Monoid G] [MulAction G X]
 
 /-- A difference of two standard basis vectors has vanishing augmentation. -/
 theorem single_sub_single_mem_augmentationSubrepresentation (x y : X) :
@@ -190,7 +139,7 @@ theorem sumCoords_basis_permutationSum :
     (MonoidAlgebra.basis X k).sumCoords (permutationSum k X) = Fintype.card X := by
   simp
 
-/-- The sum of the standard basis is nonzero, since each of its coefficients is `1`. -/
+/-- For nonempty `X` and nontrivial coefficients, the sum of the standard basis is nonzero. -/
 theorem permutationSum_ne_zero [Nonempty X] [Nontrivial k] : permutationSum k X ≠ 0 := by
   intro h
   have hone := coeff_permutationSum (k := k) (Classical.arbitrary X)
@@ -201,9 +150,9 @@ end PermutationSum
 
 section InvariantLine
 
-variable (k : Type*) [CommSemiring k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
+variable (k : Type*) [Semiring k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
 
-/-- A group element fixes the sum of the standard basis, since it permutes the summands. -/
+/-- The sum of the standard basis is fixed by the group action. -/
 @[simp]
 theorem ofMulAction_permutationSum (g : G) :
     Representation.ofMulAction k G X g (permutationSum k X) = permutationSum k X := by
@@ -227,8 +176,7 @@ theorem toSubmodule_invariantLine :
   -- inferred `@[defeq]`.
   (rfl)
 
-/-- The invariant line carries the trivial representation: the sum of the standard basis, and
-hence every multiple of it, is fixed. -/
+/-- The group acts trivially on the invariant line. -/
 @[simp]
 theorem toRepresentation_invariantLine :
     (invariantLine k G X).toRepresentation = Representation.trivial k G _ := by
@@ -238,8 +186,8 @@ theorem toRepresentation_invariantLine :
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hw
   -- both sides act on the underlying element of `k[X]`: `Subrepresentation.toRepresentation` is
   -- the restriction of the ambient action, and the trivial representation is the identity
-  simp only [Subrepresentation.toRepresentation, MonoidHom.coe_mk, OneHom.coe_mk,
-    LinearMap.coe_restrict_apply, Representation.trivial_apply]
+  simp only [Subrepresentation.toRepresentation_apply, LinearMap.coe_restrict_apply,
+    Representation.trivial_apply]
   rw [← hc, map_smul, ofMulAction_permutationSum]
 
 variable {k G X}
@@ -257,19 +205,23 @@ end InvariantLine
 
 section InvariantLineTrivial
 
-variable (k : Type*) [CommRing k] [IsDomain k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
+variable (k : Type*) [Semiring k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
   [Nonempty X]
 
-/-- **The invariant line is the trivial representation on `k` itself.**  A scalar `c` names the
-multiple `c • permutationSum k X` of the sum of the standard basis, which is a bijection onto the
-line because that sum is nonzero, and it is equivariant because the sum is fixed.  A domain is
-enough: taking the coordinate along a nonzero vector asks only for the ambient module to be
-torsion-free, which `k[X]` is. -/
+/-- For a nonempty index type, the invariant line is the trivial representation on the scalars.
+The inverse sends a scalar to that multiple of the sum of the standard basis. -/
 noncomputable def invariantLineEquivTrivial :
     (invariantLine k G X).toRepresentation.Equiv (Representation.trivial k G k) :=
   Representation.Equiv.mk
-    ((LinearEquiv.ofEq _ _ (toSubmodule_invariantLine k G X)).trans
-      (LinearEquiv.coord k (MonoidAlgebra k X) (permutationSum k X) permutationSum_ne_zero))
+    { toFun := fun v => (v : MonoidAlgebra k X).coeff (Classical.arbitrary X)
+      invFun := fun c => ⟨c • permutationSum k X, mem_invariantLine_iff.mpr ⟨c, rfl⟩⟩
+      left_inv := fun v => by
+        obtain ⟨c, hc⟩ := mem_invariantLine_iff.mp v.2
+        apply Subtype.ext
+        simp [← hc]
+      right_inv := fun c => by simp
+      map_add' := fun v w => by simp
+      map_smul' := fun c v => by simp }
     fun g => by rw [toRepresentation_invariantLine]; rfl
 
 /-- The scalar `c` names the multiple `c • permutationSum k X` of the sum of the standard basis. -/
@@ -287,60 +239,81 @@ theorem invariantLineEquivTrivial_apply_smul (v : (invariantLine k G X).toSubmod
   rw [← coe_invariantLineEquivTrivial_symm_apply k G X (invariantLineEquivTrivial k G X v),
     (invariantLineEquivTrivial k G X).symm_apply_apply]
 
+/-- Every coordinate of a vector in the invariant line is its corresponding scalar. -/
+@[simp]
+theorem coeff_eq_invariantLineEquivTrivial (v : (invariantLine k G X).toSubmodule) (x : X) :
+    (v : MonoidAlgebra k X).coeff x = invariantLineEquivTrivial k G X v := by
+  simpa only [MonoidAlgebra.coeff_smul_apply, coeff_permutationSum, smul_eq_mul, mul_one]
+    using (congrArg (fun w : MonoidAlgebra k X => w.coeff x)
+      (invariantLineEquivTrivial_apply_smul k G X v)).symm
+
+/-- The invariant line has rank one over a semiring satisfying the strong rank condition. -/
+@[simp]
+theorem finrank_invariantLine [StrongRankCondition k] :
+    Module.finrank k (invariantLine k G X).toSubmodule = 1 := by
+  rw [LinearEquiv.finrank_eq (invariantLineEquivTrivial k G X).toLinearEquiv]
+  simp
+
 end InvariantLineTrivial
+
+/-! ### The dimension of the augmentation subrepresentation -/
+
+section Dimension
+
+variable {k : Type*} [Ring k] [StrongRankCondition k] {G X : Type*}
+  [Monoid G] [MulAction G X] [Fintype X]
+
+/-- The augmentation subrepresentation has dimension one less than the cardinality of `X`.  For an
+empty `X` both sides are zero, the subtraction being truncated. -/
+@[simp]
+theorem finrank_augmentationSubrepresentation :
+    Module.finrank k (augmentationSubrepresentation k G X).toSubmodule = Fintype.card X - 1 := by
+  classical
+  have := nontrivial_of_invariantBasisNumber k
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have hbot : (augmentationSubrepresentation k G X).toSubmodule = ⊥ :=
+      Submodule.eq_bot_iff _ |>.mpr fun v _ =>
+        MonoidAlgebra.coeff_eq_zero.mp (Finsupp.ext fun x => isEmptyElim x)
+    rw [hbot, finrank_bot, Fintype.card_eq_zero]
+  let x₀ := Classical.arbitrary X
+  let d (x : {x : X // x ≠ x₀}) : MonoidAlgebra k X :=
+    MonoidAlgebra.single x.1 1 - MonoidAlgebra.single x₀ 1
+  have hcoord (i j : {x : X // x ≠ x₀}) :
+      (d j).coeff i.1 = if j = i then 1 else 0 := by
+    simp [d, Finsupp.single_apply, Ne.symm i.property, Subtype.val_inj]
+  have hind : LinearIndependent k d := by
+    refine linearIndependent_iff'.mpr fun s c hc i hi => ?_
+    have := congrArg (fun v : MonoidAlgebra k X => v.coeff i.1) hc
+    simpa [MonoidAlgebra.coeff_smul_apply, hcoord, hi] using this
+  have hspan : LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
+      Submodule.span k (Set.range d) := by
+    rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k X x₀]
+    apply le_antisymm
+    · refine Submodule.span_le.mpr ?_
+      rintro _ ⟨x, rfl⟩
+      by_cases hx : x = x₀
+      · simp [hx]
+      · exact Submodule.subset_span ⟨⟨x, hx⟩, rfl⟩
+    · apply Submodule.span_mono
+      rintro _ ⟨x, rfl⟩
+      exact ⟨x.1, rfl⟩
+  rw [toSubmodule_augmentationSubrepresentation, hspan, finrank_span_eq_card hind]
+  simp
+
+end Dimension
 
 /-! ### The splitting -/
 
-section Span
+section RingScalars
 
-variable (k : Type*) [Ring k] (X : Type*)
-
-/-- The augmentation subrepresentation is spanned by the differences of the standard basis vectors
-from a fixed one. -/
-theorem ker_sumCoords_basis_eq_span (x₀ : X) :
-    LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
-      Submodule.span k (Set.range fun x : X =>
-        (MonoidAlgebra.single x 1 - MonoidAlgebra.single x₀ 1 : MonoidAlgebra k X)) := by
-  classical
-  refine le_antisymm (fun v hv => ?_) (Submodule.span_le.mpr ?_)
-  · simp only [LinearMap.mem_ker, Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr,
-      Finsupp.sum, id_eq] at hv
-    have hbasis : ∑ x ∈ v.coeff.support, MonoidAlgebra.single x (v.coeff x) = v :=
-      MonoidAlgebra.sum_coeff_single v
-    have key : ∑ x ∈ v.coeff.support, v.coeff x •
-        (MonoidAlgebra.single x 1 - MonoidAlgebra.single x₀ 1 : MonoidAlgebra k X) = v := by
-      simp only [smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hv, zero_smul, sub_zero]
-      refine (Finset.sum_congr rfl fun x _ => ?_).trans hbasis
-      rw [MonoidAlgebra.smul_single', mul_one]
-    rw [← key]
-    exact Submodule.sum_mem _ fun x _ =>
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
-  · rintro _ ⟨x, rfl⟩
-    rw [SetLike.mem_coe, LinearMap.mem_ker, map_sub]
-    simp
-
-end Span
-
-section Field
-
-variable (k : Type*) [Field k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
-
-/-- The invariant line is a line. -/
-@[simp]
-theorem finrank_invariantLine [Nonempty X] :
-    Module.finrank k (invariantLine k G X).toSubmodule = 1 := by
-  rw [toSubmodule_invariantLine]
-  exact finrank_span_singleton permutationSum_ne_zero
+variable (k : Type*) [Ring k] (G X : Type*) [Group G] [MulAction G X] [Fintype X]
 
 variable {k G X}
 
-/-- **The permutation representation splits.**  When the cardinality of `X` is invertible in `k`,
-the invariant line and the augmentation subrepresentation are complementary, so `k[X]` is the
-direct sum of a trivial representation and a representation of dimension `|X| - 1`.  For an empty
-`X` the two are complementary as well, for the degenerate reason that `k[X]` is then the zero
-module. -/
+/-- The invariant line and augmentation subrepresentation are complementary when the index
+set is empty or its cardinality is a unit in the coefficient ring. -/
 theorem isCompl_invariantLine_augmentationSubrepresentation
-    (h : IsEmpty X ∨ (Fintype.card X : k) ≠ 0) :
+    (h : IsEmpty X ∨ IsUnit (Fintype.card X : k)) :
     IsCompl (invariantLine k G X) (augmentationSubrepresentation k G X) := by
   rcases h with hX | h
   · -- `k[X]` is the zero module, so it has only one subrepresentation
@@ -356,42 +329,46 @@ theorem isCompl_invariantLine_augmentationSubrepresentation
       rintro v hv hv'
       obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
       rw [LinearMap.mem_ker, map_smul, sumCoords_basis_permutationSum, smul_eq_mul] at hv'
-      rw [(mul_eq_zero.mp hv').resolve_right h, zero_smul]
+      have hc : c = 0 := by
+        calc
+          c = (c * (Fintype.card X : k)) * Ring.inverse (Fintype.card X : k) :=
+            (Ring.mul_inverse_cancel_right _ _ h).symm
+          _ = 0 := by rw [hv', zero_mul]
+      rw [hc, zero_smul]
     · rw [codisjoint_iff, eq_top_iff]
       intro v _
       refine Submodule.mem_sup.mpr
-        ⟨((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X,
+        ⟨((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+            permutationSum k X,
         Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
-        v - ((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X,
+        v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+          permutationSum k X,
         ?_, by abel⟩
       rw [LinearMap.mem_ker, map_sub, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
-        div_mul_cancel₀ _ h, sub_self]
-  constructor
-  · rw [disjoint_iff]
-    exact Subrepresentation.toSubmodule_injective hsub.inf_eq_bot
-  · rw [codisjoint_iff]
-    exact Subrepresentation.toSubmodule_injective hsub.sup_eq_top
+        Ring.inverse_mul_cancel_right _ _ h, sub_self]
+  exact Subrepresentation.isCompl_toSubmodule.mp hsub
 
-/-- The augmentation subrepresentation has dimension one less than the cardinality of `X`.  For an
-empty `X` both sides are zero, the subtraction being truncated. -/
-@[simp]
-theorem finrank_augmentationSubrepresentation :
-    Module.finrank k (augmentationSubrepresentation k G X).toSubmodule = Fintype.card X - 1 := by
+/-- The invariant line complements the augmentation subrepresentation exactly when the index
+set is empty or its cardinality is a unit in the coefficient ring. -/
+theorem isCompl_invariantLine_augmentationSubrepresentation_iff :
+    IsCompl (invariantLine k G X) (augmentationSubrepresentation k G X) ↔
+      IsEmpty X ∨ IsUnit (Fintype.card X : k) := by
+  refine ⟨fun h => ?_, isCompl_invariantLine_augmentationSubrepresentation⟩
   rcases isEmpty_or_nonempty X with hX | hX
-  · have hbot : (augmentationSubrepresentation k G X).toSubmodule = ⊥ :=
-      Submodule.eq_bot_iff _ |>.mpr fun v _ =>
-        MonoidAlgebra.coeff_eq_zero.mp (Finsupp.ext fun x => isEmptyElim x)
-    rw [hbot, finrank_bot, Fintype.card_eq_zero]
-  have hcard : Module.finrank k (MonoidAlgebra k X) = Fintype.card X :=
-    (Module.finrank_eq_card_basis (MonoidAlgebra.basis X k)).trans (by simp)
-  have : Module.Finite k (MonoidAlgebra k X) := Module.Finite.of_basis (MonoidAlgebra.basis X k)
-  have hrange : Module.finrank k (LinearMap.range (MonoidAlgebra.basis X k).sumCoords) = 1 := by
-    rw [LinearMap.range_eq_top.mpr sumCoords_basis_surjective]
-    simp
-  have hsum := LinearMap.finrank_range_add_finrank_ker (MonoidAlgebra.basis X k).sumCoords
-  rw [hrange, hcard] at hsum
-  rw [toSubmodule_augmentationSubrepresentation]
-  omega
+  · exact Or.inl hX
+  right
+  let x := Classical.arbitrary X
+  have hmem : MonoidAlgebra.single x (1 : k) ∈
+      (invariantLine k G X).toSubmodule ⊔ (augmentationSubrepresentation k G X).toSubmodule := by
+    rw [(Subrepresentation.isCompl_toSubmodule.mpr h).sup_eq_top]
+    exact Submodule.mem_top
+  obtain ⟨y, hy, z, hz, heq⟩ := Submodule.mem_sup.mp hmem
+  obtain ⟨c, rfl⟩ := mem_invariantLine_iff.mp hy
+  have hc := congrArg (MonoidAlgebra.basis X k).sumCoords heq
+  rw [map_add, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
+    mem_augmentationSubrepresentation_iff.mp hz, add_zero] at hc
+  have hcn : c * (Fintype.card X : k) = 1 := by simpa using hc
+  exact isUnit_iff_exists.mpr ⟨c, by rw [Nat.cast_comm]; exact hcn, hcn⟩
 
 /-! ### The splitting as trivial plus augmentation -/
 
@@ -399,54 +376,59 @@ section Splitting
 
 variable (k G X)
 
-/-- **The permutation representation is the trivial representation plus the augmentation
-subrepresentation.**  When `|X|` is invertible in `k` the invariant line is a complement of the
-augmentation subrepresentation, by
-`TauCeti.isCompl_invariantLine_augmentationSubrepresentation`, so `k[X]` splits as the product of
-the two representations they carry; the line carries the trivial representation on `k` itself, by
-`TauCeti.invariantLineEquivTrivial`.  The hypothesis already makes `X` nonempty, `|X| = 0` being
-sent to `0`. -/
-noncomputable def ofMulActionEquivProdAugmentation (h : (Fintype.card X : k) ≠ 0) :
+/-- When `|X|` is a unit in a ring, the permutation representation splits as the
+trivial representation on the scalars and the augmentation subrepresentation. The scalar
+component multiplies the sum of the standard basis. -/
+noncomputable def ofMulActionEquivProdAugmentation (h : IsUnit (Fintype.card X : k)) :
     (Representation.ofMulAction k G X).Equiv
       ((Representation.trivial k G k).prod
-        (augmentationSubrepresentation k G X).toRepresentation) :=
-  letI : Nonempty X := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h (by simp [h0]))
-  (Subrepresentation.equivProdOfIsCompl
-      (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).trans
-    (Representation.Equiv.mk
-      (LinearEquiv.prodCongr (invariantLineEquivTrivial k G X).toLinearEquiv
-        (LinearEquiv.refl k _))
-      fun g => by
-        refine LinearMap.ext fun v => Prod.ext ?_ rfl
-        simp)
+        (augmentationSubrepresentation k G X).toRepresentation) := by
+  classical
+  exact
+    if hX : Nonempty X then
+      letI := hX
+      (Subrepresentation.equivProdOfIsCompl
+          (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).trans
+        (Representation.Equiv.mk
+          (LinearEquiv.prodCongr (invariantLineEquivTrivial k G X).toLinearEquiv
+            (LinearEquiv.refl k _))
+          fun g => by
+            refine LinearMap.ext fun v => Prod.ext ?_ rfl
+            simp)
+    else by
+      haveI : IsEmpty X := not_nonempty_iff.mp hX
+      haveI : Subsingleton k := subsingleton_of_zero_eq_one
+        (isUnit_zero_iff.mp (by simpa using h))
+      exact Representation.Equiv.mk (LinearEquiv.ofSubsingleton _ _)
+        fun _ => Subsingleton.elim _ _
 
 /-- The splitting adds a multiple of the sum of the standard basis to a vector of the augmentation
 subrepresentation. -/
 @[simp]
-theorem ofMulActionEquivProdAugmentation_symm_apply (h : (Fintype.card X : k) ≠ 0)
+theorem ofMulActionEquivProdAugmentation_symm_apply (h : IsUnit (Fintype.card X : k))
     (v : k × (augmentationSubrepresentation k G X).toSubmodule) :
     (ofMulActionEquivProdAugmentation k G X h).symm v =
       v.1 • permutationSum k X + (v.2 : MonoidAlgebra k X) := by
-  have : Nonempty X := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h (by simp [h0]))
-  -- The inverse of the composite applies the two inverses in turn.  `Representation.Equiv` has no
-  -- lemma for the inverse of a `Representation.Equiv.trans`, so that one step is definitional --
-  -- `(rfl)`, not `rfl`, the body of `ofMulActionEquivProdAugmentation` not being `@[expose]`d.
-  -- Each of the two inverses is then computed by its own lemma.
+  nontriviality k
+  have hX : Nonempty X :=
+    Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h0 => h.ne_zero (by simp [h0]))
+  let := hX
+  -- On a nonempty index type, unfold the composite equivalence to expose its two inverses.
   have hcomp : (ofMulActionEquivProdAugmentation k G X h).symm v =
       (Subrepresentation.equivProdOfIsCompl
           (isCompl_invariantLine_augmentationSubrepresentation (Or.inr h))).symm
-        ((invariantLineEquivTrivial k G X).symm v.1, v.2) := (rfl)
+        ((invariantLineEquivTrivial k G X).symm v.1, v.2) := by
+    simp only [ofMulActionEquivProdAugmentation, dite_eq_left hX]
+    rfl
   rw [hcomp, Subrepresentation.equivProdOfIsCompl_symm_apply,
     coe_invariantLineEquivTrivial_symm_apply]
 
-/-- **The scalar component of the splitting is the average of the coefficients.**  The other
-component has vanishing augmentation, so the augmentation of a vector is `|X|` times its scalar
-component. -/
+/-- The scalar component is the coefficient sum times the ring inverse of the cardinality. -/
 @[simp]
-theorem ofMulActionEquivProdAugmentation_apply_fst (h : (Fintype.card X : k) ≠ 0)
+theorem ofMulActionEquivProdAugmentation_apply_fst (h : IsUnit (Fintype.card X : k))
     (v : MonoidAlgebra k X) :
     (ofMulActionEquivProdAugmentation k G X h v).1 =
-      (MonoidAlgebra.basis X k).sumCoords v / Fintype.card X := by
+      (MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k) := by
   have hrec : (ofMulActionEquivProdAugmentation k G X h v).1 • permutationSum k X +
       ((ofMulActionEquivProdAugmentation k G X h v).2 : MonoidAlgebra k X) = v := by
     rw [← ofMulActionEquivProdAugmentation_symm_apply k G X h,
@@ -455,29 +437,35 @@ theorem ofMulActionEquivProdAugmentation_apply_fst (h : (Fintype.card X : k) ≠
   rw [map_add, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
     mem_augmentationSubrepresentation_iff.mp (ofMulActionEquivProdAugmentation k G X h v).2.2,
     add_zero] at haug
-  rw [← haug, mul_div_assoc, div_self h, mul_one]
+  rw [← haug, Ring.mul_inverse_cancel_right _ _ h]
 
-/-- **The augmentation component of the splitting is what is left of the vector.** -/
+/-- The augmentation component subtracts the average coefficient from every coordinate. -/
 @[simp]
-theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : (Fintype.card X : k) ≠ 0)
+theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : IsUnit (Fintype.card X : k))
     (v : MonoidAlgebra k X) :
     ((ofMulActionEquivProdAugmentation k G X h v).2 : MonoidAlgebra k X) =
-      v - ((MonoidAlgebra.basis X k).sumCoords v / Fintype.card X) • permutationSum k X := by
+      v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+        permutationSum k X := by
   rw [← ofMulActionEquivProdAugmentation_apply_fst k G X h v, eq_sub_iff_add_eq, add_comm,
     ← ofMulActionEquivProdAugmentation_symm_apply k G X h,
     (ofMulActionEquivProdAugmentation k G X h).symm_apply_apply]
 
 end Splitting
 
+end RingScalars
+
+section Field
+
+variable {k : Type*} [Field k] {G X : Type*} [Monoid G] [MulAction G X]
+
 /-! ### The character of the augmentation subrepresentation -/
 
-omit [Fintype X] in
 /-- **The character of the augmentation subrepresentation** is the character of `k[X]` less `1`.
 The subtracted `1` is the trivial quotient `k[X] / ker(augmentation) ≃ k`, so nothing about `|X|`
 in `k` is needed: the identity holds in every characteristic, including the one dividing `|X|`,
 where the invariant line is *not* a complement.
 
-For a permutation representation the subtracted `1` is the trivial constituent: the character of
+For a monoid action the subtracted `1` is the trivial quotient: the character of
 `k[X]` counts fixed points, so the character here is the number of fixed points less one. -/
 @[simp]
 theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) :
@@ -519,12 +507,8 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
       (fun v _ => hmem v))
       = LinearMap.trace k _ (Representation.ofMulAction k G X g - σ) :=
     LinearMap.trace_restrict_eq_of_forall_mem _ _ hmem
-  -- the two characters are the traces, by definition
-  have hL : (augmentationSubrepresentation k G X).toRepresentation.character g
-      = LinearMap.trace k _ ((augmentationSubrepresentation k G X).toRepresentation g) := rfl
-  have hR : (Representation.ofMulAction k G X).character g
-      = LinearMap.trace k _ (Representation.ofMulAction k G X g) := rfl
-  rw [hL, hR, ← hrestrict, key, map_sub, htraceσ]
+  simp only [Representation.character]
+  rw [← hrestrict, key, map_sub, htraceσ]
 
 end Field
 

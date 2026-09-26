@@ -61,6 +61,8 @@ Two statements are worth singling out.
 
 ## Main results
 
+* `Module.Basis.isometryEquivOfToMatrixEq`: two bilinear forms with the same matrix in some bases
+  are isometric.
 * `TauCeti.BilinForm.isIsometry_iff_toMatrix`: the Gram-matrix criterion `Aᵀ * G * A = G`.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
@@ -233,7 +235,35 @@ end Congr
 
 section Matrix
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {B' : BilinForm R M'}
+
+/-- Two bilinear forms with the same matrix in bases `v` and `w` are isometric, through the
+linear equivalence `v.equiv w (Equiv.refl ι)` carrying `v` to `w`. -/
+noncomputable def _root_.Module.Basis.isometryEquivOfToMatrixEq (v : Basis ι R M)
+    (w : Basis ι R M') (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') :
+    B.IsometryEquiv B' where
+  __ := v.equiv w (Equiv.refl ι)
+  map_app' x y := by
+    have key : B'.comp (v.equiv w (Equiv.refl ι) : M →ₗ[R] M') (v.equiv w (Equiv.refl ι)) = B :=
+      LinearMap.BilinForm.ext_basis v fun i j => by
+        simpa [LinearMap.BilinForm.toMatrix_apply] using (congrFun₂ h i j).symm
+    simpa using LinearMap.congr_fun₂ key x y
+
+@[simp]
+theorem _root_.Module.Basis.toLinearEquiv_isometryEquivOfToMatrixEq (v : Basis ι R M)
+    (w : Basis ι R M') (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') :
+    (v.isometryEquivOfToMatrixEq w h : M ≃ₗ[R] M') = v.equiv w (Equiv.refl ι) := (rfl)
+
+@[simp]
+theorem _root_.Module.Basis.isometryEquivOfToMatrixEq_apply (v : Basis ι R M) (w : Basis ι R M')
+    (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') (x : M) :
+    v.isometryEquivOfToMatrixEq w h x = v.equiv w (Equiv.refl ι) x := (rfl)
+
+/-- The isometry attached to an equality of matrices carries the basis `v` to the basis `w`. -/
+theorem _root_.Module.Basis.isometryEquivOfToMatrixEq_apply_basis (v : Basis ι R M)
+    (w : Basis ι R M') (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B')
+    (i : ι) : v.isometryEquivOfToMatrixEq w h (v i) = w i := by
+  simp
 
 /-- An endomorphism is an isometry of `B` exactly when its matrix `A` in a basis `b` satisfies
 `Aᵀ * G * A = G` for the Gram matrix `G` of `B` in `b`. -/
@@ -258,12 +288,10 @@ theorem IsIsometry.baseChange (hf : IsIsometry B f) :
     IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) := by
   rw [isIsometry_iff]
   intro x y
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
   | tmul a m =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
       | tmul a' m' => simp [hf.apply m m']
 

@@ -8,6 +8,9 @@ module
 public import TauCeti.Probability.Exchangeability.MarkovExchangeable
 public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 public import TauCeti.Probability.Process.MarkovChain
+public import TauCeti.Probability.ConditionalProbability
+-- Non-public: null-measurability of a prefix event is used only inside a proof.
+import TauCeti.Probability.Exchangeability.Cylinder
 
 /-!
 # Mixtures of Markov chains
@@ -46,6 +49,16 @@ The class is strictly larger than the mixed i.i.d. one: the deterministic 3-cycl
 `TauCeti/Probability/Exchangeability/ThreeCycle.lean` is a Markov chain, hence a mixture of Markov
 chains (`threeCycle_mixedMarkovChain`), but is not exchangeable and so not mixed i.i.d.
 
+The class is also closed under **gluing along a countable partition**
+(`mixedMarkovChainWith_of_forall_cond`): if the process is a mixture of Markov chains under each
+conditional measure `μ[|f ⁻¹' {b}]` on a fibre of positive mass of a random variable `f` with
+countably many values, then it is one under `μ`, with the witnesses on the fibre of `ω` read off at
+`ω`. This follows from the law of total probability over the fibres
+(`ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`), since a fibre of mass zero contributes
+nothing to the finite path masses. The case `f = X 0` is what takes the Diaconis–Freedman
+representation from a process starting at a fixed state to one with a random initial state: the
+conditional representations at the individual initial states glue to a single pair of witnesses.
+
 ## Main definitions
 
 * `TauCeti.Probability.MixedMarkovChainWith`: the mixture identity with named witnesses.
@@ -61,6 +74,10 @@ chains (`threeCycle_mixedMarkovChain`), but is not exchangeable and so not mixed
   is the degenerate mixture.
 * `TauCeti.Probability.MixedIIDWith.mixedMarkovChainWith`: a mixed i.i.d. process is a mixture of
   Markov chains with state-independent rows.
+* `TauCeti.Probability.mixedMarkovChainWith_of_forall_cond` and
+  `TauCeti.Probability.mixedMarkovChain_of_forall_cond`: a process that is a mixture of Markov
+  chains conditionally on each positive-mass value of a countably-valued random variable is a
+  mixture of Markov chains.
 * `TauCeti.Probability.markovChainLaw_mixedMarkovChainWith`: the homogeneous Markov chain of an
   initial law and a transition kernel is the degenerate mixture with those constant witnesses, and
   `TauCeti.Probability.markovChainLaw_markovExchangeable` is its Markov exchangeability. These make
@@ -338,6 +355,103 @@ theorem markovChainLaw_mixedMarkovChain [Countable α] [MeasurableSingletonClass
   MixedMarkovChain.of_witnesses (markovChainLaw_mixedMarkovChainWith ν κ)
 
 end MarkovChain
+
+section Cond
+
+open ProbabilityTheory
+
+variable {β : Type*} [MeasurableSpace β] [Countable β] [MeasurableSingletonClass β]
+  {μ : Measure Ω} {X : ℕ → Ω → α} {f : Ω → β}
+
+/-- **Gluing mixtures of Markov chains along a countable partition**, witness form. If, on every
+fibre `f ⁻¹' {b}` of positive mass of a random variable `f` with countably many values, the process
+is a mixture of Markov chains under the conditional measure with witnesses `ν b` and `κ b`, then it
+is a mixture of Markov chains under `μ` itself, with the witnesses read off on the fibre of `ω`. The
+witnesses on the null fibres are only required to be measurable. -/
+theorem mixedMarkovChainWith_of_forall_cond [Countable α] [MeasurableSingletonClass α]
+    [IsFiniteMeasure μ] (hf : Measurable f)
+    {ν : β → Ω → ProbabilityMeasure α} {κ : β → Ω → α → ProbabilityMeasure α}
+    (hν : ∀ b, Measurable (ν b)) (hκ : ∀ b a, Measurable fun ω => κ b ω a)
+    (h : ∀ b, μ (f ⁻¹' {b}) ≠ 0 → MixedMarkovChainWith (μ[|f ⁻¹' {b}]) X (ν b) (κ b)) :
+    MixedMarkovChainWith μ X (fun ω => ν (f ω) ω) fun ω => κ (f ω) ω := by
+  have hfib : ∀ b, MeasurableSet (f ⁻¹' {b}) := fun b => hf (measurableSet_singleton b)
+  -- the law of total probability over the fibres of `f`
+  have hμ := sum_meas_smul_cond_fiber_of_countable hf μ
+  -- coordinatewise a.e. measurability under `μ` is inherited from the positive-mass fibres
+  have hX : ∀ i, AEMeasurable (X i) μ := fun i => by
+    rw [← hμ, aemeasurable_sum_measure_iff]
+    intro b
+    by_cases hb : μ (f ⁻¹' {b}) = 0
+    · simp [hb]
+    · exact (aemeasurable_smul_measure_iff hb).2 ((h b hb).aemeasurable i)
+  have hpair : Measurable fun ω => (f ω, ω) := hf.prodMk measurable_id
+  refine MixedMarkovChainWith.intro hX ?_ ?_ fun n w => ?_
+  · exact (measurable_from_prod_countable_right (f := fun p : β × Ω => ν p.1 p.2) hν).comp hpair
+  · exact fun a => (measurable_from_prod_countable_right (f := fun p : β × Ω => κ p.1 p.2 a)
+      fun b => hκ b a).comp hpair
+  -- the Markov-chain path mass built from the glued witnesses
+  set G : Ω → ℝ≥0∞ := fun ω => (ν (f ω) ω : Measure α) {w 0} *
+    ∏ i : Fin n, (κ (f ω) ω (w i.castSucc) : Measure α) {w i.succ} with hG
+  -- on the fibre over `b`, the glued witnesses are the witnesses of that fibre
+  have hG_ae : ∀ b, G =ᵐ[μ[|f ⁻¹' {b}]] fun ω => (ν b ω : Measure α) {w 0} *
+      ∏ i : Fin n, (κ b ω (w i.castSucc) : Measure α) {w i.succ} := fun b => by
+    filter_upwards [ae_cond_mem (hfib b)] with ω hω
+    simp only [Set.mem_preimage, Set.mem_singleton_iff] at hω
+    simp only [hG, hω]
+  -- the prefix event is the block cylinder of the singletons `{w i}`
+  have hA : NullMeasurableSet {ω | ∀ i : Fin (n + 1), X i.val ω = w i} μ := by
+    have hcyl : {ω | ∀ i : Fin (n + 1), X i.val ω = w i} =
+        blockCylinder X (fun i : Fin (n + 1) => i.val) fun i => {w i} :=
+      Set.ext fun ω => by simp
+    rw [hcyl]
+    exact nullMeasurableSet_blockCylinder (fun i => hX i.val) fun i => measurableSet_singleton (w i)
+  calc prefixLaw μ X (n + 1) {w}
+      = μ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := prefixLaw_singleton_eq_measure hX w
+    _ = (Measure.sum fun b => μ (f ⁻¹' {b}) • μ[|f ⁻¹' {b}])
+        {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by rw [hμ]
+    _ = ∑' b, μ (f ⁻¹' {b}) * μ[|f ⁻¹' {b}] {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by
+        rw [Measure.sum_apply₀ _ (hμ.symm ▸ hA)]
+        simp only [Measure.smul_apply, smul_eq_mul]
+    _ = ∑' b, μ (f ⁻¹' {b}) * ∫⁻ ω, G ω ∂μ[|f ⁻¹' {b}] := by
+        refine tsum_congr fun b => ?_
+        by_cases hb : μ (f ⁻¹' {b}) = 0
+        · simp [hb]
+        · rw [lintegral_congr_ae (hG_ae b), ← (h b hb).prefixLaw_singleton_eq_lintegral,
+            prefixLaw_singleton_eq_measure fun i => (hX i).mono_ac cond_absolutelyContinuous]
+    _ = ∫⁻ ω, G ω ∂μ := by
+        conv_rhs => rw [← hμ]
+        rw [lintegral_sum_measure]
+        exact tsum_congr fun b => by rw [lintegral_smul_measure, smul_eq_mul]
+
+/-- **Gluing mixtures of Markov chains along a countable partition**, existential form. A process
+that is a mixture of Markov chains conditionally on each positive-mass value of a random variable
+with countably many values is a mixture of Markov chains. The measure is assumed nonzero, so that
+at least one fibre carries positive mass. -/
+theorem mixedMarkovChain_of_forall_cond [IsFiniteMeasure μ] [NeZero μ] (hf : Measurable f)
+    (h : ∀ b, μ (f ⁻¹' {b}) ≠ 0 → MixedMarkovChain (μ[|f ⁻¹' {b}]) X) :
+    MixedMarkovChain μ X := by
+  -- some fibre has positive mass
+  obtain ⟨b₀, hb₀⟩ : ∃ b, μ (f ⁻¹' {b}) ≠ 0 := by
+    by_contra hcon
+    refine (NeZero.ne μ) (Measure.measure_univ_eq_zero.1 ?_)
+    rw [← Set.preimage_univ (f := f), ← Set.iUnion_of_singleton β, Set.preimage_iUnion]
+    exact measure_iUnion_null fun b => of_not_not fun hb => hcon ⟨b, hb⟩
+  obtain ⟨ν₀, κ₀, h₀⟩ := h b₀ hb₀
+  have := h₀.countable
+  have := h₀.measurableSingletonClass
+  -- its witnesses serve on the null fibres, where the mixture identity is not needed
+  have key : ∀ b, ∃ (ν : Ω → ProbabilityMeasure α) (κ : Ω → α → ProbabilityMeasure α),
+      Measurable ν ∧ (∀ a, Measurable fun ω => κ ω a) ∧
+        (μ (f ⁻¹' {b}) ≠ 0 → MixedMarkovChainWith (μ[|f ⁻¹' {b}]) X ν κ) := fun b => by
+    by_cases hb : μ (f ⁻¹' {b}) = 0
+    · exact ⟨ν₀, κ₀, h₀.measurable_initialLaw, h₀.measurable_transitionMatrix,
+        fun hb' => (hb' hb).elim⟩
+    · obtain ⟨ν, κ, hνκ⟩ := h b hb
+      exact ⟨ν, κ, hνκ.measurable_initialLaw, hνκ.measurable_transitionMatrix, fun _ => hνκ⟩
+  choose ν κ hν hκ hνκ using key
+  exact ⟨_, _, mixedMarkovChainWith_of_forall_cond hf hν hκ hνκ⟩
+
+end Cond
 
 end Probability
 

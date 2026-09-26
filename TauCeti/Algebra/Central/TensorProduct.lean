@@ -79,8 +79,7 @@ theorem forall_commute_tmul_one_iff [Module.Free K B] [Algebra.IsCentral K A] {x
       Algebra.IsCentral.center_eq_bot] at hx
     obtain ⟨y, rfl⟩ := hx
     clear h
-    induction y using TensorProduct.induction_on with
-    | zero => exact ⟨0, by simp⟩
+    induction y using TensorProduct.inductionOn with
     | tmul a b =>
       obtain ⟨k, hk⟩ := Algebra.mem_bot.mp a.2
       exact ⟨k • b, by

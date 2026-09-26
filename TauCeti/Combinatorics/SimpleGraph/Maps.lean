@@ -65,4 +65,48 @@ def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
 theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
     (G.restrictFin n).Adj a b ↔ G.Adj a b := Iff.rfl
 
+/-- Pulling a window back along a map of finite labels is pulling the graph back along the
+composite labels. -/
+theorem comap_restrictFin {m n : ℕ} (G : SimpleGraph ℕ) (f : Fin m → Fin n) :
+    SimpleGraph.comap f (G.restrictFin n) = SimpleGraph.comap (fun i => (f i : ℕ)) G := by
+  ext a b; simp [restrictFin_adj]
+
+/-- The first of two consecutive windows of a window is the window. -/
+@[simp]
+theorem comap_restrictFin_castAdd (G : SimpleGraph ℕ) (k l : ℕ) :
+    SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)) = G.restrictFin k := by
+  rw [comap_restrictFin]; ext a b; simp [restrictFin_adj]
+
+/-- The second of two consecutive windows of a window is the window at the offset. -/
+@[simp]
+theorem comap_restrictFin_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
+    SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))
+      = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by
+  rw [comap_restrictFin]; simp
+
+/-- Pulling back along the coercion of finite labels is taking the window. -/
+@[simp]
+theorem comap_val (G : SimpleGraph ℕ) (n : ℕ) :
+    SimpleGraph.comap (fun i : Fin n => (i : ℕ)) G = G.restrictFin n := by
+  ext a b; simp [restrictFin_adj]
+
+open Classical in
+/-- The adjacency array of a graph: `true` exactly on edges. -/
+noncomputable def adjArray {V : Type*} (G : SimpleGraph V) : V × V → Bool :=
+  fun p => decide (G.Adj p.1 p.2)
+
+open Classical in
+/-- The adjacency array is `true` exactly on edges. -/
+@[simp]
+theorem adjArray_apply {V : Type*} (G : SimpleGraph V) (i j : V) :
+    G.adjArray (i, j) = decide (G.Adj i j) :=
+  (rfl)
+
+/-- A graph is determined by its adjacency array. -/
+theorem adjArray_injective {V : Type*} :
+    Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
+  ext i j
+  have := congrFun h (i, j)
+  simpa only [adjArray_apply, decide_eq_decide] using this
+
 end SimpleGraph

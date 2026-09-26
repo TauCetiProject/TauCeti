@@ -33,6 +33,7 @@ dominated away from `x₀` and lose less than `1 / M` each.
 ## Main results
 
 * `Finset.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
+* `ENNReal.toReal_sub_add_toReal_sub` -- the excesses in both directions add up to the distance;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
 * `TauCeti.add_sum_tsub_eq_of_forall_ne_le` -- it gains exactly the total excess;
 * `TauCeti.exists_nat_weights_of_sum_eq_one` -- rounding a weight vector to a common denominator.
@@ -51,6 +52,16 @@ theorem _root_.Finset.sum_min_add_sum_tsub (s : Finset X) (f g : X → ℝ≥0�
     ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
   rw [← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun x _ => (add_comm _ _).trans tsub_add_min
+
+/-- The excess of `a` over `b` and the excess of `b` over `a` add up to their distance: for finite
+`a` and `b`, `(a - b) + (b - a) = |a - b|`, read in `ℝ`. -/
+theorem _root_.ENNReal.toReal_sub_add_toReal_sub {a b : ℝ≥0∞} (ha : a ≠ ⊤) (hb : b ≠ ⊤) :
+    (a - b).toReal + (b - a).toReal = |a.toReal - b.toReal| := by
+  rcases le_total a b with h | h
+  · rw [tsub_eq_zero_of_le h, ENNReal.toReal_sub_of_le h hb, ENNReal.toReal_zero, zero_add,
+      abs_sub_comm, abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono hb h))]
+  · rw [tsub_eq_zero_of_le h, ENNReal.toReal_sub_of_le h ha, ENNReal.toReal_zero, add_zero,
+      abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono ha h))]
 
 variable {s : Finset X} {f g : X → ℝ≥0∞} {x₀ : X}
 

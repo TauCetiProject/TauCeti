@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 import shutil
 import subprocess
@@ -617,9 +618,260 @@ class MetricsTest(unittest.TestCase):
         self.assertTrue(names[-1].startswith("Other (2,488 contributors)"))
         self.assertTrue(all(len(values) == len(dates) for values in series.values()))
 
+    def test_the_cutoff_excludes_events_after_the_snapshot_instant(self):
+        # Independent of the end-date cut: both events fall on a day that has finished, so only
+        # the cutoff can separate them. Kept as its own test because generate() now ends the
+        # series on the last full day, which would hide a broken cutoff behind the date filter.
+        start = datetime(2026, 1, 1, tzinfo=UTC)
+        events = [
+            (datetime(2026, 1, 3, 9, tzinfo=UTC), "before"),
+            (datetime(2026, 1, 3, 18, tzinfo=UTC), "after"),
+        ]
+        _, _, _, totals = stats.cumulative_chart_series(
+            events, start.date(), date(2026, 1, 5), limit=10,
+            cutoff=datetime(2026, 1, 3, 12, tzinfo=UTC),
+        )
+        self.assertEqual(dict(totals), {"before": 1})
+
+
+class RoadmapMatrixTest(unittest.TestCase):
+    """Who merged and who reviewed, per roadmap, over the trailing window."""
+
+    def matrix(self, prs, boards, **kw):
+        return stats.roadmap_matrix(prs, boards, date(2026, 1, 31), **kw)
+
+    def labelled(self, number, author, area, day, state="MERGED"):
+        return {
+            "number": number, "author": author,
+            "labels": [f"roadmap/{area}"] if area else ["roadmap/none"],
+            "created_at": f"2026-01-{day:02d}T00:00:00Z",
+            "merged_at": f"2026-01-{day:02d}T12:00:00Z" if state == "MERGED" else None,
+            "closed_at": None, "state": state, "is_draft": False, "events": [],
+        }
+
+    def test_it_counts_merges_and_reviews_per_roadmap(self):
+        prs = [self.labelled(1, "alice", "PDE", 10),
+               self.labelled(2, "alice", "PDE", 11),
+               self.labelled(3, "bob", "Topology", 12)]
+        boards = [{"pr": 1, "user": "carol", "created_at": "2026-01-10T13:00:00Z"},
+                  {"pr": 3, "user": "carol", "created_at": "2026-01-12T13:00:00Z"}]
+
+        matrix = self.matrix(prs, boards)
+
+        self.assertEqual(matrix["merges"]["counts"]["alice\troadmap/PDE"], 2)
+        self.assertEqual(matrix["merges"]["counts"]["bob\troadmap/Topology"], 1)
+        self.assertEqual(matrix["reviews"]["counts"]["carol\troadmap/PDE"], 1)
+        self.assertEqual(matrix["reviews"]["counts"]["carol\troadmap/Topology"], 1)
+
+    def test_a_pr_with_two_area_labels_is_counted_for_neither(self):
+        """Splitting it would put a made-up number in a chart about who works where."""
+        pr = self.labelled(1, "alice", "PDE", 10)
+        pr["labels"] = ["roadmap/PDE", "roadmap/Topology"]
+
+        self.assertEqual(self.matrix([pr], [])["merges"]["counts"], {})
+
+    def test_maintenance_titles_still_count_here(self):
+        """Unlike the lines-per-roadmap chart: somebody who keeps the PDE build honest is a
+        person that roadmap depends on, which is the question this one is asking."""
+        pr = self.labelled(1, "alice", "PDE", 10)
+
+        self.assertEqual(self.matrix([pr], [])["merges"]["counts"]["alice\troadmap/PDE"], 1)
+
+    def test_work_outside_the_window_is_left_out(self):
+        old = self.labelled(1, "alice", "PDE", 10)
+        old["merged_at"] = "2025-01-10T12:00:00Z"
+
+        self.assertEqual(self.matrix([old], [])["merges"]["counts"], {})
+
+    def test_roadmaps_past_the_limit_become_one_column(self):
+        prs = []
+        for index in range(stats.ROADMAP_LIMIT + 4):
+            for copy in range(stats.ROADMAP_LIMIT + 4 - index):
+                prs.append(self.labelled(len(prs) + 1, "alice", f"Area{index:02d}", 10))
+
+        matrix = self.matrix(prs, [])
+
+        self.assertEqual(len(matrix["columns"]), stats.ROADMAP_LIMIT)
+        self.assertEqual(len(matrix["bundled"]), 4)
+        self.assertEqual(matrix["merges"]["axis"][-1], stats.OTHER_ROADMAP)
+        # Nothing is lost by bundling.
+        self.assertEqual(sum(matrix["merges"]["counts"].values()), len(prs))
+
+    def test_contributors_past_the_limit_become_one_row(self):
+        prs = [self.labelled(index + 1, f"person-{index:02d}", "PDE", 10)
+               for index in range(stats.ROADMAP_CONTRIBUTOR_LIMIT + 6)]
+
+        rows = self.matrix(prs, [])["merges"]
+
+        self.assertEqual(rows["omitted_contributors"], 6)
+        self.assertEqual(rows["rows"][-1], stats.OTHER_CONTRIBUTOR)
+        self.assertEqual(rows["counts"][f"{stats.OTHER_CONTRIBUTOR}\troadmap/PDE"], 6)
+        self.assertEqual(sum(rows["counts"].values()), len(prs))
+
+    def test_both_charts_share_the_same_columns(self):
+        """Reviews follow the work rather than defining their own areas, so the two grids can
+        be read against each other."""
+        prs = [self.labelled(1, "alice", "PDE", 10)]
+        boards = [{"pr": 1, "user": "carol", "created_at": "2026-01-10T13:00:00Z"}]
+
+        matrix = self.matrix(prs, boards)
+
+        self.assertEqual(matrix["merges"]["axis"], matrix["reviews"]["axis"])
+
+
+class HeatBucketTest(unittest.TestCase):
+    def test_the_top_bucket_covers_a_range(self):
+        # Spacing the edges across the closed interval would land the last one exactly on the
+        # maximum, spending a whole ramp step on the single busiest cell.
+        edges = stats.heat_buckets(105)
+
+        self.assertLess(edges[-1], 105)
+        self.assertEqual(stats.heat_step(105, edges), len(edges) - 1)
+        self.assertEqual(stats.heat_step(1, edges), 0)
+
+    def test_edges_are_strictly_increasing(self):
+        for maximum in (1, 2, 3, 5, 40, 105, 5000):
+            edges = stats.heat_buckets(maximum)
+            self.assertEqual(edges, sorted(set(edges)), maximum)
+            self.assertLessEqual(len(edges), len(stats.ROADMAP_RAMP))
+
+    def test_every_ramp_step_has_an_ink(self):
+        self.assertEqual(len(stats.ROADMAP_INK), len(stats.ROADMAP_RAMP))
+
+    def test_a_long_name_is_elided_in_the_middle(self):
+        """Two roadmaps sharing a long prefix must stay distinguishable in the headings."""
+        prs = [
+            {"number": 1, "author": "alice", "labels": ["roadmap/AlgebraicNumberTheory"],
+             "created_at": "2026-01-10T00:00:00Z", "merged_at": "2026-01-10T12:00:00Z",
+             "closed_at": None, "state": "MERGED", "is_draft": False, "events": []},
+            {"number": 2, "author": "bob", "labels": ["roadmap/AlgebraicTopologySeminar"],
+             "created_at": "2026-01-10T00:00:00Z", "merged_at": "2026-01-10T12:00:00Z",
+             "closed_at": None, "state": "MERGED", "is_draft": False, "events": []},
+        ]
+        matrix = stats.roadmap_matrix(prs, [], date(2026, 1, 31))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "heat.svg"
+            stats.render_roadmap_heatmap(path, "Grid", "merged PRs", matrix, "merges")
+            svg = path.read_text(encoding="utf-8")
+        headings = re.findall(r'class="collab"[^>]*>([^<]+)<', svg)
+        self.assertEqual(len(set(headings)), len(headings), headings)
+
+    def test_a_forbidden_control_character_is_stripped(self):
+        self.assertNotIn("\x00", stats.XML_FORBIDDEN.sub("", "PD\x00E"))
+        self.assertEqual(stats.XML_FORBIDDEN.sub("", "Number&Theory"), "Number&Theory")
+
+    def test_the_ramp_gets_lighter_all_the_way_up(self):
+        """The one property a sequential scale actually needs. The categorical CVD validator
+        does not apply to a ramp and would fail this by construction."""
+        def luminance(colour):
+            def channel(value):
+                value /= 255
+                return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+            raw = colour.lstrip("#")
+            red, green, blue = (int(raw[index:index + 2], 16) for index in (0, 2, 4))
+            return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+
+        levels = [luminance(step) for step in stats.ROADMAP_RAMP]
+        self.assertEqual(levels, sorted(levels))
+
+        def contrast(one, two):
+            high, low = max(luminance(one), luminance(two)), min(luminance(one), luminance(two))
+            return (high + 0.05) / (low + 0.05)
+
+        for step, ink in zip(stats.ROADMAP_RAMP, stats.ROADMAP_INK):
+            self.assertGreaterEqual(contrast(step, ink), 4.0, step)
+
+
+class HeatmapRenderTest(unittest.TestCase):
+    """Degenerate inputs must produce a valid SVG rather than a crash or unparsable XML."""
+
+    def matrix_for(self, prs, boards=()):
+        return stats.roadmap_matrix(prs, list(boards), date(2026, 1, 31))
+
+    def merged(self, number, author, area):
+        return {
+            "number": number, "author": author,
+            "labels": [f"roadmap/{area}"] if area else ["roadmap/none"],
+            "created_at": "2026-01-10T00:00:00Z", "merged_at": "2026-01-10T12:00:00Z",
+            "closed_at": None, "state": "MERGED", "is_draft": False, "events": [],
+        }
+
+    def render(self, matrix, key="merges"):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "heat.svg"
+            stats.render_roadmap_heatmap(path, "Grid", "merged PRs", matrix, key)
+            svg = path.read_text(encoding="utf-8")
+        ET.fromstring(svg)  # raises if the sentinels or a label produced invalid XML
+        return svg
+
+    def test_nothing_labelled_still_renders(self):
+        self.render(self.matrix_for([self.merged(1, "alice", None)]))
+
+    def test_a_single_cell_renders(self):
+        svg = self.render(self.matrix_for([self.merged(1, "alice", "PDE")]))
+        self.assertIn("alice", svg)
+        self.assertIn("PDE", svg)
+
+    def test_a_login_needing_escaping_is_escaped(self):
+        svg = self.render(self.matrix_for([self.merged(1, "a&b", "PDE")]))
+        self.assertIn("a&amp;b", svg)
+        self.assertNotIn(">a&b<", svg)
+
+    def test_a_long_roadmap_name_is_clipped_out_of_the_header(self):
+        svg = self.render(self.matrix_for([self.merged(1, "alice", "A" * 60)]))
+        self.assertNotIn("A" * 40, svg)
+        self.assertIn("…", svg)
+
+    def headings_clear_the_subtitle(self, svg):
+        """Recompute how far each rotated heading reaches and compare with the subtitle.
+
+        A heading is drawn at `y` and rotated -45 degrees about that point, so it runs up and
+        to the right by its own rendered length over root two. The first render against real
+        roadmap names put `RepresentationTheory` straight through the subtitle, because the
+        band was a fixed 232 units and `css_px` scales the 12 to about 18 at this width.
+        """
+        root = ET.fromstring(svg)
+        width = int(root.attrib["viewBox"].split()[2])
+        font = 12 * width / stats.REFERENCE_WIDTH
+        worst = None
+        for node in root.iter("{http://www.w3.org/2000/svg}text"):
+            if node.attrib.get("class") != "collab":
+                continue
+            reach = float(node.attrib["y"]) - (
+                len(node.text or "") * font * stats.HEADING_ASPECT / 1.414)
+            worst = reach if worst is None else min(worst, reach)
+        return worst
+
+    def test_long_headings_do_not_run_into_the_subtitle(self):
+        prs = [self.merged(index + 1, f"person-{index:02d}", name) for index, name in enumerate(
+            ["RepresentationTheory", "OneParameterSemigroups", "StandardDistributions",
+             "GeometricTopology", "ConformalMapping"])]
+        svg = self.render(self.matrix_for(prs))
+
+        worst = self.headings_clear_the_subtitle(svg)
+
+        self.assertIsNotNone(worst)
+        self.assertGreater(worst, stats.HEADING_SUBTITLE_FLOOR, "a heading crosses the subtitle")
+
+    def test_short_headings_do_not_pay_for_the_long_ones(self):
+        """The band is sized from the labels, so a grid of short names stays compact."""
+        def height_for(name):
+            prs = [self.merged(1, "alice", name)]
+            svg = self.render(self.matrix_for(prs))
+            return int(ET.fromstring(svg).attrib["viewBox"].split()[3])
+
+        self.assertLess(height_for("PDE"), height_for("RepresentationTheory"))
+
+    def test_neither_sentinel_reaches_the_output(self):
+        prs = [self.merged(index + 1, f"person-{index:02d}", "PDE")
+               for index in range(stats.ROADMAP_CONTRIBUTOR_LIMIT + 3)]
+        svg = self.render(self.matrix_for(prs))
+        self.assertNotIn(stats.OTHER_CONTRIBUTOR, svg)
+        self.assertNotIn(stats.OTHER_ROADMAP, svg)
+
 
 class RenderingTest(unittest.TestCase):
-    def test_generate_writes_five_valid_svgs_with_requested_names(self):
+    def test_generate_writes_every_declared_svg(self):
         prs = [
             pr(1, 1, merged_day=2, author="alice", cycles=1),
             pr(2, 2, merged_day=5, author="bob", cycles=2),
@@ -652,13 +904,9 @@ class RenderingTest(unittest.TestCase):
                  "updated_at": timestamp(15, 21), "user": "future-reviewer"},
             ],
         }
-        expected = [
-            "pr-queue-age.svg",
-            "review-cycles-reached.svg",
-            "rolling-seven-day-history.svg",
-            "cumulative-merges-by-contributor.svg",
-            "cumulative-reviews-by-contributor.svg",
-        ]
+        # Derived from ASSET_NAMES rather than restated, so adding a chart cannot leave this
+        # test quietly checking the old set.
+        expected = [name for name in stats.ASSET_NAMES if name.endswith(".svg")]
         with tempfile.TemporaryDirectory() as temporary:
             out = Path(temporary)
             metrics = stats.generate(data, out, contributor_limit=2, history_days=30)
@@ -686,8 +934,24 @@ class RenderingTest(unittest.TestCase):
             self.assertIn("Reviews by contributor", review_svg)
             self.assertNotIn("Trusted v1 review scoreboards", review_svg)
             self.assertEqual(metrics["review_cycles"]["max_cycle"], 7)
+            self.assertEqual(metrics["merge_totals_by_contributor"]["alice"], 2)
+            self.assertEqual(metrics["review_totals_by_contributor"]["reviewer-a"], 1)
+            # frank merged and reviewer-c reviewed on day 15 at 12:00, eight hours before the
+            # 20:00 snapshot. Both are real and both are COUNTED -- the totals are documented
+            # as exact through the snapshot instant, and a contributor must not vanish from
+            # them for a few hours.
             self.assertEqual(metrics["merge_totals_by_contributor"]["frank"], 1)
             self.assertEqual(metrics["review_totals_by_contributor"]["reviewer-c"], 1)
+            # They are not PLOTTED, because day 15 is not over: drawing eight hours of it as
+            # though it were a whole day reads as a downturn, and the next run three hours
+            # later would redraw the same point higher.
+            self.assertEqual(metrics["last_full_day"], "2026-01-14")
+            self.assertEqual(metrics["cumulative_dates"][-1], "2026-01-14")
+            plotted = sum(values[-1] for values
+                          in metrics["cumulative_merges_plotted"].values())
+            counted = sum(metrics["merge_totals_by_contributor"].values())
+            self.assertEqual(counted - plotted, 1)  # frank's, held back for the day
+            # And anything after the snapshot instant stays out of both.
             self.assertNotIn("future-author", metrics["merge_totals_by_contributor"])
             self.assertNotIn("future-reviewer", metrics["review_totals_by_contributor"])
 

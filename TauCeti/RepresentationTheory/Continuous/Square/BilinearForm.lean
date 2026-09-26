@@ -113,8 +113,7 @@ private theorem mem_invariants_of_isInvariantForm_ofTensor (hπ : IsUnitary π) 
   refine (mem_invariants t).mpr fun g => ?_
   have key : ∀ s : V ⊗[𝕜] V, ⟪t, (tprod π π) g s⟫_𝕜 = ⟪t, s⟫_𝕜 := by
     intro s
-    induction s using TensorProduct.induction_on with
-    | zero => simp
+    induction s using TensorProduct.inductionOn with
     | tmul v w =>
       have hg : (tprod π π) g (v ⊗ₜ[𝕜] w) = π g v ⊗ₜ[𝕜] π g w := by simp
       rw [hg, ← BilinForm.ofTensor_apply, ← BilinForm.ofTensor_apply]

@@ -24,6 +24,8 @@ conjugate containing it too.
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
   conjugates.
+* `Subgroup.inclusion_conj_smul`: the inclusion of a normal subgroup into a larger normal
+  subgroup commutes with conjugation.
 -/
 
 public section
@@ -54,5 +56,13 @@ theorem mem_conjAct_smul_of_mem_center {G : Type*} [Group G] {H : Subgroup G} {z
   rw [mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, map_inv, ConjAct.ofConjAct_toConjAct,
     inv_inv, mem_center_iff.mp hz c⁻¹, inv_mul_cancel_right]
   exact h
+
+/-- The inclusion of a normal subgroup `H` into a larger normal subgroup `K` commutes with the
+conjugation actions of `ConjAct G` on `H` and on `K`. -/
+theorem inclusion_conj_smul {G : Type*} [Group G] {H K : Subgroup G} [H.Normal] [K.Normal]
+    (h : H ≤ K) (g : ConjAct G) (x : H) : inclusion h (g • x) = g • inclusion h x :=
+  Subtype.ext <| by
+    rw [coe_inclusion, ConjAct.Subgroup.val_conj_smul, ConjAct.Subgroup.val_conj_smul,
+      coe_inclusion]
 
 end Subgroup

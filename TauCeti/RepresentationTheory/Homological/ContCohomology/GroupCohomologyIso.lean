@@ -194,9 +194,11 @@ def H0AddEquivInvariants : H0 G M ≃+ (Rep.ofDistribMulAction ℤ G M).ρ.invar
   right_inv _ := rfl
   map_add' _ _ := rfl
 
+/-- `H0AddEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0AddEquivInvariants_val (m : H0 G M) : (H0AddEquivInvariants G M m).1 = m.1 := (rfl)
 
+/-- The inverse of `H0AddEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0AddEquivInvariants_symm_val (m : (Rep.ofDistribMulAction ℤ G M).ρ.invariants) :
     ((H0AddEquivInvariants G M).symm m).1 = m.1 := (rfl)
@@ -214,12 +216,16 @@ noncomputable def explicitH0IsoGroupCohomology :
   (H0AddEquivInvariants G M).trans
     (groupCohomology.H0Iso (Rep.ofDistribMulAction ℤ G M)).toLinearEquiv.symm.toAddEquiv
 
+/-- `explicitH0IsoGroupCohomology` is `H0AddEquivInvariants` followed by the inverse of Mathlib's
+`groupCohomology.H0Iso`. -/
 @[simp]
 theorem explicitH0IsoGroupCohomology_apply (m : H0 G M) :
     explicitH0IsoGroupCohomology G M m =
       (groupCohomology.H0Iso (Rep.ofDistribMulAction ℤ G M)).inv (H0AddEquivInvariants G M m) :=
   (rfl)
 
+/-- The inverse of `explicitH0IsoGroupCohomology` is Mathlib's `groupCohomology.H0Iso` followed by
+the inverse of `H0AddEquivInvariants`. -/
 @[simp]
 theorem explicitH0IsoGroupCohomology_symm_apply
     (x : groupCohomology (Rep.ofDistribMulAction ℤ G M) 0) :
@@ -244,10 +250,13 @@ def Z1AddEquivCocycles₁ : Z1 G M ≃+ cocycles₁ (Rep.ofDistribMulAction ℤ 
   right_inv _ := rfl
   map_add' _ _ := rfl
 
+/-- `Z1AddEquivCocycles₁` does not change the underlying function `G → M` of a cocycle. -/
 @[simp]
 theorem Z1AddEquivCocycles₁_coe (z : Z1 G M) :
     ⇑(Z1AddEquivCocycles₁ G M z) = (z : G → M) := (rfl)
 
+/-- The inverse of `Z1AddEquivCocycles₁` does not change the underlying function `G → M` of a
+cocycle. -/
 @[simp]
 theorem Z1AddEquivCocycles₁_symm_coe (c : cocycles₁ (Rep.ofDistribMulAction ℤ G M)) :
     (((Z1AddEquivCocycles₁ G M).symm c : Z1 G M) : G → M) = ⇑c := (rfl)
@@ -281,16 +290,23 @@ noncomputable def explicitH1IsoGroupCohomology :
         ((groupCohomology.H1π_eq_zero_iff _).1 hz)
   exact QuotientAddGroup.liftEquiv _ hφ hker
 
+/-- `explicitH1IsoGroupCohomology` sends the class of a continuous `1`-cocycle `z` to the class of
+`z` in Mathlib's `H¹`. -/
 @[simp]
 theorem explicitH1IsoGroupCohomology_mk (z : Z1 G M) :
     explicitH1IsoGroupCohomology G M (z : H1 G M) =
       groupCohomology.H1π _ (Z1AddEquivCocycles₁ G M z) :=
   (rfl)
 
+-- `simp` reduces the carrier `ModuleCat.of ℤ (cocycles₁ _)` of the source of `H1π` in implicit
+-- type arguments before it looks a term up, so the left-hand side is stated through
+-- `dsimp% only`, as in #8315.
+/-- The inverse of `explicitH1IsoGroupCohomology` sends the class of a `1`-cocycle `c` in Mathlib's
+`H¹` to the class of `c` in the explicit `H¹`. -/
 @[simp]
 theorem explicitH1IsoGroupCohomology_symm_H1π
     (c : cocycles₁ (Rep.ofDistribMulAction ℤ G M)) :
-    (explicitH1IsoGroupCohomology G M).symm (groupCohomology.H1π _ c) =
+    (dsimp% only ((explicitH1IsoGroupCohomology G M).symm (groupCohomology.H1π _ c))) =
       (((Z1AddEquivCocycles₁ G M).symm c : Z1 G M) : H1 G M) := by
   rw [AddEquiv.symm_apply_eq, explicitH1IsoGroupCohomology_mk, AddEquiv.apply_symm_apply]
 
@@ -310,10 +326,13 @@ def Z2AddEquivCocycles₂ : Z2 G M ≃+ cocycles₂ (Rep.ofDistribMulAction ℤ 
   right_inv _ := rfl
   map_add' _ _ := rfl
 
+/-- `Z2AddEquivCocycles₂` does not change the underlying function `G × G → M` of a cocycle. -/
 @[simp]
 theorem Z2AddEquivCocycles₂_coe (z : Z2 G M) :
     ⇑(Z2AddEquivCocycles₂ G M z) = (z : G × G → M) := (rfl)
 
+/-- The inverse of `Z2AddEquivCocycles₂` does not change the underlying function `G × G → M` of a
+cocycle. -/
 @[simp]
 theorem Z2AddEquivCocycles₂_symm_coe (c : cocycles₂ (Rep.ofDistribMulAction ℤ G M)) :
     (((Z2AddEquivCocycles₂ G M).symm c : Z2 G M) : G × G → M) = ⇑c := (rfl)
@@ -347,16 +366,21 @@ noncomputable def explicitH2IsoGroupCohomology :
         ((groupCohomology.H2π_eq_zero_iff _).1 hz)
   exact QuotientAddGroup.liftEquiv _ hφ hker
 
+/-- `explicitH2IsoGroupCohomology` sends the class of a continuous `2`-cocycle `z` to the class of
+`z` in Mathlib's `H²`. -/
 @[simp]
 theorem explicitH2IsoGroupCohomology_mk (z : Z2 G M) :
     explicitH2IsoGroupCohomology G M (z : H2 G M) =
       groupCohomology.H2π _ (Z2AddEquivCocycles₂ G M z) :=
   (rfl)
 
+-- `dsimp% only` on the left-hand side: see the comment on `explicitH1IsoGroupCohomology_symm_H1π`.
+/-- The inverse of `explicitH2IsoGroupCohomology` sends the class of a `2`-cocycle `c` in Mathlib's
+`H²` to the class of `c` in the explicit `H²`. -/
 @[simp]
 theorem explicitH2IsoGroupCohomology_symm_H2π
     (c : cocycles₂ (Rep.ofDistribMulAction ℤ G M)) :
-    (explicitH2IsoGroupCohomology G M).symm (groupCohomology.H2π _ c) =
+    (dsimp% only ((explicitH2IsoGroupCohomology G M).symm (groupCohomology.H2π _ c))) =
       (((Z2AddEquivCocycles₂ G M).symm c : Z2 G M) : H2 G M) := by
   rw [AddEquiv.symm_apply_eq, explicitH2IsoGroupCohomology_mk, AddEquiv.apply_symm_apply]
 

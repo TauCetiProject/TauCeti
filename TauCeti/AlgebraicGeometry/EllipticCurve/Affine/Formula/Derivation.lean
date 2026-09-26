@@ -150,8 +150,6 @@ theorem Equation.evalEval_polynomialX_smul_add_evalEval_polynomialY_smul_eq_zero
     (W⁄K).toAffine.polynomialX.evalEval x y • D x +
       (W⁄K).toAffine.polynomialY.evalEval x y • D y = 0 := by
   have h0 := congrArg D (((W⁄K).toAffine.equation_iff' x y).1 h)
-  have h2 : D (2 : K) = 0 := by simpa using D.map_natCast 2
-  have h3 : D (3 : K) = 0 := by simpa using D.map_natCast 3
   rw [evalEval_polynomialX, evalEval_polynomialY]
   simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, sq, pow_three,
     map_zero, map_sub, map_add, Derivation.leibniz, Derivation.map_algebraMap, smul_zero,

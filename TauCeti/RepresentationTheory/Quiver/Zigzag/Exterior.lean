@@ -147,6 +147,7 @@ theorem skewZigzagMk_exterior_backtrackElem_add_backtrackElem_eq_zero {i j j' : 
     SkewZigzagParameter.exterior_ratio_of_ne hG h h' hne, Units.val_neg, Units.val_one,
     neg_one_smul, neg_add_cancel]
 
+omit [Finite V] in
 /-- **In characteristic two the exterior parameter presents the ordinary zigzag relations.** The
 graph is arbitrary here: `Or.inl h2` supplies `hG`. -/
 theorem skewZigzagIdeal_exterior_eq_zigzagIdeal (h2 : (2 : k) = 0) :

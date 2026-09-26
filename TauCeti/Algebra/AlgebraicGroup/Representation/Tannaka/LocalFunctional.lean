@@ -198,8 +198,7 @@ theorem localFunctional_eq_comp_inclusion
   have hcounit (x : A ⊗[k] N.1) :
       counitEvaluation k H A Q.1 ((Submodule.inclusion hNQ).baseChange A x) =
         counitEvaluation k H A N.1 x := by
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp [hx, hy]
     | tmul a m =>
         rw [LinearMap.baseChange_tmul,

@@ -254,9 +254,11 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
   have h_toR : Tendsto τR (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) :=
     firstExitTimeRight_tendsto hρ_pos hγ_cont_R h_at h_leave_R
   have h_radL : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ‖γ (τL ε) - s‖ = ε :=
-    eventually_norm_at_firstExitTimeLeft_eq hρ_pos hγ_cont_L h_at h_leave_L
+    eventually_norm_at_firstExitTimeLeft_eq hρ_pos.le hγ_cont_L h_at
+      (h_leave_L _ ⟨le_rfl, by linarith⟩)
   have h_radR : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ‖γ (τR ε) - s‖ = ε :=
-    eventually_norm_at_firstExitTimeRight_eq hρ_pos hγ_cont_R h_at h_leave_R
+    eventually_norm_at_firstExitTimeRight_eq hρ_pos.le hγ_cont_R h_at
+      (h_leave_R _ ⟨by linarith, le_rfl⟩)
   have h_memL : ∀ᶠ ε in 𝓝[>] (0 : ℝ), τL ε ∈ Ioo (t₀ - ρ) t₀ :=
     h_toL (Ioo_mem_nhdsLT (by linarith))
   have h_memR : ∀ᶠ ε in 𝓝[>] (0 : ℝ), τR ε ∈ Ioo t₀ (t₀ + ρ) :=

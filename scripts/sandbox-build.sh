@@ -30,6 +30,10 @@ test -x "$WATCHDOG_TOOLCHAIN/bin/lean"
 export LAKE_OVERRIDE_LEAN=true
 export LEAN="$WATCHDOG_TOOLCHAIN/bin/lean"
 
+# The environment lint's compiled driver was built by pr-build.yml on the host before any candidate
+# code ran, and is mounted read-only; lint-env.sh will not compile one inside the sandbox.
+test -x "${LINT_DRIVER_EXE:?the prebuilt environment-lint driver is required}"
+
 # Build the exact candidate against its attested Lake config. bwrap keeps this offline and
 # confines writes to the candidate's .lake directory.
 #
@@ -52,7 +56,8 @@ lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/Axioms.lean"
 # (read from each compiled module's isModule flag, not a textual grep).
 lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
 
-# Environment lint: Mathlib's default `#lint` set minus docBlame, plus a
+# Environment lint (the compiled driver in LINT_DRIVER_EXE): Mathlib's default `#lint` set minus
+# docBlame, plus a
 # module-system-reliable docstring scan, compared against the grandfathered baseline in
 # scripts/lint-baseline.txt. Script, baseline, and the @[nolint <linter>] allowlist
 # (scripts/lint-nolints-allowlist.txt) are workflow-pinned trusted copies, and its report parsing

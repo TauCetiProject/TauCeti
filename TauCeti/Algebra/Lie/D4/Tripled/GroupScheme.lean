@@ -289,7 +289,10 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) :
 
 /-! ## The pinning equation -/
 
-private theorem lie_serreH_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
+/-- The numbered Serre root generators of the tripled type-`D₄` presentation are Cartan weight
+vectors with weight `TauCeti.TypeDStd.rootGeneratorWeight`: the Cartan matrix of the tripled
+weight table is the type-`D₄` Cartan matrix. -/
+theorem lie_serreH_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
     ∀ j : Fin 4,
       ⁅TauCeti.serreH ℚ weightTable.cartanMatrix j,
           TauCeti.serreRootGenerator weightTable.cartanMatrix k⁆ =

@@ -14,7 +14,7 @@ import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 /-!
 # Strong noetherianness of a completed rational localisation
 
-Two results, one about the carrier and one about the ring.
+Two results, one about the carrier of a presentation and one about the ring it presents.
 
 **Carrier-independence.** A presentation `(T, s)` of a rational localisation is carried by *some*
 localisation `S` of `A` at `s`, and the choice is immaterial: two carriers of the same

@@ -68,7 +68,7 @@ private theorem exists_repartitionDualComponent_ne_zero (hF : IsFunctionField k 
   have hle : weilDifferentialFiltration (0 : Divisor k F) ≤
       weilDifferentialFiltration D :=
     weilDifferentialFiltration_antitone hDneg.le
-  have hfdD := finiteDimensional_weilDifferentialFiltration hF hex D
+  have hfdD := finiteDimensional_weilDifferentialFiltration hF D
   have hdimD := finrank_weilDifferentialFiltration hF hex D
   have hdim0 := finrank_weilDifferentialFiltration_zero hF hex
   have hP : (1 : ℤ) ≤ P.degree := by

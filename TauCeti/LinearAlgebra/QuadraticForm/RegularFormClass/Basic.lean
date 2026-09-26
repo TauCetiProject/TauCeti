@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 /-!
 # Isometry classes of regular quadratic forms
@@ -52,6 +53,8 @@ rank is additive.
 * `TauCeti.presentedFormAppendIsometryEquiv`: concatenating weights presents the orthogonal sum.
 * `TauCeti.presentedFormConsIsometryEquiv`: peeling the first weight off presents the form as a
   line orthogonal to the presentation of the remaining weights.
+* `TauCeti.presentedForm_tail_isRepresentedBy`: the tail of a diagonal presentation is
+  represented by the full form.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 
@@ -325,6 +328,13 @@ def presentedFormConsIsometryEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     -- in the type of `x`, so the rewrite has to be directed by hand.
     rw [presentedForm_apply, QuadraticMap.prod_apply, presentedForm_apply, Fin.sum_univ_succ]
     simp
+
+/-- The tail of a diagonal presentation is represented by the full presented form. -/
+theorem presentedForm_tail_isRepresentedBy {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    (presentedForm ⟨n, fun i ↦ w i.succ⟩).IsRepresentedBy
+      (presentedForm ⟨n + 1, w⟩) :=
+  (QuadraticMap.isRepresentedBy_prod_right _ _).trans
+    (QuadraticMap.Equivalent.isRepresentedBy ⟨presentedFormConsIsometryEquiv w⟩)
 
 private theorem presentedFormConsIsometryEquiv_toLinearEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     (presentedFormConsIsometryEquiv w).toLinearEquiv =

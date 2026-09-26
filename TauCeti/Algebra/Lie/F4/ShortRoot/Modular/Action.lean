@@ -67,6 +67,19 @@ noncomputable def f4ShortRootAdjointMatrix
   LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
     (f4ShortRootAdjoint X)
 
+/-- Base change of a modular short-root adjoint matrix to a value algebra. -/
+noncomputable abbrev f4ShortRootAdjointMatrixBaseChange
+    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+    (X : f4ModularChevalleyLieAlgebra) : Matrix (Fin 26) (Fin 26) A :=
+  (f4ShortRootAdjointMatrix X).map (algebraMap (ZMod 2) A)
+
+/-- Entries of the base-changed adjoint matrix are obtained by applying the structure map. -/
+@[simp] theorem f4ShortRootAdjointMatrixBaseChange_apply
+    {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+    (X : f4ModularChevalleyLieAlgebra) (i j : Fin 26) :
+    f4ShortRootAdjointMatrixBaseChange (A := A) X i j =
+      algebraMap (ZMod 2) A (f4ShortRootAdjointMatrix X i j) := rfl
+
 /-- An entry of the adjoint matrix is the corresponding ambient bracket coordinate. -/
 @[simp] theorem f4ShortRootAdjointMatrix_apply
     (X : f4ModularChevalleyLieAlgebra) (i j : Fin 26) :
@@ -91,19 +104,34 @@ noncomputable def f4ShortRootAdjointMatrix
         f4ModularChevalleyBasis.repr Y (f4ShortRootBasisCoordinate i))
       (coe_f4ShortRootAdjoint_apply X (f4ShortRootLieIdealBasis j))
 
+/-- The named adjoint matrix is the matrix of the restricted adjoint endomorphism. -/
+theorem f4ShortRootAdjointMatrix_eq_toMatrix (X : f4ModularChevalleyLieAlgebra) :
+    f4ShortRootAdjointMatrix X =
+      LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
+        (f4ShortRootAdjoint X) := by
+  rfl
+
 /-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
 noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ShortRootLieIdeal :=
   f4ShortRootAdjoint (f4ModularSignedSimpleRootVector k)
 
 /-- The signed simple-root adjoint operator is the bracket with its signed simple root vector. -/
-@[simp] theorem coe_f4ShortRootSignedSimpleAdjoint_apply
+theorem coe_f4ShortRootSignedSimpleAdjoint_apply
     (k : Fin 4 ⊕ Fin 4) (y : f4ShortRootLieIdeal) :
     (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
         (y : f4ModularChevalleyLieAlgebra)⁆ := by
   simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply,
     f4ModularSignedSimpleRootVector_eq]
+
+/-- The signed simple-root operator is the restricted adjoint action of its root vector. -/
+@[simp] theorem f4ShortRootSignedSimpleAdjoint_apply (k : Fin 4 ⊕ Fin 4)
+    (y : f4ShortRootLieIdeal) :
+    f4ShortRootSignedSimpleAdjoint k y =
+      f4ShortRootAdjoint (f4ModularRootVector (f4SignedSimpleRootIndex k)) y :=
+  Subtype.ext ((coe_f4ShortRootSignedSimpleAdjoint_apply k y).trans
+    (coe_f4ShortRootAdjoint_apply _ y).symm)
 
 /-- The matrix of the signed simple-root adjoint operator in the canonical short-root basis. -/
 noncomputable def f4ShortRootSignedSimpleAdjointMatrix (k : Fin 4 ⊕ Fin 4) :
@@ -136,7 +164,8 @@ theorem f4ShortRootAdjoint_rootVector_of_add_eq_short (alpha beta gamma : Fin 48
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl ⟨gamma, hgamma⟩)) := by
   apply Subtype.ext
   simp only [coe_f4ShortRootAdjoint_apply, coe_f4ShortRootLieIdealBasis_symm_inl]
-  exact f4Modular_lie_rootVector_of_add_eq_short alpha beta gamma hbeta hgamma h
+  exact f4Modular_lie_rootVector_of_add_of_length_eq alpha beta gamma
+    (hbeta.trans hgamma.symm) h
 
 /-- On the root coordinate opposite a short root, the restricted adjoint action lands in the
 corresponding modular coroot. -/
@@ -161,8 +190,8 @@ theorem coe_f4ShortRootAdjoint_simpleCoroot (alpha : Fin 48) (i : Fin F4.rank)
       f4ModularChevalleyLieAlgebra) =
       -(f4SimplyConnectedRootDatum.pairing alpha
         (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) • f4ModularRootVector alpha := by
-  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk, ← lie_skew,
-    f4Modular_lie_simpleCoroot_rootVector, neg_smul]
+  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk,
+    f4Modular_lie_rootVector_simpleCoroot]
 
 end
 

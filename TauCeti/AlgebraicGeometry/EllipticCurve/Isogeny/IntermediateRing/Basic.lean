@@ -38,7 +38,11 @@ because `mapsInfinity` is precisely the assertion that it lands there.
 * `TauCeti.Isogeny.isScalarTower_intermediateRing`: the corestricted pullback puts it in a scalar
   tower under `W₂.CoordinateRing`, which is the other half of a consumer's setup.
 * `TauCeti.Isogeny.id_intermediateRing`: an identity isogeny's intermediate ring is the
-  coordinate ring itself, sitting inside its own fraction field.
+  coordinate ring itself, sitting inside its own fraction field, and
+  `TauCeti.Isogeny.id_pullbackToIntermediateRing`: its two corestrictions into that ring
+  coincide.
+* `TauCeti.Isogeny.id_algebraMap_eq_pullback`: the identity isogeny's pullback is the coordinate
+  ring's own embedding into its function field, in the form the consumers above take.
 
 ## Design
 
@@ -269,6 +273,23 @@ theorem id_intermediateRing (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed 
     exact Algebra.mem_bot.1 hbot
   · rintro ⟨x, rfl⟩
     exact isIntegral_algebraMap
+
+/-- **The identity isogeny's pullback is the coordinate ring's own embedding** into its function
+field. This is the form in which `Isogeny.isScalarTower_intermediateRing` and its fellow
+consumers take their pinning hypothesis, so it is stated once here rather than reproved at each
+use. -/
+theorem id_algebraMap_eq_pullback (W : WeierstrassCurve.Affine F) (x : W.CoordinateRing) :
+    algebraMap W.CoordinateRing W.FunctionField x = (id W).pullback x := by
+  rw [id_pullback, CoordinatePullback.id_apply]
+
+/-- **The identity isogeny corestricts both coordinate rings the same way.** Its pullback is the
+coordinate ring's own embedding in its fraction field, so the map along which ideals are extended
+and the map along which the relative norm is taken are one and the same. -/
+@[simp]
+theorem id_pullbackToIntermediateRing (W : WeierstrassCurve.Affine F) :
+    (id W).pullbackToIntermediateRing = (id W).toIntermediateRing := by
+  refine RingHom.ext fun x ↦ Subtype.ext ?_
+  rw [coe_pullbackToIntermediateRing, coe_toIntermediateRing, ← id_algebraMap_eq_pullback]
 
 end Isogeny
 

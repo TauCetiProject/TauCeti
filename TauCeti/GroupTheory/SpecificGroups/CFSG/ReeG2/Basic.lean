@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.SpecialIsogeny
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeG2.Carrier
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.OddPowerSteinberg
 public import TauCeti.GroupTheory.FixedPointCandidate
 
 /-!
@@ -24,7 +24,7 @@ preserving the root subgroups and exceptional endomorphism. No finiteness or sim
 or proved here. The conventions follow Carter, *Simple Groups of Lie Type*, §12.4.
 -/
 
-/- Adapted from the family interface and odd-iterate construction in
+/- Adapted from the family interface in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. -/
 
 public section
@@ -102,24 +102,11 @@ theorem steinberg_def :
     d.steinberg = HPow.hPow (α := Monoid.End d.AmbientGroup)
       d.halfFrobenius d.1.fieldExponent := by rfl
 
-private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.AmbientGroup) :
-    (⇑d.halfFrobenius)^[2 * k] g = G2ShortRoot.PrimeField.frobenius k d.1.Closure g := by
-  induction k generalizing g with
-  | zero => simp [G2ShortRoot.PrimeField.frobenius_zero]
-  | succ k ih =>
-      have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by omega
-      rw [hsucc,
-        Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
-        halfFrobenius_halfFrobenius, primeFrobenius_def,
-        Nat.add_comm k 1, G2ShortRoot.PrimeField.frobenius_add, MonoidHom.comp_apply]
-
 /-- The square of the Steinberg endomorphism is the field-order Frobenius. -/
 @[simp] theorem steinberg_steinberg (g : d.AmbientGroup) :
     d.steinberg (d.steinberg g) = d.frobenius g := by
-  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
-    Monoid.End.coe_pow (M := d.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  rw [hpow, ← Function.iterate_add_apply, ← two_mul,
-    halfFrobenius_iterate_two_mul, frobenius_def]
+  rw [d.frobenius_eq_primeFrobenius_pow]
+  exact d.toSuzukiReeIndex.pow_fieldExponent_pow_fieldExponent d.halfFrobenius_halfFrobenius g
 
 /-- The odd iterate exchanges the numbered roots with the prescribed parameter power. -/
 @[simp] theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank)
@@ -128,25 +115,13 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.AmbientGroup) :
       d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^
           (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
-            d.toSuzukiReeIndex.exponent i))) := by
-  have hsq : ∀ (j : Fin d.1.rank) (t : Multiplicative d.1.Closure),
-      d.halfFrobenius (d.halfFrobenius (d.simpleRootSubgroup j t)) =
-        d.simpleRootSubgroup j (Multiplicative.ofAdd (Multiplicative.toAdd t ^ 3)) := fun j t => by
-    rw [halfFrobenius_halfFrobenius, primeFrobenius_simpleRootSubgroup]
-  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
-    Monoid.End.coe_pow (M := d.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  have hexp : d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
-      d.toSuzukiReeIndex.exponent i =
-        3 ^ d.toSuzukiReeIndex.halfExponent * d.toSuzukiReeIndex.exponent i := by
-    rw [characteristic_eq_three]
-  rw [hexp, hpow, d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one]
-  exact iterate_two_mul_add_one_apply_pow
-    (x := fun a => d.simpleRootSubgroup i (Multiplicative.ofAdd a))
-    (y := fun a => d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
-      (Multiplicative.ofAdd a))
-    (fun a => d.halfFrobenius_simpleRootSubgroup i (Multiplicative.ofAdd a))
-    (fun a => hsq (d.toSuzukiReeIndex.lengthPerm i) (Multiplicative.ofAdd a))
-    d.toSuzukiReeIndex.halfExponent (Multiplicative.toAdd u)
+            d.toSuzukiReeIndex.exponent i))) :=
+  d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
+    (x := fun j t => d.simpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
+    (fun j t => (d.halfFrobenius_halfFrobenius (d.simpleRootSubgroup j t)).trans
+      ((d.primeFrobenius_simpleRootSubgroup j t).trans (by simp)))
+    i u
 
 /-- The fixed subgroup of the Ree G2 Steinberg endomorphism. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)

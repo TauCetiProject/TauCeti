@@ -9,6 +9,7 @@ import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Projection
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
 import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 
@@ -43,6 +44,10 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Comodule.IsCompletelyReducible.of_exists_isCompl` and
   `TauCeti.Comodule.IsCompletelyReducible.exists_isCompl`: construct and use complete
   reducibility through complementary subcomodules.
+* `TauCeti.Subcomodule.projection`: the projection onto a subcomodule along a complementary
+  subcomodule, as a comodule endomorphism.
+* `TauCeti.Comodule.isCompletelyReducible_iff_forall_exists_hom`: complete reducibility means
+  that every subcomodule is the image of a comodule endomorphism fixing it pointwise.
 * `TauCeti.Comodule.isCompletelyReducible_of_forall_eq_bot_or_eq_top`: a comodule with no
   subcomodules other than `⊥` and `⊤` is completely reducible, whence
   `TauCeti.Comodule.isCompletelyReducible_of_subsingleton` and
@@ -57,7 +62,8 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Comodule.isCompletelyReducible_transport_iff`: complete reducibility is invariant
   under transport along a linear equivalence.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
-  reducible.
+  reducible, with constructor
+  `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: testing finite-dimensional
   comodules in the base-field universe suffices for comodules in every universe.
 * `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
@@ -181,6 +187,31 @@ theorem coact_eq_tmul_one_of_isCompletelyReducible_of_forall_exists_fixed [One C
 
 end Comodule
 
+namespace Comodule
+
+variable {R : Type u} {C : Type v} {V : Type w}
+variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommGroup V] [Module R V] [Comodule R C V]
+
+/-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
+exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise. -/
+theorem isCompletelyReducible_iff_forall_exists_hom [Module.Flat R C] :
+    IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
+      ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
+  -- A projection along a complement gives a retraction; conversely, flatness makes the kernel
+  -- of a retraction into a subcomodule complement.
+  refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
+  · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
+    exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,
+      fun _ ↦ Subcomodule.projection_apply_of_mem_left hQ⟩
+  · obtain ⟨P, hP_mem, hP_self⟩ := hV W
+    refine ⟨Hom.ker P, ?_⟩
+    rw [Hom.ker_toSubmodule,
+      ← LinearMap.ker_codRestrict W.toSubmodule P.toLinearMap hP_mem]
+    exact LinearMap.isCompl_of_proj fun w ↦ Subtype.ext (hP_self w w.2)
+
+end Comodule
+
 namespace Coalgebra
 
 variable (k : Type u) (C : Type v)
@@ -285,6 +316,14 @@ variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
 variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
 
 namespace IsLinearlyReductive
+
+/-- Construct linear reductivity by proving complete reducibility of every finite-dimensional
+comodule with carrier in the given universe. -/
+theorem of_forall_isCompletelyReducible
+    (h : ∀ (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V],
+      Comodule.IsCompletelyReducible k C V) :
+    IsLinearlyReductive.{u, v, w} k C :=
+  h
 
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless

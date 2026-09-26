@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-public import Mathlib.NumberTheory.NumberField.Units.Basic
+public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 
 /-!
 # Units bounded at every infinite place
@@ -21,6 +20,8 @@ of a fundamental unit a finite search.
 
 * `TauCeti.NumberField.Units.finite_setOf_forall_apply_le`: the set of units with absolute value at
   most `B` at every infinite place is finite.
+* `TauCeti.NumberField.Units.finite_setOf_norm_logEmbedding_le`: the set of units in a bounded
+  region of logarithmic space is finite.
 -/
 
 public section
@@ -38,5 +39,27 @@ theorem finite_setOf_forall_apply_le (B : ℝ) :
     {u : (𝓞 K)ˣ | ∀ w : InfinitePlace K, w u ≤ B}.Finite := by
   refine ((Embeddings.finite_of_norm_le K ℂ B).preimage (Units.coe_injective K).injOn).subset
     fun u hu => ⟨RingOfIntegers.isIntegral_coe (u : 𝓞 K), (InfinitePlace.le_iff_le (u : K) B).mp hu⟩
+
+open scoped Classical NumberField in
+/-- **Finiteness of logarithmically bounded units.** Only finitely many units have logarithmic
+embedding of norm at most `r`.
+
+This reduces searches among units with bounded logarithmic embedding to finite searches. -/
+theorem finite_setOf_norm_logEmbedding_le (r : ℝ) :
+    {u : (𝓞 K)ˣ |
+      ‖NumberField.Units.logEmbedding K (Additive.ofMul u)‖ ≤ r}.Finite := by
+  by_cases hr : 0 ≤ r
+  · refine (finite_setOf_forall_apply_le (K := K)
+      (Real.exp (Fintype.card (InfinitePlace K) * r))).subset ?_
+    intro u hu w
+    rw [← Real.exp_log (Units.pos_at_place u w)]
+    have hlog : |Real.log (w u)| ≤ Fintype.card (InfinitePlace K) * r :=
+      NumberField.Units.dirichletUnitTheorem.log_le_of_logEmbedding_le
+        (K := K) (x := u) hr hu w
+    exact Real.exp_le_exp.mpr ((le_abs_self (Real.log (w u))).trans hlog)
+  · have hr' : r < 0 := lt_of_not_ge hr
+    refine Set.finite_empty.subset ?_
+    intro u hu
+    exact (not_le_of_gt hr') ((norm_nonneg _).trans hu)
 
 end TauCeti.NumberField.Units

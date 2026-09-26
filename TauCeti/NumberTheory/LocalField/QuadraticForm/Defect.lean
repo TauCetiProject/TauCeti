@@ -350,8 +350,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
 theorem defectExponent_of_odd {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     defectExponent a = (normalizedValuation K a).toAdd := by
   have ha' : ¬Even (normalizedValuation K a).toAdd := Int.not_even_iff_odd.mpr ha
-  have hsq : ¬IsSquare a := fun ⟨r, hr⟩ => ha' ⟨(normalizedValuation K r).toAdd, by
-    rw [hr, map_mul, toAdd_mul]⟩
+  have hsq : ¬IsSquare a := fun ha => ha' (even_toAdd_normalizedValuation_of_isSquare ha)
   refine le_antisymm ?_ (toAdd_normalizedValuation_le_defectExponent a)
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
   rw [← hxd, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le, hx]
@@ -551,11 +550,8 @@ theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠
     ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
       defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
-    (not_unitFiltration_le_range_powMonoidHom_two (K := K) h2)
+  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
   have huval : valuation K (u : K) = 1 := ((mem_unitFiltration_iff_valuation_le hπ).mp hu).1
-  have hnsq : ¬IsSquare u := by
-    simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm] using hsq
   refine ⟨u, huval, hnsq, le_antisymm
     (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_⟩
   have hu1 : valuation K ((u : K) - 1) ≤

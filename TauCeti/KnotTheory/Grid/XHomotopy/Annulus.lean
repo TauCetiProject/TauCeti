@@ -106,11 +106,9 @@ private theorem rowAnnulus_coveredSquares (r : Fin n) (hr : r ≠ finRotate n r)
 
 private theorem columnAnnulus_isEmpty (k : Fin n) (hk : k ≠ finRotate n k) :
     (columnAnnulus x k hk).first.IsEmpty ∧ (columnAnnulus x k hk).second.IsEmpty := by
-  rw [isEmpty_iff_forall_notMem_cIoo, isEmpty_iff_forall_notMem_cIoo]
-  simp only [columnAnnulus, ofSwapColumns_left, ofSwapColumns_right,
-    Grid.cIoo_finRotate_eq_empty]
-  exact ⟨fun c hc => absurd hc (Finset.notMem_empty c),
-    fun c hc => absurd hc (Finset.notMem_empty c)⟩
+  exact ⟨(columnAnnulus x k hk).first.isEmpty_of_right_eq_finRotate (by
+      simp [columnAnnulus]),
+    (columnAnnulus x k hk).second.isEmpty_of_right_eq_finRotate (by simp [columnAnnulus])⟩
 
 private theorem rowAnnulus_isEmpty (r : Fin n) (hr : r ≠ finRotate n r) :
     (rowAnnulus x r hr).first.IsEmpty ∧ (rowAnnulus x r hr).second.IsEmpty := by

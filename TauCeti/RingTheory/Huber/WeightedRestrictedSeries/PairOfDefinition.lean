@@ -484,9 +484,7 @@ instance isTateRing_weightedRestrictedSubring [IsTopologicalRing A] [IsTateRing 
     IsTateRing (weightedRestrictedSubring T hT) where
   exists_isPseudoUniformizer := by
     obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-    exact ⟨weightedC T hT a, isPseudoUniformizer_iff.mpr
-      ⟨ha.isUnit.map (weightedC T hT),
-        ha.isTopologicallyNilpotent.map (continuous_weightedC hT)⟩⟩
+    exact ⟨weightedC T hT a, ha.map (continuous_weightedC hT)⟩
 
 -- The completed algebra `A⟨X₁,…,Xₖ⟩` of the roadmap — the separated completion of the
 -- trivial-weight `A⟨X⟩_T` — needs no result of its own: the instances above and

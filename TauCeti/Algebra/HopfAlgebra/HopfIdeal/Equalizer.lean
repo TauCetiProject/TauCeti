@@ -126,7 +126,6 @@ private theorem map_sub_map_mem_sup (t : H ⊗[R] H) :
       leftTensorIdeal (R := R) (H := K) (equalizerIdeal f g) ⊔
         rightTensorIdeal (R := R) (H := K) (equalizerIdeal f g) := by
   induction t with
-  | zero => simp
   | tmul a c =>
       have key : (f a) ⊗ₜ[R] (f c) - (g a) ⊗ₜ[R] (g c) =
           (f a - g a) ⊗ₜ[R] (f c) + (g a) ⊗ₜ[R] (f c - g c) := by
@@ -177,7 +176,7 @@ private theorem antipode_mem_equalizerIdeal ⦃x : K⦄ (hx : x ∈ equalizerIde
     intro a
     simp only [Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       HopfAlgebra.antipodeAlgHom_apply, map_sub]
-    rw [← BialgHom.map_antipode f, ← BialgHom.map_antipode g]
+    rw [← BialgHomClass.map_antipode f, ← BialgHomClass.map_antipode g]
     exact sub_mem_equalizerIdeal f g _
   simpa using Ideal.mem_comap.mp (h hx)
 

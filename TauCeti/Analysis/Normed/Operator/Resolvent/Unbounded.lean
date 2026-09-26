@@ -456,11 +456,6 @@ section Bounded
 
 variable {T : X →L[𝕜] X}
 
-/-- `lambda • I - T`, formed in the algebra `X →L[𝕜] X`, applied to a vector. -/
-private theorem algebraMap_sub_apply (T : X →L[𝕜] X) (lambda : 𝕜) (y : X) :
-    (algebraMap 𝕜 (X →L[𝕜] X) lambda - T) y = lambda • y - T y := by
-  simp [Algebra.algebraMap_eq_smul_one]
-
 /-- An inverse of `lambda • I - T` in the unbounded sense is a two-sided inverse in the algebra
 `X →L[𝕜] X`, so `lambda • I - T` is a unit there. -/
 theorem isUnit_of_isResolventAt_toPMap_top
@@ -469,11 +464,11 @@ theorem isUnit_of_isResolventAt_toPMap_top
   have hright : (algebraMap 𝕜 (X →L[𝕜] X) lambda - T) * R = 1 := by
     ext y
     have h1 : lambda • R y - T (R y) = y := h.smul_sub_apply y
-    simpa [algebraMap_sub_apply] using h1
+    simpa using h1
   have hleft : R * (algebraMap 𝕜 (X →L[𝕜] X) lambda - T) = 1 := by
     ext y
     have h1 : R (lambda • y - T y) = y := h.apply_smul_sub ⟨y, Submodule.mem_top⟩
-    simpa [algebraMap_sub_apply] using h1
+    simpa using h1
   exact spectrum.mem_resolventSet_of_left_right_inverse hright hleft
 
 /-- A unit `lambda • I - T` of the algebra `X →L[𝕜] X` inverts `lambda • I - T` in the
@@ -487,12 +482,12 @@ theorem isResolventAt_toPMap_top_of_isUnit
     have h1 : (algebraMap 𝕜 (X →L[𝕜] X) lambda - T)
         (((h.unit⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X) y) = y := by
       rw [← mul_apply_eq_comp, h.mul_val_inv, one_apply_eq_self]
-    rwa [algebraMap_sub_apply] at h1
+    rwa [sub_apply, ContinuousLinearMap.algebraMap_apply] at h1
   apply_smul_sub x := by
     have h1 : ((h.unit⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X)
         ((algebraMap 𝕜 (X →L[𝕜] X) lambda - T) (x : X)) = (x : X) := by
       rw [← mul_apply_eq_comp, h.val_inv_mul, one_apply_eq_self]
-    rwa [algebraMap_sub_apply] at h1
+    rwa [sub_apply, ContinuousLinearMap.algebraMap_apply] at h1
 
 /-- **The bounded bridge, membership half.** For a bounded operator the unbounded resolvent set
 of `T` and Mathlib's Banach-algebra resolvent set agree. -/

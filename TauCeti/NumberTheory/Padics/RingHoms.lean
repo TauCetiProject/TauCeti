@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Congruence and continuity properties of the truncations of a `p`-adic integer
@@ -34,6 +35,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   ring operations, modulo `p ^ n`.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
+* `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
+  `ZMod (p ^ n)`.
+* `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
+  `ℤ_[p]`.
+* `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
+  finite of cardinality `p`.
 -/
 
 public section
@@ -41,6 +48,15 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
+instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+  Finite.of_equiv _ residueField.symm.toEquiv
+
+variable (p) in
+/-- The residue field of `ℤ_p` has `p` elements. -/
+theorem card_residueField : Nat.card (IsLocalRing.ResidueField ℤ_[p]) = p := by
+  rw [Nat.card_congr residueField.toEquiv, Nat.card_zmod]
 
 /-- The truncation `toZModPow n x` is the class of the natural number `x.appr n`. -/
 theorem toZModPow_eq_natCast_appr (x : ℤ_[p]) (n : ℕ) :
@@ -91,6 +107,30 @@ theorem appr_mul_modEq (x y : ℤ_[p]) (n : ℕ) :
 /-- Truncation fixes a natural number modulo `p ^ n`. -/
 theorem appr_natCast_modEq (k n : ℕ) : ((k : ℤ_[p])).appr n ≡ k [MOD p ^ n] := by
   rw [← ZMod.natCast_eq_natCast_iff, ← toZModPow_eq_natCast_appr, map_natCast]
+
+/-- The truncation `toZModPow n` identifies the quotient of `ℤ_[p]` by the ideal `(p ^ n)` with
+`ZMod (p ^ n)`. This is the `p ^ n` analogue of `PadicInt.residueField`. -/
+noncomputable def quotientSpanPowEquivZMod (n : ℕ) :
+    ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p]) ^ n} ≃+* ZMod (p ^ n) :=
+  (Ideal.quotEquivOfEq (ker_toZModPow n).symm).trans
+    (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective (toZModPow n)))
+
+@[simp]
+theorem quotientSpanPowEquivZMod_mk (n : ℕ) (x : ℤ_[p]) :
+    quotientSpanPowEquivZMod n (Ideal.Quotient.mk _ x) = toZModPow n x := by
+  simp [quotientSpanPowEquivZMod]
+
+/-- Every unit of `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because
+truncation is a surjective local homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the
+target `ZMod 1` is the trivial ring, so there is nothing to lift. -/
+theorem surjective_units_map_toZModPow (n : ℕ) :
+    Function.Surjective (Units.map (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+    exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
+  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+    exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
+      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
@@ -26,8 +26,12 @@ index a scalar extension consists of pure tensors.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
   every element of a scalar extension is the pure tensor of its unique coordinate with the
   corresponding basis vector.
+* `Module.Basis.baseChange_toMatrix_baseChange`: change-of-basis matrices between base-changed
+  bases are obtained by mapping entries.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
+* `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended endomorphisms
+  are obtained by mapping entries.
 -/
 
 public section
@@ -56,8 +60,7 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   have hcomponent (φ : (N →₀ R) →ₗ[R] R) (t : M ⊗[R] (N →₀ R)) :
       TensorProduct.rid R M (φ.lTensor M t) =
         _root_.LinearMap.tensorComponent φ t := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul m n => simp
   have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
@@ -84,8 +87,7 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
   have hleft (z : M ⊗[R] N) :
       TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul m n =>
         simp only [TensorProduct.map_tmul, LinearMap.id_apply]
@@ -116,8 +118,7 @@ variable {T : Type w} [Semiring T] [Algebra R T]
     φ ((b.baseChange S).repr z i) =
       (b.baseChange T).repr
         (TensorProduct.map φ LinearMap.id z) i := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
   | tmul s m => simp
 
@@ -139,7 +140,24 @@ section Matrix
 
 variable {S : Type v} [CommSemiring S] [Algebra R S]
 variable {T : Type w} [CommSemiring T] [Algebra R T]
+
+/-- The change-of-basis matrix between two base-changed bases is the entrywise scalar extension
+of the change-of-basis matrix between the original bases. -/
+@[simp] theorem baseChange_toMatrix_baseChange {ι' : Type*} (b : Basis ι R M)
+    (b' : Basis ι' R M) :
+    (b.baseChange S).toMatrix (b'.baseChange S) = (b.toMatrix b').map (algebraMap R S) := by
+  ext i j
+  simp [toMatrix_apply, baseChange_apply, Algebra.smul_def]
+
 variable [Fintype ι] [DecidableEq ι]
+
+/-- The matrix of a scalar-extended endomorphism is the entrywise scalar extension of its
+matrix in the original basis. -/
+theorem toMatrix_baseChange_baseChange (b : Basis ι R M) (f : M →ₗ[R] M) :
+    LinearMap.toMatrix (b.baseChange S) (b.baseChange S) (f.baseChange S) =
+      (LinearMap.toMatrix b b f).map (algebraMap R S) := by
+  ext i j
+  simp [LinearMap.toMatrix_apply, baseChange_apply, Algebra.smul_def]
 
 /-- Matrices in base-changed bases commute with a scalar map when the corresponding
 endomorphisms are intertwined by tensor-product base change. -/

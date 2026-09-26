@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Module
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RingTheory.KrullSchmidt.Multiplicity
 
 /-!

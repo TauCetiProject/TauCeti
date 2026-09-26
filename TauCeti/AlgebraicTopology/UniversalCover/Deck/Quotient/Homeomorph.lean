@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.Basic
 # The orbit quotient of a regular open map is homeomorphic to the base
 
 For a regular deck action, `Deck.IsRegular.orbitQuotientEquivBase` already identifies the
-deck-orbit quotient `E / Deck p` with the base `B` as a bare equivalence. This file upgrades
+deck-orbit quotient `E / deck p` with the base `B` as a bare equivalence. This file upgrades
 that equivalence to a homeomorphism when `p` is continuous and open.
 
 This is the abstract form of the universal-covers identity `UniversalCover x₀ / π₁(X, x₀) ≃ X`,
@@ -24,14 +24,13 @@ preconnected.
 ## Main declarations
 
 * `TauCeti.Deck.continuous_orbitQuotientToBase`: a continuous map induces a continuous map
-  `E / Deck p → B`.
+  `E / deck p → B`.
 * `TauCeti.Deck.isOpenMap_orbitQuotientToBase`: that map is open.
 * `TauCeti.Deck.IsRegular.orbitQuotientHomeomorphBase`: for a regular continuous open map,
-  `E / Deck p` is homeomorphic to the base.
+  `E / deck p` is homeomorphic to the base.
 
 ## References
 
-This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 1, where
 `UniversalCover x₀ / π₁(X, x₀) ≃ X` follows from the deck-group identification via Mathlib's
 `IsQuotientCoveringMap`; the present statement is its base-independent regular-cover form.
 -/
@@ -57,11 +56,11 @@ lemma isOpenMap_orbitQuotientToBase (hp : IsOpenMap p) :
 
 namespace IsRegular
 
-/-- For a regular continuous open map, the deck-orbit quotient `E / Deck p` is homeomorphic to
+/-- For a regular continuous open map, the deck-orbit quotient `E / deck p` is homeomorphic to
 the base. -/
 @[expose] noncomputable def orbitQuotientHomeomorphBase (hreg : IsRegular p) (hcont : Continuous p)
     (hopen : IsOpenMap p) :
-    MulAction.orbitRel.Quotient (Deck p) E ≃ₜ B :=
+    MulAction.orbitRel.Quotient (deck p) E ≃ₜ B :=
   hreg.orbitQuotientEquivBase.toHomeomorphOfContinuousOpen
     (continuous_orbitQuotientToBase hcont) (isOpenMap_orbitQuotientToBase hopen)
 
@@ -69,7 +68,7 @@ the base. -/
 `orbitQuotientEquivBase`. -/
 @[simp]
 lemma orbitQuotientHomeomorphBase_apply (hreg : IsRegular p) (hcont : Continuous p)
-    (hopen : IsOpenMap p) (x : MulAction.orbitRel.Quotient (Deck p) E) :
+    (hopen : IsOpenMap p) (x : MulAction.orbitRel.Quotient (deck p) E) :
     hreg.orbitQuotientHomeomorphBase hcont hopen x = hreg.orbitQuotientEquivBase x :=
   rfl
 
@@ -78,7 +77,7 @@ lemma orbitQuotientHomeomorphBase_apply (hreg : IsRegular p) (hcont : Continuous
 lemma orbitQuotientHomeomorphBase_mk (hreg : IsRegular p) (hcont : Continuous p)
     (hopen : IsOpenMap p) (e : E) :
     hreg.orbitQuotientHomeomorphBase hcont hopen
-      (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) = p e :=
+      (Quotient.mk'' e : MulAction.orbitRel.Quotient (deck p) E) = p e :=
   hreg.orbitQuotientEquivBase_mk e
 
 /-- The inverse orbit-quotient homeomorphism sends a projected point to the class of any
@@ -86,7 +85,7 @@ lift. -/
 @[simp]
 lemma orbitQuotientHomeomorphBase_symm_apply_proj (hreg : IsRegular p) (hcont : Continuous p)
     (hopen : IsOpenMap p) (e : E) : (hreg.orbitQuotientHomeomorphBase hcont hopen).symm (p e) =
-      (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) :=
+      (Quotient.mk'' e : MulAction.orbitRel.Quotient (deck p) E) :=
   hreg.orbitQuotientEquivBase_symm_apply_proj e
 
 end IsRegular

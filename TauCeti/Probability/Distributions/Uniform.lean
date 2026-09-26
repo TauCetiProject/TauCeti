@@ -64,8 +64,8 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
   likewise;
 * `map_uniformMeasure_affine` — every uniform law is an affine image of the standard one;
 * `measurable_uniformMeasure` — the family is measurable in its endpoints, so it can be used as a
-  kernel. The other families' parameter measurability is in
-  `TauCeti/Probability/Distributions/Measurability.lean`.
+  kernel. Other families keep their parameter-measurability results in family-specific
+  `Measurability.lean` modules.
 
 ## Implementation
 

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Irreducible
+public import Mathlib.RepresentationTheory.Character
+import TauCeti.LinearAlgebra.Trace.Pi
 
 /-!
 # The representation carried by a `k[G]`-module
@@ -27,6 +28,12 @@ is stated here, beside the comparison of modules it is read off from, rather tha
 self-contained criteria of `TauCeti.RepresentationTheory.Irreducible`, which say nothing about
 where the representation came from.
 
+Characters are read off in the same spirit: the character of `ofModule'` of a finite product of
+`k[G]`-modules is the sum of the characters of the factors
+(`TauCeti.Representation.char_ofModule'_pi`), and a factor `ρ.asModule` contributes the character
+of `ρ` itself (`Representation.char_ofModule'_asModule`).  Together they compute the
+character of a direct sum of representations assembled as a `k[G]`-module.
+
 ## Main results
 
 * `TauCeti.Representation.ofModule'_apply`: a group element acts by the corresponding
@@ -37,6 +44,10 @@ where the representation came from.
   `k[G]`-module.
 * `TauCeti.Representation.isIrreducible_ofModule'_iff`: `ofModule' M` is irreducible exactly when
   `M` is simple.
+* `TauCeti.Representation.char_ofModule'_pi`: the character of `ofModule'` of a finite product is
+  the sum of the characters of the factors.
+* `Representation.char_ofModule'_asModule`: the character of `ofModule' ρ.asModule` is the
+  character of `ρ`.
 -/
 
 public section
@@ -115,6 +126,45 @@ theorem isIrreducible_ofModule'_iff :
   exact (ofModule'AsModuleEquiv M).isSimpleModule_iff
 
 end Field
+
+section Character
+
+variable {k G : Type*} [Field k] [Monoid G]
+
+/-- **The character of `Representation.ofModule'` of a finite product of `k[G]`-modules is the
+sum of the characters of the factors.**  This is the finite-product counterpart of
+`Representation.char_prod`, for representations read off a `k[G]`-module; a factor of
+the form `ρ.asModule` is then evaluated by `Representation.char_ofModule'_asModule`. -/
+-- A group element acts on the product coordinatewise: `(MonoidAlgebra.single g 1 • x) i` is
+-- `MonoidAlgebra.single g 1 • x i`, by `ofModule'_apply` and `Pi.smul_apply`, both of which hold
+-- by `rfl`.  Rewriting with them instead of `rfl` is measurably slower, so `rfl` is kept.
+@[simp]
+theorem char_ofModule'_pi {ι : Type*} [Fintype ι] (M : ι → Type*) [∀ i, AddCommGroup (M i)]
+    [∀ i, Module k (M i)] [∀ i, Module k[G] (M i)] [∀ i, IsScalarTower k k[G] (M i)]
+    [∀ i, FiniteDimensional k (M i)] (g : G) :
+    (_root_.Representation.ofModule' (k := k) (G := G) ((i : ι) → M i)).character g =
+      ∑ i, (_root_.Representation.ofModule' (k := k) (G := G) (M i)).character g :=
+  LinearMap.trace_pi_of_apply_eq_dependent _ _ fun _ _ => rfl
+
+/-- **The character of `Representation.ofModule' ρ.asModule` is the character of `ρ`.**  This
+lets a character computed on a `k[G]`-module assembled from `asModule` summands be expressed
+through the original representations. -/
+-- `ρ.asModuleEquiv` conjugates the action on `ρ.asModule` into `ρ g`, and the trace is invariant
+-- under conjugation.  The conjugation identity is proved pointwise with explicit rewrites rather
+-- than `simp`, which would leave a goal closed only by identifying `ρ.asModule` with `V`.
+@[simp]
+theorem _root_.Representation.char_ofModule'_asModule {V : Type*} [AddCommGroup V] [Module k V]
+    (ρ : _root_.Representation k G V) (g : G) :
+    (_root_.Representation.ofModule' (k := k) (G := G) ρ.asModule).character g = ρ.character g := by
+  have h : _root_.Representation.ofModule' (k := k) (G := G) ρ.asModule g =
+      ρ.asModuleEquiv.symm.conj (ρ g) := by
+    ext x
+    rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm,
+      _root_.Representation.asModuleEquiv_symm_map_rho, LinearEquiv.symm_apply_apply,
+      ofModule'_apply, MonoidAlgebra.of_apply]
+  rw [_root_.Representation.character, h, LinearMap.trace_conj', _root_.Representation.character]
+
+end Character
 
 end Representation
 

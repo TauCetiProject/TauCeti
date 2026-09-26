@@ -26,14 +26,16 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 
 ## Main declarations
 
-* `TauCeti.intervalIntegral_gaussianPDFReal` — the Gaussian density integrates to a difference of
+* `TauCeti.Probability.intervalIntegral_gaussianPDFReal` — the Gaussian density integrates to a
+  difference of
   error-function values.
-* `TauCeti.integral_Iic_gaussianPDFReal` — the same over a left half-line.
-* `TauCeti.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
-* `TauCeti.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
-* `TauCeti.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
-* `TauCeti.measureReal_Ioi_gaussianReal` — the upper tail, in terms of `TauCeti.Real.erfc`.
-* `TauCeti.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
+* `TauCeti.Probability.integral_Iic_gaussianPDFReal` — the same over a left half-line.
+* `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
+* `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
+* `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
+* `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
+  `TauCeti.Real.erfc`.
+* `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
 public section
@@ -43,7 +45,7 @@ noncomputable section
 open MeasureTheory Filter Set Real ProbabilityTheory
 open scoped Topology NNReal
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 /-- On an interval, the Gaussian density integrates to the difference of two error-function
 values. Both sides vanish at zero variance; otherwise the affine change of variables
@@ -147,4 +149,4 @@ theorem measureReal_le_of_hasLaw_gaussianReal {Ω : Type*} [MeasurableSpace Ω] 
   rw [hX.measureReal_eq (p := fun y : ℝ => y ≤ x) measurableSet_Iic, Set.Iic_def, ← cdf_eq_real]
   exact cdf_gaussianReal_eq m hv x
 
-end TauCeti
+end TauCeti.Probability

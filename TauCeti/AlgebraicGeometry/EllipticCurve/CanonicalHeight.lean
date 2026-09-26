@@ -282,7 +282,7 @@ value at `P`, for an integer `n`. -/
 @[simp]
 theorem Point.canonicalHeight_zsmul [W.toAffine.IsElliptic] (n : ℤ) (P : W.Point) :
     (n • P).canonicalHeight = (n : ℝ) ^ 2 * P.canonicalHeight := by
-  rw [TauCeti.QuadraticMap.map_zsmul_of_parallelogram (smul_right_injective ℝ two_ne_zero)
+  rw [TauCeti.QuadraticMap.map_zsmul_of_parallelogram Point.canonicalHeight_zero
     canonicalHeight_parallelogram_nsmul n P]
   ring
 

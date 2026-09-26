@@ -83,11 +83,7 @@ theorem mgf_id_map_cast_negativeBinomialMeasure
     simp [mgf_dirac']
   have habs : |(1 - p) * exp t| < 1 := by
     rwa [abs_of_nonneg (mul_nonneg (sub_nonneg.mpr hp1) (exp_nonneg t))]
-  have hpgf := pgf_exp (id : ℕ → ℕ) (negativeBinomialMeasure r p) t
-  rw [pgf_negativeBinomialMeasure hr hp hp1 habs] at hpgf
-  rw [mgf_id_map (Measurable.of_discrete.aemeasurable :
-    AEMeasurable (Nat.cast : ℕ → ℝ) (negativeBinomialMeasure r p))]
-  exact hpgf.symm
+  rw [mgf_id_map_natCast, pgf_negativeBinomialMeasure hr hp hp1 habs]
 
 /-- The cumulant-generating function of the real cast of a valid negative-binomial law. -/
 theorem cgf_id_map_cast_negativeBinomialMeasure

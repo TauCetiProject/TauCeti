@@ -221,9 +221,7 @@ theorem hasFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     funext fun y ↦ negativeGradientRemainder_apply f x y
   rw [hfun]
   convert hf.hasFDerivAt_neg_gradient.add hlinear using 1
-  · ext y
-    rfl
-  · simp
+  simp
 
 /-- At a twice continuously differentiable point, the nonlinear negative-gradient remainder is
 strictly differentiable with zero derivative. This is the two-point estimate needed by the

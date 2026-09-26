@@ -33,13 +33,17 @@ spreads this to every positive-definite scale.
 
 ## Main results
 
-* `TauCeti.map_symmetricCongruence_nonsingularWishartMeasure` — congruence by an invertible
+* `TauCeti.Probability.map_symmetricCongruence_nonsingularWishartMeasure` — congruence by an
+  invertible
   matrix carries the law of scale `S` to the law of scale `C * S * Cᵀ`;
-* `TauCeti.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero` — the same
+* `TauCeti.Probability.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero` —
+  the same
   statement for the unbundled congruence map of a matrix of nonzero determinant;
-* `TauCeti.nonsingularWishartMeasure_eq_map_sqrt` — a nonsingular Wishart law of positive-definite
+* `TauCeti.Probability.nonsingularWishartMeasure_eq_map_sqrt` — a nonsingular Wishart law of
+  positive-definite
   scale is the standard one transported by the congruence with the square root of that scale;
-* `TauCeti.isProbabilityMeasure_nonsingularWishartMeasure` — the law is a probability measure at
+* `TauCeti.Probability.isProbabilityMeasure_nonsingularWishartMeasure` — the law is a probability
+  measure at
   exactly the parameters where a density defines it.
 
 ## References
@@ -57,7 +61,7 @@ open MeasureTheory
 
 open scoped Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -173,7 +177,8 @@ theorem map_symmetricCongruence_nonsingularWishartMeasure (n : ℝ)
 
 /-- **Congruence by a matrix of nonzero determinant carries the nonsingular Wishart law of scale
 `S` to the one of scale `C * S * Cᵀ`.** This is
-`TauCeti.map_symmetricCongruence_nonsingularWishartMeasure` for the unbundled congruence map
+`TauCeti.Probability.map_symmetricCongruence_nonsingularWishartMeasure` for the unbundled congruence
+map
 `Matrix.symmetricCongruenceLinearMap`, which is the form that composes with the congruences by
 rectangular matrices. -/
 theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero (n : ℝ)
@@ -276,7 +281,7 @@ private theorem nonsingularWishartMeasure_eq_map_sqrt_smul_one (n : ℝ) (hS : S
 /-- **A nonsingular Wishart law of positive-definite scale is the standard one transported by a
 congruence.** The congruence with the square root of the scale carries the law of scale `1` to the
 law of scale `S`. This is the density-family analogue of
-`TauCeti.wishartGramMeasure_eq_map_sqrt`. -/
+`TauCeti.Probability.wishartGramMeasure_eq_map_sqrt`. -/
 theorem nonsingularWishartMeasure_eq_map_sqrt (n : ℝ) (hS : S.PosDef) :
     nonsingularWishartMeasure n S =
       (nonsingularWishartMeasure n 1).map
@@ -292,4 +297,4 @@ theorem isProbabilityMeasure_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p 
   rw [nonsingularWishartMeasure_eq_map_sqrt_smul_one n hS (by norm_num : (0 : ℝ) < 2⁻¹)]
   infer_instance
 
-end TauCeti
+end TauCeti.Probability

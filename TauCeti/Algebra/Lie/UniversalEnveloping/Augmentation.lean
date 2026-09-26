@@ -33,6 +33,8 @@ central `p`-polynomials of positive characteristic, both live inside `U⁺(L)`.
   algebra homomorphism induced by the zero Lie homomorphism.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_mem_augmentation`: the Lie generators lie in the
   augmentation ideal.
+* `TauCeti.UniversalEnvelopingAlgebra.pow_ι_mem_augmentation_toIdeal`: every positive power of a
+  Lie generator lies in the augmentation ideal.
 * `TauCeti.UniversalEnvelopingAlgebra.eq_ofId_comp_counitAlgHom_iff`: an algebra homomorphism
   out of `U(L)` kills the Lie generators exactly when it is the augmentation followed by the
   structure map of its target.
@@ -80,6 +82,13 @@ theorem counitAlgHom_eq_lift_zero :
 theorem ι_mem_augmentation (x : L) :
     _root_.UniversalEnvelopingAlgebra.ι R x ∈ HopfIdeal.augmentation R U :=
   (HopfIdeal.mem_augmentation R U).mpr (counit_ι R L x)
+
+/-- Every positive power of a canonical Lie generator lies in the augmentation ideal.  This is
+what makes a linearized polynomial in `ι x` with zero constant term an element of `U⁺(L)`. -/
+theorem pow_ι_mem_augmentation_toIdeal (x : L) {n : ℕ} (hn : n ≠ 0) :
+    _root_.UniversalEnvelopingAlgebra.ι R x ^ n ∈ (HopfIdeal.augmentation R U).toIdeal :=
+  Ideal.pow_mem_of_mem _ (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x)) n
+    (Nat.pos_of_ne_zero hn)
 
 section UniversalProperty
 

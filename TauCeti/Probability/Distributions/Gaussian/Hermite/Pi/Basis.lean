@@ -45,7 +45,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Polynomial ProbabilityTheory
+open MeasureTheory Polynomial TauCeti.Probability ProbabilityTheory
 
 variable (𝕜 : Type*) [RCLike 𝕜] (ι : Type*) [Fintype ι]
 
@@ -92,7 +92,8 @@ product.** Scaling the `a`-th vector of `L²(γ^ι)` by the square root of the j
 
 Stated `volume^ι`-almost everywhere, the measure the envelope lives on; the move from `γ^ι`-almost
 everywhere is legitimate because the joint density never vanishes
-(`TauCeti.pi_volume_absolutelyContinuous_pi_gaussianReal`). Every coordinate contributes one factor
+(`TauCeti.Probability.pi_volume_absolutelyContinuous_pi_gaussianReal`). Every coordinate contributes
+one factor
 of the one-dimensional identity `TauCeti.sqrt_gaussianPDFReal_mul_hermiteℝ_div_sqrt_factorial`, so
 the dilation `xᵢ ↦ xᵢ/√2` really is coordinatewise. -/
 theorem sqrt_prod_gaussianPDFReal_smul_gaussianHermitePiBasis (a : ι → ℕ) :
@@ -122,7 +123,8 @@ normalization.
 
 `TauCeti.weightL2Isometry` has `L²((volume^ι).withDensity …)` as its domain, whereas
 `TauCeti.gaussianHermitePiBasis` lives in the propositionally equal `L²(γ^ι)`, so the basis vector
-is transported along `TauCeti.pi_gaussianReal_eq_withDensity` before the isometry is applied. The
+is transported along `TauCeti.Probability.pi_gaussianReal_eq_withDensity` before the isometry is
+applied. The
 positivity and measurability of the joint density are supplied here rather than left to the caller;
 by proof irrelevance the statement still applies to `TauCeti.weightL2Isometry` built from any other
 proofs of those two side conditions. -/

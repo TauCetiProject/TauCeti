@@ -46,7 +46,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Polynomial Real ProbabilityTheory
+open MeasureTheory Polynomial TauCeti.Probability Real ProbabilityTheory
 
 /-- **Orthogonality against the standard Gaussian density.**
 `∫ Hₘ Hₙ dγ = δₘₙ · n!`. This is the density-side reading of the Gaussian-measure orthogonality

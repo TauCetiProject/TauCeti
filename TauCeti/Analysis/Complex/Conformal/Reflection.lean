@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Reflection.Line
 public import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Principle
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Arc
-public import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
+public import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 
 /-!
 # Schwarz reflection

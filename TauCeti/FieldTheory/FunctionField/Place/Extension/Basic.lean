@@ -61,6 +61,8 @@ to the canonical fraction fields used by Mathlib's different API.
   (Stichtenoth, Proposition 3.1.4), by the containment of valuation rings, by the containment of
   maximal ideals, and by the scaling of the order functions. Together with
   `TauCeti.Place.restrict` they say that every place of `F'` lies over exactly one place of `F`.
+* `TauCeti.Place.restrict_eq_iff_isEquiv_comap`: `P' ∣ P` exactly when the restricted valuation
+  is equivalent to that of `P`.
 * `TauCeti.Place.linearIndependent_mul_pow_of_linearIndependent_residue`: the independence
   statement carrying the fundamental inequality, together with the three ingredients of its
   proof — `TauCeti.Place.ord_sum_eq_zero_of_isUnit`,
@@ -83,6 +85,8 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.moduleFinite_integralClosure`, and
   `TauCeti.Place.isSeparable_fractionRing_integralClosure`: the fraction-field, localization,
   Dedekind, finiteness, and separability properties of the local integral closure `𝒪'_P`.
+* `TauCeti.Place.isIntegral_algebraMap_iff_mem_integers`: the local integral closure `𝒪'_P`
+  contracts to `𝒪_P`.
 
 ## References
 
@@ -141,6 +145,17 @@ theorem algebraMap_integersExtension_injective :
     Function.Injective (algebraMap (P.integers) F') := by
   rw [IsScalarTower.algebraMap_eq (P.integers) F F', RingHom.coe_comp]
   exact (algebraMap F F').injective.comp (FaithfulSMul.algebraMap_injective (P.integers) F)
+
+/-- **`𝒪'_P` contracts to `𝒪_P`**: a function of `F` is integral over `𝒪_P` in the extension `F'`
+exactly when it is regular at `P`. So enlarging the field does not enlarge the ring of functions
+of `F` integral over `𝒪_P`, and `𝒪'_P ∩ F = 𝒪_P`. -/
+@[simp]
+theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
+    IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
+  (isIntegral_algHom_iff (IsScalarTower.toAlgHom ↥P.integers F F')
+      (algebraMap F F').injective (x := x)).trans
+    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
+      fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
 instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
   Module.isTorsionFree_iff_algebraMap_injective.mpr
@@ -335,6 +350,15 @@ theorem restrict_eq_iff_integers_le (P : Place k F) :
     exact (mem_integers_restrict_iff k F P' f).mp hf
   · refine (eq_of_integers_le (SetLike.le_def.mpr fun f hf ↦ ?_)).symm
     exact (mem_integers_restrict_iff k F P' f).mpr (h f hf)
+
+/-- **`P' ∣ P` by valuations**: `P'` lies over `P` exactly when the restriction of its valuation
+to `F` is equivalent to the valuation of `P`. The restriction need not be normalized, so an
+equivalence, not an equality, is the right statement. -/
+theorem restrict_eq_iff_isEquiv_comap (P : Place k F) :
+    P'.restrict k F = P ↔ (P'.valuation.comap (algebraMap F F')).IsEquiv P.valuation := by
+  rw [← valuation_isEquiv_iff, valuation_restrict]
+  exact ⟨(Valuation.isEquiv_normalization _).symm.trans,
+    (Valuation.isEquiv_normalization _).trans⟩
 
 /-- **`P' ∣ P` by maximal ideals** (Stichtenoth, Proposition 3.1.4): it is enough that the
 functions vanishing at `P` vanish at `P'`. -/

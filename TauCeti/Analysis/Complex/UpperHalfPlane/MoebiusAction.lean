@@ -24,8 +24,12 @@ unfolded by hand.
 ## Main results
 
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
+* `UpperHalfPlane.ofReal_mul_add_eq_zero_iff`: `m z + n = 0` for real `m`, `n` and `z ∈ ℍ` only
+  when `m = n = 0`, the `iff` form of Mathlib's `UpperHalfPlane.linear_ne_zero`.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
+  alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
   of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
 
@@ -71,6 +75,14 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
 
+/-- A real linear combination `m z + n` of a point `z` of the upper half-plane and `1` vanishes only
+when both coefficients do, as `z` is not real: the `iff` form of `UpperHalfPlane.linear_ne_zero`. -/
+theorem ofReal_mul_add_eq_zero_iff (z : ℍ) {m n : ℝ} : (m : ℂ) * z + n = 0 ↔ m = 0 ∧ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  -- the imaginary part `m (im z)` of `m z + n` vanishes only for `m = 0`
+  obtain rfl : m = 0 := by simpa [z.im_ne_zero] using congrArg Complex.im h
+  simpa using h
+
 end UpperHalfPlane
 
 namespace ModularGroup
@@ -80,5 +92,12 @@ pointwise-image counterpart of `ModularGroup.sl_moeb`. This is useful as a rewri
 the two actions are definitionally equal. -/
 @[simp]
 theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
+
+/-- Elements of `SL(2, ℤ)` that agree up to sign act alike on `ℍ`, since `-1` acts trivially
+(`ModularGroup.SL_neg_smul`). This absorbs the sign ambiguity `g = k ∨ g = -k` in the cases of
+Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
+theorem smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k ∨ g = -k) :
+    g • z = k • z :=
+  hg.elim (· ▸ rfl) (· ▸ SL_neg_smul _ _)
 
 end ModularGroup

@@ -54,9 +54,15 @@ variable [TopologicalSpace 𝕜] [ContinuousStar 𝕜]
 instance : ContinuousInv (Matrix.specialUnitaryGroup n 𝕜) where
   continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
 
-variable [IsTopologicalRing 𝕜]
+section TopologicalSemiring
+
+variable [IsTopologicalSemiring 𝕜]
 
 instance : IsTopologicalGroup (Matrix.specialUnitaryGroup n 𝕜) where
+
+end TopologicalSemiring
+
+variable [IsTopologicalRing 𝕜]
 
 /-- The special unitary group of `n × n` matrices is a closed subset of `Matrix n n 𝕜`: it is cut
 out of the closed unitary group by the closed condition `det A = 1`. -/

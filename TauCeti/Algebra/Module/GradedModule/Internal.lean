@@ -53,6 +53,11 @@ the letterwise tuple operation that applies it on a half-open index interval.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
+* `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
+  projection, up to the shift of degree.
+* `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
+  `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
+  map are homogeneous submodules.
 * `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
   Koszul twists up to the sign determined by its degree.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
@@ -300,6 +305,34 @@ theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e 
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+section Decompose
+
+variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S] [SMul R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+  {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
+
+/-- A homogeneous linear map of degree `r` carries the degree-`p` component of an element to the
+degree-`(p + r)` component of its image. -/
+theorem map_decompose (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (p : ℤ) (x : M) :
+    f (DirectSum.decompose G.piece x p : M) = (DirectSum.decompose H.piece (f x) (p + r) : N) :=
+  DirectSum.map_decompose_shift G.piece H.piece (f.restrictScalars R) (· + r)
+    (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
+
+/-- The kernel of a homogeneous linear map is a homogeneous submodule. -/
+theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+    DirectSum.SetLike.IsHomogeneous G.piece (_root_.LinearMap.ker f) := fun p x hx ↦ by
+  rw [_root_.LinearMap.mem_ker] at hx ⊢
+  rw [hf.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- The image of a homogeneous linear map is a homogeneous submodule. -/
+theorem isHomogeneous_range (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+    DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
+  rintro q _ ⟨x, rfl⟩
+  exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
+
+end Decompose
 
 end LinearMap.IsHomogeneous
 

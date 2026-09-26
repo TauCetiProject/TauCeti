@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bialgebra.Hom
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Inverse images of Hopf ideals
@@ -50,9 +50,9 @@ exactness needed for the coideal condition is not automatic without an exactness
 ## References
 
 The constructions are the standard inverse images of Hopf ideals, reduced here to the
-quotient-kernel constructions already in `TauCeti.Algebra.HopfAlgebra.Kernel`. Over a general
-base the morphism can be surjective or have the required flat quotient algebras; over a field
-it is arbitrary.
+quotient-kernel constructions already in `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel`.
+Over a general base the morphism can be surjective or have the required flat quotient
+algebras; over a field it is arbitrary.
 -/
 
 public section

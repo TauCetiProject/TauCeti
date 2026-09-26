@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Reproducing
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.InnerProductSpace.LinearCombination
 
 /-!
 # Kolmogorov decomposition of a positive-definite kernel
@@ -23,10 +24,8 @@ The span of the kernel vectors is dense, so this is the minimal Kolmogorov decom
 than an arbitrary realization.  Its universal property gives a unique linear isometry into any
 other realization, and a linear isometric equivalence when that realization is also minimal.
 
-This advances Part C of `TauCetiRoadmap/OneParameterSemigroups/README.md`, specifically the
-positive-definite-function API item asking for the GNS/Kolmogorov decomposition.  The completion
-and reproducing-kernel construction are Mathlib's `RKHS.OfKernel`; this file supplies only the
-scalar-kernel bridge and its characteristic API.
+The completion and reproducing-kernel construction are Mathlib's `RKHS.OfKernel`; this file
+supplies the scalar-kernel bridge and its characteristic API.
 
 ## Main declarations
 
@@ -203,17 +202,6 @@ private theorem denseRange_featureCombination (hK : Matrix.PosSemidef K) :
     exact kolmogorovFeature_dense hK
   exact hdense
 
-private theorem norm_featureCombination_eq {E : Type w} [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] (hK : Matrix.PosSemidef K) (φ : α → E)
-    (hφ : ∀ a b, ⟪φ a, φ b⟫_𝕜 = K a b) (f : α →₀ 𝕜) :
-    ‖Finsupp.linearCombination 𝕜 φ f‖ =
-      ‖Finsupp.linearCombination 𝕜 (kolmogorovFeature hK) f‖ := by
-  apply (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
-  rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
-  congr 1
-  simp only [Finsupp.linearCombination_apply, Finsupp.sum_inner, Finsupp.inner_sum,
-    inner_smul_left, inner_smul_right, hφ, inner_kolmogorovFeature hK]
-
 /-- The unique linear isometry from the canonical Kolmogorov space into any Hilbert-space
 realization of `K`.  It sends each canonical feature vector to the corresponding vector in the
 given realization. -/
@@ -223,7 +211,9 @@ noncomputable def kolmogorovIsometry {E : Type w} [NormedAddCommGroup E]
   let canonical := Finsupp.linearCombination 𝕜 (kolmogorovFeature hK)
   let target := Finsupp.linearCombination 𝕜 φ
   have hdense : DenseRange canonical := denseRange_featureCombination hK
-  have hnorm : ∀ f, ‖target f‖ = ‖canonical f‖ := norm_featureCombination_eq hK φ hφ
+  have hnorm : ∀ f, ‖target f‖ = ‖canonical f‖ := fun f =>
+    f.norm_linearCombination_eq_of_inner_eq fun a b =>
+      (hφ a b).trans (inner_kolmogorovFeature hK a b).symm
   have hbound : ∃ C, ∀ f, ‖target f‖ ≤ C * ‖canonical f‖ :=
     ⟨1, fun f => by simp [hnorm f]⟩
   exact LinearIsometry.mk (target.extendOfNorm canonical).toLinearMap fun x => by
@@ -247,7 +237,10 @@ theorem kolmogorovIsometry_apply {E : Type w} [NormedAddCommGroup E]
     (f := Finsupp.linearCombination 𝕜 φ)
     (e := Finsupp.linearCombination 𝕜 (kolmogorovFeature hK))
     (denseRange_featureCombination hK)
-    ⟨1, fun f => by simp [norm_featureCombination_eq hK φ hφ f]⟩ (Finsupp.single a 1)
+    ⟨1, fun f => by
+      simpa only [one_mul] using (f.norm_linearCombination_eq_of_inner_eq
+        fun a b => (hφ a b).trans (inner_kolmogorovFeature hK a b).symm).le⟩
+    (Finsupp.single a 1)
   simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
     Finsupp.linearCombination_single, one_smul] using happ
 

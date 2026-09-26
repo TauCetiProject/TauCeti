@@ -34,6 +34,8 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
 * `TauCeti.TitsSystem.bruhatCell`: the Bruhat cell indexed by an element of the Weyl group.
 * `TauCeti.TitsSystem.mem_bruhatCell_iff`: membership in a Weyl-indexed Bruhat cell in terms of
   a representative in `N`.
+* `TauCeti.TitsSystem.exists_mem_bruhatCell`: every Weyl-indexed Bruhat cell contains a
+  representative from `N`.
 * `TauCeti.TitsSystem.bruhatCells_eq_univ`: the Bruhat cells cover the ambient group.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple`: multiplication on the left by
   a simple Bruhat cell gives either the adjacent cell or its union with the original cell.
@@ -113,6 +115,22 @@ theorem mem_bruhatCell_iff {g : G} {w : T.WeylGroup} :
   · rintro ⟨m, hm, hg⟩
     rw [bruhatCell_mk, ← doubleCoset_eq_of_mk_eq T.subgroupB T.subgroupN hm]
     exact hg
+
+/-- A Bruhat cell is the double coset of any of its elements. -/
+theorem bruhatCell_eq_doubleCoset {g : G} {w : T.WeylGroup}
+    (hg : g ∈ T.bruhatCell w) :
+    T.bruhatCell w = DoubleCoset.doubleCoset g T.subgroupB T.subgroupB := by
+  obtain ⟨n, rfl, hn⟩ := T.mem_bruhatCell_iff.mp hg
+  rw [T.bruhatCell_mk]
+  exact (DoubleCoset.doubleCoset_eq_of_mem hn).symm
+
+/-- Every Weyl-indexed Bruhat cell contains a representative from the normalizer subgroup. -/
+theorem exists_mem_bruhatCell (w : T.WeylGroup) :
+    ∃ n : T.subgroupN, QuotientGroup.mk n = w ∧ (n : G) ∈ T.bruhatCell w := by
+  obtain ⟨n, hn⟩ := QuotientGroup.mk'_surjective T.intersection w
+  refine ⟨n, hn, ?_⟩
+  rw [← hn, QuotientGroup.mk'_apply, T.bruhatCell_mk]
+  exact DoubleCoset.mem_doubleCoset_self _ _ _
 
 /-- The Bruhat cell indexed by the identity of the Weyl group is `B`. -/
 @[simp]

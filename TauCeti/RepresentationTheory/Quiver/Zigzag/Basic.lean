@@ -86,6 +86,10 @@ theorem vertexEquiv_symm_vertex (v : V) : (vertexEquiv G).symm (vertex G v) = v 
   rw [← vertexEquiv_apply]
   exact (vertexEquiv G).symm_apply_apply v
 
+/-- Every vertex of the doubled quiver comes from a vertex of the graph. -/
+theorem exists_eq_vertex (a : DoubledQuiver G) : ∃ v : V, a = vertex G v :=
+  ⟨(vertexEquiv G).symm a, (vertexEquiv_symm_apply G a).symm⟩
+
 /-- The vertex inclusion of a doubled quiver is injective. -/
 theorem vertex_injective : Function.Injective (vertex G) := by
   intro u v h

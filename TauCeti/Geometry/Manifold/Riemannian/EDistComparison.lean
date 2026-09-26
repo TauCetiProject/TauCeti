@@ -31,7 +31,9 @@ Apache-2.0 do Carmo formalization at revision `24f32e4d600878bfaac6bc2f2f9324175
 
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.exists_contMDiff_pathELength_eq`: **corner smoothing**,
   every piecewise `C¹` path has a globally `C¹` path on `[0, 1]` with the same endpoints and the
-  same length.
+  same length, whose image stays in the original path's image.
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.exists_contMDiff_pathELength_eq_of_mapsTo`: smooth a
+  piecewise path while keeping it inside any set containing the original path.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.riemannianEDist_le_pathELength`: a piecewise `C¹` path
   bounds the Riemannian extended distance between its endpoints.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.riemannianEDist_le_pathELength_of_subset`: the same
@@ -124,31 +126,46 @@ private theorem exists_contMDiff_pathELength_eq_sum (γ : ℝ → M) :
       ∃ η : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧ η 0 = γ (τ 0) ∧
         η 1 = γ (τ (Fin.last (k + 1))) ∧
         Manifold.pathELength I η 0 1 =
-          ∑ i : Fin (k + 1), Manifold.pathELength I γ (τ i.castSucc) (τ i.succ) := by
+          ∑ i : Fin (k + 1), Manifold.pathELength I γ (τ i.castSucc) (τ i.succ) ∧
+        MapsTo η (Icc 0 1) (γ '' Icc (τ 0) (τ (Fin.last (k + 1)))) := by
   intro k
   induction k with
   | zero =>
       intro τ hτ hγ
-      obtain ⟨η, hη, hη₀, hη₁, hlen⟩ := exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
-      exact ⟨η, hη, by simpa using hη₀, by simpa using hη₁, by simpa using hlen⟩
+      obtain ⟨η, hη, hη₀, hη₁, hlen, hmaps⟩ :=
+        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
+      exact ⟨η, hη, by simpa using hη₀, by simpa using hη₁, by simpa using hlen,
+        by simpa using hmaps⟩
   | succ k ih =>
       intro τ hτ hγ
-      obtain ⟨α, hα, hα₀, hα₁, hαlen⟩ := exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
-      obtain ⟨β, hβ, hβ₀, hβ₁, hβlen⟩ := ih (fun i ↦ τ i.succ)
+      obtain ⟨α, hα, hα₀, hα₁, hαlen, hαmaps⟩ :=
+        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
+      obtain ⟨β, hβ, hβ₀, hβ₁, hβlen, hβmaps⟩ := ih (fun i ↦ τ i.succ)
         (fun i ↦ by simpa only [Fin.succ_castSucc] using hτ i.succ)
         (fun i ↦ by simpa only [Fin.succ_castSucc] using hγ i.succ)
-      obtain ⟨η, hη, hη₀, hη₁, hηlen, -, -⟩ :=
+      obtain ⟨η, hη, hη₀, hη₁, hηlen, -, -, hηmaps⟩ :=
         TauCeti.exists_contMDiff_pathELength_eq_add hα.contMDiffOn hβ.contMDiffOn
           (hα₁.trans hβ₀.symm)
-      refine ⟨η, hη, ?_, ?_, ?_⟩
+      refine ⟨η, hη, ?_, ?_, ?_, ?_⟩
       · rw [hη₀, hα₀, Fin.castSucc_zero]
       · rw [hη₁, hβ₁, Fin.succ_last]
       · rw [hηlen, hαlen, hβlen]
         conv_rhs => rw [Fin.sum_univ_succ]
         simp only [Fin.succ_castSucc, Fin.castSucc_zero]
+      · intro t ht
+        rcases hηmaps ht with htα | htβ
+        · obtain ⟨s, hs, hst⟩ := htα
+          obtain ⟨u, hu, hus⟩ := hαmaps hs
+          exact ⟨u, ⟨hu.1, hu.2.trans (Fin.monotone_iff_le_succ.mpr hτ
+            (Fin.le_last (Fin.succ 0)))⟩, hus.trans hst⟩
+        · obtain ⟨s, hs, hst⟩ := htβ
+          obtain ⟨u, hu, hus⟩ := hβmaps hs
+          exact ⟨u, ⟨(Fin.monotone_iff_le_succ.mpr hτ (Fin.zero_le _)).trans hu.1,
+            hu.2⟩, hus.trans hst⟩
 
 /-- **Corner smoothing.** Every piecewise `C¹` path admits a globally `C¹` path on `[0, 1]` with
-the same endpoints and exactly the same `Manifold.pathELength`.
+the same endpoints and exactly the same `Manifold.pathELength`, whose image stays in the image of
+the original path.
 
 This is the theorem which makes the piecewise `C¹` and the `C¹` descriptions of the Riemannian
 distance agree: a broken competitor can always be rounded off at its corners without gaining or
@@ -159,11 +176,27 @@ junctions. -/
 theorem IsPiecewiseContMDiffOn.exists_contMDiff_pathELength_eq
     (h : IsPiecewiseContMDiffOn I 1 γ a b) :
     ∃ η : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧ η 0 = γ a ∧ η 1 = γ b ∧
-      Manifold.pathELength I η 0 1 = Manifold.pathELength I γ a b := by
+      Manifold.pathELength I η 0 1 = Manifold.pathELength I γ a b ∧
+      MapsTo η (Icc 0 1) (γ '' Icc a b) := by
   obtain ⟨k, τ, hτa, hτb, hτ, hpieces, hsum⟩ := h.exists_partition_sum_pathELength_eq
-  obtain ⟨η, hη, hη₀, hη₁, hlen⟩ :=
+  obtain ⟨η, hη, hη₀, hη₁, hlen, hmaps⟩ :=
     exists_contMDiff_pathELength_eq_sum γ k τ (fun i ↦ (hτ i).le) hpieces
-  exact ⟨η, hη, by rw [hη₀, hτa], by rw [hη₁, hτb], by rw [hlen, hsum]⟩
+  exact ⟨η, hη, by rw [hη₀, hτa], by rw [hη₁, hτb], by rw [hlen, hsum], by
+    simpa only [hτa, hτb] using hmaps⟩
+
+/-- **Corner smoothing inside a set.** If a piecewise `C¹` path stays in `S`, it can be replaced
+by a globally `C¹` path on `[0, 1]` with the same endpoints and length that also stays in `S`.
+No openness or other property of `S` is required. -/
+theorem IsPiecewiseContMDiffOn.exists_contMDiff_pathELength_eq_of_mapsTo
+    (h : IsPiecewiseContMDiffOn I 1 γ a b) {S : Set M} (hγS : MapsTo γ (Icc a b) S) :
+    ∃ η : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧ η 0 = γ a ∧ η 1 = γ b ∧
+      Manifold.pathELength I η 0 1 = Manifold.pathELength I γ a b ∧
+      MapsTo η (Icc 0 1) S := by
+  obtain ⟨η, hη, hη₀, hη₁, hlen, hmaps⟩ := h.exists_contMDiff_pathELength_eq
+  refine ⟨η, hη, hη₀, hη₁, hlen, ?_⟩
+  intro t ht
+  obtain ⟨s, hs, hst⟩ := hmaps ht
+  exact hst ▸ hγS hs
 
 /-- The Riemannian extended distance between the endpoints of a piecewise `C¹` path is at most
 the length of that path. This is Mathlib's `Manifold.riemannianEDist_le_pathELength` for broken
@@ -171,7 +204,7 @@ competitors. -/
 theorem IsPiecewiseContMDiffOn.riemannianEDist_le_pathELength
     (h : IsPiecewiseContMDiffOn I 1 γ a b) :
     Manifold.riemannianEDist I (γ a) (γ b) ≤ Manifold.pathELength I γ a b := by
-  obtain ⟨η, hη, hη₀, hη₁, hlen⟩ := h.exists_contMDiff_pathELength_eq
+  obtain ⟨η, hη, hη₀, hη₁, hlen, -⟩ := h.exists_contMDiff_pathELength_eq
   calc Manifold.riemannianEDist I (γ a) (γ b)
       ≤ Manifold.pathELength I η 0 1 :=
         Manifold.riemannianEDist_le_pathELength hη.contMDiffOn hη₀ hη₁ zero_le_one
@@ -230,7 +263,7 @@ theorem riemannianEDist_eq_iInf_pathELength_piecewise_zero_one (x y : M) :
       (iInf_le_of_le h (iInf_le_of_le hx (iInf_le_of_le hy le_rfl)))))
   · refine le_iInf fun γ ↦ le_iInf fun a ↦ le_iInf fun b ↦ le_iInf fun h ↦
       le_iInf fun hx ↦ le_iInf fun hy ↦ ?_
-    obtain ⟨η, hη, hη₀, hη₁, hlen⟩ := h.exists_contMDiff_pathELength_eq
+    obtain ⟨η, hη, hη₀, hη₁, hlen, -⟩ := h.exists_contMDiff_pathELength_eq
     refine le_trans (iInf_le_of_le η (iInf_le_of_le
       (IsPiecewiseContMDiffOn.of_contMDiffOn zero_lt_one hη.contMDiffOn)
       (iInf_le_of_le (hη₀.trans hx) (iInf_le_of_le (hη₁.trans hy) le_rfl)))) hlen.le

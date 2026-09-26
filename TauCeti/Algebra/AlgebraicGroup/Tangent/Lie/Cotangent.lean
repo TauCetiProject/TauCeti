@@ -156,13 +156,11 @@ theorem tangentScalarExtensionEquiv_bracket
     tangentScalarExtensionEquiv (R := R) (A := H) (B := B) ⁅x, y⁆ =
       ⁅tangentScalarExtensionEquiv (R := R) (A := H) (B := B) x,
         tangentScalarExtensionEquiv (R := R) (A := H) (B := B) y⁆ := by
-  induction x using TensorProduct.induction_on with
-  | zero => rw [zero_lie y, map_zero, zero_lie]
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
       rw [add_lie x₁ x₂ y, map_add, map_add, add_lie, hx₁, hx₂]
   | tmul b f =>
-      induction y using TensorProduct.induction_on with
-      | zero => rw [lie_zero (b ⊗ₜ[R] f), map_zero, lie_zero]
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ hy₁ hy₂ =>
           rw [lie_add (b ⊗ₜ[R] f) y₁ y₂, map_add, map_add, lie_add, hy₁, hy₂]
       | tmul c g => exact tangentScalarExtensionEquiv_bracket_tmul b c f g
