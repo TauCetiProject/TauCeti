@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.HomotopyCategory
 
 /-!
 # Closed morphisms and the underlying category of a DG category
@@ -29,11 +29,12 @@ open CategoryTheory MonoidalCategory HomologicalComplex
 
 namespace TauCeti
 
-universe v u u₂
+universe v u
 
 variable (R : Type v) [CommRing R] {C : Type u} [DGCategory R C]
 
 /-- The degree-zero component of a morphism in the underlying category of a DG category. -/
+@[expose]
 noncomputable def dgClosedHom
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     DGHom R 0 (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
@@ -89,7 +90,7 @@ theorem dgClosedHom_injective {X Y : ForgetEnrichment (CochainComplex (ModuleCat
     apply ModuleCat.hom_ext
     apply LinearMap.ext_ring
     -- Composition in `ModuleCat` evaluates as composition of the underlying linear maps.
-    exact h
+    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, dgClosedHom] using h
   have := congrArg (ForgetEnrichment.homOf (CochainComplex (ModuleCat.{v} R) ℤ)) hfg
   simpa only [ForgetEnrichment.homOf_homTo] using this
 
@@ -176,26 +177,6 @@ theorem dgClosedHomOf_dgCompZero {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 
   apply dgClosedHom_injective R
   simp
 
-/-- The underlying functor of a DG functor acts on closed morphisms by its degree-zero map. -/
-theorem dgClosedHom_forget_map {D : Type u₂} [DGCategory R D]
-    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
-    {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    dgClosedHom R (F.forget.map f) = F.dgMap 0 (dgClosedHom R f) := by
-  simp only [dgClosedHom, EnrichedFunctor.forget_map, ForgetEnrichment.homTo_homOf,
-    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    EnrichedFunctor.dgMap_apply]
-
-/-- The underlying functor sends a morphism represented by a cocycle to the morphism
-represented by its image under the DG functor. -/
-theorem forget_map_dgClosedHomOf {D : Type u₂} [DGCategory R D]
-    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
-    {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
-    F.forget.map (dgClosedHomOf R f hf) =
-      dgClosedHomOf R (F.dgMap 0 f) (F.dgMap_mem_dgCycles hf) := by
-  apply dgClosedHom_injective R
-  rw [dgClosedHom_forget_map, dgClosedHom_dgClosedHomOf,
-    dgClosedHom_dgClosedHomOf]
-
 /-- The canonical functor from closed degree-zero morphisms to their classes in `H⁰`.
 It is the identity on the underlying objects. -/
 @[expose]
@@ -221,6 +202,7 @@ theorem dgClosedToHomotopy_obj
   (rfl)
 
 /-- The quotient functor takes an underlying morphism to the class of its closed component. -/
+@[simp]
 theorem dgClosedToHomotopy_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     (dgClosedToHomotopy R).map f =
@@ -241,14 +223,17 @@ theorem dgClosedToHomotopy_map_dgClosedHomOf {X Y : C} (f : DGHom R 0 X Y)
 instance full_dgClosedToHomotopy : (dgClosedToHomotopy (C := C) R).Full where
   map_surjective := by
     intro X Y c
-    -- `H⁰` morphisms are the homotopy classes of the underlying objects of `X` and `Y`.
+    -- The `DGHomotopyCategory` quiver instance defines `H⁰` Homs as `DGHomotopyClass`.
+    -- Both `underlying (of X)` and this functor's object map reduce to `X`, so `change`
+    -- exposes the type expected by `exists_dgHomotopyClass_eq` without a rewrite.
     change DGHomotopyClass R
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) at c
     obtain ⟨f, hf, hfc⟩ := exists_dgHomotopyClass_eq (C := C) R c
     refine ⟨dgClosedHomOf (C := C) R f hf, ?_⟩
     exact (dgClosedToHomotopy_map_dgClosedHomOf (C := C) R f hf).trans (by
-      -- `homOf` is the class constructor after reducing the object wrappers.
+      -- The same definitional object equalities convert the representative's class back to
+      -- the categorical Hom; `homOf_def` identifies the remaining class constructor.
       rw [DGHomotopyCategory.homOf_def]
       exact hfc)
 
