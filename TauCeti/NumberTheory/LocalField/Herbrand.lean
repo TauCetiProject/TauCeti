@@ -60,7 +60,7 @@ definitions make sense for any finite extension, with `G` the automorphism group
   `TauCeti.LocalFieldsRamification.inverseHerbrand_herbrand`: `φ ∘ ψ = id` and `ψ ∘ φ = id`.
 * `TauCeti.LocalFieldsRamification.herbrand_slope_anti_adjacent`: `φ` is concave.
 * `TauCeti.LocalFieldsRamification.continuous_herbrand`,
-  `TauCeti.LocalFieldsRamification.strictMono_herbrand` and their counterparts for `ψ`.
+  `TauCeti.LocalFieldsRamification.herbrand_strictMono` and their counterparts for `ψ`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
@@ -194,8 +194,11 @@ private theorem exists_herbrandReal_eq {y : ℝ} (hy : -1 ≤ y) :
   have hb : -1 ≤ b := by nlinarith
   have hφb : y ≤ herbrandReal K L b := by
     have h := div_sub_le_herbrandReal_sub K L hb
+    have hb_sub : b - -1 = (y + 1) * g := by
+      dsimp [b]
+      ring
     rw [herbrandReal_of_le_zero K L le_rfl (by norm_num),
-      show b - -1 = (y + 1) * g by ring, mul_div_cancel_right₀ _ (by positivity)] at h
+      hb_sub, mul_div_cancel_right₀ _ (by positivity)] at h
     linarith
   obtain ⟨u, hu, rfl⟩ := intermediate_value_Icc hb (herbrandReal_continuous K L).continuousOn
     ⟨(herbrandReal_of_le_zero K L le_rfl (by norm_num)).trans_le hy, hφb⟩
@@ -263,11 +266,11 @@ theorem inverseHerbrand_herbrand (u : RamificationIndexDomain) :
   (herbrandOrderIso K L).symm_apply_apply u
 
 /-- The Herbrand function is strictly increasing. -/
-theorem strictMono_herbrand : StrictMono (herbrand K L) :=
+theorem herbrand_strictMono : StrictMono (herbrand K L) :=
   (herbrandOrderIso K L).strictMono
 
 /-- The inverse Herbrand function is strictly increasing. -/
-theorem strictMono_inverseHerbrand : StrictMono (inverseHerbrand K L) :=
+theorem inverseHerbrand_strictMono : StrictMono (inverseHerbrand K L) :=
   (herbrandOrderIso K L).symm.strictMono
 
 /-- The Herbrand function is continuous. -/
@@ -295,11 +298,13 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
         (le_div_iff₀' (sub_pos.2 huv')).2 (mul_le_herbrandReal_sub K L huv'.le)
 
 /-- The Herbrand function is the identity on `[-1, 0]`. -/
+@[simp]
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
   Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.2 hu))
 
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
+@[simp]
 theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
@@ -360,13 +365,14 @@ theorem upperRamificationGroup_herbrand (u : RamificationIndexDomain) :
   rw [upperRamificationGroup_def, inverseHerbrand_herbrand]
 
 /-- On `[-1, 0]` the upper and lower numberings agree. -/
+@[simp]
 theorem upperRamificationGroup_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :
     upperRamificationGroup K L v = lowerRamificationGroupReal K L v := by
   rw [upperRamificationGroup_def, inverseHerbrand_of_coe_le_zero K L hv]
 
 /-- The upper ramification filtration is decreasing. -/
 theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup K L) :=
-  fun _ _ h ↦ lowerRamificationGroupReal_antitone K L ((strictMono_inverseHerbrand K L).monotone h)
+  fun _ _ h ↦ lowerRamificationGroupReal_antitone K L ((inverseHerbrand_strictMono K L).monotone h)
 
 /-- Every upper ramification group is normal in the automorphism group. -/
 instance instNormalUpperRamificationGroup (v : RamificationIndexDomain) :
