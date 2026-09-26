@@ -31,7 +31,9 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- A norm fibre has at most the linear ideal-count bound at the same cutoff. -/
 theorem IdealCountingLinearBounds.card_normFiber_le (b : IdealCountingLinearBounds K)
-    {n : ℕ} (hn : 0 < n) : ((normFiber K n).card : ℝ) ≤ b.upper * n := by
+    (n : ℕ) : ((normFiber K n).card : ℝ) ≤ b.upper * n := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [normFiber_zero]
   have hsingle : ‖normCoeff K (1 : IdealArithmeticFunction K) n‖ ≤
       ∑ k ∈ Finset.Icc 1 n, ‖normCoeff K (1 : IdealArithmeticFunction K) k‖ :=
     Finset.single_le_sum (fun k _ ↦ norm_nonneg (normCoeff K
@@ -43,19 +45,19 @@ theorem IdealCountingLinearBounds.card_normFiber_le (b : IdealCountingLinearBoun
 /-- The norm coefficient of a unitary ideal weight is bounded by the linear ideal-count
 constant. -/
 theorem IdealCountingLinearBounds.norm_normCoeff_le (b : IdealCountingLinearBounds K)
-    (χ : UnitaryIdealWeight K) {n : ℕ} (hn : 0 < n) :
+    (χ : UnitaryIdealWeight K) (n : ℕ) :
     ‖normCoeff K χ.toIdealArithmeticFunction n‖ ≤ b.upper * n :=
   (UnitaryIdealWeight.norm_normCoeff_le_norm_normCoeff_one K χ n).trans
-    ((norm_normCoeff_one K n).trans_le (b.card_normFiber_le hn))
+    ((norm_normCoeff_one K n).trans_le (b.card_normFiber_le n))
 
 /-- The number of ideals in a single norm fibre grows at most linearly. -/
 theorem card_normFiber_isBigO :
     (fun n : ℕ ↦ ((normFiber K n).card : ℝ)) =O[atTop] fun n : ℕ ↦ (n : ℝ) := by
   obtain ⟨b⟩ := idealCount_linearBounds K
   refine IsBigO.of_bound b.upper ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
+  filter_upwards [] with n
   simpa only [Real.norm_natCast, Real.norm_of_nonneg (Nat.cast_nonneg _)] using
-    b.card_normFiber_le (K := K) hn
+    b.card_normFiber_le (K := K) n
 
 /-- The norm coefficients of a unitary ideal weight grow at most linearly. -/
 theorem UnitaryIdealWeight.normCoeff_isBigO (χ : UnitaryIdealWeight K) :
@@ -63,7 +65,7 @@ theorem UnitaryIdealWeight.normCoeff_isBigO (χ : UnitaryIdealWeight K) :
       fun n : ℕ ↦ (n : ℝ) := by
   obtain ⟨b⟩ := idealCount_linearBounds K
   refine IsBigO.of_bound b.upper ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  simpa only [Real.norm_natCast] using b.norm_normCoeff_le χ hn
+  filter_upwards [] with n
+  simpa only [Real.norm_natCast] using b.norm_normCoeff_le χ n
 
 end TauCeti
