@@ -213,7 +213,7 @@ lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackComp f g).inv.app _ ≫ (pullback f).map (pullbackObjUnitIso g).hom ≫
       (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom := by
   apply ((pullbackPushforwardAdjunction (f ≫ g)).homEquiv _ _).injective
-  rw [← homEquiv_conjugateEquiv ((pullbackPushforwardAdjunction g).comp
+  rw [← Adjunction.homEquiv_conjugateEquiv ((pullbackPushforwardAdjunction g).comp
       (pullbackPushforwardAdjunction f)), conjugateEquiv_pullbackComp_inv,
     Adjunction.comp_homEquiv, Equiv.trans_apply, Adjunction.homEquiv_naturality_left,
     pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]

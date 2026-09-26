@@ -24,16 +24,17 @@ The internal-Hom comparison of a monoidal functor is one such computation: at th
 the left unitor identifies the unit with left tensoring by the unit, and the mate that remains
 is taken between the two tensor--Hom adjunctions.
 
-`CategoryTheory.homEquiv_conjugateEquiv` transposes a morphism across two adjunctions whose left
-adjoints are compared by a natural transformation `α`: transposing along the first adjunction and
-then applying the conjugate of `α` is transposing `α` followed by the morphism along the second.
+`CategoryTheory.Adjunction.homEquiv_conjugateEquiv` transposes a morphism across two adjunctions
+whose left adjoints are compared by a natural transformation `α`: transposing along the first
+adjunction and then applying the conjugate of `α` is transposing `α` followed by the morphism along
+the second.
 It computes transposes along an adjunction whose left adjoint is only known up to a comparison
 with another left adjoint, such as a composite of pullback functors.
 
 ## Main declarations
 
 * `CategoryTheory.mateEquiv_adjunction_id`;
-* `CategoryTheory.homEquiv_conjugateEquiv`.
+* `CategoryTheory.Adjunction.homEquiv_conjugateEquiv`.
 -/
 
 public section
@@ -68,6 +69,8 @@ theorem mateEquiv_adjunction_id {G H : C ⥤ D} (α : TwoSquare G (𝟭 C) (𝟭
 
 section Conjugate
 
+namespace Adjunction
+
 variable {L₁ L₂ : C ⥤ D} {R₁ R₂ : D ⥤ C} (adj₁ : L₁ ⊣ R₁) (adj₂ : L₂ ⊣ R₂)
 
 /-- Transposing `a : L₁ c ⟶ d` along `adj₁` and then applying the conjugate of `α : L₂ ⟶ L₁` is
@@ -77,6 +80,8 @@ theorem homEquiv_conjugateEquiv (α : L₂ ⟶ L₁) {c : C} {d : D} (a : L₁.o
       adj₂.homEquiv c d (α.app c ≫ a) := by
   rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc,
     ← unit_conjugateEquiv, Category.assoc, Category.assoc, NatTrans.naturality]
+
+end Adjunction
 
 end Conjugate
 

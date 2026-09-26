@@ -155,9 +155,7 @@ lemma pullbackRigidification_comp {T'' Y'' : Scheme.{u}} {s'' : T'' ⟶ Y''} {h'
 
 /-- The pullback of a rigidified line bundle along a commutative square `s' ≫ h = g ≫ s`: the line
 bundle is pulled back along `h`, and its trivialization along `g`. -/
--- `@[expose]`: the type of the trivialization, and hence the statement of
--- `pullback_rigidification`, mentions the pulled-back line bundle, which must reduce to the
--- pulled-back module.
+-- The trivialization's type mentions the pulled-back bundle, whose module must reduce.
 @[expose]
 def pullback (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle s) : RigidifiedLineBundle s' where
   lineBundle := (InvertibleSheaf.pullback h).obj P.lineBundle
@@ -210,6 +208,7 @@ def lift {α : Sort v} (f : RigidifiedLineBundle s → α)
         f P = f Q) : RigidifiedLineBundleClass s → α :=
   Quotient.lift f (by
     intro P Q h
+    -- The quotient relation is definitionally the displayed rigidified-isomorphism condition.
     change (RigidifiedLineBundle.setoid s).r P Q at h
     unfold RigidifiedLineBundle.setoid at h
     exact hf P Q h)
