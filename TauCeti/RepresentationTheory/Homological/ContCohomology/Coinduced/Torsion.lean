@@ -33,6 +33,10 @@ theorem isPPrimaryTorsion_discreteCoind (hM : IsPPrimaryTorsion p M) :
     (IsLocallyConstant.iff_continuous _).1 (DiscreteCoind.isLocallyConstant f)⟩
   obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 (hM.continuousMap G) cf
   refine ⟨k, DiscreteCoind.ext fun g ↦ ?_⟩
-  exact congrArg (fun c : C(G, M) ↦ c g) hk
+  -- `cf` has the same values as `f`, so evaluating `hk` at `g` gives `p ^ k • f g = 0`.
+  have hkg : p ^ k • f g = 0 := by
+    simpa [cf] using DFunLike.congr_fun hk g
+  rw [DiscreteCoind.coe_zero, Pi.zero_apply]
+  exact (DiscreteCoind.coe_smul_scalar (p ^ k) f g).trans hkg
 
 end TauCeti

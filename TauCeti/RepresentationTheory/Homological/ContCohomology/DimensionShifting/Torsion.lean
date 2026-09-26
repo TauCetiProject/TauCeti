@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Torsion
 
 /-!
@@ -17,6 +17,11 @@ define `p`-cohomological dimension.
 
 The compactness assumption matters: a locally constant map on an infinite discrete space may
 take values of unbounded `p`-power order.
+
+## References
+
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Chapter III,
+  §3, (3.3.2).
 -/
 
 public section
