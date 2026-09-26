@@ -13,8 +13,7 @@ public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
-import Mathlib.RingTheory.DedekindDomain.Factorization
-import Mathlib.RingTheory.RamificationInertia.Basic
+import TauCeti.NumberTheory.RamificationInertia.Inert
 import Mathlib.NumberTheory.RamificationInertia.Unramified
 
 /-!
@@ -55,25 +54,22 @@ namespace TauCeti.NumberField.Sqrt5
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- The discriminant of `X² − X − 1` is `5`. -/
+@[simp]
 theorem discr_X_sq_sub_X_sub_one : (X ^ 2 - X - 1 : ℤ[X]).discr = 5 := by
   rw [discr_of_degree_eq_two (by compute_degree!)]
   simp [coeff_one, coeff_X]
 
 /-- **The index of a root of `X² − X − 1` is `1`**, since `discr (X² − X − 1) = 5` is squarefree. -/
+@[simp]
 theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     IntegralPrimitiveElement.index (⟨θ, hgen⟩ : IntegralPrimitiveElement K) = 1 := by
-  let t : IntegralPrimitiveElement K := ⟨θ, hgen⟩
-  have hd := t.discr_minpoly_eq_index_sq_mul_discr
-  simp only [t] at hd
-  rw [hmin, discr_X_sq_sub_X_sub_one] at hd
-  have hsf : Squarefree (5 : ℤ) := by
-    apply Int.squarefree_natAbs.mp
-    exact Nat.prime_five.squarefree
-  have hu : IsUnit (t.index : ℤ) := hsf _ (by rw [← sq]; exact ⟨_, hd⟩)
-  exact_mod_cast Int.isUnit_iff_natAbs_eq.mp hu
+  apply IntegralPrimitiveElement.index_eq_one_of_squarefree_discr
+  simp only [hmin, discr_X_sq_sub_X_sub_one]
+  exact Int.squarefree_natAbs.mp Nat.prime_five.squarefree
 
 /-- **The ring of integers of `ℚ(√5)` is `ℤ[θ]`**, for a root `θ` of `X² − X − 1`. -/
+@[simp]
 theorem adjoin_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Algebra.adjoin ℤ {θ} = ⊤ := by
   rw [← IntegralPrimitiveElement.adjoin_def ⟨θ, hgen⟩]
@@ -118,39 +114,27 @@ theorem ramificationIdx_eq_one_of_mem_primesOver_two (hmin : minpoly ℤ θ = X 
 theorem inertiaDeg_eq_two_of_mem_primesOver_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {Q : Ideal (𝓞 K)}
     (hQ : Q ∈ Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) : Q.inertiaDeg ℤ = 2 := by
-  classical
-  -- The fundamental identity `Σ e f = 2` over the single prime above `2`, with `e = 1`.
+  have := hQ.1
+  have := hQ.2
   have hpr : (Ideal.span {(2 : ℤ)}).IsPrime :=
     (PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible).isPrime
-  have he := ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ
-  obtain ⟨Q', hQ'⟩ := Set.ncard_eq_one.mp (ncard_primesOver_two_eq_one hmin hgen)
-  have hsub : Subsingleton (Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) := by
-    rw [hQ']; infer_instance
-  have hfin : Fintype (Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) := by
-    rw [hQ']; infer_instance
-  have hsum := Ideal.sum_ramification_inertia_eq_finrank (R := ℤ) (S := 𝓞 K)
-    (p := Ideal.span {(2 : ℤ)})
-  rwa [Fintype.sum_subsingleton _ ⟨Q, hQ⟩, he, one_mul, RingOfIntegers.rank,
-    finrank_eq_two hmin hgen] at hsum
+  rw [TauCeti.RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ Q
+    (ncard_primesOver_two_eq_one hmin hgen)
+    (ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ), RingOfIntegers.rank,
+    finrank_eq_two hmin hgen]
 
 /-- **`2` is inert in `ℚ(√5)`**: the ideal `2 𝓞 K` is the single prime above `2`. -/
 theorem map_span_two_eq_of_mem_primesOver (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {Q : Ideal (𝓞 K)}
     (hQ : Q ∈ Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) :
     (Ideal.span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) = Q := by
-  classical
+  have := hQ.1
+  have := hQ.2
   have hmax : (Ideal.span {(2 : ℤ)}).IsMaximal :=
     PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible
-  have he := ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ
-  obtain ⟨Q', hQ'⟩ := Set.ncard_eq_one.mp (ncard_primesOver_two_eq_one hmin hgen)
-  have hQQ : Q = Q' := by rw [hQ'] at hQ; exact hQ
-  rw [Ideal.map_algebraMap_eq_finsetProd_pow (by simp), Finset.prod_eq_single Q]
-  · rw [he, pow_one]
-  · intro P hP hPQ
-    rw [Set.mem_toFinset, hQ'] at hP
-    exact absurd ((Set.mem_singleton_iff.mp hP).trans hQQ.symm) hPQ
-  · intro hQn
-    exact absurd (Set.mem_toFinset.mpr hQ) hQn
+  exact TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one _ (by simp) Q
+    (ncard_primesOver_two_eq_one hmin hgen)
+    (ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ)
 
 /-- **`2` is inert in `ℚ(√5)`**: the ideal `2 𝓞 K` is prime. -/
 theorem isPrime_map_span_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
