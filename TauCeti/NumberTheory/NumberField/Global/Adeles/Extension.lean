@@ -144,9 +144,9 @@ theorem infiniteAdeleExtension_self :
     infiniteAdeleExtension K K = RingHom.id (InfiniteAdeleRing K) := by
   ext x
   funext w
-  simp only [infiniteAdeleExtension_apply, RingHom.id_apply]
+  simp only [infiniteAdeleExtension_apply, RingHom.id_apply, Algebra.algebraMap_self,
+    InfinitePlace.comap_id]
   have hwo : w.LiesOver w := ⟨rfl⟩
-  change LiesOver.completionMap (v := w) (w := w) (x w) = x w
   have h : (LiesOver.completionMap (v := w) (w := w)) = RingHom.id _ := by
     apply DFunLike.coe_injective
     apply (InfinitePlace.Completion.denseRange_coe w).equalizer
