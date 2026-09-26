@@ -28,11 +28,11 @@ almost-sure convergence of the windows to `W` in cut distance.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.infiniteSampleLaw_ae_tendsto_homDensityFin` — for a fixed finite graph
+* `TauCeti.DenseGraphLimits.tendsto_homDensityFin_infiniteSampleLaw_ae` — for a fixed finite graph
   `F`, the homomorphism densities of the windows converge to `t(F, W)` almost surely.
-* `TauCeti.DenseGraphLimits.infiniteSampleLaw_ae_forall_tendsto_homDensityFin` — almost surely this
+* `TauCeti.DenseGraphLimits.tendsto_homDensityFin_infiniteSampleLaw_ae_forall` — almost surely this
   holds for every graph on `Fin k`, simultaneously for all `k`.
-* `TauCeti.DenseGraphLimits.infiniteSampleLaw_ae_forall_tendsto_homDensity_finiteGraphGraphon` —
+* `TauCeti.DenseGraphLimits.tendsto_homDensity_finiteGraphGraphon_infiniteSampleLaw_ae_forall` —
   the same statement for the step graphons of the windows.
 
 ## References
@@ -63,7 +63,7 @@ almost every infinite `W`-random graph `G` has windows whose homomorphism densit
 the graphon density:
 
 `t(F, G[{0, …, n - 1}]) → t(F, W)` as `n → ∞`. -/
-theorem infiniteSampleLaw_ae_tendsto_homDensityFin (W : Graphon Ω μ) {V : Type*} [Fintype V]
+theorem tendsto_homDensityFin_infiniteSampleLaw_ae (W : Graphon Ω μ) {V : Type*} [Fintype V]
     (F : SimpleGraph V) [DecidableRel F.Adj] :
     ∀ᵐ G ∂infiniteSampleLaw W,
       Tendsto (fun n => homDensityFin F (G.restrictFin n)) atTop (𝓝 (homDensity F W)) := by
@@ -88,13 +88,13 @@ theorem infiniteSampleLaw_ae_tendsto_homDensityFin (W : Graphon Ω μ) {V : Type
 /-- **Almost-sure convergence of all sampled homomorphism densities.** Almost every infinite
 `W`-random graph `G` has windows whose homomorphism densities converge to those of `W`, for every
 finite graph on `Fin k` and every `k` at once. -/
-theorem infiniteSampleLaw_ae_forall_tendsto_homDensityFin (W : Graphon Ω μ) :
+theorem tendsto_homDensityFin_infiniteSampleLaw_ae_forall (W : Graphon Ω μ) :
     ∀ᵐ G ∂infiniteSampleLaw W, ∀ (k : ℕ) (F : SimpleGraph (Fin k)) [DecidableRel F.Adj],
       Tendsto (fun n => homDensityFin F (G.restrictFin n)) atTop (𝓝 (homDensity F W)) := by
   classical
   have h : ∀ᵐ G ∂infiniteSampleLaw W, ∀ (k : ℕ) (F : SimpleGraph (Fin k)),
       Tendsto (fun n => homDensityFin F (G.restrictFin n)) atTop (𝓝 (homDensity F W)) :=
-    ae_all_iff.2 fun k => ae_all_iff.2 fun F => infiniteSampleLaw_ae_tendsto_homDensityFin W F
+    ae_all_iff.2 fun k => ae_all_iff.2 fun F => tendsto_homDensityFin_infiniteSampleLaw_ae W F
   filter_upwards [h] with G hG k F _
   convert hG k F
 
@@ -102,11 +102,11 @@ theorem infiniteSampleLaw_ae_forall_tendsto_homDensityFin (W : Graphon Ω μ) :
 infinite `W`-random graph `G` has windows `G[{0, …, n}]` whose step graphons on the unit interval
 satisfy `t(F, W_{G[{0, …, n}]}) → t(F, W)` for every finite graph `F` on `Fin k` and every `k`
 at once. The window has `n + 1` vertices, so the step graphon is defined for every `n`. -/
-theorem infiniteSampleLaw_ae_forall_tendsto_homDensity_finiteGraphGraphon (W : Graphon Ω μ) :
+theorem tendsto_homDensity_finiteGraphGraphon_infiniteSampleLaw_ae_forall (W : Graphon Ω μ) :
     ∀ᵐ G ∂infiniteSampleLaw W, ∀ (k : ℕ) (F : SimpleGraph (Fin k)) [DecidableRel F.Adj],
       Tendsto (fun n => homDensity F (finiteGraphGraphon (G.restrictFin (n + 1)))) atTop
         (𝓝 (homDensity F W)) := by
-  filter_upwards [infiniteSampleLaw_ae_forall_tendsto_homDensityFin W] with G hG k F _
+  filter_upwards [tendsto_homDensityFin_infiniteSampleLaw_ae_forall W] with G hG k F _
   simp_rw [homDensity_finiteGraphGraphon F (Nat.succ_pos _)]
   exact (tendsto_add_atTop_iff_nat 1).2 (hG k F)
 
