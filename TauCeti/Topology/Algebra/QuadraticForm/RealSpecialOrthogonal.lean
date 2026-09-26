@@ -52,7 +52,9 @@ section ClassicalDecEq
 
 attribute [local instance] Classical.decEq
 
-private theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
+/-- The coordinate homomorphism from real special-orthogonal matrices to standard
+sum-of-squares isometries is continuous. -/
+theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     Continuous (matrixSpecialOrthogonalToWeightedSumSquaresOne ι) := by
   rw [(isEmbedding_specialOrthogonalToGeneralLinear

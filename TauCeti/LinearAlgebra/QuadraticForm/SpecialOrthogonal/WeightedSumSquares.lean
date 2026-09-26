@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import Mathlib.Basic.Real.Star
@@ -52,6 +52,8 @@ private theorem unitaryGroupToLinearEquiv_apply
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (U : Matrix.orthogonalGroup ι ℝ) (x : ι → ℝ) :
     Matrix.UnitaryGroup.toLinearEquiv U x = Matrix.toLin' (U : Matrix ι ι ℝ) x := by
+  -- `toLinearEquiv` is built from `toLin'`; expose that wrapper so the underlying matrix is
+  -- visible.
   change Matrix.UnitaryGroup.toLin' U x = Matrix.toLin' (U : Matrix ι ι ℝ) x
   rfl
 
@@ -83,6 +85,7 @@ def matrixSpecialOrthogonalToWeightedSumSquaresOne
     apply LinearEquiv.ext
     intro x
     rw [matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply]
+    -- Multiplication in the matrix subgroup is inherited definitionally from matrix multiplication.
     change Matrix.toLin' ((A : Matrix ι ι ℝ) * (B : Matrix ι ι ℝ)) x = _
     rw [Matrix.toLin'_mul_apply, ← matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply,
       ← matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply]

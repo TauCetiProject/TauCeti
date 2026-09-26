@@ -41,7 +41,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The matrix exponential of an element of the real orthogonal Lie algebra is orthogonal. -/
-private theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)
+theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)
     (hA : A ∈ LieAlgebra.Orthogonal.so n ℝ) :
     exp A ∈ orthogonalGroup n ℝ := by
   rw [mem_orthogonalGroup_iff', ← exp_transpose,
@@ -115,9 +115,8 @@ theorem forall_exp_smul_mem_orthogonalGroup_iff_mem_so (A : Matrix n n ℝ) :
   · intro hA t
     have hAso : A ∈ LieAlgebra.Orthogonal.so n ℝ :=
       (LieAlgebra.Orthogonal.mem_so n ℝ A).mpr hA
-    exact (mem_specialOrthogonalGroup_iff.mp
-      (exp_mem_specialOrthogonalGroup_of_mem_so (t • A)
-        ((LieAlgebra.Orthogonal.so n ℝ).smul_mem t hAso))).1
+    exact exp_mem_orthogonalGroup_of_mem_so (t • A)
+      ((LieAlgebra.Orthogonal.so n ℝ).smul_mem t hAso)
 
 /-- A real matrix generates a one-parameter subgroup of the special orthogonal group exactly when
 it is skew-symmetric. -/
