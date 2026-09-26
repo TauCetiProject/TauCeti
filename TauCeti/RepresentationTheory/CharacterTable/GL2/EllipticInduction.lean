@@ -468,7 +468,7 @@ private theorem sum_elliptic_character_quotient_eq_zero [Fintype E] [DecidableEq
   exact sum_hom_units_eq_zero ((Units.coeHom ℂ).comp delta) hcoedelta
 
 omit [Finite F] [DecidableEq F] in
-private theorem natCard_baseField_units [Finite E] :
+private theorem natCard_baseField_units :
     Nat.card {u : Eˣ // (u : E) ∈ Set.range (algebraMap F E)} = Fintype.card F - 1 := by
   classical
   let f : Fˣ → {u : Eˣ // (u : E) ∈ Set.range (algebraMap F E)} := fun a =>
