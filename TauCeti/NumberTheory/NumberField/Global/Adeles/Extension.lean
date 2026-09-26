@@ -35,8 +35,8 @@ under base change and norm.
 * `NumberField.eq_infiniteAdeleExtension_of_continuous`: for a number field `K`, the infinite
   extension map is the only continuous ring homomorphism with that property, because `K` is dense
   in `K_∞`.
-* `NumberField.infiniteAdeleExtension_comp`, `NumberField.adeleExtension_comp`: for a number field
-  `K`, the extension maps compose in towers.
+* `NumberField.infiniteAdeleExtension_comp`, `NumberField.adeleExtension_comp`: the extension maps
+  compose in towers.
 * `NumberField.infiniteAdeleExtensionAlgebra`, `NumberField.adeleExtensionAlgebra`: the induced
   algebra structures, available in the corresponding scopes.
 
@@ -99,14 +99,42 @@ theorem eq_infiniteAdeleExtension_of_continuous [NumberField K]
   DFunLike.coe_injective <| (InfiniteAdeleRing.denseRange_algebraMap K).equalizer hf
     (continuous_infiniteAdeleExtension K L) (funext fun x ↦ by simp [hfK])
 
-/-- For a number field `K`, the extension maps of infinite adele rings compose in a tower
-`K ⊆ L ⊆ M`. -/
-theorem infiniteAdeleExtension_comp [NumberField K] (M : Type*) [Field M] [Algebra L M]
+/-- The extension maps of infinite adele rings compose in a tower `K ⊆ L ⊆ M`. -/
+theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
-    (infiniteAdeleExtension L M).comp (infiniteAdeleExtension K L) = infiniteAdeleExtension K M :=
-  eq_infiniteAdeleExtension_of_continuous K M
-    ((continuous_infiniteAdeleExtension L M).comp (continuous_infiniteAdeleExtension K L))
-    fun x ↦ by simp [← IsScalarTower.algebraMap_apply]
+    (infiniteAdeleExtension L M).comp (infiniteAdeleExtension K L) =
+      infiniteAdeleExtension K M := by
+  ext x
+  funext w
+  simp only [RingHom.comp_apply, infiniteAdeleExtension_apply]
+  let v := (w.comap (algebraMap L M)).comap (algebraMap K L)
+  have hv : v = w.comap (algebraMap K M) := by
+    dsimp [v]
+    rw [← InfinitePlace.comap_comp, ← IsScalarTower.algebraMap_eq K L M]
+  let hwo : w.LiesOver v := hv.symm ▸ inferInstance
+  have h :
+      (LiesOver.completionMap (v := w.comap (algebraMap L M)) (w := w)).comp
+        (LiesOver.completionMap (v := v) (w := w.comap (algebraMap L M))) =
+        @LiesOver.completionMap K M _ _ _ v w hwo := by
+    apply DFunLike.coe_injective
+    apply (InfinitePlace.Completion.denseRange_coe v).equalizer
+      (LiesOver.continuous_completionMap.comp LiesOver.continuous_completionMap)
+      LiesOver.continuous_completionMap
+    funext y
+    simp [Function.comp_apply, LiesOver.completionMap_coe,
+      WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
+      ← IsScalarTower.algebraMap_apply]
+  calc
+    _ = (@LiesOver.completionMap K M _ _ _ v w hwo) (x v) :=
+      RingHom.congr_fun h (x v)
+    _ = _ := by
+      have htransport (p q : InfinitePlace K) (hp : w.LiesOver p) (hq : w.LiesOver q)
+          (heq : p = q) :
+          (@LiesOver.completionMap K M _ _ _ p w hp) (x p) =
+            (@LiesOver.completionMap K M _ _ _ q w hq) (x q) := by
+        cases heq
+        rfl
+      exact htransport v (w.comap (algebraMap K M)) hwo inferInstance hv
 
 /-- The algebra structure on infinite adeles induced by `infiniteAdeleExtension`, available in
 the `InfiniteAdeleExtension` scope. -/
@@ -170,13 +198,21 @@ theorem adeleExtension_algebraMap (x : K) :
     adeleExtension R K B L (algebraMap K (AdeleRing R K) x) =
       algebraMap L (AdeleRing B L) (algebraMap K L x) := by
   refine Prod.ext ?_ ?_
-  · rw [adeleExtension_fst, AdeleRing.algebraMap_fst, AdeleRing.algebraMap_fst]
+  · rw [adeleExtension_fst]
+    change (infiniteAdeleExtension K L)
+      ((algebraMap K (InfiniteAdeleRing K × FiniteAdeleRing R K)) x).1 =
+      ((algebraMap L (InfiniteAdeleRing L × FiniteAdeleRing B L)) (algebraMap K L x)).1
+    rw [Prod.algebraMap_apply, Prod.algebraMap_apply]
     exact infiniteAdeleExtension_algebraMap K L x
-  · rw [adeleExtension_snd, AdeleRing.algebraMap_snd, AdeleRing.algebraMap_snd]
+  · rw [adeleExtension_snd]
+    change (finiteAdeleExtension R K B L)
+      ((algebraMap K (InfiniteAdeleRing K × FiniteAdeleRing R K)) x).2 =
+      ((algebraMap L (InfiniteAdeleRing L × FiniteAdeleRing B L)) (algebraMap K L x)).2
+    rw [Prod.algebraMap_apply, Prod.algebraMap_apply]
     exact finiteAdeleExtension_algebraMap R K B L x
 
-/-- For a number field `K`, the extension maps of adele rings compose in a tower `K ⊆ L ⊆ M`. -/
-theorem adeleExtension_comp [NumberField K] (C M : Type*) [CommRing C] [IsDedekindDomain C]
+/-- The extension maps of adele rings compose in a tower `K ⊆ L ⊆ M`. -/
+theorem adeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C]
     [Algebra B C] [Algebra.IsIntegral B C] [Field M] [Algebra L M] [Algebra B M]
     [IsScalarTower B L M] [Algebra C M] [IsFractionRing C M] [IsScalarTower B C M] [Algebra R C]
     [Algebra.IsIntegral R C] [Algebra K M] [Algebra R M] [IsScalarTower R K M]
