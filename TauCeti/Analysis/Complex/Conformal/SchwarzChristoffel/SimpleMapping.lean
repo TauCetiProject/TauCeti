@@ -11,13 +11,9 @@ import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
 /-!
 # The Schwarz--Christoffel map of a simple polygon
 
-If the compactified boundary of a Schwarz--Christoffel primitive is a simple curve, its image is
-one component of the complement of that curve. The primitive is a finite covering of the image.
-At a regular boundary point, the holomorphic continuation is locally injective; continuity up to
-the boundary and the distinct limit at infinity force every sheet over a sufficiently nearby
-value into that neighbourhood. The covering therefore has one sheet and the primitive is a
-bijection onto the component. This applies to polygons with reentrant corners as well as convex
-polygons.
+When its compactified boundary is a simple curve, the Schwarz--Christoffel primitive maps the
+upper half-plane bijectively onto the complementary component containing its base-point image.
+This identifies the image component for simple polygons, including those with reentrant corners.
 
 ## References
 
