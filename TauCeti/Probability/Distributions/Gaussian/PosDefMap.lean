@@ -96,6 +96,7 @@ theorem measurable_affineGeometricMean (S T : Matrix ι ι ℝ) (m₁ m₂ : Euc
 positive-semidefinite `S₂` the affine map `affineGeometricMean` carries a Gaussian law of mean
 `m₁` and covariance `S₁` onto the Gaussian law of mean `m₂` and covariance `S₂`, because the
 covariance of the image law is the congruence `A * S₁ * Aᵀ = S₂` solved by its linear part. -/
+@[simp]
 theorem map_affineGeometricMean_multivariateGaussian (m₁ m₂ : EuclideanSpace ℝ ι)
     {S₁ S₂ : Matrix ι ι ℝ} (hS₁ : S₁.PosDef) (hS₂ : S₂.PosSemidef) :
     (multivariateGaussian m₁ S₁).map (affineGeometricMean S₁ S₂ m₁ m₂) =
@@ -108,6 +109,7 @@ theorem map_affineGeometricMean_multivariateGaussian (m₁ m₂ : EuclideanSpace
 /-- **The linear version, between centred laws.** The linear map of the standard positive matrix
 carries the centred Gaussian law of covariance `S` onto the centred Gaussian law of covariance
 `T`.  This is the linear part of the Brenier map between two nondegenerate Gaussians. -/
+@[simp]
 theorem map_geometricMean_multivariateGaussian {S₁ S₂ : Matrix ι ι ℝ} (hS₁ : S₁.PosDef)
     (hS₂ : S₂.PosSemidef) :
     (multivariateGaussian 0 S₁).map (geometricMean S₁⁻¹ʳ S₂).toEuclideanLin =
