@@ -757,8 +757,8 @@ theorem pathAlgebraBasis_repr_single (x : Quiver.TotalPath Q) (c : k) :
 open PathAlgebra in
 /-- **Multiplying on both sides by a vertex idempotent reads off a coordinate.** When the trivial
 path is the only path from `v` to itself, `eᵥ f eᵥ` is the coordinate of `f` on that path, times
-`eᵥ`, so that the corner `eᵥ kQ eᵥ` is a copy of `k`. An acyclic quiver supplies the hypothesis through
-`TauCeti.Quiver.IsAcyclic.eq_nil`. -/
+`eᵥ`, so that the corner `eᵥ kQ eᵥ` is a copy of `k`. An acyclic quiver supplies the hypothesis
+through `TauCeti.Quiver.IsAcyclic.eq_nil`. -/
 theorem vertexIdempotent_mul_mul_vertexIdempotent (v : Q)
     (h : ∀ p : _root_.Quiver.Path v v, p = _root_.Quiver.Path.nil) (f : pathAlgebra k Q) :
     vertexIdempotent k v * f * vertexIdempotent k v
