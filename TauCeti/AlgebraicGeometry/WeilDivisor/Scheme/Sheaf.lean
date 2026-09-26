@@ -484,34 +484,16 @@ def sheafOverMulIsoOfCoeffEq
                 ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)).over U).val.app V
                   s.val,
               rationalFunctionsMul_over_mem_sections_of_coeffEq (-g) V hinverse s⟩
-          left_inv := by
-            intro s
-            apply Subtype.ext
-            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`.
-            change (Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
-              Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left)
-                s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
-              Scheme.rationalFunctionsMul_comp_inv, Scheme.Modules.Hom.id_app]
-            rfl
-          right_inv := by
-            intro s
-            apply Subtype.ext
-            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`.
-            change (Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
-              Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left)
-                s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
-              Scheme.rationalFunctionsMul_inv_comp, Scheme.Modules.Hom.id_app]
-            rfl
+          left_inv := fun s ↦ Subtype.ext <| by
+            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`,
+            -- and `Additive.toMul (-g)` is `(Additive.toMul g)⁻¹` by definition.
+            exact Scheme.rationalFunctionsMul_inv_app_rationalFunctionsMul_app
+              (Additive.toMul g) V.unop.left s.val
+          right_inv := fun s ↦ Subtype.ext <| by
+            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`,
+            -- and `Additive.toMul (-g)` is `(Additive.toMul g)⁻¹` by definition.
+            exact Scheme.rationalFunctionsMul_app_rationalFunctionsMul_inv_app
+              (Additive.toMul g) V.unop.left s.val
           map_add' := by
             intro s t
             apply Subtype.ext
