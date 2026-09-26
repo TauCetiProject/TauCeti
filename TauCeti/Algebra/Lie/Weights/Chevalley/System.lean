@@ -300,13 +300,12 @@ theorem intStructureConstant_ne_zero
   refine hx.toIsSl2System.structureConstant_ne_zero α β γ hγ hαβ hα hβ ?_
   rw [← hx.intStructureConstant_cast α β γ hγ hαβ, hzero, Int.cast_zero]
 
-/-- Swapping the two input roots negates the integer structure constant. This is the integral
-transfer of `TauCeti.IsSl2System.structureConstant_skew`, via the cast characterization. -/
+/-- Swapping the two input roots negates the integer structure constant. -/
 theorem intStructureConstant_skew
     (α β γ : Weight K H L) (hγ : γ.IsNonZero)
-    (hαβ : (γ : H → K) = (α : H → K) + β)
-    (hβα : (γ : H → K) = (β : H → K) + α) :
-    hx.intStructureConstant β α γ hγ hβα = -hx.intStructureConstant α β γ hγ hαβ := by
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant β α γ hγ (by rw [hαβ, add_comm]) =
+      -hx.intStructureConstant α β γ hγ hαβ := by
   refine Int.cast_injective (α := K) ?_
   rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
   exact hx.toIsSl2System.structureConstant_skew α β γ hγ hαβ
@@ -315,6 +314,7 @@ theorem intStructureConstant_skew
 sends the defining bracket equation `⁅x α, x β⁆ = N • x γ` to
 `⁅x (-α), x (-β)⁆ = -N • x (-γ)`; uniqueness of the integer coefficient identifies the
 constant at `(-α, -β)` as `-N`. -/
+@[simp]
 theorem intStructureConstant_neg_neg
     (α β γ : Weight K H L) (hγ : γ.IsNonZero)
     (hαβ : (γ : H → K) = (α : H → K) + β) :
@@ -442,6 +442,7 @@ theorem lie_eq_intStructureConstant₂_zsmul {ω : L ≃ₗ⁅K⁆ L} {x : Weigh
 
 omit hx in
 /-- Negating both weights negates the two-argument integer structure constant. -/
+@[simp]
 theorem intStructureConstant₂_neg_neg {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
     (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
     hx.intStructureConstant₂ (-α) (-β) = -hx.intStructureConstant₂ α β := by
@@ -472,6 +473,7 @@ theorem intStructureConstant₂_neg_neg {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H
 omit hx in
 /-- Swapping and negating both weights preserves the two-argument constant. This combines
 antisymmetry with negation: `N(-β, -α) = -N(-α, -β) = N(α, β)`. -/
+@[simp]
 theorem intStructureConstant₂_neg_swap {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
     (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
     hx.intStructureConstant₂ (-β) (-α) = hx.intStructureConstant₂ α β := by
