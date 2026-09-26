@@ -91,7 +91,7 @@ theorem dedekindBeta_relation
   exact beta_relation_in_field hθ
 
 /-- The relation `θ² = θ + 2β` in the integral order. -/
-@[simp] theorem dedekindCubic_theta_sq
+theorem dedekindCubic_theta_sq
     (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     θ ^ 2 = θ + 2 * dedekindBeta hθ := by
   apply RingOfIntegers.ext
