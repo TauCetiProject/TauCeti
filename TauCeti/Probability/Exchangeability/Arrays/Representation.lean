@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.RowCoding
+public import TauCeti.Probability.Exchangeability.Arrays.MixingLaw
 import TauCeti.MeasureTheory.Measure.MixtureInjective
 
 /-!
@@ -43,33 +44,6 @@ open scoped ENNReal
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- A law on row-path measures is invariant under reindexing the columns: its pushforward by every
-column permutation equals itself. -/
-def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
-  ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π
-
-/-- The probability laws on row-path measures invariant under column permutations. These are
-precisely the possible row mixing laws of separately exchangeable array laws. -/
-def columnInvariantMixingLaws (α : Type*) [MeasurableSpace α] :
-    Set (Measure (ProbabilityMeasure (ℕ → α))) :=
-  {π | IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π}
-
-/-- Membership in the column-invariant probability mixing laws. -/
-@[simp]
-theorem mem_columnInvariantMixingLaws_iff {π : Measure (ProbabilityMeasure (ℕ → α))} :
-    π ∈ columnInvariantMixingLaws α ↔
-      IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π :=
-  Iff.rfl
-
-/-- The column-invariant probability mixing laws form a convex set. -/
-theorem convex_columnInvariantMixingLaws : Convex ℝ≥0∞ (columnInvariantMixingLaws α) := by
-  rintro π₁ ⟨hp₁, hi₁⟩ π₂ ⟨hp₂, hi₂⟩ a b - - hab
-  refine ⟨⟨by simp [measure_univ, hab]⟩, fun τ ↦ ?_⟩
-  have hf : Measurable (fun P : ProbabilityMeasure (ℕ → α) ↦ P.map (permReindex τ)) :=
-    ((Measure.measurable_map _ (measurable_reindex τ)).comp measurable_subtype_coe).subtype_mk
-  rw [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable,
-    Measure.map_smul _ hf.aemeasurable, hi₁ τ, hi₂ τ]
 
 variable [StandardBorelSpace α] [Nonempty α]
 

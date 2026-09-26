@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Representation
-public import TauCeti.Probability.Exchangeability.Arrays.Extreme
+public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 
 /-!
 # Extremality of the row mixing law of a dissociated array
@@ -41,7 +41,7 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
 /-- A jointly dissociated row-coding law has an extreme column-invariant mixing law. If it is a
 nontrivial convex combination of two column-invariant probability laws, both laws equal it. -/
-theorem eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb
+private theorem eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb
     {π π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
     [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
     (hπ₁ : ColumnInvariantMixingLaw π₁) (hπ₂ : ColumnInvariantMixingLaw π₂)

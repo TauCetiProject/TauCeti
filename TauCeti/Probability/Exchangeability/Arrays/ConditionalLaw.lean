@@ -5,7 +5,7 @@ Authors: Codex, Claude
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Extreme
+public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import Mathlib.Probability.Kernel.Condexp
 import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Exchangeability.PermutationExtension

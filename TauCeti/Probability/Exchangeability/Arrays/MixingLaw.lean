@@ -40,12 +40,14 @@ of the Aldous–Hoover milestone in `TauCetiRoadmap/Exchangeability/README.md`, 
 
 ## Main results
 
+* `ColumnInvariantMixingLaw` and `columnInvariantMixingLaws` — column invariance of a law on
+  row-path measures and the convex set of invariant probability laws;
 * `SeparatelyExchangeable.mixingLaw_map_permReindex_arrayRow_eq` — the row mixing law is invariant
   under coordinate permutations;
 * `SeparatelyExchangeable.mixingLaw_map_permReindex_arrayCol_eq` — the symmetric column statement;
 
-Every result here holds of *any* supplied mixing representative; the existential versions, in which
-de Finetti produces one, are in `Arrays.DeFinetti`.
+The row and column invariance results hold of *any* supplied mixing representative; their
+existential versions, in which de Finetti produces one, are in `Arrays.DeFinetti`.
 
 ## References
 
@@ -62,12 +64,40 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
 namespace Probability
 
 variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω]
+
+/-- A law on row-path measures is invariant under reindexing the columns: its pushforward by every
+column permutation equals itself. -/
+@[expose] def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
+  ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π
+
+/-- The probability laws on row-path measures invariant under column permutations. These are
+precisely the possible row mixing laws of separately exchangeable array laws. -/
+def columnInvariantMixingLaws (α : Type*) [MeasurableSpace α] :
+    Set (Measure (ProbabilityMeasure (ℕ → α))) :=
+  {π | IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π}
+
+/-- Membership in the column-invariant probability mixing laws. -/
+@[simp]
+theorem mem_columnInvariantMixingLaws_iff {π : Measure (ProbabilityMeasure (ℕ → α))} :
+    π ∈ columnInvariantMixingLaws α ↔
+      IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π :=
+  Iff.rfl
+
+/-- The column-invariant probability mixing laws form a convex set. -/
+theorem convex_columnInvariantMixingLaws : Convex ℝ≥0∞ (columnInvariantMixingLaws α) := by
+  rintro π₁ ⟨hp₁, hi₁⟩ π₂ ⟨hp₂, hi₂⟩ a b - - hab
+  refine ⟨⟨by simp [measure_univ, hab]⟩, fun τ ↦ ?_⟩
+  have hf : Measurable (fun P : ProbabilityMeasure (ℕ → α) ↦ P.map (permReindex τ)) :=
+    ((Measure.measurable_map _ (measurable_reindex τ)).comp measurable_subtype_coe).subtype_mk
+  rw [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable,
+    Measure.map_smul _ hf.aemeasurable, hi₁ τ, hi₂ τ]
 
 /-- If a measurable coordinatewise map preserves every finite-dimensional law of a mixed i.i.d.
 process, then it preserves the law of any mixing representative. This is the uniqueness argument
