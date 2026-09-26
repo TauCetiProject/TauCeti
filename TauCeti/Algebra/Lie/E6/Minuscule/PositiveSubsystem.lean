@@ -46,10 +46,6 @@ be proved.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, Sections 26--28.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 8.2.
-
-The interface and proof organization specialize the type-`E₇` minuscule positive-subsystem
-construction from [TauCetiProject/TauCeti#9054](https://github.com/TauCetiProject/TauCeti/pull/9054)
-to the type-`E₆` weight table.
 -/
 
 public section
@@ -93,8 +89,7 @@ theorem inr_not_mem_positiveSimpleRoots (i : Fin 6) : Sum.inr i ∉ positiveSimp
 /-- The character of a positive numbered root generator is the corresponding Cartan row. -/
 private theorem rootWeight6_inl (i : Fin 6) : rootWeight6 (.inl i) = CM i := by
   funext j
-  change TauCeti.E6.rootGeneratorWeight (.inl i) j = weightTable.cartanMatrix i j
-  rw [TauCeti.E6.rootGeneratorWeight_inl, weightTable_cartanMatrix,
+  simp only [TauCeti.E6.rootGeneratorWeight_inl, weightTable_cartanMatrix,
     Matrix.transpose_apply, (CartanMatrix.E_isSymm 6).apply]
 
 /-- The numbered root generators have the characters used by the positive subsystem. -/
