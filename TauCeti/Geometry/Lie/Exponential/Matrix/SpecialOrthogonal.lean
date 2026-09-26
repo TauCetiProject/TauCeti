@@ -73,21 +73,13 @@ theorem det_exp_eq_one_of_transpose_eq_neg (A : Matrix n n ℝ) (hA : Aᵀ = -A)
     (y := 0) (by simp) (by simp)
   simpa using hone (Set.mem_univ (1 : ℝ))
 
-/-- The exponential of a real skew-symmetric matrix is special orthogonal. -/
-theorem exp_mem_specialOrthogonalGroup_of_transpose_eq_neg
-    (A : Matrix n n ℝ) (hA : Aᵀ = -A) :
-    exp A ∈ specialOrthogonalGroup n ℝ := by
-  rw [mem_specialOrthogonalGroup_iff]
-  exact ⟨exp_mem_orthogonalGroup_of_mem_so A
-      ((LieAlgebra.Orthogonal.mem_so n ℝ A).mpr hA),
-    det_exp_eq_one_of_transpose_eq_neg A hA⟩
-
 /-- The exponential of an element of the real orthogonal Lie algebra is special orthogonal. -/
 theorem exp_mem_specialOrthogonalGroup_of_mem_so (A : Matrix n n ℝ)
     (hA : A ∈ LieAlgebra.Orthogonal.so n ℝ) :
     exp A ∈ specialOrthogonalGroup n ℝ := by
-  rw [LieAlgebra.Orthogonal.mem_so] at hA
-  exact exp_mem_specialOrthogonalGroup_of_transpose_eq_neg A hA
+  rw [mem_specialOrthogonalGroup_iff]
+  exact ⟨exp_mem_orthogonalGroup_of_mem_so A hA,
+    det_exp_eq_one_of_transpose_eq_neg A ((LieAlgebra.Orthogonal.mem_so n ℝ A).mp hA)⟩
 
 /-- A real matrix generates a one-parameter subgroup of the orthogonal group exactly when it is
 skew-symmetric. -/

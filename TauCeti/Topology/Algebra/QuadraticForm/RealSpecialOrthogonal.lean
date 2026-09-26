@@ -53,7 +53,7 @@ section ClassicalDecEq
 attribute [local instance] Classical.decEq
 
 /-- The coordinate equivalence from real special-orthogonal matrices to standard
-sum-of-squares isometries is continuous. -/
+determinant-one sum-of-squares isometries is continuous. -/
 theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι) := by
@@ -69,6 +69,15 @@ theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
       (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
         (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A)) fun A =>
       (specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A).symm
+
+/-- The inverse coordinate equivalence from determinant-one sum-of-squares isometries to
+real special-orthogonal matrices is continuous. -/
+theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm
+    (ι : Type u) [Fintype ι] :
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm :=
+  Continuous.continuous_symm_of_equiv_compact_to_t2
+    (f := (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).toEquiv)
+    (continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι)
 
 /-- The special orthogonal group of the standard real sum-of-squares form is compact. -/
 instance instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne

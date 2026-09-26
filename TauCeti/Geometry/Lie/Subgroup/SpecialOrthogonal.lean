@@ -48,6 +48,8 @@ local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] :
 /-- In the canonical matrix coordinates of the general linear Lie algebra, an element generates a
 one-parameter subgroup in the range of the positive-definite `realCliffordForm n 0`
 special-orthogonal carrier exactly when it is skew-symmetric. -/
+-- Normalize the whole exponential-line predicate before range membership expands.
+@[simp↓]
 theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff_mem_so
     (n : ℕ) (A : Matrix (Fin n) (Fin n) ℝ) :
     (∀ t : ℝ, lieExp ((unitsLieAlgebraLieEquiv
@@ -70,6 +72,8 @@ theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordFor
 /-- A matrix belongs to the real orthogonal Lie algebra exactly when its inverse image under the
 canonical units Lie equivalence belongs to the Lie subalgebra of the positive-definite
 `realCliffordForm n 0` special-orthogonal carrier. -/
+-- Normalize membership before the Lie equivalence simplifies to its linear equivalence.
+@[simp↓]
 theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_so
     (n : ℕ) (A : Matrix (Fin n) (Fin n) ℝ) :
     -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` aligns the

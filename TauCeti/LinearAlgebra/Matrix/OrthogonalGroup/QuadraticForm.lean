@@ -24,30 +24,15 @@ The criteria apply to any finite index type, including the empty type, and to ri
 * `TauCeti.toMatrix_mem_orthogonalGroup_iff`: the coordinate criterion for the orthogonal group.
 * `TauCeti.toMatrix_mem_specialOrthogonalGroup_iff`: the coordinate criterion for the special
   orthogonal group.
-* `Matrix.UnitaryGroup.toLinearEquiv_apply`: the coordinate action of a unitary matrix's
-  linear equivalence.
 -/
 
 public section
 
+namespace TauCeti
+
 open Matrix
 
 universe u v
-
-namespace Matrix.UnitaryGroup
-
-variable {R : Type u} [CommRing R] [StarRing R]
-variable {n : Type v} [Fintype n] [DecidableEq n]
-
-/-- The linear equivalence associated to a unitary matrix acts by matrix-vector
-multiplication. -/
-@[simp]
-theorem toLinearEquiv_apply (U : Matrix.unitaryGroup n R) (x : n → R) :
-    Matrix.UnitaryGroup.toLinearEquiv U x = Matrix.toLin' (U : Matrix n n R) x := rfl
-
-end Matrix.UnitaryGroup
-
-namespace TauCeti
 
 variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
 

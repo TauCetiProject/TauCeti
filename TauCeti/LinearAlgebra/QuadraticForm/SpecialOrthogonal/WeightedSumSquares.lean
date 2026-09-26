@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup
 public import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import Mathlib.Basic.Real.Star
 
@@ -18,7 +19,8 @@ form with the matrix special orthogonal group in the same coordinates.
 ## Main results
 
 * `TauCeti.QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne` identifies matrix
-  special-orthogonal transformations with isometries of the standard sum-of-squares form.
+  special-orthogonal transformations with determinant-one isometries of the standard
+  sum-of-squares form.
 * `TauCeti.QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff`
   characterizes the resulting subgroup of the general linear group in matrix coordinates.
 -/
@@ -44,8 +46,11 @@ private def matrixSpecialOrthogonalToWeightedSumSquaresOneFun
   rw [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
   apply (TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
     ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e).mp
-  simpa only [e, Matrix.UnitaryGroup.toLinearEquiv, Matrix.UnitaryGroup.toLin',
-    LinearMap.toMatrix'_toLin'] using A.prop
+  have he : e.toLinearMap = Matrix.toLin' (A : Matrix ι ι ℝ) := by
+    apply LinearMap.ext
+    intro x
+    exact Matrix.UnitaryGroup.toLinearEquiv_apply U x
+  simpa only [he, LinearMap.toMatrix'_toLin'] using A.prop
 
 private theorem matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply
     (ι : Type u) [Fintype ι] [DecidableEq ι]
@@ -127,8 +132,8 @@ private theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_injective
     specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne] at h'
   exact Subtype.ext (congrArg Units.val h')
 
-/-- Matrix special-orthogonal transformations are multiplicatively equivalent to the isometries
-of the standard sum-of-squares form. -/
+/-- Matrix special-orthogonal transformations are multiplicatively equivalent to the
+determinant-one isometries of the standard sum-of-squares form. -/
 def matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] [DecidableEq ι] :
     Matrix.specialOrthogonalGroup ι ℝ ≃*
@@ -148,7 +153,8 @@ theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply
       (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x :=
   matrixSpecialOrthogonalToWeightedSumSquaresOne_apply ι A x
 
-/-- The inverse coordinate equivalence recovers the matrix of a sum-of-squares isometry. -/
+/-- The inverse coordinate equivalence recovers the matrix of a determinant-one
+sum-of-squares isometry. -/
 @[simp]
 theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm_coe
     (ι : Type u) [Fintype ι] [DecidableEq ι]
@@ -167,7 +173,8 @@ theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm_coe
       (h : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x)
     ((matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).apply_symm_apply g)
 
-/-- The coordinate inclusion of a matrix-induced sum-of-squares isometry recovers the matrix. -/
+/-- The coordinate inclusion of a matrix-induced determinant-one sum-of-squares isometry recovers
+the matrix. -/
 @[simp]
 theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] [DecidableEq ι]
