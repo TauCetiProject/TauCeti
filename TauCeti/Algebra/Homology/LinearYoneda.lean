@@ -37,8 +37,12 @@ open CategoryTheory Limits Opposite
 
 namespace TauCeti.ChainComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemigroup α] [One α]
-  (k : Type*) [Ring k] [Linear k C] (Y : C)
+variable {C : Type*} [Category* C] {α : Type*} [AddRightCancelSemigroup α] [One α]
+  (k : Type*) [Ring k]
+
+section Preadditive
+
+variable [Preadditive C] [Linear k C] (Y : C)
 
 /-- The contravariant functor sending a chain complex `X` to the cochain complex of `k`-modules
 `Hom(X, Y)`, which in degree `i` is the module of morphisms `X.X i ⟶ Y`. -/
@@ -51,6 +55,23 @@ noncomputable def linearYonedaFunctor : (ChainComplex C α)ᵒᵖ ⥤ CochainCom
   (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
     HomologicalComplex.unopFunctor _ _
 
+instance : (linearYonedaFunctor (α := α) k Y).Additive :=
+  inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
+    HomologicalComplex.unopFunctor _ _).Additive
+
+/-- `Hom(-, Y)` takes a chain homotopy between two chain maps `φ, ψ : X ⟶ X'` to a cochain
+homotopy between the two maps `Hom(X', Y) ⟶ Hom(X, Y)` obtained by precomposition. -/
+noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
+    (h : Homotopy φ ψ) :
+    Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
+  (((linearYoneda k C).obj Y).rightOp.mapHomotopy h).unop
+
+end Preadditive
+
+section Abelian
+
+variable [Abelian C] [Linear k C] (Y : C)
+
 @[simp]
 lemma linearYonedaFunctor_obj (X : (ChainComplex C α)ᵒᵖ) :
     (linearYonedaFunctor k Y).obj X = X.unop.linearYonedaObj k Y := rfl
@@ -62,17 +83,6 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
     ConcreteCategory.hom (X := (X.unop.linearYonedaObj k Y).X i)
       (Y := (X'.unop.linearYonedaObj k Y).X i) (((linearYonedaFunctor k Y).map φ).f i) g =
         φ.unop.f i ≫ g := rfl
-
-instance : (linearYonedaFunctor (α := α) k Y).Additive :=
-  inferInstanceAs ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
-    HomologicalComplex.unopFunctor _ _).Additive
-
-/-- `Hom(-, Y)` takes a chain homotopy between two chain maps `φ, ψ : X ⟶ X'` to a cochain
-homotopy between the two maps `Hom(X', Y) ⟶ Hom(X, Y)` obtained by precomposition. -/
-noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C α} {φ ψ : X ⟶ X'}
-    (h : Homotopy φ ψ) :
-    Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
-  (((linearYoneda k C).obj Y).rightOp.mapHomotopy h).unop
 
 /-- The cochain homotopy induced by a chain homotopy `h` is precomposition with `h`. -/
 @[simp]
@@ -91,5 +101,7 @@ lemma shortExact_map_linearYonedaFunctor {S : ShortComplex (ChainComplex C α)}
   have hi := hS.map_of_exact (HomologicalComplex.eval C _ i)
   exact ((ShortComplex.Splitting.ofExactOfRetraction _ hi.exact (retraction (S.f.f i))
     (IsSplitMono.id (S.f.f i)) hi.epi_g).op.map ((linearYoneda k C).obj Y)).shortExact
+
+end Abelian
 
 end TauCeti.ChainComplex

@@ -19,10 +19,10 @@ homotopy therefore induce isomorphisms on singular cohomology.  This is the homo
 Eilenberg--Steenrod for the singular cohomology theory, in both its absolute and its relative
 form.  The chain homotopies it is deduced from are Mathlib's `SSet.Homotopy.chainComplexMap`,
 applied to the simplicial homotopy `TopCat.Homotopy.toSSet`, for a space, and
-`TopPair.Homotopy.singularChainComplexMap` for a pair.  The homology counterparts are
-`Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean` (F. Odermatt, J. Riou) for a
-space and `TauCeti/AlgebraicTopology/Singular/Homotopy/Invariance.lean` for a pair; this file
-follows their proof plan and API naming for cochains.
+`TopPair.Homotopy.singularChainComplexMap` for a pair.  The homology counterparts of the results
+below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
+(F. Odermatt, J. Riou) for a space and
+`TauCeti/AlgebraicTopology/Singular/Homotopy/Invariance.lean` for a pair.
 
 ## Main results
 
