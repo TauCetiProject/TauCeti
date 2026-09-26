@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Brauer.PSection
-import TauCeti.RingTheory.PowerBasis
+public import TauCeti.RepresentationTheory.Induction.Spanning
+import TauCeti.RingTheory.RootsOfUnity.Adjoin
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -33,6 +34,8 @@ criterion from `TauCeti.RepresentationTheory.Induction.Ideal` then gives the int
 
 * `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_isElementary`: **Brauer's
   induction theorem**, in virtual-character lattice form.
+* `TauCeti.ClassFunction.character_mem_indCharacterSpanInt_isElementary`: **Brauer's induction
+  theorem**, in character-level form.
 * `TauCeti.ClassFunction.indVirtualCharacterDirectSumAddHom_isElementary_surjective`: the direct
   sum of induction maps from elementary subgroups is surjective.
 
@@ -83,10 +86,10 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
   have hn : 0 < n := Nat.card_pos
   let _ : NeZero n := ⟨hn.ne'⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot k n
-  have hζint : IsIntegral ℤ ζ := hζ.isIntegral hn
-  obtain ⟨A, hroots, t, ht⟩ := exists_subring_retraction_of_primitiveRoot hζ hζint
+  obtain ⟨t, ht⟩ := exists_subring_retraction_of_primitiveRoot hζ
   let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr hn.ne')
-  rw [indVirtualCharacters_eq_virtualCharacters_iff_forall_prime A t ht]
+  rw [indVirtualCharacters_eq_virtualCharacters_iff_forall_prime
+    (Algebra.adjoin ℤ ({ζ} : Set k)).toSubring t ht]
   intro p hp
   let _ : Fact p.Prime := ⟨hp⟩
   obtain ⟨ψ, hψp, hψspan⟩ := exists_mem_span_indVirtualCharacters_isPElementary_not_dvd
@@ -104,9 +107,12 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
       indVirtualCharacters k G (fun E ↦ IsElementary E) :=
     indVirtualCharacters_mono fun _ hE ↦ isElementary_def.mpr ⟨p, hp, hE⟩
   have hψ : (fun g ↦ (ψ g : k)) ∈
-      Submodule.span A (indVirtualCharacters k G (fun E ↦ IsElementary E) : Set (G → k)) :=
-    Submodule.span_mono hpElem (hψspan A hroots)
-  have hrel := prod_nsmul_one_sub_mem_span A (fun E ↦ IsElementary E) hψ values
+      Submodule.span (Algebra.adjoin ℤ ({ζ} : Set k)).toSubring
+        (indVirtualCharacters k G (fun E ↦ IsElementary E) : Set (G → k)) :=
+    Submodule.span_mono hpElem (hψspan _ fun x hx ↦
+      Subalgebra.mem_toSubring.mpr (hζ.mem_algebraAdjoin_of_pow_eq_one hx))
+  have hrel := prod_nsmul_one_sub_mem_span
+    (Algebra.adjoin ℤ ({ζ} : Set k)).toSubring (fun E ↦ IsElementary E) hψ values
   have hprod : (∏ a ∈ values, (a • (1 : G → k) - fun g ↦ (ψ g : k))) = 0 := by
     funext g
     simp only [Finset.prod_apply, Pi.sub_apply, Pi.zero_apply]
@@ -115,6 +121,24 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
     simp
   rw [hprod, zero_sub] at hrel
   simpa only [m] using neg_mem_iff.mp hrel
+
+/-- **Brauer's induction theorem, elementwise lattice form.** Every virtual character is an
+integral combination of virtual characters induced from elementary subgroups. -/
+theorem mem_indVirtualCharacters_isElementary [CharZero k] [IsAlgClosed k] {f : G → k}
+    (hf : f ∈ virtualCharacters k G) :
+    f ∈ indVirtualCharacters k G (fun E ↦ IsElementary E) := by
+  rw [indVirtualCharacters_eq_virtualCharacters_isElementary]
+  exact hf
+
+/-- **Brauer's induction theorem, character form.** Every character is an integral combination of
+characters induced from irreducible characters of elementary subgroups. -/
+theorem character_mem_indCharacterSpanInt_isElementary [CharZero k] [IsAlgClosed k]
+    (V : FDRep k G) : V.character ∈ indCharacterSpanInt k G (fun E ↦ IsElementary E) := by
+  let _ : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  rw [← indVirtualCharacters_eq_indCharacterSpanInt fun E _ ↦
+    isUnit_natCard_subgroup E (isUnit_of_invertible _)]
+  exact mem_indVirtualCharacters_isElementary (character_mem_virtualCharacters V)
 
 /-- The direct sum of induction maps from elementary subgroups is surjective. This is the
 direct-sum formulation of
