@@ -123,7 +123,6 @@ theorem recutRightEqRightFirst_pentagon
         hturn := rfl
 
 /-- The promoted pentagon's initial side is the first recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightFirst_pentagon_left
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -136,7 +135,6 @@ theorem recutRightEqRightFirst_pentagon_left
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.left := rfl
 
 /-- The promoted pentagon's bottom row is the first recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightFirst_pentagon_bottom
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -149,7 +147,6 @@ theorem recutRightEqRightFirst_pentagon_bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom := rfl
 
 /-- The promoted pentagon's top row is the first recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightFirst_pentagon_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -235,7 +232,6 @@ theorem recutRightEqRightSecond_pentagon
         hturn := rfl
 
 /-- The promoted pentagon's initial side is the second recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightSecond_pentagon_left
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -248,7 +244,6 @@ theorem recutRightEqRightSecond_pentagon_left
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.left := rfl
 
 /-- The promoted pentagon's bottom row is the second recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightSecond_pentagon_bottom
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -261,7 +256,6 @@ theorem recutRightEqRightSecond_pentagon_bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom := rfl
 
 /-- The promoted pentagon's top row is the second recut rectangle's. -/
-@[simp]
 theorem recutRightEqRightSecond_pentagon_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
