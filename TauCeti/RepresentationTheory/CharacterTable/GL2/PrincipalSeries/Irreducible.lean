@@ -204,9 +204,8 @@ section CommRing
 variable {F : Type} [CommRing F]
 
 /-- **The two Weyl-cell restrictions are isomorphic exactly when their parameters are swapped.**
-Both are lines, so an isomorphism is an equality of characters. Reading that equality on
-`diag(a, 1)` and `diag(1, b)` gives `α = δ` and `β = γ`; conversely, those equalities identify the
-actions because Weyl conjugation swaps the two diagonal coordinates. -/
+This characterization supplies the Weyl-cell contribution to the principal-series intertwining
+number. -/
 @[simp]
 theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
     Nonempty (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
@@ -217,6 +216,8 @@ theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
   rw [GL2BorelRep_def, GL2BorelRep_def, GL2Borel.linearRep_def,
     GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def,
     ← FDRep.ofLinearCharacter_def]
+  -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
+  -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
   change Nonempty
     ((Action.res (FGModuleCat ℂ)
           ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
