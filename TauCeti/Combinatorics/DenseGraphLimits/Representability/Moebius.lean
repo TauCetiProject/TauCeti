@@ -77,7 +77,7 @@ public section
 
 namespace TauCeti.DenseGraphLimits
 
-open _root_.Finset
+open Finset
 
 open Classical in
 /-- The **Möbius transform** `f†` of a graph parameter over supergraphs on the same vertex set:

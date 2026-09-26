@@ -72,8 +72,8 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     (hT : T.Infinite) {c : ℕ × ℕ} (hc₁ : c.1 ∈ S) (hc₂ : c.2 ∈ T) :
     (fun x : ℕ × ℕ → α ↦ x c) ⟂ᵢ[(S ×ˢ T \ {c}).domRestrict, Set.measurable_restrict _; ρ]
       ({c}ᶜ : Set (ℕ × ℕ)).domRestrict := by
-  obtain ⟨a, ha, hac, haS⟩ := TauCeti.Set.Infinite.exists_injective_nat_apply_eq_of_mem hS hc₁
-  obtain ⟨b, hb, hbc, hbT⟩ := TauCeti.Set.Infinite.exists_injective_nat_apply_eq_of_mem hT hc₂
+  obtain ⟨a, ha, hac, haS⟩ := hS.exists_injective_nat_apply_eq_of_mem hc₁
+  obtain ⟨b, hb, hbc, hbT⟩ := hT.exists_injective_nat_apply_eq_of_mem hc₂
   set R : Set (ℕ × ℕ) := S ×ˢ T \ {c}
   set D : Set (ℕ × ℕ) := {c}ᶜ
   set rR : (ℕ × ℕ → α) → R → α := R.domRestrict

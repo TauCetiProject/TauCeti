@@ -21,8 +21,6 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 namespace Set.Infinite
 
 /-- An injection of `ℕ` into an infinite set `S` of indices may be chosen to fix a prescribed
@@ -35,5 +33,3 @@ theorem exists_injective_nat_apply_eq_of_mem {S : Set ℕ} (hS : S.Infinite) {i 
   exact Subtype.val_injective.comp (e.injective.comp (Equiv.injective _))
 
 end Set.Infinite
-
-end TauCeti
