@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Disjoint
+public import TauCeti.KnotTheory.Grid.Commutation.Pairing
 
 /-!
 # The disjoint contribution to the pentagon chain-map equation
@@ -37,25 +37,29 @@ theorem sum_rectanglePentagonWeight_disjoint_eq_sum_pentagonRectangleWeight_disj
       ∑ D ∈ (G.pentagonRectangleDecompositions C x z).filter
         (fun D => D.HasDisjointSides), G.pentagonRectangleWeight C R D := by
   classical
+  let e := disjointCommuteEquiv C.column C.turnRow x z
   refine Finset.sum_bij'
-    (fun D hD => D.commute (Finset.mem_filter.mp hD).2)
-    (fun E hE => E.commute (Finset.mem_filter.mp hE).2) ?_ ?_ ?_ ?_ ?_
+    (fun D hD => (e ⟨D, (Finset.mem_filter.mp hD).2⟩).1)
+    (fun E hE => (e.symm ⟨E, (Finset.mem_filter.mp hE).2⟩).1) ?_ ?_ ?_ ?_ ?_
   · intro D hD
     have h := Finset.mem_filter.mp hD
     exact Finset.mem_filter.mpr
-      ⟨G.commute_mem_pentagonRectangleDecompositions C D h.2 h.1,
-        D.hasDisjointSides_commute h.2⟩
+      ⟨by simpa only [e, disjointCommuteEquiv_apply] using
+          G.commute_mem_pentagonRectangleDecompositions C D h.2 h.1,
+        (e ⟨D, h.2⟩).2⟩
   · intro E hE
     have h := Finset.mem_filter.mp hE
     exact Finset.mem_filter.mpr
-      ⟨G.commute_mem_rectanglePentagonDecompositions C E h.2 h.1,
-        E.hasDisjointSides_commute h.2⟩
+      ⟨by simpa only [e, disjointCommuteEquiv_symm_apply] using
+          G.commute_mem_rectanglePentagonDecompositions C E h.2 h.1,
+        (e.symm ⟨E, h.2⟩).2⟩
   · intro D hD
-    exact D.commute_commute (Finset.mem_filter.mp hD).2
+    exact congrArg Subtype.val (e.left_inv ⟨D, (Finset.mem_filter.mp hD).2⟩)
   · intro E hE
-    exact E.commute_commute (Finset.mem_filter.mp hE).2
+    exact congrArg Subtype.val (e.right_inv ⟨E, (Finset.mem_filter.mp hE).2⟩)
   · intro D hD
-    exact (G.pentagonRectangleWeight_commute_rectanglePentagon C R D
-      (Finset.mem_filter.mp hD).2).symm
+    simpa only [e, disjointCommuteEquiv_apply] using
+      (G.pentagonRectangleWeight_commute_rectanglePentagon C R D
+        (Finset.mem_filter.mp hD).2).symm
 
 end TauCeti.GridDiagram
