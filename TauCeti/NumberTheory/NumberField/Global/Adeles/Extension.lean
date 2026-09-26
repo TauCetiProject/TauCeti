@@ -35,8 +35,9 @@ under base change and norm.
 * `NumberField.eq_infiniteAdeleExtension_of_continuous`: for a number field `K`, the infinite
   extension map is the only continuous ring homomorphism with that property, because `K` is dense
   in `K_∞`.
-* `NumberField.infiniteAdeleExtension_comp`, `NumberField.adeleExtension_comp`: the extension maps
-  compose in towers.
+* `NumberField.infiniteAdeleExtension_comp`, `NumberField.adeleExtension_comp`,
+  `NumberField.infiniteAdeleExtension_self`, `NumberField.adeleExtension_self`: the tower
+  composition and identity laws.
 * `NumberField.infiniteAdeleExtensionAlgebra`, `NumberField.adeleExtensionAlgebra`: the induced
   algebra structures, available in the corresponding scopes.
 
@@ -137,6 +138,24 @@ theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
         rfl
       exact htransport v (w.comap (algebraMap K M)) hwo inferInstance hv
 
+/-- Extension of infinite adeles along the identity extension is the identity map. -/
+@[simp]
+theorem infiniteAdeleExtension_self :
+    infiniteAdeleExtension K K = RingHom.id (InfiniteAdeleRing K) := by
+  ext x
+  funext w
+  simp only [infiniteAdeleExtension_apply, RingHom.id_apply]
+  have hwo : w.LiesOver w := ⟨rfl⟩
+  change LiesOver.completionMap (v := w) (w := w) (x w) = x w
+  have h : (LiesOver.completionMap (v := w) (w := w)) = RingHom.id _ := by
+    apply DFunLike.coe_injective
+    apply (InfinitePlace.Completion.denseRange_coe w).equalizer
+      LiesOver.continuous_completionMap continuous_id
+    funext y
+    simp [Function.comp_apply, LiesOver.completionMap_coe,
+      WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply]
+  exact RingHom.congr_fun h (x w)
+
 /-- The algebra structure on infinite adeles induced by `infiniteAdeleExtension`, available in
 the `InfiniteAdeleExtension` scope. -/
 @[reducible]
@@ -218,6 +237,16 @@ theorem adeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C]
     exact RingHom.congr_fun (infiniteAdeleExtension_comp K L M) a.1
   · simp only [RingHom.comp_apply, adeleExtension_snd]
     exact RingHom.congr_fun (finiteAdeleExtension_comp R K B L C M) a.2
+
+/-- Extension of adeles along the identity extension is the identity map. -/
+@[simp]
+theorem adeleExtension_self : adeleExtension R K R K = RingHom.id (AdeleRing R K) := by
+  ext a : 1
+  refine Prod.ext ?_ ?_
+  · simpa only [adeleExtension_fst, RingHom.id_apply] using
+      RingHom.congr_fun (infiniteAdeleExtension_self K) a.1
+  · simpa only [adeleExtension_snd, RingHom.id_apply] using
+      RingHom.congr_fun (finiteAdeleExtension_self R K) a.2
 
 /-- The algebra structure on adeles induced by `adeleExtension`, available in the
 `AdeleExtension` scope. -/

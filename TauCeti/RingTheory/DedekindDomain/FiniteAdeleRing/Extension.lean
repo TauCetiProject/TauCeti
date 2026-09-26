@@ -30,7 +30,8 @@ instance under base change and norm.
   embeddings.
 * `IsDedekindDomain.eq_finiteAdeleExtension_of_continuous`: it is the only continuous ring
   homomorphism with that property, because `K` is dense in its finite adeles.
-* `IsDedekindDomain.finiteAdeleExtension_comp`: the extension maps compose in towers.
+* `IsDedekindDomain.finiteAdeleExtension_comp`,
+  `IsDedekindDomain.finiteAdeleExtension_self`: the tower composition and identity laws.
 * `IsDedekindDomain.finiteAdeleExtensionAlgebra`: the induced algebra structure, available in the
   `FiniteAdeleExtension` scope.
 
@@ -130,6 +131,15 @@ theorem finiteAdeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C
   eq_finiteAdeleExtension_of_continuous R K C M
     ((continuous_finiteAdeleExtension B L C M).comp (continuous_finiteAdeleExtension R K B L))
     fun x ↦ by simp [← IsScalarTower.algebraMap_apply]
+
+/-- Extension of finite adeles along the identity extension is the identity map. -/
+@[simp]
+theorem finiteAdeleExtension_self :
+    finiteAdeleExtension R K R K = RingHom.id (FiniteAdeleRing R K) := by
+  symm
+  apply eq_finiteAdeleExtension_of_continuous R K R K continuous_id
+  intro x
+  simp
 
 /-- The algebra structure on finite adeles induced by `finiteAdeleExtension`, available in the
 `FiniteAdeleExtension` scope. -/
