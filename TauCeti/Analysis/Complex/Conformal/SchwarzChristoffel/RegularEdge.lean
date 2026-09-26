@@ -16,10 +16,6 @@ holomorphically through the edge. Its derivative on the edge is the positive bou
 times the edge direction, so the extension is locally injective. This gives the local sheet of
 the primitive needed to determine the degree of its covering of a simple polygonal domain.
 
-The continuation uses the reflected branches of the integrand constructed in
-`SchwarzChristoffel.Edge`; the primitive itself is matched on the upper half of a disc by
-equality of derivatives.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6, Section 2.
@@ -72,9 +68,7 @@ theorem exists_injOn_schwarzChristoffelPrimitive_continuation
       intro i hi hip
       have hq : q ≤ a i := le_of_not_gt fun h => ha i hi ⟨hip, h⟩
       exact hx.2.trans_le hq
-    rw [show g (x : ℂ) = Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
-        (schwarzChristoffelDensity a e x : ℂ) by
-          simp only [g, schwarzChristoffelContinuedIntegrand_ofReal a e hlo hhi]]
+    simp only [g, schwarzChristoffelContinuedIntegrand_ofReal a e hlo hhi]
     exact mul_ne_zero (Complex.exp_ne_zero _) (by
       exact_mod_cast (schwarzChristoffelDensity_pos a e hapos).ne')
   have hGdiffOn : DifferentiableOn ℂ G B :=
