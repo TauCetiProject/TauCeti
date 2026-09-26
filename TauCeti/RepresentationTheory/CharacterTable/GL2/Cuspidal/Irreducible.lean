@@ -34,8 +34,8 @@ virtual character
 `χ_θ = χ(Ind_{Z U}^{GL₂(F)} (θ|_{Fˣ} ⊗ ψ)) - χ(Ind_{Eˣ}^{GL₂(F)} θ)`
 
 of `TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal/Basic.lean` has norm `1`, and hence,
-having positive degree `q - 1`, is the character of an irreducible representation of `GL₂(F)`:
-the cuspidal (discrete series) representation attached to `θ`.
+having positive degree `q - 1`, is the character of an irreducible representation of `GL₂(F)`.
+Classically, this character belongs to the cuspidal (discrete series) family attached to `θ`.
 
 ## The norm computation
 
@@ -70,10 +70,7 @@ the sign is fixed by the degree `q - 1`, a natural number
 
 ## Implementation notes
 
-As for `TauCeti.characterPairing_GL2Steinberg_self`, the pairing statements carry a
-`[DecidableEq F]` hypothesis: `TauCeti.ClassFunction.characterPairing` averages over a `Fintype` of
-`GL₂(F)`, which needs decidable equality of the matrix entries.  The irreducibility theorem does
-not mention the pairing and does not need it.
+The pairing proofs use classical decidable equality to construct the finite type of `GL₂(F)`.
 
 ## References
 
@@ -200,10 +197,19 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
   have hfilter : (Finset.univ.filter fun u : Eˣ => (u : E) ∈ Set.range (algebraMap F E)) =
       Finset.univ.map ⟨Units.map (algebraMap F E : F →* E),
         Units.map_injective (algebraMap F E).injective⟩ := by
-    ext u
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
-      Function.Embedding.coeFn_mk]
-    exact mem_range_iff_exists_units_map_eq (algebraMap F E) u
+    calc
+      _ = Finset.univ.filter (fun u : Eˣ =>
+            u ∈ Set.range (Units.map (algebraMap F E : F →* E))) := by
+          apply Finset.filter_congr
+          intro u _
+          exact mem_range_iff_exists_units_map_eq (algebraMap F E) u
+      _ = Finset.univ.image (Units.map (algebraMap F E : F →* E)) :=
+        Finset.univ_filter_mem_range _
+      _ = _ := by
+        simpa only [Function.Embedding.coeFn_mk] using
+          (Finset.map_eq_image
+            ⟨Units.map (algebraMap F E : F →* E),
+              Units.map_injective (algebraMap F E).injective⟩ Finset.univ).symm
   have hcardE : ((Fintype.card E - 1 : ℕ) : ℂ) = (Fintype.card F : ℂ) ^ 2 - 1 := by
     rw [← Fintype.card_units, ← Nat.card_eq_fintype_card,
       Nat.card_congr (GL2NonSplitTorus.unitsEquiv hE).toEquiv, GL2NonSplitTorus.natCard_eq,
@@ -221,8 +227,7 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
 
 /-! ### The norm of the cuspidal virtual character -/
 
-variable [DecidableEq F]
-
+open Classical in
 /-- **The cuspidal virtual character occurs once in the Gelfand-Graev term**: its pairing with the
 character induced from `Z U` by `(a, t) ↦ θ(a) ψ(t)` is `1`, for every nontrivial `ψ`. -/
 theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
@@ -245,6 +250,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
       (Nat.cast_ne_zero.mpr Fintype.card_pos.ne')
   exact inv_mul_cancel₀ hq
 
+open Classical in
 /-- **For `θ^q ≠ θ` the cuspidal virtual character is orthogonal to the elliptic induction**
 `Ind_{Eˣ}^{GL₂(F)} θ`. -/
 theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : Eˣ →* ℂˣ}
@@ -259,6 +265,7 @@ theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : 
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep hE hθ ψ, mul_zero]
 
+open Classical in
 /-- **For `θ^q ≠ θ` and `ψ` nontrivial the cuspidal virtual character has norm `1`**: it pairs to
 `1` with the Gelfand-Graev term and to `0` with the elliptic induction. -/
 theorem characterPairing_GL2CuspidalVirtualCharacter_self {θ : Eˣ →* ℂˣ}
@@ -270,7 +277,6 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self {θ : Eˣ →* ℂˣ}
     characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter hE θ hψ,
     characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter hE hθ ψ, sub_zero]
 
-omit [DecidableEq F] in
 /-- **The cuspidal characters of `GL₂(𝔽_q)` are irreducible**: for a character `θ` of `Eˣ` with
 `θ^q ≠ θ` and a nontrivial additive character `ψ`, the cuspidal virtual character is the character
 of an irreducible complex representation of `GL₂(F)`, of degree `q - 1`

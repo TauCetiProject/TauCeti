@@ -129,7 +129,7 @@ variable (F : Type*) [Field F] [Fintype F] (E : Type*) [Field E] [Algebra F E]
 additive character `ψ` of `F`: the character induced from the scalar--unipotent subgroup by
 `(a, t) ↦ θ(a) ψ(t)`, less the character induced from the non-split torus by `θ`.  For `ψ`
 nontrivial and `θ` in general position it is the character of an irreducible representation,
-the cuspidal representation attached to `θ`
+classically identified with the cuspidal representation attached to `θ`
 (`TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`). -/
 noncomputable def GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     ClassFunction ℂ (GL (Fin 2) F) :=
