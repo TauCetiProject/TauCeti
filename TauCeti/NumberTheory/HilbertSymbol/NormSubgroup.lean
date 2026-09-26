@@ -146,8 +146,7 @@ variable {K : Type*} [Field K]
 
 /-- The quadratic norm subgroup depends only on the square class of the radicand: radicands whose
 product is a square have the same norm subgroup. This is the square-class form of
-`TauCeti.quadraticNormSubgroup_mul_sq`, obtained by rescaling the radicand by the square root
-witnessed by `h`. -/
+`TauCeti.quadraticNormSubgroup_mul_sq`. -/
 theorem quadraticNormSubgroup_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ)) :
     quadraticNormSubgroup (a : K) = quadraticNormSubgroup (Δ : K) := by
   obtain ⟨c, hc⟩ := h
@@ -168,10 +167,10 @@ theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
 
 /-- **The diagonal entry of the Hilbert symbol.** The sign of `(a, a)` is the sign of `(a, -1)` for
 every `a`, with no hypothesis beyond `K` being a field, so the diagonal entry is no separate
-choice of normalization. The norm subgroup for the radicand `a` contains the norm `-a` of the
-square-root generator, hence contains `a` exactly when it contains `-1`, and the two symbols are
-positive exactly on that subgroup. -/
+choice of normalization. -/
 theorem hilbertSymbol_self (a : Kˣ) : hilbertSymbol a a = hilbertSymbol a (-1) := by
+  -- The norm subgroup for the radicand `a` contains the norm `-a` of the square-root generator,
+  -- hence contains `a` exactly when it contains `-1`.
   have hmem : a ∈ quadraticNormSubgroup (a : K) ↔ -1 ∈ quadraticNormSubgroup (a : K) := by
     constructor
     · intro ha

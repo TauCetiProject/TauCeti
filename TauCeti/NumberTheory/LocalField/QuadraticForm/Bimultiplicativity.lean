@@ -77,11 +77,12 @@ theorem hilbertSymbol_mul_right (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
       (quadraticNormSubgroup_index_eq_two_of_not_isSquare h2 ha ▸ dvd_rfl) b c
 
 /-- **Bimultiplicativity of the local Hilbert symbol in the first argument.** Away from residue
-characteristic two, `(bc, a)_K = (b, a)_K (c, a)_K` for every `a`, `b` and `c`, by symmetry. -/
+characteristic two, `(bc, a)_K = (b, a)_K (c, a)_K` for every `a`, `b` and `c`. -/
 @[simp]
 theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
     hilbertSymbol (b * c) a = hilbertSymbol b a * hilbertSymbol c a := by
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+  -- the first-argument law is the second-argument law read through the symmetry of the symbol
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
 
 /-- **Nondegeneracy of the local Hilbert symbol.** Away from residue characteristic two, for every
