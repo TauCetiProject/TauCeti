@@ -233,24 +233,40 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup
 
 /-! ## The root-indexed family -/
 
-/-- A selected Weyl-word presentation `(l, i)` of each root index. The selection fixes a usable
+/-- A selected Weyl-word presentation `(l, i)` of each root index. At a positive simple-root
+index this is the pinned presentation `([], i)`; elsewhere the selection fixes a usable
 root-indexed family without asserting that different presentations give the same parametrization. -/
 def geckRootSubgroupPresentation (k : Fin t.numRoots) :
     List (Fin t.rank) × Fin t.rank :=
-  Classical.choose (show ∃ p : List (Fin t.rank) × Fin t.rank,
-      t.geckWeylRootIndex ht p.1 p.2 = k by
-    obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
-    exact ⟨(l, i), hli⟩)
+  if hk : (k : ℕ) < t.rank then
+    ([], ⟨k, hk⟩)
+  else
+    Classical.choose (show ∃ p : List (Fin t.rank) × Fin t.rank,
+        t.geckWeylRootIndex ht p.1 p.2 = k by
+      obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
+      exact ⟨(l, i), hli⟩)
+
+/-- The selected presentation at a positive simple-root index is the pinned empty-word
+presentation. -/
+@[simp]
+theorem geckRootSubgroupPresentation_simpleIndex (i : Fin t.rank) :
+    t.geckRootSubgroupPresentation ht (t.simpleIndex ht i) = ([], i) := by
+  simp [geckRootSubgroupPresentation]
 
 /-- The selected presentation of `k` represents `k`. -/
 @[simp]
 theorem geckRootSubgroupPresentation_index (k : Fin t.numRoots) :
     t.geckWeylRootIndex ht (t.geckRootSubgroupPresentation ht k).1
-        (t.geckRootSubgroupPresentation ht k).2 = k :=
-  Classical.choose_spec (show ∃ p : List (Fin t.rank) × Fin t.rank,
-      t.geckWeylRootIndex ht p.1 p.2 = k by
-    obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
-    exact ⟨(l, i), hli⟩)
+        (t.geckRootSubgroupPresentation ht k).2 = k := by
+  rw [geckRootSubgroupPresentation]
+  split_ifs with hk
+  · rw [geckWeylRootIndex_nil]
+    apply Fin.ext
+    exact t.simpleIndex_val ht ⟨k, hk⟩
+  · exact Classical.choose_spec (show ∃ p : List (Fin t.rank) × Fin t.rank,
+        t.geckWeylRootIndex ht p.1 p.2 = k by
+      obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
+      exact ⟨(l, i), hli⟩)
 
 /-- **The selected root-subgroup morphism at a root index.** Its Weyl-word presentation is fixed
 by `geckRootSubgroupPresentation`; no presentation-independence claim is made. -/
@@ -258,6 +274,15 @@ def geckRootSubgroupAt (k : Fin t.numRoots) :
     AdditiveGroup.groupScheme ℤ ⟶ t.geckGroupScheme ht :=
   t.geckWeylRootSubgroup ht (t.geckRootSubgroupPresentation ht k).1
     (t.geckRootSubgroupPresentation ht k).2
+
+/-- At a positive simple-root index, the root-indexed family recovers the pinned root-subgroup
+morphism. -/
+@[simp]
+theorem geckRootSubgroupAt_simpleIndex (i : Fin t.rank) :
+    t.geckRootSubgroupAt ht (t.simpleIndex ht i) =
+      t.geckRootSubgroup ht (.inl i) := by
+  rw [geckRootSubgroupAt, geckRootSubgroupPresentation_simpleIndex,
+    geckWeylRootSubgroup_nil]
 
 /-- Evaluation of the root-indexed morphism agrees with the point-level subgroup at its selected
 presentation. -/
