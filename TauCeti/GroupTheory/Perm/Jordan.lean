@@ -51,10 +51,6 @@ open scoped commutatorElement
 
 variable {α : Type*} [Fintype α] [DecidableEq α] {G : Subgroup (Perm α)}
 
-private theorem card_compl_add_card_eq_nat_card (s : Finset α) :
-    #sᶜ + #s = Nat.card α := by
-  rw [card_compl_add_card, Nat.card_eq_fintype_card]
-
 /-- **Jordan's multiple primitivity for a cycle of prime length.** A primitive permutation group
 containing a cycle `g` of prime length is `(k + 1)`-fold primitive, where `k` is the number of
 fixed points of `g`. -/
@@ -65,7 +61,7 @@ theorem isMultiplyPreprimitive_of_isCycle_mem (hG : IsPreprimitive G α) {g : Pe
   obtain hk | hk := Nat.eq_zero_or_pos #g.supportᶜ
   · rwa [hk, zero_add, is_one_preprimitive_iff]
   obtain ⟨m, hm⟩ : ∃ m, #g.supportᶜ = m + 1 := ⟨_, (Nat.succ_pred_eq_of_pos hk).symm⟩
-  have hcard := card_compl_add_card_eq_nat_card g.support
+  have hcard := (card_compl_add_card g.support).trans Nat.card_eq_fintype_card.symm
   have hp2 := hgp.two_le
   rw [hm]
   refine hG.isMultiplyPreprimitive (s := (g.support : Set α)ᶜ) ?_ (by omega) ?_
@@ -158,7 +154,7 @@ theorem alternatingGroup_le_of_isPreprimitive_of_isCycle_mem (hG : IsPreprimitiv
     (hp : p.Prime) (hp' : p + 3 ≤ Nat.card α) {g : Perm α} (hgc : g.IsCycle)
     (hgp : #g.support = p) (hg : g ∈ G) : alternatingGroup α ≤ G := by
   subst hgp
-  have hcard := card_compl_add_card_eq_nat_card g.support
+  have hcard := (card_compl_add_card g.support).trans Nat.card_eq_fintype_card.symm
   have htr : IsMultiplyPretransitive G α #g.supportᶜ := by
     have := (isMultiplyPreprimitive_of_isCycle_mem hG hgc hp hg).isMultiplyPretransitive
     exact isMultiplyPretransitive_of_le (n := #g.supportᶜ + 1) (by omega)
