@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Index.Basic
+public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 
 /-!
@@ -20,13 +20,11 @@ presentation, shared by the worked example: the minimal polynomial in the form
 ## Main results
 
 * `TauCeti.NumberField.Sqrt5.finrank_eq_two`: `[K : ℚ] = 2`.
-* `TauCeti.NumberField.Sqrt5.integralPrimitiveElement`: `θ` as an integral primitive element of
-  `K`, with `coe_integralPrimitiveElement`.
 -/
 
 public section
 
-open Polynomial NumberField TauCeti.NumberField
+open Polynomial NumberField
 open scoped NumberField
 
 namespace TauCeti.NumberField.Sqrt5
@@ -45,16 +43,5 @@ theorem finrank_eq_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Module.finrank ℚ K = 2 :=
   NumberField.finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add (minpoly_eq_X_sq_sub_X_add hmin)
     hgen
-
-/-- The generator `θ` of `ℚ(√5)`, as an integral primitive element of `K`. -/
-noncomputable def integralPrimitiveElement (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    IntegralPrimitiveElement K :=
-  ⟨θ, hgen⟩
-
-/-- The algebraic integer underlying `integralPrimitiveElement hgen` is `θ`. -/
-@[simp]
-theorem coe_integralPrimitiveElement (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    (integralPrimitiveElement hgen).1 = θ :=
-  (rfl)
 
 end TauCeti.NumberField.Sqrt5

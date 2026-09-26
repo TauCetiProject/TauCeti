@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Basic
+public import TauCeti.NumberTheory.NumberField.Index.Basic
 public import TauCeti.NumberTheory.NumberField.Monogenic
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
@@ -60,29 +61,23 @@ theorem discr_X_sq_sub_X_sub_one : (X ^ 2 - X - 1 : ℤ[X]).discr = 5 := by
 
 /-- **The index of a root of `X² − X − 1` is `1`**, since `discr (X² − X − 1) = 5` is squarefree. -/
 theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : (integralPrimitiveElement hgen).index = 1 := by
-  have h := (integralPrimitiveElement hgen).discr_minpoly_eq_index_sq_mul_discr
-  rw [coe_integralPrimitiveElement, hmin, discr_X_sq_sub_X_sub_one] at h
-  -- `index ^ 2` divides `5`, so the index is `1`.
-  have hdvd : (integralPrimitiveElement hgen).index ^ 2 ∣ 5 := by
-    have : (((integralPrimitiveElement hgen).index ^ 2 : ℕ) : ℤ) ∣ 5 :=
-      ⟨NumberField.discr K, by push_cast; exact h⟩
-    exact_mod_cast this
-  have hle : (integralPrimitiveElement hgen).index ≤ 2 := by
-    nlinarith [Nat.le_of_dvd (by norm_num) hdvd]
-  have hpos := (integralPrimitiveElement hgen).index_pos
-  interval_cases hi : (integralPrimitiveElement hgen).index
-  · rfl
-  · norm_num at h
-    omega
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    IntegralPrimitiveElement.index (⟨θ, hgen⟩ : IntegralPrimitiveElement K) = 1 := by
+  let t : IntegralPrimitiveElement K := ⟨θ, hgen⟩
+  have hd := t.discr_minpoly_eq_index_sq_mul_discr
+  simp only [t] at hd
+  rw [hmin, discr_X_sq_sub_X_sub_one] at hd
+  have hsf : Squarefree (5 : ℤ) := by
+    apply Int.squarefree_natAbs.mp
+    exact Nat.prime_five.squarefree
+  have hu : IsUnit (t.index : ℤ) := hsf _ (by rw [← sq]; exact ⟨_, hd⟩)
+  exact_mod_cast Int.isUnit_iff_natAbs_eq.mp hu
 
 /-- **The ring of integers of `ℚ(√5)` is `ℤ[θ]`**, for a root `θ` of `X² − X − 1`. -/
 theorem adjoin_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Algebra.adjoin ℤ {θ} = ⊤ := by
-  have h : Algebra.adjoin ℤ {(integralPrimitiveElement hgen).1} = ⊤ :=
-    (IntegralPrimitiveElement.adjoin_def _).symm.trans
-      ((IntegralPrimitiveElement.index_eq_one_iff _).mp (index_eq_one hmin hgen))
-  rwa [coe_integralPrimitiveElement] at h
+  rw [← IntegralPrimitiveElement.adjoin_def ⟨θ, hgen⟩]
+  exact (IntegralPrimitiveElement.index_eq_one_iff ⟨θ, hgen⟩).mp (index_eq_one hmin hgen)
 
 /-- `ℚ(√5)` is monogenic. -/
 theorem isMonogenic (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
@@ -92,9 +87,9 @@ theorem isMonogenic (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
 /-- **The discriminant of `ℚ(√5)` is `5`.** -/
 theorem discr_eq_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : NumberField.discr K = 5 := by
-  have h := (integralPrimitiveElement hgen).discr_minpoly_eq_index_sq_mul_discr
-  rwa [coe_integralPrimitiveElement, hmin, discr_X_sq_sub_X_sub_one, index_eq_one hmin hgen,
-    Nat.cast_one, one_pow, one_mul, eq_comm] at h
+  have hd := IntegralPrimitiveElement.discr_minpoly_eq_index_sq_mul_discr ⟨θ, hgen⟩
+  rw [hmin, discr_X_sq_sub_X_sub_one, index_eq_one hmin hgen] at hd
+  simpa using hd.symm
 
 /-- There is a single prime of `𝓞 K` above `2`, since `5 ≡ 5 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
