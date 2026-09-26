@@ -408,11 +408,9 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] :
       exact hx q ⟨hq2, h0 ▸ hq0⟩
     exact lt_of_le_of_ne (cdf_nonneg ν x) (Ne.symm hne0)
   filter_upwards [hpos, hplateau] with x hx hqx
-  change ν.quantile (cdf ν x) = x
+  simp only [id_eq]
   rw [quantile_def]
-  have hmem : (x : ℝ) ∈ {z | cdf ν x ≤ cdf ν z} := by
-    change cdf ν x ≤ cdf ν x
-    exact le_rfl
+  have hmem : (x : ℝ) ∈ {z | cdf ν x ≤ cdf ν z} := Set.mem_ofPred_eq.mpr le_rfl
   refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf ν hx) hmem) ?_
   refine le_csInf ⟨x, hmem⟩ ?_
   intro z hz
