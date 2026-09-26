@@ -41,6 +41,8 @@ comparison between different presentations is made here.
   `w` and a node `i`.
 * `TauCeti.DynkinType.geckWeylRootSubgroupPoints`: the root subgroup `x_{l,i}` in the points of the
   Geck carrier over a commutative ring.
+* `TauCeti.DynkinType.geckRootSubgroupPresentation`: a selected Weyl-word presentation of every
+  root index, pinned to the empty word at positive simple roots.
 
 ## Main results
 
@@ -127,6 +129,42 @@ theorem exists_geckWeylRootIndex_eq (k : Fin t.numRoots) :
   refine ⟨l, (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨j, hj⟩, ?_⟩
   rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase, Equiv.apply_symm_apply]
   exact hw
+
+/-- The map sending a Weyl word and a node to their root index is surjective. -/
+theorem geckWeylRootIndex_surjective : Function.Surjective
+    (fun p : List (Fin t.rank) × Fin t.rank ↦ t.geckWeylRootIndex ht p.1 p.2) := by
+  intro k
+  obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
+  exact ⟨(l, i), hli⟩
+
+/-- A selected Weyl-word presentation `(l, i)` of each root index. At a positive simple-root
+index this is the pinned presentation `([], i)`; elsewhere the selection fixes a usable
+root-indexed family without asserting that different presentations give the same parametrization. -/
+def geckRootSubgroupPresentation (k : Fin t.numRoots) :
+    List (Fin t.rank) × Fin t.rank :=
+  if hk : (k : ℕ) < t.rank then
+    ([], ⟨k, hk⟩)
+  else
+    Function.surjInv (t.geckWeylRootIndex_surjective ht) k
+
+/-- The selected presentation at a positive simple-root index is the pinned empty-word
+presentation. -/
+@[simp]
+theorem geckRootSubgroupPresentation_simpleIndex (i : Fin t.rank) :
+    t.geckRootSubgroupPresentation ht (t.simpleIndex ht i) = ([], i) := by
+  simp [geckRootSubgroupPresentation]
+
+/-- The selected presentation of `k` represents `k`. -/
+@[simp]
+theorem geckWeylRootIndex_geckRootSubgroupPresentation (k : Fin t.numRoots) :
+    t.geckWeylRootIndex ht (t.geckRootSubgroupPresentation ht k).1
+        (t.geckRootSubgroupPresentation ht k).2 = k := by
+  rw [geckRootSubgroupPresentation]
+  split_ifs with hk
+  · rw [geckWeylRootIndex_nil]
+    apply Fin.ext
+    exact t.simpleIndex_val ht ⟨k, hk⟩
+  · exact Function.surjInv_eq (t.geckWeylRootIndex_surjective ht) k
 
 /-! ## The root subgroup attached to a word and a node -/
 
