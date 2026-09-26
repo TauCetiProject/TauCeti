@@ -21,10 +21,11 @@ the class of a parameter to the class of its image under the induced change of c
 
 The change of coefficients on cohomology is injective as soon as the induced map on units is, so
 two parameters whose images under a monoid homomorphism have the same cohomology class were
-already gauge equivalent, and over a commutative ring their relation quotients were already
-isomorphic by an algebra isomorphism fixing every vertex idempotent. The map on units is the
-hypothesis under which this is true, and no statement of injectivity is made without it: the
-coefficient groups of the cohomology are the units of the coefficient rings.
+already gauge equivalent, and, for a graph with a finite vertex set over a commutative ring, their
+relation quotients were already isomorphic by an algebra isomorphism fixing every vertex
+idempotent. The map on units is the hypothesis under which this is true, and no statement of
+injectivity is made without it: the coefficient groups of the cohomology are the units of the
+coefficient rings.
 
 The parameter classification follows C. Couture, *Skew-Zigzag Algebras*, Section 4. The
 cohomology transport uses the graph cohomology construction in
@@ -120,9 +121,9 @@ open DoubledQuiver
 variable {l : Type z} [CommRing k] [CommRing l] [Finite V]
 
 /-- **Couture's classification is injective under a coefficient homomorphism that is injective on
-units**: two parameters whose images along `f` have the same cohomology class, with `f` injective
-on units, have already isomorphic relation quotients, by an algebra isomorphism fixing every vertex
-idempotent. -/
+units**: two parameters on a graph with a finite vertex set whose images along `f` have the same
+cohomology class, with `f` injective on units, have already isomorphic relation quotients, by an
+algebra isomorphism fixing every vertex idempotent. -/
 theorem cohomologyClass_map_eq_iff_exists_vertexFixing_algEquiv (f : k →+* l)
     (hf : Function.Injective (Units.map f.toMonoidHom)) {c c' : SkewZigzagParameter k G} :
     cohomologyClass l G (c.map f) = cohomologyClass l G (c'.map f) ↔
