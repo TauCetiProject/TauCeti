@@ -142,11 +142,11 @@ to lie inside `U`. -/
 public def IsPathHomotopyTrivial (U : Set X) : Prop :=
   ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q
 
-/-- Any two paths in a path-homotopy-trivial set with the same endpoints are homotopic. -/
-public theorem IsPathHomotopyTrivial.paths_homotopic (hU : IsPathHomotopyTrivial U)
-    {a b : X} (p q : Path a b) (hp : range p ⊆ U) (hq : range q ⊆ U) :
-    Path.Homotopic p q :=
-  hU p q hp hq
+/-- The defining characterization of a path-homotopy-trivial set. -/
+public theorem isPathHomotopyTrivial_def :
+    IsPathHomotopyTrivial U ↔
+      ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q :=
+  Iff.rfl
 
 /-- In a locally path-connected space, a point at which the space is semilocally simply
 connected has an open, path-connected, path-homotopy-trivial neighbourhood, as needed in the
