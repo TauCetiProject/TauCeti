@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Involution
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
 
 /-!
 # Turn-row transports for the terminal-side recut
@@ -17,16 +17,18 @@ pentagon via `GridPentagonBetween.ofRightEq` (see `Overlap/Right.lean`).
 
 ## Main results
 
+* `TauCeti.GridRectanglePentagonDecomposition.first_recut_branch_data_of_right_eq_right`:
+  when the first recut rectangle carries the pentagon's terminal side, the recut branch is
+  forced, fixing the column geometry of the shared recut.
+* `TauCeti.GridRectanglePentagonDecomposition.second_recut_branch_data_of_right_eq_right`:
+  when the second recut rectangle carries the pentagon's terminal side, the recut branch is
+  forced, fixing the column geometry of the shared recut.
 * `TauCeti.GridRectanglePentagonDecomposition.turn_mem_recut_first_of_right_eq_right`:
   the turn row lies in the first recut rectangle's row span when it carries the pentagon's
   terminal side.
 * `TauCeti.GridRectanglePentagonDecomposition.turn_mem_recut_second_of_right_eq_right`:
   the turn row lies in the second recut rectangle's row span when it carries the pentagon's
   terminal side.
-
-The shared reasoning — the second rectangle's corner rows, the pentagon's turn-row
-membership, and the cyclic-order interval nesting — is factored into private lemmas below
-so the two transports do not duplicate it.
 -/
 
 public section
@@ -260,6 +262,20 @@ private theorem recutOfIsEmpty_second_top
 -- (the common-initial-side case): the cyclic row order comes from
 -- `cyclicOrder_of_isEmpty_of_right_eq_right`, and the recut branch is forced by
 
+/-- Common setup for the terminal-side branch determination: the pentagon's terminal side
+is the common right side of the forgotten rectangle decomposition. -/
+private theorem terminal_side_common_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right) :
+    D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right ∧
+      D.pentagon.right = D.toRectangleDecomposition.first.right := by
+  have hcommon' : D.toRectangleDecomposition.first.right =
+      D.toRectangleDecomposition.second.right := by
+    simpa only [toRectangleDecomposition_first_right,
+      toRectangleDecomposition_second_right] using hcommon
+  refine ⟨hcommon', ?_⟩
+  rw [← toRectangleDecomposition_second_right D, ← hcommon']
+
 /-- If the first recut rectangle carries the pentagon's terminal side, the recut branch is
 forced: the first recut rectangle spans from the original second rectangle's left side to
 the original first rectangle's right side, and the original second rectangle's left side
@@ -327,8 +343,6 @@ theorem second_recut_branch_data_of_right_eq_right
     exfalso
     rw [hEsecondB, hpen_right, hcommon'] at hsecond
     exact D.toRectangleDecomposition.second.left_ne_right hsecond
-
-end GridRectanglePentagonDecomposition
 
 
 -- `first_recut_branch_data_of_right_eq_right` /
