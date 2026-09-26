@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Frobenius
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.FixedPoints
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.RootSubgroup
 
 /-!
@@ -31,8 +31,8 @@ the fixed subring inside the fixed subgroup of the carrier.
   representative.
 * `TauCeti.DynkinType.geckFrobenius_geckWeylRootSubgroupPoints`: Frobenius preserves every root
   subgroup and raises its parameter.
-* `TauCeti.DynkinType.geckWeylRootSubgroupPoints_mem_fixedSubgroup_iff`: a point in a root
-  subgroup is Frobenius-fixed exactly when its parameter is.
+* `TauCeti.DynkinType.geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff`: a point in a
+  root subgroup is Frobenius-fixed exactly when its parameter is.
 * `TauCeti.DynkinType.geckWeylRootSubgroupFixedPoints`: the root subgroup over the fixed subring,
   as a subgroup of the Frobenius-fixed carrier points.
 
@@ -88,37 +88,22 @@ theorem geckFrobenius_geckWeylRootSubgroupPoints (l : List (Fin t.rank))
 
 /-- A point in a root subgroup of the Geck carrier is fixed by Frobenius exactly when its
 parameter belongs to the Frobenius-fixed subring. -/
-theorem geckWeylRootSubgroupPoints_mem_fixedSubgroup_iff (l : List (Fin t.rank))
+theorem geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff
+    (l : List (Fin t.rank))
     (i : Fin t.rank) (u : Multiplicative A) :
     t.geckWeylRootSubgroupPoints ht l i A u ∈ fixedSubgroup (t.geckFrobenius ht p k A) ↔
       Multiplicative.toAdd u ∈ frobeniusFixedSubring A p k := by
   rw [TauCeti.mem_fixedSubgroup, t.geckFrobenius_geckWeylRootSubgroupPoints ht p k A]
-  constructor
-  · intro h
-    rw [mem_frobeniusFixedSubring]
-    have hparam := (t.geckWeylRootSubgroupPoints_injective ht l i A) h
-    exact congrArg Multiplicative.toAdd hparam
-  · intro h
-    apply congrArg (t.geckWeylRootSubgroupPoints ht l i A)
-    apply Multiplicative.toAdd.injective
-    exact (mem_frobeniusFixedSubring.mp h)
+  rw [(t.geckWeylRootSubgroupPoints_injective ht l i A).eq_iff,
+    ← Multiplicative.toAdd.injective.eq_iff, toAdd_ofAdd, mem_frobeniusFixedSubring]
 
 /-- **The root subgroup over the Frobenius-fixed subring**, embedded in the fixed points of the
 Geck carrier. Its underlying point is `x_{w αᵢ}(u)` after including the parameter into `A`. -/
 def geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.rank) :
     Multiplicative (frobeniusFixedSubring A p k) →*
       fixedSubgroup (t.geckFrobenius ht p k A) :=
-  let parameterInclusion : Multiplicative (frobeniusFixedSubring A p k) →* Multiplicative A :=
-    AddMonoidHom.toMultiplicative (frobeniusFixedSubring A p k).subtype.toAddMonoidHom
-  let rootMap := (t.geckWeylRootSubgroupPoints ht l i A).comp parameterInclusion
-  rootMap.codRestrict (fixedSubgroup (t.geckFrobenius ht p k A)) fun u ↦ by
-    -- Expose the subtype inclusion hidden by the type-tag conversion and the composite map.
-    change t.geckWeylRootSubgroupPoints ht l i A
-        (Multiplicative.ofAdd
-          ((Multiplicative.toAdd u : frobeniusFixedSubring A p k) : A)) ∈
-      fixedSubgroup (t.geckFrobenius ht p k A)
-    rw [t.geckWeylRootSubgroupPoints_mem_fixedSubgroup_iff ht p k A]
-    exact (Multiplicative.toAdd u).2
+  (t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A).toMonoidHom.comp
+    (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k))
 
 /-- The fixed-root-subgroup map is the original root-subgroup parametrization after including the
 parameter from the Frobenius-fixed subring into `A`. -/
@@ -128,24 +113,29 @@ theorem coe_geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.r
     (t.geckWeylRootSubgroupFixedPoints ht p k A l i u : t.geckPoints ht A) =
       t.geckWeylRootSubgroupPoints ht l i A
         (Multiplicative.ofAdd
-          ((Multiplicative.toAdd u : frobeniusFixedSubring A p k) : A)) :=
-  (rfl)
+          ((Multiplicative.toAdd u : frobeniusFixedSubring A p k) : A)) := by
+  change
+    ((t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A
+        (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k) u) :
+        fixedSubgroup (t.geckFrobenius ht p k A)) : t.geckPoints ht A) = _
+  apply Subtype.ext
+  rw [coe_geckPointsMulEquivFixedSubgroupGeckFrobenius]
+  have h := congrArg Subtype.val
+    (t.map_geckWeylRootSubgroupPoints ht (frobeniusFixedSubring A p k).subtype l i u)
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
+  exact h
 
 /-- The parametrization of a root subgroup inside the Frobenius-fixed carrier is injective. -/
 theorem geckWeylRootSubgroupFixedPoints_injective (l : List (Fin t.rank)) (i : Fin t.rank) :
-    Function.Injective (t.geckWeylRootSubgroupFixedPoints ht p k A l i) := by
-  intro u v huv
-  have huv' := congrArg Subtype.val huv
-  rw [coe_geckWeylRootSubgroupFixedPoints, coe_geckWeylRootSubgroupFixedPoints] at huv'
-  have hparam := (t.geckWeylRootSubgroupPoints_injective ht l i A) huv'
-  apply Multiplicative.toAdd.injective
-  apply Subtype.ext
-  exact Multiplicative.ofAdd.injective hparam
+    Function.Injective (t.geckWeylRootSubgroupFixedPoints ht p k A l i) :=
+  (t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A).injective.comp
+    (t.geckWeylRootSubgroupPoints_injective ht l i ↥(frobeniusFixedSubring A p k))
 
 /-- **The fixed points in a Geck root subgroup are exactly its points over the Frobenius-fixed
 subring.** This identifies the intersection inside the ambient carrier, not merely a one-sided
 inclusion. -/
-theorem map_range_geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.rank) :
+theorem map_subtype_range_geckWeylRootSubgroupFixedPoints_eq
+    (l : List (Fin t.rank)) (i : Fin t.rank) :
     (t.geckWeylRootSubgroupFixedPoints ht p k A l i).range.map
         (fixedSubgroup (t.geckFrobenius ht p k A)).subtype =
       (t.geckWeylRootSubgroupPoints ht l i A).range ⊓
@@ -153,10 +143,11 @@ theorem map_range_geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : F
   ext g
   constructor
   · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
-    exact ⟨⟨_, rfl⟩, (t.geckWeylRootSubgroupFixedPoints ht p k A l i u).2⟩
+    exact ⟨⟨_, (t.coe_geckWeylRootSubgroupFixedPoints ht p k A l i u).symm⟩,
+      (t.geckWeylRootSubgroupFixedPoints ht p k A l i u).2⟩
   · rintro ⟨⟨u, rfl⟩, hu⟩
     have hu' : Multiplicative.toAdd u ∈ frobeniusFixedSubring A p k :=
-      (t.geckWeylRootSubgroupPoints_mem_fixedSubgroup_iff ht p k A l i u).mp hu
+      (t.geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff ht p k A l i u).mp hu
     let u' : Multiplicative (frobeniusFixedSubring A p k) :=
       Multiplicative.ofAdd ⟨Multiplicative.toAdd u, hu'⟩
     refine ⟨t.geckWeylRootSubgroupFixedPoints ht p k A l i u', ⟨u', rfl⟩, ?_⟩
