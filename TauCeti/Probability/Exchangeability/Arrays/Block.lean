@@ -10,6 +10,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.Basic
 -- realizing two along injections with disjoint ranges, and the reduction of an array law to its
 -- finite-dimensional marginals, are used only inside proofs.
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Data.Finset.Basic
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-!
@@ -43,6 +44,8 @@ coordinates of each such pair agree.
 
 * `TauCeti.Probability.SeparatelyExchangeable.arrayBlock` — separate exchangeability passes to
   every block along injections, no disjointness needed;
+* `TauCeti.Probability.SeparatelyExchangeable.map_arrayBlock_eq` — such a block even has the law
+  of the array itself;
 * `TauCeti.Probability.JointlyExchangeable.arrayBlock_diag` — joint exchangeability passes to the
   diagonal blocks `arrayBlock X e e`;
 * `TauCeti.Probability.JointlyExchangeable.separatelyExchangeable_arrayBlock` — **the block
@@ -142,6 +145,29 @@ theorem SeparatelyExchangeable.arrayBlock (h : SeparatelyExchangeable μ X)
     (measurable_blockReadOff e f)
   simp only [hρe, hρf] at key
   simpa only [arrayBlock_apply] using key
+
+/-- **A block of a separately exchangeable array along injections has the law of the array.** No
+relation between the two ranges is needed. -/
+theorem SeparatelyExchangeable.map_arrayBlock_eq [IsFiniteMeasure μ]
+    (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ)
+    (he : Function.Injective e) (hf : Function.Injective f) :
+    (μ.map fun ω p ↦ X (e p.1, f p.2) ω) = μ.map fun ω p ↦ X p ω := by
+  refine (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
+    (AEMeasurable.of_eval fun p ↦ hX _)
+    (AEMeasurable.of_eval hX)).mpr fun I ↦ ?_
+  obtain ⟨n, hbound⟩ := I.exists_nat_prod_lt
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (fun i : Fin n ↦ (i : ℕ))
+    (fun i : Fin n ↦ e i) Fin.val_injective (he.comp Fin.val_injective)
+  obtain ⟨τ, hτ⟩ := Equiv.Perm.exists_extending_pair (fun j : Fin n ↦ (j : ℕ))
+    (fun j : Fin n ↦ f j) Fin.val_injective (hf.comp Fin.val_injective)
+  have hrew : (fun ω ↦ I.restrict fun p ↦ X (σ p.1, τ p.2) ω) =
+      fun ω ↦ I.restrict fun p ↦ X (e p.1, f p.2) ω := by
+    funext ω p
+    obtain ⟨hp₁, hp₂⟩ := hbound p.1 p.2
+    simp only [Finset.restrict]
+    rw [hσ ⟨_, hp₁⟩, hτ ⟨_, hp₂⟩]
+  rw [← hrew]
+  exact h.map_comp hX σ τ (Finset.measurable_restrict I)
 
 /-- **Joint exchangeability passes to diagonal blocks along an injection.** -/
 theorem JointlyExchangeable.arrayBlock_diag (h : JointlyExchangeable μ X)
@@ -275,10 +301,7 @@ private theorem map_blockReadOff_eq {β : Type*} [MeasurableSpace β] [IsFiniteM
     (hmeas e f) (hmeas e' f')).mpr fun I ↦ ?_
   -- Every index occurring in `I` is below `n`, so a permutation matching the two pairs of index
   -- maps below `n` already matches the marginal.
-  obtain ⟨n, hbound⟩ : ∃ n : ℕ, ∀ p ∈ I, p.1 < n ∧ p.2 < n := by
-    refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
-    have hle := Finset.le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
-    omega
+  obtain ⟨n, hbound⟩ := I.exists_nat_prod_lt
   obtain ⟨σ, hσe, hσf⟩ := exists_perm_apply_eq_of_lt n he hf hd he' hf' hd'
   have key := h.map_comp hX σ (F := fun x : ℕ × ℕ → α ↦ I.restrict (B e f x))
     ((Finset.measurable_restrict I).comp (hBmeas e f))
