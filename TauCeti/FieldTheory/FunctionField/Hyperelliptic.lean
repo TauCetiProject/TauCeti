@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
+public import TauCeti.FieldTheory.FunctionField.Different.Radical
 public import TauCeti.FieldTheory.Separable.Quadratic
+-- Proof-only: the places of `k(x)`, their degrees, and the orders of polynomials there.
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+-- Proof-only: `Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one`, the degree of `F / k(x)`.
+import TauCeti.FieldTheory.KummerExtension
 
 /-!
 # Hyperelliptic function fields
@@ -18,7 +23,7 @@ two an index-two subfield can be inseparable, and no standing hypothesis of this
 rules that out.  Away from characteristic two it is automatic, by
 `TauCeti.Algebra.isSeparable_of_finrank_eq_two`.
 
-The content of this file is the *intrinsic* description of that subfield, which mentions no
+The first part of this file is the *intrinsic* description of that subfield, which mentions no
 element of `F` at all: `F` is hyperelliptic exactly when its genus is at least two and some
 divisor of degree two has `ℓ(A) ≥ 2`.  One direction is the pole divisor `(x)_∞` of the
 index-two generator, whose Riemann--Roch space contains `1` and `x`.  The other moves `A` inside
@@ -30,6 +35,13 @@ two, and it is not one because a rational function field has genus zero.
 In genus two the canonical divisor is such an `A`, since `deg W = 2g - 2 = 2` and `ℓ(W) = g = 2`;
 so every function field of genus two has an index-two rational subfield, and away from
 characteristic two every function field of genus two is hyperelliptic.
+
+The models `y² = f(x)` go the other way. Away from characteristic two, if `F = k(x)(y)` with
+`y² = f(x)` for a squarefree polynomial `f` of degree `m`, and `k` is the exact constant field,
+then `F` has genus `⌊(m - 1) / 2⌋` when `m` is positive.  If `f` is constant, the hypotheses
+instead force `F = k(x)`, of genus zero.  The ramified places of `F / k(x)` lie over the
+irreducible factors of `f`, and over the place at infinity when `m` is odd. Each has different
+exponent one, so `deg Diff(F / k(x)) = m + m % 2`, and the Hurwitz genus formula gives the genus.
 
 ## Main definitions
 
@@ -45,11 +57,19 @@ characteristic two every function field of genus two is hyperelliptic.
 * `TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two` and
   `TauCeti.isHyperellipticFunctionField_of_genus_eq_two`: genus two gives an index-two rational
   subfield, and away from characteristic two makes `F` hyperelliptic.
+* `TauCeti.finrank_eq_two_of_sq_eq_of_squarefree`: `[F : k(x)] = 2` for `y² = f(x)` with `f`
+  squarefree and nonconstant.
+* `TauCeti.Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_adicOfIrreducible` and
+  `TauCeti.Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_infty`: the ramified places of
+  `y² = f(x)` over `k(x)` are those over the irreducible factors of `f`, and those over infinity
+  when `deg f` is odd.
+* `TauCeti.genus_eq_natDegree_sub_one_div_two_of_sq_eq`: for squarefree `f` of positive degree,
+  `y² = f(x)` has genus `⌊(deg f - 1) / 2⌋`; for constant `f`, it has genus zero.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section VI.2: Definition 6.2.1 and Lemma 6.2.2.
+  Section VI.2: Definition 6.2.1, Lemma 6.2.2 and Proposition 6.2.3.
 -/
 
 public section
@@ -210,5 +230,170 @@ theorem isHyperellipticFunctionField_of_genus_eq_two (hF : IsFunctionField k F)
   obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
   exact (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
     hF hex h2).mpr ⟨by omega, A, hA, hdim.ge⟩
+
+/-! ### The genus of `y² = f(x)` -/
+
+section SquareRoot
+
+open _root_.Polynomial
+
+/-- The places of `k(x)` at which a squarefree polynomial `f` has odd order are those of the
+irreducible factors of `f`, each a simple zero, and the place at infinity exactly when `deg f` is
+odd.  As divisors: they sum to `div f + (deg f + deg f % 2) · P_∞`. -/
+theorem Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty {f : k[X]}
+    (hf : Squarefree f) :
+    radicalBranch (IsFunctionField.ratFunc k) 2 (algebraMap k[X] (RatFunc k) f)
+        (RatFunc.algebraMap_ne_zero hf.ne_zero) =
+      Divisor.principal (IsFunctionField.ratFunc k)
+          (Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf.ne_zero)) +
+        (f.natDegree + f.natDegree % 2) • WeilDivisor.ofPoint (Place.infty k) := by
+  classical
+  refine WeilDivisor.ext fun P ↦ ?_
+  rw [Divisor.coeff_radicalBranch (IsFunctionField.ratFunc k) P
+    (RatFunc.algebraMap_ne_zero hf.ne_zero)]
+  simp only [WeilDivisor.coeff_add, Divisor.coeff_principal, Units.val_mk0,
+    WeilDivisor.coeff_nsmul]
+  rcases Place.eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
+  · rw [Place.ord_infty, RatFunc.intDegree_polynomial, WeilDivisor.coeff_ofPoint_self]
+    split_ifs <;> omega
+  · rw [Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf,
+      WeilDivisor.coeff_ofPoint_of_ne (Place.adicOfIrreducible_ne_infty hq)]
+    split_ifs <;> omega
+
+/-- The radical branch divisor of a squarefree polynomial on `k(x)` has degree
+`deg f + deg f % 2`. -/
+theorem Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree {f : k[X]}
+    (hf : Squarefree f) :
+    Divisor.degree (radicalBranch (IsFunctionField.ratFunc k) 2
+      (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf.ne_zero)) =
+      f.natDegree + f.natDegree % 2 := by
+  rw [Divisor.radicalBranch_eq_principal_add_natDegree_add_mod_nsmul_ofPoint_infty hf,
+    Divisor.degree_add, Divisor.degree_principal, map_nsmul, Divisor.degree_ofPoint,
+    Place.degree_infty]
+  norm_num
+
+variable [Algebra (RatFunc k) F]
+
+omit [Algebra k F] in
+/-- **`y² = f(x)` has degree two over `k(x)`**: if `F = k(x)(y)` with `y² = f(x)` for a squarefree
+nonconstant polynomial `f`, then `[F : k(x)] = 2`.  The order of `f` at the place of any
+irreducible factor is one, so `f` is not a square in `k(x)`.  No hypothesis on the characteristic
+is needed. -/
+theorem finrank_eq_two_of_sq_eq_of_squarefree {f : k[X]} (hf : Squarefree f)
+    (hm : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
+    Module.finrank (RatFunc k) F = 2 := by
+  obtain ⟨q, hq, hqf⟩ := exists_irreducible_of_degree_pos (natDegree_pos_iff_degree_pos.mp hm)
+  refine Place.finrank_eq_of_pow_eq_of_prime_of_not_dvd_ord k (RatFunc k)
+    (Place.adicOfIrreducible hq)
+    Nat.prime_two hgen hy ?_
+  rw [Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
+  simp [hqf]
+
+variable [IsScalarTower k (RatFunc k) F]
+
+/-- **The degree of the different of `y² = f(x)`**: away from characteristic two, if
+`F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, then the different of
+`F / k(x)` has degree `deg f + deg f % 2`. -/
+theorem Divisor.degree_different_eq_natDegree_add_mod_of_sq_eq (h2 : (2 : k) ≠ 0)
+    {f : k[X]} (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
+    [FiniteDimensional (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F] :
+    Divisor.degree (Divisor.different k F (IsFunctionField.ratFunc k)) =
+      f.natDegree + f.natDegree % 2 := by
+  have hu : algebraMap k[X] (RatFunc k) f ≠ 0 := RatFunc.algebraMap_ne_zero hf.ne_zero
+  have h := Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k F
+    (IsFunctionField.ratFunc k) Nat.prime_two hgen hy (by exact_mod_cast h2) hu
+  rw [Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree hf] at h
+  norm_num at h
+  exact_mod_cast h
+
+/-- Away from characteristic two, a place `P'` of `y² = f(x)` has ramification index `1` over
+`k(x)` when `ord_P f` is even at the place `P` below it, and `2` otherwise. -/
+private theorem Place.ramificationIdx_eq_of_sq_eq [Algebra.IsIntegral (RatFunc k) F]
+    (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (P' : Place k F) :
+    Place.ramificationIdx (RatFunc k) P' =
+      if (2 : ℤ) ∣ (P'.restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) f) then 1
+      else 2 := by
+  have : FiniteDimensional (RatFunc k) F :=
+    Algebra.finiteDimensional_of_pow_eq hgen hy two_ne_zero
+  have h2' : ((2 : ℕ) : RatFunc k) ≠ 0 := by
+    rw [← map_natCast (algebraMap k (RatFunc k))]
+    exact (_root_.map_ne_zero _).mpr (by exact_mod_cast h2)
+  have : Algebra.IsSeparable (RatFunc k) F := Algebra.isSeparable_of_pow_eq hgen hy h2'
+  exact Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) Nat.prime_two hgen hy
+    (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+
+open scoped Classical in
+/-- **The ramified places of `y² = f(x)` over the finite places of `k(x)`** (Stichtenoth,
+Proposition 6.2.3(b)): away from characteristic two, if `F = k(x)(y)` with `y² = f(x)` for a
+squarefree polynomial `f`, then a place of `F` over the place of `k(x)` defined by an irreducible
+polynomial `q` has ramification index `2` when `q` divides `f`, and is unramified otherwise. -/
+theorem Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_adicOfIrreducible
+    [Algebra.IsIntegral (RatFunc k) F] (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F}
+    (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {P' : Place k F}
+    {q : k[X]} (hq : Irreducible q)
+    (hP' : P'.restrict k (RatFunc k) = Place.adicOfIrreducible hq) :
+    Place.ramificationIdx (RatFunc k) P' = if q ∣ f then 2 else 1 := by
+  rw [Place.ramificationIdx_eq_of_sq_eq h2 hf hgen hy, hP',
+    Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
+  split_ifs <;> simp_all
+
+/-- **Ramification of `y² = f(x)` at infinity** (Stichtenoth, Proposition 6.2.3(b)): away from
+characteristic two, if `F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, then a place
+of `F` over the place at infinity of `k(x)` has ramification index `2` when `deg f` is odd, and is
+unramified otherwise. -/
+theorem Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_infty [Algebra.IsIntegral (RatFunc k) F]
+    (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {P' : Place k F}
+    (hP' : P'.restrict k (RatFunc k) = Place.infty k) :
+    Place.ramificationIdx (RatFunc k) P' = if Odd f.natDegree then 2 else 1 := by
+  have hodd : (2 : ℤ) ∣ -(f.natDegree : ℤ) ↔ ¬ Odd f.natDegree := by
+    rw [Nat.not_odd_iff_even, even_iff_two_dvd]
+    omega
+  rw [Place.ramificationIdx_eq_of_sq_eq h2 hf hgen hy, hP', Place.ord_infty,
+    RatFunc.intDegree_polynomial]
+  simp only [hodd, ite_not]
+
+/-- **The genus of `y² = f(x)`** (Stichtenoth, Proposition 6.2.3(b)): away from characteristic
+two, if `F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, and `k` is the exact field
+of constants of `F`, then for positive `m = deg f`, `F` has genus `⌊(m - 1) / 2⌋`, that is
+`(m - 1) / 2` for `m` odd and `(m - 2) / 2` for `m` even.  In particular `F` has genus at least
+two once `deg f ≥ 5`. For constant `f`, the hypotheses force `F = k(x)`, of genus `0`. -/
+theorem genus_eq_natDegree_sub_one_div_two_of_sq_eq (h2 : (2 : k) ≠ 0)
+    (hex : IsIntegrallyClosedIn k F) {f : k[X]} (hf : Squarefree f) {y : F}
+    (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
+    genus k F = (f.natDegree - 1) / 2 := by
+  have hu : algebraMap k[X] (RatFunc k) f ≠ 0 := RatFunc.algebraMap_ne_zero hf.ne_zero
+  -- `[F : k(x)]` is `2` for nonconstant `f`; for constant `f`, exactness of the constants puts
+  -- the square root `y` of a constant into `k`, so `F = k(x)`.
+  have hN : Module.finrank (RatFunc k) F = if f.natDegree = 0 then 1 else 2 := by
+    split_ifs with hm
+    · obtain ⟨c, hc⟩ := natDegree_eq_zero.mp hm
+      have halg : IsAlgebraic k y := ⟨X ^ 2 - C c, X_pow_sub_C_ne_zero two_pos c, by
+        rw [map_sub, map_pow, aeval_X, aeval_C, hy, ← hc, RatFunc.algebraMap_C,
+          ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply, sub_self]⟩
+      obtain ⟨c', hc'⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex y halg
+      have hbot : (RatFunc k)⟮y⟯ = ⊥ := IntermediateField.adjoin_simple_eq_bot_iff.mpr
+        (IntermediateField.mem_bot.mpr
+          ⟨algebraMap k (RatFunc k) c', by rw [← IsScalarTower.algebraMap_apply, hc']⟩)
+      exact IntermediateField.bot_eq_top_iff_finrank_eq_one.mp (hbot ▸ hgen)
+    · exact finrank_eq_two_of_sq_eq_of_squarefree hf (Nat.pos_of_ne_zero hm) hgen hy
+  -- Hurwitz: `2g - 2 = [F : k(x)] · (0 - 2) + deg f + deg f % 2`.
+  have : FiniteDimensional (RatFunc k) F :=
+    Algebra.finiteDimensional_of_pow_eq hgen hy two_ne_zero
+  have h := hurwitz_genus_formula_of_pow_eq_of_prime (IsFunctionField.ratFunc k)
+    (isFunctionField_iff_functionField.mpr inferInstance) isIntegrallyClosedIn_ratFunc hex
+    Nat.prime_two hgen hy (by exact_mod_cast h2) hu
+  rw [Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree hf, genus_ratFunc,
+    Module.finrank_self, hN] at h
+  norm_num at h
+  by_cases hm : f.natDegree = 0 <;>
+    simp only [hm, ↓reduceIte] at h <;> omega
+
+end SquareRoot
 
 end TauCeti
