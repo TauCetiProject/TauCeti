@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Representability.LabeledGraph
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Associativity of labeled-graph gluing
@@ -194,18 +195,6 @@ private theorem glueAssocEquiv_C (A B C : LabeledGraph k) (c : Fin C.n) :
     simp only [glueAssocEquiv, Equiv.trans_apply, Equiv.symm_apply_apply,
       glueTripleRightEquiv_C]
 
-private theorem map_sup_graph {V W : Type*} (G H : SimpleGraph V) (f : V → W) :
-    (G ⊔ H).map f = G.map f ⊔ H.map f := by
-  ext u v
-  simp only [SimpleGraph.map_adj', SimpleGraph.sup_adj]
-  constructor
-  · rintro ⟨hne, a, b, hab | hab, ha, hb⟩
-    · exact Or.inl ⟨hne, a, b, hab, ha, hb⟩
-    · exact Or.inr ⟨hne, a, b, hab, ha, hb⟩
-  · rintro (⟨hne, a, b, hab, ha, hb⟩ | ⟨hne, a, b, hab, ha, hb⟩)
-    · exact ⟨hne, a, b, Or.inl hab, ha, hb⟩
-    · exact ⟨hne, a, b, Or.inr hab, ha, hb⟩
-
 /-- Reassociation sends the graph of the left parenthesization to the graph of the right
 parenthesization; each edge comes from one of the three factors. -/
 private theorem glue_graph_map_glueAssocEquiv (A B C : LabeledGraph k) :
@@ -229,13 +218,13 @@ private theorem glue_graph_map_glueAssocEquiv (A B C : LabeledGraph k) :
     funext (A.glueAssocEquiv_C B C)
   have hleft : ((A.glue B).glue C).graph =
       (A.graph.map leftA ⊔ B.graph.map leftB) ⊔ C.graph.map leftC := by
-    simp only [glue_graph, map_sup_graph, SimpleGraph.map_map]
+    simp only [glue_graph, SimpleGraph.map_sup, SimpleGraph.map_map]
     rfl
   have hright : (A.glue (B.glue C)).graph =
       A.graph.map rightA ⊔ (B.graph.map rightB ⊔ C.graph.map rightC) := by
-    simp only [glue_graph, map_sup_graph, SimpleGraph.map_map]
+    simp only [glue_graph, SimpleGraph.map_sup, SimpleGraph.map_map]
     rfl
-  rw [hleft, hright, map_sup_graph, map_sup_graph]
+  rw [hleft, hright, SimpleGraph.map_sup, SimpleGraph.map_sup]
   simp only [SimpleGraph.map_map, hA, hB, hC]
   exact sup_assoc (A.graph.map rightA) (B.graph.map rightB) (C.graph.map rightC)
 
