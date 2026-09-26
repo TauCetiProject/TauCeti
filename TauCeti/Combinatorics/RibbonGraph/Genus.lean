@@ -81,7 +81,7 @@ theorem IsConnected.two_sub_two_mul_genus (hΓ : Γ.IsConnected) :
   exact ((Γ.isConnected_toPermutationTriple ν).mpr hΓ).two_sub_two_mul_genus
 
 /-- Isomorphic ribbon graphs have the same combinatorial genus. -/
-@[simp] theorem Iso.genus_eq {Δ : BipartiteRibbonGraph.{u}} (f : Γ.Iso Δ) :
+theorem Iso.genus_eq {Δ : BipartiteRibbonGraph.{u}} (f : Γ.Iso Δ) :
     Γ.genus = Δ.genus := by
   rw [genus_def, genus_def, f.eulerChar_eq]
 
