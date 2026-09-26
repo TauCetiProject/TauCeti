@@ -24,7 +24,7 @@ composite `Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M)` and the singl
 `Rep.res K.subtype M` are representations of groups with different carrier types
 (`↥(K.subgroupOf H)` and `↥K`), so the two cannot even be compared as representations. The
 comparison morphism between them is built from
-`TauCeti.Subgroup.subtype_comp_subgroupOfEquivOfLe` and `Rep.isIntertwiningMap_res_res`.
+`Subgroup.subtype_comp_subgroupOfEquivOfLe` and `Rep.isIntertwiningMap_res_res`.
 
 ## Main results
 
@@ -38,6 +38,12 @@ comparison morphism between them is built from
   Chapter I, §5 for the composition law of the maps induced on cohomology by homomorphisms, and
   Chapter III, §9 for the dual transitivity of the transfer in group homology
   (`TauCeti.groupHomology.transfer_trans`).
+* Formally: Mathlib's `groupCohomology.map` and its composition law `groupCohomology.map_comp`, of
+  `Mathlib/RepresentationTheory/Homological/GroupCohomology/Functoriality.lean`, of which this is
+  the case of two inclusions composed with a change of group; and Tau Ceti's
+  `Rep.isIntertwiningMap_res_res`, of
+  `TauCeti/RepresentationTheory/Rep/ChangeOfGroup.lean`, which is what makes the two restrictions
+  of `M` agree along `Subgroup.subgroupOfEquivOfLe`.
 -/
 
 public noncomputable section
