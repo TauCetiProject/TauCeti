@@ -17,8 +17,7 @@ Chevalley relation over every commutative ring. When two distinct Bourbaki nodes
 pairing, both raising subgroups commute, both lowering subgroups commute, and each raising subgroup
 commutes with the other node's lowering subgroup. The last relation holds for any distinct nodes.
 
-The Lie brackets vanish by the pinned Serre relations. The represented Kostant exponential carries
-these bracket identities to matrix commutation, which descends to the points of the carrier.
+The statements concern the pinned Serre generators and their Kostant root-subgroup points.
 These relations are used in the presentation of the pinned split group by its simple-root
 subgroups; relations among nonorthogonal roots require the higher root-string formulas.
 
