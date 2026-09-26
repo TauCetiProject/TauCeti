@@ -43,8 +43,8 @@ section Translation
 
 variable [ContinuousConstSMul G G]
 
-/-- The preferred subgroup chart at `g`, obtained by translating the supplied identity chart and
-then restricting it to the subgroup slice. -/
+/-- The preferred subgroup chart at `g`, obtained by translating the given slice chart by `g` and
+then restricting it to the subgroup. -/
 noncomputable def preferredSliceChart (K : Subgroup G)
     (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
@@ -100,17 +100,6 @@ theorem coe_preferredSliceChart_symm_apply (K : Subgroup G)
   rw [TauCeti.IsSliceChart.coe_subtypeChart_symm_apply
       (h := K.isSliceChart_translatedChart e he g) (by simpa using hy),
     OpenPartialHomeomorph.translatedChart_symm_apply]
-
-/-- On its source, the ambient translated chart is recovered by reinserting the zero transverse
-coordinate after applying the preferred subgroup chart. -/
-theorem preferredSliceChart_mk_zero_eq (K : Subgroup G)
-    (e : OpenPartialHomeomorph G (F × F'))
-    (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
-    (g x : K) (hx : x ∈ (preferredSliceChart K e he g).source) :
-    (preferredSliceChart K e he g x, (0 : F')) = e ((g : G)⁻¹ * (x : G)) := by
-  unfold preferredSliceChart at hx ⊢
-  rw [TauCeti.IsSliceChart.subtypeChart_mk_zero_eq _ x hx,
-    OpenPartialHomeomorph.translatedChart_apply]
 
 /-- One zero-slice chart around the identity equips a subgroup with a charted-space structure.
 

@@ -261,15 +261,6 @@ theorem coe_subtypeChart_symm_apply
   apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
   exact hy
 
-/-- On its source, reinserting the zero transverse coordinate after applying the subtype chart
-recovers the ambient chart value. -/
-theorem subtypeChart_mk_zero_eq
-    (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s]
-    (x : s) (hx : x ∈ h.subtypeChart.source) :
-    (h.subtypeChart x, (0 : Y')) = e x.1 := by
-  rw [subtypeChart_apply]
-  exact h.mk_fst_zero_eq (by simpa using hx) x.2
-
 end ZeroSlice
 
 /-- On the source of a slice chart, the flattened set is cut out by the slice. -/

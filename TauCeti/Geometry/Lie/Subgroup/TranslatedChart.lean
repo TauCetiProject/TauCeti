@@ -84,7 +84,7 @@ open Set Topology
 variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace P]
 
-/-- Translating an identity slice chart by a subgroup point preserves the subgroup slice. -/
+/-- Translating a slice chart for a subgroup by a subgroup point preserves the subgroup slice. -/
 theorem isSliceChart_translatedChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
