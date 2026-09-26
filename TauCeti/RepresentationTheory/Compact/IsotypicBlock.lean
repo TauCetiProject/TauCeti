@@ -206,16 +206,16 @@ theorem peterWeylFamily_mem_peterWeylBlock (models : ι → IrrepModel 𝕜 G) (
   rw [peterWeylFamily_apply]
   exact Submodule.smul_mem _ _ (matrixCoeffLp_mem_peterWeylBlock (models i) _ _)
 
-/-- **The block is spanned by the normalized matrix coefficients it contains.** An arbitrary
-matrix coefficient of a model is a combination of the `dᵢ²` coefficients at pairs of canonical
-basis vectors, by sesquilinearity; that is
-`TauCeti.matrixCoeffLp_mem_span_peterWeylFamily`, applied to the one-member family
-`fun _ : Unit => models i`, whose Peter-Weyl family is exactly the part of this family's that
-belongs to the `i`-th block. -/
+/-- **The block of `models i` is the span of the `dᵢ²` members of the Peter-Weyl family that
+belong to it**, the normalized matrix coefficients of the model at pairs of vectors of its
+canonical basis. Nothing is assumed about `𝕜` beyond `RCLike`, nor about the other models of the
+family. -/
 theorem peterWeylBlock_eq_span_range (models : ι → IrrepModel 𝕜 G) (i : ι) :
     peterWeylBlock (models i) =
       Submodule.span 𝕜 (Set.range fun p : Fin (models i).dim × Fin (models i).dim =>
         peterWeylFamily models ⟨i, p⟩) := by
+  -- The Peter-Weyl family of the one-member family `fun _ : Unit => models i` is exactly the part
+  -- of this family's that belongs to the `i`-th block.
   have hrange : Set.range (peterWeylFamily fun _ : Unit => models i) =
       Set.range fun p : Fin (models i).dim × Fin (models i).dim =>
         peterWeylFamily models ⟨i, p⟩ := by
@@ -225,7 +225,9 @@ theorem peterWeylBlock_eq_span_range (models : ι → IrrepModel 𝕜 G) (i : ι
     · rintro - ⟨p, rfl⟩
       exact ⟨⟨(), p⟩, by simp⟩
   refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
-  · rintro - ⟨v, w, rfl⟩
+  · -- An arbitrary matrix coefficient is a combination of the `dᵢ²` coefficients at pairs of
+    -- canonical basis vectors, by sesquilinearity.
+    rintro - ⟨v, w, rfl⟩
     rw [SetLike.mem_coe, ← hrange]
     exact matrixCoeffLp_mem_span_peterWeylFamily (fun _ : Unit => models i) () v w
   · rintro - ⟨p, rfl⟩
@@ -370,14 +372,14 @@ theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel �
 Everything in this section assumes `𝕜` algebraically closed, which is what makes the `dᵢ²`
 normalized matrix coefficients of a model orthonormal, hence a basis of its block. -/
 
-/-- **For an algebraically closed `𝕜`** the normalized matrix coefficients belonging to a single
-block are orthonormal. This is Schur orthogonality for the single model `models i`, so no
-inequivalence hypothesis is involved: it is
-`TauCeti.ContRepresentation.orthonormal_matrixCoeffLp` for the one-member family
-`fun _ : Unit => models i`. -/
+/-- **For an algebraically closed `𝕜` the `dᵢ²` members of the Peter-Weyl family belonging to one
+block are orthonormal.** Only the model `models i` itself is involved, so nothing is assumed about
+the inequivalence of the models of the family. -/
 theorem orthonormal_peterWeylFamily_block [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G) (i : ι) :
     Orthonormal 𝕜 fun p : Fin (models i).dim × Fin (models i).dim =>
       peterWeylFamily models ⟨i, p⟩ := by
+  -- Schur orthogonality for the one-member family `fun _ : Unit => models i`, whose pairwise
+  -- inequivalence hypothesis is vacuous.
   have h := (ContRepresentation.orthonormal_matrixCoeffLp (fun _ : Unit => (models i).rep)
       (fun _ => (models i).continuous_rep) (fun _ => (models i).isUnitary)
       (fun _ => (models i).isIrreducible) Subsingleton.pairwise
@@ -731,15 +733,16 @@ section Projection
 
 variable {models : ι → IrrepModel 𝕜 G}
 
-/-- **The character averaging operator maps the whole of `L²(G)` into its block.** The preimage of
-the block is a closed subspace, the block being finite-dimensional, and it contains every block of
-the skeleton: its own by `TauCeti.peterWeylBlockAveraging_apply_of_mem`, the others by
-`TauCeti.peterWeylBlockAveraging_apply_eq_zero_of_mem`. Since the blocks of a skeleton are dense
-(`TauCeti.topologicalClosure_iSup_peterWeylBlock`), that preimage is everything; this is where
-exhaustiveness of the skeleton enters. -/
+/-- **For an algebraically closed `𝕜` and a skeleton of the unitary dual, the character averaging
+operator of `models i` maps the whole of `L²(G)` into the block of `models i`.** Exhaustiveness of
+the skeleton is what extends this from the span of the blocks to all of `L²(G)`. -/
 theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock [IsAlgClosed 𝕜]
     (h : IsIrrepSkeleton models) (i : ι) (f : Lp 𝕜 2 (haarProb G)) :
     peterWeylBlockAveraging (models i) f ∈ peterWeylBlock (models i) := by
+  -- The preimage `K` of the block is a closed subspace, the block being finite-dimensional, and it
+  -- contains every block of the skeleton: its own by `peterWeylBlockAveraging_apply_of_mem`, the
+  -- others by `peterWeylBlockAveraging_apply_eq_zero_of_mem`. The blocks of a skeleton being
+  -- dense, `K` is everything.
   set K := (peterWeylBlock (models i)).comap
     (peterWeylBlockAveraging (models i)).toLinearMap with hK
   have hclosed : IsClosed (K : Set (Lp 𝕜 2 (haarProb G))) :=
@@ -759,14 +762,15 @@ theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock [IsAlgClosed 𝕜]
       (Submodule.topologicalClosure_minimal _ hle hclosed)
   exact htop (Submodule.mem_top (x := f))
 
-/-- **The character averaging operator is the orthogonal projection onto its block**: averaging
-against `dim V_π · conj χ_π` is the isotypic projector of `π`, in the Hilbert-space sense that its
-value is the component of `f` in the `π`-block. It lands in the block by
-`TauCeti.peterWeylBlockAveraging_apply_mem_peterWeylBlock`, and what it removes is orthogonal to
-the block because the operator is self-adjoint and fixes the block. -/
+/-- **For an algebraically closed `𝕜` and a skeleton of the unitary dual, the character averaging
+operator is the orthogonal projection onto its block**: averaging against `dim V_π · conj χ_π` is
+the isotypic projector of `π`, in the Hilbert-space sense that its value at `f` is the component
+of `f` in the `π`-block. -/
 theorem peterWeylBlockAveraging_eq_starProjection [IsAlgClosed 𝕜] (h : IsIrrepSkeleton models)
     (i : ι) :
     peterWeylBlockAveraging (models i) = (peterWeylBlock (models i)).starProjection := by
+  -- The value lands in the block by `peterWeylBlockAveraging_apply_mem_peterWeylBlock`, and what
+  -- is removed is orthogonal to the block because the operator is self-adjoint and fixes it.
   refine ContinuousLinearMap.ext fun f => (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
     (peterWeylBlockAveraging_apply_mem_peterWeylBlock h i f) fun b hb => ?_).symm
   have hsym : ⟪peterWeylBlockAveraging (models i) f, b⟫_𝕜
