@@ -28,6 +28,16 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- Membership in the norm subgroup of an unramified quadratic class is equivalent to even
+normalized valuation. -/
+theorem mem_quadraticNormSubgroup_iff_even_of_unramified_class {Δ : Kˣ}
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) (b : Kˣ) :
+    b ∈ quadraticNormSubgroup (Δ : K) ↔ Even (normalizedValuation K b).toAdd := by
+  rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup Δ b,
+    hilbertSymbol_eq_one_iff]
+  exact hΔ b
+
 /-- The norm subgroup of an unramified quadratic class has index two. -/
 theorem quadraticNormSubgroup_index_eq_two_of_unramified_class {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
@@ -35,10 +45,8 @@ theorem quadraticNormSubgroup_index_eq_two_of_unramified_class {Δ : Kˣ}
     (quadraticNormSubgroup (Δ : K)).index = 2 := by
   obtain ⟨π, hπ⟩ := exists_isUniformizer K
   have hmem (b : Kˣ) : b ∈ quadraticNormSubgroup (Δ : K) ↔
-      Even (normalizedValuation K b).toAdd := by
-    rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup Δ b,
-      hilbertSymbol_eq_one_iff]
-    exact hΔ b
+      Even (normalizedValuation K b).toAdd :=
+    mem_quadraticNormSubgroup_iff_even_of_unramified_class hΔ b
   apply Subgroup.index_eq_two_iff_exists_notMem_and.mpr
   refine ⟨π, ?_, fun b ↦ ?_⟩
   · rw [hmem, (isUniformizer_def π).mp hπ, toAdd_ofAdd]
