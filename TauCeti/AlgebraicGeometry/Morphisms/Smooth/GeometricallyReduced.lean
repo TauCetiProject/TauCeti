@@ -19,8 +19,9 @@ coordinate algebras are reduced by `TauCeti.isReduced_of_smooth`.
 
 The main result is the instance `AlgebraicGeometry.Smooth.geometricallyReduced`. It supplies the
 geometric-reducedness half of the Jacobian challenge's standing-hypotheses deduction that a
-smooth, geometrically connected curve is geometrically integral. The remaining irreducibility
-half uses that the local rings of a smooth scheme over a field are regular domains.
+smooth, geometrically connected curve is geometrically integral. The irreducibility half, which
+uses that the local rings of a smooth scheme over a field are regular domains, is
+`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`.
 
 No formalization is vendored. The commutative-algebra input is
 `TauCeti.isReduced_of_smooth`; the passage from affine opens to the whole scheme uses
