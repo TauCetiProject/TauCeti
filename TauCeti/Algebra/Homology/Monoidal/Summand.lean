@@ -133,8 +133,5 @@ lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r
         (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) j).hom := rfl
   rw [ha]
   simp only [ι_mapBifunctorAssociatorX_hom, curriedAssociatorNatIso_hom_app_app_app]
-  -- Both sides are now the same inclusion; they carry different proofs of the totalization index
-  -- equation, which `simp` does not identify syntactically.
-  rfl
 
 end HomologicalComplex

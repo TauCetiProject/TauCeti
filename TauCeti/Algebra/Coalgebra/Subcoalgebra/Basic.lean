@@ -102,7 +102,7 @@ instance : SMulMemClass (Subcoalgebra R C) R C where
   smul_mem {D} r {_} hc := D.carrier.smul_mem r hc
 
 instance : PartialOrder (Subcoalgebra R C) :=
-  .ofSetLike (Subcoalgebra R C) C
+  .ofSetLike (Subcoalgebra R C)
 
 /-- The underlying submodule of a subcoalgebra. -/
 @[expose] def toSubmodule (D : Subcoalgebra R C) : Submodule R C :=

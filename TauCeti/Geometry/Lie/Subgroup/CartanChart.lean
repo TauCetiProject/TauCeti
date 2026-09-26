@@ -101,7 +101,7 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
       rw [Submodule.lieExpMulLieExp_zero, hinv_one]
       exact hA
     simpa only [Submodule.lieExpMulLieExp_zero] using
-      hf.localInverse_contMDiffAt.continuousAt.preimage_mem_nhds hA'
+      hf.contMDiffAt_localInverse.continuousAt.preimage_mem_nhds hA'
   refine ⟨U, hU, ?_⟩
   intro x hxU
   constructor

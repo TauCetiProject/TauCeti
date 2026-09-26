@@ -662,7 +662,7 @@ theorem conjugateCohomologyIso_trans_conjugateCohomologyIso (n : ℕ) :
     ← groupCohomology.map_comp]
   refine L.groupCohomologyMap_eq_conjugateCohomologyIso_hom F (g * h)
     (L.conjugate_conjugate g h).symm _ _ (fun u v huv ↦ ?_) (fun x ↦ ?_) n
-  · rw [MonoidHom.comp_apply, MonoidHom.coe_coe, MonoidHom.coe_coe,
+  · rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MonoidHom.coe_ofClass,
       MulEquiv.symm_apply_eq, MulEquiv.symm_apply_eq, conjugateGalEquiv_mk, conjugateGalEquiv_mk]
     exact congrArg QuotientGroup.mk <| Subtype.ext <| by
       rw [huv, conjugateGroundEquiv_conjugateGroundEquiv_apply_coe, conjugateGroundEquiv_apply_coe]

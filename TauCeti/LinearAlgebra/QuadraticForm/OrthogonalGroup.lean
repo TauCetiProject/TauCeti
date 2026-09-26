@@ -228,7 +228,7 @@ private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   have key' : ∀ x : M₂, Q₁ (e.toLinearEquiv.symm x) = Q₂ x := fun x => by
     rw [← key (e.toLinearEquiv.symm x), e.toLinearEquiv.apply_symm_apply]
   ext g
-  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_orthogonalGroup_iff]
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, mem_orthogonalGroup_iff]
   constructor
   · rintro ⟨f, hf, rfl⟩ m
     rw [LinearEquiv.autCongr_apply_apply, key, hf, key']
@@ -470,7 +470,7 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
     (specialOrthogonalGroup Q₁).map (LinearEquiv.autCongr e.toLinearEquiv : _ →* _) =
       specialOrthogonalGroup Q₂ := by
   ext g
-  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_specialOrthogonalGroup_iff]
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, mem_specialOrthogonalGroup_iff]
   constructor
   · rintro ⟨f, hf, rfl⟩
     constructor

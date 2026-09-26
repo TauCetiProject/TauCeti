@@ -238,7 +238,7 @@ private theorem exists_toGL_eq_diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)
         simp [d]
       rw [Units.val_mul, det_mul, diagGL_coe, det_diagonal, hprod, permutationGL_coe,
         det_permutation, Equiv.Perm.sign_inv]
-      simp only [s, Units.coe_map, MonoidHom.coe_coe, RingHom.toMonoidHom_eq_coe,
+      simp only [s, Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe,
         eq_intCast]
       rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
     exact ⟨⟨_, hdet⟩, d, Units.ext (coe_GL_coe_matrix _)⟩

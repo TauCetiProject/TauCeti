@@ -67,7 +67,6 @@ theorem finrank_code (a : F) : Module.finrank F (code a) = 1 := by
   simpa using (linearIndependent_row_generator a).rank_matrix
 
 /-- The displayed parity-check matrix cuts out exactly the generated code. -/
-@[simp]
 theorem checkedBy_check (a : F) : (check a).checkedBy = code a := by
   simpa only [generator, check, code] using
     (Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one

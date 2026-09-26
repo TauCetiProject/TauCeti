@@ -92,7 +92,7 @@ private instance instEpiPointwiseQuotientPresheafGrpProjectionHom
         (inferInstance : Epi ((pointwiseQuotientPresheafProjection H I hI).app A)) y.down
     refine ⟨ULift.up x, ?_⟩
     erw [pointwiseQuotientPresheafProjection_ulift_app_apply]
-    exact ULift.ext _ _ hx
+    exact ULift.ext hx
   let _ : Epi (Functor.whiskerRight
       (Functor.whiskerRight (pointwiseQuotientPresheafProjection H I hI)
         GrpCat.uliftFunctor.{u + 1, u}) (forget GrpCat.{u + 1})) :=

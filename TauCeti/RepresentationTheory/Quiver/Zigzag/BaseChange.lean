@@ -114,7 +114,7 @@ private theorem skewZigzagBaseChangePathAlgHom_relator
         _ = (c.ratio h h' : k) •
               skewZigzagMk l G (c.map (f : k →* l)) (backtrackElem G l h') := by
           rw [RingHom.smul_toAlgebra', RingHom.comp_apply]
-          simp only [SkewZigzagParameter.map_ratio, Units.coe_map, MonoidHom.coe_coe]
+          simp only [SkewZigzagParameter.map_ratio, Units.coe_map, MonoidHom.coe_ofClass]
           rw [Algebra.smul_def]
         _ = (c.ratio h h' : k) •
               skewZigzagBaseChangePathAlgHom G f c (backtrackElem G k h') := by
@@ -191,7 +191,7 @@ private theorem skewZigzagIdeal_map_id (c : SkewZigzagParameter k G) :
     (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal =
       (skewZigzagIdeal k G c).asIdeal :=
   congrArg (fun d : SkewZigzagParameter k G => (skewZigzagIdeal k G d).asIdeal) (by
-    simpa only [RingHom.toMonoidHom_eq_coe, RingHom.coe_monoidHom_id] using
+    simpa only [RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_id] using
       SkewZigzagParameter.map_id c)
 
 /-- Mapping a skew-zigzag parameter along a composite or successively gives the same relation
@@ -212,24 +212,18 @@ private theorem skewZigzagIdeal_map_comp {m : Type*} [CommRing m]
 /-- Scalar extension along the identity coefficient homomorphism is the identity map. -/
 @[simp]
 theorem skewZigzagBaseChange_id (c : SkewZigzagParameter k G) :
-    (Ideal.quotientEquivAlgOfEq k
-      (I := (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal)
-      (J := (skewZigzagIdeal k G c).asIdeal)
-      (by exact skewZigzagIdeal_map_id G c)).toRingHom.comp
+    (Ideal.Quotient.factor (le_of_eq
+      (by exact skewZigzagIdeal_map_id G c))).comp
         (skewZigzagBaseChange G (RingHom.id k) c) =
       RingHom.id (skewZigzagQuotient k G c) := by
   apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
     (skewZigzagMk_surjective k G c)
   · intro a
-    simp only [RingHom.comp_apply, skewZigzagBaseChange_algebraMap,
-      RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe,
-      AlgEquiv.commutes, RingHom.id_apply]
+    rw [RingHom.comp_apply, skewZigzagBaseChange_algebraMap, ← Ideal.Quotient.factorₐ_apply k,
+      AlgHom.commutes, RingHom.id_apply, RingHom.id_apply]
   · intro x
     rw [RingHom.comp_apply, skewZigzagBaseChange_skewZigzagMk_ofPath,
-      skewZigzagMk_apply, skewZigzagMk_apply, RingHom.id_apply]
-    simpa only [RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom,
-      RingHom.coe_coe] using
-        (Ideal.quotientEquivAlgOfEq_mk k (skewZigzagIdeal_map_id G c) (ofPath x))
+      skewZigzagMk_apply, skewZigzagMk_apply, RingHom.id_apply, Ideal.Quotient.factor_mk]
 
 /-- Scalar extension along a composite coefficient homomorphism is the composite of the two
 scalar-extension maps. -/
@@ -246,21 +240,14 @@ theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
   · intro a
     simp only [RingHom.comp_apply]
     rw [skewZigzagBaseChange_algebraMap, skewZigzagBaseChange_algebraMap,
-      skewZigzagBaseChange_algebraMap]
-    exact (Ideal.quotientEquivAlgOfEq m
-      (I := (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal)
-      (J := (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal)
-      (skewZigzagIdeal_map_comp G f g c)).commutes (g (f a))
+      skewZigzagBaseChange_algebraMap, ← Ideal.Quotient.factorₐ_apply m, AlgHom.commutes,
+      RingHom.comp_apply]
   · intro x
     simp only [RingHom.comp_apply]
     rw [skewZigzagBaseChange_skewZigzagMk_ofPath,
       skewZigzagBaseChange_skewZigzagMk_ofPath,
       skewZigzagBaseChange_skewZigzagMk_ofPath, skewZigzagMk_apply,
-      skewZigzagMk_apply]
-    exact Ideal.quotientEquivAlgOfEq_mk m
-      (I := (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal)
-      (J := (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal)
-      (skewZigzagIdeal_map_comp G f g c) (ofPath x)
+      skewZigzagMk_apply, Ideal.Quotient.factor_mk]
 
 end Quotient
 

@@ -174,7 +174,7 @@ theorem normalizedValuation_algebraMap_eq_one_iff (x : Kˣ) :
     normalizedValuation L (Units.map (algebraMap K L : K →* L) x) = 1 ↔
       normalizedValuation K x = 1 := by
   rw [normalizedValuation_eq_one_iff, normalizedValuation_eq_one_iff, Units.coe_map,
-    MonoidHom.coe_coe, ← ValuativeExtension.mapValueGroupWithZero_valuation,
+    MonoidHom.coe_ofClass, ← ValuativeExtension.mapValueGroupWithZero_valuation,
     ← map_one (ValuativeExtension.mapValueGroupWithZero K L)]
   exact ValuativeExtension.mapValueGroupWithZero_strictMono.injective.eq_iff
 
@@ -189,7 +189,7 @@ private theorem exists_normalizedValuation_algebraMap_eq_zpow :
   refine ⟨(φ πu).toAdd, lt_of_le_of_ne ?_ ?_, ?_⟩
   · -- `π` is integral in `K`, so its image is integral in `L`.
     have hmem : ((Units.map (algebraMap K L : K →* L) πu : Lˣ) : L) ∈ 𝒪[L] := by
-      rw [Valuation.mem_integer_iff, Units.coe_map, MonoidHom.coe_coe,
+      rw [Valuation.mem_integer_iff, Units.coe_map, MonoidHom.coe_ofClass,
         ← ValuativeExtension.mapValueGroupWithZero_valuation,
         ← map_one (ValuativeExtension.mapValueGroupWithZero K L),
         ValuativeExtension.mapValueGroupWithZero_strictMono.le_iff_le]
@@ -251,7 +251,7 @@ theorem normalizedValuationWithZero_algebraMap (x : K) :
       (Units.map (algebraMap K L : K →* L) (Units.mk0 x hx))
     have hK := normalizedValuationWithZero_coe (Units.mk0 x hx)
     have h := normalizedValuation_algebraMap (L := L) (Units.mk0 x hx)
-    simp only [Units.coe_map, MonoidHom.coe_coe, Units.val_mk0] at hL hK h
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0] at hL hK h
     rw [hL, hK, h, WithZero.coe_pow]
 
 /-- The ramification index is the only natural number `n` with `v_L(x) = n · v_K(x)` for all
@@ -289,7 +289,7 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
     (Units.map (algebraMap K L : K →* L) (Units.mk0 (πK : K) hK))
   have h₂ := valueGroupWithZeroIsoInt_valuation (Units.mk0 (πL : L) hL)
   have h₀ := normalizedValuation_algebraMap_irreducible (L := L) hπK
-  simp only [Units.coe_map, MonoidHom.coe_coe, Units.val_mk0,
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
     normalizedValuation_irreducible hπL, toAdd_ofAdd] at h₀ h₁ h₂
   rw [h₀, toAdd_ofAdd] at h₁
   rw [h₁, map_pow, h₂, ← WithZero.exp_nsmul]

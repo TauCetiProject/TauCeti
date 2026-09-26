@@ -301,7 +301,7 @@ private noncomputable def conjAlgEquivOfAlgEquiv
     rw [← IsScalarTower.algebraMap_smul R k (e.symm x),
       ← IsScalarTower.algebraMap_smul S k x]
     simp only [e.map_smulₛₗ, e.apply_symm_apply, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_ringEquiv, f.commutes]
+      AlgEquiv.coe_toRingEquiv, f.commutes]
 
 /-- **The endomorphism algebra of a simple left ideal determines the division algebra in an
 algebra presentation.**

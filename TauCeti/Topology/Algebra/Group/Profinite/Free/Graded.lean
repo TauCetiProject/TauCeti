@@ -143,8 +143,9 @@ theorem _root_.MulEquiv.gradedBracket_gradedMkZero_ne_zero_heisenbergGroup
   rw [e.pLowerCentralSeries_two_eq_bot_heisenbergGroup, Subgroup.mem_bot,
     ← map_commutatorElement, e.symm.map_eq_one_iff, HeisenbergGroup.commutatorElement_eq]
   intro h
-  have := congrArg HeisenbergGroup.z h
-  simp at this
+  have hz := congrArg HeisenbergGroup.z h
+  simp only [mul_one, mul_zero, HeisenbergGroup.one_z] at hz
+  exact one_ne_zero ((sub_zero (1 : ZMod p)).symm.trans hz)
 
 end Detecting
 

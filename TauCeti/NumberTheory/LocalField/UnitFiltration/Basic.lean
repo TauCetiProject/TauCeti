@@ -102,7 +102,7 @@ theorem mem_unitFiltration_iff_exists {i : ℕ} {x : Kˣ} :
     x ∈ unitFiltration K i ↔
       ∃ u : 𝒪[K]ˣ, (u : 𝒪[K]) - 1 ∈ 𝓂[K] ^ i ∧ ((u : 𝒪[K]) : K) = (x : K) := by
   simp only [unitFiltration, Subgroup.mem_map, MonoidHom.mem_ker, Units.ext_iff, Units.coe_map,
-    Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Subring.coe_subtype,
+    Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Subring.coe_subtype,
     ← (Ideal.Quotient.mk (𝓂[K] ^ i)).map_one, Ideal.Quotient.mk_eq_mk_iff_sub_mem]
 
 /-- Membership in the unit filtration at positive depth for a unit of `𝒪[K]`: the congruence

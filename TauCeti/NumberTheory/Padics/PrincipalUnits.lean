@@ -108,7 +108,7 @@ noncomputable def unitsPrincipal (f : ℕ) : Subgroup ℤ_[p]ˣ :=
 theorem mem_unitsPrincipal_iff_toZModPow {f : ℕ} {u : ℤ_[p]ˣ} :
     u ∈ unitsPrincipal p f ↔ PadicInt.toZModPow f (u : ℤ_[p]) = 1 := by
   rw [unitsPrincipal, MonoidHom.mem_ker, Units.ext_iff, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Units.val_one]
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_one]
 
 /-- `u ∈ U^(f)` iff `u ≡ 1 mod p ^ f`. -/
 theorem mem_unitsPrincipal_iff {f : ℕ} {u : ℤ_[p]ˣ} :

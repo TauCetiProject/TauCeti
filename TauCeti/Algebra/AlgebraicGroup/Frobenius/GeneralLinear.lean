@@ -431,7 +431,7 @@ private theorem subgroupCongr_comp_eq_of_coe_eq (F : P →* P)
       (iterateFrobeniusHopfIdealPoints n p k I A).comp
         (MulEquiv.subgroupCongr hP : P →* ↥(hopfIdealPointsSubgroup n I A)) := by
   refine MonoidHom.ext fun g => Subtype.ext ?_
-  simp only [MonoidHom.comp_apply, MonoidHom.coe_coe, MulEquiv.subgroupCongr_apply,
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MulEquiv.subgroupCongr_apply,
     coe_iterateFrobeniusHopfIdealPoints, hF]
 
 /-- **The rational points of a named carrier are its Frobenius-fixed points**, for any carrier whose

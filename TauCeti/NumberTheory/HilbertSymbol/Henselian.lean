@@ -50,7 +50,7 @@ theorem hilbertSymbol_units_map_eq_one (h2 : IsUnit (2 : R)) (u u' : Rˣ) :
   refine (hilbertSymbol_eq_one_iff _ _).mpr ⟨algebraMap R K x, algebraMap R K y, ?_⟩
   have := congrArg (algebraMap R K) hxy
   simp only [map_add, map_mul, map_pow, map_one, map_neg, Units.val_neg] at this
-  simp only [Units.coe_map, MonoidHom.coe_coe]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass]
   linear_combination -this
 
 end TauCeti

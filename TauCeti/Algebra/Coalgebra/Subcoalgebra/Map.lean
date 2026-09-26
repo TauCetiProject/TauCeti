@@ -86,7 +86,7 @@ source subcoalgebra belongs to `B`. -/
 theorem map_le_iff {f : C →ₗc[R] D} {A : Subcoalgebra R C} {B : Subcoalgebra R D} :
     A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B := by
   rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
-  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule,
+  simp only [IsConcreteLE.le_iff, Submodule.mem_comap, mem_toSubmodule,
     CoalgHom.toLinearMap_eq_ofClass, CoalgHom.coe_linearMapOfClass]
 
 /-- The image construction is monotone in the source subcoalgebra. -/

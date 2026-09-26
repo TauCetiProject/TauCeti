@@ -1331,7 +1331,7 @@ theorem weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {S : Fin k → S
     (weightMul T ν U).map (φ : A →+ B) ≤ weightMul S ν V := by
   rw [AddSubgroup.map_le_iff_le_comap]
   refine weightMul_le.mpr fun t ht u hu ↦ ?_
-  simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_coe, map_mul]
+  simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, map_mul]
   exact mul_mem_weightMul S ν V
     (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
 

@@ -70,7 +70,7 @@ theorem fieldUnitSignature_surjective :
   -- The real embedding of `x` at `w` has the sign of `ε w`, hence so does its inverse.
   have h := hx w
   simp only [Units.val_mul, Units.val_inv_eq_inv_val, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_coe, Units.val_mk0]
+    MonoidHom.coe_ofClass, Units.val_mk0]
   rcases mul_pos_iff.mp h with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · exact mul_pos (inv_pos.mpr h2) h1
   · exact mul_pos_of_neg_of_neg (inv_lt_zero.mpr h2) h1

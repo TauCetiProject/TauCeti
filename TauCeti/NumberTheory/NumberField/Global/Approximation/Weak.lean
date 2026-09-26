@@ -232,16 +232,15 @@ theorem weakApproximation_denseRange
     Metric.mem_nhds_iff.mp ((hVinf w).1.mem_nhds (hainf w))
   -- Convert the value-group radii supplied by the valued topology back to `ℤᵐ⁰` radii.
   let εₑ : FinitePlace K Sₑ → ℤᵐ⁰ := fun v =>
-    MonoidWithZeroHom.ValueGroup₀.embedding (γ v : MonoidWithZeroHom.ValueGroup₀
-      (.ofClass (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰)))
+    MonoidWithZeroHom.ValueGroup₀.embedding
+      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀)
   have hεₑ : ∀ v, εₑ v ≠ 0 := fun v => by
     intro h
     apply Units.ne_zero (γ v)
     apply MonoidWithZeroHom.ValueGroup₀.embedding_injective
     -- Unfold only the chosen radius; the value-group embedding itself remains abstract.
     change MonoidWithZeroHom.ValueGroup₀.embedding
-      (γ v : MonoidWithZeroHom.ValueGroup₀
-        (.ofClass (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰))) = 0 at h
+      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀) = 0 at h
     rw [map_zero]
     exact h
   obtain ⟨x, hxₑ, hxinf⟩ := exists_mixed_approximation aₑ ainf εₑ hεₑ einf heinf

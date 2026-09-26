@@ -228,7 +228,7 @@ theorem monoidAlgebraProdHom_single (c : C) (x : completedGroupAlgebra R Γ) :
     monoidAlgebraProdHom R C Γ (MonoidAlgebra.single c x) =
       map R (MonoidHom.inr C Γ) (continuous_inr C Γ) x * of R (C × Γ) (c, 1) := by
   simp only [monoidAlgebraProdHom, MonoidAlgebra.coe_liftNCAlgHom, MonoidAlgebra.liftNC_single,
-    MonoidHom.comp_apply, MonoidHom.inl_apply, AddMonoidHom.coe_coe]
+    MonoidHom.comp_apply, MonoidHom.inl_apply, AddMonoidHom.coe_ofClass]
 
 /-- The monomial `γ · c` goes to the group element `(c, γ)`. -/
 @[simp]

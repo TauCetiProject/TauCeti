@@ -345,7 +345,7 @@ noncomputable def componentPointwiseQuotientNatIso
         (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
         (isNormal_identityComponentHopfIdeal H) A q
       simp only [GrpCat.hom_comp, MonoidHom.comp_apply, MulEquiv.toGrpIso_hom,
-        MulEquiv.toMonoidHom_eq_coe, ConcreteCategory.hom_ofHom, MonoidHom.coe_coe]
+        MulEquiv.toMonoidHom_eq_coe, ConcreteCategory.hom_ofHom, MonoidHom.coe_ofClass]
       rw [CommHopfAlgCat.mapPointwiseQuotient_mk,
         componentPointwiseQuotientMulEquiv_mk,
         componentPointwiseQuotientMulEquiv_mk,

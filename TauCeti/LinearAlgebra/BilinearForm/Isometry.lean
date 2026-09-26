@@ -198,7 +198,7 @@ private theorem map_isometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     (isometryGroup B).map (LinearEquiv.autCongr e : _ →* _)
       = isometryGroup (LinearMap.BilinForm.congr e B) := by
   ext g
-  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_isometryGroup_iff]
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, mem_isometryGroup_iff]
   constructor
   · rintro ⟨a, ha, rfl⟩ x y
     simp only [LinearEquiv.autCongr_apply_apply, LinearMap.BilinForm.congr_apply,

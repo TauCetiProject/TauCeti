@@ -45,6 +45,12 @@ open ContCohomology
 
 universe u
 
+-- For prime `p`, `AddCommGroup (ZMod p)` is also derivable from `[IsSimpleAddGroup (ZMod p)]
+-- [AddGroup.IsNilpotent (ZMod p)]`; that structure is not reducibly the ring one, so the
+-- `DistribMulAction G (ZMod p)` hypothesis below would not match what `H1ConjInvariants` expects.
+-- Preferring the ring path locally keeps a single additive structure on `ZMod p`.
+attribute [local instance 2000] Ring.toAddCommGroup
+
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G] {N : Subgroup G} [N.Normal]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]

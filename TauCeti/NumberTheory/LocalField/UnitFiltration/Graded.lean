@@ -202,7 +202,7 @@ theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
     apply Units.ext
     apply Subtype.ext
     simp only [coe_unitFiltrationToIntegerUnits, x, Units.coe_map,
-      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Subring.coe_subtype]
+      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Subring.coe_subtype]
   refine ⟨x, ?_⟩
   -- Strip the multiplicative type tag to compare the two representatives in the module quotient.
   change Submodule.Quotient.mk (unitFiltrationDifference n x) = Submodule.Quotient.mk a

@@ -359,7 +359,7 @@ theorem map_ray_one :
   rw [Subgroup.mem_map, MonoidHom.mem_range]
   refine ⟨fun ⟨J, hJ, hJI⟩ ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
   · obtain ⟨x, _, hxJ⟩ := mem_ray_iff.mp hJ
-    exact ⟨x, by rw [hxJ, ← hJI, MonoidHom.coe_coe, idealsPrimeToEquiv_apply]⟩
+    exact ⟨x, by rw [hxJ, ← hJI, MonoidHom.coe_ofClass, idealsPrimeToEquiv_apply]⟩
   · exact ⟨⟨I, idealsPrimeTo_eq_top (Modulus.support_one (K := K)) ▸ Subgroup.mem_top I⟩,
       mem_ray_iff.mpr ⟨x, isCongrOne_one x, hx⟩, rfl⟩
 

@@ -340,7 +340,7 @@ theorem restrictShape_extend (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedS
   ext c
   obtain ⟨i, j⟩ := c
   simp only [_root_.YoungDiagram.mem_cells, mem_restrictShape, extend_apply]
-  grind [SetLike.le_def.mp h.le, entry_lt]
+  grind [IsConcreteLE.le_iff.mp h.le, entry_lt]
 
 /-- **The branching bijection, fibrewise.**  The tableaux of shape `μ` in the letters `{0, …, n}`
 whose sub-shape of small entries is a given `ν` are exactly the tableaux of shape `ν` in the

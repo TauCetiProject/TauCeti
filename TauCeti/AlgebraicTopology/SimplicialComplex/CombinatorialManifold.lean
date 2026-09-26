@@ -286,7 +286,7 @@ theorem IsCombinatorialManifold.dimension_le (h : IsCombinatorialManifold K n) :
 theorem IsCombinatorialManifold.dimension_eq (h : IsCombinatorialManifold K n) (hK : K ≠ ⊥) :
     dimension K = (n : WithBot ℕ∞) := by
   apply le_antisymm h.dimension_le
-  obtain ⟨τ, hτ, -⟩ := SetLike.exists_of_lt (bot_lt_iff_ne_bot.mpr hK)
+  obtain ⟨τ, hτ, -⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hK)
   cases n with
   | zero =>
       have hle := le_dimension hτ

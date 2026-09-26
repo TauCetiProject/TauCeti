@@ -101,27 +101,27 @@ variable {A : Type*} [Ring A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ
 /-- The predicate cut out by Wedhorn Lemma 7.2: every element of `I` has value cofinal
 for `H`. -/
 def IdealCofinalFor (v : Valuation A Γ₀)
-    (H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))) (I : Ideal A) : Prop :=
+    (H : TauCeti.ConvexSubgroup (v.valueGroup)) (I : Ideal A) : Prop :=
   ∀ a ∈ I, CofinalValueFor v H.toSubgroup a
 
 /-- The defining property of ideal-wide cofinality. Needed because the definition's body is not
 exposed, so consumers cannot apply `IdealCofinalFor` as a `∀` directly. Mirrors
 `cofinalValueFor_def`. -/
 theorem idealCofinalFor_def {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} {I : Ideal A} :
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)} {I : Ideal A} :
     IdealCofinalFor v H I ↔ ∀ a ∈ I, CofinalValueFor v H.toSubgroup a :=
   Iff.rfl
 
 /-- The condition is antitone in the ideal. -/
 theorem IdealCofinalFor.mono {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} {I J : Ideal A}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)} {I J : Ideal A}
     (h : IdealCofinalFor v H J) (hIJ : I ≤ J) : IdealCofinalFor v H I :=
   fun a ha ↦ h a (hIJ ha)
 
 /-- Below the strict-containment threshold, the ideal condition says exactly that `I` is
 contained in the cofinality ideal of Lemma 7.1. -/
 theorem idealCofinalFor_iff_le_cofinalIdeal {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     (hH : characteristicSubgroup v < H) {I : Ideal A} :
     IdealCofinalFor v H I ↔ I ≤ cofinalIdeal v hH :=
   ⟨fun h _ hx ↦ mem_cofinalIdeal.mpr (h _ hx), fun h _ hx ↦ mem_cofinalIdeal.mp (h hx)⟩
@@ -129,8 +129,8 @@ theorem idealCofinalFor_iff_le_cofinalIdeal {v : Valuation A Γ₀}
 /-- The values of `I` meet the characteristic subgroup: the first branch of Wedhorn
 Definition 7.3. -/
 def IdealMeetsCharacteristicSubgroup (v : Valuation A Γ₀) (I : Ideal A) : Prop :=
-  ∃ (a : A) (_ : a ∈ I) (h : (MonoidWithZeroHom.ofClass v) a ≠ 0),
-    valueGroup.mk (.ofClass v) 1 a (by simp) h ∈ characteristicSubgroup v
+  ∃ (a : A) (_ : a ∈ I) (h : v a ≠ 0),
+    valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h ∈ characteristicSubgroup v
 
 /-- An attained value `≥ 1` always meets the characteristic subgroup — so under Wedhorn's
 disjointness hypothesis every element of `I` has value strictly below `1`, the observation
@@ -139,13 +139,12 @@ theorem lt_one_of_not_idealMeetsCharacteristicSubgroup {v : Valuation A Γ₀} {
     (hdisj : ¬ IdealMeetsCharacteristicSubgroup v I) {a : A} (haI : a ∈ I) : v a < 1 := by
   by_contra hge
   push Not at hge
-  have ha0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := by
-    simpa using (zero_lt_one.trans_le hge).ne'
+  have ha0 : v a ≠ 0 := (zero_lt_one.trans_le hge).ne'
   exact hdisj ⟨a, haI, ha0, valueGroup_mk_mem_characteristicSubgroup_of_one_le_value ha0 hge⟩
 
 /-- The ideal condition inherits that monotonicity. -/
 theorem IdealCofinalFor.mono_subgroup {v : Valuation A Γ₀}
-    {H K : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} {I : Ideal A}
+    {H K : TauCeti.ConvexSubgroup (v.valueGroup)} {I : Ideal A}
     (h : IdealCofinalFor v K I) (hHK : H ≤ K) : IdealCofinalFor v H I :=
   fun a ha ↦ (h a ha).mono hHK
 
@@ -155,12 +154,12 @@ theorem IdealCofinalFor.mono_subgroup {v : Valuation A Γ₀}
 the attainment hypothesis of Lemma 7.2 and the maximality half; note that no maximum is taken
 over it — Wedhorn maximises over a finite generating set, which is why the standing
 finite-generation hypothesis is needed at all. -/
-def valueSet (v : Valuation A Γ₀) (I : Ideal A) : Set (valueGroup (.ofClass v)) :=
-  {γ | ∃ a ∈ I, v.restrict a = (γ : ValueGroup₀ (.ofClass v))}
+def valueSet (v : Valuation A Γ₀) (I : Ideal A) : Set (v.valueGroup) :=
+  {γ | ∃ a ∈ I, v.restrict a = (γ : v.ValueGroup₀)}
 
 @[simp]
-theorem mem_valueSet {v : Valuation A Γ₀} {I : Ideal A} {γ : valueGroup (.ofClass v)} :
-    γ ∈ valueSet v I ↔ ∃ a ∈ I, v.restrict a = (γ : ValueGroup₀ (.ofClass v)) :=
+theorem mem_valueSet {v : Valuation A Γ₀} {I : Ideal A} {γ : v.valueGroup} :
+    γ ∈ valueSet v I ↔ ∃ a ∈ I, v.restrict a = (γ : v.ValueGroup₀) :=
   Iff.rfl
 
 /-- The branch condition of Definition 7.3, restated on `valueSet`: `v(I)` meets `cΓ_v`. The
@@ -172,12 +171,12 @@ theorem idealMeetsCharacteristicSubgroup_iff {v : Valuation A Γ₀} {I : Ideal 
   · rintro ⟨a, haI, h0, hmem⟩
     exact ⟨_, ⟨a, haI, v.restrict_eq_mk h0⟩, hmem⟩
   · rintro ⟨γ, ⟨a, haI, hval⟩, hmem⟩
-    have h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := by
+    have h0 : v a ≠ 0 := by
       intro h
-      rw [v.restrict_eq_zero_iff.mpr (by simpa using h)] at hval
+      rw [v.restrict_eq_zero_iff.mpr h] at hval
       exact WithZero.coe_ne_zero hval.symm
     refine ⟨a, haI, h0, ?_⟩
-    have hγ : valueGroup.mk (.ofClass v) 1 a (by simp) h0 = γ := by
+    have hγ : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 = γ := by
       exact_mod_cast (v.restrict_eq_mk h0).symm.trans hval
     rwa [hγ]
 
@@ -187,8 +186,7 @@ that callers use
 to discharge the first branch of Definition 7.3. -/
 theorem idealMeetsCharacteristicSubgroup_of_one_le {v : Valuation A Γ₀} {I : Ideal A} {a : A}
     (haI : a ∈ I) (ha : 1 ≤ v a) : IdealMeetsCharacteristicSubgroup v I := by
-  have h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := by
-    simpa using (zero_lt_one.trans_le ha).ne'
+  have h0 : v a ≠ 0 := (zero_lt_one.trans_le ha).ne'
   exact ⟨a, haI, h0, valueGroup_mk_mem_characteristicSubgroup_of_one_le_value h0 ha⟩
 
 /-- **The bridge from the ideal to the group.** An ideal is cofinal for `H` exactly when every
@@ -196,21 +194,21 @@ one of its nonzero values is a cofinal *element* of the value group. The vanishi
 no condition, since `0` is cofinal for every subgroup — which is why they are excluded from
 `valueSet` rather than constrained. -/
 theorem idealCofinalFor_iff_forall_isCofinalElement {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} {I : Ideal A} :
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)} {I : Ideal A} :
     IdealCofinalFor v H I ↔
       ∀ γ ∈ valueSet v I, TauCeti.IsCofinalElement H.toSubgroup γ := by
   constructor
   · rintro hI γ ⟨a, haI, ha⟩
-    have h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := by
+    have h0 : v a ≠ 0 := by
       intro hz
       exact absurd (ha ▸ v.restrict_eq_zero_iff.mpr hz) WithZero.coe_ne_zero
     have := (cofinalValueFor_iff_isCofinalElement h0).mp (hI a haI)
-    have hmk : valueGroup.mk (.ofClass v) 1 a (by simp) h0 = γ := by
+    have hmk : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 = γ := by
       have := (v.restrict_eq_mk h0).symm.trans ha
       exact_mod_cast this
     exact hmk ▸ this
   · intro hS a haI
-    by_cases h0 : (MonoidWithZeroHom.ofClass v) a = 0
+    by_cases h0 : v a = 0
     · exact cofinalValueFor_of_eq_zero h0
     · refine (cofinalValueFor_iff_isCofinalElement h0).mpr (hS _ ⟨a, haI, ?_⟩)
       exact v.restrict_eq_mk h0
@@ -221,7 +219,7 @@ theorem idealCofinalFor_iff_forall_isCofinalElement {v : Valuation A Γ₀}
 generated by a single attained value below `1`. Only membership of `h` in the value set is
 needed — not that `h` dominates it. -/
 theorem le_closure_singleton_of_idealCofinalFor {v : Valuation A Γ₀} {I : Ideal A}
-    {K : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} {h : valueGroup (.ofClass v)}
+    {K : TauCeti.ConvexSubgroup (v.valueGroup)} {h : v.valueGroup}
     (hh : h ∈ valueSet v I) (hlt : h < 1) (hK : IdealCofinalFor v K I) :
     K ≤ TauCeti.ConvexSubgroup.closure {h} :=
   (TauCeti.isCofinalElement_iff_subset_closure hlt).mp
@@ -230,8 +228,8 @@ theorem le_closure_singleton_of_idealCofinalFor {v : Valuation A Γ₀} {I : Ide
 /-- **Minimality half.** A convex subgroup for which `I` is cofinal sits below every convex
 subgroup containing so much as one value of `I`. No domination hypothesis is needed. -/
 theorem le_of_idealCofinalFor_of_mem_valueSet {v : Valuation A Γ₀} {I : Ideal A}
-    {H K : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
-    (hcof : IdealCofinalFor v H I) {γ : valueGroup (.ofClass v)}
+    {H K : TauCeti.ConvexSubgroup (v.valueGroup)}
+    (hcof : IdealCofinalFor v H I) {γ : v.valueGroup}
     (hγ : γ ∈ valueSet v I) (hγK : γ ∈ K) : H ≤ K :=
   -- through the convex subgroup `γ` generates: `H` is below it, and it is below `K`
   (le_closure_singleton_of_idealCofinalFor hγ
@@ -241,7 +239,7 @@ theorem le_of_idealCofinalFor_of_mem_valueSet {v : Valuation A Γ₀} {I : Ideal
 /-- **Minimality, as a least-element statement.** Any convex subgroup for which `I` is cofinal
 and which contains a value of `I` is the least convex subgroup meeting `v(I)`. -/
 theorem isLeast_of_idealCofinalFor {v : Valuation A Γ₀} {I : Ideal A}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     (hcof : IdealCofinalFor v H I) (hmeet : ∃ γ ∈ valueSet v I, γ ∈ H) :
     IsLeast {K | ∃ γ ∈ valueSet v I, γ ∈ K} H :=
   ⟨hmeet, fun _ ⟨_, hγ, hγK⟩ ↦ le_of_idealCofinalFor_of_mem_valueSet hcof hγ hγK⟩
@@ -253,7 +251,7 @@ Note what this does *not* say: the values on `I` need not be bounded by the valu
 since `v (c * t) = v c * v t` can exceed `v t` when `1 < v c`. The hypothesis constrains the
 generators only, not the ideal's values. -/
 theorem idealCofinalFor_of_span {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     (hH : characteristicSubgroup v < H) {T : Set A} {I : Ideal A} (hspan : Ideal.span T = I)
     (hT : ∀ t ∈ T, CofinalValueFor v H.toSubgroup t) : IdealCofinalFor v H I :=
   (idealCofinalFor_iff_le_cofinalIdeal hH).mpr <| by
@@ -263,7 +261,7 @@ theorem idealCofinalFor_of_span {v : Valuation A Γ₀}
 /-- If `v` vanishes on the whole of `I` then every convex subgroup works, so the greatest one
 is `⊤`. This is Wedhorn's "if `v(I) = {0}`, we may choose `H = Γv`". -/
 theorem isGreatestIdealCofinal_top_of_forall_eq_zero {v : Valuation A Γ₀} {I : Ideal A}
-    (h : ∀ a ∈ I, (MonoidWithZeroHom.ofClass v) a = 0) : IsGreatest {K | IdealCofinalFor v K I} ⊤ :=
+    (h : ∀ a ∈ I, v a = 0) : IsGreatest {K | IdealCofinalFor v K I} ⊤ :=
   ⟨fun a ha ↦ cofinalValueFor_of_eq_zero (h a ha), fun _ _ ↦ le_top⟩
 
 /-! ### Reduction along the radical
@@ -279,7 +277,7 @@ variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZer
 replaced by a finitely generated ideal with the same radical — the standing hypothesis
 of §7.1. -/
 theorem idealCofinalFor_radical_iff {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     (hH : characteristicSubgroup v < H) {I : Ideal A} :
     IdealCofinalFor v H I.radical ↔ IdealCofinalFor v H I := by
   rw [idealCofinalFor_iff_le_cofinalIdeal hH, idealCofinalFor_iff_le_cofinalIdeal hH]
@@ -287,7 +285,7 @@ theorem idealCofinalFor_radical_iff {v : Valuation A Γ₀}
 
 /-- Two ideals with the same radical are cofinal for exactly the same convex subgroups. -/
 theorem idealCofinalFor_congr_of_radical_eq {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))}
+    {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     (hH : characteristicSubgroup v < H) {I J : Ideal A} (hIJ : I.radical = J.radical) :
     IdealCofinalFor v H I ↔ IdealCofinalFor v H J := by
   rw [← idealCofinalFor_radical_iff hH (I := I), ← idealCofinalFor_radical_iff hH (I := J), hIJ]
@@ -304,17 +302,17 @@ Domination is stated on `ValueGroup₀`, so generators lying in the support are 
 vanishing value is cofinal for free. Attainment is required only up to a power, because `h`
 lives on `J` rather than on `I`. -/
 theorem isGreatestIdealCofinal_closure_singleton_of_span {v : Valuation A Γ₀}
-    {I J : Ideal A} {T : Set A} {h : valueGroup (.ofClass v)} {n : ℕ}
+    {I J : Ideal A} {T : Set A} {h : v.valueGroup} {n : ℕ}
     (hH : characteristicSubgroup v < TauCeti.ConvexSubgroup.closure {h})
     (hspan : Ideal.span T = J) (hrad : I.radical = J.radical) (hlt : h < 1) (hn : n ≠ 0)
-    (hdom : ∀ t ∈ T, v.restrict t ≤ (h : ValueGroup₀ (.ofClass v)))
+    (hdom : ∀ t ∈ T, v.restrict t ≤ (h : v.ValueGroup₀))
     (hatt : h ^ n ∈ valueSet v I) :
     IsGreatest {K | IdealCofinalFor v K I} (TauCeti.ConvexSubgroup.closure {h}) := by
   constructor
   · -- membership: generators → J (ideal) → I (radical)
     refine (idealCofinalFor_congr_of_radical_eq hH hrad).mpr ?_
     refine idealCofinalFor_of_span hH hspan fun t ht ↦ ?_
-    by_cases h0 : (MonoidWithZeroHom.ofClass v) t = 0
+    by_cases h0 : v t = 0
     · exact cofinalValueFor_of_eq_zero h0
     · refine cofinalValueFor_closure_singleton_of_le h0 ?_ hlt
       have := hdom t ht
@@ -356,10 +354,10 @@ private theorem mem_supp_of_radical_eq_of_forall_mem_supp {v : Valuation A Γ₀
 `ValueGroup₀`. Both the disjointness argument and the construction below need it, at the two
 different generators they work with. -/
 private theorem restrict_pow_eq_mk_pow {v : Valuation A Γ₀} {t : A}
-    (ht0 : (MonoidWithZeroHom.ofClass v) t ≠ 0) (n : ℕ) :
+    (ht0 : v t ≠ 0) (n : ℕ) :
     v.restrict (t ^ n)
-      = ((valueGroup.mk (.ofClass v) 1 t (by simp) ht0 ^ n : valueGroup (.ofClass v)) :
-          ValueGroup₀ (.ofClass v)) := by
+      = ((valueGroup.mk (v : A →*₀ Γ₀) 1 t (by simp) ht0 ^ n : v.valueGroup) :
+          v.ValueGroup₀) := by
   rw [map_pow, v.restrict_eq_mk ht0]
   simp
 
@@ -368,14 +366,14 @@ it inside, so would be its `n`-th power, which is the class of `t ^ n ∈ I` —
 meeting that is excluded. -/
 private theorem not_mem_characteristicSubgroup_of_pow_mem {v : Valuation A Γ₀} {I : Ideal A}
     (hdisj : ¬ IdealMeetsCharacteristicSubgroup v I) {t : A}
-    (ht0 : (MonoidWithZeroHom.ofClass v) t ≠ 0) {n : ℕ} (hn : t ^ n ∈ I) :
-    valueGroup.mk (.ofClass v) 1 t (by simp) ht0 ∉ characteristicSubgroup v := by
+    (ht0 : v t ≠ 0) {n : ℕ} (hn : t ^ n ∈ I) :
+    valueGroup.mk (v : A →*₀ Γ₀) 1 t (by simp) ht0 ∉ characteristicSubgroup v := by
   intro hmem
-  have hn0 : (MonoidWithZeroHom.ofClass v) (t ^ n) ≠ 0 := by
+  have hn0 : v (t ^ n) ≠ 0 := by
     simpa [map_pow] using pow_ne_zero n ht0
   refine hdisj ⟨t ^ n, hn, hn0, ?_⟩
-  have hclass : valueGroup.mk (.ofClass v) 1 (t ^ n) (by simp) hn0
-      = valueGroup.mk (.ofClass v) 1 t (by simp) ht0 ^ n :=
+  have hclass : valueGroup.mk (v : A →*₀ Γ₀) 1 (t ^ n) (by simp) hn0
+      = valueGroup.mk (v : A →*₀ Γ₀) 1 t (by simp) ht0 ^ n :=
     mod_cast (v.restrict_eq_mk hn0).symm.trans (restrict_pow_eq_mk_pow ht0 n)
   rw [hclass]
   exact pow_mem hmem n
@@ -389,8 +387,8 @@ be everything of `I`, contradicting the witness. Maximality is then `Finset.exis
 the maximiser inherits nonvanishing because it dominates every generator. -/
 theorem exists_mem_max_restrict_ne_zero {v : Valuation A Γ₀} {I J : Ideal A} {T : Finset A}
     (hT : Ideal.span (T : Set A) = J) (hrad : I.radical = J.radical) {a₀ : A} (ha₀I : a₀ ∈ I)
-    (ha₀0 : (MonoidWithZeroHom.ofClass v) a₀ ≠ 0) :
-    ∃ t₀ ∈ T, (MonoidWithZeroHom.ofClass v) t₀ ≠ 0 ∧ ∀ t ∈ T, v.restrict t ≤ v.restrict t₀ := by
+    (ha₀0 : v a₀ ≠ 0) :
+    ∃ t₀ ∈ T, v t₀ ≠ 0 ∧ ∀ t ∈ T, v.restrict t ≤ v.restrict t₀ := by
   have hsupp : ¬ ∀ t ∈ T, t ∈ v.supp := fun hall ↦
     ha₀0 ((v.mem_supp_iff _).mp (mem_supp_of_radical_eq_of_forall_mem_supp hT hrad hall ha₀I))
   have hTne : T.Nonempty := by
@@ -414,21 +412,21 @@ subgroup, so the definition presupposes exactly this statement. -/
 private theorem exists_isGreatestIdealCofinal {v : Valuation A Γ₀} {I : Ideal A}
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
     (hdisj : ¬ IdealMeetsCharacteristicSubgroup v I)
-    (hne : ∃ a ∈ I, (MonoidWithZeroHom.ofClass v) a ≠ 0) :
+    (hne : ∃ a ∈ I, v a ≠ 0) :
     ∃ H, IsGreatest {K | IdealCofinalFor v K I} H ∧ characteristicSubgroup v ≤ H ∧
       ∃ γ ∈ valueSet v I, γ ∈ H := by
   obtain ⟨J, ⟨T, hT⟩, hrad⟩ := hfg
   obtain ⟨a₀, ha₀I, ha₀0⟩ := hne
   obtain ⟨t₀, ht₀T, ht₀0, ht₀max⟩ := exists_mem_max_restrict_ne_zero hT hrad ha₀I ha₀0
   -- the witness and the power of it that lands in `I`
-  set h : valueGroup (.ofClass v) := valueGroup.mk (.ofClass v) 1 t₀ (by simp) ht₀0 with hdef
-  have hrestr : v.restrict t₀ = (h : ValueGroup₀ (.ofClass v)) := v.restrict_eq_mk ht₀0
+  set h : v.valueGroup := valueGroup.mk (v : A →*₀ Γ₀) 1 t₀ (by simp) ht₀0 with hdef
+  have hrestr : v.restrict t₀ = (h : v.ValueGroup₀) := v.restrict_eq_mk ht₀0
   have ht₀J : t₀ ∈ J := hT ▸ Ideal.subset_span ht₀T
   obtain ⟨n, hn0, hn⟩ := exists_pow_ne_zero_mem_of_radical_eq hrad.symm ht₀J
-  have hpow : v.restrict (t₀ ^ n) = ((h ^ n : valueGroup (.ofClass v)) : ValueGroup₀ _) :=
+  have hpow : v.restrict (t₀ ^ n) = ((h ^ n : v.valueGroup) : ValueGroup₀ _) :=
     restrict_pow_eq_mk_pow ht₀0 n
   have hatt : h ^ n ∈ valueSet v I := ⟨t₀ ^ n, hn, hpow⟩
-  have hlt_n : (h ^ n : valueGroup (.ofClass v)) < 1 := by
+  have hlt_n : (h ^ n : v.valueGroup) < 1 := by
     have h2 : v.restrict (t₀ ^ n) < 1 :=
       v.restrict_lt_one_iff.mpr (lt_one_of_not_idealMeetsCharacteristicSubgroup hdisj hn)
     rwa [hpow, ← WithZero.coe_one, WithZero.coe_lt_coe] at h2
@@ -459,8 +457,8 @@ theorem exists_isGreatestIdealCofinal_of_not_meets {v : Valuation A Γ₀} {I : 
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
     (hdisj : ¬ IdealMeetsCharacteristicSubgroup v I) :
     ∃ H, IsGreatest {K | IdealCofinalFor v K I} H ∧ characteristicSubgroup v ≤ H ∧
-      ((∃ a ∈ I, (MonoidWithZeroHom.ofClass v) a ≠ 0) → ∃ γ ∈ valueSet v I, γ ∈ H) := by
-  by_cases hne : ∃ a ∈ I, (MonoidWithZeroHom.ofClass v) a ≠ 0
+      ((∃ a ∈ I, v a ≠ 0) → ∃ γ ∈ valueSet v I, γ ∈ H) := by
+  by_cases hne : ∃ a ∈ I, v a ≠ 0
   · obtain ⟨H, hgreat, hle, hmeet⟩ := exists_isGreatestIdealCofinal hfg hdisj hne
     exact ⟨H, hgreat, hle, fun _ ↦ hmeet⟩
   · push Not at hne
@@ -478,7 +476,7 @@ Note that this is a **case split**, not the convex subgroup generated by `cΓ_v`
 `v(I)`; those differ. -/
 noncomputable def characteristicSubgroupOfIdeal (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
-    TauCeti.ConvexSubgroup (valueGroup (.ofClass v)) :=
+    TauCeti.ConvexSubgroup (v.valueGroup) :=
   if h : IdealMeetsCharacteristicSubgroup v I then characteristicSubgroup v
   else (exists_isGreatestIdealCofinal_of_not_meets hfg h).choose
 
@@ -519,7 +517,7 @@ and nothing meets it. -/
 theorem exists_mem_valueSet_mem_characteristicSubgroupOfIdeal {v : Valuation A Γ₀} {I : Ideal A}
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
     (h : ¬ IdealMeetsCharacteristicSubgroup v I)
-    (hne : ∃ a ∈ I, (MonoidWithZeroHom.ofClass v) a ≠ 0) :
+    (hne : ∃ a ∈ I, v a ≠ 0) :
     ∃ γ ∈ valueSet v I, γ ∈ characteristicSubgroupOfIdeal v I hfg := by
   classical
   rw [characteristicSubgroupOfIdeal, dite_eq_right h]
@@ -533,7 +531,7 @@ least element. -/
 theorem isLeast_characteristicSubgroupOfIdeal {v : Valuation A Γ₀} {I : Ideal A}
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
     (h : ¬ IdealMeetsCharacteristicSubgroup v I)
-    (hne : ∃ a ∈ I, (MonoidWithZeroHom.ofClass v) a ≠ 0) :
+    (hne : ∃ a ∈ I, v a ≠ 0) :
     IsLeast {K | ∃ γ ∈ valueSet v I, γ ∈ K} (characteristicSubgroupOfIdeal v I hfg) :=
   isLeast_of_idealCofinalFor (isGreatestIdealCofinal_characteristicSubgroupOfIdeal hfg h).1
     (exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg h hne)
@@ -556,7 +554,7 @@ theorem characteristicSubgroupOfIdeal_eq_top_iff {v : Valuation A Γ₀} {I : Id
     · -- an attained value inside `cΓ_v` that is cofinal for everything forces `cΓ_v = ⊤`
       obtain ⟨a, haI, ha0, hmem⟩ := hm
       have hcof : CofinalValueFor v ⊤ a := cofinalValueFor_top_iff.mpr (hall a haI)
-      have hlt : valueGroup.mk (.ofClass v) 1 a (by simp) ha0 < 1 := by
+      have hlt : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) ha0 < 1 := by
         have := hcof.lt_one
         rwa [v.restrict_eq_mk ha0, ← WithZero.coe_one, WithZero.coe_lt_coe] at this
       have hsub := (TauCeti.isCofinalElement_iff_subset_closure hlt).mp
@@ -577,7 +575,7 @@ theorem characteristicSubgroupOfIdeal_eq_top_iff {v : Valuation A Γ₀} {I : Id
         exact cofinalValueFor_top_iff.mpr (hall a ha)
       · -- `cΓ_v = ⊤` and disjointness force every value on `I` to vanish
         refine top_le_iff.mp (hg.2 fun a ha ↦ ?_)
-        by_cases h0 : (MonoidWithZeroHom.ofClass v) a = 0
+        by_cases h0 : v a = 0
         · exact cofinalValueFor_of_eq_zero h0
         · exact absurd ⟨a, ha, h0, hfull ▸ TauCeti.ConvexSubgroup.mem_top⟩ hm
 

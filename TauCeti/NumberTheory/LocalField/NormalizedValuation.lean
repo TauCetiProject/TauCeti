@@ -122,8 +122,7 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
       (valuation K).toMonoidWithZeroHom)
 
 private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
-  (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
-    (valueGroupWithZeroIsoInt K).toOrderIso.monotone
+  (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)
 
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
@@ -190,7 +189,8 @@ theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
     normalizedValuationWithZero K x = (v x)⁻¹ := by
   have h : intValuation (K := K) x = v x :=
     DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
-      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
+      ((Valuation.isEquiv_map_self_of_strictMono _
+          (EquivLike.injective (valueGroupWithZeroIsoInt K))).trans
         (ValuativeRel.isEquiv _ _))) x
   rw [← h]
   simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
@@ -399,7 +399,7 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
     ∃ n : ℤ, (γ : ValueGroupWithZero K) = valuation K (π : K) ^ n := by
   have huni : (valuation K).IsUniformizer (π : K) :=
     Valuation.isUniformizer_of_maximalIdeal_eq_span (valuation K) hπ.maximalIdeal_eq
-  have hγ : γ ∈ MonoidWithZeroHom.valueGroup (.ofClass (valuation K)) := by
+  have hγ : γ ∈ (valuation K).valueGroup := by
     apply MonoidWithZeroHom.mem_valueGroup
     exact ValuativeRel.valuation_surjective (γ : ValueGroupWithZero K)
   rw [huni.zpowers_eq_valueGroup] at hγ

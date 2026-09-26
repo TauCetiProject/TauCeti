@@ -43,7 +43,7 @@ theorem dvd_relDiscr_iff_exists_one_lt_ramificationIdx {p : Ideal (𝓞 K)} [p.I
   constructor
   · intro hPram
     refine Nat.one_lt_iff_ne_zero_and_ne_one.mpr
-      ⟨(Ideal.ramificationIdx_pos (P : Ideal (𝓞 L)) (𝓞 K)).ne', ?_⟩
+      ⟨(Ideal.ramificationIdx_pos (𝓞 K) (P : Ideal (𝓞 L))).ne', ?_⟩
     exact fun h => hPram (Ideal.ramificationIdx_eq_one_iff.mp h)
   · intro he hur
     exact he.ne' (Ideal.ramificationIdx_eq_one_of_isUnramifiedAt (R := 𝓞 K))

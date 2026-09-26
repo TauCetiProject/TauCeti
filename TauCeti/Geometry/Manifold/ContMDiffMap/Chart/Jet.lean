@@ -95,13 +95,17 @@ section NormedSpace
 omit [IsManifold I n M]
 
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
-derivative, evaluated on the subtype representing the whole chart target. -/
+derivative, evaluated on the subtype representing the whole chart target.
+
+The coercion type is spelled `Set.univ ∩ Set.univ`, the `simp`-normal form of the extended target
+of the identity chart: the chart target rewrites to `Set.univ` by `chartAt_self_eq`, while the
+intersection itself is not simplified inside a type. -/
 @[simp]
 theorem chartIteratedFDeriv_self_apply
     (f : C^n⟮modelWithCornersSelf 𝕜 E, E; modelWithCornersSelf 𝕜 F, F⟯)
     (x : E) (m : ℕ) (hm : m ≤ n)
     (y : (extChartAt (modelWithCornersSelf 𝕜 E) x).target) :
-    DFunLike.coe (F := C(↥(Set.univ ∩ (chartAt E x).target), E [×m]→L[𝕜] F))
+    DFunLike.coe (F := C(↥(Set.univ ∩ Set.univ : Set E), E [×m]→L[𝕜] F))
       (chartIteratedFDeriv f x m hm) y =
         f.iteratedFDerivContinuousMap m hm y := by
   refine (chartIteratedFDeriv_apply f x m hm y).trans ?_

@@ -12,10 +12,11 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 /-!
 # `Lᵖ` seminorm bounds out of bounds between the integrals `∫⁻ ‖·‖ₑ ^ p`
 
-For `0 < p < ∞` the `Lᵖ` seminorm of `v` is by definition the `p`-th root of
-`∫⁻ ‖v x‖ₑ ^ p ∂μ`, so a bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals is the
-same statement as `‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records the passage from
-the former to the latter, which is the direction an estimate proved by integration produces.
+For `0 < p < ∞` the `Lᵖ` seminorm of an a.e. strongly measurable `v` is the `p`-th root of
+`∫⁻ ‖v x‖ₑ ^ p ∂μ` (a function that is not a.e. strongly measurable has seminorm `∞`), so a
+bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals implies the bound
+`‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records that implication, which is the
+direction an estimate proved by integration produces.
 
 The two functions are allowed to take values in different spaces, and those spaces need carry
 nothing beyond an extended norm, since that is all `eLpNorm` reads. In particular the statement
@@ -23,12 +24,13 @@ covers comparing a function with its derivative.
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_rpow_eq_lintegral`: for an `ℝ≥0∞`-valued function, the `p`-th power of the
-  `Lᵖ` seminorm is the integral `∫⁻ f ^ p`.
+* `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
+  power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`.
 * `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal`: an `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ`
   seminorm.
-* `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: from
-  `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`.
+* `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
+  `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`; no measurability of `w` is
+  needed.
 * `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`: Hölder's extended-valued integral inequality
   `(∫⁻ u) ^ r ≤ μ univ ^ (r - 1) * ∫⁻ u ^ r` for `u : α → ℝ≥0∞`.  On a finite measure space it
   expresses the nesting `L^r ⊆ L¹`; for a general `μ` it is only the inequality.

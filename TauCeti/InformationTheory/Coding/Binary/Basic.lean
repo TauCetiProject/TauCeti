@@ -123,7 +123,7 @@ theorem isEven_iff_one_mem_euclideanDual :
 theorem isEven_iff_le_singleParityCheckCode :
     IsEven C ↔ C ≤ singleParityCheckCode (ZMod 2) ι := by
   rw [isEven_iff]
-  simp only [SetLike.le_def, mem_singleParityCheckCode]
+  simp only [IsConcreteLE.le_iff, mem_singleParityCheckCode]
   have hsum (x : ι → ZMod 2) : ∑ i, x i = (hammingNorm x : ZMod 2) := by
     simpa [dotProduct] using dotProduct_one_eq_hammingNorm x
   simp only [hsum, ZMod.natCast_eq_zero_iff_even]

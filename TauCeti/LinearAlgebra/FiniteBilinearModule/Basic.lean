@@ -809,7 +809,7 @@ theorem isIsotropic_zmultiples_iff (x : A) :
 /-- Isotropy is equivalently inclusion in the orthogonal complement. -/
 theorem isIsotropic_iff_le_orthogonalComplement (H : AddSubgroup A) :
     A.IsIsotropic H ↔ H ≤ A.orthogonalComplement H := by
-  simp only [IsIsotropic, SetLike.le_def, mem_orthogonalComplement_iff]
+  simp only [IsIsotropic, IsConcreteLE.le_iff, mem_orthogonalComplement_iff]
 
 /-- Isotropy passes to additive subgroups. -/
 theorem IsIsotropic.mono {H K : AddSubgroup A} (hK : A.IsIsotropic K) (h : H ≤ K) :

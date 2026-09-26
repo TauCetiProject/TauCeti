@@ -105,7 +105,7 @@ theorem valuation_apply_eq_of_asIdeal_eq_smul (σ : L ≃ₐ[K] L)
     -- `e` and `MulSemiringAction.toRingHom _ _ σ` bundle the same map, as an equivalence and as
     -- a homomorphism respectively
     rfl
-  rw [← valuation_ringEquivOfRingEquiv (K := L) (K' := L) e hw x, hσ, AlgEquiv.coe_ringEquiv]
+  rw [← valuation_ringEquivOfRingEquiv (K := L) (K' := L) e hw x, hσ, AlgEquiv.coe_toRingEquiv]
 
 variable [NumberField K] (v : HeightOneSpectrum (𝒪 K))
 
@@ -140,7 +140,7 @@ theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ •
     completionCongr v σ h (algebraMap L (w.adicCompletion L) x) =
       algebraMap L (w'.adicCompletion L) (σ x) := by
   rw [completionCongr, AlgEquiv.ofRingEquiv_apply, adicCompletionCongr_algebraMap,
-    AlgEquiv.coe_ringEquiv]
+    AlgEquiv.coe_toRingEquiv]
 
 variable (v) in
 /-- `completionCongr` is continuous. -/
@@ -178,7 +178,7 @@ private theorem completionCongr_congr {σ σ' : L ≃ₐ[K] L} (hσσ' : σ = σ
 theorem completionCongr_one :
     completionCongr (w := w) (w' := w) v (1 : L ≃ₐ[K] L)
       (by simp) = AlgEquiv.refl :=
-  AlgEquiv.coe_ringEquiv_injective adicCompletionCongr_one
+  AlgEquiv.toRingEquiv_injective adicCompletionCongr_one
 
 /-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
 transporting along `τ * σ`. -/
@@ -187,7 +187,7 @@ theorem completionCongr_trans {w'' : HeightOneSpectrum (𝒪 L)} [w''.asIdeal.Li
     (σ τ : L ≃ₐ[K] L) (hσ : w'.asIdeal = σ • w.asIdeal) (hτ : w''.asIdeal = τ • w'.asIdeal) :
     (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
-  AlgEquiv.coe_ringEquiv_injective (adicCompletionCongr_trans _ _ _ _)
+  AlgEquiv.toRingEquiv_injective (adicCompletionCongr_trans _ _ _ _)
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 @[simp]
@@ -195,7 +195,7 @@ theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asI
     (completionCongr v σ h).symm =
       completionCongr v σ⁻¹
         (by rw [h, inv_smul_smul]) :=
-  AlgEquiv.coe_ringEquiv_injective (adicCompletionCongr_symm _)
+  AlgEquiv.toRingEquiv_injective (adicCompletionCongr_symm _)
 
 end completionCongr
 

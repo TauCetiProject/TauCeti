@@ -259,13 +259,18 @@ omit [FiniteDimensional ℝ F] in
 private theorem tangentSpaceEquivModel_apply (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
     tangentSpaceEquivModel p v = NormedSpace.fromTangentSpace p v := (rfl)
 
-private theorem hasMFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
-    HasMFDerivAt 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v
-      (tangentSpaceEquivModel p : TangentSpace 𝓘(ℝ, F) p →L[ℝ] F) := by
+private theorem hasFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    HasFDerivAt (riemannianExp 𝓘(ℝ, F) F p)
+      (tangentSpaceEquivModel p : TangentSpace 𝓘(ℝ, F) p →L[ℝ] F) v := by
   have hexp : riemannianExp 𝓘(ℝ, F) F p = fun u ↦ p + tangentSpaceEquivModel p u :=
     funext fun u ↦ by rw [riemannianExp_model_space, tangentSpaceEquivModel_apply]
   rw [hexp]
-  exact hasMFDerivAt_iff_hasFDerivAt.2 ((tangentSpaceEquivModel p).hasFDerivAt.const_add p)
+  exact (tangentSpaceEquivModel p).hasFDerivAt.const_add p
+
+private theorem hasMFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    HasMFDerivAt 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v
+      (tangentSpaceEquivModel p : TangentSpace 𝓘(ℝ, F) p →L[ℝ] F) :=
+  hasMFDerivAt_iff_hasFDerivAt.2 (hasFDerivAt_riemannianExp_model_space p v)
 
 /-- The differential of the exponential map of a finite-dimensional inner-product space is the
 identity at every tangent vector. -/
@@ -281,8 +286,8 @@ the identity at every tangent vector. This is the simp-normal form of
 @[simp]
 theorem fderiv_riemannianExp_apply_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
     fderiv ℝ (riemannianExp 𝓘(ℝ, F) F p) v w = NormedSpace.fromTangentSpace p w := by
-  rw [← mfderiv_eq_fderiv]
-  exact mfderiv_riemannianExp_apply_model_space p v w
+  rw [← tangentSpaceEquivModel_apply]
+  exact DFunLike.congr_fun (hasFDerivAt_riemannianExp_model_space p v).fderiv w
 
 /-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
 radius `r` onto the ball of radius `r` about `p`. -/

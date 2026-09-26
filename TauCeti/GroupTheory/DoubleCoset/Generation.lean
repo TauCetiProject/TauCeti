@@ -52,7 +52,7 @@ theorem le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
       g ∈ DoubleCoset.doubleCoset w (B : Set G) (B : Set G))
     (hBP : B ≤ P) : P ≤ B := by
   by_contra hPB
-  obtain ⟨g, hgP, hgB⟩ := SetLike.not_le_iff_exists.mp hPB
+  obtain ⟨g, hgP, hgB⟩ := IsConcreteLE.not_le_iff_exists.mp hPB
   obtain ⟨x, hx, y, hy, hxy⟩ := DoubleCoset.mem_doubleCoset.mp (hcell hgB)
   have hwP : w ∈ P := by
     have hxP := hBP hx

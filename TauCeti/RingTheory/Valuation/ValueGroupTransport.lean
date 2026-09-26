@@ -14,8 +14,8 @@ import TauCeti.Algebra.Order.Hom.MonoidWithZero
 # Transporting the value group along an equivalence of valuations
 
 Mathlib's `Valuation.IsEquiv.orderMonoidIso` is an isomorphism of the value monoids *with
-zero*, `ValueGroup₀ (.ofClass v) ≃*o ValueGroup₀ (.ofClass w)`. Consumers that work with the
-value **group** — for instance any convex subgroup of it — need the corresponding
+zero*, `v.ValueGroup₀ ≃*o w.ValueGroup₀`. Consumers that work with the value
+**group** — for instance any convex subgroup of it — need the corresponding
 isomorphism of groups, which this file supplies.
 
 Since `ValueGroup₀ f = WithZero ↥(valueGroup f)`, it is exactly the inverse of Mathlib's
@@ -53,15 +53,15 @@ Mathlib's `IsEquiv.orderMonoidIso` is an isomorphism of the value monoids *with 
 the groups with zero adjoined. -/
 noncomputable def IsEquiv.valueGroupOrderIso {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (h : v.IsEquiv w) :
-    valueGroup (.ofClass v) ≃*o valueGroup (.ofClass w) :=
+    v.valueGroup ≃*o w.valueGroup :=
   OrderMonoidIso.withZero.symm h.orderMonoidIso
 
 /-- The induced value-group isomorphism agrees with `orderMonoidIso` under the coercion. -/
 @[simp]
 theorem IsEquiv.valueGroupOrderIso_coe {v : Valuation A Γ₀}
-    {w : Valuation A Γ₀'} (h : v.IsEquiv w) (γ : valueGroup (.ofClass v)) :
-    ((h.valueGroupOrderIso γ : valueGroup (.ofClass w)) : ValueGroup₀ (.ofClass w))
-      = h.orderMonoidIso (γ : ValueGroup₀ (.ofClass v)) :=
+    {w : Valuation A Γ₀'} (h : v.IsEquiv w) (γ : v.valueGroup) :
+    ((h.valueGroupOrderIso γ : w.valueGroup) : w.ValueGroup₀)
+      = h.orderMonoidIso (γ : v.ValueGroup₀) :=
   (rfl)
 
 /-- Transport along the inverse equivalence is the inverse transport. Mirrors Mathlib's

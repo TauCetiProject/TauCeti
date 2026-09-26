@@ -257,7 +257,7 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     funext fun x ↦ freeProC.lift_of hP f x
   refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by rw [hcomp]; exact hf), ?_⟩
   refine OpenNormalSubgroup.mem_comap.mpr ?_
-  rw [MonoidHom.coe_coe, freeProC.lift_of, hf₀]
+  rw [MonoidHom.coe_ofClass, freeProC.lift_of, hf₀]
   exact one_mem _
 
 /-- The kernel dies under the lift of a continuous base-point-preserving map to a profinite pro-`C`

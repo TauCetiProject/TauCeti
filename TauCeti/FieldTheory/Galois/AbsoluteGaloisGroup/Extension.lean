@@ -117,7 +117,7 @@ private def fixingSubgroupMulEquiv : AbsoluteGaloisGroup L ≃* ↥σ.fieldRange
       (f := (separableClosureRingEquiv K L σ).symm.trans
         (g.toRingEquiv.trans (separableClosureRingEquiv K L σ)))
       fun c ↦ by
-        simp only [RingEquiv.trans_apply, AlgEquiv.coe_ringEquiv,
+        simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
           separableClosureRingEquiv_symm_algebraMap_base]
         rw [IsScalarTower.algebraMap_apply K L (SeparableClosure L), AlgEquiv.commutes,
           ← IsScalarTower.algebraMap_apply, separableClosureRingEquiv_algebraMap_base], by

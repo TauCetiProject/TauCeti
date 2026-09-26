@@ -76,7 +76,7 @@ theorem explicitRes2_evensGraphCocycle (U : OpenSubgroup G) (hU : U.toSubgroup.i
   simp only [cocyclesMap2_coe, cochainsMap2_apply, ContinuousMonoidHom.coe_subgroupSubtype,
     Subgroup.subtype_apply, AddMonoidHom.id_apply, coe_evensGraphCocycle, cocyclesMap1_coe,
     cochainsMap1_apply, coe_evensHomCocycleAmbient, DistribSMul.toAddMonoidHom_apply,
-    MonoidHom.coe_coe, Subgroup.inverseConjugationHom_apply, trivialF2Pairing_apply,
+    MonoidHom.coe_ofClass, Subgroup.inverseConjugationHom_apply, trivialF2Pairing_apply,
     Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
     AddEquiv.apply_symm_apply]
   rw [evensGraphCochain_apply_of_mem_of_mem hs γ.2 η.2, evensExtend_of_mem γ.2,

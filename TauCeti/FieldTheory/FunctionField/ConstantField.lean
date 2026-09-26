@@ -126,7 +126,7 @@ theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
 `isIntegrallyClosedIn_iff`, whose injectivity clause is automatic here. -/
 theorem isIntegrallyClosedIn_iff_forall_isAlgebraic :
     IsIntegrallyClosedIn k F ↔ ∀ x : F, IsAlgebraic k x → ∃ c : k, algebraMap k F c = x := by
-  rw [← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn, eq_bot_iff, SetLike.le_def]
+  rw [← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn, eq_bot_iff, IsConcreteLE.le_iff]
   simp [mem_algebraicClosure_iff, IntermediateField.mem_bot]
 
 /-- The exactness hypothesis on the field of constants, read off its degree. -/

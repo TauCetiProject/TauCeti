@@ -102,10 +102,10 @@ theorem levelSolutionMap_surjective {p : ℕ} (hG : HasPGroupSolutions p G)
       rw [← levelImage_toSubgroup α hα U]
       exact QuotientGroup.eq.mp hβ
     obtain ⟨t, ht, hat⟩ := Subgroup.mem_map.mp hm
-    rw [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] at hat
+    rw [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] at hat
     refine ⟨((a * t : A) : A ⧸ V.toSubgroup), ?_⟩
     simp only [φ, γ, MonoidHom.prod_apply, MonoidHom.comp_apply,
-      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe, Prod.mk.injEq]
+      ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, Prod.mk.injEq]
     refine ⟨?_, ?_⟩
     · rw [QuotientGroup.mapOfLE_mk, ← ha, QuotientGroup.mk_mul,
         (QuotientGroup.eq_one_iff t).mpr ht, mul_one]

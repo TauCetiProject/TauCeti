@@ -497,7 +497,7 @@ theorem mapScalarExtensionAutomorphisms_kostantTorusPoints (φ : A ⟶ B) (s : �
       kostantTorusPoints M b wt B fun j => Units.map φ.hom.toRingHom.toMonoidHom (s j) := by
   refine Units.ext (Module.Basis.ext (b.baseChange B) fun x => ?_)
   have hchar := congrArg Units.val (map_torusCharacter φ.hom.toRingHom s (wt x))
-  simp only [Units.coe_map, MonoidHom.coe_coe] at hchar
+  simp only [Units.coe_map, MonoidHom.coe_ofClass] at hchar
   rw [Module.Basis.baseChange_apply, GeneralLinear.mapScalarExtensionAutomorphisms_tmul,
     kostantTorusPoints_tmul_basis, kostantTorusPoints_tmul_basis, one_smul,
     GeneralLinear.scalarExtensionMap_tmul, map_mul]
@@ -563,7 +563,7 @@ theorem map_kostantTorusMatrix {B : Type*} [CommRing B] [Algebra ℤ B] (φ : A 
   refine Matrix.GeneralLinearGroup.ext fun r c => ?_
   simp only [Matrix.GeneralLinearGroup.map_apply, kostantTorusMatrix_apply, diagGL_apply]
   split_ifs
-  · rw [← map_torusCharacter φ s (wt r), Units.coe_map, MonoidHom.coe_coe]
+  · rw [← map_torusCharacter φ s (wt r), Units.coe_map, MonoidHom.coe_ofClass]
   · exact map_zero φ
 
 end Matrix
