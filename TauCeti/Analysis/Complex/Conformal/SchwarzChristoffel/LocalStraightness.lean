@@ -38,12 +38,12 @@ variable {ι : Type*} [Fintype ι]
 /-- Near a regular point of a simple compactified Schwarz--Christoffel boundary, the entire
 boundary curve agrees with the open segment traced by that edge. In particular no other edge
 enters this ball. -/
-theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_openSegment
+theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_ball_inter_openSegment
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1)
     (hinj : Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀))
-    {p q x : ℝ} (hpq : p < q)
+    {p q x : ℝ}
     (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
     ∃ ε : ℝ, 0 < ε ∧
       Metric.ball (schwarzChristoffelBoundary a e z₀ x) ε ∩
@@ -56,33 +56,40 @@ theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_openSe
   have hTopen : IsOpen T := OnePoint.isOpen_image_coe.mpr isOpen_Ioo
   have hΓcont : Continuous Γ :=
     continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty
-  have hKclosed : IsClosed (Γ '' Tᶜ) :=
-    (hTopen.isClosed_compl.isCompact.image hΓcont).isClosed
+  obtain ⟨U, hUopen, hTU⟩ :=
+    (hΓcont.isClosedEmbedding hinj).isInducing.image_eq_isOpen_inter_range hTopen
   have hxT : (x : OnePoint ℝ) ∈ T := ⟨x, hx, rfl⟩
-  have hxU : Γ (x : OnePoint ℝ) ∈ (Γ '' Tᶜ)ᶜ := by
-    rintro ⟨t, ht, htx⟩
-    exact ht (hinj htx ▸ hxT)
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hKclosed.isOpen_compl _ hxU
+  have hxU : Γ (x : OnePoint ℝ) ∈ U := by
+    have h : Γ (x : OnePoint ℝ) ∈ Γ '' T := ⟨_, hxT, rfl⟩
+    rw [hTU] at h
+    exact h.1
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hUopen _ hxU
   have hxΓ : Γ (x : OnePoint ℝ) = schwarzChristoffelBoundary a e z₀ x := by
     simp only [Γ, schwarzChristoffelCompactifiedBoundary_coe]
   rw [hxΓ] at hball
+  have hball_range :
+      Metric.ball (schwarzChristoffelBoundary a e z₀ x) ε ∩ range Γ =
+        Metric.ball (schwarzChristoffelBoundary a e z₀ x) ε ∩ Γ '' T := by
+    rw [hTU]
+    ext w
+    constructor
+    · rintro ⟨hw, hr⟩
+      exact ⟨hw, hball hw, hr⟩
+    · rintro ⟨hw, _, hr⟩
+      exact ⟨hw, hr⟩
   have hend (y : ℝ) : -1 < ∑ i with a i = y, e i :=
     lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite y
-  have hseg := schwarzChristoffelBoundary_image_Ioo a e z₀ hpq ha (hend p) (hend q)
+  have hseg := schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) ha
+    (hend p) (hend q)
   refine ⟨ε, hε, ?_⟩
+  rw [hball_range, ← hseg]
+  congr 1
   ext w
   constructor
-  · rintro ⟨hw, ⟨t, rfl⟩⟩
-    have ht : t ∈ T := by
-      by_contra hnot
-      exact (hball (by simpa only [Γ] using hw)) ⟨t, hnot, rfl⟩
-    rcases ht with ⟨y, hy, rfl⟩
-    refine ⟨hw, ?_⟩
-    rw [← hseg]
+  · rintro ⟨t, ⟨y, hy, rfl⟩, rfl⟩
     exact ⟨y, hy, (schwarzChristoffelCompactifiedBoundary_coe a e z₀ y).symm⟩
-  · rintro ⟨hw, hsegmem⟩
-    rw [← hseg] at hsegmem
-    rcases hsegmem with ⟨y, hy, rfl⟩
-    exact ⟨hw, ⟨(y : OnePoint ℝ), schwarzChristoffelCompactifiedBoundary_coe a e z₀ y⟩⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨(y : OnePoint ℝ), ⟨y, hy, rfl⟩,
+      schwarzChristoffelCompactifiedBoundary_coe a e z₀ y⟩
 
 end TauCeti
