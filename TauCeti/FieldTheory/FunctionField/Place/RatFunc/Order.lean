@@ -88,9 +88,8 @@ theorem ord_adicOfIrreducible_algebraMap_of_squarefree {q r : k[X]} (hq : Irredu
   · have hle : multiplicity q r ≤ 1 := multiplicity_le_of_emultiplicity_le <| by
       exact_mod_cast ((squarefree_iff_emultiplicity_le_one r).mp hr q).resolve_right hq.not_isUnit
     have hpos := multiplicity_pos_of_dvd h
-      (.of_not_isUnit hq.not_isUnit hr.ne_zero)
     omega
-  · simp [multiplicity_eq_zero_of_not_dvd h]
+  · simp [multiplicity_eq_zero, h]
 
 open scoped Classical in
 /-- Among the finite places, `X` has order one at the place defined by a polynomial associated to
