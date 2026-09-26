@@ -179,7 +179,6 @@ lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
   rfl
 
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
-@[simp]
 lemma pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom (f : X ⟶ Y) :
     (pullbackPushforwardAdjunction f).homEquiv _ _ (pullbackObjUnitIso f).hom =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
