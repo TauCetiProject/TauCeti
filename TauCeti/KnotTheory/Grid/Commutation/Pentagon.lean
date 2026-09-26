@@ -200,6 +200,13 @@ theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleB
   unfold ofRightEq
   rfl
 
+/-- The terminal side of `ofRightEq` is the grid line replaced by `γ`. -/
+theorem ofRightEq_right {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).right = finRotate n a := by
+  unfold ofRightEq
+  exact hright
+
 /-- The initial side of `ofRightEq` is the rectangle's. -/
 theorem ofRightEq_left {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
