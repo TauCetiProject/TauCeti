@@ -101,7 +101,7 @@ theorem rationalTrivializationHom_app_mem_sections
     Hom.app (rationalTrivializationHom M e hU) W s ∈ sections D W := by
   refine mem_sections.mpr fun y hy ↦ ?_
   have : Nonempty W := ⟨⟨y, hy⟩⟩
-  obtain ⟨V, t, hyV⟩ := SheafOfModules.exists_mem_trivialization M (y : X)
+  obtain ⟨V, t, hyV⟩ := M.exists_mem_trivialization (y : X)
   have : Nonempty V := ⟨⟨y, hyV⟩⟩
   have : Nonempty (W ⊓ V : X.Opens) := ⟨⟨y, hy, hyV⟩⟩
   rw [rationalFunctionsEquiv_rationalTrivializationHom_app,
@@ -138,7 +138,7 @@ theorem exists_rationalTrivializationHom_app_eq
       fun ⟨x, hx⟩ ↦ hW ⟨⟨x, hx⟩⟩
     have := Scheme.subsingleton_rationalFunctions W hbot
     exact ⟨0, Subsingleton.elim _ _⟩
-  choose V t hV using fun x : W ↦ SheafOfModules.exists_mem_trivialization M (x : X)
+  choose V t hV using fun x : W ↦ M.exists_mem_trivialization (x : X)
   let W' : W → X.Opens := fun x ↦ W ⊓ V x
   have hW' : ∀ x, Nonempty (W' x) := fun x ↦ ⟨⟨x, x.2, hV x⟩⟩
   have hV' : ∀ x, Nonempty (V x) := fun x ↦ ⟨⟨x, hV x⟩⟩

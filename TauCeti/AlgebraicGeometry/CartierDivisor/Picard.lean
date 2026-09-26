@@ -118,7 +118,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_e
     rw [map_neg, map_neg, rationalUnitClass_trivializationGeneratorRationalUnit_eq M e hU
       p.1.2 q.1.2 (homOfLE inf_le_left) (homOfLE inf_le_right)]
   have hcover : ⊤ ≤ iSup W := fun x _ ↦ by
-    obtain ⟨V, t, hx⟩ := SheafOfModules.exists_mem_trivialization M x
+    obtain ⟨V, t, hx⟩ := M.exists_mem_trivialization x
     exact Opens.mem_iSup.mpr ⟨⟨⟨V, t⟩, ⟨⟨x, hx⟩⟩⟩, hx⟩
   obtain ⟨E, hE, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' W ⊤
     (fun _ ↦ homOfLE le_top) hcover sf hcompat
@@ -149,7 +149,7 @@ private lemma rationalUnitClass_inv_eq
 /-- If `D` is the class of the inverse of the rational basis function over the domain of every
 rank-one trivialization of `M`, then the rational function of every section of `M` is a section of
 `𝒪_X(D)`. -/
-theorem rationalTrivializationHom_app_mem_sections
+private lemma rationalTrivializationHom_app_mem_sections
     (hD : ∀ (V : X.Opens) [Nonempty V]
       (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
       D |_ V = rationalUnitClass X V
@@ -158,7 +158,7 @@ theorem rationalTrivializationHom_app_mem_sections
     Hom.app (rationalTrivializationHom M e hU) W s ∈ D.sections W := by
   refine mem_sections_iff_exists.mpr fun x hx ↦ ?_
   have : Nonempty W := ⟨⟨x, hx⟩⟩
-  obtain ⟨V, t, hxV⟩ := SheafOfModules.exists_mem_trivialization M x
+  obtain ⟨V, t, hxV⟩ := M.exists_mem_trivialization x
   have : Nonempty V := ⟨⟨x, hxV⟩⟩
   have : Nonempty (W ⊓ V : X.Opens) := ⟨⟨x, hx, hxV⟩⟩
   refine ⟨_, isLocalEquationAt_of_rationalUnitClass_eq (rationalUnitClass_inv_eq hD V t) hxV, ?_⟩
@@ -183,7 +183,7 @@ private lemma exists_rationalTrivializationHom_app_eq_map
     ∃ (V : X.Opens) (_ : x ∈ V) (i : V ⟶ W) (s : Γ(M, V)),
       Hom.app (rationalTrivializationHom M e hU) V s =
         (rationalFunctions X).presheaf.map i.op q := by
-  obtain ⟨V, t, hxV⟩ := SheafOfModules.exists_mem_trivialization M x
+  obtain ⟨V, t, hxV⟩ := M.exists_mem_trivialization x
   have : Nonempty V := ⟨⟨x, hxV⟩⟩
   have : Nonempty (W ⊓ V : X.Opens) := ⟨⟨x, hx, hxV⟩⟩
   let i : W ⊓ V ⟶ W := homOfLE inf_le_left

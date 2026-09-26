@@ -187,18 +187,6 @@ theorem isInvertible_iff_exists_isOpenCover :
       (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
         ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm)).isInvertible
 
-variable (M) in
-/-- Every point of a scheme lies in the domain of a rank-one trivialization of an invertible
-sheaf. -/
-theorem exists_mem_trivialization [isInvertible X M] (x : X) :
-    ∃ (V : X.Opens) (_ : _root_.SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅
-      M.over V), x ∈ V := by
-  let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
-  have ht : ⨆ i, t.X i = ⊤ := by
-    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (ht ▸ Opens.mem_top x : x ∈ ⨆ i, t.X i)
-  exact ⟨t.X i, t.iso i, hi⟩
-
 end AlgebraicGeometry.SheafOfModules
 
 end TauCeti
@@ -356,6 +344,19 @@ theorem trivializationGenerator_ne_zero (M : X.Modules) {V : X.Opens}
   have hcoord := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
   rw [op_id, M.presheaf.map_id, ConcreteCategory.id_apply, h, map_zero] at hcoord
   exact zero_ne_one (α := Γ(X, V)) hcoord
+
+open TopologicalSpace in
+/-- Every point of a scheme lies in the domain of a rank-one trivialization of an invertible
+sheaf. -/
+theorem exists_mem_trivialization (M : X.Modules)
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M] (x : X) :
+    ∃ (V : X.Opens) (_ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
+      x ∈ V := by
+  let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
+  have ht : ⨆ i, t.X i = ⊤ := by
+    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (ht ▸ Opens.mem_top x : x ∈ ⨆ i, t.X i)
+  exact ⟨t.X i, t.iso i, hi⟩
 
 end
 
