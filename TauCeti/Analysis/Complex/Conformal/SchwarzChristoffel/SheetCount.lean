@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleBoundary
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Covering
+import TauCeti.Data.Set.Restrict
 import TauCeti.Topology.Homotopy.Monodromy.Basic
 import Mathlib.Topology.Connected.LocallyPathConnected
 
@@ -94,20 +95,13 @@ theorem ncard_schwarzChristoffelPrimitive_fiber_eq_of_joinedIn
     have h := isCoveringMapOn_schwarzChristoffelPrimitive a e z₀ hfinite hinfty
     exact h.isCoveringMap_restrictPreimage
   let γ : Path u v := hjoined.joined_subtype.somePath
-  -- The value map identifies a restricted fiber with the corresponding original fiber.
-  have fiber_ncard (w : ↥(Pᶜ)) :
-      ((Pᶜ.restrictPreimage F) ⁻¹' {w}).ncard = (F ⁻¹' {w.val}).ncard := by
-    calc
-      _ = ((Subtype.val : (F ⁻¹' Pᶜ) → ℍ) ''
-          ((Pᶜ.restrictPreimage F) ⁻¹' {w})).ncard :=
-        (Set.ncard_image_of_injective _ Subtype.val_injective).symm
-      _ = _ := by rw [image_val_preimage_restrictPreimage, image_singleton]
   have hcard := Nat.card_congr (coveringFiberEquiv hcov (Path.Homotopic.Quotient.mk γ))
   calc
-    (F ⁻¹' {w₁}).ncard = ((Pᶜ.restrictPreimage F) ⁻¹' {u}).ncard := (fiber_ncard u).symm
+    (F ⁻¹' {w₁}).ncard = ((Pᶜ.restrictPreimage F) ⁻¹' {u}).ncard :=
+      (ncard_fiber_restrictPreimage F Pᶜ u).symm
     _ = ((Pᶜ.restrictPreimage F) ⁻¹' {v}).ncard := by
       simpa only [Nat.card_coe_set_eq] using hcard
-    _ = (F ⁻¹' {w₂}).ncard := fiber_ncard v
+    _ = (F ⁻¹' {w₂}).ncard := ncard_fiber_restrictPreimage F Pᶜ v
 
 /-- If the compactified Schwarz--Christoffel boundary is simple, the primitive has a positive,
 finite, constant number of preimages at every point of its image. -/
