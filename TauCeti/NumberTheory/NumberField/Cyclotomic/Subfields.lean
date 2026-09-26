@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
-import TauCeti.Data.ZMod.Units
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 import Mathlib.RingTheory.ZMod.UnitsCyclic
 import Mathlib.Tactic.NormNum.Prime
@@ -44,8 +43,9 @@ private noncomputable def orderTwoSubgroup : Subgroup (Gal(K/ℚ)) :=
   Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))
 
 private theorem card_orderTwoSubgroup : Nat.card (orderTwoSubgroup (K := K)) = 2 := by
-  rw [orderTwoSubgroup, Nat.card_zpowers, MulEquiv.orderOf_eq]
-  simpa only [Nat.card_zpowers] using card_zpowers_neg_one_zmod_five_units
+  have : Fact (Nat.Prime 5) := ⟨by norm_num⟩
+  rw [orderTwoSubgroup, Nat.card_zpowers, MulEquiv.orderOf_eq, ← orderOf_units,
+    Units.coe_neg_one, orderOf_neg_one, ringChar.eq (ZMod 5) 5, ite_eq_right (by norm_num)]
 
 /-- The unique quadratic intermediate field of the fifth cyclotomic field, defined as the fixed
 field of the order-two subgroup with cyclotomic exponents `±1`. -/
@@ -92,6 +92,7 @@ theorem intermediateField_eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_to
     rw [← IsGalois.fixedField_fixingSubgroup F, h, IsGalois.fixedField_top]
 
 /-- The middle field of a fifth cyclotomic field has degree two over `ℚ`. -/
+@[simp]
 theorem finrank_fifthCyclotomicQuadraticSubfield :
     Module.finrank ℚ (fifthCyclotomicQuadraticSubfield (K := K)) = 2 := by
   have hrel : Module.finrank (fifthCyclotomicQuadraticSubfield (K := K)) K = 2 :=
@@ -119,6 +120,7 @@ theorem eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two
     omega
 
 /-- There are exactly three subfields of the fifth cyclotomic field over `ℚ`. -/
+@[simp]
 theorem card_intermediateField_fifthCyclotomic :
     Nat.card (IntermediateField ℚ K) = 3 := by
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {5} ℚ K
