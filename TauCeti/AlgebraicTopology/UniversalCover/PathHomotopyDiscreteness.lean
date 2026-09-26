@@ -436,9 +436,9 @@ private lemma Path.pasteSegmentAuxPath_succ_homotopic {x y y' : X} {n : ℕ}
   apply exact
   simp only [Path.pasteSegmentAuxPath, mk_trans, mk_cast]
   -- Decompose γ|[0, i+1] = γ|[0, i] · γ|[i, i+1] and γ'|[i, last] = γ'|[i, i+1] · γ'|[i+1, last].
-  rw [← Path.Homotopic.Quotient.subpath_trans γ
+  rw [← Path.Homotopic.mk_subpath_trans_mk_subpath γ
     (part.t 0) (part.t i.castSucc) (part.t i.succ)]
-  rw [← Path.Homotopic.Quotient.subpath_trans γ'
+  rw [← Path.Homotopic.mk_subpath_trans_mk_subpath γ'
     (part.t i.castSucc) (part.t i.succ) (part.t (Fin.last n))]
   -- Right-associate everything so the rectangle rewrite fires on the shared suffix.
   simp only [trans_assoc]

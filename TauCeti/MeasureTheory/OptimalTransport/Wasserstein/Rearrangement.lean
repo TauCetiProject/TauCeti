@@ -161,8 +161,11 @@ theorem wassersteinEDist_eq_eLpNorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
     have hq0 : q ≠ 0 := (zero_lt_one.trans_le hq).ne'
     refine le_antisymm (wassersteinEDist_le_eLpNorm_quantile_sub q μ ν)
       (le_wassersteinEDist fun π hπ ↦ ?_)
-    rw [← eLpNorm_edist_quantileCoupling, eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top]
+    have hd : ∀ m : Measure (ℝ × ℝ), AEStronglyMeasurable (fun z : ℝ × ℝ ↦ edist z.1 z.2) m :=
+      fun _ ↦ measurable_edist.aestronglyMeasurable
+    rw [← eLpNorm_edist_quantileCoupling,
+      eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top (hd _),
+      eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top (hd _)]
     simp only [enorm_eq_self]
     exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_quantileCoupling_le hπ
       (by simpa using ENNReal.toReal_mono hq_top hq)) (by positivity)
@@ -181,8 +184,11 @@ theorem wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (
     (hp_top : p ≠ ∞) (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     wassersteinEDist p μ ν
       = (∫⁻ t in Ioo (0 : ℝ) 1, ‖μ.quantile t - ν.quantile t‖ₑ ^ p.toReal) ^ (1 / p.toReal) := by
+  have hq : AEStronglyMeasurable (fun t ↦ μ.quantile t - ν.quantile t)
+      (volume.restrict (Ioo (0 : ℝ) 1)) :=
+    ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
   rw [wassersteinEDist_eq_eLpNorm_quantile_sub hp,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top]
+    eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hq]
 
 /-- **The quantile formula at the exponent `∞`.** The `∞`-Wasserstein distance of two probability
 laws on `ℝ` is the essential supremum of `|μ.quantile - ν.quantile|` on `(0, 1)`. -/
@@ -190,7 +196,10 @@ theorem wassersteinEDist_top_eq_essSup_enorm_quantile_sub (μ ν : Measure ℝ)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     wassersteinEDist ∞ μ ν
       = essSup (fun t ↦ ‖μ.quantile t - ν.quantile t‖ₑ) (volume.restrict (Ioo (0 : ℝ) 1)) := by
-  rw [wassersteinEDist_eq_eLpNorm_quantile_sub le_top, eLpNorm_exponent_top, eLpNormEssSup]
+  have hq : AEStronglyMeasurable (fun t ↦ μ.quantile t - ν.quantile t)
+      (volume.restrict (Ioo (0 : ℝ) 1)) :=
+    ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
+  rw [wassersteinEDist_eq_eLpNorm_quantile_sub le_top, eLpNorm_exponent_top hq, eLpNormEssSup]
 
 end Wasserstein
 

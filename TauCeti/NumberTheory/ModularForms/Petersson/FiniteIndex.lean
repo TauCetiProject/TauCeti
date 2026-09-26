@@ -54,6 +54,8 @@ positive-definite Hermitian form is all that the adjoint theory downstream needs
 * `CuspForm.peterssonInnerCosets_add_left`/`_right`, `_smul_right`, `_smul_left`:
   sesquilinearity.
 * `CuspForm.peterssonInnerCosets_definite`: positive definiteness.
+* `CuspForm.peterssonInnerCosets_ofLe_ofLe`: restricting two forms for `Γ` to a finite-index
+  `Γ' ≤ Γ` multiplies their pairing by the index `[Γ·{±I} : Γ'·{±I}]`.
 * `CuspForm.peterssonInnerCosetsCore`: the pairing bundled as an `InnerProductSpace.Core`.
 
 Ported from the AINTLIB `LeanModularForms` project
@@ -300,6 +302,45 @@ theorem peterssonInnerCosets_self_im (f : CuspForm (Γ.map (mapGL ℝ)) k) :
 theorem peterssonInnerCosets_self_eq_zero (f : CuspForm (Γ.map (mapGL ℝ)) k) :
     peterssonInnerCosets f f = 0 ↔ f = 0 :=
   ⟨peterssonInnerCosets_definite f, fun h ↦ by rw [h]; exact peterssonInnerCosets_zero_left 0⟩
+
+/-! ### Restriction to a sublevel -/
+
+/-- **Restriction to a sublevel multiplies the Petersson product by the index.** For subgroups
+`Γ' ≤ Γ` of finite index in `SL₂(ℤ)` and cusp forms `f`, `g` for `Γ`, read as cusp forms for
+`Γ'`,
+
+`⟪f, g⟫_Γ' = [Γ·{±I} : Γ'·{±I}] · ⟪f, g⟫_Γ`. -/
+theorem peterssonInnerCosets_ofLe_ofLe {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIndex]
+    (hle : Γ'.map (mapGL ℝ) ≤ Γ.map (mapGL ℝ)) (f g : CuspForm (Γ.map (mapGL ℝ)) k) :
+    peterssonInnerCosets (CuspForm.ofLe hle f) (CuspForm.ofLe hle g) =
+      (Γ'.withCenter.relIndex Γ.withCenter : ℂ) * peterssonInnerCosets f g := by
+  have hle' : Γ' ≤ Γ := (Subgroup.map_le_map_iff_of_injective mapGL_injective).mp hle
+  have hwc : Γ'.withCenter ≤ Γ.withCenter :=
+    Subgroup.withCenter_le_iff.mpr ⟨hle'.trans Γ.le_withCenter, Γ.center_le_withCenter⟩
+  let : Fintype (Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter) := Fintype.ofFinite _
+  -- the cosets of `Γ'·{±I}` in `SL₂(ℤ)` are the pairs of a coset `p` of `Γ·{±I}` and a coset `i`
+  -- of `Γ'·{±I}` in `Γ·{±I}`; the summand at `(p, i)` is the summand of `⟪f, g⟫_Γ` at `p`, the
+  -- `Γ·{±I}` part of the representative being invisible to the pairing of two forms for `Γ`
+  have key : ∀ (p : SL(2, ℤ) ⧸ Γ.withCenter)
+      (i : Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter),
+      UpperHalfPlane.peterssonInner k fd
+        (⇑(CuspForm.ofLe hle f) ∣[k]
+          (((Subgroup.quotientEquivProdOfLE hwc).symm (p, i)).out)⁻¹)
+        (⇑(CuspForm.ofLe hle g) ∣[k]
+          (((Subgroup.quotientEquivProdOfLE hwc).symm (p, i)).out)⁻¹) =
+      UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] (p.out)⁻¹) (⇑g ∣[k] (p.out)⁻¹) := by
+    intro p i
+    induction i using QuotientGroup.induction_on with
+    | H γ =>
+      have hsymm : (Subgroup.quotientEquivProdOfLE hwc).symm (p, QuotientGroup.mk γ) =
+          (QuotientGroup.mk (p.out * (γ : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ'.withCenter) := rfl
+      rw [hsymm, peterssonInner_slash_inv_out, CuspForm.coe_ofLe, CuspForm.coe_ofLe, mul_inv_rev,
+        SlashAction.slash_mul, SlashAction.slash_mul,
+        peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.2)]
+  rw [peterssonInnerCosets_def, peterssonInnerCosets_def,
+    ← (Subgroup.quotientEquivProdOfLE hwc).symm.sum_comp, Fintype.sum_prod_type]
+  simp only [key, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.mul_sum]
+  rw [Subgroup.relIndex, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
 
 /-- The Petersson pairing bundled as an `InnerProductSpace.Core` on `S_k(Γ)`: the Hermitian
 interface behind Mathlib's inner-product, norm, orthogonality and adjoint APIs, which the

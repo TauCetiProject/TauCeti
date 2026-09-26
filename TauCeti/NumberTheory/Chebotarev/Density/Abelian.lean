@@ -80,7 +80,7 @@ private theorem isLowerDirichletDensityBound_abelianFrobenius
     have h := hasDirichletDensity_frobeniusPrimeSet_of_fixedField _ _ ConjClasses.mem_carrier_mk <|
       AlgEquiv.card_algEquiv_fixedField_zpowers (e.symm (σ, τ)) ▸
         hasDirichletDensity_cyclotomicFrobenius _ M q (e.symm (σ, τ)).toFixedFieldAlgEquiv
-    rwa [Nat.card_coe_set_eq, TauCeti.ConjClasses.ncard_carrier_mk_of_mem_center
+    rwa [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
       (Subgroup.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
   -- Distinct tags give disjoint fibres, so the tagged fibres' densities add.
   have hunion := hasDirichletDensity_biUnion_finset hdens fun τ _ υ _ hτυ ↦ by

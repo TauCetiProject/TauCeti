@@ -73,8 +73,7 @@ theorem rightTranslationAlgHom_apply (g : WithConv (H →ₐ[k] k)) (x : H) :
       TensorProduct.rid k H
         (TensorProduct.map LinearMap.id g.ofConv.toLinearMap (Coalgebra.comul x)) := by
   rw [rightTranslationAlgHom, AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add z w hz hw => simp [hz, hw]
   | tmul z w => simp [Algebra.smul_def, mul_comm]
 
@@ -87,8 +86,7 @@ theorem toConv_comp_rightTranslationAlgHom (f g : WithConv (H →ₐ[k] k)) :
   -- Composition must be exposed at application level before the translation formula rewrites.
   change f.ofConv (rightTranslationAlgHom g x) = (f * g).ofConv x
   rw [rightTranslationAlgHom_apply, AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add y z hy hz => simp [hy, hz]
   | tmul y z => simp [Algebra.smul_def, mul_comm]
 

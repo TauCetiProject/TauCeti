@@ -119,7 +119,7 @@ theorem coeff_succ_localLogDerivSeries (D : EulerProductData K)
 theorem localLogDerivSeries_mul_localPowerSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) :
     D.localLogDerivSeries P * D.localPowerSeries P =
-      PowerSeries.X * PowerSeries.derivative ℂ (D.localPowerSeries P) := by
+      PowerSeries.X * PowerSeries.derivative (D.localPowerSeries P) := by
   rw [localLogDerivSeries, mul_assoc,
     PowerSeries.logDeriv_mul _ (D.constantCoeff_localPowerSeries P)]
 
@@ -198,18 +198,18 @@ theorem localLogDerivSeries_ofMultiplicativeIdealWeight
     simp only [map_mul, map_sub, map_one, PowerSeries.rescale_mk, Pi.one_apply, mul_one,
       PowerSeries.rescale_X] at h
     simpa [hF] using h
-  have hderiv : PowerSeries.derivative ℂ F = PowerSeries.C a * F ^ 2 := by
-    have h := congrArg (PowerSeries.derivative ℂ) hgeom
+  have hderiv : PowerSeries.derivative F = PowerSeries.C a * F ^ 2 := by
+    have h := congrArg PowerSeries.derivative hgeom
     simp only [PowerSeries.derivative_one, Derivation.leibniz, map_sub,
       PowerSeries.derivative_C, PowerSeries.derivative_X, smul_eq_mul] at h
-    have h' : (1 - PowerSeries.C a * PowerSeries.X) * PowerSeries.derivative ℂ F =
+    have h' : (1 - PowerSeries.C a * PowerSeries.X) * PowerSeries.derivative F =
         PowerSeries.C a * F := by
       linear_combination h
     calc
-      PowerSeries.derivative ℂ F =
-          (F * (1 - PowerSeries.C a * PowerSeries.X)) * PowerSeries.derivative ℂ F := by
+      PowerSeries.derivative F =
+          (F * (1 - PowerSeries.C a * PowerSeries.X)) * PowerSeries.derivative F := by
             rw [hgeom, one_mul]
-      _ = F * ((1 - PowerSeries.C a * PowerSeries.X) * PowerSeries.derivative ℂ F) := by
+      _ = F * ((1 - PowerSeries.C a * PowerSeries.X) * PowerSeries.derivative F) := by
         ring
       _ = PowerSeries.C a * F ^ 2 := by rw [h']; ring
   have hunit : IsUnit F := PowerSeries.isUnit_iff_constantCoeff.mpr (by rw [hF]; simp)

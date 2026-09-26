@@ -180,7 +180,14 @@ continuous function on the `p`-Wasserstein space. -/
 theorem continuous_lintegral_edist_rpow (hp : p ≠ ∞) (x : X) :
     Continuous fun μ : WassersteinSpace p X ↦
       ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) := by
-  simp_rw [← eLpNorm_rpow_eq_lintegral (zero_lt_one.trans_le Fact.out).ne' hp]
+  -- The measure varies, so the measurability side condition of `eLpNorm_rpow_eq_lintegral` has
+  -- to be supplied once per measure rather than left to `simp_rw` to instantiate.
+  have h : ∀ μ : WassersteinSpace p X,
+      ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X)
+        = eLpNorm (fun y ↦ edist x y) p ((μ : ProbabilityMeasure X) : Measure X) ^ p.toReal :=
+    fun _ ↦ (eLpNorm_rpow_eq_lintegral (zero_lt_one.trans_le Fact.out).ne' hp
+      (measurable_const.edist measurable_id).aemeasurable).symm
+  simp_rw [h]
   exact (ENNReal.continuous_rpow_const).comp (continuous_eLpNorm_edist x)
 
 omit [SecondCountableTopology X] [StandardBorelSpace X] in
@@ -224,7 +231,7 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
   -- It suffices that the transport cost of `edist ^ p` tends to `0`.
   suffices hc : Tendsto (fun i ↦ transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal)
       (μs i : Measure X) (μ : Measure X)) L (𝓝 0) by
-    simp_rw [wassersteinEDist_eq_transportCost_rpow hp0 hp]
+    simp_rw [wassersteinEDist_eq_transportCost_rpow measurable_edist hp0 hp]
     simpa [Function.comp_def, ENNReal.zero_rpow_of_pos (inv_pos.2 hq)] using
       ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp hc
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_

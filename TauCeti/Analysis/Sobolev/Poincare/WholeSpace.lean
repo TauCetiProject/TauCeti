@@ -59,12 +59,13 @@ open scoped ENNReal NNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
+omit [BorelSpace E] in
 /-- A bump function has nonzero `p`-seminorm: it is continuous and equal to `1` at the origin. -/
 private theorem eLpNorm_contDiffBump_ne_zero {p : ℝ≥0∞} (hp₀ : p ≠ 0)
     (φ : ContDiffBump (0 : E)) : eLpNorm (φ : E → ℝ) p μ ≠ 0 := by
   intro h
   have hcont : Continuous (φ : E → ℝ) := (φ.contDiff (n := 1)).continuous
-  have hae := (eLpNorm_eq_zero_iff hcont.aestronglyMeasurable hp₀).1 h
+  have hae := (eLpNorm_eq_zero_iff hp₀).1 h
   have hzero : (φ : E → ℝ) = 0 :=
     (Continuous.ae_eq_iff_eq μ hcont continuous_const).1 hae
   have h0 : (φ : E → ℝ) 0 = 1 := φ.one_of_mem_closedBall (by simp [φ.rIn_pos.le])

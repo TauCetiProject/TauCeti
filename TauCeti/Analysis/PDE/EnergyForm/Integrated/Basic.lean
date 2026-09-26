@@ -389,6 +389,26 @@ lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
   exact garding_energyIntegrand_self_of_bounds hlam
     (fun ξ ↦ by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hbx hcx (U x)
 
+/-- The integrated mass-floor Gårding bound with a free positive Young parameter. The
+principal lower bound and both lower-order coefficient bounds need hold only almost everywhere. -/
+lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds_with_parameter
+    {eps : ℝ} (heps : 0 < eps)
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
+    (hlower : Integrable
+      (fun x ↦ (lam - eps) * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (4 * eps)) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x ↦ energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, ((lam - eps) * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (4 * eps)) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [ha, hb, hc] with x hax hbx hcx
+  exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_with_parameter heps
+    (fun ξ ↦ by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hbx hcx (U x)
+
 /-- Integrated Gårding lower bound with a mass floor from a.e. lower ellipticity and a.e.
 lower-order coefficient hypotheses. -/
 lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < lam)
@@ -502,6 +522,25 @@ lemma garding_energyFormIntegral_self_on (h : UniformlyEllipticOn Ω a lam Lam)
   filter_upwards [hΩ] with x hx
   intro ξ
   simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx ξ
+
+/-- The integrated mass-floor Gårding bound with uniform ellipticity and any positive
+Young parameter. The drift bound and mass floor are required only almost everywhere. -/
+lemma garding_energyFormIntegral_self_of_mass_lower_bound_with_parameter_on
+    (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x) {eps : ℝ}
+    (heps : 0 < eps)
+    (hlower : Integrable
+      (fun x ↦ (lam - eps) * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (4 * eps)) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x ↦ energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, ((lam - eps) * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (4 * eps)) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  refine PDE.garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds_with_parameter
+    (μ := μ) (a := a) (b := b) (c := c) (U := U) heps ?_ hb hc hlower henergy
+  filter_upwards [hΩ] with x hx
+  intro ξ
+  simpa only [Matrix.toQuadraticForm'_apply] using h.lower_bound hx ξ
 
 /-- Integrated Gårding lower bound with a mass floor from uniform ellipticity and a.e.
 coefficient hypotheses. -/

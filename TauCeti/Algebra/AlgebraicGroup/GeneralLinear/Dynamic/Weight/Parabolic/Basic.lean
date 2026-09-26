@@ -149,6 +149,5 @@ theorem quotientPointsHom_weightParabolicPointsIso_inv_app_apply (w : Fin N → 
       (mapWeightParabolic_id R w) (mapWeightParabolic_comp R w)
       (mem_weightParabolicSubgroup_iff R w) (coe_mapWeightParabolic_apply R w)
       (CommAlgCat.of R A) g) using 1
-  rfl
 
 end TauCeti.GeneralLinear.Dynamic

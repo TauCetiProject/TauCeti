@@ -54,6 +54,8 @@ subgroup.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
+  character.
 * `FDRep.character_ρ`: the character of the carried representation is the character of the
   object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
@@ -111,6 +113,14 @@ theorem character_of_trivial {k : Type u} {G : Type v} [Field k] [Monoid G] (g :
   rw [FDRep.character, FDRep.of_ρ']
   -- the carrier of `FDRep.of ρ` is the module that `ρ` acts on, here `k` itself
   exact (Representation.char_trivial g).trans (by simp)
+
+/-- The character of a representation restricted along a monoid homomorphism is the pullback of
+its character along that homomorphism. -/
+@[simp]
+theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Monoid G]
+    [Monoid H] (V : FDRep k G) (phi : H →* G) (h : H) :
+    FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
+  (rfl)
 
 /-- Forgetting finite-dimensionality keeps the finite-generation instance on the carrier. -/
 instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]

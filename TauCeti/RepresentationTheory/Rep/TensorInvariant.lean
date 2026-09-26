@@ -71,6 +71,15 @@ theorem hom_comp_tensorInvariant {M' : Rep k G} (f : M ⟶ M') (y : N.ρ.invaria
   ext m
   simp
 
+/-- After braiding, tensoring with an invariant is natural in the other factor. -/
+@[reassoc]
+theorem hom_comp_tensorInvariant_braiding {M' : Rep k G} (f : M ⟶ M')
+    {P : Rep k G} (x : P.ρ.invariants) :
+    f ≫ tensorInvariant M' x ≫ (β_ M' P).hom =
+      tensorInvariant M x ≫ (β_ M P).hom ≫ P ◁ f := by
+  rw [← Category.assoc, hom_comp_tensorInvariant, Category.assoc,
+    BraidedCategory.braiding_naturality_left]
+
 /-- `m ↦ m ⊗ y` is natural in `N`: composing with `M ◁ g` gives `m ↦ m ⊗ g y`. -/
 theorem tensorInvariant_comp_whiskerLeft {N' : Rep k G} (g : N ⟶ N') (y : N.ρ.invariants)
     (y' : N'.ρ.invariants) (hy : g.hom y = y') :
@@ -79,3 +88,15 @@ theorem tensorInvariant_comp_whiskerLeft {N' : Rep k G} (g : N ⟶ N') (y : N.ρ
   simp [hy]
 
 end Rep
+
+namespace TauCeti.Rep
+
+variable {k G : Type u} [CommRing k] [Group G] {M N : _root_.Rep k G}
+
+/-- Braiding the tensor of a vector with an invariant puts the invariant first. -/
+theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
+    (((_root_.Rep.tensorInvariant N x) ≫ (β_ N M).hom).hom y) =
+      (x : M.V) ⊗ₜ[k] y := by
+  simp [_root_.Rep.hom_braiding]
+
+end TauCeti.Rep

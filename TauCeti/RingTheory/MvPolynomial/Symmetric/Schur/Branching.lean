@@ -127,7 +127,7 @@ theorem weight_eq_mapDomain_add_single (T : BoundedSSYT (n + 1) μ) (hν : restr
       zero_add]
   | cast j =>
     have hne : Fin.castSucc j ≠ Fin.last n := (Fin.castSucc_lt_last j).ne
-    rw [Finsupp.add_apply, Finsupp.mapDomain_apply (Fin.castSucc_injective n),
+    rw [Finsupp.add_apply, Finsupp.mapDomain_apply_of_injective (Fin.castSucc_injective n),
       Finsupp.single_eq_of_ne hne, add_zero, weight_restrict T hν j]
 
 end BoundedSSYT

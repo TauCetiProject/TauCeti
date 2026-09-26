@@ -7,8 +7,10 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+public import TauCeti.Algebra.Field.Subfield.Quadratic
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.Algebra.QuadraticDiscriminant
+import TauCeti.FieldTheory.Minpoly
 
 /-!
 # Quadratic normal forms in intermediate fields
@@ -39,17 +41,6 @@ namespace TauCeti.IntermediateField
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- If `a` and `b` lie in `F`, then `a + b * x` lies in `F ⊔ K⟮x⟯`. -/
-theorem mem_sup_adjoin_sq_of_exists {F : IntermediateField K L} {x y : L}
-    (hy : ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x) :
-    y ∈ F ⊔ IntermediateField.adjoin K {x} := by
-  rcases hy with ⟨a, b, ha, hb, rfl⟩
-  have hF : F ≤ F ⊔ IntermediateField.adjoin K {x} := le_sup_left
-  have hx : IntermediateField.adjoin K {x} ≤ F ⊔ IntermediateField.adjoin K {x} :=
-    le_sup_right
-  exact add_mem (hF ha)
-    (mul_mem (hF hb) (hx (IntermediateField.mem_adjoin_of_mem K (Set.mem_singleton x))))
-
 /-- If `x² ∈ F`, then `x` is integral over `F` (it is a root of `X² - x²`). -/
 private theorem isIntegral_of_sq_mem {F : IntermediateField K L} {x : L} (hx2 : x ^ 2 ∈ F) :
     IsIntegral F x := by
@@ -61,8 +52,8 @@ private theorem isIntegral_of_sq_mem {F : IntermediateField K L} {x : L} (hx2 : 
 divides the nonzero polynomial `X² - x²`. -/
 private theorem minpoly_natDegree_le_two_of_sq_mem {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) : (minpoly F x).natDegree ≤ 2 := by
-  have hpoly_ne : ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) ≠ 0 := by
-    intro hzero; have hdeg := congrArg Polynomial.natDegree hzero; norm_num at hdeg
+  have hpoly_ne : ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) ≠ 0 :=
+    (Polynomial.monic_X_pow_sub_C _ (by decide : (2 : ℕ) ≠ 0)).ne_zero
   have hdeg := minpoly.degree_le_of_ne_zero F x hpoly_ne (by simp)
   rw [Polynomial.degree_X_pow_sub_C (n := 2) (by norm_num)] at hdeg
   exact Polynomial.natDegree_le_iff_degree_le.mpr hdeg
@@ -105,33 +96,7 @@ theorem mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) {y : L} :
     y ∈ F ⊔ IntermediateField.adjoin K {x} ↔
       ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x :=
-  ⟨exists_add_mul_of_mem_sup_adjoin_sq hx2, mem_sup_adjoin_sq_of_exists⟩
-
-omit K [Field K] [Algebra K L] in
-/-- **Vanishing cross term in a quadratic step.** If `x² ∈ F` but `x ∉ F`, then a square
-`(a + b * x) ^ 2` of a normal-form element that lands back in `F` has no cross term: `a * b = 0`.
-This is where characteristic not two enters, through `2 ≠ 0` in `L`. It holds for an arbitrary
-subfield `F` of `L`; no ambient base field or algebra tower is needed. -/
-theorem mul_eq_zero_of_add_mul_sq_mem {S : Type*} [SetLike S L] [SubfieldClass S L] {F : S} {x : L}
-    (hx2 : x ^ 2 ∈ F) (hxF : x ∉ F) [NeZero (2 : L)] {a b : L}
-    (ha : a ∈ F) (hb : b ∈ F) (hab_mem : (a + b * x) ^ 2 ∈ F) :
-    a * b = 0 := by
-  by_contra hab
-  refine hxF ?_
-  -- Expanding `(a + b * x) ^ 2` and using `x² ∈ F`, the cross term `2 * a * b * x` lies in `F`.
-  have hcross_mem : 2 * a * b * x ∈ F := by
-    have hEq : 2 * a * b * x = (a + b * x) ^ 2 - a ^ 2 - b ^ 2 * x ^ 2 := by ring
-    rw [hEq]
-    exact sub_mem (sub_mem hab_mem (pow_mem ha 2)) (mul_mem (pow_mem hb 2) hx2)
-  -- The coefficient `2 * a * b` lies in `F` and is nonzero, so `x` is recovered by dividing it out.
-  have hcoef_mem : 2 * a * b ∈ F := mul_mem (mul_mem (natCast_mem (s := F) 2) ha) hb
-  have hcoef_ne : 2 * a * b ≠ 0 := by
-    have h2ab : (2 : L) * (a * b) ≠ 0 := mul_ne_zero (NeZero.ne (2 : L)) hab
-    simpa [mul_assoc] using h2ab
-  have hxeq : (2 * a * b)⁻¹ * (2 * a * b * x) = x := by
-    rw [← mul_assoc, inv_mul_cancel₀ hcoef_ne, one_mul]
-  rw [← hxeq]
-  exact mul_mem (inv_mem hcoef_mem) hcross_mem
+  ⟨exists_add_mul_of_mem_sup_adjoin_sq hx2, mem_sup_adjoin_of_exists_add_mul⟩
 
 /-- If `x² ∈ F` but `x ∉ F`, then the simple extension `F⟮x⟯` has finrank two over `F`. -/
 theorem _root_.IntermediateField.finrank_adjoin_simple_eq_two_of_sq_mem_notMem
@@ -139,19 +104,11 @@ theorem _root_.IntermediateField.finrank_adjoin_simple_eq_two_of_sq_mem_notMem
     (hx2 : x ^ 2 ∈ F) (hxF : x ∉ F) :
     Module.finrank F (IntermediateField.adjoin F {x}) = 2 := by
   have hx_int : IsIntegral F x := isIntegral_of_sq_mem hx2
-  have hfin := IntermediateField.adjoin.finrank hx_int
-  have hle : (minpoly F x).natDegree ≤ 2 := minpoly_natDegree_le_two_of_sq_mem hx2
-  have hpos : 0 < (minpoly F x).natDegree := minpoly.natDegree_pos hx_int
-  have hne1 : (minpoly F x).natDegree ≠ 1 := by
-    intro hdeg1
-    have hfin1 : Module.finrank F (IntermediateField.adjoin F {x}) = 1 := by
-      simpa [hfin] using hdeg1
-    have hxbot : x ∈ (⊥ : IntermediateField F L) :=
-      (IntermediateField.finrank_adjoin_simple_eq_one_iff).mp hfin1
-    rw [IntermediateField.mem_bot] at hxbot
-    obtain ⟨y, hy⟩ := hxbot
-    exact hxF (hy ▸ y.2)
-  omega
+  rw [IntermediateField.adjoin.finrank hx_int]
+  refine (minpoly_natDegree_le_two_of_sq_mem hx2).antisymm ?_
+  apply (minpoly.two_le_natDegree_iff hx_int).mpr
+  rintro ⟨y, hy⟩
+  exact hxF (hy ▸ y.2)
 
 /-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
 `[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/
@@ -237,24 +194,13 @@ private theorem adjoin_simple_eq_of_finrank_eq_two {E : IntermediateField K L} {
   have hadj : Module.finrank K (IntermediateField.adjoin K {y}) = (minpoly K y).natDegree :=
     IntermediateField.adjoin.finrank hyint
   have hdeg : (minpoly K y).natDegree = 2 := by
-    have hne1 : Module.finrank K (IntermediateField.adjoin K {y}) ≠ 1 := fun h =>
-      hyb (IntermediateField.finrank_adjoin_simple_eq_one_iff.mp h)
-    have hpos : 0 < (minpoly K y).natDegree := minpoly.natDegree_pos hyint
+    have hge2 : 2 ≤ (minpoly K y).natDegree :=
+      (minpoly.two_le_natDegree_iff hyint).mpr fun ⟨z, hz⟩ =>
+        hyb (IntermediateField.mem_bot.mpr ⟨z, hz⟩)
     have hle2 : Module.finrank K (IntermediateField.adjoin K {y}) ≤ 2 :=
       hE ▸ IntermediateField.finrank_le_of_le_right hle
     omega
   exact ⟨IntermediateField.eq_of_le_of_finrank_eq hle (by rw [hadj, hdeg, hE]), hdeg⟩
-
-/-- An integral element of degree two satisfies a monic quadratic relation over the base field. -/
-private theorem exists_quadratic_relation {y : L} (hyint : IsIntegral K y)
-    (hdeg : (minpoly K y).natDegree = 2) :
-    ∃ b c : K, y ^ 2 + algebraMap K L b * y + algebraMap K L c = 0 := by
-  obtain ⟨b, c, hpoly⟩ :=
-    Polynomial.isMonicOfDegree_two_iff.mp ⟨hdeg, minpoly.monic hyint⟩
-  refine ⟨b, c, ?_⟩
-  have h0 := minpoly.aeval K y
-  rw [hpoly] at h0
-  simpa using h0
 
 /-- **A quadratic intermediate field is generated by a square root.** If `2 ≠ 0` in `K` and the
 intermediate field `E` of `L / K` has degree `2` over `K`, then `E = K⟮x⟯` for an `x` whose square
@@ -277,7 +223,7 @@ theorem exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two [NeZero (2 : K)]
   obtain ⟨hEeq, hdeg⟩ := adjoin_simple_eq_of_finrank_eq_two hE hyE hyb
   have hEfin : FiniteDimensional K E := .of_finrank_pos (by omega)
   have hyint : IsIntegral K y := (IsIntegral.of_finite K (⟨y, hyE⟩ : E)).map E.val
-  obtain ⟨b, c, hrel⟩ := exists_quadratic_relation hyint hdeg
+  obtain ⟨b, c, hrel⟩ := hyint.exists_quadratic_relation hdeg
   -- The discriminant identity gives `(2y + b)² = b² - 4c` in the base field.
   set x : L := 2 * y + algebraMap K L b with hx
   have hyx : y = (x - algebraMap K L b) / 2 := by

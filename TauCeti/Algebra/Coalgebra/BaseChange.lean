@@ -40,8 +40,7 @@ theorem baseChange_comul_tmul (a : A) (h : H) :
       TensorProduct.AlgebraTensorModule.distribBaseChange R A H H
         (a ⊗ₜ[R] Coalgebra.comul (R := R) (A := H) h) := by
   rw [TensorProduct.comul_tmul, CommSemiring.comul_apply]
-  induction Coalgebra.comul (R := R) (A := H) h using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := R) (A := H) h using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul g k =>
       simp only [TensorProduct.AlgebraTensorModule.tensorTensorTensorComm_tmul,
@@ -66,8 +65,7 @@ private theorem baseChangeTensorBialgEquiv_includeRight (y : H ⊗[k] H) :
         (Algebra.TensorProduct.includeRight y) =
       TensorProduct.AlgebraTensorModule.distribBaseChange k K H H
         (Algebra.TensorProduct.includeRight y) := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
       rw [Algebra.TensorProduct.includeRight_apply,
@@ -82,8 +80,7 @@ private theorem baseChangeTensorBialgEquiv_includeRight_comm (y : H ⊗[k] H) :
       TensorProduct.comm K (K ⊗[k] H) (K ⊗[k] H)
         (TauCeti.Bialgebra.TensorProduct.baseChangeTensorBialgEquiv k K H H
           (Algebra.TensorProduct.includeRight y)) := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [map_add, LinearMap.map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>

@@ -124,8 +124,8 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     {τ : L ≃ₐ[M] L} (hτ : IsArithFrobAt (𝓞 M) τ Q) :
     AlgEquiv.restrictScalars K τ = σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K) := by
   have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hσ.ne_bot inferInstance
-  have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
-  have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
   have _ : (Q.under (𝓞 M)).LiesOver (Q.under (𝓞 K)) := ⟨by rw [Ideal.under_under]⟩
   -- The residue field of `𝔓` has `𝔑𝔭 ^ f(𝔓/𝔭)` elements.
   have hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) =
@@ -252,8 +252,8 @@ theorem isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one
     (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
     IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q := by
   have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hτ.ne_bot inferInstance
-  have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
-  have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_comap_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
+  have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
   have _ : (Q.under (𝓞 M)).LiesOver (Q.under (𝓞 K)) := ⟨by rw [Ideal.under_under]⟩
   -- At residue degree one the `𝓞 M`-residue field and the `𝓞 K`-residue field have equal size.
   have hcard : Nat.card (𝓞 M ⧸ Q.under (𝓞 M)) = Nat.card (𝓞 K ⧸ Q.under (𝓞 K)) := by

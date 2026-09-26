@@ -276,8 +276,11 @@ namespace IsPositiveDefinite
 
 /-- Positive-definite functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {F : ι → M → ℂ} (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
-    IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) :=
-  of_posSemidef <| posSemidef_finset_sum fun i hi => (hF i hi).posSemidef
+    IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) := by
+  apply of_posSemidef
+  have heq : (∑ i ∈ s, fun a b : M => F i (a + star b)) =
+      (fun a b : M => ∑ i ∈ s, F i (a + star b)) := by ext; simp
+  exact heq ▸ Matrix.posSemidef_sum s (fun i hi => (hF i hi).posSemidef)
 
 /-- Positive-definite functions are closed under finite products (Schur product). -/
 theorem prod {ι : Type*} {s : Finset ι} {F : ι → M → ℂ} (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :

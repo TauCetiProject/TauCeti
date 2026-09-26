@@ -288,12 +288,10 @@ theorem IsIsometry.baseChange (hf : IsIsometry B f) :
     IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) := by
   rw [isIsometry_iff]
   intro x y
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
   | tmul a m =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
       | tmul a' m' => simp [hf.apply m m']
 

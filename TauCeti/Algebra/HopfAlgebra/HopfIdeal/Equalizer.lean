@@ -126,7 +126,6 @@ private theorem map_sub_map_mem_sup (t : H ⊗[R] H) :
       leftTensorIdeal (R := R) (H := K) (equalizerIdeal f g) ⊔
         rightTensorIdeal (R := R) (H := K) (equalizerIdeal f g) := by
   induction t with
-  | zero => simp
   | tmul a c =>
       have key : (f a) ⊗ₜ[R] (f c) - (g a) ⊗ₜ[R] (g c) =
           (f a - g a) ⊗ₜ[R] (f c) + (g a) ⊗ₜ[R] (f c - g c) := by

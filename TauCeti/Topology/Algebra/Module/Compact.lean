@@ -51,6 +51,8 @@ witness that a compact totally disconnected topological ring is a compact module
 * `TauCeti.IsLinearTopology.eq_zero_of_forall_mem_of_isOpen`,
   `TauCeti.IsLinearTopology.sInf_isOpen_eq_bot`: in a `T1` linearly topologized module the open
   submodules intersect in zero.
+* `TauCeti.IsLinearTopology.continuous_iff_forall_continuous_mkQ`: a map into a linearly
+  topologized module is continuous exactly when it is continuous modulo every open submodule.
 * `TauCeti.exists_forall_mkQ_eq`: for a compact topological module, the map to compatible
   families in its quotients by open submodules is surjective.
 * `TauCeti.existsUnique_forall_mkQ_eq`: a compact `T1` linearly topologized module is the
@@ -155,6 +157,28 @@ theorem IsLinearTopology.sInf_isOpen_eq_bot :
     IsLinearTopology.eq_zero_of_forall_mem_of_isOpen fun N hN ↦ Submodule.mem_sInf.mp hx N hN
 
 end Separated
+
+section Continuity
+
+variable [IsTopologicalAddGroup M] [IsLinearTopology R M]
+
+variable (R) in
+/-- **Continuity level by level.** A map into a linearly topologized topological module is
+continuous exactly when its compositions with the quotient maps onto the quotients by the open
+submodules are continuous. -/
+theorem IsLinearTopology.continuous_iff_forall_continuous_mkQ {X : Type*} [TopologicalSpace X]
+    {f : X → M} :
+    Continuous f ↔ ∀ N : Submodule R M, IsOpen (N : Set M) → Continuous (N.mkQ ∘ f) := by
+  refine ⟨fun hf N _ ↦ N.continuous_mkQ.comp hf, fun h ↦ continuous_iff_continuousAt.2 fun x ↦ ?_⟩
+  rw [ContinuousAt, ← map_add_left_nhds_zero (f x),
+    ((IsLinearTopology.hasBasis_open_submodule R).map _).tendsto_right_iff]
+  intro N hN
+  have := Submodule.Quotient.discreteTopology_of_isOpen N hN
+  filter_upwards [((h N hN).isOpen_preimage _ (isOpen_discrete {N.mkQ (f x)})).mem_nhds
+    (by simp)] with z hz
+  exact ⟨f z - f x, (Submodule.Quotient.eq N).1 hz, add_sub_cancel _ _⟩
+
+end Continuity
 
 section Compact
 

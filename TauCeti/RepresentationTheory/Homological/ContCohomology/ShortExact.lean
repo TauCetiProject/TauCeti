@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Short exact sequences of discrete modules, and the low-degree connecting maps
@@ -48,6 +50,8 @@ sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.toShortComplex`: the sequence as a short
   complex of canonical topological coefficient representations.
 * `TauCeti.ContCohomology.DiscreteShortExact.restrict`: the same sequence over a subgroup.
+* `TauCeti.ContCohomology.DiscreteShortExact.ofAddSubgroup`: the sequence `0 → N → B → B ⧸ N → 0`
+  of a `G`-stable additive subgroup `N` of a discrete `G`-module `B`.
 * `TauCeti.ContCohomology.DiscreteShortExact.inclDistribMulActionHom` and
   `TauCeti.ContCohomology.DiscreteShortExact.projDistribMulActionHom`: the inclusion and projection
   bundled as equivariant additive homomorphisms, suitable as inputs to `explicitCoeff0`.
@@ -247,6 +251,47 @@ theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.
 theorem exists_incl_eq {b : B} (hb : S.proj b = 0) : ∃ a : A, S.incl a = b := S.exact b |>.1 hb
 
 end Basic
+
+section OfAddSubgroup
+
+variable {G : Type u} [Monoid G]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
+
+/-- The short exact sequence `0 → N → B → B ⧸ N → 0` of a `G`-stable additive subgroup `N` of a
+discrete `G`-module `B`. The subgroup carries the subspace topology and the restricted action
+`AddSubgroup.restrictDistribMulAction`; the quotient carries the quotient topology, which is
+discrete, and the quotient action `AddSubgroup.quotientDistribMulAction`. -/
+def ofAddSubgroup (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
+    letI := N.restrictDistribMulAction hN
+    letI := N.quotientDistribMulAction hN
+    DiscreteShortExact G N B (B ⧸ N) :=
+  letI := N.restrictDistribMulAction hN
+  letI := N.quotientDistribMulAction hN
+  { incl := N.subtype
+    proj := QuotientAddGroup.mk' N
+    incl_equivariant := N.restrictDistribMulAction_coe_smul hN
+    proj_equivariant := fun g b ↦ (N.quotientDistribMulAction_smul_mk hN g b).symm
+    incl_injective := N.subtype_injective
+    proj_surjective := QuotientAddGroup.mk'_surjective N
+    exact := fun b ↦ by
+      rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
+      exact ⟨fun hb ↦ ⟨⟨b, hb⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.2⟩ }
+
+@[simp]
+theorem ofAddSubgroup_incl (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
+    letI := N.restrictDistribMulAction hN
+    letI := N.quotientDistribMulAction hN
+    (ofAddSubgroup N hN).incl = N.subtype :=
+  (rfl)
+
+@[simp]
+theorem ofAddSubgroup_proj (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
+    letI := N.restrictDistribMulAction hN
+    letI := N.quotientDistribMulAction hN
+    (ofAddSubgroup N hN).proj = QuotientAddGroup.mk' N :=
+  (rfl)
+
+end OfAddSubgroup
 
 section Restrict
 

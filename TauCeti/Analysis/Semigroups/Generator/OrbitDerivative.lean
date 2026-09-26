@@ -207,9 +207,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
       isOpen_Ioi ((S.realOperator_continuousOn_Ici z).mono Set.Ioi_subset_Ici_self) t ht
     have hint := intervalIntegral.integral_hasDerivAt_right hzint hmeas hcont
     have h := ((hasDerivAt_const t (x : X)).add hint).hasDerivWithinAt (s := Set.Ici 0)
-    convert h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _) using 1
-    funext s
-    rfl
+    exact h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _)
   -- Finally transfer the derivative from `g` back to the orbit and commute the generator.
   rw [S.realOperator_generator_map ht.le x]
   exact hg.congr (fun s hs => horbit s hs) (horbit t ht.le)

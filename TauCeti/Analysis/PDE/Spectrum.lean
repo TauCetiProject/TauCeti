@@ -59,8 +59,8 @@ closure of `C_c^∞(Ω)`.  The hypotheses are carried separately and named at ea
 
 Reading the Fredholm alternative for a scalar mass shift through this vocabulary gives the
 familiar statement: if `κ` is *not* a Dirichlet eigenvalue, then `L u - κ u = f` has exactly one
-weak solution for every `f ∈ L²(Ω)`
-(`TauCeti.PDE.existsUnique_isWeakSolutionDirichletMassShift_of_not_isDirichletEigenvalue`).
+weak solution for every `f ∈ L²(Ω)`, with mass coefficient written explicitly as `c - κ` in
+`TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_sub_const_of_not_isDirichletEigenvalue`.
 
 ## The variational characterization
 
@@ -80,8 +80,8 @@ map.
   `TauCeti.PDE.inner_dirichletSolutionOperator_self_nonneg`.
 * `TauCeti.PDE.IsDirichletEigenvalue`: the Dirichlet eigenvalue problem, with
   `TauCeti.PDE.isDirichletEigenvalue_iff_setIntegral` writing it as an integral identity and
-  `TauCeti.PDE.isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift` matching it
-  with the mass-shifted weak equation.
+  `TauCeti.PDE.isDirichletEigenvalue_iff_exists_isWeakSolutionDirichlet_sub_const` matching it
+  with a homogeneous weak equation for the mass coefficient `c - κ`.
 * `TauCeti.PDE.firstDirichletEigenvalue` and `TauCeti.PDE.isDirichletEigenvalue_first`: the least
   Dirichlet eigenvalue and its attainment on a nonempty bounded domain.
 * `TauCeti.PDE.pos_of_isDirichletEigenvalue` and `TauCeti.PDE.le_of_isDirichletEigenvalue`:
@@ -243,6 +243,17 @@ theorem isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift (kappa
         W1p.value (v : W1p mu Omega 2) x ∂mu) = 0 := fun v ↦ by
     rw [← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
   simp only [IsDirichletEigenvalue, isWeakSolutionDirichletMassShift_iff, hzero, sub_eq_zero]
+
+/-- A Dirichlet eigenvalue is exactly a constant shift of the mass coefficient for which the
+homogeneous Dirichlet equation has a nonzero weak solution. -/
+theorem isDirichletEigenvalue_iff_exists_isWeakSolutionDirichlet_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) :
+    IsDirichletEigenvalue mu Omega a b c kappa ↔
+      ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧
+        IsWeakSolutionDirichlet a b (fun x ↦ c x - kappa) 0 u := by
+  rw [isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift]
+  simp only [isWeakSolutionDirichletMassShift_iff_isWeakSolutionDirichlet_sub_const hcoeff]
 
 /-- **Every Dirichlet eigenvalue of a coercive form is positive.**  Coercivity of the energy
 form on `H¹₀(Ω)` is the only hypothesis: neither boundedness nor any regularity of `Ω` is
@@ -567,16 +578,17 @@ theorem exists_hilbertBasis_forall_isDirichletEigenvalue
 /-- **The Fredholm alternative in eigenvalue language.**  On a bounded domain, if `κ` is not a
 Dirichlet eigenvalue then `L u - κ u = f` in `Ω`, `u = 0` on `∂Ω`, has exactly one weak solution
 for every `f ∈ L²(Ω)`. -/
-theorem existsUnique_isWeakSolutionDirichletMassShift_of_not_isDirichletEigenvalue
+theorem existsUnique_isWeakSolutionDirichlet_sub_const_of_not_isDirichletEigenvalue
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {kappa : ℝ}
     (hkappa : ¬ IsDirichletEigenvalue mu Omega a b c kappa) (f : Lp ℝ 2 (mu.restrict Omega)) :
-    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichletMassShift a b c kappa f u := by
-  rcases fredholmAlternative_isWeakSolutionDirichletMassShift hcoeff hcoercive hOmega kappa with
+    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b (fun x ↦ c x - kappa) f u := by
+  rcases fredholmAlternative_isWeakSolutionDirichlet_sub_const hcoeff hcoercive hOmega kappa with
     hker | hsolve
-  · exact absurd
-      ((isDirichletEigenvalue_iff_exists_isWeakSolutionDirichletMassShift kappa).mpr hker) hkappa
+  · exact (hkappa
+      ((isDirichletEigenvalue_iff_exists_isWeakSolutionDirichlet_sub_const hcoeff kappa).mpr
+        hker)).elim
   · exact hsolve f
 
 end Domain

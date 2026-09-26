@@ -8,12 +8,16 @@ module
 public import Mathlib.Topology.Category.TopPair
 
 /-!
-# Maps of topological pairs of the form `(X, B) ⟶ (Y, B')`
+# Topological pairs of nested subsets, and maps between pairs of subsets
 
 A continuous map `g : X ⟶ Y` carrying a subset `B ⊆ X` into a subset `B' ⊆ Y` induces a map of
 topological pairs `TopPair.ofSubsetMap g hB : (X, B) ⟶ (Y, B')`, where the pairs are
-`TopPair.ofSubset B` and `TopPair.ofSubset B'`.  This file defines that map and records how it acts
-on points and how it respects identities and composition.
+`TopPair.ofSubset B` and `TopPair.ofSubset B'`.
+
+Nested subsets `s ⊆ t` of a topological space form the topological pair
+`TopPair.ofInclusion : (t, s)`, whose embedding is `Set.inclusion`.  `TopPair.ofSubset` is the
+special case `t = X`; the general form is the one a filtration of a space, such as the skeletal
+filtration of a CW complex, produces.
 -/
 
 public section
@@ -23,6 +27,12 @@ open CategoryTheory
 universe u
 
 namespace TopPair
+
+/-- The topological pair `(t, s)` determined by nested subsets `s ⊆ t` of a topological space,
+with the inclusion of `s` into `t` as its embedding. -/
+abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
+  TopPair.of (A := TopCat.of s) (X := TopCat.of t)
+    (TopCat.ofHom (ContinuousMap.inclusion h)) (Topology.IsEmbedding.inclusion h)
 
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')

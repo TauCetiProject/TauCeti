@@ -186,7 +186,7 @@ theorem hom_simpleRep_eq_zero_iff {i : Q} {M : QuiverRep k Q} (f : M ⟶ simpleR
     f = 0 ↔ f.app i = 0 := by
   refine ⟨fun h ↦ by
     rw [h]
-    exact CategoryTheory.Limits.zero_app (ModuleCat k) M (simpleRep k Q i)
+    exact CategoryTheory.Limits.zero_app M (simpleRep k Q i)
       ((Paths.of Q).obj i), fun h ↦ ?_⟩
   refine NatTrans.ext (funext fun a ↦ ?_)
   rcases eq_or_ne a i with rfl | ha
@@ -200,7 +200,7 @@ theorem simpleRep_hom_eq_zero_iff {i : Q} {M : QuiverRep k Q} (f : simpleRep k Q
     f = 0 ↔ f.app i = 0 := by
   refine ⟨fun h ↦ by
     rw [h]
-    exact CategoryTheory.Limits.zero_app (ModuleCat k) (simpleRep k Q i) M
+    exact CategoryTheory.Limits.zero_app (simpleRep k Q i) M
       ((Paths.of Q).obj i), fun h ↦ ?_⟩
   refine NatTrans.ext (funext fun a ↦ ?_)
   rcases eq_or_ne a i with rfl | ha

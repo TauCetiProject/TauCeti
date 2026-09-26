@@ -30,10 +30,9 @@ what `TauCeti.SplitK0.mapRingHom` consumes here.
 
 On characters everything is as expected: the character of a restriction is the character
 precomposed with `φ` (`TauCeti.repRingCharacter_repRingRes`), so the square formed by the two
-character homomorphisms and the two restrictions commutes. Read elementwise, that square says that
-a virtual character of `H` pulls back to a virtual character of `G`
-(`TauCeti.comp_mem_virtualCharacters`), a fact about class functions with no representation ring
-in its statement.
+character homomorphisms and the two restrictions commutes. Read elementwise, that square is the
+statement that a virtual character of `H` pulls back to a virtual character of `G`, which is
+`TauCeti.comp_mem_virtualCharacters`, proved directly on the class functions.
 
 ## Main definitions
 
@@ -49,8 +48,6 @@ in its statement.
   in the homomorphism.
 * `TauCeti.repRingCharacter_repRingRes` and `TauCeti.repRingCharacter_repRingRes_apply`: the
   character of a restricted virtual representation is the character precomposed with `φ`.
-* `TauCeti.comp_mem_virtualCharacters`: pulling a virtual character back along a monoid
-  homomorphism gives a virtual character.
 
 ## Implementation notes
 
@@ -133,17 +130,6 @@ commuting square relating the two character homomorphisms to restriction on the 
 theorem repRingCharacter_repRingRes (φ : G →* H) (x : repRing k H) :
     repRingCharacter k G (repRingRes k φ x) = repRingCharacter k H x ∘ φ :=
   funext fun g => repRingCharacter_repRingRes_apply φ x g
-
-/-- **A virtual character pulls back to a virtual character** along a monoid homomorphism: the
-elementwise form of `TauCeti.repRingCharacter_repRingRes`, read through the description of the
-virtual characters as the image of the character homomorphism. -/
-theorem comp_mem_virtualCharacters (φ : G →* H) {f : H → k}
-    (hf : f ∈ virtualCharacters k H) : f ∘ φ ∈ virtualCharacters k G := by
-  obtain ⟨x, hx⟩ := (mem_range_repRingCharacter_iff (k := k) (G := H)).2 hf
-  have hfx : f ∘ φ = repRingCharacter k G (repRingRes k φ x) := by
-    rw [repRingCharacter_repRingRes, ← hx, AddMonoidHom.coe_coe]
-  rw [hfx]
-  exact repRingCharacter_mem_virtualCharacters _
 
 /-- **Restriction along an isomorphism of monoids is an isomorphism of representation rings**,
 with inverse restriction along the inverse isomorphism. -/

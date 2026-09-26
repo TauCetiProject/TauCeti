@@ -31,6 +31,14 @@ topologically finitely generated pro-`p` group `G` has a presentation on any fin
 least `topologicalGeneratorRankNat G` elements; a presentation on exactly that many generators is
 what is called a **minimal presentation** of `G`.
 
+A presented group is functorial in its presentation: a continuous homomorphism of the underlying
+free groups that sends the relators of the source into the closed normal closure of the relators
+of the target induces a continuous homomorphism of the presented groups, and a topological
+isomorphism of the free groups matching the two closed normal closures induces a topological
+isomorphism of the presented groups. In particular a presented group depends on its relators only
+through their closed normal closure. Finally, the pro-`p` group presented by the images of a set
+of profinite relators is a quotient of the profinite group they present.
+
 ## Main results
 
 * `TauCeti.presentedProfiniteGroup.existsUnique_lift`, `TauCeti.presentedProP.existsUnique_lift`:
@@ -47,11 +55,21 @@ what is called a **minimal presentation** of `G`.
 * `TauCeti.IsProP.exists_continuousMulEquiv_presentedProP`: a topologically finitely generated
   pro-`p` group has a presentation on any finite type with at least `topologicalGeneratorRankNat`
   elements.
+* `TauCeti.presentedProfiniteGroup.map`, `TauCeti.presentedProP.map`: functoriality in the
+  generators and the relators.
+* `TauCeti.presentedProfiniteGroup.congr`, `TauCeti.presentedProP.congr`: an isomorphism of the
+  free groups matching the relators induces an isomorphism of the presented groups.
+* `TauCeti.presentedProfiniteGroup.congrOfClosureEq`, `TauCeti.presentedProP.congrOfClosureEq`:
+  relators with the same closed normal closure present the same group.
+* `TauCeti.presentedProfiniteGroup.toPresentedProP_surjective`: a presented profinite group maps
+  onto the pro-`p` group presented by the images of its relators.
 
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Chapter 3 and Section 7.8.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Section III.9.
+* `Mathlib.GroupTheory.PresentedGroup`, whose discrete analogues `PresentedGroup.map` and
+  `PresentedGroup.equivPresentedGroup` are the model for the shape of the functoriality API here.
 -/
 
 public section
@@ -224,6 +242,144 @@ theorem isTopologicallyFinitelyGenerated [Finite X] :
   (Set.finite_range (of rels)).isTopologicallyFinitelyGenerated <|
     SetLike.coe_injective <| by
       rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+
+/-! ## Functoriality in the generators and the relators
+
+The shape of this API follows Mathlib's discrete analogues `PresentedGroup.map` and
+`PresentedGroup.equivPresentedGroup` in `Mathlib.GroupTheory.PresentedGroup`.
+-/
+
+section Map
+
+variable {Y : Type v} {rels' : Set (freeProfiniteGroup Y)}
+
+/-- The continuous homomorphism of presented profinite groups induced by a continuous
+homomorphism of the underlying free profinite groups that sends every relator into the closed
+normal closure of the target relators. -/
+noncomputable def map (φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y)
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) :
+    presentedProfiniteGroup X rels →ₜ* presentedProfiniteGroup Y rels' :=
+  lift ((mk rels').comp φ) hφ
+
+/-- The induced homomorphism computes on classes as the homomorphism of free profinite groups. -/
+@[simp]
+theorem map_mk (φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y)
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) (x : freeProfiniteGroup X) :
+    map φ hφ (mk rels x) = mk rels' (φ x) :=
+  lift_mk _ hφ x
+
+/-- The induced homomorphism sends a generator to the class of its image. -/
+@[simp]
+theorem map_of (φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y)
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) (x : X) :
+    map φ hφ (of rels x) = mk rels' (φ (freeProfiniteGroup.of x)) :=
+  lift_of _ hφ x
+
+/-- A continuous homomorphism of free profinite groups that sends the relators into the closed
+normal closure of the target relators sends the whole closed normal closure into it. -/
+theorem mk_eq_one_of_mk_eq_one (φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y)
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) {x : freeProfiniteGroup X} (hx : mk rels x = 1) :
+    mk rels' (φ x) = 1 := by
+  rw [← map_mk φ hφ x, hx, map_one]
+
+/-- The identity of the free profinite group induces the identity of a presented group. -/
+@[simp]
+theorem map_id :
+    map (ContinuousMonoidHom.id (freeProfiniteGroup X)) (fun _ hr ↦ mk_relator _ hr) =
+      ContinuousMonoidHom.id (presentedProfiniteGroup X rels) :=
+  hom_ext <| ContinuousMonoidHom.ext fun x ↦ by simp
+
+/-- The homomorphisms induced by a composite are the composite of the induced homomorphisms. -/
+theorem map_comp {Z : Type w} {rels'' : Set (freeProfiniteGroup Z)}
+    (φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y) (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1)
+    (ψ : freeProfiniteGroup Y →ₜ* freeProfiniteGroup Z) (hψ : ∀ r ∈ rels', mk rels'' (ψ r) = 1) :
+    (map ψ hψ).comp (map φ hφ) =
+      map (ψ.comp φ) fun r hr ↦ mk_eq_one_of_mk_eq_one ψ hψ (hφ r hr) :=
+  hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
+    -- `simp` rewrites the left-hand side; on the right the relator hypothesis carried by `map`
+    -- is stated through `ψ (φ ·)` rather than `(ψ.comp φ) ·`, so the rewrite does not match
+    -- there and the equation is closed by `exact` instead.
+    simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, map_mk]
+    exact (map_mk (ψ.comp φ) _ x).symm
+
+/-- A surjection of free profinite groups induces a surjection of presented profinite groups. -/
+theorem map_surjective {φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y}
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) (hs : Function.Surjective φ) :
+    Function.Surjective (map φ hφ) :=
+  lift_surjective hφ ((mk_surjective rels').comp hs)
+
+/-- A topological isomorphism of the free profinite groups sending each set of relators into the
+closed normal closure of the other induces a topological isomorphism of the presented profinite
+groups. -/
+noncomputable def congr (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1) :
+    presentedProfiniteGroup X rels ≃ₜ* presentedProfiniteGroup Y rels' where
+  toFun := map (e : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y) fun r hr ↦ by
+    simpa using h r hr
+  invFun := map (e.symm : freeProfiniteGroup Y →ₜ* freeProfiniteGroup X) fun r hr ↦ by
+    simpa using h' r hr
+  left_inv y := by
+    obtain ⟨x, rfl⟩ := mk_surjective rels y
+    simp
+  right_inv y := by
+    obtain ⟨x, rfl⟩ := mk_surjective rels' y
+    simp
+  map_mul' := map_mul _
+  continuous_toFun := map_continuous _
+  continuous_invFun := map_continuous _
+
+/-- The induced isomorphism computes on classes as the isomorphism of free profinite groups. -/
+@[simp]
+theorem congr_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
+    (x : freeProfiniteGroup X) : congr e h h' (mk rels x) = mk rels' (e x) :=
+  map_mk _ _ x
+
+/-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
+profinite groups. -/
+@[simp]
+theorem congr_symm_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
+    (y : freeProfiniteGroup Y) : (congr e h h').symm (mk rels' y) = mk rels (e.symm y) :=
+  map_mk _ _ y
+
+end Map
+
+/-- **Two sets of relators with the same closed normal closure present the same profinite
+group**, by an isomorphism matching the classes of every element of the free profinite group. -/
+noncomputable def congrOfClosureEq {rels₂ : Set (freeProfiniteGroup X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) :
+    presentedProfiniteGroup X rels ≃ₜ* presentedProfiniteGroup X rels₂ :=
+  congr (ContinuousMulEquiv.refl (freeProfiniteGroup X))
+    (fun r hr ↦ by
+      have hmem : r ∈ (Subgroup.normalClosure rels).topologicalClosure :=
+        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
+      rw [mk_eq_one_iff, ← h]
+      exact hmem)
+    (fun r hr ↦ by
+      have hmem : r ∈ (Subgroup.normalClosure rels₂).topologicalClosure :=
+        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
+      rw [mk_eq_one_iff, h]
+      exact hmem)
+
+/-- The isomorphism between presentations with the same closed normal closure fixes the class of
+every element of the free profinite group. -/
+@[simp]
+theorem congrOfClosureEq_mk {rels₂ : Set (freeProfiniteGroup X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
+    congrOfClosureEq h (mk rels x) = mk rels₂ x :=
+  congr_mk _ _ _ x
+
+/-- The inverse of the isomorphism between presentations with the same closed normal closure also
+fixes the class of every element of the free profinite group. -/
+@[simp]
+theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProfiniteGroup X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
+    (congrOfClosureEq h).symm (mk rels₂ x) = mk rels x :=
+  congr_symm_mk _ _ _ x
 
 /-! ## The empty set of relators -/
 
@@ -475,6 +631,142 @@ theorem lift_surjective {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
   have hcomp : ⇑ψ = lift ψ hψ ∘ mk p rels := funext fun x ↦ (lift_mk ψ hψ x).symm
   exact Function.Surjective.of_comp (hcomp ▸ hs)
 
+/-! ## Functoriality in the generators and the relators
+
+The shape of this API follows Mathlib's discrete analogues `PresentedGroup.map` and
+`PresentedGroup.equivPresentedGroup` in `Mathlib.GroupTheory.PresentedGroup`.
+-/
+
+section Map
+
+variable {Y : Type v} {rels' : Set (freeProP p Y)}
+
+/-- The continuous homomorphism of presented pro-`p` groups induced by a continuous homomorphism
+of the underlying free pro-`p` groups that sends every relator into the closed normal closure of
+the target relators. -/
+noncomputable def map (φ : freeProP p X →ₜ* freeProP p Y)
+    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) :
+    presentedProP p X rels →ₜ* presentedProP p Y rels' :=
+  lift ((mk p rels').comp φ) hφ
+
+/-- The induced homomorphism computes on classes as the homomorphism of free pro-`p` groups. -/
+@[simp]
+theorem map_mk (φ : freeProP p X →ₜ* freeProP p Y) (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1)
+    (x : freeProP p X) : map φ hφ (mk p rels x) = mk p rels' (φ x) :=
+  lift_mk _ hφ x
+
+/-- The induced homomorphism sends a generator to the class of its image. -/
+@[simp]
+theorem map_of (φ : freeProP p X →ₜ* freeProP p Y) (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1)
+    (x : X) : map φ hφ (of p rels x) = mk p rels' (φ (freeProP.of x)) :=
+  lift_of _ hφ x
+
+/-- A continuous homomorphism of free pro-`p` groups that sends the relators into the closed
+normal closure of the target relators sends the whole closed normal closure into it. -/
+theorem mk_eq_one_of_mk_eq_one (φ : freeProP p X →ₜ* freeProP p Y)
+    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) {x : freeProP p X} (hx : mk p rels x = 1) :
+    mk p rels' (φ x) = 1 := by
+  rw [← map_mk φ hφ x, hx, map_one]
+
+/-- The identity of the free pro-`p` group induces the identity of a presented group. -/
+@[simp]
+theorem map_id :
+    map (ContinuousMonoidHom.id (freeProP p X)) (fun _ hr ↦ mk_relator _ hr) =
+      ContinuousMonoidHom.id (presentedProP p X rels) :=
+  hom_ext <| ContinuousMonoidHom.ext fun x ↦ by simp
+
+/-- The homomorphisms induced by a composite are the composite of the induced homomorphisms. -/
+theorem map_comp {Z : Type w} {rels'' : Set (freeProP p Z)} (φ : freeProP p X →ₜ* freeProP p Y)
+    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) (ψ : freeProP p Y →ₜ* freeProP p Z)
+    (hψ : ∀ r ∈ rels', mk p rels'' (ψ r) = 1) :
+    (map ψ hψ).comp (map φ hφ) =
+      map (ψ.comp φ) fun r hr ↦ mk_eq_one_of_mk_eq_one ψ hψ (hφ r hr) :=
+  hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
+    -- `simp` rewrites the left-hand side; on the right the relator hypothesis carried by `map`
+    -- is stated through `ψ (φ ·)` rather than `(ψ.comp φ) ·`, so the rewrite does not match
+    -- there and the equation is closed by `exact` instead.
+    simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, map_mk]
+    exact (map_mk (ψ.comp φ) _ x).symm
+
+/-- A surjection of free pro-`p` groups induces a surjection of presented pro-`p` groups. -/
+theorem map_surjective {φ : freeProP p X →ₜ* freeProP p Y}
+    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) (hs : Function.Surjective φ) :
+    Function.Surjective (map φ hφ) :=
+  lift_surjective hφ ((mk_surjective p rels').comp hs)
+
+/-- A topological isomorphism of the free pro-`p` groups sending each set of relators into the
+closed normal closure of the other induces a topological isomorphism of the presented pro-`p`
+groups. -/
+noncomputable def congr (e : freeProP p X ≃ₜ* freeProP p Y)
+    (h : ∀ r ∈ rels, mk p rels' (e r) = 1) (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) :
+    presentedProP p X rels ≃ₜ* presentedProP p Y rels' where
+  toFun := map (e : freeProP p X →ₜ* freeProP p Y) fun r hr ↦ by
+    simpa using h r hr
+  invFun := map (e.symm : freeProP p Y →ₜ* freeProP p X) fun r hr ↦ by
+    simpa using h' r hr
+  left_inv y := by
+    obtain ⟨x, rfl⟩ := mk_surjective p rels y
+    simp
+  right_inv y := by
+    obtain ⟨x, rfl⟩ := mk_surjective p rels' y
+    simp
+  map_mul' := map_mul _
+  continuous_toFun := map_continuous _
+  continuous_invFun := map_continuous _
+
+/-- The induced isomorphism computes on classes as the isomorphism of free pro-`p` groups. -/
+@[simp]
+theorem congr_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
+    (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (x : freeProP p X) :
+    congr e h h' (mk p rels x) = mk p rels' (e x) :=
+  map_mk _ _ x
+
+/-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
+pro-`p` groups. -/
+@[simp]
+theorem congr_symm_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
+    (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (y : freeProP p Y) :
+    (congr e h h').symm (mk p rels' y) = mk p rels (e.symm y) :=
+  map_mk _ _ y
+
+end Map
+
+/-- **Two sets of relators with the same closed normal closure present the same pro-`p` group**,
+by an isomorphism matching the classes of every element of the free pro-`p` group. -/
+noncomputable def congrOfClosureEq {rels₂ : Set (freeProP p X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) :
+    presentedProP p X rels ≃ₜ* presentedProP p X rels₂ :=
+  congr (ContinuousMulEquiv.refl (freeProP p X))
+    (fun r hr ↦ by
+      have hmem : r ∈ (Subgroup.normalClosure rels).topologicalClosure :=
+        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
+      rw [mk_eq_one_iff, ← h]
+      exact hmem)
+    (fun r hr ↦ by
+      have hmem : r ∈ (Subgroup.normalClosure rels₂).topologicalClosure :=
+        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
+      rw [mk_eq_one_iff, h]
+      exact hmem)
+
+/-- The isomorphism between presentations with the same closed normal closure fixes the class of
+every element of the free pro-`p` group. -/
+@[simp]
+theorem congrOfClosureEq_mk {rels₂ : Set (freeProP p X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
+    congrOfClosureEq h (mk p rels x) = mk p rels₂ x :=
+  congr_mk _ _ _ x
+
+/-- The inverse of the isomorphism between presentations with the same closed normal closure also
+fixes the class of every element of the free pro-`p` group. -/
+@[simp]
+theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProP p X)}
+    (h : (Subgroup.normalClosure rels).topologicalClosure =
+      (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
+    (congrOfClosureEq h).symm (mk p rels₂ x) = mk p rels x :=
+  congr_symm_mk _ _ _ x
+
 /-! ## The empty set of relators -/
 
 section Empty
@@ -549,6 +841,44 @@ theorem equivOfSurjective_of (φ : freeProP p X →ₜ* G) (hφ : Function.Surje
 end OfSurjective
 
 end presentedProP
+
+/-! ## From a profinite presentation to a pro-`p` presentation -/
+
+namespace presentedProfiniteGroup
+
+variable {X : Type u}
+
+/-- The canonical continuous homomorphism from a presented profinite group to the pro-`p` group
+presented on the same generators by the images of the relators in the free pro-`p` group. -/
+noncomputable def toPresentedProP (p : ℕ) (rels : Set (freeProfiniteGroup X)) :
+    presentedProfiniteGroup X rels →ₜ*
+      presentedProP p X (freeProP.fromFreeProfiniteGroup p X '' rels) :=
+  lift ((presentedProP.mk p _).comp (freeProP.fromFreeProfiniteGroup p X))
+    fun _ hr ↦ presentedProP.mk_relator _ ⟨_, hr, rfl⟩
+
+/-- The comparison homomorphism computes on classes through the canonical map to the free pro-`p`
+group. -/
+@[simp]
+theorem toPresentedProP_mk (p : ℕ) (rels : Set (freeProfiniteGroup X))
+    (x : freeProfiniteGroup X) :
+    toPresentedProP p rels (mk rels x) =
+      presentedProP.mk p _ (freeProP.fromFreeProfiniteGroup p X x) :=
+  lift_mk _ _ x
+
+/-- The comparison homomorphism matches the canonical generators. -/
+@[simp]
+theorem toPresentedProP_of (p : ℕ) (rels : Set (freeProfiniteGroup X)) (x : X) :
+    toPresentedProP p rels (of rels x) = presentedProP.of p _ x := by
+  rw [← mk_of, toPresentedProP_mk, freeProP.fromFreeProfiniteGroup_of, presentedProP.mk_of]
+
+/-- **A presented profinite group maps onto the pro-`p` group presented by the images of its
+relators.** -/
+theorem toPresentedProP_surjective (p : ℕ) (rels : Set (freeProfiniteGroup X)) :
+    Function.Surjective (toPresentedProP p rels) :=
+  lift_surjective _ ((presentedProP.mk_surjective p _).comp
+    freeProP.fromFreeProfiniteGroup_surjective)
+
+end presentedProfiniteGroup
 
 /-! ## Presentations of topologically finitely generated pro-`p` groups -/
 

@@ -114,14 +114,8 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_e
     FDRep.frobeniusSchurIndicator (indFDRep (FDRep.ofLinearCharacter ψ)) =
       (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k) := by
   classical
-  -- `s` lies outside `N`: inside it, `hinv` would make `ψ x` conjugate to `ψ x⁻¹` in the
-  -- commutative group `kˣ`, so equal to it, and that is what `hψ` forbids.
-  have hs : s ∉ N := fun hsN => hψ <| MonoidHom.ext fun x => by
-    have hconj : (⟨s, hsN⟩ : N) * x * (⟨s, hsN⟩ : N)⁻¹ = x⁻¹ :=
-      Subtype.ext (by simpa using hinv (x : G) x.2)
-    have h := isConj_iff_eq.mp (ψ.map_isConj (isConj_iff.mpr ⟨_, hconj⟩))
-    rw [map_inv, eq_inv_iff_mul_eq_one] at h
-    rw [MonoidHom.pow_apply, MonoidHom.one_apply, pow_two, h]
+  -- `s` lies outside `N`: an inverting element inside `N` would force `ψ ^ 2 = 1`.
+  have hs : s ∉ N := fun hsN => hψ (monoidHom_sq_eq_one_of_mem_of_conj_eq_inv hsN hinv ψ)
   have hcast : (Nat.card G : k) = (Nat.card N : k) * 2 := by
     rw [← Subgroup.card_mul_index N, hindex]; push_cast; ring
   have hNunit : IsUnit (Nat.card N : k) := isUnit_of_mul_isUnit_left (hcast ▸ hG)

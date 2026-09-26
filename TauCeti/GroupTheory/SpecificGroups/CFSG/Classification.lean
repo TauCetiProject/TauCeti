@@ -25,7 +25,8 @@ finite presentations, without assuming any recognition theorem for the presented
 * `TauCeti.ValidLieTypeIndex.Group`: the concrete fixed-point, derived-subgroup, central-quotient
   carrier selected by a valid Lie-type index.
 * `TauCeti.CFSGIndex.Group`: the concrete carrier selected by an index on the classification list.
-* `TauCeti.ClassificationStatement`: every finite simple group is isomorphic to a listed carrier.
+* `TauCeti.ClassificationStatement`: every finite simple group is isomorphic to a listed carrier,
+  with `TauCeti.classificationStatement_iff` stating the quantified proposition it names.
 * `TauCeti.classificationStatement_of_zero`: the universe-zero statement implies the statement in
   every universe.
 
@@ -52,6 +53,14 @@ isomorphic to one of the explicitly constructed groups on the classification lis
 def ClassificationStatement : Prop :=
   ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
     ∃ i : CFSGIndex, Nonempty (G ≃* i.Group)
+
+/-- The classification statement holds exactly when every finite simple group is isomorphic to
+one of the indexed carriers. -/
+theorem classificationStatement_iff :
+    ClassificationStatement.{u} ↔
+      ∀ (G : Type u) [Group G] [Finite G] [IsSimpleGroup G],
+        ∃ i : CFSGIndex, Nonempty (G ≃* i.Group) :=
+  Iff.rfl
 
 /-- The universe-zero classification statement implies the statement in every universe. -/
 theorem classificationStatement_of_zero (h : ClassificationStatement.{0}) :

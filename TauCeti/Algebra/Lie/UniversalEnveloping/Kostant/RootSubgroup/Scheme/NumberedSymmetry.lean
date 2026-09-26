@@ -124,8 +124,7 @@ theorem map_kostantNumberedSymmetryMatrix {A : Type v} {B : Type v'} [CommRing A
         (AddEquiv.baseChangeInvariantRestrictUnit
             (R := B) θ.toAddEquiv M hθM).val
           (TensorProduct.map φ.toIntAlgHom.toLinearMap LinearMap.id z) := by
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul a m =>
         simp only [TensorProduct.map_tmul, AlgHom.toLinearMap_apply, LinearMap.id_apply,

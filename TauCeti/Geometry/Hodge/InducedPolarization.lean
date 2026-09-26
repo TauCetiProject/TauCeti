@@ -142,7 +142,6 @@ theorem inducedForm_nondegenerate : (W.inducedForm P).Nondegenerate := by
   · intro x hx
     have hxC : integralSubmoduleToComplex hℚ hℂ W.WQ x = 0 := hcomplex.1 _ fun y ↦ by
       induction y using (isBaseChange_integralSubmoduleToComplex hℚ hℂ W.WQ).inductionOn with
-      | zero => simp
       | tmul y => simpa [inducedForm] using congrArg ((↑) : ℤ → ℂ) (hx y)
       | smul c y hy => rw [map_smul, hy, smul_zero]
       | add y z hy hz => rw [map_add, hy, hz, add_zero]
@@ -154,7 +153,6 @@ theorem inducedForm_nondegenerate : (W.inducedForm P).Nondegenerate := by
   · intro x hx
     have hxC : integralSubmoduleToComplex hℚ hℂ W.WQ x = 0 := hcomplex.2 _ fun y ↦ by
       induction y using (isBaseChange_integralSubmoduleToComplex hℚ hℂ W.WQ).inductionOn with
-      | zero => simp
       | tmul y => simpa [inducedForm] using congrArg ((↑) : ℤ → ℂ) (hx y)
       | smul c y hy =>
           rw [map_smul, LinearMap.smul_apply, hy, smul_zero]

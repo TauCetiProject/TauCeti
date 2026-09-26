@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 
 /-!
 # Exponentiation of a pro-`p` group by the `p`-adic integers
@@ -49,6 +50,8 @@ abelian pro-`p` groups is stated.
   `g : ℤ_[p] →+ X`, the `p`-adic power of `ofAdd (g 1)` in `Multiplicative X` is `ofAdd ∘ g`.
 * `TauCeti.IsProP.module_smul`, `TauCeti.IsProP.continuousSMul_module`: the module structure
   acts by the `p`-adic power, and is topological.
+* `TauCeti.IsProP.smul_padicPow`, `TauCeti.IsProP.smulCommClass_module`: continuous actions
+  by group endomorphisms commute with `p`-adic powers and the resulting scalar action.
 
 ## References
 
@@ -245,6 +248,12 @@ theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalG
   intro k
   simp
 
+/-- A continuous action by group endomorphisms commutes with `p`-adic powers. -/
+theorem smul_padicPow {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ A]
+    [ContinuousConstSMul Γ A] (hA : IsProP p A) (γ : Γ) (a : A) (l : ℤ_[p]) :
+    γ • hA.padicPow a l = hA.padicPow (γ • a) l :=
+  hA.map_padicPow hA (MulDistribMulAction.toMonoidHom A γ) (continuous_const_smul γ) a l
+
 /-- The `p`-adic power is multiplicative on commuting base elements. -/
 @[simp]
 theorem mul_padicPow (hA : IsProP p A) (a b : A) (hab : Commute a b) (l : ℤ_[p]) :
@@ -292,6 +301,16 @@ theorem continuousSMul_module (hA : IsProP p A) :
   -- `Additive A` carries the topology of `A`, and the action is `TauCeti.IsProP.padicPow`
   -- by `TauCeti.IsProP.module_smul`.
   ⟨hA.continuous_padicPow⟩
+
+/-- **A continuous action by group endomorphisms is `ℤ_p`-linear**: it commutes with the scalar
+action of `TauCeti.IsProP.module`. -/
+theorem smulCommClass_module {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ A]
+    [ContinuousConstSMul Γ A] (hA : IsProP p A) :
+    letI := hA.module
+    SMulCommClass Γ ℤ_[p] (Additive A) :=
+  letI := hA.module
+  ⟨fun γ l x ↦ by
+    simp only [hA.module_smul, ← Additive.ofMul_smul, Additive.toMul_smul, hA.smul_padicPow]⟩
 
 end CommGroup
 

@@ -322,8 +322,8 @@ theorem clifford_restrict_character [Finite G] [IsAlgClosed k]
   refine ⟨V, inferInstance, e, inertiaTransversal V, Nat.ne_of_gt he, inertiaTransversal_spec V,
     fun n ↦ ?_⟩
   -- Evaluate the class-function identity at `n`.
-  simpa only [ClassFunction.ofFDRep_apply, character_resFDRep, Submodule.coe_smul,
-    Submodule.coe_sum, Pi.smul_apply, Finset.sum_apply, smul_eq_mul] using
+  simpa only [ClassFunction.ofFDRep_apply, FDRep.character_actionRes, Subgroup.coe_subtype,
+    Submodule.coe_smul, Submodule.coe_sum, Pi.smul_apply, Finset.sum_apply, smul_eq_mul] using
     congrArg (fun f : ClassFunction k N ↦ f.1 n)
       (ofFDRep_resFDRep_eq_smul_sum W sigma hsigma e hcommon)
 

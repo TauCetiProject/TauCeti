@@ -508,8 +508,7 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
       rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
         invOf_mul_self, map_one])
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul a m =>
     rw [reflection_apply, LinearEquiv.baseChange_tmul, reflection_apply, hinv,
       _root_.QuadraticForm.polar_baseChange_tmul]

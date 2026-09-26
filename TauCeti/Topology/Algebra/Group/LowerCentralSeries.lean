@@ -208,6 +208,12 @@ def pLowerCentralSeries : ℕ → Subgroup G
 theorem pLowerCentralSeries_zero : pLowerCentralSeries p G 0 = ⊤ := by
   rw [pLowerCentralSeries]
 
+variable {G} in
+/-- Every element lies in `λ_0 = G`. -/
+theorem mem_pLowerCentralSeries_zero (g : G) : g ∈ pLowerCentralSeries p G 0 := by
+  rw [pLowerCentralSeries_zero]
+  exact Subgroup.mem_top g
+
 @[simp]
 theorem pLowerCentralSeries_succ (k : ℕ) :
     pLowerCentralSeries p G (k + 1) = pLowerCentralStep p (pLowerCentralSeries p G k) := by
@@ -384,6 +390,13 @@ theorem _root_.ContinuousMulEquiv.map_pLowerCentralSeries_eq (e : G ≃ₜ* H) (
     e.symm.toMulEquiv.toMonoidHom.map_pLowerCentralSeries_le e.symm.continuous k
       (mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+/-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
+theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]
+    [DiscreteTopology H] (e : G ≃* H) (k : ℕ) :
+    (pLowerCentralSeries p G k).map e.toMonoidHom = pLowerCentralSeries p H k :=
+  ContinuousMulEquiv.map_pLowerCentralSeries_eq
+    ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
 end Series
 

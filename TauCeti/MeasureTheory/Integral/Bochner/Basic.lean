@@ -185,7 +185,7 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
     Tendsto (fun i => eLpNorm (f i - g) 1 μ) l (𝓝 0) := by
   have heq : ∀ i, eLpNorm (f i - g) 1 μ = ENNReal.ofReal (∫ ω, ‖f i ω - g ω‖ ∂μ) := by
     intro i
-    rw [eLpNorm_one_eq_lintegral_enorm,
+    rw [eLpNorm_one_eq_lintegral_enorm ((hf i).sub hg).aestronglyMeasurable,
       ← ofReal_integral_norm_eq_lintegral_enorm ((hf i).sub hg)]
     simp [Pi.sub_apply]
   simp_rw [heq]

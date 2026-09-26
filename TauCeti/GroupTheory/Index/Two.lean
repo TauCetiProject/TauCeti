@@ -30,6 +30,9 @@ sum over `G ⧸ N` has exactly those two terms.
 ## Main statements
 
 * `TauCeti.isMulCommutative_of_conj_eq_inv`: **a subgroup inverted by conjugation is abelian.**
+* `TauCeti.sq_eq_one_of_mem_of_conj_eq_inv`: if the inverting element lies in the subgroup, the
+  subgroup has exponent two, and `TauCeti.monoidHom_sq_eq_one_of_mem_of_conj_eq_inv`: every
+  homomorphism from it to a commutative monoid squares to one.
 * `TauCeti.conj_eq_inv_of_notMem_of_index_two`: **one inverting element outside a subgroup of index
   two makes every element outside it invert.**
 * `TauCeti.sq_eq_sq_of_notMem_of_index_two`: the elements outside such a subgroup all have the same
@@ -60,6 +63,31 @@ theorem isMulCommutative_of_conj_eq_inv {s : G} (hinv : ∀ x ∈ N, s * x * s�
         _ = s * y * s⁻¹ * (s * z * s⁻¹) := by group
         _ = (y : G)⁻¹ * (z : G)⁻¹ := by rw [hinv y y.2, hinv z z.2]
     simpa using congrArg Inv.inv h
+
+/-- **A subgroup inverted by conjugation by one of its own elements has exponent two.**  If an
+element `s ∈ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then `x ^ 2 = 1` for every
+`x ∈ N`. -/
+theorem sq_eq_one_of_mem_of_conj_eq_inv {s : G} (hs : s ∈ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {x : G} (hx : x ∈ N) : x ^ 2 = 1 := by
+  -- `N` is abelian, so conjugation by `s ∈ N` fixes `x`, which is therefore its own inverse.
+  have hcomm : s * x = x * s := by
+    simpa using congrArg Subtype.val
+      (isMulCommutative_iff.mp (isMulCommutative_of_conj_eq_inv hinv) ⟨s, hs⟩ ⟨x, hx⟩)
+  have h := hinv x hx
+  rw [hcomm, mul_inv_cancel_right] at h
+  rw [pow_two]
+  nth_rewrite 2 [h]
+  exact mul_inv_cancel x
+
+/-- **A homomorphism to a commutative monoid squares to one on a subgroup inverted by one of its
+own elements**, that subgroup having exponent two (`TauCeti.sq_eq_one_of_mem_of_conj_eq_inv`).
+Read contrapositively, a single `ψ` with `ψ ^ 2 ≠ 1` places every element inverting `N` outside
+`N`. -/
+theorem monoidHom_sq_eq_one_of_mem_of_conj_eq_inv {M : Type*} [CommMonoid M] {s : G}
+    (hs : s ∈ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (ψ : N →* M) : ψ ^ 2 = 1 := by
+  ext x
+  have hx : x ^ 2 = 1 := Subtype.ext (by simpa using sq_eq_one_of_mem_of_conj_eq_inv hs hinv x.2)
+  rw [MonoidHom.pow_apply, ← map_pow, hx, map_one, MonoidHom.one_apply]
 
 /-- **One inverting element outside a subgroup of index two makes every element outside it
 invert.**  If some `s ∉ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then so does every

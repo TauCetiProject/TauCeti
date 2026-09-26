@@ -53,8 +53,9 @@ orthonormal basis produces a weak Fréchet derivative of `∇u`, that is, the He
 Working on the whole space is what keeps the argument free of cut-offs: no boundary regularity
 is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`), so the solution concept
 `TauCeti.PDE.IsWeakSolutionDirichlet` imposes no boundary condition here, and every difference
-quotient is a legitimate test function. For constant coefficients, interior `H²` regularity on a
-general domain follows by localizing with a cutoff
+quotient is a legitimate test function. For a constant principal coefficient and bounded
+measurable lower-order coefficients, interior `H²` regularity on a general domain follows by
+absorbing the lower-order terms into the forcing and localizing with a cutoff
 (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`); allowing variable Lipschitz
 coefficients needs the difference-quotient estimate itself to be localized.
 
@@ -285,7 +286,10 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
           (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
         ≤ eLpNorm (‖y‖ • (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) 2
             (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
-          eLpNorm_mono_ae (Filter.Eventually.of_forall fun x => by
+          have hmeas : AEStronglyMeasurable (fun x => ⟪W1p.gradient g x, y⟫_ℝ)
+              (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
+            (Lp.aestronglyMeasurable (W1p.gradient g)).inner_const
+          eLpNorm_mono_ae hmeas (Filter.Eventually.of_forall fun x => by
             rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm, mul_comm]
             exact abs_real_inner_le_norm _ y)
       _ = ‖y‖ₑ * eLpNorm (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2

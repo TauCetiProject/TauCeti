@@ -28,6 +28,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `IsProP`: every quotient by an open normal subgroup is a `p`-group.
 * `isProP_iff`: the defining property, as a lemma usable outside this module.
 * `IsPGroup.isProP`: an abstract `p`-group with any topology is pro-`p`.
+* `isProP_of_module_zmod`: a commutative group whose additive copy is a `ZMod p`-module, for
+  instance an elementary abelian group, is pro-`p`.
 * `isProP_iff_isPGroup`: for a discrete topology, pro-`p` agrees with `IsPGroup`.
 * `isProP_multiplicative_zmod_pow`: the discrete cyclic group `ℤ/pⁿ` is pro-`p`.
 * `IsProP.exists_forall_pow_pow_eq_one`: each finite quotient of a pro-`p` group is killed by
@@ -75,6 +77,12 @@ theorem _root_.IsPGroup.isProP (hG : IsPGroup p G) : IsProP p G :=
   fun U ↦ hG.to_quotient U.toSubgroup
 
 end IsPGroup
+
+/-- A commutative topological group whose additive copy is a `ZMod p`-module is pro-`p`: it is an
+abstract `p`-group by `ZModModule.isPGroup_multiplicative`. -/
+theorem isProP_of_module_zmod {W : Type u} [CommGroup W] [TopologicalSpace W]
+    [Module (ZMod p) (Additive W)] : IsProP p W :=
+  IsPGroup.isProP (G := W) (ZModModule.isPGroup_multiplicative (n := p) (G := Additive W))
 
 section Discrete
 

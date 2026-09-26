@@ -89,6 +89,26 @@ private lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
       _ ≤ lam * ‖U.2‖ ^ 2 + mu * ‖U.1‖ ^ 2 := by
         exact le_add_of_nonneg_left (mul_nonneg hlam (sq_nonneg ‖U.2‖))
 
+/-- A mass floor and a free positive Young parameter give the diagonal lower bound
+`(λ - ε)‖∇u‖² + (μ - β²/(4ε))|u|²`. Both coefficients may have either sign. -/
+lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_with_parameter
+    {eps : ℝ} (heps : 0 < eps)
+    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    (lam - eps) * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (4 * eps)) * U.1 ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  have hdecomp : energyIntegrand A b₀ c₀ U U
+      = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
+    rw [energyIntegrand_self, energyIntegrand_self]; ring
+  have hgard := garding_energyIntegrand_self_of_bounds_with_parameter heps hA hb
+    (sub_nonneg.mpr hc) U
+  rw [hdecomp]
+  have hrw : (lam - eps) * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (4 * eps)) * U.1 ^ 2
+      = (lam - eps) * ‖U.2‖ ^ 2 - beta ^ 2 / (4 * eps) * U.1 ^ 2 + mu * U.1 ^ 2 := by ring
+  rw [hrw]
+  linarith [hgard]
+
 /-- Pointwise lower bound for the energy integrand with bounded drift and a mass lower bound.
 
 If the principal part has quadratic lower bound `λ‖ξ‖²`, the drift satisfies `‖b₀‖ ≤ β`, and
@@ -100,15 +120,9 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds (hlam : 0 < lam
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
     lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
       ≤ energyIntegrand A b₀ c₀ U U := by
-  have hdecomp : energyIntegrand A b₀ c₀ U U
-      = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
-    rw [energyIntegrand_self, energyIntegrand_self]; ring
-  have hgard := garding_energyIntegrand_self_of_bounds hlam hA hb (sub_nonneg.mpr hc) U
-  rw [hdecomp]
-  have hrw : lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
-      = lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2 + mu * U.1 ^ 2 := by ring
-  rw [hrw]
-  linarith [hgard]
+  convert garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_with_parameter
+    (half_pos hlam) hA hb hc U using 1
+  ring
 
 /-- The mass-floor Gårding lower bound implies the explicit diagonal estimate with constant
 `min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/

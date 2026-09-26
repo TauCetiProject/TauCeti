@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Classification
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Minimal
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -15,12 +15,14 @@ import Mathlib.Tactic.Ring
 # Bounding multiplicities along `(-2)`-configurations
 
 In a minimal numerical type of genus `g ≥ 2`, every multiplicity-weighted intersection number
-`mᵢ|aᵢⱼ|` is at most `768g` ([Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W)).
+`mᵢ|aᵢⱼ|` is at most `768g` ([Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W)),
+and in fact at most `768g - 768`.
 The components that are not `(-2)`-indices already satisfy `mⱼ|aⱼⱼ| ≤ 6g - 6`
 (`TauCeti.NumericalType.IsMinimal.multiplicity_mul_abs_intersection_self_le`). The work is to
 propagate a bound into the configurations of `(-2)`-indices, which the classification of
 [Stacks, Section 0C7L](https://stacks.math.columbia.edu/tag/0C7L) shows to be of Dynkin shape.
-This file supplies the two propagation mechanisms of the Stacks proof.
+This file supplies the two propagation mechanisms of the Stacks proof, and combines them with the
+classification of connected proper sets of `(-2)`-indices into the bound itself.
 
 * **Doubling along a walk.** If a component `i` with `aᵢᵢ = -2wᵢ` meets `k`, then
   `mᵢ|aᵢᵢ| = 2mᵢwᵢ ≤ 2mₖ|aₖₖ|`. Along a walk of such components starting at a component that is
@@ -51,6 +53,9 @@ This file supplies the two propagation mechanisms of the Stacks proof.
 * `IsSelfIntersectionMinusTwoFork.multiplicity_mul_abs_intersection_self_le` and
   `IsSelfIntersectionMinusTwoFork.multiplicity_mul_abs_intersection_self_le_branch`:
   the same bound on a fork.
+* `TauCeti.NumericalType.IsMinimal.multiplicity_mul_abs_intersection_le`:
+  `mᵢ|aᵢⱼ| ≤ 768g - 768` for all components `i`, `j` of a minimal numerical type of genus
+  `g ≥ 2`.
 
 ## References
 
@@ -599,6 +604,215 @@ theorem multiplicity_mul_abs_intersection_self_le_branch (hT : T.IsMinimal)
 end IsSelfIntersectionMinusTwoFork
 
 end Fork
+
+/-! ### The bound on a minimal numerical type -/
+
+section Minimal
+
+variable {T}
+
+/-- One doubling step: a component `y` of self-intersection `-2w` meeting a component `z` with
+`m_z|a_zz| ≤ 2ⁿB` has `m_y|a_yy| ≤ 2ⁿ⁺¹B`. -/
+private lemma le_two_pow_succ_mul {y z : T.Component} {n : ℕ} {B : ℤ}
+    (hy : T.intersection y y = -(2 * (T.weight y : ℤ))) (hyz : 0 < T.intersection y z)
+    (hz : (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 2 ^ n * B) :
+    (T.multiplicity y : ℤ) * |T.intersection y y| ≤ 2 ^ (n + 1) * B := by
+  have := T.multiplicity_mul_abs_intersection_self_le_two_mul hy hyz
+  rw [pow_succ]
+  linarith
+
+/-- Along a chain of components of self-intersection `-2w`, a bound `m|a| ≤ 2ⁿB` at position `r`
+gives `m|a| ≤ 2ⁿ⁺ᵈB` at every position at distance `d` from `r`. -/
+private lemma IsSelfIntersectionMinusTwoChain.le_two_pow_add_mul {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) {n r : ℕ} {B : ℤ} (hrt : r < t)
+    (hr : (T.multiplicity (c r) : ℤ) * |T.intersection (c r) (c r)| ≤ 2 ^ n * B) (d : ℕ) :
+    ∀ s, (s + d = r ∨ r + d = s) → s < t →
+      (T.multiplicity (c s) : ℤ) * |T.intersection (c s) (c s)| ≤ 2 ^ (n + d) * B := by
+  induction d with
+  | zero =>
+    intro s hs _
+    obtain rfl : s = r := by omega
+    simpa using hr
+  | succ d ih =>
+    rintro s (hs | hs) hst
+    · rw [← add_assoc]
+      exact le_two_pow_succ_mul (hc.intersection_self s hst) (hc.intersection_pos rfl (by omega))
+        (ih (s + 1) (.inl (by omega)) (by omega))
+    · rw [← add_assoc]
+      refine le_two_pow_succ_mul (hc.intersection_self s hst) ?_
+        (ih (s - 1) (.inr (by omega)) (by omega))
+      rw [T.intersection_comm]
+      exact hc.intersection_pos (by omega) hst
+
+/-- In a numerical type of genus at least two with more than one component, the
+`(-2)`-indices connected to a given `(-2)`-index through `(-2)`-indices form a proper connected set
+of `(-2)`-indices that no further `(-2)`-index meets. -/
+private lemma exists_finset_of_isMinusTwoIndex (hg : 2 ≤ T.arithmeticGenus)
+    (h : 1 < Fintype.card T.Component) {i : T.Component} (hi : T.IsMinusTwoIndex i) :
+    ∃ S : Finset T.Component, i ∈ S ∧ (∀ x ∈ S, T.IsMinusTwoIndex x) ∧
+      #S < Fintype.card T.Component ∧
+      (∀ A ⊆ S, A.Nonempty → A ≠ S → ∃ a ∈ A, ∃ j ∈ S, j ∉ A ∧ 0 < T.intersection a j) ∧
+      ∀ x ∈ S, ∀ k ∉ S, 0 < T.intersection x k → ¬ T.IsMinusTwoIndex k := by
+  classical
+  let R : T.Component → T.Component → Prop := fun x y ↦ T.Adj x y ∧ T.IsMinusTwoIndex y
+  let S : Finset T.Component := {x | Relation.ReflTransGen R i x}
+  have hmem {x : T.Component} : x ∈ S ↔ Relation.ReflTransGen R i x := by simp [S]
+  have hS : ∀ x ∈ S, T.IsMinusTwoIndex x := fun x hx ↦ by
+    rcases (hmem.mp hx).cases_tail with rfl | ⟨y, -, -, hx⟩
+    exacts [hi, hx]
+  -- all contributions to the genus vanish at `(-2)`-indices, so some component is not one
+  obtain ⟨k, hk⟩ : ∃ k, ¬ T.IsMinusTwoIndex k := by
+    by_contra hall
+    simp only [not_exists, not_not] at hall
+    have hq := T.arithmeticGenus_eq_one_add_sum_genusContribution
+    rw [Finset.sum_eq_zero fun j _ ↦ (T.genusContribution_eq_zero_iff h j).mpr (hall j)] at hq
+    have : (2 : ℚ) ≤ T.arithmeticGenus := by exact_mod_cast hg
+    linarith
+  refine ⟨S, hmem.mpr .refl, hS, Finset.card_lt_univ_of_notMem fun hkS ↦ hk (hS k hkS), ?_,
+    fun x hx k hk hpos hk2 ↦ hk (hmem.mpr ((hmem.mp hx).tail ⟨T.adj_iff.mpr ⟨?_, hpos⟩, hk2⟩))⟩
+  · intro A hAS ⟨a, ha⟩ hne
+    by_contra hno
+    simp only [not_exists, not_and, not_lt] at hno
+    -- without an edge leaving `A` inside `S`, membership in `A` is constant along `R`
+    have hconst : ∀ x, Relation.ReflTransGen R i x → (x ∈ A ↔ i ∈ A) := by
+      intro x hx
+      induction hx with
+      | refl => rfl
+      | tail hy hyz ih =>
+        rename_i y z
+        rw [← ih]
+        have hyS := hmem.mpr hy
+        have hzS := hmem.mpr (hy.tail hyz)
+        constructor
+        · intro hzA
+          by_contra hyA
+          exact (hno z hzA y hyS hyA).not_gt (T.intersection_comm y z ▸ (T.adj_iff.mp hyz.1).2)
+        · intro hyA
+          by_contra hzA
+          exact (hno y hyA z hzS hzA).not_gt (T.adj_iff.mp hyz.1).2
+    obtain ⟨b, hbS, hbA⟩ : ∃ b ∈ S, b ∉ A := by
+      by_contra hall
+      simp only [not_exists, not_and, not_not] at hall
+      exact hne (Finset.Subset.antisymm hAS hall)
+    exact hbA ((hconst b (hmem.mp hbS)).mpr ((hconst a (hmem.mp (hAS ha))).mp ha))
+  · rintro rfl
+    exact hk hx
+
+/-- In a minimal numerical type of genus `g ≥ 2`, every `(-2)`-index `i` satisfies
+`mᵢ|aᵢᵢ| ≤ 768g - 768`. -/
+private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoIndex
+    (hT : T.IsMinimal) (hg : 2 ≤ T.arithmeticGenus) {i : T.Component}
+    (hi : T.IsMinusTwoIndex i) :
+    (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
+  /- The connected `(-2)`-indices through `i` form a chain, a fork, or an exceptional
+  configuration. Long chains and forks use the concavity bound `24g - 24`. In the remaining
+  configurations, every component lies at distance at most six from a component meeting a
+  non-`(-2)`-index, so the doubling bound applies. -/
+  have h : 1 < Fintype.card T.Component := T.one_lt_card_of_intersection_self_ne_zero <| by
+    rw [(T.isMinusTwoIndex_iff.mp hi).2]
+    have := (T.weight i).pos
+    omega
+  obtain ⟨S, hiS, hS, hcard, hconn, hclosed⟩ := exists_finset_of_isMinusTwoIndex hg h hi
+  have hself : ∀ x ∈ S, T.intersection x x = -(2 * (T.weight x : ℤ)) := fun x hx ↦
+    (T.isMinusTwoIndex_iff.mp (hS x hx)).2
+  -- the doubling bound starts at a component of `S` meeting a component outside `S`
+  obtain ⟨x, hxS, y, hyS, hxy⟩ := T.exists_mem_notMem_adj (S : Set T.Component) ⟨i, hiS⟩
+    fun hu ↦ (exists_notMem_of_card_lt hcard).elim fun k hk ↦
+      hk (Finset.mem_coe.mp (hu ▸ Set.mem_univ k))
+  have hy := hT.multiplicity_mul_abs_intersection_self_le h
+    (hclosed x hxS y hyS (T.adj_iff.mp hxy).2)
+  have hx : (T.multiplicity x : ℤ) * |T.intersection x x| ≤
+      2 ^ (0 + 1) * (6 * T.arithmeticGenus - 6) :=
+    le_two_pow_succ_mul (hself x hxS) (T.adj_iff.mp hxy).2 (by simpa using hy)
+  have hfin : ∀ {n : ℕ} {z : T.Component}, n ≤ 7 →
+      (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 2 ^ n * (6 * T.arithmeticGenus - 6) →
+      (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 768 * T.arithmeticGenus - 768 := by
+    intro n z hn hz
+    have hpow : (2 : ℤ) ^ n ≤ 2 ^ 7 := pow_le_pow_right₀ (by norm_num) hn
+    nlinarith
+  rcases exists_chain_or_fork_or_exceptional hself hcard hconn with
+    ⟨t, c, hc, rfl⟩ | ⟨t, c, b, hf, rfl⟩ | ⟨t, c, b, hc, ht5, ht7, hbne, -, hbpos, -, rfl⟩
+  · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+    rw [mem_range] at hs
+    by_cases ht : 4 < t
+    · -- a long chain: the concavity bound
+      have := hc.multiplicity_mul_abs_intersection_self_le hT (hc.card_image_range ▸ hcard) ht
+        (fun r hr k hk hpos ↦ hclosed _ (mem_image_of_mem c (mem_range.mpr hr)) k
+          (fun hkS ↦ by
+            obtain ⟨q, hq, rfl⟩ := mem_image.mp hkS
+            exact hk q (mem_range.mp hq) rfl) hpos) hs
+      linarith
+    · obtain ⟨r, hr, rfl⟩ := mem_image.mp hxS
+      rw [mem_range] at hr
+      exact hfin (by omega) (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
+  · -- a fork: the concavity bound
+    have hc := hf.toIsSelfIntersectionMinusTwoChain
+    have hbr : b ∉ (range t).image c := fun hb ↦ by
+      obtain ⟨q, hq, hbq⟩ := mem_image.mp hb
+      exact hf.branch_ne q (mem_range.mp hq) hbq.symm
+    have hcard' : t + 1 < Fintype.card T.Component := by
+      rwa [card_insert_of_notMem hbr, hc.card_image_range] at hcard
+    have hfclosed : ∀ z, (z = b ∨ ∃ r < t, z = c r) → ∀ k, k ≠ b → (∀ s < t, k ≠ c s) →
+        0 < T.intersection z k → ¬ T.IsMinusTwoIndex k := by
+      intro z hz k hkb hkc hpos
+      refine hclosed z ?_ k ?_ hpos
+      · rcases hz with rfl | ⟨r, hr, rfl⟩
+        exacts [mem_insert_self _ _, mem_insert_of_mem (mem_image_of_mem c (mem_range.mpr hr))]
+      · rw [mem_insert, mem_image]
+        rintro (rfl | ⟨q, hq, rfl⟩)
+        exacts [hkb rfl, hkc q (mem_range.mp hq) rfl]
+    rcases mem_insert.mp hiS with rfl | hiS
+    · have := hf.multiplicity_mul_abs_intersection_self_le_branch hT hcard' hfclosed
+      linarith
+    · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+      have := hf.multiplicity_mul_abs_intersection_self_le hT hcard' hfclosed (mem_range.mp hs)
+      linarith
+  · -- an exceptional configuration: walk along the chain, through the leaf `b` if necessary
+    have hb : T.intersection b b = -(2 * (T.weight b : ℤ)) := hself b (mem_insert_self _ _)
+    have hbpos' : 0 < T.intersection b (c (t - 3)) := T.intersection_comm b _ ▸ hbpos
+    rcases mem_insert.mp hxS with rfl | hxS
+    · -- the walk starts at the leaf `x = b`
+      have hx' := le_two_pow_succ_mul (hc.intersection_self (t - 3) (by omega)) hbpos hx
+      rcases mem_insert.mp hiS with rfl | hiS
+      · exact hfin (by omega) hx
+      · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+        rw [mem_range] at hs
+        exact hfin (by omega) (hc.le_two_pow_add_mul (by omega) hx'
+          (t - 3 - s + (s - (t - 3))) s (by omega) hs)
+    · obtain ⟨r, hr, rfl⟩ := mem_image.mp hxS
+      rw [mem_range] at hr
+      rcases mem_insert.mp hiS with rfl | hiS
+      · have h3 := hc.le_two_pow_add_mul hr hx (r - (t - 3) + (t - 3 - r)) (t - 3) (by omega)
+          (by omega)
+        exact hfin (by omega) (le_two_pow_succ_mul hb hbpos' h3)
+      · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+        rw [mem_range] at hs
+        exact hfin (by omega) (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
+
+/-- **The multiplicities of a minimal numerical type are bounded.** In a minimal numerical type of
+genus `g ≥ 2`, every multiplicity-weighted intersection number satisfies
+`mᵢ|aᵢⱼ| ≤ 768g - 768`. In particular `mᵢ|aᵢⱼ| ≤ 768g`, which is
+[Stacks, Lemma 55.7.3](https://stacks.math.columbia.edu/tag/0C9W). -/
+theorem IsMinimal.multiplicity_mul_abs_intersection_le (hT : T.IsMinimal)
+    (hg : 2 ≤ T.arithmeticGenus) (i j : T.Component) :
+    (T.multiplicity i : ℤ) * |T.intersection i j| ≤ 768 * T.arithmeticGenus - 768 := by
+  by_cases h : 1 < Fintype.card T.Component
+  swap
+  · rw [T.intersection_eq_zero_of_card_eq_one (le_antisymm (not_lt.mp h) Fintype.card_pos)]
+    simp only [abs_zero, mul_zero]
+    linarith
+  -- it suffices to bound the weighted self-intersection `mⱼ|aⱼⱼ|`
+  have hj : (T.multiplicity j : ℤ) * |T.intersection j j| ≤ 768 * T.arithmeticGenus - 768 := by
+    by_cases hj : T.IsMinusTwoIndex j
+    · exact hT.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoIndex hg hj
+    · have := hT.multiplicity_mul_abs_intersection_self_le h hj
+      linarith
+  rcases eq_or_ne i j with rfl | hij
+  · exact hj
+  · rw [abs_of_nonneg (T.offDiagonal_nonneg i j hij)]
+    exact (T.multiplicity_mul_intersection_le i j).trans hj
+
+end Minimal
 
 end NumericalType
 

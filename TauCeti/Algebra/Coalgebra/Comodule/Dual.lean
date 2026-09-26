@@ -114,8 +114,7 @@ private theorem dualTensorHom_assoc_dualCoact_rTensor (x : Module.Dual R M ⊗[R
       TensorProduct.comm R H H
         (TensorProduct.map (dualTensorHom R M H x) (HopfAlgebra.antipode R)
           (coact (R := R) (C := H) (M := M) m)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [map_add, TensorProduct.map_add_left, LinearMap.add_apply]
         using congrArg₂ (· + ·) hx hy
@@ -135,8 +134,7 @@ private theorem dualTensorHom_assoc_dualCoact_rTensor (x : Module.Dual R M ⊗[R
       rw [LinearMap.rTensor_tmul, hleft, dualTensorHom_dualCoact_apply]
       rw [matrixCoefficient_def]
       generalize coact (R := R) (C := H) (M := M) m = z
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add x y hx hy =>
           simpa only [map_add, TensorProduct.add_tmul]
             using congrArg₂ (· + ·) hx hy

@@ -239,8 +239,7 @@ theorem prepend_ofLetter (a b : M) :
     (by omega) Nat.one_pos
   rw [hz0, h1] at h2
   rw [h2]
-  convert (of_tprod_eq_subword R (Nat.succ_pos 1) (![a, b] : Fin 2 → M)).symm using 1
-  congr
+  exact (of_tprod_eq_subword R (Nat.succ_pos 1) (![a, b] : Fin 2 → M)).symm
 
 /-- The only cut of a two-letter word separates its two letters. -/
 theorem deconcatenation_of_two (a b : M) :

@@ -51,31 +51,22 @@ open scoped ENNReal
 variable {α : Type*} [MeasurableSpace α] {F : Type*} [NormedAddCommGroup F] (𝕜 : Type*)
   [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {μ : Measure α} {s t : Set α}
 
-/-- Extending by zero from `s` to `t` preserves `Lᵖ` membership when `s ⊆ t`. -/
-private theorem memLp_indicator_restrict (hs : MeasurableSet s) (hst : s ⊆ t)
-    {g : α → F} (hg : MemLp g p (μ.restrict s)) : MemLp (s.indicator g) p (μ.restrict t) := by
-  rw [memLp_indicator_iff_restrict hs, Measure.restrict_restrict_of_subset hst]
-  exact hg
-
-/-- An almost-everywhere identity on `s` remains true after taking indicators, against
-`μ.restrict t`. -/
-private theorem indicator_ae_eq (hs : MeasurableSet s) {g h : α → F}
-    (hgh : g =ᵐ[μ.restrict s] h) : s.indicator g =ᵐ[μ.restrict t] s.indicator h :=
-  ((ae_eq_restrict_iff_indicator_ae_eq hs).mp hgh).filter_mono (ae_mono Measure.restrict_le_self)
-
 variable (μ) in
 /-- Extension by zero as a linear map; `TauCeti.extendByZeroLpₗᵢ` upgrades it to an isometry. -/
-private def extendByZeroLpₗ (hs : MeasurableSet s) (hst : s ⊆ t) :
+private def extendByZeroLpₗ (hs : MeasurableSet s) :
     Lp F p (μ.restrict s) →ₗ[𝕜] Lp F p (μ.restrict t) where
-  toFun f := (memLp_indicator_restrict hs hst (Lp.memLp f)).toLp _
+  toFun f := (((memLp_indicator_iff_restrict hs).2 (Lp.memLp f)).mono_measure
+    Measure.restrict_le_self).toLp _
   map_add' f g := by
     rw [← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _
-      ((indicator_ae_eq hs (Lp.coeFn_add f g)).trans (.of_eq (indicator_add' s _ _)))
+      (ae_restrict_of_ae (((ae_eq_restrict_iff_indicator_ae_eq hs).mp
+        (Lp.coeFn_add f g)).trans (.of_eq (indicator_add' s _ _))))
   map_smul' c f := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _
-      ((indicator_ae_eq hs (Lp.coeFn_smul c f)).trans (.of_eq (indicator_const_smul s c _)))
+      (ae_restrict_of_ae (((ae_eq_restrict_iff_indicator_ae_eq hs).mp
+        (Lp.coeFn_smul c f)).trans (.of_eq (indicator_const_smul s c _))))
 
 variable (μ) in
 /-- **Extension by zero as a linear isometry** `Lᵖ(s) → Lᵖ(t)` for a measurable `s ⊆ t`: a
@@ -86,11 +77,12 @@ the `Lᵖ` norm; in particular the extension is injective, so `Lᵖ(s)` really d
 `Lᵖ(t)`. -/
 def extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t) :
     Lp F p (μ.restrict s) →ₗᵢ[𝕜] Lp F p (μ.restrict t) where
-  toLinearMap := extendByZeroLpₗ 𝕜 μ hs hst
+  toLinearMap := extendByZeroLpₗ 𝕜 μ hs
   norm_map' f := by
     -- `Lp.norm_toLp` is stated for the unbundled `MemLp.toLp`; expose that implementation of
     -- `extendByZeroLpₗ`, which the bundled `toLinearMap` field hides.
-    change ‖(memLp_indicator_restrict hs hst (Lp.memLp f)).toLp _‖ = ‖f‖
+    change ‖(extendByZeroLpₗ 𝕜 μ hs f)‖ = ‖f‖
+    dsimp [extendByZeroLpₗ]
     rw [Lp.norm_toLp, eLpNorm_indicator_eq_eLpNorm_restrict hs,
       Measure.restrict_restrict_of_subset hst, ← Lp.norm_def]
 
@@ -98,7 +90,8 @@ def extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
 theorem coeFn_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
     (f : Lp F p (μ.restrict s)) :
     (extendByZeroLpₗᵢ 𝕜 μ hs hst f : α → F) =ᵐ[μ.restrict t] s.indicator (f : α → F) :=
-  MemLp.coeFn_toLp (memLp_indicator_restrict hs hst (Lp.memLp f))
+  MemLp.coeFn_toLp (((memLp_indicator_iff_restrict hs).2 (Lp.memLp f)).mono_measure
+    Measure.restrict_le_self)
 
 /-- **The extension by zero restricts back to the original function.** -/
 theorem coeFn_extendByZeroLpₗᵢ_restrict [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
@@ -122,7 +115,8 @@ theorem extendByZeroLpₗᵢ_extendByZeroLpₗᵢ [Fact (1 ≤ p)] {u : Set α} 
       extendByZeroLpₗᵢ 𝕜 μ hs (hst.trans htu) f := by
   refine Lp.ext ?_
   filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 ht htu (extendByZeroLpₗᵢ 𝕜 μ hs hst f),
-    indicator_ae_eq (t := u) ht (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f),
+    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq ht).mp
+      (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f)),
     coeFn_extendByZeroLpₗᵢ 𝕜 hs (hst.trans htu) f] with x h1 h2 h3
   rw [h1, h2, h3, indicator_indicator, inter_eq_self_of_subset_right hst]
 
@@ -134,21 +128,24 @@ theorem extendByZeroLpₗᵢ_eq_of_ae_eq [Fact (1 ≤ p)] (hs : MeasurableSet s)
     {g : Lp F p (μ.restrict t)} (hf : ∀ᵐ x ∂μ.restrict s, f x = h x)
     (hg : ∀ᵐ x ∂μ.restrict t, g x = h x) : extendByZeroLpₗᵢ 𝕜 μ hs hst f = g :=
   Lp.ext <| ((coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).trans
-    ((indicator_ae_eq hs hf).trans (.of_eq (indicator_eq_self.2 hsupp)))).trans
+    (ae_restrict_of_ae (((ae_eq_restrict_iff_indicator_ae_eq hs).mp hf).trans
+      (.of_eq (indicator_eq_self.2 hsupp))))).trans
     (Filter.EventuallyEq.symm hg)
 
 /-- **Extension by zero commutes with pointwise postcomposition by a map fixing `0`.**  If `g'` is
 the pointwise image of `f` under `L`, then the extension of `g'` is the pointwise image under `L`
-of the extension of `f`: off `s` both sides are `L 0 = 0`. -/
+of the extension of `f`: off `s` both sides are `L 0 = 0`. The source and target may have
+different integrability exponents. -/
 theorem coeFn_extendByZeroLpₗᵢ_comp {G : Type*} [NormedAddCommGroup G] [Module 𝕜 G]
-    [IsBoundedSMul 𝕜 G] [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t) (L : F → G)
-    (hL : L 0 = 0) {f : Lp F p (μ.restrict s)} {g' : Lp G p (μ.restrict s)}
+    [IsBoundedSMul 𝕜 G] {q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    (hs : MeasurableSet s) (hst : s ⊆ t) (L : F → G)
+    (hL : L 0 = 0) {f : Lp F p (μ.restrict s)} {g' : Lp G q (μ.restrict s)}
     (hg' : ∀ᵐ x ∂μ.restrict s, g' x = L (f x)) :
     (extendByZeroLpₗᵢ 𝕜 μ hs hst g' : α → G) =ᵐ[μ.restrict t]
       fun x => L (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) := by
   filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 hs hst g', coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f,
-    indicator_ae_eq (t := t) hs hg'] with x h1 h2 h3
+    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq hs).mp hg')] with x h1 h2 h3
   rw [h1, h3, h2]
-  by_cases hx : x ∈ s <;> simp [hx, hL]
+  exact congrFun (Set.indicator_comp_of_zero hL) x
 
 end TauCeti

@@ -472,7 +472,9 @@ private theorem glue_graph_map_glueCommEquiv (G₁ G₂ : LabeledGraph k) :
       (G ⊔ H).map (G₁.glueCommEquiv G₂) =
         G.map (G₁.glueCommEquiv G₂) ⊔ H.map (G₁.glueCommEquiv G₂) :=
     GaloisConnection.l_sup
-      (SimpleGraph.map_le_iff_le_comap (G₁.glueCommEquiv G₂).toEmbedding)
+      (u := SimpleGraph.comap (G₁.glueCommEquiv G₂).toEmbedding)
+      fun _ _ => SimpleGraph.map_le_iff_le_comap
+        (f := (G₁.glueCommEquiv G₂).toEmbedding)
   rw [glue_graph, hmap, SimpleGraph.map_map, SimpleGraph.map_map, h₁, h₂, glue_graph, sup_comm]
 
 /-- **Commutativity of the gluing algebra.**  The two orders of a gluing are isomorphic, so a graph

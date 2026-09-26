@@ -15,7 +15,8 @@ A semilinear monomial transformation applies one automorphism of the alphabet to
 coordinate, rescales by coordinate units, and permutes coordinates. Its induced equivalence
 of codes preserves dimension, cardinality, and Hamming data. This
 allows conjugate codes over a finite field to be compared without treating field
-conjugation as a linear map over that field.
+conjugation as a linear map over that field. Over an alphabet whose only ring automorphism is
+the identity, such as `ZMod n`, semilinear equivalence is just monomial equivalence.
 
 Use `TauCeti.semilinearMonomialEquiv u e σ` for the word transformation and
 `TauCeti.IsSemilinearEquivalent C D` for the induced relation on codes.
@@ -235,5 +236,21 @@ theorem IsSemilinearEquivalent.hammingMinDist_eq (h : IsSemilinearEquivalent C D
     (fun x _ y _ _ ↦ hammingDist_semilinearMonomialEquiv u e σ x y)).symm
 
 end Invariants
+
+section TrivialAutomorphisms
+
+variable [Subsingleton (R ≃+* R)]
+
+/-- When the identity is the only ring automorphism of the alphabet, as for `ZMod n`, semilinear
+equivalence is monomial equivalence. -/
+@[simp]
+theorem isSemilinearEquivalent_iff_isMonomialEquivalent :
+    IsSemilinearEquivalent C D ↔ IsMonomialEquivalent C D := by
+  refine ⟨?_, IsMonomialEquivalent.isSemilinearEquivalent⟩
+  rintro ⟨σ, u, e, h⟩
+  obtain rfl := Subsingleton.elim σ (RingEquiv.refl R)
+  exact isMonomialEquivalent_iff.mpr ⟨u, e, by simpa using h⟩
+
+end TrivialAutomorphisms
 
 end TauCeti

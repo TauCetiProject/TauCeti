@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalks
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalk.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Point
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.OfDirected
 

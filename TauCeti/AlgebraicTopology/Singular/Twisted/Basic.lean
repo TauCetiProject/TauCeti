@@ -177,7 +177,7 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
     have hσ : σ = (TopCat.toSSet.obj X).map (𝟙 n) σ := by simp
     rw [Sigma.ι_comp_map', Category.comp_id, vertexTransport_id, eqToHom_map]
     exact Sigma.eqToHom_comp_ι
-      (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) hσ
+      (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) hσ.symm
   map_comp {m n p} α β := by
     refine Sigma.hom_ext _ _ fun σ ↦ ?_
     have hσ : (TopCat.toSSet.obj X).map (α ≫ β) σ =
@@ -187,7 +187,7 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
       Category.assoc, eqToHom_map]
     exact congrArg (L.map (vertexTransport (α ≫ β) σ) ≫ ·)
       (Sigma.eqToHom_comp_ι (fun τ : (TopCat.toSSet.obj X).obj p ↦ L.obj (initialVertex τ))
-        hσ).symm
+        hσ.symm).symm
 
 /-- The inclusion into twisted chains of the coefficient module attached to a singular simplex. -/
 def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
@@ -435,8 +435,8 @@ lemma twistedChainsConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (φ 
   -- through the component of `φ` at that summand.
   NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦
     Eq.trans (ιTwistedChains_twistedChainsCoefficientMap ((constantFunctor X).map φ) n σ)
-      (Sigma.ι_map (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
-        (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ N) (fun _ ↦ φ) σ).symm)
+      (Sigma.ι_map (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ N)
+        (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M) (fun _ ↦ φ) σ).symm)
 
 variable (X) in
 /-- For a constant local coefficient system, the twisted chain complex is the ordinary singular
@@ -782,8 +782,8 @@ lemma twistedChainsConstantIso_hom_space_naturality :
           (Functor.whiskerRight (TopCat.toSSet.map f) ((sigmaConst.{v}).obj M)).app n =
       Sigma.ι (fun _ : (TopCat.toSSet.obj Y).obj n ↦ M) ((TopCat.toSSet.map f).app n σ) :=
     (ιTwistedChains_twistedChainsConstantIso_hom_assoc X M n σ _).trans
-      ((Sigma.ι_comp_map' (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
-          (g := fun _ : (TopCat.toSSet.obj Y).obj n ↦ M)
+      ((Sigma.ι_comp_map' (f := fun _ : (TopCat.toSSet.obj Y).obj n ↦ M)
+          (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
           (fun τ ↦ (TopCat.toSSet.map f).app n τ) (fun _ ↦ 𝟙 M) σ).trans
         (Category.id_comp _))
   refine ((ιTwistedChains_twistedChainsMap_assoc f ((constantFunctor Y).obj M) n σ

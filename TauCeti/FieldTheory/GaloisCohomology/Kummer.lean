@@ -436,9 +436,7 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
             continuous_of_discreteTopology continuous_of_discreteTopology hequiv
             (Multiplicative.toAdd (kummerIso K n hn x))) := by
   let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
-  rw [kummerIsoTransport, MulEquiv.trans_apply,
-    AddEquiv.toMultiplicative_apply_apply, AddMonoidHom.toMultiplicative_apply_apply,
-    AddEquiv.coe_toAddMonoidHom]
+  rw [kummerIsoTransport, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply]
 
 /-! ### Restriction along a field extension -/
 

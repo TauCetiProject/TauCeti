@@ -72,8 +72,7 @@ theorem dualTensorHom_map_tensorProduct_conj (ω₁ : Conjugation W₁) (ω₂ :
     (z : Module.Dual ℂ W₁ ⊗[ℂ] W₂) :
     dualTensorHom ℂ W₁ W₂ ((ω₁.dual.tensorProduct ω₂).toEquiv z) =
       (ω₁.internalHom ω₂).toEquiv (dualTensorHom ℂ W₁ W₂ z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul φ y =>
       ext x
       simpa only [Conjugation.tensorProduct_toEquiv_tmul, Conjugation.dual_toEquiv_apply,

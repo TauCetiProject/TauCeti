@@ -218,7 +218,7 @@ theorem lieMap_id [FiniteDimensional ℝ E] :
   let hG := ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra hG
   apply e.injective
-  rw [LieHom.one_apply]
+  rw [one_apply_eq_self]
   -- Expose the transported `LieHom` application so the coordinate theorem matches the target.
   change e (lieMap (ContMDiffMonoidMorphism.id (I := I) (G := G)) D) = e D
   rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap]

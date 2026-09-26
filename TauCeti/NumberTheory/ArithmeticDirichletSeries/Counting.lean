@@ -16,7 +16,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
-public import TauCeti.Order.Northcott
+public import TauCeti.Order.Northcott.Basic
 
 /-!
 # Counting carriers for ideals and prime ideals

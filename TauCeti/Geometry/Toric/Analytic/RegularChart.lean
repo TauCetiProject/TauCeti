@@ -101,9 +101,7 @@ theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) �
   -- transport the exponent of `s` along the splitting `e`
   simp only [MulEquiv.symm_monoidHomCongrLeft, MulEquiv.symm_symm,
     MulEquiv.monoidHomCongrLeft_apply, MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply,
-    AddEquiv.toMultiplicative_apply_apply, AddEquiv.toAddMonoidHom_eq_coe,
-    AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, AddMonoidHom.coe_coe,
-    MulEquiv.prodMultiplicative_apply]
+    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, MulEquiv.prodMultiplicative_apply]
   -- split the character along the two free factors and evaluate each
   rw [MonoidHom.coprodEquiv_apply, Prod.map_fst, Prod.map_snd,
     freeCommMonoidCharEquiv_symm_apply_ofAdd, MulEquiv.symm_trans_apply,

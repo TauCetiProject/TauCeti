@@ -45,8 +45,14 @@ file supplies exactly such diagonal lower bounds without packaging them.
 that file are instantiated here: a domain trapped between two hyperplanes and a domain contained
 in a ball, whose Poincaré constants are the slab width `t - s` and the diameter bound `2R`. In
 both cases the drift smallness condition `βP < λ` is what makes the resulting constant positive,
-and with no drift it is vacuous. This is *not* a claim that coercivity fails otherwise: when it
-is genuinely unavailable the Fredholm alternative (Lane D, item 18) replaces Lax--Milgram.
+and with no drift it is vacuous.
+
+A mass floor `δ` satisfying `β² < 4λδ` gives another route. Choose `0 < ε < λ` with
+`β² < 4εδ`; the coercivity constant is `min (λ - ε) (δ - β²/(4ε))`, on any open domain,
+including all of Euclidean space. The theorem
+`TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`
+therefore needs no geometric or Poincaré hypothesis. These are sufficient conditions; when
+coercivity is unavailable the Fredholm alternative (Lane D, item 18) replaces Lax--Milgram.
 
 ## The `-Δ` payoff
 
@@ -77,6 +83,8 @@ the constructed one, so it is available before, and independently of, uniqueness
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`: the Lax--Milgram solution and the
   existence-and-uniqueness theorem.
 * `TauCeti.PDE.norm_le_of_isWeakSolutionDirichlet`: the energy estimate `‖u‖ ≤ ‖f‖/C`.
+* `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
+  existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -299,6 +307,40 @@ theorem existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (f : Lp ℝ 2 (mu.restrict Omega)) :
     ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u :=
   existsUnique_isWeakSolutionDirichlet hcoeff (isCoercive_energyFormH1L0 hcoeff hC hlower) f
+
+/-- Existence and uniqueness on an arbitrary open domain under the mass-floor condition
+`β² < 4λδ`. A Young parameter between `β²/(4δ)` and `λ` makes the gradient and value
+coefficients positive. No domain boundedness, Poincaré inequality, or symmetry of the
+principal coefficient is required. -/
+theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound
+    [DecidableEq ι] {lam Lam beta gamma delta : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_lower : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), delta ≤ c x)
+    (hmass : beta ^ 2 < 4 * lam * delta) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u := by
+  have hdelta : 0 < delta := by
+    have : 0 < 4 * lam * delta := lt_of_le_of_lt (sq_nonneg beta) hmass
+    exact (mul_pos_iff_of_pos_left (mul_pos (by norm_num) h.pos)).mp this
+  have hquot : beta ^ 2 / (4 * delta) < lam := by
+    apply (div_lt_iff₀ (mul_pos (by norm_num) hdelta)).mpr
+    nlinarith [hmass]
+  obtain ⟨eps, hlo, hhi⟩ := exists_between hquot
+  have heps : 0 < eps := lt_of_le_of_lt (by positivity) hlo
+  have hdefect : beta ^ 2 / (4 * eps) < delta := by
+    apply (div_lt_iff₀ (mul_pos (by norm_num) heps)).mpr
+    have hmul := (div_lt_iff₀ (mul_pos (by norm_num) hdelta)).mp hlo
+    nlinarith [hmul]
+  exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
+    (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+      (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
+    (lt_min (sub_pos.mpr hhi) (sub_pos.mpr hdefect))
+    (fun w => h.min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound_with_parameter ha hb hc
+      hb_bound hc_bound hc_lower heps w) f
 
 /-! ### The Laplacian model -/
 

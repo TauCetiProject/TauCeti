@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Notation.Support
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.Data.ENat.Monoid
 public import Mathlib.Data.Nat.MaxPowDiv
+public import Mathlib.Data.Nat.PadicValNat
 public import Mathlib.Data.PNat.Prime
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
@@ -437,7 +438,7 @@ theorem isNatural_iff {n : Supernatural} :
     have hvaluation :
         padicValNat p ((Nat.factorizationEquiv.symm ⟨g, hgprime⟩ : ℕ+) : ℕ) = ENat.toNat (n p) := by
       rw [← Nat.factorization_def _ p.prop, hfactorization]
-      exact Finsupp.mapDomain_apply Subtype.val_injective f p
+      exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective f p
     rw [ofNat_apply, hvaluation]
     exact ENat.natCast_toNat (hfinite p)
 

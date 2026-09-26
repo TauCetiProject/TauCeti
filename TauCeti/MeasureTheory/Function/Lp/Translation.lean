@@ -297,7 +297,8 @@ theorem eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u) {p : 
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   rw [← ofReal_norm h]
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (norm_nonneg h) (zero_lt_one.trans_le hp).ne'
-    hp' ?_
+    hp' (((hu.continuous.comp (continuous_id.add continuous_const)).sub
+      hu.continuous).aestronglyMeasurable) ?_
   rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg h) (zero_lt_one.trans_le hr).le, ofReal_norm]
   exact lintegral_enorm_comp_add_sub_rpow_le hu hr h
 
@@ -362,8 +363,12 @@ theorem _root_.ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (hu : ContD
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p (mu.restrict T) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp',
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp']
+  have hsub : Continuous fun x => u (x + h) - u x :=
+    (hu.continuous.comp (continuous_id.add continuous_const)).sub hu.continuous
+  have hfd : Continuous fun x => fderiv ℝ u x h :=
+    (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
   exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
     (by positivity)
 

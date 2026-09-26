@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.Submodule.Prod
 
 This file defines the direct sum of two linear codes on the disjoint union of their coordinate
 types. A word belongs to the direct sum precisely when its restrictions to the two summands belong
-to the respective codes.
+to the respective codes. Inclusion and equality of direct sums are therefore decided summandwise.
 
 The direct sum is identified linearly with the product of the two codes. Consequently its dimension
 is the sum of the dimensions and its cardinality is the product of the cardinalities. Hamming weight
@@ -118,6 +118,21 @@ theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → R))
 theorem directSum_mono {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)}
     (hC : C ≤ C') (hD : D ≤ D') : directSum C D ≤ directSum C' D' :=
   map_mono (prod_mono hC hD)
+
+/-- One direct sum lies in another exactly when the constituent codes lie in each other. -/
+@[simp]
+theorem directSum_le_directSum_iff {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+    directSum C D ≤ directSum C' D' ↔ C ≤ C' ∧ D ≤ D' := by
+  refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩, fun h ↦ directSum_mono h.1 h.2⟩
+  · exact (mem_directSum_iff.mp (h (sumElim_zero_right_mem_directSum D hx))).1
+  · exact (mem_directSum_iff.mp (h (sumElim_zero_left_mem_directSum C hy))).2
+
+/-- Two direct sums are equal exactly when their constituent codes are equal. -/
+@[simp]
+theorem directSum_inj {C C' : Submodule R (ι → R)} {D D' : Submodule R (κ → R)} :
+    directSum C D = directSum C' D' ↔ C = C' ∧ D = D' := by
+  simp only [le_antisymm_iff, directSum_le_directSum_iff]
+  tauto
 
 /-- Reindexing a direct sum by swapping the coordinate summands swaps the two codes. -/
 @[simp]

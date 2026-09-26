@@ -251,8 +251,7 @@ theorem IsCoalgHom.eq_of_letter_comp_eq
         obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
         rw [h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw]
         clear hw
-        induction w using TensorProduct.induction_on with
-        | zero => simp only [map_zero]
+        induction w using TensorProduct.inductionOn with
         | tmul u v =>
             simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
             rw [ih _ u.2, ih _ v.2]

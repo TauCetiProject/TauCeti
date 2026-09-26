@@ -152,7 +152,6 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | zero => simp
   | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 

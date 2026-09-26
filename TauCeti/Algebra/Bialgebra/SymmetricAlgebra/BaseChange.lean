@@ -125,8 +125,7 @@ private theorem fromScalarTensor_comp_toScalarTensor :
             (_root_.SymmetricAlgebra.ι K (K ⊗[k] M) z)) =
         _root_.SymmetricAlgebra.ι K (K ⊗[k] M) z by
     exact h
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simpa using congrArg₂ (· + ·) hx hy
   | tmul s m => rw [toScalarTensor_ι_tmul, fromScalarTensor_tmul_ι]
 

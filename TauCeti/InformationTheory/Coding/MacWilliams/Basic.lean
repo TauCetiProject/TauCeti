@@ -47,6 +47,10 @@ homogeneous of degree `n`, this says that `W_C` is invariant under the normalize
   identity over a finite commutative ring with a primitive additive character.
 * `Submodule.natCard_mul_weightEnumerator_euclideanDual`: the MacWilliams identity over a finite
   field.
+* `TauCeti.aeval_macWilliams_identity`: evaluation of a division-free MacWilliams identity
+  in any commutative ring.
+* `Submodule.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
+  identity for a self-dual code.
 * `Submodule.map_weightEnumerator_euclideanDual`: the normalized MacWilliams identity, with
   coefficients in a field of characteristic zero.
 * `Submodule.aeval_weightEnumerator_of_eq_euclideanDual`: the integral MacWilliams symmetry
@@ -202,9 +206,56 @@ theorem aeval_inv_smul_weightEnumerator_of_eq_euclideanDual {K : Type*} [Field K
         (Nat.card F : MvPolynomial (Fin 2) K) ^ (Fintype.card ι / 2) = 1 := by
     simpa only [map_mul, map_pow, map_natCast, map_one] using
       congrArg (MvPolynomial.C : K →+* MvPolynomial (Fin 2) K) hscalar
-  rw [hsmul, (Set.isHomogeneous_weightEnumerator _).aeval_smul, hmap, ← mul_assoc, hscalar',
-    one_mul]
+  rw [hsmul, (Set.isHomogeneous_weightEnumerator _).aeval_smul, hmap, smul_eq_mul, ← mul_assoc,
+    hscalar', one_mul]
 
 end Normalized
+
+end Submodule
+
+namespace TauCeti
+
+/-- Evaluating an integral MacWilliams identity in any commutative ring preserves its
+cardinality factor and the substitution `(X, Y) ↦ (X + (q - 1) Y, X - Y)`. -/
+theorem aeval_macWilliams_identity
+    {p p' : MvPolynomial (Fin 2) ℤ} {m q : ℕ}
+    (h : (m : MvPolynomial (Fin 2) ℤ) * p' =
+      aeval ![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] p)
+    {A : Type*} [CommRing A] (x y : A) :
+    (m : A) * aeval ![x, y] p' = aeval ![x + (q - 1 : A) * y, x - y] p := by
+  have hvec : (fun i ↦ aeval ![x, y]
+      (![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] i)) =
+      ![x + (q - 1 : A) * y, x - y] := by
+    ext i
+    fin_cases i <;> simp
+  have heval := congrArg (aeval ![x, y]) h
+  simpa only [map_mul, map_natCast, aeval_eq_bind₁, aeval_bind₁, hvec] using heval
+
+end TauCeti
+
+namespace Submodule
+
+/-- A self-dual code over a finite commutative ring carrying a primitive additive character
+satisfies the division-free MacWilliams identity in `ℤ[X, Y]`. -/
+theorem natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive
+    {ι R S : Type*} [Fintype ι] [CommRing R] [Finite R] [DecidableEq R]
+    [CommRing S] [IsDomain S] [CharZero S] {ψ : AddChar R S}
+    (C : Submodule R (ι → R)) (hψ : ψ.IsPrimitive) (hC : C = Submodule.euclideanDual C) :
+    (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → R)).weightEnumerator =
+      aeval ![X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+        (C : Set (ι → R)).weightEnumerator := by
+  simpa only [← hC] using natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C
+
+/-- A self-dual code over a finite field satisfies the division-free MacWilliams identity
+in `ℤ[X, Y]`. -/
+theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
+    {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
+    (C : Submodule F (ι → F)) (hC : C = Submodule.euclideanDual C) :
+    (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → F)).weightEnumerator =
+      aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+        (C : Set (ι → F)).weightEnumerator :=
+  natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive C
+    (AddChar.FiniteField.primitiveChar F ℚ
+      (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim hC
 
 end Submodule

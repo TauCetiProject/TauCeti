@@ -72,8 +72,7 @@ the source and target algebras live in different universes. -/
       tangentScalarExtensionEquiv (R := R) (A := H) (B := B)
         (LinearMap.rTensor (Module.Dual R (Bialgebra.CotangentSpace R H))
           phi.toLinearMap x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy]
   | tmul a f =>
       ext h

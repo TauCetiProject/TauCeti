@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Cartan
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Push
 import TauCeti.Data.Fin.Basic

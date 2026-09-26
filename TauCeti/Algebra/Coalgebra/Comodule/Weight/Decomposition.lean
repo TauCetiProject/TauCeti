@@ -78,8 +78,7 @@ theorem coactComponent_groupLikeBasis_coord_mem_weightSpace
   rw [coactComponent_coactComponent, ← LinearMap.comp_apply,
     tensorPairComponent_comp_lTensor_comul (pairCoeff_coord_comp_comul hC φ g),
     coactComponent_apply]
-  induction coact (R := k) (C := C) m using TensorProduct.induction_on with
-  | zero => simp
+  induction coact (R := k) (C := C) m using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
   | tmul x c => simp [smul_smul]
 
@@ -94,8 +93,7 @@ theorem iSup_groupLikeWeightSpace_eq_top
   refine eq_top_iff.mpr fun m _ ↦ ?_
   have he (t : M ⊗[k] C) (g : GroupLike k C) :
       e t g = _root_.LinearMap.tensorComponent (R := k) (M := M) (b.coord g) t := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add x y hx hy => rw [map_add, Finsupp.add_apply, hx, hy, map_add]
     | tmul x c =>
       rw [TensorProduct.equivFinsuppOfBasisRight_apply_tmul_apply,

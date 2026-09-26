@@ -110,7 +110,7 @@ This is the conversion from a row of the central character table `Ω` to the cor
 ordinary character table `X`; the degree it needs is supplied by
 `TauCeti.Representation.finrank_sq_mul_classRowNorm_eq_card`. When the order of the group is
 invertible in `k`, the hypothesis on the class size comes from
-`TauCeti.ConjClasses.card_carrier_cast_ne_zero`. -/
+`ConjClasses.card_carrier_cast_ne_zero`. -/
 theorem character_eq_finrank_mul_centralCharacter_div {C : ConjClasses G} {g : G}
     (hg : ConjClasses.mk g = C) (hcard : (Nat.card C.carrier : k) ≠ 0) :
     ρ.character g =

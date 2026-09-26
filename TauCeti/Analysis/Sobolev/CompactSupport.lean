@@ -91,12 +91,10 @@ theorem HasWeakLineDerivOn.indicator_of_isCompact (h : HasWeakLineDerivOn mu Ome
   have hKnull : NullMeasurableSet K mu := hK.measurableSet.nullMeasurableSet
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨‹CompleteSpace F›,
-    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
-        h.locallyIntegrableOn hu)
+    (h.locallyIntegrableOn.integrable_indicator_of_isCompact hOmega hK hKnull hKO hu)
       |>.locallyIntegrable
       |>.locallyIntegrableOn _,
-    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
-        h.locallyIntegrableOn_deriv hu')
+    (h.locallyIntegrableOn_deriv.integrable_indicator_of_isCompact hOmega hK hKnull hKO hu')
       |>.locallyIntegrable
       |>.locallyIntegrableOn _, fun phi => ?_⟩
   -- `χ φ` is a test function on `Ω`

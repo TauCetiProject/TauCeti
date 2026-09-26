@@ -81,7 +81,8 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
   have hqpos (n : ℕ) : 0 < (q n : ℝ) := by positivity
   have hiff (n : ℕ) (π : Measure (X × X)) :
       ∫⁻ z, d z ^ (q n : ℝ) ∂π ≤ L ^ (q n : ℝ) ↔ eLpNorm d (q n) π ≤ L := by
-    have h := eLpNorm_rpow_eq_lintegral (hq0 n) ENNReal.coe_ne_top d π
+    have h := eLpNorm_rpow_eq_lintegral (hq0 n) ENNReal.coe_ne_top (f := d) (μ := π)
+      measurable_edist.aemeasurable
     rw [ENNReal.coe_toReal] at h
     rw [← h, ENNReal.rpow_le_rpow_iff (hqpos n)]
   let t : ℕ → Set (ProbabilityMeasure (X × X)) := fun n ↦
@@ -96,8 +97,8 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
         (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous _)
   have htd (n : ℕ) : t (n + 1) ⊆ t n := by
     rintro π ⟨hπ, hle⟩
-    refine ⟨hπ, (hiff n π).2 ((eLpNorm_le_eLpNorm_of_exponent_le ?_
-      measurable_edist.aestronglyMeasurable).trans ((hiff (n + 1) π).1 hle))⟩
+    refine ⟨hπ, (hiff n π).2 ((eLpNorm_le_eLpNorm_of_exponent_le
+      ?_).trans ((hiff (n + 1) π).1 hle))⟩
     simp [q]
   have htn (n : ℕ) : (t n).Nonempty := by
     obtain ⟨π, hπ, hval⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist (hq0 n)
@@ -123,7 +124,7 @@ monotonicity in the exponent the supremum may equally be taken over `1 ≤ p < �
 theorem wassersteinEDist_top_eq_iSup (μ ν : Measure X) [IsProbabilityMeasure μ] :
     wassersteinEDist ∞ μ ν = ⨆ p : ℝ≥0, wassersteinEDist p μ ν := by
   refine le_antisymm ?_
-    (iSup_le fun p ↦ wassersteinEDist_mono_exponent measurable_edist le_top μ ν)
+    (iSup_le fun p ↦ wassersteinEDist_mono_exponent le_top μ ν)
   by_cases hcoup : ∃ π, IsCoupling π μ ν
   · obtain ⟨π₀, hπ₀⟩ := hcoup
     have : IsProbabilityMeasure ν := hπ₀.isProbabilityMeasure_right
@@ -137,7 +138,7 @@ theorem tendsto_wassersteinEDist_atTop (μ ν : Measure X) [IsProbabilityMeasure
     Tendsto (fun p : ℝ≥0 ↦ wassersteinEDist p μ ν) atTop (𝓝 (wassersteinEDist ∞ μ ν)) := by
   rw [wassersteinEDist_top_eq_iSup]
   exact tendsto_atTop_iSup fun p q hpq ↦
-    wassersteinEDist_mono_exponent measurable_edist (ENNReal.coe_le_coe.2 hpq) μ ν
+    wassersteinEDist_mono_exponent (ENNReal.coe_le_coe.2 hpq) μ ν
 
 /-- **Attainment at the infinite exponent.** On a Polish metric space, the infimum defining
 `W_∞ (μ, ν)` between two finite measures that admit a coupling is a minimum: some coupling has
@@ -184,11 +185,12 @@ theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
     obtain ⟨π, hπ, hval⟩ := exists_isCoupling_eLpNorm_top_eq_wassersteinEDist μ ν hcoup
     refine ⟨π, hπ, ?_⟩
     have hbound := ae_le_eLpNormEssSup (f := fun z : X × X ↦ edist z.1 z.2) (μ := π)
-    simp only [enorm_eq_self, ← eLpNorm_exponent_top, hval] at hbound
+    rw [← eLpNorm_exponent_top measurable_edist.aestronglyMeasurable, hval] at hbound
+    simp only [enorm_eq_self] at hbound
     exact hbound.mono fun _ hz ↦ hz.trans h
   · rintro ⟨π, hπ, hbound⟩
     refine (wassersteinEDist_le hπ ∞).trans ?_
-    rw [eLpNorm_exponent_top]
+    rw [eLpNorm_exponent_top measurable_edist.aestronglyMeasurable]
     exact eLpNormEssSup_le_of_ae_enorm_bound (by simpa only [enorm_eq_self] using hbound)
 
 end TauCeti

@@ -183,12 +183,10 @@ theorem map_reverseEven_eq_adjugate_of_finrank_eq_three
     (hV : Module.finrank K V = 3)
     (e : ↥(even Q) ≃ₐ[K] Matrix (Fin 2) (Fin 2) K) (x : ↥(even Q)) :
     e (reverseEven Q x) = Matrix.adjugate (e x) := by
-  have hf := congrArg (fun g : Matrix (Fin 2) (Fin 2) K →ₗ[K] _ => g (e x))
-    (Matrix.eq_adjugateFinTwoLinearMap_of_antimultiplicative_of_exists_add_eq_smul_one
-      (reverseMatrix Q e) (reverseMatrix_mul Q e)
-      (exists_add_reverseMatrix_eq_smul_one Q hV e))
-  simpa only [reverseMatrix_apply, e.symm_apply_apply, coe_reverseEven_apply,
-    Matrix.adjugateFinTwoLinearMap_apply] using hf
+  have hf := Matrix.eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one
+    (reverseMatrix Q e) (reverseMatrix_mul Q e)
+    (exists_add_reverseMatrix_eq_smul_one Q hV e) (e x)
+  simpa only [reverseMatrix_apply, e.symm_apply_apply, coe_reverseEven_apply] using hf
 
 /-- The Clifford norm product maps to the matrix determinant times the identity. -/
  theorem map_reverseEven_mul_eq_det_smul_one_of_finrank_eq_three

@@ -84,8 +84,7 @@ theorem map_range_lTensor_submoduleOf (hℚ : IsBaseChange ℚ ιℚ) (hℂ : Is
         (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl ℂ ℂ)
           (Submodule.submoduleOfEquivOfLe hAB)).toLinearMap := by
     refine LinearMap.ext fun t ↦ ?_
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | tmul z x => simp [Submodule.submoduleOfEquivOfLe]
     | add x y hx hy => simp only [map_add, hx, hy]
   have hbase : (Submodule.baseChange ℂ A).map (rationalToComplexLinearEquiv hℚ hℂ).toLinearMap =
@@ -268,8 +267,7 @@ theorem gradedComplexEquiv_baseChange_weightGradedRatMap (hℚ : IsBaseChange �
           (fun j _ hx ↦ map_rationalToComplexSubmodule_le hℚ hℂ h'ℚ h'ℂ f
             (Submodule.map_le_iff_le_comap.2 fun y hy ↦ hf j y hy) ⟨_, hx, rfl⟩) k
         (gradedComplexEquiv hℚ hℂ WQ hWQ k t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul z x =>
       induction x using Submodule.Quotient.induction_on with
       | _ x =>
@@ -464,8 +462,7 @@ theorem gradedComplexEquiv_latticeConj (hWQ : Monotone WQ) (k : ℤ)
     gradedComplexEquiv hℚ hℂ WQ hWQ k
         (latticeConj (isBaseChange_ratTensorMap ℂ (weightGradedRat WQ k)) x) =
       (gradedComplexConjugation hℚ hℂ WQ k).toEquiv (gradedComplexEquiv hℚ hℂ WQ hWQ k x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul z y =>
       induction y using Submodule.Quotient.induction_on with
       | _ y =>

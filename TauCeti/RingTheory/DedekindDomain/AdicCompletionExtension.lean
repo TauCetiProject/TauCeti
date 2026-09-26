@@ -330,7 +330,6 @@ lemma adicCompletionExtension_coe (x : K) :
   -- transported along it; these two rewrites name that identification rather than leaving it to
   -- a bare `rfl`.
   rw [WithVal.algebraMap_left_apply, WithVal.algebraMap_right_apply]
-  rfl
 
 /-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
 @[simp]

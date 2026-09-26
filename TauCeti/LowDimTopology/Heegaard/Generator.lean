@@ -206,6 +206,19 @@ theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
   simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
     Pi.one_apply]
 
+/-- Pairing the `0`-chain of a generator with a function on intersection points sums the
+function over the points of the generator. -/
+theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g : D.Generator)
+    (f : Point → M) :
+    ∑ q, D.generatorChain g q • f q = ∑ i, f (D.point g i) := by
+  classical
+  simp only [generatorChain_apply, ite_smul, one_smul, zero_smul]
+  rw [← Finset.sum_fiberwise Finset.univ D.alpha]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.sum_congr rfl fun q hq => by rw [(Finset.mem_filter.mp hq).2],
+    Finset.sum_ite_eq]
+  simp
+
 /-- Two generators with the same chosen points are equal. -/
 @[ext]
 theorem Generator.ext {g g' : D.Generator} (h : ∀ i, (g.2 i : Point) = g'.2 i) : g = g' :=

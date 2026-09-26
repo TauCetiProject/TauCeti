@@ -97,7 +97,8 @@ private theorem finrank_hom_resFDRep_eq_sum (V : FDRep k N) (W : FDRep k G)
   -- of `T` is an expansion of the character of `Res_N W`: read `χ_{Res_N W}` at `n` as
   -- `χ_{Res_T W}` at the image `t` of `n` in `T`, and expand the latter.
   refine finrank_hom_eq_sum_of_character_eq V <| funext fun n => ?_
-  rw [character_resFDRep, ← Subgroup.coe_inclusion (le_inertia V) n, ← character_resFDRep,
+  rw [show (resFDRep N W).character n =
+        (resFDRep (inertia V) W).character (Subgroup.inclusion (le_inertia V) n) from rfl,
     character_eq_sum_nsmul_irreducibleCharacter, Finset.sum_apply, Finset.sum_apply]
   refine Finset.sum_congr rfl fun i _ => ?_
   -- The character of `Res_N Uᵢ` at `n` is `χᵢ(t)`, and the coefficient `dim Hom_T(Res_T W, Uᵢ)`

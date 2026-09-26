@@ -87,12 +87,10 @@ private theorem lid_map_dualDistrib_tensorCombine (φ : M →ₗ[R] R) (ψ : N �
           (tensorCombine (R := R) (C := C) (M := M) (N := N) (x ⊗ₜ[R] y))) =
       TensorProduct.lid R C (TensorProduct.map φ LinearMap.id x) *
         TensorProduct.lid R C (TensorProduct.map ψ LinearMap.id y) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ => simp only [add_tmul, map_add, add_mul, hx₁, hx₂]
   | tmul m c =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
+    induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp only [tmul_add, map_add, mul_add, hy₁, hy₂]
     | tmul n d =>
       rw [tensorCombine_tmul_tmul]

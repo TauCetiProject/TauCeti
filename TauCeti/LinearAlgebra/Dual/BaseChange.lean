@@ -82,8 +82,7 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
     (f : M →ₗ[R] N) (φ : Module.Dual R N) (t : A ⊗[R] M) :
     baseChangeEvaluation (R := R) (M := N) (A := A) (1 ⊗ₜ[R] φ) (f.baseChange A t) =
       baseChangeEvaluation (R := R) (M := M) (A := A) (1 ⊗ₜ[R] (φ.comp f)) t := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add s t hs ht => simpa only [map_add] using congrArg₂ (· + ·) hs ht
   | tmul a m => simp [baseChangeEvaluation_tmul]
 
@@ -128,8 +127,7 @@ corresponding element of the dual basis. -/
 theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A ⊗[R] M) :
     ((TensorProduct.isBaseChange R M A).basis b).repr z i =
       Module.Dual.baseChange A (b.coord i) z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z w hz hw => simpa only [map_add, Finsupp.add_apply] using congrArg₂ (· + ·) hz hw
   | tmul a m =>
       calc

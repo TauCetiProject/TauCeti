@@ -87,7 +87,7 @@ private theorem sum_mul_algebraMap_eq_of_coact_eq {Q : Type u} [CommRing Q] [Bia
       LinearMap.id_coe, id_eq, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       LinearMap.rTensor_tmul, LinearMap.proj_apply, TensorProduct.lid_tmul, Pi.single_apply,
       ite_smul, one_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true,
-      CoalgHom.coe_toLinearMap]
+      CoalgHom.coe_linearMapOfClass]
     refine Finset.sum_congr rfl fun l _ ↦ ?_
     rw [genericMatrix_apply, Algebra.smul_def, mul_comm]
   have hR : T (v ⊗ₜ[k] χ) = algebraMap k Q (v i) * χ := by
@@ -119,7 +119,8 @@ private theorem exists_basis_coact_eq_tmul {Q : Type u} [AddCommGroup Q] [Module
   choose χ hχ using hw
   refine ⟨w, χ, fun j ↦ ?_⟩
   have h := _root_.GroupLike.mem_weightSpace.mp (hχ j)
-  rwa [Comodule.corestrict_coact_apply, standardComodule_coact, CoalgHom.toLinearMap_eq_coe] at h
+  rwa [Comodule.corestrict_coact_apply, standardComodule_coact,
+    CoalgHom.toLinearMap_eq_ofClass] at h
 
 /-- **Simultaneous diagonalization over a diagonalizable Hopf algebra.**
 

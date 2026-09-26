@@ -123,8 +123,7 @@ theorem baseChange_invariantRestrict_baseChangeExp (M : S) (hθ : ∀ v, θ v �
         (baseChangeExp x M hx t z) =
       baseChangeExp y M (dividedPower_smul_mem_of_intertwines θ M hθ hxy hx) t
         ((θ.toAddEquiv.invariantRestrict M hθ).baseChange ℤ R M M z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul r v =>
       rw [baseChangeExp_tmul_of_pow_eq_zero x M hx hkx, map_sum,
         LinearEquiv.baseChange_tmul, baseChangeExp_tmul_of_pow_eq_zero y M
@@ -135,7 +134,7 @@ theorem baseChange_invariantRestrict_baseChangeExp (M : S) (hθ : ∀ v, θ v �
       refine Subtype.ext ?_
       rw [AddEquiv.coe_invariantRestrict_apply, coe_integralDividedPower_apply,
         coe_integralDividedPower_apply, AddEquiv.coe_invariantRestrict_apply]
-      convert apply_dividedPower_smul_of_intertwines θ.toLinearMap hxy n (v : V) using 1 <;> rfl
+      convert apply_dividedPower_smul_of_intertwines θ.toLinearMap hxy n (v : V) using 1
   | add z w hz hw => rw [map_add, map_add, map_add, map_add, hz, hw]
 
 end TauCeti

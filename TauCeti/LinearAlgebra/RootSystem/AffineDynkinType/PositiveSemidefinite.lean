@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # The form of an affine simply-laced diagram is positive semidefinite
@@ -243,7 +244,7 @@ theorem dotProduct_realCartanMatrix_mulVec_eq_zero_iff_mem_span_marks (ht : t.Va
     (x : Fin t.nodes → ℝ) :
     x ⬝ᵥ (t.realCartanMatrix *ᵥ x) = 0 ↔ x ∈ Submodule.span ℝ {fun i ↦ (t.marks i : ℝ)} := by
   rw [← ker_mulVecLin_realCartanMatrix ht, LinearMap.mem_ker, _root_.Matrix.mulVecLin_apply,
-    ← (posSemidef_realCartanMatrix ht).dotProduct_mulVec_zero_iff x, star_trivial]
+    ← (posSemidef_realCartanMatrix ht).dotProduct_mulVec_zero_iff, star_trivial]
 
 /-- **The radical of a valid affine simply-laced diagram is one-dimensional**: the marks are a
 nonzero vector spanning it. So the symmetrized form of an affine diagram is positive semidefinite

@@ -94,7 +94,7 @@ theorem isSmoothEmbedding_comp_diffeomorph [IsManifold I n M']
 theorem isSmoothEmbedding_diffeomorph_comp [IsManifold J n P]
     (h : IsSmoothEmbedding I J n f) (e : N ≃ₘ^n⟮J, J⟯ P) :
     IsSmoothEmbedding I J n (e ∘ f) :=
-  ⟨isImmersion_diffeomorph_comp h.isImmersion e, e.toHomeomorph.isEmbedding.comp h.isEmbedding⟩
+  ⟨h.isImmersion.comp_diffeomorph e, e.toHomeomorph.isEmbedding.comp h.isEmbedding⟩
 
 /-- Precomposition with a diffeomorphism of the source neither creates nor destroys a smooth
 embedding. -/
@@ -121,7 +121,7 @@ This is the statement Mathlib lists as the `TODO` `Diffeomorph.isSmoothEmbedding
 namespace nested in `TauCeti` would break dot notation on Mathlib's type. -/
 theorem isSmoothEmbedding_diffeomorph [IsManifold I n M] [IsManifold I n M']
     (e : M ≃ₘ^n⟮I, I⟯ M') : IsSmoothEmbedding I I n e :=
-  ⟨isImmersion_diffeomorph e, e.toHomeomorph.isEmbedding⟩
+  ⟨e.isImmersion, e.toHomeomorph.isEmbedding⟩
 
 end IsSmoothEmbedding
 

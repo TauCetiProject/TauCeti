@@ -107,12 +107,10 @@ theorem realificationComplexEquiv_conj (hℂ : IsBaseChange ℂ ιℂ)
     (x : ℂ ⊗[ℝ] Realification V) :
     realificationComplexEquiv hℂ (tmulConj (Realification V) x) =
       latticeConj hℂ (realificationComplexEquiv hℂ x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul z x =>
-      induction x using TensorProduct.induction_on with
-      | zero => simp
+      induction x using TensorProduct.inductionOn with
       | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
       | tmul r v =>
           rw [tmulConj_tmul, realificationComplexEquiv_tmul_tmul,
