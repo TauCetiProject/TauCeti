@@ -27,7 +27,7 @@ public section
 namespace IsPrimitiveRoot
 
 /-- A primitive fifth root of unity gives a square root of five. -/
-theorem one_add_two_mul_add_inv_sq_of_five {K : Type*} [Field K] {ζ : K}
+@[simp] theorem one_add_two_mul_add_inv_sq_of_five {K : Type*} [Field K] {ζ : K}
     (hζ : IsPrimitiveRoot ζ 5) : (1 + 2 * (ζ + ζ⁻¹)) ^ 2 = 5 := by
   have hsum := hζ.geom_sum_eq_zero (by norm_num : 1 < 5)
   norm_num [Finset.sum_range_succ] at hsum
