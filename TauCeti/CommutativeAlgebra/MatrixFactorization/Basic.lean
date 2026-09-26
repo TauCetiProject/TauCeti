@@ -146,6 +146,44 @@ instance : (parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
 @[simp] theorem disk_obj (P : FGModuleCat.{u} S) [Module.Projective S P] :
     (disk (w := w) P).obj = CurvedDuplex.disk w P := rfl
 
+/-- A map from an elementary disk is determined by its even component. -/
+@[expose] def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
+    (X : MatrixFactorization S w) :
+    (disk (w := w) P ⟶ X) ≃ₗ[S] (P ⟶ X.obj.X₀) where
+  toFun f := f.hom.f₀
+  invFun g := ObjectProperty.homMk ((CurvedDuplex.diskHomEquiv P X.obj).symm g)
+  left_inv f := by
+    cases f with
+    | mk f =>
+      -- A full-subcategory hom is the underlying curved-duplex hom.
+      change ObjectProperty.homMk ((CurvedDuplex.diskHomEquiv P X.obj).symm f.f₀) =
+        ObjectProperty.homMk f
+      congr 1
+      apply CurvedDuplex.hom_ext
+      · exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj f.f₀
+      · exact (CurvedDuplex.diskHomEquiv_symm_apply_f₁ P X.obj f.f₀).trans (by
+          simpa using f.comm₀)
+  right_inv g := by
+    -- The inverse is the curved-duplex disk map, bundled as a full-subcategory hom.
+    change ((CurvedDuplex.diskHomEquiv P X.obj).symm g).f₀ = g
+    exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj g
+  map_add' f g := rfl
+  map_smul' a f := rfl
+
+@[simp] theorem diskHomEquiv_apply (P : FGModuleCat.{u} S) [Module.Projective S P]
+    (X : MatrixFactorization S w) (f : disk (w := w) P ⟶ X) :
+    diskHomEquiv P X f = f.hom.f₀ := rfl
+
+@[simp] theorem diskHomEquiv_symm_apply_hom_f₀ (P : FGModuleCat.{u} S)
+    [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
+    ((diskHomEquiv P X).symm g).hom.f₀ = g := by
+  exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj g
+
+@[simp] theorem diskHomEquiv_symm_apply_hom_f₁ (P : FGModuleCat.{u} S)
+    [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
+    ((diskHomEquiv P X).symm g).hom.f₁ = g ≫ X.obj.d₀ := by
+  exact CurvedDuplex.diskHomEquiv_symm_apply_f₁ P X.obj g
+
 /-- The rank-one matrix factorization `S --a--> S --b--> S` of `w = a b`.
 Its components are finite free, with no regularity assumption on `S` or `w`. -/
 @[expose] def rankOne (a b : S) (h : a * b = w) : MatrixFactorization S w :=
@@ -209,30 +247,6 @@ theorem HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor :
     (I := nullHomotopic (S := S) (w := w))
     (J := nullHomotopic (S := S) (w := w)) comap_parityShift_nullHomotopic.symm]
   exact MorphismIdeal.quotientFunctor_comp_map ..
-
-/-- On a matrix factorization, the quotient parity shift agrees with the shifted object. -/
-@[simp]
-theorem HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj
-    (X : MatrixFactorization S w) :
-    (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.obj
-        ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
-      (nullHomotopic (S := S) (w := w)).quotientFunctor.obj
-        ((parityShift (S := S) (w := w)).obj X) :=
-  Functor.congr_obj HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor X
-
-/-- On maps, the quotient parity shift agrees with the shifted map. -/
-@[simp]
-theorem HomotopyCategory.parityShiftEquivalence_functor_map_quotientFunctor_map
-    {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.map
-        ((nullHomotopic (S := S) (w := w)).quotientFunctor.map f) ≫
-        eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj Y) =
-      eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj X) ≫
-        (nullHomotopic (S := S) (w := w)).quotientFunctor.map
-          ((parityShift (S := S) (w := w)).map f) := by
-  have h := Functor.congr_hom HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor f
-  simp only [Functor.comp_map] at h
-  simp [h]
 
 /-- A closed even map is null-homotopic precisely when it is the boundary of an odd map. -/
 @[simp] theorem mem_nullHomotopic_iff {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
