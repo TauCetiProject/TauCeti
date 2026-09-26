@@ -96,7 +96,8 @@ noncomputable def awayDecomposition (S : Set ι) (hS : S.Finite) (U : ∀ i, Sub
 variable (S : Set ι) (hS : S.Finite) (U : ∀ i, Subgroup (G i))
 
 /-- The first component of the decomposition records the coordinates at `S`. -/
-@[to_additive (attr := simp) addAwayDecomposition_fst]
+@[to_additive (attr := simp) addAwayDecomposition_fst /-- The first component of the additive
+away-`S` decomposition records the coordinates at `S`. -/]
 theorem awayDecomposition_fst (x : RestrictedProductGroup U) (i : S) :
     (awayDecomposition S hS U x).1 i = x i := by
   let _ : DecidablePred (· ∈ S) := Classical.decPred _
@@ -112,7 +113,11 @@ theorem awayDecomposition_fst (x : RestrictedProductGroup U) (i : S) :
 
 Not a `simp` lemma: `simp` proves it from `awayDecomposition_snd_eq_restrictAway` and
 `restrictAway_apply`. -/
-@[to_additive addAwayDecomposition_snd]
+@[to_additive addAwayDecomposition_snd /-- The second component of the additive away-`S`
+decomposition records the coordinates away from `S`.
+
+Not a `simp` lemma: `simp` proves it from `addAwayDecomposition_snd_eq_addRestrictAway` and
+`addRestrictAway_apply`. -/]
 theorem awayDecomposition_snd (x : RestrictedProductGroup U) (j : {i // i ∉ S}) :
     (awayDecomposition S hS U x).2 j = x j := by
   let _ : DecidablePred (· ∈ S) := Classical.decPred _
@@ -124,7 +129,8 @@ theorem awayDecomposition_snd (x : RestrictedProductGroup U) (j : {i // i ∉ S}
   exact h
 
 /-- The second component of the decomposition is the restriction away from `S`. -/
-@[to_additive (attr := simp) addAwayDecomposition_snd_eq_addRestrictAway]
+@[to_additive (attr := simp) addAwayDecomposition_snd_eq_addRestrictAway /-- The second component of
+the additive away-`S` decomposition is the restriction away from `S`. -/]
 theorem awayDecomposition_snd_eq_restrictAway (x : RestrictedProductGroup U) :
     (awayDecomposition S hS U x).2 = restrictAway S U x := by
   ext j
@@ -132,7 +138,9 @@ theorem awayDecomposition_snd_eq_restrictAway (x : RestrictedProductGroup U) :
 
 /-- At an index `i ∈ S`, the inverse of the decomposition reads its coordinate off the plain
 product over `S`. -/
-@[to_additive (attr := simp) addAwayDecomposition_symm_apply_of_mem]
+@[to_additive (attr := simp) addAwayDecomposition_symm_apply_of_mem /-- At an index `i ∈ S`, the
+inverse of the additive away-`S` decomposition reads its coordinate off the plain product
+over `S`. -/]
 theorem awayDecomposition_symm_apply_of_mem
     (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.1)
     (i : ι) (hi : i ∈ S) :
@@ -143,7 +151,9 @@ theorem awayDecomposition_symm_apply_of_mem
 
 /-- At an index `i ∉ S`, the inverse of the decomposition reads its coordinate off the restricted
 product away from `S`. -/
-@[to_additive (attr := simp) addAwayDecomposition_symm_apply_of_notMem]
+@[to_additive (attr := simp) addAwayDecomposition_symm_apply_of_notMem /-- At an index `i ∉ S`, the
+inverse of the additive away-`S` decomposition reads its coordinate off the restricted product away
+from `S`. -/]
 theorem awayDecomposition_symm_apply_of_notMem
     (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.1)
     (i : ι) (hi : i ∉ S) :
@@ -155,7 +165,8 @@ theorem awayDecomposition_symm_apply_of_notMem
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- The decomposition is continuous for every reference family. -/
-@[to_additive continuous_addAwayDecomposition]
+@[to_additive continuous_addAwayDecomposition /-- The additive away-`S` decomposition is continuous
+for every reference family. -/]
 theorem continuous_awayDecomposition : Continuous (awayDecomposition S hS U) := by
   let _ : DecidablePred (· ∈ S) := Classical.decPred _
   have : Finite S := hS.to_subtype
@@ -170,7 +181,11 @@ theorem continuous_awayDecomposition : Continuous (awayDecomposition S hS U) := 
 open; the reference subgroups at `S` play no role, since the finite factor carries no integrality
 condition. Together with `continuous_awayDecomposition` this makes the decomposition a
 homeomorphism for such families. -/
-@[to_additive continuous_addAwayDecomposition_symm]
+@[to_additive continuous_addAwayDecomposition_symm /-- The inverse of the additive away-`S`
+decomposition is continuous when the reference subgroups away from `S` are open; the reference
+subgroups at `S` play no role, since the finite factor carries no integrality condition. Together
+with `continuous_addAwayDecomposition` this makes the decomposition a homeomorphism for such
+families. -/]
 theorem continuous_awayDecomposition_symm (hU : ∀ i ∉ S, IsOpen (U i : Set (G i))) :
     Continuous (awayDecomposition S hS U).symm :=
   -- A map out of a product with a restricted-product factor, coordinatewise the identity.

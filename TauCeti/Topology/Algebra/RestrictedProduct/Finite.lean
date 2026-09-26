@@ -54,20 +54,24 @@ def restrictedProductOfFinite (U : ∀ i, Subgroup (G i)) :
 variable (U : ∀ i, Subgroup (G i))
 
 /-- The finite collapse is the identity on coordinates. -/
-@[to_additive (attr := simp) addRestrictedProductOfFinite_apply]
+@[to_additive (attr := simp) addRestrictedProductOfFinite_apply /-- The additive finite collapse is
+the identity on coordinates. -/]
 theorem restrictedProductOfFinite_apply (x : Πʳ i, [G i, (U i : Set (G i))]) (i : ι) :
     restrictedProductOfFinite U x i = x i := by
   rfl
 
 /-- The inverse of the finite collapse is the identity on coordinates. -/
-@[to_additive (attr := simp) addRestrictedProductOfFinite_symm_apply]
+@[to_additive (attr := simp) addRestrictedProductOfFinite_symm_apply /-- The inverse of the additive
+finite collapse is the identity on coordinates. -/]
 theorem restrictedProductOfFinite_symm_apply (x : ∀ i, G i) (i : ι) :
     (restrictedProductOfFinite U).symm x i = x i := by
   rfl
 
 /-- Over a finite index type, the everywhere-integral subgroup is carried onto the product of the
 reference subgroups. -/
-@[to_additive (attr := simp) map_addRestrictedProductOfFinite_integralAddSubgroup]
+@[to_additive (attr := simp) map_addRestrictedProductOfFinite_integralAddSubgroup /-- Over a finite
+index type, the everywhere-integral additive subgroup is carried onto the product of the reference
+additive subgroups. -/]
 theorem map_restrictedProductOfFinite_integralSubgroup :
     (integralSubgroup U).map (restrictedProductOfFinite U) = Subgroup.pi Set.univ U := by
   rw [Subgroup.map_equiv_eq_comap_symm]
@@ -77,14 +81,17 @@ theorem map_restrictedProductOfFinite_integralSubgroup :
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- The finite collapse is continuous for every reference family. -/
-@[to_additive continuous_addRestrictedProductOfFinite]
+@[to_additive continuous_addRestrictedProductOfFinite /-- The additive finite collapse is continuous
+for every reference family. -/]
 theorem continuous_restrictedProductOfFinite : Continuous (restrictedProductOfFinite U) :=
   RestrictedProduct.continuous_coe
 
 /-- The inverse of the finite collapse is continuous for every reference family: on a finite
 index type the cofinite filter is `⊥`, and the `⊥`-filter restricted product carries the product
 topology. -/
-@[to_additive continuous_addRestrictedProductOfFinite_symm]
+@[to_additive continuous_addRestrictedProductOfFinite_symm /-- The inverse of the additive finite
+collapse is continuous for every reference family: on a finite index type the cofinite filter is
+`⊥`, and the `⊥`-filter restricted product carries the product topology. -/]
 theorem continuous_restrictedProductOfFinite_symm :
     Continuous (restrictedProductOfFinite U).symm := by
   have h : (cofinite : Filter ι) ≤ ⊥ := cofinite_eq_bot.le
