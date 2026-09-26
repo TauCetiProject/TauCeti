@@ -29,6 +29,11 @@ module sheaves. The declarations `linearHomObjEquiv`, `linearHomSectionsEquiv`, 
 restriction. They support dot notation directly, for example `M.linearHom N` and
 `M.linearHomObjEquiv N U`.
 
+## Sources
+
+The construction builds on Mathlib's `presheafHom`. Its gluing proof uses the sheaf result
+`Presheaf.IsSheaf.hom` together with the subfunctor criterion `Subfunctor.isSheaf_iff`.
+
 This file constructs the underlying sheaf of sets; it does not equip it with a module
 structure or identify it with a categorical internal Hom.
 -/
