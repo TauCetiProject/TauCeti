@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
-public import TauCeti.MeasureTheory.Measure.MeasurePreserving
 public import TauCeti.Probability.Cdf
 
 /-!
