@@ -34,12 +34,16 @@ forces the index to be `2`, and the sign indicator of an index-two subgroup is m
 
 * `TauCeti.hilbertSymbol_eq_neg_one_of_unramified_class_of_odd`: `(a, Δ)_K = -1` for the
   unramified class `Δ`.
-* `TauCeti.exists_hilbertSymbol_eq_neg_one_of_odd`: there is a unit `b` with `(a, b)_K = -1`.
+* `TauCeti.exists_hilbertSymbol_eq_neg_one_of_odd`: there is a `b ∈ Kˣ` of valuation zero, the
+  unramified class, with `(a, b)_K = -1`.
 * `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd`: away from residue characteristic two the
   norms from `K(√a)` form a subgroup of index two.
-* `TauCeti.hilbertSymbol_mul_right_of_odd` and `TauCeti.hilbertSymbol_mul_left_of_odd`: away from
-  residue characteristic two, the Hilbert symbol is multiplicative in the argument not equal to
-  `a`.
+
+The radicands of even valuation, which are square-equivalent to a unit of valuation zero, are
+treated in `TauCeti.quadraticNormSubgroup_index_eq_two_of_even`, which completes the index theorem
+away from residue characteristic two. The two cases are combined in
+`TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity`, where bimultiplicativity and
+nondegeneracy of the Hilbert symbol follow from the index theorem.
 
 ## References
 
@@ -101,21 +105,5 @@ theorem quadraticNormSubgroup_index_eq_two_of_odd (h2 : IsUnit (2 : 𝒪[K])) {a
   rw [hsq] at hlt hdvd
   have hle := Nat.le_of_dvd (by norm_num) hdvd
   interval_cases h : (quadraticNormSubgroup (a : K)).index <;> simp_all
-
-/-- Away from residue characteristic two, the Hilbert symbol `(a, ·)_K` is multiplicative when
-`v_K(a)` is odd. -/
-theorem hilbertSymbol_mul_right_of_odd (h2 : IsUnit (2 : 𝒪[K])) {a : Kˣ}
-    (ha : Odd (normalizedValuation K a).toAdd) (b c : Kˣ) :
-    hilbertSymbol a (b * c) = hilbertSymbol a b * hilbertSymbol a c :=
-  (hilbertSymbol_mul_iff_quadraticNormSubgroup_index_dvd_two a).mpr
-    (quadraticNormSubgroup_index_eq_two_of_odd h2 ha ▸ dvd_rfl) b c
-
-/-- Away from residue characteristic two, the Hilbert symbol `(·, a)_K` is multiplicative when
-`v_K(a)` is odd. -/
-theorem hilbertSymbol_mul_left_of_odd (h2 : IsUnit (2 : 𝒪[K])) {a : Kˣ}
-    (ha : Odd (normalizedValuation K a).toAdd) (b c : Kˣ) :
-    hilbertSymbol (b * c) a = hilbertSymbol b a * hilbertSymbol c a := by
-  have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right_of_odd h2 ha]
 
 end TauCeti

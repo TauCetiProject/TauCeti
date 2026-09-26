@@ -23,6 +23,10 @@ nonarchimedean local field. Once the quadratic norm subgroup is known to have in
 sign indicator is multiplicative, which is the group-theoretic step in the
 bimultiplicativity of the local Hilbert symbol.
 
+The diagonal entry of the symbol, `TauCeti.hilbertSymbol_self`, needs no arithmetic input at
+all: the norm subgroup for the radicand `a` contains the norm `-a` of the square-root generator,
+so it contains `a` exactly when it contains `-1`.
+
 The subgroup contains every square and, when `a` is a unit, `-a`, the norm of the square-root
 generator. Thus its index may be computed in the square-class group, as in O'Meara,
 *Introduction to Quadratic Forms*, §63A.
@@ -140,11 +144,58 @@ section Field
 
 variable {K : Type*} [Field K]
 
+/-- The quadratic norm subgroup depends only on the square class of the radicand: radicands whose
+product is a square have the same norm subgroup. This is the square-class form of
+`TauCeti.quadraticNormSubgroup_mul_sq`, obtained by rescaling the radicand by the square root
+witnessed by `h`. -/
+theorem quadraticNormSubgroup_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ)) :
+    quadraticNormSubgroup (a : K) = quadraticNormSubgroup (Δ : K) := by
+  obtain ⟨c, hc⟩ := h
+  -- `a` and `Δ` differ by the square `(c * Δ⁻¹)²`, so rescaling the radicand changes nothing.
+  have hcd : (a : K) * (Δ : K) = (c : K) ^ 2 := by
+    rw [← Units.val_mul, hc, Units.val_mul, pow_two]
+  have hs : (a : K) = (Δ : K) * (((c * Δ⁻¹ : Kˣ) : K)) ^ 2 := by
+    push_cast
+    field_simp
+    exact hcd
+  rw [hs, quadraticNormSubgroup_mul_sq]
+
 /-- The Hilbert symbol is positive exactly on the quadratic norm subgroup. -/
 @[simp]
 theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
     hilbertSymbol a b = 1 ↔ b ∈ quadraticNormSubgroup (a : K) := by
   rw [mem_quadraticNormSubgroup_iff, hilbertSymbol_eq_one_iff_exists_unit_norm_eq]
+
+/-- **The diagonal entry of the Hilbert symbol.** The sign of `(a, a)` is the sign of `(a, -1)` for
+every `a`, with no hypothesis beyond `K` being a field, so the diagonal entry is no separate
+choice of normalization. The norm subgroup for the radicand `a` contains the norm `-a` of the
+square-root generator, hence contains `a` exactly when it contains `-1`, and the two symbols are
+positive exactly on that subgroup. -/
+theorem hilbertSymbol_self (a : Kˣ) : hilbertSymbol a a = hilbertSymbol a (-1) := by
+  have hmem : a ∈ quadraticNormSubgroup (a : K) ↔ -1 ∈ quadraticNormSubgroup (a : K) := by
+    constructor
+    · intro ha
+      have hmem' : a⁻¹ * -a ∈ quadraticNormSubgroup (a : K) :=
+        Subgroup.mul_mem _ (Subgroup.inv_mem _ ha) (neg_radicand_mem_quadraticNormSubgroup a)
+      -- `a⁻¹ * -a` is the unit `-1`, the identity being checked on the values in `K`
+      have hunit : a⁻¹ * -a = -1 := Units.ext (by simp)
+      rw [hunit] at hmem'
+      exact hmem'
+    · intro h
+      have hmem' : -1 * -a ∈ quadraticNormSubgroup (a : K) :=
+        Subgroup.mul_mem _ h (neg_radicand_mem_quadraticNormSubgroup a)
+      -- likewise `-1 * -a` is the unit `a`
+      have hunit : -1 * -a = a := Units.ext (by simp)
+      rw [hunit] at hmem'
+      exact hmem'
+  by_cases ha_mem : a ∈ quadraticNormSubgroup (a : K)
+  · rw [(hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a a).mpr ha_mem,
+      (hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a (-1)).mpr (hmem.mp ha_mem)]
+  · have hself : hilbertSymbol a a ≠ 1 :=
+      fun h ↦ ha_mem ((hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a a).mp h)
+    have hneg : hilbertSymbol a (-1) ≠ 1 :=
+      fun h ↦ ha_mem (hmem.mpr ((hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a (-1)).mp h))
+    rw [Int.units_ne_iff_eq_neg.mp hself, Int.units_ne_iff_eq_neg.mp hneg]
 
 /-- The Hilbert symbol is the sign indicator of the quadratic norm subgroup. -/
 theorem hilbertSymbol_eq_signIndicator (a b : Kˣ) :
