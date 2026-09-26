@@ -48,7 +48,7 @@ theorem val_groupLikeScalarTowerHom (x : _root_.GroupLike L (L ⊗[k] A)) :
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k A) x.val := by
   simp only [groupLikeScalarTowerHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     GroupLike.val_mapEquiv, val_groupLikeBaseChange]
-  exact Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
+  exact TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
 
 end Map
 

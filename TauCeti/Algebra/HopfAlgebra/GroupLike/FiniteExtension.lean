@@ -58,7 +58,7 @@ theorem exists_finiteDimensional_surjective_groupLikeScalarTowerHom :
   obtain ⟨x, hx⟩ := hdef ⟨g, hg, rfl⟩
   let e := Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K
   have he : e (1 ⊗ₜ[L] x) = g.val := by
-    rw [Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_one_tmul]
+    rw [TensorProduct.baseChangeTowerBialgEquiv_one_tmul]
     exact hx
   have hxg : IsGroupLikeElem L x := by
     rw [← isGroupLikeElem_one_tmul_iff (K := K), ← isGroupLikeElem_map_equiv e, he]
@@ -89,7 +89,7 @@ theorem exists_finiteDimensional_span_groupLike_eq_top
     refine ⟨1 ⊗ₜ[L] x.val,
       Submodule.tmul_mem_baseChange_of_mem 1 (Submodule.subset_span ⟨x, rfl⟩), ?_⟩
     rw [val_groupLikeScalarTowerHom]
-    exact Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
+    exact TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
   have hp : p.baseChange K = ⊤ :=
     (Submodule.map_eq_top_iff (e := e.toAlgEquiv.toLinearEquiv)).mp hmap
   apply Submodule.baseChange_injective (A := K)

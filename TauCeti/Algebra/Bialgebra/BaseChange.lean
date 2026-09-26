@@ -124,7 +124,7 @@ theorem baseChangeTowerBialgEquiv_tmul (s : K) (l : L) (h : H) :
 
 /-- On a tensor with unit scalar, the tower comparison extends the intermediate coefficients. -/
 @[simp]
-theorem baseChangeTowerBialgEquiv_one_tmul (x : L ⊗[k] H) :
+theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul (x : L ⊗[k] H) :
     baseChangeTowerBialgEquiv k L H K (1 ⊗ₜ[L] x) =
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k H) x := by
   induction x using _root_.TensorProduct.inductionOn with
