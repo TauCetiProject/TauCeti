@@ -42,7 +42,7 @@ noncomputable def dgClosedHom
     ((singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1)
 
 /-- The degree-zero component of an underlying morphism is closed. -/
-theorem dgClosedHom_mem
+theorem dgClosedHom_mem_dgCycles
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     dgClosedHom R f ∈ dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) := by
@@ -96,7 +96,7 @@ recovers that morphism. -/
 @[simp]
 theorem dgClosedHomOf_dgClosedHom {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
     (f : X ⟶ Y) :
-    dgClosedHomOf R (dgClosedHom R f) (dgClosedHom_mem R f) = f := by
+    dgClosedHomOf R (dgClosedHom R f) (dgClosedHom_mem_dgCycles R f) = f := by
   apply dgClosedHom_injective R
   exact dgClosedHom_dgClosedHomOf R _ _
 
@@ -106,7 +106,7 @@ noncomputable def dgClosedHomEquiv
     (X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
     (X ⟶ Y) ≃ dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) where
-  toFun f := ⟨dgClosedHom R f, dgClosedHom_mem R f⟩
+  toFun f := ⟨dgClosedHom R f, dgClosedHom_mem_dgCycles R f⟩
   invFun f := dgClosedHomOf (C := C) R f.1 f.2
   left_inv f := dgClosedHomOf_dgClosedHom R f
   right_inv f := Subtype.ext (dgClosedHom_dgClosedHomOf R f.1 f.2)
@@ -114,7 +114,7 @@ noncomputable def dgClosedHomEquiv
 /-- The equivalence from underlying morphisms to cycles evaluates by taking the degree-zero
 component. -/
 @[simp]
-theorem dgClosedHomEquiv_apply
+theorem dgClosedHomEquiv_apply_coe
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     (dgClosedHomEquiv R X Y f).1 = dgClosedHom R f :=
   (rfl)
@@ -131,7 +131,7 @@ theorem dgClosedHomEquiv_symm_apply
 /-- The identity at an object of Mathlib's underlying category has the DG identity as its
 closed component. -/
 @[simp]
-theorem dgClosedHom_id_underlying
+theorem dgClosedHom_id
     (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
     dgClosedHom R (𝟙 X) =
       dgId R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X) := by
@@ -140,10 +140,12 @@ theorem dgClosedHom_id_underlying
 
 /-- Composition in the underlying category is DG composition of closed degree-zero
 morphisms. -/
+@[simp]
 theorem dgClosedHom_comp
     {X Y Z : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
     (f : X ⟶ Y) (g : Y ⟶ Z) :
-    dgClosedHom R (f ≫ g) = dgComp R (dgClosedHom R f) (dgClosedHom R g) (by omega) := by
+    dgClosedHom R (f ≫ g) = dgCompZero R (dgClosedHom R f) (dgClosedHom R g) := by
+  rw [dgCompZero_def]
   simp only [dgClosedHom, ForgetEnrichment.homTo_comp, HomologicalComplex.comp_f]
   rw [leftUnitor_inv_f, leftUnitor'_inv]
   simp only [Category.assoc, tensorHom_def, HomologicalComplex.comp_f,
@@ -155,6 +157,23 @@ theorem dgClosedHom_comp
   rw [← ModuleCat.comp_apply, ← dgCompMap_def]
   exact dgCompMap_tmul R (by omega) _ _
 
+/-- The underlying morphism constructed from the DG identity is the identity. -/
+@[simp]
+theorem dgClosedHomOf_dgId (X : C) :
+    dgClosedHomOf R (dgId R X) ((mem_dgCycles R).mpr (dgDifferential_dgId R X)) =
+      𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X) := by
+  apply dgClosedHom_injective R
+  simp
+
+/-- The underlying morphism constructed from a composite of cocycles is their composite. -/
+@[simp]
+theorem dgClosedHomOf_dgCompZero {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
+    (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z) :
+    dgClosedHomOf R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) =
+      dgClosedHomOf R f hf ≫ dgClosedHomOf R g hg := by
+  apply dgClosedHom_injective R
+  simp
+
 /-- The canonical functor from closed degree-zero morphisms to their classes in `H⁰`.
 It is the identity on the underlying objects. -/
 @[expose]
@@ -162,13 +181,13 @@ noncomputable def dgClosedToHomotopy :
     ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C ⥤ DGHomotopyCategory R C where
   obj X := DGHomotopyCategory.of R
     (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
-  map f := DGHomotopyCategory.homOf R (dgClosedHom R f) (dgClosedHom_mem R f)
+  map f := DGHomotopyCategory.homOf R (dgClosedHom R f) (dgClosedHom_mem_dgCycles R f)
   map_id X := by
-    simp only [dgClosedHom_id_underlying, DGHomotopyCategory.homOf_dgId]
+    simp only [dgClosedHom_id, DGHomotopyCategory.homOf_dgId]
   map_comp f g := by
-    simpa only [dgClosedHom_comp, dgCompZero_def] using
+    simpa only [dgClosedHom_comp] using
       (DGHomotopyCategory.homOf_comp R (dgClosedHom R f) (dgClosedHom R g)
-        (dgClosedHom_mem R f) (dgClosedHom_mem R g)).symm
+        (dgClosedHom_mem_dgCycles R f) (dgClosedHom_mem_dgCycles R g)).symm
 
 /-- The quotient functor fixes the objects of the DG category. -/
 @[simp]
@@ -180,33 +199,46 @@ theorem dgClosedToHomotopy_obj
   (rfl)
 
 /-- The quotient functor takes an underlying morphism to the class of its closed component. -/
-theorem dgClosedToHomotopy_map_apply
+theorem dgClosedToHomotopy_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     (dgClosedToHomotopy R).map f =
-      DGHomotopyCategory.homOf R (dgClosedHom R f) (dgClosedHom_mem R f) :=
+      DGHomotopyCategory.homOf R (dgClosedHom R f) (dgClosedHom_mem_dgCycles R f) :=
   (rfl)
 
 /-- The quotient functor sends a closed morphism to its homotopy class. -/
 @[simp]
-theorem dgClosedToHomotopy_map {X Y : C} (f : DGHom R 0 X Y)
+theorem dgClosedToHomotopy_map_dgClosedHomOf {X Y : C} (f : DGHom R 0 X Y)
     (hf : f ∈ dgCycles R X Y) :
     (dgClosedToHomotopy R).map (dgClosedHomOf R f hf) =
       DGHomotopyCategory.homOf R f hf := by
-  simp [dgClosedToHomotopy, DGHomotopyCategory.homOf_def]
-  rfl
+  rw [dgClosedToHomotopy_map]
+  simp only [dgClosedHom_dgClosedHomOf]
+  congr
 
 /-- Every morphism in `H⁰(C)` has a representative in the underlying closed category. -/
-instance dgClosedToHomotopy_full : (dgClosedToHomotopy (C := C) R).Full where
+instance full_dgClosedToHomotopy : (dgClosedToHomotopy (C := C) R).Full where
   map_surjective := by
     intro X Y c
-    let c' : DGHomotopyClass R
+    change DGHomotopyClass R
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
-        (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) := c
-    obtain ⟨f, hf, hfc⟩ := exists_dgHomotopyClass_eq (C := C) R c'
+        (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) at c
+    obtain ⟨f, hf, hfc⟩ := exists_dgHomotopyClass_eq (C := C) R c
     refine ⟨dgClosedHomOf (C := C) R f hf, ?_⟩
-    exact (dgClosedToHomotopy_map (C := C) R f hf).trans (by
+    exact (dgClosedToHomotopy_map_dgClosedHomOf (C := C) R f hf).trans (by
       rw [DGHomotopyCategory.homOf_def]
       exact hfc)
+
+/-- Two underlying closed morphisms have the same class in `H⁰` precisely when their
+difference is a boundary. -/
+@[simp]
+theorem dgClosedToHomotopy_map_eq_iff
+    {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f g : X ⟶ Y) :
+    (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g ↔
+      dgClosedHom R f - dgClosedHom R g ∈ dgBoundaries R
+        (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
+        (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) :=
+  DGHomotopyCategory.homOf_eq_iff R
+    (dgClosedHom_mem_dgCycles R f) (dgClosedHom_mem_dgCycles R g)
 
 /-- A closed morphism becomes zero in `H⁰` exactly when it is a boundary. -/
 @[simp]
@@ -216,6 +248,6 @@ theorem dgClosedToHomotopy_map_eq_zero_iff
       dgClosedHom R f ∈ dgBoundaries R
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
         (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) :=
-  DGHomotopyCategory.homOf_eq_zero_iff R (dgClosedHom_mem R f)
+  DGHomotopyCategory.homOf_eq_zero_iff R (dgClosedHom_mem_dgCycles R f)
 
 end TauCeti
