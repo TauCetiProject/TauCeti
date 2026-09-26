@@ -41,7 +41,7 @@ open scoped TensorProduct
 namespace BialgHom
 
 variable {k L A B : Type*} [Field k] [Field L] [Algebra k L]
-variable [Ring A] [Ring B] [Bialgebra k A] [Bialgebra k B]
+variable [Semiring A] [Semiring B] [Bialgebra k A] [Bialgebra k B]
 variable [FiniteDimensional k L] [IsGalois k L]
 
 variable (F : L ⊗[k] A →ₐc[L] L ⊗[k] B)
@@ -78,6 +78,7 @@ private theorem galoisDescend_comul :
     (Algebra.TensorProduct.map (F.toAlgHom.galoisDescend hF)
         (F.toAlgHom.galoisDescend hF)).comp (Bialgebra.comulAlgHom k A) =
       (Bialgebra.comulAlgHom k B).comp (F.toAlgHom.galoisDescend hF) := by
+  let := Module.addCommMonoidToAddCommGroup k (M := B)
   ext a
   apply Algebra.TensorProduct.includeRight_injective (A := L) (algebraMap k L).injective
   apply (TensorProduct.AlgebraTensorModule.distribBaseChange k L B B).injective
@@ -126,6 +127,7 @@ theorem existsUnique_map_eq_iff :
   · rintro ⟨f, rfl, _⟩ σ x
     exact TauCeti.ScalarAut.baseChangeMap_smul f.toAlgHom σ x
   · intro hF
+    let := Module.addCommMonoidToAddCommGroup k (M := B)
     refine ⟨F.galoisDescend hF, F.map_galoisDescend hF, fun f hf ↦ ?_⟩
     ext a
     apply Algebra.TensorProduct.includeRight_injective (A := L) (algebraMap k L).injective

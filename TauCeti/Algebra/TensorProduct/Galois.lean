@@ -75,7 +75,7 @@ end TauCeti.GaloisDescent
 namespace AlgHom
 
 variable {k L A B : Type*} [Field k] [Field L] [Algebra k L]
-variable [Ring A] [Ring B] [Algebra k A] [Algebra k B]
+variable [Semiring A] [Semiring B] [Algebra k A] [Algebra k B]
 variable [FiniteDimensional k L] [IsGalois k L]
 
 variable (F : L ⊗[k] A →ₐ[L] L ⊗[k] B)
@@ -87,6 +87,7 @@ include hF in
 private theorem galoisDescend_mem_range (a : A) :
     ((F.restrictScalars k).comp Algebra.TensorProduct.includeRight) a ∈
       (Algebra.TensorProduct.includeRight : B →ₐ[k] L ⊗[k] B).range := by
+  let := Module.addCommMonoidToAddCommGroup k (M := B)
   apply (TauCeti.GaloisDescent.tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq
     (F (1 ⊗ₜ[k] a))).mp
   intro σ
@@ -94,8 +95,9 @@ private theorem galoisDescend_mem_range (a : A) :
 
 /-- Descent of an algebra morphism commuting with the scalar-factor Galois action.
 Its scalar extension is the original morphism. -/
-noncomputable def galoisDescend : A →ₐ[k] B :=
-  (AlgEquiv.ofInjective Algebra.TensorProduct.includeRight
+noncomputable def galoisDescend : A →ₐ[k] B := by
+  letI := Module.addCommMonoidToAddCommGroup k (M := B)
+  exact (AlgEquiv.ofInjective Algebra.TensorProduct.includeRight
     (Algebra.TensorProduct.includeRight_injective (algebraMap k L).injective)).symm.toAlgHom.comp
       (((F.restrictScalars k).comp Algebra.TensorProduct.includeRight).codRestrict _
         (galoisDescend_mem_range F hF))
@@ -104,6 +106,7 @@ noncomputable def galoisDescend : A →ₐ[k] B :=
 @[simp]
 theorem one_tmul_galoisDescend (a : A) :
     1 ⊗ₜ[k] F.galoisDescend hF a = F (1 ⊗ₜ[k] a) := by
+  let := Module.addCommMonoidToAddCommGroup k (M := B)
   let e := AlgEquiv.ofInjective (Algebra.TensorProduct.includeRight : B →ₐ[k] L ⊗[k] B)
     (Algebra.TensorProduct.includeRight_injective (algebraMap k L).injective)
   let g := ((F.restrictScalars k).comp Algebra.TensorProduct.includeRight).codRestrict _
@@ -134,6 +137,7 @@ theorem existsUnique_map_eq_iff :
   · rintro ⟨f, rfl, _⟩ σ x
     exact TauCeti.ScalarAut.baseChangeMap_smul f σ x
   · intro hF
+    let := Module.addCommMonoidToAddCommGroup k (M := B)
     refine ⟨F.galoisDescend hF, F.map_galoisDescend hF, fun f hf ↦ ?_⟩
     ext a
     apply Algebra.TensorProduct.includeRight_injective (A := L) (algebraMap k L).injective
