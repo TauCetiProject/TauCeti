@@ -24,13 +24,13 @@ integral and does not require a reducedness or finite-type hypothesis.
 
 ## Main results
 
-* `kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary`: generation
-  of the represented torus over its coordinate ring implies equality of the two defining Hopf
+* `kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary`:
+  generation of the represented universal torus point implies equality of the two defining Hopf
   ideals.
-* `kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary`: under the same
-  hypothesis, the root-generated and toral carriers are equal.
-* `kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary`: the canonical comparison is the
-  transport along that equality, and hence is an isomorphism.
+* `kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary`:
+  under the same hypothesis, the root-generated and toral carriers are equal.
+* `kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary`: the canonical comparison
+  is the transport along that equality, and hence is an isomorphism.
 
 ## References
 
@@ -61,19 +61,21 @@ variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι �
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 
-/-- If the represented weight torus over its own coordinate ring is contained in the elementary
-subgroup, then the root-generated defining ideal is killed by the weight-torus coordinate map.
+/-- If the represented universal weight-torus point belongs to the elementary subgroup, then the
+root-generated defining ideal is killed by the weight-torus coordinate map.
 
 It is enough to apply the hypothesis over the coordinate ring of the split torus itself. The
 identity algebra map is its universal point, so vanishing at the corresponding represented matrix
 is exactly vanishing under `GeneralLinear.weightTorusCoordinateMap wt`. -/
-theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_torus_le_elementary
-    (htorus : kostantTorusSubgroup M b wt
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
-      kostantElementarySubgroup e h ρ M hM hnil
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A) :
     (kostantGeneratedDefiningIdeal e h ρ M hM hnil b).toIdeal ≤
       RingHom.ker (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom.toRingHom := by
   let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
@@ -83,10 +85,7 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_torus_le_elementar
     toConv (AlgHom.id ℤ T)
   let s : κ → Aˣ := SplitTorus.pointsMulEquiv q
   have hs : kostantTorusPoints M b wt A s ∈
-      kostantElementarySubgroup e h ρ M hM hnil A := by
-    apply htorus
-    rw [kostantTorusSubgroup_eq_range]
-    exact ⟨s, rfl⟩
+      kostantElementarySubgroup e h ρ M hM hnil A := huniv
   have hmatrix : kostantTorusMatrix M b wt s ∈
       kostantGeneratedPointsSubgroup e h ρ M hM hnil b T := by
     apply map_kostantElementarySubgroup_le_generatedPoints e h ρ M hM hnil b T
@@ -116,13 +115,15 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_torus_le_elementar
 /-- **A root-generated universal weight-torus point makes the torus scheme-theoretically
 redundant.** If the represented torus over its own coordinate ring belongs to the elementary
 subgroup, then adjoining the torus does not change the common-kernel defining Hopf ideal. -/
-theorem kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-    (htorus : kostantTorusSubgroup M b wt
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
-      kostantElementarySubgroup e h ρ M hM hnil
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+theorem kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A) :
     kostantToralDefiningIdeal e h ρ M hM hnil b wt =
       kostantGeneratedDefiningIdeal e h ρ M hM hnil b := by
   apply le_antisymm
@@ -130,44 +131,48 @@ theorem kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_e
       e h ρ M hM hnil b wt
   · rw [le_kostantToralDefiningIdeal_iff]
     exact ⟨kostantGeneratedDefiningIdeal_toIdeal_le_ker e h ρ M hM hnil b,
-      kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_torus_le_elementary
-        e h ρ M hM hnil b wt htorus⟩
+      kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_mem_elementary
+        e h ρ M hM hnil b wt huniv⟩
 
-/-- When the weight torus is pointwise generated by the root subgroups, the root-generated
+/-- When the universal weight-torus point is generated by the root subgroups, the root-generated
 Kostant carrier and the toral closure are the same affine group scheme. -/
-theorem kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-    (htorus : kostantTorusSubgroup M b wt
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
-      kostantElementarySubgroup e h ρ M hM hnil
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+theorem kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A) :
     kostantToralGroupScheme e h ρ M hM hnil b wt =
       kostantGeneratedGroupScheme e h ρ M hM hnil b := by
   rw [kostantToralGroupScheme,
     kostantGeneratedGroupScheme,
-    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-      e h ρ M hM hnil b wt htorus]
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      e h ρ M hM hnil b wt huniv]
 
-/-- Under pointwise torus generation, the canonical inclusion of the root-generated carrier into
-the toral closure is the transport along their equality. -/
-theorem kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
-    (htorus : kostantTorusSubgroup M b wt
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
-      kostantElementarySubgroup e h ρ M hM hnil
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+/-- Under generation of the universal torus point, the canonical inclusion of the root-generated
+carrier into the toral closure is the transport along their equality. -/
+theorem kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A) :
     kostantGeneratedToToral e h ρ M hM hnil b wt =
       eqToHom
-        (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-          e h ρ M hM hnil b wt htorus).symm := by
+        (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+          e h ρ M hM hnil b wt huniv).symm := by
   have hideal :=
-    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-      e h ρ M hM hnil b wt htorus
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      e h ρ M hM hnil b wt huniv
   have hgroup :
-      (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-        e h ρ M hM hnil b wt htorus).symm =
+      (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+        e h ρ M hM hnil b wt huniv).symm =
         congrArg (CommHopfAlgCat.quotientSpec
           (GeneralLinear.coordinateHopfAlgebra ℤ n)) hideal.symm :=
     Subsingleton.elim _ _
@@ -177,18 +182,20 @@ theorem kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
   rw [← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
   exact hideal.symm
 
-/-- Pointwise generation of the weight torus makes the canonical comparison from the
+/-- Generation of the universal weight-torus point makes the canonical comparison from the
 root-generated carrier to the toral closure an isomorphism. -/
-theorem isIso_kostantGeneratedToToral_of_torus_le_elementary
-    (htorus : kostantTorusSubgroup M b wt
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
-      kostantElementarySubgroup e h ρ M hM hnil
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+theorem isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A) :
     IsIso (kostantGeneratedToToral e h ρ M hM hnil b wt) := by
-  rw [kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
-    e h ρ M hM hnil b wt htorus]
+  rw [kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary
+    e h ρ M hM hnil b wt huniv]
   infer_instance
 
 end TauCeti.UniversalEnvelopingAlgebra
