@@ -32,16 +32,6 @@ namespace TauCeti.Probability
 
 variable {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-private def iidBlockKernel (m : ℕ) : Kernel (ProbabilityMeasure α) (Fin m → α) where
-  toFun P := (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
-  measurable' := TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure
-    id measurable_id
-
-private instance (m : ℕ) : IsMarkovKernel (iidBlockKernel (α := α) m) :=
-  -- The kernel evaluates to the measure underlying `ProbabilityMeasure.pi` by definition.
-  ⟨fun P => by change IsProbabilityMeasure (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
-               infer_instance⟩
-
 /-- The conditional law of a finite block of distinct coordinates, given the directing measure,
 is the product of that measure. The equality holds for almost every directing-measure value. -/
 theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] [Nonempty α]
@@ -51,7 +41,8 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
     ∀ᵐ P ∂μ.map ν,
       condDistrib (fun ω => fun i : Fin m => X (k i) ω) ν μ P =
         (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure := by
-  let K : Kernel (ProbabilityMeasure α) (Fin m → α) := iidBlockKernel m
+  let K : Kernel (ProbabilityMeasure α) (Fin m → α) :=
+    TauCeti.MeasureTheory.iidBlockKernel m
   have hK : μ.map (fun ω => (ν ω, fun i : Fin m => X (k i) ω)) = μ.map ν ⊗ₘ K := by
     apply Measure.ext_prod
     intro S B hS hB
@@ -66,7 +57,7 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
       apply lintegral_congr
       intro ω
       by_cases hSω : ν ω ∈ S
-      · simp [Set.indicator, hSω, K, iidBlockKernel]
+      · simp [Set.indicator, hSω, K, TauCeti.MeasureTheory.iidBlockKernel]
       · simp [Set.indicator, hSω]
     · exact (TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
         ν h.measurable_directing).aemeasurable
