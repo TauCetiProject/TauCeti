@@ -63,11 +63,11 @@ private theorem isRegularLocalRing_localization_of_isStandardSmooth [IsRegularRi
   let := (MvPolynomial.aeval (R := R) a).toAlgebra
   have : IsScalarTower R P S := .of_algebraMap_eq fun r ↦ by
     simp [P, RingHom.algebraMap_toAlgebra]
+  have hX (i : I) : algebraMap P S (MvPolynomial.X i) = a i := by
+    simp [P, RingHom.algebraMap_toAlgebra]
   have hD (i : I) : map R R P S (mvPolynomialBasis R I i) = D R S (a i) := by
     rw [mvPolynomialBasis_apply, map_D]
-    -- The chosen `P`-algebra structure on `S` evaluates each variable at `a i`.
-    change D R S ((MvPolynomial.aeval (R := R) a) (MvPolynomial.X i)) = _
-    simp
+    rw [hX]
   have : Algebra.FormallyEtale P S :=
     formallyEtale_of_bijective_mapBaseChange <|
       bijective_mapBaseChange_of_basis (mvPolynomialBasis R I) b fun i ↦ by
