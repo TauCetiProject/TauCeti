@@ -148,7 +148,6 @@ theorem SeparatelyExchangeable.arrayBlock (h : SeparatelyExchangeable μ X)
 
 /-- **A block of a separately exchangeable array along injections has the law of the array.** No
 relation between the two ranges is needed. -/
-@[simp]
 theorem SeparatelyExchangeable.map_arrayBlock_eq [IsFiniteMeasure μ]
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ)
     (he : Function.Injective e) (hf : Function.Injective f) :
