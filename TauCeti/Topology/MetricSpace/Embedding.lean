@@ -25,7 +25,7 @@ variable {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
 /-- Near the image of a point in an open set, the range of an embedding agrees with the image
 of that open set. -/
 theorem exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
-    {f : X → Y} (hf : Topology.IsEmbedding f) {s : Set X} (hs : IsOpen s)
+    (f : X → Y) (hf : Topology.IsEmbedding f) {s : Set X} (hs : IsOpen s)
     {x : X} (hx : x ∈ s) :
     ∃ ε : ℝ, 0 < ε ∧
       Metric.ball (f x) ε ∩ range f = Metric.ball (f x) ε ∩ f '' s := by
