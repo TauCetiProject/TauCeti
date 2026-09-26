@@ -365,6 +365,7 @@ theorem spinTransvectionHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu�
 variable [FiniteDimensional K V]
 
 /-- **An Eichler transvection has trivial spinor norm**: it is the image of its Spin lift. -/
+-- `spinorNorm_apply` simplifies the left-hand side first, so `simpNF` rejects `@[simp]` here.
 theorem spinorNorm_transvection (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0) :
     spinorNorm Q hQ ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩ =
       1 := by
