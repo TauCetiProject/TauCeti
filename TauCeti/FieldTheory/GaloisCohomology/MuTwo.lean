@@ -18,9 +18,9 @@ coefficient object `TauCeti.trivialF2 G_K` of the profinite-cohomology layer.
 The identification is elementary: an element of `μ₂` is a root of unity `ζ` of a separable closure
 with `ζ ^ 2 = 1`, so `ζ` is `±1`, and `±1 ∈ K`, so the Galois action on `μ₂` is trivial
 (`TauCeti.kummerCoeff_smul_eq_self`). The value dictionary `TauCeti.mu2EquivZMod2` sends `0` to
-`0` and `-1` to `1`; its type pins it, because the only nontrivial additive self-equivalence of
-`ZMod 2` is the identity, and `-1` is the nontrivial element of `μ₂` as soon as `2` is invertible
-in `K`.
+`0` and `-1` to `1`; its type pins it, because `ZMod 2` has no additive self-equivalence other
+than the identity, so sending `0` to `0` already determines it, and `-1` is the nontrivial element
+of `μ₂` as soon as `2` is invertible in `K`.
 
 Crossed with the universe lift of `TauCeti.trivialF2Equiv` and read in the category
 `TopRep ℤ G_K`, this is the isomorphism of coefficient objects
@@ -36,8 +36,6 @@ precisely where the action on `μ₂` is not trivial.
   equivalence of the coefficient carriers `KummerCoeff K 2 ≃+ (trivialF2 G_K).V`.
 * `TauCeti.kummerCoeffIsoTrivialF2`: the isomorphism of coefficient objects
   `ofDiscreteModule ℤ G_K (KummerCoeff K 2) ≅ trivialF2 G_K`.
-* `TauCeti.isUnit_natCast_two`: `2` is a unit of `K` in the `ℕ`-coerced spelling the Kummer
-  statements are made in.
 * `TauCeti.kummerClass`: the Kummer class `(a) ∈ H¹(G_K, 𝔽₂)` of a unit, read in the
   `trivialF2 G_K` carrier.
 
@@ -88,21 +86,15 @@ theorem toMul_negOne : negOne.toMul.1 = (-1 : (SeparableClosure K)ˣ) :=
   Units.ext (by simp [negOne])
 
 /-- **The `2`nd roots of unity of a separable closure are `1` and `-1`**: `ζ ^ 2 = 1` in a field
-forces `ζ = 1` or `ζ = -1`, by factoring `ζ ^ 2 - 1`. No hypothesis on the characteristic is
-needed here: in characteristic two the two values coincide (`-1 = 1`), which is why the two roots
-are shown to be *distinct* only under `[Invertible (2 : K)]`
-(`TauCeti.negOne_ne_zero`). -/
+forces `ζ = 1` or `ζ = -1`. No hypothesis on the characteristic is needed here: in characteristic
+two the two values coincide (`-1 = 1`), which is why the two roots are shown to be *distinct* only
+under `[Invertible (2 : K)]` (`TauCeti.negOne_ne_zero`). -/
 theorem toMul_eq_one_or_neg_one (x : KummerCoeff K 2) :
     x.toMul = 1 ∨ x.toMul.1 = -1 := by
   have hu : (x.toMul.1 : (SeparableClosure K)ˣ) ^ 2 = 1 := (mem_rootsOfUnity 2 _).1 x.toMul.2
-  have hx : (Units.val x.toMul.1 : (SeparableClosure K)) ^ 2 = 1 := congrArg Units.val hu
-  have hfac : (Units.val x.toMul.1 - 1) * (Units.val x.toMul.1 + 1) = 0 := by
-    rw [mul_comm, ← sq_sub_sq, hx, one_pow, sub_self]
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact Or.inl (Subtype.ext (Units.ext (by
-      simpa using (sub_eq_zero (a := Units.val x.toMul.1) (b := 1)).mp h)))
-  · exact Or.inr (Units.ext (by
-      simpa using (eq_neg_iff_add_eq_zero (a := Units.val x.toMul.1) (b := 1)).mpr h))
+  rcases sq_eq_one_iff.mp (congrArg Units.val hu) with h | h
+  · exact Or.inl (Subtype.ext (Units.ext h))
+  · exact Or.inr (Units.ext h)
 
 /-- An element of `μ₂` is `0` or `-1`. -/
 theorem eq_zero_or_eq_negOne (x : KummerCoeff K 2) :
@@ -149,11 +141,6 @@ theorem kummerCoeff_smul_eq_self (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 
 /-! ### The value dictionary -/
 
 variable [Invertible (2 : K)]
-
-/-- **`2` is a unit of `K`**, in the `ℕ`-coerced spelling the Kummer statements are made in: the
-Kummer isomorphism and the map `H²(G_K, μ₂) → H²(G_K, (Kˢ)ˣ)` both ask for `IsUnit (2 : K)`. -/
-theorem isUnit_natCast_two : IsUnit ((2 : ℕ) : K) := by
-  simpa using isUnit_of_invertible (2 : K)
 
 /-- `μ₂` has decidable equality, through the two elements `TauCeti.eq_zero_or_eq_negOne` names. -/
 noncomputable local instance decidableEqMu2 (x y : KummerCoeff K 2) : Decidable (x = y) :=
@@ -310,7 +297,7 @@ two cannot drift. -/
 noncomputable def kummerClass (a : Kˣ) :
     continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
   (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 1).hom
-    (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_natCast_two K) a))
+    (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a))
 
 variable (K)
 
@@ -325,11 +312,12 @@ by hand for the degree-two Kummer map, and the same hand proof is needed here. -
 theorem kummerClass_eq_zero_of_square {a : Kˣ} (ha : a ∈ Subgroup.square Kˣ) :
     kummerClass a = 0 := by
   obtain ⟨r, hr⟩ := Subgroup.mem_square.mp ha
-  have hone : kummerMap K 2 (isUnit_natCast_two K) a = 1 :=
-    (kummerMap_eq_one_iff (isUnit_natCast_two K) a).mpr
+  have hone : kummerMap K 2 (isUnit_of_invertible (2 : K)) a = 1 :=
+    (kummerMap_eq_one_iff (isUnit_of_invertible (2 : K)) a).mpr
       ⟨r, by rw [hr, pow_two]⟩
-  have hzero : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_natCast_two K) a) = 0 := by
-    rw [explicitIso_kummerMap K 2 (isUnit_natCast_two K) a, hone]
+  have hzero : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)
+      = 0 := by
+    rw [explicitIso_kummerMap K 2 (isUnit_of_invertible (2 : K)) a, hone]
     simp
   rw [kummerClass, hzero]
   simp
