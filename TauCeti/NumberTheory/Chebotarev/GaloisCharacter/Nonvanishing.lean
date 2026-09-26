@@ -14,7 +14,8 @@ import TauCeti.NumberTheory.NumberField.DedekindZeta
 /-!
 # Nonvanishing of Galois character series on the line `Re s = 1`
 
-Let `F / K` be a finite Galois extension of number fields and `χ` a character of `Gal(F/K)`. This
+Let `F / K` be a finite Galois extension of number fields and `χ` a character of `Gal(F/K)`. On
+`Re s > 1` the `L`-series of `galoisCharacterWeight χ` does not vanish, by its Euler product. This
 file gives criteria for a function agreeing on `Re s > 1` with the `L`-series of
 `galoisCharacterWeight χ` to be nonzero at a point `s` of the line `Re s = 1`. In particular the
 series of the trivial character, which is the Dedekind zeta function of `K` with the Euler factors
@@ -26,6 +27,7 @@ boundary behaviour required to apply a Tauberian theorem to the Frobenius von Ma
 
 ## Main results
 
+* `MonoidHom.LSeries_galoisCharacterWeight_ne_zero`: the series of `χ` is nonzero on `Re s > 1`.
 * `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight`: a continuation of the
   series of `χ`, differentiable at `s = 1 + it`, is nonzero at `s` provided some continuation of
   the series of `χ²` is continuous at `1 + 2it`.
@@ -47,10 +49,20 @@ public section
 open Complex Filter IsDedekindDomain NumberField TauCeti
 open scoped Topology
 
-namespace NumberField.Chebotarev
-
 variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Algebra K F]
   [IsGalois K F]
+
+/-- **Nonvanishing on `Re s > 1`.** For a finite Galois extension `F / K` and a character `χ` of
+`Gal(F/K)`, the `L`-series of `galoisCharacterWeight χ` is nonzero at every `s` with `1 < Re s`,
+where its Euler product converges absolutely. -/
+theorem MonoidHom.LSeries_galoisCharacterWeight_ne_zero (χ : (F ≃ₐ[K] F) →* ℂˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction) s ≠ 0 :=
+  χ.galoisCharacterWeight.LSeries_ne_zero_of_summable_idealTerm
+    (summable_idealTerm_of_bounded_of_one_lt_re (C := 1)
+      (fun I ↦ by simpa using χ.galoisCharacterUnitaryWeight.norm_le_one I) hs)
+
+namespace NumberField.Chebotarev
 
 variable (K F) in
 -- The series of the trivial character continues to a function differentiable at every point of
