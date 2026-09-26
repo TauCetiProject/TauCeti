@@ -12,6 +12,7 @@ public import Mathlib.Probability.Independence.Conditional
 -- proof.
 import TauCeti.Probability.Independence.Conditional
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.Data.Set.Infinite
 
 /-!
 # Local conditional independence of the entries of a separately exchangeable array
@@ -69,15 +70,6 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti
 
 namespace Probability
-
-/-- An injection of `ℕ` into an infinite set `S` of indices may be chosen to fix a prescribed
-element `i ∈ S`. -/
-private theorem exists_injective_apply_eq_mem {S : Set ℕ} (hS : S.Infinite) {i : ℕ}
-    (hi : i ∈ S) : ∃ a : ℕ → ℕ, Function.Injective a ∧ a i = i ∧ ∀ k, a k ∈ S := by
-  have := hS.to_subtype
-  obtain ⟨e⟩ := nonempty_equiv_of_countable (α := ℕ) (β := S)
-  refine ⟨fun k ↦ e (Equiv.swap i (e.symm ⟨i, hi⟩) k), ?_, by simp, fun k ↦ (e _).2⟩
-  exact Subtype.val_injective.comp (e.injective.comp (Equiv.injective _))
 
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] {ρ : Measure (ℕ × ℕ → α)}
   [IsFiniteMeasure ρ]
