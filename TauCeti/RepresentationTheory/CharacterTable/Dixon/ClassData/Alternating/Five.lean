@@ -101,10 +101,6 @@ private theorem alternatingGroupFivePowerConjugator_conj_sq :
     hcycle.support_pow_of_pos_of_lt_orderOf (by decide) (by rw [horder]; decide),
     ← hcycle.orderOf, horder]
 
-@[simp] private theorem cycleType_alternatingGroupFive_one :
-    ((1 : A5) : Equiv.Perm (Fin 5)).cycleType = 0 := by
-  exact Equiv.Perm.cycleType_one
-
 private theorem cycleType_alternatingGroupFive (g : A5) :
     (g : Equiv.Perm (Fin 5)).cycleType = 0 ∨
       (g : Equiv.Perm (Fin 5)).cycleType = {2, 2} ∨
