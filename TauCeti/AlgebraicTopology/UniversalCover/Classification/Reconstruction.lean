@@ -58,7 +58,7 @@ variable {X : Type u} [TopologicalSpace X]
 namespace TauCeti.UniversalCover
 
 variable (x0 : X) {A : Type v} [MulAction (FundamentalGroup X x0) A]
-  [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+  [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
 
 /-- The connected covering space attached to a point `a` of a `π₁(X, x₀)`-set: it is the
 universal cover modulo the stabilizer of `a`.
@@ -105,7 +105,6 @@ private def fiberEquivOrbitAux (a : A) :
         exact range_mapOfEq_subgroupQuotientProj x0 _)).trans
       (MulAction.orbitEquivQuotientStabilizer (FundamentalGroup X x0) a).symm
 
-omit [PathConnectedSpace X] in
 /-- The raw fibre equivalence sends a monodromy translate of the quotient basepoint to the
 corresponding translate of `a`. -/
 private theorem fiberEquivOrbitAux_apply_monodromy_basepoint (a : A)
@@ -127,7 +126,6 @@ private theorem fiberEquivOrbitAux_apply_monodromy_basepoint (a : A)
   -- so orbit-stabilizer sends it to the translate of `a` by `g`.
   exact MulAction.orbitEquivQuotientStabilizer_symm_apply (FundamentalGroup X x0) a g
 
-omit [PathConnectedSpace X] in
 /-- Raw-projection form of `stabilizerCoverFiberEquivOrbit_apply_monodromy`. -/
 private theorem fiberEquivOrbitAux_apply_monodromy (a : A) (g : FundamentalGroup X x0)
     (e : subgroupQuotientProj x0 (MulAction.stabilizer (FundamentalGroup X x0) a) ⁻¹' {x0}) :

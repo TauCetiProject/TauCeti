@@ -216,6 +216,7 @@ instance transitiveFiberActionFunctor_faithful :
 instance transitiveFiberActionFunctor_full : (transitiveFiberActionFunctor x₀).Full :=
   inferInstanceAs <| (ObjectProperty.lift _ _ _).Full
 
+omit [PathConnectedSpace X] in
 /-- **Every transitive `π₁(X, x₀)`-set is the fibre action of a connected cover.** The cover is
 the quotient of the universal cover by the stabiliser of a point of the set. -/
 theorem exists_fiberAction_iso (A : Action (Type u) (FundamentalGroup X x₀))
