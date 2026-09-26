@@ -31,8 +31,9 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
 * `TauCeti.ord_eq_length_quot_span`: the order of vanishing of one equation along the other is the
   length of the quotient by the two equations, in any commutative ring;
 * `TauCeti.length_quot_span_eq_zero_iff`: that length vanishes exactly when the second equation is
-  a unit along the first, that is, when the second equation lies in the ideal `(f)`; for two
-  equations through the closed point of a local ring that cannot happen, by
+  a unit along the first, that is, when the two equations generate the unit ideal
+  `Ideal.span {f, g} = ⊤`; in a local ring with `f` in the maximal ideal that is exactly `g ∉ 𝔪`,
+  so for two equations through the closed point the length cannot vanish, by
   `TauCeti.one_le_length_quot_span_pair`;
 * `TauCeti.ringKrullDim_quot_span_singleton_eq_one`: a parameter `f ∈ 𝔪 \ 𝔪²` cuts a
   two-dimensional regular local ring down to a curve of dimension one, hence a discrete valuation
@@ -112,10 +113,10 @@ theorem ord_eq_length_quot_span (f g : R) :
 
 /-- **The length of the quotient by two equations vanishes exactly when the second equation is
 a unit along the first.** In an arbitrary commutative ring, the length of `R ⧸ (f, g)` vanishes
-exactly when the image of `g` in `R ⧸ (f)` is a unit, that is, exactly when `g` lies in the ideal
-`(f)`; no hypothesis is placed on `f` or on `g`. In a local ring `(R, 𝔪)` with `f ∈ 𝔪`, the
-image of `g` is a unit in `R ⧸ (f)` exactly when `g ∉ 𝔪`, that is, exactly when the closed point
-does not lie on the curve `g = 0`. -/
+exactly when the image of `g` in `R ⧸ (f)` is a unit, that is, exactly when the two equations
+generate the unit ideal, `Ideal.span {f, g} = ⊤`; no hypothesis is placed on `f` or on `g`. In a
+local ring `(R, 𝔪)` with `f ∈ 𝔪`, the image of `g` is a unit in `R ⧸ (f)` exactly when `g ∉ 𝔪`,
+that is, exactly when the closed point does not lie on the curve `g = 0`. -/
 @[simp]
 theorem length_quot_span_eq_zero_iff (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 0
@@ -210,8 +211,8 @@ a second curve is measured. -/
 theorem ringKrullDim_quot_span_singleton_eq_one (hd : ringKrullDim R = 2) {f : R}
     (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) :
     ringKrullDim (R ⧸ Ideal.span {f}) = 1 := by
-  -- a nonzero divisor lowers the dimension by one, and every element of the local ring `R` lies
-  -- in its Jacobson radical
+  -- a nonzero divisor lowers the dimension by one, and the element `f` in particular lies in
+  -- the Jacobson radical of the local ring `R`, being in its maximal ideal by `hf`
   have hkey :=
    ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
       (x := f)
