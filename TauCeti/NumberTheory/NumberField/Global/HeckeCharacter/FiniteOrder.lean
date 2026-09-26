@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
@@ -13,19 +14,28 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom
 # Finite-order Hecke characters
 
 A finite-order Hecke character is locally constant: its kernel is an open subgroup of the idele
-class group.  Together with the ray-subgroup criterion
-`HeckeCharacter.mem_range_ofRayClassCharacter_iff`, this is part of the equivalence between finite
-order, open kernel, and factorization through a ray class group.
+class group.  Every open subgroup of the idele class group contains a ray subgroup
+(`exists_raySubgroup_le_of_isOpen`), and a Hecke character trivial on `raySubgroup 𝔪` is the
+pullback of a ray class character of `𝔪` (`HeckeCharacter.mem_range_ofRayClassCharacter_iff`).
+Together with the finiteness of the ray class groups this proves that, for a Hecke character, the
+following are equivalent: it has finite order, its kernel is open, and it is the pullback of a ray
+class character of some modulus.  The finite-order Hecke characters are therefore exactly the
+characters of the ray class groups, which is why the ray class L-functions exhaust the Hecke
+L-functions of finite-order characters.
 
 ## Main results
 
 * `HeckeCharacter.isOpen_ker_of_isFiniteOrder`: a finite-order Hecke character has open kernel.
-* `HeckeCharacter.isOpen_ker_ofRayClassCharacter`: in particular, a character pulled back from a
-  ray class group has open kernel.
+* `HeckeCharacter.exists_ofRayClassCharacter_eq_of_isOpen_ker`: a Hecke character with open kernel
+  is the pullback of a ray class character.
+* `HeckeCharacter.isFiniteOrder_iff_exists_rayClassCharacter`: a Hecke character has finite order
+  exactly when it is the pullback of a ray class character of some modulus.
+* `HeckeCharacter.isFiniteOrder_iff_isOpen_ker`: a Hecke character has finite order exactly when
+  its kernel is open.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Chapter VII, §6.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1 and Chapter VII, §6.
 -/
 
 public section
@@ -51,6 +61,32 @@ theorem isOpen_ker_ofRayClassCharacter {𝔪 : Modulus K} (η : RayClassCharacte
     IsOpen (((ofRayClassCharacter 𝔪 η : HeckeCharacter K) :
       IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) :=
   isOpen_ker_of_isFiniteOrder (isFiniteOrder_ofRayClassCharacter η)
+
+/-- **A Hecke character with open kernel is the pullback of a ray class character** of some
+modulus `𝔪`.  Together with `isOpen_ker_ofRayClassCharacter` this identifies the Hecke characters
+with open kernel with the ray class characters of all moduli. -/
+theorem exists_ofRayClassCharacter_eq_of_isOpen_ker {χ : HeckeCharacter K}
+    (hχ : IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K))) :
+    ∃ (𝔪 : Modulus K) (η : RayClassCharacter 𝔪), ofRayClassCharacter 𝔪 η = χ := by
+  obtain ⟨𝔪, h𝔪⟩ := exists_raySubgroup_le_of_isOpen _ hχ
+  exact ⟨𝔪, MonoidHom.mem_range.mp (mem_range_ofRayClassCharacter_iff.mpr h𝔪)⟩
+
+/-- **Finite-order Hecke characters are exactly the ray class characters**: a Hecke character has
+finite order exactly when it is the pullback of a ray class character of some modulus. -/
+theorem isFiniteOrder_iff_exists_rayClassCharacter (χ : HeckeCharacter K) :
+    χ.IsFiniteOrder ↔
+      ∃ (𝔪 : Modulus K) (η : RayClassCharacter 𝔪), ofRayClassCharacter 𝔪 η = χ := by
+  refine ⟨fun h ↦ exists_ofRayClassCharacter_eq_of_isOpen_ker (isOpen_ker_of_isFiniteOrder h), ?_⟩
+  rintro ⟨𝔪, η, rfl⟩
+  exact isFiniteOrder_ofRayClassCharacter η
+
+/-- **A Hecke character has finite order exactly when its kernel is open.** -/
+theorem isFiniteOrder_iff_isOpen_ker (χ : HeckeCharacter K) :
+    χ.IsFiniteOrder ↔
+      IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) := by
+  refine ⟨isOpen_ker_of_isFiniteOrder, fun h ↦ ?_⟩
+  obtain ⟨𝔪, η, rfl⟩ := exists_ofRayClassCharacter_eq_of_isOpen_ker h
+  exact isFiniteOrder_ofRayClassCharacter η
 
 end HeckeCharacter
 

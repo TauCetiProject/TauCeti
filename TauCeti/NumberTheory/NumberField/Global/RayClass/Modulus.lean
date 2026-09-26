@@ -177,14 +177,17 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
 
+/-- **The exponent is the exact multiplicity of the prime in the finite part**: `v ^ n` divides the
+finite part exactly when `n` is at most the exponent of `v`. -/
+theorem pow_dvd_finitePart_iff_le_exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K))
+    {n : ℕ} : v.asIdeal ^ n ∣ 𝔪.finitePart ↔ n ≤ 𝔪.exponent v := by
+  rw [exponent, le_count_associates_iff_le_pow v 𝔪.finitePart_ne_bot, Ideal.dvd_iff_le]
+
 /-- **The prescribed prime power divides the finite part.**  This is what turns membership in the
 finite part into the valuation bound recorded by `IsCongrOne`. -/
 theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
-    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart := by
-  have h : Associates.mk v.asIdeal ^ 𝔪.exponent v ≤ Associates.mk 𝔪.finitePart :=
-    (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
-      (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
-  rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart :=
+  (pow_dvd_finitePart_iff_le_exponent 𝔪 v).mpr le_rfl
 
 /-- **Membership in the finite part is a local condition.**  An algebraic integer lying in the
 prime power prescribed by the exponent at every prime dividing the finite part lies in the finite
