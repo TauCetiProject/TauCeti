@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.OfFn
-public import Mathlib.Data.Fintype.Pi
+public import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 public import TauCeti.NumberTheory.NumberField.Units.Regulator
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
@@ -21,9 +20,9 @@ integer polynomials of the field degree within that coefficient bound; every uni
 whose minimal polynomial has the field degree belongs to this finite list, in particular every such
 unit when the degree is prime.
 
-The enumeration uses `Polynomial.ofFn`, so it is a finite polynomial list made directly from
-bounded integer coefficient vectors. It is intentionally an overapproximation: a later root test
-and field test eliminate candidates that cannot be units in the given field.
+The enumeration uses the existing finite set of bounded integer polynomials. It is intentionally
+an overapproximation: a later root test and field test eliminate candidates that cannot be units
+in the given field.
 
 ## References
 
@@ -39,22 +38,31 @@ namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The integer coefficient bound used to enumerate possible minimal polynomials of units
-whose selected real value is below `B`. -/
+/-- The integer coefficient bound used for units in a rank-one field whose selected real value
+satisfies `1 < w(v) ≤ B`. -/
 noncomputable def candidateCoeffBound (K : Type*) [Field K] [NumberField K] (B : ℝ) : ℕ :=
   Nat.ceil ((max (B ^ 2) 1) ^ Module.finrank ℚ K *
     (Module.finrank ℚ K).choose (Module.finrank ℚ K / 2))
+
+/-- The formula for the candidate coefficient bound. -/
+@[simp]
+theorem candidateCoeffBound_def (K : Type*) [Field K] [NumberField K] (B : ℝ) :
+    candidateCoeffBound K B = Nat.ceil ((max (B ^ 2) 1) ^ Module.finrank ℚ K *
+      (Module.finrank ℚ K).choose (Module.finrank ℚ K / 2)) := by
+  rfl
 
 /-- The explicit finite list of monic integer polynomials of field degree whose coefficients
 lie within the bound supplied by `candidateCoeffBound`. -/
 noncomputable def unitCandidates (K : Type*) [Field K] [NumberField K] (B : ℝ) :
     Finset ℤ[X] := by
   classical
-  let d := Module.finrank ℚ K
-  let C := candidateCoeffBound K B
-  exact ((Fintype.piFinset fun _ : Fin (d + 1) => Finset.Icc (-(C : ℤ)) C).image
-    (fun a => Polynomial.ofFn (d + 1) a)).filter
-      (fun f => f.Monic ∧ f.natDegree = d)
+  have hfinite : {f : ℤ[X] | f.Monic ∧ f.natDegree = Module.finrank ℚ K ∧
+      ∀ i, |f.coeff i| ≤ (candidateCoeffBound K B : ℤ)}.Finite :=
+    (TauCeti.Polynomial.finite_setOf_natDegree_le_abs_intCoeff_le
+      (Module.finrank ℚ K) (candidateCoeffBound K B)).subset (by
+      intro f hf
+      exact ⟨hf.2.1.le, hf.2.2⟩)
+  exact hfinite.toFinset
 
 /-- Membership in the candidate list is exactly monicity, field degree, and the integer
 coefficient bound. -/
@@ -64,37 +72,7 @@ theorem mem_unitCandidates_iff (f : ℤ[X]) (B : ℝ) :
       f.Monic ∧ f.natDegree = Module.finrank ℚ K ∧
         ∀ i, |f.coeff i| ≤ (candidateCoeffBound K B : ℤ) := by
   classical
-  let d := Module.finrank ℚ K
-  let C := candidateCoeffBound K B
-  simp only [unitCandidates, Finset.mem_filter, Finset.mem_image,
-    Fintype.mem_piFinset, Finset.mem_Icc]
-  constructor
-  · rintro ⟨⟨a, ha, rfl⟩, hmonic, hdeg⟩
-    refine ⟨hmonic, hdeg, fun i => ?_⟩
-    by_cases hi : i < d + 1
-    · have h := ha ⟨i, hi⟩
-      simpa only [ofFn_coeff_eq_val_of_lt a hi, abs_le] using h
-    · rw [ofFn_coeff_eq_zero_of_ge a (Nat.le_of_not_gt hi)]
-      simp
-  · rintro ⟨hmonic, hdeg, hcoeff⟩
-    refine ⟨⟨toFn (d + 1) f, ?_, ?_⟩, hmonic, hdeg⟩
-    · intro i
-      have h := hcoeff i
-      simpa [toFn, abs_le] using h
-    · exact ofFn_comp_toFn_eq_id_of_natDegree_lt (by omega)
-
-open scoped Classical in
-private theorem norm_logEmbedding_le_log_of_interval (hr : rank K = 1)
-    {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
-    (hlo : 1 < w.embedding_of_isReal hw (v : K))
-    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
-    ‖logEmbedding K (Additive.ofMul v)‖ ≤ Real.log B := by
-  have hval : w v = w.embedding_of_isReal hw (v : K) := by
-    rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
-      abs_of_pos (lt_trans zero_lt_one hlo)]
-  rw [norm_logEmbedding_eq_mult_abs_log hr v w, hw.mult_eq_one, Nat.cast_one, one_mul,
-    abs_of_pos (Real.log_pos (hval ▸ hlo))]
-  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi)
+  simp only [unitCandidates, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
 
 /-- Every unit in the selected real interval whose minimal polynomial has the field degree has
 its minimal polynomial in `unitCandidates` when the unit rank is one. -/

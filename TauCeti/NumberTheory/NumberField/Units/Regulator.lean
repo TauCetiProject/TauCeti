@@ -121,6 +121,21 @@ theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
       (mult_abs_log_eq_index_mul_regulator hr u w).symm
 
 open scoped Classical in
+/-- In unit rank one, a positive real value of a unit in `(1, B]` bounds the norm of its
+logarithmic embedding by `log B`. -/
+theorem norm_logEmbedding_le_log_of_interval (hr : rank K = 1)
+    {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
+    (hlo : 1 < w.embedding_of_isReal hw (v : K))
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
+    ‖logEmbedding K (Additive.ofMul v)‖ ≤ Real.log B := by
+  have hval : w v = w.embedding_of_isReal hw (v : K) := by
+    rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
+      abs_of_pos (lt_trans zero_lt_one hlo)]
+  rw [norm_logEmbedding_eq_mult_abs_log hr v w, hw.mult_eq_one, Nat.cast_one, one_mul,
+    abs_of_pos (Real.log_pos (hval ▸ hlo))]
+  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi)
+
+open scoped Classical in
 /-- At a place where `u` has absolute value greater than one, comparing log-embedding norms
 amounts to comparing the absolute logarithm of `v` with the logarithm of `u` at that place. -/
 theorem logEmbedding_norm_lt_iff_at_place (hr : rank K = 1) (u v : (𝓞 K)ˣ)
