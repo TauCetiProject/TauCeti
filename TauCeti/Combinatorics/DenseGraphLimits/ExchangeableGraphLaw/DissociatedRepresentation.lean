@@ -60,9 +60,8 @@ theorem ae_homDensityOnSpace_eq_upperMass_of_isDissociated
   -- `t(F, ·)` is the square of its mean, and its variance is zero
   have hsq : ∀ x : GraphonSpace Ω μ,
       homDensityOnSpace ((F ⊕g F).map finSumFinEquiv.toEmbedding) x =
-        homDensityOnSpace F x ^ 2 := by
-    refine SeparationQuotient.surjective_mk.forall.2 fun W => ?_
-    rw [homDensityOnSpace_mk, homDensityOnSpace_mk, homDensity_map_embedding, homDensity_sum, sq]
+        homDensityOnSpace F x ^ 2 := fun x => by
+    rw [homDensityOnSpace_map_embedding, homDensityOnSpace_sum, sq]
   have hmem : MemLp (homDensityOnSpace (μ := μ) F) 2 (P : Measure (GraphonSpace Ω μ)) :=
     MemLp.of_bound (continuous_homDensityOnSpace F).aestronglyMeasurable 1
       (ae_of_all _ fun x => by

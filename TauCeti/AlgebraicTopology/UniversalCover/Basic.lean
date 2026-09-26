@@ -31,6 +31,7 @@ the quotient topology coming from the compact-open based-path space.
 
 ## Main results
 
+* `UniversalCover.range_proj`: the endpoint projection has range the path component of `x₀`.
 * `UniversalCover.isOpenMap_proj`: the endpoint projection is an open map.
 * `UniversalCover.toPath_homotopic_of_ofBasedPath_eq` and
   `UniversalCover.ofBasedPath_eq_of_homotopic_toPath`: equality in the universal cover is
@@ -119,6 +120,15 @@ theorem isQuotientMap_ofBasedPath (x₀ : X) : IsQuotientMap (ofBasedPath x₀) 
 theorem proj_ofBasedPath (x₀ : X) (γ : BasedPath x₀) :
     proj (ofBasedPath x₀ γ) = BasedPath.endpoint γ :=
   (rfl)
+
+/-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
+@[simp]
+theorem range_proj (x₀ : X) : Set.range (proj : UniversalCover x₀ → X) = pathComponent x₀ := by
+  ext x
+  refine ⟨?_, fun h ↦ ⟨mk x (Path.Homotopic.Quotient.mk h.somePath), rfl⟩⟩
+  rintro ⟨⟨x, q⟩, rfl⟩
+  induction q using Quotient.inductionOn with
+  | h p => exact ⟨p⟩
 
 /-- Equal images under `ofBasedPath` have equal endpoints. -/
 theorem endpoint_eq_of_ofBasedPath_eq {α β : BasedPath x₀}

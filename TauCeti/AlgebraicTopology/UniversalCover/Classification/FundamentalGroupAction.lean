@@ -57,6 +57,9 @@ categorical action on the fibre is `IsCoveringMap.fundamentalGroupMulAction`, an
   `TauCeti.CoveringSpace.fiberActionFunctor_obj_ρ_apply`,
   `TauCeti.CoveringSpace.fiberActionFunctor_obj_mulAction` and
   `TauCeti.CoveringSpace.fiberActionFunctor_map_hom`: its values.
+* `TauCeti.CoveringSpace.fiberActionFunctor_faithful`,
+  `TauCeti.CoveringSpace.fiberActionFunctor_full`: over a path-connected, locally path-connected
+  base the functor is fully faithful, without semilocal simple connectivity.
 * `TauCeti.CoveringSpace.fiberActionEquivalence`: **covering spaces of `X` are equivalent to
   `π₁(X, x₀)`-sets.**
 * `TauCeti.ConnectedCoveringSpace.isTransitiveAction_fiberAction`: the `π₁(X, x₀)`-set attached to a
@@ -135,6 +138,24 @@ theorem fiberActionFunctor_map_hom {p q : CoveringSpace X} (f : p ⟶ q) :
       ↾(Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
   IsCoveringMap.monodromyNatTrans_app p.isCoveringMap_proj q.isCoveringMap_proj
     f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀
+
+/-- Over a path-connected base, the fibre-action functor is faithful: the fundamental groupoid is
+connected, so restricting its actions to the vertex group at `x₀` is an equivalence. -/
+instance fiberActionFunctor_faithful [PathConnectedSpace X] :
+    (fiberActionFunctor x₀).Faithful := by
+  have := Groupoid.isEquivalence_singleObjFunctor (C := FundamentalGroupoid X)
+    (FundamentalGroupoid.mk x₀) (FundamentalGroupoid.nonempty_hom _)
+  unfold fiberActionFunctor
+  infer_instance
+
+/-- Over a path-connected, locally path-connected base, the fibre-action functor is full: every
+`π₁(X, x₀)`-equivariant map of fibres over `x₀` is induced by a map of covering spaces. -/
+instance fiberActionFunctor_full [PathConnectedSpace X] [LocallyPathConnectedSpace X] :
+    (fiberActionFunctor x₀).Full := by
+  have := Groupoid.isEquivalence_singleObjFunctor (C := FundamentalGroupoid X)
+    (FundamentalGroupoid.mk x₀) (FundamentalGroupoid.nonempty_hom _)
+  unfold fiberActionFunctor
+  infer_instance
 
 section Classification
 
@@ -216,6 +237,7 @@ instance transitiveFiberActionFunctor_faithful :
 instance transitiveFiberActionFunctor_full : (transitiveFiberActionFunctor x₀).Full :=
   inferInstanceAs <| (ObjectProperty.lift _ _ _).Full
 
+omit [PathConnectedSpace X] in
 /-- **Every transitive `π₁(X, x₀)`-set is the fibre action of a connected cover.** The cover is
 the quotient of the universal cover by the stabiliser of a point of the set. -/
 theorem exists_fiberAction_iso (A : Action (Type u) (FundamentalGroup X x₀))
