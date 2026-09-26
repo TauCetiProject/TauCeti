@@ -133,22 +133,23 @@ section Trace
 variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
   [AddCommMonoid V] [Module L V] [Module K V] [IsScalarTower K L V]
 
+variable (K) in
 /-- Transfer along the algebra trace. For a finite separable field extension the functional is
 nonzero, by `Algebra.trace_ne_zero`. -/
 noncomputable def traceTransfer (Q : QuadraticForm L V) : QuadraticForm K V :=
   Q.scharlauTransfer (Algebra.trace K L)
 
 theorem traceTransfer_apply (Q : QuadraticForm L V) (x : V) :
-    Q.traceTransfer (K := K) x = Algebra.trace K L (Q x) := (rfl)
+    Q.traceTransfer K x = Algebra.trace K L (Q x) := (rfl)
 
 /-- Trace transfer is Scharlau transfer along the algebra trace. -/
 @[simp]
 theorem traceTransfer_eq_scharlauTransfer (Q : QuadraticForm L V) :
-    Q.traceTransfer (K := K) = Q.scharlauTransfer (Algebra.trace K L) := (rfl)
+    Q.traceTransfer K = Q.scharlauTransfer (Algebra.trace K L) := (rfl)
 
 /-- The trace transfer of the one-dimensional unit form is the quadratic trace form. -/
 theorem traceTransfer_sq :
-    (QuadraticMap.sq (R := L) (A := L)).traceTransfer (K := K) =
+    (QuadraticMap.sq (R := L) (A := L)).traceTransfer K =
       (Algebra.traceForm K L).toQuadraticMap := by
   ext x
   simp [QuadraticMap.sq_apply, Algebra.traceForm_apply]
@@ -239,10 +240,9 @@ theorem exists_unit_scharlauTransfer_eq [FiniteDimensional K L]
 
 /-- Trace transfer is regular exactly when the original form is, for a finite separable
 extension in characteristic different from two. -/
-@[simp]
 theorem nondegenerate_traceTransfer_iff [Invertible (2 : K)]
     [FiniteDimensional K L] [Algebra.IsSeparable K L] (Q : QuadraticForm L V) :
-    (Q.traceTransfer (K := K)).Nondegenerate ↔ Q.Nondegenerate := by
+    (Q.traceTransfer K).Nondegenerate ↔ Q.Nondegenerate := by
   rw [traceTransfer_eq_scharlauTransfer]
   exact Q.nondegenerate_scharlauTransfer_iff_of_ne_zero _ (Algebra.trace_ne_zero K L)
 
