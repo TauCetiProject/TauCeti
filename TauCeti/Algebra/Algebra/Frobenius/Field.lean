@@ -25,9 +25,9 @@ noncomputable section
 
 namespace TauCeti
 
-variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- On a finite field extension, a `K`-linear functional is Frobenius exactly when it
+/-- On a field extension, a `K`-linear functional is Frobenius exactly when it
 is nonzero. Separability is unnecessary. -/
 @[simp]
 theorem _root_.LinearMap.isFrobeniusFunctional_iff_ne_zero (s : L →ₗ[K] K) :
@@ -43,16 +43,18 @@ theorem _root_.LinearMap.isFrobeniusFunctional_iff_ne_zero (s : L →ₗ[K] K) :
       apply hs
       ext y
       exact h y
-    apply LinearMap.IsFrobeniusFunctional.of_left
-    intro a ha
-    by_contra hne
-    have hmul : a * (a⁻¹ * x) = x := by field_simp
-    exact hx (hmul ▸ ha (a⁻¹ * x))
+    have hleft : ∀ a : L, (∀ b, s (a * b) = 0) → a = 0 := by
+      intro a ha
+      by_contra hne
+      have hmul : a * (a⁻¹ * x) = x := by field_simp
+      exact hx (hmul ▸ ha (a⁻¹ * x))
+    exact LinearMap.isFrobeniusFunctional_iff.mpr
+      ⟨hleft, fun b hb => hleft b (fun a => by simpa [mul_comm] using hb a)⟩
 
 /-- Two nonzero `K`-linear functionals on a finite extension differ by multiplication
 by a unique unit of the extension. -/
 theorem _root_.LinearMap.existsUnique_unit_apply_eq_apply_mul (s t : L →ₗ[K] K)
-    (hs : s ≠ 0) (ht : t ≠ 0) :
+    [FiniteDimensional K L] (hs : s ≠ 0) (ht : t ≠ 0) :
     ∃! u : Lˣ, ∀ x : L, t x = s ((u : L) * x) := by
   let e := s.isFrobeniusFunctional_iff_ne_zero.mpr hs |>.toDualEquiv
   let a := e.symm t
