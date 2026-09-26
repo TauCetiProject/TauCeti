@@ -30,10 +30,9 @@ open scoped NumberField
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 variable {θ : 𝓞 K}
 
-omit [NumberField K] in
 /-- The defining cubic relation, expressed inside the ring of integers. -/
 theorem dedekindCubic_relation
     (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
@@ -42,6 +41,8 @@ theorem dedekindCubic_relation
   rw [hθ] at h
   simpa only [map_sub, map_mul, map_pow, aeval_X, aeval_C,
     map_ofNat, map_zero] using h
+
+variable [CharZero K]
 
 private theorem beta_relation_in_field
     (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
@@ -86,7 +87,7 @@ theorem dedekindBeta_relation
   exact beta_relation_in_field hθ
 
 /-- The relation `θ² = θ + 2β` in the integral order. -/
-theorem dedekindCubic_sq
+@[simp] theorem dedekindCubic_sq
     (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
     θ ^ 2 = θ + 2 * dedekindBeta hθ := by
   apply RingOfIntegers.ext
@@ -94,7 +95,7 @@ theorem dedekindCubic_sq
   ring
 
 /-- The product `θβ` in the integral order. -/
-theorem dedekindCubic_mul_beta
+@[simp] theorem dedekindCubic_mul_beta
     (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
     θ * dedekindBeta hθ = θ + 4 := by
   apply RingOfIntegers.ext
@@ -105,7 +106,7 @@ theorem dedekindCubic_mul_beta
   linear_combination (1 / 2 : K) * hrel
 
 /-- The square `β²` in the integral order. -/
-theorem dedekindCubic_beta_sq
+@[simp] theorem dedekindCubic_beta_sq
     (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
     dedekindBeta hθ ^ 2 = dedekindBeta hθ + 2 * θ - 2 := by
   apply RingOfIntegers.ext
