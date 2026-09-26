@@ -148,8 +148,7 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂ�
   rw [characterPairing_GL2ScalarUnipotentInduction_self
       (theta.comp (Units.map (algebraMap F E : F →* E))) hpsi,
     characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction hE theta psi,
-    hcross, characterPairing_GL2EllipticInduction_self F E hE theta (by
-      simpa only [Nat.card_eq_fintype_card] using htheta)]
+    hcross, characterPairing_GL2EllipticInduction_self F E hE theta htheta]
   ring
 
 variable [DecidableEq F]

@@ -447,7 +447,7 @@ private theorem elliptic_pairing_term (theta : Eˣ →* ℂˣ) (u : Eˣ)
     field_simp
     rw [Nat.card_eq_fintype_card]
   · have huinv : ((u⁻¹ : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
-      simpa only [coe_inv_mem_range_iff] using hu
+      simpa only [Set.mem_range, coe_inv_mem_range_iff] using hu
     rw [character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ huinv]
     simp [mul_add, inv_pow]
 
@@ -496,7 +496,7 @@ open scoped Classical in
 `q`-power map. -/
 @[simp]
 theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
-    (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     ClassFunction.characterPairing
         (ClassFunction.ofFDRep (GL2EllipticInduction F E hE theta))
         (ClassFunction.ofFDRep (GL2EllipticInduction F E hE theta)) =
@@ -518,7 +518,8 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
   simp_rw [elliptic_pairing_term F E hE theta]
   let delta : Eˣ →* ℂˣ := theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹
   have hsumdelta : ∑ u : Eˣ, (delta u : ℂ) = 0 :=
-    sum_elliptic_character_quotient_eq_zero F E theta htheta
+    sum_elliptic_character_quotient_eq_zero F E theta (by
+      simpa only [Nat.card_eq_fintype_card] using htheta)
   let p : Eˣ → Prop := fun u => (u : E) ∈ Set.range (algebraMap F E)
   have hcardBase : (Finset.univ.filter p).card = Fintype.card F - 1 := by
     rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
