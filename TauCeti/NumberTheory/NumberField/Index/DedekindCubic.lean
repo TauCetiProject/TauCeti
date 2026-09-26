@@ -90,7 +90,8 @@ theorem dedekindBeta_relation
     coe_dedekindBeta]
   exact beta_relation_in_field hθ
 
-/-- The relation `θ² = θ + 2β` in the integral order. -/
+/-- The relation `θ² = θ + 2β` in the integral order. Rewrite with the given relation,
+for example using `simp only [dedekindCubic_theta_sq hθ]`. -/
 theorem dedekindCubic_theta_sq
     (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     θ ^ 2 = θ + 2 * dedekindBeta hθ := by
