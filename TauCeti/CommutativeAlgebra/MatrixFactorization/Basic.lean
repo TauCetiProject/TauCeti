@@ -149,30 +149,14 @@ instance : (parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
 /-- A map from an elementary disk is determined by its even component. -/
 def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
     (X : MatrixFactorization S w) :
-    (disk (w := w) P ⟶ X) ≃ₗ[S] (P ⟶ X.obj.X₀) where
-  toFun f := f.hom.f₀
-  invFun g := ObjectProperty.homMk ((CurvedDuplex.diskHomEquiv P X.obj).symm g)
-  left_inv f := by
-    cases f with
-    | mk f =>
-      -- A full-subcategory hom is the underlying curved-duplex hom.
-      change ObjectProperty.homMk ((CurvedDuplex.diskHomEquiv P X.obj).symm f.f₀) =
-        ObjectProperty.homMk f
-      congr 1
-      apply CurvedDuplex.hom_ext
-      · exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj f.f₀
-      · exact (CurvedDuplex.diskHomEquiv_symm_apply_f₁ P X.obj f.f₀).trans (by
-          simpa using f.comm₀)
-  right_inv g := by
-    -- The inverse is the curved-duplex disk map, bundled as a full-subcategory hom.
-    change ((CurvedDuplex.diskHomEquiv P X.obj).symm g).f₀ = g
-    exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj g
-  map_add' f g := rfl
-  map_smul' a f := rfl
+    (disk (w := w) P ⟶ X) ≃ₗ[S] (P ⟶ X.obj.X₀) :=
+  InducedCategory.homLinearEquiv.trans (CurvedDuplex.diskHomEquiv P X.obj)
 
 @[simp] theorem diskHomEquiv_apply (P : FGModuleCat.{u} S) [Module.Projective S P]
     (X : MatrixFactorization S w) (f : disk (w := w) P ⟶ X) :
-    diskHomEquiv P X f = f.hom.f₀ := (rfl)
+    diskHomEquiv P X f = f.hom.f₀ := by
+  change CurvedDuplex.diskHomEquiv P X.obj f.hom = f.hom.f₀
+  exact CurvedDuplex.diskHomEquiv_apply P X.obj f.hom
 
 @[simp] theorem diskHomEquiv_symm_apply_hom_f₀ (P : FGModuleCat.{u} S)
     [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
