@@ -62,13 +62,6 @@ end ComoduleCat
 
 namespace FGComoduleCat
 
-/-- Forget a finite comodule to its underlying module. -/
-instance : HasForget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R) :=
-  HasForget₂.trans _ (ComoduleCat.{u, v, w} R C) _
-
-instance : (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive :=
-  inferInstanceAs ((incl ⋙ forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive)
-
 variable [IsNoetherianRing R] [Module.Flat R C]
 
 /-- Finite comodules over a flat coalgebra over a Noetherian commutative ring are abelian. -/

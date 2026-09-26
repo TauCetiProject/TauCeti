@@ -38,22 +38,6 @@ variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 noncomputable section
 
-/-- Forget a comodule over a ring to its underlying module. -/
-instance : HasForget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R) where
-  forget₂ := forget₂ (ComoduleCat R C) (SemimoduleCat R) ⋙
-    (ModuleCat.equivalenceSemimoduleCat (R := R)).inverse
-
-/-- The underlying linear map of a forgotten comodule morphism. -/
-@[simp]
-theorem forget₂_moduleCat_map {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    ((forget₂ (ComoduleCat R C) (ModuleCat R)).map f).hom = f.toLinearMap := rfl
-
-instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Faithful where
-  map_injective h := Comodule.Hom.toLinearMap_injective (congrArg ModuleCat.Hom.hom h)
-
-instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive where
-  map_add := rfl
-
 variable {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N)
 
 section Kernel
