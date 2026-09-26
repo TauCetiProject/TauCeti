@@ -54,8 +54,29 @@ theorem scharlauTransfer_apply (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x : 
 
 /-- The zero form transfers to the zero form. -/
 @[simp]
-theorem zero_scharlauTransfer (s : L →ₗ[K] K) :
+theorem scharlauTransfer_zero (s : L →ₗ[K] K) :
     (0 : QuadraticForm L V).scharlauTransfer s = 0 := by
+  ext x
+  simp
+
+/-- Transfer along the zero functional is zero. -/
+@[simp]
+theorem scharlauTransfer_zero_functional (Q : QuadraticForm L V) :
+    Q.scharlauTransfer (0 : L →ₗ[K] K) = 0 := by
+  ext x
+  simp
+
+/-- Transfer preserves addition of forms. -/
+@[simp]
+theorem scharlauTransfer_add (Q R : QuadraticForm L V) (s : L →ₗ[K] K) :
+    (Q + R).scharlauTransfer s = Q.scharlauTransfer s + R.scharlauTransfer s := by
+  ext x
+  simp
+
+/-- Transfer commutes with scaling by an element of the smaller ring. -/
+@[simp]
+theorem scharlauTransfer_smul (Q : QuadraticForm L V) (s : L →ₗ[K] K) (c : K) :
+    (c • Q).scharlauTransfer s = c • Q.scharlauTransfer s := by
   ext x
   simp
 
@@ -107,10 +128,51 @@ theorem scharlauTransfer_scharlauTransfer (Q : QuadraticForm E V)
 
 end Tower
 
+section Trace
+
+variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
+  [AddCommMonoid V] [Module L V] [Module K V] [IsScalarTower K L V]
+
+/-- Transfer along the algebra trace. For a finite separable field extension the functional is
+nonzero, by `Algebra.trace_ne_zero`. -/
+noncomputable def traceTransfer (Q : QuadraticForm L V) : QuadraticForm K V :=
+  Q.scharlauTransfer (Algebra.trace K L)
+
+theorem traceTransfer_apply (Q : QuadraticForm L V) (x : V) :
+    Q.traceTransfer (K := K) x = Algebra.trace K L (Q x) := (rfl)
+
+/-- Trace transfer is Scharlau transfer along the algebra trace. -/
+@[simp]
+theorem traceTransfer_eq_scharlauTransfer (Q : QuadraticForm L V) :
+    Q.traceTransfer (K := K) = Q.scharlauTransfer (Algebra.trace K L) := (rfl)
+
+/-- The trace transfer of the one-dimensional unit form is the quadratic trace form. -/
+theorem traceTransfer_sq :
+    (QuadraticMap.sq (R := L) (A := L)).traceTransfer (K := K) =
+      (Algebra.traceForm K L).toQuadraticMap := by
+  ext x
+  simp [QuadraticMap.sq_apply, Algebra.traceForm_apply]
+
+end Trace
+
 section Ring
 
 variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
   [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
+
+/-- Transfer preserves negation of forms. -/
+@[simp]
+theorem scharlauTransfer_neg (Q : QuadraticForm L V) (s : L →ₗ[K] K) :
+    (-Q).scharlauTransfer s = -Q.scharlauTransfer s := by
+  ext x
+  simp
+
+/-- Transfer preserves subtraction of forms. -/
+@[simp]
+theorem scharlauTransfer_sub (Q R : QuadraticForm L V) (s : L →ₗ[K] K) :
+    (Q - R).scharlauTransfer s = Q.scharlauTransfer s - R.scharlauTransfer s := by
+  ext x
+  simp
 
 /-- The polar form of a transfer is obtained by applying the functional to the polar form. -/
 @[simp]
@@ -118,17 +180,10 @@ theorem polar_scharlauTransfer (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x y 
     QuadraticMap.polar (Q.scharlauTransfer s) x y = s (QuadraticMap.polar Q x y) :=
   s.compQuadraticMap_polar Q x y
 
-end Ring
-
-section Field
-
-variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
-  [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
-
-/-- A nonzero functional preserves the radical in characteristic different from two. -/
+/-- A Frobenius functional preserves the radical when two is invertible. -/
 @[simp]
 theorem radical_scharlauTransfer [Invertible (2 : K)]
-    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
+    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s.IsFrobeniusFunctional) :
     (Q.scharlauTransfer s).radical = Q.radical.restrictScalars K := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
@@ -138,22 +193,41 @@ theorem radical_scharlauTransfer [Invertible (2 : K)]
     LinearMap.zero_apply, QuadraticMap.polarBilin_apply_apply, polar_scharlauTransfer]
   constructor
   · intro hx y
-    apply (s.isFrobeniusFunctional_iff_ne_zero.mpr hs).eq_zero_of_forall_right
+    apply hs.eq_zero_of_forall_right
     intro a
     simpa only [QuadraticMap.polar_smul_right, smul_eq_mul] using hx (a • y)
   · intro hx y
     simp [hx y]
 
-/-- Transfer along a nonzero functional preserves and reflects regularity. -/
+/-- Transfer along a Frobenius functional preserves and reflects regularity. -/
 @[simp]
 theorem nondegenerate_scharlauTransfer_iff [Invertible (2 : K)]
-    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
+    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s.IsFrobeniusFunctional) :
     (Q.scharlauTransfer s).Nondegenerate ↔ Q.Nondegenerate := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [QuadraticMap.nondegenerate_iff_radical_eq_bot,
     Q.radical_scharlauTransfer s hs, Submodule.restrictScalars_eq_bot_iff,
     QuadraticMap.nondegenerate_iff_radical_eq_bot]
+
+end Ring
+
+section Field
+
+variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
+  [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
+
+/-- A nonzero functional preserves the radical in characteristic different from two. -/
+theorem radical_scharlauTransfer_of_ne_zero [Invertible (2 : K)]
+    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
+    (Q.scharlauTransfer s).radical = Q.radical.restrictScalars K :=
+  Q.radical_scharlauTransfer s (s.isFrobeniusFunctional_iff_ne_zero.mpr hs)
+
+/-- Transfer along a nonzero functional preserves and reflects regularity over fields. -/
+theorem nondegenerate_scharlauTransfer_iff_of_ne_zero [Invertible (2 : K)]
+    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
+    (Q.scharlauTransfer s).Nondegenerate ↔ Q.Nondegenerate :=
+  Q.nondegenerate_scharlauTransfer_iff s (s.isFrobeniusFunctional_iff_ne_zero.mpr hs)
 
 /-- Over a finite field extension, changing between any two nonzero functionals amounts to
 scaling the form by a unit before transfer. -/
@@ -163,29 +237,14 @@ theorem exists_unit_scharlauTransfer_eq [FiniteDimensional K L]
   obtain ⟨a, ha, _⟩ := s.existsUnique_unit_apply_eq_apply_mul t hs ht
   exact ⟨a, QuadraticMap.ext fun x => by simpa [smul_eq_mul] using ha (Q x)⟩
 
-/-- Transfer along the field trace. For a finite separable extension the functional is
-nonzero, by `Algebra.trace_ne_zero`. -/
-noncomputable def traceTransfer (Q : QuadraticForm L V) : QuadraticForm K V :=
-  Q.scharlauTransfer (Algebra.trace K L)
-
-@[simp]
-theorem traceTransfer_apply (Q : QuadraticForm L V) (x : V) :
-    Q.traceTransfer (K := K) x = Algebra.trace K L (Q x) := (rfl)
-
 /-- Trace transfer is regular exactly when the original form is, for a finite separable
 extension in characteristic different from two. -/
 @[simp]
 theorem nondegenerate_traceTransfer_iff [Invertible (2 : K)]
     [FiniteDimensional K L] [Algebra.IsSeparable K L] (Q : QuadraticForm L V) :
-    (Q.traceTransfer (K := K)).Nondegenerate ↔ Q.Nondegenerate :=
-  Q.nondegenerate_scharlauTransfer_iff _ (Algebra.trace_ne_zero K L)
-
-/-- The trace transfer of the one-dimensional unit form is the quadratic trace form. -/
-theorem traceTransfer_sq :
-    (QuadraticMap.sq (R := L) (A := L)).traceTransfer (K := K) =
-      (Algebra.traceForm K L).toQuadraticMap := by
-  ext x
-  simp [QuadraticMap.sq_apply, Algebra.traceForm_apply]
+    (Q.traceTransfer (K := K)).Nondegenerate ↔ Q.Nondegenerate := by
+  rw [traceTransfer_eq_scharlauTransfer]
+  exact Q.nondegenerate_scharlauTransfer_iff_of_ne_zero _ (Algebra.trace_ne_zero K L)
 
 end Field
 
