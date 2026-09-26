@@ -175,12 +175,6 @@ abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
     (t.geckDefiningIdeal ht)
 
-/-- The Geck carrier is the group scheme represented by `geckCoordinateHopfAlgebra`. -/
-theorem geckGroupScheme_eq_hopfSpec :
-    t.geckGroupScheme ht =
-      (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op (t.geckCoordinateHopfAlgebra ht)) :=
-  by rw [geckGroupScheme_def]
-
 /-- The Geck carrier is a closed subgroup scheme of `GLₙ`. -/
 def geckGroupSchemeι :
     t.geckGroupScheme ht ⟶ GeneralLinear.groupScheme ℤ (t.geckDim ht) :=

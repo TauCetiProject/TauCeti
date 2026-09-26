@@ -71,7 +71,8 @@ noncomputable def geckGroupSchemePointMulEquiv (A : Type) [CommRing A] :
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
         (t.geckGroupScheme ht).X) :=
   CommHopfAlgCat.mapMulEquivOfPresentation (t.geckCoordinateHopfAlgebra ht) A
-    (t.geckGroupScheme_eq_hopfSpec ht)
+    (by simpa only [geckCoordinateHopfAlgebra] using
+      t.geckGroupScheme_def ht)
 
 /-- The underlying spectrum map of a quotient point of the Geck carrier. -/
 @[simp]
@@ -81,12 +82,20 @@ theorem geckGroupSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (t.geckGroupSchemePointMulEquiv ht A q).left =
       Spec.map (CommRingCat.ofHom (q.ofConv : t.geckCoordinateHopfAlgebra ht →+* A)) ≫
         eqToHom (congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) => G.X.left)
-          (t.geckGroupScheme_eq_hopfSpec ht)).symm := by
+          (show t.geckGroupScheme ht =
+              (hopfSpec (CommRingCat.of ℤ)).obj
+                (Opposite.op (t.geckCoordinateHopfAlgebra ht)) by
+            simpa only [geckCoordinateHopfAlgebra] using t.geckGroupScheme_def ht)).symm := by
   simpa only [geckGroupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (t.geckCoordinateHopfAlgebra ht) A (t.geckGroupScheme_eq_hopfSpec ht)
+      (t.geckCoordinateHopfAlgebra ht) A
+      (by simpa only [geckCoordinateHopfAlgebra] using
+        t.geckGroupScheme_def ht)
       (congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) => G.X.left)
-        (t.geckGroupScheme_eq_hopfSpec ht)) q
+        (show t.geckGroupScheme ht =
+            (hopfSpec (CommRingCat.of ℤ)).obj
+              (Opposite.op (t.geckCoordinateHopfAlgebra ht)) by
+          simpa only [geckCoordinateHopfAlgebra] using t.geckGroupScheme_def ht)) q
 
 /-- Scheme-valued points of the Geck carrier, identified with its matrix points. -/
 noncomputable def geckSchemePointsMulEquiv (A : Type) [CommRing A] :
@@ -140,7 +149,8 @@ theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
           (CommAlgCat.ofHom f.toIntAlgHom) q := by
     convert CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
       (t.geckCoordinateHopfAlgebra ht) f.toIntAlgHom
-      (t.geckGroupScheme_eq_hopfSpec ht) p using 1 <;>
+      (by simpa only [geckCoordinateHopfAlgebra] using
+        t.geckGroupScheme_def ht) p using 1 <;>
         simp only [q, geckGroupSchemePointMulEquiv]
     congr 1
   simp only [geckSchemePointsMulEquiv, MulEquiv.trans_apply]
@@ -189,7 +199,9 @@ private theorem groupSchemePointMulEquiv_comp_geckRootSubgroup
   simp only [Category.assoc, geckRootSubgroupCoordinatePoint, id_eq]
   rw [UniversalEnvelopingAlgebra.kostantRootSubgroupToralPoints_apply]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := ℤ) A
-    (t.geckGroupScheme_eq_hopfSpec ht) (AdditiveGroup.groupScheme_def ℤ)
+    (by simpa only [geckCoordinateHopfAlgebra] using
+      t.geckGroupScheme_def ht)
+    (AdditiveGroup.groupScheme_def ℤ)
     (t.geckGroupSchemePointMulEquiv ht A) (AdditiveGroup.groupSchemePointMulEquiv A)
     (t.geckGroupSchemePointMulEquiv_apply_left ht A)
     (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)

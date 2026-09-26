@@ -76,11 +76,13 @@ def geckWeylWordCoordinatePoint (l : List (Fin t.rank)) :
 /-- **Inner conjugation by the integral Weyl-word point**, as an automorphism of the Geck group
 scheme. On points over a commutative ring it sends `g` to `n_l g n_l⁻¹`. -/
 def geckWeylWordInnerConjugation (l : List (Fin t.rank)) : Aut (t.geckGroupScheme ht) :=
-  (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).trans
+  (eqToIso (by simpa only [geckCoordinateHopfAlgebra] using
+    t.geckGroupScheme_def ht)).trans
     ((hopfSpec (CommRingCat.of ℤ)).mapIso
       (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
         (t.geckWeylWordCoordinatePoint ht l)).op) |>.trans
-    (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).symm
+    (eqToIso (by simpa only [geckCoordinateHopfAlgebra] using
+      t.geckGroupScheme_def ht)).symm
 
 /-- Forgetting the group-object and over-category structure of the Weyl-word automorphism
 recovers its underlying scheme automorphism. This localizes the definitional behavior of the two
@@ -103,9 +105,13 @@ theorem geckGroupSchemePointMulEquiv_comp_geckWeylWordInnerConjugation
         ((CommHopfAlgCat.mapPointsFunctor
           (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
             (t.geckWeylWordCoordinatePoint ht l)).hom).app (CommAlgCat.of ℤ A) q) := by
+  have hG : t.geckGroupScheme ht =
+      (hopfSpec (CommRingCat.of ℤ)).obj
+        (Opposite.op (t.geckCoordinateHopfAlgebra ht)) := by
+    simpa only [geckCoordinateHopfAlgebra] using t.geckGroupScheme_def ht
   rw [geckWeylWordInnerConjugation]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := ℤ) A
-    (t.geckGroupScheme_eq_hopfSpec ht) (t.geckGroupScheme_eq_hopfSpec ht)
+    hG hG
     (t.geckGroupSchemePointMulEquiv ht A) (t.geckGroupSchemePointMulEquiv ht A)
     (t.geckGroupSchemePointMulEquiv_apply_left ht A)
     (t.geckGroupSchemePointMulEquiv_apply_left ht A)
