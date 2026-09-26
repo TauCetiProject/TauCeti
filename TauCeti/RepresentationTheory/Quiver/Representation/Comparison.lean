@@ -149,6 +149,7 @@ theorem indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero {i j : Q} (p
 /-- **At the vertex `i`, the surjection `Pᵢ ↠ Sᵢ` reads off the coefficient of the trivial path**:
 an element of `(Pᵢ)ᵢ` goes to that coefficient times the generator of `(Sᵢ)ᵢ`. Every other path
 `i → i` is a cycle of positive length and is killed. -/
+@[simp]
 theorem indecProjRepToSimpleRep_app_self_apply (i : Q)
     (x : (indecProjRep k Q i).obj ((Paths.of Q).obj i)) :
     (indecProjRepToSimpleRep k i).app ((Paths.of Q).obj i) x

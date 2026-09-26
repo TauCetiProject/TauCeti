@@ -42,17 +42,9 @@ Every invariant additive on short exact sequences therefore satisfies
 
 * `TauCeti.indecProjRepBasis_repr_indecProjRepArrowHom_app`: in the path bases, the morphism of
   an arrow `e` is the map `q ↦ e.toPath.comp q` on paths.
-* `TauCeti.eq_zero_of_sum_indecProjRepArrowHom_app_eq_zero`: the arrow morphisms out of `i` are
-  jointly injective at every vertex, their images being spanned by disjoint sets of paths.
 * `TauCeti.mono_arrowSumToIndecProjRep`: `⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ` is a monomorphism.
 * `TauCeti.shortExact_arrowSumToIndecProjRep`: **the sequence
   `0 ⟶ ⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ ⟶ Sᵢ ⟶ 0` is short exact.**
-
-## Implementation notes
-
-Mathlib's `CategoryTheory.biproduct.total` is stated only for index types in `Type`, while the
-arrows out of `i` form a type in the universe of the quiver; the one place it is needed, the proof
-of `TauCeti.mono_arrowSumToIndecProjRep`, proves the decomposition of the identity directly.
 
 ## References
 
@@ -71,9 +63,6 @@ universe u v w
 section ArrowHom
 
 variable (k : Type u) {Q : Type v} [Field k] [Quiver.{w} Q]
-
-/-- Representations of a quiver have finite biproducts, computed vertexwise. -/
-instance : HasFiniteBiproducts (QuiverRep k Q) := HasFiniteBiproducts.of_hasFiniteProducts
 
 /-- **The morphism of an arrow**: for `e : i ⟶ j`, the morphism `Pⱼ ⟶ Pᵢ` prefixing `e` to every
 path out of `j`. Under the universal property of `Pⱼ` it is the element `e` of `(Pᵢ)ⱼ`. -/
@@ -119,6 +108,7 @@ theorem indecProjRepBasis_repr_indecProjRepArrowHom_app_comp {i j b : Q} (e : i 
 
 /-- The image of the morphism of an arrow `e` has no coordinate at a path starting with a
 different arrow `e'`. -/
+@[simp]
 theorem indecProjRepBasis_repr_indecProjRepArrowHom_app_comp_of_ne {i j j' b : Q} (e : i ⟶ j)
     (e' : i ⟶ j') (h : (⟨j, e⟩ : (a : Q) × (i ⟶ a)) ≠ ⟨j', e'⟩)
     (x : (indecProjRep k Q j).obj ((Paths.of Q).obj b)) (q : Quiver.Path j' b) :
@@ -136,7 +126,8 @@ theorem indecProjRepBasis_repr_indecProjRepArrowHom_app_comp_of_ne {i j j' b : Q
 vectors whose images under the arrow morphisms sum to zero is zero. The image of the morphism of
 `e` is spanned by the paths beginning with `e`, and paths beginning with different arrows are
 different. -/
-theorem eq_zero_of_sum_indecProjRepArrowHom_app_eq_zero {i : Q} [Fintype ((j : Q) × (i ⟶ j))]
+private theorem eq_zero_of_sum_indecProjRepArrowHom_app_eq_zero {i : Q}
+    [Fintype ((j : Q) × (i ⟶ j))]
     {b : Q} (y : ∀ a : (j : Q) × (i ⟶ j), (indecProjRep k Q a.1).obj ((Paths.of Q).obj b))
     (hy : ∑ a, (indecProjRepArrowHom k a.2).app ((Paths.of Q).obj b) (y a) = 0)
     (a : (j : Q) × (i ⟶ j)) : y a = 0 := by
