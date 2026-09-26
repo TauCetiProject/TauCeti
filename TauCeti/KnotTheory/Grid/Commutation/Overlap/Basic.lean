@@ -45,7 +45,7 @@ must distinguish the two cases.
   is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
   exactly one of the two new rectangles has the original pentagon's terminal side.
-* `TauCeti.GridRectanglePentagonDecomposition.recut_of_isEmpty`: the shared underlying
+* `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty`: the shared underlying
   rectangle recut with the emptiness hypotheses discharged once, used by all
   terminal-side overlap results instead of repeating the construction.
 
@@ -461,7 +461,7 @@ theorem recut_first_or_second_right_eq_pentagon_right
 recut along its common side, with the rectangle emptiness supplied from `hrectangle` and the
 pentagon emptiness from `hpentagon`. All overlap results that need the recut work with this
 single construction rather than repeating it. -/
-@[expose] noncomputable def recut_of_isEmpty
+@[expose] noncomputable def recutOfIsEmpty
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :

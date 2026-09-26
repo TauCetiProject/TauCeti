@@ -783,10 +783,15 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
   exact Finset.mem_union.mpr (Or.inl hmem)
 
 /-- A point is never in the half-open cyclic interval starting at its own successor.
-The interval `cIco (finRotate n c) r` starts just after `c`; since `c` is the immediate
-predecessor of the left endpoint, `c` can only appear as the (excluded) right endpoint. -/
-@[simp]
-theorem notMem_cIco_finRotate_left (c r : Fin n) : c ∉ cIco (finRotate n c) r := by
+The interval `cIco (c + 1) r` starts just after `c` (note `c + 1 = finRotate n c`
+by `finRotate_apply`); since `c` is the immediate predecessor of the left endpoint,
+`c` can only appear as the (excluded) right endpoint.
+Stated with `c + 1` rather than `finRotate n c` so the left-hand side is already
+in simp normal form (`finRotate_apply` would otherwise rewrite it). -/
+@[simp high]
+theorem notMem_cIco_finRotate_left [NeZero n] (c r : Fin n) : c ∉ cIco (c + 1) r := by
+  have h : c + 1 = finRotate n c := (finRotate_apply c).symm
+  rw [h]
   cases n with
   | zero => exact c.elim0
   | succ n =>

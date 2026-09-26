@@ -62,19 +62,19 @@ theorem first_recut_branch_data_of_right_eq_right
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hfirst : (D.recut_of_isEmpty hone hrectangle hpentagon).first.right = D.pentagon.right) :
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right = D.pentagon.right) :
     D.toRectangleDecomposition.second.left ∈
         Grid.cIoo D.toRectangleDecomposition.first.left
           D.toRectangleDecomposition.first.right ∧
-      (D.recut_of_isEmpty hone hrectangle hpentagon).first.right =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
         D.toRectangleDecomposition.first.right ∧
-      (D.recut_of_isEmpty hone hrectangle hpentagon).first.left =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
         D.toRectangleDecomposition.second.left := by
   obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
   -- View the branch data as data about the shared recut (definitionally the same
   -- construction, by proof irrelevance of the emptiness arguments).
   have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
-      (D.recut_of_isEmpty hone hrectangle hpentagon) :=
+      (D.recutOfIsEmpty hone hrectangle hpentagon) :=
     D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
   have hbranch := hdata.recut_branch
   rcases hbranch with ⟨-, -, hEfirst, -⟩ | ⟨hcol, -, hEfirstB, -⟩
@@ -95,22 +95,22 @@ theorem second_recut_branch_data_of_right_eq_right
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hsecond : (D.recut_of_isEmpty hone hrectangle hpentagon).second.right = D.pentagon.right) :
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right = D.pentagon.right) :
     D.toRectangleDecomposition.first.left ∈
         Grid.cIoo D.toRectangleDecomposition.second.left
           D.toRectangleDecomposition.first.right ∧
-      (D.recut_of_isEmpty hone hrectangle hpentagon).second.right =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
         D.toRectangleDecomposition.first.right ∧
-      (D.recut_of_isEmpty hone hrectangle hpentagon).second.left =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.left =
         D.toRectangleDecomposition.first.left ∧
-      (D.recut_of_isEmpty hone hrectangle hpentagon).middle =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).middle =
         x.swapColumns D.toRectangleDecomposition.second.left
           D.toRectangleDecomposition.first.left := by
   obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
   -- View the branch data as data about the shared recut (definitionally the same
   -- construction, by proof irrelevance of the emptiness arguments).
   have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
-      (D.recut_of_isEmpty hone hrectangle hpentagon) :=
+      (D.recutOfIsEmpty hone hrectangle hpentagon) :=
     D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
   have hbranch := hdata.recut_branch
   rcases hbranch with ⟨hcol, hmiddleA, -, hEsecondA⟩ | ⟨-, -, -, hEsecondB⟩

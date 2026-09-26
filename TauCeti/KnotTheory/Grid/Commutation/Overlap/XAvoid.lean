@@ -45,7 +45,7 @@ iff-based transfer lemma
 `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns` does
 not apply; the interval-shaped subinterval transfer
 `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_cIco` is used
-instead, with `a ∈ cIco a r` from `Grid.left_mem_cIco`, `a ∉ cIco (finRotate n a) r` from
+instead, with `a ∈ cIco a r` from `Grid.left_mem_cIco`, `a ∉ cIco (a + 1) r` from
 `Grid.notMem_cIco_finRotate_left`, and the column inclusion from
 `Grid.cIco_subset_of_mem_cIoo`.
 
