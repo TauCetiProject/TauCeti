@@ -66,7 +66,7 @@ theorem vertexSimpleModuleResolution_shortExact (i : Q)
   (shortExact_arrowSumToIndecProjRep k i).map_of_exact (quiverRepFunctor k Q).inv
 
 /-- The middle term of the transported resolution is the vertex projective module. -/
-noncomputable def vertexSimpleModuleResolution_X₂_iso (i : Q)
+noncomputable def vertexSimpleModuleResolutionX₂Iso (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).X₂ ≅ indecProjModule k Q i :=
   by
@@ -76,7 +76,7 @@ noncomputable def vertexSimpleModuleResolution_X₂_iso (i : Q)
 
 /-- The first term of the resolution is the direct sum of the vertex projective modules at
 the heads of the arrows leaving `i`. -/
-noncomputable def vertexSimpleModuleResolution_X₁_iso (i : Q)
+noncomputable def vertexSimpleModuleResolutionX₁Iso (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).X₁ ≅
       ⨁ fun a : (j : Q) × (i ⟶ j) ↦ indecProjModule k Q a.1 := by
@@ -92,7 +92,7 @@ noncomputable def vertexSimpleModuleResolution_X₁_iso (i : Q)
         (indecProjModuleIso k Q a.1).symm))
 
 /-- The quotient of the transported resolution is the vertex simple module. -/
-noncomputable def vertexSimpleModuleResolution_X₃_iso (i : Q)
+noncomputable def vertexSimpleModuleResolutionX₃Iso (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).X₃ ≅ vertexSimpleModule k Q i :=
   Iso.refl _
@@ -121,6 +121,6 @@ theorem vertexSimpleModule_hasProjectiveDimensionLT_two (i : Q)
     (n := 1) (hasProjectiveDimensionLT_of_ge _ 1 1 (by omega))
     (hasProjectiveDimensionLT_of_ge _ 1 2 (by omega))
   let _ := h
-  exact hasProjectiveDimensionLT_of_iso (vertexSimpleModuleResolution_X₃_iso k i) 2
+  exact hasProjectiveDimensionLT_of_iso (vertexSimpleModuleResolutionX₃Iso k i) 2
 
 end TauCeti
