@@ -252,8 +252,10 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     (extChartAt I x).symm (extChartAt I x x)) Z) = _
   rw [← hchain_apply]
   rw [mfderivWithin_eq_fderivWithin]
-  -- The `NormedSpace.fromTangentSpace` identifications are definitional, so this is already the
-  -- normed-space statement about `fderivWithin`.
+  -- The rewrite leaves `(fromTangentSpace _).symm ∘L fderivWithin … ∘L fromTangentSpace _`,
+  -- typed at the `TangentSpace` instances. Mathlib has no evaluation lemma for
+  -- `NormedSpace.fromTangentSpace` (it is `tangentSpaceCastModel`, the identity up to those
+  -- instances), so no rewrite strips it; the plain `fderivWithin` on `E` is reached by unfolding.
   change (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) (extChartAt I x x)) Z = _
   -- Pull the vector fields back and invoke the normed-space bracket identity.
   have hfcoord := contMDiffWithinAt_iff_contDiffWithinAt.mp

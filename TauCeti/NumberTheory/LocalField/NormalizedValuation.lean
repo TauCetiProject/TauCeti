@@ -121,9 +121,7 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
       (valuation K).toMonoidWithZeroHom)
 
 private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
-  (valuation K).map
-    { toMonoidWithZeroHom := (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
-      monotone' := (valueGroupWithZeroIsoInt K).toOrderIso.monotone }
+  (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)
 
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
