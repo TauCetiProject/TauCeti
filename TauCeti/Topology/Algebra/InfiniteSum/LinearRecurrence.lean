@@ -5,19 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.NoncommRing
 
 /-!
 # The sum of a second-order linear recurrence
 
-A summable sequence `d` obeying `d (r + 2) = D * d (r + 1) - S * d r` has a sum `σ` determined by
-its first two terms through the characteristic polynomial evaluated at `1`:
+For a summable sequence `d` obeying `d (r + 2) = D * d (r + 1) - S * d r`, its sum `σ`
+satisfies the identity:
 
 `(1 - D + S) * σ = d 0 + (d 1 - D * d 0)`.
 
-This is the evaluation at `x = 1` of the formal identity
+Only continuity of addition, negation, and left multiplication by constants is required;
+multiplication need not be associative.
+
+In an associative ring, this corresponds to evaluating the characteristic polynomial at `1`
+in the formal generating-function identity
 `(1 - D x + S x²) ∑ d r xʳ = d 0 + (d 1 - D d 0) x`, and it is how a local Euler factor
 `(1 - a_p p^{-s} + c_p p^{-2s})⁻¹` is recovered from a prime-power recurrence for the
 coefficients of a Dirichlet series.
@@ -30,7 +34,7 @@ coefficients of a Dirichlet series.
 public section
 
 variable {R : Type*} [NonAssocRing R] [TopologicalSpace R]
-  [IsTopologicalAddGroup R] [SeparatelyContinuousMul R] [T2Space R]
+  [IsTopologicalAddGroup R] [ContinuousConstSMul R R] [T2Space R]
   {D S σ : R} {d : ℕ → R}
 
 /-- **The sum of a second-order linear recurrence.** If `d` has sum `σ` and obeys
@@ -44,9 +48,7 @@ theorem HasSum.one_sub_add_mul_eq_of_linearRec₂ (h : HasSum d σ)
   have h₂ : HasSum (fun r ↦ d (r + 2)) (σ - (d 0 + d 1)) := by
     simpa [Finset.sum_range_succ] using (hasSum_nat_add_iff' 2).mpr h
   have h₃ : HasSum (fun r ↦ d (r + 2)) (D * (σ - d 0) - S * σ) := by
-    simpa only [hd] using!
-      (h₁.map (AddMonoidHom.mulLeft D) (continuous_const_mul D)).sub
-        (h.map (AddMonoidHom.mulLeft S) (continuous_const_mul S))
+    simpa only [smul_eq_mul, hd] using (h₁.const_smul D).sub (h.const_smul S)
   calc (1 - D + S) * σ
       = (σ - (d 0 + d 1)) - (D * (σ - d 0) - S * σ) + (d 0 + (d 1 - D * d 0)) := by noncomm_ring
     _ = d 0 + (d 1 - D * d 0) := by rw [h₂.unique h₃, sub_self, _root_.zero_add]
