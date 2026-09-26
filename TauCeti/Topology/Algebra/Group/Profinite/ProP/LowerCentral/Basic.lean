@@ -17,9 +17,10 @@ commutators `⁅G, G⁆`. This file records that `P₁` is contained in the pro-
 `Φ`. The containment gives a quotient map `G ⧸ P₁ → G ⧸ Φ`, so a family generating `G` modulo
 `P₁` generates `G` modulo `Φ` as well.
 
-The comparison needs only that `p` is prime; the closedness of `TauCeti.proPFrattini` required
-to pass to the topological closure defining `P₁` is supplied by the instance
-`TauCeti.isClosed_proPFrattini`.
+The result is stated at its natural scope: the only hypothesis is that `p` is prime, and `G`
+is an arbitrary topological group — neither compactness nor finite generation is assumed. It
+feeds the Layer 8 example of the ProfiniteProPGroups roadmap, the equality `λ₁(G) = Φ(G)` for
+finitely generated pro-`p` groups, for which this containment is one of the two inclusions.
 
 ## Main results
 
