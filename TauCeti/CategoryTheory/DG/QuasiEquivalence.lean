@@ -139,7 +139,7 @@ theorem isQuasiEquivalence_id :
 /-! ### The induced functor on homotopy categories -/
 
 /-- A quasi-fully faithful DG functor induces a bijection on every Hom of homotopy categories. -/
-theorem IsQuasiFullyFaithful.bijective_mapDGHomotopyCategory_map
+theorem IsQuasiFullyFaithful.mapDGHomotopyCategory_map_bijective
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (hF : EnrichedFunctor.IsQuasiFullyFaithful F) (X Y : TauCeti.DGHomotopyCategory R C) :
     Function.Bijective (F.mapDGHomotopyCategory.map : (X ⟶ Y) → _) := by
@@ -152,13 +152,13 @@ theorem IsQuasiFullyFaithful.bijective_mapDGHomotopyCategory_map
 theorem IsQuasiFullyFaithful.full_mapDGHomotopyCategory
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (hF : EnrichedFunctor.IsQuasiFullyFaithful F) : F.mapDGHomotopyCategory.Full :=
-  ⟨fun {X Y} ↦ (hF.bijective_mapDGHomotopyCategory_map X Y).2⟩
+  ⟨fun {X Y} ↦ (hF.mapDGHomotopyCategory_map_bijective X Y).2⟩
 
 /-- A quasi-fully faithful DG functor induces a faithful functor on homotopy categories. -/
 theorem IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (hF : EnrichedFunctor.IsQuasiFullyFaithful F) : F.mapDGHomotopyCategory.Faithful :=
-  ⟨fun {X Y} ↦ (hF.bijective_mapDGHomotopyCategory_map X Y).1⟩
+  ⟨fun {X Y} ↦ (hF.mapDGHomotopyCategory_map_bijective X Y).1⟩
 
 /-- A DG functor is a quasi-equivalence exactly when it is quasi-fully faithful and the functor
 it induces on homotopy categories is essentially surjective. -/
