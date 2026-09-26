@@ -22,7 +22,7 @@ Since `u` is isotropic and orthogonal to `w`, the element `ι w * ι u` squares 
 vectors, with no sign. Moreover `w ↦ L_{u,w}` turns addition into multiplication and kills
 `K ∙ u`. So the lifts form a homomorphism from the additive group of `u^⊥ / K ∙ u` into the Spin
 group, lifting `QuadraticMap.transvectionHom` along `CliffordAlgebra.spinToSpecialOrthogonal`.
-These are the unipotent one-parameter subgroups of the Spin group. In particular every Eichler
+These form a unipotent subgroup of the Spin group. In particular every Eichler
 transvection lies in the image of Spin, so its spinor norm is trivial.
 
 The lift is stated over a field with `2` invertible and for a nondegenerate form, with no finite
@@ -365,6 +365,7 @@ theorem spinTransvectionHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu�
 variable [FiniteDimensional K V]
 
 /-- **An Eichler transvection has trivial spinor norm**: it is the image of its Spin lift. -/
+@[simp]
 theorem spinorNorm_transvection (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0) :
     spinorNorm Q hQ ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩ =
       1 := by
