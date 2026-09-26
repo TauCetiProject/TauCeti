@@ -74,6 +74,7 @@ theorem affineGeometricMean_apply_m₁ (S T : Matrix ι ι ℝ) (m₁ m₂ : Euc
 
 /-- **The action on the difference from the source mean.** The linear part
 `geometricMean S⁻¹ʳ T` acts on the difference `x - m₁`, and the result is translated by `m₂`. -/
+@[simp]
 theorem affineGeometricMean_sub (S T : Matrix ι ι ℝ) (m₁ m₂ x : EuclideanSpace ℝ ι) :
     affineGeometricMean S T m₁ m₂ x
       = (geometricMean S⁻¹ʳ T).toEuclideanLin (x - m₁) + m₂ := by
