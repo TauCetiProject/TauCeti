@@ -74,6 +74,7 @@ theorem geckFrobenius_geckWeylWordPoint (l : List (Fin t.rank)) :
 
 /-- **Frobenius raises the parameter of every root subgroup of the Geck carrier to its
 `p ^ k`-th power.** The root `w αᵢ` itself is unchanged. -/
+@[simp]
 theorem geckFrobenius_geckWeylRootSubgroupPoints (l : List (Fin t.rank))
     (i : Fin t.rank) (u : Multiplicative A) :
     t.geckFrobenius ht p k A (t.geckWeylRootSubgroupPoints ht l i A u) =
@@ -88,6 +89,7 @@ theorem geckFrobenius_geckWeylRootSubgroupPoints (l : List (Fin t.rank))
 
 /-- A point in a root subgroup of the Geck carrier is fixed by Frobenius exactly when its
 parameter belongs to the Frobenius-fixed subring. -/
+@[simp]
 theorem geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff
     (l : List (Fin t.rank))
     (i : Fin t.rank) (u : Multiplicative A) :
@@ -105,15 +107,6 @@ def geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.rank) :
   (t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A).toMonoidHom.comp
     (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k))
 
-/-- The fixed-root-subgroup map is the composite of the root-subgroup parametrization over the
-fixed subring with the equivalence onto the fixed points of the Geck carrier. -/
-theorem geckWeylRootSubgroupFixedPoints_apply (l : List (Fin t.rank)) (i : Fin t.rank)
-    (u : Multiplicative (frobeniusFixedSubring A p k)) :
-    t.geckWeylRootSubgroupFixedPoints ht p k A l i u =
-      t.geckPointsMulEquivFixedSubgroupGeckFrobenius ht p k A
-        (t.geckWeylRootSubgroupPoints ht l i ↥(frobeniusFixedSubring A p k) u) := by
-  rw [geckWeylRootSubgroupFixedPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-
 /-- The fixed-root-subgroup map is the original root-subgroup parametrization after including the
 parameter from the Frobenius-fixed subring into `A`. -/
 @[simp]
@@ -123,7 +116,7 @@ theorem coe_geckWeylRootSubgroupFixedPoints (l : List (Fin t.rank)) (i : Fin t.r
       t.geckWeylRootSubgroupPoints ht l i A
         (Multiplicative.ofAdd
           ((Multiplicative.toAdd u : frobeniusFixedSubring A p k) : A)) := by
-  rw [t.geckWeylRootSubgroupFixedPoints_apply ht p k A]
+  rw [geckWeylRootSubgroupFixedPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
   apply Subtype.ext
   rw [coe_geckPointsMulEquivFixedSubgroupGeckFrobenius]
   have h := congrArg Subtype.val
