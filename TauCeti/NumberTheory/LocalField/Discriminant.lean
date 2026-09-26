@@ -29,7 +29,7 @@ the results below therefore carry `[Algebra.IsSeparable K L]`.
 
 A norm multiplies valuations by the residue degree, by `TauCeti.toAdd_normalizedValuation_norm`, so
 `Ideal.relNorm 𝒪[K] 𝓂[L]` is `𝓂[K] ^ f(L/K)`
-(`TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow`). The discriminant ideal is then
+(`TauCeti.relNorm_maximalIdeal_eq_maximalIdeal_pow`). The discriminant ideal is then
 `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, the ideal form of the product formula `δ(L/K) = f(L/K) · d(L/K)`
 (`TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`). Since for `L/K` separable
 `TauCeti.differentExponent` is `0` exactly for unramified extensions, the discriminant inherits the
@@ -93,39 +93,21 @@ theorem discriminantIdeal_def :
 
 variable [Algebra.IsSeparable K L]
 
-/-- `Ideal.relNorm` is the `Ideal.map` along the integral norm: the bridge from the
-monoid-with-zero norm `Ideal.relNorm` to the `Ideal.map` form in which
-`TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow` is stated.
-
-Mathlib packages `Ideal.relNorm R` as a monoid-with-zero morphism on ideals whose underlying
-function is `Ideal.spanNorm R`, and defines `Ideal.spanNorm R I` to be
-`Ideal.map (Algebra.intNorm R S) I`. The two steps are `Ideal.spanNorm_eq` and
-`Ideal.spanNorm`, so no definitional equality is assumed. -/
-private theorem relNorm_eq_map_intNorm (I : Ideal 𝒪[L]) :
-    Ideal.relNorm 𝒪[K] I = Ideal.map (Algebra.intNorm 𝒪[K] 𝒪[L]) I := by
-  rw [← Ideal.spanNorm_eq, Ideal.spanNorm]
-
 /-- The local discriminant ideal is the `f(L/K) · d(L/K)`-th power of the maximal ideal of the
 base ring, the form in which the norm image of the different is computed before the discriminant
 exponent is read off it. -/
 private theorem discriminantIdeal_eq_maximalIdeal_pow_mul :
     discriminantIdeal K L = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by
-  have hrelNorm : Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
-    rw [relNorm_eq_map_intNorm, Algebra.intNorm_eq_norm,
-      map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
   rw [discriminantIdeal_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L),
-    map_pow, hrelNorm, pow_mul]
+    map_pow, relNorm_maximalIdeal_eq_maximalIdeal_pow (K := K) (L := L), pow_mul]
 
 /-- The local discriminant ideal of a separable extension of local fields is nonzero, being the
-`f(L/K) · d(L/K)`-th power of the maximal ideal of the base ring. -/
+norm of the nonzero different ideal: the norm of an ideal of a Dedekind domain is zero only for the
+zero ideal, by `Ideal.relNorm_eq_bot_iff`. -/
 theorem discriminantIdeal_ne_bot : discriminantIdeal K L ≠ ⊥ := by
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  rw [discriminantIdeal_eq_maximalIdeal_pow_mul, hπ.maximalIdeal_eq]
   intro h
-  have h' : (π : 𝒪[K]) ^ (inertiaDegree K L * differentExponent K L) = 0 := by
-    refine Ideal.span_singleton_eq_bot.mp ?_
-    rw [← Ideal.span_singleton_pow π (inertiaDegree K L * differentExponent K L), h]
-  exact (pow_ne_zero (n := inertiaDegree K L * differentExponent K L) hπ.ne_zero) h'
+  rw [discriminantIdeal_def] at h
+  exact differentIdeal_ne_bot (Ideal.relNorm_eq_bot_iff.mp h)
 
 /-- The order of vanishing of the discriminant ideal of a separable extension at the maximal ideal
 of the base ring is finite: the maximal ideal of `𝒪[K]` is a prime ideal and the discriminant ideal
