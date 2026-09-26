@@ -13,19 +13,19 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 # Restriction and corestriction in Tate degree `-2` on the abelianization
 
 For a finite group `G` and trivial coefficients `A`, degree `-2` Tate cohomology is
-`Ĥ⁻²(G, A) ≃ Gᵃᵇ ⊗ A` (`TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial`). This file
+`H_Tate⁻²(G, A) ≃ Gᵃᵇ ⊗ A` (`TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial`). This file
 identifies the two change-of-group maps in this degree under that identification:
 
-* restriction to a subgroup `S ≤ G`, `Ĥ⁻²(G, A) ⟶ Ĥ⁻²(S, A)`, is the group-theoretic transfer
-  (Verlagerung) `Gᵃᵇ → Sᵃᵇ`, tensored with `A`;
-* corestriction along a homomorphism `f : H →* G`, `Ĥ⁻²(H, A) ⟶ Ĥ⁻²(G, A)`, is
+* restriction to a subgroup `S ≤ G`, `H_Tate⁻²(G, A) ⟶ H_Tate⁻²(S, A)`, is the
+  group-theoretic transfer (Verlagerung) `Gᵃᵇ → Sᵃᵇ`, tensored with `A`;
+* corestriction along a homomorphism `f : H →* G`, `H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)`, is
   `Abelianization.map f`, tensored with `A`.
 
 Both are read off the corresponding statements for first group homology,
 `TauCeti.groupHomology.H1AddEquivOfIsTrivial_transfer` and
 `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`, through the comparison of negative Tate degrees
 with group homology. For `A = ℤ` these are the forms in which the reciprocity isomorphism
-`Ĥ⁻²(G, ℤ) ≃ Gᵃᵇ` is compatible with restriction and corestriction.
+`H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` is compatible with restriction and corestriction.
 
 ## Main results
 
@@ -79,8 +79,8 @@ private theorem isoGroupHomology_hom_HNegTwoRes_inv (y : groupHomology A 1) :
     (((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).app _).inv_hom_id_apply y)
 
 /-- **Restriction in Tate degree `-2` is the Verlagerung.** For a subgroup `S` of a finite group
-`G` and trivial coefficients `A`, restriction `Ĥ⁻²(G, A) ⟶ Ĥ⁻²(S, A)` becomes
-`V ⊗ id : Gᵃᵇ ⊗ A → Sᵃᵇ ⊗ A` under the identifications `Ĥ⁻² ≃ (-)ᵃᵇ ⊗ A`, where `V` is the
+`G` and trivial coefficients `A`, restriction `H_Tate⁻²(G, A) ⟶ H_Tate⁻²(S, A)` becomes
+`V ⊗ id : Gᵃᵇ ⊗ A → Sᵃᵇ ⊗ A` under the identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`, where `V` is the
 group-theoretic transfer. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes [A.IsTrivial] (x : tateCohomology A (-2)) :
@@ -112,8 +112,8 @@ end Restriction
 
 /-- **Corestriction in Tate degree `-2` is the map induced on abelianizations.** For a
 homomorphism `f : H →* G` of finite groups and trivial coefficients `A`, corestriction
-`Ĥ⁻²(H, A) ⟶ Ĥ⁻²(G, A)` becomes `Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A` under the
-identifications `Ĥ⁻² ≃ (-)ᵃᵇ ⊗ A`. -/
+`H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)` becomes `Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A` under the
+identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fintype H]
     (A : Rep k G) [A.IsTrivial] (f : H →* G) (y : tateCohomology (res f A) (-2)) :
