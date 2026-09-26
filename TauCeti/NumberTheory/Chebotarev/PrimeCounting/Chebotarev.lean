@@ -129,8 +129,8 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
       ConjClasses.map (AlgEquiv.restrictNormalHom L) D = ConjClasses.mk σ := by
     simp only [Finset.mem_image]
     rintro _ ⟨τ, -, rfl⟩
-    change ConjClasses.mk ((e.symm (σ, τ)).restrictNormal L) = ConjClasses.mk σ
-    simp only [e, IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
+    rw [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
+      IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
   filter_upwards [(tendsto_order.1 hsum).1 δ (hδ.trans_le (le_crossingConstant K L f r hr hf)),
     eventually_gt_atTop 0] with x hx hx0
   refine hx.trans_le ?_
