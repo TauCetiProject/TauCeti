@@ -32,19 +32,17 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- The total volume of a compact Riemannian manifold, as a real number. -/
 def riemannianTotalVolume (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+    [MeasurableSpace M] [BorelSpace M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] : ℝ :=
-  (ENNReal.neTopEquivNNReal
-    ⟨(riemannianVolume I M) univ,
-      by change (riemannianVolume I M) univ ≠ (⊤ : ENNReal); finiteness⟩ : NNReal)
+  (riemannianVolume I M).real univ
 
 /-- Total Riemannian volume is the real mass of the whole manifold. -/
 theorem riemannianTotalVolume_def :
@@ -65,7 +63,7 @@ theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
 variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
   [IsManifold I' 1 N]
-  [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
+  [MeasurableSpace N] [BorelSpace N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
