@@ -39,13 +39,14 @@ relations.
 
 * `TauCeti.DynkinType.geckWeylRootSubgroup_nil`: the empty word recovers the numbered positive
   simple-root morphism.
-* `TauCeti.DynkinType.geckSchemePointsMulEquiv_geckWeylRootSubgroup`: the transported morphism is
-  conjugation by the Weyl-word point on every commutative-ring-valued point.
+* `TauCeti.DynkinType.geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup_eq_conj`: the transported
+  morphism is conjugation by the Weyl-word point on every commutative-ring-valued point.
 * `TauCeti.DynkinType.geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup`: evaluation agrees
   directly with the existing all-root point homomorphism.
 * `TauCeti.DynkinType.isClosedImmersion_geckWeylRootSubgroup`: every transported root subgroup is
   a closed immersion.
-* `TauCeti.DynkinType.exists_geckWeylRootSubgroup`: every root index has such a closed morphism.
+* `TauCeti.DynkinType.geckRootSubgroupAt`: a chosen closed root-subgroup morphism indexed directly
+  by every root.
 
 ## References
 
@@ -69,7 +70,7 @@ variable (t : DynkinType) (ht : t.Valid)
 algebra. -/
 def geckWeylWordCoordinatePoint (l : List (Fin t.rank)) :
     HopfAlgebra.points (R := ℤ) (H := t.geckCoordinateHopfAlgebra ht) (CommAlgCat.of ℤ ℤ) :=
-  (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv.symm
+  (t.geckPointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv.symm
     (t.geckWeylWordPoint ht l ℤ)
 
 /-- **Inner conjugation by the integral Weyl-word point**, as an automorphism of the Geck group
@@ -114,30 +115,16 @@ theorem geckGroupSchemePointMulEquiv_comp_geckWeylWordInnerConjugation
 /-- The empty Weyl word gives the identity coordinate point. -/
 @[simp]
 theorem geckWeylWordCoordinatePoint_nil : t.geckWeylWordCoordinatePoint ht [] = 1 := by
-  apply (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv.injective
+  apply (t.geckPointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv.injective
   rw [geckWeylWordCoordinatePoint, MulEquiv.apply_symm_apply, map_one,
     geckWeylWordPoint_nil]
-
-/-- The expanded coordinate presentation has the same entrywise value-ring map as the named
-Geck-points presentation. -/
-private theorem map_geckCoordinatePointsPresentation_geckWeylWordPoint
-    {A B : Type} [CommRing A] [CommRing B] (f : A →+* B)
-    (l : List (Fin t.rank)) :
-    (t.geckCoordinatePointsPresentation ht A).map
-        (t.geckCoordinatePointsPresentation ht B) f (t.geckWeylWordPoint ht l A) =
-      t.geckWeylWordPoint ht l B := by
-  apply Subtype.ext
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  have h := congrArg Subtype.val (t.map_geckWeylWordPoint ht f l)
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  exact h
 
 /-- Extending the integral coordinate point of a Weyl word to a commutative ring recovers the
 existing matrix-valued Weyl-word point. -/
 @[simp]
-theorem geckCoordinatePointsPresentation_mulEquiv_extend_geckWeylWordCoordinatePoint
+theorem geckPointsPresentation_mulEquiv_extend_geckWeylWordCoordinatePoint
     (l : List (Fin t.rank)) (A : Type) [CommRing A] :
-    (t.geckCoordinatePointsPresentation ht A).mulEquiv
+    (t.geckPointsPresentation ht A).mulEquiv
         (HopfAlgebra.extendPoint (t.geckCoordinateHopfAlgebra ht) (CommAlgCat.of ℤ A)
           (t.geckWeylWordCoordinatePoint ht l)) =
       t.geckWeylWordPoint ht l A := by
@@ -145,15 +132,15 @@ theorem geckCoordinatePointsPresentation_mulEquiv_extend_geckWeylWordCoordinateP
     (Algebra.ofId ℤ (CommAlgCat.of ℤ A)), HopfAlgebra.extendPoint_self]
   -- `mapValue` and the categorical `mapPoints` have definitionally equal applications but no
   -- proposition-level comparison lemma; expose that application before using naturality.
-  change (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv
+  change (t.geckPointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv
       (HopfAlgebra.mapPoints
         (CommAlgCat.ofHom (Algebra.ofId ℤ (CommAlgCat.of ℤ A)))
         (t.geckWeylWordCoordinatePoint ht l)) = _
-  rw [(t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv_mapPoints
-    (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ A))
+  rw [(t.geckPointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv_mapPoints
+    (t.geckPointsPresentation ht (CommAlgCat.of ℤ A))
     (CommAlgCat.ofHom (Algebra.ofId ℤ (CommAlgCat.of ℤ A)))]
   rw [geckWeylWordCoordinatePoint, MulEquiv.apply_symm_apply,
-    map_geckCoordinatePointsPresentation_geckWeylWordPoint]
+    map_geckWeylWordPoint]
 
 /-- **On scheme-valued points, the Weyl-word automorphism is conjugation by the existing
 matrix-valued Weyl-word point.** -/
@@ -172,7 +159,7 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylWordInnerConjugation
   rw [geckSchemePointsMulEquiv_groupSchemePointMulEquiv,
     geckSchemePointsMulEquiv_groupSchemePointMulEquiv]
   rw [map_mul, map_mul, map_inv,
-    t.geckCoordinatePointsPresentation_mulEquiv_extend_geckWeylWordCoordinatePoint ht l A]
+    t.geckPointsPresentation_mulEquiv_extend_geckWeylWordCoordinatePoint ht l A]
 
 /-- Inner conjugation by the empty Weyl word is the identity group-scheme automorphism. -/
 @[simp]
@@ -208,7 +195,7 @@ theorem geckWeylRootSubgroup_nil (i : Fin t.rank) :
 
 /-- **On scheme-valued points, the transported root-subgroup morphism is conjugation of the
 numbered positive simple-root morphism by the Weyl-word point.** -/
-theorem geckSchemePointsMulEquiv_geckWeylRootSubgroup
+theorem geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup_eq_conj
     (l : List (Fin t.rank)) (i : Fin t.rank) (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X) :
@@ -234,9 +221,51 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup
         (p ≫ (t.geckWeylRootSubgroup ht l i).hom.hom) =
       t.geckWeylRootSubgroupPoints ht l i A
         (AdditiveGroup.schemePointsMulEquiv A p) := by
-  rw [t.geckSchemePointsMulEquiv_geckWeylRootSubgroup ht l i A p,
+  rw [t.geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup_eq_conj ht l i A p,
     t.geckSchemePointsMulEquiv_comp_geckRootSubgroup ht (.inl i) A p,
     geckWeylRootSubgroupPoints_apply]
+
+/-! ## The root-indexed family -/
+
+/-- A selected Weyl-word presentation `(l, i)` of each root index. The selection fixes a usable
+root-indexed family without asserting that different presentations give the same parametrization. -/
+def geckRootSubgroupPresentation (k : Fin t.numRoots) :
+    List (Fin t.rank) × Fin t.rank :=
+  Classical.choose (show ∃ p : List (Fin t.rank) × Fin t.rank,
+      t.geckWeylRootIndex ht p.1 p.2 = k by
+    obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
+    exact ⟨(l, i), hli⟩)
+
+/-- The selected presentation of `k` represents `k`. -/
+@[simp]
+theorem geckRootSubgroupPresentation_index (k : Fin t.numRoots) :
+    t.geckWeylRootIndex ht (t.geckRootSubgroupPresentation ht k).1
+        (t.geckRootSubgroupPresentation ht k).2 = k :=
+  Classical.choose_spec (show ∃ p : List (Fin t.rank) × Fin t.rank,
+      t.geckWeylRootIndex ht p.1 p.2 = k by
+    obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
+    exact ⟨(l, i), hli⟩)
+
+/-- **The selected root-subgroup morphism at a root index.** Its Weyl-word presentation is fixed
+by `geckRootSubgroupPresentation`; no presentation-independence claim is made. -/
+def geckRootSubgroupAt (k : Fin t.numRoots) :
+    AdditiveGroup.groupScheme ℤ ⟶ t.geckGroupScheme ht :=
+  t.geckWeylRootSubgroup ht (t.geckRootSubgroupPresentation ht k).1
+    (t.geckRootSubgroupPresentation ht k).2
+
+/-- Evaluation of the root-indexed morphism agrees with the point-level subgroup at its selected
+presentation. -/
+@[simp]
+theorem geckSchemePointsMulEquiv_comp_geckRootSubgroupAt
+    (k : Fin t.numRoots) (A : Type) [CommRing A]
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    t.geckSchemePointsMulEquiv ht A (p ≫ (t.geckRootSubgroupAt ht k).hom.hom) =
+      t.geckWeylRootSubgroupPoints ht (t.geckRootSubgroupPresentation ht k).1
+        (t.geckRootSubgroupPresentation ht k).2 A
+        (AdditiveGroup.schemePointsMulEquiv A p) := by
+  exact t.geckSchemePointsMulEquiv_comp_geckWeylRootSubgroup ht
+    (t.geckRootSubgroupPresentation ht k).1 (t.geckRootSubgroupPresentation ht k).2 A p
 
 /-- Every Weyl-transported root-subgroup morphism is a closed immersion. -/
 instance isClosedImmersion_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin t.rank) :
@@ -251,15 +280,11 @@ instance isClosedImmersion_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin
     ← geckWeylWordInnerConjugation_forget_mapIso_hom]
   exact hce
 
-/-- **Every root index of the pinned root datum has a closed root-subgroup morphism in the Geck
-carrier.** The witnesses retain a Weyl word because presentation independence, including its
-possible sign, is not yet fixed. -/
-theorem exists_geckWeylRootSubgroup (k : Fin t.numRoots) :
-    ∃ (l : List (Fin t.rank)) (i : Fin t.rank),
-      t.geckWeylRootIndex ht l i = k ∧
-        IsClosedImmersion (t.geckWeylRootSubgroup ht l i).hom.hom.left := by
-  obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
-  exact ⟨l, i, hli, inferInstance⟩
+/-- Every root-indexed subgroup morphism is a closed immersion. -/
+instance isClosedImmersion_geckRootSubgroupAt (k : Fin t.numRoots) :
+    IsClosedImmersion (t.geckRootSubgroupAt ht k).hom.hom.left := by
+  rw [geckRootSubgroupAt]
+  infer_instance
 
 end
 

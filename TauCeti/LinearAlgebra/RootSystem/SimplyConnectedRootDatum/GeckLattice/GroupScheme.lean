@@ -125,7 +125,7 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- **The defining Hopf ideal of the Geck carrier of a valid Dynkin type**: the largest Hopf
 ideal of the coordinate algebra of `GLₙ` killed by every numbered Kostant root subgroup and by the
 weight torus of the Geck lattice. -/
-def geckDefiningIdeal :
+abbrev geckDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -173,12 +173,7 @@ theorem geckGroupScheme_def :
 /-- The coordinate Hopf algebra of the Geck carrier. -/
 abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
-    (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-      (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht))
+    (t.geckDefiningIdeal ht)
 
 /-- The Geck carrier is the group scheme represented by `geckCoordinateHopfAlgebra`. -/
 theorem geckGroupScheme_eq_hopfSpec :
