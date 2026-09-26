@@ -77,7 +77,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   `TauCeti.LocalFieldsRamification.self_le_psiNat`: `ψℕ` is strictly increasing and `n ≤ ψℕ(n)`.
 * `TauCeti.LocalFieldsRamification.psiNat_eq_self_iff`,
   `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
-  `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when `t` is the only jump.
+  `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
+  constant through `t` and trivial afterward.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
@@ -98,6 +99,10 @@ namespace TauCeti.LocalFieldsRamification
 ramification groups are indexed by real numbers `u ≥ -1`, and `G_u` is the whole automorphism
 group for `u ≤ -1`. -/
 abbrev RamificationIndexDomain : Set ℝ := Ici (-1 : ℝ)
+
+/-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
+theorem natCast_mem_ramificationIndexDomain (n : ℕ) : (n : ℝ) ∈ RamificationIndexDomain :=
+  le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -418,15 +423,12 @@ The Herbrand function takes non-integral values at integers, but its inverse doe
 natural number for every natural number `n`, because `#G_{m+1}` divides `#G_i` for `i ≤ m + 1`.
 This section packages these values as `psiNat K L : ℕ → ℕ`. -/
 
-/-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
-theorem natCast_mem_ramificationIndexDomain (n : ℕ) : (n : ℝ) ∈ RamificationIndexDomain :=
-  le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
-
 private theorem inverseHerbrand_natCast_nonneg (n : ℕ) :
     (0 : ℝ) ≤ inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ := by
-  have h := (inverseHerbrand_strictMono K L).monotone
-    (show (⟨(0 : ℕ), natCast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
-      ⟨n, natCast_mem_ramificationIndexDomain n⟩ from Subtype.mk_le_mk.2 (Nat.cast_le.2 n.zero_le))
+  have hle : (⟨(0 : ℕ), natCast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
+      ⟨n, natCast_mem_ramificationIndexDomain n⟩ :=
+    Subtype.mk_le_mk.2 (Nat.cast_le.2 n.zero_le)
+  have h := (inverseHerbrand_strictMono K L).monotone hle
   rw [inverseHerbrand_of_coe_le_zero K L (by simp)] at h
   simpa using Subtype.coe_le_coe.2 h
 
@@ -462,7 +464,8 @@ private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
     (by rw [← hcR]; linarith : (u - m) * g (m + 1 : ℕ) = g (m + 1 : ℕ) * c).trans (mul_comm _ _)
   have hc0 : 0 ≤ c := by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c)
   have hc1 : c < 1 := by exact_mod_cast (hcu ▸ by linarith : (c : ℝ) < 1)
-  rw [show c = 0 by omega, Int.cast_zero, sub_eq_zero] at hcu
+  have hc_zero : c = 0 := by omega
+  rw [hc_zero, Int.cast_zero, sub_eq_zero] at hcu
   exact hcu
 
 /-- The **integral inverse Herbrand function** `ψℕ_{L/K} : ℕ → ℕ`: the value `ψ_{L/K}(n)` of the
@@ -474,6 +477,7 @@ def psiNat (n : ℕ) : ℕ :=
 
 /-- The integral inverse Herbrand function computes the inverse Herbrand function:
 `ψℕ_{L/K}(n) = ψ_{L/K}(n)`. -/
+@[simp]
 theorem coe_psiNat (n : ℕ) :
     (psiNat K L n : ℝ) =
       (inverseHerbrand K L ⟨(n : ℝ), natCast_mem_ramificationIndexDomain n⟩ : ℝ) :=
@@ -486,12 +490,31 @@ theorem psiNat_eq_iff {n m : ℕ} :
         n * Nat.card (lowerRamificationGroup K L 0) := by
   have h0 : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
     exact_mod_cast Nat.card_pos.ne'
-  rw [← Nat.cast_inj (R := ℝ), coe_psiNat, show (m : ℝ) =
-    ((⟨m, natCast_mem_ramificationIndexDomain m⟩ : RamificationIndexDomain) : ℝ) from rfl,
-    ← Subtype.ext_iff, ← herbrandOrderIso_symm_apply,
-    OrderIso.symm_apply_eq, herbrandOrderIso_apply, eq_comm, Subtype.ext_iff,
-    coe_herbrand_of_coe_eq_natCast K L m rfl, Subtype.coe_mk, div_eq_iff h0]
-  norm_cast
+  have hinv : psiNat K L n = m ↔
+      inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+        ⟨m, natCast_mem_ramificationIndexDomain m⟩ := by
+    rw [← Nat.cast_inj (R := ℝ), coe_psiNat]
+    constructor
+    · intro h
+      exact Subtype.ext h
+    · intro h
+      exact congrArg (fun x : RamificationIndexDomain ↦ (x : ℝ)) h
+  have hφ : inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+        ⟨m, natCast_mem_ramificationIndexDomain m⟩ ↔
+      herbrand K L ⟨m, natCast_mem_ramificationIndexDomain m⟩ =
+        ⟨n, natCast_mem_ramificationIndexDomain n⟩ := by
+    rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_eq, herbrandOrderIso_apply, eq_comm]
+  calc
+    psiNat K L n = m ↔
+        inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+          ⟨m, natCast_mem_ramificationIndexDomain m⟩ := hinv
+    _ ↔ herbrand K L ⟨m, natCast_mem_ramificationIndexDomain m⟩ =
+          ⟨n, natCast_mem_ramificationIndexDomain n⟩ := hφ
+    _ ↔ ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
+          n * Nat.card (lowerRamificationGroup K L 0) := by
+      rw [Subtype.ext_iff, coe_herbrand_of_coe_eq_natCast K L m rfl,
+        Subtype.coe_mk, div_eq_iff h0]
+      norm_cast
 
 /-- `#G_1 + ⋯ + #G_{ψℕ(n)} = n · #G_0`. -/
 theorem sum_card_lowerRamificationGroup_psiNat (n : ℕ) :
@@ -506,20 +529,16 @@ theorem psiNat_zero : psiNat K L 0 = 0 :=
 
 /-- The integral inverse Herbrand function is strictly increasing. -/
 theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
-  have := inverseHerbrand_strictMono K L
-    (show (⟨(a : ℝ), natCast_mem_ramificationIndexDomain a⟩ : RamificationIndexDomain) <
-      ⟨(b : ℝ), natCast_mem_ramificationIndexDomain b⟩ from
-        Subtype.mk_lt_mk.2 (by exact_mod_cast h))
+  have hlt : (⟨(a : ℝ), natCast_mem_ramificationIndexDomain a⟩ : RamificationIndexDomain) <
+      ⟨(b : ℝ), natCast_mem_ramificationIndexDomain b⟩ :=
+    Subtype.mk_lt_mk.2 (by exact_mod_cast h)
+  have := inverseHerbrand_strictMono K L hlt
   exact_mod_cast (coe_psiNat K L a).trans_lt
     ((Subtype.coe_lt_coe.2 this).trans_eq (coe_psiNat K L b).symm)
 
 /-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
-  refine Nat.le_of_mul_le_mul_right ?_ (Nat.card_pos (α := lowerRamificationGroup K L 0))
-  rw [← sum_card_lowerRamificationGroup_psiNat]
-  refine (Finset.sum_le_card_nsmul _ _ _ fun i _ ↦ Subgroup.card_le_of_le
-    (lowerRamificationGroup_antitone K L (Int.natCast_nonneg i))).trans_eq ?_
-  simp
+  exact (psiNat_strictMono K L).id_le n
 
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration has no jump in
 `[0, v)`. -/
@@ -547,9 +566,10 @@ theorem psiNat_eq_self_iff {v : ℕ} :
           rw [le_antisymm (hle i) (hv.symm.le.trans (lowerRamificationGroup_antitone K L hi))]
       _ = v * Nat.card (lowerRamificationGroup K L 0) := by simp
 
-/-- If the lower filtration has a single jump at `t`, that is `G_t = G_0` and `G_{t+1} = 1`, then
-`ψℕ_{L/K}(v) = t + #G_0 · (v - t)` for every `v ≥ t`. For a totally ramified cyclic extension of
-prime degree `ℓ` with jump `t`, this is `ψℕ(v) = t + ℓ (v - t)`. -/
+/-- If the lower filtration is constant through `t` and trivial after `t`, that is `G_t = G_0`
+and `G_{t+1} = 1`, then `ψℕ_{L/K}(v) = t + #G_0 · (v - t)` for every `v ≥ t`. For a totally
+ramified cyclic extension of prime degree `ℓ` with jump `t`, this is
+`ψℕ(v) = t + ℓ (v - t)`. -/
 theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
     (ht : lowerRamificationGroup K L t = lowerRamificationGroup K L 0)
     (ht' : lowerRamificationGroup K L (t + 1 : ℕ) = ⊥) (hv : t ≤ v) :
