@@ -185,18 +185,19 @@ end LinearMap
 
 namespace LinearEquiv
 
-/-- The determinant kernel on a finite-dimensional space of dimension at most one is trivial. -/
+/-- The determinant kernel on a finite free module of rank at most one is trivial. -/
 @[simp]
-theorem det_ker_eq_bot_of_finrank_le_one {K V : Type*} [Field K] [AddCommGroup V]
-    [Module K V] [FiniteDimensional K V] (hV : Module.finrank K V ≤ 1) :
-    (LinearEquiv.det (R := K) (M := V)).ker = ⊥ := by
+theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGroup V]
+    [Module R V] [Module.Free R V] [Module.Finite R V] (hV : Module.finrank R V ≤ 1) :
+    (LinearEquiv.det (R := R) (M := V)).ker = ⊥ := by
   apply (Subgroup.eq_bot_iff_forall _).mpr
   intro g hg
+  nontriviality R
   rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hV with hV | hV
-  · let := Module.finrank_zero_iff.mp hV
+  · let := (Module.finrank_eq_zero_iff_of_free R V).mp hV
     exact Subsingleton.elim _ _
-  · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := K) (V := V) hV
-    exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup K V) 1)
+  · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := R) (V := V) hV
+    exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
 
 end LinearEquiv
 
