@@ -40,6 +40,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   degree zero (`TauCeti.gradedPieceZeroEquiv`).
 * `TauCeti.gradedBracket`: the bracket `gr_j(G) →+ gr_k(G) →+ gr_{j+k+1}(G)`.
 * `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`.
+* `TauCeti.gradedPowLinear`: the bundled linear form of `π` in positive degree.
+* `TauCeti.iteratedGradedPow`: the `j`-fold power operator `π^j : gr_0(G) → gr_j(G)`.
 * `TauCeti.gradedMap`: the map on graded pieces induced by a continuous homomorphism.
 
 ## Main results
@@ -667,6 +669,22 @@ def gradedPowLinear [NeZero p] (k : ℕ) (hk : 1 ≤ k) :
 @[simp]
 theorem gradedPowLinear_apply [NeZero p] {k : ℕ} (hk : 1 ≤ k) (x : gradedPiece p G k) :
     gradedPowLinear (p := p) (G := G) k hk x = gradedPow p G k x :=
+  (rfl)
+
+variable (p G) in
+/-- **The `j`-fold power operator** `π^j : gr_0(G) → gr_j(G)`, iterating `TauCeti.gradedPow`
+from degree zero. -/
+def iteratedGradedPow : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
+  | 0, x => x
+  | j + 1, x => gradedPow p G j (iteratedGradedPow j x)
+
+@[simp]
+theorem iteratedGradedPow_zero (x : gradedPiece p G 0) : iteratedGradedPow p G 0 x = x :=
+  (rfl)
+
+@[simp]
+theorem iteratedGradedPow_succ (j : ℕ) (x : gradedPiece p G 0) :
+    iteratedGradedPow p G (j + 1) x = gradedPow p G j (iteratedGradedPow p G j x) :=
   (rfl)
 
 /-- **`π` against the bracket on the left**, away from degree zero: `π [x, y] = [π x, y]` for
