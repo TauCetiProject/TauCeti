@@ -9,10 +9,11 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Altern
 public import TauCeti.RingTheory.Cyclotomic.Conjugation
 
 /-!
-# Exact cyclotomic character-table data for the alternating group of degree five
+# Exact cyclotomic candidate-table data for the alternating group of degree five
 
-This file records exact character-table data for `A₅`. Its conjugacy classes, in the numbering
-fixed by `TauCeti.alternatingGroupFiveClassData`, have sizes `1`, `15`, `20`, `12`, and `12`.
+This file records exact candidate character-table data for `A₅`. Its conjugacy classes use the
+numbering fixed by `TauCeti.alternatingGroupFiveClassData` and have sizes `1`, `15`, `20`, `12`,
+and `12`.
 If `ζ` is the distinguished primitive fifth root in `TauCeti.Cyclotomic 5`, the two
 quadratic values have canonical representatives
 
@@ -23,26 +24,28 @@ quadratic values have canonical representatives
 
 These are the roots of `X² - X - 1`. The two degree-three rows exchange `φ` and `φ'` on the
 two classes of five-cycles. The central-to-ordinary conversion, degree constraints, and Hermitian
-row orthogonality are proved in the computable cyclotomic coefficient ring.
+row orthogonality are proved in the computable cyclotomic coefficient ring. These identities do
+not by themselves certify that the rows are the irreducible characters of `A₅`.
 
 ## Main definitions
 
-* `TauCeti.alternatingGroupFiveExactCentralCharacterTable`: the exact central-character table.
-* `TauCeti.alternatingGroupFiveExactCharacterTable`: the exact ordinary character table.
-* `TauCeti.alternatingGroupFiveCharacterDegrees`: the degrees `1`, `3`, `3`, `4`, and `5`.
+* `TauCeti.alternatingGroupFiveCandidateCentralCharacterTable`: candidate central-character data.
+* `TauCeti.alternatingGroupFiveCandidateCharacterTable`: candidate ordinary character data.
+* `TauCeti.alternatingGroupFiveCandidateCharacterDegrees`: the candidate degrees `1`, `3`, `3`,
+  `4`, and `5`.
 
 ## Main results
 
-* `TauCeti.alternatingGroupFive_degree_mul_centralCharacterTable`: the central and ordinary tables
-  agree under the division-free conversion formula.
-* `TauCeti.alternatingGroupFive_characterTable_orthogonal`: the displayed rows satisfy
+* `TauCeti.alternatingGroupFive_candidateDegree_mul_candidateCentralCharacterTable`: the candidate
+  central and ordinary data agree under the division-free conversion formula.
+* `TauCeti.alternatingGroupFive_candidateCharacterTable_orthogonal`: the candidate rows satisfy
   Hermitian orthogonality.
 
 ## References
 
-The table is the classical `A₅` table; see J.-P. Serre, *Linear Representations of Finite Groups*,
-§5.2. The certificate uses the Burnside--Dixon--Schneider framework developed in the surrounding
-files.
+The candidate is the classical displayed `A₅` table; see J.-P. Serre, *Linear Representations of
+Finite Groups*, §5.2. A future certificate can connect it to the Burnside--Dixon--Schneider
+framework developed in the surrounding files.
 -/
 
 public section
@@ -106,9 +109,9 @@ theorem star_alternatingGroupFiveGoldenConjugate :
   intro j
   fin_cases j <;> decide
 
-/-- **The exact central-character table of `A₅`.** Columns are the identity, double
+/-- Exact candidate central-character data for `A₅`. Columns are the identity, double
 transpositions, three-cycles, and the two classes of five-cycles. -/
-def alternatingGroupFiveExactCentralCharacterTable :
+def alternatingGroupFiveCandidateCentralCharacterTable :
     Matrix AlternatingGroupFiveClassIndex AlternatingGroupFiveClassIndex (Cyclotomic 5) :=
   let φ := alternatingGroupFiveGolden
   let φ' := alternatingGroupFiveGoldenConjugate
@@ -118,11 +121,11 @@ def alternatingGroupFiveExactCentralCharacterTable :
      1,  0,  5,      -3,      -3;
      1,  3, -4,       0,       0]
 
-/-- The entrywise formula for the exact central-character table. -/
+/-- The entrywise formula for the candidate central-character data. -/
 @[simp]
-theorem alternatingGroupFiveExactCentralCharacterTable_apply
+theorem alternatingGroupFiveCandidateCentralCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
-    alternatingGroupFiveExactCentralCharacterTable i j =
+    alternatingGroupFiveCandidateCentralCharacterTable i j =
       (let φ := alternatingGroupFiveGolden
        let φ' := alternatingGroupFiveGoldenConjugate
        !![1, 15, 20,      12,      12;
@@ -134,9 +137,9 @@ theorem alternatingGroupFiveExactCentralCharacterTable_apply
         (finCongr numClasses_alternatingGroupFiveClassData j)) := by
   fin_cases i <;> fin_cases j <;> decide
 
-/-- **The exact ordinary character table of `A₅`**, in the same row and column order as the
-central-character table. -/
-def alternatingGroupFiveExactCharacterTable :
+/-- Exact candidate ordinary character data for `A₅`, in the same row and column order as the
+candidate central-character data. -/
+def alternatingGroupFiveCandidateCharacterTable :
     Matrix AlternatingGroupFiveClassIndex AlternatingGroupFiveClassIndex (Cyclotomic 5) :=
   let φ := alternatingGroupFiveGolden
   let φ' := alternatingGroupFiveGoldenConjugate
@@ -146,11 +149,11 @@ def alternatingGroupFiveExactCharacterTable :
      4,  0,  1, -1, -1;
      5,  1, -1,  0,  0]
 
-/-- The entrywise formula for the exact ordinary character table. -/
+/-- The entrywise formula for the candidate ordinary character data. -/
 @[simp]
-theorem alternatingGroupFiveExactCharacterTable_apply
+theorem alternatingGroupFiveCandidateCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
-    alternatingGroupFiveExactCharacterTable i j =
+    alternatingGroupFiveCandidateCharacterTable i j =
       (let φ := alternatingGroupFiveGolden
        let φ' := alternatingGroupFiveGoldenConjugate
        !![1,  1,  1,  1,  1;
@@ -162,27 +165,27 @@ theorem alternatingGroupFiveExactCharacterTable_apply
         (finCongr numClasses_alternatingGroupFiveClassData j)) := by
   fin_cases i <;> fin_cases j <;> decide
 
-/-- The character degrees attached to the five exact rows. -/
-def alternatingGroupFiveCharacterDegrees : AlternatingGroupFiveClassIndex → ℕ :=
+/-- The candidate character degrees attached to the five rows. -/
+def alternatingGroupFiveCandidateCharacterDegrees : AlternatingGroupFiveClassIndex → ℕ :=
   ![1, 3, 3, 4, 5]
 
-/-- The entries of the degree vector are `1`, `3`, `3`, `4`, and `5`. -/
+/-- The entries of the candidate degree vector are `1`, `3`, `3`, `4`, and `5`. -/
 @[simp]
-theorem alternatingGroupFiveCharacterDegrees_apply (i : AlternatingGroupFiveClassIndex) :
-    alternatingGroupFiveCharacterDegrees i =
+theorem alternatingGroupFiveCandidateCharacterDegrees_apply (i : AlternatingGroupFiveClassIndex) :
+    alternatingGroupFiveCandidateCharacterDegrees i =
       ![1, 3, 3, 4, 5] (finCongr numClasses_alternatingGroupFiveClassData i) := by
   fin_cases i <;> decide
 
 /-- The two degree-three rows are genuinely distinct. -/
-theorem alternatingGroupFiveExactCharacterTable_row_one_ne_row_two :
-    alternatingGroupFiveExactCharacterTable ⟨1, by simp⟩ ≠
-      alternatingGroupFiveExactCharacterTable ⟨2, by simp⟩ := by
+theorem alternatingGroupFiveCandidateCharacterTable_row_one_ne_row_two :
+    alternatingGroupFiveCandidateCharacterTable ⟨1, by simp⟩ ≠
+      alternatingGroupFiveCandidateCharacterTable ⟨2, by simp⟩ := by
   decide
 
-/-- Every displayed central-character row is normalized at the identity class. -/
-theorem alternatingGroupFiveExactCentralCharacterTable_index_one
+/-- Every candidate central-character row is normalized at the identity class. -/
+theorem alternatingGroupFiveCandidateCentralCharacterTable_index_one
     (i : AlternatingGroupFiveClassIndex) :
-    alternatingGroupFiveExactCentralCharacterTable i
+    alternatingGroupFiveCandidateCentralCharacterTable i
       (alternatingGroupFiveClassData.index 1) = 1 := by
   have hrep : alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 := by rfl
   have hindex : alternatingGroupFiveClassData.index 1 = ⟨0, by simp⟩ := by
@@ -191,43 +194,44 @@ theorem alternatingGroupFiveExactCentralCharacterTable_index_one
   rw [hindex]
   fin_cases i <;> decide
 
-/-- Every displayed degree is positive and divides the order of `A₅`. -/
-theorem alternatingGroupFive_characterDegrees_pos_and_dvd (i : AlternatingGroupFiveClassIndex) :
-    0 < alternatingGroupFiveCharacterDegrees i ∧
-      alternatingGroupFiveCharacterDegrees i ∣ Nat.card (alternatingGroup (Fin 5)) := by
+/-- Every candidate degree is positive and divides the order of `A₅`. -/
+theorem alternatingGroupFive_candidateCharacterDegrees_pos_and_dvd
+    (i : AlternatingGroupFiveClassIndex) :
+    0 < alternatingGroupFiveCandidateCharacterDegrees i ∧
+      alternatingGroupFiveCandidateCharacterDegrees i ∣ Nat.card (alternatingGroup (Fin 5)) := by
   rw [natCard_alternatingGroup_five]
   fin_cases i <;> decide
 
-/-- The sum of the squares of the displayed degrees is the order of `A₅`. -/
-theorem alternatingGroupFive_sum_characterDegrees_sq :
-    ∑ i, alternatingGroupFiveCharacterDegrees i ^ 2 =
+/-- The sum of the squares of the candidate degrees is the order of `A₅`. -/
+theorem alternatingGroupFive_sum_candidateCharacterDegrees_sq :
+    ∑ i, alternatingGroupFiveCandidateCharacterDegrees i ^ 2 =
       Nat.card (alternatingGroup (Fin 5)) := by
   rw [natCard_alternatingGroup_five]
   decide
 
-/-- The displayed central and ordinary tables obey the division-free conversion formula. -/
-theorem alternatingGroupFive_degree_mul_centralCharacterTable
+/-- The candidate central and ordinary data obey the division-free conversion formula. -/
+theorem alternatingGroupFive_candidateDegree_mul_candidateCentralCharacterTable
     (i j : AlternatingGroupFiveClassIndex) :
-    (alternatingGroupFiveCharacterDegrees i : Cyclotomic 5) *
-        alternatingGroupFiveExactCentralCharacterTable i j =
+    (alternatingGroupFiveCandidateCharacterDegrees i : Cyclotomic 5) *
+        alternatingGroupFiveCandidateCentralCharacterTable i j =
       (alternatingGroupFiveClassData.classFinset j).card *
-        alternatingGroupFiveExactCharacterTable i j := by
+        alternatingGroupFiveCandidateCharacterTable i j := by
   rw [card_classFinset_alternatingGroupFiveClassData]
   fin_cases i <;> fin_cases j <;> decide
 
-private theorem alternatingGroupFive_characterTable_orthogonal_reindex
+private theorem alternatingGroupFive_candidateCharacterTable_orthogonal_reindex
     (i j : Fin 5) :
     ∑ k, (alternatingGroupFiveClassData.classFinset
         ((finCongr numClasses_alternatingGroupFiveClassData).symm k)).card *
-        alternatingGroupFiveExactCharacterTable
+        alternatingGroupFiveCandidateCharacterTable
           ((finCongr numClasses_alternatingGroupFiveClassData).symm i)
           ((finCongr numClasses_alternatingGroupFiveClassData).symm k) *
-          star (alternatingGroupFiveExactCharacterTable
+          star (alternatingGroupFiveCandidateCharacterTable
             ((finCongr numClasses_alternatingGroupFiveClassData).symm j)
             ((finCongr numClasses_alternatingGroupFiveClassData).symm k)) =
       if i = j then (Nat.card (alternatingGroup (Fin 5)) : Cyclotomic 5) else 0 := by
   rw [natCard_alternatingGroup_five]
-  simp only [alternatingGroupFiveExactCharacterTable_apply]
+  simp only [alternatingGroupFiveCandidateCharacterTable_apply]
   have hgolden : alternatingGroupFiveGolden =
       1 - alternatingGroupFiveGoldenConjugate := by
     linear_combination alternatingGroupFiveGolden_add_conjugate
@@ -262,27 +266,27 @@ private theorem alternatingGroupFive_characterTable_orthogonal_reindex
     try rw [hsq]
     try ring
 
-/-- The displayed exact ordinary-character rows satisfy Hermitian row orthogonality. -/
-theorem alternatingGroupFive_characterTable_orthogonal
+/-- The candidate ordinary-character rows satisfy Hermitian row orthogonality. -/
+theorem alternatingGroupFive_candidateCharacterTable_orthogonal
     (i j : AlternatingGroupFiveClassIndex) :
     ∑ k, (alternatingGroupFiveClassData.classFinset k).card *
-        alternatingGroupFiveExactCharacterTable i k *
-          star (alternatingGroupFiveExactCharacterTable j k) =
+        alternatingGroupFiveCandidateCharacterTable i k *
+          star (alternatingGroupFiveCandidateCharacterTable j k) =
       if i = j then (Nat.card (alternatingGroup (Fin 5)) : Cyclotomic 5) else 0 := by
   let e := finCongr numClasses_alternatingGroupFiveClassData
   calc
     ∑ k, (alternatingGroupFiveClassData.classFinset k).card *
-          alternatingGroupFiveExactCharacterTable i k *
-            star (alternatingGroupFiveExactCharacterTable j k) =
+          alternatingGroupFiveCandidateCharacterTable i k *
+            star (alternatingGroupFiveCandidateCharacterTable j k) =
         ∑ k : Fin 5, (alternatingGroupFiveClassData.classFinset (e.symm k)).card *
-          alternatingGroupFiveExactCharacterTable i (e.symm k) *
-            star (alternatingGroupFiveExactCharacterTable j (e.symm k)) := by
+          alternatingGroupFiveCandidateCharacterTable i (e.symm k) *
+            star (alternatingGroupFiveCandidateCharacterTable j (e.symm k)) := by
       simpa only [Equiv.symm_apply_apply] using e.sum_comp fun k ↦
         (alternatingGroupFiveClassData.classFinset (e.symm k)).card *
-          alternatingGroupFiveExactCharacterTable i (e.symm k) *
-            star (alternatingGroupFiveExactCharacterTable j (e.symm k))
+          alternatingGroupFiveCandidateCharacterTable i (e.symm k) *
+            star (alternatingGroupFiveCandidateCharacterTable j (e.symm k))
     _ = if i = j then (Nat.card (alternatingGroup (Fin 5)) : Cyclotomic 5) else 0 := by
       simpa only [e, Equiv.symm_apply_apply, e.injective.eq_iff] using
-        alternatingGroupFive_characterTable_orthogonal_reindex (e i) (e j)
+        alternatingGroupFive_candidateCharacterTable_orthogonal_reindex (e i) (e j)
 
 end TauCeti
