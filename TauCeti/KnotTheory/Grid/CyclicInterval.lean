@@ -80,6 +80,8 @@ directions before taking products.
 * `TauCeti.Grid.mem_cIco_of_mem_cIco_of_mem_cIoo`: the membership form of that nesting.
 * `TauCeti.Grid.notMem_cIco_finRotate_left`: a point is never in the half-open arc starting at
   its own cyclic successor.
+* `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
+  cut at an interior point misses the whole arc.
 
 ## References
 
@@ -783,6 +785,7 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 The interval `cIco (finRotate n c) r` starts just after `c`; since `c` is the immediate
 predecessor of the left endpoint, `c` can only appear as the (excluded) right endpoint. -/
+@[simp]
 theorem notMem_cIco_finRotate_left (c r : Fin n) : c ∉ cIco (finRotate n c) r := by
   cases n with
   | zero => exact c.elim0
@@ -805,6 +808,18 @@ theorem notMem_cIco_finRotate_left (c r : Fin n) : c ∉ cIco (finRotate n c) r 
         coe_finRotate_of_ne_last hlast
       rw [hrot] at hmem hne'
       split_ifs at hmem with h <;> omega
+
+/-- A point missing both halves of a half-open cyclic interval cut at an interior point
+misses the whole interval. -/
+theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
+    (h₁ : p ∉ cIco r₀ r₁) (h₂ : p ∉ cIco r₁ s) (hcyc : r₁ ∈ cIoo r₀ s) :
+    p ∉ cIco r₀ s := by
+  -- Rewrite the goal interval as the union of the two halves, then case on the union.
+  intro hmem
+  rw [← cIco_union_cIco_eq_cIco_of_mem_cIoo hcyc] at hmem
+  rcases Finset.mem_union.mp hmem with h | h
+  · exact h₁ h
+  · exact h₂ h
 
 end Grid
 

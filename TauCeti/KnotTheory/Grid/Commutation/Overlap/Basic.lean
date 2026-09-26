@@ -45,6 +45,9 @@ must distinguish the two cases.
   is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
   exactly one of the two new rectangles has the original pentagon's terminal side.
+* `TauCeti.GridRectanglePentagonDecomposition.recut_of_isEmpty`: the shared underlying
+  rectangle recut with the emptiness hypotheses discharged once, used by all
+  terminal-side overlap results instead of repeating the construction.
 
 These are the recut/repartition combinatorics and weight transfers for the pentagon-counting
 commutation chain map.
@@ -453,6 +456,25 @@ theorem recut_first_or_second_right_eq_pentagon_right
       rw [hsecond] at h
       exact D.toRectangleDecomposition.second.left_ne_right h
   simpa only [D.toRectangleDecomposition_second_right] using hbranches
+
+/-- The shared recut construction for overlap arguments: `D.toRectangleDecomposition`
+recut along its common side, with the rectangle emptiness supplied from `hrectangle` and the
+pentagon emptiness from `hpentagon`. All overlap results that need the recut work with this
+single construction rather than repeating it. -/
+@[expose] noncomputable def recut_of_isEmpty
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    GridRectangleDecomposition x z :=
+  D.toRectangleDecomposition.recut hone
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using
+      hpentagon)
 
 end GridRectanglePentagonDecomposition
 
