@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BaseChange
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
@@ -37,6 +38,10 @@ constructed symplectic group scheme.
 * `TauCeti.SpStd.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL_(2n+2)/A)`.
 * `TauCeti.SpStd.baseChangeCoordinateIso`: its quotient is the scalar extension of the integral
   carrier coordinate Hopf algebra.
+* `TauCeti.SpStd.baseChangeGroupScheme`: the scheme-theoretic base change of the integral carrier.
+* `TauCeti.SpStd.baseChangePresentationIso`: its transported quotient-spectrum presentation.
+* `TauCeti.SpStd.baseChangeι`: its canonical closed immersion into `GL_(2n+2)` over the target
+  ring.
 * `TauCeti.SpStd.baseChangePointsMulEquiv`: the points of that quotient over a commutative
   `A`-algebra are the integral carrier's matrix points over the same algebra.
 * `TauCeti.SpStd.rootSubgroupToBaseChangeCoordinateMap`: the transported numbered root subgroup
@@ -48,6 +53,8 @@ constructed symplectic group scheme.
 
 * `TauCeti.SpStd.mkQuotient_comp_baseChangeCoordinateIso_hom`: the coordinate isomorphism is
   compatible with the two quotient presentations.
+* `TauCeti.SpStd.baseChangeι_eq_presentation`: the canonical immersion agrees with the closed
+  immersion of the transported quotient presentation.
 * `TauCeti.SpStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: a point of `GL_(2n+2)`
   satisfies the transported defining equations exactly when its matrix is an integral carrier
   point.
@@ -86,7 +93,7 @@ calculation is repeated here.
 
 public section
 
-open CategoryTheory
+open AlgebraicGeometry CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.SpStd
@@ -178,6 +185,67 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
     (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
+
+/-! ## The carrier group scheme after base change -/
+
+section GroupScheme
+
+variable (k : Type) [CommRing k]
+
+/-- The scheme-theoretic base change to `k` of the integral full-weight type-`C_(n+1)` carrier.
+
+The same-universe restriction is inherited from the current affine-group-scheme base-change
+comparison. It includes the algebraic closures of finite prime fields used by finite groups of
+Lie type. -/
+noncomputable abbrev baseChangeGroupScheme :
+    Grp (Over (Spec (CommRingCat.of k))) :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.obj
+    (groupScheme n)
+
+/-- The scheme-theoretic base change of the integral carrier is represented by its transported
+quotient presentation. -/
+noncomputable def baseChangePresentationIso :
+    baseChangeGroupScheme n k ≅
+      CommHopfAlgCat.quotientSpec
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k) :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.mapIso
+      (eqToIso (groupScheme_def n)) ≪≫
+    GeneralLinear.hopfIdealBaseChangeIso ℤ k ((n + 1) + (n + 1))
+      (definingIdeal n) (baseChangeDefiningIdeal n k) (baseChangeCoordinateIso n k)
+
+/-- The ambient closed immersion obtained by base-changing the canonical integral carrier
+immersion and identifying the base-changed ambient group with `GL_(2n+2)/k`. -/
+noncomputable def baseChangeι :
+    baseChangeGroupScheme n k ⟶ GeneralLinear.groupScheme k ((n + 1) + (n + 1)) :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.map (carrierι n) ≫
+    (GeneralLinear.groupSchemeBaseChangeIso ℤ k ((n + 1) + (n + 1))).hom
+
+/-- The canonical base-changed carrier immersion is the base change of the integral carrier
+immersion followed by the canonical identification of the ambient general linear groups. -/
+theorem baseChangeι_def :
+    baseChangeι n k =
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.map (carrierι n) ≫
+        (GeneralLinear.groupSchemeBaseChangeIso ℤ k ((n + 1) + (n + 1))).hom := by
+  rw [baseChangeι]
+
+/-- The canonical base-changed carrier immersion agrees with the closed immersion of its
+transported quotient presentation. -/
+theorem baseChangeι_eq_presentation :
+    baseChangeι n k =
+      (baseChangePresentationIso n k).hom ≫
+        GeneralLinear.hopfIdealInclusion k ((n + 1) + (n + 1))
+          (baseChangeDefiningIdeal n k) := by
+  rw [baseChangeι_def, carrierι_eq_eqToHom_comp_hopfIdealInclusion,
+    baseChangePresentationIso, Iso.trans_hom, Functor.mapIso_hom, Functor.map_comp,
+    Category.assoc]
+  rw [GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso ℤ k
+    ((n + 1) + (n + 1)) (definingIdeal n) (baseChangeDefiningIdeal n k)
+    (baseChangeCoordinateIso n k) (mkQuotient_comp_baseChangeCoordinateIso_hom n k)]
+  rw [eqToIso.hom]
+  simp only [Category.assoc]
+
+end GroupScheme
 
 /-! ## Points of the base-changed carrier -/
 

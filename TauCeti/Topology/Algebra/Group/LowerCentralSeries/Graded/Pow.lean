@@ -127,8 +127,7 @@ theorem gradedPow_gradedBracket_left_of_odd (hp : Odd p) {j k : ℕ}
       gradedCast p G (by omega) (gradedBracket p G (j + 1) k (gradedPow p G j x) y) := by
   rcases Nat.eq_zero_or_pos j with rfl | hj
   · have h := gradedBracket_gradedPow_zero_left x y
-    rw [Nat.choose_two_right, Nat.mul_div_assoc _ (Nat.Odd.sub_odd hp odd_one).two_dvd,
-      mul_nsmul, nsmul_gradedPiece_eq_zero, nsmul_zero] at h
+    rw [choose_two_nsmul_gradedPiece_eq_zero_of_odd hp] at h
     simpa only [add_zero] using h.symm
   · exact gradedPow_gradedBracket_left hj x y
 
@@ -140,8 +139,7 @@ theorem gradedPow_gradedBracket_right_of_odd (hp : Odd p) {j k : ℕ}
       gradedCast p G (by omega) (gradedBracket p G j (k + 1) x (gradedPow p G k y)) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · have h := gradedBracket_gradedPow_zero_right x y
-    rw [Nat.choose_two_right, Nat.mul_div_assoc _ (Nat.Odd.sub_odd hp odd_one).two_dvd,
-      mul_nsmul, nsmul_gradedPiece_eq_zero, nsmul_zero] at h
+    rw [choose_two_nsmul_gradedPiece_eq_zero_of_odd hp] at h
     simpa only [add_zero] using h.symm
   · exact gradedPow_gradedBracket_right hk x y
 

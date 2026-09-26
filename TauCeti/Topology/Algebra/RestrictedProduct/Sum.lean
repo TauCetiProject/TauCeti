@@ -35,6 +35,9 @@ Under either hypothesis `restrictedProductSum` is a homeomorphism.  Openness can
 altogether: `not_continuous_restrictedProductSum_symm` exhibits a family with trivial reference
 subgroups for which the inverse is discontinuous.
 
+Everything here except that counterexample is also stated for additive groups
+(`addRestrictedProductSum`, …).
+
 ## References
 
 * N. Bourbaki, *General Topology*.
@@ -56,6 +59,10 @@ variable [∀ k, Group (G k)]
 /-- A restricted product over `ι₁ ⊕ ι₂` is the product of the restricted products over the two
 summands, coordinatewise the identity in both directions. All three restricted products are taken
 over the cofinite filter of their index types. -/
+@[to_additive addRestrictedProductSum /-- A restricted product of additive groups over `ι₁ ⊕ ι₂`
+is the product of the restricted products over the two summands, coordinatewise the identity in
+both directions. All three restricted products are taken over the cofinite filter of their index
+types. -/]
 def restrictedProductSum (U : ∀ k, Subgroup (G k)) :
     (Πʳ k, [G k, (U k : Set (G k))]) ≃*
       (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]) ×
@@ -78,19 +85,22 @@ def restrictedProductSum (U : ∀ k, Subgroup (G k)) :
 variable (U : ∀ k, Subgroup (G k))
 
 /-- The left component of the splitting is the restriction of coordinates to `ι₁`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductSum_apply_inl /-- The left component of the
+additive splitting is the restriction of coordinates to `ι₁`. -/]
 theorem restrictedProductSum_apply_inl (x : Πʳ k, [G k, (U k : Set (G k))]) (i : ι₁) :
     (restrictedProductSum U x).1 i = x (Sum.inl i) := by
   rfl
 
 /-- The right component of the splitting is the restriction of coordinates to `ι₂`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductSum_apply_inr /-- The right component of the
+additive splitting is the restriction of coordinates to `ι₂`. -/]
 theorem restrictedProductSum_apply_inr (x : Πʳ k, [G k, (U k : Set (G k))]) (j : ι₂) :
     (restrictedProductSum U x).2 j = x (Sum.inr j) := by
   rfl
 
 /-- The inverse of the splitting reads its `Sum.inl` coordinates off the left factor. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductSum_symm_apply_inl /-- The inverse of the additive
+splitting reads its `Sum.inl` coordinates off the left factor. -/]
 theorem restrictedProductSum_symm_apply_inl
     (y : (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]) ×
       (Πʳ j, [G (Sum.inr j), (U (Sum.inr j) : Set (G (Sum.inr j)))])) (i : ι₁) :
@@ -98,7 +108,8 @@ theorem restrictedProductSum_symm_apply_inl
   rfl
 
 /-- The inverse of the splitting reads its `Sum.inr` coordinates off the right factor. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductSum_symm_apply_inr /-- The inverse of the additive
+splitting reads its `Sum.inr` coordinates off the right factor. -/]
 theorem restrictedProductSum_symm_apply_inr
     (y : (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]) ×
       (Πʳ j, [G (Sum.inr j), (U (Sum.inr j) : Set (G (Sum.inr j)))])) (j : ι₂) :
@@ -109,6 +120,9 @@ variable [∀ k, TopologicalSpace (G k)]
 
 /-- The splitting over a sum is continuous for every reference family; unlike its inverse, it
 needs no openness hypothesis on the reference subgroups. -/
+@[to_additive continuous_addRestrictedProductSum /-- The additive splitting over a sum is continuous
+for every reference family; unlike its inverse, it needs no openness hypothesis on the reference
+subgroups. -/]
 theorem continuous_restrictedProductSum : Continuous (restrictedProductSum U) := by
   refine continuous_prodMk.mpr ⟨?_, ?_⟩
   · exact RestrictedProduct.mapAlong_continuous G (fun i ↦ G (Sum.inl i)) Sum.inl
@@ -121,6 +135,10 @@ theorem continuous_restrictedProductSum : Continuous (restrictedProductSum U) :=
 /-- On principal stages the inverse of the splitting over a sum is continuous for every
 reference family: openness of the reference subgroups is needed only to pass from the stages to
 the restricted products themselves. -/
+@[to_additive continuous_addRestrictedProductSum_symm_comp_prodMap_inclusion /-- On principal stages
+the inverse of the additive splitting over a sum is continuous for every reference family: openness
+of the reference subgroups is needed only to pass from the stages to the restricted products
+themselves. -/]
 theorem continuous_restrictedProductSum_symm_comp_prodMap_inclusion {S₁ : Set ι₁} {S₂ : Set ι₂}
     (hS₁ : cofinite ≤ 𝓟 S₁) (hS₂ : cofinite ≤ 𝓟 S₂) :
     Continuous ((restrictedProductSum U).symm ∘
@@ -156,6 +174,10 @@ theorem continuous_restrictedProductSum_symm_comp_prodMap_inclusion {S₁ : Set 
 /-- The inverse of the splitting over a sum is continuous when every reference subgroup is open.
 This is the same openness hypothesis under which Mathlib's `RestrictedProduct.isTopologicalGroup`
 holds; the forward direction `continuous_restrictedProductSum` needs no such hypothesis. -/
+@[to_additive continuous_addRestrictedProductSum_symm /-- The inverse of the additive splitting over
+a sum is continuous when every reference subgroup is open. This is the same openness hypothesis
+under which Mathlib's `RestrictedProduct.isTopologicalAddGroup` holds; the forward direction
+`continuous_addRestrictedProductSum` needs no such hypothesis. -/]
 theorem continuous_restrictedProductSum_symm (hU : ∀ k, IsOpen (U k : Set (G k))) :
     Continuous (restrictedProductSum U).symm := by
   rw [RestrictedProduct.continuous_dom_prod_right fun i ↦ hU (Sum.inl i)]
@@ -168,6 +190,9 @@ theorem continuous_restrictedProductSum_symm (hU : ∀ k, IsOpen (U k : Set (G k
 /-- The inverse of the splitting over a sum is continuous when the left summand is finite and
 every reference subgroup over the right summand is open; the reference subgroups over the finite
 summand need not be open. -/
+@[to_additive continuous_addRestrictedProductSum_symm_of_finite_left /-- The inverse of the additive
+splitting over a sum is continuous when the left summand is finite and every reference subgroup over
+the right summand is open; the reference subgroups over the finite summand need not be open. -/]
 theorem continuous_restrictedProductSum_symm_of_finite_left [Finite ι₁]
     (hU : ∀ j, IsOpen (U (Sum.inr j) : Set (G (Sum.inr j)))) :
     Continuous (restrictedProductSum U).symm := by
