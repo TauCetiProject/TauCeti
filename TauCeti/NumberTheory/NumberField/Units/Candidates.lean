@@ -18,7 +18,8 @@ A unit whose value at a real infinite place lies between `1` and `B` has bounded
 embedding when the unit rank is one. The bounds on every complex embedding then give an explicit
 bound on every coefficient of its minimal polynomial. `unitCandidates` enumerates all monic
 integer polynomials of the field degree within that coefficient bound; every unit in the interval
-belongs to this finite list when the degree is prime.
+whose minimal polynomial has the field degree belongs to this finite list, in particular every such
+unit when the degree is prime.
 
 The enumeration uses `Polynomial.ofFn`, so it is a finite polynomial list made directly from
 bounded integer coefficient vectors. It is intentionally an overapproximation: a later root test
@@ -57,6 +58,7 @@ noncomputable def unitCandidates (K : Type*) [Field K] [NumberField K] (B : ℝ)
 
 /-- Membership in the candidate list is exactly monicity, field degree, and the integer
 coefficient bound. -/
+@[simp]
 theorem mem_unitCandidates_iff (f : ℤ[X]) (B : ℝ) :
     f ∈ unitCandidates K B ↔
       f.Monic ∧ f.natDegree = Module.finrank ℚ K ∧
@@ -85,54 +87,35 @@ open scoped Classical in
 private theorem norm_logEmbedding_le_log_of_interval (hr : rank K = 1)
     {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
     (hlo : 1 < w.embedding_of_isReal hw (v : K))
-    (hhi : w.embedding_of_isReal hw (v : K) < B) :
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
     ‖logEmbedding K (Additive.ofMul v)‖ ≤ Real.log B := by
   have hval : w v = w.embedding_of_isReal hw (v : K) := by
     rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
       abs_of_pos (lt_trans zero_lt_one hlo)]
   rw [norm_logEmbedding_eq_mult_abs_log hr v w, hw.mult_eq_one, Nat.cast_one, one_mul,
     abs_of_pos (Real.log_pos (hval ▸ hlo))]
-  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi.le)
+  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi)
 
-/-- Every unit in the selected real interval has a minimal polynomial in `unitCandidates`
-when the unit rank is one and the field degree is prime. -/
-theorem minpoly_mem_unitCandidates (hr : rank K = 1)
-    (hp : Nat.Prime (Module.finrank ℚ K)) {w : InfinitePlace K} (hw : w.IsReal)
-    (v : (𝓞 K)ˣ) {B : ℝ}
+/-- Every unit in the selected real interval whose minimal polynomial has the field degree has
+its minimal polynomial in `unitCandidates` when the unit rank is one. -/
+theorem minpoly_mem_unitCandidates_of_natDegree_eq (hr : rank K = 1)
+    {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
+    (hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = Module.finrank ℚ K)
     (hlo : 1 < w.embedding_of_isReal hw (v : K))
-    (hhi : w.embedding_of_isReal hw (v : K) < B) :
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
     minpoly ℤ (v : 𝓞 K) ∈ unitCandidates K B := by
   classical
-  have hnot : v ∉ torsion K := by
-    intro hv
-    have hvone := (NumberField.Units.mem_torsion (x := v)).mp hv w
-    have hval : w v = w.embedding_of_isReal hw (v : K) := by
-      rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
-        abs_of_pos (lt_trans zero_lt_one hlo)]
-    exact (ne_of_gt hlo) (hval ▸ hvone)
-  have hgen := adjoin_eq_top_of_finrank_prime hp hnot
-  have hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = Module.finrank ℚ K := by
-    have hrat := (Field.primitive_element_iff_minpoly_natDegree_eq ℚ ((v : 𝓞 K) : K)).mp
-      ((IntermediateField.adjoin_eq_top_iff_of_isAlgebraic
-        fun x _ => IsAlgebraic.of_finite ℚ x).mpr hgen)
-    rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-      (minpoly.monic (v : 𝓞 K).isIntegral).natDegree_map] at hrat
-    exact hrat
   apply (mem_unitCandidates_iff (K := K) _ B).mpr
   refine ⟨minpoly.monic (v : 𝓞 K).isIntegral, hdeg, fun i => ?_⟩
   have hB : 0 ≤ Real.log B := by
-    exact (Real.log_pos (lt_trans hlo hhi)).le
-  have hBpos : 0 < B := lt_trans (lt_trans zero_lt_one hlo) hhi
+    exact (Real.log_pos (lt_of_lt_of_le hlo hhi)).le
+  have hBpos : 0 < B := lt_of_lt_of_le (lt_trans zero_lt_one hlo) hhi
   have hnorm := norm_logEmbedding_le_log_of_interval hr hw v hlo hhi
   have hemb : ∀ φ : K →+* ℂ, ‖φ ((v : 𝓞 K) : K)‖ ≤
       B ^ 2 := by
     apply (InfinitePlace.le_iff_le _ _).mp
     intro w'
-    rw [← Real.exp_log (Units.pos_at_place v w')]
-    rw [show B ^ 2 = Real.exp (2 * Real.log B) by
-      rw [mul_comm (2 : ℝ) (Real.log B), Real.exp_mul, Real.exp_log hBpos]
-      norm_num]
-    apply Real.exp_le_exp.mpr
+    rw [← Real.log_le_log_iff (Units.pos_at_place v w') (pow_pos hBpos 2), Real.log_pow]
     have h := NumberField.Units.dirichletUnitTheorem.log_le_of_logEmbedding_le
       (K := K) hB hnorm w'
     have hcard : Fintype.card (InfinitePlace K) = 2 := by
@@ -152,5 +135,30 @@ theorem minpoly_mem_unitCandidates (hr : rank K = 1)
         (Module.finrank ℚ K).choose (Module.finrank ℚ K / 2) := by
     simpa only [eq_intCast, Int.norm_cast_rat, Int.norm_eq_abs, Int.cast_abs] using hcoeff
   exact_mod_cast hcoeff'.trans (Nat.le_ceil _)
+
+/-- Every unit in the selected real interval has a minimal polynomial in `unitCandidates`
+when the unit rank is one and the field degree is prime. -/
+theorem minpoly_mem_unitCandidates (hr : rank K = 1)
+    (hp : Nat.Prime (Module.finrank ℚ K)) {w : InfinitePlace K} (hw : w.IsReal)
+    (v : (𝓞 K)ˣ) {B : ℝ}
+    (hlo : 1 < w.embedding_of_isReal hw (v : K))
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
+    minpoly ℤ (v : 𝓞 K) ∈ unitCandidates K B := by
+  have hnot : v ∉ torsion K := by
+    intro hv
+    have hvone := (NumberField.Units.mem_torsion (x := v)).mp hv w
+    have hval : w v = w.embedding_of_isReal hw (v : K) := by
+      rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
+        abs_of_pos (lt_trans zero_lt_one hlo)]
+    exact (ne_of_gt hlo) (hval ▸ hvone)
+  have hgen := adjoin_eq_top_of_finrank_prime hp hnot
+  have hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = Module.finrank ℚ K := by
+    have hrat := (Field.primitive_element_iff_minpoly_natDegree_eq ℚ ((v : 𝓞 K) : K)).mp
+      ((IntermediateField.adjoin_eq_top_iff_of_isAlgebraic
+        fun x _ => IsAlgebraic.of_finite ℚ x).mpr hgen)
+    rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
+      (minpoly.monic (v : 𝓞 K).isIntegral).natDegree_map] at hrat
+    exact hrat
+  exact minpoly_mem_unitCandidates_of_natDegree_eq hr hw v hdeg hlo hhi
 
 end TauCeti.NumberField.Units
