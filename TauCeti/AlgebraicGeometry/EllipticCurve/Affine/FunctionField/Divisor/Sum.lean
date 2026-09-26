@@ -33,6 +33,8 @@ produce its functions.
   the point--place dictionary.
 * `WeierstrassCurve.Affine.divisorSum_eq_zero_iff`: **a degree-zero divisor is principal exactly
   when its sum is `O`.**
+* `WeierstrassCurve.Affine.exists_principal_eq_ofPoint_add_sub`: the line function, whose divisor
+  is `(P + Q) - (P) - ((Q) - (O))`.
 
 ## References
 
@@ -126,6 +128,20 @@ theorem divisorSum_ofPoint_sub_ofPoint (P Q : W.Point) :
         ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree Q 0⟩ :=
     Subtype.ext (sub_sub_sub_cancel_right _ _ _).symm
   rw [hsplit, map_sub, hO, hO]
+
+/-- **The line function**: `(P + Q) - (P) - ((Q) - (O))` is the divisor of a function, its sum
+being `(P + Q) - P - Q = O` (Silverman III.3.5). -/
+theorem exists_principal_eq_ofPoint_add_sub (P Q : W.Point) :
+    ∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
+      WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace (P + Q)).1 -
+        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).1 -
+        (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).1 -
+          WeilDivisor.ofPoint (Place.infinity W)) := by
+  rw [← coe_pointEquivDegreeOnePlace_zero]
+  exact W.divisorSum_eq_zero_iff (D := ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree (P + Q) P⟩ -
+    ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree Q .zero⟩) |>.1
+    (by rw [map_sub, divisorSum_ofPoint_sub_ofPoint, divisorSum_ofPoint_sub_ofPoint,
+      ← Point.zero_def, sub_zero, add_sub_cancel_left, sub_self])
 
 end Dictionary
 
