@@ -20,11 +20,6 @@ set `S` are conditionally independent given their intersection `S ×ˢ T`. Thus 
 families of strips used in the hidden/visible array decomposition are independent given
 the entire hidden block, not merely given a directing measure.
 
-The proof first fixes a finite observation in the columns `T`. An injective column
-reindexing into `T` fixes that observation and compresses the rows `S` into the intersection.
-Kallenberg's contraction lemma gives conditional independence. Mathlib's extension from finite
-observations then recovers the whole collection of columns.
-
 ## References
 
 * D. Aldous, "Representations for partially exchangeable arrays of random variables",
@@ -98,7 +93,7 @@ private theorem SeparatelyExchangeable.condIndepFun_finite_strip
 
 /-- The columns in an infinite set `T` and the rows in `S` are conditionally independent
 given the entire intersection block. No infinitude assumption on `S` is needed. -/
-theorem SeparatelyExchangeable.condIndepFun_strips
+theorem SeparatelyExchangeable.condIndepFun_colStrip_rowStrip
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (S : Set ℕ)
     {T : Set ℕ} (hT : T.Infinite) :
     (Set.univ ×ˢ T).domRestrict ⟂ᵢ[(S ×ˢ T).domRestrict, Set.measurable_restrict _; ρ]
@@ -116,20 +111,5 @@ theorem SeparatelyExchangeable.condIndepFun_strips
   have h := hρ.condIndepFun_finite_strip S hT hC hCU
   exact h.comp (Measurable.of_eval fun p : F ↦
     measurable_pi_apply (⟨p.1.1, ⟨p.1, p.2, rfl⟩⟩ : C)) measurable_id
-
-/-- The joint law of the hidden block and its two crossing strips factors through the
-product of the two strip kernels conditional on the hidden block. This allows the two
-strip families to be sampled independently once that block is given. -/
-theorem SeparatelyExchangeable.jointLaw_strips_eq_prod_condDistrib [Nonempty α]
-    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (S : Set ℕ)
-    {T : Set ℕ} (hT : T.Infinite) :
-    let R := (S ×ˢ T).domRestrict (π := fun _ ↦ α)
-    let A := (Set.univ ×ˢ T).domRestrict (π := fun _ ↦ α)
-    let B := (S ×ˢ Set.univ).domRestrict (π := fun _ ↦ α)
-    ρ.map (fun x ↦ (R x, A x, B x)) =
-      (Kernel.id ×ₖ (condDistrib A R ρ ×ₖ condDistrib B R ρ)) ∘ₘ ρ.map R := by
-  exact (condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib
-    (Set.measurable_restrict _) (Set.measurable_restrict _)
-    (Set.measurable_restrict _)).mp (hρ.condIndepFun_strips S hT)
 
 end TauCeti.Probability
