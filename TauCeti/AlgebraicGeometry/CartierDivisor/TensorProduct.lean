@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Representation
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
@@ -17,16 +17,14 @@ Multiplication of rational functions sends sections of `𝒪_X(D)` and `𝒪_X(E
 additive. A local equation of `E` trivializes the multiplication map: multiplication by the
 equation and its inverse give its local inverse.
 
-The resulting map `D ↦ [𝒪_X(D)]` is an additive homomorphism into the Picard group. Its
-surjectivity, proved in `CartierDivisor/Picard.lean`, shows that every line-bundle class on an
-integral scheme has an inverse.
+The multiplication isomorphism supplies the tensor law needed to construct the Picard group
+in `CartierDivisor/Picard.lean`.
 
 ## Main declarations
 
 * `Scheme.CartierDivisor.tensorProductSheafIso`: `𝒪_X(D) ⊗ 𝒪_X(E) ≅ 𝒪_X(D + E)`;
-* `Scheme.CartierDivisor.toLineBundleClass_add` and `toLineBundleClassHom`: the additive
-  comparison from Cartier divisors to line-bundle classes;
-* `LineBundleClass.isUnit` and its `CommGroup` instance: the Picard group of an integral scheme.
+* `Scheme.CartierDivisor.tensorProductSheafIso_hom`: the forward multiplication map through
+  sheafification.
 
 This is the Cartier divisor version of Hartshorne, *Algebraic Geometry*, II.6.13. The
 construction of the multiplication map follows the Weil divisor construction in
@@ -317,72 +315,63 @@ theorem tensorProductSheafIso_hom :
         (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (D + E).sheaf).hom :=
   (rfl)
 
-/-- The class of the sheaf of `D + E` is the tensor product of the two divisor classes. -/
-@[simp]
-theorem toLineBundleClass_add :
-    (D + E).toLineBundleClass = D.toLineBundleClass * E.toLineBundleClass := by
-  have h (F : CartierDivisor X) :
-      F.toLineBundleClass = LineBundleClass.mk F.toInvertibleSheaf := by
-    apply toLineBundleClass_eq_mk_iff.mpr
-    simpa only [toInvertibleSheaf_obj] using
-      (⟨Iso.refl _⟩ : Nonempty (F.sheaf ≅ F.sheaf))
-  rw [h (D + E), h D, h E, ← LineBundleClass.mk_tensorProduct,
-    LineBundleClass.mk_eq_mk_iff]
-  refine ⟨?_⟩
-  simp only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj]
-  exact (tensorProductSheafIso D E).symm
-
-/-- The line-bundle class of `-D` inverts the class of `D`. -/
-theorem isUnit_toLineBundleClass : IsUnit D.toLineBundleClass :=
-  ⟨⟨D.toLineBundleClass, (-D).toLineBundleClass,
-    by rw [← toLineBundleClass_add, add_neg_cancel, toLineBundleClass_zero],
-    by rw [← toLineBundleClass_add, neg_add_cancel, toLineBundleClass_zero]⟩, rfl⟩
+/-- On a pure tensor of local sections, the tensor-product isomorphism multiplies the
+corresponding rational functions. The sheafification unit sends the sectionwise pure tensor into
+the tensor product sheaf. -/
+theorem tensorProductSheafIso_hom_tmul (U : X.Opens)
+    (s : Γ(D.sheaf, U)) (t : Γ(E.sheaf, U)) :
+    Scheme.Modules.Hom.app
+      ((TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
+        (tensorProductSheafIso D E).hom) U
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
+          D.sheaf.val E.sheaf.val)).app (op U) (s ⊗ₜ t)) =
+      sectionsMul D E U s t := by
+  let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
+    D.sheaf.val E.sheaf.val
+  let F := PresheafOfModules.sheafification (R := X.ringCatSheaf)
+    (𝟙 X.ringCatSheaf.obj)
+  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)
+  have h : adj.unit.app P ≫
+      (SheafOfModules.forget X.ringCatSheaf ⋙
+        PresheafOfModules.restrictScalars (𝟙 X.ringCatSheaf.obj)).map
+        (F.map (tensorPresheafHom D E) ≫
+          (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (D + E).sheaf).hom) =
+      tensorPresheafHom D E := by
+    apply (adj.unit_comp_map_eq_iff _ _).2
+    exact congrArg (fun g => F.map (tensorPresheafHom D E) ≫ g)
+      (TauCeti.SheafOfModules.sheafificationIso_hom X.ringCatSheaf (D + E).sheaf)
+  have hmap :
+      (TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
+        (tensorProductSheafIso D E).hom =
+      F.map (tensorPresheafHom D E) ≫
+        (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (D + E).sheaf).hom := by
+    have hcomp := congrArg
+      (fun g => (TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫ g)
+      (tensorProductSheafIso_hom D E)
+    exact hcomp.trans (Iso.inv_hom_id_assoc _ _)
+  have h' : adj.unit.app P ≫
+      (SheafOfModules.forget X.ringCatSheaf ⋙
+        PresheafOfModules.restrictScalars (𝟙 X.ringCatSheaf.obj)).map
+        ((TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
+          (tensorProductSheafIso D E).hom) = tensorPresheafHom D E :=
+    (congrArg (fun g => adj.unit.app P ≫
+      (SheafOfModules.forget X.ringCatSheaf ⋙
+        PresheafOfModules.restrictScalars (𝟙 X.ringCatSheaf.obj)).map g) hmap).trans h
+  have hU := congrArg (fun f => f.app (op U) (s ⊗ₜ t)) h'
+  change Scheme.Modules.Hom.app
+      ((TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
+        (tensorProductSheafIso D E).hom) U
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
+          D.sheaf.val E.sheaf.val)).app (op U) (s ⊗ₜ t)) =
+      sectionsMul D E U s t at hU
+  exact hU
 
 end TensorProduct
 
 end
 end CartierDivisor
 end Scheme
-
-namespace LineBundleClass
-
-variable {X : Scheme.{u}} [IsIntegral X]
-
-/-- Every line-bundle class on an integral scheme is invertible under tensor product. -/
-theorem isUnit (a : LineBundleClass X) : IsUnit a := by
-  obtain ⟨D, rfl⟩ := Scheme.CartierDivisor.toLineBundleClass_surjective a
-  exact Scheme.CartierDivisor.isUnit_toLineBundleClass D
-
-/-- Tensor product gives the Picard group of any integral scheme. -/
-noncomputable instance : CommGroup (LineBundleClass X) :=
-  commGroupOfIsUnit isUnit
-
-end LineBundleClass
-
-namespace Scheme.CartierDivisor
-
-variable {X : Scheme.{u}} [IsIntegral X]
-
-/-- Negating a Cartier divisor gives the inverse line-bundle class. -/
-@[simp]
-theorem toLineBundleClass_neg (D : CartierDivisor X) :
-    (-D).toLineBundleClass = D.toLineBundleClass⁻¹ := by
-  apply mul_eq_one_iff_eq_inv'.mp
-  rw [← toLineBundleClass_add, add_neg_cancel, toLineBundleClass_zero]
-
-/-- The Cartier divisor map to the tensor-product Picard group, as an additive homomorphism. -/
-noncomputable def toLineBundleClassHom : CartierDivisor X →+ Additive (LineBundleClass X) where
-  toFun D := Additive.ofMul D.toLineBundleClass
-  map_zero' := congrArg Additive.ofMul toLineBundleClass_zero
-  map_add' D E := congrArg Additive.ofMul (toLineBundleClass_add D E)
-
-/-- The bundled Cartier divisor comparison sends `D` to the class of `𝒪_X(D)`. -/
-@[simp]
-lemma toLineBundleClassHom_apply (D : CartierDivisor X) :
-    toLineBundleClassHom D = Additive.ofMul D.toLineBundleClass := by
-  rw [toLineBundleClassHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-
-end Scheme.CartierDivisor
-
 end AlgebraicGeometry
 end TauCeti

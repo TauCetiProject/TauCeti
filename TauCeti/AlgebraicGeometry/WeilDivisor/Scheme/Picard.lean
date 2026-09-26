@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.CartierDivisor.TensorProduct
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.TensorProduct
 
