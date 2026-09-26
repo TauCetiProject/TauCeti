@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pi
 public import TauCeti.RingTheory.Huber.Pair
-public import TauCeti.RingTheory.Huber.StronglyNoetherian
+public import TauCeti.RingTheory.Huber.StronglyNoetherian.Basic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Proper
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Flat

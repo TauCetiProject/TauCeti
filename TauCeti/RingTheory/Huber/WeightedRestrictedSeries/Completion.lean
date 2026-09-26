@@ -33,7 +33,7 @@ construction degenerates to the separated completion of `A`, the identification 
 together with its topological API.
 
 The predicate that every `A⟨X₁,…,Xₖ⟩` is noetherian is
-`TauCeti.Huber.IsStronglyNoetherian`, in `TauCeti.RingTheory.Huber.StronglyNoetherian`; the
+`TauCeti.Huber.IsStronglyNoetherian`, in `TauCeti.RingTheory.Huber.StronglyNoetherian.Basic`; the
 comparison with the plain restricted-series ring, whenever that ring is itself complete and
 Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`, in
