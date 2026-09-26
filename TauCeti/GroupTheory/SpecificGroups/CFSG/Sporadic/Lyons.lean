@@ -29,7 +29,7 @@ describes and enumerates.
 The source writes `x^y` for `y⁻¹xy`, which is `TauCeti.Relator.conj`, and `(x, y)` for
 `x⁻¹y⁻¹xy`, transcribed as `TauCeti.Relator.comm (.inv x) (.inv y)`; a displayed equation `r = s`
 is compiled as the relator `r s⁻¹`, which is `TauCeti.Relator.div`. Each auxiliary word is a
-named definition below, so that every relator is displayed in the source's own shape.
+named abbreviation, so that every relator is displayed in the source's own shape.
 
 ## Source-to-Lean read-through
 
@@ -56,13 +56,10 @@ because its correctness proof is a reproducible coset enumeration.
 ## Main definitions and results
 
 * `TauCeti.Sporadic.Lyons.presentation`: the Havas--Sims finite presentation of `Ly`.
-* `TauCeti.Sporadic.Lyons.cOne` to `TauCeti.Sporadic.Lyons.x371`: the source's auxiliary words,
-  each with a `_def` equation spelling out its word.
-* `TauCeti.Sporadic.Lyons.relatorsOne` to `TauCeti.Sporadic.Lyons.relatorsFour`: the four
-  blocks of relators, each with a `_def` equation, and `TauCeti.Sporadic.Lyons.relatorList`
-  their concatenation; `TauCeti.Sporadic.Lyons.presentation_transcribed` ties the row to it.
+* `TauCeti.Sporadic.Lyons.presentation_transcribed` and the equations for the remaining fields:
+  the characterization of the sealed row, with the source's auxiliary words as `let`-bound
+  abbreviations.
 * `TauCeti.Sporadic.Lyons.matchesMetadata_presentation`,
-  `TauCeti.Sporadic.Lyons.length_relatorList`,
   `TauCeti.Sporadic.Lyons.map_length_relators_presentation` and
   `TauCeti.Sporadic.Lyons.reducedTotalLength_presentation`: the transcription checks.
 
@@ -101,360 +98,170 @@ abbrev genE : Relator (Fin 6) := .gen 4
 abbrev genZ : Relator (Fin 6) := .gen 5
 
 /-- The source's commutator `(r, s) = r⁻¹ s⁻¹ r s`. -/
-abbrev sourceCommutator (r s : Relator (Fin 6)) : Relator (Fin 6) := .comm (.inv r) (.inv s)
+abbrev sourceCommutator {α : Type*} (r s : Relator α) : Relator α := .comm (.inv r) (.inv s)
 
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
 /-- The source's `c₁ = c` (14.6). -/
-def cOne : Relator (Fin 6) :=
+private def cOne : Relator (Fin 6) :=
   genC
 
-/-- The defining word of `cOne`. -/
-theorem cOne_def : cOne =
-    genC := by
-  rfl
-
 /-- The source's `c₂ = c^a` (14.7). -/
-def cTwo : Relator (Fin 6) :=
+private def cTwo : Relator (Fin 6) :=
   Relator.conj genC genA
 
-/-- The defining word of `cTwo`. -/
-theorem cTwo_def : cTwo =
-    Relator.conj genC genA := by
-  rfl
-
 /-- The source's `c₃ = c^b` (14.8). -/
-def cThree : Relator (Fin 6) :=
+private def cThree : Relator (Fin 6) :=
   Relator.conj genC genB
 
-/-- The defining word of `cThree`. -/
-theorem cThree_def : cThree =
-    Relator.conj genC genB := by
-  rfl
-
 /-- The source's `c₄ = c^(b⁻¹)` (14.9). -/
-def cFour : Relator (Fin 6) :=
+private def cFour : Relator (Fin 6) :=
   Relator.conj genC (.inv genB)
 
-/-- The defining word of `cFour`. -/
-theorem cFour_def : cFour =
-    Relator.conj genC (.inv genB) := by
-  rfl
-
 /-- The source's `c₅ = (c₁, c₂)` (14.10). -/
-def cFive : Relator (Fin 6) :=
+private def cFive : Relator (Fin 6) :=
   sourceCommutator cOne cTwo
 
-/-- The defining word of `cFive`. -/
-theorem cFive_def : cFive =
-    sourceCommutator cOne cTwo := by
-  rfl
-
 /-- The source's `a₁ = a` (14.45). -/
-def aOne : Relator (Fin 6) :=
+private def aOne : Relator (Fin 6) :=
   genA
 
-/-- The defining word of `aOne`. -/
-theorem aOne_def : aOne =
-    genA := by
-  rfl
-
 /-- The source's `a₂ = a^(b⁻¹)` (14.46). -/
-def aTwo : Relator (Fin 6) :=
+private def aTwo : Relator (Fin 6) :=
   Relator.conj genA (.inv genB)
 
-/-- The defining word of `aTwo`. -/
-theorem aTwo_def : aTwo =
-    Relator.conj genA (.inv genB) := by
-  rfl
-
 /-- The source's `a₃ = a^(b⁻²)` (14.47). -/
-def aThree : Relator (Fin 6) :=
+private def aThree : Relator (Fin 6) :=
   Relator.conj genA (.pow (.inv genB) 2)
 
-/-- The defining word of `aThree`. -/
-theorem aThree_def : aThree =
-    Relator.conj genA (.pow (.inv genB) 2) := by
-  rfl
-
 /-- The source's `a₄ = a^(b²)` (14.48). -/
-def aFour : Relator (Fin 6) :=
+private def aFour : Relator (Fin 6) :=
   Relator.conj genA (.pow genB 2)
 
-/-- The defining word of `aFour`. -/
-theorem aFour_def : aFour =
-    Relator.conj genA (.pow genB 2) := by
-  rfl
-
 /-- The source's `u = a²` (14.49). -/
-def u : Relator (Fin 6) :=
+private def u : Relator (Fin 6) :=
   .pow genA 2
 
-/-- The defining word of `u`. -/
-theorem u_def : u =
-    .pow genA 2 := by
-  rfl
-
 /-- The source's `x₂₃ = d` (14.50). -/
-def x23 : Relator (Fin 6) :=
+private def x23 : Relator (Fin 6) :=
   genD
 
-/-- The defining word of `x23`. -/
-theorem x23_def : x23 =
-    genD := by
-  rfl
-
 /-- The source's `x₂₄ = d⁻¹` (14.51). -/
-def x24 : Relator (Fin 6) :=
+private def x24 : Relator (Fin 6) :=
   .inv genD
 
-/-- The defining word of `x24`. -/
-theorem x24_def : x24 =
-    .inv genD := by
-  rfl
-
 /-- The source's `x₂₅` (14.52). -/
-def x25 : Relator (Fin 6) :=
+private def x25 : Relator (Fin 6) :=
   .pow genB 2 ⬝ .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genC ⬝ genA ⬝ genC ⬝
   .inv genA ⬝ .inv genC ⬝ genD ⬝ .inv genC ⬝ .pow genB 2 ⬝ .inv genA ⬝ genC ⬝ genB
 
-/-- The defining word of `x25`. -/
-theorem x25_def : x25 =
-    .pow genB 2 ⬝ .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genC ⬝ genA ⬝ genC ⬝
-    .inv genA ⬝ .inv genC ⬝ genD ⬝ .inv genC ⬝ .pow genB 2 ⬝ .inv genA ⬝ genC ⬝ genB := by
-  rfl
-
 /-- The source's `x₂₉` (14.53). -/
-def x29 : Relator (Fin 6) :=
+private def x29 : Relator (Fin 6) :=
   genA ⬝ genB ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genC ⬝ genA ⬝ genC ⬝
   genB ⬝ genC ⬝ .inv genB ⬝ genD ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ genD ⬝ genC ⬝ genB ⬝ genC
 
-/-- The defining word of `x29`. -/
-theorem x29_def : x29 =
-    genA ⬝ genB ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genA ⬝ .pow genB 2 ⬝ .inv genC ⬝ genA ⬝ genC ⬝
-    genB ⬝ genC ⬝ .inv genB ⬝ genD ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ genD ⬝ genC ⬝ genB ⬝ genC := by
-  rfl
-
 /-- The source's `x₄₇` (14.54). -/
-def x47 : Relator (Fin 6) :=
+private def x47 : Relator (Fin 6) :=
   .inv genC ⬝ .inv genD ⬝ .inv genA ⬝ .inv genC ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genD
 
-/-- The defining word of `x47`. -/
-theorem x47_def : x47 =
-    .inv genC ⬝ .inv genD ⬝ .inv genA ⬝ .inv genC ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genD := by
-  rfl
-
 /-- The source's `x₉₆ = bd` (14.55). -/
-def x96 : Relator (Fin 6) :=
+private def x96 : Relator (Fin 6) :=
   genB ⬝ genD
 
-/-- The defining word of `x96`. -/
-theorem x96_def : x96 =
-    genB ⬝ genD := by
-  rfl
-
 /-- The source's `x₁₂₉ = d⁻¹b⁻¹` (14.56). -/
-def x129 : Relator (Fin 6) :=
+private def x129 : Relator (Fin 6) :=
   .inv genD ⬝ .inv genB
 
-/-- The defining word of `x129`. -/
-theorem x129_def : x129 =
-    .inv genD ⬝ .inv genB := by
-  rfl
-
 /-- The source's `x₁₆₂` (14.57). -/
-def x162 : Relator (Fin 6) :=
+private def x162 : Relator (Fin 6) :=
   .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .inv genC ⬝ genB ⬝
   genA
 
-/-- The defining word of `x162`. -/
-theorem x162_def : x162 =
-    .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .inv genC ⬝ genB ⬝
-    genA := by
-  rfl
-
 /-- The source's `x₁₆₃` (14.58). -/
-def x163 : Relator (Fin 6) :=
+private def x163 : Relator (Fin 6) :=
   .pow (.inv genB) 2 ⬝ genA ⬝ genC ⬝ .inv genA ⬝ genB ⬝ genC ⬝ genB
 
-/-- The defining word of `x163`. -/
-theorem x163_def : x163 =
-    .pow (.inv genB) 2 ⬝ genA ⬝ genC ⬝ .inv genA ⬝ genB ⬝ genC ⬝ genB := by
-  rfl
-
 /-- The source's `x₁₆₄` (14.59). -/
-def x164 : Relator (Fin 6) :=
+private def x164 : Relator (Fin 6) :=
   .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genC ⬝ genA ⬝ genB ⬝ genA
 
-/-- The defining word of `x164`. -/
-theorem x164_def : x164 =
-    .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genC ⬝ genA ⬝ genB ⬝ genA := by
-  rfl
-
 /-- The source's `x₁₆₅` (14.60). -/
-def x165 : Relator (Fin 6) :=
+private def x165 : Relator (Fin 6) :=
   .inv genB ⬝ .inv genA ⬝ genB ⬝ genC ⬝ .inv genB ⬝ genA ⬝ genB
 
-/-- The defining word of `x165`. -/
-theorem x165_def : x165 =
-    .inv genB ⬝ .inv genA ⬝ genB ⬝ genC ⬝ .inv genB ⬝ genA ⬝ genB := by
-  rfl
-
 /-- The source's `x₁₆₆` (14.61). -/
-def x166 : Relator (Fin 6) :=
+private def x166 : Relator (Fin 6) :=
   .pow genB 2 ⬝ .inv genA ⬝ .inv genB ⬝ genC ⬝ genB ⬝ genA ⬝ genC ⬝ .pow (.inv genB) 2 ⬝
   .inv genC
 
-/-- The defining word of `x166`. -/
-theorem x166_def : x166 =
-    .pow genB 2 ⬝ .inv genA ⬝ .inv genB ⬝ genC ⬝ genB ⬝ genA ⬝ genC ⬝ .pow (.inv genB) 2 ⬝
-    .inv genC := by
-  rfl
-
 /-- The source's `x₁₆₇ = a⁻³` (14.62). -/
-def x167 : Relator (Fin 6) :=
+private def x167 : Relator (Fin 6) :=
   .pow (.inv genA) 3
 
-/-- The defining word of `x167`. -/
-theorem x167_def : x167 =
-    .pow (.inv genA) 3 := by
-  rfl
-
 /-- The source's `x₁₆₈` (14.63). -/
-def x168 : Relator (Fin 6) :=
+private def x168 : Relator (Fin 6) :=
   genB ⬝ .inv genA ⬝ .inv genB ⬝ .pow (.inv genA) 2
 
-/-- The defining word of `x168`. -/
-theorem x168_def : x168 =
-    genB ⬝ .inv genA ⬝ .inv genB ⬝ .pow (.inv genA) 2 := by
-  rfl
-
 /-- The source's `x₁₆₉` (14.64). -/
-def x169 : Relator (Fin 6) :=
+private def x169 : Relator (Fin 6) :=
   genA ⬝ .pow genB 2 ⬝ genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA
 
-/-- The defining word of `x169`. -/
-theorem x169_def : x169 =
-    genA ⬝ .pow genB 2 ⬝ genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA := by
-  rfl
-
 /-- The source's `x₃₆₄` (14.65). -/
-def x364 : Relator (Fin 6) :=
+private def x364 : Relator (Fin 6) :=
   .inv genA ⬝ genD ⬝ .inv genB ⬝ .inv genC ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genD ⬝ genB ⬝
   .inv genC ⬝ .inv genB ⬝ .inv genA ⬝ .inv genC ⬝ genA ⬝ .inv genB ⬝ genA ⬝ genB ⬝ genA ⬝
   .inv genB
 
-/-- The defining word of `x364`. -/
-theorem x364_def : x364 =
-    .inv genA ⬝ genD ⬝ .inv genB ⬝ .inv genC ⬝ .inv genA ⬝ genB ⬝ .inv genC ⬝ .inv genD ⬝ genB ⬝
-    .inv genC ⬝ .inv genB ⬝ .inv genA ⬝ .inv genC ⬝ genA ⬝ .inv genB ⬝ genA ⬝ genB ⬝ genA ⬝
-    .inv genB := by
-  rfl
-
 /-- The source's `x₃₆₅` (14.66). -/
-def x365 : Relator (Fin 6) :=
+private def x365 : Relator (Fin 6) :=
   genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ genC ⬝ genB ⬝ .inv genC ⬝ genB ⬝ .inv genA ⬝
   .pow (.inv genC) 2 ⬝ genD ⬝ genC ⬝ genA ⬝ genC ⬝ .inv genA ⬝ genC ⬝ .inv genB ⬝ .inv genD
 
-/-- The defining word of `x365`. -/
-theorem x365_def : x365 =
-    genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ genC ⬝ genB ⬝ .inv genC ⬝ genB ⬝ .inv genA ⬝
-    .pow (.inv genC) 2 ⬝ genD ⬝ genC ⬝ genA ⬝ genC ⬝ .inv genA ⬝ genC ⬝ .inv genB ⬝ .inv genD := by
-  rfl
-
 /-- The source's `x₃₆₆` (14.67). -/
-def x366 : Relator (Fin 6) :=
+private def x366 : Relator (Fin 6) :=
   genB ⬝ genA ⬝ .inv genB ⬝ .inv genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ .inv genB ⬝ genC ⬝
   .pow genB 2 ⬝ genC ⬝ genB ⬝ genD ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ genD ⬝ genC ⬝ genB ⬝ genC
 
-/-- The defining word of `x366`. -/
-theorem x366_def : x366 =
-    genB ⬝ genA ⬝ .inv genB ⬝ .inv genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ .inv genB ⬝ genC ⬝
-    .pow genB 2 ⬝ genC ⬝ genB ⬝ genD ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ genD ⬝ genC ⬝ genB ⬝ genC := by
-  rfl
-
 /-- The source's `x₃₆₇` (14.68). -/
-def x367 : Relator (Fin 6) :=
+private def x367 : Relator (Fin 6) :=
   .inv genC ⬝ .inv genB ⬝ .inv genC ⬝ .inv genD ⬝ .pow genB 2 ⬝ .inv genC ⬝ .inv genD ⬝
   .inv genB ⬝ .inv genC ⬝ .pow (.inv genB) 2 ⬝ .inv genC ⬝ genB ⬝ genA ⬝ .pow genB 2 ⬝ genA ⬝
   genB ⬝ .inv genA ⬝ .inv genB
 
-/-- The defining word of `x367`. -/
-theorem x367_def : x367 =
-    .inv genC ⬝ .inv genB ⬝ .inv genC ⬝ .inv genD ⬝ .pow genB 2 ⬝ .inv genC ⬝ .inv genD ⬝
-    .inv genB ⬝ .inv genC ⬝ .pow (.inv genB) 2 ⬝ .inv genC ⬝ genB ⬝ genA ⬝ .pow genB 2 ⬝ genA ⬝
-    genB ⬝ .inv genA ⬝ .inv genB := by
-  rfl
-
 /-- The source's `x₃₆₈` (14.69). -/
-def x368 : Relator (Fin 6) :=
+private def x368 : Relator (Fin 6) :=
   .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genA ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .inv genC ⬝
   .inv genD ⬝ .inv genA ⬝ .inv genC ⬝ genA ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ .inv genC ⬝ .inv genB ⬝
   .inv genA ⬝ .pow (.inv genB) 2
 
-/-- The defining word of `x368`. -/
-theorem x368_def : x368 =
-    .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genA ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .inv genC ⬝
-    .inv genD ⬝ .inv genA ⬝ .inv genC ⬝ genA ⬝ genC ⬝ .pow (.inv genB) 2 ⬝ .inv genC ⬝ .inv genB ⬝
-    .inv genA ⬝ .pow (.inv genB) 2 := by
-  rfl
-
 /-- The source's `x₃₆₉` (14.70). -/
-def x369 : Relator (Fin 6) :=
+private def x369 : Relator (Fin 6) :=
   .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genC ⬝ .inv genD ⬝
   genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .pow (.inv genB) 2 ⬝ genA ⬝
   .inv genB
 
-/-- The defining word of `x369`. -/
-theorem x369_def : x369 =
-    .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genC ⬝ .inv genD ⬝
-    genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genC ⬝ .inv genB ⬝ genA ⬝ .pow (.inv genB) 2 ⬝ genA ⬝
-    .inv genB := by
-  rfl
-
 /-- The source's `x₃₇₀` (14.71). -/
-def x370 : Relator (Fin 6) :=
+private def x370 : Relator (Fin 6) :=
   .inv genD ⬝ genA ⬝ genC ⬝ genB ⬝ genC ⬝ .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genA ⬝ .inv genB ⬝
   .inv genA ⬝ genC ⬝ .inv genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ genB ⬝ .inv genA
 
-/-- The defining word of `x370`. -/
-theorem x370_def : x370 =
-    .inv genD ⬝ genA ⬝ genC ⬝ genB ⬝ genC ⬝ .inv genA ⬝ .inv genC ⬝ .inv genD ⬝ genA ⬝ .inv genB ⬝
-    .inv genA ⬝ genC ⬝ .inv genA ⬝ .pow (.inv genB) 2 ⬝ .inv genA ⬝ genB ⬝ .inv genA := by
-  rfl
-
 /-- The source's `x₃₇₁` (14.72). -/
-def x371 : Relator (Fin 6) :=
+private def x371 : Relator (Fin 6) :=
   .inv genC ⬝ .inv genA ⬝ genC ⬝ genB ⬝ .inv genC ⬝ .inv genD ⬝ genC ⬝ .inv genA ⬝ genC ⬝ genA ⬝
   genC ⬝ .inv genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genB
 
-/-- The defining word of `x371`. -/
-theorem x371_def : x371 =
-    .inv genC ⬝ .inv genA ⬝ genC ⬝ genB ⬝ .inv genC ⬝ .inv genD ⬝ genC ⬝ .inv genA ⬝ genC ⬝ genA ⬝
-    genC ⬝ .inv genB ⬝ .inv genA ⬝ .inv genB ⬝ .inv genA ⬝ genB := by
-  rfl
-
 /-- The source's relators (14.1) to (14.5), presenting `GL₂(5)` on `a` and `b`. -/
-def relatorsOne : List (Relator (Fin 6)) :=
+private def relatorsOne : List (Relator (Fin 6)) :=
   [ .pow genA 8,
     .pow genB 5,
     .pow (genA ⬝ genB) 4,
     sourceCommutator (.pow genA 2) genB,
     .pow (sourceCommutator genA genB) 3 ]
 
-/-- The relators of `relatorsOne`, spelled out. -/
-theorem relatorsOne_def : relatorsOne =
-    [ .pow genA 8,
-      .pow genB 5,
-      .pow (genA ⬝ genB) 4,
-      sourceCommutator (.pow genA 2) genB,
-      .pow (sourceCommutator genA genB) 3 ] := by
-  rfl
-
 /-- The source's relators (14.11) to (14.28), the relations among `c₁`, ..., `c₅` and their
 conjugates by `a` and `b`, presenting `5^(1+4) : GL₂(5)` on `a`, `b`, `c`. -/
-def relatorsTwo : List (Relator (Fin 6)) :=
+private def relatorsTwo : List (Relator (Fin 6)) :=
   [ .pow cOne 5,
     .pow cFive 5,
     sourceCommutator cOne cFive,
@@ -475,32 +282,9 @@ def relatorsTwo : List (Relator (Fin 6)) :=
     Relator.div (Relator.conj cThree genB) (.pow cOne 2 ⬝ cFour ⬝ .pow (.inv cThree) 2),
     Relator.div (Relator.conj cFive genB) cFive ]
 
-/-- The relators of `relatorsTwo`, spelled out. -/
-theorem relatorsTwo_def : relatorsTwo =
-    [ .pow cOne 5,
-      .pow cFive 5,
-      sourceCommutator cOne cFive,
-      sourceCommutator cTwo cFive,
-      sourceCommutator cThree cFive,
-      sourceCommutator cFour cFive,
-      Relator.div (sourceCommutator cOne cThree) (.pow (.inv cFive) 2),
-      Relator.div (sourceCommutator cOne cFour) (.pow cFive 2),
-      Relator.div (sourceCommutator cTwo cThree) (.inv cFive),
-      sourceCommutator cTwo cFour,
-      Relator.div (sourceCommutator cThree cFour) (.inv cFive),
-      Relator.div (Relator.conj cTwo genA) (.pow (.inv cOne) 2),
-      Relator.div (Relator.conj cThree genA) (.pow (.inv cThree) 2 ⬝ cOne ⬝ cFour),
-      Relator.div (Relator.conj cFour genA) (cOne ⬝ .inv cTwo ⬝ .inv cThree ⬝ cFour ⬝ cOne ⬝
-      cFour),
-      Relator.div (Relator.conj cFive genA) (.pow cFive 2),
-      Relator.div (Relator.conj cTwo genB) (cTwo ⬝ cThree ⬝ .inv cFour ⬝ .inv cOne ⬝ .inv cFour),
-      Relator.div (Relator.conj cThree genB) (.pow cOne 2 ⬝ cFour ⬝ .pow (.inv cThree) 2),
-      Relator.div (Relator.conj cFive genB) cFive ] := by
-  rfl
-
 /-- The source's relators (14.29) to (14.44), defining `e` and `d` and presenting `G₂(5)` on `a`,
 `b`, `c`, `d`, `e`. -/
-def relatorsThree : List (Relator (Fin 6)) :=
+private def relatorsThree : List (Relator (Fin 6)) :=
   [ Relator.div genE (.pow (.inv genB) 2 ⬝ sourceCommutator genA cOne ⬝ .inv genA ⬝ cOne ⬝ genA ⬝
     genD ⬝ cOne ⬝ genB ⬝ genA ⬝ .inv genB ⬝ genD ⬝ cOne ⬝ genD),
     .pow genE 2,
@@ -523,34 +307,9 @@ def relatorsThree : List (Relator (Fin 6)) :=
     .pow (genD ⬝ cFive) 5,
     genD ⬝ cFive ⬝ genD ⬝ .inv cFive ⬝ genD ⬝ cFive ⬝ .pow (.inv genA) 2 ]
 
-/-- The relators of `relatorsThree`, spelled out. -/
-theorem relatorsThree_def : relatorsThree =
-    [ Relator.div genE (.pow (.inv genB) 2 ⬝ sourceCommutator genA cOne ⬝ .inv genA ⬝ cOne ⬝
-      genA ⬝ genD ⬝ cOne ⬝ genB ⬝ genA ⬝ .inv genB ⬝ genD ⬝ cOne ⬝ genD),
-      .pow genE 2,
-      Relator.div (Relator.conj cOne genE) (genB ⬝ cThree ⬝ genB ⬝ .inv cOne),
-      Relator.div (Relator.conj cThree genE) (.pow genB 2 ⬝ genA ⬝ cTwo ⬝ .inv cOne ⬝ .inv cFour ⬝
-      .inv genA),
-      Relator.div (Relator.conj cFour genE) (.pow genB 2 ⬝ .inv cThree ⬝ cFour),
-      Relator.div (Relator.conj cFive genE) (cOne ⬝ .inv cThree ⬝ cOne ⬝ .inv cFour),
-      Relator.div (genE ⬝ .pow genA 2 ⬝ genE) (genA ⬝ .pow genB 2 ⬝ genA ⬝ .inv genB ⬝ genA ⬝
-      cOne ⬝ cFive ⬝ .inv cFour),
-      Relator.div (Relator.conj genB genE) (cOne ⬝ .inv cThree ⬝ .pow (.inv cFour) 2),
-      Relator.div (genE ⬝ genA ⬝ .pow genB 2 ⬝ genA ⬝ .inv genB ⬝ genA ⬝ genE) (.pow genA 2 ⬝
-      cOne ⬝ cFive ⬝ .inv cFour),
-      genE ⬝ cTwo ⬝ genE ⬝ .inv cTwo ⬝ genE ⬝ cTwo ⬝ .inv cFour ⬝ genA ⬝ cThree ⬝ .pow genA 3,
-      Relator.div genD (genA ⬝ .pow genB 2 ⬝ .inv genA ⬝ .inv genB ⬝ .inv cOne ⬝ .inv cFour ⬝
-      .inv cFive ⬝ genA ⬝ genE ⬝ genA ⬝ genE ⬝ genA ⬝ .inv cTwo ⬝ genB ⬝ genE),
-      Relator.div (.pow genD 2) (.pow genA 4),
-      sourceCommutator genB genD,
-      Relator.div (Relator.conj genA genD) (.pow genA 3),
-      .pow (genD ⬝ cFive) 5,
-      genD ⬝ cFive ⬝ genD ⬝ .inv cFive ⬝ genD ⬝ cFive ⬝ .pow (.inv genA) 2 ] := by
-  rfl
-
 /-- The source's relators (14.73) to (14.86), the relations involving `z`, completing the
 presentation of `Ly`. -/
-def relatorsFour : List (Relator (Fin 6)) :=
+private def relatorsFour : List (Relator (Fin 6)) :=
   [ Relator.div (Relator.conj cOne genZ) x162,
     Relator.div (Relator.conj cTwo genZ) x163,
     Relator.div (Relator.conj cThree genZ) x164,
@@ -566,25 +325,8 @@ def relatorsFour : List (Relator (Fin 6)) :=
     genZ ⬝ x366 ⬝ genZ ⬝ x365 ⬝ .inv genZ ⬝ x367 ⬝ .inv genZ ⬝ x370,
     genZ ⬝ x96 ⬝ genZ ⬝ x25 ⬝ .inv genZ ⬝ x129 ⬝ .inv genZ ⬝ x371 ]
 
-/-- The relators of `relatorsFour`, spelled out. -/
-theorem relatorsFour_def : relatorsFour =
-    [ Relator.div (Relator.conj cOne genZ) x162,
-      Relator.div (Relator.conj cTwo genZ) x163,
-      Relator.div (Relator.conj cThree genZ) x164,
-      Relator.div (Relator.conj cFour genZ) x165,
-      Relator.div (Relator.conj cFive genZ) x166,
-      Relator.div (Relator.conj aOne genZ) x167,
-      Relator.div (Relator.conj aTwo genZ) x168,
-      Relator.div (Relator.conj aThree genZ) x169,
-      Relator.div (.pow genZ 2) u,
-      .pow (aFour ⬝ genZ) 3 ⬝ u,
-      x47 ⬝ genZ ⬝ x364 ⬝ genZ ⬝ x368 ⬝ genZ,
-      .inv genZ ⬝ x24 ⬝ .inv genZ ⬝ x369 ⬝ genZ ⬝ x23 ⬝ genZ ⬝ x29,
-      genZ ⬝ x366 ⬝ genZ ⬝ x365 ⬝ .inv genZ ⬝ x367 ⬝ .inv genZ ⬝ x370,
-      genZ ⬝ x96 ⬝ genZ ⬝ x25 ⬝ .inv genZ ⬝ x129 ⬝ .inv genZ ⬝ x371 ] := by
-  rfl
 /-- All fifty-three relators, in the source's order. -/
-def relatorList : List (Relator (Fin 6)) :=
+private def relatorList : List (Relator (Fin 6)) :=
   relatorsOne ++ relatorsTwo ++ relatorsThree ++ relatorsFour
 
 /-- Sims' presentation of the Lyons sporadic group `Ly`, as amended by Havas and Sims, on the six
@@ -593,11 +335,7 @@ generators `a`, `b`, `c`, `d`, `e`, `z`.
 The source proves that these relators present `Ly` (Theorem 14.2), the final step being a coset
 enumeration of the `8835156` cosets of the subgroup generated by `a`, `b`, `c`, `d`. No structural
 property of the resulting `PresentedGroup` is asserted here; the definition records only the
-generators and relators.
-
-The definition is exposed so that `Fin presentation.generatorNames.length` reduces to `Fin 6` for
-consumers, which is what lets `presentation_transcribed` state the relator list directly. -/
-@[expose]
+generators and relators. -/
 def presentation : GroupPresentation where
   generatorNames := ["a", "b", "c", "d", "e", "z"]
   source := "G. Havas and C. C. Sims, A presentation for the Lyons simple group, in Computational \
@@ -623,20 +361,54 @@ def presentation : GroupPresentation where
   expectedRelatorCount := 53
   transcribed := relatorList
 
-/-- The relator list is the concatenation of the four blocks. -/
-theorem relatorList_def :
-    relatorList = relatorsOne ++ relatorsTwo ++ relatorsThree ++ relatorsFour := by
-  rfl
-
-/-- The transcribed relators of the row are `relatorList`. -/
-@[simp]
-theorem presentation_transcribed : presentation.transcribed = relatorList := by
-  rfl
-
 /-- The generator names recorded for `Ly`. -/
 @[simp]
 theorem presentation_generatorNames :
     presentation.generatorNames = ["a", "b", "c", "d", "e", "z"] := by
+  rfl
+
+/-- The bibliographic source recorded for `Ly`. -/
+@[simp]
+theorem presentation_source :
+    presentation.source =
+      "G. Havas and C. C. Sims, A presentation for the Lyons simple group, in Computational \
+      Methods for Representations of Groups and Algebras (Essen, 1997), Progress in \
+      Mathematics 173, Birkhauser, Basel, 1999, 241-249" := by
+  rfl
+
+/-- The locator recorded for `Ly`. -/
+@[simp]
+theorem presentation_sourceLocator :
+    presentation.sourceLocator =
+      "Section 14.2, relators and relations (14.1) to (14.86), pp. 242-244; \
+      doi:10.1007/978-3-0348-8716-8_14; SHA-256 of the chapter PDF \
+      db0f8a96b79392b590982505ab32224890e548cc957239d03fc3f8f68949e1df" := by
+  rfl
+
+/-- The generator convention recorded for `Ly`. -/
+@[simp]
+theorem presentation_generatorConvention :
+    presentation.generatorConvention =
+      "The source's generators a, b, c, d, e, z, in that order, so indices 0 to 5 denote a, \
+      b, c, d, e, z. The source writes x^y for y^-1*x*y and (x, y) for x^-1*y^-1*x*y, and \
+      products are read left to right." := by
+  rfl
+
+/-- The transcription notes recorded for `Ly`. -/
+@[simp]
+theorem presentation_transcriptionNotes :
+    presentation.transcriptionNotes =
+      "The source presents Ly on a, b, c, d, z and thirty-four auxiliary generators, all \
+      words in a, b, c, d, by relators (14.1) to (14.86). This row follows the source's \
+      Section 14.4: it keeps the six generators a, b, c, d, e, z, substitutes the \
+      auxiliary generators c1 to c5, a1 to a4, u and x23 to x371 by their defining \
+      relations (14.6) to (14.10) and (14.45) to (14.72), and keeps the remaining \
+      fifty-three relators in source order, namely (14.1) to (14.5), (14.11) to (14.28), \
+      (14.29) to (14.44) and (14.73) to (14.86). An equation r = s is compiled as r*s^-1. \
+      Free reduction gives total length 975; the source prints no length. Coset \
+      enumeration with ACE on these compiled relators closes at index 8835156 over the \
+      subgroup generated by a, b, c, d, with maximum cosets equal to the index. The \
+      independent FiniteSimpleGroups development does not cover Ly." := by
   rfl
 
 /-- The generator count recorded for `Ly`. -/
@@ -649,24 +421,143 @@ theorem presentation_expectedGeneratorCount : presentation.expectedGeneratorCoun
 theorem presentation_expectedRelatorCount : presentation.expectedRelatorCount = 53 := by
   rfl
 
-/-- The first block has five relators. -/
-theorem length_relatorsOne : relatorsOne.length = 5 := by
-  rfl
-
-/-- The second block has eighteen relators. -/
-theorem length_relatorsTwo : relatorsTwo.length = 18 := by
-  rfl
-
-/-- The third block has sixteen relators. -/
-theorem length_relatorsThree : relatorsThree.length = 16 := by
-  rfl
-
-/-- The fourth block has fourteen relators. -/
-theorem length_relatorsFour : relatorsFour.length = 14 := by
+/-- The transcribed relators of the row, spelled out in the source's own shape: the six
+generators, the source's auxiliary words as `let`-bound abbreviations, and the fifty-three relators
+in the source's order (14.1) to (14.5), (14.11) to (14.28), (14.29) to (14.44), (14.73) to (14.86).
+Together with `TauCeti.GroupPresentation.relators_def` and
+`TauCeti.GroupPresentation.mem_relatorSet_iff` this determines the relations defining
+`TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. -/
+@[simp]
+theorem presentation_transcribed :
+    presentation.transcribed =
+      let a : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨0, by simp [presentation]⟩
+      let b : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨1, by simp [presentation]⟩
+      let c : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨2, by simp [presentation]⟩
+      let d : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨3, by simp [presentation]⟩
+      let e : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨4, by simp [presentation]⟩
+      let z : Relator (Fin presentation.generatorNames.length) :=
+        .gen ⟨5, by simp [presentation]⟩
+      let cOne := c
+      let cTwo := Relator.conj c a
+      let cThree := Relator.conj c b
+      let cFour := Relator.conj c (.inv b)
+      let cFive := sourceCommutator cOne cTwo
+      let aOne := a
+      let aTwo := Relator.conj a (.inv b)
+      let aThree := Relator.conj a (.pow (.inv b) 2)
+      let aFour := Relator.conj a (.pow b 2)
+      let u := .pow a 2
+      let x23 := d
+      let x24 := .inv d
+      let x25 :=
+        .pow b 2 ⬝ .inv a ⬝ .inv b ⬝ .inv a ⬝ .pow b 2 ⬝ .inv c ⬝ a ⬝ c ⬝ .inv a ⬝ .inv c ⬝ d ⬝
+        .inv c ⬝ .pow b 2 ⬝ .inv a ⬝ c ⬝ b
+      let x29 :=
+        a ⬝ b ⬝ .inv a ⬝ .pow b 2 ⬝ .inv a ⬝ .pow b 2 ⬝ .inv c ⬝ a ⬝ c ⬝ b ⬝ c ⬝ .inv b ⬝ d ⬝ c ⬝
+        .pow (.inv b) 2 ⬝ d ⬝ c ⬝ b ⬝ c
+      let x47 := .inv c ⬝ .inv d ⬝ .inv a ⬝ .inv c ⬝ .inv a ⬝ b ⬝ .inv c ⬝ .inv d
+      let x96 := b ⬝ d
+      let x129 := .inv d ⬝ .inv b
+      let x162 := .inv a ⬝ .inv b ⬝ .inv a ⬝ b ⬝ .inv c ⬝ .inv b ⬝ a ⬝ .inv c ⬝ b ⬝ a
+      let x163 := .pow (.inv b) 2 ⬝ a ⬝ c ⬝ .inv a ⬝ b ⬝ c ⬝ b
+      let x164 := .inv a ⬝ .inv b ⬝ .inv a ⬝ c ⬝ a ⬝ b ⬝ a
+      let x165 := .inv b ⬝ .inv a ⬝ b ⬝ c ⬝ .inv b ⬝ a ⬝ b
+      let x166 := .pow b 2 ⬝ .inv a ⬝ .inv b ⬝ c ⬝ b ⬝ a ⬝ c ⬝ .pow (.inv b) 2 ⬝ .inv c
+      let x167 := .pow (.inv a) 3
+      let x168 := b ⬝ .inv a ⬝ .inv b ⬝ .pow (.inv a) 2
+      let x169 := a ⬝ .pow b 2 ⬝ a ⬝ .pow (.inv b) 2 ⬝ .inv a
+      let x364 :=
+        .inv a ⬝ d ⬝ .inv b ⬝ .inv c ⬝ .inv a ⬝ b ⬝ .inv c ⬝ .inv d ⬝ b ⬝ .inv c ⬝ .inv b ⬝
+        .inv a ⬝ .inv c ⬝ a ⬝ .inv b ⬝ a ⬝ b ⬝ a ⬝ .inv b
+      let x365 :=
+        a ⬝ .pow (.inv b) 2 ⬝ .inv a ⬝ c ⬝ b ⬝ .inv c ⬝ b ⬝ .inv a ⬝ .pow (.inv c) 2 ⬝ d ⬝ c ⬝ a ⬝
+        c ⬝ .inv a ⬝ c ⬝ .inv b ⬝ .inv d
+      let x366 :=
+        b ⬝ a ⬝ .inv b ⬝ .inv a ⬝ .pow (.inv b) 2 ⬝ .inv a ⬝ .inv b ⬝ c ⬝ .pow b 2 ⬝ c ⬝ b ⬝ d ⬝
+        c ⬝ .pow (.inv b) 2 ⬝ d ⬝ c ⬝ b ⬝ c
+      let x367 :=
+        .inv c ⬝ .inv b ⬝ .inv c ⬝ .inv d ⬝ .pow b 2 ⬝ .inv c ⬝ .inv d ⬝ .inv b ⬝ .inv c ⬝
+        .pow (.inv b) 2 ⬝ .inv c ⬝ b ⬝ a ⬝ .pow b 2 ⬝ a ⬝ b ⬝ .inv a ⬝ .inv b
+      let x368 :=
+        .inv a ⬝ .inv c ⬝ .inv d ⬝ a ⬝ .inv c ⬝ .inv b ⬝ a ⬝ .inv c ⬝ .inv d ⬝ .inv a ⬝ .inv c ⬝
+        a ⬝ c ⬝ .pow (.inv b) 2 ⬝ .inv c ⬝ .inv b ⬝ .inv a ⬝ .pow (.inv b) 2
+      let x369 :=
+        .inv a ⬝ .inv c ⬝ .inv d ⬝ b ⬝ .inv a ⬝ .inv b ⬝ .inv c ⬝ .inv d ⬝ b ⬝ .inv a ⬝ .inv b ⬝
+        .inv c ⬝ .inv b ⬝ a ⬝ .pow (.inv b) 2 ⬝ a ⬝ .inv b
+      let x370 :=
+        .inv d ⬝ a ⬝ c ⬝ b ⬝ c ⬝ .inv a ⬝ .inv c ⬝ .inv d ⬝ a ⬝ .inv b ⬝ .inv a ⬝ c ⬝ .inv a ⬝
+        .pow (.inv b) 2 ⬝ .inv a ⬝ b ⬝ .inv a
+      let x371 :=
+        .inv c ⬝ .inv a ⬝ c ⬝ b ⬝ .inv c ⬝ .inv d ⬝ c ⬝ .inv a ⬝ c ⬝ a ⬝ c ⬝ .inv b ⬝ .inv a ⬝
+        .inv b ⬝ .inv a ⬝ b
+      [ .pow a 8,
+        .pow b 5,
+        .pow (a ⬝ b) 4,
+        sourceCommutator (.pow a 2) b,
+        .pow (sourceCommutator a b) 3,
+        .pow cOne 5,
+        .pow cFive 5,
+        sourceCommutator cOne cFive,
+        sourceCommutator cTwo cFive,
+        sourceCommutator cThree cFive,
+        sourceCommutator cFour cFive,
+        Relator.div (sourceCommutator cOne cThree) (.pow (.inv cFive) 2),
+        Relator.div (sourceCommutator cOne cFour) (.pow cFive 2),
+        Relator.div (sourceCommutator cTwo cThree) (.inv cFive),
+        sourceCommutator cTwo cFour,
+        Relator.div (sourceCommutator cThree cFour) (.inv cFive),
+        Relator.div (Relator.conj cTwo a) (.pow (.inv cOne) 2),
+        Relator.div (Relator.conj cThree a) (.pow (.inv cThree) 2 ⬝ cOne ⬝ cFour),
+        Relator.div (Relator.conj cFour a) (cOne ⬝ .inv cTwo ⬝ .inv cThree ⬝ cFour ⬝ cOne ⬝
+        cFour),
+        Relator.div (Relator.conj cFive a) (.pow cFive 2),
+        Relator.div (Relator.conj cTwo b) (cTwo ⬝ cThree ⬝ .inv cFour ⬝ .inv cOne ⬝ .inv cFour),
+        Relator.div (Relator.conj cThree b) (.pow cOne 2 ⬝ cFour ⬝ .pow (.inv cThree) 2),
+        Relator.div (Relator.conj cFive b) cFive,
+        Relator.div e (.pow (.inv b) 2 ⬝ sourceCommutator a cOne ⬝ .inv a ⬝ cOne ⬝ a ⬝ d ⬝ cOne ⬝
+        b ⬝ a ⬝ .inv b ⬝ d ⬝ cOne ⬝ d),
+        .pow e 2,
+        Relator.div (Relator.conj cOne e) (b ⬝ cThree ⬝ b ⬝ .inv cOne),
+        Relator.div (Relator.conj cThree e) (.pow b 2 ⬝ a ⬝ cTwo ⬝ .inv cOne ⬝ .inv cFour ⬝
+        .inv a),
+        Relator.div (Relator.conj cFour e) (.pow b 2 ⬝ .inv cThree ⬝ cFour),
+        Relator.div (Relator.conj cFive e) (cOne ⬝ .inv cThree ⬝ cOne ⬝ .inv cFour),
+        Relator.div (e ⬝ .pow a 2 ⬝ e) (a ⬝ .pow b 2 ⬝ a ⬝ .inv b ⬝ a ⬝ cOne ⬝ cFive ⬝
+        .inv cFour),
+        Relator.div (Relator.conj b e) (cOne ⬝ .inv cThree ⬝ .pow (.inv cFour) 2),
+        Relator.div (e ⬝ a ⬝ .pow b 2 ⬝ a ⬝ .inv b ⬝ a ⬝ e) (.pow a 2 ⬝ cOne ⬝ cFive ⬝
+        .inv cFour),
+        e ⬝ cTwo ⬝ e ⬝ .inv cTwo ⬝ e ⬝ cTwo ⬝ .inv cFour ⬝ a ⬝ cThree ⬝ .pow a 3,
+        Relator.div d (a ⬝ .pow b 2 ⬝ .inv a ⬝ .inv b ⬝ .inv cOne ⬝ .inv cFour ⬝ .inv cFive ⬝ a ⬝
+        e ⬝ a ⬝ e ⬝ a ⬝ .inv cTwo ⬝ b ⬝ e),
+        Relator.div (.pow d 2) (.pow a 4),
+        sourceCommutator b d,
+        Relator.div (Relator.conj a d) (.pow a 3),
+        .pow (d ⬝ cFive) 5,
+        d ⬝ cFive ⬝ d ⬝ .inv cFive ⬝ d ⬝ cFive ⬝ .pow (.inv a) 2,
+        Relator.div (Relator.conj cOne z) x162,
+        Relator.div (Relator.conj cTwo z) x163,
+        Relator.div (Relator.conj cThree z) x164,
+        Relator.div (Relator.conj cFour z) x165,
+        Relator.div (Relator.conj cFive z) x166,
+        Relator.div (Relator.conj aOne z) x167,
+        Relator.div (Relator.conj aTwo z) x168,
+        Relator.div (Relator.conj aThree z) x169,
+        Relator.div (.pow z 2) u,
+        .pow (aFour ⬝ z) 3 ⬝ u,
+        x47 ⬝ z ⬝ x364 ⬝ z ⬝ x368 ⬝ z,
+        .inv z ⬝ x24 ⬝ .inv z ⬝ x369 ⬝ z ⬝ x23 ⬝ z ⬝ x29,
+        z ⬝ x366 ⬝ z ⬝ x365 ⬝ .inv z ⬝ x367 ⬝ .inv z ⬝ x370,
+        z ⬝ x96 ⬝ z ⬝ x25 ⬝ .inv z ⬝ x129 ⬝ .inv z ⬝ x371 ] := by
   rfl
 
 /-- The row has fifty-three relators. -/
-theorem length_relatorList : relatorList.length = 53 := by
+theorem length_transcribed_presentation : presentation.transcribed.length = 53 := by
   rfl
 
 /-- The recorded generator and relator counts agree with the transcribed data. -/
