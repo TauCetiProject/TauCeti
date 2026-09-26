@@ -316,6 +316,18 @@ private def evenUnitaryGroupEquivUnitaryEven :
     rfl
   map_mul' := map_mul (evenUnitaryGroupToUnitaryEven Q)
 
+private theorem evenStarSubsemiringToEven_equivUnitaryEven_apply
+    (x : evenUnitaryGroup Q) :
+    evenStarSubsemiringToEven Q
+        ((evenUnitaryGroupEquivUnitaryEven Q x : unitary (evenStarSubsemiring Q)) :
+          evenStarSubsemiring Q) =
+      evenUnitaryGroupEvenPart Q x := rfl
+
+private theorem coe_equivUnitaryEven_symm_apply (q : unitary (evenStarSubsemiring Q)) :
+    ((((evenUnitaryGroupEquivUnitaryEven Q).symm q : evenUnitaryGroup Q) :
+        (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (q : evenStarSubsemiring Q) := rfl
+
 private def evenStarMulEquivOfAlgEquiv (e : even Q ≃ₐ[R] A)
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     evenStarSubsemiring Q ≃⋆* A where
@@ -327,6 +339,45 @@ private def evenStarMulEquivOfAlgEquiv (e : even Q ≃ₐ[R] A)
   right_inv a := e.apply_symm_apply a
   map_mul' _ _ := by simp only [map_mul]
   map_star' x := by rw [evenStarSubsemiringToEven_star, he]
+
+private theorem evenStarMulEquivOfAlgEquiv_apply (e : even Q ≃ₐ[R] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) (x : evenStarSubsemiring Q) :
+    evenStarMulEquivOfAlgEquiv Q e he x = e (evenStarSubsemiringToEven Q x) := rfl
+
+private theorem coe_evenStarMulEquivOfAlgEquiv_symm_apply (e : even Q ≃ₐ[R] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) (a : A) :
+    (((evenStarMulEquivOfAlgEquiv Q e he).symm a : evenStarSubsemiring Q) :
+        CliffordAlgebra Q) =
+      (e.symm a : even Q) := rfl
+
+private theorem coe_unitaryMapEquiv_evenStarMulEquiv_apply (e : even Q ≃ₐ[R] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x))
+    (x : unitary (evenStarSubsemiring Q)) :
+    ((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).toMulEquiv x : A) =
+      evenStarMulEquivOfAlgEquiv Q e he (x : evenStarSubsemiring Q) := by
+  calc
+    ((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).toMulEquiv x : A) =
+        (Unitary.map (evenStarMulEquivOfAlgEquiv Q e he).toStarMonoidHom x : A) :=
+      congrArg Subtype.val (Unitary.mapEquiv_apply (evenStarMulEquivOfAlgEquiv Q e he) x)
+    _ = evenStarMulEquivOfAlgEquiv Q e he (x : evenStarSubsemiring Q) :=
+      Unitary.coe_map _ _
+
+private theorem coe_unitaryMapEquiv_evenStarMulEquiv_symm_apply (e : even Q ≃ₐ[R] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) (a : unitary A) :
+    (((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).symm a :
+        unitary (evenStarSubsemiring Q)) : evenStarSubsemiring Q) =
+      (evenStarMulEquivOfAlgEquiv Q e he).symm (a : A) := by
+  calc
+    (((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).symm a :
+        unitary (evenStarSubsemiring Q)) : evenStarSubsemiring Q) =
+        (Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he).symm a :
+          evenStarSubsemiring Q) := by
+      rw [Unitary.mapEquiv_symm]
+    _ = (Unitary.map (evenStarMulEquivOfAlgEquiv Q e he).symm.toStarMonoidHom a :
+        evenStarSubsemiring Q) :=
+      congrArg Subtype.val
+        (Unitary.mapEquiv_apply (evenStarMulEquivOfAlgEquiv Q e he).symm a)
+    _ = (evenStarMulEquivOfAlgEquiv Q e he).symm (a : A) := Unitary.coe_map _ _
 
 /-- A reversal-preserving algebra equivalence sends the even part of an even unitary Clifford
 element to a unitary element of the target algebra. -/
@@ -351,7 +402,18 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply
     (x : evenUnitaryGroup Q) :
     (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x : A) =
       e (evenUnitaryGroupEvenPart Q x) := by
-  rfl
+  calc
+    (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x : A) =
+        evenStarMulEquivOfAlgEquiv Q e he
+          ((evenUnitaryGroupEquivUnitaryEven Q x : unitary (evenStarSubsemiring Q)) :
+            evenStarSubsemiring Q) := by
+      rw [evenUnitaryGroupEquivUnitaryOfAlgEquiv, MulEquiv.trans_apply]
+      exact coe_unitaryMapEquiv_evenStarMulEquiv_apply Q e he _
+    _ = e (evenStarSubsemiringToEven Q
+        ((evenUnitaryGroupEquivUnitaryEven Q x : unitary (evenStarSubsemiring Q)) :
+          evenStarSubsemiring Q)) := evenStarMulEquivOfAlgEquiv_apply Q e he _
+    _ = e (evenUnitaryGroupEvenPart Q x) := by
+      rw [evenStarSubsemiringToEven_equivUnitaryEven_apply]
 
 /-- The inverse unitary transport has Clifford value obtained by applying the inverse algebra
 equivalence. -/
@@ -360,7 +422,28 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) (q : unitary A) :
     ((((evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he).symm q : evenUnitaryGroup Q) :
         (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = (e.symm (q : A) : even Q) := by
-  rfl
+  calc
+    ((((evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he).symm q : evenUnitaryGroup Q) :
+        (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+        ((((evenUnitaryGroupEquivUnitaryEven Q).symm
+          ((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).symm q) :
+            evenUnitaryGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+      have h : (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he).symm q =
+          (evenUnitaryGroupEquivUnitaryEven Q).symm
+            ((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).symm q) :=
+        MulEquiv.symm_trans_apply (evenUnitaryGroupEquivUnitaryEven Q)
+          (Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).toMulEquiv q
+      exact congrArg
+        (fun y : evenUnitaryGroup Q ↦ (((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))) h
+    _ = ((((Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).symm q :
+        unitary (evenStarSubsemiring Q)) : evenStarSubsemiring Q) : CliffordAlgebra Q) :=
+      coe_equivUnitaryEven_symm_apply Q _
+    _ = (((evenStarMulEquivOfAlgEquiv Q e he).symm (q : A) :
+        evenStarSubsemiring Q) : CliffordAlgebra Q) := by
+      exact congrArg Subtype.val
+        (coe_unitaryMapEquiv_evenStarMulEquiv_symm_apply Q e he q)
+    _ = (e.symm (q : A) : even Q) :=
+      coe_evenStarMulEquivOfAlgEquiv_symm_apply Q e he _
 
 end Transport
 

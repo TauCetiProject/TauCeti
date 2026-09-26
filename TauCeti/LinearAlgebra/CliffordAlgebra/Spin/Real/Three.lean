@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 
