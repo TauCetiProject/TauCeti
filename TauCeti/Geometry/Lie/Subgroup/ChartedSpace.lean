@@ -49,7 +49,7 @@ noncomputable def preferredSliceChart (K : Subgroup G)
     (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g : K) : OpenPartialHomeomorph K F :=
-  (K.isSliceChart_translatedChart e he g).subtypeChart
+  (K.isSliceChart_smul_symm_transOpenPartialHomeomorph e he g).subtypeChart
 
 /-- The preferred subgroup chart at `g` sees exactly the subgroup points in the source of its
 translated ambient chart. -/
@@ -90,6 +90,17 @@ theorem preferredSliceChart_apply (K : Subgroup G)
     Homeomorph.transOpenPartialHomeomorph_apply]
   rfl
 
+/-- On its source, a preferred subgroup chart recovers the translated ambient coordinates by
+reinserting the zero transverse coordinate. -/
+theorem preferredSliceChart_mk_zero_eq (K : Subgroup G)
+    (e : OpenPartialHomeomorph G (F × F'))
+    (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
+    (g : K) {x : K} (hx : x ∈ (preferredSliceChart K e he g).source) :
+    (preferredSliceChart K e he g x, (0 : F')) = e ((g : G)⁻¹ * (x : G)) := by
+  simpa only [preferredSliceChart, Homeomorph.transOpenPartialHomeomorph_apply,
+    Function.comp_apply, Homeomorph.smul_symm_apply, smul_eq_mul] using
+    (K.isSliceChart_smul_symm_transOpenPartialHomeomorph e he g).subtypeChart_mk_zero_eq hx
+
 /-- On its target, the inverse of a preferred subgroup chart applies the original ambient inverse
 on the zero slice and then translates by the chart's base point. -/
 @[simp]
@@ -100,7 +111,7 @@ theorem coe_preferredSliceChart_symm_apply (K : Subgroup G)
     ((preferredSliceChart K e he g).symm y : G) = (g : G) * e.symm (y, 0) := by
   unfold preferredSliceChart
   rw [TauCeti.IsSliceChart.coe_subtypeChart_symm_apply
-      (h := K.isSliceChart_translatedChart e he g) (by simpa using hy),
+      (h := K.isSliceChart_smul_symm_transOpenPartialHomeomorph e he g) (by simpa using hy),
     Homeomorph.transOpenPartialHomeomorph_symm_apply]
   rfl
 

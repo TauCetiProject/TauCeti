@@ -17,7 +17,8 @@ translation by a subgroup point preserves the subgroup slice.
 
 ## Main result
 
-* `Subgroup.isSliceChart_translatedChart` shows that translation preserves the subgroup slice.
+* `Subgroup.isSliceChart_smul_symm_transOpenPartialHomeomorph` shows that translation preserves
+  the subgroup slice.
 
 The result is purely topological.  It does not install a manifold structure on the subgroup or
 assert smoothness of the translated charts.
@@ -38,7 +39,7 @@ variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace P]
 
 /-- Translating a slice chart for a subgroup by a subgroup point preserves the subgroup slice. -/
-theorem isSliceChart_translatedChart (K : Subgroup G)
+theorem isSliceChart_smul_symm_transOpenPartialHomeomorph (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
     TauCeti.IsSliceChart

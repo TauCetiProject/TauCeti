@@ -18,6 +18,13 @@ zero-slice subgroup charts use it after translating an ambient chart.
 
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
+
+## References
+
+This construction abstracts the concrete subtype charts in the following Tau Ceti formalizations:
+
+* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`.
+* `TauCeti.levelSetChart` in `TauCeti/Analysis/Fredholm/LevelSet/Basic.lean`.
 -/
 
 public section

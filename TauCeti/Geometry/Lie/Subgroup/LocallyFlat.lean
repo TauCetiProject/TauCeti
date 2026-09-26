@@ -46,7 +46,7 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart (K : Subgroup G)
     · rw [Homeomorph.transOpenPartialHomeomorph_source]
       simpa [Homeomorph.smul_symm_apply, smul_eq_mul] using h1
     · rw [Subtype.range_coe]
-      exact K.isSliceChart_translatedChart φ hφ g
+      exact K.isSliceChart_smul_symm_transOpenPartialHomeomorph φ hφ g
   exact TauCeti.isLocallyFlat_iff_isSliceEmbedding.mpr hflat
 
 end Subgroup
