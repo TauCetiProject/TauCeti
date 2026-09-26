@@ -262,7 +262,8 @@ theorem baseChangeSymplecticSchemePointsMulEquiv_apply
 
 /-- On scheme-valued points, the carrier--symplectic equivalence commutes with the ambient
 closed immersions into `GL_(2n+2)`. -/
-@[simp]
+-- Not `@[simp]`: the reducible `Symplectic.groupScheme` target prevents the left-hand side from
+-- being in simp normal form.
 theorem baseChangeSymplecticSchemePointsMulEquiv_comp_inclusion
     (A : Type) [CommRing A] [Algebra k A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of k)) ⟶
