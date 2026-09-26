@@ -31,14 +31,22 @@ def sweep_engine():
     return importlib.import_module("sweep")
 
 
+def diff_engine():
+    engine()
+    return importlib.import_module("pr_diff")
+
+
 def routing_state(pr):
     labels = {label["name"].lower() for label in pr.get("labels", [])}
     return (pr["head"]["sha"], pr["base"]["ref"], pr["state"], pr.get("draft"),
             labels & sweep_engine().KEEP_LABELS)
 
 
-def classify(pr, comments, statuses, diff, now=None):
-    """Pure evaluation of a fetched PR. Reservations and queue capacity are separate."""
+def classify(pr, comments, statuses, paths, merge_base_sha, now=None):
+    """Pure evaluation of a fetched PR. Reservations and queue capacity are separate.
+
+    `paths` are the PR's changed paths and `merge_base_sha` the merge base its diff is taken
+    from; the gate accepts a scoreboard only for the merge base it reviewed."""
     gate = engine()
     head = pr["head"]["sha"]
     result = {"head": head, "number": pr["number"], "eligible": False,
@@ -46,9 +54,9 @@ def classify(pr, comments, statuses, diff, now=None):
     if pr["state"] != "open":
         return result
     verdict = gate.decide_from_comments(
-        comments, head, set(gate.DEFAULT_RUBRICS), diff,
+        comments, head, set(gate.DEFAULT_RUBRICS), paths,
         statuses.get("build", ""), statuses.get("bump-guard", ""),
-        scope=statuses.get("scope", ""), now=now)
+        scope=statuses.get("scope", ""), now=now, merge_base_sha=merge_base_sha)
     result["gate"] = verdict
     result["reason"] = verdict["reason"]
     labels = {label["name"].lower() for label in pr.get("labels", [])}
@@ -81,7 +89,7 @@ def classify(pr, comments, statuses, diff, now=None):
         elif gate.has_live_review(comments, head, now):
             result["category"] = "review-in-progress"
         else:
-            paths = gate.changed_paths(diff)
+            paths = set(paths)
             human = not paths or any(not (p.startswith("TauCeti/") or p in gate.DEFAULT_ALLOW)
                                      for p in paths)
             if human:
@@ -169,12 +177,15 @@ def assess(pr, repo=None, now=None):
     repo = repo or core.REPO
     number = int(pr)
     current, comments, statuses = evidence(number, repo)
-    result = classify(current, comments, statuses, "", now=now)
+    head = current["head"]["sha"]
+    _, merge_base = diff_engine().resolve_shas(repo, number, head_sha=head)
+    result = classify(current, comments, statuses, [], merge_base, now=now)
     # The gate rejects missing/build/review evidence before inspecting paths.
-    # Only otherwise approved PRs need the expensive diff read.
+    # Only otherwise approved PRs need the expensive path read, which the engine takes from git
+    # (`gh pr diff` fails for PRs touching more than 300 files).
     if result["category"] in {"needs-human-review", "merge-check-failed"}:
-        diff = subprocess.check_output(["gh", "pr", "diff", str(number), "--repo", repo], text=True)
-        result = classify(current, comments, statuses, diff, now=now)
+        paths = diff_engine().pr_diff(repo, number, head_sha=head, merge_base_sha=merge_base)
+        result = classify(current, comments, statuses, paths, merge_base, now=now)
     after, _, _ = evidence(number, repo, comments=False)
     if routing_state(after) != routing_state(current):
         result.update(eligible=False, category="awaiting-CI" if after["state"] == "open" else None,
