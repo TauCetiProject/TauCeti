@@ -62,6 +62,7 @@ theorem periodAction_single (hw : Even w) (x : TraceFormulaMatrixModule n) (c : 
   simp [periodAction]
 
 /-- Left multiplication of a determinant matrix precomposes its substitution action. -/
+@[simp]
 theorem binaryFormAction_smul (hw : Even w) (g : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) :
     binaryFormAction (R := R) hw (g • x) =
@@ -76,6 +77,7 @@ theorem binaryFormAction_smul (hw : Even w) (g : SL(2, ℤ))
       binaryFormRep_op_mul_apply (g : Matrix (Fin 2) (Fin 2) ℤ) A.1 P
 
 /-- Right multiplication of a determinant matrix postcomposes its substitution action. -/
+@[simp]
 theorem binaryFormAction_op_smul (hw : Even w) (g : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) :
     binaryFormAction (R := R) hw (op (g : PSL(2, ℤ)) • x) =
@@ -91,6 +93,7 @@ theorem binaryFormAction_op_smul (hw : Even w) (g : SL(2, ℤ))
 
 /-- The free matrix action turns left multiplication in the matrix module into
 precomposition of substitutions. -/
+@[simp]
 theorem periodAction_ofMulAction (hw : Even w) (g : SL(2, ℤ))
     (ξ : R[TraceFormulaMatrixModule n]) :
     periodAction (R := R) hw
@@ -109,6 +112,7 @@ theorem periodAction_ofMulAction (hw : Even w) (g : SL(2, ℤ))
 
 /-- The free matrix action turns right multiplication in the matrix module into
 postcomposition of substitutions. -/
+@[simp]
 theorem periodAction_ofMulAction_op (hw : Even w) (g : SL(2, ℤ))
     (ξ : R[TraceFormulaMatrixModule n]) :
     periodAction (R := R) hw
