@@ -288,6 +288,18 @@ def sheafLift {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.ratio
     M ⟶ sheaf D :=
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) φ fun U s ↦ hφ U.unop s
 
+/-- A factorization through `𝒪_X(D)` is an isomorphism if its map into rational functions is
+injective on sections and has image exactly the sections of `𝒪_X(D)`. -/
+theorem isIso_sheafLift {M : X.Modules} (D : SchemeWeilDivisor X)
+    (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U)
+    (hinj : ∀ U : X.Opens, Function.Injective (Scheme.Modules.Hom.app φ U))
+    (hsurj : ∀ (U : X.Opens) (s : Γ(Scheme.rationalFunctions X, U)),
+      s ∈ sections D U → ∃ t, Scheme.Modules.Hom.app φ U t = s) :
+    IsIso (sheafLift D φ hφ) := by
+  exact TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _
+    (fun U ↦ hinj U.unop) (fun U s hs ↦ hsurj U.unop s ((submodule_obj_unop D U) ▸ hs))
+
 /-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the canonical inclusion
 `sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers the original morphism `φ`. -/
 @[reassoc (attr := simp)]
@@ -386,6 +398,16 @@ def unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
     @Quiver.Hom X.Modules _ (SheafOfModules.unit X.ringCatSheaf) (sheaf D) :=
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) (Scheme.toRationalFunctions X)
     fun U a ↦ toRationalFunctions_app_mem_sections hD U.unop a
+
+/-- The canonical map `𝒪_X ⟶ 𝒪_X(D)` is an isomorphism if every section of `𝒪_X(D)` is
+regular. -/
+theorem isIso_unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D)
+    (hsurj : ∀ (U : X.Opens) (s : Γ(Scheme.rationalFunctions X, U)),
+      s ∈ sections D U → ∃ t, Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) U t = s) :
+    IsIso (unitToSheaf hD) := by
+  exact isIso_sheafLift D (Scheme.toRationalFunctions X)
+    (toRationalFunctions_app_mem_sections hD)
+    Scheme.toRationalFunctions_app_injective hsurj
 
 @[simp, reassoc]
 lemma unitToSheaf_ι {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
