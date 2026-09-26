@@ -24,11 +24,6 @@ in a ball of radius `R`, one may take `P = 2R`. For weak Dirichlet solutions, no
 forcing gives a nonpositive solution, and ordered forcing terms give ordered solutions, with a
 positive quadratic lower bound.
 
-The coercive energy estimate follows the method of L. C. Evans, *Partial Differential
-Equations*, §6.2. For the weak-subsolution maximum principle, see D. Gilbarg and
-N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 8,
-Theorem 8.1.
-
 ## Main declarations
 
 * `TauCeti.PDE.value_eq_zero_of_energyFormH1_self_nonpos`: coercivity forces a zero-boundary
@@ -259,6 +254,10 @@ theorem IsWeakSolutionDirichlet.value_le_of_energy_bound
     ((Lp.memLp g).integrable_mul (Lp.memLp (W1p.value (w : W1p mu Omega 2))))
     (hfg.and hw |>.mono fun x hx ↦ mul_le_mul_of_nonneg_right hx.1 hx.2)
 
+-- The coercive energy estimate used below follows L. C. Evans, *Partial Differential
+-- Equations*, §6.2. For the weak-subsolution maximum principle, see D. Gilbarg and
+-- N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 8,
+-- Theorem 8.1.
 section Poincare
 
 variable [DecidableEq ι] {lam Lam beta gamma P : ℝ}
