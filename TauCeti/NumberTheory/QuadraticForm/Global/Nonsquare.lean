@@ -20,8 +20,6 @@ at a real place its image is negative. The simultaneous choice uses weak approxi
 
 This supplies the radicand in the unprescribed form of Hilbert sign prescription: at each
 selected place the associated quadratic extension is a field rather than a split algebra.
-It is the unprescribed-radicand step of GlobalQuadraticForms Layer 4.4, using the same
-localization maps as the subsequent quadratic-form statements.
 
 ## References
 
