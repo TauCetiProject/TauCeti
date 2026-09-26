@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Compact.Character.Projection
 public import TauCeti.RepresentationTheory.Compact.PeterWeyl
 public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 
@@ -41,6 +42,18 @@ product instance in Mathlib. That spelling loses nothing:
 matrix units and finds the standard basis vectors, which are the orthonormal basis of the
 Hilbert-Schmidt structure.
 
+Each block also carries its **character projection** `TauCeti.peterWeylBlockProjection`, the
+convolution operator of the kernel `dim V_π · conj χ_π`. Convolution moves the group argument of a
+matrix coefficient, hence acts on the defining vectors of the coefficient through the integrated
+operator of that kernel on the model's carrier; that operator is the identity on the model itself
+and zero on an inequivalent one, so the projection is the identity on the `π`-block and kills every
+other block. Its kernel being symmetric it is self-adjoint, and for a skeleton of the unitary dual
+every element of `L²(G)` is carried into the `π`-block, so the projection *is* the orthogonal
+projection of `L²(G)` onto that block (`TauCeti.peterWeylBlockProjection_eq_starProjection`). That
+is the sense in which averaging against the character is the isotypic projector here: it is a
+statement about the orthogonal projection onto a subspace of `L²(G)`, not about a `G`-isotypic
+decomposition.
+
 The results about a single block -- the orthonormal family, the basis, the dimension, the
 comparison with `End(V_π)` -- assume nothing about the rest of the family. Pairwise inequivalence
 of the models is what makes distinct blocks orthogonal and independent, and exhaustiveness of the
@@ -48,10 +61,10 @@ skeleton enters exactly where density is claimed.
 
 ## What is not proved here
 
-Every statement in this file is a statement about Hilbert spaces, their subspaces and their
-isometries. The blocks are called *isotypic* because the `π`-block is spanned by the matrix
-coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and that the
-decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
+Every statement in this file is a statement about Hilbert spaces, their subspaces, their isometries
+and their bounded operators. The blocks are called *isotypic* because the `π`-block is spanned by
+the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
+that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
 translation, are statements about group actions and are **not** proved here. What is proved about
 the action is that each block is stable under both translations
 (`TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock` and
@@ -60,13 +73,15 @@ model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
 block with `End(V_π)` needs the `G × G`-representation structures, hence the tensor decomposition
-`V_π ⊗ V_π^*`, which the library does not have. The character projector onto a block -- averaging
-against `dim V_π · conj χ_π` -- is likewise absent: the library's
-`ContRepresentation.isotypicProjector` is built from
+`V_π ⊗ V_π^*`, which the library does not have. The character projection
+`TauCeti.peterWeylBlockProjection` *is* proved here, but not as an instance of
+`TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is infinite-dimensional and its regular
-representation is only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`), so that
-projector is new analysis rather than a restatement of the results here.
+representation is only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). The
+averaging is carried out instead by `TauCeti.convolutionOperator`, which needs no continuity of the
+action on `L²(G)`, and the integrated operator is used only on the finite-dimensional carrier of a
+model, where it is available.
 
 ## Main definitions
 
@@ -76,6 +91,8 @@ projector is new analysis rather than a restatement of the results here.
   block onto the Hilbert-Schmidt space `EuclideanSpace 𝕜 (Fin dᵢ × Fin dᵢ)`.
 * `TauCeti.endEquivPeterWeylBlock`: **the block is a copy of `End(V_π)`**, matching the matrix
   unit at a position with the normalized matrix coefficient at that position.
+* `TauCeti.peterWeylBlockProjection`: **the character projection onto the block**, convolution
+  against the kernel `dim V_π · conj χ_π`.
 
 ## Main statements
 
@@ -98,6 +115,14 @@ projector is new analysis rather than a restatement of the results here.
   `TauCeti.isHilbertSum_peterWeylBlock`: `L²(G)` is the Hilbert sum of the blocks.
 * `TauCeti.isHilbertSum_euclideanSpace_peterWeylBlock`: **`L²(G)` is isometrically the Hilbert sum
   of the endomorphism spaces of the models**, each carrying its Hilbert-Schmidt inner product.
+* `TauCeti.peterWeylBlockProjection_apply_of_mem` and
+  `TauCeti.peterWeylBlockProjection_apply_eq_zero_of_mem`: **the character projection is the
+  identity on its own block and kills the block of an inequivalent model**, the two blockwise
+  identities of the averaging kernel.
+* `TauCeti.peterWeylBlockProjection_eq_starProjection` and
+  `TauCeti.range_peterWeylBlockProjection`: **the character projection is the orthogonal projection
+  of `L²(G)` onto the block**, whose range is therefore the block itself; this is the statement
+  that the character averages are the isotypic projectors.
 
 ## References
 
@@ -452,5 +477,191 @@ theorem isHilbertSum_euclideanSpace_peterWeylBlock [IsAlgClosed 𝕜] (h : IsIrr
     exact (topologicalClosure_iSup_peterWeylBlock h).ge
 
 end Orthogonality
+
+/-! ### The character projection onto a block
+
+Averaging the right translations of `L²(G)` against the kernel `dim V_π · conj χ_π` projects
+`L²(G)` onto the `π`-block. The averaging is convolution (`TauCeti.convolutionOperator`), which is
+bounded on `L²(G)` for a continuous kernel and needs no continuity of the action of `G` on `L²(G)`;
+on a matrix coefficient it moves the group argument, so it acts through the integrated operator of
+the same kernel on the finite-dimensional carrier of the model, where the character identities of
+`TauCeti/RepresentationTheory/Compact/Character/Projection.lean` evaluate it. -/
+
+/-- Convolving a matrix coefficient of a model against a continuous kernel `k` gives the matrix
+coefficient at the same first vector and at the second vector moved by the integrated operator of
+`k` on the model's carrier.
+
+This is the computation behind `TauCeti.peterWeylBlockProjection`, and it is where the unitarity of
+the model is used: convolution translates the group argument of the coefficient, and for a unitary
+action the translation may be moved from the first vector to the second. -/
+private theorem convolutionOperator_matrixCoeffLp (model : IrrepModel 𝕜 G) (k : C(G, 𝕜))
+    (v w : EuclideanSpace 𝕜 (Fin model.dim)) :
+    convolutionOperator k (ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w)
+      = ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v
+          (ContRepresentation.integratedOperator model.rep model.continuous_rep k w) := by
+  have hint : Integrable (fun g : G => k g • model.rep g w) (haarProb G) :=
+    integrable_continuousMap G ⟨fun g => k g • model.rep g w,
+      k.continuous.smul (model.continuous_rep.clm_apply continuous_const)⟩
+  rw [ContRepresentation.matrixCoeffLp_def, convolutionOperator_apply,
+    ContRepresentation.matrixCoeffLp_def]
+  congr 1
+  ext x
+  rw [convolutionCLM_toLp_apply, ContRepresentation.matrixCoeff_apply,
+    ContRepresentation.integratedOperator_apply, ← integral_inner hint]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+  -- `integral_congr_ae` leaves the two integrands applied but unreduced.
+  beta_reduce
+  have hmul : model.rep (z⁻¹ * x) v = model.rep z⁻¹ (model.rep x v) := by simp [map_mul]
+  rw [ContRepresentation.matrixCoeff_apply, hmul, inner_smul_right,
+    model.isUnitary.inner_map_left z⁻¹ (model.rep x v) w, inv_inv]
+
+/-- **The character projection onto the `π`-block**: convolution against the kernel
+`dim V_π · conj χ_π`.
+
+It is the identity on the `π`-block (`TauCeti.peterWeylBlockProjection_apply_of_mem`) and kills the
+block of an inequivalent model (`TauCeti.peterWeylBlockProjection_apply_eq_zero_of_mem`), because
+the integrated operator of that kernel on the carrier of a model is the identity for `π` itself and
+zero for an inequivalent one. For a skeleton of the unitary dual those two identities make it the
+orthogonal projection of `L²(G)` onto the block
+(`TauCeti.peterWeylBlockProjection_eq_starProjection`). -/
+noncomputable def peterWeylBlockProjection (model : IrrepModel 𝕜 G) :
+    Lp 𝕜 2 (haarProb G) →L[𝕜] Lp 𝕜 2 (haarProb G) :=
+  convolutionOperator ((model.dim : 𝕜) •
+    star (ContRepresentation.character model.rep model.continuous_rep))
+
+/-- **The character projection fixes the matrix coefficients of its own model.** The kernel
+`dim V_π · conj χ_π` acts on the carrier of `π` as the identity, by
+`TauCeti.ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
+@[simp]
+theorem peterWeylBlockProjection_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
+    (v w : EuclideanSpace 𝕜 (Fin model.dim)) :
+    peterWeylBlockProjection model
+        (ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w)
+      = ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w := by
+  have hop : ContRepresentation.integratedOperator model.rep model.continuous_rep
+      ((model.dim : 𝕜) • star (ContRepresentation.character model.rep model.continuous_rep))
+      = ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin model.dim)) := by
+    rw [ContRepresentation.integratedOperator_smul]
+    simpa using ContRepresentation.finrank_smul_integratedOperator_star_character_self
+      model.rep model.continuous_rep model.isUnitary model.isIrreducible
+  rw [peterWeylBlockProjection, convolutionOperator_matrixCoeffLp, hop]
+  simp
+
+/-- **The character projection kills the matrix coefficients of an inequivalent model.** The kernel
+`dim V_π · conj χ_π` acts as zero on the carrier of an irreducible model inequivalent to `π`, by
+`TauCeti.ContRepresentation.integratedOperator_star_character_eq_zero`; Schur's lemma is what turns
+inequivalence into the vanishing of every intertwiner. -/
+@[simp]
+theorem peterWeylBlockProjection_matrixCoeffLp_eq_zero [IsAlgClosed 𝕜]
+    {model model' : IrrepModel 𝕜 G}
+    (hne : IsEmpty (_root_.ContRepresentation.Equiv model.rep model'.rep))
+    (v w : EuclideanSpace 𝕜 (Fin model'.dim)) :
+    peterWeylBlockProjection model
+        (ContRepresentation.matrixCoeffLp model'.rep model'.continuous_rep v w) = 0 := by
+  have hne' : IsEmpty (_root_.ContRepresentation.Equiv model'.rep model.rep) :=
+    ⟨fun φ => hne.false φ.symm⟩
+  have hop : ContRepresentation.integratedOperator model'.rep model'.continuous_rep
+      ((model.dim : 𝕜) • star (ContRepresentation.character model.rep model.continuous_rep))
+      = 0 := by
+    rw [ContRepresentation.integratedOperator_smul,
+      ContRepresentation.integratedOperator_star_character_eq_zero model.rep model.continuous_rep
+        model'.rep model'.continuous_rep model.isUnitary model'.isIrreducible
+        (fun φ => by
+          simp [ContRepresentation.eq_zero_of_isEmpty_equiv model'.isIrreducible
+            model.isIrreducible hne' φ]),
+      smul_zero]
+  rw [peterWeylBlockProjection, convolutionOperator_matrixCoeffLp, hop]
+  simp
+
+/-- **The character projection is the identity on its own block**, the block being spanned by the
+matrix coefficients of its model. -/
+theorem peterWeylBlockProjection_apply_of_mem [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
+    peterWeylBlockProjection model f = f := by
+  induction hf using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, w, rfl⟩ := hx
+    exact peterWeylBlockProjection_matrixCoeffLp_self model v w
+  | zero => simp
+  | add x y _ _ hx hy => rw [map_add, hx, hy]
+  | smul c x _ hx => rw [map_smul, hx]
+
+/-- **The character projection kills the block of an inequivalent model.** -/
+theorem peterWeylBlockProjection_apply_eq_zero_of_mem [IsAlgClosed 𝕜]
+    {model model' : IrrepModel 𝕜 G}
+    (hne : IsEmpty (_root_.ContRepresentation.Equiv model.rep model'.rep))
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model') :
+    peterWeylBlockProjection model f = 0 := by
+  induction hf using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, w, rfl⟩ := hx
+    exact peterWeylBlockProjection_matrixCoeffLp_eq_zero hne v w
+  | zero => simp
+  | add x y _ _ hx hy => rw [map_add, hx, hy, add_zero]
+  | smul c x _ hx => rw [map_smul, hx, smul_zero]
+
+/-- **The character projection is self-adjoint.** Its kernel is symmetric in the sense of
+`TauCeti.isSelfAdjoint_convolutionOperator`, because the character of a unitary representation at an
+inverse is the conjugate of its value. -/
+theorem isSelfAdjoint_peterWeylBlockProjection (model : IrrepModel 𝕜 G) :
+    IsSelfAdjoint (peterWeylBlockProjection model) :=
+  isSelfAdjoint_convolutionOperator _ fun g => by
+    simp [ContRepresentation.character_apply_inv model.rep model.continuous_rep model.isUnitary g]
+
+section Projection
+
+variable {models : ι → IrrepModel 𝕜 G}
+
+/-- **The character projection maps the whole of `L²(G)` into its block.** The preimage of the
+block is a closed subspace, the block being finite-dimensional, and it contains every block of the
+skeleton: its own by `TauCeti.peterWeylBlockProjection_apply_of_mem`, the others by
+`TauCeti.peterWeylBlockProjection_apply_eq_zero_of_mem`. Since the blocks of a skeleton are dense
+(`TauCeti.topologicalClosure_iSup_peterWeylBlock`), that preimage is everything; this is where
+exhaustiveness of the skeleton enters. -/
+theorem peterWeylBlockProjection_apply_mem_peterWeylBlock [IsAlgClosed 𝕜]
+    (h : IsIrrepSkeleton models) (i : ι) (f : Lp 𝕜 2 (haarProb G)) :
+    peterWeylBlockProjection (models i) f ∈ peterWeylBlock (models i) := by
+  set K := (peterWeylBlock (models i)).comap
+    (peterWeylBlockProjection (models i)).toLinearMap with hK
+  have hclosed : IsClosed (K : Set (Lp 𝕜 2 (haarProb G))) :=
+    ((peterWeylBlock (models i)).closed_of_finiteDimensional).preimage
+      (peterWeylBlockProjection (models i)).continuous
+  have hle : ⨆ j, peterWeylBlock (models j) ≤ K := by
+    refine iSup_le fun j x hx => Submodule.mem_comap.2 ?_
+    rw [ContinuousLinearMap.coe_coe]
+    rcases eq_or_ne j i with rfl | hji
+    · rw [peterWeylBlockProjection_apply_of_mem (models j) hx]
+      exact hx
+    · rw [peterWeylBlockProjection_apply_eq_zero_of_mem
+        (h.pairwise_isEmpty_equiv (Ne.symm hji)) hx]
+      exact Submodule.zero_mem _
+  have htop : (⊤ : Submodule 𝕜 (Lp 𝕜 2 (haarProb G))) ≤ K :=
+    (topologicalClosure_iSup_peterWeylBlock h).ge.trans
+      (Submodule.topologicalClosure_minimal _ hle hclosed)
+  exact htop (Submodule.mem_top (x := f))
+
+/-- **The character projection is the orthogonal projection onto its block**: averaging against
+`dim V_π · conj χ_π` is the isotypic projector of `π`, in the Hilbert-space sense that its value is
+the component of `f` in the `π`-block. It lands in the block by
+`TauCeti.peterWeylBlockProjection_apply_mem_peterWeylBlock`, and what it removes is orthogonal to
+the block because the projection is self-adjoint and fixes the block. -/
+theorem peterWeylBlockProjection_eq_starProjection [IsAlgClosed 𝕜] (h : IsIrrepSkeleton models)
+    (i : ι) :
+    peterWeylBlockProjection (models i) = (peterWeylBlock (models i)).starProjection := by
+  refine ContinuousLinearMap.ext fun f => (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
+    (peterWeylBlockProjection_apply_mem_peterWeylBlock h i f) fun b hb => ?_).symm
+  have hsym : ⟪peterWeylBlockProjection (models i) f, b⟫_𝕜
+      = ⟪f, peterWeylBlockProjection (models i) b⟫_𝕜 := by
+    simpa using (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.1
+      (isSelfAdjoint_peterWeylBlockProjection (models i))) f b
+  rw [inner_sub_left, hsym, peterWeylBlockProjection_apply_of_mem (models i) hb, sub_self]
+
+/-- **The range of the character projection is the block it belongs to.** -/
+theorem range_peterWeylBlockProjection [IsAlgClosed 𝕜] (h : IsIrrepSkeleton models) (i : ι) :
+    (peterWeylBlockProjection (models i)).range = peterWeylBlock (models i) := by
+  rw [peterWeylBlockProjection_eq_starProjection h i]
+  exact Submodule.range_starProjection _
+
+end Projection
 
 end TauCeti
