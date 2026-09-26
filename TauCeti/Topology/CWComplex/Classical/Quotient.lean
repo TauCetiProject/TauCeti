@@ -30,9 +30,6 @@ out of a CW complex (the case `Z = I`) are built cell by cell.
 * `TauCeti.continuous_prod_complex_iff`: the same criterion for maps out of `Z × C` with `Z`
   locally compact.
 
-The product statement rests on `Topology.IsQuotientMap.continuous_lift_prod_right`: the product
-of a quotient map with the identity of a locally compact space is again a quotient map.
-
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),

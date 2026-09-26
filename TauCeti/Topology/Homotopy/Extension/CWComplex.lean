@@ -20,20 +20,18 @@ and homotopies can be modified on the base or on a skeleton and extended over th
 
 ## Main results
 
-* `TauCeti.hasHomotopyExtensionProperty_skeletonLT_succ`: the `n`-skeleton has the homotopy
-  extension property inside the `n + 1`-skeleton.
+* `TauCeti.hasHomotopyExtensionProperty_skeletonLT_succ`: `skeletonLT C n` has the homotopy
+  extension property inside `skeletonLT C (n + 1)`.
 * `TauCeti.hasHomotopyExtensionProperty_skeletonLT`: every skeleton has the homotopy extension
   property inside the complex.
 * `TauCeti.hasHomotopyExtensionProperty_base`: **the base of a relative CW complex has the
   homotopy extension property inside the complex.**
 
-## Implementation notes
+## Related results
 
-The `n + 1`-skeleton is the `n`-skeleton with `n`-cells attached along their boundary spheres,
-so a homotopy on the `n`-skeleton extends over each closed `n`-cell by
-`TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`, and these extensions glue by
-`TauCeti.continuous_prod_complex_iff`.  The extensions to successive skeleta are compatible and
-glue to all of `C` by the same criterion; no retraction of the cylinder is built.
+`TauCeti.hasHomotopyExtensionProperty_sphere_closedBall` gives the homotopy extension property
+for the boundary of a closed cell. `TauCeti.continuous_prod_complex_iff` characterizes
+continuity of maps on products with a relative CW complex, including homotopies.
 
 ## References
 
@@ -57,7 +55,7 @@ section Step
 
 variable {n : ℕ}
 
-/-- A point of the `n + 1`-skeleton that lies in no open `n`-cell lies in the `n`-skeleton. -/
+/-- A point of `skeletonLT C (n + 1)` that lies in no open `n`-cell lies in `skeletonLT C n`. -/
 private lemma mem_skeletonLT_of_forall_notMem_openCell {x : X}
     (hx : x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
     (h : ∀ j : cell C n, x ∉ openCell n j) : x ∈ (skeletonLT C (n : ℕ∞) : Set X) := by
@@ -85,7 +83,7 @@ private lemma map_symm_eq {j : cell C n} {x : X} (hx : x ∈ openCell n j) :
   rw [← (map n j).image_source_eq_target, source_eq n j]
   exact hx
 
-/-- An open `n`-cell is disjoint from the `n`-skeleton. -/
+/-- An open `n`-cell is disjoint from `skeletonLT C n`. -/
 private lemma notMem_openCell_of_mem_skeletonLT {x : X} (hx : x ∈ (skeletonLT C n : Set X))
     (j : cell C n) : x ∉ openCell n j :=
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left hx
@@ -105,7 +103,7 @@ variable {Y : Type u} [TopologicalSpace Y]
   (G : C(I × (Subtype.val ⁻¹' (skeletonLT C n : Set X) :
     Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)), Y))
 
-/-- The extension of a homotopy `G` given on the `n`-skeleton over the `n + 1`-skeleton, built
+/-- The extension of a homotopy `G` given on `skeletonLT C n` over `skeletonLT C (n + 1)`, built
 from extensions `K j` of `G` over the closed `n`-cells: on an open `n`-cell it is read off `K j`
 through the inverse of the characteristic map, and elsewhere it is `G`. -/
 private def extendOverCells (K : cell C n → C(I × closedBall (0 : Fin n → ℝ) 1, Y))
@@ -151,8 +149,7 @@ private lemma extendOverCells_map
 
 end Step
 
-/-- **The `n`-skeleton of a relative CW complex has the homotopy extension property inside the
-`n + 1`-skeleton.** -/
+/-- **`skeletonLT C n` has the homotopy extension property inside `skeletonLT C (n + 1)`.** -/
 theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
     HasHomotopyExtensionProperty (Subtype.val ⁻¹' (skeletonLT C n : Set X) :
       Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) := by
