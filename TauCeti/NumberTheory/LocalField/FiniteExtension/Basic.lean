@@ -443,6 +443,8 @@ theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪
     (e.integerRingEquiv x : M) = e (x : L) := by
   simp only [AlgEquiv.integerRingEquiv, AlgEquiv.trans_apply,
     AlgEquiv.ofRingEquiv_apply, AlgEquiv.ofRingEquiv_symm_apply]
+  -- Unfold the local equivalences `iL` and `iM` packaged in `integerRingEquiv` so that
+  -- the application lemmas for `subringCongr` and `mapIntegralClosure` can rewrite the goal.
   change (((RingEquiv.subringCongr (integerRing_eq_integralClosure K M)).symm
       ((e.restrictScalars 𝒪[K]).mapIntegralClosure
         ((RingEquiv.subringCongr (integerRing_eq_integralClosure K L)) x))).val : M) =
