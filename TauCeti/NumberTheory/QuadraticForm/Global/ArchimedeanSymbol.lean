@@ -13,14 +13,16 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 
 The archimedean symbol is the norm-equation Hilbert symbol read over the completion at an infinite
 place.  Tau Ceti already computes the symbol over `ℝ` and over algebraically closed fields; what is
-added here is that computation for *global* units at the *places of a number field*, the
-bimultiplicativity that a product of such symbols needs, and the real-place half of the sign
-prescription.
+added here is that computation for *global* units at the *places of a number field*, and the
+real-place half of the sign prescription.
 
 At a real place the symbol of two elements is `-1` exactly when both are negative there, and `1`
-exactly when one of them is positive there.  Bimultiplicativity of the real symbol is therefore a
-statement about signs, and it is what allows the symbols of a prescribed set of elements to be
-multiplied over its real places.  At a complex place the symbol is `1` for the same reason the
+exactly when one of them is positive there.  A product of such symbols over a prescribed set of
+real places is therefore a product of signs, and the bimultiplicativity it needs is that of
+`TauCeti.hilbertSymbol_real_mul_left` and `TauCeti.hilbertSymbol_real_mul_right`, in
+`TauCeti.NumberTheory.HilbertSymbol.Archimedean`: each of them is a `[simp]` lemma, so `simp`
+expands a product of global units inside the localized symbol without a localized restatement.
+At a complex place the symbol is `1` for the same reason the
 archimedean classification of a form is by rank alone: every element of `ℂˣ` is a square, so
 `TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`, in
 `TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed`, already settles the complex places of a number
@@ -37,10 +39,10 @@ place, which weak approximation supplies, is such a `b`.
 * `TauCeti.hilbertSymbol_unitAtRealPlace_eq_neg_one_iff` and
   `TauCeti.hilbertSymbol_unitAtRealPlace_eq_one_iff`: the archimedean symbol of two global units
   at a real place, in both signs.
-* `TauCeti.hilbertSymbol_unitAtRealPlace_mul_left` and
-  `TauCeti.hilbertSymbol_unitAtRealPlace_mul_right`: bimultiplicativity of the real symbol, by
-  which the symbols at the real places of a prescribed set can be multiplied; being `[simp]`, they
-  expand a product of global units inside a localized symbol.
+* Bimultiplicativity, by which the symbols at the real places of a prescribed set can be
+  multiplied, is `TauCeti.hilbertSymbol_real_mul_left` and
+  `TauCeti.hilbertSymbol_real_mul_right` read at a place; both are `[simp]`, so `simp` expands a
+  product of global units inside a localized symbol.
 * `TauCeti.isSquare_unitAtRealPlace_iff` and `TauCeti.not_isSquare_unitAtRealPlace_iff`: a
   global unit is a square at a real place exactly when it is positive there.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
@@ -106,30 +108,6 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 ↔
       0 < embedding_of_isReal w.2 (a : K) ∨ 0 < embedding_of_isReal w.2 (b : K) := by
   rw [hilbertSymbol_real_eq_one_iff, unitAtRealPlace_apply, unitAtRealPlace_apply]
-
-omit [NumberField K] in
-/-- **Bimultiplicativity of the localized real symbol, in the first parameter.** This is
-`TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field: the symbol of two
-global units is multiplicative in its first entry, so that the symbols at the real places of a
-prescribed set can be multiplied. -/
-@[simp]
-theorem hilbertSymbol_unitAtRealPlace_mul_left (w : {w : InfinitePlace K // w.IsReal})
-    (a a' b : Kˣ) :
-    hilbertSymbol (unitAtRealPlace w a * unitAtRealPlace w a') (unitAtRealPlace w b) =
-      hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) *
-        hilbertSymbol (unitAtRealPlace w a') (unitAtRealPlace w b) :=
-  hilbertSymbol_real_mul_left _ _ _
-
-omit [NumberField K] in
-/-- **Bimultiplicativity of the localized real symbol, in the second parameter.** This is
-`TauCeti.hilbertSymbol_real_mul_right` read at a real place of a number field. -/
-@[simp]
-theorem hilbertSymbol_unitAtRealPlace_mul_right (w : {w : InfinitePlace K // w.IsReal})
-    (a b b' : Kˣ) :
-    hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b * unitAtRealPlace w b') =
-      hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) *
-        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b') :=
-  hilbertSymbol_real_mul_right _ _ _
 
 omit [NumberField K] in
 /-- A global unit is a square at a real place exactly when it is positive there. -/
