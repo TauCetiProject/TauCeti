@@ -72,6 +72,13 @@ private abbrev singularHomologyFunctor_obj_eq_toSSetHomology (n : ℕ) (X : TopC
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
       (TopCat.toSSet.obj X).homology R n := rfl
 
+private lemma singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp
+    (n : ℕ) (X : TopCat.{w}) {Y : C}
+    (f : (TopCat.toSSet.obj X).homology R n ⟶ Y) :
+    (eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R n X)).hom ≫ f = f := by
+  change 𝟙 _ ≫ f = f
+  exact Category.id_comp f
+
 /-- **The suspension isomorphism for the homology of spheres.** For a point `p` of the unit
 sphere `S` of a real inner product space `E`, the reduced homology of `S` in degree `k + 1` is
 isomorphic to the reduced homology in degree `k` of the equator, the unit sphere of
@@ -105,8 +112,7 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
         (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) := by
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
-  simp only [asIso_hom]
-  simp
+  simp only [singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp, asIso_hom]
   rfl
 
 end TauCeti
