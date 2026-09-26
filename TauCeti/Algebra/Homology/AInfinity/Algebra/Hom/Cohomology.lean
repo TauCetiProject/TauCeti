@@ -397,7 +397,8 @@ theorem cohomologyMap_comp_cohomologyMapInv {f : AInfinityHom AA BB} (hf : f.IsQ
   exact hf.cohomologyLinearEquiv.apply_symm_apply c
 
 /-- The inverse of the map induced on cohomology by a quasi-isomorphism preserves degrees. -/
-theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : ℤ}
+theorem cohomologyMapInv_mem_cohomologyGrading_piece {f : AInfinityHom AA BB}
+    (hf : f.IsQuasiIso) {p : ℤ}
     {c : BB.Cohomology} (hc : c ∈ BB.cohomologyGrading.piece p) :
     hf.cohomologyMapInv c ∈ AA.cohomologyGrading.piece p := by
   have he : LinearMap.IsHomogeneous hf.cohomologyLinearEquiv.toLinearMap
@@ -413,7 +414,8 @@ theorem cohomologyMapInv_mem {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) {p : �
 morphism in the backward direction, inverse to the map induced on cohomology. -/
 noncomputable def cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
     AInfinityStrictHom BB.cohomologyAInfinityAlgebra AA.cohomologyAInfinityAlgebra :=
-  NonUnitalAlgHom.cohomologyStrictHom hf.cohomologyMapInv (hf.cohomologyMapInv_mem)
+  NonUnitalAlgHom.cohomologyStrictHom hf.cohomologyMapInv
+    (hf.cohomologyMapInv_mem_cohomologyGrading_piece)
 
 /-- The inverse strict morphism acts by the inverse cohomology map. -/
 @[simp]
