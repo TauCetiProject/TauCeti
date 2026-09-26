@@ -209,17 +209,23 @@ theorem walkTransition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V
 
 end Map
 
-end WalkTransition
-
-variable [CommMonoid k]
-
-/-! ### Reversing a walk -/
-
-/-- **Reversing a walk inverts its transition factor.** -/
+/-- **Reversing a walk inverts its transition factor.** Reversing a walk reverses its darts and
+replaces each of them by the reverse dart, whose transition factor is the inverse. Its transition
+factor is therefore the reverse of the list of inverses of the original factors, which is the
+inverse of the original product in any monoid. -/
 @[simp]
 theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
     (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
-  simp [walkTransition, Function.comp_def, List.prod_inv]
+  have hsymm (d : G.Dart) : transition c (Dart.symm d).adj = (transition c d.adj)⁻¹ :=
+    transition_symm c d.adj
+  simp only [walkTransition_def]
+  rw [Walk.darts_reverse, List.map_reverse, List.map_map, Function.comp_def,
+    List.prod_reverse_noncomm, List.map_map, Function.comp_def]
+  simp only [hsymm, inv_inv]
+
+end WalkTransition
+
+variable [CommMonoid k]
 
 /-! ### Trivializing a parameter from a vertex potential -/
 
