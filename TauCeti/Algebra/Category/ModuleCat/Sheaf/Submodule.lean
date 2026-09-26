@@ -192,6 +192,7 @@ def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
 /-- The inclusion of a submodule remains a monomorphism after restricting to an object. -/
 instance instMonoιOver (N : M.Submodule) (V : C) : Mono (N.ι.over V) := by
   apply (SheafOfModules.forget _).mono_of_mono_map
+  -- The forgetful functor maps this sheaf morphism to its underlying presheaf morphism `.val`.
   change Mono (N.ι.over V).val
   apply PresheafOfModules.mono_of_injective
   intro W

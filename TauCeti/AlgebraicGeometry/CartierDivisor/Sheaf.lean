@@ -16,12 +16,17 @@ Let `X` be an integral scheme with sheaf of rational functions `𝒦_X`, and let
 divisor on `X`, that is, a global section of `𝒦_X^× / 𝒪_X^×`. Near every point `x`, `D` is the
 class of a nonzero rational function `f`, a *local equation* of `D` at `x`, well defined up to a
 unit of the local ring `𝒪_{X,x}` (`Scheme.CartierDivisor.IsLocalEquationAt`). This file
-constructs the sheaf `𝒪_X(D) ⊆ 𝒦_X`,
+constructs the sheaf `𝒪_X(D) ⊆ 𝒦_X`.
 
-`Γ(U, 𝒪_X(D)) = {g ∈ K(X) | f g ∈ 𝒪_{X,x} for every x ∈ U and every local equation f at x}`,
+For nonempty `U`, its sections are rational functions satisfying
 
-so that `𝒪_X(D) = f⁻¹ 𝒪_X` over any open subset on which `f` is an equation of `D`, and proves
-that it is a line bundle.
+`Γ(U, 𝒪_X(D)) = {g ∈ K(X) | f g ∈ 𝒪_{X,x} for every x ∈ U and every local equation f at x}`.
+
+Over the empty open subset, there is a unique section. In general the definition uses sections
+of `𝒦_X` over `U`, so it also covers this case.
+
+Consequently `𝒪_X(D) = f⁻¹ 𝒪_X` over any open subset on which `f` is an equation of `D`.
+This file also proves that it is a line bundle.
 
 ## Main declarations
 
@@ -44,6 +49,8 @@ that it is a line bundle.
 
 * R. Hartshorne, *Algebraic Geometry*, Section II.6, the construction of `𝓛(D)` preceding
   Proposition II.6.13.
+* `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, whose submodule sheaf
+  construction is the model for this Cartier divisor sheaf.
 -/
 
 public section
@@ -347,6 +354,8 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     · obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl
         (principalCartierDivisor_restrict X f U).symm).mp ht
       refine ⟨a, (rationalFunctionsEquiv U).injective ?_⟩
+      -- The isomorphism criterion exposes the composite map at the presheaf level; unfold
+      -- that wrapper to use the section-level multiplication lemmas.
       change rationalFunctionsEquiv U (Scheme.Modules.Hom.app (rationalFunctionsMul X
         ((f⁻¹ : X.functionFieldˣ) : X.functionField)) U
         (Scheme.Modules.Hom.app (toRationalFunctions X) U a)) = _
