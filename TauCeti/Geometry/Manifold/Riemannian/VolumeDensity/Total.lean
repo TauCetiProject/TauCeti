@@ -42,7 +42,9 @@ def riemannianTotalVolume (I : ModelWithCorners ℝ E H) (M : Type*)
     [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] : ℝ :=
-  (riemannianVolume I M).real univ
+  (ENNReal.neTopEquivNNReal
+    ⟨(riemannianVolume I M) univ,
+      by change (riemannianVolume I M) univ ≠ (⊤ : ENNReal); finiteness⟩ : NNReal)
 
 /-- Total Riemannian volume is the real mass of the whole manifold. -/
 theorem riemannianTotalVolume_def :
