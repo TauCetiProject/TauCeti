@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
@@ -412,5 +413,29 @@ theorem integerRing_eq_integralClosure :
     Valuation.mem_integer_iff]
 
 end IntegralClosure
+
+section IntegerRingEquiv
+
+variable {K M} [ValuativeRel M] [ValuativeExtension K M]
+variable {L : Type*} [Field L] [ValuativeRel L] [Algebra K L]
+  [ValuativeExtension K L] [Module.Finite K L]
+
+/-- A base-field algebra equivalence restricts to an algebra equivalence of integer rings. -/
+noncomputable def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) :
+    𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] := by
+  let iL : 𝒪[L] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] L :=
+    AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K L))
+      (by intro x; ext; rfl)
+  let iM : 𝒪[M] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] M :=
+    AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K M))
+      (by intro x; ext; rfl)
+  exact (iL.trans (e.restrictScalars 𝒪[K]).mapIntegralClosure).trans iM.symm
+
+/-- The integer-ring equivalence acts by the original field equivalence. -/
+@[simp]
+theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪[L]) :
+    (e.integerRingEquiv x : M) = e (x : L) := by rfl
+
+end IntegerRingEquiv
 
 end TauCeti

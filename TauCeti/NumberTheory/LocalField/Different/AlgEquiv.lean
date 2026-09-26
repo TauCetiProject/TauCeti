@@ -33,49 +33,6 @@ variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
   [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [TopologicalSpace M] [IsNonarchimedeanLocalField M] in
-private theorem map_mem_integerRing (e : L ≃ₐ[K] M) (x : 𝒪[L]) : e (x : L) ∈ 𝒪[M] := by
-  have hx : (x : L) ∈ (integralClosure 𝒪[K] L).toSubring := by
-    rw [← integerRing_eq_integralClosure K L]
-    exact x.property
-  have hi : IsIntegral 𝒪[K] (x : L) := hx
-  have hm := hi.map (e.toAlgHom.restrictScalars 𝒪[K])
-  rw [integerRing_eq_integralClosure K M]
-  exact hm
-
-variable {K L M}
-
-/-- A base-field algebra equivalence restricts to an algebra equivalence of integer rings. -/
-noncomputable def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) :
-    𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] := by
-  let f : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] :=
-    { toFun := fun x => ⟨e x, map_mem_integerRing K L M e x⟩
-      map_one' := by ext; simp
-      map_mul' := by intro x y; ext; simp
-      map_zero' := by ext; simp
-      map_add' := by intro x y; ext; simp
-      commutes' := by intro x; ext; simp }
-  let g : 𝒪[M] →ₐ[𝒪[K]] 𝒪[L] :=
-    { toFun := fun x => ⟨e.symm x, map_mem_integerRing K M L e.symm x⟩
-      map_one' := by ext; simp
-      map_mul' := by intro x y; ext; simp
-      map_zero' := by ext; simp
-      map_add' := by intro x y; ext; simp
-      commutes' := by intro x; ext; simp }
-  exact AlgEquiv.ofAlgHom f g (AlgHom.ext fun x => Subtype.ext (e.right_inv _))
-    (AlgHom.ext fun x => Subtype.ext (e.left_inv _))
-
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [TopologicalSpace M] [IsNonarchimedeanLocalField M] in
-/-- The integer-ring equivalence acts by the original field equivalence. -/
-theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪[L]) :
-    (e.integerRingEquiv x : M) = e (x : L) := by rfl
-
-attribute [simp] AlgEquiv.coe_integerRingEquiv_apply
-
-variable (K L M)
-
 variable [Algebra.IsSeparable K L] [Algebra.IsSeparable K M]
 
 /-- The different ideal is carried to the different ideal by an equivalence of extensions. -/
@@ -102,19 +59,11 @@ theorem differentIdeal_map_integerRingEquiv (e : L ≃ₐ[K] M) :
     (congrArg (fun f => f (derivative (minpoly 𝒪[K] x)))
       (Polynomial.aeval_algEquiv e.integerRingEquiv x)).symm
 
-omit [Algebra.IsSeparable K L] [Algebra.IsSeparable K M] in
-/-- An equivalence of local extensions carries the maximal ideal of the integer ring to the
-maximal ideal. -/
-theorem maximalIdeal_map_integerRingEquiv (e : L ≃ₐ[K] M) :
-    (𝓂[L]).map e.integerRingEquiv = 𝓂[M] :=
-  IsLocalRing.map_ringEquiv_maximalIdeal e.integerRingEquiv.toRingEquiv
-
-attribute [simp] maximalIdeal_map_integerRingEquiv
-
 private theorem differentExponent_le_of_algEquiv (e : L ≃ₐ[K] M) :
     differentExponent K L ≤ differentExponent K M := by
   apply (pow_dvd_differentIdeal_iff_le_differentExponent (K := K) (L := M)).mp
-  rw [← maximalIdeal_map_integerRingEquiv K L M e, ← Ideal.map_pow,
+  rw [← IsLocalRing.map_ringEquiv_maximalIdeal e.integerRingEquiv.toRingEquiv,
+    ← Ideal.map_pow,
     ← differentIdeal_map_integerRingEquiv K L M e]
   exact Ideal.dvd_iff_le.mpr (Ideal.map_mono (Ideal.dvd_iff_le.mp
     ((pow_dvd_differentIdeal_iff_le_differentExponent (K := K) (L := L)).mpr le_rfl)))
