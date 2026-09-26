@@ -41,7 +41,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasu
 
 /-- Almost every infinite `W`-random graph has finite windows converging to `W` in cut distance.
 No standard-Borel or atomlessness assumption is needed on the generating probability space. -/
-theorem tendsto_cutDist_finiteGraphGraphon_infiniteSampleLaw_ae (W : Graphon Ω μ) :
+theorem infiniteSampleLaw_ae_tendsto_cutDist (W : Graphon Ω μ) :
     ∀ᵐ G ∂infiniteSampleLaw W,
       Tendsto (fun n => cutDist (finiteGraphGraphon (G.restrictFin n)) W) atTop (𝓝 0) := by
   obtain ⟨V, hWV⟩ := exists_graphon_unitInterval_cutDist_eq_zero W
@@ -73,13 +73,13 @@ theorem tendsto_cutDist_finiteGraphGraphon_infiniteSampleLaw_ae (W : Graphon Ω 
 
 /-- On the unit interval, the growing nonempty sampled windows converge almost surely in
 graphon space to the class of the generating graphon. -/
-theorem tendsto_graphonSpace_finiteGraphGraphon_infiniteSampleLaw_ae
+theorem infiniteSampleLaw_ae_tendsto_graphonSpace
     (W : Graphon I (volume : Measure I)) :
     ∀ᵐ G ∂infiniteSampleLaw W,
       Tendsto (fun n => (SeparationQuotient.mk
         (finiteGraphGraphon (G.restrictFin (n + 1))) : GraphonSpaceI)) atTop
         (𝓝 (SeparationQuotient.mk W)) := by
-  filter_upwards [tendsto_cutDist_finiteGraphGraphon_infiniteSampleLaw_ae W] with G hG
+  filter_upwards [infiniteSampleLaw_ae_tendsto_cutDist W] with G hG
   rw [tendsto_iff_dist_tendsto_zero]
   simpa only [dist_graphonSpace_mk_mk] using (tendsto_add_atTop_iff_nat 1).2 hG
 
