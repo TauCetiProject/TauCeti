@@ -214,10 +214,6 @@ private theorem transvectionUnit_mem_lipschitzGroup (hQ : Q.Nondegenerate) (hu :
   rw [hone]
   exact one_mem _
 
-/-- A nonzero vector is not in the kernel of the polar form of a nondegenerate form. -/
-private theorem polarBilin_ne_zero (hQ : Q.Nondegenerate) (hu₀ : u ≠ 0) : Q.polarBilin u ≠ 0 :=
-  fun h => hu₀ ((nondegenerate_polar_iff.mpr hQ).1 u fun y => by rw [h, LinearMap.zero_apply])
-
 /-- **The canonical Spin lift of an Eichler transvection**: for an isotropic vector `u` and a
 vector `w` orthogonal to it, the element `L_{u,w} = 1 + ι w * ι u` of the Spin group of a
 nondegenerate form. It acts on the quadratic space as the Eichler transvection `E_{u,w}`
@@ -267,6 +263,7 @@ theorem spinTransvection_neg (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar 
   exact spinTransvection_eq_one_of_mem_span hQ hu _ (by simp)
 
 /-- The Spin lift of `E_{u,w}` depends on `w` only through its class modulo `K ∙ u`. -/
+-- `spinTransvection_add` simplifies the left-hand side first, so `simpNF` rejects `@[simp]` here.
 theorem spinTransvection_add_smul (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0)
     (c : K) :
     spinTransvection hQ (w := w + c • u) hu (by simp [polar_self, hu, huw]) =
@@ -287,6 +284,7 @@ theorem coe_spinToSpecialOrthogonal_spinTransvection (hQ : Q.Nondegenerate) (hu 
     star_one_add_ι_mul_ι huw, transvection_conj_ι]
 
 /-- The Spin lift of `E_{u,w}` maps to `E_{u,w}` in `SO(Q)`. -/
+-- The coercion theorem above is already a simp normal form, so `simpNF` rejects `@[simp]` here.
 theorem spinToSpecialOrthogonal_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : polar Q u w = 0) :
     spinToSpecialOrthogonal Q (spinTransvection hQ hu huw) =
@@ -294,10 +292,11 @@ theorem spinToSpecialOrthogonal_spinTransvection (hQ : Q.Nondegenerate) (hu : Q 
   Subtype.ext (coe_spinToSpecialOrthogonal_spinTransvection hQ hu huw)
 
 /-- For `u ≠ 0`, the Spin lift of `E_{u,w}` is trivial exactly when `w` is a multiple of `u`. -/
+@[simp]
 theorem spinTransvection_eq_one_iff (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : polar Q u w = 0) (hu₀ : u ≠ 0) : spinTransvection hQ hu huw = 1 ↔ w ∈ K ∙ u := by
   refine ⟨fun h => ?_, spinTransvection_eq_one_of_mem_span hQ hu huw⟩
-  rw [← transvection_eq_one_iff hu huw (polarBilin_ne_zero hQ hu₀),
+  rw [← transvection_eq_one_iff hu huw (hQ.polarBilin_ne_zero hu₀),
     ← coe_spinToSpecialOrthogonal_spinTransvection hQ hu huw, h, map_one, OneMemClass.coe_one]
 
 /-- The Spin lifts with isotropic vector `u`, as a homomorphism out of the vectors orthogonal to
@@ -360,7 +359,7 @@ theorem spinTransvectionHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu�
     Function.Injective (spinTransvectionHom hQ hu) := by
   refine Function.Injective.of_comp (f := (spinToSpecialOrthogonal Q).toAdditive) ?_
   rw [← AddMonoidHom.coe_comp, spinToSpecialOrthogonal_comp_spinTransvectionHom]
-  exact transvectionHom_injective hu (polarBilin_ne_zero hQ hu₀)
+  exact transvectionHom_injective hu (hQ.polarBilin_ne_zero hu₀)
 
 variable [FiniteDimensional K V]
 
