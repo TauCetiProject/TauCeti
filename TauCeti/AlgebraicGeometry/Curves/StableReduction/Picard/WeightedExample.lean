@@ -49,6 +49,21 @@ noncomputable abbrev twoComponentWeightTwoExample : NumericalType.{0} where
   weight_dvd i j := by fin_cases i <;> fin_cases j <;> decide
   genus _ := 1
 
+/-- Each component of the two-component weight-two example has multiplicity one. -/
+@[simp]
+lemma twoComponentWeightTwoExample_multiplicity (i : Fin 2) :
+    twoComponentWeightTwoExample.multiplicity i = 1 := rfl
+
+/-- Each component of the two-component weight-two example has weight two. -/
+@[simp]
+lemma twoComponentWeightTwoExample_weight (i : Fin 2) :
+    twoComponentWeightTwoExample.weight i = 2 := rfl
+
+/-- Each component of the two-component weight-two example has genus one. -/
+@[simp]
+lemma twoComponentWeightTwoExample_genus (i : Fin 2) :
+    twoComponentWeightTwoExample.genus i = 1 := rfl
+
 /-- The two-component weight-two example has signed genus three. -/
 @[simp]
 lemma twoComponentWeightTwoExample_arithmeticGenus :
