@@ -142,13 +142,13 @@ theorem separatelyExchangeable_unitIntervalCoding
     (exchangeableLaw_deFinettiBarycenter (π := π)).map_permReindex σ
   have hcol : ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
       fun i => permReindex (α := α) τ (x i)) = deFinettiBarycenter π := by
-    have hnat := map_pi_deFinettiBarycenter π (measurable_reindex (α := α) τ)
-    have hperm : permReindex (α := α) τ = (fun x : ℕ → α => fun k => x (τ k)) := by
-      funext x k
-      rw [permReindex_apply]
-    have hπ' : π.map (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π := by
-      simpa only [hperm] using hπ.map_permReindex τ
-    rw [hπ'] at hnat
+    have hnat := map_pi_deFinettiBarycenter π
+      (measurable_reindex τ : Measurable (permReindex (α := α) τ))
+    -- Naturality prints reindexing as a lambda; the two functions are definitionally equal.
+    change ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
+      fun i => permReindex τ (x i)) =
+        deFinettiBarycenter (π.map (fun P => P.map (permReindex τ))) at hnat
+    rw [hπ.map_permReindex τ] at hnat
     exact hnat
   calc ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 (σ p.1)) (τ p.2))
@@ -188,17 +188,8 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     (mixedIIDWith_of_conditionallyIIDWith hν).measurable_mixingRepresentative
   have hprob : IsProbabilityMeasure (μ.map ν) :=
     inferInstance
-  refine ⟨⟨μ.map ν, hprob⟩, ColumnInvariantMixingLaw.intro (fun τ => ?_), ?_⟩
-  · have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
-        P.map (permReindex τ) :=
-      TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
-    simp only [ProbabilityMeasure.coe_mk]
-    rw [AEMeasurable.map_map_of_aemeasurable hmap.aemeasurable hν_meas.aemeasurable]
-    have hperm : permReindex (α := α) τ = (fun x : ℕ → α => fun k => x (τ k)) := by
-      funext x k
-      rw [permReindex_apply]
-    change μ.map (fun ω => (ν ω).map (permReindex τ)) = μ.map ν
-    simpa only [hperm] using hinv τ
+  refine ⟨⟨μ.map ν, hprob⟩, ?_, ?_⟩
+  · exact map_map_permReindex_eq_of_map_eq hν_meas hinv
   · have hpath : pathLaw μ (arrayRow X) = deFinettiBarycenter (μ.map ν) := by
       rw [deFinettiBarycenter_def]
       exact pathLaw_eq_bind_infinitePi_of_mixedIIDWith

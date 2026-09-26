@@ -43,14 +43,7 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-variable {α : Type*} [MeasurableSpace α]
-
-/-- Mapping a coordinate array by its own coordinate process leaves its law unchanged. -/
-private theorem map_coordinateArray_id (ρ : Measure (ℕ × ℕ → α)) :
-    ρ.map (fun ω p ↦ (fun p x ↦ x p) p ω) = ρ := by
-  simp only [Measure.map_id']
-
-variable [StandardBorelSpace α] [Nonempty α]
+variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
 /-- Separate exchangeability of an array is equivalent to representing its law by a
 column-invariant row-coding array law. -/
@@ -74,7 +67,7 @@ theorem SeparatelyExchangeable.exists_columnInvariantMixingLaw_eq_rowCodingArray
   obtain ⟨π, hπ, hlaw⟩ :=
     (separatelyExchangeable_iff_exists_rowCodingArrayLaw
       (μ := ρ) (X := fun p x ↦ x p) (fun p ↦ (measurable_pi_apply p).aemeasurable)).mp h
-  exact ⟨π, hπ, (map_coordinateArray_id ρ) ▸ hlaw⟩
+  exact ⟨π, hπ, by simpa only [Measure.map_id'] using hlaw⟩
 
 /-- A column-invariant mixing law gives a separately exchangeable row-coding array law. -/
 theorem separatelyExchangeable_rowCodingArrayLaw

@@ -44,6 +44,9 @@ one-coordinate pushforwards, not its higher finite-dimensional marginals.
 
 ## Main definitions and results
 
+* `TauCeti.Probability.ColumnInvariantMixingLaw` and
+  `TauCeti.Probability.columnInvariantMixingProbabilityMeasures` -- invariance of a law on row-path
+  measures and the convex set of invariant probability laws;
 * `TauCeti.Probability.map_map_permReindex_eq_of_map_eq` -- invariance in law under reindexing
   implies invariance under the induced action on random path measures;
 * `TauCeti.Probability.coordinateMarginals` -- the path of one-coordinate marginals of a
@@ -107,6 +110,32 @@ theorem ColumnInvariantMixingLaw.map_permReindex
     (τ : Equiv.Perm ℕ) :
     π.map (fun P ↦ P.map (permReindex τ)) = π :=
   hπ τ
+
+/-- The probability laws on row-path measures invariant under column permutations. For nonempty
+standard Borel `α`, these are exactly the row mixing laws of separately exchangeable array laws;
+see `columnInvariantMixingLaw_iff_separatelyExchangeable_rowCodingArrayLaw` and
+`separatelyExchangeable_iff_exists_rowCodingArrayLaw` in `Arrays/Representation.lean`. -/
+def columnInvariantMixingProbabilityMeasures (α : Type*) [MeasurableSpace α] :
+    Set (Measure (ProbabilityMeasure (ℕ → α))) :=
+  {π | IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π}
+
+/-- Membership in the column-invariant probability mixing laws. -/
+@[simp]
+theorem mem_columnInvariantMixingProbabilityMeasures_iff
+    {π : Measure (ProbabilityMeasure (ℕ → α))} :
+    π ∈ columnInvariantMixingProbabilityMeasures α ↔
+      IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π :=
+  Iff.rfl
+
+/-- The column-invariant probability mixing laws form a convex set. -/
+theorem convex_columnInvariantMixingProbabilityMeasures :
+    Convex ℝ≥0∞ (columnInvariantMixingProbabilityMeasures α) := by
+  rintro π₁ ⟨hp₁, hi₁⟩ π₂ ⟨hp₂, hi₂⟩ a b - - hab
+  refine ⟨⟨by simp [measure_univ, hab]⟩, ColumnInvariantMixingLaw.intro fun τ ↦ ?_⟩
+  have hf : Measurable (fun P : ProbabilityMeasure (ℕ → α) ↦ P.map (permReindex τ)) :=
+    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
+  rw [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable,
+    Measure.map_smul _ hf.aemeasurable, hi₁.map_permReindex τ, hi₂.map_permReindex τ]
 
 /-- Invariance in law of a measurable random path measure under reindexing implies invariance
 under the induced action on probability measures. -/
