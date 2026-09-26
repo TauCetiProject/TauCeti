@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.CharacterExtension
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.Extension
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Faithful
 import TauCeti.Algebra.Bialgebra.GaloisDescent
 import Mathlib.FieldTheory.Perfect

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.EssentialImage
-import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.CharacterDescent
+import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.Descent
 
 /-!
 # Tori and Galois lattices over perfect fields
