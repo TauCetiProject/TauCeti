@@ -123,6 +123,7 @@ theorem coe_δ (t : unitInterval) : (δ t : ℂ) = circleMap 0 3 (arccos (1 / 6)
 
 /-- The loop `δ` lies on the circle of radius `3` about `0`, which bounds a punctured disc about
 `∞` containing neither `0` nor `1`. -/
+@[simp]
 theorem norm_coe_δ (t : unitInterval) : ‖(δ t : ℂ)‖ = 3 := by
   simp [norm_circleMap_zero]
 
