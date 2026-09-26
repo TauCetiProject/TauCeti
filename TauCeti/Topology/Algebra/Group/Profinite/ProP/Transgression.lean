@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
 /-!
 # Transgression for extensions inside the Frattini subgroup
