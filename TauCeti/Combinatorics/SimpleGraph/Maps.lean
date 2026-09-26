@@ -60,6 +60,7 @@ theorem comap_eq_iff_inf_map_top (f : V ↪ W) (G : SimpleGraph W) (H : SimpleGr
 
 /-- Pushing a graph forward along any map commutes with joins: an edge of the image of `G ⊔ H`
 is the image of an edge of `G` or of an edge of `H`. -/
+@[simp]
 theorem map_sup (f : V → W) (G H : SimpleGraph V) : (G ⊔ H).map f = G.map f ⊔ H.map f := by
   ext u v
   simp only [map_adj', sup_adj]
