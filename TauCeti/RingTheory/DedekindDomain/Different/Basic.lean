@@ -18,6 +18,8 @@ trace-dual theorem gives the unit different, which is used to compute the relati
 the identity extension. The trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`
 decides when an ideal `I` with `I * Q = p · B` divides the different ideal of an extension of
 Dedekind domains.
+The multiplicity lemmas express divisibility by powers of a prime and Dedekind's universal
+`e - 1` bound as bounds on the different exponent.
 -/
 
 public section
@@ -27,6 +29,33 @@ open Module
 open scoped nonZeroDivisors
 
 namespace TauCeti
+
+section Multiplicity
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
+
+variable (A : Type*) {B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+variable [IsDedekindDomain A] [IsDedekindDomain B] [Module.IsTorsionFree A B] [Module.Finite A B]
+variable [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
+
+/-- The characteristic property of the different exponent at a nonzero prime `P` of `B`: `P ^ n`
+divides the different ideal exactly when `n` is at most the multiplicity of `P` in it. -/
+theorem pow_dvd_differentIdeal_iff_le_multiplicity {P : Ideal B} [P.IsPrime] (hP : P ≠ ⊥)
+    {n : ℕ} : P ^ n ∣ differentIdeal A B ↔ n ≤ multiplicity P (differentIdeal A B) :=
+  (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hP ‹_›)
+    differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+
+/-- **Dedekind's different theorem, first part, as a bound on the exponent**: the multiplicity of
+a prime `P` over a nonzero prime `p` in the different ideal is at least `e(P ∣ p) - 1`. -/
+theorem ramificationIdx_sub_one_le_multiplicity_differentIdeal {p : Ideal A} [p.IsMaximal]
+    (hp : p ≠ ⊥) (P : Ideal B) [P.IsPrime] [P.LiesOver p] :
+    P.ramificationIdx A - 1 ≤ multiplicity P (differentIdeal A B) := by
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A (Ideal.ne_bot_of_liesOver_of_ne_bot hp P),
+    ← Ideal.ramificationIdx'_eq_ramificationIdx p P hp]
+  exact pow_sub_one_dvd_differentIdeal A P _ hp
+    (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx' (p := p) (P := P)))
+
+end Multiplicity
 
 universe uR uS uK uL
 
