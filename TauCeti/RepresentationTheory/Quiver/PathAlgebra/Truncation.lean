@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Radical
 public import Mathlib.LinearAlgebra.Finsupp.Defs
+public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # The basis of a path algebra truncated by path length
@@ -105,8 +106,7 @@ noncomputable def arrowIdealQuotientEquiv (n : ℕ) :
 @[simp]
 theorem arrowIdealQuotientEquiv_mk (n : ℕ) (x : pathAlgebra k Q) :
     arrowIdealQuotientEquiv k Q n (Ideal.Quotient.mk _ x) = shortPathCoords k Q n x := by
-  change arrowIdealQuotientEquiv k Q n (Submodule.Quotient.mk x) = _
-  simp only [arrowIdealQuotientEquiv, LinearEquiv.trans_apply,
+  simp only [← Ideal.Quotient.mk_eq_mk, arrowIdealQuotientEquiv, LinearEquiv.trans_apply,
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
     truncatedPathEquiv_mk]
 
@@ -125,13 +125,8 @@ theorem arrowIdealQuotientBasis_apply (n : ℕ) (p : ShortPath Q n) :
   intro q
   simp only [arrowIdealQuotientBasis, Module.Basis.map_apply, LinearEquiv.apply_symm_apply,
     arrowIdealQuotientEquiv_mk, shortPathCoords_apply, ofPath_eq_single,
-    pathAlgebraBasis_repr_single]
-  change (Finsupp.single p (1 : k)) q = (Finsupp.single p.1 (1 : k)) q.1
-  by_cases h : p = q
-  · subst q
-    simp
-  · have hv : p.1 ≠ q.1 := fun heq => h (Subtype.ext heq)
-    simp [h, hv]
+    pathAlgebraBasis_repr_single, Finsupp.coe_basisSingleOne]
+  exact (Finsupp.single_apply_left Subtype.val_injective p q 1).symm
 
 /-- The short-path basis coordinates are exactly the restricted path coordinates. -/
 @[simp]
@@ -140,33 +135,21 @@ theorem arrowIdealQuotientBasis_repr (n : ℕ)
     (arrowIdealQuotientBasis k Q n).repr x = arrowIdealQuotientEquiv k Q n x := by
   simp [arrowIdealQuotientBasis, Module.Basis.map_repr]
 
+/-- **The rank of a truncated path algebra is the number of short paths.** -/
+theorem finrank_arrowIdealQuotient [Nontrivial k] (n : ℕ) :
+    Module.finrank k (pathAlgebra k Q ⧸ arrowIdeal k Q ^ n) = Nat.card (ShortPath Q n) :=
+  Module.finrank_eq_nat_card_basis (arrowIdealQuotientBasis k Q n)
+
 variable [∀ a b : Q, Finite (a ⟶ b)]
 
 /-- A finite quiver has finitely many paths below any fixed length. -/
 instance (n : ℕ) : Finite (ShortPath Q n) :=
   Set.finite_coe_iff.mpr (Quiver.finite_setOf_length_lt n)
 
-end ArrowIdeal
-
-end TauCeti
-
-namespace TauCeti
-
-open PathAlgebra
-
-variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
-  [∀ a b : Q, Finite (a ⟶ b)]
-
-/-- **The dimension of a truncated path algebra is the number of short paths.** -/
-theorem finrank_arrowIdealQuotient (n : ℕ) :
-    Module.finrank k (pathAlgebra k Q ⧸ arrowIdeal k Q ^ n) = Nat.card (ShortPath Q n) := by
-  let _ : Fintype (ShortPath Q n) := Fintype.ofFinite _
-  rw [Module.finrank_eq_card_basis (arrowIdealQuotientBasis k Q n),
-    Nat.card_eq_fintype_card]
-
-/-- A quotient by an arrow-ideal power is finite-dimensional for a finite quiver. -/
-noncomputable instance (n : ℕ) :
-    FiniteDimensional k (pathAlgebra k Q ⧸ arrowIdeal k Q ^ n) :=
+/-- A quotient by an arrow-ideal power is a finite module for a finite quiver. -/
+instance (n : ℕ) : Module.Finite k (pathAlgebra k Q ⧸ arrowIdeal k Q ^ n) :=
   Module.Finite.of_basis (arrowIdealQuotientBasis k Q n)
+
+end ArrowIdeal
 
 end TauCeti
