@@ -180,6 +180,21 @@ def homDensityBCF (F : SimpleGraph V) [DecidableRel F.Adj] : GraphonSpace Ω μ 
 theorem homDensityBCF_apply (F : SimpleGraph V) [DecidableRel F.Adj] (x : GraphonSpace Ω μ) :
     homDensityBCF F x = homDensityOnSpace F x := (rfl)
 
+/-- The edgeless graph has constant homomorphism density `1` as a bounded continuous function. -/
+@[simp]
+theorem homDensityBCF_bot :
+    homDensityBCF (μ := μ) (⊥ : SimpleGraph V) = 1 := by
+  ext x
+  simp
+
+/-- Relabelling along an embedding preserves the bounded continuous homomorphism density. -/
+@[simp]
+theorem homDensityBCF_map_embedding [DecidableEq V₂] (F : SimpleGraph V₁)
+    [DecidableRel F.Adj] (f : V₁ ↪ V₂) :
+    homDensityBCF (μ := μ) (F.map f) = homDensityBCF F := by
+  ext x
+  simp
+
 /-- The homomorphism density of a disjoint union is the product of the homomorphism densities, as
 bounded continuous functions on graphon space. -/
 @[simp]

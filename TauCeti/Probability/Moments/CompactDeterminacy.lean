@@ -32,21 +32,11 @@ i.i.d. laws on a compact box.
 * `Measure.ext_of_forall_integral_monomial_eq_of_support` — the ambient form on `ι → ℝ`, for
   measures supported on a common compact set.
 
-## Implementation
+## Scope
 
-The mixed monomials are the multiplicative closure of the `ι`-indexed coordinate functions, and
-coordinates separate points, so
-`TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish` (Stone–Weierstrass, via
-Mathlib's `MeasureTheory.ext_of_forall_mem_subalgebra_integral_eq_of_polish`) applies directly to
-that submonoid. The coordinates are taken inside the bounded continuous functions `K →ᵇ ℝ`, which
-on the compact space `K` agree with `C(K, ℝ)`.
-
-The ambient form is a wrapper: it pulls both measures back along `Subtype.val` to the compact
-subtype, applies the subtype form, and pushes the resulting equality forward again. That route
-establishes only equality of the *restrictions* to `K`, which is why it needs a support hypothesis
-on each measure rather than on one. That second hypothesis is not merely an artifact of the route:
-see the theorem's docstring for why dropping it makes the statement false under Lean's convention
-for integrals of non-integrable functions.
+Mixed monomials are finite products of coordinate powers. On a compact subset of a finite real
+product, their integrals determine a finite measure. The ambient version applies to two finite
+measures when both are supported on the same compact set.
 -/
 
 public section

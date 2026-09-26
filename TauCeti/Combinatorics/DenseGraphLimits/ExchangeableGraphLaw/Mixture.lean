@@ -186,8 +186,7 @@ theorem mixtureExchangeableLaw_diracProba (W : Graphon Ω μ) :
 
 /-- **The mixture law records exactly the homomorphism-density moments.** Two mixing measures on
 graphon space have the same mixture law iff they give the same integral to every member of the
-homomorphism-density submonoid, that is, to every `t(F, ·)`. Upper masses determine a law, and the
-upper mass of `F` under a mixture is the average of `t(F, ·)`. -/
+homomorphism-density submonoid, that is, to every `t(F, ·)`. -/
 theorem mixtureExchangeableLaw_eq_iff {P Q : ProbabilityMeasure (GraphonSpace Ω μ)} :
     mixtureExchangeableLaw P = mixtureExchangeableLaw Q ↔
       ∀ g ∈ homDensitySubmonoid, ∫ x, g x ∂(P : Measure (GraphonSpace Ω μ)) =
