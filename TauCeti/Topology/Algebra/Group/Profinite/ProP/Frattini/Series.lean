@@ -39,7 +39,8 @@ generation the terms need not be open: an infinite product of copies of `ℤ ⧸
 * `TauCeti.proPFrattiniStep_eq_map_proPFrattini` and
   `TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`: for a prime `p` and a closed subgroup of
   a profinite group the step is the pro-`p` Frattini subgroup of that subgroup, so the series is
-  the iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`.
+  the iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`, in
+  simp-normal form `TauCeti.proPFrattiniStep_top_eq_proPFrattini`.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le_proPFrattiniSeries`: together with
   `TauCeti.proPFrattiniSeries_le_pLowerCentralSeries` this is the interleaving of the Frattini
   series with the lower `p`-series.
@@ -100,14 +101,22 @@ theorem proPFrattiniSeries_succ_eq_map_proPFrattini (hp : p.Prime) (k : ℕ) :
   rw [proPFrattiniSeries_succ,
     proPFrattiniStep_eq_map_proPFrattini hp (isClosed_proPFrattiniSeries k)]
 
+/-- The Frattini step at the whole group of a profinite group is its pro-`p` Frattini subgroup.
+This is the simp-normal form of `TauCeti.proPFrattiniSeries_one`: `TauCeti.proPFrattiniSeries_succ`
+and `TauCeti.proPFrattiniSeries_zero` rewrite `Φ_1` to `proPFrattiniStep p ⊤`, and this lemma
+carries it on to `proPFrattini p G`. -/
+@[simp]
+theorem proPFrattiniStep_top_eq_proPFrattini (hp : p.Prime) :
+    proPFrattiniStep p (⊤ : Subgroup G) = proPFrattini p G := by
+  -- At the whole group the two steps are the same closure: `⁅⊤, ⊤⁆` on both sides.
+  rw [← pLowerCentralSeries_one_eq_proPFrattini hp, pLowerCentralSeries_succ,
+    pLowerCentralSeries_zero, proPFrattiniStep_def, pLowerCentralStep_def]
+
 /-- The first term of the Frattini series of a profinite group is its pro-`p` Frattini
 subgroup. -/
 theorem proPFrattiniSeries_one (hp : p.Prime) :
     proPFrattiniSeries p G 1 = proPFrattini p G := by
-  -- At the whole group the two steps are the same closure: `⁅⊤, ⊤⁆` on both sides.
-  rw [← pLowerCentralSeries_one_eq_proPFrattini hp, proPFrattiniSeries_succ,
-    proPFrattiniSeries_zero, pLowerCentralSeries_succ, pLowerCentralSeries_zero,
-    proPFrattiniStep_def, pLowerCentralStep_def]
+  rw [proPFrattiniSeries_succ, proPFrattiniSeries_zero, proPFrattiniStep_top_eq_proPFrattini hp]
 
 /-- **Openness of the Frattini series.** For a prime `p`, in a topologically finitely generated
 profinite group every term of the Frattini series is open. -/
