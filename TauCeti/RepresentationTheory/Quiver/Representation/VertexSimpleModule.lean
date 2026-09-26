@@ -97,20 +97,65 @@ noncomputable def vertexSimpleModuleResolutionX₃Iso (i : Q)
     (vertexSimpleModuleResolution k i).X₃ ≅ vertexSimpleModule k Q i :=
   Iso.refl _
 
+/-- The first differential of the module resolution, expressed between the direct sum of
+vertex projective modules and the vertex projective module. -/
+noncomputable def arrowSumToIndecProjModule (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (⨁ fun a : (j : Q) × (i ⟶ j) ↦ indecProjModule k Q a.1) ⟶
+      indecProjModule k Q i :=
+  (vertexSimpleModuleResolutionX₁Iso k i).inv ≫
+    (quiverRepFunctor k Q).inv.map (arrowSumToIndecProjRep k i) ≫
+      (vertexSimpleModuleResolutionX₂Iso k i).hom
+
+/-- The quotient map of the module resolution, from the vertex projective to the vertex simple. -/
+noncomputable def indecProjModuleToVertexSimpleModule (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    indecProjModule k Q i ⟶ vertexSimpleModule k Q i :=
+  (vertexSimpleModuleResolutionX₂Iso k i).inv ≫
+    (quiverRepFunctor k Q).inv.map (indecProjRepToSimpleRep k i) ≫
+      (vertexSimpleModuleResolutionX₃Iso k i).hom
+
+/-- Under the term isomorphisms, the first differential is the module first-arrow map. -/
+theorem vertexSimpleModuleResolution_f (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (vertexSimpleModuleResolution k i).f ≫ (vertexSimpleModuleResolutionX₂Iso k i).hom =
+      (vertexSimpleModuleResolutionX₁Iso k i).hom ≫ arrowSumToIndecProjModule k i := by
+  change (quiverRepFunctor k Q).inv.map (arrowSumToIndecProjRep k i) ≫
+      (vertexSimpleModuleResolutionX₂Iso k i).hom =
+    (vertexSimpleModuleResolutionX₁Iso k i).hom ≫
+      ((vertexSimpleModuleResolutionX₁Iso k i).inv ≫
+        (quiverRepFunctor k Q).inv.map (arrowSumToIndecProjRep k i) ≫
+          (vertexSimpleModuleResolutionX₂Iso k i).hom)
+  simp only [← Category.assoc, Iso.hom_inv_id, Category.id_comp]
+  rfl
+
+/-- Under the term isomorphisms, the second differential is the module quotient map. -/
+theorem vertexSimpleModuleResolution_g (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (vertexSimpleModuleResolution k i).g ≫ (vertexSimpleModuleResolutionX₃Iso k i).hom =
+      (vertexSimpleModuleResolutionX₂Iso k i).hom ≫
+        indecProjModuleToVertexSimpleModule k i := by
+  change (quiverRepFunctor k Q).inv.map (indecProjRepToSimpleRep k i) ≫
+      (vertexSimpleModuleResolutionX₃Iso k i).hom =
+    (vertexSimpleModuleResolutionX₂Iso k i).hom ≫
+      ((vertexSimpleModuleResolutionX₂Iso k i).inv ≫
+        (quiverRepFunctor k Q).inv.map (indecProjRepToSimpleRep k i) ≫
+          (vertexSimpleModuleResolutionX₃Iso k i).hom)
+  simp only [← Category.assoc, Iso.hom_inv_id, Category.id_comp]
+  rfl
+
 /-- The first term of the first-arrow sequence is projective, being a finite biproduct of
 vertex projectives, and equivalences preserve projective objects. -/
 instance vertexSimpleModuleResolution_projective_X₁ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₁ := by
-  dsimp [vertexSimpleModuleResolution]
-  infer_instance
+  exact Projective.of_iso (vertexSimpleModuleResolutionX₁Iso k i).symm inferInstance
 
 /-- The middle term of the first-arrow sequence is projective. -/
 instance vertexSimpleModuleResolution_projective_X₂ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₂ := by
-  dsimp [vertexSimpleModuleResolution]
-  infer_instance
+  exact Projective.of_iso (vertexSimpleModuleResolutionX₂Iso k i).symm inferInstance
 
 /-- A vertex simple of a path algebra has projective dimension less than two. This holds for
 finite quivers with finitely many arrows leaving the given vertex, including quivers with cycles. -/
