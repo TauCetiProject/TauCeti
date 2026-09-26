@@ -52,11 +52,11 @@ section ClassicalDecEq
 
 attribute [local instance] Classical.decEq
 
-/-- The coordinate homomorphism from real special-orthogonal matrices to standard
+/-- The coordinate equivalence from real special-orthogonal matrices to standard
 sum-of-squares isometries is continuous. -/
-theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
+theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
-    Continuous (matrixSpecialOrthogonalToWeightedSumSquaresOne ι) := by
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι) := by
   rw [(isEmbedding_specialOrthogonalToGeneralLinear
     (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))).continuous_iff]
   have hc : Continuous (fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
@@ -67,16 +67,16 @@ theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
   exact hc.congr
     (g := fun A => specialOrthogonalToGeneralLinear
       (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
-        (matrixSpecialOrthogonalToWeightedSumSquaresOne ι A)) fun A =>
-      (specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne ι A).symm
+        (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A)) fun A =>
+      (specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A).symm
 
 /-- The special orthogonal group of the standard real sum-of-squares form is compact. -/
 instance instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     CompactSpace (specialOrthogonalGroup
       (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) := by
-  exact (matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective ι).compactSpace
-    (continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne ι)
+  exact (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).surjective.compactSpace
+    (continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι)
 
 /-- The special orthogonal group of the positive-definite real Clifford form is compact. -/
 instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :

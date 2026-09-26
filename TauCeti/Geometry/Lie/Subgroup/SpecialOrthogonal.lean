@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Exponential.Matrix.Compatibility
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialOrthogonal

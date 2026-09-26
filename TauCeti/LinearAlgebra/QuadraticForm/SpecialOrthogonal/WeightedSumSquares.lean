@@ -18,8 +18,8 @@ form with the matrix special orthogonal group in the same coordinates.
 
 ## Main results
 
-* `TauCeti.QuadraticMap.matrixSpecialOrthogonalToWeightedSumSquaresOne` is the homomorphism from
-  matrix special-orthogonal transformations to isometries of the standard sum-of-squares form.
+* `TauCeti.QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne` identifies matrix
+  special-orthogonal transformations with isometries of the standard sum-of-squares form.
 * `TauCeti.QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff`
   characterizes the resulting subgroup of the general linear group in matrix coordinates.
 -/
@@ -57,9 +57,7 @@ private theorem matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply
   rw [matrixSpecialOrthogonalToWeightedSumSquaresOneFun]
   exact Matrix.UnitaryGroup.toLinearEquiv_apply _ x
 
-/-- Matrix special-orthogonal transformations act as a homomorphism on the isometry group of the
-standard sum-of-squares form. -/
-def matrixSpecialOrthogonalToWeightedSumSquaresOne
+private def matrixSpecialOrthogonalToWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] [DecidableEq ι] :
     Matrix.specialOrthogonalGroup ι ℝ →*
       specialOrthogonalGroup
@@ -82,9 +80,7 @@ def matrixSpecialOrthogonalToWeightedSumSquaresOne
       ← matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply]
     rfl
 
-/-- The underlying linear equivalence acts by matrix-vector multiplication. -/
-@[simp]
-theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_apply
+private theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_apply
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (A : Matrix.specialOrthogonalGroup ι ℝ) (x : ι → ℝ) :
     ((matrixSpecialOrthogonalToWeightedSumSquaresOne ι A :
@@ -92,9 +88,7 @@ theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_apply
       (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x :=
   matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply ι A x
 
-/-- Every determinant-one isometry of the standard sum-of-squares form comes from a
-special-orthogonal matrix. -/
-theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective
+private theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective
     (ι : Type u) [Fintype ι] [DecidableEq ι] :
     Function.Surjective (matrixSpecialOrthogonalToWeightedSumSquaresOne ι) := by
   intro g
@@ -112,9 +106,7 @@ theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective
   exact LinearMap.congr_fun (Matrix.toLin'_toMatrix'
     (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)).toLinearMap) x
 
-/-- The coordinate inclusion of a matrix-induced sum-of-squares isometry recovers the matrix. -/
-@[simp]
-theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne
+private theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (A : Matrix.specialOrthogonalGroup ι ℝ) :
     specialOrthogonalToGeneralLinear (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
@@ -126,8 +118,7 @@ theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSqu
   rw [matrixSpecialOrthogonalToWeightedSumSquaresOne_apply]
   simp [Matrix.toLin'_apply, Matrix.mulVec]
 
-/-- The matrix-coordinate homomorphism for the standard sum-of-squares form is injective. -/
-theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_injective
+private theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_injective
     (ι : Type u) [Fintype ι] [DecidableEq ι] :
     Function.Injective (matrixSpecialOrthogonalToWeightedSumSquaresOne ι) := by
   intro A B h
@@ -137,8 +128,40 @@ theorem matrixSpecialOrthogonalToWeightedSumSquaresOne_injective
     specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne] at h'
   exact Subtype.ext (congrArg Units.val h')
 
+/-- Matrix special-orthogonal transformations are multiplicatively equivalent to the isometries
+of the standard sum-of-squares form. -/
+def matrixSpecialOrthogonalEquivWeightedSumSquaresOne
+    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    Matrix.specialOrthogonalGroup ι ℝ ≃*
+      specialOrthogonalGroup
+        (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) :=
+  MulEquiv.ofBijective (matrixSpecialOrthogonalToWeightedSumSquaresOne ι)
+    ⟨matrixSpecialOrthogonalToWeightedSumSquaresOne_injective ι,
+      matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective ι⟩
+
+/-- The coordinate equivalence acts by matrix-vector multiplication. -/
+@[simp]
+theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply
+    (ι : Type u) [Fintype ι] [DecidableEq ι]
+    (A : Matrix.specialOrthogonalGroup ι ℝ) (x : ι → ℝ) :
+    ((matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A :
+        specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) :
+      (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x :=
+  matrixSpecialOrthogonalToWeightedSumSquaresOne_apply ι A x
+
+/-- The coordinate inclusion of a matrix-induced sum-of-squares isometry recovers the matrix. -/
+@[simp]
+theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
+    (ι : Type u) [Fintype ι] [DecidableEq ι]
+    (A : Matrix.specialOrthogonalGroup ι ℝ) :
+    specialOrthogonalToGeneralLinear (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
+        (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A) =
+      Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ) :=
+  specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne ι A
+
 /-- Membership in the general-linear carrier of the standard real sum-of-squares special
 orthogonal group is matrix special-orthogonal membership. -/
+@[simp]
 theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (U : Matrix.GeneralLinearGroup ι ℝ) :
@@ -147,22 +170,24 @@ theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
       (U : Matrix ι ι ℝ) ∈ Matrix.specialOrthogonalGroup ι ℝ := by
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨A, rfl⟩ := matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective ι g
-    rw [specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne]
+    obtain ⟨A, rfl⟩ :=
+      (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).surjective g
+    rw [specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne]
     exact A.prop
   · intro hU
     let A : Matrix.specialOrthogonalGroup ι ℝ := ⟨(U : Matrix ι ι ℝ), hU⟩
-    refine ⟨matrixSpecialOrthogonalToWeightedSumSquaresOne ι A, ?_⟩
+    refine ⟨matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A, ?_⟩
     calc
       specialOrthogonalToGeneralLinear
           (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
-          (matrixSpecialOrthogonalToWeightedSumSquaresOne ι A) =
+          (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A) =
           Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ) :=
-        specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquaresOne ι A
+        specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A
       _ = U := Units.ext (Unitary.val_toUnits_apply _)
 
 /-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
 special-orthogonal membership. -/
+@[simp]
 theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
     (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
     U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
