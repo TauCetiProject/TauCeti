@@ -17,6 +17,8 @@ formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 ## Main results
 
 * `PMF.sum_toReal_eq_one`: the real values of a PMF on a finite type sum to one.
+* `PMF.toReal_apply_zero_add_toReal_apply_one`: the two real masses of a PMF on `Fin 2` sum to
+  one.
 * `PMF.map_fst_apply_fintype`, `PMF.map_snd_apply_fintype`: the two marginals of a product PMF are
   its row and column sums whenever the factor being summed over is finite.
 * `PMF.map_fst_eq_iff_fintype`, `PMF.map_snd_eq_iff_fintype`: characterizations of prescribed
@@ -40,6 +42,12 @@ variable {ι : Type u} {κ : Type v}
 theorem sum_toReal_eq_one [Fintype ι] (μ : PMF ι) : ∑ i, (μ i).toReal = 1 := by
   have h : ∑ i, μ i = 1 := (tsum_fintype fun i ↦ μ i).symm.trans μ.tsum_coe
   rw [← ENNReal.toReal_sum fun i _ ↦ μ.apply_ne_top i, h, ENNReal.toReal_one]
+
+/-- The two real point masses of a probability mass function on `Fin 2` sum to one. -/
+@[simp]
+theorem toReal_apply_zero_add_toReal_apply_one (μ : PMF (Fin 2)) :
+    (μ 0).toReal + (μ 1).toReal = 1 := by
+  simpa only [Fin.sum_univ_two] using sum_toReal_eq_one μ
 
 variable (π : PMF (ι × κ))
 
