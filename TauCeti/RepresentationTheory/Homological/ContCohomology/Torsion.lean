@@ -7,9 +7,10 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
-public import TauCeti.GroupTheory.Coset.Basic
+public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
@@ -32,13 +33,11 @@ contraction identity over the cosets of `U` then exhibits `[G : U] • F` as a c
 `F` is a cocycle of positive degree. For a `ℚ`-vector space `X`, division by `[G : U]` is an
 endomorphism of `X`, and the additivity of `Hⁿ⁺¹(G, -)` turns the annihilation into vanishing.
 
+The summed contraction identity is `TopRep.d_sum_apply_add_sum_d_apply`, and the invariance of the
+coset sum is `ContRepresentation.sum_apply_out_mem_invariants`.
+
 ## Main results
 
-* `TopRep.d_sum_apply_add_sum_d_apply`: evaluation at finitely many points, summed, contracts the
-  coinduced resolution up to the number of points.
-* `ContRepresentation.sum_apply_out_mem_invariants`: summing an invariant element of the coinduced
-  representation `C(G, V)` over a transversal of a finite-index subgroup stabilizing it under right
-  translation gives an invariant element of `V`.
 * `TauCeti.ContinuousCohomology.exists_openSubgroup_index_nsmul_eq_zero`: every class of positive
   degree is killed by the index of an open subgroup.
 * `TauCeti.ContinuousCohomology.isAddTorsion_continuousCohomology`: `Hⁿ⁺¹(G, X)` is torsion.
@@ -54,54 +53,6 @@ endomorphism of `X`, and the additivity of `Hⁿ⁺¹(G, -)` turns the annihilat
 public section
 
 open CategoryTheory TopRep
-
-namespace ContRepresentation
-
-variable {R G V : Type*} [Ring R] [TopologicalSpace R] [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [AddCommGroup V] [Module R V] [TopologicalSpace V]
-  [IsTopologicalAddGroup V] [ContinuousSMul R V]
-
-/-- **Coset sums of coinduced invariants are invariant.** Let `f : C(G, V)` be invariant for the
-coinduced representation `π.coind₁` and invariant under right translation by a finite-index
-subgroup `U`. Then the sum of `f` over the transversal of `U` given by `Quotient.out` is invariant
-for `π`. -/
-theorem sum_apply_out_mem_invariants {π : ContRepresentation R G V} {f : C(G, V)}
-    (hf : f ∈ π.coind₁.invariants) {U : Subgroup G} [Fintype (G ⧸ U)]
-    (hU : U ≤ TauCeti.rightTranslationStabilizer f) :
-    ∑ q : G ⧸ U, f q.out ∈ π.invariants := by
-  intro g
-  rw [map_sum]
-  refine Fintype.sum_bijective (g • ·) (MulAction.bijective g) _ _ fun q => ?_
-  -- invariance of `f` for `π.coind₁` moves `π g` inside: `π g (f y) = f (g * y)`
-  have hπ : π g (f q.out) = f (g * q.out) := by
-    simpa using DFunLike.congr_fun (hf g) (g * q.out)
-  -- `(g • q).out` and `g * q.out` differ by an element of `U` on the right
-  obtain ⟨u, hu⟩ : ∃ u : U, g * q.out * u = (g • q).out :=
-    ⟨⟨(g * q.out)⁻¹ * (g • q).out, QuotientGroup.eq.mp (QuotientGroup.mk_out_smul g q).symm⟩,
-      by simp [mul_assoc]⟩
-  rw [hπ, ← hu]
-  exact ((TauCeti.mem_rightTranslationStabilizer.mp (hU u.2)) (g * q.out)).symm
-
-end ContRepresentation
-
-namespace TopRep
-
-variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] (X : TopRep k G)
-
-/-- **Summed evaluations contract the coinduced resolution up to a multiple.** For an element
-`F : C(G, Xₘ)` of the degree `m + 1` term of the coinduced resolution and finitely many points
-`σ i` of `G`, `dₘ (∑ᵢ F (σ i)) + ∑ᵢ (dₘ₊₁ F) (σ i) = |ι| • F`. Each summand is the identity
-`dₘ (F x) + (dₘ₊₁ F) x = F` saying that evaluation at a point contracts the resolution. -/
-theorem d_sum_apply_add_sum_d_apply {ι : Type*} [Fintype ι] (σ : ι → G) (m : ℕ)
-    (F : (resolutionX X (m + 1)).V) :
-    (d X m).hom (∑ i, (F : C(G, (resolutionX X m).V)) (σ i)) +
-      ∑ i, ((d X (m + 1)).hom F : C(G, (resolutionX X (m + 1)).V)) (σ i) =
-        Fintype.card ι • F := by
-  rw [map_sum, ← Finset.sum_add_distrib]
-  simp [hom_d_succ, ContIntertwiningMap.sub_apply]
-
-end TopRep
 
 namespace TauCeti.ContinuousCohomology
 
