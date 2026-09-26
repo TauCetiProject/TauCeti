@@ -68,6 +68,8 @@ of profinite relators is a quotient of the profinite group they present.
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Chapter 3 and Section 7.8.
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, Section III.9.
+* `Mathlib.GroupTheory.PresentedGroup`, whose discrete analogues `PresentedGroup.map` and
+  `PresentedGroup.equivPresentedGroup` are the model for the shape of the functoriality API here.
 -/
 
 public section
@@ -241,7 +243,11 @@ theorem isTopologicallyFinitelyGenerated [Finite X] :
     SetLike.coe_injective <| by
       rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
 
-/-! ## Functoriality in the generators and the relators -/
+/-! ## Functoriality in the generators and the relators
+
+The shape of this API follows Mathlib's discrete analogues `PresentedGroup.map` and
+`PresentedGroup.equivPresentedGroup` in `Mathlib.GroupTheory.PresentedGroup`.
+-/
 
 section Map
 
@@ -278,8 +284,8 @@ theorem mk_eq_one_of_mk_eq_one (φ : freeProfiniteGroup X →ₜ* freeProfiniteG
 
 /-- The identity of the free profinite group induces the identity of a presented group. -/
 @[simp]
-theorem map_id (h : ∀ r ∈ rels, mk rels (ContinuousMonoidHom.id (freeProfiniteGroup X) r) = 1) :
-    map (ContinuousMonoidHom.id (freeProfiniteGroup X)) h =
+theorem map_id :
+    map (ContinuousMonoidHom.id (freeProfiniteGroup X)) (fun _ hr ↦ mk_relator _ hr) =
       ContinuousMonoidHom.id (presentedProfiniteGroup X rels) :=
   hom_ext <| ContinuousMonoidHom.ext fun x ↦ by simp
 
@@ -625,7 +631,11 @@ theorem lift_surjective {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
   have hcomp : ⇑ψ = lift ψ hψ ∘ mk p rels := funext fun x ↦ (lift_mk ψ hψ x).symm
   exact Function.Surjective.of_comp (hcomp ▸ hs)
 
-/-! ## Functoriality in the generators and the relators -/
+/-! ## Functoriality in the generators and the relators
+
+The shape of this API follows Mathlib's discrete analogues `PresentedGroup.map` and
+`PresentedGroup.equivPresentedGroup` in `Mathlib.GroupTheory.PresentedGroup`.
+-/
 
 section Map
 
@@ -660,8 +670,8 @@ theorem mk_eq_one_of_mk_eq_one (φ : freeProP p X →ₜ* freeProP p Y)
 
 /-- The identity of the free pro-`p` group induces the identity of a presented group. -/
 @[simp]
-theorem map_id (h : ∀ r ∈ rels, mk p rels (ContinuousMonoidHom.id (freeProP p X) r) = 1) :
-    map (ContinuousMonoidHom.id (freeProP p X)) h =
+theorem map_id :
+    map (ContinuousMonoidHom.id (freeProP p X)) (fun _ hr ↦ mk_relator _ hr) =
       ContinuousMonoidHom.id (presentedProP p X rels) :=
   hom_ext <| ContinuousMonoidHom.ext fun x ↦ by simp
 
