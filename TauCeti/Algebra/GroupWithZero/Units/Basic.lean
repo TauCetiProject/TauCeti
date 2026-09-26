@@ -31,12 +31,14 @@ A monoid-with-zero homomorphism out of `G₀` carries units to units, and that i
 of its values can be a unit: such a homomorphism is local, so a preimage of a unit is itself a
 unit of `G₀`.  Membership of a unit in the range is therefore the same as being `Units.map` of a
 unit, which is what turns a hypothesis about `Set.range (algebraMap F E)` into one about `Fˣ`.
+Units being closed under inverses, a unit lies in the range exactly when its inverse does.
 
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a monoid-with-zero
   homomorphism out of a group with zero exactly when it is `Units.map` of a unit.
+* `TauCeti.coe_inv_mem_range_iff`: a unit lies in such a range exactly when its inverse does.
 -/
 
 public section
@@ -62,5 +64,19 @@ theorem mem_range_iff_exists_units_map_eq {G₀ M₀ F : Type*} [GroupWithZero G
     exact ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩
   · rintro ⟨a, rfl⟩
     exact ⟨a, rfl⟩
+
+/-- **A unit lies in the range of a monoid-with-zero homomorphism out of a group with zero exactly
+when its inverse does.** `Units.map` commutes with inverses, so a unit preimage of one inverts to
+a unit preimage of the other. -/
+@[simp]
+theorem coe_inv_mem_range_iff {G₀ M₀ F : Type*} [GroupWithZero G₀] [MonoidWithZero M₀]
+    [Nontrivial M₀] [FunLike F G₀ M₀] [MonoidWithZeroHomClass F G₀ M₀] (f : F) (u : M₀ˣ) :
+    (∃ y, f y = ((u⁻¹ : M₀ˣ) : M₀)) ↔ (u : M₀) ∈ Set.range f := by
+  have h : ((u⁻¹ : M₀ˣ) : M₀) ∈ Set.range f ↔ (u : M₀) ∈ Set.range f := by
+    rw [mem_range_iff_exists_units_map_eq, mem_range_iff_exists_units_map_eq]
+    constructor <;> rintro ⟨a, ha⟩
+    · exact ⟨a⁻¹, by rw [map_inv, ha, inv_inv]⟩
+    · exact ⟨a⁻¹, by rw [map_inv, ha]⟩
+  simpa only [Set.mem_range] using h
 
 end TauCeti

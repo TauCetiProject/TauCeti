@@ -9,6 +9,8 @@ module
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 -- `FDRep.ofLinearCharacter` and `TauCeti.indFDRep` are the bodies of the constructions below.
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
+-- `TauCeti.ClassFunction.characterPairing` occurs in the public self-pairing theorem.
+public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 -- `TauCeti.GL2ScalarUnipotent` and `TauCeti.jordanGL` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.diagGL` occurs in the statements below: the contributing cosets are those of the
@@ -20,6 +22,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
 public import Mathlib.Algebra.Group.AddChar
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
 import TauCeti.GroupTheory.QuotientGroup.Basic
+-- Non-public: Frobenius reciprocity reduces the self-pairing to a subgroup sum.
+import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 -- Non-public: the sum of a nontrivial additive character over the nonzero field elements is used
 -- in the Jordan computation.
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
@@ -52,8 +56,8 @@ character values off the class-function computation:
 Together with `TauCeti.GL2EllipticInduction`, the representation induced from the non-split
 torus, this supplies the two induced characters whose difference is the cuspidal virtual character
 `TauCeti.GL2CuspidalVirtualCharacter` of `GL₂(𝔽_q)`, taken in
-`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal.lean`.  The Gelfand-Graev summand here
-is the one that carries the degree, since
+`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal/Basic.lean`.  The Gelfand-Graev
+summand here is the one that carries the degree, since
 `[GL₂(F) : Z U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values
@@ -98,6 +102,8 @@ trace.
   semisimple, elliptic and non-semisimple normal forms.
 * `TauCeti.finrank_GL2ScalarUnipotentInduction`: the induced representation has dimension
   `q² - 1`.
+* `TauCeti.characterPairing_GL2ScalarUnipotentInduction_self`: its character has norm `q` for a
+  nontrivial additive character.
 * `TauCeti.character_GL2ScalarUnipotentInduction_scalar`,
   `TauCeti.character_GL2ScalarUnipotentInduction_diagGL`,
   `TauCeti.character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom` and
@@ -467,6 +473,12 @@ noncomputable def GL2ScalarUnipotentInduction (μ : Fˣ →* ℂˣ) (ψ : AddCha
     FDRep ℂ (GL (Fin 2) F) :=
   indFDRep (GL2ScalarUnipotentRep F μ ψ)
 
+/-- The defining equation of the scalar--unipotent induction: it is induced from the
+scalar--unipotent line carrying `(μ, ψ)`. -/
+theorem GL2ScalarUnipotentInduction_def (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    GL2ScalarUnipotentInduction F μ ψ = indFDRep (GL2ScalarUnipotentRep F μ ψ) :=
+  (rfl)
+
 /-- The scalar--unipotent induction has dimension `q² - 1`, the index of `Z U`. -/
 @[simp]
 theorem finrank_GL2ScalarUnipotentInduction (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
@@ -552,6 +564,100 @@ theorem character_GL2ScalarUnipotentInduction_jordanGL
     GL2ScalarUnipotent.indClassFun_jordanGL _ a hb,
     Finset.sum_congr rfl fun c _ => hterm c, ← Finset.mul_sum,
     AddChar.sum_units_mul_eq_neg_one ψ hψ a⁻¹, mul_neg_one]
+
+open scoped Classical in
+/-- **The scalar--unipotent induction has character norm `q`** when its additive character is
+nontrivial. -/
+@[simp]
+theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
+    {psi : AddChar F ℂ} (hpsi : psi ≠ 1) :
+    ClassFunction.characterPairing
+        (ClassFunction.ofFDRep (GL2ScalarUnipotentInduction F mu psi))
+        (ClassFunction.ofFDRep (GL2ScalarUnipotentInduction F mu psi)) =
+      Fintype.card F := by
+  classical
+  let hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
+    isUnit_iff_ne_zero.mpr (by exact_mod_cast Nat.card_pos.ne')
+  rw [GL2ScalarUnipotentInduction_def]
+  rw [← ClassFunction.ind_ofFDRep, characterPairing_ind hG]
+  rw [ClassFunction.characterPairing_apply]
+  simp only [ClassFunction.ind_ofFDRep, ClassFunction.comap_subtype_ofFDRep,
+    ClassFunction.ofFDRep_apply, character_resFDRep]
+  -- First evaluate each subgroup summand, separating the scalar slice `t = 1` from the
+  -- nontrivial Jordan slices.
+  have hterm (a : Fˣ) (t : Multiplicative F) :
+      (GL2ScalarUnipotentRep F mu psi).character
+          (GL2ScalarUnipotent.mulEquiv F (a, t)) *
+        (indFDRep (GL2ScalarUnipotentRep F mu psi)).character
+          (((GL2ScalarUnipotent.mulEquiv F (a, t) : GL2ScalarUnipotent F) :
+            GL (Fin 2) F)⁻¹) =
+        if t = 1 then (Fintype.card F ^ 2 - 1 : ℂ) else -psi (Multiplicative.toAdd t) := by
+    rw [character_GL2ScalarUnipotentRep, GL2ScalarUnipotent.linearChar_mulEquiv]
+    have hinv :
+        (((GL2ScalarUnipotent.mulEquiv F (a, t) : GL2ScalarUnipotent F) :
+            GL (Fin 2) F)⁻¹) =
+          ((GL2ScalarUnipotent.mulEquiv F (a⁻¹, t⁻¹) : GL2ScalarUnipotent F) :
+            GL (Fin 2) F) := by
+      rw [← Subgroup.coe_inv, ← map_inv]
+      rfl
+    rw [hinv, GL2ScalarUnipotent.coe_mulEquiv_apply_eq_jordanGL]
+    rw [← GL2ScalarUnipotentInduction_def]
+    split_ifs with ht
+    · subst t
+      have ht_one : Multiplicative.toAdd (1 : Multiplicative F) = 0 := rfl
+      rw [inv_one, ht_one, mul_zero,
+        jordanGL_zero,
+        character_GL2ScalarUnipotentInduction_scalar]
+      simp only [map_one, map_inv, Units.val_inv_eq_inv_val]
+      have hmu : (mu a : ℂ) ≠ 0 := Units.ne_zero _
+      field_simp [hmu]
+      simp only [mul_one]
+      ring
+    · have ht0 : Multiplicative.toAdd t⁻¹ ≠ 0 := by
+        simpa using ht
+      rw [character_GL2ScalarUnipotentInduction_jordanGL _ _ hpsi a⁻¹
+        (mul_ne_zero a⁻¹.ne_zero ht0)]
+      simp only [map_inv, Units.val_inv_eq_inv_val, Units.val_mul,
+        MonoidHom.coe_toHomUnits, AddChar.toMonoidHom_apply]
+      field_simp
+  rw [← (GL2ScalarUnipotent.mulEquiv F).toEquiv.sum_comp, Fintype.sum_prod_type]
+  simp only [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, Subgroup.coe_inv]
+  simp_rw [hterm]
+  -- The nontrivial additive character sums to zero on `F`; after removing its value at zero,
+  -- the nonscalar slices contribute `1`, so the inner sum is `q²`.
+  have hsumpsi : ∑ t : Multiplicative F, psi (Multiplicative.toAdd t) = 0 := by
+    rw [Multiplicative.toAdd.sum_comp]
+    exact AddChar.sum_eq_zero_of_ne_one hpsi
+  have herase :
+      ∑ t ∈ (Finset.univ.erase (1 : Multiplicative F)), psi (Multiplicative.toAdd t) = -1 := by
+    have hsplit := Finset.sum_erase_add (Finset.univ : Finset (Multiplicative F))
+      (fun t => psi (Multiplicative.toAdd t)) (Finset.mem_univ 1)
+    rw [hsumpsi] at hsplit
+    simpa using eq_neg_of_add_eq_zero_left hsplit
+  have hinner :
+      ∑ t : Multiplicative F,
+          (if t = 1 then (Fintype.card F ^ 2 - 1 : ℂ) else -psi (Multiplicative.toAdd t)) =
+        (Fintype.card F : ℂ) ^ 2 := by
+    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ (1 : Multiplicative F))]
+    rw [ite_eq_left rfl]
+    have hrest :
+        ∑ t ∈ Finset.univ.erase (1 : Multiplicative F),
+            (if t = 1 then (Fintype.card F ^ 2 - 1 : ℂ) else -psi (Multiplicative.toAdd t)) =
+          ∑ t ∈ Finset.univ.erase (1 : Multiplicative F), -psi (Multiplicative.toAdd t) := by
+      apply Finset.sum_congr rfl
+      intro t ht
+      rw [ite_eq_right (Finset.ne_of_mem_erase ht)]
+    rw [hrest, Finset.sum_neg_distrib, herase, neg_neg]
+    ring
+  -- Summing the constant inner value over `Fˣ` and normalizing by `|Z U| = q(q - 1)` gives `q`.
+  simp_rw [hinner, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  rw [natCard_gl2ScalarUnipotent, Nat.card_eq_fintype_card, Fintype.card_units]
+  push_cast [Fintype.one_lt_card.le]
+  have hq : (Fintype.card F : ℂ) ≠ 0 := by
+    exact_mod_cast (Fintype.card_pos_iff.mpr ⟨0⟩).ne'
+  have hq1 : (Fintype.card F : ℂ) - 1 ≠ 0 := by
+    exact sub_ne_zero.mpr (by exact_mod_cast Fintype.one_lt_card.ne')
+  field_simp [hq, hq1]
 
 end CharacterValues
 

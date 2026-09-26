@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: `unitsEquivNeZero` reindexes a punctured field sum by its units.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
@@ -29,6 +30,8 @@ relation — the one summed over the character group — in both its punctured a
   element `σ`, giving `Nat.card G` when `g = σ` and `0` otherwise.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
   sums to `-1` over the nonzero elements, even after multiplication by a unit.
+* `AddChar.FiniteField.primitiveChar_to_Complex_ne_one`: the canonical primitive complex
+  additive character of a finite field is nontrivial.
 
 The file also registers `Fintype (G →* Mˣ)`, which Mathlib leaves at `Finite`; without it a
 consumer's own character sum does not elaborate, and two ad-hoc `Fintype.ofFinite` introductions
@@ -82,6 +85,18 @@ Birkbeck--Brasca).
 public section
 
 namespace AddChar
+
+namespace FiniteField
+
+variable (F : Type*) [Field F] [Finite F]
+
+/-- Mathlib's primitive complex additive character on a finite field is nontrivial. -/
+theorem primitiveChar_to_Complex_ne_one :
+    AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1 := by
+  have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+  simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)
+
+end FiniteField
 
 variable {F : Type*} [Field F] [Fintype F]
 variable {R : Type*} [CommRing R] [IsDomain R]
