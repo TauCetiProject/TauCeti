@@ -58,6 +58,17 @@ the integral root--coroot span.
 * `TauCeti.IsChevalleySystem.intStructureConstant`: that coefficient, named as an integer, with
   `lie_eq_intStructureConstant_zsmul` its defining equation and
   `intStructureConstant_eq_natCast_or_eq_neg_natCast` identifying it as `±(p + 1)`.
+* `TauCeti.IsChevalleySystem.intStructureConstant₂`: the two-argument form `N(α,β)`, vanishing
+  when `α + β` is not a root, with `intStructureConstant₂_skew` (antisymmetry),
+  `intStructureConstant₂_eq_natCast_or_eq_neg_natCast` (values `±(p + 1)`),
+  `intStructureConstant₂_neg_neg` (negating both roots negates the constant),
+  `intStructureConstant₂_neg_swap` (swap-negation preserves it), and
+  `intStructureConstant₂_cyclic_mul_killingForm` (cyclic symmetry up to Killing pairings).
+* `TauCeti.IsChevalleySystem.intStructureConstant_skew`,
+  `TauCeti.IsChevalleySystem.intStructureConstant_neg_neg`, and
+  `TauCeti.IsChevalleySystem.intStructureConstant_cyclic_mul_killingForm`: the three-argument
+  forms of the skew, negation, and cyclic symmetries, from which the two-argument versions
+  follow.
 
 ## References
 
@@ -288,6 +299,204 @@ theorem intStructureConstant_ne_zero
   intro hzero
   refine hx.toIsSl2System.structureConstant_ne_zero α β γ hγ hαβ hα hβ ?_
   rw [← hx.intStructureConstant_cast α β γ hγ hαβ, hzero, Int.cast_zero]
+
+/-- Swapping the two input roots negates the integer structure constant. -/
+theorem intStructureConstant_skew
+    (α β γ : Weight K H L) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant β α γ hγ (by rw [hαβ, add_comm]) =
+      -hx.intStructureConstant α β γ hγ hαβ := by
+  refine Int.cast_injective (α := K) ?_
+  rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+  exact hx.toIsSl2System.structureConstant_skew α β γ hγ hαβ
+
+/-- **Negating both roots negates the integer structure constant.** The Chevalley involution
+sends the defining bracket equation `⁅x α, x β⁆ = N • x γ` to
+`⁅x (-α), x (-β)⁆ = -N • x (-γ)`; uniqueness of the integer coefficient identifies the
+constant at `(-α, -β)` as `-N`. -/
+@[simp]
+theorem intStructureConstant_neg_neg
+    (α β γ : Weight K H L) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant (-α) (-β) (-γ) hγ.neg (by
+        rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg, hαβ]
+        abel) =
+      -hx.intStructureConstant α β γ hγ hαβ := by
+  refine Int.cast_injective (α := K) ?_
+  rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+  exact hx.toIsSl2System.structureConstant_neg_neg_of_hom α β γ hγ hαβ ω.toLieHom
+    (hx.map_root α) (hx.map_root β) (hx.map_root γ)
+
+/-- **Cyclic symmetry of the integer structure constants.** For a root sum `γ = α + β`, the
+Killing-weighted constants at `(α, β, γ)` and `(β, -γ, -α)` agree. This is the integral form
+of the cyclic symmetry feeding the Chevalley commutator formula: with `α + β + γ' = 0`
+(taking `γ' = -γ`), it relates `N(α, β)` to `N(β, γ')` up to the Killing pairings, which are
+nonzero and explicitly known. -/
+theorem intStructureConstant_cyclic_mul_killingForm
+    (α β γ : Weight K H L) (hα : α.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ((hx.intStructureConstant α β γ hγ hαβ : ℤ) : K) * killingForm K L (x γ) (x (-γ)) =
+      ((hx.intStructureConstant β (-γ) (-α) hα.neg (by
+        rw [Weight.coe_neg, Weight.coe_neg, hαβ]; abel) : ℤ) : K) *
+        killingForm K L (x α) (x (-α)) := by
+  rw [hx.intStructureConstant_cast α β γ hγ hαβ,
+    hx.intStructureConstant_cast β (-γ) (-α) hα.neg _]
+  exact hx.toIsSl2System.structureConstant_mul_killingForm_eq α β γ hγ hαβ hα
+
+/-! ## Two-argument integer structure constants -/
+
+omit hx in
+/-- The two-argument integer structure constant of a Chevalley system. When `α + β` is a
+nonzero root, this is the integer `N(α,β)` with `⁅x α, x β⁆ = N(α,β) • x(α+β)`; it is `0`
+when `α + β` is not a root. The witness root is unique because the weight coercion is
+injective, so the choice is well-defined. This form is consumed by the Chevalley
+commutator formula. -/
+noncomputable def intStructureConstant₂ {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) : ℤ := by
+  haveI := Classical.propDecidable
+    (∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β))
+  exact if h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β) then
+    hx.intStructureConstant α β (Classical.choose h) (Classical.choose_spec h).1
+      (Classical.choose_spec h).2
+  else
+    0
+
+omit hx in
+/-- The two-argument constant agrees with the three-argument constant on a root sum. -/
+theorem intStructureConstant₂_eq_intStructureConstant {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hγ : γ.IsNonZero) (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant₂ α β = hx.intStructureConstant α β γ hγ hαβ := by
+  have hchoose : ∀ h : ∃ γ' : Weight K H L, γ'.IsNonZero ∧
+      ((γ' : H → K) = (α : H → K) + β),
+      hx.intStructureConstant α β (Classical.choose h) (Classical.choose_spec h).1
+        (Classical.choose_spec h).2 = hx.intStructureConstant α β γ hγ hαβ := by
+    intro h
+    have hγ' : Classical.choose h = γ := by
+      apply DFunLike.coe_injective
+      calc ((Classical.choose h : Weight K H L) : H → K)
+          = (α : H → K) + β := (Classical.choose_spec h).2
+        _ = (γ : H → K) := hαβ.symm
+    subst hγ'
+    rfl
+  unfold intStructureConstant₂
+  split
+  · exact hchoose _
+  · rename_i hneg
+    exact absurd ⟨γ, hγ, hαβ⟩ hneg
+
+omit hx in
+/-- The two-argument constant vanishes when `α + β` is not a root. -/
+@[simp]
+theorem intStructureConstant₂_eq_zero_of_not_isRootSum {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β : Weight K H L)
+    (h : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)) :
+    hx.intStructureConstant₂ α β = 0 := by
+  unfold intStructureConstant₂
+  split
+  · rename_i hpos
+    exact (h hpos).elim
+  · rfl
+
+omit hx in
+/-- Swapping the two input weights negates the two-argument integer structure constant. -/
+theorem intStructureConstant₂_skew {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
+    hx.intStructureConstant₂ β α = -hx.intStructureConstant₂ α β := by
+  classical
+  by_cases h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)
+  · obtain ⟨γ, hγ, hαβ⟩ := h
+    have hβα : (γ : H → K) = (β : H → K) + α := by rw [hαβ, add_comm]
+    rw [hx.intStructureConstant₂_eq_intStructureConstant β α γ hγ hβα,
+      hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ]
+    exact hx.intStructureConstant_skew α β γ hγ hαβ
+  · have h' : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧
+        ((γ : H → K) = (β : H → K) + α) := by
+      rintro ⟨γ, hγ, hαβ⟩
+      exact h ⟨γ, hγ, by rw [hαβ, add_comm]⟩
+    rw [hx.intStructureConstant₂_eq_zero_of_not_isRootSum β α h',
+      hx.intStructureConstant₂_eq_zero_of_not_isRootSum α β h, neg_zero]
+
+omit hx in
+/-- On a genuine root sum of nonzero roots, the two-argument constant is `±(p + 1)` for the
+root-string coefficient `p = chainBotCoeff α β`. -/
+theorem intStructureConstant₂_eq_natCast_or_eq_neg_natCast {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hα : α.IsNonZero) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    hx.intStructureConstant₂ α β = (chainBotCoeff α β + 1 : ℕ) ∨
+      hx.intStructureConstant₂ α β = -((chainBotCoeff α β + 1 : ℕ) : ℤ) := by
+  rw [hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ]
+  exact hx.intStructureConstant_eq_natCast_or_eq_neg_natCast α β γ hα hβ hγ hαβ
+
+omit hx in
+/-- The defining bracket equation for the two-argument constant on a root sum. -/
+theorem lie_eq_intStructureConstant₂_zsmul {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hγ : γ.IsNonZero) (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ⁅x α, x β⁆ = hx.intStructureConstant₂ α β • x γ := by
+  have heq : hx.intStructureConstant₂ α β = hx.intStructureConstant α β γ hγ hαβ :=
+    hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ
+  rw [heq]
+  exact hx.lie_eq_intStructureConstant_zsmul α β γ hγ hαβ
+
+omit hx in
+/-- Negating both weights negates the two-argument integer structure constant. -/
+@[simp]
+theorem intStructureConstant₂_neg_neg {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
+    hx.intStructureConstant₂ (-α) (-β) = -hx.intStructureConstant₂ α β := by
+  classical
+  by_cases h : ∃ γ : Weight K H L, γ.IsNonZero ∧ ((γ : H → K) = (α : H → K) + β)
+  · obtain ⟨γ, hγ, hαβ⟩ := h
+    have hneg : ((-γ : Weight K H L) : H → K) =
+        ((-α : Weight K H L) : H → K) + ((-β : Weight K H L) : H → K) := by
+      rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg]
+      linear_combination -hαβ
+    have e1 := hx.intStructureConstant₂_eq_intStructureConstant (-α) (-β) (-γ) hγ.neg hneg
+    have e2 := hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ
+    rw [e1, e2]
+    exact hx.intStructureConstant_neg_neg α β γ hγ hαβ
+  · have h' : ¬ ∃ γ' : Weight K H L, γ'.IsNonZero ∧
+        ((γ' : H → K) = ((-α : Weight K H L) : H → K) + ((-β : Weight K H L) : H → K)) := by
+      rintro ⟨γ', hγ', hsum⟩
+      apply h
+      refine ⟨-γ', hγ'.neg, ?_⟩
+      have hsum2 : (γ' : H → K) = -(α : H → K) + -(β : H → K) := by
+        rw [hsum, Weight.coe_neg, Weight.coe_neg]
+      have hgoal : ((-γ' : Weight K H L) : H → K) = -(γ' : H → K) := Weight.coe_neg
+      rw [hgoal, hsum2]
+      abel
+    rw [hx.intStructureConstant₂_eq_zero_of_not_isRootSum (-α) (-β) h',
+      hx.intStructureConstant₂_eq_zero_of_not_isRootSum α β h, neg_zero]
+
+omit hx in
+/-- Swapping and negating both weights preserves the two-argument constant. This combines
+antisymmetry with negation: `N(-β, -α) = -N(-α, -β) = N(α, β)`. -/
+@[simp]
+theorem intStructureConstant₂_neg_swap {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
+    (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
+    hx.intStructureConstant₂ (-β) (-α) = hx.intStructureConstant₂ α β := by
+  rw [hx.intStructureConstant₂_skew (-α) (-β), hx.intStructureConstant₂_neg_neg α β, neg_neg]
+
+omit hx in
+/-- **Cyclic symmetry of the two-argument integer structure constants.** For a root sum
+`γ = α + β`, the Killing-weighted constants at `(α, β)` and `(β, -γ)` agree. With
+`α + β + γ' = 0` (taking `γ' = -γ`), this is the standard cyclic relation
+`N(α, β) · B(x_γ, x_{-γ}) = N(β, γ') · B(x_α, x_{-α})` used by the Chevalley commutator
+formula. -/
+theorem intStructureConstant₂_cyclic_mul_killingForm {ω : L ≃ₗ⁅K⁆ L}
+    {x : Weight K H L → L} (hx : IsChevalleySystem ω x) (α β γ : Weight K H L)
+    (hα : α.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ((hx.intStructureConstant₂ α β : ℤ) : K) * killingForm K L (x γ) (x (-γ)) =
+      ((hx.intStructureConstant₂ β (-γ) : ℤ) : K) * killingForm K L (x α) (x (-α)) := by
+  have hsum : ((-α : Weight K H L) : H → K) = (β : H → K) + ((-γ : Weight K H L) : H → K) := by
+    rw [Weight.coe_neg, Weight.coe_neg, hαβ]
+    abel
+  rw [hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ,
+    hx.intStructureConstant₂_eq_intStructureConstant β (-γ) (-α) hα.neg hsum]
+  exact hx.intStructureConstant_cyclic_mul_killingForm α β γ hα hγ hαβ
 
 end IsChevalleySystem
 
