@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -24,14 +24,16 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
+* `pslS : PSL(2, ℝ)` — the image of `ModularGroup.S`, squaring to the identity
+  (`pslS_mul_self`, `pslS_inv`).
 
 The actions of these groups on the upper half-plane, and the compatibility of these maps
 with them, are in `TauCeti/Analysis/Complex/UpperHalfPlane/PSL/Action.lean`.
 
-Split out of the AINTLIB `LeanModularForms` port
-(`LeanModularForms/Modularforms/PSL2Action.lean`,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>): these
-declarations are pure matrix-group algebra with no dependence on `ℍ`.
+`sl2zToPSL2R`, `psl2zToPSL2R`, and `glPosToSL2R`/`glPosToPSL2R` are split out of the AINTLIB
+`LeanModularForms` port (`LeanModularForms/Modularforms/PSL2Action.lean`,
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>); `pslS` is not part
+of that port. All are pure matrix-group algebra with no dependence on `ℍ`.
 -/
 
 public section
@@ -133,6 +135,38 @@ def psl2zToPSL2R : PSL(2, ℤ) →* PSL(2, ℝ) :=
 `sl2zToPSL2R.ker = center SL(2, ℤ)` under the `PSL(2, ℤ)`-projection, which is `⊥`. -/
 theorem psl2zToPSL2R_injective : Function.Injective psl2zToPSL2R :=
   QuotientGroup.injective_lift_iff _ _ _ |>.2 sl2zToPSL2R_ker.symm
+
+/-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
+`z ↦ -1/z`) in `PSL(2, ℝ)`. Its action on `ℍ` and further identities are in
+`PSL/Action.lean`. -/
+noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
+
+/-- Restatement of the body of `pslS`, unfolded from the `def`: needed to rewrite through it
+from another module, since its body is not `@[expose]`d. -/
+theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
+
+private theorem SL2Z_S_mul_S : (_root_.ModularGroup.S : SL(2, ℤ)) * _root_.ModularGroup.S = -1 := by
+  ext i j
+  have h := _root_.ModularGroup.S_mul_S_eq
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+
+private theorem neg_one_mem_center_SL2R : (-1 : SL(2, ℝ)) ∈ Subgroup.center SL(2, ℝ) :=
+  Matrix.SpecialLinearGroup.mem_center_iff.mpr
+    ⟨-1, by norm_num, by ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.scalar]⟩
+
+/-- `pslS` squares to the identity of `PSL(2, ℝ)`, since `ModularGroup.S * ModularGroup.S = -1`
+(Mathlib's `ModularGroup.S_mul_S_eq`) and `-1` is central. -/
+theorem pslS_mul_self : pslS * pslS = 1 := by
+  rw [pslS, ← map_mul, show ((_root_.ModularGroup.S : PSL(2, ℤ)) * (_root_.ModularGroup.S :
+    PSL(2, ℤ))) = ((_root_.ModularGroup.S * _root_.ModularGroup.S : SL(2, ℤ)) : PSL(2, ℤ))
+    from rfl, SL2Z_S_mul_S, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
+  rw [show ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ)) (-1 : SL(2, ℤ)) : SL(2, ℝ)) = -1
+    from by ext i j; fin_cases i <;> fin_cases j <;> simp]
+  exact (QuotientGroup.eq_one_iff _).mpr neg_one_mem_center_SL2R
+
+/-- `pslS` is its own inverse. -/
+@[simp]
+theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 
 /-- The det-normalized `SL(2, ℝ)` representative of a `GL(2, ℝ)⁺` element, as a monoid
 homomorphism: the matrix `(√ det g)⁻¹ • g` has determinant `1`, and normalization is

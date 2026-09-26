@@ -40,9 +40,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
-* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)`, an involution of `ℍ`
-  (`pslS_smul_pslS_smul`, `pslS_inv`) reversing the sign of the real part, up to the `normSq`
-  factor (`re_pslS_smul`).
+* `UpperHalfPlane.pslS_smul`, `pslS_smul_pslS_smul` — `pslS` (the group-level `PSL(2, ℝ)`
+  element in `ProjectiveSpecialLinearGroup.lean`) acts on `ℍ` as `ModularGroup.S` does, and is an
+  involution; `re_pslS_smul` gives its effect on the real part, up to the `normSq` factor.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -188,27 +188,15 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
   -- `GL(2, ℝ)`-action of the common `mapGL ℝ` image
   rfl
 
-/-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
-`z ↦ -1/z`) in `PSL(2, ℝ)`. -/
-noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
-
-/-- `pslS` acts as `ModularGroup.S` does. -/
+/-- `pslS` (defined in `ProjectiveSpecialLinearGroup.lean`, the `PSL(2, ℝ)` image of
+`ModularGroup.S`) acts as `ModularGroup.S` does. -/
 theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
-  rw [pslS, psl2zToPSL2R_smul, pslMk_smul]
+  rw [pslS_def, psl2zToPSL2R_smul, pslMk_smul]
 
 /-- `pslS` is an involution of `ℍ`. -/
 @[simp]
 theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
   rw [pslS_smul, pslS_smul, _root_.ModularGroup.S_smul_S_smul]
-
-/-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
-@[simp]
-theorem pslS_mul_self : pslS * pslS = 1 :=
-  eq_of_smul_eq_smul fun τ : ℍ ↦ by rw [mul_smul, pslS_smul_pslS_smul, one_smul]
-
-/-- `pslS` is its own inverse. -/
-@[simp]
-theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 
 /-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
