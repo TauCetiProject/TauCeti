@@ -162,18 +162,6 @@ theorem dgComp_smul {X Y Z : C} {p q n : ℤ} (r : R) (f : DGHom R p X Y) (g : D
     (h : p + q = n) : dgComp R f (r • g) h = r • dgComp R f g h := by
   rw [dgComp, dgComp, TensorProduct.tmul_smul, map_smul]
 
-/-- Composition commutes with integer multiples of its first factor. -/
-@[simp]
-theorem zsmul_dgComp {X Y Z : C} {p q n : ℤ} (m : ℤ) (f : DGHom R p X Y) (g : DGHom R q Y Z)
-    (h : p + q = n) : dgComp R (m • f) g h = m • dgComp R f g h := by
-  rw [← Int.cast_smul_eq_zsmul R, smul_dgComp, Int.cast_smul_eq_zsmul]
-
-/-- Composition commutes with integer multiples of its second factor. -/
-@[simp]
-theorem dgComp_zsmul {X Y Z : C} {p q n : ℤ} (m : ℤ) (f : DGHom R p X Y) (g : DGHom R q Y Z)
-    (h : p + q = n) : dgComp R f (m • g) h = m • dgComp R f g h := by
-  rw [← Int.cast_smul_eq_zsmul R, dgComp_smul, Int.cast_smul_eq_zsmul]
-
 /-! ### The Leibniz rule -/
 
 /- Composition is a chain map out of the tensor product of the two Hom complexes; restricting

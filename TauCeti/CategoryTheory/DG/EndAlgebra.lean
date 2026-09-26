@@ -125,9 +125,10 @@ private theorem mk_mul_mk_mul_mk {i j k : ℤ} (a : DGHom R i X X) (b : DGHom R 
     (c : DGHom R k X X) :
     GradedMonoid.mk (A := fun n ↦ DGHom R n X X) i a * GradedMonoid.mk j b * GradedMonoid.mk k c =
       GradedMonoid.mk i a * (GradedMonoid.mk j b * GradedMonoid.mk k c) := by
-  simp only [GradedMonoid.mk_mul_mk, gMul_def, Units.smul_def, zsmul_dgComp, dgComp_zsmul,
-    smul_smul]
-  rw [dgComp_assoc R c b a (add_comm k j) (add_comm j i) (by omega)]
+  simp only [GradedMonoid.mk_mul_mk, gMul_def, Units.smul_def, ← Int.cast_smul_eq_zsmul R,
+    smul_dgComp, dgComp_smul, smul_smul, ← Int.cast_mul]
+  rw [dgComp_assoc R c b a (add_comm k j) (add_comm j i) (by omega), Int.cast_smul_eq_zsmul,
+    Int.cast_smul_eq_zsmul]
   refine mk_zsmul_dgComp X ?_ _ _ _ _
   rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
   congr 2
@@ -196,6 +197,7 @@ variable {R} {X : C}
 /-- Multiplication in the endomorphism algebra is Keller-ordered composition: for `g` of degree
 `q` and `f` of degree `p`, the product `g * f` is "first `f`, then `g`", which is the enriched
 composite `dgComp f g` up to the Koszul sign `(-1) ^ (p * q)`. -/
+@[simp]
 theorem lof_mul_lof {p q n : ℤ} (g : DGHom R q X X) (f : DGHom R p X X) (h : p + q = n) :
     lof R ℤ (fun n ↦ DGHom R n X X) q g * lof R ℤ (fun n ↦ DGHom R n X X) p f =
       lof R ℤ (fun n ↦ DGHom R n X X) n ((p * q).negOnePow • dgComp R f g h) := by
@@ -225,15 +227,20 @@ abbrev grading (n : ℤ) : Submodule R (DGEnd R X) :=
 variable {R X}
 
 /-- A homogeneous endomorphism of degree `n` lies in the degree-`n` part. -/
+@[simp]
 theorem lof_mem_grading {n : ℤ} (f : DGHom R n X X) :
     lof R ℤ (fun n ↦ DGHom R n X X) n f ∈ grading R X n :=
   LinearMap.mem_range_self _ f
 
 /-- The degree-`n` part consists of the homogeneous endomorphisms of degree `n`. -/
+@[simp]
 theorem mem_grading_iff {n : ℤ} {a : DGEnd R X} :
     a ∈ grading R X n ↔ ∃ f : DGHom R n X X, lof R ℤ (fun n ↦ DGHom R n X X) n f = a :=
   LinearMap.mem_range
 
+/-- The grading of the endomorphism algebra respects the unit and the multiplication: the identity
+has degree `0`, and a product of homogeneous endomorphisms of degrees `q` and `p` has degree
+`q + p`. -/
 instance : SetLike.GradedMonoid (grading R X) where
   one_mem := lof_mem_grading (dgId R X)
   mul_mem := by
@@ -352,6 +359,7 @@ theorem dgEndAlgEquiv_lof {n : ℤ} (f : DGHom R n (star h) (star h)) :
   dgEndLinearEquiv_lof h f
 
 /-- The comparison identifies the degree-`n` part of the endomorphism algebra with `𝒜 n`. -/
+@[simp]
 theorem dgEndAlgEquiv_mem_iff {n : ℤ} {x : DGEnd R (star h)} :
     dgEndAlgEquiv h x ∈ 𝒜 n ↔ x ∈ DGEnd.grading R (star h) n := by
   refine ⟨fun hx ↦ ?_, ?_⟩
