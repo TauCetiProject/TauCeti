@@ -21,9 +21,10 @@ integrated against any coupling `π` of the sources:
 `W_p (κ ∘ₘ μ, η ∘ₘ ν) ≤ ‖(x, x') ↦ W_p (κ x, η x')‖_{L^p (π)}`,
 
 for every finite exponent `1 ≤ p < ∞`. In particular a Markov kernel whose laws satisfy the
-pointwise Wasserstein-Lipschitz bound `W_p (κ x, κ y) ≤ L d(x, y)` acts on laws as an
-`L`-Lipschitz map for `W_p`. This is the Wasserstein contraction estimate for Markov kernels that
-underlies Wasserstein contraction of Markov chains and coarse Ricci curvature.
+pointwise Wasserstein-Lipschitz bound `W_p (κ x, κ y) ≤ L d(x, y)` satisfies the pairwise
+inequality `W_p (κ ∘ₘ μ, κ ∘ₘ ν) ≤ L W_p (μ, ν)` when both mixtures have finite `p`-moment.
+This is the Wasserstein contraction estimate for Markov kernels that underlies Wasserstein
+contraction of Markov chains and coarse Ricci curvature.
 
 The ground space `Y` is a separable pseudometric space whose measurable structure is
 standard Borel and contains the open sets, for instance a Polish metric space with its Borel
