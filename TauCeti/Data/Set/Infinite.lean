@@ -39,11 +39,12 @@ theorem exists_injective_into_apply_eq_of_mem {ι : Type*} [Countable ι] [Infin
 
 /-- An injection into an infinite subset of a countable type can fix any prescribed finite
 subset of its target. -/
-theorem exists_injective_into_eqOn_of_finite {ι : Type*} [Countable ι] [Infinite ι]
+theorem exists_injective_into_eqOn_of_finite {ι : Type*} [Countable ι]
     {S F : Set ι} (hS : S.Infinite) (hF : F.Finite) (hFS : F ⊆ S) :
     ∃ a : ι → ι, Function.Injective a ∧ (∀ i ∈ F, a i = i) ∧ ∀ k, a k ∈ S := by
   classical
   have := hS.to_subtype
+  have : Infinite ι := Infinite.of_injective (fun i : S ↦ (i : ι)) Subtype.val_injective
   obtain ⟨e₀⟩ := nonempty_equiv_of_countable (α := ι) (β := S)
   have aux : ∀ t : Finset ι, (∀ i ∈ t, i ∈ S) →
       ∃ e : ι ≃ S, ∀ i ∈ t, (e i).1 = i := by

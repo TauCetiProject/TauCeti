@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.BlockIndependence
+public import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 
 /-!
 # Local conditional independence of the entries of a separately exchangeable array
