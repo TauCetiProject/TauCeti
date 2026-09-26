@@ -83,10 +83,10 @@ theorem continuous_stdComplexLineEnergyDensity_toLinearMap (ω : SymplecticForm 
   refine ((hdiag stdComplexLineReal).add (hdiag stdComplexLineImag)).congr fun L ↦ ?_
   simp [stdComplexLineEnergyDensity_def]
 
-/-- The standard energy density of the differential of a compactly supported `C²` map from the
+/-- The standard energy density of the differential of a compactly supported `C¹` map from the
 plane is integrable against any measure that is finite on compact sets. -/
 theorem integrable_stdComplexLineEnergyDensity_fderiv [IsFiniteMeasureOnCompacts μ]
-    (ω : SymplecticForm V) (J : AlmostComplexStructure V) (hu : ContDiff ℝ 2 u)
+    (ω : SymplecticForm V) (J : AlmostComplexStructure V) (hu : ContDiff ℝ 1 u)
     (hsupp : HasCompactSupport u) :
     Integrable (fun z ↦ ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap) μ :=
   Continuous.integrable_of_hasCompactSupport
@@ -196,7 +196,7 @@ theorem IsConstStructureJHolomorphic.eq_zero_of_hasCompactSupport
       ((integral_eq_zero_iff_of_nonneg
         (fun z ↦ ω.stdComplexLineEnergyDensity_nonneg htame _)
         (SymplecticForm.integrable_stdComplexLineEnergyDensity_fderiv
-          (μ := (volume : Measure (ℝ × ℝ))) ω J hu hsupp)).mp hzero)
+          (μ := (volume : Measure (ℝ × ℝ))) ω J (hu.of_le (by norm_num)) hsupp)).mp hzero)
   have hfderiv : ∀ z, fderiv ℝ u z = 0 := fun z ↦
     (ω.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff htame _).mp (congrFun heq z)
   -- a constant map with compact support on a noncompact space is zero
