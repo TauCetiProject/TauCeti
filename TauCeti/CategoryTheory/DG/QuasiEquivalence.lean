@@ -28,9 +28,9 @@ On homotopy categories, a quasi-fully faithful DG functor `F` induces a fully fa
 * `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.full_mapDGHomotopyCategory` and
   `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory`: a
   quasi-fully faithful DG functor induces a fully faithful functor on homotopy categories.
-* `CategoryTheory.EnrichedFunctor.isQuasiEquivalence_iff_essSurj`: a quasi-equivalence is a
-  quasi-fully faithful DG functor whose induced functor on homotopy categories is essentially
-  surjective.
+* `CategoryTheory.EnrichedFunctor.isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj`:
+  a quasi-equivalence is a quasi-fully faithful DG functor whose induced functor on homotopy
+  categories is essentially surjective.
 * `CategoryTheory.EnrichedFunctor.IsQuasiEquivalence.isEquivalence_mapDGHomotopyCategory`: a
   quasi-equivalence induces an equivalence of homotopy categories.
 * `TauCeti.DGFullSubcategory.isQuasiEquivalence_inclusion_iff`: when the inclusion of a full DG
@@ -162,7 +162,7 @@ theorem IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory
 
 /-- A DG functor is a quasi-equivalence exactly when it is quasi-fully faithful and the functor
 it induces on homotopy categories is essentially surjective. -/
-theorem isQuasiEquivalence_iff_essSurj
+theorem isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj
     (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
     IsQuasiEquivalence F ↔ IsQuasiFullyFaithful F ∧ F.mapDGHomotopyCategory.EssSurj := by
   refine and_congr_right fun _ ↦ ⟨fun h ↦ ⟨fun Y ↦ ?_⟩, fun h Y ↦ ?_⟩
@@ -179,7 +179,7 @@ theorem IsQuasiEquivalence.isEquivalence_mapDGHomotopyCategory
     (hF : EnrichedFunctor.IsQuasiEquivalence F) : F.mapDGHomotopyCategory.IsEquivalence where
   faithful := hF.isQuasiFullyFaithful.faithful_mapDGHomotopyCategory
   full := hF.isQuasiFullyFaithful.full_mapDGHomotopyCategory
-  essSurj := ((isQuasiEquivalence_iff_essSurj F).1 hF).2
+  essSurj := ((isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj F).1 hF).2
 
 end CategoryTheory.EnrichedFunctor
 
