@@ -201,7 +201,7 @@ end CommRing
 
 section CommRing
 
-variable {F : Type} [CommRing F]
+variable {F : Type*} [CommRing F]
 
 /-- **The two Weyl-cell restrictions are isomorphic exactly when their parameters are swapped.**
 This characterization supplies the Weyl-cell contribution to the principal-series intertwining
@@ -238,6 +238,12 @@ theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, linearChar_apply, linearChar_apply,
       diag_mackeyToH]
     simp [mul_comm]
+
+end CommRing
+
+section CommRing
+
+variable {F : Type} [CommRing F]
 
 /-- **The Mackey condition of the principal series, at the Weyl element.** The restrictions of
 `α ⊗ β` and of its `w`-conjugate to `B ⊓ wBw⁻¹` are disjoint exactly when `α ≠ β`. Together with
