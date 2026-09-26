@@ -24,8 +24,8 @@ two parameters whose images under a monoid homomorphism have the same cohomology
 already gauge equivalent, and, for a graph with a finite vertex set over a commutative ring, their
 relation quotients were already isomorphic by an algebra isomorphism fixing every vertex
 idempotent. The map on units is the hypothesis under which this is true, and no statement of
-injectivity is made without it: the coefficient groups of the cohomology are the units of the
-coefficient rings.
+injectivity is made without it: the coefficient groups of the cohomology are the unit groups of the
+coefficient monoids.
 
 The parameter classification follows C. Couture, *Skew-Zigzag Algebras*, Section 4. The
 cohomology transport uses the graph cohomology construction in
@@ -118,20 +118,20 @@ section MapAlgebra
 
 open DoubledQuiver
 
-variable {l : Type z} [CommRing k] [CommRing l] [Finite V]
+variable {l : Type z} [CommRing k] [CommMonoid l] [Finite V]
 
 /-- **Couture's classification is injective under a coefficient homomorphism that is injective on
 units**: two parameters on a graph with a finite vertex set whose images along `f` have the same
 cohomology class, with `f` injective on units, have already isomorphic relation quotients, by an
 algebra isomorphism fixing every vertex idempotent. -/
-theorem cohomologyClass_map_eq_iff_exists_vertexFixing_algEquiv (f : k →+* l)
-    (hf : Function.Injective (Units.map f.toMonoidHom)) {c c' : SkewZigzagParameter k G} :
+theorem cohomologyClass_map_eq_iff_exists_vertexFixing_algEquiv (f : k →* l)
+    (hf : Function.Injective (Units.map f)) {c c' : SkewZigzagParameter k G} :
     cohomologyClass l G (c.map f) = cohomologyClass l G (c'.map f) ↔
       ∃ φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c',
         ∀ i : V, φ (skewZigzagMk k G c (PathAlgebra.vertexIdempotent k (vertex G i))) =
           skewZigzagMk k G c' (PathAlgebra.vertexIdempotent k (vertex G i)) :=
-  (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f.toMonoidHom) (c := c) (c' := c')
-    hf).trans isGaugeEquivalent_iff_exists_vertexFixing_algEquiv
+  (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f) (c := c) (c' := c') hf).trans
+    isGaugeEquivalent_iff_exists_vertexFixing_algEquiv
 
 end MapAlgebra
 
