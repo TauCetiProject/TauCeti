@@ -29,15 +29,13 @@ integral and does not require a reducedness or finite-type hypothesis.
   ideals.
 * `kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary`: under the same
   hypothesis, the root-generated and toral carriers are equal.
+* `kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary`: the canonical comparison is the
+  transport along that equality, and hence is an isomorphism.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 1.4.
-
-This advances the scheme-theoretic generation and explicit Chevalley--Demazure carrier work in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The resulting root-generated carriers are
-an input to the explicit-carrier agreement milestone L5 of the CFSGStatement roadmap.
 -/
 
 public section
@@ -46,13 +44,13 @@ open CategoryTheory TensorProduct WithConv
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u
+universe u w
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {I κ : Type} [Fintype κ]
+variable {I : Type w} {κ : Type} [Fintype κ]
 variable {V : Type} [AddCommGroup V] [Module ℚ V]
 
 variable (e : I → L) (h : κ → L)
@@ -98,31 +96,22 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_torus_le_elementar
       ((CommHopfAlgCat.mapPointsFunctor
         (GeneralLinear.weightTorusCoordinateMap wt)).app A q) =
       kostantTorusMatrix M b wt s := by
-    rw [GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app,
-      GeneralLinear.pointsMulEquiv_diagonalTorusPoints, kostantTorusMatrix_apply]
-    congr 1
-    funext i
-    rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt A q i]
-  intro x hx
-  rw [RingHom.mem_ker]
+    rw [GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
+      kostantTorusMatrix_apply]
   have hmatrix' : GeneralLinear.pointToGeneralLinear n
-      (toConv ((AlgHom.id ℤ T).comp
-        (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom)) ∈
+      (toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom) ∈
       kostantGeneratedPointsSubgroup e h ρ M hM hnil b T := by
     have hp : (CommHopfAlgCat.mapPointsFunctor
         (GeneralLinear.weightTorusCoordinateMap wt)).app A q =
-        toConv ((AlgHom.id ℤ T).comp
-          (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom) := by
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+        toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom := by
+      rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+        WithConv.ofConv_toConv, AlgHom.id_comp]
     rw [← GeneralLinear.pointsMulEquiv_apply, ← hp, hq_matrix]
     exact hmatrix
   rw [kostantGeneratedPointsSubgroup_def] at hmatrix'
-  have hker := (GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker
+  exact (GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker
     n (kostantGeneratedDefiningIdeal e h ρ M hM hnil b) T
-    ((AlgHom.id ℤ T).comp
-      (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom)).mp hmatrix'
-  have hx' := RingHom.mem_ker.mp (hker hx)
-  simpa using hx'
+    (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom).mp hmatrix'
 
 /-- **A root-generated universal weight-torus point makes the torus scheme-theoretically
 redundant.** If the represented torus over its own coordinate ring belongs to the elementary
@@ -159,5 +148,52 @@ theorem kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_eleme
     kostantGeneratedGroupScheme,
     kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
       e h ρ M hM hnil b wt htorus]
+
+/-- Under pointwise torus generation, the canonical inclusion of the root-generated carrier into
+the toral closure is the transport along their equality. -/
+theorem kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
+    (htorus : kostantTorusSubgroup M b wt
+        (CommAlgCat.of ℤ
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
+      kostantElementarySubgroup e h ρ M hM hnil
+        (CommAlgCat.of ℤ
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+    kostantGeneratedToToral e h ρ M hM hnil b wt =
+      eqToHom
+        (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+          e h ρ M hM hnil b wt htorus).symm := by
+  have hideal :=
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
+      e h ρ M hM hnil b wt htorus
+  have htransport : ∀ {I J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)}
+      (hIJ : I = J) (hquot : CommHopfAlgCat.quotientSpec
+        (GeneralLinear.coordinateHopfAlgebra ℤ n) I =
+          CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ n) J),
+      eqToHom hquot.symm ≫ CommHopfAlgCat.quotientSpecι
+          (GeneralLinear.coordinateHopfAlgebra ℤ n) I =
+        CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n) J := by
+    intro I J hIJ hquot
+    subst J
+    simp
+  apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
+  rw [kostantGeneratedToToral_comp_ι]
+  rw [kostantGeneratedGroupSchemeι_def, kostantToralGroupSchemeι_def]
+  rw [← Category.assoc, htransport hideal
+    (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+      e h ρ M hM hnil b wt htorus)]
+
+/-- Pointwise generation of the weight torus makes the canonical comparison from the
+root-generated carrier to the toral closure an isomorphism. -/
+theorem isIso_kostantGeneratedToToral_of_torus_le_elementary
+    (htorus : kostantTorusSubgroup M b wt
+        (CommAlgCat.of ℤ
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) ≤
+      kostantElementarySubgroup e h ρ M hM hnil
+        (CommAlgCat.of ℤ
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
+    IsIso (kostantGeneratedToToral e h ρ M hM hnil b wt) := by
+  rw [kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
+    e h ρ M hM hnil b wt htorus]
+  infer_instance
 
 end TauCeti.UniversalEnvelopingAlgebra

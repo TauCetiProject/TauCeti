@@ -33,22 +33,18 @@ for other types requires a full-weight admissible lattice rather than Geck's adj
   make the torus redundant in the Geck defining ideal.
 * `TauCeti.DynkinType.geckGroupScheme_eq_kostantGeneratedGroupScheme`: the corresponding carrier
   equality.
-* The suffixes `_E8`, `_F4`, and `_G2` record both equalities for the three full-weight Geck
-  carriers.
+* The suffixes `_E8`, `_F4`, and `_G2` record both equalities and the canonical comparison
+  isomorphism for the three full-weight Geck carriers.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 6.4 and 7.1.
-
-This closes the root-generation substep of Layer 9's explicit Chevalley--Demazure construction
-for the full-weight Geck carriers in `TauCetiRoadmap/ReductiveGroups/README.md`. Identifying these
-carriers as pinned split reductive group schemes remains before the CFSGStatement roadmap's L5
-explicit-carrier agreement can use them.
 -/
 
 public section
 
+open CategoryTheory
 open scoped Matrix TensorProduct
 
 namespace TauCeti.DynkinType
@@ -59,6 +55,27 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
 variable (t : DynkinType) (ht : t.Valid)
+
+/-- **Generation of the universal Geck torus makes the Geck defining ideal root-generated.** It
+is enough to contain the torus points over the coordinate ring of the split torus itself. -/
+theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
+    (htorus : (t.geckTorusPoints ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)).range ≤
+      t.geckElementarySubgroup ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)) :
+    t.geckDefiningIdeal ht =
+      kostantGeneratedDefiningIdeal
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) := by
+  rw [t.geckDefiningIdeal_def ht]
+  apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
+  rw [kostantTorusSubgroup_eq_range]
+  exact htorus
 
 /-- **Primitive Cartan rows make the Geck torus scheme-theoretically redundant.** The defining
 Hopf ideal obtained from the numbered root subgroups and the weight torus is already the defining
@@ -71,11 +88,29 @@ theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) :=
+  t.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary ht
+    (t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _)
+
+/-- **Generation of the universal Geck torus identifies the Geck and root-generated carriers.**
+The carrier equality is induced by the equality of their defining Hopf ideals. -/
+theorem geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+    (htorus : (t.geckTorusPoints ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)).range ≤
+      t.geckElementarySubgroup ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)) :
+    t.geckGroupScheme ht =
+      kostantGeneratedGroupScheme
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) := by
-  rw [t.geckDefiningIdeal_def ht]
-  apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _
+  rw [t.geckGroupScheme_def ht, kostantToralGroupScheme, kostantGeneratedGroupScheme,
+    ← t.geckDefiningIdeal_def ht,
+    t.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary ht htorus]
 
 /-- **Primitive Cartan rows identify the Geck carrier with the root-generated Kostant carrier.**
 Thus the represented weight torus adds no scheme-theoretic generator. -/
@@ -87,11 +122,41 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) := by
-  rw [t.geckGroupScheme_def ht]
-  apply kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+        (t.geckCoordinateBasisFin ht) :=
+  t.geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary ht
+    (t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _)
+
+/-- Generation of the universal Geck torus makes the canonical comparison from the root-generated
+Kostant carrier to the Geck toral carrier an isomorphism. -/
+theorem isIso_kostantGeneratedToToral_geck_of_torus_le_elementary
+    (htorus : (t.geckTorusPoints ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)).range ≤
+      t.geckElementarySubgroup ht
+        (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin t.rank))).obj)) :
+    IsIso (kostantGeneratedToToral
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) := by
+  apply isIso_kostantGeneratedToToral_of_torus_le_elementary
   rw [kostantTorusSubgroup_eq_range]
-  exact t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _
+  exact htorus
+
+/-- Primitive Cartan rows make the canonical comparison from the root-generated Kostant carrier
+to the Geck toral carrier an isomorphism. -/
+theorem isIso_kostantGeneratedToToral_geck
+    (hrow : ∀ i, ∃ c : Fin t.rank → ℤ, ∑ j, t.cartanMatrix i j * c j = 1) :
+    IsIso (kostantGeneratedToToral
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) :=
+  t.isIso_kostantGeneratedToToral_geck_of_torus_le_elementary ht
+    (t.range_geckTorusPoints_le_geckElementarySubgroup ht hrow _)
 
 /-! ## Full-weight exceptional Geck carriers -/
 
@@ -105,11 +170,9 @@ theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_E8 :
         (E8.geckCoordinateLattice valid_E8).toAddSubgroup
         (E8.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_E8)
         (E8.isNilpotent_geckRepresentation_rootGenerator valid_E8)
-        (E8.geckCoordinateBasisFin valid_E8) := by
-  rw [E8.geckDefiningIdeal_def valid_E8]
-  apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_E8 _
+        (E8.geckCoordinateBasisFin valid_E8) :=
+  E8.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary valid_E8
+    (range_geckTorusPoints_le_geckElementarySubgroup_E8 _)
 
 /-- The type-`E₈` full-weight Geck carrier is the closed group scheme generated by its sixteen
 numbered positive and negative simple-root subgroups alone. -/
@@ -121,11 +184,22 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme_E8 :
         (E8.geckCoordinateLattice valid_E8).toAddSubgroup
         (E8.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_E8)
         (E8.isNilpotent_geckRepresentation_rootGenerator valid_E8)
-        (E8.geckCoordinateBasisFin valid_E8) := by
-  rw [E8.geckGroupScheme_def valid_E8]
-  apply kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_E8 _
+        (E8.geckCoordinateBasisFin valid_E8) :=
+  E8.geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary valid_E8
+    (range_geckTorusPoints_le_geckElementarySubgroup_E8 _)
+
+/-- For type `E₈`, the canonical comparison from the root-generated Kostant carrier to the Geck
+toral carrier is an isomorphism. -/
+instance isIso_kostantGeneratedToToral_E8 :
+    IsIso (kostantGeneratedToToral
+      (E8.lieBasis valid_E8).rootGenerator (E8.lieBasis valid_E8).h
+      (E8.geckRepresentation valid_E8)
+      (E8.geckCoordinateLattice valid_E8).toAddSubgroup
+      (E8.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_E8)
+      (E8.isNilpotent_geckRepresentation_rootGenerator valid_E8)
+      (E8.geckCoordinateBasisFin valid_E8) (E8.geckWeightFin valid_E8)) :=
+  E8.isIso_kostantGeneratedToToral_geck_of_torus_le_elementary valid_E8
+    (range_geckTorusPoints_le_geckElementarySubgroup_E8 _)
 
 /-- The type-`F₄` Geck defining ideal is generated scheme-theoretically by its eight numbered
 positive and negative simple-root subgroups; adjoining the weight torus does not change it. -/
@@ -137,11 +211,9 @@ theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_F4 :
         (F4.geckCoordinateLattice valid_F4).toAddSubgroup
         (F4.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_F4)
         (F4.isNilpotent_geckRepresentation_rootGenerator valid_F4)
-        (F4.geckCoordinateBasisFin valid_F4) := by
-  rw [F4.geckDefiningIdeal_def valid_F4]
-  apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_F4 _
+        (F4.geckCoordinateBasisFin valid_F4) :=
+  F4.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary valid_F4
+    (range_geckTorusPoints_le_geckElementarySubgroup_F4 _)
 
 /-- The type-`F₄` full-weight Geck carrier is the closed group scheme generated by its eight
 numbered positive and negative simple-root subgroups alone. -/
@@ -153,11 +225,22 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme_F4 :
         (F4.geckCoordinateLattice valid_F4).toAddSubgroup
         (F4.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_F4)
         (F4.isNilpotent_geckRepresentation_rootGenerator valid_F4)
-        (F4.geckCoordinateBasisFin valid_F4) := by
-  rw [F4.geckGroupScheme_def valid_F4]
-  apply kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_F4 _
+        (F4.geckCoordinateBasisFin valid_F4) :=
+  F4.geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary valid_F4
+    (range_geckTorusPoints_le_geckElementarySubgroup_F4 _)
+
+/-- For type `F₄`, the canonical comparison from the root-generated Kostant carrier to the Geck
+toral carrier is an isomorphism. -/
+instance isIso_kostantGeneratedToToral_F4 :
+    IsIso (kostantGeneratedToToral
+      (F4.lieBasis valid_F4).rootGenerator (F4.lieBasis valid_F4).h
+      (F4.geckRepresentation valid_F4)
+      (F4.geckCoordinateLattice valid_F4).toAddSubgroup
+      (F4.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_F4)
+      (F4.isNilpotent_geckRepresentation_rootGenerator valid_F4)
+      (F4.geckCoordinateBasisFin valid_F4) (F4.geckWeightFin valid_F4)) :=
+  F4.isIso_kostantGeneratedToToral_geck_of_torus_le_elementary valid_F4
+    (range_geckTorusPoints_le_geckElementarySubgroup_F4 _)
 
 /-- The type-`G₂` Geck defining ideal is generated scheme-theoretically by its four numbered
 positive and negative simple-root subgroups; adjoining the weight torus does not change it. -/
@@ -169,11 +252,9 @@ theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_G2 :
         (G2.geckCoordinateLattice valid_G2).toAddSubgroup
         (G2.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_G2)
         (G2.isNilpotent_geckRepresentation_rootGenerator valid_G2)
-        (G2.geckCoordinateBasisFin valid_G2) := by
-  rw [G2.geckDefiningIdeal_def valid_G2]
-  apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_G2 _
+        (G2.geckCoordinateBasisFin valid_G2) :=
+  G2.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary valid_G2
+    (range_geckTorusPoints_le_geckElementarySubgroup_G2 _)
 
 /-- The type-`G₂` full-weight Geck carrier is the closed group scheme generated by its four
 numbered positive and negative simple-root subgroups alone. -/
@@ -185,10 +266,21 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme_G2 :
         (G2.geckCoordinateLattice valid_G2).toAddSubgroup
         (G2.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_G2)
         (G2.isNilpotent_geckRepresentation_rootGenerator valid_G2)
-        (G2.geckCoordinateBasisFin valid_G2) := by
-  rw [G2.geckGroupScheme_def valid_G2]
-  apply kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact range_geckTorusPoints_le_geckElementarySubgroup_G2 _
+        (G2.geckCoordinateBasisFin valid_G2) :=
+  G2.geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary valid_G2
+    (range_geckTorusPoints_le_geckElementarySubgroup_G2 _)
+
+/-- For type `G₂`, the canonical comparison from the root-generated Kostant carrier to the Geck
+toral carrier is an isomorphism. -/
+instance isIso_kostantGeneratedToToral_G2 :
+    IsIso (kostantGeneratedToToral
+      (G2.lieBasis valid_G2).rootGenerator (G2.lieBasis valid_G2).h
+      (G2.geckRepresentation valid_G2)
+      (G2.geckCoordinateLattice valid_G2).toAddSubgroup
+      (G2.geckRepresentation_kostantForm_mem_geckCoordinateLattice valid_G2)
+      (G2.isNilpotent_geckRepresentation_rootGenerator valid_G2)
+      (G2.geckCoordinateBasisFin valid_G2) (G2.geckWeightFin valid_G2)) :=
+  G2.isIso_kostantGeneratedToToral_geck_of_torus_le_elementary valid_G2
+    (range_geckTorusPoints_le_geckElementarySubgroup_G2 _)
 
 end TauCeti.DynkinType
