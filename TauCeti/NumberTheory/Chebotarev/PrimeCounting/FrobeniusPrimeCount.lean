@@ -21,12 +21,8 @@ Comparison with the prime ideal theorem for all primes then gives natural densit
 
 ## Main results
 
-* `NumberField.Chebotarev.frobeniusTheta_asymptotic`: `ϑ_C(x) = (#C / #Gal(L/K)) x + o(x)`,
-  with the ratio form `NumberField.Chebotarev.tendsto_frobeniusTheta`.
-* `NumberField.Chebotarev.frobeniusPrimeCount_sub_mul_logIntegral_isLittleO`: the
-  logarithmic-integral error estimate for the count.
-* `NumberField.Chebotarev.frobeniusPrimeCount_isEquivalent_logIntegral`: the asymptotic
-  equivalence to the logarithmic-integral main term.
+* `NumberField.Chebotarev.tendsto_frobeniusTheta`: the weighted prime count divided by `x`
+  tends to `#C / #Gal(L/K)`.
 * `NumberField.Chebotarev.tendsto_frobeniusPrimeCount`: the prime count divided by `x / log x`
   tends to `#C / #Gal(L/K)`.
 * `NumberField.Chebotarev.hasNaturalDensity_frobeniusPrimeSet`: the same ratio is the natural
@@ -50,7 +46,7 @@ variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 
 /-- The logarithmically weighted count of a Frobenius class satisfies
 `ϑ_C(x) = (#C / #Gal(L/K)) x + o(x)`. -/
-theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
+private theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ frobeniusTheta K L C x -
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) * x) =o[atTop] id := by
   have h := (frobeniusPsi_asymptotic K L C).sub
@@ -65,7 +61,7 @@ theorem tendsto_frobeniusTheta (C : ConjClasses (L ≃ₐ[K] L)) :
     (frobeniusTheta_asymptotic K L C)
 
 /-- The Frobenius prime count is `(#C / #Gal(L/K)) Li(x) + o(x / log x)`. -/
-theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
+private theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
     (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) -
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) * Real.logIntegral x)
@@ -77,7 +73,7 @@ theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
       (by simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C))
 
 /-- The Frobenius prime count is asymptotic to `(#C / #Gal(L/K)) Li(x)`. -/
-theorem frobeniusPrimeCount_isEquivalent_logIntegral
+private theorem frobeniusPrimeCount_isEquivalent_logIntegral
     (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ)) ~[atTop]
       (fun x ↦ ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) *

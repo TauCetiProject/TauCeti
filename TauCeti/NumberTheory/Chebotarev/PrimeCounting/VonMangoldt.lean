@@ -190,18 +190,11 @@ theorem frobeniusTheta_def (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusTheta K L C x = primeTheta K (frobeniusPrimeSet K L C) x := by
   rw [frobeniusTheta]
 
-open Classical in
-/-- The Frobenius prime count as a finite-set cardinality. -/
-theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
-    frobeniusPrimeCount K L C x =
-      ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card := by
-  rw [frobeniusPrimeCount]
-
 /-- The Frobenius prime count is the generic count of its prime set. -/
 theorem natCast_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
   classical
-  simpa only [frobeniusPrimeCount_eq_card] using
+  simpa only [frobeniusPrimeCount] using
     (primeCount_eq_card (frobeniusPrimeSet K L C) x).symm
 
 /-- The Frobenius `ψ` function is nonnegative. -/
