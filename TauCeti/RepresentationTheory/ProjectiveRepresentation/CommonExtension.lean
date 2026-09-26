@@ -68,17 +68,6 @@ end
 
 section
 
-variable {k G : Type*} [CommMonoid k] [Group G] [Finite G]
-  [Finite (rootsOfUnity (Nat.card G) k)]
-
-/-- The common lifting extension is finite whenever its root-of-unity group is finite. -/
-instance : Finite (projectiveLiftingFactorSet k G).Extension := by
-  infer_instance
-
-end
-
-section
-
 variable {k G : Type*} [Field k] [Group G] [Finite G]
   {V : Type*} [AddCommMonoid V] [Module k V]
 
