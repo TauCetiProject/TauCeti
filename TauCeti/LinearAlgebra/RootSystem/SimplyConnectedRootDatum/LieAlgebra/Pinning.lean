@@ -21,12 +21,13 @@ by the Chevalley involution (`TauCeti.DynkinType.chevalleyInvolution_lieBasis_e`
 
 This module establishes the Serre-relation bracket vanishings that underlie the Chevalley
 commutator formulas, and applies them through the existing Kostant root-subgroup
-machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative ring are
-provided by
-`TauCeti.DynkinType.pinnedExp`, a thin wrapper over the existing
-`TauCeti.DynkinType.geckRootSubgroupMatrix` that converts the scalar to a `𝔾ₐ`-point; this
-module contributes only the bracket relations and their direct transfer to the represented
-pinning.
+machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative ring are taken
+directly from the existing Geck root-subgroup construction:
+`t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)`, whose values in the
+general linear group are given by `TauCeti.DynkinType.geckRootSubgroupMatrix` and whose
+one-parameter subgroup laws are inherited from the monoid-hom structure of
+`geckRootSubgroupPoints` via `map_one` and `map_mul`; this module contributes only the
+bracket relations and their direct transfer to the represented pinning.
 
 ## Main results
 
@@ -35,14 +36,6 @@ pinning.
 * `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero`: the Chevalley
   commutator relation (commuting case) for the represented pinning — the existing Kostant
   commutativity lemma applied through `geckRootSubgroupMatrix`.
-* `TauCeti.DynkinType.pinnedExp`: the uniform exponential `u ↦ exp(u • e_i)` over any
-  commutative ring, as a thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`; with the
-  root-subgroup identification
-  `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`, and the commuting-case
-  Chevalley relation `TauCeti.DynkinType.pinnedExp_comm_of_cartan_eq_zero`. The
-  one-parameter subgroup law is not re-proved here: it is inherited directly from the
-  monoid-hom structure of `TauCeti.DynkinType.geckRootSubgroupMatrix` via `map_one` and
-  `map_mul`.
 * `TauCeti.DynkinType.lie_lieBasis_e_e_e_of_cartan_eq_neg_one`: for a length-one root
   string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the one-sided
   Serre relation.
@@ -99,43 +92,6 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
     exact t.lie_lieBasis_e_e_of_cartan_eq_zero ht i j hA
   exact TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix
     _ _ _ _ _ _ hbracket _ _ _ _
-
-/-! ## The uniform exponential -/
-
-/-- The uniform exponential `u ↦ exp(u • e_i)` of the `i`-th simple raising generator, as a
-thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`: the scalar `u : A` in any
-commutative ring is converted to a `𝔾ₐ`-point through `Multiplicative.ofAdd` and
-`TauCeti.AdditiveGroup.gaPointsMulEquiv`. No exponential matrix is re-implemented here; the
-divided-power exponential nature of the underlying matrix is recorded in
-`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`, and the
-identification with the root-subgroup construction in
-`TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`. -/
-noncomputable def pinnedExp (A : Type*) [CommRing A]
-    (i : Fin t.rank) (u : A) :
-    Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
-  t.geckRootSubgroupMatrix ht (.inl i)
-    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
-
-/-- **Identification of the uniform exponential with the root-subgroup construction.**
-`pinnedExp` is the coercion to the general linear group of the parametrized Geck
-root-subgroup point `TauCeti.DynkinType.geckRootSubgroupPoints` at the corresponding
-`𝔾ₐ`-parameter. -/
-theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A]
-    (i : Fin t.rank) (u : A) :
-    t.pinnedExp ht A i u =
-      (t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u) :
-        Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) := by
-  rw [t.coe_geckRootSubgroupPoints ht]
-  rfl
-
-/-- The Chevalley commutator relation (commuting case) for the uniform exponentials: when
-the Cartan matrix entry is zero, the corresponding exponentials commute. This is
-`TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero` through the
-`pinnedExp` interface. -/
-theorem pinnedExp_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
-    (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0) (u v : A) :
-    Commute (t.pinnedExp ht A i u) (t.pinnedExp ht A j v) :=
-  t.geckRootSubgroupMatrix_comm_of_cartan_eq_zero ht A i j hA _ _
 
 /-! ## Length-one root strings: one-sided Serre vanishing -/
 
