@@ -27,11 +27,14 @@ noncomputable section
 
 open CategoryTheory Limits Topology Topology.RelCWComplex
 
-universe w v u
+universe w₁ w₂ w₃ w v u
 
 namespace TauCeti
 
-variable {X Y Z : Type w} [TopologicalSpace X] [T2Space X]
+section Cellularity
+
+variable {X : Type w₁} {Y : Type w₂} {Z : Type w₃}
+  [TopologicalSpace X] [T2Space X]
   [TopologicalSpace Y] [T2Space Y] [TopologicalSpace Z] [T2Space Z]
   {D : Set X} {D' : Set Y} {D'' : Set Z}
   {C : Set X} [RelCWComplex C D] {C' : Set Y} [RelCWComplex C' D']
@@ -54,6 +57,14 @@ lemma IsCellular.comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
     (hg : IsCellular g) (hf : IsCellular f) : IsCellular (g.comp f) := by
   intro n x hx
   exact hg n (f x) (hf n x hx)
+
+end Cellularity
+
+variable {X Y Z : Type w} [TopologicalSpace X] [T2Space X]
+  [TopologicalSpace Y] [T2Space Y] [TopologicalSpace Z] [T2Space Z]
+  {D : Set X} {D' : Set Y} {D'' : Set Z}
+  {C : Set X} [RelCWComplex C D] {C' : Set Y} [RelCWComplex C' D']
+  {C'' : Set Z} [RelCWComplex C'' D'']
 
 /-- A cellular map restricted to the `n`-th stage of the skeletal filtration. -/
 def skeletonMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
@@ -85,7 +96,7 @@ lemma skeletonMap_id (n : ℕ) :
 
 /-- Restricting a composite of cellular maps to a skeleton agrees with composing the
 restrictions. -/
-@[reassoc]
+@[simp, reassoc]
 lemma skeletonMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
     (hg : IsCellular g) (hf : IsCellular f) (n : ℕ) :
     skeletonMap (g.comp f) (hg.comp hf) n =
@@ -124,7 +135,7 @@ lemma skeletonPairMap_id (n : ℕ) :
   ext : 2 <;> simp
 
 /-- The map of skeletal pairs induced by a composite is the composite of the maps of pairs. -/
-@[reassoc]
+@[simp, reassoc]
 lemma skeletonPairMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
     (hg : IsCellular g) (hf : IsCellular f) (n : ℕ) :
     skeletonPairMap (g.comp f) (hg.comp hf) n =
@@ -146,7 +157,7 @@ lemma cellularChainGroupMap_id (n : ℕ) :
   simp [cellularChainGroupMap, skeletonPairMap_id, TopPair.singularHomologyMap.eq_def]
 
 /-- Composition of cellular maps induces composition on each cellular chain group. -/
-@[reassoc]
+@[simp, reassoc]
 lemma cellularChainGroupMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
     (hg : IsCellular g) (hf : IsCellular f) (n : ℕ) :
     cellularChainGroupMap R (g.comp f) (hg.comp hf) n =
@@ -162,8 +173,13 @@ lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
     skeletonPairδ C R n ≫
         SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n =
       cellularChainGroupMap R f hf (n + 1) ≫ skeletonPairδ C' R n := by
-  exact (skeletonPair C (n + 1)).singularHomologyδ_naturality R
+  have h := (skeletonPair C (n + 1)).singularHomologyδ_naturality R
     (skeletonPairMap f hf (n + 1)) (n + 1) n
+  rw [skeletonPairMap_snd] at h
+  change skeletonPairδ C R n ≫
+      SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n =
+    cellularChainGroupMap R f hf (n + 1) ≫ skeletonPairδ C' R n at h
+  exact h
 
 /-- Naturality of the quotient map from the homology of a skeleton to its cellular chain
 group. -/
@@ -171,8 +187,11 @@ lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
     SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
         skeletonPairπ C' R n =
       skeletonPairπ C R n ≫ cellularChainGroupMap R f hf n := by
-  exact SSetPair.homologyπ_naturality
-    (TopPair.toSSetPair.map (skeletonPairMap f hf n)) R n
+  simpa only [cellularChainGroupMap, skeletonPairπ, skeletonPairMap_fst,
+    skeletonPair_fst, TopPair.toSSetPair_map_right,
+    TopPair.toSSetPair_obj_right] using
+      SSetPair.homologyπ_naturality
+        (TopPair.toSSetPair.map (skeletonPairMap f hf n)) R n
 
 /-- The maps induced on consecutive skeletal relative homology groups commute with the
 cellular differential. -/
@@ -230,7 +249,7 @@ lemma cellularChainComplexMap_id :
   simp only [Category.id_comp, eqToHom_trans, eqToHom_refl]
 
 /-- Composition of cellular maps induces composition of their cellular chain maps. -/
-@[reassoc]
+@[simp, reassoc]
 lemma cellularChainComplexMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
     (hg : IsCellular g) (hf : IsCellular f) :
     cellularChainComplexMap R (g.comp f) (hg.comp hf) =
