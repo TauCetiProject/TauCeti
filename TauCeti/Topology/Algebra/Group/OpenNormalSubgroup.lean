@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Constructions of open normal subgroups
@@ -128,18 +128,17 @@ theorem continuous_mk_comap [SeparatelyContinuousMul H] {X : Type*} [Topological
     (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) {g : X → G}
     (hg : Continuous fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) :
     Continuous fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup) := by
-  apply IsLocallyConstant.continuous
-  rw [IsLocallyConstant.iff_isOpen_fiber]
-  intro d
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective d
-  have : (fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup)) ⁻¹'
-      {(y : G ⧸ (U.comap f hf).toSubgroup)} =
-      (fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) ⁻¹' {(f y : H ⧸ U.toSubgroup)} := by
-    ext x
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, QuotientGroup.eq,
-      toSubgroup_comap, Subgroup.mem_comap, map_mul, map_inv]
-  rw [this]
-  exact hg.isOpen_preimage _ (isOpen_discrete _)
+  let φ := QuotientGroup.map (U.comap f hf).toSubgroup U.toSubgroup f
+    (toSubgroup_comap U f hf).le
+  have hφ : Function.Injective φ := by
+    intro a b
+    obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective b
+    simp only [φ, QuotientGroup.map_mk, QuotientGroup.eq, toSubgroup_comap,
+      Subgroup.mem_comap, map_mul, map_inv]
+    exact id
+  exact (IsLocallyConstant.desc _ φ
+    ((IsLocallyConstant.iff_continuous _).2 hg) hφ).continuous
 
 end OpenNormalSubgroup
 
