@@ -25,7 +25,7 @@ Coefficients are an object `R` of an abelian category with coproducts.
 
 ## Main definitions and results
 
-* `TopCat.reducedMayerVietorisδ`: the connecting morphism `Hₖ₊₁(X) ⟶ H̃ₖ(U ∩ V)`.
+* `TopCat.reducedMayerVietorisδ`: the connecting morphism `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)`.
 * `TopCat.reducedMayerVietorisδ_comp_ι`: it lifts the Mayer–Vietoris connecting morphism.
 * `TopCat.reducedMayerVietorisδ_naturality`: naturality in maps of covered spaces.
 * `TopCat.isIso_reducedMayerVietorisδ`: it is an isomorphism when `U` and `V` have vanishing
@@ -72,7 +72,7 @@ private lemma δ_comp_singularHomology₀ε :
     (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))),
     reassoc_of% δ_comp_homologyMap_inclusion R hU hV hUV 0, zero_comp]
 
-/-- The Mayer–Vietoris connecting morphism `Hₖ₊₁(X) ⟶ H̃ₖ(U ∩ V)` of an open cover of `X` by `U`
+/-- The Mayer–Vietoris connecting morphism `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)` of an open cover of `X` by `U`
 and `V`, into the reduced singular homology of the intersection. It lifts the Mayer–Vietoris
 connecting morphism through the inclusion of reduced into ordinary homology
 (`TopCat.reducedMayerVietorisδ_comp_ι`). -/
@@ -94,7 +94,7 @@ lemma reducedMayerVietorisδ_comp_ι (k : ℕ) :
 
 /-- **The reduced Mayer–Vietoris connecting morphism is an isomorphism when both open sets are
 acyclic in the adjacent degrees**: if the reduced homology of `U` and of `V` vanishes in degrees
-`k` and `k + 1`, then `Hₖ₊₁(X) ⟶ H̃ₖ(U ∩ V)` is an isomorphism. -/
+`k` and `k + 1`, then `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)` is an isomorphism. -/
 theorem isIso_reducedMayerVietorisδ {k : ℕ}
     (hU₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj (of U)))
     (hV₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj (of V)))

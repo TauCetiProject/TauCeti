@@ -15,20 +15,20 @@ public import TauCeti.AlgebraicTopology.Sphere.Puncture
 For a point `p` of the unit sphere `S` of a real normed space, the complements of `p` and of `-p`
 form an open cover of `S` by two contractible sets whose intersection is `S ∖ {p, -p}`. The
 reduced Mayer–Vietoris connecting morphism of this cover is therefore an isomorphism
-`Hₖ₊₁(S) ≅ H̃ₖ(S ∖ {p, -p})` in every degree. In a real inner product space, `S ∖ {p, -p}` is
+`Hₖ₊₁(S) ≅ H_redₖ(S ∖ {p, -p})` in every degree. In a real inner product space, `S ∖ {p, -p}` is
 homotopy equivalent to the unit sphere of the orthogonal complement `(ℝ ∙ p)ᗮ`, and composing
-gives the isomorphism `H̃ₖ₊₁(S) ≅ H̃ₖ(S ∩ (ℝ ∙ p)ᗮ)` which lowers the dimension of the sphere and
-the degree together.
+gives the isomorphism `H_redₖ₊₁(S) ≅ H_redₖ(S ∩ (ℝ ∙ p)ᗮ)`, lowering both the sphere's dimension
+and the degree.
 
 Coefficients are an object `R` of an abelian category with coproducts.
 
 ## Main definitions and results
 
 * `TauCeti.isIso_reducedMayerVietorisδ_sphere`: the reduced Mayer–Vietoris connecting morphism
-  `Hₖ₊₁(S) ⟶ H̃ₖ(S ∖ {p, -p})` of the cover of `S` by the complements of `p` and `-p` is an
+  `Hₖ₊₁(S) ⟶ H_redₖ(S ∖ {p, -p})` of the cover of `S` by the complements of `p` and `-p` is an
   isomorphism.
 * `TauCeti.reducedSingularHomologySphereSuccIso`: the isomorphism
-  `H̃ₖ₊₁(S) ≅ H̃ₖ(S ∩ (ℝ ∙ p)ᗮ)`, given by that connecting morphism followed by the homotopy
+  `H_redₖ₊₁(S) ≅ H_redₖ(S ∩ (ℝ ∙ p)ᗮ)`, given by that connecting morphism followed by the homotopy
   equivalence of `S ∖ {p, -p}` with the equator.
 
 ## References
@@ -54,7 +54,7 @@ section Normed
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- **The Mayer–Vietoris isomorphism of a sphere.** The reduced Mayer–Vietoris connecting
-morphism `Hₖ₊₁(S) ⟶ H̃ₖ(S ∖ {p, -p})` of the cover of the unit sphere `S` by the complements of
+morphism `Hₖ₊₁(S) ⟶ H_redₖ(S ∖ {p, -p})` of the cover of the unit sphere `S` by the complements of
 `p` and `-p` is an isomorphism in every degree, since both complements are contractible. -/
 theorem isIso_reducedMayerVietorisδ_sphere (k : ℕ) :
     IsIso (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
