@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.Coding.EuclideanDual
 public import TauCeti.InformationTheory.Coding.Matrix
 public import TauCeti.InformationTheory.Coding.Reindex
+
+import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 
 /-!
 # A systematic two-coordinate code under coordinate exchange
@@ -67,9 +70,9 @@ theorem finrank_code (a : F) : Module.finrank F (code a) = 1 := by
   simpa using (linearIndependent_row_generator a).rank_matrix
 
 /-- The displayed parity-check matrix cuts out exactly the generated code. -/
--- Use this as an explicit rewrite: `Matrix.checkedBy_eq_euclideanDual_generatedBy` already
--- simplifies its left-hand side, so a `simp` annotation here would violate `simpNF`.
-theorem checkedBy_check (a : F) : (check a).checkedBy = code a := by
+@[simp]
+theorem checkedBy_check (a : F) : Submodule.euclideanDual (check a).generatedBy = code a := by
+  rw [← Matrix.checkedBy_eq_euclideanDual_generatedBy]
   simpa only [generator, check, code] using
     (Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one
       (of fun _ _ ↦ a : Matrix (Fin 1) (Fin 1) F)).symm
@@ -78,7 +81,8 @@ theorem checkedBy_check (a : F) : (check a).checkedBy = code a := by
 @[simp]
 theorem mem_code_iff (a : F) (x : Fin 1 ⊕ Fin 1 → F) :
     x ∈ code a ↔ x (Sum.inr 0) = a * x (Sum.inl 0) := by
-  rw [← checkedBy_check, Matrix.mem_checkedBy_iff]
+  rw [← checkedBy_check, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
+    Matrix.mem_checkedBy_iff]
   have hentry : (check a *ᵥ x) 0 = -(a * x (Sum.inl 0)) + x (Sum.inr 0) := by
     simp [check, Matrix.mulVec, dotProduct, Matrix.transpose]
   constructor
