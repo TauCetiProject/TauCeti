@@ -49,45 +49,49 @@ variable {x : ThricePuncturedSphere}
 /-- The conjugacy class of a positive peripheral loop around `0` at `x`. -/
 noncomputable def periph0ConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  FundamentalGroup.conjClassAt basePt x periph0
+  FundamentalGroup.conjClassAt basePt x periph0 ⟨PathConnectedSpace.somePath basePt x⟩
 
 /-- The conjugacy class of a positive peripheral loop around `1` at `x`. -/
 noncomputable def periph1ConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  FundamentalGroup.conjClassAt basePt x periph1
+  FundamentalGroup.conjClassAt basePt x periph1 ⟨PathConnectedSpace.somePath basePt x⟩
 
 /-- The conjugacy class transported from the product-one element `periphInf` at `x`. -/
 noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
-  FundamentalGroup.conjClassAt basePt x periphInf
+  FundamentalGroup.conjClassAt basePt x periphInf ⟨PathConnectedSpace.somePath basePt x⟩
 
 /-- The path-independent class of `periph0` at `x` is `periph0ConjClass x`. -/
 @[simp] theorem conjClassAt_basePt_periph0 :
-    FundamentalGroup.conjClassAt basePt x periph0 = periph0ConjClass x :=
+    FundamentalGroup.conjClassAt basePt x periph0
+      ⟨PathConnectedSpace.somePath basePt x⟩ = periph0ConjClass x :=
   (rfl)
 
 /-- The path-independent class of `periph1` at `x` is `periph1ConjClass x`. -/
 @[simp] theorem conjClassAt_basePt_periph1 :
-    FundamentalGroup.conjClassAt basePt x periph1 = periph1ConjClass x :=
+    FundamentalGroup.conjClassAt basePt x periph1
+      ⟨PathConnectedSpace.somePath basePt x⟩ = periph1ConjClass x :=
   (rfl)
 
 /-- The path-independent class of `periphInf` at `x` is `periphInfConjClass x`. -/
 @[simp] theorem conjClassAt_basePt_periphInf :
-    FundamentalGroup.conjClassAt basePt x periphInf = periphInfConjClass x :=
+    FundamentalGroup.conjClassAt basePt x periphInf
+      ⟨PathConnectedSpace.somePath basePt x⟩ = periphInfConjClass x :=
   (rfl)
 
 /-- At the standard basepoint, the peripheral class at `0` is the class of `periph0`. -/
 @[simp] theorem periph0ConjClass_basePt : periph0ConjClass basePt = ConjClasses.mk periph0 :=
-  FundamentalGroup.conjClassAt_self basePt periph0
+  FundamentalGroup.conjClassAt_self basePt periph0 ⟨PathConnectedSpace.somePath basePt basePt⟩
 
 /-- At the standard basepoint, the peripheral class at `1` is the class of `periph1`. -/
 @[simp] theorem periph1ConjClass_basePt : periph1ConjClass basePt = ConjClasses.mk periph1 :=
-  FundamentalGroup.conjClassAt_self basePt periph1
+  FundamentalGroup.conjClassAt_self basePt periph1 ⟨PathConnectedSpace.somePath basePt basePt⟩
 
 /-- At the standard basepoint, the class of the product-one element is the class of `periphInf`. -/
 @[simp] theorem periphInfConjClass_basePt :
     periphInfConjClass basePt = ConjClasses.mk periphInf :=
   FundamentalGroup.conjClassAt_self basePt periphInf
+    ⟨PathConnectedSpace.somePath basePt basePt⟩
 
 /-- The class at `0` is natural under transport between any two basepoints. -/
 @[simp] theorem map_periph0ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
@@ -95,6 +99,7 @@ noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
         FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periph0ConjClass x) = periph0ConjClass y :=
   FundamentalGroup.map_conjClassAt δ periph0
+    ⟨PathConnectedSpace.somePath basePt x⟩ ⟨PathConnectedSpace.somePath basePt y⟩
 
 /-- The class at `1` is natural under transport between any two basepoints. -/
 @[simp] theorem map_periph1ConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
@@ -102,6 +107,7 @@ noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
         FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periph1ConjClass x) = periph1ConjClass y :=
   FundamentalGroup.map_conjClassAt δ periph1
+    ⟨PathConnectedSpace.somePath basePt x⟩ ⟨PathConnectedSpace.somePath basePt y⟩
 
 /-- The class of the product-one element is natural under transport between basepoints. -/
 @[simp] theorem map_periphInfConjClass {y : ThricePuncturedSphere} (δ : Path x y) :
@@ -109,5 +115,6 @@ noncomputable def periphInfConjClass (x : ThricePuncturedSphere) :
         FundamentalGroup ThricePuncturedSphere x →* FundamentalGroup ThricePuncturedSphere y)
       (periphInfConjClass x) = periphInfConjClass y :=
   FundamentalGroup.map_conjClassAt δ periphInf
+    ⟨PathConnectedSpace.somePath basePt x⟩ ⟨PathConnectedSpace.somePath basePt y⟩
 
 end TauCeti.ThricePuncturedSphere
