@@ -286,6 +286,13 @@ theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Path x₀ x₁} {γ δ : Pat
     (trans_assoc e.symm e δ).symm.trans (trans_left_of_nullhomotopic (symm_trans e))
   exact hγ.symm.trans (((refl e.symm).hcomp h).trans hδ)
 
+/-- A loop whose conjugate by a path is null-homotopic is itself null-homotopic. This is the
+path-homotopy analogue of `a * b * a⁻¹ = 1 → b = 1`. -/
+theorem of_conj_nullhomotopic {x₀ x₁ : X} {α : Path x₀ x₁} {δ : Path x₁ x₁}
+    (h : ((α.trans δ).trans α.symm).Homotopic (Path.refl x₀)) :
+    δ.Homotopic (Path.refl x₁) :=
+  trans_left_cancel ((of_trans_symm h).trans (trans_refl α).symm)
+
 /-- The image of a based loop under a null-homotopic continuous map is null-homotopic in the
 target: a map homotopic to a constant collapses every loop to the constant loop. -/
 theorem map_nullhomotopic_of_nullhomotopic {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}

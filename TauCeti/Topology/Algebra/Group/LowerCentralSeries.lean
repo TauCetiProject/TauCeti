@@ -64,6 +64,7 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   commutators `⁅H, G⁆`.
 * `TauCeti.normal_of_pLowerCentralStep_le_of_le`: a subgroup between `pLowerCentralStep p R` and
   `R` is normal.
+* `TauCeti.mk_conjNormal_eq`: conjugation by `G` acts trivially on `N ⧸ Nᵖ[N, G]`.
 * `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a closed normal subgroup
   `R` with closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is
   invariant under conjugation by `G`.
@@ -275,6 +276,33 @@ theorem normal_of_pLowerCentralStep_le_of_le {R K : Subgroup G} (hRK : pLowerCen
     (hKR : K ≤ R) : K.Normal :=
   commutator_top_right_le_iff.mp
     ((commutator_mono_left hKR).trans ((commutator_le_pLowerCentralStep R).trans hRK))
+
+/-- One step of the lower `p`-series of a subgroup `N`, read inside `N`, is a closed subgroup of
+`N`. -/
+theorem isClosed_pLowerCentralStep_subgroupOf (N : Subgroup G) :
+    IsClosed ((pLowerCentralStep p N).subgroupOf N : Set N) :=
+  (isClosed_pLowerCentralStep N).preimage continuous_subtype_val
+
+/-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group: the `p`-th power of every element is `1`, since the
+`p`-th powers of the elements of `N` lie in `pLowerCentralStep p N`. -/
+theorem isPGroup_quotient_pLowerCentralStep_subgroupOf (N : Subgroup G) [N.Normal] :
+    IsPGroup p (N ⧸ (pLowerCentralStep p N).subgroupOf N) := fun q ↦ by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
+  refine ⟨1, ?_⟩
+  rw [pow_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
+  exact pow_mem_pLowerCentralStep n.2
+
+/-- **Conjugation acts trivially on `N ⧸ Nᵖ[N, G]`.** For a normal subgroup `N`, the class of the
+conjugate `g n g⁻¹` in the quotient of `N` by `pLowerCentralStep p N` is the class of `n`. -/
+@[simp]
+theorem mk_conjNormal_eq {N : Subgroup G} [N.Normal] (g : G) (n : N) :
+    ((MulAut.conjNormal g n : N) : N ⧸ (pLowerCentralStep p N).subgroupOf N) = n := by
+  rw [QuotientGroup.eq, mem_subgroupOf, coe_mul, coe_inv, MulAut.conjNormal_apply]
+  have h : ((g * (n : G) * g⁻¹)⁻¹ * n : G) = ⁅(n : G)⁻¹, g⁆⁻¹ := by
+    rw [commutatorElement_inv, commutatorElement_def]
+    group
+  rw [h]
+  exact (pLowerCentralStep p N).inv_mem (commutator_mem_pLowerCentralStep (N.inv_mem n.2) g)
 
 /-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a closed normal subgroup
 `R` and a homomorphism `φ` on `R` with closed kernel, `φ` kills `pLowerCentralStep p R` exactly when

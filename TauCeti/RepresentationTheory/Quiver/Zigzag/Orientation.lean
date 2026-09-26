@@ -190,7 +190,8 @@ theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
 
 /-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
 and the vertices are adjacent. -/
-@[simp]
+-- Keep `Nat.card`: arrow spaces have a `Finite` instance but no `Fintype` instance at this
+-- generality. Consumers with a `Fintype` instance can rewrite via `Nat.card_eq_fintype_card`.
 theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G.Adj i j)] :
     Nat.card (vertex G (Orientation.ofLinearOrder G) i ⟶
         vertex G (Orientation.ofLinearOrder G) j) =

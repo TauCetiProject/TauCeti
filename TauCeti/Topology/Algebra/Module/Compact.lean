@@ -1,11 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Andrew Yang
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Module.Quotient
@@ -44,6 +46,10 @@ witness that a compact totally disconnected topological ring is a compact module
 
 ## Main results
 
+* `Submodule.FG.isCompact`: over a compact semiring, a finitely generated submodule of a
+  topological module is compact.
+* `Submodule.span_eq_top_of_dense_closure`: over a compact ring, a finite set spans a Hausdorff
+  module as soon as a subset of its span generates a dense additive subgroup.
 * `OpenAddSubgroup.exists_submodule_isOpen_subset`: over a compact ring, an open additive subgroup
   of a topological module contains an open submodule.
 * `TauCeti.NonarchimedeanAddGroup.isLinearTopology`: over a compact ring, a nonarchimedean
@@ -72,6 +78,46 @@ witness that a compact totally disconnected topological ring is a compact module
 public section
 
 open Filter Topology
+
+section CompactSemiring
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace R] [CompactSpace R] [AddCommMonoid M]
+  [Module R M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M]
+
+/-- **A finitely generated submodule of a topological module over a compact semiring is compact.**
+Unlike Mathlib's `Submodule.isCompact_of_fg`, the semiring need not be commutative; the completed
+group algebra of a nonabelian profinite group is the case that needs this. -/
+theorem Submodule.FG.isCompact {N : Submodule R M} (hN : N.FG) : IsCompact (N : Set M) := by
+  -- The proof is that of Mathlib's `Submodule.isCompact_of_fg` (Andrew Yang): the submodule is the
+  -- image of a finite power of `R` under the continuous linear-combination map. Commutativity of
+  -- `R` is never used.
+  obtain ⟨s, hs⟩ := hN
+  have : LinearMap.range (Fintype.linearCombination R (α := s) Subtype.val) = N := by
+    simp [hs]
+  rw [← this]
+  refine isCompact_range ?_
+  simp only [Fintype.linearCombination, Finset.univ_eq_attach, LinearMap.coe_mk, AddHom.coe_mk]
+  fun_prop
+
+end CompactSemiring
+
+section CompactRing
+
+variable {R M : Type*} [Ring R] [TopologicalSpace R] [CompactSpace R] [AddCommGroup M]
+  [Module R M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul R M]
+
+/-- **A finite set spans a Hausdorff module over a compact ring as soon as a subset of its span
+generates a dense additive subgroup**: the span is compact, hence closed, and contains a dense
+set. -/
+theorem Submodule.span_eq_top_of_dense_closure {T S : Set M} (hT : T.Finite)
+    (hS : S ⊆ Submodule.span R T) (hd : Dense (AddSubgroup.closure S : Set M)) :
+    Submodule.span R T = ⊤ := by
+  have hle : (AddSubgroup.closure S : Set M) ⊆ Submodule.span R T := by
+    rw [← Submodule.coe_toAddSubgroup]
+    exact SetLike.coe_subset_coe.2 ((AddSubgroup.closure_le _).2 hS)
+  exact top_unique fun x _ ↦ closure_minimal hle (Submodule.fg_span hT).isCompact.isClosed (hd x)
+
+end CompactRing
 
 namespace TauCeti
 
