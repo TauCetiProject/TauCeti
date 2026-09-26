@@ -277,13 +277,9 @@ lemma range_sheafι_app (D : SchemeWeilDivisor X) (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U :=
   TauCeti.SheafOfModules.range_ι_val_app (submodule D) (op U)
 
-/-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism: over every open subset it is the
-inclusion of a submodule, hence injective. -/
-instance (D : SchemeWeilDivisor X) : Mono (sheafι D) := by
-  have : ∀ U : (Opens X)ᵒᵖ,
-      Mono (((Scheme.Modules.toPresheaf X).map (sheafι D)).app U) := fun U ↦
-    ConcreteCategory.mono_of_injective _ (sheafι_app_injective D U.unop)
-  exact (Scheme.Modules.toPresheaf X).mono_of_mono_map (NatTrans.mono_of_mono_app _)
+/-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism. -/
+instance (D : SchemeWeilDivisor X) : Mono (sheafι D) :=
+  SheafOfModules.Submodule.instMonoι (submodule D)
 
 /-- A morphism to `𝒦_X` whose sections all satisfy the order bound imposed by `D` factors through
 `𝒪_X(D)`. -/

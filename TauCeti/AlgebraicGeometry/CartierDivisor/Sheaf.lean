@@ -222,12 +222,8 @@ instance (D : CartierDivisor X) : Mono D.sheafι :=
   -- Mathlib's instance for the inclusion of a submodule is supplied explicitly.
   SheafOfModules.Submodule.instMonoι D.submodule
 
-instance (D : CartierDivisor X) (V : X.Opens) : Mono (D.sheafι.over V) := by
-  apply (SheafOfModules.forget _).mono_of_mono_map
-  change Mono (D.sheafι.over V).val
-  apply PresheafOfModules.mono_of_injective
-  intro W
-  exact Subtype.val_injective
+instance (D : CartierDivisor X) (V : X.Opens) : Mono (D.sheafι.over V) :=
+  SheafOfModules.Submodule.instMonoιOver D.submodule V
 
 /-- A morphism `M ⟶ 𝒦_X` all of whose sections lie in `𝒪_X(D)` factors through `𝒪_X(D)`. -/
 def sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
