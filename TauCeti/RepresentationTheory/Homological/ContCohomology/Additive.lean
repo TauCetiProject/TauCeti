@@ -290,7 +290,7 @@ end Functor
 applied to the corresponding map of topological representations. -/
 theorem cochainsMap_ofDiscreteModulePair_id {M N : Type v} [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N]
-    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N] (f : M →+ N)
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N] {f : M →+ N}
     (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) :
     cochainsMap (ContinuousMonoidHom.id G)
         (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) f.toIntLinearMap hf) =
