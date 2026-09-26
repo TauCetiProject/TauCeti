@@ -110,6 +110,44 @@ def linearHom : Sheaf J (Type (max u v w')) where
   obj := (TauCeti.SheafOfModules.linearHomSubfunctor M N).toFunctor
   property := TauCeti.SheafOfModules.isSheaf_linearHomSubfunctor M N
 
+/-- Convert a linear Hom section over `U` to a morphism of the restricted module sheaves. -/
+private def linearHomObjToFun (U : C) (φ : (linearHom M N).obj.obj (op U)) :
+    M.over U ⟶ N.over U :=
+  ⟨PresheafOfModules.homMk φ.val (fun V ↦ φ.property V.unop)⟩
+
+/-- Convert a morphism of restricted module sheaves to its underlying linear Hom section. -/
+private def linearHomObjInvFun (U : C) (φ : M.over U ⟶ N.over U) :
+    (linearHom M N).obj.obj (op U) :=
+  ⟨(PresheafOfModules.toPresheaf _).map φ.val,
+    fun V r m ↦ (φ.val.app (op V)).hom.map_smul r m⟩
+
+/-- The forward conversion evaluates by applying the original local morphism. -/
+private theorem linearHomObjToFun_app (U : C)
+    (φ : (linearHom M N).obj.obj (op U)) (V : Over U) (m : M.val.obj (op V.left)) :
+    ((linearHomObjToFun M N U φ).val.app (op V)) m = φ.val.app (op V) m := by
+  rfl
+
+/-- The inverse conversion evaluates by applying the original restricted morphism. -/
+private theorem linearHomObjInvFun_app (U : C) (φ : M.over U ⟶ N.over U)
+    (V : Over U) (m : M.val.obj (op V.left)) :
+    (linearHomObjInvFun M N U φ).val.app (op V) m = (φ.val.app (op V)) m := by
+  rfl
+
+/-- The two objectwise conversions cancel on every component. -/
+private theorem linearHomObjInvToFun_app (U : C)
+    (φ : (linearHom M N).obj.obj (op U)) (V : (Over U)ᵒᵖ)
+    (m : (M.over U).val.obj V) :
+    (linearHomObjInvFun M N U (linearHomObjToFun M N U φ)).val.app V m =
+      φ.val.app V m := by
+  rfl
+
+/-- The two objectwise conversions cancel on every component in the other direction. -/
+private theorem linearHomObjToInvFun_app (U : C) (φ : M.over U ⟶ N.over U)
+    (V : (Over U)ᵒᵖ) (m : (M.over U).val.obj V) :
+    (linearHomObjToFun M N U (linearHomObjInvFun M N U φ)).val.app V m =
+      φ.val.app V m := by
+  rfl
+
 /-- Sections of the linear Hom sheaf over an object are precisely morphisms between the
 restricted sheaves of modules.
 
@@ -119,23 +157,22 @@ with `(linearHomObjEquiv M N U).symm`; its evaluation simplifies by
 `Equiv.apply_symm_apply`, without unfolding the sheaf construction. -/
 def linearHomObjEquiv (U : C) :
     (linearHom M N).obj.obj (op U) ≃ (M.over U ⟶ N.over U) where
-  toFun φ := ⟨PresheafOfModules.homMk φ.val (fun V => φ.property V.unop)⟩
-  invFun φ := ⟨(PresheafOfModules.toPresheaf _).map φ.val,
-    fun V r m => (φ.val.app (op V)).hom.map_smul r m⟩
+  toFun := linearHomObjToFun M N U
+  invFun := linearHomObjInvFun M N U
   left_inv φ := by
     apply Subtype.ext
     apply NatTrans.ext
     funext V
     ext m
-    rfl
+    exact linearHomObjInvToFun_app M N U φ V m
   right_inv φ := by
     ext V m
-    rfl
+    exact linearHomObjToInvFun_app M N U φ V m
 
 private theorem linearHomObjEquiv_app (U : C)
     (φ : (linearHom M N).obj.obj (op U)) (V : Over U) (m : M.val.obj (op V.left)) :
     ((linearHomObjEquiv M N U φ).val.app (op V)) m = φ.val.app (op V) m := by
-  rfl
+  exact linearHomObjToFun_app M N U φ V m
 
 /-- Restriction of a Hom section restricts its component linear maps. -/
 @[simp]
@@ -147,12 +184,31 @@ theorem linearHomObjEquiv_map_app {U V W : C} (f : V ⟶ U) (g : W ⟶ V)
   rw [linearHomObjEquiv_app, linearHomObjEquiv_app]
   exact ConcreteCategory.congr_hom (presheafHom_map_app g f (g ≫ f) rfl φ.val) m
 
+/-- Convert a global linear Hom section to its morphism of module sheaves. -/
+private def linearHomSectionsToFun (s : (linearHom M N).obj.sections) : M ⟶ N :=
+  ⟨PresheafOfModules.homMk
+    (presheafHomSectionsEquiv M.val.presheaf N.val.presheaf
+      ⟨fun U ↦ (s.val U).val, fun f ↦ congrArg Subtype.val (s.property f)⟩)
+    (fun U ↦ (s.val U).property (Over.mk (𝟙 U.unop)))⟩
+
+/-- The morphism converted from a global section evaluates at the identity slice. -/
+private theorem linearHomSectionsToFun_app (s : (linearHom M N).obj.sections) (U : Cᵒᵖ)
+    (m : M.val.obj U) :
+    ((linearHomSectionsToFun M N s).val.app U) m =
+      (s.val U).val.app (op (Over.mk (𝟙 U.unop))) m := by
+  rfl
+
+/-- Global conversion agrees componentwise with the objectwise conversion. -/
+private theorem linearHomSectionsToObjFun_app (s : (linearHom M N).obj.sections) (U : Cᵒᵖ)
+    (m : M.val.obj U) :
+    ((linearHomSectionsToFun M N s).val.app U) m =
+      ((linearHomObjToFun M N U.unop (s.val U)).val.app
+        (op (Over.mk (𝟙 U.unop)))) m := by
+  rfl
+
 /-- Global sections of the linear Hom sheaf are morphisms of sheaves of modules. -/
 def linearHomSectionsEquiv : (linearHom M N).obj.sections ≃ (M ⟶ N) where
-  toFun s := ⟨PresheafOfModules.homMk
-    (presheafHomSectionsEquiv M.val.presheaf N.val.presheaf
-      ⟨fun U => (s.val U).val, fun f => congrArg Subtype.val (s.property f)⟩)
-    (fun U => (s.val U).property (Over.mk (𝟙 U.unop)))⟩
+  toFun := linearHomSectionsToFun M N
   invFun φ :=
     ⟨fun U => (linearHomObjEquiv M N U.unop).symm (φ.over U.unop), by
       intro U V f
@@ -188,7 +244,8 @@ theorem linearHomSectionsEquiv_app (s : (linearHom M N).obj.sections) (U : Cᵒ�
     (m : M.val.obj U) :
     ((linearHomSectionsEquiv M N s).val.app U) m =
       ((linearHomObjEquiv M N U.unop (s.val U)).val.app
-        (op (Over.mk (𝟙 U.unop)))) m := by rfl
+        (op (Over.mk (𝟙 U.unop)))) m := by
+  exact linearHomSectionsToObjFun_app M N s U m
 
 /-- The global Hom section associated to a morphism restricts to that morphism on each slice. -/
 @[simp]
