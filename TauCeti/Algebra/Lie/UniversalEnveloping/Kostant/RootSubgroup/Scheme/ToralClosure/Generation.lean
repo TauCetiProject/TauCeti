@@ -62,11 +62,7 @@ variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 
 /-- If the represented universal weight-torus point belongs to the elementary subgroup, then the
-root-generated defining ideal is killed by the weight-torus coordinate map.
-
-It is enough to apply the hypothesis over the coordinate ring of the split torus itself. The
-identity algebra map is its universal point, so vanishing at the corresponding represented matrix
-is exactly vanishing under `GeneralLinear.weightTorusCoordinateMap wt`. -/
+root-generated defining ideal is killed by the weight-torus coordinate map. -/
 theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_mem_elementary
     (huniv :
       let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
