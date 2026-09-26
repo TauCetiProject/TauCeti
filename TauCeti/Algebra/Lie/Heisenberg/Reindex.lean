@@ -28,7 +28,7 @@ which yields the Chevalley commutator [x_α(u), x_β(v)] = x_{α+β}(N(α,β)uv)
 open Finset
 
 /-- Factorial successor in R: ((k+1)! : R) = (k+1) * (k! : R). -/
-theorem factorial_succ_cast {R : Type*} [Semiring R] (k : ℕ) :
+private theorem factorial_succ_cast {R : Type*} [Semiring R] (k : ℕ) :
     ((Nat.factorial (k + 1) : ℕ) : R) = ((k + 1 : ℕ) : R) * ((Nat.factorial k : ℕ) : R) := by
   rw [Nat.factorial_succ]
   push_cast
@@ -37,15 +37,15 @@ theorem factorial_succ_cast {R : Type*} [Semiring R] (k : ℕ) :
 variable {R : Type*} [Field R] [CharZero R]
 
 /-- (k+1 : R) is nonzero. -/
-theorem succ_cast_ne_zero (k : ℕ) : ((k + 1 : ℕ) : R) ≠ 0 := by
+private theorem succ_cast_ne_zero (k : ℕ) : ((k + 1 : ℕ) : R) ≠ 0 := by
   exact Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
 
 /-- (k! : R) is nonzero. -/
-theorem factorial_cast_ne_zero (k : ℕ) : ((Nat.factorial k : ℕ) : R) ≠ 0 := by
+private theorem factorial_cast_ne_zero (k : ℕ) : ((Nat.factorial k : ℕ) : R) ≠ 0 := by
   exact Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
 
 /-- The key coefficient identity: (k+1)/(k+1)! = 1/k!. -/
-theorem coeff_identity (k : ℕ) :
+private theorem coeff_identity (k : ℕ) :
     ((k + 1 : ℕ) : R) / ((Nat.factorial (k + 1) : ℕ) : R) =
     1 / ((Nat.factorial k : ℕ) : R) := by
   rw [factorial_succ_cast k]
