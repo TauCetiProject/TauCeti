@@ -12,9 +12,10 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 /-!
 # The polynomial `(1 + X) ^ n - 1`
 
-The polynomial `(1 + X) ^ n - 1` over a commutative ring `R` is monic of degree `n` for `n ≠ 0`,
+The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
-`n.choose k`. When `n = p ^ m` is a power of a prime `p`, every binomial coefficient
+`n.choose k`. Over a commutative ring, when `n = p ^ m` is a power of a prime `p`, every
+binomial coefficient
 `(p ^ m).choose k` with `0 < k < p ^ m` is divisible by `p`, so the polynomial is
 *distinguished* at the ideal `(p)`: monic with all non-leading coefficients in `(p)`. Over the
 `p`-adic integers this is the shape of divisor for which Mathlib's Weierstrass division in
@@ -42,28 +43,30 @@ open Polynomial
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*}
+
+section Ring
+
+variable [Ring R]
 
 /-- The polynomial `(1 + X) ^ n - 1` has `natDegree` equal to `n`. For `n ≠ 0` this is its
 degree; at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention. -/
 @[simp]
 theorem natDegree_one_add_X_pow_sub_one [Nontrivial R] (n : ℕ) :
     ((1 + X) ^ n - 1 : R[X]).natDegree = n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp
-  have h1 : (1 + X : R[X]).Monic := by rw [add_comm, ← C_1]; exact monic_X_add_C 1
-  have h : ((1 + X : R[X]) ^ n).natDegree = n := by
-    rw [h1.natDegree_pow, natDegree_one_add, natDegree_X, mul_one]
-  rw [natDegree_sub_eq_left_of_natDegree_lt (by rw [natDegree_one, h]; exact hn), h]
+  simpa [add_comm] using
+    (natDegree_sub_C (p := (X + C (1 : R)) ^ n) (a := 1)).trans
+      (natDegree_pow_X_add_C n 1)
 
 /-- The polynomial `(1 + X) ^ n - 1` is monic for `n ≠ 0`. -/
 theorem monic_one_add_X_pow_sub_one {n : ℕ} (hn : n ≠ 0) : ((1 + X) ^ n - 1 : R[X]).Monic := by
   nontriviality R
-  have h1 : (1 + X : R[X]).Monic := by rw [add_comm, ← C_1]; exact monic_X_add_C 1
-  refine (h1.pow n).sub_of_left ?_
-  rw [degree_one, degree_eq_natDegree (h1.pow n).ne_zero, h1.natDegree_pow, natDegree_one_add,
-    natDegree_X, mul_one]
-  exact_mod_cast Nat.pos_of_ne_zero hn
+  rw [Monic, leadingCoeff, natDegree_one_add_X_pow_sub_one]
+  simp [coeff_sub, coeff_one_add_X_pow, coeff_one, hn]
+
+end Ring
+
+variable [CommRing R]
 
 /-- **`(1 + X) ^ (p ^ m) - 1` is a distinguished polynomial at `(p)`**, for a prime `p`: it is
 monic, its constant coefficient is `0`, and its other non-leading coefficients are the binomial

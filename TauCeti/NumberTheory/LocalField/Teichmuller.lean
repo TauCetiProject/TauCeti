@@ -150,10 +150,10 @@ to the representative of its residue-field image. -/
 theorem _root_.AlgEquiv.smul_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) :
     σ • teichmullerLift L a =
       teichmullerLift L (σ • a) := by
-  rw [← AlgEquiv.integerRingAlgEquiv_apply]
+  rw [← AlgEquiv.integerRingEquiv_apply]
   apply (eq_teichmullerLift_iff L).2
   constructor
-  · rw [AlgEquiv.integerRingAlgEquiv_apply,
+  · rw [AlgEquiv.integerRingEquiv_apply,
       IsLocalRing.ResidueField.residue_smul, residue_teichmullerLift]
   · rw [← map_pow, teichmullerLift_pow_natCard]
 

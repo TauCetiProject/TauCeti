@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+import Mathlib.LinearAlgebra.SpecialLinearGroup
 
 /-!
 # Determinant transformation laws, and determinants of updated rows
@@ -44,6 +45,8 @@ results over the rows multiplies the determinant by the total of the factors.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
+* `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
+  dimension at most one.
 
 ## Implementation notes
 
@@ -179,6 +182,24 @@ theorem det_eq_of_compl₁₂_self_eq_smul [NoZeroSMulDivisors R N] (b : Basis (
 end RankTwo
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- The determinant kernel on a finite free module of rank at most one is trivial. -/
+@[simp]
+theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGroup V]
+    [Module R V] [Module.Free R V] [Module.Finite R V] (hV : Module.finrank R V ≤ 1) :
+    (LinearEquiv.det (R := R) (M := V)).ker = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  nontriviality R
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hV with hV | hV
+  · let := (Module.finrank_eq_zero_iff_of_free R V).mp hV
+    exact Subsingleton.elim _ _
+  · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := R) (V := V) hV
+    exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
+
+end LinearEquiv
 
 namespace TauCeti
 

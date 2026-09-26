@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Block
+public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import TauCeti.Probability.Independence.DisjointBlocks
 -- Non-public: the zero-one law for a self-independent event is used only inside a proof.
 import Mathlib.Probability.Independence.ZeroOne
@@ -31,8 +31,8 @@ notions the two array symmetries ask for:
   unless its off-diagonal entries are trivial, since `X (i, j)` and `X (j, i)` are then equal while
   separate dissociation asks them to be independent; it may perfectly well be jointly dissociated.
 
-Index sets are presented, as in `Arrays/Block.lean`, by index maps `e f : ℕ → ℕ`, so that the two
-sub-arrays are the rectangular blocks `arrayBlock X e f` and `arrayBlock X e' f'` and the
+Index sets are presented, as in `Arrays/Block/Basic.lean`, by index maps `e f : ℕ → ℕ`.
+The two sub-arrays are the rectangular blocks `arrayBlock X e f` and `arrayBlock X e' f'` and the
 disjointness conditions read `Disjoint (Set.range e) (Set.range e')` and
 `Disjoint (Set.range f) (Set.range f')`. Ranges of maps `ℕ → ℕ` are exactly the nonempty sets of
 indices, and a block over an empty set of indices carries no information, so nothing is lost.
