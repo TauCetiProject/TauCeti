@@ -29,7 +29,7 @@ one upstairs, because a covering map is injective on the Hom-sets of the fundame
 
 * `TauCeti.semilocallySimplyConnectedAt_of_isLocalHomeomorph`: the image of a point under a local
   homeomorphism whose source has only null-homotopic loops is a point of semilocal simple
-  connectivity, in the unbased sense of `SemilocallySimplyConnectedAt`.
+  connectivity.
 * `TauCeti.SemilocallySimplyConnectedSpace.of_isLocalHomeomorph` and
   `TauCeti.SemilocallySimplyConnectedSpace.of_isCoveringMap`: the space-level forms, the second
   saying that the base of a surjective covering map with simply connected total space is
@@ -56,28 +56,26 @@ as every loop in the source is null-homotopic.**
 
 The witnessing neighbourhood of `p e` is the source of the local inverse of `p` at `e`; a loop
 inside it is carried by that local inverse to a loop in `E`, which is null-homotopic by
-hypothesis, and pushing the null-homotopy forward along `p` returns the original loop. The
-conclusion is the unbased predicate `SemilocallySimplyConnectedAt`, so it covers loops based at
-any point of the neighbourhood, not only at `p e`. -/
+hypothesis, and pushing the null-homotopy forward along `p` returns the original loop. -/
 theorem semilocallySimplyConnectedAt_of_isLocalHomeomorph (hp : IsLocalHomeomorph p)
     (hE : ∀ (e : E) (γ : Path e e), γ.Homotopic (Path.refl e)) (e : E) :
     SemilocallySimplyConnectedAt (p e) := by
   set φ := hp.localInverseAt e
   refine semilocallySimplyConnectedAt_iff.mpr
     ⟨φ.source, φ.open_source, hp.apply_self_mem_localInverseAt_source, ?_⟩
-  intro u γ hγ
+  intro γ hγ
   have hmem : ∀ t, γ t ∈ φ.source := fun t ↦ hγ ⟨t, rfl⟩
-  have hu : u ∈ φ.source := γ.source ▸ hmem 0
-  have hpu : p (φ u) = u := hp.apply_localInverseAt_of_mem hu
+  have hpu : p (φ (p e)) = p e :=
+    hp.apply_localInverseAt_of_mem hp.apply_self_mem_localInverseAt_source
   -- The local inverse of `p` at `e` carries `γ` to a loop at `φ u` in `E`.
-  have key := hE (φ u) (γ.map' (φ.continuousOn_toFun.mono hγ))
+  have key := hE (φ (p e)) (γ.map' (φ.continuousOn_toFun.mono hγ))
   -- Pushing that loop forward along `p` returns `γ`, once its endpoints are relabelled by `hpu`.
   have hdesc : ((γ.map' (φ.continuousOn_toFun.mono hγ)).map
       (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast hpu.symm hpu.symm = γ := by
     ext t
     exact hp.apply_localInverseAt_of_mem (hmem t)
-  have hrefl : ((Path.refl (φ u)).map
-      (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast hpu.symm hpu.symm = Path.refl u := by
+  have hrefl : ((Path.refl (φ (p e))).map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast
+      hpu.symm hpu.symm = Path.refl (p e) := by
     ext t
     exact hpu
   obtain ⟨F⟩ := key.map (⟨p, hp.continuous⟩ : C(E, X))
@@ -89,9 +87,9 @@ theorem SemilocallySimplyConnectedSpace.of_isLocalHomeomorph (hp : IsLocalHomeom
     (hsurj : Function.Surjective p)
     (hE : ∀ (e : E) (γ : Path e e), γ.Homotopic (Path.refl e)) :
     SemilocallySimplyConnectedSpace X :=
-  .of_forall_semilocallySimplyConnectedAt fun x ↦ by
+  ⟨fun x ↦ by
     obtain ⟨e, rfl⟩ := hsurj x
-    exact semilocallySimplyConnectedAt_of_isLocalHomeomorph hp hE e
+    exact semilocallySimplyConnectedAt_of_isLocalHomeomorph hp hE e⟩
 
 /-- **The base of a surjective covering map whose total space is simply connected is semilocally
 simply connected.** So the standing hypothesis under which the universal cover is built is not
@@ -114,11 +112,12 @@ and semilocally simply connected. Path-connectedness of the base is not inherite
 disconnected — so to iterate the construction one restricts to a path component of `E`. -/
 theorem _root_.IsCoveringMap.semilocallySimplyConnectedSpace [SemilocallySimplyConnectedSpace X]
     (hp : IsCoveringMap p) : SemilocallySimplyConnectedSpace E where
-  exists_mem_nhds_loops_nullhomotopic e := by
-    obtain ⟨U, hU, hloop⟩ :=
-      SemilocallySimplyConnectedSpace.exists_mem_nhds_loops_nullhomotopic (p e)
+  semilocallySimplyConnectedAt e := by
+    obtain ⟨U, hU, hloop⟩ := SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (p e)
     refine ⟨p ⁻¹' U, hp.continuous.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
-    have hdown := hloop (γ.map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))) hγ
+    have hdown := hloop (γ.map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))) <| by
+      rintro _ ⟨t, rfl⟩
+      exact hγ ⟨t, rfl⟩
     have key : Path.Homotopic.Quotient.mk γ = Path.Homotopic.Quotient.mk (Path.refl e) := by
       refine hp.injective_path_homotopic_map e e ?_
       simp only [← Path.Homotopic.Quotient.mk_map, Path.map_refl]
