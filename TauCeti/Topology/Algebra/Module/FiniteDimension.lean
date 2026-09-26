@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 
@@ -22,6 +23,12 @@ This is the multilinear companion of `LinearMap.continuous_of_finiteDimensional`
 `MultilinearMap.continuous_of_bound` asks for an explicit bound, which is exactly what one does
 not have when the multilinear map arrives from algebra — a tensor or symmetric-power
 construction, say — rather than from analysis.
+
+For a bilinear map between normed spaces the same continuity is recorded in the curried form
+that analysis consumes, `LinearMap.toContinuousLinearMap₂`: a bilinear form arriving from
+algebra can then be fed to results such as Mathlib's integration by parts, which are stated for
+`E →L[𝕜] F →L[𝕜] G`. `Continuous.bilinMap` is the form in which continuity of such a pairing is
+usually applied, to a pair of continuous maps into the two arguments.
 -/
 
 public section
@@ -57,3 +64,33 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
     (continuous_apply i)).congr fun m ↦ Module.Basis.coord_apply _ _ _
 
 end MultilinearMap
+
+namespace LinearMap
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The continuous bilinear map determined by a bilinear map out of two finite-dimensional
+spaces, obtained by applying `LinearMap.toContinuousLinearMap` in each argument. -/
+noncomputable def toContinuousLinearMap₂ (b : E →ₗ[𝕜] F →ₗ[𝕜] G) : E →L[𝕜] F →L[𝕜] G :=
+  toContinuousLinearMap (toContinuousLinearMap.toLinearMap ∘ₗ b)
+
+@[simp]
+theorem toContinuousLinearMap₂_apply_apply (b : E →ₗ[𝕜] F →ₗ[𝕜] G) (v : E) (w : F) :
+    b.toContinuousLinearMap₂ v w = b v w :=
+  (rfl)
+
+end LinearMap
+
+/-- A bilinear map out of two finite-dimensional spaces, paired with two continuous maps into its
+arguments, gives a continuous function. -/
+theorem Continuous.bilinMap {𝕜 E F G X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [TopologicalSpace X] {f : X → E} {g : X → F}
+    (hf : Continuous f) (hg : Continuous g) (b : E →ₗ[𝕜] F →ₗ[𝕜] G) :
+    Continuous fun x ↦ b (f x) (g x) :=
+  ((b.toContinuousLinearMap₂.continuous.comp hf).clm_apply hg).congr fun _ ↦
+    LinearMap.toContinuousLinearMap₂_apply_apply _ _ _
