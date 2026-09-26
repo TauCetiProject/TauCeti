@@ -15,11 +15,11 @@ Let `u` be an isotropic vector of a quadratic form `Q` and `w` a vector orthogon
 Eichler transvection `E_{u,w}` (`QuadraticMap.transvection`) is a proper isometry of `Q`. It has a
 canonical lift to the Spin group, written down inside the even Clifford algebra:
 
-`Ẽ_{u,w} = 1 + ι w * ι u`.
+`L_{u,w} = 1 + ι w * ι u`.
 
 Since `u` is isotropic and orthogonal to `w`, the element `ι w * ι u` squares to zero, so
-`Ẽ_{u,w}` is a unit with inverse `1 - ι w * ι u`. Conjugation by it is exactly `E_{u,w}` on the
-vectors, with no sign. Moreover `w ↦ Ẽ_{u,w}` turns addition into multiplication and kills
+`L_{u,w}` is a unit with inverse `1 - ι w * ι u`. Conjugation by it is exactly `E_{u,w}` on the
+vectors, with no sign. Moreover `w ↦ L_{u,w}` turns addition into multiplication and kills
 `K ∙ u`. So the lifts form a homomorphism from the additive group of `u^⊥ / K ∙ u` into the Spin
 group, lifting `QuadraticMap.transvectionHom` along `CliffordAlgebra.spinToSpecialOrthogonal`.
 These are the unipotent one-parameter subgroups of the Spin group. In particular every Eichler
@@ -35,15 +35,15 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
 
 * `CliffordAlgebra.spinTransvection hQ hu huw`: the Spin element `1 + ι w * ι u` lifting
   `E_{u,w}`.
-* `CliffordAlgebra.spinTransvectionHom hQ hu`: the homomorphism `w ↦ Ẽ_{u,w}` from the additive
+* `CliffordAlgebra.spinTransvectionHom hQ hu`: the homomorphism `w ↦ L_{u,w}` from the additive
   group of `u^⊥ / K ∙ u` into the Spin group.
 
 ## Main results
 
 * `CliffordAlgebra.coe_spinToSpecialOrthogonal_spinTransvection`: the lift acts on the quadratic
   space as the Eichler transvection `E_{u,w}`.
-* `CliffordAlgebra.spinTransvection_add`: `Ẽ_{u,w + w'} = Ẽ_{u,w} * Ẽ_{u,w'}`.
-* `CliffordAlgebra.spinTransvection_eq_one_iff`: for `u ≠ 0`, `Ẽ_{u,w} = 1` exactly when
+* `CliffordAlgebra.spinTransvection_add`: `L_{u,w + w'} = L_{u,w} * L_{u,w'}`.
+* `CliffordAlgebra.spinTransvection_eq_one_iff`: for `u ≠ 0`, `L_{u,w} = 1` exactly when
   `w ∈ K ∙ u`.
 * `CliffordAlgebra.spinToSpecialOrthogonal_comp_spinTransvectionHom`: the lifts lift
   `QuadraticMap.transvectionHom`.
@@ -219,7 +219,7 @@ private theorem polarBilin_ne_zero (hQ : Q.Nondegenerate) (hu₀ : u ≠ 0) : Q.
   fun h => hu₀ ((nondegenerate_polar_iff.mpr hQ).1 u fun y => by rw [h, LinearMap.zero_apply])
 
 /-- **The canonical Spin lift of an Eichler transvection**: for an isotropic vector `u` and a
-vector `w` orthogonal to it, the element `Ẽ_{u,w} = 1 + ι w * ι u` of the Spin group of a
+vector `w` orthogonal to it, the element `L_{u,w} = 1 + ι w * ι u` of the Spin group of a
 nondegenerate form. It acts on the quadratic space as the Eichler transvection `E_{u,w}`
 (`coe_spinToSpecialOrthogonal_spinTransvection`). -/
 def spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0) :
@@ -316,7 +316,7 @@ private theorem spinTransvectionAddHom_apply (hQ : Q.Nondegenerate) (hu : Q u = 
   rw [spinTransvectionAddHom, AddMonoidHom.mk'_apply, toMul_ofMul]
 
 /-- **The Spin lifts of the Eichler transvections with a fixed isotropic vector `u`**, as a
-homomorphism `w ↦ Ẽ_{u,w}` from the additive group of `u^⊥ / K ∙ u` into the Spin group. It lifts
+homomorphism `w ↦ L_{u,w}` from the additive group of `u^⊥ / K ∙ u` into the Spin group. It lifts
 `QuadraticMap.transvectionHom` (`spinToSpecialOrthogonal_comp_spinTransvectionHom`) and is
 injective for `u ≠ 0` (`spinTransvectionHom_injective`). -/
 noncomputable def spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
@@ -329,7 +329,7 @@ noncomputable def spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     rw [toMul_zero, spinTransvectionAddHom_apply]
     exact spinTransvection_eq_one_of_mem_span hQ hu _ hw'
 
-/-- The quotient homomorphism sends the class of `w` to the Spin lift `Ẽ_{u,w}`. -/
+/-- The quotient homomorphism sends the class of `w` to the Spin lift `L_{u,w}`. -/
 @[simp]
 theorem toMul_spinTransvectionHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : polar Q u w = 0) :
@@ -340,7 +340,7 @@ theorem toMul_spinTransvectionHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
   spinTransvectionAddHom_apply hQ hu _
 
 /-- **The Spin lifts lift the Eichler transvections**: followed by the projection
-`Spin(Q) → SO(Q)`, the homomorphism `w ↦ Ẽ_{u,w}` is `w ↦ E_{u,w}`. -/
+`Spin(Q) → SO(Q)`, the homomorphism `w ↦ L_{u,w}` is `w ↦ E_{u,w}`. -/
 theorem spinToSpecialOrthogonal_comp_spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     (spinToSpecialOrthogonal Q).toAdditive.comp (spinTransvectionHom hQ hu) =
       transvectionHom Q hu := by
