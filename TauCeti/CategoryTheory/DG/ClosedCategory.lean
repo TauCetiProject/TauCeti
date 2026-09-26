@@ -210,7 +210,6 @@ theorem dgClosedToHomotopy_map
   (rfl)
 
 /-- The quotient functor sends a closed morphism to its homotopy class. -/
-@[simp]
 theorem dgClosedToHomotopy_map_dgClosedHomOf {X Y : C} (f : DGHom R 0 X Y)
     (hf : f ∈ dgCycles R X Y) :
     (dgClosedToHomotopy R).map (dgClosedHomOf R f hf) =
@@ -239,7 +238,6 @@ instance full_dgClosedToHomotopy : (dgClosedToHomotopy (C := C) R).Full where
 
 /-- Two underlying closed morphisms have the same class in `H⁰` precisely when their
 difference is a boundary. -/
-@[simp]
 theorem dgClosedToHomotopy_map_eq_iff
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f g : X ⟶ Y) :
     (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g ↔
@@ -250,7 +248,6 @@ theorem dgClosedToHomotopy_map_eq_iff
     (dgClosedHom_mem_dgCycles R f) (dgClosedHom_mem_dgCycles R g)
 
 /-- A closed morphism becomes zero in `H⁰` exactly when it is a boundary. -/
-@[simp]
 theorem dgClosedToHomotopy_map_eq_zero_iff
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     (dgClosedToHomotopy R).map f = 0 ↔

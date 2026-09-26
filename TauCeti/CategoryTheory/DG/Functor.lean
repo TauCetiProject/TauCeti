@@ -123,7 +123,6 @@ theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R 
   map_mem_dgCycles R (F.map X Y) hf
 
 /-- The underlying functor of a DG functor acts on closed morphisms by its degree-zero map. -/
-@[simp]
 theorem dgClosedHom_forget_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     dgClosedHom R (F.forget.map f) = F.dgMap 0 (dgClosedHom R f) := by
@@ -133,7 +132,6 @@ theorem dgClosedHom_forget_map
 
 /-- The underlying functor sends a morphism represented by a cocycle to the morphism
 represented by its image under the DG functor. -/
-@[simp]
 theorem forget_map_dgClosedHomOf
     {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
     F.forget.map (dgClosedHomOf R f hf) =
