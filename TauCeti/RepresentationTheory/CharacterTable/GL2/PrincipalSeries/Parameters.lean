@@ -136,6 +136,7 @@ theorem finrank_hom_GL2PrincipalSeries (α β γ δ : Fˣ →* ℂˣ) :
 such induced representations are isomorphic exactly when the ordered pairs agree directly or after
 applying the Weyl-group swap. Restricting to distinct pairs classifies the irreducible principal
 series. -/
+@[simp]
 theorem nonempty_iso_GL2PrincipalSeries_iff {α β γ δ : Fˣ →* ℂˣ} :
     Nonempty (GL2PrincipalSeries F α β ≅ GL2PrincipalSeries F γ δ) ↔
       (α = γ ∧ β = δ) ∨ (α = δ ∧ β = γ) := by
