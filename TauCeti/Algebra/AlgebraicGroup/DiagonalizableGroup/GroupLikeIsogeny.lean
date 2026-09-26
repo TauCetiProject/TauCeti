@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Isogeny
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Isomorphism
 import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 public import TauCeti.Algebra.Bialgebra.GroupLike.Map
@@ -70,7 +70,7 @@ private theorem evaluationIso_naturality
 
 /-- A morphism between diagonalizable coordinate algebras over a field is a central isogeny
 exactly when its intrinsic character map is injective with finite cokernel. -/
-@[simp] theorem isCentralIsogeny_iff_groupLikeMap_injective_finite_quotient
+@[simp] theorem isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
     (hK : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := K))) = ⊤)
     (f : H ⟶ K) :

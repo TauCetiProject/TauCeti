@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.GroupLikeIsogeny
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
-import all TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
 
 /-!
 # Geometric character criterion for isogenies of multiplicative-type groups
@@ -33,7 +32,7 @@ variable {k : Type u} [Field k] {H K : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- The geometric fibre of a morphism of multiplicative-type groups is a central isogeny
 exactly when the induced geometric character map is injective with finite cokernel. -/
-theorem isCentralIsogeny_baseChange_iff_characterMap_injective_finite_quotient
+theorem isCentralIsogeny_baseChange_iff_geometricCharacterMap_injective_and_finite_quotient
     (hH : multiplicativeTypeCommHopfAlgProperty k H)
     (hK : multiplicativeTypeCommHopfAlgProperty k K) (f : H.obj ⟶ K.obj) :
     CommHopfAlgCat.IsCentralIsogeny
@@ -41,8 +40,11 @@ theorem isCentralIsogeny_baseChange_iff_characterMap_injective_finite_quotient
       Function.Injective (CommHopfAlgCat.geometricCharacterMap f) ∧
         Finite (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
           (CommHopfAlgCat.geometricCharacterMap f).range) := by
-  simpa only [CommHopfAlgCat.geometricCharacterMap] using
-    DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_finite_quotient
+  have hmap : CommHopfAlgCat.geometricCharacterMap f =
+      TauCeti.GroupLike.map (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom :=
+    MonoidHom.ext fun x => _root_.GroupLike.ext (by simp)
+  rw [hmap]
+  exact DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
     ((Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
         ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH)))
