@@ -103,8 +103,8 @@ theorem mem_localInvariantSet {s : Set ℝ} {Q : E →L[ℝ] E} {r rho : ℝ} {z
   Iff.rfl
 
 /-- At a critical point the zero displacement belongs to every such set, whatever the time set,
-the projection and the two radii: the constant trajectory at `x` solves the centred equation and
-stays in every ball. -/
+the projection and the two radii: the constant displacement trajectory `y = 0`, which represents
+the equilibrium at `x`, solves the centred equation and stays in every ball. -/
 theorem zero_mem_localInvariantSet (hx : ∇ f x = 0) (s : Set ℝ) (Q : E →L[ℝ] E) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ localInvariantSet f x s Q r rho :=
   ⟨⟨fun _ ↦ 0, (isIntegralCurve_const fun _ ↦ by simp [hx]).isIntegralCurveOn _, rfl,
@@ -445,23 +445,23 @@ theorem exists_localUnstableSet_homeomorph_closedBall (h : IsNondegenerateCritic
           simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
             LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
 
-/-- The zero displacement, which is the critical point `x` in centred coordinates, lies in the
-local stable set: the constant trajectory at `x` is a negative-gradient solution confined to
-every ball. -/
+/-- The zero displacement, which represents the critical point `x` in centred coordinates, lies
+in the local stable set: the constant displacement trajectory `y = 0` solves the centred
+negative-gradient equation and stays in every ball. -/
 theorem zero_mem_localStableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ h.localStableSet r rho :=
   zero_mem_localInvariantSet h.gradient_eq_zero _ _ hr hrho
 
-/-- The zero displacement, which is the critical point `x` in centred coordinates, lies in the
-local unstable set. -/
+/-- The zero displacement, which represents the critical point `x` in centred coordinates, lies
+in the local unstable set. -/
 theorem zero_mem_localUnstableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ h.localUnstableSet r rho :=
   zero_mem_localInvariantSet h.gradient_eq_zero _ _ hr hrho
 
 /-- **At a local minimum the local unstable set degenerates to a point.** A nondegenerate
-critical point of Morse index `0` has no unstable directions, so the only backward
-negative-gradient solution confined near it is the constant one at `x`, whose displacement is
-`0`. -/
+critical point of Morse index `0` has no unstable directions, so for suitable radii the zero
+displacement is the only admissible initial displacement of a backward negative-gradient
+solution confined near `x`. -/
 theorem exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero
     (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = 0) :
     ∃ r > 0, ∃ rho > 0, h.localUnstableSet r rho = {0} := by
@@ -475,9 +475,9 @@ theorem exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero
     Set.image_singleton, hg0, add_zero]
 
 /-- **At a local maximum the local stable set degenerates to a point.** A nondegenerate critical
-point whose Morse index is the dimension of the ambient space has no stable directions, so the
-only forward negative-gradient solution confined near it is the constant one at `x`, whose
-displacement is `0`. -/
+point whose Morse index is the dimension of the ambient space has no stable directions, so for
+suitable radii the zero displacement is the only admissible initial displacement of a forward
+negative-gradient solution confined near `x`. -/
 theorem exists_localStableSet_eq_singleton_of_morseIndex_eq_finrank
     (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = Module.finrank ℝ E) :
     ∃ r > 0, ∃ rho > 0, h.localStableSet r rho = {0} := by
