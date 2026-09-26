@@ -172,9 +172,8 @@ theorem leftHalfPlane_nonempty (g : PSL(2, ℝ)) : (leftHalfPlane g).Nonempty :=
 
 /-- The right and left half-planes bounded by the same `geodesicLine g` are genuinely distinct
 sets, not merely disjoint. -/
-theorem rightHalfPlane_ne_leftHalfPlane (g : PSL(2, ℝ)) : rightHalfPlane g ≠ leftHalfPlane g := by
-  obtain ⟨z, hz⟩ := rightHalfPlane_nonempty g
-  exact fun h ↦ Set.disjoint_left.mp (disjoint_rightHalfPlane_leftHalfPlane g) hz (h ▸ hz)
+theorem rightHalfPlane_ne_leftHalfPlane (g : PSL(2, ℝ)) : rightHalfPlane g ≠ leftHalfPlane g :=
+  (disjoint_rightHalfPlane_leftHalfPlane g).ne (rightHalfPlane_nonempty g).ne_empty
 
 /-- The closure of the right half-plane adds exactly the geodesic line, its boundary. -/
 @[simp]
@@ -238,7 +237,7 @@ depends on the chosen representative of the geodesic line, not on the line's ima
 theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     rightHalfPlane (g * pslS) = leftHalfPlane g := by
   ext z
-  rw [mem_rightHalfPlane_iff, mem_leftHalfPlane_iff, re_inv_mul_pslS_smul,
+  rw [mem_rightHalfPlane_iff, mem_leftHalfPlane_iff, re_mul_pslS_inv_smul,
     div_pos_iff_of_pos_right (UpperHalfPlane.normSq_pos _), neg_pos]
 
 /-- The dual of `rightHalfPlane_mul_pslS`: multiplying by `pslS` swaps the left half into the

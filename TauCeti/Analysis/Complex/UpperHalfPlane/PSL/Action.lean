@@ -6,6 +6,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -201,8 +202,7 @@ theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
 /-- `pslS` is an involution of `ℍ`. -/
 @[simp]
 theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
-  rw [pslS_smul, pslS_smul, ← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv,
-    inv_smul_smul]
+  rw [pslS_smul, pslS_smul, _root_.ModularGroup.S_smul_S_smul]
 
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
 @[simp]
@@ -215,13 +215,11 @@ theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 
 /-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
-  rw [pslS_smul, modular_S_smul]
-  simp only [UpperHalfPlane.mk_re, Complex.inv_re, Complex.normSq_neg, Complex.neg_re,
-    UpperHalfPlane.coe_re, neg_div]
+  rw [pslS_smul, _root_.ModularGroup.re_S_smul]
 
 /-- Right-multiplying by `pslS` before inverting negates the real part of the translate, up to
 the `normSq` factor: see `re_pslS_smul`. -/
-theorem re_inv_mul_pslS_smul (g : PSL(2, ℝ)) (z : ℍ) :
+theorem re_mul_pslS_inv_smul (g : PSL(2, ℝ)) (z : ℍ) :
     ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
   rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
 

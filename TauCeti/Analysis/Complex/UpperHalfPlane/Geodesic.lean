@@ -143,7 +143,7 @@ while the line itself is fixed setwise. -/
 theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
     Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
   ext z
-  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_inv_mul_pslS_smul,
+  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_mul_pslS_inv_smul,
     div_eq_zero_iff]
   simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
 

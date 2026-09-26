@@ -32,6 +32,8 @@ unfolded by hand.
   alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
   of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
+  part up to a `normSq` factor, and is an involution of `ℍ`.
 
 ## Provenance
 
@@ -99,5 +101,23 @@ Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
 theorem smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k ∨ g = -k) :
     g • z = k • z :=
   hg.elim (· ▸ rfl) (· ▸ SL_neg_smul _ _)
+
+/-- The inversion `S` negates the real part of every point and divides by its norm-square.
+
+Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+`ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, which is not how any call site in
+this development states the `S`-action, so tagging would make the lemma unusable via plain
+`rw`. -/
+lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := by
+  rw [modular_S_smul]
+  simp [Complex.inv_re]
+  ring
+
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp
+-- lemma `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted double action, the same reason
+-- `re_S_smul` above is not tagged.
+/-- The inversion `S` is an involution of `ℍ`. -/
+lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
+  rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
 
 end ModularGroup
