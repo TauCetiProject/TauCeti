@@ -246,7 +246,10 @@ section Quotient
 
 open Finset
 
-variable [Fintype α] [DecidableEq ι]
+variable [Fintype α]
+
+/-- Local decidable equality for computing fiber cardinalities without an API constraint. -/
+noncomputable local instance instDecidableEqFiberColour : DecidableEq ι := Classical.decEq ι
 
 /-- A rearrangement of `f` has fibers of the same sizes as `f`. -/
 private theorem card_filter_comp_perm (f : α → ι) (g : Equiv.Perm α) (i : ι) :
@@ -287,6 +290,7 @@ theorem quotientFiberSubgroupEquiv_mk (f : α → ι) (g : Equiv.Perm α) :
 
 /-- **The rearrangement equivalence is equivariant**: moving a coset by `π` precomposes the
 corresponding rearrangement with `π⁻¹`. -/
+@[simp]
 theorem quotientFiberSubgroupEquiv_smul (f : α → ι) (π : Equiv.Perm α)
     (q : Equiv.Perm α ⧸ fiberSubgroup f) :
     (quotientFiberSubgroupEquiv f (π • q) : α → ι) = quotientFiberSubgroupEquiv f q ∘ ⇑π⁻¹ :=
@@ -296,6 +300,7 @@ theorem quotientFiberSubgroupEquiv_smul (f : α → ι) (π : Equiv.Perm α)
 
 /-- A coset is fixed by `π` exactly when the corresponding rearrangement of `f` is invariant
 under `π`. -/
+@[simp]
 theorem smul_eq_self_iff_quotientFiberSubgroupEquiv (f : α → ι) (π : Equiv.Perm α)
     (q : Equiv.Perm α ⧸ fiberSubgroup f) :
     π • q = q ↔ (quotientFiberSubgroupEquiv f q : α → ι) ∘ ⇑π = quotientFiberSubgroupEquiv f q := by
@@ -313,10 +318,11 @@ theorem smul_eq_self_iff_quotientFiberSubgroupEquiv (f : α → ι) (π : Equiv.
 of the fiber subgroup of `f` fixed by `π` is the number of maps `c : α → ι` with fibers of the same
 sizes as those of `f` and with `c ∘ π = c`.  For the rows of a tabloid this is the value at `π` of
 the permutation character on the tabloids. -/
-theorem card_fixedPoints_quotient_fiberSubgroup [DecidableEq α] [Fintype ι] (f : α → ι)
+theorem card_fixedPoints_quotient_fiberSubgroup [Fintype ι] (f : α → ι)
     (π : Equiv.Perm α) :
     Nat.card {q : Equiv.Perm α ⧸ fiberSubgroup f // π • q = q} =
       #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = #{a | f a = i}} := by
+  classical
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
   refine Nat.card_congr (((quotientFiberSubgroupEquiv f).subtypeEquiv
     (q := fun c : {c : α → ι // ∀ i, #{a | c a = i} = #{a | f a = i}} => c.1 ∘ π = c.1)

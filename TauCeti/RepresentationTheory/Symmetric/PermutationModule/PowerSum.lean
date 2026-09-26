@@ -20,8 +20,8 @@ of `Sₙ` on the `ν`-tabloids.  These characters are the coefficients of the po
 `p_ρ = ∑_{ν ⊢ n} ψ^ν(ρ) m_ν`,
 
 where `ψ^ν(ρ)` is the value of `ψ^ν` at any permutation of cycle type `ρ`.  Equivalently, the
-coefficient of `x^d` in `p_ρ` is the number of tabloids fixed by such a permutation, for the shape
-obtained by sorting the exponents of `x^d`.
+coefficient of `x^d` in `p_ρ`, when `d.degree = n`, is the number of tabloids fixed by such a
+permutation, for the shape obtained by sorting the exponents of `x^d`.
 
 The proof reads both sides as counts of invariant colourings.  A `ν`-tabloid is a colouring of
 `Fin n` by the rows of `ν` (`TauCeti.quotientFiberSubgroupEquiv`, applied to the row map
@@ -130,10 +130,13 @@ theorem coeff_partWeight_psumPart_partition (π : Perm (Fin n)) (ν : n.Partitio
   rw [coeff_psumPart_partition, ← fiberSubgroup_youngColouring ν hν,
     card_fixedPoints_quotient_fiberSubgroup]
   congr 3
+  case e_s => ext x; simp
   ext f
   exact and_congr_right' (forall_congr' fun i => by rw [card_filter_youngColouring ν hν i])
 
-variable [DecidableEq σ]
+/-- Local decidable equality for alphabet-indexed monomials. -/
+noncomputable local instance instDecidableEqPermutationModuleColour : DecidableEq σ :=
+  Classical.decEq σ
 
 /-- **The coefficient of `p_ρ` at a monomial of degree `n` counts fixed tabloids**: at `x^d` it is
 the number of tabloids fixed by a permutation `π` of cycle type `ρ`, for the shape obtained by

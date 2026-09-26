@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.GroupTheory.Perm.Partition
 
@@ -78,31 +79,10 @@ theorem isHomogeneous_psumPart [Fintype σ] {n : ℕ} (μ : n.Partition) :
 
 variable {α : Type*}
 
-/-- A colouring fixed by `π` is constant along the cycles of `π`. -/
-private theorem apply_eq_of_sameCycle [Finite α] {π : Perm α} {f : α → σ} (hf : f ∘ π = f) {a b : α}
-    (h : π.SameCycle a b) : f a = f b := by
-  have hpow : ∀ i : ℕ, f ((π ^ i) a) = f a := fun i => by
-    induction i with
-    | zero => rfl
-    | succ i ih => rw [pow_succ', Perm.mul_apply, ← Function.comp_apply (f := f) (g := π), hf, ih]
-  obtain ⟨i, rfl⟩ := h.exists_nat_pow_eq
-  exact (hpow i).symm
+variable [Fintype α] [DecidableEq α] [Fintype σ]
 
-/-- The `π`-invariant colourings are the colourings of the cycles of `π`. -/
-private def invariantColouringEquiv [Finite α] (π : Perm α) :
-    (Quotient (SameCycle.setoid π) → σ) ≃ {f : α → σ // f ∘ π = f} where
-  toFun g := ⟨fun a => g (Quotient.mk _ a), funext fun a =>
-    congrArg g (Quotient.sound (sameCycle_apply_left.mpr (SameCycle.refl π a)))⟩
-  invFun f := Quotient.lift f.1 fun _ _ h => apply_eq_of_sameCycle f.2 h
-  left_inv _ := funext fun c => Quotient.inductionOn c fun _ => rfl
-  right_inv _ := rfl
-
-private theorem invariantColouringEquiv_apply_coe [Finite α] (π : Perm α)
-    (g : Quotient (SameCycle.setoid π) → σ) (a : α) :
-    (invariantColouringEquiv π g : α → σ) a = g (Quotient.mk _ a) :=
-  (rfl)
-
-variable [Fintype α] [DecidableEq α] [Fintype σ] [DecidableEq σ]
+/-- Local decidable equality for colourings in the power-sum expansion. -/
+noncomputable local instance instDecidableEqPowerSumColour : DecidableEq σ := Classical.decEq σ
 
 /-- **The power-sum product over the cycle type of `π` is the generating function of the
 `π`-invariant colourings**: `p_ρ = ∑_{f ∘ π = f} ∏_a x_{f a}`, where `ρ` is the cycle type of `π`
