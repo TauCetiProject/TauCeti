@@ -65,6 +65,8 @@ the whole ball of radius `0` around its atom, so it is not finite.
 * `TauCeti.exists_map_range_wassersteinEDist_le` — quantization onto a dense sequence: some
   measurable map with values among the terms of a dense sequence pushes `ν` to within `δ` of
   itself;
+* `TauCeti.exists_eLpNorm_edist_le` — the quantizer itself: some measurable map with finitely many
+  values has a displacement of arbitrarily small `L^p (μ)` seminorm;
 * `TauCeti.exists_map_wassersteinEDist_le` — the approximation theorem in quantizer form: some
   measurable map with finitely many values pushes `μ` to within `ε` of itself;
 * `TauCeti.exists_ae_mem_finset_wassersteinEDist_le` — its measure form, with the approximating
@@ -311,13 +313,14 @@ section Approximation
 variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [TopologicalSpace.SeparableSpace X]
   {μ : Measure X} {ε : ℝ≥0∞}
 
-/-- **Approximation by a quantizer.** On a separable ground space, a probability measure with
-finite `p`-moment and a finite exponent `1 ≤ p < ∞` is pushed to within any prescribed accuracy
-of itself by a measurable map taking finitely many values. -/
-theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
+/-- **A quantizer with small displacement.** On a separable ground space, for a probability
+measure with finite `p`-moment and a finite exponent `1 ≤ p < ∞`, some measurable map taking
+finitely many values moves points by a displacement `x ↦ edist x (T x)` of arbitrarily small
+`L^p (μ)` seminorm. -/
+theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
     (hμ : HasFiniteMoment p μ) (hε : ε ≠ 0) :
     ∃ (s : Finset X) (T : X → X), Measurable T ∧ (∀ x, T x ∈ s) ∧
-      wassersteinEDist p μ (μ.map T) ≤ ε := by
+      eLpNorm (fun x ↦ edist x (T x)) p μ ≤ ε := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
   classical
@@ -393,10 +396,8 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
     by_cases hy : y ∈ A n
     · simp [Set.indicator_of_mem hy]
     · simp [Set.indicator_of_notMem hy, ENNReal.zero_rpow_of_pos ht]
-  calc wassersteinEDist p μ (μ.map T)
-      ≤ eLpNorm (fun x ↦ edist x (T x)) p μ :=
-        wassersteinEDist_map_le measurable_edist hT_meas.aemeasurable p
-    _ ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
+  calc eLpNorm (fun x ↦ edist x (T x)) p μ
+      ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
         eLpNorm_mono_enorm
           (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
           fun x ↦ by simpa using hbound x
@@ -407,6 +408,16 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
         rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero μ)]
         simp [hδc]
     _ ≤ ε := by rw [hc_def, ENNReal.add_halves]; exact min_le_left _ _
+
+/-- **Approximation by a quantizer.** On a separable ground space, a probability measure with
+finite `p`-moment and a finite exponent `1 ≤ p < ∞` is pushed to within any prescribed accuracy
+of itself by a measurable map taking finitely many values. -/
+theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
+    (hμ : HasFiniteMoment p μ) (hε : ε ≠ 0) :
+    ∃ (s : Finset X) (T : X → X), Measurable T ∧ (∀ x, T x ∈ s) ∧
+      wassersteinEDist p μ (μ.map T) ≤ ε := by
+  obtain ⟨s, T, hT, hTs, hle⟩ := exists_eLpNorm_edist_le hp hp_top hμ hε
+  exact ⟨s, T, hT, hTs, (wassersteinEDist_map_le measurable_edist hT.aemeasurable p).trans hle⟩
 
 variable [MeasurableSingletonClass X]
 
