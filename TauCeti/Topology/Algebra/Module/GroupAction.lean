@@ -64,7 +64,7 @@ variable {Γ R M : Type*} [Monoid Γ] [TopologicalSpace Γ] [Ring R] [AddCommGro
 variable (Γ) in
 /-- **Invariant cores of open submodules are open** when the acting monoid is compact: by the
 tube lemma, a neighbourhood of `0` is carried into `V` by the whole of `Γ`. -/
-theorem isOpen_invariantCore [CompactSpace Γ] [ContinuousAdd M] (V : Submodule R M)
+theorem isOpen_invariantCore [CompactSpace Γ] [SeparatelyContinuousAdd M] (V : Submodule R M)
     (hV : IsOpen (V : Set M)) : IsOpen (V.invariantCore Γ : Set M) := by
   have hS : IsOpen {q : Γ × M | q.1 • q.2 ∈ V} := hV.preimage continuous_smul
   obtain ⟨u, w, -, hw, hu, h0w, huw⟩ := generalized_tube_lemma isCompact_univ

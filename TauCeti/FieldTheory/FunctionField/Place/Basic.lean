@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.IsTrivialOn
 
 /-!
 # Places of an algebraic function field
@@ -264,6 +265,17 @@ theorem ord_sum_eq_of_forall_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j :
     (hfj : f j ≠ 0) (hlt : ∀ i ∈ s, i ≠ j → P.ord (f j) < P.ord (f i)) :
     P.ord (∑ i ∈ s, f i) = P.ord (f j) :=
   Valuation.ord_sum_eq_of_forall_lt P.valuation hj hfj hlt
+
+/-- **Functions of pairwise distinct orders are linearly independent over the constants**: a
+family of nonzero functions whose orders at `P` are pairwise distinct is `k`-linearly independent,
+because the summand of least order dictates the order of any nontrivial linear combination. -/
+theorem linearIndependent_of_injective_ord {ι : Type*} {f : ι → F} (hf : ∀ i, f i ≠ 0)
+    (hinj : Function.Injective fun i ↦ P.ord (f i)) : LinearIndependent k f :=
+  P.valuation.linearIndependent_of_injective (fun i ↦ P.valuation.ne_zero_iff.mpr (hf i))
+    fun i j h ↦ hinj (by
+      simp only [Function.comp_apply, P.valuation_eq_exp_neg_ord (hf i),
+        P.valuation_eq_exp_neg_ord (hf j), WithZero.exp_inj, neg_inj] at h
+      exact h)
 
 /-- **Normalizing a family of coefficients.** A finite family in `F` that does not vanish
 identically has a nonzero member by which the whole family can be divided without leaving `𝒪_P`;

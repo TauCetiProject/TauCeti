@@ -75,6 +75,16 @@ theorem cup0H_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
   apply Subtype.ext
   exact TauCeti.Rep.tensorInvariant_braiding_hom_apply x (y : N.V)
 
+variable (M N) in
+/-- In bidegree `(0, 0)` the product with a degree-zero class in the first factor is the product
+with a degree-zero class in the second factor. -/
+theorem cup0H_zero : cup0H M N 0 = cupH0 M N 0 := by
+  ext x y
+  induction x using H0_induction_on with
+  | h x =>
+    induction y using H0_induction_on with
+    | h y => simp
+
 /-- Naturality of the left degree-zero product in its first coefficient. -/
 theorem cup0H_map_left {M' : Rep k G} (f : M ⟶ M') (n : ℤ)
     (x : tateCohomology M 0) (y : tateCohomology N n) :

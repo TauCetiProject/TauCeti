@@ -21,7 +21,8 @@ field, having only complex infinite places, is then unramified at every infinite
 extension, and in degree `2` it has exactly one such place.
 
 Restricting a real place along a field embedding gives a real place, and the real embedding of the
-restriction is the composite of the embeddings.
+restriction is the composite of the embeddings. For an extension `L / k`, every place of `L` lies
+over its restriction to `k`.
 
 ## Main results
 
@@ -40,6 +41,7 @@ restriction is the composite of the embeddings.
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
   place.
+* `NumberField.InfinitePlace.liesOver_comap`: a place lies over its restriction.
 -/
 
 public section
@@ -165,5 +167,15 @@ theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →
   refine RingHom.ext fun x ↦ Complex.ofReal_injective ?_
   rw [embedding_of_isReal_apply, RingHom.comp_apply, embedding_of_isReal_apply,
     comap_embedding_of_isReal _ (hw.comap f), RingHom.comp_apply]
+
+/-- An infinite place of `L` lies over its restriction to `k`.
+
+Mathlib's `AbsoluteValue.LiesOver` instance is this statement for `AbsoluteValue.under`, which is
+not the spelling `InfinitePlace.comap` produces, so it is registered here. Constructions indexed by
+`w.comap (algebraMap k L)` that consume a `LiesOver` hypothesis, such as
+`NumberField.LiesOver.completionMap`, need it. -/
+instance InfinitePlace.liesOver_comap {k L : Type*} [Field k] [Field L] [Algebra k L]
+    (w : InfinitePlace L) : w.LiesOver (w.comap (algebraMap k L)) :=
+  ⟨rfl⟩
 
 end NumberField

@@ -86,5 +86,11 @@ lemma diskBoundaryPair_snd (n : ℕ) :
 lemma diskBoundaryPair_map (n : ℕ) :
     (diskBoundaryPair n).map = TopCat.diskBoundaryInclusion n := (rfl)
 
+/-- The ambient space of the pair consisting of a disk and its boundary is contractible.  This
+lets instances about pairs with contractible ambient space apply to `diskBoundaryPair n`. -/
+instance contractibleSpace_diskBoundaryPair_fst (n : ℕ) :
+    ContractibleSpace (diskBoundaryPair.{u} n).fst :=
+  TopCat.contractibleSpace_disk n
+
 end TauCeti
 end

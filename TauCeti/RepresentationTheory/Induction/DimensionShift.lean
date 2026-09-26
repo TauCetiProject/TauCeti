@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
@@ -42,10 +43,11 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
 
 * `Rep.dimensionShiftUpSES_def`, `Rep.dimensionShiftDownSES_def`: the maps in the two short
   complexes.
-* `Rep.dimensionShiftUpSES_shortExact`, `Rep.dimensionShiftUpSES_res_shortExact`: the upward
-  sequence is short exact, also after restriction.
-* `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`: the same for
-  the downward sequence.
+* `Rep.dimensionShiftUpSES_shortExact`, `Rep.dimensionShiftUpSES_res_shortExact`,
+  `Rep.dimensionShiftUpSES_tensorLeft_shortExact`: the upward sequence is short exact, also after
+  restriction and after tensoring on the left with any representation.
+* `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`,
+  `Rep.dimensionShiftDownSES_tensorLeft_shortExact`: the same for the downward sequence.
 
 ## References
 
@@ -57,7 +59,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory Limits
+open CategoryTheory Limits MonoidalCategory
 
 namespace Rep
 
@@ -127,6 +129,17 @@ theorem dimensionShiftUpSES_res_shortExact (A : Rep k G) {H : Type*} [Monoid H] 
     ((dimensionShiftUpSES A).map (resFunctor f)).ShortExact :=
   (shortExact_res f).mpr (dimensionShiftUpSES_shortExact A)
 
+/-- The upward dimension-shifting short complex stays short exact after tensoring on the left with
+any representation `M`: the embedding into the coinduced module has the `k`-linear retraction
+`f ↦ f 1`. -/
+theorem dimensionShiftUpSES_tensorLeft_shortExact (A M : Rep k G) :
+    ((dimensionShiftUpSES A).map (tensorLeft M)).ShortExact := by
+  have hr : Function.LeftInverse (LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G A.V).toLinearMap)
+      (coindBotUnit A).hom := fun a ↦ by
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
+      coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
+  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A) M _ hr
+
 /-! ### The downward dimension shift -/
 
 /-- The kernel of the projection `Ind_⊥^G A ⟶ A`, so that
@@ -191,5 +204,15 @@ monoid homomorphism `f : H →* G`. -/
 theorem dimensionShiftDownSES_res_shortExact (A : Rep k G) {H : Type*} [Monoid H] (f : H →* G) :
     ((dimensionShiftDownSES A).map (resFunctor f)).ShortExact :=
   (shortExact_res f).mpr (dimensionShiftDownSES_shortExact A)
+
+/-- The downward dimension-shifting short complex stays short exact after tensoring on the left
+with any representation `M`: the projection from the induced module has the `k`-linear section
+`a ↦ ⟦1 ⊗ₜ a⟧`. -/
+theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
+    ((dimensionShiftDownSES A).map (tensorLeft M)).ShortExact := by
+  have hs : Function.RightInverse (Representation.IndV.mk (⊥ : Subgroup G).subtype
+      (Representation.trivial k (⊥ : Subgroup G) A.V) 1) (indBotCounit A).hom := fun a ↦ by
+    rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
+  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A) M _ hs
 
 end Rep
