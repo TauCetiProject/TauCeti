@@ -282,12 +282,9 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
           MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} =
         (fun v ↦ v + localStableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
           (range P ∩ closedBall 0 ρ) := by
-  have hC := lyapunovPerronBound_nonneg hsmall
-  refine ⟨r / ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1), div_pos hr0 (by linarith),
-    setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr0.le hN hsmall hN0 hP
-      hAP ?_⟩
-  rw [mul_div_assoc', div_le_iff₀ (by linarith)]
-  nlinarith
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_mul_lt hr0 ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α))
+  exact ⟨ρ, hρ0, setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr0.le hN
+    hsmall hN0 hP hAP hρ.le⟩
 
 end LocalStable
 
@@ -469,12 +466,9 @@ theorem exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
           ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ} =
         (fun v ↦ v + localUnstableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
           (range (ContinuousLinearMap.id ℝ X - P) ∩ closedBall 0 ρ) := by
-  have hC := lyapunovPerronBound_nonneg hsmall
-  refine ⟨r / ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1), div_pos hr0 (by linarith),
-    setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image hs hu hr0.le hN hsmall hN0 hP
-      hAP ?_⟩
-  rw [mul_div_assoc', div_le_iff₀ (by linarith)]
-  nlinarith
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_mul_lt hr0 ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α))
+  exact ⟨ρ, hρ0, setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image hs hu hr0.le hN
+    hsmall hN0 hP hAP hρ.le⟩
 
 end LocalUnstable
 
