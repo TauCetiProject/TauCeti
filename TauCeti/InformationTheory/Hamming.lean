@@ -12,6 +12,9 @@ public import Mathlib.LinearAlgebra.Pi
 /-!
 # Hamming support, and Hamming data under coordinate decompositions and reindexing
 
+This file builds on `hammingNorm`, `hammingDist`, and `hammingDist_eq_hammingNorm` from
+`Mathlib.InformationTheory.Hamming`.
+
 The Hamming support of a word `x : ι → A` is `Function.support x`, the set of its nonzero
 coordinates, and its Hamming weight is the number of elements of that support. The first part of
 this file relates `Function.support`, its finset version, `hammingNorm` and `hammingDist`: the
