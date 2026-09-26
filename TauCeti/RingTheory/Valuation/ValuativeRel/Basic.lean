@@ -15,6 +15,8 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 ## Main results
 
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
+* `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
+  `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
   of itself.
 * `TauCeti.valuation_le_one_of_sub_sq_le_one`: if an integral element differs from a square by
@@ -41,6 +43,18 @@ theorem not_vle_zero_of_isUnit {A : Type*} [Semiring A] [ValuativeRel A] {f : A}
   intro h
   simpa [Units.inv_mul, ValuativeRel.not_vle.mpr ValuativeRel.zero_vlt_one] using
     ValuativeRel.mul_vle_mul_right h ↑u⁻¹
+
+/-- If `1 ≤ᵥ ϖ⁻¹ * t` for a unit `ϖ`, then `ϖ ≤ᵥ t`. -/
+theorem vle_of_vle_inv_mul {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
+    (h : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * t) : (ϖ : A) ≤ᵥ t := by
+  have h' := ValuativeRel.mul_vle_mul_right h ϖ
+  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
+
+/-- If `ϖ⁻¹ * t ≤ᵥ 1` for a unit `ϖ`, then `t ≤ᵥ ϖ`. -/
+theorem vle_of_inv_mul_vle {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
+    (h : (ϖ⁻¹ : Aˣ) * t ≤ᵥ 1) : t ≤ᵥ (ϖ : A) := by
+  have h' := ValuativeRel.mul_vle_mul_right h ϖ
+  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
 
 end TauCeti.ValuativeRel
 

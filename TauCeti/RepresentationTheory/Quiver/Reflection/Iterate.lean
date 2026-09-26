@@ -27,6 +27,8 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` �
 
 * `TauCeti.Quiver.reflectAt_reflectAt`: reflecting twice at the same vertex returns the quiver
   structure it started from.
+* `TauCeti.Quiver.reflectList_reverse_reflectList`: reflecting along a list and then along its
+  reverse returns the original quiver structure.
 * `TauCeti.Quiver.hom_reflectList` and `TauCeti.Quiver.hom_reflectList_of_not_iff`: reflecting
   along a repetition-free list reverses exactly the arrows joining a vertex of the list to a
   vertex outside it.
@@ -85,6 +87,20 @@ theorem hom_reflectAt_eq_hom_reflect [q : _root_.Quiver.{v} V] (i a b : V) :
     @_root_.Quiver.Hom V (reflectAt q i) a b = @_root_.Quiver.Hom (Reflect V i) _ a b :=
   (hom_reflectAt q i a b).trans (hom_reflect i a b).symm
 
+/-- A sink becomes a source after reflecting the quiver at that vertex. -/
+theorem IsSink.isSource_reflectAt {q : _root_.Quiver.{v} V} {i : V} (h : @IsSink V q i) :
+    @IsSource V (reflectAt q i) i := by
+  refine (@IsSource_def V (reflectAt q i) i).mpr fun a ↦ ⟨fun e ↦ ?_⟩
+  exact ((@IsSink_def V q i).mp h a).elim
+    (cast ((hom_reflectAt q i a i).trans (@reflectHom_right V q i a)) e)
+
+/-- A source becomes a sink after reflecting the quiver at that vertex. -/
+theorem IsSource.isSink_reflectAt {q : _root_.Quiver.{v} V} {i : V} (h : @IsSource V q i) :
+    @IsSink V (reflectAt q i) i := by
+  refine (@IsSink_def V (reflectAt q i) i).mpr fun b ↦ ⟨fun e ↦ ?_⟩
+  exact ((@IsSource_def V q i).mp h b).elim
+    (cast ((hom_reflectAt q i i b).trans (@reflectHom_left V q i b)) e)
+
 /-- **Reflection at a vertex is an involution.** Reflecting twice at the same vertex reverses the
 arrows meeting it twice, returning the quiver structure it started from. Since `reflectAt` carries
 the arrows of the type synonym `TauCeti.Quiver.Reflect`, the arrow types agree by
@@ -116,6 +132,16 @@ ordering is split into an already reflected initial segment and the entries stil
 theorem reflectList_append (q : _root_.Quiver.{v} V) (l₁ l₂ : List V) :
     reflectList q (l₁ ++ l₂) = reflectList (reflectList q l₁) l₂ :=
   (List.foldl_append)
+
+/-- Reflecting along a list and then along its reverse returns the original quiver structure. -/
+@[simp]
+theorem reflectList_reverse_reflectList (q : _root_.Quiver.{v} V) :
+    ∀ l : List V, reflectList (reflectList q l) l.reverse = q
+  | [] => by simp
+  | i :: l => by
+      rw [reflectList_cons, List.reverse_cons, reflectList_append,
+        reflectList_reverse_reflectList,
+        reflectList_cons, reflectList_nil, reflectAt_reflectAt]
 
 /-! ### Reflecting along a repetition-free list -/
 

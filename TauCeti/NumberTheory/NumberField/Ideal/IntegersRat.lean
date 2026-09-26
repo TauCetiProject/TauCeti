@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
 # Local invariants over `ℤ` and over `𝓞 ℚ`
@@ -40,6 +41,9 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
   `ℤ` agree.
 * `Ideal.isArithFrobAt_ringOfIntegers_rat_iff`: the Frobenius conditions over `𝓞 ℚ` and over `ℤ`
   agree.
+* `Ideal.inertiaDeg_eq_orderOf` and
+  `Ideal.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt`:
+  the unramified Frobenius order and prime-count formulas over `ℤ`.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
   the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
@@ -167,3 +171,43 @@ theorem exists_absNorm_eq {p : ℕ} (hp : p.Prime) :
   ⟨v, (absNorm_asIdeal v).trans (congrArg Subtype.val hv)⟩
 
 end Rat.HeightOneSpectrum
+
+namespace Ideal
+
+open Module MulAction
+open scoped NumberField Pointwise
+
+variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
+
+/-- At an unramified prime of a Galois number field, the residue degree over `ℤ` is the order of
+a Frobenius. The decomposition-group API computes it over `𝓞 ℚ`; the comparison lemmas of
+`TauCeti.NumberTheory.NumberField.Ideal.IntegersRat` transport it to `ℤ`. -/
+theorem inertiaDeg_eq_orderOf [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] {σ : K ≃ₐ[ℚ] K}
+    (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ = orderOf σ := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
+  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
+    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ
+      ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
+
+/-- At an unramified prime of a Galois number field, the number of primes above `p` times the
+residue degree is `[K : ℚ]`. -/
+theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois ℚ K]
+    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
+  -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
+  -- prime `Q` has order its residue degree.
+  have horbit : orbit (K ≃ₐ[ℚ] K) Q = (span {(p : ℤ)}).primesOver (𝓞 K) :=
+    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q
+  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
+    ← Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
+    ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
+    IsGalois.card_aut_eq_finrank]
+
+end Ideal

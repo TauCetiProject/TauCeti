@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ZMod.Units
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
@@ -28,6 +29,8 @@ at composite good indices be read off the eigenvalues at good primes and the cha
 ## Main results
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_one`: `λ₁ = 1`.
+* `HeckeRing.GL2.EigenformAwayFromLevel.heckeTCuspNat_eq_eigenvalue_smul`: at a good prime the
+  classical operator `Tₚ` on `S_k(Γ₁(N))` acts on the form by `λₚ`.
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_mul`: `λ_{mn} = λ_m λ_n` for coprime good
   indices.
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_pow_add_two`: the recurrence along the
@@ -93,6 +96,15 @@ theorem eigenvalue_one : f.eigenvalue 1 (Nat.coprime_one_left N) = 1 := by
   refine f.eq_of_smul_eq ?_
   rw [← f.isEigen 1 (Nat.coprime_one_left N), PNat.one_coe, heckeTCompositeGamma0_one, map_one,
     Module.End.one_apply, one_smul]
+
+/-- **At a good prime the classical `Tₚ` acts by the eigenvalue**: the ring generator at `p` acts
+on the character space as `heckeTCuspNat k p`, so `Tₚ f = λₚ f` on `S_k(Γ₁(N))`. -/
+theorem heckeTCuspNat_eq_eigenvalue_smul {p : ℕ} (hp : p.Prime) (hpN : Nat.Coprime p N) :
+    heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm =
+      f.eigenvalue ⟨p, hp.pos⟩ hpN • f.toCuspForm :=
+  have : NeZero p := ⟨hp.ne_zero⟩
+  heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul
+    (F := ⟨f.toCuspForm, f.mem_charSpace⟩) hp (f.isEigen ⟨p, hp.pos⟩ hpN)
 
 /-- **Multiplicativity on coprime good indices**: `λ_{mn} = λ_m λ_n`, the image of the coprime
 multiplication rule `heckeTCompositeGamma0_mul_of_coprime` of the Hecke ring. -/

@@ -12,7 +12,8 @@ public import TauCeti.GroupTheory.TitsSystem.Bruhat.Separation
 
 The Bruhat cells of a Tits system are indexed injectively by its Weyl group. Together with
 the covering theorem, this gives the disjoint decomposition `G = ⨆ w ∈ W, B w B`: every
-element belongs to exactly one Weyl-indexed cell.
+element belongs to exactly one Weyl-indexed cell. Consequently containment of cells is equality
+of their indices, and a cell contained in a union of two cells is one of the two.
 
 ## References
 
@@ -64,7 +65,7 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
       exact T.bruhatCell_ne_bruhatCell_one (Ne.symm hv) h.symm
   | mul_left s hs w _ ih => exact step hs ih
   | inv_mul_cancel s hs w _ ih =>
-      rw [inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)]
+      rw [T.inv_simple hs]
       exact step hs ih
 
 /-- Equality of Bruhat cells is equality of their Weyl indices. -/
@@ -72,6 +73,26 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
 theorem bruhatCell_inj {w v : T.WeylGroup} :
     T.bruhatCell w = T.bruhatCell v ↔ w = v :=
   T.bruhatCell_injective.eq_iff
+
+/-- Two cells sharing an element have the same Weyl index. -/
+theorem eq_of_mem_bruhatCell_of_mem {g : G} {w v : T.WeylGroup} (hw : g ∈ T.bruhatCell w)
+    (hv : g ∈ T.bruhatCell v) : w = v :=
+  T.bruhatCell_injective
+    ((T.bruhatCell_eq_doubleCoset hw).trans (T.bruhatCell_eq_doubleCoset hv).symm)
+
+/-- Containment of Bruhat cells is equality of their Weyl indices. -/
+@[simp]
+theorem bruhatCell_subset_iff {w v : T.WeylGroup} :
+    T.bruhatCell w ⊆ T.bruhatCell v ↔ w = v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ subset_rfl⟩
+  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
+  exact T.eq_of_mem_bruhatCell_of_mem hn (h hn)
+
+/-- A Bruhat cell contained in the union of two cells is one of them. -/
+theorem eq_or_eq_of_bruhatCell_subset_union {w u v : T.WeylGroup}
+    (h : T.bruhatCell w ⊆ T.bruhatCell u ∪ T.bruhatCell v) : w = u ∨ w = v := by
+  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
+  exact (h hn).imp (T.eq_of_mem_bruhatCell_of_mem hn) (T.eq_of_mem_bruhatCell_of_mem hn)
 
 /-- Two Bruhat cells are disjoint exactly when their Weyl indices differ. -/
 @[simp]
@@ -84,8 +105,7 @@ theorem disjoint_bruhatCell_iff {w v : T.WeylGroup} :
   · intro h
     rw [Set.disjoint_left]
     intro g hw hv
-    exact h (T.bruhatCell_injective
-      ((T.bruhatCell_eq_doubleCoset hw).trans (T.bruhatCell_eq_doubleCoset hv).symm))
+    exact h (T.eq_of_mem_bruhatCell_of_mem hw hv)
 
 /-- **Bruhat decomposition:** every group element belongs to a unique Weyl-indexed cell. -/
 theorem existsUnique_mem_bruhatCell (g : G) :
@@ -93,8 +113,6 @@ theorem existsUnique_mem_bruhatCell (g : G) :
   obtain ⟨n, hn⟩ := T.exists_mem_doubleCoset g
   have hn' : g ∈ T.bruhatCell (QuotientGroup.mk n) := by
     simpa only [T.bruhatCell_mk] using hn
-  refine ⟨QuotientGroup.mk n, hn', fun w hw ↦ ?_⟩
-  exact T.bruhatCell_injective
-    ((T.bruhatCell_eq_doubleCoset hw).trans (T.bruhatCell_eq_doubleCoset hn').symm)
+  exact ⟨QuotientGroup.mk n, hn', fun w hw ↦ T.eq_of_mem_bruhatCell_of_mem hw hn'⟩
 
 end TauCeti.TitsSystem

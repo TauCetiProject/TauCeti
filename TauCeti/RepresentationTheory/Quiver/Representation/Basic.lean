@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.PathCategory.Basic
+public import Mathlib.CategoryTheory.Limits.FunctorCategory.Finite
+public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 
 /-!
 # Representations of a quiver
@@ -15,8 +18,8 @@ A representation of a quiver over a field assigns a vector space to every vertex
 to every arrow, compatibly with path composition. This is precisely a functor from Mathlib's free
 path category to its category of modules.
 
-This file introduces the standard abbreviation, and the one structural fact that the trivial path
-acts as the identity. It also names the vertex spaces of a representation as a family
+This file introduces the standard abbreviation, finite biproducts of representations, and the fact
+that the trivial path acts as the identity. It also names the vertex spaces as a family
 `TauCeti.QuiverRep.vertexSpace` indexed by the vertices, with `TauCeti.QuiverRep.mapₗ` the
 structure maps between them; that is what a construction indexed by the vertices — a direct sum, a
 product — needs, since instance search does not see the objects of `CategoryTheory.Paths Q` as
@@ -42,13 +45,17 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 universe u v w t
 
 /-- The category of representations of a quiver `Q` over a field `k`. -/
 abbrev QuiverRep (k : Type u) (Q : Type v) [Field k] [Quiver Q] :=
   Paths Q ⥤ ModuleCat k
+
+/-- Representations of a quiver have finite biproducts, computed vertexwise. -/
+instance {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q] :
+    HasFiniteBiproducts (QuiverRep k Q) := HasFiniteBiproducts.of_hasFiniteProducts
 
 /-- **The trivial path acts as the identity.** In the free path category `Quiver.Path.nil` is the
 identity morphism, so a representation carries it to the identity map. Stated separately because

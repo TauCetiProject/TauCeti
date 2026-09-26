@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Linear
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Additivity and linearity of continuous cohomology
@@ -29,7 +30,8 @@ and cup products, need linearity before passing to cohomology.
   `TauCeti.ContinuousCohomology.mapLinearMap` bundle that dependence as an additive homomorphism
   and a linear map.
 * `TauCeti.ContinuousCohomology.continuousCochainsFunctor` is the additive functor of
-  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`.
+  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`; its action on
+  maps of discrete modules is `cochainsMap_ofDiscreteModulePair_id`.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_additive` and
   `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_linear` install the corresponding
   functor instances.
@@ -283,6 +285,18 @@ noncomputable def continuousCochainsFunctorCompHomologyIso (n : ℕ) :
     exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 end Functor
+
+/-- The cochain map of an equivariant map of discrete modules agrees with the cochain functor
+applied to the corresponding map of topological representations. -/
+theorem cochainsMap_ofDiscreteModulePair_id {M N : Type v} [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N]
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N] {f : M →+ N}
+    (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) :
+    cochainsMap (ContinuousMonoidHom.id G)
+        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) f.toIntLinearMap hf) =
+      (continuousCochainsFunctor ℤ G).map (ofDiscreteModuleMap f.toIntLinearMap hf) := by
+  rw [continuousCochainsFunctor_map]
+  exact congrArg _ (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl)
 
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
