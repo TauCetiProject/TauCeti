@@ -22,16 +22,11 @@ elements of that cycle type.
 
 * `TauCeti.Subgroup.classesOfType`: the conjugacy classes of `G` whose members have full cycle type
   `mu`.
-* `TauCeti.Subgroup.mem_iUnion_classesOfType`: the elements of `G` of full cycle type `mu` are
-  exactly the members of the classes of that type.
+* `TauCeti.Subgroup.mem_iUnion_classesOfType`: an element of `G` is a member of one of the classes
+  of type `mu` exactly when it has full cycle type `mu`.
 
 ## References
 
-* [Belyi maps, dessins d'enfants, and three-point covers](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/BelyiMaps/README.md),
-  Layer 3.4 step 1, which asks for the finite index set `classesOfType G λ` of `G`-conjugacy
-  classes of a full cycle type `λ` and for the identification of the elements of `G` of that type
-  with the union of those classes. The names here follow it, for a group of permutations of any
-  finite carrier.
 * `Mathlib/Algebra/Group/ConjFinite.lean`, whose `Fintype` structure on `ConjClasses` is what
   makes the index set a `Finset`.
 -/
@@ -63,18 +58,15 @@ theorem _root_.Subgroup.mem_classesOfType {G : Subgroup (Equiv.Perm α)} {mu : M
       ∃ g : G, ConjClasses.mk g = C ∧ (g : Equiv.Perm α).fullCycleType = mu := by
   simp [Subgroup.classesOfType]
 
-/-- **The elements of `G` of full cycle type `mu` are the members of its classes of that type.**
-One cycle type can meet several classes, and this says that the union of the classes recorded by
-`TauCeti.Subgroup.classesOfType` is exactly the set of elements of that type. -/
+/-- **An element of `G` is a member of one of its classes of type `mu` exactly when it has full
+cycle type `mu`.** One cycle type can meet several classes, and this says that the union of the
+classes recorded by `TauCeti.Subgroup.classesOfType` is exactly the set of elements of that type.
+-/
 theorem _root_.Subgroup.mem_iUnion_classesOfType (G : Subgroup (Equiv.Perm α))
     (mu : Multiset ℕ) (g : G) :
-    (g : Equiv.Perm α).fullCycleType = mu ↔
-      g ∈ ⋃ C ∈ G.classesOfType mu, C.carrier := by
+    g ∈ ⋃ C ∈ G.classesOfType mu, C.carrier ↔
+      (g : Equiv.Perm α).fullCycleType = mu := by
   constructor
-  · intro hg
-    refine Set.mem_iUnion.2 ⟨ConjClasses.mk g, ?_⟩
-    refine Set.mem_iUnion.2 ⟨Subgroup.mem_classesOfType.2 ⟨g, rfl, hg⟩, ?_⟩
-    exact ConjClasses.mem_carrier_iff_mk_eq.2 rfl
   · intro hg
     have hg' : ∃ C : ConjClasses G, g ∈ ⋃ (_h : C ∈ G.classesOfType mu), C.carrier :=
       Set.mem_iUnion.1 hg
@@ -88,5 +80,9 @@ theorem _root_.Subgroup.mem_iUnion_classesOfType (G : Subgroup (Equiv.Perm α))
     calc (g : Equiv.Perm α).fullCycleType = (c : Equiv.Perm α).fullCycleType :=
         Equiv.Perm.fullCycleType_eq_of_isConj hconj
       _ = mu := hc
+  · intro hg
+    refine Set.mem_iUnion.2 ⟨ConjClasses.mk g, ?_⟩
+    refine Set.mem_iUnion.2 ⟨Subgroup.mem_classesOfType.2 ⟨g, rfl, hg⟩, ?_⟩
+    exact ConjClasses.mem_carrier_iff_mk_eq.2 rfl
 
 end TauCeti

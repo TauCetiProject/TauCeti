@@ -14,8 +14,7 @@ A passport records a reference monodromy subgroup `P.G` together with the three 
 types of the generating triples it contains. The number of isomorphism classes in the passport is
 the number of `P.G`-generating triples of `S_n` with those cycle data, counted up to the action of
 the normalizer of `P.G`. This file names that finite set of generating triples and gives its
-cardinality; the size formula itself, which counts them in classes of a cycle type and divides by
-the normalizer, is a later step.
+cardinality.
 
 ## The classes of a cycle type
 
@@ -33,7 +32,9 @@ triples of the passport, as triples of permutations. The product-one relation ma
 entry a function of the first two
 (`TauCeti.PermutationTriple.ofTwo_σinf_of_productOne`), so
 `TauCeti.PassportSpec.generatingTriplesEquiv` is the elimination rule identifying that finite set
-with `TauCeti.PassportSpec.GeneratingTriple`, and
+with `TauCeti.PassportSpec.GeneratingTriple`, the two maps being computed by
+`TauCeti.PassportSpec.generatingTriplesEquiv_apply` and
+`TauCeti.PassportSpec.generatingTriplesEquiv_symm_apply`, and
 `TauCeti.PassportSpec.card_generatingTriples` reads the size of the passport's generating triples
 off it. This is the finite set that a sum over triples of classes counts, and that the normalizer
 of `P.G` acts on.
@@ -82,7 +83,9 @@ theorem mem_generatingTriples {P : PassportSpec n}
   simp [generatingTriples]
 
 /-- The generating triples of a passport, as product-one triples of permutations: the elimination
-rule for `TauCeti.PassportSpec.generatingTriples`, and the source of the counting below. -/
+rule for `TauCeti.PassportSpec.generatingTriples`, and the source of the counting below. Its two
+maps are computed by `TauCeti.PassportSpec.generatingTriplesEquiv_apply` and
+`TauCeti.PassportSpec.generatingTriplesEquiv_symm_apply`. -/
 noncomputable def generatingTriplesEquiv (P : PassportSpec n) :
     P.GeneratingTriple ≃ {p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) //
       p ∈ P.generatingTriples} := by
@@ -134,6 +137,21 @@ noncomputable def generatingTriplesEquiv (P : PassportSpec n) :
     dsimp only [invF, toF]
     rw [PermutationTriple.ofTwo_σ0, PermutationTriple.ofTwo_σ1,
       PermutationTriple.ofTwo_σinf_of_productOne q.1 h']
+
+/-- The triple of permutations that `TauCeti.PassportSpec.generatingTriplesEquiv` attaches to a
+generating triple of `P` is the triple of its three components. -/
+@[simp]
+theorem generatingTriplesEquiv_apply (P : PassportSpec n) (g : P.GeneratingTriple) :
+    (P.generatingTriplesEquiv g : Perm (Fin n) × Perm (Fin n) × Perm (Fin n)) =
+      (g.1.σ0, g.1.σ1, g.1.σinf) := (rfl)
+
+/-- The generating triple that `TauCeti.PassportSpec.generatingTriplesEquiv` attaches to a
+product-one triple of `S_n` is the triple with the same first two components. -/
+@[simp]
+theorem generatingTriplesEquiv_symm_apply (P : PassportSpec n)
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q ∈ P.generatingTriples}) :
+    (P.generatingTriplesEquiv.symm p : PermutationTriple n) =
+      PermutationTriple.ofTwo p.1.1 p.1.2.1 := (rfl)
 
 /-- The number of generating triples of a passport, computed on the generating triples of `S_n`. -/
 theorem card_generatingTriples (P : PassportSpec n) :

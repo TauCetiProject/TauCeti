@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.GroupTheory.GroupAction.Quotient
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
@@ -509,10 +507,7 @@ theorem automorphismGroup_equivOppositeConvention (t : PermutationTriple n) :
     _ = t.automorphismGroup :=
       (automorphismGroup_eq_centralizer_monodromyGroup (t := t)).symm
 
-/-- An automorphism of a triple with pretransitive monodromy fixing a sheet is the identity.
-
-This is `TauCeti.Subgroup.eq_one_of_mem_centralizer_of_apply_eq` for the centralizer of a group of
-permutations. -/
+/-- An automorphism of a triple with pretransitive monodromy fixing a sheet is the identity. -/
 theorem eq_one_of_mem_automorphismGroup_of_apply_eq
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) {τ : Perm (Fin n)}
     (hτ : τ ∈ t.automorphismGroup) {i : Fin n} (hi : τ i = i) : τ = 1 := by
@@ -520,9 +515,7 @@ theorem eq_one_of_mem_automorphismGroup_of_apply_eq
     (automorphismGroup_eq_centralizer_monodromyGroup (t := t) ▸ hτ) hi
 
 /-- The order of the automorphism group divides the degree when the monodromy action is
-pretransitive.
-
-This is `TauCeti.Subgroup.card_centralizer_dvd` for the centralizer of a group of permutations. -/
+pretransitive. -/
 theorem card_automorphismGroup_dvd
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) :
     Nat.card t.automorphismGroup ∣ n := by

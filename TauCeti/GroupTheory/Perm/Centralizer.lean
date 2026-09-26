@@ -64,8 +64,11 @@ theorem _root_.Subgroup.centralizer_stabilizer_eq_bot
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α) (i : α) :
     MulAction.stabilizer (Subgroup.centralizer (G : Set (Equiv.Perm α))) i = ⊥ := by
   refine eq_bot_iff.mpr fun τ hτ => ?_
+  have hfix : (τ : Equiv.Perm α) i = i := by
+    have hτ' : τ • i = i := MulAction.mem_stabilizer_iff.mp hτ
+    rwa [Subgroup.smul_def, Equiv.Perm.smul_def] at hτ'
   rw [Subgroup.mem_bot]
-  exact Subtype.ext (Subgroup.eq_one_of_mem_centralizer_of_apply_eq hG τ.property hτ)
+  exact Subtype.ext (Subgroup.eq_one_of_mem_centralizer_of_apply_eq hG τ.property hfix)
 
 /-- The cardinality of the centralizer of a transitive group of permutations divides the cardinality
 of the letters, the centralizer being free on them. -/
