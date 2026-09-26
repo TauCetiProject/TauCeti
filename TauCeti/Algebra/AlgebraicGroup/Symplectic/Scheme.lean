@@ -108,13 +108,8 @@ private lemma groupSchemePointMulEquiv_comp_inclusion
       GeneralLinear.groupSchemePointMulEquiv (m + m) A
         ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app
           (CommAlgCat.of R A) q) := by
-  rw [show inclusion R m =
-      eqToHom (groupScheme_def R m) ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R m).op ≫
-        eqToHom (GeneralLinear.groupScheme_def R (m + m)).symm by
-    rw [inclusion_def, GeneralLinear.hopfIdealInclusion_def,
-      CommHopfAlgCat.quotientSpecι_def, coordinateMap_def, eqToIso.hom]
-    simp only [eqToHom_refl, Category.id_comp]]
+  rw [show inclusion R m = ConstantForm.inclusion R (m + m) (JFin m R) by rfl,
+    ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
     (R := R) A (GeneralLinear.groupScheme_def R (m + m)) (groupScheme_def R m)
       (GeneralLinear.groupSchemePointMulEquiv (m + m) A) (groupSchemePointMulEquiv m A)
