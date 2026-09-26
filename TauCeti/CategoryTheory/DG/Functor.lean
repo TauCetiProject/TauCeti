@@ -28,8 +28,8 @@ statements about `H⁰(F)`.
 * `CategoryTheory.EnrichedFunctor.dgMap`: the action of a DG functor on morphisms of degree `n`.
 * `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory`: the functor `H⁰(F)` induced on homotopy
   categories.
-* `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategoryId` and
-  `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategoryComp`: `H⁰` of the identity DG functor and
+* `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategoryIdIso` and
+  `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategoryCompIso`: `H⁰` of the identity DG functor and
   of a composite.
 
 ## Main results
@@ -87,21 +87,23 @@ theorem dgMap_dgId (X : C) : F.dgMap 0 (dgId R X) = dgId R (F.obj X) := by
   rw [dgMap_apply, dgId_def, dgId_def, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
     F.map_id]
 
+/-- The bidegree component of enriched composition is natural under a DG functor. -/
+theorem dgCompMap_naturality {X Y Z : C} (p q n : ℤ) (h : p + q = n) :
+    dgCompMap R X Y Z p q n h ≫ (F.map X Z).f n =
+      ((F.map X Y).f p ⊗ₘ (F.map Y Z).f q) ≫
+        dgCompMap R (F.obj X) (F.obj Y) (F.obj Z) p q n h := by
+  rw [dgCompMap_def, dgCompMap_def, Category.assoc, ← HomologicalComplex.comp_f, F.map_comp,
+    tensorHom_def, HomologicalComplex.comp_f, HomologicalComplex.comp_f, Category.assoc,
+    ι_whiskerRight_assoc, ι_whiskerLeft_assoc, tensorHom_def_assoc]
+
 /-- A DG functor preserves the composition of homogeneous morphisms. -/
 @[simp]
 theorem dgMap_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g : DGHom R q Y Z)
     (h : p + q = n) :
     F.dgMap n (dgComp R f g h) = dgComp R (F.dgMap p f) (F.dgMap q g) h := by
-  -- The enriched compatibility `F.map_comp`, restricted to the summand of bidegree `(p, q)`.
-  have key : dgCompMap R X Y Z p q n h ≫ (F.map X Z).f n =
-      ((F.map X Y).f p ⊗ₘ (F.map Y Z).f q) ≫
-        dgCompMap R (F.obj X) (F.obj Y) (F.obj Z) p q n h := by
-    rw [dgCompMap_def, dgCompMap_def, Category.assoc, ← HomologicalComplex.comp_f, F.map_comp,
-      tensorHom_def, HomologicalComplex.comp_f, HomologicalComplex.comp_f, Category.assoc,
-      ι_whiskerRight_assoc, ι_whiskerLeft_assoc, tensorHom_def_assoc]
   simpa only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, dgCompMap_tmul,
     ModuleCat.MonoidalCategory.tensorHom_tmul, dgMap_apply] using
-    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom key) (f ⊗ₜ g)
+    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (F.dgCompMap_naturality p q n h)) (f ⊗ₜ g)
 
 /-- The identity DG functor acts as the identity on homogeneous morphisms. -/
 @[simp]
@@ -186,7 +188,7 @@ instance : F.mapDGHomotopyCategory.Linear R where
     (DGHomotopyCategory.underlying R Y)) 0).hom r f
 
 /-- `H⁰` of the identity DG functor is the identity functor. -/
-def mapDGHomotopyCategoryId :
+def mapDGHomotopyCategoryIdIso :
     (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C).mapDGHomotopyCategory ≅
       𝟭 (DGHomotopyCategory R C) :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
@@ -197,7 +199,7 @@ def mapDGHomotopyCategoryId :
       (DGHomotopyCategory.underlying R _) (DGHomotopyCategory.underlying R _)) 0)) f
 
 /-- `H⁰` of a composite of DG functors is the composite of the induced functors. -/
-def mapDGHomotopyCategoryComp :
+def mapDGHomotopyCategoryCompIso :
     (F.comp (CochainComplex (ModuleCat.{v} R) ℤ) G).mapDGHomotopyCategory ≅
       F.mapDGHomotopyCategory ⋙ G.mapDGHomotopyCategory :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
