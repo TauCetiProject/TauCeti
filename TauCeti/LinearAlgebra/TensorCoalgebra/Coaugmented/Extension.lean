@@ -77,19 +77,16 @@ theorem extendReduced_apply (f : ReducedTensorWords R M →ₗ[R] ReducedTensorW
   simp only [extendReduced, LinearMap.coe_comp, Function.comp_apply]
 
 /-- The extension annihilates every word of length zero. -/
-@[simp]
 theorem extendReduced_of_zero (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
     (z : TensorPower R 0 M) : extendReduced f (of R M 0 z) = 0 := by
   rw [extendReduced_apply, reducedProjection_of_zero, map_zero, map_zero]
 
 /-- The extension annihilates the empty word. -/
-@[simp]
 theorem extendReduced_one (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
     extendReduced f (1 : TensorWords R M) = 0 := by
   rw [one_eq_of_zero, extendReduced_of_zero]
 
 /-- On a word of positive length the extension is the inclusion of the value of the endomorphism. -/
-@[simp]
 theorem extendReduced_of (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) {n : ℕ}
     (hn : 0 < n) (z : TensorPower R n M) :
     extendReduced f (of R M n z) =
@@ -105,7 +102,6 @@ theorem extendReduced_comp_reducedInclusion
     reducedProjection_reducedInclusion]
 
 /-- The extension acts on the words of positive length as the endomorphism it extends. -/
-@[simp]
 theorem extendReduced_reducedInclusion
     (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) (w : ReducedTensorWords R M) :
     extendReduced f (reducedInclusion R M w) = reducedInclusion R M (f w) :=
