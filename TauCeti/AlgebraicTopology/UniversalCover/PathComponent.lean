@@ -30,8 +30,6 @@ path-component cover is `(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-grou
 
 ## Main declarations
 
-* `TauCeti.UniversalCover.range_proj`: the endpoint projection has range the path component of
-  `x₀`.
 * `TauCeti.UniversalCover.PathComponentCover`: the universal cover of the path component of `x₀`.
 * `TauCeti.UniversalCover.pathComponentCoverProj`: its projection down to `X`.
 * `TauCeti.UniversalCover.isCoveringMap_pathComponentCoverProj` and
@@ -56,15 +54,6 @@ namespace TauCeti.UniversalCover
 
 variable {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
   [SemilocallySimplyConnectedSpace X] (x₀ : X)
-
-omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
-/-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
-theorem range_proj : Set.range (proj : UniversalCover x₀ → X) = pathComponent x₀ := by
-  ext x
-  refine ⟨?_, fun h ↦ ⟨mk x (Path.Homotopic.Quotient.mk h.somePath), rfl⟩⟩
-  rintro ⟨⟨x, q⟩, rfl⟩
-  induction q using Quotient.inductionOn with
-  | h p => exact ⟨p⟩
 
 /-- The universal cover of the path component of `x₀`. The component is path connected; local
 path connectedness follows from its openness, and semilocal simple connectivity follows because

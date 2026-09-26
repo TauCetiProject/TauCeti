@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.SubgroupQuotient
 public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Covering.Quotient
-import TauCeti.AlgebraicTopology.UniversalCover.PathComponent
+import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.IsLocalHomeomorph
 
