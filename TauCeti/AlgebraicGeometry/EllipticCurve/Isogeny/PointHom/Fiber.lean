@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Affine
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 import TauCeti.GroupTheory.Coset.Fiber
 
