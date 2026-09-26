@@ -25,8 +25,7 @@ machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative 
 `TauCeti.DynkinType.uniformExp`, a thin abbreviation for the existing Geck root-subgroup
 points `t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)`; their values in
 the general linear group are the Geck root-subgroup matrices
-(`TauCeti.DynkinType.coe_uniformExp`), and their one-parameter subgroup laws are inherited
-from the monoid-hom structure of `geckRootSubgroupPoints` via `map_one` and `map_mul`.
+(`TauCeti.DynkinType.coe_uniformExp`).
 This module contributes only the bracket relations, their direct transfer to the
 represented pinning, and the thin uniform-exponential abbreviation.
 
@@ -104,18 +103,14 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
 /-! ## The uniform exponential -/
 
 /-- The uniform exponential `u ↦ exp(u • e_i)` at the `i`-th pinning generator over any
-commutative ring: the existing Geck root-subgroup point at the `𝔾ₐ`-parameter of `u`.
-The one-parameter subgroup laws are inherited from the monoid-hom structure of
-`geckRootSubgroupPoints` via `map_one` and `map_mul`; the matrix values are characterized
-by `TauCeti.DynkinType.coe_uniformExp`. -/
+commutative ring: the Geck root-subgroup point at the `𝔾ₐ`-parameter of `u`. Its values
+as matrices are characterized by `TauCeti.DynkinType.coe_uniformExp`. -/
 abbrev uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
     t.geckPoints ht A :=
   t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)
 
-/-- The uniform exponential takes values in the general linear group through the Geck
-root-subgroup matrix at the `𝔾ₐ`-parameter of `u`. Not a `simp` lemma: since `uniformExp`
-is a reducible abbreviation, `simp` already proves this from
-`TauCeti.DynkinType.coe_geckRootSubgroupPoints`. -/
+/-- The uniform exponential takes values in the general linear group: it is the Geck
+root-subgroup matrix at the `𝔾ₐ`-parameter of `u`. -/
 theorem coe_uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
     (t.uniformExp ht A i u :
         Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) =
