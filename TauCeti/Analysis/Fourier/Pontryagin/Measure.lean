@@ -27,10 +27,17 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 
 /-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
 additive group. -/
-@[expose]
 noncomputable def _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
+
+/-- The transform evaluated at a group element is the integral of character evaluations. -/
+theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_apply
+    (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
+    μ.pontryaginMeasureTransform g =
+      ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure := by
+  unfold FiniteMeasure.pontryaginMeasureTransform
+  rfl
 
 /-- At the identity, the transform records the total mass of the measure. -/
 @[simp]

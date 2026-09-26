@@ -47,7 +47,7 @@ theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasu
     · congr 1
       ext i
       rw [integral_finsetSum]
-      · simp only [integral_const_mul, FiniteMeasure.pontryaginMeasureTransform]
+      · simp only [integral_const_mul, FiniteMeasure.pontryaginMeasureTransform_apply]
       · intro j _
         exact hint i j
     · intro i _
