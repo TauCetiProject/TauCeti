@@ -145,14 +145,12 @@ abbrev twistedCochainComplexShortComplex :
 
 /-- The first map of the twisted cochain sequence of a pair is the image under `Hom(-, M)` of the
 quotient map from ambient to relative twisted chains. -/
-@[simp]
 lemma twistedCochainComplexShortComplex_f_eq :
     (P.twistedCochainComplexShortComplex L k M).f =
       (ChainComplex.linearYonedaFunctor k M).map (P.twistedChainComplexπ L).op := (rfl)
 
 /-- The second map of the twisted cochain sequence of a pair is restriction from the ambient space
 to the subspace. -/
-@[simp]
 lemma twistedCochainComplexShortComplex_g_eq :
     (P.twistedCochainComplexShortComplex L k M).g =
       LocalCoefficientSystem.twistedCochainComplexMap k M P.map L := (rfl)
