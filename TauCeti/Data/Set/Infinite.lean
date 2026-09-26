@@ -21,6 +21,8 @@ noncomputable section
 
 namespace TauCeti
 
+namespace Set.Infinite
+
 /-- An injection of `ℕ` into an infinite set `S` of indices may be chosen to fix a prescribed
 element `i ∈ S`. -/
 theorem exists_injective_apply_eq_mem {S : Set ℕ} (hS : S.Infinite) {i : ℕ}
@@ -29,5 +31,7 @@ theorem exists_injective_apply_eq_mem {S : Set ℕ} (hS : S.Infinite) {i : ℕ}
   obtain ⟨e⟩ := nonempty_equiv_of_countable (α := ℕ) (β := S)
   refine ⟨fun k ↦ e (Equiv.swap i (e.symm ⟨i, hi⟩) k), ?_, by simp, fun k ↦ (e _).2⟩
   exact Subtype.val_injective.comp (e.injective.comp (Equiv.injective _))
+
+end Set.Infinite
 
 end TauCeti

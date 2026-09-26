@@ -33,14 +33,6 @@ hidden block, the hidden part of row `i` and the hidden part of column `j`, and 
 that the visible entry `(i, j)` depends on the rest of the array only through these three pieces of
 data. The cell variable `Uᵢⱼ` of the representation is the randomization of this conditional law.
 
-The proof is Kallenberg's contraction principle. Reindexing the rows by an injection into `S`
-fixing `c.1`, and the columns by an injection into `T` fixing `c.2`, preserves the law of the array
-(`SeparatelyExchangeable.map_arrayBlock_eq`) and fixes the entry at `c`. So the pair formed by the
-entry at `c` and the rest of the array has the same law as the pair formed by the entry at `c` and
-a read-off of the rest of the rectangle. Since the latter carries less information, conditioning on
-the former may be replaced by conditioning on the latter
-(`TauCeti.Probability.condExp_indicator_eq_of_law_eq_of_comap_le`).
-
 The statement is about a law on array space, whose coordinate process is the array; a process on
 an arbitrary sample space enters through its law.
 
@@ -57,8 +49,6 @@ an arbitrary sample space enters through its law.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Lemma 1.3
   and Chapter 7.
 
-No material is adapted from `cameronfreer/exchangeability`, which treats sequences rather than
-arrays.
 -/
 
 public section
@@ -82,8 +72,8 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     (hT : T.Infinite) {c : ℕ × ℕ} (hc₁ : c.1 ∈ S) (hc₂ : c.2 ∈ T) :
     (fun x : ℕ × ℕ → α ↦ x c) ⟂ᵢ[(S ×ˢ T \ {c}).domRestrict, Set.measurable_restrict _; ρ]
       ({c}ᶜ : Set (ℕ × ℕ)).domRestrict := by
-  obtain ⟨a, ha, hac, haS⟩ := exists_injective_apply_eq_mem hS hc₁
-  obtain ⟨b, hb, hbc, hbT⟩ := exists_injective_apply_eq_mem hT hc₂
+  obtain ⟨a, ha, hac, haS⟩ := Set.Infinite.exists_injective_apply_eq_mem hS hc₁
+  obtain ⟨b, hb, hbc, hbT⟩ := Set.Infinite.exists_injective_apply_eq_mem hT hc₂
   set R : Set (ℕ × ℕ) := S ×ˢ T \ {c}
   set D : Set (ℕ × ℕ) := {c}ᶜ
   set rR : (ℕ × ℕ → α) → R → α := R.domRestrict
