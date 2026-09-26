@@ -33,6 +33,8 @@ precisely where the action on `μ₂` is not trivial.
   `ofDiscreteModule ℤ G_K (KummerCoeff K 2) ≅ trivialF2 G_K`.
 * `TauCeti.isUnit_natCast_two`: `2` is a unit of `K` in the `ℕ`-coerced spelling the Kummer
   statements are made in.
+* `TauCeti.kummerClass`: the Kummer class `(a) ∈ H¹(G_K, 𝔽₂)` of a unit, read in the
+  `trivialF2 G_K` carrier.
 
 ## Main results
 
@@ -45,6 +47,9 @@ precisely where the action on `μ₂` is not trivial.
 * `TauCeti.kummerCoeff_smul_eq_self`: the Galois action on `μ₂` is trivial.
 * `TauCeti.mu2EquivZMod2_equivariant`: the value dictionary is fixed by `G_K`, which is what makes
   it a morphism of coefficient objects.
+* `TauCeti.kummerClass_eq_zero_of_square`: the Kummer class of a square vanishes. The converse is
+  not stated: it is the injectivity of the coefficient map on `H¹`, which Mathlib's
+  `continuousCohomology` does not provide.
 
 ## References
 
@@ -283,5 +288,41 @@ noncomputable def kummerCoeffIsoTrivialF2 :
           rw [hfrom]
           exact ofDiscreteModuleMap_hom_apply _ _ _
         rw [hout, AddEquiv.apply_symm_apply] }
+
+/-! ### The Kummer class of a unit -/
+
+variable {K}
+
+/-- **The Kummer class** `(a) ∈ H¹(G_K, 𝔽₂)` of a unit `a`. It is the supplier's
+`TauCeti.kummerMapCanonical` at `n = 2`, read through the coefficient-object isomorphism
+`TauCeti.kummerCoeffIsoTrivialF2`, and not a second Kummer cocycle: the body is a real term, so the
+two cannot drift. -/
+noncomputable def kummerClass (a : Kˣ) :
+    continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
+  (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 1).hom
+    (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_natCast_two K) a))
+
+variable (K)
+
+/-- **The Kummer class of a square vanishes.** A member of `Subgroup.square Kˣ` is a square, hence
+a two-th power, so `TauCeti.kummerMap_eq_one_iff` at `n = 2` makes the Kummer map trivial on it, and
+the degree-one comparison `TauCeti.explicitIso_kummerMap` carries that to the Kummer class.
+⚠ Only this direction is stated. The converse, that a unit with trivial Kummer class is a square,
+is the statement that the coefficient map on `H¹` is injective, and that injectivity is not
+available at the coefficient level today: the `hom` of a morphism of `continuousCohomology` is a
+`ContinuousLinearMap`, not an `Embedding`, so `TauCeti.h2KummerToUnits_injective` had to be proved
+by hand for the degree-two Kummer map, and the same hand proof is needed here. -/
+theorem kummerClass_eq_zero_of_square {a : Kˣ} (ha : a ∈ Subgroup.square Kˣ) :
+    kummerClass a = 0 := by
+  obtain ⟨r, hr⟩ := Subgroup.mem_square.mp ha
+  have hone : kummerMap K 2 (isUnit_natCast_two K) a = 1 :=
+    (kummerMap_eq_one_iff (isUnit_natCast_two K) a).mpr
+      ⟨r, by rw [hr, pow_two]⟩
+  have hzero : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_natCast_two K) a) = 0 := by
+    rw [explicitIso_kummerMap K 2 (isUnit_natCast_two K) a, hone]
+    simp
+  rw [kummerClass, hzero]
+  simp
+
 
 end TauCeti
