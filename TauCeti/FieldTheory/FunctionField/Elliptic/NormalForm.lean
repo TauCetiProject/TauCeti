@@ -42,28 +42,38 @@ private theorem completedSquare (a₂ a₄ a₆ c d x y : F) :
         (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) := by
   ring
 
-/-- The coefficients of Mathlib's characteristic-not-two normal form are those obtained by
-completing the square in the original Weierstrass equation. -/
-theorem toCharNeTwoNF_coefficients (W : WeierstrassCurve k) (h2 : (2 : k) ≠ 0) :
-    letI : Invertible (2 : k) := invertibleOfNonzero h2
-    let c := W.a₁ / 2
-    let d := W.a₃ / 2
-    (W.toCharNeTwoNF • W).a₂ = W.a₂ + c ^ 2 ∧
-      (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * c * d ∧
-      (W.toCharNeTwoNF • W).a₆ = W.a₆ + d ^ 2 := by
-  let : Invertible (2 : k) := invertibleOfNonzero h2
-  dsimp
-  constructor
-  · simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-    field_simp [h2]
-    ring
-  constructor
-  · simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-    field_simp [h2]
-    ring
-  · simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-    field_simp [h2]
-    ring
+section Coefficients
+
+variable [Invertible (2 : k)]
+
+/-- The quadratic coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₂ (W : WeierstrassCurve k) :
+    (W.toCharNeTwoNF • W).a₂ = W.a₂ + (W.a₁ / 2) ^ 2 := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+/-- The linear coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₄ (W : WeierstrassCurve k) :
+    (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * (W.a₁ / 2) * (W.a₃ / 2) := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+/-- The constant coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₆ (W : WeierstrassCurve k) :
+    (W.toCharNeTwoNF • W).a₆ = W.a₆ + (W.a₃ / 2) ^ 2 := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+end Coefficients
 
 namespace Place.IsWeierstrassCoordinates
 
@@ -107,7 +117,6 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
     exact Q.mem_integers_iff_ord_nonneg.mp (by exact add_mem (add_mem hyQ (mul_mem hcQ hxQ)) hdQ)
   · have hEq := h.equation
     rw [Affine.equation_iff] at hEq ⊢
-    obtain ⟨ha₂, ha₄, ha₆⟩ := toCharNeTwoNF_coefficients W h2
     have hc : W.a₁ = 2 * c := by
       dsimp [c]
       field_simp [h2]
@@ -115,7 +124,7 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
       dsimp [d]
       field_simp [h2]
     simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hEq ⊢
-    rw [ha₂, ha₄, ha₆]
+    rw [toCharNeTwoNF_a₂, toCharNeTwoNF_a₄, toCharNeTwoNF_a₆]
     rw [hc, hd] at hEq
     simp only [a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, map_zero, zero_mul,
       add_zero, map_add, map_pow, map_mul, map_ofNat] at *
