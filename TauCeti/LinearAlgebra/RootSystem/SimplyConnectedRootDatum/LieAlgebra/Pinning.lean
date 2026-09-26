@@ -95,7 +95,7 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
 /-- The pinned matrix exponential: for a valid Dynkin type, the matrix `exp(u • e_i)`
 for the `i`-th pinning generator `e_i`, as an element of the general linear group
 over a ℚ-algebra. This is the Geck root-subgroup matrix at the pinning generator. -/
-noncomputable def pinnedExp (A : Type*) [CommRing A] [Algebra ℚ A]
+noncomputable def pinnedExp (A : Type*) [CommRing A]
     (i : Fin t.rank) (u : A) : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
   t.geckRootSubgroupMatrix ht (.inl i)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
