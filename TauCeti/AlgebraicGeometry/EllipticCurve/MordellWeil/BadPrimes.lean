@@ -237,7 +237,7 @@ lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Fact
   simpa using pow_le_pow_left' hz _
 
 /-- A prime `w` not lying above a bad prime lies over a good prime of `R`. -/
-lemma under_notMem_badPrimes [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
+lemma under_notMem_badPrimes (p : W.f.Factors)
     {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
     (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
     HeightOneSpectrum.under R w ∉ W.badPrimes R :=

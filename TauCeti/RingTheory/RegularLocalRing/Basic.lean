@@ -24,7 +24,8 @@ valuation rings.
 
 * `TauCeti.IsRegularLocalRing.isDomain`: a regular local ring is an integral domain;
 * `TauCeti.IsRegularLocalRing.quotient_span_singleton`: for `x ∈ 𝔪 \ 𝔪²`, the quotient `R ⧸ (x)`
-  is again a regular local ring;
+  is again a regular local ring, and `TauCeti.IsRegularLocalRing.quotient_span_singleton_iff`: for
+  a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`;
 * `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`: a regular local
   ring is a discrete valuation ring exactly when it has dimension one.
 
@@ -129,6 +130,21 @@ theorem quotient_span_singleton {x : R} (hxm : x ∈ maximalIdeal R)
   have hx0 : x = 0 := by simpa [hp] using hxp
   rw [hx0]
   exact zero_mem _
+
+/-- If `R` is a regular local ring and `x ∈ 𝔪` is nonzero, then `R ⧸ (x)` is a regular local ring
+exactly when `x ∉ 𝔪²`. -/
+theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : x ≠ 0) :
+    IsRegularLocalRing (R ⧸ span {x}) ↔ x ∉ maximalIdeal R ^ 2 := by
+  refine ⟨fun _ hx ↦ ?_, quotient_span_singleton hxm⟩
+  -- for `x ∈ 𝔪²` the maximal ideal of `R ⧸ (x)` needs as many generators as `𝔪`, while the
+  -- nonzero divisor `x` lowers the dimension
+  have h₁ := spanFinrank_map_maximalIdeal_quotient_of_le_sq
+    (maximalIdeal R).fg_of_isNoetherianRing ((span_singleton_le_iff_mem _).mpr hx)
+  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at h₁
+  have h₂ := ringKrullDim_quotient_succ_le_of_nonZeroDivisor (mem_nonZeroDivisors_of_ne_zero hx0)
+  rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R), h₁]
+    at h₂
+  exact absurd h₂ (by norm_cast; omega)
 
 /-- A regular local ring is a discrete valuation ring exactly when it has dimension one. -/
 theorem isDiscreteValuationRing_iff_ringKrullDim_eq_one :

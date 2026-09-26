@@ -43,6 +43,8 @@ quotient.
   injective, so the coefficient of an element of an arrow's span is unique.
 * `TauCeti.skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_span`: the corner between
   the endpoints of an arrow is spanned by that arrow.
+* `TauCeti.skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_eq_zero`: the corner between two
+  distinct nonadjacent vertices vanishes.
 * `TauCeti.finrank_skewZigzagQuotient`: when there are no isolated vertices, the dimension is
   `2|V| + 2|E|`, as in the ordinary case.
 
@@ -578,7 +580,36 @@ theorem skewZigzagMk_ofArrow_smul_left_injective {x y : DoubledQuiver G} (e : x 
   beta_reduce
   rw [← ofArrow_symm_mul_ofArrow, map_mul, ← mul_smul_comm, ← mul_smul_comm, hrs]
 
-/-! ### The corner of an arrow -/
+/-! ### Corners -/
+
+/-- An element of the corner `e_y Z e_x` lies in every submodule containing the classes of all
+paths from `x` to `y`. -/
+private theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_of_forall
+    {x y : DoubledQuiver G} {S : Submodule k (skewZigzagQuotient k G c)}
+    (hS : ∀ p : _root_.Quiver.Path x y, skewZigzagMk k G c (ofPath ⟨_, _, p⟩) ∈ S)
+    (z : skewZigzagQuotient k G c) :
+    skewZigzagMk k G c (vertexIdempotent k y) * z * skewZigzagMk k G c (vertexIdempotent k x) ∈
+      S := by
+  obtain ⟨z, rfl⟩ := skewZigzagMk_surjective k G c z
+  rw [← map_mul, ← map_mul]
+  induction z using PathAlgebra.induction_linear with
+  | zero => rw [mul_zero, zero_mul, map_zero]; exact Submodule.zero_mem _
+  | add z₁ z₂ h₁ h₂ => rw [mul_add, add_mul, map_add]; exact Submodule.add_mem _ h₁ h₂
+  | single q r =>
+    rw [single_eq_smul_ofPath, mul_smul_comm, smul_mul_assoc, map_smul]
+    refine Submodule.smul_mem _ r ?_
+    obtain ⟨a, b, p⟩ := q
+    by_cases hb : y = b
+    · subst hb
+      rw [vertexIdempotent_mul_ofPath]
+      by_cases ha : x = a
+      · subst ha
+        rw [ofPath_mul_vertexIdempotent]
+        exact hS p
+      · rw [ofPath_mul_vertexIdempotent_of_ne _ ha, map_zero]
+        exact Submodule.zero_mem _
+    · rw [vertexIdempotent_mul_ofPath_of_ne _ hb, zero_mul, map_zero]
+      exact Submodule.zero_mem _
 
 /-- A path whose tail is `vertex G i` and whose head is `vertex G j`, for an edge `h : G.Adj i j`,
 is a multiple of the arrow of `h` in the skew-zigzag quotient: it cannot have length zero since
@@ -610,26 +641,33 @@ theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_span {x y : D
   obtain ⟨j, rfl⟩ : ∃ j, y = vertex G j := ⟨_, (vertexEquiv_symm_apply G y).symm⟩
   have h : G.Adj i j := by simpa using e.down
   obtain rfl : e = arrow G h := Subsingleton.elim _ _
-  obtain ⟨z, rfl⟩ := skewZigzagMk_surjective k G c z
-  rw [← map_mul, ← map_mul]
-  induction z using PathAlgebra.induction_linear with
-  | zero => rw [mul_zero, zero_mul, map_zero]; exact Submodule.zero_mem _
-  | add z₁ z₂ h₁ h₂ => rw [mul_add, add_mul, map_add]; exact Submodule.add_mem _ h₁ h₂
-  | single q r =>
-    rw [single_eq_smul_ofPath, mul_smul_comm, smul_mul_assoc, map_smul]
-    refine Submodule.smul_mem _ r ?_
-    obtain ⟨a, b, p⟩ := q
-    by_cases hb : vertex G j = b
-    · subst hb
-      rw [vertexIdempotent_mul_ofPath]
-      by_cases ha : vertex G i = a
-      · subst ha
-        rw [ofPath_mul_vertexIdempotent]
-        exact skewZigzagMk_ofPath_mem_span k G c h p
-      · rw [ofPath_mul_vertexIdempotent_of_ne _ ha, map_zero]
-        exact Submodule.zero_mem _
-    · rw [vertexIdempotent_mul_ofPath_of_ne _ hb, zero_mul, map_zero]
-      exact Submodule.zero_mem _
+  exact skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_of_forall k G c
+    (skewZigzagMk_ofPath_mem_span k G c h) z
+
+/-- A path between two distinct nonadjacent vertices dies in the skew-zigzag quotient: it has
+neither length zero nor length one, and every longer such path is a relator. -/
+private theorem skewZigzagMk_ofPath_eq_zero_of_not_adj {i j : V} (hij : i ≠ j)
+    (h : ¬G.Adj i j) (p : _root_.Quiver.Path (vertex G i) (vertex G j)) :
+    skewZigzagMk k G c (ofPath ⟨_, _, p⟩) = 0 := by
+  rcases Nat.lt_or_ge p.length 3 with hlt | hge
+  · have hcases : p.length = 0 ∨ p.length = 1 ∨ p.length = 2 := by omega
+    rcases hcases with hp | hp | hp
+    · exact absurd ((vertex_inj G).mp (p.eq_of_length_zero hp)) hij
+    · exact absurd (exists_eq_arrowPath G p hp).1 h
+    · exact skewZigzagMk_ofPath_eq_zero_of_ne k G c p hp ((vertex_injective G).ne hij)
+  · exact skewZigzagMk_ofPath_eq_zero_of_three_le k G c ⟨_, _, p⟩ hge
+
+/-- **The corner between two distinct nonadjacent vertices vanishes.** Cutting any element of a
+skew-zigzag relation quotient down by the vertex idempotent at `j` on the left and at `i` on the
+right gives zero when `i ≠ j` are not joined by an edge. -/
+@[simp]
+theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_eq_zero {i j : V} (hij : i ≠ j)
+    (h : ¬G.Adj i j) (z : skewZigzagQuotient k G c) :
+    skewZigzagMk k G c (vertexIdempotent k (vertex G j)) * z *
+      skewZigzagMk k G c (vertexIdempotent k (vertex G i)) = 0 :=
+  (Submodule.mem_bot k).mp <| skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_mem_of_forall
+    k G c (fun p => (Submodule.mem_bot k).mpr
+      (skewZigzagMk_ofPath_eq_zero_of_not_adj k G c hij h p)) z
 
 /-! ### The dimension and the comparison with the ordinary quotient -/
 

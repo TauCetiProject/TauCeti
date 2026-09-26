@@ -57,6 +57,8 @@ profinite group.
   every open normal subgroup.
 * `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
   to another such set.
+* `Filter.Tendsto.convergesToOne_range`: the range of a map tending to `1` along the cofinite
+  filter converges to one.
 * `Subgroup.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
   normal subgroup has a converging set of representatives upstairs.
 * `Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
@@ -128,6 +130,15 @@ theorem ConvergesToOne.union {s t : Set G} (hs : ConvergesToOne s) (ht : Converg
   rcases hx.1 with hxs | hxt
   · exact Or.inl ⟨hxs, hx.2⟩
   · exact Or.inr ⟨hxt, hx.2⟩
+
+/-- The range of a map tending to `1` along the cofinite filter converges to one. -/
+theorem _root_.Filter.Tendsto.convergesToOne_range {ι : Type*} {f : ι → G}
+    (hf : Tendsto f cofinite (𝓝 1)) : ConvergesToOne (Set.range f) := by
+  rw [convergesToOne_iff]
+  intro U hU
+  refine ((mem_cofinite.mp (hf hU)).image f).subset ?_
+  rintro _ ⟨⟨i, rfl⟩, hi⟩
+  exact ⟨i, hi, rfl⟩
 
 end One
 

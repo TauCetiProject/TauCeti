@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
-public import TauCeti.CategoryTheory.Limits.Preserves.SigmaConst
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Naturality in relative simplicial homology
@@ -67,8 +67,11 @@ lemma chainComplexShortComplexMap_τ₃ {P P' : SSetPair.{w}} (f : P ⟶ P') (R 
 
 /-- In each degree, the map from the chains of the subobject of a pair of simplicial sets to the
 chains of the ambient simplicial set is a split monomorphism. -/
+-- The term has type `IsSplitMono (Sigma.map' (P.hom.app (op ⦋n⦌)) fun _ ↦ 𝟙 R)`, so it uses the
+-- definitional unfolding of `(sigmaConst.obj R).map` through which the degree-`n` component of
+-- `SSet.chainComplexMap` reindexes a coproduct of copies of `R`.
 instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexMap P.hom R).f n) :=
-  inferInstanceAs (IsSplitMono ((sigmaConst.obj R).map (P.hom.app (op ⦋n⦌))))
+  TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

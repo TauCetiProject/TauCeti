@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 public import TauCeti.Topology.Algebra.Module.GroupAction
 
@@ -59,6 +60,10 @@ abelian pro-`p` group; consumers introduce it with `letI := hM.completedGroupAlg
 * `TauCeti.IsCompactModule.isScalarTower_completedGroupAlgebraModule`,
   `TauCeti.IsCompactModule.continuousSMul_completedGroupAlgebraModule`: the module structure is
   compatible with the `R`-module structure and is topological.
+* `TauCeti.IsCompactModule.span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul`,
+  `TauCeti.IsCompactModule.module_finite_completedGroupAlgebraModule_of_dense_closure_univ_smul`:
+  a finite set whose `Γ`-orbit generates a dense subgroup spans the module over `R[[Γ]]`, so the
+  module is finitely generated.
 
 ## References
 
@@ -384,6 +389,47 @@ theorem continuousSMul_completedGroupAlgebraModule :
     ContinuousSMul (completedGroupAlgebra R Γ) M :=
   letI := hM.completedGroupAlgebraModule Γ
   ⟨hM.continuous_completedSMul⟩
+
+section FiniteGeneration
+
+open scoped Pointwise
+
+variable [T2Space R] [ContinuousAdd R]
+
+variable (Γ) in
+/-- **Finite generation over the completed group algebra.** If the `Γ`-orbit of a finite set `T`
+generates a dense subgroup of the compact module `M`, then `T` spans `M` over `R[[Γ]]`: the span
+contains the orbit, because a group element acts as itself, and it is closed, because `R[[Γ]]` is
+compact. -/
+theorem span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul {T : Set M}
+    (hT : T.Finite) (hgen : Dense (AddSubgroup.closure ((Set.univ : Set Γ) • T) : Set M)) :
+    letI := hM.completedGroupAlgebraModule Γ
+    Submodule.span (completedGroupAlgebra R Γ) T = ⊤ := by
+  let _ : Module (completedGroupAlgebra R Γ) M := hM.completedGroupAlgebraModule Γ
+  have := hM.continuousSMul_completedGroupAlgebraModule (Γ := Γ)
+  have := hM.isTopologicalAddGroup
+  have := hM.t2Space
+  refine Submodule.span_eq_top_of_dense_closure hT ?_ hgen
+  -- The orbit of `T` lies in its span, because a group element acts as itself.
+  intro x hx
+  obtain ⟨γ, -, t, ht, rfl⟩ := Set.mem_smul.1 hx
+  rw [SetLike.mem_coe, ← hM.completedSMul_of γ t, ← hM.completedGroupAlgebraModule_smul]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ht)
+
+variable (Γ) in
+/-- **A compact module in which the `Γ`-orbit of a finite set generates a dense subgroup is a
+finitely generated `R[[Γ]]`-module**, spanned by that set
+(`TauCeti.IsCompactModule.span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul`). -/
+theorem module_finite_completedGroupAlgebraModule_of_dense_closure_univ_smul {T : Set M}
+    (hT : T.Finite) (hgen : Dense (AddSubgroup.closure ((Set.univ : Set Γ) • T) : Set M)) :
+    letI := hM.completedGroupAlgebraModule Γ
+    Module.Finite (completedGroupAlgebra R Γ) M :=
+  letI := hM.completedGroupAlgebraModule Γ
+  Module.finite_def.2
+    (hM.span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul Γ hT hgen ▸
+      Submodule.fg_span hT)
+
+end FiniteGeneration
 
 end IsCompactModule
 
