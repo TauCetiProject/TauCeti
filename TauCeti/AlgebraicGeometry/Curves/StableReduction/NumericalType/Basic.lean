@@ -79,7 +79,8 @@ matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
 ## Implementation notes
 
 Abstract numerical types can have negative genus, so `arithmeticGenus` lands in `ℤ` rather than
-`ℕ`; the genus-zero variant of `weightedExample` at the end of the file has genus `-1`. Nor may
+`ℕ`; the genus-zero variant of `twoComponentWeightTwoExample` at the end of the file has genus
+`-1`. Nor may
 the halving be distributed over the sum: `oddDiagonalExample` has odd diagonal entries.
 
 Symmetry of the intersection matrix is recorded through Mathlib's `Matrix.IsSymm` rather than as
@@ -587,7 +588,7 @@ lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
 
 /-- Two components of multiplicity one, weight two and genus one, meeting doubly: a numerical
 type of signed genus three. -/
-noncomputable abbrev weightedExample : NumericalType.{0} where
+noncomputable abbrev twoComponentWeightTwoExample : NumericalType.{0} where
   Component := Fin 2
   multiplicity _ := 1
   weight _ := 2
@@ -607,9 +608,11 @@ noncomputable abbrev weightedExample : NumericalType.{0} where
   weight_dvd i j := by fin_cases i <;> fin_cases j <;> decide
   genus _ := 1
 
-example : weightedExample.arithmeticGenus = 3 := by decide
+example : twoComponentWeightTwoExample.arithmeticGenus = 3 := by decide
 
-example : ({ weightedExample with genus := fun _ ↦ 0 } : NumericalType).arithmeticGenus = -1 := by
+example :
+    ({ twoComponentWeightTwoExample with genus := fun _ ↦ 0 } : NumericalType).arithmeticGenus =
+      -1 := by
   decide
 
 /-- Two components of multiplicity and weight one and genus one, meeting transversally. Both

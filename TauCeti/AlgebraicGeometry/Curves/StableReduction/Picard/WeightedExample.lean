@@ -27,90 +27,102 @@ namespace NumericalType
 
 open Matrix
 
-private lemma weightedExample_weightedIntersection :
-    weightedExample.weightedIntersection = !![-1, 1; 1, -1] := by
+/-- The weighted intersection matrix of the two-component weight-two example. -/
+@[simp]
+lemma twoComponentWeightTwoExample_weightedIntersection :
+    twoComponentWeightTwoExample.weightedIntersection = !![-1, 1; 1, -1] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    norm_num [weightedIntersection_apply, weightedExample]
+    norm_num [weightedIntersection_apply, twoComponentWeightTwoExample]
+
+private lemma twoComponentWeightTwoExample_intersection :
+    twoComponentWeightTwoExample.intersection = !![-2, 2; 2, -2] := rfl
 
 /-- The principal multidegrees in the weight-two example are exactly the pairs with sum zero. -/
-theorem weightedExample_mem_principalDivisors_iff (d : Fin 2 → ℤ) :
-    d ∈ weightedExample.principalDivisors ↔ d 0 + d 1 = 0 := by
-  rw [weightedExample.mem_principalDivisors_iff]
+theorem twoComponentWeightTwoExample_mem_principalDivisors_iff (d : Fin 2 → ℤ) :
+    d ∈ twoComponentWeightTwoExample.principalDivisors ↔ d 0 + d 1 = 0 := by
+  rw [twoComponentWeightTwoExample.mem_principalDivisors_iff]
   constructor
   · rintro ⟨v, rfl⟩
-    rw [weightedExample_weightedIntersection]
+    rw [twoComponentWeightTwoExample_weightedIntersection]
     simp [Matrix.vecMul_apply_eq_sum, Fin.sum_univ_two]
     omega
   · intro hd
     refine ⟨![0, d 0], ?_⟩
     funext i
     fin_cases i
-    · simp [weightedExample_weightedIntersection, Matrix.vecMul_apply_eq_sum,
+    · simp [twoComponentWeightTwoExample_weightedIntersection, Matrix.vecMul_apply_eq_sum,
         Fin.sum_univ_two]
-    · simp [weightedExample_weightedIntersection, Matrix.vecMul_apply_eq_sum,
+    · simp [twoComponentWeightTwoExample_weightedIntersection, Matrix.vecMul_apply_eq_sum,
         Fin.sum_univ_two]
       omega
 
-private def weightedExampleSum : (Fin 2 → ℤ) →ₗ[ℤ] ℤ :=
+private def twoComponentWeightTwoExampleSum : (Fin 2 → ℤ) →ₗ[ℤ] ℤ :=
   (LinearMap.proj 0 : (Fin 2 → ℤ) →ₗ[ℤ] ℤ) + LinearMap.proj 1
 
-private lemma weightedExampleSum_surjective : Function.Surjective weightedExampleSum :=
-  fun n ↦ ⟨![n, 0], by simp [weightedExampleSum]⟩
+private lemma twoComponentWeightTwoExampleSum_surjective :
+    Function.Surjective twoComponentWeightTwoExampleSum :=
+  fun n ↦ ⟨![n, 0], by simp [twoComponentWeightTwoExampleSum]⟩
 
-private lemma weightedExample_ker_sum :
-    LinearMap.ker weightedExampleSum = weightedExample.principalDivisors := by
+private lemma twoComponentWeightTwoExample_ker_sum :
+    LinearMap.ker twoComponentWeightTwoExampleSum =
+      twoComponentWeightTwoExample.principalDivisors := by
   ext d
-  simpa [weightedExampleSum, LinearMap.mem_ker] using
-    (weightedExample_mem_principalDivisors_iff d).symm
+  simpa [twoComponentWeightTwoExampleSum, LinearMap.mem_ker] using
+    (twoComponentWeightTwoExample_mem_principalDivisors_iff d).symm
 
 /-- The weighted Picard group of the two-component example is infinite cyclic, with a
 multidegree sent to the sum of its two coordinates. -/
-noncomputable def weightedExamplePicEquivInt : weightedExample.Pic ≃ₗ[ℤ] ℤ :=
-  (Submodule.quotEquivOfEq _ _ weightedExample_ker_sum.symm) |>.trans
-    (weightedExampleSum.quotKerEquivOfSurjective weightedExampleSum_surjective)
+noncomputable def twoComponentWeightTwoExamplePicEquivInt :
+    twoComponentWeightTwoExample.Pic ≃ₗ[ℤ] ℤ :=
+  (Submodule.quotEquivOfEq _ _ twoComponentWeightTwoExample_ker_sum.symm) |>.trans
+    (twoComponentWeightTwoExampleSum.quotKerEquivOfSurjective
+      twoComponentWeightTwoExampleSum_surjective)
 
 /-- The Picard-class isomorphism is the sum of multidegrees. -/
 @[simp]
-theorem weightedExamplePicEquivInt_mk (d : Fin 2 → ℤ) :
-    weightedExamplePicEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
-  simp only [weightedExamplePicEquivInt, LinearEquiv.trans_apply,
+theorem twoComponentWeightTwoExamplePicEquivInt_mk (d : Fin 2 → ℤ) :
+    twoComponentWeightTwoExamplePicEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
+  simp only [twoComponentWeightTwoExamplePicEquivInt, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk]
   rw [LinearMap.quotKerEquivOfSurjective_apply_mk]
-  simp [weightedExampleSum]
+  simp [twoComponentWeightTwoExampleSum]
 
 /-- The weighted Picard group has no nonzero two-torsion. -/
-theorem weightedExample_pic_no_two_torsion (x : weightedExample.Pic) (hx : (2 : ℤ) • x = 0) :
+theorem twoComponentWeightTwoExample_pic_no_two_torsion
+    (x : twoComponentWeightTwoExample.Pic) (hx : (2 : ℤ) • x = 0) :
     x = 0 := by
-  apply weightedExamplePicEquivInt.injective
-  have h := congrArg weightedExamplePicEquivInt hx
+  apply twoComponentWeightTwoExamplePicEquivInt.injective
+  have h := congrArg twoComponentWeightTwoExamplePicEquivInt hx
   simp only [map_smul, map_zero, smul_eq_mul] at h
-  have hz : weightedExamplePicEquivInt x = 0 := by omega
+  have hz : twoComponentWeightTwoExamplePicEquivInt x = 0 := by omega
   simpa using hz
 
 /-- The raw intersection cokernel of the weight-two example contains nonzero two-torsion:
 the class of `(1, -1)` has order two. -/
-theorem weightedExample_coker_has_two_torsion :
-    ∃ x : weightedExample.Coker, x ≠ 0 ∧ (2 : ℤ) • x = 0 := by
-  let x : weightedExample.Coker := Submodule.Quotient.mk (![1, -1] : Fin 2 → ℤ)
+theorem twoComponentWeightTwoExample_coker_has_two_torsion :
+    ∃ x : twoComponentWeightTwoExample.Coker, x ≠ 0 ∧ (2 : ℤ) • x = 0 := by
+  let x : twoComponentWeightTwoExample.Coker := Submodule.Quotient.mk (![1, -1] : Fin 2 → ℤ)
   refine ⟨x, ?_, ?_⟩
   · intro hx
-    have hmem : (![1, -1] : Fin 2 → ℤ) ∈ weightedExample.intersectionRelations :=
+    have hmem : (![1, -1] : Fin 2 → ℤ) ∈ twoComponentWeightTwoExample.intersectionRelations :=
       (Submodule.Quotient.mk_eq_zero _).mp hx
-    obtain ⟨v, hv⟩ := weightedExample.mem_intersectionRelations_iff.mp hmem
+    obtain ⟨v, hv⟩ := twoComponentWeightTwoExample.mem_intersectionRelations_iff.mp hmem
+    rw [twoComponentWeightTwoExample_intersection] at hv
     have h0 := congrFun hv 0
     simp [Matrix.vecMul_apply_eq_sum, Fin.sum_univ_two] at h0
     omega
-  · rw [show x = Submodule.Quotient.mk (![1, -1] : Fin 2 → ℤ) from rfl,
-      ← Submodule.Quotient.mk_smul]
+  · dsimp only [x]
+    rw [← Submodule.Quotient.mk_smul]
     apply (Submodule.Quotient.mk_eq_zero _).mpr
-    refine weightedExample.mem_intersectionRelations_iff.mpr ⟨![0, 1], ?_⟩
+    refine twoComponentWeightTwoExample.mem_intersectionRelations_iff.mpr ⟨![0, 1], ?_⟩
+    rw [twoComponentWeightTwoExample_intersection]
     funext i
     fin_cases i <;>
       simp [Matrix.vecMul_apply_eq_sum, Fin.sum_univ_two, Pi.smul_apply]
 
 private noncomputable abbrev unequalWeights : NumericalType.{0} :=
-  { weightedExample with
+  { twoComponentWeightTwoExample with
     weight := ![1, 2]
     weight_dvd := by
       intro i j
@@ -120,7 +132,8 @@ private noncomputable abbrev unequalWeights : NumericalType.{0} :=
 relation is `(-2, 1)`. -/
 example : unequalWeights.weightedIntersection 0 0 = -2 ∧
     unequalWeights.weightedIntersection 0 1 = 1 := by
-  constructor <;> norm_num [weightedIntersection_apply, unequalWeights, weightedExample]
+  constructor <;>
+    norm_num [weightedIntersection_apply, unequalWeights, twoComponentWeightTwoExample]
 
 end NumericalType
 
