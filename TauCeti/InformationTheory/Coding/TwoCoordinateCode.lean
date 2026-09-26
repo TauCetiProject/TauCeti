@@ -73,7 +73,6 @@ theorem finrank_code (a : F) : Module.finrank F (code a) = 1 := by
   simpa using (linearIndependent_row_generator a).rank_matrix
 
 /-- The displayed parity-check matrix cuts out exactly the generated code. -/
-@[simp]
 theorem checkedBy_check (a : F) : (check a).checkedBy = code a := by
   simpa only [generator, check, code] using
     (Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one
@@ -125,7 +124,6 @@ theorem check_submatrix_sumComm (a : F) :
     Sum.swap]
 
 /-- The exchanged parity check cuts out the exchanged generated code. -/
-@[simp]
 theorem checkedBy_check_submatrix_sumComm (a : F) :
     ((check a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).checkedBy =
       ((generator a).submatrix id (Equiv.sumComm (Fin 1) (Fin 1))).generatedBy := by
@@ -140,7 +138,6 @@ theorem generatedBy_generator_submatrix (a : F) (e : κ ≃ Fin 1 ⊕ Fin 1) :
   rw [Matrix.generatedBy_submatrix_equiv, reindex_def, code_def]
 
 /-- Exchanging the coordinates reverses which entry is the information symbol. -/
-@[simp]
 theorem mem_reindex_code_sumComm_iff (a : F) (x : Fin 1 ⊕ Fin 1 → F) :
     x ∈ reindex (code a) (Equiv.sumComm (Fin 1) (Fin 1)) ↔
       x (Sum.inl 0) = a * x (Sum.inr 0) := by
