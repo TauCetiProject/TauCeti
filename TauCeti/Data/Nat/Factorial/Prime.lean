@@ -13,6 +13,10 @@ public import Mathlib.Data.Nat.Prime.Factorial
 ## Main results
 
 * `Nat.Prime.not_sq_dvd_factorial`: a prime occurs only once in its own factorial.
+
+Since `p!` is the order of the permutation group on `p` points, this bound also shows that
+`p ^ 2` cannot divide the order of any of its subgroups. This supplies the divisibility bound
+used in the Sylow step of Jordan's theorem.
 -/
 
 public section
