@@ -171,6 +171,24 @@ belongs to `C`. Only primes unramified in `L` are counted. -/
 noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℕ :=
   ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
 
+/-- The Frobenius prime count is the cardinality of the primes in the class below the cutoff. -/
+theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusPrimeCount K L C x =
+      Nat.card {𝔭 : HeightOneSpectrum (𝓞 K) //
+        𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x} := by
+  classical
+  change ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card =
+    Nat.card (↥{𝔭 : HeightOneSpectrum (𝓞 K) |
+      𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x})
+  rw [Nat.card_coe_set_eq]
+  have hset : {𝔭 : HeightOneSpectrum (𝓞 K) |
+      𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x} =
+      ↑((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)) := by
+    ext 𝔭
+    simp only [Set.mem_ofPred_eq, Finset.mem_coe, Finset.mem_filter, mem_normLE]
+    tauto
+  rw [hset, Set.ncard_coe_finset]
+
 /-- `frobeniusPsi` as an explicit sum over the inclusive prime-power carrier. -/
 theorem frobeniusPsi_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusPsi K L C x =
