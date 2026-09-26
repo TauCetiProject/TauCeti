@@ -42,7 +42,7 @@ open scoped Classical in
 /-- A unit with `w v ≠ 1` whose logarithmic absolute value is below `log B` can be inverted and
 multiplied by a torsion unit so that its real image lies in the open interval from `1` to `B`. -/
 theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
-    (w : InfinitePlace K) (hw : w.IsReal) (hB : 1 < B)
+    (w : InfinitePlace K) (hw : w.IsReal) (hBpos : 0 < B)
     (hv : w v ≠ 1) (hvbound : |Real.log (w v)| < Real.log B) :
     ∃ (ε : torsion K) (δ : (𝓞 K)ˣ),
       (δ = v ∨ δ = v⁻¹) ∧
@@ -50,6 +50,8 @@ theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
       embedding_of_isReal hw ((ε.1 * δ : (𝓞 K)ˣ) : K) < B := by
   have hvlog : 0 < |Real.log (w v)| := by
     exact abs_pos.mpr (Real.log_ne_zero_of_pos_of_ne_one (Units.pos_at_place v w) hv)
+  have hB : 1 < B :=
+    (Real.log_pos_iff hBpos.le).mp (lt_of_le_of_lt (abs_nonneg _) hvbound)
   have hvpos : 0 < w v := Units.pos_at_place v w
   by_cases h : 1 < w v
   · obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v
@@ -116,7 +118,7 @@ theorem generates_mod_torsion_iff_no_unit_between_real (hr : rank K = 1)
     exact h ⟨v, hv₀, hv₁⟩
   · intro h ⟨v, hv₀, hv₁⟩
     obtain ⟨ε, δ, _, hδlo, hδhi⟩ :=
-      exists_normalized_unit_between (w u) v w hw hu (by
+      exists_normalized_unit_between (w u) v w hw (zero_lt_one.trans hu) (by
         intro heq
         have hz : ‖logEmbedding K (Additive.ofMul v)‖ = 0 := by
           rw [norm_logEmbedding_eq_mult_abs_log hr v w, heq]
