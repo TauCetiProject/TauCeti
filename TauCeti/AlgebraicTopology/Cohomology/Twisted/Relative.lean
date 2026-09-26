@@ -42,7 +42,8 @@ Poincaré--Lefschetz duality, so the twisted theory, and not only the untwisted 
 * `TopPair.twistedCohomologyδ`: the connecting morphism `Hⁿ(A; L) ⟶ Hᵐ(X, A; L)` for `n + 1 = m`,
   with the exactness statements `TopPair.twistedCohomology_exact_relative`,
   `TopPair.twistedCohomology_exact_space` and `TopPair.twistedCohomology_exact_subspace`, and its
-  naturality `TopPair.twistedCohomologyδ_naturality` in maps of pairs.
+  naturality `TopPair.twistedCohomologyδ_naturality` in maps of pairs and
+  `TopPair.twistedCohomologyδ_naturality_coefficient` in morphisms of local coefficient systems.
 * `TopPair.twistedCohomologyConstantIso`: for a constant system, relative twisted cohomology is
   ordinary relative singular cohomology.
 
@@ -221,6 +222,71 @@ instance : Mono (P.twistedCohomologyπ L k M 0) := by
     (P.twistedCochainComplexShortComplex L k M).f 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
+
+section Coefficients
+
+variable {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+
+/-- The morphism between the twisted cochain sequences of a pair induced by a morphism of local
+coefficient systems. -/
+def twistedCochainComplexShortComplexCoefficientMap (η : L ⟶ K) :
+    P.twistedCochainComplexShortComplex K k M ⟶
+      P.twistedCochainComplexShortComplex L k M where
+  τ₁ := P.twistedCochainComplexCoefficientMap k M η
+  τ₂ := LocalCoefficientSystem.twistedCochainComplexCoefficientMap k M η
+  τ₃ := LocalCoefficientSystem.twistedCochainComplexCoefficientMap k M
+    ((LocalCoefficientSystem.pullback P.map.hom).map η)
+  comm₁₂ := ((ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans
+    ((congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k M).map (Opposite.op φ))
+      (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)).trans
+      ((ChainComplex.linearYonedaFunctor k M).map_comp _ _))
+  comm₂₃ := ((ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans
+    ((congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k M).map (Opposite.op φ))
+      (LocalCoefficientSystem.twistedChainComplexMap_naturality P.map η)).trans
+      ((ChainComplex.linearYonedaFunctor k M).map_comp _ _))
+
+@[simp]
+lemma twistedCochainComplexShortComplexCoefficientMap_τ₁ (η : L ⟶ K) :
+    (P.twistedCochainComplexShortComplexCoefficientMap k M η).τ₁ =
+      P.twistedCochainComplexCoefficientMap k M η := (rfl)
+
+@[simp]
+lemma twistedCochainComplexShortComplexCoefficientMap_τ₂ (η : L ⟶ K) :
+    (P.twistedCochainComplexShortComplexCoefficientMap k M η).τ₂ =
+      LocalCoefficientSystem.twistedCochainComplexCoefficientMap k M η := (rfl)
+
+@[simp]
+lemma twistedCochainComplexShortComplexCoefficientMap_τ₃ (η : L ⟶ K) :
+    (P.twistedCochainComplexShortComplexCoefficientMap k M η).τ₃ =
+      LocalCoefficientSystem.twistedCochainComplexCoefficientMap k M
+        ((LocalCoefficientSystem.pullback P.map.hom).map η) := (rfl)
+
+/-- The map from relative to absolute twisted cohomology commutes with a change of local
+coefficient system. -/
+@[reassoc]
+lemma twistedCohomologyπ_naturality_coefficient (η : L ⟶ K) (n : ℕ) :
+    P.twistedCohomologyπ K k M n ≫
+        LocalCoefficientSystem.twistedCohomologyCoefficientMap k M η n =
+      P.twistedCohomologyCoefficientMap k M η n ≫ P.twistedCohomologyπ L k M n :=
+  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (P.twistedCochainComplexShortComplexCoefficientMap k M η).comm₁₂.symm).trans
+        (HomologicalComplex.homologyMap_comp _ _ n)
+
+/-- The connecting morphism of the long exact sequence in relative twisted cohomology commutes
+with a change of local coefficient system. -/
+@[reassoc]
+lemma twistedCohomologyδ_naturality_coefficient (η : L ⟶ K) (n m : ℕ) (h : n + 1 = m := by lia) :
+    P.twistedCohomologyδ K k M n m h ≫ P.twistedCohomologyCoefficientMap k M η m =
+      LocalCoefficientSystem.twistedCohomologyCoefficientMap k M
+          ((LocalCoefficientSystem.pullback P.map.hom).map η) n ≫
+        P.twistedCohomologyδ L k M n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
+    (P.twistedCochainComplexShortComplexCoefficientMap k M η)
+    (P.shortExact_twistedCochainComplexShortComplex K k M)
+    (P.shortExact_twistedCochainComplexShortComplex L k M) n m (by simpa)
+
+end Coefficients
 
 end LongExactSequence
 
