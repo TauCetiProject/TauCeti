@@ -415,7 +415,11 @@ theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ)
     GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom hE _ hu, character_GL2NonSplitTorusRep,
     character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
 
-variable [Fintype F] [DecidableEq F]
+variable [Fintype F]
+
+section
+
+variable [DecidableEq F]
 
 omit [DecidableEq F] in
 private theorem elliptic_pairing_term (theta : Eˣ →* ℂˣ) (u : Eˣ)
@@ -485,8 +489,12 @@ private theorem natCard_baseField_units :
       exact ⟨a, Subtype.ext ha⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hf), Nat.card_eq_fintype_card, Fintype.card_units]
 
+end
+
+open scoped Classical in
 /-- **The elliptic induction has character norm `q - 1`** when `θ` is not fixed by the
 `q`-power map. -/
+@[simp]
 theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
     ClassFunction.characterPairing

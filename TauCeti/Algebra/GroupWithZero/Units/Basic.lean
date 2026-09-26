@@ -68,6 +68,7 @@ theorem mem_range_iff_exists_units_map_eq {G₀ M₀ F : Type*} [GroupWithZero G
 /-- **A unit lies in the range of a monoid-with-zero homomorphism out of a group with zero exactly
 when its inverse does.** `Units.map` commutes with inverses, so a unit preimage of one inverts to
 a unit preimage of the other. -/
+@[simp]
 theorem coe_inv_mem_range_iff {G₀ M₀ F : Type*} [GroupWithZero G₀] [MonoidWithZero M₀]
     [Nontrivial M₀] [FunLike F G₀ M₀] [MonoidWithZeroHomClass F G₀ M₀] (f : F) (u : M₀ˣ) :
     ((u⁻¹ : M₀ˣ) : M₀) ∈ Set.range f ↔ (u : M₀) ∈ Set.range f := by

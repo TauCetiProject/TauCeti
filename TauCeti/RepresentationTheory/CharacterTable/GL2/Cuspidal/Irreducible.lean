@@ -49,7 +49,11 @@ namespace TauCeti
 variable {F : Type*} [Field F] [Finite F]
 variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
 
-variable [Fintype F] [DecidableEq F]
+variable [Fintype F]
+
+section
+
+variable [DecidableEq F]
 
 private theorem scalarUnipotent_elliptic_pairing_term (theta : Eˣ →* ℂˣ)
     (psi : AddChar F ℂ) (a : Fˣ) (t : Multiplicative F) :
@@ -84,10 +88,13 @@ private theorem scalarUnipotent_elliptic_pairing_term (theta : Eˣ →* ℂˣ)
     rw [character_GL2EllipticInduction_jordanGL _ _ _ _ a⁻¹
       (mul_ne_zero a⁻¹.ne_zero ht0), mul_zero]
 
+end
 
+open scoped Classical in
 /-- **The mutual pairing of the scalar--unipotent and elliptic inductions is `q - 1`.** Only
 the scalar elements of the scalar--unipotent subgroup contribute, because the elliptic induction
 vanishes on nontrivial Jordan blocks. -/
+@[simp]
 theorem characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction
     (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) :
     ClassFunction.characterPairing
@@ -119,6 +126,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction
     exact sub_ne_zero.mpr (by exact_mod_cast Fintype.one_lt_card.ne')
   field_simp [hq, hq1]
 
+open scoped Classical in
 /-- **The cuspidal virtual character has norm one in general position.** -/
 @[simp]
 theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂˣ)
@@ -126,6 +134,7 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂ�
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     ClassFunction.characterPairing (GL2CuspidalVirtualCharacter F E hE theta psi)
       (GL2CuspidalVirtualCharacter F E hE theta psi) = 1 := by
+  classical
   rw [GL2CuspidalVirtualCharacter_def]
   simp only [map_sub, LinearMap.sub_apply]
   have hcross : ClassFunction.characterPairing
@@ -142,6 +151,8 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂ�
     hcross, characterPairing_GL2EllipticInduction_self F E hE theta (by
       simpa only [Nat.card_eq_fintype_card] using htheta)]
   ring
+
+variable [DecidableEq F]
 
 omit [DecidableEq F] in
 /-- **The cuspidal virtual character is an irreducible character in general position.** The

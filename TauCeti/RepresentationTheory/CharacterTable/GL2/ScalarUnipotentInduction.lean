@@ -565,10 +565,10 @@ theorem character_GL2ScalarUnipotentInduction_jordanGL
     Finset.sum_congr rfl fun c _ => hterm c, ← Finset.mul_sum,
     AddChar.sum_units_mul_eq_neg_one ψ hψ a⁻¹, mul_neg_one]
 
-variable [DecidableEq F]
-
+open scoped Classical in
 /-- **The scalar--unipotent induction has character norm `q`** when its additive character is
 nontrivial. -/
+@[simp]
 theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
     {psi : AddChar F ℂ} (hpsi : psi ≠ 1) :
     ClassFunction.characterPairing
