@@ -219,11 +219,11 @@ theorem card_carrier_cast_ne_zero {R : Type*} [Semiring R] (C : ConjClasses G)
     (h : (Nat.card G : R) ≠ 0) : (Nat.card C.carrier : R) ≠ 0 :=
   ne_zero_of_dvd_ne_zero h (Nat.cast_dvd_cast (card_carrier_dvd_card C))
 
-/-- For a finite group, the proportion `#C / #G` of a conjugacy class is nonzero in any division
-semiring of characteristic zero. -/
-theorem card_carrier_div_card_ne_zero {R : Type*} [DivisionSemiring R] [CharZero R] [Finite G]
-    (C : ConjClasses G) : (Nat.card C.carrier : R) / Nat.card G ≠ 0 :=
-  have hG : (Nat.card G : R) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+/-- The proportion `#C / #G` of a conjugacy class is nonzero in a division semiring whenever
+the order of the group is nonzero there. -/
+theorem card_carrier_div_card_ne_zero {R : Type*} [DivisionSemiring R]
+    (C : ConjClasses G) (hG : (Nat.card G : R) ≠ 0) :
+    (Nat.card C.carrier : R) / Nat.card G ≠ 0 :=
   div_ne_zero (C.card_carrier_cast_ne_zero hG) hG
 
 end ConjClasses

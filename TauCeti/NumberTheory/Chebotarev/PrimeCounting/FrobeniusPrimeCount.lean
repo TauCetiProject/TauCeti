@@ -80,7 +80,7 @@ private theorem frobeniusPrimeCount_isEquivalent_logIntegral
         Real.logIntegral x) :=
   (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C).trans_isBigO
     (Real.logIntegral_isEquivalent_div_log.isBigO_symm.const_mul_right
-      C.card_carrier_div_card_ne_zero)
+      (C.card_carrier_div_card_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')))
 
 /-- Qualitative prime-counting Chebotarev: the proportion relative to `x / log x` of primes
 whose arithmetic Frobenius lies in `C` tends to `#C / #Gal(L/K)`. -/
