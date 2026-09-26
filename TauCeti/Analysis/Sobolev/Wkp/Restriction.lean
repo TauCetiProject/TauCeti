@@ -225,8 +225,10 @@ theorem restrictL_zero (hU : U ≤ Omega) :
     restrictL (mu := mu) (p := p) hU 0 =
       Lp.LpToLpOfMeasureLeSMul (E := ℝ) (c := 1) (by simp) (by
         simpa only [one_smul] using
-          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) :=
-  (rfl)
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) := by
+  apply ContinuousLinearMap.ext
+  intro u
+  simpa only [value_zero] using value_restrictL hU 0 u
 
 /-- At order one, Sobolev restriction agrees with the first-order API. -/
 @[simp]
