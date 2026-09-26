@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import Mathlib.Basic.Real.Star
@@ -202,15 +201,6 @@ theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
           Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ) :=
         specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A
       _ = U := Units.ext (Unitary.val_toUnits_apply _)
-
-/-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
-special-orthogonal membership. -/
-theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
-    (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
-    U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
-      (U : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ := by
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
-  exact mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff (Fin n) U
 
 end
 

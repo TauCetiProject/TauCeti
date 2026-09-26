@@ -86,6 +86,15 @@ instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
 
 end ClassicalDecEq
 
+/-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
+special-orthogonal membership. -/
+theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
+    (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
+    U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
+      (U : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ := by
+  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
+  exact mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff (Fin n) U
+
 /-- The real special-orthogonal carrier is closed in its general-linear ambient group. -/
 theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : ℕ) :
     -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` lets this
