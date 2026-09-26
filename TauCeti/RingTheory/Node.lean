@@ -45,10 +45,6 @@ variable {R : Type*} [CommRing R] (a : R)
 def coord (i : Fin 2) : NodeAlgebra R a :=
   Ideal.Quotient.mk _ (X i)
 
-lemma coord_def (i : Fin 2) :
-    coord a i = Ideal.Quotient.mk (Ideal.span {X 0 * X 1 - C a}) (X i) :=
-  (rfl)
-
 /-- The defining equation of the nodal algebra. -/
 @[simp]
 lemma coord_zero_mul_coord_one :
@@ -60,6 +56,49 @@ lemma coord_zero_mul_coord_one :
       algebraMap R (NodeAlgebra R a) a :=
     Ideal.Quotient.mk_algebraMap R _ a
   simpa only [coord, map_sub, map_mul, hC] using h
+
+private lemma aeval_eq_zero_of_mem {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+    (h : x * y = algebraMap R A a) (p : MvPolynomial (Fin 2) R)
+    (hp : p ∈ Ideal.span {X 0 * X 1 - C a}) : aeval ![x, y] p = 0 := by
+  have hker : Ideal.span {X (0 : Fin 2) * X 1 - C a} ≤
+      RingHom.ker (aeval ![x, y]).toRingHom := by
+    rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
+    simpa using sub_eq_zero.mpr h
+  exact RingHom.mem_ker.mp (hker hp)
+
+/-- Evaluate the nodal algebra at two elements satisfying its defining equation. -/
+def lift {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+    (h : x * y = algebraMap R A a) : NodeAlgebra R a →ₐ[R] A :=
+  Ideal.Quotient.liftₐ _ (aeval ![x, y]) (aeval_eq_zero_of_mem a x y h)
+
+/-- Evaluation sends the first coordinate to the chosen first element. -/
+@[simp]
+lemma lift_coord_zero {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+    (h : x * y = algebraMap R A a) : lift a x y h (coord a 0) = x := by
+  simpa [lift, coord] using
+    AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
+      (X (0 : Fin 2))
+
+/-- Evaluation sends the second coordinate to the chosen second element. -/
+@[simp]
+lemma lift_coord_one {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+    (h : x * y = algebraMap R A a) : lift a x y h (coord a 1) = y := by
+  simpa [lift, coord] using
+    AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
+      (X (1 : Fin 2))
+
+/-- Algebra maps out of the nodal algebra are determined by the two coordinates. -/
+@[ext]
+lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
+    {f g : NodeAlgebra R a →ₐ[R] A}
+    (h₀ : f (coord a 0) = g (coord a 0))
+    (h₁ : f (coord a 1) = g (coord a 1)) : f = g := by
+  apply Ideal.Quotient.algHom_ext
+  apply MvPolynomial.algHom_ext
+  intro i
+  fin_cases i
+  · exact h₀
+  · exact h₁
 
 private def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit where
   __ := Generators.naive
@@ -85,7 +124,7 @@ private lemma prePresentation_jacobian (i : Fin 2) :
   fin_cases i <;> simp [prePresentation, presentation, coord] <;> rfl
 
 /-- Each coordinate chart of `xy = a` is standard smooth of relative dimension one. -/
-theorem isStandardSmoothOfRelativeDimension_away_coord (i : Fin 2) :
+theorem isStandardSmoothOfRelativeDimension_localizationAway_coord (i : Fin 2) :
     IsStandardSmoothOfRelativeDimension 1 R (Localization.Away (coord a i)) := by
   have : IsLocalization.Away (prePresentation a i).jacobian
       (Localization.Away (coord a i)) := by
@@ -99,7 +138,7 @@ theorem isStandardSmoothOfRelativeDimension_away_coord (i : Fin 2) :
 theorem basicOpen_coord_subset_smoothLocus (i : Fin 2) :
     (PrimeSpectrum.basicOpen (coord a i) : Set (PrimeSpectrum (NodeAlgebra R a))) ⊆
       Algebra.smoothLocus R (NodeAlgebra R a) := by
-  have := (isStandardSmoothOfRelativeDimension_away_coord a i).isStandardSmooth
+  have := (isStandardSmoothOfRelativeDimension_localizationAway_coord a i).isStandardSmooth
   exact Algebra.basicOpen_subset_smoothLocus_iff_smooth.mpr inferInstance
 
 /-- A point of `xy = a` is smooth whenever at least one coordinate is outside its prime ideal. -/
