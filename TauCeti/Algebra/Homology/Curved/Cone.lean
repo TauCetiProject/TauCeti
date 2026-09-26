@@ -98,27 +98,41 @@ noncomputable def coneProjection (f : X ⟶ Y) : cone f ⟶ (parityShift C w).ob
   simp only [coneProjection]
 
 /-- The inclusion followed by the projection vanishes. -/
-@[simp]
+@[reassoc (attr := simp), simp]
 theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
     coneInclusion f ≫ coneProjection f = 0 := by
   ext <;> simp only [comp_f₀, comp_f₁, zero_f₀, zero_f₁,
     coneInclusion_f₀, coneInclusion_f₁, coneProjection_f₀, coneProjection_f₁] <;>
     exact biprod.inr_fst
 
-/-- The cone of the identity is contractible. The odd contracting map sends the second
-summand of each component identically into the first summand of the other component. -/
-theorem nullHomotopicMap_cone_id (X : CurvedDuplex C w) :
-    nullHomotopicMap (X := cone (𝟙 X)) (Y := cone (𝟙 X))
-      (biprod.snd ≫ biprod.inl) (biprod.snd ≫ biprod.inl) = 𝟙 (cone (𝟙 X)) := by
-  ext <;> simp [cone, coneD₀, coneD₁, biprod.lift_eq, biprod.desc_eq,
-    Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
+/-- The cone of an isomorphism is contractible. The odd contracting map applies the inverse
+to the second summand and sends the result into the first summand. -/
+theorem nullHomotopicMap_cone_isIso (f : X ⟶ Y) [IsIso f] :
+    nullHomotopicMap (X := cone f) (Y := cone f)
+      (biprod.snd ≫ (inv f).f₀ ≫ biprod.inl)
+      (biprod.snd ≫ (inv f).f₁ ≫ biprod.inl) = 𝟙 (cone f) := by
+  have h₀ : f.f₀ ≫ (inv f).f₀ = 𝟙 X.X₀ := by
+    simpa only [comp_f₀, id_f₀] using congrArg Hom.f₀ (IsIso.hom_inv_id f)
+  have h₁ : f.f₁ ≫ (inv f).f₁ = 𝟙 X.X₁ := by
+    simpa only [comp_f₁, id_f₁] using congrArg Hom.f₁ (IsIso.hom_inv_id f)
+  have h₀' : (inv f).f₀ ≫ f.f₀ = 𝟙 Y.X₀ := by
+    simpa only [comp_f₀, id_f₀] using congrArg Hom.f₀ (IsIso.inv_hom_id f)
+  have h₁' : (inv f).f₁ ≫ f.f₁ = 𝟙 Y.X₁ := by
+    simpa only [comp_f₁, id_f₁] using congrArg Hom.f₁ (IsIso.inv_hom_id f)
+  ext
+  · simp [cone, coneD₀, coneD₁, biprod.lift_eq, biprod.desc_eq,
+      Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
+    simp [← Category.assoc, ← (inv f).comm₀, h₁, h₀']
+  · simp [cone, coneD₀, coneD₁, biprod.lift_eq, biprod.desc_eq,
+      Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
+    simp [← Category.assoc, ← (inv f).comm₁, h₀, h₁']
 
-/-- The cone of the identity becomes a zero object in the homotopy category. -/
-theorem isZero_quotientFunctor_obj_cone_id (X : CurvedDuplex C w) :
-    IsZero ((nullHomotopic C w).quotientFunctor.obj (cone (𝟙 X))) := by
+/-- The cone of an isomorphism becomes a zero object in the homotopy category. -/
+theorem isZero_quotientFunctor_obj_cone_isIso (f : X ⟶ Y) [IsIso f] :
+    IsZero ((nullHomotopic C w).quotientFunctor.obj (cone f)) := by
   rw [MorphismIdeal.isZero_quotientFunctor_obj_iff]
   rw [mem_nullHomotopic_iff]
-  exact ⟨_, _, nullHomotopicMap_cone_id X⟩
+  exact ⟨_, _, nullHomotopicMap_cone_isIso f⟩
 
 variable {X' Y' : CurvedDuplex C w}
 
@@ -154,6 +168,7 @@ theorem coneMap_f₁ (f : X ⟶ Y) (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
   simp only [coneMap]
 
 /-- Cone maps commute with the inclusions of their codomains. -/
+@[reassoc (attr := simp), simp]
 theorem coneInclusion_comp_coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
     (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) :
     coneInclusion f ≫ coneMap f g a b h = b ≫ coneInclusion g := by
@@ -163,6 +178,7 @@ theorem coneInclusion_comp_coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
   · exact biprod.inr_map _ _
 
 /-- Cone maps commute with the projections to the shifted domains. -/
+@[reassoc (attr := simp), simp]
 theorem coneMap_comp_coneProjection (f : X ⟶ Y) (g : X' ⟶ Y')
     (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) :
     coneMap f g a b h ≫ coneProjection g =
