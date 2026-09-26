@@ -37,10 +37,10 @@ instances, witnessed by singleton neighbourhoods.
 
 * `SemilocallySimplyConnectedAt`: the pointwise predicate.
 * `TauCeti.SemilocallySimplyConnectedSpace`: the predicate at every point, as a typeclass.
-* `TauCeti.SemilocallySimplyConnectedSpace.exists_mem_nhds_subset_loops_nullhomotopic`: the
-  witnessing neighbourhood can be taken inside any prescribed neighbourhood.
-* `TauCeti.SemilocallySimplyConnectedSpace.exists_isOpen_mem_nhds_subset_loops_nullhomotopic`:
-  the witnessing neighbourhood can moreover be taken open.
+* `SemilocallySimplyConnectedAt.exists_mem_nhds_subset_loops_nullhomotopic`: the witnessing
+  neighbourhood can be taken inside any prescribed neighbourhood.
+* `SemilocallySimplyConnectedAt.exists_isOpen_mem_nhds_subset_loops_nullhomotopic`: the
+  witnessing neighbourhood can moreover be taken open.
 * `TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds_isSimplyConnected`: a space
   in which every point has a simply connected neighbourhood is semilocally simply connected.
 * `TauCeti.SemilocallySimplyConnectedSpace.of_locallyContractibleSpace`: a locally contractible
@@ -77,7 +77,7 @@ def _root_.SemilocallySimplyConnectedAt (x : X) : Prop :=
   ∃ U ∈ 𝓝 x, ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x)
 
 /-- The defining characterization of semilocal simple connectivity at a point. -/
-theorem semilocallySimplyConnectedAt_def {x : X} :
+theorem _root_.semilocallySimplyConnectedAt_def {x : X} :
     SemilocallySimplyConnectedAt x ↔
       ∃ U ∈ 𝓝 x, ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x) :=
   Iff.rfl
@@ -89,30 +89,25 @@ class SemilocallySimplyConnectedSpace (X : Type*) [TopologicalSpace X] : Prop wh
   /-- Every point has a neighbourhood in which every based loop is null-homotopic in `X`. -/
   semilocallySimplyConnectedAt (x : X) : SemilocallySimplyConnectedAt x
 
-namespace SemilocallySimplyConnectedSpace
-
-variable [SemilocallySimplyConnectedSpace X]
-
 /-- The witnessing neighbourhood of a point can be shrunk to lie inside any prescribed
 neighbourhood: loops contained in a smaller set are in particular contained in the larger one. -/
-theorem exists_mem_nhds_subset_loops_nullhomotopic (x : X) {V : Set X} (hV : V ∈ 𝓝 x) :
+theorem _root_.SemilocallySimplyConnectedAt.exists_mem_nhds_subset_loops_nullhomotopic {x : X}
+    (h : SemilocallySimplyConnectedAt x) {V : Set X} (hV : V ∈ 𝓝 x) :
     ∃ U ∈ 𝓝 x, U ⊆ V ∧
       ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x) := by
-  obtain ⟨U, hU, hloop⟩ :=
-    semilocallySimplyConnectedAt_def.mp (semilocallySimplyConnectedAt (X := X) x)
+  obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp h
   refine ⟨U ∩ V, Filter.inter_mem hU hV, Set.inter_subset_right, fun γ hγ => ?_⟩
   exact hloop γ (hγ.trans Set.inter_subset_left)
 
 /-- The witnessing neighbourhood can be taken open and inside any prescribed neighbourhood. This
 is the form consumed by the universal-cover construction, where the sheets must be open. -/
-theorem exists_isOpen_mem_nhds_subset_loops_nullhomotopic (x : X) {V : Set X} (hV : V ∈ 𝓝 x) :
+theorem _root_.SemilocallySimplyConnectedAt.exists_isOpen_mem_nhds_subset_loops_nullhomotopic
+    {x : X} (h : SemilocallySimplyConnectedAt x) {V : Set X} (hV : V ∈ 𝓝 x) :
     ∃ U, IsOpen U ∧ x ∈ U ∧ U ⊆ V ∧
       ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x) := by
-  obtain ⟨U, hU, hUV, hloop⟩ := exists_mem_nhds_subset_loops_nullhomotopic x hV
+  obtain ⟨U, hU, hUV, hloop⟩ := h.exists_mem_nhds_subset_loops_nullhomotopic hV
   obtain ⟨W, hWU, hWopen, hxW⟩ := mem_nhds_iff.mp hU
   exact ⟨W, hWopen, hxW, hWU.trans hUV, fun γ hγ => hloop γ (hγ.trans hWU)⟩
-
-end SemilocallySimplyConnectedSpace
 
 /-- If every point of `X` has a simply connected neighbourhood, then `X` is semilocally simply
 connected: a loop inside such a neighbourhood is already null-homotopic there, hence in `X`. -/

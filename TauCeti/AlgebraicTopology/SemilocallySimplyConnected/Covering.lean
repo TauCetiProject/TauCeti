@@ -69,8 +69,7 @@ theorem semilocallySimplyConnectedAt_of_isLocalHomeomorph (hp : IsLocalHomeomorp
     hp.apply_localInverseAt_of_mem hp.apply_self_mem_localInverseAt_source
   -- The local inverse of `p` at `e` carries `γ` to a loop at `φ u` in `E`.
   have hφ : φ (p e) = e := by
-    change hp.localInverseAt e (p e) = e
-    exact hp.localInverseAt_apply_self
+    simpa only [φ] using hp.localInverseAt_apply_self
   have hE' : ∀ δ : Path (φ (p e)) (φ (p e)), δ.Homotopic (Path.refl (φ (p e))) := by
     rw [hφ]
     exact hE
