@@ -83,19 +83,7 @@ theorem counit_left (x : CompletedTensorWords R M) (n : ℕ) :
     TensorProduct.lid R (TensorPower R n M)
       (TensorProduct.map (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap
         LinearMap.id (deconcatenation R M x 0 n)) = x n := by
-  have key (z : TensorPower R 0 M ⊗[R] TensorPower R n M) :
-      TensorProduct.lid R (TensorPower R n M)
-        (TensorProduct.map (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap
-          LinearMap.id z) =
-        TensorPower.cast R M (Nat.zero_add n) (TensorPower.mulEquiv z) := by
-    induction z using TensorProduct.inductionOn with
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | tmul a b =>
-      obtain ⟨a, rfl⟩ := (TensorPower.algebraMap₀ (R := R) (M := M)).surjective a
-      simpa only [TensorProduct.map_tmul, LinearEquiv.coe_coe,
-        LinearEquiv.symm_apply_apply, LinearMap.id_apply, TensorProduct.lid_tmul,
-        ← TensorPower.gMul_def] using (TensorPower.algebraMap₀_mul a b).symm
-  rw [key, deconcatenation_apply, LinearEquiv.apply_symm_apply]
+  rw [TensorPower.lid_map_algebraMap₀_symm, deconcatenation_apply, LinearEquiv.apply_symm_apply]
   have hcast {i j : ℕ} (h : i = j) : TensorPower.cast R M h (x i) = x j := by
     subst j
     simp [TensorPower.cast_refl]
@@ -107,19 +95,7 @@ theorem counit_right (x : CompletedTensorWords R M) (n : ℕ) :
       (TensorProduct.map LinearMap.id
         (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap
         (deconcatenation R M x n 0)) = x n := by
-  have key (z : TensorPower R n M ⊗[R] TensorPower R 0 M) :
-      TensorProduct.rid R (TensorPower R n M)
-        (TensorProduct.map LinearMap.id
-          (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap z) =
-        TensorPower.cast R M (Nat.add_zero n) (TensorPower.mulEquiv z) := by
-    induction z using TensorProduct.inductionOn with
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | tmul a b =>
-      obtain ⟨b, rfl⟩ := (TensorPower.algebraMap₀ (R := R) (M := M)).surjective b
-      simpa only [TensorProduct.map_tmul, LinearEquiv.coe_coe,
-        LinearEquiv.symm_apply_apply, LinearMap.id_apply, TensorProduct.rid_tmul,
-        ← TensorPower.gMul_def] using (TensorPower.mul_algebraMap₀ b a).symm
-  rw [key, deconcatenation_apply, LinearEquiv.apply_symm_apply]
+  rw [TensorPower.rid_map_algebraMap₀_symm, deconcatenation_apply, LinearEquiv.apply_symm_apply]
   simp [TensorPower.cast_refl]
 
 /-- On finite tensor words the completed coproduct is the ordinary coproduct, projected to
@@ -128,56 +104,15 @@ theorem deconcatenation_coe (x : TensorWords R M) (p q : ℕ) :
     deconcatenation R M (DFinsupp.coeFnLinearMap R x) p q =
       TensorProduct.map (TensorWords.component R M p) (TensorWords.component R M q)
         (TensorWords.deconcatenation R M x) := by
-  have h :
-      TensorProduct.map (TensorWords.component R M p) (TensorWords.component R M q) ∘ₗ
-        TensorWords.deconcatenation R M =
-      (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
-        TensorWords.component R M (p + q) := by
-    classical
-    apply TensorWords.linearMap_ext
-    intro n x
-    simp only [LinearMap.comp_apply, TensorWords.deconcatenation_of,
-      TensorWords.deconcatenationComponent_tprod, map_sum, TensorProduct.map_tmul]
-    by_cases hn : n = p + q
-    · subst n
-      rw [TensorWords.component_of]
-      rw [Finset.sum_eq_single ⟨p, by omega⟩]
-      · simp only [TensorWords.component_of]
-        rw [TensorWords.component_of_eq R M (Nat.add_sub_cancel_left p q),
-          TensorPower.cast_tprod]
-        apply TensorPower.mulEquiv.injective
-        rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, ← TensorPower.gMul_def,
-          TensorPower.tprod_mul_tprod]
-        congr 1
-        funext i
-        refine Fin.addCases ?_ ?_ i
-        · intro j
-          rw [Fin.append_left]
-          congr 1
-        · intro j
-          rw [Fin.append_right]
-          exact congrArg x (Fin.ext (by simp))
-      · intro i _ hi
-        have hp : i.val ≠ p := fun h ↦ hi (Fin.ext h)
-        rw [TensorWords.component_of_of_ne R M hp, TensorProduct.zero_tmul]
-      · simp
-    · rw [TensorWords.component_of_of_ne R M hn, map_zero]
-      apply Finset.sum_eq_zero
-      intro i _
-      by_cases hp : i.val = p
-      · have hq : n - i.val ≠ q := by have := i.isLt; omega
-        rw [TensorWords.component_of_of_ne R M hq, TensorProduct.tmul_zero]
-      · rw [TensorWords.component_of_of_ne R M hp, TensorProduct.zero_tmul]
   simpa only [deconcatenation_apply, DFinsupp.coeFnLinearMap_apply,
-    TensorWords.component, ← DirectSum.apply_eq_component, LinearMap.comp_apply,
+    TensorWords.component_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe] using
-    (LinearMap.congr_fun h x).symm
+    (LinearMap.congr_fun (TensorWords.map_component_comp_deconcatenation R M p q) x).symm
 
 /-- The inclusion of finite tensor words preserves the counit. -/
 theorem counit_coe (x : TensorWords R M) :
     counit R M (DFinsupp.coeFnLinearMap R x) = TensorWords.counit R M x := by
-  rw [counit_apply, TensorWords.counit_apply, TensorWords.component,
-    ← DirectSum.apply_eq_component]
+  rw [counit_apply, TensorWords.counit_apply, TensorWords.component_apply]
   rfl
 
 /-- Discard all components of length at least `n`, producing an ordinary finite tensor word. -/
