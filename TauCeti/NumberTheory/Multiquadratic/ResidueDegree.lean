@@ -105,37 +105,6 @@ private theorem pow_two_eq_one (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
   rcases eq_or_eq_neg_of_sq_eq_sq _ _ hsq with h | h <;>
     simp [pow_two, AlgEquiv.mul_apply, h]
 
-/-- At an unramified prime of a Galois number field, the residue degree over `ℤ` is the order of
-a Frobenius. The decomposition-group API computes it over `𝓞 ℚ`; the comparison lemmas of
-`TauCeti.NumberTheory.NumberField.Ideal.IntegersRat` transport it to `ℤ`. -/
-private theorem inertiaDeg_eq_orderOf [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime]
-    [Q.LiesOver (span {(p : ℤ)})] [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] {σ : K ≃ₐ[ℚ] K}
-    (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ = orderOf σ := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
-    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ
-      ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
-
-/-- At an unramified prime of a Galois number field, the number of primes above `p` times the
-residue degree is `[K : ℚ]`. -/
-private theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois ℚ K]
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
-    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
-  -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
-  -- prime `Q` has order its residue degree.
-  have horbit : orbit (K ≃ₐ[ℚ] K) Q = (span {(p : ℤ)}).primesOver (𝓞 K) :=
-    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
-    ← Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
-    ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
-    IsGalois.card_aut_eq_finrank]
-
 /-- Under square-class independence of the radicands, a number `g` with `g * 2 = [K : ℚ]` is
 `2 ^ (n - 1)`, since `[K : ℚ] = 2 ^ n`. -/
 private theorem eq_two_pow_sub_one_of_mul_two_eq_finrank [Finite ι] [Nonempty ι]
@@ -209,7 +178,7 @@ theorem inertiaDeg_eq_one_iff_forall_legendreSym_eq_one [Finite ι]
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_not_dvd hr htop hodd hcop Q
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
-  rw [inertiaDeg_eq_orderOf (p := p) Q hσ, orderOf_eq_one_iff]
+  rw [TauCeti.inertiaDeg_eq_orderOf (p := p) Q hσ, orderOf_eq_one_iff]
   exact isArithFrobAt_multiquadratic_eq_one_iff d r hr htop hodd hcop Q hσ
 
 /-- **Residue degree two exactly at a non-residue.** Let `K` be generated over `ℚ` by square roots
@@ -234,7 +203,7 @@ theorem inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one [Finite ι]
     refine (legendreSym.eq_one_or_neg_one p ?_).resolve_left h
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
     exact hcop i
-  rw [inertiaDeg_eq_orderOf (p := p) Q hσ, hsym, ← hiff]
+  rw [TauCeti.inertiaDeg_eq_orderOf (p := p) Q hσ, hsym, ← hiff]
   refine ⟨fun h h1 => by simp [h1] at h, fun h => ?_⟩
   exact orderOf_eq_prime (pow_two_eq_one hr htop σ) h
 
@@ -249,7 +218,7 @@ theorem ncard_primesOver_mul_inertiaDeg_eq_finrank [Finite ι]
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_not_dvd hr htop hodd hcop Q
-  exact ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt Q
+  exact TauCeti.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt Q
 
 /-- **The number of primes above an odd prime with a non-residue radicand.** Let `K` be
 generated over `ℚ` by square roots of integers `d i`, and let `p` be an odd prime dividing none of
@@ -338,7 +307,7 @@ theorem inertiaDeg_eq_one_iff_forall_mod_eight_eq_one [Finite ι]
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_mod_four_eq_one hr htop hd Q
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := 2) Q
-  rw [inertiaDeg_eq_orderOf (p := 2) Q hσ, orderOf_eq_one_iff]
+  rw [TauCeti.inertiaDeg_eq_orderOf (p := 2) Q hσ, orderOf_eq_one_iff]
   exact isArithFrobAt_eq_one_iff_mod_eight d r hr htop hd Q hσ
 
 /-- **Residue degree two above `2` exactly when some radicand is `5` modulo `8`.** Let `K` be
@@ -357,7 +326,7 @@ theorem inertiaDeg_eq_two_iff_exists_mod_eight_eq_five [Finite ι]
   have hmod : (∃ i, d i % 8 = 5) ↔ ¬ ∀ i, d i % 8 = 1 := by
     simp only [not_forall]
     exact exists_congr fun i => by have := hd i; omega
-  rw [inertiaDeg_eq_orderOf (p := 2) Q hσ, hmod,
+  rw [TauCeti.inertiaDeg_eq_orderOf (p := 2) Q hσ, hmod,
     ← isArithFrobAt_eq_one_iff_mod_eight d r hr htop hd Q hσ]
   refine ⟨fun h h1 => by simp [h1] at h, fun h => ?_⟩
   exact orderOf_eq_prime (pow_two_eq_one hr htop σ) h
@@ -372,7 +341,7 @@ theorem ncard_primesOver_two_mul_inertiaDeg_eq_finrank [Finite ι]
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_mod_four_eq_one hr htop hd Q
-  exact ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt (p := 2) Q
+  exact TauCeti.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt (p := 2) Q
 
 /-- **The splitting law at `2`.** Let `K` be generated over `ℚ` by square roots of integers
 `d i ≡ 1 (mod 4)`. Then `2` splits completely in `K` (there are `[K : ℚ]` primes of `𝓞 K`
