@@ -124,8 +124,12 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-- **The defining Hopf ideal of the Geck carrier of a valid Dynkin type**: the largest Hopf
 ideal of the coordinate algebra of `GLₙ` killed by every numbered Kostant root subgroup and by the
-weight torus of the Geck lattice. -/
-@[expose, reducible] def geckDefiningIdeal :
+weight torus of the Geck lattice.
+
+This is an abbreviation because the presented quotient-coordinate API is indexed by the ideal
+itself; definitional transparency lets that API specialize to the pinned Kostant ideal without
+transporting every point and coordinate morphism across an equality of ideals. -/
+abbrev geckDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -170,8 +174,11 @@ theorem geckGroupScheme_def :
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := (rfl)
 
-/-- The coordinate Hopf algebra of the Geck carrier. -/
-@[expose, reducible] def geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
+/-- The coordinate Hopf algebra of the Geck carrier.
+
+This is a type abbreviation so the quotient-coordinate point API recognizes the representing
+quotient without transports across an equality of bundled Hopf algebras. -/
+abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
     (t.geckDefiningIdeal ht)
 

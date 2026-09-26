@@ -297,18 +297,21 @@ theorem kostantToralGroupScheme_eq_hopfSpec :
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt))) :=
   (rfl)
 
+/-- The underlying scheme of the toral closure is the spectrum of its coordinate ring. -/
+theorem kostantToralGroupScheme_X_left :
+    (kostantToralGroupScheme e h ρ M hM hnil b wt).X.left =
+      Spec (CommRingCat.of (CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra ℤ n)
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt))) :=
+  congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ G.X.left)
+    (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
+
 /-- Algebra-valued points of the toral closure, transported to scheme-valued points. -/
 noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
-    letI := braidedAlgSpec (R := CommRingCat.of ℤ)
     WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-        ((@Functor.mapGrp ((CommAlgCat ℤ)ᵒᵖ) inferInstance inferInstance
-          (Over (Spec (CommRingCat.of ℤ))) inferInstance inferInstance
-          (algSpec (CommRingCat.of ℤ)) inferInstance).obj (Opposite.unop
-            ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
-              (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-                (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X) :=
+        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
   CommHopfAlgCat.mapMulEquivOfPresentation _ A
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
 
@@ -317,26 +320,15 @@ noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
 theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
-    letI := braidedAlgSpec (R := CommRingCat.of ℤ)
-    @Over.Hom.left Scheme _ (Spec (CommRingCat.of ℤ))
-        ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)))
-        ((@Functor.mapGrp ((CommAlgCat ℤ)ᵒᵖ) inferInstance inferInstance
-          (Over (Spec (CommRingCat.of ℤ))) inferInstance inferInstance
-          (algSpec (CommRingCat.of ℤ)) inferInstance).obj (Opposite.unop
-            ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
-              (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-                (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X
-        (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q) =
+    (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q).left =
       Spec.map (CommRingCat.ofHom (q.ofConv :
         CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →+* A)) ≫
-        eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ K.X.left)
-          (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)).symm := by
+        eqToHom (kostantToralGroupScheme_X_left e h ρ M hM hnil b wt).symm := by
   simpa only [kostantToralSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A
       (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
-      (congrArg (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ K.X.left)
-        (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)) q
+      (kostantToralGroupScheme_X_left e h ρ M hM hnil b wt) q
 
 end SchemePoints
 

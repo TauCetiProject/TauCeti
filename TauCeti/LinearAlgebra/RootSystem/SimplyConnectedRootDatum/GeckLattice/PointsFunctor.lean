@@ -69,7 +69,7 @@ noncomputable def geckCoordinatePointMulEquiv (A : Type v) [CommRing A] :
 
 /-- The coordinate-point equivalence is natural in the value algebra. -/
 theorem geckCoordinatePointMulEquiv_mapPoints
-    {A B : Type} [CommRing A] [CommRing B] (f : A →ₐ[ℤ] B)
+    {A B : Type v} [CommRing A] [CommRing B] (f : A →ₐ[ℤ] B)
     (q : HopfAlgebra.points (R := ℤ) (H := t.geckCoordinateHopfAlgebra ht)
       (CommAlgCat.of ℤ A)) :
     t.geckCoordinatePointMulEquiv ht B
@@ -81,6 +81,42 @@ theorem geckCoordinatePointMulEquiv_mapPoints
     AlgHom.toRingHom_eq_coe] using
     (t.geckPointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv_mapPoints
       (t.geckPointsPresentation ht (CommAlgCat.of ℤ B)) (CommAlgCat.ofHom f) q
+
+/-- An integral point of the Geck carrier, read intrinsically as a point of its coordinate Hopf
+algebra. -/
+def geckCoordinatePoint (g : t.geckPoints ht ℤ) :
+    HopfAlgebra.points (R := ℤ) (H := t.geckCoordinateHopfAlgebra ht) (CommAlgCat.of ℤ ℤ) :=
+  (t.geckCoordinatePointMulEquiv ht ℤ).symm g
+
+/-- Passing an intrinsic coordinate point back through the presentation recovers the original
+integral Geck point. -/
+@[simp]
+theorem geckCoordinatePointMulEquiv_geckCoordinatePoint (g : t.geckPoints ht ℤ) :
+    t.geckCoordinatePointMulEquiv ht ℤ (t.geckCoordinatePoint ht g) = g :=
+  MulEquiv.apply_symm_apply _ _
+
+/-- Extending the coordinate point of an integral Geck point to a commutative ring agrees with
+the presented-points map on that point. -/
+@[simp]
+theorem geckCoordinatePointMulEquiv_extendPoint_geckCoordinatePoint
+    (g : t.geckPoints ht ℤ) (A : Type v) [CommRing A] :
+    t.geckCoordinatePointMulEquiv ht A
+        (HopfAlgebra.extendPoint (t.geckCoordinateHopfAlgebra ht) (CommAlgCat.of ℤ A)
+          (t.geckCoordinatePoint ht g)) =
+      (t.geckPointsPresentation ht ℤ).map (t.geckPointsPresentation ht A)
+        (Int.castRingHom A) g := by
+  apply Subtype.ext
+  simp only [geckCoordinatePointMulEquiv, geckCoordinatePoint]
+  rw [GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_map]
+  rw [← HopfAlgebra.mapValue_extendPoint _ (A := CommAlgCat.of ℤ ℤ)
+      (Algebra.ofId ℤ (CommAlgCat.of ℤ A)),
+    HopfAlgebra.extendPoint_self, ← CommHopfAlgCat.mapValue_quotientPointsHom,
+    GeneralLinear.pointsMulEquiv_mapValue]
+  have hg := (t.geckPointsPresentation ht (CommAlgCat.of ℤ ℤ)).coe_mulEquiv_apply
+    ((t.geckPointsPresentation ht (CommAlgCat.of ℤ ℤ)).mulEquiv.symm g)
+  rw [MulEquiv.apply_symm_apply] at hg
+  rw [hg, Algebra.toRingHom_ofId, algebraMap_int_eq]
 
 /-! ## Scheme-valued points of the carrier -/
 
@@ -131,34 +167,17 @@ theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht B
-        ((@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
-          (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
-            simpa only [AlgHom.toRingHom_eq_coe] using
-              (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
-                (Spec (CommRingCat.of ℤ))))) ≫ p) =
-      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) (f : A →+* B)
+        ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
+          (Spec (CommRingCat.of ℤ)) ≫ p) =
+      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f.toRingHom
         (t.geckSchemePointsMulEquiv ht A p) := by
   let q := (t.geckGroupSchemePointMulEquiv ht A).symm p
   have hpre :
       (t.geckGroupSchemePointMulEquiv ht B).symm
-          ((@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
-            (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
-              simpa only [AlgHom.toRingHom_eq_coe] using
-                (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
-                  (Spec (CommRingCat.of ℤ))))) ≫ p) =
+          ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
+            (Spec (CommRingCat.of ℤ)) ≫ p) =
         HopfAlgebra.mapPoints (H := t.geckCoordinateHopfAlgebra ht)
           (CommAlgCat.ofHom f) q := by
-    have hover :
-        @Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
-            (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
-              simpa only [AlgHom.toRingHom_eq_coe] using
-                (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
-                  (Spec (CommRingCat.of ℤ)))) =
-          (Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
-            (Spec (CommRingCat.of ℤ)) := by
-      ext
-      simp only [Scheme.Hom.asOver, OverClass.asOverHom, AlgHom.toRingHom_eq_coe]
-    rw [hover]
     simpa only [q, geckGroupSchemePointMulEquiv] using
       CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
         (t.geckCoordinateHopfAlgebra ht) f (t.geckGroupScheme_eq_hopfSpec ht) p
@@ -211,7 +230,7 @@ private theorem groupSchemePointMulEquiv_comp_geckRootSubgroup
 @[simp]
 private theorem geckCoordinatePointMulEquiv_rootPoint
     (i : Fin t.rank ⊕ Fin t.rank)
-    (A : Type) [CommRing A]
+    (A : Type v) [CommRing A]
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
       (CommAlgCat.of ℤ A)) :
     t.geckCoordinatePointMulEquiv ht A
