@@ -233,6 +233,7 @@ namespace TypeDStd
 
 /-- Over a commutative ring without zero divisors and away from characteristic two, the root space
 of `εᵢ - εⱼ`, for `i ≠ j`, is the line through the standard difference-root generator. -/
+@[simp]
 theorem rootSpace_typeDWeightSub_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)).toSubmodule =
@@ -286,6 +287,7 @@ theorem rootSpace_typeDWeightSub_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
 
 /-- Over a commutative ring without zero divisors and away from characteristic two, the root space
 of `εᵢ + εⱼ`, for `i ≠ j`, is the line through the standard positive sum-root generator. -/
+@[simp]
 theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)).toSubmodule =
@@ -333,6 +335,7 @@ theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
 
 /-- Over a commutative ring without zero divisors and away from characteristic two, the root space
 of `-εᵢ - εⱼ`, for `i ≠ j`, is the line through the standard negative sum-root generator. -/
+@[simp]
 theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j)).toSubmodule =
@@ -386,6 +389,7 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
 
 /-- Over a field away from characteristic two, the root space of a coordinate-difference root
 `εᵢ - εⱼ` with `i ≠ j` has dimension one. -/
+@[simp]
 theorem finrank_rootSpace_typeDWeightSub_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
     Module.finrank K
@@ -395,6 +399,7 @@ theorem finrank_rootSpace_typeDWeightSub_eq_one {K : Type*} [Field K]
 
 /-- Over a field away from characteristic two, the root space of a positive coordinate-sum root
 `εᵢ + εⱼ` with `i ≠ j` has dimension one. -/
+@[simp]
 theorem finrank_rootSpace_typeDWeightAdd_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
     Module.finrank K
@@ -404,6 +409,7 @@ theorem finrank_rootSpace_typeDWeightAdd_eq_one {K : Type*} [Field K]
 
 /-- Over a field away from characteristic two, the root space of a negative coordinate-sum root
 `-εᵢ - εⱼ` with `i ≠ j` has dimension one. -/
+@[simp]
 theorem finrank_rootSpace_neg_typeDWeightAdd_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
     Module.finrank K
