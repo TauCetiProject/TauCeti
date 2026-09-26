@@ -66,15 +66,15 @@ private lemma weightedExample_ker_sum :
 
 /-- The weighted Picard group of the two-component example is infinite cyclic, with a
 multidegree sent to the sum of its two coordinates. -/
-noncomputable def weightedExample_picEquivInt : weightedExample.Pic ≃ₗ[ℤ] ℤ :=
+noncomputable def weightedExamplePicEquivInt : weightedExample.Pic ≃ₗ[ℤ] ℤ :=
   (Submodule.quotEquivOfEq _ _ weightedExample_ker_sum.symm) |>.trans
     (weightedExampleSum.quotKerEquivOfSurjective weightedExampleSum_surjective)
 
 /-- The Picard-class isomorphism is the sum of multidegrees. -/
 @[simp]
-theorem weightedExample_picEquivInt_mk (d : Fin 2 → ℤ) :
-    weightedExample_picEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
-  simp only [weightedExample_picEquivInt, LinearEquiv.trans_apply,
+theorem weightedExamplePicEquivInt_mk (d : Fin 2 → ℤ) :
+    weightedExamplePicEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
+  simp only [weightedExamplePicEquivInt, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk]
   rw [LinearMap.quotKerEquivOfSurjective_apply_mk]
   simp [weightedExampleSum]
@@ -82,10 +82,10 @@ theorem weightedExample_picEquivInt_mk (d : Fin 2 → ℤ) :
 /-- The weighted Picard group has no nonzero two-torsion. -/
 theorem weightedExample_pic_no_two_torsion (x : weightedExample.Pic) (hx : (2 : ℤ) • x = 0) :
     x = 0 := by
-  apply weightedExample_picEquivInt.injective
-  have h := congrArg weightedExample_picEquivInt hx
+  apply weightedExamplePicEquivInt.injective
+  have h := congrArg weightedExamplePicEquivInt hx
   simp only [map_smul, map_zero, smul_eq_mul] at h
-  have hz : weightedExample_picEquivInt x = 0 := by omega
+  have hz : weightedExamplePicEquivInt x = 0 := by omega
   simpa using hz
 
 /-- The raw intersection cokernel of the weight-two example contains nonzero two-torsion:
