@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.E8.Basic
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
+public import TauCeti.RepresentationTheory.Quiver.EulerForm
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
