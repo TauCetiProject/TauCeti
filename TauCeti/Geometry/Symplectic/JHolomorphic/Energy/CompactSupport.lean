@@ -22,11 +22,11 @@ identity
 `e(du) - 2 ω(∂s u, ∂t u) = g(∂s u + J (∂t u), ∂s u + J (∂t u))`
 over the plane therefore turns it into the **energy identity**
 
-`∫ e(du) = ∫ g(∂̄ u, ∂̄ u)`, where `∂̄ u = ∂s u + J (∂t u)`,
+`∫ e(du) = ∫ g(D u, D u)`, where `D u = ∂s u + J (∂t u)` is the Cauchy--Riemann defect,
 
-which is the `L²` a priori estimate `‖du‖₂ = ‖∂̄ u‖₂` for the Cauchy--Riemann operator on
-compactly supported maps. With this normalization of `∂̄` the constant is `1`; the constant for
-the normalization `∂̄ u = (∂s u + J (∂t u)) / 2` is `2`. Both norms are taken in the metric
+which is the `L²` a priori estimate `‖du‖₂ = ‖D u‖₂` for the Cauchy--Riemann operator on
+compactly supported maps. With this normalization of `D` the constant is `1`; the constant for
+the normalization `D u = (∂s u + J (∂t u)) / 2` is `2`. Both norms are taken in the metric
 `g = ω(·, J ·)` of the pair, and the identity is what makes the energy of a holomorphic curve
 computable from its area.
 
@@ -52,7 +52,7 @@ behind the area statement needs; `volume` is the intended instance.
   map.
 
 The convention and the argument follow McDuff--Salamon, *J-holomorphic Curves and Symplectic
-Topology*, Section 2.2 (the energy identity `E(u) = ∫ u^*ω + ‖∂̄_J u‖²`).
+Topology*, Section 2.2 (the energy identity `E(u) = ∫ u^*ω + ‖D_J u‖²`).
 -/
 
 public section
@@ -102,9 +102,9 @@ theorem integral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) (hu : Con
 
 /-- **The energy identity for a compactly supported map.** The integrated standard energy density
 of a compactly supported `C²` map from the plane equals the integrated associated-metric square
-`g(∂̄ u, ∂̄ u)` of its Cauchy--Riemann defect `∂̄ u = ∂s u + J (∂t u)`. Equivalently
-`‖du‖₂ = ‖∂̄ u‖₂` in the metric `g = ω(·, J ·)`: the `L²` a priori estimate for the
-Cauchy--Riemann operator, with constant `1` for this normalization of `∂̄`. Only `J`-invariance of
+`g(D u, D u)` of its Cauchy--Riemann defect `D u = ∂s u + J (∂t u)`. Equivalently
+`‖du‖₂ = ‖D u‖₂` in the metric `g = ω(·, J ·)`: the `L²` a priori estimate for the
+Cauchy--Riemann operator, with constant `1` for this normalization of `D`. Only `J`-invariance of
 `ω` is used, not tameness. -/
 theorem integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
     (hinv : ω.Invariant J) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) :
