@@ -14,9 +14,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 Coinduction from a closed subgroup of a profinite group takes a short exact sequence of
 discrete modules to a short exact sequence. This packages the injectivity, middle exactness,
 and surjectivity of `TauCeti.coindMap` in the coefficient format used by continuous cohomology.
-The surjectivity uses the continuous section of the coset quotient. This is the exact coefficient
-sequence used in the coinduced proof of Shapiro's lemma (Ribes–Zalesskii, *Profinite Groups*,
-Theorem 6.10.5).
+This is the exact coefficient sequence used in the coinduced proof of Shapiro's lemma
+(Ribes–Zalesskii, *Profinite Groups*, Theorem 6.10.5).
 -/
 
 public section
@@ -32,22 +31,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [ContinuousSMul U B]
   [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction U C]
 
-omit [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-  [ContinuousSMul U B] in
-private theorem mapIncl_apply (S : DiscreteShortExact U A B C)
-    (a : DiscreteCoind G U A) (g : G) :
-    (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) g = S.incl (a g) := by
-  simpa only [AddMonoidHom.coe_toIntLinearMap] using
-    (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant a g)
-
-omit [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-  [ContinuousSMul U B] in
-private theorem mapProj_apply (S : DiscreteShortExact U A B C)
-    (b : DiscreteCoind G U B) (g : G) :
-    (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) g = S.proj (b g) := by
-  simpa only [AddMonoidHom.coe_toIntLinearMap] using
-    (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant b g)
-
 /-- The short exact sequence obtained by applying discrete coinduction from a closed subgroup
 to each term and map of a short exact sequence. -/
 noncomputable def coind (S : DiscreteShortExact U A B C) :
@@ -58,25 +41,32 @@ noncomputable def coind (S : DiscreteShortExact U A B C) :
   incl_equivariant g a := by
     apply DiscreteCoind.ext
     intro x
-    -- The short exact sequence stores the linear map as an additive homomorphism.
+    -- The record field is an additive homomorphism; expose its underlying coinduction map.
     change (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant (g • a)) x =
       (g • DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) x
     calc
-      _ = S.incl ((g • a) x) := mapIncl_apply U S _ _
+      _ = S.incl ((g • a) x) := by
+        simpa only [AddMonoidHom.coe_toIntLinearMap] using
+          (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant _ _)
       _ = S.incl (a (x * g)) := by rw [DiscreteCoind.coe_smul]
       _ = (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) (x * g) :=
-        (mapIncl_apply U S _ _).symm
+        by simpa only [AddMonoidHom.coe_toIntLinearMap] using
+          (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant _ _).symm
       _ = _ := (DiscreteCoind.coe_smul g _ x).symm
   proj_equivariant g b := by
     apply DiscreteCoind.ext
     intro x
+    -- As above, expose the map beneath the additive homomorphism in the record field.
     change (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant (g • b)) x =
       (g • DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) x
     calc
-      _ = S.proj ((g • b) x) := mapProj_apply U S _ _
+      _ = S.proj ((g • b) x) := by
+        simpa only [AddMonoidHom.coe_toIntLinearMap] using
+          (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant _ _)
       _ = S.proj (b (x * g)) := by rw [DiscreteCoind.coe_smul]
       _ = (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) (x * g) :=
-        (mapProj_apply U S _ _).symm
+        by simpa only [AddMonoidHom.coe_toIntLinearMap] using
+          (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant _ _).symm
       _ = _ := (DiscreteCoind.coe_smul g _ x).symm
   incl_injective := by
     intro a b hab
@@ -85,7 +75,9 @@ noncomputable def coind (S : DiscreteShortExact U A B C) :
     apply S.incl_injective
     have hab' : DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a =
         DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant b := hab
-    simpa only [mapIncl_apply] using
+    have ha := DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant a g
+    have hb := DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant b g
+    simpa only [ha, hb, AddMonoidHom.coe_toIntLinearMap] using
       congrArg (fun f : DiscreteCoind G U B => f g) hab'
   proj_surjective := by
     intro c
@@ -94,9 +86,11 @@ noncomputable def coind (S : DiscreteShortExact U A B C) :
     refine ⟨(DiscreteCoind.toCoind G U B).symm b, ?_⟩
     apply DiscreteCoind.ext
     intro g
+    -- Unfold the projection field to compare it pointwise with `coindMap` via `hb`.
     change (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant
       ((DiscreteCoind.toCoind G U B).symm b)) g = c g
-    simpa only [mapProj_apply, coindMap_apply, DiscreteCoind.coe_toCoind_symm,
+    rw [DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant]
+    simpa only [AddMonoidHom.coe_toIntLinearMap, coindMap_apply, DiscreteCoind.coe_toCoind_symm,
       DiscreteCoind.coe_toCoind] using
       congrArg (fun f : TauCeti.coind G U C => (f : G → C) g) hb
   exact := by
@@ -116,37 +110,53 @@ noncomputable def coind (S : DiscreteShortExact U A B C) :
         have hb' : DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b = 0 := hb
         have hg := congrArg (fun f : DiscreteCoind G U C => f g) hb'
         have hg' : S.proj (b g) = 0 := by
-          simpa only [mapProj_apply, DiscreteCoind.coe_zero, Pi.zero_apply] using hg
+          rw [DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant] at hg
+          simpa only [AddMonoidHom.coe_toIntLinearMap,
+            DiscreteCoind.coe_zero, Pi.zero_apply] using hg
         simpa [coindMap_apply] using hg'
       rw [← hcoind] at hker
       obtain ⟨a, ha⟩ := hker
       refine ⟨(DiscreteCoind.toCoind G U A).symm a, ?_⟩
       apply DiscreteCoind.ext
       intro g
+      -- Unfold the inclusion field to compare it pointwise with `coindMap` via `ha`.
       change (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant
         ((DiscreteCoind.toCoind G U A).symm a)) g = b g
-      simpa only [mapIncl_apply, coindMap_apply, DiscreteCoind.coe_toCoind_symm,
+      rw [DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant]
+      simpa only [AddMonoidHom.coe_toIntLinearMap, coindMap_apply,
+        DiscreteCoind.coe_toCoind_symm,
         DiscreteCoind.coe_toCoind] using
         congrArg (fun f : TauCeti.coind G U B => (f : G → B) g) ha
     · rintro ⟨a, rfl⟩
       apply DiscreteCoind.ext
       intro g
+      -- Expose both map fields so their pointwise composition is `S.proj_incl`.
       change (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant
         (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a)) g = 0
-      simpa only [mapProj_apply, mapIncl_apply] using S.proj_incl (a g)
+      rw [DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant,
+        DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant]
+      simpa only [AddMonoidHom.coe_toIntLinearMap] using S.proj_incl (a g)
 
 /-- Coinduction applies the inclusion of a short exact sequence pointwise. -/
 @[simp]
 theorem coind_incl_apply (S : DiscreteShortExact U A B C)
     (a : DiscreteCoind G U A) (g : G) :
     (coind U hU S).incl a g = S.incl (a g) :=
-  mapIncl_apply U S a g
+  by
+    -- The inclusion field forgets the linear structure of `DiscreteCoind.map`.
+    change (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) g = S.incl (a g)
+    simpa only [AddMonoidHom.coe_toIntLinearMap] using
+      (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant a g)
 
 /-- Coinduction applies the projection of a short exact sequence pointwise. -/
 @[simp]
 theorem coind_proj_apply (S : DiscreteShortExact U A B C)
     (b : DiscreteCoind G U B) (g : G) :
     (coind U hU S).proj b g = S.proj (b g) :=
-  mapProj_apply U S b g
+  by
+    -- The projection field forgets the linear structure of `DiscreteCoind.map`.
+    change (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) g = S.proj (b g)
+    simpa only [AddMonoidHom.coe_toIntLinearMap] using
+      (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant b g)
 
 end TauCeti.ContCohomology.DiscreteShortExact
