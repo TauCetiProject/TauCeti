@@ -16,9 +16,10 @@ the functional whose first variation detects geodesics with fixed endpoints. We 
 manifold derivative as `Manifold.pathELength`, so both functionals measure speed with the
 Riemannian norm on the tangent bundle.
 
-The energy of a maximal geodesic on a subinterval of its domain is its constant squared speed
-times half the duration. This calculation provides the normalization needed for variation
-formulas and the flat-space model.
+Energy is additive over adjacent intervals, and on any parameter set containing the interval it
+is the integral of half the squared norm of the within-set velocity `curveVelocityWithin`, since
+the two velocities agree off the endpoints. The energy of a geodesic on a preconnected parameter
+set, open or not, is its constant squared speed times half the duration.
 
 ## References
 
@@ -74,28 +75,45 @@ theorem riemannianEnergy_nonneg (γ : ℝ → M) {a b : ℝ} (hab : a ≤ b) :
   exact intervalIntegral.integral_nonneg_of_forall hab fun t ↦
     div_nonneg (sq_nonneg _) (by norm_num)
 
+/-- Energy is additive over adjacent intervals on which the squared speed is integrable. -/
+theorem riemannianEnergy_add (γ : ℝ → M) {a b c : ℝ}
+    (hab : IntervalIntegrable (fun t ↦ ‖mfderiv 𝓘(ℝ, ℝ) I γ t 1‖ ^ 2) volume a b)
+    (hbc : IntervalIntegrable (fun t ↦ ‖mfderiv 𝓘(ℝ, ℝ) I γ t 1‖ ^ 2) volume b c) :
+    riemannianEnergy I γ a b + riemannianEnergy I γ b c = riemannianEnergy I γ a c :=
+  intervalIntegral.integral_add_adjacent_intervals (hab.div_const 2) (hbc.div_const 2)
+
+/-- On any parameter set `s` containing the interval between `a` and `b`, the energy is half the
+integral of the squared norm of the velocity within `s`. The two velocities agree on the open
+interval, so no regularity of `γ` is needed. -/
+theorem riemannianEnergy_eq_integral_curveVelocityWithin (γ : ℝ → M) {s : Set ℝ} {a b : ℝ}
+    (hs : uIcc a b ⊆ s) :
+    riemannianEnergy I γ a b = ∫ t in a..b, ‖curveVelocityWithin I γ s t‖ ^ 2 / 2 := by
+  unfold riemannianEnergy
+  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
+  have hmem : s ∈ 𝓝 t :=
+    mem_interior_iff_mem_nhds.mp (interior_mono hs (by rwa [uIcc, interior_Icc]))
+  have hvel : mfderiv 𝓘(ℝ, ℝ) I γ t 1 = curveVelocityWithin I γ s t :=
+    ((curveVelocityWithin_of_mem_nhds hmem).trans (curveVelocity_apply (I := I))).symm
+  simp only [hvel]
+
 variable {I}
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- On an interval contained in its open preconnected domain, the energy of a geodesic is half
-the square of its speed at any chosen time in that domain, multiplied by the duration. -/
+/-- On an interval with endpoints in its preconnected domain, the energy of a geodesic is half
+the square of its speed at any chosen time in that domain, multiplied by the duration. The domain
+need not be open, so this applies to geodesic segments on closed intervals. -/
 theorem IsGeodesicCurveOn.riemannianEnergy_eq {γ : ℝ → M} {s : Set ℝ}
-    (hγ : IsGeodesicCurveOn I γ s) (hsopen : IsOpen s) (hconn : IsPreconnected s)
-    {a b c : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hc : c ∈ s) (hab : a ≤ b) :
+    (hγ : IsGeodesicCurveOn I γ s) (hconn : IsPreconnected s)
+    {a b c : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hc : c ∈ s) :
     riemannianEnergy I γ a b =
       (b - a) * (‖curveVelocityWithin I γ s c‖ ^ 2 / 2) := by
-  unfold riemannianEnergy
-  rw [intervalIntegral.integral_congr_Ioo_of_le hab
-    (g := fun _ ↦ ‖curveVelocityWithin I γ s c‖ ^ 2 / 2)]
-  · simp only [intervalIntegral.integral_const, smul_eq_mul]
-  · intro t ht
-    have hmem : t ∈ s := Ioo_subset_Icc_self.trans (hconn.ordConnected.out ha hb) ht
-    have hvel : mfderiv 𝓘(ℝ, ℝ) I γ t 1 = curveVelocityWithin I γ s t :=
-      ((curveVelocityWithin_of_mem_nhds (hsopen.mem_nhds hmem)).trans
-        (curveVelocity_apply (I := I))).symm
-    simp only [hvel, hγ.norm_curveVelocityWithin_eq hconn hmem hc]
+  have hsub := hconn.ordConnected.uIcc_subset ha hb
+  rw [riemannianEnergy_eq_integral_curveVelocityWithin I γ hsub,
+    intervalIntegral.integral_congr (g := fun _ ↦ ‖curveVelocityWithin I γ s c‖ ^ 2 / 2)
+      fun t ht ↦ by simp only [hγ.norm_curveVelocityWithin_eq hconn (hsub ht) hc]]
+  simp only [intervalIntegral.integral_const, smul_eq_mul]
 
 variable [I.Boundaryless] [T2Space (TangentBundle I M)]
 
@@ -103,12 +121,11 @@ variable [I.Boundaryless] [T2Space (TangentBundle I M)]
 initial squared speed times the duration. -/
 theorem riemannianEnergy_maximalGeodesic {p : M} {v : TangentSpace I p}
     {a b : ℝ} (ha : a ∈ geodesicInterval I M p v)
-    (hb : b ∈ geodesicInterval I M p v) (hab : a ≤ b) :
+    (hb : b ∈ geodesicInterval I M p v) :
     riemannianEnergy I (maximalGeodesic I M p v) a b =
       (b - a) * (‖v‖ ^ 2 / 2) := by
   rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).isGeodesicCurveOn
-    |>.riemannianEnergy_eq isOpen_geodesicInterval isPreconnected_geodesicInterval
-      ha hb zero_mem_geodesicInterval hab,
+    |>.riemannianEnergy_eq isPreconnected_geodesicInterval ha hb zero_mem_geodesicInterval,
     norm_curveVelocityWithin_maximalGeodesic zero_mem_geodesicInterval]
 
 end TauCeti.Manifold
