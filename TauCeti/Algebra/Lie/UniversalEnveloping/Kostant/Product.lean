@@ -25,9 +25,9 @@ lattice, and basis use Mathlib's product constructions directly.
 
 public section
 
-open TensorProduct TauCeti.UniversalEnvelopingAlgebra
+open TensorProduct
 
-namespace UniversalEnvelopingAlgebra
+namespace TauCeti.UniversalEnvelopingAlgebra
 
 variable {L V W : Type*} [LieRing L] [LieAlgebra ℚ L]
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
@@ -37,7 +37,7 @@ variable (σ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End �
 variable (M : AddSubgroup V) (N : AddSubgroup W)
 
 /-- The product of two Kostant-stable lattices is stable in the direct sum representation. -/
-theorem kostantForm_apply_mem_prod
+theorem _root_.UniversalEnvelopingAlgebra.kostantForm_apply_mem_prod
     (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
     (hN : ∀ u ∈ kostantForm e h, ∀ w ∈ N, σ u w ∈ N)
     (u : _root_.UniversalEnvelopingAlgebra ℚ L) (hu : u ∈ kostantForm e h)
@@ -95,16 +95,16 @@ theorem prodRight_baseChangeKostantExpHom
       (((M.prodEquiv N).toIntLinearEquiv.baseChange ℤ R _ _) z)
     E (baseChangeKostantExpHom e h
       ((LinearMap.prodMapAlgHom ℚ V W).comp (ρ.prod σ)) (M.prod N)
-      (kostantForm_apply_mem_prod e h ρ σ M N hM hN)
+      (_root_.UniversalEnvelopingAlgebra.kostantForm_apply_mem_prod e h ρ σ M N hM hN)
       i (hρ.prodMap hσ) t z) =
       (baseChangeKostantExpHom e h ρ M hM i hρ t (E z).1,
         baseChangeKostantExpHom e h σ N hN i hσ t (E z).2) := by
   dsimp only
   rw [coe_baseChangeKostantExpHom e h
     ((LinearMap.prodMapAlgHom ℚ V W).comp (ρ.prod σ)) (M.prod N)
-    (kostantForm_apply_mem_prod e h ρ σ M N hM hN)
+    (_root_.UniversalEnvelopingAlgebra.kostantForm_apply_mem_prod e h ρ σ M N hM hN)
     i (hρ.prodMap hσ) t]
   simp only [coe_baseChangeKostantExpHom]
   exact Module.End.prodRight_baseChangeExp _ _ M N _ _ hρ hσ _ z
 
-end UniversalEnvelopingAlgebra
+end TauCeti.UniversalEnvelopingAlgebra
