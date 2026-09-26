@@ -39,20 +39,22 @@ namespace TauCeti.DiagonalizableGroup
 
 universe u v
 
-variable (k : Type u) [Field k] (p : ℕ) [Fact p.Prime] [CharP k p]
+variable (k : Type u) [Field k] (p : ℕ)
 
 /-- The diagonalizable group of an abelian `p`-group is geometrically connected
-in characteristic `p`, even when the character group is infinite. -/
-theorem geometricallyConnected_of_isPGroup {G : Type v} [CommGroup G]
+in exponential characteristic `p`, even when the character group is infinite. -/
+theorem geometricallyConnected_of_isPGroup [ExpChar k p] {G : Type v} [CommGroup G]
     (hG : IsPGroup p G) :
     geometricallyConnectedCommHopfAlgProperty k (CommHopfAlgCat.of k (MonoidAlgebra k G)) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
   intro K _ _
-  let _ : CharP K p := charP_of_injective_algebraMap (algebraMap k K).injective p
+  let _ : ExpChar K p := expChar_of_injective_algebraMap (algebraMap k K).injective p
   let e := (Algebra.TensorProduct.comm k (MonoidAlgebra k G) K).toRingEquiv.trans
     (MonoidAlgebra.scalarTensorEquiv k K).toRingEquiv
   exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mpr
     (connectedSpace_primeSpectrum_monoidAlgebra_of_isPGroup K p hG)
+
+variable [Fact p.Prime] [CharP k p]
 
 /-- A finite diagonalizable group in characteristic `p` is geometrically connected
 if and only if its character group is a `p`-group. -/
