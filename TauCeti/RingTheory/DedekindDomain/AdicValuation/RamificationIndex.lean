@@ -89,6 +89,7 @@ theorem ramificationIndex_adicCompletion :
 /-- **Tameness of the completed extension.** The extension of local fields `L_w / K_v` is tamely
 ramified exactly when the ramification index of `w` over `R` is nonzero in the residue field
 `R ⧸ v`. -/
+@[simp]
 theorem isTamelyRamified_adicCompletion_iff :
     TauCeti.IsTamelyRamified (v.adicCompletion K) (w.adicCompletion L) ↔
       ((w.asIdeal.ramificationIdx R : ℕ) : R ⧸ v.asIdeal) ≠ 0 := by
@@ -100,6 +101,7 @@ theorem isTamelyRamified_adicCompletion_iff :
 /-- **Wildness of the completed extension.** The extension of local fields `L_w / K_v` is wildly
 ramified exactly when the ramification index of `w` over `R` vanishes in the residue field
 `R ⧸ v`. -/
+@[simp]
 theorem isWildlyRamified_adicCompletion_iff :
     TauCeti.IsWildlyRamified (v.adicCompletion K) (w.adicCompletion L) ↔
       ((w.asIdeal.ramificationIdx R : ℕ) : R ⧸ v.asIdeal) = 0 := by
