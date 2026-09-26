@@ -116,6 +116,38 @@ theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top {M : Ty
     rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hs, Subgroup.coe_top]
   exact DFunLike.coe_injective (hf.ext_on hdense hg (MonoidHom.eqOn_closure hfg))
 
+/-- The range of a continuous homomorphism lies in a closed subgroup exactly when a topological
+generating set of the source maps into it. -/
+theorem _root_.MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top {s : Set G}
+    (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f : G →* H} (hf : Continuous f)
+    {T : Subgroup H} (hT : IsClosed (T : Set H)) : f.range ≤ T ↔ ∀ x ∈ s, f x ∈ T := by
+  refine ⟨fun h x _ ↦ h ⟨x, rfl⟩, fun h ↦ ?_⟩
+  rw [MonoidHom.range_eq_map, ← hs]
+  refine (f.map_topologicalClosure_le hf _).trans (Subgroup.topologicalClosure_minimal _ ?_ hT)
+  rw [MonoidHom.map_closure, Subgroup.closure_le]
+  rintro _ ⟨x, hx, rfl⟩
+  exact h x hx
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The range of a continuous homomorphism out of a compact group into a Hausdorff group is a
+closed subgroup. -/
+theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] [T2Space H] {f : G →* H}
+    (hf : Continuous f) : IsClosed (f.range : Set H) := by
+  rw [MonoidHom.coe_range]
+  exact (isCompact_range hf).isClosed
+
+/-- The range of a continuous homomorphism out of a compact group into a Hausdorff group is the
+closure of a subgroup `T` as soon as a topological generating set of the source maps into that
+closure and `T` lies in the range. -/
+theorem _root_.MonoidHom.range_eq_topologicalClosure_of_topologicalClosure_closure_eq_top
+    [CompactSpace G] [T2Space H] {s : Set G}
+    (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f : G →* H} (hf : Continuous f)
+    {T : Subgroup H} (h₁ : ∀ x ∈ s, f x ∈ T.topologicalClosure) (h₂ : T ≤ f.range) :
+    f.range = T.topologicalClosure :=
+  le_antisymm ((MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top hs hf
+    (Subgroup.isClosed_topologicalClosure _)).mpr h₁)
+    (Subgroup.topologicalClosure_minimal _ h₂ (MonoidHom.isClosed_range_of_continuous hf))
+
 /-- Topological finite generation passes along a continuous homomorphism with dense range. -/
 theorem IsTopologicallyFinitelyGenerated.of_denseRange
     (hG : IsTopologicallyFinitelyGenerated G) {f : G →* H} (hf : Continuous f)

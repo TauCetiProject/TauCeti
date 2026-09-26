@@ -141,6 +141,12 @@ theorem pow_mem_proPFrattini (g : G) : g ^ p ∈ proPFrattini p G := by
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow, ← hcard]
   exact pow_card_eq_one'
 
+/-- Every `q`-th power with `p ∣ q` lies in the pro-`p` Frattini subgroup. -/
+theorem pow_mem_proPFrattini_of_dvd {q : ℕ} (hq : p ∣ q) (g : G) : g ^ q ∈ proPFrattini p G := by
+  obtain ⟨k, rfl⟩ := hq
+  rw [pow_mul]
+  exact Subgroup.pow_mem _ (pow_mem_proPFrattini g) k
+
 /-- Every commutator lies in the pro-`p` Frattini subgroup: a quotient of prime order is
 cyclic, hence commutative. -/
 theorem commutator_le_proPFrattini (hp : p.Prime) : commutator G ≤ proPFrattini p G := by

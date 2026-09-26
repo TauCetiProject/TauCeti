@@ -103,9 +103,8 @@ image of a compact group, and contains `-1` and `(-3)⁻¹`, which topologically
 `ℤ_2ˣ = {±1} × (1 + 4ℤ_2)`. -/
 theorem standardD0Orientation_surjective : Function.Surjective standardD0Orientation := by
   set R : Subgroup ℤ_[2]ˣ := standardD0Orientation.toMonoidHom.range
-  have hR : IsClosed (R : Set ℤ_[2]ˣ) := by
-    rw [MonoidHom.coe_range, ContinuousMonoidHom.coe_toMonoidHom]
-    exact (isCompact_range standardD0Orientation.continuous).isClosed
+  have hR : IsClosed (R : Set ℤ_[2]ˣ) :=
+    MonoidHom.isClosed_range_of_continuous standardD0Orientation.continuous
   have hle : unitsPlusMinus 2 ≤ R := by
     rw [← topologicalClosure_zpowers_neg_one_sup_zpowers_eq_unitsPlusMinus le_rfl
       negThreeUnit_inv_mul_one_sub_two_pow_two]

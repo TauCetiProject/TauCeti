@@ -182,6 +182,10 @@ theorem isClosed_unitsPrincipal (f : ℕ) : IsClosed (unitsPrincipal p f : Set �
   rw [unitsPrincipal, MonoidHom.coe_ker]
   exact isClosed_singleton.preimage ((PadicInt.continuous_toZModPow f).units_map _)
 
+/-- The principal unit groups are compact, being closed in the compact group `ℤ_pˣ`. -/
+instance compactSpace_unitsPrincipal (f : ℕ) : CompactSpace (unitsPrincipal p f) :=
+  isCompact_iff_compactSpace.mp (isClosed_unitsPrincipal p f).isCompact
+
 variable (p) in
 /-- The principal unit groups have trivial intersection: `U^(∞) = {1}`. -/
 @[simp]

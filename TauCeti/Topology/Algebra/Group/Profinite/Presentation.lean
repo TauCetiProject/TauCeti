@@ -534,12 +534,18 @@ theorem dense_closure_range_of :
     ← dense_iff_closure_eq] at h
   exact h
 
+/-- The generators generate the presented pro-`p` group topologically, as an equation of
+subgroups. -/
+theorem topologicalClosure_closure_range_of_eq_top :
+    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ :=
+  SetLike.coe_injective <| by
+    rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+
 /-- A pro-`p` group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
     IsTopologicallyFinitelyGenerated (presentedProP p X rels) :=
-  (Set.finite_range (of p rels)).isTopologicallyFinitelyGenerated <|
-    SetLike.coe_injective <| by
-      rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+  (Set.finite_range (of p rels)).isTopologicallyFinitelyGenerated
+    topologicalClosure_closure_range_of_eq_top
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
