@@ -22,6 +22,7 @@ public section
 namespace TauCeti
 
 /-- An alternating sum of consecutive pairs telescopes to its two end terms. -/
+@[simp]
 theorem sum_Icc_negOnePow_smul_add {G : Type*} [AddCommGroup G] (f : ℤ → G) (a b : ℤ)
     (hab : a ≤ b) :
     ∑ n ∈ Finset.Icc a b, (n.negOnePow : ℤ) • (f n + f (n + 1)) =

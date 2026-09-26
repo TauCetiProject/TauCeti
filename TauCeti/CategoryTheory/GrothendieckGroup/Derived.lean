@@ -372,6 +372,14 @@ lemma boundedDerivedK0Equiv_of (X : A) :
       DFunLike.congr_fun (boundedDerivedK0Equiv_toAddMonoidHom (A := A)) (of X)
     _ = _ := toBoundedDerivedK0_of X
 
+/-- The inverse comparison sends a degree-zero complex to its class in abelian `K₀`. -/
+@[simp]
+theorem boundedDerivedK0Equiv_symm_of_singleFunctor (X : A) :
+    (boundedDerivedK0Equiv A).symm
+      (TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)) = of X := by
+  simpa only [boundedDerivedK0Equiv_of] using
+    (boundedDerivedK0Equiv A).symm_apply_apply (of X)
+
 /-- The inverse of `TauCeti.AbelianK0.boundedDerivedK0Equiv` sends the class of a bounded complex
 to the alternating sum of the classes of its cohomology objects, summed over any finite set of
 degrees outside which the cohomology vanishes. -/
