@@ -126,8 +126,11 @@ theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R 
 @[simp]
 theorem dgClosedHom_forget_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    dgClosedHom R (F.forget.map f) = F.dgMap 0 (dgClosedHom R f) := by
-  simp only [dgClosedHom_def, EnrichedFunctor.forget_map, ForgetEnrichment.homTo_homOf,
+    dgClosedHom R (ForgetEnrichment.homOf _
+      (ForgetEnrichment.homTo _ f ≫
+        F.map (ForgetEnrichment.to _ X) (ForgetEnrichment.to _ Y))) =
+      F.dgMap 0 (dgClosedHom R f) := by
+  simp only [dgClosedHom_def, ForgetEnrichment.homTo_homOf,
     HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
     EnrichedFunctor.dgMap_apply]
 
@@ -136,10 +139,13 @@ represented by its image under the DG functor. -/
 @[simp]
 theorem forget_map_dgClosedHomOf
     {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
-    F.forget.map (dgClosedHomOf R f hf) =
+    ForgetEnrichment.homOf _
+      (ForgetEnrichment.homTo _ (dgClosedHomOf R f hf) ≫ F.map X Y) =
       dgClosedHomOf R (F.dgMap 0 f) (F.dgMap_mem_dgCycles hf) := by
   apply dgClosedHom_injective R
-  rw [F.dgClosedHom_forget_map, dgClosedHom_dgClosedHomOf, dgClosedHom_dgClosedHomOf]
+  have h := F.dgClosedHom_forget_map (f := dgClosedHomOf R f hf)
+  simp only [ForgetEnrichment.to_of] at h
+  rw [h, dgClosedHom_dgClosedHomOf, dgClosedHom_dgClosedHomOf]
 
 /-- A DG functor sends degree-zero boundaries to degree-zero boundaries. -/
 theorem dgMap_mem_dgBoundaries {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgBoundaries R X Y) :
@@ -204,7 +210,8 @@ def forgetCompDgClosedToHomotopyIso :
       dgClosedToHomotopy (C := C) R ⋙ F.mapDGHomotopyCategory :=
   NatIso.ofComponents (fun _ => Iso.refl _) fun f => by
     refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
-    simp only [Functor.comp_map, dgClosedToHomotopy_map, F.dgClosedHom_forget_map]
+    simp only [Functor.comp_map, dgClosedToHomotopy_map, EnrichedFunctor.forget_map,
+      F.dgClosedHom_forget_map]
     exact (F.mapDGHomotopyCategory_map_homOf (dgClosedHom R f)
       (dgClosedHom_mem_dgCycles R f)).symm
 
