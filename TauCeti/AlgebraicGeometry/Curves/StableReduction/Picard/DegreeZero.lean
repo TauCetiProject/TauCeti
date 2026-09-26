@@ -72,7 +72,7 @@ theorem finrank_degreeZeroSubgroup : Module.finrank ℤ T.degreeZeroSubgroup = 0
   have h := (LinearMap.ker T.degree).finrank_quotient_add_finrank
   rw [LinearEquiv.finrank_eq T.degree.quotKerEquivRange, T.finrank_range_degree,
     T.finrank_pic] at h
-  change Module.finrank ℤ (LinearMap.ker T.degree) = 0
+  rw [degreeZeroSubgroup]
   omega
 
 /-- The degree-zero subgroup of the numerical Picard group is finite. -/
