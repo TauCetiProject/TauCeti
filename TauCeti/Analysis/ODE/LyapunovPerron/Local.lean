@@ -60,7 +60,8 @@ the derivative of `N` does.
   stable set, cut down to where the `P`-component has norm at most `ρ`, is the graph of that map
   over the closed ball of radius `ρ` in the range of `P`, for every `ρ` small enough.
 * `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: such a
-  `ρ` exists as soon as the ball of confinement has positive radius.
+  `ρ` exists as soon as the ball of confinement has positive radius, by the radius choice of
+  `ContinuousLinearMap.exists_pos_lyapunovPerronBound_mul_le`.
 * `ContinuousLinearMap.localUnstableGraphMap`, with
   `ContinuousLinearMap.lipschitzWith_localUnstableGraphMap` and
   `ContinuousLinearMap.norm_localUnstableGraphMap_le`,
@@ -103,6 +104,16 @@ private theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
   have hsmallR : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
   have := (div_lt_one hαR).2 hsmallR
   exact div_nonneg K.coe_nonneg (by linarith)
+
+/-- A positive truncation radius `ρ` small enough that the Lyapunov--Perron bound
+`K / (1 - 2 K (2 ε) / α)` on a solution whose input parameter has norm at most `ρ` keeps that
+solution inside the ball of confinement of radius `r`. This is the bound on `ρ` that the local
+stable and unstable set descriptions below, and the homeomorphisms built from them in
+`TauCeti/Analysis/ODE/LyapunovPerron/Embedding.lean`, all assume. -/
+theorem exists_pos_lyapunovPerronBound_mul_le (K α ε : ℝ≥0) {r : ℝ} (hr0 : 0 < r) :
+    ∃ ρ > 0, (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r :=
+  let ⟨ρ, hρ0, hρ⟩ := exists_pos_mul_lt hr0 ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α))
+  ⟨ρ, hρ0, hρ.le⟩
 
 variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
   (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
@@ -282,9 +293,9 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
           MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} =
         (fun v ↦ v + localStableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
           (range P ∩ closedBall 0 ρ) := by
-  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_mul_lt hr0 ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α))
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_lyapunovPerronBound_mul_le K α ε hr0
   exact ⟨ρ, hρ0, setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr0.le hN
-    hsmall hN0 hP hAP hρ.le⟩
+    hsmall hN0 hP hAP hρ⟩
 
 end LocalStable
 
@@ -466,9 +477,9 @@ theorem exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
           ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ} =
         (fun v ↦ v + localUnstableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
           (range (ContinuousLinearMap.id ℝ X - P) ∩ closedBall 0 ρ) := by
-  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_mul_lt hr0 ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α))
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_pos_lyapunovPerronBound_mul_le K α ε hr0
   exact ⟨ρ, hρ0, setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image hs hu hr0.le hN
-    hsmall hN0 hP hAP hρ.le⟩
+    hsmall hN0 hP hAP hρ⟩
 
 end LocalUnstable
 

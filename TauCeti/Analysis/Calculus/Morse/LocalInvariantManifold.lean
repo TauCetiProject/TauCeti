@@ -81,8 +81,11 @@ noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {f : E → ℝ} {x : E}
+
+section
+
+variable [CompleteSpace E]
 
 /-- The displacements `z` from which the centred negative-gradient equation `z' = (-∇ f) (x + z)`
 has a solution staying in `closedBall 0 r` for all times in `s`, truncated by the bound
@@ -106,6 +109,10 @@ theorem zero_mem_localInvariantSet (hx : ∇ f x = 0) (s : Set ℝ) (Q : E →L[
     (hr : 0 ≤ r) (hrho : 0 ≤ rho) : (0 : E) ∈ localInvariantSet f x s Q r rho :=
   ⟨⟨fun _ ↦ 0, (isIntegralCurve_const fun _ ↦ by simp [hx]).isIntegralCurveOn _, rfl,
     fun _ _ ↦ by simpa using hr⟩, by simpa using hrho⟩
+
+end
+
+variable [FiniteDimensional ℝ E]
 
 namespace IsNondegenerateCriticalPoint
 
@@ -395,7 +402,8 @@ theorem exists_localStableSet_homeomorph_closedBall (h : IsNondegenerateCritical
         (h.contDiffAt.stableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_stableProjection
-    exact (Homeomorph.subtype (Homeomorph.setCongr hrange) (fun _ ↦ Iff.rfl)).trans
+    exact (Homeomorph.subtype (Homeomorph.setCongr hrange)
+      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
       (Homeomorph.subtype
         (p := fun v : (h.contDiffAt.stableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
         (q := fun w ↦ w ∈ closedBall
@@ -426,7 +434,8 @@ theorem exists_localUnstableSet_homeomorph_closedBall (h : IsNondegenerateCritic
       rw [← h.unstableProjection_def]
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_unstableProjection
-    exact (Homeomorph.subtype (Homeomorph.setCongr hrange) (fun _ ↦ Iff.rfl)).trans
+    exact (Homeomorph.subtype (Homeomorph.setCongr hrange)
+      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
       (Homeomorph.subtype
         (p := fun v : (h.contDiffAt.unstableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
         (q := fun w ↦ w ∈ closedBall (0 : EuclideanSpace ℝ (Fin (morseIndex f x))) rho)
