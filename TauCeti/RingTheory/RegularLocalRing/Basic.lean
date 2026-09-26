@@ -38,14 +38,15 @@ and Nakayama's lemma gives `P = 0`.
 
 Supporting declarations include:
 
-* `TauCeti.Ideal.span_insert_erase_eq_of_isUnit`: a generator with a unit coefficient can be
+* `TauCeti.Ideal.span_insert_erase_eq_span_of_isUnit`: a generator with a unit coefficient can be
   replaced by its linear combination;
 * `TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_add_one_le`: for `x ∈ 𝔪 \ 𝔪²`, the
   maximal ideal of `R ⧸ (x)` needs at least one generator fewer than `𝔪`;
 * `TauCeti.IsLocalRing.exists_mem_maximalIdeal_notMem_sq_notMem_minimalPrimes`: in positive
   dimension there is `x ∈ 𝔪 \ 𝔪²` outside every minimal prime;
-* `TauCeti.ringKrullDim_quotient_span_singleton_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson`:
-  for `x` in the Jacobson radical outside every minimal prime, `dim R ⧸ (x) + 1 = dim R`.
+* ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
+  says that for `x` in the Jacobson radical outside every minimal prime,
+  `dim R ⧸ (x) + 1 = dim R`.
 
 ## References
 
@@ -67,7 +68,7 @@ variable {R : Type u} [CommRing R]
 namespace Ideal
 
 /-- If one coefficient of `x` in a finite span is a unit, then `x` can replace that generator. -/
-theorem span_insert_erase_eq_of_isUnit [DecidableEq R] {s : Finset R} {i x : R} {f : R → R}
+theorem span_insert_erase_eq_span_of_isUnit [DecidableEq R] {s : Finset R} {i x : R} {f : R → R}
     (hi : i ∈ s) (hf : ∑ a ∈ s, f a • a = x) (hfi : IsUnit (f i)) :
     span ((insert x (s.erase i)) : Set R) = span (s : Set R) := by
   classical
@@ -91,10 +92,7 @@ theorem span_insert_erase_eq_of_isUnit [DecidableEq R] {s : Finset R} {i x : R} 
         exact sub_mem (subset_span (Set.mem_insert_iff.mpr (Or.inl rfl)))
           (sum_mem fun a ha ↦ (span ((insert x (s.erase i)) : Set R)).smul_mem _
             (subset_span (Set.mem_insert_of_mem x (Finset.mem_coe.mpr ha))))
-      have heq : i = ↑hfi.unit⁻¹ * (f i * i) := by
-        rw [← mul_assoc, IsUnit.val_inv_mul, one_mul]
-      simpa only [← heq, SetLike.mem_coe] using (mul_mem_left _ _ hmem :
-        ↑hfi.unit⁻¹ * (f i * i) ∈ span ((insert x (s.erase i)) : Set R))
+      exact (Ideal.unit_mul_mem_iff_mem _ hfi).mp hmem
     · exact subset_span (Set.mem_insert_of_mem x
         (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨h, hy⟩)))
 
@@ -124,8 +122,8 @@ theorem spanFinrank_map_maximalIdeal_quotient_add_one_le (hfg : (maximalIdeal R)
   set q := Ideal.Quotient.mk (span {x})
   have hmap : (maximalIdeal R).map q = span ((s.erase i).image q : Set (R ⧸ span {x})) := by
     rw [← hspan]
-    change (Ideal.span (s : Set R)).map q = _
-    rw [← Ideal.span_insert_erase_eq_of_isUnit hi hf hfi, Ideal.map_span,
+    rw [Ideal.submodule_span_eq]
+    rw [← Ideal.span_insert_erase_eq_span_of_isUnit hi hf hfi, Ideal.map_span,
       Set.image_insert_eq]
     rw [show q x = 0 from Ideal.Quotient.eq_zero_iff_mem.mpr
       (mem_span_singleton_self x), Ideal.span_insert_zero, Finset.coe_image]
@@ -168,7 +166,7 @@ open TauCeti.IsLocalRing
 `dim R ⧸ (x) + 1 = dim R`. -/
 @[stacks 0B52 "the equality case"]
 theorem
-    ringKrullDim_quotient_span_singleton_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson
+  ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
     [IsNoetherianRing R] {x : R} (hmin : ∀ p ∈ minimalPrimes R, x ∉ p)
     (hx : x ∈ Ring.jacobson R) :
     ringKrullDim (R ⧸ span {x}) + 1 = ringKrullDim R := by
@@ -196,7 +194,7 @@ private lemma quotient_aux {x : R} (hxm : x ∈ maximalIdeal R) (hx : x ∉ maxi
     (maximalIdeal R).fg_of_isNoetherianRing hxm hx
   rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at h₁
   have h₂ :=
-    ringKrullDim_quotient_span_singleton_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson
+   ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
       hmin (by rwa [ringJacobson_eq_maximalIdeal R])
   rw [← spanFinrank_maximalIdeal (R := R)] at h₂
   obtain ⟨k, hk⟩ : ∃ k, (maximalIdeal R).spanFinrank = k + 1 :=
@@ -223,8 +221,9 @@ private theorem isDomain_of_ringKrullDim_eq (n : ℕ) :
         (by rw [h]; exact_mod_cast n.succ_pos)
     have := quotient_aux hxm hx hmin
     have hdim : ringKrullDim (R ⧸ span {x}) = n := by
-      have := ringKrullDim_quotient_span_singleton_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson
-        hmin (by rwa [ringJacobson_eq_maximalIdeal R])
+      have := (
+ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
+        hmin (by rwa [ringJacobson_eq_maximalIdeal R]))
       rw [h, Nat.cast_succ, ENat.WithBot.add_one_cancel] at this
       exact this
     have hprime : (span {x}).IsPrime := (Quotient.isDomain_iff_prime (span {x})).mp (ih _ hdim)

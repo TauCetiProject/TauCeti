@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 /-!
 # Irreducibility of connected schemes with domain stalks
 
-We show that a locally noetherian connected scheme whose stalks are domains (in particular,
-whose stalks are regular local rings) is irreducible, hence integral.
+We show that a locally noetherian connected scheme whose stalks are domains is irreducible;
+when its stalks are regular local rings, it is integral.
 
 We prove that a locally noetherian connected scheme whose stalks have unique
 minimal primes is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`),
