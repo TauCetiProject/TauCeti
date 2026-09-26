@@ -31,36 +31,36 @@ open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-- The permutation induced by an automorphism on a finite invariant set of places. -/
-private noncomputable def placePermOfInvariant (S : Finset (Place k F))
-    (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S)
-    (σ : F ≃ₐ[k] F) :
-    Equiv.Perm S where
-  toFun P := ⟨σ • P, hS σ P.1 P.2⟩
-  invFun P := ⟨σ⁻¹ • P, hS σ⁻¹ P.1 P.2⟩
-  left_inv P := by
-    apply Subtype.ext
-    exact inv_smul_smul σ P.1
-  right_inv P := by
-    apply Subtype.ext
-    exact smul_inv_smul σ P.1
-
 /-- Restricting the action on places to an invariant finite set gives an action by
 permutations of that set. -/
 noncomputable def placePermHomOfInvariant (S : Finset (Place k F))
     (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S) :
     (F ≃ₐ[k] F) →* Equiv.Perm S where
-  toFun := placePermOfInvariant S hS
+  toFun σ := {
+    toFun P := ⟨σ • P, hS σ P.1 P.2⟩
+    invFun P := ⟨σ⁻¹ • P, hS σ⁻¹ P.1 P.2⟩
+    left_inv P := by
+      apply Subtype.ext
+      exact inv_smul_smul σ P.1
+    right_inv P := by
+      apply Subtype.ext
+      exact smul_inv_smul σ P.1 }
   map_one' := by
     apply Equiv.ext
     intro P
     apply Subtype.ext
-    simp [placePermOfInvariant]
+    simp
   map_mul' σ τ := by
     apply Equiv.ext
     intro P
     apply Subtype.ext
-    simp [placePermOfInvariant, mul_smul]
+    simp [mul_smul]
+
+/-- Evaluating the restricted permutation recovers the action on places. -/
+@[simp] theorem placePermHomOfInvariant_apply (S : Finset (Place k F))
+    (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S)
+    (σ : F ≃ₐ[k] F) (P : S) :
+    ((placePermHomOfInvariant S hS σ) P).1 = σ • P.1 := (rfl)
 
 /-- The restricted action is faithful when the invariant set contains at least `2g + 3`
 rational places. -/
@@ -76,7 +76,7 @@ theorem placePermHomOfInvariant_injective (hF : IsFunctionField k F)
   intro P hP
   refine ⟨hrat P hP, ?_⟩
   have h := congrArg (fun e : Equiv.Perm S ↦ (e ⟨P, hP⟩).1) heq
-  exact h
+  simpa only [placePermHomOfInvariant_apply] using h
 
 /-- An invariant set of at least `2g + 3` rational places forces the full automorphism
 group to be finite. -/
