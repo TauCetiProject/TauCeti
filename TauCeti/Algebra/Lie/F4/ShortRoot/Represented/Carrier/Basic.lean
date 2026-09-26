@@ -214,11 +214,6 @@ noncomputable def f4ShortRootCarrierIdealInRange :
 -- it; the instances below are closed terms, so importers do not need this attribute.
 attribute [local instance 2000] Ring.toAddCommGroup
 
--- The additive group of the cotangent dual, recovered from its `𝔽₂`-module structure.
-private noncomputable local instance f4ShortRootCotangentDualAddCommGroup :
-    AddCommGroup f4ShortRootCotangentDual :=
-  Module.addCommMonoidToAddCommGroup 𝔽₂
-
 /-- The carrier cotangent range is an additive group, inheriting additive inverses from its
 module structure over `𝔽₂`. -/
 noncomputable instance f4ShortRootCarrierCotangentRangeAddCommGroup :
