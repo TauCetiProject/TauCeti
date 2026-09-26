@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
-public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarAut
+public import TauCeti.Algebra.Bialgebra.GroupLike.Map
 
 /-!
 # Extending homomorphisms of group-like elements
