@@ -22,6 +22,7 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 ## Main results
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
+* `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
@@ -78,6 +79,12 @@ theorem polarBilin_restrict (Q : QuadraticMap R M P) (W : Submodule R M) :
 theorem radical_neg (Q : QuadraticMap R M P) : (-Q).radical = Q.radical := by
   ext x
   simp only [QuadraticMap.mem_radical_iff', neg_apply, neg_eq_zero, neg_inj]
+
+/-- Negating a quadratic map does not change its nondegeneracy, when `2` is invertible in the
+coefficient ring. -/
+theorem nondegenerate_neg [Invertible (2 : R)] (Q : QuadraticMap R M P) :
+    (-Q).Nondegenerate ↔ Q.Nondegenerate := by
+  rw [nondegenerate_iff_radical_eq_bot, nondegenerate_iff_radical_eq_bot, radical_neg]
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 

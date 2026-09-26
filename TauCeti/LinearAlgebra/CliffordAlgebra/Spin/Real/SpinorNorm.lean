@@ -23,15 +23,11 @@ For a positive definite form every invertible value is a positive real number, h
 `orthogonalSpinorNorm_eq_one_of_posDef` makes the orthogonal spinor norm trivial and
 `spinorNorm_eq_one_of_posDef` restricts it to `SO(Q)`. A negative definite form takes only negative
 values, so a reflection contributes the square class of `-1`, which is also the determinant square
-class of a reflection; `QuadraticMap.orthogonalGroup_hom_ext`, which determines a homomorphism out
-of `O(Q)` by its values on reflections, therefore identifies the two maps, and the spinor norm on
-`SO(Q)` is trivial because every isometry of `SO(Q)` has determinant one.
+class of a reflection: the two maps agree, and the spinor norm on `SO(Q)` is trivial since every
+isometry of `SO(Q)` has determinant one.
 
-As soon as the form takes a negative value, the reflection in such a vector has nontrivial spinor
-norm, so the spinor norm on `O(Q)` is surjective. An indefinite form has vectors of both signs, and
-the product of a reflection in a vector of negative value with a reflection in a vector of positive
-value is a determinant-one isometry with nontrivial spinor norm, so the spinor norm on `SO(Q)` is
-surjective as well.
+As soon as the form takes a negative value the spinor norm on `O(Q)` is surjective, and an
+indefinite form, which takes values of both signs, has surjective spinor norm on `SO(Q)` as well.
 
 ## Main results
 
@@ -96,8 +92,8 @@ private theorem orthogonalSpinorNorm_reflection_eq_one_of_pos (Q : QuadraticForm
     (_root_.Units.squareClass_eq_zero_iff_pos (unitOfInvertible (Q v))).mpr (by simpa using hv)]
   rfl
 
-/-- The spinor norm of a positive definite real quadratic form is trivial on `SO(Q)`, being the
-restriction of `orthogonalSpinorNorm_eq_one_of_posDef`. -/
+/-- The spinor norm of a positive definite real quadratic form is trivial on its special
+orthogonal group. -/
 theorem spinorNorm_eq_one_of_posDef (Q : QuadraticForm ℝ V) (hQ : Q.PosDef) :
     spinorNorm Q hQ.anisotropic.nondegenerate = 1 := by
   refine MonoidHom.ext fun g ↦ ?_
@@ -105,11 +101,14 @@ theorem spinorNorm_eq_one_of_posDef (Q : QuadraticForm ℝ V) (hQ : Q.PosDef) :
   simp only [MonoidHom.one_apply]
 
 /-- For a negative definite real quadratic form the spinor norm on `O(Q)` is the square class of
-the determinant: both homomorphisms send every reflection to the class of `-1`. -/
+the determinant, which is trivial on the isometries of determinant one. -/
 theorem orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef (Q : QuadraticForm ℝ V)
-    (hQ : Q.Nondegenerate) (hneg : (-Q).PosDef) :
-    orthogonalSpinorNorm Q hQ = QuadraticMap.orthogonalDetSquareClass Q := by
+    (hneg : (-Q).PosDef) :
+    orthogonalSpinorNorm Q ((QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate)
+      = QuadraticMap.orthogonalDetSquareClass Q := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  have hQ : Q.Nondegenerate :=
+    (QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
   rw [orthogonalSpinorNorm_reflectionOrthogonal, QuadraticMap.orthogonalDetSquareClass_apply,
     squareClassHom_apply, QuadraticMap.coe_reflectionOrthogonal, QuadraticMap.det_reflection,
@@ -117,19 +116,18 @@ theorem orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef (Q : Quadrati
 
 /-- The spinor norm of a negative definite real quadratic form is trivial on `SO(Q)`, where every
 isometry has determinant one. -/
-theorem spinorNorm_eq_one_of_negDef (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate)
-    (hneg : (-Q).PosDef) : spinorNorm Q hQ = 1 := by
+theorem spinorNorm_eq_one_of_negDef (Q : QuadraticForm ℝ V) (hneg : (-Q).PosDef) :
+    spinorNorm Q ((QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate) = 1 := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   refine MonoidHom.ext fun g ↦ ?_
-  rw [spinorNorm_apply, orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef Q hQ hneg,
+  rw [spinorNorm_apply, orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef Q hneg,
     QuadraticMap.orthogonalDetSquareClass_apply, coe_specialOrthogonalToOrthogonal,
     (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).2, map_one]
   simp only [MonoidHom.one_apply]
 
-/-- The spinor norm of a real quadratic form taking a negative value is surjective on `O(Q)`,
-because the reflection in a vector of negative value has nontrivial spinor norm and the real
-square-class group has only two elements. In particular this holds for negative definite forms of
-positive dimension and for indefinite forms. -/
+/-- The spinor norm of a real quadratic form taking a negative value is surjective on `O(Q)`.
+This holds in particular for a negative definite form of positive dimension and for an indefinite
+form. -/
 theorem orthogonalSpinorNorm_surjective_of_negValue (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate)
     (hneg : ∃ v, Q v < 0) : Function.Surjective (orthogonalSpinorNorm Q hQ) := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
@@ -142,10 +140,8 @@ theorem orthogonalSpinorNorm_surjective_of_negValue (Q : QuadraticForm ℝ V) (h
   · exact ⟨1, by rw [h, map_one]⟩
   · exact ⟨QuadraticMap.reflectionOrthogonal Q v, by rw [h, hval]⟩
 
-/-- The spinor norm of an indefinite real quadratic form is surjective on `SO(Q)`: the product of a
-reflection in a vector of negative value and a reflection in a vector of positive value is a
-determinant-one isometry with nontrivial spinor norm, and the real square-class group has only
-two elements. -/
+/-- The spinor norm of an indefinite real quadratic form is surjective on `SO(Q)`, so every square
+class is the spinor norm of a determinant-one isometry. -/
 theorem spinorNorm_surjective_of_indefinite (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate)
     (hpos : ∃ v, 0 < Q v) (hneg : ∃ v, Q v < 0) : Function.Surjective (spinorNorm Q hQ) := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
