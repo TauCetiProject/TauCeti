@@ -52,8 +52,8 @@ character values off the class-function computation:
 Together with `TauCeti.GL2EllipticInduction`, the representation induced from the non-split
 torus, this supplies the two induced characters whose difference is the cuspidal virtual character
 `TauCeti.GL2CuspidalVirtualCharacter` of `GL₂(𝔽_q)`, taken in
-`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal.lean`.  The Gelfand-Graev summand here
-is the one that carries the degree, since
+`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal/Basic.lean`.  The Gelfand-Graev summand
+here is the one that carries the degree, since
 `[GL₂(F) : Z U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values
@@ -466,6 +466,12 @@ character `(a,t) ↦ μ(a)ψ(t)` from `Z U` to `GL₂(F)`. -/
 noncomputable def GL2ScalarUnipotentInduction (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     FDRep ℂ (GL (Fin 2) F) :=
   indFDRep (GL2ScalarUnipotentRep F μ ψ)
+
+/-- The defining equation of the scalar--unipotent induction: it is induced from `Z U` by the line
+of `(a,t) ↦ μ(a)ψ(t)`. -/
+theorem GL2ScalarUnipotentInduction_def (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    GL2ScalarUnipotentInduction F μ ψ = indFDRep (GL2ScalarUnipotentRep F μ ψ) :=
+  (rfl)
 
 /-- The scalar--unipotent induction has dimension `q² - 1`, the index of `Z U`. -/
 @[simp]
