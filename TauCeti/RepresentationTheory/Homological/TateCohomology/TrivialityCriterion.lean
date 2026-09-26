@@ -185,9 +185,9 @@ private theorem isZero_of_forall_isPGroup_aux (d : ℕ) :
         (fun p _ T _ hT => (isZero_res_dimensionShiftDown_iff A T (q + 1)).2 (h₂ p T hT)) S
 
 /-- **Tate's cohomological triviality criterion** (Milne II 3.10). Let `G` be a finite group and
-`A` a representation of `G`. If the Tate cohomology groups `Ĥ^q(S, A)` and `Ĥ^{q+1}(S, A)` vanish
-for every subgroup `S` of `G` of prime-power order, then `Ĥⁿ(S, A)` vanishes for every subgroup
-`S` of `G` and every integer `n`. -/
+`A` a representation of `G`. If its Tate cohomology vanishes in degrees `q` and `q + 1` for every
+subgroup `S` of `G` of prime-power order, then it vanishes in degree `n` for every subgroup `S`
+of `G` and every integer `n`. -/
 theorem isZero_of_forall_isPGroup (A : Rep k G) {q : ℤ}
     (h₁ : ∀ (p : ℕ) [Fact p.Prime] (S : Subgroup G) [Fintype S], IsPGroup p S →
       IsZero (tateCohomology (res S.subtype A) q))
