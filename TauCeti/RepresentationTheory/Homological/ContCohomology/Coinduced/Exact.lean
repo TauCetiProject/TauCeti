@@ -38,36 +38,10 @@ noncomputable def coind (S : DiscreteShortExact U A B C) :
       (DiscreteCoind G U C) where
   incl := (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant).toAddMonoidHom
   proj := (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant).toAddMonoidHom
-  incl_equivariant g a := by
-    apply DiscreteCoind.ext
-    intro x
-    -- The record field is an additive homomorphism; expose its underlying coinduction map.
-    change (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant (g • a)) x =
-      (g • DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) x
-    calc
-      _ = S.incl ((g • a) x) := by
-        simpa only [AddMonoidHom.coe_toIntLinearMap] using
-          (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant _ _)
-      _ = S.incl (a (x * g)) := by rw [DiscreteCoind.coe_smul]
-      _ = (DiscreteCoind.map S.incl.toIntLinearMap S.incl_equivariant a) (x * g) :=
-        by simpa only [AddMonoidHom.coe_toIntLinearMap] using
-          (DiscreteCoind.map_apply S.incl.toIntLinearMap S.incl_equivariant _ _).symm
-      _ = _ := (DiscreteCoind.coe_smul g _ x).symm
-  proj_equivariant g b := by
-    apply DiscreteCoind.ext
-    intro x
-    -- As above, expose the map beneath the additive homomorphism in the record field.
-    change (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant (g • b)) x =
-      (g • DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) x
-    calc
-      _ = S.proj ((g • b) x) := by
-        simpa only [AddMonoidHom.coe_toIntLinearMap] using
-          (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant _ _)
-      _ = S.proj (b (x * g)) := by rw [DiscreteCoind.coe_smul]
-      _ = (DiscreteCoind.map S.proj.toIntLinearMap S.proj_equivariant b) (x * g) :=
-        by simpa only [AddMonoidHom.coe_toIntLinearMap] using
-          (DiscreteCoind.map_apply S.proj.toIntLinearMap S.proj_equivariant _ _).symm
-      _ = _ := (DiscreteCoind.coe_smul g _ x).symm
+  incl_equivariant g a :=
+    DiscreteCoind.map_smul S.incl.toIntLinearMap S.incl_equivariant g a
+  proj_equivariant g b :=
+    DiscreteCoind.map_smul S.proj.toIntLinearMap S.proj_equivariant g b
   incl_injective := by
     intro a b hab
     apply DiscreteCoind.ext
