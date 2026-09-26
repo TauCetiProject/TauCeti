@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.GroupLikeIsogeny
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
+-- Expose the definition of geometricCharacterMap for the definitional rewrite below.
+import all TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
 
 /-!
 # Geometric character criterion for isogenies of multiplicative-type groups
@@ -40,17 +42,14 @@ theorem isCentralIsogeny_baseChange_iff_geometricCharacterMap_injective_and_fini
       Function.Injective (CommHopfAlgCat.geometricCharacterMap f) ∧
         Finite (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
           (CommHopfAlgCat.geometricCharacterMap f).range) := by
-  have hmap : CommHopfAlgCat.geometricCharacterMap f =
-      TauCeti.GroupLike.map (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom :=
-    MonoidHom.ext fun x => _root_.GroupLike.ext (by simp)
-  rw [hmap]
-  exact DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
+  simpa only [CommHopfAlgCat.geometricCharacterMap] using
+    (DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
     ((Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
         ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH)))
     ((Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
         ((multiplicativeTypeCommHopfAlgProperty_iff k K).mp hK)))
-    (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f)
+    (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f))
 
 end TauCeti.multiplicativeTypeCommHopfAlgProperty
