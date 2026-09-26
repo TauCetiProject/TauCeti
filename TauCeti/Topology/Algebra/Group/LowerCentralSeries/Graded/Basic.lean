@@ -644,6 +644,31 @@ theorem gradedPow_smul_zero [NeZero p] (c : ZMod p) (x : gradedPiece p G 0) :
   rw [← ZMod.natCast_zmod_val c, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul,
     gradedPow_nsmul_zero]
 
+/-- **Above degree zero, `π` commutes with scalars.** Together with
+`TauCeti.gradedPow_add_of_one_le`, this makes the power operator linear in every positive
+degree. -/
+@[simp]
+theorem gradedPow_smul_of_one_le [NeZero p] {k : ℕ} (hk : 1 ≤ k) (c : ZMod p)
+    (x : gradedPiece p G k) : gradedPow p G k (c • x) = c • gradedPow p G k x := by
+  rw [← ZMod.natCast_zmod_val c, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
+  induction c.val with
+  | zero => rw [zero_nsmul, zero_nsmul, gradedPow_zero]
+  | succ n ih => rw [succ_nsmul, gradedPow_add_of_one_le hk, ih, succ_nsmul]
+
+/-- **The linear `p`-power operator in positive degree.** The unbundled map
+`TauCeti.gradedPow` is needed in degree zero, where it need not be additive; this bundled form is
+available exactly in the positive degrees where additivity holds. -/
+def gradedPowLinear [NeZero p] (k : ℕ) (hk : 1 ≤ k) :
+    gradedPiece p G k →ₗ[ZMod p] gradedPiece p G (k + 1) where
+  toFun := gradedPow p G k
+  map_add' := gradedPow_add_of_one_le hk
+  map_smul' := gradedPow_smul_of_one_le hk
+
+@[simp]
+theorem gradedPowLinear_apply [NeZero p] {k : ℕ} (hk : 1 ≤ k) (x : gradedPiece p G k) :
+    gradedPowLinear (p := p) (G := G) k hk x = gradedPow p G k x :=
+  (rfl)
+
 /-- **`π` against the bracket on the left**, away from degree zero: `π [x, y] = [π x, y]` for
 `x ∈ gr_j(G)` with `j ≥ 1`. The correction term `⁅x, ⁅x, y⁆⁆` has degree `2j + k + 2`, which is
 above `j + k + 2` exactly when `j ≥ 1`. -/
