@@ -64,7 +64,7 @@ theorem tendsto_under_cofinite_of_isFractionRing :
   exact HeightOneSpectrum.tendsto_under_cofinite R B
 
 /-- The local extension maps preserve the integer subrings needed for the restricted product. -/
-theorem eventually_mapsTo_adicCompletionExtension :
+private theorem eventually_mapsTo_adicCompletionExtension :
     ∀ᶠ w : HeightOneSpectrum B in cofinite,
       Set.MapsTo (HeightOneSpectrum.adicCompletionExtension K L (w.under R) w)
         (HeightOneSpectrum.adicCompletionIntegers K (w.under R))
