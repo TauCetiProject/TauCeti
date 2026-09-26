@@ -205,6 +205,7 @@ theorem mapDGHomotopyCategory_map_homOf {X Y : C} (f : DGHom R 0 X Y) (hf : f �
   exact homologyMap_dgHomotopyClass R (F.map X Y) hf
 
 /-- Taking the homotopy class of a closed morphism commutes with a DG functor. -/
+@[expose]
 def forgetCompDgClosedToHomotopyIso :
     F.forget ⋙ dgClosedToHomotopy (C := D) R ≅
       dgClosedToHomotopy (C := C) R ⋙ F.mapDGHomotopyCategory :=
@@ -214,6 +215,22 @@ def forgetCompDgClosedToHomotopyIso :
       F.dgClosedHom_forget_map]
     exact (F.mapDGHomotopyCategory_map_homOf (dgClosedHom R f)
       (dgClosedHom_mem_dgCycles R f)).symm
+
+/-- The forward component of the comparison between `Z⁰(F)` followed by the quotient and
+the quotient followed by `H⁰(F)` is the identity. -/
+@[simp]
+theorem forgetCompDgClosedToHomotopyIso_hom_app
+    (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
+    F.forgetCompDgClosedToHomotopyIso.hom.app X = 𝟙 _ :=
+  rfl
+
+/-- The inverse component of the comparison between `Z⁰(F)` followed by the quotient and
+the quotient followed by `H⁰(F)` is the identity. -/
+@[simp]
+theorem forgetCompDgClosedToHomotopyIso_inv_app
+    (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
+    F.forgetCompDgClosedToHomotopyIso.inv.app X = 𝟙 _ :=
+  rfl
 
 instance : F.mapDGHomotopyCategory.Additive where
   map_add {X Y} f g := map_add (homologyMap (F.map (DGHomotopyCategory.underlying R X)
