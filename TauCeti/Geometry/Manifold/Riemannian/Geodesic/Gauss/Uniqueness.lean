@@ -68,7 +68,7 @@ theorem IsNormalDomain.eqOn_riemannianExp_smul_of_geodesic_pathELength_eq
   have hlength : pathELength I γ 0 1 = ‖u‖ₑ := by
     rw [← pathELength_congr heq]
     simpa using pathELength_maximalGeodesic
-      (show (0 : ℝ) ∈ geodesicInterval I M p u from zero_mem_geodesicInterval) hu1
+      (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := u)) hu1
   have hnorm : ‖u‖ = ‖v‖ := by
     have he : ‖u‖ₑ = ‖v‖ₑ := by
       rw [← hlength, hlen, pathELength_riemannianExp_smul_zero_one h hv]
