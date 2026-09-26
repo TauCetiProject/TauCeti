@@ -82,6 +82,7 @@ theorem radical_neg (Q : QuadraticMap R M P) : (-Q).radical = Q.radical := by
 
 /-- Negating a quadratic map does not change its nondegeneracy, when `2` is invertible in the
 coefficient ring. -/
+@[simp]
 theorem nondegenerate_neg [Invertible (2 : R)] (Q : QuadraticMap R M P) :
     (-Q).Nondegenerate ↔ Q.Nondegenerate := by
   rw [nondegenerate_iff_radical_eq_bot, nondegenerate_iff_radical_eq_bot, radical_neg]
