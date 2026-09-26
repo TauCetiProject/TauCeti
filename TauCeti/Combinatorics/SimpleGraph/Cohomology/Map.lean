@@ -167,16 +167,17 @@ private theorem exists_coboundary_of_eq_coboundary_map (f : A →* B) (hf : Func
 
 /-- **The map on the first cohomology induced by a homomorphism of coefficient groups.** -/
 def firstCohomologyMap (f : A →* B) : G.FirstCohomology A →* G.FirstCohomology B :=
-  QuotientGroup.map (G.coboundary A).range (G.coboundary B).range (G.oneCochainsMap f) (by
+  FirstCohomology.lift ((FirstCohomology.mk G B).comp (G.oneCochainsMap f)) (by
     rintro _ ⟨φ, rfl⟩
-    exact ⟨f ∘ φ, (oneCochainsMap_coboundary G f φ).symm⟩)
+    refine MonoidHom.mem_ker.mpr ?_
+    rw [MonoidHom.comp_apply, oneCochainsMap_coboundary, FirstCohomology.mk_coboundary])
 
 /-- The induced map sends the cohomology class of a cochain to that of its image. -/
 @[simp]
 theorem firstCohomologyMap_mk (f : A →* B) (σ : G.oneCochains A) :
     G.firstCohomologyMap f (FirstCohomology.mk G A σ) =
-      FirstCohomology.mk G B (G.oneCochainsMap f σ) :=
-  QuotientGroup.map_mk _ _ _ _ σ
+      FirstCohomology.mk G B (G.oneCochainsMap f σ) := by
+  rw [firstCohomologyMap, FirstCohomology.lift_mk, MonoidHom.comp_apply]
 
 /-- Mapping cohomology classes along the identity homomorphism of coefficient groups changes
 nothing. -/
@@ -213,22 +214,10 @@ theorem firstCohomologyMap_mk_eq_one_iff (f : A →* B) (hf : Function.Injective
 cohomology.** -/
 theorem firstCohomologyMap_injective (f : A →* B) (hf : Function.Injective f) :
     Function.Injective (G.firstCohomologyMap f) := by
-  rintro x y hxy
+  rw [injective_iff_map_eq_one]
+  rintro x hx
   obtain ⟨σ, rfl⟩ := FirstCohomology.mk_surjective x
-  obtain ⟨τ, rfl⟩ := FirstCohomology.mk_surjective y
-  rw [firstCohomologyMap_mk, firstCohomologyMap_mk] at hxy
-  obtain ⟨ψ, hψ⟩ := FirstCohomology.mk_eq_mk_iff.mp hxy
-  have hkey : G.oneCochainsMap f (τ * σ⁻¹) = G.coboundary B ψ := by
-    calc G.oneCochainsMap f (τ * σ⁻¹) = G.oneCochainsMap f τ * (G.oneCochainsMap f σ)⁻¹ :=
-          by rw [map_mul, map_inv]
-      _ = (G.oneCochainsMap f σ * G.coboundary B ψ) * (G.oneCochainsMap f σ)⁻¹ := by rw [hψ]
-      _ = G.coboundary B ψ * ((G.oneCochainsMap f σ) * (G.oneCochainsMap f σ)⁻¹) := by
-        rw [mul_comm (G.oneCochainsMap f σ) (G.coboundary B ψ), mul_assoc]
-      _ = G.coboundary B ψ := by rw [mul_inv_cancel, mul_one]
-  obtain ⟨φ, hφ⟩ := exists_coboundary_of_eq_coboundary_map G f hf hkey
-  refine FirstCohomology.mk_eq_mk_iff.mpr ⟨φ, ?_⟩
-  calc τ = σ * (τ * σ⁻¹) := by
-        rw [← mul_assoc, mul_comm (σ) (τ), mul_inv_cancel_right]
-    _ = σ * G.coboundary A φ := by rw [hφ]
+  rw [firstCohomologyMap_mk_eq_one_iff G f hf] at hx
+  exact FirstCohomology.mk_eq_one_iff.mpr hx
 
 end SimpleGraph
