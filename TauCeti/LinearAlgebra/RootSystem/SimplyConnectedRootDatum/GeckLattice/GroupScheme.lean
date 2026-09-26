@@ -125,7 +125,7 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- **The defining Hopf ideal of the Geck carrier of a valid Dynkin type**: the largest Hopf
 ideal of the coordinate algebra of `GLₙ` killed by every numbered Kostant root subgroup and by the
 weight torus of the Geck lattice. -/
-abbrev geckDefiningIdeal :
+@[expose, reducible] def geckDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -171,9 +171,28 @@ theorem geckGroupScheme_def :
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := (rfl)
 
 /-- The coordinate Hopf algebra of the Geck carrier. -/
-abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
+@[expose, reducible] def geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
     (t.geckDefiningIdeal ht)
+
+/-- The coordinate Hopf algebra is the quotient by the Geck defining ideal. -/
+theorem geckCoordinateHopfAlgebra_def :
+    t.geckCoordinateHopfAlgebra ht =
+      CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+        (t.geckDefiningIdeal ht) :=
+  (rfl)
+
+/-- The Geck carrier is the Hopf spectrum of its coordinate Hopf algebra. -/
+theorem geckGroupScheme_eq_hopfSpec :
+    t.geckGroupScheme ht =
+      (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op (t.geckCoordinateHopfAlgebra ht)) :=
+  (rfl)
+
+/-- The underlying scheme of the Geck carrier is the spectrum of its coordinate ring. -/
+theorem geckGroupScheme_X_left :
+    (t.geckGroupScheme ht).X.left = Spec (CommRingCat.of (t.geckCoordinateHopfAlgebra ht)) :=
+  congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ G.X.left)
+    (t.geckGroupScheme_eq_hopfSpec ht)
 
 /-- The Geck carrier is a closed subgroup scheme of `GLₙ`. -/
 def geckGroupSchemeι :
