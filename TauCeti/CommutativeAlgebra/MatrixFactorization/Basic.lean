@@ -171,26 +171,6 @@ Its components are finite free, with no regularity assumption on `S` or `w`. -/
 @[simp] theorem rankOne_X₁ (a b : S) (h : a * b = w) :
     (rankOne a b h).obj.X₁ = FGModuleCat.of S S := rfl
 
-/-- The rank-one factorization `S --x^i--> S --x^j--> S` of `x^n`, where `i + j = n`. -/
-@[expose] def power (x : S) (n i j : ℕ) (h : i + j = n) : MatrixFactorization S (x ^ n) :=
-  rankOne (x ^ i) (x ^ j) (by rw [← pow_add, h])
-
-@[simp] theorem power_d₀ (x : S) (n i j : ℕ) (h : i + j = n) :
-    (power x n i j h).obj.d₀ = x ^ i • 𝟙 (FGModuleCat.of S S) :=
-  rankOne_d₀ ..
-
-@[simp] theorem power_d₁ (x : S) (n i j : ℕ) (h : i + j = n) :
-    (power x n i j h).obj.d₁ = x ^ j • 𝟙 (FGModuleCat.of S S) :=
-  rankOne_d₁ ..
-
-@[simp] theorem power_X₀ (x : S) (n i j : ℕ) (h : i + j = n) :
-    (power x n i j h).obj.X₀ = FGModuleCat.of S S :=
-  rankOne_X₀ ..
-
-@[simp] theorem power_X₁ (x : S) (n i j : ℕ) (h : i + j = n) :
-    (power x n i j h).obj.X₁ = FGModuleCat.of S S :=
-  rankOne_X₁ ..
-
 /-! ### Homotopies -/
 
 /-- The ideal of morphisms of finite-projective matrix factorizations that are null-homotopic

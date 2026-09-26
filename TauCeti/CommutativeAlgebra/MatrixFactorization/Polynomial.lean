@@ -26,29 +26,30 @@ namespace TauCeti.MatrixFactorization
 open CategoryTheory
 
 /-- The polynomial factorization `S[X] --X^i--> S[X] --X^(n-i)--> S[X]`
-of `X^n`, the specialization of `power` to the variable `X`. The indices are allowed to lie at
+of `X^n`, obtained from `rankOne`. The indices are allowed to lie at
 either endpoint; the interesting stable factorizations have `0 < i < n`. -/
 @[expose] noncomputable def powerX (S : Type u) [CommRing S] (n i : ℕ) (hi : i ≤ n) :
     MatrixFactorization (Polynomial S) (Polynomial.X ^ n) :=
-  power Polynomial.X n i (n - i) (Nat.add_sub_of_le hi)
+  rankOne (Polynomial.X ^ i) (Polynomial.X ^ (n - i)) (by
+    rw [← pow_add, Nat.add_sub_of_le hi])
 
 @[simp] theorem powerX_d₀ (S : Type u) [CommRing S] (n i : ℕ) (hi : i ≤ n) :
     (powerX S n i hi).obj.d₀ =
       (Polynomial.X ^ i : Polynomial S) • 𝟙 (FGModuleCat.of (Polynomial S) (Polynomial S)) :=
-  power_d₀ ..
+  rankOne_d₀ ..
 
 @[simp] theorem powerX_d₁ (S : Type u) [CommRing S] (n i : ℕ) (hi : i ≤ n) :
     (powerX S n i hi).obj.d₁ =
       (Polynomial.X ^ (n - i) : Polynomial S) •
         𝟙 (FGModuleCat.of (Polynomial S) (Polynomial S)) :=
-  power_d₁ ..
+  rankOne_d₁ ..
 
 @[simp] theorem powerX_X₀ (S : Type u) [CommRing S] (n i : ℕ) (hi : i ≤ n) :
     (powerX S n i hi).obj.X₀ = FGModuleCat.of (Polynomial S) (Polynomial S) :=
-  power_X₀ ..
+  rankOne_X₀ ..
 
 @[simp] theorem powerX_X₁ (S : Type u) [CommRing S] (n i : ℕ) (hi : i ≤ n) :
     (powerX S n i hi).obj.X₁ = FGModuleCat.of (Polynomial S) (Polynomial S) :=
-  power_X₁ ..
+  rankOne_X₁ ..
 
 end TauCeti.MatrixFactorization
