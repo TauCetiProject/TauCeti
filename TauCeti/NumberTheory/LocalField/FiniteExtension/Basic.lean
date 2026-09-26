@@ -425,16 +425,30 @@ noncomputable def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) :
     𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] := by
   let iL : 𝒪[L] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] L :=
     AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K L))
-      (by intro x; ext; rfl)
+      (by
+        intro x
+        apply Subtype.ext
+        exact RingEquiv.coe_subringCongr_apply _ _)
   let iM : 𝒪[M] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] M :=
     AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K M))
-      (by intro x; ext; rfl)
+      (by
+        intro x
+        apply Subtype.ext
+        exact RingEquiv.coe_subringCongr_apply _ _)
   exact (iL.trans (e.restrictScalars 𝒪[K]).mapIntegralClosure).trans iM.symm
 
 /-- The integer-ring equivalence acts by the original field equivalence. -/
 @[simp]
 theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪[L]) :
-    (e.integerRingEquiv x : M) = e (x : L) := by rfl
+    (e.integerRingEquiv x : M) = e (x : L) := by
+  simp only [AlgEquiv.integerRingEquiv, AlgEquiv.trans_apply,
+    AlgEquiv.ofRingEquiv_apply, AlgEquiv.ofRingEquiv_symm_apply]
+  change (((RingEquiv.subringCongr (integerRing_eq_integralClosure K M)).symm
+      ((e.restrictScalars 𝒪[K]).mapIntegralClosure
+        ((RingEquiv.subringCongr (integerRing_eq_integralClosure K L)) x))).val : M) =
+      e x.val
+  simp only [RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply,
+    AlgEquiv.coe_mapIntegralClosure, AlgEquiv.restrictScalars_apply]
 
 end IntegerRingEquiv
 

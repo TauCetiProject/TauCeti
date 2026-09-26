@@ -14,8 +14,9 @@ import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 # The different under isomorphism
 
 A base-field algebra equivalence between finite extensions of a nonarchimedean local field
-restricts to their rings of integers. It preserves the different ideal and its exponent.
-The proof uses local monogenicity and the derivative formula for the different
+restricts to their rings of integers. It preserves the different ideal and its exponent,
+so these invariants depend only on the extension's isomorphism class. The proof uses local
+monogenicity and the derivative formula for the different
 (Serre, *Local Fields*, Chapter III, §6).
 -/
 
