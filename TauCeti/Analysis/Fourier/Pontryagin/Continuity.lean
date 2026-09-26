@@ -75,7 +75,8 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
         exact (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous.comp
           (h.comp (continuous_snd.prodMk
             (continuous_ofAdd.comp continuous_fst)))
-      · exact (PontryaginDual.continuous_coe_eval (Multiplicative.ofAdd g)).comp continuous_snd
+      · exact (PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).comp
+          continuous_snd
     · exact continuous_const
   have hUcontains : ({g} : Set G) ×ˢ K ⊆ U := by
     rintro ⟨x, χ⟩ ⟨hx, -⟩

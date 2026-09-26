@@ -87,6 +87,6 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_dirac
       (χ (Multiplicative.ofAdd g) : ℂ) := by
   simp [FiniteMeasure.pontryaginMeasureTransform,
     integral_dirac' _ _
-      (PontryaginDual.continuous_coe_eval (Multiplicative.ofAdd g)).stronglyMeasurable]
+      (PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).stronglyMeasurable]
 
 end TauCeti
