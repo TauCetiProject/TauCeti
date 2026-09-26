@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -19,6 +20,7 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 ## Main results
 
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
+* `FGModuleCat.projective_biprod`: finite projective modules are closed under biproducts.
 -/
 
 public section
@@ -30,6 +32,26 @@ open CategoryTheory CategoryTheory.Limits
 universe u v
 
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
+
+/-- A biproduct of finitely generated projective modules is projective. -/
+theorem _root_.FGModuleCat.projective_biprod (R : Type u) [Ring R] [Small.{v} R]
+    (X Y : FGModuleCat.{v} R) [Module.Projective R X] [Module.Projective R Y] :
+    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) := by
+  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
+  let _ : PreservesBinaryBiproduct X Y F :=
+    preservesBinaryBiproduct_of_preservesBinaryCoproduct F
+  have hX : Module.Projective R (F.obj X) := by exact ‹Module.Projective R X›
+  have hY : Module.Projective R (F.obj Y) := by exact ‹Module.Projective R Y›
+  let : Module.Projective R (F.obj X) := hX
+  let : Module.Projective R (F.obj Y) := hY
+  let : CategoryTheory.Projective (F.obj X) :=
+    ModuleCat.projective_of_categoryTheory_projective (F.obj X)
+  let : CategoryTheory.Projective (F.obj Y) :=
+    ModuleCat.projective_of_categoryTheory_projective (F.obj Y)
+  have h : CategoryTheory.Projective (F.obj (X ⊞ Y)) :=
+    CategoryTheory.Projective.of_iso ((F.mapBiprod X Y).symm) inferInstance
+  let : CategoryTheory.Projective (F.obj (X ⊞ Y)) := h
+  exact ModuleCat.projective_of_module_projective (F.obj (X ⊞ Y))
 
 /-- The rank of a biproduct of finite free modules is the sum of their ranks. -/
 @[simp]
