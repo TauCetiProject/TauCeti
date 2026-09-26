@@ -65,8 +65,7 @@ private theorem galoisDescend_tensor (x : A ⊗[k] A) :
       TensorProduct.AlgebraTensorModule.distribBaseChange k L B B
         (1 ⊗ₜ[k] Algebra.TensorProduct.map
           (F.toAlgHom.galoisDescend hF) (F.toAlgHom.galoisDescend hF) x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
   | tmul a b =>
       simp only [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
