@@ -19,6 +19,9 @@ degree-zero part of the Picard group of a special fibre is compared in stable re
 
 The rank-one input is `NumericalType.finrank_pic`; the degree map and its value on a unit
 multidegree are in `Picard.Basic`.
+
+The numerical Picard construction follows [Stacks, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H),
+and its finite generation and rank follow [Stacks, Tag 0C7I](https://stacks.math.columbia.edu/tag/0C7I).
 -/
 
 public section
@@ -32,16 +35,18 @@ universe u
 variable (T : NumericalType.{u})
 
 /-- The numerical Picard classes of total degree zero. -/
-abbrev degreeZeroSubgroup : Submodule ℤ T.Pic := LinearMap.ker T.degree
+def degreeZeroSubgroup : Submodule ℤ T.Pic := LinearMap.ker T.degree
 
 /-- A numerical Picard class belongs to the degree-zero subgroup exactly when it has
 total degree zero. -/
-lemma mem_degreeZeroSubgroup {x : T.Pic} : x ∈ T.degreeZeroSubgroup ↔ T.degree x = 0 :=
-  LinearMap.mem_ker
+@[simp]
+lemma mem_degreeZeroSubgroup {x : T.Pic} : x ∈ T.degreeZeroSubgroup ↔ T.degree x = 0 := by
+  exact LinearMap.mem_ker
 
 /-- A degree-zero numerical Picard class has total degree zero. -/
+@[simp]
 lemma degree_coe_degreeZeroSubgroup (x : T.degreeZeroSubgroup) : T.degree (x : T.Pic) = 0 :=
-  x.property
+  T.mem_degreeZeroSubgroup.mp x.property
 
 /-- The total-degree map of a numerical type has rank one: the class supported at any
 component has nonzero degree. -/
@@ -67,8 +72,8 @@ theorem finrank_degreeZeroSubgroup : Module.finrank ℤ T.degreeZeroSubgroup = 0
   have h := (LinearMap.ker T.degree).finrank_quotient_add_finrank
   rw [LinearEquiv.finrank_eq T.degree.quotKerEquivRange, T.finrank_range_degree,
     T.finrank_pic] at h
-  simpa only [degreeZeroSubgroup] using
-    (by omega : Module.finrank ℤ (LinearMap.ker T.degree) = 0)
+  change Module.finrank ℤ (LinearMap.ker T.degree) = 0
+  omega
 
 /-- The degree-zero subgroup of the numerical Picard group is finite. -/
 theorem finite_degreeZeroSubgroup : Finite T.degreeZeroSubgroup := by
@@ -84,7 +89,7 @@ theorem degree_eq_zero_iff_exists_smul_eq_zero (x : T.Pic) :
   · intro hx
     have htor : Module.IsTorsion ℤ T.degreeZeroSubgroup :=
       Module.finrank_eq_zero_iff_isTorsion.mp T.finrank_degreeZeroSubgroup
-    obtain ⟨n, hn⟩ := htor (x := ⟨x, hx⟩)
+    obtain ⟨n, hn⟩ := htor (x := ⟨x, T.mem_degreeZeroSubgroup.mpr hx⟩)
     exact ⟨n, nonZeroDivisors.coe_ne_zero n, congrArg Subtype.val hn⟩
   · rintro ⟨n, hn, hx⟩
     by_contra hdeg
