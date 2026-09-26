@@ -15,14 +15,19 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 # Local intersection multiplicities in a two-dimensional regular local ring
 
 Fix a two-dimensional regular local ring `(R, 𝔪)`, an equation `f ∉ 𝔪²` and a second
-equation `g ∉ (f)`, so that the two curves do not share a component through the closed point. A
-unit `f` would make `(f)` the unit ideal, so `f` is then a parameter, in the maximal ideal and
-outside its square. The quotient `R ⧸ (f)` is a regular curve, so a discrete valuation ring, and
-the order of vanishing of `g` on it is the length of `R ⧸ (f, g)`, which is finite under these
-hypotheses: that length is the local intersection multiplicity of the two equations at the closed
-point. The hypotheses are part of the statement: the length identities below hold in an arbitrary
-commutative ring, while finiteness, positivity and the order-of-vanishing reading are claimed only
-for `f ∉ 𝔪²` and a proper intersection `g ∉ (f)`.
+equation `g ∉ (f)`, so that the two curves, locally at the closed point, do not share a
+component. A unit `f` would make `(f)` the unit ideal, so `f` is then a parameter, in the
+maximal ideal and outside its square. The quotient `R ⧸ (f)` is a regular curve, so a discrete
+valuation ring, and the order of vanishing of `g` on it is the length of `R ⧸ (f, g)`, which is
+finite under these hypotheses. No hypothesis beyond that is placed on `g`, and reading that
+length as a positive local intersection multiplicity at the closed point needs one more: the
+second curve contains the closed point exactly when `g ∈ 𝔪`, and then the length is positive
+by `TauCeti.one_le_length_quot_span_pair`, whereas for `g ∉ 𝔪` the second curve misses the
+closed point, the intersection is the empty germ and the length is zero, by
+`TauCeti.length_quot_span_pair_eq_zero_iff`. The hypotheses are part of the statement: the
+length identities below hold in an arbitrary commutative ring, while finiteness and the
+order-of-vanishing reading are claimed only for `f ∉ 𝔪²` and a proper intersection
+`g ∉ (f)`.
 
 This file develops that local statement, which is the local input for the intersection numbers
 `aᵢⱼ` and the component multiplicities of the special fibre of a regular model of a curve, and
@@ -38,8 +43,8 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
   so for two equations through the closed point the length cannot vanish, by
   `TauCeti.one_le_length_quot_span_pair`;
 * `TauCeti.isFiniteLength_quot_span_pair` and `TauCeti.exists_nat_length_quot_span_pair`: the
-  local intersection multiplicity of two curves without a common component through the closed
-  point of a regular surface is finite, hence a natural number;
+  local intersection multiplicity of two curves without a common component on a regular surface is
+  finite, hence a natural number, whether or not the second curve contains the closed point;
 * `TauCeti.one_le_length_quot_span_pair`: in a local ring, the length of the quotient by two
   equations through the closed point is positive;
 * `TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors` and
@@ -99,11 +104,13 @@ For elements `f` and `g` of a commutative ring, the order of vanishing of `g` in
 `(f)` is the length of that quotient by the image of `g`, which the third isomorphism theorem
 identifies with the length of `R ⧸ (f, g)`. This is an algebraic identity in an arbitrary
 commutative ring, where no hypothesis is placed on `f` or on `g` and the length may be infinite. It
-is the local intersection multiplicity of the two equations at the closed point once the length is
-finite: in a two-dimensional regular local ring with `f` a parameter, that is
+is the local intersection multiplicity of the two equations once the length is finite: in a
+two-dimensional regular local ring with `f` a parameter, that is
 `f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and with a proper intersection, that is
 `g ∉ Ideal.span {f}`, the length is finite by `TauCeti.isFiniteLength_quot_span_pair` and is the
-order of vanishing of `g` on the discrete valuation ring `R ⧸ (f)`. -/
+order of vanishing of `g` on the discrete valuation ring `R ⧸ (f)`, and it is positive, that is,
+the multiplicity of two curves meeting at the closed point, exactly when `g ∈ maximalIdeal R`,
+and is zero otherwise, by `TauCeti.length_quot_span_pair_eq_zero_iff`. -/
 theorem ord_eq_length_quot_span_pair (f g : R) :
     Ring.ord (R ⧸ Ideal.span {f}) (Ideal.Quotient.mk (Ideal.span {f}) g)
       = Module.length R (R ⧸ Ideal.span {f, g}) := by
@@ -196,13 +203,16 @@ variable {R : Type u} [CommRing R] [IsRegularLocalRing R]
 /-- **A proper intersection on a regular surface has finite local intersection multiplicity.**
 
 Let `(R, 𝔪)` be a two-dimensional regular local ring, so a regular surface, let `f ∉ 𝔪²`, and
-take a second equation `g` not belonging to the ideal `(f)`, so that the two curves do not share a
-component through the closed point. A unit `f` would make `(f)` the unit ideal, so `f` lies in
+take a second equation `g` not belonging to the ideal `(f)`, so that the two curves, locally at the
+closed point, do not share a component. A unit `f` would make `(f)` the unit ideal, so `f` lies in
 `𝔪` and, being outside `𝔪²`, is a parameter cutting out a curve that is a discrete valuation ring
 by `TauCeti.ringKrullDim_quot_span_singleton_eq_one`. The local intersection multiplicity
 `Module.length R (R ⧸ (f, g))` is then finite: it is the order of vanishing of `g` on the discrete
 valuation ring `R ⧸ (f)` by `TauCeti.ord_eq_length_quot_span_pair`, and `g` is a non-zero-divisor
-there. -/
+there. No hypothesis beyond that is placed on `g`: with `g ∈ 𝔪` the closed point lies on both
+curves, so this length is the positive local intersection multiplicity there, by
+`TauCeti.one_le_length_quot_span_pair`, and for `g ∉ 𝔪` the second curve misses the closed point
+and the length is zero, by `TauCeti.length_quot_span_pair_eq_zero_iff`. -/
 theorem isFiniteLength_quot_span_pair (hd : ringKrullDim R = 2) {f g : R}
     (hf2 : f ∉ maximalIdeal R ^ 2) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
