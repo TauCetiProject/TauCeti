@@ -167,19 +167,17 @@ theorem mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk {τ : ℍ}
   exact (((mdifferentiable_discCoordinate z).comp
     ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g).mdifferentiable (by simp))) τ).pow _
 
-/-- The transition map between the charts at the orbits of `z` and `z'`, pulled back along
-`w ↦ w ^ m` to the disc coordinate at `z`, is holomorphic at every point `w₀` of the disc of radius
-`tanh (ε / 2)` whose orbit lies in the source of the second chart: near `w₀` it is the second chart
-composed with the orbit projection and the inverse disc coordinate at `z`. -/
-private theorem differentiableAt_stabilizerBallQuotientChart_symm_pow {z' : ℍ} {ε' : ℝ}
-    [Finite (stabilizer Γ z')] (hε' : 0 < ε')
-    (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z' ε')) {w₀ : ℂ}
+/-- Pulling back a function in a stabilizer-ball chart along the power map gives a
+holomorphic function wherever its pullback to the upper half-plane is holomorphic. -/
+theorem differentiableAt_comp_stabilizerBallQuotientChart_symm_pow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {F : orbitRel.Quotient Γ ℍ → E} {w₀ : ℂ}
     (hw₀ : ‖w₀‖ < Real.tanh (ε / 2))
-    (hw₀' : (stabilizerBallQuotientChart hε hopen).symm (w₀ ^ Nat.card (stabilizer Γ z)) ∈
-      (stabilizerBallQuotientChart hε' hopen').source) :
-    DifferentiableAt ℂ (fun w ↦ stabilizerBallQuotientChart hε' hopen'
+    (hF : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) (F ∘ Quotient.mk _)
+      ((discCoordinateHomeomorph z).symm
+        (.mk w₀ (hw₀.trans (Real.tanh_lt_one _))))) :
+    DifferentiableAt ℂ (fun w ↦ F
       ((stabilizerBallQuotientChart hε hopen).symm (w ^ Nat.card (stabilizer Γ z)))) w₀ := by
-  set e' := stabilizerBallQuotientChart hε' hopen' with he'
   -- The explicit inverse of the disc coordinate at `z`, as a function on `ℂ`.
   set ψ : ℂ → ℂ := fun w ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w) with hψ
   have hψτ : ∀ w (hw : ‖w‖ < Real.tanh (ε / 2)),
@@ -187,13 +185,12 @@ private theorem differentiableAt_stabilizerBallQuotientChart_symm_pow {z' : ℍ}
         ofComplex (ψ w) := fun w hw ↦ by
     rw [← ofComplex_apply ((discCoordinateHomeomorph z).symm _),
       coe_discCoordinateHomeomorph_symm_apply, Complex.UnitDisc.coe_mk]
-  have heq : (fun w ↦ e' ((stabilizerBallQuotientChart hε hopen).symm
-      (w ^ Nat.card (stabilizer Γ z)))) =ᶠ[𝓝 w₀] fun w ↦ e' (Quotient.mk _ (ofComplex (ψ w))) := by
+  have heq : (fun w ↦ F ((stabilizerBallQuotientChart hε hopen).symm
+      (w ^ Nat.card (stabilizer Γ z)))) =ᶠ[𝓝 w₀] fun w ↦ F (Quotient.mk _ (ofComplex (ψ w))) := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hw₀)] with w hw
     rw [stabilizerBallQuotientChart_symm_pow hε hopen (mem_ball_zero_iff.1 hw),
       hψτ w (mem_ball_zero_iff.1 hw)]
-  have hτ₀ : Quotient.mk _ (ofComplex (ψ w₀)) ∈ e'.source := by
-    rwa [← hψτ w₀ hw₀, ← stabilizerBallQuotientChart_symm_pow hε hopen hw₀]
+  rw [hψτ w₀ hw₀] at hF
   have him : 0 < (ψ w₀).im := by
     have hcoe : (((discCoordinateHomeomorph z).symm
         (.mk w₀ (hw₀.trans (Real.tanh_lt_one _))) : ℍ) : ℂ) = ψ w₀ := by
@@ -204,7 +201,7 @@ private theorem differentiableAt_stabilizerBallQuotientChart_symm_pow {z' : ℍ}
     mdifferentiableAt_iff_differentiableAt.2 ((analyticOnNhd_discCoordinateHomeomorph_symm z w₀
       (mem_ball_zero_iff.2 (hw₀.trans (Real.tanh_lt_one _)))).differentiableAt)
   exact (mdifferentiableAt_iff_differentiableAt.1
-    (((mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk hε' hopen' hτ₀).comp (ψ w₀)
+    ((hF.comp (ψ w₀)
       (mdifferentiableAt_ofComplex him)).comp w₀ hψd)).congr_of_eventuallyEq heq
 
 /-- The transition map between the charts at the orbits of `z` and `z'` is holomorphic on its
@@ -244,8 +241,11 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   have hinv : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, F (ζ • u) = F u := fun u _ ζ ↦ by
     simp only [hF, rootsOfUnity.smul_pow]
   have hFd : DifferentiableOn ℂ F s := fun w₀ ⟨hw₀, hw₀'⟩ ↦
-    (differentiableAt_stabilizerBallQuotientChart_symm_pow hε hopen hε' hopen'
-      (mem_ball_zero_iff.1 hw₀) hw₀').differentiableWithinAt
+    (differentiableAt_comp_stabilizerBallQuotientChart_symm_pow hε hopen
+      (mem_ball_zero_iff.1 hw₀)
+      (mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk hε' hopen' (by
+        rwa [← stabilizerBallQuotientChart_symm_pow hε hopen
+          (mem_ball_zero_iff.1 hw₀)]))).differentiableWithinAt
   rw [hdesc]
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
 
