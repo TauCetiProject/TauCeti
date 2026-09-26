@@ -104,9 +104,9 @@ theorem IsProjectiveRep.exists_commonExtension_linearization [IsAlgClosed k]
       map_one_one' := Subtype.ext (hβ.isFactorSet.one_left 1) }
   let ev : (FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k)
       →*[G] kˣ :=
-    { toFun a := a b
-      map_one' := rfl
-      map_mul' _ _ := rfl
+    { (rootsOfUnity (Nat.card G) k).subtype.comp
+        (Pi.evalMonoidHom (fun _ : FactorSet G (rootsOfUnity (Nat.card G) k) ↦
+          rootsOfUnity (Nat.card G) k) b) with
       map_smul' _ _ := rfl }
   have hβ' : IsProjectiveRep (fun g ↦ (ρ g).trans (LinearEquiv.smulOfUnit (c g)))
       (Function.curry ⇑((projectiveLiftingFactorSet k G).map ev)) := by

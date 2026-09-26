@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
@@ -115,7 +116,7 @@ theorem ext {α β : FactorSet G M} (h : ∀ p : G × G, α p = β p) : α = β 
   DFunLike.ext _ _ h
 
 instance [Finite G] [Finite M] : Finite (FactorSet G M) :=
-  Finite.of_injective DFunLike.coe DFunLike.coe_injective
+  DFunLike.finite (FactorSet G M)
 
 section
 

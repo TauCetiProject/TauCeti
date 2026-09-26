@@ -141,9 +141,6 @@ instance [TotallyDisconnectedSpace M] [TotallyDisconnectedSpace G] :
 instance [DiscreteTopology M] [DiscreteTopology G] : DiscreteTopology α.Extension :=
   (homeomorphProd α).symm.discreteTopology
 
-instance [Finite M] [Finite G] : Finite α.Extension :=
-  .of_equiv _ (homeomorphProd α).symm.toEquiv
-
 /-! ### The topological group structure -/
 
 section TopologicalGroup
