@@ -270,11 +270,6 @@ instance isClosedImmersion_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin
   rw [← he]
   exact hce
 
-/-- Every Weyl-transported root-subgroup morphism is a monomorphism. -/
-instance mono_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin t.rank) :
-    Mono (t.geckWeylRootSubgroup ht l i) :=
-  mono_of_isClosedImmersion_underlying (t.geckWeylRootSubgroup ht l i)
-
 /-- **Every root index of the pinned root datum has a closed root-subgroup morphism in the Geck
 carrier.** The witnesses retain a Weyl word because presentation independence, including its
 possible sign, is not yet fixed. -/
