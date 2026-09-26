@@ -12,19 +12,9 @@ import Mathlib.Data.Rat.Star
 /-!
 # Positive definiteness over the rationals
 
-`Matrix.PosDef` is stated relative to the coefficient ring, so for a matrix of integers it says
-that the associated quadratic form is positive on nonzero *integer* vectors. That is formally
-weaker than positivity on nonzero *rational* vectors, and it is the rational statement that later
-arguments want, since a rational vector may be built from a construction that does not respect
-denominators. This file shows that the two notions nevertheless agree: an integer matrix that is
-positive definite over `ℤ` stays positive definite after casting its entries into `ℚ`, and
-conversely.
-
-The substantial direction is from `ℤ` to `ℚ`, and its proof is the obvious one. A nonzero
-rational vector becomes a nonzero integer vector after multiplying by a common denominator, and
-the quadratic form scales by the square of that denominator, which is positive. The index type
-need not be finite: a test vector for `Matrix.PosDef` is finitely supported, so the general case
-follows from the finite one applied to the principal submatrix on the support of the vector.
+For an integer matrix, positive definiteness over `ℤ` is equivalent to positive definiteness
+after casting its entries to `ℚ`. This lets results about rational quadratic forms certify
+positive definiteness of integer matrices, and conversely.
 
 The file also records the standard way of certifying a rational matrix as positive definite: write
 it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One general fact about
@@ -126,9 +116,8 @@ theorem posDef_map_intCast {A : Matrix n n ℤ} (hA : A.PosDef) :
   rw [← hmap]
   simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using hsub.2 hne
 
-/-- **An integer matrix is positive definite over `ℤ` exactly when it is over `ℚ`.** The converse
-of `TauCeti.Matrix.posDef_map_intCast` is the easy direction: an integer test vector is a rational
-one, and the rational value of the form on it is the cast of the integer value. -/
+/-- **An integer matrix is positive definite over `ℤ` exactly when its cast to `ℚ` is positive
+definite.** This transfers positive definiteness results between integer and rational matrices. -/
 theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
     (A.map (Int.cast : ℤ → ℚ)).PosDef ↔ A.PosDef := by
   refine ⟨fun hA ↦ ⟨?_, fun x hx ↦ ?_⟩, posDef_map_intCast⟩

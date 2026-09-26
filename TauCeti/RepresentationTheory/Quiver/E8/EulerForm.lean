@@ -41,7 +41,6 @@ acyclic. The Euler form itself is not symmetric, as its matrix shows.
 
 ## References
 
-* “An oriented `E₈` quiver” in `TauCetiRoadmap/GrothendieckEulerForms/README.md`.
 * Ibrahim Assem, Daniel Simson and Andrzej Skowroński, *Elements of the Representation Theory of
   Associative Algebras I*, Chapter III, Section 3 (the Euler form of a quiver in the simple
   dimension vectors) and Chapter VII (the Tits form and the Dynkin diagrams).

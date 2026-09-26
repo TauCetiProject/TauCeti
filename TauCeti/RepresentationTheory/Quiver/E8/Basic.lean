@@ -26,7 +26,6 @@ The Euler and Tits forms are computed in `TauCeti.RepresentationTheory.Quiver.E8
 
 ## References
 
-* “An oriented `E₈` quiver” in `TauCetiRoadmap/GrothendieckEulerForms/README.md`.
 * N. Bourbaki, *Lie groups and Lie algebras, Chapters 4–6*, Plate VII, for the numbering of the
   `E₈` diagram and its Cartan matrix.
 -/
@@ -88,6 +87,7 @@ def homEquiv (i j : Fin 8) :
 
 /-- **The arrows of the `E₈` quiver**: there is exactly one arrow `i ⟶ j` when the nodes `i < j`
 are joined by an edge of the `E₈` diagram, and there are no others. -/
+@[simp]
 theorem card_hom (i j : Fin 8) :
     Fintype.card (vertexEquiv i ⟶ vertexEquiv j) =
       if i < j ∧ (diagramGraph (CartanMatrix.E 8)).Adj i j then 1 else 0 := by
