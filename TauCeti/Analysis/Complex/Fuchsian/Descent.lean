@@ -34,7 +34,7 @@ open scoped ComplexConjugate Manifold MatrixGroups
 
 namespace Subgroup
 
-variable {Γ : Subgroup PSL(2, ℝ)} {E : Type*}
+variable (Γ : Subgroup PSL(2, ℝ)) {E : Type*}
   [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
 section Local
@@ -63,7 +63,7 @@ theorem differentiableOn_comp_stabilizerBallQuotientChart_symm
         (.mk w₀ (hw₀'.trans (Real.tanh_lt_one _))) ∈ ball z ε := by
       rw [mem_ball_iff_norm_discCoordinate_lt]
       simpa using hw₀'
-    exact (differentiableAt_comp_stabilizerBallQuotientChart_symm_pow hε hopen hw₀'
+    exact (Γ.differentiableAt_comp_stabilizerBallQuotientChart_symm_pow hε hopen hw₀'
       ((hF _ hball).mdifferentiableAt (isOpen_ball.mem_nhds hball))).differentiableWithinAt
   have hd := differentiableOn_descendPow (m := m) isOpen_ball hf
     (fun w _ ζ ↦ by simp only [f, rootsOfUnity.smul_pow])
@@ -83,7 +83,7 @@ theorem mdifferentiable_iff_comp_quotientMk {F : orbitRel.Quotient Γ ℍ → E}
   refine ⟨fun hF ↦ hF.comp (mdifferentiable_quotientMk Γ), fun hF q ↦ ?_⟩
   rw [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source ℂ q)]
   simp only [mfld_simps, mdifferentiableWithinAt_univ, mdifferentiableAt_iff_differentiableAt]
-  have hd := differentiableOn_comp_stabilizerBallQuotientChart_symm
+  have hd := Γ.differentiableOn_comp_stabilizerBallQuotientChart_symm
     (chartRadius_pos Γ q.out) (isOpenEmbedding_stabilizerBallQuotientToQuotient_chartRadius Γ q.out)
     hF.mdifferentiableOn
   rw [← chartAt_eq] at hd
@@ -101,7 +101,7 @@ theorem existsUnique_mdifferentiable_quotientMk (f : ℍ → E)
     intro z w h
     obtain ⟨g, rfl⟩ := mem_orbit_iff.mp (orbitRel_apply.mp h)
     exact hinv g w)
-  refine ⟨F, ⟨mdifferentiable_iff_comp_quotientMk.mpr hf, rfl⟩, ?_⟩
+  refine ⟨F, ⟨(Γ.mdifferentiable_iff_comp_quotientMk).mpr hf, rfl⟩, ?_⟩
   intro G hG
   funext q
   induction q using Quotient.inductionOn with

@@ -167,6 +167,7 @@ theorem mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk {τ : ℍ}
   exact (((mdifferentiable_discCoordinate z).comp
     ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g).mdifferentiable (by simp))) τ).pow _
 
+variable (Γ) in
 /-- Pulling back a function in a stabilizer-ball chart along the power map gives a
 holomorphic function wherever its pullback to the upper half-plane is holomorphic. -/
 theorem differentiableAt_comp_stabilizerBallQuotientChart_symm_pow
@@ -241,7 +242,7 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   have hinv : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, F (ζ • u) = F u := fun u _ ζ ↦ by
     simp only [hF, rootsOfUnity.smul_pow]
   have hFd : DifferentiableOn ℂ F s := fun w₀ ⟨hw₀, hw₀'⟩ ↦
-    (differentiableAt_comp_stabilizerBallQuotientChart_symm_pow hε hopen
+    (Γ.differentiableAt_comp_stabilizerBallQuotientChart_symm_pow hε hopen
       (mem_ball_zero_iff.1 hw₀)
       (mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk hε' hopen' (by
         rwa [← stabilizerBallQuotientChart_symm_pow hε hopen
