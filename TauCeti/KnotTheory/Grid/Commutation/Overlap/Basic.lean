@@ -26,9 +26,9 @@ repartition data remain available without duplicating the rectangle geometry.
 
 This module treats the common-initial-side orientation and preserves the underlying rectangle
 repartition and its rectangle weights. It also records the two possible cuts in the
-common-terminal-side orientation. In that orientation exactly one recut rectangle ends on the
-replaced grid line; which one it is is part of the finite geometry, and later turn-row transports
-must distinguish the two cases.
+common-terminal-side orientation: in that orientation exactly one recut rectangle ends on the
+replaced grid line, and the branch data in `Overlap/TurnRow.lean` identifies which one from
+the column geometry.
 
 ## Main results
 
@@ -45,6 +45,16 @@ must distinguish the two cases.
   is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
   exactly one of the two new rectangles has the original pentagon's terminal side.
+* `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty`: the shared underlying
+  rectangle recut with the emptiness hypotheses discharged once, used by the terminal-side
+  overlap results (branch determination, turn-row transport, and promotion) and the
+  X-avoidance results instead of repeating the construction.
+* `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty_eq_recut`: the shared recut
+  identified with the underlying rectangle decomposition's recut, for consumers that need the
+  definitional unfolding.
+
+These are the recut/repartition combinatorics and weight transfers for the pentagon-counting
+commutation chain map.
 
 ## References
 
@@ -450,6 +460,42 @@ theorem recut_first_or_second_right_eq_pentagon_right
       rw [hsecond] at h
       exact D.toRectangleDecomposition.second.left_ne_right h
   simpa only [D.toRectangleDecomposition_second_right] using hbranches
+
+/-- The shared recut construction for overlap arguments: `D.toRectangleDecomposition`
+recut along its common side, with the rectangle emptiness supplied from `hrectangle` and the
+pentagon emptiness from `hpentagon`. The terminal-side overlap results (branch determination,
+turn-row transport, and promotion) and the X-avoidance results work with this single
+construction rather than repeating it. -/
+@[expose] noncomputable def recutOfIsEmpty
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    GridRectangleDecomposition x z :=
+  D.toRectangleDecomposition.recut hone
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using
+      hpentagon)
+
+/-- The shared recut is the underlying rectangle decomposition's recut along its common side.
+Consumers needing the definitional unfolding rewrite with this instead. -/
+theorem recutOfIsEmpty_eq_recut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.recutOfIsEmpty hone hrectangle hpentagon = D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon) := rfl
 
 end GridRectanglePentagonDecomposition
 

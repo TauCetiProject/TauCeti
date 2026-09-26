@@ -200,6 +200,27 @@ theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleB
   unfold ofRightEq
   rfl
 
+/-- The initial side of `ofRightEq` is the rectangle's. -/
+theorem ofRightEq_left {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).left = r.left := by
+  unfold ofRightEq
+  rfl
+
+/-- The bottom row of `ofRightEq` is the rectangle's. -/
+theorem ofRightEq_bottom {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).bottom = r.bottom := by
+  unfold ofRightEq
+  rfl
+
+/-- The top row of `ofRightEq` is the rectangle's. -/
+theorem ofRightEq_top {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).top = r.top := by
+  unfold ofRightEq
+  rfl
+
 /-- Regard a rectangle between possibly different endpoint states as a pentagon when its
 underlying toroidal rectangle agrees with that of an existing pentagon. -/
 def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)

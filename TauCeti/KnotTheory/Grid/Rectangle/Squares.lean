@@ -48,6 +48,11 @@ two.
   two arc lengths.
 * `TauCeti.GridRectangle.squares_eq_coveredSquares`: the covered squares are the region
   `GridRectangle.squares` that the marking-avoidance predicate tests.
+* `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval`: X-avoidance
+  transfers across a column swap to a rectangle whose covered columns are contained in an
+  X-avoiding rectangle's covered columns and whose rows are contained in its rows.
+* `TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint`: the X-marking of a covered column
+  avoids an X-avoiding rectangle's covered rows.
 
 ## References
 
@@ -205,6 +210,56 @@ theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns (R : Grid
     apply hdisjoint
     · exact (R.mem_coveredSquares_swap_iff_of_coveredColumns h p).mpr hp
     · exact hpX
+
+/-- X-avoidance transfers across a column swap to a rectangle whose covered columns are
+contained in an X-avoiding rectangle's covered columns (with rows contained in the
+original's), provided the swapped-out column is covered by the original rectangle but not
+by the new one. -/
+theorem disjoint_coveredSquares_XSet_swapColumns_of_subinterval
+    (R R' : GridRectangle n) {a b : Fin n}
+    (hR'row : R'.coveredRows ⊆ R.coveredRows)
+    (hX : Disjoint R.coveredSquares G.XSet)
+    (ha : a ∈ R.coveredColumns)
+    (ha_not : a ∉ R'.coveredColumns)
+    (hsub : R'.coveredColumns ⊆ R.coveredColumns) :
+    Disjoint R'.coveredSquares (G.swapColumns a b).XSet := by
+  rw [Finset.disjoint_left]
+  rintro ⟨c, r'⟩ hc hx
+  -- For `(c, r')` in `R'`'s squares with `(c, r')` in the swapped X-set: if `c = b`, the
+  -- swap sends it to `(a, r')`, which lies in `R`'s squares and contradicts `R`'s
+  -- X-avoidance; otherwise the swap fixes `c` (as `c ≠ a` and `c ≠ b`), and `(c, r')`
+  -- lies in `R`'s squares via the column subset, again contradicting `R`'s X-avoidance.
+  rw [GridRectangle.mem_coveredSquares] at hc
+  obtain ⟨hc_col, hc_row⟩ := hc
+  rw [G.mem_XSet_swapColumns] at hx
+  by_cases hcb : c = b
+  · subst hcb
+    rw [Equiv.swap_apply_right] at hx
+    have hmem : (a, r') ∈ R.coveredSquares := by
+      rw [GridRectangle.mem_coveredSquares]
+      exact ⟨ha, hR'row hc_row⟩
+    exact (Finset.disjoint_left.mp hX) hmem hx
+  · have hca : c ≠ a := fun h => ha_not (h ▸ hc_col)
+    have hswap : Equiv.swap a b c = c := Equiv.swap_apply_of_ne_of_ne hca hcb
+    rw [hswap] at hx
+    have hmem : (c, r') ∈ R.coveredSquares := by
+      rw [GridRectangle.mem_coveredSquares]
+      exact ⟨hsub hc_col, hR'row hc_row⟩
+    exact (Finset.disjoint_left.mp hX) hmem hx
+
+/-- The X-marking of a covered column avoids an X-avoiding rectangle's covered rows: if
+`G.X b` were in the row interval, `(b, G.X b)` would be a covered square carrying an
+X-marking. -/
+theorem X_not_mem_coveredRows_of_disjoint (R : GridRectangle n) {b : Fin n}
+    (hX : Disjoint R.coveredSquares G.XSet)
+    (hb : b ∈ R.coveredColumns) :
+    G.X b ∉ R.coveredRows := by
+  intro hmem
+  have hmem_sq : (b, G.X b) ∈ R.coveredSquares := by
+    rw [GridRectangle.mem_coveredSquares]
+    exact ⟨hb, hmem⟩
+  have hXmem : (b, G.X b) ∈ G.XSet := by simp [GridDiagram.XSet]
+  exact (Finset.disjoint_left.mp hX) hmem_sq hXmem
 
 end GridDiagram
 
