@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Factorization
+import Mathlib.RingTheory.DedekindDomain.Factorization
 public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
 # Primes above a set of primes, and the Selmer group relative to them
 
-Let `B` be a domain integral over a domain `R`. For a set `S` of primes of `R`,
-`IsDedekindDomain.HeightOneSpectrum.primesAbove R B S` is the set of primes of `B` lying above a
-prime in `S`, i.e. whose contraction `HeightOneSpectrum.under R w` lies in `S`. When `B` is a
-Dedekind domain, torsion-free over `R`, it is finite whenever `S` is. It is the set of primes that
-the Selmer group of the fraction field of `B` is taken relative to when the "bad" primes are given
-downstairs: `IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮primesAbove R B S, n⟯`.
+For an injective algebra map of commutative rings `R → B`, the nonzero prime ideals of `B`
+lying over a nonzero prime `v` of `R` correspond to `Ideal.primesOver v.asIdeal B`. If `B` is
+a Dedekind domain, only finitely many such primes lie over `v`; this does not require
+integrality or a Dedekind hypothesis on `R`.
+
+For domains `R` and `B` with `B` integral over `R`, contraction defines
+`HeightOneSpectrum.under R`. For a set `S` of primes of `R`,
+`IsDedekindDomain.HeightOneSpectrum.primesAbove R B S` is its preimage under contraction.
+When `B` is Dedekind and the algebra map is injective, this preimage is finite whenever `S` is.
+The Selmer group of the fraction field of `B` relative to these primes is
+`IsDedekindDomain.selmerGroupAbove R B L S n`, Mathlib's `L⟮primesAbove R B S, n⟯`.
 
 ## Main definitions
 
@@ -141,7 +146,7 @@ end
 
 /-- Only finitely many primes of `B` lie above a finite set of primes of `R`. -/
 lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
-    [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
+    [FaithfulSMul R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     (primesAbove R B S).Finite := by
   refine hS.preimage' fun v _ ↦ ?_
   have : Finite (under R (B := B) ⁻¹' {v}) :=
@@ -154,7 +159,7 @@ lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R
 /-- Only finitely many primes of `B` contract to each prime of `R`, so contraction tends to the
 cofinite filter along the cofinite filter. -/
 lemma tendsto_under_cofinite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
-    [Module.IsTorsionFree R B] :
+    [FaithfulSMul R B] :
     Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
   Filter.Tendsto.cofinite_of_finite_preimage_singleton fun v ↦
     (primesAbove_finite R B (Set.finite_singleton v)).to_subtype
