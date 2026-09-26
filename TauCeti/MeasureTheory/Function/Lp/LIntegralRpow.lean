@@ -13,7 +13,8 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 # `Lᵖ` seminorm bounds out of bounds between the integrals `∫⁻ ‖·‖ₑ ^ p`
 
 For `0 < p < ∞` the `Lᵖ` seminorm of an a.e. strongly measurable `v` is the `p`-th root of
-`∫⁻ ‖v x‖ₑ ^ p ∂μ` (a function that is not a.e. strongly measurable has seminorm `∞`), so a bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals is the
+`∫⁻ ‖v x‖ₑ ^ p ∂μ` (a function that is not a.e. strongly measurable has seminorm `∞`), so a
+bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals is the
 same statement as `‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records the passage from
 the former to the latter, which is the direction an estimate proved by integration produces.
 
