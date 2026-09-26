@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Duality
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
@@ -24,23 +25,10 @@ pointwise Wasserstein-Lipschitz bound `W_p (κ x, κ y) ≤ L d(x, y)` acts on l
 `L`-Lipschitz map for `W_p`. This is the Wasserstein contraction estimate for Markov kernels that
 underlies Wasserstein contraction of Markov chains and coarse Ricci curvature.
 
-The ground space `Y` is a second-countable pseudometric space whose measurable structure is
+The ground space `Y` is a separable pseudometric space whose measurable structure is
 standard Borel and contains the open sets, for instance a Polish metric space with its Borel
 σ-algebra; the source spaces carry no structure beyond a measurable space. Both mixtures are
 assumed to have finite `p`-moment.
-
-## Implementation notes
-
-The classical argument glues the source coupling with a measurable family of near-optimal
-couplings of `κ x` and `η x'`, which requires a measurable selection theorem. We avoid it by
-duality. First, quantize the target: measurable maps `Q₁`, `Q₂` with values in a common finite set
-move `κ ∘ₘ μ` and `η ∘ₘ ν` by a small `L^p` displacement
-(`TauCeti.exists_eLpNorm_edist_le`), which reduces the problem to the mixtures of the quantized
-kernels. These mixtures live on a finite subspace, where strong Kantorovich duality holds
-(`TauCeti.exists_continuous_forall_add_le_transportCost_le`). Integrating a dual pair `(φ, ψ)`
-first against the kernels and then against `π` turns its dual value into
-`∫ (Φ x + Ψ x') dπ`, and weak duality for the pair `(κ x, η x')` bounds each `Φ x + Ψ x'` by the
-`p`-th power of `W_p (κ x, η x')` plus the quantization displacements.
 
 ## Main statements
 
@@ -69,73 +57,43 @@ namespace TauCeti
 universe u u' v
 
 variable {X : Type u} {X' : Type u'} {Y : Type v} [MeasurableSpace X] [MeasurableSpace X']
-  [MeasurableSpace Y] [PseudoMetricSpace Y] [OpensMeasurableSpace Y] [SecondCountableTopology Y]
-  {p : ℝ≥0∞}
+  [MeasurableSpace Y] {p : ℝ≥0∞}
 
-/-- Weak duality for potentials read at quantized points: if `f₁ y + f₂ y'` is bounded by the
-`p`-th power of the distance between the quantized points `Q₁ y` and `Q₂ y'`, then the dual value
-of `(f₁, f₂)` is bounded by the `p`-th power of `W_p (A, B)` enlarged by the two quantization
-displacements. -/
-private theorem ofReal_integral_add_integral_le (hp1 : 1 ≤ p) (hp : p ≠ ∞) {Q₁ Q₂ : Y → Y}
-    (hQ₁ : Measurable Q₁) (hQ₂ : Measurable Q₂) {f₁ f₂ : Y → ℝ}
-    (hf : ∀ y y', f₁ y + f₂ y' ≤ dist (Q₁ y) (Q₂ y') ^ p.toReal)
-    {A B : Measure Y}
-    (hf₁ : Integrable f₁ A) (hf₂ : Integrable f₂ B) :
-    ENNReal.ofReal (∫ y, f₁ y ∂A + ∫ y, f₂ y ∂B) ≤
-      (wassersteinEDist p A B + (eLpNorm (fun y ↦ edist y (Q₁ y)) p A +
-        eLpNorm (fun y ↦ edist y (Q₂ y)) p B)) ^ p.toReal := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+/-- The pointwise `L^p` seminorm `x ↦ ‖f‖_{L^p (κ x)}` of a measurable function against a kernel is
+measurable. -/
+private theorem measurable_eLpNorm_kernel (hp0 : p ≠ 0) (hp : p ≠ ∞) (κ : Kernel X Y)
+    {f : Y → ℝ≥0∞} (hf : Measurable f) : Measurable fun x ↦ eLpNorm f p (κ x) := by
+  simp only [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf.aestronglyMeasurable]
+  exact ((hf.enorm.pow_const _).lintegral_kernel).pow_const _
+
+/-- Averaging the pointwise `L^p` seminorms `x ↦ ‖f‖_{L^p (κ x)}` over `μ` in `L^p` gives the
+`L^p` seminorm of `f` against the mixture `κ ∘ₘ μ`. -/
+private theorem eLpNorm_eLpNorm_kernel (hp0 : p ≠ 0) (hp : p ≠ ∞) (κ : Kernel X Y)
+    (μ : Measure X) {f : Y → ℝ≥0∞} (hf : Measurable f) :
+    eLpNorm (fun x ↦ eLpNorm f p (κ x)) p μ = eLpNorm f p (κ ∘ₘ μ) := by
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  set e := eLpNorm (fun y ↦ edist y (Q₁ y)) p A + eLpNorm (fun y ↦ edist y (Q₂ y)) p B
-  set D := ENNReal.ofReal (∫ y, f₁ y ∂A + ∫ y, f₂ y ∂B)
-  -- the pair is feasible for the cost read at the quantized points
-  have hfeas : DualFeasible (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2) ^ p.toReal) f₁ f₂ := by
-    refine dualFeasible_iff_ofReal_add_le.2 fun y y' ↦ ?_
-    rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hr.le]
-    exact ENNReal.ofReal_le_ofReal (hf y y')
-  have hmeas : Measurable fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2) :=
-    (hQ₁.comp measurable_fst).edist (hQ₂.comp measurable_snd)
-  have hd₁ : Measurable fun y ↦ edist y (Q₁ y) := measurable_id.edist hQ₁
-  have hd₂ : Measurable fun y ↦ edist y (Q₂ y) := measurable_id.edist hQ₂
-  -- against each coupling, weak duality and Minkowski's inequality bound the dual value
-  have key : ∀ γ, IsCoupling γ A B →
-      D ^ p.toReal⁻¹ ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ + e := by
-    intro γ hγ
-    have hdual := hfeas.ofReal_kantorovichDualValue_le_lintegral hf₁ hf₂ hγ
-    rw [kantorovichDualValue_def, ← eLpNorm_rpow_eq_lintegral hp0 hp hmeas.aemeasurable] at hdual
-    have hle : D ^ p.toReal⁻¹ ≤ eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ :=
-      calc D ^ p.toReal⁻¹
-          ≤ (eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ ^ p.toReal) ^ p.toReal⁻¹ := by
-            gcongr
-        _ = _ := ENNReal.rpow_rpow_inv hr.ne' _
-    -- move each quantized point back to the point it quantizes
-    have hmarg₁ : eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ
-        = eLpNorm (fun y ↦ edist y (Q₁ y)) p A :=
-      eLpNorm_comp_measurePreserving hd₁.aestronglyMeasurable hγ.measurePreserving_fst
-    have hmarg₂ : eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ
-        = eLpNorm (fun y ↦ edist y (Q₂ y)) p B :=
-      eLpNorm_comp_measurePreserving hd₂.aestronglyMeasurable hγ.measurePreserving_snd
-    refine hle.trans ?_
-    calc eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ
-        ≤ eLpNorm ((fun z : Y × Y ↦ edist z.1 z.2) +
-            ((fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) + fun z ↦ edist z.2 (Q₂ z.2))) p γ := by
-          refine eLpNorm_mono_enorm hmeas.aestronglyMeasurable fun z ↦ ?_
-          simp only [enorm_eq_self, Pi.add_apply]
-          calc edist (Q₁ z.1) (Q₂ z.2)
-              ≤ edist (Q₁ z.1) z.1 + edist z.1 z.2 + edist z.2 (Q₂ z.2) :=
-                edist_triangle4 _ _ _ _
-            _ = edist z.1 z.2 + (edist z.1 (Q₁ z.1) + edist z.2 (Q₂ z.2)) := by
-                rw [edist_comm (Q₁ z.1)]
-                ring
-      _ ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-            (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-              eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) :=
-          (eLpNorm_add_le hp1).trans (add_le_add le_rfl (eLpNorm_add_le hp1))
-      _ = eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ + e := by rw [hmarg₁, hmarg₂]
-  have hroot : D ^ p.toReal⁻¹ ≤ wassersteinEDist p A B + e :=
-    tsub_le_iff_right.1 (le_wassersteinEDist fun γ hγ ↦ tsub_le_iff_right.2 (key γ hγ))
-  calc D = (D ^ p.toReal⁻¹) ^ p.toReal := (ENNReal.rpow_inv_rpow hr.ne' D).symm
-    _ ≤ (wassersteinEDist p A B + e) ^ p.toReal := by gcongr
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
+      (measurable_eLpNorm_kernel hp0 hp κ hf).aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf.aestronglyMeasurable,
+    Measure.lintegral_bind κ.aemeasurable (hf.enorm.pow_const _).aemeasurable]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  simp only [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf.aestronglyMeasurable,
+    enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr.ne']
+
+variable [PseudoMetricSpace Y] [OpensMeasurableSpace Y] [TopologicalSpace.SeparableSpace Y]
+
+/- The classical argument glues the source coupling with a measurable family of near-optimal
+couplings of `κ x` and `η x'`, which requires a measurable selection theorem. We avoid it by
+duality. First, quantize the target: measurable maps `Q₁`, `Q₂` with values in a common finite set
+move `κ ∘ₘ μ` and `η ∘ₘ ν` by a small `L^p` displacement
+(`TauCeti.exists_eLpNorm_edist_le`), which reduces the problem to the mixtures of the quantized
+kernels. These mixtures live on a finite subspace, where strong Kantorovich duality holds
+(`TauCeti.exists_continuous_forall_add_le_transportCost_le`). Integrating a dual pair `(φ, ψ)`
+first against the kernels and then against `π` turns its dual value into
+`∫ (Φ x + Ψ x') dπ`, and weak duality for the pair `(κ x, η x')` bounds each `Φ x + Ψ x'` by the
+`p`-th power of `W_p (κ x, η x')` plus the quantization displacements
+(`TauCeti.ofReal_integral_add_integral_le_wassersteinEDist_add_rpow`). -/
 
 /-- **The quantized estimate.** For quantizers `Q₁`, `Q₂` with values in a common finite set, the
 Wasserstein distance of the quantized mixtures is at most the `L^p (π)` seminorm of a bound on the
@@ -166,29 +124,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
   have hd₂ : Measurable fun y ↦ edist y (Q₂ y) := measurable_id.edist hQ₂
   set e₁ : X → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₁ y)) p (κ x)
   set e₂ : X' → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₂ y)) p (η x)
-  have he₁ : Measurable e₁ := by
-    simp only [e₁, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₁.aestronglyMeasurable]
-    exact ((hd₁.enorm.pow_const _).lintegral_kernel).pow_const _
-  have he₂ : Measurable e₂ := by
-    simp only [e₂, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₂.aestronglyMeasurable]
-    exact ((hd₂.enorm.pow_const _).lintegral_kernel).pow_const _
-  -- averaging the pointwise displacement over the source is the displacement of the mixture
-  have havg₁ : eLpNorm e₁ p μ = eLpNorm (fun y ↦ edist y (Q₁ y)) p (κ ∘ₘ μ) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp he₁.aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₁.aestronglyMeasurable,
-      Measure.lintegral_bind κ.aemeasurable (hd₁.enorm.pow_const _).aemeasurable]
-    congr 1
-    refine lintegral_congr fun x ↦ ?_
-    simp only [e₁, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₁.aestronglyMeasurable,
-      enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr.ne']
-  have havg₂ : eLpNorm e₂ p ν = eLpNorm (fun y ↦ edist y (Q₂ y)) p (η ∘ₘ ν) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp he₂.aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₂.aestronglyMeasurable,
-      Measure.lintegral_bind η.aemeasurable (hd₂.enorm.pow_const _).aemeasurable]
-    congr 1
-    refine lintegral_congr fun x ↦ ?_
-    simp only [e₂, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hd₂.aestronglyMeasurable,
-      enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr.ne']
+  have he₁ : Measurable e₁ := measurable_eLpNorm_kernel hp0 hp κ hd₁
+  have he₂ : Measurable e₂ := measurable_eLpNorm_kernel hp0 hp η hd₂
   -- the inclusion of `t` is an isometry, so it does not increase the distance
   have hα : α.map (↑) = (κ ∘ₘ μ).map Q₁ := Measure.map_map measurable_subtype_coe hq₁
   have hβ : β.map (↑) = (η ∘ₘ ν).map Q₂ := Measure.map_map measurable_subtype_coe hq₂
@@ -249,8 +186,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
     refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
       (lintegral_mono_ae (hκη.mono fun z hz ↦ ?_))
     -- pointwise, weak duality for the pair of kernel laws
-    refine (ofReal_integral_add_integral_le hp1 hp hQ₁ hQ₂ (fun y y' ↦ hfeas (q₁ y) (q₂ y'))
-      (hf₁ _) (hf₂ _)).trans ?_
+    refine (ofReal_integral_add_integral_le_wassersteinEDist_add_rpow hp1 hp hQ₁ hQ₂
+      (fun y y' ↦ hfeas (q₁ y) (q₂ y')) (hf₁ _) (hf₂ _)).trans ?_
     gcongr
     exact add_le_add_left hz _
   -- Minkowski's inequality splits the bound into its three contributions
@@ -264,12 +201,13 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
           eLpNorm_comp_measurePreserving he₁.aestronglyMeasurable hπ.measurePreserving_fst
         have h₂ : eLpNorm (fun z : X × X' ↦ e₂ z.2) p π = eLpNorm e₂ p ν :=
           eLpNorm_comp_measurePreserving he₂.aestronglyMeasurable hπ.measurePreserving_snd
-        rw [h₁, h₂, havg₁, havg₂]
+        rw [h₁, h₂, eLpNorm_eLpNorm_kernel hp0 hp κ μ hd₁,
+          eLpNorm_eLpNorm_kernel hp0 hp η ν hd₂]
 
 variable [StandardBorelSpace Y]
 
 /-- **The Wasserstein distance of two mixtures.** For Markov kernels `κ` and `η` into a
-second-countable pseudometric space with a standard Borel measurable structure, probability
+separable pseudometric space with a standard Borel measurable structure, probability
 measures `μ` and `ν` whose mixtures have finite `p`-moment, and a finite exponent `1 ≤ p < ∞`,
 the Wasserstein distance of the mixtures `κ ∘ₘ μ` and `η ∘ₘ ν` is at most the `L^p (π)` seminorm
 of any `π`-almost-everywhere bound `g` on the pointwise distance
@@ -314,7 +252,7 @@ theorem wassersteinEDist_comp_le_eLpNorm (hp1 : 1 ≤ p) (hp : p ≠ ∞)
         ring
 
 /-- **Wasserstein-Lipschitz Markov kernels.** If the laws of a Markov kernel `κ` into a
-second-countable pseudometric space with a standard Borel measurable structure satisfy
+separable pseudometric space with a standard Borel measurable structure satisfy
 `W_p (κ x, κ y) ≤ L d(x, y)` for a finite exponent `1 ≤ p < ∞`, then
 `W_p (κ ∘ₘ μ, κ ∘ₘ ν) ≤ L W_p (μ, ν)` for all probability measures `μ` and `ν` whose mixtures have
 finite `p`-moment. -/
