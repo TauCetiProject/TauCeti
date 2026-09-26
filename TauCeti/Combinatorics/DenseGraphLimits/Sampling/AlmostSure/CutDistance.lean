@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.AlmostSure.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
-import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Compact
-import TauCeti.Combinatorics.DenseGraphLimits.Separation.Inverse
+import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Convergence
 
 /-!
 # Almost-sure convergence of sampled graphons
@@ -17,9 +16,10 @@ The growing finite windows of one infinite graph sampled from a graphon converge
 to that graphon in cut distance. The generating graphon may have any probability carrier.
 For a graphon on the unit interval, this is convergence in the metric quotient `GraphonSpaceI`.
 
-The simultaneous strong law for homomorphism densities identifies every cluster point of the
-sampled graphon classes. Compactness then gives convergence, and a unit-interval representative
-transfers the result to arbitrary carriers.
+On the unit interval this is the simultaneous strong law for homomorphism densities, since
+convergence in `GraphonSpaceI` is convergence of all homomorphism densities
+(`tendsto_graphonSpace_iff_forall_homDensity`). A unit-interval representative transfers the result
+to arbitrary carriers.
 
 ## References
 
@@ -50,15 +50,9 @@ theorem infiniteSampleLaw_ae_tendsto_cutDist (W : Graphon Ω μ) :
     with G hG
   let u : ℕ → GraphonSpaceI := fun n =>
     SeparationQuotient.mk (finiteGraphGraphon (G.restrictFin (n + 1)))
-  have hu : Tendsto u atTop (𝓝 (SeparationQuotient.mk V)) := by
-    refine tendsto_nhds_of_unique_mapClusterPt fun x hx => ?_
-    refine (graphonSpace_ext_iff_homDensity x (SeparationQuotient.mk V)).2 ?_
-    intro k F _
-    have hlim : Tendsto (homDensityOnSpace F ∘ u) atTop
-        (𝓝 (homDensityOnSpace F (SeparationQuotient.mk V))) := by
-      simpa only [Function.comp_def, u, homDensityOnSpace_mk, ← hden k F] using hG k F
-    have hcluster := hx.continuousAt_comp (continuous_homDensityOnSpace F).continuousAt
-    exact eq_of_nhds_neBot (hcluster.clusterPt.mono hlim)
+  have hu : Tendsto u atTop (𝓝 (SeparationQuotient.mk V)) :=
+    (tendsto_graphonSpace_iff_forall_homDensity u _).2 fun k F _ => by
+      simpa only [u, homDensityOnSpace_mk, ← hden k F] using hG k F
   have hdist : Tendsto
       (fun n => cutDist (finiteGraphGraphon (G.restrictFin (n + 1))) V) atTop (𝓝 0) := by
     simpa only [u, dist_graphonSpace_mk_mk] using tendsto_iff_dist_tendsto_zero.1 hu
