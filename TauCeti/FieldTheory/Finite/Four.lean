@@ -11,6 +11,11 @@ public import Mathlib.Algebra.CharP.CharAndCard
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.Fin.VecNotation
 
+import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Data.List.Pi
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import Mathlib.Tactic.ComputeDegree
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -35,6 +40,51 @@ theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
   rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
   decide
 
+/-- A list of all vectors with entries in `coeffs` of length `dim`. -/
+private def powerBasisCoeffVectors {K : Type*} (coeffs : List K) (dim : ℕ) : List (Fin dim → K) :=
+  (List.pi (List.finRange dim) fun _ => coeffs).map (· · (by simp))
+
+/-- A vector is in `powerBasisCoeffVectors` if and only if every coordinate is in `coeffs`. -/
+private theorem mem_powerBasisCoeffVectors {K : Type*} (coeffs : List K)
+    {dim : ℕ} (c : Fin dim → K) :
+    c ∈ powerBasisCoeffVectors coeffs dim ↔ ∀ i, c i ∈ coeffs := by
+  simp_rw [powerBasisCoeffVectors, List.mem_map, List.mem_pi]
+  constructor
+  · rintro ⟨f, hf, rfl⟩ i
+    exact hf i (by simp)
+  · intro hc
+    use fun i _ => c i
+    constructor
+    · exact fun i _ => hc i
+    · rfl
+
+section PowerBasisExpansion
+
+variable {K L : Type*} [CommRing K] [Ring L] [Algebra K L]
+
+/-- A list of all evaluations at `gen` of polynomials with degree less than `dim` and coefficients
+in `coeffs`. -/
+private def powerBasisExpansions (coeffs : List K) (dim : ℕ) (gen : L) : List L :=
+  (powerBasisCoeffVectors coeffs dim).map fun c => ∑ i : Fin dim, Algebra.cast (c i) * gen ^ (i : ℕ)
+
+/-- If every element of `K` is in `coeffs`, then every element of `L` is in the list
+returned by `powerBasisExpansions`. -/
+private theorem powerBasisExpansions_toFinset_eq_univ [Fintype K] [DecidableEq K]
+    [Fintype L] [DecidableEq L]
+    (coeffs : List K) (pb : PowerBasis K L)
+    (hcoeffs : coeffs.toFinset = Finset.univ) :
+    (powerBasisExpansions coeffs pb.dim pb.gen).toFinset = Finset.univ := by
+  ext x
+  simp only [List.mem_toFinset, Finset.mem_univ, iff_true]
+  rw [powerBasisExpansions, List.mem_map]
+  use pb.basis.repr x
+  constructor
+  · rw [mem_powerBasisCoeffVectors coeffs _]
+    simp [← List.mem_toFinset, hcoeffs]
+  · simpa [powerBasisExpansions, pb.basis_eq_pow, Algebra.smul_def] using pb.basis.sum_repr x
+
+end PowerBasisExpansion
+
 variable {F : Type*} [Field F] [Finite F]
 
 /-- Every element other than zero and one in a field of order four is a root of
@@ -58,7 +108,7 @@ theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
 theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4) :
     ∃ ω : F, ω ^ 2 + ω + 1 = 0 := by
   classical
-  let := Fintype.ofFinite F
+  have := Fintype.ofFinite F
   have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   obtain ⟨ω, _, hω⟩ := Finset.exists_mem_notMem_of_card_lt_card
     (s := ({0, 1} : Finset F)) (t := Finset.univ) (by simp [hcard])
@@ -69,22 +119,65 @@ omit [Finite F] in
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/
 theorem univ_eq_zero_one_root_sq [Fintype F] [DecidableEq F] (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : Finset.univ = {0, 1, ω, ω ^ 2} := by
-  classical
   have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   let := charP_of_card_eq_prime_pow (p := 2) (f := 2) hcard
-  have h0 : ω ≠ 0 := by rintro rfl; simp at hω
-  have h1 : ω ≠ 1 := by rintro rfl; simp [CharTwo.add_self_eq_zero] at hω
-  have hs0 : ω ^ 2 ≠ 0 := pow_ne_zero _ h0
-  have hs1 : ω ^ 2 ≠ 1 := by
-    intro h
-    have : ω = 0 := by linear_combination hω - h - (CharTwo.two_eq_zero (R := F))
-    exact h0 this
-  have hself : ω ^ 2 ≠ ω := by
-    intro h
-    simp [h, CharTwo.add_self_eq_zero] at hω
-  apply (Finset.eq_of_subset_of_card_le (Finset.subset_univ _) ?_).symm
-  simp [hcard, Ne.symm hself, Ne.symm h0, Ne.symm h1,
-    Ne.symm hs0, Ne.symm hs1]
+  let := ZMod.algebra F 2
+  let p : Polynomial (ZMod 2) := Polynomial.X ^ 2 + Polynomial.X + 1
+  have hpdeg : p.natDegree = 2 := by
+    unfold p
+    compute_degree!
+  have hpmonic : p.Monic := by
+    unfold p
+    monicity!
+  have hpirr : Irreducible p := by
+    apply Polynomial.irreducible_of_degree_le_three_of_not_isRoot
+    · rw [hpdeg]
+      decide
+    · intro a
+      rw [Polynomial.IsRoot.def]
+      simp only [p, Polynomial.eval_add, Polynomial.eval_pow, Polynomial.eval_X,
+        Polynomial.eval_one]
+      fin_cases a <;> decide
+  have hroot : Polynomial.aeval ω p = 0 := by
+    simpa [p] using hω
+  have hdim : Module.finrank (ZMod 2) F = p.natDegree := by
+    apply Nat.pow_right_injective (by decide : 1 < 2)
+    calc
+      2 ^ Module.finrank (ZMod 2) F = Fintype.card F := FiniteField.pow_finrank_eq_card 2 F
+      _ = 2 ^ p.natDegree := by rw [hcard, hpdeg]; norm_num
+  have hint : IsIntegral (ZMod 2) ω := ⟨p, hpmonic, hroot⟩
+  have hminpoly : p = minpoly (ZMod 2) ω :=
+    minpoly.eq_of_irreducible_of_monic hpirr hroot hpmonic
+  have hgen : IntermediateField.adjoin (ZMod 2) ({ω} : Set F) = ⊤ := by
+    apply IntermediateField.eq_of_le_of_finrank_eq le_top
+    rw [IntermediateField.adjoin.finrank hint, ← hminpoly, IntermediateField.finrank_top']
+    exact hdim.symm
+  let pb : PowerBasis (ZMod 2) F := PowerBasis.ofAdjoinSimpleEqTop hint hgen
+  have hpb_dim : pb.dim = 2 := by
+    rw [PowerBasis.ofAdjoinSimpleEqTop_dim hint hgen, ← hminpoly, hpdeg]
+  have hsq : ω ^ 2 = ω + 1 := by
+    linear_combination hω - (CharTwo.two_eq_zero (R := F)) * (ω + 1)
+  let coeffs : List (ZMod 2) := [0, 1]
+  let output := powerBasisExpansions coeffs pb.dim pb.gen
+  have houtput_univ : output.toFinset = Finset.univ := powerBasisExpansions_toFinset_eq_univ _ _ rfl
+  have houtput : output = [0, ω, 1, ω ^ 2] := by
+    unfold output
+    rw [hpb_dim]
+    change [
+      Algebra.cast (0 : ZMod 2) * ω ^ 0 + (Algebra.cast (0 : ZMod 2) * ω ^ 1 + 0),
+      Algebra.cast (0 : ZMod 2) * ω ^ 0 + (Algebra.cast (1 : ZMod 2) * ω ^ 1 + 0),
+      Algebra.cast (1 : ZMod 2) * ω ^ 0 + (Algebra.cast (0 : ZMod 2) * ω ^ 1 + 0),
+      Algebra.cast (1 : ZMod 2) * ω ^ 0 + (Algebra.cast (1 : ZMod 2) * ω ^ 1 + 0)
+    ] = _
+    ring_nf
+    simp [hsq]
+  suffices Finset.univ = [0, 1, ω, ω ^ 2].toFinset by simpa [List.toFinset_cons]
+  calc
+    _ = output.toFinset := houtput_univ.symm
+    _ = [0, ω, 1, ω ^ 2].toFinset := congr($(houtput).toFinset)
+    _ = [0, 1, ω, ω ^ 2].toFinset := by
+      simp only [List.toFinset_cons, List.toFinset_nil]
+      exact congrArg (insert (0 : F)) (Finset.insert_comm ω 1 (insert (ω ^ 2) ∅))
 
 /-- Label a field of four elements by `0, 1, ω, ω²`, in that order. -/
 noncomputable def finFourEquiv (hF : Nat.card F = 4) {ω : F}

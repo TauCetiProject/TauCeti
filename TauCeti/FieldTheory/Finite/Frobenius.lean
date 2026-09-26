@@ -56,8 +56,8 @@ variable (K A : Type*) [Field K] [Fintype K] [CommRing A] [Algebra K A]
 /-- The `n`-th iterate of the Frobenius over a finite base field raises every element to the
 `(Nat.card K) ^ n`-th power. -/
 theorem frobeniusAlgHom_pow_apply (n : ℕ) (x : A) :
-    ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) x = x ^ (Nat.card K) ^ n := by
-  rw [AlgHom.coe_pow, _root_.FiniteField.coe_frobeniusAlgHom, pow_iterate,
+    ((FiniteField.frobeniusAlgHom K A) ^ n) x = x ^ (Nat.card K) ^ n := by
+  rw [AlgHom.coe_pow, FiniteField.coe_frobeniusAlgHom, pow_iterate,
     Nat.card_eq_fintype_card]
 
 /-- **The subalgebra fixed by an iterate of the Frobenius over a finite base field**, the
@@ -67,13 +67,13 @@ For `K = 𝔽_q`, `A` an algebraic closure of `K` and `0 < n` this is the subfie
 elements, but nothing of the sort is asserted here. Unlike `TauCeti.frobeniusFixedSubring`, which
 reads the same subset off `iterateFrobenius`, this needs no exponential characteristic on `A`. -/
 def frobeniusFixedSubalgebra (n : ℕ) : Subalgebra K A :=
-  AlgHom.equalizer ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A)
+  AlgHom.equalizer ((FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A)
 
 /-- The Frobenius-fixed subalgebra is the equalizer of the `n`-th Frobenius iterate with the
 identity. -/
 theorem frobeniusFixedSubalgebra_def (n : ℕ) :
     frobeniusFixedSubalgebra K A n =
-      AlgHom.equalizer ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A) := by
+      AlgHom.equalizer ((FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A) := by
   rw [frobeniusFixedSubalgebra]
 
 variable {K A}
@@ -85,31 +85,22 @@ theorem mem_frobeniusFixedSubalgebra {n : ℕ} {a : A} :
   rw [frobeniusFixedSubalgebra, AlgHom.mem_equalizer, frobeniusAlgHom_pow_apply, AlgHom.coe_id,
     id_eq]
 
-variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Fintype K] [Field L] [Algebra K L]
 
 /-- **A field is purely inseparable over the image of its finite-base-field Frobenius**
 (the field-theoretic statement in Silverman II.2.11(b)). Every element has its `q`-th power in
 the image, where `q = Nat.card K` is a power of the exponential characteristic. -/
 theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
-    letI := Fintype.ofFinite K
-    IsPurelyInseparable (_root_.FiniteField.frobeniusAlgHom K L).fieldRange L := by
-  let _ := Fintype.ofFinite K
-  obtain ⟨p, hpK, n, hp, hcard⟩ := _root_.FiniteField.card' K
-  let _ : CharP K p := hpK
-  let _ : ExpChar K p := ExpChar.prime hp
-  have hcard' : Nat.card K = p ^ (n : ℕ) := by
-    rw [Nat.card_eq_fintype_card, hcard]
+    IsPurelyInseparable (FiniteField.frobeniusAlgHom K L).fieldRange L := by
+  obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
+  have : ExpChar K p := .prime hp
   rw [isPurelyInseparable_iff_pow_mem _ p]
   intro x
-  have hx : x ^ p ^ (n : ℕ) ∈
-      (_root_.FiniteField.frobeniusAlgHom K L).fieldRange := by
-    rw [AlgHom.mem_fieldRange]
-    refine ⟨x, ?_⟩
-    rw [_root_.FiniteField.coe_frobeniusAlgHom, ← Nat.card_eq_fintype_card, hcard']
-  refine ⟨(n : ℕ), ?_⟩
-  refine ⟨⟨x ^ p ^ (n : ℕ), hx⟩, ?_⟩
-  exact IntermediateField.algebraMap_apply
-    (S := (_root_.FiniteField.frobeniusAlgHom K L).fieldRange) _
+  use n
+  refine ⟨⟨x ^ p ^ (n : ℕ), ?_⟩, rfl⟩
+  rw [AlgHom.mem_fieldRange]
+  use x
+  rw [FiniteField.coe_frobeniusAlgHom, ← Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, hcard]
 
 end TauCeti.FiniteField
 
