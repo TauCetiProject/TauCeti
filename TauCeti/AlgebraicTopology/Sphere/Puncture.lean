@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Homotopy.Path
+public import Mathlib.Analysis.Normed.Group.BallSphere
 -- Private: these supply the affine homotopy and the antipode inequality used in proofs below.
 import Mathlib.Analysis.Normed.Module.Ball.Action
 import Mathlib.Topology.Homotopy.Affine
@@ -29,6 +30,8 @@ arbitrary loop off a point, which is done in
 * `TauCeti.homotopic_of_segment_ne_zero`: radial projection of a straight-line
   homotopy between sphere paths.
 * `TauCeti.contractibleSpace_sphere_compl_singleton`: the sphere minus one point is contractible.
+* `TauCeti.compl_singleton_union_compl_singleton_neg`: the complements of two antipodal points
+  cover the sphere.
 * `TauCeti.nullhomotopic_inclusion_sphere_compl_singleton`: the inclusion of the sphere minus a
   point into the sphere is null-homotopic.
 * `TauCeti.homotopic_refl_of_notMem_range`: a loop on the unit sphere omitting a point of
@@ -226,6 +229,14 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
           rw [hGval]
           simpa [normalize_neg] using congrArg Neg.neg (normalize_eq_self_of_norm_eq_one hp)
         exact Subtype.ext (Subtype.ext (hraw.trans (coe_neg_sphere p).symm)) }
+
+/-- The complements of two antipodal points cover the unit sphere. -/
+lemma compl_singleton_union_compl_singleton_neg (p : sphere (0 : E) 1) :
+    ({p}ᶜ ∪ {-p}ᶜ : Set (sphere (0 : E) 1)) = Set.univ := by
+  refine Set.eq_univ_of_forall fun x => ?_
+  by_contra h
+  simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_singleton_iff, not_or, not_not] at h
+  exact ne_neg_of_mem_unit_sphere ℝ p (h.1.symm.trans h.2)
 
 /-- **The inclusion of the unit sphere minus one point into the sphere is null-homotopic.** -/
 theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :

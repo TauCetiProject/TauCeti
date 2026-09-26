@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Singular chains with local coefficients
@@ -616,6 +617,23 @@ instance mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
 /-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
 instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
   HomologicalComplex.mono_of_mono_f _ fun _ ↦ mono_twistedChainsMap_app f L _
+
+/-- The monomorphism of twisted chains induced by a monomorphism of spaces is split in every
+degree: the retraction keeps the summands of the simplices coming from the subspace and kills the
+others.  This is what makes the twisted chain sequence of a pair stay exact after applying a
+contravariant `Hom(-, M)`. -/
+-- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so, like
+-- `mono_twistedChainsMap_app`, it uses the definitional descriptions of `twistedChainsMap` and of
+-- the coefficient module of each summand of its source.
+instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
+    IsSplitMono ((twistedChainsMap f L).app k) :=
+  TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+
+/-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
+complexes. -/
+instance isSplitMono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
+    IsSplitMono ((twistedChainComplexMap f L).f k) :=
+  isSplitMono_twistedChainsMap_app f L _
 
 end Map
 

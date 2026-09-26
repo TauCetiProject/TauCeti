@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.TypeTags
+public import Mathlib.Algebra.Group.Pointwise.Set.Scalar
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.GroupTheory.GroupAction.Hom
 
@@ -55,6 +56,12 @@ theorem ofMul_smul (g : M) (a : A) : ofMul (g • a) = g • ofMul a :=
 @[simp]
 theorem toMul_smul (g : M) (x : Additive A) : (g • x).toMul = g • x.toMul :=
   rfl
+
+open scoped Pointwise in
+/-- The additive tags of the orbit of a set under a set of monoid elements are the orbit of the
+additive tags. -/
+theorem ofMul_image_smul (s : Set M) (t : Set A) : ofMul '' (s • t) = s • (ofMul '' t) :=
+  Set.image_image2_distrib_right fun _ _ ↦ rfl
 
 end Additive
 

@@ -34,6 +34,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
+* `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
+  for a nondegenerate quadratic form.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
@@ -123,6 +125,12 @@ namespace QuadraticMap.Nondegenerate
 
 variable {R M M' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup M'] [Module R M'] [AddCommGroup P] [Module R P]
+
+/-- The polar functional of a nonzero vector is nonzero for a nondegenerate quadratic form. -/
+theorem polarBilin_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [Invertible (2 : K)] {Q : QuadraticForm K V} {u : V}
+    (hQ : Q.Nondegenerate) (hu : u ≠ 0) : Q.polarBilin u ≠ 0 :=
+  fun h => hu ((nondegenerate_polar_iff.mpr hQ).1 u fun y => by rw [h, LinearMap.zero_apply])
 
 /-- The orthogonal product of two nondegenerate quadratic maps is nondegenerate, when `2` is
 invertible in the coefficient ring. -/

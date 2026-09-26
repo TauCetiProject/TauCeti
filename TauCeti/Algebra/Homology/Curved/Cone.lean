@@ -17,7 +17,13 @@ entries `-d_X` and `d_Y` and lower-left entry `f`. Its square remains multiplica
 curvature: the off-diagonal terms cancel because `f` commutes with the differentials.
 
 The canonical inclusion of `Y` and projection to the parity shift of `X` give the sequence
-`Y ⟶ cone(f) ⟶ X[1]` used to form cone triangles in the homotopy category.
+`Y ⟶ cone(f) ⟶ X[1]` used to form cone triangles in the homotopy category. The cone behaves
+like a cofibre of `f`: the composite `X ⟶ Y ⟶ cone(f)` is null-homotopic, and the cone of an
+isomorphism is contractible.
+
+The parity shift is the only shift curved duplexes carry, so its compatibility with the cone is
+recorded here too: the parity shift of `cone(f)` is the cone of the parity shift of `f`, the two
+differing only by the sign on the summand coming from `Y`.
 
 This is the curved analogue of the ordinary mapping cone; see Frenkel, Khovanov and
 Schiffmann, *Homological realization of Nakajima varieties and Weyl group actions*,
@@ -126,6 +132,20 @@ theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
     coneInclusion_f₀, coneInclusion_f₁, coneProjection_f₀, coneProjection_f₁] <;>
     exact biprod.inr_fst
 
+/-- The composite `X ⟶ Y ⟶ cone(f)` is null-homotopic: it is `d h + h d` for the odd map given
+by the two biproduct inclusions. -/
+theorem comp_coneInclusion (f : X ⟶ Y) :
+    f ≫ coneInclusion f = nullHomotopicMap biprod.inl biprod.inl := by
+  ext <;> simp
+
+/-- The composite `X ⟶ Y ⟶ cone(f)` vanishes in the homotopy category. -/
+@[simp]
+theorem quotientFunctor_map_comp_coneInclusion (f : X ⟶ Y) :
+    (nullHomotopic C w).quotientFunctor.map f ≫
+      (nullHomotopic C w).quotientFunctor.map (coneInclusion f) = 0 := by
+  rw [← Functor.map_comp, MorphismIdeal.quotientFunctor_map_eq_zero_iff, mem_nullHomotopic_iff]
+  exact ⟨_, _, (comp_coneInclusion f).symm⟩
+
 /-- The cone of an isomorphism is contractible. The odd contracting map applies the inverse
 to the second summand and sends the result into the first summand. -/
 theorem nullHomotopicMap_cone_isIso (f : X ⟶ Y) [IsIso f] :
@@ -154,6 +174,38 @@ theorem isZero_quotientFunctor_obj_cone_isIso (f : X ⟶ Y) [IsIso f] :
   rw [MorphismIdeal.isZero_quotientFunctor_obj_iff]
   rw [mem_nullHomotopic_iff]
   exact ⟨_, _, nullHomotopicMap_cone_isIso f⟩
+
+/-- Minus the identity, as an automorphism. It carries the sign by which the parity shift and
+the cone differ on the summand coming from the codomain. -/
+private def negId (A : C) : A ≅ A where
+  hom := -𝟙 A
+  inv := -𝟙 A
+
+/-- The parity shift of the cone of `f` is the cone of the parity shift of `f`. Both curved
+duplexes have the same components; the isomorphism negates the summand coming from the codomain
+of `f`, which is where the sign of the parity shift and the sign of the cone differ. -/
+noncomputable def coneParityShiftIso (f : X ⟶ Y) :
+    (parityShift C w).obj (cone f) ≅ cone ((parityShift C w).map f) :=
+  isoMk (biprod.mapIso (Iso.refl _) (negId _)) (biprod.mapIso (Iso.refl _) (negId _))
+    (by apply biprod.hom_ext <;> apply biprod.hom_ext' <;>
+      simp [negId, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.map_eq, biprod.lift_eq,
+        biprod.desc_eq])
+    (by apply biprod.hom_ext <;> apply biprod.hom_ext' <;>
+      simp [negId, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.map_eq, biprod.lift_eq,
+        biprod.desc_eq])
+
+@[simp] theorem coneParityShiftIso_hom_f₀ (f : X ⟶ Y) :
+    (coneParityShiftIso f).hom.f₀ = biprod.map (𝟙 X.X₀) (-𝟙 Y.X₁) := by
+  simp [coneParityShiftIso, negId]
+@[simp] theorem coneParityShiftIso_hom_f₁ (f : X ⟶ Y) :
+    (coneParityShiftIso f).hom.f₁ = biprod.map (𝟙 X.X₁) (-𝟙 Y.X₀) := by
+  simp [coneParityShiftIso, negId]
+@[simp] theorem coneParityShiftIso_inv_f₀ (f : X ⟶ Y) :
+    (coneParityShiftIso f).inv.f₀ = biprod.map (𝟙 X.X₀) (-𝟙 Y.X₁) := by
+  simp [coneParityShiftIso, negId]
+@[simp] theorem coneParityShiftIso_inv_f₁ (f : X ⟶ Y) :
+    (coneParityShiftIso f).inv.f₁ = biprod.map (𝟙 X.X₁) (-𝟙 Y.X₀) := by
+  simp [coneParityShiftIso, negId]
 
 variable {X' Y' : CurvedDuplex C w}
 
@@ -235,6 +287,15 @@ theorem coneMap_comp {X'' Y'' : CurvedDuplex C w} (f : X ⟶ Y) (g : X' ⟶ Y')
     apply biprod.hom_ext <;> simp [Category.assoc]
   · simp only [comp_f₁, coneMap_f₁]
     apply biprod.hom_ext <;> simp [Category.assoc]
+
+/-- A square whose two vertical maps are isomorphisms induces an isomorphism of cones. -/
+instance isIso_coneMap (f : X ⟶ Y) (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : f ≫ b = a ≫ g) [IsIso a] [IsIso b] : IsIso (coneMap f g a b h) := by
+  refine (isIso_iff _).2 ⟨?_, ?_⟩
+  · rw [coneMap_f₀]
+    exact (biprod.mapIso (asIso a.f₁) (asIso b.f₀)).isIso_hom
+  · rw [coneMap_f₁]
+    exact (biprod.mapIso (asIso a.f₀) (asIso b.f₁)).isIso_hom
 
 end CurvedDuplex
 end TauCeti

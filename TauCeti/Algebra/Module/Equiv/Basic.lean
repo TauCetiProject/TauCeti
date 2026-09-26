@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.End
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
@@ -14,12 +16,16 @@ public import Mathlib.Algebra.Module.Submodule.Equiv
 Mathlib's `LinearEquiv.smulOfUnit` packages multiplication by a unit `u` of the base ring as a
 linear equivalence, but records no lemma evaluating it at a vector. This file supplies that
 evaluation lemma, in the `simp`-normal form that rewrites an application of
-`LinearEquiv.smulOfUnit` to a scalar multiplication.
+`LinearEquiv.smulOfUnit` to a scalar multiplication. It also records how a linear automorphism,
+viewed as a permutation of the module through `MulAction.toPermHom`, moves the set underlying a
+submodule.
 
 ## Main results
 
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining linear equivalence.
+* `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
+  automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
 -/
 
@@ -63,6 +69,22 @@ theorem map_range_of_intertwine
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
 end Intertwining
+
+section PermHom
+
+open Pointwise
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- The permutation of the module underlying a linear automorphism moves the set underlying a
+submodule to the set underlying its image. -/
+theorem toPermHom_smul_coe (g : M ≃ₗ[R] M) (p : Submodule R M) :
+    MulAction.toPermHom (M ≃ₗ[R] M) M g • (p : Set M) = (p.map (g : M →ₗ[R] M) : Set M) := by
+  ext x
+  simp only [Set.mem_smul_set, SetLike.mem_coe, Submodule.mem_map, MulAction.toPermHom_apply,
+    Equiv.Perm.smul_def, MulAction.toPerm_apply, LinearEquiv.smul_def, LinearEquiv.coe_coe]
+
+end PermHom
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 

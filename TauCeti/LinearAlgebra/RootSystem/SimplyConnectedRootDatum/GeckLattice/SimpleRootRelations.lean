@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootRelations
 
 /-!
 # Commuting simple-root subgroups of the Geck carrier
@@ -17,9 +18,17 @@ Chevalley relation over every commutative ring. When two distinct Bourbaki nodes
 pairing, both raising subgroups commute, both lowering subgroups commute, and each raising subgroup
 commutes with the other node's lowering subgroup. The last relation holds for any distinct nodes.
 
-The statements concern the pinned Serre generators and their Kostant root-subgroup points.
-These relations are used in the presentation of the pinned split group by its simple-root
-subgroups; relations among nonorthogonal roots require the higher root-string formulas.
+The statements concern the pinned Serre generators and their Kostant root-subgroup points, both
+in the matrix model and as scheme-valued points of the Geck carrier. These relations are used in
+the presentation of the pinned split group by its simple-root subgroups; relations among
+nonorthogonal roots require the higher root-string formulas.
+
+## Main results
+
+* `TauCeti.DynkinType.commute_geckSimpleRaisingPoints` and its lowering and mixed-sign variants
+  give the relations in the represented matrix group.
+* `TauCeti.DynkinType.commute_geckSimpleRaisingSchemePoints` and its lowering and mixed-sign
+  variants give the same relations for the root-subgroup morphisms of the Geck group scheme.
 
 ## References
 
@@ -28,6 +37,9 @@ subgroups; relations among nonorthogonal roots require the higher root-string fo
 -/
 
 public section
+
+open AlgebraicGeometry CategoryTheory
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.DynkinType
 
@@ -121,6 +133,77 @@ theorem commute_geckSimpleLowering_raisingPoints (i j : Fin t.rank) (hij : i ≠
     Commute (t.geckRootSubgroupPoints ht (.inr i) A u)
       (t.geckRootSubgroupPoints ht (.inl j) A w) :=
   (t.commute_geckSimpleRaising_loweringPoints ht j i hij.symm A w u).symm
+
+/-! ## Relations on scheme-valued points -/
+
+/-- Two numbered Geck root-subgroup morphisms give commuting scheme-valued points whenever their
+pinned Lie generators commute. -/
+theorem commute_geckRootSubgroupSchemePoints_of_lie_eq_zero
+    (i j : Fin t.rank ⊕ Fin t.rank)
+    (hij : ⁅(t.lieBasis ht).rootGenerator i, (t.lieBasis ht).rootGenerator j⁆ = 0)
+    (A : Type) [CommRing A]
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    Commute (p ≫ (t.geckRootSubgroup ht i).hom.hom)
+      (q ≫ (t.geckRootSubgroup ht j).hom.hom) := by
+  have hcomm :=
+    (TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupToToral
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.geckCoordinateBasisFin ht) (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckWeightFin ht) A hij p q).map
+        (IsMonHom.monoidHom (eqToHom (t.geckGroupScheme_def ht).symm).hom.hom
+          ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ))))
+  simpa only [IsMonHom.monoidHom_apply, geckRootSubgroup_def, Grp.comp', Mon.comp_hom',
+    Category.assoc] using hcomm
+
+/-- Raising root-subgroup morphisms at orthogonal simple roots give commuting scheme-valued
+points over every commutative ring. -/
+theorem commute_geckSimpleRaisingSchemePoints (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = 0) (A : Type) [CommRing A]
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    Commute (p ≫ (t.geckRootSubgroup ht (.inl i)).hom.hom)
+      (q ≫ (t.geckRootSubgroup ht (.inl j)).hom.hom) :=
+  t.commute_geckRootSubgroupSchemePoints_of_lie_eq_zero ht _ _
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+      t.lie_geckSimpleRaising_eq_zero ht i j hij) A p q
+
+/-- Lowering root-subgroup morphisms at orthogonal simple roots give commuting scheme-valued
+points over every commutative ring. -/
+theorem commute_geckSimpleLoweringSchemePoints (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = 0) (A : Type) [CommRing A]
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    Commute (p ≫ (t.geckRootSubgroup ht (.inr i)).hom.hom)
+      (q ≫ (t.geckRootSubgroup ht (.inr j)).hom.hom) :=
+  t.commute_geckRootSubgroupSchemePoints_of_lie_eq_zero ht _ _
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inr] using
+      t.lie_geckSimpleLowering_eq_zero ht i j hij) A p q
+
+/-- Raising at one node and lowering at a distinct node give commuting scheme-valued points of
+the Geck carrier. -/
+theorem commute_geckSimpleRaising_loweringSchemePoints (i j : Fin t.rank) (hij : i ≠ j)
+    (A : Type) [CommRing A]
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    Commute (p ≫ (t.geckRootSubgroup ht (.inl i)).hom.hom)
+      (q ≫ (t.geckRootSubgroup ht (.inr j)).hom.hom) :=
+  t.commute_geckRootSubgroupSchemePoints_of_lie_eq_zero ht _ _
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl,
+      LieAlgebra.Basis.rootGenerator_inr] using
+      t.lie_geckSimpleRaising_lowering_eq_zero ht i j hij) A p q
+
+/-- Lowering at one node and raising at a distinct node give commuting scheme-valued points of
+the Geck carrier. -/
+theorem commute_geckSimpleLowering_raisingSchemePoints (i j : Fin t.rank) (hij : i ≠ j)
+    (A : Type) [CommRing A]
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    Commute (p ≫ (t.geckRootSubgroup ht (.inr i)).hom.hom)
+      (q ≫ (t.geckRootSubgroup ht (.inl j)).hom.hom) :=
+  (t.commute_geckSimpleRaising_loweringSchemePoints ht j i hij.symm A q p).symm
 
 end
 
