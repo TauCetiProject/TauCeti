@@ -72,10 +72,11 @@ a unit preimage of the other. -/
 theorem coe_inv_mem_range_iff {G₀ M₀ F : Type*} [GroupWithZero G₀] [MonoidWithZero M₀]
     [Nontrivial M₀] [FunLike F G₀ M₀] [MonoidWithZeroHomClass F G₀ M₀] (f : F) (u : M₀ˣ) :
     (∃ y, f y = ((u⁻¹ : M₀ˣ) : M₀)) ↔ (u : M₀) ∈ Set.range f := by
-  change ((u⁻¹ : M₀ˣ) : M₀) ∈ Set.range f ↔ (u : M₀) ∈ Set.range f
-  rw [mem_range_iff_exists_units_map_eq, mem_range_iff_exists_units_map_eq]
-  constructor <;> rintro ⟨a, ha⟩
-  · exact ⟨a⁻¹, by rw [map_inv, ha, inv_inv]⟩
-  · exact ⟨a⁻¹, by rw [map_inv, ha]⟩
+  have h : ((u⁻¹ : M₀ˣ) : M₀) ∈ Set.range f ↔ (u : M₀) ∈ Set.range f := by
+    rw [mem_range_iff_exists_units_map_eq, mem_range_iff_exists_units_map_eq]
+    constructor <;> rintro ⟨a, ha⟩
+    · exact ⟨a⁻¹, by rw [map_inv, ha, inv_inv]⟩
+    · exact ⟨a⁻¹, by rw [map_inv, ha]⟩
+  simpa only [Set.mem_range] using h
 
 end TauCeti
