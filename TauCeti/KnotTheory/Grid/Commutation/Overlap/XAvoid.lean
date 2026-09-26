@@ -19,9 +19,9 @@ beyond its underlying rectangle, where `bottom` is the recut's first rectangle's
 
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_bottom_eq_pentagon_bottom_of_branch1`:
   in the first recut branch, the recut's first rectangle's bottom row equals the original
-  pentagon's bottom row.
-* `TauCeti.GridRectanglePentagonDecomposition.recut_X_not_mem_of_branch1`: X-avoidance for
-  the `finRotate` strip in the first recut branch, from the original pentagon's X-avoidance.
+  pentagon's bottom row. Call sites needing strip X-avoidance extract the strip clause
+  from `GridPentagonBetween.disjoint_coveredSquares_XSet_iff` and rewrite with this
+  bottom-row equation.
 
 -/
 
@@ -55,27 +55,6 @@ public theorem recut_first_bottom_eq_pentagon_bottom_of_branch1
     have h1 : D.pentagon.bottom = D.middle D.pentagon.left := rfl
     rw [h1, ← hcommon, D.rectangle.map_left, D.toRectangleDecomposition_first_right]
   rw [hnew, hold]
-
-/-- X-avoidance for the `finRotate` strip in the first recut branch. -/
-public theorem recut_X_not_mem_of_branch1
-    {a s : Fin n}
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hcommon : D.rectangle.left = D.pentagon.left)
-    (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hdisjoint : Disjoint D.pentagon.coveredSquares G.XSet)
-    (hfirstLeft : (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
-      D.toRectangleDecomposition.first.right) :
-    G.X (finRotate n a) ∉
-      Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom s := by
-  -- The bottoms coincide, so the pentagon's X-avoidance gives the strip avoidance directly
-  -- via `disjoint_coveredSquares_XSet_iff`.
-  have hbot := D.recut_first_bottom_eq_pentagon_bottom_of_branch1 hcommon hone
-    hrectangle hpentagon hfirstLeft
-  have hX' := hdisjoint
-  rw [GridPentagonBetween.disjoint_coveredSquares_XSet_iff] at hX'
-  obtain ⟨_, _, hXb⟩ := hX'
-  rwa [hbot.symm] at hXb
 
 /-
 Application note (branch 1):

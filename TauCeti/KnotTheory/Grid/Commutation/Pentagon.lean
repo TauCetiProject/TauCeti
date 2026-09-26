@@ -185,7 +185,7 @@ def ofSwapColumns (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
 
 /-- Regard an oriented rectangle as a pentagon: its terminal side must be the grid line replaced
 by `γ`, and the turn row must lie among the rows that side spans. -/
-@[expose] def ofRightEq {u v : GridState n} (r : GridRectangleBetween u v)
+def ofRightEq {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     GridPentagonBetween a s u v where
   toGridRectangleBetween := r
@@ -197,6 +197,30 @@ by `γ`, and the turn row must lie among the rows that side spans. -/
 theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     (ofRightEq r hright hs : GridPentagonBetween a s u v).toGridRectangleBetween = r := by
+  unfold ofRightEq
+  rfl
+
+/-- The initial side of `ofRightEq` is the rectangle's. -/
+@[simp]
+theorem ofRightEq_left {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).left = r.left := by
+  unfold ofRightEq
+  rfl
+
+/-- The bottom row of `ofRightEq` is the rectangle's. -/
+@[simp]
+theorem ofRightEq_bottom {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).bottom = r.bottom := by
+  unfold ofRightEq
+  rfl
+
+/-- The top row of `ofRightEq` is the rectangle's. -/
+@[simp]
+theorem ofRightEq_top {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).top = r.top := by
   unfold ofRightEq
   rfl
 

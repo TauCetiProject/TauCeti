@@ -67,11 +67,12 @@ theorem first_recut_branch_data_of_right_eq_right
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
         D.toRectangleDecomposition.second.left := by
   obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
-  -- View the branch data as data about the shared recut (definitionally the same
-  -- construction, by proof irrelevance of the emptiness arguments).
+  -- View the branch data as data about the shared recut, via the characteristic
+  -- identification `recutOfIsEmpty_eq_recut` (proof irrelevance of the emptiness arguments).
   have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
-      (D.recutOfIsEmpty hone hrectangle hpentagon) :=
-    D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
   have hbranch := hdata.recut_branch
   rcases hbranch with ⟨-, -, hEfirst, -⟩ | ⟨hcol, -, hEfirstB, -⟩
   · -- First branch: E.first.right = D.first.left, so D.first.left = D.pentagon.right
@@ -103,11 +104,12 @@ theorem second_recut_branch_data_of_right_eq_right
         x.swapColumns D.toRectangleDecomposition.second.left
           D.toRectangleDecomposition.first.left := by
   obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
-  -- View the branch data as data about the shared recut (definitionally the same
-  -- construction, by proof irrelevance of the emptiness arguments).
+  -- View the branch data as data about the shared recut, via the characteristic
+  -- identification `recutOfIsEmpty_eq_recut` (proof irrelevance of the emptiness arguments).
   have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
-      (D.recutOfIsEmpty hone hrectangle hpentagon) :=
-    D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
   have hbranch := hdata.recut_branch
   rcases hbranch with ⟨hcol, hmiddleA, -, hEsecondA⟩ | ⟨-, -, -, hEsecondB⟩
   · exact ⟨hcol, hEsecondA, hdata.recut_sides.2, hmiddleA⟩

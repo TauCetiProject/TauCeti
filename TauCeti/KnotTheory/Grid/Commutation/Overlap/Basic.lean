@@ -463,7 +463,7 @@ recut along its common side, with the rectangle emptiness supplied from `hrectan
 pentagon emptiness from `hpentagon`. The terminal-side overlap results (branch determination,
 turn-row transport, and promotion) and the X-avoidance results work with this single
 construction rather than repeating it. -/
-@[expose] noncomputable def recutOfIsEmpty
+noncomputable def recutOfIsEmpty
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :

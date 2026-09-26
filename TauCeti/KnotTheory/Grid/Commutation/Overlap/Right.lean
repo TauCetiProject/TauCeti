@@ -61,7 +61,7 @@ The result is a `GridPentagonRectangleDecomposition` with:
 
 Use the characterization lemmas below (for example `.middle`) to access the components in
 terms of the underlying recut. -/
-@[expose] noncomputable def recutRightEqRightFirst
+noncomputable def recutRightEqRightFirst
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
@@ -132,7 +132,8 @@ theorem recutRightEqRightFirst_pentagon_left
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.top) :
     (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).pentagon.left =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).first.left := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.left := by
+  simp only [recutRightEqRightFirst_pentagon, GridPentagonBetween.ofRightEq_left]
 
 /-- The promoted pentagon's bottom row is the first recut rectangle's. -/
 @[simp]
@@ -145,7 +146,8 @@ theorem recutRightEqRightFirst_pentagon_bottom
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.top) :
     (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).pentagon.bottom =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom := by
+  simp only [recutRightEqRightFirst_pentagon, GridPentagonBetween.ofRightEq_bottom]
 
 /-- The promoted pentagon's top row is the first recut rectangle's. -/
 @[simp]
@@ -158,7 +160,8 @@ theorem recutRightEqRightFirst_pentagon_top
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.top) :
     (D.recutRightEqRightFirst hone hrectangle hpentagon hfirst hturn).pentagon.top =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).first.top := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.top := by
+  simp only [recutRightEqRightFirst_pentagon, GridPentagonBetween.ofRightEq_top]
 
 /-- Recut a rectangle followed by a pentagon when their unique common side is terminal for
 both, then promote the second new rectangle to a pentagon. This applies when the second recut
@@ -172,7 +175,7 @@ The result is a `GridRectanglePentagonDecomposition` with:
 
 Use the characterization lemmas below (for example `.middle`) to access the components in
 terms of the underlying recut. -/
-@[expose] noncomputable def recutRightEqRightSecond
+noncomputable def recutRightEqRightSecond
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
@@ -243,7 +246,8 @@ theorem recutRightEqRightSecond_pentagon_left
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.top) :
     (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).pentagon.left =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).second.left := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.left := by
+  simp only [recutRightEqRightSecond_pentagon, GridPentagonBetween.ofRightEq_left]
 
 /-- The promoted pentagon's bottom row is the second recut rectangle's. -/
 @[simp]
@@ -256,7 +260,8 @@ theorem recutRightEqRightSecond_pentagon_bottom
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.top) :
     (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).pentagon.bottom =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom := by
+  simp only [recutRightEqRightSecond_pentagon, GridPentagonBetween.ofRightEq_bottom]
 
 /-- The promoted pentagon's top row is the second recut rectangle's. -/
 @[simp]
@@ -269,7 +274,8 @@ theorem recutRightEqRightSecond_pentagon_top
     (hturn : s ∈ Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.top) :
     (D.recutRightEqRightSecond hone hrectangle hpentagon hsecond hturn).pentagon.top =
-      (D.recutOfIsEmpty hone hrectangle hpentagon).second.top := rfl
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.top := by
+  simp only [recutRightEqRightSecond_pentagon, GridPentagonBetween.ofRightEq_top]
 
 end GridRectanglePentagonDecomposition
 

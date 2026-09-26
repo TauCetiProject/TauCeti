@@ -51,8 +51,6 @@ two.
 * `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval`: X-avoidance
   transfers across a column swap to a rectangle whose covered columns are contained in an
   X-avoiding rectangle's covered columns and whose rows are contained in its rows.
-* `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_cIco`: the half-open
-  cyclic interval specialization of that transfer.
 * `TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint`: the X-marking of a covered column
   avoids an X-avoiding rectangle's covered rows.
 
@@ -248,25 +246,6 @@ theorem disjoint_coveredSquares_XSet_swapColumns_of_subinterval
       rw [GridRectangle.mem_coveredSquares]
       exact ⟨hsub hc_col, hR'row hc_row⟩
     exact (Finset.disjoint_left.mp hX) hmem hx
-
-/-- X-avoidance transfers across a column swap to a rectangle whose covered columns form a
-half-open cyclic subinterval of an X-avoiding rectangle's covered columns. This is the
-interval-shaped specialization of
-`disjoint_coveredSquares_XSet_swapColumns_of_subinterval`. -/
-theorem disjoint_coveredSquares_XSet_swapColumns_of_cIco
-    (R R' : GridRectangle n) {a b r : Fin n}
-    (hX : Disjoint R.coveredSquares G.XSet)
-    (hRcol : R.coveredColumns = Grid.cIco a r)
-    (hR'col : R'.coveredColumns = Grid.cIco b r)
-    (hR'row : R'.coveredRows ⊆ R.coveredRows)
-    (ha : a ∈ Grid.cIco a r)
-    (ha_not : a ∉ Grid.cIco b r)
-    (hsub : Grid.cIco b r ⊆ Grid.cIco a r) :
-    Disjoint R'.coveredSquares (G.swapColumns a b).XSet := by
-  apply disjoint_coveredSquares_XSet_swapColumns_of_subinterval G R R' hR'row hX
-  · rw [hRcol]; exact ha
-  · rw [hR'col]; exact ha_not
-  · rw [hRcol, hR'col]; exact hsub
 
 /-- The X-marking of a covered column avoids an X-avoiding rectangle's covered rows: if
 `G.X b` were in the row interval, `(b, G.X b)` would be a covered square carrying an
