@@ -142,29 +142,40 @@ theorem posSemidef_schur_finset_prod {ι : Type w} {s : Finset ι}
   exact Finset.prod_induction K Matrix.PosSemidef
     (fun _ _ hA hB => hA.hadamard hB) posSemidef_const_one hK
 
-/-- For weights `w` in `[0, 1]`, the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` is positive
-semidefinite.  Each factor `a` contributes the matrix equal to `w a` where `a ∈ L i ∪ L j` and to
-`1` elsewhere; it is the constant `w a` plus `1 - w a` times the rank-one matrix of the indicator of
-`a ∉ L i`, so the product is positive semidefinite by the Schur product theorem. -/
-theorem posSemidef_prod_union {ι : Type w} [Finite α] [DecidableEq α] (L : ι → Finset α)
+/-- For weights `w` in `[0, 1]` and finite sets `L i`, the matrix
+`(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` is positive semidefinite. -/
+theorem posSemidef_prod_union {ι : Type w} [DecidableEq α] (L : ι → Finset α)
     {w : α → ℝ} (hw₀ : ∀ a, 0 ≤ w a) (hw₁ : ∀ a, w a ≤ 1) :
     Matrix.PosSemidef (fun i j => ∏ a ∈ L i ∪ L j, w a) := by
-  have := Fintype.ofFinite α
   -- The indicator of `a ∉ L i`.
   let χ : α → ι → ℝ := fun a i => if a ∈ L i then 0 else 1
   have hfactor (a : α) :
       Matrix.PosSemidef (fun i j => w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) :=
     (posSemidef_const_of_nonneg (hw₀ a)).add (posSemidef_rankOne fun i => √(1 - w a) * χ a i)
-  have heq : (fun i j => ∏ a ∈ L i ∪ L j, w a) =
-      fun i j => ∏ a ∈ Finset.univ,
-        (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) := by
-    funext i j
-    rw [← Finset.univ_inter (L i ∪ L j), ← Finset.prod_ite_mem]
-    refine Finset.prod_congr rfl fun a _ => ?_
+  have hterm (i j : ι) (a : α) :
+      (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) =
+        if a ∈ L i ∪ L j then w a else 1 := by
     have hsq : √(1 - w a) * √(1 - w a) = 1 - w a := Real.mul_self_sqrt (sub_nonneg.2 (hw₁ a))
     by_cases hi : a ∈ L i <;> by_cases hj : a ∈ L j <;> simp [χ, hi, hj, hsq]
-  rw [heq]
-  exact posSemidef_schur_finset_prod fun a _ => hfactor a
+  refine posSemidef_of_support_posSemidef
+    (fun i j => ∏ a ∈ L i ∪ L j, w a) ?_ fun x => ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, Matrix.of_apply, star_trivial]
+    rw [Finset.union_comm]
+  · let s : Finset α := x.support.biUnion L
+    have hs (i : x.support) : L i ⊆ s := by
+      intro a ha
+      exact Finset.mem_biUnion.mpr ⟨i, i.property, ha⟩
+    have heq : (Matrix.of fun i j : x.support => ∏ a ∈ L i ∪ L j, w a) =
+        (fun i j : x.support => ∏ a ∈ s,
+          (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j))) := by
+      ext i j
+      change (∏ a ∈ L i ∪ L j, w a) =
+        ∏ a ∈ s, (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j))
+      simp_rw [hterm]
+      rw [Finset.prod_ite_mem, Finset.inter_eq_right.mpr (Finset.union_subset (hs i) (hs j))]
+    rw [heq]
+    exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
 
 end TauCeti
 

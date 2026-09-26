@@ -513,12 +513,9 @@ together with one private part for each side. -/
 /-- The vertices of a `k`-labeled graph are its `k` labels together with its unlabeled
 vertices. -/
 noncomputable def labelSumUnlabeledEquiv (G : LabeledGraph k) : Fin k ⊕ G.Unlabeled ≃ Fin G.n :=
-  Equiv.ofBijective (Sum.elim G.label Subtype.val)
-    ⟨G.label_injective.sumElim Subtype.val_injective fun i a => a.2 i, fun v => by
-      by_cases h : ∃ i, G.label i = v
-      · obtain ⟨i, rfl⟩ := h
-        exact ⟨Sum.inl i, rfl⟩
-      · exact ⟨Sum.inr ⟨v, fun i hi => h ⟨i, hi⟩⟩, rfl⟩⟩
+  ((Equiv.ofInjective G.label G.label_injective).sumCongr
+    (Equiv.subtypeEquivRight (fun a => by simp only [Set.mem_range]; push Not; rfl))).trans
+      (Equiv.sumCompl (· ∈ Set.range G.label))
 
 @[simp]
 theorem labelSumUnlabeledEquiv_inl (G : LabeledGraph k) (i : Fin k) :
@@ -552,6 +549,7 @@ theorem glueEquiv_inr_inr (G₁ G₂ : LabeledGraph k) (b : G₂.Unlabeled) :
 
 /-- In coordinates, the left vertex map of a gluing sends the labels to the shared labels and the
 unlabeled vertices to the private left summand. -/
+@[simp]
 theorem glueInl_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k ⊕ G₁.Unlabeled) :
     G₁.glueInl G₂ (G₁.labelSumUnlabeledEquiv s) = G₁.glueEquiv G₂ (Sum.map id Sum.inl s) := by
   rcases s with i | a
@@ -561,6 +559,7 @@ theorem glueInl_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k �
 
 /-- In coordinates, the right vertex map of a gluing sends the labels to the shared labels and the
 unlabeled vertices to the private right summand. -/
+@[simp]
 theorem glueInr_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k ⊕ G₂.Unlabeled) :
     G₁.glueInr G₂ (G₂.labelSumUnlabeledEquiv s) = G₁.glueEquiv G₂ (Sum.map id Sum.inr s) := by
   rcases s with i | b
@@ -570,6 +569,7 @@ theorem glueInr_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k �
 
 /-- **Adjacency between labels.**  Two labels of a gluing are joined exactly when they are joined
 on one of the two sides. -/
+@[simp]
 theorem glue_adj_label (G₁ G₂ : LabeledGraph k) (i j : Fin k) :
     (G₁.glue G₂).graph.Adj ((G₁.glue G₂).label i) ((G₁.glue G₂).label j) ↔
       G₁.graph.Adj (G₁.label i) (G₁.label j) ∨ G₂.graph.Adj (G₂.label i) (G₂.label j) := by

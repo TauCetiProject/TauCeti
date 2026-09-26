@@ -19,15 +19,8 @@ The homomorphism density `t(·, W)` of a graphon `W` is a graph parameter
 normalized and reflection positive.  These are the four structural conditions of the
 Lovász–Szegedy characterization of homomorphism densities, so this is its easy direction.
 
-The first three are the structural laws of `homDensity`.  Reflection positivity is the substantive
-one.  Fix `k`-labeled graphs `A₁, …, Aₙ`.  Integrating first over the unlabeled vertices and then
-over the positions `x : Fin k → Ω` of the labels gives
-`t(Aᵢ Aⱼ, W) = ∫ (∏_{e ∈ Lᵢ ∪ Lⱼ} W(x e)) gᵢ(x) gⱼ(x) dx`, where `Lᵢ` is the set of pairs of labels
-joined in `Aᵢ` and `gᵢ(x)` is the density of the remaining edges of `Aᵢ` with the labels held at
-`x`.  The union `Lᵢ ∪ Lⱼ` appears, not a sum, because gluing simple graphs identifies an edge
-between labels present on both sides.  For weights in `[0, 1]` the matrix
-`(i, j) ↦ ∏_{e ∈ Lᵢ ∪ Lⱼ} W(x e)` is positive semidefinite (`TauCeti.posSemidef_prod_union`), so
-the integrand is positive semidefinite for every `x`, and so is its integral.
+The first three conditions are structural laws of `homDensity`. Reflection positivity follows from
+the gluing formula for labeled graphs and positivity of the resulting connection matrices.
 
 ## Main definitions
 
