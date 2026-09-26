@@ -74,8 +74,28 @@ variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω]
 
 /-- A law on row-path measures is invariant under reindexing the columns: its pushforward by every
 column permutation equals itself. -/
-@[expose] def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
+def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
   ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π
+
+/-- Constructor for `ColumnInvariantMixingLaw` from invariance under column permutations. -/
+theorem ColumnInvariantMixingLaw.intro {π : Measure (ProbabilityMeasure (ℕ → α))}
+    (h : ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π) :
+    ColumnInvariantMixingLaw π :=
+  h
+
+/-- Simp normal form for `ColumnInvariantMixingLaw`. -/
+@[simp]
+theorem columnInvariantMixingLaw_iff {π : Measure (ProbabilityMeasure (ℕ → α))} :
+    ColumnInvariantMixingLaw π ↔
+      ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π :=
+  Iff.rfl
+
+/-- The defining invariance of a column-invariant mixing law. -/
+theorem ColumnInvariantMixingLaw.map_permReindex
+    {π : Measure (ProbabilityMeasure (ℕ → α))} (hπ : ColumnInvariantMixingLaw π)
+    (τ : Equiv.Perm ℕ) :
+    π.map (fun P ↦ P.map (permReindex τ)) = π :=
+  hπ τ
 
 /-- The probability laws on row-path measures invariant under column permutations. These are
 precisely the possible row mixing laws of separately exchangeable array laws. -/
