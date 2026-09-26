@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.ScalarExtension
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
 import TauCeti.RingTheory.Flat.Descent
 import TauCeti.RingTheory.TensorProduct.Descent

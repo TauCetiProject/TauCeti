@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 /-!
 # Descent for scalar extensions of algebra homomorphisms
 
-A property of ring maps satisfying faithfully flat descent can be checked after faithfully
-flat extension of the common scalar ring. The two tensor-product squares form a pushout
+A property of ring maps satisfying faithfully flat descent is reflected by faithfully flat
+extension of the common scalar ring. The two tensor-product squares form a pushout
 square for the scalar-extended algebra homomorphism, by `Algebra.IsPushout.comp_iff`.
 -/
 
