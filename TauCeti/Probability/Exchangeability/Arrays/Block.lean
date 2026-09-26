@@ -155,7 +155,7 @@ theorem SeparatelyExchangeable.map_arrayBlock_eq [IsFiniteMeasure μ]
   refine (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
     (AEMeasurable.of_eval fun p ↦ aemeasurable_arrayBlock hX p)
     (AEMeasurable.of_eval hX)).mpr fun I ↦ ?_
-  obtain ⟨n, hbound⟩ := TauCeti.exists_nat_prod_lt_of_finset I
+  obtain ⟨n, hbound⟩ := TauCeti.Finset.exists_nat_prod_lt I
   obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (fun i : Fin n ↦ (i : ℕ))
     (fun i : Fin n ↦ e i) Fin.val_injective (he.comp Fin.val_injective)
   obtain ⟨τ, hτ⟩ := Equiv.Perm.exists_extending_pair (fun j : Fin n ↦ (j : ℕ))
@@ -301,7 +301,7 @@ private theorem map_blockReadOff_eq {β : Type*} [MeasurableSpace β] [IsFiniteM
     (hmeas e f) (hmeas e' f')).mpr fun I ↦ ?_
   -- Every index occurring in `I` is below `n`, so a permutation matching the two pairs of index
   -- maps below `n` already matches the marginal.
-  obtain ⟨n, hbound⟩ := TauCeti.exists_nat_prod_lt_of_finset I
+  obtain ⟨n, hbound⟩ := TauCeti.Finset.exists_nat_prod_lt I
   obtain ⟨σ, hσe, hσf⟩ := exists_perm_apply_eq_of_lt n he hf hd he' hf' hd'
   have key := h.map_comp hX σ (F := fun x : ℕ × ℕ → α ↦ I.restrict (B e f x))
     ((Finset.measurable_restrict I).comp (hBmeas e f))

@@ -76,7 +76,7 @@ public section
 
 namespace TauCeti
 
-open Finset LieAlgebra LieModule Module
+open _root_.Finset LieAlgebra LieModule Module
 
 universe u v w
 

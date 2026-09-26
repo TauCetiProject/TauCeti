@@ -19,7 +19,7 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Finite-set infrastructure
 
-* `TauCeti.exists_nat_prod_lt_of_finset` bounds both coordinates of a finite set of pairs of
+* `TauCeti.Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
   natural numbers.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
@@ -46,13 +46,17 @@ public section
 
 namespace TauCeti
 
+namespace Finset
+
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
-theorem exists_nat_prod_lt_of_finset (I : Finset (ℕ × ℕ)) :
+theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
     ∃ n : ℕ, ∀ p ∈ I, p.1 < n ∧ p.2 < n := by
   refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
-  have hle := Finset.le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
+  have hle := _root_.Finset.le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
   omega
+
+end Finset
 
 /-- A union of two products of finsets can be rearranged by distributing each product over its
 union coordinate. -/
