@@ -75,5 +75,12 @@ def cupFundamentalClass (cf : ClassFormation F) (L : NormalLayer G) (r : ℤ) :
     L.TrivialTateH r →+ L.TateH F (r + 2) :=
   cupClass F L (cf.fundamentalClass L) r
 
+/-- The map `cupFundamentalClass` evaluates as `cupClass` at the fundamental class. -/
+@[simp]
+theorem cupFundamentalClass_apply (cf : ClassFormation F) (L : NormalLayer G) (r : ℤ)
+    (x : L.TrivialTateH r) :
+    cf.cupFundamentalClass L r x = cupClass F L (cf.fundamentalClass L) r x := by
+  rw [cupFundamentalClass]
+
 end ClassFormation
 end TauCeti.ClassFieldTheory
