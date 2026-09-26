@@ -378,6 +378,35 @@ theorem rationalFunctionsEquiv_toRationalFunctions_app (U : X.Opens) [Nonempty U
       X.germToFunctionField U r := by
   exact ConcreteCategory.congr_hom (app_comp_functionFieldSectionsIso U) r
 
+/-- A morphism from the structure sheaf to rational functions is multiplication by the
+rational function obtained by evaluating the global section `1`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.rationalFunctionsEquiv_app_unit
+    (φ : @Quiver.Hom X.Modules _ (SheafOfModules.unit X.ringCatSheaf) (rationalFunctions X))
+    (U : X.Opens) [Nonempty U] (a : Γ(X, U)) :
+    rationalFunctionsEquiv U (Scheme.Modules.Hom.app φ U a) =
+      X.germToFunctionField U a *
+        rationalFunctionsEquiv ⊤ (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) := by
+  have hnat := φ.mapPresheaf.naturality_apply (homOfLE (le_top : U ≤ ⊤)).op (1 : Γ(X, ⊤))
+  -- The unit module's restrictions and scalar action are those of the structure sheaf.
+  have hres : Scheme.Modules.Hom.app φ U (1 : Γ(X, U)) =
+      (rationalFunctions X).presheaf.map (homOfLE (le_top : U ≤ ⊤)).op
+        (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) := by
+    change Scheme.Modules.Hom.app φ U (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op 1) =
+      (rationalFunctions X).presheaf.map (homOfLE (le_top : U ≤ ⊤)).op
+        (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) at hnat
+    simpa only [map_one] using hnat
+  calc
+    _ = rationalFunctionsEquiv U (a • Scheme.Modules.Hom.app φ U (1 : Γ(X, U))) := by
+      have h := Scheme.Modules.Hom.app_smul φ a (1 : Γ(X, U))
+      -- Scalar multiplication on the unit module is multiplication of regular functions.
+      change Scheme.Modules.Hom.app φ U (a * (1 : Γ(X, U)) : Γ(X, U)) =
+        a • Scheme.Modules.Hom.app φ U (1 : Γ(X, U)) at h
+      rw [mul_one] at h
+      exact congrArg (rationalFunctionsEquiv U) h
+    _ = _ := by
+      rw [map_smul, hres, rationalFunctionsEquiv_map, Algebra.smul_def,
+        RingHom.algebraMap_toAlgebra]
+
 section SectionsMul
 
 /-- The action of a regular function on a section of `𝒦_X` is multiplication in the ring of
