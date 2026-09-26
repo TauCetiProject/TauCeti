@@ -13,11 +13,14 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 /-!
 # Local intersection multiplicities in a two-dimensional regular local ring
 
-Two curves on a surface that share no component meet at finitely many points, and the length of
-the quotient of the local ring of the surface by the two equations of the curves is their local
-intersection multiplicity there. On a *regular* surface the number is the order of vanishing of
-one equation along the other: cutting the surface by a general equation `f` leaves a regular
-curve, so a discrete valuation ring, and the second equation `g` has an order of vanishing on it.
+Fix a two-dimensional regular local ring `(R, 𝔪)`, a parameter `f ∈ 𝔪 \ 𝔪²` and a second
+equation `g ∉ (f)`, so that the two curves do not share a component through the closed point. The
+quotient `R ⧸ (f)` is then a regular curve, so a discrete valuation ring, and the order of
+vanishing of `g` on it is the length of `R ⧸ (f, g)`, which is finite under these
+hypotheses: that length is the local intersection multiplicity of the two equations at the closed
+point. The hypotheses are part of the statement: the length identities below hold in an arbitrary
+commutative ring, while finiteness, positivity and the order-of-vanishing reading are claimed only
+for a parameter `f` and a proper intersection `g ∉ (f)`.
 
 This file develops that local statement, which is the local input for the intersection numbers
 `aᵢⱼ` and the component multiplicities of the special fibre of a regular model of a curve, and
@@ -25,14 +28,15 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
 
 ## Main results
 
-* `TauCeti.ord_eq_length_quot_span`: the local intersection multiplicity of two equations through
-  a point is the order of vanishing of one of them along the other;
-* `TauCeti.length_quot_span_eq_zero_iff`: the intersection multiplicity vanishes exactly when the
-  second equation is a unit along the first, that is, when the point does not lie on the second
-  curve;
-* `TauCeti.ringKrullDim_quot_span_singleton_eq_one`: a general hyperplane section of a
-  two-dimensional regular local ring is a curve of dimension one, hence a discrete valuation ring
-  by `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`;
+* `TauCeti.ord_eq_length_quot_span`: the order of vanishing of one equation along the other is the
+  length of the quotient by the two equations, in any commutative ring;
+* `TauCeti.length_quot_span_eq_zero_iff`: that length vanishes exactly when the second equation is
+  a unit along the first, that is, when the second equation lies in the ideal `(f)`; for two
+  equations through the closed point of a local ring that cannot happen, by
+  `TauCeti.one_le_length_quot_span_pair`;
+* `TauCeti.ringKrullDim_quot_span_singleton_eq_one`: a parameter `f ∈ 𝔪 \ 𝔪²` cuts a
+  two-dimensional regular local ring down to a curve of dimension one, hence a discrete valuation
+  ring by `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`;
 * `TauCeti.isFiniteLength_quot_span_pair` and `TauCeti.exists_nat_length_quot_span_pair`: the
   local intersection multiplicity of two curves without a common component through the closed
   point of a regular surface is finite, hence a natural number;
@@ -85,15 +89,17 @@ section Quotient
 
 variable {R : Type u} [CommRing R]
 
-/-- **The local intersection multiplicity of two equations is an order of vanishing.**
+/-- **The order of vanishing of an equation along another is a length.**
 
 For elements `f` and `g` of a commutative ring, the order of vanishing of `g` in the quotient by
 `(f)` is the length of that quotient by the image of `g`, which the third isomorphism theorem
-identifies with the length of `R ⧸ (f, g)`, the length of the quotient by the two equations
-through the point. On a surface this is the local intersection multiplicity of the two curves. In
-a two-dimensional regular local ring it is finite as soon as `f` is a parameter, that is
-`f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and the second equation does not vanish identically on
-the curve `f = 0`, that is `g ∉ Ideal.span {f}`, by `TauCeti.isFiniteLength_quot_span_pair`. -/
+identifies with the length of `R ⧸ (f, g)`. This is an algebraic identity in an arbitrary
+commutative ring, where no hypothesis is placed on `f` or on `g` and the length may be infinite. It
+is the local intersection multiplicity of the two equations at the closed point once the length is
+finite: in a two-dimensional regular local ring with `f` a parameter, that is
+`f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and with a proper intersection, that is
+`g ∉ Ideal.span {f}`, the length is finite by `TauCeti.isFiniteLength_quot_span_pair` and is the
+order of vanishing of `g` on the discrete valuation ring `R ⧸ (f)`. -/
 theorem ord_eq_length_quot_span (f g : R) :
     Ring.ord (R ⧸ Ideal.span {f}) (Ideal.Quotient.mk (Ideal.span {f}) g)
       = Module.length R (R ⧸ Ideal.span {f, g}) := by
@@ -104,11 +110,12 @@ theorem ord_eq_length_quot_span (f g : R) :
     Module.length_eq_of_surjective (R := R ⧸ Ideal.span {f}) Ideal.Quotient.mk_surjective]
   rfl
 
-/-- **The local intersection multiplicity of two equations vanishes exactly when the second
-equation is a unit along the first.** Let `(R, 𝔪)` be a local ring, let `f ∈ 𝔪` be an equation
-cutting out a curve through the closed point, and let `g` be an arbitrary second equation. The
-length of `R ⧸ (f, g)` vanishes exactly when the image of `g` in `R ⧸ (f)` is a unit, that is,
-exactly when the closed point does not lie on the curve `g = 0` of the first. -/
+/-- **The length of the quotient by two equations vanishes exactly when the second equation is
+a unit along the first.** In an arbitrary commutative ring, the length of `R ⧸ (f, g)` vanishes
+exactly when the image of `g` in `R ⧸ (f)` is a unit, that is, exactly when `g` lies in the ideal
+`(f)`; no hypothesis is placed on `f` or on `g`. In a local ring `(R, 𝔪)` with `f ∈ 𝔪`, the
+image of `g` is a unit in `R ⧸ (f)` exactly when `g ∉ 𝔪`, that is, exactly when the closed point
+does not lie on the curve `g = 0`. -/
 @[simp]
 theorem length_quot_span_eq_zero_iff (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 0
