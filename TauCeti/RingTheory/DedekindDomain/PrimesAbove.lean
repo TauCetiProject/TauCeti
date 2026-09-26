@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import Mathlib.RingTheory.DedekindDomain.Factorization
 public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -38,7 +38,7 @@ downstairs: `IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮prim
 * `IsDedekindDomain.HeightOneSpectrum.tendsto_under_cofinite`: consequently, contraction tends to
   the cofinite filter along the cofinite filter;
   `IsDedekindDomain.HeightOneSpectrum.tendsto_under_cofinite_of_isFractionRing` is the variant
-  for rings inside a tower of fields.
+  for rings mapping compatibly to a common nontrivial algebra over a fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.finite_liesOver`: finitely many height one primes lie over
   a given one.
 
@@ -95,34 +95,7 @@ lemma primesAbove_empty : primesAbove R B (∅ : Set (HeightOneSpectrum R)) = �
 
 end IsDomain
 
-/-- Only finitely many primes of `B` lie above a finite set of primes of `R`. -/
-lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
-    [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
-    (primesAbove R B S).Finite := by
-  refine hS.preimage' fun v _ ↦ ?_
-  rcases (primesAbove R B {v}).eq_empty_or_nonempty with h | ⟨w, rfl⟩
-  · exact Set.finite_empty.subset h.subset
-  have := w.isMaximal
-  have : (under R w).asIdeal.IsMaximal := Ideal.IsMaximal.under R w.asIdeal
-  exact ((primesOver_finite (under R w).asIdeal B).preimage asIdeal_injective.injOn).subset
-    fun w' hw' ↦ ⟨w'.isPrime, ⟨congrArg asIdeal hw'.symm⟩⟩
-
-/-- Only finitely many primes of `B` contract to each prime of `R`, so contraction tends to the
-cofinite filter along the cofinite filter. -/
-lemma tendsto_under_cofinite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
-    [Module.IsTorsionFree R B] :
-    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
-  Filter.Tendsto.cofinite_of_finite_preimage_singleton fun v ↦
-    (primesAbove_finite R B (Set.finite_singleton v)).to_subtype
-
-/-- `tendsto_under_cofinite` when `R` and `B` sit in fields `K ⊆ L` with `K` the fraction field
-of `R`: the torsion-freeness of `B` over `R` then comes from the tower `R → K → L`. -/
-lemma tendsto_under_cofinite_of_isFractionRing [IsDomain R] [IsDedekindDomain B]
-    [Algebra.IsIntegral R B] (K L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [Field L]
-    [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra B L] [IsScalarTower R B L] :
-    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
-  have := FaithfulSMul.of_field_isFractionRing R B K L
-  tendsto_under_cofinite R B
+section
 
 variable {R B}
 
@@ -132,39 +105,70 @@ instance liesOver_val {v : HeightOneSpectrum R}
     w.1.asIdeal.LiesOver v.asIdeal :=
   w.2
 
-variable (B) [IsDedekindDomain R] [IsDedekindDomain B] [Module.IsTorsionFree R B]
+variable (B) [FaithfulSMul R B]
 
-/-- The height one primes of `B` lying over a height one prime `v` of `R` are the primes of `B`
-over `v.asIdeal`, in Mathlib's `Ideal.primesOver` spelling. Mathlib's
-`IsDedekindDomain.HeightOneSpectrum.equivPrimesOver` is the same bijection for the subtype cut out
-by divisibility `w.asIdeal ∣ v.asIdeal.map (algebraMap R B)` instead of `LiesOver`. -/
-noncomputable def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
-    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B := by
-  letI := v.isMaximal
-  exact (Equiv.subtypeEquivRight fun w ↦
-    Ideal.liesOver_iff_dvd_map w.isPrime.ne_top).trans
-      (HeightOneSpectrum.equivPrimesOver B v.ne_bot)
+/-- The nonzero prime ideals of `B` lying over a nonzero prime `v` of `R` are precisely
+`Ideal.primesOver v.asIdeal B`. Injectivity of the algebra map ensures that an ideal lying
+above `v` is nonzero; neither ring needs to be a Dedekind domain. -/
+def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
+    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B where
+  toFun w := ⟨w.1.asIdeal, w.1.isPrime, w.2⟩
+  invFun Q := ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q.1⟩, Q.2.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 @[simp]
 theorem liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal := by
-  simp [liesOverEquivPrimesOver]
+    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal :=
+  (rfl)
 
 @[simp]
 theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
     (Q : v.asIdeal.primesOver B) :
-    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q := by
-  let _ := v.isMaximal
-  simp only [liesOverEquivPrimesOver]
-  exact congrArg Subtype.val
-    ((HeightOneSpectrum.equivPrimesOver B v.ne_bot).apply_symm_apply Q)
+    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q :=
+  (rfl)
 
-/-- Only finitely many height one primes of `B` lie over a given height one prime of `R`. -/
-instance finite_liesOver [Algebra.IsIntegral R B] (v : HeightOneSpectrum R) :
-    Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} :=
-  have := v.isMaximal
-  .of_equiv _ (liesOverEquivPrimesOver B v).symm
+/-- Only finitely many nonzero primes of a Dedekind domain `B` lie over a given nonzero
+prime of `R`. The extension need not be integral, and `R` need not be Dedekind. -/
+instance finite_liesOver [IsDedekindDomain B] (v : HeightOneSpectrum R) :
+    Finite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} := by
+  have h := Ideal.finite_factors (Ideal.map_ne_bot_of_ne_bot (S := B) v.ne_bot)
+  exact (h.subset fun w hw ↦ Ideal.dvd_iff_le.mpr
+    (Ideal.map_le_iff_le_comap.mpr (le_of_eq hw.over))).to_subtype
+
+end
+
+/-- Only finitely many primes of `B` lie above a finite set of primes of `R`. -/
+lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
+    [Module.IsTorsionFree R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
+    (primesAbove R B S).Finite := by
+  refine hS.preimage' fun v _ ↦ ?_
+  have : Finite (under R (B := B) ⁻¹' {v}) :=
+    Finite.of_injective
+      (fun w ↦ (⟨w.1, ⟨congrArg asIdeal (Set.mem_singleton_iff.mp w.2).symm⟩⟩ :
+        {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}))
+      (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+  exact Set.toFinite _
+
+/-- Only finitely many primes of `B` contract to each prime of `R`, so contraction tends to the
+cofinite filter along the cofinite filter. -/
+lemma tendsto_under_cofinite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
+    [Module.IsTorsionFree R B] :
+    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
+  Filter.Tendsto.cofinite_of_finite_preimage_singleton fun v ↦
+    (primesAbove_finite R B (Set.finite_singleton v)).to_subtype
+
+/-- `tendsto_under_cofinite` when `R` and `B` map compatibly to a nontrivial algebra `L`
+over the fraction field `K` of `R`: the tower `R → K → L` makes the algebra map `R → B`
+injective. -/
+lemma tendsto_under_cofinite_of_isFractionRing [IsDomain R] [IsDedekindDomain B]
+    [Algebra.IsIntegral R B] (K L : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+    [Semiring L] [Nontrivial L]
+    [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra B L] [IsScalarTower R B L] :
+    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
+  have := FaithfulSMul.of_field_isFractionRing R B K L
+  tendsto_under_cofinite R B
 
 end HeightOneSpectrum
 

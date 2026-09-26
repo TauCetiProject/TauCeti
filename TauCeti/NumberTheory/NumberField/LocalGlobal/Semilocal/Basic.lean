@@ -96,6 +96,7 @@ theorem semilocalHom_tmul (a : v.adicCompletion K) (x : L)
 
 variable (L v)
 
+omit [NumberField K] in
 /-- **Weak approximation above `v`.** The diagonal image of `L` is dense in the product of the
 completions of `L` at the places above `v`. -/
 theorem denseRange_algebraMap_pi_liesOver :
