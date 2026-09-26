@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
+public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
 /-!
@@ -222,9 +222,7 @@ theorem differentExponent_def : differentExponent k F P' =
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     (centerIntegralClosure k F P').asIdeal ^ n ∣ differentIdeal ((P'.restrict k F).integers)
         (integralClosure ((P'.restrict k F).integers) F') ↔ n ≤ differentExponent k F P' :=
-  (FiniteMultiplicity.of_prime_left
-    (Ideal.prime_of_isPrime (centerIntegralClosure k F P').ne_bot
-      (centerIntegralClosure k F P').isPrime) differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').ne_bot
 
 /-- **Dedekind's different theorem, first part** (Stichtenoth, Theorem 3.5.1(a)): the different
 exponent of a place is at least one less than its ramification index.  It is stated as
@@ -247,12 +245,10 @@ theorem ramificationIdx_le_differentExponent_add_one :
     rw [Ideal.ramificationIdx'_eq_ramificationIdx 𝔭.asIdeal 𝔓.asIdeal 𝔭.ne_bot,
       ramificationIdx_eq_ramificationIdx_center (R := ((P'.restrict k F).integers)) k F P' hS,
       h𝔓, centerIntegralClosure_def]
-  -- Mathlib's `𝔓^(e-1) ∣ 𝔡` for the extension of Dedekind domains `𝒪_P ⊆ 𝒪'_P`
-  have hdvd : 𝔓.asIdeal ^ (ramificationIdx F P' - 1) ∣ differentIdeal
-      ((P'.restrict k F).integers) (integralClosure ((P'.restrict k F).integers) F') :=
-    pow_sub_one_dvd_differentIdeal _ 𝔓.asIdeal _ 𝔭.ne_bot
-      (Ideal.dvd_iff_le.mpr (hidx ▸ Ideal.le_pow_ramificationIdx'))
-  have := (pow_dvd_differentIdeal_iff_le_differentExponent k F P').mp hdvd
+  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal _ 𝔭.ne_bot 𝔓.asIdeal
+  rw [Ideal.ramificationIdx'_eq_ramificationIdx 𝔭.asIdeal 𝔓.asIdeal 𝔭.ne_bot] at hidx
+  rw [h𝔓] at this hidx
+  rw [differentExponent_def, ← hidx]
   have hpos := ramificationIdx_pos F P'
   omega
 
