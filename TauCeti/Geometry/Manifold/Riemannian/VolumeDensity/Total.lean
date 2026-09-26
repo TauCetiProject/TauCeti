@@ -31,14 +31,14 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {M : Type*} [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- The total volume of a compact Riemannian manifold, as a real number. -/
 def riemannianTotalVolume (I : ModelWithCorners ℝ E H) (M : Type*)
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 1 M]
     [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] : ℝ :=
@@ -49,10 +49,6 @@ theorem riemannianTotalVolume_def :
     riemannianTotalVolume I M = (riemannianVolume I M).real univ :=
   (rfl)
 
-section
-
-variable [CompactSpace M]
-
 /-- The total volume recovers the finite mass of the Riemannian volume measure. -/
 @[simp]
 theorem ofReal_riemannianTotalVolume :
@@ -60,14 +56,13 @@ theorem ofReal_riemannianTotalVolume :
   rw [riemannianTotalVolume_def]
   exact ofReal_measureReal (by finiteness)
 
-end
-
 /-- Total Riemannian volume is nonnegative. -/
 theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
   measureReal_nonneg
 
 variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
+  {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
+  [IsManifold I' 1 N]
   [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
