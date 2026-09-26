@@ -29,7 +29,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 /-- Membership in the norm subgroup of an unramified quadratic class is equivalent to even
-normalized valuation. -/
+normalized valuation. This packages the norm-equation criterion as a subgroup membership test. -/
 theorem mem_quadraticNormSubgroup_iff_even_of_unramified_class {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) (b : Kˣ) :
