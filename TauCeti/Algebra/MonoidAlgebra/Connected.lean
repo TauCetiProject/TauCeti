@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.PGroup
 import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.MonoidAlgebra.Torsion
@@ -14,8 +15,8 @@ public import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 For an abelian `p`-group, every element of its group algebra in exponential
 characteristic `p` differs from its augmentation by a nilpotent. Thus the group
-algebra has connected spectrum whenever the coefficient ring does. Over a field
-of characteristic `p`, the converse holds for finite abelian groups.
+algebra has connected spectrum whenever the coefficient ring does. In prime
+characteristic `p`, the converse holds for finite abelian groups.
 
 This detects connected finite diagonalizable group schemes, including the
 nonreduced groups of roots of unity of prime-power order.
@@ -71,14 +72,15 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_of_isPGroup
   · exact Or.inl (by simpa only [h, map_zero] using heq)
   · exact Or.inr (by simpa only [h, map_one] using heq)
 
-variable (k : Type*) [Field k] (G : Type*) [CommGroup G] [Finite G]
-variable (p : ℕ) [Fact p.Prime] [CharP k p]
+variable [ConnectedSpace (PrimeSpectrum R)] (G : Type*) [CommGroup G] [Finite G]
+variable (p : ℕ) [Fact p.Prime] [CharP R p]
 
-/-- A finite abelian group has connected group-algebra spectrum over a field of
-characteristic `p` if and only if it is a `p`-group. -/
+/-- A finite abelian group has connected group-algebra spectrum over a connected
+commutative ring of prime characteristic `p` if and only if it is a `p`-group. -/
 theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
-    ConnectedSpace (PrimeSpectrum k[G]) ↔ IsPGroup p G := by
-  refine ⟨fun hconn => ?_, connectedSpace_primeSpectrum_monoidAlgebra_of_isPGroup k p⟩
+    ConnectedSpace (PrimeSpectrum R[G]) ↔ IsPGroup p G := by
+  let _ : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  refine ⟨fun hconn => ?_, connectedSpace_primeSpectrum_monoidAlgebra_of_isPGroup R p⟩
   let _ := hconn
   rw [isPGroup_iff_primeFactors_card_subset (Fact.out : p.Prime).ne_zero]
   intro q hq
@@ -87,19 +89,25 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
   suffices q = p by simpa [this] using (Nat.mem_primeFactors.mpr
     ⟨Fact.out, dvd_rfl, (Fact.out : p.Prime).ne_zero⟩ : p ∈ p.primeFactors)
   by_contra hqp
-  have hqk : (q : k) ≠ 0 := by
-    rw [Ne, CharP.cast_eq_zero_iff k p]
+  have hqk : (q : ZMod p) ≠ 0 := by
+    rw [Ne, CharP.cast_eq_zero_iff (ZMod p) p]
     exact fun h => hqp ((Nat.prime_dvd_prime_iff_eq Fact.out hqprime).mp h).symm
   obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' q hqdvd
   let P := Subgroup.zpowers g
   let _ : Fintype P := Fintype.ofFinite P
   have hcard : Fintype.card P = q := by
     simpa only [Nat.card_eq_fintype_card] using (Nat.card_zpowers g).trans hg
-  have hnz : (Fintype.card P : k) ≠ 0 := by simpa only [hcard] using hqk
-  have hidem := isIdempotentElem_groupAlgebraSubgroupAverage k P hnz
+  have hnz : (Fintype.card P : ZMod p) ≠ 0 := by simpa only [hcard] using hqk
+  -- Embed the prime-field average to reuse its idempotence and nontriviality.
+  let φ := MonoidAlgebra.mapRingHom G (ZMod.castHom (dvd_refl p) R)
+  have hφ : Function.Injective φ :=
+    MonoidAlgebra.map_injective _ (ZMod.castHom_injective R)
+  have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P hnz).map φ
   rcases eq_zero_or_eq_one_of_isIdempotentElem hidem with hzero | hone
-  · exact groupAlgebraSubgroupAverage_ne_zero k P hnz hzero
-  · exact groupAlgebraSubgroupAverage_ne_one k P ⟨g, Subgroup.mem_zpowers g⟩
-      (fun h => hqprime.ne_one (hg.symm.trans (orderOf_eq_one_iff.mpr h))) hone
+  · exact groupAlgebraSubgroupAverage_ne_zero (ZMod p) P hnz
+      (hφ (hzero.trans (map_zero φ).symm))
+  · exact groupAlgebraSubgroupAverage_ne_one (ZMod p) P ⟨g, Subgroup.mem_zpowers g⟩
+      (fun h => hqprime.ne_one (hg.symm.trans (orderOf_eq_one_iff.mpr h)))
+      (hφ (hone.trans (map_one φ).symm))
 
 end TauCeti

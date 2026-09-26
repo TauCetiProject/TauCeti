@@ -16,7 +16,8 @@ import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 Over a field of characteristic `p`, a finite diagonalizable group is geometrically
 connected exactly when its character group is a `p`-group. In particular, the finite
 kernel of `D(N) → D(M)` is geometrically connected exactly when the character cokernel
-`N / range f` is a `p`-group. Ordinary connectedness gives the same criterion.
+`N / range f` is a `p`-group. Ordinary connectedness gives the same criterion over
+any connected commutative base ring of prime characteristic `p`.
 
 These statements detect infinitesimal finite kernels without assuming smoothness
 of either ambient group. They complement the prime-to-characteristic criterion for
@@ -68,17 +69,19 @@ theorem geometricallyConnected_iff_isPGroup (G : Type v) [CommGroup G] [Finite G
 variable {M N : Type v} [CommGroup M] [CommGroup N] (f : M →* N)
 variable [Finite (N ⧸ f.range)]
 
-/-- A finite diagonalizable-group kernel in characteristic `p` is connected
-if and only if the character cokernel is a `p`-group. -/
-theorem connectedSpace_kernelCoordinate_iff_isPGroup :
+/-- A finite diagonalizable-group kernel over a connected commutative ring of prime
+characteristic `p` is connected if and only if the character cokernel is a `p`-group. -/
+theorem connectedSpace_kernelCoordinate_iff_isPGroup
+    (R : Type u) [CommRing R] [ConnectedSpace (PrimeSpectrum R)]
+    (p : ℕ) [Fact p.Prime] [CharP R p] (f : M →* N) [Finite (N ⧸ f.range)] :
     ConnectedSpace (PrimeSpectrum
-      (CommHopfAlgCat.quotient (CommHopfAlgCat.of k (MonoidAlgebra k N))
+      (CommHopfAlgCat.quotient (CommHopfAlgCat.of R (MonoidAlgebra R N))
         (CommHopfAlgCat.kernelHopfIdeal
-          (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k f))))) ↔
+          (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R f))))) ↔
       IsPGroup p (N ⧸ f.range) := by
-  let e := (CommHopfAlgCat.ofIso (kernelCoordinateIso k f)).toAlgEquiv.toRingEquiv
+  let e := (CommHopfAlgCat.ofIso (kernelCoordinateIso R f)).toAlgEquiv.toRingEquiv
   exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.trans
-    (connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup k (N ⧸ f.range) p)
+    (connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup R (N ⧸ f.range) p)
 
 /-- A finite diagonalizable-group kernel in characteristic `p` is geometrically
 connected if and only if the character cokernel is a `p`-group. -/
