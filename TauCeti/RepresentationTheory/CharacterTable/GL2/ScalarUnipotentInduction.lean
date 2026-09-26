@@ -565,10 +565,6 @@ theorem character_GL2ScalarUnipotentInduction_jordanGL
     Finset.sum_congr rfl fun c _ => hterm c, ← Finset.mul_sum,
     AddChar.sum_units_mul_eq_neg_one ψ hψ a⁻¹, mul_neg_one]
 
-private theorem card_gl2_ne_zero (F : Type*) [Field F] [Finite F] :
-    (Nat.card (GL (Fin 2) F) : ℂ) ≠ 0 := by
-  exact_mod_cast Nat.card_pos.ne'
-
 variable [DecidableEq F]
 
 /-- **The scalar--unipotent induction has character norm `q`** when its additive character is
@@ -581,12 +577,14 @@ theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
       Fintype.card F := by
   classical
   let hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
-    isUnit_iff_ne_zero.mpr (card_gl2_ne_zero F)
+    isUnit_iff_ne_zero.mpr (by exact_mod_cast Nat.card_pos.ne')
   rw [GL2ScalarUnipotentInduction_def]
   rw [← ClassFunction.ind_ofFDRep, characterPairing_ind hG]
   rw [ClassFunction.characterPairing_apply]
   simp only [ClassFunction.ind_ofFDRep, ClassFunction.comap_subtype_ofFDRep,
     ClassFunction.ofFDRep_apply, character_resFDRep]
+  -- First evaluate each subgroup summand, separating the scalar slice `t = 1` from the
+  -- nontrivial Jordan slices.
   have hterm (a : Fˣ) (t : Multiplicative F) :
       (GL2ScalarUnipotentRep F mu psi).character
           (GL2ScalarUnipotent.mulEquiv F (a, t)) *
@@ -625,6 +623,8 @@ theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
   rw [← (GL2ScalarUnipotent.mulEquiv F).toEquiv.sum_comp, Fintype.sum_prod_type]
   simp only [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, Subgroup.coe_inv]
   simp_rw [hterm]
+  -- The nontrivial additive character sums to zero on `F`; after removing its value at zero,
+  -- the nonscalar slices contribute `1`, so the inner sum is `q²`.
   have hsumpsi : ∑ t : Multiplicative F, psi (Multiplicative.toAdd t) = 0 := by
     rw [Multiplicative.toAdd.sum_comp]
     exact AddChar.sum_eq_zero_of_ne_one hpsi
@@ -649,6 +649,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
       rw [ite_eq_right (Finset.ne_of_mem_erase ht)]
     rw [hrest, Finset.sum_neg_distrib, herase, neg_neg]
     ring
+  -- Summing the constant inner value over `Fˣ` and normalizing by `|Z U| = q(q - 1)` gives `q`.
   simp_rw [hinner, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   rw [natCard_gl2ScalarUnipotent, Nat.card_eq_fintype_card, Fintype.card_units]
   push_cast [Fintype.one_lt_card.le]

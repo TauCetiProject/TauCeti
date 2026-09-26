@@ -415,11 +415,75 @@ theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ)
     GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom hE _ hu, character_GL2NonSplitTorusRep,
     character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
 
-private theorem card_gl2_ne_zero (F : Type*) [Field F] [Finite F] :
-    (Nat.card (GL (Fin 2) F) : ℂ) ≠ 0 := by
-  exact_mod_cast Nat.card_pos.ne'
-
 variable [Fintype F] [DecidableEq F]
+
+omit [DecidableEq F] in
+private theorem elliptic_pairing_term (theta : Eˣ →* ℂˣ) (u : Eˣ)
+    [Decidable ((u : E) ∈ Set.range (algebraMap F E))] :
+    (GL2NonSplitTorusRep F E hE theta).character
+        (GL2NonSplitTorus.unitsEquiv hE u) *
+      (indFDRep (GL2NonSplitTorusRep F E hE theta)).character
+        (((GL2NonSplitTorus.unitsEquiv hE u : GL2NonSplitTorus F E hE) :
+          GL (Fin 2) F)⁻¹) =
+      if (u : E) ∈ Set.range (algebraMap F E) then
+        ((Fintype.card F : ℂ) * ((Fintype.card F : ℂ) - 1))
+      else 1 + ((theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹) u : ℂ) := by
+  rw [character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply]
+  have hinv :
+      (((GL2NonSplitTorus.unitsEquiv hE u : GL2NonSplitTorus F E hE) :
+          GL (Fin 2) F)⁻¹) = GL2NonSplitTorusHom F E hE u⁻¹ := by
+    rw [← Subgroup.coe_inv, ← map_inv]
+    exact GL2NonSplitTorus.coe_unitsEquiv_apply hE u⁻¹
+  rw [hinv, ← GL2EllipticInduction_def]
+  split_ifs with hu
+  · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) _).mp hu
+    rw [map_inv, GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap,
+      ← map_inv, character_GL2EllipticInduction_scalar]
+    simp only [map_inv, Units.val_inv_eq_inv_val]
+    field_simp
+    rw [Nat.card_eq_fintype_card]
+  · have huinv : ((u⁻¹ : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
+      simpa only [coe_inv_mem_range_iff] using hu
+    rw [character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ huinv]
+    simp [mul_add, inv_pow]
+
+omit [Field F] [Algebra F E] [Finite F] [Fintype F] [DecidableEq F] in
+private theorem sum_elliptic_character_quotient_eq_zero [Fintype E] [DecidableEq E]
+    (theta : Eˣ →* ℂˣ) (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
+    ∑ u : Eˣ, ((theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹) u : ℂ) = 0 := by
+  let delta : Eˣ →* ℂˣ := theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹
+  have hdelta : delta ≠ 1 := by
+    intro hd
+    apply htheta
+    ext u
+    have hu := DFunLike.congr_fun hd u
+    dsimp only [delta] at hu
+    rw [MonoidHom.mul_apply, MonoidHom.inv_apply, MonoidHom.one_apply, mul_inv_eq_one] at hu
+    exact congrArg Units.val hu.symm
+  have hcoedelta : (Units.coeHom ℂ).comp delta ≠ 1 := by
+    intro hd
+    apply hdelta
+    ext u
+    exact DFunLike.congr_fun hd u
+  exact sum_hom_units_eq_zero ((Units.coeHom ℂ).comp delta) hcoedelta
+
+omit [Finite F] [DecidableEq F] in
+private theorem natCard_baseField_units [Finite E] :
+    Nat.card {u : Eˣ // (u : E) ∈ Set.range (algebraMap F E)} = Fintype.card F - 1 := by
+  classical
+  let f : Fˣ → {u : Eˣ // (u : E) ∈ Set.range (algebraMap F E)} := fun a =>
+    ⟨Units.map (algebraMap F E : F →* E) a, a, rfl⟩
+  have hf : Function.Bijective f := by
+    constructor
+    · intro a b hab
+      apply Units.ext
+      have hab' := congrArg
+        (fun u : {u : Eˣ // (u : E) ∈ Set.range (algebraMap F E)} => ((u : Eˣ) : E)) hab
+      exact (algebraMap F E).injective hab'
+    · rintro ⟨u, hu⟩
+      obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) u).mp hu
+      exact ⟨a, Subtype.ext ha⟩
+  rw [← Nat.card_congr (Equiv.ofBijective f hf), Nat.card_eq_fintype_card, Fintype.card_units]
 
 /-- **The elliptic induction has character norm `q - 1`** when `θ` is not fixed by the
 `q`-power map. -/
@@ -435,73 +499,22 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       (nonSplitTorusBasis F E hE).repr.injective
   let _ : Fintype E := Fintype.ofFinite E
   let hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
-    isUnit_iff_ne_zero.mpr (card_gl2_ne_zero F)
+    isUnit_iff_ne_zero.mpr (by exact_mod_cast Nat.card_pos.ne')
   rw [GL2EllipticInduction_def]
   rw [← ClassFunction.ind_ofFDRep, characterPairing_ind hG]
   rw [ClassFunction.characterPairing_apply]
   simp only [ClassFunction.ind_ofFDRep, ClassFunction.comap_subtype_ofFDRep,
     ClassFunction.ofFDRep_apply, character_resFDRep]
-  have hterm (u : Eˣ) :
-      (GL2NonSplitTorusRep F E hE theta).character
-          (GL2NonSplitTorus.unitsEquiv hE u) *
-        (indFDRep (GL2NonSplitTorusRep F E hE theta)).character
-          (((GL2NonSplitTorus.unitsEquiv hE u : GL2NonSplitTorus F E hE) :
-            GL (Fin 2) F)⁻¹) =
-        if (u : E) ∈ Set.range (algebraMap F E) then
-          ((Fintype.card F : ℂ) * ((Fintype.card F : ℂ) - 1))
-        else 1 + ((theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹) u : ℂ) := by
-    rw [character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply]
-    have hinv :
-        (((GL2NonSplitTorus.unitsEquiv hE u : GL2NonSplitTorus F E hE) :
-            GL (Fin 2) F)⁻¹) = GL2NonSplitTorusHom F E hE u⁻¹ := by
-      rw [← Subgroup.coe_inv, ← map_inv]
-      exact GL2NonSplitTorus.coe_unitsEquiv_apply hE u⁻¹
-    rw [hinv, ← GL2EllipticInduction_def]
-    split_ifs with hu
-    · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) _).mp hu
-      rw [map_inv, GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap,
-        ← map_inv, character_GL2EllipticInduction_scalar]
-      simp only [map_inv, Units.val_inv_eq_inv_val]
-      field_simp
-      rw [Nat.card_eq_fintype_card]
-    · have huinv : ((u⁻¹ : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
-        simpa only [coe_inv_mem_range_iff] using hu
-      rw [character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ huinv]
-      simp [mul_add, inv_pow]
   rw [← (GL2NonSplitTorus.unitsEquiv hE).toEquiv.sum_comp]
   simp only [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, Subgroup.coe_inv]
-  simp_rw [hterm]
+  simp_rw [elliptic_pairing_term F E hE theta]
   let delta : Eˣ →* ℂˣ := theta * (theta.comp (powMonoidHom (Nat.card F)))⁻¹
-  have hdelta : delta ≠ 1 := by
-    intro hd
-    apply htheta
-    ext u
-    have hu := DFunLike.congr_fun hd u
-    dsimp only [delta] at hu
-    rw [MonoidHom.mul_apply, MonoidHom.inv_apply, MonoidHom.one_apply, mul_inv_eq_one] at hu
-    exact congrArg Units.val hu.symm
-  have hcoedelta : (Units.coeHom ℂ).comp delta ≠ 1 := by
-    intro hd
-    apply hdelta
-    ext u
-    exact DFunLike.congr_fun hd u
   have hsumdelta : ∑ u : Eˣ, (delta u : ℂ) = 0 :=
-    sum_hom_units_eq_zero ((Units.coeHom ℂ).comp delta) hcoedelta
+    sum_elliptic_character_quotient_eq_zero F E theta htheta
   let p : Eˣ → Prop := fun u => (u : E) ∈ Set.range (algebraMap F E)
-  let f : Fˣ → {u : Eˣ // p u} := fun a =>
-    ⟨Units.map (algebraMap F E : F →* E) a, a, rfl⟩
-  have hf : Function.Bijective f := by
-    constructor
-    · intro a b hab
-      apply Units.ext
-      have hab' := congrArg (fun u : {u : Eˣ // p u} => ((u : Eˣ) : E)) hab
-      exact (algebraMap F E).injective hab'
-    · rintro ⟨u, hu⟩
-      obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) u).mp hu
-      exact ⟨a, Subtype.ext ha⟩
-  let e : Fˣ ≃ {u : Eˣ // p u} := Equiv.ofBijective f hf
   have hcardBase : (Finset.univ.filter p).card = Fintype.card F - 1 := by
-    rw [← Fintype.card_subtype, ← Fintype.card_congr e, Fintype.card_units]
+    rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+    exact natCard_baseField_units F E
   have hrewrite (u : Eˣ) :
       (if p u then (Fintype.card F : ℂ) * ((Fintype.card F : ℂ) - 1)
         else 1 + (delta u : ℂ)) =
@@ -519,7 +532,8 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       rw [hdelta_one]
       norm_num
     · ring
-  -- Unfold the pairing after naming its summand predicate and character quotient above.
+  -- The quotient character cancels on `Eˣ`; the embedded `Fˣ` has `q - 1` elements, so only
+  -- the constant term and the correction on those base-field units remain.
   change (Nat.card (GL2NonSplitTorus F E hE) : ℂ)⁻¹ *
     (∑ u : Eˣ, if p u then (Fintype.card F : ℂ) * ((Fintype.card F : ℂ) - 1)
       else 1 + (delta u : ℂ)) = _
