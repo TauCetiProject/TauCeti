@@ -25,39 +25,17 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
     {f : M → A} (hi : i ∈ s) (hf : ∑ a ∈ s, f a • a = x) (hfi : IsUnit (f i)) :
     _root_.Submodule.span A ((insert x (s.erase i)) : Set M) =
       _root_.Submodule.span A (s : Set M) := by
-  classical
-  apply le_antisymm
-  · rw [Submodule.span_le]
-    intro y hy
-    simp only [Set.mem_insert_iff] at hy
-    rcases hy with rfl | hy
-    · rw [← hf]
-      exact (_root_.Submodule.span A (s : Set M)).sum_mem fun a ha ↦
-        (_root_.Submodule.span A (s : Set M)).smul_mem _
-          (Submodule.subset_span (Finset.mem_coe.mpr ha))
-    · exact Submodule.subset_span (Finset.mem_coe.mpr (Finset.mem_of_mem_erase hy))
-  · rw [Submodule.span_le]
-    intro y hy
-    by_cases h : y = i
-    · subst y
-      have hsum : f i • i + ∑ a ∈ s.erase i, f a • a = x := by
-        rw [Finset.add_sum_erase _ (fun a ↦ f a • a) hi, hf]
-      have hmem : f i • i ∈ _root_.Submodule.span A ((insert x (s.erase i)) : Set M) := by
-        have hxmem : x ∈ _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
-          Submodule.subset_span (Set.mem_insert_iff.mpr (Or.inl rfl))
-        have hsmem : (∑ a ∈ s.erase i, f a • a) ∈
-            _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
-          (_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).sum_mem fun a ha ↦
-            (_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).smul_mem _
-              (Submodule.subset_span (Set.mem_insert_of_mem x (Finset.mem_coe.mpr ha)))
-        have hsub : x - (∑ a ∈ s.erase i, f a • a) ∈
-            _root_.Submodule.span A ((insert x (s.erase i)) : Set M) :=
-          _root_.Submodule.sub_mem (_root_.Submodule.span A ((insert x (s.erase i)) : Set M))
-            hxmem hsmem
-        rwa [eq_sub_of_add_eq hsum]
-      exact ((_root_.Submodule.span A ((insert x (s.erase i)) : Set M)).smul_mem_iff_of_isUnit
-        hfi).mp hmem
-    · exact Submodule.subset_span (Set.mem_insert_of_mem x
-        (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨h, hy⟩)))
+  have hx : x ∈ _root_.Submodule.span A (s : Set M) :=
+    hf ▸ sum_mem fun a ha ↦ Submodule.smul_mem _ _ (Submodule.subset_span ha)
+  have hi' : i ∈ _root_.Submodule.span A (insert x (s.erase i : Set M)) := by
+    refine (Submodule.smul_mem_iff_of_isUnit _ hfi).mp (Submodule.mem_span_insert.mpr
+      ⟨1, -∑ a ∈ s.erase i, f a • a,
+        neg_mem (sum_mem fun a ha ↦ Submodule.smul_mem _ _ (Submodule.subset_span ha)), ?_⟩)
+    rw [one_smul, ← hf, ← Finset.add_sum_erase _ _ hi, add_neg_cancel_right]
+  calc _ = _root_.Submodule.span A (insert i (insert x (s.erase i : Set M))) :=
+        (Submodule.span_insert_eq_span hi').symm
+    _ = _root_.Submodule.span A (insert x (s : Set M)) := by
+      rw [Set.insert_comm, ← Finset.coe_insert, Finset.insert_erase hi]
+    _ = _ := Submodule.span_insert_eq_span hx
 
 end TauCeti.Submodule

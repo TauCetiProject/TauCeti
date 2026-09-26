@@ -7,10 +7,8 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.KrullDimension.Regular
-public import TauCeti.LinearAlgebra.Span.Basic
-public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
+public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Square
 
 /-!
 # Regular local rings are domains
@@ -22,13 +20,6 @@ regular scheme irreducible, and a regular local ring of dimension one is a discr
 ring, so that the local rings of a regular curve at its codimension-one points are discrete
 valuation rings.
 
-The proof is by induction on `d = dim R`. If `d = 0` then `𝔪 = 0` and `R` is a field. If
-`d > 0`, prime avoidance gives `x ∈ 𝔪 \ 𝔪²` lying in no minimal prime of `R`. Then `R ⧸ (x)` has
-dimension `d - 1`, and its maximal ideal needs one generator fewer, since `x` can replace one of a
-minimal system of generators of `𝔪`. So `R ⧸ (x)` is regular of dimension `d - 1`, hence a domain
-by induction, i.e. `(x)` is prime. A minimal prime `P ⊆ (x)` does not contain `x`, so `P = x P`,
-and Nakayama's lemma gives `P = 0`.
-
 ## Main declarations
 
 * `TauCeti.IsRegularLocalRing.isDomain`: a regular local ring is an integral domain;
@@ -36,18 +27,6 @@ and Nakayama's lemma gives `P = 0`.
   is again a regular local ring;
 * `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`: a regular local
   ring is a discrete valuation ring exactly when it has dimension one.
-
-Supporting declarations include:
-
-* `TauCeti.Submodule.span_insert_erase_eq_span_of_isUnit`: a generator with a unit coefficient
-  can be replaced by its linear combination;
-* `TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_add_one_le`: for `x ∈ 𝔪 \ 𝔪²`, the
-  maximal ideal of `R ⧸ (x)` needs at least one generator fewer than `𝔪`;
-* `TauCeti.IsLocalRing.exists_mem_maximalIdeal_notMem_sq_notMem_minimalPrimes`: in positive
-  dimension there is `x ∈ 𝔪 \ 𝔪²` outside every minimal prime;
-* ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
-  says that for `x` in the Jacobson radical outside every minimal prime,
-  `dim R ⧸ (x) + 1 = dim R`.
 
 ## References
 
@@ -62,71 +41,9 @@ namespace TauCeti
 
 universe u
 
-open IsLocalRing Ideal Pointwise _root_.IsRegularLocalRing
+open _root_.IsLocalRing Ideal Pointwise _root_.IsRegularLocalRing
 
 variable {R : Type u} [CommRing R]
-
-namespace IsLocalRing
-
-variable [IsLocalRing R]
-
-/-- If `x ∈ 𝔪 \ 𝔪²`, then the image of `𝔪` in `R ⧸ (x)`, which is the maximal ideal of `R ⧸ (x)`,
-needs at least one generator fewer than `𝔪`: some coefficient of `x` in a minimal system of
-generators of `𝔪` is a unit, so `x` can replace the corresponding generator. -/
-theorem spanFinrank_map_maximalIdeal_quotient_add_one_le (hfg : (maximalIdeal R).FG) {x : R}
-    (hxm : x ∈ maximalIdeal R) (hx : x ∉ maximalIdeal R ^ 2) :
-    ((maximalIdeal R).map (Ideal.Quotient.mk (span {x}))).spanFinrank + 1 ≤
-      (maximalIdeal R).spanFinrank := by
-  classical
-  obtain ⟨s, hcard, hspan⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
-  obtain ⟨f, -, hf⟩ := Submodule.mem_span_finset.mp (hspan ▸ hxm)
-  -- some coefficient of `x` is a unit, since otherwise `x ∈ 𝔪²`
-  obtain ⟨i, hi, hfi⟩ : ∃ i ∈ s, IsUnit (f i) := by
-    by_contra! h
-    refine hx (hf ▸ Ideal.sum_mem _ fun i hi ↦ ?_)
-    rw [pow_two, smul_eq_mul]
-    exact mul_mem_mul (not_not.mp (mt notMem_maximalIdeal.mp (h i hi)))
-      (hspan ▸ Submodule.subset_span hi)
-  set q := Ideal.Quotient.mk (span {x})
-  have hmap : (maximalIdeal R).map q = span ((s.erase i).image q : Set (R ⧸ span {x})) := by
-    rw [← hspan]
-    rw [← TauCeti.Submodule.span_insert_erase_eq_span_of_isUnit hi hf hfi,
-      Ideal.submodule_span_eq, Ideal.map_span,
-      Set.image_insert_eq]
-    rw [show q x = 0 from Ideal.Quotient.eq_zero_iff_mem.mpr
-      (mem_span_singleton_self x), Ideal.span_insert_zero, Finset.coe_image]
-  rw [hmap, ← hcard, ← Finset.card_erase_add_one hi, add_le_add_iff_right]
-  refine (Submodule.spanFinrank_span_le_ncard_of_finite (Finset.finite_toSet _)).trans ?_
-  rw [Set.ncard_coe_finset]
-  exact Finset.card_image_le
-
-/-- In a Noetherian local ring of positive dimension, by prime avoidance there is an element of
-the maximal ideal which lies neither in its square nor in any minimal prime. -/
-theorem exists_mem_maximalIdeal_notMem_sq_notMem_minimalPrimes [IsNoetherianRing R]
-    (h : 0 < ringKrullDim R) :
-    ∃ x ∈ maximalIdeal R, x ∉ maximalIdeal R ^ 2 ∧ ∀ p ∈ minimalPrimes R, x ∉ p := by
-  by_contra! H
-  have hsub : (maximalIdeal R : Set R) ⊆ ⋃ i ∈ insert (maximalIdeal R ^ 2) (minimalPrimes R),
-      (i : Set R) := by
-    intro x hx
-    by_cases hx2 : x ∈ maximalIdeal R ^ 2
-    · exact Set.mem_biUnion (Set.mem_insert _ _) hx2
-    · obtain ⟨p, hp, hxp⟩ := H x hx hx2
-      exact Set.mem_biUnion (Set.mem_insert_of_mem _ hp) hxp
-  obtain ⟨i, hi, hmi⟩ := (subset_union_prime_finite
-    ((minimalPrimes.finite_of_isNoetherianRing R).insert _) (f := id)
-    (maximalIdeal R ^ 2) (maximalIdeal R ^ 2)
-    fun (i : Ideal R) hi hi₁ _ ↦
-      IsMinimalPrime.isPrime ((Set.mem_insert_iff.mp hi).resolve_left hi₁)).mp hsub
-  rcases Set.mem_insert_iff.mp hi with rfl | hi
-  · exact (maximalIdeal_sq_lt_of_ringKrullDim_ne_zero h.ne').not_ge hmi
-  · -- `𝔪` would be a minimal prime, hence of height zero
-    obtain rfl : i = maximalIdeal R :=
-      le_antisymm (le_maximalIdeal (IsMinimalPrime.isPrime hi).ne_top) hmi
-    rw [← maximalIdeal_height_eq_ringKrullDim, height_eq_zero_iff.mpr hi] at h
-    exact h.false
-
-end IsLocalRing
 
 open TauCeti.IsLocalRing
 
@@ -156,9 +73,12 @@ private lemma quotient_aux {x : R} (hxm : x ∈ maximalIdeal R) (hx : x ∉ maxi
   rw [h₂]
   exact_mod_cast (by omega : (maximalIdeal (R ⧸ span {x})).spanFinrank ≤ k)
 
-/-- A regular local ring of dimension `n` is a domain, by induction on `n`. -/
+/-- A regular local ring of dimension `n` is a domain. -/
 private theorem isDomain_of_ringKrullDim_eq (n : ℕ) :
     ∀ (R : Type u) [CommRing R] [IsRegularLocalRing R], ringKrullDim R = n → IsDomain R := by
+  -- Induction on `n`: for `n > 0` pick `x ∈ 𝔪 \ 𝔪²` outside every minimal prime; then `R ⧸ (x)`
+  -- is regular of dimension `n - 1`, hence a domain, so `(x)` is prime, and a minimal prime
+  -- `P ⊆ (x)` satisfies `P = x P`, so `P = 0` by Nakayama's lemma.
   induction n with
   | zero =>
     intro R _ _ h
@@ -199,16 +119,15 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
 instance (priority := 100) isDomain : IsDomain R :=
   isDomain_of_ringKrullDim_eq _ R (spanFinrank_maximalIdeal (R := R)).symm
 
-/-- If `R` is a regular local ring and `x ∈ 𝔪 \ 𝔪²`, then `R ⧸ (x)` is a regular local ring. Its
-dimension is `dim R - 1`, by Mathlib's
-`ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors`, as `x ≠ 0` in
-the domain `R`. -/
+/-- If `R` is a regular local ring and `x ∈ 𝔪 \ 𝔪²`, then `R ⧸ (x)` is a regular local ring. -/
 @[stacks 00NQ "(2), for one generator"]
 theorem quotient_span_singleton {x : R} (hxm : x ∈ maximalIdeal R)
     (hx : x ∉ maximalIdeal R ^ 2) : IsRegularLocalRing (R ⧸ span {x}) := by
+  -- the only minimal prime of the domain `R` is `0`, and `x ≠ 0` as `x ∉ 𝔪²`
   refine quotient_aux hxm hx fun p hp hxp ↦ hx ?_
   rw [IsDomain.minimalPrimes_eq_singleton_bot, Set.mem_singleton_iff] at hp
-  rw [show x = 0 by simpa [hp] using hxp]
+  have hx0 : x = 0 := by simpa [hp] using hxp
+  rw [hx0]
   exact zero_mem _
 
 /-- A regular local ring is a discrete valuation ring exactly when it has dimension one. -/
