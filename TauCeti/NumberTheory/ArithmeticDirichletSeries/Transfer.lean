@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # From the weighted prime count to the unweighted one
@@ -59,7 +60,7 @@ public section
 namespace TauCeti
 
 open Asymptotics Filter MeasureTheory
-open scoped nonZeroDivisors NumberField
+open scoped nonZeroDivisors NumberField Topology
 open IsDedekindDomain
 
 variable {K : Type*} [Field K] [NumberField K] {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
@@ -123,6 +124,18 @@ theorem primeCount_sub_mul_logIntegral_isLittleO
   refine ((hboundary.add hintegral).add hconst).congr' ?_ EventuallyEq.rfl
   filter_upwards [eventually_ge_atTop (2 : ℝ)] with x hx
   exact (primeCount_sub_mul_logIntegral_eq S δ hx).symm
+
+/-- An error of `o(x / log x)` relative to `δ Li(x)` gives the prime-counting ratio limit. -/
+theorem tendsto_primeCount_div_of_isLittleO_logIntegral
+    (h : (fun x ↦ primeCount K S x - δ * Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x) :
+    Tendsto (fun x : ℝ ↦ primeCount K S x / (x / Real.log x)) atTop (𝓝 δ) := by
+  have h' : (fun x ↦ primeCount K S x - δ * (x / Real.log x)) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x :=
+    (h.add (Real.logIntegral_isEquivalent_div_log.isLittleO.const_mul_left δ)).congr_left
+      fun x ↦ by simp only [Pi.sub_apply, div_eq_mul_inv]; ring
+  exact (isLittleO_sub_mul_iff_tendsto_div
+    (Real.tendsto_div_log_atTop.eventually_ne_atTop 0)).mp h'
 
 /-- **The zero-density case.**  If the logarithmically weighted count of `S` is `o(x)`, then `S`
 contains `o(Li x)` primes up to `x`.  An asymptotic equivalence is *not* the right statement here:
