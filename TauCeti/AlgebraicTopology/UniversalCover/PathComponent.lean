@@ -7,39 +7,32 @@ module
 
 public import TauCeti.AlgebraicTopology.PathComponent
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
-public import TauCeti.Topology.Covering.Clopen
 
 /-!
-# The universal cover of a path component
+# The universal cover of a non-path-connected base
 
-The universal-cover development assumes that the base is path connected, so that the endpoint
-projection is surjective. Dropping that assumption, based paths out of `x₀` still only see the
-path component of `x₀`, so this file builds the cover of `pathComponent x₀` instead.
+The endpoint projection `UniversalCover.proj : UniversalCover x₀ → X` is a covering map for any
+locally path connected, semilocally simply connected `X` (`UniversalCover.isCoveringMap`); when
+`X` is not path connected its range is exactly the path component of `x₀`
+(`UniversalCover.range_proj`), and the fibres over the other path components are empty.
 
-For `X` locally path connected and semilocally simply connected — but *not* assumed path
-connected — the path component of `x₀` is path connected, is open and therefore locally path
+The deck-group computation `UniversalCover.deckFundamentalGroupEquiv` does use path
+connectedness, since it goes through regularity of the covering, which includes surjectivity. For
+a base that is not path connected this file therefore passes to the universal cover of the path
+component of `x₀`. That component is path connected, is open and therefore locally path
 connected, and absorbs ambient null-homotopies, so it inherits all three standing hypotheses
-(`TauCeti/AlgebraicTopology/PathComponent.lean`). Its universal cover is therefore available,
-and because the subspace is clopen the composite of its endpoint projection with the inclusion
-is a covering map of `X` itself, with range exactly `pathComponent x₀`. Total-space path
-connectedness and simple connectivity are inherited from the universal cover, being statements
-about the same topological space.
-
-The deck group is unchanged by the inclusion, and
-`FundamentalGroup.pathComponentMulEquiv` identifies the fundamental group of the path
-component with that of `X` at the same point. Thus the deck group of the path-component cover is
-`(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-group convention pinned in
+(`TauCeti/AlgebraicTopology/PathComponent.lean`). The deck group is unchanged by composing with
+the inclusion into `X`, and `FundamentalGroup.pathComponentMulEquiv` identifies the fundamental
+group of the path component with that of `X` at the same point. Thus the deck group of the
+path-component cover is `(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-group convention pinned in
 `TauCeti.UniversalCover.deckFundamentalGroupEquiv`.
 
 ## Main declarations
 
+* `TauCeti.UniversalCover.range_proj`: the endpoint projection has range the path component of
+  `x₀`.
 * `TauCeti.UniversalCover.PathComponentCover`: the universal cover of the path component of `x₀`.
 * `TauCeti.UniversalCover.pathComponentCoverProj`: its projection down to `X`.
-* `TauCeti.UniversalCover.isCoveringMap_pathComponentCoverProj` and
-  `TauCeti.UniversalCover.range_pathComponentCoverProj`: it is a covering map of `X` with range
-  the path component of `x₀`.
-* `TauCeti.UniversalCover.existsUnique_continuousMap_lifts_pathComponentCoverProj`: the universal
-  lifting property, stated for maps into `X`.
 * `TauCeti.UniversalCover.deckPathComponentFundamentalGroupEquiv`: its deck group is
   `(π₁(X, x₀))ᵐᵒᵖ`.
 
@@ -58,6 +51,15 @@ namespace TauCeti.UniversalCover
 variable {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
   [SemilocallySimplyConnectedSpace X] (x₀ : X)
 
+omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
+/-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
+theorem range_proj : Set.range (proj : UniversalCover x₀ → X) = pathComponent x₀ := by
+  ext x
+  refine ⟨?_, fun h ↦ ⟨mk x (Path.Homotopic.Quotient.mk h.somePath), rfl⟩⟩
+  rintro ⟨⟨x, q⟩, rfl⟩
+  induction q using Quotient.inductionOn with
+  | h p => exact ⟨p⟩
+
 /-- The universal cover of the path component of `x₀`. The component is path connected; local
 path connectedness follows from its openness, and semilocal simple connectivity follows because
 ambient null-homotopies based in the component remain there. -/
@@ -67,28 +69,6 @@ abbrev PathComponentCover : Type _ := UniversalCover (pathComponentSelf x₀)
 projection followed by the inclusion of the path component. -/
 abbrev pathComponentCoverProj : PathComponentCover x₀ → X :=
   Subtype.val ∘ UniversalCover.proj
-
-/-- **The universal cover of a path component is a covering map into the ambient space.** The path
-component is clopen, so fibres over the other path components are empty and evenly covered by
-empty trivialisations. -/
-theorem isCoveringMap_pathComponentCoverProj : IsCoveringMap (pathComponentCoverProj x₀) :=
-  (UniversalCover.isCoveringMap (pathComponentSelf x₀)).subtypeVal_comp (IsClopen.pathComponent x₀)
-
-omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
-/-- The image of the path-component cover is exactly the path component of `x₀`. -/
-theorem range_pathComponentCoverProj :
-    Set.range (pathComponentCoverProj x₀) = pathComponent x₀ :=
-  (UniversalCover.proj_surjective.range_comp Subtype.val).trans Subtype.range_coe
-
-/-- **Universal property of the path-component cover.** A continuous map into `X` from a locally
-path connected, simply connected space lifts uniquely once the image of one point is prescribed.
--/
-theorem existsUnique_continuousMap_lifts_pathComponentCoverProj {A : Type*} [TopologicalSpace A]
-    [LocallyPathConnectedSpace A] [SimplyConnectedSpace A] (f : C(A, X))
-    (a₀ : A) (e₀ : PathComponentCover x₀) (he : pathComponentCoverProj x₀ e₀ = f a₀) :
-    ∃! F : C(A, PathComponentCover x₀),
-      F a₀ = e₀ ∧ pathComponentCoverProj x₀ ∘ F = f :=
-  (isCoveringMap_pathComponentCoverProj x₀).existsUnique_continuousMap_lifts f a₀ e₀ he
 
 omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
 /-- Postcomposing the endpoint projection with the path-component inclusion does not change its
