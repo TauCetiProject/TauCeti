@@ -86,7 +86,7 @@ def HalfEdge.vertex (h : G.HalfEdge) : G.Vertex := G.endpoint h.1 h.2
 def firstBetti : ℕ := Fintype.card G.Edge + 1 - Fintype.card G.Vertex
 
 /-- The arithmetic genus encoded by a connected weighted dual graph. -/
-def arithmeticGenus : ℕ := ∑ v, G.genus v + G.firstBetti
+def arithmeticGenus : ℕ := (∑ v, G.genus v) + G.firstBetti
 
 end DualGraph
 
