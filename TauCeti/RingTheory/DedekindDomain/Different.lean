@@ -37,6 +37,10 @@ residue separability the residue trace is zero (`Algebra.trace_eq_zero_of_not_is
 * `TauCeti.pow_ramificationIdx_dvd_differentIdeal_iff`: **Dedekind's different theorem, second
   part** — `P ^ e(P ∣ p) ∣ 𝔡(B/A)` exactly when the residue extension is inseparable or
   `e(P ∣ p)` vanishes in `A ⧸ p`.
+* `TauCeti.multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff` and
+  `TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff`: for a separable residue extension,
+  the multiplicity of `P` in the different is `e(P ∣ p) - 1` in the tame case and at least
+  `e(P ∣ p)` in the wild case.
 
 ## References
 
@@ -138,5 +142,53 @@ theorem pow_ramificationIdx_dvd_differentIdeal_iff
   rw [← Ideal.IsDedekindDomain.ramificationIdx_eq_normalizedFactors_count p P hp'] at h₂
   exact pow_dvd_differentIdeal_iff_of_isCoprime A hp P Q
     (Ideal.isCoprime_iff_sup_eq.mpr h₁).pow_left h₂.symm
+
+section Multiplicity
+
+variable [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
+
+/-- The characteristic property of the different exponent at a nonzero prime `P` of `B`: `P ^ n`
+divides the different ideal exactly when `n` is at most the multiplicity of `P` in it. -/
+theorem pow_dvd_differentIdeal_iff_le_multiplicity {P : Ideal B} [P.IsPrime] (hP : P ≠ ⊥)
+    {n : ℕ} : P ^ n ∣ differentIdeal A B ↔ n ≤ multiplicity P (differentIdeal A B) :=
+  (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hP ‹_›)
+    differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+
+/-- **Dedekind's different theorem, first part, as a bound on the exponent**: the multiplicity of
+a prime `P` over a nonzero prime `p` in the different ideal is at least `e(P ∣ p) - 1`. -/
+theorem ramificationIdx_sub_one_le_multiplicity_differentIdeal {p : Ideal A} [p.IsMaximal]
+    (hp : p ≠ ⊥) (P : Ideal B) [P.IsPrime] [P.LiesOver p] :
+    P.ramificationIdx A - 1 ≤ multiplicity P (differentIdeal A B) := by
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A (Ideal.ne_bot_of_liesOver_of_ne_bot hp P),
+    ← Ideal.ramificationIdx'_eq_ramificationIdx p P hp]
+  exact pow_sub_one_dvd_differentIdeal A P _ hp
+    (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx' (p := p) (P := P)))
+
+variable {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P : Ideal B) [P.IsMaximal] [P.LiesOver p]
+  [Algebra.IsSeparable (A ⧸ p) (B ⧸ P)]
+include hp
+
+/-- **Dedekind's different theorem, the wild case, as a bound on the exponent**: for a separable
+residue extension, the multiplicity of `P` in the different ideal is at least `e(P ∣ p)` exactly
+when `e(P ∣ p)` vanishes in the residue field `A ⧸ p`. -/
+theorem ramificationIdx_le_multiplicity_differentIdeal_iff :
+    P.ramificationIdx A ≤ multiplicity P (differentIdeal A B) ↔
+      ((P.ramificationIdx A : ℕ) : A ⧸ p) = 0 := by
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A (Ideal.ne_bot_of_liesOver_of_ne_bot hp P),
+    pow_ramificationIdx_dvd_differentIdeal_iff A hp P]
+  simp only [‹Algebra.IsSeparable (A ⧸ p) (B ⧸ P)›, not_true_eq_false, false_or]
+
+/-- **Dedekind's different theorem, the tame case, as an exponent**: for a separable residue
+extension, the multiplicity of `P` in the different ideal is exactly `e(P ∣ p) - 1` when
+`e(P ∣ p)` is nonzero in the residue field `A ⧸ p`. -/
+theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
+    multiplicity P (differentIdeal A B) = P.ramificationIdx A - 1 ↔
+      ((P.ramificationIdx A : ℕ) : A ⧸ p) ≠ 0 := by
+  have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal A hp P
+  have hpos := Ideal.ramificationIdx_pos P A
+  rw [ne_eq, ← ramificationIdx_le_multiplicity_differentIdeal_iff A hp P]
+  omega
+
+end Multiplicity
 
 end TauCeti
