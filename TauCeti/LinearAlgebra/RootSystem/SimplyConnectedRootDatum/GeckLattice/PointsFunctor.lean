@@ -136,21 +136,32 @@ theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht B
-        ((Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom)).asOver
-          (Spec (CommRingCat.of ℤ)) ≫ p) =
+        (@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom f)) _ inferInstance
+          inferInstance (by
+            constructor
+            simpa only [show f.toIntAlgHom.toRingHom = f from rfl] using
+              (CategoryTheory.comp_over
+                (f := Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom))
+                (S := Spec (CommRingCat.of ℤ)))) ≫ p) =
       (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f
         (t.geckSchemePointsMulEquiv ht A p) := by
   let q := (t.geckGroupSchemePointMulEquiv ht A).symm p
   have hpre :
       (t.geckGroupSchemePointMulEquiv ht B).symm
-          ((Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom)).asOver
-            (Spec (CommRingCat.of ℤ)) ≫ p) =
+          (@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom f)) _ inferInstance
+            inferInstance (by
+              constructor
+              simpa only [show f.toIntAlgHom.toRingHom = f from rfl] using
+                (CategoryTheory.comp_over
+                  (f := Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom))
+                  (S := Spec (CommRingCat.of ℤ)))) ≫ p) =
         HopfAlgebra.mapPoints (H := t.geckCoordinateHopfAlgebra ht)
           (CommAlgCat.ofHom f.toIntAlgHom) q := by
-    simpa only [q, geckGroupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (t.geckCoordinateHopfAlgebra ht) f.toIntAlgHom
-        (t.geckGroupScheme_eq_hopfSpec ht) p
+    convert CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
+      (t.geckCoordinateHopfAlgebra ht) f.toIntAlgHom
+      (t.geckGroupScheme_eq_hopfSpec ht) p using 1 <;>
+        simp only [q, geckGroupSchemePointMulEquiv]
+    congr 1
   simp only [geckSchemePointsMulEquiv, MulEquiv.trans_apply]
   rw [hpre]
   change (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ B)).mulEquiv
