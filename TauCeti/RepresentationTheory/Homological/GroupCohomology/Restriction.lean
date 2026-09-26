@@ -29,7 +29,7 @@ comparison morphism between them is built from
 ## Main results
 
 * `TauCeti.groupCohomology.map_subgroupOf_trans`: restriction along a tower of subgroups is
-  transitive, in every degree `n + 1` for `n : ℕ`.
+  transitive, in every degree `n` for `n : ℕ`.
 
 ## References
 
@@ -59,48 +59,48 @@ open _root_.groupCohomology
 variable {R G : Type u} [CommRing R] [Group G] (M : Rep.{u} R G)
 
 /-- **Restriction along a tower of subgroups is transitive**: for `K ≤ H ≤ G` and `n : ℕ`, the map
-`Hⁿ⁺¹(G, M) ⟶ Hⁿ⁺¹(H, Res_H M)` along `H.subtype` followed by the map along
+`Hⁿ(G, M) ⟶ Hⁿ(H, Res_H M)` along `H.subtype` followed by the map along
 `(K.subgroupOf H).subtype` and then the change-of-group map along
-`Subgroup.subgroupOfEquivOfLe hKH` is restriction `Hⁿ⁺¹(G, M) ⟶ Hⁿ⁺¹(K, Res_K M)` along
+`Subgroup.subgroupOfEquivOfLe hKH` is restriction `Hⁿ(G, M) ⟶ Hⁿ(K, Res_K M)` along
 `K.subtype`. Here `K.subgroupOf H`, which is `K` viewed as a subgroup of `H`, is identified with
 `K` by `Subgroup.subgroupOfEquivOfLe hKH`, under which the two restrictions of `M` agree
 (`Rep.isIntertwiningMap_res_res`). -/
 @[reassoc]
 theorem map_subgroupOf_trans {K H : Subgroup G} (hKH : K ≤ H) (n : ℕ) :
-    map H.subtype (𝟙 (Rep.res H.subtype M)) (n + 1) ≫
+    map H.subtype (𝟙 (Rep.res H.subtype M)) n ≫
       map (K.subgroupOf H).subtype
-        (𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) (n + 1) ≫
+        (𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) n ≫
       map (A := Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))
         (B := Rep.res K.subtype M) ((Subgroup.subgroupOfEquivOfLe hKH).symm)
         (Rep.isIntertwiningMap_res_res M
-          (Subgroup.subtype_comp_subgroupOfEquivOfLe hKH)).ofRes (n + 1) =
-    map K.subtype (𝟙 (Rep.res K.subtype M)) (n + 1) := by
+          (Subgroup.subtype_comp_subgroupOfEquivOfLe hKH)).ofRes n =
+    map K.subtype (𝟙 (Rep.res K.subtype M)) n := by
   have h₁ := map_comp (A := M) (B := Rep.res H.subtype M)
       (C := Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))
       (f := H.subtype) (g := (K.subgroupOf H).subtype)
       (φ := 𝟙 (Rep.res H.subtype M))
-      (ψ := 𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) (n + 1)
+      (ψ := 𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) n
   have h₃ := map_comp (A := M)
       (B := Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M)) (C := Rep.res K.subtype M)
       (f := H.subtype.comp (K.subgroupOf H).subtype)
       (g := (Subgroup.subgroupOfEquivOfLe hKH).symm)
       (φ := (Rep.resFunctor (K.subgroupOf H).subtype).map (𝟙 (Rep.res H.subtype M)))
       (ψ := (Rep.isIntertwiningMap_res_res M
-        (Subgroup.subtype_comp_subgroupOfEquivOfLe hKH)).ofRes) (n + 1)
+        (Subgroup.subtype_comp_subgroupOfEquivOfLe hKH)).ofRes) n
   rw [← Category.assoc, h₁.symm]
   have h₁' :
       map (H.subtype.comp (K.subgroupOf H).subtype)
-          ((Rep.resFunctor (K.subgroupOf H).subtype).map (𝟙 (Rep.res H.subtype M))) (n + 1) =
+          ((Rep.resFunctor (K.subgroupOf H).subtype).map (𝟙 (Rep.res H.subtype M))) n =
         map (H.subtype.comp (K.subgroupOf H).subtype)
           ((Rep.resFunctor (K.subgroupOf H).subtype).map (𝟙 (Rep.res H.subtype M)) ≫
-            𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) (n + 1) :=
-    map_congr rfl (by ext x; simp) (n + 1)
+            𝟙 (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M))) n :=
+    map_congr rfl (by ext x; simp) n
   rw [h₁'.symm, h₃.symm]
   have hg : (H.subtype.comp (K.subgroupOf H).subtype).comp
       (Subgroup.subgroupOfEquivOfLe hKH).symm = K.subtype := by
     rw [← Subgroup.subtype_comp_subgroupOfEquivOfLe hKH]
     ext x
     simp
-  exact map_congr hg (by ext x; simp) (n + 1)
+  exact map_congr hg (by ext x; simp) n
 
 end TauCeti.groupCohomology

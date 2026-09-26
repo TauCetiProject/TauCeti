@@ -234,6 +234,6 @@ theorem posRes_trans {K H : Subgroup G} (hKH : K ≤ H) (n : ℕ) :
     ((_root_.TateCohomology.isoGroupCohomology (G := ↥H) (n + 1)).app (Rep.res H.subtype M))
     ((_root_.TateCohomology.isoGroupCohomology (G := ↥(K.subgroupOf H)) (n + 1)).app
       (Rep.res (K.subgroupOf H).subtype (Rep.res H.subtype M)))
-    (TauCeti.groupCohomology.map_subgroupOf_trans M hKH n)
+    (TauCeti.groupCohomology.map_subgroupOf_trans M hKH (n + 1))
 
 end TauCeti.TateCohomology
