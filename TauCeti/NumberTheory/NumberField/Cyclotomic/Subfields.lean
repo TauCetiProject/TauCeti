@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
+import TauCeti.Data.ZMod.Units
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 import Mathlib.RingTheory.ZMod.UnitsCyclic
 import Mathlib.Tactic.NormNum.Prime
@@ -39,20 +40,12 @@ private theorem card_gal_five : Nat.card (Gal(K/ℚ)) = 4 := by
   rw [Nat.card_congr (galEquivZMod 5 K).toEquiv, Nat.card_eq_fintype_card,
     ZMod.card_units_eq_totient, Nat.totient_prime (by norm_num : Nat.Prime 5)]
 
-private theorem card_zpowers_neg_one :
-    Nat.card (Subgroup.zpowers (-1 : (ZMod 5)ˣ)) = 2 := by
-  let hfact : Fact (1 < (5 : ℕ)) := ⟨by omega⟩
-  have h : ringChar (ZMod 5) ≠ 2 := by rw [ringChar.eq (ZMod 5) 5]; omega
-  have h' : orderOf (-1 : ZMod 5) = 2 := by simp [orderOf_neg_one, h]
-  rw [Nat.card_zpowers]
-  exact (orderOf_units (y := (-1 : (ZMod 5)ˣ))).symm.trans (by simpa using h')
-
 private noncomputable def orderTwoSubgroup : Subgroup (Gal(K/ℚ)) :=
   Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))
 
 private theorem card_orderTwoSubgroup : Nat.card (orderTwoSubgroup (K := K)) = 2 := by
   rw [orderTwoSubgroup, Nat.card_zpowers, MulEquiv.orderOf_eq]
-  simpa only [Nat.card_zpowers] using card_zpowers_neg_one
+  simpa only [Nat.card_zpowers] using card_zpowers_neg_one_zmod_five_units
 
 /-- The unique quadratic intermediate field of the fifth cyclotomic field, defined as the fixed
 field of the order-two subgroup with cyclotomic exponents `±1`. -/
@@ -88,7 +81,7 @@ theorem intermediateField_eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_to
   have : IsCyclic (ZMod 5)ˣ := ZMod.isCyclic_units_prime (by norm_num : Nat.Prime 5)
   have : IsCyclic (Gal(K/ℚ)) :=
     isCyclic_of_injective (galEquivZMod 5 K).toMonoidHom (galEquivZMod 5 K).injective
-  rcases subgroup_eq_bot_or_eq_of_card_two_or_eq_top (card_gal_five (K := K))
+  rcases subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two (card_gal_five (K := K))
       (orderTwoSubgroup (K := K)) (card_orderTwoSubgroup (K := K)) F.fixingSubgroup with h | h | h
   · right; right
     rw [← IsGalois.fixedField_fixingSubgroup F, h, fixedField_bot]

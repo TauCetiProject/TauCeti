@@ -25,7 +25,7 @@ variable {G : Type*} [Group G] [Finite G] [IsCyclic G]
 
 /-- In a cyclic group of order four, the unique subgroup of order two is the only proper
 nontrivial subgroup. -/
-theorem subgroup_eq_bot_or_eq_of_card_two_or_eq_top
+theorem subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two
     (hG : Nat.card G = 4) (H : Subgroup G) (hH : Nat.card H = 2) (S : Subgroup G) :
     S = ⊥ ∨ S = H ∨ S = ⊤ := by
   have hdiv : Nat.card S ∣ 4 := hG ▸ S.card_subgroup_dvd_card
@@ -62,7 +62,7 @@ theorem card_subgroups_of_card_eq_four (hG : Nat.card G = 4) :
   have huniv : (Finset.univ : Finset (Subgroup G)) = {⊥, H, ⊤} := by
     ext S
     simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    exact subgroup_eq_bot_or_eq_of_card_two_or_eq_top hG H hH S
+    exact subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two hG H hH S
   rw [Nat.card_eq_fintype_card, ← Finset.card_univ, huniv]
   simp [hHbot.symm, hHtop, hbt]
 
