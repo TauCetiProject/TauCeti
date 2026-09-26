@@ -57,11 +57,12 @@ Hilbert-Schmidt structure.
 Each block also carries its **character averaging operator** `TauCeti.peterWeylBlockAveraging`,
 the convolution operator of the kernel `dim V_π · conj χ_π`.
 Convolution moves the group argument of a matrix coefficient, hence acts on the defining vectors of
-the coefficient through the integrated operator of that kernel on the model's carrier. When `𝕜` is
-algebraically closed that operator is the identity on the model itself and zero on an inequivalent
-one, so the averaging is the identity on the `π`-block and kills every other block; its kernel being
-symmetric it is self-adjoint, and for a skeleton of the unitary dual every element of `L²(G)` is
-carried into the `π`-block, so it *is* the orthogonal projection of `L²(G)` onto that block
+the coefficient through the integrated operator of that kernel on the model's carrier. That
+operator is zero on an inequivalent model over any `𝕜`, and the identity on the model itself when
+`𝕜` is algebraically closed, so the averaging always kills every other block and is the identity
+on the `π`-block for an algebraically closed `𝕜`; its kernel being symmetric it is self-adjoint,
+and for a skeleton of the unitary dual every element of `L²(G)` is carried into the `π`-block, so
+it *is* the orthogonal projection of `L²(G)` onto that block
 (`TauCeti.peterWeylBlockAveraging_eq_starProjection`). That is the sense in which averaging against
 the character is the isotypic projector here: it is a statement about the orthogonal projection onto
 a subspace of `L²(G)`, not about a `G`-isotypic decomposition.
@@ -101,11 +102,13 @@ nothing is claimed here about its equivariance. The character averaging operator
 `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
-norm-continuous representation, while `L²(G)` is infinite-dimensional and its regular
-representation is only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). The
-averaging is carried out instead by `TauCeti.convolutionOperator`, which needs no continuity of the
-action on `L²(G)`, and the integrated operator is used only on the finite-dimensional carrier of a
-model, where it is available.
+norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
+representation then only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). Both
+obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`; but nothing here
+assumes `G` finite, so the general route is the one taken. The averaging is carried out instead by
+`TauCeti.convolutionOperator`, which needs no continuity of the action on `L²(G)`, and the
+integrated operator is used only on the finite-dimensional carrier of a model, where it is
+available.
 
 ## Main definitions
 
@@ -149,9 +152,10 @@ model, where it is available.
   is isometrically the Hilbert sum of the endomorphism spaces of the models**, each carrying its
   Hilbert-Schmidt inner product.
 * `TauCeti.peterWeylBlockAveraging_apply_of_mem` and
-  `TauCeti.peterWeylBlockAveraging_apply_eq_zero_of_mem`: **for an algebraically closed `𝕜` the
-  character averaging operator is the identity on its own block and kills the block of an
-  inequivalent model**, the two blockwise identities of the averaging kernel.
+  `TauCeti.peterWeylBlockAveraging_apply_eq_zero_of_mem`: **the character averaging operator kills
+  the block of an inequivalent model, and for an algebraically closed `𝕜` is the identity on its
+  own block**, the two blockwise identities of the averaging kernel. Only the second needs the
+  algebraic closure.
 * `TauCeti.peterWeylBlockAveraging_eq_starProjection` and
   `TauCeti.range_peterWeylBlockAveraging`: **for an algebraically closed `𝕜` the character
   averaging operator is the orthogonal projection of `L²(G)` onto the block**, whose range is
@@ -606,12 +610,13 @@ private theorem convolutionOperator_matrixCoeffLp (model : IrrepModel 𝕜 G) (k
 /-- **The character averaging operator of the `π`-block**: convolution against the kernel
 `dim V_π · conj χ_π`.
 
-When `𝕜` is algebraically closed it is the identity on the `π`-block
-(`TauCeti.peterWeylBlockAveraging_apply_of_mem`) and kills the block of an inequivalent model
-(`TauCeti.peterWeylBlockAveraging_apply_eq_zero_of_mem`), because the integrated operator of that
-kernel on the carrier of a model is then the identity for `π` itself and zero for an inequivalent
-one. For a skeleton of the unitary dual those two identities make it the orthogonal projection of
-`L²(G)` onto the block (`TauCeti.peterWeylBlockAveraging_eq_starProjection`).
+It kills the block of an inequivalent model
+(`TauCeti.peterWeylBlockAveraging_apply_eq_zero_of_mem`), and when `𝕜` is algebraically closed it is
+the identity on the `π`-block (`TauCeti.peterWeylBlockAveraging_apply_of_mem`), because the
+integrated operator of that kernel on the carrier of a model is zero for an inequivalent model and,
+over such a `𝕜`, the identity for `π` itself. For a skeleton of the unitary dual those two
+identities make it the orthogonal projection of `L²(G)` onto the block
+(`TauCeti.peterWeylBlockAveraging_eq_starProjection`).
 
 It is not called a projection, because over a `𝕜` that is not algebraically closed it need not be
 one: the kernel scales the block by the dimension over `𝕜` of the endomorphism algebra of the
@@ -667,12 +672,13 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : I
   simp
 
 /-- **The character averaging operator kills the matrix coefficients of an inequivalent model.**
-The kernel `dim V_π · conj χ_π` acts as zero on the carrier of an irreducible model inequivalent to
-`π`, by
+The kernel `dim V_π · conj χ_π` acts as zero on the carrier of a model inequivalent to `π`, by
 `TauCeti.ContRepresentation.integratedOperator_star_character_eq_zero`; Schur's lemma is what turns
-inequivalence into the vanishing of every intertwiner. -/
+inequivalence into the vanishing of every intertwiner. No algebraic closedness is needed here: it
+is the *identity* on a model's own block, not the vanishing on the others, that holds only over an
+algebraically closed `𝕜`. -/
 @[simp]
-theorem peterWeylBlockAveraging_matrixCoeffLp_eq_zero [IsAlgClosed 𝕜]
+theorem peterWeylBlockAveraging_matrixCoeffLp_eq_zero
     {model model' : IrrepModel 𝕜 G}
     (hne : IsEmpty (_root_.ContRepresentation.Equiv model.rep model'.rep))
     (v w : EuclideanSpace 𝕜 (Fin model'.dim)) :
@@ -685,7 +691,7 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_eq_zero [IsAlgClosed 𝕜]
       = 0 := by
     rw [ContRepresentation.integratedOperator_smul,
       ContRepresentation.integratedOperator_star_character_eq_zero model.rep model.continuous_rep
-        model'.rep model'.continuous_rep model.isUnitary model'.isIrreducible
+        model'.rep model'.continuous_rep model.isUnitary
         (fun φ => by
           simp [ContRepresentation.eq_zero_of_isEmpty_equiv model'.isIrreducible
             model.isIrreducible hne' φ]),
@@ -707,8 +713,9 @@ theorem peterWeylBlockAveraging_apply_of_mem [IsAlgClosed 𝕜] (model : IrrepMo
   | add x y _ _ hx hy => rw [map_add, hx, hy]
   | smul c x _ hx => rw [map_smul, hx]
 
-/-- **The character averaging operator kills the block of an inequivalent model.** -/
-theorem peterWeylBlockAveraging_apply_eq_zero_of_mem [IsAlgClosed 𝕜]
+/-- **The character averaging operator kills the block of an inequivalent model.** Like the
+matrix-coefficient identity it comes from, this holds over any `RCLike 𝕜`. -/
+theorem peterWeylBlockAveraging_apply_eq_zero_of_mem
     {model model' : IrrepModel 𝕜 G}
     (hne : IsEmpty (_root_.ContRepresentation.Equiv model.rep model'.rep))
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model') :

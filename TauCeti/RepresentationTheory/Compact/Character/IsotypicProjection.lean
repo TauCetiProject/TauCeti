@@ -314,6 +314,7 @@ variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
 include hrho
 
+omit [IsAlgClosed k] in
 private theorem isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary
     (sigma : ContRepresentation k G W) (hsigma : Continuous sigma) (hunitary : IsUnitary sigma)
     (hirr : Representation.IsIrreducible sigma.toRepresentation)
@@ -339,7 +340,7 @@ private theorem isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary
       exact hne.false (tau.asModuleEquivAsSubmodule.symm.trans
         (Representation.asModuleLinearEquivOfEquiv phi'))⟩
   have hzero : integratedOperator rhoTau hTau (star (character sigma hsigma)) = 0 :=
-    integratedOperator_star_character_eq_zero sigma hsigma rhoTau hTau hunitary hirrTau
+    integratedOperator_star_character_eq_zero sigma hsigma rhoTau hTau hunitary
       fun phi ↦ by
         simpa using congrArg ContIntertwiningMap.toContinuousLinearMap
           (eq_zero_of_isEmpty_equiv hirrTau hirr hempty phi)
@@ -357,6 +358,7 @@ variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
 include hrho
 
+omit [IsAlgClosed k] in
 /-- **The isotypic projector vanishes on every inequivalent irreducible block.** -/
 theorem isotypicProjector_apply_subtype_of_not_equiv
     (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
