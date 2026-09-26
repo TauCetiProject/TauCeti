@@ -44,7 +44,10 @@ with measurable singletons.
 * `TauCeti.graphPlan T μ` — the graph plan, or Monge plan, of `T`: the pushforward of `μ` along
   `x ↦ (x, T x)`;
 * `TauCeti.Coupling.graph` — the graph plan of a transport map between two probability
-  measures, bundled as an element of `TauCeti.Coupling`.
+  measures, bundled as an element of `TauCeti.Coupling`; `TauCeti.Coupling.coe_graph` identifies
+  its underlying probability measure with the bundled pushforward
+  `MeasureTheory.ProbabilityMeasure.map` along `x ↦ (x, T x)`, which
+  `TauCeti.toMeasure_map_prodMk_self` identifies with the graph plan.
 
 ## Main statements
 
@@ -55,7 +58,8 @@ with measurable singletons.
 * `TauCeti.lintegral_graphPlan` — the change of variables
   `∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ`, which feeds the Monge-to-Kantorovich
   inequality `TauCeti.transportCost_le_lintegral_of_hasLaw` in
-  `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`;
+  `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`, and its Bochner version
+  `TauCeti.integral_graphPlan`;
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
@@ -283,6 +287,13 @@ theorem lintegral_graphPlan (hT : AEMeasurable T μ) (hc : AEMeasurable c (graph
     ∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ :=
   lintegral_map' hc (aemeasurable_prodMk_self hT)
 
+/-- **Change of variables along a graph plan**, Bochner version: integrating a vector-valued
+function against the graph plan of `T` is integrating its values at the graph points. -/
+theorem integral_graphPlan {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : X × Y → E}
+    (hT : AEMeasurable T μ) (hf : AEStronglyMeasurable f (graphPlan T μ)) :
+    ∫ z, f z ∂graphPlan T μ = ∫ x, f (x, T x) ∂μ :=
+  integral_map (aemeasurable_prodMk_self hT) hf
+
 end ChangeOfVariables
 
 section Determinism
@@ -367,6 +378,12 @@ theorem graphPlan_dirac {x : X} (hT : AEMeasurable T (Measure.dirac x)) :
 
 end Dirac
 
+/-- The bundled pushforward of a probability measure along the graph map `x ↦ (x, T x)` is the
+graph plan of `T`. -/
+theorem toMeasure_map_prodMk_self (T : X → Y) (μ : ProbabilityMeasure X) :
+    ((μ.map fun x ↦ (x, T x) : ProbabilityMeasure (X × Y)) : Measure (X × Y)) = graphPlan T μ := by
+  rw [ProbabilityMeasure.toMeasure_map, graphPlan_def]
+
 namespace Coupling
 
 variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
@@ -375,14 +392,20 @@ variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
 `TauCeti.Coupling`. -/
 def graph (hT : HasLaw T ν.toMeasure μ.toMeasure) : Coupling μ ν :=
   ⟨μ.map (fun x ↦ (x, T x)), by
-    rw [ProbabilityMeasure.toMeasure_map]
+    rw [toMeasure_map_prodMk_self]
     exact isCoupling_graphPlan hT⟩
 
-/-- The underlying measure of a bundled graph plan is the graph plan. -/
+/-- The underlying probability measure of a bundled graph plan is the pushforward of `μ` along
+the graph map `x ↦ (x, T x)`. -/
 @[simp]
 theorem coe_graph (hT : HasLaw T ν.toMeasure μ.toMeasure) :
-    ((graph hT : ProbabilityMeasure (X × Y)) : Measure (X × Y)) = graphPlan T μ.toMeasure :=
+    (graph hT : ProbabilityMeasure (X × Y)) = μ.map fun x ↦ (x, T x) :=
   (rfl)
+
+/-- The underlying measure of a bundled graph plan is the graph plan. -/
+theorem toMeasure_graph (hT : HasLaw T ν.toMeasure μ.toMeasure) :
+    ((graph hT : ProbabilityMeasure (X × Y)) : Measure (X × Y)) = graphPlan T μ.toMeasure := by
+  rw [coe_graph, toMeasure_map_prodMk_self]
 
 end Coupling
 

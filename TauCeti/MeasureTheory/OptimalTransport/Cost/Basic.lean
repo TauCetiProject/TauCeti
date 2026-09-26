@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # The transport cost of two measures
@@ -73,7 +73,7 @@ none.
 
 The Monge-to-Kantorovich inequality is a statement about the transport cost, so it is stated
 here; the graph plan that witnesses it and the change of variables it uses come from
-`TauCeti/MeasureTheory/OptimalTransport/GraphPlan.lean`, which is below this module. Its
+`TauCeti/MeasureTheory/OptimalTransport/GraphPlan/Basic.lean`, which is below this module. Its
 inequality half needs no measurability of the cost at all, since only one half of the change of
 variables, `MeasureTheory.lintegral_map_le`, is used.
 
