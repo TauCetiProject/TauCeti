@@ -24,6 +24,13 @@ Finiteness and faithful flatness descend as properties of ring homomorphisms. Ce
 descends because formation of the center and of the kernel Hopf ideal commutes with field
 extension, and faithfully flat extension reflects containment of ideals.
 
+The descent equivalences use a common universe for the base ring, extension ring, and
+coordinate Hopf algebras, as required by `IsIsogeny.baseChange` and
+`IsCentralIsogeny.baseChange`. The center base-change identity also requires the extension
+ring and coordinate algebra to share a universe. Algebraic closure stays in the universe
+of the field, so these restrictions still allow descent from an algebraic closure when
+the coordinate algebras lie in that universe.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§2 and 12.
