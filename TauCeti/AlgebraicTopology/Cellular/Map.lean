@@ -138,15 +138,6 @@ def cellularChainGroupMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ)
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap f hf n) R n
 
-/-- The cellular chain group map is induced by the corresponding map of skeletal pairs on
-relative homology. -/
-lemma cellularChainGroupMap_eq_singularHomologyMap (f : ContinuousMap C C')
-    (hf : IsCellular f) (n : ℕ) :
-    cellularChainGroupMap R f hf n =
-      TopPair.singularHomologyMap (skeletonPairMap f hf n) R n := by
-  unfold cellularChainGroupMap
-  rfl
-
 /-- The identity cellular map induces the identity on each cellular chain group. -/
 @[simp]
 lemma cellularChainGroupMap_id (n : ℕ) :
