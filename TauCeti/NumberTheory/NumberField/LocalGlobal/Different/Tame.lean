@@ -44,7 +44,8 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamif
       w.asIdeal.ramificationIdx (𝓞 K) - 1 ↔
     TauCeti.IsTamelyRamified (v.adicCompletion K) (w.adicCompletion L) :=
   (TauCeti.multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff (𝓞 K) v.ne_bot
-    w.asIdeal).trans (isTamelyRamified_adicCompletion_iff v w).symm
+    w.asIdeal).trans <| (and_iff_right (by infer_instance)).trans
+      (isTamelyRamified_adicCompletion_iff v w).symm
 
 /-- The global different exponent at `w` reaches `e(w/v)` precisely when the canonical
 completed extension is wildly ramified. -/
@@ -52,8 +53,9 @@ theorem ramificationIdx_le_multiplicity_differentIdeal_iff_isWildlyRamified :
     w.asIdeal.ramificationIdx (𝓞 K) ≤
       multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) ↔
     TauCeti.IsWildlyRamified (v.adicCompletion K) (w.adicCompletion L) :=
-  (TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff (𝓞 K) v.ne_bot w.asIdeal).trans
-    (isWildlyRamified_adicCompletion_iff v w).symm
+  (TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff (𝓞 K) v.ne_bot w.asIdeal).trans <|
+    (or_iff_right (not_not_intro (by infer_instance))).trans
+      (isWildlyRamified_adicCompletion_iff v w).symm
 
 end IsDedekindDomain.HeightOneSpectrum
 
