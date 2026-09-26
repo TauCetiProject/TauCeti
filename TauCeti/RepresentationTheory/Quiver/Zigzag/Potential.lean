@@ -41,6 +41,8 @@ trivializes the parameter.
   monoid homomorphism mapping a parameter.
 * `TauCeti.SkewZigzagParameter.transition_map`: transition factors are carried by the monoid
   homomorphism mapping a parameter.
+* `TauCeti.SkewZigzagParameter.walkTransition_map`: transition factors along a walk are carried
+  by the monoid homomorphism mapping a parameter.
 * `TauCeti.SkewZigzagParameter.transition_mul`: transition factors are multiplicative in the
   parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_potential`: a vertex potential for the
@@ -189,6 +191,21 @@ theorem walkTransition_append (c : SkewZigzagParameter k G) {u v w : V}
 theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
     (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
   simp [walkTransition, Function.comp_def, List.prod_inv]
+
+section Map
+
+variable {l : Type z} [CommMonoid l]
+
+/-- The transition factor of a walk is carried by the monoid homomorphism mapping a
+parameter. -/
+@[simp]
+theorem walkTransition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) :
+    walkTransition (c.map f) q = Units.map f (walkTransition c q) := by
+  unfold walkTransition
+  rw [← List.prod_hom (q.darts.map fun d ↦ transition c d.adj) (Units.map f)]
+  simp [transition_map, List.map_map, Function.comp_def]
+
+end Map
 
 /-! ### Trivializing a parameter from a vertex potential -/
 
