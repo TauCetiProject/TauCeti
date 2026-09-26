@@ -114,6 +114,9 @@ theorem coe_mk (f : G × G → M) (hf : IsMulCocycle₂ f) (hf₁ : f (1, 1) = 1
 theorem ext {α β : FactorSet G M} (h : ∀ p : G × G, α p = β p) : α = β :=
   DFunLike.ext _ _ h
 
+instance [Finite G] [Finite M] : Finite (FactorSet G M) :=
+  Finite.of_injective DFunLike.coe DFunLike.coe_injective
+
 section
 
 variable (α : FactorSet G M)
@@ -179,6 +182,10 @@ namespace Extension
 
 variable {α : FactorSet G M}
 
+instance [Finite G] [Finite M] : Finite α.Extension :=
+  Finite.of_injective (fun x : α.Extension ↦ (x.left, x.right))
+    (fun _ _ h ↦ Extension.ext (congrArg Prod.fst h) (congrArg Prod.snd h))
+
 instance instMul : Mul α.Extension where
   mul x y := ⟨x.left * x.right • y.left * α (x.right, y.right), x.right * y.right⟩
 
@@ -237,6 +244,27 @@ instance instGroup : Group α.Extension where
     · simp
 
 end Extension
+
+section MapExtension
+
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+
+/-- The homomorphism of twisted products induced by an equivariant coefficient homomorphism. -/
+def mapExtension (α : FactorSet G M) (f : M →*[G] N) :
+    α.Extension →* (α.map f).Extension where
+  toFun x := ⟨f x.left, x.right⟩
+  map_one' := by ext <;> simp
+  map_mul' x y := by ext <;> simp [map_smul]
+
+@[simp]
+theorem mapExtension_left (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).left = f x.left := (rfl)
+
+@[simp]
+theorem mapExtension_right (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).right = x.right := (rfl)
+
+end MapExtension
 
 section
 
