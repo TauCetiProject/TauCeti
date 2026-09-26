@@ -15,7 +15,7 @@ import Mathlib.Probability.Independence.Process.Basic
 /-!
 # Conditional independence of crossing array strips
 
-For a separately exchangeable array, the columns in `T` and the rows in `S` are
+For a separately exchangeable array, the row strips along `T` and the column strips along `S` are
 conditionally independent given their intersection `S ×ˢ T` whenever either index set
 is infinite. Thus the two
 families of strips used in the hidden/visible array decomposition are independent given
@@ -108,9 +108,9 @@ private theorem SeparatelyExchangeable.condIndepFun_strip_of_reindexing
   exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
     (Set.measurable_restrict D).comap_le hcontr).symm
 
-/-- The columns in `T` and the rows in `S` are conditionally independent given the entire
-intersection block whenever at least one of `S` and `T` is infinite. -/
-theorem SeparatelyExchangeable.condIndepFun_colStrip_rowStrip
+/-- The row strips along `T` and the column strips along `S` are conditionally independent given
+the entire intersection block whenever at least one of `S` and `T` is infinite. -/
+theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (S : Set ℕ)
     {T : Set ℕ} (hST : S.Infinite ∨ T.Infinite) :
     (Set.univ ×ˢ T).domRestrict ⟂ᵢ[(S ×ˢ T).domRestrict, Set.measurable_restrict _; ρ]
