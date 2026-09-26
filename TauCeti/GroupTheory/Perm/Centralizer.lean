@@ -67,16 +67,16 @@ theorem _root_.Subgroup.centralizer_stabilizer_eq_bot
   rw [Subgroup.mem_bot]
   exact Subtype.ext (Subgroup.eq_one_of_mem_centralizer_of_apply_eq hG τ.property hτ)
 
-/-- The order of the centralizer of a transitive group of permutations divides the number of
-letters, the centralizer being free on them. -/
-theorem _root_.Subgroup.card_centralizer_dvd [Fintype α] (G : Subgroup (Equiv.Perm α))
+/-- The cardinality of the centralizer of a transitive group of permutations divides the cardinality
+of the letters, the centralizer being free on them. -/
+theorem _root_.Subgroup.card_centralizer_dvd (G : Subgroup (Equiv.Perm α))
     (hG : MulAction.IsPretransitive G α) :
-    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Fintype.card α := by
+    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α := by
   have hfree : ∀ i : α,
       MulAction.stabilizer (Subgroup.centralizer (G : Set (Equiv.Perm α))) i = ⊥ :=
     Subgroup.centralizer_stabilizer_eq_bot hG
   have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
-  rw [Nat.card_prod, Nat.card_eq_fintype_card] at hcard
+  rw [Nat.card_prod] at hcard
   exact ⟨_, hcard.trans (mul_comm _ _)⟩
 
 end TauCeti

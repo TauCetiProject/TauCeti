@@ -117,6 +117,13 @@ def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
 
 @[simp] theorem ofTwo_σinf (σ0 σ1 : Perm (Fin n)) : (ofTwo σ0 σ1).σinf = (σ1 * σ0)⁻¹ := (rfl)
 
+/-- The third component of a triple built from its first two is the third entry of a product-one
+triple of permutations, the relation determining it. -/
+theorem ofTwo_σinf_of_productOne (p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n))
+    (h : p.2.2 * p.2.1 * p.1 = 1) : (ofTwo p.1 p.2.1).σinf = p.2.2 := by
+  have h' : p.2.2 * (p.2.1 * p.1) = 1 := by simpa only [mul_assoc] using h
+  rw [ofTwo_σinf, eq_inv_of_mul_eq_one_right h', inv_inv]
+
 variable (t : PermutationTriple n)
 
 /-- The third component of a triple is determined by the first two. -/
@@ -519,12 +526,8 @@ This is `TauCeti.Subgroup.card_centralizer_dvd` for the centralizer of a group o
 theorem card_automorphismGroup_dvd
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) :
     Nat.card t.automorphismGroup ∣ n := by
-  have hfree : ∀ i : Fin n, MulAction.stabilizer t.automorphismGroup i = ⊥ := fun i => by
-    rw [automorphismGroup_eq_centralizer_monodromyGroup (t := t),
-      Subgroup.centralizer_stabilizer_eq_bot ht i]
-  have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
-  rw [Nat.card_prod, Nat.card_eq_fintype_card, Fintype.card_fin] at hcard
-  exact ⟨_, hcard.trans (mul_comm _ _)⟩
+  rw [automorphismGroup_eq_centralizer_monodromyGroup (t := t)]
+  simpa only [Nat.card_fin] using Subgroup.card_centralizer_dvd t.monodromyGroup ht
 
 /-! ### Images under representations of the monodromy group -/
 
