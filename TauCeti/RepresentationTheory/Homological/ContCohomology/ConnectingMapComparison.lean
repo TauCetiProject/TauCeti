@@ -32,15 +32,6 @@ H⁰_cont(G, C) ----delta 0--> H¹_cont(G, A)   H¹_cont(G, C) ----delta 1--> H�
 So a statement about the long exact sequence proved on explicit cocycles, such as the Kummer
 description of the connecting map, is a statement about the canonical long exact sequence.
 
-Both squares are checked on representatives. An invariant `c` of `C`, respectively a continuous
-`1`-cocycle `f` on `C`, is lifted to an element `b` of `B`, respectively a continuous cochain `e`
-into `B`; the differential of the lift comes from a cocycle `a` on `A`, whose class is the explicit
-connecting image (`explicitDelta0_apply`, `explicitDelta1_apply`). The cochain comparisons send
-`b` or `e` to a homogeneous lift of the canonical cocycle attached to `c` or `f`, and `a` to a
-homogeneous cocycle whose image in `B` is the differential of that lift; this is the
-characterization `TauCeti.ContCohomology.DiscreteShortExact.delta_apply` of the canonical
-connecting map.
-
 ## Main results
 
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitIso_delta0`: the degree-zero square.
