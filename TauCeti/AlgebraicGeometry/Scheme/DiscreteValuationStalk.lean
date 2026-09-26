@@ -33,7 +33,8 @@ universe u
 namespace CodimensionOnePoint
 
 /-- The stalk at a regular codimension-one point is a discrete valuation ring. -/
-theorem isDiscreteValuationRing {X : Scheme.{u}} (x : CodimensionOnePoint X)
+instance (priority := low) isDiscreteValuationRing_stalk {X : Scheme.{u}}
+    (x : CodimensionOnePoint X)
     [IsRegularLocalRing (X.presheaf.stalk (x : X))] :
     IsDiscreteValuationRing (X.presheaf.stalk (x : X)) := by
   apply IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
@@ -41,14 +42,6 @@ theorem isDiscreteValuationRing {X : Scheme.{u}} (x : CodimensionOnePoint X)
   simp [x.property]
 
 end CodimensionOnePoint
-
-/-- If every local ring of a scheme is regular, its codimension-one local rings are discrete
-valuation rings. This supplies the local hypothesis used by the divisor and place APIs. -/
-instance (priority := low) isDiscreteValuationRing_stalk_of_isRegularLocalRing_stalk
-    {X : Scheme.{u}} [∀ x : X, IsRegularLocalRing (X.presheaf.stalk x)] :
-    ∀ x : CodimensionOnePoint X,
-      IsDiscreteValuationRing (X.presheaf.stalk (x : X)) :=
-  fun x => x.isDiscreteValuationRing
 
 end AlgebraicGeometry
 
