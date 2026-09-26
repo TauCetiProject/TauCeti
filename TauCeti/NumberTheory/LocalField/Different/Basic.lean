@@ -104,9 +104,7 @@ ideal of `𝒪[L]` divides the different ideal exactly when `n ≤ d(L/K)`. -/
 @[simp]
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     𝓂[L] ^ n ∣ differentIdeal 𝒪[K] 𝒪[L] ↔ n ≤ differentExponent K L :=
-  (FiniteMultiplicity.of_prime_left
-    (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[L]) inferInstance)
-    differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+  pow_dvd_differentIdeal_iff_le_multiplicity 𝒪[K] (IsDiscreteValuationRing.not_a_field 𝒪[L])
 
 /-- The different ideal of a separable extension of nonarchimedean local fields is the
 `d(L/K)`-th power of the maximal ideal of `𝒪[L]`. -/
@@ -122,9 +120,9 @@ theorem differentIdeal_eq_maximalIdeal_pow :
 /-- **The first half of Dedekind's different theorem**: `e(L/K) - 1 ≤ d(L/K)`. -/
 theorem ramificationIndex_sub_one_le_differentExponent :
     ramificationIndex K L - 1 ≤ differentExponent K L := by
-  rw [← pow_dvd_differentIdeal_iff_le_differentExponent]
-  exact pow_sub_one_dvd_differentIdeal 𝒪[K] 𝓂[L] _ (IsDiscreteValuationRing.not_a_field 𝒪[K])
-    (map_maximalIdeal_eq_maximalIdeal_pow K L).symm.dvd
+  rw [ramificationIndex_eq_ramificationIdx]
+  exact ramificationIdx_sub_one_le_multiplicity_differentIdeal 𝒪[K]
+    (IsDiscreteValuationRing.not_a_field 𝒪[K]) 𝓂[L]
 
 attribute [local instance] Ideal.Quotient.field in
 /-- **The different exponent reaches the ramification index exactly in the wild case**:
@@ -132,9 +130,9 @@ attribute [local instance] Ideal.Quotient.field in
 @[simp]
 theorem ramificationIndex_le_differentExponent_iff :
     ramificationIndex K L ≤ differentExponent K L ↔ IsWildlyRamified K L := by
-  rw [← pow_dvd_differentIdeal_iff_le_differentExponent, isWildlyRamified_iff,
-    ramificationIndex_eq_ramificationIdx,
-    pow_ramificationIdx_dvd_differentIdeal_iff 𝒪[K] (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  rw [isWildlyRamified_iff, ramificationIndex_eq_ramificationIdx, differentExponent_def,
+    ramificationIdx_le_multiplicity_differentIdeal_iff 𝒪[K]
+      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
   -- `𝓀[K]` is by definition the quotient `𝒪[K] ⧸ 𝓂[K]` of the Dedekind-domain statement, so that
   -- quotient is finite and has the characteristic of `𝓀[K]`. Finite residue fields are perfect,
   -- so the residue extension is separable.
@@ -143,15 +141,20 @@ theorem ramificationIndex_le_differentExponent_iff :
   simp only [this, not_true_eq_false, false_or]
   exact ringChar.spec 𝓀[K] _
 
+attribute [local instance] Ideal.Quotient.field in
 /-- **Dedekind's different theorem, the tame case**: `d(L/K) = e(L/K) - 1` exactly when `L/K` is
 tamely ramified. -/
 @[simp]
 theorem differentExponent_eq_ramificationIndex_sub_one_iff :
     differentExponent K L = ramificationIndex K L - 1 ↔ IsTamelyRamified K L := by
-  have h := ramificationIndex_sub_one_le_differentExponent K L
-  have he := ramificationIndex_pos (K := K) (L := L)
-  rw [← not_isWildlyRamified_iff, ← ramificationIndex_le_differentExponent_iff]
-  omega
+  rw [isTamelyRamified_iff, ramificationIndex_eq_ramificationIdx, differentExponent_def,
+    multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff 𝒪[K]
+      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  -- As in the wild case, the finite residue extension is separable.
+  have : Finite (𝒪[K] ⧸ 𝓂[K]) := inferInstanceAs (Finite 𝓀[K])
+  have : Algebra.IsSeparable (𝒪[K] ⧸ 𝓂[K]) (𝒪[L] ⧸ 𝓂[L]) := inferInstance
+  simp only [this, true_and]
+  exact (ringChar.spec 𝓀[K] _).not
 
 /-- **The different of a local extension is trivial exactly when the extension is
 unramified**: `d(L/K) = 0` if and only if `L/K` is unramified. -/
