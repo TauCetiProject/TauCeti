@@ -47,19 +47,6 @@ noncomputable def groupSchemeBaseChangeIso :
       (coordinateHopfAlgebraBaseChangeIso R S n).symm.op ≪≫
     eqToIso (groupScheme_def S n).symm
 
-/-- The forward base-change comparison is the composite of the scheme presentation, affine
-Hopf-spectrum base change, and the general-linear coordinate comparison. -/
-theorem groupSchemeBaseChangeIso_hom :
-    (groupSchemeBaseChangeIso R S n).hom =
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).mapGrp.map
-          (eqToHom (groupScheme_def R n)) ≫
-        (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
-          (coordinateHopfAlgebra R n)).hom ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of S)).map
-          (coordinateHopfAlgebraBaseChangeIso R S n).symm.hom.op ≫
-        eqToHom (groupScheme_def S n).symm := by
-  rfl
-
 /-! ## Closed subgroups under base change -/
 
 /-- The base change of the Hopf spectrum of the coordinate algebra of `GL_n/R`, expressed as the
@@ -73,6 +60,16 @@ noncomputable def coordinateGroupSchemeBaseChangeIso :
   AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso (coordinateHopfAlgebra R n) ≪≫
     (AlgebraicGeometry.hopfSpec (CommRingCat.of S)).mapIso
       (coordinateHopfAlgebraBaseChangeIso R S n).symm.op
+
+/-- The forward base-change comparison is the coordinate-presentation comparison, preceded and
+followed by the named presentations of the source and target general linear group schemes. -/
+theorem groupSchemeBaseChangeIso_hom :
+    (groupSchemeBaseChangeIso R S n).hom =
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).mapGrp.map
+          (eqToHom (groupScheme_def R n)) ≫
+        (coordinateGroupSchemeBaseChangeIso R S n).hom ≫
+        eqToHom (groupScheme_def S n).symm := by
+  rfl
 
 /-- The base change of a closed subgroup presented by a Hopf ideal, transported to a compatible
 quotient presentation over the target ring. -/
@@ -139,15 +136,9 @@ theorem map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I := by
     rw [← eqToIso.hom, hopfIdealInclusion_def, Category.assoc]
     simp
-  rw [groupSchemeBaseChangeIso]
-  simp only [Iso.trans_hom, Functor.mapIso_hom]
-  rw [eqToIso.hom]
+  rw [groupSchemeBaseChangeIso_hom]
   rw [← Category.assoc, ← Functor.map_comp, hI]
-  change ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).mapGrp.map
-      (CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I) ≫
-        (coordinateGroupSchemeBaseChangeIso R S n).hom) ≫
-      eqToHom (groupScheme_def S n).symm =
-    (hopfIdealBaseChangeIso R S n I I' e).hom ≫ hopfIdealInclusion S n I'
+  rw [← Category.assoc]
   rw [map_quotientSpecι_comp_coordinateGroupSchemeBaseChangeIso R S n I I' e he]
   rw [hopfIdealInclusion_def, eqToIso.hom]
   simp only [Category.assoc]

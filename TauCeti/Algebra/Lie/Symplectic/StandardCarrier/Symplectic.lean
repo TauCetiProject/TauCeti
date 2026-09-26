@@ -202,8 +202,7 @@ private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
     (baseChangePresentationSymplecticIso n k).hom ≫ Symplectic.inclusion k (n + 1) =
       GeneralLinear.hopfIdealInclusion k ((n + 1) + (n + 1))
         (baseChangeDefiningIdeal n k) := by
-  rw [show Symplectic.inclusion k (n + 1) =
-      ConstantForm.inclusion k ((n + 1) + (n + 1)) (JFin (n + 1) k) by rfl,
+  rw [Symplectic.inclusion_eq_constantForm,
     ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map,
     GeneralLinear.hopfIdealInclusion_def, baseChangePresentationSymplecticIso_hom]
   rw [eqToIso.hom]

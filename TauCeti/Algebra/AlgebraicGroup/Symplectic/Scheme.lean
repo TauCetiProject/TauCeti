@@ -108,7 +108,7 @@ private lemma groupSchemePointMulEquiv_comp_inclusion
       GeneralLinear.groupSchemePointMulEquiv (m + m) A
         ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app
           (CommAlgCat.of R A) q) := by
-  rw [show inclusion R m = ConstantForm.inclusion R (m + m) (JFin m R) by rfl,
+  rw [inclusion_eq_constantForm,
     ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
     (R := R) A (GeneralLinear.groupScheme_def R (m + m)) (groupScheme_def R m)
