@@ -30,7 +30,6 @@ fuse in the symmetric group.  Their class sizes are both twelve.
 ## Main results
 
 * `TauCeti.numClasses_alternatingGroupFiveClassData`: the numbering has five classes.
-* `TauCeti.natCard_alternatingGroup_five`: `A₅` has order sixty.
 
 ## References
 
@@ -72,23 +71,27 @@ private theorem alternatingGroupFivePowerConjugator_conj_sq :
         alternatingGroupFivePowerConjugator⁻¹ = alternatingGroupFiveFiveCycle := by
   decide
 
-@[simp] private theorem cycleType_alternatingGroupFiveDoubleTransposition :
+/-- The double-transposition representative has cycle type `(2, 2)`. -/
+@[simp] theorem cycleType_alternatingGroupFiveDoubleTransposition :
     (alternatingGroupFiveDoubleTransposition : Equiv.Perm (Fin 5)).cycleType = {2, 2} := by
-  change (Equiv.swap (0 : Fin 5) 1 * Equiv.swap 2 3).cycleType = {2, 2}
+  rw [alternatingGroupFiveDoubleTransposition]
   rw [Equiv.Perm.Disjoint.cycleType_mul (Equiv.Perm.disjoint_swap_swap (by decide))]
   rw [Equiv.Perm.isSwap_iff_cycleType.mp (Equiv.Perm.swap_isSwap_iff.mpr (by decide))]
   rw [Equiv.Perm.isSwap_iff_cycleType.mp (Equiv.Perm.swap_isSwap_iff.mpr (by decide))]
   rfl
 
-@[simp] private theorem cycleType_alternatingGroupFiveThreeCycle :
+/-- The three-cycle representative has cycle type `(3)`. -/
+@[simp] theorem cycleType_alternatingGroupFiveThreeCycle :
     (alternatingGroupFiveThreeCycle : Equiv.Perm (Fin 5)).cycleType = {3} := by
   exact Fin.cycleType_cycleRange (by decide)
 
-@[simp] private theorem cycleType_alternatingGroupFiveFiveCycle :
+/-- The five-cycle representative has cycle type `(5)`. -/
+@[simp] theorem cycleType_alternatingGroupFiveFiveCycle :
     (alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5)).cycleType = {5} := by
   exact Fin.cycleType_cycleRange (by decide)
 
-@[simp] private theorem cycleType_alternatingGroupFiveFiveCycle_sq :
+/-- The square of the five-cycle representative has cycle type `(5)`. -/
+@[simp] theorem cycleType_alternatingGroupFiveFiveCycle_sq :
     ((alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5)) ^ 2).cycleType = {5} := by
   have hcycle : (alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5)).IsCycle :=
     Fin.isCycle_cycleRange (by decide)
@@ -107,7 +110,8 @@ private theorem cycleType_alternatingGroupFive (g : A5) :
       (g : Equiv.Perm (Fin 5)).cycleType = {3} ∨
       (g : Equiv.Perm (Fin 5)).cycleType = {5} := by
   let m := (g : Equiv.Perm (Fin 5)).cycleType
-  change m = 0 ∨ m = {2, 2} ∨ m = {3} ∨ m = {5}
+  have hm : (g : Equiv.Perm (Fin 5)).cycleType = m := rfl
+  rw [hm]
   have hsum : m.sum ≤ 5 := (g : Equiv.Perm (Fin 5)).sum_cycleType_le
   have htwo : ∀ n ∈ m, 2 ≤ n := fun _ hn ↦ Equiv.Perm.two_le_of_mem_cycleType hn
   have hcard : m.card ≤ 2 := by
@@ -133,19 +137,19 @@ private theorem cycleType_alternatingGroupFive (g : A5) :
   · exact Or.inl (Multiset.card_eq_zero.mp hc)
   · obtain ⟨n, hncard⟩ := Multiset.card_eq_one.mp hc
     have hn : 2 ≤ n := htwo n (hncard ▸ by simp)
-    rw [hncard] at hsum heven ⊢
-    change n ≤ 5 at hsum
-    change Even (n + 1) at heven
-    rcases heven with ⟨k, hk⟩
+    have hsum' : n ≤ 5 := by simpa [hncard] using hsum
+    have heven' : Even (n + 1) := by simpa [hncard] using heven
+    rw [hncard]
+    rcases heven' with ⟨k, hk⟩
     have : n = 3 ∨ n = 5 := by omega
     rcases this with rfl | rfl <;> simp
   · obtain ⟨n, k, hncard⟩ := Multiset.card_eq_two.mp hc
     have hn : 2 ≤ n := htwo n (hncard ▸ by simp)
     have hk' : 2 ≤ k := htwo k (hncard ▸ by simp)
-    rw [hncard] at hsum heven ⊢
-    change n + k ≤ 5 at hsum
-    change Even (n + k + 2) at heven
-    rcases heven with ⟨r, hr⟩
+    have hsum' : n + k ≤ 5 := by simpa [hncard] using hsum
+    have heven' : Even (n + k + 2) := by simpa [hncard] using heven
+    rw [hncard]
+    rcases heven' with ⟨r, hr⟩
     have : n = 2 ∧ k = 2 := by omega
     rcases this with ⟨rfl, rfl⟩
     simp
@@ -330,11 +334,6 @@ theorem reps_alternatingGroupFiveClassData :
 @[simp]
 theorem numClasses_alternatingGroupFiveClassData :
     alternatingGroupFiveClassData.numClasses = 5 := by
-  rfl
-
-/-- The alternating group of degree five has order sixty: half of `5! = 120`. -/
-theorem natCard_alternatingGroup_five : Nat.card (alternatingGroup (Fin 5)) = 60 := by
-  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   rfl
 
 end TauCeti
