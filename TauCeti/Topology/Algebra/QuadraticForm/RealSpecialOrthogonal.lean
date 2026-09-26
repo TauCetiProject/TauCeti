@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import Mathlib.Topology.UniformSpace.Real
+public import TauCeti.Topology.Algebra.OrthogonalGroup
 import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
@@ -18,8 +19,7 @@ The standard real sum-of-squares form has a special orthogonal group which is th
 of the compact real special orthogonal matrix group. This gives the construction for any finite
 coordinate type. Specializing to the positive-definite form `realCliffordForm n 0` supplies the
 quadratic-form model used as the target of the compact real Spin projection with its canonical
-compact-space instance. The file also identifies that concrete carrier with the matrix special
-orthogonal group in canonical coordinates.
+compact-space instance.
 
 The transfer follows the existing coordinate embedding into the general linear group. An
 orthogonal matrix defines a form-preserving linear equivalence, and its inverse matrix is its
@@ -30,11 +30,6 @@ transpose, so the resulting map is continuous for the induced topology.
 * `TauCeti.QuadraticMap.instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne`: the
   special orthogonal group of the standard sum-of-squares form on any finite coordinate type is
   compact.
-* `TauCeti.QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff`:
-  membership in its general-linear carrier is matrix special-orthogonal membership.
-* `TauCeti.QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff`:
-  membership in the positive-definite Clifford-form carrier is matrix special-orthogonal
-  membership.
 * `TauCeti.QuadraticMap.instCompactSpaceSpecialOrthogonalGroupRealCliffordForm`: the associated
   special orthogonal group is compact.
 * `TauCeti.QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm`: the
@@ -53,17 +48,12 @@ namespace QuadraticMap
 
 noncomputable section
 
-/-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
-special-orthogonal membership. -/
-theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
-    (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
-    U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
-      (U : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ := by
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
-  exact mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff (Fin n) U
+section ClassicalDecEq
+
+attribute [local instance] Classical.decEq
 
 private theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
-    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    (ι : Type u) [Fintype ι] :
     Continuous (matrixSpecialOrthogonalToWeightedSumSquaresOne ι) := by
   rw [(isEmbedding_specialOrthogonalToGeneralLinear
     (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))).continuous_iff]
@@ -80,7 +70,7 @@ private theorem continuous_matrixSpecialOrthogonalToWeightedSumSquaresOne
 
 /-- The special orthogonal group of the standard real sum-of-squares form is compact. -/
 instance instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne
-    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    (ι : Type u) [Fintype ι] :
     CompactSpace (specialOrthogonalGroup
       (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) := by
   exact (matrixSpecialOrthogonalToWeightedSumSquaresOne_surjective ι).compactSpace
@@ -92,15 +82,26 @@ instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   exact instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
 
+end ClassicalDecEq
+
 /-- The real special-orthogonal carrier is closed in its general-linear ambient group. -/
 theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : ℕ) :
+    -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` lets this
+    -- statement use the canonical `Fin n` equality and matrix-topology instances.
     IsClosed (Set.range (specialOrthogonalToGeneralLinear
       (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) := by
-  have hc : IsCompact (Set.univ : Set (specialOrthogonalGroup
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) := isCompact_univ
-  simpa only [Set.image_univ] using
-    (hc.image (isEmbedding_specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)).continuous).isClosed
+  have hrange : Set.range (specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) =
+      {U : Matrix.GeneralLinearGroup (Fin n) ℝ |
+        (U : Matrix (Fin n) (Fin n) ℝ) ∈
+        Matrix.specialOrthogonalGroup (Fin n) ℝ} := by
+    ext U
+    rw [← MonoidHom.coe_range]
+    exact mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n U
+  rw [hrange]
+  exact (Matrix.isClosed_specialOrthogonalGroup (n := Fin n) (R := ℝ)).preimage
+    (Units.continuous_val : Continuous (fun U : Matrix.GeneralLinearGroup (Fin n) ℝ =>
+      (U : Matrix (Fin n) (Fin n) ℝ)))
 
 end
 

@@ -72,6 +72,8 @@ canonical units Lie equivalence belongs to the Lie subalgebra of the positive-de
 `realCliffordForm n 0` special-orthogonal carrier. -/
 theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_so
     (n : ℕ) (A : Matrix (Fin n) (Fin n) ℝ) :
+    -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` aligns the
+    -- carrier with the canonical matrix and operator-topology instances used in this statement.
     (unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℝ)).symm A ∈
         lieSubalgebraOfSubgroup
           (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
