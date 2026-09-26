@@ -30,7 +30,7 @@ The file also records the real-place half of the sign prescription of O'Meara 71
 prescribed element `b` that is a nonsquare at a real place,
 `exists_hilbertSymbol_eq_neg_one_atRealPlace` turns it into a local non-norm, which is what a
 sign-prescription argument needs at each place of its set; a field unit negative at every real
-place of a prescribed finite set, which weak approximation supplies, is such a `b`.
+place, which weak approximation supplies, is such a `b`.
 
 ## Main results
 
@@ -39,7 +39,8 @@ place of a prescribed finite set, which weak approximation supplies, is such a `
   at a real place, in both signs.
 * `TauCeti.hilbertSymbol_unitAtRealPlace_mul_left` and
   `TauCeti.hilbertSymbol_unitAtRealPlace_mul_right`: bimultiplicativity of the real symbol, by
-  which the symbols at the real places of a prescribed set can be multiplied.
+  which the symbols at the real places of a prescribed set can be multiplied; being `[simp]`, they
+  expand a product of global units inside a localized symbol.
 * `TauCeti.isSquare_unitAtRealPlace_iff` and `TauCeti.not_isSquare_unitAtRealPlace_iff`: a
   global unit is a square at a real place exactly when it is positive there.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
@@ -47,20 +48,24 @@ place of a prescribed finite set, which weak approximation supplies, is such a `
 
 ## A value-group convention
 
-The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)`, and its `1`
-is the *top* of that group, that is, value zero.  So `v.valuation K x = 1` says that `x` is a local
-unit at `v`, which every global unit satisfies; an element of order of vanishing `1` is instead
-written `WithZero.exp (-1)`, the value of a generator of `v.asIdeal`.  A criterion phrased with the
-hypothesis `v.valuation K (a : K) = 1` would therefore be false, and `a = 1` is the counterexample:
-its image in the completion is the unit `1`, which is a square.  This is also why a field unit
-cannot serve as a nonsquare at a *finite* place of a prescribed set: it is a unit at every place,
-so its value at each of them is the top `1`, never `WithZero.exp (-1)`.  The finite-place
-nonsquare criterion that does hold is
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)`, whose
+multiplicative identity `1` is the value zero, that is, order of vanishing zero.  So
+`v.valuation K x = 1` says that `x` is a local unit at `v`, while an element of order of vanishing
+`1` is written `WithZero.exp (-1)`, the value of a generator of `v.asIdeal`; the additive order of
+vanishing of an element is the negative logarithm of its value, as
+`IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff` records.  A criterion phrased
+with the hypothesis `v.valuation K (a : K) = 1` would therefore be false, and `a = 1` is the
+counterexample: its image in the completion is the unit `1`, which is a square.
+
+The finite-place nonsquare criterion that does hold is
 `IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even`:
-an element of odd order of vanishing is a nonsquare in the completion.  Its order of vanishing `1`
-case, the one that a prime of a prescribed modulus supplies, is
-`IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one`, whose
-hypothesis `neg_log_valuation_eq_one_iff` identifies with an order of vanishing `1`.
+an element of odd order of vanishing is a nonsquare in the completion, and the prime of a
+prescribed modulus supplies an element of that kind.  Here `Kˣ` is the group of all nonzero
+elements of `K`, not the unit group of the ring of integers, so a field unit of odd order of
+vanishing at a finite place is a nonsquare in its completion by that criterion, exactly as any
+other element of odd order of vanishing is.  The criterion is one way to obtain a nonsquare and
+not a description of all of them; in particular it says nothing about the local units, which are
+the case `v.valuation K x = 1`.
 
 ## References
 
@@ -107,22 +112,24 @@ omit [NumberField K] in
 `TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field: the symbol of two
 global units is multiplicative in its first entry, so that the symbols at the real places of a
 prescribed set can be multiplied. -/
+@[simp]
 theorem hilbertSymbol_unitAtRealPlace_mul_left (w : {w : InfinitePlace K // w.IsReal})
     (a a' b : Kˣ) :
-    hilbertSymbol (unitAtRealPlace w (a * a')) (unitAtRealPlace w b) =
+    hilbertSymbol (unitAtRealPlace w a * unitAtRealPlace w a') (unitAtRealPlace w b) =
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) *
-        hilbertSymbol (unitAtRealPlace w a') (unitAtRealPlace w b) := by
-  rw [(unitAtRealPlace w).map_mul a a', hilbertSymbol_real_mul_left]
+        hilbertSymbol (unitAtRealPlace w a') (unitAtRealPlace w b) :=
+  hilbertSymbol_real_mul_left _ _ _
 
 omit [NumberField K] in
 /-- **Bimultiplicativity of the localized real symbol, in the second parameter.** This is
 `TauCeti.hilbertSymbol_real_mul_right` read at a real place of a number field. -/
+@[simp]
 theorem hilbertSymbol_unitAtRealPlace_mul_right (w : {w : InfinitePlace K // w.IsReal})
     (a b b' : Kˣ) :
-    hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w (b * b')) =
+    hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b * unitAtRealPlace w b') =
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) *
-        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b') := by
-  rw [(unitAtRealPlace w).map_mul b b', hilbertSymbol_real_mul_right]
+        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b') :=
+  hilbertSymbol_real_mul_right _ _ _
 
 omit [NumberField K] in
 /-- A global unit is a square at a real place exactly when it is positive there. -/

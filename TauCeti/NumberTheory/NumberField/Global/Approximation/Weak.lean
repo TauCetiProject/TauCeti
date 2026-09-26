@@ -373,22 +373,16 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     exact hxf v hv
   rw [Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp v]
 
-/-- **A field unit which is negative at every real place of a prescribed finite set.**
+/-- **A field unit which is negative at every real place.**
 
-Signs at real places are the one datum a sign prescription may impose on a field unit, and they
-can be imposed simultaneously: for every finite set `T` of real places there is a single field unit
-of `K` which is negative at each place of `T`.  Being negative at `w` is exactly being a nonsquare
-at `w`, so this supplies the prescribed element `b` of a sign prescription at every real place of
-its set, in one step. -/
-theorem exists_fieldUnit_negative_at (T : Finset {w : InfinitePlace K // w.IsReal}) :
-    ∃ x : Kˣ, ∀ w ∈ T, embedding_of_isReal w.2 (x : K) < 0 := by
-  classical
-  obtain ⟨x, -, hxs⟩ := exists_fieldUnit_valuation_eq_and_signHom_eq (S := ∅)
-    (fun _ => 0) (fun w => if w ∈ T then -1 else 1)
-  refine ⟨x, fun w hw => ?_⟩
-  have hs : signHom x w = -1 := by
-    have h := congrFun hxs w
-    simpa [hw] using h
-  rwa [signHom_apply_eq_neg_one_iff] at hs
+Being negative at a real place is exactly being a nonsquare there, so this is the element `b` a
+sign prescription needs at each real place of its set; `x = -1` is such an element at all of them
+at once.  Signs are not the only datum a prescription can impose on a field unit —
+`exists_fieldUnit_valuation_eq_and_signHom_eq` prescribes finite-place valuations as well — but
+they are the one a sign prescription reads off, and they are the one datum that a single element
+of `Kˣ` realizes at every real place at once. -/
+theorem exists_fieldUnit_negative_at :
+    ∃ x : Kˣ, ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (x : K) < 0 :=
+  ⟨-1, fun _ => by simp⟩
 
 end TauCeti.GlobalNumberFields
