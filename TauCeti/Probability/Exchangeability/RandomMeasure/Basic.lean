@@ -85,6 +85,29 @@ open TauCeti.MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- A law on row-path measures is invariant under reindexing the columns. -/
+def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
+  ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π
+
+/-- Constructor for `ColumnInvariantMixingLaw` from invariance under column permutations. -/
+theorem ColumnInvariantMixingLaw.intro {π : Measure (ProbabilityMeasure (ℕ → α))}
+    (h : ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π) :
+    ColumnInvariantMixingLaw π :=
+  h
+
+/-- Column invariance expressed as equality of pushforward laws. -/
+theorem columnInvariantMixingLaw_iff {π : Measure (ProbabilityMeasure (ℕ → α))} :
+    ColumnInvariantMixingLaw π ↔
+      ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π :=
+  Iff.rfl
+
+/-- The defining invariance of a column-invariant mixing law. -/
+theorem ColumnInvariantMixingLaw.map_permReindex
+    {π : Measure (ProbabilityMeasure (ℕ → α))} (hπ : ColumnInvariantMixingLaw π)
+    (τ : Equiv.Perm ℕ) :
+    π.map (fun P ↦ P.map (permReindex τ)) = π :=
+  hπ τ
+
 /-- Invariance in law of a measurable random path measure under reindexing implies invariance
 under the induced action on probability measures. -/
 theorem map_map_permReindex_eq_of_map_eq
@@ -92,7 +115,7 @@ theorem map_map_permReindex_eq_of_map_eq
     {ν : Ω → ProbabilityMeasure (ℕ → α)} (hν : Measurable ν)
     (hinv : ∀ τ : Equiv.Perm ℕ,
       μ.map (fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k))) = μ.map ν) :
-    ∀ τ : Equiv.Perm ℕ, (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
+    ColumnInvariantMixingLaw (μ.map ν) := by
   intro τ
   have hpush : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
     measurable_probabilityMeasure_map (measurable_reindex τ)
@@ -175,8 +198,7 @@ The hypothesis is invariance of the *law* `π` under pushing a sampled path meas
 coordinate permutation; it does not assert that the sampled measure itself is exchangeable. -/
 theorem fullyExchangeable_coordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     FullyExchangeable π fun i P => coordinateMarginals P i := by
   intro τ
   have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
@@ -198,8 +220,7 @@ theorem fullyExchangeable_coordinateMarginals_of_invariant
 /-- **The coordinate marginals of an invariant random path measure are exchangeable.** -/
 theorem exchangeable_coordinateMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     Exchangeable π fun i P => coordinateMarginals P i :=
   (fullyExchangeable_coordinateMarginals_of_invariant π hπ).exchangeable
     fun _ => ((measurable_pi_apply _).comp
@@ -210,8 +231,7 @@ The code loses no information about any coordinate marginal. -/
 theorem exchangeable_codedCoordinateMarginals_of_invariant
     [MeasurableSpace.CountablyGenerated α]
     (π : Measure (ProbabilityMeasure (ℕ → α)))
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     Exchangeable π fun i P => codedCoordinateMarginals P i :=
   by
     simpa only [codedCoordinateMarginals_apply] using
@@ -227,8 +247,7 @@ Borel value space. -/
 theorem conditionallyIID_codedCoordinateMarginals_of_invariant
     [MeasurableSpace.CountablyGenerated α]
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsFiniteMeasure π]
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     ConditionallyIID π fun i P => codedCoordinateMarginals P i :=
   conditionallyIID_of_exchangeable
     (exchangeable_codedCoordinateMarginals_of_invariant π hπ)
@@ -242,8 +261,7 @@ coordinate-indexed uniform variables. -/
 theorem exists_pathLaw_codedCoordinateMarginals_eq_map_unitIntervalCoding
     [MeasurableSpace.CountablyGenerated α]
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π]
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     ∃ Λ : ProbabilityMeasure
         (ProbabilityMeasure (ProbabilityMeasureCodeIndex α → ℝ≥0∞)),
       pathLaw π (fun i P => codedCoordinateMarginals P i) =

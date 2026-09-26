@@ -111,7 +111,7 @@ invariant under the finitary permutation action is exchangeable: invariant under
 by every permutation of `ℕ`.
 
 The converse of `ExchangeableLaw.smulInvariantMeasure`; the sequence form of the reduction
-`jointlyExchangeable_of_smulInvariantMeasure` for arrays in `Arrays/Extreme.lean`. -/
+`jointlyExchangeable_of_smulInvariantMeasure` for arrays in `Arrays/Extreme/Basic.lean`. -/
 theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
     [SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ] : ExchangeableLaw ρ := by
   have hmeas : ∀ i : ℕ, AEMeasurable (fun x : ℕ → α => x i) ρ :=

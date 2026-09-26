@@ -78,12 +78,18 @@ section CodingLaw
 
 variable [StandardBorelSpace α] [Nonempty α]
 
+/-- The array sampled from a path law and independent row noise is measurable. -/
+theorem measurable_rowCodingArray :
+    Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
+      fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
+  Measurable.of_eval fun p ↦ measurable_unitIntervalCoding_entry p
+
 /-- The measurable map which retains a path law and uses one independent uniform variable to
 sample each row from it. -/
 theorem measurable_arrayRowCoding :
     Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
       (q.1, fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
-  measurable_fst.prodMk (Measurable.of_eval fun p ↦ measurable_unitIntervalCoding_entry p)
+  measurable_fst.prodMk measurable_rowCodingArray
 
 /-- The canonical coupled law of a random path measure and the array obtained by independently
 sampling its rows. -/
@@ -165,7 +171,7 @@ theorem rowCodingArrayLaw_add (π₁ π₂ : Measure (ProbabilityMeasure (ℕ �
     [SFinite π₁] [SFinite π₂] :
     rowCodingArrayLaw (π₁ + π₂) = rowCodingArrayLaw π₁ + rowCodingArrayLaw π₂ := by
   rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.add_prod]
-  exact Measure.map_add _ _ (Measurable.of_eval fun p => measurable_unitIntervalCoding_entry p)
+  exact Measure.map_add _ _ measurable_rowCodingArray
 
 /-- The row-coding construction preserves nonnegative scalar multiples of mixing laws. -/
 @[simp]
@@ -173,7 +179,7 @@ theorem rowCodingArrayLaw_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasur
     rowCodingArrayLaw (c • π) = c • rowCodingArrayLaw π := by
   rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.prod_smul_left]
   exact Measure.map_smul _
-    (Measurable.of_eval fun p => measurable_unitIntervalCoding_entry p).aemeasurable
+    measurable_rowCodingArray.aemeasurable
 
 /-- A directing measure for the row process identifies its joint law with the canonical coupled
 row-coding law.  Unlike the array-law-only coding theorem, this keeps the directing measure as a

@@ -45,6 +45,11 @@ namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- Mapping a coordinate array by its own coordinate process leaves its law unchanged. -/
+private theorem map_coordinateArray_id (ρ : Measure (ℕ × ℕ → α)) :
+    ρ.map (fun ω p ↦ (fun p x ↦ x p) p ω) = ρ := by
+  simp only [Measure.map_id']
+
 variable [StandardBorelSpace α] [Nonempty α]
 
 /-- Separate exchangeability of an array is equivalent to representing its law by a
@@ -56,8 +61,20 @@ theorem separatelyExchangeable_iff_exists_rowCodingArrayLaw
       ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
         ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
           μ.map (fun ω p ↦ X p ω) = rowCodingArrayLaw π := by
-  simp only [rowCodingArrayLaw_def, columnInvariantMixingLaw_iff]
+  simp only [rowCodingArrayLaw_def]
   exact separatelyExchangeable_iff_exists_coding (α := α) hX
+
+/-- A separately exchangeable coordinate array has a column-invariant row-coding law. -/
+theorem SeparatelyExchangeable.exists_columnInvariantMixingLaw_eq_rowCodingArrayLaw
+    {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+    (h : SeparatelyExchangeable ρ (fun p x ↦ x p)) :
+    ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
+      ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
+        ρ = rowCodingArrayLaw π := by
+  obtain ⟨π, hπ, hlaw⟩ :=
+    (separatelyExchangeable_iff_exists_rowCodingArrayLaw
+      (μ := ρ) (X := fun p x ↦ x p) (fun p ↦ (measurable_pi_apply p).aemeasurable)).mp h
+  exact ⟨π, hπ, (map_coordinateArray_id ρ) ▸ hlaw⟩
 
 /-- A column-invariant mixing law gives a separately exchangeable row-coding array law. -/
 theorem separatelyExchangeable_rowCodingArrayLaw
@@ -108,7 +125,7 @@ theorem SeparatelyExchangeable.existsUnique_rowCodingArrayLaw
       ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
         μ.map (fun ω p ↦ X p ω) = rowCodingArrayLaw π := by
   obtain ⟨π, hπ, hlaw⟩ := h.exists_arrayLaw_eq_map_unitIntervalCoding hX
-  refine ⟨π, ⟨ColumnInvariantMixingLaw.intro hπ, ?_⟩, ?_⟩
+  refine ⟨π, ⟨hπ, ?_⟩, ?_⟩
   · rw [rowCodingArrayLaw_def]
     exact hlaw
   · intro π' hπ'
@@ -125,10 +142,7 @@ theorem columnInvariantMixingLaw_iff_separatelyExchangeable_rowCodingArrayLaw
     ColumnInvariantMixingLaw π ↔
       SeparatelyExchangeable (rowCodingArrayLaw π) (fun p x ↦ x p) := by
   refine ⟨separatelyExchangeable_rowCodingArrayLaw π, fun h ↦ ?_⟩
-  obtain ⟨π', hπ', hlaw⟩ := h.existsUnique_rowCodingArrayLaw
-    (fun p ↦ (measurable_pi_apply p).aemeasurable) |>.exists
-  have hlaw' : rowCodingArrayLaw π = rowCodingArrayLaw π' := by
-    simpa only [Measure.map_id'] using hlaw
+  obtain ⟨π', hπ', hlaw'⟩ := h.exists_columnInvariantMixingLaw_eq_rowCodingArrayLaw
   rwa [eq_of_rowCodingArrayLaw_eq hlaw']
 
 end TauCeti.Probability

@@ -8,6 +8,7 @@ module
 -- Public: the array symmetry and the inherited invariance of the row mixing law are the
 -- hypothesis and the conclusion of the representation.
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
+public import TauCeti.Probability.Exchangeability.RandomMeasure.Basic
 -- Public: the coding map and the barycenter identity it satisfies appear in every statement.
 public import TauCeti.Probability.DeFinetti.Coding
 -- Non-public: the mixture form of a row path law is used only inside proofs.
@@ -132,8 +133,7 @@ leaves the law alone; permuting the columns pushes `P` forward by that time perm
 leaves the law alone exactly because `π` is invariant under that pushforward. -/
 theorem separatelyExchangeable_unitIntervalCoding
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π]
-    (hπ : ∀ τ : Equiv.Perm ℕ,
-      π.map (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) :
+    (hπ : ColumnInvariantMixingLaw π) :
     SeparatelyExchangeable
         (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval)))
       fun p q => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
@@ -143,7 +143,12 @@ theorem separatelyExchangeable_unitIntervalCoding
   have hcol : ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
       fun i => permReindex (α := α) τ (x i)) = deFinettiBarycenter π := by
     have hnat := map_pi_deFinettiBarycenter π (measurable_reindex (α := α) τ)
-    rw [hπ τ] at hnat
+    have hperm : permReindex (α := α) τ = (fun x : ℕ → α => fun k => x (τ k)) := by
+      funext x k
+      rw [permReindex_apply]
+    have hπ' : π.map (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π := by
+      simpa only [hperm] using hπ.map_permReindex τ
+    rw [hπ'] at hnat
     exact hnat
   calc ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 (σ p.1)) (τ p.2))
@@ -173,9 +178,7 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     {μ : Measure Ω} [IsProbabilityMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
-      (∀ τ : Equiv.Perm ℕ,
-          (π : Measure (ProbabilityMeasure (ℕ → α))).map
-            (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) ∧
+      ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
         (μ.map fun ω p => X p ω) =
           ((π : Measure (ProbabilityMeasure (ℕ → α))).prod
               (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
@@ -185,13 +188,17 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     (mixedIIDWith_of_conditionallyIIDWith hν).measurable_mixingRepresentative
   have hprob : IsProbabilityMeasure (μ.map ν) :=
     inferInstance
-  refine ⟨⟨μ.map ν, hprob⟩, fun τ => ?_, ?_⟩
+  refine ⟨⟨μ.map ν, hprob⟩, ColumnInvariantMixingLaw.intro (fun τ => ?_), ?_⟩
   · have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
-        P.map (fun x : ℕ → α => fun k => x (τ k)) :=
+        P.map (permReindex τ) :=
       TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
     simp only [ProbabilityMeasure.coe_mk]
     rw [AEMeasurable.map_map_of_aemeasurable hmap.aemeasurable hν_meas.aemeasurable]
-    exact hinv τ
+    have hperm : permReindex (α := α) τ = (fun x : ℕ → α => fun k => x (τ k)) := by
+      funext x k
+      rw [permReindex_apply]
+    change μ.map (fun ω => (ν ω).map (permReindex τ)) = μ.map ν
+    simpa only [hperm] using hinv τ
   · have hpath : pathLaw μ (arrayRow X) = deFinettiBarycenter (μ.map ν) := by
       rw [deFinettiBarycenter_def]
       exact pathLaw_eq_bind_infinitePi_of_mixedIIDWith
@@ -207,9 +214,7 @@ theorem separatelyExchangeable_iff_exists_coding {μ : Measure Ω} [IsProbabilit
     {X : ℕ × ℕ → Ω → α} (hX : ∀ p, AEMeasurable (X p) μ) :
     SeparatelyExchangeable μ X ↔
       ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
-        (∀ τ : Equiv.Perm ℕ,
-            (π : Measure (ProbabilityMeasure (ℕ → α))).map
-              (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) ∧
+        ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
           (μ.map fun ω p => X p ω) =
             ((π : Measure (ProbabilityMeasure (ℕ → α))).prod
                 (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
