@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Combinatorics.SimpleGraph.Metric
+import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
 
 public import Mathlib.Combinatorics.SimpleGraph.Paths
-public import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
 
 /-!
@@ -229,21 +228,21 @@ theorem isGaugeEquivalent_one_of_walkTransition_eq (c : SkewZigzagParameter k G)
   have hpot {r w : V} (hr : componentRoot G w = r) (q : G.Walk r w) (hq : q.IsPath) :
       potential c w = walkTransition c q := by
     subst hr
-    exact hc _ _ (componentPath_isPath G w) hq
+    exact hc _ _ (isPath_componentPath G w) hq
   refine isGaugeEquivalent_one_of_potential c (potential c) fun v w h ↦ ?_
   by_cases hw : w ∈ (componentPath G v).support
   -- The path to `v` runs through `w`; the part after `w` has the transition factor of the edge.
   · have hsplit := congrArg (walkTransition c) ((componentPath G v).take_spec hw)
     rw [walkTransition_append,
       ← hpot (componentRoot_eq_of_adj G h) _
-          ((componentPath_isPath G v).takeUntil hw),
-      hc _ h.symm.toWalk ((componentPath_isPath G v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
+          ((isPath_componentPath G v).takeUntil hw),
+      hc _ h.symm.toWalk ((isPath_componentPath G v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
     have hedge : walkTransition c h.symm.toWalk = (transition c h)⁻¹ := by
       rw [walkTransition_toWalk, transition_symm]
     rw [hedge] at hsplit
     exact (eq_mul_inv_iff_mul_eq.mp hsplit.symm).symm
   -- Otherwise the path to `v` extended by the edge is a path to `w`.
-  · rw [hpot (componentRoot_eq_of_adj G h) _ ((componentPath_isPath G v).concat hw h),
+  · rw [hpot (componentRoot_eq_of_adj G h) _ ((isPath_componentPath G v).concat hw h),
       walkTransition_concat, potential]
 
 end SkewZigzagParameter

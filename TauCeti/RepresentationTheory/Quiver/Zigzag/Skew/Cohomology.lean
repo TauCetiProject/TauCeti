@@ -36,9 +36,9 @@ public section
 
 namespace TauCeti.SkewZigzagParameter
 
-universe u w z
+universe u v w z
 
-variable {k : Type w} {V W : Type u} {G : SimpleGraph V} {H : SimpleGraph W}
+variable {k : Type w} {V : Type u} {W : Type v} {G : SimpleGraph V} {H : SimpleGraph W}
 
 section Relabel
 

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
+
 public import TauCeti.Combinatorics.SimpleGraph.Cohomology.Basic
-public import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
 
 /-!
 # Changing the coefficients of the first cohomology of a graph
@@ -166,17 +167,16 @@ private theorem exists_coboundary_of_eq_coboundary_map (f : A →* B) (hf : Func
 
 /-- **The map on the first cohomology induced by a homomorphism of coefficient groups.** -/
 def firstCohomologyMap (f : A →* B) : G.FirstCohomology A →* G.FirstCohomology B :=
-  FirstCohomology.lift ((FirstCohomology.mk G B).comp (G.oneCochainsMap f)) (by
+  QuotientGroup.map (G.coboundary A).range (G.coboundary B).range (G.oneCochainsMap f) (by
     rintro _ ⟨φ, rfl⟩
-    refine MonoidHom.mem_ker.mpr ?_
-    rw [MonoidHom.comp_apply, oneCochainsMap_coboundary, FirstCohomology.mk_coboundary])
+    exact ⟨f ∘ φ, (oneCochainsMap_coboundary G f φ).symm⟩)
 
 /-- The induced map sends the cohomology class of a cochain to that of its image. -/
 @[simp]
 theorem firstCohomologyMap_mk (f : A →* B) (σ : G.oneCochains A) :
     G.firstCohomologyMap f (FirstCohomology.mk G A σ) =
-      FirstCohomology.mk G B (G.oneCochainsMap f σ) := by
-  rw [firstCohomologyMap, FirstCohomology.lift_mk, MonoidHom.comp_apply]
+      FirstCohomology.mk G B (G.oneCochainsMap f σ) :=
+  QuotientGroup.map_mk _ _ _ _ σ
 
 /-- Mapping cohomology classes along the identity homomorphism of coefficient groups changes
 nothing. -/

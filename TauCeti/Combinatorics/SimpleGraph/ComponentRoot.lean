@@ -27,8 +27,8 @@ of a vertex, or the product of transition factors along it.
 
 ## Main results
 
-* `SimpleGraph.componentRoot_reachable`: the root of a vertex reaches it.
-* `SimpleGraph.componentPath_isPath`: the chosen walk is a path.
+* `SimpleGraph.reachable_componentRoot`: the root of a vertex reaches it.
+* `SimpleGraph.isPath_componentPath`: the chosen walk is a path.
 * `SimpleGraph.componentRoot_eq_of_adj`: adjacent vertices have the same root.
 -/
 
@@ -45,17 +45,17 @@ noncomputable def componentRoot (v : V) : V :=
   (G.connectedComponentMk v).nonempty_supp.some
 
 /-- The root of the connected component of a vertex reaches it. -/
-theorem componentRoot_reachable (v : V) : G.Reachable (componentRoot G v) v :=
+theorem reachable_componentRoot (v : V) : G.Reachable (componentRoot G v) v :=
   SimpleGraph.ConnectedComponent.exact
     ((G.connectedComponentMk v).nonempty_supp.some_mem)
 
 /-- A chosen walk from the root of the connected component of a vertex to that vertex. -/
 noncomputable def componentPath (v : V) : G.Walk (componentRoot G v) v :=
-  (componentRoot_reachable G v).exists_path_of_dist.choose
+  (reachable_componentRoot G v).exists_path_of_dist.choose
 
 /-- The chosen walk from the root of a connected component to a vertex is a path. -/
-theorem componentPath_isPath (v : V) : (componentPath G v).IsPath :=
-  (componentRoot_reachable G v).exists_path_of_dist.choose_spec.1
+theorem isPath_componentPath (v : V) : (componentPath G v).IsPath :=
+  (reachable_componentRoot G v).exists_path_of_dist.choose_spec.1
 
 /-- The roots of adjacent vertices are the same. -/
 theorem componentRoot_eq_of_adj {v w : V} (h : G.Adj v w) :
