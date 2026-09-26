@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Planar
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
+public import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The planar Green kernel on a disk
@@ -45,12 +46,6 @@ theorem planarGreenKernelDisk_def (c : ℂ) (R : ℝ) (a z : ℂ) :
     planarGreenKernelDisk 0 1 a z = planarGreenKernel a z := by
   simp [planarGreenKernelDisk]
 
-/-- A point of a disk of positive radius has normalized coordinate in the unit disk. -/
-private theorem norm_normalized_lt_one {c z : ℂ} {R : ℝ} (hR : 0 < R)
-    (hz : ‖z - c‖ < R) : ‖R⁻¹ • (z - c)‖ < 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
-  exact (inv_mul_lt_iff₀ hR).2 (by simpa using hz)
-
 /-- The Green kernel is harmonic in the disk away from its pole. -/
 theorem harmonicAt_planarGreenKernelDisk {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     (ha : ‖a - c‖ < R) (hz : ‖z - c‖ < R) (hza : z ≠ a) :
@@ -60,17 +55,15 @@ theorem harmonicAt_planarGreenKernelDisk {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     intro heq
     have := smul_right_injective ℂ hRne heq
     exact hza (sub_left_inj.mp this)
-  have hh := harmonicAt_planarGreenKernel (norm_normalized_lt_one hR ha)
-    (norm_normalized_lt_one hR hz) hnormalized
-  have hdilate :
-      HarmonicAt (fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • w)) (z - c) :=
-    (harmonicAt_comp_smul_right_iff R⁻¹ hRne).2 hh
+  have hh := harmonicAt_planarGreenKernel (norm_inv_smul_sub_lt_one hR ha)
+    (norm_inv_smul_sub_lt_one hR hz) hnormalized
   have hfun : planarGreenKernelDisk c R a =
-      fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • (w - c)) :=
-    funext (planarGreenKernelDisk_def c R a)
+      fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (-(R⁻¹ • c) + R⁻¹ • w) := by
+    funext w
+    simp only [planarGreenKernelDisk_def, smul_sub, neg_add_eq_sub]
   rw [hfun]
-  simpa only [sub_eq_add_neg] using
-    (harmonicAt_comp_add_right_iff (a := -c)).2 hdilate
+  exact (harmonicAt_comp_const_add_smul_iff (x := -(R⁻¹ • c)) hRne).2
+    (by simpa only [smul_sub, neg_add_eq_sub] using hh)
 
 /-- The Green kernel vanishes on the boundary circle of its disk. -/
 @[simp] theorem planarGreenKernelDisk_eq_zero_of_norm_sub_eq {c a z : ℂ} {R : ℝ}
@@ -89,8 +82,8 @@ theorem planarGreenKernelDisk_pos {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     intro heq
     have := smul_right_injective ℂ hRne heq
     exact hza (sub_left_inj.mp this)
-  exact planarGreenKernel_pos (norm_normalized_lt_one hR ha)
-    (norm_normalized_lt_one hR hz) hnormalized
+  exact planarGreenKernel_pos (norm_inv_smul_sub_lt_one hR ha)
+    (norm_inv_smul_sub_lt_one hR hz) hnormalized
 
 /-- The difference between the disk Green kernel and its scaled Newtonian singularity is
 harmonic throughout the disk, including at the pole. The scale matters at the pole because
@@ -101,22 +94,19 @@ theorem harmonicAt_planarGreenKernelDisk_sub_newtonianKernel {c a z : ℂ} {R : 
       planarNewtonianKernel (R⁻¹ • (w - a))) z := by
   have hRne : R⁻¹ ≠ 0 := inv_ne_zero hR.ne'
   have hh := harmonicAt_planarGreenKernel_sub_newtonianKernel
-    (norm_normalized_lt_one hR ha) (norm_normalized_lt_one hR hz)
-  have hdilate : HarmonicAt
-      (fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • w) -
-        planarNewtonianKernel (R⁻¹ • w - R⁻¹ • (a - c))) (z - c) :=
-    (harmonicAt_comp_smul_right_iff R⁻¹ hRne).2 hh
+    (norm_inv_smul_sub_lt_one hR ha) (norm_inv_smul_sub_lt_one hR hz)
   have hfun : (fun w : ℂ ↦ planarGreenKernelDisk c R a w -
       planarNewtonianKernel (R⁻¹ • (w - a))) =
-      fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • (w - c)) -
-        planarNewtonianKernel (R⁻¹ • (w - c) - R⁻¹ • (a - c)) := by
+      fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (-(R⁻¹ • c) + R⁻¹ • w) -
+        planarNewtonianKernel ((-(R⁻¹ • c) + R⁻¹ • w) - R⁻¹ • (a - c)) := by
     funext w
-    rw [planarGreenKernelDisk_def, ← smul_sub]
+    rw [planarGreenKernelDisk_def]
+    simp only [smul_sub, neg_add_eq_sub]
     congr 1
     abel_nf
   rw [hfun]
-  simpa only [sub_eq_add_neg] using
-    (harmonicAt_comp_add_right_iff (a := -c)).2 hdilate
+  exact (harmonicAt_comp_const_add_smul_iff (x := -(R⁻¹ • c)) hRne).2
+    (by simpa only [neg_add_eq_sub, ← smul_sub] using hh)
 
 end TauCeti
 
