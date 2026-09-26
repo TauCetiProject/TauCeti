@@ -40,19 +40,6 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
   [IsProbabilityMeasure μ] [NullSingletonClass μ]
 
-private theorem wassersteinEDist_map_le_of_edist_le
-    {Z : Type*} [PseudoMetricSpace Z] [SecondCountableTopology Z]
-    [MeasurableSpace Z] [BorelSpace Z]
-    (ρ : Measure Z) [IsProbabilityMeasure ρ] {F : Z → Z} (hF : Measurable F)
-    {δ : ℝ≥0∞} (hδ : ∀ z, edist z (F z) ≤ δ) :
-    wassersteinEDist 1 ρ (ρ.map F) ≤ δ := by
-  have hm : Measurable fun z : Z ↦ edist z (F z) :=
-    measurable_edist.comp (measurable_id.prodMk hF)
-  refine (wassersteinEDist_map_le measurable_edist hF.aemeasurable 1).trans ?_
-  refine (eLpNorm_mono_enorm hm.aestronglyMeasurable (g := fun _ : Z ↦ δ) hδ).trans ?_
-  rw [eLpNorm_const _ (by norm_num : (1 : ℝ≥0∞) ≠ 0) (IsProbabilityMeasure.ne_zero ρ)]
-  simp
-
 /-- Every coupling with an atomless source has a graph realization arbitrarily close in the
 Lévy--Prokhorov metric. The source and target marginals of the realization are exact. -/
 theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
