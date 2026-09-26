@@ -11,8 +11,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Ir
 # Isomorphism classes in the principal series of `GL₂(𝔽_q)`
 
 For characters `α, β : Fˣ → ℂˣ`, the principal series is unchanged up to isomorphism when the
-parameters are swapped. More precisely, two off-diagonal principal-series representations are
-isomorphic exactly when their parameter pairs differ by that swap:
+parameters are swapped. More precisely, two principal-series representations are isomorphic exactly
+when their parameter pairs differ by that swap:
 
 `Ind_B^GL₂(α ⊗ β) ≅ Ind_B^GL₂(γ ⊗ δ) ↔ (α, β) = (γ, δ) or (α, β) = (δ, γ)`.
 
@@ -26,8 +26,8 @@ directly, while the Weyl cell compares the first with the swap of the second.
 * `TauCeti.finrank_hom_GL2PrincipalSeries`: the dimension of the intertwining space between two
   principal-series representations is the sum of the two Kronecker deltas for equality and
   equality after swapping.
-* `TauCeti.nonempty_iso_GL2PrincipalSeries_iff`: off the diagonal, two principal-series
-  representations are isomorphic exactly when their parameters agree up to swap.
+* `TauCeti.nonempty_iso_GL2PrincipalSeries_iff`: two principal-series representations are
+  isomorphic exactly when their parameters agree up to swap.
 * `TauCeti.nonempty_iso_GL2PrincipalSeries_swap`: swapping the two inducing characters always
   gives an isomorphic principal-series representation.
 
@@ -132,47 +132,44 @@ theorem finrank_hom_GL2PrincipalSeries (α β γ δ : Fˣ →* ℂˣ) :
     rw [← finrank_hom_res_mackeyToH_mul_left_mul_right _ _ hh₁ hh₂, ← hout,
       finrank_mackeyTerm_weyl]
 
-/-- **The irreducible principal series are parametrized by unordered pairs of distinct
-characters.** If the first parameter pair is off the diagonal, its induced representation is
-isomorphic to the one from a second pair exactly when the ordered pairs agree directly or after
-applying the Weyl-group swap. -/
-theorem nonempty_iso_GL2PrincipalSeries_iff {α β γ δ : Fˣ →* ℂˣ} (hαβ : α ≠ β) :
+/-- **Principal-series representations are parametrized by unordered pairs of characters.** Two
+such induced representations are isomorphic exactly when the ordered pairs agree directly or after
+applying the Weyl-group swap. Restricting to distinct pairs classifies the irreducible principal
+series. -/
+theorem nonempty_iso_GL2PrincipalSeries_iff {α β γ δ : Fˣ →* ℂˣ} :
     Nonempty (GL2PrincipalSeries F α β ≅ GL2PrincipalSeries F γ δ) ↔
       (α = γ ∧ β = δ) ∨ (α = δ ∧ β = γ) := by
   constructor
-  · intro h
-    have hγδ : γ ≠ δ := (simple_GL2PrincipalSeries_iff F γ δ).mp <|
-      (Simple.iff_of_iso (Classical.choice h)).mp
-        ((simple_GL2PrincipalSeries_iff F α β).mpr hαβ)
-    let _ : Simple (GL2PrincipalSeries F α β) :=
-      (simple_GL2PrincipalSeries_iff F α β).mpr hαβ
-    let _ : Simple (GL2PrincipalSeries F γ δ) :=
-      (simple_GL2PrincipalSeries_iff F γ δ).mpr hγδ
-    rw [← CategoryTheory.finrank_hom_simple_simple_eq_one_iff ℂ,
-      finrank_hom_GL2PrincipalSeries] at h
-    split_ifs at h <;> aesop
-  · intro h
-    have hγδ : γ ≠ δ := by
-      rintro rfl
-      rcases h with ⟨hαγ, hβγ⟩ | ⟨hαγ, hβγ⟩
-      · exact hαβ (hαγ.trans hβγ.symm)
-      · exact hαβ (hαγ.trans hβγ.symm)
-    let _ : Simple (GL2PrincipalSeries F α β) :=
-      (simple_GL2PrincipalSeries_iff F α β).mpr hαβ
-    let _ : Simple (GL2PrincipalSeries F γ δ) :=
-      (simple_GL2PrincipalSeries_iff F γ δ).mpr hγδ
-    rw [← CategoryTheory.finrank_hom_simple_simple_eq_one_iff ℂ,
-      finrank_hom_GL2PrincipalSeries]
-    split_ifs <;> aesop
+  · rintro ⟨e⟩
+    have hdim :=
+      (Linear.homCongr ℂ e (Iso.refl (GL2PrincipalSeries F α β))).finrank_eq
+    have hpos : 0 < Module.finrank ℂ
+        (GL2PrincipalSeries F γ δ ⟶ GL2PrincipalSeries F α β) := by
+      rw [← hdim, finrank_hom_GL2PrincipalSeries]
+      simp
+    rw [finrank_hom_GL2PrincipalSeries] at hpos
+    by_cases hdirect : α = γ ∧ β = δ
+    · exact Or.inl hdirect
+    · by_cases hswap : α = δ ∧ β = γ
+      · exact Or.inr hswap
+      · simp [hdirect, hswap] at hpos
+  · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · exact ⟨Iso.refl _⟩
+    · by_cases hαβ : α = β
+      · subst β
+        exact ⟨Iso.refl _⟩
+      · let _ : Simple (GL2PrincipalSeries F α β) :=
+          (simple_GL2PrincipalSeries_iff F α β).mpr hαβ
+        let _ : Simple (GL2PrincipalSeries F β α) :=
+          (simple_GL2PrincipalSeries_iff F β α).mpr (Ne.symm hαβ)
+        rw [← CategoryTheory.finrank_hom_simple_simple_eq_one_iff ℂ,
+          finrank_hom_GL2PrincipalSeries]
+        simp [hαβ]
 
 /-- **Swapping the two inducing characters does not change the principal series.** -/
 theorem nonempty_iso_GL2PrincipalSeries_swap (α β : Fˣ →* ℂˣ) :
     Nonempty (GL2PrincipalSeries F α β ≅ GL2PrincipalSeries F β α) := by
-  by_cases hαβ : α = β
-  · subst β
-    exact ⟨Iso.refl _⟩
-  · exact (nonempty_iso_GL2PrincipalSeries_iff F hαβ).mpr
-      (Or.inr ⟨rfl, rfl⟩)
+  exact (nonempty_iso_GL2PrincipalSeries_iff F).mpr (Or.inr ⟨rfl, rfl⟩)
 
 end FiniteField
 
