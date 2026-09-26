@@ -42,15 +42,26 @@ universe u
 
 An edge has two half-edges even when both endpoints agree, so loops contribute two to valence. -/
 structure DualGraph where
+  /-- The vertices, indexing the irreducible components of the curve. -/
   Vertex : Type u
+  /-- There are finitely many components. -/
   [vertexFintype : Fintype Vertex]
+  /-- Components can be told apart. -/
   [vertexDecidableEq : DecidableEq Vertex]
+  /-- A curve has at least one component. -/
   [vertexNonempty : Nonempty Vertex]
+  /-- The edges, indexing the nodes of the curve. -/
   Edge : Type u
+  /-- There are finitely many nodes. -/
   [edgeFintype : Fintype Edge]
+  /-- Nodes can be told apart. -/
   [edgeDecidableEq : DecidableEq Edge]
+  /-- The two branches of a node, as an edge together with a half-edge index. Both values may
+  agree, which is how a node joining a component to itself becomes a loop. -/
   endpoint : Edge → Fin 2 → Vertex
+  /-- The geometric genus of each component, the vertex weight. -/
   genus : Vertex → ℕ
+  /-- The curve is connected: any two components are joined by a chain of nodes. -/
   connected : ∀ v w, Relation.ReflTransGen
     (fun v w ↦ ∃ e, (endpoint e 0 = v ∧ endpoint e 1 = w) ∨
       (endpoint e 0 = w ∧ endpoint e 1 = v)) v w
