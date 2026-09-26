@@ -81,7 +81,6 @@ variable {s : T ⟶ Y}
 
 /-- Isomorphism of rigidified line bundles: an isomorphism of the underlying line bundles whose
 pullback along `s` carries the first trivialization to the second. -/
-@[expose]
 def setoid (s : T ⟶ Y) : Setoid (RigidifiedLineBundle s) where
   r P Q := ∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
     (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom
@@ -179,7 +178,6 @@ lemma pullback_rigidification (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle
 end RigidifiedLineBundle
 
 /-- Isomorphism classes of line bundles on `Y` rigidified along `s : T ⟶ Y`. -/
-@[expose]
 def RigidifiedLineBundleClass (s : T ⟶ Y) : Type (u + 1) :=
   Quotient (RigidifiedLineBundle.setoid s)
 
@@ -188,7 +186,6 @@ namespace RigidifiedLineBundleClass
 variable {s : T ⟶ Y}
 
 /-- The isomorphism class of a rigidified line bundle. -/
-@[expose]
 def mk (P : RigidifiedLineBundle s) : RigidifiedLineBundleClass s :=
   Quotient.mk _ P
 
@@ -207,12 +204,15 @@ theorem mk_eq_mk_iff {P Q : RigidifiedLineBundle s} :
 
 /-- Descend a function on rigidified line bundles that respects rigidified isomorphisms to
 their isomorphism classes. -/
-@[expose]
 def lift {α : Sort v} (f : RigidifiedLineBundle s → α)
     (hf : ∀ P Q, (∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
       (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom) →
         f P = f Q) : RigidifiedLineBundleClass s → α :=
-  Quotient.lift f hf
+  Quotient.lift f (by
+    intro P Q h
+    change (RigidifiedLineBundle.setoid s).r P Q at h
+    unfold RigidifiedLineBundle.setoid at h
+    exact hf P Q h)
 
 /-- Applying `lift` to a representative returns the original function. -/
 @[simp]
@@ -221,7 +221,7 @@ theorem lift_mk {α : Sort v} {f : RigidifiedLineBundle s → α}
       (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom) →
         f P = f Q} (P : RigidifiedLineBundle s) :
     lift f hf (mk P) = f P :=
-  rfl
+  by simp only [lift, mk, Quotient.lift_mk]
 
 variable {T' Y' : Scheme.{u}} {s' : T' ⟶ Y'} {h : Y' ⟶ Y} {g : T' ⟶ T}
 
