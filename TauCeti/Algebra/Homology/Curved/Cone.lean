@@ -218,6 +218,7 @@ theorem coneMap_id (f : X ⟶ Y) :
   · apply biprod.hom_ext <;> simp [cone]
 
 /-- Composing commutative squares composes their induced cone maps. -/
+@[simp ←]
 theorem coneMap_comp {X'' Y'' : CurvedDuplex C w} (f : X ⟶ Y) (g : X' ⟶ Y')
     (k : X'' ⟶ Y'') (a : X ⟶ X') (b : Y ⟶ Y') (a' : X' ⟶ X'')
     (b' : Y' ⟶ Y'') (h : f ≫ b = a ≫ g) (h' : g ≫ b' = a' ≫ k) :
