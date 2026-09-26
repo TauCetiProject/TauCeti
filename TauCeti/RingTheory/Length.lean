@@ -18,7 +18,8 @@ Mathlib defines `Module.length R M` as the Krull dimension of the lattice of sub
 proves that it is additive in short exact sequences. This file adds the facts about it that a
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
-generated submodules already see the whole length, and the length of `I ⧸ aI` for an ideal `I`.
+generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, and
+the length of `R ⧸ 𝔪` for a local ring.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -50,6 +51,7 @@ applies to the quotients appearing here without any further appeal to defeq.
   contains a non-zero-divisor.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
+* `TauCeti.length_quot_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 -/
 
 public section
@@ -249,5 +251,22 @@ theorem length_quotient_lsmul_ideal_eq_ord (I : Ideal A) (hI : IsFiniteLength A 
   exact (WithTop.add_left_cancel hfin (hfilt.trans (add_comm _ _))).symm
 
 end CommRing
+
+section LocalRing
+
+open _root_.IsLocalRing
+
+variable {A : Type*} [CommRing A] [IsLocalRing A]
+
+/-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
+residue field. -/
+@[simp]
+theorem length_quot_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 := by
+  rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
+    (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
+  let _ := Ideal.Quotient.field (maximalIdeal A)
+  exact instIsSimpleModule _
+
+end LocalRing
 
 end TauCeti
