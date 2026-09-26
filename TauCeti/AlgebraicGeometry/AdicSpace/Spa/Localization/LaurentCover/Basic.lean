@@ -690,8 +690,6 @@ end Cover
 
 section Injective
 
-universe v
-
 -- As in `laurentCover_exact`, decidable equality is only needed for the numerator sets `{f, 1}`
 -- and `{1}`, so it is supplied classically instead of being assumed of `A`.
 attribute [local instance] Classical.decEq
@@ -702,11 +700,10 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 /-- **Wedhorn's Lemma 8.33, injectivity.** Let `A` be a complete Hausdorff strongly noetherian
 Tate ring and `f ∈ A`. The map `A → A⟨U₁⟩ × A⟨U₂⟩`, `a ↦ (a, a)`, into the coordinate rings of
 `U₁ = R({f, 1}/1)` and `U₂ = R({1}/f)` is injective. Unlike the other two results of this file it
-needs no presentation of `U₁ ∩ U₂`, and no ring of integral elements has to be chosen. The two
-localisations are asked to lie in one universe, as for the family in
-`pi_toCompletionLoc_injective`. Exactness in the middle and surjectivity are `laurentCover_exact`
-and `laurentCover_surjective`. -/
-theorem laurentCover_injective (P : PairOfDefinition A) (f : A) (S₁ S₂ : Type v) [CommRing S₁]
+needs no presentation of `U₁ ∩ U₂`, and no ring of integral elements has to be chosen.
+The two localisations may lie in independent universes. Exactness in the middle and
+surjectivity are `laurentCover_exact` and `laurentCover_surjective`. -/
+theorem laurentCover_injective (P : PairOfDefinition A) (f : A) (S₁ S₂ : Type*) [CommRing S₁]
     [Algebra A S₁] [IsLocalization.Away (1 : A) S₁] [CommRing S₂] [Algebra A S₂]
     [IsLocalization.Away f S₂] (hden₂ : HasDenominatorPower P {1} f S₂) :
     letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
@@ -719,15 +716,40 @@ theorem laurentCover_injective (P : PairOfDefinition A) (f : A) (S₁ S₂ : Typ
     Function.Injective
       (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂)) := by
   have hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  -- the cover as a family indexed by `Bool`, `true` for `R({f, 1}/1)` and `false` for `R({1}/f)`
-  let S : Bool → Type v := fun b ↦ cond b S₁ S₂
-  let _ : ∀ b, CommRing (S b) := fun b ↦ b.casesOn ‹CommRing S₂› ‹CommRing S₁›
-  let _ : ∀ b, Algebra A (S b) := fun b ↦ b.casesOn ‹Algebra A S₂› ‹Algebra A S₁›
-  have _ : ∀ b, IsLocalization.Away (cond b 1 f) (S b) := fun b ↦ b.casesOn ‹_› ‹_›
+  -- Use canonical localizations to put the `Bool`-indexed family in one universe.
+  let S (b : Bool) := Localization.Away (cond b 1 f)
+  have _ : IsLocalization.Away (1 : A) (S true) :=
+    inferInstanceAs (IsLocalization.Away (1 : A) (Localization.Away (1 : A)))
+  have _ : IsLocalization.Away f (S false) :=
+    inferInstanceAs (IsLocalization.Away f (Localization.Away f))
+  have hden₁' := hasDenominatorPower_denom_one P {f, 1} (S true)
+  have hden₂' : HasDenominatorPower P {1} f (S false) := by
+    obtain ⟨N, hN⟩ := (hasDenominatorPower_iff P {1} f S₂).mp hden₂
+    refine (hasDenominatorPower_iff P {1} f (S false)).mpr ⟨N, fun b hb ↦ ?_⟩
+    simpa only [mul_one] using divBy_mul_mem_locSubring P {1} f S₂ {1} f (S false)
+      1 (mul_one f).symm (by simp) (hN b hb)
+  have hden (b : Bool) : HasDenominatorPower P (cond b {f, 1} {1}) (cond b 1 f) (S b) :=
+    b.casesOn hden₂' hden₁'
   have hinj := pi_toCompletionLoc_injective P _ (Pair.powerBounded A).isRingOfIntegralElements
     (Pair.powerBounded_plus (A := A) ▸ P.le_powerBoundedSubring) _ _ S
-    (fun b ↦ b.casesOn hden₂ hden₁) (spa_subset_iUnion_laurentCover _ f)
-  exact fun a b hab ↦ hinj (funext (Bool.rec (congrArg Prod.snd hab) (congrArg Prod.fst hab)))
+    hden (spa_subset_iUnion_laurentCover _ f)
+  -- The restriction maps to the canonical presentations preserve the structure maps from `A`.
+  let ρ₁ := restrictionRingHom P {f, 1} 1 S₁ hden₁ {f, 1} 1 (S true) hden₁'
+    1 (mul_one 1).symm (by simp)
+  let ρ₂ := restrictionRingHom P {1} f S₂ hden₂ {1} f (S false) hden₂'
+    1 (mul_one f).symm (by simp)
+  intro a b hab
+  apply hinj
+  funext i
+  cases i
+  · have h := congrArg ρ₂ (congrArg Prod.snd hab)
+    simpa only [RingHom.pi_apply, Bool.cond_false, Bool.cond_true,
+      RingHom.prod_apply, ← RingHom.comp_apply,
+      restrictionRingHom_comp_toCompletionLoc, ρ₂] using h
+  · have h := congrArg ρ₁ (congrArg Prod.fst hab)
+    simpa only [RingHom.pi_apply, Bool.cond_false, Bool.cond_true,
+      RingHom.prod_apply, ← RingHom.comp_apply,
+      restrictionRingHom_comp_toCompletionLoc, ρ₁] using h
 
 end Injective
 

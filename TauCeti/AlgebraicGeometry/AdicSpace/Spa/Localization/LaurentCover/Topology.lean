@@ -39,15 +39,13 @@ namespace TauCeti.ValuationSpectrum
 
 attribute [local instance] Classical.decEq
 
-universe v
-
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStronglyNoetherian A]
   (P : PairOfDefinition A) (f : A)
 
 section Augmentation
 
-variable (S₁ S₂ : Type v) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
+variable (S₁ S₂ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
   [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
   (hden₂ : HasDenominatorPower P {1} f S₂)
 
