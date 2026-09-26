@@ -12,27 +12,32 @@ public import Mathlib.Logic.Relation
 /-!
 # Dual graphs of geometric nodal curves
 
-The **dual graph** of a proper geometric nodal curve is the finite connected weighted graph whose
-vertices are the irreducible components, whose edges are the nodes (with two half-edges even when
-both endpoints agree, so loops contribute two to valence), and whose vertex weights are the genera
-of the components.
+This file defines `TauCeti.DualGraph`, a finite nonempty connected graph with natural number
+vertex weights, together with its first Betti number and the weighted invariant
+`arithmeticGenus`. No curve appears in this file: the structure is the combinatorial shape that
+the dual graph of a proper geometric nodal curve has, with vertices standing for irreducible
+components, edges for nodes and weights for component genera, and the comparison with an actual
+curve is not defined or proved here.
 
-The arithmetic genus of the curve is recovered from this combinatorial data alone: it is the sum
-of the component genera plus the first Betti number of the underlying graph, the latter measuring
-how many independent cycles the nodes create.
+Edges carry two half-edges even when both endpoints agree, so a loop contributes two to the
+valence of its vertex. `valence` counts half-edges at a vertex, which is the form in which the
+stability condition of a stable curve is stated.
 
 ## Main definitions
 
-* `TauCeti.DualGraph`: finite nonempty connected weighted dual graph.
+* `TauCeti.DualGraph`: finite nonempty connected weighted graph.
 * `TauCeti.DualGraph.HalfEdge`: an edge together with an endpoint index.
+* `TauCeti.DualGraph.incident`: the half-edges meeting a given vertex.
+* `TauCeti.DualGraph.valence`: the number of half-edges at a vertex, counting loops twice.
 * `TauCeti.DualGraph.firstBetti`: first Betti number by Euler characteristic.
-* `TauCeti.DualGraph.arithmeticGenus`: arithmetic genus `∑ genus + firstBetti`.
+* `TauCeti.DualGraph.arithmeticGenus`: the weighted invariant `∑ genus + firstBetti`.
 
 ## References
 
 * [Caporaso, *On the complexity group of stable curves*](https://arxiv.org/abs/0808.1529),
-  Section 1: the dual graph of a nodal curve, its first Betti number `b₁ = δ - γ + c`, and the
-  arithmetic genus as the sum of component genera plus `b₁`.
+  Section 1: the dual graph of a nodal curve, its first Betti number `b₁ = δ - γ + c`, the
+  valence conditions defining stability, and the arithmetic genus as the sum of component
+  genera plus `b₁`.
 -/
 
 public section
@@ -72,6 +77,7 @@ variable (G : DualGraph)
 instance : Fintype G.Vertex := G.vertexFintype
 instance : Nonempty G.Vertex := G.vertexNonempty
 instance : Fintype G.Edge := G.edgeFintype
+instance : Fintype (G.Edge × Fin 2) := instFintypeProd _ _
 
 /-- Half-edges make the loop-counting convention explicit in the data. -/
 abbrev HalfEdge := G.Edge × Fin 2
@@ -91,7 +97,7 @@ def firstBetti : ℕ := Fintype.card G.Edge + 1 - Fintype.card G.Vertex
 -- `by rfl`, not `rfl`: `firstBetti` is not `@[expose]`, so a theorem exported from this module
 -- cannot unfold it in term mode.
 @[simp]
-theorem firstBetti_eq : G.firstBetti = Fintype.card G.Edge + 1 - Fintype.card G.Vertex := by rfl
+theorem firstBetti_def : G.firstBetti = Fintype.card G.Edge + 1 - Fintype.card G.Vertex := by rfl
 
 /-- The arithmetic genus encoded by a connected weighted dual graph. -/
 def arithmeticGenus : ℕ := (∑ v, G.genus v) + G.firstBetti
@@ -99,7 +105,48 @@ def arithmeticGenus : ℕ := (∑ v, G.genus v) + G.firstBetti
 -- `by rfl`, not `rfl`: `arithmeticGenus` is not `@[expose]`, so a theorem exported from this
 -- module cannot unfold it in term mode.
 @[simp]
-theorem arithmeticGenus_eq : G.arithmeticGenus = (∑ v, G.genus v) + G.firstBetti := by rfl
+theorem arithmeticGenus_def : G.arithmeticGenus = (∑ v, G.genus v) + G.firstBetti := by rfl
+
+section Valence
+
+variable [DecidableEq G.Vertex]
+
+/-- The half-edges meeting a vertex. A node joining a component to itself contributes both of
+its half-edges, so it is counted twice. -/
+def incident (v : G.Vertex) : Finset G.HalfEdge :=
+  {h ∈ Finset.univ | HalfEdge.vertex G h = v}
+
+/-- The valence of a vertex: the number of half-edges meeting it, counting loops twice. The
+stability condition of a stable curve is a lower bound on this quantity. -/
+def valence (v : G.Vertex) : ℕ := (G.incident v).card
+
+@[simp]
+theorem mem_incident {v : G.Vertex} {h : G.HalfEdge} :
+    h ∈ G.incident v ↔ HalfEdge.vertex G h = v := by
+  simp [incident]
+
+-- `by rfl`, not `rfl`: `valence` is not `@[expose]`, so a theorem exported from this module
+-- cannot unfold it in term mode.
+@[simp]
+theorem valence_def (v : G.Vertex) : G.valence v = (G.incident v).card := by rfl
+
+/-- Every half-edge meets exactly one vertex, so the valences sum to the number of half-edges,
+which is twice the number of edges. -/
+theorem sum_valence : ∑ v, G.valence v = 2 * Fintype.card G.Edge := by
+  classical
+  have : ∑ v, G.valence v = Finset.univ.card (α := G.HalfEdge) := by
+    simp only [valence, incident]
+    rw [← Finset.card_biUnion]
+    · congr 1
+      ext h
+      simp
+    · intro x _ y _ hxy
+      simp only [Finset.disjoint_left, Finset.mem_filter]
+      rintro a ⟨-, rfl⟩ ⟨-, h⟩
+      exact hxy h
+  rw [this, Finset.card_univ, Fintype.card_prod, Fintype.card_fin, Nat.mul_comm]
+
+end Valence
 
 end DualGraph
 
