@@ -193,6 +193,7 @@ def ofRightEq {u v : GridState n} (r : GridRectangleBetween u v)
   turn_mem := hs
 
 /-- The rectangle underlying `ofRightEq` is the supplied rectangle. -/
+@[simp]
 theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     (ofRightEq r hright hs : GridPentagonBetween a s u v).toGridRectangleBetween = r := by
@@ -200,7 +201,6 @@ theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleB
   rfl
 
 /-- The initial side of `ofRightEq` is the rectangle's. -/
-@[simp]
 theorem ofRightEq_left {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     (ofRightEq r hright hs : GridPentagonBetween a s u v).left = r.left := by
@@ -208,7 +208,6 @@ theorem ofRightEq_left {u v : GridState n} (r : GridRectangleBetween u v)
   rfl
 
 /-- The bottom row of `ofRightEq` is the rectangle's. -/
-@[simp]
 theorem ofRightEq_bottom {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     (ofRightEq r hright hs : GridPentagonBetween a s u v).bottom = r.bottom := by
@@ -216,7 +215,6 @@ theorem ofRightEq_bottom {u v : GridState n} (r : GridRectangleBetween u v)
   rfl
 
 /-- The top row of `ofRightEq` is the rectangle's. -/
-@[simp]
 theorem ofRightEq_top {u v : GridState n} (r : GridRectangleBetween u v)
     (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
     (ofRightEq r hright hs : GridPentagonBetween a s u v).top = r.top := by

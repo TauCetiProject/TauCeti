@@ -27,8 +27,8 @@ repartition data remain available without duplicating the rectangle geometry.
 This module treats the common-initial-side orientation and preserves the underlying rectangle
 repartition and its rectangle weights. It also records the two possible cuts in the
 common-terminal-side orientation: in that orientation exactly one recut rectangle ends on the
-replaced grid line, and the branch data in `Overlap/TurnRow.lean` identifies which one from
-the column geometry.
+replaced grid line, and the branch data below identifies which one from the column geometry
+(the turn-row transports building on it live in `Overlap/TurnRow.lean`).
 
 ## Main results
 
@@ -52,6 +52,12 @@ the column geometry.
 * `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty_eq_recut`: the shared recut
   identified with the underlying rectangle decomposition's recut, for consumers that need the
   definitional unfolding.
+* `TauCeti.GridRectanglePentagonDecomposition.first_recut_branch_data_of_right_eq_right`:
+  when the first recut rectangle carries the pentagon's terminal side, the recut branch is
+  forced, fixing the column geometry of the shared recut.
+* `TauCeti.GridRectanglePentagonDecomposition.second_recut_branch_data_of_right_eq_right`:
+  when the second recut rectangle carries the pentagon's terminal side, the recut branch is
+  forced, fixing the column geometry of the shared recut.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_bottom_eq_pentagon_bottom_of_branch1`:
   in the first recut branch, the recut's first rectangle's bottom row equals the original
   pentagon's bottom row.
@@ -518,6 +524,90 @@ theorem recutOfIsEmpty_eq_recut
           D.toRectangleDecomposition_second_toGridRectangle] using
         hpentagon) :=
   D.recutOfIsEmpty_eq_recut_aux hone hrectangle hpentagon
+
+/-- Common setup for the terminal-side branch determination: the pentagon's terminal side
+is the common right side of the forgotten rectangle decomposition. -/
+private theorem terminal_side_common_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right) :
+    D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right ∧
+      D.pentagon.right = D.toRectangleDecomposition.first.right := by
+  have hcommon' : D.toRectangleDecomposition.first.right =
+      D.toRectangleDecomposition.second.right := by
+    simpa only [toRectangleDecomposition_first_right,
+      toRectangleDecomposition_second_right] using hcommon
+  refine ⟨hcommon', ?_⟩
+  rw [← toRectangleDecomposition_second_right D, ← hcommon']
+
+/-- If the first recut rectangle carries the pentagon's terminal side, the recut branch is
+forced: the first recut rectangle spans from the original second rectangle's left side to
+the original first rectangle's right side, and the original second rectangle's left side
+lies in the original first rectangle's open column interval. -/
+theorem first_recut_branch_data_of_right_eq_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right = D.pentagon.right) :
+    D.toRectangleDecomposition.second.left ∈
+        Grid.cIoo D.toRectangleDecomposition.first.left
+          D.toRectangleDecomposition.first.right ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+        D.toRectangleDecomposition.first.right ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
+        D.toRectangleDecomposition.second.left := by
+  obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
+  -- View the branch data as data about the shared recut, via the characteristic
+  -- identification `recutOfIsEmpty_eq_recut` (proof irrelevance of the emptiness arguments).
+  have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  have hbranch := hdata.recut_branch
+  rcases hbranch with ⟨-, -, hEfirst, -⟩ | ⟨hcol, -, hEfirstB, -⟩
+  · -- First branch: E.first.right = D.first.left, so D.first.left = D.pentagon.right
+    -- = D.first.right, contradicting left_ne_right.
+    exfalso
+    rw [hEfirst, hpen_right] at hfirst
+    exact D.toRectangleDecomposition.first.left_ne_right hfirst
+  · exact ⟨hcol, hEfirstB, hdata.recut_sides.1⟩
+
+/-- If the second recut rectangle carries the pentagon's terminal side, the recut branch is
+forced: the second recut rectangle spans from the original first rectangle's left side to
+the original first rectangle's right side with the column-swapped middle state, and the
+original first rectangle's left side lies in the original second rectangle's open column
+interval. -/
+theorem second_recut_branch_data_of_right_eq_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right = D.pentagon.right) :
+    D.toRectangleDecomposition.first.left ∈
+        Grid.cIoo D.toRectangleDecomposition.second.left
+          D.toRectangleDecomposition.first.right ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+        D.toRectangleDecomposition.first.right ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.left =
+        D.toRectangleDecomposition.first.left ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).middle =
+        x.swapColumns D.toRectangleDecomposition.second.left
+          D.toRectangleDecomposition.first.left := by
+  obtain ⟨hcommon', hpen_right⟩ := D.terminal_side_common_right hcommon
+  -- View the branch data as data about the shared recut, via the characteristic
+  -- identification `recutOfIsEmpty_eq_recut` (proof irrelevance of the emptiness arguments).
+  have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  have hbranch := hdata.recut_branch
+  rcases hbranch with ⟨hcol, hmiddleA, -, hEsecondA⟩ | ⟨-, -, -, hEsecondB⟩
+  · exact ⟨hcol, hEsecondA, hdata.recut_sides.2, hmiddleA⟩
+  · -- Second branch: E.second.right = D.second.left, so D.second.left = D.pentagon.right
+    -- = D.first.right = D.second.right (by hcommon'), contradicting left_ne_right.
+    exfalso
+    rw [hEsecondB, hpen_right, hcommon'] at hsecond
+    exact D.toRectangleDecomposition.second.left_ne_right hsecond
 
 /-- In the first recut branch, the recut's first rectangle's bottom row equals the original
 pentagon's bottom row. Call sites needing strip X-avoidance extract the strip clause from

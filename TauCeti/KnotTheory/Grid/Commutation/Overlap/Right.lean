@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.TurnRow
 
 /-!
@@ -37,9 +36,9 @@ The two subcases give different decomposition shapes:
   terminal-side recut to a rectangle--pentagon decomposition when the second new rectangle
   carries the original pentagon's terminal side.
 * `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightFirst_middle`,
-  `..._pentagon_left`, `..._pentagon_bottom`, `..._pentagon_top` (and the `...Second`
-  analogues): the promoted components in terms of the underlying recut, so consumers never
-  unfold the definitions.
+  `..._rectangle_left`, `..._rectangle_right`, `..._pentagon_left`, `..._pentagon_bottom`,
+  `..._pentagon_top` (and the `...Second` analogues): the promoted components in terms of
+  the underlying recut, so consumers never unfold the definitions.
 -/
 
 public section
@@ -109,6 +108,32 @@ theorem recutRightEqRightFirst_middle
       D.pentagon.right) :
     (D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).middle =
       (D.recutOfIsEmpty hone hrectangle hpentagon).middle := by
+  rw [D.recutRightEqRightFirst_unfold hcommon hone hrectangle hpentagon hfirst]
+
+/-- The initial side of the first promotion's rectangle is the second recut rectangle's. -/
+@[simp]
+theorem recutRightEqRightFirst_rectangle_left
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).rectangle.left =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.left := by
+  rw [D.recutRightEqRightFirst_unfold hcommon hone hrectangle hpentagon hfirst]
+
+/-- The terminal side of the first promotion's rectangle is the second recut rectangle's. -/
+@[simp]
+theorem recutRightEqRightFirst_rectangle_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).rectangle.right =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.right := by
   rw [D.recutRightEqRightFirst_unfold hcommon hone hrectangle hpentagon hfirst]
 
 /-- The promoted pentagon's initial side is the first recut rectangle's. -/
@@ -213,6 +238,32 @@ theorem recutRightEqRightSecond_middle
       D.pentagon.right) :
     (D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond).middle =
       (D.recutOfIsEmpty hone hrectangle hpentagon).middle := by
+  rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
+
+/-- The initial side of the second promotion's rectangle is the first recut rectangle's. -/
+@[simp]
+theorem recutRightEqRightSecond_rectangle_left
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond).rectangle.left =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.left := by
+  rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
+
+/-- The terminal side of the second promotion's rectangle is the first recut rectangle's. -/
+@[simp]
+theorem recutRightEqRightSecond_rectangle_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond).rectangle.right =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.right := by
   rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
 
 /-- The promoted pentagon's initial side is the second recut rectangle's. -/
