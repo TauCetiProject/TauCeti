@@ -177,6 +177,8 @@ theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) 
       Nat.card {𝔭 : HeightOneSpectrum (𝓞 K) //
         𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x} := by
   classical
+  -- Unfold the count and view the subtype as the coercion of its defining set, so
+  -- `Nat.card_coe_set_eq` converts its cardinality to a set cardinality.
   change ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card =
     Nat.card (↥{𝔭 : HeightOneSpectrum (𝓞 K) |
       𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x})
