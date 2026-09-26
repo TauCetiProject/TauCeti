@@ -24,6 +24,9 @@ matches the two chart volumes. The global statement follows from the characteriz
 `TauCeti.eq_riemannianVolume_iff` of the Riemannian volume by its chart restrictions, using a
 countable cover of `M` by chart sources.
 
+The change-of-variables proof of `chartRiemannianVolume_image_of_inner_mfderiv` is adapted from
+the proof of `TauCeti.chartRiemannianVolume_restrict_overlap`.
+
 The isometry condition is stated pointwise, on the tangent maps, and no orientation is used, so
 orientation-reversing isometries and manifolds with boundary or corners are covered. The two
 manifolds may be modelled on different model spaces `H` and `H'` over the same vector space `E`.
