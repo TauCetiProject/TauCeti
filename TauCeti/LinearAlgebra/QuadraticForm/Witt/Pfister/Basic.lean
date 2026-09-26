@@ -254,17 +254,16 @@ theorem rank_pfisterFormClass {n : ℕ} (a : Fin n → Kˣ) :
   rw [pfisterFormClass_def, ← RegularFormClass.rankHom_apply, map_prod]
   simp [RegularFormClass.rankHom_apply, RegularFormClass.rank_mk]
 
-/-- **Pfister forms of fold at least two have trivial discriminant.** Splitting off one slot,
-`d(<<a>> ⊗ φ) = rank φ • d(<<a>>) + 2 • d(φ)`, and both terms vanish in the square-class group
-because `rank φ = 2 ^ (n - 1)` is even once `n ≥ 2`. -/
+/-- **Pfister forms of fold at least two have trivial discriminant**: the signed discriminant of
+an `n`-fold Pfister form is the trivial square class once `n ≥ 2`. -/
+@[simp]
 theorem discr_pfisterFormClass {n : ℕ} (a : Fin n → Kˣ) (hn : 2 ≤ n) :
     RegularFormClass.discr (pfisterFormClass a) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [← Fin.cons_self_tail a, pfisterFormClass_cons, RegularFormClass.discr_mul,
-    rank_pfisterFormClass, RegularFormClass.rank_add, RegularFormClass.rank_one,
-    RegularFormClass.rank_mk, pow_succ, mul_nsmul', one_add_one_eq_two,
-    ZModModule.char_nsmul_eq_zero 2 (_ : SquareClassGroup K),
-    ZModModule.char_nsmul_eq_zero 2 (_ : SquareClassGroup K), nsmul_zero, zero_add]
+  have h2 (x : SquareClassGroup K) : 2 • x = 0 := ZModModule.char_nsmul_eq_zero 2 x
+  -- Split off one slot: `d(<<a>> ⊗ φ) = rank φ • d(<<a>>) + 2 • d(φ)`, with `rank φ` even.
+  rw [← Fin.cons_self_tail a, pfisterFormClass_cons]
+  simp [RegularFormClass.discr_mul, pow_succ, mul_nsmul', h2]
 
 /-- The Witt class of an `n`-fold Pfister form. -/
 noncomputable def pfisterClass {n : ℕ} (a : Fin n → Kˣ) : WittRing K :=

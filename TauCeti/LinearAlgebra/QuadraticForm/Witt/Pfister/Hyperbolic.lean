@@ -21,13 +21,9 @@ proves that the following are equivalent:
 3. `<<a, b>>` is hyperbolic, that is isometric to the sum of two hyperbolic planes;
 4. the Witt class of `<<a, b>>` vanishes.
 
-The equivalence of (2) and (3) needs no quaternion algebra: every Pfister form of fold at least
-two has trivial discriminant (`TauCeti.discr_pfisterFormClass`), and a regular isotropic quaternary
-form of trivial discriminant is the sum of two hyperbolic planes
-(`QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self`). The equivalence of (1) and (2)
-is the splitting criterion for quaternion algebras, read through the identification of the norm
-form of `ℍ[K,a,b]` with `<1, -a, -b, ab>`. The equivalence of (3) and (4) holds because the only
-anisotropic class with vanishing Witt class is the zero class.
+The equivalence of (2) and (3), that an isotropic two-fold Pfister form is hyperbolic, is the
+first case of the theorem that isotropic Pfister forms are hyperbolic. The equivalence of (1) and
+(4) says that the Witt class of `<<a, b>>` detects whether `ℍ[K,a,b]` is split.
 
 ## Main results
 
@@ -74,6 +70,9 @@ theorem not_anisotropic_pfisterFormClass_two_iff (a b : Kˣ) :
     ¬ (pfisterFormClass ![a, b]).Anisotropic ↔
       pfisterFormClass ![a, b] = 2 • hyperbolicClass K := by
   refine ⟨fun h => ?_, fun h => ?_⟩
+  -- Pfister forms of fold at least two have trivial discriminant (`discr_pfisterFormClass`), and
+  -- a regular isotropic quaternary form of trivial discriminant is the sum of two hyperbolic
+  -- planes (`QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self`).
   · let p : RegularFormPresentation K := ⟨4, ![1, -a, -b, a * b]⟩
     have hp : formClass (presentedForm p) (nondegenerate_presentedForm p) =
         pfisterFormClass ![a, b] := by
@@ -100,20 +99,23 @@ theorem pfisterFormClass_two_tfae (a b : Kˣ) :
       ¬ (pfisterFormClass ![a, b]).Anisotropic,
       pfisterFormClass ![a, b] = 2 • hyperbolicClass K,
       pfisterClass ![a, b] = 0].TFAE := by
+  -- The splitting criterion for quaternion algebras, read through the identification of the
+  -- norm form of `ℍ[K,a,b]` with `<1, -a, -b, ab>`.
   tfae_have 1 ↔ 2 := by
     rw [anisotropic_pfisterFormClass_two_iff,
       QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_anisotropic_normForm]
   tfae_have 2 ↔ 3 := not_anisotropic_pfisterFormClass_two_iff a b
   tfae_have 3 → 4 := fun h => by
     rw [← wittClass_pfisterFormClass, h, map_nsmul, wittClass_hyperbolicClass, smul_zero]
+  -- The only anisotropic class with vanishing Witt class is the zero class.
   tfae_have 4 → 2 := fun h hani => by
     rw [← wittClass_pfisterFormClass, wittClass_eq_zero_iff,
       RegularFormClass.anisotropicPart_eq_self hani] at h
     simpa [h] using rank_pfisterFormClass ![a, b]
   tfae_finish
 
-/-- **The four-fold splitting criterion in the Witt ring**: the two-fold Pfister form `<<a, b>>`
-is hyperbolic exactly when `ℍ[K,a,b]` is split. -/
+/-- **Hyperbolicity criterion for two-fold Pfister forms**: the regular form class of `<<a, b>>`
+is the sum of two hyperbolic planes exactly when `ℍ[K,a,b]` is split. -/
 theorem pfisterFormClass_two_eq_two_nsmul_hyperbolicClass_iff (a b : Kˣ) :
     pfisterFormClass ![a, b] = 2 • hyperbolicClass K ↔
       Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] Matrix (Fin 2) (Fin 2) K) :=
