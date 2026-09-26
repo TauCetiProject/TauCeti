@@ -49,18 +49,16 @@ theorem monomialEquiv_preserves_form_iff_exists_signed (m : ℕ+) (u : ι → �
       form m x y) ↔
       ∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e := by
   rw [form_monomialEquiv_iff]
+  rw [exists_signed_monomialEquiv_iff]
   constructor
-  · intro hu
-    let v : ι → ℤˣ := fun i ↦ if (u i : ℚ) = 1 then 1 else -1
-    refine ⟨v, LinearEquiv.ext fun x ↦ funext fun j ↦ ?_⟩
-    obtain h | h := (sq_eq_one_iff).mp (hu (e.symm j))
-    · have h' : u (e.symm j) = 1 := Units.ext h
-      simp [monomialEquiv_apply, signedEquiv_apply, v, h']
-    · have h' : u (e.symm j) = -1 := Units.ext h
-      simp [monomialEquiv_apply, signedEquiv_apply, v, h']
-  · rintro ⟨v, hv⟩ i
-    exact (dotProduct_monomialEquiv_iff u e).mp (fun x y ↦ by
-      rw [hv, dotProduct_signedEquiv]) i
+  · intro hu i
+    obtain h | h := (sq_eq_one_iff).mp (hu i)
+    · exact Or.inl (Units.ext h)
+    · exact Or.inr (Units.ext h)
+  · intro hu i
+    obtain h | h := hu i
+    · simp [h]
+    · simp [h]
 
 end
 
