@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Affine
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Fibres of the class-group point map
@@ -137,7 +138,7 @@ theorem toPointHom_surjective : Function.Surjective φ.toPointHom := by
 degree over a separably closed field. -/
 theorem card_ker_toPointHom : Nat.card φ.toPointHom.ker = φ.degree := by
   rw [← φ.ncard_fiber_toPointHom 0, ← Nat.card_coe_set_eq]
-  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp)
+  exact (φ.toPointHom.card_fiber_eq_card_ker (map_zero φ.toPointHom)).symm
 
 /-- The point kernel of a separable isogeny over a separably closed field is finite. -/
 instance finite_ker_toPointHom : Finite φ.toPointHom.ker :=
