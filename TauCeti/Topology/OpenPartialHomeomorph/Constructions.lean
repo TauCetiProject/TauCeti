@@ -6,21 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
-public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Constructions for open partial homeomorphisms
 
 An open partial homeomorphism restricts to a chart on a subtype when membership in the subtype is
-detected by a parametrized coordinate slice. In a topological group, an ambient chart can also be
-transported by left translation. This file packages both topological constructions; zero-slice
-subgroup charts translate the ambient chart first and then restrict it to the zero-slice subtype.
+detected by a parametrized coordinate slice. This file packages that topological construction;
+zero-slice subgroup charts use it after translating an ambient chart.
 
 ## Main definitions
 
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
-* `OpenPartialHomeomorph.translatedChart` translates an ambient group chart by a group element.
 -/
 
 public section
@@ -136,54 +133,5 @@ theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
   classical
   simp [subtypeCoord, hz]
-
-section Translation
-
-variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
-  [TopologicalSpace P]
-
-/-- Translate an ambient chart by a group element `g`. -/
-def translatedChart (φ : OpenPartialHomeomorph G P) (g : G) : OpenPartialHomeomorph G P :=
-  (Homeomorph.smul g).symm.transOpenPartialHomeomorph φ
-
-/-- A translated chart is composition with inverse left translation. -/
-theorem translatedChart_def (φ : OpenPartialHomeomorph G P) (g : G) :
-    φ.translatedChart g = (Homeomorph.smul g).symm.transOpenPartialHomeomorph φ := by
-  rfl
-
-/-- The source of a translated chart consists of the points moved into the source of the original
-chart by multiplication by `g⁻¹`. -/
-@[simp]
-theorem translatedChart_source (φ : OpenPartialHomeomorph G P) (g : G) :
-    (φ.translatedChart g).source = (fun y : G => g⁻¹ * y) ⁻¹' φ.source := by
-  ext y
-  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
-
-/-- Translation does not change the coordinate target of an ambient chart. -/
-@[simp]
-theorem translatedChart_target (φ : OpenPartialHomeomorph G P) (g : G) :
-    (φ.translatedChart g).target = φ.target := by
-  simp [translatedChart]
-
-/-- Evaluating a chart translated by `g` first translates the argument by `g⁻¹`, then applies
-the original chart. -/
-@[simp]
-theorem translatedChart_apply (φ : OpenPartialHomeomorph G P) (g y : G) :
-    φ.translatedChart g y = φ (g⁻¹ * y) := by
-  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
-
-/-- The inverse of a translated chart applies the original inverse and then translates by `g`. -/
-@[simp]
-theorem translatedChart_symm_apply (φ : OpenPartialHomeomorph G P) (g : G) (p : P) :
-    (φ.translatedChart g).symm p = g * φ.symm p := by
-  simp [translatedChart, smul_eq_mul]
-
-/-- A chart containing `1` in its source, translated by `g`, contains `g` in its source. -/
-theorem mem_translatedChart_source (φ : OpenPartialHomeomorph G P)
-    (h1 : (1 : G) ∈ φ.source) (g : G) : g ∈ (φ.translatedChart g).source := by
-  rw [translatedChart_source]
-  simpa using h1
-
-end Translation
 
 end OpenPartialHomeomorph

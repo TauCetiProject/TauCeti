@@ -59,7 +59,8 @@ theorem preferredSliceChart_source (K : Subgroup G)
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g : K) :
     (preferredSliceChart K e he g).source =
-      Subtype.val ⁻¹' (e.translatedChart (g : G)).source := by
+      Subtype.val ⁻¹'
+        ((Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph e).source := by
   unfold preferredSliceChart
   apply TauCeti.IsSliceChart.subtypeChart_source
 
@@ -74,7 +75,7 @@ theorem preferredSliceChart_target (K : Subgroup G)
       (fun y : F => (y, (0 : F'))) ⁻¹' e.target := by
   unfold preferredSliceChart
   rw [TauCeti.IsSliceChart.subtypeChart_target,
-    OpenPartialHomeomorph.translatedChart_target]
+    Homeomorph.transOpenPartialHomeomorph_target]
 
 /-- A preferred subgroup chart first translates its argument back to the identity and then reads
 the tangential coordinate of the original ambient chart. -/
@@ -86,7 +87,8 @@ theorem preferredSliceChart_apply (K : Subgroup G)
     preferredSliceChart K e he g x = (e ((g : G)⁻¹ * (x : G))).1 := by
   unfold preferredSliceChart
   rw [TauCeti.IsSliceChart.subtypeChart_apply,
-    OpenPartialHomeomorph.translatedChart_apply]
+    Homeomorph.transOpenPartialHomeomorph_apply]
+  rfl
 
 /-- On its target, the inverse of a preferred subgroup chart applies the original ambient inverse
 on the zero slice and then translates by the chart's base point. -/
@@ -99,7 +101,8 @@ theorem coe_preferredSliceChart_symm_apply (K : Subgroup G)
   unfold preferredSliceChart
   rw [TauCeti.IsSliceChart.coe_subtypeChart_symm_apply
       (h := K.isSliceChart_translatedChart e he g) (by simpa using hy),
-    OpenPartialHomeomorph.translatedChart_symm_apply]
+    Homeomorph.transOpenPartialHomeomorph_symm_apply]
+  rfl
 
 /-- One zero-slice chart around the identity equips a subgroup with a charted-space structure.
 
@@ -114,8 +117,9 @@ noncomputable def chartedSpaceOfIsSliceChart (K : Subgroup G)
     { atlas := Set.range (preferredSliceChart K e he)
       chartAt := preferredSliceChart K e he
       mem_chart_source := fun x => by
-        rw [preferredSliceChart_source]
-        exact e.mem_translatedChart_source h1 x
+        rw [preferredSliceChart_source,
+          Homeomorph.transOpenPartialHomeomorph_source]
+        simpa [Homeomorph.smul_symm_apply, smul_eq_mul] using h1
       chart_mem_atlas := Set.mem_range_self }
 
 /-- The atlas of `chartedSpaceOfIsSliceChart` is exactly the range of its preferred translated

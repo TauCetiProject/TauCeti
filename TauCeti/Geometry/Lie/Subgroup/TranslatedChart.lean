@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 
 /-!
@@ -40,7 +41,8 @@ variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
 theorem isSliceChart_translatedChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
-    TauCeti.IsSliceChart (φ.translatedChart (g : G)) S (K : Set G) := by
+    TauCeti.IsSliceChart
+      ((Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph φ) S (K : Set G) := by
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
   have hset : e.source ∩ e ⁻¹' (K : Set G) = (K : Set G) := by
@@ -53,7 +55,6 @@ theorem isSliceChart_translatedChart (K : Subgroup G)
     simp [e]
   have hchart := hφ.comp e
   rw [hset] at hchart
-  rw [OpenPartialHomeomorph.translatedChart_def]
   simpa [e,
     Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
 
