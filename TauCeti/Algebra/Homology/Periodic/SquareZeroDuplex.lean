@@ -49,10 +49,7 @@ theorem isZero_squareZero_periodicHomology (A : C) (i : ZMod 2)
     have h' := (nonempty_homotopy_toPeriodicComplex_map_zero_iff
       (C := C) (R := R) (𝟙 (squareZero (R := R) A))).2
         ⟨_, _, nullHomotopicMap_squareZero (R := R) A⟩
-    change Nonempty (Homotopy
-      (𝟙 ((toPeriodicComplex C R).obj (squareZero (R := R) A))) 0)
-    rw [← (toPeriodicComplex C R).map_id (squareZero (R := R) A)]
-    exact h'
+    simpa only [(toPeriodicComplex C R).map_id] using h'
   rw [IsZero.iff_id_eq_zero]
   calc
     𝟙 (K.homology i) = HomologicalComplex.homologyMap (𝟙 K) i :=
