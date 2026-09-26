@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Representation
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
@@ -318,6 +318,7 @@ theorem tensorProductSheafIso_hom :
 /-- On a pure tensor of local sections, the tensor-product isomorphism multiplies the
 corresponding rational functions. The sheafification unit sends the sectionwise pure tensor into
 the tensor product sheaf. -/
+@[simp]
 theorem tensorProductSheafIso_hom_tmul (U : X.Opens)
     (s : Γ(D.sheaf, U)) (t : Γ(E.sheaf, U)) :
     Scheme.Modules.Hom.app

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Representation
 public import TauCeti.AlgebraicGeometry.CartierDivisor.TensorProduct
 
 /-!
