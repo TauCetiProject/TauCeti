@@ -18,10 +18,10 @@ operator or regularity of the boundary. The corresponding condition on `(u - v)�
 weak comparison principle. For nonnegative potential, a boundary bound `k ≥ 0` is expressed
 by `(u - k)⁺ ∈ W^{1,2}_0(Ω)` and implies `u ≤ k` almost everywhere.
 
-For `-div(a ∇u) + c u` on a domain contained in a ball, uniform ellipticity, bounded measurable
-coefficients, and `c ≥ 0` suffice. The ball may have any centre; its radius does not impose a
-smallness condition. For weak Dirichlet solutions, nonpositive forcing gives a nonpositive
-solution, and ordered forcing terms give ordered solutions, whenever the energy form has a
+For `-div(a ∇u) + b · ∇u + c u`, uniform ellipticity, bounded measurable coefficients,
+`c ≥ 0`, a Poincaré bound `P`, and drift smallness `βP < λ` suffice. On a domain contained
+in a ball of radius `R`, one may take `P = 2R`. For weak Dirichlet solutions, nonpositive
+forcing gives a nonpositive solution, and ordered forcing terms give ordered solutions, with a
 positive quadratic lower bound.
 
 ## Main declarations
@@ -33,11 +33,15 @@ positive quadratic lower bound.
 * `TauCeti.PDE.value_le_of_energyFormH1_le`: the coercive weak comparison principle.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_nonpos_of_energy_bound`: the sign of a weak solution.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_le_of_energy_bound`: comparison for ordered forcing.
-* `TauCeti.PDE.UniformlyEllipticOn.value_nonpos_of_zero_drift_of_subset_ball`: the bounded-domain
-  maximum principle without drift.
-* `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_zero_drift_of_subset_ball`: the corresponding
-  principle with boundary bound `k ≥ 0`.
-* `TauCeti.PDE.UniformlyEllipticOn.value_le_of_zero_drift_of_subset_ball`: its comparison theorem.
+* `TauCeti.PDE.UniformlyEllipticOn.value_nonpos_of_small_drift_of_poincare`: the weak maximum
+  principle from a Poincaré bound.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_small_drift_of_poincare`: its constant-bound
+  version.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_of_small_drift_of_poincare`: its comparison theorem.
+* `TauCeti.PDE.UniformlyEllipticOn.value_nonpos_of_small_drift_of_subset_ball`: the ball corollary.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_small_drift_of_subset_ball`: the ball
+  corollary with boundary bound `k ≥ 0`.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_of_small_drift_of_subset_ball`: ball comparison.
 -/
 
 public section
@@ -250,89 +254,192 @@ theorem IsWeakSolutionDirichlet.value_le_of_energy_bound
     ((Lp.memLp g).integrable_mul (Lp.memLp (W1p.value (w : W1p mu Omega 2))))
     (hfg.and hw |>.mono fun x hx ↦ mul_le_mul_of_nonneg_right hx.1 hx.2)
 
+-- The coercive energy estimate used below follows L. C. Evans, *Partial Differential
+-- Equations*, §6.2. For the weak-subsolution maximum principle, see D. Gilbarg and
+-- N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 8,
+-- Theorem 8.1.
+section Poincare
+
+variable [DecidableEq ι] {lam Lam beta gamma P : ℝ}
+
+/-- For `-div(a ∇u) + b · ∇u + cu` with uniformly elliptic, bounded measurable
+coefficients and `c ≥ 0`, a Poincaré bound `P` and `βP < λ` imply that a weak subsolution
+with `u⁺ ∈ W^{1,2}_0(Ω)` is nonpositive almost everywhere. -/
+theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_poincare
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
+    (hpoincare : ∀ w : W1p0 mu Omega 2,
+      ‖W1p.value (w : W1p mu Omega 2)‖ ≤
+        P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
+    (hsmall : beta * P < lam)
+    {u : W1p mu Omega 2}
+    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ 0 := by
+  have hC := energyFormH1_poincare_constant_pos h.pos hbeta hP hsmall
+  refine value_nonpos_of_energyFormH1_nonpos hboundary hC ?_ hu
+  intro w
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg (hpoincare w)
+
+/-- For `-div(a ∇u) + b · ∇u + cu` with uniformly elliptic, bounded measurable
+coefficients and `c ≥ 0`, a Poincaré bound `P` and `βP < λ` imply that a weak subsolution
+with `k ≥ 0` and `(u - k)⁺ ∈ W^{1,2}_0(Ω)` is at most `k` almost everywhere. -/
+theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_poincare
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
+    (hpoincare : ∀ w : W1p0 mu Omega 2,
+      ‖W1p.value (w : W1p mu Omega 2)‖ ≤
+        P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
+    (hsmall : beta * P < lam)
+    {k : ℝ} (hk : 0 ≤ k) {u : W1p mu Omega 2}
+    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2)
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
+  have hC := energyFormH1_poincare_constant_pos h.pos hbeta hP hsmall
+  refine value_le_of_energyFormH1_nonpos hcoeff
+    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦ hc_nonneg x hx)
+    hk hboundary hC ?_ hu
+  intro w
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg (hpoincare w)
+
+/-- For `-div(a ∇u) + b · ∇u + cu` with uniformly elliptic, bounded measurable
+coefficients and `c ≥ 0`, a Poincaré bound `P` and `βP < λ` imply `u ≤ v` almost
+everywhere when `(u - v)⁺ ∈ W^{1,2}_0(Ω)` and the weak operator values are ordered. -/
+theorem UniformlyEllipticOn.value_le_of_small_drift_of_poincare
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
+    (hpoincare : ∀ w : W1p0 mu Omega 2,
+      ‖W1p.value (w : W1p mu Omega 2)‖ ≤
+        P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
+    (hsmall : beta * P < lam)
+    {u v : W1p mu Omega 2}
+    (hboundary : W1p.posPart (by norm_num) (u - v) ∈ w1p0Submodule mu Omega 2)
+    (huv : ∀ w : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (w : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (w : W1p mu Omega 2) ≤
+          energyFormH1 a b c v (w : W1p mu Omega 2)) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
+  have hC := energyFormH1_poincare_constant_pos h.pos hbeta hP hsmall
+  refine value_le_of_energyFormH1_le hcoeff hboundary hC ?_ huv
+  intro w
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg (hpoincare w)
+
+end Poincare
+
 section Euclidean
 
 variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-  {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {lam Lam gamma : ℝ}
+  {b : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+  {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {lam Lam beta gamma : ℝ}
 
-/-- The weak maximum principle for `-div(a ∇u) + c u` on a ball-contained domain, with
-uniformly elliptic `a`, bounded measurable coefficients, and `c ≥ 0`. Nonpositive boundary
-data means that `u⁺` belongs to `W^{1,2}_0(Ω)`; no boundary regularity is assumed. -/
-theorem UniformlyEllipticOn.value_nonpos_of_zero_drift_of_subset_ball
+/-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
+bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, a weak subsolution with
+`u⁺ ∈ W^{1,2}_0(Ω)` is nonpositive almost everywhere. -/
+theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hb : AEStronglyMeasurable b (volume.restrict Omega))
     (hc : AEStronglyMeasurable c (volume.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hOmega : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
+    (hbeta : 0 ≤ beta) (hR : 0 ≤ R)
+    (hsmall : beta * (2 * R) < lam)
     {u : W1p volume Omega 2}
     (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule volume Omega 2)
     (hu : ∀ v : W1p0 volume Omega 2,
       (∀ᵐ x ∂volume.restrict Omega, 0 ≤ W1p.value (v : W1p volume Omega 2) x) →
-        energyFormH1 a 0 c u (v : W1p volume Omega 2) ≤ 0) :
+        energyFormH1 a b c u (v : W1p volume Omega 2) ≤ 0) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ 0 := by
-  refine value_nonpos_of_energyFormH1_nonpos hboundary
-    (div_pos h.pos (by positivity : 0 < (2 * R) ^ 2 + 1)) ?_ hu
-  intro w
-  exact h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift ha hc (by simp) hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (by norm_num) hOmega w.property)
+  apply h.value_nonpos_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
+      (by norm_num) hOmega w.property) hsmall hboundary hu
 
-/-- The weak maximum principle with a nonnegative boundary bound for `-div(a ∇u) + c u`.
-On a ball-contained domain, uniformly elliptic bounded measurable coefficients and a bounded
-nonnegative potential imply `u ≤ k` almost everywhere whenever `(u - k)⁺ ∈ W^{1,2}_0(Ω)` and
-`u` is a weak subsolution. -/
-theorem UniformlyEllipticOn.value_le_const_of_zero_drift_of_subset_ball
+/-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
+bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, a weak subsolution with
+`k ≥ 0` and `(u - k)⁺ ∈ W^{1,2}_0(Ω)` is at most `k` almost everywhere. -/
+theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hb : AEStronglyMeasurable b (volume.restrict Omega))
     (hc : AEStronglyMeasurable c (volume.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hOmega : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
+    (hbeta : 0 ≤ beta) (hR : 0 ≤ R)
+    (hsmall : beta * (2 * R) < lam)
     {k : ℝ} (hk : 0 ≤ k) {u : W1p volume Omega 2}
     (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule volume Omega 2)
     (hu : ∀ v : W1p0 volume Omega 2,
       (∀ᵐ x ∂volume.restrict Omega, 0 ≤ W1p.value (v : W1p volume Omega 2) x) →
-        energyFormH1 a 0 c u (v : W1p volume Omega 2) ≤ 0) :
+        energyFormH1 a b c u (v : W1p volume Omega 2) ≤ 0) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ k := by
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) h.upper_nonneg ha
-    aestronglyMeasurable_const hc (fun x hx eta xi ↦ h.upper_bound hx eta xi)
-    (by simp) hc_bound
-  refine value_le_of_energyFormH1_nonpos hcoeff
-    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦ hc_nonneg x hx)
-    hk hboundary (div_pos h.pos (by positivity : 0 < (2 * R) ^ 2 + 1)) ?_ hu
-  intro w
-  exact h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift ha hc (by simp) hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (by norm_num) hOmega w.property)
+  apply h.value_le_const_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
+      (by norm_num) hOmega w.property) hsmall hk hboundary hu
 
-/-- Weak comparison for `-div(a ∇u) + c u` on a ball-contained domain. Ordered weak operator
-values and `(u - v)⁺ ∈ W^{1,2}_0(Ω)` imply `u ≤ v` almost everywhere. The potential is bounded
-and nonnegative, and the leading coefficients are bounded, measurable, and uniformly elliptic. -/
-theorem UniformlyEllipticOn.value_le_of_zero_drift_of_subset_ball
+/-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
+bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, ordered weak operator values
+and `(u - v)⁺ ∈ W^{1,2}_0(Ω)` imply `u ≤ v` almost everywhere. -/
+theorem UniformlyEllipticOn.value_le_of_small_drift_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hb : AEStronglyMeasurable b (volume.restrict Omega))
     (hc : AEStronglyMeasurable c (volume.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hOmega : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
+    (hbeta : 0 ≤ beta) (hR : 0 ≤ R)
+    (hsmall : beta * (2 * R) < lam)
     {u v : W1p volume Omega 2}
     (hboundary : W1p.posPart (by norm_num) (u - v) ∈ w1p0Submodule volume Omega 2)
     (huv : ∀ w : W1p0 volume Omega 2,
       (∀ᵐ x ∂volume.restrict Omega, 0 ≤ W1p.value (w : W1p volume Omega 2) x) →
-        energyFormH1 a 0 c u (w : W1p volume Omega 2) ≤
-          energyFormH1 a 0 c v (w : W1p volume Omega 2)) :
+        energyFormH1 a b c u (w : W1p volume Omega 2) ≤
+          energyFormH1 a b c v (w : W1p volume Omega 2)) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) h.upper_nonneg ha
-    aestronglyMeasurable_const hc (fun x hx eta xi ↦ h.upper_bound hx eta xi)
-    (by simp) hc_bound
-  refine value_le_of_energyFormH1_le hcoeff hboundary
-    (div_pos h.pos (by positivity : 0 < (2 * R) ^ 2 + 1)) ?_ huv
-  intro w
-  exact h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift ha hc (by simp) hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (by norm_num) hOmega w.property)
+  apply h.value_le_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
+    hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
+      (by norm_num) hOmega w.property) hsmall hboundary huv
 
 end Euclidean
 

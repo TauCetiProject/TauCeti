@@ -10,7 +10,7 @@ import Mathlib.Order.Atoms.Finite
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
 /-!
 # Burnside generation for pro-`p` groups

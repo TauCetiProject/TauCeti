@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Topology.Circle.Arc
 public import TauCeti.Topology.JordanCurve.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # A proper subcontinuum of a Jordan curve is an arc
@@ -90,7 +94,9 @@ The statements are for a subset of an arbitrary topological space, as in
 than closed, which is what transports along the parametrization without a separation axiom. Only the
 two nowhere-density statements `TauCeti.IsJordanCurve.exists_notMem_closure_sdiff` and
 `TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` need the ambient space to be Hausdorff,
-because they speak of a closure taken in that space.
+because they speak of a closure taken in that space. The corollary
+`TauCeti.IsJordanCurve.interior_eq_empty` is for a real normed space of dimension at least two,
+where a ball contains a sphere, which is a subcontinuum with more than one point.
 
 ## Main results
 
@@ -105,6 +111,8 @@ because they speak of a closure taken in that space.
 * `TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` — the contrapositive, and the form
   the boundary correspondence consumes: a compact connected subset of a Jordan curve every point of
   which is adherent to the complement is a subsingleton, so a single point once it is nonempty.
+* `TauCeti.IsJordanCurve.interior_eq_empty` — a Jordan curve in a real normed space of dimension at
+  least two has empty interior.
 
 ## References
 
@@ -269,5 +277,38 @@ theorem IsJordanCurve.subsingleton_of_subset_closure_sdiff [T2Space X] (h : IsJo
   by_contra hnsub
   obtain ⟨p, hp, hpn⟩ := h.exists_notMem_closure_sdiff hSC hS hpre hnsub
   exact hpn (hdense hp)
+
+/-- **A Jordan curve in a real normed space of dimension at least two has empty interior.** -/
+@[simp]
+theorem IsJordanCurve.interior_eq_empty {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hE : 1 < Module.rank ℝ E) {C : Set E} (h : IsJordanCurve C) : interior C = ∅ := by
+  -- A ball inside `C` would contain a sphere: a subcontinuum of `C` with more than one point, every
+  -- point of which is adherent to the rest of `C`, contradicting `exists_notMem_closure_sdiff`.
+  refine eq_empty_iff_forall_notMem.mpr fun q hq => ?_
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp isOpen_interior q hq
+  have hr₂ : 0 < r / 2 := half_pos hr
+  have hsub : Metric.ball q (r / 2) ∪ Metric.sphere q (r / 2) ⊆ C := by
+    rintro z (hz | hz) <;> refine interior_subset (hball ?_) <;>
+      simp only [Metric.mem_ball, Metric.mem_sphere] at hz ⊢ <;> linarith
+  have hSC : Metric.sphere q (r / 2) ⊆ C := subset_union_right.trans hsub
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans hE)
+  -- the sphere has two antipodal points, so it is not a subsingleton
+  obtain ⟨p, hp⟩ := (NormedSpace.sphere_nonempty (x := q) (r := r / 2)).mpr hr₂.le
+  have hnsub : ¬ (Metric.sphere q (r / 2)).Subsingleton := by
+    refine fun hs => hr₂.ne' ?_
+    have hp' : q + (q - p) ∈ Metric.sphere q (r / 2) := by
+      rw [Metric.mem_sphere, dist_eq_norm, add_sub_cancel_left, ← dist_eq_norm, dist_comm]
+      exact hp
+    have hpq : p - q = 0 := by
+      linear_combination (norm := module) (1 / 2 : ℝ) • hs hp hp'
+    rw [← Metric.mem_sphere.mp hp, dist_eq_norm, hpq, norm_zero]
+  obtain ⟨z, hz, hzn⟩ := h.exists_notMem_closure_sdiff hSC
+    (h.isCompact.of_isClosed_subset Metric.isClosed_sphere hSC)
+    (isPreconnected_sphere hE q _) hnsub
+  -- every point of the sphere is adherent to the open ball inside it, which lies in `C` off it
+  have hball_sub : Metric.ball q (r / 2) ⊆ C \ Metric.sphere q (r / 2) := fun w hw =>
+    ⟨hsub (Or.inl hw), fun hwS => (Metric.mem_ball.mp hw).ne (Metric.mem_sphere.mp hwS)⟩
+  exact hzn (closure_mono hball_sub
+    (frontier_subset_closure (by rwa [frontier_ball q hr₂.ne'])))
 
 end TauCeti

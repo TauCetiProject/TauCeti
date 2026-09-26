@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Frattini
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Topology.Algebra.ClopenNhdofOne
 import TauCeti.GroupTheory.Index.Basic

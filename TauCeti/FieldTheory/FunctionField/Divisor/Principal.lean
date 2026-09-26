@@ -48,6 +48,8 @@ the places themselves.
 ## Main results
 
 * `TauCeti.Divisor.zeros_sub_poles`: `div z = (z)₀ - (z)_∞`, with both parts effective.
+* `TauCeti.Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg`: a function with a single pole,
+  of order `n` at `P`, has pole divisor `nP`.
 * `TauCeti.Divisor.principal_eq_zero_iff_mem_algebraicClosure`: `div z = 0` exactly when `z` is
   a constant, and `TauCeti.Divisor.principal_eq_zero_iff`: over an exact constant field, exactly
   when `z ∈ kˣ`.
@@ -286,6 +288,20 @@ theorem zeros_sub_poles (hF : IsFunctionField k F) (z : Fˣ) :
 theorem poles_eq_zeros_inv (hF : IsFunctionField k F) (z : Fˣ) :
     poles hF z = zeros hF z⁻¹ :=
   WeilDivisor.ext fun P => by rw [coeff_poles, coeff_zeros, Units.val_inv_eq_inv_val, P.ord_inv]
+
+/-- **The pole divisor of a function with a single pole**: a function of order `-n` at `P`,
+with `n : ℕ`, that is regular at every other place has pole divisor `nP`. -/
+theorem poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg (hF : IsFunctionField k F) {z : Fˣ}
+    {P : Place k F} {n : ℕ} (hP : P.ord (z : F) = -(n : ℤ))
+    (hQ : ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord (z : F)) :
+    poles hF z = (n : ℤ) • WeilDivisor.ofPoint P := by
+  ext Q
+  rcases eq_or_ne Q P with rfl | hQP
+  · rw [coeff_poles, hP, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one]
+    omega
+  · rw [coeff_poles, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero]
+    have := hQ Q hQP
+    omega
 
 /-- **Two functions with the same divisor differ by a constant of the base field**, over an exact
 constant field. -/

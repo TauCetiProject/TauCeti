@@ -287,7 +287,10 @@ finite. As for the extended version, the topology is defeq to the original one.
 This should only be used when constructing data in specific situations. To develop the theory, one
 should rather assume that there is an already existing metric space structure, satisfying
 additionally the predicate `IsRiemannianManifold I M`. -/
-@[reducible] def MetricSpace.ofRiemannianMetric [T3Space M] [PreconnectedSpace M] :
+-- The body is exposed because the characteristic property of the construction, that the topology
+-- it induces is the manifold topology, is a definitional equality: a consumer installing this
+-- structure on a manifold must unfold it to keep the charted-space instances of that topology.
+@[expose, reducible] def MetricSpace.ofRiemannianMetric [T3Space M] [PreconnectedSpace M] :
     MetricSpace M :=
   letI : EMetricSpace M := .ofRiemannianMetric I M
   EMetricSpace.toMetricSpace (fun x y ↦ Manifold.riemannianEDist_ne_top I x y)
