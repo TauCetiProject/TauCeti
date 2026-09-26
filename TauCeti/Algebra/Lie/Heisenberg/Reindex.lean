@@ -88,3 +88,13 @@ theorem heisenberg_reindex
     rw [hcoeff]
     rw [mul_one_div]
   rw [heq]
+
+/-- The linear term (j=0) of the reindexed sum is `u • C`.
+
+This is the key term for the Chevalley commutator: when `C = vY` and the
+higher terms vanish (nilpotency), the conjugation formula reduces to
+`vY + uv[X,Y]`. -/
+theorem heisenberg_reindex_linear_term
+    (u : R) (X C : Matrix n n R) :
+    ((u ^ (0 + 1) / ((Nat.factorial 0 : ℕ) : R)) • (C * X ^ (0 : ℕ))) = u • C := by
+  simp
