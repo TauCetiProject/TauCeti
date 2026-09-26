@@ -7,17 +7,19 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Different
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
+public import TauCeti.RingTheory.DedekindDomain.Discriminant.Basic
 
 /-!
 # The local discriminant of an extension of local fields
 
 The different `𝔡(L/K)` of Mathlib is an ideal of `𝒪[L]`, the ring of integers of the *upper* field
 of an extension `L/K` of nonarchimedean local fields. The discriminant `𝔩(L/K)` of the same
-extension is an ideal of the *base* ring `𝒪[K]`: it is the norm image `N_{L/K}(𝔡(L/K))`. The two
-ideals live in different rings and are not to be conflated: `TauCeti.differentExponent` reads the
-exponent of `𝔡(L/K)` in the maximal ideal of `𝒪[L]`, and this file adds
-`TauCeti.discriminantExponent K L`, for `L/K` separable, the exponent `δ(L/K)` of the maximal
-ideal of `𝒪[K]` in `𝔩(L/K)`.
+extension is an ideal of the *base* ring `𝒪[K]`: it is the norm image `N_{L/K}(𝔡(L/K))`, which is
+Tau Ceti's `relDiscr 𝒪[K] 𝒪[L]`, the relative discriminant of the two rings of integers, and is
+built from Mathlib's ideal norm `Ideal.relNorm`. The two ideals live in different rings and are not
+to be conflated: `TauCeti.differentExponent` reads the exponent of `𝔡(L/K)` in the maximal ideal
+of `𝒪[L]`, and this file adds `TauCeti.discriminantExponent K L`, for `L/K` separable, the
+exponent `δ(L/K)` of the maximal ideal of `𝒪[K]` in `𝔩(L/K)`.
 
 `TauCeti.discriminantExponent` is read for `L/K` separable. The trace form of an inseparable
 extension is degenerate, so the different ideal, and with it the discriminant ideal, is the zero
@@ -26,7 +28,7 @@ order of vanishing would there be `0` for every power of the maximal ideal. The 
 the results below therefore carry `[Algebra.IsSeparable K L]`.
 
 A norm multiplies valuations by the residue degree, by `TauCeti.toAdd_normalizedValuation_norm`, so
-`𝓂[K] ^ f(L/K)` generates the norm image of `𝓂[L]`
+`Ideal.relNorm 𝒪[K] 𝓂[L]` is `𝓂[K] ^ f(L/K)`
 (`TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow`). The discriminant ideal is then
 `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, the ideal form of the product formula `δ(L/K) = f(L/K) · d(L/K)`
 (`TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`). Since for `L/K` separable
@@ -35,7 +37,8 @@ unramified criterion and the bound `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
 
 ## Main definitions
 
-* `TauCeti.discriminantIdeal`: the local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))`.
+* `TauCeti.discriminantIdeal`: the local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))`, the
+  relative discriminant `relDiscr 𝒪[K] 𝒪[L]` of the two rings of integers.
 * `TauCeti.discriminantExponent`: the local discriminant exponent `δ(L/K)` of a separable
   extension, the multiplicity of `𝓂[K]` in `𝔩(L/K)`.
 
@@ -73,17 +76,20 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))` of an extension `L/K` of
 nonarchimedean local fields: the norm image of the different ideal, an ideal of the base ring
-`𝒪[K]`. It is not the different ideal `𝔡(L/K)`, which is an ideal of `𝒪[L]`. -/
-noncomputable def discriminantIdeal : Ideal 𝒪[K] :=
-  (differentIdeal 𝒪[K] 𝒪[L]).map (Algebra.norm 𝒪[K])
+`𝒪[K]`. It is not the different ideal `𝔡(L/K)`, which is an ideal of `𝒪[L]`.
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The defining formula of the local discriminant ideal. -/
+It is the relative discriminant `relDiscr 𝒪[K] 𝒪[L]` of the two rings of integers, the same
+carrier for any finite extension of Dedekind domains, named here for the local field extension. -/
+noncomputable def discriminantIdeal : Ideal 𝒪[K] :=
+  relDiscr 𝒪[K] 𝒪[L]
+
+/-- The defining formula of the local discriminant ideal: the relative norm of the different
+ideal, in the form of `TauCeti.relDiscr_def`. -/
 theorem discriminantIdeal_def :
-    discriminantIdeal K L = (differentIdeal 𝒪[K] 𝒪[L]).map (Algebra.norm 𝒪[K]) := (rfl)
+    discriminantIdeal K L = Ideal.relNorm 𝒪[K] (differentIdeal 𝒪[K] 𝒪[L]) := by
+  rw [discriminantIdeal, relDiscr_def]
 
 variable [Algebra.IsSeparable K L]
 
@@ -92,24 +98,11 @@ base ring, the form in which the norm image of the different is computed before 
 exponent is read off it. -/
 private theorem discriminantIdeal_eq_maximalIdeal_pow_mul :
     discriminantIdeal K L = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  calc discriminantIdeal K L = (𝓂[L] ^ differentExponent K L).map (Algebra.norm 𝒪[K]) := by
-        rw [discriminantIdeal_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L)]
-    _ = ((Ideal.span {↑(ϖ ^ differentExponent K L)} : Ideal 𝒪[L])).map
-        (Algebra.norm 𝒪[K]) := by
-      rw [hϖ.maximalIdeal_eq,
-        ← Ideal.span_singleton_pow (ϖ : 𝒪[L]) (differentExponent K L)]
-    _ = Ideal.span {↑((Algebra.norm 𝒪[K] ϖ) ^ differentExponent K L)} := by
-      simpa only [map_pow] using
-        (map_span_singleton_norm_eq_span_singleton (K := K) (L := L)
-          (ϖ ^ differentExponent K L))
-    _ = ((𝓂[L].map (Algebra.norm 𝒪[K])) ^ differentExponent K L) := by
-      rw [← Ideal.span_singleton_pow (Algebra.norm 𝒪[K] ϖ) (differentExponent K L),
-        ← map_span_singleton_norm_eq_span_singleton (K := K) (L := L) ϖ,
-        ← hϖ.maximalIdeal_eq]
-    _ = (𝓂[K] ^ inertiaDegree K L) ^ differentExponent K L := by
-      rw [map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
-    _ = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by rw [pow_mul]
+  have hrelNorm : Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
+    change Ideal.map (Algebra.intNorm 𝒪[K] 𝒪[L]) 𝓂[L] = _
+    rw [Algebra.intNorm_eq_norm, map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
+  rw [discriminantIdeal_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L),
+    map_pow, hrelNorm, pow_mul]
 
 /-- The local discriminant ideal of a separable extension of local fields is nonzero, being the
 `f(L/K) · d(L/K)`-th power of the maximal ideal of the base ring. -/
