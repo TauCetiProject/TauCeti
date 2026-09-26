@@ -432,9 +432,15 @@ theorem card_classFinset_alternatingGroupFiveClassData
   have hezero : e 0 = ⟨0, by omega⟩ := Fin.ext rfl
   have heone : e 1 = ⟨1, by omega⟩ := Fin.ext rfl
   have hetwo : e 2 = ⟨2, by omega⟩ := Fin.ext rfl
+  have hethree : e 3 = ⟨3, by omega⟩ := Fin.ext rfl
+  have hefour : e 4 = ⟨4, by omega⟩ := Fin.ext rfl
   have hfzero : f 0 = 1 := by simpa only [f, hezero] using hzero
   have hfone : f 1 = 15 := by simpa only [f, heone] using hone
   have hftwo : f 2 = 20 := by simpa only [f, hetwo] using htwo
+  have hfthree : f 3 = (alternatingGroupFiveClassData.classFinset ⟨3, by omega⟩).card := by
+    simp only [f, hethree]
+  have hffour : f 4 = (alternatingGroupFiveClassData.classFinset ⟨4, by omega⟩).card := by
+    simp only [f, hefour]
   have hsum_last : f 3 + f 4 = 24 := by
     norm_num [Finset.sum_fin_eq_sum_range, Finset.sum_range_succ, hfzero, hfone, hftwo]
       at hsum5
@@ -445,20 +451,12 @@ theorem card_classFinset_alternatingGroupFiveClassData
   · exact htwo
   · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
     have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
-    have hfthree : f 3 = (alternatingGroupFiveClassData.classFinset ⟨3, by omega⟩).card :=
-      rfl
-    have hffour : f 4 = (alternatingGroupFiveClassData.classFinset ⟨4, by omega⟩).card :=
-      rfl
     have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
     have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
     have hfthree_eq : f 3 = 12 := by omega
     exact hfthree.symm.trans hfthree_eq
   · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
     have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
-    have hfthree : f 3 = (alternatingGroupFiveClassData.classFinset ⟨3, by omega⟩).card :=
-      rfl
-    have hffour : f 4 = (alternatingGroupFiveClassData.classFinset ⟨4, by omega⟩).card :=
-      rfl
     have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
     have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
     have hffour_eq : f 4 = 12 := by omega

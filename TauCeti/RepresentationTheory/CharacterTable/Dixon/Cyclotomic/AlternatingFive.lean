@@ -65,6 +65,70 @@ abbrev alternatingGroupFiveGolden : Cyclotomic 5 :=
 abbrev alternatingGroupFiveGoldenGaloisConjugate : Cyclotomic 5 :=
   Cyclotomic.ofCoeffList 5 [1, 1, 0, 1]
 
+private theorem alternatingGroupFive_isRoot_zeta_pow {k : ℕ} (hk : k.Coprime 5) :
+    (Polynomial.cyclotomic 5 ℤ).eval₂ (Int.castRingHom (Cyclotomic 5))
+      (Cyclotomic.zeta 5 ^ k) = 0 := by
+  apply Cyclotomic.complexEmbedding_injective
+  rw [map_zero, Polynomial.hom_eval₂]
+  have hprimitive : IsPrimitiveRoot (Cyclotomic.complexRoot 5 ^ k) 5 :=
+    Cyclotomic.isPrimitiveRoot_complexRoot.pow_of_coprime k hk
+  rw [RingHom.ext_int
+    (Cyclotomic.complexEmbedding.comp (Int.castRingHom (Cyclotomic 5)))
+    (Int.castRingHom ℂ), map_pow, Cyclotomic.complexEmbedding_zeta,
+    ← Polynomial.eval_map, Polynomial.map_cyclotomic]
+  exact (hprimitive.isRoot_cyclotomic (by norm_num)).eq_zero
+
+/-- The cyclotomic Galois automorphism `ζ ↦ ζ²` of `TauCeti.Cyclotomic 5`. -/
+noncomputable def alternatingGroupFiveGaloisEquiv : Cyclotomic 5 ≃+* Cyclotomic 5 := by
+  let σ2 : Cyclotomic 5 →+* Cyclotomic 5 := Cyclotomic.evalRingHom
+    (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 2)
+      (alternatingGroupFive_isRoot_zeta_pow (by decide))
+  let σ3 : Cyclotomic 5 →+* Cyclotomic 5 := Cyclotomic.evalRingHom
+    (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 3)
+      (alternatingGroupFive_isRoot_zeta_pow (by decide))
+  have hleft : σ3.comp σ2 = RingHom.id (Cyclotomic 5) := by
+    apply Cyclotomic.ringHom_ext
+    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
+      RingHom.id_apply]
+    decide
+  have hright : σ2.comp σ3 = RingHom.id (Cyclotomic 5) := by
+    apply Cyclotomic.ringHom_ext
+    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
+      RingHom.id_apply]
+    decide
+  exact
+    { toFun := σ2
+      invFun := σ3
+      left_inv := fun x ↦ by rw [← RingHom.comp_apply, hleft, RingHom.id_apply]
+      right_inv := fun x ↦ by rw [← RingHom.comp_apply, hright, RingHom.id_apply]
+      map_mul' := σ2.map_mul
+      map_add' := σ2.map_add }
+
+private theorem alternatingGroupFiveGaloisEquiv_apply (x : Cyclotomic 5) :
+    alternatingGroupFiveGaloisEquiv x = Cyclotomic.evalRingHom
+      (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 2)
+        (alternatingGroupFive_isRoot_zeta_pow (by decide)) x := by
+  rfl
+
+/-- The Galois automorphism `ζ ↦ ζ²` exchanges the two golden-ratio values. -/
+@[simp]
+theorem alternatingGroupFiveGaloisEquiv_golden :
+    alternatingGroupFiveGaloisEquiv alternatingGroupFiveGolden =
+      alternatingGroupFiveGoldenGaloisConjugate := by
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_ofCoeffList]
+  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  decide
+
+/-- The Galois automorphism `ζ ↦ ζ²` sends the conjugate golden-ratio value back to the
+positive one. -/
+@[simp]
+theorem alternatingGroupFiveGaloisEquiv_galoisConjugate :
+    alternatingGroupFiveGaloisEquiv alternatingGroupFiveGoldenGaloisConjugate =
+      alternatingGroupFiveGolden := by
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_ofCoeffList]
+  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  decide
+
 /-- The two golden-ratio character values sum to one. -/
 theorem alternatingGroupFiveGolden_add_galoisConjugate :
     alternatingGroupFiveGolden + alternatingGroupFiveGoldenGaloisConjugate = 1 := by
@@ -80,7 +144,7 @@ theorem alternatingGroupFiveGolden_ne_galoisConjugate :
     alternatingGroupFiveGolden ≠ alternatingGroupFiveGoldenGaloisConjugate := by
   decide
 
-/-- Both golden-ratio character values are fixed by exact complex conjugation. -/
+/-- The positive golden-ratio character value is fixed by exact complex conjugation. -/
 @[simp]
 theorem star_alternatingGroupFiveGolden : star alternatingGroupFiveGolden =
     alternatingGroupFiveGolden := by
@@ -183,6 +247,33 @@ theorem alternatingGroupFiveCandidateCharacterTable_row_one_ne_row_two :
     alternatingGroupFiveCandidateCharacterTable ⟨1, by simp⟩ ≠
       alternatingGroupFiveCandidateCharacterTable ⟨2, by simp⟩ := by
   decide
+
+/-- The Galois automorphism `ζ ↦ ζ²` exchanges the two degree-three candidate rows. -/
+theorem alternatingGroupFiveGaloisEquiv_candidateCharacterTable_row_one
+    (j : AlternatingGroupFiveClassIndex) :
+    alternatingGroupFiveGaloisEquiv
+        (alternatingGroupFiveCandidateCharacterTable ⟨1, by simp⟩ j) =
+      alternatingGroupFiveCandidateCharacterTable ⟨2, by simp⟩ j := by
+  have hjlt : j.val < 5 := by
+    simpa only [numClasses_alternatingGroupFiveClassData] using j.isLt
+  have hj : finCongr numClasses_alternatingGroupFiveClassData j = ⟨j.val, hjlt⟩ := Fin.ext rfl
+  rw [alternatingGroupFiveCandidateCharacterTable_apply,
+    alternatingGroupFiveCandidateCharacterTable_apply, hj]
+  fin_cases j <;> norm_num; simp only [map_ofNat]
+
+/-- The Galois automorphism `ζ ↦ ζ²` exchanges the two degree-three candidate rows in the
+opposite direction as well. -/
+theorem alternatingGroupFiveGaloisEquiv_candidateCharacterTable_row_two
+    (j : AlternatingGroupFiveClassIndex) :
+    alternatingGroupFiveGaloisEquiv
+        (alternatingGroupFiveCandidateCharacterTable ⟨2, by simp⟩ j) =
+      alternatingGroupFiveCandidateCharacterTable ⟨1, by simp⟩ j := by
+  have hjlt : j.val < 5 := by
+    simpa only [numClasses_alternatingGroupFiveClassData] using j.isLt
+  have hj : finCongr numClasses_alternatingGroupFiveClassData j = ⟨j.val, hjlt⟩ := Fin.ext rfl
+  rw [alternatingGroupFiveCandidateCharacterTable_apply,
+    alternatingGroupFiveCandidateCharacterTable_apply, hj]
+  fin_cases j <;> norm_num; simp only [map_ofNat]
 
 /-- Every candidate central-character row is normalized at the identity class. -/
 @[simp]
