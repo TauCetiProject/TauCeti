@@ -19,11 +19,9 @@ Diamond–Shurman's Theorem 5.8.3, the decomposition
 S_k(Γ₁(N)) = ⊕_{M ∣ N} ⊕_{f newform of level M} ⊕_{d ∣ N/M} ℂ · f(dτ).
 ```
 
-Refined by eigenvalues, this locates good Hecke eigenvectors. Each `V_d g` is an eigenvector of
-every `Tₚ` with `p ∤ N`, with the eigenvalue of `g` at `p`, because `V_d` commutes with `Tₚ`.
-Simultaneous eigenspaces of any family of operators are independent. Hence a cusp form of level
-`Γ₁(N)` that is an eigenvector of every such `Tₚ` is a combination of those `V_d g` whose
-newform `g` has the same eigenvalues at the primes not dividing `N`. In particular a good Hecke
+The eigenvalue-refined spanning theorem says that a cusp form of level `Γ₁(N)` that is an
+eigenvector of every `Tₚ` with `p ∤ N` is a combination of those `V_d g` whose newform `g` has
+the same eigenvalues at these primes. In particular a good Hecke
 eigenform of level `N` shares its eigenvalues at the primes not dividing `N` with a newform of
 some level `M ∣ N`. This is the eigenvalue half of the existence of the newform associated with
 an eigenform (Diamond–Shurman, Proposition 5.8.4; Miyake, Corollary 4.6.20). Uniqueness of that
