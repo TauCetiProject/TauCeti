@@ -24,7 +24,7 @@ Together they make the identification `H_Tate⁻²(G, A) ≃ Gᵃᵇ ⊗ A` natu
 statement about restriction or corestriction in Tate degree `-2` can be transported to the
 corresponding statement about the Verlagerung or `Abelianization.map`. For `A = ℤ`, these are the
 compatibilities of the identification `H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` with restriction and corestriction
-that the reciprocity isomorphism `Gᵃᵇ ≃ Ĥ⁰(G, C)` inherits.
+that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
 
 ## Main results
 
