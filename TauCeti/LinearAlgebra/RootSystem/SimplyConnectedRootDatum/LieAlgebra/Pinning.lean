@@ -21,7 +21,8 @@ by the Chevalley involution (`TauCeti.DynkinType.chevalleyInvolution_lieBasis_e`
 
 This module establishes the Serre-relation bracket vanishings that underlie the Chevalley
 commutator formulas, and applies them through the existing Kostant root-subgroup
-machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any `ℚ`-algebra are provided by
+machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative ring are
+provided by
 `TauCeti.DynkinType.pinnedExp`, a thin wrapper over the existing
 `TauCeti.DynkinType.geckRootSubgroupMatrix` that converts the scalar to a `𝔾ₐ`-point; this
 module contributes only the bracket relations and their direct transfer to the represented
@@ -37,7 +38,7 @@ pinning.
   commutator relation (commuting case) for the represented pinning — the existing Kostant
   commutativity lemma applied through `geckRootSubgroupMatrix`.
 * `TauCeti.DynkinType.pinnedExp`: the uniform exponential `u ↦ exp(u • e_i)` over any
-  `ℚ`-algebra, as a thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`; with the
+  commutative ring, as a thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`; with the
   root-subgroup identification
   `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`, the one-parameter law,
   and the commuting-case Chevalley relation
@@ -122,13 +123,13 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
 
 /-- The uniform exponential `u ↦ exp(u • e_i)` of the `i`-th simple raising generator, as a
 thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`: the scalar `u : A` in any
-`ℚ`-algebra is converted to a `𝔾ₐ`-point through `Multiplicative.ofAdd` and
+commutative ring is converted to a `𝔾ₐ`-point through `Multiplicative.ofAdd` and
 `TauCeti.AdditiveGroup.gaPointsMulEquiv`. No exponential matrix is re-implemented here; the
 divided-power exponential nature of the underlying matrix is recorded in
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`, and the
 identification with the root-subgroup construction in
 `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`. -/
-noncomputable def pinnedExp (A : Type*) [CommRing A] [Algebra ℚ A]
+noncomputable def pinnedExp (A : Type*) [CommRing A]
     (i : Fin t.rank) (u : A) :
     Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
   t.geckRootSubgroupMatrix ht (.inl i)
