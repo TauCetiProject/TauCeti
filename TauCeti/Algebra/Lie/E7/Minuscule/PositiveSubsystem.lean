@@ -238,11 +238,7 @@ theorem positiveSubsystemClosedSubgroup_eq_kostantTorusSubsystemClosedSubgroup :
   apply Subtype.ext
   rw [coe_positiveSubsystemClosedSubgroup, coe_kostantTorusSubsystemClosedSubgroup]
   exact Subobject.mk_eq_mk_of_comm _ _ (eqToIso positiveSubsystemGroupScheme_def) (by
-    change eqToHom positiveSubsystemGroupScheme_def ≫
-      kostantTorusSubsystemToToral rootGen cartanGen rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-        isNilpotent_rep_serreRootGenerator positiveSimpleRoots = positiveSubsystemInclusion
-    rw [positiveSubsystemInclusion])
+    rw [eqToIso.hom, positiveSubsystemInclusion])
 
 /-- The `i`-th positive simple-root subgroup factored through the positive subsystem. -/
 noncomputable def positiveRootSubgroup (i : Fin 7) :
