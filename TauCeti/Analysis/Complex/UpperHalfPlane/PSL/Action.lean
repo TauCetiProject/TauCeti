@@ -40,9 +40,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
-* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)` (`pslS_def`), an
-  involution of `ℍ` (`pslS_smul_pslS_smul`, `pslS_inv`) reversing the sign of the real part, up
-  to the `normSq` factor (`re_pslS_smul`).
+* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)`, an involution of `ℍ`
+  (`pslS_smul_pslS_smul`, `pslS_inv`) reversing the sign of the real part, up to the `normSq`
+  factor (`re_pslS_smul`).
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -191,9 +191,6 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
 /-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
 `z ↦ -1/z`) in `PSL(2, ℝ)`. -/
 noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
-
-/-- Restatement of `pslS` at the group level, through `sl2zToPSL2R : SL(2, ℤ) →* PSL(2, ℝ)`. -/
-theorem pslS_def : pslS = sl2zToPSL2R _root_.ModularGroup.S := psl2zToPSL2R_mk _
 
 /-- `pslS` acts as `ModularGroup.S` does. -/
 theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
