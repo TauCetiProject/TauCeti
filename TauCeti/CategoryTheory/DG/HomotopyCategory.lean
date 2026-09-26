@@ -314,10 +314,9 @@ theorem map_mem_dgCycles {C' : Type*} [DGCategory R C'] {X Y : C} {X' Y' : C'}
     (hf : f ∈ dgCycles R X Y) : (φ.f 0).hom f ∈ dgCycles R X' Y' := by
   obtain ⟨x, hx, _⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
   rw [← hx, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i,
-    ModuleCat.comp_apply, mem_dgCycles, ← ModuleCat.comp_apply]
-  change ((dgHomComplex R X' Y').iCycles 0 ≫ (dgHomComplex R X' Y').d 0 1).hom
-    ((HomologicalComplex.cyclesMap φ 0).hom x) = 0
-  rw [(dgHomComplex R X' Y').iCycles_d 0 1]
+    ModuleCat.comp_apply, mem_dgCycles]
+  unfold dgDifferential
+  rw [← ModuleCat.comp_apply, zero_add, (dgHomComplex R X' Y').iCycles_d 0 1]
   rfl
 
 /-- The map induced on homotopy classes by a chain map of Hom complexes sends the class of a
