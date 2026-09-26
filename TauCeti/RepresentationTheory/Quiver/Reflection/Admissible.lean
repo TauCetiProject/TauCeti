@@ -150,6 +150,7 @@ theorem isSourceAdmissible_cons {q : _root_.Quiver.{v} V} {i : V} {l : List V} :
 
 /-- A concatenation is source-admissible exactly when its first segment is source-admissible and
 its second segment is source-admissible after reflecting along the first. -/
+@[simp]
 theorem isSourceAdmissible_append {q : _root_.Quiver.{v} V} {l₁ l₂ : List V} :
     IsSourceAdmissible q (l₁ ++ l₂) ↔
       IsSourceAdmissible q l₁ ∧ IsSourceAdmissible (reflectList q l₁) l₂ := by
