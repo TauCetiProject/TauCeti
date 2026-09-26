@@ -21,9 +21,12 @@ The parity shift preserves matrix factorizations. The elementary factorization
 projective. These constructions are used in the homotopy and triangulated categories of
 matrix factorizations.
 
-The finite-projective convention follows D. Eisenbud, *Homological algebra on a complete
+The matrix-factorization equations follow D. Eisenbud, *Homological algebra on a complete
 intersection, with an application to group representations*, Trans. Amer. Math. Soc. **260**
-(1980), Section 5. The ambient curved-duplex convention follows
+(1980), Section 5, where the components are finite free. The finite-projective formulation
+follows D. Orlov, *Triangulated categories of singularities and D-branes in Landau–Ginzburg
+models*, Proc. Steklov Inst. Math. **246** (2004), Sections 1.2 and 3. The ambient
+curved-duplex convention follows
 `TauCeti.Algebra.Homology.Curved.Duplex`.
 -/
 
@@ -33,7 +36,7 @@ universe u
 
 namespace TauCeti
 
-open CategoryTheory
+open CategoryTheory Limits
 
 variable (S : Type u) [CommRing S] (w : S)
 
@@ -80,10 +83,10 @@ abbrev inclusion : MatrixFactorization S w ⥤ CurvedDuplex (FGModuleCat.{u} S) 
   map f := ObjectProperty.homMk
     ((CurvedDuplex.parityShift (FGModuleCat.{u} S) w).map f.hom)
 
-@[simp] theorem parityShift_obj_even (X : MatrixFactorization S w) :
+@[simp] theorem parityShift_obj_X₀ (X : MatrixFactorization S w) :
     ((parityShift (S := S) (w := w)).obj X).obj.X₀ = X.obj.X₁ := rfl
 
-@[simp] theorem parityShift_obj_odd (X : MatrixFactorization S w) :
+@[simp] theorem parityShift_obj_X₁ (X : MatrixFactorization S w) :
     ((parityShift (S := S) (w := w)).obj X).obj.X₁ = X.obj.X₀ := rfl
 
 @[simp] theorem parityShift_obj_d₀ (X : MatrixFactorization S w) :
@@ -97,6 +100,29 @@ abbrev inclusion : MatrixFactorization S w ⥤ CurvedDuplex (FGModuleCat.{u} S) 
 
 @[simp] theorem parityShift_map_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     ((parityShift (S := S) (w := w)).map f).hom.f₁ = f.hom.f₀ := rfl
+
+instance : (parityShift (S := S) (w := w)).Additive where
+
+/-- Applying the parity shift twice gives the original matrix factorization. -/
+@[expose]
+def parityShiftCompParityShiftIso :
+    parityShift (S := S) (w := w) ⋙ parityShift (S := S) (w := w) ≅ 𝟭 _ :=
+  NatIso.ofComponents
+    (fun X ↦ ObjectProperty.isoMk (P := MatrixFactorization.isProjective S w)
+      ((CurvedDuplex.parityShiftCompParityShiftIso (FGModuleCat.{u} S) w).app X.obj))
+    (fun _ ↦ by ext <;> rfl)
+
+/-- The parity shift is a self-equivalence of finite-projective matrix factorizations. -/
+@[expose, simps]
+def parityShiftEquivalence : MatrixFactorization S w ≌ MatrixFactorization S w where
+  functor := parityShift (S := S) (w := w)
+  inverse := parityShift (S := S) (w := w)
+  unitIso := parityShiftCompParityShiftIso.symm
+  counitIso := parityShiftCompParityShiftIso
+  functor_unitIso_comp _ := by ext <;> rfl
+
+instance : (parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
+  inferInstanceAs (parityShift (S := S) (w := w)).Additive
 
 /-- The elementary contractible factorization on a finitely generated projective module. -/
 @[expose] def disk (P : FGModuleCat.{u} S) [Module.Projective S P] :
@@ -141,8 +167,63 @@ odd maps between the underlying finite projective components. -/
 def nullHomotopic : MorphismIdeal (MatrixFactorization S w) :=
   (CurvedDuplex.nullHomotopic (FGModuleCat.{u} S) w).comap inclusion
 
+/-- Null-homotopic maps are exactly the maps whose parity shifts are null-homotopic. -/
+theorem comap_parityShift_nullHomotopic :
+    (nullHomotopic (S := S) (w := w)).comap (parityShift (S := S) (w := w)) =
+      nullHomotopic (S := S) (w := w) := by
+  ext X Y f
+  simpa [nullHomotopic, inclusion, parityShift, ofCurvedDuplex] using
+    congrArg (fun I : MorphismIdeal (CurvedDuplex (FGModuleCat.{u} S) w) ↦
+      f.hom ∈ I.hom X.obj Y.obj)
+      (CurvedDuplex.comap_parityShift_nullHomotopic
+        (C := FGModuleCat.{u} S) (w := w))
+
 /-- The homotopy category of finite-projective matrix factorizations. -/
 abbrev HomotopyCategory : Type _ := (nullHomotopic (S := S) (w := w)).Quotient
+
+/-- The parity shift induces an equivalence of matrix-factorization homotopy categories. -/
+noncomputable def HomotopyCategory.parityShiftEquivalence :
+    HomotopyCategory (S := S) (w := w) ≌ HomotopyCategory (S := S) (w := w) :=
+  MorphismIdeal.mapEquivalence
+    (TauCeti.MatrixFactorization.parityShiftEquivalence (S := S) (w := w)) _ _
+    comap_parityShift_nullHomotopic.symm
+
+/-- Parity shift commutes with the quotient functor. -/
+theorem HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor :
+    (nullHomotopic (S := S) (w := w)).quotientFunctor ⋙
+      (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor =
+    parityShift (S := S) (w := w) ⋙
+      (nullHomotopic (S := S) (w := w)).quotientFunctor := by
+  rw [HomotopyCategory.parityShiftEquivalence]
+  rw [MorphismIdeal.mapEquivalence_functor
+    (e := TauCeti.MatrixFactorization.parityShiftEquivalence (S := S) (w := w))
+    (I := nullHomotopic (S := S) (w := w))
+    (J := nullHomotopic (S := S) (w := w)) comap_parityShift_nullHomotopic.symm]
+  exact MorphismIdeal.quotientFunctor_comp_map ..
+
+/-- On a matrix factorization, the quotient parity shift agrees with the shifted object. -/
+@[simp]
+theorem HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj
+    (X : MatrixFactorization S w) :
+    (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.obj
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
+      (nullHomotopic (S := S) (w := w)).quotientFunctor.obj
+        ((parityShift (S := S) (w := w)).obj X) :=
+  Functor.congr_obj HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor X
+
+/-- On maps, the quotient parity shift agrees with the shifted map. -/
+@[simp]
+theorem HomotopyCategory.parityShiftEquivalence_functor_map_quotientFunctor_map
+    {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.map
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.map f) ≫
+        eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj Y) =
+      eqToHom (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj X) ≫
+        (nullHomotopic (S := S) (w := w)).quotientFunctor.map
+          ((parityShift (S := S) (w := w)).map f) := by
+  have h := Functor.congr_hom HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor f
+  simp only [Functor.comp_map] at h
+  simp [h]
 
 /-- A closed even map is null-homotopic precisely when it is the boundary of an odd map. -/
 @[simp] theorem mem_nullHomotopic_iff {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
@@ -151,9 +232,25 @@ abbrev HomotopyCategory : Type _ := (nullHomotopic (S := S) (w := w)).Quotient
         CurvedDuplex.nullHomotopicMap h₀ h₁ = f.hom := by
   simp [nullHomotopic]
 
+/-- The identity of an elementary disk is null-homotopic. -/
+theorem id_disk_mem_nullHomotopic (P : FGModuleCat.{u} S) [Module.Projective S P] :
+    𝟙 (disk (w := w) P) ∈ (nullHomotopic (S := S) (w := w)).hom _ _ := by
+  rw [mem_nullHomotopic_iff]
+  refine ⟨0, 𝟙 P, ?_⟩
+  change CurvedDuplex.nullHomotopicMap (X := CurvedDuplex.disk w P)
+    (Y := CurvedDuplex.disk w P) 0 (𝟙 P) = 𝟙 (CurvedDuplex.disk w P)
+  exact CurvedDuplex.nullHomotopicMap_disk P
+
+/-- An elementary disk is zero in the homotopy category. -/
+theorem isZero_quotientFunctor_obj_disk (P : FGModuleCat.{u} S) [Module.Projective S P] :
+    IsZero ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj (disk (w := w) P)) := by
+  rw [MorphismIdeal.isZero_quotientFunctor_obj_iff]
+  exact id_disk_mem_nullHomotopic P
+
 /-- Two morphisms of finite-projective matrix factorizations have the same image in the
 homotopy category exactly when their difference is the boundary of an odd map. -/
-theorem quotientFunctor_map_eq_iff {X Y : MatrixFactorization S w} (f g : X ⟶ Y) :
+theorem quotientFunctor_map_eq_quotientFunctor_map_iff
+    {X Y : MatrixFactorization S w} (f g : X ⟶ Y) :
     (nullHomotopic (S := S) (w := w)).quotientFunctor.map f =
       (nullHomotopic (S := S) (w := w)).quotientFunctor.map g ↔
         ∃ h₀ : X.obj.X₀ ⟶ Y.obj.X₁, ∃ h₁ : X.obj.X₁ ⟶ Y.obj.X₀,

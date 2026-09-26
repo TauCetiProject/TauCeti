@@ -13,6 +13,8 @@ public import Mathlib.Algebra.Polynomial.Basic
 
 The rank-one factorization of `X ^ n` has differentials `X ^ i` and `X ^ (n - i)`.
 Its two components are finite free modules over the polynomial ring.
+These standard examples model the hypersurface `S[X]/(X^n)` in the homotopy category
+of matrix factorizations.
 -/
 
 public section
