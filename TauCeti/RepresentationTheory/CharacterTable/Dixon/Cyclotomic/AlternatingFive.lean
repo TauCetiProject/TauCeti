@@ -75,18 +75,6 @@ theorem alternatingGroupFiveGolden_mul_galoisConjugate :
     alternatingGroupFiveGolden * alternatingGroupFiveGoldenGaloisConjugate = -1 := by
   decide
 
-/-- The sum of the squares of the two golden-ratio character values is three. -/
-theorem alternatingGroupFiveGolden_sq_add_galoisConjugate_sq :
-    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenGaloisConjugate ^ 2 = 3 := by
-  calc
-    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenGaloisConjugate ^ 2 =
-        (alternatingGroupFiveGolden + alternatingGroupFiveGoldenGaloisConjugate) ^ 2 -
-          2 * (alternatingGroupFiveGolden * alternatingGroupFiveGoldenGaloisConjugate) := by ring
-    _ = 3 := by
-      rw [alternatingGroupFiveGolden_add_galoisConjugate,
-        alternatingGroupFiveGolden_mul_galoisConjugate]
-      norm_num
-
 /-- The two golden-ratio character values are distinct. -/
 theorem alternatingGroupFiveGolden_ne_galoisConjugate :
     alternatingGroupFiveGolden ≠ alternatingGroupFiveGoldenGaloisConjugate := by
@@ -177,6 +165,7 @@ theorem alternatingGroupFiveCandidateCharacterDegrees_apply (i : AlternatingGrou
   fin_cases i <;> decide
 
 /-- The identity-class entry of each candidate row is its candidate degree. -/
+@[simp]
 theorem alternatingGroupFiveCandidateCharacterTable_index_one
     (i : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCharacterTable i
@@ -198,6 +187,7 @@ theorem alternatingGroupFiveCandidateCharacterTable_row_one_ne_row_two :
   decide
 
 /-- Every candidate central-character row is normalized at the identity class. -/
+@[simp]
 theorem alternatingGroupFiveCandidateCentralCharacterTable_index_one
     (i : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCentralCharacterTable i

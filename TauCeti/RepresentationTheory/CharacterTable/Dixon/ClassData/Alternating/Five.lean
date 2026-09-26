@@ -464,18 +464,6 @@ theorem card_classFinset_alternatingGroupFiveClassData
     have hffour_eq : f 4 = 12 := by omega
     exact hffour.symm.trans hffour_eq
 
-/-- The ordered list of conjugacy-class sizes of `A₅` is `[1, 15, 20, 12, 12]`. -/
-@[simp]
-theorem card_classes_alternatingGroupFiveClassData :
-    alternatingGroupFiveClassData.classes.map Finset.card = [1, 15, 20, 12, 12] := by
-  -- `ClassData.classes` is the list packaging of the `Fin`-indexed `classFinset` family.
-  change [(alternatingGroupFiveClassData.classFinset ⟨0, by simp⟩).card,
-    (alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩).card,
-    (alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩).card,
-    (alternatingGroupFiveClassData.classFinset ⟨3, by simp⟩).card,
-    (alternatingGroupFiveClassData.classFinset ⟨4, by simp⟩).card] = _
-  simp
-
 private theorem orderOf_alternatingGroupFiveDoubleTransposition :
     orderOf alternatingGroupFiveDoubleTransposition = 2 := by
   apply orderOf_eq_prime <;> decide
