@@ -375,10 +375,11 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
 
 /-- **A field unit which is negative at every real place of a prescribed finite set.**
 
-Prescribing a sign at each real place of a finite set is weak approximation data, so
-`exists_fieldUnit_valuation_eq_and_signHom_eq` supplies the element in one step: take the finite set
-of places to be empty, so only the signs are prescribed.  The construction uses no finite-place
-data at all, which is why the empty `S` is the right input here. -/
+Signs at real places are the one datum a sign prescription may impose on a field unit, and they
+can be imposed simultaneously: for every finite set `T` of real places there is a single field unit
+of `K` which is negative at each place of `T`.  Being negative at `w` is exactly being a nonsquare
+at `w`, so this supplies the prescribed element `b` of a sign prescription at every real place of
+its set, in one step. -/
 theorem exists_fieldUnit_negative_at (T : Finset {w : InfinitePlace K // w.IsReal}) :
     ∃ x : Kˣ, ∀ w ∈ T, embedding_of_isReal w.2 (x : K) < 0 := by
   classical

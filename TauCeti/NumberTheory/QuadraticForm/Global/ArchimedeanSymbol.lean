@@ -7,32 +7,30 @@ module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
-public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 
 /-!
 # The archimedean Hilbert symbol
 
 The archimedean symbol is the norm-equation Hilbert symbol read over the completion at an infinite
-place.  Tau Ceti already computes the symbol over `ℝ` and over algebraically closed fields, so
-both halves of the archimedean formula are instances of those computations.  What is new here is
-that the computation is stated for *global* units at the *places of a number field*, so that it can
-be multiplied over places, and that the bimultiplicativity that multiplication needs is proved at
-a real place from the archimedean formula itself.
+place.  Tau Ceti already computes the symbol over `ℝ` and over algebraically closed fields; what is
+added here is that computation for *global* units at the *places of a number field*, the
+bimultiplicativity that a product of such symbols needs, and the real-place half of the sign
+prescription.
 
-Bimultiplicativity is read off that formula rather than cited from `hilbertSymbol_comm` and
-`hilbertSymbol_mul`, because those carry an `IsNonarchimedeanLocalField` hypothesis on every
-theorem about the symbol: they are not available at an archimedean place, and citing them here
-would be a type error rather than a shortcut.  At a complex place the symbol is `1` for the same
-reason the archimedean classification of a form is by rank alone: every element of `ℂˣ` is a
-square.  `TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`, in
-`TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed`, already computes that case at the
-algebraically closed completion, so the symbol at a complex place needs no theorem of its own.
+At a real place the symbol of two elements is `-1` exactly when both are negative there, and `1`
+exactly when one of them is positive there.  Bimultiplicativity of the real symbol is therefore a
+statement about signs, and it is what allows the symbols of a prescribed set of elements to be
+multiplied over its real places.  At a complex place the symbol is `1` for the same reason the
+archimedean classification of a form is by rank alone: every element of `ℂˣ` is a square, so
+`TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`, in
+`TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed`, already settles the complex places of a number
+field and the real places alone decide such a product.
 
 The file also records the real-place half of the sign prescription of O'Meara 71:19.  Given a
 prescribed element `b` that is a nonsquare at a real place,
 `exists_hilbertSymbol_eq_neg_one_atRealPlace` turns it into a local non-norm, which is what a
-sign-prescription argument needs at each place of its set;
-`TauCeti.GlobalNumberFields.exists_fieldUnit_negative_at` supplies the `b` itself.
+sign-prescription argument needs at each place of its set; a field unit negative at every real
+place of a prescribed finite set, which weak approximation supplies, is such a `b`.
 
 ## Main results
 
@@ -40,8 +38,8 @@ sign-prescription argument needs at each place of its set;
   `TauCeti.hilbertSymbol_unitAtRealPlace_eq_one_iff`: the archimedean symbol of two global units
   at a real place, in both signs.
 * `TauCeti.hilbertSymbol_unitAtRealPlace_mul_left` and
-  `TauCeti.hilbertSymbol_unitAtRealPlace_mul_right`: bimultiplicativity of the localized real
-  symbol, read off that formula.
+  `TauCeti.hilbertSymbol_unitAtRealPlace_mul_right`: bimultiplicativity of the real symbol, by
+  which the symbols at the real places of a prescribed set can be multiplied.
 * `TauCeti.isSquare_unitAtRealPlace_iff` and `TauCeti.not_isSquare_unitAtRealPlace_iff`: a
   global unit is a square at a real place exactly when it is positive there.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
@@ -58,8 +56,11 @@ its image in the completion is the unit `1`, which is a square.  This is also wh
 cannot serve as a nonsquare at a *finite* place of a prescribed set: it is a unit at every place,
 so its value at each of them is the top `1`, never `WithZero.exp (-1)`.  The finite-place
 nonsquare criterion that does hold is
-`IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one`, with
-`neg_log_valuation_eq_one_iff` relating its hypothesis to an order of vanishing `1`.
+`IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even`:
+an element of odd order of vanishing is a nonsquare in the completion.  Its order of vanishing `1`
+case, the one that a prime of a prescribed modulus supplies, is
+`IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one`, whose
+hypothesis `neg_log_valuation_eq_one_iff` identifies with an order of vanishing `1`.
 
 ## References
 
@@ -81,10 +82,9 @@ variable {K : Type*} [Field K] [NumberField K]
 
 omit [NumberField K] in
 /-- The archimedean symbol at a real place is `-1` exactly when both global units are negative
-there.  The archimedean formula is `TauCeti.hilbertSymbol_real`, read through
-`TauCeti.unitAtRealPlace`.  The formula is read at a place rather than through
-`TauCeti.hilbertSymbol_mul`, which is unavailable at a real place, so the sign prescription has
-to multiply these symbols over the archimedean places by hand. -/
+there.  This is the real formula `TauCeti.hilbertSymbol_real`, read at a place of a number field
+through `TauCeti.unitAtRealPlace`; it is the sign criterion by which a sign prescription multiplies
+the symbols of a prescribed set over its real places. -/
 @[simp]
 theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
@@ -104,9 +104,9 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
 
 omit [NumberField K] in
 /-- **Bimultiplicativity of the localized real symbol, in the first parameter.** This is
-`TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field.  The instance
-`TauCeti.hilbertSymbol_mul` is stated over a nonarchimedean local field, and this symbol is taken
-at a real place, so it cannot be used here. -/
+`TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field: the symbol of two
+global units is multiplicative in its first entry, so that the symbols at the real places of a
+prescribed set can be multiplied. -/
 theorem hilbertSymbol_unitAtRealPlace_mul_left (w : {w : InfinitePlace K // w.IsReal})
     (a a' b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w (a * a')) (unitAtRealPlace w b) =
@@ -141,13 +141,16 @@ theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a 
       have hne : Real.sqrt (unitAtRealPlace w a : ℝ) ≠ 0 := Real.sqrt_pos.2 h |>.ne'
       refine ⟨Units.mk0 _ hne, ?_⟩
       refine Units.ext ?_
-      change (unitAtRealPlace w a : ℝ) = ((Units.mk0 _ hne) : ℝˣ) * ((Units.mk0 _ hne) : ℝˣ)
-      change (unitAtRealPlace w a : ℝ) = Real.sqrt _ * Real.sqrt _
-      exact (Real.mul_self_sqrt h.le).symm
+      simpa only [Units.val_mul, Units.val_mk0] using (Real.mul_self_sqrt h.le).symm
   rw [key, unitAtRealPlace_apply]
 
 omit [NumberField K] in
-/-- A global unit is a nonsquare at a real place exactly when it is negative there. -/
+/-- A global unit is a nonsquare at a real place exactly when it is negative there.
+
+This is deliberately not annotated `@[simp]`: `simp` already rewrites
+`IsSquare (unitAtRealPlace w a)` through the parallel `isSquare_unitAtRealPlace_iff`, so the
+negation is available without a second tag, whose left-hand side would not be in simp normal
+form. -/
 theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.2 (a : K) < 0 := by
   rw [not_congr (isSquare_unitAtRealPlace_iff w a), not_lt, lt_iff_le_and_ne]
@@ -163,12 +166,12 @@ omit [NumberField K] in
 
 Given the element `b` whose local nonsquareness a sign-prescription argument presupposes, there is
 a global unit `a` whose symbol with `b` at `w` is `-1`, and `a` is negative there.  Both operands
-are read through the real place, so that the symbol can be multiplied with the symbols at the
-other places of the prescribed set.  This is the step that turns a prescribed nonsquare into a local
-non-norm.
+are read at the same real place, so that the symbol can be multiplied with the symbols at the
+other places of the prescribed set.  This is the step that turns a prescribed nonsquare into a
+local non-norm.
 
-`a = -1` works because a real place is local, so `(-1, b) = -1` there exactly when `b` is
-negative. -/
+The sign criterion `hilbertSymbol_unitAtRealPlace_eq_neg_one_iff` settles it for `a = -1`, since
+`-1` and `b` are both negative at `w` exactly when `b` is. -/
 theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K // w.IsReal})
     (b : Kˣ) (hb : embedding_of_isReal w.2 (b : K) < 0) :
     ∃ a : Kˣ, embedding_of_isReal w.2 (a : K) < 0 ∧
