@@ -77,11 +77,14 @@ abbrev inclusion : MatrixFactorization S w ⥤ CurvedDuplex (FGModuleCat.{u} S) 
 
 /-- The parity shift swaps the projective components and negates both differentials. -/
 @[expose, implicit_reducible] def parityShift :
-    MatrixFactorization S w ⥤ MatrixFactorization S w where
-  obj X := ofCurvedDuplex ((CurvedDuplex.parityShift (FGModuleCat.{u} S) w).obj X.obj)
-    X.property.2 X.property.1
-  map f := ObjectProperty.homMk
-    ((CurvedDuplex.parityShift (FGModuleCat.{u} S) w).map f.hom)
+    MatrixFactorization S w ⥤ MatrixFactorization S w :=
+  ObjectProperty.lift _ (inclusion ⋙ CurvedDuplex.parityShift (FGModuleCat.{u} S) w)
+    fun X ↦ ⟨X.property.2, X.property.1⟩
+
+/-- The parity shift commutes with the inclusion into curved duplexes. -/
+theorem parityShift_comp_inclusion :
+    parityShift (S := S) (w := w) ⋙ inclusion =
+      inclusion ⋙ CurvedDuplex.parityShift (FGModuleCat.{u} S) w := rfl
 
 @[simp] theorem parityShift_obj_X₀ (X : MatrixFactorization S w) :
     ((parityShift (S := S) (w := w)).obj X).obj.X₀ = X.obj.X₁ := rfl
@@ -104,13 +107,22 @@ abbrev inclusion : MatrixFactorization S w ⥤ CurvedDuplex (FGModuleCat.{u} S) 
 instance : (parityShift (S := S) (w := w)).Additive where
 
 /-- Applying the parity shift twice gives the original matrix factorization. -/
-@[expose]
 def parityShiftCompParityShiftIso :
     parityShift (S := S) (w := w) ⋙ parityShift (S := S) (w := w) ≅ 𝟭 _ :=
   NatIso.ofComponents
     (fun X ↦ ObjectProperty.isoMk (P := MatrixFactorization.isProjective S w)
       ((CurvedDuplex.parityShiftCompParityShiftIso (FGModuleCat.{u} S) w).app X.obj))
     (fun _ ↦ by ext <;> rfl)
+
+@[simp] theorem parityShiftCompParityShiftIso_hom_app_hom (X : MatrixFactorization S w) :
+    (parityShiftCompParityShiftIso.hom.app X).hom =
+      (CurvedDuplex.parityShiftCompParityShiftIso (FGModuleCat.{u} S) w).hom.app X.obj := by
+  simp [parityShiftCompParityShiftIso]
+
+@[simp] theorem parityShiftCompParityShiftIso_inv_app_hom (X : MatrixFactorization S w) :
+    (parityShiftCompParityShiftIso.inv.app X).hom =
+      (CurvedDuplex.parityShiftCompParityShiftIso (FGModuleCat.{u} S) w).inv.app X.obj := by
+  simp [parityShiftCompParityShiftIso]
 
 /-- The parity shift is a self-equivalence of finite-projective matrix factorizations. -/
 @[expose, simps]
@@ -159,6 +171,26 @@ Its components are finite free, with no regularity assumption on `S` or `w`. -/
 @[simp] theorem rankOne_X₁ (a b : S) (h : a * b = w) :
     (rankOne a b h).obj.X₁ = FGModuleCat.of S S := rfl
 
+/-- The rank-one factorization `S --x^i--> S --x^j--> S` of `x^n`, where `i + j = n`. -/
+@[expose] def power (x : S) (n i j : ℕ) (h : i + j = n) : MatrixFactorization S (x ^ n) :=
+  rankOne (x ^ i) (x ^ j) (by rw [← pow_add, h])
+
+@[simp] theorem power_d₀ (x : S) (n i j : ℕ) (h : i + j = n) :
+    (power x n i j h).obj.d₀ = x ^ i • 𝟙 (FGModuleCat.of S S) :=
+  rankOne_d₀ ..
+
+@[simp] theorem power_d₁ (x : S) (n i j : ℕ) (h : i + j = n) :
+    (power x n i j h).obj.d₁ = x ^ j • 𝟙 (FGModuleCat.of S S) :=
+  rankOne_d₁ ..
+
+@[simp] theorem power_X₀ (x : S) (n i j : ℕ) (h : i + j = n) :
+    (power x n i j h).obj.X₀ = FGModuleCat.of S S :=
+  rankOne_X₀ ..
+
+@[simp] theorem power_X₁ (x : S) (n i j : ℕ) (h : i + j = n) :
+    (power x n i j h).obj.X₁ = FGModuleCat.of S S :=
+  rankOne_X₁ ..
+
 /-! ### Homotopies -/
 
 /-- The ideal of morphisms of finite-projective matrix factorizations that are null-homotopic
@@ -171,12 +203,9 @@ def nullHomotopic : MorphismIdeal (MatrixFactorization S w) :=
 theorem comap_parityShift_nullHomotopic :
     (nullHomotopic (S := S) (w := w)).comap (parityShift (S := S) (w := w)) =
       nullHomotopic (S := S) (w := w) := by
-  ext X Y f
-  simpa [nullHomotopic, inclusion, parityShift, ofCurvedDuplex] using
-    congrArg (fun I : MorphismIdeal (CurvedDuplex (FGModuleCat.{u} S) w) ↦
-      f.hom ∈ I.hom X.obj Y.obj)
-      (CurvedDuplex.comap_parityShift_nullHomotopic
-        (C := FGModuleCat.{u} S) (w := w))
+  rw [nullHomotopic, ← MorphismIdeal.comap_comp,
+    MorphismIdeal.comap_eq_of_iso _ (eqToIso parityShift_comp_inclusion),
+    MorphismIdeal.comap_comp, CurvedDuplex.comap_parityShift_nullHomotopic]
 
 /-- The homotopy category of finite-projective matrix factorizations. -/
 abbrev HomotopyCategory : Type _ := (nullHomotopic (S := S) (w := w)).Quotient
@@ -235,11 +264,8 @@ theorem HomotopyCategory.parityShiftEquivalence_functor_map_quotientFunctor_map
 /-- The identity of an elementary disk is null-homotopic. -/
 theorem id_disk_mem_nullHomotopic (P : FGModuleCat.{u} S) [Module.Projective S P] :
     𝟙 (disk (w := w) P) ∈ (nullHomotopic (S := S) (w := w)).hom _ _ := by
-  rw [mem_nullHomotopic_iff]
-  refine ⟨0, 𝟙 P, ?_⟩
-  change CurvedDuplex.nullHomotopicMap (X := CurvedDuplex.disk w P)
-    (Y := CurvedDuplex.disk w P) 0 (𝟙 P) = 𝟙 (CurvedDuplex.disk w P)
-  exact CurvedDuplex.nullHomotopicMap_disk P
+  rw [mem_nullHomotopic_iff, ObjectProperty.FullSubcategory.id_hom, disk_obj]
+  exact ⟨0, 𝟙 P, CurvedDuplex.nullHomotopicMap_disk P⟩
 
 /-- An elementary disk is zero in the homotopy category. -/
 theorem isZero_quotientFunctor_obj_disk (P : FGModuleCat.{u} S) [Module.Projective S P] :
