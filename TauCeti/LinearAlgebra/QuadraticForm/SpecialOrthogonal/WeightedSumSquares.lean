@@ -48,15 +48,6 @@ private def matrixSpecialOrthogonalToWeightedSumSquaresOneFun
   simpa only [e, Matrix.UnitaryGroup.toLinearEquiv, Matrix.UnitaryGroup.toLin',
     LinearMap.toMatrix'_toLin'] using A.prop
 
-private theorem unitaryGroupToLinearEquiv_apply
-    (ι : Type u) [Fintype ι] [DecidableEq ι]
-    (U : Matrix.orthogonalGroup ι ℝ) (x : ι → ℝ) :
-    Matrix.UnitaryGroup.toLinearEquiv U x = Matrix.toLin' (U : Matrix ι ι ℝ) x := by
-  -- `toLinearEquiv` is built from `toLin'`; expose that wrapper so the underlying matrix is
-  -- visible.
-  change Matrix.UnitaryGroup.toLin' U x = Matrix.toLin' (U : Matrix ι ι ℝ) x
-  rfl
-
 private theorem matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (A : Matrix.specialOrthogonalGroup ι ℝ) (x : ι → ℝ) :
@@ -64,7 +55,7 @@ private theorem matrixSpecialOrthogonalToWeightedSumSquaresOneFun_apply
         specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) :
       (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x := by
   rw [matrixSpecialOrthogonalToWeightedSumSquaresOneFun]
-  exact unitaryGroupToLinearEquiv_apply ι _ x
+  exact Matrix.UnitaryGroup.toLinearEquiv_apply _ x
 
 /-- Matrix special-orthogonal transformations act as a homomorphism on the isometry group of the
 standard sum-of-squares form. -/
