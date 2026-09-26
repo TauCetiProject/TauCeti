@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -39,6 +40,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
+* `UpperHalfPlane.pslS_smul`, `pslS_smul_pslS_smul` — `pslS` (the group-level `PSL(2, ℝ)`
+  element in `ProjectiveSpecialLinearGroup.lean`) acts on `ℍ` as `ModularGroup.S` does, and is an
+  involution; `re_pslS_smul` gives its effect on the real part, up to the `normSq` factor.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -183,6 +187,26 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
   -- the `SL(2, ℤ)`-action and the cast `SL(2, ℝ)`-action are definitionally the
   -- `GL(2, ℝ)`-action of the common `mapGL ℝ` image
   rfl
+
+/-- `pslS` (defined in `ProjectiveSpecialLinearGroup.lean`, the `PSL(2, ℝ)` image of
+`ModularGroup.S`) acts as `ModularGroup.S` does. -/
+theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
+  rw [pslS_def, psl2zToPSL2R_smul, pslMk_smul]
+
+/-- `pslS` is an involution of `ℍ`, transported from the group-level `pslS_mul_self`. -/
+@[simp]
+theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
+  rw [← mul_smul, pslS_mul_self, one_smul]
+
+/-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
+theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
+  rw [pslS_smul, _root_.ModularGroup.re_S_smul]
+
+/-- Right-multiplying by `pslS` before inverting negates the real part of the translate, up to
+the `normSq` factor: see `re_pslS_smul`. -/
+theorem re_mul_pslS_inv_smul (g : PSL(2, ℝ)) (z : ℍ) :
+    ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
+  rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
 
 /-- The `PSL(2, ℤ)`-action on `ℍ` is faithful, through the injective descent
 `psl2zToPSL2R` and the faithfulness of the `PSL(2, ℝ)`-action. -/

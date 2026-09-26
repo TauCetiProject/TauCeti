@@ -43,6 +43,12 @@ one through two prescribed points is not.
   mapped into each other, by the `PSL(2, ℝ)`-action.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq` — a geodesic line through any prescribed
   point of `ℍ`.
+* `TauCeti.UpperHalfPlane.range_geodesicLine_one` and `TauCeti.UpperHalfPlane.range_geodesicLine`
+  — every geodesic line, as a set, is a `g`-translate of the imaginary axis `{z | z.re = 0}`.
+* `TauCeti.UpperHalfPlane.mem_range_geodesicLine_iff` — membership test for a geodesic line,
+  without unfolding the smul-image.
+* `TauCeti.UpperHalfPlane.range_geodesicLine_mul_pslS` — a geodesic line's image is unaffected by
+  multiplying its representative by `pslS`.
 -/
 
 public section
@@ -101,5 +107,45 @@ theorem smul_range_geodesicLine (h g : PSL(2, ℝ)) :
 theorem exists_geodesicLine_zero_eq (z : ℍ) : ∃ g : PSL(2, ℝ), geodesicLine g 0 = z := by
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) UpperHalfPlane.I z
   exact ⟨g, by rw [geodesicLine_zero, hg]⟩
+
+/-- The geodesic line of the identity, as a set, is the imaginary axis `{z | z.re = 0}`. -/
+theorem range_geodesicLine_one :
+    Set.range (geodesicLine (1 : PSL(2, ℝ))) = {z : ℍ | z.re = 0} := by
+  ext z
+  simp only [Set.mem_range, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨t, rfl⟩
+    simp [geodesicLine_one_apply]
+  · intro hz
+    refine ⟨Real.log z.im, UpperHalfPlane.ext_re_im ?_ ?_⟩
+    · simp [geodesicLine_one_apply, hz]
+    · simp [geodesicLine_one_apply, Real.exp_log z.im_pos]
+
+/-- Every geodesic line, as a set, is a `g`-translate of the imaginary axis. -/
+theorem range_geodesicLine (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
+  rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
+
+/-- Membership test for a geodesic line, without unfolding the smul-image. Deliberately not
+`@[simp]`: at default priority it never fires, since `Set.mem_range` already rewrites the same
+term first; at `@[simp high]` it always fires first instead, which regresses the trivial
+self-membership goal `geodesicLine g t ∈ Set.range (geodesicLine g)` (closed by `Set.mem_range`
+together with `exists_apply_eq_apply'`) into the harder `(g⁻¹ • geodesicLine g t).re = 0`. Use
+`rw [mem_range_geodesicLine_iff]` explicitly instead. -/
+theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
+  rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
+
+/-- Unlike `HalfPlane.lean`'s half-planes, the geodesic line's image is unaffected by
+multiplying by `pslS` (the `PSL(2, ℝ)` element of `z ↦ -1/z`, defined in
+`LinearAlgebra/Matrix/ProjectiveSpecialLinearGroup.lean`): for
+this representative change, `HalfPlane.lean`'s `rightHalfPlane_mul_pslS` swaps the two sides
+while the line itself is fixed setwise. -/
+theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
+  ext z
+  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_mul_pslS_inv_smul,
+    div_eq_zero_iff]
+  simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
 
 end TauCeti.UpperHalfPlane
