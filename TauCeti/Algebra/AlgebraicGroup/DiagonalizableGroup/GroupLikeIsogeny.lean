@@ -47,8 +47,8 @@ central isogeny exactly when its intrinsic character map is injective with finit
     CommHopfAlgCat.IsCentralIsogeny f ↔
       Function.Injective (TauCeti.GroupLike.map f.hom) ∧
         Finite (_root_.GroupLike k K ⧸ (TauCeti.GroupLike.map f.hom).range) := by
-  let eH := TauCeti.CommHopfAlgCat.evaluationIso H hH
-  let eK := TauCeti.CommHopfAlgCat.evaluationIso K hK
+  let eH := TauCeti.CommHopfAlgCat.evaluationIso hH
+  let eK := TauCeti.CommHopfAlgCat.evaluationIso hK
   let p := TauCeti.GroupLike.map f.hom
   let g := _root_.CommHopfAlgCat.ofHom (_root_.MonoidAlgebra.mapDomainBialgHom k p)
   have hcomm : eH.hom ≫ f = g ≫ eK.hom :=

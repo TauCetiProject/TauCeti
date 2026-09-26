@@ -32,8 +32,7 @@ variable {H K : _root_.CommHopfAlgCat.{u} k}
 
 /-- The categorical isomorphism given by evaluation on the group-like elements of a
 torsion-free commutative Hopf algebra when they span its carrier. -/
-noncomputable def evaluationIso (H : _root_.CommHopfAlgCat.{u} k)
-    [Module.IsTorsionFree k H]
+noncomputable def evaluationIso {H : _root_.CommHopfAlgCat.{u} k} [Module.IsTorsionFree k H]
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤) :
     _root_.CommHopfAlgCat.of k (_root_.MonoidAlgebra k (_root_.GroupLike k H)) ≅ H :=
   _root_.CommHopfAlgCat.isoMk (TauCeti.GroupLike.evaluationBialgEquiv k H hH)
@@ -45,10 +44,10 @@ theorem evaluationIso_naturality
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
     (hK : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := K))) = ⊤)
     (f : H ⟶ K) :
-    (evaluationIso H hH).hom ≫ f =
+    (evaluationIso hH).hom ≫ f =
       _root_.CommHopfAlgCat.ofHom
         (_root_.MonoidAlgebra.mapDomainBialgHom k (TauCeti.GroupLike.map f.hom)) ≫
-          (evaluationIso K hK).hom := by
+          (evaluationIso hK).hom := by
   apply _root_.CommHopfAlgCat.hom_ext
   apply _root_.MonoidAlgebra.bialgHom_ext
   · intro x
