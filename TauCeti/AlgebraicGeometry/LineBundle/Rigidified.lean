@@ -208,9 +208,6 @@ def lift {α : Sort v} (f : RigidifiedLineBundle s → α)
         f P = f Q) : RigidifiedLineBundleClass s → α :=
   Quotient.lift f (by
     intro P Q h
-    -- The quotient relation is definitionally the displayed rigidified-isomorphism condition.
-    change (RigidifiedLineBundle.setoid s).r P Q at h
-    unfold RigidifiedLineBundle.setoid at h
     exact hf P Q h)
 
 /-- Applying `lift` to a representative returns the original function. -/

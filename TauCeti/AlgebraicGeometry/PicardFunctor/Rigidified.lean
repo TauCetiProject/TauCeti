@@ -96,9 +96,7 @@ lemma rigidifiedPicardFunctor_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
       RigidifiedLineBundleClass.mk (RigidifiedLineBundle.pullback
         (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop) P) :=
   by
-    change RigidifiedLineBundleClass.pullback
-      (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop)
-        (RigidifiedLineBundleClass.mk P) = _
+    rw [rigidifiedPicardFunctor_map]
     exact RigidifiedLineBundleClass.pullback_mk _ P
 
 end
