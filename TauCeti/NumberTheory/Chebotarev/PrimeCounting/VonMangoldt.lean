@@ -30,6 +30,9 @@ their contribution is `o(x)`.
   function, regrouped by absolute norm.
 * `NumberField.Chebotarev.frobeniusPsi` and `NumberField.Chebotarev.frobeniusTheta`: the weighted
   prime-power and prime summatory functions.
+* `NumberField.Chebotarev.frobeniusPrimeCount`: the number of primes of norm at most `x`
+  whose arithmetic Frobenius class is `C`, with `NumberField.Chebotarev.natCast_frobeniusPrimeCount`
+  identifying it with the generic count of `frobeniusPrimeSet`.
 
 ## Main results
 
@@ -161,6 +164,13 @@ variable (K L) in
 noncomputable def frobeniusTheta (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℝ :=
   primeTheta K (frobeniusPrimeSet K L C) x
 
+variable (K L) in
+open Classical in
+/-- The number of primes of `K` of norm at most `x` whose arithmetic Frobenius in `L/K`
+belongs to `C`. Only primes unramified in `L` are counted. -/
+noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℕ :=
+  ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
+
 /-- `frobeniusPsi` as an explicit sum over the inclusive prime-power carrier. -/
 theorem frobeniusPsi_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusPsi K L C x =
@@ -173,6 +183,26 @@ theorem frobeniusTheta_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
       ∑ 𝔭 ∈ primesLE K x, (frobeniusPrimeSet K L C).indicator
         (fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) 𝔭 := by
   rw [frobeniusTheta, primeTheta_apply]
+
+/-- The Frobenius `ϑ` function is the generic logarithmically weighted prime count of its
+Frobenius prime set. -/
+theorem frobeniusTheta_def (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusTheta K L C x = primeTheta K (frobeniusPrimeSet K L C) x := by
+  rw [frobeniusTheta]
+
+open Classical in
+/-- The Frobenius prime count as a finite-set cardinality. -/
+theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusPrimeCount K L C x =
+      ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card := by
+  rw [frobeniusPrimeCount]
+
+/-- The Frobenius prime count is the generic count of its prime set. -/
+theorem natCast_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
+  classical
+  simpa only [frobeniusPrimeCount_eq_card] using
+    (primeCount_eq_card (frobeniusPrimeSet K L C) x).symm
 
 /-- The Frobenius `ψ` function is nonnegative. -/
 theorem frobeniusPsi_nonneg (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
