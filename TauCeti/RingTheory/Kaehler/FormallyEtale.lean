@@ -109,8 +109,8 @@ theorem bijective_mapBaseChange_of_basis {ι : Type*} (bS : Basis ι S Ω[S⁄R]
     Function.Bijective (mapBaseChange R S T) := by
   have : mapBaseChange R S T = ((bS.baseChange T).equiv bT (Equiv.refl ι)).toLinearMap :=
     (bS.baseChange T).ext fun i ↦ by
-      rw [LinearEquiv.coe_coe, Basis.equiv_apply, Equiv.refl_apply, ← h]
-      simp
+      simp only [LinearEquiv.coe_coe, Basis.equiv_apply, Equiv.refl_apply]
+      simpa using h i
   rw [this]
   exact LinearEquiv.bijective _
 
