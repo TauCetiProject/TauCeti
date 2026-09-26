@@ -247,6 +247,7 @@ theorem typeDWeightAdd_eq_typeDWeightAdd_iff [Nontrivial K] {i j : ι} (hij : i 
 
 /-- A coordinate-difference weight is never a coordinate-sum weight away from characteristic
 two. -/
+@[simp]
 theorem typeDWeightSub_ne_typeDWeightAdd (h2 : (2 : K) ≠ 0) (a b i j : ι) :
     typeDWeightSub (K := K) a b ≠ typeDWeightAdd i j := by
   intro h
@@ -259,6 +260,7 @@ theorem typeDWeightSub_ne_typeDWeightAdd (h2 : (2 : K) ≠ 0) (a b i j : ι) :
 
 /-- Away from characteristic two, a negative coordinate-sum weight is never a positive
 coordinate-sum weight whose coordinates are distinct. -/
+@[simp]
 theorem neg_typeDWeightAdd_ne_typeDWeightAdd (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j)
     (a b : ι) : -typeDWeightAdd (K := K) a b ≠ typeDWeightAdd i j := by
   let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
@@ -287,6 +289,7 @@ theorem neg_typeDWeightAdd_ne_typeDWeightAdd (h2 : (2 : K) ≠ 0) {i j : ι} (hi
 
 /-- A negative coordinate-sum weight is never a coordinate-difference weight away from
 characteristic two. -/
+@[simp]
 theorem neg_typeDWeightAdd_ne_typeDWeightSub (h2 : (2 : K) ≠ 0) (a b i j : ι) :
     -typeDWeightAdd (K := K) a b ≠ typeDWeightSub i j := by
   intro h
@@ -417,6 +420,45 @@ theorem typeDDiagonalCartan_lie_apply (A : typeDDiagonalCartan K ι)
     rw [mem_diagonalCartan_iff_isDiag]
     exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
   rw [lie_apply_of_mem_diagonalCartan hA, typeDMatrixWeight_apply]
+
+/-- An entry of a generalized root vector vanishes when its weight difference from the root is
+regular at some element of the diagonal Cartan. -/
+theorem rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular
+    {chi : Module.Dual K (typeDDiagonalCartan K ι)}
+    {X : LieAlgebra.Orthogonal.typeD ι K}
+    (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) chi)
+    (a b : ι ⊕ ι) (A : typeDDiagonalCartan K ι)
+    (hreg : IsRegular (typeDMatrixWeight a b A - chi A)) :
+    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
+  let inc := ((LieAlgebra.Orthogonal.typeD ι K).incl').restrictLie
+    (typeDDiagonalCartan K ι)
+  have hambient : (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
+      LieModule.genWeightSpace (Matrix (ι ⊕ ι) (ι ⊕ ι) K) chi := by
+    exact LieModule.map_genWeightSpace_le inc ⟨X, hX, rfl⟩
+  have hA : (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ Module.End.maxGenEigenspace
+      (LieModule.toEnd K (typeDDiagonalCartan K ι)
+        (Matrix (ι ⊕ ι) (ι ⊕ ι) K) A) (chi A) := by
+    have := LieModule.genWeightSpace_le_genWeightSpaceOf
+      (Matrix (ι ⊕ ι) (ι ⊕ ι) K) A _ hambient
+    rwa [LieModule.mem_genWeightSpaceOf, ← Module.End.mem_maxGenEigenspace] at this
+  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).mp hA
+  have hop :
+      LieModule.toEnd K (typeDDiagonalCartan K ι)
+          (Matrix (ι ⊕ ι) (ι ⊕ ι) K) A - chi A • 1 =
+        Matrix.toLin (Matrix.stdBasis K (ι ⊕ ι) (ι ⊕ ι))
+          (Matrix.stdBasis K (ι ⊕ ι) (ι ⊕ ι))
+          (Matrix.diagonal
+            ((fun p : (ι ⊕ ι) × (ι ⊕ ι) => typeDMatrixWeight p.1 p.2 A) -
+              chi A • 1)) := by
+    rw [toEnd_typeDDiagonalCartan_matrix_eq_toLin_diagonal, Pi.sub_def,
+      ← Matrix.diagonal_sub]
+    simp [Module.End.one_eq_id]
+  rw [hop, ← Matrix.toLin_pow, Matrix.diagonal_pow,
+    Matrix.toLin_apply_eq_zero_iff] at hk
+  have hab : (typeDMatrixWeight a b A - chi A) ^ k *
+      (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
+    simpa [Matrix.mulVec_diagonal, Matrix.stdBasis] using hk (a, b)
+  exact (isRegular_iff_eq_zero_of_mul.mp (hreg.pow k)).1 _ hab
 
 /-- A type-`D` matrix supported on entries of weight `χ` belongs to the `χ` root space. -/
 theorem mem_rootSpace_typeDDiagonalCartan_of_forall

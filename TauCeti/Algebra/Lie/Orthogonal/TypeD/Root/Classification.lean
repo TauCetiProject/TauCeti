@@ -10,10 +10,10 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
 /-!
 # Root-space lines of the split even orthogonal Lie algebra
 
-This file identifies the nonzero root spaces of the split type-`D` Lie algebra relative to its
-diagonal Cartan. The coordinate-difference root `εᵢ - εⱼ` is spanned by the standard paired
-diagonal-block matrix, while `εᵢ + εⱼ` and `-εᵢ - εⱼ` are spanned by the standard skew
-matrices in the two off-diagonal blocks.
+This file identifies the root spaces for the three standard nonzero root families of the split
+type-`D` Lie algebra relative to its diagonal Cartan. The coordinate-difference root `εᵢ - εⱼ` is
+spanned by the standard paired diagonal-block matrix, while `εᵢ + εⱼ` and `-εᵢ - εⱼ` are
+spanned by the standard skew matrices in the two off-diagonal blocks.
 
 These line descriptions provide the concrete root spaces needed to describe the positive
 nilradical, construct a compatible Borel subalgebra, and match the resulting split Cartan data to
@@ -134,7 +134,7 @@ private theorem exists_isRegular_negWeightAdd_sub_weightAdd (h2 : IsRegular (2 :
     · refine ⟨i, ?_⟩
       simpa [hai, hbi, hij] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))
 
-private theorem rootSpace_entry_eq_zero_of_isRegular_coordinate [IsReduced K]
+private theorem rootSpace_entry_eq_zero_of_isRegular_coordinate
     {chi : Module.Dual K (typeDDiagonalCartan K ι)}
     {X : LieAlgebra.Orthogonal.typeD ι K}
     (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) chi)
@@ -142,38 +142,15 @@ private theorem rootSpace_entry_eq_zero_of_isRegular_coordinate [IsReduced K]
     (hreg : IsRegular
       ((typeDWeightEquiv (K := K)).symm (typeDMatrixWeight a b - chi) k)) :
     (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
-  rw [rootSpace_typeDDiagonalCartan_eq_weightSpace, LieModule.mem_weightSpace] at hX
   let A := typeDDiagonalCartanBasis (K := K) (ι := ι) k
-  have hEq := congrArg Subtype.val (hX A)
-  have hentry := congrFun (congrFun hEq a) b
-  rw [SetLike.val_smul, Matrix.smul_apply] at hentry
-  simp only [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket] at hentry
-  rw [typeDDiagonalCartan_lie_apply] at hentry
-  apply (isRegular_iff_eq_zero_of_mul.mp hreg).1
   have hcoeff :
       (typeDWeightEquiv (K := K)).symm (typeDMatrixWeight a b - chi) k =
         typeDMatrixWeight a b A - chi A := by
     simp [typeDWeightEquiv_symm_apply, A]
-  rw [hcoeff]
-  linear_combination hentry
+  exact rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX a b A
+    (hcoeff ▸ hreg)
 
-private theorem rootSpace_entry_eq_zero_of_isRegular [IsReduced K]
-    {chi : Module.Dual K (typeDDiagonalCartan K ι)}
-    {X : LieAlgebra.Orthogonal.typeD ι K}
-    (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) chi)
-    (a b : ι ⊕ ι) (A : typeDDiagonalCartan K ι)
-    (hreg : IsRegular (typeDMatrixWeight a b A - chi A)) :
-    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
-  rw [rootSpace_typeDDiagonalCartan_eq_weightSpace, LieModule.mem_weightSpace] at hX
-  have hEq := congrArg Subtype.val (hX A)
-  have hentry := congrFun (congrFun hEq a) b
-  rw [SetLike.val_smul, Matrix.smul_apply] at hentry
-  simp only [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket] at hentry
-  rw [typeDDiagonalCartan_lie_apply] at hentry
-  apply (isRegular_iff_eq_zero_of_mul.mp hreg).1
-  linear_combination hentry
-
-private theorem rootSpace_typeDWeightSub_apply_eq_zero [IsReduced K]
+private theorem rootSpace_typeDWeightSub_apply_eq_zero
     (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j)
     (X : LieAlgebra.Orthogonal.typeD ι K)
     (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)) :
@@ -187,11 +164,11 @@ private theorem rootSpace_typeDWeightSub_apply_eq_zero [IsReduced K]
     obtain ⟨k, hk⟩ := exists_isRegular_weightSub_sub h2 hij a b hp
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inl a) (.inl b) k
     simpa [typeDWeightSub_def, Pi.single_apply, eq_comm] using hk
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inl a) (.inr b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inr b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using h2
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inr a) (.inl b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inl b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     have hneg2 : IsRegular (-(2 : K)) := by
       rw [show -(2 : K) = (-1) * 2 by ring]
@@ -205,7 +182,7 @@ private theorem rootSpace_typeDWeightSub_apply_eq_zero [IsReduced K]
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inr b) k
     simpa [typeDWeightSub_def, Pi.single_apply, eq_comm] using hk
 
-private theorem rootSpace_typeDWeightAdd_apply_eq_zero [IsReduced K]
+private theorem rootSpace_typeDWeightAdd_apply_eq_zero
     (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j)
     (X : LieAlgebra.Orthogonal.typeD ι K)
     (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)) :
@@ -216,7 +193,7 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero [IsReduced K]
     rw [show -(2 : K) = (-1) * 2 by ring]
     exact isUnit_neg_one.isRegular.mul h2
   rcases a with a | a <;> rcases b with b | b
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inl a) (.inl b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inl b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using hneg2
@@ -231,12 +208,12 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero [IsReduced K]
   · obtain ⟨k, hk⟩ := exists_isRegular_negWeightAdd_sub_weightAdd h2 hij a b
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inl b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inr a) (.inr b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inr b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using hneg2
 
-private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero [IsReduced K]
+private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero
     (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j)
     (X : LieAlgebra.Orthogonal.typeD ι K)
     (hX : X ∈ LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j)) :
@@ -244,11 +221,11 @@ private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero [IsReduced K]
       (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
   intro a b hne
   rcases a with a | a <;> rcases b with b | b
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inl a) (.inl b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inl b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using h2
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inl a) (.inr b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inr b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     have h4 : IsRegular ((2 : K) + 2) := by
       rw [show (2 : K) + 2 = 2 * 2 by ring]
@@ -280,156 +257,179 @@ private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero [IsReduced K]
       map_add, typeDWeightEquiv_symm_epsilon, Pi.add_apply, Pi.neg_apply, Pi.sub_apply]
     convert hneg using 1
     ring
-  · apply rootSpace_entry_eq_zero_of_isRegular hX (.inr a) (.inr b)
+  · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inr b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using h2
 
-/-- Over a reduced nontrivial ring in which `2` is regular, the root space of `εᵢ - εⱼ`, for
-`i ≠ j`, is the line through the standard difference-root generator. -/
+private theorem smul_differenceRootGenerator_eq_of_support
+    (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j)
+    (X : LieAlgebra.Orthogonal.typeD ι K)
+    (hs : ∀ a b, typeDMatrixWeight (K := K) a b ≠ typeDWeightSub i j →
+      (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0) :
+    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl j) •
+      differenceRootGenerator (K := K) i j = X := by
+  apply Subtype.ext
+  ext (a | a) (b | b)
+  · by_cases hab : a = i ∧ b = j
+    · obtain ⟨rfl, rfl⟩ := hab
+      simp [val_differenceRootGenerator, differenceRootMatrix_def]
+    · have hz := hs (.inl a) (.inl b) (fun hw => by
+        have hp := (typeDMatrixWeight_eq_typeDWeightSub_iff h2 hij (.inl a) (.inl b)).mp hw
+        simp only [Sum.inl.injEq, Sum.inl_ne_inr, false_and, or_false] at hp
+        exact hab hp)
+      rw [hz]
+      have hpos : ¬(i = a ∧ j = b) := fun h => hab ⟨h.1.symm, h.2.symm⟩
+      simp [val_differenceRootGenerator, differenceRootMatrix_def, hpos]
+  · have hz := hs (.inl a) (.inr b) (fun hw => by
+        have := (typeDMatrixWeight_eq_typeDWeightSub_iff h2 hij (.inl a) (.inr b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_differenceRootGenerator, differenceRootMatrix_def]
+  · have hz := hs (.inr a) (.inl b) (fun hw => by
+        have := (typeDMatrixWeight_eq_typeDWeightSub_iff h2 hij (.inr a) (.inl b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_differenceRootGenerator, differenceRootMatrix_def]
+  · -- The lower-right block is determined by the transpose of the upper-left block.
+    rw [typeD_apply_inr_inr X a b]
+    by_cases hab : b = i ∧ a = j
+    · obtain ⟨rfl, rfl⟩ := hab
+      simp [val_differenceRootGenerator, differenceRootMatrix_def]
+    · have hz := hs (.inl b) (.inl a) (fun hw => by
+        have hp := (typeDWeightSub_eq_typeDWeightSub_iff h2 hij b a).mp (by simpa using hw)
+        exact hab hp)
+      rw [hz]
+      have hpos : ¬(i = b ∧ j = a) := fun h => hab ⟨h.1.symm, h.2.symm⟩
+      simp [typeD_apply_inr_inr, val_differenceRootGenerator, differenceRootMatrix_def, hpos]
+
+/-- Over a nontrivial ring in which `2` is regular, the root space of `εᵢ - εⱼ`, for `i ≠ j`,
+is the line through the standard difference-root generator. -/
 @[simp]
-theorem rootSpace_typeDWeightSub_eq_span [Nontrivial K] [IsReduced K]
+theorem rootSpace_typeDWeightSub_eq_span [Nontrivial K]
     (h2 : IsRegular (2 : K))
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)).toSubmodule =
       K ∙ differenceRootGenerator (K := K) i j := by
-  have h2ne := h2.ne_zero
   refine le_antisymm (fun X hX => ?_) ?_
   · rw [Submodule.mem_span_singleton]
-    refine ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl j), ?_⟩
-    have hs := rootSpace_typeDWeightSub_apply_eq_zero h2 hij X hX
-    apply Subtype.ext
-    ext (a | a) (b | b)
-    · by_cases hab : a = i ∧ b = j
-      · obtain ⟨rfl, rfl⟩ := hab
-        simp [val_differenceRootGenerator, differenceRootMatrix_def]
-      · have hz := hs (.inl a) (.inl b) (fun hw => by
-          have hp := (typeDMatrixWeight_eq_typeDWeightSub_iff h2ne hij (.inl a) (.inl b)).mp hw
-          simp only [Sum.inl.injEq, Sum.inl_ne_inr, false_and, or_false] at hp
-          exact hab hp)
-        rw [hz]
-        have hpos : ¬(i = a ∧ j = b) := fun h => hab ⟨h.1.symm, h.2.symm⟩
-        simp [val_differenceRootGenerator, differenceRootMatrix_def, hpos]
-    · have hz := hs (.inl a) (.inr b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightSub_iff h2ne hij (.inl a) (.inr b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_differenceRootGenerator, differenceRootMatrix_def]
-    · have hz := hs (.inr a) (.inl b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightSub_iff h2ne hij (.inr a) (.inl b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_differenceRootGenerator, differenceRootMatrix_def]
-    · rw [typeD_apply_inr_inr X a b]
-      by_cases hab : b = i ∧ a = j
-      · obtain ⟨rfl, rfl⟩ := hab
-        simp [val_differenceRootGenerator, differenceRootMatrix_def]
-      · have hz := hs (.inl b) (.inl a) (fun hw => by
-          have hp := (typeDWeightSub_eq_typeDWeightSub_iff h2ne hij b a).mp (by simpa using hw)
-          exact hab hp)
-        rw [hz]
-        have hpos : ¬(i = b ∧ j = a) := fun h => hab ⟨h.1.symm, h.2.symm⟩
-        simp [typeD_apply_inr_inr, val_differenceRootGenerator, differenceRootMatrix_def, hpos]
+    exact ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl j),
+      smul_differenceRootGenerator_eq_of_support h2.ne_zero hij X
+        (rootSpace_typeDWeightSub_apply_eq_zero h2 hij X hX)⟩
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact differenceRootGenerator_mem_rootSpace i j
 
-/-- Over a reduced nontrivial ring in which `2` is regular, the root space of `εᵢ + εⱼ`, for
-`i ≠ j`, is the line through the standard positive sum-root generator. -/
+private theorem smul_sumRootGenerator_eq_of_support
+    (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j)
+    (X : LieAlgebra.Orthogonal.typeD ι K)
+    (hs : ∀ a b, typeDMatrixWeight (K := K) a b ≠ typeDWeightAdd i j →
+      (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0) :
+    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j) •
+      sumRootGenerator (K := K) i j = X := by
+  apply Subtype.ext
+  ext (a | a) (b | b)
+  · have hz := hs (.inl a) (.inl b) (fun hw => by
+        have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 hij (.inl a) (.inl b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_sumRootGenerator, sumRootMatrix_def]
+  · -- Skew-symmetry determines the second supported upper-right entry from the first.
+    by_cases h₁ : a = i ∧ b = j
+    · obtain ⟨rfl, rfl⟩ := h₁
+      simp [val_sumRootGenerator, sumRootMatrix_def, hij]
+    · by_cases h₂ : a = j ∧ b = i
+      · rw [typeD_apply_inl_inr X a b, h₂.2, h₂.1]
+        simp [val_sumRootGenerator, sumRootMatrix_def, hij]
+      · have hz := hs (.inl a) (.inr b) (fun hw => by
+            rcases (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 hij (.inl a) (.inr b)).mp hw
+                with h | h
+            · exact h₁ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩
+            · exact h₂ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩)
+        rw [hz]
+        have hn₁ : ¬(i = a ∧ j = b) := fun h => h₁ ⟨h.1.symm, h.2.symm⟩
+        have hn₂ : ¬(j = a ∧ i = b) := fun h => h₂ ⟨h.1.symm, h.2.symm⟩
+        simp [val_sumRootGenerator, sumRootMatrix_def, hn₁, hn₂]
+  · have hz := hs (.inr a) (.inl b) (fun hw => by
+        have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 hij (.inr a) (.inl b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_sumRootGenerator, sumRootMatrix_def]
+  · have hz := hs (.inr a) (.inr b) (fun hw => by
+        have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 hij (.inr a) (.inr b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_sumRootGenerator, sumRootMatrix_def]
+
+/-- Over a nontrivial ring in which `2` is regular, the root space of `εᵢ + εⱼ`, for `i ≠ j`,
+is the line through the standard positive sum-root generator. -/
 @[simp]
-theorem rootSpace_typeDWeightAdd_eq_span [Nontrivial K] [IsReduced K]
+theorem rootSpace_typeDWeightAdd_eq_span [Nontrivial K]
     (h2 : IsRegular (2 : K))
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)).toSubmodule =
       K ∙ sumRootGenerator (K := K) i j := by
-  have h2ne := h2.ne_zero
   refine le_antisymm (fun X hX => ?_) ?_
   · rw [Submodule.mem_span_singleton]
-    refine ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j), ?_⟩
-    have hs := rootSpace_typeDWeightAdd_apply_eq_zero h2 hij X hX
-    apply Subtype.ext
-    ext (a | a) (b | b)
-    · have hz := hs (.inl a) (.inl b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2ne hij (.inl a) (.inl b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_sumRootGenerator, sumRootMatrix_def]
-    · by_cases h₁ : a = i ∧ b = j
-      · obtain ⟨rfl, rfl⟩ := h₁
-        simp [val_sumRootGenerator, sumRootMatrix_def, hij]
-      · by_cases h₂ : a = j ∧ b = i
-        · rw [typeD_apply_inl_inr X a b, h₂.2, h₂.1]
-          simp [val_sumRootGenerator, sumRootMatrix_def, hij]
-        · have hz := hs (.inl a) (.inr b) (fun hw => by
-              rcases (typeDMatrixWeight_eq_typeDWeightAdd_iff h2ne hij (.inl a) (.inr b)).mp hw
-                  with h | h
-              · exact h₁ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩
-              · exact h₂ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩)
-          rw [hz]
-          have hn₁ : ¬(i = a ∧ j = b) := fun h => h₁ ⟨h.1.symm, h.2.symm⟩
-          have hn₂ : ¬(j = a ∧ i = b) := fun h => h₂ ⟨h.1.symm, h.2.symm⟩
-          simp [val_sumRootGenerator, sumRootMatrix_def, hn₁, hn₂]
-    · have hz := hs (.inr a) (.inl b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2ne hij (.inr a) (.inl b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_sumRootGenerator, sumRootMatrix_def]
-    · have hz := hs (.inr a) (.inr b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2ne hij (.inr a) (.inr b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_sumRootGenerator, sumRootMatrix_def]
+    exact ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j),
+      smul_sumRootGenerator_eq_of_support h2.ne_zero hij X
+        (rootSpace_typeDWeightAdd_apply_eq_zero h2 hij X hX)⟩
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact sumRootGenerator_mem_rootSpace i j
 
-/-- Over a reduced nontrivial ring in which `2` is regular, the root space of `-εᵢ - εⱼ`, for
-`i ≠ j`, is the line through the standard negative sum-root generator. -/
+private theorem smul_negSumRootGenerator_eq_of_support
+    (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j)
+    (X : LieAlgebra.Orthogonal.typeD ι K)
+    (hs : ∀ a b, typeDMatrixWeight (K := K) a b ≠ -typeDWeightAdd i j →
+      (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0) :
+    (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j) •
+      negSumRootGenerator (K := K) i j = X := by
+  apply Subtype.ext
+  ext (a | a) (b | b)
+  · have hz := hs (.inl a) (.inl b) (fun hw => by
+        have := (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 hij (.inl a) (.inl b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_negSumRootGenerator, negSumRootMatrix_def]
+  · have hz := hs (.inl a) (.inr b) (fun hw => by
+        have := (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 hij (.inl a) (.inr b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_negSumRootGenerator, negSumRootMatrix_def]
+  · -- Skew-symmetry determines the second supported lower-left entry from the first.
+    by_cases h₁ : a = i ∧ b = j
+    · obtain ⟨rfl, rfl⟩ := h₁
+      simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
+    · by_cases h₂ : a = j ∧ b = i
+      · rw [typeD_apply_inr_inl X a b, h₂.2, h₂.1]
+        simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
+      · have hz := hs (.inr a) (.inl b) (fun hw => by
+            rcases (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 hij (.inr a) (.inl b)).mp hw
+                with h | h
+            · exact h₁ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩
+            · exact h₂ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩)
+        rw [hz]
+        have hn₁ : ¬(i = a ∧ j = b) := fun h => h₁ ⟨h.1.symm, h.2.symm⟩
+        have hn₂ : ¬(j = a ∧ i = b) := fun h => h₂ ⟨h.1.symm, h.2.symm⟩
+        simp [val_negSumRootGenerator, negSumRootMatrix_def, hn₁, hn₂]
+  · have hz := hs (.inr a) (.inr b) (fun hw => by
+        have := (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 hij (.inr a) (.inr b)).mp hw
+        simp at this)
+    rw [hz]
+    simp [val_negSumRootGenerator, negSumRootMatrix_def]
+
+/-- Over a nontrivial ring in which `2` is regular, the root space of `-εᵢ - εⱼ`, for `i ≠ j`,
+is the line through the standard negative sum-root generator. -/
 @[simp]
-theorem rootSpace_neg_typeDWeightAdd_eq_span [Nontrivial K] [IsReduced K]
+theorem rootSpace_neg_typeDWeightAdd_eq_span [Nontrivial K]
     (h2 : IsRegular (2 : K))
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-⇑(typeDWeightAdd i j))).toSubmodule =
       K ∙ negSumRootGenerator (K := K) i j := by
-  have h2ne := h2.ne_zero
   refine le_antisymm (fun X hX => ?_) ?_
   · rw [Submodule.mem_span_singleton]
-    refine ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j), ?_⟩
-    have hs := rootSpace_neg_typeDWeightAdd_apply_eq_zero h2 hij X hX
-    apply Subtype.ext
-    ext (a | a) (b | b)
-    · have hz := hs (.inl a) (.inl b) (fun hw => by
-          have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2ne hij (.inl a) (.inl b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_negSumRootGenerator, negSumRootMatrix_def]
-    · have hz := hs (.inl a) (.inr b) (fun hw => by
-          have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2ne hij (.inl a) (.inr b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_negSumRootGenerator, negSumRootMatrix_def]
-    · by_cases h₁ : a = i ∧ b = j
-      · obtain ⟨rfl, rfl⟩ := h₁
-        simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
-      · by_cases h₂ : a = j ∧ b = i
-        · rw [typeD_apply_inr_inl X a b, h₂.2, h₂.1]
-          simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
-        · have hz := hs (.inr a) (.inl b) (fun hw => by
-              rcases
-                  (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2ne hij (.inr a) (.inl b)).mp hw
-                  with h | h
-              · exact h₁ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩
-              · exact h₂ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩)
-          rw [hz]
-          have hn₁ : ¬(i = a ∧ j = b) := fun h => h₁ ⟨h.1.symm, h.2.symm⟩
-          have hn₂ : ¬(j = a ∧ i = b) := fun h => h₂ ⟨h.1.symm, h.2.symm⟩
-          simp [val_negSumRootGenerator, negSumRootMatrix_def, hn₁, hn₂]
-    · have hz := hs (.inr a) (.inr b) (fun hw => by
-          have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2ne hij (.inr a) (.inr b)).mp hw
-          simp at this)
-      rw [hz]
-      simp [val_negSumRootGenerator, negSumRootMatrix_def]
+    exact ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j),
+      smul_negSumRootGenerator_eq_of_support h2.ne_zero hij X
+        (rootSpace_neg_typeDWeightAdd_apply_eq_zero h2 hij X hX)⟩
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact negSumRootGenerator_mem_rootSpace i j
 
