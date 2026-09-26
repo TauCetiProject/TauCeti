@@ -48,16 +48,20 @@ open TauCeti
 universe u v w
 
 variable {K : Type u} {L : Type w} {V : Type v} [Field K] [Field L] [Algebra K L]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)] [Invertible (2 : L)]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
 
 /-- Extending scalars from `K` to `L` intertwines the spinor norms of `Q` and of
 `Q.baseChange L` with the pushforward of square classes along `K → L`. -/
 theorem orthogonalSpinorNorm_comp_orthogonalGroupBaseChange (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     (orthogonalSpinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)).comp
         (QuadraticMap.orthogonalGroupBaseChange Q) =
       (AddMonoidHom.toMultiplicative (algebraMap K L).squareClassMap.toAddMonoidHom).comp
         (orthogonalSpinorNorm Q hQ) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
   have hv : Q.baseChange L (1 ⊗ₜ v) = algebraMap K L (Q v) := by
     rw [QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
@@ -79,6 +83,8 @@ image of its spinor norm under the pushforward of square classes. -/
 @[simp]
 theorem orthogonalSpinorNorm_orthogonalGroupBaseChange (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (g : QuadraticMap.orthogonalGroup Q) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     orthogonalSpinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
         (QuadraticMap.orthogonalGroupBaseChange Q g) =
       Multiplicative.ofAdd
@@ -87,11 +93,16 @@ theorem orthogonalSpinorNorm_orthogonalGroupBaseChange (Q : QuadraticForm K V)
 
 /-- The spinor norm of a special orthogonal automorphism after extending scalars from `K` to `L`
 is the image of its spinor norm under the pushforward of square classes. -/
+@[simp]
 theorem spinorNorm_specialOrthogonalGroupBaseChange (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     spinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
         (QuadraticMap.specialOrthogonalGroupBaseChange Q g) =
       Multiplicative.ofAdd ((algebraMap K L).squareClassMap (spinorNorm Q hQ g).toAdd) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [spinorNorm_apply, spinorNorm_apply, ← orthogonalSpinorNorm_orthogonalGroupBaseChange]
   congr 1
   apply Subtype.ext

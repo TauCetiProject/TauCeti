@@ -62,7 +62,6 @@ theorem orthogonalSpinorNorm_orthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
         orthogonalSpinorNorm Q₁ hQ₁ := by
     refine QuadraticMap.orthogonalGroup_hom_ext Q₁ hQ₁ fun v _ ↦ ?_
     have hv : (Q₁.prod Q₂) (v, 0) = Q₁ v := by simp
-    let _ : Invertible ((Q₁.prod Q₂) (v, 0)) := (‹Invertible (Q₁ v)›).copy _ hv
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.inl_apply,
       QuadraticMap.orthogonalGroupProd_reflectionOrthogonal_one,
       orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
@@ -72,7 +71,6 @@ theorem orthogonalSpinorNorm_orthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
         orthogonalSpinorNorm Q₂ hQ₂ := by
     refine QuadraticMap.orthogonalGroup_hom_ext Q₂ hQ₂ fun w _ ↦ ?_
     have hw : (Q₁.prod Q₂) (0, w) = Q₂ w := by simp
-    let _ : Invertible ((Q₁.prod Q₂) (0, w)) := (‹Invertible (Q₂ w)›).copy _ hw
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.inr_apply,
       QuadraticMap.orthogonalGroupProd_one_reflectionOrthogonal,
       orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
@@ -83,6 +81,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
 
 /-- The spinor norm of the orthogonal sum of two special orthogonal automorphisms is the product
 of their spinor norms. -/
+@[simp]
 theorem spinorNorm_specialOrthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
     (hQ₂ : Q₂.Nondegenerate)
     (g : QuadraticMap.specialOrthogonalGroup Q₁ × QuadraticMap.specialOrthogonalGroup Q₂) :

@@ -329,18 +329,24 @@ variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
 
 /-- The reflection of `Q₁.prod Q₂` in a vector `(v, 0)` of the first summand is the orthogonal sum
 of the reflection of `Q₁` in `v` with the identity of the second summand. -/
-theorem orthogonalGroupProd_reflectionOrthogonal_one (v : M₁) [Invertible (Q₁ v)]
-    [Invertible ((Q₁.prod Q₂) (v, 0))] :
+theorem orthogonalGroupProd_reflectionOrthogonal_one (v : M₁) [Invertible (Q₁ v)] :
+    letI : Invertible ((Q₁.prod Q₂) (v, 0)) :=
+      (‹Invertible (Q₁ v)›).copy _ (by simp)
     orthogonalGroupProd Q₁ Q₂ (reflectionOrthogonal Q₁ v, 1) =
       reflectionOrthogonal (Q₁.prod Q₂) (v, 0) := by
+  let : Invertible ((Q₁.prod Q₂) (v, 0)) :=
+    (‹Invertible (Q₁ v)›).copy _ (by simp)
   ext x <;> simp [reflection_apply]
 
 /-- The reflection of `Q₁.prod Q₂` in a vector `(0, w)` of the second summand is the orthogonal sum
 of the identity of the first summand with the reflection of `Q₂` in `w`. -/
-theorem orthogonalGroupProd_one_reflectionOrthogonal (w : M₂) [Invertible (Q₂ w)]
-    [Invertible ((Q₁.prod Q₂) (0, w))] :
+theorem orthogonalGroupProd_one_reflectionOrthogonal (w : M₂) [Invertible (Q₂ w)] :
+    letI : Invertible ((Q₁.prod Q₂) (0, w)) :=
+      (‹Invertible (Q₂ w)›).copy _ (by simp)
     orthogonalGroupProd Q₁ Q₂ (1, reflectionOrthogonal Q₂ w) =
       reflectionOrthogonal (Q₁.prod Q₂) (0, w) := by
+  let : Invertible ((Q₁.prod Q₂) (0, w)) :=
+    (‹Invertible (Q₂ w)›).copy _ (by simp)
   ext x <;> simp [reflection_apply]
 
 end Reflection
