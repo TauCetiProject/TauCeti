@@ -12,15 +12,9 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLatt
 # Scheme-theoretic root generation of full-weight Geck carriers
 
 The Geck carrier is defined as the closed subgroup scheme generated jointly by the numbered
-positive and negative simple-root subgroups and the represented weight torus. For a valid Dynkin
-type whose Cartan rows are primitive, the pointwise coroot calculation in
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Generation` shows that the
-torus is already contained in the elementary subgroup over every commutative ring.
-
-This file promotes that all-rings statement to the scheme level. Evaluating at the universal
-point of the split torus shows that its coordinate map kills the root-generated Hopf ideal.
-Therefore the toral Geck defining ideal is exactly the common-kernel ideal of the numbered root
-subgroups alone, and the Geck carrier is the root-generated Kostant group scheme.
+positive and negative simple-root subgroups and the represented weight torus. This file upgrades
+universal pointwise generation of the represented torus to equality of the toral and
+root-generated defining ideals and carriers.
 
 The general results apply to every valid type whose Cartan rows are primitive. The specializations
 record `E₈`, `F₄`, and `G₂`, the three exceptional types whose Geck coordinate weights span the
