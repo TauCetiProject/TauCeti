@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Basic
 
-import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # Finite-order Hecke characters
@@ -42,8 +42,9 @@ namespace HeckeCharacter
 
 /-- A finite-order Hecke character has open kernel, and is therefore locally constant. -/
 theorem isOpen_ker_of_isFiniteOrder {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
-    IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) :=
-  ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder hχ
+    IsOpen ((χ : IdeleClassGroup (𝓞 K) K →* ℂˣ).ker : Set (IdeleClassGroup (𝓞 K) K)) := by
+  simpa [MonoidHom.coe_ker] using
+    (ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder hχ)
 
 /-- **A Hecke character pulled back from a ray class character has open kernel.** -/
 theorem isOpen_ker_ofRayClassCharacter {𝔪 : Modulus K} (η : RayClassCharacter 𝔪) :
