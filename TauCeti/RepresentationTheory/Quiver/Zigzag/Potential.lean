@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Combinatorics.SimpleGraph.Metric
+import TauCeti.Combinatorics.SimpleGraph.ComponentRoot
 
 public import Mathlib.Combinatorics.SimpleGraph.Paths
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Gauge
@@ -37,6 +37,12 @@ trivializes the parameter.
 
 * `TauCeti.SkewZigzagParameter.ratio_eq_localCoordinate_div`: every ratio is a quotient of local
   edge coordinates.
+* `TauCeti.SkewZigzagParameter.localCoordinate_map`: local coordinates are carried by the
+  monoid homomorphism mapping a parameter.
+* `TauCeti.SkewZigzagParameter.transition_map`: transition factors are carried by the monoid
+  homomorphism mapping a parameter.
+* `TauCeti.SkewZigzagParameter.walkTransition_map`: transition factors along a walk are carried
+  by the monoid homomorphism mapping a parameter.
 * `TauCeti.SkewZigzagParameter.transition_mul`: transition factors are multiplicative in the
   parameter.
 * `TauCeti.SkewZigzagParameter.isGaugeEquivalent_one_of_potential`: a vertex potential for the
@@ -53,15 +59,19 @@ public section
 
 namespace TauCeti
 
-open DoubledQuiver
+open DoubledQuiver SimpleGraph
 
-universe u w
+universe u w z
 
 namespace SkewZigzagParameter
 
-variable {k : Type w} [CommMonoid k] {V : Type u} {G : SimpleGraph V}
+variable {k : Type w} {V : Type u} {G : SimpleGraph V}
 
 /-! ### Local edge coordinates -/
+
+section LocalCoordinate
+
+variable [Monoid k]
 
 variable (G) in
 /-- A distinguished incident edge at a vertex having at least one. -/
@@ -96,6 +106,36 @@ theorem transition_symm (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) 
     transition c h.symm = (transition c h)⁻¹ := by
   rw [transition, transition, inv_div]
 
+/-! ### Transition factors under a coefficient homomorphism -/
+
+section Map
+
+variable {l : Type z} [Monoid l]
+
+/-- The local coordinates of a mapped parameter are the images of the local coordinates. -/
+@[simp]
+theorem localCoordinate_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V}
+    (h : G.Adj v w) :
+    localCoordinate (c.map f) h = Units.map f (localCoordinate c h) := by
+  unfold localCoordinate
+  exact map_ratio f c h _
+
+/-- The transition factors of a mapped parameter are the images of the transition factors. -/
+@[simp]
+theorem transition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w) :
+    transition (c.map f) h = Units.map f (transition c h) := by
+  rw [transition_def, transition_def, localCoordinate_map, localCoordinate_map, map_div]
+
+end Map
+
+end LocalCoordinate
+
+/-! ### Products of parameters -/
+
+section Products
+
+variable [CommMonoid k]
+
 /-- The local coordinates of a product of parameters are the products of their local
 coordinates. -/
 @[simp]
@@ -112,7 +152,13 @@ theorem transition_mul (c c' : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w
   rw [transition_def, transition_def, transition_def, localCoordinate_mul, localCoordinate_mul,
     mul_div_mul_comm]
 
+end Products
+
 /-! ### Transition factors along walks -/
+
+section WalkTransition
+
+variable [Monoid k]
 
 /-- The **transition factor of a walk**: the product of the transition factors along its darts. -/
 noncomputable def walkTransition (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) : kˣ :=
@@ -148,11 +194,38 @@ theorem walkTransition_append (c : SkewZigzagParameter k G) {u v w : V}
     walkTransition c (p.append q) = walkTransition c p * walkTransition c q := by
   simp [walkTransition]
 
-/-- **Reversing a walk inverts its transition factor.** -/
+section Map
+
+variable {l : Type z} [Monoid l]
+
+/-- The transition factor of a walk is carried by the monoid homomorphism mapping a
+parameter. -/
+@[simp]
+theorem walkTransition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) :
+    walkTransition (c.map f) q = Units.map f (walkTransition c q) := by
+  unfold walkTransition
+  rw [← List.prod_hom (q.darts.map fun d ↦ transition c d.adj) (Units.map f)]
+  simp [transition_map, List.map_map, Function.comp_def]
+
+end Map
+
+/-- **Reversing a walk inverts its transition factor.** Reversing a walk reverses its darts and
+replaces each of them by the reverse dart, whose transition factor is the inverse. Its transition
+factor is therefore the reverse of the list of inverses of the original factors, which is the
+inverse of the original product in any monoid. -/
 @[simp]
 theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
     (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
-  simp [walkTransition, Function.comp_def, List.prod_inv]
+  have hsymm (d : G.Dart) : transition c (Dart.symm d).adj = (transition c d.adj)⁻¹ :=
+    transition_symm c d.adj
+  simp only [walkTransition_def]
+  rw [Walk.darts_reverse, List.map_reverse, List.map_map, Function.comp_def,
+    List.prod_reverse_noncomm, List.map_map, Function.comp_def]
+  simp only [hsymm, inv_inv]
+
+end WalkTransition
+
+variable [CommMonoid k]
 
 /-! ### Trivializing a parameter from a vertex potential -/
 
@@ -176,31 +249,10 @@ theorem isGaugeEquivalent_one_of_potential (c : SkewZigzagParameter k G) (a : V 
 
 /-! ### The potential along paths from a root -/
 
-variable (G) in
-/-- The chosen root of the connected component of a vertex. -/
-private noncomputable def root (v : V) : V :=
-  (G.connectedComponentMk v).nonempty_supp.some
-
-private theorem reachable_root (v : V) : G.Reachable (root G v) v :=
-  SimpleGraph.ConnectedComponent.exact
-    ((G.connectedComponentMk v).nonempty_supp.some_mem)
-
-private theorem root_eq_of_adj {v w : V} (h : G.Adj v w) : root G w = root G v :=
-  congrArg (fun C : G.ConnectedComponent => C.nonempty_supp.some)
-    (SimpleGraph.ConnectedComponent.sound h.symm.reachable)
-
-variable (G) in
-/-- A chosen path from the root of a connected component to one of its vertices. -/
-private noncomputable def rootPath (v : V) : G.Walk (root G v) v :=
-  (reachable_root v).exists_path_of_dist.choose
-
-private theorem rootPath_isPath (v : V) : (rootPath G v).IsPath :=
-  (reachable_root v).exists_path_of_dist.choose_spec.1
-
 /-- The potential obtained by multiplying transition factors along the chosen path from the root
 of the component of a vertex. -/
 private noncomputable def potential (c : SkewZigzagParameter k G) (v : V) : kˣ :=
-  walkTransition c (rootPath G v)
+  walkTransition c (componentPath G v)
 
 /-- **A parameter whose transition factor along a path depends only on its endpoints is gauge
 equivalent to the constant parameter.** The transition factors along paths from a root in every
@@ -210,24 +262,25 @@ theorem isGaugeEquivalent_one_of_walkTransition_eq (c : SkewZigzagParameter k G)
       walkTransition c p = walkTransition c q) :
     IsGaugeEquivalent (1 : SkewZigzagParameter k G) c := by
   classical
-  have hpot {r w : V} (hr : root G w = r) (q : G.Walk r w) (hq : q.IsPath) :
+  have hpot {r w : V} (hr : componentRoot G w = r) (q : G.Walk r w) (hq : q.IsPath) :
       potential c w = walkTransition c q := by
     subst hr
-    exact hc _ _ (rootPath_isPath w) hq
+    exact hc _ _ (isPath_componentPath G w) hq
   refine isGaugeEquivalent_one_of_potential c (potential c) fun v w h ↦ ?_
-  by_cases hw : w ∈ (rootPath G v).support
+  by_cases hw : w ∈ (componentPath G v).support
   -- The path to `v` runs through `w`; the part after `w` has the transition factor of the edge.
-  · have hsplit := congrArg (walkTransition c) ((rootPath G v).take_spec hw)
+  · have hsplit := congrArg (walkTransition c) ((componentPath G v).take_spec hw)
     rw [walkTransition_append,
-      ← hpot (root_eq_of_adj h) _ ((rootPath_isPath v).takeUntil hw),
-      hc _ h.symm.toWalk ((rootPath_isPath v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
+      ← hpot (componentRoot_eq_of_adj G h) _
+          ((isPath_componentPath G v).takeUntil hw),
+      hc _ h.symm.toWalk ((isPath_componentPath G v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
     have hedge : walkTransition c h.symm.toWalk = (transition c h)⁻¹ := by
       rw [walkTransition_toWalk, transition_symm]
     rw [hedge] at hsplit
     exact (eq_mul_inv_iff_mul_eq.mp hsplit.symm).symm
   -- Otherwise the path to `v` extended by the edge is a path to `w`.
-  · rw [hpot (root_eq_of_adj h) _ ((rootPath_isPath v).concat hw h), walkTransition_concat,
-      potential]
+  · rw [hpot (componentRoot_eq_of_adj G h) _ ((isPath_componentPath G v).concat hw h),
+      walkTransition_concat, potential]
 
 end SkewZigzagParameter
 

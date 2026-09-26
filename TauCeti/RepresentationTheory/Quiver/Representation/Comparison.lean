@@ -36,6 +36,8 @@ that line and the functional dual to it, and both are read off the identificatio
 
 * `TauCeti.epi_indecProjRepToSimpleRep`: `Pᵢ ↠ Sᵢ` is an epimorphism, and
   `TauCeti.mono_simpleRepToIndecInjRep`: `Sᵢ ↪ Iᵢ` is a monomorphism.
+* `TauCeti.indecProjRepToSimpleRep_app_self_apply`: at the vertex `i`, `Pᵢ ↠ Sᵢ` reads off the
+  coefficient of the trivial path.
 * `TauCeti.exists_eq_smul_indecProjRepToSimpleRep` and
   `TauCeti.exists_eq_smul_simpleRepToIndecInjRep`: every morphism `Pᵢ ⟶ Sᵢ`, respectively
   `Sᵢ ⟶ Iᵢ`, is a scalar multiple of the canonical one, so each comparison morphism is unique up
@@ -143,6 +145,27 @@ theorem indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero {i j : Q} (p
     (indecProjRepToSimpleRep k i).app ((Paths.of Q).obj j) (indecProjRepBasis k i j p) = 0 := by
   rw [indecProjRepToSimpleRep_app_basis, simpleRep_map_eq_zero_of_length_ne_zero i p hp]
   rfl
+
+/-- **At the vertex `i`, the surjection `Pᵢ ↠ Sᵢ` reads off the coefficient of the trivial path**:
+an element of `(Pᵢ)ᵢ` goes to that coefficient times the generator of `(Sᵢ)ᵢ`. Every other path
+`i → i` is a cycle of positive length and is killed. -/
+@[simp]
+theorem indecProjRepToSimpleRep_app_self_apply (i : Q)
+    (x : (indecProjRep k Q i).obj ((Paths.of Q).obj i)) :
+    (indecProjRepToSimpleRep k i).app ((Paths.of Q).obj i) x
+      = (indecProjRepBasis k i i).repr x Quiver.Path.nil • simpleRepGenerator k i := by
+  have key : ((indecProjRepToSimpleRep k i).app ((Paths.of Q).obj i)).hom
+      = LinearMap.smulRight (Finsupp.lapply Quiver.Path.nil ∘ₗ
+          (indecProjRepBasis k i i).repr.toLinearMap) (simpleRepGenerator k i) := by
+    refine (indecProjRepBasis k i i).ext fun p ↦ ?_
+    by_cases hp : p.length = 0
+    · obtain rfl := Quiver.Path.eq_nil_of_length_zero p hp
+      refine (indecProjRepToSimpleRep_app_nil k i).trans ?_
+      simp
+    · have hne : p ≠ Quiver.Path.nil := fun h ↦ hp (h ▸ rfl)
+      refine (indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero k p hp).trans ?_
+      simp [hne]
+  exact LinearMap.congr_fun key x
 
 -- Kept although the epimorphism instance below no longer goes through it: `Epi` in a functor
 -- category is not by definition componentwise, so this is the element-level statement, and it is

@@ -21,6 +21,14 @@ subgroup of `G`, even when `G` itself is infinite. These subgroupwise shifts all
 condition in consecutive degrees to be moved to other degrees simultaneously on all subgroups,
 as required in Tate's cohomological triviality and cup-product criteria.
 
+The two sequences stay short exact after tensoring on the left with any representation `M`, and
+the middle terms `M ⊗ Coind_⊥^G A` and `M ⊗ Ind_⊥^G A` still have vanishing Tate cohomology, so
+their connecting maps are isomorphisms as well (`tensorDimensionShiftUpIso`,
+`tensorDimensionShiftDownIso`). These tensored shifts take the target degree as a parameter, so
+that a construction proceeding by recursion on the degree, such as the cup product in all
+bidegrees, needs no transport along equalities of degrees between its recursive steps; the cup
+product transports its result once, at the end, to the requested target degree.
+
 Each isomorphism below has Mathlib's connecting homomorphism `TateCohomology.δ` as its forward
 map. Thus its naturality in a morphism of the short exact sequences is the existing theorem
 `TateCohomology.δ_naturality`; no choices of abstract isomorphisms enter the construction.
@@ -40,7 +48,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory Limits Rep
+open CategoryTheory Limits MonoidalCategory Rep
 
 namespace TauCeti.TateCohomology
 
@@ -107,6 +115,97 @@ theorem isZero_dimensionShiftDown_iff :
     IsZero (tateCohomology (dimensionShiftDown A) (n + 1)) ↔
       IsZero (tateCohomology A n) :=
   (dimensionShiftDownIso A n).isZero_iff.symm
+
+section Tensor
+
+variable (M : Rep k G)
+
+/-- Tensoring the upward dimension-shifting sequence of `A` on the left with `M` identifies Tate
+cohomology of `M ⊗ dimensionShiftUp A` in degree `i` with Tate cohomology of `M ⊗ A` in degree
+`j = i + 1`. -/
+def tensorDimensionShiftUpIso (i j : ℤ) (hij : i + 1 = j) :
+    tateCohomology (M ⊗ dimensionShiftUp A) i ≅ tateCohomology (M ⊗ A) j :=
+  (_root_.TateCohomology.map_tateComplexFunctor_shortExact
+    (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+      (coindBotUnit_comp_dimensionShiftUpπ A)).map (tensorLeft M))
+    (by simpa only [dimensionShiftUpSES_def] using
+      dimensionShiftUpSES_tensorLeft_shortExact A M)).δIso i j hij
+        (isZero_tensor_coindBot A.V M i) (isZero_tensor_coindBot A.V M j)
+
+/-- The tensored upward dimension shift is the connecting map of the tensored coinduced short
+exact sequence. -/
+@[simp]
+theorem tensorDimensionShiftUpIso_hom (i j : ℤ) (hij : i + 1 = j) :
+    (tensorDimensionShiftUpIso A M i j hij).hom =
+      (_root_.TateCohomology.map_tateComplexFunctor_shortExact
+        (S := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+          (coindBotUnit_comp_dimensionShiftUpπ A)).map (tensorLeft M))
+        (by simpa only [dimensionShiftUpSES_def] using
+          dimensionShiftUpSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
+
+/-- Tensoring the downward dimension-shifting sequence of `A` on the left with `M` identifies Tate
+cohomology of `M ⊗ A` in degree `i` with Tate cohomology of `M ⊗ dimensionShiftDown A` in degree
+`j = i + 1`. -/
+def tensorDimensionShiftDownIso (i j : ℤ) (hij : i + 1 = j) :
+    tateCohomology (M ⊗ A) i ≅ tateCohomology (M ⊗ dimensionShiftDown A) j :=
+  (_root_.TateCohomology.map_tateComplexFunctor_shortExact
+    (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+      (dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M))
+    (by simpa only [dimensionShiftDownSES_def] using
+      dimensionShiftDownSES_tensorLeft_shortExact A M)).δIso i j hij
+        (isZero_tensor_indBot A.V M i) (isZero_tensor_indBot A.V M j)
+
+/-- The tensored downward dimension shift is the connecting map of the tensored induced short
+exact sequence. -/
+@[simp]
+theorem tensorDimensionShiftDownIso_hom (i j : ℤ) (hij : i + 1 = j) :
+    (tensorDimensionShiftDownIso A M i j hij).hom =
+      (_root_.TateCohomology.map_tateComplexFunctor_shortExact
+        (S := (ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+          (dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M))
+        (by simpa only [dimensionShiftDownSES_def] using
+          dimensionShiftDownSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
+
+variable {M} in
+/-- The tensored upward dimension shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
+        (tensorDimensionShiftUpIso A M' i j hij).hom =
+      (tensorDimensionShiftUpIso A M i j hij).hom ≫ (tateCohomologyFunctor j).map (f ▷ A) := by
+  rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
+    _ _ i j hij).symm
+
+variable {M} in
+/-- The tensored downward dimension shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
+      (tensorDimensionShiftDownIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) := by
+  rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
+    _ _ i j hij).symm
+
+variable {M} in
+/-- The inverse of the tensored downward dimension shift is natural in the tensoring
+representation. -/
+theorem tensorDimensionShiftDownIso_inv_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫
+        (tensorDimensionShiftDownIso A M' i j hij).inv =
+      (tensorDimensionShiftDownIso A M i j hij).inv ≫ (tateCohomologyFunctor i).map (f ▷ A) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality,
+    Iso.inv_hom_id_assoc]
+
+end Tensor
 
 end Fintype
 

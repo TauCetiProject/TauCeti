@@ -20,7 +20,7 @@ file constructs that module, `TauCeti.ReducedTensorWords`, and its reduced decon
 which cuts a positive word at every nontrivial position.  It also defines blocks of consecutive
 letters in a tensor word, used to express iterated cuts.  The tensor words that also carry the
 empty word are the separate type `TauCeti.TensorWords`, built in
-`TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented`.
+`TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`.
 
 The construction uses Mathlib's `TensorPower` and direct-sum/tensor-product equivalences, together
 with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction in

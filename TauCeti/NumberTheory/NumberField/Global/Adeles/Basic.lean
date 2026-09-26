@@ -146,6 +146,19 @@ theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField 
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
   inferInstanceAs <| T2Space (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 
+/-- The infinite component of the diagonal embedding into the adele ring. -/
+@[simp]
+theorem AdeleRing.algebraMap_fst (x : K) :
+    (algebraMap K (AdeleRing R K) x).1 = algebraMap K (InfiniteAdeleRing K) x :=
+  rfl
+
+/-- The finite component of the diagonal embedding into the adele ring. -/
+@[simp]
+theorem AdeleRing.algebraMap_snd (x : K) :
+    (algebraMap K (AdeleRing R K) x).2 =
+      algebraMap K (IsDedekindDomain.FiniteAdeleRing R K) x :=
+  rfl
+
 variable {R K} in
 /-- The infinite component of a product of adeles is the product of their infinite components. -/
 @[simp]

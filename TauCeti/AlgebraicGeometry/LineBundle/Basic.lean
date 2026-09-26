@@ -52,7 +52,7 @@ normal forms for sections used in line-bundle constructions.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry TopologicalSpace
 
 namespace TauCeti
 
@@ -65,6 +65,25 @@ noncomputable section
 namespace SheafOfModules
 
 variable (X : Scheme.{u})
+
+/-- Construct a rank-one atlas from an open cover and a trivialization on each member. -/
+def LocalTrivializations.ofIsOpenCover {M : X.Modules} {ι : Type u} (W : ι → X.Opens)
+    (hW : IsOpenCover W)
+    (e : ∀ i, _root_.SheafOfModules.unit (X.ringCatSheaf.over (W i)) ≅ M.over (W i)) :
+    TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M :=
+  { I := ι
+    X := W
+    coversTop := (Opens.coversTop_iff (X : Type u) W).mpr hW
+    iso := fun i ↦ TauCeti.SheafOfModules.freePUnitIsoUnit
+      (X.ringCatSheaf.over (W i)) ≪≫ e i }
+
+/-- Construct a rank-one atlas from a neighbourhood of each point and a trivialization there. -/
+def LocalTrivializations.ofForallMem {M : X.Modules} (V : X → X.Opens)
+    (hx : ∀ x, x ∈ V x)
+    (e : ∀ x, _root_.SheafOfModules.unit (X.ringCatSheaf.over (V x)) ≅ M.over (V x)) :
+    TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M :=
+  LocalTrivializations.ofIsOpenCover X V
+    (TopologicalSpace.IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩)) e
 
 /-- The object property of being an invertible sheaf on a scheme. -/
 abbrev isInvertible : ObjectProperty X.Modules :=
@@ -164,13 +183,9 @@ theorem isInvertible_iff_exists_isOpenCover :
   · rintro ⟨ι, W, hW, e⟩
     -- On each `W i`, transport the trivialization `𝒪_{W i} ≅ M|_{W i}` of `(W i).toScheme`-modules
     -- back to the slice site over `W i` along the equivalence `Scheme.Modules.overEquiv`.
-    exact TauCeti.SheafOfModules.LocalTrivializations.isInvertible (M := M)
-      { I := ι
-        X := W
-        coversTop := (Opens.coversTop_iff (X : Type u) W).mpr hW
-        iso i := TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (W i)) ≪≫
-          (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
-            ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm) }
+    exact (LocalTrivializations.ofIsOpenCover X W hW fun i ↦
+      (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
+        ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm)).isInvertible
 
 end AlgebraicGeometry.SheafOfModules
 

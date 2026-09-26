@@ -161,11 +161,12 @@ theorem toQuotientEnd_apply_apply [Fintype (Γ ⧸ U.toSubgroup)] (x : completed
     LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
 
-/-- **Continuity of the level action** for an invariant open submodule `V` of a topological
-module over a topological ring: the quotient `M ⧸ V` is discrete, and each coefficient of the
-projection is continuous. -/
+/-- **Continuity of the level action** for an invariant open submodule `V` of `M`, when `M` has
+separately continuous addition and a continuous scalar action of `R`: the action of `R[[Γ]]` on
+the discrete quotient `M ⧸ V` is jointly continuous. -/
 theorem continuous_toQuotientEnd [TopologicalSpace R] [CompactSpace Γ] [SeparatelyContinuousMul Γ]
-    [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M] (hVo : IsOpen (V : Set M)) :
+    [TopologicalSpace M] [SeparatelyContinuousAdd M] [ContinuousSMul R M]
+    (hVo : IsOpen (V : Set M)) :
     Continuous fun p : completedGroupAlgebra R Γ × (M ⧸ V) ↦ toQuotientEnd hV U hU p.1 p.2 := by
   have := Submodule.Quotient.discreteTopology_of_isOpen V hVo
   refine continuous_prod_of_discrete_right.2 fun y ↦ ?_

@@ -50,6 +50,9 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
   that the two quotients need, coboundaries being continuous.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
+* `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
+  `subsingleton_H2_of_subsingleton_coefficients`: trivial coefficients have vanishing `H¹` and
+  `H²`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -865,6 +868,30 @@ instance subsingleton_H2_of_subsingleton [ContinuousMul G] : Subsingleton (H2 G 
     | _ f' => exact H2pi_eq_iff.2 (hB _)
 
 end TrivialGroup
+
+section TrivialCoefficients
+
+variable (G : Type u) [Monoid G] [TopologicalSpace G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M] [Subsingleton M]
+
+/-- **Trivial coefficients have vanishing `H¹`**: there is only one cochain. -/
+instance subsingleton_H1_of_subsingleton_coefficients : Subsingleton (H1 G M) :=
+  ⟨fun x y => by
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      induction y using QuotientAddGroup.induction_on with
+      | _ f' => exact congrArg (H1pi G M) (Subsingleton.elim f f')⟩
+
+/-- **Trivial coefficients have vanishing `H²`**: there is only one cochain. -/
+instance subsingleton_H2_of_subsingleton_coefficients [ContinuousMul G] : Subsingleton (H2 G M) :=
+  ⟨fun x y => by
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      induction y using QuotientAddGroup.induction_on with
+      | _ f' => exact congrArg (H2pi G M) (Subsingleton.elim f f')⟩
+
+end TrivialCoefficients
 
 section TrivialAction
 
