@@ -233,6 +233,9 @@ theorem pathELength_comp (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N 
       exact hγ h
     rw [mfderiv_zero_of_not_mdifferentiableAt hγ,
       mfderiv_zero_of_not_mdifferentiableAt hcomp]
+    -- Both sides are now `‖0 1‖ₑ` with `1 : ℝ` rather than a tangent vector, so
+    -- `ContinuousLinearMap.zero_apply` does not match syntactically; restate them as
+    -- zero tangent vectors so that `simp` can apply `enorm_zero` for the Riemannian norm.
     change ‖(0 : TangentSpace J (Φ (γ t)))‖ₑ = ‖(0 : TangentSpace I (γ t))‖ₑ
     simp
 
