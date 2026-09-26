@@ -55,7 +55,7 @@ noncomputable def geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f :
   TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom
 
 /-- The geometric character map is the group-like map of the base-changed morphism. -/
-theorem geometricCharacterMap_eq_groupLike_map {H K : _root_.CommHopfAlgCat.{u} k}
+theorem geometricCharacterMap_eq_groupLikeMap {H K : _root_.CommHopfAlgCat.{u} k}
     (f : H ⟶ K) :
     geometricCharacterMap f =
       TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom :=
