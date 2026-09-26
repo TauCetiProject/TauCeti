@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.NumberTheory.Padics.RingHoms
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
@@ -15,6 +18,14 @@ Let `G` be a topological group and `χ : G →ₜ* ℤ_pˣ` a continuous charact
 finite discrete module `I(χ)/pⁱ` is `ℤ/pⁱ` with `G` acting by `g • x = χ(g) x`, the action being
 through the truncation `charScalar χ i g` of `χ g` modulo `pⁱ`. The reductions
 `I(χ)/pⁱ → I(χ)/pʲ` for `j ≤ i` are equivariant and surjective, and form a compatible system.
+Dually, multiplication by `pʲ` is an equivariant injection `I(χ)/pⁱ → I(χ)/pⁱ⁺ʲ`, and the two fit
+into the short exact sequences
+
+```text
+0 → I(χ)/pⁱ → I(χ)/pⁱ⁺ʲ → I(χ)/pʲ → 0
+```
+
+of discrete `G`-modules, whose long exact cohomology sequences relate the cohomology of the levels.
 These are the coefficient modules of Labute's prescription property of a character and of the
 twisted duality `M^∨(χ) = Hom(M, I(χ)/pⁱ)`.
 
@@ -31,11 +42,20 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 * `TauCeti.ZModTwist.reduce`: the equivariant reduction `I(χ)/pⁱ → I(χ)/pʲ` for `j ≤ i`, with
   `TauCeti.ZModTwist.reduce_self` and `TauCeti.ZModTwist.reduce_reduce` its identity and
   composition laws.
+* `TauCeti.ZModTwist.mulPow`: the equivariant multiplication by `pʲ`, `I(χ)/pⁱ → I(χ)/pⁿ` for
+  `i + j = n`, with `TauCeti.ZModTwist.mulPow_zero` and `TauCeti.ZModTwist.mulPow_mulPow` its
+  identity and composition laws.
+* `TauCeti.ZModTwist.shortExact`: the short exact sequence `0 → I(χ)/pⁱ → I(χ)/pⁿ → I(χ)/pʲ → 0`
+  of discrete `G`-modules, for `i + j = n`.
 
 ## Main results
 
 * `TauCeti.ZModTwist.isProP_multiplicative`: `I(χ)/pⁱ` is pro-`p`.
 * `TauCeti.ZModTwist.reduce_surjective`: the reductions are surjective.
+* `TauCeti.ZModTwist.mulPow_injective`: the multiplications are injective.
+* `TauCeti.ZModTwist.reduce_mulPow_eq_mulPow_reduce`: the reductions commute with the
+  multiplications, and `TauCeti.ZModTwist.explicitCoeff1_reduce_explicitCoeff1_mulPow` is the
+  induced commutation on `H¹`.
 
 ## References
 
@@ -188,6 +208,161 @@ residue class modulo `pⁱ`. -/
 theorem reduce_surjective {j : ℕ} (h : j ≤ i) : Function.Surjective (reduce χ h) := fun y ↦ by
   obtain ⟨x, hx⟩ := ZMod.castHom_surjective (pow_dvd_pow p h) y.val
   exact ⟨⟨x⟩, ZModTwist.ext hx⟩
+
+/-! ### The trivial module at level zero -/
+
+/-- `I(χ)/p⁰ = ℤ/1` is trivial. -/
+instance : Subsingleton (ZModTwist χ 0) :=
+  have : Subsingleton (ZMod (p ^ 0)) := ZMod.subsingleton_iff.2 (pow_zero p)
+  (equiv χ 0).toEquiv.subsingleton
+
+/-! ### Multiplication by `pʲ` -/
+
+variable {j n : ℕ}
+
+/-- **Multiplication by `pʲ`, `I(χ)/pⁱ →+[G] I(χ)/pⁿ`** for `i + j = n`. It is equivariant because
+the scalar of the action at level `n` reduces to the scalar at level `i`. -/
+def mulPow (h : i + j = n) : ZModTwist χ i →+[G] ZModTwist χ n where
+  toFun x := ⟨ZMod.mulCastHom (p ^ j) ((pow_add p i j).symm.trans (congrArg (p ^ ·) h)) x.val⟩
+  map_smul' g x := ZModTwist.ext (by
+    simp only [val_smul, MonoidHom.id_apply]
+    rw [← castHom_charScalar χ (Nat.le.intro h) g, ZMod.mulCastHom_castHom_mul])
+  map_zero' := ZModTwist.ext (by simp only [val_zero, map_zero])
+  map_add' _ _ := ZModTwist.ext (by simp only [val_add, map_add])
+
+/-- The residue class of `pʲ x` is `pʲ` times the residue class of `x`. -/
+@[simp]
+theorem val_mulPow (h : i + j = n) (x : ZModTwist χ i) :
+    (mulPow χ h x).val =
+      ZMod.mulCastHom (p ^ j) ((pow_add p i j).symm.trans (congrArg (p ^ ·) h)) x.val :=
+  (rfl)
+
+/-- Multiplication by `pʲ` is injective on `I(χ)/pⁱ`. -/
+theorem mulPow_injective (h : i + j = n) : Function.Injective (mulPow χ h) := fun _ _ hxy ↦
+  ZModTwist.ext
+    (ZMod.mulCastHom_injective _ _ (pow_ne_zero j (Fact.out : p.Prime).ne_zero) (congrArg val hxy))
+
+/-- Multiplication by `p⁰` is the identity. -/
+@[simp]
+theorem mulPow_zero : mulPow χ (Nat.add_zero i) = DistribMulActionHom.id G :=
+  DistribMulActionHom.ext fun x ↦ ZModTwist.ext <| by
+    simp only [val_mulPow, DistribMulActionHom.id_apply, pow_zero, ZMod.mulCastHom_one,
+      AddMonoidHom.id_apply]
+
+/-- Two successive multiplications, by `pʲ` and then by `pᵏ`, compose to the multiplication by
+`pʲ⁺ᵏ`. The index equation of the composite is taken as a hypothesis, so that any proof of it may
+be used. -/
+theorem mulPow_mulPow {k m : ℕ} (h : i + j = n) (h' : n + k = m) (h'' : i + (j + k) = m)
+    (x : ZModTwist χ i) : mulPow χ h' (mulPow χ h x) = mulPow χ h'' x :=
+  ZModTwist.ext <| by
+    rw [val_mulPow, val_mulPow, val_mulPow,
+      ZMod.mulCastHom_mulCastHom _ _ _ _ (by rw [← pow_add, ← pow_add, h''])]
+    simp only [pow_add]
+
+/-- The reduction modulo `pʲ` kills the image of the multiplication by `pʲ`. -/
+@[simp]
+theorem reduce_mulPow (h : i + j = n) (x : ZModTwist χ i) :
+    reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) (mulPow χ h x) = 0 :=
+  ZModTwist.ext (ZMod.castHom_mulCastHom _ _ x.val)
+
+/-- The reductions commute with the multiplications: reducing `pʲ x` from level `n` to level `n'`
+is `pʲ` times the reduction of `x` from level `i` to level `i'`, when `i + j = n` and
+`i' + j = n'`. -/
+theorem reduce_mulPow_eq_mulPow_reduce {i' n' : ℕ} (h : i + j = n) (h' : i' + j = n') (hi : i' ≤ i)
+    (hn : n' ≤ n) (x : ZModTwist χ i) :
+    reduce χ hn (mulPow χ h x) = mulPow χ h' (reduce χ hi x) :=
+  ZModTwist.ext (ZMod.castHom_mulCastHom_eq_mulCastHom_castHom _ _ _ _ _ x.val)
+
+/-- Two successive reductions compose to the reduction between the outer levels, as equivariant
+homomorphisms. -/
+theorem reduce_comp_reduce {j k : ℕ} (h₁ : j ≤ i) (h₂ : k ≤ j) :
+    (reduce χ h₂).comp (reduce χ h₁) = reduce χ (h₂.trans h₁) :=
+  DistribMulActionHom.ext (reduce_reduce χ h₁ h₂)
+
+/-- `reduce_mulPow_eq_mulPow_reduce`, as an equality of equivariant homomorphisms. -/
+theorem reduce_comp_mulPow {i' n' : ℕ} (h : i + j = n) (h' : i' + j = n') (hi : i' ≤ i)
+    (hn : n' ≤ n) : (reduce χ hn).comp (mulPow χ h) = (mulPow χ h').comp (reduce χ hi) :=
+  DistribMulActionHom.ext (reduce_mulPow_eq_mulPow_reduce χ h h' hi hn)
+
+/-! ### The short exact sequences `0 → I(χ)/pⁱ → I(χ)/pⁱ⁺ʲ → I(χ)/pʲ → 0` -/
+
+open ContCohomology
+
+/-- **The short exact sequence `0 → I(χ)/pⁱ → I(χ)/pⁿ → I(χ)/pʲ → 0`** of discrete `G`-modules, for
+`i + j = n`: multiplication by `pʲ` followed by reduction modulo `pʲ`. -/
+def shortExact (h : i + j = n) :
+    DiscreteShortExact G (ZModTwist χ i) (ZModTwist χ n) (ZModTwist χ j) where
+  incl := mulPow χ h
+  proj := reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h))
+  incl_equivariant := (mulPow χ h).map_smul
+  proj_equivariant := (reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h))).map_smul
+  incl_injective := mulPow_injective χ h
+  proj_surjective := reduce_surjective χ (Nat.le.intro ((Nat.add_comm j i).trans h))
+  exact y := by
+    constructor
+    · intro hy
+      obtain ⟨a, ha⟩ := (ZMod.exact_mulCastHom_castHom (p ^ j)
+        ((pow_add p i j).symm.trans (congrArg (p ^ ·) h)) y.val).1 (congrArg val hy)
+      exact ⟨⟨a⟩, ZModTwist.ext ha⟩
+    · rintro ⟨x, rfl⟩
+      exact ZModTwist.ext (ZMod.castHom_mulCastHom _ _ x.val)
+
+/-- The inclusion of `shortExact` multiplies by `pʲ`. -/
+@[simp]
+theorem shortExact_incl_apply (h : i + j = n) (x : ZModTwist χ i) :
+    (shortExact χ h).incl x = mulPow χ h x :=
+  congrFun (DistribMulActionHom.coe_fn_coe (mulPow χ h)) x
+
+/-- The projection of `shortExact` reduces modulo `pʲ`. -/
+@[simp]
+theorem shortExact_proj_apply (h : i + j = n) (y : ZModTwist χ n) :
+    (shortExact χ h).proj y = reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) y :=
+  congrFun (DistribMulActionHom.coe_fn_coe (reduce χ _)) y
+
+/-- The inclusion of `shortExact` is the multiplication by `pʲ`. -/
+theorem shortExact_inclDistribMulActionHom (h : i + j = n) :
+    (shortExact χ h).inclDistribMulActionHom = mulPow χ h :=
+  DistribMulActionHom.ext fun x ↦
+    ((shortExact χ h).inclDistribMulActionHom_apply x).trans (shortExact_incl_apply χ h x)
+
+/-- The projection of `shortExact` is the reduction modulo `pʲ`. -/
+theorem shortExact_projDistribMulActionHom (h : i + j = n) :
+    (shortExact χ h).projDistribMulActionHom =
+      reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) :=
+  DistribMulActionHom.ext fun y ↦
+    ((shortExact χ h).projDistribMulActionHom_apply y).trans (shortExact_proj_apply χ h y)
+
+/-! ### The induced maps on `H¹`
+
+The reductions and multiplications induce maps on the explicit first continuous cohomology, and
+their composition laws pass to those maps. Both continuity proofs are the generic
+`continuous_of_discreteTopology`, which is what lets an equality of coefficient maps be transported
+across `explicitCoeff1` by `congrArg`. -/
+
+/-- Two successive reductions on `H¹` compose to the reduction between the outer levels. -/
+theorem explicitCoeff1_reduce_explicitCoeff1_reduce {j k : ℕ} (h₁ : j ≤ i) (h₂ : k ≤ j)
+    (x : H1 G (ZModTwist χ i)) :
+    explicitCoeff1 G (ZModTwist χ j) (reduce χ h₂) continuous_of_discreteTopology
+        (explicitCoeff1 G (ZModTwist χ i) (reduce χ h₁) continuous_of_discreteTopology x) =
+      explicitCoeff1 G (ZModTwist χ i) (reduce χ (h₂.trans h₁))
+        continuous_of_discreteTopology x := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
+  exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ k ↦
+    explicitCoeff1 G (ZModTwist χ i) f continuous_of_discreteTopology x)
+    (reduce_comp_reduce χ h₁ h₂)
+
+/-- On `H¹`, reducing after multiplying by `pʲ` is multiplying by `pʲ` after reducing. -/
+theorem explicitCoeff1_reduce_explicitCoeff1_mulPow {i' n' : ℕ} (h : i + j = n) (h' : i' + j = n')
+    (hi : i' ≤ i) (hn : n' ≤ n) (x : H1 G (ZModTwist χ i)) :
+    explicitCoeff1 G (ZModTwist χ n) (reduce χ hn) continuous_of_discreteTopology
+        (explicitCoeff1 G (ZModTwist χ i) (mulPow χ h) continuous_of_discreteTopology x) =
+      explicitCoeff1 G (ZModTwist χ i') (mulPow χ h') continuous_of_discreteTopology
+        (explicitCoeff1 G (ZModTwist χ i) (reduce χ hi) continuous_of_discreteTopology x) := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp, ← AddMonoidHom.comp_apply,
+    ← explicitCoeff1_comp]
+  exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ n' ↦
+    explicitCoeff1 G (ZModTwist χ i) f continuous_of_discreteTopology x)
+    (reduce_comp_mulPow χ h h' hi hn)
 
 end ZModTwist
 
