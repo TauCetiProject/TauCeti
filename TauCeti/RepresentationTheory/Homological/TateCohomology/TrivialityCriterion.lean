@@ -24,7 +24,8 @@ class cohomologically trivial.
 The proof has three steps.
 
 * For a finite cyclic group, cohomology in positive degrees is two-periodic, so vanishing in two
-  consecutive positive degrees gives vanishing in all of them (`isZero_succ_of_isCyclic`).
+  consecutive positive degrees gives vanishing in all of them
+  (`isZero_succ_of_isCyclic_of_isZero`).
 * For a subgroup `S` of prime-power order, argue by induction on `#S`. A nontrivial such `S` has a
   normal subgroup `T` of index `p` with `S ⧸ T` cyclic. By induction the cohomology of `T`
   vanishes in every positive degree, so inflation `Hⁿ⁺¹(S ⧸ T, A^T) ⟶ Hⁿ⁺¹(S, A)` is an
@@ -39,8 +40,8 @@ positive degrees.
 
 ## Main statements
 
-* `TauCeti.groupCohomology.isZero_succ_of_isCyclic`: for a finite cyclic group, vanishing of
-  `H^{q+1}` and `H^{q+2}` implies vanishing of `Hⁿ⁺¹` for every `n`.
+* `TauCeti.groupCohomology.isZero_succ_of_isCyclic_of_isZero`: for a finite cyclic group,
+  vanishing of `H^{q+1}` and `H^{q+2}` implies vanishing of `Hⁿ⁺¹` for every `n`.
 * `TauCeti.groupCohomology.isZero_of_forall_isPGroup`: the criterion for ordinary cohomology in
   positive degrees.
 * `TauCeti.TateCohomology.isZero_of_forall_isPGroup`: the criterion for Tate cohomology in all
@@ -49,7 +50,8 @@ positive degrees.
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter II, Theorem 3.10.
-* J.-P. Serre, *Local Fields*, Chapter IX, §5.
+* J.-P. Serre, *Local Fields*, Chapter IX, §5 (the criterion for a finite group, via its Sylow
+  subgroups) and §8 (its use in the theorem of Tate and Nakayama).
 * `ClassFieldTheory/Cohomology/TrivialityCriterion.lean` in `kbuzzard/ClassFieldTheory`, commit
   `ccc3323c6750abca25b49b35106f54eb3a398509`, proves the same criterion
   (`groupCohomology.trivialCohomology_of_even_of_odd` and
@@ -73,7 +75,7 @@ variable {k G : Type u} [CommRing k] [Group G]
 /-- **Periodicity for a finite cyclic group.** If the cohomology of a finite cyclic group vanishes
 in the two consecutive positive degrees `q + 1` and `q + 2`, it vanishes in every positive
 degree. -/
-theorem isZero_succ_of_isCyclic [Finite G] [IsCyclic G] (A : Rep k G) {q : ℕ}
+theorem isZero_succ_of_isCyclic_of_isZero [Finite G] [IsCyclic G] (A : Rep k G) {q : ℕ}
     (h₁ : IsZero (groupCohomology A (q + 1))) (h₂ : IsZero (groupCohomology A (q + 2)))
     (n : ℕ) : IsZero (groupCohomology A (n + 1)) := by
   have := Fintype.ofFinite G
@@ -125,7 +127,7 @@ private theorem isZero_succ_of_isPGroup (p : ℕ) [Fact p.Prime] {q : ℕ}
   have e (m : ℕ) := @asIso _ _ _ _ (infRes (res S.subtype A) T m).f
     (isIso_infRes_f (res S.subtype A) m fun i _ => hTzero i)
   have : IsCyclic (S ⧸ T) := isCyclic_of_prime_card (p := p) (by rw [← hTindex, Subgroup.index])
-  exact (e n).isZero_iff.1 <| isZero_succ_of_isCyclic _
+  exact (e n).isZero_iff.1 <| isZero_succ_of_isCyclic_of_isZero _
     ((e q).isZero_iff.2 (h₁ S hS)) ((e (q + 1)).isZero_iff.2 (h₂ S hS)) n
 
 /-- **Tate's cohomological triviality criterion** for ordinary cohomology (Milne II 3.10). Let `G`
