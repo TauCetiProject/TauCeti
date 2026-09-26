@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 
 /-!
@@ -30,6 +31,9 @@ fuse in the symmetric group.  Their class sizes are both twelve.
 ## Main results
 
 * `TauCeti.numClasses_alternatingGroupFiveClassData`: the numbering has five classes.
+* `TauCeti.card_classFinset_alternatingGroupFiveClassData`: the class sizes are `1`, `15`,
+  `20`, `12`, and `12`.
+* `TauCeti.exponent_alternatingGroup_five`: the exponent of `A₅` is thirty.
 
 ## References
 
@@ -335,5 +339,208 @@ theorem reps_alternatingGroupFiveClassData :
 theorem numClasses_alternatingGroupFiveClassData :
     alternatingGroupFiveClassData.numClasses = 5 := by
   rfl
+
+local instance fact_prime_five_alternatingGroupFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+
+/-- The five numbered conjugacy classes of `A₅` have sizes `1`, `15`, `20`, `12`, and `12`. -/
+@[simp]
+theorem card_classFinset_alternatingGroupFiveClassData
+    (i : Fin alternatingGroupFiveClassData.numClasses) :
+    (alternatingGroupFiveClassData.classFinset i).card =
+      ![1, 15, 20, 12, 12]
+        (finCongr numClasses_alternatingGroupFiveClassData i) := by
+  have hnum := numClasses_alternatingGroupFiveClassData
+  have hzero : (alternatingGroupFiveClassData.classFinset ⟨0, by omega⟩).card = 1 := by
+    rw [alternatingGroupFiveClassData.card_classFinset,
+      alternatingGroupFiveClassData.classOf_eq_mk]
+    rw [show alternatingGroupFiveClassData.rep ⟨0, by omega⟩ = 1 by rfl]
+    exact ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _)
+  have hone : (alternatingGroupFiveClassData.classFinset ⟨1, by omega⟩).card = 15 := by
+    have hfinset : alternatingGroupFiveClassData.classFinset ⟨1, by omega⟩ =
+        ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {2, 2}} : Finset A5) := by
+      ext g
+      rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      constructor
+      · intro h
+        exact Equiv.Perm.isConj_iff_cycleType_eq.mp
+          ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
+            cycleType_alternatingGroupFiveDoubleTransposition
+      · exact isConj_alternatingGroupFiveDoubleTransposition_of_cycleType
+    rw [hfinset, AlternatingGroup.card_of_cycleType]
+    rw [ite_eq_left (by decide)]
+    decide
+  have htwo : (alternatingGroupFiveClassData.classFinset ⟨2, by omega⟩).card = 20 := by
+    have hfinset : alternatingGroupFiveClassData.classFinset ⟨2, by omega⟩ =
+        ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {3}} : Finset A5) := by
+      ext g
+      rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      constructor
+      · intro h
+        exact Equiv.Perm.isConj_iff_cycleType_eq.mp
+          ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
+            cycleType_alternatingGroupFiveThreeCycle
+      · intro h
+        exact alternatingGroup.isThreeCycle_isConj (by norm_num)
+          cycleType_alternatingGroupFiveThreeCycle h
+    rw [hfinset, AlternatingGroup.card_of_cycleType_singleton (by omega) (by simp)]
+    rw [ite_eq_left (by decide)]
+    decide
+  have hle (j : Fin alternatingGroupFiveClassData.numClasses)
+      (hj : j = ⟨3, by omega⟩ ∨ j = ⟨4, by omega⟩) :
+      (alternatingGroupFiveClassData.classFinset j).card ≤ 12 := by
+    have horder : orderOf alternatingGroupFiveFiveCycle = 5 := by
+      apply orderOf_eq_prime <;> decide
+    have hrep_three : alternatingGroupFiveClassData.rep ⟨3, by omega⟩ =
+        alternatingGroupFiveFiveCycle := by
+      rfl
+    have hrep_four : alternatingGroupFiveClassData.rep ⟨4, by omega⟩ =
+        alternatingGroupFiveFiveCycle ^ 2 := by
+      rfl
+    have hrepOrder : orderOf (alternatingGroupFiveClassData.rep j) = 5 := by
+      rcases hj with rfl | rfl
+      · rw [hrep_three]
+        exact horder
+      · rw [hrep_four]
+        rw [orderOf_pow, horder]
+        norm_num
+    have hmem : alternatingGroupFiveClassData.rep j ∈
+        (alternatingGroupFiveClassData.classOf j).carrier := by
+      simpa only [alternatingGroupFiveClassData.classOf_eq_mk] using
+        (ConjClasses.mem_carrier_mk : alternatingGroupFiveClassData.rep j ∈
+          (ConjClasses.mk (alternatingGroupFiveClassData.rep j)).carrier)
+    have hdvd := (alternatingGroupFiveClassData.classOf j).card_carrier_mul_orderOf_dvd
+      (alternatingGroupFiveClassData.rep j) hmem
+    rw [← alternatingGroupFiveClassData.card_classFinset, hrepOrder,
+      nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin] at hdvd
+    norm_num [Nat.factorial] at hdvd
+    have hmul_le : (alternatingGroupFiveClassData.classFinset j).card * 5 ≤ 60 :=
+      Nat.le_of_dvd (by norm_num) hdvd
+    omega
+  have hsum := alternatingGroupFiveClassData.sum_card_classFinset
+  have hcard : Fintype.card (alternatingGroup (Fin 5)) = 60 := by
+    rw [← Nat.card_eq_fintype_card, nat_card_alternatingGroup,
+      Nat.card_eq_fintype_card, Fintype.card_fin]
+    rfl
+  rw [hcard] at hsum
+  let e : Fin 5 ≃ Fin alternatingGroupFiveClassData.numClasses := (finCongr hnum).symm
+  let f : Fin 5 → ℕ := fun j ↦ (alternatingGroupFiveClassData.classFinset (e j)).card
+  have hsum5 : ∑ j, f j = 60 := (e.sum_comp fun j ↦
+    (alternatingGroupFiveClassData.classFinset j).card).trans hsum
+  have hezero : e 0 = ⟨0, by omega⟩ := Fin.ext rfl
+  have heone : e 1 = ⟨1, by omega⟩ := Fin.ext rfl
+  have hetwo : e 2 = ⟨2, by omega⟩ := Fin.ext rfl
+  have hfzero : f 0 = 1 := by simpa only [f, hezero] using hzero
+  have hfone : f 1 = 15 := by simpa only [f, heone] using hone
+  have hftwo : f 2 = 20 := by simpa only [f, hetwo] using htwo
+  have hsum_last : f 3 + f 4 = 24 := by
+    norm_num [Finset.sum_fin_eq_sum_range, Finset.sum_range_succ, hfzero, hfone, hftwo]
+      at hsum5
+    omega
+  fin_cases i
+  · exact hzero
+  · exact hone
+  · exact htwo
+  · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
+    have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
+    have hfthree : f 3 = (alternatingGroupFiveClassData.classFinset ⟨3, by omega⟩).card :=
+      rfl
+    have hffour : f 4 = (alternatingGroupFiveClassData.classFinset ⟨4, by omega⟩).card :=
+      rfl
+    have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
+    have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
+    have hfthree_eq : f 3 = 12 := by omega
+    exact hfthree.symm.trans hfthree_eq
+  · have hle_three := hle ⟨3, by omega⟩ (Or.inl rfl)
+    have hle_four := hle ⟨4, by omega⟩ (Or.inr rfl)
+    have hfthree : f 3 = (alternatingGroupFiveClassData.classFinset ⟨3, by omega⟩).card :=
+      rfl
+    have hffour : f 4 = (alternatingGroupFiveClassData.classFinset ⟨4, by omega⟩).card :=
+      rfl
+    have hfthree_le : f 3 ≤ 12 := hfthree.trans_le hle_three
+    have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
+    have hffour_eq : f 4 = 12 := by omega
+    exact hffour.symm.trans hffour_eq
+
+/-- The ordered list of conjugacy-class sizes of `A₅` is `[1, 15, 20, 12, 12]`. -/
+@[simp]
+theorem card_classes_alternatingGroupFiveClassData :
+    alternatingGroupFiveClassData.classes.map Finset.card = [1, 15, 20, 12, 12] := by
+  change [(alternatingGroupFiveClassData.classFinset ⟨0, by simp⟩).card,
+    (alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩).card,
+    (alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩).card,
+    (alternatingGroupFiveClassData.classFinset ⟨3, by simp⟩).card,
+    (alternatingGroupFiveClassData.classFinset ⟨4, by simp⟩).card] = _
+  simp
+
+private theorem orderOf_alternatingGroupFiveDoubleTransposition :
+    orderOf alternatingGroupFiveDoubleTransposition = 2 := by
+  apply orderOf_eq_prime <;> decide
+
+private theorem orderOf_alternatingGroupFiveThreeCycle :
+    orderOf alternatingGroupFiveThreeCycle = 3 := by
+  apply orderOf_eq_prime <;> decide
+
+private theorem orderOf_alternatingGroupFiveFiveCycle :
+    orderOf alternatingGroupFiveFiveCycle = 5 := by
+  apply orderOf_eq_prime <;> decide
+
+private theorem alternatingGroupFiveDoubleTransposition_pow_thirty :
+    alternatingGroupFiveDoubleTransposition ^ 30 = 1 := by
+  apply orderOf_dvd_iff_pow_eq_one.mp
+  rw [orderOf_alternatingGroupFiveDoubleTransposition]
+  decide
+
+private theorem alternatingGroupFiveThreeCycle_pow_thirty :
+    alternatingGroupFiveThreeCycle ^ 30 = 1 := by
+  apply orderOf_dvd_iff_pow_eq_one.mp
+  rw [orderOf_alternatingGroupFiveThreeCycle]
+  decide
+
+private theorem alternatingGroupFiveFiveCycle_pow_thirty :
+    alternatingGroupFiveFiveCycle ^ 30 = 1 := by
+  apply orderOf_dvd_iff_pow_eq_one.mp
+  rw [orderOf_alternatingGroupFiveFiveCycle]
+  decide
+
+/-- The alternating group of degree five has order sixty: half of `5! = 120`. -/
+theorem natCard_alternatingGroup_five : Nat.card (alternatingGroup (Fin 5)) = 60 := by
+  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rfl
+
+/-- The exponent of the alternating group of degree five is thirty. -/
+theorem exponent_alternatingGroup_five :
+    Monoid.exponent (alternatingGroup (Fin 5)) = 30 := by
+  apply Nat.dvd_antisymm
+  · rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
+    intro g
+    obtain ⟨r, hr, hrg⟩ := alternatingGroupFiveClassData.exists_isConj g
+    simp only [reps_alternatingGroupFiveClassData, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · simp [isConj_one_right.mp hrg]
+    · exact isConj_one_right.mp
+        (alternatingGroupFiveDoubleTransposition_pow_thirty ▸ hrg.pow 30)
+    · exact isConj_one_right.mp
+        (alternatingGroupFiveThreeCycle_pow_thirty ▸ hrg.pow 30)
+    · exact isConj_one_right.mp
+        (alternatingGroupFiveFiveCycle_pow_thirty ▸ hrg.pow 30)
+    · exact isConj_one_right.mp
+        ((show (alternatingGroupFiveFiveCycle ^ 2) ^ 30 = 1 by
+          calc
+            (alternatingGroupFiveFiveCycle ^ 2) ^ 30 =
+                alternatingGroupFiveFiveCycle ^ (2 * 30) := by rw [pow_mul]
+            _ = alternatingGroupFiveFiveCycle ^ (30 * 2) := by norm_num
+            _ = (alternatingGroupFiveFiveCycle ^ 30) ^ 2 := by rw [pow_mul]
+            _ = 1 := by rw [alternatingGroupFiveFiveCycle_pow_thirty, one_pow]) ▸ hrg.pow 30)
+  · exact Nat.lcm_dvd
+      (orderOf_alternatingGroupFiveDoubleTransposition ▸
+        Monoid.order_dvd_exponent alternatingGroupFiveDoubleTransposition)
+      (Nat.lcm_dvd
+        (orderOf_alternatingGroupFiveThreeCycle ▸
+          Monoid.order_dvd_exponent alternatingGroupFiveThreeCycle)
+        (orderOf_alternatingGroupFiveFiveCycle ▸
+          Monoid.order_dvd_exponent alternatingGroupFiveFiveCycle))
 
 end TauCeti
