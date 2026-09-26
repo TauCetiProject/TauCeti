@@ -77,12 +77,14 @@ theorem compactifiedQuotientMap_ofCusp (h : Δ ≤ Γ) (C : Δ.CuspOrbit) :
     compactifiedQuotientMap h (.ofCusp C) = .ofCusp (cuspOrbitMap h C) :=
   (rfl)
 
+/-- The cusp-orbit map for a reflexive inclusion is the identity. -/
 @[simp]
 theorem cuspOrbitMap_id : cuspOrbitMap (le_refl Δ) = id := by
   funext C
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
   simp
 
+/-- The compactified quotient map for a reflexive inclusion is the identity. -/
 @[simp]
 theorem compactifiedQuotientMap_id :
     compactifiedQuotientMap (le_refl Δ) = id := by
@@ -93,6 +95,8 @@ theorem compactifiedQuotientMap_id :
       | h z => simp
   | ofCusp C => simp
 
+/-- Cusp-orbit maps compose along a tower of subgroup inclusions. -/
+@[simp]
 theorem cuspOrbitMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
     cuspOrbitMap k ∘ cuspOrbitMap h = cuspOrbitMap (h.trans k) := by
   funext C
@@ -100,6 +104,7 @@ theorem cuspOrbitMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
   simp
 
 /-- Compactified quotient maps compose along a tower of subgroup inclusions. -/
+@[simp]
 theorem compactifiedQuotientMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
     compactifiedQuotientMap k ∘ compactifiedQuotientMap h =
       compactifiedQuotientMap (h.trans k) := by
@@ -114,7 +119,7 @@ namespace CompactifiedQuotient
 
 /-- The map induced by `Δ ≤ Γ` sends a cusp neighbourhood into the neighbourhood at the
 same boundary point and height, when the cusp data use the same scaling. -/
-theorem map_cuspNhd_subset (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+theorem image_cuspNhd_subset_cuspNhd (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hc : E.cusp = D.cusp) (hσ : E.scaling = D.scaling) (A : ℝ) :
     compactifiedQuotientMap h '' cuspNhd D A ⊆ cuspNhd E A := by
   rintro _ ⟨x, hx, rfl⟩
@@ -134,9 +139,11 @@ theorem map_cuspNhd_subset (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
       simpa only [cuspOrbitMk_val, E.cuspOrbit_val] using congrArg Quotient.mk'' hc.symm
 
 /-- The map of compactified quotients is continuous at each cusp point. -/
-theorem continuousAt_compactifiedQuotientMap_ofCusp [DiscreteTopology Δ]
-    [DiscreteTopology Γ] (h : Δ ≤ Γ) (D : Δ.CuspDatum) :
+theorem continuousAt_compactifiedQuotientMap_ofCusp [DiscreteTopology Γ]
+    (h : Δ ≤ Γ) (D : Δ.CuspDatum) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ContinuousAt (compactifiedQuotientMap h) (.ofCusp D.cuspOrbit) := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   obtain ⟨E, hc, hσ⟩ := (D.isCuspPoint.mono h).exists_cuspDatum D.scaling_smul_cusp
   have hC : cuspOrbitMap h D.cuspOrbit = E.cuspOrbit := by
     rw [cuspOrbitMap_cuspOrbit]
@@ -148,13 +155,14 @@ theorem continuousAt_compactifiedQuotientMap_ofCusp [DiscreteTopology Δ]
   apply (mem_nhds_ofCusp_iff D).mpr
   refine ⟨A, ?_⟩
   intro x hx
-  exact hA (map_cuspNhd_subset h D E hc hσ A ⟨x, hx, rfl⟩)
+  exact hA (image_cuspNhd_subset_cuspNhd h D E hc hσ A ⟨x, hx, rfl⟩)
 
 /-- The compactified orbit map induced by an inclusion of discrete projective subgroups is
 continuous, including at the added cusp points. -/
-theorem continuous_compactifiedQuotientMap [DiscreteTopology Δ] [DiscreteTopology Γ]
-    (h : Δ ≤ Γ) :
+theorem continuous_compactifiedQuotientMap [DiscreteTopology Γ] (h : Δ ≤ Γ) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     Continuous (compactifiedQuotientMap h) := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [continuous_iff_continuousAt]
   intro x
   cases x with
