@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
+public import TauCeti.Probability.Distributions.Gamma.Pi
 public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Geometric.Basic
 public import TauCeti.Probability.Distributions.Laplace
@@ -195,12 +196,8 @@ sum of the coordinates gives the Gamma (Erlang) law whose shape is the number of
 theorem map_sum_pi_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι] {r : ℝ} (hr : 0 < r) :
     (Measure.pi fun _ : ι ↦ expMeasure r).map (fun x ↦ ∑ i, x i) =
       gammaMeasure (Fintype.card ι) r := by
-  let _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-  have hindep : iIndepFun (fun (i : ι) (x : ι → ℝ) ↦ x i)
-      (Measure.pi fun _ : ι ↦ expMeasure r) :=
-    iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id
-  exact (iIndepFun.hasLaw_sum_expMeasure hindep hr
-    fun i ↦ (measurePreserving_eval (fun _ : ι ↦ expMeasure r) i).hasLaw).map_eq
+  simpa only [expMeasure, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using
+    map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) hr
 
 end Probability
 
