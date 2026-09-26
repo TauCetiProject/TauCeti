@@ -21,24 +21,27 @@ by the Chevalley involution (`TauCeti.DynkinType.chevalleyInvolution_lieBasis_e`
 
 This module establishes the Serre-relation bracket vanishings that underlie the Chevalley
 commutator formulas, and applies them through the existing Kostant root-subgroup
-machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative ring are taken
-directly from the existing Geck root-subgroup construction:
-`t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)`, whose values in the
-general linear group are given by `TauCeti.DynkinType.geckRootSubgroupMatrix` and whose
-one-parameter subgroup laws are inherited from the monoid-hom structure of
-`geckRootSubgroupPoints` via `map_one` and `map_mul`; this module contributes only the
-bracket relations and their direct transfer to the represented pinning.
+machinery. The uniform exponentials `u ↦ exp(u • e_i)` over any commutative ring are
+`TauCeti.DynkinType.uniformExp`, a thin abbreviation for the existing Geck root-subgroup
+points `t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)`; their values in
+the general linear group are the Geck root-subgroup matrices
+(`TauCeti.DynkinType.coe_uniformExp`), and their one-parameter subgroup laws are inherited
+from the monoid-hom structure of `geckRootSubgroupPoints` via `map_one` and `map_mul`.
+This module contributes only the bracket relations, their direct transfer to the
+represented pinning, and the thin uniform-exponential abbreviation.
 
 ## Main results
 
 * `TauCeti.DynkinType.lie_lieBasis_e_e_of_cartan_eq_zero`: when the Cartan matrix entry
   vanishes (`A_{ji} = 0`), the Lie bracket `⁅e_i, e_j⁆ = 0` — the Serre relation.
 * `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero`: the Chevalley
-  commutator relation (commuting case) for the represented pinning — the existing Kostant
-  commutativity lemma applied through `geckRootSubgroupMatrix`.
+  commutator relation (commuting case) for the represented pinning.
 * `TauCeti.DynkinType.lie_lieBasis_e_e_e_of_cartan_eq_neg_one`: for a length-one root
   string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the one-sided
   Serre relation.
+* `TauCeti.DynkinType.uniformExp`: the uniform exponential `u ↦ exp(u • e_i)` over any
+  commutative ring, as a thin abbreviation for the existing Geck root-subgroup points,
+  with the matrix characterization `TauCeti.DynkinType.coe_uniformExp`.
 
 ## References
 
@@ -46,8 +49,6 @@ bracket relations and their direct transfer to the represented pinning.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
-
-Roadmap: ReductiveGroups (Layer 9, uniform pinned Chevalley-Demazure construction).
 -/
 
 public section
@@ -60,9 +61,9 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (t : DynkinType) (ht : t.Valid)
 
-/-- The Lie bracket of distinct simple raising generators vanishes when the corresponding
-Cartan matrix entry is zero. This is the Serre relation: when `A_{ji} = 0`, the exponent
-`(-Aᵀ_{ij}).toNat = 0`, so `(ad e_i)^0 [e_i, e_j] = [e_i, e_j] = 0`. -/
+/-- When the Cartan matrix entry vanishes (`A_{ji} = 0`), the Lie bracket of the
+corresponding simple raising generators vanishes: `⁅e_i, e_j⁆ = 0`. -/
+@[simp]
 theorem lie_lieBasis_e_e_of_cartan_eq_zero (i j : Fin t.rank)
     (hA : t.cartanMatrix j i = 0) :
     ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ = 0 := by
@@ -75,12 +76,8 @@ theorem lie_lieBasis_e_e_of_cartan_eq_zero (i j : Fin t.rank)
   simpa using hserre
 
 /-- The Chevalley commutator relation (commuting case) for the represented pinning: when
-the Cartan matrix entry is zero — i.e., when `α_i + α_j` is not a root — the corresponding
-numbered root subgroups commute. This is the existing Kostant commutativity lemma
-`TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix` applied to the
-pinning matrices `TauCeti.DynkinType.geckRootSubgroupMatrix`, with the bracket hypothesis
-supplied by the Serre relation
-`TauCeti.DynkinType.lie_lieBasis_e_e_of_cartan_eq_zero`. -/
+the Cartan matrix entry is zero, the corresponding numbered root subgroups commute. -/
+@[simp]
 theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
     (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0)
     (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
@@ -90,18 +87,47 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
       (t.lieBasis ht).rootGenerator (.inl j)⁆ = 0 := by
     simp only [LieAlgebra.Basis.rootGenerator_inl]
     exact t.lie_lieBasis_e_e_of_cartan_eq_zero ht i j hA
+  -- The Geck root-subgroup matrices are the Kostant matrices at the pinning data.
+  have hident (k : Fin t.rank ⊕ Fin t.rank)
+      (q : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+      t.geckRootSubgroupMatrix ht k q =
+        TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) k
+          (t.isNilpotent_geckRepresentation_rootGenerator ht k)
+          (t.geckCoordinateBasisFin ht) q := rfl
+  rw [hident, hident]
   exact TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix
     _ _ _ _ _ _ hbracket _ _ _ _
 
+/-! ## The uniform exponential -/
+
+/-- The uniform exponential `u ↦ exp(u • e_i)` at the `i`-th pinning generator over any
+commutative ring: the existing Geck root-subgroup point at the `𝔾ₐ`-parameter of `u`.
+The one-parameter subgroup laws are inherited from the monoid-hom structure of
+`geckRootSubgroupPoints` via `map_one` and `map_mul`; the matrix values are characterized
+by `TauCeti.DynkinType.coe_uniformExp`. -/
+abbrev uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
+    t.geckPoints ht A :=
+  t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)
+
+/-- The uniform exponential takes values in the general linear group through the Geck
+root-subgroup matrix at the `𝔾ₐ`-parameter of `u`. -/
+@[simp]
+theorem coe_uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
+    (t.uniformExp ht A i u :
+        Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) =
+      t.geckRootSubgroupMatrix ht (.inl i)
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+          (Multiplicative.ofAdd u)) :=
+  t.coe_geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)
+
 /-! ## Length-one root strings: one-sided Serre vanishing -/
 
-/-- For a length-one root string (`A_{ji} = -1`, i.e., `α_i + α_j` is a root but
-`2α_i + α_j` is not), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes. This is the Serre
-relation: `(ad e_i)^{-A_{ji}}(⁅e_i, e_j⁆) = (ad e_i)(⁅e_i, e_j⁆) = 0`. Only this one-sided
-vanishing is proved: no symmetric statement is claimed, since in multiply-laced types
-(`B₂`, `C₂`, `G₂`) the reverse Cartan entry `A_{ij}` may be `-2` or `-3`, and the
-Chevalley commutator formula can then involve further root factors beyond
-`x_{α_i+α_j}`. -/
+/-- For a length-one root string (`A_{ji} = -1`), the double bracket
+`⁅e_i, ⁅e_i, e_j⁆⁆` vanishes. Only this one-sided vanishing is stated. -/
+@[simp]
 theorem lie_lieBasis_e_e_e_of_cartan_eq_neg_one (i j : Fin t.rank)
     (hA : t.cartanMatrix j i = -1) :
     ⁅(t.lieBasis ht).e i, ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆⁆ = 0 := by
