@@ -113,7 +113,7 @@ theorem harmonicAt_planarGreenKernelDisk_sub_newtonianKernel {c a z : ℂ} {R : 
     funext w
     rw [planarGreenKernelDisk_def, ← smul_sub]
     congr 1
-    abel
+    abel_nf
   rw [hfun]
   simpa only [sub_eq_add_neg] using
     (harmonicAt_comp_add_right_iff (a := -c)).2 hdilate
