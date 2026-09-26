@@ -42,40 +42,15 @@ public theorem recut_first_bottom_eq_pentagon_bottom_of_branch1
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
-    (hfirstLeft : (D.toRectangleDecomposition.recut hone
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).first.left = D.toRectangleDecomposition.first.right) :
-    (D.toRectangleDecomposition.recut hone
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).first.bottom = D.pentagon.bottom := by
-  have hempty1 : D.toRectangleDecomposition.first.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
-  have hempty2 : D.toRectangleDecomposition.second.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      D.toRectangleDecomposition_middle,
-      D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
-  have hnew : (D.toRectangleDecomposition.recut hone hempty1 hempty2).first.bottom =
+    (hfirstLeft : (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
+      D.toRectangleDecomposition.first.right) :
+    (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom = D.pentagon.bottom := by
+  have hnew : (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom =
       x D.toRectangleDecomposition.first.right := by
-    have h1 : (D.toRectangleDecomposition.recut hone hempty1 hempty2).first.bottom =
-        x ((D.toRectangleDecomposition.recut hone hempty1 hempty2).first.left) :=
+    have h1 : (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom =
+        x ((D.recutOfIsEmpty hone hrectangle hpentagon).first.left) :=
       GridRectangleBetween.bottom_def _
-    rw [h1]
-    have h2 : ((D.toRectangleDecomposition.recut hone hempty1 hempty2).first).left =
-        D.toRectangleDecomposition.first.right := hfirstLeft
-    rw [h2]
+    rw [h1, hfirstLeft]
   have hold : D.pentagon.bottom = x D.toRectangleDecomposition.first.right := by
     have h1 : D.pentagon.bottom = D.middle D.pentagon.left := rfl
     rw [h1, ← hcommon, D.rectangle.map_left, D.toRectangleDecomposition_first_right]
@@ -89,25 +64,10 @@ public theorem recut_X_not_mem_of_branch1
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
     (hdisjoint : Disjoint D.pentagon.coveredSquares G.XSet)
-    (hfirstLeft : (D.toRectangleDecomposition.recut hone
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using
-          hpentagon)).first.left = D.toRectangleDecomposition.first.right) :
+    (hfirstLeft : (D.recutOfIsEmpty hone hrectangle hpentagon).first.left =
+      D.toRectangleDecomposition.first.right) :
     G.X (finRotate n a) ∉
-      Grid.cIco (D.toRectangleDecomposition.recut hone
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by
-          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-            D.toRectangleDecomposition_middle,
-            D.toRectangleDecomposition_second_toGridRectangle] using
-            hpentagon)).first.bottom s := by
+      Grid.cIco (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom s := by
   -- The bottoms coincide, so the pentagon's X-avoidance gives the strip avoidance directly
   -- via `disjoint_coveredSquares_XSet_iff`.
   have hbot := D.recut_first_bottom_eq_pentagon_bottom_of_branch1 hcommon hone
