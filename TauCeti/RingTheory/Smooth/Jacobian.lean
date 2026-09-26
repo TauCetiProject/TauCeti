@@ -15,8 +15,12 @@ standard smooth after inverting the corresponding Jacobian determinant. Its rela
 dimension is the number of variables minus the number of relations. This provides smooth
 coordinate charts for hypersurfaces.
 
-The construction uses Mathlib's composition of pre-submersive presentations and its formula
-for the Jacobian of a composite. See the Stacks Project, Tag 00T7.
+For a hypersurface, one can apply the criterion wherever a chosen partial derivative is
+invertible; with several relations, use the determinant of a square Jacobian minor.
+
+## References
+
+* Stacks Project, Tag 00T7.
 -/
 
 public section
