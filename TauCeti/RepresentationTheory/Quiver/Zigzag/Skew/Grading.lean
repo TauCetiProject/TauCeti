@@ -22,8 +22,8 @@ idempotents have degree `0`, the arrows degree `1`, and the backtracks degree `2
 The comparison isomorphisms between skew-zigzag quotients are graded: the gauge isomorphism
 rescales arrows, the relabelling along a graph isomorphism preserves path length, and the
 comparison of the constant parameter with the ordinary zigzag relation quotient is the identity on
-representatives. Consequently Couture's classification of skew-zigzag algebras up to
-vertex-fixing isomorphism holds verbatim for **vertex-fixing graded isomorphisms**: two parameters
+representatives. Consequently the vertex-fixing classification from Couture's setting extends here
+to finite graphs over commutative rings, with **vertex-fixing graded isomorphisms**: two parameters
 are gauge equivalent, equivalently have the same class in `H¹(G, kˣ)`, exactly when their relation
 quotients are isomorphic by a graded isomorphism fixing every vertex idempotent. A graded
 isomorphism `φ : Z_k(G, c) ≃ₐ[k] Z_k(G, c')` is spelled out as an algebra isomorphism such that
@@ -58,8 +58,10 @@ isomorphism `φ : Z_k(G, c) ≃ₐ[k] Z_k(G, c')` is spelled out as an algebra i
 
 ## References
 
-C. Couture, *Skew-Zigzag Algebras*, Section 3 for the grading and Section 4, Theorem 4.8, for the
-classification of vertex-fixing graded isomorphism classes, https://arxiv.org/abs/1509.08405.
+C. Couture, *Skew-Zigzag Algebras*, Section 3 for the grading and Section 4, Theorem 4.8, for
+the vertex-fixing classification of connected graphs over fields containing square roots,
+https://arxiv.org/abs/1509.08405. The graded classification here extends that result to finite
+graphs over commutative rings.
 -/
 
 public section
@@ -114,17 +116,11 @@ decomposition of the quotient itself. -/
 noncomputable def skewZigzagGrade (n : ℕ) : Submodule k (skewZigzagQuotient k G c) :=
   TauCeti.GradedAlgebra.quotientPiece (grade k (DoubledQuiver G)) (skewZigzagIdeal k G c).asIdeal n
 
-/-- The skew-zigzag grading is the descent of the path-length grading along the quotient map. -/
-theorem skewZigzagGrade_def (n : ℕ) :
-    skewZigzagGrade k G c n =
-      TauCeti.GradedAlgebra.quotientPiece (grade k (DoubledQuiver G))
-        (skewZigzagIdeal k G c).asIdeal n := (rfl)
-
 /-- Membership in a graded piece is being the class of a homogeneous element of that degree. -/
 theorem mem_skewZigzagGrade_iff {n : ℕ} {x : skewZigzagQuotient k G c} :
     x ∈ skewZigzagGrade k G c n ↔
       ∃ y ∈ grade k (DoubledQuiver G) n, skewZigzagMk k G c y = x := by
-  simp only [skewZigzagGrade_def, TauCeti.GradedAlgebra.mem_quotientPiece_iff,
+  simp only [skewZigzagGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff,
     skewZigzagMk_apply]
 
 /-- A homogeneous element lands in the piece its degree names. -/
@@ -289,7 +285,7 @@ theorem skewZigzagQuotientEquiv_mem_skewZigzagGrade_iff (e : G ≃g H)
 
 end GradedEquiv
 
-/-! ### Couture's classification by vertex-fixing graded isomorphisms -/
+/-! ### Vertex-fixing graded classification extending Couture's result -/
 
 namespace SkewZigzagParameter
 
@@ -314,10 +310,10 @@ theorem isGaugeEquivalent_iff_exists_graded_vertexFixing_algEquiv :
     fun _ _ => skewZigzagQuotientGaugeEquiv_mem_skewZigzagGrade_iff k G c c' u hu,
     fun i => by rw [skewZigzagQuotientGaugeEquiv_skewZigzagMk, rescale_vertexIdempotent]⟩
 
-/-- **Couture's classification by vertex-fixing graded isomorphisms**: over a commutative ring, two
-skew-zigzag parameters of a finite graph have the same cohomology class in `H¹(G, kˣ)` exactly
+/-- **Vertex-fixing graded classification extending Couture's result**: over a commutative ring,
+two skew-zigzag parameters of a finite graph have the same cohomology class in `H¹(G, kˣ)` exactly
 when their relation quotients are isomorphic by a graded algebra isomorphism fixing every vertex
-idempotent. -/
+idempotent. Couture's Theorem 4.8 treats connected graphs over fields containing square roots. -/
 theorem cohomologyClass_eq_iff_exists_graded_vertexFixing_algEquiv :
     cohomologyClass k G c = cohomologyClass k G c' ↔
       ∃ φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c',
