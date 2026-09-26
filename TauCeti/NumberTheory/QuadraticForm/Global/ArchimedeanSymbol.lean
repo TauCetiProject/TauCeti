@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
-public import TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 
@@ -25,7 +24,9 @@ Bimultiplicativity is read off that formula rather than cited from `hilbertSymbo
 theorem about the symbol: they are not available at an archimedean place, and citing them here
 would be a type error rather than a shortcut.  At a complex place the symbol is `1` for the same
 reason the archimedean classification of a form is by rank alone: every element of `ℂˣ` is a
-square.
+square.  `TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`, in
+`TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed`, already computes that case at the
+algebraically closed completion, so the symbol at a complex place needs no theorem of its own.
 
 The file also records the real-place half of the sign prescription of O'Meara 71:19.  Given a
 prescribed element `b` that is a nonsquare at a real place,
@@ -41,8 +42,6 @@ sign-prescription argument needs at each place of its set;
 * `TauCeti.hilbertSymbol_unitAtRealPlace_mul_left` and
   `TauCeti.hilbertSymbol_unitAtRealPlace_mul_right`: bimultiplicativity of the localized real
   symbol, read off that formula.
-* `TauCeti.hilbertSymbol_unitAtComplexEmbedding_eq_one`: the symbol of two global units read
-  through the complex embedding of an infinite place is `1`.
 * `TauCeti.isSquare_unitAtRealPlace_iff` and `TauCeti.not_isSquare_unitAtRealPlace_iff`: a
   global unit is a square at a real place exactly when it is positive there.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
@@ -83,9 +82,9 @@ variable {K : Type*} [Field K] [NumberField K]
 omit [NumberField K] in
 /-- The archimedean symbol at a real place is `-1` exactly when both global units are negative
 there.  The archimedean formula is `TauCeti.hilbertSymbol_real`, read through
-`TauCeti.unitAtRealPlace`.  Layer 4.4 asks for this statement in global notation, because
-`hilbertSymbol_mul` is not available at a real place and the sign prescription has to multiply
-these symbols over the archimedean places by hand. -/
+`TauCeti.unitAtRealPlace`.  The formula is read at a place rather than through
+`TauCeti.hilbertSymbol_mul`, which is unavailable at a real place, so the sign prescription has
+to multiply these symbols over the archimedean places by hand. -/
 @[simp]
 theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
@@ -105,11 +104,9 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
 
 omit [NumberField K] in
 /-- **Bimultiplicativity of the localized real symbol, in the first parameter.** This is
-`TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field.
-
-Layer 4.4 pins this to the archimedean formula.  The instance `TauCeti.hilbertSymbol_mul` is
-stated over a nonarchimedean local field, and this symbol is taken at a real place, so it cannot
-be used here. -/
+`TauCeti.hilbertSymbol_real_mul_left` read at a real place of a number field.  The instance
+`TauCeti.hilbertSymbol_mul` is stated over a nonarchimedean local field, and this symbol is taken
+at a real place, so it cannot be used here. -/
 theorem hilbertSymbol_unitAtRealPlace_mul_left (w : {w : InfinitePlace K // w.IsReal})
     (a a' b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w (a * a')) (unitAtRealPlace w b) =
@@ -160,20 +157,6 @@ theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal})
       simpa only [map_zero] using hz
     exact a.ne_zero ((embedding_of_isReal w.2).injective h1)
   exact ⟨fun h => ⟨h, hne⟩, fun h => h.1⟩
-
-omit [NumberField K] in
-/-- **The symbol is trivial at a complex place.** For any infinite place `w` of `K` and global
-units `a, b`, the symbol of their images through the complex embedding of `w` is `1`.
-
-Layer 4.4 states the archimedean symbol as a formula which is `1` at every complex place.  Every
-element of `ℂˣ` is a square, so the symbol is trivial there.  This holds at the complex embedding
-of a real place as well, which is why the statement is made for every infinite place rather than
-only for the non-real ones.  It carries no `@[simp]` attribute, because
-`hilbertSymbol_eq_one_of_isAlgClosed` is already a simp lemma and this statement is an instance of
-it, so tagging this one would only duplicate that lemma. -/
-theorem hilbertSymbol_unitAtComplexEmbedding_eq_one (w : InfinitePlace K) (a b : Kˣ) :
-    hilbertSymbol (Units.map w.embedding.toMonoidHom a) (Units.map w.embedding.toMonoidHom b) = 1 :=
-  hilbertSymbol_eq_one_of_isAlgClosed _ _
 
 omit [NumberField K] in
 /-- **A prescribed negative global unit at a real place has a partner with symbol `-1`.**
