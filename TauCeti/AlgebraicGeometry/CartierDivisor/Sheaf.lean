@@ -391,18 +391,12 @@ private def localTrivializations (D : CartierDivisor X) :
     TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} D.sheaf := by
   choose f hf using D.exists_isLocalEquationAt
   choose V hx hV using fun x ↦ isLocalEquationAt_iff.mp (hf x)
-  exact
-    { I := X
-      X := V
-      coversTop := (Opens.coversTop_iff (X : Type u) V).mpr
-        (IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩))
-      iso := fun x ↦
-        haveI : Nonempty (V x) := ⟨⟨x, hx x⟩⟩
-        TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (V x)) ≪≫
-          (SheafOfModules.overFunctor X.ringCatSheaf (V x)).mapIso
-            (unitIsoSheafPrincipalCartierDivisor X (f x)) ≪≫
-          sheafOverIsoOfRestrictEq _ D (V x)
-            ((principalCartierDivisor_restrict X (f x) (V x)).trans (hV x)) }
+  exact SheafOfModules.LocalTrivializations.ofForallMem X V hx fun x ↦
+    haveI : Nonempty (V x) := ⟨⟨x, hx x⟩⟩
+    (SheafOfModules.overFunctor X.ringCatSheaf (V x)).mapIso
+      (unitIsoSheafPrincipalCartierDivisor X (f x)) ≪≫
+      sheafOverIsoOfRestrictEq _ D (V x)
+        ((principalCartierDivisor_restrict X (f x) (V x)).trans (hV x))
 
 /-- **The sheaf of a Cartier divisor is a line bundle.** On an integral scheme, `𝒪_X(D)` is
 locally free of rank one: over an open subset on which `f` is an equation of `D`, it is

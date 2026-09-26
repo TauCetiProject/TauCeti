@@ -52,7 +52,7 @@ normal forms for sections used in line-bundle constructions.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry TopologicalSpace
 
 namespace TauCeti
 
@@ -65,6 +65,19 @@ noncomputable section
 namespace SheafOfModules
 
 variable (X : Scheme.{u})
+
+/-- Construct a rank-one atlas from a neighbourhood of each point and a trivialization there. -/
+def LocalTrivializations.ofForallMem {M : X.Modules} (V : X → X.Opens)
+    (hx : ∀ x, x ∈ V x)
+    (e : ∀ x, _root_.SheafOfModules.unit (X.ringCatSheaf.over (V x)) ≅ M.over (V x)) :
+    TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M :=
+  { I := X
+    X := V
+    coversTop := (Opens.coversTop_iff (X : Type u) V).mpr
+      (TopologicalSpace.IsOpenCover.mk
+        (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩))
+    iso := fun x ↦ TauCeti.SheafOfModules.freePUnitIsoUnit
+      (X.ringCatSheaf.over (V x)) ≪≫ e x }
 
 /-- The object property of being an invertible sheaf on a scheme. -/
 abbrev isInvertible : ObjectProperty X.Modules :=
