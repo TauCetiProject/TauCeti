@@ -110,6 +110,12 @@ private theorem alternatingGroupFiveGaloisEquiv_apply (x : Cyclotomic 5) :
         (alternatingGroupFive_isRoot_zeta_pow (by decide)) x := by
   rfl
 
+/-- The Galois automorphism sends the distinguished fifth root of unity to its square. -/
+@[simp]
+theorem alternatingGroupFiveGaloisEquiv_zeta :
+    alternatingGroupFiveGaloisEquiv (Cyclotomic.zeta 5) = Cyclotomic.zeta 5 ^ 2 := by
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_zeta]
+
 /-- The Galois automorphism `ζ ↦ ζ²` exchanges the two golden-ratio values. -/
 @[simp]
 theorem alternatingGroupFiveGaloisEquiv_golden :
