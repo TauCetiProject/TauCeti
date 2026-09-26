@@ -137,7 +137,8 @@ theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
 /-- Unlike `HalfPlane.lean`'s half-planes, the geodesic line's image is unaffected by
-multiplying by `pslS` (the `PSL(2, ℝ)` element of `z ↦ -1/z`, defined in `PSL/Action.lean`): for
+multiplying by `pslS` (the `PSL(2, ℝ)` element of `z ↦ -1/z`, defined in
+`LinearAlgebra/Matrix/ProjectiveSpecialLinearGroup.lean`): for
 this representative change, `HalfPlane.lean`'s `rightHalfPlane_mul_pslS` swaps the two sides
 while the line itself is fixed setwise. -/
 theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :

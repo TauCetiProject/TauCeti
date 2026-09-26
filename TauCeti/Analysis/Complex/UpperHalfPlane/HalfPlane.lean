@@ -50,7 +50,8 @@ with the same line image gives the same *unordered* pair of sides is not proved 
   membership in the closed half-planes directly.
 * `TauCeti.UpperHalfPlane.rightHalfPlane_mul_pslS`, `leftHalfPlane_mul_pslS` — witness that
   `rightHalfPlane`/`leftHalfPlane` depend on the chosen representative of a geodesic line, not
-  just its image (`pslS`, the `PSL(2, ℝ)` element of `z ↦ -1/z`, is defined in `PSL/Action.lean`;
+  just its image (`pslS`, the `PSL(2, ℝ)` element of `z ↦ -1/z`, is defined in
+  `LinearAlgebra/Matrix/ProjectiveSpecialLinearGroup.lean`;
   `Geodesic.lean`'s `range_geodesicLine_mul_pslS` is the companion fact for the line itself).
 -/
 
@@ -226,7 +227,8 @@ theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
 
 /-! ### The non-canonicity witness
 
-`pslS` (defined in `PSL/Action.lean`, the `PSL(2, ℝ)` element of `z ↦ -1/z`). Multiplying any
+`pslS` (defined in `LinearAlgebra/Matrix/ProjectiveSpecialLinearGroup.lean`, the `PSL(2, ℝ)`
+element of `z ↦ -1/z`). Multiplying any
 representative `g` by it fixes the geodesic line's image (`range_geodesicLine_mul_pslS` in
 `Geodesic.lean`) but swaps which half-plane is called `right`, so the labelling is a choice of
 representative, not an invariant of the line. -/
