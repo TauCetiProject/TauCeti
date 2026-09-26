@@ -409,7 +409,7 @@ theorem intStructureConstant₂_skew {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L 
     have hβα : (γ : H → K) = (β : H → K) + α := by rw [hαβ, add_comm]
     rw [hx.intStructureConstant₂_eq_intStructureConstant β α γ hγ hβα,
       hx.intStructureConstant₂_eq_intStructureConstant α β γ hγ hαβ]
-    exact hx.intStructureConstant_skew α β γ hγ hαβ hβα
+    exact hx.intStructureConstant_skew α β γ hγ hαβ
   · have h' : ¬ ∃ γ : Weight K H L, γ.IsNonZero ∧
         ((γ : H → K) = (β : H → K) + α) := by
       rintro ⟨γ, hγ, hαβ⟩
