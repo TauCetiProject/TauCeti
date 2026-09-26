@@ -16,6 +16,9 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Ba
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+-- Non-public: the permutation-matrix description of the Weyl element is used only to compute
+-- its action on the diagonal coordinates.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
 -- Non-public: irreducibility of a line and its passage to `CategoryTheory.Simple` are used only
 -- inside the proof that the two sides of the Mackey condition are simple.
 import TauCeti.RepresentationTheory.Irreducible
@@ -179,10 +182,12 @@ theorem diag_mackeyToH (g : (mackeySubgroup (GL2WeylElement R) (GL2Borel R)
     diag (mackeyToH (GL2WeylElement R) (GL2Borel R) (GL2Borel R) g) =
       ((diag (g : GL2Borel R)).2, (diag (g : GL2Borel R)).1) := by
   apply Prod.ext <;> apply Units.ext
-  · simp only [diag_fst_val, diag_snd_val, coe_mackeyToH_apply, gl2WeylElement_inv]
-    simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
-  · simp only [diag_snd_val, diag_fst_val, coe_mackeyToH_apply, gl2WeylElement_inv]
-    simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
+  · simp only [diag_fst_val, diag_snd_val, coe_mackeyToH_apply,
+      gl2WeylElement_eq_permutationGL_swap,
+      coe_permutationGL_inv_mul_mul_permutationGL_apply, Equiv.swap_apply_left]
+  · simp only [diag_snd_val, diag_fst_val, coe_mackeyToH_apply,
+      gl2WeylElement_eq_permutationGL_swap,
+      coe_permutationGL_inv_mul_mul_permutationGL_apply, Equiv.swap_apply_right]
 
 /-- **The determinant does not see the Mackey conjugation.** Conjugation is inner and the
 determinant is a homomorphism into a commutative group, so it is unchanged; this is why the
