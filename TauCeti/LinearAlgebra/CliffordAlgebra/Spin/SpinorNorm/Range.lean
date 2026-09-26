@@ -19,9 +19,6 @@ anisotropic reflection.
 This reduces the orthogonal column of a local spinor-norm calculation to the special orthogonal
 column and one value of the quadratic form.
 
-The argument uses the index-two theorem for the determinant kernel, so it applies uniformly
-over all fields of characteristic different from two.
-
 ## References
 
 O. T. O'Meara, *Introduction to Quadratic Forms*, §55.
