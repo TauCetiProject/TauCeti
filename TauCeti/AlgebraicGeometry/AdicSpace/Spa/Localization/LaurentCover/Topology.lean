@@ -53,7 +53,7 @@ variable (S₁ S₂ : Type v) [CommRing S₁] [Algebra A S₁] [IsLocalization.A
 
 /-- The augmentation for a Laurent cover is a closed embedding. In particular, the topology
 on `A` is the subspace topology on the equalizer of the two restrictions to the overlap. -/
-theorem laurentCover_isClosedEmbedding :
+theorem isClosedEmbedding_laurentCover :
     letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
     letI := locUniformSpace P {f, 1} 1 S₁ hden₁
     letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
@@ -133,7 +133,7 @@ variable (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1
 /-- The difference of the two restrictions in a Laurent cover is an open quotient map.
 Thus the topology on the overlap ring agrees with the quotient topology from the product
 of the two coordinate rings. -/
-theorem laurentCover_isOpenQuotientMap
+theorem isOpenQuotientMap_laurentCover
     (S₁₂ : Type*) [CommRing S₁₂] [Algebra A S₁₂] [IsLocalization.Away (1 * f) S₁₂] :
     letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
     letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
@@ -226,9 +226,22 @@ theorem laurentCover_isOpenQuotientMap
       {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl (by simp)).comp continuous_fst).sub
       ((continuous_restrictionRingHom P {1} f S₂ hden₂
         {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f) (by simp)).comp continuous_snd)
+  -- Identify the additive differential with its A-linear presentation.
+  have hdiff : ⇑(r₁.toRingHom.toAddMonoidHom.comp
+      (AddMonoidHom.fst (Completion S₁) (Completion S₂)) -
+    r₂.toRingHom.toAddMonoidHom.comp
+      (AddMonoidHom.snd (Completion S₁) (Completion S₂))) = d := by
+    funext x
+    simp only [d, AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_fst,
+      AddMonoidHom.coe_snd, RingHom.toAddMonoidHom_eq_coe,
+      AddMonoidHom.coe_coe, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply,
+      AlgHom.toLinearMap_apply]
+  have hsurj : Function.Surjective d := by
+    simpa only [← hdiff] using laurentCover_surjective P f S₁ S₂ S₁₂ hden₂
   -- Apply open mapping to the surjective difference of restrictions.
-  exact ⟨laurentCover_surjective P f S₁ S₂ S₁₂ hden₂, hd,
-    IsTateRing.isOpenMap d (laurentCover_surjective P f S₁ S₂ S₁₂ hden₂) hd.continuousAt⟩
+  simpa only [← hdiff] using
+    (⟨hsurj, hd, IsTateRing.isOpenMap d hsurj hd.continuousAt⟩ : IsOpenQuotientMap d)
 
 end Differential
 
