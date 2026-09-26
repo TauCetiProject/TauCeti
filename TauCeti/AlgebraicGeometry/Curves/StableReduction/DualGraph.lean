@@ -15,10 +15,11 @@ public import Mathlib.Logic.Relation
 The **dual graph** of a proper geometric nodal curve is the finite connected weighted graph whose
 vertices are the irreducible components, whose edges are the nodes (with two half-edges even when
 both endpoints agree, so loops contribute two to valence), and whose vertex weights are the genera
-of the components. This is the combinatorial carrier that Layer 1 of the Stable Reduction roadmap
-pins before numerical types and decorated graphs.
+of the components.
 
-The signatures match `StableReduction/Suggested.lean`.
+The arithmetic genus of the curve is recovered from this combinatorial data alone: it is the sum
+of the component genera plus the first Betti number of the underlying graph, the latter measuring
+how many independent cycles the nodes create.
 
 ## Main definitions
 
@@ -29,7 +30,9 @@ The signatures match `StableReduction/Suggested.lean`.
 
 ## References
 
-* [Stacks, Tag 0C6P](https://stacks.math.columbia.edu/tag/0C6P) (dual graph of a nodal curve).
+* [Caporaso, *On the complexity group of stable curves*](https://arxiv.org/abs/0808.1529),
+  Section 1: the dual graph of a nodal curve, its first Betti number `b₁ = δ - γ + c`, and the
+  arithmetic genus as the sum of component genera plus `b₁`.
 -/
 
 public section
@@ -46,16 +49,12 @@ structure DualGraph where
   Vertex : Type u
   /-- There are finitely many components. -/
   [vertexFintype : Fintype Vertex]
-  /-- Components can be told apart. -/
-  [vertexDecidableEq : DecidableEq Vertex]
   /-- A curve has at least one component. -/
   [vertexNonempty : Nonempty Vertex]
   /-- The edges, indexing the nodes of the curve. -/
   Edge : Type u
   /-- There are finitely many nodes. -/
   [edgeFintype : Fintype Edge]
-  /-- Nodes can be told apart. -/
-  [edgeDecidableEq : DecidableEq Edge]
   /-- The two branches of a node, as an edge together with a half-edge index. Both values may
   agree, which is how a node joining a component to itself becomes a loop. -/
   endpoint : Edge → Fin 2 → Vertex
@@ -71,10 +70,8 @@ namespace DualGraph
 variable (G : DualGraph)
 
 instance : Fintype G.Vertex := G.vertexFintype
-instance : DecidableEq G.Vertex := G.vertexDecidableEq
 instance : Nonempty G.Vertex := G.vertexNonempty
 instance : Fintype G.Edge := G.edgeFintype
-instance : DecidableEq G.Edge := G.edgeDecidableEq
 
 /-- Half-edges make the loop-counting convention explicit in the data. -/
 abbrev HalfEdge := G.Edge × Fin 2
@@ -82,11 +79,27 @@ abbrev HalfEdge := G.Edge × Fin 2
 /-- The vertex incident to a half-edge. -/
 def HalfEdge.vertex (h : G.HalfEdge) : G.Vertex := G.endpoint h.1 h.2
 
+-- `by rfl`, not `rfl`: `HalfEdge.vertex` is not `@[expose]`, so a theorem exported from this
+-- module cannot unfold it in term mode.
+@[simp]
+theorem HalfEdge.vertex_mk (e : G.Edge) (i : Fin 2) :
+    HalfEdge.vertex G (e, i) = G.endpoint e i := by rfl
+
 /-- The first Betti number of the connected dual graph, by Euler characteristic. -/
 def firstBetti : ℕ := Fintype.card G.Edge + 1 - Fintype.card G.Vertex
 
+-- `by rfl`, not `rfl`: `firstBetti` is not `@[expose]`, so a theorem exported from this module
+-- cannot unfold it in term mode.
+@[simp]
+theorem firstBetti_eq : G.firstBetti = Fintype.card G.Edge + 1 - Fintype.card G.Vertex := by rfl
+
 /-- The arithmetic genus encoded by a connected weighted dual graph. -/
 def arithmeticGenus : ℕ := (∑ v, G.genus v) + G.firstBetti
+
+-- `by rfl`, not `rfl`: `arithmeticGenus` is not `@[expose]`, so a theorem exported from this
+-- module cannot unfold it in term mode.
+@[simp]
+theorem arithmeticGenus_eq : G.arithmeticGenus = (∑ v, G.genus v) + G.firstBetti := by rfl
 
 end DualGraph
 
