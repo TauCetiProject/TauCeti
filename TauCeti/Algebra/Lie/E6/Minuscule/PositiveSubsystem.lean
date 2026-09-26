@@ -44,6 +44,9 @@ be proved.
 
 ## References
 
+* The type-`E₇` positive subsystem construction in `TauCeti.Algebra.Lie.E7.Minuscule`, introduced
+  in [TauCetiProject/TauCeti#9054](https://github.com/TauCetiProject/TauCeti/pull/9054), for the
+  interface and proof organization specialized here.
 * J. E. Humphreys, *Linear Algebraic Groups*, Sections 26--28.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 8.2.
 -/
