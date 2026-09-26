@@ -49,6 +49,9 @@ the column geometry.
   rectangle recut with the emptiness hypotheses discharged once, used by the terminal-side
   overlap results (branch determination, turn-row transport, and promotion) and the
   X-avoidance results instead of repeating the construction.
+* `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty_eq_recut`: the shared recut
+  identified with the underlying rectangle decomposition's recut, for consumers that need the
+  definitional unfolding.
 
 These are the recut/repartition combinatorics and weight transfers for the pentagon-counting
 commutation chain map.
@@ -463,7 +466,7 @@ recut along its common side, with the rectangle emptiness supplied from `hrectan
 pentagon emptiness from `hpentagon`. The terminal-side overlap results (branch determination,
 turn-row transport, and promotion) and the X-avoidance results work with this single
 construction rather than repeating it. -/
-noncomputable def recutOfIsEmpty
+@[expose] noncomputable def recutOfIsEmpty
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
@@ -477,6 +480,22 @@ noncomputable def recutOfIsEmpty
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using
       hpentagon)
+
+/-- The shared recut is the underlying rectangle decomposition's recut along its common side.
+Consumers needing the definitional unfolding rewrite with this instead. -/
+theorem recutOfIsEmpty_eq_recut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.recutOfIsEmpty hone hrectangle hpentagon = D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using
+        hpentagon) := rfl
 
 end GridRectanglePentagonDecomposition
 
