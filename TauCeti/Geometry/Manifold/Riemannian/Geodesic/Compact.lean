@@ -82,6 +82,7 @@ theorem isGeodesicallyCompleteAt_of_compactSpace (p : M) : IsGeodesicallyComplet
 
 /-- **The exponential map of a compact Riemannian manifold is everywhere defined**, its domain
 being the whole tangent space at every point. -/
+@[simp]
 theorem expDomain_eq_univ_of_compactSpace (p : M) : expDomain I M p = univ :=
   expDomain_eq_univ_iff.2 (isGeodesicallyCompleteAt_of_compactSpace p)
 
