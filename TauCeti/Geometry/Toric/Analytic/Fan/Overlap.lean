@@ -213,14 +213,6 @@ theorem analyticOverlapRight_self (σ : Φ.cones) :
   obtain ⟨y, rfl⟩ := (Φ.mem_analyticOverlapOpens hΦ σ σ x).1 hx
   simp [analyticOverlapRight_self]
 
-/-- Pointwise composition of maps in the analytic affine chart diagram. -/
-theorem analyticChartMap_comp {α β γ : Φ.cones} (f : α ⟶ β) (g : β ⟶ γ)
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj α) :
-    (Φ.analyticAffineChartDiagram hΦ).map g
-        ((Φ.analyticAffineChartDiagram hΦ).map f x) =
-      (Φ.analyticAffineChartDiagram hΦ).map (f ≫ g) x := by
-  exact (ConcreteCategory.congr_hom ((Φ.analyticAffineChartDiagram hΦ).map_comp f g) x).symm
-
 /-- A point coming from a common face belongs to the overlap of the two charts. -/
 theorem mem_analyticOverlapOpens_of_le {γ σ τ : Φ.cones} (hγσ : γ ≤ σ)
     (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram hΦ).obj γ) :
