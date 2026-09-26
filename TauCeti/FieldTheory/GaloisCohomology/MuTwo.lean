@@ -82,10 +82,12 @@ noncomputable def negOne : KummerCoeff K 2 :=
 theorem toMul_negOne : negOne.toMul.1 = (-1 : (SeparableClosure K)ˣ) :=
   Units.ext (by simp [negOne])
 
-/-- **The `2`nd roots of unity of a separable closure are `1` and `-1`**, when `2` is invertible
-in the base field: `ζ ^ 2 = 1` in a field forces `ζ = 1` or `ζ = -1`, by factoring `ζ ^ 2 - 1`.
-Invertibility of `2` is what rules out characteristic two, where `-1 = 1`. -/
-theorem toMul_eq_one_or_neg_one [Invertible (2 : K)] (x : KummerCoeff K 2) :
+/-- **The `2`nd roots of unity of a separable closure are `1` and `-1`**: `ζ ^ 2 = 1` in a field
+forces `ζ = 1` or `ζ = -1`, by factoring `ζ ^ 2 - 1`. No hypothesis on the characteristic is
+needed here: in characteristic two the two values coincide (`-1 = 1`), which is why the two roots
+are shown to be *distinct* only under `[Invertible (2 : K)]`
+(`TauCeti.negOne_ne_zero`). -/
+theorem toMul_eq_one_or_neg_one (x : KummerCoeff K 2) :
     x.toMul = 1 ∨ x.toMul.1 = -1 := by
   have hu : (x.toMul.1 : (SeparableClosure K)ˣ) ^ 2 = 1 := (mem_rootsOfUnity 2 _).1 x.toMul.2
   have hx : (Units.val x.toMul.1 : (SeparableClosure K)) ^ 2 = 1 := congrArg Units.val hu
@@ -98,7 +100,7 @@ theorem toMul_eq_one_or_neg_one [Invertible (2 : K)] (x : KummerCoeff K 2) :
       simpa using (eq_neg_iff_add_eq_zero (a := Units.val x.toMul.1) (b := 1)).mpr h))
 
 /-- An element of `μ₂` is `0` or `-1`. -/
-theorem eq_zero_or_eq_negOne [Invertible (2 : K)] (x : KummerCoeff K 2) :
+theorem eq_zero_or_eq_negOne (x : KummerCoeff K 2) :
     x = 0 ∨ x = negOne := by
   rcases toMul_eq_one_or_neg_one x with h | h
   · exact Or.inl (Additive.toMul.injective h)
@@ -126,19 +128,22 @@ private theorem negOne_add_negOne : (negOne : KummerCoeff K 2) + negOne = 0 := b
 
 /-! ### The trivial Galois action -/
 
-variable (K) [Invertible (2 : K)]
+variable (K)
 
 /-- **The Galois action on `μ₂` is trivial.** Every `2`nd root of unity in a separable closure is
 `±1` (TauCeti.toMul_eq_one_or_neg_one), hence lies in the base field and is fixed by `G_K`. This
 is what makes the Kummer coefficients at `n = 2` isomorphic to the trivial `F₂` coefficient
-object, and it is false at `n > 2`, which is why every mod-2 statement carries
-`[Invertible (2 : K)]` rather than a general `n`. -/
+object, and it is false at `n > 2`. It is a statement about a field in any characteristic: the
+hypothesis `[Invertible (2 : K)]` is what the rest of the layer needs to tell the two roots
+apart, not what triviality of the action needs. -/
 theorem kummerCoeff_smul_eq_self (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
     g • x = x := by
   refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
   rcases toMul_eq_one_or_neg_one x with h | h <;> simp [h]
 
 /-! ### The value dictionary -/
+
+variable [Invertible (2 : K)]
 
 /-- **`2` is a unit of `K`**, in the `ℕ`-coerced spelling the Kummer statements are made in: the
 Kummer isomorphism and the map `H²(G_K, μ₂) → H²(G_K, (Kˢ)ˣ)` both ask for `IsUnit (2 : K)`. -/
