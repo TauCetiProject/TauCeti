@@ -22,6 +22,9 @@ the entire hidden block, not merely given a directing measure.
 
 ## References
 
+* The finite-strip lemma is adapted from
+  `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_domRestrict_compl_of_finite` in
+  `TauCeti.Probability.Exchangeability.Arrays.Block.Independence`.
 * D. Aldous, "Representations for partially exchangeable arrays of random variables",
   *Journal of Multivariate Analysis* 11 (1981), 581–598.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005,
