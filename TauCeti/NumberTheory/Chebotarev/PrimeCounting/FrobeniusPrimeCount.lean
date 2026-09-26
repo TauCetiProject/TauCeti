@@ -60,7 +60,7 @@ theorem natCast_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) 
 
 /-- The logarithmically weighted count of a Frobenius class satisfies
 `ϑ_C(x) = (#C / #Gal(L/K)) x + o(x)`. -/
-theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
+private theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ frobeniusTheta K L C x -
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) * x) =o[atTop] id := by
   have h := (frobeniusPsi_asymptotic K L C).sub
@@ -74,32 +74,27 @@ theorem tendsto_frobeniusTheta (C : ConjClasses (L ≃ₐ[K] L)) :
   (isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp
     (frobeniusTheta_asymptotic K L C)
 
-/-- The count of primes in a Frobenius class is
-`(#C / #Gal(L/K)) Li(x) + o(x / log x)`. -/
-theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
-    (C : ConjClasses (L ≃ₐ[K] L)) :
-    (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) -
-      ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) * Real.logIntegral x)
-        =o[atTop] fun x : ℝ ↦ x / Real.log x := by
-  simpa only [natCast_frobeniusPrimeCount] using
-    primeCount_sub_mul_logIntegral_isLittleO (by
-      simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C)
-
 /-- Qualitative prime-counting Chebotarev: the proportion relative to `x / log x` of primes
 whose arithmetic Frobenius lies in `C` tends to `#C / #Gal(L/K)`. -/
 theorem tendsto_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) :
     Tendsto (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) / (x / Real.log x))
       atTop (𝓝 ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L))) := by
   let δ : ℝ := (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)
-  have herror := (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C).tendsto_div_nhds_zero
+  have herror := (primeCount_sub_mul_logIntegral_isLittleO (K := K)
+    (S := frobeniusPrimeSet K L C) (δ := δ) (by
+    simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C)).tendsto_div_nhds_zero
   have hLi : Tendsto (fun x : ℝ ↦ Real.logIntegral x / (x / Real.log x)) atTop (𝓝 1) := by
     refine Real.tendsto_logIntegral_mul_log_div_atTop.congr' ?_
     filter_upwards [eventually_gt_atTop (2 : ℝ)] with x _
     simp only [div_div_eq_mul_div]
   have h := herror.add (hLi.const_mul δ)
-  simpa only [zero_add, mul_one] using h.congr' (Eventually.of_forall fun x ↦ by
-    dsimp [δ]
-    ring)
+  have hcount : Tendsto
+      (fun x : ℝ ↦ primeCount K (frobeniusPrimeSet K L C) x / (x / Real.log x))
+      atTop (𝓝 ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L))) := by
+    simpa only [zero_add, mul_one] using h.congr' (Eventually.of_forall fun x ↦ by
+      dsimp [δ]
+      ring)
+  simpa only [← natCast_frobeniusPrimeCount] using hcount
 
 /-- Natural-density Chebotarev: among the primes of `K`, the primes with arithmetic Frobenius
 class `C` have density `#C / #Gal(L/K)`. -/
@@ -107,8 +102,10 @@ theorem hasNaturalDensity_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L C)
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
   apply NumberField.Set.hasNaturalDensity_of_isLittleO_logIntegral
-  · simpa only [← natCast_frobeniusPrimeCount] using
-      frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C
+  · exact primeCount_sub_mul_logIntegral_isLittleO (K := K)
+      (S := frobeniusPrimeSet K L C) (δ :=
+        (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) (by
+      simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C)
   · exact primeCount_univ_sub_logIntegral_isLittleO K
 
 end NumberField.Chebotarev
