@@ -34,6 +34,10 @@ subtorus of torus points trivial on the characters vanishing on `F`: those chara
 differences of characters of the dual semigroup vanishing on `F`, because `F` is cut out by a
 single character of the dual semigroup.
 
+The membership, ray-coordinate, and quotient-orbit identities below are named rewrite lemmas.
+Existing simp lemmas already reduce their left-hand sides, so tagging these identities with
+`@[simp]` would violate `simpNF`.
+
 ## Main declarations
 
 * `TauCeti.Toric.affineConeOrbit`: the intrinsic stratum associated to a face.
