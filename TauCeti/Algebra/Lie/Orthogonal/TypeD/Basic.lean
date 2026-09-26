@@ -17,6 +17,8 @@ depend on a choice of Cartan subalgebra or root system.
 
 * `Matrix.fromBlocks_mem_typeD`: a block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split
   type-`D` Lie algebra when its off-diagonal blocks are skew-symmetric.
+* `TauCeti.typeD_apply_inr_inr`, `TauCeti.typeD_apply_inl_inr`, and
+  `TauCeti.typeD_apply_inr_inl`: the three block relations satisfied by a type-`D` matrix.
 -/
 
 public section
@@ -44,3 +46,62 @@ theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Finty
     one_mul, mul_one, neg_neg]
 
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
+
+/-- In a type-`D` matrix, the lower-right block is the negative transpose of the upper-left
+block. -/
+@[simp]
+theorem typeD_apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
+    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inr j) =
+      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl i) := by
+  have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
+    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
+  rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
+    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
+  have h := congr_fun (congr_fun hA (.inl i)) (.inr j)
+  exact neg_eq_iff_eq_neg.mp (by
+    simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h.symm)
+
+/-- In a type-`D` matrix, the upper-right block is skew-symmetric. -/
+theorem typeD_apply_inl_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
+    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j) =
+      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inr i) := by
+  have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
+    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
+  rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
+    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
+  have h := congr_fun (congr_fun hA (.inr j)) (.inr i)
+  simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h
+
+/-- In a type-`D` matrix, the lower-left block is skew-symmetric. -/
+theorem typeD_apply_inr_inl (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
+    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j) =
+      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr j) (.inl i) := by
+  have hA := A.2
+  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
+  -- provides no public elimination lemma for this subtype membership.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
+    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
+  rw [mem_skewAdjointMatricesSubmodule] at hA
+  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
+  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
+    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
+  have h := congr_fun (congr_fun hA (.inl j)) (.inl i)
+  simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h
+
+end TauCeti
