@@ -12,14 +12,14 @@ public import TauCeti.Probability.Exchangeability.Arrays.Extreme
 # Extremality of the row mixing law of a dissociated array
 
 The row-coding representation associates to a separately exchangeable array a unique law on
-probability measures on row paths. Its law is invariant under column permutations. If the array
+probability measures on row paths, invariant under column permutations. If the array
 is jointly dissociated, this mixing law is extreme among such invariant probability laws: a
 nontrivial convex decomposition of it would give a convex decomposition of the array law into
 jointly exchangeable laws, contradicting dissociation.
 
-This isolates the extreme case of the invariant-random-measure problem left after the first
-row-coding stage of the separate Aldous--Hoover representation. A functional coding of those
-extreme invariant laws by column and cell noise remains to be constructed.
+Thus, for a dissociated array, the first row-coding stage of the separate Aldous--Hoover
+representation is driven by an extreme column-invariant law on row-path measures; resolving such
+a law into column and cell noise gives the functional representation of the array.
 
 ## References
 
@@ -39,49 +39,24 @@ namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
-/-- A probability law on row measures is invariant under reindexing the columns exactly when
-its pushforward by every column permutation equals itself. -/
-def ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Prop :=
-  ∀ τ : Equiv.Perm ℕ, π.map (fun P ↦ P.map (permReindex τ)) = π
-
-/-- The convex family of probability laws on row-path measures invariant under coordinate
-permutations of those paths. These are precisely the possible row mixing laws of separately
-exchangeable array laws. -/
-def columnInvariantMixingLaws (α : Type*) [MeasurableSpace α] :
-    Set (Measure (ProbabilityMeasure (ℕ → α))) :=
-  {π | IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π}
-
-omit [StandardBorelSpace α] [Nonempty α] in
-/-- Membership in the column-invariant probability mixing laws. -/
-@[simp]
-theorem mem_columnInvariantMixingLaws_iff {π : Measure (ProbabilityMeasure (ℕ → α))} :
-    π ∈ columnInvariantMixingLaws α ↔
-      IsProbabilityMeasure π ∧ ColumnInvariantMixingLaw π :=
-  Iff.rfl
-
 /-- A jointly dissociated row-coding law has an extreme column-invariant mixing law. If it is a
 nontrivial convex combination of two column-invariant probability laws, both laws equal it. -/
 theorem eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb
     {π π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsProbabilityMeasure π] [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
+    [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
     (hπ₁ : ColumnInvariantMixingLaw π₁) (hπ₂ : ColumnInvariantMixingLaw π₂)
     (h : JointlyDissociated (rowCodingArrayLaw π) (fun p x ↦ x p))
     {a b : ℝ≥0∞} (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
     (hcomb : π = a • π₁ + b • π₂) : π₁ = π ∧ π₂ = π := by
+  obtain ⟨_, hπ⟩ := mem_columnInvariantMixingLaws_iff.mp <| hcomb ▸
+    convex_columnInvariantMixingLaws (mem_columnInvariantMixingLaws_iff.mpr ⟨‹_›, hπ₁⟩)
+      (mem_columnInvariantMixingLaws_iff.mpr ⟨‹_›, hπ₂⟩) ha.le hb.le hab
   have hρ₁ : JointlyExchangeable (rowCodingArrayLaw π₁) (fun p x ↦ x p) :=
     (separatelyExchangeable_rowCodingArrayLaw π₁ hπ₁).jointlyExchangeable
   have hρ₂ : JointlyExchangeable (rowCodingArrayLaw π₂) (fun p x ↦ x p) :=
     (separatelyExchangeable_rowCodingArrayLaw π₂ hπ₂).jointlyExchangeable
-  have hπ : ColumnInvariantMixingLaw π := by
-    intro τ
-    have hf : Measurable (fun P : ProbabilityMeasure (ℕ → α) ↦ P.map (permReindex τ)) :=
-      ((Measure.measurable_map _ (measurable_reindex τ)).comp
-        measurable_subtype_coe).subtype_mk
-    rw [hcomb, Measure.map_add _ _ hf,
-      Measure.map_smul _ hf.aemeasurable, Measure.map_smul _ hf.aemeasurable,
-      hπ₁ τ, hπ₂ τ]
-  have hρ : JointlyExchangeable (rowCodingArrayLaw π) (fun p x ↦ x p) := by
-    exact (separatelyExchangeable_rowCodingArrayLaw π hπ).jointlyExchangeable
+  have hρ : JointlyExchangeable (rowCodingArrayLaw π) (fun p x ↦ x p) :=
+    (separatelyExchangeable_rowCodingArrayLaw π hπ).jointlyExchangeable
   have hext := (jointlyDissociated_iff_mem_extremePoints hρ).mp h
   have hopen : rowCodingArrayLaw π ∈
       openSegment ℝ≥0∞ (rowCodingArrayLaw π₁) (rowCodingArrayLaw π₂) := by
@@ -112,8 +87,8 @@ theorem mem_extremePoints_columnInvariantMixingLaws_of_jointlyDissociated
   exact (eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb hi₁ hi₂ h
     ha hb hab hcomb.symm).1
 
-/-- A separately exchangeable, jointly dissociated array has a unique row mixing law, and that
-law is extreme among column-invariant probability laws on row-path measures. -/
+/-- A separately exchangeable, jointly dissociated array has a row mixing law which is extreme
+among column-invariant probability laws on row-path measures. -/
 theorem SeparatelyExchangeable.exists_extreme_rowMixingLaw
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
     (hexch : SeparatelyExchangeable ρ (fun p x ↦ x p))
@@ -127,11 +102,8 @@ theorem SeparatelyExchangeable.exists_extreme_rowMixingLaw
       (μ := ρ) (X := fun p x ↦ x p) (fun p ↦ (measurable_pi_apply p).aemeasurable)).mp
       hexch
   have hlaw' : ρ = rowCodingArrayLaw π := by
-    simpa only [show (fun ω : ℕ × ℕ → α ↦ fun p ↦ ω p) = id from rfl,
-      Measure.map_id] using hlaw
+    simpa only [Measure.map_id'] using hlaw
   refine ⟨π, hlaw', ?_⟩
-  have : ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) := hπ
-  exact mem_extremePoints_columnInvariantMixingLaws_of_jointlyDissociated this
-    (hlaw' ▸ hdiss)
+  exact mem_extremePoints_columnInvariantMixingLaws_of_jointlyDissociated hπ (hlaw' ▸ hdiss)
 
 end TauCeti.Probability
