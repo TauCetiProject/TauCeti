@@ -36,18 +36,36 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
   [w.asIdeal.LiesOver v.asIdeal]
 
+private theorem pow_dvd_differentIdeal_iff_le_multiplicity {n : ℕ} :
+    w.asIdeal ^ n ∣ differentIdeal (𝓞 K) (𝓞 L) ↔
+      n ≤ multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) :=
+  (FiniteMultiplicity.of_prime_left
+    (Ideal.prime_of_isPrime w.ne_bot w.isPrime)
+    differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+
 /-- At a finite prime of a number-field extension, the different exponent is at least the
 ramification index exactly when the ramification index vanishes in the base residue field. -/
 theorem ramificationIdx_le_multiplicity_differentIdeal_iff :
     w.asIdeal.ramificationIdx (𝓞 K) ≤
       multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) ↔
     ((w.asIdeal.ramificationIdx (𝓞 K) : ℕ) : (𝓞 K) ⧸ v.asIdeal) = 0 := by
-  rw [← (FiniteMultiplicity.of_prime_left
-      (Ideal.prime_of_isPrime w.ne_bot w.isPrime)
-      differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity,
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity w,
     TauCeti.pow_ramificationIdx_dvd_differentIdeal_iff (𝓞 K) v.ne_bot w.asIdeal]
   have : Algebra.IsSeparable ((𝓞 K) ⧸ v.asIdeal) ((𝓞 L) ⧸ w.asIdeal) := inferInstance
   simp only [this, not_true_eq_false, false_or]
+
+/-- The exponent of the different at a finite prime is at least one less than its
+ramification index. -/
+theorem ramificationIdx_sub_one_le_multiplicity_differentIdeal
+    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
+    [w.asIdeal.LiesOver v.asIdeal] :
+    w.asIdeal.ramificationIdx (𝓞 K) - 1 ≤
+      multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) := by
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity w,
+    ← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
+  exact pow_sub_one_dvd_differentIdeal (𝓞 K) w.asIdeal _ v.ne_bot
+    (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx'
+      (p := v.asIdeal) (P := w.asIdeal)))
 
 /-- At a finite prime of a number-field extension, the different exponent is `e - 1` exactly
 when the ramification index is nonzero in the base residue field. -/
@@ -55,15 +73,7 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
     multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
       w.asIdeal.ramificationIdx (𝓞 K) - 1 ↔
     ((w.asIdeal.ramificationIdx (𝓞 K) : ℕ) : (𝓞 K) ⧸ v.asIdeal) ≠ 0 := by
-  have hle : w.asIdeal.ramificationIdx (𝓞 K) - 1 ≤
-      multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) := by
-    rw [← (FiniteMultiplicity.of_prime_left
-        (Ideal.prime_of_isPrime w.ne_bot w.isPrime)
-        differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity,
-      ← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
-    exact pow_sub_one_dvd_differentIdeal (𝓞 K) w.asIdeal _ v.ne_bot
-      (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx'
-        (p := v.asIdeal) (P := w.asIdeal)))
+  have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal v w
   have hpos : 0 < w.asIdeal.ramificationIdx (𝓞 K) :=
     Ideal.ramificationIdx_pos w.asIdeal (𝓞 K)
   constructor
@@ -79,6 +89,7 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
 
 /-- The global different exponent at `w` is `e(w/v) - 1` precisely when the canonical
 completed extension is tamely ramified. -/
+@[simp]
 theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamified :
     multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
       w.asIdeal.ramificationIdx (𝓞 K) - 1 ↔
@@ -91,16 +102,15 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamif
 
 /-- The global different exponent at `w` reaches `e(w/v)` precisely when the canonical
 completed extension is wildly ramified. -/
+@[simp]
 theorem ramificationIdx_le_multiplicity_differentIdeal_iff_isWildlyRamified :
     w.asIdeal.ramificationIdx (𝓞 K) ≤
       multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) ↔
     TauCeti.IsWildlyRamified (v.adicCompletion K) (w.adicCompletion L) := by
-  rw [ramificationIdx_le_multiplicity_differentIdeal_iff v w,
-    TauCeti.isWildlyRamified_iff, v.ramificationIndex_adicCompletion w,
-    ← ringChar.spec (𝓀[v.adicCompletion K]) (w.asIdeal.ramificationIdx (𝓞 K))]
-  simpa only [map_natCast, not_ne_iff] using
-    (map_ne_zero (v.residueFieldEquivAdicCompletion (K := K))
-      (a := (w.asIdeal.ramificationIdx (𝓞 K) : (𝓞 K) ⧸ v.asIdeal))).not.symm
+  rw [← TauCeti.not_isTamelyRamified_iff,
+    ← multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamified v w,
+    multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff v w,
+    ramificationIdx_le_multiplicity_differentIdeal_iff v w, not_ne_iff]
 
 end IsDedekindDomain.HeightOneSpectrum
 
