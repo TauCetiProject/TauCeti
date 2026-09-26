@@ -140,6 +140,42 @@ theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι →
 
 end Fintype
 
+section DotProduct
+
+variable [Fintype ι] [Fintype κ]
+
+/-- A monomial coordinate change preserves the standard dot product exactly when every
+coordinate multiplier has square one. -/
+theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
+    (∀ x y : ι → R, monomialEquiv u e x ⬝ᵥ monomialEquiv u e y = x ⬝ᵥ y) ↔
+      ∀ i, (u i : R) ^ 2 = 1 := by
+  classical
+  have hdot (x y : ι → R) :
+      monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
+        (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
+    have hx : monomialEquiv u e x = (fun i ↦ (u i : R) * x i) ∘ e.symm := by
+      ext j
+      simp
+    have hy : monomialEquiv u e y = (fun i ↦ (u i : R) * y i) ∘ e.symm := by
+      ext j
+      simp
+    rw [hx, hy, comp_equiv_dotProduct_comp_equiv]
+  constructor
+  · intro h i
+    have hi := h (Pi.single i 1) (Pi.single i 1)
+    rw [hdot] at hi
+    simpa [dotProduct, Pi.single_apply, pow_two] using hi
+  · intro h x y
+    rw [hdot]
+    simp only [dotProduct]
+    apply Finset.sum_congr rfl
+    intro i _
+    calc
+      (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
+      _ = x i * y i := by rw [h i]; simp
+
+end DotProduct
+
 end Monomial
 
 /-! ### Signed coordinate transformations -/
@@ -187,6 +223,57 @@ theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ} (u : ι → (ZMod m)�
   ext x j
   rw [monomialEquiv_apply, signedEquiv_apply, hv]
 
+/-- A monomial map over `ZMod m` is the reduction of a signed coordinate change exactly when
+each multiplier is `1` or `-1`. -/
+theorem exists_signed_monomialEquiv_iff {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) :
+    (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e) ↔
+      ∀ i, u i = 1 ∨ u i = -1 := by
+  classical
+  constructor
+  · rintro ⟨v, hv⟩ i
+    have hi : (u i : ZMod m) = (v i : ZMod m) := by
+      have h := congrArg
+        (fun f : (ι → ZMod m) ≃ₗ[ZMod m] (κ → ZMod m) ↦
+          f (Pi.single i 1) (e i)) hv
+      simpa [monomialEquiv_apply, signedEquiv_apply] using h
+    obtain h | h := Int.units_eq_one_or (v i)
+    · left
+      apply Units.ext
+      simpa [h] using hi
+    · right
+      apply Units.ext
+      simpa [h] using hi
+  · intro hu
+    let v : ι → ℤˣ := fun i ↦ if u i = 1 then 1 else -1
+    have hv (i : ι) : (v i : ZMod m) = u i := by
+      obtain h | h := hu i
+      · simp [v, h]
+      · by_cases h1 : u i = 1
+        · simp [v, h1]
+        · simp only [v, h1, ↓reduceIte]
+          simpa using congrArg (fun a : (ZMod m)ˣ ↦ (a : ZMod m)) h.symm
+    exact ⟨v, monomialEquiv_eq_signedEquiv_of_intUnits u e v hv⟩
+
+/-- Multiplication by `2` modulo `5` is a monomial coordinate change with no signed lift. -/
+theorem not_exists_signed_monomialEquiv_zmod_five_two :
+    ¬ ∃ v : Fin 1 → ℤˣ,
+      monomialEquiv
+          (fun _ : Fin 1 ↦
+            (ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) : (ZMod 5)ˣ))
+          (Equiv.refl (Fin 1)) = signedEquiv v (Equiv.refl (Fin 1)) := by
+  intro h
+  have h0 := (exists_signed_monomialEquiv_iff (m := 5)
+    (fun _ : Fin 1 ↦
+      (ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) : (ZMod 5)ˣ))
+    (Equiv.refl (Fin 1))).mp h 0
+  rcases h0 with h0 | h0
+  · have hn : ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) ≠
+        (1 : (ZMod 5)ˣ) := by decide
+    exact hn h0
+  · have hn : ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) ≠
+        (-1 : (ZMod 5)ˣ) := by decide
+    exact hn h0
+
 section Fintype
 
 variable [Fintype ι] [Fintype κ]
@@ -195,25 +282,16 @@ variable [Fintype ι] [Fintype κ]
 @[simp]
 theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
     signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
-  calc
-    signedEquiv u e x ⬝ᵥ signedEquiv u e y =
-        ((fun i ↦ (u i : R) * x i) ∘ e.symm) ⬝ᵥ
-          ((fun i ↦ (u i : R) * y i) ∘ e.symm) := by
-            congr 1
-    _ = (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) :=
-      comp_equiv_dotProduct_comp_equiv _ _ e.symm
-    _ = x ⬝ᵥ y := by
-      simp only [dotProduct]
-      apply Finset.sum_congr rfl
-      intro i _
+  apply (dotProduct_monomialEquiv_iff
+    (fun i ↦ Units.map (Int.castRingHom R) (u i)) e).mpr
+    (by
+      intro i
       have hu : (u i : R) ^ 2 = 1 := by
         calc
           (u i : R) ^ 2 = (((u i : ℤ) ^ 2 : ℤ) : R) := by norm_cast
           _ = 1 := by simp only [← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one,
             Int.cast_one]
-      calc
-        (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
-        _ = x i * y i := by rw [hu]; simp
+      simpa using hu) x y
 
 end Fintype
 
