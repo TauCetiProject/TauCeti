@@ -48,7 +48,7 @@ variable [Algebra W₂.FunctionField W₁.FunctionField]
   (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
 
 /-- A separable isogeny sends a rational point to the point whose place lies below it. -/
-private theorem toPointHom_eq_of_restrict_eq (P : W₁.Point) (Q : W₂.Point)
+theorem toPointHom_eq_of_restrict_eq (P : W₁.Point) (Q : W₂.Point)
     (hP : haveI := φ.isScalarTower_of_algebraMap_eq_fieldPullback h
       haveI := φ.finiteDimensional_functionField h
       (W₁.pointEquivDegreeOnePlace P).1.restrict F W₂.FunctionField =
@@ -103,7 +103,7 @@ end Restrict
 
 /-- Every fibre of a separable isogeny's point map over a separably closed field has cardinality
 equal to its degree. -/
-theorem ncard_fiber_toPointHom (Q : W₂.Point) :
+@[simp] theorem ncard_fiber_toPointHom (Q : W₂.Point) :
     {P : W₁.Point | φ.toPointHom P = Q}.ncard = φ.degree := by
   let _ : Algebra W₂.FunctionField W₁.FunctionField := φ.fieldPullback.toRingHom.toAlgebra
   have h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z := fun _ ↦ rfl
@@ -138,7 +138,8 @@ theorem toPointHom_surjective : Function.Surjective φ.toPointHom := by
 
 /-- The kernel of a separable isogeny's class-group point map has cardinality equal to the
 degree over a separably closed field. -/
-theorem card_ker_toPointHom : Nat.card φ.toPointHom.ker = φ.degree := by
+-- Simplify before `AddMonoidHom.mem_ker` rewrites membership in the kernel subtype.
+@[simp↓] theorem card_ker_toPointHom : Nat.card φ.toPointHom.ker = φ.degree := by
   rw [← φ.ncard_fiber_toPointHom 0, ← Nat.card_coe_set_eq]
   exact (φ.toPointHom.card_fiber_eq_card_ker (map_zero φ.toPointHom)).symm
 
