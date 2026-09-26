@@ -227,13 +227,11 @@ abbrev grading (n : ℤ) : Submodule R (DGEnd R X) :=
 variable {R X}
 
 /-- A homogeneous endomorphism of degree `n` lies in the degree-`n` part. -/
-@[simp]
 theorem lof_mem_grading {n : ℤ} (f : DGHom R n X X) :
     lof R ℤ (fun n ↦ DGHom R n X X) n f ∈ grading R X n :=
   LinearMap.mem_range_self _ f
 
 /-- The degree-`n` part consists of the homogeneous endomorphisms of degree `n`. -/
-@[simp]
 theorem mem_grading_iff {n : ℤ} {a : DGEnd R X} :
     a ∈ grading R X n ↔ ∃ f : DGHom R n X X, lof R ℤ (fun n ↦ DGHom R n X X) n f = a :=
   LinearMap.mem_range
