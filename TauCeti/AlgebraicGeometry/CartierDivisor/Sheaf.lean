@@ -329,24 +329,27 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     IsIso (unitToSheafPrincipalCartierDivisor X f) := by
   -- Injectivity comes from that of `𝒪_X ⟶ 𝒦_X`; surjectivity from the description of the
   -- sections of `𝒪_X(div f)` as the rational functions `g` with `f g` regular.
-  refine Scheme.Modules.Hom.isIso_iff_isIso_app.mpr fun U ↦ ?_
-  rw [ConcreteCategory.isIso_iff_bijective]
-  -- Multiplication by `f⁻¹` is injective on sections, with left inverse multiplication by `f`.
-  refine ⟨fun a b hab ↦ toRationalFunctions_app_injective U ?_, fun t ↦ ?_⟩
-  · rw [← rationalFunctionsMul_app_rationalFunctionsMul_inv_app f U
-        (Scheme.Modules.Hom.app (toRationalFunctions X) U a),
-      ← rationalFunctionsMul_app_rationalFunctionsMul_inv_app f U
-        (Scheme.Modules.Hom.app (toRationalFunctions X) U b),
-      ← unitToSheafPrincipalCartierDivisor_app f U a,
-      ← unitToSheafPrincipalCartierDivisor_app f U b, hab]
-  · rcases isEmpty_or_nonempty U with hU | hU
+  refine TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _ (fun U a b hab ↦ ?_)
+    fun U t ht ↦ ?_
+  · -- Multiplication by `f⁻¹` is injective on sections, with left inverse multiplication by `f`.
+    refine toRationalFunctions_app_injective U.unop ?_
+    rw [← rationalFunctionsMul_app_rationalFunctionsMul_inv_app f U.unop
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U.unop a),
+      ← rationalFunctionsMul_app_rationalFunctionsMul_inv_app f U.unop
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U.unop b)]
+    exact congrArg _ hab
+  · induction U using Opposite.rec with | op U => ?_
+    rw [submodule_obj] at ht
+    rcases isEmpty_or_nonempty U with hU | hU
     · have hbot : U = ⊥ := Opens.coe_eq_empty.mp (Set.isEmpty_coe_sort.mp hU)
       have := subsingleton_rationalFunctions U hbot
-      exact ⟨0, sheafι_app_injective _ U (Subsingleton.elim _ _)⟩
+      exact ⟨0, @Subsingleton.elim _ this _ _⟩
     · obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl
-        (principalCartierDivisor_restrict X f U).symm).mp (sheafι_app_mem _ U t)
-      refine ⟨a, sheafι_app_injective _ U ((unitToSheafPrincipalCartierDivisor_app f U a).trans
-        ((rationalFunctionsEquiv U).injective ?_))⟩
+        (principalCartierDivisor_restrict X f U).symm).mp ht
+      refine ⟨a, (rationalFunctionsEquiv U).injective ?_⟩
+      change rationalFunctionsEquiv U (Scheme.Modules.Hom.app (rationalFunctionsMul X
+        ((f⁻¹ : X.functionFieldˣ) : X.functionField)) U
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U a)) = _
       rw [rationalFunctionsEquiv_rationalFunctionsMul_app,
         rationalFunctionsEquiv_toRationalFunctions_app, ha, ← mul_assoc, Units.inv_mul,
         one_mul]

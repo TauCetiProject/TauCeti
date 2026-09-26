@@ -20,6 +20,8 @@ land in `N` factors through `N`, uniquely because `N.ι` is a monomorphism.
 
 * `TauCeti.PresheafOfModules.liftToSubmodule` and `TauCeti.SheafOfModules.liftToSubmodule`, the
   factorization itself, with `liftToSubmodule_ι` recording that it does factor the given morphism;
+* `TauCeti.SheafOfModules.isIso_liftToSubmodule`: the factorization is an isomorphism when the
+  morphism is injective on sections with image exactly `N`;
 * `TauCeti.SheafOfModules.Submodule.homOfLE`, the inclusion of one submodule of a sheaf of modules
   into a larger one;
 * `SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules
@@ -126,6 +128,23 @@ lemma range_ι_val_app (N : M.Submodule) (U : Cᵒᵖ) :
     Set.range (N.toSubmodule.ι.app U) = N.toSubmodule.obj U := by
   ext s
   exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ ι_val_app_mem N U t, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
+
+/-- The factorization `liftToSubmodule N φ hφ` is an isomorphism when `φ` is injective on sections
+and every section of `N` is in the image of `φ`. -/
+lemma isIso_liftToSubmodule (N : M.Submodule) (φ : P ⟶ M)
+    (hφ : ∀ (U : Cᵒᵖ) (s : P.val.obj U), φ.val.app U s ∈ N.toSubmodule.obj U)
+    (hinj : ∀ U : Cᵒᵖ, Function.Injective (φ.val.app U))
+    (hsurj : ∀ (U : Cᵒᵖ) (s : M.val.obj U), s ∈ N.toSubmodule.obj U → ∃ t, φ.val.app U t = s) :
+    IsIso (liftToSubmodule N φ hφ) := by
+  rw [← isIso_iff_of_reflects_iso _ (_root_.SheafOfModules.forget _)]
+  have (U : Cᵒᵖ) : IsIso ((liftToSubmodule N φ hφ).val.app U) := by
+    rw [ConcreteCategory.isIso_iff_bijective]
+    refine ⟨fun a b hab ↦ hinj U ?_, fun s ↦ ?_⟩
+    · simpa only [liftToSubmodule_val_app_coe] using congrArg Subtype.val hab
+    · obtain ⟨t, ht⟩ := hsurj U s.1 s.2
+      exact ⟨t, Subtype.ext (by simpa only [liftToSubmodule_val_app_coe] using ht)⟩
+  exact (_root_.PresheafOfModules.isoMk (fun U ↦ asIso ((liftToSubmodule N φ hφ).val.app U))
+    fun _ _ f ↦ (liftToSubmodule N φ hφ).val.naturality f).isIso_hom
 
 namespace Submodule
 
