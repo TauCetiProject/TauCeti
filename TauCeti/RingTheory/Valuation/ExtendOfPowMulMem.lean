@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.Valuation.Basic
 /-!
 # Extending a valuation from a subring reached by the powers of an element
 
-Let `R` be a subring of a commutative ring `A`, and let `s ∈ R` be an element some power of which
-carries each element of `A` into `R`: for every `a` there is an `n` with `sⁿ * a ∈ R`. A
+Let `R` be a subring of a ring `A`, and let `s ∈ R` be central in `A`, with some power of `s`
+carrying each element of `A` into `R`: for every `a` there is an `n` with `sⁿ * a ∈ R`. A
 valuation `w` of `R` that does not vanish at `s` then has only one possible extension to `A`,
 
 `v a = w (sⁿ * a) * (w s)⁻ⁿ`,
@@ -81,7 +81,7 @@ public section
 
 namespace Valuation
 
-variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+variable {A : Type*} [Ring A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
   {R : Subring A}
 
 /-- Raising the exponent keeps the product in the subring. -/
@@ -101,17 +101,18 @@ private theorem extend_aux (w : Valuation R Γ₀) {s : A} (hs : s ∈ R) (hw : 
     intro k hk j
     have hsplit : (⟨s ^ (k + j) * a, pow_add_mul_mem hs hk j⟩ : R) =
         ⟨s, hs⟩ ^ j * ⟨s ^ k * a, hk⟩ :=
-      Subtype.ext (by push_cast; ring)
+      Subtype.ext (by simp [← mul_assoc, ← pow_add, Nat.add_comm])
     rw [hsplit, map_mul, map_pow, pow_add, mul_comm (w ⟨s, hs⟩ ^ j), mul_mul_mul_comm,
       ← mul_pow, mul_inv_cancel₀ hw, one_pow, mul_one]
   -- compare both exponents with their sum
   rw [step hm n, step hn m]
-  exact congrArg₂ (· * ·) (congrArg w (Subtype.ext (by push_cast; ring))) (by rw [add_comm])
+  exact congrArg₂ (· * ·) (congrArg w (Subtype.ext (by simp [add_comm]))) (by rw [add_comm])
 
 /-- **The extension of `w` from `R` to `A`**, when every element of `A` is carried into `R` by
-some power of `s`. For any `n` with `sⁿ * a ∈ R` the value is `w (sⁿ * a) * (w s)⁻ⁿ`, and
-`extendOfPowMulMem_apply` says so at every such `n`. -/
+some power of a central element `s`. For any `n` with `sⁿ * a ∈ R` the value is
+`w (sⁿ * a) * (w s)⁻ⁿ`, and `extendOfPowMulMem_apply` says so at every such `n`. -/
 noncomputable def extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hcomm : ∀ a : A, Commute s a)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) : Valuation A Γ₀ where
   toFun a := w ⟨s ^ (hpow a).choose * a, (hpow a).choose_spec⟩ * (w ⟨s, hs⟩)⁻¹ ^ (hpow a).choose
   map_zero' := by
@@ -125,11 +126,11 @@ noncomputable def extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ 
   map_mul' x y := by
     obtain ⟨m, hm⟩ := hpow x
     obtain ⟨n, hn⟩ := hpow y
-    have hxy : s ^ (m + n) * (x * y) ∈ R := by
-      convert R.mul_mem hm hn using 1
-      ring
+    have hmul : s ^ (m + n) * (x * y) = (s ^ m * x) * (s ^ n * y) := by
+      simp only [pow_add, mul_assoc, ((hcomm x).pow_left n).left_comm]
+    have hxy : s ^ (m + n) * (x * y) ∈ R := hmul.symm ▸ R.mul_mem hm hn
     have hsplit : (⟨s ^ (m + n) * (x * y), hxy⟩ : R) = ⟨s ^ m * x, hm⟩ * ⟨s ^ n * y, hn⟩ :=
-      Subtype.ext (by push_cast; ring)
+      Subtype.ext hmul
     rw [extend_aux w hs hw _ hxy, extend_aux w hs hw _ hm, extend_aux w hs hw _ hn, hsplit,
       map_mul, pow_add, mul_mul_mul_comm]
   map_add_le_max' x y := by
@@ -141,51 +142,57 @@ noncomputable def extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ 
     have hxy : s ^ (m + n) * (x + y) ∈ R := mul_add (s ^ (m + n)) x y ▸ R.add_mem hx hy
     have hsplit : (⟨s ^ (m + n) * (x + y), hxy⟩ : R) =
         ⟨s ^ (m + n) * x, hx⟩ + ⟨s ^ (m + n) * y, hy⟩ :=
-      Subtype.ext (by push_cast; ring)
+      Subtype.ext (mul_add _ _ _)
     rw [extend_aux w hs hw _ hxy, extend_aux w hs hw _ hx, extend_aux w hs hw _ hy, hsplit,
       max_mul_mul_right]
     exact mul_le_mul_left (w.map_add _ _) _
 
 /-- The value of `extendOfPowMulMem` at the chosen exponent. -/
 private theorem extendOfPowMulMem_apply_choose (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hcomm : ∀ a : A, Commute s a)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : A) :
-    w.extendOfPowMulMem hs hpow hw a =
+    w.extendOfPowMulMem hs hcomm hpow hw a =
       w ⟨s ^ (hpow a).choose * a, (hpow a).choose_spec⟩ * (w ⟨s, hs⟩)⁻¹ ^ (hpow a).choose :=
   rfl
 
 /-- **The defining formula**, at every exponent that carries `a` into the subring. -/
 theorem extendOfPowMulMem_apply (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hcomm : ∀ a : A, Commute s a)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : A) {n : ℕ}
     (hn : s ^ n * a ∈ R) :
-    w.extendOfPowMulMem hs hpow hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n := by
+    w.extendOfPowMulMem hs hcomm hpow hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n := by
   rw [extendOfPowMulMem_apply_choose, extend_aux w hs hw _ hn]
 
 /-- **The extension restricts to `w`.** -/
 @[simp]
 theorem extendOfPowMulMem_coe (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hcomm : ∀ a : A, Commute s a)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : R) :
-    w.extendOfPowMulMem hs hpow hw (a : A) = w a := by
-  rw [extendOfPowMulMem_apply w hs hpow hw (a : A) (n := 0) (by simp)]
+    w.extendOfPowMulMem hs hcomm hpow hw (a : A) = w a := by
+  rw [extendOfPowMulMem_apply w hs hcomm hpow hw (a : A) (n := 0) (by simp)]
   simp
 
 /-- **The extension is the only one**: a valuation of `A` restricting to `w` on `R` is
 `extendOfPowMulMem`. In particular the extension is canonical. -/
 theorem eq_extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hcomm : ∀ a : A, Commute s a)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (v : Valuation A Γ₀)
-    (hv : ∀ a : R, v (a : A) = w a) : v = w.extendOfPowMulMem hs hpow hw := by
+    (hv : ∀ a : R, v (a : A) = w a) : v = w.extendOfPowMulMem hs hcomm hpow hw := by
   ext a
   obtain ⟨n, hn⟩ := hpow a
   have hval : w ⟨s ^ n * a, hn⟩ = w ⟨s, hs⟩ ^ n * v a := by
     rw [← hv ⟨s ^ n * a, hn⟩, ← hv ⟨s, hs⟩, ← map_pow, ← map_mul]
-  rw [extendOfPowMulMem_apply w hs hpow hw a hn, hval, mul_right_comm, ← mul_pow,
+  rw [extendOfPowMulMem_apply w hs hcomm hpow hw a hn, hval, mul_right_comm, ← mul_pow,
     mul_inv_cancel₀ hw, one_pow, one_mul]
 
-/-- **The extension does not depend on `s`**: two elements of `R` whose powers carry `A` into `R`
-and at which `w` is nonzero give the same extension. -/
+/-- **The extension does not depend on `s`**: two central elements of `R` whose powers carry
+`A` into `R` and at which `w` is nonzero give the same extension. -/
 theorem extendOfPowMulMem_congr (w : Valuation R Γ₀) {s t : A} (hs : s ∈ R)
+    (hcomms : ∀ a : A, Commute s a)
     (hpows : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hws : w ⟨s, hs⟩ ≠ 0) (ht : t ∈ R)
-    (hpowt : ∀ a : A, ∃ n : ℕ, t ^ n * a ∈ R) (hwt : w ⟨t, ht⟩ ≠ 0) :
-    w.extendOfPowMulMem hs hpows hws = w.extendOfPowMulMem ht hpowt hwt :=
-  eq_extendOfPowMulMem w ht hpowt hwt _ (extendOfPowMulMem_coe w hs hpows hws)
+    (hcommt : ∀ a : A, Commute t a) (hpowt : ∀ a : A, ∃ n : ℕ, t ^ n * a ∈ R)
+    (hwt : w ⟨t, ht⟩ ≠ 0) :
+    w.extendOfPowMulMem hs hcomms hpows hws = w.extendOfPowMulMem ht hcommt hpowt hwt :=
+  eq_extendOfPowMulMem w ht hcommt hpowt hwt _ (extendOfPowMulMem_coe w hs hcomms hpows hws)
 
 end Valuation
