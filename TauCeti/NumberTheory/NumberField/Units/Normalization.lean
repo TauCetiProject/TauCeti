@@ -14,7 +14,7 @@ At a real infinite place, an absolute value forgets the sign of an embedding. To
 rank-one minimality criterion for logarithmic embeddings into a search among real roots in an
 interval, invert a unit if its absolute value is below one and multiply it by a torsion unit
 `1` or `-1` to make its real embedding positive. The resulting unit has a positive real image
-strictly between `1` and the proposed generator's image.
+strictly between `1` and `w u`, the absolute value of the proposed generator's real embedding.
 
 The normalization is used before enumerating possible minimal polynomials: it accounts for
 both the inversion and the sign that are invisible in the absolute-value criterion.
@@ -103,7 +103,8 @@ theorem exists_normalized_unit_between (hr : rank K = 1) (u v : (𝓞 K)ˣ)
 
 open scoped Classical in
 /-- At unit rank one, a unit expanding at a real place generates the units modulo torsion if
-and only if no unit has real image strictly between `1` and its image. The equivalence includes
+and only if no unit has real image strictly between `1` and `w u`, the absolute value of the
+generator's real embedding. The equivalence includes
 the torsion sign and inversion needed to pass from the intrinsic logarithmic criterion to this
 one-sided interval. -/
 theorem generates_mod_torsion_iff_no_unit_between_real (hr : rank K = 1)
