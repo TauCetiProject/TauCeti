@@ -68,6 +68,10 @@ end Normed
 
 variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
+private abbrev singularHomologyFunctor_obj_eq_toSSetHomology (n : ℕ) (X : TopCat.{w}) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
+      (TopCat.toSSet.obj X).homology R n := rfl
+
 /-- **The suspension isomorphism for the homology of spheres.** For a point `p` of the unit
 sphere `S` of a real inner product space `E`, the reduced homology of `S` in degree `k + 1` is
 isomorphic to the reduced homology in degree `k` of the equator, the unit sphere of
@@ -80,6 +84,7 @@ def reducedSingularHomologySphereSuccIso (k : ℕ) :
   -- `TauCeti.isIso_reducedMayerVietorisδ_sphere` is a theorem rather than an instance, so it is
   -- supplied to `asIso` explicitly.
   (reducedSingularHomologySuccIso R k).app _ ≪≫
+    eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R (k + 1) _) ≪≫
     @asIso _ _ _ _ (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
       (compl_singleton_union_compl_singleton_neg p) k)
@@ -100,9 +105,8 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
         (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) := by
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
-  -- What remains is `(asIso f).hom = f`, which holds by definition; `asIso_hom` does not rewrite
-  -- here because the source of `f` is stated through `singularHomologyFunctor` in the goal and
-  -- through the singular simplicial set in the type of `f`.
+  simp only [asIso_hom]
+  simp
   rfl
 
 end TauCeti
