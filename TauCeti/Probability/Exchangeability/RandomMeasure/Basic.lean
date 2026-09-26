@@ -10,6 +10,7 @@ module
 public import TauCeti.Probability.DeFinetti.Coding
 -- Public: the measurable injective code occurs in the standard-Borel factorization.
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 -- Non-public: measurability of pushforward on probability measures is used in the proofs.
 import TauCeti.MeasureTheory.Measure.Measurability
 -- Non-public: full exchangeability is used only to prove the finitary process predicate.
@@ -131,7 +132,8 @@ theorem mem_columnInvariantMixingProbabilityMeasures_iff
 theorem convex_columnInvariantMixingProbabilityMeasures :
     Convex ℝ≥0∞ (columnInvariantMixingProbabilityMeasures α) := by
   rintro π₁ ⟨hp₁, hi₁⟩ π₂ ⟨hp₂, hi₂⟩ a b - - hab
-  refine ⟨⟨by simp [measure_univ, hab]⟩, ColumnInvariantMixingLaw.intro fun τ ↦ ?_⟩
+  refine ⟨TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul hab π₁ π₂,
+    ColumnInvariantMixingLaw.intro fun τ ↦ ?_⟩
   have hf : Measurable (fun P : ProbabilityMeasure (ℕ → α) ↦ P.map (permReindex τ)) :=
     TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
   rw [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable,

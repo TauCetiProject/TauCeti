@@ -142,12 +142,8 @@ theorem separatelyExchangeable_unitIntervalCoding
     (exchangeableLaw_deFinettiBarycenter (π := π)).map_permReindex σ
   have hcol : ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
       fun i => permReindex (α := α) τ (x i)) = deFinettiBarycenter π := by
-    have hnat := map_pi_deFinettiBarycenter π
-      (measurable_reindex τ : Measurable (permReindex (α := α) τ))
-    -- Naturality prints reindexing as a lambda; the two functions are definitionally equal.
-    change ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
-      fun i => permReindex τ (x i)) =
-        deFinettiBarycenter (π.map (fun P => P.map (permReindex τ))) at hnat
+    have hnat := map_pi_deFinettiBarycenter π (f := permReindex (α := α) τ)
+      (measurable_reindex τ)
     rw [hπ.map_permReindex τ] at hnat
     exact hnat
   calc ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map

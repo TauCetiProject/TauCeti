@@ -62,7 +62,6 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal
 
 namespace TauCeti
 

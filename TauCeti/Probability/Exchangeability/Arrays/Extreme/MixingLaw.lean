@@ -43,15 +43,12 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 nontrivial convex combination of two column-invariant probability laws, both laws equal it. -/
 private theorem eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb
     {π π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
+    [IsProbabilityMeasure π] [IsProbabilityMeasure π₁] [IsProbabilityMeasure π₂]
+    (hπ : ColumnInvariantMixingLaw π)
     (hπ₁ : ColumnInvariantMixingLaw π₁) (hπ₂ : ColumnInvariantMixingLaw π₂)
     (h : JointlyDissociated (rowCodingArrayLaw π) (fun p x ↦ x p))
     {a b : ℝ≥0∞} (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
     (hcomb : π = a • π₁ + b • π₂) : π₁ = π ∧ π₂ = π := by
-  obtain ⟨_, hπ⟩ := mem_columnInvariantMixingProbabilityMeasures_iff.mp <| hcomb ▸
-    convex_columnInvariantMixingProbabilityMeasures
-      (mem_columnInvariantMixingProbabilityMeasures_iff.mpr ⟨‹_›, hπ₁⟩)
-      (mem_columnInvariantMixingProbabilityMeasures_iff.mpr ⟨‹_›, hπ₂⟩) ha.le hb.le hab
   have hρ₁ : JointlyExchangeable (rowCodingArrayLaw π₁) (fun p x ↦ x p) :=
     (separatelyExchangeable_rowCodingArrayLaw π₁ hπ₁).jointlyExchangeable
   have hρ₂ : JointlyExchangeable (rowCodingArrayLaw π₂) (fun p x ↦ x p) :=
@@ -85,7 +82,7 @@ theorem mem_extremePoints_columnInvariantMixingProbabilityMeasures_of_jointlyDis
   have : IsProbabilityMeasure π₁ := hp₁
   have : IsProbabilityMeasure π₂ := hp₂
   obtain ⟨a, b, ha, hb, hab, hcomb⟩ := hseg
-  exact (eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb hi₁ hi₂ h
+  exact (eq_of_rowCodingArrayLaw_jointlyDissociated_convexComb hπ hi₁ hi₂ h
     ha hb hab hcomb.symm).1
 
 /-- A separately exchangeable, jointly dissociated array has a row mixing law which is extreme

@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.RowCoding
-public import TauCeti.Probability.Exchangeability.Arrays.MixingLaw
 import TauCeti.MeasureTheory.Measure.MixtureInjective
 
 /-!
@@ -39,7 +38,6 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
 
 namespace TauCeti.Probability
 
