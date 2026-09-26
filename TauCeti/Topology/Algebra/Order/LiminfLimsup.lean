@@ -29,6 +29,9 @@ This is how a one-sided estimate becomes an asymptotic: an argument that exhibit
 each member of a finite partition, and cannot see that there is no more, still determines every
 member once the total is known.
 
+The analogous Dirichlet-density squeeze is
+`NumberField.Set.hasDirichletDensity_of_squeeze`.
+
 ## Main results
 
 * `TauCeti.tendsto_of_forall_eventually_lt_of_eventually_sum_lt`: lower bounds on the members of

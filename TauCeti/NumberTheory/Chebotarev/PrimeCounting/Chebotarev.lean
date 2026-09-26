@@ -31,7 +31,8 @@ where `ψ_C = frobeniusPsi K L C` sums `log N𝔭` over the prime powers `𝔭 ^
 unramified in `L` and `Frob(𝔭) ^ j ∈ C`.
 
 The proof is the weighted form of the cyclotomic crossing behind
-`NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet`.
+`NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet`; in particular, the tagged-class
+crossing follows the proof of `NumberField.Chebotarev.hasDirichletDensity_abelianFrobenius`.
 
 * For abelian `G` and `σ ∈ G` of order `f`, pick an auxiliary prime `q` with `f ^ r ∣ q - 1`
   and cross with `M = L(μ_q)`, so that `Gal(M/K) ≃ G × (ZMod q)ˣ`. For each tag `τ` with
@@ -121,13 +122,15 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
   -- Distinct tags give distinct classes of `Gal(M/K)`, all over the class of `σ`.
   have hinj : Set.InjOn (fun τ : (ZMod q)ˣ ↦ ConjClasses.mk (e.symm (σ, τ)))
       (taggedElements (H := (ZMod q)ˣ) f : Set (ZMod q)ˣ) := fun τ _ υ _ h ↦ by
-    simpa [e] using (hζ.autToPow K).map_isConj (ConjClasses.mk_eq_mk_iff_isConj.mp h)
+    have hconj := (hζ.autToPow K).map_isConj (ConjClasses.mk_eq_mk_iff_isConj.mp h)
+    apply isConj_iff_eq.mp
+    simpa only [e, IsCyclotomicExtension.autToPow_galEquivProd_symm] using hconj
   have hover : ∀ D ∈ (taggedElements f).image fun τ : (ZMod q)ˣ ↦ ConjClasses.mk (e.symm (σ, τ)),
       ConjClasses.map (AlgEquiv.restrictNormalHom L) D = ConjClasses.mk σ := by
     simp only [Finset.mem_image]
     rintro _ ⟨τ, -, rfl⟩
-    rw [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-      IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
+    change ConjClasses.mk ((e.symm (σ, τ)).restrictNormal L) = ConjClasses.mk σ
+    simp only [e, IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
   filter_upwards [(tendsto_order.1 hsum).1 δ (hδ.trans_le (le_crossingConstant K L f r hr hf)),
     eventually_gt_atTop 0] with x hx hx0
   refine hx.trans_le ?_
