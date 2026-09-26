@@ -16,17 +16,6 @@ differentiable, and whose tangent maps preserve the Riemannian inner products, c
 Riemannian volume of `M` to the Riemannian volume of `N`. In particular isometric manifolds have
 the same Riemannian volume, which is what makes the total volume a Riemannian invariant.
 
-The proof is local. In a chart at `α` of `M` and a chart at `β` of `N`, the Gram matrix of the
-metric of `M` is the Gram matrix of the metric of `N` conjugated by the Jacobian matrix of `Φ` read
-in these charts, because the tangent maps of `Φ` are linear isometries. So the chart volume
-densities differ by the absolute Jacobian determinant, and the change-of-variables formula
-matches the two chart volumes. The global statement follows from the characterization
-`TauCeti.eq_riemannianVolume_iff` of the Riemannian volume by its chart restrictions, using a
-countable cover of `M` by chart sources.
-
-The change-of-variables proof of `chartRiemannianVolume_image_of_inner_mfderiv` is adapted from
-the proof of `TauCeti.chartRiemannianVolume_restrict_overlap`.
-
 The isometry condition is stated pointwise, on the tangent maps, and no orientation is used, so
 orientation-reversing isometries and manifolds with boundary or corners are covered. The two
 manifolds may be modelled on different model spaces `H` and `H'` over the same vector space `E`.
@@ -137,6 +126,8 @@ theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     chartRiemannianVolume (I := I') β (Φ '' s) = chartRiemannianVolume (I := I) α s := by
+  -- This change-of-variables argument is adapted from the proof of
+  -- `TauCeti.chartRiemannianVolume_restrict_overlap`.
   have hsα' : s ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
   have hsβ' : Φ '' s ⊆ (extChartAt I' β).source := by
     rw [extChartAt_source]; exact hsβ.image_subset
