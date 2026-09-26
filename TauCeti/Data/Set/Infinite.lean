@@ -13,11 +13,9 @@ import Mathlib.Logic.Equiv.Basic
 /-!
 # Injections into infinite sets of countable indices
 
-An infinite subset of a countable type admits a self-injection that fixes any prescribed member.
-This lets us reindex a countable sequence or an array axis into an infinite coordinate subset
-while leaving a distinguished coordinate unchanged.
-
-The injection may also be chosen to fix any finite subset of the target.
+An infinite subset of a countable type admits a self-injection that fixes any prescribed finite
+subset of the target. This lets us reindex a countable sequence or an array axis into an infinite
+coordinate subset while leaving distinguished coordinates unchanged.
 -/
 
 public section
@@ -62,15 +60,5 @@ theorem exists_injective_into_eqOn_of_finite {ι : Type*} [Countable ι]
   refine ⟨fun i => (e i).1, Subtype.val_injective.comp e.injective, ?_, fun i => (e i).2⟩
   intro i hi
   exact he i (hF.mem_toFinset.mpr hi)
-
-/-- An injection of a countable type into an infinite set `S` of indices may be chosen to fix a
-prescribed element `i ∈ S`. -/
-theorem exists_injective_into_apply_eq_of_mem {ι : Type*} [Countable ι]
-    {S : Set ι} (hS : S.Infinite) {i : ι} (hi : i ∈ S) :
-    ∃ a : ι → ι, Function.Injective a ∧ a i = i ∧ ∀ k, a k ∈ S := by
-  obtain ⟨a, ha, haF, haS⟩ :=
-    hS.exists_injective_into_eqOn_of_finite (Set.finite_singleton i)
-      (Set.singleton_subset_iff.mpr hi)
-  exact ⟨a, ha, haF i rfl, haS⟩
 
 end Set.Infinite
