@@ -16,15 +16,17 @@ For two sheaves of modules over a sheaf of rings, local linear morphisms form a 
 sets. This is the gluing input for the dual sheaf: take the target to be the structure sheaf.
 The construction works over any site and does not require commutativity of the rings.
 
-We use Mathlib's `presheafHom` of the underlying additive presheaves and cut out its
-subpresheaf of linear morphisms. Linearity is local because equality of sections of the
-target sheaf can be checked on a covering sieve. Thus Mathlib's sheaf theorem for
-`presheafHom` supplies the gluing, without reconstructing additive morphisms sectionwise.
-Mathlib's `presheafHomSectionsEquiv` supplies the underlying global-sections identification.
+Over an object `U`, a section is an additive morphism between the restrictions of the two
+sheaves to the slice over `U`, whose components are linear over the restricted structure
+sheaf. Restriction pulls such morphisms back along arrows. Linearity is local because
+equality of target sections can be checked on a covering sieve, so compatible local linear
+morphisms glue uniquely.
 
-The equivalences `linearHomObjEquiv` and `linearHomSectionsEquiv` identify local and global
-sections with module-sheaf morphisms, and `linearHomObjEquiv_map_app` describes restriction.
-These declarations support dot notation directly, for example `M.linearHom N` and
+The resulting sheaf has local sections over `U` equivalent to morphisms between the
+restricted module sheaves, and global sections equivalent to morphisms of the original
+module sheaves. The declarations `linearHomObjEquiv`, `linearHomSectionsEquiv`, and
+`linearHomObjEquiv_map_app` expose these identifications and their behavior under
+restriction. They support dot notation directly, for example `M.linearHom N` and
 `M.linearHomObjEquiv N U`.
 
 This file constructs the underlying sheaf of sets; it does not equip it with a module
