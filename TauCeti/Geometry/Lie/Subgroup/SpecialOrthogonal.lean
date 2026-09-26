@@ -40,10 +40,9 @@ namespace TauCeti.Lie
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The matrix topology selected by the operator norm used for the general linear Lie group. -/
-local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] [DecidableEq n] :
+local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] :
     TopologicalSpace (Matrix n n ℝ) :=
-  (Matrix.linftyOpNormedRing (n := n) (α := ℝ)).toNonUnitalNormedRing
-    |>.toNormedAddCommGroup |>.toPseudoMetricSpace |>.toUniformSpace |>.toTopologicalSpace
+  Matrix.linftyOpTopologicalSpace n n ℝ
 
 /-- In the canonical matrix coordinates of the general linear Lie algebra, an element generates a
 one-parameter subgroup in the range of the positive-definite `realCliffordForm n 0`
