@@ -179,7 +179,6 @@ theorem maslovPhase_symm {L₁ : Submodule ℝ E}
   rw [mul_comm, hL.maslovPhase_mul_maslovPhase hL₁ hL, hL.maslovPhase_self]
 
 /-- The Maslov phase is invariant under a simultaneous complex-linear change of coordinates. -/
-@[simp]
 theorem maslovPhase_map_map {L₁ : Submodule ℝ E}
     (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
     (B : E ≃ₗ[ℂ] E) :
@@ -202,7 +201,6 @@ theorem maslovPhase_map_map {L₁ : Submodule ℝ E}
 
 /-- Rotating a maximal totally real subspace `L` of an `n`-dimensional complex module by a nonzero
 scalar `z` has Maslov phase `(z / conj z) ^ n`; for `z = e^{iθ}` this is `e^{2inθ}`. -/
-@[simp]
 theorem maslovPhase_map_lsmul {z : ℂ} (hz : z ≠ 0) :
     hL.maslovPhase (hL.map_linearEquiv (LinearEquiv.smulOfNeZero ℂ E z hz)) =
       (z / conj z) ^ finrank ℂ E := by
@@ -223,7 +221,6 @@ theorem maslovPhase_map_lsmul {z : ℂ} (hz : z ≠ 0) :
 
 /-- The image `i L` of a maximal totally real subspace `L` of an `n`-dimensional complex module
 has Maslov phase `(-1) ^ n` relative to `L`. -/
-@[simp]
 theorem maslovPhase_map_I :
     hL.maslovPhase (hL.map_linearEquiv
       (LinearEquiv.smulOfNeZero ℂ E Complex.I Complex.I_ne_zero)) =
