@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Torsion
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
-public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Continuous cohomology of a compact group is torsion in positive degrees

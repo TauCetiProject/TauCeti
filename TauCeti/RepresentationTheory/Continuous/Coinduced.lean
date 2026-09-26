@@ -47,7 +47,8 @@ theorem sum_apply_out_mem_invariants {π : ContRepresentation R G V} {f : C(G, V
   refine Fintype.sum_bijective (g • ·) (MulAction.bijective g) _ _ fun q => ?_
   -- invariance of `f` for `π.coind₁` moves `π g` inside: `π g (f y) = f (g * y)`
   have hπ : π g (f q.out) = f (g * q.out) := by
-    simpa using DFunLike.congr_fun (hf g) (g * q.out)
+    simpa only [ContRepresentation.coind₁_apply_apply, inv_mul_cancel_left]
+      using DFunLike.congr_fun (hf g) (g * q.out)
   -- `(g • q).out` and `g * q.out` differ by an element of `U` on the right
   obtain ⟨u, hu⟩ : ∃ u : U, g * q.out * u = (g • q).out :=
     ⟨⟨(g * q.out)⁻¹ * (g • q).out, QuotientGroup.eq.mp (QuotientGroup.mk_out_smul g q).symm⟩,
