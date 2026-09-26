@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
-public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.Analysis.Real.Sqrt
 
 /-!
