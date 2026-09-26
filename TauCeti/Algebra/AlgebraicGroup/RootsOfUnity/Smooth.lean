@@ -52,6 +52,11 @@ theorem coordinateRing_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
   have hu := (coordinateRing_smooth_iff (k := k) p).mp hs
   exact (isUnit_iff_ne_zero.mp hu) (CharP.cast_eq_zero k p)
 
+private theorem coordinateRing_carrier (n : ℕ) :
+    ((DiagonalizableGroup.coordinateRing k (characterGroup n)).obj : Type u) =
+      MonoidAlgebra k (ULift.{u} (Multiplicative (ZMod n))) :=
+  rfl
+
 /-- The structural morphism of the group scheme `μ_n` is smooth exactly when `n` is a unit in
 the ground field. -/
 -- Not `@[simp]`: `simp` unfolds the left-hand side via `DiagonalizableGroup.groupScheme_X_hom`.
@@ -64,10 +69,7 @@ theorem groupScheme_smooth_iff (n : ℕ) [NeZero n] :
     have h := (algebraSmooth_iff_smooth_hopfSpec k
       (DiagonalizableGroup.coordinateRing k (characterGroup n)).obj).symm
     rw [smoothAffineGroupSchemeProperty_iff, smoothCommHopfAlgProperty_iff] at h
-    -- `DiagonalizableGroup.coordinateRing`, `FiniteTypeCommHopfAlgCat.of` and `characterGroup`
-    -- are abbreviations, so the carrier of this coordinate ring is by definition the group
-    -- algebra `MonoidAlgebra k (ULift (Multiplicative (ZMod n)))`, and `h` applies as stated.
-    exact h
+    simpa only [coordinateRing_carrier] using h
   rw [hsmooth]
   have hcard : Nat.card (ULift.{u} (Multiplicative (ZMod n))) = n :=
     (Nat.card_congr (Equiv.ulift : ULift.{u} (Multiplicative (ZMod n)) ≃
