@@ -100,12 +100,19 @@ theorem Algebra.finiteDimensional_of_pow_eq {y : E} {n : ℕ} {a : F}
   exact e.finiteDimensional
 
 /-- **Separability of a radical extension**: if `y` generates `E` over `F`, satisfies
-`y ^ n = a`, and both `n` and `a` are nonzero, then `E / F` is separable. -/
+`y ^ n = a`, and `n` is nonzero in `F`, then `E / F` is separable. For `a = 0` the generator is
+`y = 0`, so `E = F`. -/
 theorem Algebra.isSeparable_of_pow_eq {y : E} {n : ℕ} {a : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F E a) (hn : (n : F) ≠ 0) (ha : a ≠ 0) :
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F E a) (hn : (n : F) ≠ 0) :
     Algebra.IsSeparable F E := by
-  have hsep : IsSeparable F y :=
-    (separable_X_pow_sub_C _ hn ha).of_dvd (minpoly.dvd _ _ (by simp [hy]))
+  have hsep : IsSeparable F y := by
+    rcases eq_or_ne a 0 with rfl | ha
+    · have hn0 : n ≠ 0 := by
+        rintro rfl
+        exact hn Nat.cast_zero
+      rw [map_zero, pow_eq_zero_iff hn0] at hy
+      simpa [hy] using isSeparable_algebraMap (K := E) (0 : F)
+    · exact (separable_X_pow_sub_C _ hn ha).of_dvd (minpoly.dvd _ _ (by simp [hy]))
   have hsep' : Algebra.IsSeparable F F⟮y⟯ :=
     (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable _ _).mpr hsep
   let e := (IntermediateField.equivOfEq hgen).trans IntermediateField.topEquiv

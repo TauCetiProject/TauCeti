@@ -335,7 +335,7 @@ theorem hurwitz_genus_formula_of_pow_eq_of_prime [FiniteDimensional k k'] [Algeb
   have hnF : (n : F) ≠ 0 := by
     rw [← map_natCast (algebraMap k F)]
     exact (_root_.map_ne_zero _).mpr hn
-  have : Algebra.IsSeparable F F' := Algebra.isSeparable_of_pow_eq hgen hy hnF hu
+  have : Algebra.IsSeparable F F' := Algebra.isSeparable_of_pow_eq hgen hy hnF
   rw [hurwitz_genus_formula hF hF' hex hex',
     Divisor.finrank_mul_degree_different_of_pow_eq_of_prime k' F' hF hp hgen hy hn hu]
 

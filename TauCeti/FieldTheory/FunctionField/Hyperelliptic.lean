@@ -59,6 +59,10 @@ exponent one, so `deg Diff(F / k(x)) = m + m % 2`, and the Hurwitz genus formula
   subfield, and away from characteristic two makes `F` hyperelliptic.
 * `TauCeti.finrank_eq_two_of_sq_eq_of_squarefree`: `[F : k(x)] = 2` for `y² = f(x)` with `f`
   squarefree and nonconstant.
+* `TauCeti.Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_adicOfIrreducible` and
+  `TauCeti.Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_infty`: the ramified places of
+  `y² = f(x)` over `k(x)` are those over the irreducible factors of `f`, and those over infinity
+  when `deg f` is odd.
 * `TauCeti.genus_eq_natDegree_sub_one_div_two_of_sq_eq`: for squarefree `f` of positive degree,
   `y² = f(x)` has genus `⌊(deg f - 1) / 2⌋`; for constant `f`, it has genus zero.
 
@@ -303,6 +307,55 @@ theorem Divisor.degree_different_eq_natDegree_add_mod_of_sq_eq (h2 : (2 : k) ≠
   rw [Divisor.degree_radicalBranch_eq_natDegree_add_mod_of_squarefree hf] at h
   norm_num at h
   exact_mod_cast h
+
+/-- Away from characteristic two, a place `P'` of `y² = f(x)` has ramification index `1` over
+`k(x)` when `ord_P f` is even at the place `P` below it, and `2` otherwise. -/
+private theorem Place.ramificationIdx_eq_of_sq_eq [Algebra.IsIntegral (RatFunc k) F]
+    (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (P' : Place k F) :
+    Place.ramificationIdx (RatFunc k) P' =
+      if (2 : ℤ) ∣ (P'.restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) f) then 1
+      else 2 := by
+  have : FiniteDimensional (RatFunc k) F :=
+    Algebra.finiteDimensional_of_pow_eq hgen hy two_ne_zero
+  have h2' : ((2 : ℕ) : RatFunc k) ≠ 0 := by
+    rw [← map_natCast (algebraMap k (RatFunc k))]
+    exact (_root_.map_ne_zero _).mpr (by exact_mod_cast h2)
+  have : Algebra.IsSeparable (RatFunc k) F := Algebra.isSeparable_of_pow_eq hgen hy h2'
+  exact Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) Nat.prime_two hgen hy
+    (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+
+open scoped Classical in
+/-- **The ramified places of `y² = f(x)` over the finite places of `k(x)`** (Stichtenoth,
+Proposition 6.2.3(b)): away from characteristic two, if `F = k(x)(y)` with `y² = f(x)` for a
+squarefree polynomial `f`, then a place of `F` over the place of `k(x)` defined by an irreducible
+polynomial `q` has ramification index `2` when `q` divides `f`, and is unramified otherwise. -/
+theorem Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_adicOfIrreducible
+    [Algebra.IsIntegral (RatFunc k) F] (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F}
+    (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {P' : Place k F}
+    {q : k[X]} (hq : Irreducible q)
+    (hP' : P'.restrict k (RatFunc k) = Place.adicOfIrreducible hq) :
+    Place.ramificationIdx (RatFunc k) P' = if q ∣ f then 2 else 1 := by
+  rw [Place.ramificationIdx_eq_of_sq_eq h2 hf hgen hy, hP',
+    Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
+  split_ifs <;> simp_all
+
+/-- **Ramification of `y² = f(x)` at infinity** (Stichtenoth, Proposition 6.2.3(b)): away from
+characteristic two, if `F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, then a place
+of `F` over the place at infinity of `k(x)` has ramification index `2` when `deg f` is odd, and is
+unramified otherwise. -/
+theorem Place.ramificationIdx_eq_of_sq_eq_of_restrict_eq_infty [Algebra.IsIntegral (RatFunc k) F]
+    (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {P' : Place k F}
+    (hP' : P'.restrict k (RatFunc k) = Place.infty k) :
+    Place.ramificationIdx (RatFunc k) P' = if Odd f.natDegree then 2 else 1 := by
+  have hodd : (2 : ℤ) ∣ -(f.natDegree : ℤ) ↔ ¬ Odd f.natDegree := by
+    rw [Nat.not_odd_iff_even, even_iff_two_dvd]
+    omega
+  rw [Place.ramificationIdx_eq_of_sq_eq h2 hf hgen hy, hP', Place.ord_infty,
+    RatFunc.intDegree_polynomial]
+  simp only [hodd, ite_not]
 
 /-- **The genus of `y² = f(x)`** (Stichtenoth, Proposition 6.2.3(b)): away from characteristic
 two, if `F = k(x)(y)` with `y² = f(x)` for a squarefree polynomial `f`, and `k` is the exact field
