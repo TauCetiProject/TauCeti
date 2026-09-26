@@ -39,6 +39,11 @@ def IsPrimitive (χ : RayClassCharacter 𝔪) : Prop :=
   ∀ (𝔫 : Modulus K) (h : 𝔫 ∣ 𝔪) (ψ : RayClassCharacter 𝔫),
     ψ.induced h = χ → 𝔫 = 𝔪
 
+/-- A character is primitive exactly when every modulus inducing it is its own modulus. -/
+theorem isPrimitive_iff (χ : RayClassCharacter 𝔪) :
+    χ.IsPrimitive ↔ ∀ (𝔫 : Modulus K) (h : 𝔫 ∣ 𝔪) (ψ : RayClassCharacter 𝔫),
+      ψ.induced h = χ → 𝔫 = 𝔪 := Iff.rfl
+
 /-- An imprimitive character is induced from a strictly smaller modulus. -/
 theorem not_isPrimitive_iff (χ : RayClassCharacter 𝔪) :
     ¬χ.IsPrimitive ↔ ∃ (𝔫 : Modulus K) (h : 𝔫 ∣ 𝔪) (ψ : RayClassCharacter 𝔫),
