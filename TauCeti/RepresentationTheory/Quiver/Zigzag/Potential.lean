@@ -132,6 +132,8 @@ end LocalCoordinate
 
 /-! ### Products of parameters -/
 
+section Products
+
 variable [CommMonoid k]
 
 /-- The local coordinates of a product of parameters are the products of their local
@@ -150,7 +152,13 @@ theorem transition_mul (c c' : SkewZigzagParameter k G) {v w : V} (h : G.Adj v w
   rw [transition_def, transition_def, transition_def, localCoordinate_mul, localCoordinate_mul,
     mul_div_mul_comm]
 
+end Products
+
 /-! ### Transition factors along walks -/
+
+section WalkTransition
+
+variable [Monoid k]
 
 /-- The **transition factor of a walk**: the product of the transition factors along its darts. -/
 noncomputable def walkTransition (c : SkewZigzagParameter k G) {v w : V} (q : G.Walk v w) : kˣ :=
@@ -186,15 +194,9 @@ theorem walkTransition_append (c : SkewZigzagParameter k G) {u v w : V}
     walkTransition c (p.append q) = walkTransition c p * walkTransition c q := by
   simp [walkTransition]
 
-/-- **Reversing a walk inverts its transition factor.** -/
-@[simp]
-theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
-    (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
-  simp [walkTransition, Function.comp_def, List.prod_inv]
-
 section Map
 
-variable {l : Type z} [CommMonoid l]
+variable {l : Type z} [Monoid l]
 
 /-- The transition factor of a walk is carried by the monoid homomorphism mapping a
 parameter. -/
@@ -206,6 +208,18 @@ theorem walkTransition_map (f : k →* l) (c : SkewZigzagParameter k G) {v w : V
   simp [transition_map, List.map_map, Function.comp_def]
 
 end Map
+
+end WalkTransition
+
+variable [CommMonoid k]
+
+/-! ### Reversing a walk -/
+
+/-- **Reversing a walk inverts its transition factor.** -/
+@[simp]
+theorem walkTransition_reverse (c : SkewZigzagParameter k G) {u v : V}
+    (p : G.Walk u v) : walkTransition c p.reverse = (walkTransition c p)⁻¹ := by
+  simp [walkTransition, Function.comp_def, List.prod_inv]
 
 /-! ### Trivializing a parameter from a vertex potential -/
 
