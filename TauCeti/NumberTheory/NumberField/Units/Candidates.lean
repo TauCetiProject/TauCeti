@@ -16,13 +16,13 @@ import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
 /-!
 # Candidate minimal polynomials for units in rank one
 
-Let `K` be a number field of unit rank one and degree `n`. A unit `v` whose value at a real
-infinite place lies between `1` and `B` has all its other conjugates of absolute value at most
-`1`, so its minimal polynomial over `ℤ` is a monic polynomial of degree `n` with constant
-coefficient `±1` whose coefficient of `X ^ (n - k)` is at most `C(n-1, k-1) B + C(n-1, k)` in
-absolute value. `unitCandidates K B` is the finite set of all such polynomials, and every unit
-in the interval whose minimal polynomial has the field degree belongs to it, in particular every
-such unit when the degree is prime.
+Let `K` be a number field of unit rank one and degree `n`. A unit `v` generating `K` over `ℚ`
+whose value at a real infinite place lies between `1` and `B` has all its other conjugates of
+absolute value at most `1`, so its minimal polynomial over `ℤ` is a monic polynomial of degree
+`n` with constant coefficient `±1` whose coefficient of `X ^ (n - k)` is at most
+`C(n-1, k-1) B + C(n-1, k)` in absolute value. `unitCandidates K B` is the finite set of all such
+polynomials; the minimal polynomial of every generating unit in the interval belongs to it, and
+at prime degree every unit in the interval generates `K`.
 
 In degree `2` the candidates are `X² + mX ± 1` with `|m| ≤ B + 1`; in degree `3` they are
 `X³ + aX² + bX ± 1` with `|a| ≤ B + 2` and `|b| ≤ 2B + 1`. The enumeration is intentionally an
@@ -34,7 +34,7 @@ in the given field.
 * `TauCeti.NumberField.Units.unitCandidates`: the finite set of candidate minimal polynomials,
   characterised by `TauCeti.NumberField.Units.mem_unitCandidates_iff`.
 * `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
-  of the minimal polynomial of a unit generating `K` over `ℚ` is `±1`.
+  of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.minpoly_mem_unitCandidates`: completeness of the candidate set at
   unit rank one and prime degree.
 
@@ -54,7 +54,7 @@ variable (K : Type*) [Field K] [NumberField K]
 
 /-- The set of monic integer polynomials of degree `[K : ℚ]` with constant coefficient `±1`
 and the coefficient bounds of `unitCandidates` is finite. -/
-theorem finite_setOf_unitCandidate (B : ℝ) :
+private theorem finite_setOf_unitCandidate (B : ℝ) :
     {f : ℤ[X] | f.Monic ∧ f.natDegree = Module.finrank ℚ K ∧ (f.coeff 0 = 1 ∨ f.coeff 0 = -1) ∧
       ∀ k, 0 < k → k < Module.finrank ℚ K →
         |(f.coeff (Module.finrank ℚ K - k) : ℝ)| ≤
@@ -110,24 +110,29 @@ theorem mem_unitCandidates_iff (f : ℤ[X]) (B : ℝ) :
             (Module.finrank ℚ K - 1).choose (k - 1) * B + (Module.finrank ℚ K - 1).choose k :=
   Set.Finite.mem_toFinset _
 
-/-- The constant coefficient of the minimal polynomial of a unit generating `K` over `ℚ` is
-`±1`. -/
-theorem coeff_zero_minpoly_eq_one_or_neg_one (v : (𝓞 K)ˣ)
-    (hgen : Algebra.adjoin ℚ {((v : 𝓞 K) : K)} = ⊤) :
+open scoped IntermediateField in
+/-- The constant coefficient of the minimal polynomial of a unit is `±1`. -/
+theorem coeff_zero_minpoly_eq_one_or_neg_one (v : (𝓞 K)ˣ) :
     (minpoly ℤ (v : 𝓞 K)).coeff 0 = 1 ∨ (minpoly ℤ (v : 𝓞 K)).coeff 0 = -1 := by
-  let θ : IntegralPrimitiveElement K := ⟨v, hgen⟩
-  have hN : Algebra.norm ℤ (v : 𝓞 K) = 1 ∨ Algebra.norm ℤ (v : 𝓞 K) = -1 :=
-    Int.isUnit_iff.mp (v.isUnit.map (Algebra.norm ℤ))
-  have hpb := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly θ.powerBasis
-  rw [IntegralPrimitiveElement.powerBasis_gen, ← Algebra.coe_norm_int,
+  have hint : IsIntegral ℚ ((v : 𝓞 K) : K) := IsIntegral.of_finite ℚ _
+  -- The norm of `v` from `ℚ(v)` is `±` the constant coefficient, and its norm from `K` is a
+  -- power of that; the latter is a unit of `ℤ`.
+  have hpb := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly
+    (IntermediateField.adjoin.powerBasis hint)
+  rw [IntermediateField.adjoin.powerBasis_gen, IntermediateField.minpoly_gen,
     RingOfIntegers.minpoly_rat_coe, coeff_map, eq_intCast] at hpb
-  have key : ((minpoly ℤ (v : 𝓞 K)).coeff 0 : ℚ) = 1 ∨
-      ((minpoly ℤ (v : 𝓞 K)).coeff 0 : ℚ) = -1 := by
-    rcases hN with hN | hN <;> rcases neg_one_pow_eq_or ℚ θ.powerBasis.dim with h | h <;>
-      rw [hN, h] at hpb <;> push_cast at hpb <;> [left; right; right; left] <;> linarith
-  rcases key with h | h
-  · exact Or.inl (by exact_mod_cast h)
-  · exact Or.inr (by exact_mod_cast h)
+  have hadj := Algebra.norm_eq_norm_adjoin ℚ ((v : 𝓞 K) : K)
+  rw [← Algebra.coe_norm_int, hpb] at hadj
+  have hZ : Algebra.norm ℤ (v : 𝓞 K) =
+      ((-1) ^ (IntermediateField.adjoin.powerBasis hint).dim * (minpoly ℤ (v : 𝓞 K)).coeff 0) ^
+        Module.finrank ℚ⟮((v : 𝓞 K) : K)⟯ K := by
+    exact_mod_cast hadj
+  have hu : IsUnit (((-1) ^ (IntermediateField.adjoin.powerBasis hint).dim *
+      (minpoly ℤ (v : 𝓞 K)).coeff 0) ^ Module.finrank ℚ⟮((v : 𝓞 K) : K)⟯ K) := by
+    rw [← hZ]
+    exact v.isUnit.map (Algebra.norm ℤ)
+  rw [isUnit_pow_iff Module.finrank_pos.ne'] at hu
+  exact Int.isUnit_iff.mp (isUnit_of_mul_isUnit_right hu)
 
 /-- Every unit generating `K` over `ℚ` whose value at a real infinite place lies in `(1, B]`
 has its minimal polynomial in `unitCandidates K B` when the unit rank is one. -/
@@ -154,7 +159,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   have hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = n := by
     rw [← hdegQ, hQ, natDegree_map_eq_of_injective (algebraMap ℤ ℚ).injective_int]
   refine (mem_unitCandidates_iff _ B).mpr ⟨minpoly.monic (v : 𝓞 K).isIntegral, hdeg,
-    coeff_zero_minpoly_eq_one_or_neg_one v hgen, fun k hk hkn => ?_⟩
+    coeff_zero_minpoly_eq_one_or_neg_one v, fun k hk hkn => ?_⟩
   -- Work over `ℂ`, where the minimal polynomial is the product over the embeddings.
   set p : ℂ[X] := (minpoly ℚ (v : K)).map (algebraMap ℚ ℂ) with hpdef
   have hpmonic : p.Monic := (minpoly.monic hintQ).map _
@@ -213,10 +218,12 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   have hsplit : p.coeff (n - k) = q.coeff (n - k - 1) - r * q.coeff (n - k) := by
     obtain ⟨a, ha⟩ : ∃ a, n - k = a + 1 := ⟨n - k - 1, by omega⟩
     rw [hpq, ha, Nat.add_sub_cancel, coeff_X_sub_C_mul]
+  have hidx1 : n - k - 1 = n - 1 - k := by omega
+  have hidx2 : n - k = n - 1 - (k - 1) := by omega
   have hsym1 : (n - 1).choose (n - k - 1) = (n - 1).choose k := by
-    rw [show n - k - 1 = n - 1 - k by omega, Nat.choose_symm (by omega)]
+    rw [hidx1, Nat.choose_symm (Nat.le_sub_one_of_lt hkn)]
   have hsym2 : (n - 1).choose (n - k) = (n - 1).choose (k - 1) := by
-    rw [show n - k = n - 1 - (k - 1) by omega, Nat.choose_symm (by omega)]
+    rw [hidx2, Nat.choose_symm (Nat.sub_le_sub_right hkn.le 1)]
   have hfinal : ‖p.coeff (n - k)‖ ≤ (n - 1).choose (k - 1) * B + (n - 1).choose k := by
     rw [hsplit]
     calc ‖q.coeff (n - k - 1) - r * q.coeff (n - k)‖
