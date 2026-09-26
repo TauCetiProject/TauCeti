@@ -195,9 +195,9 @@ Koszul twist and acts on the left half of every cut, exactly as in
 `TauCeti.ReducedTensorWords.IsGradedCoderivation`.  This is only the twisted co-Leibniz condition,
 not a homogeneity requirement on `b`; degree-`q` homogeneity in the total letter degree is separate
 and is recorded by `TauCeti.TensorWords.gradedPiece`.  Nor does the condition itself require `b` to
-annihilate the empty word: it is the extensions of *reduced* coderivations by zero on the empty
-word, such as `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`, whose two degenerate cuts
-this identity reads off. -/
+annihilate the empty word: the extensions by zero on the empty word of *reduced* coderivations,
+such as `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`, satisfy it, by
+`TauCeti.TensorWords.extendReduced_isGradedCoderivation`. -/
 def IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
     (b : TensorWords R M →ₗ[R] TensorWords R M) : Prop :=
   deconcatenation R M ∘ₗ b =

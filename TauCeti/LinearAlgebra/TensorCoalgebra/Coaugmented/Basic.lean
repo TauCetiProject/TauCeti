@@ -52,9 +52,10 @@ constraint `d ≤ c` as an explicit `if`.  Coassociativity is then `Finset.sum_c
   coproduct is the reduced coproduct together with its two degenerate cuts.
 * `TauCeti.TensorWords.ker_counit`: the kernel of the counit is the image of the positive-length
   words under `TauCeti.TensorWords.reducedInclusion`.
-* `TauCeti.TensorWords.map_id`, `TauCeti.TensorWords.map_comp` and
-  `TauCeti.TensorWords.deconcatenation_natural`: the letterwise maps are homomorphisms, and
-  deconcatenation is natural with respect to them.
+* `TauCeti.TensorWords.map_id`, `TauCeti.TensorWords.map_comp`,
+  `TauCeti.TensorWords.deconcatenation_natural` and `TauCeti.TensorWords.counit_comp_map`: the
+  letterwise maps are homomorphisms, and deconcatenation and the counit are natural with respect to
+  them.
 * `TauCeti.TensorWords.map_comp_reducedInclusion`: on the words of positive length a letterwise map
   is the inclusion of the corresponding reduced one.
 
@@ -753,6 +754,19 @@ theorem deconcatenation_natural (f : M →ₗ[R] N) :
   rw [map_of_tprod]
   simp only [deconcatenation_of, deconcatenationComponent_tprod]
   simp only [map_sum, TensorProduct.map_tmul, map_of, PiTensorProduct.map_tprod]
+
+/-- The counit is natural with respect to the letterwise maps. -/
+@[simp]
+theorem counit_comp_map (f : M →ₗ[R] N) : counit R N ∘ₗ map f = counit R M := by
+  refine linearMap_ext R M fun n x => ?_
+  rw [LinearMap.coe_comp, Function.comp_apply]
+  rcases n with _ | n
+  · have hone : of R M 0 (PiTensorProduct.tprod R x) = (1 : TensorWords R M) := by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R M (fun i : Fin 0 => i.elim0)
+    rw [hone, map_one, counit_one, counit_one]
+  · rw [map_of_tprod, counit_of_of_ne_zero R N (Nat.succ_ne_zero n),
+      counit_of_of_ne_zero R M (Nat.succ_ne_zero n)]
 
 /-- On the words of positive length the letterwise map of the coaugmented coalgebra is the
 inclusion of the letterwise map of the reduced one, because the two apply the same map to the same

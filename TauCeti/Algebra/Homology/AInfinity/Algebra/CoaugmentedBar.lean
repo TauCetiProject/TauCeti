@@ -18,12 +18,9 @@ a bimodule a bicomodule coderivation, so in both cases `b` has to be available a
 of the *coaugmented* tensor coalgebra, which also carries the empty word.
 
 This file supplies that extension, for the bar differential of an `A∞` algebra.  The empty word is
-annihilated, and the coproduct of a word of positive length is its two degenerate cuts together
-with the reduced coproduct, so the graded co-Leibniz identity on the coaugmented coalgebra reduces
-to the one already known on the reduced coalgebra: the extended coderivation is a
-`TauCeti.TensorWords.IsGradedCoderivation` of twist parameter one, its square is zero, and it
-raises the total letter degree by one.  The letterwise Koszul twist of the suspension grading fixes
-the empty word, which is what makes the twisted term of the identity agree with the reduced one.
+annihilated, and on the coaugmented tensor coalgebra the extension is a
+`TauCeti.TensorWords.IsGradedCoderivation` of twist parameter one whose square is zero and which
+raises the total letter degree by one.
 
 The extension itself is not specific to bar constructions: an endomorphism of the reduced words is
 extended to all tensor words by
@@ -43,6 +40,8 @@ letterwise maps, and the total-letter-degree pieces are in
 
 ## Main results
 
+* `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_one`: the extension annihilates the empty
+  word.
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion`: the extension
   restricts to the bar differential on the words of positive length.
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_sq`: its square is zero.
@@ -84,6 +83,12 @@ theorem coaugmentedBarDifferential_def (𝒜 : AInfinityAlgebra R A) :
     𝒜.coaugmentedBarDifferential = extendReduced 𝒜.barDifferential := by
   rw [coaugmentedBarDifferential]
 
+/-- The extension annihilates the empty word. -/
+@[simp]
+theorem coaugmentedBarDifferential_one (𝒜 : AInfinityAlgebra R A) :
+    𝒜.coaugmentedBarDifferential (1 : TensorWords R A) = 0 := by
+  rw [coaugmentedBarDifferential_def, extendReduced_one]
+
 /-- The extension agrees with the bar differential on the words of positive length. -/
 theorem coaugmentedBarDifferential_comp_reducedInclusion (𝒜 : AInfinityAlgebra R A) :
     𝒜.coaugmentedBarDifferential ∘ₗ reducedInclusion R A
@@ -102,11 +107,7 @@ theorem isHomogeneous_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
       (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 1 :=
   extendReduced_isHomogeneous 𝒜.isHomogeneous_barDifferential
 
-/-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra.
-On a word of positive length the two degenerate cuts of its coproduct are read off the term in
-which the nonempty half is differentiated, and they vanish in the other term because the extension
-annihilates the empty word; the empty word itself is annihilated on both sides, so the whole
-identity reduces to the reduced one. -/
+/-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra. -/
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     TensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1 𝒜.coaugmentedBarDifferential :=
   extendReduced_isGradedCoderivation 𝒜.isGradedCoderivation_barDifferential
