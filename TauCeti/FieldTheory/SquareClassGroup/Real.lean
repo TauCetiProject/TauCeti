@@ -27,7 +27,7 @@ form.
   add up to the number of negative members times the class of `-1`.
 * `TauCeti.nsmul_squareClass_neg_one_eq_zero_iff_even`: `n • [-1]` vanishes in the real
   square-class group exactly when `n` is even.
-* `TauCeti.eq_one_or_squareClassHom_neg_one`: every real square class is either the trivial
+* `TauCeti.eq_one_or_eq_squareClassHom_neg_one`: every real square class is either the trivial
   class or the class of `-1`, in multiplicative notation.
 -/
 
@@ -94,7 +94,7 @@ private theorem ofAdd_mk_ofMul (u : ℝˣ) :
     Multiplicative.ofAdd (QuotientAddGroup.mk (Additive.ofMul u)) = squareClassHom u := by
   rw [squareClassHom_apply, squareClass_def]
 
-private theorem squareClassHom_eq_one_or_neg_one (u : ℝˣ) :
+private theorem squareClassHom_eq_one_or_eq_squareClassHom_neg_one (u : ℝˣ) :
     squareClassHom u = 1 ∨ squareClassHom u = squareClassHom (-1 : ℝˣ) := by
   rcases lt_or_gt_of_ne (Units.ne_zero u) with hu | hu
   · refine Or.inr ?_
@@ -105,13 +105,13 @@ private theorem squareClassHom_eq_one_or_neg_one (u : ℝˣ) :
     rfl
 
 /-- Every real square class is either the trivial class or the class of `-1`. -/
-theorem eq_one_or_squareClassHom_neg_one (x : Multiplicative (SquareClassGroup ℝ)) :
+theorem eq_one_or_eq_squareClassHom_neg_one (x : Multiplicative (SquareClassGroup ℝ)) :
     x = 1 ∨ x = squareClassHom (-1 : ℝˣ) := by
   refine Multiplicative.rec ?_ x
   intro y
   obtain ⟨a, ha⟩ := QuotientAddGroup.mk_surjective (y : SquareClassGroup ℝ)
   rw [← ha]
   obtain ⟨u, rfl⟩ := (Additive.ofMul.surjective a)
-  simpa only [ofAdd_mk_ofMul] using squareClassHom_eq_one_or_neg_one u
+  simpa only [ofAdd_mk_ofMul] using squareClassHom_eq_one_or_eq_squareClassHom_neg_one u
 
 end TauCeti

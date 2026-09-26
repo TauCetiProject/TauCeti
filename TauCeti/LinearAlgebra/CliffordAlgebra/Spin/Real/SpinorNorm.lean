@@ -16,8 +16,8 @@ import TauCeti.FieldTheory.SquareClassGroup.Real
 # The spinor norm of a real quadratic form
 
 Over `ℝ` the square-class group `ℝˣ/(ℝˣ)²` has exactly two elements, by
-`TauCeti.eq_one_or_squareClassHom_neg_one`, so the image of the spinor norm of a real quadratic form
-is read off the sign of a single reflection.
+`TauCeti.eq_one_or_eq_squareClassHom_neg_one`, so the image of the spinor norm of a real quadratic
+form is read off the sign of a single reflection.
 
 For a positive definite form every invertible value is a positive real number, hence a square, so
 `orthogonalSpinorNorm_eq_one_of_posDef` makes the orthogonal spinor norm trivial and
@@ -136,7 +136,7 @@ theorem orthogonalSpinorNorm_surjective_of_negValue (Q : QuadraticForm ℝ V) (h
   have hval : orthogonalSpinorNorm Q hQ (QuadraticMap.reflectionOrthogonal Q v)
       = squareClassHom (-1 : ℝˣ) := orthogonalSpinorNorm_reflection_eq_neg_one Q hQ hv
   intro x
-  rcases eq_one_or_squareClassHom_neg_one x with h | h
+  rcases eq_one_or_eq_squareClassHom_neg_one x with h | h
   · exact ⟨1, by rw [h, map_one]⟩
   · exact ⟨QuadraticMap.reflectionOrthogonal Q v, by rw [h, hval]⟩
 
@@ -156,7 +156,7 @@ theorem spinorNorm_surjective_of_indefinite (Q : QuadraticForm ℝ V) (hQ : Q.No
       orthogonalSpinorNorm_reflection_eq_one_of_pos Q hQ hw]
     exact mul_one (squareClassHom (-1 : ℝˣ))
   intro x
-  rcases eq_one_or_squareClassHom_neg_one x with h | h
+  rcases eq_one_or_eq_squareClassHom_neg_one x with h | h
   · refine ⟨1, ?_⟩
     rw [h]
     exact MonoidHom.map_one (spinorNorm Q hQ)
