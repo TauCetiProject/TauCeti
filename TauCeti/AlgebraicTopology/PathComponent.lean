@@ -46,8 +46,10 @@ instance instSemilocallySimplyConnectedSpaceSubtypePathComponent
     [SemilocallySimplyConnectedSpace X] :
     SemilocallySimplyConnectedSpace (pathComponent x₀) :=
   ⟨fun a => by
-    obtain ⟨U, hU, hloop⟩ := SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X)
-    refine ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
+    obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
+      (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
+    refine semilocallySimplyConnectedAt_def.mpr
+      ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
     apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
     rw [Path.map_refl]
     refine hloop (γ.map continuous_subtype_val) ?_

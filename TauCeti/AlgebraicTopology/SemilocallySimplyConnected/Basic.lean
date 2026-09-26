@@ -73,8 +73,14 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 every loop in `U` based at `x` is null-homotopic in the whole space. The null-homotopy is allowed
 to leave `U`, which is what makes this weaker than local simple connectivity. This is the based
 notion of Brazas, Definition 2.1 (see the References below). -/
-@[expose] def _root_.SemilocallySimplyConnectedAt (x : X) : Prop :=
+def _root_.SemilocallySimplyConnectedAt (x : X) : Prop :=
   ∃ U ∈ 𝓝 x, ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x)
+
+/-- The defining characterization of semilocal simple connectivity at a point. -/
+theorem semilocallySimplyConnectedAt_def {x : X} :
+    SemilocallySimplyConnectedAt x ↔
+      ∃ U ∈ 𝓝 x, ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x) :=
+  Iff.rfl
 
 /-- A space is **semilocally simply connected** if it is semilocally simply connected at every
 point: every point `x` has a neighbourhood `U` such that every loop in `U` based at `x` is
@@ -92,7 +98,8 @@ neighbourhood: loops contained in a smaller set are in particular contained in t
 theorem exists_mem_nhds_subset_loops_nullhomotopic (x : X) {V : Set X} (hV : V ∈ 𝓝 x) :
     ∃ U ∈ 𝓝 x, U ⊆ V ∧
       ∀ γ : Path x x, Set.range γ ⊆ U → γ.Homotopic (Path.refl x) := by
-  obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt (X := X) x
+  obtain ⟨U, hU, hloop⟩ :=
+    semilocallySimplyConnectedAt_def.mp (semilocallySimplyConnectedAt (X := X) x)
   refine ⟨U ∩ V, Filter.inter_mem hU hV, Set.inter_subset_right, fun γ hγ => ?_⟩
   exact hloop γ (hγ.trans Set.inter_subset_left)
 
@@ -113,7 +120,7 @@ theorem SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds_isSimplyConnec
     (h : ∀ x : X, ∃ U ∈ 𝓝 x, IsSimplyConnected U) : SemilocallySimplyConnectedSpace X where
   semilocallySimplyConnectedAt x := by
     obtain ⟨U, hU, hsc⟩ := h x
-    refine ⟨U, hU, fun γ hγ => ?_⟩
+    refine semilocallySimplyConnectedAt_def.mpr ⟨U, hU, fun γ hγ => ?_⟩
     obtain ⟨F, -⟩ :=
       (isSimplyConnected_iff_exists_homotopy_refl_forall_mem.mp hsc).2 x γ
       (Set.range_subset_iff.mp hγ)
@@ -131,15 +138,16 @@ theorem SemilocallySimplyConnectedSpace.of_locallyContractibleSpace
     let j : C(V, X) := ⟨Subtype.val, continuous_subtype_val⟩
     have hnj : j.Nullhomotopic :=
       hnull.comp_right (⟨Subtype.val, continuous_subtype_val⟩ : C((Set.univ : Set X), X))
-    refine ⟨V, hV, fun γ hγ => ?_⟩
+    refine semilocallySimplyConnectedAt_def.mpr ⟨V, hV, fun γ hγ => ?_⟩
     exact Path.Homotopic.refl_of_forall_mem_of_nullhomotopic hnj γ (Set.range_subset_iff.mp hγ)
 
 /-- A simply connected space is semilocally simply connected: the whole space already witnesses
 the condition, since every loop is null-homotopic. -/
 instance (priority := 100) [SimplyConnectedSpace X] : SemilocallySimplyConnectedSpace X where
   semilocallySimplyConnectedAt x :=
-    ⟨Set.univ, Filter.univ_mem,
-      fun γ _ => (simply_connected_iff_loops_nullhomotopic.mp ‹_›).2 x γ⟩
+    semilocallySimplyConnectedAt_def.mpr
+      ⟨Set.univ, Filter.univ_mem,
+        fun γ _ => (simply_connected_iff_loops_nullhomotopic.mp ‹_›).2 x γ⟩
 
 /-- A strongly locally contractible space (each point has a basis of contractible neighbourhoods)
 is semilocally simply connected, since strong local contractibility implies the classical local
@@ -152,7 +160,8 @@ instance (priority := 100) [StronglyLocallyContractibleSpace X] :
 contains only the constant loop. -/
 instance (priority := 100) [DiscreteTopology X] : SemilocallySimplyConnectedSpace X where
   semilocallySimplyConnectedAt x := by
-    refine ⟨{x}, (isOpen_discrete _).mem_nhds rfl, fun γ hγ => ?_⟩
+    refine semilocallySimplyConnectedAt_def.mpr
+      ⟨{x}, (isOpen_discrete _).mem_nhds rfl, fun γ hγ => ?_⟩
     have hγx : γ = Path.refl x := by
       ext t
       simpa using hγ ⟨t, rfl⟩
@@ -166,10 +175,13 @@ instance [SemilocallySimplyConnectedSpace X] [SemilocallySimplyConnectedSpace Y]
   semilocallySimplyConnectedAt := by
     rintro ⟨x, y⟩
     obtain ⟨U, hU, hUloop⟩ :=
-      SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (X := X) x
+      semilocallySimplyConnectedAt_def.mp
+        (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (X := X) x)
     obtain ⟨V, hV, hVloop⟩ :=
-      SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (X := Y) y
-    refine ⟨U ×ˢ V, prod_mem_nhds hU hV, fun γ hγ => ?_⟩
+      semilocallySimplyConnectedAt_def.mp
+        (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (X := Y) y)
+    refine semilocallySimplyConnectedAt_def.mpr
+      ⟨U ×ˢ V, prod_mem_nhds hU hV, fun γ hγ => ?_⟩
     obtain ⟨F₁⟩ := hUloop (γ.map continuous_fst)
       (Set.range_subset_iff.mpr fun t => (Set.mem_prod.mp (hγ ⟨t, rfl⟩)).1)
     obtain ⟨F₂⟩ := hVloop (γ.map continuous_snd)

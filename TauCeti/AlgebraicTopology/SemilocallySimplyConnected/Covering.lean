@@ -113,8 +113,10 @@ disconnected — so to iterate the construction one restricts to a path componen
 theorem _root_.IsCoveringMap.semilocallySimplyConnectedSpace [SemilocallySimplyConnectedSpace X]
     (hp : IsCoveringMap p) : SemilocallySimplyConnectedSpace E where
   semilocallySimplyConnectedAt e := by
-    obtain ⟨U, hU, hloop⟩ := SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (p e)
-    refine ⟨p ⁻¹' U, hp.continuous.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
+    obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
+      (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (p e))
+    refine semilocallySimplyConnectedAt_def.mpr
+      ⟨p ⁻¹' U, hp.continuous.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
     have hdown := hloop (γ.map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))) <| by
       rintro _ ⟨t, rfl⟩
       exact hγ ⟨t, rfl⟩
