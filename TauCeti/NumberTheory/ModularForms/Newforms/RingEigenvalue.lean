@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ZMod.Units
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Basic
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Eigenvector
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Recurrence
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
@@ -101,11 +101,10 @@ theorem eigenvalue_one : f.eigenvalue 1 (Nat.coprime_one_left N) = 1 := by
 on the character space as `heckeTCuspNat k p`, so `Tₚ f = λₚ f` on `S_k(Γ₁(N))`. -/
 theorem heckeTCuspNat_eq_eigenvalue_smul {p : ℕ} (hp : p.Prime) (hpN : Nat.Coprime p N) :
     heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f.toCuspForm =
-      f.eigenvalue ⟨p, hp.pos⟩ hpN • f.toCuspForm := by
-  have h := congrArg Subtype.val (f.isEigen ⟨p, hp.pos⟩ hpN)
-  rw [← coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k f.χ hp
-    (⟨f.toCuspForm, f.mem_charSpace⟩ : cuspFormCharSpace k f.χ)]
-  simpa [heckeTCompositeGamma0_prime N hp] using h
+      f.eigenvalue ⟨p, hp.pos⟩ hpN • f.toCuspForm :=
+  have : NeZero p := ⟨hp.ne_zero⟩
+  heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul
+    (F := ⟨f.toCuspForm, f.mem_charSpace⟩) hp (f.isEigen ⟨p, hp.pos⟩ hpN)
 
 /-- **Multiplicativity on coprime good indices**: `λ_{mn} = λ_m λ_n`, the image of the coprime
 multiplication rule `heckeTCompositeGamma0_mul_of_coprime` of the Hecke ring. -/
