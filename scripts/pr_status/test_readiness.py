@@ -11,7 +11,7 @@ import readiness
 
 HEAD = "current"
 NOW = 1700000000
-PR = {"number": 1, "state": "open", "head": {"sha": HEAD}, "base": {"ref": "main"},
+PR = {"number": 1, "state": "open", "head": {"sha": HEAD}, "base": {"ref": "main", "sha": "tip"},
       "draft": False, "labels": []}
 STATUSES = {"build": "success", "scope": "success", "bump-guard": "success"}
 MERGE_BASE = "mergebase"
@@ -69,6 +69,13 @@ class GateContract(unittest.TestCase):
         self.check("awaiting-review", merge_base="retargeted")
         self.check("awaiting-review", merge_base="")
 
+    def test_blocking_review_of_another_merge_base_awaits_review_not_author(self):
+        states = {r: "green" for r in readiness.engine().DEFAULT_RUBRICS}
+        states["proof-quality"] = "blocking_request"
+        self.check("awaiting-author", comments=[board(states=states)])
+        self.check("awaiting-review", comments=[board(states=states)], merge_base="retargeted")
+        self.check("awaiting-review", comments=[board(states=states, extra={"merge_base_sha": ""})])
+
     def test_stale_and_incomplete_scoreboards_cannot_be_ready(self):
         self.check("awaiting-review", comments=[board(head="old")])
         self.check("awaiting-review", comments=[board(states={"correctness": "green"})])
@@ -116,6 +123,7 @@ class GateContract(unittest.TestCase):
 class ReadEvidence(unittest.TestCase):
     def node(self):
         return {"number": 1, "state": "OPEN", "isDraft": False, "baseRefName": "main",
+                "baseRefOid": "tip",
                 "headRefOid": HEAD, "mergeable": "MERGEABLE",
                 "labels": {"nodes": [], "pageInfo": {"hasNextPage": False}},
                 "commits": {"nodes": [{"commit": {"oid": HEAD, "status": {"contexts": [
@@ -150,11 +158,11 @@ class ReadEvidence(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "truncated labels"):
                 readiness.evidence(1, "owner/repo")
 
+    @patch.object(readiness.core, "gh_api", return_value=MERGE_BASE + "\n")
     @patch.object(readiness, "diff_engine", return_value=SimpleNamespace(
-        resolve_shas=lambda repo, pr, head_sha="": (head_sha, MERGE_BASE),
-        pr_diff=lambda repo, pr, head_sha="", merge_base_sha="": PATHS))
+        git_diff=lambda remote, merge_base, head: PATHS))
     @patch.object(readiness, "evidence")
-    def test_head_change_invalidates_result(self, evidence, diff):
+    def test_head_change_invalidates_result(self, evidence, diff, api):
         moved = copy.deepcopy(PR)
         moved["head"]["sha"] = "moved"
         evidence.side_effect = [(PR, [board()], STATUSES), (moved, [], STATUSES)]
@@ -168,14 +176,15 @@ class ReadEvidence(unittest.TestCase):
                 (PR, [board()], STATUSES, True), (PR, [], STATUSES, False),
                 (PR, [board()], dict(STATUSES, build="failure"), False),
                 (dict(PR, draft=True), [board()], STATUSES, False),
-                (dict(PR, base={"ref": "parent"}), [board()], STATUSES, False)):
+                (dict(PR, base={"ref": "parent", "sha": "tip"}), [board()], STATUSES, False)):
             fake = MagicMock()
-            fake.resolve_shas.return_value = (HEAD, MERGE_BASE)
-            fake.pr_diff.return_value = PATHS
+            fake.git_diff.return_value = PATHS
             with patch.object(readiness, "evidence", return_value=(current, comments, statuses)), \
+                 patch.object(readiness.core, "gh_api", return_value=MERGE_BASE) as api, \
                  patch.object(readiness, "diff_engine", return_value=fake):
                 result = readiness.assess(1, now=NOW)
-                self.assertEqual(fake.pr_diff.called, expected)
+                self.assertEqual(fake.git_diff.called, expected)
+                self.assertIn("compare/tip...current", api.call_args.args[0])
                 self.assertEqual(result["eligible"], expected)
 
     @patch.object(readiness, "diff_engine")
@@ -183,7 +192,15 @@ class ReadEvidence(unittest.TestCase):
     def test_failed_read_is_not_a_merge_verdict(self, evidence, diff):
         with self.assertRaisesRegex(RuntimeError, "rate limited"):
             readiness.assess(1)
-        diff.return_value.pr_diff.assert_not_called()
+        diff.return_value.git_diff.assert_not_called()
+
+    @patch.object(readiness, "diff_engine")
+    @patch.object(readiness.core, "gh_api", side_effect=readiness.core.RateLimited("limited"))
+    @patch.object(readiness, "evidence", return_value=(PR, [board()], STATUSES))
+    def test_rate_limited_merge_base_read_stays_a_rate_limit(self, evidence, api, diff):
+        with self.assertRaises(readiness.core.RateLimited):
+            readiness.assess(1)
+        diff.return_value.git_diff.assert_not_called()
 
     def test_graphql_http_200_rate_limit_opens_circuit(self):
         from types import SimpleNamespace

@@ -42,6 +42,11 @@ def routing_state(pr):
             labels & sweep_engine().KEEP_LABELS)
 
 
+def meta_merge_base(scoreboard):
+    """The merge base a (board, meta) scoreboard pair records having reviewed, or ""."""
+    return scoreboard[1].get("merge_base_sha") or ""
+
+
 def classify(pr, comments, statuses, paths, merge_base_sha, now=None):
     """Pure evaluation of a fetched PR. Reservations and queue capacity are separate.
 
@@ -76,6 +81,11 @@ def classify(pr, comments, statuses, paths, merge_base_sha, now=None):
         if latest is None or latest[1].get("mode") == "init":
             result["category"] = ("review-in-progress" if gate.has_live_review(comments, head, now)
                                   else "awaiting-review")
+        elif not verdict["review_safe"] and meta_merge_base(latest) != merge_base_sha:
+            # The newest review judged a different diff (retargeted PR or rewritten base), so its
+            # verdict, blocking or not, says nothing about the current one.
+            result["category"] = ("review-in-progress" if gate.has_live_review(comments, head, now)
+                                  else "awaiting-review")
         elif not verdict["review_safe"]:
             board, meta = latest
             states = meta.get("states")
@@ -106,7 +116,7 @@ def classify(pr, comments, statuses, paths, merge_base_sha, now=None):
 # Use GraphQL for evidence so the all-open audit does not spend one REST request
 # per metadata/comments/status read. Status.contexts contains the latest value of
 # each commit-status context; check runs are intentionally not interchangeable.
-_FIELDS = """number state isDraft baseRefName headRefOid mergeable
+_FIELDS = """number state isDraft baseRefName baseRefOid headRefOid mergeable
   labels(first:100) { nodes { name } pageInfo { hasNextPage } }
   commits(last:1) { nodes { commit { oid status { contexts { context state } } } } }
 """
@@ -164,7 +174,8 @@ def evidence(number, repo, comments=True):
     if commit["oid"] != first["headRefOid"]:
         raise RuntimeError("Commit statuses do not belong to the current PR head")
     pr = {"number": number, "state": first["state"].lower(), "draft": first["isDraft"],
-          "head": {"sha": first["headRefOid"]}, "base": {"ref": first["baseRefName"]},
+          "head": {"sha": first["headRefOid"]},
+          "base": {"ref": first["baseRefName"], "sha": first["baseRefOid"]},
           "labels": first["labels"]["nodes"],
           "mergeable": {"MERGEABLE": True, "CONFLICTING": False}.get(first["mergeable"])}
     statuses = {c["context"]: c["state"].lower()
@@ -178,13 +189,17 @@ def assess(pr, repo=None, now=None):
     number = int(pr)
     current, comments, statuses = evidence(number, repo)
     head = current["head"]["sha"]
-    _, merge_base = diff_engine().resolve_shas(repo, number, head_sha=head)
+    # The same compare the merge job asks; core.gh_api keeps the rate-limit circuit breaker.
+    merge_base = core.gh_api(f"repos/{repo}/compare/{current['base']['sha']}...{head}?per_page=1",
+                             jq=".merge_base_commit.sha").strip()
+    if not merge_base:
+        raise RuntimeError(f"No merge base for #{number} from the compare API")
     result = classify(current, comments, statuses, [], merge_base, now=now)
     # The gate rejects missing/build/review evidence before inspecting paths.
     # Only otherwise approved PRs need the expensive path read, which the engine takes from git
-    # (`gh pr diff` fails for PRs touching more than 300 files).
+    # without any API call (`gh pr diff` fails for PRs touching more than 300 files).
     if result["category"] in {"needs-human-review", "merge-check-failed"}:
-        paths = diff_engine().pr_diff(repo, number, head_sha=head, merge_base_sha=merge_base)
+        paths = diff_engine().git_diff(f"https://github.com/{repo}", merge_base, head)
         result = classify(current, comments, statuses, paths, merge_base, now=now)
     after, _, _ = evidence(number, repo, comments=False)
     if routing_state(after) != routing_state(current):
