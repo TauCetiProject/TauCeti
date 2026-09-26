@@ -57,7 +57,7 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
       apply lintegral_congr
       intro ω
       by_cases hSω : ν ω ∈ S
-      · simp [Set.indicator, hSω, K, TauCeti.MeasureTheory.iidBlockKernel]
+      · simp [Set.indicator, hSω, K]
       · simp [Set.indicator, hSω]
     · exact (TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
         ν h.measurable_directing).aemeasurable
@@ -65,6 +65,7 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
     AEMeasurable.of_eval fun i => h.aemeasurable (k i)
   have hcond := condDistrib_ae_eq_of_measure_eq_compProd
     h.measurable_directing.aemeasurable hblock hK
-  exact hcond
+  filter_upwards [hcond] with P hP
+  simpa only [K, TauCeti.MeasureTheory.iidBlockKernel_apply] using hP
 
 end TauCeti.Probability

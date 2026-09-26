@@ -153,11 +153,18 @@ theorem aemeasurable_probabilityMeasure_pi_const_toMeasure {α : Type*} [Measura
   aemeasurable_probabilityMeasure_pi_toMeasure (fun _ ↦ ν) (fun _ ↦ hν)
 
 /-- The Markov kernel taking a probability measure to its finite i.i.d. product law. -/
-@[expose]
 def iidBlockKernel {α : Type*} [MeasurableSpace α] (m : ℕ) :
     ProbabilityTheory.Kernel (ProbabilityMeasure α) (Fin m → α) where
   toFun P := (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
   measurable' := measurable_probabilityMeasure_pi_const_toMeasure id measurable_id
+
+/-- Evaluating the finite i.i.d. block kernel gives the product measure. -/
+@[simp]
+theorem iidBlockKernel_apply {α : Type*} [MeasurableSpace α] (m : ℕ)
+    (P : ProbabilityMeasure α) :
+    iidBlockKernel m P = (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure := by
+  unfold iidBlockKernel
+  rfl
 
 instance {α : Type*} [MeasurableSpace α] (m : ℕ) :
     ProbabilityTheory.IsMarkovKernel (iidBlockKernel (α := α) m) :=
