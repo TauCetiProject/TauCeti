@@ -102,6 +102,7 @@ theorem faithfullyFlat_mapDomainRingHom_of_injective (k : Type*) [CommRing k]
 
 /-- Over a nonzero commutative ring, the group-algebra map is faithfully flat exactly when
 the homomorphism of character groups is injective. -/
+@[simp]
 theorem faithfullyFlat_mapDomainRingHom_iff (k : Type*) [CommRing k] [Nontrivial k]
     (p : G →* H) : (mapDomainRingHom k p).FaithfullyFlat ↔ Function.Injective p := by
   refine ⟨fun h x y hxy => ?_, faithfullyFlat_mapDomainRingHom_of_injective k p⟩
