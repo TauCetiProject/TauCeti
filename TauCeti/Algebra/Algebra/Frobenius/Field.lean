@@ -29,7 +29,8 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
 
 /-- On a finite field extension, a `K`-linear functional is Frobenius exactly when it
 is nonzero. Separability is unnecessary. -/
-theorem linearFunctional_isFrobeniusFunctional_iff_ne_zero (s : L →ₗ[K] K) :
+@[simp]
+theorem _root_.LinearMap.isFrobeniusFunctional_iff_ne_zero (s : L →ₗ[K] K) :
     s.IsFrobeniusFunctional ↔ s ≠ 0 := by
   constructor
   · intro hs hzero
@@ -50,10 +51,10 @@ theorem linearFunctional_isFrobeniusFunctional_iff_ne_zero (s : L →ₗ[K] K) :
 
 /-- Two nonzero `K`-linear functionals on a finite extension differ by multiplication
 by a unique unit of the extension. -/
-theorem existsUnique_unit_mul_linearFunctional (s t : L →ₗ[K] K)
+theorem _root_.LinearMap.existsUnique_unit_apply_eq_apply_mul (s t : L →ₗ[K] K)
     (hs : s ≠ 0) (ht : t ≠ 0) :
     ∃! u : Lˣ, ∀ x : L, t x = s ((u : L) * x) := by
-  let e := (linearFunctional_isFrobeniusFunctional_iff_ne_zero s).mpr hs |>.toDualEquiv
+  let e := s.isFrobeniusFunctional_iff_ne_zero.mpr hs |>.toDualEquiv
   let a := e.symm t
   have hta : e a = t := e.apply_symm_apply t
   have happly (b x : L) : e b x = s (b * x) :=
