@@ -53,7 +53,7 @@ theorem kernelHopfIdeal_mapDomainBialgHom_toIdeal :
   -- The categorical carrier and the coercion of `counitAlgHom` hide the underlying ring maps.
   change Ideal.map (MonoidAlgebra.mapDomainRingHom R p)
     (RingHom.ker (Bialgebra.counitAlgHom R (MonoidAlgebra R M)).toRingHom) = _
-  rw [MonoidAlgebra.counitAlgHom_toRingHom]
+  simp only [AlgHom.toRingHom_eq_coe, MonoidAlgebra.counitAlgHom_toRingHom]
   apply MonoidAlgebra.map_ker_augmentation_eq_ker_mapDomainRingHom
   exact congrArg Subgroup.toSubmonoid (QuotientGroup.ker_mk' p.range).symm
 
