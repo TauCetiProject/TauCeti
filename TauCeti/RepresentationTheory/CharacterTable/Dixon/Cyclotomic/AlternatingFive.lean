@@ -110,7 +110,6 @@ def alternatingGroupFiveCandidateCentralCharacterTable :
      1,  3, -4,       0,       0]
 
 /-- The entrywise formula for the candidate central-character data. -/
-@[simp]
 theorem alternatingGroupFiveCandidateCentralCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCentralCharacterTable i j =
@@ -138,7 +137,6 @@ def alternatingGroupFiveCandidateCharacterTable :
      5,  1, -1,  0,  0]
 
 /-- The entrywise formula for the candidate ordinary character data. -/
-@[simp]
 theorem alternatingGroupFiveCandidateCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCharacterTable i j =
