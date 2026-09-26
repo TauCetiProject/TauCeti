@@ -35,7 +35,7 @@ variable {C : Type u} [Category.{w} C] {J : GrothendieckTopology C}
 
 /-- A morphism of sheaves of modules that is an isomorphism on every member of a covering
 family is an isomorphism globally. -/
-theorem isIso_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N)
+theorem _root_.SheafOfModules.isIso_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N)
     (hf : ∀ i, IsIso (f.over (X i))) : IsIso f := by
   have h : IsIso ((_root_.SheafOfModules.toSheaf R).map f) := by
     apply Sheaf.isIso_of_coversTop hX
@@ -49,9 +49,9 @@ theorem isIso_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N)
 
 /-- A morphism of sheaves of modules is an isomorphism exactly when its restrictions to a
 cover are isomorphisms. -/
-theorem isIso_iff_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N) :
+theorem _root_.SheafOfModules.isIso_iff_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N) :
     IsIso f ↔ ∀ i, IsIso (f.over (X i)) :=
-  ⟨fun _ _ => inferInstance, isIso_of_coversTop hX f⟩
+  ⟨fun _ _ => inferInstance, _root_.SheafOfModules.isIso_of_coversTop hX f⟩
 
 end SheafOfModules
 
