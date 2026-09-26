@@ -44,8 +44,8 @@ of the Aldous–Hoover milestone in `TauCetiRoadmap/Exchangeability/README.md`, 
   under coordinate permutations;
 * `SeparatelyExchangeable.mixingLaw_map_permReindex_arrayCol_eq` — the symmetric column statement;
 
-The row and column invariance results hold of *any* supplied mixing representative; their
-existential versions, in which de Finetti produces one, are in `Arrays.DeFinetti`.
+Every result here holds of *any* supplied mixing representative; the existential versions, in which
+de Finetti produces one, are in `Arrays.DeFinetti`.
 
 ## References
 

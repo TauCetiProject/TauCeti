@@ -304,7 +304,8 @@ the consecutive blocks is extended to the underlying path coordinates while pres
 inside the blocks. -/
 theorem fullyExchangeable_blockMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α))) (m : ℕ) [NeZero m]
-    (hπ : ColumnInvariantMixingLaw π) :
+    (hπ : ∀ τ : Equiv.Perm ℕ,
+      π.map (fun P => P.map (permReindex τ)) = π) :
     FullyExchangeable π fun i P => blockMarginals P m i := by
   intro τ
   have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
@@ -323,7 +324,7 @@ theorem fullyExchangeable_blockMarginals_of_invariant
     _ = (π.map fun P => P.map (permReindex (blockPerm m τ))).map
           (blockMarginals (m := m)) :=
       (Measure.map_map (measurable_blockMarginals m) hmap).symm
-    _ = π.map (blockMarginals (m := m)) := by rw [hπ.map_permReindex (blockPerm m τ)]
+    _ = π.map (blockMarginals (m := m)) := by rw [hπ (blockPerm m τ)]
     _ = pathLaw π (fun i P => blockMarginals P m i) := (rfl)
 
 /-- **The coded finite block marginals of an invariant random path measure are exchangeable.**
@@ -331,7 +332,8 @@ The code loses no information about any fixed-width marginal. -/
 theorem exchangeable_codedBlockMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α))) (m : ℕ) [NeZero m]
     [MeasurableSpace.CountablyGenerated (Fin m → α)]
-    (hπ : ColumnInvariantMixingLaw π) :
+    (hπ : ∀ τ : Equiv.Perm ℕ,
+      π.map (fun P => P.map (permReindex τ)) = π) :
     Exchangeable π fun i P => codedBlockMarginals P m i := by
   have h := (fullyExchangeable_blockMarginals_of_invariant π m hπ).exchangeable
     (fun _ => ((measurable_pi_apply _).comp
@@ -347,7 +349,8 @@ consecutive block of the chosen positive width. -/
 theorem conditionallyIID_codedBlockMarginals_of_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsFiniteMeasure π]
     (m : ℕ) [NeZero m] [MeasurableSpace.CountablyGenerated (Fin m → α)]
-    (hπ : ColumnInvariantMixingLaw π) :
+    (hπ : ∀ τ : Equiv.Perm ℕ,
+      π.map (fun P => P.map (permReindex τ)) = π) :
     ConditionallyIID π fun i P => codedBlockMarginals P m i :=
   conditionallyIID_of_exchangeable
     (exchangeable_codedBlockMarginals_of_invariant π m hπ)

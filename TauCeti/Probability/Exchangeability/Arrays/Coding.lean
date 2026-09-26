@@ -8,7 +8,6 @@ module
 -- Public: the array symmetry and the inherited invariance of the row mixing law are the
 -- hypothesis and the conclusion of the representation.
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
-public import TauCeti.Probability.Exchangeability.RandomMeasure.Basic
 -- Public: the coding map and the barycenter identity it satisfies appear in every statement.
 public import TauCeti.Probability.DeFinetti.Coding
 -- Non-public: the mixture form of a row path law is used only inside proofs.
@@ -133,7 +132,8 @@ leaves the law alone; permuting the columns pushes `P` forward by that time perm
 leaves the law alone exactly because `π` is invariant under that pushforward. -/
 theorem separatelyExchangeable_unitIntervalCoding
     (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π]
-    (hπ : ColumnInvariantMixingLaw π) :
+    (hπ : ∀ τ : Equiv.Perm ℕ,
+      π.map (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) :
     SeparatelyExchangeable
         (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval)))
       fun p q => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
@@ -142,9 +142,8 @@ theorem separatelyExchangeable_unitIntervalCoding
     (exchangeableLaw_deFinettiBarycenter (π := π)).map_permReindex σ
   have hcol : ((deFinettiBarycenter π).map fun x : ℕ → ℕ → α =>
       fun i => permReindex (α := α) τ (x i)) = deFinettiBarycenter π := by
-    have hnat := map_pi_deFinettiBarycenter π (f := permReindex (α := α) τ)
-      (measurable_reindex τ)
-    rw [hπ.map_permReindex τ] at hnat
+    have hnat := map_pi_deFinettiBarycenter π (measurable_reindex (α := α) τ)
+    rw [hπ τ] at hnat
     exact hnat
   calc ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
           fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 (σ p.1)) (τ p.2))
@@ -174,7 +173,9 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     {μ : Measure Ω} [IsProbabilityMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
-      ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
+      (∀ τ : Equiv.Perm ℕ,
+          (π : Measure (ProbabilityMeasure (ℕ → α))).map
+            (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) ∧
         (μ.map fun ω p => X p ω) =
           ((π : Measure (ProbabilityMeasure (ℕ → α))).prod
               (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
@@ -184,8 +185,13 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
     (mixedIIDWith_of_conditionallyIIDWith hν).measurable_mixingRepresentative
   have hprob : IsProbabilityMeasure (μ.map ν) :=
     inferInstance
-  refine ⟨⟨μ.map ν, hprob⟩, ?_, ?_⟩
-  · exact map_map_permReindex_eq_of_map_eq hν_meas hinv
+  refine ⟨⟨μ.map ν, hprob⟩, fun τ => ?_, ?_⟩
+  · have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
+        P.map (fun x : ℕ → α => fun k => x (τ k)) :=
+      TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
+    simp only [ProbabilityMeasure.coe_mk]
+    rw [AEMeasurable.map_map_of_aemeasurable hmap.aemeasurable hν_meas.aemeasurable]
+    exact hinv τ
   · have hpath : pathLaw μ (arrayRow X) = deFinettiBarycenter (μ.map ν) := by
       rw [deFinettiBarycenter_def]
       exact pathLaw_eq_bind_infinitePi_of_mixedIIDWith
@@ -201,7 +207,9 @@ theorem separatelyExchangeable_iff_exists_coding {μ : Measure Ω} [IsProbabilit
     {X : ℕ × ℕ → Ω → α} (hX : ∀ p, AEMeasurable (X p) μ) :
     SeparatelyExchangeable μ X ↔
       ∃ π : ProbabilityMeasure (ProbabilityMeasure (ℕ → α)),
-        ColumnInvariantMixingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) ∧
+        (∀ τ : Equiv.Perm ℕ,
+            (π : Measure (ProbabilityMeasure (ℕ → α))).map
+              (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) ∧
           (μ.map fun ω p => X p ω) =
             ((π : Measure (ProbabilityMeasure (ℕ → α))).prod
                 (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
