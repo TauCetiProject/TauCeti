@@ -28,7 +28,7 @@ public section
 
 open MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 /-- Every probability law on a standard Borel target is the image of an atomless standard Borel
 probability law under a measurable map. The target may have atoms.
@@ -45,4 +45,4 @@ theorem exists_measurePreserving_of_nullSingleton
   obtain ⟨g, hg⟩ := ν.exists_measurePreserving_from_unitInterval
   exact ⟨g ∘ f, hg.comp hf⟩
 
-end TauCeti
+end MeasureTheory.Measure
