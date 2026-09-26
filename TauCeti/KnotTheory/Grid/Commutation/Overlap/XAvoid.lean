@@ -35,7 +35,7 @@ bottom row is `x D.rectangle.left`. Its extra strip avoids X by combining the or
 rectangle's X-avoidance with the original pentagon's X-avoidance over the two halves of a
 cyclic-ordered row interval, via the interval-union lemma
 `Grid.notMem_cIco_of_cIco_union`:
-`GridPentagonBetween.X_not_mem_strip_of_disjoint` supplies the pentagon half and
+`GridPentagonBetween.disjoint_coveredSquares_XSet_iff` supplies the pentagon half and
 `TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint` the rectangle half.
 
 The branch-2 recut *rectangle* `E.second` spans the columns `cIco (finRotate n a)
@@ -142,17 +142,22 @@ public theorem recut_X_not_mem_of_branch1
             D.toRectangleDecomposition_middle,
             D.toRectangleDecomposition_second_toGridRectangle] using
             hpentagon)).first.bottom s := by
-  -- The bottoms coincide, so the shared pentagon strip argument applies.
+  -- The bottoms coincide, so the pentagon's X-avoidance gives the strip avoidance directly
+  -- via `disjoint_coveredSquares_XSet_iff`.
   have hbot := D.recut_first_bottom_eq_pentagon_bottom_of_branch1 hcommon hone
     hrectangle hpentagon hfirstLeft
-  exact D.pentagon.X_not_mem_strip_of_disjoint G hdisjoint _ hbot.symm
+  have hX' := hdisjoint
+  rw [GridPentagonBetween.disjoint_coveredSquares_XSet_iff] at hX'
+  obtain ⟨_, _, hXb⟩ := hX'
+  rwa [hbot.symm] at hXb
 
 /-
 Application note (branch 1):
 
 To show the `recutLeftEqLeft`-promoted pentagon is counted, apply
-`GridPentagonBetween.disjoint_coveredSquares_XSet_of_column_subset` with `Q := D.pentagon`
-and `hX` from the pentagon's counted membership (`((G.mem_pentagons D.pentagon).mp hpent).2`):
+`GridPentagonBetween.disjoint_coveredSquares_XSet_iff` to both the original pentagon
+(`Q := D.pentagon`, with `hX` from the pentagon's counted membership
+(`((G.mem_pentagons D.pentagon).mp hpent).2`)) and the promoted pentagon `P`:
 - `hcol`: from `Grid.cIco_subset_of_mem_cIoo hbranch` after rewriting the recut
   first rectangle's `left` via the branch-1 side equation and `hcommon`;
 - `hbot`: `D.recut_first_bottom_eq_pentagon_bottom_of_branch1`;

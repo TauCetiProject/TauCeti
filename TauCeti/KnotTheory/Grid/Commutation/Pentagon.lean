@@ -81,10 +81,6 @@ here.
   with those of the underlying rectangle away from columns `a` and `b`.
 * `TauCeti.GridPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance condition
   column by column.
-* `TauCeti.GridPentagonBetween.disjoint_coveredSquares_XSet_of_column_subset`: X-avoidance
-  transfers to a pentagon on a column subinterval with agreeing rows.
-* `TauCeti.GridPentagonBetween.X_not_mem_strip_of_disjoint`: the `finRotate` column's
-  X-marking avoids a pentagon's strip below the turn row.
 * `TauCeti.GridDiagram.pentagonWeight_eq_prod_coveredSquares`,
   `TauCeti.GridDiagram.pentagonWeight_eq_prod_swapColumns`: the weight as a product over the
   covered squares, and as the product of the variables of the covered `O`-markings of the
@@ -322,46 +318,6 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridPentagonBetween a s x y) (G : 
     · exact h₁ p.1 hca hc hr
     · exact h₂ (hpa ▸ hr)
     · exact h₃ (hpb ▸ hr)
-
-/-- X-avoidance transfer for a pentagon built on a subinterval of another pentagon's
-columns.
-
-If `P` is a pentagon whose column interval sits inside an `X`-avoiding pentagon `Q`'s
-(`hcol`), and whose bottom and top rows agree with `Q`'s (`hbot`, `htop`), then `P`
-inherits `Q`'s X-avoidance. Only `Q`'s X-avoidance is used: neither its counted
-membership nor any ambient decomposition data. -/
-theorem disjoint_coveredSquares_XSet_of_column_subset
-    {u v : GridState n}
-    (Q : GridPentagonBetween a s u v)
-    (G : GridDiagram n)
-    (hX : Disjoint Q.coveredSquares G.XSet)
-    (P : GridPentagonBetween a s x y)
-    (hcol : Grid.cIco P.left (finRotate n a) ⊆ Grid.cIco Q.left (finRotate n a))
-    (hbot : P.bottom = Q.bottom)
-    (htop : P.top = Q.top) :
-    Disjoint P.coveredSquares G.XSet := by
-  -- Apply `disjoint_coveredSquares_XSet_iff` on both sides: the side-column clause
-  -- transfers through the column inclusion, while the column-`a` and column-`b` clauses
-  -- are literally the old ones once the rows agree.
-  rw [disjoint_coveredSquares_XSet_iff] at hX ⊢
-  rw [hbot, htop]
-  obtain ⟨ha, hb, hc⟩ := hX
-  exact ⟨fun c hcne hcmem => ha c hcne (hcol hcmem), hb, hc⟩
-
-/-- The X-marking of the `finRotate` column avoids a pentagon's strip below the turn row,
-from the pentagon's X-avoidance alone. -/
-theorem X_not_mem_strip_of_disjoint
-    (P : GridPentagonBetween a s x y)
-    (G : GridDiagram n)
-    (hX : Disjoint P.coveredSquares G.XSet)
-    (bot : Fin n)
-    (hbot : P.bottom = bot) :
-    G.X (finRotate n a) ∉ Grid.cIco bot s := by
-  -- The pentagon disjointness equivalence exposes the strip clause directly.
-  rw [disjoint_coveredSquares_XSet_iff] at hX
-  obtain ⟨_, _, hXb⟩ := hX
-  rw [← hbot]
-  exact hXb
 
 end GridPentagonBetween
 
