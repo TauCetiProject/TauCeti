@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.FixedSubmodule
+import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
 # Dimensions of common fixed submodules
@@ -17,6 +18,10 @@ complementary eigenspace.
 
 ## Main results
 
+* `IsIdempotentElem.two_mul_finrank_fixedSubmodule`: an idempotent whose fixed vectors and kernel
+  are exchanged by maps that are mutually inverse there has a fixed submodule of half the dimension.
+* `LinearMap.finrank_fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
+  invariant submodule `p` has the dimension of `p ⊓ f.fixedSubmodule`.
 * `TauCeti.two_mul_finrank_iInf_fixedSubmodule_insert`: adjoining one such idempotent halves the
   common fixed-space dimension.
 * `TauCeti.pow_card_mul_finrank_iInf_fixedSubmodule`: iterating the construction multiplies the
@@ -29,6 +34,39 @@ open Module
 
 namespace TauCeti
 
+/-- If `u` maps the fixed vectors of an idempotent endomorphism `q` of a finite-dimensional space
+into the kernel of `q`, `v` maps the kernel into the fixed vectors, and these two restrictions are
+mutually inverse, then the fixed submodule of `q` has half the dimension of the space. -/
+theorem _root_.IsIdempotentElem.two_mul_finrank_fixedSubmodule {K W : Type*} [DivisionRing K]
+    [AddCommGroup W] [Module K W] [FiniteDimensional K W] {q : Module.End K W}
+    (hq : IsIdempotentElem q) (u v : Module.End K W) (hu0 : ∀ x, q x = x → q (u x) = 0)
+    (hv1 : ∀ x, q x = 0 → q (v x) = v x) (hvu : ∀ x, q x = x → v (u x) = x)
+    (huv : ∀ x, q x = 0 → u (v x) = x) :
+    2 * finrank K q.fixedSubmodule = finrank K W := by
+  have hf {x} := LinearMap.mem_fixedSubmodule_iff (f := q) (v := x)
+  -- For an idempotent, the range is exactly the submodule of fixed vectors.
+  have hr : LinearMap.range q = q.fixedSubmodule := by
+    ext x
+    rw [LinearMap.IsIdempotentElem.mem_range_iff hq, hf]
+  -- `u` and `v` restrict to mutually inverse maps between the fixed vectors and the kernel of `q`.
+  let e : q.fixedSubmodule ≃ₗ[K] LinearMap.ker q := .ofLinearMap
+    (u.restrict fun x hx => LinearMap.mem_ker.mpr (hu0 x (hf.mp hx)))
+    (v.restrict fun x hx => hf.mpr (hv1 x (LinearMap.mem_ker.mp hx)))
+    (by ext x; simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.coe_restrict_apply]
+      using huv x (LinearMap.mem_ker.mp x.2))
+    (by ext x; simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.coe_restrict_apply]
+      using hvu x (hf.mp x.2))
+  -- Rank-nullity for `q`, with its kernel replaced by the isomorphic fixed submodule.
+  rw [two_mul, ← q.finrank_range_add_finrank_ker, hr, e.finrank_eq]
+
+/-- If `f` maps a submodule `p` into itself, then the fixed submodule of the restriction of `f`
+to `p` has the same dimension as `p ⊓ f.fixedSubmodule`. -/
+theorem _root_.LinearMap.finrank_fixedSubmodule_restrict {K V : Type*} [Semiring K]
+    [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V} {p : Submodule K V} (hf : ∀ x ∈ p, f x ∈ p) :
+    finrank K (f.restrict hf).fixedSubmodule = finrank K ↥(p ⊓ f.fixedSubmodule) := by
+  rw [LinearMap.fixedSubmodule_restrict hf, ← Submodule.finrank_map_subtype_eq,
+    Submodule.map_comap_subtype]
+
 /-- If two endomorphisms exchange the fixed and zero eigenspaces of an idempotent inside the
 common fixed space of a commuting family, adjoining that idempotent halves the dimension.
 
@@ -38,7 +76,7 @@ space. -/
 theorem two_mul_finrank_iInf_fixedSubmodule_insert
     {K V ι : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
     [FiniteDimensional K V] [DecidableEq ι]
-    (p : ι → Module.End K V) (s : Finset ι) (a : ι) (ha : a ∉ s)
+    (p : ι → Module.End K V) (s : Finset ι) (a : ι)
     (hpa : IsIdempotentElem (p a))
     (hcomm : ∀ i ∈ s, Commute (p i) (p a))
     (u v : Module.End K V)
@@ -51,116 +89,21 @@ theorem two_mul_finrank_iInf_fixedSubmodule_insert
     2 * finrank K ((⨅ i ∈ insert a s, (p i).fixedSubmodule) : Submodule K V) =
       finrank K ((⨅ i ∈ s, (p i).fixedSubmodule) : Submodule K V) := by
   let S : Submodule K V := ⨅ i ∈ s, (p i).fixedSubmodule
-  let A : Submodule K V := ⨅ i ∈ insert a s, (p i).fixedSubmodule
-  have hAS : A ≤ S := by
-    intro x hx
-    have hx' : ∀ i ∈ insert a s, p i x = x := by
-      simpa only [A, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using
-      (fun i hi => hx' i (Finset.mem_insert_of_mem hi))
-  have hpS : ∀ x ∈ S, p a x ∈ S := by
-    intro x hx
-    have hx' : ∀ i ∈ s, p i x = x := by
-      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
-      calc
-        p i (p a x) = p a (p i x) := LinearMap.congr_fun (hcomm i hi).eq x
-        _ = p a x := congrArg (p a) (hx' i hi)
-  let q : Module.End K S := (p a).restrict hpS
-  have hq : IsIdempotentElem q := by
-    apply LinearMap.ext
-    intro x
-    apply Subtype.ext
+  have hS {f : Module.End K V} (hf : ∀ i ∈ s, Commute (p i) f) : ∀ x ∈ S, f x ∈ S :=
+    LinearMap.iInf_invariant f fun i => LinearMap.iInf_invariant f fun hi _ =>
+      (hf i hi).apply_mem_fixedSubmodule
+  let q : Module.End K S := (p a).restrict (hS hcomm)
+  have hq : IsIdempotentElem q := LinearMap.ext fun x => Subtype.ext <| by
     simpa only [q, Module.End.mul_apply, LinearMap.coe_restrict_apply] using
       LinearMap.congr_fun hpa.eq (x : V)
-  have hqrange : LinearMap.range q = A.comap S.subtype := by
-    ext x
-    rw [LinearMap.IsIdempotentElem.mem_range_iff hq]
-    constructor
-    · intro hx
-      have hxa : p a (x : V) = x := by
-        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx
-      have hxS : ∀ i ∈ s, p i (x : V) = x := by
-        simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using x.2
-      simp only [Submodule.mem_comap, A, Submodule.mem_iInf,
-        LinearMap.mem_fixedSubmodule_iff]
-      intro i hi
-      rw [Finset.mem_insert] at hi
-      rcases hi with rfl | hi
-      · exact hxa
-      · exact hxS i hi
-    · intro hx
-      have hx' : ∀ i ∈ insert a s, p i (S.subtype x) = S.subtype x := by
-        simpa only [Submodule.mem_comap, A, Submodule.mem_iInf,
-          LinearMap.mem_fixedSubmodule_iff] using hx
-      apply Subtype.ext
-      convert hx' a (Finset.mem_insert_self a s) using 1 <;> rfl
-  have huS' : ∀ x ∈ S, u x ∈ S := by
+  -- Inside `S`, the new common fixed space is the fixed space of `q`.
+  rw [Finset.iInf_insert, inf_comm, ← LinearMap.finrank_fixedSubmodule_restrict (hS hcomm),
+    hq.two_mul_finrank_fixedSubmodule (u.restrict (hS huS)) (v.restrict (hS hvS))]
+  -- The four exchange hypotheses restrict from `V` to `S`.
+  all_goals
     intro x hx
-    have hx' : ∀ i ∈ s, p i x = x := by
-      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
-      calc
-        p i (u x) = u (p i x) := LinearMap.congr_fun (huS i hi).eq x
-        _ = u x := congrArg u (hx' i hi)
-  have hvS' : ∀ x ∈ S, v x ∈ S := by
-    intro x hx
-    have hx' : ∀ i ∈ s, p i x = x := by
-      simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using hx
-    simpa only [S, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff] using fun i hi =>
-      calc
-        p i (v x) = v (p i x) := LinearMap.congr_fun (hvS i hi).eq x
-        _ = v x := congrArg v (hx' i hi)
-  let uS : Module.End K S := u.restrict huS'
-  let vS : Module.End K S := v.restrict hvS'
-  let U : LinearMap.range q →ₗ[K] LinearMap.ker q :=
-    uS.restrict fun x hx => by
-      have hxfix : p a (x : V) = x := by
-        have hx' := LinearMap.IsIdempotentElem.mem_range_iff hq |>.mp hx
-        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx'
-      apply LinearMap.mem_ker.mpr
-      apply Subtype.ext
-      simpa only [q, uS, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
-        hu0 (x : V) hxfix
-  let W : LinearMap.ker q →ₗ[K] LinearMap.range q :=
-    vS.restrict fun x hx => by
-      apply LinearMap.IsIdempotentElem.mem_range_iff hq |>.mpr
-      have hxzero : p a (x : V) = 0 := by
-        have hx' := LinearMap.mem_ker.mp hx
-        simpa only [q, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
-          congrArg Subtype.val hx'
-      apply Subtype.ext
-      simpa only [q, vS, LinearMap.coe_restrict_apply] using hv1 (x : V) hxzero
-  let e : LinearMap.range q ≃ₗ[K] LinearMap.ker q := LinearEquiv.ofLinearMap U W
-    (LinearMap.ext fun x => Subtype.ext (Subtype.ext (by
-      have hxzero : p a (x : V) = 0 := by
-        have hx' := LinearMap.mem_ker.mp x.2
-        simpa only [q, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] using
-          congrArg Subtype.val hx'
-      simpa only [U, W, uS, vS, LinearMap.comp_apply, LinearMap.id_apply,
-        LinearMap.coe_restrict_apply] using
-        huv (x : V) hxzero)))
-    (LinearMap.ext fun x => Subtype.ext (Subtype.ext (by
-      have hxfix : p a (x : V) = x := by
-        have hx' := LinearMap.IsIdempotentElem.mem_range_iff hq |>.mp x.2
-        simpa only [q, LinearMap.coe_restrict_apply] using congrArg Subtype.val hx'
-      simpa only [U, W, uS, vS, LinearMap.comp_apply, LinearMap.id_apply,
-        LinearMap.coe_restrict_apply] using
-        hvu (x : V) hxfix)))
-  have hrank := Submodule.finrank_add_eq_of_isCompl
-    (LinearMap.IsIdempotentElem.isCompl hq)
-  have hrangeA : finrank K (LinearMap.range q) = finrank K A := by
-    rw [hqrange]
-    exact (Submodule.comapSubtypeEquivOfLe hAS).finrank_eq
-  calc
-    2 * finrank K ((⨅ i ∈ insert a s, (p i).fixedSubmodule) : Submodule K V) =
-        2 * finrank K A := rfl
-    _ = 2 * finrank K (LinearMap.range q) := by rw [hrangeA]
-    _ = finrank K (LinearMap.range q) + finrank K (LinearMap.range q) := two_mul _
-    _ = finrank K (LinearMap.range q) + finrank K (LinearMap.ker q) := by
-      rw [e.finrank_eq]
-    _ = finrank K S := hrank
-    _ = finrank K ((⨅ i ∈ s, (p i).fixedSubmodule) : Submodule K V) := rfl
+    simp only [q, Subtype.ext_iff, LinearMap.coe_restrict_apply, ZeroMemClass.coe_zero] at hx ⊢
+  exacts [hu0 _ hx, hv1 _ hx, hvu _ hx, huv _ hx]
 
 /-- A finite family of commuting idempotent endomorphisms has common fixed-space dimension
 `2 ^ (-|t|)` times the ambient dimension when each idempotent's fixed and zero pieces are
@@ -193,7 +136,7 @@ theorem pow_card_mul_finrank_iInf_fixedSubmodule
       have hrec : 2 * finrank K
           ((⨅ i ∈ insert a s, (p i).fixedSubmodule) : Submodule K V) =
           finrank K ((⨅ i ∈ s, (p i).fixedSubmodule) : Submodule K V) :=
-        two_mul_finrank_iInf_fixedSubmodule_insert p s a ha (hp a (by simp))
+        two_mul_finrank_iInf_fixedSubmodule_insert p s a (hp a (by simp))
           (fun i hi => hcomm (by simp [hi]) (by simp) (by
             exact fun hia => ha (hia ▸ hi))) (u a) (v a)
           (fun i hi => huS a (by simp) i (by simp [hi]) (by
