@@ -26,7 +26,8 @@ The global compactness theorem for zero-boundary functions is
 ## Reference
 
 H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-Corollary 9.16 (local Rellich compactness).
+Theorem 9.16 (Rellich--Kondrachov compact embedding on bounded C¹ domains).
+The local statement here follows by cutoff localization and the zero-boundary theorem above.
 -/
 
 public section
@@ -44,11 +45,14 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-- Compactness of the value restriction on a bounded ambient domain, by a smooth cutoff. -/
 private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ ∞)
-    (hOmega : IsBounded (Omega : Set E)) (hV : V ≤ Omega)
+    (hOmega : IsBounded (Omega : Set E))
     (hVc : IsCompact (closure (V : Set E)))
     (hVO : closure (V : Set E) ⊆ (Omega : Set E)) :
     IsCompactOperator
-      ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV)) := by
+      ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp
+        (W1p.restrictL (SetLike.coe_subset_coe.mp (Subset.trans subset_closure hVO)))) := by
+  have hV : V ≤ Omega :=
+    SetLike.coe_subset_coe.mp (Subset.trans subset_closure hVO)
   obtain ⟨psi, M, hpsi, _, hpsiOne, hcpt, hts, hM, hpsiM, hgradM⟩ :=
     hVc.exists_contDiff_cutoff_with_bounds Omega.isOpen hVO
   let cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p :=
@@ -59,6 +63,16 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
         rw [W1p.contDiffSMulL_apply]
         exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hpsi hM
           (fun x _ => hpsiM x) (fun x _ => hgradM x) hcpt hts u)
+  have cutoff_apply (u : W1p mu Omega p) : (cutoff u : W1p mu Omega p) =
+      W1p.contDiffSMul psi hpsi hM (fun x _ => hpsiM x)
+        (fun x _ => hgradM x) u := by
+    calc
+      (cutoff u : W1p mu Omega p) =
+          W1p.contDiffSMulL psi hpsi hM (fun x _ => hpsiM x)
+            (fun x _ => hgradM x) u := by
+              simp only [cutoff, ContinuousLinearMap.coe_codRestrict_apply]
+      _ = _ := W1p.contDiffSMulL_apply hpsi hM (fun x _ => hpsiM x)
+        (fun x _ => hgradM x) u
   let hmeasure : mu.restrict (V : Set E) ≤ (1 : ENNReal) • mu.restrict (Omega : Set E) := by
     simpa only [one_smul] using Measure.restrict_mono_set mu
       (SetLike.coe_subset_coe.mpr hV)
@@ -87,15 +101,7 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
     rw [ContinuousLinearMap.comp_apply, W1p.valueL_apply, hleft,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       W1p0.valueL_apply, hres']
-    have hcut : (cutoff u : W1p mu Omega p) =
-        W1p.contDiffSMul psi hpsi hM (fun x _ => hpsiM x)
-          (fun x _ => hgradM x) u := by
-      -- A codomain restriction keeps the underlying value of the cutoff map.
-      change W1p.contDiffSMulL psi hpsi hM (fun x _ => hpsiM x)
-        (fun x _ => hgradM x) u = _
-      exact W1p.contDiffSMulL_apply hpsi hM (fun x _ => hpsiM x)
-        (fun x _ => hgradM x) u
-    rw [hcut, hmul, hOne x hx, one_smul]
+    rw [cutoff_apply u, hmul, hOne x hx, one_smul]
   rw [heq]
   exact hcompact
 
@@ -103,10 +109,13 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
 `1 ≤ p < ∞`, restriction of values from `W^{1,p}(Ω)` to `Lᵖ(V)` is compact. Neither the
 boundedness nor the boundary regularity of `Ω` is required. -/
 theorem W1p.isCompactOperator_valueL_restrictL (hp : p ≠ ∞)
-    (hV : V ≤ Omega) (hVc : IsCompact (closure (V : Set E)))
+    (hVc : IsCompact (closure (V : Set E)))
     (hVO : closure (V : Set E) ⊆ (Omega : Set E)) :
     IsCompactOperator
-      ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV)) := by
+      ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp
+        (W1p.restrictL (SetLike.coe_subset_coe.mp (Subset.trans subset_closure hVO)))) := by
+  have hV : V ≤ Omega :=
+    SetLike.coe_subset_coe.mp (Subset.trans subset_closure hVO)
   obtain ⟨R, hR⟩ := hVc.isBounded.subset_ball (0 : E)
   let U : Opens E := Omega ⊓ ⟨Metric.ball (0 : E) R, Metric.isOpen_ball⟩
   have hU : U ≤ Omega := inf_le_left
@@ -117,7 +126,7 @@ theorem W1p.isCompactOperator_valueL_restrictL (hp : p ≠ ∞)
   have hUbdd : IsBounded (U : Set E) :=
     (Metric.isBounded_ball (x := (0 : E)) (r := R)).subset (fun x hx => hx.2)
   have hcompact := W1p.isCompactOperator_valueL_restrictL_of_isBounded
-    (mu := mu) (Omega := U) (V := V) hp hUbdd hVU hVc hUc
+    (mu := mu) (Omega := U) (V := V) hp hUbdd hVc hUc
   have heq : (W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV) =
       ((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp
         (W1p.restrictL hVU)).comp (W1p.restrictL hU) := by
