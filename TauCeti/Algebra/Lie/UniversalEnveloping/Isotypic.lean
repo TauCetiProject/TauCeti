@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
+import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
 # Isotypic Lie modules through the universal enveloping algebra
@@ -34,6 +35,10 @@ Mathlib's `IsIsotypicOfType`, `IsIsotypic`, and `isotypicComponent` through thos
   membership normalization.
 * `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`: the top-component criterion for an
   irreducible type.
+* `LieModule.representation_eq_smul_of_mem_isotypicComponent`: **a central element of `U(L)`
+  acting on `S` by a scalar acts by that scalar on the whole `S`-isotypic component**.
+* `LieModule.isotypicComponent_inf_isotypicComponent_eq_bot_of_smul_ne`: isotypic components on
+  which a single central element acts by different scalars are disjoint.
 
 ## Roadmap
 
@@ -215,5 +220,50 @@ theorem isIsotypicOfType_isotypicComponent
   isIsotypicOfType_isotypicComponent_of_ι_smul (asModule_ι_smul R L M) S (asModule_ι_smul R L S)
 
 end Canonical
+
+section Center
+
+variable {R L M}
+
+/-- **A central element of `U(L)` acting on `S` by a scalar acts by that scalar on the whole
+`S`-isotypic component of `M`.** Centrality makes the locus where it acts by that scalar a Lie
+submodule (`TauCeti.UniversalEnvelopingAlgebra.centralEigenspace`), the isotypic component is the
+supremum of the Lie submodules equivalent to `S`, and a Lie-module equivalence intertwines the two
+enveloping-algebra actions, so each of those submodules lies in that locus. -/
+theorem representation_eq_smul_of_mem_isotypicComponent
+    {S : Type*} [AddCommGroup S] [Module R S] [LieRingModule L S] [LieModule R L S]
+    {u : Subalgebra.center R U} {c : R}
+    (hS : ∀ s : S, representation R L S (u : U) s = c • s)
+    {m : M} (hm : m ∈ isotypicComponent R L M S) :
+    representation R L M (u : U) m = c • m := by
+  have key : isotypicComponent R L M S ≤ centralEigenspace R L M u c := by
+    rw [isotypicComponent_le_iff]
+    rintro P ⟨e⟩ p hp
+    -- `S` maps onto `P` by a homomorphism of Lie modules, which intertwines the two actions
+    set f : S →ₗ⁅R,L⁆ M :=
+      (P.incl : (P : Type _) →ₗ⁅R,L⁆ M).comp (e.symm : S →ₗ⁅R,L⁆ (P : Type _)) with hf
+    obtain ⟨s, rfl⟩ : ∃ s : S, f s = p := ⟨e ⟨p, hp⟩, by simp [hf]⟩
+    rw [mem_centralEigenspace_iff R L M, ← map_representation R L S M f (u : U) s, hS s, map_smul]
+  exact (mem_centralEigenspace_iff R L M).mp (key hm)
+
+/-- **Isotypic components on which a single central element of `U(L)` acts by different scalars are
+disjoint.** The two components lie in two eigenspaces of one endomorphism of `M`, which are
+disjoint by `Module.End.disjoint_genEigenspace`. -/
+theorem isotypicComponent_inf_isotypicComponent_eq_bot_of_smul_ne [IsDomain R]
+    [Module.IsTorsionFree R M]
+    {S : Type*} [AddCommGroup S] [Module R S] [LieRingModule L S] [LieModule R L S]
+    {S' : Type*} [AddCommGroup S'] [Module R S'] [LieRingModule L S'] [LieModule R L S']
+    {u : Subalgebra.center R U} {c c' : R} (hc : c ≠ c')
+    (hS : ∀ s : S, representation R L S (u : U) s = c • s)
+    (hS' : ∀ s : S', representation R L S' (u : U) s = c' • s) :
+    isotypicComponent R L M S ⊓ isotypicComponent R L M S' = ⊥ := by
+  rw [← disjoint_iff, ← LieSubmodule.disjoint_toSubmodule]
+  refine (Module.End.disjoint_genEigenspace (representation R L M (u : U)) hc 1 1).mono
+    (fun m hm => ?_) (fun m hm => ?_)
+  · exact Module.End.mem_eigenspace_iff.mpr (representation_eq_smul_of_mem_isotypicComponent hS hm)
+  · exact Module.End.mem_eigenspace_iff.mpr
+      (representation_eq_smul_of_mem_isotypicComponent hS' hm)
+
+end Center
 
 end LieModule
