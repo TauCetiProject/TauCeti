@@ -139,7 +139,7 @@ noncomputable def pinnedExp (A : Type*) [CommRing A]
 `pinnedExp` is the coercion to the general linear group of the parametrized Geck
 root-subgroup point `TauCeti.DynkinType.geckRootSubgroupPoints` at the corresponding
 `𝔾ₐ`-parameter. -/
-theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A] [Algebra ℚ A]
+theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A]
     (i : Fin t.rank) (u : A) :
     t.pinnedExp ht A i u =
       (t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u) :
@@ -148,13 +148,13 @@ theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A] [Algebr
   rfl
 
 /-- The uniform exponential at `u = 0` is the identity matrix. -/
-theorem pinnedExp_zero (A : Type*) [CommRing A] [Algebra ℚ A] (i : Fin t.rank) :
+theorem pinnedExp_zero (A : Type*) [CommRing A] (i : Fin t.rank) :
     t.pinnedExp ht A i 0 = 1 := by
   simp [pinnedExp]
 
 /-- The one-parameter subgroup law: `exp(u • e_i) * exp(v • e_i) = exp((u + v) • e_i)`,
 inherited from the monoid-hom structure of the root-subgroup matrix. -/
-theorem pinnedExp_mul (A : Type*) [CommRing A] [Algebra ℚ A]
+theorem pinnedExp_mul (A : Type*) [CommRing A]
     (i : Fin t.rank) (u v : A) :
     t.pinnedExp ht A i u * t.pinnedExp ht A i v = t.pinnedExp ht A i (u + v) := by
   simp only [pinnedExp, ← map_mul]
@@ -164,7 +164,7 @@ theorem pinnedExp_mul (A : Type*) [CommRing A] [Algebra ℚ A]
 the Cartan matrix entry is zero, the corresponding exponentials commute. This is
 `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero` through the
 `pinnedExp` interface. -/
-theorem pinnedExp_comm_of_cartan_eq_zero (A : Type*) [CommRing A] [Algebra ℚ A]
+theorem pinnedExp_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
     (i j : Fin t.rank) (hA : t.cartanMatrix j i = 0) (u v : A) :
     Commute (t.pinnedExp ht A i u) (t.pinnedExp ht A j v) :=
   t.geckRootSubgroupMatrix_comm_of_cartan_eq_zero ht A i j hA _ _
