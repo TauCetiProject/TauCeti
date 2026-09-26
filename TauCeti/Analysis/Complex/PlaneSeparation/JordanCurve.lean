@@ -38,7 +38,7 @@ also meet the unbounded component.
 
 ## Main results
 
-* `TauCeti.isConnected_compl_range_of_injective_path` — the complement of a simple arc in the plane
+* `Path.isConnected_compl_range_of_injective` — the complement of a simple arc in the plane
   is connected.
 * `TauCeti.IsJordanCurve.isConnected_compl_of_ne` — the complement of a proper subcontinuum of a
   Jordan curve in the plane is connected.
@@ -64,7 +64,7 @@ open Metric Set
 
 /-- **A simple arc does not separate the plane.** The complement of the range of an injective
 path in `ℂ` is connected. -/
-theorem isConnected_compl_range_of_injective_path {p q : ℂ} (γ : Path p q)
+theorem _root_.Path.isConnected_compl_range_of_injective {p q : ℂ} (γ : Path p q)
     (hγ : Function.Injective γ) : IsConnected (range γ)ᶜ := by
   have hK : IsCompact (range γ) := isCompact_range γ.continuous
   refine ⟨nonempty_compl.mpr fun h => NormedSpace.unbounded_univ ℝ ℂ (h ▸ hK.isBounded),
@@ -85,7 +85,7 @@ theorem IsJordanCurve.isConnected_compl_of_ne {C S : Set ℂ} (h : IsJordanCurve
   · refine hsub.countable.isConnected_compl_of_one_lt_rank ?_
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
-  · exact isConnected_compl_range_of_injective_path γ hγ
+  · exact γ.isConnected_compl_range_of_injective hγ
 
 /-- **A Jordan curve lies in the closure of each of its complementary components.** If the Jordan
 curve `C ⊆ ℂ` separates `x` from `y`, then every point of `C` is adherent to the component of `Cᶜ`
