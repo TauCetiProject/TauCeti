@@ -219,24 +219,6 @@ noncomputable def kostantToralConjToQuotient
   (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
     (kostantToralConjCoordinateMap e h ρ M hM hnil b wt J P hroot htorus).op
 
-/-- `kostantToralConjToQuotient` is the spectrum map of the conjugated quotient coordinate
-morphism. -/
-theorem kostantToralConjToQuotient_def
-    (hroot : ∀ (A : Type) [CommRing A] (i : I)
-      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
-      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
-          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
-          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
-        GeneralLinear.hopfIdealPointsSubgroup n J A)
-    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
-      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
-          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
-        GeneralLinear.hopfIdealPointsSubgroup n J A) :
-    kostantToralConjToQuotient e h ρ M hM hnil b wt J P hroot htorus =
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
-        (kostantToralConjCoordinateMap e h ρ M hM hnil b wt J P hroot htorus).op :=
-  by rw [kostantToralConjToQuotient]
-
 /-- The conjugated toral closure is a closed subgroup scheme of the quotient cut out by `J`. -/
 instance isClosedImmersion_kostantToralConjToQuotient
     (hroot : ∀ (A : Type) [CommRing A] (i : I)
@@ -251,7 +233,7 @@ instance isClosedImmersion_kostantToralConjToQuotient
         GeneralLinear.hopfIdealPointsSubgroup n J A) :
     AlgebraicGeometry.IsClosedImmersion
       (kostantToralConjToQuotient e h ρ M hM hnil b wt J P hroot htorus).hom.hom.left := by
-  rw [kostantToralConjToQuotient_def,
+  rw [kostantToralConjToQuotient,
     CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff]
   exact (CommHopfAlgCat.quotientMapOfLe_surjective _ _).comp
     (ConcreteCategory.bijective_of_isIso
@@ -277,7 +259,7 @@ theorem kostantToralConjToQuotient_comp_quotientSpecι
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
           (GeneralLinear.conjCoordinateIso P).hom.op := by
-  rw [kostantToralConjToQuotient_def, CommHopfAlgCat.quotientSpecι_def,
+  rw [kostantToralConjToQuotient, CommHopfAlgCat.quotientSpecι_def,
     CommHopfAlgCat.quotientSpecι_def,
     ← (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map_comp,
     ← (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map_comp,
