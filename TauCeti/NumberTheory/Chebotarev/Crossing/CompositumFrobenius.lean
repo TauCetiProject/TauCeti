@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Basic
 
 /-!
 # Frobenius fibres in a cyclotomic compositum
@@ -39,6 +40,9 @@ field `M` is `L`, a prime above `2` may be unramified, and `𝔑𝔭` is then no
   lies in the fibre of `[ρ|_L]` over `L` and `autToPow ρ = 𝔑𝔭` in `ZMod m`.
 * `NumberField.Chebotarev.mem_frobeniusPrimeSet_galEquivProd_symm_iff`: the same statement in the
   coordinates of `IsCyclotomicExtension.galEquivProd`.
+* `NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm`: for a cyclotomic
+  extension of `K` itself, the fibre away from the level is characterized by the norm residue;
+  unramifiedness follows automatically.
 
 ## References
 
@@ -128,5 +132,25 @@ theorem mem_frobeniusPrimeSet_galEquivProd_symm_iff
   rw [mem_frobeniusPrimeSet_mk_iff_restrictNormal_autToPow (L := L) hm hur hζ,
     IsCyclotomicExtension.restrictNormal_galEquivProd_symm,
     IsCyclotomicExtension.autToPow_galEquivProd_symm]
+
+section Cyclotomic
+
+variable {F : Type*} [Field F] [NumberField F] [Algebra K F] [IsGalois K F]
+  [IsCyclotomicExtension {m} K F]
+
+/-- Away from the level, the cyclotomic Frobenius fibre is characterized by the norm modulo
+that level. Unramifiedness follows from the condition on the level. -/
+theorem mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm {ζ : F} (hζ : IsPrimitiveRoot ζ m)
+    (σ : F ≃ₐ[K] F) {𝔭 : HeightOneSpectrum (𝓞 K)} (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal) :
+    𝔭 ∈ frobeniusPrimeSet K F (ConjClasses.mk σ) ↔
+      (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  have hur (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
+      Algebra.IsUnramifiedAt (𝓞 K) Q :=
+    isUnramifiedAt_of_notMem_cyclotomicModulus_support F m
+      (mem_cyclotomicModulus_support_iff.not.mpr hm) Q
+  rw [mem_frobeniusPrimeSet_mk_iff_restrictNormal_autToPow (L := K) hm hur hζ]
+  exact and_iff_right (mem_frobeniusPrimeSet_self 𝔭 _)
+
+end Cyclotomic
 
 end NumberField.Chebotarev
