@@ -45,6 +45,8 @@ the doubled family being what its graph-twisted family `²E₆(q)` needs where `
 * `TauCeti.DynkinType.e6MinusculeWeight`: the twenty-seven weights in fundamental coordinates.
 * `TauCeti.DynkinType.e6MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e6MinusculeWeight_reflection`: the simple-reflection equation.
+* `TauCeti.DynkinType.exists_e6MinusculeReflections_eq`: every table index is reached from the
+  highest-weight index by simple reflections.
 * `TauCeti.DynkinType.range_e6MinusculeWeight`: the table is exactly the Weyl orbit of `ϖ₁`.
 * `TauCeti.DynkinType.span_range_e6MinusculeWeight_eq_top`: the weights span the character lattice.
 * `TauCeti.DynkinType.e6MinusculeGraphDualPerm`: the involution of the index set induced by the
@@ -65,7 +67,9 @@ Algebras, Chapters 4--6*, Plate V. The minuscule-orbit description of the 27-dim
 representation follows J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
 §13.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.2. That the diagram
 automorphism exchanges the two twenty-seven dimensional representations, and the conventions for
-`²E₆(q)` that makes this relevant to, are R. W. Carter, *Simple Groups of Lie Type*, §12.2.
+`²E₆(q)` that makes this relevant to, are R. W. Carter, *Simple Groups of Lie Type*, §12.2. The
+reflection-reachability argument follows the parallel type-`E₇` construction in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.MinusculeWeight`.
 -/
 
 public section
@@ -215,6 +219,39 @@ private theorem e6MinusculeWeight_succ_eq_reflection_parent (a : Fin 26) :
         (e6MinusculeWeight (e6MinusculeParent a)) := by
   rw [e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
   fin_cases a <;> decide
+
+/-- Every index in the minuscule weight table is reached from the highest-weight index by a
+finite sequence of simple reflections. -/
+theorem exists_e6MinusculeReflections_eq (a : Fin 27) :
+    ∃ l : List (Fin 6), l.foldl (fun b i ↦ e6MinusculeReflection i b) 0 = a := by
+  have aux : ∀ n, ∀ hn : n < 27,
+      ∃ l : List (Fin 6), l.foldl (fun b i ↦ e6MinusculeReflection i b) 0 =
+        (⟨n, hn⟩ : Fin 27) := by
+    intro n hn
+    induction n using Nat.strong_induction_on with
+    | h n ih =>
+        by_cases hzero : n = 0
+        · subst n
+          exact ⟨[], rfl⟩
+        · let c : Fin 26 := ⟨n - 1, by omega⟩
+          have hsucc : c.succ = (⟨n, hn⟩ : Fin 27) := by
+            apply Fin.ext
+            simp [c]
+            omega
+          obtain ⟨l, hl⟩ := ih (e6MinusculeParent c)
+            (by
+              have hlt := e6MinusculeParent_lt_succ c
+              have hval : (c.succ : ℕ) = n := congrArg Fin.val hsucc
+              rw [hval] at hlt
+              exact hlt)
+            (e6MinusculeParent c).isLt
+          refine ⟨l ++ [e6MinusculeParentNode c], ?_⟩
+          rw [List.foldl_append, hl]
+          simp only [List.foldl_cons, List.foldl_nil]
+          apply e6MinusculeWeight_injective
+          rw [← hsucc, e6MinusculeWeight_succ_eq_reflection_parent,
+            e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
+  exact aux a a.isLt
 
 private theorem e6MinusculeWeight_mem_orbit (a : Fin 27) :
     e6MinusculeWeight a ∈
