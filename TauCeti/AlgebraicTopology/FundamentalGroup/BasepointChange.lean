@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
 
 /-!
-# Basepoint change for fundamental-group subgroups
+# Basepoint change for fundamental groups
 
 The pointed classification of connected covers records a subgroup of the fundamental group at
 a chosen basepoint. Changing the basepoint along a path transports that subgroup by the
@@ -18,9 +18,12 @@ standard path-conjugation isomorphism of fundamental groups. This file packages 
 and the induced transport of the normalizer quotient `N(H) / H` used for deck groups of covers
 attached to subgroups.
 
+It also records the element-level behaviour of the transport: path-quotient formulas and its
+compatibility with concatenation of paths.
+
 Mathlib already supplies the fundamental-group isomorphism
-`FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are only the
-subgroup and normalizer-quotient bookkeeping needed by the universal-covers roadmap.
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
+rules, subgroup, and normalizer-quotient bookkeeping built on it.
 
 ## Main declarations
 
@@ -30,16 +33,16 @@ subgroup and normalizer-quotient bookkeeping needed by the universal-covers road
   `basepointChangeSubgroup`.
 * `TauCeti.FundamentalGroup.basepointChangeNormalizerQuotientEquiv`: the corresponding
   isomorphism `N(H) / H ≃* N(γ₊H) / γ₊H`.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` and
+  `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`: basepoint change as conjugation
+  by the path in the path quotient.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans`: basepoint change along a concatenated
+  path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
-## References
-
-This supplies a small prerequisite for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-items 7 and 8: the pointed cover attached to `H ≤ π₁(X, x₀)`, conjugacy under basepoint
-change, and the normalizer quotient `N(H) / H` appearing as the deck group of that cover.
 -/
 
 public section
@@ -98,6 +101,54 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
     (_root_.FundamentalGroup.inv_def).symm
   rw [hsymm, htrans, htrans]
   group
+
+open CategoryTheory in
+/-- Basepoint change along `γ` is represented by conjugation with `γ` in the path quotient: a loop
+`g` at `x₀` goes to the class of `γ⁻¹ ⬝ g ⬝ γ`. This is the forward counterpart of
+`FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`. -/
+@[simp]
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
+    (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g =
+      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ).symm
+        (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ)) := by
+  let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
+  let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm γq
+  -- Mathlib defines the transport as `α.conj`; the groupoid arrow and path quotient are
+  -- definitionally the same type (`FundamentalGroupoid.Hom` is a path quotient).
+  change α.conj g = γq.symm.trans (g.trans γq)
+  rw [CategoryTheory.Iso.conj_apply]
+  rfl
+
+open CategoryTheory in
+/-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
+@[simp]
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (γ.trans δ) =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).trans
+        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ) := by
+  let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk γ)
+  let β : FundamentalGroupoid.mk x₁ ≅ FundamentalGroupoid.mk x₂ :=
+    (Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk δ)
+  have h : (Groupoid.isoEquivHom (FundamentalGroupoid.mk x₀)
+      (FundamentalGroupoid.mk x₂)).symm (Path.Homotopic.Quotient.mk (γ.trans δ)) =
+        α ≪≫ β := by
+    apply CategoryTheory.Iso.ext
+    -- `Iso.ext` exposes groupoid arrows; composition there is path-quotient concatenation.
+    change Path.Homotopic.Quotient.mk (γ.trans δ) =
+      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
+        (Path.Homotopic.Quotient.mk δ)
+    exact Path.Homotopic.Quotient.mk_trans γ δ
+  ext g
+  -- Unfold Mathlib's path transport to `Iso.conj` on the associated groupoid arrows.
+  change ((Groupoid.isoEquivHom _ _).symm
+      (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)
+  rw [h]
+  exact CategoryTheory.Iso.trans_conj α β g
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 
