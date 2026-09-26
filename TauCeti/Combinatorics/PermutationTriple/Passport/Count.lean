@@ -44,9 +44,10 @@ Relabelling a generating triple of a passport must normalise the reference subgr
 isomorphism classes of a passport are the orbits of the normalizer of `P.G` on these triples. An
 element of the normalizer stabilising a generating triple centralises the group that the triple
 generates (`TauCeti.Subgroup.eq_one_of_mem_centralizer_of_apply_eq`, and hence
-`TauCeti.Subgroup.centralizer_stabilizer_eq_bot`), which is what makes every stabiliser equal to
-the centralizer; Burnside's lemma then turns the count above into the passport size. The centralizer on
-the right is itself bounded by the degree, by `TauCeti.Subgroup.card_centralizer_dvd`.
+`TauCeti.Subgroup.centralizer_stabilizer_eq_bot`), which is what makes every stabiliser equal
+to the centralizer; Burnside's lemma then turns the count above into the passport size. The
+centralizer on the right is itself bounded by the degree, by
+`TauCeti.Subgroup.card_centralizer_dvd`.
 
 ## References
 
