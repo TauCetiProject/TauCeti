@@ -12,20 +12,22 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 /-!
 # Rigidity of measure-preserving real maps
 
-A finite measure determines the distribution of a real-valued function on it: two measurable
-real-valued functions with the same pushforward measure, one of which lies below the other almost
-everywhere, agree almost everywhere. In the endomap case this says that a measure-preserving real
-endomap lying below the identity almost everywhere is the identity almost everywhere.
+A finite measure determines the distribution of a real-valued function on it: two
+almost-everywhere measurable real-valued functions with the same pushforward measure, one of which
+lies below the other almost everywhere, agree almost everywhere. In the endomap case this says
+that a measure-preserving real endomap lying below the identity almost everywhere is the
+identity almost everywhere.
 
 ## Main results
 
-* `MeasureTheory.Measure.ae_eq_of_measurePreserving_of_le` — two measurable real-valued
-  functions on a finite measure space with the same pushforward measure, where the first lies
-  below the second almost everywhere, agree almost everywhere. It turns a domination hypothesis
-  on a real-valued coordinate into an equality almost everywhere, so it is useful whenever one
-  has to rule out a measure-preserving map that moves points downwards. Its endomap case, namely
-  `α = ℝ` and `g = id`, says that a measure-preserving real endomap lying below the identity is
-  the identity almost everywhere.
+* `MeasureTheory.Measure.ae_eq_of_map_eq_of_le` — two almost-everywhere measurable
+  real-valued functions on a finite measure space with the same pushforward measure, where the
+  first lies below the second almost everywhere, agree almost everywhere. It turns a domination
+  hypothesis on a real-valued coordinate into an equality almost everywhere, so it is useful
+  whenever one has to rule out a measure-preserving map that moves points downwards, including
+  maps which are only measurable outside a null set. Its endomap case, namely `α = ℝ` and
+  `g = id`, says that a measure-preserving real endomap lying below the identity is the identity
+  almost everywhere.
 -/
 
 public section
@@ -36,10 +38,10 @@ open Filter MeasureTheory
 
 namespace MeasureTheory.Measure
 
-/-- Two measurable real-valued functions with the same pushforward measure, where the first lies
-below the second almost everywhere, are equal almost everywhere. -/
-theorem ae_eq_of_measurePreserving_of_le {α : Type*} [MeasurableSpace α] {f g : α → ℝ}
-    {μ : Measure α} (hf : Measurable f) (hg : Measurable g) [IsFiniteMeasure μ]
+/-- Two almost-everywhere measurable real-valued functions with the same pushforward measure,
+where the first lies below the second almost everywhere, are equal almost everywhere. -/
+theorem ae_eq_of_map_eq_of_le {α : Type*} [MeasurableSpace α] {f g : α → ℝ}
+    {μ : Measure α} (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) [IsFiniteMeasure μ]
     (hmap : Measure.map f μ = Measure.map g μ) (hle : f ≤ᵐ[μ] g) : f =ᵐ[μ] g := by
   have habs : ∀ y : ℝ, ‖Real.arctan y‖ ≤ Real.pi / 2 := fun y => by
     rw [Real.norm_eq_abs, abs_le]
@@ -47,16 +49,16 @@ theorem ae_eq_of_measurePreserving_of_le {α : Type*} [MeasurableSpace α] {f g 
       le_of_lt (Real.arctan_lt_pi_div_two y)⟩
   have hfint : Integrable (fun x => Real.arctan (f x)) μ :=
     Integrable.of_bound
-      ((Real.continuous_arctan.measurable.comp hf).aestronglyMeasurable)
+      ((Real.continuous_arctan.measurable.comp_aemeasurable hf).aestronglyMeasurable)
       (Real.pi / 2) (Filter.Eventually.of_forall (fun x => habs _))
   have hgint : Integrable (fun x => Real.arctan (g x)) μ :=
     Integrable.of_bound
-      ((Real.continuous_arctan.measurable.comp hg).aestronglyMeasurable)
+      ((Real.continuous_arctan.measurable.comp_aemeasurable hg).aestronglyMeasurable)
       (Real.pi / 2) (Filter.Eventually.of_forall (fun x => habs _))
   have hint : ∫ x, Real.arctan (f x) ∂μ = ∫ x, Real.arctan (g x) ∂μ := by
-    have hm := integral_map (μ := μ) (φ := f) (f := fun x => Real.arctan x) hf.aemeasurable
+    have hm := integral_map (μ := μ) (φ := f) (f := fun x => Real.arctan x) hf
       Real.continuous_arctan.aestronglyMeasurable
-    have hm' := integral_map (μ := μ) (φ := g) (f := fun x => Real.arctan x) hg.aemeasurable
+    have hm' := integral_map (μ := μ) (φ := g) (f := fun x => Real.arctan x) hg
       Real.continuous_arctan.aestronglyMeasurable
     calc ∫ x, Real.arctan (f x) ∂μ = ∫ x, Real.arctan x ∂Measure.map f μ := hm.symm
       _ = ∫ x, Real.arctan x ∂Measure.map g μ := by rw [hmap]

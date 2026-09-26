@@ -321,7 +321,7 @@ theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
     rw [hcomp, ← Measure.map_map hq hcdf, cdf_map_eq_volume_restrict ν]
     simpa only [MeasureTheory.restrict_Ioo_eq_restrict_Icc] using
       (map_quantile_volume_Ioo ν)
-  exact ae_eq_of_measurePreserving_of_le (hq.comp hcdf) measurable_id
+  exact ae_eq_of_map_eq_of_le (hq.comp hcdf).aemeasurable measurable_id.aemeasurable
     (hmap.trans Measure.map_id.symm) hle
 
 /-- **The CDF/quantile transport of an atomless real law.** The cumulative distribution function
