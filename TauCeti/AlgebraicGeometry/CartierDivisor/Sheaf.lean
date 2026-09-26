@@ -155,16 +155,6 @@ theorem mem_sections_iff_of_rationalUnitClass_eq {D : CartierDivisor X} {V W : X
     rw [← ha, ← _root_.AlgebraicGeometry.Scheme.algebraMap_germ_eq_germToFunctionField X hx]
     exact RingHom.mem_range_self _ _
 
-/-- On a nonempty open subset, a section of `𝒪_X(0)` comes from a regular function. -/
-theorem exists_regular_of_mem_sections_zero {V : X.Opens} [Nonempty V]
-    {s : Γ(rationalFunctions X, V)} (hs : s ∈ (0 : CartierDivisor X).sections V) :
-    ∃ r : Γ(X, V), X.germToFunctionField V r = rationalFunctionsEquiv V s := by
-  have hzero : rationalUnitClass X V (Additive.ofMul (1 : X.functionFieldˣ)) =
-      (0 : CartierDivisor X) |_ V := by
-    simp only [ofMul_one, map_zero, TopCat.Presheaf.restrictOpen,
-      TopCat.Presheaf.restrict]
-  simpa using (mem_sections_iff_of_rationalUnitClass_eq le_rfl hzero).mp hs
-
 /-- Divisors that agree on an open subset `V` have the same sections over every open `W ≤ V`. -/
 lemma sections_congr {D E : CartierDivisor X} {V W : X.Opens} (h : D |_ V = E |_ V)
     (hWV : W ≤ V) : D.sections W = E.sections W := by

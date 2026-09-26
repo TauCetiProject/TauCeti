@@ -206,28 +206,26 @@ def sectionsMulRetraction :
     congr 1
     exact sheafι_app_injective D V (by simp)
 
-/-- The retraction sends `s` to `(s·g) ⊗ g⁻¹`. -/
-@[simp]
-lemma sectionsMulRetraction_apply (s : Γ((D + E).sheaf, V)) :
-    sectionsMulRetraction hg D s =
-      sectionMk _ (mul_localEquation_mem_sections hg D s) ⊗ₜ
-        sectionMk _ (inv_localEquation_mem_sections hg) :=
-  (rfl)
-
 /-- Division by the local equation retracts multiplication. -/
 theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, V)) :
     sectionsMulRetraction hg D (sectionsMul D E V a b) = a ⊗ₜ b := by
   obtain ⟨r, hr⟩ : ∃ r : Γ(X, V), Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
       Scheme.rationalFunctionsMulBilin X V (Scheme.Modules.Hom.app (sheafι E) V b)
         ((Scheme.rationalFunctionsEquiv V).symm (g : X.functionField)) := by
-    obtain ⟨r, hr⟩ := exists_regular_of_mem_sections_zero
-      (show Scheme.rationalFunctionsMulBilin X V
+    have hzero : Scheme.rationalUnitClass X V (Additive.ofMul (1 : X.functionFieldˣ)) =
+        (0 : CartierDivisor X) |_ V := by
+      simp only [ofMul_one, map_zero, TopCat.Presheaf.restrictOpen,
+        TopCat.Presheaf.restrict]
+    have hmem : Scheme.rationalFunctionsMulBilin X V
         (Scheme.Modules.Hom.app (sheafι E) V b)
         ((Scheme.rationalFunctionsEquiv V).symm (g : X.functionField)) ∈
-        (0 : CartierDivisor X).sections V from by
-          simpa only [add_neg_cancel] using
-            rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
-              (localEquation_mem_sections_neg hg))
+        (0 : CartierDivisor X).sections V := by
+      simpa only [add_neg_cancel] using
+        rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
+          (localEquation_mem_sections_neg hg)
+    obtain ⟨r, hr⟩ :=
+      (mem_sections_iff_of_rationalUnitClass_eq le_rfl hzero).mp hmem
+    simp only [Units.val_one, one_mul] at hr
     exact ⟨r, (Scheme.rationalFunctionsEquiv V).injective
       (by rw [Scheme.rationalFunctionsEquiv_toRationalFunctions_app]; exact hr)⟩
   have h1 : sectionMk _ (mul_localEquation_mem_sections hg D (sectionsMul D E V a b)) =
@@ -243,7 +241,10 @@ theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, 
     rw [Scheme.Modules.Hom.app_smul,
       ← Scheme.rationalFunctionsMulBilin_toRationalFunctions_app, hr, sheafι_app_sectionMk]
     exact (Scheme.rationalFunctionsEquiv V).injective (by simp)
-  rw [sectionsMulRetraction_apply, h1, TensorProduct.smul_tmul, h2]
+  -- Unfold the retraction's `toFun` field to expose the tensor expression.
+  change sectionMk _ (mul_localEquation_mem_sections hg D (sectionsMul D E V a b)) ⊗ₜ
+    sectionMk _ (inv_localEquation_mem_sections hg) = a ⊗ₜ b
+  rw [h1, TensorProduct.smul_tmul, h2]
 
 /-- Multiplication is injective on a domain with a local equation of `E`. -/
 theorem sectionsMulLift_injective : Function.Injective (sectionsMulLift D E V) := by
@@ -324,7 +325,7 @@ theorem toLineBundleClass_add :
       F.toLineBundleClass = LineBundleClass.mk F.toInvertibleSheaf := by
     apply toLineBundleClass_eq_mk_iff.mpr
     simpa only [toInvertibleSheaf_obj] using
-      (show Nonempty (F.sheaf ≅ F.sheaf) from ⟨Iso.refl _⟩)
+      (⟨Iso.refl _⟩ : Nonempty (F.sheaf ≅ F.sheaf))
   rw [h (D + E), h D, h E, ← LineBundleClass.mk_tensorProduct,
     LineBundleClass.mk_eq_mk_iff]
   refine ⟨?_⟩
