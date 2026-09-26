@@ -114,22 +114,3 @@ theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
       TauCeti.ScalarAut.semilinearMap_apply] using LinearMap.congr_fun heq x
 
 end BialgHom
-
-namespace MonoidHom
-
-variable {k L A B : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
-  [Semiring A] [Bialgebra k A] [Semiring B] [Bialgebra k B]
-
-/-- An equivariant homomorphism of group-like elements extends to an equivariant
-homomorphism of the scalar-extended bialgebras. -/
-theorem liftBialgHom_map_smul
-    (f : GroupLike L (L ⊗[k] A) →* GroupLike L (L ⊗[k] B))
-    (hlinear : LinearIndependent L (GroupLike.val (R := L) (A := L ⊗[k] A)))
-    (hA : Submodule.span L
-      (Set.range (GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤)
-    (σ : L ≃ₐ[k] L) (hf : ∀ x, f (σ • x) = σ • f x) (x : L ⊗[k] A) :
-    f.liftBialgHom hlinear hA (σ • x) = σ • f.liftBialgHom hlinear hA x := by
-  apply ((f.liftBialgHom hlinear hA).map_smul_iff_groupLike hA σ).2 _ x
-  simpa only [groupLikeMap_liftBialgHom] using hf
-
-end MonoidHom

@@ -57,8 +57,10 @@ theorem existsUnique_geometricCharacterExtension
   · exact f.groupLikeMap_liftBialgHom hlinear hspan
   · intro σ x
     -- The absolute-Galois wrapper uses the scalar action of its underlying algebra automorphism.
-    exact f.liftBialgHom_map_smul hlinear hspan
-      (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) (hf σ) x
+    apply ((f.liftBialgHom hlinear hspan).map_smul_iff_groupLike hspan
+      (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ)).2 _ x
+    simp only [MonoidHom.groupLikeMap_liftBialgHom]
+    exact hf σ
   · intro F hF
     apply f.liftBialgHom_unique hlinear hspan F
     intro x
