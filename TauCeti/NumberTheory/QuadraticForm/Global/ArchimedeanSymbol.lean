@@ -168,8 +168,9 @@ units `a, b`, the symbol of their images through the complex embedding of `w` is
 Layer 4.4 states the archimedean symbol as a formula which is `1` at every complex place.  Every
 element of `ℂˣ` is a square, so the symbol is trivial there.  This holds at the complex embedding
 of a real place as well, which is why the statement is made for every infinite place rather than
-only for the non-real ones. -/
-@[simp]
+only for the non-real ones.  It carries no `@[simp]` attribute, because
+`hilbertSymbol_eq_one_of_isAlgClosed` is already a simp lemma and this statement is an instance of
+it, so tagging this one would only duplicate that lemma. -/
 theorem hilbertSymbol_unitAtComplexEmbedding_eq_one (w : InfinitePlace K) (a b : Kˣ) :
     hilbertSymbol (Units.map w.embedding.toMonoidHom a) (Units.map w.embedding.toMonoidHom b) = 1 :=
   hilbertSymbol_eq_one_of_isAlgClosed _ _

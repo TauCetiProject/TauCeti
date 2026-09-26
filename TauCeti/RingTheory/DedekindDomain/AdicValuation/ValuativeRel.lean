@@ -259,7 +259,7 @@ unit at `v`, and the order of vanishing `1` is instead the value `WithZero.exp (
 generator of `v.asIdeal`.  This is the equivalence that relates the multiplicative value of an
 element to the additive order of vanishing used by the class-group interface, whose `adicOrd` is
 `-WithZero.log` of this valuation. -/
-theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) [NumberField K] :
+theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
     -WithZero.log (v.valuation K x) = 1 ↔
       v.valuation K x = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ)) := by
   constructor
@@ -283,7 +283,7 @@ completion.  The hypothesis is the one selected by `neg_log_valuation_eq_one_iff
 group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)` and its `1` is the top of
 that group, that is, value zero, so order of vanishing `1` is written `WithZero.exp (-1)`. -/
 theorem not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one
-    (v : HeightOneSpectrum R) (a : K) [NumberField K]
+    (v : HeightOneSpectrum R) (a : K)
     (ha : v.valuation K a = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ))) :
     ¬IsSquare (algebraMap K (v.adicCompletion K) a) := by
   rintro ⟨y, hy⟩
