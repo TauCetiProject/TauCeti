@@ -212,8 +212,13 @@ theorem IsGlobalMinimal.baseChange_smul {W : WeierstrassCurve K} [W.IsElliptic]
   have hC := isMinimal_baseChange_smul (Localization.AtPrime v.asIdeal) W
     (C.baseChange (Localization.AtPrime v.asIdeal))
   -- Base changing `C` to `Oᵥ` and then to `K` is base changing it to `K`.
-  rwa [VariableChange.baseChange, VariableChange.baseChange, VariableChange.map_map,
-    ← IsScalarTower.algebraMap_eq, ← VariableChange.baseChange] at hC
+  change IsMinimal _
+    ((C.baseChange (Localization.AtPrime v.asIdeal)).map
+      (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K :
+        Localization.AtPrime v.asIdeal →+* K) • W) at hC
+  rw [VariableChange.map_baseChange C
+    (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K)] at hC
+  exact hC
 
 /-- **A change of variables between two globally minimal equations of an elliptic curve is defined
 over `O`** (Silverman, *AEC*, VIII.8): at every height-one prime `v` both equations are minimal, so
@@ -231,21 +236,11 @@ theorem IsGlobalMinimal.exists_baseChange_eq_of_smul_eq {W₁ W₂ : Weierstrass
       algebraMap (Localization.AtPrime v.asIdeal) K u₀ = D.u := fun v => by
     have := h₁.isMinimal v
     have := h₂.isMinimal v
-    obtain ⟨u₀, hau⟩ := IsDiscreteValuationRing.associated_of_valuation_eq
-      (A := Localization.AtPrime v.asIdeal) 1 (↑D.u : K)
-      (by rw [map_one]; exact (valuation_u_eq_one_of_isMinimal_smul _ D hD).symm)
-    rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
-    exact ⟨u₀, hau⟩
-  obtain ⟨a, ha⟩ := HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime
-    (↑D.u : K) fun v => let ⟨u₀, hu₀⟩ := hloc v; ⟨u₀, hu₀⟩
-  obtain ⟨b, hb⟩ := HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime
-    (↑D.u⁻¹ : K) fun v => by
-      obtain ⟨u₀, hu₀⟩ := hloc v
-      exact ⟨↑u₀⁻¹, by rw [map_units_inv, hu₀, Units.val_inv_eq_inv_val]⟩
-  have hab : a * b = 1 := IsFractionRing.injective O K (by
-    rw [map_mul, ha, hb, map_one, Units.mul_inv])
+    exact exists_units_algebraMap_eq_u_of_isMinimal_smul _ D hD
+  obtain ⟨u₀, hu₀⟩ := HeightOneSpectrum.isUnit_of_forall_isUnit_localizationAtPrime
+    (D.u : K) (Units.ne_zero _) hloc
   have := (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp (inferInstance : IsIntegrallyClosed O)
-  exact VariableChange.exists_baseChange_eq_of_smul_eq O D hD ⟨a, b, hab, by rw [mul_comm, hab]⟩ ha
+  exact VariableChange.exists_baseChange_eq_of_smul_eq O D hD u₀ hu₀
 
 end WeierstrassCurve
 
