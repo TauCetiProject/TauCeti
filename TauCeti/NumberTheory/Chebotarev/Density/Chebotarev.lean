@@ -72,12 +72,8 @@ theorem hasDirichletDensity_splitCompletely :
 /-- **Every Frobenius class occurs infinitely often.** For every conjugacy class `C` of
 `Gal(L/K)`, infinitely many primes of `𝓞 K` are unramified in `L` with Frobenius class `C`. -/
 theorem infinite_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
-    (frobeniusPrimeSet K L C).Infinite := by
-  refine (hasDirichletDensity_frobeniusPrimeSet K L C).infinite (div_ne_zero ?_ ?_)
-  · obtain ⟨σ, rfl⟩ := ConjClasses.mk_surjective C
-    have : Nonempty (ConjClasses.mk σ).carrier := ⟨⟨σ, ConjClasses.mem_carrier_mk⟩⟩
-    exact Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  · exact Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+    (frobeniusPrimeSet K L C).Infinite :=
+  (hasDirichletDensity_frobeniusPrimeSet K L C).infinite C.card_carrier_div_card_ne_zero
 
 variable {K L} in
 /-- **Chebotarev density up to finitely many primes.** A set `S` of primes of `𝓞 K` that differs

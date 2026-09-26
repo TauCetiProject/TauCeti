@@ -14,14 +14,15 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
 # Prime counting and natural density for Frobenius classes
 
 For a finite Galois extension `L/K` of number fields, the primes of `K` in a conjugacy class
-`C` have count asymptotic to `(#C / #Gal(L/K)) Li(x)`. The weighted Chebotarev theorem gives the
-corresponding result for `ψ_C`; removing higher prime powers and Abel summation give the count.
+`C`, counted by `NumberField.Chebotarev.frobeniusPrimeCount`, have count asymptotic to
+`(#C / #Gal(L/K)) Li(x)`. The weighted Chebotarev theorem gives the corresponding result for
+`ψ_C`; removing higher prime powers and Abel summation give the count.
 Comparison with the prime ideal theorem for all primes then gives natural density.
 
 ## Main results
 
-* `NumberField.Chebotarev.frobeniusPrimeCount`: the number of primes of norm at most `x`
-  whose arithmetic Frobenius class is `C`.
+* `NumberField.Chebotarev.frobeniusTheta_asymptotic`: `ϑ_C(x) = (#C / #Gal(L/K)) x + o(x)`,
+  with the ratio form `NumberField.Chebotarev.tendsto_frobeniusTheta`.
 * `NumberField.Chebotarev.frobeniusPrimeCount_sub_mul_logIntegral_isLittleO`: the
   logarithmic-integral error estimate for the count.
 * `NumberField.Chebotarev.frobeniusPrimeCount_isEquivalent_logIntegral`: the asymptotic
@@ -47,30 +48,9 @@ namespace NumberField.Chebotarev
 variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-open Classical in
-/-- The number of primes of `K` of norm at most `x` whose arithmetic Frobenius in `L/K`
-belongs to `C`. Only primes unramified in `L` are counted. -/
-noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℕ :=
-  ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
-
-open Classical in
-/-- The Frobenius prime count as a finite-set cardinality. -/
-theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
-    frobeniusPrimeCount K L C x =
-      ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card := by
-  rw [frobeniusPrimeCount]
-
-/-- The Frobenius prime count is the generic count of its prime set. -/
-@[simp]
-theorem natCast_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
-    (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
-  classical
-  simpa only [frobeniusPrimeCount_eq_card] using
-    (primeCount_eq_card (frobeniusPrimeSet K L C) x).symm
-
 /-- The logarithmically weighted count of a Frobenius class satisfies
 `ϑ_C(x) = (#C / #Gal(L/K)) x + o(x)`. -/
-private theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
+theorem frobeniusTheta_asymptotic (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ frobeniusTheta K L C x -
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) * x) =o[atTop] id := by
   have h := (frobeniusPsi_asymptotic K L C).sub
@@ -101,28 +81,18 @@ theorem frobeniusPrimeCount_isEquivalent_logIntegral
     (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ)) ~[atTop]
       (fun x ↦ ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) *
-        Real.logIntegral x) := by
-  have hδ : ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) ≠ 0 := by
-    obtain ⟨σ, rfl⟩ := C.exists_rep
-    have hc : 0 < Nat.card (ConjClasses.mk σ).carrier :=
-      Nat.card_pos_iff.mpr ⟨⟨σ, ConjClasses.mem_carrier_mk⟩, inferInstance⟩
-    have hg : 0 < Nat.card (L ≃ₐ[K] L) :=
-      Nat.card_pos_iff.mpr ⟨⟨1⟩, inferInstance⟩
-    exact ne_of_gt (div_pos (by exact_mod_cast hc) (by exact_mod_cast hg))
-  exact (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C).trans_isBigO
-    (Real.logIntegral_isEquivalent_div_log.isBigO_symm.const_mul_right hδ)
+        Real.logIntegral x) :=
+  (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C).trans_isBigO
+    (Real.logIntegral_isEquivalent_div_log.isBigO_symm.const_mul_right
+      C.card_carrier_div_card_ne_zero)
 
 /-- Qualitative prime-counting Chebotarev: the proportion relative to `x / log x` of primes
 whose arithmetic Frobenius lies in `C` tends to `#C / #Gal(L/K)`. -/
 theorem tendsto_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) :
     Tendsto (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) / (x / Real.log x))
-      atTop (𝓝 ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L))) := by
-  have h := tendsto_primeCount_div_of_isLittleO_logIntegral (K := K)
-    (S := frobeniusPrimeSet K L C) (δ :=
-      (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) (by
-      simpa only [natCast_frobeniusPrimeCount] using
-        frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C)
-  simpa only [← natCast_frobeniusPrimeCount] using h
+      atTop (𝓝 ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L))) :=
+  Real.tendsto_div_div_log_of_isLittleO_logIntegral
+    (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C)
 
 /-- Natural-density Chebotarev: among the primes of `K`, the primes with arithmetic Frobenius
 class `C` have density `#C / #Gal(L/K)`. -/

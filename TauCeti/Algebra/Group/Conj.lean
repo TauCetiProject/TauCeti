@@ -54,7 +54,8 @@ conjugation action.
   cardinality of a `Finset`, which makes it computable.
 * `ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
   the group, with `ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
-  a class is nonzero in any semiring where the group order is.
+  a class is nonzero in any semiring where the group order is, and
+  `ConjClasses.card_carrier_div_card_ne_zero` the nonvanishing of `#C / #G` for a finite group.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
@@ -217,6 +218,13 @@ nonzero: it divides that order. -/
 theorem card_carrier_cast_ne_zero {R : Type*} [Semiring R] (C : ConjClasses G)
     (h : (Nat.card G : R) ≠ 0) : (Nat.card C.carrier : R) ≠ 0 :=
   ne_zero_of_dvd_ne_zero h (Nat.cast_dvd_cast (card_carrier_dvd_card C))
+
+/-- For a finite group, the proportion `#C / #G` of a conjugacy class is nonzero in any division
+semiring of characteristic zero. -/
+theorem card_carrier_div_card_ne_zero {R : Type*} [DivisionSemiring R] [CharZero R] [Finite G]
+    (C : ConjClasses G) : (Nat.card C.carrier : R) / Nat.card G ≠ 0 :=
+  have hG : (Nat.card G : R) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  div_ne_zero (C.card_carrier_cast_ne_zero hG) hG
 
 end ConjClasses
 
