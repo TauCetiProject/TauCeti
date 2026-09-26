@@ -128,6 +128,19 @@ theorem subtypeCoord_apply (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Non
   unfold subtypeCoord
   rfl
 
+/-- On its source, `subtypeCoord` recovers the ambient coordinate after applying the slice
+parametrization. -/
+theorem subtypeCoord_parametrization_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
+    (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
+    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
+    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
+    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
+    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) {x : s}
+    (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
+    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
+  rw [subtypeCoord_apply]
+  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.2
+
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/
 @[simp]

@@ -256,8 +256,7 @@ theorem subtypeChart_mk_zero_eq
     (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s]
     {x : s} (hx : x ∈ h.subtypeChart.source) :
     (h.subtypeChart x, (0 : Y')) = e x := by
-  rw [subtypeChart_apply]
-  exact h.mk_fst_zero_eq (by simpa only [subtypeChart_source, Set.mem_preimage] using hx) x.prop
+  exact OpenPartialHomeomorph.subtypeCoord_parametrization_apply _ _ _ _ _ _ _ _ _ _ hx
 
 /-- On its target, the inverse of a zero-slice subtype chart is the ambient inverse evaluated on
 the zero slice. -/
