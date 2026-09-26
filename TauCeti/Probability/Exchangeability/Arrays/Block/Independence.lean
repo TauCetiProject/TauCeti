@@ -17,17 +17,13 @@ import TauCeti.Data.Set.Infinite
 For a separately exchangeable array, any finite block of entries inside an infinite rectangle is
 conditionally independent of the entries outside the block given the other entries of the
 rectangle. This is the finite-block form of the local conditional-independence principle used to
-factor the visible-cell laws in the Aldous--Hoover representation. The two axes can be reindexed
-into the rectangle while fixing all coordinates of the finite block.
+factor the visible-cell laws in the Aldous--Hoover representation.
 
 ## References
 
 * D. Aldous, "Representations for partially exchangeable arrays of random variables",
   *Journal of Multivariate Analysis* 11 (1981), 581--598.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 7.
-
-The proof generalizes the reindexing argument previously used for the one-cell theorem
-`SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl`.
 -/
 
 public section
