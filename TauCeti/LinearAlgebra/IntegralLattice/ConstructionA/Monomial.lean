@@ -66,31 +66,36 @@ end
 
 variable {m : ℕ+}
 
-/-- When the coefficients of a modular monomial map are signed residues, its action on a
-Construction A carrier is the restriction of a rational signed coordinate change. -/
-theorem exists_lattice_map_monomialEquiv (C : AdditiveCode (ZMod m) ι)
-    (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) (hu : ∀ i, u i = 1 ∨ u i = -1) :
-    ∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e ∧
+/-- A modular monomial map acts on a Construction A carrier through a rational signed
+coordinate change exactly when all its coefficients are signed residues. -/
+theorem exists_signedEquiv_and_lattice_map_monomialEquiv_iff
+    (C : AdditiveCode (ZMod m) ι) (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) :
+    (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e ∧
       (lattice m C).map
           (((signedEquiv (R := ℚ) v e).toLinearMap).restrictScalars ℤ :
             (ι → ℚ) →ₗ[ℤ] (κ → ℚ)) =
-        lattice m (C.map (monomialEquiv u e).toAddEquiv.toAddMonoidHom) := by
-  obtain ⟨v, heq⟩ := (exists_signed_monomialEquiv_iff u e).mpr hu
-  refine ⟨v, heq, ?_⟩
-  rw [heq]
-  exact lattice_map_signedEquiv C v e
+        lattice m (C.map (monomialEquiv u e).toAddEquiv.toAddMonoidHom)) ↔
+      ∀ i, u i = 1 ∨ u i = -1 := by
+  constructor
+  · rintro ⟨v, hv, _⟩
+    exact (exists_signed_monomialEquiv_iff u e).mp ⟨v, hv⟩
+  · intro hu
+    obtain ⟨v, heq⟩ := (exists_signed_monomialEquiv_iff u e).mpr hu
+    refine ⟨v, heq, ?_⟩
+    rw [heq]
+    exact lattice_map_signedEquiv C v e
 
 section
 
 variable [Fintype ι] [Fintype κ]
 
-/-- A modular monomial map with signed coefficients lifts to an isometry of the associated
-Construction A integral lattices, with the prescribed signed action on rational coordinates. -/
-theorem exists_integralLatticeIsometry_of_monomial (C : AdditiveCode (ZMod m) ι)
+/-- A modular monomial map lifts to a signed isometry of the associated Construction A
+integral lattices exactly when all its coefficients are signed residues. -/
+theorem exists_signedEquiv_and_integralLatticeIsometry_iff (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) (hu : ∀ i, u i = 1 ∨ u i = -1) :
-    ∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e ∧
+    (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) :
+    (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e ∧
       ∃ hD : AddSubgroup.toZModSubmodule m
           (C.map (monomialEquiv u e).toAddEquiv.toAddMonoidHom) ≤
             (AddSubgroup.toZModSubmodule m
@@ -98,13 +103,18 @@ theorem exists_integralLatticeIsometry_of_monomial (C : AdditiveCode (ZMod m) ι
         ∃ f : IntegralLattice.Isometry (integralLattice m C hC)
             (integralLattice m
               (C.map (monomialEquiv u e).toAddEquiv.toAddMonoidHom) hD),
-          ∀ x : ι → ℚ, f x = signedEquiv v e x := by
-  obtain ⟨v, hv⟩ := (exists_signed_monomialEquiv_iff u e).mpr hu
-  refine ⟨v, hv, ?_⟩
-  rw [hv]
-  exact ⟨map_signedEquiv_le_euclideanDual C hC v e,
-    integralLatticeSignedEquiv C hC v e,
-    fun x ↦ integralLatticeSignedEquiv_apply C hC v e x⟩
+          ∀ x : ι → ℚ, f x = signedEquiv v e x) ↔
+      ∀ i, u i = 1 ∨ u i = -1 := by
+  constructor
+  · rintro ⟨v, hv, _⟩
+    exact (exists_signed_monomialEquiv_iff u e).mp ⟨v, hv⟩
+  · intro hu
+    obtain ⟨v, hv⟩ := (exists_signed_monomialEquiv_iff u e).mpr hu
+    refine ⟨v, hv, ?_⟩
+    rw [hv]
+    exact ⟨map_signedEquiv_le_euclideanDual C hC v e,
+      integralLatticeSignedEquiv C hC v e,
+      fun x ↦ integralLatticeSignedEquiv_apply C hC v e x⟩
 
 end
 

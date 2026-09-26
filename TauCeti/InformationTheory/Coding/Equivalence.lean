@@ -153,13 +153,7 @@ theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
   have hdot (x y : ι → R) :
       monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
         (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
-    have hx : monomialEquiv u e x = (fun i ↦ (u i : R) * x i) ∘ e.symm := by
-      ext j
-      simp
-    have hy : monomialEquiv u e y = (fun i ↦ (u i : R) * y i) ∘ e.symm := by
-      ext j
-      simp
-    rw [hx, hy, comp_equiv_dotProduct_comp_equiv]
+    rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, comp_equiv_dotProduct_comp_equiv]
   constructor
   · intro h i
     have hi := h (Pi.single i 1) (Pi.single i 1)
@@ -215,25 +209,25 @@ underlying function. -/
 theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
     (signedEquiv (R := ℚ) u e).restrictScalars ℤ x = signedEquiv u e x := rfl
 
-/-- A monomial coordinate change over `ZMod m` agrees with a signed coordinate change when its
-coordinate units are reductions of integer units. -/
-theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
-    (v : ι → ℤˣ) (hv : ∀ i, (v i : ZMod m) = u i) :
+/-- A monomial coordinate change agrees with a signed coordinate change when its
+coordinate units are images of integer units. -/
+theorem monomialEquiv_eq_signedEquiv_of_intUnits (u : ι → Rˣ) (e : ι ≃ κ)
+    (v : ι → ℤˣ) (hv : ∀ i, (v i : R) = u i) :
     monomialEquiv u e = signedEquiv v e := by
   ext x j
   rw [monomialEquiv_apply, signedEquiv_apply, hv]
 
-/-- A monomial map over `ZMod m` is the reduction of a signed coordinate change exactly when
+/-- A monomial map over a commutative ring is a signed coordinate change exactly when
 each multiplier is `1` or `-1`. -/
-theorem exists_signed_monomialEquiv_iff {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ) :
+theorem exists_signed_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
     (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e) ↔
       ∀ i, u i = 1 ∨ u i = -1 := by
   classical
   constructor
   · rintro ⟨v, hv⟩ i
-    have hi : (u i : ZMod m) = (v i : ZMod m) := by
+    have hi : (u i : R) = (v i : R) := by
       have h := congrArg
-        (fun f : (ι → ZMod m) ≃ₗ[ZMod m] (κ → ZMod m) ↦
+        (fun f : (ι → R) ≃ₗ[R] (κ → R) ↦
           f (Pi.single i 1) (e i)) hv
       simpa [monomialEquiv_apply, signedEquiv_apply] using h
     obtain h | h := Int.units_eq_one_or (v i)
@@ -245,34 +239,14 @@ theorem exists_signed_monomialEquiv_iff {m : ℕ} (u : ι → (ZMod m)ˣ) (e : �
       simpa [h] using hi
   · intro hu
     let v : ι → ℤˣ := fun i ↦ if u i = 1 then 1 else -1
-    have hv (i : ι) : (v i : ZMod m) = u i := by
+    have hv (i : ι) : (v i : R) = u i := by
       obtain h | h := hu i
       · simp [v, h]
       · by_cases h1 : u i = 1
         · simp [v, h1]
         · simp only [v, h1, ↓reduceIte]
-          simpa using congrArg (fun a : (ZMod m)ˣ ↦ (a : ZMod m)) h.symm
+          simpa using congrArg (fun a : Rˣ ↦ (a : R)) h.symm
     exact ⟨v, monomialEquiv_eq_signedEquiv_of_intUnits u e v hv⟩
-
-/-- Multiplication by `2` modulo `5` is a monomial coordinate change with no signed lift. -/
-theorem not_exists_signed_monomialEquiv_zmod_five_two :
-    ¬ ∃ v : Fin 1 → ℤˣ,
-      monomialEquiv
-          (fun _ : Fin 1 ↦
-            (ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) : (ZMod 5)ˣ))
-          (Equiv.refl (Fin 1)) = signedEquiv v (Equiv.refl (Fin 1)) := by
-  intro h
-  have h0 := (exists_signed_monomialEquiv_iff (m := 5)
-    (fun _ : Fin 1 ↦
-      (ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) : (ZMod 5)ˣ))
-    (Equiv.refl (Fin 1))).mp h 0
-  rcases h0 with h0 | h0
-  · have hn : ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) ≠
-        (1 : (ZMod 5)ˣ) := by decide
-    exact hn h0
-  · have hn : ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) ≠
-        (-1 : (ZMod 5)ˣ) := by decide
-    exact hn h0
 
 section Fintype
 
