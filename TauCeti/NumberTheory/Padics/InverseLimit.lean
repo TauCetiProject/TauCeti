@@ -18,7 +18,8 @@ reduce to its coarser residues. Mathlib's universal maps `PadicInt.toZModPow` an
 `PadicInt.lift` identify this ring with `ℤ_[p]`.
 
 The topology on the inverse limit is the subspace topology from the product of the discrete
-finite rings. The algebraic equivalence is a homeomorphism because its forward map is
+finite rings; the compatibility conditions are closed, so the inverse limit is compact for
+every nonzero modulus. The algebraic equivalence is a homeomorphism because its forward map is
 continuous and `ℤ_[p]` is compact.
 
 ## Main definitions
@@ -68,6 +69,15 @@ def inverseLimit : Subring (∀ n : ℕ, ZMod (p ^ n)) where
       _ = -ZMod.cast (x n) := ZMod.cast_neg (pow_dvd_pow p h) _
       _ = -x m := by rw [hx h]
 
+variable {p} in
+/-- Membership in `PadicInt.inverseLimit`: a family belongs to the inverse limit exactly when
+each of its finer residues reduces to the coarser ones. Use `.mpr` to build an element of the
+inverse limit from a compatibility proof. -/
+theorem mem_inverseLimit_iff {x : ∀ n : ℕ, ZMod (p ^ n)} :
+    x ∈ inverseLimit p ↔
+      ∀ ⦃m n : ℕ⦄, m ≤ n → (ZMod.cast (x n) : ZMod (p ^ m)) = x m :=
+  Iff.rfl
+
 namespace inverseLimit
 
 /-- The projection from the inverse limit to `ZMod (p ^ n)`. -/
@@ -85,6 +95,22 @@ theorem cast_proj (m n : ℕ) (h : m ≤ n) :
   exact x.2 h
 
 end inverseLimit
+
+/-- The compatible families are cut out of the product of the discrete rings `ZMod (p ^ n)` by
+closed conditions. -/
+theorem isClosed_inverseLimit :
+    IsClosed (inverseLimit p : Set (∀ n : ℕ, ZMod (p ^ n))) := by
+  have hcarrier : (inverseLimit p : Set (∀ n : ℕ, ZMod (p ^ n))) =
+      ⋂ m, ⋂ n, ⋂ _ : m ≤ n, {x | (ZMod.cast (x n) : ZMod (p ^ m)) = x m} := by
+    ext x
+    simp only [SetLike.mem_coe, mem_inverseLimit_iff, Set.mem_iInter, Set.mem_ofPred_eq]
+  rw [hcarrier]
+  exact isClosed_iInter fun m ↦ isClosed_iInter fun n ↦ isClosed_iInter fun _ ↦
+    isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply n)) (continuous_apply m)
+
+/-- The inverse limit of the finite rings `ZMod (p ^ n)` is compact. -/
+instance compactSpace_inverseLimit [NeZero p] : CompactSpace (inverseLimit p) :=
+  isCompact_iff_compactSpace.mp (isClosed_inverseLimit p).isCompact
 
 variable [Fact p.Prime]
 
@@ -147,10 +173,13 @@ theorem inverseLimitRingEquiv_symm_apply (x : inverseLimit p) :
 theorem continuous_toInverseLimit : Continuous (toInverseLimit p) := by
   exact (continuous_pi fun n ↦ continuous_toZModPow n).subtype_mk _
 
+/-- The ring equivalence from `ℤ_[p]` to its inverse-limit presentation is continuous. -/
+theorem continuous_inverseLimitRingEquiv : Continuous (inverseLimitRingEquiv p) :=
+  (continuous_toInverseLimit p).congr fun x ↦ (inverseLimitRingEquiv_apply p x).symm
+
 /-- The ring equivalence from `ℤ_[p]` to its inverse-limit presentation is a homeomorphism. -/
 noncomputable def inverseLimitHomeomorph : ℤ_[p] ≃ₜ inverseLimit p :=
-  (show Continuous (inverseLimitRingEquiv p) from continuous_toInverseLimit p)
-    |>.homeoOfEquivCompactToT2
+  (continuous_inverseLimitRingEquiv p).homeoOfEquivCompactToT2
 
 /-- The underlying map of `PadicInt.inverseLimitHomeomorph` is the ring equivalence taking a
 `p`-adic integer to all of its residues. -/
@@ -159,21 +188,19 @@ theorem inverseLimitHomeomorph_toEquiv :
     (inverseLimitHomeomorph p : ℤ_[p] ≃ inverseLimit p) = inverseLimitRingEquiv p :=
   (rfl)
 
-/-- The inverse limit of the finite rings `ZMod (p ^ n)` is compact. -/
-instance compactSpace_inverseLimit : CompactSpace (inverseLimit p) :=
-  (inverseLimitHomeomorph p).compactSpace
-
 /-- The additive group of `ℤ_[p]` is topologically isomorphic to the additive group of its
 inverse-limit presentation. -/
 noncomputable def inverseLimitContinuousMulEquiv :
     Multiplicative ℤ_[p] ≃ₜ* Multiplicative (inverseLimit p) where
   toMulEquiv := AddEquiv.toMultiplicative (inverseLimitRingEquiv p).toAddEquiv
-  continuous_toFun := continuous_toInverseLimit p
+  continuous_toFun := by
+    -- The multiplicative type tag has the same topology and underlying function.
+    change Continuous (inverseLimitRingEquiv p)
+    exact continuous_inverseLimitRingEquiv p
   continuous_invFun := by
     -- The multiplicative type tag has the same topology and underlying inverse function.
     change Continuous (inverseLimitRingEquiv p).symm
-    have h : Continuous (inverseLimitRingEquiv p) := continuous_toInverseLimit p
-    exact h.continuous_symm_of_equiv_compact_to_t2
+    exact (continuous_inverseLimitRingEquiv p).continuous_symm_of_equiv_compact_to_t2
 
 @[simp]
 theorem inverseLimitContinuousMulEquiv_apply (x : ℤ_[p]) :
