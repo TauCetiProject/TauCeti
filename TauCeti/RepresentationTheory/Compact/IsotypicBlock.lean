@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.PeterWeyl
+public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 
 /-!
 # The isotypic blocks of `L²(G)`
@@ -21,22 +22,29 @@ coefficients of the `i`-th model -- not only the normalized basis ones. The two 
 canonical orthonormal basis of the model writes an arbitrary matrix coefficient as a combination
 of the `dᵢ²` basis ones. Those `dᵢ²` coefficients are in fact a basis of the block
 (`TauCeti.peterWeylBlockBasis`), so the block is finite-dimensional of dimension `dᵢ²`, and
-matching a matrix position with the matrix unit at that position identifies the block with
-`End(V_π)` (`TauCeti.peterWeylBlockEquivEnd`).
+matching a matrix position with the matrix unit at that position identifies the block linearly
+with `End(V_π)` (`TauCeti.endEquivPeterWeylBlock`).
 
 Distinct blocks are orthogonal, by the second Schur orthogonality relation
 (`TauCeti.ContRepresentation.schur_orthogonality`), and together they span `L²(G)` densely,
 because their supremum is the span of the whole Peter-Weyl family. So `L²(G)` is the Hilbert sum
-of the blocks (`TauCeti.isHilbertSum_peterWeylBlock`), whose
-`IsHilbertSum.linearIsometryEquiv` is the isometry of `L²(G)` onto the `ℓ²` sum of the blocks:
-this is the isotypic decomposition `L²(G) ≅ ⨁̂_π End(V_π)`, with the `π`-block of dimension
-`(dim V_π)²` spanned by `π`'s matrix coefficients.
+of the blocks (`TauCeti.isHilbertSum_peterWeylBlock`), whose `IsHilbertSum.linearIsometryEquiv` is
+an isometry of `L²(G)` onto the `ℓ²` sum of the **block subspaces**. That, together with the
+separate linear identification of each block with `End(V_π)` and the dimension count
+`dim = (dim V_π)²`, is the isotypic decomposition `L²(G) ≅ ⨁̂_π End(V_π)` in the form proved here:
+the isometry is not transported to an `ℓ²` sum of the spaces `End(V_π)` themselves, because
+`Module.End` carries no inner product instance to express the Hilbert-Schmidt structure that would
+make `TauCeti.endEquivPeterWeylBlock` an isometry, even though both bases involved are orthonormal.
 
-Only pairwise inequivalence of the models is used for the individual blocks and for their
-orthogonality; exhaustiveness of the skeleton enters exactly where density is claimed.
+The results about a single block -- the orthonormal family, the basis, the dimension, the
+comparison with `End(V_π)` -- assume nothing about the rest of the family. Pairwise inequivalence
+of the models is what makes distinct blocks orthogonal and independent, and exhaustiveness of the
+skeleton enters exactly where density is claimed.
 
-The blocks are also stable under left and right translation, because translation carries matrix
-coefficients of a model to matrix coefficients of the same model
+The blocks are stable under left and right translation
+(`TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock` and
+`TauCeti.rightRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
+model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). That the identification of a block with
 `End(V_π)` is one of `G × G`-representations needs the tensor decomposition `V_π ⊗ V_π^*` and is
@@ -47,17 +55,19 @@ not proved here.
 * `TauCeti.peterWeylBlock`: the span in `L²(G)` of the matrix coefficients of one model.
 * `TauCeti.peterWeylBlockBasis`: the basis of the block given by the `dᵢ²` normalized matrix
   coefficients of its model.
-* `TauCeti.peterWeylBlockEquivEnd`: **the block is a copy of `End(V_π)`**, matching the matrix
+* `TauCeti.endEquivPeterWeylBlock`: **the block is a copy of `End(V_π)`**, matching the matrix
   unit at a position with the normalized matrix coefficient at that position.
 
 ## Main statements
 
 * `TauCeti.peterWeylBlock_eq_span_range`: the block is already spanned by the `dᵢ²` normalized
   matrix coefficients of the Peter-Weyl family that belong to it.
-* `TauCeti.finrank_peterWeylBlock`: **the block has dimension `dᵢ²`**, and
-  `TauCeti.finrank_peterWeylBlock_eq_finrank_end` reads that dimension as `finrank End(V_π)`.
+* `TauCeti.finrank_peterWeylBlock`: **the block has dimension `dᵢ²`**.
 * `TauCeti.toLp_star_character_mem_peterWeylBlock`: the conjugate character of a model lies in its
   own block, the trace direction of `End(V_π)`.
+* `TauCeti.rightRegularLp_mem_peterWeylBlock` and
+  `TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock`: **each block is stable under right
+  and left translation**.
 * `TauCeti.isOrtho_peterWeylBlock`, `TauCeti.orthogonalFamily_peterWeylBlock`: **distinct blocks
   are orthogonal**, so the blocks form an orthogonal family of subspaces, and
   `TauCeti.iSupIndep_peterWeylBlock` that they are independent.
@@ -172,6 +182,64 @@ theorem iSup_peterWeylBlock_eq_span_peterWeylFamily (models : ι → IrrepModel 
   rintro - ⟨x, rfl⟩
   exact Submodule.mem_iSup_of_mem x.1 (peterWeylFamily_mem_peterWeylBlock models x.1 x.2)
 
+/-! ### Stability under translation -/
+
+/-- **Each block is stable under right translation**, that is, under the right regular
+representation `TauCeti.rightRegularLp` of `G` on `L²(G)`: right translating a matrix coefficient of
+a model absorbs the translation into its first vector
+(`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
+coefficient of the same model. -/
+theorem rightRegularLp_mem_peterWeylBlock (models : ι → IrrepModel 𝕜 G) (i : ι) (g : G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock models i) :
+    rightRegularLp 𝕜 G g f ∈ peterWeylBlock models i := by
+  induction hf using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, w, rfl⟩ := hx
+    rw [ContRepresentation.matrixCoeffLp_def, rightRegularLp_toLp,
+      ContRepresentation.matrixCoeff_comp_mulRight, ← ContRepresentation.matrixCoeffLp_def]
+    exact matrixCoeffLp_mem_peterWeylBlock models i _ _
+  | zero => simp
+  | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
+  | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
+
+/-- **Each block is stable under left translation**: left translating a matrix coefficient of a
+unitary model moves the inverse translation onto its second vector
+(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`), so the translate is again a matrix
+coefficient of the same model.
+
+Left translation is spelled as Mathlib's precomposition operator
+`MeasureTheory.Lp.compMeasurePreserving`, which is also what `TauCeti.rightRegularLp_apply` unfolds
+right translation to; the left regular representation of `G` on `L²(G)` is not in the library. -/
+theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (models : ι → IrrepModel 𝕜 G) (i : ι)
+    (g : G) {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock models i) :
+    Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) f ∈
+      peterWeylBlock models i := by
+  induction hf using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, w, rfl⟩ := hx
+    have htranslate : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
+        (ContRepresentation.matrixCoeffLp (models i).rep (models i).continuous_rep v w) =
+        ContRepresentation.matrixCoeffLp (models i).rep (models i).continuous_rep v
+          ((models i).rep g⁻¹ w) := by
+      rw [ContRepresentation.matrixCoeffLp_def, ContRepresentation.matrixCoeffLp_def,
+        ← ContRepresentation.matrixCoeff_comp_mulLeft (models i).continuous_rep
+          (models i).isUnitary v w g]
+      exact Lp.compMeasurePreserving_toLp 𝕜 _ (ContinuousMap.mulLeft g)
+        (measurePreserving_mul_left (haarProb G) g)
+    rw [htranslate]
+    exact matrixCoeffLp_mem_peterWeylBlock models i _ _
+  | zero => simp
+  | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
+  | smul c x _ hx =>
+    -- `Lp.compMeasurePreserving` is bundled as an `AddMonoidHom`, so its `𝕜`-linearity comes from
+    -- the linear-map form of the same precomposition.
+    have hsmul : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
+        (c • x) =
+        c • Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) x :=
+      (Lp.compMeasurePreservingₗ 𝕜 (g * ·) (measurePreserving_mul_left (haarProb G) g)).map_smul c x
+    rw [hsmul]
+    exact Submodule.smul_mem _ c hx
+
 /-! ### A block is a copy of the endomorphism algebra of its model -/
 
 /-- The normalized matrix coefficients belonging to a single block are orthonormal. This is Schur
@@ -218,26 +286,17 @@ normalized matrix coefficient at that position. Both families are orthonormal --
 for the Hilbert-Schmidt inner product, the coefficients in `L²(G)` by
 `TauCeti.orthonormal_peterWeylFamily_block` -- but only the linear equivalence is recorded, since
 `Module.End` carries no inner product. -/
-noncomputable def peterWeylBlockEquivEnd [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G) (i : ι) :
+noncomputable def endEquivPeterWeylBlock [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G) (i : ι) :
     Module.End 𝕜 (EuclideanSpace 𝕜 (Fin (models i).dim)) ≃ₗ[𝕜] peterWeylBlock models i :=
   (Module.Basis.end (models i).basis.toBasis).equiv (peterWeylBlockBasis models i) (Equiv.refl _)
 
 @[simp]
-theorem coe_peterWeylBlockEquivEnd_basis_end [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G) (i : ι)
+theorem coe_endEquivPeterWeylBlock_basis_end [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G) (i : ι)
     (p : Fin (models i).dim × Fin (models i).dim) :
-    (peterWeylBlockEquivEnd models i (Module.Basis.end (models i).basis.toBasis p) :
+    (endEquivPeterWeylBlock models i (Module.Basis.end (models i).basis.toBasis p) :
         Lp 𝕜 2 (haarProb G)) = peterWeylFamily models ⟨i, p⟩ := by
-  rw [peterWeylBlockEquivEnd, Module.Basis.equiv_apply]
+  rw [endEquivPeterWeylBlock, Module.Basis.equiv_apply]
   simp
-
-/-- **The dimension of a Peter-Weyl block is the dimension of the endomorphism algebra of its
-model**, `dim End(V_π) = (dim V_π)²`: the block is the copy of `End(V_π)` inside `L²(G)` that the
-isotypic decomposition `L²(G) ≅ ⨁̂_π End(V_π)` predicts. -/
-theorem finrank_peterWeylBlock_eq_finrank_end [IsAlgClosed 𝕜] (models : ι → IrrepModel 𝕜 G)
-    (i : ι) :
-    Module.finrank 𝕜 (peterWeylBlock models i) =
-      Module.finrank 𝕜 (Module.End 𝕜 (EuclideanSpace 𝕜 (Fin (models i).dim))) := by
-  rw [finrank_peterWeylBlock, Module.finrank_linearMap, finrank_euclideanSpace_fin, sq]
 
 /-! ### Orthogonality of distinct blocks, and the Hilbert sum -/
 
@@ -245,13 +304,15 @@ section Orthogonality
 
 variable {models : ι → IrrepModel 𝕜 G}
 
-/-- **Distinct Peter-Weyl blocks are orthogonal.** This is the second Schur orthogonality
-relation: for inequivalent models, a matrix coefficient of one is `L²`-orthogonal to every matrix
-coefficient of the other. -/
-theorem isOrtho_peterWeylBlock
-    (hne : Pairwise fun i j ↦
-      IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep))
-    {i j : ι} (hij : i ≠ j) : peterWeylBlock models i ⟂ peterWeylBlock models j := by
+/-- **The Peter-Weyl blocks of two inequivalent models are orthogonal.** This is the second Schur
+orthogonality relation: for inequivalent models, a matrix coefficient of one is `L²`-orthogonal to
+every matrix coefficient of the other. Only the two models involved are constrained; the family
+version is `TauCeti.orthogonalFamily_peterWeylBlock`. -/
+theorem isOrtho_peterWeylBlock {i j : ι}
+    (hne : IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
+    peterWeylBlock models i ⟂ peterWeylBlock models j := by
+  have hne' : IsEmpty (_root_.ContRepresentation.Equiv (models j).rep (models i).rep) :=
+    ⟨fun e ↦ hne.elim e.symm⟩
   refine Submodule.span_le.2 ?_
   rintro f ⟨v, w, rfl⟩
   have hji : peterWeylBlock models j ⟂
@@ -262,7 +323,7 @@ theorem isOrtho_peterWeylBlock
     rw [SetLike.mem_coe, Submodule.mem_orthogonal_singleton_iff_inner_left]
     exact ContRepresentation.schur_orthogonality _ (models j).continuous_rep _
       (models i).continuous_rep (models i).isUnitary (models j).isIrreducible
-      (models i).isIrreducible (hne (Ne.symm hij)) v' w' v w
+      (models i).isIrreducible hne' v' w' v w
   exact hji.symm.le (Submodule.subset_span (Set.mem_singleton _))
 
 /-- **The Peter-Weyl blocks of pairwise inequivalent models are an orthogonal family of subspaces
@@ -273,12 +334,12 @@ theorem orthogonalFamily_peterWeylBlock
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
     OrthogonalFamily 𝕜 (fun i => (peterWeylBlock models i : Type _))
       fun i => (peterWeylBlock models i).subtypeₗᵢ :=
-  OrthogonalFamily.of_pairwise fun _ _ hij => isOrtho_peterWeylBlock hne hij
+  OrthogonalFamily.of_pairwise fun _ _ hij => isOrtho_peterWeylBlock (hne hij)
 
 /-- **The Peter-Weyl blocks of pairwise inequivalent models are independent**: the algebraic
 direct sum of the blocks injects into `L²(G)`, so with
-`TauCeti.topologicalClosure_iSup_peterWeylBlock` the decomposition `L²(G) ≅ ⨁̂_π End(V_π)` has no
-collapsing. -/
+`TauCeti.topologicalClosure_iSup_peterWeylBlock` the decomposition of `L²(G)` into its blocks has
+no collapsing. -/
 theorem iSupIndep_peterWeylBlock
     (hne : Pairwise fun i j ↦
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
@@ -298,10 +359,11 @@ theorem topologicalClosure_iSup_peterWeylBlock (h : IsIrrepSkeleton models) :
     (⨆ i, peterWeylBlock models i).topologicalClosure = ⊤ :=
   Submodule.topologicalClosure_eq_top_iff.2 (orthogonal_iSup_peterWeylBlock_eq_bot h)
 
-/-- **`L²(G)` is the Hilbert sum of the Peter-Weyl blocks.** This is the isotypic decomposition
-`L²(G) ≅ ⨁̂_π End(V_π)`: the blocks are pairwise orthogonal and dense, so
-`IsHilbertSum.linearIsometryEquiv` is an isometry of `L²(G)` onto their `ℓ²` sum, and
-`TauCeti.peterWeylBlockEquivEnd` identifies the `π`-block with `End(V_π)`. -/
+/-- **`L²(G)` is the Hilbert sum of the Peter-Weyl blocks.** The blocks are pairwise orthogonal and
+dense, so `IsHilbertSum.linearIsometryEquiv` is an isometry of `L²(G)` onto the `ℓ²` sum of the
+block subspaces. This is the isotypic decomposition `L²(G) ≅ ⨁̂_π End(V_π)` up to the separate
+linear identification `TauCeti.endEquivPeterWeylBlock` of the `π`-block with `End(V_π)`, which is
+not an isometry statement: `Module.End` carries no inner product instance. -/
 theorem isHilbertSum_peterWeylBlock (h : IsIrrepSkeleton models) :
     IsHilbertSum 𝕜 (fun i => (peterWeylBlock models i : Type _))
       fun i => (peterWeylBlock models i).subtypeₗᵢ :=
