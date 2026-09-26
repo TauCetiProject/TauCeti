@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
+import TauCeti.Topology.MetricSpace.Embedding
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
@@ -56,27 +57,13 @@ theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_ball_i
   have hTopen : IsOpen T := OnePoint.isOpen_image_coe.mpr isOpen_Ioo
   have hΓcont : Continuous Γ :=
     continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty
-  obtain ⟨U, hUopen, hTU⟩ :=
-    (hΓcont.isClosedEmbedding hinj).isInducing.image_eq_isOpen_inter_range hTopen
   have hxT : (x : OnePoint ℝ) ∈ T := ⟨x, hx, rfl⟩
-  have hxU : Γ (x : OnePoint ℝ) ∈ U := by
-    have h : Γ (x : OnePoint ℝ) ∈ Γ '' T := ⟨_, hxT, rfl⟩
-    rw [hTU] at h
-    exact h.1
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hUopen _ hxU
+  obtain ⟨ε, hε, hball_range⟩ :=
+    exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
+      (hΓcont.isClosedEmbedding hinj).isEmbedding hTopen hxT
   have hxΓ : Γ (x : OnePoint ℝ) = schwarzChristoffelBoundary a e z₀ x := by
     simp only [Γ, schwarzChristoffelCompactifiedBoundary_coe]
-  rw [hxΓ] at hball
-  have hball_range :
-      Metric.ball (schwarzChristoffelBoundary a e z₀ x) ε ∩ range Γ =
-        Metric.ball (schwarzChristoffelBoundary a e z₀ x) ε ∩ Γ '' T := by
-    rw [hTU]
-    ext w
-    constructor
-    · rintro ⟨hw, hr⟩
-      exact ⟨hw, hball hw, hr⟩
-    · rintro ⟨hw, _, hr⟩
-      exact ⟨hw, hr⟩
+  rw [hxΓ] at hball_range
   have hend (y : ℝ) : -1 < ∑ i with a i = y, e i :=
     lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite y
   have hseg := schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) ha
