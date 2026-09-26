@@ -231,13 +231,7 @@ theorem rightHalfPlane_mul_swapMatrix (g : PSL(2, ℝ)) :
   ext z
   have hinv : swapMatrix⁻¹ = swapMatrix := inv_eq_of_mul_eq_one_right swapMatrix_mul_self
   rw [mem_rightHalfPlane_iff, mem_leftHalfPlane_iff, mul_inv_rev, hinv, mul_smul,
-    re_swapMatrix_smul, div_pos_iff]
-  constructor
-  · rintro (⟨h, -⟩ | ⟨h, hpos⟩)
-    · linarith
-    · exact absurd (UpperHalfPlane.normSq_pos _) (by linarith)
-  · intro h
-    exact Or.inl ⟨by linarith, UpperHalfPlane.normSq_pos _⟩
+    re_swapMatrix_smul, div_pos_iff_of_pos_right (UpperHalfPlane.normSq_pos _), neg_pos]
 
 /-- The dual of `rightHalfPlane_mul_swapMatrix`: multiplying by `swapMatrix` swaps the left half
 into the right half. -/
@@ -246,13 +240,7 @@ theorem leftHalfPlane_mul_swapMatrix (g : PSL(2, ℝ)) :
   ext z
   have hinv : swapMatrix⁻¹ = swapMatrix := inv_eq_of_mul_eq_one_right swapMatrix_mul_self
   rw [mem_leftHalfPlane_iff, mem_rightHalfPlane_iff, mul_inv_rev, hinv, mul_smul,
-    re_swapMatrix_smul, div_neg_iff]
-  constructor
-  · rintro (⟨h, hpos⟩ | ⟨h, -⟩)
-    · exact absurd (UpperHalfPlane.normSq_pos (g⁻¹ • z)) (by linarith)
-    · linarith
-  · intro h
-    exact Or.inr ⟨by linarith, UpperHalfPlane.normSq_pos _⟩
+    re_swapMatrix_smul, div_lt_iff₀ (UpperHalfPlane.normSq_pos _), zero_mul, neg_lt_zero]
 
 /-- Unlike the half-planes, the geodesic line's image is unaffected by multiplying by
 `swapMatrix`: only which side is called `right` depends on the representative. -/
