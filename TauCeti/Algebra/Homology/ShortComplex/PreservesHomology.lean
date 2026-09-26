@@ -16,8 +16,7 @@ cycles and the homology of `S.map F` with the images under `F` of those of `S`, 
 interacts with the inclusion of the cycles (`ShortComplex.mapCyclesIso_hom_iCycles`). This file
 records the companion statement for the class map: under the two identifications, the class map
 `homologyπ` of `S.map F` is the image under `F` of the class map of `S`
-(`ShortComplex.homologyπ_comp_mapHomologyIso_hom`). The inclusion of the cycles is also recorded
-in the direction of the inverse identification (`ShortComplex.mapCyclesIso_inv_comp_iCycles`).
+(`ShortComplex.homologyπ_comp_mapHomologyIso_hom`).
 
 This is what makes a homology class computed after applying `F` recognisable as the image of a
 class before applying it, for instance when a connecting map is constructed in an abelian category
@@ -30,13 +29,6 @@ namespace CategoryTheory.ShortComplex
 
 variable {C D : Type*} [Category C] [Category D] [Limits.HasZeroMorphisms C]
   [Limits.HasZeroMorphisms D] (S : ShortComplex C) (F : C ⥤ D) [F.PreservesZeroMorphisms]
-
-/-- `ShortComplex.mapCyclesIso_hom_iCycles` for the inverse identification: the cycles of `S.map F`,
-read as the image under `F` of the cycles of `S`, include by the image of the inclusion. -/
-@[reassoc (attr := simp)]
-theorem mapCyclesIso_inv_comp_iCycles [S.HasLeftHomology] [F.PreservesLeftHomologyOf S] :
-    (S.mapCyclesIso F).inv ≫ (S.map F).iCycles = F.map S.iCycles := by
-  rw [Iso.inv_comp_eq, mapCyclesIso_hom_iCycles]
 
 /-- **The class map commutes with a functor preserving homology.** Under the identifications
 `mapCyclesIso` and `mapHomologyIso`, the class map of `S.map F` is the image under `F` of the

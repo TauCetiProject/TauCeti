@@ -151,7 +151,10 @@ theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
         ((K.sc i).mapCyclesIso F).inv z :=
     (ModuleCat.mono_iff_injective (((F.mapHomologicalComplex _).obj K).iCycles i)).1
       inferInstance <| (((F.mapHomologicalComplex _).obj K).i_cyclesMk _ j hj hz).trans
-        (ConcreteCategory.congr_hom ((K.sc i).mapCyclesIso_inv_comp_iCycles F) z).symm
+        (ConcreteCategory.congr_hom
+          (show ((K.sc i).mapCyclesIso F).inv ≫ ((K.sc i).map F).iCycles =
+              F.map (K.sc i).iCycles by
+            rw [Iso.inv_comp_eq, CategoryTheory.ShortComplex.mapCyclesIso_hom_iCycles]) z).symm
   have hclass (K : CochainComplex (TopModuleCat.{u} ℤ) ℕ) (i : ℕ) (z : K.cycles i) :
       ((K.sc i).mapHomologyIso F).hom (((K.sc i).map F).homologyπ
         (((K.sc i).mapCyclesIso F).inv z)) = K.homologyπ i z :=

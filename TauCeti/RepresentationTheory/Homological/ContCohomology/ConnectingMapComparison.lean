@@ -65,18 +65,6 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- The cochain map of an equivariant coefficient map is its compatible-pair cochain map at
-`φ = id`; this is the form in which the cochain comparisons are natural. -/
-private theorem cochainsMap_ofDiscreteModulePair_id {M N : Type u} [AddCommGroup M]
-    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N]
-    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N] (f : M →+ N)
-    (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) :
-    cochainsMap (ContinuousMonoidHom.id G)
-        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) f.toIntLinearMap hf) =
-      (continuousCochainsFunctor ℤ G).map (ofDiscreteModuleMap f.toIntLinearMap hf) := by
-  rw [continuousCochainsFunctor_map]
-  exact congrArg _ (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl)
-
 variable [CompactSpace G]
   {A : Type u} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
   [ContinuousSMul G A]
