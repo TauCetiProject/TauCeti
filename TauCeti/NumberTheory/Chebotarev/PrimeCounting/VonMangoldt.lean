@@ -177,7 +177,7 @@ theorem frobeniusTheta_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
 /-- The Frobenius `ϑ` function is the generic logarithmically weighted prime count of its
 Frobenius prime set. -/
 @[simp]
-theorem frobeniusTheta_eq_primeTheta (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+theorem frobeniusTheta_def (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusTheta K L C x = primeTheta K (frobeniusPrimeSet K L C) x := by
   rw [frobeniusTheta_apply, primeTheta_apply]
 

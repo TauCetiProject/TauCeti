@@ -83,7 +83,7 @@ theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
         =o[atTop] fun x : ℝ ↦ x / Real.log x := by
   simpa only [natCast_frobeniusPrimeCount] using
     primeCount_sub_mul_logIntegral_isLittleO (by
-      simpa only [← frobeniusTheta_eq_primeTheta] using frobeniusTheta_asymptotic K L C)
+      simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C)
 
 /-- Qualitative prime-counting Chebotarev: the proportion relative to `x / log x` of primes
 whose arithmetic Frobenius lies in `C` tends to `#C / #Gal(L/K)`. -/
