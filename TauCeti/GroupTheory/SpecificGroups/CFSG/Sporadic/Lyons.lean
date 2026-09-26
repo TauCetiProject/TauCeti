@@ -48,6 +48,12 @@ has index `3906` in the group presented by the z-free relators. This is provenan
 Lean theorem: the file asserts no order, finiteness, simplicity, or identification result. The
 independent FiniteSimpleGroups development named by the roadmap does not cover `Ly`.
 
+Three of the fifty-three relators are not cyclically reduced after free reduction: the commutator
+relations (14.14), (14.18), and (14.19) freely reduce to words that begin and end with a cancelling
+pair of letters, because their two sides share a conjugating prefix. The cyclic-reducedness check
+stated by other rows is therefore not stated here; it exists to compare a reduced letter count with
+a published presentation length, and this source prints none.
+
 An earlier version of this row transcribed Gebhardt's twenty-five-relator presentation (Experimental
 Mathematics 9 (2000), 333--338). That row presented the trivial group, because of transcription
 errors and a misprint in the paper's fourth `R_G` relator; the present source is used instead
@@ -554,10 +560,6 @@ theorem presentation_transcribed :
         .inv z ⬝ x24 ⬝ .inv z ⬝ x369 ⬝ z ⬝ x23 ⬝ z ⬝ x29,
         z ⬝ x366 ⬝ z ⬝ x365 ⬝ .inv z ⬝ x367 ⬝ .inv z ⬝ x370,
         z ⬝ x96 ⬝ z ⬝ x25 ⬝ .inv z ⬝ x129 ⬝ .inv z ⬝ x371 ] := by
-  rfl
-
-/-- The row has fifty-three relators. -/
-theorem length_transcribed_presentation : presentation.transcribed.length = 53 := by
   rfl
 
 /-- The recorded generator and relator counts agree with the transcribed data. -/
