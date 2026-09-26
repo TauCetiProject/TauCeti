@@ -338,7 +338,7 @@ of `-εᵢ - εⱼ`, for `i ≠ j`, is the line through the standard negative su
 @[simp]
 theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
-    (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j)).toSubmodule =
+    (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-⇑(typeDWeightAdd i j))).toSubmodule =
       K ∙ negSumRootGenerator (K := K) i j := by
   let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
   let _ : IsDomain K := NoZeroDivisors.to_isDomain K
@@ -392,8 +392,10 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
 @[simp]
 theorem finrank_rootSpace_typeDWeightSub_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
-    Module.finrank K
-      (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)).toSubmodule = 1 := by
+    Module.finrank K (LieAlgebra.rootSpace
+      (typeDDiagonalCartan K ι) (typeDWeightSub i j)) = 1 := by
+  change Module.finrank K
+    (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)).toSubmodule = 1
   rw [rootSpace_typeDWeightSub_eq_span h2 hij]
   exact finrank_span_singleton (differenceRootGenerator_ne_zero i j)
 
@@ -402,8 +404,10 @@ theorem finrank_rootSpace_typeDWeightSub_eq_one {K : Type*} [Field K]
 @[simp]
 theorem finrank_rootSpace_typeDWeightAdd_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
-    Module.finrank K
-      (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)).toSubmodule = 1 := by
+    Module.finrank K (LieAlgebra.rootSpace
+      (typeDDiagonalCartan K ι) (typeDWeightAdd i j)) = 1 := by
+  change Module.finrank K
+    (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)).toSubmodule = 1
   rw [rootSpace_typeDWeightAdd_eq_span h2 hij]
   exact finrank_span_singleton (sumRootGenerator_ne_zero i j hij)
 
@@ -412,8 +416,10 @@ theorem finrank_rootSpace_typeDWeightAdd_eq_one {K : Type*} [Field K]
 @[simp]
 theorem finrank_rootSpace_neg_typeDWeightAdd_eq_one {K : Type*} [Field K]
     (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j) :
-    Module.finrank K
-      (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j)).toSubmodule = 1 := by
+    Module.finrank K (LieAlgebra.rootSpace
+      (typeDDiagonalCartan K ι) (-⇑(typeDWeightAdd i j))) = 1 := by
+  change Module.finrank K
+    (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-⇑(typeDWeightAdd i j))).toSubmodule = 1
   rw [rootSpace_neg_typeDWeightAdd_eq_span h2 hij]
   exact finrank_span_singleton (negSumRootGenerator_ne_zero i j hij)
 
