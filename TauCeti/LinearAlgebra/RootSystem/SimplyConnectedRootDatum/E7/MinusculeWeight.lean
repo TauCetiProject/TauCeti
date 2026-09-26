@@ -208,6 +208,7 @@ theorem e7MinusculeReflection_eq_self_iff (i : Fin 7) (a : Fin 56) :
 
 /-- A simple reflection moves an `E₇` minuscule weight earlier in the explicit table exactly
 when its simple-coroot coordinate is `-1`. -/
+@[simp]
 theorem e7MinusculeReflection_lt_iff (i : Fin 7) (a : Fin 56) :
     e7MinusculeReflection i a < a ↔ e7MinusculeWeight a i = -1 := by
   fin_cases i <;> fin_cases a <;> decide +kernel
