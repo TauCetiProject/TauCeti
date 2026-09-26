@@ -52,12 +52,6 @@ field of the order-two subgroup with cyclotomic exponents `±1`. -/
 noncomputable def fifthCyclotomicQuadraticSubfield : IntermediateField ℚ K :=
   fixedField (Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ)))
 
-/-- The quadratic subfield is the fixed field of the automorphism with cyclotomic exponent `-1`. -/
-theorem fifthCyclotomicQuadraticSubfield_def :
-    fifthCyclotomicQuadraticSubfield (K := K) =
-      fixedField (Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))) := by
-  rw [fifthCyclotomicQuadraticSubfield]
-
 /-- An element lies in the quadratic subfield exactly when the automorphism with cyclotomic
 exponent `-1` fixes it. -/
 @[simp]
@@ -92,8 +86,8 @@ theorem intermediateField_eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_to
   · right; right
     rw [← IsGalois.fixedField_fixingSubgroup F, h, fixedField_bot]
   · right; left
-    rw [← IsGalois.fixedField_fixingSubgroup F, h]
-    rfl
+    rw [← IsGalois.fixedField_fixingSubgroup F, h, orderTwoSubgroup,
+      fifthCyclotomicQuadraticSubfield]
   · left
     rw [← IsGalois.fixedField_fixingSubgroup F, h, IsGalois.fixedField_top]
 
