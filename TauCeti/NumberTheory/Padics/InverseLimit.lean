@@ -25,6 +25,8 @@ continuous and `ℤ_[p]` is compact.
 ## Main definitions
 
 * `PadicInt.inverseLimit`: the ring of compatible families in `∏ n, ZMod (p ^ n)`.
+* `PadicInt.inverseLimit.lift`: the universal map into the inverse limit determined by a
+  compatible family of ring homomorphisms.
 * `PadicInt.toInverseLimit`: the compatible family of residues of a `p`-adic integer.
 * `PadicInt.inverseLimitRingEquiv`: the ring equivalence from `ℤ_[p]` to the inverse limit.
 * `PadicInt.inverseLimitHomeomorph`: the same equivalence as a homeomorphism.
@@ -93,6 +95,32 @@ theorem cast_proj (m n : ℕ) (h : m ≤ n) :
     (ZMod.castHom (pow_dvd_pow p h) (ZMod (p ^ m))).comp (proj p n) = proj p m := by
   ext x
   exact x.2 h
+
+variable {R : Type*} [NonAssocSemiring R] (f : ∀ n : ℕ, R →+* ZMod (p ^ n))
+  (hf : ∀ (m n : ℕ) (h : m ≤ n),
+    (ZMod.castHom (pow_dvd_pow p h) (ZMod (p ^ m))).comp (f n) = f m)
+
+/-- The universal property of the inverse limit: a family of ring homomorphisms
+`f n : R →+* ZMod (p ^ n)` compatible with the reduction maps assembles into a single ring
+homomorphism to `PadicInt.inverseLimit p`. -/
+def lift : R →+* inverseLimit p :=
+  (RingHom.pi f).codRestrict (inverseLimit p) fun x ↦
+    mem_inverseLimit_iff.mpr fun m n h ↦ DFunLike.congr_fun (hf m n h) x
+
+@[simp]
+theorem lift_apply (x : R) (n : ℕ) : (lift p f hf x).1 n = f n x :=
+  (rfl)
+
+/-- `PadicInt.inverseLimit.lift` recovers the given family on each projection. -/
+@[simp]
+theorem proj_comp_lift (n : ℕ) : (proj p n).comp (lift p f hf) = f n :=
+  (rfl)
+
+/-- `PadicInt.inverseLimit.lift` is the only homomorphism recovering the given family on each
+projection. -/
+theorem lift_unique (g : R →+* inverseLimit p) (hg : ∀ n : ℕ, (proj p n).comp g = f n) :
+    g = lift p f hf :=
+  RingHom.ext fun x ↦ Subtype.ext (funext fun n ↦ DFunLike.congr_fun (hg n) x)
 
 end inverseLimit
 
