@@ -34,6 +34,8 @@ the negative sign.  The resulting representation is the cuspidal representation 
 
 ## References
 
+* C. J. Bushnell and G. Henniart, *The Local Langlands Conjecture for `GL(2)`*,
+  Springer (2006), §6, for the induced-character difference construction and its irreducibility.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`*, Springer (2011), Chapter 6.
 * I. Piatetski-Shapiro, *Complex Representations of `GL(2, K)` for Finite Fields `K`*,
   Contemporary Mathematics 16, AMS (1983), §5.
