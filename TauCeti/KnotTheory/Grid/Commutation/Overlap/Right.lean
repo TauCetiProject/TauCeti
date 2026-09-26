@@ -107,7 +107,6 @@ theorem recutRightEqRightFirst_rectangle
 
 /-- The pentagon of the first promotion is the first recut rectangle promoted via
 `GridPentagonBetween.ofRightEq`. -/
-@[simp]
 theorem recutRightEqRightFirst_pentagon
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -123,6 +122,7 @@ theorem recutRightEqRightFirst_pentagon
         hturn := rfl
 
 /-- The promoted pentagon's initial side is the first recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightFirst_pentagon_left
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -135,6 +135,7 @@ theorem recutRightEqRightFirst_pentagon_left
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.left := rfl
 
 /-- The promoted pentagon's bottom row is the first recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightFirst_pentagon_bottom
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -147,6 +148,7 @@ theorem recutRightEqRightFirst_pentagon_bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom := rfl
 
 /-- The promoted pentagon's top row is the first recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightFirst_pentagon_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -216,7 +218,6 @@ theorem recutRightEqRightSecond_rectangle
 
 /-- The pentagon of the second promotion is the second recut rectangle promoted via
 `GridPentagonBetween.ofRightEq`. -/
-@[simp]
 theorem recutRightEqRightSecond_pentagon
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -232,6 +233,7 @@ theorem recutRightEqRightSecond_pentagon
         hturn := rfl
 
 /-- The promoted pentagon's initial side is the second recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightSecond_pentagon_left
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -244,6 +246,7 @@ theorem recutRightEqRightSecond_pentagon_left
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.left := rfl
 
 /-- The promoted pentagon's bottom row is the second recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightSecond_pentagon_bottom
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
@@ -256,6 +259,7 @@ theorem recutRightEqRightSecond_pentagon_bottom
       (D.recutOfIsEmpty hone hrectangle hpentagon).second.bottom := rfl
 
 /-- The promoted pentagon's top row is the second recut rectangle's. -/
+@[simp]
 theorem recutRightEqRightSecond_pentagon_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
