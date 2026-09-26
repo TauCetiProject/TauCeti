@@ -66,7 +66,7 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     (fun x : ℕ × ℕ → α ↦ x c) ⟂ᵢ[(S ×ˢ T \ {c}).domRestrict, Set.measurable_restrict _; ρ]
       ({c}ᶜ : Set (ℕ × ℕ)).domRestrict := by
   have h := SeparatelyExchangeable.condIndepFun_domRestrict_compl_of_finite hρ hS hT
-    (Set.finite_singleton c) (by simpa using (show c ∈ S ×ˢ T from ⟨hc₁, hc₂⟩))
+    (Set.finite_singleton c) (Set.singleton_subset_iff.mpr ⟨hc₁, hc₂⟩)
   have heval : Measurable (fun z : ({c} : Set (ℕ × ℕ)) → α ↦ z ⟨c, by simp⟩) :=
     measurable_pi_apply _
   have h' := h.comp heval measurable_id
