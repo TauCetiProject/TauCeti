@@ -40,11 +40,11 @@ theorem preprojectiveIdeal_le_arrowIdeal_sq (k : Type w) {Q : Type u} [CommRing 
   -- Both backtracks have length two; expose the length across the path wrappers.
   have hhead : headBacktrackElem k a ∈ arrowIdeal k (Symmetrify Q) ^ 2 := by
     rw [headBacktrackElem_def]
-    exact Ideal.pow_le_pow_right (by change 2 ≤ 2; omega)
+    exact Ideal.pow_le_pow_right (by simp only [Path.length_comp, Path.length_toPath]; omega)
       (ofPath_mem_arrowIdeal_pow _)
   have htail : tailBacktrackElem k a ∈ arrowIdeal k (Symmetrify Q) ^ 2 := by
     rw [tailBacktrackElem_def]
-    exact Ideal.pow_le_pow_right (by change 2 ≤ 2; omega)
+    exact Ideal.pow_le_pow_right (by simp only [Path.length_comp, Path.length_toPath]; omega)
       (ofPath_mem_arrowIdeal_pow _)
   exact sub_mem hhead htail
 

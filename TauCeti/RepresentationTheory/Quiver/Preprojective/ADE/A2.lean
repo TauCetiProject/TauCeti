@@ -256,6 +256,7 @@ private theorem arrowIdeal_sq_le_preprojectiveIdeal (k : Type*) [CommRing k] :
 /-- **The preprojective relation ideal of `A₂` is the square of the arrow ideal.** The two
 local relations kill the two backtracks, which are all the paths of length two in the doubled
 one-edge quiver. -/
+@[simp]
 theorem preprojectiveIdeal_A2_eq_arrowIdeal_sq (k : Type*) [CommRing k] :
     (preprojectiveIdeal k preprojectiveA2Quiver).asIdeal =
       arrowIdeal k (Symmetrify preprojectiveA2Quiver) ^ 2 :=
