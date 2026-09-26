@@ -21,6 +21,14 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
+  is the value `WithZero.exp (-1)`, which relates this multiplicative value group to the additive
+  order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even`:
+  an element of odd order of vanishing at `v` is a nonsquare in the completion, and its order of
+  vanishing `1` case `not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one` is the form a prime
+  of a prescribed modulus supplies.
+
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
   membership form, `valuation_integers_adicCompletionIntegers` packages it as
@@ -243,6 +251,75 @@ instance compactSpace_adicCompletionIntegers
       continuous_subtype_val.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
+
+/-- **An element has order of vanishing exactly `1` at `v` exactly when its adic value is
+`WithZero.exp (-1)`.**
+
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)` and its `1`
+is the *top* of that group, that is, value zero.  So `v.valuation K x = 1` says that `x` is a local
+unit at `v`, and the order of vanishing `1` is instead the value `WithZero.exp (-1)`, the value of a
+generator of `v.asIdeal`.  This is the equivalence that relates the multiplicative value of an
+element to the additive order of vanishing used by the class-group interface, whose `adicOrd` is
+`-WithZero.log` of this valuation. -/
+theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
+    -WithZero.log (v.valuation K x) = 1 ↔
+      v.valuation K x = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ)) := by
+  constructor
+  · intro h
+    have hlog : WithZero.log (v.valuation K x) = -1 := (neg_eq_iff_eq_neg).mp h
+    have hx : v.valuation K x ≠ 0 := by
+      intro hx0
+      rw [hx0] at hlog
+      simp at hlog
+    calc v.valuation K x = WithZero.exp (WithZero.log (v.valuation K x)) :=
+        (WithZero.exp_log hx).symm
+      _ = WithZero.exp (-1) := by rw [hlog]
+  · intro h
+    rw [h, WithZero.log_exp, neg_neg]
+
+/-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
+
+The hypothesis `v.valuation K a = WithZero.exp n` with `¬ Even n` says that the order of vanishing
+of `a` at `v` is the odd integer `n`.  This is the nonsquare criterion a finite place of a
+prescribed set needs: an element that vanishes there to odd order remains a nonsquare in the
+completion.
+
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)` and its `1` is the
+top of that group, that is, value zero, so an order of vanishing `1` is written
+`WithZero.exp (-1)`, the value of a generator of `v.asIdeal`. -/
+theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
+    (v : HeightOneSpectrum R) (a : K) (n : ℤ) (hn : ¬ Even n)
+    (ha : v.valuation K a = (WithZero.exp n : WithZero (Multiplicative ℤ))) :
+    ¬IsSquare (algebraMap K (v.adicCompletion K) a) := by
+  rintro ⟨y, hy⟩
+  have hval : Valued.v (algebraMap K (v.adicCompletion K) a)
+      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
+    exact ha
+  -- The adic value of a square is the square of the adic value of its root, and here it is nonzero.
+  have hprod : (Valued.v y : WithZero (Multiplicative ℤ)) * Valued.v y
+      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+    rw [← hval, hy, Valued.v.map_mul]
+  have hvy : (Valued.v y : WithZero (Multiplicative ℤ)) ≠ 0 := by
+    rintro h
+    rw [h, zero_mul] at hprod
+    exact (WithZero.exp_ne_zero : (WithZero.exp n) ≠ 0) hprod.symm
+  -- Taking logarithms, the order of vanishing is a sum of two equal integers, so it is even.
+  have hlog : n = WithZero.log (Valued.v y) + WithZero.log (Valued.v y) := by
+    have h := WithZero.log_mul hvy hvy
+    rw [hprod, WithZero.log_exp] at h
+    exact h
+  exact hn ⟨WithZero.log (Valued.v y), hlog⟩
+
+/-- **An element of order of vanishing `1` at `v` is a nonsquare in the completion `K_v`.** This is
+the order of vanishing `1` case of
+`not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even`, the hypothesis being the one
+`neg_log_valuation_eq_one_iff` identifies with an order of vanishing `1`. -/
+theorem not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one
+    (v : HeightOneSpectrum R) (a : K)
+    (ha : v.valuation K a = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ))) :
+    ¬IsSquare (algebraMap K (v.adicCompletion K) a) :=
+  not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even v a (-1) (by decide) ha
 
 end IsDedekindDomain.HeightOneSpectrum
 
