@@ -31,10 +31,8 @@ that the norm image of the maximal ideal of `𝒪[L]` is the residue-degree powe
 ideal of `𝒪[K]`.
 
 Ideal norms are read through Mathlib's: the norm image of a principal ideal is
-`Ideal.spanNorm_singleton`, and the norm image of the maximal ideal is `Ideal.relNorm 𝒪[K] 𝓂[L]`,
-which `TauCeti.relNorm_eq_map_intNorm` identifies with the `Ideal.map` along the integral norm,
-so that this file computes the maximal-ideal formula in both the `.map` and the `Ideal.relNorm`
-form.
+`Ideal.relNorm_singleton`, and the norm image of the maximal ideal is `Ideal.relNorm 𝒪[K] 𝓂[L]`,
+the form in which the local discriminant ideal is written.
 
 ## Main results
 
@@ -43,12 +41,9 @@ form.
 * `TauCeti.normalizedValuation_norm`: the normalized valuation of a norm is multiplied by the
   inertia degree.
 * `TauCeti.toAdd_normalizedValuation_norm`: the preceding result in additive notation.
-* `TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow`: the norm of the maximal ideal of `𝒪[L]` is
-  the residue-degree power of the maximal ideal of `𝒪[K]`, the ideal-theoretic form of
+* `TauCeti.relNorm_maximalIdeal_eq_maximalIdeal_pow`: the ideal norm of the maximal ideal of
+  `𝒪[L]` is the residue-degree power of the maximal ideal of `𝒪[K]`, the ideal-theoretic form of
   `TauCeti.toAdd_normalizedValuation_norm`.
-* `TauCeti.relNorm_eq_map_intNorm`: `Ideal.relNorm` is the `Ideal.map` along the integral norm.
-* `TauCeti.relNorm_maximalIdeal_eq_maximalIdeal_pow`: the preceding maximal-ideal formula in the
-  form of Mathlib's `Ideal.relNorm`, the form in which the local discriminant ideal is written.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
 
@@ -177,20 +172,28 @@ omit [FiniteDimensional K L] in
 theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ 𝒪[K] := by
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
 
-omit [FiniteDimensional K L] in
+-- The ideal-norm statement below is in a section of its own, without `FiniteDimensional K L`
+-- in scope: `Ideal.relNorm` is elaborated by type class search, and with a
+-- `FiniteDimensional K L` hypothesis in scope that search mentions the hypothesis, so an
+-- `omit` of it is rejected.
+section IdealNorm
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
 variable (K L) in
-/-- **The norm of the maximal ideal of `𝒪[L]` generates the residue-degree power of the maximal
-ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`.
+/-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
+maximal ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`, in the form of Mathlib's
+`Ideal.relNorm`.
 
-This is the ideal-theoretic form of `TauCeti.toAdd_normalizedValuation_norm`, the valuation of a
-norm being `f(L/K)` times the valuation of its argument: a uniformizer of `𝒪[L]` is taken to an
-element of `𝒪[K]` of normalized valuation `f(L/K)`, which generates `𝓂[K] ^ f(L/K)` in the discrete
-valuation ring `𝒪[K]`.
-
-It is the `Ideal.map` form of Mathlib's `Ideal.relNorm 𝒪[K] 𝓂[L]`, the two norms being equal by
-`Algebra.intNorm_eq_norm`; the principal-ideal step reads off `Ideal.spanNorm_singleton`. -/
-theorem map_maximalIdeal_norm_eq_maximalIdeal_pow :
-    𝓂[L].map (Algebra.norm 𝒪[K]) = 𝓂[K] ^ inertiaDegree K L := by
+This is the ideal-theoretic form of `TauCeti.toAdd_normalizedValuation_norm`, the valuation
+of a norm being `f(L/K)` times the valuation of its argument: a uniformizer of `𝒪[L]` is taken
+to an element of `𝒪[K]` of normalized valuation `f(L/K)`, which generates `𝓂[K] ^ f(L/K)` in
+the discrete valuation ring `𝒪[K]`. The principal-ideal step reads off
+`Ideal.relNorm_singleton`. -/
+theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
+    Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
   let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
@@ -239,49 +242,15 @@ theorem map_maximalIdeal_norm_eq_maximalIdeal_pow :
       (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).1 hle
   have hass : Associated (Algebra.norm 𝒪[K] ϖ) (π ^ inertiaDegree K L) :=
     associated_of_dvd_dvd h₁ h₂
-  calc 𝓂[L].map (Algebra.norm 𝒪[K])
-      = ((Ideal.span {↑ϖ} : Ideal 𝒪[L])).map (Algebra.norm 𝒪[K]) := by rw [hϖ.maximalIdeal_eq]
-    _ = Ideal.span {Algebra.norm 𝒪[K] ϖ} := by
-      rw [← Algebra.intNorm_eq_norm, ← Ideal.spanNorm, Ideal.spanNorm_singleton,
-        Algebra.intNorm_eq_norm]
-    _ = Ideal.span {↑(π ^ inertiaDegree K L)} :=
-        (Ideal.span_singleton_eq_span_singleton).2 hass
+  calc Ideal.relNorm 𝒪[K] 𝓂[L]
+      = Ideal.relNorm 𝒪[K] (Ideal.span {↑ϖ} : Ideal 𝒪[L]) := by rw [hϖ.maximalIdeal_eq]
+    _ = Ideal.span {Algebra.intNorm 𝒪[K] 𝒪[L] ϖ} := Ideal.relNorm_singleton 𝒪[K] ϖ
+    _ = Ideal.span {↑(π ^ inertiaDegree K L)} := by
+      rw [Algebra.intNorm_eq_norm]
+      exact (Ideal.span_singleton_eq_span_singleton).2 hass
     _ = (Ideal.span {↑π} : Ideal 𝒪[K]) ^ inertiaDegree K L :=
         (Ideal.span_singleton_pow (π : 𝒪[K]) (inertiaDegree K L)).symm
     _ = 𝓂[K] ^ inertiaDegree K L := by rw [hπ.maximalIdeal_eq]
-
--- The ideal-norm statements below are in a section of their own, without `FiniteDimensional K L`
--- in scope: `Ideal.relNorm` is elaborated by type class search, and with a
--- `FiniteDimensional K L` hypothesis in scope that search mentions the hypothesis, so an
--- `omit` of it is rejected.
-section IdealNorm
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- `Ideal.relNorm 𝒪[K]` is the `Ideal.map` along the integral norm: the bridge from
-Mathlib's monoid-with-zero norm `Ideal.relNorm` to the `Ideal.map` form.
-
-Mathlib packages `Ideal.relNorm R` as a monoid-with-zero morphism on ideals whose underlying
-function is `Ideal.spanNorm R`, and defines `Ideal.spanNorm R I` to be
-`Ideal.map (Algebra.intNorm R S) I`. The two steps are `Ideal.spanNorm_eq` and
-`Ideal.spanNorm`, so no definitional equality is assumed. -/
-theorem relNorm_eq_map_intNorm (I : Ideal 𝒪[L]) :
-    Ideal.relNorm 𝒪[K] I = Ideal.map (Algebra.intNorm 𝒪[K] 𝒪[L]) I := by
-  rw [← Ideal.spanNorm_eq, Ideal.spanNorm]
-
-variable (K L) in
-/-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
-maximal ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`, in the form of
-Mathlib's `Ideal.relNorm`.
-
-This is the `Ideal.relNorm` form of `TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow`, the two
-norms being equal by `TauCeti.relNorm_eq_map_intNorm` and `Algebra.intNorm_eq_norm`. -/
-theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
-    Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
-  rw [relNorm_eq_map_intNorm, Algebra.intNorm_eq_norm,
-    map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
 
 end IdealNorm
 
