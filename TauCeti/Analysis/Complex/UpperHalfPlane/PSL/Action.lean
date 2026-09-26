@@ -39,6 +39,8 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
+* `UpperHalfPlane.pslS` — the image of `ModularGroup.S` in `PSL(2, ℝ)`, an involution of `ℍ`
+  (`pslS_smul_pslS_smul`, `pslS_inv`) negating the real part (`re_pslS_smul`).
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -183,6 +185,33 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
   -- the `SL(2, ℤ)`-action and the cast `SL(2, ℝ)`-action are definitionally the
   -- `GL(2, ℝ)`-action of the common `mapGL ℝ` image
   rfl
+
+/-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
+`z ↦ -1/z`) in `PSL(2, ℝ)`. -/
+noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
+
+/-- `pslS` acts as `ModularGroup.S` does. -/
+theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
+  rw [pslS, psl2zToPSL2R_smul, pslMk_smul]
+
+/-- `pslS` is an involution of `ℍ`. -/
+theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
+  rw [pslS_smul, pslS_smul, ← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv,
+    inv_smul_smul]
+
+/-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
+theorem pslS_mul_self : pslS * pslS = 1 :=
+  eq_of_smul_eq_smul fun τ : ℍ ↦ by rw [mul_smul, pslS_smul_pslS_smul, one_smul]
+
+/-- `pslS` is its own inverse. -/
+@[simp]
+theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
+
+/-- `pslS` negates the real part and divides by the norm-square. -/
+theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
+  rw [pslS_smul, modular_S_smul]
+  simp [Complex.inv_re]
+  ring
 
 /-- The `PSL(2, ℤ)`-action on `ℍ` is faithful, through the injective descent
 `psl2zToPSL2R` and the faithfulness of the `PSL(2, ℝ)`-action. -/
