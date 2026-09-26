@@ -10,9 +10,9 @@ public import TauCeti.Geometry.Lie.Subgroup.TranslatedChart
 /-!
 # Charted spaces on subgroup slices
 
-An ambient chart that identifies a subgroup with the coordinate slice `F × {0}` restricts to a
-chart on the subgroup subtype with values in `F`.  Translating one such chart at the identity gives
-enough charts to equip the subgroup with a charted-space structure.
+An ambient chart that identifies a subgroup with the coordinate slice `F × {0}` can first be
+translated from the identity to any subgroup point and then restricted to the subgroup subtype with
+values in `F`. These preferred charts equip the subgroup with a charted-space structure.
 
 The construction is topological.  Its atlas contains exactly the preferred charts obtained by
 translating the supplied identity chart; it does not by itself assert smooth compatibility, a

@@ -53,7 +53,7 @@ theorem isSliceChart_translatedChart (K : Subgroup G)
     simp [e]
   have hchart := hφ.comp e
   rw [hset] at hchart
-  rw [OpenPartialHomeomorph.translatedChart_eq]
+  rw [OpenPartialHomeomorph.translatedChart_def]
   simpa [e,
     Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
 
