@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
@@ -26,10 +25,10 @@ model.
 * `TauCeti.realCliffordThreeZeroEvenEquivQuaternion` identifies `Cl⁺(3,0)` with `ℍ[ℝ]`.
 * `TauCeti.realCliffordThreeZeroEvenEquivQuaternion_reverseEven` identifies reversal with
   quaternion conjugation.
-* The three `..._bivector_*` theorems identify the coordinate bivectors with the imaginary
+* The three `..._ι_single_*` theorems identify the coordinate products with the imaginary
   quaternion basis.
-* `TauCeti.realCliffordThreeZeroEvenEquivQuaternion_reverseEven_mul_self` identifies the reverse
-  norm with the quaternion norm-square.
+* `TauCeti.realCliffordThreeZeroEvenEquivQuaternion_map_reverseEven_mul_self_eq_normSq`
+  identifies the reverse norm with the quaternion norm-square.
 
 ## References
 
@@ -52,57 +51,24 @@ private noncomputable def realCliffordZeroThreeAugmentedIsometry :
       realCliffordZeroOneIsometry)
 
 @[simp]
-private theorem realCliffordFormNegIsometry_three_zero_basis (i : Fin 3) :
-    realCliffordFormNegIsometry 3 0 (Pi.single i 1) = Pi.single i 1 := by
-  funext j
-  simpa using realCliffordFormNegIsometry_neg_of_pos 3 0 (Pi.single i 1) j
+private theorem realCliffordFormNegIsometry_three_zero (v : Fin 3 → ℝ) :
+    realCliffordFormNegIsometry 3 0 v = v := by
+  funext i
+  simpa using realCliffordFormNegIsometry_neg_of_pos 3 0 v i
 
-@[simp]
-private theorem realCliffordZeroThreeAugmentedIsometry_basis_zero :
-    realCliffordZeroThreeAugmentedIsometry (Pi.single 0 1) =
-      (Pi.single 0 1, 0) := by
+private theorem realCliffordZeroThreeAugmentedIsometry_apply (v : Fin 3 → ℝ) :
+    realCliffordZeroThreeAugmentedIsometry v = (![v 0, v 1], v 2) := by
   classical
   apply Prod.ext
   · funext i
-    change (realCliffordSplitIsometry 0 0 2 1 (Pi.single 0 1)).1 i = _
-    convert realCliffordSplitIsometry_fst_neg 0 0 2 1 (Pi.single 0 1) i using 1
+    -- The composed isometry exposes its first projection through the shared splitting lemma.
+    change (realCliffordSplitIsometry 0 0 2 1 v).1 i = _
+    convert realCliffordSplitIsometry_fst_neg 0 0 2 1 v i using 1
     all_goals fin_cases i <;> simp
-  · change realCliffordZeroOneIsometry
-        (realCliffordSplitIsometry 0 0 2 1 (Pi.single 0 1)).2 = 0
+  · -- The second projection is the one-dimensional real Clifford coordinate.
+    change realCliffordZeroOneIsometry (realCliffordSplitIsometry 0 0 2 1 v).2 = v 2
     rw [realCliffordZeroOneIsometry_apply]
-    convert realCliffordSplitIsometry_snd_neg 0 0 2 1 (Pi.single 0 1) (0 : Fin 1)
-      using 1 <;> simp
-
-@[simp]
-private theorem realCliffordZeroThreeAugmentedIsometry_basis_one :
-    realCliffordZeroThreeAugmentedIsometry (Pi.single 1 1) =
-      (Pi.single 1 1, 0) := by
-  classical
-  apply Prod.ext
-  · funext i
-    change (realCliffordSplitIsometry 0 0 2 1 (Pi.single 1 1)).1 i = _
-    convert realCliffordSplitIsometry_fst_neg 0 0 2 1 (Pi.single 1 1) i using 1
-    all_goals fin_cases i <;> simp
-  · change realCliffordZeroOneIsometry
-        (realCliffordSplitIsometry 0 0 2 1 (Pi.single 1 1)).2 = 0
-    rw [realCliffordZeroOneIsometry_apply]
-    convert realCliffordSplitIsometry_snd_neg 0 0 2 1 (Pi.single 1 1) (0 : Fin 1)
-      using 1 <;> simp
-
-@[simp]
-private theorem realCliffordZeroThreeAugmentedIsometry_basis_two :
-    realCliffordZeroThreeAugmentedIsometry (Pi.single 2 1) =
-      (0, 1) := by
-  classical
-  apply Prod.ext
-  · funext i
-    change (realCliffordSplitIsometry 0 0 2 1 (Pi.single 2 1)).1 i = 0
-    convert realCliffordSplitIsometry_fst_neg 0 0 2 1 (Pi.single 2 1) i using 1
-    all_goals fin_cases i <;> simp
-  · change realCliffordZeroOneIsometry
-        (realCliffordSplitIsometry 0 0 2 1 (Pi.single 2 1)).2 = 1
-    rw [realCliffordZeroOneIsometry_apply]
-    convert realCliffordSplitIsometry_snd_neg 0 0 2 1 (Pi.single 2 1) (0 : Fin 1)
+    convert realCliffordSplitIsometry_snd_neg 0 0 2 1 v (0 : Fin 1)
       using 1 <;> simp
 
 /-- The even Clifford algebra of the positive-definite three-dimensional real form is the
@@ -115,35 +81,50 @@ noncomputable def realCliffordThreeZeroEvenEquivQuaternion :
         ((CliffordAlgebra.equivEven (realCliffordForm 0 2)).symm.trans
           realCliffordZeroTwoEquivQuaternion)))
 
-/-- The coordinate bivector `e₀e₁` maps to `-k`. -/
-theorem realCliffordThreeZeroEvenEquivQuaternion_bivector_zero_one :
+/-- The quaternion coordinates of the image of a product of two Clifford generators. -/
+theorem realCliffordThreeZeroEvenEquivQuaternion_ι (m n : Fin 3 → ℝ) :
+    realCliffordThreeZeroEvenEquivQuaternion
+        ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin m n) =
+      (⟨m 0 * n 0 + m 1 * n 1 + m 2 * n 2,
+        m 0 * n 2 - m 2 * n 0,
+        m 1 * n 2 - m 2 * n 1,
+        m 1 * n 0 - m 0 * n 1⟩ : ℍ[ℝ]) := by
+  classical
+  simp only [realCliffordThreeZeroEvenEquivQuaternion, AlgEquiv.trans_apply]
+  rw [CliffordAlgebra.evenEquivEvenNeg_apply, CliffordAlgebra.evenToNeg_ι,
+    map_neg, CliffordAlgebra.evenEquivOfIsometry_ι,
+    map_neg, CliffordAlgebra.evenEquivOfIsometry_ι, map_neg,
+    CliffordAlgebra.equivEven_symm_apply, CliffordAlgebra.ofEven_ι]
+  simp only [realCliffordFormNegIsometry_three_zero,
+    realCliffordZeroThreeAugmentedIsometry_apply]
+  ext <;> simp [realCliffordZeroTwoEquivQuaternion_ι] <;> ring
+
+/-- The coordinate product `e₀e₁` maps to `-k`. -/
+@[simp]
+theorem realCliffordThreeZeroEvenEquivQuaternion_ι_single_zero_one :
     realCliffordThreeZeroEvenEquivQuaternion
         ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin
           (Pi.single 0 1) (Pi.single 1 1)) = (⟨0, 0, 0, -1⟩ : ℍ[ℝ]) := by
   classical
-  simp only [realCliffordThreeZeroEvenEquivQuaternion, AlgEquiv.trans_apply]
-  rw [CliffordAlgebra.evenEquivEvenNeg_apply, CliffordAlgebra.evenToNeg_ι]
-  simp
+  simpa using realCliffordThreeZeroEvenEquivQuaternion_ι (Pi.single 0 1) (Pi.single 1 1)
 
-/-- The coordinate bivector `e₁e₂` maps to `j`. -/
-theorem realCliffordThreeZeroEvenEquivQuaternion_bivector_one_two :
+/-- The coordinate product `e₁e₂` maps to `j`. -/
+@[simp]
+theorem realCliffordThreeZeroEvenEquivQuaternion_ι_single_one_two :
     realCliffordThreeZeroEvenEquivQuaternion
         ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin
           (Pi.single 1 1) (Pi.single 2 1)) = (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) := by
   classical
-  simp only [realCliffordThreeZeroEvenEquivQuaternion, AlgEquiv.trans_apply]
-  rw [CliffordAlgebra.evenEquivEvenNeg_apply, CliffordAlgebra.evenToNeg_ι]
-  simp
+  simpa using realCliffordThreeZeroEvenEquivQuaternion_ι (Pi.single 1 1) (Pi.single 2 1)
 
-/-- The coordinate bivector `e₂e₀` maps to `-i`. -/
-theorem realCliffordThreeZeroEvenEquivQuaternion_bivector_two_zero :
+/-- The coordinate product `e₂e₀` maps to `-i`. -/
+@[simp]
+theorem realCliffordThreeZeroEvenEquivQuaternion_ι_single_two_zero :
     realCliffordThreeZeroEvenEquivQuaternion
         ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin
           (Pi.single 2 1) (Pi.single 0 1)) = (⟨0, -1, 0, 0⟩ : ℍ[ℝ]) := by
   classical
-  simp only [realCliffordThreeZeroEvenEquivQuaternion, AlgEquiv.trans_apply]
-  rw [CliffordAlgebra.evenEquivEvenNeg_apply, CliffordAlgebra.evenToNeg_ι]
-  simp
+  simpa using realCliffordThreeZeroEvenEquivQuaternion_ι (Pi.single 2 1) (Pi.single 0 1)
 
 /-- In the compact three-dimensional quaternion model, Clifford reversal is quaternion
 conjugation. -/
@@ -162,8 +143,7 @@ theorem realCliffordThreeZeroEvenEquivQuaternion_reverseEven
 
 /-- The reverse norm in the compact three-dimensional even Clifford algebra is the quaternion
 norm-square. -/
-@[simp]
-theorem realCliffordThreeZeroEvenEquivQuaternion_reverseEven_mul_self
+theorem realCliffordThreeZeroEvenEquivQuaternion_map_reverseEven_mul_self_eq_normSq
     (x : CliffordAlgebra.even (realCliffordForm 3 0)) :
     realCliffordThreeZeroEvenEquivQuaternion
         (CliffordAlgebra.reverseEven (realCliffordForm 3 0) x * x) =

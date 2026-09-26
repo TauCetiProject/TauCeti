@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 
@@ -62,18 +63,6 @@ theorem coe_realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary_symm_apply
       (realCliffordThreeZeroEvenEquivQuaternion.symm (q : ℍ[ℝ]) :
         CliffordAlgebra.even (realCliffordForm 3 0)) := by
   apply CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
-
-/-- Every quaternion in the image of the compact three-dimensional even unitary carrier has
-norm-square one. -/
-@[simp]
-theorem normSq_realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary_eq_one
-    (x : CliffordAlgebra.evenUnitaryGroup (realCliffordForm 3 0)) :
-    Quaternion.normSq
-        (realCliffordThreeZeroEvenEquivQuaternion
-          (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0) x)) = 1 := by
-  rw [← coe_realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary_apply]
-  exact Quaternion.normSq_coe_unitary_eq_one
-    (realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary x)
 
 end TauCeti
 

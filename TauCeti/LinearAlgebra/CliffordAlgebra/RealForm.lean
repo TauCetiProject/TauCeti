@@ -763,10 +763,9 @@ theorem realCliffordZeroTwoEquivQuaternion_star
     (x : CliffordAlgebra (realCliffordForm 0 2)) :
     realCliffordZeroTwoEquivQuaternion (star x) =
       star (realCliffordZeroTwoEquivQuaternion x) := by
-  rw [realCliffordZeroTwoEquivQuaternion_eq, realCliffordZeroTwoEquivQuaternion_eq,
+  simp only [realCliffordZeroTwoEquivQuaternion_eq,
     CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_star,
     CliffordAlgebraQuaternion.equiv_apply, CliffordAlgebraQuaternion.toQuaternion_star]
-  rfl
 
 /-! ### `Cliff(1,1) ≅ M₂(ℝ)` -/
 

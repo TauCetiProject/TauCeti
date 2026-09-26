@@ -25,8 +25,7 @@ and scalar action on the right Clifford algebra is faithful.
 * `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
-  subalgebras; `CliffordAlgebra.evenEquivOfIsometry_bilin` and
-  `CliffordAlgebra.equivEven_symm_bilin` give its generator-level transport equations.
+  subalgebras, with coercion and generator-level transport equations.
 * `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
 -/
 
@@ -83,7 +82,7 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
         SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
 
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
-theorem map_even_eq (e : Q₁.IsometryEquiv Q₂) :
+theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
     (even Q₁).map (equivOfIsometry e).toAlgHom = even Q₂ := by
   apply le_antisymm
   · rintro y ⟨x, hx, rfl⟩
@@ -97,7 +96,7 @@ the even subalgebras. -/
 noncomputable def evenEquivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
     even Q₁ ≃ₐ[R] even Q₂ :=
   ((equivOfIsometry e).subalgebraMap (even Q₁)).trans
-    (Subalgebra.equivOfEq _ _ (map_even_eq e))
+    (Subalgebra.equivOfEq _ _ (map_equivOfIsometry_even e))
 
 /-- After coercion, `evenEquivOfIsometry` agrees with the full Clifford-algebra equivalence. -/
 @[simp]
@@ -108,19 +107,59 @@ theorem coe_evenEquivOfIsometry_apply (e : Q₁.IsometryEquiv Q₂) (x : even Q�
 
 /-- On a bilinear generator, the restricted equivalence applies the isometry to both vectors. -/
 @[simp]
-theorem evenEquivOfIsometry_bilin (e : Q₁.IsometryEquiv Q₂) (m n : M₁) :
+theorem evenEquivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (m n : M₁) :
     evenEquivOfIsometry e ((even.ι Q₁).bilin m n) =
       (even.ι Q₂).bilin (e m) (e n) := by
   apply Subtype.ext
   simp [even.ι, coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
 
-/-- The inverse dimension-shift equivalence on a bilinear generator of the augmented even
-Clifford algebra. -/
+/-- The inverse of an isometry-induced even Clifford equivalence is induced by the inverse
+isometry. -/
 @[simp]
-theorem equivEven_symm_bilin (Q : QuadraticForm R M₁) (x y : M₁ × R) :
-    (equivEven Q).symm ((even.ι (EquivEven.Q' Q)).bilin x y) =
-      (ι Q x.1 + algebraMap R _ x.2) * (ι Q y.1 - algebraMap R _ y.2) := by
-  exact ofEven_ι Q x y
+theorem evenEquivOfIsometry_symm (e : Q₁.IsometryEquiv Q₂) :
+    (evenEquivOfIsometry e).symm = evenEquivOfIsometry e.symm := by
+  apply AlgEquiv.ext
+  intro x
+  apply Subtype.ext
+  apply (equivOfIsometry e).injective
+  rw [← coe_evenEquivOfIsometry_apply, AlgEquiv.apply_symm_apply,
+    coe_evenEquivOfIsometry_apply]
+  exact ((equivOfIsometry e).apply_symm_apply (x : CliffordAlgebra Q₂)).symm
+
+/-- Restriction to even Clifford algebras respects composition of isometry equivalences. -/
+@[simp]
+theorem evenEquivOfIsometry_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂)
+    (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (evenEquivOfIsometry e₁₂).trans (evenEquivOfIsometry e₂₃) =
+      evenEquivOfIsometry (e₁₂.trans e₂₃) := by
+  apply AlgEquiv.ext
+  intro x
+  apply Subtype.ext
+  simp only [AlgEquiv.trans_apply, coe_evenEquivOfIsometry_apply]
+  exact DFunLike.congr_fun (equivOfIsometry_trans e₁₂ e₂₃) (x : CliffordAlgebra Q₁)
+
+/-- The identity isometry induces the identity on the even Clifford algebra. -/
+@[simp]
+theorem evenEquivOfIsometry_refl :
+    evenEquivOfIsometry (QuadraticMap.IsometryEquiv.refl Q₁) = AlgEquiv.refl := by
+  apply AlgEquiv.ext
+  intro x
+  apply Subtype.ext
+  change equivOfIsometry (QuadraticMap.IsometryEquiv.refl Q₁)
+      (x : CliffordAlgebra Q₁) = (x : CliffordAlgebra Q₁)
+  rw [equivOfIsometry_refl]
+  rfl
+
+/-- The standard dimension-shift equivalence applies its defining algebra homomorphism. -/
+@[simp]
+theorem equivEven_apply (Q : QuadraticForm R M₁) (x : CliffordAlgebra Q) :
+    equivEven Q x = toEven Q x := rfl
+
+/-- The inverse standard dimension-shift equivalence applies its defining algebra homomorphism. -/
+@[simp]
+theorem equivEven_symm_apply (Q : QuadraticForm R M₁) (x : even (EquivEven.Q' Q)) :
+    (equivEven Q).symm x = ofEven Q x := rfl
 
 section OrthogonalProduct
 

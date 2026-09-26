@@ -106,6 +106,7 @@ theorem star_mul_self (x : ℍ[R,c₁,c₂,c₃]) :
   rw [star_comm_self', self_mul_star]
 
 /-- A quaternion is unitary exactly when its norm form is one. -/
+@[simp]
 theorem mem_unitary_iff_normForm_eq_one (x : ℍ[R,c₁,c₂,c₃]) :
     x ∈ unitary ℍ[R,c₁,c₂,c₃] ↔ normForm c₁ c₂ c₃ x = 1 := by
   rw [Unitary.mem_iff, star_mul_self, self_mul_star, and_self]
@@ -258,6 +259,7 @@ theorem mem_unitary_iff_normSq_eq_one (x : ℍ[R]) :
   rw [normSq_eq_normForm, QuaternionAlgebra.mem_unitary_iff_normForm_eq_one]
 
 /-- The quaternion underlying a unitary Hamilton quaternion has norm-square one. -/
+@[simp]
 theorem normSq_coe_unitary_eq_one (x : unitary ℍ[R]) : normSq (x : ℍ[R]) = 1 :=
   (mem_unitary_iff_normSq_eq_one _).mp x.2
 

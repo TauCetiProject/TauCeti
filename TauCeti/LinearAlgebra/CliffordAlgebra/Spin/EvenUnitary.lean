@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Star.Subsemiring
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 
@@ -21,8 +22,9 @@ The carrier is intentionally larger than `spinGroup`: the latter also requires m
 Lipschitz closure. The range theorem records that distinction exactly, so subsequent low-rank
 arguments can prove when the two carriers coincide rather than building a second Spin definition.
 
-The theorem `CliffordAlgebra.evenUnitaryGroupEquivUnitaryOfAlgEquiv` transports this carrier along
-any algebra equivalence from the even Clifford algebra that carries reversal to the target star.
+The equivalence `CliffordAlgebra.evenUnitaryGroupEquivUnitaryOfAlgEquiv` transports this carrier
+along any algebra equivalence from the even Clifford algebra that carries reversal to the target
+star.
 Its coercion equations expose the forward and inverse maps without unfolding the construction.
 
 The construction follows the Clifford-group conventions of H. B. Lawson and M.-L. Michelsohn,
@@ -221,83 +223,126 @@ theorem coe_evenUnitaryGroupEvenPart (x : evenUnitaryGroup Q) :
       ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
   simp [evenUnitaryGroupEvenPart]
 
+/-- The left reverse norm of the even part of an even unitary element is one. -/
+theorem reverseEven_evenUnitaryGroupEvenPart_mul_self (x : evenUnitaryGroup Q) :
+    reverseEven Q (evenUnitaryGroupEvenPart Q x) * evenUnitaryGroupEvenPart Q x = 1 := by
+  apply Subtype.ext
+  simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, coe_reverseEven_apply,
+    coe_evenUnitaryGroupEvenPart] using evenUnitaryGroup.reverse_mul_self Q x
+
+/-- The right reverse norm of the even part of an even unitary element is one. -/
+theorem evenUnitaryGroupEvenPart_mul_reverseEven (x : evenUnitaryGroup Q) :
+    evenUnitaryGroupEvenPart Q x * reverseEven Q (evenUnitaryGroupEvenPart Q x) = 1 := by
+  apply Subtype.ext
+  simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, coe_reverseEven_apply,
+    coe_evenUnitaryGroupEvenPart] using evenUnitaryGroup.self_mul_reverse Q x
+
 section Transport
 
-variable {A : Type w} [Ring A] [Algebra R A] [StarRing A]
+variable {A : Type w} [Semiring A] [Algebra R A] [StarMul A]
 
-private noncomputable def evenUnitaryGroupToUnitaryOfAlgEquiv
-    (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
-    evenUnitaryGroup Q →* unitary A :=
-  (e.toMonoidHom.comp (evenUnitaryGroupEvenPart Q)).codRestrict (unitary A) fun x => by
-    let a := evenUnitaryGroupEvenPart Q x
-    let uEven : (even Q)ˣ :=
-      { val := a
-        inv := evenUnitaryGroupEvenPart Q x⁻¹
-        val_inv := by apply Subtype.ext; simp [a]
-        inv_val := by apply Subtype.ext; simp [a] }
-    have hunit : IsUnit (e a) := by
-      exact IsUnit.map e.toMonoidHom (Units.isUnit uEven)
-    change e a ∈ unitary A
-    rw [IsUnit.mem_unitary_iff_star_mul_self hunit]
-    change star (e a) * e a = 1
-    have h : reverseEven Q a * a = 1 := by
-      apply Subtype.ext
-      simp only [Subalgebra.coe_mul, Subalgebra.coe_one, coe_reverseEven_apply]
-      change reverse (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) *
-          ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1
-      exact evenUnitaryGroup.reverse_mul_self Q x
-    calc
-      star (e a) * e a = e (reverseEven Q a) * e a := by rw [he]
-      _ = e (reverseEven Q a * a) := (map_mul e _ _).symm
-      _ = e 1 := congrArg e h
-      _ = 1 := map_one e
+/-- The even Clifford subalgebra, regarded privately as a star subsemiring using the ambient
+Clifford conjugation. -/
+private abbrev evenStarSubsemiring : StarSubsemiring (CliffordAlgebra Q) where
+  toSubsemiring := (even Q).toSubsemiring
+  star_mem' := fun {x} hx => by
+    change x ∈ evenOdd Q 0 at hx
+    change star x ∈ evenOdd Q 0
+    rw [star_def, reverse_mem_evenOdd_iff, involute_mem_evenOdd_iff]
+    exact hx
 
-private noncomputable def unitaryToEvenUnitaryGroupOfAlgEquiv
-    (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
-    unitary A →* evenUnitaryGroup Q where
-  toFun q := by
-    let a : even Q := e.symm (q : A)
-    let uEven : (even Q)ˣ := Units.mapEquiv e.toMulEquiv |>.symm (Unitary.toUnits q)
-    let u : (CliffordAlgebra Q)ˣ := Units.map (even Q).val.toMonoidHom uEven
-    refine ⟨u, ?_⟩
-    have hu : (u : CliffordAlgebra Q) = a := rfl
-    rw [evenUnitaryGroup.mem_iff]
-    refine ⟨hu ▸ a.2, ?_⟩
-    rw [IsUnit.mem_unitary_iff_star_mul_self (Units.isUnit u), hu,
-      ← reverse_eq_star_of_mem_even a]
-    have h : reverseEven Q a * a = 1 := by
-      apply e.injective
-      have ha : e a = (q : A) := by simp [a]
-      rw [map_mul, he, ha, map_one]
-      exact Unitary.star_mul_self_of_mem q.2
-    simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, coe_reverseEven_apply] using
-      congrArg Subtype.val h
+private def evenStarSubsemiringSubtype : evenStarSubsemiring Q →⋆* CliffordAlgebra Q where
+  toFun := Subtype.val
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+private def evenStarSubsemiringToEven : evenStarSubsemiring Q →* even Q where
+  toFun x := ⟨x, x.2⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+private theorem evenStarSubsemiringToEven_star (x : evenStarSubsemiring Q) :
+    evenStarSubsemiringToEven Q (star x) =
+      reverseEven Q (evenStarSubsemiringToEven Q x) := by
+  apply Subtype.ext
+  simp only [evenStarSubsemiringToEven, MonoidHom.coe_mk, OneHom.coe_mk]
+  calc
+    ((star x : evenStarSubsemiring Q) : CliffordAlgebra Q) =
+        star (x : CliffordAlgebra Q) := rfl
+    _ = reverse (x : CliffordAlgebra Q) := by
+      rw [star_def, involute_eq_of_mem_even x.2]
+    _ = (reverseEven Q (evenStarSubsemiringToEven Q x) : CliffordAlgebra Q) :=
+      (coe_reverseEven_apply (Q := Q) _).symm
+
+private def evenUnitaryGroupToUnitaryEven :
+    evenUnitaryGroup Q →* unitary (evenStarSubsemiring Q) where
+  toFun x :=
+    ⟨⟨((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q),
+      (evenUnitaryGroup.mem_iff Q).mp x.2 |>.1⟩,
+      ⟨Subtype.ext (Unitary.star_mul_self_of_mem ((evenUnitaryGroup.mem_iff Q).mp x.2 |>.2)),
+        Subtype.ext (Unitary.mul_star_self_of_mem
+          ((evenUnitaryGroup.mem_iff Q).mp x.2 |>.2))⟩⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+private def unitaryEvenToEvenUnitaryGroup :
+    unitary (evenStarSubsemiring Q) →* evenUnitaryGroup Q where
+  toFun q :=
+    ⟨Unitary.toUnits (Unitary.map (evenStarSubsemiringSubtype Q) q),
+      (evenUnitaryGroup.mem_iff Q).mpr
+        ⟨q.1.2, (Unitary.map (evenStarSubsemiringSubtype Q) q).2⟩⟩
   map_one' := by
     apply Subtype.ext
     apply Units.ext
-    simp
-  map_mul' q r := by
+    rfl
+  map_mul' _ _ := by
     apply Subtype.ext
     apply Units.ext
-    simp
+    rfl
+
+private def evenUnitaryGroupEquivUnitaryEven :
+    evenUnitaryGroup Q ≃* unitary (evenStarSubsemiring Q) where
+  toFun := evenUnitaryGroupToUnitaryEven Q
+  invFun := unitaryEvenToEvenUnitaryGroup Q
+  left_inv _ := by
+    apply Subtype.ext
+    apply Units.ext
+    rfl
+  right_inv _ := by
+    apply Subtype.ext
+    rfl
+  map_mul' := map_mul (evenUnitaryGroupToUnitaryEven Q)
+
+private def evenStarMulEquivOfAlgEquiv (e : even Q ≃ₐ[R] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) :
+    evenStarSubsemiring Q ≃⋆* A where
+  toFun x := e (evenStarSubsemiringToEven Q x)
+  invFun a := ⟨e.symm a, (e.symm a).2⟩
+  left_inv x := by
+    apply Subtype.ext
+    change (e.symm (e (evenStarSubsemiringToEven Q x)) : CliffordAlgebra Q) = x
+    rw [e.symm_apply_apply]
+    rfl
+  right_inv a := e.apply_symm_apply a
+  map_mul' _ _ := by simp only [map_mul]
+  map_star' x := by rw [evenStarSubsemiringToEven_star, he]
+
+/-- A reversal-preserving algebra equivalence sends the even part of an even unitary Clifford
+element to a unitary element of the target algebra. -/
+theorem map_evenUnitaryGroupEvenPart_mem_unitary
+    (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x))
+    (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary A := by
+  exact (Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)
+    (evenUnitaryGroupEquivUnitaryEven Q x)).2
 
 /-- A reversal-preserving equivalence from the even Clifford algebra transports its even unitary
 carrier to the unitary group of the target algebra. -/
 noncomputable def evenUnitaryGroupEquivUnitaryOfAlgEquiv
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
-    evenUnitaryGroup Q ≃* unitary A where
-  toFun := evenUnitaryGroupToUnitaryOfAlgEquiv Q e he
-  invFun := unitaryToEvenUnitaryGroupOfAlgEquiv Q e he
-  left_inv x := by
-    apply Subtype.ext
-    apply Units.ext
-    simp [evenUnitaryGroupToUnitaryOfAlgEquiv, unitaryToEvenUnitaryGroupOfAlgEquiv,
-      evenUnitaryGroupEvenPart]
-  right_inv q := by
-    apply Subtype.ext
-    simp [evenUnitaryGroupToUnitaryOfAlgEquiv, unitaryToEvenUnitaryGroupOfAlgEquiv,
-      evenUnitaryGroupEvenPart]
-  map_mul' := map_mul (evenUnitaryGroupToUnitaryOfAlgEquiv Q e he)
+    evenUnitaryGroup Q ≃* unitary A :=
+  (evenUnitaryGroupEquivUnitaryEven Q).trans
+    (Unitary.mapEquiv (evenStarMulEquivOfAlgEquiv Q e he)).toMulEquiv
 
 /-- The forward unitary transport applies the algebra equivalence to the even Clifford value. -/
 @[simp]
@@ -306,8 +351,7 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply
     (x : evenUnitaryGroup Q) :
     (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x : A) =
       e (evenUnitaryGroupEvenPart Q x) := by
-  simp [evenUnitaryGroupEquivUnitaryOfAlgEquiv,
-    evenUnitaryGroupToUnitaryOfAlgEquiv]
+  rfl
 
 /-- The inverse unitary transport has Clifford value obtained by applying the inverse algebra
 equivalence. -/
@@ -316,8 +360,7 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) (q : unitary A) :
     ((((evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he).symm q : evenUnitaryGroup Q) :
         (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = (e.symm (q : A) : even Q) := by
-  simp [evenUnitaryGroupEquivUnitaryOfAlgEquiv,
-    unitaryToEvenUnitaryGroupOfAlgEquiv]
+  rfl
 
 end Transport
 
