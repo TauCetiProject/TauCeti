@@ -177,7 +177,6 @@ theorem alternatingGroupFiveCandidateCharacterDegrees_apply (i : AlternatingGrou
   fin_cases i <;> decide
 
 /-- The identity-class entry of each candidate row is its candidate degree. -/
-@[simp]
 theorem alternatingGroupFiveCandidateCharacterTable_index_one
     (i : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCharacterTable i
