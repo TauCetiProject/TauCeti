@@ -33,7 +33,7 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- Restricting the action on places to an invariant finite set gives an action by
 permutations of that set. -/
-noncomputable def placePermHomOfInvariant (S : Finset (Place k F))
+noncomputable def placePermHomOfInvariant {S : Finset (Place k F)}
     (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S) :
     (F ≃ₐ[k] F) →* Equiv.Perm S where
   toFun σ := {
@@ -57,10 +57,10 @@ noncomputable def placePermHomOfInvariant (S : Finset (Place k F))
     simp [mul_smul]
 
 /-- Evaluating the restricted permutation recovers the action on places. -/
-@[simp] theorem placePermHomOfInvariant_apply (S : Finset (Place k F))
+@[simp] theorem placePermHomOfInvariant_apply {S : Finset (Place k F)}
     (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S)
     (σ : F ≃ₐ[k] F) (P : S) :
-    ((placePermHomOfInvariant S hS σ) P).1 = σ • P.1 := (rfl)
+    ((placePermHomOfInvariant hS σ) P).1 = σ • P.1 := (rfl)
 
 /-- The restricted action is faithful when the invariant set contains at least `2g + 3`
 rational places. -/
@@ -69,7 +69,7 @@ theorem placePermHomOfInvariant_injective (hF : IsFunctionField k F)
     (hS : ∀ (σ : F ≃ₐ[k] F) (P : Place k F), P ∈ S → σ • P ∈ S)
     (hrat : ∀ P ∈ S, P.degree = 1)
     (hcard : 2 * genus k F + 3 ≤ S.card) :
-    Function.Injective (placePermHomOfInvariant S hS) := by
+    Function.Injective (placePermHomOfInvariant hS) := by
   intro σ τ heq
   apply eq_of_forall_smul_eq_of_two_mul_genus_add_three_le_card hF hex
     (S := S) (hcard := hcard)
@@ -86,7 +86,7 @@ theorem finite_algEquiv_of_invariant_rational_places (hF : IsFunctionField k F)
     (hrat : ∀ P ∈ S, P.degree = 1)
     (hcard : 2 * genus k F + 3 ≤ S.card) :
     Finite (F ≃ₐ[k] F) :=
-  Finite.of_injective (placePermHomOfInvariant S hS)
+  Finite.of_injective (placePermHomOfInvariant hS)
     (placePermHomOfInvariant_injective hF hex S hS hrat hcard)
 
 /-- The finite invariant set also bounds the automorphism group's order by the order of
@@ -97,7 +97,7 @@ theorem card_algEquiv_le_factorial_of_invariant_rational_places (hF : IsFunction
     (hrat : ∀ P ∈ S, P.degree = 1)
     (hcard : 2 * genus k F + 3 ≤ S.card) :
     Nat.card (F ≃ₐ[k] F) ≤ S.card.factorial := by
-  have hle := Nat.card_le_card_of_injective (placePermHomOfInvariant S hS)
+  have hle := Nat.card_le_card_of_injective (placePermHomOfInvariant hS)
     (placePermHomOfInvariant_injective hF hex S hS hrat hcard)
   simpa only [Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_coe] using hle
 
