@@ -47,7 +47,7 @@ noncomputable def vertexSimpleModuleIso (i : Q) :
   (quiverRepFunctor k Q).objObjPreimageIso _
 
 /-- The vertex simple is a simple object of the path algebra module category. -/
-instance vertexSimpleModule_simple (i : Q) : Simple (vertexSimpleModule k Q i) :=
+instance simple_vertexSimpleModule (i : Q) : Simple (vertexSimpleModule k Q i) :=
   simple_obj (quiverRepFunctor k Q).inv (simpleRep k Q i)
 
 variable {Q}
@@ -60,7 +60,7 @@ noncomputable def vertexSimpleModuleResolution (i : Q)
     (quiverRepFunctor k Q).inv
 
 /-- The transported first-arrow sequence is short exact. -/
-theorem vertexSimpleModuleResolution_shortExact (i : Q)
+theorem shortExact_vertexSimpleModuleResolution (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).ShortExact :=
   (shortExact_arrowSumToIndecProjRep k i).map_of_exact (quiverRepFunctor k Q).inv
@@ -116,53 +116,45 @@ noncomputable def indecProjModuleToVertexSimpleModule (i : Q)
       (vertexSimpleModuleResolutionX₃Iso k i).hom
 
 /-- Under the term isomorphisms, the first differential is the module first-arrow map. -/
+@[reassoc (attr := simp), simp]
 theorem vertexSimpleModuleResolution_f (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).f ≫ (vertexSimpleModuleResolutionX₂Iso k i).hom =
       (vertexSimpleModuleResolutionX₁Iso k i).hom ≫ arrowSumToIndecProjModule k i := by
-  change (quiverRepFunctor k Q).inv.map (arrowSumToIndecProjRep k i) ≫
-      (vertexSimpleModuleResolutionX₂Iso k i).hom =
-    (vertexSimpleModuleResolutionX₁Iso k i).hom ≫
-      ((vertexSimpleModuleResolutionX₁Iso k i).inv ≫
-        (quiverRepFunctor k Q).inv.map (arrowSumToIndecProjRep k i) ≫
-          (vertexSimpleModuleResolutionX₂Iso k i).hom)
-  simp only [← Category.assoc, Iso.hom_inv_id, Category.id_comp]
+  simp only [arrowSumToIndecProjModule, ← Category.assoc]
+  simp only [Iso.hom_inv_id, Category.id_comp]
   rfl
 
 /-- Under the term isomorphisms, the second differential is the module quotient map. -/
+@[reassoc (attr := simp), simp]
 theorem vertexSimpleModuleResolution_g (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (vertexSimpleModuleResolution k i).g ≫ (vertexSimpleModuleResolutionX₃Iso k i).hom =
       (vertexSimpleModuleResolutionX₂Iso k i).hom ≫
         indecProjModuleToVertexSimpleModule k i := by
-  change (quiverRepFunctor k Q).inv.map (indecProjRepToSimpleRep k i) ≫
-      (vertexSimpleModuleResolutionX₃Iso k i).hom =
-    (vertexSimpleModuleResolutionX₂Iso k i).hom ≫
-      ((vertexSimpleModuleResolutionX₂Iso k i).inv ≫
-        (quiverRepFunctor k Q).inv.map (indecProjRepToSimpleRep k i) ≫
-          (vertexSimpleModuleResolutionX₃Iso k i).hom)
-  simp only [← Category.assoc, Iso.hom_inv_id, Category.id_comp]
+  simp only [indecProjModuleToVertexSimpleModule, ← Category.assoc]
+  simp only [Iso.hom_inv_id, Category.id_comp]
   rfl
 
 /-- The first term of the first-arrow sequence is projective, being a finite biproduct of
 vertex projectives, and equivalences preserve projective objects. -/
-instance vertexSimpleModuleResolution_projective_X₁ (i : Q)
+instance projective_vertexSimpleModuleResolution_X₁ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₁ := by
   exact Projective.of_iso (vertexSimpleModuleResolutionX₁Iso k i).symm inferInstance
 
 /-- The middle term of the first-arrow sequence is projective. -/
-instance vertexSimpleModuleResolution_projective_X₂ (i : Q)
+instance projective_vertexSimpleModuleResolution_X₂ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₂ := by
   exact Projective.of_iso (vertexSimpleModuleResolutionX₂Iso k i).symm inferInstance
 
 /-- A vertex simple of a path algebra has projective dimension less than two. This holds for
 finite quivers with finitely many arrows leaving the given vertex, including quivers with cycles. -/
-theorem vertexSimpleModule_hasProjectiveDimensionLT_two (i : Q)
+theorem hasProjectiveDimensionLT_two_vertexSimpleModule (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     HasProjectiveDimensionLT (vertexSimpleModule k Q i) 2 := by
-  have h := (vertexSimpleModuleResolution_shortExact k i).hasProjectiveDimensionLT_X₃
+  have h := (shortExact_vertexSimpleModuleResolution k i).hasProjectiveDimensionLT_X₃
     (n := 1) (hasProjectiveDimensionLT_of_ge _ 1 1 (by omega))
     (hasProjectiveDimensionLT_of_ge _ 1 2 (by omega))
   let _ := h
