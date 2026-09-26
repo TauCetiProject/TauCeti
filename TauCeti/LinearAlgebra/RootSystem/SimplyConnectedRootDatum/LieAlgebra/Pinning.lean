@@ -113,8 +113,9 @@ abbrev uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
   t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)
 
 /-- The uniform exponential takes values in the general linear group through the Geck
-root-subgroup matrix at the `𝔾ₐ`-parameter of `u`. -/
-@[simp]
+root-subgroup matrix at the `𝔾ₐ`-parameter of `u`. Not a `simp` lemma: since `uniformExp`
+is a reducible abbreviation, `simp` already proves this from
+`TauCeti.DynkinType.coe_geckRootSubgroupPoints`. -/
 theorem coe_uniformExp (A : Type*) [CommRing A] (i : Fin t.rank) (u : A) :
     (t.uniformExp ht A i u :
         Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) =
