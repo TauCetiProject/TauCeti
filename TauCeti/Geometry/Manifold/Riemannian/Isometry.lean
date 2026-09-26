@@ -181,6 +181,14 @@ theorem trans_apply (Φ : RiemannianIsometry I J M N)
     (Ψ : RiemannianIsometry J K N P) (x : M) :
     (Φ.trans Ψ) x = Ψ (Φ x) := by rfl
 
+/-- The inverse of a composite is the composite of the inverses in reverse order. -/
+@[simp]
+theorem symm_trans (Φ : RiemannianIsometry I J M N)
+    (Ψ : RiemannianIsometry J K N P) :
+    (Φ.trans Ψ).symm = Ψ.symm.trans Φ.symm := by
+  ext x
+  rfl
+
 @[simp]
 theorem refl_trans (Φ : RiemannianIsometry I J M N) :
     (RiemannianIsometry.refl I M).trans Φ = Φ := by

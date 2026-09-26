@@ -12,6 +12,8 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 
 The differentials of a diffeomorphism and its inverse undo each other.
 Differentiability at a point is also preserved by postcomposition with a diffeomorphism.
+These facts support inverse isometries and transport of curve differentiability through
+diffeomorphisms.
 -/
 
 public section
@@ -31,6 +33,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 namespace Diffeomorph
 
 /-- The differentials of a diffeomorphism and its inverse compose to the identity. -/
+@[simp]
 theorem mfderiv_apply_mfderiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (x : M) (v : TangentSpace J (h x)) :
     mfderiv I J h x (mfderiv J I h.symm (h x) v) = v := by
@@ -43,6 +46,7 @@ theorem mfderiv_apply_mfderiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   exact hder.symm
 
 /-- The differential of the inverse undoes the differential of a diffeomorphism. -/
+@[simp]
 theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (x : M) (v : TangentSpace I x) :
     mfderiv J I h.symm (h x) (mfderiv I J h x v) = v := by
