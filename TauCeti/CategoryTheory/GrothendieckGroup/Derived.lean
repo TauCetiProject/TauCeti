@@ -193,7 +193,9 @@ theorem sum_negOnePow_of_homology_of_distTriang {T : Triangle (DerivedCategory A
         (n.negOnePow : ℤ) • (of (kernel ((homologyFunctor A n).map T.mor₁)) +
           of (kernel ((homologyFunctor A (n + 1)).map T.mor₁))) := fun n ↦ by
     rw [← smul_add, ← smul_add, of_homology_obj₁_add_of_homology_obj₃ hT]
-  rw [Finset.sum_congr rfl fun n _ ↦ key n, Finset.sum_add_distrib,
+  rw [Finset.sum_congr rfl fun n _ ↦ key n, Finset.sum_add_distrib]
+  simp_rw [smul_add]
+  rw [
     sum_Icc_negOnePow_smul_add (fun n ↦ of (kernel ((homologyFunctor A n).map T.mor₁))) _ _
       (by omega),
     of_eq_zero_of_isZero (hk _ ha), of_eq_zero_of_isZero (hk _ hb)]

@@ -25,17 +25,17 @@ namespace TauCeti
 @[simp]
 theorem sum_Icc_negOnePow_smul_add {G : Type*} [AddCommGroup G] (f : ℤ → G) (a b : ℤ)
     (hab : a ≤ b) :
-    ∑ n ∈ Finset.Icc a b, (n.negOnePow : ℤ) • (f n + f (n + 1)) =
+    ∑ n ∈ Finset.Icc a b, ((n.negOnePow : ℤ) • f n + (n.negOnePow : ℤ) • f (n + 1)) =
       (a.negOnePow : ℤ) • f a + (b.negOnePow : ℤ) • f (b + 1) := by
   induction b, hab using Int.leInduction with
-  | base => simp [smul_add]
+  | base => simp
   | succ b hb ih =>
     have hins : Finset.Icc a (b + 1) = insert (b + 1) (Finset.Icc a b) := by
       ext x
       simp only [Finset.mem_Icc, Finset.mem_insert]
       omega
     rw [hins, Finset.sum_insert (by simp), ih, Int.negOnePow_succ]
-    simp only [Units.val_neg, neg_smul, smul_add]
+    simp only [Units.val_neg, neg_smul]
     abel
 
 end TauCeti
