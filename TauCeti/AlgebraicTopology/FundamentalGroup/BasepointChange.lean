@@ -110,6 +110,7 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
   rw [hsymm, htrans, htrans]
   group
 
+open CategoryTheory in
 /-- Basepoint change along `γ` is represented by conjugation with `γ` in the path quotient: a loop
 `g` at `x₀` goes to the class of `γ⁻¹ ⬝ g ⬝ γ`. This is the forward counterpart of
 `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`. -/
@@ -119,12 +120,12 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g =
       Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ).symm
         (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ)) := by
-  rw [← MulEquiv.eq_symm_apply, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
-  -- Cancel `γ⁻¹ ⬝ γ` on the right, then `γ ⬝ γ⁻¹` on the left.
-  rw [Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_assoc,
-    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.trans_refl,
-    ← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
-    Path.Homotopic.Quotient.refl_trans]
+  let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
+  let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm γq
+  change α.conj g = γq.symm.trans (g.trans γq)
+  rw [CategoryTheory.Iso.conj_apply]
+  rfl
 
 open CategoryTheory in
 /-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
