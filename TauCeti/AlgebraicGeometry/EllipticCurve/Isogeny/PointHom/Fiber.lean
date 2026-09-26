@@ -27,7 +27,7 @@ isogeny is unramified, so every place above a rational place is again rational.
 * `TauCeti.Isogeny.ncard_fiber_toPointHom_eq_degree`: every point fibre has size `deg φ`.
 * `TauCeti.Isogeny.toPointHom_surjective`: a separable isogeny is surjective on points over
   a separably closed field.
-* `TauCeti.Isogeny.card_ker_toPointHom`: the point kernel has cardinality `deg φ`.
+* `TauCeti.Isogeny.card_ker_toPointHom_eq_degree`: the point kernel has cardinality `deg φ`.
 * `TauCeti.Isogeny.finite_ker_toPointHom`: the point kernel is finite.
 
 ## References
@@ -94,13 +94,13 @@ theorem toPointHom_surjective : Function.Surjective φ.toPointHom := by
 /-- The kernel of a separable isogeny's class-group point map has cardinality equal to the
 degree over a separably closed field. -/
 -- Simplify before `AddMonoidHom.mem_ker` rewrites membership in the kernel subtype.
-@[simp↓] theorem card_ker_toPointHom : Nat.card φ.toPointHom.ker = φ.degree := by
+@[simp↓] theorem card_ker_toPointHom_eq_degree : Nat.card φ.toPointHom.ker = φ.degree := by
   rw [← φ.ncard_fiber_toPointHom_eq_degree 0, ← Nat.card_coe_set_eq]
   exact (φ.toPointHom.card_fiber_eq_card_ker (map_zero φ.toPointHom)).symm
 
 /-- The point kernel of a separable isogeny over a separably closed field is finite. -/
 instance finite_ker_toPointHom : Finite φ.toPointHom.ker :=
-  Nat.finite_of_card_ne_zero (φ.card_ker_toPointHom ▸ φ.degree_ne_zero)
+  Nat.finite_of_card_ne_zero (φ.card_ker_toPointHom_eq_degree ▸ φ.degree_ne_zero)
 
 end TauCeti.Isogeny
 
