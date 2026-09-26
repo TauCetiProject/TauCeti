@@ -32,17 +32,17 @@ pinning.
 
 * `TauCeti.DynkinType.lie_lieBasis_e_e_of_cartan_eq_zero`: when the Cartan matrix entry
   vanishes (`A_{ji} = 0`), the Lie bracket `⁅e_i, e_j⁆ = 0` — the Serre relation.
-* `TauCeti.DynkinType.coe_lieBasis_e_comm_of_cartan_eq_zero`: the corresponding matrix
-  commutativity.
 * `TauCeti.DynkinType.geckRootSubgroupMatrix_comm_of_cartan_eq_zero`: the Chevalley
   commutator relation (commuting case) for the represented pinning — the existing Kostant
   commutativity lemma applied through `geckRootSubgroupMatrix`.
 * `TauCeti.DynkinType.pinnedExp`: the uniform exponential `u ↦ exp(u • e_i)` over any
   commutative ring, as a thin wrapper over `TauCeti.DynkinType.geckRootSubgroupMatrix`; with the
   root-subgroup identification
-  `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`, the one-parameter law,
-  and the commuting-case Chevalley relation
-  `TauCeti.DynkinType.pinnedExp_comm_of_cartan_eq_zero`.
+  `TauCeti.DynkinType.pinnedExp_eq_coe_geckRootSubgroupPoints`, and the commuting-case
+  Chevalley relation `TauCeti.DynkinType.pinnedExp_comm_of_cartan_eq_zero`. The
+  one-parameter subgroup law is not re-proved here: it is inherited directly from the
+  monoid-hom structure of `TauCeti.DynkinType.geckRootSubgroupMatrix` via `map_one` and
+  `map_mul`.
 * `TauCeti.DynkinType.lie_lieBasis_e_e_e_of_cartan_eq_neg_one`: for a length-one root
   string (`A_{ji} = -1`), the double bracket `⁅e_i, ⁅e_i, e_j⁆⁆` vanishes — the one-sided
   Serre relation.
@@ -80,25 +80,6 @@ theorem lie_lieBasis_e_e_of_cartan_eq_zero (i j : Fin t.rank)
     simp
   rw [hCM, pow_zero] at hserre
   simpa using hserre
-
-/-- When the Cartan matrix entry vanishes, the simple raising generators commute as matrices.
-The Lie bracket in the matrix Lie algebra is the commutator, so a vanishing bracket gives
-commuting matrices, via `commute_iff_lie_eq`. -/
-theorem coe_lieBasis_e_comm_of_cartan_eq_zero (i j : Fin t.rank)
-    (hA : t.cartanMatrix j i = 0) :
-    ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
-     ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
-    ((t.lieBasis ht).e j : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *
-     ((t.lieBasis ht).e i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
-  have hbracket := t.lie_lieBasis_e_e_of_cartan_eq_zero ht i j hA
-  -- The inclusion of the Lie subalgebra preserves brackets
-  have hcoe : ((((⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ : t.lieAlgebra ht))) :
-      Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
-      ⁅(((t.lieBasis ht).e i) : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ),
-       (((t.lieBasis ht).e j) : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ)⁆ :=
-    LieSubalgebra.coe_bracket (t.lieAlgebra ht) _ _
-  rw [hbracket, ZeroMemClass.coe_zero] at hcoe
-  exact (commute_iff_lie_eq.mpr hcoe.symm).eq
 
 /-- The Chevalley commutator relation (commuting case) for the represented pinning: when
 the Cartan matrix entry is zero — i.e., when `α_i + α_j` is not a root — the corresponding
@@ -145,19 +126,6 @@ theorem pinnedExp_eq_coe_geckRootSubgroupPoints (A : Type*) [CommRing A]
       (t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u) :
         Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) := by
   rw [t.coe_geckRootSubgroupPoints ht]
-  rfl
-
-/-- The uniform exponential at `u = 0` is the identity matrix. -/
-theorem pinnedExp_zero (A : Type*) [CommRing A] (i : Fin t.rank) :
-    t.pinnedExp ht A i 0 = 1 := by
-  simp [pinnedExp]
-
-/-- The one-parameter subgroup law: `exp(u • e_i) * exp(v • e_i) = exp((u + v) • e_i)`,
-inherited from the monoid-hom structure of the root-subgroup matrix. -/
-theorem pinnedExp_mul (A : Type*) [CommRing A]
-    (i : Fin t.rank) (u v : A) :
-    t.pinnedExp ht A i u * t.pinnedExp ht A i v = t.pinnedExp ht A i (u + v) := by
-  simp only [pinnedExp, ← map_mul]
   rfl
 
 /-- The Chevalley commutator relation (commuting case) for the uniform exponentials: when
