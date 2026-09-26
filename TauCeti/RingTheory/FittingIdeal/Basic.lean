@@ -270,8 +270,8 @@ private theorem minorsIdeal_ker_eq_prod_top [Projective R G] (ρ : F × G →ₗ
 
 /-- The minors ideal of the kernel of `φ + ψ : F × F' → M`, for `φ` surjective, is the shifted
 minors ideal of the kernel of `φ`. -/
-private theorem minorsIdeal_ker_coprod [Free R F] [Module.Finite R F] [Free R F']
-    [Module.Finite R F'] {φ : F →ₗ[R] M} (hφ : Surjective φ) (ψ : F' →ₗ[R] M) (k : ℕ) :
+private theorem minorsIdeal_ker_coprod [Free R F'] [Module.Finite R F']
+    {φ : F →ₗ[R] M} (hφ : Surjective φ) (ψ : F' →ₗ[R] M) (k : ℕ) :
     (ker (φ.coprod ψ)).minorsIdeal (finrank R F + finrank R F' - k) =
       (ker φ).minorsIdeal (finrank R F - k) := by
   rw [minorsIdeal_ker_eq_prod_top _ (by rwa [coprod_inl]), coprod_inl]
