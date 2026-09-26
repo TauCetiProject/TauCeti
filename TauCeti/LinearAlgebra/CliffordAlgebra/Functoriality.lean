@@ -146,9 +146,7 @@ theorem evenEquivOfIsometry_refl :
   apply AlgEquiv.ext
   intro x
   apply Subtype.ext
-  change equivOfIsometry (QuadraticMap.IsometryEquiv.refl Q₁)
-      (x : CliffordAlgebra Q₁) = (x : CliffordAlgebra Q₁)
-  rw [equivOfIsometry_refl]
+  rw [coe_evenEquivOfIsometry_apply, equivOfIsometry_refl]
   rfl
 
 /-- The standard dimension-shift equivalence applies its defining algebra homomorphism. -/

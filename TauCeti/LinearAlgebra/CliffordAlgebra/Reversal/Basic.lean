@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 

@@ -246,6 +246,8 @@ Clifford conjugation. -/
 private abbrev evenStarSubsemiring : StarSubsemiring (CliffordAlgebra Q) where
   toSubsemiring := (even Q).toSubsemiring
   star_mem' := fun {x} hx => by
+    -- `even` is the subalgebra wrapper around the zero part of `evenOdd`; the star-subsemiring
+    -- field exposes membership in that wrapper, while the reversal lemmas use the graded part.
     change x ∈ evenOdd Q 0 at hx
     change star x ∈ evenOdd Q 0
     rw [star_def, reverse_mem_evenOdd_iff, involute_mem_evenOdd_iff]
@@ -321,9 +323,7 @@ private def evenStarMulEquivOfAlgEquiv (e : even Q ≃ₐ[R] A)
   invFun a := ⟨e.symm a, (e.symm a).2⟩
   left_inv x := by
     apply Subtype.ext
-    change (e.symm (e (evenStarSubsemiringToEven Q x)) : CliffordAlgebra Q) = x
-    rw [e.symm_apply_apply]
-    rfl
+    exact congrArg Subtype.val (e.symm_apply_apply (evenStarSubsemiringToEven Q x))
   right_inv a := e.apply_symm_apply a
   map_mul' _ _ := by simp only [map_mul]
   map_star' x := by rw [evenStarSubsemiringToEven_star, he]
