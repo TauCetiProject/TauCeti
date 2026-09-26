@@ -147,13 +147,15 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
 `T_n (V_{n e} g) = V_e g` at level `N`. Every prime factor of `n` divides `N`, so `T_n` reads
 off the coefficients `a_{n m}`, and those of `V_{n e} g` are the coefficients of `V_e g`.
 At `e = 1` this is the classical `U_p V_p = 1`. -/
-theorem heckeTCuspNat_levelRaise_mul {n e : ℕ} [NeZero N] [NeZero n] (hdvd : n * e * M ∣ N)
+theorem heckeTCuspNat_levelRaise_mul {n e : ℕ} [NeZero N] (hdvd : n * e * M ∣ N)
     (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    haveI : NeZero n := NeZero.of_dvd ((dvd_mul_right n e).trans (dvd_of_mul_right_dvd hdvd))
     haveI : NeZero e := NeZero.of_dvd (dvd_of_mul_left_dvd (dvd_of_mul_right_dvd hdvd))
     heckeTCuspNat k n
         (CuspForm.levelRaise (n * e) (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g) =
       CuspForm.levelRaise e (Gamma1_map_le_conjAct_scaleGL_of_dvd
         ((mul_dvd_mul_right (dvd_mul_left e n) M).trans hdvd)) g := by
+  have : NeZero n := NeZero.of_dvd ((dvd_mul_right n e).trans (dvd_of_mul_right_dvd hdvd))
   have : NeZero e := NeZero.of_dvd (dvd_of_mul_left_dvd (dvd_of_mul_right_dvd hdvd))
   have hn : n.primeFactors ⊆ N.primeFactors := Nat.primeFactors_mono
     ((dvd_mul_right n e).trans (dvd_of_mul_right_dvd hdvd)) (NeZero.ne N)
