@@ -65,14 +65,13 @@ theorem typeDWeightSub_eq_typeDWeightSub_iff (h2 : (2 : K) ≠ 0) {i j : ι} (hi
     simpa [Pi.single_apply] using hA
   exact (glWeightSub_eq_glWeightSub_iff h2 hij a b).mp hgl
 
-/-- Away from characteristic two, two coordinate-sum roots agree exactly when their unordered
-pairs of distinct coordinates agree. -/
+/-- Over a nontrivial ring, two coordinate-sum roots agree exactly when their unordered pairs of
+distinct coordinates agree. -/
 @[simp]
-theorem typeDWeightAdd_eq_typeDWeightAdd_iff (h2 : (2 : K) ≠ 0) {i j : ι} (hij : i ≠ j)
+theorem typeDWeightAdd_eq_typeDWeightAdd_iff [Nontrivial K] {i j : ι} (hij : i ≠ j)
     (a b : ι) :
     typeDWeightAdd (K := K) a b = typeDWeightAdd i j ↔
       (a = i ∧ b = j) ∨ (a = j ∧ b = i) := by
-  have : Nontrivial K := nontrivial_of_ne 2 0 h2
   refine ⟨fun h => ?_, ?_⟩
   · have hfun := congrArg (typeDWeightEquiv (K := K)).symm h
     simp only [typeDWeightAdd_def, map_add, typeDWeightEquiv_symm_epsilon] at hfun
@@ -181,16 +180,23 @@ theorem typeDMatrixWeight_eq_typeDWeightSub_iff (h2 : (2 : K) ≠ 0)
 
 /-- The two matrix positions of weight `εᵢ + εⱼ` in the split type-`D` model. -/
 @[simp]
-theorem typeDMatrixWeight_eq_typeDWeightAdd_iff (h2 : (2 : K) ≠ 0) (h4 : (4 : K) ≠ 0)
+theorem typeDMatrixWeight_eq_typeDWeightAdd_iff (h4 : (4 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) (a b : ι ⊕ ι) :
     typeDMatrixWeight (K := K) a b = typeDWeightAdd i j ↔
       (a = .inl i ∧ b = .inr j) ∨ (a = .inl j ∧ b = .inr i) := by
+  have h2 : (2 : K) ≠ 0 := by
+    intro h
+    apply h4
+    calc
+      (4 : K) = 2 * 2 := by norm_num
+      _ = 0 := by rw [h, zero_mul]
+  let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
   rcases a with a | a <;> rcases b with b | b
   · simp only [typeDMatrixWeight_inl_inl, Sum.inl.injEq, Sum.inl_ne_inr,
       and_false, or_self]
     exact iff_false_intro (typeDWeightSub_ne_typeDWeightAdd h2 a b i j)
   · simp only [typeDMatrixWeight_inl_inr, Sum.inl.injEq, Sum.inr.injEq]
-    exact typeDWeightAdd_eq_typeDWeightAdd_iff h2 hij a b
+    exact typeDWeightAdd_eq_typeDWeightAdd_iff hij a b
   · simp only [typeDMatrixWeight_inr_inl, Sum.inr_ne_inl, false_and, false_or]
     exact iff_false_intro (neg_typeDWeightAdd_ne_typeDWeightAdd h4 a b i j)
   · simp only [typeDMatrixWeight_inr_inr, Sum.inr_ne_inl, false_and, false_or]
@@ -198,17 +204,24 @@ theorem typeDMatrixWeight_eq_typeDWeightAdd_iff (h2 : (2 : K) ≠ 0) (h4 : (4 : 
 
 /-- The two matrix positions of weight `-εᵢ - εⱼ` in the split type-`D` model. -/
 @[simp]
-theorem typeDMatrixWeight_eq_neg_typeDWeightAdd_iff (h2 : (2 : K) ≠ 0)
-    (h4 : (4 : K) ≠ 0) {i j : ι} (hij : i ≠ j) (a b : ι ⊕ ι) :
+theorem typeDMatrixWeight_eq_neg_typeDWeightAdd_iff (h4 : (4 : K) ≠ 0)
+    {i j : ι} (hij : i ≠ j) (a b : ι ⊕ ι) :
     typeDMatrixWeight (K := K) a b = -typeDWeightAdd i j ↔
       (a = .inr i ∧ b = .inl j) ∨ (a = .inr j ∧ b = .inl i) := by
+  have h2 : (2 : K) ≠ 0 := by
+    intro h
+    apply h4
+    calc
+      (4 : K) = 2 * 2 := by norm_num
+      _ = 0 := by rw [h, zero_mul]
+  let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
   rcases a with a | a <;> rcases b with b | b
   · simp only [typeDMatrixWeight_inl_inl, Sum.inl_ne_inr, false_and, false_or]
     exact iff_false_intro (Ne.symm (neg_typeDWeightAdd_ne_typeDWeightSub h2 i j a b))
   · simp only [typeDMatrixWeight_inl_inr, Sum.inl_ne_inr, false_and, false_or]
     exact iff_false_intro (Ne.symm (neg_typeDWeightAdd_ne_typeDWeightAdd h4 i j a b))
   · simp only [typeDMatrixWeight_inr_inl, Sum.inr.injEq, Sum.inl.injEq, neg_inj]
-    exact typeDWeightAdd_eq_typeDWeightAdd_iff h2 hij a b
+    exact typeDWeightAdd_eq_typeDWeightAdd_iff hij a b
   · simp only [typeDMatrixWeight_inr_inr, Sum.inr_ne_inl, and_false, or_self]
     exact iff_false_intro (Ne.symm (neg_typeDWeightAdd_ne_typeDWeightSub h2 i j b a))
 
@@ -288,7 +301,7 @@ theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     apply Subtype.ext
     ext (a | a) (b | b)
     · have hz := hs (.inl a) (.inl b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 h4 hij (.inl a) (.inl b)).mp hw
+          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h4 hij (.inl a) (.inl b)).mp hw
           simp at this)
       rw [hz]
       simp [val_sumRootGenerator, sumRootMatrix_def]
@@ -299,7 +312,7 @@ theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
         · rw [typeD_apply_inl_inr X a b, h₂.2, h₂.1]
           simp [val_sumRootGenerator, sumRootMatrix_def, hij]
         · have hz := hs (.inl a) (.inr b) (fun hw => by
-              rcases (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 h4 hij (.inl a) (.inr b)).mp hw
+              rcases (typeDMatrixWeight_eq_typeDWeightAdd_iff h4 hij (.inl a) (.inr b)).mp hw
                   with h | h
               · exact h₁ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩
               · exact h₂ ⟨Sum.inl.inj h.1, Sum.inr.inj h.2⟩)
@@ -308,12 +321,12 @@ theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
           have hn₂ : ¬(j = a ∧ i = b) := fun h => h₂ ⟨h.1.symm, h.2.symm⟩
           simp [val_sumRootGenerator, sumRootMatrix_def, hn₁, hn₂]
     · have hz := hs (.inr a) (.inl b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 h4 hij (.inr a) (.inl b)).mp hw
+          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h4 hij (.inr a) (.inl b)).mp hw
           simp at this)
       rw [hz]
       simp [val_sumRootGenerator, sumRootMatrix_def]
     · have hz := hs (.inr a) (.inr b) (fun hw => by
-          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 h4 hij (.inr a) (.inr b)).mp hw
+          have := (typeDMatrixWeight_eq_typeDWeightAdd_iff h4 hij (.inr a) (.inr b)).mp hw
           simp at this)
       rw [hz]
       simp [val_sumRootGenerator, sumRootMatrix_def]
@@ -340,13 +353,13 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
     ext (a | a) (b | b)
     · have hz := hs (.inl a) (.inl b) (fun hw => by
           have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 h4 hij (.inl a) (.inl b)).mp hw
+            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h4 hij (.inl a) (.inl b)).mp hw
           simp at this)
       rw [hz]
       simp [val_negSumRootGenerator, negSumRootMatrix_def]
     · have hz := hs (.inl a) (.inr b) (fun hw => by
           have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 h4 hij (.inl a) (.inr b)).mp hw
+            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h4 hij (.inl a) (.inr b)).mp hw
           simp at this)
       rw [hz]
       simp [val_negSumRootGenerator, negSumRootMatrix_def]
@@ -358,7 +371,7 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
           simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
         · have hz := hs (.inr a) (.inl b) (fun hw => by
               rcases
-                  (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 h4 hij (.inr a) (.inl b)).mp hw
+                  (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h4 hij (.inr a) (.inl b)).mp hw
                   with h | h
               · exact h₁ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩
               · exact h₂ ⟨Sum.inr.inj h.1, Sum.inl.inj h.2⟩)
@@ -368,7 +381,7 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
           simp [val_negSumRootGenerator, negSumRootMatrix_def, hn₁, hn₂]
     · have hz := hs (.inr a) (.inr b) (fun hw => by
           have :=
-            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 h4 hij (.inr a) (.inr b)).mp hw
+            (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h4 hij (.inr a) (.inr b)).mp hw
           simp at this)
       rw [hz]
       simp [val_negSumRootGenerator, negSumRootMatrix_def]
