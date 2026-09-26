@@ -53,14 +53,10 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
   obtain ⟨ι, V, hV, e⟩ :=
     TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hM
   refine TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
-    ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦ by
-    let : (SheafOfModules.pushforward.{u} (f ∣_ V i).toRingCatSheafHom).IsRightAdjoint :=
-      inferInstanceAs (Scheme.Modules.pushforward (f ∣_ V i)).IsRightAdjoint
-    have : IsIso (SheafOfModules.pullbackObjUnitToUnit (f ∣_ V i).toRingCatSheafHom) :=
-      SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
-    exact ⟨(asIso (SheafOfModules.pullbackObjUnitToUnit (f ∣_ V i).toRingCatSheafHom)).symm ≪≫
-      (Scheme.Modules.pullback (f ∣_ V i)).mapIso (e i).some ≪≫
-      (Scheme.Modules.restrictPullbackObjIso f (V i) M).symm⟩⟩
+    ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦
+      ⟨(Scheme.Modules.pullbackObjUnitIso (f ∣_ V i)).symm ≪≫
+        (Scheme.Modules.pullback (f ∣_ V i)).mapIso (e i).some ≪≫
+        (Scheme.Modules.restrictPullbackObjIso f (V i) M).symm⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
 
 end SheafOfModules
