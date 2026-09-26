@@ -72,8 +72,8 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     (hT : T.Infinite) {c : ℕ × ℕ} (hc₁ : c.1 ∈ S) (hc₂ : c.2 ∈ T) :
     (fun x : ℕ × ℕ → α ↦ x c) ⟂ᵢ[(S ×ˢ T \ {c}).domRestrict, Set.measurable_restrict _; ρ]
       ({c}ᶜ : Set (ℕ × ℕ)).domRestrict := by
-  obtain ⟨a, ha, hac, haS⟩ := hS.exists_injective_nat_apply_eq_of_mem hc₁
-  obtain ⟨b, hb, hbc, hbT⟩ := hT.exists_injective_nat_apply_eq_of_mem hc₂
+  obtain ⟨a, ha, hac, haS⟩ := hS.exists_injective_into_apply_eq_of_mem hc₁
+  obtain ⟨b, hb, hbc, hbT⟩ := hT.exists_injective_into_apply_eq_of_mem hc₂
   set R : Set (ℕ × ℕ) := S ×ˢ T \ {c}
   set D : Set (ℕ × ℕ) := {c}ᶜ
   set rR : (ℕ × ℕ → α) → R → α := R.domRestrict
@@ -103,7 +103,8 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     exact MeasurableSpace.comap_mono hG.comap_le
   have hRD' : MeasurableSpace.comap rR inferInstance ≤
       MeasurableSpace.comap rD (inferInstance : MeasurableSpace (D → α)) := by
-    have hcomp : rR = Set.domRestrict₂ (π := fun _ ↦ α) hRD ∘ rD := rfl
+    have hcomp : rR = Set.domRestrict₂ (π := fun _ ↦ α) hRD ∘ rD := by
+      simpa only [rR, rD] using (Set.domRestrict₂_comp_domRestrict hRD).symm
     rw [hcomp, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRD).comap_le
   have hpair : ρ.map (fun x ↦ (x c, W x)) = ρ.map fun x ↦ (x c, rD x) := by
