@@ -31,6 +31,7 @@ file will prove that the descended map is a covering map.
   quotient covering map, and hence a covering map.
 * `TauCeti.UniversalCover.subgroupQuotientProj`: the endpoint projection descended to the
   subgroup quotient.
+* `TauCeti.UniversalCover.range_subgroupQuotientProj`: its range is the path component of `x₀`.
 * `TauCeti.UniversalCover.SubgroupQuotient.basepointFiber`: the distinguished point, bundled in
   the fibre over the basepoint.
 * `TauCeti.UniversalCover.subgroupQuotientBotHomeomorph`: the quotient by the trivial subgroup is
@@ -128,6 +129,14 @@ theorem subgroupQuotientProj_comp_subgroupQuotientMap (H : Subgroup (Fundamental
     subgroupQuotientProj x₀ H ∘ subgroupQuotientMap x₀ H = proj := by
   ext e
   exact subgroupQuotientProj_mk x₀ H e
+
+/-- The descended endpoint projection has range the path component of `x₀`, like
+`UniversalCover.proj`: its fibres over the other path components are empty. -/
+@[simp]
+theorem range_subgroupQuotientProj (H : Subgroup (FundamentalGroup X x₀)) :
+    Set.range (subgroupQuotientProj x₀ H) = pathComponent x₀ := by
+  rw [← range_proj x₀, ← subgroupQuotientProj_comp_subgroupQuotientMap x₀ H]
+  exact ((Quotient.mk'_surjective (s := MulAction.orbitRel H _)).range_comp _).symm
 
 /-- The distinguished point of the subgroup quotient lies over the basepoint. -/
 theorem subgroupQuotientProj_basepoint (H : Subgroup (FundamentalGroup X x₀)) :

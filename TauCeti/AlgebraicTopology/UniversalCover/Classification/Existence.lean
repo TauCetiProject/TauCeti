@@ -83,10 +83,7 @@ theorem isCoveringMap_subgroupQuotientProj [LocallyPathConnectedSpace X]
       exact proj_eq_iff_mem_orbit
     disjoint := exists_nhds_smul_disjoint }
   let r : SubgroupQuotient x₀ H → pathComponent x₀ := fun y =>
-    ⟨subgroupQuotientProj x₀ H y, by
-      rw [← range_proj x₀]
-      obtain ⟨e, rfl⟩ := (isQuotientCoveringMap_subgroupQuotientMap x₀ H).surjective y
-      exact ⟨e, (congrFun (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) e).symm⟩⟩
+    ⟨subgroupQuotientProj x₀ H y, range_subgroupQuotientProj x₀ H ▸ Set.mem_range_self y⟩
   have hr : r ∘ subgroupQuotientMap x₀ H = p := by
     funext e
     apply Subtype.ext
