@@ -122,14 +122,6 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
   rw [hprod, zero_sub] at hrel
   simpa only [m] using neg_mem_iff.mp hrel
 
-/-- **Brauer's induction theorem, elementwise lattice form.** Every virtual character is an
-integral combination of virtual characters induced from elementary subgroups. -/
-theorem mem_indVirtualCharacters_isElementary [CharZero k] [IsAlgClosed k] {f : G → k}
-    (hf : f ∈ virtualCharacters k G) :
-    f ∈ indVirtualCharacters k G (fun E ↦ IsElementary E) := by
-  rw [indVirtualCharacters_eq_virtualCharacters_isElementary]
-  exact hf
-
 /-- **Brauer's induction theorem, character form.** Every character is an integral combination of
 characters induced from irreducible characters of elementary subgroups. -/
 theorem character_mem_indCharacterSpanInt_isElementary [CharZero k] [IsAlgClosed k]
@@ -137,8 +129,9 @@ theorem character_mem_indCharacterSpanInt_isElementary [CharZero k] [IsAlgClosed
   let _ : Invertible (Nat.card G : k) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   rw [← indVirtualCharacters_eq_indCharacterSpanInt fun E _ ↦
-    isUnit_natCard_subgroup E (isUnit_of_invertible _)]
-  exact mem_indVirtualCharacters_isElementary (character_mem_virtualCharacters V)
+    isUnit_natCard_subgroup E (isUnit_of_invertible _),
+    indVirtualCharacters_eq_virtualCharacters_isElementary]
+  exact character_mem_virtualCharacters V
 
 /-- The direct sum of induction maps from elementary subgroups is surjective. This is the
 direct-sum formulation of
