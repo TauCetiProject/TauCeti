@@ -8,8 +8,7 @@ module
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Isogeny
 import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Isomorphism
-import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
-public import TauCeti.Algebra.Bialgebra.GroupLike.Map
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.GroupLikeEvaluation
 
 /-!
 # Central isogenies between diagonalizable coordinate algebras
@@ -39,32 +38,6 @@ variable {H K : _root_.CommHopfAlgCat.{u} k}
 
 variable [Module.IsTorsionFree k H] [Module.IsTorsionFree k K]
 
-private noncomputable def evaluationIso (H : _root_.CommHopfAlgCat.{u} k)
-    [Module.IsTorsionFree k H]
-    (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤) :
-    _root_.CommHopfAlgCat.of k (_root_.MonoidAlgebra k (_root_.GroupLike k H)) ≅ H :=
-  _root_.CommHopfAlgCat.isoMk
-    (TauCeti.GroupLike.evaluationBialgEquiv k H hH)
-
-private theorem evaluationIso_naturality
-    (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
-    (hK : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := K))) = ⊤)
-    (f : H ⟶ K) :
-    (evaluationIso H hH).hom ≫ f =
-      _root_.CommHopfAlgCat.ofHom
-        (_root_.MonoidAlgebra.mapDomainBialgHom k (TauCeti.GroupLike.map f.hom)) ≫
-          (evaluationIso K hK).hom := by
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply _root_.MonoidAlgebra.bialgHom_ext
-  · intro x
-    simp only [_root_.CommHopfAlgCat.hom_comp, _root_.BialgHom.comp_apply,
-      _root_.CommHopfAlgCat.hom_ofHom, _root_.MonoidAlgebra.mapDomainBialgHom_single]
-    simp [evaluationIso, TauCeti.GroupLike.evaluationBialgHom_single,
-      TauCeti.GroupLike.val_map]
-  · apply AlgHom.ext
-    intro r
-    simp [evaluationIso, MonoidAlgebra.singleOneAlgHom_apply]
-
 /-- A morphism between torsion-free diagonalizable coordinate algebras over a domain is a
 central isogeny exactly when its intrinsic character map is injective with finite cokernel. -/
 @[simp] theorem isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
@@ -74,11 +47,11 @@ central isogeny exactly when its intrinsic character map is injective with finit
     CommHopfAlgCat.IsCentralIsogeny f ↔
       Function.Injective (TauCeti.GroupLike.map f.hom) ∧
         Finite (_root_.GroupLike k K ⧸ (TauCeti.GroupLike.map f.hom).range) := by
-  let eH := evaluationIso H hH
-  let eK := evaluationIso K hK
+  let eH := TauCeti.GroupLike.evaluationIso H hH
+  let eK := TauCeti.GroupLike.evaluationIso K hK
   let p := TauCeti.GroupLike.map f.hom
   let g := _root_.CommHopfAlgCat.ofHom (_root_.MonoidAlgebra.mapDomainBialgHom k p)
-  have hcomm : eH.hom ≫ f = g ≫ eK.hom := evaluationIso_naturality hH hK f
+  have hcomm : eH.hom ≫ f = g ≫ eK.hom := TauCeti.GroupLike.evaluationIso_naturality hH hK f
   have hiff : CommHopfAlgCat.IsCentralIsogeny f ↔ CommHopfAlgCat.IsCentralIsogeny g := by
     rw [CommHopfAlgCat.isCentralIsogeny_iff_isCentralIsogeny_hopfSpec_map,
       CommHopfAlgCat.isCentralIsogeny_iff_isCentralIsogeny_hopfSpec_map]
