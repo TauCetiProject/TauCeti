@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
+import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 
 /-!
 # Root-space lines of the split even orthogonal Lie algebra
@@ -56,27 +57,13 @@ theorem typeDWeightSub_eq_typeDWeightSub_iff (h2 : (2 : K) ≠ 0) {i j : ι} (hi
   refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
   have hfun := congrArg (typeDWeightEquiv (K := K)).symm h
   simp only [typeDWeightSub_def, map_sub, typeDWeightEquiv_symm_epsilon] at hfun
-  have hi := congrFun hfun i
-  have hj := congrFun hfun j
-  rw [Pi.sub_apply, Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij] at hi
-  rw [Pi.sub_apply, Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hij)] at hj
-  refine ⟨?_, ?_⟩
-  · by_contra hia
-    rw [Pi.single_eq_of_ne (Ne.symm hia)] at hi
-    by_cases hib : b = i
-    · rw [hib, Pi.single_eq_same] at hi
-      exact absurd (by linear_combination -hi) h2
-    · rw [Pi.single_eq_of_ne (Ne.symm hib)] at hi
-      have h10 : (1 : K) = 0 := by linear_combination -hi
-      exact one_ne_zero h10
-  · by_contra hjb
-    rw [Pi.single_eq_of_ne (Ne.symm hjb)] at hj
-    by_cases hja : a = j
-    · rw [hja, Pi.single_eq_same] at hj
-      exact absurd (by linear_combination hj) h2
-    · rw [Pi.single_eq_of_ne (Ne.symm hja)] at hj
-      have h10 : (1 : K) = 0 := by linear_combination hj
-      exact one_ne_zero h10
+  have hglCoord := congrArg (glWeightEquiv K ι) hfun
+  have hgl : glWeightSub K ι a b = glWeightSub K ι i j := by
+    ext A
+    rw [glWeightSub_apply, glWeightSub_apply]
+    have hA := congrArg (fun f : Module.Dual K (diagonalCartan K ι) => f A) hglCoord
+    simpa [Pi.single_apply] using hA
+  exact (glWeightSub_eq_glWeightSub_iff h2 hij a b).mp hgl
 
 /-- Away from characteristic two, two coordinate-sum roots agree exactly when their unordered
 pairs of distinct coordinates agree. -/
@@ -229,12 +216,14 @@ theorem typeDMatrixWeight_eq_neg_typeDWeightAdd_iff (h2 : (2 : K) ≠ 0)
 
 namespace TypeDStd
 
-/-- Over a domain away from characteristic two, the root space of `εᵢ - εⱼ`, for
-`i ≠ j`, is the line through the standard difference-root generator. -/
-theorem rootSpace_typeDWeightSub_eq_span [IsDomain K] (h2 : (2 : K) ≠ 0)
+/-- Over a commutative ring without zero divisors and away from characteristic two, the root space
+of `εᵢ - εⱼ`, for `i ≠ j`, is the line through the standard difference-root generator. -/
+theorem rootSpace_typeDWeightSub_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightSub i j)).toSubmodule =
       K ∙ differenceRootGenerator (K := K) i j := by
+  let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
+  let _ : IsDomain K := NoZeroDivisors.to_isDomain K
   refine le_antisymm (fun X hX => ?_) ?_
   · rw [Submodule.mem_span_singleton]
     refine ⟨(X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl j), ?_⟩
@@ -280,12 +269,14 @@ theorem rootSpace_typeDWeightSub_eq_span [IsDomain K] (h2 : (2 : K) ≠ 0)
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact differenceRootGenerator_mem_rootSpace i j
 
-/-- Over a domain away from characteristic two, the root space of `εᵢ + εⱼ`, for
-`i ≠ j`, is the line through the standard positive sum-root generator. -/
-theorem rootSpace_typeDWeightAdd_eq_span [IsDomain K] (h2 : (2 : K) ≠ 0)
+/-- Over a commutative ring without zero divisors and away from characteristic two, the root space
+of `εᵢ + εⱼ`, for `i ≠ j`, is the line through the standard positive sum-root generator. -/
+theorem rootSpace_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (typeDWeightAdd i j)).toSubmodule =
       K ∙ sumRootGenerator (K := K) i j := by
+  let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
+  let _ : IsDomain K := NoZeroDivisors.to_isDomain K
   have h4 : (4 : K) ≠ 0 := by
     have hmul : (2 : K) * 2 ≠ 0 := mul_ne_zero h2 h2
     norm_num at hmul
@@ -329,12 +320,14 @@ theorem rootSpace_typeDWeightAdd_eq_span [IsDomain K] (h2 : (2 : K) ≠ 0)
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact sumRootGenerator_mem_rootSpace i j
 
-/-- Over a domain away from characteristic two, the root space of `-εᵢ - εⱼ`, for
-`i ≠ j`, is the line through the standard negative sum-root generator. -/
-theorem rootSpace_neg_typeDWeightAdd_eq_span [IsDomain K] (h2 : (2 : K) ≠ 0)
+/-- Over a commutative ring without zero divisors and away from characteristic two, the root space
+of `-εᵢ - εⱼ`, for `i ≠ j`, is the line through the standard negative sum-root generator. -/
+theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) ≠ 0)
     {i j : ι} (hij : i ≠ j) :
     (LieAlgebra.rootSpace (typeDDiagonalCartan K ι) (-typeDWeightAdd i j)).toSubmodule =
       K ∙ negSumRootGenerator (K := K) i j := by
+  let _ : Nontrivial K := nontrivial_of_ne 2 0 h2
+  let _ : IsDomain K := NoZeroDivisors.to_isDomain K
   have h4 : (4 : K) ≠ 0 := by
     have hmul : (2 : K) * 2 ≠ 0 := mul_ne_zero h2 h2
     norm_num at hmul
