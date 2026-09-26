@@ -92,6 +92,26 @@ theorem geckRootSubgroupMatrix_comm_of_cartan_eq_zero (A : Type*) [CommRing A]
   exact TauCeti.UniversalEnvelopingAlgebra.commute_kostantRootSubgroupMatrix
     _ _ _ _ _ _ hbracket _ _ _ _
 
+/-- The pinned matrix exponential: for a valid Dynkin type, the matrix `exp(u • e_i)`
+for the `i`-th pinning generator `e_i`, as an element of the general linear group
+over a ℚ-algebra. This is the Geck root-subgroup matrix at the pinning generator. -/
+noncomputable def pinnedExp (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i : Fin t.rank) (u : A) : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
+  t.geckRootSubgroupMatrix ht (.inl i)
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+
+/-- The pinned matrix exponential equals the matrix exponential of the scaled pinning
+generator. -/
+theorem pinnedExp_eq_exp (A : Type*) [CommRing A] [Algebra ℚ A]
+    (i : Fin t.rank) (u : A) :
+    (t.pinnedExp ht A i u : Matrix (Fin (t.geckDim ht)) (Fin (t.geckDim ht)) A) =
+      Matrix.exp (u • (t.geckRepresentation ht) ((t.lieBasis ht).e i)) := by
+  -- The Geck root-subgroup matrix is the Kostant matrix, which is the exponential
+  -- by the nilpotency of the pinning generator.
+  unfold pinnedExp
+  rw [t.coe_geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd u)]
+  rfl
+
 end
 
 end TauCeti.DynkinType
