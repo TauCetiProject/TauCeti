@@ -35,8 +35,7 @@ Coefficients are an object `R` of an abelian category with coproducts.
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 2.2, the reduced Mayer–Vietoris sequence.
-* `TopPair.reducedSingularHomologyδ` in Tau Ceti's relative singular homology formalization
-  (#9037), whose construction and proof provide the template for this connecting morphism.
+* `TopPair.reducedSingularHomologyδ` for the connecting morphism in relative singular homology.
 -/
 
 public section
