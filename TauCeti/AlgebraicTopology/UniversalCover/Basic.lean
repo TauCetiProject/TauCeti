@@ -122,6 +122,7 @@ theorem proj_ofBasedPath (x₀ : X) (γ : BasedPath x₀) :
   (rfl)
 
 /-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
+@[simp]
 theorem range_proj (x₀ : X) : Set.range (proj : UniversalCover x₀ → X) = pathComponent x₀ := by
   ext x
   refine ⟨?_, fun h ↦ ⟨mk x (Path.Homotopic.Quotient.mk h.somePath), rfl⟩⟩

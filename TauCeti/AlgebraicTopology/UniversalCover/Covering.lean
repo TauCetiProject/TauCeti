@@ -27,6 +27,14 @@ This file is adapted from Kim Morrison's
 * `UniversalCover.pathConnectedSpace`: the universal cover is path-connected.
 * `UniversalCover.simplyConnectedSpace`: the universal cover is simply connected.
 * `UniversalCover.existsUnique_continuousMap_lifts`: the universal lifting property.
+
+## Implementation notes
+
+`UniversalCover.isCoveringMap` does not assume `X` is path-connected. Over a point with no path
+from `x₀` the preimage of a good neighbourhood is empty, hence evenly covered
+(`IsEvenlyCovered.of_preimage_eq_empty`); over the path component of `x₀` the sheet
+trivialization applies. This case split also follows
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292).
 -/
 
 public section
