@@ -652,7 +652,6 @@ theorem peterWeylBlockAveraging_eq_of_equiv {model model' : IrrepModel 𝕜 G}
 /-- **The character averaging operator fixes the matrix coefficients of its own model.** The
 kernel `dim V_π · conj χ_π` acts on the carrier of `π` as the identity, by
 `TauCeti.ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
-@[simp]
 theorem peterWeylBlockAveraging_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
     (v w : EuclideanSpace 𝕜 (Fin model.dim)) :
     peterWeylBlockAveraging model
@@ -696,6 +695,7 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_eq_zero [IsAlgClosed 𝕜]
 
 /-- **The character averaging operator is the identity on its own block**, the block being spanned
 by the matrix coefficients of its model. -/
+@[simp]
 theorem peterWeylBlockAveraging_apply_of_mem [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
     peterWeylBlockAveraging model f = f := by
