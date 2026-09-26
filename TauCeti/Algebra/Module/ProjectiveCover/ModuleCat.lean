@@ -125,7 +125,7 @@ cover.** Here `K` is an Artinian ring acting on `A` compatibly with its multipli
 finite as a `K`-module; for instance, `A` may be a finite-dimensional algebra over a field. No
 finiteness is required of the module. Essentiality is spelled out here as its two clauses, so that
 the statement is usable without unfolding `TauCeti.IsEssentialEpi`. -/
-theorem exists_projectiveCover {K : Type v} [Ring K] [IsArtinianRing K] {A : Type u} [Ring A]
+theorem exists_projectiveCover (K : Type v) [Ring K] [IsArtinianRing K] {A : Type u} [Ring A]
     [Module K A] [IsScalarTower K A A] [Module.Finite K A] (M : ModuleCat.{u} A) :
     ∃ (P : ModuleCat.{u} A) (π : P ⟶ M), Projective P ∧ Epi π ∧
       ∀ (X : ModuleCat.{u} A) (i : X ⟶ P), Epi (i ≫ π) → Epi i := by
