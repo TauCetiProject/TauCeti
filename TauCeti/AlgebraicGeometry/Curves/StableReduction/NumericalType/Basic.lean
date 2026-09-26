@@ -587,7 +587,7 @@ lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
 
 /-- Two components of multiplicity one, weight two and genus one, meeting doubly: a numerical
 type of signed genus three. -/
-private noncomputable abbrev weightedExample : NumericalType.{0} where
+noncomputable abbrev weightedExample : NumericalType.{0} where
   Component := Fin 2
   multiplicity _ := 1
   weight _ := 2
