@@ -32,9 +32,12 @@ saying nothing about `‖u‖₂`. With this normalization of `D` the constant i
 the normalization `D u = (∂s u + J (∂t u)) / 2` is `2`. The identity is what makes the energy of
 a holomorphic curve computable from its area.
 
-Taking `u` holomorphic makes the right-hand side vanish, so a compactly supported `C²` solution
-of the Cauchy--Riemann equation on the whole plane, with tame target, is zero: there are no
-compactly supported nonconstant holomorphic planes.
+For a holomorphic `u` the energy density is twice the area density, so the vanishing area makes
+the energy integral vanish, and under tameness the energy density is positive wherever the
+differential is not. A compactly supported `C²` solution of the Cauchy--Riemann equation on the
+whole plane, with tame target, is therefore zero: there are no compactly supported nonconstant
+holomorphic planes. Tameness alone suffices for this, without invariance, because the argument
+runs through the vanishing area rather than through the energy identity.
 
 The measure is any additive Haar measure on `ℝ × ℝ`, which is what the integration by parts
 behind the area statement needs; `volume` is the intended instance.
@@ -97,6 +100,7 @@ variable [μ.IsAddHaarMeasure]
 /-- **The symplectic area of a compactly supported map from the plane vanishes.** For a compactly
 supported `C²` map `u`, the area density `ω(∂s u, ∂t u)` integrates to zero over the whole plane.
 Nothing relates `ω` to an almost complex structure here: only that `ω` is alternating is used. -/
+@[simp]
 theorem integral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) (hu : ContDiff ℝ 2 u)
     (hsupp : HasCompactSupport u) :
     ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ∂μ = 0 :=
@@ -164,27 +168,25 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {u : ℝ × ℝ 
 
 /-- A compactly supported `C²` solution of the Cauchy--Riemann equation on the whole plane, with
 values in a vector space carrying a symplectic form taming the target structure, is zero: there
-are no compactly supported nonconstant holomorphic planes. This is the rigidity consequence of
-the energy identity. -/
+are no compactly supported nonconstant holomorphic planes. Tameness is the only hypothesis
+relating `ω` to `J`: for a holomorphic map the energy density is twice the area density, which
+integrates to zero, and under tameness a vanishing energy density forces a vanishing
+differential. -/
 theorem IsConstStructureJHolomorphic.eq_zero_of_hasCompactSupport
     (hhol : IsConstStructureJHolomorphic (AlmostComplexStructure.product ℝ) J u)
-    (hinv : ω.Invariant J) (htame : ω.Tames J) (hu : ContDiff ℝ 2 u)
-    (hsupp : HasCompactSupport u) : u = 0 := by
+    (htame : ω.Tames J) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) : u = 0 := by
   -- the plane's Lebesgue measure is the product of two copies of Lebesgue measure on the line,
   -- so it is an additive Haar measure
   have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
-  -- the Cauchy--Riemann defect vanishes pointwise, so the energy integral vanishes
-  have hdefect : ∀ z : ℝ × ℝ,
-      fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag) = 0 := fun z ↦ by
-    have h := (hhol.isConstStructureJHolomorphicAt z).fderiv_isComplexLinear
-      |>.apply_stdComplexLineReal
-    simp only [ContinuousLinearMap.coe_coe] at h
-    rw [h]
-    simp
+  -- holomorphicity turns the energy density into twice the area density, which integrates to zero
+  have hpt : ∀ z : ℝ × ℝ, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap =
+      2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := fun z ↦
+    hhol.isConstStructureJHolomorphicAt z
+      |>.fderiv_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
   have hzero : ∫ z, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap ∂volume = 0 := by
-    rw [ω.integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
-      hinv hu hsupp]
-    simp [hdefect]
+    simp only [hpt]
+    rw [integral_const_mul, SymplecticForm.integral_symplecticForm_fderiv_eq_zero ω hu hsupp,
+      mul_zero]
   -- nonnegativity and continuity upgrade the vanishing integral to a vanishing differential
   have hcont : Continuous fun z ↦ ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap :=
     (ω.continuous_stdComplexLineEnergyDensity_toLinearMap J).comp

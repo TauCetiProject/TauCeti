@@ -22,9 +22,10 @@ the second derivative is symmetric.
 
 Consequently the integral vanishes whenever `B` is alternating. That is the vanishing of the
 integral over the whole space of the pullback of a constant two-form along a compactly supported
-map — the "null Lagrangian" phenomenon: the integrand is a Jacobian determinant in the scalar
-case. It is what makes the energy of a compactly supported map into a symplectic vector space
-equal the square of the `L²` norm of its Cauchy--Riemann defect.
+map — the "null Lagrangian" phenomenon: for a map from the plane to the plane, with `B` the
+standard area form and the two coordinate directions, the integrand is the Jacobian determinant.
+It is what makes the energy of a compactly supported map into a symplectic vector space equal the
+square of the `L²` norm of its Cauchy--Riemann defect.
 
 ## Main results
 
@@ -33,6 +34,12 @@ equal the square of the `L²` norm of its Cauchy--Riemann defect.
   bilinear form on a finite-dimensional space.
 * `TauCeti.integral_bilinForm_fderiv_apply_eq_zero_of_isAlt`: for an alternating bilinear form
   the integral vanishes.
+
+## References
+
+* Sébastien Gouëzel, `Mathlib/Analysis/Calculus/LineDeriv/IntegrationByParts.lean`, theorem
+  `integral_bilinear_fderiv_right_eq_neg_left_of_integrable`: the integration by parts in a single
+  direction that every proof here is built on.
 -/
 
 public section
