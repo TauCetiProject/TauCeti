@@ -14,8 +14,9 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.Map
 /-!
 # Central isogenies between diagonalizable coordinate algebras
 
-For arbitrary diagonalizable coordinate Hopf algebras over a field, a morphism is a central
-isogeny precisely when its map on group-like elements is injective with finite cokernel.
+For diagonalizable coordinate Hopf algebras over a domain with torsion-free carriers, a morphism
+is a central isogeny precisely when its map on group-like elements is injective with finite
+cokernel.
 The group-like elements give the intrinsic character groups; no presentation as a group
 algebra needs to be chosen. This form applies to geometric fibres of groups of multiplicative
 type, where the defining character group is available only after scalar extension.
@@ -33,20 +34,17 @@ namespace TauCeti.DiagonalizableGroup
 
 universe u
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H K : _root_.CommHopfAlgCat.{u} k}
 
+variable [Module.IsTorsionFree k H] [Module.IsTorsionFree k K]
+
 private noncomputable def evaluationIso (H : _root_.CommHopfAlgCat.{u} k)
+    [Module.IsTorsionFree k H]
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤) :
     _root_.CommHopfAlgCat.of k (_root_.MonoidAlgebra k (_root_.GroupLike k H)) ≅ H :=
   _root_.CommHopfAlgCat.isoMk
     (TauCeti.GroupLike.evaluationBialgEquiv k H hH)
-
-private theorem evaluationIso_hom_single
-    (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
-    (x : _root_.GroupLike k H) :
-    (evaluationIso H hH).hom.hom (_root_.MonoidAlgebra.single x 1) = x.val := by
-  simp [evaluationIso, TauCeti.GroupLike.evaluationBialgHom_single]
 
 private theorem evaluationIso_naturality
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
@@ -61,15 +59,14 @@ private theorem evaluationIso_naturality
   · intro x
     simp only [_root_.CommHopfAlgCat.hom_comp, _root_.BialgHom.comp_apply,
       _root_.CommHopfAlgCat.hom_ofHom, _root_.MonoidAlgebra.mapDomainBialgHom_single]
-    rw [evaluationIso_hom_single (H := H) hH x,
-      evaluationIso_hom_single (H := K) hK (TauCeti.GroupLike.map f.hom x)]
-    exact (TauCeti.GroupLike.val_map f.hom x).symm
+    simp [evaluationIso, TauCeti.GroupLike.evaluationBialgHom_single,
+      TauCeti.GroupLike.val_map]
   · apply AlgHom.ext
     intro r
     simp [evaluationIso, MonoidAlgebra.singleOneAlgHom_apply]
 
-/-- A morphism between diagonalizable coordinate algebras over a field is a central isogeny
-exactly when its intrinsic character map is injective with finite cokernel. -/
+/-- A morphism between torsion-free diagonalizable coordinate algebras over a domain is a
+central isogeny exactly when its intrinsic character map is injective with finite cokernel. -/
 @[simp] theorem isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
     (hK : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := K))) = ⊤)

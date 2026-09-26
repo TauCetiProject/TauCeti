@@ -50,16 +50,9 @@ variable {k : Type u} [Field k]
 
 /-- A morphism of commutative Hopf algebras induces a homomorphism of their geometric character
 groups by scalar extension and restriction to group-like elements. -/
-noncomputable def geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶ K) :
+@[expose] noncomputable def geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶ K) :
     geometricCharacterGroup H →* geometricCharacterGroup K :=
   TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom
-
-/-- The geometric character map is the group-like map of the base-changed morphism. -/
-theorem geometricCharacterMap_eq_groupLikeMap {H K : _root_.CommHopfAlgCat.{u} k}
-    (f : H ⟶ K) :
-    geometricCharacterMap f =
-      TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom :=
-  by rw [geometricCharacterMap]
 
 /-- The value underlying the image of a geometric character is obtained by applying the
 base-changed Hopf-algebra morphism. -/
