@@ -8,7 +8,9 @@ module
 public import TauCeti.Topology.Sets.Opens
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Spectral
+import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 
 /-!
 # The rational basis of the adic spectrum
@@ -70,11 +72,13 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen`: over a Tate
   ring, if a finite set `T` generates an open ideal, then the standard rational subsets cover
   `spa Aplus` (Wedhorn Corollary 7.53 specialization).
+* `TauCeti.ValuationSpectrum.exists_unit_forall_mem_spa_exists_vlt`: for a finite standard cover
+  of a Tate ring, a unit is strictly dominated at every point by some numerator.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.29, Remark 7.30, Theorem 7.35,
-  Corollary 7.53, and Lemma 6.6.
+  Corollaries 7.32 and 7.53, Lemmas 6.6 and 8.34.
 
 One correction to the source: Wedhorn's proof of Theorem 7.35(2) cites Remark 7.30(4) for
 stability under finite intersection, but 7.30(4) is the statement that `R(T/s)` is rational
@@ -405,6 +409,40 @@ theorem spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen (Aplus : Subring A
     spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t :=
   spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus
     ((IsTateRing.isOpen_iff_eq_top (Ideal.span (T : Set A))).mp hT)
+
+/-- **A dominating unit for a standard rational cover** (the input to Wedhorn Lemma 8.34(ii)).
+Let `A` be a Tate ring and `T` a finite set generating the unit ideal. Then some unit `ϖ` of `A`
+is strictly dominated at every point of `Spa (A, A⁺)` by an element of `T`.
+
+This supplies the unit used to form the Laurent generators `ϖ⁻¹ t` in part (ii). -/
+theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
+    (hT : Ideal.span (T : Set A) = ⊤) :
+    ∃ ϖ : Aˣ, ∀ v ∈ spa Aplus, ∃ t ∈ T, v.toValuativeRel.vlt (ϖ : A) t := by
+  have hTopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
+    rw [hT]
+    exact isOpen_univ
+  -- Lemma 7.31 on each piece `R(T/t)` of the standard cover
+  have hdom (t : A) : ∃ I ∈ 𝓝 (0 : A),
+      ∀ a ∈ I, ∀ v ∈ rationalSubset Aplus T t, v.toValuativeRel.vlt a t := by
+    have hcpt : IsCompact (rationalSubset Aplus T t) := by
+      have h := (isCompact_of_mem_spaRationalFamily
+        (mem_spaRationalFamily_iff.mpr ⟨T, t, hTopen, rfl⟩ :
+          (Subtype.val ⁻¹' rationalSubset Aplus T t : Set (spa Aplus)) ∈
+            spaRationalFamily Aplus)).image continuous_subtype_val
+      rwa [Subtype.image_preimage_coe,
+        Set.inter_eq_right.mpr (rationalSubset_subset_spa Aplus T t)] at h
+    exact exists_mem_nhds_zero_forall_vlt
+      (fun v hv ↦ (spa_def Aplus ▸ Set.inter_subset_left) (rationalSubset_subset_spa Aplus T t hv))
+      hcpt fun v hv ↦ ((mem_rationalSubset_iff _ _ _ _).mp hv).2.2
+  choose I hI hIt using hdom
+  -- a unit in the intersection of these neighbourhoods
+  have hc : ContinuousAt (fun a : A ↦ a • (1 : A)) 0 := by fun_prop
+  obtain ⟨ϖ, hϖ⟩ := HasZeroSequenceOfUnits.exists_unit_smul_mem (M := A) 1 (zero_smul A 1) hc
+    ((Filter.biInter_finset_mem T).mpr fun t _ ↦ hI t)
+  refine ⟨ϖ, fun v hv ↦ ?_⟩
+  obtain ⟨t, ht, hvt⟩ := Set.mem_iUnion₂.mp
+    ((spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus hT).subset hv)
+  exact ⟨t, ht, hIt t ϖ (by simpa using Set.mem_iInter₂.mp hϖ t ht) v hvt⟩
 
 end Tate
 
