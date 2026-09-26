@@ -61,9 +61,13 @@ induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The co
   characters already generate the subgroup of induced virtual characters.
 * `TauCeti.ClassFunction.range_subtype_comp_indVirtualCharacterDirectSumAddHom`: the range of the
   bundled map is exactly `indVirtualCharacters`.
+* `TauCeti.ClassFunction.indVirtualCharacterDirectSumAddHom_surjective_iff`: the bundled induction
+  map is surjective exactly when the induced virtual characters exhaust all virtual characters.
 * `TauCeti.ClassFunction.indVirtualCharacterDirectSumBaseChangeRat_surjective_of_nsmul_one_mem`: a
   general criterion for rational surjectivity of the scalar-extended induction map.
 * `TauCeti.ClassFunction.mul_mem_indVirtualCharacters`: the ideal property.
+* `TauCeti.ClassFunction.mul_mem_span_indVirtualCharacters`: the corresponding ideal property for
+  spans over a subring of the coefficient field.
 * `TauCeti.ClassFunction.nsmul_mem_indVirtualCharacters_of_nsmul_one_mem`: propagation of a
   multiple of `1` to the same multiple of every virtual character.
 * `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff`: the induction theorem for
@@ -228,6 +232,28 @@ theorem range_subtype_comp_indVirtualCharacterDirectSumAddHom :
       AddSubgroup.subtype_apply] using
       indVirtualCharacterAddHom_apply_coe (k := k) (G := G) S' ψ'
 
+/-- The direct-sum induction map for a family of subgroups is surjective exactly when the virtual
+characters induced from that family exhaust the virtual characters of `G`. -/
+theorem indVirtualCharacterDirectSumAddHom_surjective_iff :
+    Function.Surjective (indVirtualCharacterDirectSumAddHom k G P) ↔
+      indVirtualCharacters k G P = virtualCharacters k G := by
+  constructor
+  · intro h
+    apply le_antisymm indVirtualCharacters_le_virtualCharacters
+    intro f hf
+    obtain ⟨x, hx⟩ := h ⟨f, hf⟩
+    rw [← range_subtype_comp_indVirtualCharacterDirectSumAddHom]
+    refine ⟨x, ?_⟩
+    simpa only [AddMonoidHom.comp_apply, AddSubgroup.subtype_apply] using
+      congrArg Subtype.val hx
+  · intro h f
+    have hf : (f : G → k) ∈ indVirtualCharacters k G P := by
+      rw [h]
+      exact f.2
+    rw [← range_subtype_comp_indVirtualCharacterDirectSumAddHom] at hf
+    obtain ⟨x, hx⟩ := hf
+    exact ⟨x, Subtype.ext hx⟩
+
 /-- **The induced virtual characters form an ideal of the virtual-character ring.**  For a virtual
 character `f` of `G` and a virtual character `ψ` of a subgroup `S` of the family, the projection
 formula rewrites `f · Ind_S^G ψ` as `Ind_S^G ((Res_S f) · ψ)`, and `(Res_S f) · ψ` is again a
@@ -248,6 +274,17 @@ theorem mul_mem_indVirtualCharacters {f u : G → k} (hf : f ∈ virtualCharacte
     rw [AddSubgroup.mem_comap, AddMonoidHom.coe_mulLeft, hproj]
     exact indClassFun_mem_indVirtualCharacters hS hres
   exact hle hu
+
+/-- Multiplying an `A`-linear combination of virtual characters by an `A`-linear combination of
+virtual characters induced from a family of subgroups remains in the induced span. -/
+theorem mul_mem_span_indVirtualCharacters (A : Subring k) (P : Subgroup G → Prop) {f u : G → k}
+    (hf : f ∈ Submodule.span A (virtualCharacters k G : Set (G → k)))
+    (hu : u ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k))) :
+    f * u ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)) := by
+  have h := Submodule.mul_mem_mul hf hu
+  rw [Submodule.span_mul_span] at h
+  exact Submodule.span_mono (Set.mul_subset_iff.mpr fun _ hx _ hy ↦
+    mul_mem_indVirtualCharacters hx hy) h
 
 /-- If a natural-number multiple of the trivial character is induced from a family, then the same
 multiple of every virtual character is induced from that family. -/
