@@ -13,13 +13,14 @@ import Mathlib.Probability.HasLaw
 /-!
 # The standard positive matrix between Gaussian laws
 
-A Gaussian law of positive-definite covariance `S` and a Gaussian law of covariance `T` are tied
-together by an affine map whose linear part is the unique nonnegative matrix `A` solving
-`A * S * A = T` for the two covariance matrices.  That matrix is `geometricMean S⁻¹ʳ T`, the
-geometric mean of the inverse of `S` and of `T`; it is Hermitian, so it also solves the
-congruence `A * S * Aᵀ = T` by `Matrix.PosDef.mul_mul_conjTranspose_geometricMean`, and the
-covariance of the image law is therefore the target covariance.  The matrix itself is written out
-through square roots by `Matrix.PosDef.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt`.
+A Gaussian law of positive-definite covariance `S` and a Gaussian law of positive-semidefinite
+covariance `T` are tied together by an affine map whose linear part is the unique nonnegative
+matrix `A` solving `A * S * A = T` for the two covariance matrices.  That matrix is
+`geometricMean S⁻¹ʳ T`, the geometric mean of the inverse of `S` and of `T`; it is Hermitian, so it
+also solves the congruence `A * S * Aᵀ = T` by
+`Matrix.PosDef.mul_mul_conjTranspose_geometricMean`, and the covariance of the image law is
+therefore the target covariance.  The matrix itself is written out through square roots by
+`Matrix.PosDef.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt`.
 
 For two nondegenerate Gaussian laws this is the standard positive matrix formula for the Brenier
 map between them.
@@ -56,8 +57,9 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The affine map between two Gaussian laws.** This is the affine map whose linear part is the
-positive matrix `geometricMean S⁻¹ʳ T`, the unique nonnegative matrix `A` solving
-`A * S * A = T`, and which sends the mean `m₁` to the mean `m₂`. -/
+positive matrix `geometricMean S⁻¹ʳ T`, and which sends the mean `m₁` to the mean `m₂`.  For a
+positive-definite `S` and a positive-semidefinite `T` that linear part is the unique nonnegative
+matrix `A` solving `A * S * A = T`; the definition itself needs no positivity hypothesis. -/
 def affineGeometricMean (S T : Matrix ι ι ℝ) (m₁ m₂ : EuclideanSpace ℝ ι)
     (x : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   (geometricMean S⁻¹ʳ T).toEuclideanLin x + (m₂ - (geometricMean S⁻¹ʳ T).toEuclideanLin m₁)

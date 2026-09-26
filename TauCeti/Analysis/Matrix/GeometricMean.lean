@@ -20,7 +20,7 @@ semidefinite there is exactly one positive semidefinite `A` with `A * S * A = T`
 Read through covariance matrices, that matrix is the linear map pushing a centred Gaussian law of
 covariance `S` forward to one of covariance `T`, that is, the Brenier map between two Gaussians.
 
-The solution is symmetric, so for positive definite `S` and positive semidefinite `T` it solves
+The solution is Hermitian, so for positive definite `S` and positive semidefinite `T` it solves
 the congruence equation `A * S * Aᴴ = T` as well; when `T` is positive definite the solution is
 positive definite itself, and its inverse is the solution `TauCeti.geometricMean T⁻¹ʳ S` of the
 reversed equation.
@@ -59,7 +59,7 @@ theorem PosDef.existsUnique_posSemidef_mul_mul (hS : S.PosDef) (hT : T.PosSemide
   · rintro A ⟨hA, hAST⟩
     exact eq_geometricMean_ringInverse_of_mul_mul hAST hS.isStrictlyPositive hA.nonneg
 
-/-! ### The standard positive matrix, its symmetry, and its inverse -/
+/-! ### The standard positive matrix, its Hermitian symmetry, and its inverse -/
 
 section Symmetry
 
@@ -78,7 +78,7 @@ theorem PosDef.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt (hS : S.PosDef) :
     ← Matrix.nonsing_inv_eq_ringInverse, ← hS.posSemidef.inv_sqrt,
     Matrix.nonsing_inv_nonsing_inv (A := CFC.sqrt S) hSdet]
 
-/-- **The solution is symmetric.** The geometric mean
+/-- **The solution is Hermitian.** The geometric mean
 `√a * √(√a⁻¹ * b * √a⁻¹) * √a` is a Hermitian matrix sandwiched between two copies of a
 Hermitian matrix: each square root is nonnegative, hence Hermitian. No positivity hypothesis is
 needed, so this is a statement about `geometricMean a b` for every `a` and `b`; in particular the
