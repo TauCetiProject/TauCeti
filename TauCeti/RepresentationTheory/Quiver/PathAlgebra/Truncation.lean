@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Radical
-public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # The basis of a path algebra truncated by path length
 
 The quotient of a path algebra by the span of paths of length at least `n` has precisely the
-shorter paths as a basis. This gives a concrete basis for the quotient by the `n`th power of the
-arrow ideal. It is useful for calculations with bound quivers, including the radical-square-zero
-presentation of the preprojective algebra of `A₂`.
+shorter paths as a basis. When the vertex type is finite, this gives a concrete basis for the
+quotient by the `n`th power of the arrow ideal. It is useful for calculations with bound quivers,
+including the radical-square-zero presentation of the preprojective algebra of `A₂`.
 
 The construction follows the path-basis description of truncated quiver algebras in
 Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
@@ -30,7 +29,9 @@ open PathAlgebra
 
 universe u v w
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+section Coordinates
+
+variable (k : Type w) (Q : Type u) [Semiring k] [Quiver.{v} Q]
 
 /-- Paths of length strictly less than `n`. -/
 abbrev ShortPath (n : ℕ) := {p : Quiver.TotalPath Q // p.2.2.length < n}
@@ -76,6 +77,10 @@ theorem shortPathCoords_surjective (n : ℕ) :
   intro p
   rw [shortPathCoords_apply, LinearEquiv.apply_symm_apply]
   exact Finsupp.embDomain_apply_self e y p
+
+end Coordinates
+
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
 
 /-- The quotient by the length filtration is the free module on short paths. -/
 noncomputable def truncatedPathEquiv (n : ℕ) :
