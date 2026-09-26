@@ -53,16 +53,6 @@ variable (R K B L : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra 
   [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra B L] [IsFractionRing B L]
   [IsScalarTower R B L]
 
-omit [IsFractionRing B L] in
-include K L in
-/-- Contraction of height-one primes tends to cofinite when `K` and `L` are the fraction fields
-of `R` and `B`. -/
-theorem tendsto_under_cofinite_of_isFractionRing :
-    Filter.Tendsto (HeightOneSpectrum.under R : HeightOneSpectrum B → HeightOneSpectrum R)
-      cofinite cofinite := by
-  have := FaithfulSMul.of_field_isFractionRing R B K L
-  exact HeightOneSpectrum.tendsto_under_cofinite R B
-
 /-- The local extension maps preserve the integer subrings needed for the restricted product. -/
 private theorem eventually_mapsTo_adicCompletionExtension :
     ∀ᶠ w : HeightOneSpectrum B in cofinite,
@@ -78,7 +68,7 @@ domains: the component at a height-one prime `w` of `B` is the image of the comp
 `w.under R` under the completion map `K_{w.under R} → L_w`. -/
 noncomputable def finiteAdeleExtension : FiniteAdeleRing R K →+* FiniteAdeleRing B L :=
   RestrictedProduct.mapAlongRingHom _ _ (HeightOneSpectrum.under R)
-    (tendsto_under_cofinite_of_isFractionRing R K B L)
+    (HeightOneSpectrum.tendsto_under_cofinite_of_isFractionRing R B K L)
     (fun w ↦ HeightOneSpectrum.adicCompletionExtension K L (w.under R) w)
     (eventually_mapsTo_adicCompletionExtension R K B L)
 
@@ -98,7 +88,7 @@ theorem continuous_finiteAdeleExtension : Continuous (finiteAdeleExtension R K B
   apply RestrictedProduct.mapAlong_continuous
   case φ_cont => exact fun w ↦ HeightOneSpectrum.continuous_adicCompletionExtension K L _ w
   case hφ => exact eventually_mapsTo_adicCompletionExtension R K B L
-  case hf => exact tendsto_under_cofinite_of_isFractionRing R K B L
+  case hf => exact HeightOneSpectrum.tendsto_under_cofinite_of_isFractionRing R B K L
 
 /-- The extension map of finite adele rings extends `K → L` along the diagonal embeddings. -/
 @[simp]

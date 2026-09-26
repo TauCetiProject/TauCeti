@@ -36,7 +36,9 @@ downstairs: `IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮prim
 * `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`: finitely many primes lie above a
   finite set.
 * `IsDedekindDomain.HeightOneSpectrum.tendsto_under_cofinite`: consequently, contraction tends to
-  the cofinite filter along the cofinite filter.
+  the cofinite filter along the cofinite filter;
+  `IsDedekindDomain.HeightOneSpectrum.tendsto_under_cofinite_of_isFractionRing` is the variant
+  for rings inside a tower of fields.
 * `IsDedekindDomain.HeightOneSpectrum.finite_liesOver`: finitely many height one primes lie over
   a given one.
 
@@ -112,6 +114,15 @@ lemma tendsto_under_cofinite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegr
     Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
   Filter.Tendsto.cofinite_of_finite_preimage_singleton fun v ↦
     (primesAbove_finite R B (Set.finite_singleton v)).to_subtype
+
+/-- `tendsto_under_cofinite` when `R` and `B` sit in fields `K ⊆ L` with `K` the fraction field
+of `R`: the torsion-freeness of `B` over `R` then comes from the tower `R → K → L`. -/
+lemma tendsto_under_cofinite_of_isFractionRing [IsDomain R] [IsDedekindDomain B]
+    [Algebra.IsIntegral R B] (K L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [Field L]
+    [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra B L] [IsScalarTower R B L] :
+    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
+  have := FaithfulSMul.of_field_isFractionRing R B K L
+  tendsto_under_cofinite R B
 
 variable {R B}
 
