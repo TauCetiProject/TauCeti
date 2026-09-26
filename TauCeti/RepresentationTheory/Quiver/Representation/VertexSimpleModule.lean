@@ -136,8 +136,36 @@ theorem vertexSimpleModuleResolution_g (i : Q)
   simp only [Iso.hom_inv_id, Category.id_comp]
   rfl
 
-/-- The first term of the first-arrow sequence is projective, being a finite biproduct of
-vertex projectives, and equivalences preserve projective objects. -/
+/-- The canonical first-arrow sequence of path algebra modules is short exact. -/
+theorem shortExact_arrowSumToIndecProjModule (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (ShortComplex.mk (arrowSumToIndecProjModule k i)
+      (indecProjModuleToVertexSimpleModule k i) (by
+        let S := vertexSimpleModuleResolution k i
+        let e₁ := vertexSimpleModuleResolutionX₁Iso k i
+        let e₂ := vertexSimpleModuleResolutionX₂Iso k i
+        let e₃ := vertexSimpleModuleResolutionX₃Iso k i
+        have hf : arrowSumToIndecProjModule k i = e₁.inv ≫ S.f ≫ e₂.hom := by
+          calc
+            _ = e₁.inv ≫ (e₁.hom ≫ arrowSumToIndecProjModule k i) := by simp
+            _ = e₁.inv ≫ (S.f ≫ e₂.hom) := by
+              rw [← vertexSimpleModuleResolution_f k i]
+        have hg : indecProjModuleToVertexSimpleModule k i = e₂.inv ≫ S.g ≫ e₃.hom := by
+          calc
+            _ = e₂.inv ≫ (e₂.hom ≫ indecProjModuleToVertexSimpleModule k i) := by simp
+            _ = e₂.inv ≫ (S.g ≫ e₃.hom) := by
+              rw [← vertexSimpleModuleResolution_g k i]
+        rw [hf, hg]
+        simp [Category.assoc])).ShortExact := by
+  apply ShortComplex.shortExact_of_iso
+    (ShortComplex.isoMk (vertexSimpleModuleResolutionX₁Iso k i)
+      (vertexSimpleModuleResolutionX₂Iso k i)
+      (vertexSimpleModuleResolutionX₃Iso k i)
+      (vertexSimpleModuleResolution_f k i).symm
+      (vertexSimpleModuleResolution_g k i).symm)
+  exact shortExact_vertexSimpleModuleResolution k i
+
+/-- The first term of the transported resolution is projective. -/
 instance projective_vertexSimpleModuleResolution_X₁ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₁ := by
