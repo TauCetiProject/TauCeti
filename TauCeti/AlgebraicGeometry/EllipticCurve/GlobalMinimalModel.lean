@@ -231,7 +231,7 @@ theorem IsGlobalMinimal.exists_baseChange_eq_of_smul_eq {W₁ W₂ : Weierstrass
       algebraMap (Localization.AtPrime v.asIdeal) K u₀ = D.u := fun v => by
     have := h₁.isMinimal v
     have := h₂.isMinimal v
-    exact VariableChange.exists_units_algebraMap_eq_u_of_isMinimal_smul _ D hD
+    exact VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul _ D hD
   obtain ⟨u₀, hu₀⟩ := HeightOneSpectrum.isUnit_of_forall_isUnit_localizationAtPrime
     (D.u : K) (Units.ne_zero _) hloc
   have := (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp (inferInstance : IsIntegrallyClosed O)
