@@ -24,11 +24,13 @@ over the plane therefore turns it into the **energy identity**
 
 `∫ e(du) = ∫ g(D u, D u)`, where `D u = ∂s u + J (∂t u)` is the Cauchy--Riemann defect,
 
-which is the `L²` a priori estimate `‖du‖₂ = ‖D u‖₂` for the Cauchy--Riemann operator on
-compactly supported maps. With this normalization of `D` the constant is `1`; the constant for
-the normalization `D u = (∂s u + J (∂t u)) / 2` is `2`. Both norms are taken in the metric
-`g = ω(·, J ·)` of the pair, and the identity is what makes the energy of a holomorphic curve
-computable from its area.
+an equality of integrals that needs only `J`-invariance of `ω`. Invariance alone does not make
+the associated form `g = ω(·, J ·)` positive, so neither side is a norm in that generality; when
+`ω` in addition tames `J` the identity reads `‖du‖₂ = ‖D u‖₂`, a homogeneous `L²` estimate for
+the Cauchy--Riemann operator on compactly supported maps, controlling the derivative alone and
+saying nothing about `‖u‖₂`. With this normalization of `D` the constant is `1`; the constant for
+the normalization `D u = (∂s u + J (∂t u)) / 2` is `2`. The identity is what makes the energy of
+a holomorphic curve computable from its area.
 
 Taking `u` holomorphic makes the right-hand side vanish, so a compactly supported `C²` solution
 of the Cauchy--Riemann equation on the whole plane, with tame target, is zero: there are no
@@ -102,10 +104,11 @@ theorem integral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) (hu : Con
 
 /-- **The energy identity for a compactly supported map.** The integrated standard energy density
 of a compactly supported `C²` map from the plane equals the integrated associated-metric square
-`g(D u, D u)` of its Cauchy--Riemann defect `D u = ∂s u + J (∂t u)`. Equivalently
-`‖du‖₂ = ‖D u‖₂` in the metric `g = ω(·, J ·)`: the `L²` a priori estimate for the
-Cauchy--Riemann operator, with constant `1` for this normalization of `D`. Only `J`-invariance of
-`ω` is used, not tameness. -/
+`g(D u, D u)` of its Cauchy--Riemann defect `D u = ∂s u + J (∂t u)`. This is an equality of
+integrals: only `J`-invariance of `ω` is used, not tameness, and without tameness the associated
+form `g = ω(·, J ·)` need not be positive, so neither side is a norm. Under tameness it reads
+`‖du‖₂ = ‖D u‖₂`, the homogeneous `L²` estimate for the Cauchy--Riemann operator on compactly
+supported maps, with constant `1` for this normalization of `D`. -/
 theorem integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
     (hinv : ω.Invariant J) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) :
     ∫ z, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap ∂μ =
