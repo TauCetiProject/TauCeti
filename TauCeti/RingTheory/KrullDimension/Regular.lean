@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Regular
 # Krull dimension of a principal quotient
 
 For a Noetherian ring, quotienting by an element in the Jacobson radical that lies outside every
-minimal prime lowers the Krull dimension by one. This is the ring form of Mathlib's
+minimal prime gives `dim (R ⧸ (x)) + 1 = dim R`. This is the ring form of Mathlib's
 `Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson`.
 -/
 
