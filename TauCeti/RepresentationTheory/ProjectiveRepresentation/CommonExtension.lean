@@ -68,11 +68,11 @@ end
 
 section
 
-variable {k G : Type*} [CommRing k] [IsDomain k] [Group G] [Finite G]
+variable {k G : Type*} [CommMonoid k] [Group G] [Finite G]
+  [Finite (rootsOfUnity (Nat.card G) k)]
 
-/-- The common lifting extension is finite, including in positive characteristic. -/
+/-- The common lifting extension is finite whenever its root-of-unity group is finite. -/
 instance : Finite (projectiveLiftingFactorSet k G).Extension := by
-  let : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
   infer_instance
 
 end
