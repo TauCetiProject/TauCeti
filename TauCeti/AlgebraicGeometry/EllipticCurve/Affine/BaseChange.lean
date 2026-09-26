@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+-- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # Base change of affine elliptic curves
@@ -58,6 +60,12 @@ the point group along `baseChange_self`. Point-group facts stated for `W⁄F`, t
 statements produce, are read on `W` itself through it. -/
 noncomputable def equivBaseChangeSelf : W.Point ≃+ (W⁄F).toAffine.Point :=
   AddEquiv.cast (M := fun W' : Affine F ↦ W'.Point) W.baseChange_self.symm
+
+/-- **`equivBaseChangeSelf` keeps the coordinates of an affine point.** -/
+@[simp]
+theorem equivBaseChangeSelf_some {x y : F} (h : W.Nonsingular x y) :
+    equivBaseChangeSelf W (.some x y h) = .some x y (W.baseChange_self.symm ▸ h) :=
+  Point.cast_some _ h
 
 end WeierstrassCurve.Affine.Point
 

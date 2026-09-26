@@ -30,6 +30,8 @@ characteristic.
 ## Main results
 
 * `TauCeti.FiniteField.frobeniusAlgHom_pow_apply`: the `n`-th iterate is the `q ^ n`-power map.
+* `TauCeti.FiniteField.sub_pow_natCard`: the `q`-power map is additive,
+  `(x - y) ^ q = x ^ q - y ^ q`.
 * `TauCeti.FiniteField.mem_frobeniusFixedSubalgebra`: membership in the fixed subalgebra is the
   equation `a ^ q ^ n = a`.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
@@ -50,6 +52,15 @@ same `q`-power map.
 public section
 
 namespace TauCeti.FiniteField
+
+/-- **Raising to the order of a finite base field is additive**: in a `K`-algebra,
+`(x - y) ^ q = x ^ q - y ^ q` for `q` the number of elements of `K`. -/
+@[simp]
+theorem sub_pow_natCard (K A : Type*) [Field K] [Finite K] [CommRing A] [Algebra K A] (x y : A) :
+    (x - y) ^ Nat.card K = x ^ Nat.card K - y ^ Nat.card K := by
+  let _ := Fintype.ofFinite K
+  simpa only [_root_.FiniteField.coe_frobeniusAlgHom, Nat.card_eq_fintype_card] using
+    map_sub (_root_.FiniteField.frobeniusAlgHom K A) x y
 
 variable (K A : Type*) [Field K] [Fintype K] [CommRing A] [Algebra K A]
 
