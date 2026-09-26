@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
-import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Orbit
+import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # Spinor norms of isotropic quadratic spaces

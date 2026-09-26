@@ -33,6 +33,47 @@ values on reflections, `orthogonalGroup_hom_ext`.
 
 public section
 
+namespace QuadraticMap
+
+open TauCeti.QuadraticMap
+
+universe u v
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] [NeZero (2 : K)]
+
+/-- The product of two reflections, as an element of the special orthogonal group. -/
+noncomputable def reflectionPairSpecialOrthogonal
+    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
+    specialOrthogonalGroup Q :=
+  ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
+    rw [mem_specialOrthogonalGroup_iff]
+    constructor
+    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
+        (reflectionOrthogonal Q v).2
+    · simp⟩
+
+omit [NeZero (2 : K)] in
+/-- The underlying orthogonal isometry of a pair of reflections. -/
+@[simp] theorem reflectionPairSpecialOrthogonal_toOrthogonal
+    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
+    specialOrthogonalToOrthogonal Q (reflectionPairSpecialOrthogonal Q u v) =
+      reflectionOrthogonal Q u * reflectionOrthogonal Q v := by
+  apply Subtype.ext
+  simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
+    reflectionPairSpecialOrthogonal]
+
+omit [NeZero (2 : K)] in
+/-- A pair of reflections acts by applying the second reflection, then the first. -/
+@[simp] theorem reflectionPairSpecialOrthogonal_apply
+    (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
+    (reflectionPairSpecialOrthogonal Q u v : V ≃ₗ[K] V) x =
+      reflection Q u (reflection Q v x) := by
+  simp only [reflectionPairSpecialOrthogonal, Subgroup.coe_mk, LinearEquiv.mul_apply,
+    coe_reflectionOrthogonal]
+
+end QuadraticMap
+
 namespace TauCeti.QuadraticMap
 
 universe u v
