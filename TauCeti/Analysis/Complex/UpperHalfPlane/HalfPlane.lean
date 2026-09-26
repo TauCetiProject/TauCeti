@@ -46,7 +46,8 @@ with the same line image gives the same *unordered* pair of sides is not proved 
   `rightHalfPlane_ne_leftHalfPlane` — the two half-planes are nonempty and genuinely distinct.
 * `TauCeti.UpperHalfPlane.frontier_rightHalfPlane`, `frontier_leftHalfPlane` — the geodesic line
   is the topological boundary of each half-plane it bounds, via `closure_rightHalfPlane` and
-  `closure_leftHalfPlane`.
+  `closure_leftHalfPlane`; `mem_closure_rightHalfPlane_iff`/`mem_closure_leftHalfPlane_iff` test
+  membership in the closed half-planes directly.
 * `TauCeti.UpperHalfPlane.rightHalfPlane_mul_pslS`, `leftHalfPlane_mul_pslS` — witness that
   `rightHalfPlane`/`leftHalfPlane` depend on the chosen representative of a geodesic line, not
   just its image (`pslS`, the `PSL(2, ℝ)` element of `z ↦ -1/z`, is defined in `PSL/Action.lean`;
@@ -89,12 +90,14 @@ theorem mem_leftHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ leftHalfPlane g ↔ (g⁻¹ • z : ℍ).re < 0 := by
   rw [leftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
-/-- The right half-plane of the identity is the canonical `{z | 0 < z.re}`. -/
-@[simp]
+/-- The right half-plane of the identity is the canonical `{z | 0 < z.re}`. Deliberately not
+`@[simp]`, matching `Geodesic.lean`'s untagged `range_geodesicLine_one`: tagging it would strip
+the head of the argument before the `smul`/`closure`/`frontier` `@[simp]` lemmas about
+`rightHalfPlane` could fire. -/
 theorem rightHalfPlane_one : rightHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | 0 < z.re} := one_smul _ _
 
-/-- The left half-plane of the identity is the canonical `{z | z.re < 0}`. -/
-@[simp]
+/-- The left half-plane of the identity is the canonical `{z | z.re < 0}`. Deliberately not
+`@[simp]`, for the same reason as `rightHalfPlane_one`. -/
 theorem leftHalfPlane_one : leftHalfPlane (1 : PSL(2, ℝ)) = {z : ℍ | z.re < 0} := one_smul _ _
 
 /-- Translating a right half-plane by `h` gives the right half-plane of `h * g`. -/
@@ -193,20 +196,33 @@ theorem closure_leftHalfPlane (g : PSL(2, ℝ)) :
   ext z
   simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq]
 
+/-- Membership test for the closed right half-plane, without unfolding it as a union.
+Deliberately not `@[simp]`, for the same reason as `mem_range_geodesicLine_iff`:
+`closure_rightHalfPlane` already rewrites `closure (rightHalfPlane g)` first. -/
+theorem mem_closure_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ closure (rightHalfPlane g) ↔ 0 ≤ (g⁻¹ • z : ℍ).re := by
+  simp only [closure_rightHalfPlane, Set.mem_union, mem_rightHalfPlane_iff,
+    mem_range_geodesicLine_iff, le_iff_lt_or_eq, eq_comm]
+
+/-- Membership test for the closed left half-plane, without unfolding it as a union.
+Deliberately not `@[simp]`, for the same reason as `mem_closure_rightHalfPlane_iff`. -/
+theorem mem_closure_leftHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ closure (leftHalfPlane g) ↔ (g⁻¹ • z : ℍ).re ≤ 0 := by
+  simp only [closure_leftHalfPlane, Set.mem_union, mem_leftHalfPlane_iff,
+    mem_range_geodesicLine_iff, le_iff_lt_or_eq]
+
 /-- The geodesic line is the boundary of the right half-plane it bounds. -/
 @[simp]
 theorem frontier_rightHalfPlane (g : PSL(2, ℝ)) :
     frontier (rightHalfPlane g) = Set.range (geodesicLine g) := by
-  rw [frontier, (isOpen_rightHalfPlane g).interior_eq, closure_rightHalfPlane,
-    Set.union_sdiff_left]
+  rw [(isOpen_rightHalfPlane g).frontier_eq, closure_rightHalfPlane, Set.union_sdiff_left]
   exact sdiff_eq_self_iff_disjoint.mpr (disjoint_rightHalfPlane_range_geodesicLine g)
 
 /-- The geodesic line is the boundary of the left half-plane it bounds. -/
 @[simp]
 theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
     frontier (leftHalfPlane g) = Set.range (geodesicLine g) := by
-  rw [frontier, (isOpen_leftHalfPlane g).interior_eq, closure_leftHalfPlane,
-    Set.union_sdiff_left]
+  rw [(isOpen_leftHalfPlane g).frontier_eq, closure_leftHalfPlane, Set.union_sdiff_left]
   exact sdiff_eq_self_iff_disjoint.mpr (disjoint_leftHalfPlane_range_geodesicLine g)
 
 /-! ### The non-canonicity witness
@@ -226,11 +242,10 @@ theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     div_pos_iff_of_pos_right (UpperHalfPlane.normSq_pos _), neg_pos]
 
 /-- The dual of `rightHalfPlane_mul_pslS`: multiplying by `pslS` swaps the left half into the
-right half. -/
+right half. Follows from `rightHalfPlane_mul_pslS` applied to `g * pslS`, using that `pslS` is an
+involution. -/
 theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     leftHalfPlane (g * pslS) = rightHalfPlane g := by
-  ext z
-  rw [mem_leftHalfPlane_iff, mem_rightHalfPlane_iff, re_inv_mul_pslS_smul,
-    div_lt_iff₀ (UpperHalfPlane.normSq_pos _), zero_mul, neg_lt_zero]
+  rw [← rightHalfPlane_mul_pslS (g * pslS), mul_assoc, pslS_mul_self, mul_one]
 
 end TauCeti.UpperHalfPlane

@@ -199,11 +199,13 @@ theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
   rw [pslS, psl2zToPSL2R_smul, pslMk_smul]
 
 /-- `pslS` is an involution of `ℍ`. -/
+@[simp]
 theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
   rw [pslS_smul, pslS_smul, ← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv,
     inv_smul_smul]
 
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
+@[simp]
 theorem pslS_mul_self : pslS * pslS = 1 :=
   eq_of_smul_eq_smul fun τ : ℍ ↦ by rw [mul_smul, pslS_smul_pslS_smul, one_smul]
 
@@ -214,10 +216,11 @@ theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 /-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
   rw [pslS_smul, modular_S_smul]
-  change ((-τ : ℂ)⁻¹).re = _
-  simp only [Complex.inv_re, Complex.normSq_neg, Complex.neg_re, UpperHalfPlane.coe_re, neg_div]
+  simp only [UpperHalfPlane.mk_re, Complex.inv_re, Complex.normSq_neg, Complex.neg_re,
+    UpperHalfPlane.coe_re, neg_div]
 
-/-- The common computation behind the half-plane and geodesic-line `_mul_pslS` lemmas. -/
+/-- Right-multiplying by `pslS` before inverting negates the real part of the translate, up to
+the `normSq` factor: see `re_pslS_smul`. -/
 theorem re_inv_mul_pslS_smul (g : PSL(2, ℝ)) (z : ℍ) :
     ((g * pslS)⁻¹ • z : ℍ).re = -(g⁻¹ • z : ℍ).re / Complex.normSq ((g⁻¹ • z : ℍ) : ℂ) := by
   rw [mul_inv_rev, pslS_inv, mul_smul, re_pslS_smul]
