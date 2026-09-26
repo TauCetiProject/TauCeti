@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import Mathlib.Topology.Order.IntermediateValue
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # The Herbrand function and the upper numbering
