@@ -30,7 +30,8 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [NeZero (2 : K)]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-private noncomputable def reflectionPairSpecialOrthogonal
+/-- The product of two reflections, as an element of the special orthogonal group. -/
+noncomputable def reflectionPairSpecialOrthogonal
     (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
     specialOrthogonalGroup Q :=
   ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
@@ -39,6 +40,16 @@ private noncomputable def reflectionPairSpecialOrthogonal
     · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
         (reflectionOrthogonal Q v).2
     · simp⟩
+
+omit [NeZero (2 : K)] in
+/-- The underlying orthogonal isometry of a pair of reflections. -/
+theorem reflectionPairSpecialOrthogonal_toOrthogonal
+    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
+    specialOrthogonalToOrthogonal Q (reflectionPairSpecialOrthogonal Q u v) =
+      reflectionOrthogonal Q u * reflectionOrthogonal Q v := by
+  apply Subtype.ext
+  simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
+    reflectionPairSpecialOrthogonal]
 
 omit [NeZero (2 : K)] in
 private theorem reflectionPairSpecialOrthogonal_apply

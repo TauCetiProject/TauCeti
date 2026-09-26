@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Orbit
 
 /-!
 # Spinor norms of isotropic quadratic spaces
@@ -39,11 +41,7 @@ theorem spinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hiso : ¬ Q.Anisotropic) :
     Function.Surjective (spinorNorm Q hQ) := by
   intro b
-  obtain ⟨a, ha⟩ : ∃ a : Kˣ, squareClassHom a = b := by
-    obtain ⟨a, ha⟩ := QuotientAddGroup.mk_surjective b.toAdd
-    refine ⟨a.toMul, ?_⟩
-    rw [squareClassHom_apply, squareClass_def]
-    simpa using congrArg Multiplicative.ofAdd ha
+  obtain ⟨a, ha⟩ := squareClassHom_surjective b
   obtain ⟨x, hx⟩ := (represents_iff _ _).mp
     (Q.represents_of_nondegenerate_of_not_anisotropic hQ hiso (a : K))
   obtain ⟨y, hy⟩ := (represents_iff _ _).mp
@@ -52,18 +50,13 @@ theorem spinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
   have hy0 : Q y ≠ 0 := by rw [hy]; exact one_ne_zero
   let _ : Invertible (Q x) := invertibleOfNonzero hx0
   let _ : Invertible (Q y) := invertibleOfNonzero hy0
-  let g : QuadraticMap.specialOrthogonalGroup Q := ⟨reflection Q x * reflection Q y, by
-    apply mem_specialOrthogonalGroup_iff.mpr
-    exact ⟨(orthogonalGroup Q).mul_mem
-      (reflection_mem_orthogonalGroup Q x)
-      (reflection_mem_orthogonalGroup Q y), by simp⟩⟩
+  let g : QuadraticMap.specialOrthogonalGroup Q :=
+    reflectionPairSpecialOrthogonal Q x y
   refine ⟨g, ?_⟩
   rw [spinorNorm_apply]
   have hg : specialOrthogonalToOrthogonal Q g =
       reflectionOrthogonal Q x * reflectionOrthogonal Q y := by
-    apply Subtype.ext
-    simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
-      coe_reflectionOrthogonal, g]
+    simpa only [g] using reflectionPairSpecialOrthogonal_toOrthogonal Q x y
   rw [hg, map_mul, orthogonalSpinorNorm_reflectionOrthogonal,
     orthogonalSpinorNorm_reflectionOrthogonal]
   have hxa : unitOfInvertible (Q x) = a := Units.ext hx
