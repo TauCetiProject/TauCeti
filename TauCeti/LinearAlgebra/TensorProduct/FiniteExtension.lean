@@ -37,7 +37,9 @@ theorem exists_finiteDimensional_intermediateField_tensor_range
   intro x hx
   obtain ⟨y, rfl⟩ := hJ hx
   refine ⟨LinearMap.rTensor V (J.inclusion hJL) y, ?_⟩
-  rw [← LinearMap.rTensor_comp_apply]
-  rfl
+  have hcomp : L.val.toLinearMap.comp (J.inclusion hJL) = J.subtype := by
+    ext z
+    exact Submodule.coe_inclusion hJL z
+  rw [← LinearMap.rTensor_comp_apply, hcomp]
 
 end Set

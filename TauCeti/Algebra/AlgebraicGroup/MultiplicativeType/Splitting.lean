@@ -29,7 +29,8 @@ universe u
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- Every group of multiplicative type is diagonalizable over a finite algebraic extension. -/
+/-- Every finite-type group of multiplicative type is diagonalizable over a finite algebraic
+extension. -/
 theorem exists_finiteDimensional_groupLikeSpanned_baseChange
     (hH : multiplicativeTypeCommHopfAlgProperty k H) :
     ∃ L : IntermediateField k (AlgebraicClosure k), FiniteDimensional k L ∧
