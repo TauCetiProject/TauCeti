@@ -152,6 +152,8 @@ def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
     (disk (w := w) P ⟶ X) ≃ₗ[S] (P ⟶ X.obj.X₀) :=
   InducedCategory.homLinearEquiv.trans (CurvedDuplex.diskHomEquiv P X.obj)
 
+-- The induced hom equivalence removes the full-subcategory wrapper definitionally; after
+-- this reduction, the application formulas are those of `CurvedDuplex.diskHomEquiv`.
 @[simp] theorem diskHomEquiv_apply (P : FGModuleCat.{u} S) [Module.Projective S P]
     (X : MatrixFactorization S w) (f : disk (w := w) P ⟶ X) :
     diskHomEquiv P X f = f.hom.f₀ := by
@@ -161,11 +163,13 @@ def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
 @[simp] theorem diskHomEquiv_symm_apply_hom_f₀ (P : FGModuleCat.{u} S)
     [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
     ((diskHomEquiv P X).symm g).hom.f₀ = g := by
+  change ((CurvedDuplex.diskHomEquiv P X.obj).symm g).f₀ = g
   exact CurvedDuplex.diskHomEquiv_symm_apply_f₀ P X.obj g
 
 @[simp] theorem diskHomEquiv_symm_apply_hom_f₁ (P : FGModuleCat.{u} S)
     [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
     ((diskHomEquiv P X).symm g).hom.f₁ = g ≫ X.obj.d₀ := by
+  change ((CurvedDuplex.diskHomEquiv P X.obj).symm g).f₁ = g ≫ X.obj.d₀
   exact CurvedDuplex.diskHomEquiv_symm_apply_f₁ P X.obj g
 
 /-- The rank-one matrix factorization `S --a--> S --b--> S` of `w = a b`.
