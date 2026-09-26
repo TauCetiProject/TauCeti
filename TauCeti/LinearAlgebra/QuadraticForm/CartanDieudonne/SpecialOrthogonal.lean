@@ -18,7 +18,8 @@ all special orthogonal transformations to reflection pairs, as needed when provi
 by putting those pairs in the identity component.
 
 The full orthogonal group is generated as a monoid by individual reflections, as expressed by
-`closure_reflectionOrthogonal_eq_top`.
+`closure_reflectionOrthogonal_eq_top`; consequently a homomorphism out of it is determined by its
+values on reflections, `orthogonalGroup_hom_ext`.
 
 ## Main results
 
@@ -81,6 +82,18 @@ theorem closure_reflectionOrthogonal_eq_top
     subgroup_eq_top_of_reflection_mem Q hQ (Subgroup.closure S)
       (fun v hv ↦ Subgroup.subset_closure ⟨v, hv, rfl⟩)
   rw [htop, Subgroup.top_toSubmonoid]
+
+/-- Two monoid homomorphisms out of the orthogonal group are equal as soon as they agree on every
+reflection in a vector of invertible norm. -/
+theorem orthogonalGroup_hom_ext
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {M : Type*} [MulOneClass M]
+    {f g : orthogonalGroup Q →* M}
+    (h : ∀ (v : V) [Invertible (Q v)],
+      f (reflectionOrthogonal Q v) = g (reflectionOrthogonal Q v)) :
+    f = g :=
+  MonoidHom.eq_of_eqOn_denseM (closure_reflectionOrthogonal_eq_top Q hQ) <| by
+    rintro _ ⟨v, _, rfl⟩
+    exact h v
 
 /-- Every determinant-one orthogonal transformation belongs to any submonoid containing all
 products of two reflections. No nonzero-dimensional hypothesis is required. -/
