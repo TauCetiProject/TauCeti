@@ -115,11 +115,22 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
 
+/-- Evaluation of a finite tensor word is its component projection. -/
+theorem apply_eq_component (x : TensorWords R M) (n : ℕ) :
+    x n = component R M n x :=
+  DirectSum.apply_eq_component R x n
+
 /-- The component of an included tensor power at its own length is that tensor power. -/
 @[simp]
 theorem component_of (n : ℕ) (x : TensorPower R n M) :
     component R M n (of R M n x) = x := by
   simp [component, of]
+
+/-- Projection of an included tensor power at an equal length is the canonical reindexing. -/
+theorem component_of_eq {m n : ℕ} (h : m = n) (x : TensorPower R m M) :
+    component R M n (of R M m x) = TensorPower.cast R M h x := by
+  subst n
+  simp [TensorPower.cast_refl]
 
 /-- Projecting an included tensor power vanishes when the two lengths differ. -/
 @[simp]
@@ -140,6 +151,11 @@ theorem toModule_of {N : Type uN} [AddCommMonoid N] [Module R N]
 /-- The counit of the tensor coalgebra reads off the coefficient of the empty word. -/
 noncomputable def counit : TensorWords R M →ₗ[R] R :=
   (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap ∘ₗ component R M 0
+
+/-- The counit evaluates the length-zero component using the scalar identification. -/
+theorem counit_apply (x : TensorWords R M) :
+    counit R M x = (TensorPower.algebraMap₀ (R := R) (M := M)).symm (component R M 0 x) :=
+  (rfl)
 
 /-- On the empty length the counit is the canonical identification with the ground ring. -/
 @[simp]
