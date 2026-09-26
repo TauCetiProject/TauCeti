@@ -15,8 +15,8 @@ import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 For a finite separable tower `M/L/K`, the different exponent of `M/K` is the
 sum of the different exponent of `M/L` and the different exponent of `L/K`
 multiplied by the ramification index of `M/L`. This is the local form of
-transitivity of different ideals. It uses the coefficientwise Dedekind-domain
-tower formula already available in Tau Ceti.
+transitivity of different ideals. The formula computes the exponent of a
+composite extension from its exponents over an intermediate local field.
 
 ## References
 
@@ -61,6 +61,8 @@ theorem differentExponent_tower :
     isSeparable_fractionRing_integerRing K M
   let _ : (IsDiscreteValuationRing.maximalIdeal 𝒪[M]).asIdeal.LiesOver
       (IsDiscreteValuationRing.maximalIdeal 𝒪[L]).asIdeal := by
+    -- These DVR ideals are definitionally the local-ring maximal ideals, for which
+    -- the `LiesOver` instance is available.
     change (𝓂[M]).LiesOver 𝓂[L]
     infer_instance
   rw [differentExponent_def, differentExponent_def, differentExponent_def,
