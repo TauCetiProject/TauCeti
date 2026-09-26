@@ -252,7 +252,6 @@ theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ)
 
 omit [DecidableEq F] in
 /-- The character of the cuspidal representation has value `q - 1` at the identity. -/
-@[simp]
 theorem character_one_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
     (GL2Cuspidal hE theta htheta).character 1 = (Fintype.card F : ℂ) - 1 := by
