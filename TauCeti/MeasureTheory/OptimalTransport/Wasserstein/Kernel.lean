@@ -27,8 +27,9 @@ underlies Wasserstein contraction of Markov chains and coarse Ricci curvature.
 
 The ground space `Y` is a separable pseudometric space whose measurable structure is
 standard Borel and contains the open sets, for instance a Polish metric space with its Borel
-σ-algebra; the source spaces carry no structure beyond a measurable space. Both mixtures are
-assumed to have finite `p`-moment.
+σ-algebra. The two-kernel estimate only requires measurable source spaces; the Lipschitz
+corollary also requires an extended pseudometric on the source. Both mixtures are assumed to
+have finite `p`-moment.
 
 ## Main statements
 
