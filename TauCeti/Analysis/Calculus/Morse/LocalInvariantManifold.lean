@@ -464,14 +464,12 @@ solution confined near `x`. -/
 theorem exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero
     (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = 0) :
     ∃ r > 0, ∃ rho > 0, h.localUnstableSet r rho = {0} := by
-  obtain ⟨r, hr, rho, hrho, g, -, hg0, -, -, -, hset, -⟩ :=
-    h.exists_localUnstableSet_eq_lipschitzGraph 1 one_pos
-  have hbot : h.contDiffAt.unstableLinearSubspace = ⊥ :=
-    Submodule.finrank_eq_zero.1 (by rw [h.contDiffAt.finrank_unstableLinearSubspace, hind])
-  refine ⟨r, hr, rho, hrho, ?_⟩
-  rw [hset, hbot, Submodule.bot_coe,
-    Set.inter_eq_self_of_subset_left (Set.singleton_subset_iff.2 (mem_closedBall_self hrho.le)),
-    Set.image_singleton, hg0, add_zero]
+  obtain ⟨r, hr, rho, hrho, ⟨e⟩⟩ := h.exists_localUnstableSet_homeomorph_closedBall
+  have : Subsingleton (EuclideanSpace ℝ (Fin (morseIndex f x))) := by
+    rw [hind]; infer_instance
+  exact ⟨r, hr, rho, hrho,
+    ((Set.subsingleton_coe _).1 e.toEquiv.subsingleton).eq_singleton_of_mem
+      (h.zero_mem_localUnstableSet hr.le hrho.le)⟩
 
 /-- **At a local maximum the local stable set degenerates to a point.** A nondegenerate critical
 point whose Morse index is the dimension of the ambient space has no stable directions, so for
@@ -480,16 +478,12 @@ negative-gradient solution confined near `x`. -/
 theorem exists_localStableSet_eq_singleton_of_morseIndex_eq_finrank
     (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = Module.finrank ℝ E) :
     ∃ r > 0, ∃ rho > 0, h.localStableSet r rho = {0} := by
-  obtain ⟨r, hr, rho, hrho, g, -, hg0, -, -, -, hset, -⟩ :=
-    h.exists_localStableSet_eq_lipschitzGraph 1 one_pos
-  have hbot : h.contDiffAt.stableLinearSubspace = ⊥ :=
-    Submodule.finrank_eq_zero.1 (by
-      have := h.finrank_stableLinearSubspace_add_morseIndex
-      omega)
-  refine ⟨r, hr, rho, hrho, ?_⟩
-  rw [hset, hbot, Submodule.bot_coe,
-    Set.inter_eq_self_of_subset_left (Set.singleton_subset_iff.2 (mem_closedBall_self hrho.le)),
-    Set.image_singleton, hg0, add_zero]
+  obtain ⟨r, hr, rho, hrho, ⟨e⟩⟩ := h.exists_localStableSet_homeomorph_closedBall
+  have : Subsingleton (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - morseIndex f x))) := by
+    rw [hind, Nat.sub_self]; infer_instance
+  exact ⟨r, hr, rho, hrho,
+    ((Set.subsingleton_coe _).1 e.toEquiv.subsingleton).eq_singleton_of_mem
+      (h.zero_mem_localStableSet hr.le hrho.le)⟩
 
 end IsNondegenerateCriticalPoint
 
