@@ -51,12 +51,6 @@ rules, conjugacy-class, subgroup, and normalizer-quotient bookkeeping built on i
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
-## References
-
-This supplies a small prerequisite for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-items 7 and 8: the pointed cover attached to `H ≤ π₁(X, x₀)`, conjugacy under basepoint
-change, and the normalizer quotient `N(H) / H` appearing as the deck group of that cover. The
-path-independent conjugacy classes supply `TauCetiRoadmap/BelyiMaps/README.md`, Layer 5, §5.7.
 -/
 
 public section
@@ -132,20 +126,30 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
     ← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
     Path.Homotopic.Quotient.refl_trans]
 
+open CategoryTheory in
 /-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
 lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
     {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (γ.trans δ) =
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).trans
         (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ) := by
+  let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk γ)
+  let β : FundamentalGroupoid.mk x₁ ≅ FundamentalGroupoid.mk x₂ :=
+    (Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk δ)
+  have h : (Groupoid.isoEquivHom (FundamentalGroupoid.mk x₀)
+      (FundamentalGroupoid.mk x₂)).symm (Path.Homotopic.Quotient.mk (γ.trans δ)) =
+        α ≪≫ β := by
+    apply CategoryTheory.Iso.ext
+    change Path.Homotopic.Quotient.mk (γ.trans δ) =
+      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
+        (Path.Homotopic.Quotient.mk δ)
+    exact Path.Homotopic.Quotient.mk_trans γ δ
   ext g
-  rw [MulEquiv.trans_apply, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
-    ← Path.Homotopic.Quotient.mk_symm, Path.trans_symm]
-  -- Both sides are the word `δ⁻¹ ⬝ γ⁻¹ ⬝ g ⬝ γ ⬝ δ`, up to reassociation.
-  simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
-    Path.Homotopic.Quotient.trans_assoc]
+  change ((Groupoid.isoEquivHom _ _).symm
+      (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)
+  rw [h]
+  exact CategoryTheory.Iso.trans_conj α β g
 
 /-- Transporting an element of a fundamental group along two paths with the same endpoints gives
 conjugate elements. Thus basepoint transport determines a conjugacy class independently of the
