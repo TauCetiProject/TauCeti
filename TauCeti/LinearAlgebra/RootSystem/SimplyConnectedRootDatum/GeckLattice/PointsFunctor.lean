@@ -145,6 +145,8 @@ theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
     congr 1
   simp only [geckSchemePointsMulEquiv, MulEquiv.trans_apply]
   rw [hpre]
+  -- `mulEquiv_mapPoints` is stated for the `CommAlgCat.of ℤ A` and
+  -- `CommAlgCat.of ℤ B` presentations, whose carrier rings are definitionally `A` and `B`.
   change (t.geckPointsPresentation ht (CommAlgCat.of ℤ B)).mulEquiv
       (HopfAlgebra.mapPoints (CommAlgCat.ofHom f.toIntAlgHom) q) = _
   rw [(t.geckPointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv_mapPoints
