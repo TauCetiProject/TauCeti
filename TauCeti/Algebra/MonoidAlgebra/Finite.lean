@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.RingTheory.Finiteness.Cardinality
 
@@ -35,7 +34,7 @@ open _root_.MonoidAlgebra
 
 variable (R : Type*) {M N : Type*} [CommGroup M] [CommGroup N]
 
-/-- Monomials indexed by representatives of the character cokernel span the target group
+/-- Monomials indexed by representatives of the cokernel span the target group
 algebra as a module over the source group algebra. -/
 theorem span_range_single_quotient_eq_top [CommSemiring R] (p : M →* N)
     (s : N ⧸ p.range → N) (hs : Function.RightInverse s (QuotientGroup.mk' p.range)) :
@@ -75,8 +74,9 @@ theorem mapDomainRingHom_finite_of_finite_quotient (p : M →* N) [Finite (N ⧸
   exact Submodule.fg_def.mpr ⟨_, Set.finite_range _, rfl⟩
 
 /-- Over a nonzero commutative ring, the group-algebra map induced by a homomorphism of
-commutative groups is finite exactly when its character cokernel is finite. -/
-theorem mapDomainRingHom_finite_iff [Nontrivial R] (p : M →* N) :
+commutative groups is finite exactly when its cokernel is finite. -/
+@[simp]
+theorem mapDomainRingHom_finite_iff_finite_quotient [Nontrivial R] (p : M →* N) :
     (mapDomainRingHom R p).Finite ↔ Finite (N ⧸ p.range) := by
   constructor
   · intro hp
