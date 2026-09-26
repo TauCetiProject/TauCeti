@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-public import TauCeti.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
@@ -106,7 +106,7 @@ theorem integral_bilinForm_fderiv_apply_comm (b : LinearMap.BilinForm ℝ V) (hu
     (hsupp : HasCompactSupport u) (v w : E) :
     ∫ x, b (fderiv ℝ u x v) (fderiv ℝ u x w) ∂μ =
       ∫ x, b (fderiv ℝ u x w) (fderiv ℝ u x v) ∂μ := by
-  simpa using integral_bilinear_fderiv_apply_comm b.toContinuousLinearMap₂ hu hsupp v w
+  simpa using integral_bilinear_fderiv_apply_comm b.toContinuousBilinearMap hu hsupp v w
 
 /-- The integral of an alternating bilinear form evaluated on two directional derivatives of a
 compactly supported `C²` map vanishes: the pullback of a constant two-form along a compactly

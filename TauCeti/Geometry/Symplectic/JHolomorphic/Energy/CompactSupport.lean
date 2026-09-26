@@ -76,7 +76,7 @@ theorem continuous_stdComplexLineEnergyDensity_toLinearMap (ω : SymplecticForm 
   have hdiag : ∀ p : ℝ × ℝ, Continuous fun L : (ℝ × ℝ) →L[ℝ] V ↦
       ω.associatedBilinForm J (L p) (L p) := fun p ↦ by
     have hL : Continuous fun L : (ℝ × ℝ) →L[ℝ] V ↦ L p := continuous_id.clm_apply continuous_const
-    exact hL.bilinMap hL (ω.associatedBilinForm J)
+    exact (ω.associatedBilinForm J).toContinuousBilinearMap.continuous₂.comp₂ hL hL
   refine ((hdiag stdComplexLineReal).add (hdiag stdComplexLineImag)).congr fun L ↦ ?_
   simp [stdComplexLineEnergyDensity_def]
 
@@ -128,14 +128,14 @@ theorem integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
   have harea : Integrable
       (fun z ↦ 2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) μ :=
     Continuous.integrable_of_hasCompactSupport
-      (continuous_const.mul (hs.bilinMap ht ω.toBilinForm))
+      (continuous_const.mul (ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp₂ hs ht))
       (hcs (fun L ↦ 2 * ω (L stdComplexLineReal) (L stdComplexLineImag)) (by simp))
   have hdefect : Integrable
       (fun z ↦ ω.associatedBilinForm J
         (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
         (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))) μ :=
     Continuous.integrable_of_hasCompactSupport
-      (hcr.bilinMap hcr (ω.associatedBilinForm J))
+      ((ω.associatedBilinForm J).toContinuousBilinearMap.continuous₂.comp₂ hcr hcr)
       (hcs (fun L ↦ ω.associatedBilinForm J (L stdComplexLineReal + J (L stdComplexLineImag))
         (L stdComplexLineReal + J (L stdComplexLineImag))) (by simp))
   have hpt : ∀ z : ℝ × ℝ, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap =
