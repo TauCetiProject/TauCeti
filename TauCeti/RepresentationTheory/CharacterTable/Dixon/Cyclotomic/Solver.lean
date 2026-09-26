@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.FinEnum
 import Mathlib.Data.List.NodupEquivFin
+import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
@@ -193,17 +194,6 @@ private theorem table_eq_cyclotomicQuotient (e : ℕ)
   exact cyclotomicQuotient_natCast_mul e (table i k)
     (Finset.card_pos.mpr ⟨d.rep k, d.rep_mem_classFinset k⟩)
 
-/-- Read an entry of a two-dimensional `Array.ofFn`.
-
-`Array.getElem_ofFn` proves this in two steps, but as a `simp` lemma it also descends into the
-outer array and rewrites the lookups sitting inside its entries, where the resulting definitional
-check is prohibitively expensive.  This lemma matches the outer pair of lookups only. -/
-private theorem getElem_getElem_ofFn {β : Type*} {n : ℕ} (F : Fin n → Fin n → β)
-    (i k : Fin n) (h₁ : i.val < (Array.ofFn fun a ↦ Array.ofFn (F a)).size)
-    (h₂ : k.val < ((Array.ofFn fun a ↦ Array.ofFn (F a))[i.val]'h₁).size) :
-    ((Array.ofFn fun a ↦ Array.ofFn (F a))[i.val]'h₁)[k.val]'h₂ = F i k := by
-  simp
-
 /-- Enumerate the exact-cyclotomic candidates inspected by the solver.
 
 For every Galois-conjugate root, a permutation chooses how its modular rows align with the
@@ -266,7 +256,10 @@ private theorem conjugateResidueRow_mem_of_mem_candidates (e : ℕ) (he : e = Mo
       (Cyclotomic.conjugateResidues_lift hroot
         (fun l ↦ d.canonicalModularRow q (perms l i) k)) j
   simp only [canonicalModularRow] at hrow
-  simp only [getElem_getElem_ofFn]
+  -- Read the outer pair of lookups first. `simp only [Array.getElem_ofFn]` alone would also
+  -- descend into the outer array and rewrite the lookups inside its entries, where the resulting
+  -- definitional check is prohibitively expensive.
+  simp only [Array.getElem_getElem_ofFn_ofFn]
   simp only [Array.getElem_ofFn]
   rw [hrow]
   simpa only [canonicalModularRow] using canonicalModularRow_mem d q (perms j i)

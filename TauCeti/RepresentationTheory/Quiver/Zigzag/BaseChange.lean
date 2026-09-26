@@ -219,18 +219,11 @@ theorem skewZigzagBaseChange_id (c : SkewZigzagParameter k G) :
   apply PathAlgebra.ringHom_ext_of_surjective (skewZigzagMk k G c)
     (skewZigzagMk_surjective k G c)
   · intro a
-    rw [RingHom.comp_apply, skewZigzagBaseChange_algebraMap, RingHom.id_apply]
-    exact (Ideal.quotientEquivAlgOfEq k
-      (I := (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal)
-      (J := (skewZigzagIdeal k G c).asIdeal)
-      (skewZigzagIdeal_map_id G c)).commutes a
+    rw [RingHom.comp_apply, skewZigzagBaseChange_algebraMap, ← Ideal.Quotient.factorₐ_apply k,
+      AlgHom.commutes, RingHom.id_apply, RingHom.id_apply]
   · intro x
     rw [RingHom.comp_apply, skewZigzagBaseChange_skewZigzagMk_ofPath,
-      skewZigzagMk_apply, skewZigzagMk_apply, RingHom.id_apply]
-    exact Ideal.quotientEquivAlgOfEq_mk k
-      (I := (skewZigzagIdeal k G (c.map (RingHom.id k : k →* k))).asIdeal)
-      (J := (skewZigzagIdeal k G c).asIdeal)
-      (skewZigzagIdeal_map_id G c) (ofPath x)
+      skewZigzagMk_apply, skewZigzagMk_apply, RingHom.id_apply, Ideal.Quotient.factor_mk]
 
 /-- Scalar extension along a composite coefficient homomorphism is the composite of the two
 scalar-extension maps. -/
@@ -247,21 +240,14 @@ theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
   · intro a
     simp only [RingHom.comp_apply]
     rw [skewZigzagBaseChange_algebraMap, skewZigzagBaseChange_algebraMap,
-      skewZigzagBaseChange_algebraMap]
-    exact (Ideal.quotientEquivAlgOfEq m
-      (I := (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal)
-      (J := (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal)
-      (skewZigzagIdeal_map_comp G f g c)).commutes (g (f a))
+      skewZigzagBaseChange_algebraMap, ← Ideal.Quotient.factorₐ_apply m, AlgHom.commutes,
+      RingHom.comp_apply]
   · intro x
     simp only [RingHom.comp_apply]
     rw [skewZigzagBaseChange_skewZigzagMk_ofPath,
       skewZigzagBaseChange_skewZigzagMk_ofPath,
       skewZigzagBaseChange_skewZigzagMk_ofPath, skewZigzagMk_apply,
-      skewZigzagMk_apply]
-    exact Ideal.quotientEquivAlgOfEq_mk m
-      (I := (skewZigzagIdeal m G (c.map (g.comp f : k →* m))).asIdeal)
-      (J := (skewZigzagIdeal m G ((c.map (f : k →* l)).map (g : l →* m))).asIdeal)
-      (skewZigzagIdeal_map_comp G f g c) (ofPath x)
+      skewZigzagMk_apply, Ideal.Quotient.factor_mk]
 
 end Quotient
 
