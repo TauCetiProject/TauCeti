@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 
 /-!
 # The ideal weight of a Galois character
@@ -55,6 +57,10 @@ primes is what makes the ramified Euler factors drop out as `(1 - 0)⁻¹ = 1`.
   their weights.
 * `MonoidHom.val_galoisCharacterUnitaryWeight`: the unitary packaging has the same underlying
   weight.
+* `MonoidHom.norm_galoisCharacterWeight_le_one`: the weight of a Galois character is bounded by
+  `1`.
+* `MonoidHom.summable_idealTerm_galoisCharacterWeight`: the ideal series of a Galois character
+  converges absolutely on `Re s > 1`.
 
 ## Implementation notes
 
@@ -88,6 +94,7 @@ open scoped NumberField
 open IsDedekindDomain (HeightOneSpectrum)
 
 open UniqueFactorizationMonoid
+open TauCeti
 
 namespace NumberField.Chebotarev
 
@@ -292,5 +299,18 @@ noncomputable def galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ)
 theorem val_galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
     (galoisCharacterUnitaryWeight (L := L) χ).1 = galoisCharacterWeight (L := L) χ := by
   simp [galoisCharacterUnitaryWeight]
+
+/-- The weight of a Galois character is bounded by `1`. -/
+theorem norm_galoisCharacterWeight_le_one (χ : (L ≃ₐ[K] L) →* ℂˣ) (I : Ideal (𝓞 K)) :
+    ‖galoisCharacterWeight (L := L) χ I‖ ≤ 1 := by
+  simpa using χ.galoisCharacterUnitaryWeight.norm_le_one I
+
+/-- The ideal series of a Galois character weight converges absolutely on `Re s > 1`. -/
+theorem summable_idealTerm_galoisCharacterWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    Summable (idealTerm K χ.galoisCharacterWeight.toIdealArithmeticFunction s) :=
+  by simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+      val_galoisCharacterUnitaryWeight] using
+    summable_idealTerm_of_unitary_of_one_lt_re χ.galoisCharacterUnitaryWeight hs
 
 end MonoidHom

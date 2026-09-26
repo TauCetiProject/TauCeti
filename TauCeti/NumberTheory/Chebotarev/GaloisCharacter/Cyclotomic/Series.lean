@@ -11,7 +11,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Bas
 import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!

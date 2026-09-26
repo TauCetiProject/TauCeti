@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.ThreeFourOne
 import TauCeti.Analysis.Asymptotics.InvSubOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.PrimeSum
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
