@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Asymptotics.Lemmas
 # Linear asymptotics as limits of ratios
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
-tends to `a`, provided `g` is eventually nonzero. This is Mathlib's
-`Asymptotics.isLittleO_iff_tendsto'` applied to `f - a g`, with the constant moved out of the ratio.
+tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
+into limits of normalized functions, and conversely recovers error estimates from ratio limits.
 The quotient is right division: multiplication need not be commutative. For ordered fields,
 the ratio formulation also supports order arguments.
 
@@ -20,6 +20,10 @@ the ratio formulation also supports order arguments.
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
   `f / g → a`, for an eventually nonzero `g`.
+
+## Related results
+
+Mathlib's `Asymptotics.isLittleO_iff_tendsto'` is the underlying zero-limit ratio criterion.
 -/
 
 public section
