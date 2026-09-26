@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.LocalField.NatCastValuation
 
 Let `K` be a nonarchimedean local field whose residue characteristic is odd, that is with `2` a
 unit of `𝒪[K]`. The norms from `K(√a)`, that is the subgroup of `Kˣ` consisting of the `b` of the
-form `x² - a y²` with `x y ∈ K`, form a subgroup of index two in `Kˣ` for every nonsquare radicand
+form `x² - a y²` with `x, y ∈ K`, form a subgroup of index two in `Kˣ` for every nonsquare radicand
 `a`. A radicand of odd valuation is handled in
 `TauCeti.NumberTheory.LocalField.QuadraticForm.OddValuation`, where the index is forced by the four
 square classes, and a radicand of even valuation, which is square-equivalent to a unit of valuation
@@ -24,9 +24,11 @@ class up to a square and so has the same norms, namely the elements of even norm
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
 bimultiplicative in both arguments. The same index theorem gives the diagonal entry
-`(π, π)_K = (π, -1)_K` and nondegeneracy: a radicand of odd valuation is separated by the
-unramified class, and a radicand of even valuation by a uniformizer, because an element of even
-valuation is a norm of the unramified class.
+`(π, π)_K = (π, -1)_K` and nondegeneracy: the norms from the unramified class are exactly
+the elements of even normalized valuation, so a uniformizer, which has valuation one, is not such
+a norm and the symbol with it is `-1`. A radicand of odd valuation is therefore separated by the
+unramified class, and a radicand of even valuation, being the unramified class up to a square, by a
+uniformizer.
 
 ## Main results
 
@@ -63,6 +65,7 @@ theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : IsUnit (2 : �
 
 /-- **Bimultiplicativity of the local Hilbert symbol in the second argument.** Away from residue
 characteristic two, `(a, bc)_K = (a, b)_K (a, c)_K` for every `a`, `b` and `c`. -/
+@[simp]
 theorem hilbertSymbol_mul_right (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
     hilbertSymbol a (b * c) = hilbertSymbol a b * hilbertSymbol a c := by
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
@@ -73,6 +76,7 @@ theorem hilbertSymbol_mul_right (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
 
 /-- **Bimultiplicativity of the local Hilbert symbol in the first argument.** Away from residue
 characteristic two, `(bc, a)_K = (b, a)_K (c, a)_K` for every `a`, `b` and `c`, by symmetry. -/
+@[simp]
 theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
     hilbertSymbol (b * c) a = hilbertSymbol b a * hilbertSymbol c a := by
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
@@ -101,7 +105,7 @@ by the unramified class, and a radicand of even valuation by a uniformizer. -/
 theorem exists_hilbertSymbol_eq_neg_one (h2 : IsUnit (2 : 𝒪[K])) {a : Kˣ} (ha : ¬IsSquare a) :
     ∃ b : Kˣ, hilbertSymbol a b = -1 := by
   by_cases hev : Even (normalizedValuation K a).toAdd
-  · obtain ⟨Δ, -, hsq, hΔ⟩ := exists_unramified_class_mul_sq_of_even_of_not_isSquare h2 hev ha
+  · obtain ⟨Δ, -, hsq, hΔ⟩ := exists_unramified_class_isSquare_mul_of_even_of_not_isSquare h2 hev ha
     obtain ⟨π, hπ⟩ := exists_isUniformizer K
     refine ⟨π, (hilbertSymbol_congr_sq a Δ π π hsq ⟨π, rfl⟩).trans ?_⟩
     rw [hilbertSymbol_unramified hΔ π, (isUniformizer_def π).mp hπ, toAdd_ofAdd]

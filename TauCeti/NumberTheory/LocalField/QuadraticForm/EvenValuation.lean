@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.NormIndex
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.OddValuation
 
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.SquareClass
@@ -16,7 +15,7 @@ import TauCeti.NumberTheory.LocalField.SquareClass
 
 Let `K` be a nonarchimedean local field whose residue characteristic is odd, that is with `2` a
 unit of `𝒪[K]`, and let `a ∈ Kˣ`. The norms from `K(√a)`, that is the subgroup of `Kˣ` consisting
-of the `b` of the form `x² - a y²` with `x y ∈ K`, have index two in `Kˣ` as soon as `a` is not a
+of the `b` of the form `x² - a y²` with `x, y ∈ K`, have index two in `Kˣ` as soon as `a` is not a
 square.
 
 `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd` treats the radicands of odd valuation. This
@@ -34,8 +33,8 @@ that the local Hilbert symbol is bimultiplicative and nondegenerate.
 
 ## Main results
 
-* `TauCeti.exists_unramified_class_mul_sq_of_even_of_not_isSquare`: a nonsquare radicand of even
-  valuation is the unramified class up to a square.
+* `TauCeti.exists_unramified_class_isSquare_mul_of_even_of_not_isSquare`: a nonsquare radicand of
+  even valuation is the unramified class up to a square.
 * `TauCeti.quadraticNormSubgroup_index_eq_two_of_even`: the norm index of a radicand of even
   valuation.
 
@@ -54,33 +53,11 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-section NormSubgroup
-
-variable {K : Type*} [Field K]
-
-/-- The quadratic norm subgroup of a radicand and of a square multiple of it coincide: the symbol
-depends only on the square class of the radicand. This is the square-class form of
-`TauCeti.quadraticNormSubgroup_mul_sq`, obtained by rescaling the radicand by the square root
-witnessed by `h`. -/
-private theorem quadraticNormSubgroup_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ)) :
-    quadraticNormSubgroup (a : K) = quadraticNormSubgroup (Δ : K) := by
-  obtain ⟨c, hc⟩ := h
-  -- `a` and `Δ` differ by the square `(c * Δ⁻¹)²`, so rescaling the radicand changes nothing.
-  have hcd : (a : K) * (Δ : K) = (c : K) ^ 2 := by
-    rw [← Units.val_mul, hc, Units.val_mul, pow_two]
-  have hs : (a : K) = (Δ : K) * (((c * Δ⁻¹ : Kˣ) : K)) ^ 2 := by
-    push_cast
-    field_simp
-    exact hcd
-  rw [hs, quadraticNormSubgroup_mul_sq]
-
-end NormSubgroup
-
 /-- **The unramified class in the square class of an even-valuation radicand.** Away from residue
 characteristic two, if `v_K(a)` is even and `a` is not a square, there is a class `Δ` of valuation
 zero, the unramified class, such that `a` and `Δ` differ by a square and the elements of even
 normalized valuation are exactly the norms from `K(√Δ)`. -/
-theorem exists_unramified_class_mul_sq_of_even_of_not_isSquare (h2 : IsUnit (2 : 𝒪[K]))
+theorem exists_unramified_class_isSquare_mul_of_even_of_not_isSquare (h2 : IsUnit (2 : 𝒪[K]))
     {a : Kˣ} (ha : Even (normalizedValuation K a).toAdd) (ha' : ¬IsSquare a) :
     ∃ Δ : Kˣ, (normalizedValuation K Δ).toAdd = 0 ∧ IsSquare (a * Δ) ∧
       ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
@@ -97,7 +74,7 @@ radicand is the unramified class up to a square, and it therefore has the same n
 theorem quadraticNormSubgroup_index_eq_two_of_even (h2 : IsUnit (2 : 𝒪[K])) {a : Kˣ}
     (ha : Even (normalizedValuation K a).toAdd) (ha' : ¬IsSquare a) :
     (quadraticNormSubgroup (a : K)).index = 2 := by
-  obtain ⟨Δ, -, hsq, hΔ⟩ := exists_unramified_class_mul_sq_of_even_of_not_isSquare h2 ha ha'
+  obtain ⟨Δ, -, hsq, hΔ⟩ := exists_unramified_class_isSquare_mul_of_even_of_not_isSquare h2 ha ha'
   rw [quadraticNormSubgroup_eq_of_isSquare_mul hsq]
   exact quadraticNormSubgroup_index_eq_two_of_unramified_class hΔ
 
