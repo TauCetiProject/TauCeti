@@ -35,6 +35,7 @@ variable {k : Type u} [Field k]
 
 /-- For positive `n`, the coordinate algebra of `μ_n` is smooth exactly when `n` is a unit in
 the ground field. -/
+-- Not `@[simp]`: `simp` already proves this from `MonoidAlgebra.smooth_iff_isUnit_card`.
 theorem coordinateRing_smooth_iff (n : ℕ) [NeZero n] :
     Algebra.Smooth k (MonoidAlgebra k (Multiplicative (ZMod n))) ↔ IsUnit (n : k) := by
   have hcard : Nat.card (Multiplicative (ZMod n)) = n :=
@@ -53,6 +54,7 @@ theorem coordinateRing_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
 
 /-- The structural morphism of the group scheme `μ_n` is smooth exactly when `n` is a unit in
 the ground field. -/
+-- Not `@[simp]`: `simp` unfolds the left-hand side via `DiagonalizableGroup.groupScheme_X_hom`.
 theorem groupScheme_smooth_iff (n : ℕ) [NeZero n] :
     Smooth (groupScheme k n).X.hom ↔ IsUnit (n : k) := by
   rw [groupScheme, DiagonalizableGroup.groupScheme_def]
@@ -62,6 +64,9 @@ theorem groupScheme_smooth_iff (n : ℕ) [NeZero n] :
     have h := (algebraSmooth_iff_smooth_hopfSpec k
       (DiagonalizableGroup.coordinateRing k (characterGroup n)).obj).symm
     rw [smoothAffineGroupSchemeProperty_iff, smoothCommHopfAlgProperty_iff] at h
+    -- `DiagonalizableGroup.coordinateRing`, `FiniteTypeCommHopfAlgCat.of` and `characterGroup`
+    -- are abbreviations, so the carrier of this coordinate ring is by definition the group
+    -- algebra `MonoidAlgebra k (ULift (Multiplicative (ZMod n)))`, and `h` applies as stated.
     exact h
   rw [hsmooth]
   have hcard : Nat.card (ULift.{u} (Multiplicative (ZMod n))) = n :=

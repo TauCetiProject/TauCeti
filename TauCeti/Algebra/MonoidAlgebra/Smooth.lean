@@ -31,8 +31,9 @@ namespace TauCeti.MonoidAlgebra
 
 variable (k G : Type*) [Field k] [CommGroup G] [Finite G]
 
-/-- A finite commutative group algebra over a field is smooth if and only if the order of its
-exponent group is invertible in the field. -/
+/-- A finite commutative group algebra over a field is smooth if and only if the order of the
+group is invertible in the field. -/
+@[simp]
 theorem smooth_iff_isUnit_card :
     Algebra.Smooth k (MonoidAlgebra k G) ↔ IsUnit (Nat.card G : k) := by
   refine ⟨fun hs => ?_, fun h => ?_⟩
