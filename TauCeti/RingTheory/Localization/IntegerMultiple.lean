@@ -88,10 +88,8 @@ theorem exists_smul_mem_span_of_mem_span (f : B →ₗ[A] L) (hf : Function.Inje
     (hx : f x ∈ Submodule.span K (f '' s)) :
     ∃ a ∈ M, a • x ∈ Submodule.span A s := by
   obtain ⟨⟨a, ha⟩, hax⟩ := multiple_mem_span_of_mem_localization_span M K (f '' s) (f x) hx
-  rw [← Submodule.map_span, Submodule.mem_map] at hax
-  obtain ⟨y, hy, hyx⟩ := hax
-  refine ⟨a, ha, ?_⟩
-  rwa [← hf (hyx.trans (map_smul f a x).symm)]
+  refine ⟨a, ha, (Submodule.apply_mem_span_image_iff_mem_span hf).mp ?_⟩
+  simpa only [map_smul, Submonoid.smul_def] using hax
 
 end LinearMap
 
