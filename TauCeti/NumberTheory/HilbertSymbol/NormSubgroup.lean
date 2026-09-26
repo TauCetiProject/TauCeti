@@ -168,6 +168,7 @@ theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
 /-- **The diagonal entry of the Hilbert symbol.** The sign of `(a, a)` is the sign of `(a, -1)` for
 every `a`, with no hypothesis beyond `K` being a field, so the diagonal entry is no separate
 choice of normalization. -/
+@[simp]
 theorem hilbertSymbol_self (a : Kˣ) : hilbertSymbol a a = hilbertSymbol a (-1) := by
   -- The norm subgroup for the radicand `a` contains the norm `-a` of the square-root generator,
   -- hence contains `a` exactly when it contains `-1`.
