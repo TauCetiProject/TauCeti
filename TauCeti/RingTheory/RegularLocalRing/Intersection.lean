@@ -13,11 +13,11 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 /-!
 # Local intersection multiplicities in a two-dimensional regular local ring
 
-Two curves on a surface meet at finitely many points, and the length of the quotient of the local
-ring of the surface by the two equations of the curves is their local intersection multiplicity
-there. On a *regular* surface the number is the order of vanishing of one equation along the
-other: cutting the surface by a general equation `f` leaves a regular curve, so a discrete
-valuation ring, and the second equation `g` has an order of vanishing on it.
+Two curves on a surface that share no component meet at finitely many points, and the length of
+the quotient of the local ring of the surface by the two equations of the curves is their local
+intersection multiplicity there. On a *regular* surface the number is the order of vanishing of
+one equation along the other: cutting the surface by a general equation `f` leaves a regular
+curve, so a discrete valuation ring, and the second equation `g` has an order of vanishing on it.
 
 This file develops that local statement, which is the local input for the intersection numbers
 `aᵢⱼ` and the component multiplicities of the special fibre of a regular model of a curve, and
@@ -27,19 +27,21 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
 
 * `TauCeti.ord_eq_length_quot_span`: the local intersection multiplicity of two equations through
   a point is the order of vanishing of one of them along the other;
-* `TauCeti.length_quot_span_eq_zero_iff`: the intersection multiplicity vanishes exactly when one
-  of the two equations is a unit along the other, that is, exactly when the point does not lie
-  on the second curve;
+* `TauCeti.length_quot_span_eq_zero_iff`: the intersection multiplicity vanishes exactly when the
+  second equation is a unit along the first, that is, when the point does not lie on the second
+  curve;
 * `TauCeti.ringKrullDim_quot_span_singleton_eq_one`: a general hyperplane section of a
   two-dimensional regular local ring is a curve of dimension one, hence a discrete valuation ring
   by `TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one`;
-* `TauCeti.isFiniteLength_quot_span_add`, `TauCeti.exists_nat_length_quot_span_add` and
-  `TauCeti.one_le_length_quot_span_add`: the local intersection multiplicity of two curves without
-  a common component through the closed point of a regular surface is a natural number, and is
-  positive when the closed point lies on both curves;
-* `TauCeti.length_quot_span_add_mul_eq_add`: the local intersection multiplicity is additive over
+* `TauCeti.isFiniteLength_quot_span_pair` and `TauCeti.exists_nat_length_quot_span_pair`: the
+  local intersection multiplicity of two curves without a common component through the closed
+  point of a regular surface is finite, hence a natural number;
+* `TauCeti.one_le_length_quot_span_pair`: in a local ring, the length of the quotient by two
+  equations through the closed point is positive;
+* `TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors` and
+  `TauCeti.length_quot_span_pair_mul_eq_add`: the local intersection multiplicity is additive over
   a product of equations, which is additivity over a union of curves;
-* `TauCeti.length_quot_span_add_eq_one_of_eq_maximalIdeal`: two equations generating the maximal
+* `TauCeti.length_quot_span_pair_eq_one_of_eq_maximalIdeal`: two equations generating the maximal
   ideal meet transversally, with intersection multiplicity one.
 
 Taking `f` and `g` to be the equations of the two branches of the local model `R[x, y] ⧸ (xy - πⁿ)`
@@ -55,17 +57,19 @@ The length of `R ⧸ (f, g)` is compared with the order of vanishing in `R ⧸ (
 isomorphism theorem for rings `DoubleQuot.quotQuotEquivQuotSupₐ`, which identifies
 `(R ⧸ (f)) ⧸ (g)` with `R ⧸ (f) ⊔ (g)`, and through Mathlib's
 `Module.length_eq_of_surjective`, which identifies the length of a module over a surjective
-quotient with its length over the original ring. The statements about lengths above,
-`ord_eq_length_quot_span`, `length_quot_span_eq_zero_iff`, `length_quot_maximalIdeal_eq_one` and
-`length_quot_span_add_eq_one_of_eq_maximalIdeal`, hold in an arbitrary commutative ring, the last
-two for a local ring; the surface hypotheses enter only through the finiteness and the positivity of
-the order of vanishing.
+quotient with its length over the original ring. The statements
+`ord_eq_length_quot_span`, `length_quot_span_eq_zero_iff` and
+`length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors` hold in an arbitrary commutative ring,
+and `length_quot_maximalIdeal_eq_one`, `length_quot_span_pair_eq_one_of_eq_maximalIdeal` and
+`one_le_length_quot_span_pair` for a local ring; the surface hypotheses enter only through the
+finiteness and the positivity of the order of vanishing.
 
 ## References
 
 * J.-P. Serre, *Local Algebra*, Chapter V, §3: intersection multiplicities on a regular local
   ring of dimension two, and their additivity.
-* R. Hartshorne, *Algebraic Geometry*, IV.§5, for the order of vanishing along a Cartier divisor.
+* R. Hartshorne, *Algebraic Geometry*, II.§6 (Divisors): Cartier divisors given by local
+  equations, and the order of vanishing of a rational function along a prime divisor.
 -/
 
 public section
@@ -81,44 +85,31 @@ section Quotient
 
 variable {R : Type u} [CommRing R]
 
-/-- The quotients `R ⧸ (I ⊔ J)` and `(R ⧸ I) ⧸ J`, the second taken by the image of `J`, are
-isomorphic as modules over `R` by the third isomorphism theorem, so their lengths agree. -/
-private theorem length_quot_quot_eq_length_quot_sup (I J : Ideal R) :
-    Module.length R ((R ⧸ I) ⧸ J.map (Ideal.Quotient.mkₐ R I)) = Module.length R (R ⧸ I ⊔ J) :=
-  (DoubleQuot.quotQuotEquivQuotSupₐ R I J).toLinearEquiv.length_eq
-
-/-- The ideal generated by two elements is the supremum of the two principal ideals they generate,
-being the join of the two individual equations. -/
-private theorem span_singleton_sup_span_singleton (f g : R) :
-    Ideal.span {f} ⊔ Ideal.span {g} = Ideal.span {f, g} :=
-  (Ideal.span_insert f ({g} : Set R)).symm
-
-/-- The image of a principal ideal in a quotient ring is the principal ideal of the image. -/
-private theorem map_span_singleton (I : Ideal R) (g : R) :
-    (Ideal.span {g} : Ideal R).map (Ideal.Quotient.mkₐ R I)
-      = Ideal.span {Ideal.Quotient.mk I g} := by
-  rw [Ideal.map_span, Set.image_singleton]
-  rfl
-
 /-- **The local intersection multiplicity of two equations is an order of vanishing.**
 
 For elements `f` and `g` of a commutative ring, the order of vanishing of `g` in the quotient by
 `(f)` is the length of that quotient by the image of `g`, which the third isomorphism theorem
 identifies with the length of `R ⧸ (f, g)`, the length of the quotient by the two equations
-through the point. On a surface this is the local intersection multiplicity of the two curves, and
-it is finite as soon as one of the two equations is a parameter, by
-`TauCeti.isFiniteLength_quot_span_add`. -/
+through the point. On a surface this is the local intersection multiplicity of the two curves. In
+a two-dimensional regular local ring it is finite as soon as `f` is a parameter, that is
+`f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and the second equation does not vanish identically on
+the curve `f = 0`, that is `g ∉ Ideal.span {f}`, by `TauCeti.isFiniteLength_quot_span_pair`. -/
 theorem ord_eq_length_quot_span (f g : R) :
     Ring.ord (R ⧸ Ideal.span {f}) (Ideal.Quotient.mk (Ideal.span {f}) g)
       = Module.length R (R ⧸ Ideal.span {f, g}) := by
-  rw [Ring.ord, ← span_singleton_sup_span_singleton, ← length_quot_quot_eq_length_quot_sup,
-    map_span_singleton,
+  rw [Ring.ord, ← (Ideal.span_insert f ({g} : Set R)).symm,
+    ← (DoubleQuot.quotQuotEquivQuotSupₐ R (Ideal.span {f})
+      (Ideal.span {g})).toLinearEquiv.length_eq,
+    Ideal.map_span, Set.image_singleton,
     Module.length_eq_of_surjective (R := R ⧸ Ideal.span {f}) Ideal.Quotient.mk_surjective]
+  rfl
 
 /-- **The local intersection multiplicity of two equations vanishes exactly when the second
-equation is a unit along the first.** For a local ring `(R, 𝔪)` this says that two equations
-through the closed point meet there with multiplicity zero exactly when the image of `g` in
-`R ⧸ (f)` is a unit, that is, exactly when the second equation does not vanish at the point. -/
+equation is a unit along the first.** Let `(R, 𝔪)` be a local ring, let `f ∈ 𝔪` be an equation
+cutting out a curve through the closed point, and let `g` be an arbitrary second equation. The
+length of `R ⧸ (f, g)` vanishes exactly when the image of `g` in `R ⧸ (f)` is a unit, that is,
+exactly when the closed point does not lie on the curve `g = 0` of the first. -/
+@[simp]
 theorem length_quot_span_eq_zero_iff (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 0
       ↔ IsUnit (Ideal.Quotient.mk (Ideal.span {f}) g) := by
@@ -127,6 +118,7 @@ theorem length_quot_span_eq_zero_iff (f g : R) :
 
 /-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
 residue field. -/
+@[simp]
 theorem length_quot_maximalIdeal_eq_one [IsLocalRing R] :
     Module.length R (R ⧸ maximalIdeal R) = 1 := by
   rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
@@ -136,12 +128,65 @@ theorem length_quot_maximalIdeal_eq_one [IsLocalRing R] :
 
 /-- **Two equations generating the maximal ideal of a local ring meet transversally**, with local
 intersection multiplicity one: they generate the residue field, whose length is one. -/
-theorem length_quot_span_add_eq_one_of_eq_maximalIdeal [IsLocalRing R] (f g : R)
+theorem length_quot_span_pair_eq_one_of_eq_maximalIdeal [IsLocalRing R] (f g : R)
     (h : Ideal.span {f, g} = maximalIdeal R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 1 := by
   rw [h, length_quot_maximalIdeal_eq_one]
 
+/-- **The local intersection multiplicity is additive over a product of equations.** If the image
+of `h` in `R ⧸ (f)` is a non-zero-divisor, then the length of `R ⧸ (f, g * h)` is the sum of the
+lengths of `R ⧸ (f, g)` and `R ⧸ (f, h)`: by `TauCeti.ord_eq_length_quot_span` this is the
+additivity `Ring.ord_mul` of the order of vanishing on the curve `f = 0`. -/
+theorem length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors {f g h : R}
+    (hh : Ideal.Quotient.mk (Ideal.span {f}) h ∈ nonZeroDivisors (R ⧸ Ideal.span {f})) :
+    Module.length R (R ⧸ Ideal.span {f, g * h})
+      = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) := by
+  rw [← ord_eq_length_quot_span f (g * h), map_mul, Ring.ord_mul (R ⧸ Ideal.span {f}) hh,
+    ← ord_eq_length_quot_span f g, ← ord_eq_length_quot_span f h]
+
 end Quotient
+
+section LocalRing
+
+variable {R : Type u} [CommRing R] [IsLocalRing R]
+
+/-- **The length of the quotient of a local ring by two equations through the closed point is
+positive.** If `f` and `g` lie in the maximal ideal of a local ring `(R, 𝔪)`, then
+`Module.length R (R ⧸ (f, g)) ≥ 1`: the image of `g` in `R ⧸ (f)` lies in the maximal ideal of
+that quotient and is not a unit there, so by `TauCeti.length_quot_span_eq_zero_iff` the length
+does not vanish. For `f` a parameter of a two-dimensional regular local ring, this is the
+positivity of the local intersection multiplicity of two curves through the closed point, whose
+finiteness for a proper intersection is `TauCeti.isFiniteLength_quot_span_pair`. -/
+theorem one_le_length_quot_span_pair {f g : R} (hf : f ∈ maximalIdeal R)
+    (hgm : g ∈ maximalIdeal R) : 1 ≤ Module.length R (R ⧸ Ideal.span {f, g}) := by
+  -- the quotient by `(f)`, a proper ideal of the local ring `R`, is a local ring
+  have hne_top : Ideal.span {f} ≠ ⊤ := by
+    rintro htop
+    have hone : (1 : R) ∈ Ideal.span {f} := by
+      rw [htop]
+      exact Submodule.mem_top
+    have hle : Ideal.span {f} ≤ maximalIdeal R := Ideal.span_le.2 (by simpa using hf)
+    exact (IsLocalRing.notMem_maximalIdeal.mpr isUnit_one) (hle hone)
+  let _ : Nontrivial (R ⧸ Ideal.span {f}) := Ideal.Quotient.nontrivial_iff.mpr hne_top
+  let _ : IsLocalRing (R ⧸ Ideal.span {f}) :=
+    IsLocalRing.of_surjective' (Ideal.Quotient.mk (Ideal.span {f})) Ideal.Quotient.mk_surjective
+  -- the image of `g` lies in the maximal ideal of the curve `f = 0`, so it is not a unit there
+  have hmax : (maximalIdeal R).map (Ideal.Quotient.mk (Ideal.span {f}))
+      = maximalIdeal (R ⧸ Ideal.span {f}) :=
+    map_maximalIdeal_of_surjective (f := Ideal.Quotient.mk (Ideal.span {f}))
+      Ideal.Quotient.mk_surjective
+  have hnotunit : ¬ IsUnit (Ideal.Quotient.mk (Ideal.span {f}) g) := by
+    intro hu
+    have hmem : (Ideal.Quotient.mk (Ideal.span {f}) g)
+        ∈ maximalIdeal (R ⧸ Ideal.span {f}) := by
+      rw [← hmax]
+      exact Ideal.mem_map_of_mem (Ideal.Quotient.mk (Ideal.span {f})) hgm
+    exact IsLocalRing.notMem_maximalIdeal.mpr hu hmem
+  have hne : Module.length R (R ⧸ Ideal.span {f, g}) ≠ 0 :=
+    fun hzero => hnotunit ((length_quot_span_eq_zero_iff f g).mp hzero)
+  exact (Order.one_le_iff_ne_zero).mpr hne
+
+end LocalRing
 
 section Surface
 
@@ -187,7 +232,7 @@ intersection multiplicity
 `Module.length R (R ⧸ (f, g))` is finite: it is the order of vanishing of `g` on the discrete
 valuation ring `R ⧸ (f)` by `TauCeti.ord_eq_length_quot_span`, and `g` is a non-zero-divisor
 there. -/
-theorem isFiniteLength_quot_span_add (hd : ringKrullDim R = 2) {f g : R}
+theorem isFiniteLength_quot_span_pair (hd : ringKrullDim R = 2) {f g : R}
     (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
   -- the curve `f = 0` is a discrete valuation ring, so a domain of dimension one
@@ -205,62 +250,36 @@ theorem isFiniteLength_quot_span_add (hd : ringKrullDim R = 2) {f g : R}
 
 /-- **The local intersection multiplicity of a proper intersection on a regular surface is a
 natural number.** The intersection numbers and the component multiplicities of a special fibre are
-natural numbers, and by `TauCeti.isFiniteLength_quot_span_add` so is the local intersection
+natural numbers, and by `TauCeti.isFiniteLength_quot_span_pair` so is the local intersection
 multiplicity of two curves without a common component. -/
-theorem exists_nat_length_quot_span_add (hd : ringKrullDim R = 2) {f g : R}
+theorem exists_nat_length_quot_span_pair (hd : ringKrullDim R = 2) {f g : R}
     (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) (hg : g ∉ Ideal.span {f}) :
     ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
   have hc : Module.length R (R ⧸ Ideal.span {f, g}) ≠ ⊤ :=
-    Module.length_ne_top_iff.mpr (isFiniteLength_quot_span_add hd hf hf2 hg)
+    Module.length_ne_top_iff.mpr (isFiniteLength_quot_span_pair hd hf hf2 hg)
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
-
-/-- **Two curves through the closed point of a regular local ring have positive local
-intersection multiplicity.** If `f ∈ 𝔪 \ 𝔪²` and `g ∈ 𝔪` cut out two curves through the closed
-point of a regular local ring, then their local intersection multiplicity is at least one, as the
-intersection number of two divisors through a point is: the point lies on the second curve, so by
-`TauCeti.length_quot_span_eq_zero_iff` the intersection multiplicity does not vanish. -/
-theorem one_le_length_quot_span_add {f g : R}
-    (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) (hgm : g ∈ maximalIdeal R) :
-    1 ≤ Module.length R (R ⧸ Ideal.span {f, g}) := by
-  let _ : IsRegularLocalRing (R ⧸ Ideal.span {f}) :=
-    IsRegularLocalRing.quotient_span_singleton hf hf2
-  -- the image of `g` lies in the maximal ideal of the curve `f = 0`, so it is not a unit there
-  have hmax : (maximalIdeal R).map (Ideal.Quotient.mk (Ideal.span {f}))
-      = maximalIdeal (R ⧸ Ideal.span {f}) :=
-    map_maximalIdeal_of_surjective (f := Ideal.Quotient.mk (Ideal.span {f}))
-      Ideal.Quotient.mk_surjective
-  have hnotunit : ¬ IsUnit (Ideal.Quotient.mk (Ideal.span {f}) g) := by
-    intro hu
-    have hmem : (Ideal.Quotient.mk (Ideal.span {f}) g)
-        ∈ maximalIdeal (R ⧸ Ideal.span {f}) := by
-      rw [← hmax]
-      exact Ideal.mem_map_of_mem (Ideal.Quotient.mk (Ideal.span {f})) hgm
-    exact IsLocalRing.notMem_maximalIdeal.mpr hu hmem
-  have hne : Module.length R (R ⧸ Ideal.span {f, g}) ≠ 0 :=
-    fun hzero => hnotunit ((length_quot_span_eq_zero_iff f g).mp hzero)
-  exact (Order.one_le_iff_ne_zero).mpr hne
 
 /-- **The local intersection multiplicity on a regular surface is additive over a product of
 equations.** If `f` is a parameter of a two-dimensional regular local ring and `h` is not a
 multiple of `f`, then the curve `g * h = 0` meets the curve `f = 0` with multiplicity equal to
-the sum of the multiplicities of the two factors. Applying this to a product of the equations of
-distinct irreducible components of a curve gives additivity of the intersection number over a
-union of curves, which is the bilinearity of intersection numbers. -/
-theorem length_quot_span_add_mul_eq_add (hd : ringKrullDim R = 2) {f g h : R}
+the sum of the multiplicities of the two factors, by
+`TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: the image of `h` on the
+discrete valuation ring `R ⧸ (f)` is a non-zero-divisor. Applying this to a product of the
+equations of distinct irreducible components of a curve gives additivity of the intersection
+number over a union of curves, which is the bilinearity of intersection numbers. -/
+theorem length_quot_span_pair_mul_eq_add (hd : ringKrullDim R = 2) {f g h : R}
     (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) := by
-  -- the curve `f = 0` is a discrete valuation ring, so a domain, in which the image of `h` is a
-  -- non-zero-divisor
+  -- the curve `f = 0` is a discrete valuation ring, so a domain, in which the nonzero image of `h`
+  -- is a non-zero-divisor
   let _ : IsRegularLocalRing (R ⧸ Ideal.span {f}) :=
     IsRegularLocalRing.quotient_span_singleton hf hf2
   let _ : IsDiscreteValuationRing (R ⧸ Ideal.span {f}) :=
     IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
       (ringKrullDim_quot_span_singleton_eq_one hd hf hf2)
-  have hh' : Ideal.Quotient.mk (Ideal.span {f}) h ∈ nonZeroDivisors (R ⧸ Ideal.span {f}) :=
-    mem_nonZeroDivisors_of_ne_zero (fun hzero => hh ((Submodule.Quotient.mk_eq_zero _).mp hzero))
-  rw [← ord_eq_length_quot_span f (g * h), map_mul, Ring.ord_mul (R ⧸ Ideal.span {f}) hh',
-    ← ord_eq_length_quot_span f g, ← ord_eq_length_quot_span f h]
+  exact length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero (fun hzero => hh ((Submodule.Quotient.mk_eq_zero _).mp hzero)))
 
 end Surface
 
