@@ -42,7 +42,7 @@ theorem measurable_eLpNorm_kernel (hp0 : p ≠ 0) (hp : p ≠ ∞) (κ : Kernel 
 
 /-- Averaging the pointwise `L^p` seminorms `x ↦ ‖f‖_{L^p (κ x)}` over `μ` in `L^p` gives the
 `L^p` seminorm of `f` against the mixture `κ ∘ₘ μ`. -/
-theorem eLpNorm_eLpNorm_kernel (hp0 : p ≠ 0) (hp : p ≠ ∞) (κ : Kernel X Y)
+@[simp] theorem eLpNorm_eLpNorm_kernel (hp0 : p ≠ 0) (hp : p ≠ ∞) (κ : Kernel X Y)
     (μ : Measure X) {f : Y → ℝ≥0∞} (hf : Measurable f) :
     eLpNorm (fun x ↦ eLpNorm f p (κ x)) p μ = eLpNorm f p (κ ∘ₘ μ) := by
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
