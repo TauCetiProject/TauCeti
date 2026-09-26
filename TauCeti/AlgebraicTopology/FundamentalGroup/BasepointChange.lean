@@ -106,6 +106,7 @@ open CategoryTheory in
 /-- Basepoint change along `γ` is represented by conjugation with `γ` in the path quotient: a loop
 `g` at `x₀` goes to the class of `γ⁻¹ ⬝ g ⬝ γ`. This is the forward counterpart of
 `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`. -/
+@[simp]
 lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
     (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
@@ -123,6 +124,7 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
 
 open CategoryTheory in
 /-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
+@[simp]
 lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
     {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (γ.trans δ) =
