@@ -13,12 +13,9 @@ public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Bas
 # Almost-sure convergence of sampled homomorphism densities
 
 Sample the infinite `W`-random graph once, from the joint sampling law `infiniteSampleLaw W`, and
-read off its growing windows on the labels below `n`. Each window has the law `G(n, W)`, so for a
-fixed finite graph `F` its homomorphism density concentrates around `t(F, W)` with summable tails.
-The first Borel--Cantelli lemma then shows that, almost surely, the deviation eventually drops below
-every tolerance `1 / (m + 1)`, and a countable intersection over the tolerances gives almost-sure
-convergence. Since there are only countably many graphs on `Fin k` for `k : ℕ`, a second countable
-intersection makes the convergence hold simultaneously for all finite patterns.
+read off its growing windows on the labels below `n`; each window has the law `G(n, W)`. This file
+shows that, almost surely, the homomorphism densities of the windows converge to those of `W`:
+for a fixed finite graph `F`, and simultaneously for every finite graph on `Fin k` and every `k`.
 
 The last form is phrased with the step graphons `finiteGraphGraphon` of the windows, which are
 graphons on the unit interval: almost surely every homomorphism density of the windows' step
@@ -39,9 +36,8 @@ almost-sure convergence of the windows to `W` in cut distance.
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §10.1.
 * C. Freer, `cameronfreer/graphon` at commit
-  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/AlmostSureSampling.lean`. The
-  route — Borel--Cantelli per fixed pattern at tolerances `1 / (m + 1)` from the summable
-  concentration tails, then a countable intersection over patterns — is the one formalized there.
+  `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`, Apache-2.0, `Graphon/AlmostSureSampling.lean`, whose
+  proof route is adapted here.
 -/
 
 public section
@@ -92,6 +88,7 @@ theorem tendsto_homDensityFin_infiniteSampleLaw_ae_forall (W : Graphon Ω μ) :
     ∀ᵐ G ∂infiniteSampleLaw W, ∀ (k : ℕ) (F : SimpleGraph (Fin k)) [DecidableRel F.Adj],
       Tendsto (fun n => homDensityFin F (G.restrictFin n)) atTop (𝓝 (homDensity F W)) := by
   classical
+  -- A countable intersection over the countably many graphs on `Fin k`, `k : ℕ`.
   have h : ∀ᵐ G ∂infiniteSampleLaw W, ∀ (k : ℕ) (F : SimpleGraph (Fin k)),
       Tendsto (fun n => homDensityFin F (G.restrictFin n)) atTop (𝓝 (homDensity F W)) :=
     ae_all_iff.2 fun k => ae_all_iff.2 fun F => tendsto_homDensityFin_infiniteSampleLaw_ae W F
