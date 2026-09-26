@@ -142,11 +142,11 @@ theorem smul_eq_self_of_reduced {W : WeierstrassCurve ℤ} (C : VariableChange �
 
 /-! ### Existence and uniqueness -/
 
-/-- **Every elliptic curve over `ℚ` has a reduced minimal equation**: a globally minimal equation
-exists since `ℤ` is a principal ideal domain, and a change of variables over `ℤ` with `u = 1`
-reduces its coefficients `a₁`, `a₂`, `a₃` without affecting global minimality. -/
+/-- **Every elliptic curve over `ℚ` has a reduced minimal equation** in its variable-change
+orbit. -/
 theorem exists_isReducedMinimal_smul (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     ∃ C : VariableChange ℚ, IsReducedMinimal (C • E) := by
+  -- Start with a globally minimal equation and normalize its coefficients over `ℤ`.
   obtain ⟨C₀, hC₀⟩ := exists_isGlobalMinimal_smul ℤ E
   have := hC₀.isIntegral
   have hW : (integralModel ℤ (C₀ • E)).baseChange ℚ = C₀ • E := baseChange_integralModel_eq ℤ _
@@ -159,12 +159,12 @@ theorem exists_isReducedMinimal_smul (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     simp only [baseChange, map_a₁, map_a₂, map_a₃, algebraMap_int_eq, eq_intCast]
     exact ⟨by exact_mod_cast h₁, by exact_mod_cast h₂, by exact_mod_cast h₃⟩
 
-/-- **Two reduced minimal equations related by a change of variables are equal.** The change of
-variables is defined over `ℤ`, both equations being globally minimal, and such a change of
-variables between equations in reduced form is the identity or `[-1]`. -/
+/-- **Two reduced minimal equations related by a change of variables are equal.** This gives
+uniqueness of the reduced equation in each variable-change orbit. -/
 theorem IsReducedMinimal.eq_of_smul_eq {W₁ W₂ : WeierstrassCurve ℚ} [W₁.IsElliptic]
     [W₂.IsElliptic] (h₁ : IsReducedMinimal W₁) (h₂ : IsReducedMinimal W₂) (C : VariableChange ℚ)
     (hC : C • W₁ = W₂) : W₁ = W₂ := by
+  -- The change descends to `ℤ`; reduced form makes its action fix the equation.
   obtain ⟨C₀, rfl⟩ := h₁.isGlobalMinimal.exists_baseChange_eq_of_smul_eq h₂.isGlobalMinimal C hC
   have := h₁.isGlobalMinimal.isIntegral
   have := h₂.isGlobalMinimal.isIntegral

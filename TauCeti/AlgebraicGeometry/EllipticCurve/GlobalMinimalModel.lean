@@ -201,9 +201,7 @@ theorem IsSemiGlobalMinimal.isIntegral {W : WeierstrassCurve K} [W.IsElliptic]
 
 /-! ### Changes of variables between globally minimal equations -/
 
-/-- **A change of variables defined over `O` preserves global minimality**: it is defined over
-every localisation `Oᵥ`, and a change of variables defined over `Oᵥ` preserves minimality at `v`
-(`WeierstrassCurve.isMinimal_baseChange_smul`). -/
+/-- **A change of variables defined over `O` preserves global minimality.** -/
 theorem IsGlobalMinimal.baseChange_smul {W : WeierstrassCurve K} [W.IsElliptic]
     (h : IsGlobalMinimal O W) (C : VariableChange O) :
     IsGlobalMinimal O (C.baseChange K • W) := by
@@ -211,25 +209,22 @@ theorem IsGlobalMinimal.baseChange_smul {W : WeierstrassCurve K} [W.IsElliptic]
   have := h.isMinimal v
   have hC := isMinimal_baseChange_smul (Localization.AtPrime v.asIdeal) W
     (C.baseChange (Localization.AtPrime v.asIdeal))
-  -- Base changing `C` to `Oᵥ` and then to `K` is base changing it to `K`.
-  change IsMinimal _
-    ((C.baseChange (Localization.AtPrime v.asIdeal)).map
-      (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K :
-        Localization.AtPrime v.asIdeal →+* K) • W) at hC
-  rw [VariableChange.map_baseChange C
-    (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K)] at hC
+  have hmap : (C.baseChange (Localization.AtPrime v.asIdeal)).baseChange K =
+      C.baseChange K :=
+    VariableChange.map_baseChange C
+      (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K)
+  rw [hmap] at hC
   exact hC
 
 /-- **A change of variables between two globally minimal equations of an elliptic curve is defined
-over `O`** (Silverman, *AEC*, VIII.8): at every height-one prime `v` both equations are minimal, so
-the scaling factor `D.u` is a unit of `Oᵥ`; hence `D.u` and `D.u⁻¹` lie in `O = ⋂ᵥ Oᵥ`, so `D.u` is
-a unit of `O`, and a change of variables between integral models with such a scaling factor has
-its translation parameters in `O` too. Together with `IsGlobalMinimal.baseChange_smul`, the changes
-of variables between globally minimal equations are exactly those defined over `O`. -/
+over `O`** (Silverman, *AEC*, VIII.8). Together with `IsGlobalMinimal.baseChange_smul`, this
+characterises the changes of variables between globally minimal equations. -/
 theorem IsGlobalMinimal.exists_baseChange_eq_of_smul_eq {W₁ W₂ : WeierstrassCurve K}
     [W₁.IsElliptic] [W₂.IsElliptic] (h₁ : IsGlobalMinimal O W₁) (h₂ : IsGlobalMinimal O W₂)
     (D : VariableChange K) (hD : D • W₁ = W₂) :
     ∃ C₀ : VariableChange O, C₀.baseChange K = D := by
+  -- Local minimality makes the scaling factor a unit at every height-one prime. Descend that
+  -- unit to `O`, then descend the remaining parameters using the integral models.
   have := h₁.isIntegral
   have := h₂.isIntegral
   have hloc : ∀ v : HeightOneSpectrum O, ∃ u₀ : (Localization.AtPrime v.asIdeal)ˣ,
