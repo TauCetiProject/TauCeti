@@ -432,9 +432,7 @@ private theorem inverseHerbrand_natCast_nonneg (n : ℕ) :
   rw [inverseHerbrand_of_coe_le_zero K L (by simp)] at h
   simpa using Subtype.coe_le_coe.2 h
 
-/-- `ψ(n)` is a natural number for every natural number `n`. Writing `u = ψ(n)` and `m = ⌊u⌋`, the
-finite-sum formula gives `(u - m) #G_{m+1} = n #G_0 - (#G_1 + ⋯ + #G_m)`, whose right side is a
-multiple of `#G_{m+1}`; as `0 ≤ u - m < 1`, it vanishes. -/
+/-- The inverse Herbrand value at a natural number equals its natural floor. -/
 private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
     (inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ) =
       ⌊(inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊ := by
@@ -515,12 +513,6 @@ theorem psiNat_eq_iff {n m : ℕ} :
       rw [Subtype.ext_iff, coe_herbrand_of_coe_eq_natCast K L m rfl,
         Subtype.coe_mk, div_eq_iff h0]
       norm_cast
-
-/-- `#G_1 + ⋯ + #G_{ψℕ(n)} = n · #G_0`. -/
-theorem sum_card_lowerRamificationGroup_psiNat (n : ℕ) :
-    ∑ i ∈ Finset.Icc 1 (psiNat K L n), Nat.card (lowerRamificationGroup K L i) =
-      n * Nat.card (lowerRamificationGroup K L 0) :=
-  (psiNat_eq_iff K L).1 rfl
 
 /-- `ψℕ_{L/K}(0) = 0`. -/
 @[simp]
