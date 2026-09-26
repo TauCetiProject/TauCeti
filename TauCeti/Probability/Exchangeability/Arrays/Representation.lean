@@ -38,6 +38,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
+open scoped ENNReal
 
 namespace TauCeti.Probability
 
@@ -95,6 +96,22 @@ theorem rowCodingArrayLaw_inj {π₁ π₂ : Measure (ProbabilityMeasure (ℕ �
     [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
   ⟨eq_of_rowCodingArrayLaw_eq, fun h ↦ congrArg rowCodingArrayLaw h⟩
+
+/-- The row-coding construction preserves sums of mixing laws. -/
+@[simp]
+theorem rowCodingArrayLaw_add (π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α)))
+    [SFinite π₁] [SFinite π₂] :
+    rowCodingArrayLaw (π₁ + π₂) = rowCodingArrayLaw π₁ + rowCodingArrayLaw π₂ := by
+  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.add_prod]
+  exact Measure.map_add _ _ (Measurable.of_eval fun p => measurable_unitIntervalCoding_entry p)
+
+/-- The row-coding construction preserves nonnegative scalar multiples of mixing laws. -/
+@[simp]
+theorem rowCodingArrayLaw_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    rowCodingArrayLaw (c • π) = c • rowCodingArrayLaw π := by
+  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.prod_smul_left]
+  exact Measure.map_smul _
+    (Measurable.of_eval fun p => measurable_unitIntervalCoding_entry p).aemeasurable
 
 /-- **Canonical row-coding representation.** A separately exchangeable array has a unique law on
 path measures which is invariant under column reindexing and whose row-coding array law is the
