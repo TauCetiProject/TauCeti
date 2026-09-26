@@ -82,30 +82,25 @@ theorem edist_eq (Φ : RiemannianIsometry I J M N) (x y : M) :
     Φ.riemannianEDist_eq]
 
 /-- A smooth Riemannian isometry between spaces equipped with their Riemannian extended distances
-is an isometry equivalence. -/
-def toIsometryEquiv (Φ : RiemannianIsometry I J M N) : M ≃ᵢ N where
-  toEquiv := Φ.toDiffeomorph.toEquiv
-  isometry_toFun := fun x y ↦ Φ.edist_eq x y
-
-include hM hN in
-@[simp]
-theorem toIsometryEquiv_apply (Φ : RiemannianIsometry I J M N) (x : M) :
-    Φ.toIsometryEquiv x = Φ x := by rfl
+is an isometry of extended metric spaces; in particular it coerces to `M ≃ᵢ N`. -/
+instance : IsometryClass (RiemannianIsometry I J M N) M N where
+  isometry Φ := Φ.edist_eq
 
 /-- The metric equivalence of the inverse is the inverse metric equivalence. -/
 @[simp]
 theorem toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
-    Φ.symm.toIsometryEquiv = Φ.toIsometryEquiv.symm := by
+    ((Φ.symm : RiemannianIsometry J I N M) : N ≃ᵢ M) = (Φ : M ≃ᵢ N).symm := by
   ext x
-  apply Φ.toIsometryEquiv.injective
+  apply (Φ : M ≃ᵢ N).injective
   simp
 
 /-- The identity Riemannian isometry induces the identity metric equivalence. -/
 @[simp]
 theorem toIsometryEquiv_refl :
-    (RiemannianIsometry.refl I M).toIsometryEquiv = IsometryEquiv.refl M := by
+    ((RiemannianIsometry.refl I M : RiemannianIsometry I I M M) : M ≃ᵢ M) =
+      IsometryEquiv.refl M := by
   ext x
-  rw [toIsometryEquiv_apply, RiemannianIsometry.refl_apply]
+  rw [IsometryClass.coe_coe, RiemannianIsometry.refl_apply]
   simp only [IsometryEquiv.coe_eq_toEquiv, IsometryEquiv.refl, Equiv.refl_apply]
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -117,7 +112,8 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 @[simp]
 theorem toIsometryEquiv_trans (Φ : RiemannianIsometry I J M N)
     (Ψ : RiemannianIsometry J K N P) :
-    (Φ.trans Ψ).toIsometryEquiv = Φ.toIsometryEquiv.trans Ψ.toIsometryEquiv := by
+    ((Φ.trans Ψ : RiemannianIsometry I K M P) : M ≃ᵢ P) =
+      (Φ : M ≃ᵢ N).trans (Ψ : N ≃ᵢ P) := by
   ext x
   simp
 
