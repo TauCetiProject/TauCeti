@@ -197,7 +197,7 @@ not a homogeneity requirement on `b`; degree-`q` homogeneity in the total letter
 and is recorded by `TauCeti.TensorWords.gradedPiece`.  Nor does the condition itself require `b` to
 annihilate the empty word: the extensions by zero on the empty word of *reduced* coderivations,
 such as `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`, satisfy it, by
-`TauCeti.TensorWords.extendReduced_isGradedCoderivation`. -/
+`TauCeti.TensorWords.isGradedCoderivation_extendReduced`. -/
 def IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
     (b : TensorWords R M →ₗ[R] TensorWords R M) : Prop :=
   deconcatenation R M ∘ₗ b =

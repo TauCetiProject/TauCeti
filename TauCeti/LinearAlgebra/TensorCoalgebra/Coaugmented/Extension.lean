@@ -22,8 +22,8 @@ coaugmented one, whose coproduct admits the two degenerate cuts at the ends of a
 extension preserves the three properties that the module and bimodule theories need from a
 coderivation over `b`: the square-zero law
 `TauCeti.TensorWords.extendReduced_sq`, homogeneity in the total letter degree
-`TauCeti.TensorWords.extendReduced_isHomogeneous`, and the `q`-twisted co-Leibniz identity
-`TauCeti.TensorWords.extendReduced_isGradedCoderivation`.
+`TauCeti.TensorWords.isHomogeneous_extendReduced`, and the `q`-twisted co-Leibniz identity
+`TauCeti.TensorWords.isGradedCoderivation_extendReduced`.
 
 ## Main definitions
 
@@ -36,9 +36,9 @@ coderivation over `b`: the square-zero law
   endomorphism it extends.
 * `TauCeti.TensorWords.extendReduced_sq`: the extension of a square-zero endomorphism squares to
   zero.
-* `TauCeti.TensorWords.extendReduced_isHomogeneous`: the extension of a homogeneous endomorphism
+* `TauCeti.TensorWords.isHomogeneous_extendReduced`: the extension of a homogeneous endomorphism
   is homogeneous of the same degree in the total letter degree.
-* `TauCeti.TensorWords.extendReduced_isGradedCoderivation`: the extension of a `q`-twisted graded
+* `TauCeti.TensorWords.isGradedCoderivation_extendReduced`: the extension of a `q`-twisted graded
   coderivation of the reduced words is one of the coaugmented words.
 
 ## References
@@ -126,7 +126,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The extension of a homogeneous endomorphism of the reduced words is homogeneous of the same
 degree in the total letter degree of the coaugmented words. -/
-theorem extendReduced_isHomogeneous {G : InternalGrading R M} {r : ℤ}
+theorem isHomogeneous_extendReduced {G : InternalGrading R M} {r : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : LinearMap.IsHomogeneous f (ReducedTensorWords.gradedPiece G)
       (ReducedTensorWords.gradedPiece G) r) :
@@ -195,7 +195,7 @@ private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M) 
 
 /-- The extension of a `q`-twisted graded coderivation of the reduced tensor words is a `q`-twisted
 graded coderivation of the coaugmented ones. -/
-theorem extendReduced_isGradedCoderivation {G : InternalGrading R M} {q : ℤ}
+theorem isGradedCoderivation_extendReduced {G : InternalGrading R M} {q : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : ReducedTensorWords.IsGradedCoderivation G q f) :
     IsGradedCoderivation G q (extendReduced f) := by

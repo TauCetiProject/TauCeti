@@ -105,12 +105,12 @@ theorem coaugmentedBarDifferential_sq (𝒜 : AInfinityAlgebra R A) :
 theorem isHomogeneous_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
       (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 1 :=
-  extendReduced_isHomogeneous 𝒜.isHomogeneous_barDifferential
+  isHomogeneous_extendReduced 𝒜.isHomogeneous_barDifferential
 
 /-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra. -/
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     TensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1 𝒜.coaugmentedBarDifferential :=
-  extendReduced_isGradedCoderivation 𝒜.isGradedCoderivation_barDifferential
+  isGradedCoderivation_extendReduced 𝒜.isGradedCoderivation_barDifferential
 
 end AInfinityAlgebra
 
