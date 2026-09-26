@@ -6,16 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
-public import Mathlib.GroupTheory.Index
-public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.Topology.Algebra.Group.Units
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 public import TauCeti.Topology.Algebra.Group.Subgroup
 import Mathlib.GroupTheory.Schreier
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # Topological generation of a topological group
