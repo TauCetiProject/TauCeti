@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Ring.Ideal
-public import TauCeti.RingTheory.Huber.StronglyNoetherian
+public import TauCeti.RingTheory.Huber.StronglyNoetherian.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.RingTheory.Huber.OpenMapping
