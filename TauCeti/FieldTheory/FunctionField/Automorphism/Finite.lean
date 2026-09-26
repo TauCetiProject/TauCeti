@@ -15,7 +15,8 @@ A finite, automorphism-invariant set of sufficiently many rational places detect
 automorphism of a function field. Restricting the action to this set embeds the full
 automorphism group in its symmetric group, and in particular makes it finite. This is the
 group-theoretic step in the Weierstrass-point argument for finiteness of the automorphism
-group in genus at least two.
+group in genus at least two. The finite invariant set is an explicit input; the result
+applies to Weierstrass points once their invariance and cardinality are established.
 
 ## References
 
