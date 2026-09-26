@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
 import Mathlib.RingTheory.ZMod.UnitsCyclic
 import Mathlib.Tactic.NormNum.Prime
 
@@ -72,25 +72,6 @@ theorem mem_fifthCyclotomicQuadraticSubfield_iff (x : K) :
     have hs := hle hσ
     simpa [MulAction.mem_stabilizer_iff] using hs
 
-/-- Every subfield of a fifth cyclotomic field is the base field, the unique quadratic subfield,
-or the full field. -/
-theorem intermediateField_eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_top
-    (F : IntermediateField ℚ K) :
-    F = ⊥ ∨ F = fifthCyclotomicQuadraticSubfield ∨ F = ⊤ := by
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {5} ℚ K
-  have : IsCyclic (ZMod 5)ˣ := ZMod.isCyclic_units_prime (by norm_num : Nat.Prime 5)
-  have : IsCyclic (Gal(K/ℚ)) :=
-    isCyclic_of_injective (galEquivZMod 5 K).toMonoidHom (galEquivZMod 5 K).injective
-  rcases subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two (card_gal_five (K := K))
-      (orderTwoSubgroup (K := K)) (card_orderTwoSubgroup (K := K)) F.fixingSubgroup with h | h | h
-  · right; right
-    rw [← IsGalois.fixedField_fixingSubgroup F, h, fixedField_bot]
-  · right; left
-    rw [← IsGalois.fixedField_fixingSubgroup F, h, orderTwoSubgroup,
-      fifthCyclotomicQuadraticSubfield]
-  · left
-    rw [← IsGalois.fixedField_fixingSubgroup F, h, IsGalois.fixedField_top]
-
 /-- The middle field of a fifth cyclotomic field has degree two over `ℚ`. -/
 @[simp]
 theorem finrank_fifthCyclotomicQuadraticSubfield :
@@ -105,19 +86,6 @@ theorem finrank_fifthCyclotomicQuadraticSubfield :
     (fifthCyclotomicQuadraticSubfield (K := K)) K
   rw [hrel, htot] at htower
   omega
-
-/-- The middle field is the only degree-two subfield of a fifth cyclotomic field. -/
-theorem eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two
-    (F : IntermediateField ℚ K) (hF : Module.finrank ℚ F = 2) :
-    F = fifthCyclotomicQuadraticSubfield := by
-  rcases intermediateField_eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_top F with
-    h | h | h
-  · rw [h, IntermediateField.finrank_bot] at hF
-    omega
-  · exact h
-  · rw [h, IntermediateField.finrank_top', IsCyclotomicExtension.Rat.finrank 5 K,
-      Nat.totient_prime (by norm_num : Nat.Prime 5)] at hF
-    omega
 
 /-- There are exactly three subfields of the fifth cyclotomic field over `ℚ`. -/
 @[simp]
@@ -136,3 +104,42 @@ theorem card_intermediateField_fifthCyclotomic :
         Nat.totient_prime (by norm_num : Nat.Prime 5)])
 
 end TauCeti.NumberField
+
+namespace IntermediateField
+
+open TauCeti TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {5} ℚ K]
+
+/-- Every subfield of a fifth cyclotomic field is the base field, the unique quadratic subfield,
+or the full field. -/
+theorem eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_top
+    (F : IntermediateField ℚ K) :
+    F = ⊥ ∨ F = fifthCyclotomicQuadraticSubfield ∨ F = ⊤ := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {5} ℚ K
+  have : IsCyclic (ZMod 5)ˣ := ZMod.isCyclic_units_prime (by norm_num : Nat.Prime 5)
+  have : IsCyclic (Gal(K/ℚ)) :=
+    isCyclic_of_injective (galEquivZMod 5 K).toMonoidHom (galEquivZMod 5 K).injective
+  rcases subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two (card_gal_five (K := K))
+      (orderTwoSubgroup (K := K)) (card_orderTwoSubgroup (K := K)) F.fixingSubgroup with h | h | h
+  · right; right
+    rw [← IsGalois.fixedField_fixingSubgroup F, h, fixedField_bot]
+  · right; left
+    rw [← IsGalois.fixedField_fixingSubgroup F, h, orderTwoSubgroup,
+      fifthCyclotomicQuadraticSubfield]
+  · left
+    rw [← IsGalois.fixedField_fixingSubgroup F, h, IsGalois.fixedField_top]
+
+/-- The middle field is the only degree-two subfield of a fifth cyclotomic field. -/
+theorem eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two
+    (F : IntermediateField ℚ K) (hF : Module.finrank ℚ F = 2) :
+    F = fifthCyclotomicQuadraticSubfield := by
+  rcases F.eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_top with h | h | h
+  · rw [h, IntermediateField.finrank_bot] at hF
+    omega
+  · exact h
+  · rw [h, IntermediateField.finrank_top', IsCyclotomicExtension.Rat.finrank 5 K,
+      Nat.totient_prime (by norm_num : Nat.Prime 5)] at hF
+    omega
+
+end IntermediateField
