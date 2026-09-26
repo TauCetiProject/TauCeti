@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 
@@ -42,6 +43,8 @@ Poincaré--Lefschetz duality, so the twisted theory, and not only the untwisted 
   with the exactness statements `TopPair.twistedCohomology_exact_relative`,
   `TopPair.twistedCohomology_exact_space` and `TopPair.twistedCohomology_exact_subspace`, and its
   naturality `TopPair.twistedCohomologyδ_naturality` in maps of pairs.
+* `TopPair.twistedCohomologyConstantIso`: for a constant system, relative twisted cohomology is
+  ordinary relative singular cohomology.
 
 ## References
 
@@ -260,6 +263,19 @@ lemma twistedCochainComplexMap_naturality
       (twistedChainComplexMap_naturality f L η)).trans
       ((ChainComplex.linearYonedaFunctor k M).map_comp _ _))
 
+/-- The cohomology form of `TopPair.twistedCochainComplexMap_naturality`. -/
+@[reassoc]
+lemma twistedCohomologyMap_naturality
+    {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (η : L ⟶ K) (n : ℕ) :
+    Q.twistedCohomologyCoefficientMap k M η n ≫ twistedCohomologyMap k M f L n =
+      twistedCohomologyMap k M f K n ≫
+        P.twistedCohomologyCoefficientMap k M
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) n :=
+  ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _).symm.trans
+    ((congrArg (fun φ ↦ (HomologicalComplex.homologyFunctor _ _ n).map φ)
+      (twistedCochainComplexMap_naturality k M f L η)).trans
+      ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _))
+
 /-- The identity map of a pair induces on relative twisted cochains the coefficient-change map
 coming from the canonical identification of a system with its pullback along the identity. -/
 @[simp]
@@ -269,6 +285,15 @@ lemma twistedCochainComplexMap_id (P : TopPair.{v})
       P.twistedCochainComplexCoefficientMap k M (fstPullbackIdIso P L).hom :=
   congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k M).map (Opposite.op φ))
     (twistedChainComplexMap_id L)
+
+/-- The cohomology form of `TopPair.twistedCochainComplexMap_id`. -/
+@[simp]
+lemma twistedCohomologyMap_id (P : TopPair.{v})
+    (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) (n : ℕ) :
+    twistedCohomologyMap k M (𝟙 P) L n =
+      P.twistedCohomologyCoefficientMap k M (fstPullbackIdIso P L).hom n :=
+  congrArg (fun φ ↦ (HomologicalComplex.homologyFunctor _ _ n).map φ)
+    (twistedCochainComplexMap_id k M P L)
 
 variable {S : TopPair.{v}} (g : Q ⟶ S) (K : LocalCoefficientSystem.{u, v, max v w} R S.fst)
 
@@ -372,5 +397,48 @@ lemma twistedCohomologyδ_naturality (n m : ℕ) (h : n + 1 = m := by lia) :
     (P.shortExact_twistedCochainComplexShortComplex _ k M) n m (by simpa)
 
 end Naturality
+
+section Constant
+
+variable (P : TopPair.{v}) (k : Type*) [Ring k] [Linear k (ModuleCat.{max v w} R)]
+  (M N : ModuleCat.{max v w} R)
+
+/-- For a constant local coefficient system, the relative twisted cochain complex of a pair is the
+ordinary relative singular cochain complex with the same coefficient module. -/
+def twistedCochainComplexConstantIso :
+    P.twistedCochainComplex ((LocalCoefficientSystem.constantFunctor P.fst).obj N) k M ≅
+      P.singularCochainComplex N k M :=
+  ((ChainComplex.linearYonedaFunctor k M).mapIso (P.twistedChainComplexConstantIso N).op).symm
+
+@[simp]
+lemma twistedCochainComplexConstantIso_hom :
+    (P.twistedCochainComplexConstantIso k M N).hom =
+      (ChainComplex.linearYonedaFunctor k M).map
+        (P.twistedChainComplexConstantIso N).inv.op := (rfl)
+
+@[simp]
+lemma twistedCochainComplexConstantIso_inv :
+    (P.twistedCochainComplexConstantIso k M N).inv =
+      (ChainComplex.linearYonedaFunctor k M).map
+        (P.twistedChainComplexConstantIso N).hom.op := (rfl)
+
+/-- For a constant local coefficient system, relative twisted cohomology is ordinary relative
+singular cohomology. -/
+def twistedCohomologyConstantIso (n : ℕ) :
+    P.twistedCohomology ((LocalCoefficientSystem.constantFunctor P.fst).obj N) k M n ≅
+      P.singularCohomology N k M n :=
+  (HomologicalComplex.homologyFunctor _ _ n).mapIso (P.twistedCochainComplexConstantIso k M N)
+
+@[simp]
+lemma twistedCohomologyConstantIso_hom (n : ℕ) :
+    (P.twistedCohomologyConstantIso k M N n).hom =
+      HomologicalComplex.homologyMap (P.twistedCochainComplexConstantIso k M N).hom n := (rfl)
+
+@[simp]
+lemma twistedCohomologyConstantIso_inv (n : ℕ) :
+    (P.twistedCohomologyConstantIso k M N n).inv =
+      HomologicalComplex.homologyMap (P.twistedCochainComplexConstantIso k M N).inv n := (rfl)
+
+end Constant
 
 end TopPair
