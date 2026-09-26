@@ -11,7 +11,7 @@ import TauCeti.Algebra.Group.Conj
 import Mathlib.Tactic.Group
 
 /-!
-# Basepoint change for fundamental-group subgroups
+# Basepoint change for fundamental groups
 
 The pointed classification of connected covers records a subgroup of the fundamental group at
 a chosen basepoint. Changing the basepoint along a path transports that subgroup by the
@@ -19,9 +19,14 @@ standard path-conjugation isomorphism of fundamental groups. This file packages 
 and the induced transport of the normalizer quotient `N(H) / H` used for deck groups of covers
 attached to subgroups.
 
+It also records the element-level behaviour of the transport: path-quotient formulas, its
+compatibility with concatenation of paths, and the fact that two paths with the same endpoints
+give conjugate transports. In a path-connected space the latter yields a path-independent
+conjugacy class at every basepoint.
+
 Mathlib already supplies the fundamental-group isomorphism
-`FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are only the
-subgroup and normalizer-quotient bookkeeping needed by the universal-covers roadmap.
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
+rules, conjugacy-class, subgroup, and normalizer-quotient bookkeeping built on it.
 
 ## Main declarations
 
@@ -31,8 +36,18 @@ subgroup and normalizer-quotient bookkeeping needed by the universal-covers road
   `basepointChangeSubgroup`.
 * `TauCeti.FundamentalGroup.basepointChangeNormalizerQuotientEquiv`: the corresponding
   isomorphism `N(H) / H ≃* N(γ₊H) / γ₊H`.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` and
+  `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`: basepoint change as conjugation
+  by the path in the path quotient.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans`: basepoint change along a concatenated
+  path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
+* `FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_paths`: transports along two
+  paths with the same endpoints are conjugate.
+* `FundamentalGroup.conjClassAt`: the path-independent conjugacy class of `g ∈ π₁(X, x₀)` at
+  `x₁`, with `FundamentalGroup.mk_fundamentalGroupMulEquivOfPath_eq_conjClassAt`,
+  `FundamentalGroup.conjClassAt_self`, and `FundamentalGroup.map_conjClassAt`.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
@@ -40,12 +55,11 @@ subgroup and normalizer-quotient bookkeeping needed by the universal-covers road
 
 This supplies a small prerequisite for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
 items 7 and 8: the pointed cover attached to `H ≤ π₁(X, x₀)`, conjugacy under basepoint
-change, and the normalizer quotient `N(H) / H` appearing as the deck group of that cover.
+change, and the normalizer quotient `N(H) / H` appearing as the deck group of that cover. The
+path-independent conjugacy classes supply `TauCetiRoadmap/BelyiMaps/README.md`, Layer 5, §5.7.
 -/
 
 public section
-
-open CategoryTheory
 
 namespace TauCeti
 
@@ -102,6 +116,37 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
   rw [hsymm, htrans, htrans]
   group
 
+/-- Basepoint change along `γ` is represented by conjugation with `γ` in the path quotient: a loop
+`g` at `x₀` goes to the class of `γ⁻¹ ⬝ g ⬝ γ`. This is the forward counterpart of
+`FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`. -/
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
+    (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g =
+      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ).symm
+        (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ)) := by
+  rw [← MulEquiv.eq_symm_apply, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
+  -- Cancel `γ⁻¹ ⬝ γ` on the right, then `γ ⬝ γ⁻¹` on the left.
+  rw [Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_assoc,
+    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.trans_refl,
+    ← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
+    Path.Homotopic.Quotient.refl_trans]
+
+/-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (γ.trans δ) =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).trans
+        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ) := by
+  ext g
+  rw [MulEquiv.trans_apply, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    ← Path.Homotopic.Quotient.mk_symm, Path.trans_symm]
+  -- Both sides are the word `δ⁻¹ ⬝ γ⁻¹ ⬝ g ⬝ γ ⬝ δ`, up to reassociation.
+  simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
+    Path.Homotopic.Quotient.trans_assoc]
+
 /-- Transporting an element of a fundamental group along two paths with the same endpoints gives
 conjugate elements. Thus basepoint transport determines a conjugacy class independently of the
 chosen path. -/
@@ -110,17 +155,19 @@ lemma _root_.FundamentalGroup.isConj_fundamentalGroupMulEquivOfPath_apply_of_pat
     (g : _root_.FundamentalGroup X x₀) :
     IsConj (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g)
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ g) := by
-  let αγ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
-    (Groupoid.isoEquivHom _ _).symm ⟦γ⟧
-  let αδ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
-    (Groupoid.isoEquivHom _ _).symm ⟦δ⟧
-  -- Mathlib defines path transport as conjugation by the corresponding groupoid isomorphism.
-  rw [_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath]
-  -- Conjugating by the loop `αγ⁻¹ ≫ αδ` at `x₁` carries one transport to the other.
-  refine ⟨toUnits (αγ.symm ≪≫ αδ).hom, ?_⟩
-  rw [SemiconjBy, val_toUnits_apply, End.mul_def, End.mul_def, Iso.conj_apply, Iso.conj_apply]
-  simp [αγ, αδ]
+  -- The loop `γ⁻¹ ⬝ δ` at `x₁` conjugates `γ⁻¹ ⬝ g ⬝ γ` to `δ⁻¹ ⬝ g ⬝ δ`. In `π₁(X, x₁)`,
+  -- multiplication is concatenation in the reverse order (`FundamentalGroup.mul_def`).
+  refine ⟨toUnits (Path.Homotopic.Quotient.mk (γ.symm.trans δ)), ?_⟩
+  rw [SemiconjBy, val_toUnits_apply, _root_.FundamentalGroup.mul_def,
+    _root_.FundamentalGroup.mul_def, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm]
+  -- Both sides reduce to `γ⁻¹ ⬝ g ⬝ δ` after cancelling `γ ⬝ γ⁻¹` and `δ ⬝ δ⁻¹` respectively.
+  simp only [Path.Homotopic.Quotient.trans_assoc]
+  rw [← Path.Homotopic.Quotient.trans_assoc (Path.Homotopic.Quotient.mk γ),
+    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans,
+    ← Path.Homotopic.Quotient.trans_assoc (Path.Homotopic.Quotient.mk δ),
+    Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
 
 /-- The conjugacy class of `g` transported from `x₀` to `x₁`, independent of the chosen path. -/
 noncomputable def _root_.FundamentalGroup.conjClassAt
@@ -131,7 +178,7 @@ noncomputable def _root_.FundamentalGroup.conjClassAt
 
 /-- Any path from `x₀` to `x₁` realizes the path-independent conjugacy class of `g`. -/
 @[simp]
-theorem _root_.FundamentalGroup.mk_transport_eq_conjClassAt
+theorem _root_.FundamentalGroup.mk_fundamentalGroupMulEquivOfPath_eq_conjClassAt
     {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
     {x₀ x₁ : X} (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₀) :
     ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
@@ -146,7 +193,7 @@ theorem _root_.FundamentalGroup.conjClassAt_self
     {X : Type*} [TopologicalSpace X] [PathConnectedSpace X]
     (x : X) (g : _root_.FundamentalGroup X x) :
     _root_.FundamentalGroup.conjClassAt x x g = ConjClasses.mk g := by
-  rw [← _root_.FundamentalGroup.mk_transport_eq_conjClassAt (Path.refl x) g,
+  rw [← _root_.FundamentalGroup.mk_fundamentalGroupMulEquivOfPath_eq_conjClassAt (Path.refl x) g,
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj]
   have hrefl : _root_.FundamentalGroup.fromPath
       (Path.Homotopic.Quotient.mk (Path.refl x)) = 1 := by
@@ -164,22 +211,11 @@ theorem _root_.FundamentalGroup.map_conjClassAt
       (_root_.FundamentalGroup.conjClassAt x₀ x₁ g) =
         _root_.FundamentalGroup.conjClassAt x₀ x₂ g := by
   let γ : Path x₀ x₁ := PathConnectedSpace.somePath x₀ x₁
-  rw [← _root_.FundamentalGroup.mk_transport_eq_conjClassAt γ g, ConjClasses.map_mk,
-    ← _root_.FundamentalGroup.mk_transport_eq_conjClassAt (γ.trans δ) g]
-  let αγ : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
-    (Groupoid.isoEquivHom _ _).symm ⟦γ⟧
-  let αδ : FundamentalGroupoid.mk x₁ ≅ FundamentalGroupoid.mk x₂ :=
-    (Groupoid.isoEquivHom _ _).symm ⟦δ⟧
-  -- The groupoid isomorphism of a concatenated path is the composite isomorphism, since
-  -- composition in the fundamental groupoid is concatenation (`FundamentalGroupoid.comp_eq`).
-  have htrans : ((Groupoid.isoEquivHom _ _).symm ⟦γ.trans δ⟧ :
-      FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₂) = αγ ≪≫ αδ := by
-    apply Iso.ext
-    rw [Iso.trans_hom, FundamentalGroupoid.comp_eq]
-    rfl
-  rw [MonoidHom.coe_coe, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath, htrans, Iso.trans_conj]
+  rw [← _root_.FundamentalGroup.mk_fundamentalGroupMulEquivOfPath_eq_conjClassAt γ g,
+    ConjClasses.map_mk,
+    ← _root_.FundamentalGroup.mk_fundamentalGroupMulEquivOfPath_eq_conjClassAt (γ.trans δ) g,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
+    MonoidHom.coe_coe]
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 
