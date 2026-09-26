@@ -32,15 +32,15 @@ universe u
 variable (T : NumericalType.{u})
 
 /-- The numerical Picard classes of total degree zero. -/
-abbrev degreeZero : Submodule ℤ T.Pic := LinearMap.ker T.degree
+abbrev degreeZeroSubgroup : Submodule ℤ T.Pic := LinearMap.ker T.degree
 
 /-- A numerical Picard class belongs to the degree-zero subgroup exactly when it has
 total degree zero. -/
-lemma mem_degreeZero {x : T.Pic} : x ∈ T.degreeZero ↔ T.degree x = 0 :=
+lemma mem_degreeZeroSubgroup {x : T.Pic} : x ∈ T.degreeZeroSubgroup ↔ T.degree x = 0 :=
   LinearMap.mem_ker
 
 /-- A degree-zero numerical Picard class has total degree zero. -/
-lemma degree_coe_degreeZero (x : T.degreeZero) : T.degree (x : T.Pic) = 0 :=
+lemma degree_coe_degreeZeroSubgroup (x : T.degreeZeroSubgroup) : T.degree (x : T.Pic) = 0 :=
   x.property
 
 /-- The total-degree map of a numerical type has rank one: the class supported at any
@@ -50,9 +50,7 @@ theorem finrank_range_degree : Module.finrank ℤ (LinearMap.range T.degree) = 1
   let x : T.Pic := Submodule.Quotient.mk (Pi.single i 1)
   have hx : T.degree x ≠ 0 := by
     dsimp only [x]
-    rw [T.degree_mk, T.totalDegree_apply]
-    simp only [Finset.sum_ite_eq', Finset.mem_univ, ite_true, Pi.single_apply,
-      ite_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ite_true, one_mul]
+    rw [T.degree_mk_single]
     exact mul_ne_zero (Int.natCast_pos.mpr (T.multiplicity i).pos).ne'
       (Int.natCast_pos.mpr (T.weight i).pos).ne'
   have hpos : 0 < Module.finrank ℤ (LinearMap.range T.degree) := by
@@ -65,17 +63,18 @@ theorem finrank_range_degree : Module.finrank ℤ (LinearMap.range T.degree) = 1
   omega
 
 /-- The kernel of total degree has rank zero. -/
-theorem finrank_degreeZero : Module.finrank ℤ T.degreeZero = 0 := by
+theorem finrank_degreeZeroSubgroup : Module.finrank ℤ T.degreeZeroSubgroup = 0 := by
   have h := (LinearMap.ker T.degree).finrank_quotient_add_finrank
   rw [LinearEquiv.finrank_eq T.degree.quotKerEquivRange, T.finrank_range_degree,
     T.finrank_pic] at h
-  simpa only [degreeZero] using (by omega : Module.finrank ℤ (LinearMap.ker T.degree) = 0)
+  simpa only [degreeZeroSubgroup] using
+    (by omega : Module.finrank ℤ (LinearMap.ker T.degree) = 0)
 
 /-- The degree-zero subgroup of the numerical Picard group is finite. -/
-theorem finite_degreeZero : Finite T.degreeZero := by
-  have htor : Module.IsTorsion ℤ T.degreeZero :=
-    Module.finrank_eq_zero_iff_isTorsion.mp T.finrank_degreeZero
-  exact Module.finite_of_fg_torsion T.degreeZero htor
+theorem finite_degreeZeroSubgroup : Finite T.degreeZeroSubgroup := by
+  have htor : Module.IsTorsion ℤ T.degreeZeroSubgroup :=
+    Module.finrank_eq_zero_iff_isTorsion.mp T.finrank_degreeZeroSubgroup
+  exact Module.finite_of_fg_torsion T.degreeZeroSubgroup htor
 
 /-- A numerical Picard class has degree zero if and only if it is torsion. In particular,
 the degree-zero condition can be checked by an integral multiple of the class. -/
@@ -83,8 +82,8 @@ theorem degree_eq_zero_iff_exists_smul_eq_zero (x : T.Pic) :
     T.degree x = 0 ↔ ∃ n : ℤ, n ≠ 0 ∧ n • x = 0 := by
   constructor
   · intro hx
-    have htor : Module.IsTorsion ℤ T.degreeZero :=
-      Module.finrank_eq_zero_iff_isTorsion.mp T.finrank_degreeZero
+    have htor : Module.IsTorsion ℤ T.degreeZeroSubgroup :=
+      Module.finrank_eq_zero_iff_isTorsion.mp T.finrank_degreeZeroSubgroup
     obtain ⟨n, hn⟩ := htor (x := ⟨x, hx⟩)
     exact ⟨n, nonZeroDivisors.coe_ne_zero n, congrArg Subtype.val hn⟩
   · rintro ⟨n, hn, hx⟩
