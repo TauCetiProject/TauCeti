@@ -44,6 +44,8 @@ reverse norm one.
   `star` norm on the Lipschitz group.
 * `CliffordAlgebra.mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one`: the Spin group consists
   of the even Lipschitz elements of reverse norm one.
+* `CliffordAlgebra.exists_scalarUnits_mul_mem_spinGroup_iff`: a Lipschitz element rescales by a
+  scalar unit into the Spin group exactly when it is even and its reverse norm is a square.
 
 ## References
 
@@ -199,5 +201,28 @@ theorem cliffordNorm_pinToLipschitz_spinToPin (x : spinGroup Q) :
   refine ((mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one _).1 ?_).2
   rw [coe_pinToLipschitz_apply, coe_spinToPin_apply]
   exact x.2
+
+/-- **Rescaling a Lipschitz element into the Spin group.** A Lipschitz element can be multiplied
+by a scalar unit into `spinGroup Q` exactly when it is even and its Clifford norm is a square.
+Rescaling by `a` multiplies the Clifford norm by `a * a` and preserves evenness. -/
+theorem exists_scalarUnits_mul_mem_spinGroup_iff (hQ : ∃ v, IsUnit (Q v))
+    (x : lipschitzGroup Q) :
+    (∃ a : Rˣ, (((scalarUnits Q hQ a * x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
+        CliffordAlgebra Q) ∈ spinGroup Q) ↔
+      ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 ∧
+        IsSquare (cliffordNorm Q x) := by
+  have heven (a : Rˣ) :
+      (((scalarUnits Q hQ a * x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
+          CliffordAlgebra Q) ∈ evenOdd Q 0 ↔
+        ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
+    rw [Subgroup.coe_mul, Units.val_mul, coe_scalarUnits, ← Algebra.smul_def, ← Units.smul_def,
+      Submodule.smul_mem_iff']
+  simp_rw [mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one, heven, map_mul,
+    cliffordNorm_scalarUnits]
+  constructor
+  · rintro ⟨a, hx, ha⟩
+    exact ⟨hx, a⁻¹, by rw [eq_inv_of_mul_eq_one_right ha, mul_inv]⟩
+  · rintro ⟨hx, b, hb⟩
+    exact ⟨b⁻¹, hx, by rw [hb]; group⟩
 
 end CliffordAlgebra
