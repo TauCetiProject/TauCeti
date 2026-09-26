@@ -93,6 +93,7 @@ theorem heisenberg_reindex
     rw [mul_one_div]
   rw [heq]
 
+omit [CharZero R] in
 /-- The linear term (j=0) of the reindexed sum is `u • C`.
 
 This is the key term for the Chevalley commutator: when `C = vY` and the
