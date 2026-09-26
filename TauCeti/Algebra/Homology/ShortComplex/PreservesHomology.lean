@@ -30,6 +30,13 @@ namespace CategoryTheory.ShortComplex
 variable {C D : Type*} [Category C] [Category D] [Limits.HasZeroMorphisms C]
   [Limits.HasZeroMorphisms D] (S : ShortComplex C) (F : C ⥤ D) [F.PreservesZeroMorphisms]
 
+/-- The inverse cycles identification carries the inclusion of cycles in the mapped complex to
+the image of the original inclusion. -/
+@[reassoc (attr := simp)]
+theorem mapCyclesIso_inv_comp_iCycles [S.HasLeftHomology] [F.PreservesLeftHomologyOf S] :
+    (S.mapCyclesIso F).inv ≫ (S.map F).iCycles = F.map S.iCycles := by
+  rw [Iso.inv_comp_eq, mapCyclesIso_hom_iCycles]
+
 /-- **The class map commutes with a functor preserving homology.** Under the identifications
 `mapCyclesIso` and `mapHomologyIso`, the class map of `S.map F` is the image under `F` of the
 class map of `S`. -/
