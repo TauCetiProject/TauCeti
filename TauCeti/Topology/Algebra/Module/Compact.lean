@@ -186,9 +186,9 @@ variable [CompactSpace M]
 
 /-- **Surjectivity onto compatible families of open quotients.** Every family of elements of
 `M ⧸ N`, with `N` ranging over the open submodules, that is compatible along the factor maps
-`M ⧸ N → M ⧸ N'` for `N ≤ N'` comes from an element of the compact topological module `M`.
-The element is unique when `M` is moreover `T1` and linearly topologized
-(`TauCeti.existsUnique_forall_mkQ_eq`). -/
+`M ⧸ N → M ⧸ N'` for `N ≤ N'` comes from an element of `M`, for `M` compact with separately
+continuous addition. The element is unique when `M` moreover has continuous addition and is `T1`
+and linearly topologized (`TauCeti.existsUnique_forall_mkQ_eq`). -/
 theorem exists_forall_mkQ_eq [SeparatelyContinuousAdd M]
     (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
     (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
