@@ -60,18 +60,6 @@ theorem X_smul_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
   rw [hG.X_smul_unblockedHomology i y]
   exact (hG.toOddComponentGridDiagram).X_smul_mem_alexanderUnblockedHomologyGrading_piece R i hy
 
-/-- The coefficient action on knot grid homology agrees with the constant polynomials in the
-`R[U]`-module structure. -/
-theorem isScalarTower_unblockedHomology :
-    letI := hG.unblockedHomologyModule R
-    IsScalarTower R (Polynomial R) (G.unblockedHomology R) := by
-  let _ := hG.unblockedHomologyModule R
-  apply IsScalarTower.of_algebraMap_smul
-  intro r y
-  have h := hG.aeval_smul_unblockedHomology (MvPolynomial.C r) y
-  have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y := rfl
-  simpa only [MvPolynomial.aeval_C, hbase] using h
-
 /-- The Alexander degrees containing a non-torsion class of `GH⁻` are bounded above. -/
 theorem bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading
     [IsNoetherianRing R] :
@@ -79,7 +67,7 @@ theorem bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading
     BddAbove (hG.alexanderUnblockedHomologyGrading R).nonTorsionDegrees := by
   let _ := hG.unblockedHomologyModule R
   exact @InternalGrading.bddAbove_nonTorsionDegrees R (G.unblockedHomology R)
-    _ _ _ _ (hG.isScalarTower_unblockedHomology R)
+    _ _ _ _ hG.isScalarTower_unblockedHomology
     (hG.alexanderUnblockedHomologyGrading R) 1
     (hG.finite_unblockedHomology (G := G) R) (fun {p} {y} hy => by
       exact hG.X_smul_mem_alexanderUnblockedHomologyGrading_piece R hy)

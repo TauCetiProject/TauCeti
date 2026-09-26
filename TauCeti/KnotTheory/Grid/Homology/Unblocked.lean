@@ -60,6 +60,8 @@ respects, such as the Alexander grading, descends to this quotient.
 * `TauCeti.GridDiagram.IsKnot.aeval_smul_unblockedHomology` and
   `TauCeti.GridDiagram.IsKnot.X_smul_unblockedHomology`: the action of `R[U]` on `GH⁻` of a knot
   grid.
+* `TauCeti.GridDiagram.IsKnot.isScalarTower_unblockedHomology`: the coefficient action agrees
+  with the `R[U]`-module structure.
 
 ## References
 
@@ -246,6 +248,19 @@ theorem X_smul_unblockedHomology (hG : G.IsKnot) (c : Fin n) (x : G.unblockedHom
     letI := unblockedHomologyModule R hG
     (Polynomial.X : Polynomial R) • x = (MvPolynomial.X c : MvPolynomial (Fin n) R) • x := by
   simpa using aeval_smul_unblockedHomology hG (MvPolynomial.X c) x
+
+/-- The coefficient action on knot grid homology agrees with the constant polynomials in the
+`R[U]`-module structure. -/
+theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
+    letI := hG.unblockedHomologyModule R
+    IsScalarTower R (Polynomial R) (G.unblockedHomology R) := by
+  let _ := hG.unblockedHomologyModule R
+  apply IsScalarTower.of_algebraMap_smul
+  intro r y
+  have h := hG.aeval_smul_unblockedHomology (MvPolynomial.C r) y
+  have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y :=
+    IsScalarTower.algebraMap_smul (MvPolynomial (Fin n) R) r y
+  simpa only [MvPolynomial.aeval_C, hbase] using h
 
 end IsKnot
 
