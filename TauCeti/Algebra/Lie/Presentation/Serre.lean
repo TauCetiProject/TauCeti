@@ -270,6 +270,31 @@ theorem isSerreSystem_serre :
   ad_pow_lie_E_E := ad_pow_lie_serreE_serreE R CM
   ad_pow_lie_F_F := ad_pow_lie_serreF_serreF R CM
 
+/-! ### Degeneration of the higher Serre relations
+
+When a Cartan-matrix entry vanishes, the corresponding higher Serre relation has exponent
+one, so it degenerates to the vanishing of the bracket itself. -/
+
+omit [DecidableEq B] in
+/-- In a Serre system, the higher Serre relation on the raising generators degenerates when the
+Cartan-matrix entry vanishes: `⁅Eᵢ, Eⱼ⁆ = 0` when `CMᵢⱼ = 0`. -/
+theorem IsSerreSystem.lie_E_E_of_cartan_eq_zero {H E F : B → L}
+    (h : IsSerreSystem R CM H E F) (i j : B) (hCM : CM i j = 0) :
+    ⁅E i, E j⁆ = 0 := by
+  have hserre := h.ad_pow_lie_E_E i j
+  rw [hCM, neg_zero, Int.toNat_zero, pow_zero] at hserre
+  simpa using hserre
+
+omit [DecidableEq B] in
+/-- In a Serre system, the higher Serre relation on the lowering generators degenerates when the
+Cartan-matrix entry vanishes: `⁅Fᵢ, Fⱼ⁆ = 0` when `CMᵢⱼ = 0`. -/
+theorem IsSerreSystem.lie_F_F_of_cartan_eq_zero {H E F : B → L}
+    (h : IsSerreSystem R CM H E F) (i j : B) (hCM : CM i j = 0) :
+    ⁅F i, F j⁆ = 0 := by
+  have hserre := h.ad_pow_lie_F_F i j
+  rw [hCM, neg_zero, Int.toNat_zero, pow_zero] at hserre
+  simpa using hserre
+
 /-! ### Stability of Serre systems
 
 Serre's relations are stable under reindexing the three families along an injective map of index
