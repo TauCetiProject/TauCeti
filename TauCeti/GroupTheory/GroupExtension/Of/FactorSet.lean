@@ -181,11 +181,28 @@ structure Extension (α : FactorSet G M) where
 
 namespace Extension
 
+/-- **The twisted product is `M × G` as a type.** It is the multiplication that the factor set
+twists, not the underlying set. -/
+def equivProd (α : FactorSet G M) : α.Extension ≃ M × G where
+  toFun x := (x.left, x.right)
+  invFun p := ⟨p.1, p.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem equivProd_apply {α : FactorSet G M} (x : α.Extension) :
+    equivProd α x = (x.left, x.right) :=
+  (rfl)
+
+@[simp]
+theorem equivProd_symm_apply {α : FactorSet G M} (p : M × G) :
+    (equivProd α).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
+
 variable {α : FactorSet G M}
 
 instance [Finite G] [Finite M] : Finite α.Extension :=
-  Finite.of_injective (fun x : α.Extension ↦ (x.left, x.right))
-    (fun _ _ h ↦ Extension.ext (congrArg Prod.fst h) (congrArg Prod.snd h))
+  Finite.of_equiv _ (equivProd α).symm
 
 instance instMul : Mul α.Extension where
   mul x y := ⟨x.left * x.right • y.left * α (x.right, y.right), x.right * y.right⟩
@@ -288,6 +305,21 @@ def rightHom : α.Extension →* G where
   map_mul' _ _ := rfl
 
 @[simp] theorem rightHom_apply (x : α.Extension) : rightHom α x = x.right := (rfl)
+
+/-- The induced map of extensions commutes with the coefficient inclusions. -/
+@[simp]
+theorem mapExtension_comp_inl {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (α.mapExtension f).comp (inl α) = (inl (α.map f)).comp f.toMonoidHom := by
+  ext <;> rfl
+
+/-- The induced map of extensions preserves the projection to the quotient group. -/
+@[simp]
+theorem rightHom_comp_mapExtension {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (rightHom (α.map f)).comp (α.mapExtension f) = rightHom α := by
+  ext
+  rfl
 
 theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Extension.left h
 
