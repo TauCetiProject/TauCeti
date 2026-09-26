@@ -8,7 +8,8 @@ module
 public import TauCeti.NumberTheory.Chebotarev.Crossing.CompositumFrobenius
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.NumberTheory.Chebotarev.Crossing.CompositumRamification
+import TauCeti.NumberTheory.Chebotarev.CyclotomicRamification
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 
 /-!
 # Cyclotomic Frobenius fibres and arithmetic progressions
@@ -49,11 +50,8 @@ theorem mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm {ζ : F} (hζ : IsPrimi
     𝔭 ∈ frobeniusPrimeSet K F (ConjClasses.mk σ) ↔
       (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
   have hur (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
-      Algebra.IsUnramifiedAt (𝓞 K) Q := by
-    by_contra hQ
-    refine hm ((Ideal.mem_of_liesOver Q 𝔭.asIdeal _).mpr ?_)
-    simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)
-      (IsCyclotomicExtension.natCast_mem_differentIdeal K F m)
+      Algebra.IsUnramifiedAt (𝓞 K) Q :=
+    IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem F m hm Q
   rw [mem_frobeniusPrimeSet_mk_iff_restrictNormal_autToPow (L := K) hm hur hζ]
   exact and_iff_right (mem_frobeniusPrimeSet_self 𝔭 _)
 

@@ -105,7 +105,8 @@ theorem mem_frobeniusPrimeSet_iff {𝔭 : HeightOneSpectrum (𝓞 K)}
   Iff.rfl
 
 /-- Every prime lies in the unique Frobenius fibre of the trivial extension. -/
-theorem mem_frobeniusPrimeSet_self (𝔭 : HeightOneSpectrum (𝓞 K))
+-- Apply before the generic membership expansion in `mem_frobeniusPrimeSet_iff`.
+@[simp high] theorem mem_frobeniusPrimeSet_self (𝔭 : HeightOneSpectrum (𝓞 K))
     (C : ConjClasses (K ≃ₐ[K] K)) : 𝔭 ∈ frobeniusPrimeSet K K C := by
   rw [mem_frobeniusPrimeSet_iff]
   have : Subsingleton (ConjClasses (K ≃ₐ[K] K)) := Quot.Subsingleton
