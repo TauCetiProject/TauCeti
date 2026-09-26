@@ -204,10 +204,17 @@ the cover, with the label of the chosen point marked, modulo relabeling triple a
 noncomputable def markedClass
     (C : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     MarkedIsoClass n :=
-  Quotient.map' (s₁ := orbitRel (Perm (Fin n)) _) (s₂ := orbitRel (Perm (Fin n)) _)
-    (Prod.map triple id) (fun _ _ ⟨τ, hτ⟩ => ⟨τ, Prod.ext
-      ((triple_smul τ _).symm.trans (congrArg (triple ∘ Prod.fst) hτ)) (congrArg Prod.snd hτ :)⟩)
-    (markedOrbitRelQuotientEquiv.symm C)
+  Quotient.liftOn' (markedOrbitRelQuotientEquiv.symm C)
+    (fun Ci => MarkedIsoClass.mk (triple Ci.1) Ci.2)
+    (by
+      intro Ci Ci' h
+      obtain ⟨τ, hτ⟩ := h
+      apply MarkedIsoClass.mk_eq_mk_iff.2
+      have htriple : τ • triple Ci'.1 = triple Ci.1 :=
+        (triple_smul τ _).symm.trans (congrArg (triple ∘ Prod.fst) hτ)
+      have hi : τ Ci'.2 = Ci.2 := by
+        simpa [Perm.smul_def] using (congrArg Prod.snd hτ)
+      exact ⟨τ, Prod.ext htriple hi⟩)
 
 end ConnectedPointedCoverClass
 
@@ -219,7 +226,7 @@ theorem ConnectedFiberNumberedCoverClass.markedClass_markLabel
     (i : Fin n) :
     (C.markLabel i).markedClass = MarkedIsoClass.mk C.triple i := by
   rw [ConnectedPointedCoverClass.markedClass, ← markedOrbitRelQuotientEquiv_mk, symm_apply_apply]
-  exact Quotient.map'_mk'' _ _ (C, i)
+  rfl
 
 /-- Forgetting the chosen point of a cover is forgetting the marked label of its marked class. -/
 @[simp]

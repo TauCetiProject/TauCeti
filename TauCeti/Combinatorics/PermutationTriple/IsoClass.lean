@@ -168,7 +168,7 @@ end ConnectedIsoClass
 action `τ • (t, i) = (τ • t, τ i)`: the relabeling moves the label along with the triple.
 Quotienting by the stabilizer of the label instead would never identify pairs with different
 labels. -/
-@[expose] def MarkedIsoClass (n : ℕ) : Type :=
+def MarkedIsoClass (n : ℕ) : Type :=
   MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n × Fin n)
 
 namespace MarkedIsoClass
@@ -176,7 +176,7 @@ namespace MarkedIsoClass
 variable {n : ℕ}
 
 /-- The class of a connected triple with the marked label `i`. -/
-@[expose] def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
+def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
   Quotient.mk'' (t, i)
 
 /-- Two marked connected triples determine the same class exactly when they are related by the
