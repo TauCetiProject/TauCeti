@@ -164,6 +164,17 @@ theorem absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
     ← span_natGenerator, Ideal.absNorm_span_singleton]
   simp
 
+/-- A height-one prime of `𝓞 ℚ` containing a rational prime has that absolute norm. -/
+theorem absNorm_asIdeal_eq_of_natCast_mem (v : HeightOneSpectrum (𝓞 ℚ))
+    {q : ℕ} [Fact q.Prime] (h : (q : 𝓞 ℚ) ∈ v.asIdeal) :
+    Ideal.absNorm v.asIdeal = q := by
+  rw [absNorm_asIdeal]
+  have hdvd : natGenerator v ∣ q := by
+    rw [natGenerator_dvd_iff]
+    simpa using Ideal.mem_map_of_mem (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)) h
+  exact (Nat.dvd_prime (Fact.out : q.Prime)).mp hdvd |>.resolve_left
+    (prime_natGenerator v).ne_one
+
 /-- Every rational prime is the absolute norm of a height-one prime of `𝓞 ℚ`. -/
 theorem exists_absNorm_eq {p : ℕ} (hp : p.Prime) :
     ∃ v : HeightOneSpectrum (𝓞 ℚ), Ideal.absNorm v.asIdeal = p :=

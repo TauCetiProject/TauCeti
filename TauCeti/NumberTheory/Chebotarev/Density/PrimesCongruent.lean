@@ -125,4 +125,13 @@ theorem hasDirichletDensity_primesCongruent (m a : ℕ) [NeZero m]
   · simpa [Nat.mod_one] using
       primeCount_rat_sub_mul_logIntegral_isLittleO 1 0 (isUnit_of_subsingleton _)
 
+/-- The residue-class prime set in `ZMod m` equals its natural-number congruence form. -/
+theorem setOf_absNorm_natCast_eq_units (m : ℕ) [NeZero m] (a : (ZMod m)ˣ) :
+    {𝔭 : HeightOneSpectrum (𝓞 ℚ) | (Ideal.absNorm 𝔭.asIdeal : ZMod m) = a} =
+      {𝔭 : HeightOneSpectrum (𝓞 ℚ) |
+        Ideal.absNorm 𝔭.asIdeal % m = (a : ZMod m).val % m} := by
+  ext 𝔭
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← ZMod.natCast_eq_natCast_iff']
+  simp
+
 end NumberField.Chebotarev

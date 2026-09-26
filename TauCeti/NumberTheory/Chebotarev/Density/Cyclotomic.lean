@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.NumberTheory.Chebotarev.Density.Ramification
@@ -23,6 +24,10 @@ the primes of `𝓞 K` whose Frobenius is `σ` have Dirichlet density `1 / #Gal(
 
 * `NumberField.Chebotarev.hasDirichletDensity_cyclotomicFrobenius`: the Frobenius fibre of any
   `σ ∈ Gal(K(μ_m)/K)` has Dirichlet density `1 / #Gal(K(μ_m)/K)`.
+* `NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet_galEquivZMod_symm`: over
+  `ℚ`, the density of the fibre tagged by any unit modulo `m` is `1 / φ(m)`.
+* `NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet_cyclotomic_five`: each fibre
+  of a fifth cyclotomic field has density `1/4`.
 
 ## References
 
@@ -91,5 +96,29 @@ theorem hasDirichletDensity_cyclotomicFrobenius (m : ℕ) [NeZero m]
   simp only [mul_div_assoc', ← Finset.sum_div,
     ← σ.natCard_mul_primeIdealZetaSum_frobeniusPrimeSet ht]
   simp
+
+/-- Over `ℚ`, the Frobenius fibre tagged by a unit modulo the cyclotomic level `m` has
+Dirichlet density `1 / φ(m)`. -/
+theorem hasDirichletDensity_frobeniusPrimeSet_galEquivZMod_symm
+    (F : Type*) [Field F] [NumberField F] (m : ℕ) [NeZero m]
+    [IsCyclotomicExtension {m} ℚ F] [IsGalois ℚ F] (a : (ZMod m)ˣ) :
+    NumberField.Set.HasDirichletDensity
+      (frobeniusPrimeSet ℚ F (ConjClasses.mk ((IsCyclotomicExtension.Rat.galEquivZMod m F).symm a)))
+      (1 / (Nat.totient m : ℝ)) := by
+  simpa only [IsGalois.card_aut_eq_finrank, IsCyclotomicExtension.finrank F
+    (Polynomial.cyclotomic.irreducible_rat (NeZero.pos m))] using
+    hasDirichletDensity_cyclotomicFrobenius ℚ F m
+      ((IsCyclotomicExtension.Rat.galEquivZMod m F).symm a)
+
+/-- Each of the four arithmetic Frobenius fibres of a fifth cyclotomic field has Dirichlet
+density `1/4`. -/
+theorem hasDirichletDensity_frobeniusPrimeSet_cyclotomic_five
+    (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {5} ℚ F] [IsGalois ℚ F]
+    (a : (ZMod 5)ˣ) :
+    NumberField.Set.HasDirichletDensity
+      (frobeniusPrimeSet ℚ F (ConjClasses.mk ((IsCyclotomicExtension.Rat.galEquivZMod 5 F).symm a)))
+      (1 / 4) := by
+  simpa [Nat.totient_prime (by decide : Nat.Prime 5)] using
+    hasDirichletDensity_frobeniusPrimeSet_galEquivZMod_symm F 5 a
 
 end NumberField.Chebotarev
