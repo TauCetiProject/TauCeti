@@ -94,25 +94,23 @@ theorem ncard_schwarzChristoffelPrimitive_fiber_eq_of_joinedIn
     have h := isCoveringMapOn_schwarzChristoffelPrimitive a e z₀ hfinite hinfty
     exact h.isCoveringMap_restrictPreimage
   let γ : Path u v := hjoined.joined_subtype.somePath
-  -- Monodromy speaks about fibers of the restricted cover. The target point already lies in
-  -- the complement, so each such fiber is the corresponding fiber in the upper half-plane.
-  let fiberRestrictEquiv (w : ↥(Pᶜ)) :
-      ((Pᶜ.restrictPreimage F) ⁻¹' {w}) ≃ (F ⁻¹' {w.val}) := {
-    toFun x := ⟨x.val.val, congrArg Subtype.val x.property⟩
-    invFun x := ⟨⟨x.val, show F x.val ∈ Pᶜ from by
-      rw [x.property]
-      exact w.property⟩, Subtype.ext x.property⟩
-    left_inv x := by cases x; rfl
-    right_inv x := by cases x; rfl
-  }
+  -- The value map identifies a restricted fiber with the corresponding original fiber.
+  have fiber_ncard (w : ↥(Pᶜ)) :
+      ((Pᶜ.restrictPreimage F) ⁻¹' {w}).ncard = (F ⁻¹' {w.val}).ncard := by
+    calc
+      _ = ((Subtype.val : (F ⁻¹' Pᶜ) → ℍ) ''
+          ((Pᶜ.restrictPreimage F) ⁻¹' {w})).ncard :=
+        (Set.ncard_image_of_injective _ Subtype.val_injective).symm
+      _ = _ := by rw [image_val_preimage_restrictPreimage, image_singleton]
   have hcard := Nat.card_congr (coveringFiberEquiv hcov (Path.Homotopic.Quotient.mk γ))
-  simpa only [Nat.card_coe_set_eq] using
-    (Nat.card_congr (fiberRestrictEquiv u)).symm.trans
-      (hcard.trans (Nat.card_congr (fiberRestrictEquiv v)))
+  calc
+    (F ⁻¹' {w₁}).ncard = ((Pᶜ.restrictPreimage F) ⁻¹' {u}).ncard := (fiber_ncard u).symm
+    _ = ((Pᶜ.restrictPreimage F) ⁻¹' {v}).ncard := by
+      simpa only [Nat.card_coe_set_eq] using hcard
+    _ = (F ⁻¹' {w₂}).ncard := fiber_ncard v
 
 /-- If the compactified Schwarz--Christoffel boundary is simple, the primitive has a positive,
-finite, constant number of preimages at every point of its image. Thus the primitive is a
-finite-sheeted covering of the complementary component it maps onto. -/
+finite, constant number of preimages at every point of its image. -/
 theorem exists_constant_schwarzChristoffelPrimitive_fiber_ncard (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1)
