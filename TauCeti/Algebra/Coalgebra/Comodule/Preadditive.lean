@@ -157,6 +157,10 @@ universe u v w
 variable (R : Type u) [CommRing R]
 variable (C : Type v) [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
+/-- A bundled comodule over a ring has an additive group as its underlying module. -/
+instance (M : ComoduleCat.{u, v, w} R C) : AddCommGroup M :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- Categorical morphisms form an additive commutative group over a commutative ring. -/
 instance homAddCommGroup (M N : ComoduleCat.{u, v, w} R C) : AddCommGroup (M ⟶ N) :=
   inferInstanceAs (AddCommGroup (Comodule.Hom R C M N))
