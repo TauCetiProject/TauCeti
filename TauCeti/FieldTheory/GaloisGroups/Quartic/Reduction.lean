@@ -32,8 +32,9 @@ local instance quarticFactSplitsSplittingField (f : ℚ[X]) :
 /-- The eighth cyclotomic polynomial `X⁴ + 1` becomes reducible modulo every prime. Its
 Galois action over `ℚ` has label `4T2`, so every induced permutation is even, whereas an
 irreducible reduction would exhibit an odd four-cycle. -/
-theorem not_irreducible_map_X_pow_four_add_one (p : ℕ) [Fact p.Prime] :
-    ¬ Irreducible ((X ^ 4 + 1 : ℤ[X]).map (Int.castRingHom (ZMod p))) := by
+@[simp]
+theorem not_irreducible_X_pow_four_add_one (p : ℕ) [Fact p.Prime] :
+    ¬ Irreducible (X ^ 4 + 1 : (ZMod p)[X]) := by
   classical
   have hA₀ :=
     (hasGaloisLabel_X_pow_four_add_one.range_le_alternatingGroup_iff).mpr
@@ -52,8 +53,10 @@ theorem not_irreducible_map_X_pow_four_add_one (p : ℕ) [Fact p.Prime] :
     rw [mem_alternatingGroup, Equiv.Perm.sign_permCongr]
     exact mem_alternatingGroup.mp (hA₀ ⟨g, rfl⟩)
   have hdeg : (X ^ 4 + 1 : ℤ[X]).natDegree = 4 := by compute_degree!
-  apply not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup
+  have h := not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup
     (f := X ^ 4 + 1) (by monicity!) (by rw [hdeg]; decide)
     (by rw [hdeg]; decide) hA p
+  simpa only [Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_one]
+    using h
 
 end TauCeti
