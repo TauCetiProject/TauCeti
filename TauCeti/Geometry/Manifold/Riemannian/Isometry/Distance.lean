@@ -73,18 +73,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [PseudoEMetricSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [hN : IsRiemannianManifold J N]
 
-/-- A smooth Riemannian isometry preserves the ambient extended distance when each ambient
-distance agrees with its Riemannian distance. -/
-@[simp]
-theorem edist_eq (Φ : RiemannianIsometry I J M N) (x y : M) :
-    edist (Φ x) (Φ y) = edist x y := by
-  rw [IsRiemannianManifold.out (I := J), IsRiemannianManifold.out (I := I),
-    Φ.riemannianEDist_eq]
-
 /-- A smooth Riemannian isometry between spaces equipped with their Riemannian extended distances
 is an isometry of extended metric spaces; in particular it coerces to `M ≃ᵢ N`. -/
 instance : IsometryClass (RiemannianIsometry I J M N) M N where
-  isometry Φ := Φ.edist_eq
+  isometry Φ := by
+    intro x y
+    rw [IsRiemannianManifold.out (I := J), IsRiemannianManifold.out (I := I),
+      Φ.riemannianEDist_eq]
 
 /-- The metric equivalence of the inverse is the inverse metric equivalence. -/
 @[simp]
