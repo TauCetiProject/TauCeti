@@ -80,7 +80,9 @@ theorem shortPathCoords_surjective (n : ℕ) :
 
 end Coordinates
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+section LengthFiltration
+
+variable (k : Type w) (Q : Type u) [Ring k] [Quiver.{v} Q]
 
 /-- The quotient by the length filtration is the free module on short paths. -/
 noncomputable def truncatedPathEquiv (n : ℕ) :
@@ -94,6 +96,10 @@ noncomputable def truncatedPathEquiv (n : ℕ) :
 theorem truncatedPathEquiv_mk (n : ℕ) (x : pathAlgebra k Q) :
     truncatedPathEquiv k Q n (Submodule.Quotient.mk x) = shortPathCoords k Q n x := by
   simp [truncatedPathEquiv]
+
+end LengthFiltration
+
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
 
 section ArrowIdeal
 
