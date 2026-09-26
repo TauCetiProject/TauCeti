@@ -371,23 +371,28 @@ theorem positiveSubsystemToUpperTriangular_comp_inclusion :
     positiveSubsystemToUpperTriangular ≫
         TauCeti.GeneralLinear.UpperTriangular.inclusion ℤ 56 =
       positiveSubsystemInclusion ≫ carrierι := by
-  rw [positiveSubsystemInclusion_comp_carrierι]
-  exact TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemToUpperTriangular_comp_inclusion
+  rw [positiveSubsystemToUpperTriangular, positiveSubsystemInclusion_comp_carrierι,
+    Category.assoc]
+  rw [TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemToUpperTriangular_comp_inclusion
       rootGen cartanGen rep
       lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
       rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
       isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
-      positiveRootWeight_strict
+      positiveRootWeight_strict]
 
 /-- The positive subsystem is a closed subgroup scheme of the standard upper-triangular group. -/
 instance isClosedImmersion_positiveSubsystemToUpperTriangular :
-    IsClosedImmersion positiveSubsystemToUpperTriangular.hom.hom.left :=
-  TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantTorusSubsystemToUpperTriangular
+    IsClosedImmersion positiveSubsystemToUpperTriangular.hom.hom.left := by
+  rw [← closedSubgroupMorphismProperty_iff, positiveSubsystemToUpperTriangular,
+    (closedSubgroupMorphismProperty _).cancel_left_of_respectsIso,
+    closedSubgroupMorphismProperty_iff]
+  exact
+    TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantTorusSubsystemToUpperTriangular
       rootGen cartanGen rep
-      lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-      rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
-      isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
-      positiveRootWeight_strict
+        lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
+        rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
+        isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
+        positiveRootWeight_strict
 
 /-- **Every algebra-valued point group of the positive subsystem is solvable.** -/
 theorem isSolvable_points_positiveSubsystem (A : Type v) [CommRing A] :
