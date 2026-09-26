@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.IsolatedZeros
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 
@@ -65,13 +64,15 @@ theorem basepointDivisor_intersection_order
     (hf : ContinuousAt f w)
     (ha : AnalyticAt ℂ (fun t => symChartAt (K := ℂ) (f w) (f t)) w)
     (hz : f w ∈ Sym.basepointDivisor z) :
-    ∃ g : ℂ → ℂ, AnalyticAt ℂ g w ∧ analyticOrderAt g w ≠ 0 ∧
+    ∃ g : ℂ → ℂ, AnalyticAt ℂ g w ∧
+      (∀ᶠ t in 𝓝 w, (f t ∈ Sym.basepointDivisor z ↔ g t = 0)) ∧
+      analyticOrderAt g w ≠ 0 ∧
       (analyticOrderAt g w = ⊤ ↔ ∀ᶠ t in 𝓝 w, f t ∈ Sym.basepointDivisor z) ∧
       (analyticOrderAt g w ≠ ⊤ →
         ∀ᶠ t in 𝓝[≠] w, f t ∉ Sym.basepointDivisor z) := by
   obtain ⟨g, hg, hgw, hmem⟩ :=
     exists_analyticAt_basepointDivisor_equation z f w hf ha hz
-  refine ⟨g, hg, hg.analyticOrderAt_ne_zero.mpr hgw, ?_, ?_⟩
+  refine ⟨g, hg, hmem, hg.analyticOrderAt_ne_zero.mpr hgw, ?_, ?_⟩
   · rw [analyticOrderAt_eq_top]
     constructor
     · intro hzero
