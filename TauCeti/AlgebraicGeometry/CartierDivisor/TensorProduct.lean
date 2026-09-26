@@ -191,17 +191,6 @@ theorem exists_sectionsMul_eq (s : Γ((D + E).sheaf, V)) :
   refine sheafι_app_injective _ V ((Scheme.rationalFunctionsEquiv V).injective ?_)
   simp
 
-omit hg in
-/-- On a nonempty open subset, a section of `𝒪_X(0)` comes from a regular function. -/
-private lemma exists_regular_of_mem_sections_zero
-    {s : Γ(Scheme.rationalFunctions X, V)} (hs : s ∈ (0 : CartierDivisor X).sections V) :
-    ∃ r : Γ(X, V), X.germToFunctionField V r = Scheme.rationalFunctionsEquiv V s := by
-  have hzero : Scheme.rationalUnitClass X V (Additive.ofMul (1 : X.functionFieldˣ)) =
-      (0 : CartierDivisor X) |_ V := by
-    simp only [ofMul_one, map_zero, TopCat.Presheaf.restrictOpen,
-      TopCat.Presheaf.restrict]
-  simpa using (mem_sections_iff_of_rationalUnitClass_eq le_rfl hzero).mp hs
-
 /-- Division by a local equation gives a linear retraction of section multiplication. -/
 def sectionsMulRetraction :
     Γ((D + E).sheaf, V) →ₗ[Γ(X, V)]
@@ -272,18 +261,6 @@ end LocalEquation
 section TensorProduct
 
 variable (D E : CartierDivisor X)
-
-/-- Every point has a smaller open neighbourhood on which `E` has one Cartier equation. -/
-private lemma exists_localEquation_le (U : X.Opens) {x : X} (hx : x ∈ U) :
-    ∃ (V : X.Opens) (_hVU : V ≤ U) (hxV : x ∈ V) (g : X.functionFieldˣ),
-      haveI : Nonempty V := ⟨⟨x, hxV⟩⟩
-      Scheme.rationalUnitClass X V (Additive.ofMul g) = E |_ V := by
-  obtain ⟨g, hg⟩ := E.exists_isLocalEquationAt x
-  obtain ⟨W, hxW, hg⟩ := isLocalEquationAt_iff.mp hg
-  have : Nonempty W := ⟨⟨x, hxW⟩⟩
-  have : Nonempty (U ⊓ W : X.Opens) := ⟨⟨x, hx, hxW⟩⟩
-  exact ⟨U ⊓ W, inf_le_left, ⟨hx, hxW⟩, g,
-    rationalUnitClass_eq_of_le inf_le_right hg⟩
 
 /-- Multiplication is locally surjective on tensor products of sections. -/
 theorem isLocallySurjective_tensorPresheafHom :
