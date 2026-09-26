@@ -58,10 +58,9 @@ hypothesis `v.valuation K (a : K) = 1` would therefore be false, and `a = 1` is 
 its image in the completion is the unit `1`, which is a square.  This is also why a field unit
 cannot serve as a nonsquare at a *finite* place of a prescribed set: it is a unit at every place,
 so its value at each of them is the top `1`, never `WithZero.exp (-1)`.  The finite-place
-nonsquare criterion that does hold is stated in
-`TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel`; see
-`IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff` for the equivalence between an
-order of vanishing `1` and the value `WithZero.exp (-1)`.
+nonsquare criterion that does hold is
+`IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_neg_one`, with
+`neg_log_valuation_eq_one_iff` relating its hypothesis to an order of vanishing `1`.
 
 ## References
 
