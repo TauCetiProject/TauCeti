@@ -71,6 +71,14 @@ includes `0`: the constant function `1` witnesses that zero is a pole number. -/
 def IsPoleNumber (P : Place k F) (n : ℕ) : Prop :=
   ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x
 
+/-- A pole number is witnessed by a nonzero function with its unique pole of that order at
+`P`. -/
+theorem isPoleNumber_iff (P : Place k F) (n : ℕ) :
+    P.IsPoleNumber n ↔
+      ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧
+        ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x :=
+  Iff.rfl
+
 /-- A natural number is a **gap** at `P` if it is not a pole number at `P`. -/
 def IsGap (P : Place k F) (n : ℕ) : Prop :=
   ¬ P.IsPoleNumber n
