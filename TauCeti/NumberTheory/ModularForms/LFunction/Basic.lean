@@ -31,8 +31,6 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
   `k + 1` (from `aₙ = O(nᵏ)`).
 * `CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a cusp form, at most `k/2 + 1`
   (from Hecke's `aₙ = O(n^{k/2})`).
-* `CuspForm.LSeriesSummable_qExpansion_coeff`: absolute convergence of the coefficient
-  L-series for `Re s > k/2 + 1`.
 * `ModularForm.LSeries_qExpansion_coeff_eq`, `CuspForm.LSeries_qExpansion_coeff_eq`:
   on the respective half-planes, `LSeries` of the coefficients is
   `(Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` for Mathlib's `ModularForm.L`.
@@ -117,14 +115,6 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
     abscissaOfAbsConv (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) ≤
       (((k : ℝ) / 2 : ℝ) : EReal) + 1 :=
   LSeries.abscissaOfAbsConv_le_of_isBigO_rpow (CuspFormClass.qExpansion_isBigO f)
-
-/-- The L-series of a cusp form's Fourier coefficients converges absolutely when
-`Re s > k/2 + 1`. -/
-theorem LSeriesSummable_qExpansion_coeff [CuspFormClass F Γ k] (f : F)
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
-    LSeriesSummable (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s := by
-  refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
-  exact (abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt (mod_cast hs)
 
 /-- On the half-plane `Re s > k/2 + 1`, the Dirichlet series of the `q`-expansion
 coefficients of a cusp form is Mathlib's `ModularForm.L`, up to the width factor.
