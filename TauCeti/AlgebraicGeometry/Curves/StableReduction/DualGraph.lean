@@ -38,6 +38,9 @@ stability condition of a stable curve is stated.
   Section 1: the dual graph of a nodal curve, its first Betti number `b₁ = δ - γ + c`, the
   valence conditions defining stability, and the arithmetic genus as the sum of component
   genera plus `b₁`.
+* [Liu, *Algebraic Geometry and Arithmetic Curves*](https://global.oup.com/academic/product/algebraic-geometry-and-arithmetic-curves-9780199202492),
+  Chapter 10.3: dual graphs of semistable curves, valence counted with loops twice, and the
+  genus formula for a connected nodal curve.
 -/
 
 public section
