@@ -127,6 +127,44 @@ theorem geckSchemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A
       (t.geckCoordinatePointsPresentation ht A).mulEquiv q := by
   simp [geckSchemePointsMulEquiv]
 
+/-- The scheme-valued point identification is covariantly natural in the value ring. A ring
+homomorphism `A → B` becomes precomposition by the reversed spectrum map and acts through the
+presented-points map on the corresponding Geck point. -/
+@[simp]
+theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
+    (f : A →+* B)
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (t.geckGroupScheme ht).X) :
+    t.geckSchemePointsMulEquiv ht B
+        ((Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom)).asOver
+          (Spec (CommRingCat.of ℤ)) ≫ p) =
+      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f
+        (t.geckSchemePointsMulEquiv ht A p) := by
+  let q := (t.geckGroupSchemePointMulEquiv ht A).symm p
+  have hpre :
+      (t.geckGroupSchemePointMulEquiv ht B).symm
+          ((Spec.map (CommRingCat.ofHom f.toIntAlgHom.toRingHom)).asOver
+            (Spec (CommRingCat.of ℤ)) ≫ p) =
+        HopfAlgebra.mapPoints (H := t.geckCoordinateHopfAlgebra ht)
+          (CommAlgCat.ofHom f.toIntAlgHom) q := by
+    simpa only [q, geckGroupSchemePointMulEquiv] using
+      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
+        (t.geckCoordinateHopfAlgebra ht) f.toIntAlgHom
+        (t.geckGroupScheme_eq_hopfSpec ht) p
+  simp only [geckSchemePointsMulEquiv, MulEquiv.trans_apply]
+  rw [hpre]
+  change (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ B)).mulEquiv
+      (HopfAlgebra.mapPoints (CommAlgCat.ofHom f.toIntAlgHom) q) = _
+  rw [(t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv_mapPoints
+      (t.geckCoordinatePointsPresentation ht (CommAlgCat.of ℤ B))
+      (CommAlgCat.ofHom f.toIntAlgHom)]
+  simp only [q]
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    GeneralLinear.IntegralPointsPresentation.coe_map]
+  ext i j
+  rfl
+
 /-- The quotient-coordinate point obtained by evaluating a numbered Geck root subgroup. -/
 private noncomputable def geckRootSubgroupCoordinatePoint (i : Fin t.rank ⊕ Fin t.rank)
     (A : Type v) [CommRing A]

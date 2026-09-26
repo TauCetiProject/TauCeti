@@ -31,8 +31,8 @@ relations.
 
 ## Main definitions
 
-* `TauCeti.DynkinType.geckWeylWordConj`: inner conjugation by the integral Weyl-word point, as an
-  automorphism of the Geck group scheme.
+* `TauCeti.DynkinType.geckWeylWordInnerConjugation`: inner conjugation by the integral Weyl-word
+  point, as an automorphism of the Geck group scheme.
 * `TauCeti.DynkinType.geckWeylRootSubgroup`: the transported root-subgroup morphism.
 
 ## Main results
@@ -74,7 +74,7 @@ def geckWeylWordCoordinatePoint (l : List (Fin t.rank)) :
 
 /-- **Inner conjugation by the integral Weyl-word point**, as an automorphism of the Geck group
 scheme. On points over a commutative ring it sends `g` to `n_l g n_l⁻¹`. -/
-def geckWeylWordConj (l : List (Fin t.rank)) : Aut (t.geckGroupScheme ht) :=
+def geckWeylWordInnerConjugation (l : List (Fin t.rank)) : Aut (t.geckGroupScheme ht) :=
   (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).trans
     ((hopfSpec (CommRingCat.of ℤ)).mapIso
       (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
@@ -84,24 +84,25 @@ def geckWeylWordConj (l : List (Fin t.rank)) : Aut (t.geckGroupScheme ht) :=
 /-- Forgetting the group-object and over-category structure of the Weyl-word automorphism
 recovers its underlying scheme automorphism. This localizes the definitional behavior of the two
 concrete forgetful functors. -/
-private theorem geckWeylWordConj_forget_mapIso_hom (l : List (Fin t.rank)) :
-    ((Over.forget _).mapIso ((Grp.forget _).mapIso (t.geckWeylWordConj ht l))).hom =
-      (t.geckWeylWordConj ht l).hom.hom.hom.left :=
+private theorem geckWeylWordInnerConjugation_forget_mapIso_hom (l : List (Fin t.rank)) :
+    ((Over.forget _).mapIso
+      ((Grp.forget _).mapIso (t.geckWeylWordInnerConjugation ht l))).hom =
+      (t.geckWeylWordInnerConjugation ht l).hom.hom.hom.left :=
   rfl
 
-/-- On presented scheme-valued points, `geckWeylWordConj` is induced by the coordinate inner
-automorphism. -/
-theorem geckGroupSchemePointMulEquiv_comp_geckWeylWordConj
+/-- On presented scheme-valued points, `geckWeylWordInnerConjugation` is induced by the coordinate
+inner automorphism. -/
+theorem geckGroupSchemePointMulEquiv_comp_geckWeylWordInnerConjugation
     (l : List (Fin t.rank)) (A : Type) [CommRing A]
     (q : HopfAlgebra.points (R := ℤ) (H := t.geckCoordinateHopfAlgebra ht)
       (CommAlgCat.of ℤ A)) :
     t.geckGroupSchemePointMulEquiv ht A q ≫
-        (t.geckWeylWordConj ht l).hom.hom.hom =
+        (t.geckWeylWordInnerConjugation ht l).hom.hom.hom =
       t.geckGroupSchemePointMulEquiv ht A
         ((CommHopfAlgCat.mapPointsFunctor
           (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
             (t.geckWeylWordCoordinatePoint ht l)).hom).app (CommAlgCat.of ℤ A) q) := by
-  rw [geckWeylWordConj]
+  rw [geckWeylWordInnerConjugation]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := ℤ) A
     (t.geckGroupScheme_eq_hopfSpec ht) (t.geckGroupScheme_eq_hopfSpec ht)
     (t.geckGroupSchemePointMulEquiv ht A) (t.geckGroupSchemePointMulEquiv ht A)
@@ -156,16 +157,16 @@ theorem geckCoordinatePointsPresentation_mulEquiv_extend_geckWeylWordCoordinateP
 
 /-- **On scheme-valued points, the Weyl-word automorphism is conjugation by the existing
 matrix-valued Weyl-word point.** -/
-theorem geckSchemePointsMulEquiv_comp_geckWeylWordConj
+theorem geckSchemePointsMulEquiv_comp_geckWeylWordInnerConjugation
     (l : List (Fin t.rank)) (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht A
-        (p ≫ (t.geckWeylWordConj ht l).hom.hom.hom) =
+        (p ≫ (t.geckWeylWordInnerConjugation ht l).hom.hom.hom) =
       t.geckWeylWordPoint ht l A * t.geckSchemePointsMulEquiv ht A p *
         (t.geckWeylWordPoint ht l A)⁻¹ := by
   obtain ⟨q, rfl⟩ := (t.geckGroupSchemePointMulEquiv ht A).surjective p
-  rw [t.geckGroupSchemePointMulEquiv_comp_geckWeylWordConj ht l A]
+  rw [t.geckGroupSchemePointMulEquiv_comp_geckWeylWordInnerConjugation ht l A]
   rw [CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
     HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
   rw [geckSchemePointsMulEquiv_groupSchemePointMulEquiv,
@@ -175,8 +176,9 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylWordConj
 
 /-- Inner conjugation by the empty Weyl word is the identity group-scheme automorphism. -/
 @[simp]
-theorem geckWeylWordConj_nil : t.geckWeylWordConj ht [] = Iso.refl _ := by
-  rw [geckWeylWordConj, geckWeylWordCoordinatePoint_nil,
+theorem geckWeylWordInnerConjugation_nil :
+    t.geckWeylWordInnerConjugation ht [] = Iso.refl _ := by
+  rw [geckWeylWordInnerConjugation, geckWeylWordCoordinatePoint_nil,
     CommHopfAlgCat.innerConjugationIso_one]
   apply Iso.ext
   simp
@@ -186,7 +188,7 @@ positive simple-root subgroup at `i` by the integral Weyl-word point. Its root i
 datum is `geckWeylRootIndex l i`. -/
 def geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin t.rank) :
     AdditiveGroup.groupScheme ℤ ⟶ t.geckGroupScheme ht :=
-  t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordConj ht l).hom
+  t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordInnerConjugation ht l).hom
 
 /-- The underlying scheme map of a transported root subgroup is the composite of the numbered
 root subgroup with the forgotten Weyl-word automorphism. -/
@@ -194,7 +196,7 @@ private theorem geckWeylRootSubgroup_hom_left
     (l : List (Fin t.rank)) (i : Fin t.rank) :
     (t.geckWeylRootSubgroup ht l i).hom.hom.left =
       (t.geckRootSubgroup ht (.inl i)).hom.hom.left ≫
-        (t.geckWeylWordConj ht l).hom.hom.hom.left := by
+        (t.geckWeylWordInnerConjugation ht l).hom.hom.hom.left := by
   rw [geckWeylRootSubgroup]
   rfl
 
@@ -202,7 +204,7 @@ private theorem geckWeylRootSubgroup_hom_left
 @[simp]
 theorem geckWeylRootSubgroup_nil (i : Fin t.rank) :
     t.geckWeylRootSubgroup ht [] i = t.geckRootSubgroup ht (.inl i) := by
-  rw [geckWeylRootSubgroup, geckWeylWordConj_nil, Iso.refl_hom, Category.comp_id]
+  rw [geckWeylRootSubgroup, geckWeylWordInnerConjugation_nil, Iso.refl_hom, Category.comp_id]
 
 /-- **On scheme-valued points, the transported root-subgroup morphism is conjugation of the
 numbered positive simple-root morphism by the Weyl-word point.** -/
@@ -218,7 +220,7 @@ theorem geckSchemePointsMulEquiv_geckWeylRootSubgroup
         (t.geckWeylWordPoint ht l A)⁻¹ := by
   rw [geckWeylRootSubgroup]
   simp only [Grp.comp', Mon.comp_hom']
-  exact t.geckSchemePointsMulEquiv_comp_geckWeylWordConj ht l A
+  exact t.geckSchemePointsMulEquiv_comp_geckWeylWordInnerConjugation ht l A
     (p ≫ (t.geckRootSubgroup ht (.inl i)).hom.hom)
 
 /-- **The scheme morphism at an arbitrary root induces the existing all-root point
@@ -241,12 +243,12 @@ instance isClosedImmersion_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin
     IsClosedImmersion (t.geckWeylRootSubgroup ht l i).hom.hom.left := by
   let c := (t.geckRootSubgroup ht (.inl i)).hom.hom.left
   let e : (t.geckGroupScheme ht).X.left ≅ (t.geckGroupScheme ht).X.left :=
-    (Over.forget _).mapIso ((Grp.forget _).mapIso (t.geckWeylWordConj ht l))
+    (Over.forget _).mapIso ((Grp.forget _).mapIso (t.geckWeylWordInnerConjugation ht l))
   have hc : IsClosedImmersion c := inferInstance
   have hce : IsClosedImmersion (c ≫ e.hom) :=
     (MorphismProperty.cancel_right_of_respectsIso _ c e.hom).2 hc
   rw [geckWeylRootSubgroup_hom_left,
-    ← geckWeylWordConj_forget_mapIso_hom]
+    ← geckWeylWordInnerConjugation_forget_mapIso_hom]
   exact hce
 
 /-- **Every root index of the pinned root datum has a closed root-subgroup morphism in the Geck
