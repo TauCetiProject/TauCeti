@@ -221,8 +221,9 @@ private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) :
 
 /-- The **Herbrand function** `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]` of a finite Galois extension
 of local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inverse Herbrand function
-`ψ_{L/K}`. The integral formula is `coe_herbrand`. -/
-def herbrandOrderIso [IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
+`ψ_{L/K}`. The integral formula is `coe_herbrand`. The construction does not use `IsGalois`;
+the hypothesis restricts the Herbrand function to the Galois case, where it is meaningful. -/
+def herbrandOrderIso [_hGal : IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
   StrictMono.orderIsoOfSurjective (herbrandFun K L) (herbrandFun_strictMono K L)
     (herbrandFun_surjective K L)
 
