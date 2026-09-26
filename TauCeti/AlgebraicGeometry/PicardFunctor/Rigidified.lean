@@ -80,26 +80,26 @@ lemma rigidifiedPicardFunctor_obj (T : (Over S)ᵒᵖ) :
       RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop) :=
   rfl
 
-/-- The rigidified Picard functor acts on every class by pullback along the induced map of base
-changes. -/
+/-- The rigidified Picard functor acts by pullback along the induced map of base changes. -/
 @[simp]
-lemma rigidifiedPicardFunctor_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
-    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
-    (rigidifiedPicardFunctor f x₀ hx₀).map φ a =
-      RigidifiedLineBundleClass.pullback
-        (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop) a :=
+lemma rigidifiedPicardFunctor_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
+    (rigidifiedPicardFunctor f x₀ hx₀).map φ =
+      TypeCat.ofHom (RigidifiedLineBundleClass.pullback
+        (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop)) :=
   rfl
 
 /-- The rigidified Picard functor acts on the class of a rigidified line bundle by pulling it
 back along the induced morphism of base changes. -/
-@[simp]
 lemma rigidifiedPicardFunctor_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
     (P : RigidifiedLineBundle (baseChangeSection f x₀ hx₀ T.unop)) :
     (rigidifiedPicardFunctor f x₀ hx₀).map φ (RigidifiedLineBundleClass.mk P) =
       RigidifiedLineBundleClass.mk (RigidifiedLineBundle.pullback
         (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop) P) :=
-  (rigidifiedPicardFunctor_map f x₀ hx₀ φ _).trans
-    (RigidifiedLineBundleClass.pullback_mk _ P)
+  by
+    change RigidifiedLineBundleClass.pullback
+      (baseChangeSection_comp_pullback_map f x₀ hx₀ φ.unop)
+        (RigidifiedLineBundleClass.mk P) = _
+    exact RigidifiedLineBundleClass.pullback_mk _ P
 
 end
 
