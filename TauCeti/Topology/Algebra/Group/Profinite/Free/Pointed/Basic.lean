@@ -251,9 +251,9 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     (hf₀ : f x₀ = 1) (V : OpenNormalSubgroup P) :
     IsAdmissible C x₀ (V.comap (freeProC.lift hP f : freeProC C X →* P)
       (freeProC.lift hP f).continuous) := by
-  have hcomp : (freeProC.lift hP f : freeProC C X →* P) ∘ (freeProC.of : X → freeProC C X) = f :=
-    funext fun x ↦ freeProC.lift_of hP f x
-  refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by rw [hcomp]; exact hf), ?_⟩
+  refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by
+    simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
+      QuotientGroup.continuous_mk.comp hf), ?_⟩
   refine OpenNormalSubgroup.mem_comap.mpr ?_
   rw [MonoidHom.coe_ofClass, freeProC.lift_of, hf₀]
   exact one_mem _
