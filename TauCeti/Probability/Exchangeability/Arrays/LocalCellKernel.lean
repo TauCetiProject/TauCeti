@@ -41,7 +41,7 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 /-- Conditional on the local rectangle and the rest of the array, the distribution of a cell
 depends only on the local rectangle. The equality is almost everywhere for the joint law of
 the two observations. -/
-theorem SeparatelyExchangeable.condDistrib_cell_rest_eq_local
+theorem SeparatelyExchangeable.condDistrib_cell_rest_ae_eq_local
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p)
     {S T : Set ℕ} (hS : S.Infinite) (hT : T.Infinite)
     {c : ℕ × ℕ} (hc₁ : c.1 ∈ S) (hc₂ : c.2 ∈ T) :
@@ -78,9 +78,8 @@ theorem SeparatelyExchangeable.jointLaw_cell_rest_eq_compProd_local
     ((Set.measurable_restrict _).prodMk (Set.measurable_restrict _)).aemeasurable
   have hf : AEMeasurable (fun x : ℕ × ℕ → α ↦ x c) ρ :=
     (measurable_pi_apply c).aemeasurable
-  rw [← compProd_map_condDistrib hk hf]
-  exact Measure.compProd_congr
-    (hρ.condDistrib_cell_rest_eq_local hS hT hc₁ hc₂)
+  exact (condDistrib_ae_eq_iff_measure_eq_compProd hk hf _).mp
+    (hρ.condDistrib_cell_rest_ae_eq_local hS hT hc₁ hc₂)
 
 /-- One fresh uniform variable can generate the cell while preserving its joint law with all
 other cells. The coding function uses only the local rectangle as a parameter; the full
