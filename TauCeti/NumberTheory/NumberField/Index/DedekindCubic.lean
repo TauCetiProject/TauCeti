@@ -12,7 +12,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The extra integer in Dedekind's cubic field
 
-For an algebraic integer `θ` with minimal polynomial `X³ - X² - 2X - 8`, the element
+For an algebraic integer `θ` satisfying `θ³ - θ² - 2θ - 8 = 0`, the element
 `β = (θ² - θ)/2` is integral. Its monic equation and the multiplication relations among
 `1`, `θ`, and `β` are the first ingredients in the integral order with basis `(1, θ, β)`.
 The factor of `2` in its denominator is why reduction of the polynomial modulo `2` does not
@@ -42,15 +42,19 @@ theorem dedekindCubic_relation
   simpa only [map_sub, map_mul, map_pow, aeval_X, aeval_C,
     map_ofNat, map_zero] using h
 
+private theorem dedekindCubic_relation_in_field
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    (θ : K) ^ 3 - (θ : K) ^ 2 - 2 * (θ : K) - 8 = 0 := by
+  simpa only [map_sub, map_mul, map_pow, map_ofNat, map_zero] using
+    congrArg (algebraMap (𝓞 K) K) hθ
+
 variable [CharZero K]
 
 private theorem beta_relation_in_field
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     (((θ : K) ^ 2 - θ) / 2) ^ 3 - 2 * (((θ : K) ^ 2 - θ) / 2) ^ 2 +
       3 * (((θ : K) ^ 2 - θ) / 2) - 10 = 0 := by
-  have hrel : (θ : K) ^ 3 - (θ : K) ^ 2 - 2 * (θ : K) - 8 = 0 := by
-    simpa only [map_sub, map_mul, map_pow, map_ofNat, map_zero] using
-      congrArg (algebraMap (𝓞 K) K) (dedekindCubic_relation hθ)
+  have hrel := dedekindCubic_relation_in_field hθ
   have hfactor :
       8 * (((((θ : K) ^ 2 - θ) / 2) ^ 3 - 2 * (((θ : K) ^ 2 - θ) / 2) ^ 2) +
         3 * (((θ : K) ^ 2 - θ) / 2) - 10) =
@@ -61,7 +65,7 @@ private theorem beta_relation_in_field
 
 /-- The half-integral element used in the integral basis of Dedekind's cubic field. Its
 equation is `β³ - 2β² + 3β - 10 = 0`. -/
-def dedekindBeta (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) : 𝓞 K := by
+def dedekindBeta (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : 𝓞 K := by
   let b : K := ((θ : K) ^ 2 - θ) / 2
   have hint : IsIntegral ℤ b := by
     refine ⟨X ^ 3 - C 2 * X ^ 2 + C 3 * X - C 10, ?_, ?_⟩
@@ -71,14 +75,14 @@ def dedekindBeta (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) : 𝓞 K
 
 /-- The extra algebraic integer is `(θ² - θ)/2` in the ambient field. -/
 @[simp] theorem coe_dedekindBeta
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     (dedekindBeta hθ : K) = ((θ : K) ^ 2 - θ) / 2 := by
   unfold dedekindBeta
   rfl
 
 /-- The defining monic equation of the extra integer. -/
 theorem dedekindBeta_relation
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     (dedekindBeta hθ) ^ 3 - 2 * (dedekindBeta hθ) ^ 2 +
       3 * dedekindBeta hθ - 10 = 0 := by
   apply RingOfIntegers.ext
@@ -87,33 +91,29 @@ theorem dedekindBeta_relation
   exact beta_relation_in_field hθ
 
 /-- The relation `θ² = θ + 2β` in the integral order. -/
-@[simp] theorem dedekindCubic_sq
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+@[simp] theorem dedekindCubic_theta_sq
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     θ ^ 2 = θ + 2 * dedekindBeta hθ := by
   apply RingOfIntegers.ext
   simp only [map_pow, map_add, map_mul, map_ofNat, coe_dedekindBeta]
   ring
 
 /-- The product `θβ` in the integral order. -/
-@[simp] theorem dedekindCubic_mul_beta
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+@[simp] theorem dedekindCubic_theta_mul_beta
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     θ * dedekindBeta hθ = θ + 4 := by
   apply RingOfIntegers.ext
   simp only [map_mul, map_add, map_ofNat, coe_dedekindBeta]
-  have hrel : (θ : K) ^ 3 - (θ : K) ^ 2 - 2 * (θ : K) - 8 = 0 := by
-    simpa only [map_sub, map_mul, map_pow, map_ofNat, map_zero] using
-      congrArg (algebraMap (𝓞 K) K) (dedekindCubic_relation hθ)
+  have hrel := dedekindCubic_relation_in_field hθ
   linear_combination (1 / 2 : K) * hrel
 
 /-- The square `β²` in the integral order. -/
 @[simp] theorem dedekindCubic_beta_sq
-    (hθ : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
     dedekindBeta hθ ^ 2 = dedekindBeta hθ + 2 * θ - 2 := by
   apply RingOfIntegers.ext
   simp only [map_pow, map_sub, map_add, map_mul, map_ofNat, coe_dedekindBeta]
-  have hrel : (θ : K) ^ 3 - (θ : K) ^ 2 - 2 * (θ : K) - 8 = 0 := by
-    simpa only [map_sub, map_mul, map_pow, map_ofNat, map_zero] using
-      congrArg (algebraMap (𝓞 K) K) (dedekindCubic_relation hθ)
+  have hrel := dedekindCubic_relation_in_field hθ
   linear_combination (((θ : K) - 1) / 4) * hrel
 
 end TauCeti.NumberField
