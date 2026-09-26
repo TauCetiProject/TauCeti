@@ -23,12 +23,15 @@ zero, in `TauCeti.NumberTheory.LocalField.QuadraticForm.EvenValuation`, where it
 class up to a square and so has the same norms, namely the elements of even normalized valuation.
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
-bimultiplicative in both arguments. The same index theorem gives the diagonal entry
-`(π, π)_K = (π, -1)_K` and nondegeneracy: the norms from the unramified class are exactly
-the elements of even normalized valuation, so a uniformizer, which has valuation one, is not such
-a norm and the symbol with it is `-1`. A radicand of odd valuation is therefore separated by the
-unramified class, and a radicand of even valuation, being the unramified class up to a square, by a
-uniformizer.
+bimultiplicative in both arguments. The same index theorem gives nondegeneracy: the norms from the
+unramified class are exactly the elements of even normalized valuation, so a uniformizer, which has
+valuation one, is not such a norm and the symbol with it is `-1`. A radicand of odd valuation is
+therefore separated by the unramified class, and a radicand of even valuation, being the unramified
+class up to a square, by a uniformizer.
+
+The diagonal entry `(a, a)_K = (a, -1)_K` needs no arithmetic input and is stated for an arbitrary
+field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
+`TauCeti.hilbertSymbol_self`.
 
 ## Main results
 
@@ -36,7 +39,6 @@ uniformizer.
   radicand.
 * `TauCeti.hilbertSymbol_mul_right` and `TauCeti.hilbertSymbol_mul_left`: the Hilbert symbol is
   bilinear in both arguments.
-* `TauCeti.hilbertSymbol_self`: the diagonal entry, `(π, π)_K = (π, -1)_K`.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one`: for every nonsquare `a` there is a `b` with
   `(a, b)_K = -1`.
 
@@ -81,23 +83,6 @@ theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
     hilbertSymbol (b * c) a = hilbertSymbol b a * hilbertSymbol c a := by
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
-
-/-- **The diagonal of the local Hilbert symbol.** Away from residue characteristic two,
-`(π, π)_K = (π, -1)_K` for every `π`, because `(a, -a)_K = 1` and the symbol is bilinear in the
-first argument. The value of `(π, π)_K` is therefore not a separate convention. -/
-theorem hilbertSymbol_self (h2 : IsUnit (2 : 𝒪[K])) (π : Kˣ) :
-    hilbertSymbol π π = hilbertSymbol π (-1) := by
-  have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  have hneg : hilbertSymbol (-π) π = 1 := by
-    rw [hilbertSymbol_comm, hilbertSymbol_neg_self]
-  have hπ : (-π : Kˣ) * (-1) = π := by
-    ext
-    push_cast
-    ring
-  calc hilbertSymbol π π = hilbertSymbol ((-π : Kˣ) * (-1)) π := by rw [hπ]
-    _ = hilbertSymbol (-π) π * hilbertSymbol (-1) π := hilbertSymbol_mul_left h2 π (-π) (-1)
-    _ = hilbertSymbol (-1) π := by rw [hneg, one_mul]
-    _ = hilbertSymbol π (-1) := hilbertSymbol_comm _ _
 
 /-- **Nondegeneracy of the local Hilbert symbol.** Away from residue characteristic two, for every
 nonsquare `a` there is a `b ∈ Kˣ` with `(a, b)_K = -1`. A radicand of odd valuation is separated
