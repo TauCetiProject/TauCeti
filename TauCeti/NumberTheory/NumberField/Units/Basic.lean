@@ -23,12 +23,36 @@ to see that a non-torsion unit of a field of prime degree generates the field.
 
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
   base field `ℚ` is torsion.
+* `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
+  unit's real embedding equal its absolute value at a real place.
 -/
 
 public section
 
 open NumberField NumberField.InfinitePlace NumberField.Units
 open scoped NumberField
+
+namespace NumberField.InfinitePlace
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- At a real place, multiply a unit by a torsion unit so that its real embedding is its
+(positive) absolute value. -/
+theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal)
+    (v : (𝓞 K)ˣ) :
+    ∃ ε : torsion K,
+      embedding_of_isReal hw ((ε.1 * v : (𝓞 K)ˣ) : K) = w v := by
+  let φ := embedding_of_isReal hw
+  have hv : |φ (v : K)| = w v := by
+    simpa [Real.norm_eq_abs] using (norm_embedding_of_isReal hw (v : K))
+  by_cases h : 0 ≤ φ (v : K)
+  · refine ⟨1, ?_⟩
+    simpa [φ, abs_of_nonneg h] using hv
+  · refine ⟨⟨-1, neg_one_mem_torsion⟩, ?_⟩
+    have hneg : φ (v : K) < 0 := lt_of_not_ge h
+    simpa [φ, abs_of_neg hneg] using hv
+
+end NumberField.InfinitePlace
 
 namespace TauCeti.NumberField.Units
 
