@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Discriminant
+public import TauCeti.NumberTheory.LocalField.Different.Basic
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 
 /-!
-# The different and discriminant under isomorphism
+# The different under isomorphism
 
 A base-field algebra equivalence between finite extensions of a nonarchimedean local field
-restricts to their rings of integers. It preserves the different ideal and hence the different
-and discriminant exponents. These invariants therefore depend only on the extension up to
-base-field equivalence. The proof uses local monogenicity and the derivative formula for the
-different (Serre, *Local Fields*, Chapter III, §6).
+restricts to their rings of integers. It preserves the different ideal and its exponent.
+The proof uses local monogenicity and the derivative formula for the different
+(Serre, *Local Fields*, Chapter III, §6).
 -/
 
 public section
@@ -33,12 +33,14 @@ variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
   [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
 
-variable [Algebra.IsSeparable K L] [Algebra.IsSeparable K M]
+variable [Algebra.IsSeparable K L]
 
 /-- The different ideal is carried to the different ideal by an equivalence of extensions. -/
+@[simp]
 theorem differentIdeal_map_integerRingEquiv (e : L ≃ₐ[K] M) :
     (differentIdeal 𝒪[K] 𝒪[L]).map e.integerRingEquiv =
       differentIdeal 𝒪[K] 𝒪[M] := by
+  have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
     (R := 𝒪[K]) (S := 𝒪[L])
   have hy : Algebra.adjoin 𝒪[K] {e.integerRingEquiv x} = ⊤ := by
@@ -61,6 +63,7 @@ theorem differentIdeal_map_integerRingEquiv (e : L ≃ₐ[K] M) :
 
 private theorem differentExponent_le_of_algEquiv (e : L ≃ₐ[K] M) :
     differentExponent K L ≤ differentExponent K M := by
+  have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
   apply (pow_dvd_differentIdeal_iff_le_differentExponent (K := K) (L := M)).mp
   rw [← IsLocalRing.map_ringEquiv_maximalIdeal e.integerRingEquiv.toRingEquiv,
     ← Ideal.map_pow,
@@ -70,20 +73,9 @@ private theorem differentExponent_le_of_algEquiv (e : L ≃ₐ[K] M) :
 
 /-- The different exponent is invariant under equivalence of finite extensions over `K`. -/
 theorem differentExponent_eq_of_algEquiv (e : L ≃ₐ[K] M) :
-    differentExponent K L = differentExponent K M :=
-  Nat.le_antisymm (differentExponent_le_of_algEquiv K L M e)
+    differentExponent K L = differentExponent K M := by
+  have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
+  exact Nat.le_antisymm (differentExponent_le_of_algEquiv K L M e)
     (differentExponent_le_of_algEquiv K M L e.symm)
-
-/-- The discriminant ideal is unchanged by an equivalence of extensions over the base field. -/
-theorem discriminantIdeal_eq_of_algEquiv (e : L ≃ₐ[K] M) :
-    discriminantIdeal K L = discriminantIdeal K M := by
-  rw [discriminantIdeal_def, discriminantIdeal_def,
-    ← differentIdeal_map_integerRingEquiv K L M e, Ideal.relNorm_map_algEquiv]
-
-/-- The local discriminant exponent is invariant under equivalence of finite extensions. -/
-theorem discriminantExponent_eq_of_algEquiv (e : L ≃ₐ[K] M) :
-    discriminantExponent K L = discriminantExponent K M := by
-  rw [discriminantExponent_def, discriminantExponent_def,
-    discriminantIdeal_eq_of_algEquiv K L M e]
 
 end TauCeti
