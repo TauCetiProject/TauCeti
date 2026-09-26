@@ -34,14 +34,16 @@ forces the index to be `2`, and the sign indicator of an index-two subgroup is m
 
 * `TauCeti.hilbertSymbol_eq_neg_one_of_unramified_class_of_odd`: `(a, Δ)_K = -1` for the
   unramified class `Δ`.
-* `TauCeti.exists_hilbertSymbol_eq_neg_one_of_odd`: there is a unit `b` with `(a, b)_K = -1`.
+* `TauCeti.exists_hilbertSymbol_eq_neg_one_of_odd`: there is a `b ∈ Kˣ` of valuation zero, the
+  unramified class, with `(a, b)_K = -1`.
 * `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd`: away from residue characteristic two the
   norms from `K(√a)` form a subgroup of index two.
 
-The radicands of even valuation, which are the units, are treated in
-`TauCeti.quadraticNormSubgroup_index_eq_two_of_even`, which completes the index theorem away from
-residue characteristic two. Bimultiplicativity and nondegeneracy of the Hilbert symbol follow from
-the index theorem in both cases.
+The radicands of even valuation, which are square-equivalent to a unit of valuation zero, are
+treated in `TauCeti.quadraticNormSubgroup_index_eq_two_of_even`, which completes the index theorem
+away from residue characteristic two. The two cases are combined in
+`TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity`, where bimultiplicativity and
+nondegeneracy of the Hilbert symbol follow from the index theorem.
 
 ## References
 
