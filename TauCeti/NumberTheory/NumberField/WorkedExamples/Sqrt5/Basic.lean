@@ -12,10 +12,10 @@ import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 # The field `ℚ(√5)`, presented by the golden ratio
 
 Let `K` be a number field generated over `ℚ` by an algebraic integer `θ` with
-`minpoly ℤ θ = X² − X − 1`, that is `K = ℚ(√5)` presented by `θ = (1 + √5)/2`. This file
-records the basic shape of this presentation, shared by the worked example: the minimal
-polynomial in the form `X² − X + C ((1 − 5)/4)` used by the quadratic splitting laws, and
-`[K : ℚ] = 2`.
+`minpoly ℤ θ = X² − X − 1`, that is `K = ℚ(√5)` presented by a root `θ` of the golden-ratio
+polynomial (either conjugate `(1 ± √5)/2`). This file records the basic shape of this
+presentation, shared by the worked example: the minimal polynomial in the form
+`X² − X + C ((1 − 5)/4)` used by the quadratic splitting laws, and `[K : ℚ] = 2`.
 
 ## Main results
 

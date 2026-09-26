@@ -35,6 +35,12 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 * `TauCeti.NumberField.Sqrt5.ncard_primesOver_two_eq_one`,
   `TauCeti.NumberField.Sqrt5.inertiaDeg_eq_two_of_mem_primesOver_two`,
   `TauCeti.NumberField.Sqrt5.isPrime_map_span_two`: `2` is inert.
+
+## References
+
+* The dyadic quadratic splitting law
+  `NumberField.ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add`, in
+  `TauCeti.NumberTheory.NumberField.Quadratic.Splitting`, is from TauCetiProject/TauCeti#5901.
 -/
 
 public section
@@ -51,7 +57,7 @@ theorem discr_X_sq_sub_X_sub_one : (X ^ 2 - X - 1 : ℤ[X]).discr = 5 := by
   rw [discr_of_degree_eq_two (by compute_degree!)]
   simp [coeff_one, coeff_X]
 
-/-- **The index of the golden ratio is `1`**, since `discr (X² − X − 1) = 5` is squarefree. -/
+/-- **The index of a root of `X² − X − 1` is `1`**, since `discr (X² − X − 1) = 5` is squarefree. -/
 theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     IntegralPrimitiveElement.index (⟨θ, hgen⟩ : IntegralPrimitiveElement K) = 1 := by
@@ -69,7 +75,7 @@ theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   · norm_num at h
     omega
 
-/-- **The ring of integers of `ℚ(√5)` is `ℤ[θ]`**, for `θ = (1 + √5)/2`. -/
+/-- **The ring of integers of `ℚ(√5)` is `ℤ[θ]`**, for a root `θ` of `X² − X − 1`. -/
 theorem adjoin_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Algebra.adjoin ℤ {θ} = ⊤ := by
   have h : Algebra.adjoin ℤ {(⟨θ, hgen⟩ : IntegralPrimitiveElement K).1} = ⊤ :=
