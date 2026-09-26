@@ -33,8 +33,7 @@ This file is adapted from Kim Morrison's
 `UniversalCover.isCoveringMap` does not assume `X` is path-connected. Over a point with no path
 from `x₀` the preimage of a good neighbourhood is empty, hence evenly covered
 (`IsEvenlyCovered.of_preimage_eq_empty`); over the path component of `x₀` the sheet
-trivialization applies. This case split also follows
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292).
+trivialization applies.
 -/
 
 public section
@@ -57,6 +56,8 @@ theorem isCoveringMap [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedS
   intro x
   obtain ⟨U, hU_open, hxU, hU_pathConn, hU_slsc⟩ :=
     exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
+  -- This case split, which removes the path-connectedness hypothesis, is adapted from
+  -- https://github.com/leanprover-community/mathlib4/pull/38292.
   cases isEmpty_or_nonempty (Path.Homotopic.Quotient x₀ x) with
   | inl h =>
     refine (IsEvenlyCovered.of_preimage_eq_empty Empty (hU_open.mem_nhds hxU)
