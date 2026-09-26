@@ -14,9 +14,8 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.Map
 When group-like elements form a basis of a bialgebra over a commutative semiring, every
 monoid homomorphism from its group-like elements extends uniquely to a bialgebra homomorphism.
 Over a domain, linear independence follows from torsion-freeness by
-`linearIndep_groupLikeVal`. Only the source needs the basis hypotheses. For scalar extensions,
-equivariance of the extension can be checked on group-like elements. This is the coordinate-algebra
-extension step in descent of morphisms between groups of multiplicative type.
+`linearIndep_groupLikeVal`. Only the source needs the basis hypotheses. This is the
+coordinate-algebra extension step in descent of morphisms between groups of multiplicative type.
 
 The construction uses `TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop`
 and Mathlib's `MonoidAlgebra.mapDomainBialgHom`. See Milne, *Algebraic Groups* (2017), §12.
