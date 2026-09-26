@@ -165,22 +165,21 @@ theorem kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
   have hideal :=
     kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
       e h ρ M hM hnil b wt htorus
-  have htransport : ∀ {I J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)}
-      (hIJ : I = J) (hquot : CommHopfAlgCat.quotientSpec
-        (GeneralLinear.coordinateHopfAlgebra ℤ n) I =
-          CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ n) J),
-      eqToHom hquot.symm ≫ CommHopfAlgCat.quotientSpecι
-          (GeneralLinear.coordinateHopfAlgebra ℤ n) I =
-        CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n) J := by
-    intro I J hIJ hquot
-    subst J
-    simp
+  have hgroup :
+      (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+        e h ρ M hM hnil b wt htorus).symm =
+        congrArg (CommHopfAlgCat.quotientSpec
+          (GeneralLinear.coordinateHopfAlgebra ℤ n)) hideal.symm :=
+    Subsingleton.elim _ _
   apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
   rw [kostantGeneratedToToral_comp_ι]
-  rw [kostantGeneratedGroupSchemeι_def, kostantToralGroupSchemeι_def]
-  rw [← Category.assoc, htransport hideal
-    (kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
-      e h ρ M hM hnil b wt htorus)]
+  rw [kostantGeneratedGroupSchemeι_def, kostantToralGroupSchemeι_def, hgroup]
+  rw [← Category.assoc,
+    ← CommHopfAlgCat.quotientSpecMapOfLe_eq_eqToHom
+      (GeneralLinear.coordinateHopfAlgebra ℤ n)
+      (kostantToralDefiningIdeal_le_kostantGeneratedDefiningIdeal
+        e h ρ M hM hnil b wt) hideal.symm,
+    CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
 
 /-- Pointwise generation of the weight torus makes the canonical comparison from the
 root-generated carrier to the toral closure an isomorphism. -/

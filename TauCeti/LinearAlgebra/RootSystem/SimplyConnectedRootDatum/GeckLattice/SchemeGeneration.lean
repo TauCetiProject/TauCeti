@@ -22,10 +22,10 @@ point of the split torus shows that its coordinate map kills the root-generated 
 Therefore the toral Geck defining ideal is exactly the common-kernel ideal of the numbered root
 subgroups alone, and the Geck carrier is the root-generated Kostant group scheme.
 
-The result is specialized to `E₈`, `F₄`, and `G₂`. These are the three exceptional types for
-which the Geck coordinate weights span the full character lattice, so their represented tori are
-the full-weight tori needed by the Chevalley--Demazure construction. The corresponding statement
-for other types requires a full-weight admissible lattice rather than Geck's adjoint lattice.
+The general results apply to every valid type whose Cartan rows are primitive. The specializations
+record `E₈`, `F₄`, and `G₂`, the three exceptional types whose Geck coordinate weights span the
+full character lattice and hence whose Geck tori are the full-weight tori used by the
+Chevalley--Demazure construction.
 
 ## Main results
 
@@ -51,10 +51,21 @@ namespace TauCeti.DynkinType
 
 open TauCeti.UniversalEnvelopingAlgebra
 
+universe v
+
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
 variable (t : DynkinType) (ht : t.Valid)
+
+private theorem kostantTorusSubgroup_le_geckElementarySubgroup_of_range_le
+    {A : CommAlgCat.{v} ℤ}
+    (htorus : (t.geckTorusPoints ht A).range ≤ t.geckElementarySubgroup ht A) :
+    kostantTorusSubgroup (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A ≤
+      t.geckElementarySubgroup ht A := by
+  rw [kostantTorusSubgroup_eq_range]
+  exact htorus
 
 /-- **Generation of the universal Geck torus makes the Geck defining ideal root-generated.** It
 is enough to contain the torus points over the coordinate ring of the split torus itself. -/
@@ -74,8 +85,7 @@ theorem geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementar
         (t.geckCoordinateBasisFin ht) := by
   rw [t.geckDefiningIdeal_def ht]
   apply kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact htorus
+  exact t.kostantTorusSubgroup_le_geckElementarySubgroup_of_range_le ht htorus
 
 /-- **Primitive Cartan rows make the Geck torus scheme-theoretically redundant.** The defining
 Hopf ideal obtained from the numbered root subgroups and the weight torus is already the defining
@@ -108,9 +118,10 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) := by
-  rw [t.geckGroupScheme_def ht, kostantToralGroupScheme, kostantGeneratedGroupScheme,
-    ← t.geckDefiningIdeal_def ht,
-    t.geckDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_torus_le_elementary ht htorus]
+  rw [t.geckGroupScheme_def ht]
+  exact kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_torus_le_elementary
+    _ _ _ _ _ _ _ _
+    (t.kostantTorusSubgroup_le_geckElementarySubgroup_of_range_le ht htorus)
 
 /-- **Primitive Cartan rows identify the Geck carrier with the root-generated Kostant carrier.**
 Thus the represented weight torus adds no scheme-theoretic generator. -/
@@ -142,8 +153,7 @@ theorem isIso_kostantGeneratedToToral_geck_of_torus_le_elementary
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) := by
   apply isIso_kostantGeneratedToToral_of_torus_le_elementary
-  rw [kostantTorusSubgroup_eq_range]
-  exact htorus
+  exact t.kostantTorusSubgroup_le_geckElementarySubgroup_of_range_le ht htorus
 
 /-- Primitive Cartan rows make the canonical comparison from the root-generated Kostant carrier
 to the Geck toral carrier an isomorphism. -/
