@@ -79,20 +79,20 @@ are multiplication by the original curvature `w`. -/
 @[simp] theorem cone_d₁ (f : X ⟶ Y) : (cone f).d₁ = coneD₁ f := by
   simp only [cone]
 
-@[simp] theorem biprod_inl_comp_cone_d₀ (f : X ⟶ Y) :
-    biprod.inl ≫ (cone f).d₀ = (-X.d₁) ≫ biprod.inl + f.f₁ ≫ biprod.inr := by
+@[simp] theorem biprod_inl_comp_coneD₀ (f : X ⟶ Y) :
+    biprod.inl ≫ coneD₀ f = (-X.d₁) ≫ biprod.inl + f.f₁ ≫ biprod.inr := by
   simp [coneD₀]
 
-@[simp] theorem biprod_inr_comp_cone_d₀ (f : X ⟶ Y) :
-    biprod.inr ≫ (cone f).d₀ = Y.d₀ ≫ biprod.inr := by
+@[simp] theorem biprod_inr_comp_coneD₀ (f : X ⟶ Y) :
+    biprod.inr ≫ coneD₀ f = Y.d₀ ≫ biprod.inr := by
   simp [coneD₀]
 
-@[simp] theorem biprod_inl_comp_cone_d₁ (f : X ⟶ Y) :
-    biprod.inl ≫ (cone f).d₁ = (-X.d₀) ≫ biprod.inl + f.f₀ ≫ biprod.inr := by
+@[simp] theorem biprod_inl_comp_coneD₁ (f : X ⟶ Y) :
+    biprod.inl ≫ coneD₁ f = (-X.d₀) ≫ biprod.inl + f.f₀ ≫ biprod.inr := by
   simp [coneD₁]
 
-@[simp] theorem biprod_inr_comp_cone_d₁ (f : X ⟶ Y) :
-    biprod.inr ≫ (cone f).d₁ = Y.d₁ ≫ biprod.inr := by
+@[simp] theorem biprod_inr_comp_coneD₁ (f : X ⟶ Y) :
+    biprod.inr ≫ coneD₁ f = Y.d₁ ≫ biprod.inr := by
   simp [coneD₁]
 
 /-- The canonical inclusion of the codomain into the cone. -/
