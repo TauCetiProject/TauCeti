@@ -75,9 +75,9 @@ ring. -/
 theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
     (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ) :
     IsRegularLocalRing (Localization.AtPrime ((maximalIdeal R).comap (constantCoeff (σ := Fin 2))) ⧸
-      span {algebraMap (MvPolynomial (Fin 2) R)
+      span {(algebraMap (MvPolynomial (Fin 2) R)
         (Localization.AtPrime ((maximalIdeal R).comap (constantCoeff (σ := Fin 2))))
-        (X 0 * X 1 - C π ^ n)}) ↔ n = 1 := by
+        (X 0 * X 1 - C π ^ n))}) ↔ n = 1 := by
   have := IsRegularLocalRing.of_isRegularRing_of_isLocalRing R
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
   set B := Localization.AtPrime 𝔪
