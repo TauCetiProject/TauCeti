@@ -79,7 +79,7 @@ displacements. -/
 private theorem ofReal_integral_add_integral_le (hp1 : 1 ≤ p) (hp : p ≠ ∞) {Q₁ Q₂ : Y → Y}
     (hQ₁ : Measurable Q₁) (hQ₂ : Measurable Q₂) {f₁ f₂ : Y → ℝ}
     (hf : ∀ y y', f₁ y + f₂ y' ≤ dist (Q₁ y) (Q₂ y') ^ p.toReal)
-    {A B : Measure Y} [IsProbabilityMeasure A] [IsProbabilityMeasure B]
+    {A B : Measure Y}
     (hf₁ : Integrable f₁ A) (hf₂ : Integrable f₂ B) :
     ENNReal.ofReal (∫ y, f₁ y ∂A + ∫ y, f₂ y ∂B) ≤
       (wassersteinEDist p A B + (eLpNorm (fun y ↦ edist y (Q₁ y)) p A +
