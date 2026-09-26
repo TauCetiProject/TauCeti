@@ -149,6 +149,25 @@ theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply
       (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x :=
   matrixSpecialOrthogonalToWeightedSumSquaresOne_apply ι A x
 
+/-- The inverse coordinate equivalence recovers the matrix of a sum-of-squares isometry. -/
+@[simp]
+theorem matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm_coe
+    (ι : Type u) [Fintype ι] [DecidableEq ι]
+    (g : specialOrthogonalGroup
+      (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) :
+    (((matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm g :
+        Matrix.specialOrthogonalGroup ι ℝ) : Matrix ι ι ℝ) =
+      LinearMap.toMatrix' (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)).toLinearMap := by
+  apply Matrix.toLin'.injective
+  rw [Matrix.toLin'_toMatrix']
+  apply LinearMap.ext
+  intro x
+  rw [← matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply]
+  exact congrArg (fun h : specialOrthogonalGroup
+    (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) =>
+      (h : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x)
+    ((matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).apply_symm_apply g)
+
 /-- The coordinate inclusion of a matrix-induced sum-of-squares isometry recovers the matrix. -/
 @[simp]
 theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
