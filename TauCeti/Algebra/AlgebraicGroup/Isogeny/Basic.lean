@@ -76,6 +76,11 @@ that Hopf ideal. -/
 def IsCentralIsogeny (f : H ⟶ K) : Prop :=
   IsIsogeny f ∧ (kernelHopfIdeal f).IsCentral
 
+/-- Restatement of the coordinate-algebra conditions defining an isogeny. -/
+theorem isIsogeny_iff (f : H ⟶ K) :
+    IsIsogeny f ↔ f.hom.toAlgHom.Finite ∧ f.hom.toAlgHom.toRingHom.FaithfullyFlat :=
+  Iff.rfl
+
 /-- Restatement of the coordinate-algebra conditions defining a central isogeny. -/
 theorem isCentralIsogeny_iff (f : H ⟶ K) :
     IsCentralIsogeny f ↔
