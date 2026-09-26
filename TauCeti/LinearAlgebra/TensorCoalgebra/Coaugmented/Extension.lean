@@ -68,12 +68,19 @@ noncomputable def extendReduced (f : ReducedTensorWords R M →ₗ[R] ReducedTen
     TensorWords R M →ₗ[R] TensorWords R M :=
   reducedInclusion R M ∘ₗ f ∘ₗ reducedProjection R M
 
+/-- On a word the extension is the inclusion of the value of the endomorphism on the
+positive-length part of that word. -/
+@[simp]
+theorem extendReduced_apply (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
+    (w : TensorWords R M) :
+    extendReduced f w = reducedInclusion R M (f (reducedProjection R M w)) := by
+  simp only [extendReduced, LinearMap.coe_comp, Function.comp_apply]
+
 /-- The extension annihilates every word of length zero. -/
 @[simp]
 theorem extendReduced_of_zero (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
     (z : TensorPower R 0 M) : extendReduced f (of R M 0 z) = 0 := by
-  change reducedInclusion R M (f (reducedProjection R M (of R M 0 z))) = 0
-  rw [reducedProjection_of_zero, map_zero, map_zero]
+  rw [extendReduced_apply, reducedProjection_of_zero, map_zero, map_zero]
 
 /-- The extension annihilates the empty word. -/
 @[simp]
@@ -87,18 +94,15 @@ theorem extendReduced_of (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWord
     (hn : 0 < n) (z : TensorPower R n M) :
     extendReduced f (of R M n z) =
       reducedInclusion R M (f (ReducedTensorWords.of R M ⟨n, hn⟩ z)) := by
-  change reducedInclusion R M (f (reducedProjection R M (of R M n z)))
-      = reducedInclusion R M (f (ReducedTensorWords.of R M ⟨n, hn⟩ z))
-  rw [reducedProjection_of_of_pos]
+  rw [extendReduced_apply, reducedProjection_of_of_pos]
 
 /-- The extension agrees with the endomorphism it extends on the words of positive length. -/
 theorem extendReduced_comp_reducedInclusion
     (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
     extendReduced f ∘ₗ reducedInclusion R M = reducedInclusion R M ∘ₗ f := by
   refine LinearMap.ext fun w => ?_
-  change reducedInclusion R M (f (reducedProjection R M (reducedInclusion R M w)))
-      = reducedInclusion R M (f w)
-  rw [reducedProjection_reducedInclusion]
+  simp only [LinearMap.coe_comp, Function.comp_apply, extendReduced_apply,
+    reducedProjection_reducedInclusion]
 
 /-- The extension acts on the words of positive length as the endomorphism it extends. -/
 @[simp]
@@ -114,10 +118,8 @@ theorem extendReduced_sq (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWord
   have h : extendReduced f ∘ₗ extendReduced f
       = reducedInclusion R M ∘ₗ (f ∘ₗ f) ∘ₗ reducedProjection R M := by
     refine LinearMap.ext fun w => ?_
-    change reducedInclusion R M
-          (f (reducedProjection R M (reducedInclusion R M (f (reducedProjection R M w)))))
-      = reducedInclusion R M (f (f (reducedProjection R M w)))
-    rw [reducedProjection_reducedInclusion]
+    simp only [LinearMap.coe_comp, Function.comp_apply, extendReduced_apply,
+      reducedProjection_reducedInclusion]
   rw [h, hf, LinearMap.zero_comp, LinearMap.comp_zero]
 
 end Extension
@@ -216,7 +218,6 @@ theorem extendReduced_isGradedCoderivation {G : InternalGrading R M} {q : ℤ}
         extendReduced_one, TensorProduct.zero_tmul, TensorProduct.tmul_zero, add_zero]
   · -- a word of positive length, by the reduced co-Leibniz identity and the degenerate cuts
     rw [← reducedInclusion_of R M ⟨n + 1, Nat.succ_pos n⟩ (PiTensorProduct.tprod R x)]
-    set u := ReducedTensorWords.of R M ⟨n + 1, Nat.succ_pos n⟩ (PiTensorProduct.tprod R x)
     -- The coproduct of the value of the extension, read off the reduced co-Leibniz identity.
     have htwist : ∀ w : ReducedTensorWords R M,
         map (InternalGrading.koszulTwist G q) (reducedInclusion R M w) =
