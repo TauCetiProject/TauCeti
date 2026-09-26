@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-public import TauCeti.Algebra.Coalgebra.Comodule.Cat
+public import TauCeti.Algebra.Coalgebra.Comodule.Zero
+public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 
 /-!
 # Products of comodules
@@ -590,6 +591,24 @@ theorem prod_hom_ext' {M N P : ComoduleCat.{u, v, w} R C} {f g : prod R C M N �
         rw [map_add]
       _ = g.toLinearMap x := congrArg g.toLinearMap hx.symm
   exact hlin
+
+open CategoryTheory.Limits
+
+/-- The concrete product of comodules is their categorical binary product. -/
+instance (M N : ComoduleCat.{u, v, w} R C) : HasBinaryProduct M N :=
+  HasLimit.mk ⟨BinaryFan.mk (prodFst M N) (prodSnd M N),
+    BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
+      (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
+      (fun f g _ h₁ h₂ ↦ prod_hom_ext
+        (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))⟩
+
+/-- Comodules have binary products. -/
+instance : HasBinaryProducts (ComoduleCat.{u, v, w} R C) :=
+  hasBinaryProducts_of_hasLimit_pair _
+
+/-- Comodules have finite products. -/
+instance : HasFiniteProducts (ComoduleCat.{u, v, w} R C) :=
+  hasFiniteProducts_of_has_binary_and_terminal
 
 end ComoduleCat
 

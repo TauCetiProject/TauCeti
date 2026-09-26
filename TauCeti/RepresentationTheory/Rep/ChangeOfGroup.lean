@@ -22,6 +22,10 @@ These are the general representation-theoretic inputs of a change-of-group map i
 and cohomology: `groupHomology.chainsMap` consumes the first adapter and
 `groupCohomology.cochainsMap` the second.
 
+The file also records that restricting a trivial representation along a homomorphism of monoids
+gives a trivial representation, so that `Rep.res f A` carries an `IsTrivial` instance whenever `A`
+does.
+
 ## Main definitions
 
 * `Representation.IsIntertwiningMap.toRes`: an intertwining map along `f : G →* H` read as
@@ -31,6 +35,8 @@ and cohomology: `groupHomology.chainsMap` consumes the first adapter and
 
 ## Main results
 
+* `Representation.isTrivial_comp`: the restriction of a trivial representation along a
+  homomorphism of monoids is trivial; in particular `Rep.res f A` is trivial when `A` is.
 * `Representation.IsIntertwiningMap.trans` and `Representation.IsIntertwiningMap.symm`:
   intertwining maps along homomorphisms of monoids compose, and invert along an isomorphism when
   their linear part is an equivalence.
@@ -87,6 +93,11 @@ theorem symm {e' : V ≃ₗ[R] W}
       (σ := σ.comp (e : G →* H)) he' (e.symm h)) v)⟩
 
 end IsIntertwiningMap
+
+/-- The restriction of a trivial representation along a homomorphism of monoids is trivial. -/
+instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H) :
+    Representation.IsTrivial (σ.comp f) :=
+  ⟨fun g ↦ IsTrivial.out (f g)⟩
 
 end Monoid
 

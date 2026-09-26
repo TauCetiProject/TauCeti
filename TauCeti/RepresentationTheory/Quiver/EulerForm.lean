@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RepresentationTheory.Quiver.FirstArrow
@@ -27,7 +28,9 @@ instead.
 
 The last section evaluates both forms on the simple dimension vectors `αᵢ = Pi.single i 1`;
 in particular `TauCeti.titsPolarForm_single_single` computes the Gram matrix of the polarized
-Tits form as `2·I - (A + Aᵀ)`, for `A` the matrix of arrow counts.
+Tits form as `2·I - (A + Aᵀ)`, for `A` the matrix of arrow counts, and
+`TauCeti.titsForm_posDef_iff_posDef_toMatrix` says that the Tits form is positive definite exactly
+when this matrix is.
 
 The definitions follow the Layer 4 signatures in
 `TauCetiRoadmap/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Suggested.lean`.
@@ -288,5 +291,16 @@ public theorem titsPolarForm_single_self_of_isEmpty {i : Q} (h : IsEmpty (i ⟶ 
     titsPolarForm Q (Pi.single i 1) (Pi.single i 1) = 2 := by
   rw [titsPolarForm_single_single, Fintype.card_eq_zero_iff.mpr h]
   simp
+
+/-- **The Tits form is positive definite exactly when the Gram matrix `2·I - (A + Aᵀ)` of its
+polarization is**, the matrix being taken in the simple dimension vectors, as computed by
+`TauCeti.titsPolarForm_single_single`. The polarized form takes the value `2 q(d)` at `(d, d)`. -/
+public theorem titsForm_posDef_iff_posDef_toMatrix :
+    (titsForm Q).PosDef ↔ ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).PosDef := by
+  rw [← LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix _ _
+    ⟨fun d e ↦ titsPolarForm_comm Q d e⟩]
+  refine forall₂_congr fun d _ ↦ ?_
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, titsPolarForm_def, ← titsForm_def]
+  omega
 
 end TauCeti
