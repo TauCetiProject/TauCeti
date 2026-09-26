@@ -18,8 +18,8 @@ Let `G` be a finite group and `A` a representation of `G`. If the cohomology of 
 two consecutive degrees on every subgroup of `G` of prime-power order, then it vanishes in every
 degree on every subgroup of `G` (Milne, *Class Field Theory*, II 3.10). This file proves the
 criterion for ordinary cohomology in positive degrees and for Tate cohomology in all integer
-degrees. It is the step of Tate's theorem that makes the splitting module of a two-dimensional
-class cohomologically trivial.
+degrees. It is the step of Tate's theorem that makes the splitting module of a degree-two
+cohomology class cohomologically trivial.
 
 The proof has three steps.
 
