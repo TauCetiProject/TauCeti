@@ -146,13 +146,19 @@ noncomputable def extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ 
       max_mul_mul_right]
     exact mul_le_mul_left (w.map_add _ _) _
 
+/-- The value of `extendOfPowMulMem` at the chosen exponent. -/
+private theorem extendOfPowMulMem_apply_choose (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
+    (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : A) :
+    w.extendOfPowMulMem hs hpow hw a =
+      w ⟨s ^ (hpow a).choose * a, (hpow a).choose_spec⟩ * (w ⟨s, hs⟩)⁻¹ ^ (hpow a).choose :=
+  rfl
+
 /-- **The defining formula**, at every exponent that carries `a` into the subring. -/
 theorem extendOfPowMulMem_apply (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
     (hpow : ∀ a : A, ∃ n : ℕ, s ^ n * a ∈ R) (hw : w ⟨s, hs⟩ ≠ 0) (a : A) {n : ℕ}
     (hn : s ^ n * a ∈ R) :
     w.extendOfPowMulMem hs hpow hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n := by
-  simpa only [extendOfPowMulMem, coe_mk, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk] using
-    extend_aux w hs hw _ hn
+  rw [extendOfPowMulMem_apply_choose, extend_aux w hs hw _ hn]
 
 /-- **The extension restricts to `w`.** -/
 @[simp]
