@@ -34,8 +34,8 @@ graded nonunital algebra with zero differential is formal.
 ## Main results
 
 * `TauCeti.AInfinityAlgebra.IsMinimal.isFormal`: a minimal algebra with vanishing higher operations
-  is formal, and `TauCeti.IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_zero` specializes this to
-  graded algebras with zero differential.
+  is formal. `TauCeti.IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_of_differential_eq_zero`
+  applies this to DG algebras with zero differential.
 * `TauCeti.AInfinityAlgebra.IsFormal.of_isQuasiIso`: formality is reflected along
   quasi-isomorphisms.
 
@@ -113,12 +113,20 @@ end IsMinimal
 
 end AInfinityAlgebra
 
+/-- The `A∞` algebra of a nonunital DG algebra with vanishing differential is formal. -/
+theorem IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_of_differential_eq_zero
+    {A : Type uA} [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+    {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜]
+    {d : A →ₗ[R] A} (h : IsNonUnitalDGAlgebra 𝒜 d) (hd : d = 0) :
+    h.toAInfinityAlgebra.IsFormal :=
+  ((h.isMinimal_toAInfinityAlgebra_iff).2 hd).isFormal fun _ hn ↦
+    h.toAInfinityAlgebra_m_of_three_le hn
+
 /-- The `A∞` algebra of a graded nonunital algebra with zero differential is formal. -/
 theorem IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_zero {A : Type uA} [NonUnitalRing A]
     [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] (𝒜 : ℤ → Submodule R A)
     [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜] :
     (isNonUnitalDGAlgebra_zero 𝒜 (R := R)).toAInfinityAlgebra.IsFormal :=
-  ((isMinimal_toAInfinityAlgebra_iff _).2 rfl).isFormal fun _ hn ↦
-    toAInfinityAlgebra_m_of_three_le _ hn
+  (isNonUnitalDGAlgebra_zero 𝒜).isFormal_toAInfinityAlgebra_of_differential_eq_zero rfl
 
 end TauCeti
