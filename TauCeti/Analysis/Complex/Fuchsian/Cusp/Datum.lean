@@ -273,6 +273,7 @@ theorem ext {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
 end CuspDatum
 
 /-- Enlarging the subgroup sends a normalized cusp datum to the orbit of its cusp point. -/
+@[simp]
 theorem cuspOrbitMap_cuspOrbit {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) :
     cuspOrbitMap h D.cuspOrbit =

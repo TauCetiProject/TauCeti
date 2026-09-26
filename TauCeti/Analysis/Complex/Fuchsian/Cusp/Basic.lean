@@ -197,7 +197,7 @@ theorem cuspOrbitMap_cuspOrbitMk (h : Δ ≤ Γ) (c : Δ.cuspPoints) :
 
 /-- The cusp-orbit map for a reflexive inclusion is the identity. -/
 @[simp]
-theorem cuspOrbitMap_id : cuspOrbitMap (le_refl Δ) = id := by
+theorem cuspOrbitMap_self : cuspOrbitMap (le_refl Δ) = id := by
   funext C
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
   simp

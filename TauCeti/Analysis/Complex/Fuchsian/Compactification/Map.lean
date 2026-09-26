@@ -51,7 +51,7 @@ theorem compactifiedQuotientMap_ofCusp (h : Δ ≤ Γ) (C : Δ.CuspOrbit) :
 
 /-- The compactified quotient map for a reflexive inclusion is the identity. -/
 @[simp]
-theorem compactifiedQuotientMap_id :
+theorem compactifiedQuotientMap_self :
     compactifiedQuotientMap (le_refl Δ) = id := by
   funext x
   cases x with
@@ -118,13 +118,10 @@ theorem continuousAt_compactifiedQuotientMap_ofCusp [DiscreteTopology Γ]
   obtain ⟨E, hc, hσ⟩ := (D.isCuspPoint.mono h).exists_cuspDatum D.scaling_smul_cusp
   have hC := cuspOrbitMap_cuspOrbit_eq_of_cusp_eq h hc
   rw [ContinuousAt, compactifiedQuotientMap_ofCusp, hC]
-  intro U hU
-  obtain ⟨A, hA⟩ := (mem_nhds_ofCusp_iff E).mp hU
-  apply (mem_nhds_ofCusp_iff D).mpr
-  refine ⟨A, ?_⟩
-  intro x hx
-  exact hA (image_compactifiedQuotientMap_cuspNhd_subset_cuspNhd
-    h D E hc hσ A ⟨x, hx, rfl⟩)
+  refine (nhds_basis_cuspNhd E 0).tendsto_right_iff.mpr fun A _ ↦ ?_
+  exact Filter.mem_of_superset (cuspNhd_mem_nhds D A)
+    (image_subset_iff.mp (image_compactifiedQuotientMap_cuspNhd_subset_cuspNhd
+      h D E hc hσ A))
 
 /-- The compactified orbit map induced by an inclusion of discrete projective subgroups is
 continuous, including at the added cusp points. -/
