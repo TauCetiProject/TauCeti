@@ -36,12 +36,10 @@ abbrev degreeZero : Submodule ℤ T.Pic := LinearMap.ker T.degree
 
 /-- A numerical Picard class belongs to the degree-zero subgroup exactly when it has
 total degree zero. -/
-@[simp]
 lemma mem_degreeZero {x : T.Pic} : x ∈ T.degreeZero ↔ T.degree x = 0 :=
   LinearMap.mem_ker
 
 /-- A degree-zero numerical Picard class has total degree zero. -/
-@[simp]
 lemma degree_coe_degreeZero (x : T.degreeZero) : T.degree (x : T.Pic) = 0 :=
   x.property
 
