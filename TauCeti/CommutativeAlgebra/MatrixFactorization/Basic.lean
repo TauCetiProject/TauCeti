@@ -147,7 +147,7 @@ instance : (parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
     (disk (w := w) P).obj = CurvedDuplex.disk w P := rfl
 
 /-- A map from an elementary disk is determined by its even component. -/
-@[expose] def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
+def diskHomEquiv (P : FGModuleCat.{u} S) [Module.Projective S P]
     (X : MatrixFactorization S w) :
     (disk (w := w) P ⟶ X) ≃ₗ[S] (P ⟶ X.obj.X₀) where
   toFun f := f.hom.f₀
@@ -172,7 +172,7 @@ instance : (parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
 
 @[simp] theorem diskHomEquiv_apply (P : FGModuleCat.{u} S) [Module.Projective S P]
     (X : MatrixFactorization S w) (f : disk (w := w) P ⟶ X) :
-    diskHomEquiv P X f = f.hom.f₀ := rfl
+    diskHomEquiv P X f = f.hom.f₀ := (rfl)
 
 @[simp] theorem diskHomEquiv_symm_apply_hom_f₀ (P : FGModuleCat.{u} S)
     [Module.Projective S P] (X : MatrixFactorization S w) (g : P ⟶ X.obj.X₀) :
