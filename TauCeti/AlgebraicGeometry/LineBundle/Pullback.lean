@@ -67,6 +67,8 @@ variable {X Y : Scheme.{u}}
 
 /-- The pullback of line bundles along a morphism of schemes `f : X ⟶ Y`, as a functor from line
 bundles on `Y` to line bundles on `X`. -/
+-- Expose the underlying module so rigidified pullbacks can use this functor directly.
+@[expose]
 def pullback (f : X ⟶ Y) : InvertibleSheaf Y ⥤ InvertibleSheaf X :=
   (SheafOfModules.isInvertible X).lift
     ((SheafOfModules.isInvertible Y).ι ⋙ Scheme.Modules.pullback f)

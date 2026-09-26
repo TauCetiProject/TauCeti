@@ -104,6 +104,16 @@ lemma pullback_section_map (h : SplitEpi f) {T T' : C} (g : T ⟶ S) (k : T' ⟶
   · simp [Limits.pullback.map, Limits.pullback.lift_fst, Category.assoc]
   · simp [Limits.pullback.map, Limits.pullback.lift_snd, Category.assoc]
 
+/-- Naturality of a pulled-back section when the base-change composite is given by an equal
+morphism. This form is convenient for morphisms in an over category. -/
+lemma pullback_section_map_of_eq (h : SplitEpi f) {T T' : C} (g : T ⟶ S)
+    (g' : T' ⟶ S) (k : T' ⟶ T) (w : k ≫ g = g') [HasPullback f g] [HasPullback f g'] :
+    (h.pullback g').section_ ≫
+        Limits.pullback.map f g' f g (𝟙 X) k (𝟙 S) (by simp) (by simp [← w]) =
+      k ≫ (h.pullback g).section_ := by
+  subst g'
+  exact h.pullback_section_map g k
+
 end SplitEpi
 
 /-- A pullback of a split epimorphism is a split epimorphism.

@@ -61,7 +61,7 @@ namespace AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -81,6 +81,7 @@ variable {s : T ⟶ Y}
 
 /-- Isomorphism of rigidified line bundles: an isomorphism of the underlying line bundles whose
 pullback along `s` carries the first trivialization to the second. -/
+@[expose]
 def setoid (s : T ⟶ Y) : Setoid (RigidifiedLineBundle s) where
   r P Q := ∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
     (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom
@@ -160,19 +161,14 @@ bundle is pulled back along `h`, and its trivialization along `g`. -/
 -- pulled-back module.
 @[expose]
 def pullback (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle s) : RigidifiedLineBundle s' where
-  lineBundle := ⟨(Scheme.Modules.pullback h).obj P.lineBundle.obj, inferInstance⟩
+  lineBundle := (InvertibleSheaf.pullback h).obj P.lineBundle
   rigidification := pullbackRigidification w P.lineBundle.obj P.rigidification
 
 /-- The line bundle of a pulled-back rigidified line bundle is the pulled-back line bundle. -/
 @[simp]
 lemma pullback_lineBundle (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle s) :
     (pullback w P).lineBundle = (InvertibleSheaf.pullback h).obj P.lineBundle :=
-  ObjectProperty.FullSubcategory.ext (InvertibleSheaf.pullback_obj_obj h P.lineBundle).symm
-
-/-- The underlying module of a pulled-back rigidified line bundle is the pulled-back module. -/
-lemma pullback_lineBundle_obj (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle s) :
-    (pullback w P).lineBundle.obj = (Scheme.Modules.pullback h).obj P.lineBundle.obj :=
-  (rfl)
+  rfl
 
 /-- The trivialization of a pulled-back rigidified line bundle is `pullbackRigidification`. -/
 @[simp]
@@ -183,6 +179,7 @@ lemma pullback_rigidification (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle
 end RigidifiedLineBundle
 
 /-- Isomorphism classes of line bundles on `Y` rigidified along `s : T ⟶ Y`. -/
+@[expose]
 def RigidifiedLineBundleClass (s : T ⟶ Y) : Type (u + 1) :=
   Quotient (RigidifiedLineBundle.setoid s)
 
@@ -191,6 +188,7 @@ namespace RigidifiedLineBundleClass
 variable {s : T ⟶ Y}
 
 /-- The isomorphism class of a rigidified line bundle. -/
+@[expose]
 def mk (P : RigidifiedLineBundle s) : RigidifiedLineBundleClass s :=
   Quotient.mk _ P
 
@@ -205,6 +203,24 @@ theorem mk_eq_mk_iff {P Q : RigidifiedLineBundle s} :
     mk P = mk Q ↔ ∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
       (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom :=
   Quotient.eq
+
+/-- Descend a function on rigidified line bundles that respects rigidified isomorphisms to
+their isomorphism classes. -/
+@[expose]
+def lift {α : Sort v} (f : RigidifiedLineBundle s → α)
+    (hf : ∀ P Q, (∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
+      (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom) →
+        f P = f Q) : RigidifiedLineBundleClass s → α :=
+  Quotient.lift f hf
+
+/-- Applying `lift` to a representative returns the original function. -/
+@[simp]
+theorem lift_mk {α : Sort v} {f : RigidifiedLineBundle s → α}
+    {hf : ∀ P Q, (∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
+      (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom) →
+        f P = f Q} (P : RigidifiedLineBundle s) :
+    lift f hf (mk P) = f P :=
+  rfl
 
 variable {T' Y' : Scheme.{u}} {s' : T' ⟶ Y'} {h : Y' ⟶ Y} {g : T' ⟶ T}
 
@@ -248,7 +264,7 @@ lemma pullback_comp {T'' Y'' : Scheme.{u}} {s'' : T'' ⟶ Y''} {h' : Y'' ⟶ Y'}
 /-- The class of the underlying line bundle of a rigidified line bundle, forgetting the
 trivialization. -/
 def toLineBundleClass : RigidifiedLineBundleClass s → LineBundleClass Y :=
-  Quotient.lift (fun P ↦ LineBundleClass.mk P.lineBundle) fun _ _ ⟨e, _⟩ ↦
+  lift (fun P ↦ LineBundleClass.mk P.lineBundle) fun _ _ ⟨e, _⟩ ↦
     LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩
 
 /-- Forgetting the trivialization of the class of `P` gives the class of its line bundle. -/

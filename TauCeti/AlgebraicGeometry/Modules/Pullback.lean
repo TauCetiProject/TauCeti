@@ -169,6 +169,15 @@ def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ �
     SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
   @asIso _ _ _ _ (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) this
 
+/-- The hom of `pullbackObjUnitIso` is Mathlib's structure sheaf comparison map. -/
+@[simp]
+lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
+    (pullbackObjUnitIso f).hom =
+      (letI : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+        inferInstanceAs (pushforward f).IsRightAdjoint
+       SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) := by
+  rfl
+
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
 @[simp]
 lemma pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom (f : X ⟶ Y) :
@@ -183,6 +192,8 @@ lemma unitToPushforwardObjUnit_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
         (pushforward g).map (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) ≫
           (pushforwardComp f g).hom.app _ =
       SheafOfModules.unitToPushforwardObjUnit (f ≫ g).toRingCatSheafHom := by
+  -- On each open, `pushforwardComp` is the identity map and the map associated to
+  -- `(f ≫ g).toRingCatSheafHom` is the composite of the two maps on sections.
   ext U
   rfl
 
@@ -192,6 +203,7 @@ lemma pullbackObjUnitIso_id (X : Scheme.{u}) :
   apply ((pullbackPushforwardAdjunction (𝟙 X)).homEquiv _ _).injective
   rw [pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom, Adjunction.homEquiv_unit,
     ← unit_conjugateEquiv Adjunction.id, conjugateEquiv_pullbackId_hom]
+  -- On each open, `pushforwardId` and `(𝟙 X).toRingCatSheafHom` act as identities.
   ext U
   rfl
 
