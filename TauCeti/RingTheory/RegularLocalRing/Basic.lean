@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.KrullDimension.Regular
-public import TauCeti.RingTheory.Ideal.Operations
+public import TauCeti.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Square
