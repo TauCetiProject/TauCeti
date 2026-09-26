@@ -38,7 +38,7 @@ variable (R : Type u) [CommRing R] {G H : FGCommGrpCat.{u}} (φ : G ⟶ H)
 
 /-- An injective homomorphism of finitely generated character groups with finite cokernel
 induces a central isogeny of diagonalizable group schemes over any commutative ring. -/
-theorem isCentralIsogeny_groupSchemeMap_of_injective
+theorem isCentralIsogeny_groupSchemeMap_of_injective_of_finite_quotient
     (hφ : Function.Injective (FGCommGrpCat.toMonoidHom φ))
     [Finite (H ⧸ (FGCommGrpCat.toMonoidHom φ).range)] :
     GroupScheme.IsCentralIsogeny (groupSchemeMap R φ) := by
@@ -47,7 +47,8 @@ theorem isCentralIsogeny_groupSchemeMap_of_injective
     (GroupScheme.centralIsogenies R).cancel_left_of_respectsIso,
     (GroupScheme.centralIsogenies R).cancel_right_of_respectsIso]
   apply (CommHopfAlgCat.isCentralIsogeny_iff_isCentralIsogeny_hopfSpec_map _).mp
-  exact isCentralIsogeny_mapDomainBialgHom_of_injective R (FGCommGrpCat.toMonoidHom φ) hφ
+  exact isCentralIsogeny_mapDomainBialgHom_of_injective_of_finite_quotient R
+    (FGCommGrpCat.toMonoidHom φ) hφ
 
 /-- A morphism of diagonalizable group schemes over a nonzero commutative ring is a
 central isogeny exactly when its character map is injective with finite cokernel. -/
