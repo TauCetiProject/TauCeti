@@ -7,14 +7,19 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Representability.ParamLaw
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.DissociatedRepresentation
+public import TauCeti.Combinatorics.DenseGraphLimits.Representability.HomDensity
 
 /-!
-# Graph parameters satisfying the representability axioms are homomorphism densities
+# The Lovász–Szegedy characterization of homomorphism densities
 
-An isomorphism-invariant, multiplicative, normalized, reflection-positive graph parameter `f` is
-the homomorphism density of a graphon on the unit interval: `f F = t(F, W)` for every finite graph
-`F` (`exists_graphon_of_representability_axioms`). This is the hard direction of the Lovász–Szegedy
-characterization of homomorphism densities.
+A graph parameter is the homomorphism density `t(·, W)` of a graphon `W` on the unit interval if and
+only if it is isomorphism invariant, multiplicative, normalized and reflection positive
+(`lovasz_szegedy_representability`).
+
+The hard direction is `exists_graphon_of_representability_axioms`: a parameter `f` satisfying the
+four axioms is `t(·, W)` for a graphon `W` on the unit interval.  The easy direction is that
+`t(·, W)` satisfies them, for a graphon on any probability space
+(`isReflectionPositive_homDensityParam` and its three companions).
 
 As a consequence such a parameter takes values in `[0, 1]`
 (`graphParam_mem_Icc_of_representability_axioms`): boundedness follows from the four axioms and is
@@ -22,9 +27,11 @@ not one of them.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.exists_graphon_of_representability_axioms` — **a graph parameter
-  satisfying the four representability axioms is `t(·, W)` for a graphon `W` on the unit
-  interval.**
+* `TauCeti.DenseGraphLimits.lovasz_szegedy_representability` — **a graph parameter is `t(·, W)`
+  for a graphon `W` on the unit interval iff it satisfies the four representability axioms.**
+* `TauCeti.DenseGraphLimits.exists_graphon_of_representability_axioms` — the hard direction: a
+  graph parameter satisfying the four representability axioms is `t(·, W)` for a graphon `W` on
+  the unit interval.
 * `TauCeti.DenseGraphLimits.graphParam_mem_Icc_of_representability_axioms` — such a parameter
   takes values in `[0, 1]`.
 
@@ -65,5 +72,22 @@ theorem graphParam_mem_Icc_of_representability_axioms (f : GraphParam) (hiso : I
   obtain ⟨W, hW⟩ := exists_graphon_of_representability_axioms f hiso hmul hnorm hrp
   rw [hW n F]
   exact ⟨homDensity_nonneg F W, homDensity_le_one F W⟩
+
+/-- **The Lovász–Szegedy characterization of homomorphism densities.** A graph parameter is the
+homomorphism density of a graphon on the unit interval if and only if it is isomorphism invariant,
+multiplicative, normalized and reflection positive. -/
+theorem lovasz_szegedy_representability (f : GraphParam) :
+    (∃ W : Graphon unitInterval (volume : Measure unitInterval),
+        ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj], f n F = homDensity F W) ↔
+      IsIsoInvariant f ∧ IsMultiplicative f ∧ IsNormalized f ∧ IsReflectionPositive f := by
+  refine ⟨fun ⟨W, hW⟩ => ?_, fun ⟨hiso, hmul, hnorm, hrp⟩ =>
+    exists_graphon_of_representability_axioms f hiso hmul hnorm hrp⟩
+  have hf : f = homDensityParam W := by
+    classical
+    funext n F
+    rw [hW n F, homDensityParam_apply]
+  subst hf
+  exact ⟨isIsoInvariant_homDensityParam W, isMultiplicative_homDensityParam W,
+    isNormalized_homDensityParam W, isReflectionPositive_homDensityParam W⟩
 
 end TauCeti.DenseGraphLimits

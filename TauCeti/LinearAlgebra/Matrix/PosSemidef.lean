@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Matrix.Order
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
 It provides rank-one and constant matrices, finite Schur products, Schur powers,
-and the quadratic-form characterization.
+products of weights over unions of finite sets, and the quadratic-form characterization.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -24,6 +24,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
 * `TauCeti.posSemidef_schur_finset_prod` and `Matrix.PosSemidef.hadamard_pow`: finite Schur
   products and Schur powers.
+* `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
+  `[0, 1]`.
 
 ## References
 
@@ -139,6 +141,30 @@ theorem posSemidef_schur_finset_prod {ι : Type w} {s : Finset ι}
   rw [← heq]
   exact Finset.prod_induction K Matrix.PosSemidef
     (fun _ _ hA hB => hA.hadamard hB) posSemidef_const_one hK
+
+/-- For weights `w` in `[0, 1]`, the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` is positive
+semidefinite.  Each factor `a` contributes the matrix equal to `w a` where `a ∈ L i ∪ L j` and to
+`1` elsewhere; it is the constant `w a` plus `1 - w a` times the rank-one matrix of the indicator of
+`a ∉ L i`, so the product is positive semidefinite by the Schur product theorem. -/
+theorem posSemidef_prod_union {ι : Type w} [Finite α] [DecidableEq α] (L : ι → Finset α)
+    {w : α → ℝ} (hw₀ : ∀ a, 0 ≤ w a) (hw₁ : ∀ a, w a ≤ 1) :
+    Matrix.PosSemidef (fun i j => ∏ a ∈ L i ∪ L j, w a) := by
+  have := Fintype.ofFinite α
+  -- The indicator of `a ∉ L i`.
+  let χ : α → ι → ℝ := fun a i => if a ∈ L i then 0 else 1
+  have hfactor (a : α) :
+      Matrix.PosSemidef (fun i j => w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) :=
+    (posSemidef_const_of_nonneg (hw₀ a)).add (posSemidef_rankOne fun i => √(1 - w a) * χ a i)
+  have heq : (fun i j => ∏ a ∈ L i ∪ L j, w a) =
+      fun i j => ∏ a ∈ Finset.univ,
+        (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j)) := by
+    funext i j
+    rw [← Finset.univ_inter (L i ∪ L j), ← Finset.prod_ite_mem]
+    refine Finset.prod_congr rfl fun a _ => ?_
+    have hsq : √(1 - w a) * √(1 - w a) = 1 - w a := Real.mul_self_sqrt (sub_nonneg.2 (hw₁ a))
+    by_cases hi : a ∈ L i <;> by_cases hj : a ∈ L j <;> simp [χ, hi, hj, hsq]
+  rw [heq]
+  exact posSemidef_schur_finset_prod fun a _ => hfactor a
 
 end TauCeti
 
