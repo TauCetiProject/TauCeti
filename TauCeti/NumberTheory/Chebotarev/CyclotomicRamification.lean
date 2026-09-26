@@ -42,7 +42,7 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
     simpa [p, Rat.HeightOneSpectrum.absNorm_asIdeal] using
       Rat.HeightOneSpectrum.prime_natGenerator 𝔭
   have : Fact p.Prime := ⟨hp⟩
-  have hpn : p ∣ n := (Rat.HeightOneSpectrum.absNorm_asIdeal_dvd_iff_natCast_mem 𝔭).mpr hm
+  have hpn : p ∣ n := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
   obtain ⟨e, m, hpm, hnm⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.ne_one
   cases e with
   | zero => simp_all
@@ -54,7 +54,7 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
     have : Q.1.LiesOver 𝔭.asIdeal := Q.2.2
     have hpQ : (p : 𝓞 F) ∈ Q.1 := by
       have hp𝔭 : (p : 𝓞 ℚ) ∈ 𝔭.asIdeal :=
-        (Rat.HeightOneSpectrum.absNorm_asIdeal_dvd_iff_natCast_mem 𝔭).mp dvd_rfl
+        (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mpr dvd_rfl
       simpa using (Ideal.mem_of_liesOver Q.1 𝔭.asIdeal (p : 𝓞 ℚ)).mp hp𝔭
     have : Q.1.LiesOver (Ideal.span {(p : ℤ)}) := by
       rw [Ideal.liesOver_iff]

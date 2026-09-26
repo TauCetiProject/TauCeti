@@ -65,6 +65,8 @@ variable [IsGalois ℚ F]
 /-- At a nonzero level not congruent to two modulo four, a cyclotomic Frobenius fibre over
 `ℚ` is exactly an invertible arithmetic progression. Primes dividing the level belong to neither
 side. -/
+-- Rewrite before simp expands the inverse cyclotomic Galois equivalence.
+@[simp↓]
 theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n % 4 ≠ 2)
     (a : (ZMod n)ˣ) :
     frobeniusPrimeSet ℚ F (ConjClasses.mk ((Rat.galEquivZMod n F).symm a)) =
@@ -75,13 +77,13 @@ theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n 
         (ConjClasses.mk ((Rat.galEquivZMod n F).symm a)) := fun h ↦
       frobeniusPrimeSet_subset_compl_ramifiedPrimes _ h
         (mem_ramifiedPrimes_of_natCast_mem F n (fun h2 ↦ by
-          have := (Rat.HeightOneSpectrum.absNorm_asIdeal_dvd_iff_natCast_mem 𝔭).mpr hm
+          have := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
           rw [h2] at this
           omega) hm)
     refine iff_of_false hram fun ha ↦ ?_
     have hcop := (ZMod.isUnit_iff_coprime (Ideal.absNorm 𝔭.asIdeal) n).mp
       (ha.symm ▸ a.isUnit)
-    have hdvd := (Rat.HeightOneSpectrum.absNorm_asIdeal_dvd_iff_natCast_mem 𝔭).mpr hm
+    have hdvd := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
     have hp := Rat.HeightOneSpectrum.prime_natGenerator 𝔭
     rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hcop hdvd
     exact (hp.coprime_iff_not_dvd.mp hcop) hdvd

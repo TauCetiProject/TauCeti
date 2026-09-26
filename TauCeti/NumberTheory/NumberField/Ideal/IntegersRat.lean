@@ -165,8 +165,10 @@ theorem absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
   simp
 
 /-- A natural number belongs to a rational prime ideal exactly when its norm divides it. -/
-theorem absNorm_asIdeal_dvd_iff_natCast_mem (v : HeightOneSpectrum (𝓞 ℚ)) {n : ℕ} :
-    Ideal.absNorm v.asIdeal ∣ n ↔ (n : 𝓞 ℚ) ∈ v.asIdeal := by
+@[simp]
+theorem natCast_mem_iff_absNorm_asIdeal_dvd (v : HeightOneSpectrum (𝓞 ℚ)) {n : ℕ} :
+    (n : 𝓞 ℚ) ∈ v.asIdeal ↔ Ideal.absNorm v.asIdeal ∣ n := by
+  symm
   rw [absNorm_asIdeal, natGenerator_dvd_iff]
   rw [← map_natCast (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)), ← Ideal.mem_comap,
     Ideal.comap_map_of_bijective _ (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)).bijective]
