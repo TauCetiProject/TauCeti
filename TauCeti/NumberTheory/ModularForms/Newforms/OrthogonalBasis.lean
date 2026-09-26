@@ -236,7 +236,7 @@ private theorem heckeRingHomCuspCharSpace_eq_smul_of_add_eq {p : ℕ} (hp : p.Pr
     (by
       rw [hd, Submodule.coe_sub, Submodule.coe_smul]
       exact Submodule.sub_mem _ (Submodule.smul_mem _ _ ho)
-        (coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp hpN ho))
+        (coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp ho))
     (by
       rw [Submodule.coe_sub, Submodule.coe_smul]
       exact Submodule.sub_mem _
