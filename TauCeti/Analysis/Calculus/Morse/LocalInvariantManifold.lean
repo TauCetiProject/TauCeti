@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.ExponentialDichotomy
+public import TauCeti.Analysis.InnerProductSpace.EuclideanClosedBall
 public import TauCeti.Analysis.ODE.LyapunovPerron.Embedding
 import Mathlib.Analysis.ODE.Transform
 
@@ -114,23 +115,6 @@ theorem zero_mem_localInvariantSet (hx : ∇ f x = 0) (s : Set ℝ) (Q : E →L[
 end
 
 variable [FiniteDimensional ℝ E]
-
-/-- The closed ball of radius `rho` in a subspace `V` of `E`, presented through a set `s` equal to
-that subspace, is homeomorphic to the closed ball of the same radius in the Euclidean space of the
-dimension of `V`. Both disk theorems below read their Euclidean coordinates off this
-homeomorphism, taking for `s` the range of a spectral projection. -/
-private def euclideanClosedBallHomeomorph {s : Set E} {V : Submodule ℝ E} (hs : s = (V : Set E))
-    {n : ℕ} (hn : Module.finrank ℝ V = n) (rho : ℝ) :
-    {v : s | ‖(v : E)‖ ≤ rho} ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin n)) rho :=
-  (Homeomorph.subtype (Homeomorph.setCongr hs)
-      (fun _ ↦ by simp only [mem_ofPred_eq, Homeomorph.setCongr_apply])).trans
-    (Homeomorph.subtype
-      (p := fun v : (V : Set E) ↦ ‖(v : E)‖ ≤ rho)
-      (q := fun w ↦ w ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) rho)
-      ((stdOrthonormalBasis ℝ V).reindex (finCongr hn)).repr.toHomeomorph
-      (fun v ↦ by
-        simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
-          LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
 
 namespace IsNondegenerateCriticalPoint
 
