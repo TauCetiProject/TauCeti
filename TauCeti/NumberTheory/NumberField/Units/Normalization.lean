@@ -21,8 +21,8 @@ both the inversion and the sign that are invisible in the absolute-value criteri
 
 ## Main results
 
-* `exists_normalized_unit_between`: a non-torsion unit with sufficiently small logarithmic
-  absolute value yields a unit whose real embedding lies in the search interval.
+* `exists_normalized_unit_between`: a unit detected by the chosen place, with sufficiently
+  small logarithmic absolute value, yields a unit whose real embedding lies in the search interval.
 * `generates_mod_torsion_iff_no_unit_between_real`: at rank one, a unit expanding at a real
   place generates modulo torsion exactly when that interval contains no unit.
 -/
@@ -58,23 +58,17 @@ end NumberField.InfinitePlace
 namespace TauCeti.NumberField.Units
 
 open scoped Classical in
-/-- A non-torsion unit whose logarithmic absolute value is below `log B` can be inverted and
+/-- A unit with `w v ≠ 1` whose logarithmic absolute value is below `log B` can be inverted and
 multiplied by a torsion unit so that its real image lies in the open interval from `1` to `B`. -/
-theorem exists_normalized_unit_between (hr : rank K = 1) (B : ℝ) (v : (𝓞 K)ˣ)
+theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
     (w : InfinitePlace K) (hw : w.IsReal) (hB : 1 < B)
-    (hv : v ∉ torsion K) (hvbound : |Real.log (w v)| < Real.log B) :
+    (hv : w v ≠ 1) (hvbound : |Real.log (w v)| < Real.log B) :
     ∃ (ε : torsion K) (δ : (𝓞 K)ˣ),
       (δ = v ∨ δ = v⁻¹) ∧
       1 < embedding_of_isReal hw ((ε.1 * δ : (𝓞 K)ˣ) : K) ∧
       embedding_of_isReal hw ((ε.1 * δ : (𝓞 K)ˣ) : K) < B := by
-  have hv₀ : 0 < ‖logEmbedding K (Additive.ofMul v)‖ := by
-    rw [norm_pos_iff, ne_eq, NumberField.Units.dirichletUnitTheorem.logEmbedding_eq_zero_iff]
-    exact hv
   have hvlog : 0 < |Real.log (w v)| := by
-    rw [norm_logEmbedding_eq_mult_abs_log hr v w] at hv₀
-    have hm : (0 : ℝ) < w.mult := by
-      exact_mod_cast (NumberField.InfinitePlace.mult_pos (w := w))
-    exact pos_of_mul_pos_right hv₀ hm.le
+    exact abs_pos.mpr (Real.log_ne_zero_of_pos_of_ne_one (Units.pos_at_place v w) hv)
   have hvpos : 0 < w v := Units.pos_at_place v w
   by_cases h : 1 < w v
   · obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v
@@ -140,13 +134,13 @@ theorem generates_mod_torsion_iff_no_unit_between_real (hr : rank K = 1)
         exact Real.log_lt_log hvpos hvhi
     exact h ⟨v, hv₀, hv₁⟩
   · intro h ⟨v, hv₀, hv₁⟩
-    have hvt : v ∉ torsion K := by
-      intro hv
-      have hz : logEmbedding K (Additive.ofMul v) = 0 :=
-        NumberField.Units.dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hv
-      simp [hz] at hv₀
     obtain ⟨ε, δ, _, hδlo, hδhi⟩ :=
-      exists_normalized_unit_between hr (w u) v w hw hu hvt
+      exists_normalized_unit_between (w u) v w hw hu (by
+        intro heq
+        have hz : ‖logEmbedding K (Additive.ofMul v)‖ = 0 := by
+          rw [norm_logEmbedding_eq_mult_abs_log hr v w, heq]
+          simp
+        exact (ne_of_gt hv₀) hz)
         ((logEmbedding_norm_lt_iff_at_place hr u v w hu).mp hv₁)
     exact h ⟨ε.1 * δ, hδlo, hδhi⟩
 
