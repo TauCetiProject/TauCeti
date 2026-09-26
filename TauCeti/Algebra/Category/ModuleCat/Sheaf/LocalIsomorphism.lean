@@ -16,8 +16,7 @@ A morphism of sheaves of modules is an isomorphism if it is one after restrictio
 member of a cover of the terminal object. This lets one check an isomorphism involving a line
 bundle, such as its tensor evaluation map, on a cover of free rank-one trivializations.
 
-The proof passes to the underlying sheaf of abelian groups and uses Mathlib's local
-isomorphism criterion for sheaves.
+This is the module-sheaf counterpart of Mathlib's local isomorphism criterion for sheaves.
 -/
 
 public section
@@ -26,13 +25,13 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v
+universe u v w x
 
 namespace SheafOfModules
 
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+variable {C : Type u} [Category.{w} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{v}} {M N : _root_.SheafOfModules.{v} R}
-  {ι : Type u} {X : ι → C}
+  {ι : Type x} {X : ι → C}
 
 /-- A morphism of sheaves of modules that is an isomorphism on every member of a covering
 family is an isomorphism globally. -/
