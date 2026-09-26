@@ -39,9 +39,9 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 
 ## References
 
-* The dyadic quadratic splitting law
+* The dyadic quadratic splitting law is
   `NumberField.ncard_primesOver_two_eq_one_iff_of_minpoly_eq_X_sq_sub_X_add`, in
-  `TauCeti.NumberTheory.NumberField.Quadratic.Splitting`, is from TauCetiProject/TauCeti#5901.
+  `TauCeti.NumberTheory.NumberField.Quadratic.Splitting`.
 -/
 
 public section
