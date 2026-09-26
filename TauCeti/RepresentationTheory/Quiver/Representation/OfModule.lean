@@ -487,10 +487,11 @@ instance : (quiverRepFunctor.{u, v, w, t} k Q).Additive where
     change Q at x
     rw [quiverRepFunctor_map, quiverRepFunctor_map, quiverRepFunctor_map,
       quiverRepHomOfModule_app, quiverRepHomOfModule_app, quiverRepHomOfModule_app,
-      ModuleCat.hom_add, key x, ModuleCat.ofHom_add]
-    -- the two sides now differ only in whether the sum of morphisms of `ModuleCat k` is read
-    -- through `ModuleCat.Hom.instAddCommGroup` or through `CategoryTheory.Preadditive.homGroup`
-    rfl
+      ModuleCat.hom_add, key x]
+    -- the sum of morphisms of `ModuleCat k` left in the goal is the one of the preadditive
+    -- structure on that category, which `ModuleCat.ofHom_add` is not stated for; the two are the
+    -- same operation, but only `exact` identifies them, not the syntactic matching of `rw`
+    exact ModuleCat.ofHom_add _ _
 
 /-- **The functor is `k`-linear**: the vertex components of a `kQ`-module are `k`-subspaces, and
 restricting a `kQ`-linear map to them is `k`-linear in the map. This is what makes the functor
@@ -505,9 +506,11 @@ instance : (quiverRepFunctor.{u, v, w, t} k Q).Linear k where
     change Q at x
     rw [quiverRepFunctor_map, quiverRepFunctor_map, quiverRepHomOfModule_app,
       quiverRepHomOfModule_app, ModuleCat.hom_smul, key x]
-    -- as for additivity, the remaining difference is the route by which the scalar action on
-    -- morphisms of `ModuleCat k` is found
-    rfl
+    -- as for additivity, `ModuleCat.hom_smul` is the operation lemma for the scalar action left in
+    -- the goal, and is supplied its argument explicitly because `rw` does not match it
+    exact ModuleCat.hom_ext
+      (ModuleCat.hom_smul (S := k) r
+        (ModuleCat.ofHom (vertexComponentMap k (ModuleCat.Hom.hom f) x))).symm
 
 end Functor
 
