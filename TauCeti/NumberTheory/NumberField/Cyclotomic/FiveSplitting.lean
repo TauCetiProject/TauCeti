@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import Mathlib.Tactic.NormNum.Prime
 
 /-!
@@ -30,19 +30,6 @@ open scoped NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- For an unramified rational prime in a cyclotomic field, the number of primes above it
-times their residue degree is the degree of the field. -/
-theorem ncard_primesOver_mul_orderOf_eq_totient {m : ℕ} [NeZero m]
-    [IsCyclotomicExtension {m} ℚ K] (p : ℕ) [Fact p.Prime] (hm : ¬ p ∣ m) :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * orderOf (p : ZMod m) = Nat.totient m := by
-  let _ : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-  have h := Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
-    (span {(p : ℤ)}) (𝓞 K) Gal(K/ℚ)
-  rw [IsCyclotomicExtension.Rat.ramificationIdxIn_eq_of_not_dvd p K hm,
-    IsCyclotomicExtension.Rat.inertiaDegIn_eq_of_not_dvd p K hm,
-    IsGalois.card_aut_eq_finrank ℚ K, IsCyclotomicExtension.Rat.finrank m K] at h
-  simpa using h
 
 variable [IsCyclotomicExtension {5} ℚ K]
 
