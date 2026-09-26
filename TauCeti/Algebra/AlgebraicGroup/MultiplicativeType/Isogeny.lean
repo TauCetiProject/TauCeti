@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.GroupLikeIsogeny
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
--- Expose the definition of geometricCharacterMap for the definitional rewrite below.
-import all TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Functoriality
 
 /-!
 # Geometric character criterion for isogenies of multiplicative-type groups
@@ -42,7 +40,7 @@ theorem isCentralIsogeny_baseChange_iff_geometricCharacterMap_injective_and_fini
       Function.Injective (CommHopfAlgCat.geometricCharacterMap f) ∧
         Finite (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
           (CommHopfAlgCat.geometricCharacterMap f).range) := by
-  simpa only [CommHopfAlgCat.geometricCharacterMap] using
+  simpa only [CommHopfAlgCat.geometricCharacterMap_eq_groupLike_map] using
     (DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
     ((Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
