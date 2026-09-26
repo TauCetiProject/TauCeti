@@ -42,8 +42,6 @@ private theorem completedSquare (a₂ a₄ a₆ c d x y : F) :
         (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) := by
   ring
 
-namespace WeierstrassCurve
-
 /-- The coefficients of Mathlib's characteristic-not-two normal form are those obtained by
 completing the square in the original Weierstrass equation. -/
 theorem toCharNeTwoNF_coefficients (W : WeierstrassCurve k) (h2 : (2 : k) ≠ 0) :
@@ -66,8 +64,6 @@ theorem toCharNeTwoNF_coefficients (W : WeierstrassCurve k) (h2 : (2 : k) ≠ 0)
   · simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
     field_simp [h2]
     ring
-
-end WeierstrassCurve
 
 namespace Place.IsWeierstrassCoordinates
 
@@ -111,7 +107,7 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
     exact Q.mem_integers_iff_ord_nonneg.mp (by exact add_mem (add_mem hyQ (mul_mem hcQ hxQ)) hdQ)
   · have hEq := h.equation
     rw [Affine.equation_iff] at hEq ⊢
-    obtain ⟨ha₂, ha₄, ha₆⟩ := WeierstrassCurve.toCharNeTwoNF_coefficients W h2
+    obtain ⟨ha₂, ha₄, ha₆⟩ := toCharNeTwoNF_coefficients W h2
     have hc : W.a₁ = 2 * c := by
       dsimp [c]
       field_simp [h2]
